@@ -113,10 +113,19 @@ theorem isSetAlgebra_setOf_isAnalyticBooleanCombination (U : Set E) :
 sets containing the zero set and the positivity set of every function analytic on `U`. -/
 theorem setOf_isAnalyticBooleanCombination_subset {U : Set E} {ℬ : Set (Set E)}
     (hℬ : IsSetAlgebra ℬ)
-    (eq_zero : ∀ f : E → ℝ, AnalyticOnNhd ℝ f U → {x | f x = 0} ∈ ℬ)
     (pos : ∀ f : E → ℝ, AnalyticOnNhd ℝ f U → {x | 0 < f x} ∈ ℬ) :
-    {t : Set E | IsAnalyticBooleanCombination U t} ⊆ ℬ :=
-  hℬ.generateSetAlgebra_subset <| union_subset (fun _ ⟨f, hf, h⟩ => h ▸ eq_zero f hf)
+    {t : Set E | IsAnalyticBooleanCombination U t} ⊆ ℬ := by
+  have eq_zero (f : E → ℝ) (hf : AnalyticOnNhd ℝ f U) : {x | f x = 0} ∈ ℬ := by
+    have : {x | f x = 0} = ({x | 0 < f x} ∪ {x | 0 < -f x})ᶜ := by
+      ext x
+      simp only [mem_ofPred_eq, mem_compl_iff, mem_union, not_or, not_lt]
+      constructor
+      · intro h
+        simp [h]
+      · rintro ⟨h₁, h₂⟩
+        linarith
+    exact this ▸ hℬ.compl_mem (hℬ.union_mem (pos f hf) (pos (-f) hf.neg))
+  exact hℬ.generateSetAlgebra_subset <| union_subset (fun _ ⟨f, hf, h⟩ => h ▸ eq_zero f hf)
     (fun _ ⟨f, hf, h⟩ => h ▸ pos f hf)
 
 /-- The empty set is a Boolean combination of analytic sign conditions. -/
@@ -186,7 +195,6 @@ functions analytic on any smaller set `V ⊆ U`. -/
 theorem mono (ht : IsAnalyticBooleanCombination U t) (hVU : V ⊆ U) :
     IsAnalyticBooleanCombination V t :=
   setOf_isAnalyticBooleanCombination_subset (isSetAlgebra_setOf_isAnalyticBooleanCombination V)
-    (fun _ hf => isAnalyticBooleanCombination_setOf_eq_zero (hf.mono hVU))
     (fun _ hf => isAnalyticBooleanCombination_setOf_pos (hf.mono hVU)) ht
 
 /-- The preimage of a Boolean combination of analytic sign conditions on `U` under a map `g`
@@ -197,7 +205,6 @@ theorem preimage {U : Set F} {t : Set F} (ht : IsAnalyticBooleanCombination U t)
     IsAnalyticBooleanCombination V (g ⁻¹' t) := by
   refine setOf_isAnalyticBooleanCombination_subset (ℬ := {t | IsAnalyticBooleanCombination V
     (g ⁻¹' t)}) ⟨?_, fun s hs => ?_, fun s s' hs hs' => ?_⟩
-    (fun f hf => isAnalyticBooleanCombination_setOf_eq_zero (hf.comp hg hgVU))
     (fun f hf => isAnalyticBooleanCombination_setOf_pos (hf.comp hg hgVU)) ht
   · exact isAnalyticBooleanCombination_empty V
   · exact IsAnalyticBooleanCombination.compl hs

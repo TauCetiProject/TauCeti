@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.CartanExists
+public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
+public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 import TauCeti.Algebra.Lie.Subalgebra.Engel
 
 /-!
@@ -21,10 +23,17 @@ semisimple adjoint action lies in some Cartan subalgebra
 The Cartan subalgebra is a Cartan subalgebra of the Engel subalgebra `engel K x`, viewed inside
 `L`. This is the step that places the neutral element of an `sl₂` triple in a Cartan subalgebra.
 
+Over an algebraically closed field of characteristic zero, when the Killing form of `L` is
+nondegenerate, a Cartan subalgebra comes with a base of its root system
+(`TauCeti.exists_isCartanSubalgebra_base`). This is the choice behind statements that mention
+neither.
+
 ## Main results
 
 * `TauCeti.exists_isCartanSubalgebra_mem_of_isSemisimple_ad`: an element with semisimple adjoint
   action lies in a Cartan subalgebra.
+* `TauCeti.exists_isCartanSubalgebra_base`: a Lie algebra with nondegenerate Killing form has a
+  Cartan subalgebra whose root system has a base.
 
 ## References
 
@@ -85,5 +94,17 @@ theorem exists_isCartanSubalgebra_mem_of_isSemisimple_ad [Infinite K] [FiniteDim
     refine hmemC.mp ?_
     rw [LieSubalgebra.coe_bracket]
     exact (mem_normalizer_iff (C.map E.incl) z).mp hz w (hmemC.mpr hw)
+
+variable (K L) in
+/-- **A Cartan subalgebra with a base of its root system.** A finite-dimensional Lie algebra with
+nondegenerate Killing form over an algebraically closed field of characteristic zero has a Cartan
+subalgebra, and the root system of a Cartan subalgebra has a base. -/
+theorem exists_isCartanSubalgebra_base [CharZero K] [IsAlgClosed K] [FiniteDimensional K L]
+    [IsKilling K L] :
+    ∃ (H : LieSubalgebra K L) (_ : H.IsCartanSubalgebra),
+      Nonempty (IsKilling.rootSystem H).Base := by
+  obtain ⟨x₀, hx₀⟩ := exists_isCartanSubalgebra_engel K L
+  have _i : (engel K x₀).IsCartanSubalgebra := hx₀
+  exact ⟨_, _i, (IsKilling.rootSystem _).nonempty_base⟩
 
 end TauCeti

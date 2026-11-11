@@ -26,6 +26,8 @@ pure tensors over a finite spanning family of the right factor.
 
 * `LinearMap.assoc_rTensor_lTensor_comp`: reassociation commutes with tensoring a composite map.
 * `LinearMap.lTensor_rTensor_comm`: tensoring maps on the two factors commutes elementwise.
+* `LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self`: the twisted co-Leibniz operator on
+  `N ⊗ N` composed with itself, for an involution anticommuting with `b`.
 * `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
   of `M`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
@@ -43,6 +45,9 @@ pure tensors over a finite spanning family of the right factor.
   multiplication.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
+* `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
+* `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
+  of `tensorTensorTensorComm` exchanges the factors of its value.
 
 ## References
 
@@ -90,6 +95,32 @@ theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :
   have h : e.lTensor P ∘ f.rTensor M = f.rTensor Q ∘ e.lTensor N :=
     funext fun x ↦ lTensor_rTensor_comm f e.toLinearMap x
   rw [← EquivLike.comp_injective _ (e.lTensor P), h, EquivLike.injective_comp]
+
+/-- Composing the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ b) ∘ (τ ⊗ 𝟙)` on `N ⊗ N` with itself:
+if `τ` is an involution anticommuting with `b`, the cross terms cancel and the composite is
+`(b ∘ b) ⊗ 𝟙 + 𝟙 ⊗ (b ∘ b)`. -/
+theorem rTensor_add_lTensor_comp_rTensor_comp_self (b τ : N →ₗ[R] N) (hτ : τ ∘ₗ τ = LinearMap.id)
+    (hodd : b ∘ₗ τ + τ ∘ₗ b = 0) :
+    (b.rTensor N + b.lTensor N ∘ₗ τ.rTensor N) ∘ₗ (b.rTensor N + b.lTensor N ∘ₗ τ.rTensor N) =
+      (b ∘ₗ b).rTensor N + (b ∘ₗ b).lTensor N := by
+  refine LinearMap.ext fun w ↦ ?_
+  have hcross : TensorProduct.map (b ∘ₗ τ) b w + TensorProduct.map (τ ∘ₗ b) b w = 0 := by
+    rw [← LinearMap.add_apply, ← TensorProduct.map_add_left, hodd, TensorProduct.map_zero_left,
+      LinearMap.zero_apply]
+  have hcommute (y : N ⊗[R] N) : τ.rTensor N (b.lTensor N y) = b.lTensor N (τ.rTensor N y) :=
+    (lTensor_rTensor_comm τ b y).symm
+  have hlast : b.lTensor N (τ.rTensor N (b.lTensor N (τ.rTensor N w))) = (b ∘ₗ b).lTensor N w := by
+    rw [hcommute, ← lTensor_comp_apply, ← rTensor_comp_apply, hτ, rTensor_id_apply]
+  have hcrossLeft :
+      b.rTensor N (b.lTensor N (τ.rTensor N w)) = TensorProduct.map (b ∘ₗ τ) b w := by
+    rw [← comp_apply, rTensor_comp_lTensor, map_rTensor]
+  have hcrossRight :
+      b.lTensor N (τ.rTensor N (b.rTensor N w)) = TensorProduct.map (τ ∘ₗ b) b w := by
+    rw [← rTensor_comp_apply, ← comp_apply, lTensor_comp_rTensor]
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, map_add]
+  rw [hcrossLeft, hcrossRight, hlast, ← rTensor_comp_apply]
+  rw [show ∀ A B X Y : N ⊗[R] N, A + Y + (X + B) = A + B + (X + Y) from fun A B X Y ↦ by abel,
+    hcross, add_zero]
 
 end Naturality
 
@@ -323,5 +354,26 @@ theorem map_sub_sub_add_eq {R : Type*} [CommSemiring R] {P : Type*} [AddCommGrou
   simp only [LinearMap.add_apply, LinearMap.id_apply, LinearMap.rTensor_def,
     LinearMap.lTensor_def]
   abel
+
+variable {P Q : Type*} [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
+
+/-- Exchanging the factors of both arguments of `tensorTensorTensorComm` exchanges the factors of
+its value: `(n ⊗ m) ⊗ (q ⊗ p) ↦ (n ⊗ q) ⊗ (m ⊗ p)` is the exchange of
+`(m ⊗ n) ⊗ (p ⊗ q) ↦ (m ⊗ p) ⊗ (n ⊗ q)`. -/
+theorem tensorTensorTensorComm_comm_tmul_comm (x : M ⊗[R] N) (y : P ⊗[R] Q) :
+    tensorTensorTensorComm R N M Q P (TensorProduct.comm R M N x ⊗ₜ TensorProduct.comm R P Q y) =
+      TensorProduct.comm R _ _ (tensorTensorTensorComm R M N P Q (x ⊗ₜ y)) := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' h h' => simp only [map_add, add_tmul, h, h']
+  | tmul m n =>
+    induction y using TensorProduct.inductionOn with
+    | add y y' h h' => simp only [map_add, tmul_add, h, h']
+    | tmul p q => simp
+
+/-- If `M ⊗[R] N` is nontrivial then so is `N`: were `N` trivial, the tensor product would be
+trivial too (`TensorProduct.uniqueRight`). -/
+theorem nontrivial_right [Nontrivial (M ⊗[R] N)] : Nontrivial N :=
+  not_subsingleton_iff_nontrivial.1 fun _ =>
+    not_subsingleton (M ⊗[R] N) TensorProduct.uniqueRight.instSubsingleton
 
 end TensorProduct

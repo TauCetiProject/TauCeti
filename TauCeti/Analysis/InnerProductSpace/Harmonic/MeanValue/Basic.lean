@@ -245,21 +245,27 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_eq {x₀ : E}
   rw [zero_add] at h
   rw [Measure.addHaar_real_ball_center, ← h, setIntegral_ball_eq_setIntegral_ball_zero_add]
 
-omit [Nontrivial E] in
+omit [Nontrivial E] [CompleteSpace F] in
 /-- A harmonic value is bounded by the `L¹` norm on any containing open set, using a ball
-of fixed radius around the evaluation point. -/
+of fixed radius around the evaluation point. Completeness of `F` is not needed. -/
 theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_le_inv_measureReal_mul_integral_norm
     {s : Set E} (hu : HarmonicOnNhd u s) (hi : IntegrableOn u s μ) {x : E} {ρ : ℝ}
     (hρ : 0 < ρ) (hx : closedBall x ρ ⊆ s) :
     ‖u x‖ ≤ (μ.real (ball (0 : E) ρ))⁻¹ * ∫ z in s, ‖u z‖ ∂μ := by
   have hV : 0 < μ.real (ball (0 : E) ρ) := measureReal_ball_pos μ 0 hρ
-  have hmean := (hu.mono hx).setIntegral_ball_eq (μ := μ)
+  -- Pass to the completion `F̂`, where Bochner integrals are not junk.
+  set L : F →L[ℝ] UniformSpace.Completion F := UniformSpace.Completion.toComplL
+  have hL (y : F) : ‖L y‖ = ‖y‖ := UniformSpace.Completion.norm_coe y
+  have hu' : HarmonicOnNhd (L ∘ u) s := hu.comp_CLM L
+  have hmean := (hu'.mono hx).setIntegral_ball_eq (μ := μ)
+  simp only [Function.comp_apply] at hmean
   have hbound : μ.real (ball (0 : E) ρ) * ‖u x‖ ≤ ∫ z in s, ‖u z‖ ∂μ := by
     calc
-      _ = ‖∫ z in ball x ρ, u z ∂μ‖ := by
+      _ = ‖∫ z in ball x ρ, L (u z) ∂μ‖ := by
         rw [hmean, norm_smul, Real.norm_of_nonneg measureReal_nonneg,
-          Measure.addHaar_real_ball_center μ x ρ]
-      _ ≤ ∫ z in ball x ρ, ‖u z‖ ∂μ := norm_integral_le_integral_norm _
+          Measure.addHaar_real_ball_center μ x ρ, hL]
+      _ ≤ ∫ z in ball x ρ, ‖L (u z)‖ ∂μ := norm_integral_le_integral_norm _
+      _ = ∫ z in ball x ρ, ‖u z‖ ∂μ := by simp only [hL]
       _ ≤ ∫ z in s, ‖u z‖ ∂μ := setIntegral_mono_set hi.norm
         (ae_of_all _ fun _ ↦ norm_nonneg _) (ball_subset_closedBall.trans hx).eventuallyLE
   rw [inv_mul_eq_div, le_div_iff₀ hV, mul_comm]

@@ -223,11 +223,15 @@ theorem generalizedParetoMeasure_of_nonpos {s : ℝ} (hs : s ≤ 0) (ξ : ℝ) :
     generalizedParetoMeasure s ξ = 0 := by
   simp [generalizedParetoMeasure, not_lt.mpr hs]
 
-/-- The zero-shape generalized Pareto law with positive scale is the exponential law with rate
-`s⁻¹`. -/
+/-- The zero-shape generalized Pareto law is the exponential law with rate `s⁻¹`. At nonpositive
+scale both sides are the zero measure. -/
 @[simp]
-theorem generalizedParetoMeasure_zero {s : ℝ} (hs : 0 < s) :
+theorem generalizedParetoMeasure_zero {s : ℝ} :
     generalizedParetoMeasure s 0 = expMeasure s⁻¹ := by
+  by_cases hs : 0 < s
+  swap
+  · rw [generalizedParetoMeasure_of_nonpos (not_lt.1 hs), expMeasure_of_nonpos]
+    exact inv_nonpos.2 (not_lt.1 hs)
   calc
     generalizedParetoMeasure s 0 = (expMeasure 1).map (s * ·) := by
       rw [generalizedParetoMeasure_of_pos hs]
