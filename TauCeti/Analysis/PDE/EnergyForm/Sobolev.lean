@@ -704,6 +704,14 @@ theorem energyFormH1_add_right
   rw [← energyFormH1L_apply hcoeff, map_add]
   simp only [energyFormH1L_apply]
 
+/-- Subtractivity of the Sobolev energy form in its right argument. -/
+theorem energyFormH1_sub_right
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (u v w : W1p mu Omega 2) :
+    energyFormH1 a b c u (v - w) = energyFormH1 a b c u v - energyFormH1 a b c u w := by
+  rw [← energyFormH1L_apply hcoeff, map_sub]
+  simp only [energyFormH1L_apply]
+
 /-- **Subtractivity of the Sobolev energy form in its coefficients.** For two essentially
 bounded coefficient fields, the energy form of the difference of the coefficient triples is the
 difference of the energy forms; this is the `H¹` form of `energyFormIntegral_sub`. It turns an
