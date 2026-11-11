@@ -11,10 +11,10 @@ public import TauCeti.Combinatorics.Network.Walk
 # Trimming directed paths between terminal sets
 
 A directed path whose source lies in `A` and whose target lies in `B` contains a contiguous
-subpath from `A` to `B` whose internal vertices avoid both terminal sets. This file packages that
-extraction as the operation `TauCeti.ArrowWalk.trimToSets`. The trimmed path visits only vertices
-and traverses only arrows of the original path, so trimming preserves vertex-disjoint and
-arrow-disjoint families.
+subpath from its last vertex in `A` to its first subsequent vertex in `B`, whose internal vertices
+avoid both terminal sets. This file packages that extraction as the operation
+`TauCeti.ArrowWalk.trimToSets`. The trimmed path visits only vertices and traverses only arrows of
+the original path, so trimming preserves vertex-disjoint and arrow-disjoint families.
 
 The operation permits a path of length zero when the terminal sets overlap. This is the convention
 needed when auxiliary source and sink constructions reduce set-to-set path problems to problems
@@ -31,7 +31,8 @@ with two distinguished terminals.
 * `TauCeti.ArrowWalk.trimToSets_isPath`: the trimmed walk is a path.
 * `TauCeti.ArrowWalk.trimToSets_vertices_subset` and
   `TauCeti.ArrowWalk.trimToSets_arrows_subset`: trimming introduces no vertices or arrows.
-* `TauCeti.ArrowWalk.exists_eq_comp_trimToSets_comp`: the trimmed path is a contiguous subpath.
+* `TauCeti.ArrowWalk.exists_eq_comp_trimToSets_comp`: the trimmed path is a contiguous subpath and
+  its source is the last vertex in `A` on the original path.
 * `TauCeti.ArrowWalk.trimToSets_interior_notMem`: internal vertices of the trimmed path lie in
   neither terminal set.
 * `TauCeti.ArrowWalk.trimToSets_source_eq_target_of_source_mem_right`: trimming stops immediately
@@ -61,7 +62,8 @@ private noncomputable def trimToSetsData {A B : Set V} {s t : V} (p : ArrowWalk 
       x.1 ∈ A ∧ x.2.1 ∈ B ∧ x.2.2.IsPath ∧ x.2.2.vertices ⊆ p.vertices ∧
         x.2.2.arrows ⊆ p.arrows ∧
           (∃ (before : ArrowWalk Q s x.1) (after : ArrowWalk Q x.2.1 t),
-            p = before.comp (x.2.2.comp after)) ∧
+            p = before.comp (x.2.2.comp after) ∧
+              ∀ z ∈ (x.2.2.comp after).vertices, z ≠ x.1 → z ∉ A) ∧
           (∀ z ∈ x.2.2.vertices, z ≠ x.1 → z ∉ A) ∧
             ∀ z ∈ x.2.2.vertices, z ≠ x.2.1 → z ∉ B} :=
   Classical.choice <| by
@@ -116,12 +118,15 @@ theorem trimToSets_arrows_subset {A B : Set V} {s t : V} (p : ArrowWalk Q s t)
     (p.trimToSets hp hs ht).arrows ⊆ p.arrows :=
   (trimToSetsData p hp hs ht).2.2.2.2.2.1
 
-/-- A trimmed path is a contiguous subpath of the original path. -/
+/-- A trimmed path is a contiguous subpath of the original path, beginning at its last vertex in
+`A`. -/
 theorem exists_eq_comp_trimToSets_comp {A B : Set V} {s t : V} (p : ArrowWalk Q s t)
     (hp : p.IsPath) (hs : s ∈ A) (ht : t ∈ B) :
     ∃ (before : ArrowWalk Q s (p.trimToSetsSource hp hs ht))
       (after : ArrowWalk Q (p.trimToSetsTarget hp hs ht) t),
-      p = before.comp ((p.trimToSets hp hs ht).comp after) :=
+      p = before.comp ((p.trimToSets hp hs ht).comp after) ∧
+        ∀ z ∈ ((p.trimToSets hp hs ht).comp after).vertices,
+          z ≠ p.trimToSetsSource hp hs ht → z ∉ A :=
   (trimToSetsData p hp hs ht).2.2.2.2.2.2.1
 
 /-- Apart from its source, a path trimmed between `A` and `B` contains no vertex of `A`. -/
