@@ -65,6 +65,11 @@ unit vector `u` of `V` the number `(gauge (-c +ᵥ C) u)⁻¹` is the length of 
 direction `u` inside `C`. No finite-dimensionality is needed. This identifies every nonempty
 compact convex set of a finite-dimensional space with a disk, which is how Brouwer's fixed-point
 theorem passes from the disk to compact convex sets.
+
+The relative-frontier nowhere-density and local-membership lemmas are adapted from
+`Mei/Analysis/Convex/Intrinsic.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
 -/
 
 public section
@@ -188,6 +193,37 @@ theorem intrinsicFrontier_subset_iUnion_of_exists_mem_intrinsicInterior {ι : Ty
     rw [← intrinsicClosure_sdiff_intrinsicInterior] at hx
     exact hx.2
   exact mem_iUnion₂.2 ⟨j, ⟨fun hji' => hxi (hji' ▸ hxj), hji⟩, intrinsicInterior_subset hxj⟩
+
+/-- The relative boundary of a closed set is nowhere dense in its affine span. -/
+theorem _root_.IsClosed.isNowhereDense_preimage_intrinsicFrontier {s : Set P} (hs : IsClosed s)
+    {A : AffineSubspace 𝕜 P} (hA : affineSpan 𝕜 s = A) :
+    IsNowhereDense ((↑) ⁻¹' intrinsicFrontier 𝕜 s : Set A) := by
+  subst hA
+  rw [intrinsicFrontier, preimage_image_eq _ Subtype.val_injective,
+    isClosed_frontier.isNowhereDense_iff]
+  exact interior_frontier (hs.preimage continuous_subtype_val)
+
+/-- Off the relative boundary of a set, membership in the set is locally constant within
+its affine span. -/
+theorem eventually_mem_iff_of_notMem_intrinsicFrontier {s : Set P}
+    {A : AffineSubspace 𝕜 P} (hA : affineSpan 𝕜 s = A) {x : A}
+    (hx : (x : P) ∉ intrinsicFrontier 𝕜 s) :
+    ∀ᶠ y : A in nhds x, ((y : P) ∈ s ↔ (x : P) ∈ s) := by
+  subst hA
+  have hxfr : x ∉ frontier ((↑) ⁻¹' s : Set (affineSpan 𝕜 s)) :=
+    fun hfr => hx ⟨x, hfr, rfl⟩
+  by_cases hxP : (x : P) ∈ s
+  · have hint : x ∈ interior ((↑) ⁻¹' s : Set (affineSpan 𝕜 s)) :=
+      (mem_interior_iff_notMem_frontier
+        (s := ((↑) ⁻¹' s : Set (affineSpan 𝕜 s))) hxP).mpr hxfr
+    filter_upwards [mem_interior_iff_mem_nhds.mp hint] with y hy
+    exact iff_of_true hy hxP
+  · have hint : x ∈ interior (((↑) ⁻¹' s : Set (affineSpan 𝕜 s))ᶜ) :=
+      (mem_interior_iff_notMem_frontier
+        (s := ((↑) ⁻¹' s : Set (affineSpan 𝕜 s))ᶜ) hxP).mpr
+        (by rwa [frontier_compl])
+    filter_upwards [mem_interior_iff_mem_nhds.mp hint] with y hy
+    exact iff_of_false hy hxP
 
 end AffineSpan
 
