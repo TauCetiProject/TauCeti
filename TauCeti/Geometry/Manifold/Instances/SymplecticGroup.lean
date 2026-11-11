@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Subalgebra.RestrictScalars
-public import TauCeti.Geometry.Lie.Subgroup.Differential
+public import TauCeti.Geometry.Lie.Subgroup.Transport
 public import TauCeti.Geometry.Lie.Subgroup.Symplectic
-public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.Algebra.LieGroup
-public import TauCeti.Geometry.Manifold.PullbackGroupoid
 
 /-!
 # The native symplectic Lie group
@@ -97,21 +94,6 @@ instance symplecticGroup_isManifold (l : Type*) [Fintype l] [DecidableEq l]
     (manifoldM := (closedSymplecticLieGroup l 𝕜).toContMDiffMul.toIsManifold)
     𝓘(ℝ, SymplecticGroupModel l 𝕜) ∞
 
--- Keep the selected closed-subgroup charts explicit when specializing the generic pullback.
-private def symplecticDiffeomorph (l : Type*) [Fintype l] [DecidableEq l]
-    (𝕜 : Type*) [RCLike 𝕜] :
-    Matrix.symplecticGroup l 𝕜 ≃ₘ^∞⟮𝓘(ℝ, SymplecticGroupModel l 𝕜),
-      𝓘(ℝ, SymplecticGroupModel l 𝕜)⟯ GLSymplectic l 𝕜 :=
-  (GLSymplectic.symplecticGroupContinuousMulEquiv l 𝕜).toHomeomorph.pullbackDiffeomorph
-    (cM := closedSymplecticChartedSpace l 𝕜) 𝓘(ℝ, SymplecticGroupModel l 𝕜) ∞
-
-private theorem symplecticDiffeomorph_coe (l : Type*) [Fintype l] [DecidableEq l]
-    (𝕜 : Type*) [RCLike 𝕜] :
-    ⇑(symplecticDiffeomorph l 𝕜) = GLSymplectic.symplecticGroupContinuousMulEquiv l 𝕜 := by
-  unfold symplecticDiffeomorph
-  exact (GLSymplectic.symplecticGroupContinuousMulEquiv l 𝕜).toHomeomorph.coe_pullbackDiffeomorph
-    (cM := closedSymplecticChartedSpace l 𝕜) 𝓘(ℝ, SymplecticGroupModel l 𝕜) ∞
-
 /-- Mathlib's matrix symplectic group is a Lie group for its original subspace topology. -/
 instance symplecticGroup_lieGroup (l : Type*) [Fintype l] [DecidableEq l]
     (𝕜 : Type*) [RCLike 𝕜] :
@@ -120,83 +102,35 @@ instance symplecticGroup_lieGroup (l : Type*) [Fintype l] [DecidableEq l]
     (cB := closedSymplecticChartedSpace l 𝕜) (lieB := closedSymplecticLieGroup l 𝕜)
     (I := 𝓘(ℝ, SymplecticGroupModel l 𝕜)) (n := ∞)
 
-/-- In the transported charts the actual matrix-to-units map is a smooth embedding. -/
-theorem isSmoothEmbedding_ofSymplecticGroup (l : Type*) [Fintype l] [DecidableEq l]
-    (𝕜 : Type*) [RCLike 𝕜] :
-    Manifold.IsSmoothEmbedding 𝓘(ℝ, SymplecticGroupModel l 𝕜)
-      𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜) ∞ (GLSymplectic.ofSymplecticGroup l 𝕜) := by
-  have h := TauCeti.isSmoothEmbedding_comp_isLocalDiffeomorph
-    (g := symplecticDiffeomorph l 𝕜) (f := fun x : GLSymplectic l 𝕜 ↦ (x : GL (l ⊕ l) 𝕜))
-    (symplecticDiffeomorph l 𝕜).isLocalDiffeomorph
-    (symplecticDiffeomorph l 𝕜).toHomeomorph.isEmbedding
-    (symplecticEmbeddedData l 𝕜).isSmoothEmbedding_subtypeVal
-  have he : (fun x : GLSymplectic l 𝕜 ↦ (x : GL (l ⊕ l) 𝕜)) ∘
-      (symplecticDiffeomorph l 𝕜) = GLSymplectic.ofSymplecticGroup l 𝕜 := by
-    funext x
-    rw [Function.comp_apply, symplecticDiffeomorph_coe]
-    exact GLSymplectic.coe_symplecticGroupContinuousMulEquiv l 𝕜 x
-  exact he ▸ h
-
-private def symplecticGroupToClosedCarrier (l : Type*) [Fintype l] [DecidableEq l]
-    (𝕜 : Type*) [RCLike 𝕜] :
-    ContMDiffMonoidMorphism 𝓘(ℝ, SymplecticGroupModel l 𝕜)
-      𝓘(ℝ, SymplecticGroupModel l 𝕜) ∞ (Matrix.symplecticGroup l 𝕜) (GLSymplectic l 𝕜) where
-  toMonoidHom := (GLSymplectic.symplecticGroupContinuousMulEquiv l 𝕜).toMulEquiv.toMonoidHom
-  contMDiff_toFun := by
-    -- Expose the equivalence underlying the monoid-hom coercion for the pullback theorem.
-    change ContMDiff 𝓘(ℝ, SymplecticGroupModel l 𝕜) 𝓘(ℝ, SymplecticGroupModel l 𝕜) ∞
-      (⇑(GLSymplectic.symplecticGroupContinuousMulEquiv l 𝕜))
-    rw [← symplecticDiffeomorph_coe]
-    exact (symplecticDiffeomorph l 𝕜).contMDiff
-
-private theorem coe_symplecticGroupToClosedCarrier (l : Type*) [Fintype l] [DecidableEq l]
-    (𝕜 : Type*) [RCLike 𝕜] :
-    ⇑(symplecticGroupToClosedCarrier l 𝕜) =
-      (GLSymplectic.symplecticGroupContinuousMulEquiv l 𝕜) := by
-  -- The smooth homomorphism and continuous equivalence retain the same function through
-  -- their monoid-hom projections.
-  unfold symplecticGroupToClosedCarrier
-  rfl
-
 /-- The canonical embedding into the general linear group as a smooth group homomorphism. -/
 def symplecticGroupToGLSmoothHom (l : Type*) [Fintype l] [DecidableEq l]
     (𝕜 : Type*) [RCLike 𝕜] :
     ContMDiffMonoidMorphism 𝓘(ℝ, SymplecticGroupModel l 𝕜)
       𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜) ∞ (Matrix.symplecticGroup l 𝕜) (GL (l ⊕ l) 𝕜) :=
-  (symplecticEmbeddedData l 𝕜).subtypeVal.comp (symplecticGroupToClosedCarrier l 𝕜)
+  (symplecticEmbeddedData l 𝕜).pullbackSmoothHom
+    (GLSymplectic.symplecticGroupContinuousMulEquiv l 𝕜)
 
 /-- The smooth homomorphism has the original matrix-to-units map as its underlying map. -/
 @[simp]
 theorem symplecticGroupToGLSmoothHom_apply (l : Type*) [Fintype l] [DecidableEq l]
     (𝕜 : Type*) [RCLike 𝕜] (x : Matrix.symplecticGroup l 𝕜) :
     symplecticGroupToGLSmoothHom l 𝕜 x = GLSymplectic.ofSymplecticGroup l 𝕜 x := by
-  rw [symplecticGroupToGLSmoothHom]
-  -- Express evaluation as a composition on the selected carrier charts to use `comp_apply`.
-  change ((symplecticEmbeddedData l 𝕜).subtypeVal.comp
-    (symplecticGroupToClosedCarrier l 𝕜)) x = _
-  rw [ContMDiffMonoidMorphism.coe_comp, Function.comp_apply,
-    EmbeddedLieSubgroupData.subtypeVal_apply]
-  rw [coe_symplecticGroupToClosedCarrier]
-  exact GLSymplectic.coe_symplecticGroupContinuousMulEquiv l 𝕜 x
+  exact ((symplecticEmbeddedData l 𝕜).pullbackSmoothHom_apply
+    (GLSymplectic.symplecticGroupContinuousMulEquiv l 𝕜) x).trans
+    (GLSymplectic.coe_symplecticGroupContinuousMulEquiv l 𝕜 x)
 
-private def symplecticNativeToCarrierLieEquiv (l : Type*) [Fintype l] [DecidableEq l]
+/-- In the transported charts the actual matrix-to-units map is a smooth embedding. -/
+theorem isSmoothEmbedding_ofSymplecticGroup (l : Type*) [Fintype l] [DecidableEq l]
     (𝕜 : Type*) [RCLike 𝕜] :
-    LeftInvariantDerivation 𝓘(ℝ, SymplecticGroupModel l 𝕜) (Matrix.symplecticGroup l 𝕜)
-      ≃ₗ⁅ℝ⁆ LeftInvariantDerivation 𝓘(ℝ, SymplecticGroupModel l 𝕜) (GLSymplectic l 𝕜) := by
-  let f := symplecticGroupToClosedCarrier l 𝕜
-  have hf : IsLocalDiffeomorphAt 𝓘(ℝ, SymplecticGroupModel l 𝕜)
-      𝓘(ℝ, SymplecticGroupModel l 𝕜) ∞ f 1 := by
-    dsimp only [f]
-    rw [coe_symplecticGroupToClosedCarrier, ← symplecticDiffeomorph_coe]
-    exact (symplecticDiffeomorph l 𝕜).isLocalDiffeomorph 1
-  exact lieEquivOfIsLocalDiffeomorphAt f hf
-
-private theorem symplecticNativeToCarrierLieEquiv_apply (l : Type*) [Fintype l] [DecidableEq l]
-    (𝕜 : Type*) [RCLike 𝕜]
-    (D : LeftInvariantDerivation 𝓘(ℝ, SymplecticGroupModel l 𝕜) (Matrix.symplecticGroup l 𝕜)) :
-    symplecticNativeToCarrierLieEquiv l 𝕜 D = lieMap (symplecticGroupToClosedCarrier l 𝕜) D := by
-  unfold symplecticNativeToCarrierLieEquiv
-  exact lieEquivOfIsLocalDiffeomorphAt_apply _ _ D
+    Manifold.IsSmoothEmbedding 𝓘(ℝ, SymplecticGroupModel l 𝕜)
+      𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜) ∞ (GLSymplectic.ofSymplecticGroup l 𝕜) := by
+  have h := (symplecticEmbeddedData l 𝕜).isSmoothEmbedding_pullbackSmoothHom
+    (GLSymplectic.symplecticGroupContinuousMulEquiv l 𝕜)
+  have hinclusion :
+      (symplecticGroupToGLSmoothHom l 𝕜 : Matrix.symplecticGroup l 𝕜 → GL (l ⊕ l) 𝕜) =
+      GLSymplectic.ofSymplecticGroup l 𝕜 :=
+    funext (symplecticGroupToGLSmoothHom_apply l 𝕜)
+  exact hinclusion ▸ h
 
 private def symplecticLieSubalgebraToSp (l : Type*) [Fintype l] [DecidableEq l]
     (𝕜 : Type*) [RCLike 𝕜] :
@@ -241,9 +175,9 @@ def symplecticGroupLieAlgebraEquiv (l : Type*) [Fintype l] [DecidableEq l]
     (𝕜 : Type*) [RCLike 𝕜] :
     LeftInvariantDerivation 𝓘(ℝ, SymplecticGroupModel l 𝕜) (Matrix.symplecticGroup l 𝕜)
       ≃ₗ⁅ℝ⁆ RestrictScalars ℝ 𝕜 (LieAlgebra.Symplectic.sp l 𝕜) :=
-  (symplecticNativeToCarrierLieEquiv l 𝕜).trans
-    ((symplecticEmbeddedData l 𝕜).lieEquivLieSubalgebraOfSubgroup.trans
-      (symplecticLieSubalgebraToSp l 𝕜))
+  ((symplecticEmbeddedData l 𝕜).pullbackLieEquiv
+    (GLSymplectic.symplecticGroupContinuousMulEquiv l 𝕜)).trans
+      (symplecticLieSubalgebraToSp l 𝕜)
 
 /-- In matrix coordinates the native Lie algebra equivalence is the differential of the
 canonical matrix-to-units map. -/
@@ -256,10 +190,11 @@ theorem restrictScalarsIncl_symplecticGroupLieAlgebraEquiv_apply
       (symplecticGroupLieAlgebraEquiv l 𝕜 D) =
     (unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) 𝕜))
       (lieMap (symplecticGroupToGLSmoothHom l 𝕜) D) := by
-  simp only [symplecticGroupLieAlgebraEquiv, LieEquiv.trans_apply,
-    restrictScalarsIncl_symplecticLieSubalgebraToSp_apply,
-    EmbeddedLieSubgroupData.lieEquivLieSubalgebraOfSubgroup_apply,
-    EmbeddedLieSubgroupData.lieMapSubtypeVal_apply, symplecticNativeToCarrierLieEquiv_apply,
-    symplecticGroupToGLSmoothHom, lieMap_comp, LieHom.comp_apply]
+  exact (restrictScalarsIncl_symplecticLieSubalgebraToSp_apply l 𝕜
+    ((symplecticEmbeddedData l 𝕜).pullbackLieEquiv
+      (GLSymplectic.symplecticGroupContinuousMulEquiv l 𝕜) D)).trans
+    (congrArg (unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) 𝕜))
+      ((symplecticEmbeddedData l 𝕜).coe_pullbackLieEquiv_apply
+        (GLSymplectic.symplecticGroupContinuousMulEquiv l 𝕜) D))
 
 end TauCeti.Lie

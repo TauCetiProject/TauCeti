@@ -5,6 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Units.Hom
+
+import Mathlib.Algebra.Group.Subgroup.Ker
+
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.UnitaryGroup
 
@@ -33,6 +37,14 @@ This mirrors `TauCeti.GLSymplectic`, the units-level avatar of `Matrix.symplecti
 
 ## Main results
 
+* `TauCeti.GLSpecialUnitary.ofSpecialUnitaryGroup`: the canonical matrix-to-units inclusion.
+* `TauCeti.GLSpecialUnitary.mulEquivSpecialUnitaryGroup`: the equivalence with the native
+  special unitary matrix group.
+* `TauCeti.GLSpecialUnitary.coe_ofSpecialUnitaryGroup`: the inclusion keeps the original matrix.
+* `TauCeti.GLSpecialUnitary.range_ofSpecialUnitaryGroup`: its image is `GLSpecialUnitary`.
+* `TauCeti.GLSpecialUnitary.coe_mulEquivSpecialUnitaryGroup` and
+  `TauCeti.GLSpecialUnitary.coe_mulEquivSpecialUnitaryGroup_symm_apply`: the carrier
+  computation rules.
 * `TauCeti.GLSpecialUnitary.eq_unitarySubgroup_inf_ker_det`: the defining decomposition into a
   unitary and a determinant condition.
 * `TauCeti.GLSpecialUnitary.mem_iff_mem_specialUnitaryGroup`: its elements are the units whose
@@ -89,3 +101,53 @@ theorem coe_eq_preimage :
 end GLSpecialUnitary
 
 end TauCeti
+
+namespace TauCeti.GLSpecialUnitary
+
+variable (n : Type*) [Fintype n] [DecidableEq n]
+  (R : Type*) [CommRing R] [StarRing R]
+
+/-- The special unitary matrix, viewed as a unit. -/
+def ofSpecialUnitaryGroup : Matrix.specialUnitaryGroup n R →* GL n R :=
+  (Matrix.specialUnitaryGroup n R).subtype.toHomUnits
+
+/-- The canonical unit has the original matrix as its value. -/
+@[simp]
+theorem coe_ofSpecialUnitaryGroup (A : Matrix.specialUnitaryGroup n R) :
+    (ofSpecialUnitaryGroup n R A : Matrix n n R) = (A : Matrix n n R) :=
+  MonoidHom.coe_toHomUnits _ A
+
+/-- The matrix inclusion has range equal to the special unitary subgroup of the units. -/
+theorem range_ofSpecialUnitaryGroup : (ofSpecialUnitaryGroup n R).range = GLSpecialUnitary n R := by
+  ext A
+  rw [MonoidHom.mem_range, mem_iff_mem_specialUnitaryGroup]
+  constructor
+  · rintro ⟨X, rfl⟩
+    simpa only [coe_ofSpecialUnitaryGroup] using X.property
+  · intro hA
+    exact ⟨⟨(A : Matrix n n R), hA⟩, Units.ext (coe_ofSpecialUnitaryGroup n R _)⟩
+
+/-- Read the special unitary subgroup of the units in its original matrix carrier. -/
+noncomputable def mulEquivSpecialUnitaryGroup :
+    GLSpecialUnitary n R ≃* Matrix.specialUnitaryGroup n R :=
+  ((MonoidHom.ofInjective (fun A B h ↦ Subtype.ext (by
+      simpa only [coe_ofSpecialUnitaryGroup] using congrArg Units.val h))).trans
+    (MulEquiv.subgroupCongr (range_ofSpecialUnitaryGroup n R))).symm
+
+/-- The inverse equivalence sends a matrix to its canonical unit. -/
+@[simp]
+theorem coe_mulEquivSpecialUnitaryGroup_symm_apply (A : Matrix.specialUnitaryGroup n R) :
+    ((mulEquivSpecialUnitaryGroup n R).symm A : GL n R) = ofSpecialUnitaryGroup n R A := by
+  simp only [mulEquivSpecialUnitaryGroup, MulEquiv.symm_symm, MulEquiv.trans_apply,
+    MulEquiv.subgroupCongr_apply]
+  exact MonoidHom.ofInjective_apply _
+
+/-- The equivalence keeps the underlying matrix of each unit. -/
+@[simp]
+theorem coe_mulEquivSpecialUnitaryGroup (A : GLSpecialUnitary n R) :
+    (mulEquivSpecialUnitaryGroup n R A : Matrix n n R) = (A.val : Matrix n n R) := by
+  have h := coe_mulEquivSpecialUnitaryGroup_symm_apply n R (mulEquivSpecialUnitaryGroup n R A)
+  rw [MulEquiv.symm_apply_apply] at h
+  simpa only [coe_ofSpecialUnitaryGroup] using (congrArg Units.val h).symm
+
+end TauCeti.GLSpecialUnitary

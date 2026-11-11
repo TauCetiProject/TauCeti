@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Sum
+
+public import TauCeti.Topology.Algebra.Group.Units.ContinuousMulEquiv
 
 /-!
 # The topology of the matrix symplectic group
@@ -27,9 +28,12 @@ matrices.
 
 ## Main results
 
+* `Matrix.instContinuousInvSymplecticGroup`: inversion in the native matrix group is continuous.
 * `Matrix.isClosed_symplecticGroup`: the matrix symplectic group is closed over any `T₁`
   topological commutative ring.
 * `TauCeti.isClosed_GLSymplectic`: the symplectic subgroup of the general linear group is closed.
+* `TauCeti.GLSymplectic.toMulEquiv_symplecticGroupContinuousMulEquiv`: the original algebraic
+  equivalence is preserved.
 * `TauCeti.GLSymplectic.symplecticGroupContinuousMulEquiv`: the canonical equivalence for
   the matrix and unit subspace topologies.
 * `Continuous.matrix_symplecticSum` and `TauCeti.GLSymplectic.continuous_sum`: the symplectic
@@ -55,6 +59,14 @@ theorem isClosed_symplecticGroup :
     Set.ext fun _ => SymplecticGroup.mem_iff
   rw [hset]
   exact isClosed_eq hcont continuous_const
+
+omit [T1Space R] in
+/-- Inversion in the symplectic matrix group over a topological commutative ring is continuous. -/
+instance instContinuousInvSymplecticGroup : ContinuousInv (Matrix.symplecticGroup l R) where
+  continuous_inv := by
+    apply continuous_induced_rng.2
+    exact ((continuous_const.matrix_mul continuous_subtype_val.matrix_transpose).matrix_mul
+      continuous_const).congr fun A ↦ (SymplecticGroup.coe_inv A).symm
 
 end Matrix
 
@@ -112,43 +124,39 @@ variable (l : Type*) [Fintype l] [DecidableEq l] (R : Type*) [CommRing R]
 variable [TopologicalSpace R] [IsTopologicalRing R]
 
 /-- The standard embedding into matrix units is continuous for the subspace topology. -/
-theorem continuous_ofSymplecticGroup : Continuous (ofSymplecticGroup l R) := by
-  refine Units.continuous_iff.2 ⟨?_, ?_⟩
-  · exact continuous_subtype_val.congr fun A ↦
-      (coe_ofSymplecticGroup l R A).symm
-  · have h : Continuous (fun A : Matrix.symplecticGroup l R ↦
-        (-J l R) * (A : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * J l R) :=
-      (continuous_const.matrix_mul continuous_subtype_val.matrix_transpose).matrix_mul
-        continuous_const
-    refine h.congr fun A ↦ ?_
-    have hinv := coe_ofSymplecticGroup l R A⁻¹
-    rw [map_inv] at hinv
-    exact (SymplecticGroup.coe_inv A).symm.trans hinv.symm
+@[fun_prop]
+theorem continuous_ofSymplecticGroup : Continuous (ofSymplecticGroup l R) :=
+  Continuous.of_coeHom_comp (f := ofSymplecticGroup l R)
+    (continuous_subtype_val.congr fun A ↦ (coe_ofSymplecticGroup l R A).symm)
 
 /-- The canonical multiplicative equivalence preserves the original matrix subspace topology. -/
-def symplecticGroupContinuousMulEquiv : Matrix.symplecticGroup l R ≃ₜ* GLSymplectic l R where
-  __ := (mulEquivSymplecticGroup l R).symm
-  continuous_toFun := by
-    apply continuous_induced_rng.2
-    exact (continuous_ofSymplecticGroup l R).congr fun A ↦
-      (coe_mulEquivSymplecticGroup_symm_apply l R A).symm
-  continuous_invFun := by
-    apply continuous_induced_rng.2
-    exact (Units.continuous_val.comp continuous_subtype_val).congr fun A ↦
-      (coe_mulEquivSymplecticGroup l R A).symm
+def symplecticGroupContinuousMulEquiv : Matrix.symplecticGroup l R ≃ₜ* GLSymplectic l R :=
+  (mulEquivSymplecticGroup l R).symm.toContinuousMulEquivOfUnits
+    (by simpa only [coe_mulEquivSymplecticGroup_symm_apply, coe_ofSymplecticGroup] using
+      (Topology.IsEmbedding.subtypeVal (p := fun A ↦ A ∈ Matrix.symplecticGroup l R)))
 
 /-- The equivalence sends a symplectic matrix to its canonical unit. -/
 @[simp]
 theorem coe_symplecticGroupContinuousMulEquiv (A : Matrix.symplecticGroup l R) :
     (symplecticGroupContinuousMulEquiv l R A : GL (l ⊕ l) R) =
-      ofSymplecticGroup l R A :=
-  coe_mulEquivSymplecticGroup_symm_apply l R A
+      ofSymplecticGroup l R A := by
+  rw [symplecticGroupContinuousMulEquiv, MulEquiv.toContinuousMulEquivOfUnits_apply]
+  exact coe_mulEquivSymplecticGroup_symm_apply l R A
 
 /-- The inverse equivalence keeps the underlying matrix of the symplectic unit. -/
 @[simp]
 theorem coe_symplecticGroupContinuousMulEquiv_symm (A : GLSymplectic l R) :
     ((symplecticGroupContinuousMulEquiv l R).symm A : Matrix (l ⊕ l) (l ⊕ l) R) =
-      ((A : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) :=
-  coe_mulEquivSymplecticGroup l R A
+      ((A : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) := by
+  rw [symplecticGroupContinuousMulEquiv, MulEquiv.toContinuousMulEquivOfUnits_symm_apply,
+    MulEquiv.symm_symm]
+  exact coe_mulEquivSymplecticGroup l R A
+
+/-- The homeomorphism retains the original algebraic equivalence. -/
+@[simp]
+theorem toMulEquiv_symplecticGroupContinuousMulEquiv :
+    (symplecticGroupContinuousMulEquiv l R : Matrix.symplecticGroup l R ≃* GLSymplectic l R) =
+      (mulEquivSymplecticGroup l R).symm := by
+  rw [symplecticGroupContinuousMulEquiv, MulEquiv.toMulEquiv_toContinuousMulEquivOfUnits]
 
 end TauCeti.GLSymplectic

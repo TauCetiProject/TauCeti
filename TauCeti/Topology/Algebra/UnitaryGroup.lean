@@ -7,12 +7,15 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.RCLike.Lemmas
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialUnitary
 public import TauCeti.Topology.Algebra.Star.Unitary
 
+import TauCeti.Topology.Algebra.Group.Units.ContinuousMulEquiv
+
 /-!
-# The unitary and special unitary matrix groups are compact
+# Topology and native carriers of unitary matrix groups
 
 For a finite index type `n` and `𝕜 = ℝ` or `ℂ` (any `RCLike` field), the unitary group
 `Matrix.unitaryGroup n 𝕜` and the special unitary group `Matrix.specialUnitaryGroup n 𝕜` are
@@ -39,10 +42,24 @@ unitary group under the continuous coercion `Units.val`.  That is the form in wh
 closed-subgroup theorem consumes it.  Over `ℝ` or `ℂ`, compactness of the matrix unitary group
 likewise passes to the unitary subgroup `unitarySubgroup (GL n 𝕜)`.
 
+The continuous matrix-to-units inclusion also identifies `GLSpecialUnitary` with Mathlib's
+special unitary group by a continuous multiplicative equivalence for the inherited topologies.
+This homeomorphism transports the closed-subgroup charts to the native matrix carrier.
+
 This is the setup the compact-group representation theory of `SU(2)` runs on; see
 `TauCeti/RepresentationTheory/SU2/Basic.lean`.
 
 ## Main results
+
+* `TauCeti.GLSpecialUnitary.toMulEquiv_specialUnitaryGroupContinuousMulEquiv`: the underlying
+  algebraic equivalence is unchanged.
+* `TauCeti.GLSpecialUnitary.coe_specialUnitaryGroupContinuousMulEquiv_symm`: the inverse
+  matrix rule.
+
+* `TauCeti.GLSpecialUnitary.continuous_ofSpecialUnitaryGroup`: continuity of the inclusion.
+* `TauCeti.GLSpecialUnitary.specialUnitaryGroupContinuousMulEquiv`: the carrier homeomorphism.
+* `TauCeti.GLSpecialUnitary.coe_specialUnitaryGroupContinuousMulEquiv`:
+  its forward map is the canonical matrix-to-units inclusion.
 
 * `TauCeti.Matrix.isClosed_specialUnitaryGroup`: the special unitary matrix group is closed.
 * `TauCeti.Matrix.isCompact_unitaryGroup` and `TauCeti.Matrix.isCompact_specialUnitaryGroup`: the
@@ -153,3 +170,46 @@ theorem isCompact_unitarySubgroup :
   TauCeti.isCompact_unitarySubgroup_units_iff.mpr TauCeti.Matrix.isCompact_unitaryGroup
 
 end Matrix.GeneralLinearGroup
+
+namespace TauCeti.GLSpecialUnitary
+
+variable (n : Type*) [Fintype n] [DecidableEq n]
+  (R : Type*) [CommRing R] [StarRing R] [TopologicalSpace R] [ContinuousStar R]
+
+/-- The canonical matrix-to-units inclusion is continuous in both unit coordinates. -/
+@[fun_prop]
+theorem continuous_ofSpecialUnitaryGroup : Continuous (ofSpecialUnitaryGroup n R) :=
+  Continuous.of_coeHom_comp (f := ofSpecialUnitaryGroup n R)
+    (continuous_subtype_val.congr fun A ↦ (coe_ofSpecialUnitaryGroup n R A).symm)
+
+/-- The canonical equivalence is a homeomorphism for the inherited topologies. -/
+noncomputable def specialUnitaryGroupContinuousMulEquiv :
+    Matrix.specialUnitaryGroup n R ≃ₜ* GLSpecialUnitary n R :=
+  (mulEquivSpecialUnitaryGroup n R).symm.toContinuousMulEquivOfUnits
+    (by simpa only [coe_mulEquivSpecialUnitaryGroup_symm_apply, coe_ofSpecialUnitaryGroup] using
+      (Topology.IsEmbedding.subtypeVal (p := fun A ↦ A ∈ Matrix.specialUnitaryGroup n R)))
+
+/-- The homeomorphism sends a special unitary matrix to its canonical unit. -/
+@[simp]
+theorem coe_specialUnitaryGroupContinuousMulEquiv (A : Matrix.specialUnitaryGroup n R) :
+    (specialUnitaryGroupContinuousMulEquiv n R A : GL n R) = ofSpecialUnitaryGroup n R A := by
+  rw [specialUnitaryGroupContinuousMulEquiv, MulEquiv.toContinuousMulEquivOfUnits_apply]
+  exact coe_mulEquivSpecialUnitaryGroup_symm_apply n R A
+
+/-- The inverse homeomorphism keeps the underlying matrix of each unit. -/
+@[simp]
+theorem coe_specialUnitaryGroupContinuousMulEquiv_symm (A : GLSpecialUnitary n R) :
+    ((specialUnitaryGroupContinuousMulEquiv n R).symm A : Matrix n n R) =
+      (A.val : Matrix n n R) := by
+  rw [specialUnitaryGroupContinuousMulEquiv, MulEquiv.toContinuousMulEquivOfUnits_symm_apply,
+    MulEquiv.symm_symm]
+  exact coe_mulEquivSpecialUnitaryGroup n R A
+
+/-- The homeomorphism retains the canonical algebraic equivalence. -/
+@[simp]
+theorem toMulEquiv_specialUnitaryGroupContinuousMulEquiv :
+    (specialUnitaryGroupContinuousMulEquiv n R : Matrix.specialUnitaryGroup n R ≃*
+      GLSpecialUnitary n R) = (mulEquivSpecialUnitaryGroup n R).symm := by
+  rw [specialUnitaryGroupContinuousMulEquiv, MulEquiv.toMulEquiv_toContinuousMulEquivOfUnits]
+
+end TauCeti.GLSpecialUnitary

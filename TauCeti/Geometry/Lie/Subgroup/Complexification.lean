@@ -142,27 +142,6 @@ theorem unitaryComplexificationLieEquiv_symm_apply
 
 /-! ### The special unitary group -/
 
-/-- The matrix coordinates of the Lie algebra of `SU(n)`, as a homomorphism of real Lie algebras
-into `𝔤𝔩(n, ℂ)`. -/
-private abbrev specialUnitaryToMatrix :
-    lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n ℂ))
-        (GLSpecialUnitary n ℂ : Subgroup (Matrix n n ℂ)ˣ) →ₗ⁅ℝ⁆ Matrix n n ℂ :=
-  (unitsLieAlgebraLieEquiv (R := Matrix n n ℂ) :
-      LeftInvariantDerivation 𝓘(ℝ, Matrix n n ℂ) (Matrix n n ℂ)ˣ →ₗ⁅ℝ⁆ Matrix n n ℂ).comp
-    (lieSubalgebraOfSubgroup (GLSpecialUnitary n ℂ : Subgroup (Matrix n n ℂ)ˣ)).incl
-
-/-- A matrix lies in the Lie algebra of `SU(n)`, in matrix coordinates, exactly when it is
-skew-Hermitian and trace-free. -/
-private theorem exists_specialUnitaryToMatrix_eq_iff (A : Matrix n n ℂ) :
-    (∃ X, specialUnitaryToMatrix n X = A) ↔ Aᴴ = -A ∧ A.trace = 0 := by
-  rw [← unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff]
-  constructor
-  · rintro ⟨X, rfl⟩
-    have hX := X.2
-    rwa [← (unitsLieAlgebraLieEquiv (R := Matrix n n ℂ)).symm_apply_apply X.1] at hX
-  · intro hA
-    exact ⟨⟨_, hA⟩, by simp⟩
-
 /-- **`𝔰𝔩(n, ℂ)` is the complexification of the Lie algebra of `SU(n)`.**  The matrix coordinates
 of the Lie algebra of the special unitary group, with values in the trace-free matrices, exhibit
 `𝔰𝔩(n, ℂ)` as its base change from `ℝ` to `ℂ`: the trace-free matrices are closed under the
@@ -181,11 +160,20 @@ theorem isBaseChange_complex_GLSpecialUnitary :
       (unitsLieAlgebraLieEquiv_coe_mem_sl (n := n))) := by
   refine LinearMap.isBaseChange_complex_codRestrict_of_star_eq_neg _ (fun A hA ↦ ?_) _
     (fun X Y h ↦ Subtype.ext ((unitsLieAlgebraLieEquiv (R := Matrix n n ℂ)).injective h))
-    (fun X ↦ ((exists_specialUnitaryToMatrix_eq_iff n _).1 ⟨X, rfl⟩).1) fun A hA hskew ↦ ?_
+    (fun X ↦ ?_) fun A hA hskew ↦ ?_
   · rw [LieSubalgebra.mem_toSubmodule, LieAlgebra.SpecialLinear.mem_sl_iff] at hA ⊢
     rw [Matrix.star_eq_conjTranspose, Matrix.trace_conjTranspose, hA, star_zero]
+  · have hmem : unitsLieAlgebraLieEquiv (R := Matrix n n ℂ) X.1 ∈
+        specialUnitaryMatrixLieAlgebra n ℂ := by
+      rw [← unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_GLSpecialUnitary]
+      exact (LieSubalgebra.mem_map _ _ _).mpr ⟨X.1, X.2, rfl⟩
+    exact ((mem_specialUnitaryMatrixLieAlgebra_iff _).mp hmem).1
   · rw [LieSubalgebra.mem_toSubmodule, LieAlgebra.SpecialLinear.mem_sl_iff] at hA
-    exact (exists_specialUnitaryToMatrix_eq_iff n A).2 ⟨hskew, hA⟩
+    have hmem := (mem_specialUnitaryMatrixLieAlgebra_iff A).mpr ⟨hskew, hA⟩
+    rw [← unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_GLSpecialUnitary,
+      LieSubalgebra.mem_map] at hmem
+    obtain ⟨X, hX, hval⟩ := hmem
+    exact ⟨⟨X, hX⟩, hval⟩
 
 /-- **The complexification of the Lie algebra of `SU(n)` is `𝔰𝔩(n, ℂ)`**: the isomorphism of
 complex Lie algebras from the Lie algebra of the special unitary group with scalars extended to
