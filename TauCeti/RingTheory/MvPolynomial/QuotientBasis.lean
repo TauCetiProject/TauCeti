@@ -451,12 +451,12 @@ omit [Fintype ι] [DecidableEq ι] in
 theorem IsQuotientBasis.map {source target : Type*} [CommRing source] [CommRing target]
     [Algebra R source] [Algebra R target] {ideal : Ideal (MvPolynomial n source)}
     (basis : IsQuotientBasis w ideal) (scalarMap : source →ₐ[R] target) :
-    IsQuotientBasis w (ideal.map (map scalarMap.toRingHom)) := by
-  letI := scalarMap.toRingHom.toAlgebra
+    IsQuotientBasis w (ideal.map (_root_.MvPolynomial.map scalarMap.toRingHom)) := by
+  let : Algebra source target := scalarMap.toRingHom.toAlgebra
   let e := (Algebra.TensorProduct.tensorQuotientEquiv target (MvPolynomial n source)
     target ideal).trans (Ideal.quotientEquivAlg _ _ (algebraTensorAlgEquiv source target) (by
       -- Identify the transported ideal by composing its two public coefficient maps.
-      change ideal.map (map (algebraMap source target)) =
+      change ideal.map (_root_.MvPolynomial.map (algebraMap source target)) =
         (ideal.map (Algebra.TensorProduct.includeRight
           (A := target) (R := source)).toRingHom).map
             (algebraTensorAlgEquiv source target).toAlgHom.toRingHom
@@ -465,14 +465,14 @@ theorem IsQuotientBasis.map {source target : Type*} [CommRing source] [CommRing 
       exact RingHom.ext fun p ↦ by simp))
   let b := (basis.basis.baseChange target).map e.toLinearEquiv
   have hb (i : ι) : b i =
-      Ideal.Quotient.mk (ideal.map (map scalarMap.toRingHom))
-        (map (algebraMap R target) (w i)) := by
+      Ideal.Quotient.mk (ideal.map (_root_.MvPolynomial.map scalarMap.toRingHom))
+        (_root_.MvPolynomial.map (algebraMap R target) (w i)) := by
     simp only [b, Module.Basis.map_apply, Module.Basis.baseChange_apply,
       basis_apply, e, AlgEquiv.toLinearEquiv_apply, AlgEquiv.trans_apply,
       Algebra.TensorProduct.tensorQuotientEquiv_apply_tmul, Ideal.quotientEquivAlg_mk,
       algebraTensorAlgEquiv_tmul, one_smul, map_map, ← IsScalarTower.algebraMap_eq]
-  have heq : (fun i ↦ Ideal.Quotient.mk (ideal.map (map scalarMap.toRingHom))
-      (map (algebraMap R target) (w i))) = b := (funext hb).symm
+  have heq : (fun i ↦ Ideal.Quotient.mk (ideal.map (_root_.MvPolynomial.map scalarMap.toRingHom))
+      (_root_.MvPolynomial.map (algebraMap R target) (w i))) = b := (funext hb).symm
   exact ⟨heq.symm ▸ b.linearIndependent, heq.symm ▸ b.span_eq⟩
 
 end TauCeti.PolynomialQuotient
