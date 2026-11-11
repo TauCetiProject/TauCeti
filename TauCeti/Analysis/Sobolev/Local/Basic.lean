@@ -159,6 +159,13 @@ theorem memLpLoc_of_forall_opens {Ω : Opens ℂ}
   obtain ⟨g, hg, hgf⟩ := h ⟨W, hWo⟩ hWc hWΩ
   exact (hg.ae_eq hgf).mono_measure (Measure.restrict_mono hKW le_rfl)
 
+/-- A function that is `Lᵖ` on a set `W` is locally `Lᵖ` on every set `U` contained in `W` up to a
+null set, including on compact subsets of `U` that leave `W`. -/
+theorem _root_.MeasureTheory.MemLp.memLpLoc_of_ae_le {W : Set ℂ}
+    (hf : MemLp f p (volume.restrict W)) (hUW : U ≤ᵐ[volume] W) : MemLpLoc p U f :=
+  memLpLoc_iff.2 fun _ hK _ => hf.mono_measure
+    (Measure.restrict_mono_ae (Filter.EventuallyLE.trans (Filter.Eventually.of_forall hK) hUW))
+
 variable [NormedSpace ℝ F] [NormedSpace ℝ G]
 
 /-- Real scalar multiplication preserves local `Lᵖ` membership. -/
