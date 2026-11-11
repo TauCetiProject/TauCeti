@@ -672,7 +672,7 @@ theorem exists_isGeneralizedMinimizingMovement (hl : ∀ y, pure y ≤ l y)
     push_cast [hτ_def]
     field_simp
   choose U hU0 hU using fun k ↦ exists_forall_mem_moreauYosidaResolvent
-    (fun z _ _ hv ↦ hd (tendsto_const_pure.mono_right (hl z)) hv) hφ hcpt (hτ k)
+    (fun z _ _ hv ↦ hd (tendsto_const_pure.mono_right (hl z)) hv) hφ hcpt
     (((le_mul_of_one_le_left zero_le (by norm_num)).trans (hττ' k)).trans_lt (half_lt_self hτ₀))
     hx₀ h₀
   -- The limit curve of a subsequence of the interpolants.

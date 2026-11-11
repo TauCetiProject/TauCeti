@@ -34,7 +34,7 @@ each vector whose matrix image is upper triangular with real diagonal.
   under those same hypotheses at `X`, every eigenvalue of the complexified `ad X` is real.
 * `TauCeti.splits_charpoly_ad_upperTriangularRealDiagonalLieSubalgebra`:
   real splitting for the matrix Lie algebra itself.
-* `im_eq_zero_of_hasEigenvalue_baseChange_ad_upperTriangularRealDiagonalLieSubalgebra`:
+* `TauCeti.im_eq_zero_of_hasEigenvalue_baseChange_ad_upperTriangularRealDiagonalLieSubalgebra`:
   reality of the complexified adjoint eigenvalues.
 
 ## References
@@ -68,6 +68,8 @@ theorem mem_upperTriangularRealDiagonalLieSubalgebra_iff {A : Matrix ι ι 𝕜}
 /-- The real-diagonal upper-triangular Lie algebra is solvable. -/
 instance isSolvable_upperTriangularRealDiagonalLieSubalgebra :
     LieAlgebra.IsSolvable (upperTriangularRealDiagonalLieSubalgebra 𝕜 ι) := by
+  -- Both carriers inherit addition, integer scalar multiplication and Lie brackets from
+  -- the matrix ring, so the subtype maps preserve these operations definitionally.
   let f : upperTriangularRealDiagonalLieSubalgebra 𝕜 ι →ₗ⁅ℤ⁆ upperTriangular 𝕜 ι :=
     { toFun := fun x ↦ ⟨x.val, mem_upperTriangular_iff_blockTriangular.mpr
         (mem_upperTriangularRealDiagonalLieSubalgebra_iff.mp x.property).1⟩

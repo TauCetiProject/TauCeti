@@ -12,6 +12,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `FiniteDimensional` and `Module.finrank` occur in the statement, and
 -- `Module.finBasisOfFinrankEq` in the body.
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+-- `LinearMap.det` occurs in the statement of `TauCeti.Algebra.det_endAlgEquivMatrix`.
+public import Mathlib.LinearAlgebra.Determinant
 
 /-!
 # Matrix realizations of endomorphisms and their action on a basis
@@ -30,6 +32,7 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `TauCeti.Algebra.endAlgEquivMatrix`: the above, read off the basis
   `Module.finBasisOfFinrankEq`.
 * `TauCeti.Algebra.endAlgEquivMatrix_apply`: its evaluation as `LinearMap.toMatrix` in that basis.
+* `TauCeti.Algebra.det_endAlgEquivMatrix`: its matrices compute determinants of endomorphisms.
 * `Module.Basis.toLinAlgEquiv_single_apply_basis`: the endomorphism of a matrix unit sends a basis
   vector to a single coordinate.
 * `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
@@ -275,5 +278,12 @@ theorem endAlgEquivMatrix_apply {n : ℕ} (hn : Module.finrank K M = n) (f : Mod
     ext i j
     simp [endAlgEquivMatrix, algEquivMatrix, algEquivMatrix',
       LinearEquiv.conjAlgEquiv_apply, LinearMap.toMatrix_apply]
+
+/-- The chosen-basis matrix of an endomorphism has the determinant of the endomorphism. Since
+`endAlgEquivMatrix` is an algebra isomorphism, this computes the determinant of every polynomial
+expression in `f`, such as `det (1 - f ^ n)`, as that of the same expression in its matrix. -/
+theorem det_endAlgEquivMatrix {n : ℕ} (hn : Module.finrank K M = n) (f : Module.End K M) :
+    (endAlgEquivMatrix K M hn f).det = LinearMap.det f := by
+  rw [endAlgEquivMatrix_apply, LinearMap.det_toMatrix]
 
 end TauCeti.Algebra

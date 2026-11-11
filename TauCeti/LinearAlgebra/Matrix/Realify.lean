@@ -302,7 +302,9 @@ variable [Fintype ι] [DecidableEq ι]
 private def interleaveIndex : (ι ⊕ ι) ≃ (ι ×ₗ Bool) :=
   ((Equiv.boolProdEquivSum ι).symm.trans (Equiv.prodComm Bool ι)).trans toLex
 
-/-- Realification with the real and imaginary coordinate of each index adjacent. -/
+/-- Realification with adjacent real (`false`) and imaginary (`true`) coordinates.
+For linearly ordered `ι`, the lexicographic order on `ι ×ₗ Bool` preserves
+upper triangularity of matrices with real diagonal entries. -/
 def interleavedRealifyAlgHom : Matrix ι ι 𝕜 →ₐ[ℝ] Matrix (ι ×ₗ Bool) (ι ×ₗ Bool) ℝ :=
   (Matrix.reindexAlgEquiv ℝ ℝ interleaveIndex).toAlgHom.comp (Matrix.realifyAlgHom ι 𝕜)
 
