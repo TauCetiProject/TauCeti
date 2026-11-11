@@ -15,7 +15,7 @@ The **nilradical** of a Lie algebra `L` is the supremum of its ideals that are n
 algebras*, built here as `TauCeti.LieAlgebra.nilradical R L`, the supremum of the ideals `I` with
 `LieRing.IsNilpotent I`.  As soon as `L` is Noetherian that supremum is itself nilpotent, so it is
 then a largest element: the largest nilpotent ideal.  It sits between the centre and the solvable
-radical, and, again for Noetherian `L`, every one of its elements is `ad`-nilpotent.
+radical, and every one of its elements is `ad`-nilpotent.
 
 Mathlib's `LieAlgebra.maxNilpotentIdeal R L` is a *different* ideal: the largest ideal on which the
 ambient algebra `L` acts nilpotently.  It is contained in the nilradical
@@ -365,9 +365,21 @@ theorem nilradical_eq_top_iff [IsNoetherian R L] :
 variable {R L}
 
 /-- **Every element of the nilradical is `ad`-nilpotent.** -/
-theorem isNilpotent_ad_of_mem_nilradical [IsNoetherian R L] {x : L}
-    (hx : x ∈ nilradical R L) : IsNilpotent (LieAlgebra.ad R L x) :=
-  LieIdeal.isNilpotent_ad_of_mem (nilradical R L) hx
+theorem isNilpotent_ad_of_mem_nilradical {x : L}
+    (hx : x ∈ nilradical R L) : IsNilpotent (LieAlgebra.ad R L x) := by
+  -- the nilradical is a directed supremum, so `x` lies in a single nilpotent ideal
+  obtain ⟨J, hJ, hxJ⟩ : ∃ J : LieIdeal R L, LieRing.IsNilpotent J ∧ x ∈ J := by
+    rw [nilradical, sSup_eq_iSup'] at hx
+    refine LieSubmodule.iSup_induction _
+      (motive := fun y ↦ ∃ J : LieIdeal R L, LieRing.IsNilpotent J ∧ y ∈ J) hx
+      (fun I y hy ↦ ⟨I, I.2, hy⟩) ⟨⊥, inferInstance, zero_mem _⟩ ?_
+    rintro a b ⟨I, hI, ha⟩ ⟨J, hJ, hb⟩
+    have := hI
+    have := hJ
+    exact ⟨I ⊔ J, inferInstance,
+      add_mem ((le_sup_left : I ≤ I ⊔ J) ha) ((le_sup_right : J ≤ I ⊔ J) hb)⟩
+  have := hJ
+  exact LieIdeal.isNilpotent_ad_of_mem J hxJ
 
 end LieAlgebra
 

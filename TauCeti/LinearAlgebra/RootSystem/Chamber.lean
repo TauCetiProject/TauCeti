@@ -43,6 +43,8 @@ Weyl-invariant.
 ## Main results
 
 * `RootPairing.isRegularWeight_smul`: regularity is invariant under the Weyl group.
+* `RootPairing.smul_dominantChamber` and `RootPairing.smul_openDominantChamber`: an automorphism
+  of the root pairing carries both chambers of a base to those of the transported base.
 * `RootPairing.mem_openDominantChamber_of_isRegularWeight` and
   `RootPairing.isRegularWeight_of_mem_openDominantChamber`: strict dominance is equivalent to
   regular dominance.
@@ -152,6 +154,26 @@ lemma mem_dominantChamber (x : M) :
 @[simp]
 lemma mem_openDominantChamber (x : M) :
     x ∈ openDominantChamber P b ↔ ∀ i ∈ b.support, 0 < P.coroot' i x := Iff.rfl
+
+/-- **An automorphism carries the closed dominant chamber of a base to that of the transported
+base.** -/
+theorem smul_dominantChamber (g : P.Aut) :
+    g • dominantChamber P b = dominantChamber P (b.map g) := by
+  classical
+  ext x
+  simp only [mem_smul_set_iff_inv_smul_mem, mem_dominantChamber, coroot'_smul,
+    Equiv.indexEquiv_inv, Equiv.Perm.inv_def, _root_.Equiv.symm_symm, Equiv.indexHom_apply,
+    Base.support_map_eq, Finset.forall_mem_image]
+
+/-- **An automorphism carries the open dominant chamber of a base to that of the transported
+base.** -/
+theorem smul_openDominantChamber (g : P.Aut) :
+    g • openDominantChamber P b = openDominantChamber P (b.map g) := by
+  classical
+  ext x
+  simp only [mem_smul_set_iff_inv_smul_mem, mem_openDominantChamber, coroot'_smul,
+    Equiv.indexEquiv_inv, Equiv.Perm.inv_def, _root_.Equiv.symm_symm, Equiv.indexHom_apply,
+    Base.support_map_eq, Finset.forall_mem_image]
 
 /-- The open dominant chamber is contained in the closed one. -/
 lemma openDominantChamber_subset_dominantChamber :

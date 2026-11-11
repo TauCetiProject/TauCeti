@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.Coproduct
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellMap
+import Mathlib.Algebra.Category.ModuleCat.AB
 
 /-!
 # The cellular boundary on a cell generator
@@ -34,6 +35,10 @@ cellular differential leaving degree `n + 1` is zero
 (`TauCeti.cellularDifferential_eq_zero_of_cellFrontier_subset`). In particular, all cellular
 differentials vanish when every cell is attached along the base
 (`TauCeti.cellularChainComplex_d_eq_zero_of_cellFrontier_subset`).
+
+With module coefficients, the same naturality shows that the connecting morphism
+`Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ)` of the skeletal pair takes values in the span of the images of the
+attaching maps of the `(n + 1)`-cells (`TauCeti.skeletonPairδ_mem_iSup_range`).
 -/
 
 public section
@@ -174,5 +179,58 @@ theorem cellularChainComplex_d_eq_zero_of_cellFrontier_subset
         (skeletonLT_mono zero_le)), zero_comp, comp_zero]
   · exact (cellularChainComplex C R).shape i j fun h' ↦ hij h'.symm
 
+section Module
+
+variable {k : Type w} [Ring k] (M : ModuleCat.{w} k)
+
+/-- **The connecting morphism of a skeletal pair lands in the span of the attaching maps.** For
+module coefficients `M`, every class in the image of the connecting morphism
+`Hₙ₊₁(Xⁿ⁺¹, Xⁿ; M) ⟶ Hₙ(Xⁿ; M)` is a sum of images of classes of the boundary spheres of the
+`(n + 1)`-cells under their attaching maps. -/
+theorem skeletonPairδ_mem_iSup_range (n : ℕ)
+    (a : cellularChainGroup (A := ModuleCat.{w} k) C M (n + 1)) :
+    (skeletonPairδ C M n).hom a ∈
+      ⨆ j : cell C (n + 1),
+        LinearMap.range (SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) M n).hom := by
+  -- The coproduct of the cell summands is spanned by the summands.
+  set T := ⨆ j : cell C (n + 1), LinearMap.range (Sigma.ι (fun _ : cell C (n + 1) ↦ M) j).hom
+  have hT : ModuleCat.ofHom T.mkQ = 0 := Sigma.hom_ext _ _ fun j ↦ by
+    ext r
+    simpa [Submodule.Quotient.mk_eq_zero] using
+      Submodule.mem_iSup_of_mem j (LinearMap.mem_range_self _ r)
+  have hmem : (cellularChainGroupIso C M (n + 1)).hom a ∈ T := by
+    simpa [Submodule.Quotient.mk_eq_zero] using
+      ConcreteCategory.congr_hom hT ((cellularChainGroupIso C M (n + 1)).hom a)
+  -- It suffices to treat one cell summand at a time.
+  have hle : T ≤ (⨆ j : cell C (n + 1), LinearMap.range
+      (SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) M n).hom).comap
+        ((skeletonPairδ C M n).hom ∘ₗ
+          (cellularChainGroupIso C M (n + 1)).inv.hom) := by
+    refine iSup_le fun j ↦ ?_
+    rintro _ ⟨r, rfl⟩
+    -- On a cell summand, the connecting morphism is the attaching map applied to the boundary
+    -- sphere, by naturality for the characteristic map of the cell.
+    have e₁ := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
+      (ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPairMap C M (n + 1) j))
+      r
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at e₁
+    have e₂ : (SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) M n).hom
+        (((diskBoundaryPair (n + 1)).singularHomologyδ M (n + 1) n).hom
+          ((singularHomologyDiskBoundaryPairIso M (n + 1)).inv.hom r)) =
+        (skeletonPairδ C M n).hom
+          ((TopPair.singularHomologyMap (characteristicCellPairMap C j) M (n + 1)).hom
+            ((singularHomologyDiskBoundaryPairIso M (n + 1)).inv.hom r)) := by
+      rw [← characteristicCellPairMap_snd]
+      -- Both sides apply a composite. The connecting morphism of a pair `P` lands in the
+      -- homology of `(TopPair.toSSetPair.obj P).left`, which is `TopCat.toSSet.obj P.snd` by
+      -- definition (`TopPair.toSSetPair_obj_left`), so `ModuleCat.hom_comp` cannot split the
+      -- composites syntactically.
+      exact ConcreteCategory.congr_hom
+        (TopPair.singularHomologyδ_naturality M (characteristicCellPairMap C j) (n + 1) n) _
+    rw [Submodule.mem_comap, LinearMap.comp_apply, e₁, ← e₂]
+    exact Submodule.mem_iSup_of_mem j (LinearMap.mem_range_self _ _)
+  simpa using hle hmem
+
+end Module
 
 end TauCeti

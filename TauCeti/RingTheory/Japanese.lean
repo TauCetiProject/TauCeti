@@ -283,12 +283,13 @@ integral closure of `R` in `E` is a finite `R`-module. For `M = K` this says tha
 closure of a Noetherian N-1 domain in a finite separable extension of its fraction field is
 finite. Stacks, Lemma 10.161.8 (032L) for normal `R`, applied to the integral closure of `R` in
 `M`. -/
-theorem finite_integralClosure_of_isSeparable [IsDomain R] [IsNoetherianRing R]
+theorem finite_integralClosure_of_isSeparable [IsNoetherianRing R]
     (K : Type*) (M : Type*) (E : Type*) [Field K] [Algebra R K] [IsFractionRing R K] [Field M]
     [Algebra K M] [Algebra R M] [IsScalarTower R K M] [FiniteDimensional K M]
     [Module.Finite R (integralClosure R M)] [Field E] [Algebra M E] [Algebra R E]
     [IsScalarTower R M E] [FiniteDimensional M E] [Algebra.IsSeparable M E] :
     Module.Finite R (integralClosure R E) := by
+  have : IsDomain R := (IsFractionRing.isDomain_iff_isField (K := K)).mpr (Field.toIsField K)
   -- The integral closure `B` of `R` in `M` is finite over `R`, hence a Noetherian integrally
   -- closed domain with fraction field `M`, and the integral closure of `R` in `E` is that of
   -- `B`, which is finite over `B` since `E / M` is separable.
@@ -308,10 +309,11 @@ theorem finite_integralClosure_of_isSeparable [IsDomain R] [IsNoetherianRing R]
 domain with fraction field `K`, for instance an integrally closed Noetherian domain. Then the
 integral closure of `R` in a finite étale `K`-algebra `L`, that is, in a finite product of finite
 separable extensions of `K`, is a finite `R`-module. -/
-theorem finite_integralClosure_of_etale [IsDomain R] [IsNoetherianRing R] [IsN1 R]
+theorem finite_integralClosure_of_etale [IsNoetherianRing R] [IsN1 R]
     (K : Type*) (L : Type*) [Field K] [Algebra R K] [IsFractionRing R K] [CommRing L]
     [Algebra K L] [Algebra R L] [IsScalarTower R K L] [Algebra.Etale K L] :
     Module.Finite R (integralClosure R L) := by
+  have : IsDomain R := (IsFractionRing.isDomain_iff_isField (K := K)).mpr (Field.toIsField K)
   -- `L` is a finite product of finite separable field extensions `Lᵢ` of `K`.
   obtain ⟨I, _, Li, _, _, e, hsep⟩ :=
     (Algebra.FormallyEtale.iff_exists_algEquiv_prod K L).mp inferInstance
@@ -383,8 +385,11 @@ theorem isJapanese_iff_isPurelyInseparable [IsDomain R] [IsNoetherianRing R] :
 
 /-- **A localization of an N-1 domain is N-1.** Stacks, Lemma 10.161.3 (032G). -/
 theorem isN1_of_isLocalization [IsDomain R] [IsN1 R] (M : Submonoid R) (S : Type*)
-    [CommRing S] [IsDomain S] [Algebra R S] [IsLocalization M S] : IsN1 S where
+    [CommRing S] [Algebra R S] [IsLocalization M S] : IsN1 S where
   finite_integralClosure_fractionRing := by
+    rcases subsingleton_or_nontrivial S with hS | hS
+    · have : Subsingleton (FractionRing S) := inferInstance
+      exact Module.Finite.of_finite
     have : IsFractionRing R (FractionRing S) := IsFractionRing.of_isLocalization_of_isFractionRing
       M S _ (IsLocalization.le_nonZeroDivisors_of_nontrivial M S)
     exact finite_integralClosure_of_isLocalization M S (FractionRing S)

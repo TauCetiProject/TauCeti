@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.InvariantForm
 public import Mathlib.Analysis.InnerProductSpace.Positive
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.RepresentationTheory.Continuous.Transport
+import TauCeti.RepresentationTheory.Compact.BilinearForm
 
 /-!
 # Weyl's unitarian trick
@@ -274,20 +274,26 @@ theorem exists_isSymm_bilinForm_invariant {G V : Type*} [Group G] [TopologicalSp
     ∃ B : LinearMap.BilinForm ℝ V, B.IsSymm ∧ (∀ v, v ≠ 0 → 0 < B v v) ∧
       Representation.IsInvariantForm π.toRepresentation B := by
   borelize G
-  -- Average the inner product transported from Euclidean space along a linear equivalence.
   let e := toEuclidean (E := V)
-  have hρ := e.continuous_congr hπ
-  let S := gramOperator (e.congr π) hρ
-  refine ⟨.mk₂ ℝ (fun v w ↦ ⟪e v, S (e w)⟫_ℝ) (fun _ _ _ ↦ by simp [inner_add_left])
-    (fun _ _ _ ↦ by simp [inner_smul_left]) (fun _ _ _ ↦ by simp [inner_add_right])
-    (fun _ _ _ ↦ by simp [inner_smul_right]), ⟨fun v w ↦ ?_⟩, fun v hv ↦ ?_,
-      Representation.isInvariantForm_iff.mpr fun g v w ↦ ?_⟩
-  · simpa [real_inner_comm] using (isSymmetric_gramOperator (e.congr π) hρ (e v) (e w)).symm
-  · have h := re_inner_gramOperator_self_pos (e.congr π) hρ (e.map_ne_zero_iff.mpr hv)
-    simpa [real_inner_comm] using h
-  · have h : ⟪e (π g v), S (e (π g w))⟫_ℝ = ⟪e v, S (e w)⟫_ℝ := by
-      simpa [ContinuousLinearEquiv.congr_apply] using
-        inner_gramOperator_map_map (e.congr π) hρ g (e v) (e w)
-    exact h
+  let B₀ : V →L[ℝ] V →L[ℝ] ℝ :=
+    (innerSL ℝ).bilinearComp e.toContinuousLinearMap e.toContinuousLinearMap
+  have hsymm : B₀.toBilinForm.IsSymm := by
+    constructor
+    intro v w
+    simp only [B₀, ContinuousLinearMap.toBilinForm_apply,
+      ContinuousLinearMap.bilinearComp_apply, innerSL_apply_apply]
+    exact real_inner_comm _ _
+  have hpos : B₀.toBilinForm.toQuadraticMap.PosDef := by
+    intro v hv
+    simp only [LinearMap.BilinMap.toQuadraticMap_apply,
+      ContinuousLinearMap.toBilinForm_apply, B₀, ContinuousLinearMap.bilinearComp_apply,
+      innerSL_apply_apply]
+    exact real_inner_self_pos.mpr (e.map_ne_zero_iff.mpr hv)
+  refine ⟨(π.averageBilinearForm hπ B₀).toBilinForm,
+    π.isSymm_averageBilinearForm hπ B₀ hsymm, ?_,
+    π.isInvariantForm_averageBilinearForm hπ B₀⟩
+  intro v hv
+  simpa only [LinearMap.BilinMap.toQuadraticMap_apply] using
+    π.posDef_averageBilinearForm hπ B₀ hpos v hv
 
 end ContRepresentation
