@@ -36,6 +36,8 @@ of `μ.comap (↑)`:
 * `MeasurableSet.measurableEmbedding_inclusion`: `Set.inclusion hst : s → t` is a measurable
   embedding when `s` is measurable in `α`.
 * `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`.
+* `MeasurableEmbedding.comap_comap`: `(μ.comap g).comap f = μ.comap (g ∘ f)` for a measurable
+  embedding `g` and any `f`.
 * `MeasureTheory.Measure.comap_inclusion_comap_subtype_coe`: compatibility of `Measure.comap` along
   nested subtypes `s ⊆ t` with `t` measurable.
 * `MeasureTheory.Measure.instIsLocallyFiniteMeasureComapSubtype`,
@@ -58,6 +60,40 @@ theorem MeasurableSet.measurableEmbedding_inclusion {α : Type*} [MeasurableSpac
     MeasurableEmbedding (Set.inclusion hst) :=
   ⟨Set.inclusion_injective hst, measurable_inclusion hst, fun _ hu ↦ hs.image_inclusion hst hu⟩
 
+namespace MeasurableEmbedding
+
+variable {α β γ : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace γ] {g : β → γ}
+
+/-- Pulling a measure back along a measurable embedding `g` and then along an arbitrary map `f`
+agrees with pulling it back along `g ∘ f`: no measurability assumption on `f` is needed, since both
+sides vanish unless the relevant images are null-measurable. -/
+theorem comap_comap (hg : MeasurableEmbedding g) (f : α → β) (μ : Measure γ) :
+    (μ.comap g).comap f = μ.comap (g ∘ f) := by
+  have himg : ∀ A : Set β, MeasurableSet A → NullMeasurableSet (g '' A) μ :=
+    fun A hA => (hg.measurableSet_image' hA).nullMeasurableSet
+  have hqmp : QuasiMeasurePreserving g (μ.comap g) μ :=
+    ⟨hg.measurable, by
+      rw [hg.map_comap]
+      exact Measure.restrict_le_self.absolutelyContinuous⟩
+  by_cases hR : Function.Injective f ∧
+      ∀ A : Set α, MeasurableSet A → NullMeasurableSet ((g ∘ f) '' A) μ
+  · have hL : ∀ A : Set α, MeasurableSet A → NullMeasurableSet (f '' A) (μ.comap g) := by
+      intro A hA
+      have : f '' A = g ⁻¹' ((g ∘ f) '' A) := by
+        rw [image_comp, preimage_image_eq _ hg.injective]
+      rw [this]
+      exact (hR.2 A hA).preimage hqmp
+    ext A hA
+    rw [Measure.comap_apply₀ _ _ hR.1 hL hA.nullMeasurableSet,
+      Measure.comap_apply₀ _ _ (hg.injective.comp hR.1) hR.2 hA.nullMeasurableSet,
+      Measure.comap_apply₀ _ _ hg.injective himg (hL A hA), image_comp]
+  · rw [Measure.comap_undef (f := g ∘ f) fun h => hR ⟨h.1.of_comp, h.2⟩]
+    refine Measure.comap_undef fun h => hR ⟨h.1, fun A hA => ?_⟩
+    have := Measure.NullMeasurableSet.image _ _ hg.injective himg (h.2 A hA)
+    rwa [image_comp]
+
+end MeasurableEmbedding
+
 namespace MeasureTheory.Measure
 
 section Measurable
@@ -77,33 +113,8 @@ theorem comap_preimage_le {f : α → β} (hf : Measurable f) (μ : Measure β) 
 `s ⊆ t` agrees with pulling `μ` back directly to `s`. -/
 theorem comap_inclusion_comap_subtype_coe {s t : Set α} (ht : MeasurableSet t) (hst : s ⊆ t)
     (μ : Measure α) :
-    (μ.comap ((↑) : t → α)).comap (Set.inclusion hst) = μ.comap ((↑) : s → α) := by
-  have hemb := MeasurableEmbedding.subtype_coe ht
-  have himg : ∀ A : Set t, MeasurableSet A → NullMeasurableSet (((↑) : t → α) '' A) μ :=
-    fun A hA => (hemb.measurableSet_image' hA).nullMeasurableSet
-  have hqmp : QuasiMeasurePreserving ((↑) : t → α) (μ.comap ((↑) : t → α)) μ :=
-    ⟨measurable_subtype_coe, by
-      rw [hemb.map_comap]
-      exact restrict_le_self.absolutelyContinuous⟩
-  have hcomp : (((↑) : t → α) ∘ Set.inclusion hst) = ((↑) : s → α) := rfl
-  by_cases hR : ∀ A : Set s, MeasurableSet A → NullMeasurableSet (((↑) : s → α) '' A) μ
-  · have hL : ∀ A : Set s, MeasurableSet A →
-        NullMeasurableSet (Set.inclusion hst '' A) (μ.comap ((↑) : t → α)) := by
-      intro A hA
-      have : Set.inclusion hst '' A = ((↑) : t → α) ⁻¹' (((↑) : s → α) '' A) := by
-        have himg' : ((↑) : s → α) '' A = ((↑) : t → α) '' (Set.inclusion hst '' A) := by
-          rw [image_image]
-        rw [himg', preimage_image_eq _ Subtype.coe_injective]
-      rw [this]
-      exact (hR A hA).preimage hqmp
-    ext A hA
-    rw [comap_apply₀ _ _ (Set.inclusion_injective hst) hL hA.nullMeasurableSet,
-      comap_apply₀ _ _ Subtype.coe_injective hR hA.nullMeasurableSet,
-      comap_apply₀ _ _ Subtype.coe_injective himg (hL A hA), image_image]
-  · rw [comap_undef (fun h => hR h.2)]
-    refine comap_undef fun h => hR fun A hA => ?_
-    have := NullMeasurableSet.image _ _ Subtype.coe_injective himg (h.2 A hA)
-    rwa [image_image] at this
+    (μ.comap ((↑) : t → α)).comap (Set.inclusion hst) = μ.comap ((↑) : s → α) :=
+  (MeasurableEmbedding.subtype_coe ht).comap_comap (Set.inclusion hst) μ
 
 end Measurable
 
