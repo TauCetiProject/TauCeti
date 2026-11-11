@@ -29,6 +29,7 @@ For a tower of ideals `p ⊆ Q ⊆ P` along a tower of algebras `A → B → C`,
 ## Main results
 
 * `Ideal.algebraMap_mem_iff_dvd_of_liesOver`: `algebraMap R S m ∈ Q ↔ a ∣ m`.
+* `Ideal.finite_quotient_of_liesOver`: if `B ⧸ P` is finite for `P` over `p`, so is `R ⧸ p`.
 * `Ideal.natCard_quotient_under_of_liesOver`: `Nat.card (ℤ ⧸ Q ∩ ℤ) = n` for `Q` over `(n)`.
 * `Ideal.Quotient.isScalarTower_quotient_of_liesOver`: `A ⧸ p → B ⧸ Q → C ⧸ P` is a tower of
   algebras.
@@ -46,6 +47,13 @@ theorem algebraMap_mem_iff_dvd_of_liesOver {R S : Type*} [CommSemiring R] [Semir
     [Algebra R S] {a : R} (Q : Ideal S) [Q.LiesOver (span {a})] (m : R) :
     algebraMap R S m ∈ Q ↔ a ∣ m :=
   (mem_of_liesOver Q (span {a}) m).symm.trans mem_span_singleton
+
+/-- If a prime `P` of `B` lies over `p` and `B ⧸ P` is finite, then `R ⧸ p` is finite: the induced
+map `R ⧸ p → B ⧸ P` is injective. -/
+theorem finite_quotient_of_liesOver {R B : Type*} [CommRing R] [CommRing B] [Algebra R B]
+    (p : Ideal R) (P : Ideal B) [P.LiesOver p] [Finite (B ⧸ P)] : Finite (R ⧸ p) :=
+  .of_injective (quotientMap P (algebraMap R B) (LiesOver.over (p := p) (P := P)).le)
+    (quotientMap_injective' (LiesOver.over (p := p) (P := P)).ge)
 
 /-- The base residue ring of an ideal lying over the integer ideal `(n)` has `Nat.card` equal
 to `n`: `Nat.card (ℤ ⧸ Q ∩ ℤ) = n` for `Q` over `(n)`. For `n ≠ 0` this says the residue ring has

@@ -306,16 +306,32 @@ theorem isParabolic_upperRightHom_iff {x : R} : IsParabolic (upperRightHom x) �
     refine ⟨?_, by norm_num [Matrix.single_apply]⟩
     exact fun hs ↦ hx (by simpa using (TauCeti.mem_range_scalar_fin_two_iff.1 hs).1)
 
-/-- If `T` represents `upperRightHom x`, that is `T = ±!![1, x; 0, 1]`, then
+omit [NoZeroDivisors R] in
+/-- If `T` represents `upperRightHom x`, that is `T = r • !![1, x; 0, 1]` for a central scalar `r`
+with `r ^ 2 = 1` (so `T = ±!![1, x; 0, 1]` when `R` has no zero divisors), then
 `tr ⁅T, X⁆ - 2 = x² c²`, where `c` is the lower-left entry of `X`. -/
 theorem trace_commutatorElement_sub_two_of_mk_eq_upperRightHom {T : SL(2, R)} {x : R}
     (hT : (T : PSL(2, R)) = upperRightHom x) (X : SL(2, R)) :
     ((⁅T, X⁆ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R).trace - 2 = x ^ 2 * X 1 0 ^ 2 := by
   have hTe : T 1 0 = 0 ∧ T 1 1 = T 0 0 ∧ T 0 1 ^ 2 = x ^ 2 := by
-    rw [upperRightHom_apply, mk_eq_mk_iff] at hT
-    rcases hT with h | h
-    · simp [← h, SpecialLinearGroup.transvection_coe]
-    · simp [neg_eq_iff_eq_neg.1 h.symm, SpecialLinearGroup.transvection_coe]
+    rw [upperRightHom_apply, QuotientGroup.eq, SpecialLinearGroup.mem_center_iff] at hT
+    obtain ⟨r, hr, hrT⟩ := hT
+    have hr2 : r * r = 1 := by simpa [sq] using hr
+    have hS : ((T * (T⁻¹ * SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) x) :
+        SL(2, R)) : Matrix (Fin 2) (Fin 2) R) = !![1, x; 0, 1] := by
+      rw [mul_inv_cancel_left, SpecialLinearGroup.transvection_coe, ← Matrix.transvection]
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp [Matrix.transvection]
+    rw [SpecialLinearGroup.coe_mul, ← hrT] at hS
+    have h00 := congrFun (congrFun hS 0) 0
+    have h01 := congrFun (congrFun hS 0) 1
+    have h10 := congrFun (congrFun hS 1) 0
+    have h11 := congrFun (congrFun hS 1) 1
+    simp [Matrix.scalar_apply, Matrix.mul_diagonal] at h00 h01 h10 h11
+    refine ⟨?_, ?_, ?_⟩
+    · linear_combination r * h10 - T 1 0 * hr2
+    · linear_combination r * h11 - r * h00 - (T 1 1 - T 0 0) * hr2
+    · linear_combination (T 0 1 * r + x) * h01 - T 0 1 ^ 2 * hr2
   rw [SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two, Matrix.det_fin_two, ← hTe.2.2]
   simp only [Matrix.sub_apply, Matrix.mul_apply, Fin.sum_univ_two, hTe.1, hTe.2.1]
   ring

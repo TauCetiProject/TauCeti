@@ -18,6 +18,10 @@ import Mathlib.MeasureTheory.Measure.Prod
 -- `Mathlib.MeasureTheory.Integral.Prod` is imported privately: measurability of an integral in a
 -- parameter appears only inside the proof of `TauCeti.stronglyMeasurable_ballAverage`.
 import Mathlib.MeasureTheory.Integral.Prod
+-- Tightness of finite measures and the escape of balls to infinity are used only inside the
+-- proof of `TauCeti.tendsto_ballAverage_cocompact`.
+import Mathlib.MeasureTheory.Measure.Tight
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # The ball average of an `Lᵖ` function
@@ -88,6 +92,8 @@ the maximal inequality, so the two developments are kept apart.
 * `TauCeti.uniformEquicontinuous_ballAverage`: equicontinuity of the ball averages of a family.
 * `TauCeti.continuous_ballAverage`, `TauCeti.memLp_ballAverage`: a ball average at positive
   scale is continuous and remains in `Lᵖ`.
+* `TauCeti.tendsto_ballAverage_cocompact`: at every fixed scale the ball average of an `Lᵖ`
+  function tends to zero at infinity, since `‖f‖ ^ p` has vanishing mass on far balls.
 * `TauCeti.ballAverage_sub_self`, `TauCeti.eLpNorm_ballAverage_sub_le`: the deviation of `f` from
   its ball average as an average of increments, and the `Lᵖ` approximation estimate.
 
@@ -344,6 +350,47 @@ theorem eLpNorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : AEStrongly
 theorem memLp_ballAverage (hf : MemLp f p mu) (hp : 1 ≤ p) (hp' : p ≠ ∞)
     (hr : 0 < r) : MemLp (ballAverage mu r f) p mu :=
   lt_of_le_of_lt (eLpNorm_ballAverage_le hp hp' hf.aestronglyMeasurable hr) hf.eLpNorm_lt_top
+
+/-- **Ball averages of an `Lᵖ` function vanish at infinity**, for `1 ≤ p < ∞`: at every fixed
+scale, `A_r f x → 0` as `x` leaves every compact set. The `p`-th power of `‖A_r f x‖` is at most
+`μ (ball 0 r)⁻¹` times the mass of `‖f‖ ^ p` on `ball x r`, and that mass tends to zero because
+the finite measure with density `‖f‖ ^ p` is tight. -/
+theorem tendsto_ballAverage_cocompact (hf : MemLp f p mu) (hp : 1 ≤ p) (hp' : p ≠ ∞) (r : ℝ) :
+    Filter.Tendsto (ballAverage mu r f) (Filter.cocompact E) (nhds 0) := by
+  rcases le_or_gt r 0 with hr | hr
+  · have h0 : ballAverage mu r f = 0 :=
+      funext fun x => by simp [ballAverage_apply, ball_eq_empty.2 hr]
+    rw [h0]
+    exact tendsto_const_nhds
+  have hq0 : 0 < p.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le hp).ne' hp'
+  have hq : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
+  -- The finite measure `ν` with density `‖f‖ ^ p` gives vanishing mass to far balls.
+  set ν := mu.withDensity fun y => ‖f y‖ₑ ^ p.toReal
+  have : IsFiniteMeasure ν := isFiniteMeasure_withDensity
+    (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top (zero_lt_one.trans_le hp).ne' hp'
+      hf.eLpNorm_lt_top).ne
+  have hν : Filter.Tendsto (fun x => ν (closedBall x r)) (Filter.cocompact E) (nhds 0) := by
+    have htight := isTightMeasureSet_singleton (μ := ν)
+    rw [IsTightMeasureSet, iSup_singleton] at htight
+    exact htight.comp (cobounded_eq_cocompact (α := E) ▸ tendsto_closedBall_cobounded_smallSets r)
+  -- Hölder: `‖A_r f x‖ ^ p ≤ μ (ball 0 r)⁻¹ ν (ball x r)`.
+  have hbound : ∀ x, ‖ballAverage mu r f x‖ₑ ^ p.toReal ≤
+      (mu (ball (0 : E) r))⁻¹ * ν (closedBall x r) := fun x => by
+    rw [ballAverage_apply, ← Measure.addHaar_ball_center mu x r]
+    refine (enorm_setAverage_rpow_le hq).trans (mul_le_mul' le_rfl ?_)
+    rw [withDensity_apply _ measurableSet_closedBall]
+    exact lintegral_mono_set ball_subset_closedBall
+  have hpow : Filter.Tendsto (fun x => ‖ballAverage mu r f x‖ₑ ^ p.toReal)
+      (Filter.cocompact E) (nhds 0) := by
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => bot_le)
+      hbound
+    simpa using ENNReal.Tendsto.const_mul hν
+      (Or.inr (ENNReal.inv_ne_top.2 (measure_ball_pos mu 0 hr).ne'))
+  have hroot := (ENNReal.continuous_rpow_const (y := p.toReal⁻¹)).tendsto 0 |>.comp hpow
+  rw [ENNReal.zero_rpow_of_pos (inv_pos.2 hq0)] at hroot
+  refine tendsto_iff_edist_tendsto_0.2 (hroot.congr fun x => ?_)
+  rw [Function.comp_apply, ← ENNReal.rpow_mul, mul_inv_cancel₀ hq0.ne', ENNReal.rpow_one,
+    edist_zero_right]
 
 variable [CompleteSpace F]
 

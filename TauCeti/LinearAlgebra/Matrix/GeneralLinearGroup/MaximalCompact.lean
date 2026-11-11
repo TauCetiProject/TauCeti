@@ -143,8 +143,6 @@ theorem exists_conj_smul_le_unitarySubgroup {K : Subgroup (GL ι 𝕜)}
     (hK : IsCompact (K : Set (GL ι 𝕜))) :
     ∃ g : GL ι 𝕜, MulAut.conj g • K ≤ unitarySubgroup (GL ι 𝕜) := by
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let : MeasurableSpace K := borel K
-  have : BorelSpace K := ⟨rfl⟩
   obtain ⟨e, he⟩ := (tautologicalRep K).exists_isUnitary_congr (continuous_tautologicalRep K)
   -- The invertible matrix of the automorphism `e`.
   let B : GL ι 𝕜 := Units.map

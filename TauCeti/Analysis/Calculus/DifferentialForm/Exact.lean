@@ -13,7 +13,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 
 For a function `f : V → ℝ` on a real normed space, its Fréchet differential defines a one-form
 `df` on `V`, which is the exterior derivative of `f` viewed as a zero-form. This file proves
-that `df` is closed at every point where the second derivative of `f` exists and is symmetric,
+that `df` is closed at every point where the second derivative of `f` is symmetric,
 a pointwise statement under weaker hypotheses than the `C²` condition used by Mathlib's
 `extDeriv_extDeriv_apply`.
 
@@ -24,7 +24,7 @@ a pointwise statement under weaker hypotheses than the `C²` condition used by M
 * `TauCeti.differentialOneForm_eq_extDeriv`: this one-form is the exterior derivative of the
   associated zero-form.
 * `TauCeti.extDeriv_differentialOneForm_apply_eq_zero`: the differential one-form is closed
-  wherever the second derivative exists and is symmetric.
+  wherever the second derivative of `f` is symmetric.
 -/
 
 public section
@@ -55,24 +55,26 @@ lemma differentialOneForm_eq_extDeriv (f : V → ℝ) :
   rw [extDeriv_constOfIsEmpty]
   simp [differentialOneForm]
 
-/-- The differential one-form is differentiable at `x` when the derivative of `f` is. -/
-lemma differentiableAt_differentialOneForm {f : V → ℝ} {x : V}
-    (hf : DifferentiableAt ℝ (fderiv ℝ f) x) :
-    DifferentiableAt ℝ (differentialOneForm f) x :=
-  (ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ) (0 : Fin 1)).differentiableAt.comp x hf
+/-- The differential one-form is differentiable at `x` exactly when the derivative of `f` is. -/
+lemma differentiableAt_differentialOneForm_iff {f : V → ℝ} {x : V} :
+    DifferentiableAt ℝ (differentialOneForm f) x ↔ DifferentiableAt ℝ (fderiv ℝ f) x :=
+  (ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ) (0 : Fin 1)).comp_differentiableAt_iff
 
-/-- The exterior derivative of `df` vanishes at every point where the derivative of `df` exists
-and is symmetric. -/
+/-- The exterior derivative of `df` vanishes at every point where the second derivative of `f` is
+symmetric; no differentiability of `df` is needed. -/
 lemma extDeriv_differentialOneForm_apply_eq_zero {f : V → ℝ} {x : V}
-    (hdf : DifferentiableAt ℝ (fderiv ℝ f) x) (hf : IsSymmSndFDerivAt ℝ f x) :
+    (hf : IsSymmSndFDerivAt ℝ f x) :
     extDeriv (differentialOneForm f) x = 0 := by
+  by_cases hdf : DifferentiableAt ℝ (fderiv ℝ f) x
+  swap
+  · exact extDeriv_zero_of_not_differentiableAt (mt differentiableAt_differentialOneForm_iff.1 hdf)
   ext v
   have hv : v = ![v 0, v 1] := by
     funext i
     fin_cases i <;> rfl
   conv_lhs => rw [hv, extDeriv_apply_pair]
   simp only [← fderiv_continuousAlternatingMap_apply_const_apply
-    (differentiableAt_differentialOneForm hdf), differentialOneForm_apply]
+    (differentiableAt_differentialOneForm_iff.2 hdf), differentialOneForm_apply]
   rw [fderiv_clm_apply hdf (differentiableAt_const (v 1)),
     fderiv_clm_apply hdf (differentiableAt_const (v 0))]
   simp [hf.eq (v 0) (v 1)]
@@ -88,9 +90,7 @@ lemma contDiff_differentialOneForm {f : V → ℝ} {m n : WithTop ℕ∞}
 lemma extDeriv_differentialOneForm_eq_zero {f : V → ℝ} (hf : ContDiff ℝ 2 f) :
     extDeriv (differentialOneForm f) = 0 := by
   funext x
-  exact extDeriv_differentialOneForm_apply_eq_zero
-    ((hf.fderiv_right le_rfl).differentiable one_ne_zero x)
-    (hf.contDiffAt.isSymmSndFDerivAt (by simp))
+  exact extDeriv_differentialOneForm_apply_eq_zero (hf.contDiffAt.isSymmSndFDerivAt (by simp))
 
 end TauCeti
 

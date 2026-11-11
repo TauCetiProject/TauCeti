@@ -95,8 +95,6 @@ theorem coe_mem_target_of_norm_lt {r δ : ℝ}
   have hr : 0 < r := by linarith [norm_nonneg (φ.coord w), hδr w hw]
   simpa using hrT _ ((hδr w hw).trans (half_lt_self hr))
 
-variable [FiniteDimensional ℝ E]
-
 /-- The small cube of a Morse chart, where the coordinates and the chart value are small, is
 open. -/
 theorem isOpen_smallCube (ε δ : ℝ) :

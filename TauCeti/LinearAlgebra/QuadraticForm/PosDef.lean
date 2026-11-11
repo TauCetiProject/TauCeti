@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Data.Int.Interval
 import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
@@ -22,13 +23,18 @@ are doubled. A diagonal form is positive definite exactly when its weights are p
 quadratic form of a symmetric bilinear form is positive definite exactly when the bilinear form is
 positive semidefinite and nondegenerate.
 
-A positive definite quadratic form on a finitely generated free `ℤ`-module takes each of its values
+A positive definite quadratic form on a finitely generated `ℤ`-module takes each of its values
 only finitely often: the sets `{x | q x ≤ n}` and `{x | q x = n}` are finite. This is the
 finiteness that makes "the vectors of norm `n`" of a positive definite lattice a finite list, and
 the one that turns an orbit lying in a level set into a periodic orbit.
 
 ## Main results
 
+* `QuadraticMap.PosDef.comp`: injective pullback preserves positive definiteness.
+* `LinearMap.BilinForm.posDef_toQuadraticMap_iff`: positive definiteness is positivity
+  of the diagonal at nonzero vectors.
+* `LinearMap.BilinForm.posDef_toQuadraticMap_compl₁₂`: an injective pullback preserves
+  positive definiteness of a bilinear form's quadratic map.
 * `QuadraticMap.posDef_smul_iff_of_pos`: a quadratic map is positive definite if and only if
   its multiple by a positive scalar is positive definite.
 * `LinearMap.BilinForm.posDef_toQuadraticMap_add_flip_iff`: symmetrizing a bilinear form
@@ -39,7 +45,7 @@ the one that turns an orbit lying in a level set into a periodic orbit.
 * `QuadraticMap.posDef_weightedSumSquares_iff`: a diagonal form over a linearly ordered ring is
   positive definite exactly when all of its weights are positive.
 * `QuadraticMap.PosDef.finite_setOf_apply_le`: a positive definite quadratic form on a
-  finitely generated free `ℤ`-module has only finitely many vectors of value at most `n`.
+  finitely generated `ℤ`-module has only finitely many vectors of value at most `n`.
 * `QuadraticMap.PosDef.finite_setOf_apply_eq`: consequently only finitely many vectors of
   value exactly `n`.
 
@@ -63,6 +69,14 @@ uses.
 -/
 
 public section
+
+/-- An injective pullback of a positive-definite quadratic map is positive definite. -/
+theorem QuadraticMap.PosDef.comp {R M N P : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [PartialOrder N]
+    [AddCommMonoid P] [Module R P] {Q : QuadraticMap R M N} (hQ : Q.PosDef)
+    (f : P →ₗ[R] M) (hf : Function.Injective f) : (Q.comp f).PosDef := by
+  intro x hx
+  exact hQ (f x) (fun h ↦ hx (hf (h.trans (map_zero f).symm)))
 
 namespace QuadraticMap
 
@@ -99,6 +113,21 @@ theorem posDef_weightedSumSquares_iff {R : Type*} [CommRing R] [LinearOrder R]
 end QuadraticMap
 
 namespace LinearMap.BilinForm
+
+/-- Positive definiteness of a bilinear form's quadratic map is positivity on nonzero vectors. -/
+theorem posDef_toQuadraticMap_iff {R M : Type*} [CommSemiring R] [PartialOrder R]
+    [AddCommMonoid M] [Module R M] (B : LinearMap.BilinForm R M) :
+    B.toQuadraticMap.PosDef ↔ ∀ x ≠ 0, 0 < B x x := by
+  simp only [QuadraticMap.PosDef, LinearMap.BilinMap.toQuadraticMap_apply]
+
+/-- An injective pullback preserves positive definiteness of the diagonal of a bilinear form. -/
+theorem posDef_toQuadraticMap_compl₁₂ {R M N : Type*} [CommSemiring R] [PartialOrder R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (B : LinearMap.BilinForm R M) (hB : B.toQuadraticMap.PosDef)
+    (f : N →ₗ[R] M) (hf : Function.Injective f) :
+    (LinearMap.BilinMap.toQuadraticMap (B.compl₁₂ f f)).PosDef := by
+  rw [LinearMap.BilinMap.toQuadraticMap_comp_same]
+  exact hB.comp f hf
 
 /-- Symmetrization preserves and reflects positive-definiteness of a bilinear form's quadratic
 map. -/
@@ -148,14 +177,21 @@ end TauCeti
 
 namespace QuadraticMap.PosDef
 
-variable {M : Type*} [AddCommGroup M] [Module.Free ℤ M] [Module.Finite ℤ M]
+variable {M : Type*} [AddCommGroup M] [Module.Finite ℤ M]
 
 /-- **A positive definite integral quadratic form has finitely many vectors of bounded value.**
-For a positive definite quadratic form `q` on a finitely generated free `ℤ`-module and any integer
-`n`, only finitely many vectors satisfy `q x ≤ n`. -/
+For a positive definite quadratic form `q` on a finitely generated `ℤ`-module (which is then free,
+being torsion free) and any integer `n`, only finitely many vectors satisfy `q x ≤ n`. -/
 theorem finite_setOf_apply_le {q : QuadraticForm ℤ M} (hq : q.PosDef) (n : ℤ) :
     {x : M | q x ≤ n}.Finite := by
   classical
+  -- A positive definite form makes `M` torsion free, hence free over the PID `ℤ`.
+  have : Module.IsTorsionFree ℤ M := ⟨fun r hr x y (hxy : r • x = r • y) ↦ by
+    by_contra hne
+    have hz := hq (x - y) (sub_ne_zero.mpr hne)
+    have h := q.map_smul r (x - y)
+    rw [smul_sub, hxy, sub_self, QuadraticMap.map_zero, smul_eq_mul] at h
+    exact (mul_pos (mul_self_pos.mpr hr.ne_zero) hz).ne h⟩
   set b := Module.Free.chooseBasis ℤ M
   set B : LinearMap.BilinForm ℤ M := q.polarBilin with hBdef
   have hBself : ∀ x : M, B x x = 2 * q x := fun x ↦ by
@@ -202,7 +238,7 @@ theorem finite_setOf_apply_le {q : QuadraticForm ℤ M} (hq : q.PosDef) (n : ℤ
   exact abs_le.mp (TauCeti.abs_le_of_sq_le (hcs.trans hle))
 
 /-- **A positive definite integral quadratic form takes each value finitely often.** For a
-positive definite quadratic form `q` on a finitely generated free `ℤ`-module, only finitely many
+positive definite quadratic form `q` on a finitely generated `ℤ`-module, only finitely many
 vectors satisfy `q x = n`; for a positive definite lattice this is the finiteness of the set of
 vectors of a given norm. -/
 theorem finite_setOf_apply_eq {q : QuadraticForm ℤ M} (hq : q.PosDef) (n : ℤ) :

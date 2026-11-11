@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -45,7 +46,8 @@ Given a period-one Hamiltonian `H`, the perturbation `TauCeti.Floer.PSSPlane.per
   closed pole disc `‖w‖ ≤ exp (2π)`, where the Morse incidence condition is imposed;
 * `TauCeti.Floer.PSSPlane.contMDiff_perturbation`: it is smooth on the whole of `ℂ × M`,
   including across the pole, and its components in the real coordinates `ℝ × ℝ ≃ ℂ` are `C¹`
-  for a `C¹` Hamiltonian (`TauCeti.Floer.PSSPlane.contDiff_uncurry_perturbation`);
+  for a `C¹` Hamiltonian (`TauCeti.Floer.PSSPlane.contDiff_uncurry_perturbation`, and
+  `TauCeti.Floer.PSSPlane.contMDiff_uncurry_perturbation` for a manifold target);
 * `TauCeti.Floer.PSSPlane.perturbation_cylindricalEndLift`: its pullback along the end lift is the
   continuation datum `β(ε s - 1) H(t) dt` at every point of the cylinder;
 * `TauCeti.Floer.PSSPlane.perturbation_cylindricalEndLift_of_two_le` and
@@ -456,6 +458,36 @@ theorem contDiff_uncurry_perturbation {V : Type*} [NormedAddCommGroup V] [Normed
       (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff))).contDiff.comp
     ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk contDiff_snd)).clm_apply
     contDiff_const
+
+/-- In the real coordinates `ℝ × ℝ ≃ ℂ` of the plane, the component of the perturbation of a PSS
+plane along a tangent vector `v` is `C¹` jointly in the domain point and the point of the
+manifold, for a period-one `C¹` Hamiltonian. -/
+theorem contMDiff_uncurry_perturbation (hH : Function.Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry H)) (v : ℂ) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
+      (Function.uncurry fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x v) :=
+  ((contMDiff_perturbation hH hHs).comp
+    ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
+      contMDiff_snd)).clm_apply contMDiff_const
+
+/-- In the real coordinates `ℝ × ℝ ≃ ℂ` of the plane, the component of the perturbation of a PSS
+plane along a tangent vector `v` is differentiable in the domain point, for a period-one `C¹`
+Hamiltonian. -/
+theorem differentiableAt_perturbation_domain (hH : Function.Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry H)) (z : ℝ × ℝ)
+    (x : M) (v : ℂ) :
+    DifferentiableAt ℝ (fun z' ↦ p.perturbation H (Complex.equivRealProdCLM.symm z') x v) z :=
+  (((contMDiff_uncurry_perturbation hH hHs v).comp
+    (contMDiff_id.prodMk contMDiff_const)).contDiff.differentiable one_ne_zero) z
+
+/-- The component of the perturbation of a PSS plane along a tangent vector `v` is differentiable
+in the point of the manifold, for a period-one `C¹` Hamiltonian. -/
+theorem mdifferentiableAt_perturbation_target (hH : Function.Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry H)) (w : ℂ)
+    (x : M) (v : ℂ) :
+    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ p.perturbation H w y v) x :=
+  ((((contMDiff_perturbation hH hHs).comp (contMDiff_const.prodMk contMDiff_id)).clm_apply
+    contMDiff_const) x).mdifferentiableAt one_ne_zero
 
 end PSSPlane
 
