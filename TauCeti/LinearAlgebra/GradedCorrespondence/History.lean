@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.LinearAlgebra.GradedCorrespondence.Path
-public import TauCeti.LinearAlgebra.Graded.History.Basic
+public import TauCeti.LinearAlgebra.Graded.History.Regrouping
 
 /-!
 # Component expansions of zero-extended transfers
@@ -29,6 +29,13 @@ The single-step formula is `decompose_right_liftLeftTotal_of_mem`. Selecting the
 same admissible degree at every vertex, the history of a path on the incoming
 homogeneous piece is the selected-transfer functor `GradedCorrespondence.transferFunctor`
 (`transferFunctor_map_hom_eq_homogeneousHistory`).
+
+Two consecutive transfer blocks can instead be expanded on a uniform finite rectangle
+when the incoming range is finitely generated. The nested sums may select arbitrary
+paired histories, including those satisfying geometric incidence conditions, and can
+be followed by any linear output map. Retaining every pair recovers the composite
+total transfer. The proof reuses the generic rectangular-support identity for
+homogeneous histories, rather than a separate basis expansion.
 
 Adapted from `Mei/LinearAlgebra/GradedCorrespondence/History.lean` and
 `Mei/LinearAlgebra/GradedCorrespondence/History/Regrouping.lean` in
@@ -116,5 +123,42 @@ theorem transferFunctor_map_hom_eq_homogeneousHistory
       _ = _ := (LinearMap.comp_apply
         ((p.cons e).homogeneousHistory T ℳ ((p.cons e).degreesOfVertices s))
         (ℳ a (s a)).subtype x).symm
+
+open Classical in
+/-- A finitely generated incoming range supports every selected two-block transfer sum
+uniformly. The predicate may couple both histories, for instance by geometric
+incidence inequalities; zero terms are retained. The right-hand side is the
+pointwise selected expansion of the concatenated transfer path. -/
+theorem exists_uniform_totalTransfer_regrouping
+    {a b c : Q} (p : Quiver.Path a b) (q : Quiver.Path b c)
+    {E : Type*} [AddCommMonoid E] [Module R E]
+    (f : E →ₗ[R] M a) (hf : (LinearMap.range f).FG) :
+    ∃ (S : Finset (p.Degrees ι)) (U : Finset (q.Degrees ι)),
+      (∀ d ∉ S, (p.homogeneousHistory T ℳ d).comp f = 0) ∧
+      (∀ d ∈ S, ∀ e ∉ U,
+        (q.homogeneousHistory T ℳ e).comp ((p.homogeneousHistory T ℳ d).comp f) = 0) ∧
+      ∀ (P : p.Degrees ι → q.Degrees ι → Prop),
+        ∀ {O : Type*} [AddCommMonoid O] [Module R O] (g : M c →ₗ[R] O) (x : E),
+          (∑ d ∈ S, ∑ e ∈ U, if P d e then
+            g.comp ((q.homogeneousHistory T ℳ e).comp
+              ((p.homogeneousHistory T ℳ d).comp f)) else 0) x =
+            ∑ h ∈ (p.comp q).historySupport T ℳ (f x),
+              if P ((p.degreesComp (ι := ι) q) h).1 ((p.degreesComp (ι := ι) q) h).2 then
+                g ((p.comp q).homogeneousHistory T ℳ h (f x)) else 0 := by
+  classical
+  obtain ⟨S, U, hS, hU⟩ := p.exists_uniform_historySupport_rectangle T ℳ q f hf
+  refine ⟨S, U, hS, hU, fun P O _ _ g x => ?_⟩
+  rw [p.sum_ite_comp_homogeneousHistory_comp T ℳ q f g S U P]
+  have hrect := p.homogeneousHistory_comp_eq_zero_of_notMem_rectangle T ℳ q f S U hS hU
+  have hexp := (p.comp q).sum_ite_homogeneousHistory_comp_apply T ℳ f
+    ((S ×ˢ U).map (p.degreesComp (ι := ι) q).symm.toEmbedding) hrect
+    (fun h => P ((p.degreesComp (ι := ι) q) h).1 ((p.degreesComp (ι := ι) q) h).2) x
+  have hmap := congrArg g hexp
+  convert hmap using 1
+  all_goals
+    simp only [LinearMap.sum_apply, map_sum]
+    apply Finset.sum_congr rfl
+    intro h _
+    split_ifs <;> simp
 
 end TauCeti.GradedCorrespondence
