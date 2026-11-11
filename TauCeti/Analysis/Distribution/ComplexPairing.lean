@@ -154,12 +154,9 @@ theorem complexPairing_eq_integral [MeasurableSpace E] [OpensMeasurableSpace E]
     have hK : IsCompact (tsupport g) := g.hasCompactSupport
     have hfK : MeasureTheory.IntegrableOn f (tsupport g) μ :=
       hf.integrableOn_compact_subset (hpart L) hK
-    have hsupp : (tsupport g).indicator (fun x => g x • f x) = fun x => g x • f x :=
-      Set.indicator_eq_self.2 <| Function.support_subset_iff'.2 fun x hx => by
-        simp [show g x = 0 from image_eq_zero_of_notMem_tsupport hx]
-    rw [← hsupp, Set.indicator_smul]
-    exact (MeasureTheory.integrable_indicator_iff hK.measurableSet |>.2 hfK).smul_of_top_right
-      (φ := ⇑g) (g.continuous.memLp_top_of_hasCompactSupport g.hasCompactSupport μ)
+    exact (MeasureTheory.integrableOn_iff_integrable_of_support_subset
+      ((Function.support_smul_subset_left _ _).trans (subset_tsupport g))).mp
+      (hfK.continuousOn_smul g.continuous.continuousOn hK)
   rw [complexPairing_apply, hT _ (hpart reCLM), hT _ (hpart imCLM),
     ← MeasureTheory.integral_const_mul,
     ← MeasureTheory.integral_add (hint reCLM) ((hint imCLM).const_mul I)]
