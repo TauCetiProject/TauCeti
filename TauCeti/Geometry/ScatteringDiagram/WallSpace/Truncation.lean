@@ -47,7 +47,7 @@ theorem truncated_wall (k : ℕ) (n : Γ) (m : Λ →+ ℤ) :
   rw [truncated, map_wall]
 
 /-- The canonical graded quotient homomorphism preserves directed wall spaces. -/
-theorem truncation_mem_wall (k : ℕ) (n : Γ) (m : Λ →+ ℤ) (x : L)
+theorem mkQ_mem_truncated_wall (k : ℕ) (n : Γ) (m : Λ →+ ℤ) (x : L)
     (hx : x ∈ H.wall n m) :
     (d.degreeIdeal ℒ k).mkQ x ∈ (H.truncated d k).wall n m := by
   rw [truncated_wall]

@@ -24,7 +24,7 @@ maps on homogeneous pieces. This is the condition that permits independent label
 on one primitive ray to be combined without choosing their order.
 
 The construction specializes `TauCeti.supportedLieSubalgebra`; the abelian criterion
-uses Mathlib's `Submodule.iSup_induction` and `IsLieAbelian`.
+uses Mathlib's bilinear submodule images and `IsLieAbelian`.
 
 Adapted from `Mei/Algebra/Lie/Graded/Ray.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -65,7 +65,7 @@ theorem rayLieSubalgebra_le_iff (w : SupportedRay d) (K : LieSubalgebra R L) :
 
 /-- If only one homogeneous piece on a ray can be nonzero, that piece is the entire ray
 Lie algebra. The distinguished degree need not be primitive. -/
-theorem rayLieSubalgebra_eq_of_single_degree (w : SupportedRay d) (n : N)
+theorem rayLieSubalgebra_toSubmodule_eq_of_single_degree (w : SupportedRay d) (n : N)
     (hn : n ∈ w.rayDegrees)
     (hvan : ∀ m ∈ w.rayDegrees, m ≠ n → ℒ m = ⊥) :
     (rayLieSubalgebra ℒ w).toSubmodule = ℒ n := by
@@ -107,11 +107,13 @@ theorem isAbelianRays_iff : IsAbelianRays d ℒ ↔
       rw [← rayLieSubalgebra_toSubmodule]; exact x.property
     have hy : (y : L) ∈ ⨆ n : w.rayDegrees, ℒ n := by
       rw [← rayLieSubalgebra_toSubmodule]; exact y.property
-    refine Submodule.iSup_induction _ (motive := fun x => ⁅x, (y : L)⁆ = 0) hx
-      (fun n x hx => ?_) (by simp) (fun x z hx hz => by simp [hx, hz])
-    exact Submodule.iSup_induction _ (motive := fun y => ⁅x, y⁆ = 0) hy
-      (fun m y hy => h w n m n.property m.property x hx y hy)
-      (by simp) (fun y z hy hz => by simp [hy, hz])
+    let : LieRing (Module.End R L) := LieRing.ofAssociativeRing
+    suffices hle : Submodule.map₂ (LieModule.toEnd R L L).toLinearMap
+        (⨆ n : w.rayDegrees, ℒ n) (⨆ n : w.rayDegrees, ℒ n) ≤ ⊥ from
+      (Submodule.mem_bot R).mp (hle (Submodule.apply_mem_map₂ _ hx hy))
+    simp_rw [Submodule.map₂_iSup_left, Submodule.map₂_iSup_right]
+    exact iSup_le fun n => iSup_le fun m => Submodule.map₂_le.mpr
+      (fun x hx y hy => (Submodule.mem_bot R).mpr (h w n m n.property m.property x hx y hy))
 
 /-- Every grading of an abelian ambient Lie algebra has abelian rays. -/
 instance [IsLieAbelian L] : IsAbelianRays d ℒ :=
@@ -127,15 +129,13 @@ theorem map_rayLieSubalgebra (w : SupportedRay d) (f : L →ₗ⁅R⁆ L') :
   map_supportedLieSubalgebra ℒ w.degreeSemigroup f
 
 /-- Surjectivity on homogeneous pieces preserves abelian rays, without injectivity. -/
-theorem isAbelianRays_of_map_eq [IsAbelianRays d ℒ]
-    (f : L →ₗ⁅R⁆ L') (hf : ∀ n, (ℒ n).map f.toLinearMap = ℳ n) :
+theorem isAbelianRays_of_le_map [IsAbelianRays d ℒ]
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ n, ℳ n ≤ (ℒ n).map f.toLinearMap) :
     IsAbelianRays d ℳ := by
   apply (isAbelianRays_iff ℳ).mpr
   intro w n m hn hm x hx y hy
-  rw [← hf n, Submodule.mem_map] at hx
-  rw [← hf m, Submodule.mem_map] at hy
-  obtain ⟨a, ha, rfl⟩ := hx
-  obtain ⟨b, hb, rfl⟩ := hy
+  obtain ⟨a, ha, rfl⟩ := Submodule.mem_map.mp (hf n hx)
+  obtain ⟨b, hb, rfl⟩ := Submodule.mem_map.mp (hf m hy)
   exact (f.map_lie a b).symm.trans (by
     rw [(isAbelianRays_iff ℒ).mp ‹IsAbelianRays d ℒ› w n m hn hm a ha b hb, map_zero])
 
@@ -201,8 +201,8 @@ theorem map_rayLieSubalgebra_truncationMap (w : SupportedRay d)
 /-- Finite degree quotients inherit abelian rays. -/
 instance isAbelianRays_truncatedGrading [IsAbelianRays d ℒ] (k : ℕ) :
     IsAbelianRays d (d.truncatedGrading ℒ k) :=
-  isAbelianRays_of_map_eq ℒ (d.truncatedGrading ℒ k) (d.degreeIdeal ℒ k).mkQ
-    (fun n => (d.truncatedGrading_eq ℒ k n).symm)
+  isAbelianRays_of_le_map ℒ (d.truncatedGrading ℒ k) (d.degreeIdeal ℒ k).mkQ
+    (fun n => (d.truncatedGrading_eq ℒ k n).le)
 
 end TauCeti.PositiveDegrees
 

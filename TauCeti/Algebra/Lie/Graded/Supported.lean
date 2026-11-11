@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Graded.Hom
 public import TauCeti.Algebra.DirectSum.Supported
+public import Mathlib.Algebra.Module.Submodule.Bilinear
 
 /-!
 # Lie subalgebras supported on additive sets of degrees
@@ -40,12 +41,12 @@ The degree set need not contain zero. -/
 def supportedLieSubalgebra (S : AddSubsemigroup N) : LieSubalgebra R L where
   toSubmodule := ⨆ n : S, ℒ n
   lie_mem' {x y} hx hy := by
-    refine Submodule.iSup_induction _ (motive := fun x =>
-      ⁅x, y⁆ ∈ ⨆ n : S, ℒ n) hx (fun n x hx => ?_) (by simp)
-      (fun x z hx hz => by simpa using Submodule.add_mem _ hx hz)
-    refine Submodule.iSup_induction _ (motive := fun y =>
-      ⁅x, y⁆ ∈ ⨆ n : S, ℒ n) hy (fun m y hy => ?_) (by simp)
-      (fun y z hy hz => by simpa using Submodule.add_mem _ hy hz)
+    let : LieRing (Module.End R L) := LieRing.ofAssociativeRing
+    suffices hle : Submodule.map₂ (LieModule.toEnd R L L).toLinearMap
+        (⨆ n : S, ℒ n) (⨆ n : S, ℒ n) ≤ ⨆ n : S, ℒ n from
+      hle (Submodule.apply_mem_map₂ _ hx hy)
+    simp_rw [Submodule.map₂_iSup_left, Submodule.map₂_iSup_right]
+    refine iSup_le fun n => iSup_le fun m => Submodule.map₂_le.mpr fun x hx y hy => ?_
     exact (le_iSup (fun n : S => ℒ n) ⟨n + m, S.add_mem n.property m.property⟩)
       (SetLike.GradedBracket.bracket_mem hx hy)
 

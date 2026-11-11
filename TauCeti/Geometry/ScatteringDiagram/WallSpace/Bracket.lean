@@ -17,7 +17,7 @@ For an internal decomposition, the degree-`n` component uses only pairs adding
 to `n`. This locates the homogeneous contributions of a wall interaction without
 assuming that primitive generators belong to the positive monoid.
 
-The proofs use Mathlib's `Submodule.iSup_induction` and homogeneous projections
+The proofs use Mathlib's submodule image API and homogeneous projections
 `DirectSum.decompose_of_mem_same` and `DirectSum.decompose_of_mem_ne`.
 The contracted-normal rule is the directed-wall law of Leung, Ma and Young,
 *Refined scattering diagrams and theta functions from asymptotic analysis of
@@ -47,14 +47,14 @@ theorem lie_mem_iSup_wall_of_mem_raySubmodule
     ⁅x, y⁆ ∈ ⨆ a : w.rayDegrees, ⨆ b : v.rayDegrees,
       H.wall (a.val + b.val) (wallBracketNormal ρ a.val b.val m m') := by
   rw [raySubmodule_def] at hx hy
-  let S := ⨆ a : w.rayDegrees, ⨆ b : v.rayDegrees,
-    H.wall (a.val + b.val) (wallBracketNormal ρ a.val b.val m m')
-  refine Submodule.iSup_induction _ (motive := fun x => ⁅x, y⁆ ∈ S) hx
-    (fun a x hx => ?_) (by simp [S])
-    (fun x z hx hz => by simpa only [add_lie] using S.add_mem hx hz)
-  refine Submodule.iSup_induction _ (motive := fun y => ⁅x, y⁆ ∈ S) hy
-    (fun b y hy => ?_) (by simp [S])
-    (fun y z hy hz => by simpa only [lie_add] using S.add_mem hy hz)
+  let : LieRing (Module.End R L) := LieRing.ofAssociativeRing
+  suffices hle : Submodule.map₂ (LieModule.toEnd R L L).toLinearMap
+      (⨆ a : w.rayDegrees, H.wall a m) (⨆ b : v.rayDegrees, H.wall b m') ≤
+        ⨆ a : w.rayDegrees, ⨆ b : v.rayDegrees,
+          H.wall (a.val + b.val) (wallBracketNormal ρ a.val b.val m m') from
+    hle (Submodule.apply_mem_map₂ _ hx hy)
+  simp_rw [Submodule.map₂_iSup_left, Submodule.map₂_iSup_right]
+  refine iSup_le fun a => iSup_le fun b => Submodule.map₂_le.mpr fun x hx y hy => ?_
   exact Submodule.mem_iSup_of_mem a (Submodule.mem_iSup_of_mem b (H.bracket_mem hx hy))
 
 /-- The supported-ray bracket formula indexed by positive integer multipliers.
@@ -91,14 +91,16 @@ theorem decompose_lie_mem_iSup_wall_of_mem_raySubmodule
   have hxy := H.lie_mem_iSup_wall_of_mem_raySubmodule hx hy
   let S := ⨆ a : w.rayDegrees, ⨆ b : v.rayDegrees, ⨆ (_ : a.val + b.val = n),
     H.wall n (wallBracketNormal ρ a.val b.val m m')
-  refine Submodule.iSup_induction _
-    (motive := fun z => (DirectSum.decompose ℒ z n : L) ∈ S) hxy
-    (fun a z hz => ?_) (by simp [S])
-    (fun z t hz ht => by simpa using S.add_mem hz ht)
-  refine Submodule.iSup_induction _
-    (motive := fun z => (DirectSum.decompose ℒ z n : L) ∈ S) hz
-    (fun b z hz => ?_) (by simp [S])
-    (fun z t hz ht => by simpa using S.add_mem hz ht)
+  let p : L →ₗ[R] L := (ℒ n).subtype ∘ₗ
+    DirectSum.component R Γ (fun i => ℒ i) n ∘ₗ (DirectSum.decomposeLinearEquiv ℒ).toLinearMap
+  suffices hle : (⨆ a : w.rayDegrees, ⨆ b : v.rayDegrees,
+      H.wall (a.val + b.val) (wallBracketNormal ρ a.val b.val m m')).map p ≤ S from
+    hle (Submodule.mem_map.mpr ⟨⁅x, y⁆, hxy, rfl⟩)
+  simp only [Submodule.map_iSup]
+  refine iSup_le fun a => iSup_le fun b => Submodule.map_le_iff_le_comap.mpr ?_
+  intro z hz
+  simp only [Submodule.mem_comap, p, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    DirectSum.decomposeLinearEquiv_apply, ← DirectSum.apply_eq_component, Submodule.subtype_apply]
   by_cases hab : a.val + b.val = n
   · rw [DirectSum.decompose_of_mem_same ℒ (hab ▸ H.wall_le_piece _ _ hz)]
     exact Submodule.mem_iSup_of_mem a

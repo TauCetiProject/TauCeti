@@ -12,8 +12,8 @@ public import Mathlib.Algebra.DirectSum.Decomposition
 
 For an internal module grading, the sum of the pieces indexed by any set is
 characterized by vanishing of all excluded components. Such sums are stable
-under homogeneous projections. This provides common support criteria for
-shifted modules and supported associative and Lie subalgebras.
+under homogeneous projections. These criteria detect membership and homogeneity
+of `TauCeti.supportedLieSubalgebra`.
 
 We use Mathlib's `DirectSum.decompose_of_mem_ne` and
 `DirectSum.sum_support_decompose` to detect and reconstruct the allowed support.

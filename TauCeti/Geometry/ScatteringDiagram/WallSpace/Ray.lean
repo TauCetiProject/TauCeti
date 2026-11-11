@@ -91,15 +91,17 @@ theorem lie_eq_zero_of_mem_raySubmodule_of_forall {w v : SupportedRay d} {m m' :
       ⁅x, y⁆ = 0)
     {x y : L} (hx : x ∈ H.raySubmodule w m) (hy : y ∈ H.raySubmodule v m') : ⁅x, y⁆ = 0 := by
   rw [raySubmodule_def] at hx hy
-  refine Submodule.iSup_induction _ (motive := fun x => ⁅x, y⁆ = 0) hx
-    (fun n x hx => ?_) (by simp) (fun x z hx hz => by simp [hx, hz])
-  exact Submodule.iSup_induction _ (motive := fun y => ⁅x, y⁆ = 0) hy
-    (fun n' y hy => hwall n n.property n' n'.property x hx y hy)
-    (by simp) (fun y z hy hz => by simp [hy, hz])
+  let : LieRing (Module.End R L) := LieRing.ofAssociativeRing
+  suffices hle : Submodule.map₂ (LieModule.toEnd R L L).toLinearMap
+      (⨆ n : w.rayDegrees, H.wall n m) (⨆ n : v.rayDegrees, H.wall n m') ≤ ⊥ from
+    (Submodule.mem_bot R).mp (hle (Submodule.apply_mem_map₂ _ hx hy))
+  simp_rw [Submodule.map₂_iSup_left, Submodule.map₂_iSup_right]
+  exact iSup_le fun n => iSup_le fun n' => Submodule.map₂_le.mpr
+    (fun x hx y hy => (Submodule.mem_bot R).mpr (hwall n n.property n' n'.property x hx y hy))
 
 /-- Sums of wall elements with rationally proportional normals commute, even
 when their supported rays differ. -/
-theorem lie_eq_zero_of_mem_raySubmodule {w v : SupportedRay d} {m m' : Λ →+ ℤ}
+theorem lie_eq_zero_of_mem_raySubmodule_of_proportional {w v : SupportedRay d} {m m' : Λ →+ ℤ}
     {x y : L} (hx : x ∈ H.raySubmodule w m) (hy : y ∈ H.raySubmodule v m')
     {c e : ℤ} (hc : c ≠ 0) (he : e ≠ 0) (hm : c • m = e • m') : ⁅x, y⁆ = 0 :=
   H.lie_eq_zero_of_mem_raySubmodule_of_forall
@@ -119,27 +121,28 @@ theorem lie_eq_zero_of_mem_raySubmodule_of_apply_eq_zero {w v : SupportedRay d}
   · simpa only [AddMonoidHom.comp_apply, hm', smul_zero] using (m'.comp ρ).map_zsmul a w.generator
 
 /-- The ray sum is an abelian Lie subalgebra of the original Lie algebra. -/
-def rayLieSubalgebra (w : SupportedRay d) (m : Λ →+ ℤ) : LieSubalgebra R L where
+def wallRayLieSubalgebra (w : SupportedRay d) (m : Λ →+ ℤ) : LieSubalgebra R L where
   toSubmodule := H.raySubmodule w m
   lie_mem' hx hy := by
-    rw [H.lie_eq_zero_of_mem_raySubmodule hx hy one_ne_zero one_ne_zero rfl]
+    rw [H.lie_eq_zero_of_mem_raySubmodule_of_proportional hx hy one_ne_zero one_ne_zero rfl]
     exact Submodule.zero_mem _
 
 /-- The underlying module of a wall ray Lie subalgebra is its supported-ray wall sum. -/
 @[simp]
-theorem rayLieSubalgebra_toSubmodule (w : SupportedRay d) (m : Λ →+ ℤ) :
-    (H.rayLieSubalgebra w m).toSubmodule = H.raySubmodule w m := (rfl)
+theorem wallRayLieSubalgebra_toSubmodule (w : SupportedRay d) (m : Λ →+ ℤ) :
+    (H.wallRayLieSubalgebra w m).toSubmodule = H.raySubmodule w m := (rfl)
 
 /-- Membership in the ray Lie subalgebra is membership in the ray sum. -/
 @[simp]
-theorem mem_rayLieSubalgebra (w : SupportedRay d) (m : Λ →+ ℤ) (x : L) :
-    x ∈ H.rayLieSubalgebra w m ↔ x ∈ H.raySubmodule w m := Iff.rfl
+theorem mem_wallRayLieSubalgebra (w : SupportedRay d) (m : Λ →+ ℤ) (x : L) :
+    x ∈ H.wallRayLieSubalgebra w m ↔ x ∈ H.raySubmodule w m := Iff.rfl
 
 /-- Every supported-ray wall Lie algebra is abelian. -/
-instance rayLieSubalgebra_isLieAbelian (w : SupportedRay d) (m : Λ →+ ℤ) :
-    IsLieAbelian (H.rayLieSubalgebra w m) where
+instance wallRayLieSubalgebra_isLieAbelian (w : SupportedRay d) (m : Λ →+ ℤ) :
+    IsLieAbelian (H.wallRayLieSubalgebra w m) where
   trivial x y := Subtype.ext
-    (H.lie_eq_zero_of_mem_raySubmodule x.property y.property one_ne_zero one_ne_zero rfl)
+    (H.lie_eq_zero_of_mem_raySubmodule_of_proportional
+      x.property y.property one_ne_zero one_ne_zero rfl)
 
 variable [DecidableEq Γ] [DirectSum.Decomposition ℒ]
 
@@ -162,12 +165,18 @@ theorem decompose_mem_wall_of_mem_raySubmodule {w : SupportedRay d} {m : Λ →+
 theorem decompose_eq_zero_of_notMem_rayDegrees {w : SupportedRay d} {m : Λ →+ ℤ}
     {x : L} (hx : x ∈ H.raySubmodule w m) {n : Γ} (hn : n ∉ w.rayDegrees) :
     (DirectSum.decompose ℒ x n : L) = 0 := by
-  rw [raySubmodule_def] at hx
-  exact Submodule.iSup_induction _
-    (motive := fun x => (DirectSum.decompose ℒ x n : L) = 0) hx
-    (fun i x hx => DirectSum.decompose_of_mem_ne ℒ (H.wall_le_piece _ _ hx)
-      (fun h => hn (h ▸ i.property)))
-    (by simp) (fun x y hx hy => by simp [hx, hy])
+  have hle : H.raySubmodule w m ≤ ⨆ n : w.rayDegrees, ℒ n :=
+    iSup_mono fun n => H.wall_le_piece n m
+  exact (TauCeti.DirectSum.mem_iSup_iff_decompose_eq_zero ℒ w.rayDegrees).mp (hle hx) n hn
+
+/-- Supported-ray wall sums are stable under homogeneous projections. -/
+theorem raySubmodule_isHomogeneous (w : SupportedRay d) (m : Λ →+ ℤ) :
+    DirectSum.SetLike.IsHomogeneous ℒ (H.raySubmodule w m) := by
+  intro n x hx
+  by_cases hn : n ∈ w.rayDegrees
+  · exact H.wall_le_raySubmodule w m hn (H.decompose_mem_wall_of_mem_raySubmodule hx n)
+  · rw [H.decompose_eq_zero_of_notMem_rayDegrees hx hn]
+    exact Submodule.zero_mem _
 
 /-- Membership in a ray sum is equivalent to the wall-space condition on every
 component and vanishing of all components off the actual allowed ray degrees. -/
@@ -180,9 +189,9 @@ theorem mem_raySubmodule_iff (w : SupportedRay d) (m : Λ →+ ℤ) (x : L) :
   refine ⟨fun hx => ⟨H.decompose_mem_wall_of_mem_raySubmodule hx,
     fun _ hn => H.decompose_eq_zero_of_notMem_rayDegrees hx hn⟩, ?_⟩
   rintro ⟨hwall, hzero⟩
-  rw [← DirectSum.sum_support_decompose ℒ x]
-  apply Submodule.sum_mem
-  intro n _
+  apply (DirectSum.AddSubmonoidClass.IsHomogeneous.mem_iff ℒ _
+    (H.raySubmodule_isHomogeneous w m)).mpr
+  intro n
   by_cases hn : n ∈ w.rayDegrees
   · exact H.wall_le_raySubmodule w m hn (hwall n)
   · rw [hzero n hn]
