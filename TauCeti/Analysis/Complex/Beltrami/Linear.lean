@@ -372,16 +372,10 @@ private theorem isComplexLinear_iff_exists_eq_mul_linearMap (J : AlmostComplexSt
       rw [he, linearMap_intertwines J hJ (e.symm w), ← he, ContinuousLinearEquiv.apply_symm_apply,
         ContinuousLinearEquiv.apply_symm_apply]
     have hB (w : ℂ) : A (e.symm w) = w * A (e.symm 1) := by
-      have hI : A (e.symm I) = I * A (e.symm 1) := by
-        have h := hA' (e.symm 1)
-        rwa [hJe, mul_one] at h
-      have h := LinearMap.apply_eq_re_smul_one_add_im_smul_I
-        (A.toLinearMap.comp e.symm.toLinearEquiv.toLinearMap) w
-      simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe,
-        ContinuousLinearEquiv.coe_toLinearEquiv, hI, Complex.real_smul] at h
-      rw [h]
-      conv_rhs => rw [← Complex.re_add_im w]
-      ring
+      -- `A ∘ e⁻¹` commutes with `I`, so it is complex linear.
+      let B := (A.toLinearMap.comp e.symm.toLinearEquiv.toLinearMap).complexOfMapISmul
+        fun v => by simpa [smul_eq_mul, hJe] using hA' (e.symm v)
+      simpa [B] using B.map_smul w 1
     refine ⟨A (e.symm 1), fun v => ?_⟩
     have := hB (e v)
     rw [ContinuousLinearEquiv.symm_apply_apply] at this

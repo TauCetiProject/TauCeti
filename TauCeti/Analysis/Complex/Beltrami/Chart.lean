@@ -56,7 +56,7 @@ namespace TauCeti.Beltrami
 
 /-- The function `w ↦ w + T h(w)` built from a source `h` through the Cauchy transform `T`. -/
 def cauchySolution (h : ℂ → ℂ) : ℂ → ℂ :=
-  fun w ↦ w + (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • h z
+  fun w ↦ w + cauchyTransform h w
 
 /-- The normalization of `ψ` at `c`: subtract `ψ(c)` and divide by the holomorphic derivative
 `∂ψ(c)`. -/
@@ -65,7 +65,7 @@ def normalizedChart (ψ : ℂ → ℂ) (c : ℂ) : ℂ → ℂ :=
 
 /-- Unfolding lemma for `cauchySolution`. -/
 theorem cauchySolution_apply (h : ℂ → ℂ) (w : ℂ) :
-    cauchySolution h w = w + (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • h z :=
+    cauchySolution h w = w + cauchyTransform h w :=
   (rfl)
 
 /-- Unfolding lemma for `normalizedChart`. -/
@@ -170,7 +170,7 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
   obtain ⟨h, hh, hhμ, hC1, -, hbel, hnear, hhol, hinv⟩ := hsol μ hμ hμδ
   -- The solver states its conclusions for the explicit map `w ↦ w + T h(w)`; fold it.
   have hfold : (fun w ↦ w + (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • h z) = cauchySolution h :=
-    funext fun w ↦ (cauchySolution_apply h w).symm
+    funext fun w ↦ by rw [cauchySolution_apply, cauchyTransform_apply]
   rw [hfold] at hC1 hbel hnear hhol hinv
   set ψ := cauchySolution h with hψdef
   have hsub : closedBall c r ⊆ ball c (r + 1) := closedBall_subset_ball (by linarith)
