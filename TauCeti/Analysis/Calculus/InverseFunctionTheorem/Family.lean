@@ -240,7 +240,7 @@ theorem exists_openPartialHomeomorph_tendstoContDiffAt_symm {Φ : ι → E → F
   have h₀a := happrox Φ₀ hΦ₀ fun x hx ↦ (hrb x hx).1.2
   set e₀ := h₀a.toOpenPartialHomeomorph Φ₀ (ball x₀ r) hc isOpen_ball with he₀_def
   have h₀c : ContDiffOn 𝕜 n e₀.symm e₀.target :=
-    h₀a.contDiffOn_toOpenPartialHomeomorph_symm hc isOpen_ball le_rfl (hΦ₀.mono hrs)
+    h₀a.contDiffOn_toOpenPartialHomeomorph_symm hc isOpen_ball (hΦ₀.mono hrs)
   have he₀c : ⇑e₀ = Φ₀ := by rw [he₀_def, ApproximatesLinearOn.toOpenPartialHomeomorph_coe]
   have he₀s : e₀.source = ball x₀ r := by
     rw [he₀_def, ApproximatesLinearOn.toOpenPartialHomeomorph_source]
@@ -266,7 +266,7 @@ theorem exists_openPartialHomeomorph_tendstoContDiffAt_symm {Φ : ι → E → F
       simp [e, hia]
     have hec : ⇑(e i) = Φ i := by rw [hei, ApproximatesLinearOn.toOpenPartialHomeomorph_coe]
     refine ⟨hec ▸ hia, hec, ?_,
-      hei ▸ hia.contDiffOn_toOpenPartialHomeomorph_symm hc isOpen_ball le_rfl (h1.mono hrs),
+      hei ▸ hia.contDiffOn_toOpenPartialHomeomorph_symm hc isOpen_ball (h1.mono hrs),
       hei ▸ hρT (Φ i) hia h3⟩
     rw [hei, ApproximatesLinearOn.toOpenPartialHomeomorph_source]
   have hT₀ : ball (Φ₀ x₀) ρ ⊆ e₀.target := hρT Φ₀ h₀a (by simpa using hρ)

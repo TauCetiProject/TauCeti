@@ -169,13 +169,13 @@ theorem OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv [CompleteSp
   exact (hat.differentiableAt hn).hasFDerivAt
 
 /-- A map that is `C^n` on an open set `s` and approximates a continuous linear equivalence `L`
-there with a constant at most `‖L⁻¹‖⁻¹ / 2` restricts to an open partial homeomorphism with source
+there with a constant less than `‖L⁻¹‖⁻¹` restricts to an open partial homeomorphism with source
 `s` whose inverse is `C^n` on its target. -/
 theorem ApproximatesLinearOn.contDiffOn_toOpenPartialHomeomorph_symm [CompleteSpace E]
     {n : ℕ∞ω} {f : E → F} {L : E ≃L[𝕜] F} {s : Set E} {c : ℝ≥0}
     (hf : ApproximatesLinearOn f (L : E →L[𝕜] F) s c)
     (hc : Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹) (hs : IsOpen s)
-    (hcL : c ≤ ‖(L.symm : F →L[𝕜] E)‖₊⁻¹ / 2) (hcont : ContDiffOn 𝕜 n f s) :
+    (hcont : ContDiffOn 𝕜 n f s) :
     ContDiffOn 𝕜 n (hf.toOpenPartialHomeomorph f s hc hs).symm
       (hf.toOpenPartialHomeomorph f s hc hs).target := by
   rcases eq_or_ne n 0 with rfl | hn
@@ -183,7 +183,9 @@ theorem ApproximatesLinearOn.contDiffOn_toOpenPartialHomeomorph_symm [CompleteSp
   refine (hf.toOpenPartialHomeomorph f s hc hs).contDiffOn_symm_of_isInvertible_fderiv
     (by simpa using hcont) fun x hx ↦ ?_
   simp only [toOpenPartialHomeomorph_source, toOpenPartialHomeomorph_coe] at hx ⊢
-  refine ContinuousLinearMap.isInvertible_of_norm_sub_le_half L (le_trans ?_ hcL)
+  rcases hc with hE | hc
+  · exact ⟨L, by ext x; simp [Subsingleton.elim x 0]⟩
+  refine ContinuousLinearMap.isInvertible_of_norm_sub_lt L (lt_of_le_of_lt ?_ hc)
   have h := hf.norm_sub_le_of_hasFDerivAt (hs.mem_nhds hx)
     ((hcont.contDiffAt (hs.mem_nhds hx)).differentiableAt hn).hasFDerivAt
   rwa [← NNReal.coe_le_coe, coe_nnnorm]
