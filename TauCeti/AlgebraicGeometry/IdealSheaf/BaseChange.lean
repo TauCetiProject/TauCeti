@@ -45,10 +45,10 @@ a section, or of a finite family of sections, therefore commutes with arbitrary 
 The closed subscheme of the inverse image `I.comap g` along `g : X' ⟶ X` is the base change of the
 closed subscheme of `I` along `g`; when `X'` is itself a base change of `X ⟶ S`, it is the base
 change over `S` of the closed subscheme of `I`
-(`AlgebraicGeometry.Scheme.IdealSheafData.isPullback_subschemeMap_comap`). So it is finite over `S`
-when that of `I` is and `g` is finite
-(`AlgebraicGeometry.Scheme.IdealSheafData.isFinite_comap_subschemeι_comp`). If the closed
-subscheme of `I` is finite and flat over a base `S` and `g` is finite and flat of constant rank
+(`AlgebraicGeometry.Scheme.IdealSheafData.isPullback_subschemeMap_comap`). Hence, if the closed
+subscheme of `I` is finite over a base `S` and `g` is finite, so is the closed subscheme of
+`I.comap g` (`AlgebraicGeometry.Scheme.IdealSheafData.isFinite_comap_subschemeι_comp`). If the
+closed subscheme of `I` is finite and flat over `S` and `g` is finite and flat of constant rank
 `n`, the rank over `S` of the closed subscheme of `I.comap g` is `n` times that of `I`
 (`AlgebraicGeometry.Scheme.IdealSheafData.finrank_comap_subschemeι_comp`). For relative effective
 Cartier divisors on relative curves, whose degree is this rank, this is the statement that inverse
@@ -237,13 +237,12 @@ theorem flat_appLE_comp_ofHom_quotient_mk (I : X.IdealSheafData) (f : X ⟶ S)
     ← Scheme.Hom.app_eq_appLE, subschemeι_app, ← Category.assoc] at h
   exact (RingHom.Flat.respectsIso.cancel_right_isIso _ _).mp h
 
-/-- **Inverse images along finite morphisms stay finite.** If the closed subscheme of `I` is finite
-over `S` through `f : X ⟶ S` and `g : X' ⟶ X` is finite, then the closed subscheme of the inverse
-image `I.comap g` is finite over `S`. -/
+/-- **Inverse images of finite closed subschemes are finite.** If the closed subscheme of `I` is
+finite over `S` through `f : X ⟶ S` and `g : X' ⟶ X` is finite, then the closed subscheme of the
+inverse image `I.comap g`, which is `X' ×_X I.subscheme`, is finite over `S`. -/
 theorem isFinite_comap_subschemeι_comp (I : X.IdealSheafData) (f : X ⟶ S)
     [IsFinite (I.subschemeι ≫ f)] {X' : Scheme.{u}} (g : X' ⟶ X) [IsFinite g] :
     IsFinite ((I.comap g).subschemeι ≫ g ≫ f) := by
-  -- The closed subscheme of `I.comap g` is `X' ×_X I.subscheme`, finite over `I.subscheme`.
   rw [← comapIso_hom_fst, Category.assoc, pullback.condition_assoc]
   infer_instance
 

@@ -93,7 +93,6 @@ theorem _root_.Polynomial.exists_analyticAt_prod_X_sub_C_of_orderAt_discr_eq
     Filter.Eventually.mono (ball_mem_nhds a hρ₀) hreal₀, fun v hv ↦ ?_⟩
   obtain ⟨ρ, hρ, hρle, u, hu, hunit⟩ := hdir v hv
   have hΦ := hΦ₀.mono (ball_subset_ball hρle)
-  have hreal := fun x hx ↦ hreal₀ x (ball_subset_ball hρle hx)
   let ac : ι → ℂ := fun j ↦ (a j : ℂ)
   let U := ball ac ρ
   let F : (ι → ℂ) × ℂ → ℂ[X] := fun z ↦

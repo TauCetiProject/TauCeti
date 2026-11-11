@@ -26,17 +26,16 @@ scheme `D` give
   `χ(I) = χ(𝒪_X) - dim_k Γ(D, 𝒪_D)`
 
 (`Scheme.IdealSheafData.eulerCharBelow_sheaf`), where `χ` is the degree-`2` truncation
-`dim H⁰ - dim H¹` and `H⁰(X, 𝒪_X)`, `H¹(X, 𝒪_X)` are assumed finite-dimensional.
+`dim H⁰ - dim H¹` and `H⁰(X, 𝒪_X)`, `H¹(X, 𝒪_X)` are assumed finite-dimensional; then
+`H⁰(X, I)` and `H¹(X, I)` are finite-dimensional too
+(`Scheme.IdealSheafData.finiteDimensional_cohomology_sheaf`).
 
 More generally, for a vector bundle `E` of constant rank `r` on `X`, tensoring the sequence with
 `E` gives `0 ⟶ E ⊗ I ⟶ E ⟶ E ⊗ ι_* 𝒪_D ⟶ 0`. By the projection formula the last term is the
 direct image of the pullback of `E` to `D`, a vector bundle of rank `r` on a scheme finite over `k`
 and hence free (`FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isFinite`). So `E ⊗ I` has
 finite-dimensional `H⁰` and `H¹` exactly when `E` does
-(`Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff`); for `E = 𝒪_X`, the ideal
-sheaf `I` has finite-dimensional `H⁰` and `H¹` when `𝒪_X` does
-(`Scheme.IdealSheafData.finiteDimensional_cohomology_sheaf`). When `H⁰(X, E)` and `H¹(X, E)` are
-finite-dimensional,
+(`Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff`), and then
 
   `χ(E ⊗ I) = χ(E) - r · dim_k Γ(D, 𝒪_D)`
 
@@ -293,21 +292,6 @@ section FiniteCohomology
 variable [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0)]
   [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)]
 
-/-- **Ideal sheaves have finite-dimensional cohomology.** If `I ⊆ 𝒪_X` cuts out a closed
-subscheme finite over the field `k`, and `H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)` are finite-dimensional,
-then so are `H⁰(X, I)` and `H¹(X, I)`. -/
-theorem finiteDimensional_cohomology_sheaf {i : ℕ} (hi : i < 2) :
-    FiniteDimensional k (Cohomology I.sheaf i) := by
-  -- `𝒪_X` is a vector bundle of rank one, and `I` is `𝒪_X ⊗ I`.
-  let E := (InvertibleSheaf.toFixedRankOne X).obj (InvertibleSheaf.trivial X)
-  have hE : E.obj.obj = (InvertibleSheaf.trivial X).obj := by
-    rw [InvertibleSheaf.toFixedRankOne_obj_obj, ObjectProperty.ιOfLE_obj_obj]
-  have h := (finiteDimensional_cohomology_tensor_sheaf_iff (k := k) I (E := E)).mpr
-    (fun j hj ↦ by rw [hE]; interval_cases j <;> infer_instance) i hi
-  rw [hE] at h
-  exact (finiteDimensional_cohomology_congr k
-    (whiskerRightIso (InvertibleSheaf.trivialObjIsoUnit X) I.sheaf ≪≫ λ_ _) i).mp h
-
 /-- **The Euler characteristic of an ideal sheaf.** If `I ⊆ 𝒪_X` cuts out a closed subscheme
 `D` finite over the field `k`, and `H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)` are finite-dimensional, then
 `χ(I) = χ(𝒪_X) - dim_k Γ(D, 𝒪_D)`, with `χ = dim H⁰ - dim H¹` and the dimension of `Γ(D, 𝒪_D)`
@@ -329,6 +313,21 @@ theorem eulerCharBelow_sheaf (s : Spec (.of k)) :
   -- `I` is `𝒪_X ⊗ I`.
   exact eulerCharBelow_congr k
     (whiskerRightIso (InvertibleSheaf.trivialObjIsoUnit X) I.sheaf ≪≫ λ_ _).symm 2
+
+/-- **An ideal sheaf of finite colength has finite-dimensional cohomology.** If `I ⊆ 𝒪_X` cuts out
+a closed subscheme finite over the field `k`, and `H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)` are
+finite-dimensional, then so are `H⁰(X, I)` and `H¹(X, I)`. -/
+theorem finiteDimensional_cohomology_sheaf {i : ℕ} (hi : i < 2) :
+    FiniteDimensional k (Cohomology I.sheaf i) := by
+  -- `𝒪_X` is a vector bundle of rank one, and `I` is `𝒪_X ⊗ I`.
+  let E := (InvertibleSheaf.toFixedRankOne X).obj (InvertibleSheaf.trivial X)
+  have hE : E.obj.obj = (InvertibleSheaf.trivial X).obj := by
+    rw [InvertibleSheaf.toFixedRankOne_obj_obj, ObjectProperty.ιOfLE_obj_obj]
+  have h := (finiteDimensional_cohomology_tensor_sheaf_iff (k := k) I (E := E)).mpr
+    (fun j hj ↦ by rw [hE]; interval_cases j <;> infer_instance) i hi
+  rw [hE] at h
+  exact (finiteDimensional_cohomology_congr k
+    (whiskerRightIso (InvertibleSheaf.trivialObjIsoUnit X) I.sheaf ≪≫ λ_ _) i).mp h
 
 end FiniteCohomology
 

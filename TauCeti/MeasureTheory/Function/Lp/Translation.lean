@@ -470,7 +470,7 @@ continuously. -/
 theorem ContDiff.tendsto_eLpNorm_comp_add_sub [SecondCountableTopology E] (hu : ContDiff ℝ 1 u)
     {p : ℝ≥0∞} (hp : 1 ≤ p) (hfin : eLpNorm (fderiv ℝ u) p mu ≠ ∞) :
     Filter.Tendsto (fun h : E => eLpNorm (fun x => u (x + h) - u x) p mu) (nhds 0) (nhds 0) :=
-  TauCeti.tendsto_nhds_zero_of_le_enorm_mul hfin fun h =>
+  TauCeti.tendsto_nhds_zero_of_le_enorm_mul hfin <| .of_forall fun h =>
     hu.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv hp h
 
 /-- **The second-order translation estimate**: the mixed second difference of a `C²` function is

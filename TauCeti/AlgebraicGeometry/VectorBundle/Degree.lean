@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree
 public import TauCeti.AlgebraicGeometry.Cohomology.Skyscraper
 public import TauCeti.AlgebraicGeometry.VectorBundle.EulerCharacteristic
-public import TauCeti.AlgebraicGeometry.LineBundle.Degree.Pullback
+public import TauCeti.AlgebraicGeometry.Curves.Degree.Pullback
 import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
@@ -403,7 +403,7 @@ theorem vectorBundleDegree_pullback_of_finrank_eq {d : ℕ} (hf : ∀ y, f.finra
     exact LineBundleClass.mk_eq_mk_iff.mpr ⟨eqToIso (by simp only [toInvertible_obj_obj,
       pullback_obj_obj, FiniteLocallyFreeSheaf.pullback_obj_obj, InvertibleSheaf.pullback_obj_obj])⟩
   simpa only [vectorBundleDegree_eq_eulerDegree_toInvertible, ← LineBundleClass.eulerDegree_mk,
-    hpull] using LineBundleClass.eulerDegree_pullback_of_finrank_eq k hf _
+    hpull] using LineBundleClass.eulerDegree_pullback_of_finrank_eq k f hf _
 
 /-- **The degree of a rank-one bundle under pullback along a finite flat dominant morphism.** Let
 `f : X ⟶ Y` be a finite flat dominant morphism of integral schemes over `k`, where `Y` is proper

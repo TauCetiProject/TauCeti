@@ -32,11 +32,6 @@ asserted here.
 * `TauCeti.SlStd.toSpecialLinear_comp_groupSchemeι`: composing with `SL_{r+1} → GL_{r+1}`
   recovers the carrier inclusion.
 
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: the full-weight type `A` carrier is now proved to lie
-in the expected pinned ambient group.  Identifying it with that group remains the generation
-step.
-
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
