@@ -253,16 +253,19 @@ theorem IsSuspension.eq_desuspension {G : InternalGrading R A}
     rw [← LinearMap.comp_apply (G.koszulTwist _), InternalGrading.koszulTwist_comp_self,
       LinearMap.id_apply]
 
-/-- The desuspension of a Taylor map of degree one for the suspended grading has, in each positive
+/-- The desuspension of a Taylor map of degree one for the suspended grading has, in each
 arity `n`, the degree `2 - n` of an `A∞` operation.  This is the converse of
 `IsSuspension.isHomogeneous`. -/
 theorem isHomogeneous_desuspension {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     (hF : LinearMap.IsHomogeneous F (ReducedTensorWords.gradedPiece (G.shift 1))
-      (G.shift 1).piece 1) {n : ℕ} (hn : 0 < n) :
+      (G.shift 1).piece 1) {n : ℕ} :
     MultilinearMap.IsHomogeneous (desuspension G F n) (fun _ ↦ G.piece) G.piece (2 - n) := by
   rw [MultilinearMap.isHomogeneous_def]
   intro d x hx
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [desuspension_zero, zero_apply]
+    exact zero_mem _
   rw [desuspension_apply G F hn]
   have hw := ReducedTensorWords.mem_gradedPiece_of_tprod (G.shift 1) hn
     (fun i ↦ G.koszulTwist ((n : ℤ) - 1 - i) (x i)) (fun i ↦ d i - 1) fun i ↦ by
