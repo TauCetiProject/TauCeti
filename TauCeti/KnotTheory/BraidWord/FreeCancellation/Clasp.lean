@@ -207,10 +207,6 @@ private theorem readClosingClasp_edgePair :
     (closure ((i, ε) :: (i, -ε) :: v)).edgePair =
       (readClasp (closingClasp v i ε hp hq)).edgePair := by
   let D := closingClasp v i ε hp hq
-  have hlo : outgoingSlot ((i, ε) :: (i, -ε) :: v) 1 (strand i) = 2 :=
-    outgoingSlot_strand ((i, ε) :: (i, -ε) :: v) 1
-  have hhi : outgoingSlot ((i, ε) :: (i, -ε) :: v) 1 (strandSucc i) = 1 :=
-    outgoingSlot_strandSucc ((i, ε) :: (i, -ε) :: v) 1
   have hfirst₁ := readClasp_edgePair_apply D
     (halfEdgeSuccEquiv (v.length + 1) (.inl (halfEdgeSuccEquiv v.length (.inr 2))))
   have hfirst₂ := readClasp_edgePair_apply D
