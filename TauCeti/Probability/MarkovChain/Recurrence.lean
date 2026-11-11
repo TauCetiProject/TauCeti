@@ -19,8 +19,9 @@ and infinite at a transient state.
 
 Every state reachable from a recurrent state is recurrent and hits the original state
 almost surely. Consequently a recurrent communicating class is closed. In an irreducible
-chain with a recurrent state, every state is hit almost surely from every initial law, and on
-a countable state space almost every path visits every state infinitely often. These results
+chain with a recurrent state, every state is hit almost surely from every initial law, and almost
+every path visits every state infinitely often; countability of the state space follows from
+irreducibility with measurable singletons. These results
 supply the state-classification input to coupling arguments.
 
 On a finite nonempty state space some state is recurrent: the chain spends its infinitely many
@@ -92,28 +93,35 @@ theorem one_le_meanReturnTime : 1 ≤ κ.meanReturnTime x := by
       have h := le_hittingAfter (u := fun n (ω : ℕ → S) => ω n) (s := {x}) (n := 1) ω
       exact_mod_cast ENat.natCast_le_toENNReal.2 h
 
-variable [MeasurableSingletonClass S]
-
 /-- **A transient state has infinite mean return time.** The chain started there fails to return
 with positive probability, and the first return time is infinite on that event. -/
 theorem IsTransient.meanReturnTime_eq_top (hx : κ.IsTransient x) : κ.meanReturnTime x = ∞ := by
-  have hT : Measurable (hittingAfter (fun n (ω : ℕ → S) => ω n) {x} 1) :=
-    (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-      (f := Filtration.piLE (X := fun _ : ℕ => S)) (measurableSet_singleton x)).measurable'
-  have hE : MeasurableSet {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤} :=
-    (measurableSet_singleton ⊤).preimage hT |>.compl
-  refine lintegral_eq_top_of_measure_eq_top_ne_zero
-    (Measurable.of_discrete.comp hT).aemeasurable ?_
-  -- The integrand takes the value `∞` exactly where the first return is missing.
-  have hset : {ω | ENat.toENNReal (hittingAfter (fun n ω => ω n) {x} 1 ω) = ∞} =
-      {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤}ᶜ :=
-    Set.ext fun ω => by
-      simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_not]
-      exact ENat.toENNReal_eq_top
-  rw [hset, prob_compl_eq_one_sub hE]
-  have hlt := isTransient_iff_return_probability_lt_one.mp hx
-  exact (tsub_pos_of_lt hlt).ne'
+  set μ := markovChainLaw (Measure.dirac x) κ
+  set A := {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤}
+  -- The failure set is only null-measurable, so work with a measurable superset of `A`.
+  have hlt : μ (toMeasurable μ A) < 1 := by
+    rw [measure_toMeasurable]
+    exact isTransient_iff_return_probability_lt_one.mp hx
+  have hpos : 0 < μ (toMeasurable μ A)ᶜ := by
+    rw [prob_compl_eq_one_sub (measurableSet_toMeasurable μ A)]
+    exact tsub_pos_of_lt hlt
+  refine eq_top_iff.mpr ?_
+  calc (⊤ : ℝ≥0∞) = ∫⁻ ω, (toMeasurable μ A)ᶜ.indicator (fun _ => (∞ : ℝ≥0∞)) ω ∂μ := by
+        rw [lintegral_indicator_const (measurableSet_toMeasurable μ A).compl]
+        exact (ENNReal.top_mul hpos.ne').symm
+    _ ≤ κ.meanReturnTime x := lintegral_mono fun ω => by
+      by_cases hω : ω ∈ (toMeasurable μ A)ᶜ
+      · -- Off `A` the first return is missing, so its value is `∞`.
+        have hωA : ω ∉ A := fun h => hω (subset_toMeasurable μ A h)
+        rw [Set.indicator_of_mem hω]
+        simp only [A, Set.mem_ofPred_eq, not_not] at hωA
+        exact (ENat.toENNReal_eq_top.mpr hωA).ge
+      · rw [Set.indicator_of_notMem hω]
+        exact zero_le
 
+variable [MeasurableSingletonClass S]
+
+omit [MeasurableSingletonClass S] in
 /-- Finite extended mean return time implies almost-sure return. -/
 theorem isRecurrent_of_meanReturnTime_ne_top (h : κ.meanReturnTime x ≠ ∞) :
     κ.IsRecurrent x := by
@@ -242,11 +250,13 @@ theorem isRecurrent_iff_isRecurrent [IsIrreducible Measure.count κ] (x y : S) :
     κ.IsRecurrent x ↔ κ.IsRecurrent y :=
   Communicates.isRecurrent_iff (isIrreducible_count_iff_forall_communicates.mp ‹_› x y)
 
-/-- In an irreducible chain with a recurrent state on a countable state space, from any initial
-measure, almost every path visits every state infinitely often. -/
-theorem IsRecurrent.ae_forall_infinite_setOf_eq [Countable S] [IsIrreducible Measure.count κ]
+/-- In an irreducible chain with a recurrent state, from any initial measure, almost every path
+visits every state infinitely often. The state space is automatically countable by
+`countable_of_isIrreducible_count`. -/
+theorem IsRecurrent.ae_forall_infinite_setOf_eq [IsIrreducible Measure.count κ]
     (hx : κ.IsRecurrent x) (ν : Measure S) :
     ∀ᵐ ω ∂markovChainLaw ν κ, ∀ y, {n | ω n = y}.Infinite := by
+  have := countable_of_isIrreducible_count (κ := κ)
   have hS : MeasurableSet {ω : ℕ → S | ∀ y, {n | ω n = y}.Infinite} := by
     simp_rw [← forall_successiveVisit_lt_top_iff (X := fun n (ω : ℕ → S) => ω n),
       lt_top_iff_ne_top, Set.ofPred_forall]

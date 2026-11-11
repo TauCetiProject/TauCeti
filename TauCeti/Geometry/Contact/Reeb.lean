@@ -171,6 +171,7 @@ theorem IsContactForm.reebVectorField_eq_inv_smul_add_iff (hα : α.IsContactFor
   simp only [degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt]
   simp only [ContinuousLinearMap.coe_coe]
 
+omit [FiniteDimensional ℝ E] in
 /-- Multiplying a contact form by a nonzero constant `c` divides its Reeb vector field by `c`. -/
 theorem IsContactForm.reebVectorField_smul (hα : α.IsContactForm) {c : ℝ} (hc : c ≠ 0)
     (x : M) : (c • α).reebVectorField x = c⁻¹ • α.reebVectorField x := by
@@ -186,6 +187,7 @@ theorem IsContactForm.reebVectorField_smul (hα : α.IsContactForm) {c : ℝ} (h
   rw [reebVectorField, reebVectorField, ha, hB, Module.Dual.reebVector_smul_bilinForm hc,
     (isContactForm_def.1 hα x).reebVector_smul hc]
 
+omit [FiniteDimensional ℝ E] in
 /-- The Reeb vector field of `-α` is `-R_α`. -/
 theorem IsContactForm.reebVectorField_neg (hα : α.IsContactForm) (x : M) :
     (-α).reebVectorField x = -α.reebVectorField x := by
