@@ -6,20 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
+public import TauCeti.Combinatorics.SimpleGraph.Dart
 
 /-!
 # Walks without backtracking in a simple graph
 
 A walk in a simple graph backtracks when it traverses a dart and then immediately the reverse
 dart. Since consecutive darts of a walk share a vertex, this happens exactly when two consecutive
-edges of the walk coincide. A path never backtracks, and in an acyclic graph the walks without
-backtracking are exactly the paths.
+edges of the walk coincide. A trail (a walk without repeated edges) never backtracks, and in an
+acyclic graph the walks without backtracking are exactly the paths.
 
 ## Main results
 
 * `SimpleGraph.Walk.isChain_ne_edges_iff`: no two consecutive edges of a walk coincide exactly
   when no dart of the walk is followed by its reverse.
-* `SimpleGraph.Walk.IsPath.isChain_ne_symm_darts`: a path does not backtrack.
+* `SimpleGraph.Walk.IsTrail.isChain_ne_symm_darts`: a trail does not backtrack.
 * `SimpleGraph.IsAcyclic.isPath_iff_isChain_darts`: in an acyclic graph a walk is a path exactly
   when it does not backtrack.
 -/
@@ -29,15 +30,6 @@ public section
 namespace SimpleGraph
 
 variable {V : Type*} {G : SimpleGraph V}
-
-/-- Two consecutive darts have different edges exactly when the second is not the reverse of the
-first. -/
-theorem DartAdj.edge_ne_iff {d d' : G.Dart} (h : G.DartAdj d d') :
-    d.edge ≠ d'.edge ↔ d' ≠ d.symm := by
-  have := d.adj.ne
-  rw [Ne, dart_edge_eq_iff]
-  unfold DartAdj at h
-  grind [Dart.symm_symm]
 
 namespace Walk
 
@@ -54,10 +46,10 @@ theorem isChain_ne_edges_iff {u v : V} (p : G.Walk u v) :
       simp only [edges_cons, darts_cons, List.isChain_cons_cons] at ih ⊢
       exact and_congr (DartAdj.edge_ne_iff (d := ⟨(_, _), h⟩) (d' := ⟨(_, _), h'⟩) rfl) ih
 
-/-- A path does not backtrack: none of its darts is followed by its reverse. -/
-theorem IsPath.isChain_ne_symm_darts {u v : V} {p : G.Walk u v} (hp : p.IsPath) :
+/-- A trail does not backtrack: none of its darts is followed by its reverse. -/
+theorem IsTrail.isChain_ne_symm_darts {u v : V} {p : G.Walk u v} (hp : p.IsTrail) :
     p.darts.IsChain fun d d' => d' ≠ d.symm :=
-  p.isChain_ne_edges_iff.mp (edges_nodup_of_support_nodup hp.support_nodup).isChain
+  p.isChain_ne_edges_iff.mp hp.edges_nodup.isChain
 
 end Walk
 

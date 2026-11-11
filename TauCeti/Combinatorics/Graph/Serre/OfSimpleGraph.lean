@@ -17,10 +17,10 @@ this file identifies them: `SimpleGraph.Walk.toSerrePath` and `SimpleGraph.serre
 mutually inverse and preserve the dart sequence, concatenation and reversal.
 
 Under this identification a Serre path is reduced exactly when the walk never traverses a dart
-and then its reverse. Every path of `G` (a walk without repeated vertices) is such a walk, and in
-an acyclic graph these are the only ones. Hence connectedness, acyclicity and the tree property
-of `G.toSerreGraph` in the sense of Serre agree with the corresponding notions for `G`; for
-connectedness and trees both sides require a vertex.
+and then its reverse. Every trail of `G` (a walk without repeated edges), in particular every
+path, is such a walk, and in an acyclic graph the paths are the only ones. Hence connectedness,
+acyclicity and the tree property of `G.toSerreGraph` in the sense of Serre agree with the
+corresponding notions for `G`; for connectedness and trees both sides require a vertex.
 
 ## Main declarations
 
@@ -37,6 +37,8 @@ connectedness and trees both sides require a vertex.
 ## References
 
 * J.-P. Serre, *Trees*, Chapter I, §2.1 (Definition 1) and §2.2.
+* I. Kapovich, R. Weidmann and A. Myasnikov, *Foldings, graphs of groups and the membership
+  problem*, §2, Convention 2.1 (reduced edge-paths).
 -/
 
 public section
@@ -130,8 +132,8 @@ theorem isReduced_toSerrePath_iff {u v : V} (p : G.Walk u v) :
   -- The reversal of the Serre graph is `Dart.symm` by definition.
   rfl
 
-/-- The Serre path of a path of a simple graph is reduced. -/
-theorem IsPath.isReduced_toSerrePath {u v : V} {p : G.Walk u v} (hp : p.IsPath) :
+/-- The Serre path of a trail of a simple graph is reduced. -/
+theorem IsTrail.isReduced_toSerrePath {u v : V} {p : G.Walk u v} (hp : p.IsTrail) :
     Path.IsReduced G.toSerreGraph p.toSerrePath :=
   (isReduced_toSerrePath_iff p).mpr hp.isChain_ne_symm_darts
 
@@ -222,7 +224,7 @@ theorem isAcyclic_toSerreGraph_iff : G.toSerreGraph.IsAcyclic ↔ G.IsAcyclic :=
   refine ⟨fun h => isAcyclic_iff_subsingleton_path.mpr fun v w => ⟨fun p q => Subtype.ext ?_⟩,
     fun h => (isAcyclic_iff _).mpr fun u p hp => ?_⟩
   · exact (Walk.serrePathEquiv G v w).injective
-      (h.eq_of_isReduced p.2.isReduced_toSerrePath q.2.isReduced_toSerrePath)
+      (h.eq_of_isReduced p.2.isTrail.isReduced_toSerrePath q.2.isTrail.isReduced_toSerrePath)
   · rw [← G.toSerrePath_serrePathToWalk p, h.isReduced_toSerrePath_iff, Walk.isPath_iff_nil,
       ← Walk.eq_nil_iff_nil] at hp
     rw [← G.toSerrePath_serrePathToWalk p, hp, Walk.toSerrePath_nil]
