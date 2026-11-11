@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Action.Pointwise.Finset
 public import Mathlib.Data.Finset.SymmDiff
 public import Mathlib.MeasureTheory.Group.FoelnerFilter
 public import Mathlib.MeasureTheory.Measure.Count
+import TauCeti.Data.ENNReal.NatCastDiv
 
 /-!
 # Følner sets of a group for counting measure
@@ -68,19 +69,6 @@ section Count
 
 variable {X : Type*} [MeasurableSpace X] [MeasurableSingletonClass X] [DecidableEq X]
 
-/-- For a nonempty finset `F`, the cardinality ratio `|A| / |F|` in `ℝ≥0∞` is below
-`ENNReal.ofReal ε` exactly when `|A| < ε · |F|`. -/
-private theorem card_div_card_lt_ofReal_iff {α : Type*} {A F : Finset α} (hF : F.Nonempty)
-    {ε : ℝ} : (#A : ℝ≥0∞) / #F < ENNReal.ofReal ε ↔ (#A : ℝ) < ε * #F := by
-  rcases le_or_gt ε 0 with hε | hε
-  · rw [ENNReal.ofReal_of_nonpos hε]
-    exact iff_of_false (by simp) (not_lt.2 ((mul_nonpos_of_nonpos_of_nonneg hε
-      (Nat.cast_nonneg _)).trans (Nat.cast_nonneg _)))
-  -- Clear the denominator in `ℝ≥0∞`, then compare a natural number with a real.
-  rw [ENNReal.div_lt_iff (by simp [hF.ne_empty]) (by simp), ← ENNReal.ofReal_natCast #F,
-    ← ENNReal.ofReal_mul hε.le]
-  exact ENNReal.natCast_lt_ofReal
-
 /-- For a finite nonempty `F`, the counting-measure Følner ratio of `F` at `m` is below
 `ENNReal.ofReal ε` exactly when `|mF △ F| < ε · |F|`. -/
 theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : Type*}
@@ -89,7 +77,7 @@ theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : T
       (#((m • F) ∆ F) : ℝ) < ε * #F := by
   -- Turn the counting measures into cardinalities.
   simp only [← coe_smul_finset, ← coe_symmDiff, Measure.count_apply_finset]
-  exact card_div_card_lt_ofReal_iff hF
+  exact ENNReal.natCast_div_natCast_lt_ofReal_iff (Finset.card_pos.2 hF)
 
 omit [MeasurableSingletonClass X] in
 /-- The counting-measure Følner ratio of a measurable finite set bounds the cardinality ratio
@@ -143,7 +131,7 @@ theorem IsFoelner.exists_finset_card_smul_symmDiff_lt [MulAction G X] {ι : Type
   refine ⟨hfin.toFinset, hne, fun g hg => ?_⟩
   have hlt := (Measure.card_smul_symmDiff_div_card_le_count_div_count hmeas' g).trans_lt
     (by simpa only [Set.Finite.coe_toFinset] using hiK g hg)
-  exact (card_div_card_lt_ofReal_iff hne).1 hlt
+  exact (ENNReal.natCast_div_natCast_lt_ofReal_iff (Finset.card_pos.2 hne)).1 hlt
 
 namespace TauCeti
 
