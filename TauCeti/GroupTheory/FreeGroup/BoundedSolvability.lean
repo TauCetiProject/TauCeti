@@ -73,18 +73,18 @@ private theorem primrec_varBound [Primcodable A] :
 
 /-- The tuples of words tested for a system: one word of length at most `N` for each variable
 below a bound on the variables of the system. -/
-private noncomputable def candidates [Fintype A]
+private noncomputable def candidates [Finite A]
     (p : List (List ((ℕ ⊕ A) × Bool)) × List (List ((ℕ ⊕ A) × Bool))) (N : ℕ) :
     List (List (List (A × Bool))) :=
   (List.replicate (varBound (p.1 ++ p.2).flatten) (wordsOfLengthLE A N)).sections
 
-private theorem mem_candidates [Fintype A]
+private theorem mem_candidates [Finite A]
     {p : List (List ((ℕ ⊕ A) × Bool)) × List (List ((ℕ ⊕ A) × Bool))} {N : ℕ}
     {u : List (List (A × Bool))} :
     u ∈ candidates p N ↔ u.length = varBound (p.1 ++ p.2).flatten ∧ ∀ w ∈ u, w.length ≤ N := by
   simp [candidates, List.mem_sections_replicate]
 
-private theorem primrec₂_candidates [Fintype A] [Primcodable A] :
+private theorem primrec₂_candidates [Finite A] [Primcodable A] :
     Primrec₂ (candidates (A := A)) :=
   (Primrec.list_sections.comp (Primrec.list_replicate.comp
     (primrec_varBound.comp (Primrec.list_flatten.comp
@@ -114,7 +114,7 @@ private theorem primrecRel_isSolution_mk_getD [Primcodable A] :
 
 /-- A system has a solution with all values of length at most `N` exactly when one of the
 finitely many tested tuples of words solves it. -/
-private theorem exists_norm_le_isSolution_iff [Fintype A] [DecidableEq A]
+private theorem exists_norm_le_isSolution_iff [Finite A] [DecidableEq A]
     (p : List (List ((ℕ ⊕ A) × Bool)) × List (List ((ℕ ⊕ A) × Bool))) (N : ℕ) :
     (∃ v : ℕ → FreeGroup A, (∀ x, (v x).norm ≤ N) ∧ (ofWords p).IsSolution v of) ↔
       ∃ u ∈ candidates p N,
@@ -146,7 +146,6 @@ reduced, and the number of variables is not fixed. -/
 theorem primrecRel_exists_norm_le_isSolution :
     PrimrecRel fun (p : List (List ((ℕ ⊕ A) × Bool)) × List (List ((ℕ ⊕ A) × Bool))) (N : ℕ) =>
       ∃ v : ℕ → FreeGroup A, (∀ x, (v x).norm ≤ N) ∧ (ofWords p).IsSolution v of := by
-  cases nonempty_fintype A
   exact (primrecRel_isSolution_mk_getD.exists_mem_list.comp primrec₂_candidates
     Primrec.fst).of_eq fun q => (exists_norm_le_isSolution_iff q.1 q.2).symm
 

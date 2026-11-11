@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.Primrec.List
-public import Mathlib.Data.Fintype.Defs
 public import Mathlib.Data.List.ProdSigma
+public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 public import TauCeti.Computability.Primrec.List
 public import TauCeti.Data.List.Sections
@@ -178,13 +178,13 @@ theorem primrec₂_lift_mk_fin (hmul : Primrec₂ ((· * ·) : G → G → G))
 
 section Words
 
-variable {A : Type*} [Fintype A]
+variable {A : Type*} [Finite A]
 
 variable (A) in
 /-- The words of length at most `N` in the letters of a finite alphabet and their inverses. -/
 noncomputable def wordsOfLengthLE (N : ℕ) : List (List (A × Bool)) :=
   (List.range (N + 1)).flatMap fun k =>
-    (List.replicate k ((Finset.univ : Finset A).toList ×ˢ [true, false])).sections
+    (List.replicate k ((Set.finite_univ (α := A)).toFinset.toList ×ˢ [true, false])).sections
 
 /-- A word is listed among the words of length at most `N` exactly when its length is at
 most `N`. -/
