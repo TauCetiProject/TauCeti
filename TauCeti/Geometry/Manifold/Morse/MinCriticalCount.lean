@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import TauCeti.Geometry.Manifold.Morse.LusternikSchnirelmann
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
+import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 
 /-!
@@ -31,6 +32,17 @@ vanishes exactly on the empty manifold (`TauCeti.minCriticalCount_eq_zero_iff`),
 least `2` as soon as `M` has two points (`TauCeti.two_le_minCriticalCount`), attained on every
 sphere by the height function (`TauCeti.minCriticalCount_sphere`).
 
+The minimum is additive over a finite cover by pairwise disjoint open sets
+(`TauCeti.minCriticalCount_eq_sum`), in particular over the connected components of a locally
+connected manifold with finitely many components
+(`TauCeti.minCriticalCount_eq_sum_connectedComponents`): a smooth function restricts to smooth
+functions on the pieces, and smooth functions on the pieces glue to a smooth function. On a compact
+boundaryless manifold of positive dimension every component is a compact manifold with at least two
+points, so `c(M)` is at least twice the number of components
+(`TauCeti.two_mul_card_connectedComponents_le_minCriticalCount`), and a manifold carrying a smooth
+function with fewer than four critical points is preconnected
+(`TauCeti.preconnectedSpace_of_totalCriticalCount_lt_four`).
+
 ## Main declarations
 
 * `TauCeti.minCriticalCount`: the minimal number of critical points of a smooth function.
@@ -43,6 +55,12 @@ sphere by the height function (`TauCeti.minCriticalCount_sphere`).
 * `TauCeti.minCriticalCount_eq_zero_iff` and `TauCeti.two_le_minCriticalCount`: the elementary
   lower bounds.
 * `TauCeti.minCriticalCount_sphere`: the minimum is `2` on every sphere.
+* `TauCeti.minCriticalCount_eq_sum` and `TauCeti.minCriticalCount_eq_sum_connectedComponents`:
+  the minimum is additive over finite disjoint open covers and over connected components.
+* `TauCeti.two_mul_card_connectedComponents_le_minCriticalCount`: each component of a compact
+  boundaryless manifold of positive dimension contributes at least two critical points.
+* `TauCeti.preconnectedSpace_of_totalCriticalCount_lt_four`: fewer than four critical points force
+  such a manifold to be preconnected.
 
 ## References
 
@@ -52,7 +70,7 @@ sphere by the height function (`TauCeti.minCriticalCount_sphere`).
 
 public section
 
-open Metric Module Set
+open Function Metric Module Set TopologicalSpace
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -94,6 +112,41 @@ theorem minCriticalCount_of_isEmpty [IsEmpty M] : minCriticalCount I M = 0 := by
   simpa [totalCriticalCount_def, eq_empty_of_isEmpty] using
     minCriticalCount_le (I := I) (f := (0 : M → ℝ)) contMDiff_const
 
+/-- **Additivity of `c(M)`.** If finitely many pairwise disjoint open subsets `U i` cover `M`, the
+minimal number of critical points of a smooth function on `M` is the sum of those of the open
+submanifolds `U i`. -/
+theorem minCriticalCount_eq_sum {ι : Type*} [Fintype ι] (U : ι → Opens M)
+    (hd : Pairwise (Disjoint on U)) (hU : ⨆ i, U i = ⊤) :
+    minCriticalCount I M = ∑ i, minCriticalCount I (U i) := by
+  refine le_antisymm ?_ (le_minCriticalCount_iff.2 fun f hf ↦ ?_)
+  · -- Glue smooth functions `g i` on the `U i` with `c(U i)` critical points into one function
+    -- `F` on `M`, reading `F x` from the piece `U (idx x)` containing `x`.
+    choose g hg hgc using fun i ↦ exists_totalCriticalCount_eq_minCriticalCount (I := I) (M := U i)
+    choose idx hidx using fun x : M ↦ Opens.mem_iSup.1 (hU.symm ▸ Opens.mem_top x : x ∈ ⨆ i, U i)
+    have hg_eq {i j : ι} {x : M} (hi : x ∈ U i) (hj : x ∈ U j) : g j ⟨x, hj⟩ = g i ⟨x, hi⟩ := by
+      obtain rfl : j = i := by_contra fun h ↦ disjoint_left.1 (Opens.coe_disjoint.2 (hd h)) hj hi
+      rfl
+    set F : M → ℝ := fun x ↦ g (idx x) ⟨x, hidx x⟩
+    have hF (i : ι) : (F ∘ Subtype.val : U i → ℝ) = g i := funext fun x ↦ hg_eq x.2 (hidx x)
+    have hFs : ContMDiff I 𝓘(ℝ) ∞ F := fun x ↦ by
+      rw [← contMDiffAt_subtype_iff (U := U (idx x)) (x := ⟨x, hidx x⟩)]
+      exact (hF (idx x) ▸ hg (idx x)).contMDiffAt
+    calc minCriticalCount I M ≤ totalCriticalCount I F := minCriticalCount_le hFs
+      _ = ∑ i, minCriticalCount I (U i) := by
+        rw [totalCriticalCount_eq_sum U hd hU]
+        exact Finset.sum_congr rfl fun i _ ↦ hF i ▸ hgc i
+  · rw [totalCriticalCount_eq_sum U hd hU]
+    exact Finset.sum_le_sum fun i _ ↦ minCriticalCount_le (hf.comp contMDiff_subtype_val)
+
+/-- **The component sum formula for `c(M)`.** If `M` is locally connected with finitely many
+connected components, for instance compact and boundaryless, then `c(M)` is the sum of the minimal
+numbers of critical points of its components, each an open submanifold. -/
+theorem minCriticalCount_eq_sum_connectedComponents [LocallyConnectedSpace M]
+    [Fintype (ConnectedComponents M)] :
+    minCriticalCount I M = ∑ C : ConnectedComponents M, minCriticalCount I C.opens :=
+  minCriticalCount_eq_sum _ ConnectedComponents.pairwise_disjoint_opens
+    ConnectedComponents.iSup_opens
+
 section Boundaryless
 
 variable [I.Boundaryless] [CompactSpace M]
@@ -110,6 +163,44 @@ theorem minCriticalCount_eq_zero_iff : minCriticalCount I M = 0 ↔ IsEmpty M :=
 least two critical points, so `2 ≤ c(M)`. -/
 theorem two_le_minCriticalCount [Nontrivial M] : 2 ≤ minCriticalCount I M :=
   le_minCriticalCount_iff.2 fun _ hf ↦ two_le_totalCriticalCount hf.continuous
+
+/-- On a compact boundaryless manifold of positive dimension, every smooth function has at least
+two critical points on each connected component, so `c(M)` is at least twice the number of
+components. -/
+theorem two_mul_card_connectedComponents_le_minCriticalCount [Nontrivial E] :
+    2 * ENat.card (ConnectedComponents M) ≤ minCriticalCount I M := by
+  have : LocallyConnectedSpace H := I.toHomeomorph.locallyConnectedSpace
+  have : LocallyConnectedSpace M := ChartedSpace.locallyConnectedSpace H M
+  have : PerfectSpace H := perfectSpace_iff_forall_not_isolated.2 fun x ↦ by
+    simpa using (PerfectSpace.not_isolated (I.toHomeomorph x)).map I.toHomeomorph.symm
+  have := Fintype.ofFinite (ConnectedComponents M)
+  rw [minCriticalCount_eq_sum_connectedComponents, ENat.card_eq_coe_fintype_card, mul_comm,
+    ← nsmul_eq_mul, ← Finset.card_univ, ← Finset.sum_const]
+  refine Finset.sum_le_sum fun C _ ↦ ?_
+  -- Each component is a nonempty compact boundaryless manifold with no isolated points.
+  obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe C
+  have : Nonempty (ConnectedComponents.mk x).opens := ⟨⟨x, ConnectedComponents.mem_opens.2 rfl⟩⟩
+  have : Nontrivial (ConnectedComponents.mk x).opens := ChartedSpace.nontrivial (H := H)
+  have : CompactSpace (ConnectedComponents.mk x).opens :=
+    isCompact_iff_compactSpace.1 (ConnectedComponents.isClopen_opens _).isClosed.isCompact
+  exact two_le_minCriticalCount
+
+/-- A compact boundaryless manifold of positive dimension carrying a smooth function with fewer
+than four critical points is preconnected, hence connected when nonempty: each connected component
+carries at least two of the critical points. -/
+theorem preconnectedSpace_of_totalCriticalCount_lt_four [Nontrivial E]
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (h4 : totalCriticalCount I f < 4) : PreconnectedSpace M := by
+  have hle := two_mul_card_connectedComponents_le_minCriticalCount.trans (minCriticalCount_le hf)
+  have : Subsingleton (ConnectedComponents M) := by
+    rw [← ENat.card_le_one_iff_subsingleton]
+    by_contra! h
+    have : (4 : ℕ∞) ≤ 2 * ENat.card (ConnectedComponents M) :=
+      calc (4 : ℕ∞) = 2 * 2 := by norm_num
+        _ ≤ 2 * ENat.card (ConnectedComponents M) := by
+          gcongr; simpa [one_add_one_eq_two] using Order.add_one_le_of_lt h
+    exact (this.trans hle).not_gt h4
+  exact preconnectedSpace_iff_connectedComponent.2 fun x ↦ eq_univ_of_forall fun _ ↦
+    ConnectedComponents.coe_eq_coe'.1 (Subsingleton.elim _ _)
 
 variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
 
