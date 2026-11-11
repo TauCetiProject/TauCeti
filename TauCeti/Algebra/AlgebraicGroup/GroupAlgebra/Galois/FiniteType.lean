@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Adjoin.Tower
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.Invariant.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Invariants
+import Mathlib.RingTheory.Jacobson.Ring
 
 /-!
 # Finiteness of descended group algebras
@@ -82,13 +83,15 @@ theorem isIntegral_groupAlgebra_over_groupAlgebraInvariants
   exact Algebra.IsInvariant.isIntegral
     (groupAlgebraInvariants rho) (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L)
 
-/-- If `L/k` is finite type with finite automorphism group and the exponent group is finitely
-generated, the split group algebra is finite as a module over its invariant algebra. -/
+/-- If `L/k` is finite type and the exponent group is finitely generated, the split group algebra
+is finite as a module over its invariant algebra. By Zariski's lemma `L/k` is then finite, so its
+automorphism group is finite. -/
 theorem moduleFinite_groupAlgebra_over_groupAlgebraInvariants
-    [Algebra.FiniteType k L] [Finite (L ≃ₐ[k] L)] [Module.Finite ℤ M]
+    [Algebra.FiniteType k L] [Module.Finite ℤ M]
     (rho : Representation ℤ (L ≃ₐ[k] L) M) :
     Module.Finite (groupAlgebraInvariants rho)
       (MonoidAlgebra L (Multiplicative M)) := by
+  have : Module.Finite k L := finite_of_finite_type_of_isJacobsonRing k L
   let _ : AddGroup.FG M := Module.Finite.iff_addGroup_fg.mp inferInstance
   let _ : Group.FG (Multiplicative M) := AddGroup.fg_iff_mul_fg.mp inferInstance
   let _ : Algebra.FiniteType k (MonoidAlgebra L (Multiplicative M)) :=
@@ -102,11 +105,10 @@ theorem moduleFinite_groupAlgebra_over_groupAlgebraInvariants
     isIntegral_groupAlgebra_over_groupAlgebraInvariants rho
   exact Algebra.IsIntegral.finite
 
-/-- For a finite-type extension with finite automorphism group, the invariant algebra of the
-automorphism action on the group algebra of a finitely generated abelian group is finite type over
-the ground field. -/
+/-- For a finite-type field extension, the invariant algebra of the automorphism action on the
+group algebra of a finitely generated abelian group is finite type over the ground field. -/
 noncomputable instance instFiniteTypeGroupAlgebraInvariants
-    [Algebra.FiniteType k L] [Finite (L ≃ₐ[k] L)] [Module.Finite ℤ M]
+    [Algebra.FiniteType k L] [Module.Finite ℤ M]
     (rho : Representation ℤ (L ≃ₐ[k] L) M) :
     Algebra.FiniteType k (groupAlgebraInvariants rho) := by
   let _ : AddGroup.FG M := Module.Finite.iff_addGroup_fg.mp inferInstance
