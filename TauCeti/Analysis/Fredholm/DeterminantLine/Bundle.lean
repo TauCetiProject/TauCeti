@@ -184,6 +184,7 @@ theorem detLinePretrivialization_baseSet :
 
 /-- On its domain, a kernel chart is the kernel chart of the determinant line of `T x` read
 through `b`. -/
+@[simp]
 theorem detLinePretrivialization_apply_mk {x : X} (hx : x ∈ detLineChartSet T D₂ q)
     (v : DetLineBundle T x) :
     detLinePretrivialization hT D₂ q b ⟨x, v⟩ =
@@ -196,6 +197,7 @@ theorem detLinePretrivialization_apply_mk {x : X} (hx : x ∈ detLineChartSet T 
 
 /-- On its domain, the inverse of a kernel chart is the inverse of the kernel chart of the
 determinant line of `T x`, after `b⁻¹`. -/
+@[simp]
 theorem detLinePretrivialization_symm_apply {x : X} (hx : x ∈ detLineChartSet T D₂ q) (w : 𝕜) :
     (detLinePretrivialization hT D₂ q b).symm x w =
       (DetLineBundle.linearEquiv T x).symm
