@@ -93,6 +93,11 @@ lemma prodThomPairMap_fst_apply (g : C(B, B')) (p : B × F) :
   TopPair.ofSubsetMap_fst_apply _ _ _
 
 @[simp]
+lemma prodThomPairMap_snd_apply (g : C(B, B')) (p : (prodThomPair B F).snd) :
+    (TopPair.Hom.snd (prodThomPairMap F g) p).1 = (g p.1.1, p.1.2) :=
+  TopPair.ofSubsetMap_snd_apply _ _ _
+
+@[simp]
 lemma prodThomPairMap_id : prodThomPairMap F (ContinuousMap.id B) = 𝟙 _ :=
   TopPair.ofSubsetMap_id _
 
