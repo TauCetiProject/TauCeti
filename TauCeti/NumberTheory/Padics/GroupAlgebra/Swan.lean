@@ -12,7 +12,6 @@ import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.MonoidAlgebra.CosetBasis
-import TauCeti.Algebra.MonoidAlgebra.ProjectiveTrace
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Invariants
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Projective
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
