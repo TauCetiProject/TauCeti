@@ -64,18 +64,34 @@ instance FiniteBundleAtlas.isFiniteMeasure_restrict_image (i : Fin A.n) :
   isFiniteMeasure_restrict.2
     ((measure_mono subset_closure).trans_lt (A.isCompact_closure_image i).measure_lt_top).ne
 
+omit [FiniteDimensional ℝ F] in
+/-- The image of chart `i` in the chart data of a finite bundle atlas has finite Haar measure. -/
+instance FiniteBundleAtlas.isFiniteMeasure_restrict_sectionChartData_image
+    (i : Fin A.sectionChartData.n) :
+    IsFiniteMeasure (μ.restrict (A.sectionChartData.image i)) :=
+  A.isFiniteMeasure_restrict_image μ i
+
+omit [FiniteDimensional ℝ F] in
+/-- The image of chart `i` in the chart data of a finite bundle atlas has finite Haar measure, for
+`i` indexed by the charts of the atlas. Instance search does not identify `Fin A.n` with
+`Fin A.sectionChartData.n`, so this is a separate instance. -/
+instance FiniteBundleAtlas.isFiniteMeasure_restrict_sectionChartData_image' (i : Fin A.n) :
+    IsFiniteMeasure (μ.restrict (A.sectionChartData.image i)) :=
+  A.isFiniteMeasure_restrict_image μ i
+
 namespace SobolevSection
 
 /-- **Lowering the exponent.** For `p ≤ q`, the continuous inclusion `W^{k,q}(V) → W^{k,p}(V)`
 applying `TauCeti.Wkp.ofExponentLEL` to every chartwise component. -/
 def ofExponentLEL (hpq : p ≤ q) : SobolevSection A μ q k →L[ℝ] SobolevSection A μ p k :=
   ((ContinuousLinearMap.piMap fun _ ↦ ContinuousLinearMap.piMap fun _ ↦
-    Wkp.ofExponentLEL hpq k).comp (sobolevSections A μ q k).subtypeL).codRestrict
-      (sobolevSections A μ p k) fun w ↦ by
-      obtain ⟨s, hs⟩ := exists_section A μ q k w
-      exact (mem_sobolevSections_iff A μ p k).2 ⟨s, fun i ↦
-        chartValueL_ae_eq_coord_of_value_ae_eq fun j ↦
-        (Wkp.value_ofExponentLEL_ae hpq k _).trans (value_ae_eq_repr_coord (hs i) j)⟩
+    Wkp.ofExponentLEL hpq k).comp (A.sectionChartData.sobolevSections μ q k).subtypeL).codRestrict
+      (A.sectionChartData.sobolevSections μ p k) fun w ↦ by
+      obtain ⟨s, hs⟩ := A.sectionChartData.exists_section μ q k w
+      exact (A.sectionChartData.mem_sobolevSections_iff μ p k).2 ⟨s, fun i ↦
+        A.sectionChartData.chartValueL_ae_eq_coord μ p k fun j ↦
+        (Wkp.value_ofExponentLEL_ae hpq k _).trans
+          ((A.sectionChartData.chartValueL_ae_eq_coord_iff μ q k).1 (hs i) j)⟩
 
 variable {A μ k}
 
@@ -83,17 +99,18 @@ variable {A μ k}
 @[simp]
 theorem ofExponentLEL_apply (hpq : p ≤ q) (w : SobolevSection A μ q k) (i : Fin A.n)
     (j : Fin (finrank ℝ F)) :
-    (ofExponentLEL A μ k hpq w : SobolevData A μ p k) i j =
-      Wkp.ofExponentLEL hpq k ((w : SobolevData A μ q k) i j) :=
+    (ofExponentLEL A μ k hpq w : A.sectionChartData.SobolevData μ p k) i j =
+      Wkp.ofExponentLEL hpq k ((w : A.sectionChartData.SobolevData μ q k) i j) :=
   (rfl)
 
 /-- Lowering the exponent does not change the chart data. -/
 theorem chartValueL_ofExponentLEL_ae (hpq : p ≤ q) (w : SobolevSection A μ q k) (i : Fin A.n) :
-    ⇑(A.chartValueL μ p k i (ofExponentLEL A μ k hpq w)) =ᵐ[μ.restrict (A.image i)]
-      A.chartValueL μ q k i w := by
-  filter_upwards [A.chartValueL_apply_ae μ p k i (ofExponentLEL A μ k hpq w),
-    A.chartValueL_apply_ae μ q k i w,
-    ae_all_iff.2 fun j ↦ Wkp.value_ofExponentLEL_ae hpq k ((w : SobolevData A μ q k) i j)]
+    ⇑(A.sectionChartData.chartValueL μ p k i (ofExponentLEL A μ k hpq w)) =ᵐ[μ.restrict (A.image i)]
+      A.sectionChartData.chartValueL μ q k i w := by
+  filter_upwards [A.sectionChartData.chartValueL_apply_ae μ p k i (ofExponentLEL A μ k hpq w),
+    A.sectionChartData.chartValueL_apply_ae μ q k i w,
+    ae_all_iff.2 fun j ↦
+      Wkp.value_ofExponentLEL_ae hpq k ((w : A.sectionChartData.SobolevData μ q k) i j)]
     with y hp hq hj
   rw [hp, hq]
   exact Finset.sum_congr rfl fun j _ ↦ by rw [ofExponentLEL_apply, hj j]
@@ -102,23 +119,25 @@ theorem chartValueL_ofExponentLEL_ae (hpq : p ≤ q) (w : SobolevSection A μ q 
 coordinates of `s`, so are those of `ofExponentLEL hpq w`. -/
 theorem chartValueL_ofExponentLEL_ae_coord (hpq : p ≤ q) {w : SobolevSection A μ q k}
     {s : ∀ x, V x} {i : Fin A.n}
-    (hs : A.chartValueL μ q k i w =ᵐ[μ.restrict (A.image i)] A.coord i s) :
-    A.chartValueL μ p k i (ofExponentLEL A μ k hpq w) =ᵐ[μ.restrict (A.image i)] A.coord i s :=
+    (hs : A.sectionChartData.chartValueL μ q k i w =ᵐ[μ.restrict (A.image i)] A.coord i s) :
+    A.sectionChartData.chartValueL μ p k i (ofExponentLEL A μ k hpq w)
+      =ᵐ[μ.restrict (A.image i)] A.coord i s :=
   (chartValueL_ofExponentLEL_ae hpq w i).trans hs
 
 /-- Lowering the exponent is injective. -/
 theorem ofExponentLEL_injective (hpq : p ≤ q) :
     Function.Injective (ofExponentLEL A μ k hpq) := fun w w' h ↦
-  Subtype.ext <| funext fun i ↦ funext fun j ↦ Wkp.ofExponentLEL_injective hpq k <| by
-    rw [← ofExponentLEL_apply, ← ofExponentLEL_apply, h]
+  Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦
+    Wkp.ofExponentLEL_injective hpq k <| by
+      rw [← ofExponentLEL_apply, ← ofExponentLEL_apply, h]
 
 /-- Lowering the exponent commutes with forgetting the highest derivative. -/
 theorem lowerOrderL_ofExponentLEL (hpq : p ≤ q) (w : SobolevSection A μ q (k + 1)) :
-    lowerOrderL A μ p k (ofExponentLEL A μ (k + 1) hpq w) =
-      ofExponentLEL A μ k hpq (lowerOrderL A μ q k w) :=
-  Subtype.ext <| funext fun i ↦ funext fun j ↦ by
-    rw [lowerOrderL_apply, ofExponentLEL_apply, ofExponentLEL_apply, lowerOrderL_apply,
-      Wkp.lowerOrder_ofExponentLEL]
+    A.sectionChartData.lowerOrderL μ p k (ofExponentLEL A μ (k + 1) hpq w) =
+      ofExponentLEL A μ k hpq (A.sectionChartData.lowerOrderL μ q k w) :=
+  Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦ by
+    erw [SectionChartData.lowerOrderL_apply, ofExponentLEL_apply, ofExponentLEL_apply,
+      SectionChartData.lowerOrderL_apply, Wkp.lowerOrder_ofExponentLEL]
 
 variable [IsManifold 𝓘(ℝ, E) k M] [ContMDiffVectorBundle k F V 𝓘(ℝ, E)]
 
