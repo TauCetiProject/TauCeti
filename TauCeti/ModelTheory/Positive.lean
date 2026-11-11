@@ -221,14 +221,18 @@ protected theorem liftAt {k m : ℕ} (h : φ.IsPositive) : (φ.liftAt k m).IsPos
 
 /-- Induction for positive quantifier-free formulas: they are generated from atomic formulas by
 conjunction and disjunction. -/
-theorem induction_on_isQF {P : ∀ {m}, L.BoundedFormula α m → Prop} (hφ : φ.IsPositive)
-    (hqf : φ.IsQF) (atomic : ∀ {m} {ψ : L.BoundedFormula α m}, ψ.IsAtomic → P ψ)
-    (inf : ∀ {m} {ψ₁ ψ₂ : L.BoundedFormula α m}, P ψ₁ → P ψ₂ → P (ψ₁ ⊓ ψ₂))
-    (sup : ∀ {m} {ψ₁ ψ₂ : L.BoundedFormula α m}, P ψ₁ → P ψ₂ → P (ψ₁ ⊔ ψ₂)) : P φ := by
+theorem induction_on_isQF {P : L.BoundedFormula α n → Prop} (hφ : φ.IsPositive)
+    (hqf : φ.IsQF) (atomic : ∀ {ψ : L.BoundedFormula α n}, ψ.IsAtomic → P ψ)
+    (inf : ∀ {ψ₁ ψ₂ : L.BoundedFormula α n}, P ψ₁ → P ψ₂ → P (ψ₁ ⊓ ψ₂))
+    (sup : ∀ {ψ₁ ψ₂ : L.BoundedFormula α n}, P ψ₁ → P ψ₂ → P (ψ₁ ⊔ ψ₂)) : P φ := by
   induction hφ with
   | of_isAtomic h => exact atomic h
-  | inf _ _ ih₁ ih₂ => exact inf (ih₁ (isQF_inf_iff.1 hqf).1) (ih₂ (isQF_inf_iff.1 hqf).2)
-  | sup _ _ ih₁ ih₂ => exact sup (ih₁ (isQF_sup_iff.1 hqf).1) (ih₂ (isQF_sup_iff.1 hqf).2)
+  | inf _ _ ih₁ ih₂ =>
+    exact inf (ih₁ (isQF_inf_iff.1 hqf).1 atomic inf sup)
+      (ih₂ (isQF_inf_iff.1 hqf).2 atomic inf sup)
+  | sup _ _ ih₁ ih₂ =>
+    exact sup (ih₁ (isQF_sup_iff.1 hqf).1 atomic inf sup)
+      (ih₂ (isQF_sup_iff.1 hqf).2 atomic inf sup)
   | all => exact (not_all_isQF _ hqf).elim
   | ex => exact (not_ex_isQF _ hqf).elim
 
