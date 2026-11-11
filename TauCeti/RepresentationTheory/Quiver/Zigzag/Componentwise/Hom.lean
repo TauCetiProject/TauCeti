@@ -59,9 +59,7 @@ private theorem map_shifted_projective_zero (i j : V) (s : ℤ) :
     rw [GradedModuleCat.mem_shiftObj_piece_iff, zero_sub]
   rw [hpiece]
   exact GradedModuleCat.map_subtype_smul_ofIdeal_span_singleton_piece
-    (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
     (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i)
-    (isIdempotentElem_zigzagAlgebraBasis_inl k G j)
     (isHomogeneous_span_zigzagAlgebraBasis_inl k G j) (-s)
 
 /-- Evaluation at the vertex generator identifies maps into internal shift `s` with the signed

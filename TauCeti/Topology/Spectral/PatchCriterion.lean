@@ -83,19 +83,19 @@ lemma compactSpace_of_isOpen_generateFrom (htU : t = generateFrom U)
   ⟨isCompact_of_patch htU hU' (@CompactSpace.isCompact_univ X t' hcomp)⟩
 
 /-- Every set closed for the witness topology is quasi-compact for the generated topology. The
-two lemmas below are its instances, at a finite intersection of members of `U` and at a single
+two lemmas below are its instances, at an intersection of members of `U` and at a single
 member. -/
 lemma isCompact_of_isClosed_generateFrom (htU : t = generateFrom U)
     (hcomp : @CompactSpace X t') (hU : ∀ s ∈ U, IsOpen[t'] s)
     {s : Set X} (hs : @IsClosed X t' s) : IsCompact s :=
   isCompact_of_patch htU hU (@IsClosed.isCompact X t' _ hcomp hs)
 
-/-- Every finite intersection of members of `U` is quasi-compact for the generated topology. -/
+/-- Every intersection of members of `U` is quasi-compact for the generated topology. -/
 lemma isCompact_sInter_of_isClopen_generateFrom (htU : t = generateFrom U)
     (hcomp : @CompactSpace X t') (hU : ∀ s ∈ U, @IsClopen X t' s)
-    {f : Set (Set X)} (hf : f.Finite) (hfU : f ⊆ U) : IsCompact (⋂₀ f) :=
+    {f : Set (Set X)} (hfU : f ⊆ U) : IsCompact (⋂₀ f) :=
   isCompact_of_isClosed_generateFrom htU hcomp (fun u hu ↦ @IsClopen.isOpen X t' u (hU u hu))
-    (@IsClopen.isClosed X t' _ (isClopen_sInter_of_subset hU hf hfU))
+    (@isClosed_sInter X t' f fun s hs ↦ @IsClopen.isClosed X t' _ (hU s (hfU hs)))
 
 /-- Every member of `U` is quasi-compact for the generated topology. -/
 lemma isCompact_of_isClopen_generateFrom (htU : t = generateFrom U)
@@ -113,8 +113,8 @@ private lemma isTopologicalBasis_sInter_of_patch (htU : t = generateFrom U) :
 lemma prespectralSpace_of_isClopen_generateFrom (htU : t = generateFrom U)
     (hcomp : @CompactSpace X t') (hU : ∀ s ∈ U, @IsClopen X t' s) : PrespectralSpace X := by
   refine .of_isTopologicalBasis (isTopologicalBasis_sInter_of_patch htU) ?_
-  rintro _ ⟨f, ⟨hf, hfU⟩, rfl⟩
-  exact isCompact_sInter_of_isClopen_generateFrom htU hcomp hU hf hfU
+  rintro _ ⟨f, ⟨-, hfU⟩, rfl⟩
+  exact isCompact_sInter_of_isClopen_generateFrom htU hcomp hU hfU
 
 /-- A set that is quasi-compact and open for the generated topology is clopen for the witness
 topology: it is a finite union of finite intersections of members of `U`. This is the bridge
@@ -139,8 +139,7 @@ lemma quasiSeparatedSpace_of_isClopen_generateFrom (htU : t = generateFrom U)
       rw [Set.image_eq_range] at h
       exact h) fun i j ↦ ?_
   rw [← Set.sInter_union]
-  exact isCompact_sInter_of_isClopen_generateFrom htU hcomp hU (i.2.1.union j.2.1)
-    (Set.union_subset i.2.2 j.2.2)
+  exact isCompact_sInter_of_isClopen_generateFrom htU hcomp hU (Set.union_subset i.2.2 j.2.2)
 
 /-- The generated topology of a compact patch presentation is quasi-sober
 (Wedhorn, Lemma 3.29). -/
