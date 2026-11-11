@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Theta.UnitFundamentalDomain
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Norm-one and radial coordinates for archimedean parameters
@@ -49,20 +50,6 @@ theorem surfaceScale_apply (x : realSpace K) (t : ℝ) (w : InfinitePlace K) :
 theorem surfaceScale_one (x : realSpace K) : surfaceScale x 1 = x := by
   ext w
   simp
-
-/-- Real powers distribute over a product whose first factor is nonnegative, with no condition on
-the second factor. -/
-theorem _root_.Real.mul_rpow_of_nonneg_left {s : ℝ} (hs : 0 ≤ s) (t z : ℝ) :
-    (s * t) ^ z = s ^ z * t ^ z := by
-  rcases hs.eq_or_lt with rfl | hs
-  · rcases eq_or_ne z 0 with rfl | hz
-    · simp
-    · simp [Real.zero_rpow hz]
-  rcases le_or_gt 0 t with ht | ht
-  · exact Real.mul_rpow hs.le ht
-  · rw [Real.rpow_def_of_neg ht, Real.rpow_def_of_neg (mul_neg_of_pos_of_neg hs ht),
-      Real.rpow_def_of_pos hs, Real.log_mul hs.ne' ht.ne, add_mul, Real.exp_add]
-    ring
 
 /-- Successive radial scalings multiply their norm coordinates, the first being nonnegative. -/
 theorem surfaceScale_surfaceScale (x : realSpace K) {s : ℝ} (hs : 0 ≤ s) (t : ℝ) :

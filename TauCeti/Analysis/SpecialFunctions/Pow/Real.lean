@@ -112,6 +112,7 @@ with the corresponding integral of `q`-th powers.
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.mul_rpow_of_pos_left`: `(a t) ^ z = a ^ z t ^ z` for `0 < a` and every real `t`.
+* `Real.mul_rpow_of_nonneg_left`: the same for `0 ≤ a` and every real `t`.
 * `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
   `a ^ q ≤ K ^ q * c * t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
@@ -313,6 +314,16 @@ theorem mul_rpow_of_pos_left {a : ℝ} (ha : 0 < a) (t z : ℝ) :
   · rw [rpow_def_of_neg (mul_neg_of_pos_of_neg ha ht), rpow_def_of_neg ht, rpow_def_of_pos ha,
       log_mul ha.ne' ht.ne, add_mul, exp_add]
     ring
+
+/-- Real powers distribute over a product whose first factor is nonnegative, with no condition on
+the second factor. -/
+theorem mul_rpow_of_nonneg_left {a : ℝ} (ha : 0 ≤ a) (t z : ℝ) :
+    (a * t) ^ z = a ^ z * t ^ z := by
+  rcases ha.eq_or_lt with rfl | ha
+  · rcases eq_or_ne z 0 with rfl | hz
+    · simp
+    · simp [zero_rpow hz]
+  · exact mul_rpow_of_pos_left ha t z
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)
