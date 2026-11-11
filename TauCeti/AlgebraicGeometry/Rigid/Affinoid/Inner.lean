@@ -196,7 +196,7 @@ theorem isInner_univ_of_finite [CompleteSpace A] (hA : IsAffinoidAlgebra K A)
     (Finset.sum_nonneg fun i _ ↦ supSeminorm_nonneg (K := K) (b i))
   obtain ⟨c, hc0, hc⟩ := NormedField.exists_norm_lt K (inv_pos.mpr hM)
   have hcb (i : Fin n) : supSeminorm K (c • b i) < 1 := by
-    rw [hB.supSeminorm_smul]
+    rw [supSeminorm_smul]
     have hbM : supSeminorm K (b i) ≤ M := by
       have := Finset.single_le_sum (fun j _ ↦ supSeminorm_nonneg (K := K) (b j)) (Finset.mem_univ i)
       linarith
@@ -266,7 +266,7 @@ theorem IsInner.exists_monic_supSeminorm_aeval_lt_one (hB : IsAffinoidAlgebra K 
       (ψ (Q.coeff j) - algebraMap K B (κ (Q.coeff j))) * f ^ j := by
     rw [aeval_def, eval₂_map, eval₂_eq_sum_range]
     simp only [sub_mul, Finset.sum_sub_distrib, hP0, zero_sub, neg_neg, RingHom.comp_apply]
-  rw [hq, hB.supSeminorm_neg]
+  rw [hq, supSeminorm_neg]
   refine lt_of_le_of_lt ?_ hε1
   refine Finset.sum_induction _ (fun b ↦ supSeminorm K b ≤ ε)
     (fun a b ha hb ↦ (hB.supSeminorm_add_le a b).trans (max_le ha hb))
@@ -274,7 +274,7 @@ theorem IsInner.exists_monic_supSeminorm_aeval_lt_one (hB : IsAffinoidAlgebra K 
   have hj := hB.supSeminorm_map_sub_algebraMap_constantCoeff_le ψ hε0 hε1.le hXε
     (Subring.mem_unitClosedBall.mp (Q.coeff j).2)
   have hfj : supSeminorm K (f ^ j) ≤ 1 := supSeminorm_le zero_le_one fun y ↦ by
-    rw [hB.pointNorm_pow]
+    rw [y.pointNorm_pow]
     exact pow_le_one₀ (pointNorm_nonneg f) ((hB.pointNorm_le_supSeminorm y f).trans hf)
   exact (hB.supSeminorm_mul_le _ _).trans
     ((mul_le_mul hj hfj (supSeminorm_nonneg _) hε0.le).trans_eq (mul_one ε))

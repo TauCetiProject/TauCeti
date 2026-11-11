@@ -74,8 +74,6 @@ merely to be written down, are carried for the same reason.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf–Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Regularity of the Levi-Civita connection".
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 2, §3.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, GTM 176, 2018, Thm. 5.10.
 -/

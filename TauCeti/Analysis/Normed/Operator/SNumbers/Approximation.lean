@@ -24,6 +24,9 @@ completeness of the scalar field.
 
 * A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §§1–2.
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge University Press (1987), Chapter 2.
+* M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
+  `SNumbers/Approximation.lean`: an earlier Lean formalization of approximation numbers as
+  an s-number sequence.
 -/
 
 public section
@@ -46,27 +49,19 @@ theorem approximation_apply {X Y : Type u}
     [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
     (T : X →L[𝕜] Y) (n : ℕ) : approximation T n = T.singularValue n := (rfl)
 
-/-- Approximation numbers satisfy Pietsch's s-number axioms over every nontrivially
-normed field. -/
-theorem isSNumberSequence_approximation : IsSNumberSequence (approximation (𝕜 := 𝕜)) where
-  norm T := T.singularValue_zero
-  antitone T := T.antitone_singularValue
-  add_le S T n := S.singularValue_add_le T n
-  comp_le B T A n := B.singularValue_comp_comp_le T A n
-  eq_zero_of_rank_le hT := ContinuousLinearMap.singularValue_eq_zero_of_rank_le hT
-  normalize n := by
-    have hrank : Module.rank 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1))) = (n + 1 : ℕ) := by
-      rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq]
-      simp
-    simp [approximation_apply, ContinuousLinearMap.singularValue_id, hrank]
-
 /-- Approximation numbers are strict: every identity is normalized below the dimension.
 No completeness assumption on the field or the space is needed. -/
 theorem isStrictSNumberSequence_approximation :
-    IsStrictSNumberSequence (approximation (𝕜 := 𝕜)) where
-  toIsSNumberSequence := isSNumberSequence_approximation
-  normalize_of_lt_rank n hn := by
-    simp [approximation_apply, ContinuousLinearMap.singularValue_id, hn]
+    IsStrictSNumberSequence (approximation (𝕜 := 𝕜)) :=
+  .of_normalize_of_lt_rank (fun T ↦ T.singularValue_zero) (fun T ↦ T.antitone_singularValue)
+    (fun S T n ↦ S.singularValue_add_le T n) (fun B T A n ↦ B.singularValue_comp_comp_le T A n)
+    ContinuousLinearMap.singularValue_eq_zero_of_rank_le fun n hn ↦ by
+      simp [approximation_apply, ContinuousLinearMap.singularValue_id, hn]
+
+/-- Approximation numbers satisfy Pietsch's s-number axioms over every nontrivially
+normed field. -/
+theorem isSNumberSequence_approximation : IsSNumberSequence (approximation (𝕜 := 𝕜)) :=
+  isStrictSNumberSequence_approximation.toIsSNumberSequence
 
 /-- Approximation numbers are the largest s-number sequence, pointwise on every operator. -/
 theorem IsSNumberSequence.le_singularValue {s : SNumberFamily 𝕜}

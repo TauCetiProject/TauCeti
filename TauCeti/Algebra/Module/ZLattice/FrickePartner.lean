@@ -38,9 +38,10 @@ The content and its basic API live in `TauCeti.Algebra.Module.ZLattice.Content`.
 ## Main statements
 
 * `ZLattice.isEven_sqrt_level_smul_dual`: the Fricke partner `√N • L^∨` is even, for every `L`.
-* `ZLattice.IsIntegral.det_sqrt_level_smul_dual`,
-  `ZLattice.IsIntegral.mul_card_discriminantGroup_sqrt_level_smul_dual`: for a full integral
-  lattice of rank `n`, `det (√N • L^∨) = Nⁿ / det L` and `|A_L| * |A_{√N • L^∨}| = Nⁿ`.
+* `ZLattice.det_sqrt_level_smul_dual`: for a full lattice of rank `n`,
+  `det (√N • L^∨) = Nⁿ / det L`.
+* `ZLattice.IsIntegral.mul_card_discriminantGroup_sqrt_level_smul_dual`: for a full integral
+  lattice of rank `n`, `|A_L| * |A_{√N • L^∨}| = Nⁿ`.
 * `ZLattice.IsEven.level_sqrt_level_smul_dual`: for an even full lattice,
   `level (√N • L^∨) = N / gcd (N, c_L)`.
 * `ZLattice.IsEven.level_sqrt_level_smul_dual_dvd`: the level of the Fricke partner divides `N`.
@@ -82,12 +83,11 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 
-/-- The Fricke partner of a full integral lattice `L` of level `N` and rank `n` has determinant
+/-- The Fricke partner of a full lattice `L` of level `N` and rank `n` has determinant
 `det (√N • L^∨) = Nⁿ / det L`. -/
-theorem IsIntegral.det_sqrt_level_smul_dual [MeasurableSpace E] [BorelSpace E]
-    (h : IsIntegral L) :
+theorem det_sqrt_level_smul_dual [MeasurableSpace E] [BorelSpace E] :
     det (√(level L : ℝ) • dual L) = level L ^ finrank ℝ E / det L := by
-  rw [det_sqrt_smul _ h.level_pos.ne', det_dual, div_eq_mul_inv]
+  rw [det_sqrt_smul, det_dual, div_eq_mul_inv]
 
 /-- For an integral full lattice `L` of rank `n` and level `N`, the orders of the discriminant
 groups of `L` and of its Fricke partner `√N • L^∨` multiply to `Nⁿ`. -/
@@ -98,7 +98,7 @@ theorem IsIntegral.mul_card_discriminantGroup_sqrt_level_smul_dual (h : IsIntegr
   have : NeZero √(level L : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr h.level_pos)⟩
   refine Nat.cast_injective (R := ℝ) ?_
   rw [Nat.cast_mul, Nat.cast_pow, ← h.det_eq_card_discriminantGroup,
-    ← isIntegral_sqrt_level_smul_dual.det_eq_card_discriminantGroup, h.det_sqrt_level_smul_dual,
+    ← isIntegral_sqrt_level_smul_dual.det_eq_card_discriminantGroup, det_sqrt_level_smul_dual,
     mul_div_cancel₀ _ (det_pos L).ne']
 
 /-- An integer `K` is a multiple of the level of the Fricke partner `√N • L^∨` of a full integral
@@ -196,7 +196,7 @@ theorem IsEven.level_sqrt_smul_of_isUnimodular [Nontrivial E] (h : IsEven L)
   have hint : IsIntegral ((√(N : ℝ) * (√(m : ℝ))⁻¹) • L) := by
     simpa only [hdual, smul_smul] using isIntegral_sqrt_level_smul_dual (L := √(m : ℝ) • L)
   have hdet := hint.one_le_det
-  rw [det_smul L hc, hU.det_eq_one, mul_one, pow_mul, mul_pow, inv_pow, Real.sq_sqrt hN₀.le,
+  rw [det_smul L, hU.det_eq_one, mul_one, pow_mul, mul_pow, inv_pow, Real.sq_sqrt hN₀.le,
     Real.sq_sqrt hm₀.le] at hdet
   have hmN : (m : ℝ) ≤ N := by
     by_contra hlt
@@ -236,7 +236,7 @@ theorem level_sqrt_level_smul_dual_span_two :
   have hL : (span ℤ {2} : Submodule ℤ ℝ) = (2 : ℝ) • span ℤ (Set.range b) := by
     simp [b, smul_span]
   have hlevel : level (span ℤ {2} : Submodule ℤ ℝ) = 8 := by
-    simpa [hL, h4] using level_sqrt_smul_span_orthonormalBasis b (m := 4) (by norm_num)
+    simpa [hL, h4] using level_sqrt_smul_span_orthonormalBasis b (m := 4)
   rw [hlevel, hL, dual_smul _ two_ne_zero, dual_span_orthonormalBasis, smul_smul]
   push_cast
   rw [h8, show 2 * √2 * (2 : ℝ)⁻¹ = √2 by ring]

@@ -63,7 +63,7 @@ theorem qExpansion_normalizedCharE1MF_coeff (huv : u * v ∣ N)
       DirichletCharacter.twistedDivisorSum 0 ψ φ n := by
   let _ : NeZero v := NeZero.of_dvd (dvd_of_mul_left_dvd huv)
   have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-  have hg := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hφ.inv
+  have hg := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hφ.inv
     (isPrimitive_stdAddChar v)
   have hscale : 2 * (-2 * π * I) / v * gaussSum φ⁻¹ stdAddChar ≠ 0 := by
     exact mul_ne_zero (div_ne_zero (by simp [Real.pi_ne_zero]) hv) hg
@@ -163,8 +163,7 @@ theorem qExpansion_normalizedCharE1MFRaise (htuv : t * (u * v) ∣ N) :
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   rw [normalizedCharE1MFRaise]
   exact ModularForm.qExpansion_levelRaise
-    (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N) _ _
+    (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v)) _ _
 
 /-- The `q`-expansion of a raised normalized weight-one Eisenstein series is supported on the
 multiples of `t`, without primitivity or parity assumptions. -/
@@ -175,7 +174,6 @@ theorem isSupportedOnDvd_qExpansion_normalizedCharE1MFRaise (htuv : t * (u * v) 
   rw [normalizedCharE1MFRaise]
   exact ModularForm.isSupportedOnDvd_qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 /-- The positive coefficients of the raised series are the twisted divisor sums at `n / t`
@@ -187,8 +185,7 @@ theorem qExpansion_normalizedCharE1MFRaise_coeff (htuv : t * (u * v) ∣ N)
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   rw [normalizedCharE1MFRaise, ModularForm.qExpansion_levelRaise_coeff
-    (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)]
+    (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))]
   split_ifs with htn
   · exact qExpansion_normalizedCharE1MF_coeff ψ φ dvd_rfl hpar hφ
       (Nat.div_ne_zero_iff.mpr ⟨NeZero.ne t, Nat.le_of_dvd (Nat.pos_of_ne_zero hn) htn⟩)

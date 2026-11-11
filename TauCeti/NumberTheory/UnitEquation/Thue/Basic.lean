@@ -225,7 +225,7 @@ theorem logHeight₁_div_le_of_eval_homogenize_eq {g : ℤ[X]} {n : ℕ} (hn : g
     rw [hεK 2, hεK 0, ht']
     field_simp [coe_ne_zero (ε 2)]
   have hK := logHeight₁_div_le_of_mul_sub_mul_eq
-    (fun h ↦ hθ₀₂ (RingOfIntegers.coe_injective h)) (Int.cast_ne_zero.mpr hy) ht
+    (fun h ↦ hθ₀₂ (RingOfIntegers.coe_injective h)) ht
   rw [totalWeight_eq_finrank] at hK
   -- Bound the heights over `K` of `t`, `θ 0` and `θ 2`.
   have hth : logHeight₁ t ≤ 2 * (D * (c₁ + Real.log |(m : ℝ)|)) + D * (B * L) := by

@@ -204,10 +204,10 @@ theorem mem_range_finiteAdelicSpecialOrthogonalToOrthogonal_iff (x : U.finiteAde
     · ext p : 1
       exact (U.finiteAdelicSpecialOrthogonalToOrthogonal_apply _ p).trans (hy p)
 
-/-- For a nondegenerate form on a nonzero space, a finite adelic Spin element projects to the
+/-- For a nondegenerate form, a finite adelic Spin element projects to the
 identity of `SO(V)(𝔸_f)` exactly when each of its components is `1` or `-1` in the local Clifford
 algebra. -/
-theorem mem_ker_finiteAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V] [Nontrivial V]
+theorem mem_ker_finiteAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V]
     (hQ : Q.Nondegenerate)
     (x : U.finiteAdelicSpin) :
     x ∈ U.finiteAdelicSpinToSpecialOrthogonal.ker ↔
@@ -216,12 +216,19 @@ theorem mem_ker_finiteAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V
           ((x p : spinGroup (Q.baseChange ℚ_[p])) : CliffordAlgebra (Q.baseChange ℚ_[p])) = -1 := by
   rw [MonoidHom.mem_ker, RestrictedProduct.ext_iff]
   refine forall_congr' fun p ↦ ?_
+  rw [finiteAdelicSpinToSpecialOrthogonal_apply, RestrictedProduct.one_apply,
+    ← MonoidHom.mem_ker]
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · have : Subsingleton (ℚ_[p] ⊗[ℚ] V) := inferInstance
+    have hx : x p = 1 :=
+      (CliffordAlgebra.spinToSpecialOrthogonal_bijective_of_subsingleton
+        (Q.baseChange ℚ_[p])).injective (Subsingleton.elim _ _)
+    simp only [hx, OneMemClass.coe_one, true_or, iff_true]
+    exact Subsingleton.elim _ _
   have : Nontrivial (ℚ_[p] ⊗[ℚ] V) := Module.nontrivial_of_finrank_pos <| by
     rw [Module.finrank_baseChange]
     exact Module.finrank_pos
   have hQp : (Q.baseChange ℚ_[p]).Nondegenerate := _root_.QuadraticForm.Nondegenerate.baseChange hQ
-  rw [finiteAdelicSpinToSpecialOrthogonal_apply, RestrictedProduct.one_apply,
-    ← MonoidHom.mem_ker]
   refine (CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff _ hQp _).trans ?_
   constructor
   · rintro (hx | hx)

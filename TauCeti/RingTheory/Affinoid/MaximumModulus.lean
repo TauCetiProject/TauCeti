@@ -231,7 +231,7 @@ theorem supSeminorm_map_sub_algebraMap_constantCoeff_le {B : Type*} [CommRing B]
       rw [pointNorm_algebraMap]
       exact (norm_constantCoeff_le _).trans hp.le
     rw [sub_eq_add_neg]
-    exact (hB.supSeminorm_add_le _ _).trans (max_le h₁ ((hB.supSeminorm_neg _).trans_le h₂))
+    exact (hB.supSeminorm_add_le _ _).trans (max_le h₁ ((supSeminorm_neg _).trans_le h₂))
   · refine hB.supSeminorm_aeval_le hε0.le hε1 hX (by simp [c₀]) fun t ↦ ?_
     rcases eq_or_ne t 0 with rfl | ht
     · simp [c₀]

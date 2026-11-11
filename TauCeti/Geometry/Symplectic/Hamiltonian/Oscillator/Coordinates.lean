@@ -263,7 +263,7 @@ private theorem mfderiv_oscillatorCoordinates_apply (θ J : ℝ) (hJ : 0 < J)
   have hy := (mem_oscillatorActionCylinder (y := ((θ : AddCircle (2 * π)), J))).mpr hJ
   have hf := ((contMDiffOn_oscillatorCylinderMap (m := m) (ν := ν)).contMDiffAt
     (oscillatorActionCylinder.isOpen.mem_nhds hy)).mdifferentiableAt (by simp)
-  exact (Manifold.mfderiv_comp_subtype_val_apply hf v).trans
+  exact (Manifold.mfderiv_comp_subtype_val_apply v).trans
     (DFunLike.congr_fun (mfderiv_oscillatorCylinderMap_coe (m := m) (ν := ν) θ J hJ) v)
 
 /-- On the positive-action cylinder the oscillator map pulls `dq ∧ dp` back to `dθ ∧ dI`,

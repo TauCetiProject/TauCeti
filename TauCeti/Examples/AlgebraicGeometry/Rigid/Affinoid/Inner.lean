@@ -35,7 +35,7 @@ example {c : K} (hc : 1 < ‖c‖) :
     ⟨1, AlgHom.id K _, Function.surjective_id, fun a ↦ by simp, fun i y hy ↦ ?_⟩
   obtain rfl := Subsingleton.elim i 0
   have hy := (mem_ofMap _ y).mp hy |> mem_laurentDomain.mp |>.1 0
-  rw [Matrix.cons_val_zero, isAffinoidAlgebra_tate.pointNorm_smul] at hy
+  rw [Matrix.cons_val_zero, y.pointNorm_smul] at hy
   have hc0 : 0 < ‖c‖ := one_pos.trans hc
   rw [AlgHom.id_apply]
   by_contra! h

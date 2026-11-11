@@ -23,6 +23,10 @@ approximated in operator norm by operators factoring through any operator `g : F
 dense range. On a finite-dimensional real domain, strict pointwise norm bounds are equivalent
 to strict operator-norm bounds.
 
+Bounded operators between finite-dimensional spaces form a finite-dimensional space over every
+finite extension of the scalars acting compatibly on the codomain, for instance over `ℂ` for
+real-linear operators into a complex space.
+
 ## Main results
 
 * `ContinuousLinearMap.finite_spectrum`: a bounded operator on a finite-dimensional normed space
@@ -31,6 +35,8 @@ to strict operator-norm bounds.
   postcomposition with an operator of dense range has dense range.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
   every nonzero vector of a finite-dimensional real domain.
+* `ContinuousLinearMap.finiteDimensional_of_isScalarTower`: `E →L[𝕜] F` is finite-dimensional
+  over a finite extension `𝕜'` of `𝕜` acting on a finite-dimensional codomain `F`.
 * `IsCompact.isCompact_setOfPred_mapsTo`: out of a finite-dimensional space over a complete field,
   the operators sending a neighbourhood of `0` into a compact set form a compact set.
 -/
@@ -96,6 +102,23 @@ theorem opNorm_lt_iff (A : E →L[ℝ] F) {c : ℝ} (hc : 0 < c) :
         _ < c := by simpa only [hxnorm, mul_one] using h x hxne
 
 end StrictNorm
+
+section ScalarExtension
+
+variable {𝕜 𝕜' E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  [NormedAlgebra 𝕜 𝕜'] [FiniteDimensional 𝕜 𝕜']
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜' F] [NormedSpace 𝕜 F] [IsScalarTower 𝕜 𝕜' F]
+  [FiniteDimensional 𝕜' F]
+
+/-- Bounded `𝕜`-linear operators between finite-dimensional spaces form a finite-dimensional
+space over a finite extension `𝕜'` of `𝕜` acting compatibly on the codomain, for instance over
+`ℂ` for real-linear operators into a finite-dimensional complex space. -/
+theorem finiteDimensional_of_isScalarTower : FiniteDimensional 𝕜' (E →L[𝕜] F) := by
+  have : FiniteDimensional 𝕜 F := Module.Finite.trans 𝕜' F
+  exact Module.Finite.of_restrictScalars_finite 𝕜 𝕜' (E →L[𝕜] F)
+
+end ScalarExtension
 
 end ContinuousLinearMap
 

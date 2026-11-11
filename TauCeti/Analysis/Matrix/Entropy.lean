@@ -403,7 +403,7 @@ theorem PosSemidef.re_trace_mul_cfc_log_le {A B : Matrix n n 𝕜} (hA : A.PosSe
     _ ≤ 0 := by
         rw [hw]
         exact mul_nonpos_of_nonneg_of_nonpos ha.le
-          (by linarith [hA.eigenvalues_mul_sum_inv_mul_le_one hBA hB.1 ha])
+          (by linarith [hA.eigenvalues_mul_sum_inv_mul_le_one hBA hB.1 i])
 
 /-- **Nonpositivity of the relative entropy under Loewner domination.** If `A` and `B - A` are
 positive semidefinite, that is `0 ≤ A ≤ B`, then `D(A ‖ B) ≤ 0`. The support condition holds
