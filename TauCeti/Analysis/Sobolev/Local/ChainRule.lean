@@ -17,7 +17,7 @@ on an open set containing `u '' U` to give a member of `W^{1,p}_loc(U)`. The wea
 `g ∘ u` on `interior U` is `z ↦ Dg(u z) ∘ Du z`, by the weak chain rule
 `TauCeti.HasWeakFDerivOn.contDiffOn_comp`. On a compact set `K` it obeys
 `‖D(g ∘ u)‖_{Lᵖ(K)} ≤ (sup_{u(K)} ‖Dg‖) ‖Du‖_{Lᵖ(K)}`, the bound
-`ContinuousOn.eLpNorm_clm_comp_restrict_le` for the continuous factor `Dg ∘ u`; its `Lᵖ`
+`MeasureTheory.eLpNorm_clm_comp_le_of_ae_nnnorm_le` for the bounded factor `Dg ∘ u`; its `Lᵖ`
 membership is `MeasureTheory.MemLp.clm_comp_of_continuousOn`. The domain-dependent form
 `z ↦ g(z, u z)` follows by composing with the graph map `z ↦ (z, u z)`.
 

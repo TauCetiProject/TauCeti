@@ -18,7 +18,8 @@ On a set of finite measure, uniform convergence implies `L¹` convergence
 (`TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub`).
 Combined with `L¹` convergence of a second family, uniform convergence gives `L¹` convergence of
 pointwise compositions of operator families: if `Aᵢ → A` uniformly on `s` with `A` bounded there,
-and `Bᵢ → B` in `L¹(s)`, then `Aᵢ ∘L Bᵢ → A ∘L B` in `L¹(s)`. This is how the weak chain rule
+and `Bᵢ → B` in `L¹(s)`, then `Aᵢ ∘L Bᵢ → A ∘L B` in `L¹(s)`
+(`TendstoUniformlyOn.tendsto_setLIntegral_enorm_clm_comp_sub`). This is how the weak chain rule
 passes from smooth approximations to the limit.
 -/
 
@@ -35,8 +36,9 @@ variable {ι α : Type*} [MeasurableSpace α] {μ : Measure α} {l : Filter ι} 
 
 /-- **`L¹` convergence of compositions.** If `Aᵢ → A` uniformly on `s`, with `‖A‖ ≤ C` on `s`, and
 `Bᵢ → B` in `L¹(s)` with `B` integrable on `s`, then `Aᵢ ∘L Bᵢ → A ∘L B` in `L¹(s)`. -/
-theorem tendsto_setLIntegral_enorm_clm_comp_sub {A' : ι → α → F →L[𝕜] G} {A : α → F →L[𝕜] G}
-    {B' : ι → α → E →L[𝕜] F} {B : α → E →L[𝕜] F} (hA : TendstoUniformlyOn A' A l s)
+theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_clm_comp_sub
+    {A' : ι → α → F →L[𝕜] G} {A : α → F →L[𝕜] G} {B' : ι → α → E →L[𝕜] F} {B : α → E →L[𝕜] F}
+    (hA : TendstoUniformlyOn A' A l s)
     (hs : MeasurableSet s) {C : ℝ≥0} (hAC : ∀ x ∈ s, ‖A x‖₊ ≤ C)
     (hB' : ∀ i, AEStronglyMeasurable (B' i) (μ.restrict s))
     (hBm : AEStronglyMeasurable B (μ.restrict s))

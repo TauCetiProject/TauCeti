@@ -25,9 +25,12 @@ Then `g ∘ u` has weak derivative `x ↦ Dg(u x) ∘ Du x` on `Ω`. No integrab
 `Du` is only locally integrable, and continuity of `u` makes `Dg ∘ u` locally bounded. The
 domain-dependent form `x ↦ g(x, u x)` follows by composing with the graph map `x ↦ (x, u x)`.
 
-Continuity of `u` is a hypothesis. Without it the statement fails in general: in the plane, for
-`p = 4/3` the function `u = |z|^{-2/5}` lies in `W^{1,4/3}` near `0`, but `u²` does not, since
-its derivative has size `|z|^{-9/5}` and `(9/5)(4/3) > 2`.
+Continuity of `u` is a hypothesis. Without it the statement fails in general: in the plane, the
+function `u = -log |z|` has the locally integrable weak derivative `-z / |z|²` near `0`, but for
+`g = exp (2 ·)` the composition `g ∘ u = |z|⁻²` is not even locally integrable there. Continuity
+also matters for the `W^{1,p}` form: for `p = 4/3` the function `u = |z|^{-2/5}` lies in
+`W^{1,4/3}` near `0`, but `u²` does not, since its derivative has size `|z|^{-9/5}` and
+`(9/5)(4/3) > 2`.
 
 ## Proof
 
@@ -37,8 +40,8 @@ larger open set. The mollifications converge to `u` uniformly on `closure V`
 of `Du`, converge to `Du` in `L¹(V)`. The classical chain rule applies to each mollification.
 Since `u '' closure V` is compact, uniform convergence carries `g` and `Dg` along
 (`IsCompact.comp_tendstoUniformlyOn`), and the compositions converge in `L¹(V)`
-(`TauCeti.tendsto_setLIntegral_enorm_clm_comp_sub`). The weak derivatives pass to that limit, and
-locality of weak derivatives returns the statement to `Ω`.
+(`TendstoUniformlyOn.tendsto_setLIntegral_enorm_clm_comp_sub`). The weak derivatives pass to that
+limit, and locality of weak derivatives returns the statement to `Ω`.
 
 ## Main declarations
 
@@ -208,9 +211,9 @@ private theorem hasWeakFDerivOn_comp_of_isCompact_closure
       ((measure_mono hVS).trans_lt hVc.measure_lt_top).ne
   · refine (tendsto_add_atTop_iff_nat (f := fun n => ∫⁻ x in V,
       ‖(fderiv ℝ g (un n x)).comp (Dn n x) - (fderiv ℝ g (u x)).comp (Du x)‖ₑ ∂μ) N).2 ?_
-    refine tendsto_setLIntegral_enorm_clm_comp_sub
-      ((huS.comp_tendstoUniformlyOn hDgAt huu).mono hVS) V.isOpen.measurableSet
-      (C := C.toNNReal) (fun x hx => ?_) (fun n => (hDn n).aestronglyMeasurable)
+    have hDgu := (huS.comp_tendstoUniformlyOn hDgAt huu).mono hVS
+    refine hDgu.tendsto_setLIntegral_enorm_clm_comp_sub V.isOpen.measurableSet (C := C.toNNReal)
+      (fun x hx => ?_) (fun n => (hDn n).aestronglyMeasurable)
       (hDuS.mono_set hVS).aestronglyMeasurable hDD (hDuS.mono_set hVS).hasFiniteIntegral.ne
     rw [← NNReal.coe_le_coe, coe_nnnorm]
     exact (hC x (hVS hx)).trans (Real.le_coe_toNNReal C)

@@ -20,8 +20,7 @@ continuous counterpart of Mathlib's `MonotoneOn.memLp_top`, and the restricted-m
 of `Continuous.memLp_top_of_hasCompactSupport`.
 
 The same bound controls a pointwise composition `x ↦ A x ∘L B x` of operator families with `A`
-continuous on `K`: if `‖A x‖ ≤ C` on `s`, then `‖A ∘L B‖_{Lᵖ(s)} ≤ C ‖B‖_{Lᵖ(s)}` for every exponent
-(`ContinuousOn.eLpNorm_clm_comp_restrict_le`), and `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
+continuous on `K`: `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
 (`MeasureTheory.MemLp.clm_comp_of_continuousOn`, Hölder's inequality
 `ContinuousLinearMap.memLp_of_bilin` for `ContinuousLinearMap.compL` with exponents `(∞, p, p)`).
 
@@ -53,19 +52,6 @@ section CLMComp
 variable {𝕜 F G H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
   {A : X → G →L[𝕜] H} {B : X → F →L[𝕜] G} {K s : Set X} {μ : Measure X}
-
-/-- **`Lᵖ` bound for composing with a continuous operator family.** If `A` is continuous on a
-compact set `K` and bounded by `C` on a measurable `s ⊆ K`, then for every exponent `p`,
-`‖A ∘L B‖_{Lᵖ(s)} ≤ C ‖B‖_{Lᵖ(s)}`. -/
-theorem ContinuousOn.eLpNorm_clm_comp_restrict_le (hA : ContinuousOn A K) (hK : IsCompact K)
-    (hs : MeasurableSet s) (hsK : s ⊆ K) (hB : AEStronglyMeasurable B (μ.restrict s)) {C : ℝ≥0}
-    (hC : ∀ x ∈ s, ‖A x‖₊ ≤ C) (p : ℝ≥0∞) :
-    eLpNorm (fun x => (A x).comp (B x)) p (μ.restrict s) ≤ C * eLpNorm B p (μ.restrict s) := by
-  refine eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
-    ((ContinuousLinearMap.compL 𝕜 F G H).continuous₂.comp_aestronglyMeasurable₂
-      (hA.aestronglyMeasurable_of_subset_isCompact hK hs hsK) hB) ?_ p
-  filter_upwards [ae_restrict_mem hs] with x hx
-  exact (ContinuousLinearMap.opNNNorm_comp_le _ _).trans (mul_le_mul_left (hC x hx) _)
 
 /-- **Composing an `Lᵖ` operator family with a continuous one.** If `A` is continuous on a compact
 set `K` and `B` is in `Lᵖ` on a measurable `s ⊆ K`, then so is `A ∘L B`. -/
