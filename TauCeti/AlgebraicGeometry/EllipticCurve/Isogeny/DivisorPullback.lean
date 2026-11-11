@@ -37,7 +37,7 @@ already use. A caller supplies it with `let _ := φ.fieldPullback.toRingHom.toAl
   the coefficient formula and the support, the characteristic API of the pullback.
 * `TauCeti.Isogeny.divisorPullback_ofPoint`: the pullback of a point divisor is its fibre,
   weighted by the ramification indices.
-* `TauCeti.Isogeny.divisorPullback_mono`, `TauCeti.Isogeny.isEffective_divisorPullback` and
+* `TauCeti.Isogeny.divisorPullback_mono`, `TauCeti.Isogeny.divisorPullback_nonneg` and
   `TauCeti.Isogeny.divisorPullback_injective`: it is monotone, preserves effectivity, and is
   injective.
 * `TauCeti.Isogeny.divisorPullback_principal`: **it carries `div z` to the divisor of the
@@ -138,11 +138,11 @@ theorem divisorPullback_mono : Monotone (φ.divisorPullback h) :=
   Divisor.conorm_mono ..
 
 /-- The pullback of an effective divisor is effective. -/
-theorem isEffective_divisorPullback {D : Divisor F W₂.FunctionField} (hD : D.IsEffective) :
-    (φ.divisorPullback h D).IsEffective :=
+theorem divisorPullback_nonneg {D : Divisor F W₂.FunctionField} (hD : 0 ≤ D) :
+    0 ≤ φ.divisorPullback h D :=
   haveI := isScalarTower_of_algebraMap_eq_fieldPullback φ h
   haveI := φ.finiteDimensional_functionField h
-  Divisor.isEffective_conorm F W₁.FunctionField hD
+  Divisor.conorm_nonneg F W₁.FunctionField hD
 
 /-- **The pullback is injective**: every place of `F(W₂)` is the restriction of a place of
 `F(W₁)`, and the ramification indices are nonzero. -/

@@ -73,6 +73,19 @@ theorem covBy (h : IsFreePair K σ τ) : σ ⋖ τ := by
   · exact hσω.false
   · exact hωτ.false
 
+/-- A face of a free pair that contains the lower face lies inside the upper face. -/
+theorem subset_upper_of_lower_subset (h : IsFreePair K σ τ) {ω : Finset ι}
+    (hω : ω ∈ K) (hσω : σ ⊆ ω) : ω ⊆ τ := by
+  rcases h.eq_lower_or_eq_upper hω hσω with rfl | rfl
+  · exact h.lower_ssubset_upper.subset
+  · exact Finset.Subset.rfl
+
+/-- A face of the complex that is not contained in the upper face of a free pair survives the
+deletion of the pair. -/
+theorem mem_deletion_of_not_subset_upper (h : IsFreePair K σ τ) {ω : Finset ι}
+    (hω : ω ∈ K) (hωτ : ¬ ω ⊆ τ) : ω ∈ deletion K σ :=
+  mem_deletion.mpr ⟨hω, fun hσω => hωτ (h.subset_upper_of_lower_subset hω hσω)⟩
+
 end IsFreePair
 
 /-- Deleting the lower face of a free pair retains exactly the original faces other than the

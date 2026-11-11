@@ -105,6 +105,30 @@ theorem reachable_walkGraph (p : G.Walk x y) :
       · intro f hf
         exact ((Walk.cons e h p).mem_edgeSet_walkGraph f).mpr hf
 
+/-- Any two vertices visited by a walk are reachable in its traced graph. -/
+theorem reachable_walkGraph_of_mem_support (p : G.Walk x y) {a b : α}
+    (ha : a ∈ p.support) (hb : b ∈ p.support) :
+    (G.walkGraph p).Reachable a b := by
+  classical
+  cases p with
+  | nil =>
+      simp only [support_nil, List.mem_singleton] at ha hb
+      subst a
+      subst b
+      exact Reachable.refl (by simp)
+  | cons e h p =>
+      let r := Walk.cons e h p
+      let q := (r.takeUntil a ha).reverse.append (r.takeUntil b hb)
+      have hq : ∀ e ∈ q.edges, e ∈ E(G.walkGraph r) := by
+        intro e he
+        rw [r.mem_edgeSet_walkGraph]
+        simp only [q, edges_append, edges_reverse, List.mem_append] at he
+        exact he.elim
+          (fun h ↦ r.edges_takeUntil_subset_edges ha (by simpa only [List.mem_reverse] using h))
+          (fun h ↦ r.edges_takeUntil_subset_edges hb h)
+      simpa only [r] using
+        (q.transfer (r.walkGraph_le_of_pos (by simp [r])) hq).reachable (by simpa [r] using ha)
+
 /-- Inclusion between two traced graphs is equivalent to inclusion of their vertex and edge
 lists, regarded as sets. -/
 theorem walkGraph_le_walkGraph_iff (p : G.Walk x y) (q : G.Walk z w) :

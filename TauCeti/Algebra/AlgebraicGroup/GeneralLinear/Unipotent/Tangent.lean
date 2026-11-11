@@ -23,10 +23,15 @@ curve lies in `H` scheme-theoretically by
 the Lie algebra of `H`, and the velocity of `t ↦ exp(tX)` has matrix `X`. No smoothness,
 connectedness or reducedness assumption on `H` is needed.
 
+More generally, a polynomial one-parameter subgroup of `GLₙ` with unipotent value `g` at
+parameter one has velocity matrix `log g`.
+
 ## Main declarations
 
 * `TauCeti.GeneralLinear.tangentMatrix_curveVelocity_nilpotentOneParameterCoordinateMap`: the
   velocity of `t ↦ exp(tX)` at `t = 0` has matrix `X`.
+* `TauCeti.GeneralLinear.tangentMatrix_curveVelocity_eq_log`: the velocity of a polynomial
+  one-parameter subgroup with unipotent value `g` at parameter one has matrix `log g`.
 * `TauCeti.GeneralLinear.mem_map_lieSubalgebra_of_nilpotentExpUnit_mem`: a nilpotent matrix
   whose exponential lies in a closed subgroup lies in its Lie algebra.
 * `TauCeti.GeneralLinear.log_mem_map_lieSubalgebra`: the logarithm of a unipotent point of a
@@ -62,6 +67,23 @@ theorem tangentMatrix_curveVelocity_nilpotentOneParameterCoordinateMap (hX : IsN
     nilpotentOneParameterCoordinateMap_apply_X, Matrix.coeff_one_exp_X_smul_C_mapMatrix hX]
 
 variable [IsDomain R]
+
+/-- The velocity of a polynomial one-parameter subgroup of `GLₙ` is the logarithm of its
+unipotent value at parameter one. -/
+theorem tangentMatrix_curveVelocity_eq_log
+    (γ : coordinateHopfAlgebra R n →ₐ[R] R[X])
+    (hγ : ∀ s t : R, toConv ((Polynomial.aeval (s + t)).comp γ) =
+      toConv ((Polynomial.aeval s).comp γ) * toConv ((Polynomial.aeval t).comp γ))
+    (hzero : (Polynomial.aeval (0 : R)).comp γ =
+      Bialgebra.counitAlgHom R (coordinateHopfAlgebra R n))
+    (g : Matrix.GeneralLinearGroup (Fin n) R)
+    (hg : IsNilpotent ((g : Matrix (Fin n) (Fin n) R) - 1))
+    (h : toConv ((Polynomial.aeval (1 : R)).comp γ) = generalLinearToPoint n g) :
+    tangentMatrix n (Bialgebra.curveVelocity γ hzero) =
+      IsNilpotent.log (g : Matrix (Fin n) (Fin n) R) := by
+  have heq := eq_nilpotentOneParameterCoordinateMap_log n γ hγ g hg h
+  subst γ
+  exact tangentMatrix_curveVelocity_nilpotentOneParameterCoordinateMap n _
 
 /-- **A nilpotent matrix whose exponential lies in a closed subgroup of `GLₙ` lies in its Lie
 algebra.** The closed subgroup is cut out by the Hopf ideal `I`, and its Lie algebra is read

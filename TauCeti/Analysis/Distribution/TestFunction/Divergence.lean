@@ -40,6 +40,10 @@ total variation of a function and the perimeter of a set are suprema of the pair
 * `TauCeti.trace_fderiv_smul` and `TauCeti.trace_fderiv_smul_const`: the Leibniz rule
   `div (χ φ) = χ div φ + Dχ φ` for the divergence `tr (D ·)` of a vector field multiplied by a
   scalar function.
+* `TauCeti.exists_testFunction_sum_smul_comp_add`: weighting translates of a test vector field
+  `φ` by nonnegative smooth functions `ζ k` compactly supported in `Ω` with sum at most one gives
+  a test vector field `∑ k, ζ k φ(· + τ k)` on `Ω`, of norm at most one when `‖φ‖ ≤ 1`, whose
+  divergence is given by the Leibniz rule.
 -/
 
 public section
@@ -114,7 +118,7 @@ end TestFunction
 namespace TauCeti
 
 open Set TestFunction TopologicalSpace
-open scoped Distributions
+open scoped ContDiff Distributions
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω V : Opens E} {h : E}
@@ -139,6 +143,51 @@ theorem trace_fderiv_smul {χ : E → ℝ} {φ : E → E} {x : E} (hχ : Differe
 theorem trace_fderiv_smul_const {χ : E → ℝ} {x : E} (hχ : DifferentiableAt ℝ χ x) (v : E) :
     LinearMap.trace ℝ E (fderiv ℝ (fun y => χ y • v) x : E →ₗ[ℝ] E) = fderiv ℝ χ x v := by
   simpa using trace_fderiv_smul hχ (differentiableAt_const v)
+
+/-- Let `ζ k`, for `k ∈ s`, be nonnegative smooth functions compactly supported in `Ω` whose sum
+is at most one, and `φ` a test vector field on `Ω` with `‖φ‖ ≤ 1`. For any vectors `τ k`, the
+field `∑ k ∈ s, ζ k φ(· + τ k)` is a test vector field on `Ω` of norm at most one, whose
+divergence is given by the Leibniz rule `div (ζ φ) = ζ div φ + Dζ φ`. The translates
+`φ(· + τ k)` need not be supported in `Ω`: the weights `ζ k` cut them off. -/
+theorem exists_testFunction_sum_smul_comp_add {ι : Type*} {s : Finset ι} {ζ : ι → E → ℝ}
+    (hζ : ∀ k ∈ s, ContDiff ℝ ∞ (ζ k) ∧ HasCompactSupport (ζ k) ∧ tsupport (ζ k) ⊆ Ω)
+    (hζ0 : ∀ k ∈ s, ∀ x, 0 ≤ ζ k x) (hζ1 : ∀ x, ∑ k ∈ s, ζ k x ≤ 1)
+    (φ : 𝓓(Ω, E)) (hφ : ∀ x, ‖φ x‖ ≤ 1) (τ : ι → E) :
+    ∃ Φ : 𝓓(Ω, E), (∀ y, Φ y = ∑ k ∈ s, ζ k y • φ (y + τ k)) ∧ (∀ y, ‖Φ y‖ ≤ 1) ∧
+      ∀ y, divergenceCLM Φ y =
+        ∑ k ∈ s, (ζ k y * divergenceCLM φ (y + τ k) + fderiv ℝ (ζ k) y (φ (y + τ k))) := by
+  have hφτ (k : ι) : ContDiff ℝ ∞ (fun y => φ (y + τ k)) :=
+    φ.contDiff.comp (contDiff_id.add contDiff_const)
+  set L : Set E := ⋃ k ∈ s, tsupport (ζ k)
+  have hL : IsCompact L := s.isCompact_biUnion fun k hk => (hζ k hk).2.1
+  have hLΩ : L ⊆ Ω := iUnion₂_subset fun k hk => (hζ k hk).2.2
+  have hΦL : Function.support (fun y => ∑ k ∈ s, ζ k y • φ (y + τ k)) ⊆ L := fun y hy => by
+    by_contra hyL
+    refine hy (Finset.sum_eq_zero fun k hk => ?_)
+    rw [image_eq_zero_of_notMem_tsupport fun h => hyL (mem_iUnion₂.2 ⟨k, hk, h⟩), zero_smul]
+  have hΦt : tsupport (fun y => ∑ k ∈ s, ζ k y • φ (y + τ k)) ⊆ L :=
+    closure_minimal hΦL hL.isClosed
+  refine ⟨⟨fun y => ∑ k ∈ s, ζ k y • φ (y + τ k),
+    ContDiff.sum fun k hk => (hζ k hk).1.smul (hφτ k),
+    .of_support_subset_isCompact hL hΦL, hΦt.trans hLΩ⟩, fun y => ?_, fun y => ?_, fun y => ?_⟩
+  · simp only [TestFunction.coe_mk]
+  · simp only [TestFunction.coe_mk]
+    calc ‖∑ k ∈ s, ζ k y • φ (y + τ k)‖
+        ≤ ∑ k ∈ s, ‖ζ k y • φ (y + τ k)‖ := norm_sum_le _ _
+      _ ≤ ∑ k ∈ s, ζ k y := Finset.sum_le_sum fun k hk => by
+          rw [norm_smul, Real.norm_of_nonneg (hζ0 k hk y)]
+          exact mul_le_of_le_one_right (hζ0 k hk y) (hφ _)
+      _ ≤ 1 := hζ1 y
+  · have hζd (k : ι) (hk : k ∈ s) : DifferentiableAt ℝ (ζ k) y :=
+      (hζ k hk).1.differentiable (by simp) y
+    have hd (k : ι) : DifferentiableAt ℝ (fun y => φ (y + τ k)) y :=
+      (hφτ k).differentiable (by simp) y
+    rw [divergenceCLM_apply]
+    simp only [TestFunction.coe_mk]
+    rw [fderiv_fun_sum (A := fun k y => ζ k y • φ (y + τ k)) fun k hk => (hζd k hk).smul (hd k),
+      ContinuousLinearMap.toLinearMap_sum, map_sum]
+    refine Finset.sum_congr rfl fun k hk => ?_
+    rw [trace_fderiv_smul (hζd k hk) (hd k), fderiv_comp_add_right, divergenceCLM_apply]
 
 /-- The pairing `∫ u div φ` of `u` with a test vector field `φ` on `Ω` only depends on `u` almost
 everywhere on `Ω`, since `div φ` vanishes off `Ω`. -/

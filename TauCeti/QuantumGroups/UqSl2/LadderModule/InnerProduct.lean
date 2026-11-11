@@ -59,6 +59,11 @@ theorem innerWeight_succ (q : ℝ) (m j : ℕ) :
   unfold innerWeight
   rw [Finset.prod_range_succ]
 
+/-- The squared length of the lower fundamental ladder vector is `q`. -/
+@[simp]
+theorem innerWeight_one_one {q : ℝ} (hd : q - q⁻¹ ≠ 0) : innerWeight q 1 1 = q := by
+  simp [innerWeight, quantumInteger_one hd]
+
 /-- All squared lengths in the finite ladder are strictly positive. -/
 theorem innerWeight_pos {q : ℝ} (hq : 0 < q) (hd : q - q⁻¹ ≠ 0) {m j : ℕ} (hj : j ≤ m) :
     0 < innerWeight q m j := by

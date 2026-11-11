@@ -135,7 +135,8 @@ theorem natCast_eq_zero_iff_ringChar_eq_ringChar_residueField_and_dvd {K : Type*
   have : CharP (valuation K).integer (ringChar K) :=
     (Subring.subtype _).charP Subtype.val_injective _
   have hO : ringChar (valuation K).integer = ringChar K := ringChar.eq _ _
-  rw [IsLocalRing.ringChar_residueField_of_ringChar_ne_zero (hO ▸ hK), hO]
+  rw [IsLocalRing.ringChar_residueField_of_prime_ringChar
+    (hO ▸ CharP.char_prime_of_ne_zero K hK), hO]
   exact ⟨rfl, hdvd⟩
 
 end TauCeti

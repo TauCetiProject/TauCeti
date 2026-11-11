@@ -24,7 +24,9 @@ of `C` is a nonzero continuous linear functional `g` whose real part attains its
 a point of `C` at which this happens is a *support point*. The **Bishop–Phelps theorem** says
 that there are many of both:
 
-* if `C` is moreover bounded and nonempty and `E` is nonzero, the support functionals of `C` are
+* if `C` is nonempty, every nonzero functional whose real part is bounded above on `C` is a norm
+  limit of support functionals of `C` (`Convex.mem_closure_setOf_ne_zero_isMaxOn_re_of_bddAbove`);
+  in particular, if `C` is moreover bounded and `E` is nonzero, the support functionals of `C` are
   norm dense in the dual (`Convex.dense_setOf_ne_zero_isMaxOn_re`);
 * the support points of `C` are dense in its boundary
   (`Convex.frontier_subset_closure_setOf_isMaxOn_re`); conversely every support point lies on the
@@ -50,6 +52,8 @@ within `k * ‖f‖` of `f`.
 * `StrongDual.exists_pos_norm_sub_ofReal_smul_le`: the Bishop–Phelps lemma.
 * `StrongDual.convex_setOf_mul_norm_sub_lt_re`: the open Bishop–Phelps cones are convex.
 * `Convex.exists_isMaxOn_re_of_bddAbove`: support functionals at points reached through a cone.
+* `Convex.mem_closure_setOf_ne_zero_isMaxOn_re_of_bddAbove`: support functionals of a nonempty
+  complete convex set are dense among the nonzero functionals bounded above on it.
 * `Convex.dense_setOf_ne_zero_isMaxOn_re`: support functionals of a bounded complete convex set are
   dense.
 * `Convex.frontier_subset_closure_setOf_isMaxOn_re`: support points are dense in the boundary.
@@ -237,43 +241,48 @@ theorem Convex.exists_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C) (hC : IsComp
     exact hgx.trans (hgC y hy)
   · simpa using hneg w hw
 
+/-- **The Bishop–Phelps theorem for support functionals**, in Phelps' general form. Let `C` be a
+nonempty complete convex subset of a normed space. Every nonzero functional whose real part is
+bounded above on `C` is a norm limit of support functionals of `C`, namely of nonzero functionals
+whose real part attains its supremum on `C`. No boundedness of `C` is assumed: the support
+functionals of `C` are norm dense among the nonzero functionals whose real part is bounded above
+on `C`. -/
+theorem Convex.mem_closure_setOf_ne_zero_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C)
+    (hC : IsComplete C) (hne : C.Nonempty) {f : StrongDual 𝕜 E} (hf : f ≠ 0)
+    (hbdd : BddAbove ((fun y ↦ re (f y)) '' C)) :
+    f ∈ closure {g : StrongDual 𝕜 E | g ≠ 0 ∧ ∃ x ∈ C, IsMaxOn (fun y ↦ re (g y)) C x} := by
+  obtain ⟨z, hz⟩ := hne
+  refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
+  set k := min (1 / 2) (ε / (2 * ‖f‖))
+  have hk₀ : 0 < k := lt_min (by norm_num) (by positivity)
+  have hk₁ : k < 1 := (min_le_left _ _).trans_lt (by norm_num)
+  have hkε : k * ‖f‖ < ε := by
+    calc k * ‖f‖ ≤ ε / (2 * ‖f‖) * ‖f‖ := by gcongr; exact min_le_right _ _
+      _ = ε / 2 := by field_simp
+      _ < ε := half_lt_self hε
+  obtain ⟨x, hx, -, h, hh, hmax, hpos⟩ :=
+    hconv.exists_isMaxOn_re_of_bddAbove hC hf hbdd hk₀ hk₁ hz
+  obtain ⟨c, hc, hfc⟩ := f.exists_pos_norm_sub_ofReal_smul_le h hk₀.le hk₁ hf hpos
+  refine ⟨(c : 𝕜) • h, ⟨smul_ne_zero (ofReal_ne_zero.2 hc.ne') hh, x, hx, fun y hy ↦ ?_⟩, ?_⟩
+  · simp only [mem_ofPred_eq, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, re_ofReal_mul]
+    exact mul_le_mul_of_nonneg_left (hmax hy) hc.le
+  · rw [dist_eq_norm]
+    exact hfc.trans_lt hkε
+
 /-- **The Bishop–Phelps theorem for support functionals.** The support functionals of a nonempty
 bounded complete convex subset `C` of a nonzero normed space, namely the nonzero functionals whose
-real part attains its supremum on `C`, are norm dense in the dual. -/
+real part attains its supremum on `C`, are norm dense in the dual. This is the case of
+`Convex.mem_closure_setOf_ne_zero_isMaxOn_re_of_bddAbove` in which every functional is bounded on
+`C`. -/
 theorem Convex.dense_setOf_ne_zero_isMaxOn_re [Nontrivial E] (hconv : Convex ℝ C)
     (hC : IsComplete C) (hb : Bornology.IsBounded C) (hne : C.Nonempty) :
     Dense {g : StrongDual 𝕜 E | g ≠ 0 ∧ ∃ x ∈ C, IsMaxOn (fun y ↦ re (g y)) C x} := by
-  set S := {g : StrongDual 𝕜 E | g ≠ 0 ∧ ∃ x ∈ C, IsMaxOn (fun y ↦ re (g y)) C x}
-  obtain ⟨z, hz⟩ := hne
   obtain ⟨R, hR⟩ := hb.exists_norm_le
-  -- Every nonzero functional is a limit of support functionals.
-  have hsub : ({0}ᶜ : Set (StrongDual 𝕜 E)) ⊆ closure S := by
-    intro f hf
-    rw [mem_compl_singleton_iff] at hf
-    have hfpos : 0 < ‖f‖ := norm_pos_iff.2 hf
-    refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-    set k := min (1 / 2) (ε / (2 * ‖f‖))
-    have hk₀ : 0 < k := lt_min (by norm_num) (by positivity)
-    have hk₁ : k < 1 := (min_le_left _ _).trans_lt (by norm_num)
-    have hkε : k * ‖f‖ < ε := by
-      calc k * ‖f‖ ≤ ε / (2 * ‖f‖) * ‖f‖ := by gcongr; exact min_le_right _ _
-        _ = ε / 2 := by field_simp
-        _ < ε := half_lt_self hε
-    have hbdd : BddAbove ((fun y ↦ re (f y)) '' C) := by
-      refine ⟨‖f‖ * R, ?_⟩
-      rintro _ ⟨y, hy, rfl⟩
-      exact (re_le_norm _).trans ((f.le_opNorm y).trans (by gcongr; exact hR y hy))
-    obtain ⟨x, hx, -, h, hh, hmax, hpos⟩ :=
-      hconv.exists_isMaxOn_re_of_bddAbove hC hf hbdd hk₀ hk₁ hz
-    obtain ⟨c, hc, hfc⟩ := f.exists_pos_norm_sub_ofReal_smul_le h hk₀.le hk₁ hf hpos
-    refine ⟨(c : 𝕜) • h, ⟨smul_ne_zero (ofReal_ne_zero.2 hc.ne') hh, x, hx, fun y hy ↦ ?_⟩, ?_⟩
-    · simp only [mem_ofPred_eq, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
-        re_ofReal_mul]
-      exact mul_le_mul_of_nonneg_left (hmax hy) hc.le
-    · rw [dist_eq_norm]
-      exact hfc.trans_lt hkε
   have := Module.punctured_nhds_neBot 𝕜 (StrongDual 𝕜 E)
-  exact dense_closure.1 ((dense_compl_singleton 0).mono hsub)
+  refine dense_closure.1 ((dense_compl_singleton 0).mono fun f hf ↦ ?_)
+  refine hconv.mem_closure_setOf_ne_zero_isMaxOn_re_of_bddAbove hC hne hf ⟨‖f‖ * R, ?_⟩
+  rintro _ ⟨y, hy, rfl⟩
+  exact (re_le_norm _).trans ((f.le_opNorm y).trans (by gcongr; exact hR y hy))
 
 /-- **The Bishop–Phelps theorem for support points.** The support points of a complete convex
 subset `C` of a normed space, namely the points of `C` at which the real part of some nonzero

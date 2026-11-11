@@ -50,7 +50,7 @@ theorem spinSixSpecialLinearToIsometryGroup_eq_one_iff
     · intro h
       apply LinearMap.ext
       intro x
-      have hx := congrArg (fun e : BilinForm.isometryGroup (spinSixWedgeForm K) ↦ e.1 x) h
+      have hx := congrArg (fun e : (spinSixWedgeForm K).isometryGroup ↦ e.1 x) h
       simpa [spinSixSpecialLinearToIsometryGroup_apply, Representation.exteriorPower_apply,
         hf] using hx
     · intro h

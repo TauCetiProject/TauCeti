@@ -13,7 +13,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Finsupp.Multiset
 -- The characters `TauCeti.weightChar` of a split torus.
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
--- `TauCeti.Sym.ofFn`, the unordered tuple underlying an ordered one.
+-- `Sym.ofFn`, the unordered tuple underlying an ordered one.
 public import TauCeti.Data.Sym.Basic
 
 /-!

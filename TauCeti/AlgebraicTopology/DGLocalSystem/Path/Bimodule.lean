@@ -28,7 +28,7 @@ The chains are the module
 ## Main results
 
 * `TauCeti.pathChain_isDGBimodule`: the chains `C_*(P_{b→b'} B; R)` form a DG
-  `(C_*(Ω_b B), C_*(Ω_{b'} B))`-bimodule.
+  `(C_*(Ω_b B), C_*(Ω_{b'} B))`-bimodule, bundled as `TauCeti.pathChainBimodule`.
 
 ## References
 
@@ -52,5 +52,11 @@ theorem pathChain_isDGBimodule :
       (cubicalChainModuleDifferential (MoorePathBetween B b b') (MooreLoopSpace B b') R) :=
   cubicalChainModule_isDGBimodule (MooreLoopSpace B b) (MoorePathBetween B b b')
     (MooreLoopSpace B b') R
+
+/-- **The chains of Moore paths from `b` to `b'`**, as an object of the category of DG
+`(C_*(Ω_b B), C_*(Ω_{b'} B))`-bimodules. -/
+noncomputable abbrev pathChainBimodule :
+    DGBimoduleCat (loopChain_isDGAlgebra B b R) (loopChain_isDGAlgebra B b' R) :=
+  DGBimoduleCat.of (pathChain_isDGBimodule B b b' R)
 
 end TauCeti

@@ -46,7 +46,7 @@ theorem inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp
       exp (lam / μ) * (levyPDFReal 0 lam x *
         exp ((t - lam / (2 * μ ^ 2)) * x)) := by
   by_cases hx : 0 < x
-  · rw [inverseGaussianPDFReal_of_pos hμ hlam hx, levyPDFReal_of_lt hlam hx,
+  · rw [inverseGaussianPDFReal_of_pos hμ hlam hx, levyPDFReal_of_lt hx,
       sub_zero]
     have hfactor : √(lam / (2 * π * x ^ 3)) =
         √(lam / (2 * π)) * x ^ (-(3 / 2 : ℝ)) := by

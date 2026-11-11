@@ -8,6 +8,7 @@ module
 public import TauCeti.Computability.AutomaticSequence
 import Mathlib.Data.Nat.Digits.Lemmas
 import Mathlib.Basic.Finite.Prod
+import TauCeti.Data.Nat.Digits
 
 /-!
 # The `k`-kernel of a sequence and Eilenberg's theorem
@@ -200,13 +201,8 @@ computes it. -/
 theorem isAutomatic_of_finite_kernel (hk : 2 ≤ k) (h : (kernel k a).Finite) :
     IsAutomatic k a := by
   have := h.to_subtype
-  have hw (n : ℕ) : ((Nat.digits k n).map (Fin.ofNat k)).map Fin.val = Nat.digits k n := by
-    rw [List.map_map]
-    conv_rhs => rw [← List.map_id (Nat.digits k n)]
-    refine List.map_congr_left fun d hd ↦ ?_
-    simp [Nat.mod_eq_of_lt (Nat.digits_lt_base hk hd)]
   convert (kernelDFAO k a).isAutomatic with n
-  rw [output_eval_kernelDFAO, hw, Nat.ofDigits_digits]
+  rw [output_eval_kernelDFAO, Nat.map_val_map_ofNat_digits hk, Nat.ofDigits_digits]
 
 /-- **Eilenberg's theorem**: for `2 ≤ k`, a sequence is `k`-automatic if and only if its
 `k`-kernel is finite. -/

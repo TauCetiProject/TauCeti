@@ -18,26 +18,28 @@ neither is a globally defined map: on any set `s` containing the origin, a map t
 origin and preserves distances between points of `s` already preserves the inner product on `s`.
 
 The reason is polarisation. The three quantities `‖x‖`, `‖y‖`, `‖x - y‖` determine `⟪x, y⟫_ℝ`
-through `norm_sub_sq_real`, and all three are preserved: the two norms because `0 ∈ s` is a fixed
-point, so `‖g z‖ = ‖g z - g 0‖ = ‖z - 0‖`, and the third by hypothesis. Nothing about linearity,
-surjectivity, or continuity enters, and the conclusion is available point by point on `s` rather
-than only after an extension.
+(`real_inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two`), and all three
+are preserved: the two norms because `0 ∈ s` is a fixed point, so `‖g z‖ = ‖g z - g 0‖ = ‖z - 0‖`,
+and the third by hypothesis. Nothing about linearity, surjectivity, or continuity enters, and the
+conclusion is available point by point on `s` rather than only after an extension.
 
 ## Main results
 
 * `TauCeti.norm_map_of_dist_map_eq` — such a map preserves norms.
 * `TauCeti.real_inner_map_map_of_dist_map_eq` — such a map preserves the real inner product.
 
-The consumer is `TauCeti/Analysis/Complex/Isometry.lean`, which classifies the distance-preserving
-self-maps of a disc of `ℂ` about the origin. There the map is given only on an open ball, and is
-assumed neither linear nor bijective; Mazur--Ulam asks for an isometric equivalence of the whole
-space, so none of its hypotheses are on hand, and this polarisation is what replaces it.
+This feeds the classification of the distance-preserving self-maps of a disc of `ℂ` about the
+origin, and that of the isometries of the Poincaré disc. There the map is given only on
+an open ball, and is assumed neither linear nor bijective; Mazur--Ulam asks for an isometric
+equivalence of the whole space, so none of its hypotheses are on hand, and this polarisation is
+what replaces it.
 
-The argument is adapted from the proofs of
+The argument is adapted from the original proofs of
 `TauCeti.norm_map_of_pseudoHyperbolicExpr_map_eq` and
 `TauCeti.real_inner_map_map_of_pseudoHyperbolicExpr_map_eq` in
-`TauCeti/Analysis/Complex/Conformal/Poincare/Isometry/Classification.lean`, as merged in
-TauCeti#1502, with the unit disc of `ℂ` relaxed to an arbitrary set `s` containing the origin.
+`TauCeti/Analysis/Complex/Conformal/Poincare/Isometry/Classification.lean`, with the unit disc of
+`ℂ` relaxed to an arbitrary set `s` containing the origin. The second of those lemmas now derives
+from `TauCeti.real_inner_map_map_of_dist_map_eq`.
 -/
 
 public section
@@ -72,14 +74,9 @@ between points of `s`; the conclusion is correspondingly restricted to `s`. -/
 theorem real_inner_map_map_of_dist_map_eq (h0 : (0 : E) ∈ s) (hg0 : g 0 = 0)
     (hg : ∀ z ∈ s, ∀ w ∈ s, dist (g z) (g w) = dist z w) {z w : E} (hz : z ∈ s) (hw : w ∈ s) :
     ⟪g z, g w⟫ = ⟪z, w⟫ := by
-  have hnz := norm_map_of_dist_map_eq h0 hg0 hg hz
-  have hnw := norm_map_of_dist_map_eq h0 hg0 hg hw
-  have hsub : ‖g z - g w‖ = ‖z - w‖ := by
-    simpa only [dist_eq_norm] using hg z hz w hw
-  have h1 := norm_sub_sq_real (g z) (g w)
-  have h2 := norm_sub_sq_real z w
-  rw [hsub, hnz, hnw] at h1
-  linarith
+  simp only [real_inner_eq_norm_mul_self_add_norm_mul_self_sub_norm_sub_mul_self_div_two,
+    ← dist_eq_norm, hg z hz w hw, norm_map_of_dist_map_eq h0 hg0 hg hz,
+    norm_map_of_dist_map_eq h0 hg0 hg hw]
 
 end InnerProduct
 

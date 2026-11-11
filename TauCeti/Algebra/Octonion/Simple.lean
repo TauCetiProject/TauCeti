@@ -421,6 +421,64 @@ private theorem eq_top_of_lie_eq {I : LieIdeal K (derivationLieAlgebra K (Octoni
   obtain rfl : M = N := congrArg Prod.fst hMN
   exact eq_top_of_slDerivation_mem (hN ▸ lie_mem_left K _ I x y hxI) hdiag hi
 
+/-- An ideal of `Der 𝕆` containing a generalized weight vector with a nonzero upper parameter `uᵢ`
+is everything: bracket with the lower vector derivation of `eᵢ`. -/
+private theorem eq_top_of_mem_genWeightSpace_of_upper_ne_zero
+    {I : LieIdeal K (derivationLieAlgebra K (Octonion K))}
+    {χ : Weight K 𝔥 (derivationLieAlgebra K (Octonion K))} {M : sl (Fin 3) K} {u t : Fin 3 → K}
+    (hxI : derivationOfTriple (M, u, t) ∈ I)
+    (hx : derivationOfTriple (M, u, t) ∈ genWeightSpace (derivationLieAlgebra K (Octonion K)) χ)
+    {i : Fin 3} (hi : u i ≠ 0) : I = ⊤ := by
+  refine eq_top_of_lie_eq hxI hx (y := lowerDerivation (Pi.single i 1))
+    (mem_genWeightSpace_neg (χ := χ.toLinear) fun k => ?_) (i := i)
+    (M := slOfVectors u (Pi.single i 1))
+    (u := (2 : K) • (t ⨯₃ Pi.single i 1)) (t := -((M : Matrix (Fin 3) (Fin 3) K)ᵀ *ᵥ
+      Pi.single i 1)) ?_ ?_
+  · simp only [Weight.toLinear_apply]
+    obtain ⟨N, d, hk, hN⟩ := exists_cartanDerivation_eq (R := K) k
+    rw [apply_cartanElement_eq hx hk (coordV_one_lie hN i) (by simpa using hi), hk,
+      lie_slDerivation_lowerDerivation, hN, diagonal_transpose, diagonal_mulVec_single,
+      ← map_smul]
+    congr 1
+    ext l
+    by_cases hl : l = i <;> simp [hl]
+  · simp [add_lie]
+    abel
+  · simp only [coe_slOfVectors, Matrix.sub_apply, Matrix.smul_apply, one_apply_eq,
+      vecMulVec_apply, Pi.single_eq_same, dotProduct_single, smul_eq_mul, mul_one]
+    intro h
+    exact hi ((mul_eq_zero.mp (by linear_combination -h : (2 : K) * u i = 0)).resolve_left
+      two_ne_zero)
+
+/-- An ideal of `Der 𝕆` containing a generalized weight vector with a nonzero lower parameter `tᵢ`
+is everything: bracket with the upper vector derivation of `eᵢ`. -/
+private theorem eq_top_of_mem_genWeightSpace_of_lower_ne_zero
+    {I : LieIdeal K (derivationLieAlgebra K (Octonion K))}
+    {χ : Weight K 𝔥 (derivationLieAlgebra K (Octonion K))} {M : sl (Fin 3) K} {u t : Fin 3 → K}
+    (hxI : derivationOfTriple (M, u, t) ∈ I)
+    (hx : derivationOfTriple (M, u, t) ∈ genWeightSpace (derivationLieAlgebra K (Octonion K)) χ)
+    {i : Fin 3} (hi : t i ≠ 0) : I = ⊤ := by
+  refine eq_top_of_lie_eq hxI hx (y := upperDerivation (Pi.single i 1))
+    (mem_genWeightSpace_neg (χ := χ.toLinear) fun k => ?_) (i := i)
+    (M := -slOfVectors (Pi.single i 1) t)
+    (u := (M : Matrix (Fin 3) (Fin 3) K) *ᵥ Pi.single i 1)
+    (t := (2 : K) • (u ⨯₃ Pi.single i 1)) ?_ ?_
+  · simp only [Weight.toLinear_apply]
+    obtain ⟨N, d, hk, hN⟩ := exists_cartanDerivation_eq (R := K) k
+    rw [apply_cartanElement_eq hx hk (coordW_one_lie hN i) (by simpa using hi), hk,
+      lie_slDerivation_upperDerivation, hN, diagonal_mulVec_single, neg_neg, ← map_smul]
+    congr 1
+    ext l
+    by_cases hl : l = i <;> simp [hl]
+  · simp [add_lie, ← lie_skew (lowerDerivation _) (upperDerivation _)]
+    abel
+  · simp only [NegMemClass.coe_neg, coe_slOfVectors, Matrix.neg_apply, Matrix.sub_apply,
+      Matrix.smul_apply, one_apply_eq, vecMulVec_apply, Pi.single_eq_same, single_dotProduct,
+      smul_eq_mul, mul_one, one_mul]
+    intro h
+    exact hi ((mul_eq_zero.mp (by linear_combination h : (2 : K) * t i = 0)).resolve_left
+      two_ne_zero)
+
 /-- **An ideal of `Der 𝕆` meeting a generalized weight space of the Cartan subalgebra
 nontrivially is everything.** -/
 private theorem eq_top_of_mem_genWeightSpace
@@ -430,52 +488,12 @@ private theorem eq_top_of_mem_genWeightSpace
     (hx : x ∈ genWeightSpace (derivationLieAlgebra K (Octonion K)) χ) (hx0 : x ≠ 0) : I = ⊤ := by
   obtain ⟨⟨M, u, t⟩, rfl⟩ := derivationOfTriple_surjective x
   by_cases hu : ∃ i, u i ≠ 0
-  · -- A nonzero upper parameter `uᵢ`: bracket with the lower vector derivation of `eᵢ`.
-    obtain ⟨i, hi⟩ := hu
-    refine eq_top_of_lie_eq hxI hx (y := lowerDerivation (Pi.single i 1))
-      (mem_genWeightSpace_neg (χ := χ.toLinear) fun k => ?_) (i := i)
-      (M := slOfVectors u (Pi.single i 1))
-      (u := (2 : K) • (t ⨯₃ Pi.single i 1)) (t := -((M : Matrix (Fin 3) (Fin 3) K)ᵀ *ᵥ
-        Pi.single i 1)) ?_ ?_
-    · simp only [Weight.toLinear_apply]
-      obtain ⟨N, d, hk, hN⟩ := exists_cartanDerivation_eq (R := K) k
-      rw [apply_cartanElement_eq hx hk (coordV_one_lie hN i) (by simpa using hi), hk,
-        lie_slDerivation_lowerDerivation, hN, diagonal_transpose, diagonal_mulVec_single,
-        ← map_smul]
-      congr 1
-      ext l
-      by_cases hl : l = i <;> simp [hl]
-    · simp [add_lie]
-      abel
-    · simp only [coe_slOfVectors, Matrix.sub_apply, Matrix.smul_apply, one_apply_eq,
-        vecMulVec_apply, Pi.single_eq_same, dotProduct_single, smul_eq_mul, mul_one]
-      intro h
-      exact hi ((mul_eq_zero.mp (by linear_combination -h : (2 : K) * u i = 0)).resolve_left
-        two_ne_zero)
+  · obtain ⟨i, hi⟩ := hu
+    exact eq_top_of_mem_genWeightSpace_of_upper_ne_zero hxI hx hi
   push Not at hu
   by_cases ht : ∃ i, t i ≠ 0
-  · -- A nonzero lower parameter `tᵢ`: bracket with the upper vector derivation of `eᵢ`.
-    obtain ⟨i, hi⟩ := ht
-    refine eq_top_of_lie_eq hxI hx (y := upperDerivation (Pi.single i 1))
-      (mem_genWeightSpace_neg (χ := χ.toLinear) fun k => ?_) (i := i)
-      (M := -slOfVectors (Pi.single i 1) t)
-      (u := (M : Matrix (Fin 3) (Fin 3) K) *ᵥ Pi.single i 1)
-      (t := (2 : K) • (u ⨯₃ Pi.single i 1)) ?_ ?_
-    · simp only [Weight.toLinear_apply]
-      obtain ⟨N, d, hk, hN⟩ := exists_cartanDerivation_eq (R := K) k
-      rw [apply_cartanElement_eq hx hk (coordW_one_lie hN i) (by simpa using hi), hk,
-        lie_slDerivation_upperDerivation, hN, diagonal_mulVec_single, neg_neg, ← map_smul]
-      congr 1
-      ext l
-      by_cases hl : l = i <;> simp [hl]
-    · simp [add_lie, ← lie_skew (lowerDerivation _) (upperDerivation _)]
-      abel
-    · simp only [NegMemClass.coe_neg, coe_slOfVectors, Matrix.neg_apply, Matrix.sub_apply,
-        Matrix.smul_apply, one_apply_eq, vecMulVec_apply, Pi.single_eq_same, single_dotProduct,
-        smul_eq_mul, mul_one, one_mul]
-      intro h
-      exact hi ((mul_eq_zero.mp (by linear_combination h : (2 : K) * t i = 0)).resolve_left
-        two_ne_zero)
+  · obtain ⟨i, hi⟩ := ht
+    exact eq_top_of_mem_genWeightSpace_of_lower_ne_zero hxI hx hi
   push Not at ht
   by_cases hM : ∃ i j, i ≠ j ∧ (M : Matrix (Fin 3) (Fin 3) K) i j ≠ 0
   · -- A nonzero off-diagonal entry `Mᵢⱼ`: bracket with the special linear derivation of `Eⱼᵢ`.

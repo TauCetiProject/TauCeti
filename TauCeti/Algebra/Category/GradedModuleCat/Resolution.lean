@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
+public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 public import TauCeti.Algebra.Module.GradedModule.Resolution
 
 /-!
@@ -21,6 +22,10 @@ The resulting resolution can be used directly with Mathlib's comparison maps, un
 chain homotopy, and computation of Ext from projective resolutions. No enough-projectives
 hypothesis is needed to bundle a given resolution. The construction imposes neither linearity,
 minimality, finite generation, nor boundedness.
+
+Forgetting the grading turns the same data into a projective resolution of the underlying
+`A`-module. Hence a graded resolution whose terms vanish from homological degree `n` on bounds the
+ungraded projective dimension (`TauCeti.GradedProjectiveResolution.hasProjectiveDimensionLT`).
 
 ## References
 
@@ -141,6 +146,51 @@ theorem toProjectiveResolution_π_f_zero :
   change r.complexπ.f 0 = 𝟙 (r.termObj 0) ≫ r.augmentation
   rw [Category.id_comp]
   exact r.complexπ_f_zero
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- **A graded resolution with vanishing tail bounds the projective dimension.** If the terms of
+a graded projective resolution of `M` vanish from homological degree `n` on, then the underlying
+`A`-module of `M` has projective dimension less than `n`. -/
+theorem hasProjectiveDimensionLT (n : ℕ) (h : ∀ i, n ≤ i → Subsingleton (r.X i)) :
+    HasProjectiveDimensionLT (GradedModuleCat.toModuleCat.obj M) n := by
+  -- The underlying modules form a projective resolution in `ModuleCat A`; no grading
+  -- decomposition is needed, since exactness is read off from the linear maps.
+  let C : ChainComplex (ModuleCat.{v} A) ℕ :=
+    ChainComplex.of (fun i ↦ ModuleCat.of A (r.X i)) (fun i ↦ ModuleCat.ofHom (r.d i))
+      fun i ↦ ModuleCat.hom_ext (r.exact_d_d i).linearMap_comp_eq_zero
+  let π : C ⟶ (ChainComplex.single₀ (ModuleCat.{v} A)).obj (GradedModuleCat.toModuleCat.obj M) :=
+    (C.toSingle₀Equiv _).symm
+      ⟨ModuleCat.ofHom r.π, ModuleCat.hom_ext r.exact_d_π.linearMap_comp_eq_zero⟩
+  have hd (j : ℕ) : C.d (j + 1) j = ModuleCat.ofHom (r.d j) := by simp [C]
+  have : QuasiIso π := by
+    constructor
+    intro i
+    cases i with
+    | zero =>
+      rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _ rfl rfl rfl]
+      constructor
+      · rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
+        exact r.exact_d_π
+      · exact (ModuleCat.epi_iff_surjective _).mpr r.surjective_π
+    | succ i =>
+      rw [quasiIsoAt_iff_exactAt'
+        (hL := ChainComplex.exactAt_succ_single_obj ..),
+        HomologicalComplex.exactAt_iff' _ (i + 2) (i + 1) i (by simp) (by simp),
+        ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
+      -- `exactAt_iff'` uses short-complex projections; expose just its two maps.
+      change Function.Exact (C.d (i + 2) (i + 1)).hom (C.d (i + 1) i).hom
+      rw [hd, hd]
+      exact r.exact_d_d i
+  let R : ProjectiveResolution (GradedModuleCat.toModuleCat.obj M) :=
+    { complex := C
+      projective i := by
+        have := r.projective i
+        exact ModuleCat.projective_of_categoryTheory_projective (ModuleCat.of A (r.X i))
+      π := π
+      quasiIso := this }
+  refine R.hasProjectiveDimensionLT n fun i hi ↦ ?_
+  have := h i hi
+  exact ModuleCat.isZero_of_subsingleton (ModuleCat.of A (r.X i))
 
 end GradedProjectiveResolution
 

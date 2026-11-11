@@ -109,6 +109,17 @@ private theorem eigenvector_block_energy_identity (hT : T.IsSymmetric) (hH : H.I
   set s₂ : ℝ := ‖z‖ ^ 2
   linear_combination s₂ * e1 - c₂ * e2 + c₂ * hW
 
+/-- A lower quadratic-form bound `b * ‖y‖ ^ 2 ≤ re ⟪T y, y⟫` weighted by `‖z‖ ^ 2` and an upper
+bound `re ⟪T z, z⟫ ≤ a * ‖z‖ ^ 2` weighted by `‖y‖ ^ 2` bound the weighted gap
+`‖z‖ ^ 2 * re ⟪y, T y⟫ - ‖y‖ ^ 2 * re ⟪z, T z⟫` below by `‖y‖ ^ 2 * ‖z‖ ^ 2 * (b - a)`. -/
+private theorem sq_mul_sq_mul_sub_le_re_inner_map {T : E →ₗ[𝕜] E} {a b : ℝ} {y z : E}
+    (hy : b * ‖y‖ ^ 2 ≤ RCLike.re ⟪T y, y⟫_𝕜) (hz : RCLike.re ⟪T z, z⟫_𝕜 ≤ a * ‖z‖ ^ 2) :
+    ‖y‖ ^ 2 * ‖z‖ ^ 2 * (b - a)
+      ≤ ‖z‖ ^ 2 * RCLike.re ⟪y, T y⟫_𝕜 - ‖y‖ ^ 2 * RCLike.re ⟪z, T z⟫_𝕜 := by
+  rw [inner_re_symm] at hy hz
+  linarith [mul_le_mul_of_nonneg_left hy (sq_nonneg ‖z‖),
+    mul_le_mul_of_nonneg_left hz (sq_nonneg ‖y‖)]
+
 /-- **Davis's sin 2θ theorem, orthogonal-decomposition form.**  Let `T`, `H`
 be symmetric, `U` a `T`-invariant subspace with the quadratic form of `T` at
 least `b * ‖·‖ ^ 2` on `U` and at most `a * ‖·‖ ^ 2` on `Uᗮ`, and let
@@ -150,17 +161,8 @@ theorem sin_two_theta_le_of_mem (hT : T.IsSymmetric) (hH : H.IsSymmetric)
   have hcs : 0 < ‖y‖ * ‖z‖ := mul_pos hc hs
   -- The block energy identity and the two quadratic-form bounds.
   have key := eigenvector_block_energy_identity hT hH hUinv hyU hzU hμ
-  have hby : b * ‖y‖ ^ 2 ≤ RCLike.re ⟪y, T y⟫_𝕜 := by
-    have h := hb y hyU
-    rwa [← inner_conj_symm, RCLike.conj_re] at h
-  have haz : RCLike.re ⟪z, T z⟫_𝕜 ≤ a * ‖z‖ ^ 2 := by
-    have h := ha z hzU
-    rwa [← inner_conj_symm, RCLike.conj_re] at h
   have hquad : ∀ u : E, |RCLike.re ⟪u, H u⟫_𝕜| ≤ ε * ‖u‖ ^ 2 := fun u =>
-    calc |RCLike.re ⟪u, H u⟫_𝕜| ≤ ‖⟪u, H u⟫_𝕜‖ := RCLike.abs_re_le_norm _
-      _ ≤ ‖u‖ * ‖H u‖ := norm_inner_le_norm _ _
-      _ ≤ ‖u‖ * (ε * ‖u‖) := by gcongr; exact hε u
-      _ = ε * ‖u‖ ^ 2 := by ring
+    (TauCeti.abs_re_inner_le_of_norm_le u (hε u)).trans_eq (by ring)
   -- Test the quadratic form of `H` against the two rotation vectors
   -- `s(c-s) • y + c(c+s) • z` and `-s(c+s) • y + c(c-s) • z`
   -- (the polynomial realization of the classical half-angle rotation:
@@ -182,8 +184,6 @@ theorem sin_two_theta_le_of_mem (hT : T.IsSymmetric) (hH : H.IsSymmetric)
     linear_combination (2 * ‖y‖ ^ 2 * ‖z‖ ^ 2) * hpyth
   rw [hN1] at hb1
   rw [hN2] at hb2
-  have habs1 := abs_le.mp hb1
-  have habs2 := abs_le.mp hb2
   -- The difference of the two tested forms is `4cs (s² re⟪y,Ty⟫ - c² re⟪z,Tz⟫)`
   -- by the block energy identity; multiply it by `4cs` to keep everything
   -- linear over monomials.
@@ -195,24 +195,12 @@ theorem sin_two_theta_le_of_mem (hT : T.IsSymmetric) (hH : H.IsSymmetric)
   have hstep1 : 4 * (‖y‖ * ‖z‖)
       * (‖z‖ ^ 2 * RCLike.re ⟪y, T y⟫_𝕜 - ‖y‖ ^ 2 * RCLike.re ⟪z, T z⟫_𝕜)
       ≤ ε * (4 * (‖y‖ ^ 2 * ‖z‖ ^ 2)) := by
-    linarith [habs1.2, habs2.1, key4]
+    linarith [(abs_le.mp hb1).2, (abs_le.mp hb2).1, key4]
   -- Insert the two form bounds and divide by `4c²s² > 0`.
-  have hmid : ‖y‖ ^ 2 * ‖z‖ ^ 2 * (b - a)
-      ≤ ‖z‖ ^ 2 * RCLike.re ⟪y, T y⟫_𝕜 - ‖y‖ ^ 2 * RCLike.re ⟪z, T z⟫_𝕜 :=
-    have h1 := mul_le_mul_of_nonneg_left hby (sq_nonneg ‖z‖)
-    have h2 := mul_le_mul_of_nonneg_left haz (sq_nonneg ‖y‖)
-    by linarith
-  have hstep2 : 4 * (‖y‖ ^ 2 * ‖z‖ ^ 2) * ((b - a) * (‖y‖ * ‖z‖))
-      ≤ 4 * (‖y‖ * ‖z‖)
-        * (‖z‖ ^ 2 * RCLike.re ⟪y, T y⟫_𝕜 - ‖y‖ ^ 2 * RCLike.re ⟪z, T z⟫_𝕜) :=
-    have h3 := mul_le_mul_of_nonneg_left hmid (by positivity : (0 : ℝ) ≤ 4 * (‖y‖ * ‖z‖))
-    by linarith
-  have hfinal : 4 * (‖y‖ ^ 2 * ‖z‖ ^ 2) * ((b - a) * (‖y‖ * ‖z‖))
-      ≤ 4 * (‖y‖ ^ 2 * ‖z‖ ^ 2) * ε := by linarith
-  have h4 : (0 : ℝ) < 4 * (‖y‖ ^ 2 * ‖z‖ ^ 2) := by
-    have := mul_pos hcs hcs
-    nlinarith [this]
-  exact le_of_mul_le_mul_left hfinal h4
+  have h3 := mul_le_mul_of_nonneg_left
+    (sq_mul_sq_mul_sub_le_re_inner_map (hb y hyU) (ha z hzU)) hcs.le
+  refine le_of_mul_le_mul_left ?_ (mul_pos four_pos (mul_pos (pow_pos hc 2) (pow_pos hs 2)))
+  linarith
 
 /-- **Davis's sin 2θ theorem, per-eigenvector product form.**  Under the
 hypotheses of `sin_two_theta_le_of_mem`, for a unit eigenvector `x` of
@@ -303,27 +291,15 @@ theorem tan_two_theta_le_of_mem (hT : T.IsSymmetric) (hH : H.IsSymmetric)
   have key := eigenvector_block_energy_identity hT hH hUinv hyU hzU hμ
   have hyH : RCLike.re ⟪y, H y⟫_𝕜 = 0 := by rw [hHU y hyU y hyU]; simp
   have hzH : RCLike.re ⟪z, H z⟫_𝕜 = 0 := by rw [hHUperp z hzU z hzU]; simp
-  have hby : b * ‖y‖ ^ 2 ≤ RCLike.re ⟪y, T y⟫_𝕜 := by
-    have h := hb y hyU
-    rwa [← inner_conj_symm, RCLike.conj_re] at h
-  have haz : RCLike.re ⟪z, T z⟫_𝕜 ≤ a * ‖z‖ ^ 2 := by
-    have h := ha z hzU
-    rwa [← inner_conj_symm, RCLike.conj_re] at h
   have hmix : |RCLike.re ⟪y, H z⟫_𝕜| ≤ ‖y‖ * ‖z‖ * ε :=
-    calc |RCLike.re ⟪y, H z⟫_𝕜| ≤ ‖⟪y, H z⟫_𝕜‖ := RCLike.abs_re_le_norm _
-      _ ≤ ‖y‖ * ‖H z‖ := norm_inner_le_norm _ _
-      _ ≤ ‖y‖ * (ε * ‖z‖) := by gcongr; exact hε z
-      _ = ‖y‖ * ‖z‖ * ε := by ring
+    TauCeti.abs_re_inner_le_of_norm_le y (hε z)
   -- The vanishing diagonal blocks collapse the block energy identity.
   have hcollapse : ‖z‖ ^ 2 * RCLike.re ⟪y, T y⟫_𝕜 - ‖y‖ ^ 2 * RCLike.re ⟪z, T z⟫_𝕜
       = (‖y‖ ^ 2 - ‖z‖ ^ 2) * RCLike.re ⟪y, H z⟫_𝕜 := by
     rw [hyH, hzH] at key
     linear_combination key
   -- The two quadratic-form bounds give the lower bound on the collapsed LHS.
-  have hlow : ‖y‖ ^ 2 * ‖z‖ ^ 2 * (b - a)
-      ≤ ‖z‖ ^ 2 * RCLike.re ⟪y, T y⟫_𝕜 - ‖y‖ ^ 2 * RCLike.re ⟪z, T z⟫_𝕜 := by
-    nlinarith [mul_le_mul_of_nonneg_left hby (sq_nonneg ‖z‖),
-      mul_le_mul_of_nonneg_left haz (sq_nonneg ‖y‖)]
+  have hlow := sq_mul_sq_mul_sub_le_re_inner_map (hb y hyU) (ha z hzU)
   -- Chain: `‖y‖²‖z‖²(b-a) ≤ (Y-Z)·W ≤ |Y-Z|·‖y‖‖z‖·ε`.
   have hchain : ‖y‖ ^ 2 * ‖z‖ ^ 2 * (b - a)
       ≤ |‖y‖ ^ 2 - ‖z‖ ^ 2| * (‖y‖ * ‖z‖ * ε) :=

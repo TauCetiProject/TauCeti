@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.NormTwoShell.Folding
+public import TauCeti.Algebra.Lie.NormTwoShell.Folding.Basic
 public import TauCeti.Algebra.Lie.NormTwoShell.TrialityD4.FixedBasis
 
 /-!

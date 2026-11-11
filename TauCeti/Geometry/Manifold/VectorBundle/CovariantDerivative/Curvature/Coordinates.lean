@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Frame
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
 public import TauCeti.Geometry.Manifold.VectorField.CoordinateFrame
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
@@ -81,40 +80,28 @@ theorem curvatureOperator_localFrame_eq_sum {x : M}
       ∑ l, (mvfderiv I (Γ j k l) x (X i x) - mvfderiv I (Γ i k l) x (X j x) +
         ∑ m, (Γ j k m x * Γ i m l x - Γ i k m x * Γ j m l x)) • X l x := by
   have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-  have hbase : x ∈ (e).baseSet := by simpa using hx
-  have : IsManifold I ((2 : ℕ∞ω) + 1) M :=
+  have : IsManifold I 3 M :=
+    IsManifold.of_le (n := minSmoothness 𝕜 3) (le_minSmoothness (𝕜 := 𝕜))
+  have : IsManifold I (2 + 1) M :=
     IsManifold.of_le (n := minSmoothness 𝕜 3)
       (le_trans (by norm_num) (le_minSmoothness (𝕜 := 𝕜)))
   have : ContMDiffVectorBundle 2 E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
-  have hframe (l : ι) : CMDiff[(e).baseSet] 2 (T% (X l)) :=
-    (e).contMDiffOn_localFrame_baseSet 2 b l
-  have hcovFrame (a c : ι) :
-      CMDiff[(e).baseSet] 1 (T% (fun y => cov (X c) y (X a y))) := by
-    have hclm : ContMDiffOn I (I.prod 𝓘(𝕜, E →L[𝕜] E)) 1
-        (fun y => TotalSpace.mk' (E →L[𝕜] E) y (cov (X c) y)) (e).baseSet :=
-      ContMDiffCovariantDerivativeOn.contMDiff (hframe c)
-    exact ContMDiffOn.clm_bundle_apply hclm ((hframe a).of_le one_le_two)
-  have hdiff (a c : ι) : MDiffAt (T% (fun y => cov (X c) y (X a y))) x :=
-    ((hcovFrame a c).contMDiffAt ((e).open_baseSet.mem_nhds hbase)).mdifferentiableAt
-      one_ne_zero
-  have hfirst := covariantDerivative_apply_localFrame_eq_sum b
-    cov.isCovariantDerivativeOn hbase (hdiff j k) i
-  have hsecond := covariantDerivative_apply_localFrame_eq_sum b
-    cov.isCovariantDerivativeOn hbase (hdiff i k) j
-  -- The coefficient functions of these differentiated frame sections are exactly Γ.
-  simp only [LinearMap.piApply_apply, ← christoffelSymbol_apply] at hfirst hsecond
+  have hbase : x ∈ (e).baseSet := by simpa using hx
+  let hs := (e).isLocalFrameOn_localFrame_baseSet I 2 b
+  rw [hs.coeff_sum_eq (cov.curvatureOperator (X i) (X j) (X k)) hbase]
+  refine Finset.sum_congr rfl fun l _ ↦ ?_
+  have h := hs.coeff_curvatureOperator_frame (e).open_baseSet cov hbase i j k l
   have : IsManifold I (minSmoothness 𝕜 2) M :=
     IsManifold.of_le (n := minSmoothness 𝕜 3)
       (minSmoothness_monotone (𝕜 := 𝕜) (by norm_num))
-  rw [curvatureOperator_apply, mlieBracket_localFrame_trivializationAt b x₀ hx i j,
-    map_zero, sub_zero, hfirst, hsecond, ← Finset.sum_sub_distrib]
-  apply Finset.sum_congr rfl
-  intro l _
-  rw [← sub_smul]
-  congr 1
-  rw [Finset.sum_sub_distrib]
-  ring
+  have hΓ (a c d : ι) (y : M) : hs.coeff d y (cov (X c) y (X a y)) = Γ a c d y := by
+    rw [christoffelSymbol_apply]
+    -- The coefficient functional is independent of the frame's regularity index.
+    rfl
+  rw [mlieBracket_localFrame_trivializationAt b x₀ hx i j] at h
+  simp only [map_zero, zero_mul, Finset.sum_const_zero, sub_zero, hΓ] at h
+  exact congrArg (fun c ↦ c • X l x) h
 
 /-- The scalar coordinate formula for `R(∂ᵢ, ∂ⱼ)∂ₖ`, in the output component `l`.
 The order of the indices agrees with `christoffelSymbol`: `Γ i k l` is the `l`-th

@@ -292,9 +292,8 @@ middle boundary into the other, and repeats until it reaches the outer boundary 
 the multiplication of the Brauer algebra on the diagram basis, up to the power of `δ` counting
 the loops that close up in the middle. -/
 def composeDiagram (D₁ D₂ : BrauerDiagram k) : BrauerDiagram k :=
-  .mk (BrauerDiagram.stackVal_involutive D₁ D₂).toPerm
-    (fun x => by simpa using BrauerDiagram.stackVal_involutive D₁ D₂ x)
-    fun x => by simpa using BrauerDiagram.stackVal_ne D₁ D₂ x
+  .ofInvolutive (BrauerDiagram.stackVal_involutive D₁ D₂)
+    (BrauerDiagram.stackVal_ne D₁ D₂)
 
 /-- Following a strand of the stack of `D₁` above `D₂` one arc further, from a **middle state**:
 a point of the middle boundary together with the diagram the strand runs through next. The

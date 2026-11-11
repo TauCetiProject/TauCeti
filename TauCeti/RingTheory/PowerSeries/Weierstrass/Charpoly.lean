@@ -8,9 +8,11 @@ module
 public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.RingTheory.PowerBasis
 public import Mathlib.RingTheory.PowerSeries.WeierstrassPreparation
+public import Mathlib.RingTheory.QuotSMulTop
 
 import TauCeti.RingTheory.AdjoinRoot.Minpoly
 import TauCeti.RingTheory.PowerBasis
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # Multiplication by `X` on a quotient of a power series ring
@@ -24,7 +26,9 @@ file transports that structure to `A⟦X⟧ ⧸ (g)`:
 * `A⟦X⟧ ⧸ (g)` is free of rank `deg f` over `A`, with power basis the classes of
   `1, X, …, X ^ (deg f - 1)`;
 * the minimal polynomial over `A` of the class of `X` is `f`;
-* multiplication by `X` on `A⟦X⟧ ⧸ (g)` has characteristic polynomial `f`.
+* multiplication by `X` on `A⟦X⟧ ⧸ (g)` has characteristic polynomial `f`;
+* for `a : A`, the quotient `A⟦X⟧ ⧸ (a, g)` is `(A ⧸ (a)) ^ deg f`, the reduction modulo `a` of
+  the free module `A⟦X⟧ ⧸ (g)`.
 
 Over a complete local ring and for a series `g` whose reduction modulo the maximal ideal is
 nonzero, the factorization is Mathlib's `PowerSeries.weierstrassDistinguished`, so multiplication
@@ -42,6 +46,8 @@ factor of `g`, and `T` acts on it with characteristic polynomial that distinguis
 ## Main results
 
 * `PowerSeries.IsWeierstrassFactorizationAt.finrank_quotient`: `A⟦X⟧ ⧸ (g)` has rank `deg f`.
+* `PowerSeries.IsWeierstrassFactorizationAt.natCard_quotSMulTop_quotient_span_C`: for `a : A`, the
+  quotient `A⟦X⟧ ⧸ (a, g)` has `#(A ⧸ (a)) ^ deg f` elements.
 * `PowerSeries.IsWeierstrassFactorizationAt.minpoly_mk_X`: the minimal polynomial of the class of
   `X` is `f`.
 * `PowerSeries.IsWeierstrassFactorizationAt.charpoly_lmul_mk_X`: multiplication by `X` on
@@ -118,6 +124,19 @@ is free of rank the degree of `f`. -/
 theorem finrank_quotient [Nontrivial A] :
     Module.finrank A (A⟦X⟧ ⧸ Ideal.span {g}) = f.natDegree :=
   H.powerBasis.finrank
+
+/-- For a Weierstrass factorization `g = f * h` and any `a : A`, the quotient of `A⟦X⟧ ⧸ (a)` by
+`g` is `A⟦X⟧ ⧸ (a, g) ≃ (A ⧸ (a)) ^ deg f`, so it has `#(A ⧸ (a)) ^ deg f` elements. -/
+theorem natCard_quotSMulTop_quotient_span_C (a : A) :
+    Nat.card (QuotSMulTop g (A⟦X⟧ ⧸ Ideal.span {C a})) =
+      Nat.card (A ⧸ Ideal.span {a}) ^ f.natDegree := by
+  have := H.free_quotient
+  have := H.finite_quotient
+  nontriviality A
+  -- `A⟦X⟧ ⧸ (a, g)` is the reduction modulo `a` of the free `A`-module `A⟦X⟧ ⧸ (g)`.
+  rw [Nat.card_congr (QuotSMulTop.quotSpanSingletonComm g (C a)).toEquiv,
+    ← algebraMap_eq (R := A), Nat.card_congr (QuotSMulTop.restrictScalarsEquiv a).toEquiv,
+    QuotSMulTop.natCard_eq_pow_finrank, H.finrank_quotient]
 
 /-- For a Weierstrass factorization `g = f * h`, the minimal polynomial over `A` of the class of
 `X` in `A⟦X⟧ ⧸ (g)` is the distinguished polynomial `f`. -/

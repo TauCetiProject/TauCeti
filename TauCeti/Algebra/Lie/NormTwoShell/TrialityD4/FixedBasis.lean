@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.Algebra.Lie.BaseChange.Hom
 public import TauCeti.Algebra.Lie.NormTwoShell.BaseChange
 public import TauCeti.Algebra.Lie.NormTwoShell.TrialityD4.Basic
-public import TauCeti.Algebra.Lie.Subalgebra.Fixed
+public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Folding.TrialityD4
 
 /-!

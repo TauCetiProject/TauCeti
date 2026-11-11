@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
@@ -46,6 +47,9 @@ everywhere exactly when it and its covariant derivative are orthogonal to `γ'` 
   normal everywhere if and only if `J` and `DJ` are normal at one parameter.
 * `TauCeti.Manifold.IsJacobiFieldOn.starProjection_singleton_eq`: the orthogonal projection of a
   Jacobi field onto the velocity line is `(α + β t) γ'(t)` with explicit coefficients.
+* `TauCeti.Manifold.IsGeodesicCurveOn.alongCurveWithin_starProjection_singleton` and
+  `TauCeti.Manifold.IsGeodesicCurveOn.alongCurveWithin_sub_starProjection_singleton`: covariant
+  differentiation preserves the tangential and normal splitting.
 * `TauCeti.Manifold.IsJacobiFieldOn.isJacobiFieldOn_starProjection_singleton` and
   `TauCeti.Manifold.IsJacobiFieldOn.isJacobiFieldOn_sub_starProjection_singleton`: the tangential
   and normal components of a Jacobi field are Jacobi fields.
@@ -113,8 +117,8 @@ private theorem IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin_curveVel
       (curveVelocityWithin I γ s r)) 0 s t := by
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   have hγ := hJ.isGeodesicCurveOn
-  have hprod := hm.hasDerivWithinAt_inner_alongCurveWithin (hJ.uniqueDiffOn t ht)
-    (hγ.mdifferentiableOn t ht) (hJ.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
+  have hprod := hm.hasDerivWithinAt_inner_alongCurveWithin (hγ.mdifferentiableOn t ht)
+    (hJ.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
     (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hγ.uniqueDiffOn hγ.contMDiffOn ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
   refine hprod.congr_deriv ?_
@@ -134,8 +138,8 @@ private theorem IsJacobiFieldOn.hasDerivWithinAt_inner_curveVelocityWithin
         (curveVelocityWithin I γ s t)) s t := by
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   have hγ := hJ.isGeodesicCurveOn
-  have hprod := hm.hasDerivWithinAt_inner_alongCurveWithin (hJ.uniqueDiffOn t ht)
-    (hγ.mdifferentiableOn t ht) (hJ.differentiableWithinAt_sectionCoord ht)
+  have hprod := hm.hasDerivWithinAt_inner_alongCurveWithin (hγ.mdifferentiableOn t ht)
+    (hJ.differentiableWithinAt_sectionCoord ht)
     (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hγ.uniqueDiffOn hγ.contMDiffOn ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
   refine hprod.congr_deriv ?_
@@ -148,11 +152,8 @@ theorem IsJacobiFieldOn.inner_alongCurveWithin_curveVelocityWithin_eq
     inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ J s a) (curveVelocityWithin I γ s a) =
       inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ J s b)
         (curveVelocityWithin I γ s b) := by
-  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
-    (fun r hr ↦ hJ.hasDerivWithinAt_inner_alongCurveWithin_curveVelocityWithin hr)
-    (C := 0) (fun _ _ ↦ by simp) hb ha
-  rw [zero_mul, norm_le_zero_iff, sub_eq_zero] at h
-  exact h
+  exact (IsPreconnected.eq_of_hasDerivWithinAt_zero hs
+    (fun r hr ↦ hJ.hasDerivWithinAt_inner_alongCurveWithin_curveVelocityWithin hr) hb ha).symm
 
 /-- **The tangential component of a Jacobi field is affine.** On a preconnected parameter set,
 `⟨J(t), γ'(t)⟩ = ⟨J(a), γ'(a)⟩ + (t - a) ⟨DJ(a), γ'(a)⟩`. -/
@@ -171,9 +172,8 @@ theorem IsJacobiFieldOn.inner_curveVelocityWithin_eq
     rw [hJ.inner_alongCurveWithin_curveVelocityWithin_eq hs hr ha] at h₁
     exact (h₁.sub (((hasDerivAt_id' r).sub_const a).mul_const c).hasDerivWithinAt).congr_deriv
       (by simp [c])
-  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
-    hderiv (C := 0) (fun _ _ ↦ by simp) ha ht
-  rw [zero_mul, norm_le_zero_iff, sub_eq_zero, sub_self, zero_mul, sub_zero] at h
+  have h := IsPreconnected.eq_of_hasDerivWithinAt_zero hs hderiv ha ht
+  simp only [sub_self, zero_mul, sub_zero] at h
   linarith
 
 /-- **Normal Jacobi fields.** A Jacobi field on a preconnected parameter set is orthogonal to the
@@ -205,6 +205,59 @@ theorem IsJacobiFieldOn.starProjection_singleton_eq
     hJ.inner_curveVelocityWithin_eq hs ha ht,
     hJ.isGeodesicCurveOn.norm_curveVelocityWithin_eq hs ht ha, RCLike.ofReal_real_eq_id, id_eq]
 
+omit [T2Space M] in
+/-- The tangential projection has differentiable coordinates, and its covariant derivative is
+obtained by projecting the covariant derivative of the original field. -/
+private theorem IsGeodesicCurveOn.differentiableWithinAt_and_alongCurveWithin_starProjection
+    (h : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s) (ht : t ∈ s)
+    (hJ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ J (γ t)) s t) :
+    DifferentiableWithinAt ℝ (sectionCoord (F := E) γ
+      (fun r ↦ (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)) (γ t)) s t ∧
+    alongCurveWithin (leviCivitaConnection I M) γ
+        (fun r ↦ (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)) s t =
+      (ℝ ∙ curveVelocityWithin I γ s t).starProjection
+        (alongCurveWithin (leviCivitaConnection I M) γ J s t) := by
+  let f : ℝ → ℝ := fun r ↦
+    inner ℝ (J r) (curveVelocityWithin I γ s r) / ‖curveVelocityWithin I γ s t‖ ^ 2
+  have hv := differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn
+    h.contMDiffOn ht (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
+  have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
+  have hprod := hm.hasDerivWithinAt_inner_alongCurveWithin (h.mdifferentiableOn t ht) hJ hv
+  rw [← accelerationWithin_def, h.accelerationWithin_eq_zero t ht,
+    inner_zero_right, add_zero] at hprod
+  have hf := hprod.div_const (‖curveVelocityWithin I γ s t‖ ^ 2)
+  have hproj (r : ℝ) (hr : r ∈ s) :
+      (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r) =
+        f r • curveVelocityWithin I γ s r := by
+    dsimp only [f]
+    rw [Submodule.starProjection_singleton, real_inner_comm,
+      h.norm_curveVelocityWithin_eq hs hr ht, RCLike.ofReal_real_eq_id, id_eq]
+  have hcoord : sectionCoord (F := E) γ
+      (fun r ↦ (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)) (γ t) =ᶠ[𝓝[s] t]
+        f • sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ t) := by
+    filter_upwards [self_mem_nhdsWithin] with r hr
+    simp only [sectionCoord_apply, hproj r hr, map_smul, Pi.smul_apply']
+  refine ⟨(hf.differentiableWithinAt.smul hv).congr_of_eventuallyEq hcoord
+    (hcoord.eq_of_nhdsWithin ht), ?_⟩
+  rw [alongCurveWithin_congr _ γ _
+    (Filter.mem_of_superset self_mem_nhdsWithin (fun r hr ↦ hproj r hr)) (hproj t ht),
+    h.alongCurveWithin_smul_curveVelocityWithin ht hf.differentiableWithinAt,
+    hf.derivWithin (h.uniqueDiffOn t ht), Submodule.starProjection_singleton,
+    real_inner_comm, RCLike.ofReal_real_eq_id, id_eq]
+
+omit [T2Space M] in
+/-- Covariant differentiation commutes with the tangential projection of a differentiable field
+along a geodesic. The formula also holds when the geodesic velocity vanishes. -/
+@[simp]
+theorem IsGeodesicCurveOn.alongCurveWithin_starProjection_singleton
+    (h : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s) (ht : t ∈ s)
+    (hJ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ J (γ t)) s t) :
+    alongCurveWithin (leviCivitaConnection I M) γ
+        (fun r ↦ (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)) s t =
+      (ℝ ∙ curveVelocityWithin I γ s t).starProjection
+        (alongCurveWithin (leviCivitaConnection I M) γ J s t) :=
+  (h.differentiableWithinAt_and_alongCurveWithin_starProjection hs ht hJ).2
+
 /-- The tangential component of a Jacobi field, its orthogonal projection onto the line spanned by
 the velocity, is a Jacobi field on a preconnected parameter set. -/
 theorem IsJacobiFieldOn.isJacobiFieldOn_starProjection_singleton [I.Boundaryless]
@@ -232,6 +285,48 @@ theorem IsJacobiFieldOn.isJacobiFieldOn_sub_starProjection_singleton [I.Boundary
       (fun r ↦ J r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)) s :=
   (hJ.add ((hJ.isJacobiFieldOn_starProjection_singleton hs).const_smul (-1))).congr fun r _ ↦ by
     simp [sub_eq_add_neg]
+
+omit [T2Space M] in
+/-- Covariant differentiation commutes with the normal projection of a differentiable field
+along a geodesic. -/
+@[simp]
+theorem IsGeodesicCurveOn.alongCurveWithin_sub_starProjection_singleton
+    (h : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s) (ht : t ∈ s)
+    (hJ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ J (γ t)) s t) :
+    alongCurveWithin (leviCivitaConnection I M) γ
+        (fun r ↦ J r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)) s t =
+      alongCurveWithin (leviCivitaConnection I M) γ J s t -
+        (ℝ ∙ curveVelocityWithin I γ s t).starProjection
+          (alongCurveWithin (leviCivitaConnection I M) γ J s t) := by
+  let N := fun r ↦ J r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)
+  let P := fun r ↦ (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)
+  have hsum : J = fun r ↦ N r + P r := by funext r; simp [N, P]
+  have hP := h.differentiableWithinAt_and_alongCurveWithin_starProjection hs ht hJ
+  have hcoord : sectionCoord (F := E) γ N (γ t) =
+      sectionCoord (F := E) γ J (γ t) - sectionCoord (F := E) γ P (γ t) := by
+    funext r
+    simp only [N, P, sectionCoord_apply, map_sub, Pi.sub_apply]
+  have hN : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ N (γ t)) s t := by
+    rw [hcoord]
+    exact hJ.sub hP.1
+  have hD := alongCurveWithin_add (leviCivitaConnection I M) γ N P s hN hP.1
+  rw [← hsum, hP.2] at hD
+  exact eq_sub_of_add_eq hD.symm
+
+omit [T2Space M] in
+/-- The normal projection of a differentiable field along a geodesic and its covariant derivative
+are both orthogonal to the velocity. -/
+theorem IsGeodesicCurveOn.inner_sub_starProjection_singleton_eq_zero
+    (h : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s) (ht : t ∈ s)
+    (hJ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ J (γ t)) s t) :
+    inner ℝ (J t - (ℝ ∙ curveVelocityWithin I γ s t).starProjection (J t))
+        (curveVelocityWithin I γ s t) = 0 ∧
+      inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ
+        (fun r ↦ J r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)) s t)
+          (curveVelocityWithin I γ s t) = 0 := by
+  rw [h.alongCurveWithin_sub_starProjection_singleton hs ht hJ]
+  exact ⟨Submodule.starProjection_inner_eq_zero _ _ (Submodule.mem_span_singleton_self _),
+    Submodule.starProjection_inner_eq_zero _ _ (Submodule.mem_span_singleton_self _)⟩
 
 /-- **Splitting of Jacobi fields.** On a preconnected parameter set, every Jacobi field is the sum
 of a tangential Jacobi field `(α + β t) γ'(t)` and a Jacobi field orthogonal to the velocity. -/

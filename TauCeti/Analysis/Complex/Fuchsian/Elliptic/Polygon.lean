@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Finite
+public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Meridian
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Stabilizer
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Elliptic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Orbit
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
@@ -22,6 +24,9 @@ The classification is an equivalence with the actual elliptic-orbit subtype of t
 quotient. Its characteristic equations recover the orbit representatives and their stabilizer
 orders, so it supplies both the number and the orders of the elliptic points in an orbifold
 signature. Discreteness and compactness are not additional hypotheses.
+
+The finite vertex-cycle transformation is also identified with the positive stabilizer generator.
+Thus a positive meridian lifts to that cycle transformation, with no inversion.
 
 ## References
 
@@ -154,7 +159,8 @@ private theorem ellipticOrbitMap_apply_inr
     (σ.ellipticOrbitMap hmap hdisj (.inr i)).val =
       Quotient.mk'' (σ.selfPairedSideFixedPoint i) := rfl
 
-private theorem quotientMk_vertex_ne_selfPairedSideFixedPoint
+/-- The fixed point of a self-paired side is not equivalent to a finite vertex. -/
+theorem quotientMk_vertex_ne_selfPairedSideFixedPoint
     (hmap : ∀ i, σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
@@ -176,7 +182,8 @@ private theorem quotientMk_vertex_ne_selfPairedSideFixedPoint
       (P.mem_leftHalfPlane_of_mem_side hi hip hiq hji)
       (P.side_subset_range_sideGeodesic _ hside)
 
-private theorem selfPairedSideOrbit_injective
+/-- The fixed points of distinct self-paired sides are not equivalent. -/
+theorem injective_quotientMk_selfPairedSideFixedPoint
     (hmap : ∀ i, σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
@@ -211,7 +218,7 @@ private theorem ellipticOrbitMap_injective
     exact False.elim ((σ.quotientMk_vertex_ne_selfPairedSideFixedPoint hmap hdisj
       (Sum.inl_getLeft (P.vertex k) k.2.1).symm i)
       (hk.trans (congrArg Subtype.val heq.symm)))
-  · exact congrArg Sum.inr (σ.selfPairedSideOrbit_injective hmap hdisj
+  · exact congrArg Sum.inr (σ.injective_quotientMk_selfPairedSideFixedPoint hmap hdisj
       (congrArg Subtype.val heq))
 
 private theorem ellipticOrbitMap_surjective
@@ -326,5 +333,29 @@ theorem natCard_ellipticOrbits
     Nat.card Γ.ellipticOrbits =
       Nat.card σ.EllipticVertexCycle + Nat.card {i : Fin n // σ.pair i = i} := by
   rw [← Nat.card_congr (σ.ellipticOrbitEquiv hmap hcover hdisj), Nat.card_sum]
+
+section Meridian
+
+open _root_.Subgroup
+
+variable {N : ℕ} [NeZero N] {P : ConvexPolygon N} (σ : P.SidePairing)
+  {Γ : Subgroup PSL(2, ℝ)} {j : Fin N} {z : ℍ} [Finite (stabilizer Γ z)]
+
+/-- A positive meridian in the finite vertex quotient lifts to the polygon's cycle
+transformation. Signed multiple turns give the corresponding signed power of that cycle,
+including for the constant lift at the fixed point. -/
+theorem ellipticMeridian_lift_endpoint_eq_cycleMap_zpow_smul (hz : P.vertex j = .inl z)
+    (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    (n : ℤ) {τ : ℍ} {f : unitInterval → ℍ}
+    (hf : Continuous f) (h₀ : f 0 = τ)
+    (hq : ∀ t, discCoordinate z (f t) ^ Nat.card (stabilizer Γ z) =
+      Γ.ellipticMeridian z n τ t) : f 1 = σ.cycleMap j ^ n • τ := by
+  rw [σ.cycleMap_eq_positiveStabilizerGenerator hz hmap hdisj]
+  -- Powers and actions in the stabilizer are restrictions of the ambient projective ones.
+  exact Γ.ellipticMeridian_lift_endpoint z n hf h₀ hq
+
+end Meridian
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

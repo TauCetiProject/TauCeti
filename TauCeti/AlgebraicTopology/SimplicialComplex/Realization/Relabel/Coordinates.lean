@@ -43,7 +43,7 @@ variable {α β : Type*} [DecidableEq β]
 theorem relabelingHomeomorph_coe_eq_extendByZero
     (x : {x : Realization K // x.1.support ∈ P}) :
     ((P.relabelingHomeomorph e hK hL x).1.1 : β → ℝ) =
-      Function.ExtendByZero.continuousLinearMap ℝ e (x.1.1 : α → ℝ) := by
+      Function.ExtendByZero.continuousLinearMap ℝ ℝ e (x.1.1 : α → ℝ) := by
   rw [relabelingHomeomorph_val, Function.ExtendByZero.continuousLinearMap_apply]
   exact Finsupp.coe_mapDomain_eq_extend e.injective _
 
@@ -62,7 +62,7 @@ include hK hL in
 original coordinate range. This includes precomplexes with unused ambient vertices. -/
 theorem range_coe_map_eq_image_extendByZero :
     range (fun y : {y : Realization L // y.1.support ∈ P.map e} => (y.1.1 : β → ℝ)) =
-      (Function.ExtendByZero.continuousLinearMap ℝ e) ''
+      (Function.ExtendByZero.continuousLinearMap ℝ ℝ e) ''
         range (fun x : {x : Realization K // x.1.support ∈ P} => (x.1.1 : α → ℝ)) := by
   rw [← (P.relabelingHomeomorph e hK hL).surjective.range_comp
     (fun y => (y.1.1 : β → ℝ))]

@@ -54,6 +54,45 @@ universe u
 variable {k : Type*} {M : Type u} [Field k] [AddCommGroup M] [Module k M] [Module k[X] M]
   [IsScalarTower k k[X] M] [Module.Finite k[X] M] {G : InternalGrading k M} {d : ℕ}
 
+omit [Module.Finite k[X] M] in
+/-- The union over all degrees `p` of `k`-bases `s p` of complements `C p` to `X` times the
+degree-`(p + d)` part of a homogeneous submodule `L` is `k[X]`-linearly independent: the `C p` are
+`k`-independent as they lie in distinct pieces, and a relation among them could be divided by `X`
+indefinitely. -/
+private theorem linearIndependent_sigma_of_disjoint_torsion
+    (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
+    (L : Submodule k[X] M) (hL : DirectSum.SetLike.IsHomogeneous G.piece L)
+    (hLT : Disjoint L (Submodule.torsion k[X] M)) (C : ℤ → Submodule k M) (s : ℤ → Set M)
+    (hsC : ∀ p, s p ⊆ C p) (hli : ∀ p, LinearIndependent k (fun x : s p ↦ (x : M)))
+    (hspan : ∀ p, Submodule.span k (s p) = C p) (hCG : ∀ p, C p ≤ G.piece p)
+    (hCL : ∀ p, C p ≤ L.restrictScalars k)
+    (hWC : ∀ p, Disjoint (Submodule.map ((_root_.LinearMap.lsmul k[X] M X).restrictScalars k)
+      (G.piece (p + d) ⊓ L.restrictScalars k)) (C p)) :
+    LinearIndependent k[X] (fun i : (Σ p : ℤ, s p) ↦ (i.2 : M)) := by
+  classical
+  have hspanL : Submodule.span k[X] (Set.range fun i : (Σ p : ℤ, s p) ↦ (i.2 : M)) ≤ L :=
+    Submodule.span_le.mpr fun _ ⟨i, hi⟩ ↦ hi ▸ hCL _ (hsC _ i.2.2)
+  refine LinearIndependent.polynomial ?_ (fun x hx hXx ↦ ?_) fun z hz y hy hzy ↦ ?_
+  · -- Over `k`, the `C p` are independent because they lie in distinct pieces.
+    refine linearIndependent_iUnion_finite (f := fun p (x : s p) ↦ (x : M)) hli
+      fun p t _ hpt ↦ ?_
+    simp only [Subtype.range_coe, hspan]
+    refine (G.isInternal.submodule_iSupIndep p).mono (hCG p) ?_
+    exact iSup₂_le fun q hq ↦ le_iSup₂_of_le q (fun h ↦ hpt (h ▸ hq)) (hCG q)
+  · -- `X` is a nonzerodivisor on `L`.
+    exact (Submodule.disjoint_def.mp hLT) x (hspanL hx)
+      ((Submodule.mem_torsion_iff x).mpr ⟨⟨X, X_mem_nonZeroDivisors⟩, hXx⟩)
+  · -- Each component of `z` lies in both `C p` and `X` times the part of degree `p + d` of `L`.
+    have hzero (p : ℤ) : (DirectSum.decompose G.piece z p : M) = 0 := by
+      refine Submodule.disjoint_def.mp (hWC p) _ ?_
+        (G.decompose_mem_of_mem_span_sigma C s hsC hCG hz p)
+      rw [hzy, ← pow_one (X : k[X]), coe_decompose_X_pow_smul hX, Nat.cast_one, one_mul,
+        pow_one]
+      exact ⟨_, Submodule.mem_inf.mpr
+        ⟨(DirectSum.decompose G.piece y (p + d)).2, hL _ (hspanL hy)⟩, rfl⟩
+    rw [← DirectSum.sum_support_decompose G.piece z]
+    exact Finset.sum_eq_zero fun p _ ↦ hzero p
+
 /-- **Homogeneous bases of the free part.** Let `X` lower degree by `d ≠ 0` in a finitely
 generated graded `k[X]`-module over a field. Then a homogeneous `k[X]`-submodule `L` meeting the
 torsion submodule trivially is the span of a `k[X]`-linearly independent family of homogeneous
@@ -80,51 +119,19 @@ theorem exists_linearIndependent_span_eq_of_disjoint_torsion (hd : d ≠ 0)
     refine ⟨C' ⊓ V p, inf_le_right, hC'.disjoint.mono_right inf_le_left, ?_⟩
     rw [← sup_inf_assoc_of_le C' (hWV p), hC'.sup_eq_top, top_inf_eq]
   choose C hCV hWC hWCV using hC
+  have hCG (p : ℤ) : C p ≤ G.piece p := fun x hx ↦ (hCV p hx).1
+  have hCL (p : ℤ) : C p ≤ L.restrictScalars k := fun x hx ↦ (hCV p hx).2
   choose s hsC hspan hli using fun p ↦ exists_linearIndependent k (C p : Set M)
   have hspan' (p : ℤ) : Submodule.span k (s p) = C p := by rw [hspan p, Submodule.span_eq]
   -- The family `b` collects the bases `s p` of all degrees.
   let b : (Σ p : ℤ, s p) → M := fun i ↦ i.2
   have hbC (i : Σ p : ℤ, s p) : b i ∈ C i.1 := hsC i.1 i.2.2
-  have hbG (i : Σ p : ℤ, s p) : b i ∈ G.piece i.1 := (Submodule.mem_inf.mp (hCV _ (hbC i))).1
+  have hbG (i : Σ p : ℤ, s p) : b i ∈ G.piece i.1 := hCG _ (hbC i)
   have hspanL : Submodule.span k[X] (Set.range b) ≤ L :=
-    Submodule.span_le.mpr fun _ ⟨i, hi⟩ ↦ hi ▸ (Submodule.mem_inf.mp (hCV _ (hbC i))).2
-  -- Every component of an element of the `k`-span of `b` lies in the matching `C p`.
-  have hcomp {z : M} (hz : z ∈ Submodule.span k (Set.range b)) (p : ℤ) :
-      (DirectSum.decompose G.piece z p : M) ∈ C p := by
-    induction hz using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨i, rfl⟩ := hx
-      by_cases hi : i.1 = p
-      · rw [DirectSum.decompose_of_mem_same _ (hi ▸ hbG i)]
-        exact hi ▸ hbC i
-      · rw [DirectSum.decompose_of_mem_ne _ (hbG i) hi]
-        exact (C p).zero_mem
-    | zero => simp
-    | add x y _ _ hx hy => simpa using (C p).add_mem hx hy
-    | smul a x _ hx =>
-      rw [DirectSum.decompose_smul, DirectSum.smul_apply, Submodule.coe_smul]
-      exact (C p).smul_mem a hx
+    Submodule.span_le.mpr fun _ ⟨i, hi⟩ ↦ hi ▸ hCL _ (hbC i)
   refine ⟨Σ p : ℤ, s p, b, fun i ↦ i.1, hbG, ?_, ?_⟩
-  · refine LinearIndependent.polynomial ?_ (fun x hx hXx ↦ ?_) fun z hz y hy hzy ↦ ?_
-    · -- Over `k`, the `C p` are independent because they lie in distinct pieces.
-      refine linearIndependent_iUnion_finite (f := fun p (x : s p) ↦ (x : M)) hli
-        fun p t _ hpt ↦ ?_
-      simp only [Subtype.range_coe, hspan']
-      refine (G.isInternal.submodule_iSupIndep p).mono (fun x hx ↦ (hCV p hx).1) ?_
-      exact iSup₂_le fun q hq ↦ le_iSup₂_of_le q (fun h ↦ hpt (h ▸ hq))
-        fun x hx ↦ (hCV q hx).1
-    · -- `X` is a nonzerodivisor on `L`.
-      exact (Submodule.disjoint_def.mp hLT) x (hspanL hx)
-        ((Submodule.mem_torsion_iff x).mpr ⟨⟨X, X_mem_nonZeroDivisors⟩, hXx⟩)
-    · -- Each component of `z` lies in both `C p` and `W p`.
-      have hzero (p : ℤ) : (DirectSum.decompose G.piece z p : M) = 0 := by
-        refine Submodule.disjoint_def.mp (hWC p) _ ?_ (hcomp hz p)
-        rw [hzy, ← pow_one (X : k[X]), coe_decompose_X_pow_smul hX, Nat.cast_one, one_mul,
-          pow_one]
-        exact ⟨_, Submodule.mem_inf.mpr
-          ⟨(DirectSum.decompose G.piece y (p + d)).2, hL _ (hspanL hy)⟩, rfl⟩
-      rw [← DirectSum.sum_support_decompose G.piece z]
-      exact Finset.sum_eq_zero fun p _ ↦ hzero p
+  · exact linearIndependent_sigma_of_disjoint_torsion hX L hL hLT C s hsC hli hspan'
+      hCG hCL hWC
   · -- Each homogeneous `x ∈ L` is `X • y + c` with `y` of higher degree and `c ∈ C p`.
     refine le_antisymm hspanL (le_of_forall_mem_piece_exists_sub_X_smul_mem hd
       (bddAbove_setOf_piece_ne_bot hX) hL fun p x hxG hxL ↦ ?_)

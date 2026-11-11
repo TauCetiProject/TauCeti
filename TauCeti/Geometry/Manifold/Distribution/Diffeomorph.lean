@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Distribution
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
 # Transport of distributions through diffeomorphisms
@@ -26,6 +27,8 @@ coordinates. `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global special
 `TauCeti.IsInvolutiveDistribution.diffeomorph` is its global specialization, and
 `Diffeomorph.isInvolutiveDistribution_iff` gives the equivalence for identified distributions.
 `Diffeomorph.isInvolutiveDistribution_comap_mfderiv_iff` gives the pullback characterization.
+`PartialDiffeomorph.isInvolutiveDistributionOn_comap_mfderivWithin` shows that the pullback of a
+distribution involutive on the target is involutive on the source.
 
 The distributions remain families of tangent subspaces, and their pullback is expressed by
 `Submodule.comap` along the differential. Pulling back a `C^m` frame through a `C^n`
@@ -95,8 +98,7 @@ theorem IsDistributionFrameOn.comap_mfderivWithin {m : ℕ∞ω} {ι : Type*}
     simp at hmn
   have hΦinv (x : M) (hx : x ∈ Φ.source) :
       (mfderivWithin I J Φ Φ.source x).IsInvertible := by
-    rw [mfderivWithin_eq_mfderiv (Φ.open_source.uniqueMDiffOn x hx)
-      (Φ.mdifferentiableAt hn0 hx)]
+    rw [Φ.mfderivWithin_source hx]
     exact (_root_.PartialDiffeomorph.isLocalDiffeomorphAt I J n Φ hx).isInvertible_mfderiv hn0
   exact isDistributionFrameOn_comap_mfderivWithin_of_isInvertible hX Φ Φ.source
     Φ.contMDiffOn hΦinv Φ.open_source.uniqueMDiffOn hmn
@@ -138,6 +140,25 @@ end TauCeti
 namespace PartialDiffeomorph
 
 open TauCeti
+
+omit [CompleteSpace E] in
+/-- The differential of a partial diffeomorphism carries a family of subspaces onto its pullback
+through the inverse. -/
+theorem map_mfderiv_eq_comap_mfderivWithin_symm (Φ : PartialDiffeomorph I J M N n) (hn : n ≠ 0)
+    (D : Π x : M, Submodule 𝕜 (TangentSpace I x)) {x : M} (hx : x ∈ Φ.source) :
+    (D x).map (mfderiv I J Φ x).toLinearMap =
+      (D (Φ.symm (Φ x))).comap (mfderivWithin J I Φ.symm Φ.symm.source (Φ x)).toLinearMap := by
+  have hleft : Φ.symm (Φ x) = x := Φ.left_inv hx
+  rw [Φ.symm.mfderivWithin_source (Φ.map_source hx), hleft]
+  ext v
+  constructor
+  · rintro ⟨u, hu, rfl⟩
+    have h : mfderiv J I Φ.symm (Φ x) (mfderiv I J Φ x u) ∈ D x :=
+      (Φ.mfderiv_symm_apply_mfderiv_apply hn hx u).symm ▸ hu
+    exact Submodule.mem_comap.2 h
+  · refine fun hv ↦ ⟨_, Submodule.mem_comap.1 hv, ?_⟩
+    have h := Φ.mfderiv_apply_mfderiv_symm_apply hn (Φ.map_source hx) v
+    rwa [hleft] at h
 
 section Involutive
 
@@ -199,6 +220,25 @@ theorem isInvolutiveDistributionOn (Φ : PartialDiffeomorph I J M N n)
   have hmem := (hDD' (Φ.symm y) hxSource _).mp hbr
   rw [mpullback_apply, (hΦinv _ hxSource).self_apply_inverse, hΦx] at hmem
   exact hmem
+
+omit [CompleteSpace E] in
+/-- The pullback of a distribution through the differential of a partial diffeomorphism is
+involutive on the source when the distribution is involutive on the target. -/
+theorem isInvolutiveDistributionOn_comap_mfderivWithin [CompleteSpace F]
+    (Φ : PartialDiffeomorph I J M N n)
+    (hD' : IsInvolutiveDistributionOn J D' Φ.target) (hn : minSmoothness 𝕜 2 ≤ n) :
+    IsInvolutiveDistributionOn I
+      (fun x ↦ (D' (Φ x)).comap (mfderivWithin I J Φ Φ.source x).toLinearMap) Φ.source := by
+  have hn0 : n ≠ 0 := ne_of_gt
+    (lt_of_lt_of_le (by norm_num : (0 : ℕ∞ω) < 2) (le_minSmoothness.trans hn))
+  refine Φ.symm.isInvolutiveDistributionOn hD' hn fun y hy v ↦ ?_
+  have hx : Φ.symm y ∈ Φ.source := Φ.map_target hy
+  have hmem : mfderiv J I Φ.symm y v ∈ (D' (Φ (Φ.symm y))).comap
+      (mfderivWithin I J Φ Φ.source (Φ.symm y)).toLinearMap ↔ v ∈ D' y := by
+    have hright : Φ (Φ.symm y) = y := Φ.right_inv hy
+    rw [Submodule.mem_comap, Φ.mfderivWithin_source hx, ContinuousLinearMap.coe_coe,
+      Φ.mfderiv_apply_mfderiv_symm_apply hn0 hy, hright]
+  exact hmem.symm
 
 end Involutive
 

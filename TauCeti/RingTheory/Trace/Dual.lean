@@ -45,7 +45,7 @@ public section
 namespace Module.Dual
 
 variable {K L V : Type*} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
-  [Algebra.IsSeparable K L] [AddCommGroup V] [Module L V] [Module K V] [IsScalarTower K L V]
+  [Algebra.IsSeparable K L] [AddCommMonoid V] [Module L V] [Module K V] [IsScalarTower K L V]
 
 /-- The value at `v` of the `L`-linear form attached to a `K`-linear form `μ`: the element of `L`
 whose trace pairing is the `K`-linear form `b ↦ μ (b • v)` on `L`. -/
@@ -62,18 +62,15 @@ private theorem trace_mul_traceCompInvAux (μ : Module.Dual K V) (v : V) (b : L)
 private theorem eq_traceCompInvAux {μ : Module.Dual K V} {v : V} {x : L}
     (h : ∀ b : L, Algebra.trace K L (x * b) = μ (b • v)) : x = traceCompInvAux μ v :=
   sub_eq_zero.mp <| (traceForm_nondegenerate K L).1 _ fun b ↦ by
-    rw [Algebra.traceForm_apply, sub_mul, map_sub, h, trace_mul_traceCompInvAux, sub_self]
+    simp [h, trace_mul_traceCompInvAux]
 
 variable (K L V) in
 /-- The `L`-linear form attached to a `K`-linear form. -/
 private noncomputable def traceCompInvFun (μ : Module.Dual K V) : Module.Dual L V where
   toFun := traceCompInvAux μ
-  map_add' v w := (eq_traceCompInvAux fun b ↦ by
-    rw [add_mul, map_add, trace_mul_traceCompInvAux, trace_mul_traceCompInvAux, smul_add,
-      map_add]).symm
+  map_add' v w := (eq_traceCompInvAux fun b ↦ by simp [add_mul, trace_mul_traceCompInvAux]).symm
   map_smul' a v := (eq_traceCompInvAux fun b ↦ by
-    rw [RingHom.id_apply, smul_eq_mul, mul_comm a, mul_assoc, trace_mul_traceCompInvAux, mul_comm,
-      mul_smul]).symm
+    simp [mul_comm a, mul_assoc, trace_mul_traceCompInvAux, mul_smul]).symm
 
 private theorem traceCompInvFun_apply (μ : Module.Dual K V) (v : V) :
     traceCompInvFun K L V μ v = traceCompInvAux μ v :=
@@ -109,10 +106,8 @@ omit [Module K V] [IsScalarTower K L V] in
 /-- An `L`-linear form vanishes at `v` exactly when the traces of its values at the multiples
 `b • v` all vanish. -/
 theorem apply_eq_zero_iff_forall_trace_eq_zero (φ : Module.Dual L V) (v : V) :
-    φ v = 0 ↔ ∀ b : L, Algebra.trace K L (φ (b • v)) = 0 := by
-  refine ⟨fun h b ↦ by simp [h], fun h ↦ ?_⟩
-  refine (traceForm_nondegenerate K L).1 (φ v) fun b ↦ ?_
-  rw [Algebra.traceForm_apply, mul_comm, ← smul_eq_mul, ← map_smul]
-  exact h b
+    φ v = 0 ↔ ∀ b : L, Algebra.trace K L (φ (b • v)) = 0 :=
+  ⟨fun h b ↦ by simp [h], fun h ↦ (traceForm_nondegenerate K L).1 (φ v) fun b ↦ by
+    simpa [mul_comm] using h b⟩
 
 end Module.Dual

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.BaseChange.Hom
 public import TauCeti.Algebra.Lie.NormTwoShell.FixedBasis
-public import TauCeti.Algebra.Lie.Subalgebra.Fixed
+public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 
 /-!
 # Scalar extension of the pinned shell fixed lattice

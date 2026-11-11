@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.BinomialBasis
+public import TauCeti.RingTheory.Polynomial.Binomial.Basis
 public import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.RingTheory.AlgebraTower
 import Mathlib.Algebra.CharP.Algebra
@@ -21,7 +21,7 @@ integer coefficients are unique.
 These are the polynomial normal forms for products of toral binomial coefficients.
 
 The construction iterates the univariate basis from
-`TauCeti.RingTheory.Polynomial.BinomialBasis` using Mathlib's scalar-tower basis.
+`TauCeti.RingTheory.Polynomial.Binomial.Basis` using Mathlib's scalar-tower basis.
 
 ## References
 

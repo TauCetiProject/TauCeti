@@ -42,6 +42,8 @@ the `[Fintype N]` that the cube radius uses.
   homotopy along the trace of that homotopy at the base point.
 * `TauCeti.homotopyGroupTransport_map`: **freely homotopic maps induce the same map on homotopy
   groups, up to transport along the trace of the homotopy.**
+* `HomotopyGroup.map_eq_homotopyGroupEquivOfPath_comp_of_homotopy`: the same statement for the
+  induced maps themselves, as base-point change along the trace.
 * `TauCeti.homotopyGroupTransport_map_map`: the case of a round trip `g ∘ f ≃ id`.
 * `HomotopyGroup.map_eq_one_of_nullhomotopic`: in positive dimensions a null-homotopic map
   induces the trivial map on homotopy groups.
@@ -125,6 +127,18 @@ end TauCeti
 namespace HomotopyGroup
 
 variable {N X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+variable [Fintype N] in
+/-- **Freely homotopic maps induce the same map on homotopy groups, up to base-point change.** The
+map induced by `g` is the map induced by `f` followed by base-point change along the trace of a
+homotopy `H` from `f` to `g` at the base point. -/
+theorem map_eq_homotopyGroupEquivOfPath_comp_of_homotopy {f g : C(X, Y)} (H : f.Homotopy g)
+    (x : X) :
+    map (N := N) g (rfl : g x = g x) =
+      TauCeti.homotopyGroupEquivOfPath (H.evalAt x) ∘ map f rfl := by
+  funext a
+  rw [Function.comp_apply, TauCeti.homotopyGroupEquivOfPath_apply]
+  exact (TauCeti.homotopyGroupTransport_map H rfl rfl a).symm
 
 section Finite
 

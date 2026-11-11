@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Descent
-public import TauCeti.Geometry.Manifold.Submersion
+public import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
 # Descent of basic forms along submersions

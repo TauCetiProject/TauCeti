@@ -84,6 +84,14 @@ noncomputable def f4ShortRootQuotientLift (a : Fin 26) :
       f4ModularChevalleyBasis (f4LongRootBasisCoordinate a) := by
   rfl
 
+/-- The canonical lift of a root coordinate of the quotient is the root vector of its preimage
+under the special root permutation. -/
+theorem f4ShortRootQuotientLift_symm_inl (i : F4ShortRootIndex) :
+    f4ShortRootQuotientLift (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
+      f4ModularRootVector (f4SpecialIsogenyIndexEquiv i) := by
+  rw [f4ShortRootQuotientLift_eq_basis, f4LongRootBasisCoordinate_symm_inl,
+    f4ModularChevalleyBasis_inl_eq_rootVector, f4PinnedRootIndex_f4KillingRootLabel]
+
 theorem f4ShortRootSubspace_mkQ_quotientLift (a : Fin 26) :
     f4ShortRootSubspace.mkQ (f4ShortRootQuotientLift a) =
       f4ShortRootQuotientBasis a := by
@@ -182,6 +190,16 @@ noncomputable def f4ShortRootIdealDividedSquareColumn
     f4ShortRootIdealDividedSquareColumn k a =
       f4ShortRootDividedAdjointSquare k (f4ShortRootLieIdealBasis a) := by
   rfl
+
+/-- The ideal divided-square column vanishes when the ambient divided square of the basis vector
+does. -/
+theorem f4ShortRootIdealDividedSquareColumn_eq_zero
+    (k : Fin 4 ⊕ Fin 4) (a : Fin 26)
+    (h : f4ModularDividedAdjointSquare k
+      (f4ShortRootLieIdealBasis a : f4ModularChevalleyLieAlgebra) = 0) :
+    f4ShortRootIdealDividedSquareColumn k a = 0 := by
+  simp only [f4ShortRootIdealDividedSquareColumn_apply]
+  exact Subtype.ext ((f4ModularDividedAdjointSquare_basis k a).symm.trans h)
 
 /-- The ideal's first-order canonical column is the corresponding sparse root-matrix column. -/
 theorem f4ShortRootIdealFirstColumn_eq

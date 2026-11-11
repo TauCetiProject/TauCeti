@@ -393,6 +393,7 @@ noncomputable def hyperbolicSixEvenEquivMatrixProd :
     (splitEvenPolarization_W_ne_bot K (by norm_num))
       ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
 
+omit [NeZero (2 : K)] in
 /-- The hyperbolic matrix-product model is the model of the canonical split polarization. -/
 theorem hyperbolicSixEvenEquivMatrixProd_apply (x : even (splitEvenForm K 3)) :
     hyperbolicSixEvenEquivMatrixProd K x =

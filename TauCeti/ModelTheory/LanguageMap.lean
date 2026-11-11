@@ -26,10 +26,18 @@ the `L`-structure along `g`; the `L'`-structure can be taken to be the reduct.
   it expands along is the original structure.
 * `FirstOrder.Language.LHom.sumMap_isExpansionOn_of_reduct`: a structure on a sum language is
   expanded along `ϕ.sumMap ψ` by a sum structure expanding its two parts along `ϕ` and `ψ`.
+* `FirstOrder.Language.LHom.mem_range_sumInl_onFunction_of_mem_range_sumMap` and
+  `FirstOrder.Language.LHom.mem_range_sumInl_onRelation_of_mem_range_sumMap`: the symbols of
+  `L.sum (L₁.sum L₂)` shared by the images of `L.sum L₁` and `L.sum L₂` come from `L`.
 
 The relation map of `lhomWithConstants` inverts the elimination of the empty summand of
 `L[[γ]].Relations n` by `Equiv.sumEmpty`
-(`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`).
+(`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`), symbol sets of `L[[γ]]` avoiding the
+added constants lie in the range of `lhomWithConstants`
+(`FirstOrder.Language.subset_range_lhomWithConstants_onFunction`,
+`FirstOrder.Language.subset_range_lhomWithConstants_onRelation`), and every `L[[γ]]`-structure is
+the expansion of its `L`-reduct by the interpretations of the added constants
+(`FirstOrder.Language.withConstantsStructure_reduct_eq`).
 -/
 
 public section
@@ -84,6 +92,44 @@ theorem sumMap_isExpansionOn_of_reduct {L₀ : Language.{u', v'}} {L₁ : Langua
     | .inl R, x => @map_onRelation L L₀ ϕ M ((LHom.sumInl : L →ᴸ L.sum L₁).reduct M) _ _ _ R x
     | .inr R, x => @map_onRelation L₁ L₁' ψ M ((LHom.sumInr : L₁ →ᴸ L.sum L₁).reduct M) _ _ _ R x
 
+section SumMap
+
+variable {L₁ : Language.{u', v'}} {L₂ : Language.{u'', v''}}
+
+/-- A function symbol of `L.sum (L₁.sum L₂)` that is the image of a function symbol of `L.sum L₁`
+along `(LHom.id L).sumMap LHom.sumInl` and of a function symbol of `L.sum L₂` along
+`(LHom.id L).sumMap LHom.sumInr` is the image of a function symbol of `L` along `LHom.sumInl`. -/
+theorem mem_range_sumInl_onFunction_of_mem_range_sumMap {s : Σ k, (L.sum (L₁.sum L₂)).Functions k}
+    (h₁ : s ∈ Set.range fun t : Σ k, (L.sum L₁).Functions k =>
+      (⟨t.1, ((LHom.id L).sumMap LHom.sumInl).onFunction t.2⟩ :
+        Σ k, (L.sum (L₁.sum L₂)).Functions k))
+    (h₂ : s ∈ Set.range fun t : Σ k, (L.sum L₂).Functions k =>
+      (⟨t.1, ((LHom.id L).sumMap LHom.sumInr).onFunction t.2⟩ :
+        Σ k, (L.sum (L₁.sum L₂)).Functions k)) :
+    s ∈ Set.range fun t : Σ k, L.Functions k =>
+      (⟨t.1, LHom.sumInl.onFunction t.2⟩ : Σ k, (L.sum (L₁.sum L₂)).Functions k) := by
+  obtain ⟨⟨k, f | f⟩, rfl⟩ := h₁
+  · exact ⟨⟨k, f⟩, rfl⟩
+  · obtain ⟨⟨k', f' | f'⟩, h⟩ := h₂ <;> obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h <;> cases h
+
+/-- A relation symbol of `L.sum (L₁.sum L₂)` that is the image of a relation symbol of `L.sum L₁`
+along `(LHom.id L).sumMap LHom.sumInl` and of a relation symbol of `L.sum L₂` along
+`(LHom.id L).sumMap LHom.sumInr` is the image of a relation symbol of `L` along `LHom.sumInl`. -/
+theorem mem_range_sumInl_onRelation_of_mem_range_sumMap {s : Σ k, (L.sum (L₁.sum L₂)).Relations k}
+    (h₁ : s ∈ Set.range fun t : Σ k, (L.sum L₁).Relations k =>
+      (⟨t.1, ((LHom.id L).sumMap LHom.sumInl).onRelation t.2⟩ :
+        Σ k, (L.sum (L₁.sum L₂)).Relations k))
+    (h₂ : s ∈ Set.range fun t : Σ k, (L.sum L₂).Relations k =>
+      (⟨t.1, ((LHom.id L).sumMap LHom.sumInr).onRelation t.2⟩ :
+        Σ k, (L.sum (L₁.sum L₂)).Relations k)) :
+    s ∈ Set.range fun t : Σ k, L.Relations k =>
+      (⟨t.1, LHom.sumInl.onRelation t.2⟩ : Σ k, (L.sum (L₁.sum L₂)).Relations k) := by
+  obtain ⟨⟨k, R | R⟩, rfl⟩ := h₁
+  · exact ⟨⟨k, R⟩, rfl⟩
+  · obtain ⟨⟨k', R' | R'⟩, h⟩ := h₂ <;> obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h <;> cases h
+
+end SumMap
+
 end LHom
 
 end Language
@@ -100,5 +146,37 @@ theorem lhomWithConstants_onRelation_sumEmpty {l : ℕ} (R : L[[γ]].Relations l
   cases R with
   | inl R => rfl
   | inr R => exact R.elim
+
+/-- Any set of arity-tagged function symbols of `L[[γ]]` containing none of the added constants
+`L.con c` lies in the range of `(L.lhomWithConstants γ).onFunction`. -/
+theorem subset_range_lhomWithConstants_onFunction {X : Set (Σ k, L[[γ]].Functions k)}
+    (hX : ∀ c, (⟨0, L.con c⟩ : Σ k, L[[γ]].Functions k) ∉ X) :
+    X ⊆ Set.range fun s : Σ k, L.Functions k =>
+      (⟨s.1, (L.lhomWithConstants γ).onFunction s.2⟩ : Σ k, L[[γ]].Functions k) := by
+  rintro ⟨k, f | c⟩ hf
+  · exact ⟨⟨k, f⟩, rfl⟩
+  · cases k with
+    | zero => exact (hX c hf).elim
+    | succ k => exact c.elim
+
+/-- Every set of arity-tagged relation symbols of `L[[γ]]` lies in the range of
+`(L.lhomWithConstants γ).onRelation`. -/
+theorem subset_range_lhomWithConstants_onRelation (Y : Set (Σ k, L[[γ]].Relations k)) :
+    Y ⊆ Set.range fun s : Σ k, L.Relations k =>
+      (⟨s.1, (L.lhomWithConstants γ).onRelation s.2⟩ : Σ k, L[[γ]].Relations k) := by
+  rintro ⟨k, R | R⟩ -
+  · exact ⟨⟨k, R⟩, rfl⟩
+  · exact R.elim
+
+/-- Every `L[[γ]]`-structure on `M` is the expansion of its `L`-reduct interpreting each `c : γ`
+as `(L.con c : M)`. -/
+theorem withConstantsStructure_reduct_eq (M : Type*) [S : L[[γ]].Structure M] :
+    @withConstantsStructure L M ((L.lhomWithConstants γ).reduct M) γ
+      (constantsOn.structure fun c => (L.con c : M)) = S := by
+  refine Structure.ext (funext fun k => funext fun f => funext fun xs => ?_)
+    (funext fun _ => funext fun | .inl _ => funext fun _ => rfl | .inr R => R.elim)
+  rcases f with f | c
+  · rfl
+  · cases k with | zero => rw [Unique.eq_default xs]; rfl | succ _ => exact c.elim
 
 end FirstOrder.Language

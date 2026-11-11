@@ -7,6 +7,11 @@ module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Decomposition
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.GaussSum
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Comparison
+
+import TauCeti.LinearAlgebra.FiniteBilinearModule.ZMod.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Classification
+import Mathlib.FieldTheory.Finiteness
 
 /-!
 # Two-elementary finite quadratic modules
@@ -29,8 +34,17 @@ nondegenerate `2`-elementary module of order `2^a`:
 Through Milgram's theorem these become conditions on the signatures of even lattices with
 `2`-elementary discriminant group, the arithmetic half of Nikulin's Theorem 3.6.2.
 
+These three invariants are also complete: two nondegenerate `2`-elementary modules are
+isometric exactly when their orders, Gauss signs and `½ℤ/ℤ`-valuedness agree. Indeed their
+polar pairings, read over `𝔽₂`, are classified by dimension and alternation. Nikulin's
+comparison theorem then recovers the quadratic form from the pairing and the Gauss sign.
+
 ## Main results
 
+* `TauCeti.FiniteBilinearModule.nonempty_isometry_iff_of_two_nsmul_eq_zero`: elementary
+  two-group pairings are classified by their order and alternation type.
+* `TauCeti.FiniteQuadraticModule.nonempty_isometry_iff_of_two_nsmul_eq_zero`: complete
+  classification by order, Gauss sign and `½ℤ/ℤ`-valuedness.
 * `TauCeti.FiniteQuadraticModule.exists_isometry_prod_pi_of_two_nsmul_eq_zero`: a nondegenerate
   `2`-elementary module is an orthogonal sum of copies of `q_θ^{(2)}(2)`, `u^{(2)}(2)` and
   `v^{(2)}(2)`.
@@ -46,12 +60,45 @@ Through Milgram's theorem these become conditions on the signatures of even latt
 ## References
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*,
-  Propositions 1.8.1 and 1.11.2, and §3.6 for `2`-elementary forms.
+  Propositions 1.8.1 and 1.11.2, Theorem 1.11.3, and §3.6 for `2`-elementary forms.
 -/
 
 public section
 
 open QuadraticMap.IsometryEquiv
+
+namespace TauCeti.FiniteBilinearModule
+
+/-- Nondegenerate pairings on elementary abelian two-groups are classified by their order
+and whether every self-pairing vanishes. This includes the trivial group. -/
+theorem nonempty_isometry_iff_of_two_nsmul_eq_zero {A B : FiniteBilinearModule}
+    (hA : A.IsNondegenerate) (hB : B.IsNondegenerate)
+    (h2A : ∀ x : A, 2 • x = 0) (h2B : ∀ x : B, 2 • x = 0) :
+    Nonempty (Isometry A B) ↔ Nat.card A = Nat.card B ∧
+      ((∀ x : A, A.pairing x x = 0) ↔ ∀ y : B, B.pairing y y = 0) := by
+  constructor
+  · rintro ⟨f⟩
+    refine ⟨Nat.card_congr f.toAddEquiv.toEquiv, ?_⟩
+    constructor
+    · intro h y
+      obtain ⟨x, rfl⟩ := f.toAddEquiv.surjective y
+      simp only [Isometry.coe_toAddEquiv, f.map_pairing, h]
+    · intro h x
+      rw [← f.map_pairing, h]
+  · rintro ⟨hcard, halt⟩
+    let := AddCommGroup.zmodModule h2A
+    let := AddCommGroup.zmodModule h2B
+    have hdim : Module.finrank (ZMod 2) A = Module.finrank (ZMod 2) B := by
+      rw [Module.natCard_eq_pow_finrank (K := ZMod 2) (V := A.carrier),
+        Module.natCard_eq_pow_finrank (K := ZMod 2) (V := B.carrier), Nat.card_zmod] at hcard
+      exact Nat.pow_right_injective (by decide) hcard
+    apply (A.nonempty_isometry_iff_equivalent_zmodForm 2 B).mpr
+    exact (A.isSymm_zmodForm 2).equivalent_of_finrank_eq_of_isAlt_iff
+      (B.isSymm_zmodForm 2) isSquare_of_charTwo'
+      ((A.nondegenerate_zmodForm_iff 2).mpr hA) ((B.nondegenerate_zmodForm_iff 2).mpr hB)
+      hdim (by simpa only [isAlt_zmodForm_iff] using halt)
+
+end TauCeti.FiniteBilinearModule
 
 namespace TauCeti.FiniteQuadraticModule
 
@@ -220,5 +267,21 @@ theorem quadratic_add_self_eq_zero_of_gaussSign_eq_four {A : FiniteQuadraticModu
   rw [hsign, Fin.sum_univ_two] at hsign'
   rcases hs 0 with h0 | h0 <;> rcases hs 1 with h1 | h1 <;> rw [h0, h1] at hsign' <;>
     revert hsign' <;> decide
+
+/-! ## Complete isometry invariants -/
+
+/-- Nondegenerate `2`-elementary finite quadratic modules are classified by their order,
+their Gauss-sum invariant, and whether the quadratic form takes values in `½ℤ/ℤ`.
+The last invariant is Nikulin's `δ = 0` condition. -/
+theorem nonempty_isometry_iff_of_two_nsmul_eq_zero {A B : FiniteQuadraticModule}
+    (hA : A.IsNondegenerate) (hB : B.IsNondegenerate)
+    (h2A : ∀ x : A, 2 • x = 0) (h2B : ∀ x : B, 2 • x = 0) :
+    Nonempty (Isometry A B) ↔ Nat.card A = Nat.card B ∧ A.gaussSign = B.gaussSign ∧
+      ((∀ x : A, A.quadratic x + A.quadratic x = 0) ↔
+        ∀ y : B, B.quadratic y + B.quadratic y = 0) := by
+  rw [nonempty_isometry_iff_bilinear_isometry_and_gaussSign_eq hA,
+    FiniteBilinearModule.nonempty_isometry_iff_of_two_nsmul_eq_zero hA hB h2A h2B]
+  simp only [← polar_eq_pairing, QuadraticMap.polar_self, two_nsmul]
+  tauto
 
 end TauCeti.FiniteQuadraticModule

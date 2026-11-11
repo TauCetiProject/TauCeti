@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Metabolic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZModStandard
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZMod.Standard
 import Mathlib.NumberTheory.SumFourSquares
 import TauCeti.LinearAlgebra.QuadraticForm.FourSquares
 
