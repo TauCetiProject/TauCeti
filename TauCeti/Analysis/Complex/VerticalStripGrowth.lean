@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Polynomial growth on vertical strips
@@ -15,9 +16,9 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 The height threshold depends on the strip: in particular, poles at nonzero heights
 need not obstruct this property. No regularity of `f` is required.
 
-The property is stable under addition, finite sums and multiplication. A function bounded
-on every closed vertical strip has it, with exponent zero and no height threshold. Bounds
-extend to degenerate strips, and real exponential functions provide nonconstant examples of
+The property is stable under addition, finite sums and multiplication, and every function
+bounded on each closed vertical strip has it. Bounds extend to degenerate strips, and real
+exponential functions and powers `n ^ (c s)` of positive integers provide nonconstant examples of
 vertical-strip growth.
 These facts allow growth estimates for completed L-functions to be assembled from their factors.
 -/
@@ -152,8 +153,7 @@ theorem sum {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ}
 
 end HasVerticalStripGrowth
 
-/-- A function bounded on every closed vertical strip has vertical-strip growth, with exponent
-zero and height threshold zero. -/
+/-- A function bounded on every closed vertical strip has vertical-strip growth. -/
 theorem hasVerticalStripGrowth_of_forall_bound {f : ℂ → ℂ}
     (h : ∀ a b : ℝ, ∃ M, ∀ s : ℂ, s.re ∈ Set.Icc a b → ‖f s‖ ≤ M) :
     HasVerticalStripGrowth f := by
@@ -178,5 +178,12 @@ theorem hasVerticalStripGrowth_cexp_ofReal_mul {r : ℝ} :
     zero_mul, sub_zero, Real.rpow_zero, mul_one]
   apply Real.exp_le_exp.mpr
   exact (le_abs_self _).trans (by rw [abs_mul]; gcongr)
+
+/-- For a positive integer `n` and real `c`, the powers `n ^ (c s)` have vertical-strip
+growth. -/
+theorem hasVerticalStripGrowth_natCast_cpow_ofReal_mul {n : ℕ} (hn : n ≠ 0) (c : ℝ) :
+    HasVerticalStripGrowth fun s : ℂ ↦ (n : ℂ) ^ ((c : ℂ) * s) :=
+  (hasVerticalStripGrowth_congr fun s ↦ (natCast_cpow_ofReal_mul hn c s).symm).mp
+    hasVerticalStripGrowth_cexp_ofReal_mul
 
 end TauCeti

@@ -7,8 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LSeries.MellinGrowth
 public import Mathlib.NumberTheory.LSeries.ZMod
-import TauCeti.Analysis.Asymptotics.Lemmas
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+public import TauCeti.Analysis.Complex.VerticalStripGrowth
 
 /-!
 # Growth of the entire completed Hurwitz and periodic zeta functions
@@ -34,8 +33,7 @@ are David Loeffler's work in Mathlib.
   `HurwitzZeta.exists_norm_completedHurwitzZetaOdd_le_exp_mul_log`: global logarithmic-exponential
   bounds.
 * `HurwitzZeta.hasVerticalStripGrowth_completedHurwitzZetaEven₀` and
-  `HurwitzZeta.hasVerticalStripGrowth_completedHurwitzZetaOdd`: vertical-strip growth, from
-  boundedness on each closed strip.
+  `HurwitzZeta.hasVerticalStripGrowth_completedHurwitzZetaOdd`: vertical-strip growth.
 * `ZMod.exists_norm_completedLFunction₀_le_exp_mul_log`, `ZMod.orderLE_completedLFunction₀`
   and `ZMod.hasVerticalStripGrowth_completedLFunction₀`: the same for periodic completions.
 
@@ -47,38 +45,6 @@ are David Loeffler's work in Mathlib.
 public section
 
 open Complex Real Set Filter Topology Asymptotics
-
-namespace TauCeti
-
-/-- A function continuous on `[1, ∞)` with an eventual bound `O(exp (-p u))` satisfies
-`‖f u‖ ≤ C exp (-p u ^ 1)` for every `u > 1`, with `C ≥ 0`. The exponent `u ^ 1` is the shape
-consumed by the split Mellin estimates. -/
-theorem exists_norm_le_mul_exp_neg_mul_rpow_one_of_isBigO {E : Type*} [NormedAddCommGroup E]
-    {f : ℝ → E} {p : ℝ} (hf : ContinuousOn f (Ici 1))
-    (h : f =O[atTop] fun u ↦ Real.exp (-p * u)) :
-    ∃ C ≥ 0, ∀ u ∈ Ioi 1, ‖f u‖ ≤ C * Real.exp (-p * u ^ (1 : ℝ)) := by
-  obtain ⟨C, hC⟩ := isBigO_principal.mp (h.isBigO_principal_Ici_of_continuousOn hf
-    (by fun_prop) fun u _ ↦ (Real.exp_pos _).ne')
-  refine ⟨max C 0, le_max_right _ _, fun u hu ↦ ?_⟩
-  have hCu := hC u (mem_Ici.mpr (le_of_lt hu))
-  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] at hCu
-  rw [Real.rpow_one]
-  exact hCu.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le)
-
-/-- A logarithmic-exponential bound transfers to arguments `t` with `‖t‖ ≤ 1 + ‖s‖`, at the
-cost of the factor `21` in the constant. -/
-theorem norm_le_exp_mul_log_of_norm_le_one_add {F : ℂ → ℂ} {C : ℝ} (hC : 0 ≤ C)
-    (hF : ∀ t, ‖F t‖ ≤ Real.exp (C * (1 + ‖t‖) * Real.log (2 + ‖t‖))) {s t : ℂ}
-    (ht : ‖t‖ ≤ 1 + ‖s‖) :
-    ‖F t‖ ≤ Real.exp (21 * C * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
-  have hscale := add_one_mul_log_add_two_le (norm_nonneg s) (norm_nonneg t) zero_le_one
-    (by linarith)
-  norm_num at hscale
-  refine (hF t).trans (Real.exp_le_exp.mpr ?_)
-  have := mul_le_mul_of_nonneg_left hscale hC
-  linarith
-
-end TauCeti
 
 namespace HurwitzZeta
 
@@ -163,8 +129,7 @@ theorem exists_norm_completedHurwitzZetaOdd_le_exp_mul_log (a : UnitAddCircle) :
   rw [norm_div, Complex.norm_two]
   linarith [norm_add_le s 1, norm_one (α := ℂ), norm_nonneg s]
 
-/-- The entire completed even Hurwitz zeta function has vertical-strip growth. The proof bounds it
-on each closed strip. -/
+/-- The entire completed even Hurwitz zeta function has vertical-strip growth. -/
 theorem hasVerticalStripGrowth_completedHurwitzZetaEven₀ (a : UnitAddCircle) :
     HasVerticalStripGrowth (completedHurwitzZetaEven₀ a) := by
   obtain ⟨C₁, -, c₁, hc₁, hf⟩ := exists_norm_hurwitzEvenFEPair_f_sub_le a
@@ -178,8 +143,7 @@ theorem hasVerticalStripGrowth_completedHurwitzZetaEven₀ (a : UnitAddCircle) :
   rw [Complex.div_ofNat_re]
   exact ⟨by linarith [hs.1], by linarith [hs.2]⟩
 
-/-- The entire completed odd Hurwitz zeta function has vertical-strip growth. The proof bounds it
-on each closed strip. -/
+/-- The entire completed odd Hurwitz zeta function has vertical-strip growth. -/
 theorem hasVerticalStripGrowth_completedHurwitzZetaOdd (a : UnitAddCircle) :
     HasVerticalStripGrowth (completedHurwitzZetaOdd a) := by
   obtain ⟨C₁, -, c₁, hc₁, hf⟩ := exists_norm_hurwitzOddFEPair_f_sub_le a
@@ -210,56 +174,38 @@ theorem exists_norm_completedLFunction₀_le_exp_mul_log (Φ : ZMod N → ℂ) :
     exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log (toAddCircle j)
   choose CO hCO hO using fun j : ZMod N ↦
     exists_norm_completedHurwitzZetaOdd_le_exp_mul_log (toAddCircle j)
+  -- `K` dominates every Hurwitz constant and `S` is the total mass of `Φ`.
   set K := ∑ j, (CE j + CO j)
   set S := ∑ j, ‖Φ j‖
-  set L := Real.log N
-  have hL : 0 ≤ L := Real.log_natCast_nonneg N
+  have hL : 0 ≤ Real.log N := Real.log_natCast_nonneg N
   have hpos : ∀ j ∈ Finset.univ, 0 ≤ CE j + CO j := fun j _ ↦ (add_pos (hCE j) (hCO j)).le
   have hK : 0 ≤ K := Finset.sum_nonneg hpos
   have hS : 0 ≤ S := Finset.sum_nonneg fun j _ ↦ norm_nonneg _
-  have hEK : ∀ j, CE j ≤ K := fun j ↦ (le_add_of_nonneg_right (hCO j).le).trans
-    (Finset.single_le_sum hpos (Finset.mem_univ j))
-  have hOK : ∀ j, CO j ≤ K := fun j ↦ (le_add_of_nonneg_left (hCE j).le).trans
-    (Finset.single_le_sum hpos (Finset.mem_univ j))
-  refine ⟨2 * L + K + 4 * S + 1, by positivity, fun s ↦ ?_⟩
-  have hlog := Real.one_half_le_log_two_add (norm_nonneg s)
-  have hW : ‖s‖ ≤ 2 * ((1 + ‖s‖) * Real.log (2 + ‖s‖)) := by nlinarith [norm_nonneg s]
-  have hscale : ∀ {A B : ℝ}, A ≤ B →
-      A * (1 + ‖s‖) * Real.log (2 + ‖s‖) ≤ B * (1 + ‖s‖) * Real.log (2 + ‖s‖) :=
-    fun hAB ↦ mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hAB (by positivity))
-      (by linarith)
-  have hpow : ‖(N : ℂ) ^ (-s)‖ ≤ Real.exp (2 * L * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
-    rw [show -s = ((-1 : ℝ) : ℂ) * s by push_cast; ring, natCast_cpow_ofReal_mul (NeZero.ne N)]
-    refine (norm_exp_le_exp_norm _).trans (Real.exp_le_exp.mpr ?_)
-    rw [norm_mul, norm_real, Real.norm_eq_abs, neg_one_mul, abs_neg, abs_of_nonneg hL]
-    nlinarith [mul_le_mul_of_nonneg_left hW hL]
-  have hsum : ∀ (F : ZMod N → ℂ → ℂ) (c : ZMod N → ℝ), (∀ j, c j ≤ K) →
-      (∀ j, ‖F j s‖ ≤ Real.exp (c j * (1 + ‖s‖) * Real.log (2 + ‖s‖))) →
-      ‖∑ j, Φ j * F j s‖ ≤ S * Real.exp (K * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
-    intro F c hcK hF
-    refine (norm_sum_le _ _).trans ((Finset.sum_le_sum fun j _ ↦ ?_).trans_eq
-      (Finset.sum_mul _ _ _).symm)
-    rw [norm_mul]
-    exact mul_le_mul_of_nonneg_left ((hF j).trans (Real.exp_le_exp.mpr (hscale (hcK j))))
-      (norm_nonneg _)
-  have hsE := hsum (fun j ↦ completedHurwitzZetaEven₀ (toAddCircle j)) CE hEK (hE · s)
-  have hsO := hsum (fun j ↦ completedHurwitzZetaOdd (toAddCircle j)) CO hOK (hO · s)
+  have hEK : ∀ j ∈ Finset.univ, CE j ≤ K := fun j hj ↦
+    (le_add_of_nonneg_right (hCO j).le).trans (Finset.single_le_sum hpos hj)
+  have hOK : ∀ j ∈ Finset.univ, CO j ≤ K := fun j hj ↦
+    (le_add_of_nonneg_left (hCE j).le).trans (Finset.single_le_sum hpos hj)
+  refine ⟨2 * Real.log N + K + 4 * S + 1, by positivity, fun s ↦ ?_⟩
+  have hpow : ‖(N : ℂ) ^ (-s)‖ ≤ Real.exp (2 * Real.log N * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
+    simpa using norm_natCast_cpow_ofReal_mul_le_exp_mul_log (NeZero.ne N) (-1) s
+  have hsE := norm_sum_mul_le_mul_exp_mul_log (a := Φ) hEK fun j _ ↦ hE j s
+  have hsO := norm_sum_mul_le_mul_exp_mul_log (a := Φ) hOK fun j _ ↦ hO j s
   calc
     ‖completedLFunction₀ Φ s‖ ≤
         ‖(N : ℂ) ^ (-s)‖ * ‖∑ j, Φ j * completedHurwitzZetaEven₀ (toAddCircle j) s‖ +
           ‖(N : ℂ) ^ (-s)‖ * ‖∑ j, Φ j * completedHurwitzZetaOdd (toAddCircle j) s‖ := by
       rw [completedLFunction₀, ← norm_mul, ← norm_mul]
       exact norm_add_le _ _
-    _ ≤ Real.exp (2 * L * (1 + ‖s‖) * Real.log (2 + ‖s‖)) *
+    _ ≤ Real.exp (2 * Real.log N * (1 + ‖s‖) * Real.log (2 + ‖s‖)) *
           (S * Real.exp (K * (1 + ‖s‖) * Real.log (2 + ‖s‖))) +
-        Real.exp (2 * L * (1 + ‖s‖) * Real.log (2 + ‖s‖)) *
+        Real.exp (2 * Real.log N * (1 + ‖s‖) * Real.log (2 + ‖s‖)) *
           (S * Real.exp (K * (1 + ‖s‖) * Real.log (2 + ‖s‖))) := by gcongr
-    _ = 2 * S * Real.exp ((2 * L + K) * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
+    _ = 2 * S * Real.exp ((2 * Real.log N + K) * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
       rw [add_mul, add_mul, Real.exp_add]
       ring
-    _ ≤ Real.exp ((2 * L + K + 2 * (2 * S)) * (1 + ‖s‖) * Real.log (2 + ‖s‖)) :=
+    _ ≤ Real.exp ((2 * Real.log N + K + 2 * (2 * S)) * (1 + ‖s‖) * Real.log (2 + ‖s‖)) :=
       Real.mul_exp_mul_one_add_mul_log_two_add_le (by positivity) (norm_nonneg s)
-    _ ≤ _ := Real.exp_le_exp.mpr (hscale (by linarith))
+    _ ≤ _ := Real.exp_mul_one_add_mul_log_two_add_le_of_le (by linarith) (norm_nonneg s)
 
 /-- The entire completed L-function of a function on `ZMod N` has order at most one. -/
 theorem orderLE_completedLFunction₀ (Φ : ZMod N → ℂ) : OrderLE (completedLFunction₀ Φ) 1 := by
@@ -270,13 +216,11 @@ theorem orderLE_completedLFunction₀ (Φ : ZMod N → ℂ) : OrderLE (completed
 theorem hasVerticalStripGrowth_completedLFunction₀ (Φ : ZMod N → ℂ) :
     HasVerticalStripGrowth (completedLFunction₀ Φ) := by
   have hpow : HasVerticalStripGrowth fun s : ℂ ↦ (N : ℂ) ^ (-s) := by
-    refine (hasVerticalStripGrowth_congr fun s ↦ ?_).mpr
-      (hasVerticalStripGrowth_cexp_ofReal_mul (r := -1 * Real.log N))
-    rw [show -s = ((-1 : ℝ) : ℂ) * s by push_cast; ring, natCast_cpow_ofReal_mul (NeZero.ne N)]
-  have h := (hpow.mul (HasVerticalStripGrowth.sum (t := Finset.univ) fun j _ ↦
+    simpa using hasVerticalStripGrowth_natCast_cpow_ofReal_mul (NeZero.ne N) (-1)
+  refine (hasVerticalStripGrowth_congr (completedLFunction₀.eq_1 Φ)).mpr ?_
+  exact (hpow.mul (HasVerticalStripGrowth.sum (t := Finset.univ) fun j _ ↦
       (hasVerticalStripGrowth_completedHurwitzZetaEven₀ (toAddCircle j)).const_mul (Φ j))).add
     (hpow.mul (HasVerticalStripGrowth.sum (t := Finset.univ) fun j _ ↦
       (hasVerticalStripGrowth_completedHurwitzZetaOdd (toAddCircle j)).const_mul (Φ j)))
-  exact h
 
 end ZMod

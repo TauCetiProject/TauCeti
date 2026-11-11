@@ -22,8 +22,7 @@ The split Mellin estimates therefore give an explicit bound
 `‖Λ(s)‖ ≤ exp (C (1 + ‖s‖) log (2 + ‖s‖))` on the whole plane. Hence the completion has order
 at most one (`dirichletData_completed_orderLE_one`, the Dirichlet instance of the order bound for
 split Mellin integrals), and the record has finite order. On each closed vertical strip the
-Mellin bounds depend only on the real part, so the completion has vertical-strip growth with
-exponent zero and no height threshold.
+Mellin bounds depend only on the real part, so the completion has vertical-strip growth.
 
 This route does not use Stirling's formula, partial summation or the functional equation.
 
@@ -49,20 +48,15 @@ theorem dirichletData_completed_eq_mul_completedLFunction₀ (hne : χ ≠ 1) (s
 
 /-- **Explicit order-one bound.** The completed function of a primitive nonprincipal Dirichlet
 record satisfies `‖Λ(s)‖ ≤ exp (C (1 + ‖s‖) log (2 + ‖s‖))` on the whole plane. -/
-theorem dirichletData_exists_norm_completed_le_exp_mul_log (hne : χ ≠ 1) :
+theorem exists_norm_dirichletData_completed_le_exp_mul_log (hne : χ ≠ 1) :
     ∃ C > 0, ∀ s : ℂ, ‖(dirichletData χ hχ).completed s‖ ≤
       Real.exp (C * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
   obtain ⟨C, hC, hb⟩ := ZMod.exists_norm_completedLFunction₀_le_exp_mul_log (χ ·)
   have hL : 0 ≤ Real.log N := Real.log_natCast_nonneg N
   refine ⟨Real.log N + C, by positivity, fun s ↦ ?_⟩
-  have hlog := Real.one_half_le_log_two_add (norm_nonneg s)
-  have hpow : ‖(N : ℂ) ^ (s / 2)‖ ≤ Real.exp (Real.log N * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
-    rw [show s / 2 = ((1 / 2 : ℝ) : ℂ) * s by push_cast; ring,
-      natCast_cpow_ofReal_mul (NeZero.ne N)]
-    refine (norm_exp_le_exp_norm _).trans (Real.exp_le_exp.mpr ?_)
-    rw [norm_mul, norm_real, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-    have hW : ‖s‖ ≤ 2 * ((1 + ‖s‖) * Real.log (2 + ‖s‖)) := by nlinarith [norm_nonneg s]
-    nlinarith [mul_le_mul_of_nonneg_left hW hL]
+  have hpow := norm_natCast_cpow_ofReal_mul_le_exp_mul_log (NeZero.ne N) (1 / 2) s
+  rw [show ((1 / 2 : ℝ) : ℂ) * s = s / 2 by push_cast; ring,
+    abs_of_pos (by norm_num : (0 : ℝ) < 1 / 2), mul_one_div_cancel two_ne_zero, one_mul] at hpow
   rw [dirichletData_completed_eq_mul_completedLFunction₀ χ hχ hne, norm_mul, add_mul, add_mul,
     Real.exp_add]
   exact mul_le_mul hpow (hb s) (norm_nonneg _) (Real.exp_pos _).le
@@ -71,7 +65,7 @@ theorem dirichletData_exists_norm_completed_le_exp_mul_log (hne : χ ≠ 1) :
 is entire of order at most one. -/
 theorem dirichletData_completed_orderLE_one (hne : χ ≠ 1) :
     OrderLE (dirichletData χ hχ).completed 1 := by
-  obtain ⟨C, -, hC⟩ := dirichletData_exists_norm_completed_le_exp_mul_log χ hχ hne
+  obtain ⟨C, -, hC⟩ := exists_norm_dirichletData_completed_le_exp_mul_log χ hχ hne
   exact orderLE_one_of_norm_le_exp_mul_log hC
 
 /-- A primitive nonprincipal Dirichlet record has finite order. -/
@@ -80,15 +74,13 @@ theorem dirichletData_isFiniteOrder (hne : χ ≠ 1) : (dirichletData χ hχ).Is
   exact (dirichletData_completed_orderLE_one χ hχ hne).isFiniteOrder
 
 /-- **Vertical-strip growth.** The completed function of a primitive nonprincipal Dirichlet
-record has vertical-strip growth. The proof bounds it on each closed strip, so exponent zero and
-height threshold zero suffice. -/
+record has vertical-strip growth. -/
 theorem dirichletData_completed_hasVerticalStripGrowth (hne : χ ≠ 1) :
     HasVerticalStripGrowth (dirichletData χ hχ).completed := by
   refine (hasVerticalStripGrowth_congr fun s ↦ ?_).mpr
-    ((hasVerticalStripGrowth_cexp_ofReal_mul (r := 1 / 2 * Real.log N)).mul
+    ((hasVerticalStripGrowth_natCast_cpow_ofReal_mul (NeZero.ne N) (1 / 2)).mul
       (ZMod.hasVerticalStripGrowth_completedLFunction₀ (χ ·)))
   rw [dirichletData_completed_eq_mul_completedLFunction₀ χ hχ hne,
-    show s / 2 = ((1 / 2 : ℝ) : ℂ) * s by push_cast; ring,
-    natCast_cpow_ofReal_mul (NeZero.ne N)]
+    show s / 2 = ((1 / 2 : ℝ) : ℂ) * s by push_cast; ring]
 
 end TauCeti.LFunctions

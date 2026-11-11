@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.MellinTransform.Growth
 public import Mathlib.NumberTheory.LSeries.AbstractFuncEq
-public import TauCeti.Analysis.Complex.VerticalStripGrowth
 
 /-!
 # Order-one growth from split Mellin integrals
@@ -182,16 +181,5 @@ theorem _root_.WeakFEPair.exists_norm_Λ₀_le_of_re_mem_Icc (P : WeakFEPair E)
   rw [norm_smul]
   exact mul_le_mul_of_nonneg_left (norm_integral_cpow_smul_le_of_re_le hc₂ hα₂ hg hdual)
     (norm_nonneg _)
-
-/-- If both kernel tails decay exponentially, the entire part of a complex weak
-functional-equation pair has vertical-strip growth, with exponent zero and no height
-threshold. -/
-theorem _root_.WeakFEPair.hasVerticalStripGrowth_Λ₀ (P : WeakFEPair ℂ)
-    {C₁ c₁ α₁ C₂ c₂ α₂ : ℝ} (hc₁ : 0 < c₁) (hα₁ : 0 < α₁) (hc₂ : 0 < c₂) (hα₂ : 0 < α₂)
-    (hf : ∀ u ∈ Ioi 1, ‖P.f u - P.f₀‖ ≤ C₁ * exp (-c₁ * u ^ α₁))
-    (hg : ∀ u ∈ Ioi 1, ‖P.g u - P.g₀‖ ≤ C₂ * exp (-c₂ * u ^ α₂)) :
-    HasVerticalStripGrowth P.Λ₀ :=
-  hasVerticalStripGrowth_of_forall_bound fun a b ↦
-    P.exists_norm_Λ₀_le_of_re_mem_Icc hc₁ hα₁ hc₂ hα₂ hf hg a b
 
 end TauCeti

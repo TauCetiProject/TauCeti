@@ -20,6 +20,8 @@ In particular this bound remains finite at `R = 0`. These estimates provide the 
 ingredient for the split Mellin method of proving order-one growth for completed L-functions.
 On a half-plane `Re s ≤ R` the upper Mellin integral is bounded by the tail at the fixed
 exponent `R`, independently of `Im s`; this gives boundedness on vertical strips.
+A kernel continuous on `[1, ∞)` with an eventual bound `O(exp (-p u))` satisfies the
+exponential bound `C exp (-p u ^ 1)` on all of `(1, ∞)` that these estimates take.
 
 ## References
 
@@ -150,6 +152,19 @@ theorem norm_integral_cpow_smul_le_of_re_le {f : ℝ → E} {C₀ c α R : ℝ}
       apply mul_le_mul _ (hbound u hu) (norm_nonneg _) (by positivity)
       exact div_le_div_of_nonneg_right (rpow_le_rpow_of_exponent_le hu.le hs) hu0.le
     _ = _ := by ring
+
+/-- A function continuous on `[1, ∞)` with an eventual bound `O(exp (-p u))` satisfies
+`‖f u‖ ≤ C exp (-p u ^ 1)` for every `u > 1`, with `C ≥ 0`. -/
+theorem exists_norm_le_mul_exp_neg_mul_rpow_one_of_isBigO {F : Type*} [NormedAddCommGroup F]
+    {f : ℝ → F} {p : ℝ} (hf : ContinuousOn f (Ici 1)) (h : f =O[atTop] fun u ↦ exp (-p * u)) :
+    ∃ C ≥ 0, ∀ u ∈ Ioi 1, ‖f u‖ ≤ C * exp (-p * u ^ (1 : ℝ)) := by
+  obtain ⟨C, hC⟩ := isBigO_principal.mp (h.isBigO_principal_Ici_of_continuousOn hf
+    (by fun_prop) fun u _ ↦ (exp_pos _).ne')
+  refine ⟨max C 0, le_max_right _ _, fun u hu ↦ ?_⟩
+  have hCu := hC u (mem_Ici.mpr hu.le)
+  rw [Real.norm_eq_abs, abs_of_pos (exp_pos _)] at hCu
+  rw [rpow_one]
+  exact hCu.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (exp_pos _).le)
 
 /-- An exponentially decaying kernel gives logarithmic-exponential growth of its upper Mellin
 integral, uniformly over the whole complex plane. -/

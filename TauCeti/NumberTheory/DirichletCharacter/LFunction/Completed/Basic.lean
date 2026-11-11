@@ -83,9 +83,8 @@ theorem meromorphic_completedLFunction : Meromorphic χ.completedLFunction := by
   rw [funext (ZMod.completedLFunction_eq (χ ·))]
   fun_prop
 
-/-- For a nonprincipal character the polar terms cancel: `χ 0 = 0` since the level exceeds one,
-and the character values sum to zero. Hence the completed function is the entire periodic
-completion. -/
+/-- For a nonprincipal character the completed L-function is the entire periodic completion
+`ZMod.completedLFunction₀` of the character values. -/
 theorem completedLFunction_eq_completedLFunction₀ (hχ : χ ≠ 1) :
     χ.completedLFunction = ZMod.completedLFunction₀ (χ ·) := by
   ext s
