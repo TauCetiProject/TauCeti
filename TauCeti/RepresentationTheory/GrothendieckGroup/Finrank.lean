@@ -162,15 +162,16 @@ section SimpleCoordinates
 -- order, since `k` is not determined by the goal.
 variable (k : Type u) [Field k] (A : Type u) [Ring A] [Algebra k A] [FiniteDimensional k A]
   [IsArtinianRing A] {I : Type v} (S : I → FGModuleCat.{u} A)
-  (hnoniso : Pairwise fun i j ↦ IsEmpty ((S i : Type u) ≃ₗ[A] S j))
+  (hnoniso : Pairwise fun i j ↦
+    IsSimpleModule A (S i) → IsSimpleModule A (S j) → IsEmpty ((S i : Type u) ≃ₗ[A] S j))
   (hexhaustive : IsExhaustiveSimpleFamily S)
 
 include hnoniso hexhaustive in
 /-- **The dimension of a class is its Jordan--Hölder expansion weighted by the dimensions of the
 simple modules.** For the class of a module this is the statement that the dimension of a module is
 the sum of the dimensions of its composition factors. The members of the family need not be
-simple: a member that is not simple has Jordan--Hölder coordinate zero, so it contributes
-nothing. -/
+simple, nor pairwise nonisomorphic when they are not simple: a member that is not simple has
+Jordan--Hölder coordinate zero, so it contributes nothing. -/
 theorem finrankK0_eq_sum_jordanHolderCoordinate_mul [Fintype I]
     (x : ExactK0 (finiteModulesExactStructure A)) :
     finrankK0 k A x =
@@ -179,7 +180,7 @@ theorem finrankK0_eq_sum_jordanHolderCoordinate_mul [Fintype I]
   let S' : {i // IsSimpleModule A (S i)} → FGModuleCat.{u} A := fun j ↦ S j
   have : ∀ j, IsSimpleModule A (S' j) := fun j ↦ j.2
   have hnoniso' : Pairwise fun i j ↦ IsEmpty ((S' i : Type u) ≃ₗ[A] S' j) :=
-    fun i j hij ↦ hnoniso fun h ↦ hij (Subtype.ext h)
+    fun i j hij ↦ hnoniso (fun h ↦ hij (Subtype.ext h)) i.2 j.2
   have hexhaustive' : IsExhaustiveSimpleFamily S' := by
     rw [isExhaustiveSimpleFamily_iff] at hexhaustive ⊢
     intro M hM
