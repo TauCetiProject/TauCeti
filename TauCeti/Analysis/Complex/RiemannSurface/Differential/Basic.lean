@@ -340,6 +340,20 @@ theorem HolomorphicAt.apply_eq_of_eventually [IsManifold 𝓘(ℂ) 1 X] (hω : �
   have h₂ := (coeff_eq_iff η (chart_mem_maximalAtlas x) hcx).1 rfl
   rw [← h₁, ← h₂, hc]
 
+/-- Where `ω` does not vanish, its coefficient in the chart at `x` does not vanish. -/
+theorem coeff_chartAt_ne_zero [IsManifold 𝓘(ℂ) 1 X] (hω : ω x ≠ 0) :
+    ω.coeff (chartAt ℂ x) (chartAt ℂ x x) ≠ 0 := by
+  intro h0
+  apply hω
+  rw [← (coeff_eq_iff ω (chart_mem_maximalAtlas x) (mem_chart_source ℂ x)).1 rfl, h0, zero_smul]
+
+/-- A `1`-form holomorphic at `x` and nonzero at `x` has order zero at `x`. -/
+theorem HolomorphicAt.order_eq_zero [IsManifold 𝓘(ℂ) 1 X] (hω : ω.HolomorphicAt x)
+    (hx : ω x ≠ 0) : ω.order x = 0 := by
+  rw [order_def, ((holomorphicAt_def ω x).1 hω).meromorphicOrderAt_eq,
+    analyticOrderAt_eq_zero.2 (Or.inr (coeff_chartAt_ne_zero hx))]
+  rfl
+
 /-- A `1`-form meromorphic at `x` is holomorphic on a punctured neighbourhood of `x`. -/
 theorem MeromorphicAt.eventually_holomorphicAt [IsManifold 𝓘(ℂ) 1 X]
     (hω : ω.MeromorphicAt x) :
