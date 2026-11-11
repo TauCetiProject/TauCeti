@@ -34,6 +34,10 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
   integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
   continuous on the closed interval `[a, b]`.
+* `TauCeti.intervalIntegral.norm_primitive_le_setIntegral_norm` and
+  `TauCeti.intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo`: on a bounded interval
+  `(a, b)`, the primitive based at a point of `[a, b]` is bounded by `∫ s in (a, b), ‖f s‖` at
+  every point of `[a, b]`, and is integrable on `(a, b)`.
 * `TauCeti.intervalIntegral.eLpNorm_primitive_le` and
   `TauCeti.intervalIntegral.eLpNorm_primitive_le_mul_eLpNorm`: on a bounded interval `(a, b)`,
   the primitive based at a point of `[a, b]` is bounded by the `L¹(a, b)` norm of `f`, so its
@@ -87,6 +91,30 @@ theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
   simpa [uIcc_of_le hab] using _root_.intervalIntegral.continuousOn_primitive_interval'
     ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
 
+/-- The primitive `t ↦ ∫ s in t₀..t, f s` of a function integrable on `(a, b)`, based at a point
+`t₀` of `[a, b]`, is bounded by `∫ s in (a, b), ‖f s‖` at every point `t` of `[a, b]`. -/
+theorem norm_primitive_le_setIntegral_norm {t₀ t : ℝ} (hf : IntegrableOn f (Ioo a b))
+    (ht₀ : t₀ ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ‖∫ s in t₀..t, f s‖ ≤ ∫ s in Ioo a b, ‖f s‖ := by
+  have hf' : IntegrableOn f (Icc a b) := by rwa [integrableOn_Icc_iff_integrableOn_Ioo]
+  -- The oriented interval between `t₀` and `t` lies in `[a, b]`.
+  have hsub : Ι t₀ t ⊆ Icc a b := uIoc_subset_uIcc.trans (uIcc_subset_Icc ht₀ ht)
+  calc ‖∫ s in t₀..t, f s‖ ≤ ∫ s in Ι t₀ t, ‖f s‖ :=
+        _root_.intervalIntegral.norm_integral_le_integral_norm_uIoc
+    _ ≤ ∫ s in Icc a b, ‖f s‖ :=
+        setIntegral_mono_set hf'.norm (Eventually.of_forall fun _ ↦ norm_nonneg _)
+          hsub.eventuallyLE
+    _ = ∫ s in Ioo a b, ‖f s‖ := integral_Icc_eq_integral_Ioo
+
+/-- The primitive `t ↦ ∫ s in t₀..t, f s ∂μ` of a function integrable on `(a, b)`, based at a
+point `t₀` of `[a, b]`, is integrable on `(a, b)`. -/
+theorem integrableOn_primitive_of_integrableOn_Ioo {μ : Measure ℝ} [NullSingletonClass μ]
+    [IsFiniteMeasureOnCompacts μ] {t₀ : ℝ} (hf : IntegrableOn f (Ioo a b) μ)
+    (ht₀ : t₀ ∈ Icc a b) :
+    IntegrableOn (fun t ↦ ∫ s in t₀..t, f s ∂μ) (Ioo a b) μ :=
+  (continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).integrableOn_Icc.mono_set
+    Ioo_subset_Icc_self
+
 /-- The `Lᵖ(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s` of a function integrable on
 `(a, b)`, based at a point `t₀` of `[a, b]`, is at most `(b - a) ^ (1 / p)` times the `L¹(a, b)`
 norm of `f`: the primitive is bounded by `∫ s in (a, b), ‖f s‖` at every point. -/
@@ -94,19 +122,10 @@ theorem eLpNorm_primitive_le {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Io
     (ht₀ : t₀ ∈ Icc a b) :
     eLpNorm (fun t ↦ ∫ s in t₀..t, f s) p (volume.restrict (Ioo a b)) ≤
       volume (Ioo a b) ^ p.toReal⁻¹ * eLpNorm f 1 (volume.restrict (Ioo a b)) := by
-  have hf' : IntegrableOn f (Icc a b) := by rwa [integrableOn_Icc_iff_integrableOn_Ioo]
   have hbound : ∀ᵐ t ∂volume.restrict (Ioo a b),
       ‖∫ s in t₀..t, f s‖ ≤ ∫ s in Ioo a b, ‖f s‖ := by
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-    -- The oriented interval between `t₀` and `t` lies in `[a, b]`.
-    have hsub : Ι t₀ t ⊆ Icc a b := uIoc_subset_uIcc.trans
-      (uIcc_subset_Icc ht₀ (Ioo_subset_Icc_self ht))
-    calc ‖∫ s in t₀..t, f s‖ ≤ ∫ s in Ι t₀ t, ‖f s‖ :=
-          _root_.intervalIntegral.norm_integral_le_integral_norm_uIoc
-      _ ≤ ∫ s in Icc a b, ‖f s‖ :=
-          setIntegral_mono_set hf'.norm (Eventually.of_forall fun _ ↦ norm_nonneg _)
-            hsub.eventuallyLE
-      _ = ∫ s in Ioo a b, ‖f s‖ := integral_Icc_eq_integral_Ioo
+    exact norm_primitive_le_setIntegral_norm hf ht₀ (Ioo_subset_Icc_self ht)
   have hm : AEStronglyMeasurable (fun t ↦ ∫ s in t₀..t, f s) (volume.restrict (Ioo a b)) :=
     ((continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).mono
       Ioo_subset_Icc_self).aestronglyMeasurable measurableSet_Ioo

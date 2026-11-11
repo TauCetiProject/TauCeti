@@ -252,6 +252,44 @@ theorem norm_intervalTraceL_le (hab : a < b)
     ((intervalRepresentativeL hab u).norm_coe_le_norm _)).trans
     (norm_intervalRepresentativeL_le hab u)
 
+/-- The continuous representatives of two Sobolev classes on `(a,b)` are at supremum distance
+at most the distance of their values at `a` plus the `L¹(a,b)` distance of their weak
+derivatives. -/
+theorem norm_intervalRepresentativeL_sub_le (hab : a < b)
+    (u v : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
+    ‖intervalRepresentativeL hab u - intervalRepresentativeL hab v‖ ≤
+      |(intervalTraceL hab u).1 - (intervalTraceL hab v).1| +
+        ∫ t in Ioo a b, |gradient u t - gradient v t| := by
+  have : IsFiniteMeasure (volume.restrict ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
+    Real.isFiniteMeasure_restrict_Ioo a b
+  have hint : ∀ w : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p, IntegrableOn (gradient w) (Ioo a b) :=
+    fun w ↦ (Lp.memLp (gradient w)).integrable Fact.out
+  have h0 : 0 ≤ ∫ t in Ioo a b, |gradient u t - gradient v t| :=
+    integral_nonneg fun _ ↦ abs_nonneg _
+  refine (ContinuousMap.norm_le _ (by positivity)).2 fun t ↦ ?_
+  set y : Icc a b := ⟨a, left_mem_Icc.2 hab.le⟩
+  -- The difference of the representatives at `t` is their difference at `a` plus `∫_a^t (u' - v')`.
+  have hI : ∀ w : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
+      IntervalIntegrable (gradient w) volume a t := fun w ↦
+    ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 (hint w)).mono_set
+      (uIcc_subset_uIcc left_mem_uIcc (by rw [uIcc_of_le hab.le]; exact t.2))
+  have heq : intervalRepresentativeL hab u t - intervalRepresentativeL hab v t =
+      ((intervalTraceL hab u).1 - (intervalTraceL hab v).1) +
+        ∫ s in a..(t : ℝ), (gradient u s - gradient v s) := by
+    rw [intervalIntegral.integral_sub (hI u) (hI v),
+      integral_gradient_eq_intervalRepresentativeL_sub hab u y t,
+      integral_gradient_eq_intervalRepresentativeL_sub hab v y t, intervalTraceL_apply,
+      intervalTraceL_apply]
+    ring
+  rw [ContinuousMap.sub_apply, Real.norm_eq_abs, heq]
+  refine (abs_add_le _ _).trans (add_le_add_right ?_ _)
+  refine (intervalIntegral.abs_integral_le_integral_abs t.2.1).trans ?_
+  -- `(a, t] ⊆ (a, b]`, and `(a, b]` and `(a, b)` differ by a null set.
+  rw [intervalIntegral.integral_of_le t.2.1, ← integral_Ioc_eq_integral_Ioo]
+  exact setIntegral_mono_set
+    ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 ((hint u).sub (hint v)).abs).1
+    (ae_of_all _ fun _ ↦ abs_nonneg _) (Ioc_subset_Ioc_right t.2.2).eventuallyLE
+
 /-- Integration by parts for two interval Sobolev representatives, allowing different
 integrability exponents. The projections extend the representatives outside `[a,b]` only. -/
 theorem integral_intervalRepresentativeL_mul_gradient_eq_sub {q : ℝ≥0∞} [Fact (1 ≤ q)]

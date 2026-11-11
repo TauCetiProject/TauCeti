@@ -39,6 +39,8 @@ is a primitive of `-F` plus an affine function, which is in general no better th
 
 * `TauCeti.PDE.exists_ae_mul_gradient_add_eq_sub_intervalIntegral`: the first integral
   `a u' + F = k - ∫_{x₀}^t f`.
+* `TauCeti.PDE.mul_setIntegral_inv_eq_of_ae_mul_gradient_add_eq`: the constant `k` of the first
+  integral in terms of the endpoint values of `ū`.
 * `TauCeti.PDE.ae_abs_gradient_le_of_forall_integral_eq`: the explicit pointwise bound for `u'`.
 * `TauCeti.PDE.abs_intervalRepresentativeL_sub_le_of_forall_integral_eq`: the explicit bound for
   the increments of `ū`.
@@ -113,9 +115,13 @@ theorem exists_ae_mul_gradient_add_eq_sub_intervalIntegral
   filter_upwards [hk] with t ht
   rw [ht, Pi.neg_def, intervalIntegral.integral_neg, sub_eq_add_neg]
 
-/-- Integrating the first integral `a u' + F = k - Φ` over `(x₀, x₁)`, after dividing by `a`:
-`k ∫ a⁻¹ = ū x₁ - ū x₀ + ∫ a⁻¹ (Φ + F)`. -/
-private theorem mul_setIntegral_inv_eq (hx : x₀ < x₁) {lam : ℝ} (hlam : 0 < lam)
+/-- **The constant of the first integral.** If `λ ≤ a` almost everywhere on `(x₀, x₁)`, with
+`λ > 0`, and `a u' + F = k - Φ` almost everywhere for integrable `Φ` and `F`, then integrating
+`u' = k a⁻¹ - a⁻¹ (Φ + F)` over `(x₀, x₁)` gives `k ∫ a⁻¹ = ū x₁ - ū x₀ + ∫ a⁻¹ (Φ + F)`, where `ū`
+is the continuous representative of `u`. Since `∫ a⁻¹ > 0`, this determines `k` from the endpoint
+values of `ū`. -/
+theorem mul_setIntegral_inv_eq_of_ae_mul_gradient_add_eq (hx : x₀ < x₁) {lam : ℝ}
+    (hlam : 0 < lam)
     (ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
     (hlama : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t) (hF : IntegrableOn F (Ioo x₀ x₁))
     {Φ : ℝ → ℝ} (hΦ : IntegrableOn Φ (Ioo x₀ x₁)) {k : ℝ}
@@ -161,7 +167,8 @@ private theorem abs_le_of_ae_mul_gradient_add_eq (hx : x₀ < x₁) {lam M : ℝ
   have hinv : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), ‖(a t)⁻¹‖ ≤ lam⁻¹ := haM.mono fun t ht => by
     rw [Real.norm_eq_abs, abs_inv, abs_of_pos (hlam.trans_le ht.1)]
     exact inv_anti₀ hlam ht.1
-  have hkA := mul_setIntegral_inv_eq hx hlam ha (haM.mono fun _ ht => ht.1) hF hΦi hk
+  have hkA := mul_setIntegral_inv_eq_of_ae_mul_gradient_add_eq hx hlam ha
+    (haM.mono fun _ ht => ht.1) hF hΦi hk
   -- `∫ a⁻¹ ≥ (x₁ - x₀) / M`.
   have hA : (x₁ - x₀) / M ≤ ∫ t in Ioo x₀ x₁, (a t)⁻¹ := by
     have h := integral_mono_ae (integrable_const M⁻¹)
