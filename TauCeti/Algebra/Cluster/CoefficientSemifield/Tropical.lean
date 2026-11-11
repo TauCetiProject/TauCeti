@@ -82,6 +82,12 @@ noncomputable def generator (j : J) : Trop J := Multiplicative.ofAdd (Finsupp.si
 theorem toAdd_generator (j : J) : (generator j).toAdd = Finsupp.single j 1 :=
   (rfl)
 
+/-- Group evaluation sends each tropical generator to its chosen coordinate. -/
+@[simp]
+theorem eval_generator {Q : Type*} [CommGroup Q] (q : J → Q) (j : J) :
+    freeAbelianCharEquiv.symm q (generator j) = q j := by
+  simpa only [generator] using freeAbelianCharEquiv_symm_apply_ofAdd_single q j
+
 /-- The minimum of two distinct generators is the multiplicative identity. -/
 @[simp]
 theorem generator_add_generator {i j : J} (h : i ≠ j) : generator i + generator j = 1 := by
@@ -202,7 +208,7 @@ example [IsEmpty J] : Unique (Trop J) := inferInstance
 example {Q : Type*} [CommGroup Q] (q : Fin 2 → Q) :
     freeAbelianCharEquiv.symm q ((generator 0)⁻¹ * generator 1 ^ (2 : ℤ)) =
       (q 0)⁻¹ * q 1 ^ (2 : ℤ) := by
-  simp [generator]
+  simp
 
 /-- Transposing two generators exchanges their exponents. -/
 example : reindex (Equiv.swap (0 : Fin 2) 1)
