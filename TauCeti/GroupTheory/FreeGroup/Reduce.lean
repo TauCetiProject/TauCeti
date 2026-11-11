@@ -17,6 +17,9 @@ the formal inverse of a one-letter word, uniqueness of reduced representatives, 
 formal inverses, and reducedness of words `w u w⁻¹` in which no letter cancels at either join.
 A word without repeated generators is reduced, a reduced word representing the identity is
 empty, and a word that is not reduced admits a step of free reduction.
+Free reductions are non-crossing: in a trivial word, the subword between the only two occurrences
+of a generator is trivial; and a cancelling pair in a concatenation of reduced words straddles
+two consecutive nonempty words.
 
 The last section controls cancellation under left multiplication: if the reduced word of `g` does
 not begin with the formal inverse of `x₂`, then the reduced word of `(x₁ ++ x₂) * g` still begins
@@ -132,6 +135,81 @@ theorem exists_eq_append_cons_cons_of_not_isReduced {L : List (α × Bool)} (h :
 /-- A step of free reduction does not change the element represented. -/
 theorem Red.Step.mk_eq {L₁ L₂ : List (α × Bool)} (h : Red.Step L₁ L₂) : mk L₁ = mk L₂ :=
   Red.exact.2 ⟨_, h.to_red, Red.refl⟩
+
+/-- **Non-crossing of free reductions.** If the generator `x` occurs in the trivial word
+`P (x, b) M (x, !b) Q` only at the two displayed positions, then the subword `M` between them is
+trivial. -/
+theorem mk_eq_one_of_mk_append_cons_append_cons_eq_one {P M Q : List (α × Bool)} {x : α} {b : Bool}
+    (hP : x ∉ P.map Prod.fst) (hM : x ∉ M.map Prod.fst) (hQ : x ∉ Q.map Prod.fst)
+    (h : mk (P ++ (x, b) :: (M ++ (x, !b) :: Q)) = 1) : mk M = 1 := by
+  classical
+  by_contra hM₁
+  -- Otherwise the reduced word `(x, b) R (x, !b)` of `x^b M x^-b`, with `R` the reduced word of
+  -- `M`, would be the reduced word of `P⁻¹ Q⁻¹`, which does not contain `x`.
+  set R := (mk M).toWord with hR
+  have hRM : R.Sublist M := by rw [hR, toWord_mk]; exact reduce.red.sublist
+  have hR₀ : R ≠ [] := fun h₀ => hM₁ (by rw [← mk_toWord (x := mk M), ← hR, h₀, one_eq_mk])
+  have hxR : x ∉ R.map Prod.fst := fun hx => hM ((hRM.map _).subset hx)
+  have hmk : mk ([(x, b)] ++ R ++ invRev [(x, b)]) = mk (invRev P ++ invRev Q) := by
+    have hC : mk ([(x, b)] ++ R ++ invRev [(x, b)]) = mk ([(x, b)] ++ M ++ [(x, !b)]) := by
+      rw [← mul_mk, ← mul_mk, ← mul_mk, ← mul_mk, hR, mk_toWord]
+      simp [invRev]
+    have h' : mk P * mk ([(x, b)] ++ R ++ invRev [(x, b)]) * mk Q = 1 := by
+      rw [hC, ← h]
+      simp
+    have hPQ : (mk P)⁻¹ * (mk Q)⁻¹ = mk (invRev P ++ invRev Q) := by
+      rw [inv_mk, inv_mk, mul_mk]
+    rw [← hPQ]
+    exact eq_inv_mul_of_mul_eq (eq_inv_of_mul_eq_one_left h')
+  have hsub := (reduce.red (L := invRev P ++ invRev Q)).sublist
+  rw [← reduce.sound hmk, (isReduced_toWord.singleton_append_append_invRev hR₀ hxR).reduce_eq]
+    at hsub
+  have hmem := hsub.subset (List.mem_append_left _ (List.mem_append_left _
+    (List.mem_singleton_self (x, b))))
+  simp only [invRev, List.mem_append, List.mem_reverse, List.mem_map, Prod.mk.injEq] at hmem
+  rcases hmem with ⟨a, ha, rfl, -⟩ | ⟨a, ha, rfl, -⟩
+  exacts [hP (List.mem_map_of_mem ha), hQ (List.mem_map_of_mem ha)]
+
+/-- In a list of reduced words whose concatenation contains a letter followed by its inverse,
+the letter ends one of the words and its inverse begins the next nonempty word. -/
+theorem exists_eq_append_cons_append_cons_of_flatten_eq {ws : List (List (α × Bool))}
+    (hws : ∀ w ∈ ws, IsReduced w) {L₁ L₂ : List (α × Bool)} {x : α} {b : Bool}
+    (h : ws.flatten = L₁ ++ (x, b) :: (x, !b) :: L₂) :
+    ∃ pre w₁ mid w₂ post, ws = pre ++ (w₁ ++ [(x, b)]) :: (mid ++ ((x, !b) :: w₂) :: post) ∧
+      ∀ w ∈ mid, w = [] := by
+  induction ws generalizing L₁ with
+  | nil => simp at h
+  | cons w ws ih =>
+    have hws' : ∀ w ∈ ws, IsReduced w := fun w hw => hws w (List.mem_cons_of_mem _ hw)
+    rw [List.flatten_cons, List.append_eq_append_iff] at h
+    rcases h with ⟨as, rfl, h⟩ | ⟨bs, rfl, h⟩
+    · obtain ⟨pre, w₁, mid, w₂, post, rfl, hmid⟩ := ih hws' h
+      exact ⟨w :: pre, w₁, mid, w₂, post, rfl, hmid⟩
+    · rcases bs with _ | ⟨c, _ | ⟨d, bs⟩⟩
+      · -- The pair lies in the later words.
+        obtain ⟨pre, w₁, mid, w₂, post, rfl, hmid⟩ := ih (L₁ := []) hws' (by simpa using h.symm)
+        exact ⟨(L₁ ++ []) :: pre, w₁, mid, w₂, post, rfl, hmid⟩
+      · -- The letter ends `w`; its inverse begins the next nonempty word.
+        simp only [List.cons_append, List.nil_append, List.cons.injEq] at h
+        obtain ⟨rfl, h⟩ := h
+        obtain ⟨mid, w₂, post, rfl, hmid, -⟩ := List.flatten_eq_cons_iff.1 h.symm
+        exact ⟨[], L₁, mid, w₂, post, rfl, hmid⟩
+      · -- The pair would lie inside the reduced word `w`.
+        simp only [List.cons_append, List.cons.injEq] at h
+        obtain ⟨rfl, rfl, -⟩ := h
+        have hw := (hws _ List.mem_cons_self).infix (L₁ := [(x, b), (x, !b)]) ⟨L₁, bs, by simp⟩
+        simp [isReduced_cons_cons] at hw
+
+/-- Renaming the letters and inserting a cancelling pair does not change the element of the free
+group represented, up to renaming. -/
+theorem mk_map_append_cons_cons {β : Type*} (f : α → β) (n : β) (X Y : List (α × Bool)) :
+    mk (X.map (Prod.map f id) ++ (n, true) :: (n, false) :: Y.map (Prod.map f id)) =
+      FreeGroup.map f (mk (X ++ Y)) := by
+  have h := (Red.Step.not (L₁ := X.map (Prod.map f id)) (L₂ := Y.map (Prod.map f id)) (x := n)
+    (b := true)).mk_eq
+  rw [Bool.not_true] at h
+  rw [h, map.mk, ← List.map_append, Prod.map_def]
+  rfl
 
 section Prefix
 

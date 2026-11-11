@@ -8,6 +8,7 @@ module
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.GroupTheory.FreeGroup.Substitution
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
+import TauCeti.Data.List.Pairwise
 import TauCeti.GroupTheory.FreeGroup.Reduce
 
 /-!
@@ -54,76 +55,6 @@ reductions (`FreeGroup.mk_eq_one_of_mk_append_cons_append_cons_eq_one`).
 -/
 
 public section
-
-namespace FreeGroup
-
-variable {α : Type*}
-
-/-- **Non-crossing of free reductions.** If the generator `x` occurs in the trivial word
-`P (x, b) M (x, !b) Q` only at the two displayed positions, then the subword `M` between them is
-trivial. -/
-theorem mk_eq_one_of_mk_append_cons_append_cons_eq_one {P M Q : List (α × Bool)} {x : α} {b : Bool}
-    (hP : x ∉ P.map Prod.fst) (hM : x ∉ M.map Prod.fst) (hQ : x ∉ Q.map Prod.fst)
-    (h : mk (P ++ (x, b) :: (M ++ (x, !b) :: Q)) = 1) : mk M = 1 := by
-  classical
-  by_contra hM₁
-  -- Otherwise the reduced word `(x, b) R (x, !b)` of `x^b M x^-b`, with `R` the reduced word of
-  -- `M`, would be the reduced word of `P⁻¹ Q⁻¹`, which does not contain `x`.
-  set R := (mk M).toWord with hR
-  have hRM : R.Sublist M := by rw [hR, toWord_mk]; exact reduce.red.sublist
-  have hR₀ : R ≠ [] := fun h₀ => hM₁ (by rw [← mk_toWord (x := mk M), ← hR, h₀, one_eq_mk])
-  have hxR : x ∉ R.map Prod.fst := fun hx => hM ((hRM.map _).subset hx)
-  have hmk : mk ([(x, b)] ++ R ++ invRev [(x, b)]) = mk (invRev P ++ invRev Q) := by
-    have hC : mk ([(x, b)] ++ R ++ invRev [(x, b)]) = mk ([(x, b)] ++ M ++ [(x, !b)]) := by
-      rw [← mul_mk, ← mul_mk, ← mul_mk, ← mul_mk, hR, mk_toWord]
-      simp [invRev]
-    have h' : mk P * mk ([(x, b)] ++ R ++ invRev [(x, b)]) * mk Q = 1 := by
-      rw [hC, ← h]
-      simp
-    have hPQ : (mk P)⁻¹ * (mk Q)⁻¹ = mk (invRev P ++ invRev Q) := by
-      rw [inv_mk, inv_mk, mul_mk]
-    rw [← hPQ]
-    exact eq_inv_mul_of_mul_eq (eq_inv_of_mul_eq_one_left h')
-  have hsub := (reduce.red (L := invRev P ++ invRev Q)).sublist
-  rw [← reduce.sound hmk, (isReduced_toWord.singleton_append_append_invRev hR₀ hxR).reduce_eq]
-    at hsub
-  have hmem := hsub.subset (List.mem_append_left _ (List.mem_append_left _
-    (List.mem_singleton_self (x, b))))
-  simp only [invRev, List.mem_append, List.mem_reverse, List.mem_map, Prod.mk.injEq] at hmem
-  rcases hmem with ⟨a, ha, rfl, -⟩ | ⟨a, ha, rfl, -⟩
-  exacts [hP (List.mem_map_of_mem ha), hQ (List.mem_map_of_mem ha)]
-
-/-- In a list of reduced words whose concatenation contains a letter followed by its inverse,
-the letter ends one of the words and its inverse begins the next nonempty word. -/
-theorem exists_eq_append_cons_append_cons_of_flatten_eq {ws : List (List (α × Bool))}
-    (hws : ∀ w ∈ ws, IsReduced w) {L₁ L₂ : List (α × Bool)} {x : α} {b : Bool}
-    (h : ws.flatten = L₁ ++ (x, b) :: (x, !b) :: L₂) :
-    ∃ pre w₁ mid w₂ post, ws = pre ++ (w₁ ++ [(x, b)]) :: (mid ++ ((x, !b) :: w₂) :: post) ∧
-      ∀ w ∈ mid, w = [] := by
-  induction ws generalizing L₁ with
-  | nil => simp at h
-  | cons w ws ih =>
-    have hws' : ∀ w ∈ ws, IsReduced w := fun w hw => hws w (List.mem_cons_of_mem _ hw)
-    rw [List.flatten_cons, List.append_eq_append_iff] at h
-    rcases h with ⟨as, rfl, h⟩ | ⟨bs, rfl, h⟩
-    · obtain ⟨pre, w₁, mid, w₂, post, rfl, hmid⟩ := ih hws' h
-      exact ⟨w :: pre, w₁, mid, w₂, post, rfl, hmid⟩
-    · rcases bs with _ | ⟨c, _ | ⟨d, bs⟩⟩
-      · -- The pair lies in the later words.
-        obtain ⟨pre, w₁, mid, w₂, post, rfl, hmid⟩ := ih (L₁ := []) hws' (by simpa using h.symm)
-        exact ⟨(L₁ ++ []) :: pre, w₁, mid, w₂, post, rfl, hmid⟩
-      · -- The letter ends `w`; its inverse begins the next nonempty word.
-        simp only [List.cons_append, List.nil_append, List.cons.injEq] at h
-        obtain ⟨rfl, h⟩ := h
-        obtain ⟨mid, w₂, post, rfl, hmid, -⟩ := List.flatten_eq_cons_iff.1 h.symm
-        exact ⟨[], L₁, mid, w₂, post, rfl, hmid⟩
-      · -- The pair would lie inside the reduced word `w`.
-        simp only [List.cons_append, List.cons.injEq] at h
-        obtain ⟨rfl, rfl, -⟩ := h
-        have hw := (hws _ List.mem_cons_self).infix (L₁ := [(x, b), (x, !b)]) ⟨L₁, bs, by simp⟩
-        simp [isReduced_cons_cons] at hw
-
-end FreeGroup
 
 namespace TauCeti
 
@@ -258,19 +189,6 @@ end CancellationPieces
 
 section Construction
 
-/-- If the signed letters `(y, c)` and `(y, !c)` occur in a list without repetitions at the
-displayed positions, then `y` occurs nowhere else. -/
-private theorem not_mem_map_fst_of_nodup {L₁ L₂ L₃ : List (Z × Bool)} {y : Z} {c : Bool}
-    (h : (L₁ ++ (y, c) :: (L₂ ++ (y, !c) :: L₃)).Nodup) : y ∉ (L₁ ++ L₂ ++ L₃).map Prod.fst := by
-  have hp : (L₁ ++ (y, c) :: (L₂ ++ (y, !c) :: L₃)).Perm
-      ((y, c) :: (y, !c) :: (L₁ ++ L₂ ++ L₃)) :=
-    List.perm_middle.trans (.cons _ (by rw [← List.append_assoc]; exact List.perm_middle))
-  have h' := hp.nodup_iff.1 h
-  rw [List.nodup_cons, List.nodup_cons, List.mem_cons, not_or] at h'
-  intro hy
-  obtain ⟨⟨_, d⟩, hd, rfl⟩ := List.mem_map.1 hy
-  cases d <;> cases c <;> simp_all
-
 /-- A list of empty words has cancellation pieces with no pieces. -/
 private theorem nonempty_of_forall_eq_nil {ws : List (List (α × Bool))} (hws : ∀ w ∈ ws, w = []) :
     Nonempty (CancellationPieces ws (Fin 0)) := by
@@ -287,36 +205,6 @@ private theorem nonempty_of_forall_eq_nil {ws : List (List (α × Bool))} (hws :
   rw [List.map_map]
   conv_rhs => rw [← List.map_id ws]
   exact List.map_congr_left fun w hw => by simp [hws w hw]
-
-/-- Changing the piece of a letter `y` that occurs only in a block ending with `(y, c)` and a later
-block beginning with `(y, !c)` changes only the substitutions into these two blocks. -/
-private theorem map_flatMap_update [DecidableEq Z] {Vpre Vmid Vpost : List (List (Z × Bool))}
-    {A C : List (Z × Bool)} {y : Z} {c : Bool}
-    (hnd : (Vpre ++ (A ++ [(y, c)]) :: (Vmid ++ ((y, !c) :: C) :: Vpost)).flatten.Nodup)
-    (u : Z → List (α × Bool)) (s : List (α × Bool)) :
-    (Vpre ++ (A ++ [(y, c)]) :: (Vmid ++ ((y, !c) :: C) :: Vpost)).map
-        (·.flatMap (substituteLetter (Function.update u y s))) =
-      Vpre.map (·.flatMap (substituteLetter u)) ++
-        (A.flatMap (substituteLetter u) ++ substituteLetter (Function.update u y s) (y, c)) ::
-        (Vmid.map (·.flatMap (substituteLetter u)) ++
-          (substituteLetter (Function.update u y s) (y, !c) ++ C.flatMap (substituteLetter u)) ::
-          Vpost.map (·.flatMap (substituteLetter u))) := by
-  have hy : ∀ a ∈ Vpre.flatten ++ A ++ Vmid.flatten ++ C ++ Vpost.flatten, a.1 ≠ y := by
-    have := not_mem_map_fst_of_nodup (L₁ := Vpre.flatten ++ A) (L₂ := Vmid.flatten)
-      (L₃ := C ++ Vpost.flatten) (y := y) (c := c) (by simpa using hnd)
-    exact fun a ha hay => this (List.mem_map.2 ⟨a, by simpa using ha, hay⟩)
-  simp only [List.mem_append] at hy
-  have hF : ∀ v : List (Z × Bool), (∀ a ∈ v, a.1 ≠ y) →
-      v.flatMap (substituteLetter (Function.update u y s)) = v.flatMap (substituteLetter u) :=
-    fun v hv => flatMap_substituteLetter_congr fun a ha => Function.update_of_ne (hv a ha) _ _
-  have hFs : ∀ V : List (List (Z × Bool)), (∀ a ∈ V.flatten, a.1 ≠ y) →
-      V.map (·.flatMap (substituteLetter (Function.update u y s))) =
-        V.map (·.flatMap (substituteLetter u)) :=
-    fun V hV => List.map_congr_left fun v hv =>
-      hF v fun a ha => hV a (List.mem_flatten.2 ⟨v, hv, ha⟩)
-  simp [hFs Vpre fun a ha => hy a (by simp [ha]), hFs Vmid fun a ha => hy a (by simp [ha]),
-    hFs Vpost fun a ha => hy a (by simp [ha]), hF A fun a ha => hy a (by simp [ha]),
-    hF C fun a ha => hy a (by simp [ha])]
 
 /-- **Lengthening a piece.** Suppose the patterns of `P` contain a block ending with `(y, c)`
 followed (after empty blocks) by a block beginning with `(y, !c)`. Appending a letter `(x, e)` to
@@ -353,7 +241,7 @@ private theorem nonempty_of_continue {ws : List (List (α × Bool))} (P : Cancel
     · subst hz
       cases c <;> simp [hu, ht, hx]
     · simpa [hu, Function.update_of_ne hz] using P.piece_ne_nil z
-  · rw [hP, hu, map_flatMap_update (hP ▸ P.nodup_flatten_patterns), ← hu, hc, hnc]
+  · rw [hP, hu, map_flatMap_substituteLetter_update (hP ▸ P.nodup_flatten_patterns), ← hu, hc, hnc]
     simp [ht]
 
 /-- If the patterns of `P` contain a block `A (z, c) B` followed (after empty blocks) by a block
@@ -366,7 +254,7 @@ private theorem mk_append_eq_one_of_patterns_eq {ws : List (List (α × Bool))}
   have hflat : P.patterns.flatten =
       (Vpre.flatten ++ A) ++ (z, c) :: ((B ++ C) ++ (z, !c) :: (D ++ Vpost.flatten)) := by
     simp [hP, List.flatten_eq_nil_iff.2 hmid]
-  have hz := not_mem_map_fst_of_nodup (hflat ▸ P.nodup_flatten_patterns)
+  have hz := List.notMem_map_fst_of_nodup_append_cons_append_cons (hflat ▸ P.nodup_flatten_patterns)
   simp only [List.map_append, List.mem_append, not_or] at hz
   refine mk_eq_one_of_mk_append_cons_append_cons_eq_one ?_ ?_ ?_
     (hflat ▸ P.mk_flatten_patterns) <;>
@@ -420,27 +308,6 @@ private theorem flatten_insertPiece (f : Z → Z') (n : Z') (Vpre : List (List (
       (n, true) :: (n, false) :: (v₂ ++ Vpost.flatten).map (Prod.map f id) := by
   simp [insertPiece, ← List.map_flatten, List.flatten_eq_nil_iff.2 hmid]
 
-/-- Renaming the letters along an injective map and inserting the cancelling pair `n n⁻¹` of a
-fresh letter keeps a word without repeated signed letters. -/
-private theorem nodup_map_append_cons_cons {f : Z → Z'} (hf : f.Injective) {n : Z'}
-    (hn : ∀ z, f z ≠ n) {X Y : List (Z × Bool)} (h : (X ++ Y).Nodup) :
-    (X.map (Prod.map f id) ++ (n, true) :: (n, false) :: Y.map (Prod.map f id)).Nodup := by
-  refine (List.perm_middle.trans (.cons _ List.perm_middle)).nodup_iff.2 ?_
-  have h' := h.map (hf.prodMap Function.injective_id)
-  rw [List.map_append] at h'
-  simp [h', hn]
-
-/-- Renaming the letters and inserting a cancelling pair does not change the element of the free
-group represented, up to renaming. -/
-private theorem mk_map_append_cons_cons (f : Z → Z') (n : Z') (X Y : List (Z × Bool)) :
-    mk (X.map (Prod.map f id) ++ (n, true) :: (n, false) :: Y.map (Prod.map f id)) =
-      FreeGroup.map f (mk (X ++ Y)) := by
-  have h := (Red.Step.not (L₁ := X.map (Prod.map f id)) (L₂ := Y.map (Prod.map f id)) (x := n)
-    (b := true)).mk_eq
-  rw [Bool.not_true] at h
-  rw [h, map.mk, ← List.map_append, Prod.map_def]
-  rfl
-
 /-- After starting a new piece, no letter occurs twice in one pattern. -/
 private theorem nodup_map_fst_insertPiece {f : Z → Z'} (hf : f.Injective) {n : Z'}
     (hn : ∀ z, f z ≠ n) {Vpre Vmid Vpost : List (List (Z × Bool))} {v₁ v₂ : List (Z × Bool)}
@@ -464,62 +331,6 @@ private theorem nodup_map_fst_insertPiece {f : Z → Z'} (hf : f.Injective) {n :
     exact ⟨hn' v₂, hold v₂ (by simp)⟩
   · exact hold w (by simp [hw])
 
-/-- Pairwise relations survive replacing two entries `a`, `b` of a list by `a'`, `b'` and the
-others by their images under `g`, provided the relations transfer. -/
-private theorem pairwise_map_append_cons_append_cons {β γ : Type*} {R : β → β → Prop}
-    {S : γ → γ → Prop} {g : β → γ} {l₁ l₂ l₃ : List β} {a b : β} {a' b' : γ}
-    (h : (l₁ ++ a :: (l₂ ++ b :: l₃)).Pairwise R) (hg : ∀ x y, R x y → S (g x) (g y))
-    (ha : ∀ x, (R a x → S a' (g x)) ∧ (R x a → S (g x) a'))
-    (hb : ∀ x, (R b x → S b' (g x)) ∧ (R x b → S (g x) b')) (hab : S a' b') :
-    (l₁.map g ++ a' :: (l₂.map g ++ b' :: l₃.map g)).Pairwise S := by
-  simp only [List.pairwise_append, List.pairwise_cons, List.pairwise_map, List.mem_append,
-    List.mem_cons, List.mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂] at h ⊢
-  obtain ⟨h₁, ⟨h₂, h₃, ⟨h₄, h₅⟩, h₆⟩, h₇⟩ := h
-  refine ⟨h₁.imp (hg _ _), ⟨?_, h₃.imp (hg _ _), ⟨fun x hx => (hb x).1 (h₄ x hx),
-    h₅.imp (hg _ _)⟩, ?_⟩, ?_⟩
-  · rintro _ (⟨x, hx, rfl⟩ | rfl | ⟨x, hx, rfl⟩)
-    · exact (ha x).1 (h₂ x (Or.inl hx))
-    · exact hab
-    · exact (ha x).1 (h₂ x (Or.inr (Or.inr hx)))
-  · rintro x hx _ (rfl | ⟨y, hy, rfl⟩)
-    · exact (hb x).2 (h₆ x hx b (Or.inl rfl))
-    · exact hg _ _ (h₆ x hx y (Or.inr hy))
-  · rintro x hx _ (rfl | ⟨y, hy, rfl⟩ | rfl | ⟨y, hy, rfl⟩)
-    · exact (ha x).2 (h₇ x hx a (Or.inl rfl))
-    · exact hg _ _ (h₇ x hx y (Or.inr (Or.inl hy)))
-    · exact (hb x).2 (h₇ x hx b (Or.inr (Or.inr (Or.inl rfl))))
-    · exact hg _ _ (h₇ x hx y (Or.inr (Or.inr (Or.inr hy))))
-
-/-- If every letter shared by `V` and `W` is the image under `f` of a letter shared by `v` and
-`w`, and `v`, `w` share at most one letter, then so do `V` and `W`. -/
-private theorem subsingleton_of_forall_shared {Y Y' : Type*} (f : Y → Y') {v w : List (Y × Bool)}
-    {V W : List (Y' × Bool)} (h : {z | z ∈ v.map Prod.fst ∧ z ∈ w.map Prod.fst}.Subsingleton)
-    (hVW : ∀ z ∈ V.map Prod.fst, z ∈ W.map Prod.fst →
-      ∃ z₀ ∈ v.map Prod.fst, z₀ ∈ w.map Prod.fst ∧ f z₀ = z) :
-    {z | z ∈ V.map Prod.fst ∧ z ∈ W.map Prod.fst}.Subsingleton :=
-  (h.image f).anti fun z hz => by
-    obtain ⟨z₀, h₁, h₂, rfl⟩ := hVW z hz.1 hz.2
-    exact ⟨z₀, ⟨h₁, h₂⟩, rfl⟩
-
-/-- A letter shared by two words renamed along an injective map is the image of a shared
-letter. -/
-private theorem exists_mem_of_mem_map_prodMap {f : Z → Z'} (hf : f.Injective)
-    {v w : List (Z × Bool)} {z : Z'} (hv : z ∈ (v.map (Prod.map f id)).map Prod.fst)
-    (hw : z ∈ (w.map (Prod.map f id)).map Prod.fst) :
-    ∃ z₀ ∈ v.map Prod.fst, z₀ ∈ w.map Prod.fst ∧ f z₀ = z := by
-  simp only [List.map_map, Function.comp_def, Prod.map_fst, List.mem_map] at hv hw
-  obtain ⟨a, ha, rfl⟩ := hv
-  obtain ⟨b, hb, hab⟩ := hw
-  exact ⟨a.1, List.mem_map_of_mem ha, hf hab ▸ List.mem_map_of_mem hb, rfl⟩
-
-/-- A letter of a word extended by `(n, c)` at either end is `n` or a letter of the word. -/
-private theorem mem_map_fst_or_eq {v : List (Z' × Bool)} {z n : Z'} {c : Bool}
-    (h : z ∈ (v ++ [(n, c)]).map Prod.fst ∨ z ∈ ((n, c) :: v).map Prod.fst) :
-    z ∈ v.map Prod.fst ∨ z = n := by
-  simp only [List.map_append, List.map_cons, List.map_nil, List.mem_append, List.mem_cons,
-    List.not_mem_nil, or_false] at h
-  tauto
-
 /-- After starting a new piece between two blocks sharing no letter, two distinct patterns share
 at most one letter. -/
 private theorem pairwise_insertPiece {f : Z → Z'} (hf : f.Injective) {n : Z'} (hn : ∀ z, f z ≠ n)
@@ -529,15 +340,26 @@ private theorem pairwise_insertPiece {f : Z → Z'} (hf : f.Injective) {n : Z'} 
     (hdisj : ∀ z ∈ v₁.map Prod.fst, z ∉ v₂.map Prod.fst) :
     (insertPiece f n Vpre Vmid Vpost v₁ v₂).Pairwise fun v w =>
       {z | z ∈ v.map Prod.fst ∧ z ∈ w.map Prod.fst}.Subsingleton := by
-  have key := @exists_mem_of_mem_map_prodMap _ _ _ hf
-  have hext := @mem_map_fst_or_eq Z'
+  -- A letter shared by two renamed words is the image of a shared letter.
+  have key : ∀ {v w : List (Z × Bool)} {z : Z'}, z ∈ (v.map (Prod.map f id)).map Prod.fst →
+      z ∈ (w.map (Prod.map f id)).map Prod.fst →
+      z ∈ f '' {z | z ∈ v.map Prod.fst ∧ z ∈ w.map Prod.fst} := fun {v w z} hv hw => by
+    have hmap (l : List (Z × Bool)) :
+        (l.map (Prod.map f id)).map Prod.fst = (l.map Prod.fst).map f := by simp
+    rw [hmap] at hv hw
+    obtain ⟨a, ha, rfl⟩ := List.mem_map.1 hv
+    exact ⟨a, ⟨ha, (List.mem_map_of_injective hf).1 hw⟩, rfl⟩
+  -- A letter of a word extended by `(n, c)` at either end is `n` or a letter of the word.
+  have hext : ∀ {v : List (Z' × Bool)} {z : Z'} {c : Bool},
+      z ∈ (v ++ [(n, c)]).map Prod.fst ∨ z ∈ ((n, c) :: v).map Prod.fst →
+      z ∈ v.map Prod.fst ∨ z = n := fun h => by simpa [or_comm] using h
   have hn' : ∀ w : List (Z × Bool), n ∉ (w.map (Prod.map f id)).map Prod.fst := by simp [hn]
-  refine pairwise_map_append_cons_append_cons h
-    (fun v w h => subsingleton_of_forall_shared f h fun z hv hw => key hv hw)
-    (fun w => ⟨fun h => subsingleton_of_forall_shared f h fun z hv hw => ?_,
-      fun h => subsingleton_of_forall_shared f h fun z hv hw => ?_⟩)
-    (fun w => ⟨fun h => subsingleton_of_forall_shared f h fun z hv hw => ?_,
-      fun h => subsingleton_of_forall_shared f h fun z hv hw => ?_⟩) ?_
+  refine List.pairwise_map_append_cons_append_cons h
+    (fun v w h => (h.image f).anti fun z hz => key hz.1 hz.2)
+    (fun w => ⟨fun h => (h.image f).anti fun z ⟨hv, hw⟩ => ?_,
+      fun h => (h.image f).anti fun z ⟨hv, hw⟩ => ?_⟩)
+    (fun w => ⟨fun h => (h.image f).anti fun z ⟨hv, hw⟩ => ?_,
+      fun h => (h.image f).anti fun z ⟨hv, hw⟩ => ?_⟩) ?_
   · rcases hext (Or.inl hv) with hv | rfl
     exacts [key hv hw, absurd hw (hn' w)]
   · rcases hext (Or.inl hw) with hw | rfl
@@ -550,7 +372,7 @@ private theorem pairwise_insertPiece {f : Z → Z'} (hf : f.Injective) {n : Z'} 
     refine (Set.subsingleton_singleton (a := n)).anti fun z hz => ?_
     rcases hext (Or.inl hz.1) with h₁ | rfl
     · rcases hext (Or.inr hz.2) with h₂ | rfl
-      · obtain ⟨z₀, h₀, h₀', -⟩ := key h₁ h₂
+      · obtain ⟨z₀, ⟨h₀, h₀'⟩, -⟩ := key h₁ h₂
         exact (hdisj z₀ h₀ h₀').elim
       · rfl
     · rfl
@@ -611,8 +433,8 @@ private theorem nonempty_of_new {p : ℕ} {ws : List (List (α × Bool))}
     piece_ne_nil := fun z => ?_
     map_flatMap_patterns := map_flatMap_insertPiece (Fin.snoc_comp_castSucc ..) (Fin.snoc_last ..)
       Vpre Vmid Vpost v₁ v₂
-    nodup_flatten_patterns := hnew ▸ nodup_map_append_cons_cons (Fin.castSucc_injective p)
-      Fin.castSucc_ne_last (hflat ▸ P.nodup_flatten_patterns)
+    nodup_flatten_patterns := hnew ▸ List.Nodup.map_prodMap_append_cons_cons
+      (Fin.castSucc_injective p) Fin.castSucc_ne_last (hflat ▸ P.nodup_flatten_patterns)
     mem_flatten_patterns := mem_flatten_insertPiece hmid (hflat ▸ P.mem_flatten_patterns)
     nodup_map_fst := nodup_map_fst_insertPiece (Fin.castSucc_injective p) Fin.castSucc_ne_last
       (hP ▸ P.nodup_map_fst)

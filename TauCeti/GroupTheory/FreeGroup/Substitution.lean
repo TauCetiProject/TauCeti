@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Computability
+import TauCeti.Data.List.Pairwise
 
 /-!
 # Primitive-recursive substitution of free-group words
@@ -18,6 +19,8 @@ substitutions used when evaluating finite systems of equations over free groups.
 Substitution without free reduction is also recorded, for words in variables and constant
 letters (`FreeGroup.substituteVars`): it is the substitution in Makanin's generalised equations,
 where both sides must agree letter by letter.
+It only depends on the words assigned to the generators that occur, so
+changing the word of one generator changes the substitution only at the letters of that generator.
 -/
 
 public section
@@ -54,6 +57,40 @@ theorem flatMap_substituteLetter_map {γ : Type*} (f : α → List (β × Bool))
       w.flatMap (substituteLetter (f ∘ g)) := by
   rw [List.flatMap_map]
   exact List.flatMap_congr fun a _ => by simp [substituteLetter]
+
+/-- Changing the word assigned to a generator that does not occur in a word does not change the
+substitution without free reduction. -/
+theorem flatMap_substituteLetter_update_of_notMem [DecidableEq α] {w : List (α × Bool)} {y : α}
+    (hy : y ∉ w.map Prod.fst) (f : α → List (β × Bool)) (s : List (β × Bool)) :
+    w.flatMap (substituteLetter (Function.update f y s)) = w.flatMap (substituteLetter f) :=
+  flatMap_substituteLetter_congr fun a ha =>
+    Function.update_of_ne (fun h : a.1 = y => hy (h ▸ List.mem_map_of_mem ha)) _ _
+
+/-- Changing the word assigned to a generator `y` whose two signed letters end one word and begin
+a later one, in a list of words without repeated signed letters, changes only the substitutions
+into these two words, and only at these two letters. -/
+theorem map_flatMap_substituteLetter_update [DecidableEq α]
+    {Vpre Vmid Vpost : List (List (α × Bool))} {A C : List (α × Bool)} {y : α} {c : Bool}
+    (hnd : (Vpre ++ (A ++ [(y, c)]) :: (Vmid ++ ((y, !c) :: C) :: Vpost)).flatten.Nodup)
+    (f : α → List (β × Bool)) (s : List (β × Bool)) :
+    (Vpre ++ (A ++ [(y, c)]) :: (Vmid ++ ((y, !c) :: C) :: Vpost)).map
+        (·.flatMap (substituteLetter (Function.update f y s))) =
+      Vpre.map (·.flatMap (substituteLetter f)) ++
+        (A.flatMap (substituteLetter f) ++ substituteLetter (Function.update f y s) (y, c)) ::
+        (Vmid.map (·.flatMap (substituteLetter f)) ++
+          (substituteLetter (Function.update f y s) (y, !c) ++ C.flatMap (substituteLetter f)) ::
+          Vpost.map (·.flatMap (substituteLetter f))) := by
+  have hy := List.notMem_map_fst_of_nodup_append_cons_append_cons (L₁ := Vpre.flatten ++ A)
+    (L₂ := Vmid.flatten) (L₃ := C ++ Vpost.flatten) (y := y) (c := c) (by simpa using hnd)
+  simp only [List.map_append, List.mem_append, List.map_flatten, not_or] at hy
+  have hFs : ∀ V : List (List (α × Bool)), y ∉ (V.map (List.map Prod.fst)).flatten →
+      V.map (·.flatMap (substituteLetter (Function.update f y s))) =
+        V.map (·.flatMap (substituteLetter f)) :=
+    fun V hV => List.map_congr_left fun v hv => flatMap_substituteLetter_update_of_notMem
+      (fun h => hV (List.mem_flatten.2 ⟨_, List.mem_map_of_mem hv, h⟩)) f s
+  simp [hFs Vpre hy.1.1.1, hFs Vmid hy.1.2, hFs Vpost hy.2.2,
+    flatMap_substituteLetter_update_of_notMem hy.1.1.2,
+    flatMap_substituteLetter_update_of_notMem hy.2.1]
 
 /-- Substitution without free reduction commutes with formal inverses. -/
 theorem flatMap_substituteLetter_invRev (f : α → List (β × Bool)) (w : List (α × Bool)) :
