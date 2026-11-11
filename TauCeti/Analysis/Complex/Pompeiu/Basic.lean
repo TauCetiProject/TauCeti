@@ -163,7 +163,6 @@ theorem norm_mul_norm_cauchyTransform_le {f : ℂ → F} {r : ℝ}
   · simp only [norm_zero, zero_mul]
     have : 0 ≤ ∫ z, ‖f z‖ := integral_nonneg fun z ↦ norm_nonneg (f z)
     positivity
-  have hw' : 0 < ‖w‖ := norm_pos_iff.2 hw0
   have hpt : ∀ z, ‖(w - z)⁻¹ • f z‖ ≤ 2 * ‖w‖⁻¹ * ‖f z‖ := fun z ↦ by
     by_cases hz : f z = 0
     · simp [hz]
