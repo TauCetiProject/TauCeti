@@ -139,9 +139,9 @@ theorem PolarPartDecomposition.hasCauchyPV_analyticRemainder_add_residue_sum_of_
     rwa [h_val, neg_neg] at h
 
 /-- **The Hungerbühler–Wasem generalized residue theorem** (HW Thm 3.3): for `f` holomorphic
-on `U ∖ S` and meromorphic at each point of the finite `S`, and a null-homologous closed
-piecewise-`C¹` immersion `γ` in `U` rooted off the poles, under conditions (A′) and (B) the
-set-level Cauchy principal value of `f` along `γ` is
+on `U ∖ S` and meromorphic at each point of the finite `S` lying in `U`, and a null-homologous
+closed piecewise-`C¹` immersion `γ` in `U` rooted off the poles, under conditions (A′) and (B)
+the set-level Cauchy principal value of `f` along `γ` is
 `2πi · Σ_{s ∈ S} n_s(γ) · Res_s f`, with the generalized (non-integer) winding numbers as
 weights — valid when singularities of `f` lie **on** the curve. A point of `S` outside `U` has
 winding number `0` by null-homology, so neither `S ⊆ U` nor meromorphy of `f` at such a point is
@@ -157,10 +157,8 @@ theorem hungerbuhlerWasem_residueTheorem {f : ℂ → ℂ} {U : Set ℂ} (hU : I
   classical
   -- Restrict to the singularities inside `U`; the others have winding number `0`.
   have hsub : S.filter (· ∈ U) ⊆ S := Finset.filter_subset _ _
-  have hf' : DifferentiableOn ℂ f (U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ)) := by
-    have hdiff : U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ) = U \ (S : Set ℂ) := by
-      ext z; simp only [Finset.coe_filter]; grind
-    exact hdiff ▸ hf
+  have hf' : DifferentiableOn ℂ f (U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ)) :=
+    hf.mono fun z hz ↦ ⟨hz.1, fun hzS ↦ hz.2 (Finset.mem_filter.mpr ⟨hzS, hz.1⟩)⟩
   have hmero' : ∀ s ∈ S.filter (· ∈ U), MeromorphicAt f s := fun s hs ↦
     hmero s (hsub hs) (Finset.mem_filter.mp hs).2
   have h := PolarPartDecomposition.hasCauchyPV_analyticRemainder_add_residue_sum_of_conditions
@@ -170,9 +168,8 @@ theorem hungerbuhlerWasem_residueTheorem {f : ℂ → ℂ} {U : Set ℂ} (hU : I
     (hA.mono hsub) hB
   have hsum : ∑ s ∈ S.filter (· ∈ U), windingNumber γ a b s * residue f s =
       ∑ s ∈ S, windingNumber γ a b s * residue f s :=
-    Finset.sum_subset hsub fun s hs hs' ↦ by
-      have : s ∉ U := fun h ↦ hs' (Finset.mem_filter.mpr ⟨hs, h⟩)
-      rw [isNullHomologous_iff.mp hnull s this, zero_mul]
+    Finset.sum_filter_of_ne fun s _ hs ↦ by_contra fun hsU ↦ hs <| by
+      rw [isNullHomologous_iff.mp hnull s hsU, zero_mul]
   rwa [PolarPartDecomposition.intervalIntegral_deriv_smul_analyticRemainder_eq_zero
     (PolarPartDecomposition.ofMeromorphic hU hf' hmero') hU hγ_imm.isPiecewiseC1On hγU hclosed
     hnull, zero_add, hsum] at h

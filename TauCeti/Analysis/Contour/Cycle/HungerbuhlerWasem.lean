@@ -13,8 +13,8 @@ public import TauCeti.Analysis.Contour.HungerbuhlerWasem
 # The Hungerbühler–Wasem generalized residue theorem for contour cycles
 
 This file lifts HW Thm 3.3 from one parametrized closed curve to a finite formal integer cycle
-`C` of them. For `f` holomorphic on `U ∖ S` and meromorphic at each point of the finite `S ⊆ U`,
-and a cycle `C` in `U` that is **null-homologous** there, whose curves are piecewise-`C¹`
+`C` of them. For `f` holomorphic on `U ∖ S` and meromorphic at each point of the finite `S` lying
+in `U`, and a cycle `C` in `U` that is **null-homologous** there, whose curves are piecewise-`C¹`
 immersions rooted off `S` and satisfy the regularity conditions (A′) and (B),
 
 `PV ∮_C f = 2πi · ∑_{s ∈ S} n_s(C) · Res_s f`,
@@ -146,10 +146,8 @@ theorem hungerbuhlerWasem_residueTheorem (hU : IsOpen U) (S : Finset ℂ)
   classical
   -- Restrict to the singularities inside `U`; the others have winding number `0`.
   have hsub : S.filter (· ∈ U) ⊆ S := Finset.filter_subset _ _
-  have hf' : DifferentiableOn ℂ f (U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ)) := by
-    have hdiff : U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ) = U \ (S : Set ℂ) := by
-      ext z; simp only [Finset.coe_filter]; grind
-    exact hdiff ▸ hf
+  have hf' : DifferentiableOn ℂ f (U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ)) :=
+    hf.mono fun z hz ↦ ⟨hz.1, fun hzS ↦ hz.2 (Finset.mem_filter.mpr ⟨hzS, hz.1⟩)⟩
   have hmero' : ∀ s ∈ S.filter (· ∈ U), MeromorphicAt f s := fun s hs ↦
     hmero s (hsub hs) (Finset.mem_filter.mp hs).2
   have h := hasCauchyPV_analyticRemainder_add_residue_sum
@@ -159,9 +157,8 @@ theorem hungerbuhlerWasem_residueTheorem (hU : IsOpen U) (S : Finset ℂ)
     (fun γ hγ ↦ (hA γ hγ).mono hsub) hB
   have hsum : ∑ s ∈ S.filter (· ∈ U), windingNumber s C * residue f s =
       ∑ s ∈ S, windingNumber s C * residue f s :=
-    Finset.sum_subset hsub fun s hs hs' ↦ by
-      have : s ∉ U := fun h ↦ hs' (Finset.mem_filter.mpr ⟨hs, h⟩)
-      rw [isNullHomologous_iff.mp hnull s this, zero_mul]
+    Finset.sum_filter_of_ne fun s _ hs ↦ by_contra fun hsU ↦ hs <| by
+      rw [isNullHomologous_iff.mp hnull s hsU, zero_mul]
   rwa [homologyCauchyTheorem hU hCU
     (PolarPartDecomposition.ofMeromorphic hU hf' hmero').analyticRemainder_differentiableOn hnull,
     zero_add, hsum] at h
