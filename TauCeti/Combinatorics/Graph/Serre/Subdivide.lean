@@ -307,18 +307,19 @@ private theorem subdivideGeomEdgeFun_subdivideRev (x : (Γ.subdivide a).E) :
   · simp [subdivideGeomEdgeFun]
   · simp [subdivideGeomEdgeFun, Γ.rev_ne a]
 
-/-- The geometric edge of the subdivision lying on a dart of `Γ` and keeping its name. -/
+/-- The geometric edge of the subdivision lying on a dart of `Γ` and keeping its name: the half of
+the subdivided edge at the target of `a` for `a`, and the initial half of `e` for any other `e`. -/
 private def subdivideGeomEdgeInv (e : Γ.E) : (Γ.subdivide a).GeomEdge :=
-  (Γ.subdivide a).toGeomEdge (if e = a ∨ e = Γ.rev a then .inr true else .inl e)
+  (Γ.subdivide a).toGeomEdge (if e = a then .inr true else .inl e)
 
 private theorem subdivideGeomEdgeInv_rev (e : Γ.E) :
     subdivideGeomEdgeInv a (Γ.rev e) = subdivideGeomEdgeInv a e := by
   by_cases h : e = a
-  · simp [subdivideGeomEdgeInv, h]
+  · simpa [subdivideGeomEdgeInv, h, Γ.rev_ne a] using (subdivide_toGeomEdge_inr_true a).symm
   · by_cases h' : e = Γ.rev a
-    · simp [subdivideGeomEdgeInv, h']
-    · simpa [subdivideGeomEdgeInv, h, h', Γ.rev_injective.eq_iff,
-        ← Γ.rev_injective.eq_iff (a := Γ.rev e)] using subdivide_toGeomEdge_inl_rev_of_ne h h'
+    · simpa [subdivideGeomEdgeInv, h', Γ.rev_ne a] using subdivide_toGeomEdge_inr_true a
+    · have hr : Γ.rev e ≠ a := fun hr => h' (by rw [← hr, Γ.rev_rev])
+      simpa [subdivideGeomEdgeInv, h, hr] using subdivide_toGeomEdge_inl_rev_of_ne h h'
 
 variable (Γ) in
 /-- The geometric edges of a subdivision are the geometric edges of the original graph and one
@@ -332,21 +333,40 @@ def subdivideGeomEdgeEquiv : (Γ.subdivide a).GeomEdge ≃ Option Γ.GeomEdge wh
     obtain ⟨e | _ | _, rfl⟩ := (Γ.subdivide a).toGeomEdge_surjective x
     · by_cases h : e = a
       · simp [subdivideGeomEdgeFun, h]
-      · by_cases h' : e = Γ.rev a
-        · simpa [subdivideGeomEdgeFun, subdivideGeomEdgeInv, h', Γ.rev_ne a] using
-            subdivide_toGeomEdge_inr_true a
-        · simp [subdivideGeomEdgeFun, subdivideGeomEdgeInv, h, h']
+      · simp [subdivideGeomEdgeFun, subdivideGeomEdgeInv, h]
     · simpa [subdivideGeomEdgeFun] using (subdivide_toGeomEdge_inr_false a).symm
     · simp [subdivideGeomEdgeFun, subdivideGeomEdgeInv]
   right_inv x := by
     obtain _ | x := x
     · simp [subdivideGeomEdgeFun]
     · obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective x
-      by_cases h : e = a
-      · simp [subdivideGeomEdgeFun, subdivideGeomEdgeInv, h]
-      · by_cases h' : e = Γ.rev a
-        · simp [subdivideGeomEdgeFun, subdivideGeomEdgeInv, h']
-        · simp [subdivideGeomEdgeFun, subdivideGeomEdgeInv, h, h']
+      by_cases h : e = a <;> simp [subdivideGeomEdgeFun, subdivideGeomEdgeInv, h]
+
+/-- The initial half of `a` lies on the new geometric edge, and the initial half of any other dart
+on the geometric edge of that dart. -/
+@[simp] theorem subdivideGeomEdgeEquiv_toGeomEdge_inl (e : Γ.E) :
+    Γ.subdivideGeomEdgeEquiv a ((Γ.subdivide a).toGeomEdge (.inl e)) =
+      if e = a then none else some (Γ.toGeomEdge e) := by
+  simp [subdivideGeomEdgeEquiv, subdivideGeomEdgeFun]
+
+/-- The half of the subdivided edge at the target of `a` keeps the name of the subdivided edge, and
+the half at its source is the new geometric edge. -/
+@[simp] theorem subdivideGeomEdgeEquiv_toGeomEdge_inr (b : Bool) :
+    Γ.subdivideGeomEdgeEquiv a ((Γ.subdivide a).toGeomEdge (.inr b)) =
+      cond b (some (Γ.toGeomEdge a)) none := by
+  simp [subdivideGeomEdgeEquiv, subdivideGeomEdgeFun]
+
+/-- The new geometric edge is the half of the subdivided edge at the source of `a`. -/
+@[simp] theorem subdivideGeomEdgeEquiv_symm_none :
+    (Γ.subdivideGeomEdgeEquiv a).symm none = (Γ.subdivide a).toGeomEdge (.inl a) := (rfl)
+
+/-- The geometric edge of `a` names the half of the subdivided edge at the target of `a`, and the
+geometric edge of any other dart names the edge of its initial half. -/
+@[simp] theorem subdivideGeomEdgeEquiv_symm_some_toGeomEdge (e : Γ.E) :
+    (Γ.subdivideGeomEdgeEquiv a).symm (some (Γ.toGeomEdge e)) =
+      (Γ.subdivide a).toGeomEdge (if e = a then .inr true else .inl e) := by
+  simp only [subdivideGeomEdgeEquiv, Equiv.coe_fn_symm_mk, Option.elim_some,
+    GeomEdge.lift_toGeomEdge, subdivideGeomEdgeInv]
 
 /-- A subdivision has one more geometric edge. -/
 theorem card_subdivide_geomEdge [Finite Γ.GeomEdge] :

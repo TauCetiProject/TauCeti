@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Logic.Equiv.Fin.Rotate
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -15,7 +16,8 @@ import TauCeti.Data.Fin.Basic
 Mathlib's `finSigmaFinEquiv` lists the positions of `m` consecutive blocks of lengths `n i` as
 `Fin (∑ i, n i)`. This file describes the cyclic successor `finRotate` in these coordinates: inside
 a block it moves to the next position of that block, and from the last position of a block it
-moves to the first position of the cyclically next block.
+moves to the first position of the cyclically next block. Positions are compared through the
+prefix sums `TauCeti.prefixSum` of the block lengths.
 
 This is the bookkeeping needed to replace each letter of a cyclic word by a nonempty block of
 letters.
@@ -23,32 +25,17 @@ letters.
 
 public section
 
-namespace TauCeti
+namespace Fin
+
+open TauCeti
 
 variable {m : ℕ} {n : Fin m → ℕ}
 
-/-- The total length of the blocks before the block `a`. -/
-private def blockStart (n : Fin m → ℕ) (a : ℕ) : ℕ := ∑ k : Fin m, if (k : ℕ) < a then n k else 0
-
-private theorem blockStart_zero : blockStart n 0 = 0 := by
-  simp [blockStart]
-
-private theorem blockStart_self : blockStart n m = ∑ k, n k := by
-  simp [blockStart]
-
-private theorem blockStart_succ (i : Fin m) : blockStart n (i + 1) = blockStart n i + n i := by
-  have h : ∀ k : Fin m, (if (k : ℕ) < i + 1 then n k else 0) =
-      (if (k : ℕ) < i then n k else 0) + if k = i then n k else 0 := fun k => by
-    simp only [Fin.ext_iff]
-    split_ifs <;> omega
-  simp [blockStart, h, Finset.sum_add_distrib]
-
+/-- The position of `⟨i, j⟩` in the concatenation is the total length of the blocks before `i`,
+plus `j`. -/
 private theorem coe_finSigmaFinEquiv (i : Fin m) (j : Fin (n i)) :
-    (finSigmaFinEquiv ⟨i, j⟩ : ℕ) = blockStart n i + j := by
-  rw [finSigmaFinEquiv_apply, blockStart,
-    Fin.sum_univ_eq_sum_castLE_add i (fun k => if (k : ℕ) < i then n k else 0)
-      fun k hk => ite_eq_right_iff.2 fun h => absurd h (not_lt.2 hk.le)]
-  simp
+    (finSigmaFinEquiv ⟨i, j⟩ : ℕ) = prefixSum i n + j := by
+  rw [finSigmaFinEquiv_apply, prefixSum_eq_sum_castLE i.2.le]
 
 /-- Inside a block, the cyclic successor of a position is the next position of that block. -/
 theorem finRotate_finSigmaFinEquiv_of_lt (i : Fin m) (j : Fin (n i)) (h : (j : ℕ) + 1 < n i) :
@@ -67,15 +54,15 @@ theorem finRotate_finSigmaFinEquiv_of_eq (i : Fin m) (j : Fin (n i)) (h : (j : �
     finRotate _ (finSigmaFinEquiv ⟨i, j⟩) = finSigmaFinEquiv ⟨finRotate m i, j'⟩ := by
   apply Fin.ext
   have hlt := (finSigmaFinEquiv ⟨finRotate m i, j'⟩).is_lt
-  have hstep := blockStart_succ (n := n) i
+  have hstep : prefixSum (i + 1) n = prefixSum i n + n i := prefixSum_succ i.2 n
   rw [Fin.coe_finRotate_eq_ite, coe_finSigmaFinEquiv, coe_finSigmaFinEquiv]
   rw [coe_finSigmaFinEquiv] at hlt
   rw [Fin.coe_finRotate_eq_ite i] at hlt ⊢
   by_cases hi : (i : ℕ) + 1 = m
-  · rw [hi, blockStart_self] at hstep
-    simp only [hi, ite_true, blockStart_zero]
+  · rw [hi, prefixSum_of_le le_rfl] at hstep
+    simp only [hi, ite_true, prefixSum_zero]
     split_ifs <;> omega
   · simp only [hi, ite_false] at hlt ⊢
     split_ifs <;> omega
 
-end TauCeti
+end Fin

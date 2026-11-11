@@ -142,13 +142,13 @@ private theorem finRotate_subdivideSides_of_lt (f : C.Face) (i : Fin (C.sides f)
     (j : Fin (C.subdivideLen a (C.side f i))) (hj : (j : ℕ) + 1 < C.subdivideLen a (C.side f i)) :
     finRotate (C.subdivideSides a f) (finSigmaFinEquiv ⟨i, j⟩) =
       finSigmaFinEquiv ⟨i, ⟨j + 1, hj⟩⟩ :=
-  finRotate_finSigmaFinEquiv_of_lt (n := fun i => C.subdivideLen a (C.side f i)) i j hj
+  Fin.finRotate_finSigmaFinEquiv_of_lt (n := fun i => C.subdivideLen a (C.side f i)) i j hj
 
 private theorem finRotate_subdivideSides_of_eq (f : C.Face) (i : Fin (C.sides f))
     (j : Fin (C.subdivideLen a (C.side f i))) (hj : (j : ℕ) + 1 = C.subdivideLen a (C.side f i)) :
     finRotate (C.subdivideSides a f) (finSigmaFinEquiv ⟨i, j⟩) =
       finSigmaFinEquiv ⟨finRotate _ i, ⟨0, C.subdivideLen_pos a _⟩⟩ :=
-  finRotate_finSigmaFinEquiv_of_eq (n := fun i => C.subdivideLen a (C.side f i)) i j hj _ rfl
+  Fin.finRotate_finSigmaFinEquiv_of_eq (n := fun i => C.subdivideLen a (C.side f i)) i j hj _ rfl
 
 /-- The sides of a subdivided face form a closed dart sequence. -/
 theorem tgt_subdivideSide (f : C.Face) (k : Fin (C.subdivideSides a f)) :
@@ -395,51 +395,71 @@ theorem cornerVertex_subdivideLastCorner {c : C.Corner}
 
 /-! ### Side counts and link degrees -/
 
+/-- The sides of the subdivision attached along the initial half of `e` are the first sides
+replacing the sides of `C` attached along `e`. -/
+private def subdivideSideInlEquiv (e : C.graph.E) :
+    {c : (C.subdivide a).Corner // (C.subdivide a).outgoing c = .inl e} ≃
+      {c : C.Corner // C.outgoing c = e} where
+  toFun c := ⟨C.subdivideOriginCorner a c.1, by
+    rw [← subdivideOrigin_outgoing, c.2, SerreGraph.subdivideOrigin_inl]⟩
+  invFun c := ⟨C.subdivideFirstCorner a c.1, by rw [outgoing_subdivideFirstCorner, c.2]⟩
+  left_inv c := Subtype.ext (eq_subdivideFirstCorner_of_outgoing_eq_inl c.2).symm
+  right_inv c := Subtype.ext (C.subdivideOriginCorner_subdivideFirstCorner a c.1)
+
+/-- The sides of the subdivision attached along a dart starting at the new vertex are the last
+sides replacing the sides of `C` attached along the dart on which it lies. -/
+private def subdivideSideInrEquiv (b : Bool) :
+    {c : (C.subdivide a).Corner // (C.subdivide a).outgoing c = .inr b} ≃
+      {c : C.Corner // C.outgoing c = cond b a (C.graph.rev a)} where
+  toFun c := ⟨C.subdivideOriginCorner a c.1, by
+    rw [← subdivideOrigin_outgoing, c.2, SerreGraph.subdivideOrigin_inr]⟩
+  invFun c := ⟨C.subdivideLastCorner a c.1, by
+    rw [outgoing_subdivideLastCorner, c.2]
+    cases b <;> simp⟩
+  left_inv c := Subtype.ext (eq_subdivideLastCorner_of_outgoing_eq_inr c.2).symm
+  right_inv c := Subtype.ext (C.subdivideOriginCorner_subdivideLastCorner a c.1)
+
+/-- The sides of the subdivision attached along a dart `x` correspond to the sides of `C` attached
+along the dart on which `x` lies. -/
+private def subdivideSideEquiv : (x : (C.subdivide a).graph.E) →
+    {c : (C.subdivide a).Corner // (C.subdivide a).outgoing c = x} ≃
+      {c : C.Corner // C.outgoing c = C.graph.subdivideOrigin a x}
+  | .inl e => (C.subdivideSideInlEquiv a e).trans
+      (Equiv.subtypeEquivRight fun _ => by rw [SerreGraph.subdivideOrigin_inl])
+  | .inr b => (C.subdivideSideInrEquiv a b).trans
+      (Equiv.subtypeEquivRight fun _ => by rw [SerreGraph.subdivideOrigin_inr])
+
 /-- The initial half of a dart `e` lies on as many sides of the subdivision as `e` lies on sides
 of `C`. -/
 @[simp] theorem sideCount_subdivide_inl (e : C.graph.E) :
     (C.subdivide a).sideCount (.inl e) = C.sideCount e := by
   rw [sideCount_def, sideCount_def]
-  exact Nat.card_congr
-    { toFun c := ⟨C.subdivideOriginCorner a c.1, by
-        rw [← subdivideOrigin_outgoing, c.2, SerreGraph.subdivideOrigin_inl]⟩
-      invFun c := ⟨C.subdivideFirstCorner a c.1, by rw [outgoing_subdivideFirstCorner, c.2]⟩
-      left_inv c := Subtype.ext (eq_subdivideFirstCorner_of_outgoing_eq_inl c.2).symm
-      right_inv c := Subtype.ext (C.subdivideOriginCorner_subdivideFirstCorner a c.1) }
+  exact Nat.card_congr (C.subdivideSideInlEquiv a e)
 
 /-- The dart from the new vertex to the target of `a` lies on as many sides of the subdivision as
 `a` lies on sides of `C`, and the dart to the source of `a` on as many as the reverse of `a`. -/
 @[simp] theorem sideCount_subdivide_inr (b : Bool) :
     (C.subdivide a).sideCount (.inr b) = C.sideCount (cond b a (C.graph.rev a)) := by
   rw [sideCount_def, sideCount_def]
-  exact Nat.card_congr
-    { toFun c := ⟨C.subdivideOriginCorner a c.1, by
-        rw [← subdivideOrigin_outgoing, c.2, SerreGraph.subdivideOrigin_inr]⟩
-      invFun c := ⟨C.subdivideLastCorner a c.1, by
-        rw [outgoing_subdivideLastCorner, c.2]
-        cases b <;> simp⟩
-      left_inv c := Subtype.ext (eq_subdivideLastCorner_of_outgoing_eq_inr c.2).symm
-      right_inv c := Subtype.ext (C.subdivideOriginCorner_subdivideLastCorner a c.1) }
+  exact Nat.card_congr (C.subdivideSideInrEquiv a b)
+
+/-- A dart of the subdivision has the link degree of the dart of `C` on which it lies. -/
+theorem linkDegree_subdivide (x : (C.subdivide a).graph.E) :
+    (C.subdivide a).linkDegree x = C.linkDegree (C.graph.subdivideOrigin a x) := by
+  rw [linkDegree_eq_card_sum, linkDegree_eq_card_sum, ← SerreGraph.subdivideOrigin_subdivideRev,
+    ← SerreGraph.subdivide_rev]
+  exact Nat.card_congr ((C.subdivideSideEquiv a _).sumCongr (C.subdivideSideEquiv a x))
 
 /-- A germ at an old vertex keeps its link degree. -/
-@[simp] theorem linkDegree_subdivide_inl [Finite C.Face] (e : C.graph.E) :
+@[simp] theorem linkDegree_subdivide_inl (e : C.graph.E) :
     (C.subdivide a).linkDegree (.inl e) = C.linkDegree e := by
-  rw [linkDegree_eq_sideCount_rev_add_sideCount, linkDegree_eq_sideCount_rev_add_sideCount,
-    sideCount_subdivide_inl]
-  by_cases h : e = a
-  · simp [h]
-  · by_cases h' : e = C.graph.rev a
-    · simp [h']
-    · rw [SerreGraph.subdivide_rev, SerreGraph.subdivideRev_inl_of_ne h h',
-        sideCount_subdivide_inl]
+  rw [linkDegree_subdivide, SerreGraph.subdivideOrigin_inl]
 
 /-- Both germs at the new vertex have the link degree of the subdivided dart. -/
-@[simp] theorem linkDegree_subdivide_inr [Finite C.Face] (b : Bool) :
+@[simp] theorem linkDegree_subdivide_inr (b : Bool) :
     (C.subdivide a).linkDegree (.inr b) = C.linkDegree a := by
-  rw [linkDegree_eq_sideCount_rev_add_sideCount, linkDegree_eq_sideCount_rev_add_sideCount]
-  cases b
-  · simp [add_comm]
-  · simp
+  rw [linkDegree_subdivide]
+  cases b <;> simp
 
 /-! ### Links -/
 
@@ -475,14 +495,36 @@ theorem subdivideLinkHom_mapV_surjective (v : C.graph.V) :
   · exact ⟨⟨e, Option.some_injective _ he⟩, rfl⟩
   · exact absurd he (by simp)
 
+variable {C a} in
+/-- A corner of the subdivision at an old vertex is the first corner on its side. -/
+private theorem eq_subdivideFirstCorner_of_cornerVertex_eq_some {c : (C.subdivide a).Corner}
+    {v : C.graph.V} (h : (C.subdivide a).cornerVertex c = some v) :
+    c = C.subdivideFirstCorner a (C.subdivideOriginCorner a c) := by
+  rw [← src_outgoing] at h
+  rcases hc : (C.subdivide a).outgoing c with e | b
+  · exact eq_subdivideFirstCorner_of_outgoing_eq_inl hc
+  · rw [hc] at h
+    exact absurd h (by simp)
+
+/-- Every corner of the subdivision at an old vertex is the first corner on the side of a corner
+of `C` at that vertex. -/
+theorem subdivideLinkHom_mapE_surjective (v : C.graph.V) :
+    Function.Surjective (C.subdivideLinkHom a v).mapE := by
+  rintro ⟨⟨c, hc⟩, b⟩
+  have h := eq_subdivideFirstCorner_of_cornerVertex_eq_some hc
+  refine ⟨(⟨C.subdivideOriginCorner a c, Option.some_injective _ ?_⟩, b),
+    Prod.ext (Subtype.ext h.symm) rfl⟩
+  rw [← cornerVertex_subdivideFirstCorner, ← h, hc]
+
 variable {C} in
 /-- A vertex with a surface link keeps a surface link when an edge is subdivided. -/
-theorem HasSurfaceLink.subdivide [Finite C.Face] {v : C.graph.V} (h : C.HasSurfaceLink v) :
+theorem HasSurfaceLink.subdivide {v : C.graph.V} (h : C.HasSurfaceLink v) :
     (C.subdivide a).HasSurfaceLink (some v) := by
-  obtain ⟨-, hconn, hdeg⟩ := (C.hasSurfaceLink_iff v).1 h
-  refine ((C.subdivide a).hasSurfaceLink_iff _).2 ⟨inferInstance,
-    (C.subdivideLinkHom a v).connected_of_surjective (C.subdivideLinkHom_mapV_surjective a v)
-      hconn, ?_⟩
+  obtain ⟨hfin, hconn, hdeg⟩ := (C.hasSurfaceLink_iff v).1 h
+  refine ((C.subdivide a).hasSurfaceLink_iff _).2
+    ⟨Finite.of_surjective _ (C.subdivideLinkHom_mapE_surjective a v),
+      (C.subdivideLinkHom a v).connected_of_surjective (C.subdivideLinkHom_mapV_surjective a v)
+        hconn, ?_⟩
   have hsrc : ∀ x : (C.subdivide a).graph.E, (C.subdivide a).graph.src x = some v →
       ∃ e, x = .inl e ∧ C.graph.src e = v := by
     rintro (e | b) hx
@@ -514,18 +556,28 @@ theorem nonempty_vertexLink_subdivide_path {c : C.Corner}
 
 /-- The new vertex of a subdivision has a surface link as soon as the subdivided edge lies on one
 or two face sides: its link has two germs, joined by one corner for each such side. -/
-theorem hasSurfaceLink_subdivide_none [Finite C.Face]
-    (h : C.linkDegree a = 1 ∨ C.linkDegree a = 2) : (C.subdivide a).HasSurfaceLink none := by
+theorem hasSurfaceLink_subdivide_none (h : C.linkDegree a = 1 ∨ C.linkDegree a = 2) :
+    (C.subdivide a).HasSurfaceLink none := by
   have hsrc : ∀ x : (C.subdivide a).graph.E, (C.subdivide a).graph.src x = none →
       x = .inr true ∨ x = .inr false := by
     rintro (e | _ | _) hx
     · exact absurd hx (by simp)
     · exact .inr rfl
     · exact .inl rfl
+  -- Each of the two germs at the new vertex has nonzero degree, so finitely many link darts.
+  have hfin (b : Bool) : Finite {d : ((C.subdivide a).vertexLink none).E //
+      (((C.subdivide a).vertexLink none).src d).1 = .inr b} := by
+    have hb := (C.subdivide a).linkDegree_def (.inr b)
+    rw [linkDegree_subdivide_inr] at hb
+    exact (Nat.card_ne_zero.1 (hb ▸ by omega)).2
   obtain ⟨c, hc⟩ := C.exists_outgoing_of_linkDegree_ne_zero (e := a) (by omega)
-  refine ((C.subdivide a).hasSurfaceLink_iff _).2 ⟨inferInstance,
+  refine ((C.subdivide a).hasSurfaceLink_iff _).2 ⟨Finite.of_surjective
+    (fun p : (b : Bool) × {d : ((C.subdivide a).vertexLink none).E //
+      (((C.subdivide a).vertexLink none).src d).1 = .inr b} => p.2.1) fun d => ?_,
     (SerreGraph.connected_iff _).2 ⟨⟨⟨.inr true, rfl⟩⟩,
       SerreGraph.preconnected_of_forall_nonempty_path _ ⟨.inr true, rfl⟩ ?_⟩, ?_⟩
+  · rcases hsrc _ (((C.subdivide a).vertexLink none).src d).2 with hd | hd
+    exacts [⟨⟨true, d, hd⟩, rfl⟩, ⟨⟨false, d, hd⟩, rfl⟩]
   · rintro ⟨x, hx⟩
     rcases hsrc x hx with rfl | rfl
     · exact ⟨.nil⟩
@@ -596,16 +648,21 @@ theorem eulerChar_subdivide : (S.subdivide a).eulerChar = S.eulerChar := by
 variable {S a} in
 /-- The initial half of a dart is a boundary dart of the subdivision exactly when the dart is a
 boundary dart. -/
-theorem inl_mem_boundaryDarts_subdivide_iff {e : S.graph.E} :
-    .inl e ∈ (S.subdivide a).boundaryDarts ↔ e ∈ S.boundaryDarts := by
+@[simp] theorem inl_mem_boundaryDarts_subdivide_iff {e : S.graph.E} :
+    -- Membership is stated in `Set (S.graph.E ⊕ Bool)`, the reduced form of
+    -- `Set (S.subdivide a).graph.E`: stated in the latter form, the lemma is not found by `simp`.
+    @Membership.mem (S.graph.E ⊕ Bool) (Set (S.graph.E ⊕ Bool)) _ (S.subdivide a).boundaryDarts
+      (.inl e) ↔ e ∈ S.boundaryDarts := by
   rw [← linkDegree_eq_one_iff_mem_boundaryDarts, ← linkDegree_eq_one_iff_mem_boundaryDarts,
     linkDegree_subdivide_inl]
 
 variable {S a} in
 /-- The darts at the new vertex are boundary darts of the subdivision exactly when the subdivided
 dart is a boundary dart. -/
-theorem inr_mem_boundaryDarts_subdivide_iff {b : Bool} :
-    .inr b ∈ (S.subdivide a).boundaryDarts ↔ a ∈ S.boundaryDarts := by
+@[simp] theorem inr_mem_boundaryDarts_subdivide_iff {b : Bool} :
+    -- Stated in `Set (S.graph.E ⊕ Bool)` for the same reason as the lemma above.
+    @Membership.mem (S.graph.E ⊕ Bool) (Set (S.graph.E ⊕ Bool)) _ (S.subdivide a).boundaryDarts
+      (.inr b) ↔ a ∈ S.boundaryDarts := by
   rw [← linkDegree_eq_one_iff_mem_boundaryDarts, ← linkDegree_eq_one_iff_mem_boundaryDarts,
     linkDegree_subdivide_inr]
 

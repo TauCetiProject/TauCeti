@@ -212,11 +212,7 @@ theorem eulerChar_torus_subdivide : (torus.subdivide a).eulerChar = 0 :=
 
 /-- Subdividing an edge of the torus creates no boundary. -/
 theorem boundaryDarts_torus_subdivide : (torus.subdivide a).boundaryDarts = ∅ := by
-  ext (e | b)
-  · rw [inl_mem_boundaryDarts_subdivide_iff, boundaryDarts_torus]
-    rfl
-  · rw [inr_mem_boundaryDarts_subdivide_iff, boundaryDarts_torus]
-    rfl
+  ext (e | b) <;> simp [boundaryDarts_torus]
 
 /-- The link of the new vertex of a subdivided torus is a circle: both of its germs have degree
 two. -/

@@ -254,6 +254,13 @@ private def linkFiberEquiv (e : C.graph.E) :
   right_inv s := by
     rcases s with c | c <;> simp
 
+/-- The link darts starting at a germ `e` correspond to the face sides attached along the reverse
+of `e` together with those attached along `e`, so they have the same `Nat.card`. -/
+theorem linkDegree_eq_card_sum (e : C.graph.E) :
+    C.linkDegree e = Nat.card
+      ({c : C.Corner // C.outgoing c = C.graph.rev e} ⊕ {c : C.Corner // C.outgoing c = e}) :=
+  Nat.card_congr (C.linkFiberEquiv e)
+
 /-- The degree of a germ `e` in its link is the number of face sides attached along `e` or along
 its reverse, when there are finitely many such sides: every such side gives exactly one corner at
 `src e` having `e` as a germ. -/
@@ -261,25 +268,20 @@ theorem linkDegree_eq_sideCount_rev_add_sideCount (e : C.graph.E)
     [Finite {c : C.Corner // C.outgoing c = C.graph.rev e}]
     [Finite {c : C.Corner // C.outgoing c = e}] :
     C.linkDegree e = C.sideCount (C.graph.rev e) + C.sideCount e := by
-  rw [linkDegree_def, sideCount_def, sideCount_def, Nat.card_congr (C.linkFiberEquiv e),
-    Nat.card_sum]
+  rw [linkDegree_eq_card_sum, sideCount_def, sideCount_def, Nat.card_sum]
 
 /-- A germ of nonzero link degree, or its reverse, is attached to a face side. -/
-theorem exists_outgoing_of_linkDegree_ne_zero [Finite C.Face] {e : C.graph.E}
-    (h : C.linkDegree e ≠ 0) : ∃ c : C.Corner, C.outgoing c = e ∨ C.outgoing c = C.graph.rev e := by
-  rw [linkDegree_eq_sideCount_rev_add_sideCount] at h
-  rcases Nat.eq_zero_or_pos (C.sideCount e) with he | he
-  · obtain ⟨c, hc⟩ := C.sideCount_pos_iff.1 (by omega : 0 < C.sideCount (C.graph.rev e))
-    exact ⟨c, .inr hc⟩
-  · obtain ⟨c, hc⟩ := C.sideCount_pos_iff.1 he
-    exact ⟨c, .inl hc⟩
+theorem exists_outgoing_of_linkDegree_ne_zero {e : C.graph.E} (h : C.linkDegree e ≠ 0) :
+    ∃ c : C.Corner, C.outgoing c = e ∨ C.outgoing c = C.graph.rev e := by
+  rw [linkDegree_eq_card_sum] at h
+  obtain ⟨⟨c, hc⟩ | ⟨c, hc⟩⟩ := (Nat.card_ne_zero.1 h).1
+  exacts [⟨c, .inr hc⟩, ⟨c, .inl hc⟩]
 
 /-- A germ and its reverse have the same link degree: both count the face sides along their
 common edge. -/
 @[simp] theorem linkDegree_rev (e : C.graph.E) :
     C.linkDegree (C.graph.rev e) = C.linkDegree e := by
-  rw [linkDegree_def, linkDegree_def, Nat.card_congr (C.linkFiberEquiv _),
-    Nat.card_congr (C.linkFiberEquiv e), SerreGraph.rev_rev]
+  rw [linkDegree_eq_card_sum, linkDegree_eq_card_sum, SerreGraph.rev_rev]
   exact Nat.card_congr (Equiv.sumComm _ _)
 
 /-! ### Surface links -/
