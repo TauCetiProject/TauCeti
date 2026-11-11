@@ -53,7 +53,7 @@ variable {Ω : Type*} [MeasurableSpace Ω]
 `F i ·` converges to `g i` in `L¹`, and every value lies almost everywhere in the closed unit ball,
 then the product `∏ i ∈ s, F i j` converges to `∏ i ∈ s, g i` in `L¹`. -/
 theorem tendsto_integral_norm_prod_sub_prod {ι ι' R : Type*} [SeminormedCommRing R]
-    [NormOneClass R] {l : Filter ι'} {μ : Measure Ω} [IsFiniteMeasure μ] {s : Finset ι}
+    {l : Filter ι'} {μ : Measure Ω} [IsFiniteMeasure μ] {s : Finset ι}
     {F : ι → ι' → Ω → R} {g : ι → Ω → R}
     (hF_meas : ∀ i ∈ s, ∀ j, AEStronglyMeasurable (F i j) μ)
     (hg_meas : ∀ i ∈ s, AEStronglyMeasurable (g i) μ)

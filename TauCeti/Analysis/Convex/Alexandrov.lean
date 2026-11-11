@@ -193,7 +193,7 @@ theorem isLittleO_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A : E →
   refine ⟨r, hr, fun x' hx' => ?_⟩
   set h := x' - x
   set X := ⟪h, A h⟫_ℝ
-  obtain ⟨n, hn₀, hAa⟩ := exists_pos_nat_mul_inv_le ‖A‖ hc
+  obtain ⟨n, hn₀, hAa⟩ := exists_pos_nat_mul_inv_lt ‖A‖ hc
   set a : ℝ := (n : ℝ)⁻¹
   have hn : (0 : ℝ) < n := by exact_mod_cast hn₀
   have ha : 0 < a := inv_pos.2 hn
@@ -233,7 +233,7 @@ theorem isLittleO_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A : E →
       ‖A‖ * a * ‖h‖ ^ 2 / 2 + c / 2 * ‖h‖ ^ 2 := by
     linear_combination (‖A‖ * ‖h‖ ^ 2 * a / 2 + c / 2 * ‖h‖ ^ 2) * hna
   rw [this, hpn, ← sub_sub] at hbound
-  have : ‖A‖ * a * ‖h‖ ^ 2 ≤ c * ‖h‖ ^ 2 := mul_le_mul_of_nonneg_right hAa (sq_nonneg _)
+  have : ‖A‖ * a * ‖h‖ ^ 2 ≤ c * ‖h‖ ^ 2 := mul_le_mul_of_nonneg_right hAa.le (sq_nonneg _)
   rw [Real.norm_eq_abs, norm_pow, norm_norm, real_inner_comm h (A h), real_inner_comm h y]
   linarith
 
@@ -614,8 +614,9 @@ theorem _root_.ConvexOn.ae_existsUnique_isPositive_isLittleO {Ω : Set E} {u : E
   classical
   -- Extend `u` by `⊤` off `Ω`. Almost every point of `Ω` is interior, and near an interior point
   -- the real representative of the extension is `u` itself.
-  filter_upwards [TauCeti.ae_existsUnique_isPositive_isLittleO (μ := μ) (convex_epigraph_ite hu)
-    ite_ne_bot, hu.ae_differentiableAt_of_mem, hu.1.ae_mem_interior] with x h₁ h₂ h₃ hx
+  filter_upwards [TauCeti.ae_existsUnique_isPositive_isLittleO (μ := μ)
+    (convexOn_iff_convex_epigraph_ite.1 hu) ite_ne_bot, hu.ae_differentiableAt_of_mem,
+    hu.1.ae_mem_interior] with x h₁ h₂ h₃ hx
   have heq : (fun x' => ((if x' ∈ Ω then (u x' : EReal) else ⊤)).toReal) =ᶠ[𝓝 x] u :=
     eventually_of_mem (isOpen_interior.mem_nhds (h₃ hx)) fun x' hx' => by
       simp [interior_subset hx']

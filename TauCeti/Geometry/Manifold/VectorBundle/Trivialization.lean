@@ -26,6 +26,8 @@ into the total space is a continuous linear isomorphism onto the model fibre; he
 and has injective derivative. Moreover, every atlas trivialization of a `C^n`
 vector bundle is a `C^n` partial diffeomorphism between its source in `TotalSpace F E` and its
 target `e.baseSet ×ˢ univ` in `B × F`, and hence a `C^n` local diffeomorphism in both directions.
+Read back through such a trivialization, a `C^n` family of vectors of the model fibre is a `C^n`
+section.
 
 ## Main results
 
@@ -40,6 +42,8 @@ target `e.baseSet ×ˢ univ` in `B × F`, and hence a `C^n` local diffeomorphism
 * `Bundle.Trivialization.toPartialDiffeomorph`, `Bundle.Trivialization.isLocalDiffeomorphAt`,
   `Bundle.Trivialization.isLocalDiffeomorphAt_symm`: an atlas trivialization of a `C^n` vector
   bundle as a `C^n` partial diffeomorphism and local diffeomorphism.
+* `Bundle.Trivialization.contMDiffOn_section_symm`: a `C^n` family of vectors of the model fibre,
+  read through an atlas trivialization, is a `C^n` section over its base set.
 -/
 
 public noncomputable section
@@ -225,5 +229,26 @@ theorem frameTransitionMap_apply (x : U) :
       (e.coordChangeL 𝕜 e' x : F →L[𝕜] F) := by
   rfl
 
+
+end Bundle.Trivialization
+
+namespace Bundle.Trivialization
+
+variable {𝕜 B F : Type*} {E : B → Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpace F E)]
+  [∀ x, TopologicalSpace (E x)] [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B]
+  [ChartedSpace HB B] {n : WithTop ℕ∞} [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [ContMDiffVectorBundle n F E IB]
+  (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
+
+/-- **A `C^n` family of vectors of the model fibre, read through a trivialization, is a `C^n`
+section.** Over an open subset `U` of the base set of an atlas trivialization `e`, the section
+`x ↦ e.symm x (u x)` is `C^n` when `u` is. -/
+theorem contMDiffOn_section_symm {U : Set B} (hU : IsOpen U) (hUe : U ⊆ e.baseSet) {u : B → F}
+    (hu : ContMDiffOn IB 𝓘(𝕜, F) n u U) :
+    ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (e.symm x (u x))) U :=
+  (e.contMDiffOn_section_iff hU hUe).mpr (hu.congr fun x hx ↦ by simp [e.apply_mk_symm (hUe hx)])
 
 end Bundle.Trivialization

@@ -45,7 +45,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {I : ModelWithCorners 𝕜 EY HY} {J : ModelWithCorners 𝕜 EZ HZ}
   {Y Z : Type*} [TopologicalSpace Y] [ChartedSpace HY Y] [T2Space Y] [LocallyCompactSpace Y]
   [TopologicalSpace Z] [ChartedSpace HZ Z] [T2Space Z] [LocallyCompactSpace Z]
-  {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+  {Λ : Type*} [AddCommGroup Λ]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedSpace 𝕜 E] (P : Y → Λ →ₗ[ℤ] E)
   [∀ y, DiscreteTopology (LinearMap.range (P y))] [∀ y, IsZLattice ℝ (LinearMap.range (P y))]

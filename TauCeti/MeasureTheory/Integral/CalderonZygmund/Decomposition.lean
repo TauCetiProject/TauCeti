@@ -45,6 +45,8 @@ an arbitrary `g : (ι → ℝ) → ℝ≥0∞` in place of `‖f‖ₑ`.
 * `TauCeti.calderonZygmundCubes`: the Calderón–Zygmund cubes of `g` at height `t`, with
   `TauCeti.lt_setLAverage_of_mem_calderonZygmundCubes`,
   `TauCeti.setLAverage_le_of_mem_calderonZygmundCubes`,
+  `TauCeti.mul_volume_lt_volume_inter_of_mem_calderonZygmundCubes_indicator`,
+  `TauCeti.volume_inter_le_mul_volume_of_mem_calderonZygmundCubes_indicator`,
   `TauCeti.pairwiseDisjoint_calderonZygmundCubes`,
   `TauCeti.dyadicCube_subset_of_mem_calderonZygmundCubes_of_le`,
   `TauCeti.exists_mem_calderonZygmundCubes_of_lt_setLAverage`,
@@ -156,6 +158,26 @@ theorem dyadicCube_subset_of_mem_calderonZygmundCubes_indicator {q₀ : ℤ × (
   · rw [hint, hdisj.inter_eq, Measure.restrict_empty, lintegral_zero_measure,
       ENNReal.zero_div] at hlt
     exact absurd hlt not_lt_zero
+
+/-- A Calderón–Zygmund cube `Q` of the indicator of `A` at height `t` meets `A` in more than a `t`
+fraction of its volume: `t |Q| < |A ∩ Q|`. -/
+theorem mul_volume_lt_volume_inter_of_mem_calderonZygmundCubes_indicator {A : Set (ι → ℝ)}
+    (hA : NullMeasurableSet A) (hq : q ∈ calderonZygmundCubes (A.indicator 1) t) :
+    t * volume (dyadicCube q.1 q.2) < volume (A ∩ dyadicCube q.1 q.2) := by
+  have h := mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes hq
+  rwa [lintegral_indicator_one₀ (hA.mono Measure.restrict_le_self),
+    Measure.restrict_apply' (measurableSet_dyadicCube _ _)] at h
+
+/-- A dyadic cube `P` of higher level containing a Calderón–Zygmund cube of the indicator of `A`
+at height `t` meets `A` in at most a `t` fraction of its volume: `|A ∩ P| ≤ t |P|`. -/
+theorem volume_inter_le_mul_volume_of_mem_calderonZygmundCubes_indicator {A : Set (ι → ℝ)}
+    (hA : NullMeasurableSet A) (hq : q ∈ calderonZygmundCubes (A.indicator 1) t) {j : ℤ}
+    {m : ι → ℤ} (hj : q.1 < j) (hsub : dyadicCube q.1 q.2 ⊆ dyadicCube j m) :
+    volume (A ∩ dyadicCube j m) ≤ t * volume (dyadicCube j m) := by
+  have h := (mem_calderonZygmundCubes.1 hq).2 j m hj hsub
+  rwa [setLAverage_eq, lintegral_indicator_one₀ (hA.mono Measure.restrict_le_self),
+    Measure.restrict_apply' (measurableSet_dyadicCube _ _),
+    ENNReal.div_le_iff (volume_dyadicCube_pos _ _).ne' (volume_dyadicCube_ne_top _ _)] at h
 
 /-- Distinct Calderón–Zygmund cubes are disjoint. -/
 theorem pairwiseDisjoint_calderonZygmundCubes :
