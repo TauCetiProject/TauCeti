@@ -215,8 +215,8 @@ theorem im_div_deriv_lineSchwarzReflection_eq_zero (hΩopen : IsOpen Ω)
   field_simp
 
 /-- **The pre-Schwarzian derivative of the reflected extension is real on the real axis.** The
-hypotheses are those of the reflection principle across the real axis: the domain is symmetric, and
-the boundary values of `f` lie on the line through `q` with direction `b`. -/
+hypotheses are that `Ω` is open and that the boundary values of `f` on the real axis lie on the
+line through `q` with direction `b`; no symmetry of `Ω` is needed. -/
 theorem im_logDeriv_deriv_lineSchwarzReflection_eq_zero (hΩopen : IsOpen Ω)
     (hline : ∀ z ∈ Ω, z.im = 0 → ((f z - q) / b).im = 0)
     {x : ℂ} (hx : x ∈ Ω) (hx0 : x.im = 0) :
