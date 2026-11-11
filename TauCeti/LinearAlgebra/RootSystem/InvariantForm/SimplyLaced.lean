@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
+import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
@@ -80,16 +81,8 @@ theorem pairingIn_eq_neg_one_of_isSimplyLaced (hsl : b.cartanMatrix.IsSimplyLace
   have := Fintype.ofFinite ι
   let B := P.toInvariantForm
   have hlen (x y : ι) := B.apply_root_root_eq_of_isSimplyLaced b hsl x y
-  have hsymm := B.symm.eq (P.root k) (P.root i)
-  have htwo := B.two_mul_apply_root_root i k
-  have hexp : B.form (P.root m) (P.root m) = B.form (P.root i) (P.root i) +
-      2 * B.form (P.root i) (P.root k) + B.form (P.root k) (P.root k) := by
-    rw [hm]
-    simp only [map_add, LinearMap.add_apply]
-    simp only [RingHom.id_apply] at hsymm
-    rw [hsymm]
-    ring
-  rw [htwo, hlen m k, hlen i k] at hexp
+  have hexp := B.form_root_add_root_self k i
+  rw [add_comm (P.root k), ← hm, hlen m k, hlen i k] at hexp
   have hz : (P.pairing i k + 1) * B.form (P.root k) (P.root k) = 0 := by
     linear_combination -hexp
   have hp : P.pairing i k = -1 := by
