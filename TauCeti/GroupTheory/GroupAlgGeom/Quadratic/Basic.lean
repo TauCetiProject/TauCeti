@@ -629,6 +629,10 @@ theorem eulerChar_nonorientableCoeff {x : Fin n → X} (hn : 0 < n)
 
 end Accessors
 
+/-- A standard quadratic equation has positive atomic rank. -/
+theorem atomicRank_pos (S : Standard G X) : 0 < S.atomicRank := by
+  cases S <;> simp <;> lia
+
 /-! ### Standard equations are quadratic -/
 
 section IsQuadratic
