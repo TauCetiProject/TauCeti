@@ -339,7 +339,7 @@ theorem hasWeakFDerivOn_log_norm (Ω : Opens ℂ) :
   refine h.congr_ae_deriv ?_
   filter_upwards [ae_restrict_of_ae (volume.ae_ne (0 : ℂ))] with z hz
   ext v
-  simp only [Pi.smul_apply, smul_apply, fderiv_planarNewtonianKernel_apply hz,
+  simp only [Pi.smul_apply, smul_apply, fderiv_planarNewtonianKernel_apply,
     innerSL_apply_apply, smul_eq_mul]
   field_simp
 
