@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.Support
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The singular support of a distribution
@@ -103,14 +104,6 @@ theorem singularSupport_ofFun {f : E → F} (hf : ContDiffOn ℝ ∞ f Ω) :
   eq_empty_iff_forall_notMem.2 fun _ hx ↦ hx.2 ⟨Ω, Ω.isOpen, hx.1, f, hf, fun _ _ ↦
     ofFun_apply (hf.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)⟩
 
-/-- Against a test function supported in an open set `U`, a function continuous on `U` is
-integrable. -/
-private theorem integrable_smul_of_continuousOn {U : Set E} (hU : IsOpen U) {f : E → F}
-    (hf : ContinuousOn f U) {φ : 𝓓^{n}(Ω, ℝ)} (hφ : tsupport φ ⊆ U) :
-    Integrable fun y ↦ φ y • f y :=
-  TestFunction.integrable_smul (Ω := ⟨U, hU⟩) ⟨φ, φ.contDiff, φ.hasCompactSupport, hφ⟩
-    (hf.locallyIntegrableOn hU.measurableSet)
-
 /-- The singular support of a sum lies in the union of the singular supports. -/
 theorem singularSupport_add_subset (S T : 𝓓'^{n}(Ω, F)) :
     (S + T).singularSupport ⊆ S.singularSupport ∪ T.singularSupport := by
@@ -122,9 +115,11 @@ theorem singularSupport_add_subset (S T : 𝓓'^{n}(Ω, F)) :
     (hg.mono inter_subset_right), fun φ hφ ↦ ?_⟩
   have hφU := hφ.trans inter_subset_left
   have hφV := hφ.trans inter_subset_right
+  have hfU := hf.continuousOn.locallyIntegrableOn (μ := volume) hU.measurableSet
+  have hgV := hg.continuousOn.locallyIntegrableOn (μ := volume) hV.measurableSet
   rw [add_apply, hS φ hφU, hT φ hφV, ← integral_add
-    (integrable_smul_of_continuousOn hU hf.continuousOn hφU)
-    (integrable_smul_of_continuousOn hV hg.continuousOn hφV)]
+    (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous φ.hasCompactSupport hφU)
+    (hgV.integrable_smul_left_of_hasCompactSupport φ.continuous φ.hasCompactSupport hφV)]
   simp [smul_add]
 
 /-- A scalar multiple of a distribution has no larger singular support. -/

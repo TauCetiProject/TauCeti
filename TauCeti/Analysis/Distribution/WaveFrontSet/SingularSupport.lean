@@ -9,8 +9,6 @@ public import Mathlib.Algebra.Module.ZLattice.Covolume
 public import TauCeti.Algebra.Module.ZLattice.Dual
 public import TauCeti.Analysis.Distribution.SingularSupport
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
-import Mathlib.Analysis.Calculus.SmoothSeries
-import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
@@ -95,47 +93,18 @@ and a smooth function `χ`, equal to one where `φ ≠ 0`, such that for every c
 
 `T (ψ φ) = (covolume L)⁻¹ ∑ m : L^∨, (φ T)^(-m) 𝓕 (χ ψ) (m)`.
 
-Here `(φ T)^(η) = T (φ e_η)` is the localized Fourier transform. The lattice is chosen so that a
-compact neighbourhood of the support of `φ` meets none of its nonzero translates, and `χ ψ` is
-expanded in its Fourier series on that neighbourhood. -/
+Here `(φ T)^(η) = T (φ e_η)` is the localized Fourier transform. -/
 theorem exists_hasSum_complexPairing (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
     ∃ (L : Submodule ℤ E) (_ : DiscreteTopology L) (_ : IsZLattice ℝ L) (χ : E → ℝ),
       ContDiff ℝ ∞ χ ∧ (∀ x, φ x ≠ 0 → χ x = 1) ∧ ∀ ψ : 𝓓(Ω, ℂ),
         HasSum (fun m : ZLattice.dual L ↦ (ZLattice.covolume L : ℂ)⁻¹ * T.localFourier φ (-m) *
           𝓕 (fun y ↦ (χ y : ℂ) * ψ y) m)
           (T.complexPairing (bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) φ.contDiff ψ)) := by
-  -- Nested compact sets `tsupport φ ⊆ K₁ ⊆ K₂ ⊆ Ω` and cutoffs `χ₁, χ₂` adapted to them.
-  obtain ⟨K₁, hK₁, hφK₁, hK₁Ω⟩ :=
-    exists_compact_between φ.hasCompactSupport Ω.isOpen φ.tsupport_subset
-  obtain ⟨K₂, hK₂, hK₁K₂, hK₂Ω⟩ := exists_compact_between hK₁ Ω.isOpen hK₁Ω
-  obtain ⟨χ₁, hχ₁, -, hχ₁1, -, hχ₁s⟩ :=
-    φ.hasCompactSupport.exists_contDiff_cutoff isOpen_interior hφK₁
-  obtain ⟨χ₂, hχ₂, -, hχ₂1, -, hχ₂s⟩ := hK₁.exists_contDiff_cutoff isOpen_interior hK₁K₂
-  let K : Compacts E := ⟨K₂, hK₂⟩
-  have hKΩ : (K : Set E) ⊆ Ω := hK₂Ω
-  have hχ₁φ {x : E} (hx : φ x ≠ 0) : χ₁ x = 1 := interior_subset (hχ₁1 (subset_tsupport _ hx))
-  have hχ₂K₁ {x : E} (hx : x ∈ K₁) : χ₂ x = 1 := interior_subset (hχ₂1 hx)
-  have hχ₁K₁ : tsupport χ₁ ⊆ K₁ := hχ₁s.trans interior_subset
-  have hχ₁c : ContDiff ℝ ∞ fun x ↦ (χ₁ x : ℂ) := ofRealCLM.contDiff.comp hχ₁
-  have hχK : support (fun x ↦ (χ₂ x : ℂ)) ⊆ K₂ := fun x hx ↦
-    interior_subset (hχ₂s (subset_tsupport _ (by simpa using hx)))
-  let χ : 𝓓_{K}(E, ℂ) :=
-    ContDiffMapSupportedIn.of_support_subset (ofRealCLM.contDiff.comp hχ₂) hχK
-  have hχv (x : E) : χ x = χ₂ x :=
-    ContDiffMapSupportedIn.coe_of_support_subset (K := K) (ofRealCLM.contDiff.comp hχ₂) hχK x
-  -- A lattice none of whose nonzero translates of `K` meet `K`.
-  obtain ⟨L, _, _, hL⟩ := ZLattice.exists_forall_add_mem_eq_zero_of_isBounded hK₂.isBounded
-  refine ⟨L, inferInstance, inferInstance, χ₁, hχ₁, fun x hx ↦ hχ₁φ hx, fun ψ ↦ ?_⟩
-  -- The test function `χ₁ ψ`, supported in `K`, which agrees with `ψ` near the support of `φ`.
-  have hfK : support (fun x ↦ (χ₁ x : ℂ) * ψ x) ⊆ K₂ := fun x hx ↦
-    interior_subset (hK₁K₂ (hχ₁K₁ (subset_tsupport _ (by simpa using left_ne_zero_of_mul hx))))
-  let f : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset (hχ₁c.mul ψ.contDiff) hfK
-  have hf : (f : E → ℂ) = fun x ↦ (χ₁ x : ℂ) * ψ x :=
-    funext (ContDiffMapSupportedIn.coe_of_support_subset (K := K) (hχ₁c.mul ψ.contDiff) hfK)
-  have hχ : EqOn χ 1 (support f) := fun x hx ↦ by
-    rw [mem_support, hf] at hx
-    have hx' : χ₁ x ≠ 0 := by exact_mod_cast left_ne_zero_of_mul hx
-    simp [hχv, hχ₂K₁ (hχ₁K₁ (subset_tsupport _ hx'))]
+  obtain ⟨K, hKΩ, L, _, _, χ₁, χ, hχ₁, hχ₁φ, hχφ, hexp⟩ :=
+    exists_hasSum_fourier_smul_modulate_mul_cutoff φ
+  refine ⟨L, inferInstance, inferInstance, χ₁, hχ₁, hχ₁φ, fun ψ ↦ ?_⟩
+  -- The test function `f = χ₁ ψ`, supported in `K`, agrees with `ψ` near the support of `φ`.
+  obtain ⟨f, hf, hexp⟩ := hexp ψ ψ.contDiff.contDiffOn
   -- Pair the Fourier expansion of `f` with `φ T`; its modes give the localized Fourier transform.
   let Λ : 𝓓_{K}(E, ℂ) →L[ℂ] ℂ := T.complexPairing ∘L
     (bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) φ.contDiff ∘L ofSupportedInCLM ℂ hKΩ)
@@ -148,19 +117,18 @@ theorem exists_hasSum_complexPairing (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
     ext x
     by_cases hx : φ x = 0
     · simp [bilinLeftCLM_apply, hx]
-    · simp [bilinLeftCLM_apply, hf, hχ₁φ hx]
+    · simp [bilinLeftCLM_apply, hf, hχ₁φ x hx]
   have h2 (m : ZLattice.dual L) : Λ (χ.modulate m) = T.localFourier φ (-m) := by
     rw [hΛ, localFourier_eq_complexPairing_mul_modulate T hKΩ (φ := φ) (ψ := φ) (f := χ)
       (fun x ↦ ?_) (-m), neg_neg]
     by_cases hx : φ x = 0
     · simp [hx]
-    · simp [hχv, hχ₂K₁ (hφK₁.trans interior_subset (subset_tsupport _ hx))]
-  have hmap := (ContDiffMapSupportedIn.hasSum_fourier_smul_modulate L f χ
-    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.2 h)) hχ).map Λ Λ.continuous
+    · simp [hχφ x hx]
+  have hmap := hexp.map Λ Λ.continuous
   rw [h1] at hmap
   convert hmap using 1
   ext m
-  simp only [comp_apply, map_smul, smul_eq_mul, h2, hf]
+  simp only [comp_apply, map_smul, smul_eq_mul, h2, funext hf]
   ring
 
 /-- **Fourier inversion for a localized distribution.** If the localized Fourier transform
