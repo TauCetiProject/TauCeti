@@ -120,11 +120,6 @@ integers is local). -/
 noncomputable instance residueFieldAlgebra : Algebra 𝓀ᵥ[K] 𝓀ᵥ[L] :=
   IsLocalRing.ResidueField.instAlgebra
 
-/-- Coercing the integer-ring structure map to `L` gives the field structure map. -/
-theorem coe_algebraMap_integerRing (x : 𝒪ᵥ[K]) :
-    ((algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x : 𝒪ᵥ[L]) : L) = algebraMap K L (x : K) :=
-  Valuation.HasExtension.val_algebraMap x
-
 /-- The square from `𝒪ᵥ[K]` to `L` through `𝒪ᵥ[L]` and through `K` commutes. -/
 theorem algebraMap_comp_algebraMap_integerRing :
     (algebraMap 𝒪ᵥ[L] L).comp (algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L]) =
