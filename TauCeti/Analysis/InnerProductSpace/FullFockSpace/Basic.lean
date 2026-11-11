@@ -640,8 +640,8 @@ private theorem norm_sum_wordVector_replicate_sq {e : H} (he : ‖e‖ = 1) (N :
   have hv_orth : Pairwise fun j k =>
       ⟪wordVector 𝕜 (List.replicate j e), wordVector 𝕜 (List.replicate k e)⟫_𝕜 = 0 :=
     fun _ _ hjk => inner_wordVector_eq_zero_of_length_ne (by simpa using hjk)
-  have hsq := TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero hv_orth
-    (Finset.range (N + 1))
+  have hsq := TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero
+    (s := Finset.range (N + 1)) (hv_orth.set_pairwise _)
   simpa [he] using hsq
 
 private theorem inner_sum_wordVector_replicate_creation {e : H} (he : ‖e‖ = 1) (N : ℕ) :
