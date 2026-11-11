@@ -20,11 +20,12 @@ algebra for the matching `M` of `Z` (`TauCeti.StrandsAlgebra.matchedSubalgebra`)
 sums of the identity diagrams `I(S)` over the sets `S` containing one point of each pair in `s`.
 This file shows that they are the primitive idempotents of a decomposition of the unit: they are
 orthogonal idempotents summing to the unit of `A(Z)`
-(`TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedIdem`), and each of them is
-primitive (`TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem`), as in the summands
-`A(Z, i)` with a fixed number of strands
+(`TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedIdem`), and each `I(s)` with `s` a
+set of pairs is primitive when `1` is a primitive idempotent of the coefficient ring
+(`TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem_iff`), while `I(s) = 0` when `s` is
+not a set of pairs. The same holds in the summands `A(Z, i)` with a fixed number of strands
 (`TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedIdem_matchedSummand`,
-`TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem_matchedSummand`). The type `D`
+`TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem_matchedSummand_iff`). The type `D`
 structures over `A(Z)` are modules over the ring of these idempotents, and their generators each
 lie over one of them.
 
@@ -48,6 +49,8 @@ identity diagram at all, the coefficients on the other identity diagrams being k
   of pairs.
 * `TauCeti.StrandsAlgebra.eq_zero_or_eq_zero_of_add_eq_matchedIdem`: `I(s)` is not the sum of two
   nonzero orthogonal idempotents of the matched subalgebra.
+* `TauCeti.StrandsAlgebra.orthogonalIdempotents_of_map_eq_matchedIdem`: the `I(s)` of distinct
+  sets `s` are orthogonal idempotents of any semiring embedded in the strands algebra.
 * `TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem_iff`,
   `TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem_matchedSummand_iff`: `I(s)` is a
   primitive idempotent of the matched subalgebra, and of its summand with `#s` strands, exactly
@@ -163,6 +166,17 @@ theorem eq_zero_or_eq_zero_of_add_eq_matchedIdem (hk : IsPrimitiveIdempotent (1 
     (eq_zero_of_isIdempotentElem_of_repr_idOn_eq_zero hf₁ h₁ hc₁ hS rfl)
     (eq_zero_of_isIdempotentElem_of_repr_idOn_eq_zero hf₂ h₂ hc₂ hS rfl)
 
+/-- **The idempotents `I(s)` of distinct sets `s` are orthogonal.** A family of a semiring sent
+by an injective non-unital homomorphism to the `I(s)` of an injective family of sets `s` is a
+family of orthogonal idempotents. -/
+theorem orthogonalIdempotents_of_map_eq_matchedIdem {A ι F : Type*} [Semiring A]
+    [FunLike F A (StrandsAlgebra R α)] [NonUnitalRingHomClass F A (StrandsAlgebra R α)] (σ : F)
+    (hσ : Function.Injective σ) {v : ι → Finset β} (hv : Function.Injective v) {e : ι → A}
+    (he : ∀ i, σ (e i) = matchedIdem R M (v i)) : OrthogonalIdempotents e where
+  idem i := hσ (by rw [map_mul, he, isIdempotentElem_matchedIdem M (v i)])
+  ortho i j hij := hσ (by
+    rw [map_mul, he, he, matchedIdem_mul_matchedIdem, ite_eq_right fun h ↦ hij (hv h), map_zero])
+
 /-! ### The idempotents of the matched subalgebra -/
 
 /-- **The idempotents `I(s)` of the matched subalgebra are primitive.** If `1` is a primitive
@@ -177,11 +191,9 @@ theorem isPrimitiveIdempotent_matchedIdem_iff (hk : IsPrimitiveIdempotent (1 : R
     fun hs ↦ ⟨Subtype.ext (isIdempotentElem_matchedIdem M s),
       fun h ↦ matchedIdem_eq_zero_iff.1 (congrArg Subtype.val h) hs, ?_⟩⟩
   intro e₁ e₂ h₁ h₂ h₁₂ h₂₁ hsum
-  have key {e : matchedSubalgebra R M} (he : IsIdempotentElem e) :
-      IsIdempotentElem (e : StrandsAlgebra R α) := by
-    rw [IsIdempotentElem, ← NonUnitalSubalgebra.coe_mul, he.eq]
-  refine (eq_zero_or_eq_zero_of_add_eq_matchedIdem (s := s) hk e₁.2 e₂.2 (key h₁) (key h₂) ?_ ?_
-    ?_).imp (fun h ↦ Subtype.ext h) fun h ↦ Subtype.ext h
+  refine (eq_zero_or_eq_zero_of_add_eq_matchedIdem (s := s) hk e₁.2 e₂.2
+    (h₁.map (NonUnitalSubalgebraClass.subtype _)) (h₂.map (NonUnitalSubalgebraClass.subtype _))
+    ?_ ?_ ?_).imp (fun h ↦ Subtype.ext h) fun h ↦ Subtype.ext h
   · rw [← NonUnitalSubalgebra.coe_mul, h₁₂, ZeroMemClass.coe_zero]
   · rw [← NonUnitalSubalgebra.coe_mul, h₂₁, ZeroMemClass.coe_zero]
   · rw [← NonUnitalSubalgebra.coe_add, hsum]
@@ -191,10 +203,8 @@ idempotents of the matched subalgebra**: they are orthogonal idempotents summing
 theorem completeOrthogonalIdempotents_matchedIdem :
     CompleteOrthogonalIdempotents fun s : (univ.image M).powerset ↦
       (⟨matchedIdem R M s, matchedIdem_mem_matchedSubalgebra M s⟩ : matchedSubalgebra R M) where
-  idem s := Subtype.ext (isIdempotentElem_matchedIdem M s)
-  ortho s t hst := Subtype.ext (by
-    rw [NonUnitalSubalgebra.coe_mul, matchedIdem_mul_matchedIdem,
-      ite_eq_right fun h ↦ hst (Subtype.ext h), ZeroMemClass.coe_zero])
+  toOrthogonalIdempotents := orthogonalIdempotents_of_map_eq_matchedIdem
+    (NonUnitalSubalgebraClass.subtype _) Subtype.val_injective Subtype.val_injective fun _ ↦ rfl
   complete := Subtype.ext (by
     rw [AddSubmonoidClass.coe_finsetSum, coe_matchedSubalgebra_one, matchedOne_def,
       ← sum_coe_sort (univ.image M).powerset])
@@ -209,19 +219,9 @@ theorem isPrimitiveIdempotent_matchedIdem_matchedSummand_iff (hk : IsPrimitiveId
         (⟨matchedIdem R M s, matchedIdem_mem_matchedSummand M s⟩ : matchedSummand R M #s) ↔
       s ⊆ univ.image M := by
   have := hk.nontrivial
-  refine ⟨fun h ↦ not_not.1 fun hs ↦ h.ne_zero (Subtype.ext (matchedIdem_eq_zero_iff.2 hs)),
-    fun hs ↦ ⟨Subtype.ext (isIdempotentElem_matchedIdem M s),
-      fun h ↦ matchedIdem_eq_zero_iff.1 (congrArg Subtype.val h) hs, ?_⟩⟩
-  intro e₁ e₂ h₁ h₂ h₁₂ h₂₁ hsum
-  have key {e : matchedSummand R M #s} (he : IsIdempotentElem e) :
-      IsIdempotentElem (e : StrandsAlgebra R α) := by
-    rw [IsIdempotentElem, ← NonUnitalSubalgebra.coe_mul, he.eq]
-  refine (eq_zero_or_eq_zero_of_add_eq_matchedIdem (s := s) hk
-    (matchedSummand_le_matchedSubalgebra _ e₁.2) (matchedSummand_le_matchedSubalgebra _ e₂.2)
-    (key h₁) (key h₂) ?_ ?_ ?_).imp (fun h ↦ Subtype.ext h) fun h ↦ Subtype.ext h
-  · rw [← NonUnitalSubalgebra.coe_mul, h₁₂, ZeroMemClass.coe_zero]
-  · rw [← NonUnitalSubalgebra.coe_mul, h₂₁, ZeroMemClass.coe_zero]
-  · rw [← NonUnitalSubalgebra.coe_add, hsum]
+  exact ⟨fun h ↦ not_not.1 fun hs ↦ h.ne_zero (Subtype.ext (matchedIdem_eq_zero_iff.2 hs)),
+    fun hs ↦ .of_map (NonUnitalSubalgebra.inclusion (matchedSummand_le_matchedSubalgebra _))
+      (NonUnitalSubalgebra.inclusion_injective _) ((isPrimitiveIdempotent_matchedIdem_iff hk).2 hs)⟩
 
 /-- **The idempotents `I(s)` of the sets `s` of `k` pairs form a complete family of orthogonal
 idempotents of the matched summand with `k` strands**: they are orthogonal idempotents summing to
@@ -231,10 +231,8 @@ theorem completeOrthogonalIdempotents_matchedIdem_matchedSummand (k : ℕ) :
       (⟨matchedIdem R M s, by
         have h := matchedIdem_mem_matchedSummand (R := R) M s
         rwa [(mem_filter.1 s.2).2] at h⟩ : matchedSummand R M k) where
-  idem s := Subtype.ext (isIdempotentElem_matchedIdem M s)
-  ortho s t hst := Subtype.ext (by
-    rw [NonUnitalSubalgebra.coe_mul, matchedIdem_mul_matchedIdem,
-      ite_eq_right fun h ↦ hst (Subtype.ext h), ZeroMemClass.coe_zero])
+  toOrthogonalIdempotents := orthogonalIdempotents_of_map_eq_matchedIdem
+    (NonUnitalSubalgebraClass.subtype _) Subtype.val_injective Subtype.val_injective fun _ ↦ rfl
   complete := Subtype.ext (by
     rw [AddSubmonoidClass.coe_finsetSum, coe_matchedSummand_one, matchedSummandOne_def,
       ← sum_coe_sort {s ∈ (univ.image M).powerset | #s = k}])

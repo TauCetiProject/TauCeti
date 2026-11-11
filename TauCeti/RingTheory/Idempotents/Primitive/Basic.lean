@@ -128,11 +128,11 @@ theorem IsPrimitiveIdempotent.map {B : Type v} [Semiring B] (σ : A ≃+* B)
         (by simpa using congrArg σ.symm hsum)).imp
       (fun h ↦ by simpa using congrArg σ h) fun h ↦ by simpa using congrArg σ h
 
-/-- Primitivity pulls back along an injective semiring homomorphism: a decomposition of `b`
-maps to a decomposition of `σ b`. In particular a primitive idempotent of a ring lying in a
-subring is primitive there. -/
+/-- Primitivity pulls back along an injective, possibly non-unital, semiring homomorphism: a
+decomposition of `b` maps to a decomposition of `σ b`. In particular a primitive idempotent of a
+ring lying in a subring, or in a non-unital subring with its own unit, is primitive there. -/
 theorem IsPrimitiveIdempotent.of_map {B : Type v} [Semiring B] {F : Type*} [FunLike F B A]
-    [RingHomClass F B A] (σ : F) (hσ : Function.Injective σ) {b : B}
+    [NonUnitalRingHomClass F B A] (σ : F) (hσ : Function.Injective σ) {b : B}
     (h : IsPrimitiveIdempotent (σ b)) : IsPrimitiveIdempotent b where
   isIdempotentElem := hσ (by rw [map_mul, h.isIdempotentElem.eq])
   ne_zero hb := h.ne_zero (by rw [hb, map_zero])

@@ -104,17 +104,6 @@ theorem length_le (φ : StrandDiagram α) : φ.length ≤ Fintype.card α * Fint
   rw [smul_eq_mul]
   exact Nat.mul_le_mul_right _ (card_le_univ _)
 
-/-- The points above `i` and up to `k` are those up to `j` and those above `j`, for `j` between
-`i` and `k`. -/
-private theorem card_lt_le_add_card_lt_le {i j k : α} (hij : i ≤ j) (hjk : j ≤ k) :
-    #{x | i < x ∧ x ≤ j} + #{x | j < x ∧ x ≤ k} = #{x | i < x ∧ x ≤ k} := by
-  let := Fintype.toLocallyFiniteOrder (α := α)
-  have hIoc (a b : α) : ({x | a < x ∧ x ≤ b} : Finset α) = Ioc a b := by
-    ext
-    simp
-  rw [hIoc, hIoc, hIoc, ← card_union_of_disjoint (Ioc_disjoint_Ioc_of_le le_rfl),
-    Ioc_union_Ioc_eq_Ioc hij hjk]
-
 /-- **The length is additive under concatenation**: if `φ` ends where `ψ` starts, each strand of
 `φ.trans ψ` is a strand of `φ` followed by a strand of `ψ`. -/
 theorem length_trans_of_target_eq (h : φ.target = ψ.source) :
@@ -126,8 +115,10 @@ theorem length_trans_of_target_eq (h : φ.target = ψ.source) :
   rw [hψ, length_def, length_def, source_trans_of_target_eq h, ← sum_add_distrib]
   refine sum_congr rfl fun i hi ↦ ?_
   have hj := h ▸ endpoint_mem_target hi
-  rw [endpoint_trans_of_target_eq h hi, card_lt_le_add_card_lt_le (φ.le_of_mem (endpoint_mem hi))
-    (ψ.le_of_mem (endpoint_mem hj))]
+  let := Fintype.toLocallyFiniteOrder (α := α)
+  rw [endpoint_trans_of_target_eq h hi, filter_lt_le_eq_Ioc, filter_lt_le_eq_Ioc,
+    filter_lt_le_eq_Ioc, ← card_union_of_disjoint (Ioc_disjoint_Ioc_of_le le_rfl),
+    Ioc_union_Ioc_eq_Ioc (φ.le_of_mem (endpoint_mem hi)) (ψ.le_of_mem (endpoint_mem hj))]
 
 /-- **A concatenation is an identity diagram exactly when both factors are**: the lengths of the
 factors add up to the length zero of an identity diagram. -/
