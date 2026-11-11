@@ -239,7 +239,7 @@ theorem isLeast_lintegral_isContinuityEquation {μ₀ μ₁ : Measure E} [IsProb
     rw [ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
       ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.coe_mk]
   have hνc : Continuous ν := ProbabilityMeasure.toFiniteMeasure_continuous.comp
-    (P.continuous_map_of_forall_continuous (fun _ ↦ by fun_prop) fun _ ↦ by fun_prop)
+    (P.continuous_map_of_ae_continuous (fun _ ↦ by fun_prop) (ae_of_all _ fun _ ↦ by fun_prop))
   have h0 : (ν 0 : Measure E) = μ₀ := by
     rw [hν, ← hπ.toIsCoupling.fst_eq, Measure.fst]
     simp
