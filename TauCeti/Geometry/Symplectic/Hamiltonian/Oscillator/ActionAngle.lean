@@ -125,6 +125,11 @@ theorem oscillatorActionAngle_eq_zero (y : ℝ × ℝ) (h : y.2 ≤ 0 ∨ m * ν
   · simp [oscillatorActionAngle_apply, Real.sqrt_eq_zero_of_nonpos (by linarith : 2 * y.2 ≤ 0)]
   · simp [oscillatorActionAngle_apply, Real.sqrt_eq_zero_of_nonpos h]
 
+/-- The parametrization vanishes unless both the action and `m ν` are positive. -/
+theorem oscillatorActionAngle_eq_zero_of_not (y : ℝ × ℝ) (h : ¬(0 < y.2 ∧ 0 < m * ν)) :
+    oscillatorActionAngle m ν y = 0 :=
+  oscillatorActionAngle_eq_zero y ((not_and_or.1 h).imp not_lt.1 not_lt.1)
+
 /-- At a fixed action `I`, the action–angle parametrization is `2π`-periodic in the angle. -/
 theorem periodic_oscillatorActionAngle (m ν I : ℝ) :
     Function.Periodic (fun θ : ℝ ↦ oscillatorActionAngle m ν (θ, I)) (2 * π) :=
@@ -159,7 +164,7 @@ theorem contDiffOn_oscillatorActionAngle :
 /-- The derivative of the action–angle parametrization at a point of positive action. Writing
 `r = √(2I)` and `c = √(m ν)`, it sends `(δθ, δI)` to
 `(δθ r cos θ / c + δI sin θ / (r c), -δθ c r sin θ + δI c cos θ / r)`. -/
-theorem hasFDerivAt_oscillatorActionAngle {y : ℝ × ℝ} (hI : 0 < y.2) :
+theorem hasFDerivAt_oscillatorActionAngle (m ν : ℝ) {y : ℝ × ℝ} (hI : 0 < y.2) :
     HasFDerivAt (oscillatorActionAngle m ν)
       (((√(2 * y.2) * Real.cos y.1 / √(m * ν)) • fst ℝ ℝ ℝ +
           (Real.sin y.1 / (√(2 * y.2) * √(m * ν))) • snd ℝ ℝ ℝ).prod
@@ -194,7 +199,7 @@ theorem stdSymplecticForm_fderiv_oscillatorActionAngle (hm : 0 < m) (hν : 0 < �
       stdSymplecticForm u v := by
   have hr0 : √(2 * y.2) ≠ 0 := by positivity
   have hc0 : √(m * ν) ≠ 0 := by positivity
-  rw [(hasFDerivAt_oscillatorActionAngle hI).fderiv]
+  rw [(hasFDerivAt_oscillatorActionAngle m ν hI).fderiv]
   simp only [stdSymplecticForm_apply, RCLike.inner_apply, RCLike.conj_to_real,
     ContinuousLinearMap.prod_apply, add_apply, smul_apply, coe_fst', coe_snd', smul_eq_mul]
   field_simp
@@ -221,11 +226,29 @@ theorem isLocalDiffeomorphAt_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν)
   -- The self-model tangent equivalences act as identities; `ofBijective` retains L's map.
   rfl
 
+/-- Where the parametrization vanishes along the horizontal line through `y`, its derivative
+vanishes in the `θ`-direction. -/
+private theorem fderiv_oscillatorActionAngle_apply_frequency_of_eq_zero {y : ℝ × ℝ}
+    (hz : ∀ a : ℝ, oscillatorActionAngle m ν (a, y.2) = 0) :
+    fderiv ℝ (oscillatorActionAngle m ν) y (ν, 0) = 0 := by
+  by_cases hd : DifferentiableAt ℝ (oscillatorActionAngle m ν) y
+  · have hcurve : HasDerivAt (fun s : ℝ ↦ (y.1 + ν * s, y.2)) (ν, 0) 0 := by
+      simpa only [mul_one] using
+        (((hasDerivAt_id' (0 : ℝ)).const_mul ν).const_add y.1).prodMk (hasDerivAt_const 0 y.2)
+    have hd' : HasFDerivAt (oscillatorActionAngle m ν) (fderiv ℝ (oscillatorActionAngle m ν) y)
+        (y.1 + ν * 0, y.2) := by simpa using hd.hasFDerivAt
+    have h1 := hd'.comp_hasDerivAt (0 : ℝ) hcurve
+    have h2 : (oscillatorActionAngle m ν ∘ fun s : ℝ ↦ (y.1 + ν * s, y.2)) = fun _ ↦ 0 :=
+      funext fun s ↦ hz _
+    rw [h2] at h1
+    exact h1.unique (hasDerivAt_const _ _)
+  · simp [fderiv_zero_of_not_differentiableAt hd]
+
 /-- **The Hamiltonian vector field is `ν ∂_θ`**: the derivative of the parametrization sends
 `(ν, 0)` to the Hamiltonian vector field of the energy. This is the interesting case at a point of
 positive action; where the parametrization vanishes identically along the `θ`-direction, both sides
 are `0`. -/
-theorem fderiv_oscillatorActionAngle_apply_frequency {y : ℝ × ℝ} :
+theorem fderiv_oscillatorActionAngle_apply_frequency (m ν : ℝ) (y : ℝ × ℝ) :
     fderiv ℝ (oscillatorActionAngle m ν) y (ν, 0) =
       (stdSymplecticForm (V := ℝ)).hamiltonianVectorField (oscillatorHamiltonian m ν)
         (oscillatorActionAngle m ν y) := by
@@ -235,7 +258,7 @@ theorem fderiv_oscillatorActionAngle_apply_frequency {y : ℝ × ℝ} :
     have hc0 : √(m * ν) ≠ 0 := (Real.sqrt_pos.2 hmν).ne'
     have hm0 : m ≠ 0 := left_ne_zero_of_mul hmν.ne'
     have hν0 : ν ≠ 0 := right_ne_zero_of_mul hmν.ne'
-    rw [(hasFDerivAt_oscillatorActionAngle hI).fderiv,
+    rw [(hasFDerivAt_oscillatorActionAngle m ν hI).fderiv,
       stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian, oscillatorActionAngle_apply]
     ext
     · simp
@@ -245,36 +268,24 @@ theorem fderiv_oscillatorActionAngle_apply_frequency {y : ℝ × ℝ} :
       field_simp
       linear_combination Real.sin y.1 * hc
   · have hz (a : ℝ) : oscillatorActionAngle m ν (a, y.2) = 0 :=
-      oscillatorActionAngle_eq_zero _ ((not_and_or.1 h).imp not_lt.1 not_lt.1)
+      oscillatorActionAngle_eq_zero_of_not _ h
     have hy : oscillatorActionAngle m ν y = 0 := hz y.1
     rw [hy, stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian]
     simp only [Prod.snd_zero, mul_zero, neg_zero, zero_div, Prod.fst_zero, Prod.mk_zero_zero]
-    by_cases hd : DifferentiableAt ℝ (oscillatorActionAngle m ν) y
-    · have hcurve : HasDerivAt (fun s : ℝ ↦ (y.1 + ν * s, y.2)) (ν, 0) 0 := by
-        simpa only [mul_one] using
-          (((hasDerivAt_id' (0 : ℝ)).const_mul ν).const_add y.1).prodMk (hasDerivAt_const 0 y.2)
-      have hd' : HasFDerivAt (oscillatorActionAngle m ν) (fderiv ℝ (oscillatorActionAngle m ν) y)
-          (y.1 + ν * 0, y.2) := by simpa using hd.hasFDerivAt
-      have h1 := hd'.comp_hasDerivAt (0 : ℝ) hcurve
-      have h2 : (oscillatorActionAngle m ν ∘ fun s : ℝ ↦ (y.1 + ν * s, y.2)) = fun _ ↦ 0 :=
-        funext fun s ↦ hz _
-      rw [h2] at h1
-      exact h1.unique (hasDerivAt_const _ _)
-    · rw [fderiv_zero_of_not_differentiableAt hd]
-      rfl
+    exact fderiv_oscillatorActionAngle_apply_frequency_of_eq_zero hz
 
 /-- **Uniform rotation of the angle solves Hamilton's equations**: the curve `t ↦ (θ + ν t, I)`
 in action–angle coordinates is an integral curve of the Hamiltonian vector field of the energy. For
 `I = 0` it is the constant curve at the equilibrium at the origin, and so it is, by convention,
 whenever `I ≤ 0` or `m ν ≤ 0`, where the parametrization vanishes. -/
-theorem hasDerivAt_oscillatorActionAngle (θ : ℝ) {I : ℝ} (t : ℝ) :
+theorem hasDerivAt_oscillatorActionAngle (m ν θ I t : ℝ) :
     HasDerivAt (fun s ↦ oscillatorActionAngle m ν (θ + ν * s, I))
       ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField (oscillatorHamiltonian m ν)
         (oscillatorActionAngle m ν (θ + ν * t, I))) t := by
   by_cases h : 0 < I ∧ 0 < m * ν
   swap
   · have h0 (s : ℝ) : oscillatorActionAngle m ν (s, I) = 0 :=
-      oscillatorActionAngle_eq_zero _ ((not_and_or.1 h).imp not_lt.1 not_lt.1)
+      oscillatorActionAngle_eq_zero_of_not _ h
     simp only [h0, stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian, Prod.fst_zero,
       Prod.snd_zero, zero_div, mul_zero, neg_zero, Prod.mk_zero_zero]
     exact hasDerivAt_const t 0
@@ -282,8 +293,8 @@ theorem hasDerivAt_oscillatorActionAngle (θ : ℝ) {I : ℝ} (t : ℝ) :
   have hcurve : HasDerivAt (fun s : ℝ ↦ (θ + ν * s, I)) (ν, 0) t := by
     simpa only [mul_one] using
       (((hasDerivAt_id' t).const_mul ν).const_add θ).prodMk (hasDerivAt_const t I)
-  have hψ := hasFDerivAt_oscillatorActionAngle (m := m) (ν := ν) (y := (θ + ν * t, I)) hI
-  rw [← fderiv_oscillatorActionAngle_apply_frequency, hψ.fderiv]
+  have hψ := hasFDerivAt_oscillatorActionAngle m ν (y := (θ + ν * t, I)) hI
+  rw [← fderiv_oscillatorActionAngle_apply_frequency m ν, hψ.fderiv]
   exact hψ.comp_hasDerivAt t hcurve
 
 /-! ### Action and angle of a point -/
