@@ -113,7 +113,7 @@ section General
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] [OpensMeasurableSpace E]
-  [LocallyCompactSpace E] {Ω : Opens E} {v : E} {μ : Measure E} {u u' : E → F} {ψ : E → ℝ}
+  {Ω : Opens E} {v : E} {μ : Measure E} {u u' : E → F} {ψ : E → ℝ}
 
 /-- **The Leibniz rule for weak directional derivatives, local form.** If `u'` is a weak derivative
 of `u` in the direction `v` on `Ω` and `ψ` is smooth on `Ω`, then `ψ u` is weakly differentiable in
@@ -126,14 +126,13 @@ theorem HasWeakLineDerivOn.contDiffOn_smul (h : HasWeakLineDerivOn μ Ω u u' v)
     (hψ : ContDiffOn ℝ ∞ ψ Ω) :
     HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
       (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) v := by
-  have hΩ : IsLocallyClosed (Ω : Set E) := Ω.isOpen.isLocallyClosed
   have hdψ : ContDiffOn ℝ ∞ (fun x => fderiv ℝ ψ x v) Ω :=
     (hψ.fderiv_of_isOpen Ω.isOpen (by simp)).clm_apply contDiffOn_const
   have hu : LocallyIntegrableOn (fun x => ψ x • u x) Ω μ :=
-    h.locallyIntegrableOn.continuousOn_smul hΩ hψ.continuousOn
+    h.locallyIntegrableOn.continuousOn_smul_of_isOpen Ω.isOpen hψ.continuousOn
   have hu' : LocallyIntegrableOn (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) Ω μ :=
-    (h.locallyIntegrableOn_deriv.continuousOn_smul hΩ hψ.continuousOn).add
-      (h.locallyIntegrableOn.continuousOn_smul hΩ hdψ.continuousOn)
+    (h.locallyIntegrableOn_deriv.continuousOn_smul_of_isOpen Ω.isOpen hψ.continuousOn).add
+      (h.locallyIntegrableOn.continuousOn_smul_of_isOpen Ω.isOpen hdψ.continuousOn)
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨h.completeSpace, hu, hu', fun φ => ?_⟩
   -- `ψ φ` and `(∂_v ψ) φ` are test functions on `Ω`.
