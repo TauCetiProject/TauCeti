@@ -23,7 +23,9 @@ symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`, hence Lagrangian.
 ## Main declarations
 
 * `TauCeti.realSubspace`: the real subspace `ℝⁿ ⊆ ℂⁿ`, which is maximal totally real
-  (`TauCeti.isMaximalTotallyReal_realSubspace`).
+  (`TauCeti.isMaximalTotallyReal_realSubspace`). It is the orthogonal complement of `i ℝⁿ` for
+  the real inner product `Re ⟪·, ·⟫`
+  (`TauCeti.forall_re_inner_I_smul_eq_zero_iff_mem_realSubspace`).
 * `Matrix.realImage`: the image `M ℝⁿ` of `ℝⁿ` under a complex matrix `M`, maximal totally real
   for invertible `M` (`Matrix.isMaximalTotallyReal_realImage`).
 * `Matrix.realImage_mul_map_ofReal`, `Matrix.exists_eq_mul_map_ofReal`: `M ℝⁿ` determines an
@@ -81,6 +83,20 @@ theorem isMaximalTotallyReal_realSubspace :
     refine Submodule.mem_sup.2 ⟨re, fun i ↦ by simp [re], _, ⟨im, fun i ↦ by simp [im], rfl⟩, ?_⟩
     ext i
     apply Complex.ext <;> simp [re, im]
+
+open scoped InnerProductSpace in
+/-- For the real subspace `ℝⁿ ⊆ ℂⁿ`, a vector `w` satisfies `Re ⟪i v, w⟫ = 0` for all `v ∈ ℝⁿ`
+exactly when `w ∈ ℝⁿ`: the orthogonal complement of `i ℝⁿ` for `Re ⟪·, ·⟫` is `ℝⁿ`. -/
+theorem forall_re_inner_I_smul_eq_zero_iff_mem_realSubspace [Fintype n]
+    {w : EuclideanSpace ℂ n} :
+    (∀ v ∈ realSubspace n, (⟪Complex.I • v, w⟫_ℂ).re = 0) ↔ w ∈ realSubspace n := by
+  classical
+  refine ⟨fun h ↦ mem_realSubspace.2 fun i ↦ ?_, fun hw v hv ↦ ?_⟩
+  · have := h (EuclideanSpace.single i 1) <| mem_realSubspace.2 fun j ↦ by
+      by_cases hj : j = i <;> simp [hj]
+    simpa [inner_smul_left, EuclideanSpace.inner_single_left] using this
+  · simp [inner_smul_left, PiLp.inner_apply, Complex.im_sum, Complex.mul_im,
+      mem_realSubspace.1 hv _, mem_realSubspace.1 hw _]
 
 end TauCeti
 

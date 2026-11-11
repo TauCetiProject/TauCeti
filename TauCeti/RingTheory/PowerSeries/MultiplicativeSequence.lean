@@ -222,17 +222,12 @@ private theorem aeval_snoc_X_zero_multiplicativeSequence :
       MvPolynomial.C (constantCoeff Q) * Q.multiplicativeSequence n k := by
   refine MvPolynomial.esymmAlgHom_injective R (Fintype.card_fin n).ge (Subtype.ext ?_)
   -- The elementary symmetric polynomials of `x₁, …, xₙ, 0` are those of `x₁, …, xₙ`, then `0`.
-  have h : (fun j : Fin (n + 1) => MvPolynomial.aeval
-      (fun j : Fin n => MvPolynomial.esymm (Fin n) R (j + 1))
-      (Fin.snoc (α := fun _ => MvPolynomial (Fin n) R) MvPolynomial.X 0 j)) =
-      fun j : Fin (n + 1) =>
-        (0 ::ₘ univ.val.map (MvPolynomial.X : Fin n → MvPolynomial (Fin n) R)).esymm (j + 1) := by
-    funext j
-    refine Fin.lastCases ?_ (fun i => ?_) j
-    · rw [Fin.snoc_last, map_zero, Fin.val_last, Multiset.esymm_cons_zero,
-        Multiset.esymm_of_card_lt (by simp)]
-    · rw [Fin.snoc_castSucc, MvPolynomial.aeval_X, Fin.val_castSucc, Multiset.esymm_cons_zero,
-        MvPolynomial.esymm_eq_multiset_esymm]
+  have h := Fin.comp_snoc
+    (MvPolynomial.aeval (R := R) fun j : Fin n => MvPolynomial.esymm (Fin n) R (j + 1))
+    MvPolynomial.X 0
+  simp only [map_zero, Function.comp_def, MvPolynomial.aeval_X] at h
+  rw [MvPolynomial.esymm_eq_multiset_esymm, ← Multiset.esymm_cons_zero_eq_snoc _ (by simp),
+    ← MvPolynomial.esymm_eq_multiset_esymm] at h
   -- Both sides are now coefficients of `∏ᵢ Q(xᵢ t)`, with an extra factor `Q(0 t)` on the left.
   rw [MvPolynomial.esymmAlgHom_apply, MvPolynomial.esymmAlgHom_apply,
     MvPolynomial.comp_aeval_apply, h,

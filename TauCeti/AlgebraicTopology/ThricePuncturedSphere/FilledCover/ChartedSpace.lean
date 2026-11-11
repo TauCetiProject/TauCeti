@@ -221,7 +221,7 @@ theorem isManifold {n : ℕ∞ω} :
   -- The inverse of each filling chart is holomorphic: in the charts of `E` it is
   -- `w ↦ coordInv q (w ^ degree p i)`.
   refine PunctureFilling.isManifold (isOpenEmbedding_chart hp hfin) fun i ↦
-    OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm (by simp) _ ?_
+    OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm _ ?_
   rw [puncturedDiscChart_target, hπ.contMDiffOn_chartedSpaceComap_iff]
   refine ⟨puncturedDiscChart_target (isOpenEmbedding_chart hp hfin i) ▸
     (puncturedDiscChart _).continuousOn_symm, ?_⟩

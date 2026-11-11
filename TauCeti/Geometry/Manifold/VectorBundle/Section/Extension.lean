@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import Mathlib.Geometry.Manifold.BumpFunction
 
@@ -16,7 +16,8 @@ import Mathlib.Geometry.Manifold.BumpFunction
 Let `V` be a `C^n` real vector bundle, `n ≤ ∞`, over a finite-dimensional Hausdorff smooth
 manifold. Every vector in `V` is the value of a global `C^n` section. This lets tensorial
 operations on globally `C^n` sections define maps on individual fibres. The construction cuts off
-Mathlib's locally `C^n` `FiberBundle.extend` with a smooth bump function.
+Mathlib's locally `C^n` `FiberBundle.extend` with a smooth bump function. Equivalently,
+evaluation of global `C^n` sections at a point is surjective.
 
 Every fibre vector is moreover the value of a compactly supported `C^n` section supported in any
 prescribed neighbourhood of its base point
@@ -56,16 +57,26 @@ end FiberBundle
 
 namespace ContMDiffSection
 
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+
+/-- In a `C^n` vector bundle with `n ≤ ∞`, evaluation of `C^n` sections at a point is surjective:
+every fibre vector is the value of a global `C^n` section. -/
+theorem evalLinearMap_surjective (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
+    (x : M) : Function.Surjective (evalLinearMap I F n V x) := fun v ↦ by
+  obtain ⟨s, hs, hsx⟩ := FiberBundle.exists_contMDiff_section_eq I F n v
+  exact ⟨⟨s, hs⟩, by simpa using hsx⟩
+
 open Set
 open scoped Topology
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [T2Space M] [IsManifold I ∞ M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞} {V : M → Type*}
-  [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-  [ContMDiffVectorBundle n F V I]
+variable {n : ℕ∞} [ContMDiffVectorBundle n F V I]
 
 /-- Every vector `v` of the fibre over `x₀` is the value at `x₀` of a `C^n` section (smooth when
 `n = ∞`) whose closed support is compact and contained in any prescribed neighbourhood `U` of

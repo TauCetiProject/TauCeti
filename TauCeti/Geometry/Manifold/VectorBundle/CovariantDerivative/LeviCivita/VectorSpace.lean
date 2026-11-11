@@ -108,11 +108,11 @@ theorem two_mul_leviCivitaConnection_model_space
     funext fun y ↦ hg y (A y) (B y)
   -- The three Lie brackets of the Koszul formula, read in the model space.
   have hbr₁ : tangentSpaceCastModel 𝓘(ℝ, F) x (mlieBracket 𝓘(ℝ, F) (C u) V x) =
-      fderiv ℝ W x u := TauCeti.mlieBracket_const_left_model_space u V x
+      fderiv ℝ W x u := mlieBracket_const_left_model_space u V x
   have hbr₂ : tangentSpaceCastModel 𝓘(ℝ, F) x (mlieBracket 𝓘(ℝ, F) (C u) (C w) x) = 0 :=
-    TauCeti.mlieBracket_const_model_space u w x
+    mlieBracket_const_model_space u w x
   have hbr₃ : tangentSpaceCastModel 𝓘(ℝ, F) x (mlieBracket 𝓘(ℝ, F) V (C w) x) =
-      -fderiv ℝ W x w := TauCeti.mlieBracket_const_right_model_space V w x
+      -fderiv ℝ W x w := mlieBracket_const_right_model_space V w x
   have hcomm (a b : F) : g x a b = g x b a := by
     have h := hg x ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm b)
       ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm a)

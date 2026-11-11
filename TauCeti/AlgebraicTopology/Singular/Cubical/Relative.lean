@@ -58,6 +58,18 @@ theorem supportedIn_def (A : Set X) (n : ℕ) :
     supportedIn R A n = LinearMap.range (map R (ContinuousMap.subtypeVal A) n) := by
   rw [supportedIn]
 
+/-- The push-forward of a chain of `A` is supported in `A`. -/
+theorem map_subtypeVal_mem_supportedIn {A : Set X} {n : ℕ} (c : NormalizedCubicalChain A R n) :
+    map R (ContinuousMap.subtypeVal A) n c ∈ supportedIn R A n := by
+  rw [supportedIn_def]
+  exact LinearMap.mem_range_self _ c
+
+/-- The chain of a cube with image in `A` is supported in `A`. -/
+theorem ofCube_mem_supportedIn {A : Set X} {n : ℕ} {c : SingularCube X n}
+    (hc : Set.range c ⊆ A) : ofCube X R c ∈ supportedIn R A n := by
+  rw [supportedIn_def]
+  exact ofCube_mem_range_map R Topology.IsInducing.subtypeVal fun _ hy ↦ ⟨⟨_, hc hy⟩, rfl⟩
+
 /-- The chains supported in a subspace form a subcomplex. -/
 theorem boundary_mem_supportedIn {A : Set X} {n : ℕ} {g : NormalizedCubicalChain X R (n + 1)}
     (hg : g ∈ supportedIn R A (n + 1)) : boundary X R n g ∈ supportedIn R A n := by

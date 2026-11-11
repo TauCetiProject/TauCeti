@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.JHolomorphic.TorusWeight
+public import TauCeti.Geometry.Symplectic.JHolomorphic.ConfigurationCount
 public import TauCeti.RingTheory.NovikovSeries.OrbitZeta.Basic
-public import TauCeti.RingTheory.NovikovSeries.PowerSeries
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -47,6 +46,13 @@ zeta function `exp (∑_γ ∑_{n ≥ 1} sgn det (1 - P_γ ^ n) e^(n [γ]) / n)`
 homology-indexed form of the local identity
 `TauCeti.X_mul_derivative_torusWeightSeries_of_det_eq_one`.
 
+The tori of distinct orbits are disjoint, so every multiplicity assignment on them is a compatible
+configuration, and the generating series `∑_A Gr(A) e^A` of their weighted configuration counts
+(`TauCeti.configurationCountSeries`) is the product of their substituted local series
+(`TauCeti.hasProd_ofPowerSeries_configurationCountSeries`). It is therefore the integral Euler
+product (`TauCeti.configurationCountSeries_eq_eulerProduct`), and over any `ℚ`-algebra the orbit
+zeta function (`TauCeti.orbitZeta_eq_mapRingHom_configurationCountSeries`).
+
 That the labels of the actual orbit tori are given by the signs of `det (1 ∓ P)` is a separate
 determinant comparison for their twisted normal operators; the statements here concern the labels
 those signs prescribe.
@@ -59,6 +65,10 @@ those signs prescribe.
   converges to the integral Euler product.
 * `TauCeti.orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries`: that product is the
   orbit zeta function.
+* `TauCeti.configurationCountSeries_eq_eulerProduct`,
+  `TauCeti.orbitZeta_eq_mapRingHom_configurationCountSeries`: the generating series of the weighted
+  configuration counts of pairwise compatible orbit tori is the Euler product and the orbit zeta
+  function.
 
 ## References
 
@@ -184,6 +194,50 @@ theorem orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries
     (hasProd_ofPowerSeries_torusWeightSeries hpos hfin hdet fun i => by
       simpa using hP i 1 one_ne_zero).tprod_eq]
   simp only [hσ, pow_one]
+
+include hdet in
+/-- **The configuration count of the orbit tori is an integral Euler product.** Let the orbit
+tori, of classes `γ i` of positive period with finitely many below each cutoff, be pairwise
+compatible, as the tori `S¹ × γ` of distinct orbits are disjoint, and let each carry the four-twist
+weights of the label read off from its nondegenerate return map `P i` of determinant one. Then the
+generating series `∑_A Gr(A) e^A` of the weighted configuration counts is the Euler product
+`∏ᵢ (1 - σ' i e^(γ i)) ^ (-(ε i σ' i))` of `TauCeti.hasProd_ofPowerSeries_torusWeightSeries`. -/
+theorem configurationCountSeries_eq_eulerProduct {r : ι → ι → Prop} (hr : Pairwise r)
+    {w : ι → ℕ → ℤ} (hw : ∀ i, w i = torusWeight (decide (0 < (1 - P i).det))
+      (if (1 + P i).det < 0 then 1 else 0))
+    (hfin : ∀ C : ℝ, {i ∈ Set.univ | N (γ i) ≤ C}.Finite) (hP : ∀ i, (1 - P i).det ≠ 0) :
+    configurationCountSeries r γ w (fun i _ => hpos i) hfin =
+      eulerProduct γ hpos (fun i => if (1 + P i).det < 0 then -1 else 1)
+        (fun i => -(SignType.sign (1 - P i).det * if (1 + P i).det < 0 then -1 else 1)) :=
+  (hasProd_ofPowerSeries_configurationCountSeries (Set.pairwise_univ.2 hr) _ hfin
+    (f := fun i => torusWeightSeries (decide (0 < (1 - P i).det))
+      (if (1 + P i).det < 0 then 1 else 0))
+    (fun i _ k => by rw [hw, torusWeight_def])
+    fun i _ => constantCoeff_torusWeightSeries _ _).unique ((Equiv.Set.univ ι).hasProd_iff.2
+      (hasProd_ofPowerSeries_torusWeightSeries hpos
+        ((northcott_iff_tendsto _).1 ⟨fun C => by simpa using hfin C⟩) hdet hP))
+
+include hdet in
+/-- **The configuration count of the orbit tori is the orbit zeta function.** Let the orbit
+tori, of classes `γ i` of positive period with finitely many below each cutoff, be pairwise
+compatible, and let each carry the four-twist weights of the label read off from its return map
+`P i` of determinant one with nondegenerate nonzero powers. Then over any `ℚ`-algebra `K` the
+generating series `∑_A Gr(A) e^A` of the weighted configuration counts is the orbit zeta function
+`exp (∑ᵢ ∑_{n ≥ 1} sgn det (1 - P i ^ n) e^(n • γ i) / n)`. -/
+theorem orbitZeta_eq_mapRingHom_configurationCountSeries {r : ι → ι → Prop} (hr : Pairwise r)
+    {w : ι → ℕ → ℤ} (hw : ∀ i, w i = torusWeight (decide (0 < (1 - P i).det))
+      (if (1 + P i).det < 0 then 1 else 0))
+    (hfin : ∀ C : ℝ, {i ∈ Set.univ | N (γ i) ≤ C}.Finite)
+    (hP : ∀ i, ∀ k ≠ 0, (1 - P i ^ k).det ≠ 0) (K : Type*) [CommRing K] [Algebra ℚ K] :
+    orbitZeta K N γ (fun i n => SignType.sign (1 - P i ^ n).det) =
+      mapRingHom (Int.castRingHom K) (AddMonoidHom.id H) ⟨1, one_pos, by simp⟩
+        (configurationCountSeries r γ w (fun i _ => hpos i) hfin) := by
+  have hP₁ (i : ι) : (1 - P i).det ≠ 0 := by simpa using hP i 1 one_ne_zero
+  have hN : Tendsto (fun i => N (γ i)) cofinite atTop :=
+    (northcott_iff_tendsto _).1 ⟨fun C => by simpa using hfin C⟩
+  rw [orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries hpos hN hdet hP K,
+    (hasProd_ofPowerSeries_torusWeightSeries hpos hN hdet hP₁).tprod_eq,
+    configurationCountSeries_eq_eulerProduct hpos hdet hr hw hfin hP₁]
 
 end Product
 

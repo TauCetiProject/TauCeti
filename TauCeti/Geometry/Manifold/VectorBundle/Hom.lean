@@ -10,9 +10,11 @@ public import TauCeti.Topology.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import Mathlib.Geometry.Manifold.BumpFunction
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Topology.VectorBundle.Coordinates
 import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Testing smooth bundle homomorphisms on sections
@@ -34,11 +36,13 @@ along a trivialization gives a `C^n` field of bilinear forms over its base set
 (`TauCeti.Manifold.contMDiffOn_trivializationAt_pullbackForm`), conversely that a field of
 bilinear forms which is `C^n` at a point reads in the trivialization at that point as a family of
 bilinear forms on the model fibre which is `C^n` there
-(`TauCeti.Manifold.exists_contMDiffAt_apply_eq_apply_symm`), and that fibrewise inversion
-preserves smoothness of a hom-bundle section at every point where the section is invertible
-(`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle form of the
-smoothness of inversion of continuous linear maps between Banach spaces. A constant bilinear
-pairing between trivial bundles is a smooth hom-bundle section
+(`TauCeti.Manifold.exists_contMDiffAt_apply_eq_apply_symm`). Over the whole base set of an atlas
+trivialization of a `C^n` vector bundle, a `C^n` field of bilinear forms reads as a `C^n` family of
+bilinear forms on the model fibre (`Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ`). Fibrewise
+inversion preserves smoothness of a hom-bundle section at every point where the section is
+invertible (`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle
+form of the smoothness of inversion of continuous linear maps between Banach spaces. A constant
+bilinear pairing between trivial bundles is a smooth hom-bundle section
 (`TauCeti.contMDiff_const_bundlePairing`). A hom-bundle section whose coordinate expressions are
 constant on the common frame domains is smooth
 (`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`).
@@ -207,6 +211,47 @@ theorem exists_contMDiffAt_apply_eq_apply_symm {β : (b : B) → E b →L[ℝ] E
 
 end PullbackForm
 
+section TrivializationForm
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {n : WithTop ℕ∞} [ContMDiffVectorBundle n F V IB]
+
+/-- **A `C^n` field of bilinear forms read in a trivialization.** Over the base set of a
+trivialization `e` in the atlas of `V`, a field `β` of bilinear forms on the fibres which is `C^n`
+there reads as the `C^n` family `y ↦ β y (e.symm y ·) (e.symm y ·)` of bilinear forms on the model
+fibre. Unlike `TauCeti.Manifold.exists_contMDiffAt_apply_eq_apply_symm`, which reads `β` only at
+the centre of the preferred trivialization and needs no smoothness of `V`, this holds on the whole
+base set, which requires `V` to be a `C^n` vector bundle. -/
+theorem _root_.Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ
+    {β : ∀ x, V x →L[𝕜] V x →L[𝕜] G}
+    (e : Trivialization F (π F V)) [MemTrivializationAtlas e]
+    (hβ : ContMDiffOn IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) x (β x))
+      e.baseSet) :
+    ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G) n
+      (fun y ↦ ((β y).toLinearMap₁₂.compl₁₂ (e.symmₗ 𝕜 y)
+        (e.symmₗ 𝕜 y)).toContinuousBilinearMap) e.baseSet := by
+  intro y hy
+  -- Each fixed vector of the model fibre reads as a `C^n` section over the base set.
+  have hs (u : F) := e.contMDiffOn_section_symm (IB := IB) (n := n) e.open_baseSet subset_rfl
+    (contMDiffOn_const (c := u)) y hy
+  refine TauCeti.contMDiffWithinAt_clm_apply.mpr fun v ↦
+    TauCeti.contMDiffWithinAt_clm_apply.mpr fun w ↦ ?_
+  have h := ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := G) (E₃ := Bundle.Trivial B G)
+    (b := id) (hβ y hy) (hs v) (hs w)
+  exact (contMDiffWithinAt_totalSpace.mp h).2.congr
+    (fun z hz ↦ by simp [e.symmₗ_apply hz]) (by simp [e.symmₗ_apply hy])
+
+end TrivializationForm
+
 end TauCeti.Manifold
 
 namespace TauCeti
@@ -268,6 +313,25 @@ variable {𝕜 B M F₁ F₂ F₃ EB HB EM HM : Type*} [NontriviallyNormedField 
   {n : WithTop ℕ∞} {b : M → B}
   {A : ∀ y, V₂ (b y) →L[𝕜] V₃ (b y)} {C : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
 
+/-- Composing two hom-bundle fields along the same base map preserves their regularity at a
+point. -/
+theorem ContMDiffAt.clm_bundle_comp {x : M}
+    (hA : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃) (E := fun z ↦ V₂ z →L[𝕜] V₃ z) (b y) (A y)) x)
+    (hC : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (C y)) x) :
+    ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) x := by
+  have hAx := (contMDiffAt_hom_bundle _).mp hA
+  have hCx := (contMDiffAt_hom_bundle _).mp hC
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨hAx.1, (hAx.2.clm_comp hCx.2).congr_of_eventuallyEq ?_⟩
+  filter_upwards [hAx.1.continuousAt.preimage_mem_nhds
+    ((trivializationAt F₂ V₂ (b x)).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F₂ V₂ (b x)))] with y hy
+  exact ContinuousLinearMap.inCoordinates_comp (A y) (C y) hy
+
 /-- Composing two hom-bundle fields along the same base map preserves their regularity. -/
 theorem ContMDiff.clm_bundle_comp
     (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃)) n
@@ -276,16 +340,8 @@ theorem ContMDiff.clm_bundle_comp
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (C y))) :
     ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
-        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) := by
-  intro x
-  have hAx := (contMDiffAt_hom_bundle _).mp (hA x)
-  have hCx := (contMDiffAt_hom_bundle _).mp (hC x)
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨hAx.1, (hAx.2.clm_comp hCx.2).congr_of_eventuallyEq ?_⟩
-  filter_upwards [hAx.1.continuousAt.preimage_mem_nhds
-    ((trivializationAt F₂ V₂ (b x)).open_baseSet.mem_nhds
-      (mem_baseSet_trivializationAt F₂ V₂ (b x)))] with y hy
-  exact ContinuousLinearMap.inCoordinates_comp (A y) (C y) hy
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) :=
+  fun x ↦ (hA x).clm_bundle_comp (hC x)
 
 /-- Composition of native `Cⁿ` hom-bundle sections. -/
 def ContMDiffSection.clmComp
@@ -376,17 +432,12 @@ theorem ContMDiffWithinAt.clm_bundle_inverse
     rw [ContinuousLinearMap.inCoordinates_eq h₁ h₂]
     exact ContinuousLinearMap.isInvertible_equiv.comp
       (hx.comp ContinuousLinearMap.isInvertible_equiv)
-  -- Near `x`, the inverse in coordinates is the inverse of the coordinate expression, and
+  -- The inverse in coordinates is the inverse of the coordinate expression, and
   -- inversion is smooth at an invertible map.
-  have hev : ∀ᶠ m in 𝓝[s] x, b m ∈ (trivializationAt F₁ E₁ (b x)).baseSet ∧
-      b m ∈ (trivializationAt F₂ E₂ (b x)).baseSet :=
-    hϕ.1.continuousWithinAt.preimage_mem_nhdsWithin <| Filter.inter_mem
-      ((trivializationAt F₁ E₁ (b x)).open_baseSet.mem_nhds h₁)
-      ((trivializationAt F₂ E₂ (b x)).open_baseSet.mem_nhds h₂)
   have hcomp := (hinv.contDiffAt_map_inverse (n := n)).contMDiffAt.comp_contMDiffWithinAt x hϕ.2
-  refine hcomp.congr_of_eventuallyEq ?_ (ContinuousLinearMap.inCoordinates_inverse (ϕ x) h₁ h₂)
-  filter_upwards [hev] with m hm
-  exact ContinuousLinearMap.inCoordinates_inverse (ϕ m) hm.1 hm.2
+  exact hcomp.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun m ↦ ContinuousLinearMap.inCoordinates_inverse (ϕ m))
+    (ContinuousLinearMap.inCoordinates_inverse (ϕ x))
 
 /-- Consider linear maps `ϕ m : E₁ (b m) → E₂ (b m)` depending `C^n` on `m`, over a base map
 `b : M → B`, with `ϕ x` invertible. Then the fibrewise inverses `(ϕ m).inverse` depend `C^n` on

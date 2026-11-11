@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
+public import Mathlib.Algebra.GroupWithZero.Action.End
 import Mathlib.Algebra.Group.Subgroup.Actions
 
 /-!
@@ -32,6 +33,7 @@ by conjugation on every transitive normal subgroup.
 
 * `MonoidHom.map_conjNormal_val`: a homomorphism from a normal subgroup to a commutative monoid is
   unchanged by conjugation by an element of that subgroup.
+* `Subgroup.conjugationAction`: the explicit conjugation action on a normal subgroup.
 * `Subgroup.inv_mul_mul_mem_conjAct_smul_iff`: conjugation preserves subgroup membership.
 * `Subgroup.mem_conjAct_smul_of_mem_center`: a central element of a subgroup lies in each of its
   conjugates.
@@ -67,6 +69,34 @@ end MonoidHom
 namespace Subgroup
 
 open scoped Pointwise
+
+section ConjugationAction
+
+open scoped IsMulCommutative
+
+variable {G : Type*} [Group G] (N : Subgroup G) [N.Normal]
+
+/-- Conjugation by the ambient group on a normal subgroup. -/
+@[instance_reducible]
+def conjugationAction : MulDistribMulAction G N :=
+  MulDistribMulAction.compHom N (MulAut.conjNormal (H := N))
+
+attribute [local instance] conjugationAction
+
+@[simp]
+theorem coe_conjugationAction_smul (g : G) (n : N) :
+    ((g • n : N) : G) = g * n * g⁻¹ := (rfl)
+
+variable {N} [IsMulCommutative N]
+
+/-- Conjugation by an element of an abelian normal subgroup is trivial on that subgroup. -/
+@[simp]
+theorem conjugationAction_coe_smul (n m : N) : (n : G) • m = m := by
+  apply Subtype.ext
+  rw [coe_conjugationAction_smul, ← coe_mul, ← coe_inv, ← coe_mul]
+  simp
+
+end ConjugationAction
 
 /-- Conjugating an element and a subgroup by the same inverse preserves membership. -/
 @[simp]

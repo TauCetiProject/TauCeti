@@ -243,8 +243,8 @@ theorem eq_freeCumulantSeries_of_subst_eq (hφ : φ 1 = 1) {C : R⟦X⟧}
     (h : C.subst (X * momentSeries φ a) = momentSeries φ a) : C = freeCumulantSeries φ a := by
   have h0 : constantCoeff (X * momentSeries φ a) = 0 := by simp
   have hu := isUnit_coeff_one_X_mul_momentSeries a hφ
-  rw [eq_subst_substInvOfIsUnit_of_subst_eq h0 hu h,
-    ← eq_subst_substInvOfIsUnit_of_subst_eq h0 hu
+  rw [(subst_eq_iff_eq_subst_substInvOfIsUnit h0 hu).mp h,
+    ← (subst_eq_iff_eq_subst_substInvOfIsUnit h0 hu).mp
       (freeCumulantSeries_subst_X_mul_momentSeries a hφ)]
 
 /-- For a normalised `φ`, the free cumulant series is the moment series composed with the
@@ -252,7 +252,7 @@ compositional inverse of `z M(z)`: `C = M ∘ (z M)⁻¹`. -/
 theorem freeCumulantSeries_eq_subst_substInvOfIsUnit (hφ : φ 1 = 1) :
     freeCumulantSeries φ a = (momentSeries φ a).subst
       ((X * momentSeries φ a).substInvOfIsUnit (isUnit_coeff_one_X_mul_momentSeries a hφ)) :=
-  eq_subst_substInvOfIsUnit_of_subst_eq (by simp) _
+  (subst_eq_iff_eq_subst_substInvOfIsUnit (by simp) _).mp
     (freeCumulantSeries_subst_X_mul_momentSeries a hφ)
 
 /-- For normalised functionals, two elements have the same moment series exactly when they have the

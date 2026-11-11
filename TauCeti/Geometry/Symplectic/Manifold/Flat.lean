@@ -29,7 +29,9 @@ smooth section as well, by `ContMDiff.clm_bundle_inverse`.
 Inverting the flat map turns covector fields into vector fields: a Hamiltonian vector field is
 `(σ♭)⁻¹ df`, and the Liouville field of a primitive `α` is `(σ♭)⁻¹ α`. For a nondegenerate form,
 in any dimension, a vector field is determined by its contraction with the form
-(`TauCeti.SmoothTwoForm.IsNondegenerate.interior_injective`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.interior_injective`), and a linear map between two tangent
+spaces of `M` that preserves the form is surjective in finite dimensions
+(`TauCeti.SmoothTwoForm.IsNondegenerate.surjective_of_eval₂_map`).
 
 On smooth sections, contraction `X ↦ ι_X σ` is a linear map from smooth vector fields to smooth
 one-forms (`TauCeti.SmoothTwoForm.interiorₗ`). For a nondegenerate form on a finite-dimensional
@@ -50,8 +52,12 @@ skew-adjoint everywhere without changing that value.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.interior_injective`: for a nondegenerate form,
   `X ↦ ι_X σ` is injective.
 * `TauCeti.SmoothTwoForm.contMDiff_flat`: the flat maps form a smooth section.
+* `TauCeti.SmoothTwoForm.contMDiffAt_sectionAlong_flatL`: the flat maps of a smooth family of
+  two-forms along a map depend smoothly on the parameter.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_isInvertible_flat`: nondegeneracy is invertibility of
   the flat maps, in finite dimensions.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.surjective_of_eval₂_map`: a linear map between tangent
+  spaces preserving a nondegenerate form is surjective, in finite dimensions.
 * `TauCeti.SmoothTwoForm.interiorₗ`: contraction of smooth vector fields, as a linear map to smooth
   one-forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv`: for a nondegenerate form in finite
@@ -114,30 +120,53 @@ theorem IsNondegenerate.interior_injective (h : σ.IsNondegenerate) :
   rw [← flat_apply, map_sub, sub_apply, sub_eq_zero]
   simpa [interior_apply_eq_ofSubsingleton_flat] using congr($hXY x ![w])
 
+/-- **Flat maps of a smooth family of two-forms.** Let `σ m` be alternating two-forms on the
+tangent spaces `T_(b m) M` along a map `b : N → M`, depending `C^n` on `m`. Then their flat maps
+`v ↦ σ m (v, ·)` depend `C^n` on `m`, as a section of `Hom(TM, Hom(TM, ℝ))` along `b`. -/
+theorem contMDiffAt_sectionAlong_flatL {EN HN N : Type*} [NormedAddCommGroup EN]
+    [NormedSpace ℝ EN] [TopologicalSpace HN] {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N]
+    [ChartedSpace HN N] {n : WithTop ℕ∞} {b : N → M}
+    {σ : (m : N) → TangentSpace I (b m) [⋀^Fin 2]→L[ℝ] Trivial M ℝ (b m)} {m₀ : N}
+    (hσ : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] ℝ)) n
+      (fun m ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] Trivial M ℝ x) (b m) (σ m)) m₀) :
+    ContMDiffAt J (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
+      (fun m ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (b m)
+        (ContinuousAlternatingMap.flatL ℝ E ℝ (σ m))) m₀ := by
+  rw [contMDiffAt_hom_bundle]
+  have hσ' := (contMDiffAt_continuousAlternatingMap_bundle _).1 hσ
+  refine ⟨hσ'.1, ?_⟩
+  -- In coordinates, the flat map is `flatL` applied to the coordinate expression of the form.
+  refine ((ContinuousAlternatingMap.flatL ℝ E ℝ).contDiff.comp_contMDiffAt
+    hσ'.2).congr_of_eventuallyEq ?_
+  filter_upwards [hσ'.1.continuousAt.preimage_mem_nhds
+    ((trivializationAt E (TangentSpace I) (b m₀)).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt E (TangentSpace I) (b m₀)))] with m
+    (hm : b m ∈ (trivializationAt E (TangentSpace I) (b m₀)).baseSet)
+  ext v w
+  -- `flatL ℝ E ℝ (σ m)` is typed over the model space `E`, while the bundle lemmas apply maps of
+  -- tangent fibres `TangentSpace I (b m)`. These are definitionally `E`, so the map is passed
+  -- explicitly to `inCoordinates_apply_eq₂`, and its evaluation `flatL_apply_apply` on fibre
+  -- vectors is applied by unification.
+  rw [inCoordinates_apply_eq₂ (E₃ := Trivial M ℝ)
+    (ϕ := ContinuousAlternatingMap.flatL ℝ E ℝ (σ m)) hm hm (Set.mem_univ _),
+    Function.comp_apply, ContinuousAlternatingMap.flatL_apply_apply]
+  simp only [Trivial.fiberBundle_trivializationAt',
+    Trivial.linearMapAt_trivialization, Trivial.continuousLinearMapAt_trivialization,
+    ContinuousAlternatingMap.inCoordinates, ContinuousLinearMap.id_compContinuousAlternatingMap,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, LinearMap.id_coe, id_eq]
+  refine (ContinuousAlternatingMap.flatL_apply_apply (E := E) (F := ℝ) (σ m) _ _).trans ?_
+  congr 1
+  ext i
+  fin_cases i <;> exact (Trivialization.symmL_apply _ hm _).symm
+
 /-- **The flat maps of a two-form form a smooth section** of the bundle `Hom(TM, Hom(TM, ℝ))`. -/
 theorem contMDiff_flat (σ : SmoothTwoForm I M) :
     ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x (σ.flat x)) := by
-  intro x₀
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨contMDiffAt_id, ?_⟩
-  have hσ := (contMDiffAt_continuousAlternatingMap_bundle _).1 (σ.contMDiff x₀)
-  -- In coordinates, the flat map is `flatL` applied to the coordinate expression of the form.
-  refine ((ContinuousAlternatingMap.flatL ℝ E ℝ).contDiff.comp_contMDiffAt
-    hσ.2).congr_of_eventuallyEq ?_
-  filter_upwards [(trivializationAt E (TangentSpace I) x₀).open_baseSet.mem_nhds
-    (mem_baseSet_trivializationAt E (TangentSpace I) x₀)] with y hy
-  ext v w
-  rw [inCoordinates_apply_eq₂ (E₃ := Trivial M ℝ) hy hy (Set.mem_univ _), Function.comp_apply,
-    ContinuousAlternatingMap.flatL_apply_apply]
-  simp only [flat_apply, SmoothBundleForm.eval₂_apply, Trivial.fiberBundle_trivializationAt',
-    Trivial.linearMapAt_trivialization, Trivial.continuousLinearMapAt_trivialization,
-    ContinuousAlternatingMap.inCoordinates, ContinuousLinearMap.id_compContinuousAlternatingMap,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply, LinearMap.id_coe, id_eq]
-  congr 1
-  ext i
-  fin_cases i <;> exact (Trivialization.symmL_apply _ hy _).symm
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x (σ.flat x)) :=
+  fun x₀ ↦ contMDiffAt_sectionAlong_flatL (b := id) (σ.contMDiff x₀)
 
 /-- The flat map is the continuous form of the algebraic bilinear form of `σ` at a point. -/
 theorem toBilinForm_flat (σ : SmoothTwoForm I M) (x : M) :
@@ -159,6 +188,19 @@ theorem isNondegenerate_iff_isInvertible_flat [FiniteDimensional ℝ E] :
 theorem IsNondegenerate.isInvertible_flat [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
     (x : M) : (σ.flat x).IsInvertible :=
   isNondegenerate_iff_isInvertible_flat.1 h x
+
+/-- **Linear maps preserving a nondegenerate form are surjective.** A linear map `D` from the
+tangent space at `x` to the tangent space at `y` with `σ_y(D u, D v) = σ_x(u, v)` is injective
+because `σ` is nondegenerate, hence surjective in finite dimension. -/
+theorem IsNondegenerate.surjective_of_eval₂_map [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
+    {x y : M} {D : TangentSpace I x →L[ℝ] TangentSpace I y}
+    (hD : ∀ u v, SmoothBundleForm.eval₂ σ y (D u) (D v) = SmoothBundleForm.eval₂ σ x u v) :
+    Function.Surjective D := by
+  have hinj : Function.Injective D :=
+    (injective_iff_map_eq_zero D).2 fun u hu ↦
+      isNondegenerate_iff_separatingLeft.1 h x u fun w ↦ by
+        rw [← hD, hu, ← flat_apply, map_zero, zero_apply]
+  exact (LinearMap.injective_iff_surjective (f := (D.toLinearMap : E →ₗ[ℝ] E))).1 hinj
 
 /-! ### Contraction of smooth vector fields -/
 

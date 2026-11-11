@@ -39,9 +39,9 @@ open scoped ComplexConjugate
 The source line has base point `p` and direction `a`, while the target line has base point `q`
 and direction `b`. In affine coordinates, this is exactly the real-axis extension:
 `q + b * schwarzReflection (w ↦ (f (p + a * w) - q) / b) ((z - p) / a)`.
-The definition is total. Agreement with the original branch and the reflection symmetry assume
-`a ≠ 0` and `b ≠ 0`; holomorphy itself only needs `a ≠ 0`, since `b = 0` makes the function
-constant. -/
+The definition is total. Agreement with the original branch needs `a ≠ 0` and `b ≠ 0`, while
+holomorphy and the reflection symmetry only need `a ≠ 0`: for `b = 0` the function is the constant
+`q`, and the symmetry reads `q = q`. -/
 noncomputable def lineSchwarzReflection (p a q b : ℂ) (f : ℂ → ℂ) (z : ℂ) : ℂ :=
   q + b * schwarzReflection (fun w => (f (p + a * w) - q) / b) ((z - p) / a)
 
@@ -179,15 +179,19 @@ theorem differentiableOn_lineSchwarzReflection_of_symmetric {Ω : Set ℂ} {p a 
     fun z _ => lineSchwarzReflection_def p a q b f z
 
 /-- Affine-line Schwarz reflection intertwines reflection in the source line with reflection in
-the target line. The boundary hypothesis says precisely that the original function takes the
-source line into the target line. -/
+the target line. For `b ≠ 0` the boundary hypothesis says precisely that the original function
+takes the source line into the target line, and the target map is a genuine reflection. For
+`b = 0` the extension is the constant `q`, the hypothesis `hline` holds automatically, and the
+statement degenerates to `q = q`. -/
 theorem lineSchwarzReflection_sourceReflection {Ω : Set ℂ} {p a q b : ℂ} {f : ℂ → ℂ}
-    (ha : a ≠ 0) (hb : b ≠ 0) (hline : ∀ z ∈ Ω, ((z - p) / a).im = 0 → ((f z - q) / b).im = 0)
+    (ha : a ≠ 0) (hline : ∀ z ∈ Ω, ((z - p) / a).im = 0 → ((f z - q) / b).im = 0)
     {z : ℂ} (hz : z ∈ Ω) :
     lineSchwarzReflection p a q b f
         (p + a * (starRingEnd ℂ) ((z - p) / a)) =
       q + b * (starRingEnd ℂ)
         ((lineSchwarzReflection p a q b f z - q) / b) := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp only [lineSchwarzReflection_def, zero_mul, add_zero]
   let g := fun w : ℂ => (f (p + a * w) - q) / b
   have hgline : ((z - p) / a).im = 0 → (g ((z - p) / a)).im = 0 := by
     intro him
@@ -220,6 +224,6 @@ theorem exists_differentiableOn_eqOn_lineReflection_of_symmetric
   · intro z hz
     exact lineSchwarzReflection_of_coord_im_nonneg f ha hb hz.2
   · intro z hz
-    exact lineSchwarzReflection_sourceReflection ha hb hline hz
+    exact lineSchwarzReflection_sourceReflection ha hline hz
 
 end TauCeti

@@ -9,15 +9,15 @@ public import TauCeti.Algebra.RingQuot
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Basic
 public import TauCeti.LinearAlgebra.TensorAlgebra.Grading
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
-public import TauCeti.RingTheory.TwoSidedIdeal.Homogeneous
 
 /-!
 # The input-degree grading of the signed symmetric algebra
 
 The images of the input-degree pieces of the tensor algebra form an internal integer grading
 of `TauCeti.SignedSym G`. Equivalently, its degree-`p` piece is spanned by words of homogeneous
-generators whose degrees sum to `p`. Multiplication adds degrees, and a degree-preserving
-linear map satisfying the Koszul relations extends to a graded algebra map.
+generators whose degrees sum to `p`. Homogeneous induction retains this total input degree.
+Multiplication adds degrees, and a degree-preserving linear map satisfying the Koszul relations
+extends to a graded algebra map.
 
 The construction of the free supercommutative algebra follows J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1). Grading descent uses
@@ -42,9 +42,8 @@ variable (G : InternalGrading R V)
 /-- The Koszul relation ideal is homogeneous for tensor input degree. -/
 theorem isHomogeneous_ker_quotient :
     (RingHom.ker (quotient G)).IsHomogeneous (tensorAlgebraPiece G) := by
-  rw [quotient, AlgHom.ker_coe, RingQuot.mkAlgHom_coe, RingQuot.ker_mkRingHom_eq_span]
-  refine TwoSidedIdeal.homogeneous_span _ ?_
-  rintro _ ⟨a, b, hab, rfl⟩
+  apply RingQuot.isHomogeneous_ker_mkAlgHom
+  intro a b hab
   cases hab with
   | swap p q x y hx hy =>
     refine ⟨p + q, Submodule.sub_mem _
@@ -103,23 +102,41 @@ theorem signedSymPiece_eq_span (p : ℤ) :
     exact ⟨TensorAlgebra.tprod R V n x, ⟨n, d, x, hx, hd, rfl⟩,
       SignedSym.quotient_tprod G x⟩
 
+namespace SignedSym
+
+/-- Induction on homogeneous expressions in the signed symmetric algebra, keeping track of
+input degree. The zero and addition steps take place in each fixed degree. -/
+@[elab_as_elim]
+theorem homogeneous_induction {P : ℤ → SignedSym G → Prop}
+    (one : P 0 1)
+    (generator : ∀ (p : ℤ) (x : V), x ∈ G.piece p → P p (SignedSym.generator G x))
+    (mul : ∀ (p q : ℤ) (a b : SignedSym G), P p a → P q b → P (p + q) (a * b))
+    (zero : ∀ p, P p 0)
+    (add : ∀ (p : ℤ) (a b : SignedSym G), P p a → P p b → P p (a + b))
+    (smul : ∀ (p : ℤ) (r : R) (a : SignedSym G), P p a → P p (r • a))
+    {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) : P p a := by
+  rw [signedSymPiece_eq_span] at ha
+  induction ha using Submodule.span_induction with
+  | mem a ha =>
+    obtain ⟨n, d, x, hx, rfl, rfl⟩ := ha
+    induction n with
+    | zero => simpa using one
+    | succ n ih =>
+      simpa only [Fin.sum_univ_succ, List.ofFn_succ, List.prod_cons] using
+        mul (d 0) (∑ i : Fin n, d i.succ) _ _ (generator _ _ (hx 0))
+          (ih (fun i => d i.succ) (fun i => x i.succ) (fun i => hx i.succ))
+  | zero => exact zero p
+  | add a b _ _ ha hb => exact add p a b ha hb
+  | smul r a _ ha => exact smul p r a ha
+
+end SignedSym
+
 /-- The input-degree pieces of the signed symmetric algebra form an internal direct sum. -/
 theorem isInternal_signedSymPiece : DirectSum.IsInternal (signedSymPiece G) := by
-  let I := RingHom.ker (SignedSym.quotient G)
-  let e := Ideal.quotientKerAlgEquivOfSurjective (SignedSym.quotient_surjective G)
-  let H : InternalGrading R (TensorAlgebra R V ⧸ I) :=
-    ⟨GradedAlgebra.quotientPiece (tensorAlgebraPiece G) I,
-      GradedAlgebra.isInternal_quotientPiece _ _ (SignedSym.isHomogeneous_ker_quotient G)⟩
-  have hp : (H.map e.toLinearEquiv).piece = signedSymPiece G := by
-    funext p
-    rw [InternalGrading.map_piece]
-    dsimp only [H]
-    rw [GradedAlgebra.quotientPiece_def, ← Submodule.map_comp, signedSymPiece]
-    apply congrArg ((tensorAlgebraPiece G p).map)
-    exact LinearMap.ext fun x =>
-      Ideal.quotientKerAlgEquivOfSurjective_mk (SignedSym.quotient_surjective G) x
-  rw [← hp]
-  exact (H.map e.toLinearEquiv).isInternal
+  rw [funext (signedSymPiece_def G)]
+  -- `convert!` identifies the additive instances from `RingQuot` and its semiring.
+  convert! GradedAlgebra.isInternal_map (tensorAlgebraPiece G) (SignedSym.quotient G)
+    (SignedSym.quotient_surjective G) (SignedSym.isHomogeneous_ker_quotient G) using 1
 
 /-- Multiplication adds input degrees in the signed symmetric algebra. -/
 instance : SetLike.GradedMonoid (signedSymPiece G) where
@@ -239,6 +256,23 @@ theorem isHomogeneous_map (f : V →ₗ[R] W)
   rw [lift_unique G ((generator H).comp f) hr (map G H f hf) (map_generator G H f hf)]
   apply isHomogeneous_lift
   simpa only [add_zero] using (isHomogeneous_signedSymGenerator H).comp hf
+
+/-- A degree-preserving linear map induces a graded algebra map of signed symmetric algebras.
+Its underlying algebra map is `SignedSym.map`. -/
+noncomputable def gradedMap (f : V →ₗ[R] W) (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
+    signedSymPiece G →ₐᵍ[R] signedSymPiece H where
+  toAlgHom := map G H f hf
+  map_mem hx := by
+    simpa only [add_zero, AlgHom.toLinearMap_apply, AlgHom.toRingHom_eq_coe,
+      RingHom.coe_coe] using (isHomogeneous_map G H f hf).map_mem hx
+
+@[simp]
+theorem gradedMap_toAlgHom (f : V →ₗ[R] W) (hf) :
+    (gradedMap G H f hf).toAlgHom = map G H f hf := (rfl)
+
+@[simp]
+theorem gradedMap_apply (f : V →ₗ[R] W) (hf) (a : SignedSym G) :
+    gradedMap G H f hf a = map G H f hf a := (rfl)
 
 end Map
 

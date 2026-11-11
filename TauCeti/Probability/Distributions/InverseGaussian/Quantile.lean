@@ -55,7 +55,7 @@ theorem cdf_gaussianReal_add_exp_mul_cdf_quantile_inverseGaussianMeasure
   let _ := isProbabilityMeasure_inverseGaussianMeasure hμ hlam
   rw [← cdf_inverseGaussianMeasure_of_pos hμ hlam
     (quantile_inverseGaussianMeasure_pos hμ hlam hu)]
-  exact Measure.cdf_quantile _ (Measure.continuous_cdf_of_noAtoms _) hu.1 hu.2
+  exact Measure.cdf_quantile_of_noAtoms _ hu.1 hu.2
 
 /-- The inverse Gaussian quantile is the unique positive root of its explicit cdf formula. -/
 theorem quantile_inverseGaussianMeasure_eq_iff (hμ : 0 < μ) (hlam : 0 < lam)
@@ -67,8 +67,7 @@ theorem quantile_inverseGaussianMeasure_eq_iff (hμ : 0 < μ) (hlam : 0 < lam)
             cdf (gaussianReal 0 1) (-(√(lam / x) * (x / μ + 1))) = u := by
   let _ := isProbabilityMeasure_inverseGaussianMeasure hμ hlam
   have hq := quantile_inverseGaussianMeasure_pos hμ hlam hu
-  have hroot := Measure.cdf_quantile (inverseGaussianMeasure μ lam)
-    (Measure.continuous_cdf_of_noAtoms _) hu.1 hu.2
+  have hroot := Measure.cdf_quantile_of_noAtoms (inverseGaussianMeasure μ lam) hu.1 hu.2
   constructor
   · rintro rfl
     exact ⟨hq, cdf_gaussianReal_add_exp_mul_cdf_quantile_inverseGaussianMeasure hμ hlam hu⟩
@@ -80,7 +79,7 @@ theorem quantile_inverseGaussianMeasure_eq_iff (hμ : 0 < μ) (hlam : 0 < lam)
 theorem strictMonoOn_quantile_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam) :
     StrictMonoOn (inverseGaussianMeasure μ lam).quantile (Ioo 0 1) := by
   let _ := isProbabilityMeasure_inverseGaussianMeasure hμ hlam
-  exact Measure.strictMonoOn_quantile _ (Measure.continuous_cdf_of_noAtoms _)
+  exact Measure.strictMonoOn_quantile_of_noAtoms _
 
 /-- The inverse Gaussian quantile is continuous at every interior probability level. -/
 theorem continuousOn_quantile_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam) :

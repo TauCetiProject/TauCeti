@@ -116,12 +116,15 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanli
     have h1 := hpos t ht
     rw [hf t ht, integral_reflected_nevanlinnaKernel ν ht] at h1
     nlinarith [hKnonneg t ht, sq_nonneg t]
-  have hc : 0 ≤ c := ge_of_tendsto (((by fun_prop : Continuous fun t : ℝ =>
-      c + (b + ν.real univ) * t).tendsto' 0 c (by simp)).mono_left nhdsWithin_le_nhds)
+  have htend : Tendsto (fun t : ℝ => c + (b + ν.real univ) * t) (𝓝[>] 0) (𝓝 c) :=
+    ((by fun_prop : Continuous fun t : ℝ => c + (b + ν.real univ) * t).tendsto' 0 c
+      (by simp)).mono_left nhdsWithin_le_nhds
+  have hc : 0 ≤ c := ge_of_tendsto htend
     (eventually_nhdsWithin_of_forall (s := Ioi 0) fun t ht => (hKnonneg t ht).trans (hbound t ht))
   -- The pivot: `∫ y⁻¹ ∂ν` is finite and bounded by `c`.
   have hmeas : AEMeasurable (fun y : ℝ≥0 => (y : ℝ≥0∞)⁻¹) ν := by fun_prop
-  have hlint := lintegral_inv_le_of_forall_integral_inv_add_le (integrable_stieltjesWeight ν) hbound
+  have hlint := lintegral_inv_le_of_eventually_integral_inv_add_le (integrable_stieltjesWeight ν)
+    htend (eventually_nhdsWithin_of_forall hbound)
   have hlinttop := (hlint.trans_lt ENNReal.ofReal_lt_top).ne
   have hfin := ae_lt_top' hmeas hlinttop
   have hane : ∀ᵐ y ∂ν, y ≠ 0 := hfin.mono fun y hy => by

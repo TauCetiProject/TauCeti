@@ -33,6 +33,7 @@ to `(Δⁿ f)(a)`. This is shared by the Taylor theories of entire series
 ## Main results
 
 * `constantCoeff_taylor`: the constant term of the translate is `f(a)`.
+* `order_taylor_ne_zero_iff`: the translate at `a` has positive order exactly when `f(a) = 0`.
 * `taylor_coe`: on polynomials, the translate is `Polynomial.taylor`.
 * `taylor_zero`: translation by `0` is the identity.
 * `taylor_one`: the translate of `1` is `1`.
@@ -69,6 +70,11 @@ theorem coeff_taylor (a : R) (f : R⟦X⟧) (n : ℕ) :
 @[simp]
 theorem constantCoeff_taylor (a : R) (f : R⟦X⟧) : constantCoeff (taylor a f) = f.evalAt a := by
   simp [← coeff_zero_eq_constantCoeff_apply]
+
+/-- The Taylor translate at `a` has positive order exactly when `a` is a zero: the order of the
+translate is the multiplicity of the zero. -/
+theorem order_taylor_ne_zero_iff {a : R} {f : R⟦X⟧} : (taylor a f).order ≠ 0 ↔ f.evalAt a = 0 := by
+  rw [order_ne_zero_iff_constCoeff_eq_zero, constantCoeff_taylor]
 
 /-- On polynomials, Taylor translation is `Polynomial.taylor`. -/
 @[simp]

@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.RelationalConfiguration
 public import TauCeti.ModelTheory.BackAndForth.Graph
 public import TauCeti.ModelTheory.Counting.Classes
+public import TauCeti.ModelTheory.Scott.EquivalenceRelation
 
 /-!
 # A perfect set of countable equivalence relations
@@ -38,6 +39,9 @@ tier `ℕ`.
   equivalence relations.
 * `TauCeti.isoSetoid_toRelationalConfiguration_fromRel_iff`: the configurations of the graphs of
   two equivalence relations are isomorphic exactly when the relations are.
+* `TauCeti.isoSetoid_fromRel_iff_enatCard_eq`: on a countable carrier, the graphs of two
+  equivalence relations with infinite classes are isomorphic exactly when the relations have
+  equally many classes.
 * `TauCeti.isoSetoid_equivalenceRelationCantorFamily_iff`: the explicit family is injective up to
   isomorphism.
 * `TauCeti.hasCantorAntichainOn_modelsOf_equivalenceRelationSentence` and
@@ -143,6 +147,17 @@ theorem isoSetoid_toRelationalConfiguration_fromRel_iff {V : Type*} {r s : Setoi
         (fromRel s).toRelationalConfiguration ↔ Nonempty (⇑r ≃r ⇑s) := by
   rw [isoSetoid_apply, ← Setoid.nonempty_equiv_fromRel_iff, toStructure_toRelationalConfiguration,
     toStructure_toRelationalConfiguration]
+
+/-- On a countable carrier, the graphs of two equivalence relations with infinite classes are
+isomorphic exactly when the relations have equally many classes, counted in `ℕ∞`. -/
+theorem isoSetoid_fromRel_iff_enatCard_eq {V : Type*} [Countable V] {r s : Setoid V}
+    (hr : ∀ x : V, {x' | r x x'}.Infinite) (hs : ∀ x : V, {x' | s x x'}.Infinite) :
+    isoSetoid Language.graph V (fromRel r).toRelationalConfiguration
+        (fromRel s).toRelationalConfiguration ↔
+      ENat.card (Quotient r) = ENat.card (Quotient s) := by
+  rw [isoSetoid_toRelationalConfiguration_fromRel_iff]
+  exact ⟨fun ⟨e⟩ => ENat.card_congr (Quotient.congr e.toEquiv fun _ _ => e.map_rel_iff.symm),
+    Setoid.nonempty_relIso_of_infinite hr hs⟩
 
 /-! ### An explicit perfect set of models on `ℕ` -/
 

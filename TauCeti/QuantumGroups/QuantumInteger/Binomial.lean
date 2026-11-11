@@ -7,6 +7,7 @@ module
 
 public import TauCeti.QuantumGroups.QuantumInteger.Basic
 public import Mathlib.Algebra.Algebra.Defs
+public import Mathlib.Algebra.Polynomial.Coeff
 
 import TauCeti.Algebra.BigOperators.Finset.Range
 import Mathlib.Tactic
@@ -50,6 +51,8 @@ comparisons of quantum divided-power relations at opposite parameters.
 * `TauCeti.quantumBinomial_one`: the classical specialization `[n choose k]_1 = n.choose k`.
 * `TauCeti.add_pow_of_mul_eq_smul_mul`: the `q`-binomial theorem for `y x = q² x y` with
   `q ≠ 0`.
+* `TauCeti.coeff_prod_range_one_add_C_mul_X`: Cauchy's binomial theorem in coefficient form, the
+  coefficient of `X ^ k` in `∏_{j < n} (1 + q^(2j) X)` is `q^(k(n-1)) [n choose k]_q`.
 
 ## References
 
@@ -59,6 +62,8 @@ comparisons of quantum divided-power relations at opposite parameters.
   the symmetric normalization.
 * G. Lusztig, *Introduction to Quantum Groups*, Sections 1.3 and 33.2, for the symmetric
   normalization and sign comparisons.
+* V. Kac and P. Cheung, *Quantum Calculus*, Universitext, Chapter 5, for Gauss's (Cauchy's)
+  binomial formula.
 -/
 
 public section
@@ -123,6 +128,19 @@ section
 
 variable [Semifield K]
 
+/-- The defining Pascal rule with integer exponents. This form holds for all indices,
+including `k > n`, because the corresponding quantum binomial coefficients vanish. -/
+theorem quantumBinomial_succ_succ_zpow (q : K) (n k : ℕ) :
+    quantumBinomial q (n + 1) (k + 1) =
+      q ^ ((n : ℤ) - k) * quantumBinomial q n k +
+        q ^ (-((k : ℤ) + 1)) * quantumBinomial q n (k + 1) := by
+  rw [quantumBinomial_succ_succ]
+  congr 1
+  · by_cases hk : k ≤ n
+    · rw [← Nat.cast_sub hk, zpow_natCast]
+    · simp [quantumBinomial_eq_zero_of_lt q (by omega : n < k)]
+  · rw [zpow_neg, ← Nat.cast_add_one, zpow_natCast, inv_pow]
+
 /-- Over a semifield, the quantum binomial coefficients at `q = 1` are the ordinary
 binomial coefficients. -/
 @[simp] theorem quantumBinomial_one (n k : ℕ) :
@@ -133,6 +151,35 @@ binomial coefficients. -/
     cases k with
     | zero => simp
     | succ k => simp [quantumBinomial_succ_succ, ih, Nat.choose_succ_succ]
+
+open Polynomial in
+/-- **Cauchy's binomial theorem**, in coefficient form: for `q ≠ 0`, the coefficient of `X ^ k`
+in `∏_{j < n} (1 + q^(2j) X)` is `q^(k(n-1)) [n choose k]_q`. -/
+theorem coeff_prod_range_one_add_C_mul_X {q : K} (hq : q ≠ 0) (n k : ℕ) :
+    (∏ j ∈ range n, (1 + C ((q ^ 2) ^ j) * X)).coeff k =
+      q ^ ((k : ℤ) * (n - 1)) * quantumBinomial q n k := by
+  induction n generalizing k with
+  | zero => cases k <;> simp [coeff_one]
+  | succ n ih =>
+    rw [prod_range_succ, mul_one_add, coeff_add, mul_left_comm, coeff_C_mul]
+    cases k with
+    | zero => rw [coeff_mul_X_zero, ih]; simp
+    | succ k =>
+      have h₁ : q ^ (((k + 1 : ℕ) : ℤ) * ((n + 1 : ℕ) - 1)) * q ^ ((n : ℤ) - k) =
+          (q ^ 2) ^ n * q ^ ((k : ℤ) * (n - 1)) := by
+        rw [← pow_mul, ← zpow_natCast, ← zpow_add₀ hq, ← zpow_add₀ hq]
+        congr 1
+        push_cast
+        ring
+      have h₂ : q ^ (((k + 1 : ℕ) : ℤ) * ((n + 1 : ℕ) - 1)) * q ^ (-((k : ℤ) + 1)) =
+          q ^ (((k + 1 : ℕ) : ℤ) * (n - 1)) := by
+        rw [← zpow_add₀ hq]
+        congr 1
+        push_cast
+        ring
+      rw [coeff_mul_X, ih, ih, quantumBinomial_succ_succ_zpow]
+      simp only [mul_add, ← mul_assoc, h₁, h₂]
+      exact add_comm _ _
 
 end
 
@@ -176,12 +223,7 @@ theorem quantumBinomial_succ_right_eq (q : K) (n k : ℕ) :
       have h₂ := quantumInteger_add q ((n : ℤ) - (k + 1)) ((k : ℤ) + 1 + 1)
       rw [show (n : ℤ) - k + (k + 1) = n + 1 by ring] at h₁
       rw [show (n : ℤ) - (k + 1) + (k + 1 + 1) = n + 1 by ring] at h₂
-      have p₁ : q ^ (n - k) = q ^ ((n : ℤ) - k) := by rw [← Nat.cast_sub hk.le, zpow_natCast]
-      have p₂ : q ^ (n - (k + 1)) = q ^ ((n : ℤ) - (k + 1)) := by
-        rw [← zpow_natCast, Nat.cast_sub hk, Nat.cast_add_one]
-      have p₃ : ∀ m : ℕ, q⁻¹ ^ m = q ^ (-(m : ℤ)) := fun m => by
-        rw [zpow_neg, zpow_natCast, inv_pow]
-      rw [quantumBinomial_succ_succ, quantumBinomial_succ_succ, p₁, p₂, p₃, p₃]
+      rw [quantumBinomial_succ_succ_zpow, quantumBinomial_succ_succ_zpow]
       push_cast at ih₁ ⊢
       rw [show (n : ℤ) + 1 - (k + 1) = n - k by ring]
       linear_combination q ^ ((n : ℤ) - k) * ih₀ + q ^ (-((k : ℤ) + 1 + 1)) * ih₁ -
