@@ -83,6 +83,8 @@ versus `MeromorphicOn` (on a set).
 * `HasCauchyPVAt.of_avoidance` — if `γ` avoids `z₀` on `[a, b]` and the integrand is integrable
   there, the principal value is the ordinary integral (`cauchyPVExistsAt_of_avoidance` is the
   existence form).
+* `cauchyPVAt_eq_integral_of_avoidance` — under continuity and avoidance, `cauchyPVAt` equals the
+  ordinary integral, without needing integrability.
 * `HasCauchyPVAt.translate`, `CauchyPVExistsAt.translate`, `cauchyPVAt_translate` — simultaneous
   translation of the curve, point, and integrand preserves the principal value.
 * `HasCauchyPVAt.const_mul_curve`, `CauchyPVExistsAt.const_mul_curve`,

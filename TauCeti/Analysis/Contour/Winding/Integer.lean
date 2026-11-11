@@ -21,9 +21,11 @@ Hungerbühler–Wasem path (HW Thm 3.3): combined with continuity of the winding
 it makes the winding number locally constant on the complement of the curve — the input to the
 homology form of Cauchy's theorem.
 
-The proof recovers absolute continuity from the countable-exception hypotheses and then uses
-`AbsolutelyContinuousOnInterval.exists_int_windingNumber`. In that theorem, the endpoint ratio
-of a closed curve is `1`, so its winding number is an integer.
+The proof splits on whether the index integrand is interval integrable. In the integrable case it
+recovers absolute continuity from the countable-exception hypotheses and then uses
+`AbsolutelyContinuousOnInterval.exists_int_windingNumber`: there, the endpoint ratio of a closed
+curve is `1`, so its winding number is an integer. Otherwise the winding number is the junk value
+`0` (via `cauchyPVAt_eq_integral_of_avoidance` and `intervalIntegral.integral_undef`).
 
 ## Main results
 
