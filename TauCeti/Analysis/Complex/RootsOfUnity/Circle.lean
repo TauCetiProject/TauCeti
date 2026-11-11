@@ -21,6 +21,8 @@ spaces.
 * `ZMod.toCircle_pow_eq_one`: every value of `ZMod.toCircle` is an `n`-th root of unity.
 * `ZMod.exists_toCircle_eq_of_pow_eq_one`: every `n`-th root of unity in the circle is a value
   of `ZMod.toCircle`.
+* `ZMod.toCircle_pow_mul_eq_self_iff`: for `n` coprime to `b`, multiplication by `toCircle k ^ b`
+  fixes a nonzero complex number only for `k = 0`, so `ℤ/n` acts freely on `ℂ \ {0}` this way.
 -/
 
 public section
@@ -39,5 +41,13 @@ theorem exists_toCircle_eq_of_pow_eq_one {ζ : Circle} (hζ : ζ ^ n = 1) :
   obtain ⟨j, hj⟩ := (bijective_rootsOfUnityAddChar (n := n)).2 ⟨toUnits ζ, by
     rw [mem_rootsOfUnity, ← map_pow, hζ, map_one]⟩
   exact ⟨j, by simpa using congrArg (fun u : rootsOfUnity n Circle ↦ ((u : Circleˣ) : Circle)) hj⟩
+
+/-- **The rotations by `b`-th powers of `n`-th roots of unity act freely.** For `n` coprime to `b`,
+multiplication by `toCircle k ^ b` fixes a nonzero complex number `w` only for `k = 0`. -/
+theorem toCircle_pow_mul_eq_self_iff {b : ℕ} (hnb : n.Coprime b) {w : ℂ} (hw : w ≠ 0)
+    {k : ZMod n} : ((toCircle k ^ b : Circle) : ℂ) * w = w ↔ k = 0 := by
+  rw [mul_eq_right₀ hw, Circle.coe_eq_one, ← AddChar.map_nsmul_eq_pow,
+    ← (toCircle (N := n)).map_zero_eq_one, injective_toCircle.eq_iff, nsmul_eq_mul,
+    ((isUnit_iff_coprime b n).2 hnb.symm).mul_right_eq_zero]
 
 end ZMod

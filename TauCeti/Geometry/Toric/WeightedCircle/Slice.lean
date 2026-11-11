@@ -34,7 +34,7 @@ slice charts, over `z₁ ≠ 0` and over `z₂ ≠ 0`, retaining the finite stab
   (`TauCeti.Toric.exists_weightedRotation_weightedSliceFst_eq_iff`); for the second slice the
   residual group is `ℤ / b`, acting by `u ↦ exp(-2π i a k / b) u`. For coprime weights these
   actions are free away from the centre of the disc, in particular effective
-  (`TauCeti.Toric.toCircle_neg_pow_mul_eq_self_iff`).
+  (`ZMod.toCircle_pow_mul_eq_self_iff`, applied to `-k`).
 * **Change of slices.** On the overlap `w ≠ 0`, the slice point over `w` is rotated onto the second
   slice at `exp(-i a arg(w) / b) √((2 ε - b |w|²) / a)` (`TauCeti.Toric.weightedSliceTransition`),
   and the second slice meets that orbit exactly in the `ℤ / b`-orbit of this point
@@ -270,17 +270,6 @@ theorem exists_weightedRotation_weightedSliceSnd_eq_iff [NeZero b] {u : ℂ}
   refine exists_congr fun v ↦ ?_
   rw [weightedSliceSnd_eq_swap, weightedSliceSnd_eq_swap, ← Prod.swap_inj, swap_weightedRotation,
     Prod.swap_swap, Prod.swap_swap]
-
-/-- **The residual actions are effective.** For coprime weights, `k ∈ ℤ / a` fixes a nonzero slice
-coordinate `w`, that is `exp(-2π i b k / a) w = w`, only for `k = 0`. So the residual group `ℤ / a`
-acts freely away from the centre of the slice; with the weights exchanged, the same holds for the
-residual group `ℤ / b` of the slice over `z₂ ≠ 0`. -/
-theorem toCircle_neg_pow_mul_eq_self_iff (hab : a.Coprime b) [NeZero a] {w : ℂ} (hw : w ≠ 0)
-    {k : ZMod a} : ((ZMod.toCircle (-k) ^ b : Circle) : ℂ) * w = w ↔ k = 0 := by
-  rw [mul_eq_right₀ hw, Circle.coe_eq_one, ← AddChar.map_nsmul_eq_pow,
-    ← (ZMod.toCircle (N := a)).map_zero_eq_one,
-    ZMod.injective_toCircle.eq_iff, smul_neg, neg_eq_zero, nsmul_eq_mul,
-    ((ZMod.isUnit_iff_coprime b a).2 hab.symm).mul_right_eq_zero]
 
 /-! ### The change of slices -/
 
