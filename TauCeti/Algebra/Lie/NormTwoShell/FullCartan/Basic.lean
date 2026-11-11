@@ -354,30 +354,31 @@ protected theorem lie_skew (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i))
 protected theorem lie_self (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i))
     (x : FullShellLieAlgebra D) : ⁅x, x⁆ = 0 :=
   TauCeti.FullCartan.bracketBilin_self (rootBracket_swap hB hdiag)
-    (fun a ↦ by
-      have ha : rootBracket D a a = 0 := by
-        simpa [ShellLieAlgebra.root_lie_root] using
-          congr(toFull D $(ShellLieAlgebra.lie_self hB hdiag (ShellLieAlgebra.root B a)))
-      exact ha) x
+    (fun a ↦ show rootBracket D a a = (0 : FullShellLieAlgebra D) by
+      simpa [ShellLieAlgebra.root_lie_root] using
+        congr(toFull D $(ShellLieAlgebra.lie_self hB hdiag (ShellLieAlgebra.root B a)))) x
 
 /-! ### The Jacobi identity -/
+
+private theorem cartan_bracketBilin_rootBracket (y : Y) (a b : B.normTwoShell) :
+    bracketBilin D (cartan D y) (rootBracket D a b) =
+      (D.weight a y + D.weight b y) • rootBracket D a b := by
+  rw [bracketBilin_apply_apply, cartan_lie_rootBracket, map_add, LinearMap.add_apply]
 
 /-- The Jacobi identity for three root vectors, transported from the shell algebra. -/
 private theorem jacobi_root_root_root (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
     (a b c : B.normTwoShell) :
     ⁅root D a, rootBracket D b c⁆ + ⁅root D b, rootBracket D c a⁆ +
       ⁅root D c, rootBracket D a b⁆ = 0 := by
-  have hS := hB.isHermitian.isSymm
-  simpa [toFull_lie hS] using congr(toFull D $(ShellLieAlgebra.lie_jacobi hB hdiag
-    (ShellLieAlgebra.root B a) (ShellLieAlgebra.root B b) (ShellLieAlgebra.root B c)))
+  simpa [toFull_lie hB.isHermitian.isSymm] using congr(toFull D $(ShellLieAlgebra.lie_jacobi hB
+    hdiag (ShellLieAlgebra.root B a) (ShellLieAlgebra.root B b) (ShellLieAlgebra.root B c)))
 
 /-- **The Jacobi identity**, for a positive definite `B` with even diagonal. -/
 protected theorem lie_jacobi (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
     (x y z : FullShellLieAlgebra D) :
     ⁅x, ⁅y, z⁆⁆ + ⁅y, ⁅z, x⁆⁆ + ⁅z, ⁅x, y⁆⁆ = 0 :=
   TauCeti.FullCartan.bracketBilin_jacobi (rootBracket_swap hB.isHermitian.isSymm hdiag)
-    (fun y a b ↦ (cartan_lie_rootBracket y a b).trans (by rw [map_add, LinearMap.add_apply]; rfl))
-    (jacobi_root_root_root hB hdiag) x y z
+    cartan_bracketBilin_rootBracket (jacobi_root_root_root hB hdiag) x y z
 
 /-- **The Leibniz form of the Jacobi identity**, for a positive definite `B` with even
 diagonal. -/
@@ -385,8 +386,7 @@ protected theorem leibniz_lie (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
     (x y z : FullShellLieAlgebra D) :
     ⁅x, ⁅y, z⁆⁆ = ⁅⁅x, y⁆, z⁆ + ⁅y, ⁅x, z⁆⁆ :=
   TauCeti.FullCartan.bracketBilin_leibniz (rootBracket_swap hB.isHermitian.isSymm hdiag)
-    (fun y a b ↦ (cartan_lie_rootBracket y a b).trans (by rw [map_add, LinearMap.add_apply]; rfl))
-    (jacobi_root_root_root hB hdiag) x y z
+    cartan_bracketBilin_rootBracket (jacobi_root_root_root hB hdiag) x y z
 
 variable (D) in
 /-- **The signed Lie ring of the norm-two shell over a full Cartan lattice**, for a positive

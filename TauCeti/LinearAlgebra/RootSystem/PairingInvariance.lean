@@ -11,31 +11,12 @@ public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 /-!
 # Invariance of crystallographic root relations under matching Cartan pairings
 
-When comparing a root datum `P : RootPairing ι ℤ X Y` over `ℤ` (possibly with a central torus in
-`X` and `Y`) against the Killing root system of a semisimple Lie algebra over a characteristic-zero
-field `K`, there is no `RootPairing.Hom` because the base rings and ambient ranks differ. However,
-in any finite crystallographic root pairing in characteristic zero, the polarization on
-`P.rootSpan ℤ` is injective (`RootPairing.exists_coroot_ne`), so an integer linear combination of
-roots vanishes if and only if its pairings with all coroots vanish.
-
-Consequently, a bijection `e : ι ≃ ι₂` between finite crystallographic root pairings over
-characteristic-zero domains satisfying `P₂.pairingIn ℤ (e i) (e j) = P.pairingIn ℤ i j` preserves
-and reflects integer linear relations among roots, intertwines `RootPairing.reflectionPerm`, and
-preserves pairwise linear independence, reducedness, `chainTopCoeff`, and `chainBotCoeff`.
-
-## Main results
-
-* `RootPairing.eq_zero_of_mem_rootSpan_of_forall_coroot'_eq_zero`,
-  `RootPairing.eq_zero_of_mem_corootSpan_of_forall_root'_eq_zero`,
-  `RootPairing.sum_zsmul_root_eq_zero_iff`: vanishing in the integral root or coroot span is
-  detected by pairings against coroots or roots, regardless of extra toral directions.
-* `RootPairing.sum_zsmul_root_eq_zero_iff_of_pairingIn`,
-  `RootPairing.root_add_eq_zero_iff_of_pairingIn`, `RootPairing.root_eq_add_iff_of_pairingIn`,
-  `RootPairing.root_add_add_eq_zero_iff_of_pairingIn`,
-  `RootPairing.map_reflectionPerm_of_pairingIn`: invariance of root relations and reflections.
-* `RootPairing.linearIndependent_root_iff_of_pairingIn`, `RootPairing.isReduced_iff_of_pairingIn`,
-  `RootPairing.chainTopCoeff_eq_of_pairingIn`, `RootPairing.chainBotCoeff_eq_of_pairingIn`:
-  invariance of pairwise linear independence, reducedness, and root-string lengths.
+In any finite crystallographic root pairing in characteristic zero, the polarization on
+`P.rootSpan ℤ` is injective (`RootPairing.exists_coroot_ne`), so integer linear relations among
+roots are detected by pairings against coroots (`sum_zsmul_root_eq_zero_iff`), regardless of central
+toral directions. Any bijection `e : ι ≃ ι₂` matching `pairingIn ℤ` therefore preserves and
+reflects integer root relations, intertwines `reflectionPerm`, and preserves pairwise linear
+independence, reducedness, `chainTopCoeff`, and `chainBotCoeff`.
 
 ## References
 
@@ -53,44 +34,35 @@ section General
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-- Over the ambient coefficient ring `R` itself, `P.pairingIn R` agrees with `P.pairing`. -/
-@[simp]
-theorem pairingIn_eq_pairing (P : RootPairing ι R M N) (i j : ι) :
-    P.pairingIn R i j = P.pairing i j := by
-  simpa using P.algebraMap_pairingIn R i j
+@[simp] theorem pairingIn_eq_pairing (P : RootPairing ι R M N) (i j : ι) :
+    P.pairingIn R i j = P.pairing i j := by simpa using P.algebraMap_pairingIn R i j
 
-/-- Rewrites a mixed `pairingIn`/`pairing` agreement `P₂.pairingIn R (e i) (e j) = P.pairing i j`
-into an agreement of `pairingIn R` on both sides. -/
+/-- Rewrites `P₂.pairingIn R (e i) (e j) = P.pairing i j` into agreement of `pairingIn R`. -/
 theorem pairingIn_eq_of_pairingIn_eq_pairing {ι₂ S M₂ N₂ : Type*} [CommRing S] [Algebra R S]
     [AddCommGroup M₂] [Module S M₂] [AddCommGroup N₂] [Module S N₂]
     {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ S M₂ N₂} [P₂.IsValuedIn R]
     {e : ι → ι₂} (he : ∀ i j, P₂.pairingIn R (e i) (e j) = P.pairing i j) (i j : ι) :
-    P₂.pairingIn R (e i) (e j) = P.pairingIn R i j := by
-  rw [he, pairingIn_eq_pairing]
+    P₂.pairingIn R (e i) (e j) = P.pairingIn R i j := by rw [he, pairingIn_eq_pairing]
 
-/-- Rewrites an agreement `P₂.pairing (e i) (e j) = P.pairing i j` over `R` into an agreement of
-`pairingIn R` on both sides. -/
+/-- Rewrites `P₂.pairing (e i) (e j) = P.pairing i j` into agreement of `pairingIn R`. -/
 theorem pairingIn_eq_of_pairing_eq {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂]
     [AddCommGroup N₂] [Module R N₂] {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ R M₂ N₂}
     {e : ι → ι₂} (he : ∀ i j, P₂.pairing (e i) (e j) = P.pairing i j) (i j : ι) :
     P₂.pairingIn R (e i) (e j) = P.pairingIn R i j :=
-  pairingIn_eq_of_pairingIn_eq_pairing
-    (fun a b ↦ (P₂.pairingIn_eq_pairing _ _).trans (he a b)) i j
+  pairingIn_eq_of_pairingIn_eq_pairing (fun a b ↦ (P₂.pairingIn_eq_pairing _ _).trans (he a b)) i j
 
 /-- When three roots sum to zero, the opposite of the first equals the sum of the other two. -/
 theorem root_reflectionPerm_self_eq_add_of_add_add_eq_zero {P : RootPairing ι R M N} {i j k : ι}
     (h : P.root i + P.root j + P.root k = 0) :
     P.root (P.reflectionPerm i i) = P.root j + P.root k := by
-  rw [P.root_reflectionPerm, P.reflection_apply_self]
-  calc -P.root i = P.root i + P.root j + P.root k - P.root i := by rw [h, zero_sub]
-    _ = P.root j + P.root k := by abel
+  rw [P.root_reflectionPerm, P.reflection_apply_self, neg_eq_iff_add_eq_zero, ← add_assoc, h]
 
 /-- Negating all three indices via `reflectionPerm` preserves a root sum `αₖ = αᵢ + αⱼ`. -/
 theorem root_reflectionPerm_self_eq_add_of_root_eq_add {P : RootPairing ι R M N} {i j k : ι}
     (h : P.root k = P.root i + P.root j) :
     P.root (P.reflectionPerm k k) =
       P.root (P.reflectionPerm i i) + P.root (P.reflectionPerm j j) := by
-  simp only [root_reflectionPerm, reflection_apply_self]
-  rw [h, neg_add]
+  simp only [root_reflectionPerm, reflection_apply_self]; rw [h, neg_add]
 
 /-- Negating two roots via `reflectionPerm` preserves membership of their sum in `range P.root`. -/
 theorem root_reflectionPerm_add_mem_range_iff (P : RootPairing ι R M N) (i j : ι) :
@@ -103,12 +75,10 @@ end General
 
 section SinglePairing
 
-variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  (P : RootPairing ι R M N) [Finite ι] [P.IsCrystallographic]
+variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) [Finite ι] [P.IsCrystallographic]
 
-/-- An element of the integral root span `P.rootSpan ℤ` annihilated by every coroot functional
-vanishes, without assuming that the roots span `M`. -/
+/-- An element of `P.rootSpan ℤ` annihilated by every coroot functional vanishes. -/
 theorem eq_zero_of_mem_rootSpan_of_forall_coroot'_eq_zero {x : M} (hx : x ∈ P.rootSpan ℤ)
     (h : ∀ i, P.coroot' i x = 0) : x = 0 := by
   cases nonempty_fintype ι
@@ -117,21 +87,18 @@ theorem eq_zero_of_mem_rootSpan_of_forall_coroot'_eq_zero {x : M} (hx : x ∈ P.
   exact hi <| FaithfulSMul.algebraMap_injective ℤ R <| by
     rw [P.algebraMap_coroot'In_apply, map_zero, h i]
 
-/-- An element of the integral coroot span `P.corootSpan ℤ` annihilated by every root functional
-vanishes, without assuming that the coroots span `N`. -/
+/-- An element of `P.corootSpan ℤ` annihilated by every root functional vanishes. -/
 theorem eq_zero_of_mem_corootSpan_of_forall_root'_eq_zero {y : N} (hy : y ∈ P.corootSpan ℤ)
     (h : ∀ i, P.root' i y = 0) : y = 0 :=
   P.flip.eq_zero_of_mem_rootSpan_of_forall_coroot'_eq_zero hy h
 
-/-- An integer linear combination of roots vanishes in `M` if and only if its integer Cartan
-pairing with every coroot vanishes. -/
+/-- An integer linear combination of roots vanishes iff its pairings with all coroots vanish. -/
 theorem sum_zsmul_root_eq_zero_iff {κ : Type*} [Fintype κ] (c : κ → ℤ) (idx : κ → ι) :
     ∑ a : κ, c a • P.root (idx a) = 0 ↔ ∀ s : ι, ∑ a : κ, c a * P.pairingIn ℤ (idx a) s = 0 := by
   have hmem : ∑ a : κ, c a • P.root (idx a) ∈ P.rootSpan ℤ :=
     Submodule.sum_mem _ fun a _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span (mem_range_self _))
-  have hpair (s : ι) :
-      P.coroot' s (∑ a : κ, c a • P.root (idx a)) =
-        ((∑ a : κ, c a * P.pairingIn ℤ (idx a) s : ℤ) : R) := by
+  have hpair (s : ι) : P.coroot' s (∑ a : κ, c a • P.root (idx a)) =
+      ((∑ a : κ, c a * P.pairingIn ℤ (idx a) s : ℤ) : R) := by
     rw [map_sum, Int.cast_sum]
     refine Finset.sum_congr rfl fun a _ ↦ ?_
     rw [LinearMap.map_smul_of_tower, root_coroot'_eq_pairing, ← P.algebraMap_pairingIn ℤ]
@@ -147,15 +114,13 @@ section TwoPairings
 variable {ι ι₂ R S M N M₂ N₂ : Type*}
   [CommRing R] [CharZero R] [IsDomain R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [CommRing S] [CharZero S] [IsDomain S] [AddCommGroup M₂] [Module S M₂]
-  [AddCommGroup N₂] [Module S N₂]
-  {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ S M₂ N₂}
+  [AddCommGroup N₂] [Module S N₂] {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ S M₂ N₂}
   [Finite ι] [P.IsCrystallographic] [P₂.IsCrystallographic]
   (e : ι ≃ ι₂) (he : ∀ i j, P₂.pairingIn ℤ (e i) (e j) = P.pairingIn ℤ i j)
 
 include he
 
-/-- A bijection of root indices preserving integer Cartan pairings preserves and reflects all
-integer linear relations among roots. -/
+/-- A bijection matching integer Cartan pairings preserves and reflects integer root relations. -/
 theorem sum_zsmul_root_eq_zero_iff_of_pairingIn {κ : Type*} [Fintype κ] (c : κ → ℤ) (idx : κ → ι) :
     ∑ a : κ, c a • P₂.root (e (idx a)) = 0 ↔ ∑ a : κ, c a • P.root (idx a) = 0 := by
   let _ : Finite ι₂ := Finite.of_equiv ι e
@@ -191,8 +156,7 @@ theorem root_add_mem_range_iff_of_pairingIn (i j : ι) :
 
 /-- Zero-sum root triples `α + β + γ = 0` are preserved and reflected by `e`. -/
 theorem root_add_add_eq_zero_iff_of_pairingIn (i j k : ι) :
-    P₂.root (e i) + P₂.root (e j) + P₂.root (e k) = 0 ↔
-      P.root i + P.root j + P.root k = 0 := by
+    P₂.root (e i) + P₂.root (e j) + P₂.root (e k) = 0 ↔ P.root i + P.root j + P.root k = 0 := by
   simpa using zsmul_add_zsmul_add_zsmul_root_eq_zero_iff_of_pairingIn e he 1 1 1 i j k
 
 /-- Root-string step relations `γ = β + z • α` are preserved and reflected by `e`. -/
@@ -208,8 +172,8 @@ theorem map_reflectionPerm_of_pairingIn (i j : ι) :
   apply P₂.root.injective
   have h1 : P.root (P.reflectionPerm i j) = P.root j + (-P.pairingIn ℤ j i) • P.root i := by
     rw [root_reflectionPerm, P.reflection_apply_root' ℤ, neg_smul, sub_eq_add_neg]
-  rw [(root_eq_add_zsmul_iff_of_pairingIn e he (P.reflectionPerm i j) j i (-P.pairingIn ℤ j i)).mpr
-    h1, ← he j i, root_reflectionPerm, P₂.reflection_apply_root' ℤ, neg_smul, sub_eq_add_neg]
+  rw [(root_eq_add_zsmul_iff_of_pairingIn e he _ j i (-P.pairingIn ℤ j i)).mpr h1, ← he j i,
+    root_reflectionPerm, P₂.reflection_apply_root' ℤ, neg_smul, sub_eq_add_neg]
 
 /-- A pairing-preserving bijection preserves and reflects pairwise linear independence of roots. -/
 theorem linearIndependent_root_iff_of_pairingIn (i j : ι) :
@@ -222,19 +186,18 @@ theorem linearIndependent_root_iff_of_pairingIn (i j : ι) :
     P.linearIndependent_iff_coxeterWeightIn_ne_four ℤ]
   simp only [coxeterWeightIn, he]
 
-/-- Finite crystallographic root pairings over characteristic-zero domains with matching integer
-Cartan pairings are simultaneously reduced. -/
+/-- Finite crystallographic root pairings with matching integer Cartan pairings are simultaneously
+reduced. -/
 theorem isReduced_iff_of_pairingIn : P₂.IsReduced ↔ P.IsReduced := by
   let _ : Finite ι₂ := Finite.of_equiv ι e
   simp only [isReduced_iff', root_eq_neg_iff]
-  refine ⟨fun h i j hij hdep ↦ ?_, fun h i₂ j₂ hij hdep ↦ ?_⟩
-  · exact e.injective ((h (e i) (e j) (e.injective.ne hij)
+  refine ⟨fun h i j hij hdep ↦ e.injective ((h (e i) (e j) (e.injective.ne hij)
       (mt (linearIndependent_root_iff_of_pairingIn e he i j).mp hdep)).trans
-      (map_reflectionPerm_of_pairingIn e he j j).symm)
-  · obtain ⟨i, rfl⟩ := e.surjective i₂; obtain ⟨j, rfl⟩ := e.surjective j₂
-    rw [← map_reflectionPerm_of_pairingIn e he j j]
-    exact congrArg e (h i j (fun h' ↦ hij (congrArg e h'))
-      (mt (linearIndependent_root_iff_of_pairingIn e he i j).mpr hdep))
+      (map_reflectionPerm_of_pairingIn e he j j).symm), fun h i₂ j₂ hij hdep ↦ ?_⟩
+  obtain ⟨i, rfl⟩ := e.surjective i₂; obtain ⟨j, rfl⟩ := e.surjective j₂
+  rw [← map_reflectionPerm_of_pairingIn e he j j]
+  exact congrArg e (h i j (by rintro rfl; exact hij rfl)
+    (mt (linearIndependent_root_iff_of_pairingIn e he i j).mpr hdep))
 
 /-- A pairing-preserving bijection of root indices preserves ascending root-string lengths. -/
 theorem chainTopCoeff_eq_of_pairingIn (i j : ι) :

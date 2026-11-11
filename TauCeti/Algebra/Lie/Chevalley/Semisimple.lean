@@ -14,26 +14,12 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 
 Given a finite-dimensional Killing Lie algebra `L` over a characteristic-zero field `K`, a
 splitting Cartan subalgebra `H`, and `hx : TauCeti.IsChevalleySystem ω x`, this file extracts a
-`RootPairing.ChevalleyConstants P` table on any integral root datum `P : RootPairing ι ℤ X Y`
-equipped with `e : ι ≃ H.root` satisfying `(rootSystem H).pairingIn ℤ (e i) (e j) = P.pairing i j`,
-without assuming that roots or coroots span `X` or `Y`. A compatible cocharacter map `γ : Y →ₗ[ℤ] H`
-landing in `hx.chevalleyLieLattice` induces `toChevalleyLieLattice`, which upgrades to
-`toChevalleyLieLatticeEquiv` when `Y` is free on simple coroots; specializing to
-`TauCeti.DynkinType.isChevalleySystem_chevalleySystem` treats every valid `TauCeti.DynkinType`.
-
-## Main definitions and results
-
-* `TauCeti.IsChevalleySystem.chevalleyConstants`,
-  `TauCeti.IsChevalleySystem.lie_eq_chevalleyConstants_structConst_zsmul`: Chevalley constants on
-  `P` extracted from `hx` along `e`.
-* `TauCeti.IsChevalleySystem.toChevalleyLieLattice`,
-  `TauCeti.IsChevalleySystem.toChevalleyLieLatticeEquiv`: comparison with `hx.chevalleyLieLattice`.
-* `TauCeti.DynkinType.simplyConnectedChevalleyConstants`,
-  `TauCeti.DynkinType.simplyConnectedChevalleyLieEquiv`: canonical Chevalley table and simply
-  connected lattice isomorphism on the pinned root datum of a valid Dynkin type.
-* `TauCeti.DynkinType.chevalleyConstants`: Chevalley structure constants on any integral root datum
-  of Dynkin type `t`, obtained by transporting `simplyConnectedChevalleyConstants` along a given
-  pairing-preserving root enumeration `e`.
+`RootPairing.ChevalleyConstants P` table (`IsChevalleySystem.chevalleyConstants`) on any integral
+root datum `P : RootPairing ι ℤ X Y` along `e : ι ≃ H.root` matching Cartan integers, compares
+`ChevalleyLieAlgebra` with `hx.chevalleyLieLattice` (`toChevalleyLieLattice`,
+`toChevalleyLieLatticeEquiv`), and specializes to valid `TauCeti.DynkinType`s
+(`simplyConnectedChevalleyConstants`, `simplyConnectedChevalleyLieEquiv`, and transported tables
+`DynkinType.chevalleyConstants` along a given root enumeration).
 
 ## References
 
@@ -59,12 +45,23 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
   (P : RootPairing ι ℤ X Y) (e : ι ≃ H.root)
   (he : ∀ i j, (rootSystem H).pairingIn ℤ (e i) (e j) = P.pairing i j)
 
+omit [Finite ι] in
+include he in
+private theorem coe_root_coroot_eq_pairing (i j : ι) :
+    (e i : Weight K H L) (coroot (e j : Weight K H L)) = (P.pairing i j : K) := by
+  rw [← rootSystem_pairing_apply, ← (rootSystem H).algebraMap_pairingIn ℤ, he, eq_intCast]
+
+include he in
+private theorem map_reflectionPerm_self_eq_neg (a : ι) : e (P.reflectionPerm a a) = -e a :=
+  (RootPairing.map_reflectionPerm_of_pairingIn e
+    (RootPairing.pairingIn_eq_of_pairingIn_eq_pairing he) a a).trans
+    (rootSystem_reflectionPerm_self_eq_neg (e a))
+
 include he in
 private theorem weight_eq_neg_of_root_add_eq_zero {i j : ι} (h0 : P.root i + P.root j = 0) :
     (e j : Weight K H L) = -(e i : Weight K H L) := by
-  have hH :=
-    (RootPairing.root_add_eq_zero_iff_of_pairingIn e
-      (RootPairing.pairingIn_eq_of_pairingIn_eq_pairing he) i j).mpr h0
+  have hH := (RootPairing.root_add_eq_zero_iff_of_pairingIn e
+    (RootPairing.pairingIn_eq_of_pairingIn_eq_pairing he) i j).mpr h0
   ext z
   have hz : (e i : Weight K H L) z + (e j : Weight K H L) z = 0 := by
     simpa [rootSystem_root_apply, Weight.toLinear_apply] using DFunLike.congr_fun hH z
@@ -75,32 +72,28 @@ private theorem rootSpace_add_eq_bot_of_notMem {i j : ι}
     (hnot : P.root i + P.root j ∉ range P.root) (hne : P.root i + P.root j ≠ 0) :
     rootSpace H (((e i : Weight K H L) : H → K) + (e j : Weight K H L)) = ⊥ := by
   by_contra hbot
+  let heIn := RootPairing.pairingIn_eq_of_pairingIn_eq_pairing he
   let χ : Weight K H L := ⟨((e i : Weight K H L) : H → K) + (e j : Weight K H L), hbot⟩
   have hχ : χ.IsNonZero := fun h0 ↦ hne <|
-    (RootPairing.root_add_eq_zero_iff_of_pairingIn e
-      (RootPairing.pairingIn_eq_of_pairingIn_eq_pairing he) i j).mp <| by
+    (RootPairing.root_add_eq_zero_iff_of_pairingIn e heIn i j).mp <| by
       ext z; simpa [χ, rootSystem_root_apply, Weight.toLinear_apply] using congrFun h0 z
-  let r : H.root := ⟨χ, by simpa [LieSubalgebra.root] using hχ⟩
-  exact hnot <|
-    (RootPairing.root_add_mem_range_iff_of_pairingIn e
-      (RootPairing.pairingIn_eq_of_pairingIn_eq_pairing he) i j).mp
-      ⟨r, by ext z; simp [r, χ, rootSystem_root_apply, Weight.toLinear_apply]⟩
+  exact hnot <| (RootPairing.root_add_mem_range_iff_of_pairingIn e heIn i j).mp
+    ⟨⟨χ, by simpa [LieSubalgebra.root] using hχ⟩,
+      by ext z; simp [χ, rootSystem_root_apply, Weight.toLinear_apply]⟩
 
-open scoped Classical in
+open Classical in
 private noncomputable def rawStructConst (i j : ι) : ℤ :=
   if h : ∃ k, P.root k = P.root i + P.root j then
-    hx.intStructureConstant (e i) (e j) (e h.choose) (H.isNonZero_coe_root (e h.choose))
+    hx.intStructureConstant (e i) (e j) (e h.choose) (H.isNonZero_coe_root _)
       (coe_weight_eq_add_of_root_eq_add e he h.choose_spec)
   else 0
 
 private theorem rawStructConst_of_root_eq_add {i j k : ι} (hk : P.root k = P.root i + P.root j) :
-    hx.rawStructConst P e he i j =
-      hx.intStructureConstant (e i) (e j) (e k) (H.isNonZero_coe_root (e k))
-        (coe_weight_eq_add_of_root_eq_add e he hk) := by
+    hx.rawStructConst P e he i j = hx.intStructureConstant (e i) (e j) (e k)
+      (H.isNonZero_coe_root _) (coe_weight_eq_add_of_root_eq_add e he hk) := by
   classical
   have hex : ∃ k', P.root k' = P.root i + P.root j := ⟨k, hk⟩
-  rw [rawStructConst, dite_eq_left hex]
-  congr!
+  rw [rawStructConst, dite_eq_left hex]; congr!
   exact P.root.injective (hex.choose_spec.trans hk.symm)
 
 private theorem rawStructConst_of_notMem {i j : ι} (hnot : P.root i + P.root j ∉ range P.root) :
@@ -110,7 +103,7 @@ private theorem rawStructConst_of_notMem {i j : ι} (hnot : P.root i + P.root j 
 private theorem lie_eq_rawStructConst_zsmul {i j k : ι} (hk : P.root k = P.root i + P.root j) :
     ⁅x (e i), x (e j)⁆ = hx.rawStructConst P e he i j • x (e k) := by
   rw [hx.rawStructConst_of_root_eq_add P e he hk]
-  exact hx.lie_eq_intStructureConstant_zsmul (e i) (e j) (e k) (H.isNonZero_coe_root (e k))
+  exact hx.lie_eq_intStructureConstant_zsmul (e i) (e j) (e k) (H.isNonZero_coe_root _)
     (coe_weight_eq_add_of_root_eq_add e he hk)
 
 private theorem lie_lie_eq_tripleRootCoeff_zsmul {a b c l : ι}
@@ -121,12 +114,10 @@ private theorem lie_lie_eq_tripleRootCoeff_zsmul {a b c l : ι}
   · obtain rfl : l = a := P.root.injective (by rw [hl, add_assoc, hbc0, add_zero])
     rw [P.tripleRootCoeff_of_add_eq_zero _ hbc0, ite_eq_left rfl,
       weight_eq_neg_of_root_add_eq_zero P e he hbc0,
-      hx.toIsSl2System.lie_neg (e b) (H.isNonZero_coe_root (e b)),
+      hx.toIsSl2System.lie_neg (e b) (H.isNonZero_coe_root _),
       ← lie_skew (x (e l)) (coroot (e b : Weight K H L) : L),
-      hx.toIsSl2System.lie_coroot (e l) (e b)]
-    have hpair : (e l : Weight K H L) (coroot (e b : Weight K H L)) = (P.pairing l b : K) := by
-      rw [← rootSystem_pairing_apply, ← (rootSystem H).algebraMap_pairingIn ℤ, he, eq_intCast]
-    rw [hpair, ← neg_smul, ← Int.cast_neg, Int.cast_smul_eq_zsmul]
+      hx.toIsSl2System.lie_coroot (e l) (e b), coe_root_coroot_eq_pairing P e he, ← neg_smul,
+      ← Int.cast_neg, Int.cast_smul_eq_zsmul]
   · by_cases hex : ∃ m, P.root m = P.root b + P.root c
     · obtain ⟨m, hm⟩ := hex
       have hlm : P.root l = P.root a + P.root m := by rw [hl, hm, add_assoc]
@@ -138,104 +129,77 @@ private theorem lie_lie_eq_tripleRootCoeff_zsmul {a b c l : ι}
         hx.toIsSl2System.lie_eq_zero_of_rootSpace_add_eq_bot (e b) (e c)
           (rootSpace_add_eq_bot_of_notMem P e he hnot hbc0), lie_zero]
 
-private theorem rawStructConst_swap (i j : ι) :
-    hx.rawStructConst P e he j i = -hx.rawStructConst P e he i j := by
-  by_cases hex : ∃ k, P.root k = P.root i + P.root j
-  · obtain ⟨k, hk⟩ := hex
-    rw [hx.rawStructConst_of_root_eq_add P e he (hk.trans (add_comm (P.root i) (P.root j))),
-      hx.rawStructConst_of_root_eq_add P e he hk]
-    refine (Int.cast_injective : Function.Injective (Int.cast : ℤ → K)) ?_
-    rw [Int.cast_neg, hx.intStructureConstant_cast, hx.intStructureConstant_cast]
-    exact hx.toIsSl2System.structureConstant_skew (e i) (e j) (e k) (H.isNonZero_coe_root (e k))
-      (coe_weight_eq_add_of_root_eq_add e he hk)
-  · have hnot : P.root i + P.root j ∉ range P.root := fun ⟨k, hk⟩ ↦ hex ⟨k, hk⟩
-    rw [hx.rawStructConst_of_notMem P e he (add_comm (P.root i) (P.root j) ▸ hnot),
-      hx.rawStructConst_of_notMem P e he hnot, neg_zero]
-
-private theorem natAbs_rawStructConst {i j k : ι} (hk : P.root k = P.root i + P.root j) :
-    (hx.rawStructConst P e he i j).natAbs = P.chainBotCoeff i j + 1 := by
-  have heIn := RootPairing.pairingIn_eq_of_pairingIn_eq_pairing he
-  have hkH := (RootPairing.root_eq_add_iff_of_pairingIn e heIn k i j).mpr hk
-  have hli := (rootSystem H).linearIndependent_of_add_mem_range_root' ⟨e k, hkH⟩
-  have hbot : chainBotCoeff (e i : Weight K H L) (e j : Weight K H L) = P.chainBotCoeff i j :=
-    (rootSystem_chainCoeffs_eq hli).2.symm.trans
-      (RootPairing.chainBotCoeff_eq_of_pairingIn e heIn i j)
-  rw [hx.rawStructConst_of_root_eq_add P e he hk, ← hbot]
-  rcases hx.intStructureConstant_eq_natCast_or_eq_neg_natCast (e i) (e j) (e k)
-      (H.isNonZero_coe_root (e i)) (H.isNonZero_coe_root (e j)) (H.isNonZero_coe_root (e k))
-      (coe_weight_eq_add_of_root_eq_add e he hk) with hN | hN
-  · rw [hN, Int.natAbs_natCast]
-  · rw [hN, Int.natAbs_neg, Int.natAbs_natCast]
-
-private theorem rawStructConst_reflectionPerm (i j : ι) :
-    hx.rawStructConst P e he (P.reflectionPerm i i) (P.reflectionPerm j j) =
-      -hx.rawStructConst P e he i j := by
-  have hneg_e (a : ι) : e (P.reflectionPerm a a) = -e a :=
-    (RootPairing.map_reflectionPerm_of_pairingIn e
-      (RootPairing.pairingIn_eq_of_pairingIn_eq_pairing he) a a).trans
-      (rootSystem_reflectionPerm_self_eq_neg (e a))
-  by_cases hex : ∃ k, P.root k = P.root i + P.root j
-  · obtain ⟨k, hk⟩ := hex
-    rw [hx.rawStructConst_of_root_eq_add P e he
-        (P.root_reflectionPerm_self_eq_add_of_root_eq_add hk),
-      hx.rawStructConst_of_root_eq_add P e he hk]
-    refine (Int.cast_injective : Function.Injective (Int.cast : ℤ → K)) ?_
-    rw [Int.cast_neg, hx.intStructureConstant_cast, hx.intStructureConstant_cast]
-    have hneg := (hx.toIsSl2System.structureConstant_neg_neg_eq_neg_iff
-      (e i) (e j) (e k) (H.isNonZero_coe_root (e i)) (H.isNonZero_coe_root (e j))
-      (H.isNonZero_coe_root (e k)) (coe_weight_eq_add_of_root_eq_add e he hk)).mpr
-      (hx.structureConstant_eq_natCast_or_eq_neg_natCast (e i) (e j) (e k)
-        (H.isNonZero_coe_root (e i)) (H.isNonZero_coe_root (e j)) (H.isNonZero_coe_root (e k))
-        (coe_weight_eq_add_of_root_eq_add e he hk))
-    convert hneg using 2 <;> simp [hneg_e]
-  · have hnot : P.root i + P.root j ∉ range P.root := fun ⟨k, hk⟩ ↦ hex ⟨k, hk⟩
-    rw [hx.rawStructConst_of_notMem P e he
-        (mt (P.root_reflectionPerm_add_mem_range_iff i j).mp hnot),
-      hx.rawStructConst_of_notMem P e he hnot, neg_zero]
-
-private theorem rawStructConst_coroot_jacobi {i j k : ι}
-    (hsum : P.root i + P.root j + P.root k = 0) :
-    hx.rawStructConst P e he j k • P.coroot i + hx.rawStructConst P e he k i • P.coroot j +
-      hx.rawStructConst P e he i j • P.coroot k = 0 := by
-  have hterm {a b c : ι} (habc : P.root a + P.root b + P.root c = 0) :
-      ⁅x (e a), ⁅x (e b), x (e c)⁆⁆ =
-        hx.rawStructConst P e he b c • (coroot (e a : Weight K H L) : L) := by
-    have hea' : (e (P.reflectionPerm a a) : Weight K H L) = -(e a : Weight K H L) :=
-      congrArg Subtype.val <|
-        (RootPairing.map_reflectionPerm_of_pairingIn e
-          (RootPairing.pairingIn_eq_of_pairingIn_eq_pairing he) a a).trans
-          (rootSystem_reflectionPerm_self_eq_neg (e a))
-    rw [hx.lie_eq_rawStructConst_zsmul P e he
-        (RootPairing.root_reflectionPerm_self_eq_add_of_add_add_eq_zero habc),
-      lie_zsmul, hea', hx.toIsSl2System.lie_neg (e a) (H.isNonZero_coe_root (e a))]
-  have hjac := lie_jacobi (x (e i)) (x (e j)) (x (e k))
-  rw [hterm hsum, hterm (by rw [← hsum]; abel), hterm (by rw [← hsum]; abel)] at hjac
-  have hH : hx.rawStructConst P e he j k • (rootSystem H).coroot (e i) +
-      hx.rawStructConst P e he k i • (rootSystem H).coroot (e j) +
-      hx.rawStructConst P e he i j • (rootSystem H).coroot (e k) = 0 :=
-    Subtype.ext (by simpa [rootSystem_coroot_apply, add_assoc] using hjac)
-  have hc (r) : P.coroot r ∈ P.corootSpan ℤ := Submodule.subset_span (mem_range_self _)
-  refine P.eq_zero_of_mem_corootSpan_of_forall_root'_eq_zero
-    (add_mem (add_mem (Submodule.smul_mem _ _ (hc _)) (Submodule.smul_mem _ _ (hc _)))
-      (Submodule.smul_mem _ _ (hc _))) fun s ↦ ?_
-  have hs := congrArg ((rootSystem H).toLinearMap ((rootSystem H).root (e s))) hH
-  simp only [map_add, LinearMap.map_smul_of_tower, map_zero, rootSystem_toLinearMap_apply,
-    rootSystem_root_apply, Weight.toLinear_apply, rootSystem_coroot_apply,
-    ← rootSystem_pairing_apply, ← (rootSystem H).algebraMap_pairingIn ℤ, he] at hs
-  exact (Int.cast_injective : Function.Injective (Int.cast : ℤ → K))
-    (by simpa [RootPairing.root'_coroot_eq_pairing, zsmul_eq_mul] using hs)
-
 include hx in
-/-- **Chevalley structure constants from a Killing Chevalley system.** Any Chevalley system `hx`
-induces a `RootPairing.ChevalleyConstants` table on any finite integral root pairing `P` whose root
-indices match `H.root` with equal Cartan integers. -/
+/-- **Chevalley structure constants from a Killing Chevalley system `hx` along `e`.** -/
 noncomputable def chevalleyConstants : P.ChevalleyConstants where
   structConst := hx.rawStructConst P e he
   structConst_eq_zero_of_notMem_range _ _ := hx.rawStructConst_of_notMem P e he
-  structConst_swap := hx.rawStructConst_swap P e he
-  natAbs_structConst := hx.natAbs_rawStructConst P e he
-  structConst_reflectionPerm := hx.rawStructConst_reflectionPerm P e he
-  coroot_jacobi := hx.rawStructConst_coroot_jacobi P e he
+  structConst_swap i j := by
+    by_cases hex : ∃ k, P.root k = P.root i + P.root j
+    · obtain ⟨k, hk⟩ := hex
+      rw [hx.rawStructConst_of_root_eq_add P e he (hk.trans (add_comm _ _)),
+        hx.rawStructConst_of_root_eq_add P e he hk]
+      refine Int.cast_injective (α := K) ?_
+      rw [Int.cast_neg, hx.intStructureConstant_cast, hx.intStructureConstant_cast]
+      exact hx.toIsSl2System.structureConstant_skew (e i) (e j) (e k) (H.isNonZero_coe_root _)
+        (coe_weight_eq_add_of_root_eq_add e he hk)
+    · have hnot : P.root i + P.root j ∉ range P.root := fun ⟨k, hk⟩ ↦ hex ⟨k, hk⟩
+      rw [hx.rawStructConst_of_notMem P e he (add_comm (P.root i) _ ▸ hnot),
+        hx.rawStructConst_of_notMem P e he hnot, neg_zero]
+  natAbs_structConst {i j k} hk := by
+    let heIn := RootPairing.pairingIn_eq_of_pairingIn_eq_pairing he
+    have hli := (rootSystem H).linearIndependent_of_add_mem_range_root'
+      ⟨e k, (RootPairing.root_eq_add_iff_of_pairingIn e heIn k i j).mpr hk⟩
+    rw [hx.rawStructConst_of_root_eq_add P e he hk,
+      ← ((rootSystem_chainCoeffs_eq hli).2.symm.trans
+        (RootPairing.chainBotCoeff_eq_of_pairingIn e heIn i j))]
+    rcases hx.intStructureConstant_eq_natCast_or_eq_neg_natCast (e i) (e j) (e k)
+        (H.isNonZero_coe_root _) (H.isNonZero_coe_root _) (H.isNonZero_coe_root _)
+        (coe_weight_eq_add_of_root_eq_add e he hk) with hN | hN <;>
+      simp only [hN, Int.natAbs_neg, Int.natAbs_natCast]
+  structConst_reflectionPerm i j := by
+    by_cases hex : ∃ k, P.root k = P.root i + P.root j
+    · obtain ⟨k, hk⟩ := hex
+      rw [hx.rawStructConst_of_root_eq_add P e he
+          (P.root_reflectionPerm_self_eq_add_of_root_eq_add hk),
+        hx.rawStructConst_of_root_eq_add P e he hk]
+      refine Int.cast_injective (α := K) ?_
+      rw [Int.cast_neg, hx.intStructureConstant_cast, hx.intStructureConstant_cast]
+      convert (hx.toIsSl2System.structureConstant_neg_neg_eq_neg_iff (e i) (e j) (e k)
+        (H.isNonZero_coe_root _) (H.isNonZero_coe_root _) (H.isNonZero_coe_root _)
+        (coe_weight_eq_add_of_root_eq_add e he hk)).mpr
+        (hx.structureConstant_eq_natCast_or_eq_neg_natCast (e i) (e j) (e k)
+          (H.isNonZero_coe_root _) (H.isNonZero_coe_root _) (H.isNonZero_coe_root _)
+          (coe_weight_eq_add_of_root_eq_add e he hk)) using 2 <;>
+        simp [map_reflectionPerm_self_eq_neg P e he]
+    · have hnot : P.root i + P.root j ∉ range P.root := fun ⟨k, hk⟩ ↦ hex ⟨k, hk⟩
+      rw [hx.rawStructConst_of_notMem P e he
+          (mt (P.root_reflectionPerm_add_mem_range_iff i j).mp hnot),
+        hx.rawStructConst_of_notMem P e he hnot, neg_zero]
+  coroot_jacobi {i j k} hsum := by
+    have hterm {a b c : ι} (habc : P.root a + P.root b + P.root c = 0) :
+        ⁅x (e a), ⁅x (e b), x (e c)⁆⁆ =
+          hx.rawStructConst P e he b c • (coroot (e a : Weight K H L) : L) := by
+      have hea : (e (P.reflectionPerm a a) : Weight K H L) = -(e a : Weight K H L) :=
+        congrArg Subtype.val (map_reflectionPerm_self_eq_neg P e he a)
+      rw [hx.lie_eq_rawStructConst_zsmul P e he
+          (RootPairing.root_reflectionPerm_self_eq_add_of_add_add_eq_zero habc),
+        lie_zsmul, hea, hx.toIsSl2System.lie_neg (e a) (H.isNonZero_coe_root _)]
+    have hjac := lie_jacobi (x (e i)) (x (e j)) (x (e k))
+    rw [hterm hsum, hterm (by rw [← hsum]; abel), hterm (by rw [← hsum]; abel)] at hjac
+    have hH : hx.rawStructConst P e he j k • (rootSystem H).coroot (e i) +
+        hx.rawStructConst P e he k i • (rootSystem H).coroot (e j) +
+        hx.rawStructConst P e he i j • (rootSystem H).coroot (e k) = 0 :=
+      Subtype.ext (by simpa [rootSystem_coroot_apply, add_assoc] using hjac)
+    have hc (r) : P.coroot r ∈ P.corootSpan ℤ := Submodule.subset_span (mem_range_self _)
+    refine P.eq_zero_of_mem_corootSpan_of_forall_root'_eq_zero
+      (add_mem (add_mem (Submodule.smul_mem _ _ (hc _)) (Submodule.smul_mem _ _ (hc _)))
+        (Submodule.smul_mem _ _ (hc _))) fun s ↦ ?_
+    have hs := congrArg ((rootSystem H).toLinearMap ((rootSystem H).root (e s))) hH
+    simp only [map_add, LinearMap.map_smul_of_tower, map_zero, rootSystem_toLinearMap_apply,
+      rootSystem_root_apply, Weight.toLinear_apply, rootSystem_coroot_apply,
+      coe_root_coroot_eq_pairing P e he] at hs
+    exact Int.cast_injective (α := K) (by simpa [RootPairing.root'_coroot_eq_pairing] using hs)
   root_jacobi i j k l := by
     by_cases hl : P.root l = P.root i + P.root j + P.root k
     · have hjac := lie_jacobi (x (e i)) (x (e j)) (x (e k))
@@ -243,24 +207,21 @@ noncomputable def chevalleyConstants : P.ChevalleyConstants where
         hx.lie_lie_eq_tripleRootCoeff_zsmul P e he (by rw [hl]; abel),
         hx.lie_lie_eq_tripleRootCoeff_zsmul P e he (by rw [hl]; abel),
         ← add_smul, ← add_smul, ← Int.cast_smul_eq_zsmul K] at hjac
-      exact Int.cast_eq_zero.mp
-        ((smul_eq_zero.mp hjac).resolve_right (hx.toIsSl2System.ne_zero (e l)
-          (H.isNonZero_coe_root (e l))))
+      exact Int.cast_eq_zero.mp ((smul_eq_zero.mp hjac).resolve_right
+        (hx.toIsSl2System.ne_zero (e l) (H.isNonZero_coe_root _)))
     · rw [P.tripleRootCoeff_eq_zero_of_ne_sum _ hl,
         P.tripleRootCoeff_eq_zero_of_ne_sum _ (fun h ↦ hl (by rw [h]; abel)),
         P.tripleRootCoeff_eq_zero_of_ne_sum _ (fun h ↦ hl (by rw [h]; abel)), add_zero, add_zero]
 
-/-- On a root sum `P.root k = P.root i + P.root j`, `(hx.chevalleyConstants P e he).structConst i j`
-equals the integer structure constant of the Killing Chevalley system `hx`. -/
+/-- On `P.root k = P.root i + P.root j`, `(hx.chevalleyConstants P e he).structConst i j` equals
+`hx.intStructureConstant`. -/
 theorem chevalleyConstants_structConst_of_root_eq_add {i j k : ι}
     (hk : P.root k = P.root i + P.root j) :
-    (hx.chevalleyConstants P e he).structConst i j =
-      hx.intStructureConstant (e i) (e j) (e k) (H.isNonZero_coe_root (e k))
-        (coe_weight_eq_add_of_root_eq_add e he hk) :=
+    (hx.chevalleyConstants P e he).structConst i j = hx.intStructureConstant (e i) (e j) (e k)
+      (H.isNonZero_coe_root _) (coe_weight_eq_add_of_root_eq_add e he hk) :=
   hx.rawStructConst_of_root_eq_add P e he hk
 
-/-- On a root sum `P.root k = P.root i + P.root j`, the bracket of `x (e i)` and `x (e j)` in `L`
-is given by `(hx.chevalleyConstants P e he).structConst i j • x (e k)`. -/
+/-- On `P.root k = P.root i + P.root j`, `⁅x (e i), x (e j)⁆ = Nᵢⱼ • x (e k)`. -/
 theorem lie_eq_chevalleyConstants_structConst_zsmul {i j k : ι}
     (hk : P.root k = P.root i + P.root j) :
     ⁅x (e i), x (e j)⁆ = (hx.chevalleyConstants P e he).structConst i j • x (e k) :=
@@ -281,7 +242,7 @@ private theorem gamma_coroot_eq (γ : Y →ₗ[ℤ] H)
       obtain ⟨r, rfl⟩ := hf; obtain ⟨j, rfl⟩ := e.surjective r
       rw [map_sub, sub_eq_zero, rootSystem_root_apply, Weight.toLinear_apply,
         Weight.toLinear_apply, hγ_pair, rootSystem_coroot_apply, P.root_coroot_eq_pairing,
-        ← rootSystem_pairing_apply, ← (rootSystem H).algebraMap_pairingIn ℤ, he, eq_intCast]
+        coe_root_coroot_eq_pairing P e he]
     | zero => simp
     | add _ _ _ _ hf hg => simp only [LinearMap.add_apply, hf, hg, add_zero]
     | smul _ _ _ hf => simp only [LinearMap.smul_apply, hf, smul_zero]
@@ -290,8 +251,7 @@ private theorem gamma_coroot_eq (γ : Y →ₗ[ℤ] H)
 
 include hx in
 /-- **The `ℤ`-Lie homomorphism from `ChevalleyLieAlgebra` into `hx.chevalleyLieLattice`** induced by
-any cocharacter map `γ : Y →ₗ[ℤ] H` landing in `hx.chevalleyLieLattice` and compatible with the
-root-cocharacter pairing. -/
+a compatible cocharacter map `γ : Y →ₗ[ℤ] H`. -/
 noncomputable def toChevalleyLieLattice (γ : Y →ₗ[ℤ] H)
     (hγ_mem : ∀ y, (γ y : L) ∈ hx.chevalleyLieLattice)
     (hγ_pair : ∀ y i, (e i : Weight K H L) (γ y) = (P.toLinearMap (P.root i) y : K)) :
@@ -310,7 +270,7 @@ noncomputable def toChevalleyLieLattice (γ : Y →ₗ[ℤ] H)
     (fun {i j} h0 ↦ Subtype.ext <| by
       simp only [LieSubalgebra.coe_bracket, γL, LinearMap.coe_mk, AddHom.coe_mk]
       rw [weight_eq_neg_of_root_add_eq_zero P e he h0,
-        hx.toIsSl2System.lie_neg (e i) (H.isNonZero_coe_root (e i)),
+        hx.toIsSl2System.lie_neg (e i) (H.isNonZero_coe_root _),
         gamma_coroot_eq P e he γ hγ_pair i, rootSystem_coroot_apply])
     (fun {_ _ _} hk ↦ Subtype.ext <| hx.lie_eq_chevalleyConstants_structConst_zsmul P e he hk)
     (fun {i j} hnot h0 ↦ Subtype.ext <|
@@ -367,44 +327,29 @@ private theorem simpleCorootCoweightMap_pair (y : Y) (i : ι) :
     simp only [lhs, rhs, LinearMap.comp_apply, LinearMap.coe_restrictScalars, Weight.toLinear_apply,
       AddMonoidHom.coe_toIntLinearMap, Int.coe_castAddHom]
     rw [simpleCorootCoweightMap, Basis.constr_basis, rootSystem_coroot_apply, hbY,
-      P.root_coroot_eq_pairing, ← rootSystem_pairing_apply,
-      ← (rootSystem H).algebraMap_pairingIn ℤ, ← he i (e.symm (s j)), e.apply_symm_apply,
-      eq_intCast]
+      P.root_coroot_eq_pairing, ← coe_root_coroot_eq_pairing P e he, e.apply_symm_apply]
   simpa [lhs, rhs] using DFunLike.congr_fun h y
 
 include hx in
-private theorem toChevalleyLieLattice_simpleCoroot_bijective :
-    Function.Bijective (hx.toChevalleyLieLattice P e he (simpleCorootCoweightMap b bY s)
-      (hx.simpleCorootCoweightMap_mem b bY s)
-      (simpleCorootCoweightMap_pair P e he b bY s hbY)) := by
-  let f := hx.toChevalleyLieLattice P e he (simpleCorootCoweightMap b bY s)
-    (hx.simpleCorootCoweightMap_mem b bY s) (simpleCorootCoweightMap_pair P e he b bY s hbY)
-  let σ : J ⊕ ι ≃ H.root ⊕ b.support := (Equiv.sumCongr s e).trans (Equiv.sumComm _ _)
-  let bSrc := RootPairing.ChevalleyLieAlgebra.basis (hx.chevalleyConstants P e he) bY
-  let bDst := (hx.rootSimpleCorootBasis b).reindex σ.symm
-  have hf_eq : f.toLinearMap = (bSrc.equiv bDst (.refl _)).toLinearMap :=
-    bSrc.ext fun idx ↦ by
-      have hrhs : (bSrc.equiv bDst (.refl _)).toLinearMap (bSrc idx) = bDst idx := by simp
-      rw [hrhs]
-      rcases idx with j | i <;> apply Subtype.ext <;>
-        simp [f, bSrc, bDst, σ, simpleCorootCoweightMap]
-  rw [← LieHom.coe_toLinearMap, hf_eq]
-  exact (bSrc.equiv bDst (.refl _)).bijective
-
-include hx in
-/-- **Simply connected identification with the Chevalley Lie lattice.** When `b` is a base of
-`rootSystem H` and `Y` has a `ℤ`-basis `bY` indexed by `J ≃ b.support` consisting of the
-corresponding simple coroots of `P`, the abstract `ChevalleyLieAlgebra` is canonically isomorphic
-over `ℤ` to `hx.chevalleyLieLattice`. -/
+/-- **Simply connected identification with `hx.chevalleyLieLattice`** when `Y` has a `ℤ`-basis `bY`
+of simple coroots indexed by `J ≃ b.support`. -/
 noncomputable def toChevalleyLieLatticeEquiv :
     RootPairing.ChevalleyLieAlgebra (hx.chevalleyConstants P e he) ≃ₗ⁅ℤ⁆ hx.chevalleyLieLattice :=
-  LieEquiv.ofBijective
-    (hx.toChevalleyLieLattice P e he (simpleCorootCoweightMap b bY s)
-      (hx.simpleCorootCoweightMap_mem b bY s) (simpleCorootCoweightMap_pair P e he b bY s hbY))
-    (hx.toChevalleyLieLattice_simpleCoroot_bijective P e he b bY s hbY)
+  let f := hx.toChevalleyLieLattice P e he (simpleCorootCoweightMap b bY s)
+    (hx.simpleCorootCoweightMap_mem b bY s) (simpleCorootCoweightMap_pair P e he b bY s hbY)
+  LieEquiv.ofBijective f <| by
+    let σ : J ⊕ ι ≃ H.root ⊕ b.support := (Equiv.sumCongr s e).trans (Equiv.sumComm _ _)
+    let bSrc := RootPairing.ChevalleyLieAlgebra.basis (hx.chevalleyConstants P e he) bY
+    let bDst := (hx.rootSimpleCorootBasis b).reindex σ.symm
+    have hf_eq : f.toLinearMap = (bSrc.equiv bDst (.refl _)).toLinearMap :=
+      bSrc.ext fun idx ↦ by
+        rw [show (bSrc.equiv bDst (.refl _)).toLinearMap (bSrc idx) = bDst idx by simp]
+        rcases idx with j | i <;> apply Subtype.ext <;>
+          simp [f, bSrc, bDst, σ, simpleCorootCoweightMap]
+    rw [← LieHom.coe_toLinearMap, hf_eq]
+    exact (bSrc.equiv bDst (.refl _)).bijective
 
-/-- `toChevalleyLieLatticeEquiv` sends the `j`-th Cartan basis generator to the `s j`-th simple
-coroot in `L`. -/
+/-- `toChevalleyLieLatticeEquiv` sends `cartan _ (bY j)` to the `s j`-th simple coroot in `L`. -/
 theorem coe_toChevalleyLieLatticeEquiv_cartan_basis (j : J) :
     (hx.toChevalleyLieLatticeEquiv P e he b bY s hbY
       (RootPairing.ChevalleyLieAlgebra.cartan _ (bY j)) : L) =
@@ -478,8 +423,7 @@ noncomputable def chevalleyConstants {ι X Y : Type*} [AddCommGroup X] [AddCommG
 
 /-- The structure constants of `t.chevalleyConstants ht P e he` are pulled back from
 `t.simplyConnectedChevalleyConstants ht` along `e`. -/
-@[simp]
-theorem chevalleyConstants_structConst {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
+@[simp] theorem chevalleyConstants_structConst {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
     (P : RootPairing ι ℤ X Y) (e : ι ≃ Fin t.numRoots)
     (he : ∀ i j, P.pairing i j = (t.simplyConnectedRootDatum ht).pairing (e i) (e j)) (i j : ι) :
     letI : Finite ι := Finite.of_equiv _ e.symm
