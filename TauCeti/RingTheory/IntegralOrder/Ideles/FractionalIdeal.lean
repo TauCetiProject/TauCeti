@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.TensorFractionField
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Units
@@ -156,7 +155,8 @@ the idele equal to `b` at `w` and to `1` elsewhere has lattice `b A`. For instan
 and a rational prime `p`, the idele `α_p = p`, `α_q = 1` for `q ≠ p` has lattice `pℤ`. -/
 theorem lattice_bot_mulSingle_principal [DecidableEq (HeightOneSpectrum A)]
     {w : HeightOneSpectrum A} {b : Kˣ} (hb : ∀ v ≠ w, v.valuation K (b : K) = 1) :
-    lattice K ⊥ (.mulSingle _ w (principal K ⊥ (⊥ : Subalgebra A K).span_coe_eq_top b w)) =
+    lattice K ⊥ (.mulSingle _ w (principal K ⊥
+      (IntegralOrder.isOrder_bot (R := A) (F := K)).span_eq_top b w)) =
       span A {(b : K)} := by
   rw [lattice_mulSingle_principal (Ring.not_isField_of_ne_of_ne w.ne_bot w.isPrime.ne_top),
     Algebra.toSubmodule_bot, Units.smul_def, smul_one_eq_span]

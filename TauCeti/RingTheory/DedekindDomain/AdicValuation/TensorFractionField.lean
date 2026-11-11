@@ -73,8 +73,7 @@ private theorem bijective_lift_ofId_toAlgHom :
       (TensorProduct.mk A K (v.adicCompletionIntegers K) 1)
       (g := f.toLinearMap.restrictScalars A ∘ₗ (TensorProduct.comm A _ _).toLinearMap)
       fun c hc ↦ by
-        rw [LinearMap.comp_apply, LinearEquiv.coe_coe, mk_apply, comm_tmul,
-          LinearMap.restrictScalars_apply, AlgHom.toLinearMap_apply, hf, map_one, mul_one] at hc
+        have hc : (c : v.adicCompletion K) = 0 := by simpa [hf] using hc
         rw [mk_apply, show c = 0 from Subtype.ext hc, tmul_zero]
     exact (TensorProduct.comm A _ _).symm.injective (this (by simpa using hxy))
   · -- `z = (z / b) * b` for some `b ∈ K` with the valuation of `z`.
@@ -108,9 +107,7 @@ theorem adicCompletionIntegersTensorEquiv_tmul (c : v.adicCompletionIntegers K) 
 /-- The image of `1 ⊗ x` in `K_v` has the valuation of `x`. -/
 theorem valued_adicCompletionIntegersTensorEquiv_one_tmul (x : K) :
     Valued.v (adicCompletionIntegersTensorEquiv K v (1 ⊗ₜ x)) = v.valuation K x := by
-  rw [adicCompletionIntegersTensorEquiv_tmul, OneMemClass.coe_one, one_mul,
-    algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply,
-    valuedAdicCompletion_eq_valuation']
+  simp [algebraMap_adicCompletion]
 
 /-- An element of `𝒪_v ⊗[A] K` is sent into `𝒪_v` exactly when it lies in the image of `𝒪_v`,
 the bottom `𝒪_v`-subalgebra. -/

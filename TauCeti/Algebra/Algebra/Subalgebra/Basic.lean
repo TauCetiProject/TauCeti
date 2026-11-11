@@ -23,8 +23,6 @@ compatible with the two inclusions into `A`.
   different base rings, with the same underlying set.
 * `Subalgebra.coe_ringEquivOfSetEq_apply` and `Subalgebra.coe_ringEquivOfSetEq_symm_apply`: the
   isomorphism and its inverse commute with the inclusions into `A`.
-* `Subalgebra.span_coe_eq_top`: a subalgebra of `A` spans `A` as an `A`-module, since it
-  contains `1`.
 -/
 
 public section
@@ -51,10 +49,5 @@ theorem coe_ringEquivOfSetEq_apply (S₁ : Subalgebra R₁ A) (S₂ : Subalgebra
 theorem coe_ringEquivOfSetEq_symm_apply (S₁ : Subalgebra R₁ A) (S₂ : Subalgebra R₂ A)
     (h : (S₁ : Set A) = S₂) (b : S₂) : ((ringEquivOfSetEq S₁ S₂ h).symm b : A) = b :=
   (rfl)
-
-/-- A subalgebra `S` of `A` spans `A` as an `A`-module, since `1 ∈ S`. For instance, the base ring
-`A` (the bottom subalgebra) spans its fraction field `K` over `K`. -/
-theorem span_coe_eq_top (S : Subalgebra R₁ A) : Submodule.span A (S : Set A) = ⊤ :=
-  eq_top_iff.2 fun x _ ↦ mul_one x ▸ Submodule.smul_mem _ x (Submodule.subset_span S.one_mem)
 
 end Subalgebra

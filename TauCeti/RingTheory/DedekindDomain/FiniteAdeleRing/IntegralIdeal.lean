@@ -95,8 +95,7 @@ theorem mem_toFractionalIdeal_iff (x : 𝔸ᶠ[R, K]ˣ) {a : K} :
   rw [← FractionalIdeal.spanSingleton_le_iff_mem, ← Units.val_mk0 ha, ← coe_toPrincipalIdeal,
     hle, toFractionalIdeal_le_one_iff, mem_integralAdeles]
   refine forall_congr' fun v ↦ ?_
-  rw [Units.val_mul, mul_apply, mul_comm, unitEmbedding_apply, algebraMap_apply, Units.val_mk0,
-    algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply]
+  simp [u, mul_comm, unitEmbedding_apply, algebraMap_adicCompletion]
 
 variable (R K) in
 /-- Finite ideles whose underlying adeles are integral at every finite place. -/
