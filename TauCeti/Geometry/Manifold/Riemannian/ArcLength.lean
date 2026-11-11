@@ -40,6 +40,9 @@ that energy less than `(b - a) / 2` forces length less than `b - a`.
   a parameter set with unique derivatives.
 * `ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin`: the Riemannian length of a
   `C¹` curve over a compact interval is the integral of its speed.
+* `ContMDiff.integral_eq_intervalIntegral_norm_curveVelocity_smul`: integrals against the image of
+  the speed-weighted Lebesgue measure on `(a, b]` under a `C¹` curve `γ` are integrals over
+  `[a, b]` of the composite with `γ`, weighted by the speed.
 * `TauCeti.Manifold.pathELength_eq_of_norm_curveVelocity_eq`: a curve of constant speed `C` on
   `(a, b)` has length `C * (b - a)`.
 * `TauCeti.Manifold.pathELength_le_ofReal_sqrt_energy_of_intervalIntegrable`: the length `L` and
@@ -126,6 +129,25 @@ theorem _root_.ContMDiffOn.intervalIntegrable_norm_curveVelocity_sq {γ : ℝ �
   have hmem : s ∈ 𝓝 t :=
     mem_interior_iff_mem_nhds.mp (interior_mono hsub (by rwa [uIcc, interior_Icc]))
   rw [Pi.pow_apply, curveVelocityWithin_of_mem_nhds hmem]
+
+/-- If a `C¹` curve `γ` carries the Lebesgue measure on `(a, b]`, weighted by its speed, to a
+measure `ν`, then integrals against `ν` are integrals over `[a, b]` weighted by the speed. -/
+theorem _root_.ContMDiff.integral_eq_intervalIntegral_norm_curveVelocity_smul
+    [MeasurableSpace M] [BorelSpace M] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ) I 1 γ) {a b : ℝ} (hab : a ≤ b) {ν : Measure M}
+    (hν : Measure.map γ ((volume.restrict (Ioc a b)).withDensity
+      fun t ↦ ‖curveVelocity I γ t‖ₑ) = ν) {f : M → G} (hf : AEStronglyMeasurable f ν) :
+    ∫ y, f y ∂ν = ∫ t in a..b, ‖curveVelocity I γ t‖ • f (γ t) := by
+  have hc : Continuous fun t ↦ ‖curveVelocity I γ t‖ := by
+    simpa only [curveVelocityWithin_univ, continuousOn_univ] using
+      hγ.contMDiffOn.continuousOn_norm_curveVelocityWithin uniqueMDiffOn_univ
+  have hρ : AEMeasurable (fun t ↦ ‖curveVelocity I γ t‖ₑ) (volume.restrict (Ioc a b)) := by
+    simpa only [ofReal_norm] using hc.measurable.ennreal_ofReal.aemeasurable
+  subst hν
+  rw [integral_map hγ.continuous.aemeasurable hf,
+    integral_withDensity_eq_integral_toReal_smul₀ hρ (ae_of_all _ fun _ ↦ enorm_lt_top),
+    intervalIntegral.integral_of_le hab]
+  simp only [toReal_enorm]
 
 omit [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- A curve whose Riemannian speed is `C` on the open interval `(a, b)` has length `C * (b - a)`

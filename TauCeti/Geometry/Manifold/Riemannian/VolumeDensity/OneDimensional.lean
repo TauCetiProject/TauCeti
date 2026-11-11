@@ -134,25 +134,6 @@ theorem _root_.IsLocalDiffeomorph.map_withDensity_enorm_curveVelocity_of_periodi
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
-omit [FiniteDimensional ℝ E] [LindelofSpace M] in
-/-- If a `C¹` curve `γ` carries the Lebesgue measure on `(a, b]`, weighted by its speed, to a
-measure `ν`, then integrals against `ν` are integrals over `[a, b]` weighted by the speed. -/
-private theorem integral_eq_intervalIntegral_norm_curveVelocity_smul {γ : ℝ → M}
-    (hγ : ContMDiff 𝓘(ℝ) I 1 γ) {a b : ℝ} (hab : a ≤ b) {ν : Measure M}
-    (hν : Measure.map γ ((volume.restrict (Ioc a b)).withDensity
-      fun t ↦ ‖curveVelocity I γ t‖ₑ) = ν) {f : M → G} (hf : AEStronglyMeasurable f ν) :
-    ∫ y, f y ∂ν = ∫ t in a..b, ‖curveVelocity I γ t‖ • f (γ t) := by
-  have hc : Continuous fun t ↦ ‖curveVelocity I γ t‖ := by
-    simpa only [curveVelocityWithin_univ, continuousOn_univ] using
-      hγ.contMDiffOn.continuousOn_norm_curveVelocityWithin uniqueMDiffOn_univ
-  have hρ : AEMeasurable (fun t ↦ ‖curveVelocity I γ t‖ₑ) (volume.restrict (Ioc a b)) := by
-    simpa only [ofReal_norm] using hc.measurable.ennreal_ofReal.aemeasurable
-  subst hν
-  rw [integral_map hγ.continuous.aemeasurable hf,
-    integral_withDensity_eq_integral_toReal_smul₀ hρ (ae_of_all _ fun _ ↦ enorm_lt_top),
-    intervalIntegral.integral_of_le hab]
-  simp only [toReal_enorm]
-
 /-- For a `p`-periodic `C^n` local diffeomorphism `γ` from `ℝ` to a Riemannian manifold, with
 `n ≠ 0`, which is injective on the open interval `(a, a + p)`, the integral of `f` over the range
 of `γ` against the Riemannian volume is the integral over a period of `f ∘ γ` weighted by the
@@ -163,7 +144,7 @@ theorem _root_.IsLocalDiffeomorph.setIntegral_riemannianVolume_range_of_periodic
     (hf : AEStronglyMeasurable f ((riemannianVolume I M).restrict (range γ))) :
     ∫ y in range γ, f y ∂riemannianVolume I M =
       ∫ t in a..a + p, ‖curveVelocity I γ t‖ • f (γ t) :=
-  integral_eq_intervalIntegral_norm_curveVelocity_smul
+  ContMDiff.integral_eq_intervalIntegral_norm_curveVelocity_smul
     (hγ.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn)) (le_add_of_nonneg_right hp.le)
     (hγ.map_withDensity_enorm_curveVelocity_of_periodic hn hper hp a hinj) hf
 
@@ -194,7 +175,7 @@ theorem _root_.Diffeomorph.integral_riemannianVolume_addCircle {n : ℕ∞ω} {p
     (hf : AEStronglyMeasurable f (riemannianVolume I M)) :
     ∫ y, f y ∂riemannianVolume I M =
       ∫ t in a..a + p, ‖curveVelocity I (fun r : ℝ ↦ e r) t‖ • f (e t) :=
-  integral_eq_intervalIntegral_norm_curveVelocity_smul
+  ContMDiff.integral_eq_intervalIntegral_norm_curveVelocity_smul
     ((e.contMDiff.comp (AddCircle.contMDiff_coe p n)).of_le
       (ENat.one_le_iff_ne_zero_withTop.mpr hn))
     (le_add_of_nonneg_right (Fact.out : 0 < p).le)
