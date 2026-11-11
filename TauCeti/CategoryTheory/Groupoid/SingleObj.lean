@@ -27,7 +27,9 @@ that dictionary applied to isomorphisms.
 The weak initiality hypothesis is stated as the family of nonemptiness assertions
 `∀ x, Nonempty (x₀ ⟶ x)` rather than through `CategoryTheory.IsConnected`: the intended source of
 that data is a path-connected topological space, whose fundamental groupoid comes with paths out
-of a chosen basepoint.
+of a chosen basepoint. The groupoid hypothesis is the proposition `CategoryTheory.IsGroupoid C`
+that every morphism of the category `C` is an isomorphism, so no choice of inverses is needed; it
+holds in particular for every `CategoryTheory.Groupoid`.
 
 For a monoid `M`, a functor from such a groupoid to `SingleObj M` is determined by its values on
 the morphisms out of `x₀` (`TauCeti.Groupoid.functor_singleObj_ext_of_map_eq`).
@@ -91,15 +93,15 @@ end Category
 
 section Groupoid
 
-variable {C : Type u} [CategoryTheory.Groupoid.{v} C] (x₀ : C)
+variable {C : Type u} [Category.{v} C] [IsGroupoid C] (x₀ : C)
 
 /-- If `x₀` admits a morphism to every object of the groupoid, then every object is isomorphic to
 `x₀`, so the functor out of the one-object category is essentially surjective. -/
 theorem essSurj_singleObjFunctor (hconn : ∀ x : C, Nonempty (x₀ ⟶ x)) :
     (singleObjFunctor x₀).EssSurj where
   mem_essImage x :=
-    ⟨SingleObj.star (End x₀),
-      ⟨(CategoryTheory.Groupoid.isoEquivHom x₀ x).symm (hconn x).some⟩⟩
+    let ⟨f⟩ := hconn x
+    ⟨SingleObj.star (End x₀), ⟨(asIso f : x₀ ≅ x)⟩⟩
 
 /-- If `x₀` admits a morphism to every object of the groupoid, the functor out of the one-object
 category of the vertex group is an equivalence. -/
@@ -156,7 +158,7 @@ variable {M : Type*} [Monoid M]
 
 /-- In a groupoid, two functors to the one-object category of a monoid are equal once they agree
 on every morphism out of an object `x₀` which admits a morphism to every object. -/
-theorem functor_singleObj_ext_of_map_eq {C : Type u} [CategoryTheory.Groupoid.{v} C] (x₀ : C)
+theorem functor_singleObj_ext_of_map_eq {C : Type u} [Category.{v} C] [IsGroupoid C] (x₀ : C)
     (hconn : ∀ x : C, Nonempty (x₀ ⟶ x)) {F F' : C ⥤ SingleObj M}
     (h : ∀ (x : C) (f : x₀ ⟶ x), F.map f = F'.map f) : F = F' := by
   refine CategoryTheory.Functor.ext (fun _ ↦ rfl) fun a b f ↦ ?_
