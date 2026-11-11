@@ -16,7 +16,10 @@ In an ultrametric seminormed group, `‖x / y‖ ≤ max ‖x‖ ‖y‖`; addit
 `IsUltrametricDist.norm_mul_le_max` and `IsUltrametricDist.norm_add_le_max`. Measured from a
 common point `y`, the triangle inequality reads `‖x - z‖ ≤ max ‖x - y‖ ‖z - y‖`. If
 `‖x - y‖ < ‖x‖` then `‖x‖ = ‖y‖`: an element and a strictly smaller perturbation of it have the
-same norm, and if `x` and `y - x` both have norm at most `C`, so does `y`.
+same norm, and if `x` and `y - x` both have norm at most `C`, so does `y`. Consequently a dense
+subset attains every nonzero norm (`IsUltrametricDist.exists_norm_eq_of_denseRange'`, additively
+`IsUltrametricDist.exists_norm_eq_of_denseRange`): passing to a completion adds no new nonzero
+norms.
 
 A separable ultrametric additive group with a strictly decreasing sequence of norms `‖cₙ‖`
 bounded away from `0` is not spherically complete: there are decreasing closed balls of radii
@@ -68,6 +71,18 @@ point `y`: `‖x - z‖ ≤ max ‖x - y‖ ‖z - y‖`. -/]
 theorem norm_div_le_max_norm_div (x y z : S) : ‖x / z‖ ≤ max ‖x / y‖ ‖z / y‖ := by
   rw [norm_div_rev z y, ← div_mul_div_cancel x y z]
   exact norm_mul_le_max _ _
+
+/-- **A dense subset attains every nonzero norm** of an ultrametric group: if `f` has dense range
+and `‖y‖ ≠ 0`, then `‖f a‖ = ‖y‖` for some `a`. -/
+@[to_additive exists_norm_eq_of_denseRange /-- **A dense subset attains every nonzero norm** of an
+ultrametric additive group: if `f` has dense range and `‖y‖ ≠ 0`, then `‖f a‖ = ‖y‖` for some
+`a`. -/]
+theorem exists_norm_eq_of_denseRange' {α : Type*} {f : α → S} (hf : DenseRange f) {y : S}
+    (hy : ‖y‖ ≠ 0) : ∃ a, ‖f a‖ = ‖y‖ := by
+  obtain ⟨a, ha⟩ := hf.exists_dist_lt y ((norm_nonneg' y).lt_of_ne' hy)
+  rw [dist_eq_norm_inv_mul] at ha
+  refine ⟨a, ?_⟩
+  rw [← mul_inv_cancel_left y (f a), norm_mul_eq_max_of_norm_ne_norm ha.ne', max_eq_left ha.le]
 
 section SphericalCompleteness
 

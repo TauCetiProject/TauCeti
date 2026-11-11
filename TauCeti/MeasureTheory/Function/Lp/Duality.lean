@@ -88,11 +88,7 @@ conjugate exponents `p` and `q`. -/
 theorem enorm_integral_mul_le {𝕜 : Type*} [NonUnitalNormedRing 𝕜] [NormedSpace ℝ 𝕜]
     {p q : ℝ≥0∞} [p.HolderConjugate q] {u v : α → 𝕜} :
     ‖∫ x, u x * v x ∂μ‖ₑ ≤ eLpNorm u p μ * eLpNorm v q μ := by
-  calc ‖∫ x, u x * v x ∂μ‖ₑ ≤ eLpNorm (fun x => u x * v x) 1 μ :=
-        (eNorm_integral_le_lintegral_eNorm _).trans lintegral_eNorm_le_eLpNorm_one
-    _ ≤ eLpNorm u p μ * eLpNorm v q μ := by
-        simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm_of_pos (· * ·) 1 continuous_mul
-          (ae_of_all _ fun x => by simpa using norm_mul_le (u x) (v x)) zero_lt_one
+  simpa only [smul_eq_mul] using enorm_integral_smul_le (μ := μ) (p := p) (a := u) (f := v)
 
 /-- **Hölder's inequality** for the integral of an inner product: `‖∫ ⟪u, v⟫‖ ≤ ‖u‖_p ‖v‖_q` for
 Hölder conjugate exponents `p` and `q`. -/

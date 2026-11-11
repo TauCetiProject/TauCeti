@@ -8,15 +8,21 @@ module
 public import Mathlib.MeasureTheory.Function.Holder
 
 /-!
-# Integrability of dual pairings
+# Hölder estimates for pointwise pairings
 
-Pointwise evaluation pairs dual-valued and vector-valued functions with Hölder conjugate
-exponents to give an integrable scalar function. This supplies the integrability needed to
-split integrals in weak integration-by-parts formulas. The result specializes Mathlib's
-bilinear Hölder estimate `ContinuousLinearMap.memLp_of_bilin` to the dual pairing.
+Consequences of Mathlib's Hölder estimates for the pairings used in duality and weak
+integration-by-parts arguments:
 
-The Hölder pairing `ContinuousLinearMap.lpPairing` of the multiplication of a normed algebra is
-the integral of the product (`ContinuousLinearMap.lpPairing_mul_eq_integral`).
+* `MeasureTheory.MemLp.integrable_apply`: evaluating an `L^p` function with values in continuous
+  linear maps `V →L[𝕜] W` on a `V`-valued `L^q` function, for Hölder conjugate exponents, gives
+  an integrable function. This supplies the integrability needed to split integrals in weak
+  integration-by-parts formulas. It specializes Mathlib's bilinear Hölder estimate
+  `ContinuousLinearMap.memLp_of_bilin` to evaluation.
+* `ContinuousLinearMap.lpPairing_mul_eq_integral`: the Hölder pairing
+  `ContinuousLinearMap.lpPairing` of the multiplication of a complete normed algebra is the
+  integral of the product.
+* `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
+  Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
 -/
 
 public section
@@ -25,16 +31,17 @@ open scoped ENNReal
 
 namespace MeasureTheory.MemLp
 
-variable {α 𝕜 V : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] {μ : Measure α} {p q : ℝ≥0∞}
-  [p.HolderConjugate q] {f : α → StrongDual 𝕜 V} {g : α → V}
+variable {α 𝕜 V W : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+  {μ : Measure α} {p q : ℝ≥0∞} [p.HolderConjugate q] {f : α → V →L[𝕜] W} {g : α → V}
 
-/-- Evaluating a dual-valued `L^p` function on an `L^q` function is integrable when the
-exponents are Hölder conjugate. -/
+/-- Evaluating an `L^p` function with values in continuous linear maps on an `L^q` function is
+integrable when the exponents are Hölder conjugate. This covers dual pairings, where
+`W = 𝕜`. -/
 theorem integrable_apply (hf : MemLp f p μ) (hg : MemLp g q μ) :
     Integrable (fun x ↦ f x (g x)) μ :=
   memLp_one_iff_integrable.1
-    ((ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 V)).memLp_of_bilin 1 hf hg)
+    ((ContinuousLinearMap.id 𝕜 (V →L[𝕜] W)).memLp_of_bilin 1 hf hg)
 
 end MeasureTheory.MemLp
 
@@ -59,13 +66,19 @@ namespace TauCeti
 
 open MeasureTheory
 
-/-- **Hölder's inequality** for the Bochner integral of a scalar multiple. -/
+/-- **Hölder's inequality** for the Bochner integral of a pointwise scalar multiple:
+`‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for Hölder conjugate exponents `p` and `q`. The scalars only need to
+act boundedly, as a normed field does on a normed space and a normed ring does on itself. -/
 theorem enorm_integral_smul_le {α 𝕜 F : Type*} [MeasurableSpace α]
-    [NormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F]
-    {μ : Measure α} {p q : ℝ≥0∞} [p.HolderConjugate q] {a : α → 𝕜} {f : α → F} :
+    [NormedAddGroup 𝕜] [NormedAddCommGroup F] [SMulZeroClass 𝕜 F] [IsBoundedSMul 𝕜 F]
+    [NormedSpace ℝ F] {μ : Measure α} {p q : ℝ≥0∞} [p.HolderConjugate q] {a : α → 𝕜}
+    {f : α → F} :
     ‖∫ x, a x • f x ∂μ‖ₑ ≤ eLpNorm a p μ * eLpNorm f q μ := by
   calc ‖∫ x, a x • f x ∂μ‖ₑ ≤ eLpNorm (fun x => a x • f x) 1 μ :=
       (eNorm_integral_le_lintegral_eNorm _).trans lintegral_eNorm_le_eLpNorm_one
-    _ ≤ eLpNorm a p μ * eLpNorm f q μ := eLpNorm_smul_le_mul_eLpNorm_of_pos zero_lt_one
+    _ ≤ eLpNorm a p μ * eLpNorm f q μ := by
+      simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm_of_pos (· • ·) 1
+        continuous_smul.comp_aestronglyMeasurable₂
+        (.of_forall fun _ => by simpa using eNorm_smul_le) zero_lt_one
 
 end TauCeti

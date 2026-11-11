@@ -56,8 +56,8 @@ theorem continuous_lift_iff (f : MultilinearMap (RingHom.id 𝕜) E F) :
       simp
     exact hcomp ▸ hf.comp (continuous_tprod p hp)
   · intro hf
-    exact continuous_lift p q hq f (fun j =>
-      exists_multilinearMap_seminorm_bound p hp (q j) (hq.continuous_seminorm j) f hf)
+    exact continuous_lift p q hq f fun j => exists_multilinearMap_seminorm_bound p hp (q j) f
+      ((hq.continuous_seminorm j).comp hf).continuousAt
 
 variable [IsTopologicalAddGroup F] [ContinuousConstSMul 𝕜 F]
 
