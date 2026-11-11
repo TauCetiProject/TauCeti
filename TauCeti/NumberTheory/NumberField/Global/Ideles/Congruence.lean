@@ -408,7 +408,7 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
   have hAopen : IsOpen A := isOpen_setOf_congruenceConditions 𝔪
   have hmemA : ∀ x ∈ ideleCongruenceSubgroup 𝔪, (x : 𝔸[K]) ∈ A := by
     intro x hx
-    refine ⟨FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
+    refine ⟨FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_, fun v _ ↦ ?_, fun w hw ↦ ?_⟩
     · exact ideleCongruenceSubgroup.snd_mem_adicCompletionIntegers hx v
     · exact ideleCongruenceSubgroup.valued_snd_sub_one_le_of_pow_dvd hx
         (𝔪.pow_exponent_dvd_finitePart v)
@@ -590,7 +590,7 @@ theorem ideleCongruenceSubgroup_gcd (𝔪 𝔫 : Modulus K) :
       · exact extensionEmbeddingOfIsReal_pos_of_mem_inter hx hw
           (not_not.mp fun h𝔫 ↦ hwT (hmemT.mpr ⟨hw, h𝔫⟩))
   · -- The components of `y` satisfy the conditions of `𝔫`.
-    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
+    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v _ ↦ ?_, fun w hw ↦ ?_⟩
     · rw [hyf]
       split_ifs
       · exact hunit v

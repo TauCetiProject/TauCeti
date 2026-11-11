@@ -113,7 +113,7 @@ theorem image_interlace_fst [DecidableEq α] {s : Finset α} :
     s.interlace.image (fun p => (ofLex p).1) = s := by
   ext x
   simp only [mem_image, mem_interlace]
-  exact ⟨fun ⟨p, hp, hpx⟩ => hpx ▸ hp, fun hx => ⟨toLex (x, false), hx, rfl⟩⟩
+  exact ⟨fun ⟨_, hp, hpx⟩ => hpx ▸ hp, fun hx => ⟨toLex (x, false), hx, rfl⟩⟩
 
 end Finset
 
@@ -227,7 +227,7 @@ theorem prod_parts_interlace {M : Type*} [CommMonoid M] (P Q : Finpartition s)
     (toLex_mk_injective true) h]
   refine disjoint_left.2 fun C hP hQ => ?_
   obtain ⟨B, hB, rfl⟩ := mem_image.1 hP
-  obtain ⟨B', hB', hBB'⟩ := mem_image.1 hQ
+  obtain ⟨B', _, hBB'⟩ := mem_image.1 hQ
   obtain ⟨x, hx⟩ := P.nonempty_of_mem_parts hB
   obtain ⟨y, -, hyx⟩ := mem_image.1 (hBB' ▸ mem_image_of_mem (fun x => toLex (x, false)) hx)
   exact Bool.noConfusion (Prod.mk.inj (toLex.injective hyx)).2
@@ -493,7 +493,7 @@ private theorem exists_interval_of_interlacePairs_le {ρ : NoncrossingPartition 
       fun h => hBρ h ▸ toLex_mem_part_of_interlacePairs_le hρ hx b false⟩
   refine ⟨T, filter_subset _ s, fun x hx z hz y hy hxy hyz => ?_, ?_, ?_,
     fun x hx y hy b b' h => ?_⟩
-  · obtain ⟨hxs, hxB⟩ := mem_filter.1 hx
+  · obtain ⟨_, hxB⟩ := mem_filter.1 hx
     obtain ⟨hzs, hzB⟩ := mem_filter.1 hz
     refine mem_filter.2 ⟨hy, ?_⟩
     rcases hxy.lt_or_eq with hxy | rfl

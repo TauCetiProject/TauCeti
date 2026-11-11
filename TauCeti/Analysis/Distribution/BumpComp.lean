@@ -42,7 +42,7 @@ theorem nonpos_of_forall_intervalIntegral_mul_contDiffBump_comp {b F : ℝ → �
   -- `b` is positive on a neighbourhood of `σ₀` inside `(a, T)`.
   obtain ⟨ε, hε, hεb⟩ := Metric.eventually_nhds_iff.1
     ((hb.continuousAt (Icc_mem_nhds hσ.1 hσ.2)).eventually (lt_mem_nhds hpos))
-  set δ := min ε (min (σ₀ - a) (T - σ₀)) with hδ
+  set δ := min ε (min (σ₀ - a) (T - σ₀))
   have hδpos : 0 < δ := lt_min hε (lt_min (by linarith [hσ.1]) (by linarith [hσ.2]))
   have hδσ : δ ≤ σ₀ - a := (min_le_right _ _).trans (min_le_left _ _)
   have hδT : δ ≤ T - σ₀ := (min_le_right _ _).trans (min_le_right _ _)
@@ -55,7 +55,7 @@ theorem nonpos_of_forall_intervalIntegral_mul_contDiffBump_comp {b F : ℝ → �
   set c := F σ₀
   have h1 : c < F (σ₀ - δ / 2) := hFa hm h0 (by linarith)
   have h2 : F (σ₀ + δ / 2) < c := hFa h0 hp (by linarith)
-  set r := min (F (σ₀ - δ / 2) - c) (c - F (σ₀ + δ / 2)) with hr
+  set r := min (F (σ₀ - δ / 2) - c) (c - F (σ₀ + δ / 2))
   have hrpos : 0 < r := lt_min (by linarith) (by linarith)
   let ψ : ContDiffBump c := ⟨r / 2, r, by positivity, by linarith⟩
   have hψ0 : ∀ σ ∈ Icc a T, δ / 2 ≤ |σ - σ₀| → ψ (F σ) = 0 := fun σ hσI hσ' ↦ by

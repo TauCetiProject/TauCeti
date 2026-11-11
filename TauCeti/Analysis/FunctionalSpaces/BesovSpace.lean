@@ -213,7 +213,7 @@ other bump function `φ'`. -/
 theorem MemBesov.of_bump {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (φ' : ContDiffBump (0 : E)) :
     u.MemBesov φ' s p q := by
   obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
-  obtain ⟨K, L, hK, hKL⟩ := exists_littlewoodPaleyBlock_eq_and_le (F := F) φ φ' s
+  obtain ⟨K, L, _, hKL⟩ := exists_littlewoodPaleyBlock_eq_and_le (F := F) φ φ' s
   obtain ⟨f', hf', hle⟩ := hKL f hf
   refine memBesov_iff.2 ⟨f', hf', ((hmem.sum_Ico_sub_add L).const_mul K).mono fun j ↦ ?_⟩
   rw [Real.norm_of_nonneg (by positivity)]
@@ -225,7 +225,7 @@ to `r` costs `n (1/p - 1/r)` orders of smoothness. -/
 theorem MemBesov.mono_exponent {u : 𝓢'(E, F)} {r : ℝ≥0∞} [Fact (1 ≤ r)]
     (hu : u.MemBesov φ s p q) (hpr : p ≤ r) :
     u.MemBesov φ (s - Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) r q := by
-  obtain ⟨C, hC, hB⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_le (F := F) φ hpr
+  obtain ⟨C, _, hB⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_le (F := F) φ hpr
   set a : ℝ := Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)
   obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
   choose g hg hgf using fun j ↦ hB j u (f j) (hf j)

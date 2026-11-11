@@ -462,7 +462,7 @@ variable {X E : Type*} [MeasurableSpace X] [TopologicalSpace X]
 is locally integrable on `s`. -/
 theorem locallyIntegrableOn (g : Lp E p (μ.restrict s)) (hp : 1 ≤ p) :
     LocallyIntegrableOn g s μ := by
-  intro x hx
+  intro x _
   obtain ⟨U, hU, hgU⟩ := ((Lp.memLp g).locallyIntegrable hp) x
   refine ⟨s ∩ U, inter_mem_nhdsWithin s hU, ?_⟩
   rw [IntegrableOn, ← Measure.restrict_restrict_of_subset (inter_subset_left (s := s) (t := U))]

@@ -96,7 +96,7 @@ underlying edges is injective. -/
 theorem bidirectedHom_edge_injOn_cut (S : Set V(G)) :
     Set.InjOn (fun a : Σ x y, G.BidirectedHom x y ↦ a.2.2.1)
       {a | a.1 ∈ S ∧ a.2.1 ∉ S} := by
-  rintro ⟨x, y, e, hxy⟩ ⟨hx, hy⟩ ⟨x', y', e', hxy'⟩ ⟨hx', hy'⟩ (rfl : e = e')
+  rintro ⟨x, y, e, hxy⟩ ⟨hx, _⟩ ⟨x', y', e', hxy'⟩ ⟨hx', hy'⟩ (rfl : e = e')
   rcases hxy.eq_and_eq_or_eq_and_eq hxy' with ⟨h₁, h₂⟩ | ⟨h₁, -⟩
   · obtain rfl : x = x' := Subtype.ext h₁
     obtain rfl : y = y' := Subtype.ext h₂
@@ -158,8 +158,8 @@ variable {α : Type u} {β : Type v} {G : Graph α β}
 /-- A directed walk of the bidirected arrow family of `G`, as a walk of `G` traversing the edges
 of its arrows in the same order. -/
 def toGraphWalk {x : V(G)} : {y : V(G)} → ArrowWalk G.BidirectedHom x y → G.Walk x y
-  | _, @Quiver.Path.nil _ .(_) _ => .nil
-  | _, @Quiver.Path.cons _ .(_) _ _ _ q a => (toGraphWalk q).append a.2.toWalk
+  | _, @Quiver.Path.nil _ .(_) .(x) => .nil
+  | _, @Quiver.Path.cons _ .(_) .(x) _ _ q a => (toGraphWalk q).append a.2.toWalk
 
 variable {x y z : V(G)}
 

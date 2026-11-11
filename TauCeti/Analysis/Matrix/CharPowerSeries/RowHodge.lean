@@ -134,7 +134,7 @@ theorem isConvexSeq_rowHodgePolygon (hb : 1 < b) (hr : BddAbove (Set.range r)) :
       simpa [s] using h
   rw [heq]
   refine isConvexSeq_ite hs ?_
-  intro i hi j hj hij
+  intro i _ j hj hij
   simp only [sum_range_succ, add_sub_cancel_left]
   have hpos : 0 < decreasingRearrangement r j := hj.2 j (Nat.lt_succ_self j)
   exact neg_le_neg (Real.logb_le_logb_of_le hb hpos (antitone_decreasingRearrangement hr hij))
