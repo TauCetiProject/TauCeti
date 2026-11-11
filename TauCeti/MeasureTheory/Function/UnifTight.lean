@@ -42,12 +42,7 @@ protected theorem UnifTight.ae_mono {α β ι : Type*} {m : MeasurableSpace α}
 open Filter Topology in
 /-- **Continuous maps of norm at most the identity preserve `Lᵖ` convergence.** Let
 `1 ≤ p < ∞` and let `P` be continuous with `‖P x‖ ≤ ‖x‖`. If `f n → g` in `Lᵖ`, then
-`P ∘ f n → P ∘ g` in `Lᵖ`.
-
-Every subsequence of `f` has a further subsequence converging almost everywhere, along which
-`P ∘ f` converges almost everywhere by continuity, while the norm bound transfers uniform
-integrability and uniform tightness from `f` to `P ∘ f`; Vitali's convergence theorem then gives
-convergence along that subsequence. -/
+`P ∘ f n → P ∘ g` in `Lᵖ`. -/
 theorem tendsto_eLpNorm_comp_sub_comp_of_tendsto {α β : Type*} {m : MeasurableSpace α}
     [NormedAddCommGroup β] {μ : Measure α} {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞) {P : β → β}
     (hP : Continuous P) (hPb : ∀ x, ‖P x‖ ≤ ‖x‖) {f : ℕ → α → β} {g : α → β}

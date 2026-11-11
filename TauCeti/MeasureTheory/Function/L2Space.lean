@@ -201,15 +201,15 @@ private theorem max_add_sq_sub_bounds (x y : ℝ) :
 
 open Filter in
 /-- **The squared `L²` norm of the positive part is differentiable**: on real `L²`, the map
-`g ↦ ‖g⁺‖²` has derivative `k ↦ 2 ⟪f⁺, k⟫` at `f`. The remainder is at most `‖k‖²`, because
-`x ↦ (x⁺)²` is convex with derivative `2 x⁺`, which is `2`-Lipschitz. -/
+`g ↦ ‖g⁺‖²` has derivative `k ↦ 2 ⟪f⁺, k⟫` at `f`. -/
 theorem Lp.hasFDerivAt_norm_posPart_sq (f : Lp ℝ 2 μ) :
     HasFDerivAt (fun g : Lp ℝ 2 μ ↦ ‖Lp.posPart g‖ ^ 2)
       ((2 : ℝ) • innerSL ℝ (Lp.posPart f)) f := by
   rw [hasFDerivAt_iff_isLittleO_nhds_zero]
   refine Asymptotics.IsBigO.trans_isLittleO ?_ (Asymptotics.isLittleO_norm_pow_id one_lt_two)
   refine Asymptotics.IsBigO.of_bound 1 (Eventually.of_forall fun h ↦ ?_)
-  -- The remainder is the integral of the pointwise remainder `φ` of `x ↦ (x⁺)²`.
+  -- The remainder is the integral of the pointwise remainder `φ` of `x ↦ (x⁺)²`, which lies
+  -- between `0` and `h²` since `x ↦ (x⁺)²` is convex with `2`-Lipschitz derivative `2 x⁺`.
   set φ : α → ℝ := fun x ↦ max (f x + h x) 0 ^ 2 - max (f x) 0 ^ 2 - 2 * max (f x) 0 * h x
   have i₁ := L2.integrable_inner (𝕜 := ℝ) (Lp.posPart (f + h)) (Lp.posPart (f + h))
   have i₂ := L2.integrable_inner (𝕜 := ℝ) (Lp.posPart f) (Lp.posPart f)
