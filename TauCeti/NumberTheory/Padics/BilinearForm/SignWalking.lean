@@ -45,17 +45,18 @@ a sign walk that do not pass between two adjacent constituents of type I:
 
 In each case there is another Jordan splitting `N'` of `B`, agreeing with `N` away from the two
 indices, in which the Gram determinants of the two constituents are multiplied by the nonsquare
-unit `5` up to squares, and the oddities of the constituents of type I among them by `4` modulo
-`8`. Since `5 ≡ 1` modulo `4` and its sign is `χ₈(5) = -1`, this is the sign walk. The isometries
-above concern one or two vectors of each constituent: a vector `x` of `N k` with `B x x = 2 ^ k a`,
+unit `5` up to squares, and the oddities of the constituents of type I among them change by `4`
+modulo `8`. Since `5 ≡ 1` modulo `4` and its sign is `χ₈(5) = -1`, this is the sign walk. The
+isometries above concern one or two vectors of each constituent: a vector `x` of `N k` with
+`B x x = 2 ^ k a`,
 `a` a unit, for a constituent of type I, and a pair with Gram matrix `2 ^ k U` or `2 ^ k V` for a
 nonzero constituent of type II. These blocks are exchanged by
 `LinearMap.BilinForm.IsJordanSplitting.exists_isJordanSplitting_of_span_eq`, which keeps their
 orthogonal complements in the two constituents.
 
-Between two adjacent constituents of type I, both signs change together with the oddities in a
-different way, `⟨1, 2⟩ ≅ ⟨3, 6⟩`, and this is covered by the classification of `⟨a, 2 b⟩`
-(`TauCeti.equivalent_toBilin'_diagonal_two_pow_mul_iff`) rather than by the moves here.
+The move between two adjacent constituents of type I on a Jordan splitting is not proved here.
+Its underlying isometry of explicit binary forms, such as `⟨1, 2⟩ ≅ ⟨3, 6⟩`, is covered by
+`TauCeti.equivalent_toBilin'_diagonal_two_pow_mul_iff`.
 
 The isometry invariants of a dyadic Jordan splitting, such as the determinant conditions of
 `LinearMap.BilinForm.IsJordanSplitting.exists_sq_mul_det_toMatrix_eq_of_equivalent` and the
@@ -95,7 +96,7 @@ variable {M : Type*} [AddCommGroup M] [Module ℤ_[2] M] {B : BilinForm ℤ_[2] 
 /-! ### Vectors of constituents of type I and type II -/
 
 /-- A constituent `N k` of type I has a vector `x` with `B x x = 2 ^ k a` for a unit `a`. -/
-private theorem IsJordanSplitting.exists_mem_apply_self_eq_two_pow_mul (h : B.IsJordanSplitting 2 N)
+theorem IsJordanSplitting.exists_mem_apply_self_eq_two_pow_mul (h : B.IsJordanSplitting 2 N)
     {k : ℕ} (hodd : ¬∀ x ∈ N k, 2 * 2 ^ k ∣ B x x) :
     ∃ x ∈ N k, ∃ a : ℤ_[2], IsUnit a ∧ B x x = 2 ^ k * a := by
   push Not at hodd
@@ -107,7 +108,7 @@ private theorem IsJordanSplitting.exists_mem_apply_self_eq_two_pow_mul (h : B.Is
 
 /-- A nonzero constituent `N k` of type II has a pair `e, f` whose Gram matrix is `2 ^ k` times
 `U = !![0, 1; 1, 0]` or `V = !![2, 1; 1, 2]`. -/
-private theorem IsJordanSplitting.exists_mem_apply_eq_two_pow [Module.Free ℤ_[2] M]
+theorem IsJordanSplitting.exists_mem_apply_eq_two_pow [Module.Free ℤ_[2] M]
     [Module.Finite ℤ_[2] M] (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm) {k : ℕ}
     (heven : ∀ x ∈ N k, 2 * 2 ^ k ∣ B x x) (hne : N k ≠ ⊥) :
     ∃ e ∈ N k, ∃ f ∈ N k, B e f = 2 ^ k ∧

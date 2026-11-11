@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
-public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Modular
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
@@ -21,7 +22,7 @@ Let `B` be a symmetric form on a `ℤ_[2]`-module, and let `P` be the span of a 
 with `G` of unit determinant. Then `B` is `2 ^ k` times a unimodular form `C` on `P`, and the
 *oddity* of `C`, the self-pairing `C w w` of a characteristic vector `w` modulo `8`
 (`LinearMap.BilinForm.IsCharacteristic.eight_dvd_apply_self_sub_apply_self`), is `a` plus a
-contribution of `t` alone (`LinearMap.BilinForm.IsSymm.two_pow_mul_eight_dvd_of_eq_span`).
+contribution of `t` alone.
 
 So replacing `x` by another vector `x'` orthogonal to `t`, with `B x' x' = 2 ^ k a'`, changes the
 oddity by `a' - a` modulo `8` (`LinearMap.BilinForm.IsSymm.eight_dvd_sub_sub_of_eq_span`). This is
@@ -30,8 +31,6 @@ block of it is exchanged, as in sign walking and oddity fusion.
 
 ## Main results
 
-* `LinearMap.BilinForm.IsSymm.two_pow_mul_eight_dvd_of_eq_span`: the oddity of `C` is `a` plus a
-  term depending only on `t` and its Gram matrix, modulo `8`.
 * `LinearMap.BilinForm.IsSymm.eight_dvd_sub_sub_of_eq_span`: exchanging `x` for `x'` changes the
   oddity by `a' - a` modulo `8`.
 
@@ -54,7 +53,8 @@ variable {M : Type*} [AddCommGroup M] [Module ℤ_[2] M] {B : BilinForm ℤ_[2] 
 /-- The characteristic vectors of `P = ⟨x, t⟩`, with `B x x = 2 ^ k a`, `x` orthogonal to `t` and
 `B` equal to `2 ^ k C` on `P`, have self-pairings `C w w ≡ a + 2 ^ (-k) B w₀ w₀ (mod 8)` for a
 vector `w₀` of the span of `t` that depends only on `t` and its Gram matrix. -/
-theorem IsSymm.two_pow_mul_eight_dvd_of_eq_span (hB : B.IsSymm) {k m : ℕ} {x : M} {a : ℤ_[2]}
+private theorem IsSymm.two_pow_mul_eight_dvd_of_eq_span (hB : B.IsSymm) {k m : ℕ} {x : M}
+    {a : ℤ_[2]}
     {t : Fin m → M} {G : Matrix (Fin m) (Fin m) ℤ_[2]} (hx : B x x = 2 ^ k * a)
     (hG : ∀ i j, B (t i) (t j) = 2 ^ k * G i j) (hxt : ∀ j, B x (t j) = 0) (hau : IsUnit a)
     (hGu : IsUnit G.det) {P : Submodule ℤ_[2] M}
