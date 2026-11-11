@@ -28,6 +28,8 @@ inequality for closed plane curves.
 For a continuous, time-dependent real coefficient `g`, a differentiable solution of `P' = g • P`
 on an open interval `J` is `P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`
 (`TauCeti.eq_exp_integral_smul_of_hasDerivAt_smul`), by the integrating factor `exp (-∫ₛᵘ g)`.
+For a constant coefficient `c`, a solution of `v' = c • v` on a closed half-line `(-∞, a]` is
+`v τ = exp (c (τ - a)) • v a` there (`TauCeti.eq_exp_smul_of_hasDerivAt_smul_of_le`).
 -/
 
 public section
@@ -137,5 +139,25 @@ theorem eq_exp_integral_smul_of_hasDerivAt_smul {J : Set ℝ} (hJo : IsOpen J)
     rw [smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
   rw [hconst] at hPt
   exact hPt
+
+/-- **Constant-coefficient solutions on a closed left half-line.** If `v' = c • v` at every time
+`τ ≤ a`, then `v τ = exp (c (τ - a)) • v a` for every `τ ≤ a`. The equation is only assumed on
+`(-∞, a]`, so nothing is required of `v` after time `a`. -/
+theorem eq_exp_smul_of_hasDerivAt_smul_of_le {v : ℝ → V} {c a : ℝ}
+    (hv : ∀ τ, τ ≤ a → HasDerivAt v (c • v τ) τ) {τ : ℝ} (hτ : τ ≤ a) :
+    v τ = Real.exp (c * (τ - a)) • v a := by
+  -- `exp (-c (σ - a)) v(σ)` has derivative zero on `[τ, a]`.
+  set h : ℝ → V := fun σ ↦ Real.exp (-c * (σ - a)) • v σ
+  have hh (σ : ℝ) (hσ : σ ≤ a) : HasDerivAt h 0 σ := by
+    have he : HasDerivAt (fun σ ↦ Real.exp (-c * (σ - a))) (Real.exp (-c * (σ - a)) * -c) σ := by
+      simpa using ((hasDerivAt_id σ).sub_const a).const_mul (-c) |>.exp
+    convert he.smul (hv σ hσ) using 1
+    module
+  have hconst := constant_of_has_deriv_right_zero
+    (HasDerivAt.continuousOn fun σ hσ ↦ hh σ hσ.2) (fun σ hσ ↦ (hh σ hσ.2.le).hasDerivWithinAt) a
+    ⟨hτ, le_rfl⟩
+  simp only [h, sub_self, mul_zero, Real.exp_zero, one_smul] at hconst
+  rw [hconst, smul_smul, ← Real.exp_add]
+  simp
 
 end TauCeti

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.ODE.EnergyEstimate.Index
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.ODE.DysonSeries
+import TauCeti.Analysis.ODE.ScalarLinear
 import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
@@ -223,17 +224,9 @@ theorem squareIntegrableSolutionsOn_neg_le_orthogonal
   have hconst (τ : ℝ) : ⟪v τ, w τ⟫_ℝ = ⟪v 0, w 0⟫_ℝ :=
     is_const_of_deriv_eq_zero (fun τ ↦ (hderiv τ).differentiableAt) (fun τ ↦ (hderiv τ).deriv)
       τ 0
-  have hvc : Continuous v := continuous_iff_continuousAt.2 fun τ ↦ (hv τ).continuousAt
-  have hwc : Continuous w := continuous_iff_continuousAt.2 fun τ ↦ (hw τ).continuousAt
-  -- A product of two square-integrable functions is integrable.
-  have hint : IntegrableOn (fun τ ↦ ⟪v τ, w τ⟫_ℝ) s := by
-    rw [memLp_two_iff_integrable_sq_norm hvc.aestronglyMeasurable] at hv2
-    rw [memLp_two_iff_integrable_sq_norm hwc.aestronglyMeasurable] at hw2
-    refine (hv2.add hw2).mono' (hvc.inner hwc).aestronglyMeasurable
-      (.of_forall fun τ ↦ ?_)
-    rw [Real.norm_eq_abs, Pi.add_apply]
-    nlinarith [abs_real_inner_le_norm (v τ) (w τ), sq_nonneg (‖v τ‖ - ‖w τ‖),
-      norm_nonneg (v τ), norm_nonneg (w τ)]
+  -- A product of two square-integrable functions is integrable, by Hölder's inequality.
+  have hint : IntegrableOn (fun τ ↦ ⟪v τ, w τ⟫_ℝ) s :=
+    memLp_one_iff_integrable.1 ((innerSL ℝ).memLp_of_bilin 1 hv2 hw2)
   simp_rw [hconst] at hint
   rw [integrableOn_const_iff, hs] at hint
   simpa using hint
@@ -279,24 +272,6 @@ private theorem tendsto_leftCap_atTop {Aplus : E →L[ℝ] E} (htop : Tendsto A 
     Tendsto (leftCap A) atTop (𝓝 Aplus) :=
   htop.congr' <| (eventually_ge_atTop 0).mono fun _ hτ ↦ (leftCap_of_nonneg hτ).symm
 
-/-- On `(-∞, a]` a solution of `v' = c v` is `exp (c (τ - a)) v(a)`. -/
-private theorem eq_exp_smul_of_hasDerivAt {v : ℝ → E} {c a : ℝ}
-    (hv : ∀ τ, τ ≤ a → HasDerivAt v (c • v τ) τ) {τ : ℝ} (hτ : τ ≤ a) :
-    v τ = Real.exp (c * (τ - a)) • v a := by
-  -- `exp (-c (σ - a)) v(σ)` has derivative zero on `[τ, a]`.
-  set h : ℝ → E := fun σ ↦ Real.exp (-c * (σ - a)) • v σ
-  have hh (σ : ℝ) (hσ : σ ≤ a) : HasDerivAt h 0 σ := by
-    have he : HasDerivAt (fun σ ↦ Real.exp (-c * (σ - a))) (Real.exp (-c * (σ - a)) * -c) σ := by
-      simpa using ((hasDerivAt_id σ).sub_const a).const_mul (-c) |>.exp
-    convert he.smul (hv σ hσ) using 1
-    module
-  have hconst := constant_of_has_deriv_right_zero
-    (HasDerivAt.continuousOn fun σ hσ ↦ hh σ hσ.2) (fun σ hσ ↦ (hh σ hσ.2.le).hasDerivWithinAt) a
-    ⟨hτ, le_rfl⟩
-  simp only [h, sub_self, mul_zero, Real.exp_zero, one_smul] at hconst
-  rw [hconst, smul_smul, ← Real.exp_add]
-  simp
-
 variable [FiniteDimensional ℝ E]
 
 /-- Every solution of `v' = -leftCap A v` is square integrable on `(-∞, 0)`: before time `-1` it
@@ -311,7 +286,8 @@ private theorem squareIntegrableSolutionsOn_leftCap_Iio (hA : Continuous A) :
   refine ⟨v, by simp [v], hv, ?_⟩
   rw [memLp_two_iff_integrable_sq_norm hvc.aestronglyMeasurable]
   have hexp (τ : ℝ) (hτ : τ ≤ -1) : v τ = Real.exp (1 * (τ - -1)) • v (-1) :=
-    eq_exp_smul_of_hasDerivAt (fun σ hσ ↦ by simpa [leftCap_of_le_neg_one hσ] using hv σ) hτ
+    eq_exp_smul_of_hasDerivAt_smul_of_le
+      (fun σ hσ ↦ by simpa [leftCap_of_le_neg_one hσ] using hv σ) hτ
   -- Split `(-∞, 0)` at `-1`: an exponential tail and a compact piece.
   have hsplit : Iio (0 : ℝ) ⊆ Iic (-1) ∪ Icc (-1) 0 := fun τ hτ ↦ by
     rcases le_total τ (-1) with h | h

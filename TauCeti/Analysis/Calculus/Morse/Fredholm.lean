@@ -365,32 +365,38 @@ theorem morseIndex_lt_morseIndex_of_surjective
 
 /-- **The linearized unstable space has dimension the Morse index of the source.** Let `f` be a
 `C²` function on a finite-dimensional real inner product space and `γ` a negative gradient
-trajectory from a nondegenerate critical point `p` at `-∞` to a nondegenerate critical point `q`
-at `+∞`. Then the initial values of the solutions of `v' + Hess f(γ) v = 0` that are square
-integrable on `(-∞, 0)` form a space of dimension `morseIndex f p`. -/
+trajectory from a nondegenerate critical point `p` at `-∞`; nothing is assumed at `+∞`. Then the
+initial values of the solutions of `v' + Hess f(γ) v = 0` that are square integrable on `(-∞, 0)`
+form a space of dimension `morseIndex f p`. -/
 theorem finrank_squareIntegrableSolutionsOn_Iio_hessianOperator
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
-    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
-    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) :
+    (hp : IsNondegenerateCriticalPoint f p) (hbot : Tendsto γ atBot (𝓝 p)) :
     Module.finrank ℝ (squareIntegrableSolutionsOn (fun s ↦ hessianOperator f (γ s)) (Iio 0)) =
       morseIndex f p := by
-  obtain ⟨hA, hsym, ⟨α, hα, hminus, -⟩, hAbot, -⟩ := trajectory_hypotheses hγ hf hp hq hbot htop
-  rw [finrank_squareIntegrableSolutionsOn_Iio hA hsym hα hminus hAbot,
+  have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
+  obtain ⟨α, hα, hminus, -⟩ := exists_pos_mul_norm_le_hessianOperator hp hp
+  rw [finrank_squareIntegrableSolutionsOn_Iio (A := fun s ↦ hessianOperator f (γ s))
+      (hH.comp hγ.continuous)
+      (fun _ ↦ hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric) hα hminus
+      ((hH.tendsto p).comp hbot),
     hp.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace]
 
 /-- **The linearized stable space has the codimension of the Morse index of the target.** Let `f`
 be a `C²` function on a finite-dimensional real inner product space and `γ` a negative gradient
-trajectory from a nondegenerate critical point `p` at `-∞` to a nondegenerate critical point `q`
-at `+∞`. Then the initial values of the solutions of `v' + Hess f(γ) v = 0` that are square
-integrable on `(0, ∞)` form a space of dimension `dim E - morseIndex f q`. -/
+trajectory to a nondegenerate critical point `q` at `+∞`; nothing is assumed at `-∞`. Then the
+initial values of the solutions of `v' + Hess f(γ) v = 0` that are square integrable on `(0, ∞)`
+form a space of dimension `dim E - morseIndex f q`. -/
 theorem finrank_squareIntegrableSolutionsOn_Ioi_hessianOperator_add_morseIndex
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
-    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
-    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) :
+    (hq : IsNondegenerateCriticalPoint f q) (htop : Tendsto γ atTop (𝓝 q)) :
     Module.finrank ℝ (squareIntegrableSolutionsOn (fun s ↦ hessianOperator f (γ s)) (Ioi 0)) +
       morseIndex f q = Module.finrank ℝ E := by
-  obtain ⟨hA, hsym, ⟨α, hα, -, hplus⟩, -, hAtop⟩ := trajectory_hypotheses hγ hf hp hq hbot htop
-  rw [finrank_squareIntegrableSolutionsOn_Ioi hA hsym hα hplus hAtop,
+  have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
+  obtain ⟨α, hα, hplus, -⟩ := exists_pos_mul_norm_le_hessianOperator hq hq
+  rw [finrank_squareIntegrableSolutionsOn_Ioi (A := fun s ↦ hessianOperator f (γ s))
+      (hH.comp hγ.continuous)
+      (fun _ ↦ hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric) hα hplus
+      ((hH.tendsto q).comp htop),
     ← hq.contDiffAt.stableLinearSubspace_eq_pointSpectralSubspace]
   exact hq.finrank_stableLinearSubspace_add_morseIndex
 
