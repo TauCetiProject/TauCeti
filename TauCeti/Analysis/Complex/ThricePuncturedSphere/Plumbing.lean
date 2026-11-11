@@ -77,6 +77,9 @@ maps on the plumbed sphere is computed.
 * `TauCeti.ThricePuncturedSphere.Puncture.isCompact_preimage_plumbedTruncation`,
   `TauCeti.ThricePuncturedSphere.Puncture.measurableSet_preimage_plumbedTruncation`: in the real
   coordinates, the truncation `Σ_R` is compact and measurable.
+* `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_mono`,
+  `TauCeti.ThricePuncturedSphere.Puncture.iUnion_plumbedTruncation`: the truncations `Σ_R`
+  increase with `R` and exhaust the four-punctured sphere.
 
 ## References
 
@@ -593,5 +596,37 @@ theorem isCompact_preimage_plumbedTruncation (q : Puncture) (L R : ℝ) :
 theorem measurableSet_preimage_plumbedTruncation (q : Puncture) (L R : ℝ) :
     MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) :=
   (isCompact_preimage_plumbedTruncation q L R).isClosed.measurableSet
+
+/-- The truncations of the plumbed sphere increase with the cutoff. -/
+theorem plumbedTruncation_mono (q : Puncture) (L : ℝ) : Monotone (q.plumbedTruncation L) :=
+  fun _ _ hRR' ↦ union_subset_union (inter_subset_inter_left _ (truncation_mono hRR'))
+    (image_mono (inter_subset_inter_left _ (truncation_mono hRR')))
+
+/-- Every point of the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}` lies in the receiving
+thrice-punctured sphere inside the circle `Re z = L/2` of the end `q`, or is the image under the
+plumbing map `ψ` of a point of the inserted one outside the circle `Re z = -L/2` of its end at
+`∞`. -/
+theorem mem_or_exists_plumbingMap_eq_of_mem_plumbedSphere {q : Puncture} {L : ℝ} {w : ℂ}
+    (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) :
+    ((w ≠ 0 ∧ w ≠ 1) ∧ (q.endCoord w).re ≤ L / 2) ∨
+      ∃ w', (w' ≠ 0 ∧ w' ≠ 1) ∧ -(L / 2) ≤ (inf.endCoord w').re ∧ q.plumbingMap L w' = w := by
+  by_cases h : (q.endCoord w).re ≤ L / 2
+  · exact Or.inl ⟨hw.1, h⟩
+  set w' := q.plumbingPreimage L ⟨w, hw.1⟩ hw.2
+  have hψ : q.plumbingMap L w' = w := q.plumbingMap_plumbingPreimage L ⟨w, hw.1⟩ hw.2
+  have hre := re_endCoord_plumbingMap q L w'.2.1
+  rw [hψ] at hre
+  exact Or.inr ⟨w', w'.2, by linarith, hψ⟩
+
+/-- The truncations `Σ_R` exhaust the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`. -/
+theorem iUnion_plumbedTruncation {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL : 0 < L) :
+    ⋃ R, q.plumbedTruncation L R = {w | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1} := by
+  refine subset_antisymm (iUnion_subset fun R ↦ plumbedTruncation_subset hq hL R) fun w hw ↦ ?_
+  rw [mem_iUnion]
+  rcases mem_or_exists_plumbingMap_eq_of_mem_plumbedSphere hw with ⟨hS, hre⟩ | ⟨w', hS, hre, rfl⟩
+  · obtain ⟨R, hR⟩ := mem_iUnion.1 (iUnion_truncation.symm ▸ hS : w ∈ ⋃ R, truncation R)
+    exact ⟨R, mem_plumbedTruncation_iff.2 (Or.inl ⟨hR, hre⟩)⟩
+  · obtain ⟨R, hR⟩ := mem_iUnion.1 (iUnion_truncation.symm ▸ hS : w' ∈ ⋃ R, truncation R)
+    exact ⟨R, mem_plumbedTruncation_iff.2 (Or.inr ⟨w', hR, hre, rfl⟩)⟩
 
 end TauCeti.ThricePuncturedSphere.Puncture
