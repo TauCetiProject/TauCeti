@@ -43,6 +43,13 @@ commutators (`TauCeti.sum_creation_contraction_of_anticommutator`). For an ortho
 Euclidean space the standard pairing is the induced inner product on `⋀ M`, so `ιᵢ` is the adjoint
 of `εᵢ`.
 
+The anticommutation relation splits the square norm,
+`∑ s, (εᵢ φ) s ^ 2 + ∑ s, (ιᵢ φ) s ^ 2 = ∑ s, φ s ^ 2`
+(`Module.Basis.sum_exteriorCreation_apply_sq_add_sum_exteriorContraction_apply_sq`). Over an ordered
+ring it follows that `|⟨⁅εᵢ, ιⱼ⁆ φ, φ⟩| ≤ ∑ s, φ s ^ 2` for the standard pairing
+(`Module.Basis.abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le`), so the zeroth-order
+Hessian term `∑ᵢⱼ Hᵢⱼ ⁅εᵢ, ιⱼ⁆` of a Witten Laplacian is bounded by `∑ᵢⱼ |Hᵢⱼ|`.
+
 Coordinate vectors are what one differentiates: a differential form on `ℝⁿ` is a function with
 values in the coordinate space `Finset (Fin n) → ℝ`, a finite-dimensional normed space, and the
 exterior derivative, its formal adjoint and their deformations are sums of these operators applied
@@ -239,6 +246,73 @@ theorem sum_exteriorCreation_apply_mul (i : I) (φ ψ : Finset I → R) :
     simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hs
     rw [Finset.insert_erase hs, Units.smul_def, Units.smul_def, zsmul_eq_mul, zsmul_eq_mul]
     ring
+
+/-- **`εᵢ` and `ιᵢ` split the square norm**: for the standard pairing of coordinate vectors,
+`∑ s, (εᵢ φ) s ^ 2 + ∑ s, (ιᵢ φ) s ^ 2 = ∑ s, φ s ^ 2`, since `ιᵢ` is the transpose of `εᵢ` and
+`εᵢ ιᵢ + ιᵢ εᵢ = 1`. -/
+theorem sum_exteriorCreation_apply_sq_add_sum_exteriorContraction_apply_sq (i : I)
+    (φ : Finset I → R) :
+    ∑ s, b.exteriorCreation i φ s ^ 2 + ∑ s, b.exteriorContraction i φ s ^ 2 = ∑ s, φ s ^ 2 := by
+  have h := congr($(b.exteriorCreation_mul_exteriorContraction_add_swap i i) φ)
+  simp only [ite_true, LinearMap.add_apply, mul_apply_eq_comp, one_apply_eq_self] at h
+  simp only [sq]
+  rw [b.sum_exteriorCreation_apply_mul i φ, ← b.sum_exteriorCreation_apply_mul i _ φ,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  have hs := congrFun h s
+  simp only [Pi.add_apply] at hs
+  linear_combination φ s * hs
+
+end Module.Basis
+
+namespace Module.Basis
+
+variable {R M I : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M]
+  [Module R M] [LinearOrder I] [Fintype I] (b : Module.Basis I R M)
+
+/-- **The commutators `⁅εᵢ, ιⱼ⁆` are contractions** for the standard pairing of coordinate
+vectors: `|∑ s, ⁅εᵢ, ιⱼ⁆ φ s * φ s| ≤ ∑ s, φ s ^ 2`. This bounds the zeroth-order Hessian term
+`∑ᵢⱼ Hᵢⱼ ⁅εᵢ, ιⱼ⁆` of a Witten Laplacian by the entries of the Hessian. -/
+theorem abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le (i j : I)
+    (φ : Finset I → R) :
+    |∑ s, ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ s * φ s| ≤ ∑ s, φ s ^ 2 := by
+  -- `⟨⁅εᵢ, ιⱼ⁆ φ, φ⟩ = ⟨ιⱼ φ, ιᵢ φ⟩ - ⟨εⱼ φ, εᵢ φ⟩`, by transposing each factor
+  have hlie : ∑ s, ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ s * φ s =
+      ∑ s, b.exteriorContraction j φ s * b.exteriorContraction i φ s -
+        ∑ s, b.exteriorCreation j φ s * b.exteriorCreation i φ s := by
+    simp only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, Pi.sub_apply, sub_mul,
+      Finset.sum_sub_distrib, b.sum_exteriorCreation_apply_mul j φ]
+    rw [b.sum_exteriorCreation_apply_mul i]
+    simp only [mul_comm]
+  have hi := b.sum_exteriorCreation_apply_sq_add_sum_exteriorContraction_apply_sq i φ
+  have hj := b.sum_exteriorCreation_apply_sq_add_sum_exteriorContraction_apply_sq j φ
+  -- each pairing is bounded by half the sum of the two square norms
+  have hle : ∀ u w : Finset I → R, 2 * ∑ s, u s * w s ≤ ∑ s, u s ^ 2 + ∑ s, w s ^ 2 := by
+    intro u w
+    rw [Finset.mul_sum, ← Finset.sum_add_distrib]
+    exact Finset.sum_le_sum fun s _ ↦ by simpa [mul_assoc] using two_mul_le_add_sq (u s) (w s)
+  have h₁ := hle (b.exteriorContraction j φ) (b.exteriorContraction i φ)
+  have h₂ := hle (b.exteriorCreation j φ) (-b.exteriorCreation i φ)
+  have h₃ := hle (b.exteriorContraction j φ) (-b.exteriorContraction i φ)
+  have h₄ := hle (b.exteriorCreation j φ) (b.exteriorCreation i φ)
+  simp only [Pi.neg_apply, mul_neg, Finset.sum_neg_distrib, neg_sq] at h₂ h₃
+  rw [hlie, abs_le]
+  constructor <;> linarith
+
+/-- The Hessian term `∑ᵢⱼ Hᵢⱼ ⁅εᵢ, ιⱼ⁆` of a Witten Laplacian is bounded, for the standard pairing
+of coordinate vectors, by the sum of the absolute values of the entries `Hᵢⱼ`. -/
+theorem abs_sum_sum_sum_smul_lie_exteriorCreation_exteriorContraction_apply_mul_le
+    (H : I → I → R) (φ : Finset I → R) :
+    |∑ s, (∑ i, ∑ j, H i j • ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ) s * φ s| ≤
+      (∑ i, ∑ j, |H i j|) * ∑ s, φ s ^ 2 := by
+  simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Finset.sum_mul, mul_assoc]
+  rw [Finset.sum_comm]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  rw [Finset.sum_comm]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
+  rw [← Finset.mul_sum, abs_mul]
+  exact mul_le_mul_of_nonneg_left
+    (b.abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le i j φ) (abs_nonneg _)
 
 end Module.Basis
 
