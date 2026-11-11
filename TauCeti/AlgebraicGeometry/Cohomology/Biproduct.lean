@@ -34,6 +34,9 @@ infinite-dimensional and `I` is nonempty.
 ## Main declarations
 
 * `Scheme.Modules.cohomologyBiproductLinearEquiv`: `Hⁱ(X, ⨁ⱼ Mⱼ) ≃ₗ[R] ∀ j, Hⁱ(X, Mⱼ)`;
+* `Scheme.Modules.cohomologyBiprodLinearEquiv`: `Hⁱ(X, M ⊞ N) ≃ₗ[R] Hⁱ(X, M) × Hⁱ(X, N)`, with
+  `Scheme.Modules.finrank_cohomology_biprod` and `Scheme.Modules.eulerCharBelow_biprod` computing
+  dimensions and truncated Euler characteristics when the cohomology is finite-dimensional;
 * `Scheme.Modules.finrank_cohomology_biproduct_const`:
   `dim Hⁱ(X, ⨁_{I} M) = |I| · dim Hⁱ(X, M)`;
 * `Scheme.Modules.eulerCharBelow_biproduct_const` and `Scheme.Modules.eulerCharBelow_free`: the
@@ -134,6 +137,74 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.eulerCharBelow_biproduct_const (
     rw [eulerCharBelow_succ, eulerCharBelow_succ, ih, finrank_cohomology_biproduct_const]
     push_cast
     ring
+
+section Binary
+
+variable (k : Type u) [Field k] [X.Over (Spec (.of k))] (M N : X.Modules)
+
+/-- **Cohomology commutes with binary direct sums.** The maps induced by the projections of
+`M ⊞ N` give an `R`-linear equivalence `Hⁱ(X, M ⊞ N) ≃ₗ[R] Hⁱ(X, M) × Hⁱ(X, N)`. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBiprodLinearEquiv (i : ℕ) :
+    Cohomology (M ⊞ N) i ≃ₗ[R] Cohomology M i × Cohomology N i := by
+  -- The four composites of the induced maps of `biprod.inl`, `biprod.inr` with `biprod.fst`,
+  -- `biprod.snd`, and the induced map of `biprod.total`.
+  have h₁₁ := cohomologyMapBaseLinear_comp R X (biprod.inl : M ⟶ M ⊞ N) biprod.fst i
+  have h₁₂ := cohomologyMapBaseLinear_comp R X (biprod.inl : M ⟶ M ⊞ N) biprod.snd i
+  have h₂₁ := cohomologyMapBaseLinear_comp R X (biprod.inr : N ⟶ M ⊞ N) biprod.fst i
+  have h₂₂ := cohomologyMapBaseLinear_comp R X (biprod.inr : N ⟶ M ⊞ N) biprod.snd i
+  rw [biprod.inl_fst, cohomologyMapBaseLinear_id] at h₁₁
+  rw [biprod.inl_snd, cohomologyMapBaseLinear_zero] at h₁₂
+  rw [biprod.inr_fst, cohomologyMapBaseLinear_zero] at h₂₁
+  rw [biprod.inr_snd, cohomologyMapBaseLinear_id] at h₂₂
+  have htotal : (cohomologyMapBaseLinear R X biprod.inl i).comp
+      (cohomologyMapBaseLinear R X (biprod.fst : M ⊞ N ⟶ M) i) +
+      (cohomologyMapBaseLinear R X biprod.inr i).comp
+        (cohomologyMapBaseLinear R X (biprod.snd : M ⊞ N ⟶ N) i) = LinearMap.id := by
+    rw [← cohomologyMapBaseLinear_comp, ← cohomologyMapBaseLinear_comp,
+      ← cohomologyMapBaseLinear_add, biprod.total, cohomologyMapBaseLinear_id]
+  exact LinearEquiv.ofLinearMap
+    ((cohomologyMapBaseLinear R X biprod.fst i).prod (cohomologyMapBaseLinear R X biprod.snd i))
+    ((cohomologyMapBaseLinear R X biprod.inl i).coprod (cohomologyMapBaseLinear R X biprod.inr i))
+    (LinearMap.ext fun v ↦ Prod.ext
+      (by
+        change cohomologyMapBaseLinear R X biprod.fst i
+          (cohomologyMapBaseLinear R X biprod.inl i v.1 +
+            cohomologyMapBaseLinear R X biprod.inr i v.2) = v.1
+        rw [map_add, ← LinearMap.comp_apply, ← LinearMap.comp_apply, ← h₁₁, ← h₂₁,
+          LinearMap.id_apply, LinearMap.zero_apply, add_zero])
+      (by
+        change cohomologyMapBaseLinear R X biprod.snd i
+          (cohomologyMapBaseLinear R X biprod.inl i v.1 +
+            cohomologyMapBaseLinear R X biprod.inr i v.2) = v.2
+        rw [map_add, ← LinearMap.comp_apply, ← LinearMap.comp_apply, ← h₁₂, ← h₂₂,
+          LinearMap.id_apply, LinearMap.zero_apply, zero_add]))
+    (LinearMap.ext fun x ↦ by simpa using LinearMap.congr_fun htotal x)
+
+/-- **Dimension of the cohomology of a binary direct sum.** Over a field `k`, if `Hⁱ(X, M)` and
+`Hⁱ(X, N)` are finite-dimensional then `dim Hⁱ(X, M ⊞ N) = dim Hⁱ(X, M) + dim Hⁱ(X, N)`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finrank_cohomology_biprod (i : ℕ)
+    [FiniteDimensional k (Cohomology M i)] [FiniteDimensional k (Cohomology N i)] :
+    finrank k (Cohomology (M ⊞ N) i) = finrank k (Cohomology M i) + finrank k (Cohomology N i) :=
+  ((cohomologyBiprodLinearEquiv k M N i).finrank_eq).trans Module.finrank_prod
+
+/-- **Euler characteristic of a binary direct sum.** If `Hⁱ(X, M)` and `Hⁱ(X, N)` are
+finite-dimensional for `i < n`, then `χ_{<n}(X, M ⊞ N) = χ_{<n}(X, M) + χ_{<n}(X, N)`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.eulerCharBelow_biprod (n : ℕ)
+    (hM : ∀ i < n, FiniteDimensional k (Cohomology M i))
+    (hN : ∀ i < n, FiniteDimensional k (Cohomology N i)) :
+    eulerCharBelow k X (M ⊞ N) n = eulerCharBelow k X M n + eulerCharBelow k X N n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have := hM n n.lt_succ_self
+    have := hN n n.lt_succ_self
+    rw [eulerCharBelow_succ, eulerCharBelow_succ, eulerCharBelow_succ,
+      ih (fun i hi ↦ hM i (hi.trans n.lt_succ_self)) (fun i hi ↦ hN i (hi.trans n.lt_succ_self)),
+      finrank_cohomology_biprod]
+    push_cast
+    ring
+
+end Binary
 
 variable (X) in
 /-- The truncated Euler characteristic of the free sheaf on a finite type:
