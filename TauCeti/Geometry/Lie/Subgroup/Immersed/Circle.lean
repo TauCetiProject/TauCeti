@@ -84,29 +84,16 @@ private theorem hom_ofAdd_isImmersion {m : ℕ∞ω} :
     TauCeti.contMDiff_expUnitHom Complex.I
   apply hs.isImmersion_units_of_injective_mfderiv_val (by simp)
   intro t
-  have hi : Injective (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ)
-      (fun s : ℝ ↦ (Circle.exp s : ℂ)) t) := by
-    have hcoe : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) ω (fun z : Circle ↦ (z : ℂ)) :=
-      contMDiff_coe_sphere
-    have hcomp : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) (fun s : ℝ ↦ (Circle.exp s : ℂ)) t =
-        (mfderiv (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) (Circle.exp t)).comp
-          (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t) := by
-      simpa only [Function.comp_def] using mfderiv_comp t
-        (hcoe.mdifferentiableAt (by simp))
-        ((contMDiff_circleExp (m := ω)).mdifferentiableAt (by simp))
-    rw [hcomp]
-    have hc : Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℂ)
-        (fun z : Circle ↦ (z : ℂ)) (Circle.exp t)) :=
-      (TauCeti.injective_mvfderiv_iff).mp
-        (injective_mvfderiv_subtypeVal_sphere (E := ℂ) (n := 1) (Circle.exp t))
-    exact hc.comp (TauCeti.injective_mfderiv_circleExp t)
+  have hi := TauCeti.injective_mfderiv_coe_circleExp t
   apply (TauCeti.injective_mvfderiv_iff).mp
   simpa [hom_ofAdd, Circle.toUnits_apply] using (TauCeti.injective_mvfderiv_iff).mpr hi
 
 /-- The real exponential parametrization is an immersion at every differentiability order. -/
 theorem isImmersion_hom {m : ℕ∞ω} : Manifold.IsImmersion 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) m hom := by
-  -- Multiplicative uses the ordinary real charts through the TypeTags manifold instances.
-  exact hom_ofAdd_isImmersion
+  apply (TauCeti.isImmersion_comp_diffeomorph_iff
+    (f := hom) (Diffeomorph.ofAdd (I := 𝓘(ℝ, ℝ)) (M := ℝ) (n := m))).mp
+  simpa only [Function.comp_def, Diffeomorph.ofAdd_apply] using
+    (hom_ofAdd_isImmersion (m := m))
 
 /-- The real source is not homeomorphic to the circle, since it is not compact. -/
 theorem isEmpty_homeomorph_circle : IsEmpty (Multiplicative ℝ ≃ₜ Circle) := by

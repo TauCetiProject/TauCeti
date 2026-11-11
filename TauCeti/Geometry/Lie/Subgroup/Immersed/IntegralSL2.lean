@@ -52,11 +52,11 @@ def chartedSpace : ChartedSpace (EuclideanSpace ℝ (Fin 0)) X := ChartedSpace.o
 
 attribute [local instance] chartedSpace
 
-/-- The integral special-linear group is a zero-dimensional smooth manifold. -/
-instance instIsManifold : IsManifold (𝓡 0) ∞ X := IsManifold.of_discreteTopology ∞
+/-- The integral special-linear group is a zero-dimensional analytic manifold. -/
+instance instIsManifold : IsManifold (𝓡 0) ω X := IsManifold.of_discreteTopology ω
 
-/-- The integral special-linear group is a discrete zero-dimensional Lie group. -/
-instance instLieGroup : LieGroup (𝓡 0) ∞ X := LieGroup.of_discreteTopology ∞
+/-- The integral special-linear group is a discrete zero-dimensional analytic Lie group. -/
+instance instLieGroup : LieGroup (𝓡 0) ω X := LieGroup.of_discreteTopology ω
 
 /-- With its discrete topology, the nontrivial group SL₂(ℤ) is not connected. -/
 theorem not_connectedSpace : ¬ ConnectedSpace X := by
@@ -69,10 +69,12 @@ theorem not_connectedSpace : ¬ ConnectedSpace X := by
   obtain ⟨γ, hγ⟩ := (mem_integralSL2Subgroup g).mp hg
   simpa [Subsingleton.elim γ 1] using hγ.symm
 
-/-- The usual integral-matrix inclusion into native SL₂(ℝ) is a smooth immersion. -/
-theorem isImmersion_map_intCast : Manifold.IsImmersion (𝓡 0) 𝓘(ℝ, E) ∞
+/-- The usual integral-matrix inclusion into native SL₂(ℝ) is an immersion at every order. -/
+theorem isImmersion_map_intCast {m : ℕ∞ω} : Manifold.IsImmersion (𝓡 0) 𝓘(ℝ, E) m
     (SpecialLinearGroup.map (Int.castRingHom ℝ) : X →* G) := by
-  have hs : ContMDiff (𝓡 0) 𝓘(ℝ, E) ∞
+  suffices h : Manifold.IsImmersion (𝓡 0) 𝓘(ℝ, E) ω
+      (SpecialLinearGroup.map (Int.castRingHom ℝ) : X →* G) from h.of_le le_top
+  have hs : ContMDiff (𝓡 0) 𝓘(ℝ, E) ω
       (SpecialLinearGroup.map (Int.castRingHom ℝ) : X → G) := contMDiff_of_discreteTopology
   exact hs.isImmersion_of_subsingleton (by simp)
 
