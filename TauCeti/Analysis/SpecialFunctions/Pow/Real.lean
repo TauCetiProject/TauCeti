@@ -46,6 +46,8 @@ bound with a real factor `δ` into a bound by an `r`-th power.
 For a positive base `a`, the real powers `(a ^ (n + 1)) ^ B` and `(a ^ n) ^ C` multiply to
 `a ^ B * (a ^ (B + C)) ^ n`, a geometric term in `n`. This is how dyadic annuli are summed against
 a geometric series.
+For `1 ≤ b`, moving the exponent of `b ^ (s y)` to `s x` with `|x - y| ≤ L` costs at most the
+factor `b ^ (|s| L)`. This compares dyadic weights `2 ^ (s j)` and `2 ^ (s k)` at nearby indices.
 
 A power `x ^ y` of a nonnegative real with exponent `0 ≤ y ≤ 1` is at most `1 + x`, which bounds
 the fractional powers `T ^ (α / 2)` and `√T` of a time horizon uniformly by `1 + T`.
@@ -95,6 +97,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
 * `Real.pow_succ_rpow_mul_pow_rpow`: `(a ^ (n + 1)) ^ B * (a ^ n) ^ C = a ^ B * (a ^ (B + C)) ^ n`
   for `0 < a`.
+* `Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul`: `b ^ (s x) ≤ b ^ (|s| L) b ^ (s y)` when `1 ≤ b`
+  and `|x - y| ≤ L`.
 * `Real.rpow_le_one_add`: `x ^ y ≤ 1 + x` for `0 ≤ x` and `0 ≤ y ≤ 1`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
@@ -205,6 +209,17 @@ theorem pow_succ_rpow_mul_pow_rpow {a : ℝ} (ha : 0 < a) (B C : ℝ) (n : ℕ) 
   congr 1
   push_cast
   ring
+
+/-- For `1 ≤ b`, moving the exponent of `b ^ (s y)` to `s x` with `|x - y| ≤ L` costs at most the
+factor `b ^ (|s| L)`. -/
+theorem rpow_mul_le_rpow_abs_mul_mul_rpow_mul {b : ℝ} (hb : 1 ≤ b) (s : ℝ) {x y L : ℝ}
+    (h : |x - y| ≤ L) : b ^ (s * x) ≤ b ^ (|s| * L) * b ^ (s * y) := by
+  rw [← rpow_add (by linarith)]
+  refine rpow_le_rpow_of_exponent_le hb ?_
+  have : s * (x - y) ≤ |s| * L := (le_abs_self _).trans <| by
+    rw [abs_mul]
+    exact mul_le_mul_of_nonneg_left h (abs_nonneg s)
+  linarith
 
 /-- A power of a nonnegative real with exponent in `[0, 1]` is at most `1 + x`: `x ^ y ≤ 1` for
 `x ≤ 1` and `x ^ y ≤ x` for `1 ≤ x`. -/
