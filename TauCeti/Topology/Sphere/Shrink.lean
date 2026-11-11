@@ -21,11 +21,17 @@ continuous and injective off `p`, which is the identity near `y` and carries `K`
 the replacement for the homeomorphism `h` in M. Brown's proof of the generalized Schoenflies
 theorem.
 
+The same chart, precomposed with a linear isomorphism and a dilation, shows that such a `K` lies in
+the open cell of an embedded closed ball missing `p`. Brown's theorem on two inverse sets uses this
+cell to reduce to his theorem on a single inverse set.
+
 ## Main results
 
 * `TauCeti.exists_continuousOn_injOn_mapsTo_sphere`: a map of the sphere, continuous and injective
   off a point `p`, which is the identity near `y` and pushes a compact set missing `p` into a given
   neighbourhood of `y`.
+* `TauCeti.exists_continuous_injective_subset_image_ball_sphere`: a compact subset of the sphere
+  missing a point `z` lies in the open cell of an embedded closed ball missing `z`.
 
 ## References
 
@@ -86,5 +92,48 @@ theorem exists_continuousOn_injOn_mapsTo_sphere [FiniteDimensional ℝ F] {p y :
     rw [add_sub_cancel_right, ← mem_closedBall_zero_iff]
     exact hρmaps <|
       mem_closedBall_zero_iff.2 (mem_closedBall_iff_norm.1 (hR (mem_image_of_mem φ hz)))
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **A cell around a compact subset of a sphere.** Let `K` be a compact subset of the unit sphere
+`Sⁿ` of a real inner product space of dimension `n + 1`, missing a point `z`, and let `E` be a real
+normed space of dimension `n`. There is a continuous injection `φ : E → Sⁿ` missing `z` with
+`K ⊆ φ(ball 0 1)`: `K` lies in the open cell of an embedded closed `n`-ball missing `z`. It is the
+inverse stereographic projection from `z`, precomposed with a linear isomorphism and a dilation. -/
+theorem exists_continuous_injective_subset_image_ball_sphere
+    (hEF : finrank ℝ F = finrank ℝ E + 1) {z : sphere (0 : F) 1} {K : Set (sphere (0 : F) 1)}
+    (hK : IsCompact K) (hzK : z ∉ K) :
+    ∃ φ : E → sphere (0 : F) 1, Continuous φ ∧ Injective φ ∧ z ∉ range φ ∧
+      K ⊆ φ '' ball 0 1 := by
+  have : Fact (finrank ℝ F = finrank ℝ E + 1) := ⟨hEF⟩
+  set ψ := stereographic' (finrank ℝ E) z
+  have hsrc : ψ.source = {z}ᶜ := stereographic'_source z
+  have htgt : ψ.target = univ := stereographic'_target z
+  have hsymm : Continuous ψ.symm := continuousOn_univ.1 (htgt ▸ ψ.continuousOn_symm)
+  have hKψ : K ⊆ ψ.source := fun x hx ↦ by rw [hsrc]; exact fun h ↦ hzK (h ▸ hx)
+  set L : EuclideanSpace ℝ (Fin (finrank ℝ E)) ≃L[ℝ] E :=
+    ContinuousLinearEquiv.ofFinrankEq (by simp)
+  -- The coordinates of `K` are bounded by some `R > 0`.
+  obtain ⟨R₀, hR₀⟩ := ((hK.image_of_continuousOn (ψ.continuousOn.mono hKψ)).image
+    L.continuous).isBounded.subset_ball 0
+  set R := max R₀ 1
+  have hR : 0 < R := lt_max_of_lt_right one_pos
+  refine ⟨fun v ↦ ψ.symm (L.symm (R • v)), by fun_prop, fun v v' hvv' ↦ ?_, ?_, fun x hx ↦ ?_⟩
+  · have h := ψ.symm.injOn (by rw [ψ.symm_source, htgt]; trivial)
+      (by rw [ψ.symm_source, htgt]; trivial) hvv'
+    exact smul_right_injective E hR.ne' (L.symm.injective h)
+  · rintro ⟨v, hv⟩
+    have := ψ.map_target (x := L.symm (R • v)) (by rw [htgt]; trivial)
+    rw [hsrc] at this
+    exact this hv
+  · refine ⟨R⁻¹ • L (ψ x), ?_, ?_⟩
+    · have hx' : ‖L (ψ x)‖ < R :=
+        (mem_ball_zero_iff.1 (hR₀ (mem_image_of_mem L (mem_image_of_mem ψ hx)))).trans_le
+          (le_max_left _ _)
+      rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hR.le),
+        inv_mul_lt_iff₀ hR, mul_one]
+      exact hx'
+    · simp only [smul_inv_smul₀ hR.ne', ContinuousLinearEquiv.symm_apply_apply]
+      exact ψ.left_inv (hKψ hx)
 
 end TauCeti
