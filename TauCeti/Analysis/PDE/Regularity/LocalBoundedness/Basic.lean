@@ -189,7 +189,6 @@ private theorem exists_mem_w1p0Submodule_norm_gradient_sq_le_of_caccioppoli
         x ∉ tsupport ψ ∩ {x | l < W1p.value u x} → W1p.value z x = 0 := by
   set T := tsupport ψ
   set I := ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ T, max (W1p.value u x - k) 0 ^ 2 ∂mu
-  have hT : MeasurableSet T := (isClosed_tsupport ψ).measurableSet
   -- The truncation at the higher level is dominated by the one at the lower level.
   have hwl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega) :=
     W1p.memLp_posPartAbove_of_le u hkl.le hwLp

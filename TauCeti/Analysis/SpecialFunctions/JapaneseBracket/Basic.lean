@@ -396,7 +396,7 @@ theorem setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow
       (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) * (2 ^ (m - 1) * t ^ m *
         (log (1 + (R / t) ^ 2) -
           ∑ k ∈ Finset.range (m - 1), (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1))) := by
-  rcases eq_or_ne t 0 with rfl | ht
+  rcases eq_or_ne t 0 with rfl | _
   · simp [hm]
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hm
   simp only [Nat.add_sub_cancel]
