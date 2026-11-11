@@ -226,7 +226,7 @@ private theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_positive
       (hψ.differentiable two_ne_zero z) (hud hz.1)
       (differentiableAt_perturbation positive hH hHs 1 _ _)
       (differentiableAt_perturbation positive hH hHs Complex.I _ _)
-      (Complex.isComplexLinearMap_fderiv_realChart (positive.hasDerivAt_cylindricalEndLift _))
+      (Floer.isComplexLinearMap_fderiv_realChart (positive.hasDerivAt_cylindricalEndLift _))
       (hfloer _ (exp_lt_norm_realChart_positive hz.1))
   -- The finite-energy half-cylinder breaks off an orbit.
   obtain ⟨x, hxper, hx, ⟨φ, -, hφ, hux⟩, hA⟩ :=
