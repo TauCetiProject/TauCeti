@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Spectral.Inertia
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
 public import TauCeti.Geometry.Manifold.Morse.Bott.Coordinates
 import TauCeti.Analysis.InnerProductSpace.Dual
+import TauCeti.Analysis.InnerProductSpace.Spectral.SignatureNormalForm
 
 /-!
 # Smooth spectral splitting of the normal Hessian
@@ -31,6 +32,13 @@ of the trivialization, and the two subspaces have dimensions the Morse indices o
 positive definite subspaces of the normal spaces: the local form of the splitting of the normal
 bundle into negative and positive normal subbundles. The subspaces themselves depend on the
 inner product chosen on `P` and on the trivialization; their dimensions do not.
+
+The same data put half the normal Hessian in the standard form of the Morse–Bott lemma: with
+`T s` the square root of the absolute value of `(Q s)♯ / 2`, a `C^k` family of invertible operators
+preserving the two spectral subspaces, `½ Q s (u, u) = ‖P₊ (T s u)‖ ^ 2 - ‖P₋ (T s u)‖ ^ 2`, where
+`P₋` and `P₊` are the negative and positive spectral projections. This is the fibrewise linear
+change of variables that turns a quadratic normal form `c + ½ Hess (w, w)` along the submanifold
+into `c - ‖w₋‖ ^ 2 + ‖w₊‖ ^ 2`.
 
 The pointwise statements need only some linear equivalence `L : P ≃ₗ[ℝ] NormalSpace s` with
 `Q (u, v) = Hess (L u, L v)`, such as `(e.linearEquivAt ℝ s hs).symm` for a normal-bundle
@@ -60,6 +68,10 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
   index of `-f`.
 * `exists_contMDiffOn_starProjection_pointSpectralSubspace`: in each normal-bundle trivialization,
   the negative and positive spectral projections of the normal Hessian are `C^k`.
+* `exists_contMDiffOn_normalHessian_div_two_eq_norm_sq_sub_norm_sq`: in each normal-bundle
+  trivialization, a `C^k` family of invertible operators preserving the spectral splitting carries
+  half the normal Hessian to the difference of the squared norms of its positive and negative
+  components.
 
 ## References
 
@@ -165,6 +177,31 @@ namespace IsNondegenerateCriticalSubmanifold
 
 variable [I.Boundaryless] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold J 1 S]
 
+/-- In the preferred normal-bundle trivialization at `s₀`, the normal Hessian of a Morse–Bott
+critical submanifold is given over the base set by a `C^k` family `Q` of bilinear forms on `P`,
+whose Riesz operators `(Q s)♯` form a `C^k` family of invertible self-adjoint operators there. -/
+private theorem exists_contMDiffOn_continuousLinearMapOfBilin {k : ℕ∞ω}
+    [IsManifold I (k + 2) M] (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (s₀ : S) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    ∃ Q : S → P →L[ℝ] P →L[ℝ] ℝ,
+      ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k Q
+        (i.normalSpaceTrivialization hn hdim s₀).baseSet ∧
+      (∀ s ∈ (i.normalSpaceTrivialization hn hdim s₀).baseSet, ∀ u v : P,
+        h.normalHessian hn s ((i.normalSpaceTrivialization hn hdim s₀).symm s u)
+          ((i.normalSpaceTrivialization hn hdim s₀).symm s v) = Q s u v) ∧
+      ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P) k (fun s ↦ (Q s)♯)
+        (i.normalSpaceTrivialization hn hdim s₀).baseSet ∧
+      ∀ s ∈ (i.normalSpaceTrivialization hn hdim s₀).baseSet,
+        IsSelfAdjoint (Q s)♯ ∧ IsUnit (Q s)♯ := by
+  obtain ⟨Q, hQ, hrep⟩ :=
+    h.exists_contMDiffOn_normalHessian_normalSpaceTrivialization hn hk hf hdim s₀
+  exact ⟨Q, hQ, fun s hs u v ↦ ((hrep s hs).1 u v).1, fun s hs ↦
+    contDiff_continuousLinearMapOfBilin.comp_contMDiffWithinAt (hQ s hs), fun s hs ↦
+    ⟨InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin fun u v ↦ ((hrep s hs).1 u v).2,
+      InnerProductSpace.isUnit_continuousLinearMapOfBilin (hrep s hs).2⟩⟩
+
 /-- **The spectral splitting of the normal Hessian is `C^k`.** Let `i` be a Morse–Bott critical
 submanifold of `f`, with `f` of class `C^{k+2}` at every point of the submanifold and `k ≤ n`.
 In the preferred normal-bundle trivialization at any point `s₀`, with fibre model a
@@ -199,26 +236,81 @@ theorem exists_contMDiffOn_starProjection_pointSpectralSubspace {k : ℕ∞ω}
       ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P) k
         (fun s ↦ (Module.End.pointSpectralSubspace (Q s)♯.toLinearMap (Ioi 0)).starProjection)
         (i.normalSpaceTrivialization hn hdim s₀).baseSet := by
-  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
-  set e := i.normalSpaceTrivialization hn hdim s₀
-  obtain ⟨Q, hQ, hrep⟩ :=
-    h.exists_contMDiffOn_normalHessian_normalSpaceTrivialization hn hk hf hdim s₀
-  -- Over the base set the Riesz operators are `C^k`, self-adjoint and invertible.
+  obtain ⟨Q, hQ, hrep, hsharp, hT⟩ :=
+    h.exists_contMDiffOn_continuousLinearMapOfBilin hn hk hf hdim s₀
+  -- Over the base set the Riesz operators lie in the set of invertible self-adjoint operators.
   set T : Set (P →L[ℝ] P) := {A | IsSelfAdjoint A ∧ IsUnit A}
-  have hT (s : S) (hs : s ∈ e.baseSet) : (Q s)♯ ∈ T :=
-    ⟨InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin fun u v ↦ ((hrep s hs).1 u v).2,
-      InnerProductSpace.isUnit_continuousLinearMapOfBilin (hrep s hs).2⟩
-  have hsharp : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P) k (fun s ↦ (Q s)♯) e.baseSet := fun s hs ↦
-    contDiff_continuousLinearMapOfBilin.comp_contMDiffWithinAt (hQ s hs)
   have hneg := (contDiffOn_id (n := k) (s := T)).starProjection_pointSpectralSubspace_Iio_zero
     (fun _ hA ↦ hA.1) (fun _ hA ↦ hA.2)
   have hpos := (contDiffOn_id (n := k) (s := T)).starProjection_pointSpectralSubspace_Ioi_zero
     (fun _ hA ↦ hA.1) (fun _ hA ↦ hA.2)
-  refine ⟨Q, hQ, fun s hs u v ↦ ((hrep s hs).1 u v).1, fun s hs ↦ ?_, fun s hs ↦ ?_⟩
+  refine ⟨Q, hQ, hrep, fun s hs ↦ ?_, fun s hs ↦ ?_⟩
   · exact ContDiffWithinAt.comp_contMDiffWithinAt (f := fun s ↦ (Q s)♯) (hneg _ (hT s hs))
       (hsharp s hs) hT
   · exact ContDiffWithinAt.comp_contMDiffWithinAt (f := fun s ↦ (Q s)♯) (hpos _ (hT s hs))
       (hsharp s hs) hT
+
+/-- **Half the normal Hessian as a difference of squared norms.** Let `i` be a Morse–Bott critical
+submanifold of `f`, with `f` of class `C^{k+2}` at every point of the submanifold and `k ≤ n`. In
+the preferred normal-bundle trivialization `e` at any point `s₀`, with fibre model a
+finite-dimensional real inner product space `P`, the normal Hessian is given over the base set by
+a `C^k` family `Q` of bilinear forms on `P`. Write `P₋ s` and `P₊ s` for the orthogonal
+projections onto the negative and positive spectral subspaces of the Riesz operator `(Q s)♯`.
+Then there is a `C^k` family `T` of invertible operators on `P`, commuting with every spectral
+projection of `(Q s)♯`, such that for every `u : P`
+
+  `½ Hess (e.symm s u, e.symm s u) = ‖P₊ s (T s u)‖ ^ 2 - ‖P₋ s (T s u)‖ ^ 2`.
+
+So the fibrewise linear change of variables `u ↦ T s u`, which maps the negative and positive
+spectral subspaces into themselves, carries half the normal Hessian to the standard quadratic
+form `-‖u₋‖ ^ 2 + ‖u₊‖ ^ 2` of the Morse–Bott lemma; the projections `P₋` and `P₊` are `C^k` by
+`exists_contMDiffOn_starProjection_pointSpectralSubspace`. One such family is
+`2^{-1/2} |(Q s)♯|^{1/2}`, a multiple of the square root of the absolute value of the Riesz
+operator, which involves no choice of eigenbasis
+(`ContinuousLinearMap.inner_apply_self_eq_norm_sq_sub_norm_sq`). -/
+theorem exists_contMDiffOn_normalHessian_div_two_eq_norm_sq_sub_norm_sq {k : ℕ∞ω}
+    [IsManifold I (k + 2) M] (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (s₀ : S) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    ∃ (Q : S → P →L[ℝ] P →L[ℝ] ℝ) (T : S → P →L[ℝ] P),
+      ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k Q
+        (i.normalSpaceTrivialization hn hdim s₀).baseSet ∧
+      (∀ s ∈ (i.normalSpaceTrivialization hn hdim s₀).baseSet, ∀ u v : P,
+        h.normalHessian hn s ((i.normalSpaceTrivialization hn hdim s₀).symm s u)
+          ((i.normalSpaceTrivialization hn hdim s₀).symm s v) = Q s u v) ∧
+      ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P) k T (i.normalSpaceTrivialization hn hdim s₀).baseSet ∧
+      ∀ s ∈ (i.normalSpaceTrivialization hn hdim s₀).baseSet, IsUnit (T s) ∧
+        (∀ Ω : Set ℝ,
+          Commute (T s) (Module.End.pointSpectralSubspace (Q s)♯.toLinearMap Ω).starProjection) ∧
+        ∀ u : P, h.normalHessian hn s ((i.normalSpaceTrivialization hn hdim s₀).symm s u)
+            ((i.normalSpaceTrivialization hn hdim s₀).symm s u) / 2 =
+          ‖(Module.End.pointSpectralSubspace (Q s)♯.toLinearMap (Ioi 0)).starProjection
+              (T s u)‖ ^ 2 -
+            ‖(Module.End.pointSpectralSubspace (Q s)♯.toLinearMap (Iio 0)).starProjection
+              (T s u)‖ ^ 2 := by
+  obtain ⟨Q, hQ, hrep, hsharp, hT⟩ :=
+    h.exists_contMDiffOn_continuousLinearMapOfBilin hn hk hf hdim s₀
+  set c : ℝ := (√2)⁻¹
+  have hc : c ^ 2 = 1 / 2 := by simp [c, inv_pow]
+  -- `T s = c • ((Q s)♯ * (Q s)♯) ^ (1 / 4)` is a smooth function of the Riesz operator.
+  set T : Set (P →L[ℝ] P) := {A | IsSelfAdjoint A ∧ IsUnit A}
+  have hroot := ((contDiffOn_id (n := k) (s := T)).rpow_mul_self (1 / 4) (fun _ hA ↦ hA.1)
+    (fun _ hA ↦ hA.2)).const_smul c
+  refine ⟨Q, fun s ↦ c • ((Q s)♯ * (Q s)♯) ^ (1 / 4 : ℝ), hQ, hrep, fun s hs ↦
+    ContDiffWithinAt.comp_contMDiffWithinAt (f := fun s ↦ (Q s)♯) (hroot _ (hT s hs))
+      (hsharp s hs) hT, fun s hs ↦ ⟨?_, fun Ω ↦ ?_, fun u ↦ ?_⟩⟩
+  · have hpos : 0 ≤ (Q s)♯ * (Q s)♯ := by
+      simpa only [(hT s hs).1.star_eq] using star_mul_self_nonneg (Q s)♯
+    exact ((hT s hs).2.mul (hT s hs).2).cfcRpow _ hpos |>.smul
+      (Units.mk0 c (by positivity))
+  · exact (ContinuousLinearMap.commute_rpow_mul_self_starProjection_pointSpectralSubspace
+      (hT s hs).1 _ Ω).smul_left c
+  · rw [hrep s hs, ← InnerProductSpace.continuousLinearMapOfBilin_apply,
+      ContinuousLinearMap.inner_apply_self_eq_norm_sq_sub_norm_sq (hT s hs).1]
+    simp only [smul_apply, map_smul, norm_smul, mul_pow, Real.norm_eq_abs,
+      sq_abs, hc]
+    ring
 
 end IsNondegenerateCriticalSubmanifold
 

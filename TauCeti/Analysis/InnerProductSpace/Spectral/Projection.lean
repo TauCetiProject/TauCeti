@@ -17,7 +17,8 @@ the orthogonal projections onto its negative and positive spectral subspaces are
 `(1 - A * (A * A) ^ (-(1 / 2))) / 2` and
 `(1 + A * (A * A) ^ (-(1 / 2))) / 2`, respectively.
 Consequently these native spectral projections depend smoothly, even real analytically, on
-`A` as long as it remains self-adjoint and invertible. No smoothly varying eigenbasis is needed.
+`A` as long as it remains self-adjoint and invertible, as does every real power of `A * A`
+(`ContDiffOn.rpow_mul_self`). No smoothly varying eigenbasis is needed.
 
 These formulas supply smooth local projections for splitting a nondegenerate symmetric form
 into its positive and negative subbundles. They concern the existing
@@ -99,16 +100,23 @@ theorem starProjection_pointSpectralSubspace_Ioi_zero_eq (A : E →L[ℝ] E) (hA
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
   {n : ℕ∞ω} {A : P → E →L[ℝ] E} {s : Set P}
 
+/-- Every real power of the square of a smooth family of invertible self-adjoint operators is a
+smooth family, including at real analytic regularity. For `r = 1 / 2` this is the absolute value
+`|A x|`, and for `r = -(1 / 2)` its inverse. -/
+theorem _root_.ContDiffOn.rpow_mul_self (r : ℝ) (hA : ContDiffOn ℝ n A s)
+    (hself : ∀ x ∈ s, IsSelfAdjoint (A x)) (hunit : ∀ x ∈ s, IsUnit (A x)) :
+    ContDiffOn ℝ n (fun x ↦ (A x * A x) ^ r) s :=
+  (contDiffOn_rpow (E := E) (n := n) r).comp (hA.mul hA) fun x hx ↦
+    ((hunit x hx).mul (hunit x hx)).isStrictlyPositive (by
+      simpa only [(hself x hx).star_eq] using star_mul_self_nonneg (A x))
+
 /-- The negative spectral projections of a smooth family of invertible self-adjoint operators
 form a smooth family, including at real analytic regularity. -/
 theorem _root_.ContDiffOn.starProjection_pointSpectralSubspace_Iio_zero (hA : ContDiffOn ℝ n A s)
     (hself : ∀ x ∈ s, IsSelfAdjoint (A x)) (hunit : ∀ x ∈ s, IsUnit (A x)) :
     ContDiffOn ℝ n
       (fun x ↦ (Module.End.pointSpectralSubspace (A x).toLinearMap (Iio 0)).starProjection) s := by
-  have hpos (x) (hx : x ∈ s) : IsStrictlyPositive (A x * A x) :=
-    ((hunit x hx).mul (hunit x hx)).isStrictlyPositive (by
-      simpa only [(hself x hx).star_eq] using star_mul_self_nonneg (A x))
-  have hpow := (contDiffOn_rpow (E := E) (n := n) (-(1 / 2))).comp (hA.mul hA) hpos
+  have hpow := hA.rpow_mul_self (-(1 / 2)) hself hunit
   exact (((contDiffOn_const (c := (1 : E →L[ℝ] E))).sub (hA.mul hpow)).const_smul
     (1 / 2 : ℝ)).congr
     fun x hx ↦ starProjection_pointSpectralSubspace_Iio_zero_eq (A x) (hself x hx) (hunit x hx)
