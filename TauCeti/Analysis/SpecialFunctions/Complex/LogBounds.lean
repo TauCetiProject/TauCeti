@@ -36,7 +36,7 @@ factor `1 - w / p` is nonzero.  These are the estimates used to compare an Euler
 
 * `Complex.summable_taylorSeries_neg_log`: for a summable `r : ι → ℂ` with every `‖r i‖ < 1`, the
   family `(i, e) ↦ r i ^ (e + 1) / (e + 1)` is summable over `ι × ℕ`.
-* `Complex.summable_of_summable_neg_log_one_sub`: if every `‖r i‖ < 1` and `-log (1 - r i)` is
+* `Complex.summable_of_summable_neg_log_one_sub`: if every `r i ≠ 1` and `-log (1 - r i)` is
   summable, then `r` is summable (the converse of Mathlib's `Summable.clog_one_sub`).
 * `Complex.tsum_taylorSeries_neg_log`: for every `r` with `‖r i‖ < 1`, the sum over `ι × ℕ` is
   `∑' i, -log (1 - r i)` (both sides are `0` when `r` is not summable).
@@ -80,13 +80,13 @@ theorem summable_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (hr : Summab
 
 
 /-- **Summability of `-log (1 - rᵢ)` forces summability of `r`**, the converse of Mathlib's
-`Summable.clog_one_sub`, for `‖rᵢ‖ < 1`: once the logarithm is small, `‖rᵢ‖ ≤ 2 ‖log (1 - rᵢ)‖`. -/
-theorem summable_of_summable_neg_log_one_sub {ι : Type*} {r : ι → ℂ} (h1 : ∀ i, ‖r i‖ < 1)
+`Summable.clog_one_sub`, for `rᵢ ≠ 1`: once the logarithm is small, `‖rᵢ‖ ≤ 2 ‖log (1 - rᵢ)‖`. -/
+theorem summable_of_summable_neg_log_one_sub {ι : Type*} {r : ι → ℂ} (h1 : ∀ i, r i ≠ 1)
     (hg : Summable fun i ↦ -Complex.log (1 - r i)) : Summable r := by
   refine Summable.of_norm_bounded_eventually (hg.norm.mul_left 2) ?_
   have hlim := tendsto_zero_iff_norm_tendsto_zero.1 hg.tendsto_cofinite_zero
   filter_upwards [hlim.eventually_le_const one_pos] with i hi
-  have hne : 1 - r i ≠ 0 := sub_ne_zero.2 fun h ↦ by simpa [← h] using h1 i
+  have hne : 1 - r i ≠ 0 := sub_ne_zero.2 (h1 i).symm
   have h2 := Complex.norm_exp_sub_one_le (x := Complex.log (1 - r i)) (by simpa using hi)
   rw [Complex.exp_log hne, show 1 - r i - 1 = -r i by ring, norm_neg] at h2
   simpa using h2
@@ -101,7 +101,7 @@ theorem tsum_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (h1 : ∀ i, ‖
       (-Complex.log (1 - r i)) := fun i ↦ hasSum_taylorSeries_neg_log' (h1 i)
   by_cases hg : Summable fun i ↦ -Complex.log (1 - r i)
   · -- Summability of the logarithms forces summability of `r`.
-    have hr := summable_of_summable_neg_log_one_sub h1 hg
+    have hr := summable_of_summable_neg_log_one_sub (fun i h ↦ (h1 i).ne (by simp [h])) hg
     exact ((summable_taylorSeries_neg_log hr h1).hasSum.prod_fiberwise hfib).tsum_eq.symm
   · rw [tsum_eq_zero_of_not_summable hg]
     refine tsum_eq_zero_of_not_summable fun hS ↦ hg ?_
