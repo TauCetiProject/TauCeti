@@ -63,8 +63,7 @@ the position and the frequency.
   expansion**. In general `a # b - b # a` is
   `[a, b] - i ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{ξⱼ} b ∘ ∂_{xⱼ} a)` up to a symbol of order
   `m' + m - 2`, where `[a, b]` is the pointwise commutator.
-* `TauCeti.Symbol.poissonBracket` and
-  `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp_add_poissonBracket`: if every value of `a`
+* `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp_add_poissonBracket`: if every value of `a`
   commutes with every value of `b`, for instance if one of them is scalar, then
   `a # b - b # a = -i {a, b}` up to a symbol of order `m' + m - 2`, where
   `{a, b} = ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{xⱼ} a ∘ ∂_{ξⱼ} b)` is the Poisson bracket.
@@ -667,29 +666,6 @@ theorem isAsymptoticSum_sharp (hb : b.HasCompactSpatialSupport) :
   isAsymptoticSum_iff.2 fun N ↦ ⟨a.sharpRemainder b hb N, by simp⟩
 
 end Symbol
-
-/-! ### The Poisson bracket -/
-
-section PoissonBracket
-
-variable (a : Symbol n W U m') (b : Symbol n V W m)
-
-/-- The **Poisson bracket** `{a, b} = ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{xⱼ} a ∘ ∂_{ξⱼ} b)` of a symbol
-`a` of order `m'` and a symbol `b` of order `m`, a symbol of order `m' + m - 1`. For symbols whose
-values commute with each other, `-i {a, b}` is the leading term of the composition symbol of the
-commutator `[Op(a), Op(b)]` (`exists_coefficient_eq_sharp_sub_sharp_add_poissonBracket`). -/
-def poissonBracket : Symbol n V U (m' + m - 1) :=
-  ∑ j, (inclusion (by linarith) ((frequencyDeriv j a).comp (spatialDeriv j b)) -
-    inclusion (by linarith) ((spatialDeriv j a).comp (frequencyDeriv j b)))
-
-@[simp]
-theorem coefficient_poissonBracket (p : CoordinateSpace n × CoordinateSpace n) :
-    (a.poissonBracket b).coefficient p =
-      ∑ j, (((frequencyDeriv j a).coefficient p).comp ((spatialDeriv j b).coefficient p) -
-        ((spatialDeriv j a).coefficient p).comp ((frequencyDeriv j b).coefficient p)) := by
-  simp [poissonBracket, coefficient_sum]
-
-end PoissonBracket
 
 /-! ### Commutators -/
 
