@@ -73,12 +73,18 @@ variable {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [NormedAdd
 
 /-- The point `(‖y‖, x)` of the cylinder `I × B` over the closed unit ball of `E`, for a point
 `(x, y)` of the product of the closed unit balls of `E` and `F`. -/
-private def ballProdHeight (p : closedBall (0 : E) 1 × closedBall (0 : F) 1) :
+def ballProdHeight (p : closedBall (0 : E) 1 × closedBall (0 : F) 1) :
     I × closedBall (0 : E) 1 :=
   (⟨‖(p.2 : F)‖, Set.mem_Icc.2 ⟨norm_nonneg _, mem_closedBall_zero_iff.1 p.2.2⟩⟩, p.1)
 
 omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
-private theorem continuous_ballProdHeight :
+theorem ballProdHeight_def (p : closedBall (0 : E) 1 × closedBall (0 : F) 1) :
+    ballProdHeight p =
+      (⟨‖(p.2 : F)‖, Set.mem_Icc.2 ⟨norm_nonneg _, mem_closedBall_zero_iff.1 p.2.2⟩⟩, p.1) :=
+  (rfl)
+
+omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
+theorem continuous_ballProdHeight :
     Continuous (ballProdHeight (E := E) (F := F)) :=
   ((continuous_norm.comp (continuous_subtype_val.comp continuous_snd)).subtype_mk _).prodMk
     continuous_fst
@@ -110,7 +116,7 @@ def ballProdRetraction (p : closedBall (0 : E) 1 × closedBall (0 : F) 1) : E ×
   ((ballRadialProjection (ballProdHeight p)).2,
     ((ballRadialProjection (ballProdHeight p)).1 / ‖(p.2 : F)‖) • (p.2 : F))
 
-private theorem ballProdRetraction_def (p : closedBall (0 : E) 1 × closedBall (0 : F) 1) :
+theorem ballProdRetraction_def (p : closedBall (0 : E) 1 × closedBall (0 : F) 1) :
     ballProdRetraction p =
       ((ballRadialProjection (ballProdHeight p)).2,
         ((ballRadialProjection (ballProdHeight p)).1 / ‖(p.2 : F)‖) • (p.2 : F)) := (rfl)
@@ -224,11 +230,37 @@ private abbrev diskBoundaryHomeomorph' (n : ℕ) :
     TopCat.diskBoundary.{u} n ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin n)) 1 :=
   Homeomorph.ulift
 
+/-- A point of the boundary of the disc `TopCat.disk n` is the same point of the closed unit ball
+as of the unit sphere. -/
+private theorem coe_diskHomeomorph_diskBoundaryInclusion (n : ℕ)
+    (s : TopCat.diskBoundary.{u} n) :
+    (diskHomeomorph n (TopCat.diskBoundaryInclusion n s) : EuclideanSpace ℝ (Fin n)) =
+      diskBoundaryHomeomorph' n s :=
+  coe_diskBoundaryInclusion_apply_down n s
+
+/-- The centre of the disc `TopCat.disk n` is the centre `0` of the closed unit ball. -/
+private theorem coe_diskHomeomorph_diskCenter (n : ℕ) :
+    (diskHomeomorph n (diskCenter.{u} n) : EuclideanSpace ℝ (Fin n)) = 0 :=
+  coe_diskCenter_down n
+
 /-- The handle `D^k × D^m` is the product of two closed unit balls. -/
 private abbrev handleHomeomorph (k m : ℕ) :
     TopCat.disk.{u} k × TopCat.disk.{u} m ≃ₜ
       closedBall (0 : EuclideanSpace ℝ (Fin k)) 1 × closedBall (0 : EuclideanSpace ℝ (Fin m)) 1 :=
   (diskHomeomorph k).prodCongr (diskHomeomorph m)
+
+/-- A point `(s, y)` of the attaching region `∂D^k × D^m` lies over the unit sphere. -/
+private theorem handleHomeomorph_diskBoundaryInclusion_mem
+    (s : TopCat.diskBoundary.{u} k × TopCat.disk.{u} m) :
+    ((handleHomeomorph k m (TopCat.diskBoundaryInclusion k s.1, s.2)).1 :
+      EuclideanSpace ℝ (Fin k)) ∈ sphere 0 1 := by
+  rw [Homeomorph.coe_prodCongr, Prod.map_fst, coe_diskHomeomorph_diskBoundaryInclusion]
+  exact (diskBoundaryHomeomorph' k s.1).2
+
+/-- A point `(w, 0)` of the core `D^k × {0}` has second coordinate `0`. -/
+private theorem handleHomeomorph_diskCenter (w : TopCat.disk.{u} k) :
+    ((handleHomeomorph k m (w, diskCenter.{u} m)).2 : EuclideanSpace ℝ (Fin m)) = 0 := by
+  rw [Homeomorph.coe_prodCongr, Prod.map_snd, coe_diskHomeomorph_diskCenter]
 
 /-- The retraction `TauCeti.ballProdRetraction` of a handle, read on a point of the handle. -/
 private abbrev handleRetraction (p : TopCat.disk.{u} k × TopCat.disk.{u} m) :
@@ -288,6 +320,18 @@ private theorem handleHomotopy_eq_self (t : unitInterval)
   simp only [handleHomotopy, ContinuousMap.coe_mk, Homeomorph.apply_symm_apply, handleRetraction,
     h]
   ext <;> simp [← add_smul]
+
+/-- The homotopy of the handle fixes the attaching region `∂D^k × D^m`. -/
+private theorem handleHomotopy_diskBoundaryInclusion (t : unitInterval)
+    (s : TopCat.diskBoundary.{u} k × TopCat.disk.{u} m) :
+    handleHomotopy k m (t, (TopCat.diskBoundaryInclusion k s.1, s.2)) =
+      (TopCat.diskBoundaryInclusion k s.1, s.2) :=
+  handleHomotopy_eq_self t _ (Or.inr (handleHomeomorph_diskBoundaryInclusion_mem s))
+
+/-- The homotopy of the handle fixes the core `D^k × {0}`. -/
+private theorem handleHomotopy_diskCenter (t : unitInterval) (w : TopCat.disk.{u} k) :
+    handleHomotopy k m (t, (w, diskCenter.{u} m)) = (w, diskCenter.{u} m) :=
+  handleHomotopy_eq_self t _ (Or.inl (handleHomeomorph_diskCenter w))
 
 end Handle
 
@@ -350,23 +394,37 @@ private theorem exists_handle_desc
       obtain ⟨q, hp₂⟩ := y
       obtain rfl : p = q := hxy
       have hc : (diskHomeomorph (k i)).symm ⟨(handleRetraction p).1, (ballProdRetraction_mem _).1⟩ =
-          TopCat.diskBoundaryInclusion (k i) ((diskBoundaryHomeomorph' (k i)).symm ⟨_, hp₂⟩) :=
-        rfl
+          TopCat.diskBoundaryInclusion (k i) ((diskBoundaryHomeomorph' (k i)).symm ⟨_, hp₂⟩) := by
+        apply (diskHomeomorph (k i)).injective
+        ext1
+        rw [Homeomorph.apply_symm_apply, coe_diskHomeomorph_diskBoundaryInclusion,
+          Homeomorph.apply_symm_apply]
       have hm : (diskHomeomorph (m i)).symm
           ⟨(handleRetraction p).2, (ballProdRetraction_mem _).2.1⟩ = diskCenter.{u} (m i) := by
         apply (diskHomeomorph (m i)).injective
-        exact Subtype.ext (by
-          rw [Homeomorph.apply_symm_apply]
-          exact hp₁.trans (coe_diskCenter_down.{u} (m i)).symm)
-      have hw := ConcreteCategory.congr_hom hQ.w (Sigma.ι (fun i ↦ TopCat.diskBoundary.{u} (k i)) i
+        ext1
+        rw [Homeomorph.apply_symm_apply, coe_diskHomeomorph_diskCenter]
+        exact hp₁
+      have hw := hQ.w_apply (Sigma.ι (fun i ↦ TopCat.diskBoundary.{u} (k i)) i
         ((diskBoundaryHomeomorph' (k i)).symm ⟨_, hp₂⟩))
       simp only [ConcreteCategory.comp_apply, Sigma.ι_comp_desc_apply, Sigma.ι_map_apply] at hw
-      change inrQ _ = inlQ _
-      rw [hc, hm, ← hw]
-      rfl)
+      simp only [a, b, TopCat.hom_ofHom, ContinuousMap.coe_mk]
+      rw [hc, hm, ← hw, handleCoreBoundaryInclusion_apply])
   refine ⟨h, fun p hp ↦ ?_, fun p hp ↦ ?_⟩
   · exact ConcreteCategory.congr_hom ha ⟨p, hp⟩
   · exact ConcreteCategory.congr_hom (hb ()) ⟨p, hp⟩
+
+/-- The pushout square of the handle attachment `P`, read on points of the attaching regions. -/
+private theorem inlP_apply_eq_inrP_of_isPushout_handles
+    (hP : IsPushout (Sigma.desc α) (Limits.Sigma.map fun i ↦ TopCat.ofHom
+      ((TopCat.diskBoundaryInclusion (k i)).hom.prodMap (ContinuousMap.id _))) inlP inrP)
+    (i : ι) (s : TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (m i)) :
+    inlP (α i s) = inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) ×
+      TopCat.disk.{u} (m i))) i (TopCat.diskBoundaryInclusion (k i) s.1, s.2)) := by
+  have := hP.w_apply
+    (Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (m i))) i s)
+  simp only [Sigma.ι_comp_desc_apply, Sigma.ι_map_apply] at this
+  exact this
 
 /-- The retraction of the handle attachment `P` onto the attachment `Q` of the cores: a map
 `g : P → Q` which is the identity on `X` and on the cores, and which, followed by `φ`, is the end of
@@ -376,10 +434,10 @@ private theorem exists_handleCoreRetraction
       ((TopCat.diskBoundaryInclusion (k i)).hom.prodMap (ContinuousMap.id _))) inlP inrP)
     (hQ : IsPushout (Sigma.desc fun i ↦ handleCoreBoundaryInclusion (k i) (m i) ≫ α i)
       (Limits.Sigma.map fun i ↦ TopCat.diskBoundaryInclusion (k i)) inlQ inrQ)
-    (φ : Q ⟶ P) (hφl : inlQ ≫ φ = inlP)
-    (hφr : ∀ i, Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i ≫ inrQ ≫ φ =
-      handleCoreInclusion (k i) (m i) ≫
-        Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i ≫ inrP) :
+    (φ : Q ⟶ P) (hφl : ∀ x, φ (inlQ x) = inlP x)
+    (hφr : ∀ i w, φ (inrQ (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i w)) =
+      inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i
+        (w, diskCenter.{u} (m i)))) :
     ∃ g : P ⟶ Q, (∀ x, g (inlP x) = inlQ x) ∧
       (∀ i w, g (inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i
           (w, diskCenter.{u} (m i)))) = inrQ (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i w)) ∧
@@ -388,17 +446,10 @@ private theorem exists_handleCoreRetraction
         φ (g (inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) ×
           TopCat.disk.{u} (m i))) i p))) := by
   choose h hcore hside using fun i ↦ exists_handle_desc (α := α) hQ i
-  have hφl' (x : X) : φ (inlQ x) = inlP x := ConcreteCategory.congr_hom hφl x
-  have hφr' (i : ι) (w : TopCat.disk.{u} (k i)) :
-      φ (inrQ (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i w)) =
-        inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i
-          (w, diskCenter.{u} (m i))) :=
-    ConcreteCategory.congr_hom (hφr i) w
   -- On the attaching region the retraction is the identity, so `h i` is `α i` there.
   have hhα (i : ι) (s : TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (m i)) :
       h i (TopCat.diskBoundaryInclusion (k i) s.1, s.2) = inlQ (α i s) := by
-    have hs : ((handleHomeomorph (k i) (m i) (TopCat.diskBoundaryInclusion (k i) s.1, s.2)).1 :
-        EuclideanSpace ℝ (Fin (k i))) ∈ sphere 0 1 := s.1.down.2
+    have hs := handleHomeomorph_diskBoundaryInclusion_mem s
     have hρ := ballProdRetraction_eq_self _ (Or.inr hs)
     rw [hside i _ (by rw [handleRetraction, hρ]; exact hs)]
     congr 2
@@ -429,36 +480,26 @@ private theorem exists_handleCoreRetraction
   -- On the core the retraction is the identity, so `h i` is the `i`-th cell there.
   have hhcore (i : ι) (w : TopCat.disk.{u} (k i)) :
       h i (w, diskCenter.{u} (m i)) = inrQ (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i w) := by
-    have h0 : ((handleHomeomorph (k i) (m i) (w, diskCenter.{u} (m i))).2 :
-        EuclideanSpace ℝ (Fin (m i))) = 0 := coe_diskCenter_down.{u} (m i)
+    have h0 := handleHomeomorph_diskCenter (m := m i) w
     have hρ := ballProdRetraction_eq_self _ (Or.inl h0)
     rw [hcore i _ (by rw [handleRetraction, hρ]; exact h0)]
     congr 2
     apply (diskHomeomorph (k i)).injective
     simp only [Homeomorph.apply_symm_apply]
     exact Subtype.ext (congrArg Prod.fst hρ)
-  -- The pushout square of `P`, read on points of the attaching regions.
-  have hPw (i : ι) (s : TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (m i)) :
-      inlP (α i s) = inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) ×
-          TopCat.disk.{u} (m i))) i
-        (TopCat.diskBoundaryInclusion (k i) s.1, s.2)) := by
-    have := ConcreteCategory.congr_hom hP.w
-      (Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (m i))) i s)
-    simp only [ConcreteCategory.comp_apply, Sigma.ι_comp_desc_apply, Sigma.ι_map_apply] at this
-    exact this
   -- At the end of the homotopy of the `i`-th handle, `inrP` agrees with `φ ∘ h i`.
   have hend (i : ι) (p : TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i)) :
       inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i
         (handleHomotopy (k i) (m i) (1, p))) = φ (h i p) := by
     rw [handleHomotopy_one]
     rcases (ballProdRetraction_mem (handleHomeomorph (k i) (m i) p)).2.2 with h0 | hs
-    · rw [hcore i p h0, hφr']
+    · rw [hcore i p h0, hφr]
       congr 2
       apply (handleHomeomorph (k i) (m i)).injective
       rw [Homeomorph.apply_symm_apply]
       refine Prod.ext (by simp) (Subtype.ext ?_)
-      exact h0.trans (coe_diskCenter_down.{u} (m i)).symm
-    · rw [hside i p hs, hφl', hPw]
+      exact h0.trans (handleHomeomorph_diskCenter _).symm
+    · rw [hside i p hs, hφl, inlP_apply_eq_inrP_of_isPushout_handles hP]
       congr 2
   exact ⟨g, hgl, fun i w ↦ (hgr i _).trans (hhcore i w), fun i p ↦ (hend i p).trans
     (congrArg φ (hgr i p).symm)⟩
@@ -483,100 +524,54 @@ theorem exists_leftInverse_homotopicRel_of_isPushout_handles
         Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i ≫ inrP) :
     ∃ g : C(P, Q), Function.LeftInverse g φ ∧
       (ContinuousMap.id P).HomotopicRel (φ.hom.comp g) (range φ) := by
-  obtain ⟨g, hgl, hgcore, hend⟩ := exists_handleCoreRetraction hP hQ φ hφl hφr
   have hφl' (x : X) : φ (inlQ x) = inlP x := ConcreteCategory.congr_hom hφl x
   have hφr' (i : ι) (w : TopCat.disk.{u} (k i)) :
       φ (inrQ (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i w)) =
         inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i
           (w, diskCenter.{u} (m i))) :=
     ConcreteCategory.congr_hom (hφr i) w
-  -- The pushout square of `P`, read on points of the attaching regions.
-  have hPw (i : ι) (s : TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (m i)) :
-      inlP (α i s) = inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) ×
-          TopCat.disk.{u} (m i))) i
-        (TopCat.diskBoundaryInclusion (k i) s.1, s.2)) := by
-    have := ConcreteCategory.congr_hom hP.w
-      (Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (m i))) i s)
-    simp only [ConcreteCategory.comp_apply, Sigma.ι_comp_desc_apply, Sigma.ι_map_apply] at this
-    exact this
-  -- The homotopies of the handles, glued over their coproduct through the curried maps.
-  let C (i : ι) : C(unitInterval × (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i)), P) :=
-    (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i ≫ inrP).hom.comp
-      (handleHomotopy (k i) (m i))
-  let Hcurry : (∐ fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) ⟶
-      TopCat.of C(unitInterval, P) :=
-    Sigma.desc fun i ↦ TopCat.ofHom ((C i).comp ContinuousMap.prodSwap).curry
-  let HZfun :
-      C(unitInterval × (∐ fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i)) :
-        TopCat.{u}), P) :=
-    Hcurry.hom.uncurry.comp ContinuousMap.prodSwap
-  have hHZ (t : unitInterval) (i : ι) (p : TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i)) :
-      HZfun (t, Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i p) =
-        inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) ×
-            TopCat.disk.{u} (m i))) i (handleHomotopy (k i) (m i) (t, p))) := by
-    have hc : Hcurry (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) ×
-        TopCat.disk.{u} (m i))) i p) =
-        ((C i).comp ContinuousMap.prodSwap).curry p :=
-      ConcreteCategory.congr_hom
-        (Sigma.ι_comp_desc (fun i ↦ TopCat.ofHom ((C i).comp ContinuousMap.prodSwap).curry) i) p
-    exact congrArg (fun γ : C(unitInterval, P) ↦ γ t) hc
-  have hrepH
-      (z : (∐ fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i)) : TopCat.{u})) :
-      ∃ i p, Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i p = z :=
-    let ⟨⟨i⟩, p, hp⟩ := Concrete.colimit_exists_rep _ z; ⟨i, p, hp⟩
-  have hrepA
-      (z : (∐ fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (m i)) :
-        TopCat.{u})) :
-      ∃ i s, Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) ×
-          TopCat.disk.{u} (m i))) i s =
-        z :=
-    let ⟨⟨i⟩, s, hs⟩ := Concrete.colimit_exists_rep _ z; ⟨i, s, hs⟩
-  -- On `X` the homotopy is constant, and on the handles it is the straight-line homotopy.
+  obtain ⟨g, hgl, hgcore, hend⟩ := exists_handleCoreRetraction hP hQ φ hφl' hφr'
+  -- On `X` the homotopy is constant, and on each handle it is the straight-line homotopy.
   let HY : ((ContinuousMap.id P).comp inlP.hom).Homotopy ((φ.hom.comp g.hom).comp inlP.hom) :=
     (ContinuousMap.Homotopy.refl inlP.hom).cast (by ext x; rfl)
       (by ext x; exact (congrArg φ (hgl x)).trans (hφl' x) |>.symm)
   let HZ : ((ContinuousMap.id P).comp inrP.hom).Homotopy ((φ.hom.comp g.hom).comp inrP.hom) :=
-    { toContinuousMap := HZfun
-      map_zero_left := fun z ↦ by
-        obtain ⟨i, p, rfl⟩ := hrepH z
-        exact (hHZ 0 i p).trans (by rw [handleHomotopy_zero]; rfl)
-      map_one_left := fun z ↦ by
-        obtain ⟨i, p, rfl⟩ := hrepH z
-        exact (hHZ 1 i p).trans (hend i p) }
+    sigmaHomotopy fun i ↦
+      { toContinuousMap :=
+          (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i ≫
+            inrP).hom.comp (handleHomotopy (k i) (m i))
+        map_zero_left := fun p ↦ by simp [handleHomotopy_zero]
+        map_one_left := fun p ↦ by simpa using hend i p }
+  have hHZ (t : unitInterval) (i : ι) (p : TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i)) :
+      HZ (t, Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i p) =
+        inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i
+          (handleHomotopy (k i) (m i) (t, p))) := by
+    simp only [HZ]
+    rw [sigmaHomotopy_apply_ι]
+    rfl
   have hYZ (t : unitInterval)
       (b : (∐ fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (m i)) :
         TopCat.{u})) :
       HY (t, Sigma.desc α b) = HZ (t, Limits.Sigma.map (fun i ↦ TopCat.ofHom
         ((TopCat.diskBoundaryInclusion (k i)).hom.prodMap (ContinuousMap.id _))) b) := by
-    obtain ⟨i, s, rfl⟩ := hrepA b
-    have hs : ((handleHomeomorph (k i) (m i) (TopCat.diskBoundaryInclusion (k i) s.1, s.2)).1 :
-        EuclideanSpace ℝ (Fin (k i))) ∈ sphere 0 1 := s.1.down.2
-    change inlP (Sigma.desc α (Sigma.ι (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) ×
-        TopCat.disk.{u} (m i))) i s)) =
-      HZfun (t, _)
-    rw [Sigma.ι_comp_desc_apply, Sigma.ι_map_apply]
-    change inlP (α i s) =
-      HZfun (t, Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i
-        (TopCat.diskBoundaryInclusion (k i) s.1, s.2))
-    rw [hHZ, handleHomotopy_eq_self t _ (Or.inr hs), hPw]
+    obtain ⟨i, s, rfl⟩ := exists_sigma_ι_eq b
+    rw [Sigma.ι_comp_desc_apply, Sigma.ι_map_apply, hHZ]
+    simp only [HY, ContinuousMap.Homotopy.cast_apply, ContinuousMap.Homotopy.refl_apply]
+    -- `Sigma.map` acts on the `i`-th attaching region as `(s, y) ↦ (s, y)`, fixed by the homotopy.
+    exact (inlP_apply_eq_inrP_of_isPushout_handles hP i s).trans (congrArg (fun p ↦
+      inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i p))
+      (handleHomotopy_diskBoundaryInclusion t s).symm)
   let F := hP.homotopyDesc HY HZ hYZ
   refine ⟨g.hom, fun q ↦ ?_, ⟨{ toHomotopy := F, prop' := fun t y hy ↦ ?_ }⟩⟩
   · rcases exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma hQ q with ⟨x, rfl⟩ | ⟨i, w, rfl⟩
-    · change g (φ (inlQ x)) = inlQ x
-      rw [hφl', hgl]
-    · change g (φ (inrQ _)) = _
-      rw [hφr', hgcore]
+    · rw [hφl', hgl]
+    · rw [hφr', hgcore]
   · obtain ⟨q, rfl⟩ := hy
     rcases exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma hQ q with ⟨x, rfl⟩ | ⟨i, w, rfl⟩
-    · change F (t, φ (inlQ x)) = φ (inlQ x)
-      rw [hφl', hP.homotopyDesc_apply_inl]
-      rfl
-    · have h0 : ((handleHomeomorph (k i) (m i) (w, diskCenter.{u} (m i))).2 :
-          EuclideanSpace ℝ (Fin (m i))) = 0 := coe_diskCenter_down.{u} (m i)
-      change F (t, φ (inrQ _)) = φ (inrQ _)
-      rw [hφr', hP.homotopyDesc_apply_inr]
-      change HZfun _ = _
-      rw [hHZ, handleHomotopy_eq_self t _ (Or.inl h0)]
+    · simp [F, HY, hφl']
+    · simp only [ContinuousMap.toFun_eq_coe, ContinuousMap.Homotopy.coe_toContinuousMap,
+        ContinuousMap.coe_mk, ContinuousMap.id_apply]
+      rw [hφr', hP.homotopyDesc_apply_inr, hHZ, handleHomotopy_diskCenter]
 
 end Attachment
 
