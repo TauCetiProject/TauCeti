@@ -76,10 +76,7 @@ theorem singleToSingularity_map_eq_zero {X Y : C} {f : X ⟶ Y}
     (E.isZero_singleToSingularity_obj hP).eq_of_src (E.singleToSingularity.map q) 0, comp_zero]
 
 /-- The functor `stable(E) ⥤ D_sg(E)` induced by placing objects in degree zero. -/
--- Exposed because its characteristic lemmas below identify the objects
--- `stableToSingularity.obj (projectiveStableFunctor.obj X)` and `singleToSingularity.obj X`
--- definitionally, as Mathlib's `CategoryTheory.Quotient.lift_map_functor_map` does.
-@[expose] noncomputable def stableToSingularity :
+noncomputable def stableToSingularity :
     E.ProjectiveStableCategory ⥤ E.SingularityCategory :=
   CategoryTheory.Quotient.lift _ E.singleToSingularity fun _ _ f g h ↦ by
     rw [← sub_eq_zero, ← Functor.map_sub]
@@ -93,13 +90,17 @@ noncomputable def projectiveStableFunctorCompStableToSingularityIso :
 @[simp]
 theorem stableToSingularity_obj_projectiveStableFunctor_obj (X : C) :
     E.stableToSingularity.obj (E.projectiveStableFunctor.obj X) = E.singleToSingularity.obj X :=
-  rfl
+  (rfl)
 
-@[simp]
+/-- On the image of a morphism of `C`, `stableToSingularity` is `singleToSingularity`, conjugated
+by the comparison `projectiveStableFunctorCompStableToSingularityIso`. -/
 theorem stableToSingularity_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶ Y) :
     E.stableToSingularity.map (E.projectiveStableFunctor.map f) =
-      E.singleToSingularity.map f :=
-  CategoryTheory.Quotient.lift_map_functor_map _ _ _ f
+      E.projectiveStableFunctorCompStableToSingularityIso.hom.app X ≫
+        E.singleToSingularity.map f ≫
+          E.projectiveStableFunctorCompStableToSingularityIso.inv.app Y := by
+  rw [← Category.assoc, ← E.projectiveStableFunctorCompStableToSingularityIso.hom.naturality f,
+    Category.assoc, Iso.hom_inv_id_app, Category.comp_id, Functor.comp_map]
 
 instance : E.stableToSingularity.Additive :=
   have := Functor.additive_of_iso E.projectiveStableFunctorCompStableToSingularityIso.symm
