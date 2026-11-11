@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.StateSpace
+public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.Normed.Module.HahnBanach
@@ -18,8 +18,8 @@ Every state of a unital C⋆-subalgebra extends to a state of the ambient C⋆-a
 * `TauCeti.surjOn_pullbackFunctional_stateSpace`: along an injective unital star homomorphism
   `f : A → B`, restriction of states `pullbackFunctional A f` maps the state space of `B` onto the
   state space of `A`.
-* `TauCeti.exists_mem_stateSpace_forall_apply_coe_eq`: every state of a closed star subalgebra `S`
-  of `A` (containing the unit of `A`) is the restriction of a state of `A`.
+* `StarSubalgebra.exists_mem_stateSpace_forall_apply_coe_eq`: every state of a closed star
+  subalgebra `S` of `A` (containing the unit of `A`) is the restriction of a state of `A`.
 
 The proof takes a norm-preserving Hahn–Banach extension of the state, transported to the range of
 `f`, and reads off that it is a state from its value `1` at the unit, by
@@ -69,6 +69,14 @@ theorem surjOn_pullbackFunctional_stateSpace (f : F) (hf : Function.Injective f)
   · simpa [hnorm] using LinearMap.mkContinuous_norm_le _ zero_le_one _
   · simpa [h1] using ψ.le_opNorm 1
 
+end TauCeti
+
+namespace StarSubalgebra
+
+open TauCeti
+
+variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
 /-- **Extension of states from a C⋆-subalgebra.** Every state of a closed star subalgebra `S` of a
 unital C⋆-algebra `A`, containing the unit of `A`, is the restriction of a state of `A`. -/
 theorem exists_mem_stateSpace_forall_apply_coe_eq (S : StarSubalgebra ℂ A)
@@ -77,4 +85,4 @@ theorem exists_mem_stateSpace_forall_apply_coe_eq (S : StarSubalgebra ℂ A)
   obtain ⟨ψ, hψ, rfl⟩ := surjOn_pullbackFunctional_stateSpace S.subtype Subtype.val_injective hφ
   exact ⟨ψ, hψ, fun s => (pullbackFunctional_apply S.subtype ψ s).symm⟩
 
-end TauCeti
+end StarSubalgebra
