@@ -442,15 +442,6 @@ private lemma norm_integrandFDeriv_le {x : E} {C C' : ℝ}
 omit [MeasurableSpace E] [BorelSpace E] in
 private lemma continuous_integrandFDeriv (ha : ContDiff ℝ 1 a) (f : 𝓢(E, V)) (x : E) :
     Continuous (integrandFDeriv a f x) := by
-  have hD : Continuous fun ζ : E ↦ fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x :=
-    (ContDiff.fderiv (f := fun (ζ : E) (y : E) ↦ a (y, (2 * π) • ζ))
-      (ha.comp (contDiff_snd.prodMk (contDiff_fst.const_smul _))) contDiff_const
-      (n := 0) (by simp)).continuous
-  have he : Continuous fun ζ : E ↦ (𝐞 ⟪ζ, x⟫ : ℂ) :=
-    continuous_subtype_val.comp
-      (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const))
-  have ha' : Continuous fun ζ : E ↦ a (x, (2 * π) • ζ) :=
-    ha.continuous.comp (continuous_const.prodMk (continuous_const_smul _))
   refine continuous_clm_apply.2 fun h ↦ ?_
   simp only [integrandFDeriv_apply, Circle.smul_def]
   fun_prop
