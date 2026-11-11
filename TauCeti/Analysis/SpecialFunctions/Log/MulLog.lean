@@ -61,26 +61,26 @@ namespace Real
 the graph at every nonnegative `u`: with the slope `log a + 1` of `Real.deriv_mul_log`,
 `u * log u - a * log a ≥ (u - a) * (log a + 1)`. -/
 theorem mul_log_sub_mul_log_ge (a u : ℝ) (ha : 0 < a) (hu : 0 ≤ u) :
-    u * Real.log u - a * Real.log a ≥ (u - a) * (Real.log a + 1) := by
+    u * log u - a * log a ≥ (u - a) * (log a + 1) := by
   rcases lt_or_eq_of_le hu with hu' | hu0
-  · have key : u * Real.log u - a * Real.log a - (u - a) * (Real.log a + 1)
-        = a * ((u / a) * Real.log (u / a) - (u / a - 1)) := by
-      rw [Real.log_div (x := u) (y := a) hu'.ne' ha.ne']
+  · have key : u * log u - a * log a - (u - a) * (log a + 1)
+        = a * ((u / a) * log (u / a) - (u / a - 1)) := by
+      rw [log_div (x := u) (y := a) hu'.ne' ha.ne']
       field_simp
       ring
-    have h1 : 0 ≤ (u / a) * Real.log (u / a) - (u / a - 1) :=
-      sub_nonneg.mpr (Real.self_sub_one_le_mul_log (le_of_lt (div_pos hu' ha)))
+    have h1 : 0 ≤ (u / a) * log (u / a) - (u / a - 1) :=
+      sub_nonneg.mpr (self_sub_one_le_mul_log (le_of_lt (div_pos hu' ha)))
     have h2 := mul_nonneg (le_of_lt ha) h1
     linarith
   · subst hu0
-    simp only [Real.log_zero, zero_mul]
+    simp only [log_zero, zero_mul]
     linarith
 
 /-- The scalar form of Klein's inequality: `a - b ≤ a * log a - a * log b` for `0 ≤ a, b`,
 provided `a = 0` whenever `b = 0`. For `0 < b` it is the supporting line
 `Real.mul_log_sub_mul_log_ge` at `b`; the proviso excludes `b = 0 < a`, where it fails. -/
 theorem sub_le_mul_log_sub_mul_log {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : b = 0 → a = 0) :
-    a - b ≤ a * Real.log a - a * Real.log b := by
+    a - b ≤ a * log a - a * log b := by
   rcases hb.eq_or_lt with rfl | hb
   · simp [hab rfl]
   nlinarith [mul_log_sub_mul_log_ge b a hb ha]
@@ -93,19 +93,19 @@ theorem sub_le_mul_log_sub_mul_log {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (ha
 The case `x = 0`, which the hypotheses force together with `t = 0` and which makes both sides
 zero, is included. -/
 theorem sub_mul_log_le {x t : ℝ} (ht0 : 0 ≤ t) (htx : t ≤ x / 2) :
-    (x - t) * Real.log (x - t) - x * Real.log x ≤ -t * (Real.log x - Real.log 2 + 1) := by
+    (x - t) * log (x - t) - x * log x ≤ -t * (log x - log 2 + 1) := by
   have hx0' : 0 ≤ x := by nlinarith
   rcases lt_or_eq_of_le hx0' with hx0 | hx0
   · have hxt0 : 0 < x - t := by linarith
-    have h1 : x * Real.log x - (x - t) * Real.log (x - t) ≥ t * (Real.log (x - t) + 1) := by
+    have h1 : x * log x - (x - t) * log (x - t) ≥ t * (log (x - t) + 1) := by
       have hle := mul_log_sub_mul_log_ge (x - t) x hxt0 hx0'
       linarith
     have hhalf : x / 2 ≤ x - t := by
       calc x / 2 = x - x / 2 := by ring
         _ ≤ x - t := sub_le_sub_left htx x
-    have h2 : Real.log x - Real.log 2 ≤ Real.log (x - t) := by
-      rw [← Real.log_div (x := x) (y := 2) (ne_of_gt hx0) (by norm_num : (2 : ℝ) ≠ 0)]
-      exact Real.strictMonoOn_log.monotoneOn (a := x / 2) (b := x - t)
+    have h2 : log x - log 2 ≤ log (x - t) := by
+      rw [← log_div (x := x) (y := 2) (ne_of_gt hx0) (by norm_num : (2 : ℝ) ≠ 0)]
+      exact strictMonoOn_log.monotoneOn (a := x / 2) (b := x - t)
         (div_pos hx0 (by norm_num : (0 : ℝ) < 2)) hxt0 hhalf
     have h3 := mul_le_mul_of_nonneg_left h2 ht0
     linarith
@@ -118,22 +118,22 @@ theorem sub_mul_log_le {x t : ℝ} (ht0 : 0 ≤ t) (htx : t ≤ x / 2) :
 sum of the gaps of the supporting lines `Real.mul_log_sub_mul_log_ge` of `u ↦ u * log u` at `p`
 and at `q`, so this bounds that symmetrised gap below by `(p - q) ^ 2 / M`. -/
 theorem sq_sub_le_mul_sub_mul_log_sub_log {p q M : ℝ} (hp : 0 < p) (hq : 0 < q) (hpM : p ≤ M)
-    (hqM : q ≤ M) : (p - q) ^ 2 ≤ M * ((p - q) * (Real.log p - Real.log q)) := by
+    (hqM : q ≤ M) : (p - q) ^ 2 ≤ M * ((p - q) * (log p - log q)) := by
   wlog hqp : q ≤ p generalizing p q
   · have h := this hq hp hqM hpM (le_of_not_ge hqp)
     linarith
   -- Scale `log p - log q ≥ 1 - q / p` by `p * (p - q) ≥ 0`, then enlarge `p` to `M`.
-  have hlog : 1 - q / p ≤ Real.log p - Real.log q := by
-    rw [← Real.log_div hp.ne' hq.ne']
-    simpa [inv_div] using Real.one_sub_inv_le_log_of_pos (div_pos hp hq)
+  have hlog : 1 - q / p ≤ log p - log q := by
+    rw [← log_div hp.ne' hq.ne']
+    simpa [inv_div] using one_sub_inv_le_log_of_pos (div_pos hp hq)
   have hpq : 0 ≤ p - q := sub_nonneg.2 hqp
   have hsq : (p - q) ^ 2 = p * ((p - q) * (1 - q / p)) := by field_simp
-  have hgap : 0 ≤ (p - q) * (Real.log p - Real.log q) :=
-    mul_nonneg hpq (sub_nonneg.2 (Real.log_le_log hq hqp))
+  have hgap : 0 ≤ (p - q) * (log p - log q) :=
+    mul_nonneg hpq (sub_nonneg.2 (log_le_log hq hqp))
   rw [hsq]
-  calc p * ((p - q) * (1 - q / p)) ≤ p * ((p - q) * (Real.log p - Real.log q)) :=
+  calc p * ((p - q) * (1 - q / p)) ≤ p * ((p - q) * (log p - log q)) :=
         mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hlog hpq) hp.le
-    _ ≤ M * ((p - q) * (Real.log p - Real.log q)) := mul_le_mul_of_nonneg_right hpM hgap
+    _ ≤ M * ((p - q) * (log p - log q)) := mul_le_mul_of_nonneg_right hpM hgap
 
 /-- The exponential is strongly monotone on `[log m, ∞)`: for `0 < p, q` with `m ≤ p, q`,
 `m * (log p - log q) ^ 2 ≤ (p - q) * (log p - log q)`. Equivalently, for `log p ≠ log q` the
@@ -142,32 +142,32 @@ difference quotient `(p - q) / (log p - log q)` of `exp` between `log q` and `lo
 point and its logarithm exchanged. -/
 theorem mul_sq_log_sub_log_le_sub_mul_log_sub_log {p q m : ℝ} (hp : 0 < p) (hq : 0 < q)
     (hmp : m ≤ p) (hmq : m ≤ q) :
-    m * (Real.log p - Real.log q) ^ 2 ≤ (p - q) * (Real.log p - Real.log q) := by
+    m * (log p - log q) ^ 2 ≤ (p - q) * (log p - log q) := by
   wlog hqp : q ≤ p generalizing p q
   · have h := this hq hp hmq hmp (le_of_not_ge hqp)
     linarith
   -- Scale `q (log p - log q) ≤ p - q`, from `log y ≤ y - 1`, by `log p - log q ≥ 0`.
-  have hlog : q * (Real.log p - Real.log q) ≤ p - q := by
-    have h := Real.log_le_sub_one_of_pos (div_pos hp hq)
-    rw [Real.log_div hp.ne' hq.ne'] at h
-    calc q * (Real.log p - Real.log q) ≤ q * (p / q - 1) := mul_le_mul_of_nonneg_left h hq.le
+  have hlog : q * (log p - log q) ≤ p - q := by
+    have h := log_le_sub_one_of_pos (div_pos hp hq)
+    rw [log_div hp.ne' hq.ne'] at h
+    calc q * (log p - log q) ≤ q * (p / q - 1) := mul_le_mul_of_nonneg_left h hq.le
       _ = p - q := by field_simp
-  have hgap : 0 ≤ Real.log p - Real.log q := sub_nonneg.2 (Real.log_le_log hq hqp)
-  calc m * (Real.log p - Real.log q) ^ 2 ≤ q * (Real.log p - Real.log q) ^ 2 :=
+  have hgap : 0 ≤ log p - log q := sub_nonneg.2 (log_le_log hq hqp)
+  calc m * (log p - log q) ^ 2 ≤ q * (log p - log q) ^ 2 :=
         mul_le_mul_of_nonneg_right hmq (sq_nonneg _)
-    _ = (q * (Real.log p - Real.log q)) * (Real.log p - Real.log q) := by ring
-    _ ≤ (p - q) * (Real.log p - Real.log q) := mul_le_mul_of_nonneg_right hlog hgap
+    _ = (q * (log p - log q)) * (log p - log q) := by ring
+    _ ≤ (p - q) * (log p - log q) := mul_le_mul_of_nonneg_right hlog hgap
 
 /-- The difference quotient of `exp` between `log b` and `log a` is at least `m` when `m ≤ a, b`:
 for `log a ≠ log b`, `m ≤ (a - b) / (log a - log b)`. -/
 theorem le_sub_div_log_sub_log {a b m : ℝ} (ha : 0 < a) (hb : 0 < b)
-    (hma : m ≤ a) (hmb : m ≤ b) (h₀ : Real.log a - Real.log b ≠ 0) :
-    m ≤ (a - b) / (Real.log a - Real.log b) := by
-  have hmono := Real.mul_sq_log_sub_log_le_sub_mul_log_sub_log ha hb hma hmb
-  have hD2 : 0 < (Real.log a - Real.log b) ^ 2 :=
+    (hma : m ≤ a) (hmb : m ≤ b) (h₀ : log a - log b ≠ 0) :
+    m ≤ (a - b) / (log a - log b) := by
+  have hmono := mul_sq_log_sub_log_le_sub_mul_log_sub_log ha hb hma hmb
+  have hD2 : 0 < (log a - log b) ^ 2 :=
     lt_of_le_of_ne (sq_nonneg _) (pow_ne_zero 2 h₀).symm
-  have hquot : (a - b) / (Real.log a - Real.log b) =
-      (a - b) * (Real.log a - Real.log b) / (Real.log a - Real.log b) ^ 2 := by
+  have hquot : (a - b) / (log a - log b) =
+      (a - b) * (log a - log b) / (log a - log b) ^ 2 := by
     field_simp
   rw [hquot, le_div_iff₀ hD2]
   exact hmono
