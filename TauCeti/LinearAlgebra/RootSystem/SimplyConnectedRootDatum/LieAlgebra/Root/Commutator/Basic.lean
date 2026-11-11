@@ -77,7 +77,7 @@ variable {t : DynkinType} {ht : t.Valid} {α β γ δ : Fin t.numRoots}
 
 /-- A root sum `γ = α + β` makes the roots `α` and `β` linearly independent, so a combination
 `a α + b β` with natural coefficients and `a ≠ 0` does not vanish. -/
-private theorem ne_zero_of_eq_nsmul_root_add_nsmul_root
+theorem ne_zero_of_eq_nsmul_root_add_nsmul_root
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
     {a b : ℕ} (ha : a ≠ 0) {w : Fin t.rank → ℤ}
