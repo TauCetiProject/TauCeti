@@ -225,6 +225,10 @@ namespace ideleCongruenceSubgroup
 
 variable {𝔪 : Modulus K} {x : IdeleGroup (𝓞 K) K}
 
+/-- **An idele of the congruence subgroup is congruent to one at every finite place**: its
+`v`-component minus one has valuation at most `exp (-(𝔪.exponent v))`.  At a divisor of the finite
+part this is the defining congruence; away from it the exponent is zero, and the bound says that
+the component minus one is integral, which holds because the component is a unit there. -/
 theorem valued_ideleFiniteCoord_sub_one_le (hx : x ∈ ideleCongruenceSubgroup 𝔪)
     {v : HeightOneSpectrum (𝓞 K)} :
     Valued.v ((v.ideleFiniteCoord x : v.adicCompletion K) - 1) ≤
