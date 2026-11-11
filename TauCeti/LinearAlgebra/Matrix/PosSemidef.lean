@@ -29,6 +29,8 @@ but do not depend on Tau Ceti's positive-definite-function theory.
 * `TauCeti.posSemidef_rankOne`: rank-one positive-semidefinite matrices.
 * `TauCeti.posSemidef_const_one` and `TauCeti.posSemidef_const_of_nonneg`: constant matrices.
 * `TauCeti.posSemidef_iff_finite_sum`: the quadratic-form characterization.
+* `TauCeti.posSemidef_of_support_posSemidef`: a Hermitian matrix is positive semidefinite when
+  its principal submatrices on supports of finitely supported vectors are.
 * `TauCeti.posSemidef_schur_finset_prod` and `Matrix.PosSemidef.hadamard_pow`: finite Schur
   products and Schur powers.
 * `TauCeti.posSemidef_prod_union`: the matrix `(i, j) ↦ ∏_{a ∈ L i ∪ L j} w a` for weights in
@@ -64,7 +66,9 @@ universe u v w
 
 variable {α : Type v}
 
-private theorem posSemidef_of_support_posSemidef {R : Type u}
+/-- A conjugate-symmetric matrix over an arbitrary index type is positive semidefinite as soon
+as all its principal submatrices on finite supports of finitely supported vectors are. -/
+theorem posSemidef_of_support_posSemidef {R : Type u}
     [Ring R] [PartialOrder R] [StarRing R] (K : α → α → R)
     (hHerm : (Matrix.of fun a b => K a b).IsHermitian) (hgram : ∀ x : α →₀ R,
       (Matrix.of fun i j : x.support => K (i : α) (j : α)).PosSemidef) :

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Topology.Category.TopPair
+import TauCeti.Topology.Closure
 
 /-!
 # Excision for relative singular homology
@@ -224,25 +225,19 @@ lemma interior_subset_range_or_subset_range_fst_excisionMap (b : Bool) :
 `(A, A ∩ B) ⟶ (X, B)` induces isomorphisms on relative singular homology. -/
 theorem isIso_singularHomologyMap_excisionMap (h : interior A ∪ interior B = Set.univ)
     (n : ℕ) : IsIso (TopPair.singularHomologyMap (excisionMap A B) R n) := by
-  refine isIso_singularHomologyMap_of_open_cover R (excisionMap A B)
+  exact isIso_singularHomologyMap_of_open_cover R (excisionMap A B)
     (isEmbedding_fst_excisionMap A B) (mem_range_map_of_fst_excisionMap_mem A B)
     (fun b : Bool ↦ bif b then interior A else interior B)
-    (fun b ↦ by cases b <;> exact isOpen_interior) ?_
+    (fun b ↦ by cases b <;> exact isOpen_interior) (Set.union_eq_iUnion.symm.trans h)
     (interior_subset_range_or_subset_range_fst_excisionMap A B) n
-  rw [← Set.union_eq_iUnion]
-  exact h
 
 /-- **Excision of a set with closure in the interior of the subspace.** If `closure Z ⊆ interior B`,
 the inclusion of pairs `(X ∖ Z, B ∖ Z) ⟶ (X, B)` induces isomorphisms on relative singular
 homology. -/
 theorem isIso_singularHomologyMap_excisionMap_compl (Z : Set X) (h : closure Z ⊆ interior B)
     (n : ℕ) : IsIso (TopPair.singularHomologyMap (excisionMap Zᶜ B) R n) := by
-  refine isIso_singularHomologyMap_excisionMap R Zᶜ B ?_ n
-  rw [interior_compl, Set.eq_univ_iff_forall]
-  intro x
-  by_cases hx : x ∈ closure Z
-  · exact Or.inr (h hx)
-  · exact Or.inl hx
+  exact isIso_singularHomologyMap_excisionMap R Zᶜ B
+    (TauCeti.interior_compl_union_interior_eq_univ_iff.2 h) n
 
 /-- **Excision onto a neighbourhood of the closure.** If `U` is open and contains the closure of
 `K`, the inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative singular
