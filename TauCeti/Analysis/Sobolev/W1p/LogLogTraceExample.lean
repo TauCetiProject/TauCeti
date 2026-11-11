@@ -157,13 +157,15 @@ private theorem norm_gradient_logLogTraceExample_le {z : ℂ} (hz : z ∈ ball (
       ≤ (‖z - 1‖ * Real.log (4 / ‖z - 1‖))⁻¹ * 1 := by gcongr
     _ = _ := mul_one _
 
-/-- The radial integrand of `f²` is bounded on `(0, 2)`: `r (log log (4 / r))² ≤ 36`. -/
-private theorem integrableOn_mul_profile_sq :
-    IntegrableOn (fun r : ℝ => r * profile r ^ 2) (Ioo 0 2) := by
+/-- The radial integrand `r (log log (4 / r))²` is integrable on `(0, 2)`: it is bounded by
+`36` there. This is the radial form of square integrability of `log log (4 / r)` on a disc of
+radius `2` about the singularity. -/
+theorem integrableOn_mul_log_log_four_div_sq :
+    IntegrableOn (fun r : ℝ => r * Real.log (Real.log (4 / r)) ^ 2) (Ioo 0 2) := by
   refine Measure.integrableOn_of_bounded (M := 36) (by simp) ?_ ?_
-  · exact Measurable.aestronglyMeasurable (by unfold profile; fun_prop)
+  · exact Measurable.aestronglyMeasurable (by fun_prop)
   · refine ae_restrict_of_forall_mem measurableSet_Ioo fun r ⟨h0, h2⟩ => ?_
-    set L := Real.log (4 / r) with hLdef
+    set L := Real.log (4 / r)
     have hL : Real.log 2 < L := log_two_lt_log_four_div h0 h2
     have hL2 : 1 / 2 < L := by
       have := Real.one_sub_inv_le_log_of_pos (two_pos : (0 : ℝ) < 2)
@@ -191,17 +193,16 @@ private theorem integrableOn_mul_profile_sq :
       rw [mul_pow, Real.sq_sqrt (by positivity)] at h1
       calc r * L ^ 2 ≤ r * (2 ^ 2 * (4 / r)) := by gcongr
         _ = 16 := by field_simp; norm_num
-    have hprof : profile r ^ 2 ≤ (L + 1) ^ 2 := by
-      rw [profile, ← hLdef]
-      exact sq_le_sq' hlow hup
+    have hprof : Real.log L ^ 2 ≤ (L + 1) ^ 2 := sq_le_sq' hlow hup
     rw [Real.norm_of_nonneg (by positivity)]
-    calc r * profile r ^ 2 ≤ r * (L + 1) ^ 2 := by gcongr
+    calc r * Real.log L ^ 2 ≤ r * (L + 1) ^ 2 := by gcongr
       _ ≤ 2 * (r * L ^ 2) + 2 * r := by nlinarith [sq_nonneg (L - 1)]
       _ ≤ 36 := by linarith
 
-/-- The radial integrand of `‖∇f‖²` is integrable on `(0, 2)`: it is the derivative of
-`r ↦ (log (4 / r))⁻¹`, which is continuous on `[0, 2]` and vanishes at `0`. -/
-private theorem integrableOn_mul_inv_mul_log_sq :
+/-- The radial integrand `r (r log (4 / r))⁻²` is integrable on `(0, 2)`: it is the derivative of
+`r ↦ (log (4 / r))⁻¹`, which is continuous on `[0, 2]` and vanishes at `0`. This is the radial
+form of square integrability of the gradient of `log log (4 / r)`. -/
+theorem integrableOn_mul_inv_mul_log_four_div_sq :
     IntegrableOn (fun r : ℝ => r * ((r * Real.log (4 / r))⁻¹) ^ 2) (Ioo 0 2) := by
   set G : ℝ → ℝ := fun r => (Real.log (4 / r))⁻¹
   have hcont : ContinuousOn G (Icc 0 2) := by
@@ -239,7 +240,7 @@ theorem memLp_logLogTraceExample :
   rw [e]
   have h : IntegrableOn (fun z : ℂ => profile ‖z - 1‖ ^ 2) (ball 1 2) := by
     refine (integrableOn_fun_norm_sub_addHaar (f := fun r => profile r ^ 2)).2 ?_
-    simpa [Complex.finrank_real_complex] using integrableOn_mul_profile_sq
+    simpa [Complex.finrank_real_complex, profile] using integrableOn_mul_log_log_four_div_sq
   exact h.mono_set (ball_subset_ball' (by norm_num))
 
 /-- The classical gradient of `f(z) = log log (4 / ‖1 - z‖)` is square integrable on the unit
@@ -254,7 +255,7 @@ theorem memLp_gradient_logLogTraceExample :
   have h : IntegrableOn (fun z : ℂ => ((‖z - 1‖ * Real.log (4 / ‖z - 1‖))⁻¹) ^ 2) (ball 1 2) := by
     refine (integrableOn_fun_norm_sub_addHaar
       (f := fun r => ((r * Real.log (4 / r))⁻¹) ^ 2)).2 ?_
-    simpa [Complex.finrank_real_complex] using integrableOn_mul_inv_mul_log_sq
+    simpa [Complex.finrank_real_complex] using integrableOn_mul_inv_mul_log_four_div_sq
   refine Integrable.mono' (h.mono_set (ball_subset_ball' (by norm_num))) (hm.norm.pow 2)
     (ae_restrict_of_forall_mem measurableSet_ball fun z hz => ?_)
   rw [Real.norm_of_nonneg (sq_nonneg _)]
