@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
+public import TauCeti.Combinatorics.Network.AuxiliaryTerminals.Basic
 public import TauCeti.Combinatorics.Network.Menger.Vertex
 import Mathlib.Basic.Finite.Sum
 

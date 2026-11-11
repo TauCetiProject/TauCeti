@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
+public import TauCeti.Combinatorics.Network.AuxiliaryTerminals.Basic
 public import TauCeti.Combinatorics.Network.ShortestAugmentation
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.Group.Int
@@ -37,7 +37,7 @@ then correspond exactly to the ordinary flows between the fresh terminals, with 
 the original arrows and the same value (`TauCeti.SetFlow.auxFlowEquiv`), and normalizing a minimum
 cut between the fresh terminals gives a minimum `A`–`B` cut of the same capacity
 (`TauCeti.TerminalCut.IsMinimum.isMinimum_union_sdiff`, in
-`TauCeti.Combinatorics.Network.AuxiliaryTerminals`).
+`TauCeti.Combinatorics.Network.AuxiliaryTerminals.Basic`).
 
 ## Main definitions
 
