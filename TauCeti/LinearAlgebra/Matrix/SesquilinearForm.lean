@@ -13,6 +13,7 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Ring.Hom
+import TauCeti.LinearAlgebra.Matrix.Nondegenerate
 
 /-!
 # The standard sesquilinear form with a specified twist
@@ -48,7 +49,9 @@ isotropic (`Matrix.comp_add_smul_dotProduct_mulVec_add_smul`).
 
 Over a field, if the trace `t ↦ t + ε σ(t)` is onto the elements `s` with `σ(s) = ε s`, a vector
 `u` with `B(u, x) ≠ 0` corrects to an isotropic `u + c x`
-(`Matrix.exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero`). For invertible `Q`, any two
+(`Matrix.exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero`). For invertible `Q`, a vector
+outside a line `K ∙ u` is separated from `u` by the form when `σ` is surjective
+(`Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero`), and any two
 nonzero vectors pair nontrivially with a common vector
 (`Matrix.exists_comp_dotProduct_mulVec_ne_zero_pair`). If moreover the trace has a nonzero kernel
 element and some nonzero vector is isotropic, a matrix scaling every isotropic vector is scalar
@@ -159,6 +162,18 @@ theorem comp_add_dotProduct_mulVec (u v w : n → R) :
   rw [← add_dotProduct]
   exact congrArg (· ⬝ᵥ (Q *ᵥ w)) (funext fun i ↦ map_add σ _ _)
 
+/-- The form is `σ`-semilinear in its first argument. -/
+theorem comp_smul_dotProduct_mulVec (c : R) (u w : n → R) :
+    (σ ∘ (c • u)) ⬝ᵥ (Q *ᵥ w) = σ c * ((σ ∘ u) ⬝ᵥ (Q *ᵥ w)) := by
+  rw [TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul]
+
+/-- The form preserves subtraction in its first argument. -/
+theorem comp_sub_dotProduct_mulVec {R : Type*} [CommRing R] {Q : Matrix n n R} {σ : R →+* R}
+    (u v w : n → R) :
+    (σ ∘ (u - v)) ⬝ᵥ (Q *ᵥ w) = (σ ∘ u) ⬝ᵥ (Q *ᵥ w) - (σ ∘ v) ⬝ᵥ (Q *ᵥ w) := by
+  rw [← sub_dotProduct]
+  exact congrArg (· ⬝ᵥ (Q *ᵥ w)) (funext fun i ↦ map_sub σ _ _)
+
 /-- With `ε * ε = 1`, the form is `ε`-Hermitian in the form `B(y, x) = ε σ(B(x, y))`. -/
 theorem comp_dotProduct_mulVec_swap (hσ : Function.Involutive σ) {ε : R}
     (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) (x y : n → R) :
@@ -236,6 +251,18 @@ theorem exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero
   refine ⟨t / (σ ∘ u) ⬝ᵥ (Q *ᵥ x), ?_⟩
   rw [comp_add_smul_dotProduct_mulVec_add_smul hσ hQ hε hx, div_mul_cancel₀ _ hux, ht,
     add_neg_cancel]
+
+/-- **Separating a vector from a line by a sesquilinear form.** If `σ` is surjective, `Q` is
+invertible, and `x` does not lie on the line `K ∙ u`, then some vector `v` satisfies
+`B(v, u) = 0` and `B(v, x) ≠ 0`. -/
+theorem exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero (hσ : Function.Surjective σ)
+    (hdet : Q.det ≠ 0) {u x : n → K} (hx : x ∉ K ∙ u) :
+    ∃ v : n → K, (σ ∘ v) ⬝ᵥ (Q *ᵥ u) = 0 ∧ (σ ∘ v) ⬝ᵥ (Q *ᵥ x) ≠ 0 := by
+  obtain ⟨w, hwu, hwx⟩ := (nondegenerate_of_det_ne_zero hdet).separatingRight
+    |>.separatingLeft_transpose.exists_ortho_and_not_ortho_of_notMem_span hx
+  rw [dotProduct_transpose_mulVec] at hwu hwx
+  have hv : (σ ∘ fun i ↦ (hσ (w i)).choose) = w := funext fun i ↦ (hσ (w i)).choose_spec
+  exact ⟨fun i ↦ (hσ (w i)).choose, hv.symm ▸ hwu, hv.symm ▸ hwx⟩
 
 /-- For an invertible `Q`, two nonzero vectors pair nontrivially with a common vector. -/
 theorem exists_comp_dotProduct_mulVec_ne_zero_pair (hdet : Q.det ≠ 0) {x y : n → K}
