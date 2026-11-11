@@ -107,15 +107,15 @@ variable [CompactSpace G] [DiscreteTopology X.V] [TotallyDisconnectedSpace G]
 
 /-- **Vanishing on a subgroup spreads to an open subgroup.** An element of the coinduced
 resolution of a discrete representation of a profinite group whose restriction to a subgroup `H`
-vanishes has vanishing restriction to some open subgroup containing `H`: the element, being
-continuous with discrete values, vanishes on the closure of `H`, and the closure is a closed
-subgroup. -/
+vanishes has vanishing restriction to some open subgroup containing `H`. -/
 theorem exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero {H : Subgroup G}
     {n : ℕ} {F : (TopRep.resolutionX X n).V}
     (hF : (resolutionMap (ContinuousMonoidHom.subgroupSubtype H)
       (𝟙 (TopRep.res (H.subtype : H →* G) X)) n).hom F = 0) :
     ∃ V : OpenSubgroup G, H ≤ V ∧ (resolutionMap (ContinuousMonoidHom.subgroupSubtype
       (V : Subgroup G)) (𝟙 (TopRep.res ((V : Subgroup G).subtype : V →* G) X)) n).hom F = 0 := by
+  -- the element, being continuous with discrete values, vanishes on the closure of `H`, which is
+  -- a closed subgroup
   have hF' : ResolutionVanishesOn X (H.topologicalClosure : Set G) n F := by
     rw [Subgroup.topologicalClosure_coe]
     exact ((resolutionMap_subgroupSubtype_eq_zero_iff H n F).1 hF).closure n
