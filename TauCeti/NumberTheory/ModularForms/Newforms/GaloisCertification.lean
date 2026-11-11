@@ -49,15 +49,16 @@ Galois closure of `CoefficientField f` over `ℚ`:
      (`natCard_gal_CoefficientFieldGaloisClosure_of_primeSymmetric`).
 
 For the concrete level-one instantiation on the Ramanujan discriminant newform `Δ`, see
-`TauCeti.NumberTheory.ModularForms.LevelOne.DiscriminantNewform`.
+`TauCeti.NumberTheory.ModularForms.LevelOne.Discriminant.Newform`.
 
 ## Main definitions and results
 
 * `TauCeti.CoefficientFieldGaloisClosure`: the Galois closure of `CoefficientField f` in `ℂ`.
 * `TauCeti.numberField_CoefficientFieldGaloisClosure`,
   `TauCeti.isGalois_CoefficientFieldGaloisClosure`,
-  `TauCeti.normalClosureDataCoefficientField`: number-field and Galois-closure structure in weight
-  `k ≥ 2`.
+  `TauCeti.normalClosureDataCoefficientField`,
+  `TauCeti.normalClosureDataCoefficientField_embedding`: number-field and Galois-closure structure
+  in weight `k ≥ 2`.
 * `TauCeti.CoefficientField_eq_adjoin_coeff_of_finrank_le`: single-coefficient generation of
   `CoefficientField f`.
 * `TauCeti.not_isSolvable_CoefficientFieldGaloisClosure_of_check_eq_true`,
@@ -166,6 +167,15 @@ def normalClosureDataCoefficientField (f : Newform N k) (hk : 2 ≤ k) :
   letI := numberField_CoefficientFieldGaloisClosure f hk
   { embedding := IntermediateField.inclusion (le_CoefficientFieldGaloisClosure f)
     isNormalClosure := isNormalClosure_CoefficientFieldGaloisClosure f hk }
+
+/-- The chosen embedding of `normalClosureDataCoefficientField f hk` is the ambient inclusion of
+`CoefficientField f` into `CoefficientFieldGaloisClosure f`. -/
+@[simp]
+theorem normalClosureDataCoefficientField_embedding (f : Newform N k) (hk : 2 ≤ k) :
+    @TauCeti.NumberField.NormalClosureData.embedding _ _ _
+        (numberField_CoefficientField f hk) _ (numberField_CoefficientFieldGaloisClosure f hk)
+        (normalClosureDataCoefficientField f hk) =
+      IntermediateField.inclusion (le_CoefficientFieldGaloisClosure f) := (rfl)
 
 /-! ### Single-coefficient generation of `CoefficientField f` -/
 
