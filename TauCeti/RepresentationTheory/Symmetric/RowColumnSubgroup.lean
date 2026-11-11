@@ -31,8 +31,6 @@ transposing a tableau exchanges the two groups, the labels of `tᵗ` being ident
 ## References
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.1.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layers 0 and 2.
 -/
 
 public section
