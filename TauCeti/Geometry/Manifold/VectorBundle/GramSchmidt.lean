@@ -97,26 +97,28 @@ theorem ContMDiffAt.gramSchmidt_bundle
     apply congrArg (TotalSpace.mk' F (b y))
     simpa only [Pi.sub_apply, Finset.sum_apply, Pi.smul_apply'] using congrFun hformula y
 
-end Along
-
 /-- Fiberwise normalized Gram–Schmidt preserves `C^n` regularity at a linearly independent
-family. -/
+family, including for sections along an arbitrary base map. -/
 theorem ContMDiffAt.gramSchmidtNormed_bundle
-    (hv : ∀ i, CMDiffAt n (T% (v i)) x)
+    (hv : ∀ i, ContMDiffAt IP (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (v i y)) x)
     (hli : LinearIndependent ℝ (fun i ↦ v i x)) (j : ι) :
-    CMDiffAt n (T% (fun y ↦ gramSchmidtNormed ℝ (fun i ↦ v i y) j)) x := by
+    ContMDiffAt IP (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (gramSchmidtNormed ℝ (fun i ↦ v i y) j)) x := by
   have hg := ContMDiffAt.gramSchmidt_bundle hv hli j
-  have hh : CMDiffAt n (fun y ↦ inner ℝ (gramSchmidt ℝ (fun i ↦ v i y) j)
+  have hh : ContMDiffAt IP 𝓘(ℝ) n (fun y ↦ inner ℝ (gramSchmidt ℝ (fun i ↦ v i y) j)
       (gramSchmidt ℝ (fun i ↦ v i y) j)) x := hg.inner_bundle hg
-  have hn : CMDiffAt n (fun y ↦ ‖gramSchmidt ℝ (fun i ↦ v i y) j‖) x := by
-    have hr : ContDiffAt ℝ n Real.sqrt ((fun y : M ↦
+  have hn : ContMDiffAt IP 𝓘(ℝ) n (fun y ↦ ‖gramSchmidt ℝ (fun i ↦ v i y) j‖) x := by
+    have hr : ContDiffAt ℝ n Real.sqrt ((fun y : P ↦
         inner ℝ (gramSchmidt ℝ (fun i ↦ v i y) j)
           (gramSchmidt ℝ (fun i ↦ v i y) j)) x) :=
       Real.contDiffAt_sqrt (inner_self_ne_zero.mpr (gramSchmidt_ne_zero j hli))
-    simpa only [Function.comp_def, ← norm_eq_sqrt_real_inner] using hr.comp_contMDiffAt (I := I)
-      (f := fun y : M ↦ inner ℝ (gramSchmidt ℝ (fun i ↦ v i y) j)
+    simpa only [Function.comp_def, ← norm_eq_sqrt_real_inner] using hr.comp_contMDiffAt (I := IP)
+      (f := fun y : P ↦ inner ℝ (gramSchmidt ℝ (fun i ↦ v i y) j)
         (gramSchmidt ℝ (fun i ↦ v i y) j)) hh
-  exact (hn.inv₀ (norm_ne_zero_iff.mpr (gramSchmidt_ne_zero j hli))).smul_section hg
+  exact (hn.inv₀ (norm_ne_zero_iff.mpr (gramSchmidt_ne_zero j hli))).smul_totalSpace hg
+
+end Along
 
 open scoped Classical in
 /-- The vectors of the Gram–Schmidt orthonormal basis `e.orthonormalBasis c` of the fibres over the

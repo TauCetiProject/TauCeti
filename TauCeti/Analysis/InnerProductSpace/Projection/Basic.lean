@@ -45,9 +45,7 @@ Compressing the square of the difference `P_U - P_V` to `U`, from either side, g
 `P_U - P_U P_V P_U`.
 
 A linear map agrees with its composition with the orthogonal projection onto the orthogonal
-complement of its kernel whenever the kernel admits an orthogonal projection. Projection onto
-the span of a finite orthogonal family is the sum of the projections onto its individual lines
-(`Submodule.starProjection_eq_sum_of_orthogonal`).
+complement of its kernel whenever the kernel admits an orthogonal projection.
 
 ## Provenance
 
@@ -108,36 +106,6 @@ open ContinuousLinearMap
 open scoped InnerProductSpace
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-/-- Projection onto the span of a finite orthogonal family is the sum of its line projections.
-Zero vectors in the family are allowed. -/
-theorem starProjection_eq_sum_of_orthogonal (U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
-    {ι : Type*} [Fintype ι] (v : ι → E)
-    (hv : Pairwise fun i j ↦ inner 𝕜 (v i) (v j) = 0)
-    (hspan : span 𝕜 (Set.range v) = U) (w : E) :
-    U.starProjection w = ∑ i, (𝕜 ∙ v i).starProjection w := by
-  classical
-  apply eq_starProjection_of_mem_of_inner_eq_zero
-  · rw [← hspan]
-    apply Submodule.sum_mem
-    intro i _
-    exact span_mono (Set.singleton_subset_iff.mpr (Set.mem_range_self i))
-      (starProjection_apply_mem _ _)
-  · intro z hz
-    rw [← hspan] at hz
-    induction hz using Submodule.span_induction with
-    | mem z hz =>
-      obtain ⟨i, rfl⟩ := hz
-      rw [inner_sub_left, sum_inner, Finset.sum_eq_single i]
-      · simpa only [inner_sub_left] using
-          Submodule.starProjection_inner_eq_zero (K := 𝕜 ∙ v i) w (v i)
-            (mem_span_singleton_self _)
-      · intro j _ hji
-        simp [starProjection_singleton, inner_smul_left, hv hji]
-      · simp
-    | zero => simp
-    | add z t _ _ hz ht => simp only [inner_add_right, hz, ht, add_zero]
-    | smul a z _ hz => simp only [inner_smul_right, hz, mul_zero]
-
 variable (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
 
 /-- One half of `norm_starProjection_comp_starProjection_comm`. -/

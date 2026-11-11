@@ -80,10 +80,8 @@ theorem contMDiff_starProjection_orthogonal_ker (hn : n + 1 ≤ ∞) :
       have hf := ((h.isSubmersion.contMDiff.of_le hn) x)
       have hdf : ContMDiffAt I (J.prod 𝓘(ℝ, F)) n
           (fun y ↦ TotalSpace.mk' F (f y)
-            (mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y))) x := by
-        -- Express the tangent-map composition as the bundled differential applied to the frame.
-        simpa only [Function.comp_def, tangentMap] using
-          (hf.contMDiffAt_tangentMap le_rfl).comp x hX
+            (mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y))) x :=
+        hf.mfderiv_apply_sectionAlong hX
       have hlift := hf.mfderiv_adjoint_apply
         (W := fun y ↦ mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y)) hdf
       simpa only [Function.id_def, ← h.horizontalLift_apply, h.horizontalLift_mfderiv]

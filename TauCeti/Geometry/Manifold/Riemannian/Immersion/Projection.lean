@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
-public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+public import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
+public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
+import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
@@ -78,39 +79,32 @@ theorem ContMDiffAt.starProjection_range_mfderiv_apply
       (fun y ↦ TotalSpace.mk' F (f y) (v i y)) x := by
     have hs := (e.contMDiffOn_localFrame_baseSet (I := I) n b i).contMDiffAt
       (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x))
-    simpa only [Function.comp_def, tangentMap] using
-      (hf.contMDiffAt_tangentMap le_rfl).comp x hs
+    exact hf.mfderiv_apply_sectionAlong hs
   have hli : LinearIndependent ℝ (fun i ↦ v i x) :=
     (e.isLocalFrameOn_localFrame_baseSet I n b).linearIndependent
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x) |>.map' _
         (LinearMap.ker_eq_bot.mpr hinj)
   let g (i : Fin (Module.finrank ℝ E)) (y : M) :=
-    InnerProductSpace.gramSchmidt ℝ (fun i ↦ v i y) i
+    InnerProductSpace.gramSchmidtNormed ℝ (fun i ↦ v i y) i
   -- Pin the metric structure through its regularity witness: TangentSpace is reducible
   -- to the model, but its metric norm need not be the model norm.
   have hmetric : IsContMDiffRiemannianBundle J n F (fun y : N ↦ TangentSpace J y) :=
     inferInstance
   have hg (i) : ContMDiffAt I (J.prod 𝓘(ℝ, F)) n
       (fun y ↦ TotalSpace.mk' F (f y) (g i y)) x :=
-    ContMDiffAt.gramSchmidt_bundle (hmetric := hmetric) (b := f) (v := v) hv hli i
-  have hc (i) := ((hg i).inner_bundle (h := hmetric) hW).div₀
-    ((hg i).inner_bundle (h := hmetric) (hg i))
-    (inner_self_ne_zero.mpr (InnerProductSpace.gramSchmidt_ne_zero i hli))
+    ContMDiffAt.gramSchmidtNormed_bundle (hmetric := hmetric) (b := f) (v := v) hv hli i
+  have hc (i) := (hg i).inner_bundle (h := hmetric) hW
   have hs := ContMDiffAt.sum_sectionAlong Finset.univ _ (hf.of_le le_self_add)
     (fun i _ ↦ (hc i).smul_totalSpace (hg i))
   refine hs.congr_of_eventuallyEq ?_
   filter_upwards [e.open_baseSet.mem_nhds
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x)] with y hy
   apply congrArg (TotalSpace.mk' F (f y))
-  have hspan : Submodule.span ℝ (Set.range (fun i ↦ g i y)) =
-      (mfderiv I J f y).range := by
-    rw [InnerProductSpace.span_gramSchmidt]
-    exact e.span_range_localFrame_map b (mfderiv I J f y).toLinearMap hy
-  rw [Submodule.starProjection_eq_sum_of_orthogonal _ (fun i ↦ g i y)
-    (InnerProductSpace.gramSchmidt_pairwise_orthogonal ℝ (fun i ↦ v i y)) hspan]
-  congr 1
-  funext i
-  simp [Submodule.starProjection_singleton]
+  have hspan : Submodule.span ℝ (Set.range (fun i ↦ v i y)) =
+      (mfderiv I J f y).range :=
+    e.span_range_localFrame_map b (mfderiv I J f y).toLinearMap hy
+  rw [InnerProductSpace.starProjection_eq_sum_rankOne_gramSchmidtNormed (fun i ↦ v i y) hspan]
+  simp [InnerProductSpace.rankOne_apply, g]
 
 /-- Normal projection along an immersion preserves `C^n` regularity at a point.
 The normal space is the orthogonal complement of the differential's range in the ambient

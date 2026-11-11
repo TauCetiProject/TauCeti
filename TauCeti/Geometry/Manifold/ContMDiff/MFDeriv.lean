@@ -8,12 +8,15 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 
 /-!
-# Joint regularity of derivatives in vector-space families
+# Regularity of differentials applied to sections and of derivatives in families
 
 For a jointly `C^m` family of maps from a normed space to another normed space, the derivative
 in the vector-space variable is jointly `C^n` when `n + 1 ≤ m`. The parameter may range over
 a manifold. This supplies derivative regularity for parameter-dependent coordinate formulas,
 including the Christoffel symbols of a metric family.
+
+Applying the differential of a `C^(n+1)` map to a `C^n` tangent section gives a `C^n`
+tangent field along the map (`ContMDiffAt.mfderiv_apply_sectionAlong`).
 
 ## Formal sources
 
@@ -24,6 +27,28 @@ public section
 
 open scoped ContDiff Manifold
 
+section SectionAlong
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
+  {f : M → N} {s : ∀ y : M, TangentSpace I y} {x : M} {n : ℕ∞ω}
+
+/-- The differential of a `C^(n+1)` map sends a `C^n` tangent section to a `C^n` tangent
+field along the map. No metric or finite-dimensionality assumption is needed. -/
+theorem ContMDiffAt.mfderiv_apply_sectionAlong (hf : ContMDiffAt I J (n + 1) f x)
+    (hs : ContMDiffAt I (I.prod 𝓘(𝕜, E)) n (fun y ↦ Bundle.TotalSpace.mk' E y (s y)) x) :
+    ContMDiffAt I (J.prod 𝓘(𝕜, F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' F (f y) (mfderiv I J f y (s y))) x := by
+  -- The tangent map composed with a section is the bundled differential applied to that section.
+  simpa only [Function.comp_def, tangentMap] using
+    (hf.contMDiffAt_tangentMap le_rfl).comp x hs
+
+end SectionAlong
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
