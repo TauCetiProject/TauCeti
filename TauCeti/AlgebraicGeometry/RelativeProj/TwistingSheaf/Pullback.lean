@@ -187,22 +187,12 @@ theorem _root_.CategoryTheory.CommMon.isInvertible_pullback_relativeProjTwisting
         (TauCeti.SheafOfModules.freePUnitIsoUnit _ ≪≫ Proj.twistingSheaf.chartIso n b hb)
     let eV : SheafOfModules.unit (g ''ᵁ V).toScheme.ringCatSheaf ≅
         (B.relativeProjTwistingSheaf n).restrict (g ''ᵁ V).ι :=
-      (Scheme.Modules.restrictUnitIso (g.isoImage V).inv).symm ≪≫
-        (Scheme.Modules.restrictFunctor (g.isoImage V).inv).mapIso
-          (e ≪≫ (Scheme.Modules.restrictFunctor V.ι).mapIso
-            (B.restrictRelativeProjTwistingSheafIso n U).symm ≪≫
-            ((Scheme.Modules.restrictFunctorComp V.ι g).app
-              (B.relativeProjTwistingSheaf n)).symm) ≪≫
-        ((Scheme.Modules.restrictFunctorComp (g.isoImage V).inv (V.ι ≫ g)).app
-          (B.relativeProjTwistingSheaf n)).symm ≪≫
-        (Scheme.Modules.restrictFunctorCongr (g.isoImage_inv_ι V)).app
-          (B.relativeProjTwistingSheaf n)
+      Scheme.Modules.unitIsoRestrictImage g V
+        (e ≪≫ (Scheme.Modules.restrictFunctor V.ι).mapIso
+          (B.restrictRelativeProjTwistingSheafIso n U).symm)
     -- Restriction of pullback is pullback of restriction along W → D₊(b).
-    exact ⟨W, hy ▸ ⟨y, hyb, rfl⟩, ⟨
-      (Scheme.Modules.pullbackObjUnitIso ((CommMon.relativeProjMap φ hφ).resLE _ W hW)).symm ≪≫
-        (Scheme.Modules.pullback ((CommMon.relativeProjMap φ hφ).resLE _ W hW)).mapIso eV ≪≫
-        ((Scheme.Modules.restrictPullbackIso (CommMon.relativeProjMap φ hφ) _ W hW).app
-          (B.relativeProjTwistingSheaf n)).symm⟩⟩
+    exact ⟨W, hy ▸ ⟨y, hyb, rfl⟩,
+      ⟨Scheme.Modules.unitIsoRestrictPullback (CommMon.relativeProjMap φ hφ) hW eV⟩⟩
   choose W hx e using localTriviality
   exact AlgebraicGeometry.SheafOfModules.isInvertible_iff_exists_isOpenCover.mpr
     ⟨A.relativeProj, W, TopologicalSpace.IsOpenCover.mk
