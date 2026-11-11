@@ -19,10 +19,12 @@ import TauCeti.AlgebraicTopology.Singular.Contractible
 
 The `j`-th Betti number `bettiNumber k X j` of a topological space `X` with coefficients in a ring
 `k` is the dimension `Module.finrank k Hⱼ(X; k)` of its `j`-th singular homology with coefficients
-in `k`. Following the convention of `Module.finrank`, it is `0` when that homology is not finitely
-generated; statements reading it as a dimension carry a finiteness hypothesis, such as compactness
-of a manifold or finiteness of a CW model. Over `ℤ` it is the rank of the homology group, which
-for finitely generated homology is the classical Betti number.
+in `k`. Following the convention of `Module.finrank`, it is `0` when that homology has infinite
+rank; over a division ring this happens exactly when the homology is not finitely generated, but
+over a general ring a module that is not finitely generated may still have finite rank (over `ℤ`,
+the module `ℤ[1/2]` has rank `1`). Statements reading it as a dimension carry a finiteness
+hypothesis, such as compactness of a manifold or finiteness of a CW model. Over `ℤ` it is the
+rank of the homology group, which for finitely generated homology is the classical Betti number.
 
 The Betti numbers are invariants of homotopy type
 (`ContinuousMap.HomotopyEquiv.bettiNumber_eq`). Over a division ring, or any ring with the strong
@@ -66,7 +68,8 @@ variable (k : Type u) [Ring k] (X : Type u) [TopologicalSpace X]
 
 /-- The `j`-th **Betti number** of a topological space `X` with coefficients in the ring `k`: the
 dimension over `k` of the `j`-th singular homology of `X` with coefficients in `k`. It is `0` when
-this homology is not finitely generated. -/
+this homology has infinite rank, which over a division ring means that it is not finitely
+generated. -/
 def bettiNumber (j : ℕ) : ℕ :=
   finrank k (((singularHomologyFunctor (ModuleCat.{u} k) j).obj (ModuleCat.of k k)).obj
     (TopCat.of X))
