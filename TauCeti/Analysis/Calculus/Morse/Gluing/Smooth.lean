@@ -195,7 +195,7 @@ theorem exists_contDiffOn_splitGluingPairs
   have heqδ {r : ℝ} (hr : r ∈ Icc 0 δ) : w r = v r :=
     hWsub ⟨(hsmall hr).2, ⟨hr.1, hr.2.trans hδr⟩⟩
   have himageδ : F '' Ioc 0 δ = splitGluingPairs ε δ g k := by
-    rw [← image_pairs_eq_splitGluingPairs hε hδr
+    rw [← image_pairs_eq_splitGluingPairs hδr
       (fun r hr ↦ hwnorm r (Ioc_subset_Icc_self hr)) himage]
     exact image_congr fun r hr ↦ by simp only [F, heqδ (Ioc_subset_Icc_self hr)]
   have hderiv : HasDerivAt (fun r ↦ r • v r) (k 0) 0 := by

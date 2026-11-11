@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.RationalPoint.Degree
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Invertible
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.ZeroLocus
-public import TauCeti.AlgebraicGeometry.Curves.Degree
+public import TauCeti.AlgebraicGeometry.Curves.Degree.Basic
 
 /-!
 # The ideal sheaf of a rational point

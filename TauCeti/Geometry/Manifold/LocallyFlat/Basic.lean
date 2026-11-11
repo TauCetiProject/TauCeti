@@ -1049,9 +1049,10 @@ private theorem range_symm_zero_eq_inter {ψ : OpenPartialHomeomorph M (F × G)}
     refine ⟨⟨(ψ m).1, h1⟩, ?_⟩
     simpa only [hψ.mk_fst_zero_eq hms hmr] using ψ.left_inv hms
 
-/-- A slice chart whose target is a box `u ×ˢ ball 0 r` exhibits its source as a product of the
-part of the domain lying under it with the complementary model, the map being the zero slice.
-This is the geometric content of the local product statement; the general case reduces to it by
+/-- For a topological embedding `f` and a slice chart `ψ` for `range f` whose target is a box
+`u ×ˢ ball 0 r`, the product of the part of the domain lying under the chart with the complementary
+model embeds openly into the ambient space, by a map that restricts to `f` on the zero slice. This
+is the geometric content of the local product statement; the general case reduces to it by
 shrinking the chart. -/
 private theorem exists_isOpenEmbedding_prod_of_target_eq_prod {ψ : OpenPartialHomeomorph M (F × G)}
     {u : Set F} {r : ℝ} (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r)
