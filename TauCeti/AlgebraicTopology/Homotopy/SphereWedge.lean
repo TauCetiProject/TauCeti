@@ -92,21 +92,18 @@ attached. -/
 def sphereWedgeBase : sphereWedge ι n :=
   cellAttachmentIncl (sphereWedgeAttachingMap ι n) PUnit.unit
 
+/-- The base point of the wedge of spheres is the image of the point under the inclusion of the
+cell attachment. -/
+lemma sphereWedgeBase_def :
+    sphereWedgeBase ι n = cellAttachmentIncl (sphereWedgeAttachingMap ι n) PUnit.unit :=
+  (rfl)
+
 /-- **The `i`-th sphere of a wedge of spheres**, as a generalized loop at the base point: the
 characteristic map of the `i`-th cell, read on the cube through `TauCeti.diskHomeomorphCube`
-(`TauCeti.sphereWedgeLoop_apply`). The boundary of the cube goes to the boundary sphere of the
-disk, which is attached at the base point. -/
+(`TauCeti.sphereWedgeLoop_apply`), a case of `TauCeti.cellAttachmentCellLoop`. The boundary of the
+cube goes to the boundary sphere of the disk, which is attached at the base point. -/
 def sphereWedgeLoop (i : ι) : Ω^ (Fin n) (sphereWedge ι n) (sphereWedgeBase ι n) :=
-  ⟨(cellAttachmentCell (sphereWedgeAttachingMap ι n) i).hom.comp
-      ((diskHomeomorphCube n).symm : C(I^(Fin n), TopCat.disk n)),
-    fun t ht ↦ by
-      obtain ⟨s, hs⟩ := (diskHomeomorphCube_mem_boundary_iff _).1
-        (((diskHomeomorphCube n).apply_symm_apply t).symm ▸ ht)
-      have h := ConcreteCategory.congr_hom
-        (cellAttachment_boundary (sphereWedgeAttachingMap ι n) i) s
-      rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hs] at h
-      -- `h` evaluates the constant attaching map at `s`, which is the base point by definition.
-      exact h.symm⟩
+  cellAttachmentCellLoop (sphereWedgeAttachingMap ι n) i rfl
 
 variable {ι n} in
 /-- The `i`-th sphere of the wedge is the characteristic map of the `i`-th cell, read on the cube
@@ -114,7 +111,7 @@ through `TauCeti.diskHomeomorphCube`. -/
 lemma sphereWedgeLoop_apply (i : ι) (t : I^(Fin n)) :
     sphereWedgeLoop ι n i t =
       cellAttachmentCell (sphereWedgeAttachingMap ι n) i ((diskHomeomorphCube n).symm t) :=
-  (rfl)
+  cellAttachmentCellLoop_apply _ i rfl t
 
 /-- **A wedge of `(n + 1)`-spheres is `n`-connected**: its homotopy groups `π_k` vanish for
 `k ≤ n`, because attaching `(n + 1)`-cells to a point is onto on `π_k` for `k ≤ n`. -/
