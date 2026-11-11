@@ -292,6 +292,7 @@ section Moment
 variable [NormedSpace ℂ F] [CompleteSpace F]
 
 /-- The integral of the Fourier transform of a Schwartz function is its value at `0`. -/
+@[simp]
 theorem integral_fourier_eq_apply_zero (f : 𝓢(E, F)) : ∫ v, 𝓕 (f : E → F) v = f 0 := by
   have h : (𝓕⁻ (𝓕 f : 𝓢(E, F)) : 𝓢(E, F)) 0 = f 0 := by
     rw [FourierTransform.fourierInv_fourier_eq]
@@ -299,6 +300,7 @@ theorem integral_fourier_eq_apply_zero (f : 𝓢(E, F)) : ∫ v, 𝓕 (f : E →
   simpa using h
 
 /-- The Fourier transform of the Fourier transform of a Schwartz function is its reflection. -/
+@[simp]
 theorem fourier_fourier_apply (f : 𝓢(E, F)) (w : E) : 𝓕 (𝓕 (f : E → F)) w = f (-w) := by
   have h := Real.fourierInv_eq_fourier_neg (𝓕 (f : E → F)) (-w)
   rw [neg_neg] at h
@@ -457,6 +459,7 @@ variable [NormedSpace ℂ F] [CompleteSpace F]
 
 /-- **Fourier inversion** for a Schwartz function, written with the Fourier character:
 `∫ exp(2πi ⟪η, w⟫) 𝓕 χ(η) dη = χ w`. -/
+@[simp]
 theorem integral_fourierChar_mul_fourier (χ : 𝓢(E, ℂ)) (w : E) :
     ∫ η, (𝐞 ⟪η, w⟫ : ℂ) * 𝓕 χ η = χ w := by
   have h : (𝓕⁻ (𝓕 χ : 𝓢(E, ℂ)) : 𝓢(E, ℂ)) w = χ w := by
