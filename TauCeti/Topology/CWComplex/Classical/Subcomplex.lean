@@ -39,6 +39,10 @@ subcomplexes.
 * `Topology.RelCWComplex.Subcomplex.ofLE`: a subcomplex `F ≤ E`, as a subcomplex of `E`.
 * `Topology.RelCWComplex.coe_skeletonLT_skeletonLT`: the skeleta of a skeleton of `C` are skeleta
   of `C`.
+* `Topology.RelCWComplex.imageSubcomplex`: the image of a CW complex under a map carrying each of
+  its cells onto a cell of `C`, with the same characteristic map, is a subcomplex of `C`. This is
+  how a CW complex extending another one, as in an iterated cell attachment, contains it as a
+  subcomplex.
 
 ## References
 
@@ -211,5 +215,44 @@ lemma coe_skeletonLT_skeletonLT (n m : ℕ∞) :
     fun ⟨k, hk, j, hj⟩ ↦ ⟨k, hk.1, ⟨j, ?_⟩, by simpa using hj⟩⟩
   · simpa only [skeletonLT_I, mem_ofPred_eq] using j.2
   · simpa only [skeletonLT_I, mem_ofPred_eq] using hk.2
+
+section Image
+
+variable {Y : Type*} [TopologicalSpace Y] {C₀ D₀ : Set Y} [RelCWComplex C₀ D₀] (g : Y → X)
+  {E : Set X} (hD : g '' D₀ = D) (hE : g '' C₀ = E) (e : ∀ n, cell C₀ n → cell C n)
+  (he : ∀ n j x, map n (e n j) x = g (map n j x))
+
+include hD hE he in
+/-- **The image of a CW complex mapped cell by cell is a subcomplex.** Let `g` carry the base `D₀`
+of a CW complex `C₀` onto the base `D` of `C`, and each `n`-cell `j` of `C₀` onto an `n`-cell
+`e n j` of `C`, in the sense that the characteristic map of `e n j` is that of `j` followed by `g`.
+Then the image `E = g '' C₀` is a subcomplex of `C`, whose `n`-cells are the cells `e n j`. -/
+def imageSubcomplex : Subcomplex C :=
+  Subcomplex.mk' C E (fun n ↦ range (e n))
+    (by
+      rintro n ⟨_, j, rfl⟩ _ ⟨x, hx, rfl⟩
+      rw [he, ← hE]
+      exact mem_image_of_mem g (closedCell_subset_complex n j ⟨x, hx, rfl⟩))
+    (by
+      have hopen (n : ℕ) (j : cell C₀ n) : openCell n (e n j) = g '' openCell n j := by
+        rw [openCell, openCell, ← image_comp]
+        exact image_congr fun x _ ↦ he n j x
+      rw [← hE, ← congrArg (g '' ·) (union_iUnion_openCell_eq_complex (C := C₀)), image_union, hD,
+        image_iUnion]
+      refine congrArg _ (iUnion_congr fun n ↦ ?_)
+      rw [image_iUnion]
+      exact (iSup_range' (fun j ↦ openCell n j) (e n)).trans (iUnion_congr fun j ↦ hopen n j))
+
+/-- As a set, `imageSubcomplex g hD hE e he` is the image `E` of `C₀`. -/
+@[simp]
+lemma coe_imageSubcomplex : (imageSubcomplex g hD hE e he : Set X) = E :=
+  (rfl)
+
+/-- The `n`-cells of `imageSubcomplex g hD hE e he` are the images of the `n`-cells of `C₀`. -/
+@[simp]
+lemma imageSubcomplex_I (n : ℕ) : (imageSubcomplex g hD hE e he).I n = range (e n) :=
+  (rfl)
+
+end Image
 
 end Topology.RelCWComplex
