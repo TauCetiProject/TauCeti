@@ -161,6 +161,13 @@ theorem exists_linearMap_quotient_eq_one {m : M}
     Module.Projective.exists_dual_eq_one (R ⧸ _root_.IsLocalRing.maximalIdeal R) hx
   exact ⟨(φ.restrictScalars R) ∘ₗ Submodule.mkQ _, hφ⟩
 
+/-- A scalar killing a nonzero element of a module over a local ring lies in the maximal ideal,
+since a unit kills only zero. -/
+theorem mem_maximalIdeal_of_smul_eq_zero {m : M} (hm : m ≠ 0) {r : R} (h : r • m = 0) :
+    r ∈ _root_.IsLocalRing.maximalIdeal R := by
+  by_contra hr
+  exact hm (((_root_.IsLocalRing.notMem_maximalIdeal.mp hr).smul_eq_zero).mp h)
+
 end TauCeti.IsLocalRing
 
 namespace Module
