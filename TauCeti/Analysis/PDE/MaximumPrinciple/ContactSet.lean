@@ -60,8 +60,8 @@ elliptic operator applied to it, in
   operator is positive.
 * `TauCeti.PDE.ball_subset_image_gradient_upperContactSet`: the ball of radius
   `(u x - m) / diam Ω` lies in the gradient image of the upper contact set.
-* `TauCeti.PDE.addHaar_image_gradient_upperContactSet_le`: the measure of that gradient image is
-  at most the integral of `|det D²u|` over the upper contact set.
+* `TauCeti.PDE.addHaar_image_gradient_le_lintegral_abs_det_hessianOperator`: the measure of the
+  gradient image of a measurable subset of `Ω` is at most the integral of `|det D²u|` over it.
 * `TauCeti.PDE.addHaar_ball_le_lintegral_inter_preimage_abs_det_hessianOperator`: the two
   combined, for the slopes in a ball of radius `r ≤ (u x - m) / diam Ω`: `μ (ball 0 r)` is at most
   the integral of `|det D²u|` over the contact points where `‖∇ u‖ < r`.
@@ -279,15 +279,13 @@ theorem ball_subset_image_gradient_upperContactSet {m : ℝ} (hΩb : Bornology.I
 
 variable [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
-/-- The measure of the gradient image of the upper contact set of a function `C²` on an open set
-is at most the integral of the absolute Hessian determinant over the upper contact set. -/
-theorem addHaar_image_gradient_upperContactSet_le (hΩ : IsOpen Ω) (hu : ContDiffOn ℝ 2 u Ω) :
-    μ (∇ u '' upperContactSet u Ω) ≤
-      ∫⁻ y in upperContactSet u Ω, ENNReal.ofReal |(hessianOperator u y).det| ∂μ :=
-  addHaar_image_le_lintegral_abs_det_fderiv μ
-    (measurableSet_upperContactSet hΩ (hu.of_le (by norm_num))) fun _ hy =>
-      (hu.contDiffAt (hΩ.mem_nhds
-        (upperContactSet_subset hy))).hasFDerivAt_gradient.hasFDerivWithinAt
+/-- For a function `C²` on an open set `Ω`, the measure of the gradient image of a measurable
+`s ⊆ Ω` is at most the integral of the absolute Hessian determinant over `s`. -/
+theorem addHaar_image_gradient_le_lintegral_abs_det_hessianOperator {s : Set E} (hΩ : IsOpen Ω)
+    (hu : ContDiffOn ℝ 2 u Ω) (hs : MeasurableSet s) (hsΩ : s ⊆ Ω) :
+    μ (∇ u '' s) ≤ ∫⁻ y in s, ENNReal.ofReal |(hessianOperator u y).det| ∂μ :=
+  addHaar_image_le_lintegral_abs_det_fderiv μ hs fun _ hy =>
+    (hu.contDiffAt (hΩ.mem_nhds (hsΩ hy))).hasFDerivAt_gradient.hasFDerivWithinAt
 
 /-- **The Aleksandrov measure estimate for bounded slopes.** Let `Ω` be bounded and open, let `u`
 be continuous on `closure Ω` and `C²` in `Ω`, and let `m` bound `u` on `frontier Ω`. For `x ∈ Ω`,
@@ -308,9 +306,8 @@ theorem addHaar_ball_le_lintegral_inter_preimage_abs_det_hessianOperator {m r : 
         exact measure_mono (subset_inter ((ball_subset_ball hr).trans
           (ball_subset_image_gradient_upperContactSet hΩb hΩ hcont
             (hu.differentiableOn two_ne_zero) hm hx)) subset_rfl)
-    _ ≤ _ := addHaar_image_le_lintegral_abs_det_fderiv μ hs fun _ hy =>
-        (hu.contDiffAt (hΩ.mem_nhds
-          (upperContactSet_subset hy.1))).hasFDerivAt_gradient.hasFDerivWithinAt
+    _ ≤ _ := addHaar_image_gradient_le_lintegral_abs_det_hessianOperator μ hΩ hu hs
+        (inter_subset_left.trans upperContactSet_subset)
 
 /-- **The Aleksandrov measure estimate** (Gilbarg–Trudinger, Lemma 9.2). Let `Ω` be bounded and
 open, let `u` be continuous on `closure Ω` and `C²` in `Ω`, and let `m` bound `u` on
