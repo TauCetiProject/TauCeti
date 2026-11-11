@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.Kronecker
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # The power substitution `F ↦ F(X, X ^ B)`
@@ -43,32 +44,6 @@ substitution is injective on polynomials of `Z`-degree below `B`.
 public section
 
 noncomputable section
-
-namespace Finsupp
-
-/-- The weight `![1, B]` sends the exponent `μ` of `Z ^ μ 0 W ^ μ 1` to `μ 0 + B * μ 1`. -/
-theorem weight_vecCons_one (B : ℕ) (μ : Fin 2 →₀ ℕ) : weight ![1, B] μ = μ 0 + B * μ 1 := by
-  simp [weight_apply, Finsupp.sum_fintype, mul_comm]
-
-/-- The weight `![1, B]` is injective on the exponents `μ` with `μ 0 < B`: `μ 0` and `μ 1` are the
-remainder and the quotient of `μ 0 + B * μ 1` on division by `B`. -/
-theorem injOn_weight_vecCons_one (B : ℕ) :
-    Set.InjOn (weight ![1, B]) {μ : Fin 2 →₀ ℕ | μ 0 < B} := by
-  intro μ hμ ν hν h
-  simp only [Set.mem_ofPred_eq] at hμ hν
-  rw [weight_vecCons_one, weight_vecCons_one] at h
-  have hB : 0 < B := (Nat.zero_le _).trans_lt hμ
-  have h0 : μ 0 = ν 0 := by
-    simpa [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hμ, Nat.mod_eq_of_lt hν] using
-      congrArg (· % B) h
-  have h1 : μ 1 = ν 1 := by
-    simpa [Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt hμ, Nat.div_eq_of_lt hν] using
-      congrArg (· / B) h
-  ext i
-  fin_cases i
-  exacts [h0, h1]
-
-end Finsupp
 
 namespace MvPolynomial
 
@@ -158,6 +133,7 @@ theorem natDegree_powerSubstitution_le (B : ℕ) (F : MvPolynomial (Fin 2) R) :
     (Nat.mul_le_mul_left B (monomial_le_degreeOf 1 hμ)))
 
 /-- The power substitution commutes with a ring map `f : R →+* S` applied to the coefficients. -/
+@[simp]
 theorem powerSubstitution_map (f : R →+* S) (B : ℕ) (F : MvPolynomial (Fin 2) R) :
     powerSubstitution B (map f F) = Polynomial.map f (powerSubstitution B F) := by
   induction F using MvPolynomial.induction_on' with
@@ -165,6 +141,7 @@ theorem powerSubstitution_map (f : R →+* S) (B : ℕ) (F : MvPolynomial (Fin 2
   | add F G hF hG => simp [hF, hG, Polynomial.map_add]
 
 /-- **Evaluation formula.** `F(X, X ^ B)` evaluated at `a` is `F(a, a ^ B)`. -/
+@[simp]
 theorem eval_powerSubstitution (B : ℕ) (a : R) (F : MvPolynomial (Fin 2) R) :
     (powerSubstitution B F).eval a = eval ![a, a ^ B] F := by
   induction F using MvPolynomial.induction_on' with
