@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.SeamFamily
 import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
 # Seam-compatible families with prescribed values on closed parameter faces
@@ -178,16 +179,12 @@ private theorem conjContinuousAlgEquiv_eq_of_mfderiv_symm {x : M}
     (φ.symm.mfderivToContinuousLinearEquiv (by simp) x).conjContinuousAlgEquiv
         (LinearMap.toContinuousLinearMap J.toLinearMap) =
       LinearMap.toContinuousLinearMap J'.toLinearMap := by
-  ext w
-  set g := φ.symm.mfderivToContinuousLinearEquiv (by simp) x
-  have hg : ∀ v, g v = mfderiv I I φ.symm x v := fun v ↦
-    congrArg (· v) (φ.symm.mfderivToContinuousLinearEquiv_coe (x := x) (by simp))
-  have h' := h (g.symm w)
-  rw [← hg, ← hg, ContinuousLinearEquiv.apply_symm_apply] at h'
-  rw [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
-    LinearMap.coe_toContinuousLinearMap', LinearMap.coe_toContinuousLinearMap']
+  refine (ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_eq_iff_semiconj _ _ _).2 fun v ↦ ?_
+  have hg : ∀ w, φ.symm.mfderivToContinuousLinearEquiv (by simp) x w = mfderiv I I φ.symm x w :=
+    fun w ↦ congrArg (· w) (φ.symm.mfderivToContinuousLinearEquiv_coe (x := x) (by simp))
+  rw [LinearMap.coe_toContinuousLinearMap', LinearMap.coe_toContinuousLinearMap', hg, hg]
   -- An almost complex structure acts on vectors through its underlying linear map.
-  exact h'
+  exact h v
 
 /-- The cut-off family satisfies the seam identity when the background and the prescribed
 families do. -/
