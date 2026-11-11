@@ -36,7 +36,7 @@ universe v
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 private theorem doubleBond_stronglyOrthogonal (i j : Fin t.rank)
-    (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -2) :
+    (hji : t.cartanMatrix j i = -2) :
     let P := t.simplyConnectedRootDatum ht
     let α := t.simpleIndex ht i
     let β := t.simpleIndex ht j
@@ -50,10 +50,11 @@ private theorem doubleBond_stronglyOrthogonal (i j : Fin t.rank)
   let α := t.simpleIndex ht i
   let β := t.simpleIndex ht j
   have := t.isReduced_simplyConnectedRootDatum ht
+  have hij := t.cartanMatrix_eq_neg_one_of_cartanMatrix_eq_neg_two i j hji
   have hγ : P.root (P.reflectionPerm α β) = P.root β + 2 • P.root α := by
     rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_root]
     simp only [P, α, β, t.pairing_simpleIndex, hji, neg_smul, sub_neg_eq_add]
-    rfl
+    module
   have hsum : P.root (P.reflectionPerm α β) + P.root β =
       2 • P.root (P.reflectionPerm β α) := by
     rw [hγ, RootPairing.root_reflectionPerm, RootPairing.reflection_apply_root]
@@ -75,7 +76,7 @@ private theorem doubleBond_stronglyOrthogonal (i j : Fin t.rank)
       (h.trans (smul_zero _).symm))
 
 private theorem doubleBond_commute_conjugate (i j : Fin t.rank)
-    (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -2)
+    (hji : t.cartanMatrix j i = -2)
     (A : Type v) [CommRing A] :
     let a := D.weylElement (t.simpleIndex ht i) A 1
     let b := D.weylElement (t.simpleIndex ht j) A 1
@@ -106,17 +107,15 @@ private theorem doubleBond_commute_conjugate (i j : Fin t.rank)
         (Multiplicative.ofAdd u) * a⁻¹ ∈ R := by
       rw [hc, hneg]
       exact Subgroup.subset_closure (Or.inr ⟨_, rfl⟩)
-    have hb : a * b * a⁻¹ =
-        (a * D.rootSubgroupPoints β A (Multiplicative.ofAdd 1) * a⁻¹) *
-        (a * D.rootSubgroupPoints (P.reflectionPerm β β) A
-          (Multiplicative.ofAdd (-1)) * a⁻¹) *
-        (a * D.rootSubgroupPoints β A (Multiplicative.ofAdd 1) * a⁻¹) := by
-      simp only [b, D.weylElement_def, Units.val_one, inv_one]
-      dsimp only [P]
-      group
-    rw [hb]
-    exact R.mul_mem (R.mul_mem (hp 1) (hn (-1))) (hp 1)
-  have horth := doubleBond_stronglyOrthogonal (ht := ht) i j hij hji
+    have hclosure : Subgroup.closure (Set.range (D.rootSubgroupPoints β A) ∪
+        Set.range (D.rootSubgroupPoints (P.reflectionPerm β β) A)) ≤
+        R.comap (MulAut.conj a).toMonoidHom := by
+      rw [Subgroup.closure_le]
+      rintro _ (⟨u, rfl⟩ | ⟨u, rfl⟩)
+      · exact hp (Multiplicative.toAdd u)
+      · exact hn (Multiplicative.toAdd u)
+    exact hclosure (D.weylElement_mem_closure_rootPair β A 1)
+  have horth := doubleBond_stronglyOrthogonal (ht := ht) i j hji
   exact (Subgroup.mem_centralizer_iff.mp
       (D.closure_rootPair_le_centralizer A γ β horth.1 horth.2.1 horth.2.2.1
         horth.2.2.2 hab) b (D.weylElement_mem_closure_rootPair β A 1)).symm
@@ -139,16 +138,23 @@ private theorem doubleBond_commute_square (i j : Fin t.rank)
   have hn : P.root (P.reflectionPerm β β) i = 2 := by
     simp only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self, Pi.neg_apply,
       hp, neg_neg]
-  have h := ((hx β (Or.inl hp) 1).mul_right
-    (hx (P.reflectionPerm β β) (Or.inr hn) (-1))).mul_right (hx β (Or.inl hp) 1)
+  have hclosure : Subgroup.closure (Set.range (D.rootSubgroupPoints β A) ∪
+      Set.range (D.rootSubgroupPoints (P.reflectionPerm β β) A)) ≤
+      Subgroup.centralizer {D.simpleCorootPoints i A (-1)} := by
+    rw [Subgroup.closure_le]
+    rintro _ (⟨u, rfl⟩ | ⟨u, rfl⟩) <;>
+      apply Subgroup.mem_centralizer_singleton_iff.mpr
+    · exact (hx β (Or.inl hp) (Multiplicative.toAdd u)).symm.eq
+    · exact (hx (P.reflectionPerm β β) (Or.inr hn) (Multiplicative.toAdd u)).symm.eq
   rw [D.weylElement_mul_self]
-  simpa only [D.weylElement_def, Units.val_one, inv_one] using h
+  exact (Subgroup.mem_centralizer_singleton_iff.mp
+    (hclosure (D.weylElement_mem_closure_rootPair β A 1))).symm
 
 /-- Pinned simple Weyl representatives at a double bond satisfy the length-four braid
 relation over every commutative value ring. The Cartan matrix is indexed by root, then coroot,
 so `j` is the long node and `i` the short node. -/
 theorem weylElement_braid_of_cartanMatrix_eq_neg_two (i j : Fin t.rank)
-    (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -2)
+    (hji : t.cartanMatrix j i = -2)
     (A : Type v) [CommRing A] :
     D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 *
         D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 =
@@ -156,7 +162,7 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_two (i j : Fin t.rank)
         D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 := by
   let a := D.weylElement (t.simpleIndex ht i) A 1
   let b := D.weylElement (t.simpleIndex ht j) A 1
-  have hcomm : Commute (a * b * a⁻¹) b := D.doubleBond_commute_conjugate i j hij hji A
+  have hcomm : Commute (a * b * a⁻¹) b := D.doubleBond_commute_conjugate i j hji A
   have hsq : Commute (a * a) b := D.doubleBond_commute_square i j hji A
   -- Replace the inverse in the orthogonal-pair commutation using the commuting square.
   have h := congrArg (fun g => g * a * a) hcomm.eq
