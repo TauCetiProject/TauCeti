@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.Opens
 /-!
 # Isotropic, coisotropic, Lagrangian and symplectic tangent images on open submanifolds
 
-Restricting the source of a differentiable map to an open subset restricts its tangent-image
+Restricting the source of a map to an open subset restricts its tangent-image
 condition to the points of that subset. These conditions can therefore be checked on any open
 cover of the source. If a map takes values in an open submanifold, its isotropic, coisotropic,
 Lagrangian and symplectic tangent-image conditions for the restricted form agree with those of its
@@ -175,14 +175,11 @@ ambient inclusion is isotropic. -/
 theorem isIsotropicMap_subtype_val_comp_iff :
     hσ.IsIsotropicMap J ((Subtype.val : U → M) ∘ f) ↔
       (hσ.mpullback_subtype_val U).IsIsotropicMap J f := by
-  rw [isIsotropicMap_iff, isIsotropicMap_iff]
+  rw [isIsotropicMap_iff_forall, isIsotropicMap_iff_forall]
   refine forall_congr' fun x ↦ ?_
-  by_cases hf : MDifferentiableAt J I f x
-  · simp only [mfderiv_comp _ (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hf,
-      ContinuousLinearMap.comp_apply, SmoothForm.eval₂_mpullback, Function.comp_apply]
-  · simp [mfderiv_zero_of_not_mdifferentiableAt hf,
-      mfderiv_zero_of_not_mdifferentiableAt
-        (Manifold.mdifferentiableAt_subtype_val_comp_iff.not.mpr hf)]
+  rw [Manifold.range_mfderiv_subtype_val_comp x, Function.comp_apply,
+    ← hσ.symplecticFormAt_mpullback_subtype_val_transport,
+    SymplecticForm.isIsotropic_map_transport_iff]
 
 /-- A map into an open submanifold is coisotropic for the restricted form exactly when its
 ambient inclusion is coisotropic. -/

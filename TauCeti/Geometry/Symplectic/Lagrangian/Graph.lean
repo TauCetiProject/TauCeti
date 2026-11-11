@@ -92,8 +92,7 @@ theorem IsNondegenerate.isLagrangianMap_graph_iff
 /-- The graph of a map `f : M → N` has symplectic tangent images for the product
 form `pr₁*σ + pr₂*τ` exactly when the form `σ + f*τ` is nondegenerate at every point: a tangent
 vector `v` with `σ(v, w) + τ(df v, df w) = 0` for every `w` is zero. At a point where `f` is not
-differentiable the graph is not either, so both differentials are zero by convention: the tangent
-image of the graph is zero, hence symplectic, and the criterion holds by nondegeneracy of `σ`. -/
+differentiable both sides hold trivially, so no differentiability of `f` is assumed. -/
 theorem IsNondegenerate.hasSymplecticTangentImages_graph_iff
     (hσ : σ.IsNondegenerate) (hτ : τ.IsNondegenerate) {f : M → N} :
     (hσ.prod hτ).HasSymplecticTangentImages I (fun x ↦ (x, f x)) ↔
