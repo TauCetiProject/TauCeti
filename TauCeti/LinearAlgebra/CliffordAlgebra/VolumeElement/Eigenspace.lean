@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Idempotents.SquareRootOne
 -- Private: the following are used only inside proofs: the dimension `2 ^ (n / 2)` of a spinor
 -- module, Clifford functoriality, the eigenspace splitting, anticommutation and transport lemmas
 -- for endomorphisms, the Morita evaluation of eigenspaces, and the square of a volume element.
+import Mathlib.LinearAlgebra.CliffordAlgebra.Inversion
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.Eigenspace.Anticommute
@@ -42,10 +43,11 @@ preserved by the whole Clifford algebra: they are the two multiplicity pieces of
 central factors labelled by `Γ = ±1`.
 
 Finally, suppose `n` is positive, and let `S` be a spinor module, a `Cℓ`-module on which `Cℓ` acts
-as the whole of `End_ℂ S`, as for the Fock module of an even-dimensional space
-(`TauCeti.SpinPolarizationData.cliffordEquivEnd`). Then `n` is even, `S` is finite-dimensional and
-`dim S = 2 ^ (n / 2)` (`CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`), its half-spin
-spaces `S⁺` and `S⁻` both have dimension `2 ^ (n / 2 - 1)`, and by Morita evaluation
+faithfully and as the whole of `End_ℂ S` (the action map `Cℓ → End_ℂ S` is bijective), as for the
+Fock module of an even-dimensional space (`TauCeti.SpinPolarizationData.cliffordEquivEnd`). Then
+`n` is even, `S` is finite-dimensional and `dim S = 2 ^ (n / 2)`
+(`CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`), its half-spin spaces `S⁺` and `S⁻` both
+have dimension `2 ^ (n / 2 - 1)`, and by Morita evaluation
 (`TauCeti.eigenspaceTensorEquivOfBijective`) every module satisfies
 
 `E⁺ ≃ S⁺ ⊗ Hom_Cℓ(S, E)`,  `E⁻ ≃ S⁻ ⊗ Hom_Cℓ(S, E)`,
@@ -298,25 +300,11 @@ theorem finrank_eigenspace_complexVolume_neg (hn : Even n) (hn0 : n ≠ 0) (μ :
     · rw [hker μ hμ, hker (-μ) (neg_ne_zero.2 hμ)]
   · obtain ⟨u, hu⟩ := not_forall.1 hQ0
     set c := ι (Q.baseChange ℂ) (1 ⊗ₜ u)
-    -- The vector `u` has `c² = Q u ≠ 0`.
-    have hc : c * c = algebraMap ℂ _ (Q u : ℂ) := by
-      rw [ι_sq_scalar, QuadraticForm.baseChange_tmul]
-      simp [Algebra.algebraMap_eq_smul_one]
-    have hq : (Q u : ℂ) ≠ 0 := by exact_mod_cast hu
-    have h₁ : c * ((Q u : ℂ)⁻¹ • c) = 1 := by
-      rw [mul_smul_comm, hc, Algebra.algebraMap_eq_smul_one, smul_smul, inv_mul_cancel₀ hq,
-        one_smul]
-    have h₂ : ((Q u : ℂ)⁻¹ • c) * c = 1 := by
-      rw [smul_mul_assoc, hc, Algebra.algebraMap_eq_smul_one, smul_smul, inv_mul_cancel₀ hq,
-        one_smul]
-    let e : E ≃ₗ[ℂ] E := .ofLinearMap (Algebra.lsmul ℂ ℂ E c)
-      (Algebra.lsmul ℂ ℂ E ((Q u : ℂ)⁻¹ • c))
-      (LinearMap.ext fun ψ ↦ by
-        simp only [LinearMap.comp_apply, Algebra.lsmul_coe, LinearMap.id_apply]
-        rw [← mul_smul, h₁, one_smul])
-      (LinearMap.ext fun ψ ↦ by
-        simp only [LinearMap.comp_apply, Algebra.lsmul_coe, LinearMap.id_apply]
-        rw [← mul_smul, h₂, one_smul])
+    -- The vector `u` has `Q u ≠ 0`, so `c` is a unit and acts invertibly on `E`.
+    have hcu : IsUnit c := CliffordAlgebra.isUnit_ι_of_isUnit _ (by
+      rw [QuadraticForm.baseChange_tmul]
+      simpa [Algebra.algebraMap_eq_smul_one] using (isUnit_iff_ne_zero.2 (by exact_mod_cast hu)))
+    let e : E ≃ₗ[ℂ] E := DistribMulAction.toLinearEquiv ℂ E hcu.unit
     refine finrank_genEigenspace_neg_of_anticommute e ?_ μ 1
     have hanti : complexVolume Q o * c + c * complexVolume Q o = 0 := by
       rw [complexVolume_mul_ι_of_even o hn, neg_add_cancel]
@@ -333,11 +321,12 @@ variable {S : Type*} [AddCommGroup S] [Module ℂ S] [Module (CliffordAlgebra (Q
 include h in
 /-- **The half-spin spaces of a spinor module**: in even positive dimension, both eigenspaces of
 `Γ` on a spinor module have dimension `2 ^ (n / 2 - 1)`. -/
-theorem finrank_eigenspace_complexVolume_of_bijective_lsmul (hn : Even n) (hn0 : n ≠ 0) {μ : ℂ}
+theorem finrank_eigenspace_complexVolume_of_bijective_lsmul (hn0 : n ≠ 0) {μ : ℂ}
     (hμ : μ = 1 ∨ μ = -1) :
     finrank ℂ ((Algebra.lsmul ℂ ℂ S (complexVolume Q o)).eigenspace μ) = 2 ^ (n / 2 - 1) := by
   have hV : finrank ℂ (ℂ ⊗[ℝ] V) = n := by
     rw [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)]
+  have hn : Even n := hV ▸ even_finrank_of_algEquiv_end _ (AlgEquiv.ofBijective _ h)
   have hS : finrank ℂ S = 2 ^ (n / 2) := by
     rw [finrank_eq_two_pow_of_bijective_lsmul _ h, hV]
   have : FiniteDimensional ℂ S := Module.finite_of_finrank_pos (by rw [hS]; positivity)
@@ -366,12 +355,11 @@ theorem finrank_eigenspace_complexVolume_eq_mul_finrank_linearMap (hn0 : n ≠ 0
       2 ^ (n / 2 - 1) * finrank ℂ (S →ₗ[CliffordAlgebra (Q.baseChange ℂ)] E) := by
   have hV : finrank ℂ (ℂ ⊗[ℝ] V) = n := by
     rw [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)]
-  have hn : Even n := hV ▸ even_finrank_of_algEquiv_end _ (AlgEquiv.ofBijective _ h)
   have hS : finrank ℂ S = 2 ^ (n / 2) := by
     rw [finrank_eq_two_pow_of_bijective_lsmul _ h, hV]
   have : FiniteDimensional ℂ S := Module.finite_of_finrank_pos (by rw [hS]; positivity)
   rw [finrank_eigenspace_eq_finrank_mul_finrank_linearMap_of_bijective_lsmul h,
-    finrank_eigenspace_complexVolume_of_bijective_lsmul o hQ h hn hn0 hμ]
+    finrank_eigenspace_complexVolume_of_bijective_lsmul o hQ h hn0 hμ]
 
 end Form
 
