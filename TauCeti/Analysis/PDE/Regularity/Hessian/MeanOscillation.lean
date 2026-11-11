@@ -10,14 +10,16 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Matrix.Contraction
+import TauCeti.Analysis.PDE.Ellipticity.Average
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.MeanInequalities
 
 /-!
-# Mean oscillation of the Hessian for constant-coefficient equations
+# Mean oscillation of the Hessian for non-divergence-form equations
 
 Let `A` be a constant coefficient matrix, uniformly elliptic with constants `0 < λ ≤ Λ`, and let
 `u ∈ W^{2,2}(Ω)` be a strong solution of
@@ -55,12 +57,38 @@ then bounds the square mean oscillation of `∇(∂ₖu)`, which is the column `
 by the symmetry of weak second derivatives. Summing over `k`, the operator norm is controlled by
 the columns: `‖T‖² ≤ (n + 1) ∑ₖ ‖T eₖ‖²` and `‖T eₖ‖ ≤ ‖T‖`.
 
+## Variable coefficients
+
+For a measurable coefficient field `a`, the equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` is compared with the one
+frozen at a constant uniformly elliptic matrix `A`: `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = f + ∑ᵢⱼ (Aᵢⱼ - aᵢⱼ) ∂ᵢ∂ⱼu`.
+The error is at most `θ ‖D²u‖` pointwise, with `θ = ∑ᵢⱼ |aᵢⱼ - Aᵢⱼ|`
+(`Matrix.abs_contraction_le_sum_sum_abs_mul`), so the estimate above holds with `∫_{B_r} f²`
+replaced by `2 (∫_{B_r} f² + ∫_{B_r} θ² ‖D²u‖²)`
+(`TauCeti.PDE.setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_sub_le`).
+No continuity of `a` is used. If `|aᵢⱼ - Aᵢⱼ| ≤ M` and `D²u ∈ L^{2q}(B_r)`, Hölder's inequality with
+the conjugate exponent `q'` and `θ^(2q') ≤ ((n + 1)² M)^(2q' - 1) θ` bound the error by the mean
+deviation `⨍_{B_r} θ`, which gives Krylov's estimate in scale-invariant form
+(`TauCeti.PDE.setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_abs_sub_le`):
+
+`⨍_{B_ρ} ‖D²u - (D²u)_{B_ρ}‖² ≤ C κ⁻² ⨍_{B_r} ‖D²u - (D²u)_{B_r}‖²`
+`  + C κ^(n + 1) (⨍_{B_r} f² + (⨍_{B_r} θ)^(1/q') (⨍_{B_r} ‖D²u‖^(2q))^(1/q))`.
+
+Freezing at the average `A = ⨍_{B_r} a`, which is uniformly elliptic whenever `a` is
+(`TauCeti.PDE.UniformlyEllipticOn.setAverage`), turns `⨍_{B_r} θ` into the sum of the mean
+oscillations of the entries of `a` on `B_r`
+(`TauCeti.PDE.setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_sum_mul_inner_eq`).
+For coefficients of vanishing mean oscillation it is small on small balls; this is the input to
+the sharp maximal function bound for `D²u`.
+
 ## References
 
 * N. V. Krylov, *Lectures on Elliptic and Parabolic Equations in Sobolev Spaces*, AMS, 2008,
   Chapter 3 (mean oscillation estimates for the second derivatives).
 * M. Giaquinta, L. Martinazzi, *An Introduction to the Regularity Theory for Elliptic Systems,
   Harmonic Maps and Minimal Graphs*, 2nd ed., Section 5.3 (comparison with the frozen problem).
+* N. V. Krylov, *Parabolic and elliptic equations with VMO coefficients*, Comm. Partial
+  Differential Equations **32** (2007), 453–475 (the mean oscillation estimate for variable
+  coefficients, freezing at the average over the ball).
 -/
 
 public section
@@ -341,6 +369,327 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_m
   have hHρ := ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρr) hHB
   rwa [average_congr hHρ, integral_congr_ae (hHρ.mono fun x hx => by rw [hx]),
     average_congr hHB, integral_congr_ae (hHB.mono fun x hx => by rw [hx])] at key
+
+/-! ### Variable coefficients -/
+
+variable {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+
+/-- The deviation `∑ᵢⱼ |aᵢⱼ - Aᵢⱼ|` of a measurable coefficient field from a constant matrix is
+measurable. -/
+private theorem aestronglyMeasurable_sum_sum_abs_sub
+    {μ : Measure (EuclideanSpace ℝ (Fin (n + 1)))}
+    (ham : ∀ i j, AEStronglyMeasurable (fun x => a x i j) μ) :
+    AEStronglyMeasurable (fun x => ∑ i, ∑ j, |a x i j - A i j|) μ :=
+  Finset.aestronglyMeasurable_fun_sum _ fun i _ => Finset.aestronglyMeasurable_fun_sum _
+    fun j _ => continuous_abs.comp_aestronglyMeasurable ((ham i j).sub aestronglyMeasurable_const)
+
+/-- An entrywise deviation bound `|aᵢⱼ - Aᵢⱼ| ≤ M` gives `∑ᵢⱼ |aᵢⱼ - Aᵢⱼ| ≤ (n + 1)² M`. -/
+private theorem sum_sum_abs_sub_le {M : ℝ} {x : EuclideanSpace ℝ (Fin (n + 1))}
+    (hx : ∀ i j, |a x i j - A i j| ≤ M) :
+    ∑ i, ∑ j, |a x i j - A i j| ≤ (n + 1) ^ 2 * M := by
+  calc ∑ i, ∑ j, |a x i j - A i j| ≤ ∑ _i : Fin (n + 1), ∑ _j : Fin (n + 1), M :=
+        Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => hx i j
+    _ = (n + 1) ^ 2 * M := by simp; ring
+
+/-- **Mean oscillation of the Hessian for variable coefficients, by freezing.** Let
+`u ∈ W^{2,2}(Ω)` solve `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere on `B_r = ball x₀ r ⊆ Ω`, where the
+coefficient `a` is measurable and stays entrywise within `M` of a constant matrix `A` that is
+uniformly elliptic with constants `0 < λ ≤ Λ`. Then for `0 < ρ ≤ r` the square mean oscillation
+`ψ(t) = ∫_{B_t} ‖D²u - (D²u)_{B_t}‖²` of the weak Hessian satisfies
+
+`ψ(ρ) ≤ (n + 1)² (4 D (ρ / r)^(n + 3) ψ(r) + (2 (4 D + 2) / λ²) (∫_{B_r} f² + ∫_{B_r} θ² ‖D²u‖²))`,
+
+where `θ(x) = ∑ᵢⱼ |aᵢⱼ(x) - Aᵢⱼ|` measures the deviation of `a` from `A` and
+`D = 2^(3n + 13) (n + 2)² (Λ / λ)^((n + 3) / 2)`. No regularity of `a` is assumed: the bound `M`
+only makes the error term `θ ‖D²u‖` square integrable. -/
+theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_sub_le
+    {lam Lam M : ℝ} (hA : UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam)
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
+    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hball : ball x₀ r ⊆ Omega)
+    (ham : ∀ i j, AEStronglyMeasurable (fun x => a x i j) (volume.restrict (ball x₀ r)))
+    (haM : ∀ᵐ x ∂(volume.restrict (ball x₀ r)), ∀ i j, |a x i j - A i j| ≤ M)
+    (heq : ∀ᵐ x ∂(volume.restrict (ball x₀ r)), ∑ i, ∑ j, a x i j *
+      ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
+        f x)
+    (hρ : 0 < ρ) (hρr : ρ ≤ r) :
+    ∫ x in ball x₀ ρ,
+        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y‖ ^ 2 ≤
+      (n + 1) ^ 2 *
+        (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) * (ρ / r) ^ (n + 3) *
+            (∫ x in ball x₀ r,
+              ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ r, Wkp.iteratedGradient 1 u y‖ ^ 2) +
+          2 * (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
+            ((∫ x in ball x₀ r, f x ^ 2) +
+              ∫ x in ball x₀ r, (∑ i, ∑ j, |a x i j - A i j|) ^ 2 *
+                ‖Wkp.iteratedGradient 1 u x‖ ^ 2)) := by
+  -- Freeze the coefficients at `A`, check that the datum `f + c` of the frozen equation is square
+  -- integrable, apply the constant-coefficient estimate and bound `(f + c)² ≤ 2 f² + 2 θ² ‖D²u‖²`.
+  set μr := volume.restrict (ball x₀ r)
+  set H : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
+    ⇑(Wkp.iteratedGradient 1 u)
+  set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => ∑ i, ∑ j, |a x i j - A i j|
+  -- The error `c x = ∑ᵢⱼ (Aᵢⱼ - aᵢⱼ(x)) ∂ᵢ∂ⱼu(x)` of freezing the coefficients at `A`.
+  set c : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => Matrix.contraction (A - a x) (H x)
+  have hH : MemLp H 2 μr :=
+    (memLp_iteratedGradient_one u).mono_measure (Measure.restrict_mono hball le_rfl)
+  have hθm : AEStronglyMeasurable θ μr := aestronglyMeasurable_sum_sum_abs_sub ham
+  have hcm : AEStronglyMeasurable c μr := by
+    simp only [c, Matrix.contraction_apply, Matrix.sub_apply]
+    refine Finset.aestronglyMeasurable_fun_sum _ fun i _ => Finset.aestronglyMeasurable_fun_sum _
+      fun j _ => (aestronglyMeasurable_const.sub (ham i j)).mul ?_
+    exact ((ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin (n + 1)))
+      (EuclideanSpace.single i 1)).continuous.comp_aestronglyMeasurable
+        hH.aestronglyMeasurable).inner aestronglyMeasurable_const
+  have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ (n + 1) ^ 2 * M := by
+    filter_upwards [haM] with x hx
+    exact ⟨by positivity, sum_sum_abs_sub_le hx⟩
+  have hc : ∀ x, |c x| ≤ θ x * ‖H x‖ := fun x => by
+    refine (Matrix.abs_contraction_le_sum_sum_abs_mul _ _).trans_eq ?_
+    simp only [θ, Matrix.sub_apply, abs_sub_comm (A _ _)]
+  have hθH : MemLp (fun x => θ x * ‖H x‖) 2 μr := by
+    refine (hH.norm.const_mul ((n + 1) ^ 2 * M)).of_le (hθm.mul hH.aestronglyMeasurable.norm) ?_
+    filter_upwards [hθ] with x hx
+    rw [Real.norm_of_nonneg (by positivity), Real.norm_eq_abs, abs_mul,
+      abs_norm]
+    exact mul_le_mul_of_nonneg_right (hx.2.trans (le_abs_self _)) (norm_nonneg _)
+  have hc2 : MemLp c 2 μr := hθH.of_le hcm (ae_of_all _ fun x => (hc x).trans (le_abs_self _))
+  -- Frozen at `A`, the equation reads `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = f + c`.
+  have heqA : ∀ᵐ x ∂μr, ∑ i, ∑ j, A i j *
+      ⟪H x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = f x + c x := by
+    filter_upwards [heq] with x hx
+    simp only [c, Matrix.contraction_sub, sub_apply,
+      Matrix.contraction_apply, ← hx]
+    ring
+  have hf2 : MemLp f 2 μr := by
+    refine (((Matrix.contraction A).comp_memLp' hH).sub hc2).ae_eq ?_
+    filter_upwards [heqA] with x hx
+    simp only [Function.comp_apply, Pi.sub_apply, Matrix.contraction_apply, hx,
+      add_sub_cancel_right]
+  have key := setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mul_inner_eq
+    hA u hball heqA hρ hρr
+  -- The frozen datum `f + c` has `∫ (f + c)² ≤ 2 (∫ f² + ∫ θ² ‖D²u‖²)`.
+  have hint : ∫ x in ball x₀ r, (f x + c x) ^ 2 ≤
+      2 * ((∫ x in ball x₀ r, f x ^ 2) + ∫ x in ball x₀ r, θ x ^ 2 * ‖H x‖ ^ 2) := by
+    have h1 := hf2.integrable_sq
+    have h2 : Integrable (fun x => θ x ^ 2 * ‖H x‖ ^ 2) μr := by
+      simpa only [mul_pow] using hθH.integrable_sq
+    rw [← integral_add h1 h2, ← integral_const_mul]
+    refine integral_mono_of_nonneg (ae_of_all _ fun x => sq_nonneg _) ((h1.add h2).const_mul 2)
+      (ae_of_all _ fun x => ?_)
+    have hcx : c x ^ 2 ≤ θ x ^ 2 * ‖H x‖ ^ 2 := by
+      rw [← mul_pow, ← sq_abs (c x)]
+      exact pow_le_pow_left₀ (abs_nonneg _) (hc x) 2
+    nlinarith [sq_nonneg (f x - c x)]
+  refine key.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
+  have hC : 0 ≤ (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 := by
+    positivity
+  have h2 : (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
+        ∫ x in ball x₀ r, (f x + c x) ^ 2 ≤
+      2 * (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
+        ((∫ x in ball x₀ r, f x ^ 2) + ∫ x in ball x₀ r, θ x ^ 2 * ‖H x‖ ^ 2) :=
+    (mul_le_mul_of_nonneg_left hint hC).trans_eq (by ring)
+  exact add_le_add le_rfl h2
+
+/-- **Krylov's mean oscillation estimate for the Hessian.** Let `u ∈ W^{2,2}(Ω)` solve
+`∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere on `B_r = ball x₀ r ⊆ Ω`, where the coefficient `a` is
+measurable and stays entrywise within `M` of a constant matrix `A` that is uniformly elliptic with
+constants `0 < λ ≤ Λ`, and let the weak Hessian lie in `L^{2q}(B_r)` for a pair of Hölder
+conjugate exponents `q, q'`. Then for `0 < ρ ≤ r`
+
+`⨍_{B_ρ} ‖D²u - (D²u)_{B_ρ}‖² ≤ (n + 1)² (4 D (ρ / r)² ⨍_{B_r} ‖D²u - (D²u)_{B_r}‖²`
+`  + (2 (4 D + 2) / λ²) (r / ρ)^(n + 1) (⨍_{B_r} f² + E))`
+
+with `E = (K^(2q' - 1) ⨍_{B_r} θ)^(1/q') (⨍_{B_r} ‖D²u‖^(2q))^(1/q)`, where
+`θ(x) = ∑ᵢⱼ |aᵢⱼ(x) - Aᵢⱼ|`, `K = (n + 1)² M` and
+`D = 2^(3n + 13) (n + 2)² (Λ / λ)^((n + 3) / 2)`. Every average is scale invariant, and the
+coefficients enter only through the mean deviation `⨍_{B_r} θ`; for `A` the average of `a` over
+`B_r` this is a mean oscillation of `a`
+(`TauCeti.PDE.setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_sum_mul_inner_eq`).
+Combined with the Fefferman–Stein inequality, this is the estimate behind the `W^{2,p}` theory for
+coefficients of vanishing mean oscillation. -/
+theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_abs_sub_le
+    {lam Lam M : ℝ} (hA : UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam)
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
+    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hball : ball x₀ r ⊆ Omega)
+    (ham : ∀ i j, AEStronglyMeasurable (fun x => a x i j) (volume.restrict (ball x₀ r)))
+    (haM : ∀ᵐ x ∂(volume.restrict (ball x₀ r)), ∀ i j, |a x i j - A i j| ≤ M)
+    (heq : ∀ᵐ x ∂(volume.restrict (ball x₀ r)), ∑ i, ∑ j, a x i j *
+      ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
+        f x)
+    {q q' : ℝ} (hq : q.HolderConjugate q')
+    (hHq : MemLp (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
+      (ENNReal.ofReal (2 * q)) (volume.restrict (ball x₀ r)))
+    (hρ : 0 < ρ) (hρr : ρ ≤ r) :
+    ⨍ x in ball x₀ ρ,
+        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y‖ ^ 2 ≤
+      (n + 1) ^ 2 *
+        (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) * (ρ / r) ^ 2 *
+            (⨍ x in ball x₀ r,
+              ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ r, Wkp.iteratedGradient 1 u y‖ ^ 2) +
+          2 * (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
+            (r / ρ) ^ (n + 1) *
+            ((⨍ x in ball x₀ r, f x ^ 2) +
+              (((n + 1) ^ 2 * M) ^ (2 * q' - 1) *
+                  ⨍ x in ball x₀ r, ∑ i, ∑ j, |a x i j - A i j|) ^ q'⁻¹ *
+                (⨍ x in ball x₀ r, ‖Wkp.iteratedGradient 1 u x‖ ^ (2 * q)) ^ q⁻¹)) := by
+  -- Apply the frozen comparison, bound its error term by Hölder's inequality, and divide by
+  -- `|B_ρ| = (ρ / r)^(n + 1) |B_r|`.
+  have hr : 0 < r := hρ.trans_le hρr
+  set μr := volume.restrict (ball x₀ r)
+  set H : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
+    ⇑(Wkp.iteratedGradient 1 u)
+  set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => ∑ i, ∑ j, |a x i j - A i j|
+  set K : ℝ := (n + 1) ^ 2 * M
+  have : IsFiniteMeasure μr := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hK : 0 ≤ K := by
+    have := ae_restrict_neBot.2 (measure_ball_pos volume x₀ hr).ne'
+    obtain ⟨x, hx⟩ := haM.exists
+    exact (by positivity : (0 : ℝ) ≤ θ x).trans (sum_sum_abs_sub_le hx)
+  have hθm : AEStronglyMeasurable θ μr := aestronglyMeasurable_sum_sum_abs_sub ham
+  have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ K := by
+    filter_upwards [haM] with x hx
+    exact ⟨by positivity, sum_sum_abs_sub_le hx⟩
+  have hθi : Integrable θ μr := Integrable.of_bound hθm K (by
+    filter_upwards [hθ] with x hx
+    rw [Real.norm_of_nonneg hx.1]
+    exact hx.2)
+  -- Hölder's inequality with the bounded weight `θ²` and exponents `q'`, `q` bounds the error
+  -- term `∫ θ² ‖D²u‖²` of the frozen comparison.
+  have hH2 : MemLp (fun x => ‖H x‖ ^ 2) (ENNReal.ofReal q) μr := by
+    have h := hHq.norm_rpow_div (ENNReal.ofReal 2)
+    rw [← ENNReal.ofReal_div_of_pos two_pos, ENNReal.toReal_ofReal zero_le_two,
+      show 2 * q / 2 = q by ring] at h
+    simpa only [Real.rpow_two] using h
+  have hHolder := integral_mul_le_L1_mul_Lq_of_le hq.symm (hθm.pow 2)
+    (hθ.mono fun x hx => ⟨sq_nonneg _, pow_le_pow_left₀ hx.1 hx.2 2⟩)
+    (ae_of_all _ fun x => sq_nonneg ‖H x‖) hH2
+  -- Since `0 ≤ θ ≤ K`, `(K²)^(q' - 1) θ² ≤ K^(2q' - 1) θ`.
+  have hθq : (K ^ 2) ^ (q' - 1) * ∫ x in ball x₀ r, θ x ^ 2 ≤
+      K ^ (2 * q' - 1) * ∫ x in ball x₀ r, θ x := by
+    rw [← integral_const_mul, ← integral_const_mul]
+    refine integral_mono_of_nonneg (ae_of_all _ fun x => by positivity) (hθi.const_mul _)
+      (hθ.mono fun x hx => ?_)
+    have hθ2 : θ x ^ 2 ≤ K * θ x := by nlinarith [hx.1, hx.2]
+    calc (K ^ 2) ^ (q' - 1) * θ x ^ 2 = K ^ (2 * (q' - 1)) * θ x ^ 2 := by
+          rw [← Real.rpow_natCast, ← Real.rpow_mul hK]
+          norm_num
+      _ ≤ K ^ (2 * (q' - 1)) * (K * θ x) :=
+          mul_le_mul_of_nonneg_left hθ2 (Real.rpow_nonneg hK _)
+      _ = K ^ (2 * q' - 1) * θ x := by
+          rw [show 2 * q' - 1 = 2 * (q' - 1) + 1 by ring,
+            Real.rpow_add_one' hK (by linarith [hq.symm.lt])]
+          ring
+  have hHq' : ∫ x in ball x₀ r, (‖H x‖ ^ 2) ^ q = ∫ x in ball x₀ r, ‖H x‖ ^ (2 * q) := by
+    refine integral_congr_ae (ae_of_all _ fun x => ?_)
+    simp only
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
+    norm_num
+  set Iθ := ∫ x in ball x₀ r, θ x
+  set IH := ∫ x in ball x₀ r, ‖H x‖ ^ (2 * q)
+  have hIH : 0 ≤ IH := integral_nonneg fun x => by positivity
+  have hΘ : ∫ x in ball x₀ r, θ x ^ 2 * ‖H x‖ ^ 2 ≤
+      (K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * IH ^ q⁻¹ := by
+    refine hHolder.trans ?_
+    rw [hHq']
+    exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (mul_nonneg (Real.rpow_nonneg
+      (sq_nonneg K) _) (integral_nonneg fun x => sq_nonneg _)) hθq hq.symm.inv_nonneg)
+      (Real.rpow_nonneg hIH _)
+  have key := setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_sub_le
+    hA u hball ham haM heq hρ hρr
+  -- Pass to averages: `|B_ρ| = (ρ / r)^(n + 1) |B_r|`.
+  set V : ℝ := volume.real (ball x₀ r)
+  have hV : 0 < V := ENNReal.toReal_pos (measure_ball_pos volume x₀ hr).ne' measure_ball_lt_top.ne
+  have hVρ : volume.real (ball x₀ ρ) = (ρ / r) ^ (n + 1) * V := by
+    simp only [V, measureReal_def, Measure.addHaar_ball_of_pos volume x₀ hρ,
+      Measure.addHaar_ball_of_pos volume x₀ hr, finrank_euclideanSpace_fin, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal (pow_nonneg hρ.le _), ENNReal.toReal_ofReal (pow_nonneg hr.le _),
+      div_pow]
+    field_simp
+  have havg : ∀ (t : ℝ) (g : EuclideanSpace ℝ (Fin (n + 1)) → ℝ),
+      ⨍ x in ball x₀ t, g x = (volume.real (ball x₀ t))⁻¹ * ∫ x in ball x₀ t, g x :=
+    fun t g => by rw [setAverage_eq, smul_eq_mul]
+  rw [havg ρ (fun x => ‖H x - ⨍ y in ball x₀ ρ, H y‖ ^ 2),
+    havg r (fun x => ‖H x - ⨍ y in ball x₀ r, H y‖ ^ 2), havg r (fun x => f x ^ 2), havg r θ,
+    havg r (fun x => ‖H x‖ ^ (2 * q)), hVρ]
+  have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * IH) ^ q⁻¹ =
+      V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * IH ^ q⁻¹) := by
+    rw [mul_left_comm, Real.mul_rpow (inv_nonneg.2 hV.le) (by positivity),
+      Real.mul_rpow (inv_nonneg.2 hV.le) hIH, mul_mul_mul_comm, ← Real.rpow_add (inv_pos.2 hV),
+      hq.symm.inv_add_inv_eq_one, Real.rpow_one]
+  rw [hsplit]
+  have hs : 0 < ρ / r := div_pos hρ hr
+  refine (mul_le_mul_of_nonneg_left (key.trans (mul_le_mul_of_nonneg_left (add_le_add le_rfl
+    (mul_le_mul_of_nonneg_left (add_le_add le_rfl hΘ) (by positivity))) (by positivity)))
+    (by positivity)).trans_eq ?_
+  have hlam : lam ≠ 0 := hA.pos.ne'
+  have hV0 : V ≠ 0 := hV.ne'
+  rw [← inv_div ρ r]
+  simp only [H, V] at hV0 ⊢
+  generalize ρ / r = s at hs ⊢
+  have hs0 : s ≠ 0 := hs.ne'
+  rw [inv_pow]
+  field_simp
+  ring
+
+/-- **Krylov's mean oscillation estimate for the Hessian, frozen at the average.** Let `a` be
+measurable and uniformly elliptic with constants `0 < λ ≤ Λ` on `B_r = ball x₀ r ⊆ Ω`, let
+`u ∈ W^{2,2}(Ω)` solve `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere on `B_r`, and let the weak Hessian lie
+in `L^{2q}(B_r)` for a pair of Hölder conjugate exponents `q, q'`. Then for `0 < ρ ≤ r`
+
+`⨍_{B_ρ} ‖D²u - (D²u)_{B_ρ}‖² ≤ (n + 1)² (4 D (ρ / r)² ⨍_{B_r} ‖D²u - (D²u)_{B_r}‖²`
+`  + (2 (4 D + 2) / λ²) (r / ρ)^(n + 1) (⨍_{B_r} f² + E))`
+
+with `E = (K^(2q' - 1) ⨍_{B_r} θ)^(1/q') (⨍_{B_r} ‖D²u‖^(2q))^(1/q)`, where
+`K = 2 (n + 1)² Λ`, `D = 2^(3n + 13) (n + 2)² (Λ / λ)^((n + 3) / 2)`, and
+`⨍_{B_r} θ = ⨍_{B_r} ∑ᵢⱼ |aᵢⱼ - (aᵢⱼ)_{B_r}|` is the sum of the mean oscillations of the entries of
+`a` on `B_r`. For coefficients of small mean oscillation the last term is small, so up to the
+data `f` the Hessian oscillates on `B_ρ` like that of a solution of a constant-coefficient
+equation. -/
+theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_sum_mul_inner_eq
+    {lam Lam : ℝ} (ha : UniformlyEllipticOn (ball x₀ r) a lam Lam)
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
+    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hball : ball x₀ r ⊆ Omega)
+    (ham : ∀ i j, AEStronglyMeasurable (fun x => a x i j) (volume.restrict (ball x₀ r)))
+    (heq : ∀ᵐ x ∂(volume.restrict (ball x₀ r)), ∑ i, ∑ j, a x i j *
+      ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
+        f x)
+    {q q' : ℝ} (hq : q.HolderConjugate q')
+    (hHq : MemLp (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
+      (ENNReal.ofReal (2 * q)) (volume.restrict (ball x₀ r)))
+    (hρ : 0 < ρ) (hρr : ρ ≤ r) :
+    ⨍ x in ball x₀ ρ,
+        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y‖ ^ 2 ≤
+      (n + 1) ^ 2 *
+        (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) * (ρ / r) ^ 2 *
+            (⨍ x in ball x₀ r,
+              ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ r, Wkp.iteratedGradient 1 u y‖ ^ 2) +
+          2 * (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
+            (r / ρ) ^ (n + 1) *
+            ((⨍ x in ball x₀ r, f x ^ 2) +
+              (((n + 1) ^ 2 * (2 * Lam)) ^ (2 * q' - 1) *
+                  ⨍ x in ball x₀ r, ∑ i, ∑ j, |a x i j - ⨍ y in ball x₀ r, a y i j|) ^ q'⁻¹ *
+                (⨍ x in ball x₀ r, ‖Wkp.iteratedGradient 1 u x‖ ^ (2 * q)) ^ q⁻¹)) := by
+  have hr : 0 < r := hρ.trans_le hρr
+  have : IsFiniteMeasure (volume.restrict (ball x₀ r)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hmem : ∀ᵐ x ∂(volume.restrict (ball x₀ r)), x ∈ ball x₀ r :=
+    ae_restrict_mem measurableSet_ball
+  have hint : ∀ i j, IntegrableOn (fun x => a x i j) (ball x₀ r) := fun i j =>
+    Integrable.of_bound (ham i j) Lam (hmem.mono fun x hx => ha.abs_apply_le hx i j)
+  -- Freeze the coefficients at their average over `B_r`, which is uniformly elliptic.
+  have hA := ha.setAverage measurableSet_ball (measure_ball_pos volume x₀ hr).ne'
+    measure_ball_lt_top.ne hint (ball x₀ r)
+  have haM : ∀ᵐ x ∂(volume.restrict (ball x₀ r)), ∀ i j,
+      |a x i j - Matrix.of (fun i j => ⨍ y in ball x₀ r, a y i j) i j| ≤ 2 * Lam :=
+    hmem.mono fun x hx i j => (abs_sub _ _).trans
+      (by linarith [ha.abs_apply_le hx i j, hA.abs_apply_le hx i j])
+  simpa only [Matrix.of_apply] using
+    setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_abs_sub_le
+      hA u hball ham haM heq hq hHq hρ hρr
 
 end PDE
 

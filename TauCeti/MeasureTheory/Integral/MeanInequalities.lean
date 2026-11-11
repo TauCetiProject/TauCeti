@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 
 /-!
-# Hölder's inequality with Young's exponents
+# Variants of Hölder's inequality
 
 For `1 ≤ p ≤ q` and `1/p + 1/r = 1 + 1/q`, and functions `k g : β → ℝ≥0∞`,
 
@@ -23,9 +24,16 @@ variable and applying Tonelli's theorem gives the `Lᵖ → L^q` bound for the i
 
 The statement is in `ℝ≥0∞`, so it needs no integrability hypotheses.
 
+For a weight `0 ≤ w ≤ K` and Hölder conjugate exponents `p, q`, the bound `w ^ p ≤ K ^ (p - 1) w`
+turns Hölder's inequality into
+`∫ w g ≤ (K ^ (p - 1) ∫ w) ^ (1/p) (∫ g ^ q) ^ (1/q)` for `g ≥ 0`, which controls `∫ w g` by the
+`L¹` norm of the weight. With `w` the deviation of a coefficient from a constant, this is how a
+mean oscillation enters the error estimates of frozen-coefficient arguments.
+
 ## Main declarations
 
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
+* `TauCeti.integral_mul_le_L1_mul_Lq_of_le`: Hölder's inequality with a bounded weight.
 
 ## References
 
@@ -84,5 +92,29 @@ theorem lintegral_mul_le_of_inv_add_inv_eq {k g : β → ℝ≥0∞} (hk : AEMea
           ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hr0.le ha) (mul_nonneg hr0.le hb),
           ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hp0.le ha) (mul_nonneg hp0.le hc)]
         ring
+
+/-- **Hölder's inequality with a bounded weight.** Let `p, q` be Hölder conjugate exponents, let
+`w` be measurable with `0 ≤ w ≤ K` on a finite measure space and let `0 ≤ g ∈ L^q`. Then
+`∫ w g ≤ (K ^ (p - 1) ∫ w) ^ (1/p) (∫ g ^ q) ^ (1/q)`: the `Lᵖ` norm of the weight in Hölder's
+inequality is replaced by its `L¹` norm, since `w ^ p ≤ K ^ (p - 1) w`. -/
+theorem integral_mul_le_L1_mul_Lq_of_le [IsFiniteMeasure ν] {p q K : ℝ}
+    (hpq : p.HolderConjugate q) {w g : β → ℝ} (hwm : AEStronglyMeasurable w ν)
+    (hw : ∀ᵐ x ∂ν, 0 ≤ w x ∧ w x ≤ K) (hg0 : 0 ≤ᵐ[ν] g) (hg : MemLp g (ENNReal.ofReal q) ν) :
+    ∫ x, w x * g x ∂ν ≤ (K ^ (p - 1) * ∫ x, w x ∂ν) ^ p⁻¹ * (∫ x, g x ^ q ∂ν) ^ q⁻¹ := by
+  have hwK : ∀ᵐ x ∂ν, ‖w x‖ ≤ K := hw.mono fun x hx => by rw [Real.norm_of_nonneg hx.1]; exact hx.2
+  refine (integral_mul_le_Lp_mul_Lq_of_nonneg hpq (hw.mono fun x hx => hx.1) hg0
+    (MemLp.of_bound hwm K hwK) hg).trans ?_
+  rw [one_div, one_div]
+  refine mul_le_mul_of_nonneg_right (Real.rpow_le_rpow
+    (integral_nonneg_of_ae (hw.mono fun x hx => Real.rpow_nonneg hx.1 _)) ?_ hpq.inv_nonneg)
+    (Real.rpow_nonneg (integral_nonneg_of_ae (hg0.mono fun x hx => Real.rpow_nonneg hx _)) _)
+  rw [← integral_const_mul]
+  refine integral_mono_of_nonneg (hw.mono fun x hx => Real.rpow_nonneg hx.1 _)
+    ((memLp_one_iff_integrable.1 (MemLp.of_bound hwm K hwK)).const_mul _) (hw.mono fun x hx => ?_)
+  -- `w ^ p = w ^ (p - 1) w ≤ K ^ (p - 1) w`.
+  calc w x ^ p = w x ^ (p - 1) * w x := by
+        rw [← Real.rpow_add_one' hx.1 (by linarith [hpq.lt]), sub_add_cancel]
+    _ ≤ K ^ (p - 1) * w x :=
+        mul_le_mul_of_nonneg_right (Real.rpow_le_rpow hx.1 hx.2 hpq.sub_one_pos.le) hx.1
 
 end TauCeti
