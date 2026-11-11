@@ -47,7 +47,9 @@ squares through lifts into and descents out of binary biproducts
 (`CategoryTheory.Functor.comp_map_biprod_lift` and `CategoryTheory.Functor.biprod_desc_comp_map`).
 For a functor out of `Cᵒᵖ`, the comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)`
 through `biprod.opIso` has inverse given by the images of the projections
-(`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`).
+(`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`), and it identifies the lift of
+the images of two maps `f`, `g` with the image of `biprod.desc f g`
+(`CategoryTheory.Functor.biprod_lift_map_op_comp_mapIso_biprod_opIso_trans_mapBiprod_inv`).
 -/
 
 public section
@@ -558,6 +560,22 @@ theorem mapIso_biprod_opIso_trans_mapBiprod_inv :
   apply biprod.hom_ext'
   · rw [biprod.inl_desc_assoc, ← F.map_comp, biprod.inl_opIso_inv, biprod.inl_desc]
   · rw [biprod.inr_desc_assoc, ← F.map_comp, biprod.inr_opIso_inv, biprod.inr_desc]
+
+variable {X Y} in
+/-- For a functor `F` out of `Cᵒᵖ` and maps `f : X ⟶ Z`, `g : Y ⟶ Z`, the lift of `F.map f.op`
+and `F.map g.op` followed by the inverse of the comparison
+`F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)` is the image of the opposite of
+`biprod.desc f g`. -/
+theorem biprod_lift_map_op_comp_mapIso_biprod_opIso_trans_mapBiprod_inv {Z : C} (f : X ⟶ Z)
+    (g : Y ⟶ Z) :
+    biprod.lift (F.map f.op) (F.map g.op) ≫
+        (F.mapIso (biprod.opIso X Y) ≪≫ F.mapBiprod (op X) (op Y)).inv =
+      F.map (biprod.desc f g).op := by
+  rw [Iso.comp_inv_eq]
+  apply biprod.hom_ext <;>
+    simp only [Iso.trans_hom, Functor.mapIso_hom, Functor.mapBiprod_hom, Category.assoc,
+      biprod.lift_fst, biprod.lift_snd, ← F.map_comp, biprod.opIso_hom_fst, biprod.opIso_hom_snd,
+      ← op_comp, biprod.inl_desc, biprod.inr_desc]
 
 end Op
 
