@@ -21,10 +21,10 @@ Two properties of the curve are used, for two different parts of the argument. *
 makes each excised set measurable. **Nullity of the times the curve spends exactly
 at a centre** gives the almost-everywhere convergence: away from those times the curve keeps a
 positive distance from the finite centre set, so the excision condition eventually fails
-outright. Injectivity on `[a, b]` is one convenient sufficient condition for the second — it
-makes those times finite — and is recorded separately as
-`measure_setOf_mem_eq_zero_of_injOn`; a curve may revisit centres, so long as it does so on a
-null set of times.
+outright (`eventually_not_exists_norm_sub_le`). Injectivity on `[a, b]` is one convenient
+sufficient condition for the second — it makes those times finite — and is the general
+measure-theoretic fact `Set.InjOn.measure_setOf_mem_eq_zero`; a curve may revisit centres, so long
+as it does so on a null set of times.
 
 ## Main results
 
@@ -33,8 +33,8 @@ null set of times.
 * `TauCeti.Contour.measurableSet_excision`: its measurable specialization.
 * `TauCeti.Contour.aestronglyMeasurable_indicator_excision`: excising from an integrand supported
   where the curve is differentiable keeps it a.e. strongly measurable.
-* `TauCeti.Contour.measure_setOf_mem_eq_zero_of_injOn`: an injective curve meets a finite set at
-  a null set of times.
+* `TauCeti.Contour.eventually_not_exists_norm_sub_le`: a point off the finite centre set
+  survives every small enough excision.
 * `TauCeti.Contour.tendsto_intervalIntegral_excisionIndicator`: the excision indicator's integral
   over `[a, b]` tends to `b - a` as `ε → 0⁺`.
 
@@ -102,21 +102,24 @@ theorem aestronglyMeasurable_indicator_excision [NormedAddCommGroup E] [NormedSp
     ((hG.mono_measure Measure.restrict_le_self).indicator₀
       (nullMeasurableSet_excision hγD S ε).compl)
 
-/-- **An injective curve meets a finite set at a null set of times**, for any measure giving
-singletons zero mass. It meets it at finitely many times — at most one per centre. This is the
-convenient sufficient condition for `tendsto_intervalIntegral_excisionIndicator`'s hypothesis. -/
-theorem measure_setOf_mem_eq_zero_of_injOn [MeasurableSpace α] {γ : α → E} {A : Set α}
-    (hγ : InjOn γ A) (S : Finset E) {μ : Measure α} [NullSingletonClass μ] :
-    μ {t ∈ A | γ t ∈ S} = 0 :=
-  (Set.Finite.of_injOn (fun _ ht => by exact ht.2) (hγ.mono fun _ ht => by exact ht.1)
-    S.finite_toSet).measure_zero μ
+/-- **A point off the centres survives every small enough excision.** If `z` is none of the
+finitely many centres `S`, then for all small enough `ε > 0` it is farther than `ε` from each
+of them. -/
+theorem eventually_not_exists_norm_sub_le [NormedAddGroup E] {z : E} {S : Finset E}
+    (hz : z ∉ S) : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ¬ ∃ s ∈ S, ‖z - s‖ ≤ ε := by
+  -- Each of the finitely many distances `‖z - s‖` is positive.
+  have hlt : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ s ∈ S, ε < ‖z - s‖ :=
+    (eventually_all_finset S).mpr fun s hs => (eventually_lt_nhds <| norm_sub_pos_iff.mpr
+      fun h : z = s => hz (h ▸ hs)).filter_mono nhdsWithin_le_nhds
+  filter_upwards [hlt] with ε hε ⟨s, hs, hle⟩
+  exact (hε s hs).not_ge hle
 
 /-- **The excised parameter set shrinks to nothing.** Deleting from `[a, b]` the times at which
 the curve comes within `ε` of one of finitely many centres costs no length as `ε → 0⁺`: what
 survives tends to the whole length `b - a`.
 
 The curve must be measurable, and must spend only a null set of times exactly at a centre —
-`measure_setOf_mem_eq_zero_of_injOn` supplies the latter from injectivity. -/
+`Set.InjOn.measure_setOf_mem_eq_zero` supplies the latter from injectivity. -/
 theorem tendsto_intervalIntegral_excisionIndicator [NormedAddCommGroup E]
     [MeasurableSpace E] [OpensMeasurableSpace E] {γ : ℝ → E} (hγm : Measurable γ) {a b : ℝ}
     (hab : a ≤ b) (S : Finset E) (hnull : volume {t ∈ Icc a b | γ t ∈ S} = 0) :
@@ -146,10 +149,8 @@ theorem tendsto_intervalIntegral_excisionIndicator [NormedAddCommGroup E]
     refine ht ?_
     simp only [Set.mem_ofPred_eq]
     by_cases hmem : t ∈ Ioc a b
-    · have hev : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ s ∈ S, ε < ‖γ t - s‖ :=
-        (eventually_all_finset S).mpr fun s hs => (eventually_lt_nhds <| norm_sub_pos_iff.mpr
-          fun h : γ t = s => hnot ⟨⟨hmem.1.le, hmem.2⟩, h ▸ hs⟩).filter_mono nhdsWithin_le_nhds
-      filter_upwards [hev] with ε hε
+    · filter_upwards [eventually_not_exists_norm_sub_le
+        fun h : γ t ∈ S => hnot ⟨⟨hmem.1.le, hmem.2⟩, h⟩] with ε hε
       simpa [hAs_def, hmem] using hε
     · exact Eventually.of_forall fun ε => by simp [hAs_def, hmem]
   simpa only [Function.comp_def, ← measureReal_def, Real.volume_real_Ioc_of_le hab] using
