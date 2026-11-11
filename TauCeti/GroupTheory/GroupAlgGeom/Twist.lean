@@ -15,12 +15,13 @@ Let `A` be an element of the free `G`-group `G[X] = G ∗ F(X)` and attach to ev
 pair of integers `(l, r)`. The substitution `v ↦ A ^ l * v * A ^ r` is a `G`-endomorphism
 `twistHom A e` of `G[X]`; evaluating its image of a word at a point `u` is evaluating the word
 at the point `v ↦ A(u) ^ l * u v * A(u) ^ r` (`eval_twistHom`). When the substitution for `A`
-fixes `A`, so do the substitutions for the natural powers of `A` (`twistHom_pow_self`). When the
-substitutions for `A` and for `A⁻¹` fix `A`, so do the substitutions for all the powers `A ^ k`
-(`twistHom_zpow_self`), and these form a one-parameter group of `G`-automorphisms of `G[X]`: the
-automorphism `twist A e h₁ h₂` for `A` itself has `k`-th power the substitution for `A ^ k`
-(`twist_pow_apply`, `twist_zpow_apply`), and its inverse is the substitution for `A⁻¹`
-(`twist_symm_apply`).
+fixes `A`, so do the substitutions for the natural powers of `A` (`twistHom_pow_self`), and they
+fix every element that the substitution for `A` fixes
+(`twistHom_pow_apply_eq_self_of_apply_eq_self`). When the substitutions for `A` and for `A⁻¹`
+fix `A`, so do the substitutions for all the powers `A ^ k` (`twistHom_zpow_self`), and these
+form a one-parameter group of `G`-automorphisms of `G[X]`: the automorphism `twist A e h₁ h₂` for
+`A` itself has `k`-th power the substitution for `A ^ k` (`twist_pow_apply`, `twist_zpow_apply`),
+and its inverse is the substitution for `A⁻¹` (`twist_symm_apply`).
 
 The Nielsen-type automorphisms used to parametrise the solutions of quadratic equations are of
 this form: a block of variables is multiplied on the left or on the right, or conjugated, by a
@@ -82,13 +83,20 @@ theorem twistHom_comp (hC : twistHom B e C = C) (hBC : Commute B C) :
   rw [(hBC.zpow_zpow _ _).eq]
   simp only [mul_assoc]
 
-/-- If the substitution for `A` fixes `A`, then so does the substitution for every natural power
-of `A`. -/
-theorem twistHom_pow_self (h₁ : twistHom A e A = A) (n : ℕ) : twistHom (A ^ n) e A = A := by
+/-- If the substitution for `A` fixes `A` and `w`, then the substitution for every natural power
+of `A` fixes `w`. -/
+theorem twistHom_pow_apply_eq_self_of_apply_eq_self (h₁ : twistHom A e A = A)
+    {w : GX G X} (hw : twistHom A e w = w) (n : ℕ) : twistHom (A ^ n) e w = w := by
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ, ← twistHom_comp ih ((Commute.refl A).pow_left n), MonoidHom.comp_apply, h₁, ih]
+    rw [pow_succ', ← twistHom_comp (by rw [map_pow, h₁]) (Commute.self_pow A n),
+      MonoidHom.comp_apply, ih, hw]
+
+/-- If the substitution for `A` fixes `A`, then so does the substitution for every natural power
+of `A`. -/
+theorem twistHom_pow_self (h₁ : twistHom A e A = A) (n : ℕ) : twistHom (A ^ n) e A = A :=
+  twistHom_pow_apply_eq_self_of_apply_eq_self h₁ h₁ n
 
 /-- If the substitution for `A` fixes `A`, then the substitutions for two natural powers of `A`
 compose to the substitution for the product. -/
