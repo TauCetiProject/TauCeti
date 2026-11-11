@@ -24,12 +24,18 @@ This file attaches the generators one stage at a time and passes to the union. T
 on all of `G`, whose rows strictly lower the stage, together with images `c x ≡ c₀ x` modulo
 `N (st x)`, such that `c : K_m → M` commutes with the differentials and:
 
-* for every `n`, its restriction to the generators of stage `< n` is a quasi-isomorphism onto
-  `N n`, in the elementwise form used by
-  `TauCeti.RowFiniteTwistingCocycle.exists_attach_of_forall_exists`: every relative cycle with
-  target in `N n` is a relative boundary with target in `N n`;
-* it is a quasi-isomorphism onto the union `⨆ n, N n`, and so onto `M` when the filtration is
-  exhaustive.
+* for every `n`, every relative cycle of its restriction to the generators of stage `< n` with
+  target in `N n` is a relative boundary with target in `N n`, the elementwise form used by
+  `TauCeti.RowFiniteTwistingCocycle.exists_attach_of_forall_exists`;
+* every relative cycle of `c` with target in the union `⨆ n, N n` is a relative boundary with
+  target in the union.
+
+These elementwise statements do not require the `N n` to be stable under the differential. When
+they are, so that the `N n` and their union are subcomplexes, a relative cycle being a relative
+boundary is the acyclicity of the mapping cone, and the two statements say that the restriction of
+`c` is a quasi-isomorphism onto each `N n`, and that `c` is one onto `⨆ n, N n`, hence onto `M`
+when the filtration is exhaustive. The same reading applies to the hypotheses: `N 0` acyclic means
+that every cycle of `N 0` bounds in `N 0`, and the quasi-isomorphisms of the stages are elementwise.
 
 Since the rows strictly lower the stage, `m` is semi-free
 (`TauCeti.RowFiniteTwistingCocycle.wellFounded_mem_support_of_lt`), so the lifting properties of
@@ -74,9 +80,9 @@ variable (st : G → ℕ) (N : ℕ → Submodule A M) (c₀ : G → M)
 
 /-- The first `n` stages of a semi-free model along the filtration `N`: rows `m x` and images
 `c x` of the generators of stage `< n`, with rows lowering the stage, the degrees and twisting
-equation of a cocycle, images congruent to `c₀` and commuting with the differentials, and the
-restriction to these generators a quasi-isomorphism onto `N n`. The values on generators of stage
-`≥ n` are irrelevant. -/
+equation of a cocycle, images congruent to `c₀` and commuting with the differentials, and every
+relative cycle of the restriction to these generators with target in `N n` a relative boundary
+with target in `N n`. The values on generators of stage `≥ n` are irrelevant. -/
 private structure IsStage (n : ℕ) (m : G → G →₀ A) (c : G → M) : Prop where
   lt : ∀ x, st x < n → ∀ y ∈ (m x).support, st y < st x
   mem_graded : ∀ x, st x < n → ∀ y, m x y ∈ 𝒜 (ind y - ind x + 1)
@@ -142,6 +148,45 @@ private theorem isStage_zero (hN₀ : ∀ w ∈ N 0, dM w = 0 → ∃ w' ∈ N 0
   obtain ⟨w', hw', rfl⟩ := hN₀ w hw (by rw [← hfw, map_zero])
   exact ⟨0, w', by simp, hw', by simp, by simp⟩
 
+omit [IsScalarTower R A M] [SetLike.GradedSMul 𝒜 ℳ] [DirectSum.Decomposition ℳ] in
+/-- Relabelling generators along an injection `φ`, compatibly with the differentials and the
+images, transports the property that relative cycles with target in `N'` are relative boundaries
+with target in `N'`, from the source of `φ` to the vectors supported on its range. -/
+private theorem forall_exists_iff_of_mapDomain {P : Type*} (φ : P → G)
+    (hφ : Function.Injective φ) {mP : P → P →₀ A} {m : G → G →₀ A}
+    (hD : ∀ f, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (mapDomain φ f) =
+      mapDomain φ (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP f))
+    {cP : P → M} {c : G → M} (hc : ∀ x, c (φ x) = cP x) (N' : Submodule A M) :
+    (∀ (u : P →₀ A) (w : M), rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP u = 0 →
+      linearCombination A cP u = dM w → w ∈ N' → ∃ (u' : P →₀ A) (w' : M), w' ∈ N' ∧
+        rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP u' = u ∧
+          linearCombination A cP u' + dM w' = w) ↔
+    ∀ (f : G →₀ A) (w : M), ↑f.support ⊆ Set.range φ →
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f = 0 → linearCombination A c f = dM w →
+        w ∈ N' → ∃ (f' : G →₀ A) (w' : M), ↑f'.support ⊆ Set.range φ ∧ w' ∈ N' ∧
+          rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f' = f ∧
+            linearCombination A c f' + dM w' = w := by
+  classical
+  have hrange {f : G →₀ A} (hf : ↑f.support ⊆ Set.range φ) : ∃ u, mapDomain φ u = f :=
+    ⟨comapDomain φ f hφ.injOn, mapDomain_comapDomain _ hφ _ hf⟩
+  have hsupp (u : P →₀ A) : ↑(mapDomain φ u).support ⊆ Set.range φ := fun y hy ↦ by
+    obtain ⟨x, -, rfl⟩ := Finset.mem_image.1 (mapDomain_support hy)
+    exact ⟨x, rfl⟩
+  have hL (u : P →₀ A) : linearCombination A c (mapDomain φ u) = linearCombination A cP u := by
+    rw [linearCombination_mapDomain]
+    exact congrArg (linearCombination A · u) (funext hc)
+  have hD₀ (u : P →₀ A) : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (mapDomain φ u) = 0 ↔
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP u = 0 := by
+    rw [hD, ← mapDomain_zero (f := φ), (mapDomain_injective hφ).eq_iff]
+  refine ⟨fun H f w hf hDf hfw hw ↦ ?_, fun H u w hu huw hw ↦ ?_⟩
+  · obtain ⟨u, rfl⟩ := hrange hf
+    obtain ⟨u', w', hw', hDu', huw'⟩ := H u w ((hD₀ u).1 hDf) (by rwa [← hL]) hw
+    exact ⟨mapDomain φ u', w', hsupp u', hw', by rw [hD, hDu'], by rwa [hL]⟩
+  · obtain ⟨f', w', hf', hw', hDf', hfw'⟩ :=
+      H (mapDomain φ u) w (hsupp u) ((hD₀ u).2 hu) (by rwa [hL]) hw
+    obtain ⟨u', rfl⟩ := hrange hf'
+    exact ⟨u', w', hw', mapDomain_injective hφ (by rw [← hD, hDf']), by rwa [← hL]⟩
+
 /-- **One more stage of cells.** The first `n` stages of a semi-free model extend to the first
 `n + 1`, without changing the rows and images of the generators of stage `< n`, by attaching the
 generators of stage `n` (`RowFiniteTwistingCocycle.exists_attach_of_forall_exists`). -/
@@ -164,46 +209,16 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
   -- The generators of stage `< n` and the restriction of the cocycle to them.
   let P := {x : G // st x < n}
   let Q := {x : G // st x = n}
-  have hsupp (x : P) : ↑(m x.1).support ⊆ Set.range (Subtype.val : P → G) :=
-    fun y hy ↦ ⟨⟨y, (hs.lt x.1 x.2 y hy).trans x.2⟩, rfl⟩
-  have hmP (x : P) : mapDomain Subtype.val
-      (comapDomain Subtype.val (m x.1) Subtype.val_injective.injOn) = m x.1 :=
-    mapDomain_comapDomain _ Subtype.val_injective _ (hsupp x)
-  have hD (f : P →₀ A) : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (mapDomain Subtype.val f)
-      = mapDomain Subtype.val (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d)
-        (fun x : P ↦ comapDomain Subtype.val (m x.1) Subtype.val_injective.injOn) f) :=
-    rowFiniteTwistedDifferential_mapDomain Subtype.val _ (fun x ↦ (hmP x).symm) f
   let mP : RowFiniteTwistingCocycle 𝒜 d P (fun x ↦ ind x.1) :=
-    { m := fun x ↦ comapDomain Subtype.val (m x.1) Subtype.val_injective.injOn
-      mem_graded := fun x y ↦ hs.mem_graded x.1 x.2 y.1
-      twisting := fun x ↦ by
-        refine (mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero
-          (ind := fun x : P ↦ ind x.1) _ fun y ↦ hs.mem_graded x.1 x.2 y.1).2 ?_
-        apply mapDomain_injective Subtype.val_injective
-        rw [← hD, hmP, mapDomain_zero]
-        exact hs.twisting x.1 x.2 }
-  have hmapsupp (f : P →₀ A) : ↑(mapDomain Subtype.val f).support ⊆ {x | st x < n} := by
-    intro y hy
-    obtain ⟨x, -, rfl⟩ := Finset.mem_image.1 (mapDomain_support hy)
-    exact x.2
-  -- The first `n` stages make the restriction a quasi-isomorphism onto `N n`.
-  have hK : ∀ (u : P →₀ A) (w : M), rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP.m u = 0 →
-      linearCombination A (fun x : P ↦ c x.1) u = dM w → w ∈ N n →
-        ∃ (u' : P →₀ A) (w' : M), w' ∈ N n ∧
-          rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP.m u' = u ∧
-            linearCombination A (fun x : P ↦ c x.1) u' + dM w' = w := by
-    intro u w hu huw hw
-    obtain ⟨f', w', hf', hw', hDf', hfw'⟩ := hs.exists_eq (mapDomain Subtype.val u) w
-      (hmapsupp u) (by rw [hD]; exact (congrArg _ hu).trans (mapDomain_zero))
-      (by rwa [linearCombination_mapDomain]) hw
-    have hf'r : ↑f'.support ⊆ Set.range (Subtype.val : P → G) := fun y hy ↦ ⟨⟨y, hf' hy⟩, rfl⟩
-    refine ⟨comapDomain Subtype.val f' Subtype.val_injective.injOn, w', hw', ?_, ?_⟩
-    · apply mapDomain_injective Subtype.val_injective
-      rw [← hD, mapDomain_comapDomain _ Subtype.val_injective _ hf'r, hDf']
-    · have := linearCombination_mapDomain A (v' := c) (Subtype.val : P → G)
-        (comapDomain Subtype.val f' Subtype.val_injective.injOn)
-      rw [mapDomain_comapDomain _ Subtype.val_injective _ hf'r, Function.comp_def] at this
-      rw [← this, hfw']
+    .comap m Subtype.val Subtype.val_injective
+      (fun x y hy ↦ ⟨⟨y, (hs.lt x.1 x.2 y hy).trans x.2⟩, rfl⟩)
+      (fun x y ↦ hs.mem_graded x.1 x.2 y.1) (fun x ↦ hs.twisting x.1 x.2)
+  have hmP (x : P) : mapDomain Subtype.val (mP.m x) = m x.1 :=
+    RowFiniteTwistingCocycle.mapDomain_comap_m x
+  -- The relative cycles of the restriction with target in `N n` are relative boundaries.
+  have hK := (forall_exists_iff_of_mapDomain Subtype.val Subtype.val_injective (mP := mP.m)
+    RowFiniteTwistingCocycle.rowFiniteTwistedDifferential_mapDomain_comap
+    (fun x : P ↦ rfl) (N n)).2 (by rw [Subtype.range_coe_subtype]; exact hs.exists_eq)
   -- Attach the generators of stage `n`.
   have hg (x : P) : linearCombination A (fun x : P ↦ c x.1) (mP.m x) = dM (c x.1) := by
     have := hs.hom x.1 x.2
@@ -248,12 +263,11 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
       exact (hm'P x).trans (hmP x).symm
     · rw [RowFiniteTwistingCocycle.attach_m_inr, ← mapDomain_comp]
       exact hm'Q x
-  have hcφ : c' ∘ φ = Sum.elim (fun x : P ↦ c x.1) cQ := by
-    funext z
+  have hcφ (z : P ⊕ Q) : c' (φ z) = Sum.elim (fun x : P ↦ c x.1) cQ z := by
     rcases z with x | x
     exacts [hc'P x, hc'Q x]
   refine ⟨m', c', ⟨fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_,
-    fun x hx ↦ ?_, fun x hx ↦ ?_, fun f w hf hDf hfw hw ↦ ?_⟩,
+    fun x hx ↦ ?_, fun x hx ↦ ?_, ?_⟩,
     fun x hx ↦ hm'P ⟨x, hx⟩, fun x hx ↦ hc'P ⟨x, hx⟩⟩
   -- The rows of the new generators involve only old generators.
   · obtain ⟨y, rfl⟩ | ⟨y, rfl⟩ := hcases x hx
@@ -303,21 +317,15 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
         show c' ∘ Subtype.val = fun x : P ↦ c x.1 from funext hc'P]
       exact hak y
   -- A relative cycle on the generators of stage `≤ n` is one of the attached module.
-  · obtain ⟨v, rfl⟩ : ∃ v, mapDomain φ v = f := by
-      refine ⟨comapDomain φ f hφ.injOn, mapDomain_comapDomain _ hφ _ fun y hy ↦ ?_⟩
-      obtain ⟨z, rfl⟩ | ⟨z, rfl⟩ := hcases y (hf hy)
-      exacts [⟨Sum.inl z, rfl⟩, ⟨Sum.inr z, rfl⟩]
-    have hDv : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (mP.attach a ha hca).m v = 0 :=
-      mapDomain_injective hφ (by rw [← hDφ, hDf, mapDomain_zero])
-    rw [linearCombination_mapDomain, hcφ] at hfw
-    obtain ⟨f', w', hw', hDf', hfw'⟩ := hext v w hDv hfw hw
-    refine ⟨mapDomain φ f', w', fun y hy ↦ ?_, hw', by rw [hDφ, hDf'], ?_⟩
-    · obtain ⟨z, -, rfl⟩ := Finset.mem_image.1 (mapDomain_support hy)
-      rcases z with z | z
-      · exact Nat.lt_succ_of_lt z.2
-      · exact Nat.lt_succ_of_le z.2.le
-    · rw [linearCombination_mapDomain, hcφ]
-      exact hfw'
+  · have hrange : Set.range φ = {x | st x < n + 1} := by
+      ext y
+      refine ⟨?_, fun hy ↦ ?_⟩
+      · rintro ⟨z | z, rfl⟩
+        exacts [Nat.lt_succ_of_lt z.2, Nat.lt_succ_of_le z.2.le]
+      · obtain ⟨z, rfl⟩ | ⟨z, rfl⟩ := hcases y hy
+        exacts [⟨Sum.inl z, rfl⟩, ⟨Sum.inr z, rfl⟩]
+    rw [← hrange]
+    exact (forall_exists_iff_of_mapDomain φ hφ hDφ hcφ (N (n + 1))).1 hext
 
 /-- **A semi-free model along a filtration, built one stage of cells at a time.** Let `M` be a
 DG left module, filtered by homogeneous submodules `N 0 ≤ N 1 ≤ ⋯` with `N 0` acyclic, and let
@@ -331,10 +339,12 @@ images `c x ≡ c₀ x` modulo `N (st x)`, of degree `-ind x` and in `N (st x + 
 `c : K_m → M` commutes with the differentials and:
 
 * for every `n`, every relative cycle of `c` on the generators of stage `< n` with target in
-  `N n` is a relative boundary there, with target in `N n`: the restriction of `c` is a
-  quasi-isomorphism onto `N n`;
+  `N n` is a relative boundary there, with target in `N n`;
 * every relative cycle of `c` with target in `⨆ n, N n` is a relative boundary with target in
-  `⨆ n, N n`: `c` is a quasi-isomorphism onto the union. -/
+  `⨆ n, N n`.
+
+No stability of the `N n` under `dM` is needed. When the `N n` are subcomplexes, these say that
+the restriction of `c` is a quasi-isomorphism onto `N n` and that `c` is one onto the union. -/
 theorem exists_rowFiniteTwistingCocycle_of_forall_exists (hM : IsDGLeftModule h ℳ dM)
     (st : G → ℕ) {N : ℕ → Submodule A M} (hN : Monotone N) (hNh : ∀ n, (N n).IsHomogeneous ℳ)
     (hN₀ : ∀ w ∈ N 0, dM w = 0 → ∃ w' ∈ N 0, dM w' = w)

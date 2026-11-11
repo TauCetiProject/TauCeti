@@ -49,6 +49,9 @@ is a cycle.
   commutes with the differentials.
 * `rowFiniteTwistedDifferential_congr`: the differential of a vector depends only on the rows of
   the generators in its support.
+* `RowFiniteTwistingCocycle.comap`: the restriction of rows to an injectively labelled set of
+  generators closed under taking rows, with `rowFiniteTwistedDifferential_mapDomain_comap`
+  relating the two differentials.
 * `mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero`: the Maurer–Cartan equation of a
   row is the vanishing of its twisted differential.
 * The zero cocycle, whose differential is the coefficient differential alone
@@ -441,6 +444,50 @@ theorem mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero (m : P → P �
     rw [show ind y - k + 1 = -(k - ind y) + 1 by ring, Int.negOnePow_succ, Int.negOnePow_neg,
       Units.neg_smul]
   rw [hD, sub_eq_zero]
+
+namespace RowFiniteTwistingCocycle
+
+variable {P' : Type uP'} {ind' : P' → ℤ}
+
+/-- **Restricting rows to a row-closed set of generators.** Let an injection `e : P → P'` pick
+out generators whose rows `m (e x)` only involve generators in the range of `e`, are homogeneous,
+and are cycles of the differential of `m`. Then the rows read back on `P` form a row-finite
+twisting cocycle. The rows of the other generators of `P'` are irrelevant. -/
+noncomputable def comap (m : P' → P' →₀ A) (e : P → P') (he : Function.Injective e)
+    (hsupp : ∀ x, ↑(m (e x)).support ⊆ Set.range e)
+    (hgr : ∀ x y, m (e x) (e y) ∈ 𝒜 (ind' (e y) - ind' (e x) + 1))
+    (htw : ∀ x, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (m (e x)) = 0) :
+    RowFiniteTwistingCocycle 𝒜 d P fun x ↦ ind' (e x) where
+  m x := Finsupp.comapDomain e (m (e x)) he.injOn
+  mem_graded x y := hgr x y
+  twisting x := by
+    refine (mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero
+      (ind := fun x ↦ ind' (e x)) _ fun y ↦ hgr x y).2 ?_
+    apply Finsupp.mapDomain_injective he
+    rw [← rowFiniteTwistedDifferential_mapDomain e _ (m' := m)
+        (fun x ↦ (Finsupp.mapDomain_comapDomain _ he _ (hsupp x)).symm),
+      Finsupp.mapDomain_comapDomain _ he _ (hsupp x), Finsupp.mapDomain_zero]
+    exact htw x
+
+variable {m : P' → P' →₀ A} {e : P → P'} {he : Function.Injective e}
+  {hsupp : ∀ x, ↑(m (e x)).support ⊆ Set.range e}
+  {hgr : ∀ x y, m (e x) (e y) ∈ 𝒜 (ind' (e y) - ind' (e x) + 1)}
+  {htw : ∀ x, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (m (e x)) = 0}
+
+/-- Relabelling a restricted row along `e` recovers the original row. -/
+theorem mapDomain_comap_m (x : P) :
+    Finsupp.mapDomain e ((comap m e he hsupp hgr htw).m x) = m (e x) :=
+  Finsupp.mapDomain_comapDomain _ he _ (hsupp x)
+
+/-- Relabelling along `e` intertwines the differential of the restricted cocycle with that of
+the original rows. -/
+theorem rowFiniteTwistedDifferential_mapDomain_comap (f : P →₀ A) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.mapDomain e f) =
+      Finsupp.mapDomain e
+        (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (comap m e he hsupp hgr htw).m f) :=
+  rowFiniteTwistedDifferential_mapDomain e _ (fun x ↦ mapDomain_comap_m x |>.symm) f
+
+end RowFiniteTwistingCocycle
 
 section Maps
 
