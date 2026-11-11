@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
@@ -64,47 +65,26 @@ theorem mem_realSobolevFunctions_add_two_of_neg_laplacian_add_smul {c s : ℝ} (
   have hgreen := ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian (μ := volume)
     (hf.contDiffOn (s := ((⊤ : Opens E) : Set E))) ψ
   change ∫ x, Δ (φ : E → ℝ) x * f x = ∫ x, φ x * Δ f x at hgreen
-  have hΔφ : Continuous (Δ (φ : E → ℝ)) :=
-    ((φ.smooth ⊤).of_le (by simp)).continuous_laplacian
-  have hi₁ : Integrable (fun x ↦ Δ (φ : E → ℝ) x * f x) volume :=
-    (hΔφ.mul hf.continuous).integrable_of_hasCompactSupport hφ.laplacian.mul_right
   have hi₂ : Integrable (fun x ↦ φ x * f x) volume :=
     (φ.continuous.mul hf.continuous).integrable_of_hasCompactSupport hφ.mul_right
   have hi₃ : Integrable (fun x ↦ φ x * Δ f x) volume :=
     (φ.continuous.mul hf.continuous_laplacian).integrable_of_hasCompactSupport hφ.mul_right
-  have hΔ : ∀ x, (Δ (φ.postcompCLM Complex.ofRealCLM)) x = (Δ (φ : E → ℝ) x : ℂ) := by
-    intro x
-    rw [TauCeti.laplacian_postcompCLM, SchwartzMap.postcompCLM_apply, SchwartzMap.laplacian_apply]
-    rfl
-  simp only [add_apply, neg_apply,
-    smul_apply, laplacian_apply_apply, Lp.toTemperedDistribution_apply, hΔ,
-    SchwartzMap.postcompCLM_apply, Complex.ofRealCLM_apply]
-  have hfu := Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) (hL.toLp f)
-  have e₁ : ∫ x, (Δ (φ : E → ℝ) x : ℂ) • Complex.ofRealCLM.compLp (hL.toLp f) x =
-      ((∫ x, Δ (φ : E → ℝ) x * f x : ℝ) : ℂ) := by
-    rw [← integral_complex_ofReal]
-    refine integral_congr_ae ?_
-    filter_upwards [hfu, hL.coeFn_toLp] with x h₁ h₂
-    rw [h₁, Complex.ofRealCLM_apply, h₂, smul_eq_mul, Complex.ofReal_mul]
-  have e₂ : ∫ x, (φ x : ℂ) • Complex.ofRealCLM.compLp (hL.toLp f) x =
-      ((∫ x, φ x * f x : ℝ) : ℂ) := by
-    rw [← integral_complex_ofReal]
-    refine integral_congr_ae ?_
-    filter_upwards [hfu, hL.coeFn_toLp] with x h₁ h₂
-    rw [h₁, Complex.ofRealCLM_apply, h₂, smul_eq_mul, Complex.ofReal_mul]
-  have e₃ : ∫ x, (φ x : ℂ) • Complex.ofRealCLM.compLp w x =
-      ((∫ x, φ x * (-Δ f x + c * f x) : ℝ) : ℂ) := by
-    rw [← integral_complex_ofReal]
-    refine integral_congr_ae ?_
-    filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) w, hwf] with x h₁ h₂
-    rw [h₁, Complex.ofRealCLM_apply, h₂, smul_eq_mul, Complex.ofReal_mul]
+  -- Pairing a real test function with the distribution of a real `L²` representative.
+  have hpair {g : E → ℝ} {u : Lp ℝ 2 volume} (hu : u =ᵐ[volume] g) (χ : 𝓢(E, ℝ)) :
+      ((Complex.ofRealCLM.compLp u : Lp ℂ 2 volume) : 𝓢'(E, ℂ))
+          (χ.postcompCLM Complex.ofRealCLM) = ((∫ x, χ x * g x : ℝ) : ℂ) := by
+    rw [Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
+      integral_congr_ae (hu.mono fun x hx ↦ by rw [hx])]
+  rw [add_apply, neg_apply, smul_apply, laplacian_apply_apply, TauCeti.laplacian_postcompCLM,
+    hpair hL.coeFn_toLp, hpair hL.coeFn_toLp, hpair hwf]
+  simp only [SchwartzMap.laplacian_apply]
   have e₄ : ∫ x, φ x * (-Δ f x + c * f x) = -(∫ x, φ x * Δ f x) + c * ∫ x, φ x * f x := by
     rw [← integral_neg, ← integral_const_mul,
       ← integral_add (f := fun x ↦ -(φ x * Δ f x)) hi₃.neg (hi₂.const_mul c)]
     congr 1
     ext x
     ring
-  rw [e₁, e₂, e₃, e₄, hgreen, Complex.real_smul]
+  rw [e₄, hgreen, Complex.real_smul]
   push_cast
   ring
 
