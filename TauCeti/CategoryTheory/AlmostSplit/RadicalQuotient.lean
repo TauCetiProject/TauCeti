@@ -18,7 +18,7 @@ For an almost-split sequence `0 → A → B → C → 0`, composition with `B �
 `Hom(B, X) / rad(B, X)` with `Irr(A, X)`. These identifications compute the dimensions of
 irreducible morphism spaces from the middle term of an almost-split sequence.
 
-The results require local endomorphism rings at the two ends, as in a Krull–Schmidt category.
+The endomorphism rings at the two ends are local as a consequence of almost-splitness.
 The tested object `X` need not be indecomposable. No finiteness or field assumption is needed
 for the linear equivalences.
 
