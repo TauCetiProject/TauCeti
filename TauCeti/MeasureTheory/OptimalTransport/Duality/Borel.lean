@@ -10,14 +10,16 @@ public import TauCeti.MeasureTheory.OptimalTransport.Duality.LowerSemicontinuous
 import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.L2Space
-import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
-import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Minimal
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.MeasureTheory.Constructions.Polish.Capacitability
+import TauCeti.MeasureTheory.Function.Lp.Basic
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Lebesgue.Add
+import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 
 /-!
@@ -145,29 +147,15 @@ private lemma primalMaxValue_le_dualUpperValue {B : ℝ≥0} (f : X × Y → ℝ
     _ = (∫⁻ x, u x ∂μ) + ∫⁻ y, v y ∂ν := by
       rw [hπ.lintegral_comp_fst hu.aemeasurable, hπ.lintegral_comp_snd hv.aemeasurable]
 
-private lemma le_mul_dualUpperValue_add [IsFiniteMeasure μ] {B : ℝ≥0} {f : X × Y → ℝ≥0∞}
-    (hf_le : ∀ z, f z ≤ B) {a c d : ℝ≥0∞} (hc0 : c ≠ 0) (hctop : c ≠ ∞)
+private lemma le_mul_dualUpperValue_add {B : ℝ≥0} {f : X × Y → ℝ≥0∞}
+    {a c d : ℝ≥0∞} (hc0 : c ≠ 0) (hctop : c ≠ ∞)
     (h : ∀ (u : X → ℝ≥0∞), Measurable u → (∀ x, u x ≤ B) → ∀ (v : Y → ℝ≥0∞), Measurable v →
       (∀ y, v y ≤ B) → (∀ x y, f (x, y) ≤ u x + v y) →
       a ≤ c * ((∫⁻ x, u x ∂μ) + ∫⁻ y, v y ∂ν) + d) :
     a ≤ c * dualUpperValue B μ ν f + d := by
-  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
-  have hdfin : dualUpperValue B μ ν f ≠ ∞ :=
-    ne_top_of_le_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top (measure_ne_top μ univ))
-      (dualUpperValue_le_mul_univ hf_le)
-  have hδ0 : c⁻¹ * (ε : ℝ≥0∞) ≠ 0 :=
-    mul_ne_zero (ENNReal.inv_ne_zero.2 hctop) (ENNReal.coe_pos.2 hε).ne'
-  have hlt : dualUpperValue B μ ν f < dualUpperValue B μ ν f + c⁻¹ * ε :=
-    ENNReal.lt_add_right hdfin hδ0
-  conv_lhs at hlt => rw [dualUpperValue]
-  simp only [iInf_lt_iff] at hlt
-  obtain ⟨u, hum, huB, v, hvm, hvB, huv, hint⟩ := hlt
-  calc
-    a ≤ c * ((∫⁻ x, u x ∂μ) + ∫⁻ y, v y ∂ν) + d := h u hum huB v hvm hvB huv
-    _ ≤ c * (dualUpperValue B μ ν f + c⁻¹ * ε) + d :=
-      add_le_add (mul_le_mul_of_nonneg_left hint.le zero_le) le_rfl
-    _ = (c * dualUpperValue B μ ν f + d) + ε := by
-      rw [mul_add, ← mul_assoc, ENNReal.mul_inv_cancel hc0 hctop, one_mul]; ac_rfl
+  rw [dualUpperValue]
+  simp_rw [ENNReal.mul_iInf_of_ne hc0 hctop, ENNReal.iInf_add]
+  exact le_iInf₂ fun u hu ↦ le_iInf fun huB ↦ le_iInf₂ fun v hv ↦ le_iInf₂ (h u hu huB v hv)
 
 private lemma primalMaxValue_eq_sub_transportCost [IsProbabilityMeasure μ]
     {B : ℝ≥0} {f : X × Y → ℝ≥0∞} (hf_meas : Measurable f)
@@ -190,87 +178,6 @@ private lemma primalMaxValue_eq_sub_transportCost [IsProbabilityMeasure μ]
 
 /-! ### Upward continuity of the upper-envelope functional via `L²` tail convex hulls -/
 
-private lemma norm_toLp_le_of_bounds {Z : Type*} [MeasurableSpace Z] {ρ : Measure Z}
-    [IsFiniteMeasure ρ] {B : ℝ≥0} {w : Z → ℝ}
-    (hw_m : Measurable w) (hw_b : ∀ z, 0 ≤ w z ∧ w z ≤ B) (hw_lp : MemLp w 2 ρ) :
-    ‖hw_lp.toLp w‖ ≤ ((B : ℝ≥0∞) * ρ univ ^ (2 : ℝ)⁻¹).toReal := by
-  rw [Lp.norm_toLp]
-  refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg (by positivity) (measure_ne_top ρ univ))) ?_
-  have hb := eLpNorm_le_of_ae_nnnorm_bound (μ := ρ) (p := 2) hw_m.aestronglyMeasurable
-    (.of_forall fun z ↦ by rw [Real.nnnorm_of_nonneg (hw_b z).1]; exact_mod_cast (hw_b z).2)
-  simpa [ENNReal.smul_def, smul_eq_mul] using hb
-
-/-- A sequence of `[0, B]`-bounded measurable potential pairs defines a norm-bounded sequence in
-the Hilbert product `WithLp 2 (Lp ℝ 2 μ × Lp ℝ 2 ν)`. -/
-private lemma isBounded_range_toLp_pair [IsFiniteMeasure μ] [IsFiniteMeasure ν] {B : ℝ≥0}
-    {u : ℕ → X → ℝ} {v : ℕ → Y → ℝ}
-    (hu_meas : ∀ n, Measurable (u n)) (hu_bounds : ∀ n x, 0 ≤ u n x ∧ u n x ≤ B)
-    (hv_meas : ∀ n, Measurable (v n)) (hv_bounds : ∀ n y, 0 ≤ v n y ∧ v n y ≤ B)
-    (hu_lp : ∀ n, MemLp (u n) 2 μ) (hv_lp : ∀ n, MemLp (v n) 2 ν) :
-    Bornology.IsBounded
-      (range fun n ↦ WithLp.toLp 2 ((hu_lp n).toLp (u n), (hv_lp n).toLp (v n))) := by
-  let C₁ : ℝ := ((B : ℝ≥0∞) * μ univ ^ (2 : ℝ)⁻¹).toReal
-  let C₂ : ℝ := ((B : ℝ≥0∞) * ν univ ^ (2 : ℝ)⁻¹).toReal
-  refine isBounded_iff_forall_norm_le.2 ⟨C₁ + C₂, forall_mem_range.2 fun n ↦ ?_⟩
-  have hn₁ : ‖(hu_lp n).toLp (u n)‖ ≤ C₁ :=
-    norm_toLp_le_of_bounds (hu_meas n) (hu_bounds n) (hu_lp n)
-  have hn₂ : ‖(hv_lp n).toLp (v n)‖ ≤ C₂ :=
-    norm_toLp_le_of_bounds (hv_meas n) (hv_bounds n) (hv_lp n)
-  have h0 : 0 ≤ C₁ + C₂ := add_nonneg ((norm_nonneg _).trans hn₁) ((norm_nonneg _).trans hn₂)
-  have hsq :
-      ‖WithLp.toLp 2 ((hu_lp n).toLp (u n), (hv_lp n).toLp (v n))‖ ^ 2 ≤ (C₁ + C₂) ^ 2 := by
-    rw [WithLp.prod_norm_sq_eq_of_L2, WithLp.toLp_fst, WithLp.toLp_snd]
-    nlinarith [norm_nonneg ((hu_lp n).toLp (u n)), norm_nonneg ((hv_lp n).toLp (v n)),
-      pow_le_pow_left₀ (norm_nonneg _) hn₁ 2, pow_le_pow_left₀ (norm_nonneg _) hn₂ 2]
-  exact le_of_pow_le_pow_left₀ two_ne_zero h0 hsq
-
-/-- Single-marginal properties of a finite convex combination
-`z ↦ ∑ i ∈ t, c i * (W (k i) z).toReal` of `[0, B]`-valued measurable functions: measurability,
-`[0, B]` bounds, `ofReal` expansion, Lebesgue integral linearity, and `Lp` class identity. -/
-private lemma convexComb_marginal_props {Z : Type*} [MeasurableSpace Z] {ρ : Measure Z}
-    {B : ℝ≥0} {W : ℕ → Z → ℝ≥0∞}
-    (hW_meas : ∀ m, Measurable (W m)) (hW_le : ∀ m z, W m z ≤ B)
-    (hw_lp : ∀ m, MemLp (fun z ↦ (W m z).toReal) 2 ρ)
-    {ι : Type*} (t : Finset ι) (c : ι → ℝ) (k : ι → ℕ)
-    (hc0 : ∀ i ∈ t, 0 ≤ c i) (hc1 : ∑ i ∈ t, c i = 1) :
-    let w' : Z → ℝ := fun z ↦ ∑ i ∈ t, c i * (W (k i) z).toReal
-    Measurable w' ∧ (∀ z, 0 ≤ w' z ∧ w' z ≤ B) ∧
-      (∀ z, ENNReal.ofReal (w' z) = ∑ i ∈ t, ENNReal.ofReal (c i) * W (k i) z) ∧
-      (∫⁻ z, ENNReal.ofReal (w' z) ∂ρ =
-        ∑ i ∈ t, ENNReal.ofReal (c i) * ∫⁻ z, W (k i) z ∂ρ) ∧
-      ∀ (hw'_lp : MemLp w' 2 ρ),
-        hw'_lp.toLp w' = ∑ i ∈ t, c i • (hw_lp (k i)).toLp (fun z ↦ (W (k i) z).toReal) := by
-  intro w'
-  have hw'_meas : Measurable w' :=
-    Finset.measurable_sum _ fun i _ ↦ measurable_const.mul (hW_meas (k i)).ennreal_toReal
-  have hw'_bounds (z : Z) : 0 ≤ w' z ∧ w' z ≤ B :=
-    ⟨Finset.sum_nonneg fun i hi ↦ mul_nonneg (hc0 i hi) ENNReal.toReal_nonneg,
-      (Finset.sum_le_sum fun i hi ↦ mul_le_mul_of_nonneg_left
-        (ENNReal.toReal_le_coe_of_le_coe (hW_le (k i) z)) (hc0 i hi)).trans_eq
-        (by rw [← Finset.sum_mul, hc1, one_mul])⟩
-  have hofReal (z : Z) : ENNReal.ofReal (w' z) = ∑ i ∈ t, ENNReal.ofReal (c i) * W (k i) z := by
-    rw [ENNReal.ofReal_sum_of_nonneg fun i hi ↦ mul_nonneg (hc0 i hi) ENNReal.toReal_nonneg]
-    exact Finset.sum_congr rfl fun i hi ↦ by
-      rw [ENNReal.ofReal_mul (hc0 i hi),
-        ENNReal.ofReal_toReal (ne_top_of_le_ne_top ENNReal.coe_ne_top (hW_le (k i) z))]
-  have hint : ∫⁻ z, ENNReal.ofReal (w' z) ∂ρ =
-      ∑ i ∈ t, ENNReal.ofReal (c i) * ∫⁻ z, W (k i) z ∂ρ := by
-    simp_rw [hofReal]
-    rw [lintegral_finsetSum t (f := fun i z ↦ ENNReal.ofReal (c i) * W (k i) z)
-      fun i _ ↦ measurable_const.mul (hW_meas (k i))]
-    exact Finset.sum_congr rfl fun i _ ↦ lintegral_const_mul _ (hW_meas (k i))
-  refine ⟨hw'_meas, hw'_bounds, hofReal, hint, fun hw'_lp ↦ ?_⟩
-  rw [Lp.ext_iff]
-  refine hw'_lp.coeFn_toLp.trans (EventuallyEq.trans ?_ (Lp.coeFn_finsetSum _ _).symm)
-  have hae : ∀ i ∈ t,
-      (c i • (hw_lp (k i)).toLp (fun z ↦ (W (k i) z).toReal) : Lp ℝ 2 ρ) =ᵐ[ρ]
-        fun z ↦ c i * (W (k i) z).toReal := fun i _ ↦
-    (Lp.coeFn_smul _ _).trans ((hw_lp (k i)).coeFn_toLp.mono fun _ hx ↦ by simp [hx])
-  filter_upwards [(ae_ball_iff (Finset.countable_toSet t)).2 hae] with z hz
-  rw [Finset.sum_apply]
-  exact Finset.sum_congr rfl fun i hi ↦ (hz i hi).symm
-
 /-- Finite convex combinations of bounded measurable potential pairs produce concrete measurable
 potentials converging in `L²(μ)` and `L²(ν)` while preserving the pointwise envelope and marginal
 integral bounds. -/
@@ -291,21 +198,22 @@ private lemma exists_convex_comb_potentials_tendsto_L2 [IsFiniteMeasure μ] [IsF
       Tendsto (fun n ↦ (hv'_lp n).toLp (v' n)) atTop (𝓝 p₂) := by
   let u : ℕ → X → ℝ := fun n x ↦ (U n x).toReal
   let v : ℕ → Y → ℝ := fun n y ↦ (V n y).toReal
+  have hu_bdd (n : ℕ) : ∀ᵐ x ∂μ, ‖u n x‖ ≤ B := .of_forall fun x ↦ by
+    rw [Real.norm_of_nonneg ENNReal.toReal_nonneg]
+    exact ENNReal.toReal_le_coe_of_le_coe (hU_le n x)
+  have hv_bdd (n : ℕ) : ∀ᵐ y ∂ν, ‖v n y‖ ≤ B := .of_forall fun y ↦ by
+    rw [Real.norm_of_nonneg ENNReal.toReal_nonneg]
+    exact ENNReal.toReal_le_coe_of_le_coe (hV_le n y)
   have hu_lp (n : ℕ) : MemLp (u n) 2 μ :=
-    MemLp.of_bound (hU_meas n).ennreal_toReal.aestronglyMeasurable B <| .of_forall fun x ↦ by
-      rw [Real.norm_of_nonneg ENNReal.toReal_nonneg]
-      exact ENNReal.toReal_le_coe_of_le_coe (hU_le n x)
+    MemLp.of_bound (hU_meas n).ennreal_toReal.aestronglyMeasurable B (hu_bdd n)
   have hv_lp (n : ℕ) : MemLp (v n) 2 ν :=
-    MemLp.of_bound (hV_meas n).ennreal_toReal.aestronglyMeasurable B <| .of_forall fun y ↦ by
-      rw [Real.norm_of_nonneg ENNReal.toReal_nonneg]
-      exact ENNReal.toReal_le_coe_of_le_coe (hV_le n y)
+    MemLp.of_bound (hV_meas n).ennreal_toReal.aestronglyMeasurable B (hv_bdd n)
   let H := WithLp 2 (Lp ℝ 2 μ × Lp ℝ 2 ν)
   let F : ℕ → H := fun n ↦ WithLp.toLp 2 ((hu_lp n).toLp (u n), (hv_lp n).toLp (v n))
   obtain ⟨p_lim, W, hW_mem, hW_tendsto⟩ := exists_tendsto_mem_convexHull_image_Ici <|
-    isBounded_range_toLp_pair (fun n ↦ (hU_meas n).ennreal_toReal)
-      (fun n x ↦ ⟨ENNReal.toReal_nonneg, ENNReal.toReal_le_coe_of_le_coe (hU_le n x)⟩)
-      (fun n ↦ (hV_meas n).ennreal_toReal)
-      (fun n y ↦ ⟨ENNReal.toReal_nonneg, ENNReal.toReal_le_coe_of_le_coe (hV_le n y)⟩) hu_lp hv_lp
+    (isBounded_range_toLp (p := 2)).2
+      ⟨isBounded_range_toLp_of_ae_bound hu_lp hu_bdd,
+        isBounded_range_toLp_of_ae_bound hv_lp hv_bdd⟩
   have hW_unpack (n : ℕ) :
       ∃ (ι : Type) (t : Finset ι) (c : ι → ℝ) (k : ι → ℕ),
         (∀ i ∈ t, 0 ≤ c i) ∧ ∑ i ∈ t, c i = 1 ∧ (∀ i ∈ t, n ≤ k i) ∧
@@ -322,35 +230,55 @@ private lemma exists_convex_comb_potentials_tendsto_L2 [IsFiniteMeasure μ] [IsF
   choose ι t c k hc0 hc1 hnk hW_eq using hW_unpack
   let u' : ℕ → X → ℝ := fun n x ↦ ∑ i ∈ t n, c n i * u (k n i) x
   let v' : ℕ → Y → ℝ := fun n y ↦ ∑ i ∈ t n, c n i * v (k n i) y
-  have hu_props (n : ℕ) :=
-    convexComb_marginal_props hU_meas hU_le hu_lp (t n) (c n) (k n) (hc0 n) (hc1 n)
-  have hv_props (n : ℕ) :=
-    convexComb_marginal_props hV_meas hV_le hv_lp (t n) (c n) (k n) (hc0 n) (hc1 n)
+  have hu'_meas (n : ℕ) : Measurable (u' n) :=
+    Finset.measurable_sum _ fun i _ ↦ measurable_const.mul (hU_meas (k n i)).ennreal_toReal
+  have hv'_meas (n : ℕ) : Measurable (v' n) :=
+    Finset.measurable_sum _ fun i _ ↦ measurable_const.mul (hV_meas (k n i)).ennreal_toReal
+  have hu'_bounds (n : ℕ) (x : X) : 0 ≤ u' n x ∧ u' n x ≤ B :=
+    (convex_Icc (0 : ℝ) B).sum_mem (hc0 n) (hc1 n) fun i _ ↦
+      ⟨ENNReal.toReal_nonneg, ENNReal.toReal_le_coe_of_le_coe (hU_le (k n i) x)⟩
+  have hv'_bounds (n : ℕ) (y : Y) : 0 ≤ v' n y ∧ v' n y ≤ B :=
+    (convex_Icc (0 : ℝ) B).sum_mem (hc0 n) (hc1 n) fun i _ ↦
+      ⟨ENNReal.toReal_nonneg, ENNReal.toReal_le_coe_of_le_coe (hV_le (k n i) y)⟩
   have hu'_lp (n : ℕ) : MemLp (u' n) 2 μ :=
-    MemLp.of_bound (hu_props n).1.aestronglyMeasurable B <| .of_forall fun x ↦ by
-      rw [Real.norm_of_nonneg ((hu_props n).2.1 x).1]; exact ((hu_props n).2.1 x).2
+    MemLp.of_bound (hu'_meas n).aestronglyMeasurable B <| .of_forall fun x ↦ by
+      rw [Real.norm_of_nonneg (hu'_bounds n x).1]; exact (hu'_bounds n x).2
   have hv'_lp (n : ℕ) : MemLp (v' n) 2 ν :=
-    MemLp.of_bound (hv_props n).1.aestronglyMeasurable B <| .of_forall fun y ↦ by
-      rw [Real.norm_of_nonneg ((hv_props n).2.1 y).1]; exact ((hv_props n).2.1 y).2
+    MemLp.of_bound (hv'_meas n).aestronglyMeasurable B <| .of_forall fun y ↦ by
+      rw [Real.norm_of_nonneg (hv'_bounds n y).1]; exact (hv'_bounds n y).2
   have hsum_c (n : ℕ) : ∑ i ∈ t n, ENNReal.ofReal (c n i) = 1 := by
     rw [← ENNReal.ofReal_sum_of_nonneg (hc0 n), hc1 n, ENNReal.ofReal_one]
   let π₁ := WithLp.fstL 2 ℝ (Lp ℝ 2 μ) (Lp ℝ 2 ν)
   let π₂ := WithLp.sndL 2 ℝ (Lp ℝ 2 μ) (Lp ℝ 2 ν)
-  refine ⟨π₁ p_lim, π₂ p_lim, u', v', hu'_lp, hv'_lp, fun n ↦ (hu_props n).1,
-    fun n ↦ (hu_props n).2.1, fun n ↦ (hv_props n).1, fun n ↦ (hv_props n).2.1, ?_, ?_, ?_, ?_⟩
+  refine ⟨π₁ p_lim, π₂ p_lim, u', v', hu'_lp, hv'_lp, hu'_meas, hu'_bounds, hv'_meas, hv'_bounds,
+    ?_, ?_, ?_, ?_⟩
   · intro n x y
-    rw [(hu_props n).2.2.1 x, (hv_props n).2.2.1 y, ← Finset.sum_add_distrib]
     calc
       fs n (x, y) = ∑ i ∈ t n, ENNReal.ofReal (c n i) * fs n (x, y) := by
         rw [← Finset.sum_mul, hsum_c n, one_mul]
-      _ ≤ ∑ i ∈ t n, ENNReal.ofReal (c n i) * (U (k n i) x + V (k n i) y) :=
-        Finset.sum_le_sum fun i hi ↦ mul_le_mul_of_nonneg_left
-          ((hmono (hnk n i hi) (x, y)).trans (hUV (k n i) x y)) zero_le
-      _ = ∑ i ∈ t n, (ENNReal.ofReal (c n i) * U (k n i) x +
+      _ ≤ ∑ i ∈ t n, (ENNReal.ofReal (c n i) * U (k n i) x +
             ENNReal.ofReal (c n i) * V (k n i) y) :=
-        Finset.sum_congr rfl fun _ _ ↦ mul_add _ _ _
+        Finset.sum_le_sum fun i hi ↦ (mul_le_mul_of_nonneg_left
+          ((hmono (hnk n i hi) (x, y)).trans (hUV (k n i) x y)) zero_le).trans_eq (mul_add _ _ _)
+      _ = (∑ i ∈ t n, ENNReal.ofReal (c n i * u (k n i) x)) +
+            ∑ i ∈ t n, ENNReal.ofReal (c n i * v (k n i) y) := by
+        rw [Finset.sum_add_distrib]
+        congr 1 <;> refine Finset.sum_congr rfl fun i hi ↦ ?_
+        · rw [ENNReal.ofReal_mul (hc0 n i hi),
+            ENNReal.ofReal_toReal (ne_top_of_le_ne_top ENNReal.coe_ne_top (hU_le (k n i) x))]
+        · rw [ENNReal.ofReal_mul (hc0 n i hi),
+            ENNReal.ofReal_toReal (ne_top_of_le_ne_top ENNReal.coe_ne_top (hV_le (k n i) y))]
+      _ = ENNReal.ofReal (u' n x) + ENNReal.ofReal (v' n y) := by
+        rw [ENNReal.ofReal_sum_of_nonneg fun i hi ↦ mul_nonneg (hc0 n i hi) ENNReal.toReal_nonneg,
+          ENNReal.ofReal_sum_of_nonneg fun i hi ↦ mul_nonneg (hc0 n i hi) ENNReal.toReal_nonneg]
   · intro n
-    rw [(hu_props n).2.2.2.1, (hv_props n).2.2.2.1, ← Finset.sum_add_distrib]
+    rw [lintegral_ofReal_finsetSum_mul_toReal (hc0 n)
+        (fun i _ ↦ (hU_meas (k n i)).aemeasurable)
+        (fun i _ ↦ .of_forall fun x ↦ ne_top_of_le_ne_top ENNReal.coe_ne_top (hU_le (k n i) x)),
+      lintegral_ofReal_finsetSum_mul_toReal (hc0 n)
+        (fun i _ ↦ (hV_meas (k n i)).aemeasurable)
+        (fun i _ ↦ .of_forall fun y ↦ ne_top_of_le_ne_top ENNReal.coe_ne_top (hV_le (k n i) y)),
+      ← Finset.sum_add_distrib]
     calc
       ∑ i ∈ t n, (ENNReal.ofReal (c n i) * (∫⁻ x, U (k n i) x ∂μ) +
           ENNReal.ofReal (c n i) * ∫⁻ y, V (k n i) y ∂ν)
@@ -361,35 +289,17 @@ private lemma exists_convex_comb_potentials_tendsto_L2 [IsFiniteMeasure μ] [IsF
         Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_left (hM (k n i)) zero_le
       _ = M := by rw [← Finset.sum_mul, hsum_c n, one_mul]
   · have hfst (n : ℕ) : (hu'_lp n).toLp (u' n) = π₁ (W n) := by
-      rw [← hW_eq n, map_sum, (hu_props n).2.2.2.2 (hu'_lp n)]
-      exact Finset.sum_congr rfl fun i _ ↦ by
-        simp [π₁, F, WithLp.fst, u]
+      rw [← hW_eq n, map_sum,
+        (hu'_lp n).toLp_finsetSum fun i ↦ (hu_lp (k n i)).const_smul (c n i)]
+      exact Finset.sum_congr rfl fun i _ ↦
+        (MemLp.toLp_const_smul (c n i) (hu_lp (k n i))).trans (by simp [π₁, F, WithLp.fst, u])
     simp_rw [hfst]; exact (π₁.continuous.tendsto p_lim).comp hW_tendsto
   · have hsnd (n : ℕ) : (hv'_lp n).toLp (v' n) = π₂ (W n) := by
-      rw [← hW_eq n, map_sum, (hv_props n).2.2.2.2 (hv'_lp n)]
-      exact Finset.sum_congr rfl fun i _ ↦ by
-        simp [π₂, F, WithLp.snd, v]
+      rw [← hW_eq n, map_sum,
+        (hv'_lp n).toLp_finsetSum fun i ↦ (hv_lp (k n i)).const_smul (c n i)]
+      exact Finset.sum_congr rfl fun i _ ↦
+        (MemLp.toLp_const_smul (c n i) (hv_lp (k n i))).trans (by simp [π₂, F, WithLp.snd, v])
     simp_rw [hsnd]; exact (π₂.continuous.tendsto p_lim).comp hW_tendsto
-
-/-- Dominated convergence of `∫⁻ z, ENNReal.ofReal (w j z) ∂ρ` to the integral of its pointwise
-`limsup` along a sequence whose `Lp` classes converge almost everywhere. -/
-private lemma tendsto_lintegral_limsup_of_ae {Z : Type*} [MeasurableSpace Z] {ρ : Measure Z}
-    [IsFiniteMeasure ρ] {B : ℝ≥0} {p : Lp ℝ 2 ρ} {w : ℕ → Z → ℝ}
-    {hw_lp : ∀ j, MemLp (w j) 2 ρ} (hw_meas : ∀ j, Measurable (w j))
-    (hw_le : ∀ j z, w j z ≤ B)
-    (hae : ∀ᵐ z ∂ρ, Tendsto (fun j ↦ ((hw_lp j).toLp (w j) : Lp ℝ 2 ρ) z) atTop (𝓝 (p z))) :
-    Tendsto (fun j ↦ ∫⁻ z, ENNReal.ofReal (w j z) ∂ρ) atTop
-      (𝓝 (∫⁻ z, limsup (fun j ↦ ENNReal.ofReal (w j z)) atTop ∂ρ)) := by
-  have hco : ∀ᵐ z ∂ρ, ∀ j, ((hw_lp j).toLp (w j) : Lp ℝ 2 ρ) z = w j z :=
-    ae_all_iff.2 fun j ↦ (hw_lp j).coeFn_toLp
-  refine tendsto_lintegral_of_dominated_convergence (fun _ ↦ (B : ℝ≥0∞))
-    (fun j ↦ (hw_meas j).ennreal_ofReal)
-    (fun j ↦ .of_forall fun z ↦ by simpa using ENNReal.ofReal_le_ofReal (hw_le j z))
-    (by simp [ENNReal.mul_ne_top, measure_ne_top]) ?_
-  filter_upwards [hae, hco] with z hz hzeq
-  have hc : Tendsto (fun j ↦ ENNReal.ofReal (w j z)) atTop (𝓝 (ENNReal.ofReal (p z))) :=
-    ENNReal.tendsto_ofReal (hz.congr hzeq)
-  simpa [hc.limsup_eq] using hc
 
 /-- Extracting a joint `μ`- and `ν`-almost everywhere convergent subsequence of bounded measurable
 potentials and taking pointwise `limsup` produces a measurable `[0, B]`-valued upper envelope for
@@ -406,9 +316,12 @@ private lemma dualUpperValue_iSup_le_of_tendsto_L2 [IsFiniteMeasure μ] [IsFinit
     (ht₁ : Tendsto (fun n ↦ (hu'_lp n).toLp (u' n)) atTop (𝓝 p₁))
     (ht₂ : Tendsto (fun n ↦ (hv'_lp n).toLp (v' n)) atTop (𝓝 p₂)) :
     dualUpperValue B μ ν (fun z ↦ ⨆ n, fs n z) ≤ M := by
-  obtain ⟨φ₁, hφ₁, hae₁⟩ := (tendstoInMeasure_of_tendsto_Lp ht₁).exists_seq_tendsto_ae
+  obtain ⟨φ₁, hφ₁, hae₁⟩ :=
+    ((tendstoInMeasure_of_tendsto_Lp ht₁).congr_left
+      fun n ↦ (hu'_lp n).coeFn_toLp).exists_seq_tendsto_ae
   obtain ⟨φ₂, hφ₂, hae₂⟩ :=
-    (tendstoInMeasure_of_tendsto_Lp (ht₂.comp hφ₁.tendsto_atTop)).exists_seq_tendsto_ae
+    ((tendstoInMeasure_of_tendsto_Lp (ht₂.comp hφ₁.tendsto_atTop)).congr_left
+      fun j ↦ (hv'_lp (φ₁ j)).coeFn_toLp).exists_seq_tendsto_ae
   let ψ : ℕ → ℕ := φ₁ ∘ φ₂
   have hψ : StrictMono ψ := hφ₁.comp hφ₂
   let U_lim : X → ℝ≥0∞ := fun x ↦ limsup (fun j ↦ ENNReal.ofReal (u' (ψ j) x)) atTop
@@ -436,13 +349,20 @@ private lemma dualUpperValue_iSup_le_of_tendsto_L2 [IsFiniteMeasure μ] [IsFinit
       _ = (U_lim x + V_lim y) + ε := by rw [add_add_add_comm, ENNReal.add_halves]
   have hint_u : Tendsto (fun j ↦ ∫⁻ x, ENNReal.ofReal (u' (ψ j) x) ∂μ) atTop
       (𝓝 (∫⁻ x, U_lim x ∂μ)) :=
-    tendsto_lintegral_limsup_of_ae (w := fun j ↦ u' (ψ j)) (hw_lp := fun j ↦ hu'_lp (ψ j))
-      (fun j ↦ hu'_meas (ψ j)) (fun j x ↦ (hu'_bounds (ψ j) x).2)
-      (hae₁.mono fun _ hx ↦ hx.comp hφ₂.tendsto_atTop)
+    tendsto_lintegral_filter_limsup_of_dominated_convergence (fun _ ↦ (B : ℝ≥0∞))
+      (.of_forall fun j ↦ (hu'_meas (ψ j)).ennreal_ofReal.aemeasurable)
+      (.of_forall fun j ↦ .of_forall fun x ↦ by
+        simpa using ENNReal.ofReal_le_ofReal (hu'_bounds (ψ j) x).2)
+      (by simp [ENNReal.mul_ne_top, measure_ne_top])
+      (hae₁.mono fun _ hx ↦ ⟨_, ENNReal.tendsto_ofReal (hx.comp hφ₂.tendsto_atTop)⟩)
   have hint_v : Tendsto (fun j ↦ ∫⁻ y, ENNReal.ofReal (v' (ψ j) y) ∂ν) atTop
       (𝓝 (∫⁻ y, V_lim y ∂ν)) :=
-    tendsto_lintegral_limsup_of_ae (w := fun j ↦ v' (ψ j)) (hw_lp := fun j ↦ hv'_lp (ψ j))
-      (fun j ↦ hv'_meas (ψ j)) (fun j y ↦ (hv'_bounds (ψ j) y).2) hae₂
+    tendsto_lintegral_filter_limsup_of_dominated_convergence (fun _ ↦ (B : ℝ≥0∞))
+      (.of_forall fun j ↦ (hv'_meas (ψ j)).ennreal_ofReal.aemeasurable)
+      (.of_forall fun j ↦ .of_forall fun y ↦ by
+        simpa using ENNReal.ofReal_le_ofReal (hv'_bounds (ψ j) y).2)
+      (by simp [ENNReal.mul_ne_top, measure_ne_top])
+      (hae₂.mono fun _ hy ↦ ⟨_, ENNReal.tendsto_ofReal hy⟩)
   exact (dualUpperValue_le (Measurable.limsup fun j ↦ (hu'_meas (ψ j)).ennreal_ofReal) hU_le
     (Measurable.limsup fun j ↦ (hv'_meas (ψ j)).ennreal_ofReal) hV_le hUV_lim).trans <|
     le_of_tendsto (hint_u.add hint_v) (.of_forall fun j ↦ hM (ψ j))
@@ -766,7 +686,7 @@ private lemma dualUpperValue_one_eq_primalMaxValue_of_measurable
   have hslice_bounds := sliceCount_subgraph_bounds hN_pos hf_le
   have hd_scale : dualUpperValue 1 μ ν f ≤
       (N : ℝ≥0∞)⁻¹ * dualUpperValue (N : ℝ≥0) μ ν (sliceCount N E) + (N : ℝ≥0∞)⁻¹ :=
-    le_mul_dualUpperValue_add (sliceCount_le N E) (ENNReal.inv_ne_zero.2 hNtop)
+    le_mul_dualUpperValue_add (ENNReal.inv_ne_zero.2 hNtop)
       (ENNReal.inv_ne_top.2 hN0) fun U hUm _ V hVm hVN hUV ↦ by
       let u₁ : X → ℝ≥0∞ := fun x ↦ min ((N : ℝ≥0∞)⁻¹ * (U x + 1)) 1
       let v₁ : Y → ℝ≥0∞ := fun y ↦ (N : ℝ≥0∞)⁻¹ * V y
@@ -817,8 +737,8 @@ private lemma dualUpperValue_eq_primalMaxValue_of_measurable {B : ℝ≥0}
   have h1 := dualUpperValue_one_eq_primalMaxValue_of_measurable (μ := μ) (ν := ν) hf₁_meas hf₁_le
   refine le_antisymm ?_ (primalMaxValue_le_dualUpperValue f)
   have hd_le : dualUpperValue B μ ν f ≤ (B : ℝ≥0∞) * dualUpperValue 1 μ ν f₁ := by
-    have h0 := le_mul_dualUpperValue_add (μ := μ) (ν := ν) (a := dualUpperValue B μ ν f)
-      (c := (B : ℝ≥0∞)) (d := 0) hf₁_le hB_coe0 ENNReal.coe_ne_top
+    have h0 := le_mul_dualUpperValue_add (f := f₁) (μ := μ) (ν := ν)
+      (a := dualUpperValue B μ ν f) (c := (B : ℝ≥0∞)) (d := 0) hB_coe0 ENNReal.coe_ne_top
       fun u hum hu1 v hvm hv1 huv ↦ by
       rw [add_zero]
       refine (dualUpperValue_le (hum.const_mul _)

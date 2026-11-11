@@ -20,7 +20,8 @@ sum of the norms of its two components.  For `p = 1` the bound is an identity fo
 It also records that the `ℓ^p` norm is monotone and positively homogeneous in the component norms.
 
 It also records that taking a component of `WithLp p (α × β)` commutes with `Set.indicator`, as
-Mathlib's `norm_indicator_eq_indicator_norm` does for the norm.
+Mathlib's `norm_indicator_eq_indicator_norm` does for the norm, and that an indexed family of
+pairs in `WithLp p (α × β)` has bounded range if and only if each coordinate family does.
 
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
@@ -40,6 +41,8 @@ projections onto the factors and the inclusions of the factors are contractions.
   strictly less than `1`.
 * `WithLp.fst_indicator`, `WithLp.snd_indicator` — a component of an indicator is the indicator
   of the component.
+* `TauCeti.isBounded_range_toLp` — `Set.range (fun i ↦ WithLp.toLp p (f i, g i))` is bounded if
+  and only if `Set.range f` and `Set.range g` are bounded.
 * `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
@@ -163,6 +166,26 @@ theorem _root_.WithLp.snd_indicator (f : ι → WithLp p (α × β)) (x : ι) :
   (congr_fun (Set.indicator_comp_of_zero (g := WithLp.snd) WithLp.zero_snd) x).symm
 
 end Indicator
+
+section Bornology
+
+variable {p : ℝ≥0∞} {ι : Sort*} {α β : Type*} [Bornology α] [Bornology β]
+
+/-- A family of pairs in `WithLp p (α × β)` has bounded range if and only if each coordinate
+family has bounded range. -/
+@[simp]
+theorem isBounded_range_toLp {f : ι → α} {g : ι → β} :
+    Bornology.IsBounded (Set.range fun i ↦ WithLp.toLp p (f i, g i)) ↔
+      Bornology.IsBounded (Set.range f) ∧ Bornology.IsBounded (Set.range g) := by
+  have hfst : Prod.fst '' (WithLp.ofLp '' Set.range fun i ↦ WithLp.toLp p (f i, g i)) =
+      Set.range f := by
+    rw [Set.image_image, ← Set.range_comp]; rfl
+  have hsnd : Prod.snd '' (WithLp.ofLp '' Set.range fun i ↦ WithLp.toLp p (f i, g i)) =
+      Set.range g := by
+    rw [Set.image_image, ← Set.range_comp]; rfl
+  rw [Bornology.isBounded_induced, ← Bornology.isBounded_image_fst_and_snd, hfst, hsnd]
+
+end Bornology
 
 end TauCeti
 
