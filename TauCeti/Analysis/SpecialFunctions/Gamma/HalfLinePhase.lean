@@ -35,6 +35,9 @@ and proves `Γ(½ + ia) = |Γ(½ + ia)| e^{iφ₂(a)}`.
 With `Φ(a) = ∫₀ᵃ Im ψ(½ + it) dt`, the function `Γ(½ + ia) e^{−iφ₂(a)} e^{Φ(a)}` has derivative
 zero, because `d/da Γ(½ + ia) = i ψ(½ + ia) Γ(½ + ia)`. Its value at `a = 0` is `Γ(½) = √π`,
 so `Γ(½ + ia) = √π e^{−Φ(a)} e^{iφ₂(a)}`, and the modulus is `√π e^{−Φ(a)}`.
+
+The phase identity is adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
+file `DLMF/ParabolicCylinder/Weber/Solutions.lean`.
 -/
 
 @[expose] public section
