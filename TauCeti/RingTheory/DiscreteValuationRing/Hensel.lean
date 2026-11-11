@@ -244,17 +244,29 @@ theorem existsUnique_isRoot_le_addVal_iff [HenselianLocalRing A] (F : A[X]) (x :
     exact ⟨z, ⟨hz, hball⟩, fun z' ⟨hz', h'⟩ ↦
       (huniq z' ⟨hz', hdr.trans_le h'⟩).trans hzw.symm⟩
 
-/-- **A small perturbation has at least as many roots.** Let `G = F + δ k` be nonzero, where at
+/-- **A small perturbation has at least as many roots.** Let `G = F + δ k`, where at
 every root `y` of `F` the order of `δ` exceeds twice that of `F'(y)`. Then `G` has at least as
 many roots as `F`, counted with multiplicity. -/
 theorem card_roots_le_of_eq_add_C_mul [HenselianLocalRing A] {F G k : A[X]} {δ : A}
-    (hG0 : G ≠ 0) (hG : G = F + C δ * k)
+    (hG : G = F + C δ * k)
     (hδ : ∀ y, F.IsRoot y →
       addVal A (F.derivative.eval y) + addVal A (F.derivative.eval y) < addVal A δ) :
     F.roots.card ≤ G.roots.card := by
   classical
   rcases eq_or_ne F 0 with rfl | hF0
   · simp
+  rcases eq_or_ne G 0 with rfl | hG0
+  · -- Then `F = -δ k` has no roots, as the order of `F'` at a root would be at least that of `δ`.
+    have hF : F = -(C δ * k) := eq_neg_of_add_eq_zero_left hG.symm
+    have hroots : F.roots = 0 := Multiset.eq_zero_of_forall_notMem fun y hy ↦ by
+      have hy := isRoot_of_mem_roots hy
+      have hder : addVal A (F.derivative.eval y) = addVal A δ + addVal A (k.derivative.eval y) := by
+        rw [hF, derivative_neg, derivative_C_mul, eval_neg, eval_mul, eval_C, (addVal A).map_neg,
+          addVal_mul]
+      have := hδ y hy
+      rw [hder] at this
+      exact not_le.mpr this (le_self_add.trans (add_le_add_left le_self_add _))
+    simp [hroots]
   -- Hensel's lemma for `G` at a root `y` of `F`, where `G(y) = δ k(y)`.
   have hlift (y : A) (hy : F.IsRoot y) :
       ∃ z, G.IsRoot z ∧ addVal A (F.derivative.eval y) < addVal A (z - y) := by
@@ -333,20 +345,8 @@ theorem card_roots_eq_of_addVal_lt_coeff_sub [HenselianLocalRing A] {f g U V : A
       addVal A (g.derivative.eval y) = addVal A (f.derivative.eval y) := by
     rw [hg, derivative_add, derivative_C_mul, eval_add, eval_mul, eval_C]
     exact (addVal A).map_add_eq_of_lt_left (hy.trans_lt (hδeval _))
-  have hf0 : f ≠ 0 := by
-    rintro rfl
-    rw [mul_zero, derivative_zero, mul_zero, add_zero, eq_comm, C_eq_zero] at hβ
-    exact hb (by rw [hb_def, hβ, addVal_zero])
-  have hg0 : g ≠ 0 := by
-    rintro rfl
-    -- Otherwise `f = -δ k`, so `δ ∣ β` and `v(δ) ≤ v(β)`.
-    have hC : C β = C δ * (U * -k + V * derivative (-k)) := by
-      rw [← hβ, hf, zero_add, derivative_C_mul]
-      ring
-    have hdvd : δ ∣ β := ⟨_, by rw [← coeff_C_zero (a := β), hC, coeff_C_mul]⟩
-    exact (le_self_add.trans_lt hδb).not_ge (addVal_le_iff_dvd.2 hdvd)
-  refine le_antisymm (card_roots_le_of_eq_add_C_mul hf0 hf fun y hy ↦ ?_)
-    (card_roots_le_of_eq_add_C_mul hg0 hg fun y hy ↦
+  refine le_antisymm (card_roots_le_of_eq_add_C_mul hf fun y hy ↦ ?_)
+    (card_roots_le_of_eq_add_C_mul hg fun y hy ↦
       (add_le_add (hfroot hy) (hfroot hy)).trans_lt hδb)
   rw [hder (hgroot hy)]
   exact (add_le_add (hgroot hy) (hgroot hy)).trans_lt hδb
