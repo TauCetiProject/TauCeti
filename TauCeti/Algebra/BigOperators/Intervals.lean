@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Group.Nat.Even
+public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Data.Int.Interval
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Ring.GeomSum
@@ -29,6 +30,8 @@ and the nonpositive half `∑ j ∈ range (N + 1), F (-(j : ℤ))`. In a ring, t
 `∑_{1 ≤ k ≤ n} (-1) ^ (k + 1)` of the alternating sequence `1, -1, 1, …` are `0` or `1`.
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
 form of Gauss's sum.
+A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
+`f` at `j + d - L` where this index is defined, and vanish otherwise.
 
 ## Main results
 
@@ -42,6 +45,8 @@ form of Gauss's sum.
   `1` for odd `n`.
 * `Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero`: twice `∑_{0 ≤ j < k} j - ∑_{k ≤ j < 0} j` is
   `k (k - 1)` for every `k : ℤ`.
+* `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
+  sum of `2 L` shifts of `f`.
 -/
 
 public section
@@ -144,5 +149,19 @@ theorem two_mul_sum_Ico_zero_sub_sum_Ico_zero (k : ℤ) :
     rw [Ico_eq_empty_of_le hi] at ih
     simp only [sum_empty, zero_sub] at ih ⊢
     linear_combination ih
+
+/-- A window sum `∑_{j - L ≤ k < j + L} f k` is the sum of `2 L` shifts of `f`: the `d`-th one
+reads `f` at `j + d - L`, where this index is defined. -/
+theorem sum_Ico_sub_add_eq_sum_range_indicator {M : Type*} [AddCommMonoid M] (f : ℕ → M)
+    (L j : ℕ) :
+    ∑ k ∈ Ico (j - L) (j + L), f k =
+      ∑ d ∈ range (2 * L), {i | L ≤ i + d}.indicator (f ∘ fun i ↦ i + d - L) j := by
+  classical
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq, Function.comp_apply]
+  rw [← sum_filter]
+  refine sum_nbij' (fun k ↦ k + L - j) (fun d ↦ j + d - L) (fun k hk ↦ ?_) (fun d hd ↦ ?_)
+    (fun k hk ↦ ?_) (fun d hd ↦ ?_) fun k hk ↦ ?_
+  all_goals simp only [mem_Ico, mem_filter, mem_range] at *
+  all_goals first | omega | (congr 1; omega)
 
 end Finset
