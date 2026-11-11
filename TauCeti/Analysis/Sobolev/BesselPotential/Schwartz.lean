@@ -77,6 +77,14 @@ theorem toLp_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
   rw [← BesselPotentialSpace.toLpₗᵢ_apply, toBesselPotentialSpaceCLM]
   simp
 
+/-- The `Lᵖ` part of a Schwartz function `u` in `H^{s,p}` is almost everywhere the Schwartz function
+`J^s u`. -/
+theorem coeFn_toLp_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
+    (toBesselPotentialSpaceCLM s p u).toLp =ᵐ[volume]
+      fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u := by
+  rw [toLp_toBesselPotentialSpaceCLM]
+  exact coeFn_toLp _ p volume
+
 @[simp]
 theorem toDistr_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
     (toBesselPotentialSpaceCLM s p u).toDistr = (u : 𝓢'(E, F)) := by

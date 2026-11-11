@@ -58,7 +58,7 @@ characteristic; the coordinates `s, t` need only lie in `𝔪` for this.
   determinant is a unit.
 * `TauCeti.span_range_apply_eq_maximalIdeal_iff_isUnit_det_hessian`: the same, in the form
   `(D₁ f, …, Dₙ f) = 𝔪`.
-* `TauCeti.span_range_apply_sup_span_singleton_eq_maximalIdeal_iff`: for `f ∈ 𝔪`, the Jacobian
+* `TauCeti.span_range_apply_sup_span_singleton_eq_maximalIdeal_iff`: the Jacobian
   ideal `(f, D₁ f, …, Dₙ f)` is `𝔪` exactly when `f ∈ 𝔪²` and the Hessian determinant is a unit.
 * `TauCeti.residue_hessian_sum_mul_mul`: modulo `𝔪`, the Hessian of `Σ Qₖₗ xₖ xₗ` is `Q + Qᵀ`.
 * `TauCeti.isUnit_det_hessian_iff_isUnit_discrim`: the Hessian of `a s² + b s t + c t²` has unit
@@ -123,15 +123,25 @@ theorem sub_sum_apply_mul_mem_maximalIdeal_sq [Fintype ι]
 
 /-- An element `f ∈ 𝔪` lies in `𝔪²` exactly when all its partial derivatives `Dᵢ f` lie in
 `𝔪`. -/
-theorem mem_maximalIdeal_sq_iff_forall_apply_mem [Finite ι]
+theorem mem_maximalIdeal_sq_iff_forall_apply_mem
     (hx : maximalIdeal P = Ideal.span (Set.range x))
     (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {f : P} (hf : f ∈ maximalIdeal P) :
     f ∈ maximalIdeal P ^ 2 ↔ ∀ i, D i f ∈ maximalIdeal P := by
-  have := Fintype.ofFinite ι
   refine ⟨fun h i ↦ (D i).apply_mem_of_mem_sq h, fun h ↦ ?_⟩
-  have hsum : ∑ i, D i f * x i ∈ maximalIdeal P ^ 2 := sum_mem fun i _ ↦
-    pow_two (maximalIdeal P) ▸ Ideal.mul_mem_mul (h i) (hx ▸ Ideal.subset_span ⟨i, rfl⟩)
-  simpa using add_mem (sub_sum_apply_mul_mem_maximalIdeal_sq hx hD hf) hsum
+  have hxm (i : ι) : x i ∈ maximalIdeal P := hx ▸ Ideal.subset_span ⟨i, rfl⟩
+  rw [hx, Finsupp.mem_span_range_iff_exists_finsupp] at hf
+  obtain ⟨c, rfl⟩ := hf
+  -- each coefficient `c j` is congruent to `D j f` modulo `𝔪`
+  have hc (j : ι) : c j ∈ maximalIdeal P := by
+    have hsum : D j (c.sum fun i a ↦ a • x i) = c.sum (fun i a ↦ x i * D j a) + c j := by
+      simp only [Finsupp.sum, map_sum, smul_eq_mul, Derivation.leibniz, hD, mul_ite, mul_one,
+        mul_zero]
+      rw [Finset.sum_add_distrib, Finset.sum_ite_eq, add_comm]
+      simp
+    have := h j
+    rw [hsum] at this
+    exact (Ideal.add_mem_iff_right _ (sum_mem fun i _ ↦ Ideal.mul_mem_right _ _ (hxm i))).mp this
+  exact sum_mem fun i _ ↦ pow_two (maximalIdeal P) ▸ Ideal.mul_mem_mul (hc i) (hxm i)
 
 variable [Fintype ι]
 
@@ -221,23 +231,24 @@ theorem span_range_apply_eq_maximalIdeal_iff_isUnit_det_hessian
       (ringJacobson_eq_maximalIdeal P).ge ?_
     simpa [smul_eq_mul, pow_two] using h
 
-/-- **The Jacobian ideal of a nondegenerate quadratic singularity.** For `f ∈ 𝔪`, the ideal
+/-- **The Jacobian ideal of a nondegenerate quadratic singularity.** The ideal
 `(f, D₁ f, …, Dₙ f)` is the maximal ideal exactly when `f ∈ 𝔪²` and the Hessian determinant of
 `f` is a unit. -/
 theorem span_range_apply_sup_span_singleton_eq_maximalIdeal_iff
     (hx : maximalIdeal P = Ideal.span (Set.range x))
-    (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {f : P} (hf : f ∈ maximalIdeal P) :
+    (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {f : P} :
     Ideal.span (Set.range fun j ↦ D j f) ⊔ Ideal.span {f} = maximalIdeal P ↔
       f ∈ maximalIdeal P ^ 2 ∧ IsUnit (hessian D f).det := by
   constructor
   · intro h
+    have hf : f ∈ maximalIdeal P := h ▸ Ideal.mem_sup_right (Ideal.mem_span_singleton_self f)
     have hf2 : f ∈ maximalIdeal P ^ 2 := (mem_maximalIdeal_sq_iff_forall_apply_mem hx hD hf).2
       fun j ↦ h ▸ Ideal.mem_sup_left (Ideal.subset_span ⟨j, rfl⟩)
     refine ⟨hf2, (maximalIdeal_le_span_range_apply_sup_iff_isUnit_det_hessian hx hD hf2).1 ?_⟩
     exact h.symm.le.trans (sup_le_sup_left ((Ideal.span_singleton_le_iff_mem _).2 hf2) _)
   · rintro ⟨hf2, hdet⟩
     rw [(span_range_apply_eq_maximalIdeal_iff_isUnit_det_hessian hx hD hf2).2 hdet]
-    exact sup_eq_left.2 ((Ideal.span_singleton_le_iff_mem _).2 hf)
+    exact sup_eq_left.2 ((Ideal.span_singleton_le_iff_mem _).2 (Ideal.pow_le_self two_ne_zero hf2))
 
 /-- **The Hessian of a quadratic form is its polar matrix.** Modulo the maximal ideal, the
 Hessian of `Σₖ Σₗ Qₖₗ xₖ xₗ` is `Q + Qᵀ`. -/

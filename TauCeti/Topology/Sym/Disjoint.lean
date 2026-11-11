@@ -22,7 +22,7 @@ Splitting over the distinct points of a tuple, with the multiplicities as the de
 symmetric power of a surface is charted: a neighbourhood of a tuple with
 distinct points `z₁, …, z_k` of multiplicities `n₁, …, n_k` is a product of the symmetric powers
 `Sym^{n_j}` of disjoint coordinate discs, each of which is an open subspace of affine space by
-`TauCeti.Sym.isOpenEmbedding_coeffEquiv_comp_map`. Lane F4.1 of the analytic Heegaard Floer
+`Sym.isOpenEmbedding_coeffEquiv_comp_map`. Lane F4.1 of the analytic Heegaard Floer
 roadmap needs exactly this to give `Sym^g(Σ)` its complex structure, after Ozsváth--Szabó
 ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1). The coefficient homeomorphism
 is in `TauCeti/Analysis/Polynomial/SymmetricPower.lean`, while the charts and charted structure are
