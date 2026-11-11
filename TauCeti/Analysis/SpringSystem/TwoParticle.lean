@@ -744,10 +744,11 @@ private theorem iInf_eigenspace_symmetryRep_eq_span
 
 /-- The **trivial isotypic component** of the displacements is the line through the stretching
 mode `(1, 0, -1, 0)`. -/
+@[simp]
 theorem iInf_eigenspace_symmetryRep_one :
-    ⨅ g, Module.End.eigenspace (symmetryRep g) ((1 : _ →* ℝ) g) =
+    ⨅ g, Module.End.eigenspace (symmetryRep g) 1 =
       ℝ ∙ (![1, 0, -1, 0] : Fin 4 → ℝ) := by
-  refine iInf_eigenspace_symmetryRep_eq_span (by simp [symmetryRep_stretch])
+  refine iInf_eigenspace_symmetryRep_eq_span (χ := 1) (by simp [symmetryRep_stretch])
     fun u hr hs ↦ ⟨u 0, ?_⟩
   have hr1 := congrFun hr 1
   have hr3 := congrFun hr 3
@@ -758,10 +759,12 @@ theorem iInf_eigenspace_symmetryRep_one :
 
 /-- The isotypic component of the sign character of the first factor, reversed by the axis
 reflection and fixed by the bisector reflection, is the line of vertical translations. -/
+@[simp]
 theorem iInf_eigenspace_symmetryRep_comp_fst :
-    ⨅ g, Module.End.eigenspace (symmetryRep g) ((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) g) =
+    ⨅ g, Module.End.eigenspace (symmetryRep g) (cyclicTwoSign ℝ g.1) =
       ℝ ∙ (![0, 1, 0, 1] : Fin 4 → ℝ) := by
-  refine iInf_eigenspace_symmetryRep_eq_span symmetryRep_translation_y fun u hr hs ↦ ⟨u 1, ?_⟩
+  refine iInf_eigenspace_symmetryRep_eq_span (χ := (cyclicTwoSign ℝ).comp (MonoidHom.fst _ _))
+    symmetryRep_translation_y fun u hr hs ↦ ⟨u 1, ?_⟩
   have hr0 := congrFun hr 0
   have hr2 := congrFun hr 2
   have hs1 := congrFun hs 1
@@ -771,10 +774,12 @@ theorem iInf_eigenspace_symmetryRep_comp_fst :
 
 /-- The isotypic component of the sign character of the second factor, fixed by the axis
 reflection and reversed by the bisector reflection, is the line of horizontal translations. -/
+@[simp]
 theorem iInf_eigenspace_symmetryRep_comp_snd :
-    ⨅ g, Module.End.eigenspace (symmetryRep g) ((cyclicTwoSign ℝ).comp (MonoidHom.snd _ _) g) =
+    ⨅ g, Module.End.eigenspace (symmetryRep g) (cyclicTwoSign ℝ g.2) =
       ℝ ∙ (![1, 0, 1, 0] : Fin 4 → ℝ) := by
-  refine iInf_eigenspace_symmetryRep_eq_span symmetryRep_translation_x fun u hr hs ↦ ⟨u 0, ?_⟩
+  refine iInf_eigenspace_symmetryRep_eq_span (χ := (cyclicTwoSign ℝ).comp (MonoidHom.snd _ _))
+    symmetryRep_translation_x fun u hr hs ↦ ⟨u 0, ?_⟩
   have hr1 := congrFun hr 1
   have hr3 := congrFun hr 3
   have hs0 := congrFun hs 0
@@ -784,12 +789,13 @@ theorem iInf_eigenspace_symmetryRep_comp_snd :
 
 /-- The isotypic component of the product of the two sign characters, reversed by both
 reflections, is the line through the transverse mode `(0, 1, 0, -1)`. -/
+@[simp]
 theorem iInf_eigenspace_symmetryRep_mul :
-    ⨅ g, Module.End.eigenspace (symmetryRep g)
-        (((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) * (cyclicTwoSign ℝ).comp (MonoidHom.snd _ _) :
-          Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) g) =
+    ⨅ g, Module.End.eigenspace (symmetryRep g) (cyclicTwoSign ℝ g.1 * cyclicTwoSign ℝ g.2) =
       ℝ ∙ (![0, 1, 0, -1] : Fin 4 → ℝ) := by
-  refine iInf_eigenspace_symmetryRep_eq_span symmetryRep_transverse fun u hr hs ↦ ⟨u 1, ?_⟩
+  refine .trans (by simp) (iInf_eigenspace_symmetryRep_eq_span
+    (χ := (cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) * (cyclicTwoSign ℝ).comp (MonoidHom.snd _ _))
+    symmetryRep_transverse fun u hr hs ↦ ⟨u 1, ?_⟩)
   have hr0 := congrFun hr 0
   have hr2 := congrFun hr 2
   have hs1 := congrFun hs 1
@@ -863,9 +869,8 @@ projectors. -/
 theorem isotypicProjector_dotProduct
     (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) (u w : Fin 4 → ℝ) :
     isotypicProjector χ u ⬝ᵥ w = u ⬝ᵥ isotypicProjector χ w := by
-  have hsr : axisReflection (bisectorReflection w) = bisectorReflection (axisReflection w) := by
-    ext i
-    fin_cases i <;> simp
+  have hsr : axisReflection (bisectorReflection w) = bisectorReflection (axisReflection w) :=
+    congrArg (fun f ↦ f w) commute_axisReflection_bisectorReflection.eq
   rw [isotypicProjector_apply, isotypicProjector_apply, hsr]
   simp only [smul_dotProduct, dotProduct_smul, add_dotProduct, dotProduct_add,
     ← symmetryRep_ofAdd_one_one_apply, ← symmetryRep_one_ofAdd_one_apply, symmetryRep_dotProduct]
