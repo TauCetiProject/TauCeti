@@ -36,7 +36,10 @@ surface models preserves the boundary darts.
 ## Main definitions
 
 * `TauCeti.PolygonalComplex.Iso`: isomorphisms of polygonal complexes, with
-  `PolygonalComplex.Iso.refl`, `PolygonalComplex.Iso.symm` and `PolygonalComplex.Iso.trans`.
+  `PolygonalComplex.Iso.refl`, `PolygonalComplex.Iso.symm` and `PolygonalComplex.Iso.trans`,
+  which satisfy the groupoid laws (`PolygonalComplex.Iso.trans_assoc`,
+  `PolygonalComplex.Iso.refl_trans`, `PolygonalComplex.Iso.trans_refl`,
+  `PolygonalComplex.Iso.symm_trans_self`, `PolygonalComplex.Iso.self_trans_symm`).
 * `TauCeti.PolygonalComplex.Iso.cornerEquiv`: the induced bijection of corners.
 * `TauCeti.PolygonalComplex.Iso.vertexLinkIso`: the induced isomorphisms of vertex links.
 * `TauCeti.SurfaceModel.ofIso`: the surface model structure on a complex isomorphic to a surface
@@ -63,7 +66,7 @@ surface models preserves the boundary darts.
 
 public section
 
-universe u v w u' v' w' u'' v'' w''
+universe u v w u' v' w' u'' v'' w'' u''' v''' w'''
 
 namespace TauCeti
 
@@ -224,6 +227,24 @@ orientation of a face when exactly one of the two isomorphisms does. -/
 
 @[simp] theorem trans_sideEquiv (ψ : D.Iso K) :
     (φ.trans ψ).sideEquiv = φ.sideEquiv.trans ψ.sideEquiv := (rfl)
+
+@[simp] theorem refl_symm (C : PolygonalComplex.{u, v, w}) : (refl C).symm = refl C :=
+  ext (by simp) (by simp)
+
+@[simp] theorem symm_trans (ψ : D.Iso K) : (φ.trans ψ).symm = ψ.symm.trans φ.symm :=
+  ext (by simp) (by simp)
+
+@[simp] theorem refl_trans : (refl C).trans φ = φ := ext (by simp) (by simp)
+
+@[simp] theorem trans_refl : φ.trans (refl D) = φ := ext (by simp) (by simp)
+
+@[simp] theorem symm_trans_self : φ.symm.trans φ = refl D := ext (by simp) (by simp)
+
+@[simp] theorem self_trans_symm : φ.trans φ.symm = refl C := ext (by simp) (by simp)
+
+theorem trans_assoc {L : PolygonalComplex.{u''', v''', w'''}} (ψ : D.Iso K) (χ : K.Iso L) :
+    (φ.trans ψ).trans χ = φ.trans (ψ.trans χ) :=
+  ext (SerreGraph.Iso.trans_assoc ..) (Equiv.trans_assoc ..)
 
 /-! ### Corners -/
 

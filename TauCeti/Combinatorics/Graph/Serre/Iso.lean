@@ -22,7 +22,9 @@ a polygonal complex with the link of the corresponding vertex of an isomorphic c
 ## Main definitions
 
 * `TauCeti.SerreGraph.Iso`: isomorphisms of Serre graphs, with `SerreGraph.Iso.refl`,
-  `SerreGraph.Iso.symm` and `SerreGraph.Iso.trans`.
+  `SerreGraph.Iso.symm` and `SerreGraph.Iso.trans`, which satisfy the groupoid laws
+  (`SerreGraph.Iso.trans_assoc`, `SerreGraph.Iso.refl_trans`, `SerreGraph.Iso.trans_refl`,
+  `SerreGraph.Iso.symm_trans_self`, `SerreGraph.Iso.self_trans_symm`).
 * `TauCeti.SerreGraph.Iso.toHom`: the underlying morphism.
 * `TauCeti.SerreGraph.Iso.geomEdgeEquiv`: the induced bijection of geometric edges.
 
@@ -33,7 +35,7 @@ a polygonal complex with the link of the corresponding vertex of an isomorphic c
 
 public section
 
-universe u v w x y z
+universe u v w x y z u' v'
 
 namespace TauCeti
 
@@ -128,6 +130,22 @@ def toHom (φ : Γ.Iso Δ) : Γ.Hom Δ where
 
 @[simp] theorem trans_equivE (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ) :
     (φ.trans ψ).equivE = φ.equivE.trans ψ.equivE := (rfl)
+
+@[simp] theorem refl_symm (Γ : SerreGraph.{u, v}) : (refl Γ).symm = refl Γ := (rfl)
+
+@[simp] theorem symm_trans (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ) :
+    (φ.trans ψ).symm = ψ.symm.trans φ.symm := (rfl)
+
+@[simp] theorem refl_trans (φ : Γ.Iso Δ) : (refl Γ).trans φ = φ := by ext <;> simp
+
+@[simp] theorem trans_refl (φ : Γ.Iso Δ) : φ.trans (refl Δ) = φ := by ext <;> simp
+
+@[simp] theorem symm_trans_self (φ : Γ.Iso Δ) : φ.symm.trans φ = refl Δ := by ext <;> simp
+
+@[simp] theorem self_trans_symm (φ : Γ.Iso Δ) : φ.trans φ.symm = refl Γ := by ext <;> simp
+
+theorem trans_assoc {Λ : SerreGraph.{u', v'}} (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ) (χ : Θ.Iso Λ) :
+    (φ.trans ψ).trans χ = φ.trans (ψ.trans χ) := (rfl)
 
 /-- The bijection of geometric edges induced by an isomorphism. -/
 def geomEdgeEquiv (φ : Γ.Iso Δ) : Γ.GeomEdge ≃ Δ.GeomEdge where
