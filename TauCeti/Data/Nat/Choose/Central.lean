@@ -65,7 +65,7 @@ theorem choose_middle_mul_sqrt_le_two_pow (k : ℕ) :
     rw [hchoose, _root_.pow_succ', mul_assoc] at h
     rw [hdiv, _root_.pow_succ, _root_.pow_mul]
     norm_num at h ⊢
-    nlinarith [mul_le_mul_of_nonneg_left hsqrt (Nat.cast_nonneg ((2 * n + 1).choose n))]
+    nlinarith [mul_le_mul_of_nonneg_left hsqrt (cast_nonneg ((2 * n + 1).choose n))]
 
 /-- Middle binomial coefficients are supermultiplicative in the row index. -/
 theorem choose_middle_mul_choose_middle_le (a b : ℕ) :
@@ -86,6 +86,6 @@ theorem prod_choose_middle_le_choose_sum_middle {ι : Type*} (s : Finset ι) (d 
   | empty => simp
   | @insert i s hi ih =>
     simp only [Finset.prod_insert hi, Finset.sum_insert hi]
-    exact (Nat.mul_le_mul_left _ ih).trans (choose_middle_mul_choose_middle_le _ _)
+    exact (mul_le_mul_left _ ih).trans (choose_middle_mul_choose_middle_le _ _)
 
 end Nat
