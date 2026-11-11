@@ -160,9 +160,7 @@ private theorem exists_openEmbedding_isMorse_affineChartInvOneAddDistSq
     exact hinj z (eL.injective hvw)
   have hinj_mfC (z : (Projectivization.affineChart i).symm ⁻¹' X) :
       Injective (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, EuclideanSpace ℂ (Fin n)) ι z) :=
-    fun v w hvw ↦ hinj_mvC z
-      ((mvfderiv_apply_eq_mfderiv_apply ι z v).trans
-        (hvw.trans (mvfderiv_apply_eq_mfderiv_apply ι z w).symm))
+    injective_mvfderiv_iff.1 (hinj_mvC z)
   have hinj_mfR (z : (Projectivization.affineChart i).symm ⁻¹' X) :
       Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, EuclideanSpace ℂ (Fin n)) ι z) :=
     injective_mfderiv_restrictScalars ℝ (hinj_mfC z)
