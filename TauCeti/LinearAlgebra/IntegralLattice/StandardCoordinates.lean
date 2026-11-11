@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 import Mathlib.Algebra.BigOperators.Field
+import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
 # Gram-matrix lattices on the standard rational coordinate space
@@ -246,13 +247,10 @@ theorem apply_eq_sum_mul_form_ofGramMatrix_basisFun_div (hd : d ≠ 0) (x : ι �
       (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x (Pi.basisFun ℚ ι i)) / d := by
   have hd' : (d : ℚ) ≠ 0 := by exact_mod_cast hd
   let f := Int.castRingHom ℚ
-  have hGM : G.map f * ((d : ℚ)⁻¹ • M.map f) = 1 := by
-    rw [Matrix.mul_smul, ← Matrix.map_mul, hM]
-    ext i k
-    by_cases hik : i = k <;> simp [Matrix.one_apply, Matrix.intCast_apply, hik, f, hd']
   have hMG : M.map f * G.map f = (d : ℚ) • 1 := by
-    have h := congrArg ((d : ℚ) • ·) (mul_eq_one_comm.mp hGM)
-    simpa only [Matrix.smul_mul, smul_smul, mul_inv_cancel₀ hd', one_smul] using h
+    rw [← Matrix.map_mul, (Matrix.mul_eq_smul_one_comm (mem_nonZeroDivisors_of_ne_zero hd)).mp hM]
+    ext i k
+    by_cases hik : i = k <;> simp [Matrix.intCast_apply, hik, f]
   have hjk (k : ι) : ∑ i, (M j i : ℚ) * (G i k : ℚ) = if j = k then (d : ℚ) else 0 := by
     have h := congrFun (congrFun hMG j) k
     simpa only [Matrix.mul_apply, Matrix.map_apply, Matrix.smul_apply, Matrix.one_apply,
