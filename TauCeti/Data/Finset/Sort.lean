@@ -397,11 +397,7 @@ namespace Nat
 /-- Sorting the interval `[a, b)` of natural numbers gives the list `a, a + 1, …, b - 1`. -/
 @[simp]
 theorem sort_Ico (a b : ℕ) : (Finset.Ico a b).sort = List.range' a (b - a) := by
-  have h : Finset.Ico a b = (List.range' a (b - a)).toFinset := by
-    ext x
-    simp only [Finset.mem_Ico, List.mem_toFinset, List.mem_range'_1]
-    omega
-  rw [h, List.toFinset_sort _ List.nodup_range']
-  exact List.pairwise_le_range'
+  rw [Nat.Ico_eq_range']
+  exact List.mergeSort_eq_self _ List.pairwise_le_range'
 
 end Nat

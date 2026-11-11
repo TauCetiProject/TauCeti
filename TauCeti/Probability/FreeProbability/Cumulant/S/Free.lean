@@ -46,6 +46,9 @@ the compositional inverse of `Ψ = M_{ab} - 1` turns `u` and `v` into the compos
 * `TauCeti.IsFreelyIndependent.momentSeries_mul_comm` and
   `TauCeti.IsFreelyIndependentElements.momentSeries_mul_comm` — `M_{ab} = M_{ba}` for free `a`
   and `b`.
+* `TauCeti.IsFreelyIndependent.isUnit_apply_mul_of_ne` and
+  `TauCeti.IsFreelyIndependentElements.isUnit_apply_mul_of_ne` — `φ (a b)` is a unit for free `a`
+  and `b` with unit means, over a semiring.
 * `TauCeti.IsFreelyIndependent.sSeries_mul` and
   `TauCeti.IsFreelyIndependentElements.sSeries_mul` — `S_{ab} = S_a S_b` for free `a` and `b`
   with unit means.
@@ -377,6 +380,26 @@ theorem IsFreelyIndependentElements.momentSeries_mul_comm {c : ι → A}
   (isFreelyIndependentElements_iff.mp h).momentSeries_mul_comm hφ hij
     (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _)
 
+/-- The mean of a product of free elements with unit means is a unit: if `a ∈ B i` and `b ∈ B j`
+for `i ≠ j`, with `B` freely independent for a normalised `φ`, and `φ a` and `φ b` are units, then
+so is `φ (a b) = φ a φ b`. Unlike `IsFreelyIndependent.apply_mul_of_ne`, this holds over a
+semiring `A`. -/
+theorem IsFreelyIndependent.isUnit_apply_mul_of_ne {B : ι → Subalgebra R A}
+    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) {a b : A}
+    (ha : a ∈ B i) (hb : b ∈ B j) (hua : IsUnit (φ a)) (hub : IsUnit (φ b)) :
+    IsUnit (φ (a * b)) := by
+  rw [apply_mul_of_mixedVanish hφ (mixedVanish h hφ hij ha hb)]
+  exact hua.mul hub
+
+/-- The mean of a product of two free elements with unit means is a unit: if `c i` and `c j`, for
+`i ≠ j`, belong to a freely independent family for a normalised `φ` and `φ (c i)` and `φ (c j)`
+are units, then so is `φ (c i * c j)`. -/
+theorem IsFreelyIndependentElements.isUnit_apply_mul_of_ne {c : ι → A}
+    (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j)
+    (hua : IsUnit (φ (c i))) (hub : IsUnit (φ (c j))) : IsUnit (φ (c i * c j)) :=
+  (isFreelyIndependentElements_iff.mp h).isUnit_apply_mul_of_ne hφ hij
+    (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _) hua hub
+
 /-- *Multiplicativity of the S-series*: if `a ∈ B i` and `b ∈ B j` for `i ≠ j`, with `B` freely
 independent for a normalised `φ`, and the means `φ a` and `φ b` are units, then
 `S_{ab} = S_a S_b`. The mean `φ (a b) = φ a φ b` of `a b` is then a unit too. No traciality of
@@ -384,8 +407,7 @@ independent for a normalised `φ`, and the means `φ a` and `φ b` are units, th
 theorem IsFreelyIndependent.sSeries_mul {B : ι → Subalgebra R A}
     (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) {a b : A}
     (ha : a ∈ B i) (hb : b ∈ B j) (hua : IsUnit (φ a)) (hub : IsUnit (φ b)) :
-    sSeries φ (a * b)
-        (by rw [apply_mul_of_mixedVanish hφ (mixedVanish h hφ hij ha hb)]; exact hua.mul hub) =
+    sSeries φ (a * b) (h.isUnit_apply_mul_of_ne hφ hij ha hb hua hub) =
       sSeries φ a hua * sSeries φ b hub :=
   sSeries_mul_of_mixedVanish hφ (mixedVanish h hφ hij ha hb) (mixedVanish h hφ hij.symm hb ha)
     hua hub _
@@ -396,11 +418,7 @@ the product of the S-series of `c i` and of `c j`. -/
 theorem IsFreelyIndependentElements.sSeries_mul {c : ι → A}
     (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j)
     (hua : IsUnit (φ (c i))) (hub : IsUnit (φ (c j))) :
-    sSeries φ (c i * c j)
-        (by
-          rw [apply_mul_of_mixedVanish hφ (mixedVanish (isFreelyIndependentElements_iff.mp h) hφ
-            hij (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _))]
-          exact hua.mul hub) =
+    sSeries φ (c i * c j) (h.isUnit_apply_mul_of_ne hφ hij hua hub) =
       sSeries φ (c i) hua * sSeries φ (c j) hub :=
   (isFreelyIndependentElements_iff.mp h).sSeries_mul hφ hij
     (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _) hua hub
