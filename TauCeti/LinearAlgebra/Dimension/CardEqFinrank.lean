@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.Data.Fintype.Card
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
 # An index type matching the dimension of an infinite-dimensional module
