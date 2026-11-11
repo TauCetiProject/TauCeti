@@ -34,13 +34,7 @@ variable {R S E F : Type*} [Semiring R] [Semiring S]
 noncomputable def completion (e : E ≃SL[σ] F) : Completion E ≃SL[σ] Completion F := by
   let f := e.toContinuousLinearMap.completion
   let g := e.symm.toContinuousLinearMap.completion
-  refine
-    { f.toLinearMap with
-      invFun := g
-      left_inv := ?_
-      right_inv := ?_
-      continuous_toFun := f.continuous
-      continuous_invFun := g.continuous }
+  refine ContinuousLinearEquiv.equivOfInverse f g ?_ ?_
   · exact congr_fun (Completion.ext (g.continuous.comp f.continuous) continuous_id
       (fun x => by simp [f, g]))
   · exact congr_fun (Completion.ext (f.continuous.comp g.continuous) continuous_id
