@@ -31,7 +31,11 @@ theorem isCompact_annulus {E : Type*} [PseudoMetricSpace E] [ProperSpace E] (c :
 
 end Metric
 
+namespace TauCeti
+
 /-- A closed annulus written with the norm is compact in a proper seminormed group. -/
 theorem isCompact_setOf_le_norm_sub_le {E : Type*} [SeminormedAddCommGroup E] [ProperSpace E]
     (c : E) (a b : ℝ) : IsCompact {z : E | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b} := by
   simpa only [dist_eq_norm] using Metric.isCompact_annulus c a b
+
+end TauCeti

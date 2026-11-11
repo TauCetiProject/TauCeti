@@ -42,7 +42,7 @@ theorem ContinuousOn.smul_integral_comp_circleMap [CompleteSpace F]
     (hf : ContinuousOn f {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) (ha : 0 ≤ a) :
     ContinuousOn (fun r ↦ r • ∫ θ in -π..π, f (circleMap z₀ r θ)) (Icc a b) := by
   let A := {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
-  have hcompact : IsCompact A := isCompact_setOf_le_norm_sub_le z₀ a b
+  have hcompact : IsCompact A := TauCeti.isCompact_setOf_le_norm_sub_le z₀ a b
   obtain ⟨C, hC⟩ := hcompact.exists_bound_of_continuousOn hf
   have hmem (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) : circleMap z₀ r θ ∈ A := by
     simpa only [A, mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
