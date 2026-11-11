@@ -60,7 +60,9 @@ coefficient vanishing at all large frequencies is smoothing
 constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
 
 The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
-by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`).
+by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`), and commutes with
+spatial and frequency derivatives (`TauCeti.Symbol.spatialDeriv_map`,
+`TauCeti.Symbol.frequencyDeriv_map`).
 
 The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
@@ -1350,7 +1352,7 @@ theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpat
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]⟩
 
-/-- Position derivatives commute with the image under a continuous linear map. -/
+/-- Spatial derivatives commute with the image under a continuous linear map. -/
 @[simp]
 theorem spatialDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) (j : Fin n) :
     spatialDeriv j (a.map Φ) = (spatialDeriv j a).map Φ :=
