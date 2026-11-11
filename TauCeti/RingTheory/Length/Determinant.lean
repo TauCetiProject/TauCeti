@@ -48,25 +48,6 @@ open Matrix
 
 namespace TauCeti
 
-/-- The cokernel of an endomorphism of a module with a finite basis is the cokernel of its
-matrix. -/
-theorem _root_.Module.Basis.length_quotient_range_eq_length_quotient_range_toMatrix
-    {R ι F : Type*} [CommRing R] [Fintype ι] [DecidableEq ι] [AddCommGroup F] [Module R F]
-    (b : Module.Basis ι R F) (ψ : F →ₗ[R] F) :
-    Module.length R (F ⧸ LinearMap.range ψ) =
-      Module.length R ((ι → R) ⧸ LinearMap.range (LinearMap.toMatrix b b ψ).mulVecLin) := by
-  refine (Submodule.Quotient.equiv _ _ b.equivFun ?_).length_eq
-  ext x
-  simp only [Submodule.mem_map, LinearMap.mem_range, LinearEquiv.coe_coe, mulVecLin_apply]
-  constructor
-  · rintro ⟨_, ⟨y, rfl⟩, rfl⟩
-    exact ⟨b.equivFun y, by
-      rw [Module.Basis.equivFun_apply, Module.Basis.equivFun_apply, LinearMap.toMatrix_mulVec_repr]⟩
-  · rintro ⟨y, rfl⟩
-    refine ⟨ψ (b.equivFun.symm y), ⟨_, rfl⟩, ?_⟩
-    conv_rhs => rw [← b.equivFun.apply_symm_apply y]
-    rw [Module.Basis.equivFun_apply, Module.Basis.equivFun_apply, LinearMap.toMatrix_mulVec_repr]
-
 variable {A ι : Type*} [CommRing A] [IsDomain A] [Fintype ι] [DecidableEq ι]
 
 section KrullDimLE
