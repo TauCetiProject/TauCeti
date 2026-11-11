@@ -68,14 +68,10 @@ section Count
 
 variable {X : Type*} [MeasurableSpace X] [MeasurableSingletonClass X] [DecidableEq X]
 
-/-- For a finite nonempty `F`, the counting-measure Følner ratio of `F` at `m` is below
-`ENNReal.ofReal ε` exactly when `|mF △ F| < ε · |F|`. -/
-theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : Type*}
-    [SMul M X] {F : Finset X} (hF : F.Nonempty) (m : M) {ε : ℝ} :
-    Measure.count ((m • (F : Set X)) ∆ F) / Measure.count (F : Set X) < ENNReal.ofReal ε ↔
-      (#((m • F) ∆ F) : ℝ) < ε * #F := by
-  -- Turn the counting measures into cardinalities.
-  simp only [← coe_smul_finset, ← coe_symmDiff, Measure.count_apply_finset]
+/-- For a nonempty finset `F`, the cardinality ratio `|A| / |F|` in `ℝ≥0∞` is below
+`ENNReal.ofReal ε` exactly when `|A| < ε · |F|`. -/
+private theorem card_div_card_lt_ofReal_iff {α : Type*} {A F : Finset α} (hF : F.Nonempty)
+    {ε : ℝ} : (#A : ℝ≥0∞) / #F < ENNReal.ofReal ε ↔ (#A : ℝ) < ε * #F := by
   rcases le_or_gt ε 0 with hε | hε
   · rw [ENNReal.ofReal_of_nonpos hε]
     exact iff_of_false (by simp) (not_lt.2 ((mul_nonpos_of_nonpos_of_nonneg hε
@@ -84,6 +80,16 @@ theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : T
   rw [ENNReal.div_lt_iff (by simp [hF.ne_empty]) (by simp), ← ENNReal.ofReal_natCast #F,
     ← ENNReal.ofReal_mul hε.le]
   exact ENNReal.natCast_lt_ofReal
+
+/-- For a finite nonempty `F`, the counting-measure Følner ratio of `F` at `m` is below
+`ENNReal.ofReal ε` exactly when `|mF △ F| < ε · |F|`. -/
+theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : Type*}
+    [SMul M X] {F : Finset X} (hF : F.Nonempty) (m : M) {ε : ℝ} :
+    Measure.count ((m • (F : Set X)) ∆ F) / Measure.count (F : Set X) < ENNReal.ofReal ε ↔
+      (#((m • F) ∆ F) : ℝ) < ε * #F := by
+  -- Turn the counting measures into cardinalities.
+  simp only [← coe_smul_finset, ← coe_symmDiff, Measure.count_apply_finset]
+  exact card_div_card_lt_ofReal_iff hF
 
 omit [MeasurableSingletonClass X] in
 /-- The counting-measure Følner ratio of a measurable finite set bounds the cardinality ratio
@@ -137,9 +143,7 @@ theorem IsFoelner.exists_finset_card_smul_symmDiff_lt [MulAction G X] {ι : Type
   refine ⟨hfin.toFinset, hne, fun g hg => ?_⟩
   have hlt := (Measure.card_smul_symmDiff_div_card_le_count_div_count hmeas' g).trans_lt
     (by simpa only [Set.Finite.coe_toFinset] using hiK g hg)
-  rw [ENNReal.div_lt_iff (by simp [hne.ne_empty]) (by simp),
-    ← ENNReal.ofReal_natCast #hfin.toFinset, ← ENNReal.ofReal_mul hε.le] at hlt
-  exact ENNReal.natCast_lt_ofReal.1 hlt
+  exact (card_div_card_lt_ofReal_iff hne).1 hlt
 
 namespace TauCeti
 
