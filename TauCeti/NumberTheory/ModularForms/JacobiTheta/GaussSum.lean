@@ -159,11 +159,11 @@ private theorem jacobiTheta_eq_mul_jacobiTheta_I_mul_sub {N : ℕ} {Y : ℝ} {u 
   simp [this]
 
 /-- The functional equation `jacobiTheta_I_mul` at `4Y`: `θ(4iY) = θ(i/(4Y)) / (2√Y)`. -/
-private theorem jacobiTheta_I_mul_four_mul {Y : ℝ} (hY : 0 < Y) :
+private theorem jacobiTheta_I_mul_four_mul {Y : ℝ} :
     jacobiTheta (I * (4 * Y)) = jacobiTheta (I / (4 * Y)) / (2 * √Y) := by
   have h4 : √(4 * Y) = 2 * √Y := by
     rw [Real.sqrt_mul (by norm_num), show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
-  have h := jacobiTheta_I_mul (y := 4 * Y) (by positivity)
+  have h := jacobiTheta_I_mul (y := 4 * Y)
   rw [h4] at h
   push_cast at h
   exact h
@@ -218,9 +218,9 @@ private theorem sum_mul_jacobiTheta₂_eq (N : ℕ) [NeZero N] {Y : ℝ} (hY : 0
   -- The second expansion.
   have hF := jacobiTheta_eq_mul_jacobiTheta_I_mul_sub hu hτ
     (cpow_one_div_two_neg_I_mul_eq_inv hs2 hsre hτ)
-  have hB := jacobiTheta_sub_natCast_div_two N (τ := I * Y) (by simpa using hY)
-  rw [show (4 : ℂ) * (I * Y) = I * (4 * Y) by ring, jacobiTheta_I_mul_four_mul hY,
-    jacobiTheta_I_mul hY] at hB
+  have hB := jacobiTheta_sub_natCast_div_two N (τ := I * Y)
+  rw [show (4 : ℂ) * (I * Y) = I * (4 * Y) by ring, jacobiTheta_I_mul_four_mul,
+    jacobiTheta_I_mul] at hB
   have hI : (1 + I) ≠ 0 := fun h ↦ by simpa using congrArg re h
   have hsN : ((√N : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 (Real.sqrt_pos.2 hNpos).ne'
   have hsY : ((√Y : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 (Real.sqrt_pos.2 hY).ne'
@@ -278,7 +278,7 @@ theorem sum_range_cexp_two_pi_I_sq_div (N : ℕ) :
     have him : (1 / (2 * (N : ℂ)) + I / (4 * Y)).im = 1 / (4 * Y) := by
       rw [add_im, ← ofReal_natCast, ← ofReal_ofNat, ← ofReal_mul, ← ofReal_one, ← ofReal_div,
         ofReal_im, zero_add, ← ofReal_ofNat, ← ofReal_mul, div_ofReal_im, I_im]
-    refine (norm_jacobiTheta₂_sub_one_le (by simp) (by rw [him]; positivity)).trans_eq ?_
+    refine (norm_jacobiTheta₂_sub_one_le (by simp)).trans_eq ?_
     rw [him]
     congr 3
     push_cast
