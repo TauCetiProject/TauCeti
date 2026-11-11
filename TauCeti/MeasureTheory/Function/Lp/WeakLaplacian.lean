@@ -80,14 +80,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-omit [CompleteSpace F] in
-/-- The Laplacian of a test function, multiplied by an `Lᵖ` function, is integrable. -/
-private theorem integrable_laplacian_smul (φ : 𝓓((⊤ : Opens E), ℝ))
-    (f : Lp F p (volume : Measure E)) :
-    Integrable (fun x ↦ Δ (φ : E → ℝ) x • f x) volume := by
-  simpa only [TestFunction.laplacianCLM_apply] using
-    (LineDeriv.laplacianCLM ℝ E (𝓓((⊤ : Opens E), ℝ)) φ).integrable_smul_of_memLp (Lp.memLp f)
-
 /-- The pairs `(f, g)` of `Lᵖ` functions with `Δf = g` in the sense of distributions. -/
 private def weakLaplacianGraph :
     Submodule ℝ (Lp F p (volume : Measure E) × Lp F p (volume : Measure E)) where
@@ -101,7 +93,8 @@ private def weakLaplacianGraph :
     have hr : ∫ x, φ x • (fg₁ + fg₂).2 x = ∫ x, (φ x • fg₁.2 x + φ x • fg₂.2 x) :=
       integral_congr_ae <| (Lp.coeFn_add fg₁.2 fg₂.2).mono fun x hx ↦ by
         simp only [Prod.snd_add, hx, Pi.add_apply, smul_add]
-    rw [hl, hr, integral_add (integrable_laplacian_smul φ _) (integrable_laplacian_smul φ _),
+    rw [hl, hr, integral_add (φ.integrable_laplacian_smul_of_memLp (Lp.memLp _))
+      (φ.integrable_laplacian_smul_of_memLp (Lp.memLp _)),
       integral_add (φ.integrable_smul_of_memLp (Lp.memLp _))
         (φ.integrable_smul_of_memLp (Lp.memLp _)), h₁ φ, h₂ φ]
   zero_mem' φ := by simp
@@ -240,7 +233,7 @@ theorem eq_zero_of_mem_graph_weakLaplacianLp_smul {c : ℝ} (hc : 0 < c)
       ∫ x, Δ (ψ : E → ℝ) x • ℓ (f x) = ∫ x, ψ x • (c * ℓ (f x)) := by
     intro ψ
     have := congrArg ℓ (h ψ)
-    rw [← ℓ.integral_comp_comm (integrable_laplacian_smul ψ f),
+    rw [← ℓ.integral_comp_comm (ψ.integrable_laplacian_smul_of_memLp (Lp.memLp f)),
       ← ℓ.integral_comp_comm (ψ.integrable_smul_of_memLp (Lp.memLp _))] at this
     simp only [map_smul] at this
     refine this.trans (integral_congr_ae <| (Lp.coeFn_smul c f).mono fun x hx ↦ ?_)

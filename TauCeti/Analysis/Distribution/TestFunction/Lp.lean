@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.Distribution.Mass.Basic
@@ -12,6 +13,7 @@ import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
@@ -43,6 +45,8 @@ evaluation on integrable forms (`Distribution.extendL1`).
   function on `Ω` is an `Lᵖ(μ)` limit of test functions for `p < ∞`.
 * `TestFunction.denseRange_toLp`: test functions are dense in `Lᵖ(μ)` for `p < ∞`.
 * `TestFunction.integrable_smul_of_memLp`: a test function times an `Lᵖ` function is integrable.
+* `TestFunction.integrable_laplacian_smul_of_memLp`: so is the Laplacian of a test function
+  times an `Lᵖ` function.
 * `MeasureTheory.Lp.eq_zero_of_forall_integral_testFunction_smul_eq_zero`: an `Lᵖ` function on a
   finite-dimensional space whose pairings with all test functions vanish is zero.
 
@@ -320,5 +324,14 @@ theorem _root_.MeasureTheory.Lp.eq_zero_of_forall_integral_testFunction_smul_eq_
   refine Lp.eq_zero_iff_ae_eq_zero.2 <| ae_eq_zero_of_integral_contDiff_smul_eq_zero
     ((Lp.memLp g).locallyIntegrable Fact.out) fun ψ hψ hψc ↦ ?_
   exact h ⟨ψ, hψ, hψc, by simp⟩
+
+open Laplacian in
+/-- The Laplacian of a test function multiplied by an `Lᵖ` function, `1 ≤ p`, is integrable. -/
+theorem integrable_laplacian_smul_of_memLp {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {Ω : Opens E} {ν : Measure E} [IsLocallyFiniteMeasure ν] (φ : 𝓓(Ω, ℝ)) {f : E → F}
+    (hf : MemLp f p ν) : Integrable (fun x ↦ Δ (φ : E → ℝ) x • f x) ν := by
+  simpa only [laplacianCLM_apply] using
+    (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ).integrable_smul_of_memLp hf
 
 end TestFunction
