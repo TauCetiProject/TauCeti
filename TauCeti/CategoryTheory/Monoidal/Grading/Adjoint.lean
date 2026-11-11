@@ -194,7 +194,7 @@ private theorem occurs_classOf_unit_tensor (U : SimpleClasses C) :
   (occurs_self _).of_iso_right
     ((λ_ _).symm ≪≫ whiskerRightIso (SimpleClasses.classOfReprIso _).symm _)
 
-omit [IsFiniteSemisimpleCategory C] in
+omit [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C] in
 /-- The unit class is a constituent of `X ⊗ Xᘁ` for a nonzero `X`, through the coevaluation. -/
 private theorem occurs_classOf_unit_tensor_rightDual {X : C} (hX : ¬IsZero X) :
     Occurs (SimpleClasses.classOf (𝟙_ C)).repr (X ⊗ Xᘁ) :=
@@ -204,7 +204,7 @@ end AdjointGrading
 
 namespace SimpleClasses
 
-omit [IsFiniteSemisimpleCategory C] in
+omit [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C] in
 /-- The tensor unit is adjoint, as a constituent of `X ⊗ Xᘁ` for `X = 𝟙_ C`. -/
 @[simp]
 theorem isAdjoint_classOf_unit : (classOf (𝟙_ C)).IsAdjoint := by
@@ -255,7 +255,7 @@ namespace AdjointGrading
 private def CosetRel (S T : SimpleClasses C) : Prop :=
   ∃ A : SimpleClasses C, A.IsAdjoint ∧ Occurs S.repr (T.repr ⊗ A.repr)
 
-omit [IsFiniteSemisimpleCategory C] in
+omit [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C] in
 private theorem cosetRel_refl (S : SimpleClasses C) : CosetRel S S :=
   ⟨_, isAdjoint_classOf_unit, occurs_tensor_classOf_unit S⟩
 
