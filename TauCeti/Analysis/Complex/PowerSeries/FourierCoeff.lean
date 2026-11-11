@@ -80,7 +80,7 @@ theorem DiffContOnCl.intervalIntegral_circleMap_zpow_smul_eq_zero {f : ℂ → E
   rw [h] at h'
   exact (smul_eq_zero.mp h'.symm).resolve_left I_ne_zero
 
-local instance : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
+local instance diffContOnClFourierCoeffTwoPiPos : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
 
 /-- A function holomorphic on the open unit disc and continuous on its closure has vanishing
 negative Fourier coefficients on the unit circle, read as a function on `AddCircle (2 * π)`. -/
