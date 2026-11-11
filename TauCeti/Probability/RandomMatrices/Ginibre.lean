@@ -173,7 +173,8 @@ instance (m n : ℕ) : IsProbabilityMeasure (gaussianGramReal m n) :=
   (Measure.isProbabilityMeasure_map_iff measurable_subtype_coe.aemeasurable).2 inferInstance
 
 instance (m n : ℕ) : IsProbabilityMeasure (gaussianGramComplex m n) :=
-  (Measure.isProbabilityMeasure_map_iff measurable_matrix_mul_conjTranspose.aemeasurable).2
+  (Measure.isProbabilityMeasure_map_iff
+    (measurable_matrix_mul_conjTranspose (R := ℂ) continuous_star.measurable).aemeasurable).2
     inferInstance
 
 /-- Each entry of a real Ginibre matrix is a standard Gaussian. -/
@@ -293,7 +294,8 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
   have hreshape : Measurable
       (fun z : Fin m × Fin n → ℂ ↦ Matrix.of fun i j ↦ z (i, j)) :=
     (Matrix.ofMeasurableEquiv (Fin m) (Fin n) ℂ).measurable.comp measurable_curry
-  rw [gaussianGramComplex, integral_map measurable_matrix_mul_conjTranspose.aemeasurable
+  rw [gaussianGramComplex, integral_map
+    (measurable_matrix_mul_conjTranspose (R := ℂ) continuous_star.measurable).aemeasurable
     (Continuous.aestronglyMeasurable (by fun_prop)), ginibreComplex_def,
     integral_map hreshape.aemeasurable
       (Continuous.aestronglyMeasurable (by fun_prop))]
@@ -314,7 +316,8 @@ open scoped ComplexOrder in
 /-- The complex Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramComplex (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramComplex m n), A.PosSemidef := by
-  rw [gaussianGramComplex, ae_map_iff measurable_matrix_mul_conjTranspose.aemeasurable
+  rw [gaussianGramComplex, ae_map_iff
+      (measurable_matrix_mul_conjTranspose (R := ℂ) continuous_star.measurable).aemeasurable
       isClosed_setOfPred_posSemidef.measurableSet]
   exact Filter.Eventually.of_forall fun X ↦ posSemidef_self_mul_conjTranspose X
 
