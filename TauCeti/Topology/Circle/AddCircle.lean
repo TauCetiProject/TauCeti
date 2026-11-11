@@ -97,26 +97,16 @@ at `x` is real exactly when `x` is `0` or the half period `T / 2`; these are sen
 -/
 theorem im_toCircle_eq_zero_iff {T : ℝ} (hT : T ≠ 0) {x : AddCircle T} :
     (toCircle x : ℂ).im = 0 ↔ x = 0 ∨ x = ((T / 2 : ℝ) : AddCircle T) := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · -- A unit complex number with vanishing imaginary part is `1` or `-1`.
-    have hsq : ((toCircle x : ℂ).re - 1) * ((toCircle x : ℂ).re + 1) = 0 := by
-      have := Circle.normSq_coe (toCircle x)
-      rw [Complex.normSq_apply, h] at this
-      linear_combination this
-    -- Such a point of the circle is determined by its real part.
-    have heq (w : Circle) (hw : (w : ℂ).im = 0) (hre : (toCircle x : ℂ).re = (w : ℂ).re) :
-        toCircle x = w :=
-      Circle.ext (Complex.ext hre (h.trans hw.symm))
-    rcases mul_eq_zero.1 hsq with hre | hre
-    · left
-      refine injective_toCircle hT ?_
-      rw [toCircle_zero]
-      exact heq 1 (by simp) (by simp [sub_eq_zero.1 hre])
-    · right
-      refine injective_toCircle hT ?_
-      rw [toCircle_half_period hT]
-      exact heq (-1) (by simp) (by simp [eq_neg_of_add_eq_zero_left hre])
-  · rintro (rfl | rfl) <;> simp [hT]
+  -- A point of the unit circle is real exactly when it is `1` or `-1`.
+  have key (w : Circle) : (w : ℂ).im = 0 ↔ w = 1 ∨ w = -1 := by
+    refine ⟨fun h ↦ ?_, by rintro (rfl | rfl) <;> simp⟩
+    have hre : |(w : ℂ).re| = 1 := by rw [Complex.abs_re_eq_norm.2 h, Circle.norm_coe]
+    rcases (abs_eq zero_le_one).1 hre with hre | hre
+    · exact .inl <| Circle.ext <| Complex.ext (by simp [hre]) (by simp [h])
+    · exact .inr <| Circle.ext <| Complex.ext (by simp [hre]) (by simp [h])
+  -- `0` and `T / 2` are the unique preimages of `1` and `-1`, by injectivity of `toCircle`.
+  rw [key, ← toCircle_half_period hT, ← toCircle_zero (T := T),
+    (injective_toCircle hT).eq_iff, (injective_toCircle hT).eq_iff]
 
 end AddCircle
 
@@ -136,7 +126,7 @@ theorem circleProdHomeomorphUnitAddTorus_apply (z : Circle × Circle) :
       ![(AddCircle.homeomorphCircle one_ne_zero).symm z.1,
         (AddCircle.homeomorphCircle one_ne_zero).symm z.2] := by
   ext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp [circleProdHomeomorphUnitAddTorus]
 
 /-- The inverse identification of `ℝ² / ℤ²` with `S¹ × S¹` sends the coordinates of a point to the
 circle by `AddCircle.toCircle`. -/
