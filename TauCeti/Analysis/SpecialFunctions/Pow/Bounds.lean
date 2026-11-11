@@ -52,9 +52,6 @@ comparable: each is at most `2 ^ (|r| / 2)` times the other. For `|t| ≤ 2`, th
 power `(1 + t ^ 2) ^ (r / 2)` is at least `5 ^ (-|r| / 2)`. These compare homogeneous growth
 `‖ξ‖ ^ r` with symbol growth `⟨ξ⟩ ^ r` away from the origin, and bound `⟨ξ⟩ ^ r` below near it.
 
-If `2 c ≤ t`, then `c (1 + t ^ 2) ^ (-m / 2) (1 + t ^ 2) ^ ((m - 1) / 2) ≤ 1 / 2`. This makes a
-perturbation of order `m - 1` small against an inverse of order `-m` at large frequencies.
-
 If `0 < d` and `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`: an approximation of quality
 `d ^ (-p)` meets the hypothesis of Legendre's theorem `Real.exists_rat_eq_convergent`.
 
@@ -106,8 +103,6 @@ function that does not need a derivative.
   for `1 ≤ t`.
 * `Real.one_le_five_rpow_mul_one_add_sq_rpow`: `1 ≤ 5 ^ (|r| / 2) (1 + t ^ 2) ^ (r / 2)` for
   `|t| ≤ 2`.
-* `Real.mul_one_add_sq_rpow_mul_one_add_sq_rpow_le_half`:
-  `c (1 + t ^ 2) ^ (-m / 2) (1 + t ^ 2) ^ ((m - 1) / 2) ≤ 1 / 2` for `2 c ≤ t`.
 * `Real.rpow_neg_le_one_div_two_mul_sq`: `d ^ (-p) ≤ 1 / (2 d ^ 2)` for `2 ≤ d ^ (p - 2)`.
 * `Real.rpow_le_two_mul_rpow_of_le_two_mul`: `r ^ p ≤ 2 h ^ p` for `0 ≤ r ≤ 2 h` and
   `0 ≤ p ≤ 1`.
@@ -325,15 +320,6 @@ theorem one_le_five_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : |t| ≤ 2) (r : ℝ
         rw [← rpow_add (by linarith), add_div]
     _ ≤ 5 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
         gcongr
-
-/-- If `2 c ≤ t`, then `c (1 + t²) ^ (-m / 2) (1 + t²) ^ ((m - 1) / 2) ≤ 1 / 2`: the product of
-the Japanese bracket powers of orders `-m` and `m - 1` is `(1 + t²) ^ (-1 / 2) ≤ 1 / |t|`. -/
-theorem mul_one_add_sq_rpow_mul_one_add_sq_rpow_le_half {c t : ℝ} (hct : 2 * c ≤ t) (m : ℝ) :
-    c * (1 + t ^ 2) ^ (-m / 2) * (1 + t ^ 2) ^ ((m - 1) / 2) ≤ 1 / 2 := by
-  have hs : 0 < 1 + t ^ 2 := by positivity
-  rw [mul_assoc, ← rpow_add hs, show -m / 2 + (m - 1) / 2 = -(1 / 2) by ring, rpow_neg hs.le,
-    ← sqrt_eq_rpow, mul_inv_le_iff₀ (sqrt_pos.2 hs)]
-  linarith [le_abs_self t, abs_le_sqrt (by linarith : t ^ 2 ≤ 1 + t ^ 2)]
 
 /-- If `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`. (For `d = 0` the hypothesis fails, as
 `0 ^ x ≤ 1`.) -/

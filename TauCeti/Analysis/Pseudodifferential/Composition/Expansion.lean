@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Fourier.Inversion
