@@ -29,6 +29,8 @@ public section
 
 namespace ContinuousLinearMap
 
+section Prod
+
 variable {R E F G : Type*} [Ring R]
   [TopologicalSpace E] [AddCommGroup E] [Module R E]
   [TopologicalSpace F] [AddCommGroup F] [Module R F]
@@ -47,12 +49,26 @@ theorem hasLeftInverse_fst_prod_iff (A : E × F →L[R] G) :
     have hA : A (x, y) = A (x, 0) + A (0, y) := by rw [← map_add]; simp
     simpa [hA] using hL y
 
+end Prod
+
+section Projection
+
+variable {R E F G : Type*} [Ring R]
+  [TopologicalSpace E] [AddCommGroup E] [Module R E]
+  [TopologicalSpace F] [AddCommMonoid F] [Module R F]
+  [TopologicalSpace G] [AddCommGroup G] [Module R G] [IsTopologicalAddGroup G]
+
 /-- Projecting a continuous linear map off the range of an operator with invertible compression
 annihilates that operator. -/
 theorem sub_comp_inverse_comp_comp_eq_zero (a : E →L[R] G) (A : F →L[R] E)
     (P : E →L[R] F) (hQ : (P ∘L A).IsInvertible) :
     (a - a ∘L A ∘L (P ∘L A).inverse ∘L P) ∘L A = 0 := by
-  simp [comp_assoc, hQ.inverse_comp_self]
+  ext x
+  have h : (P ∘L A).inverse (P (A x)) = x := by
+    simpa using congr($(hQ.inverse_comp_self) x)
+  simp [h]
+
+end Projection
 
 section FiniteDimensional
 
