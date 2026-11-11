@@ -175,7 +175,7 @@ private theorem coeffVec_primitiveMinpoly_mem_linearFormApproximations {n : ℕ}
     linarith [abs_nonneg ξ]
   calc |aeval ξ (primitiveMinpoly α)| ≤ K * H * ‖(ξ : ℂ) - α‖ := by
         rw [← hLℂ]
-        refine (norm_aeval_primitiveMinpoly_le halg hξα).trans ?_
+        refine (norm_aeval_primitiveMinpoly_le halg).trans ?_
         gcongr
     _ ≤ K * H * H ^ (-w - 1) := by gcongr
     _ = K * H ^ (-w) := by

@@ -157,7 +157,6 @@ theorem hasFDerivAt_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν) {y : ℝ �
           (Real.sin y.1 / (√(2 * y.2) * √(m * ν))) • snd ℝ ℝ ℝ).prod
         ((-(√(m * ν) * √(2 * y.2) * Real.sin y.1)) • fst ℝ ℝ ℝ +
           (√(m * ν) * Real.cos y.1 / √(2 * y.2)) • snd ℝ ℝ ℝ)) y := by
-  have hr0 : √(2 * y.2) ≠ 0 := by positivity
   have hc0 : √(m * ν) ≠ 0 := by positivity
   have hsqrt : HasFDerivAt (fun z : ℝ × ℝ ↦ √(2 * z.2))
       ((1 / (2 * √(2 * y.2))) • ((2 : ℝ) • snd ℝ ℝ ℝ)) y :=

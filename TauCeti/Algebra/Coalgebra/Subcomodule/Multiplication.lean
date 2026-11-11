@@ -19,7 +19,7 @@ right comodule to the regular right comodule. Consequently, if `N` and `P` are
 subcomodules of the regular comodule and a third subcomodule `Q` contains all products
 `n * p`, multiplication corestricts to a comodule morphism `N ⊗ P ⟶ Q`.
 
-When `H` is free over the base semiring and `N` and `P` are finite submodules, the products
+When `H` is projective over the base semiring and `N` and `P` are finite submodules, the products
 of their elements lie in some finite regular subcomodule. This packages the multiplication
 map needed to compare tensor-compatible natural transformations on finite regular
 subcomodules.
@@ -151,9 +151,9 @@ theorem exists_finite_mul_le_of_exists_mem
   refine ⟨Q, hQfinite, fun n p ↦ hQ ?_⟩
   exact ⟨n ⊗ₜ[R] p, rfl⟩
 
-/-- If `H` is free over `R`, pairwise products from two finite submodules lie in a finite
+/-- If `H` is projective over `R`, pairwise products from two finite submodules lie in a finite
 regular subcomodule. -/
-theorem exists_finite_mul_le [Module.Free R H] (N P : Submodule R H)
+theorem exists_finite_mul_le [Module.Projective R H] (N P : Submodule R H)
     [Module.Finite R N] [Module.Finite R P] :
     ∃ Q : Subcomodule R H H, Module.Finite R Q.toSubmodule ∧
       ∀ (n : N) (p : P), (n : H) * (p : H) ∈ Q :=
