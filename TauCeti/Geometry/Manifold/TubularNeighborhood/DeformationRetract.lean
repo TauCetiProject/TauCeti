@@ -103,13 +103,8 @@ theorem retraction_coreMap (T : IsTubularNeighborhood f U φ) (x : B) :
 
 /-- The range of the core map consists of the points of the tube on the core. -/
 theorem range_coreMap (T : IsTubularNeighborhood f U φ) :
-    range T.coreMap = {w : range φ | (w : N) ∈ range f} := by
-  ext w
-  constructor
-  · rintro ⟨x, rfl⟩
-    exact mem_range_self x
-  · rintro ⟨x, hx⟩
-    exact ⟨x, Subtype.ext hx⟩
+    range T.coreMap = {w : range φ | (w : N) ∈ range f} :=
+  Set.range_codRestrict T.f_mem_range
 
 /-- The retraction undoes the core map. -/
 @[simp]
