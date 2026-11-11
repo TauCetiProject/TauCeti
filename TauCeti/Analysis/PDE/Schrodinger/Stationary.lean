@@ -10,12 +10,14 @@ public import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Distribution.TestFunction.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Integral
 import TauCeti.Analysis.InnerProductSpace.WeakSolution
 import TauCeti.Analysis.Sobolev.Poincare.Schrodinger
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The stationary Schrödinger equation with a potential positive at infinity
@@ -141,10 +143,7 @@ theorem exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq [Nontri
     simp only [inner]
     exact integral_congr_ae (ae_of_all _ fun z ↦ mul_comm _ _)
   have norm_toLp_sq {f : E → ℝ} (hf : MemLp f 2 volume) : ‖hf.toLp f‖ ^ 2 = ∫ z, f z ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, inner_toLp_eq_integral]
-    refine integral_congr_ae ?_
-    filter_upwards [hf.coeFn_toLp] with z hz
-    rw [hz, sq]
+    simpa only [Real.norm_eq_abs, sq_abs] using hf.norm_toLp_sq
   set S := schrodingerToLp hP
   set ι :=
     (TestFunction.ambientToLp 2 volume : TestFn E →L[ℝ] Lp ℝ 2 (volume : Measure E)).toLinearMap
@@ -220,14 +219,6 @@ theorem mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq {P
     hg.add ((memLp_top_const 1).sub hP |>.mul hh)
   set v := hf.toLp _
   set U := Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)
-  -- The tempered distribution of a real `L²` function at a complexified real Schwartz function.
-  have toTemperedDistribution_apply_ofReal (w : Lp ℝ 2 (volume : Measure E)) (φ : 𝓢(E, ℝ)) :
-      Lp.toTemperedDistribution (Complex.ofRealCLM.compLp w) (φ.postcompCLM Complex.ofRealCLM) =
-        ((∫ z, φ z * w z : ℝ) : ℂ) := by
-    rw [Lp.toTemperedDistribution_apply, ← integral_complex_ofReal]
-    refine integral_congr_ae ?_
-    filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) w] with z hz
-    simp [hz]
   -- In the sense of tempered distributions, `-Δh + h = g + (1 - P) h`.
   have hU : -Δ U + (1 : ℝ) • U = Lp.toTemperedDistribution (Complex.ofRealCLM.compLp v) := by
     refine TemperedDistribution.ext_real fun φ hφc ↦ ?_
@@ -253,9 +244,10 @@ theorem mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq {P
         ((memLp_top_const 1).sub hP |>.mul hφ2 : MemLp (fun z ↦ (1 - P z) * φ z) 2 volume)
     have hi₅ : Integrable (fun z ↦ g z * φ z) volume := hg.integrable_mul hφ2
     simp only [add_apply, neg_apply, TemperedDistribution.laplacian_apply_apply, smul_apply, hΔ]
-    rw [toTemperedDistribution_apply_ofReal, toTemperedDistribution_apply_ofReal,
-      toTemperedDistribution_apply_ofReal, Complex.real_smul, Complex.ofReal_one, one_mul,
-      ← Complex.ofReal_neg, ← Complex.ofReal_add, ← integral_neg]
+    rw [Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
+      Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
+      Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM, Complex.real_smul,
+      Complex.ofReal_one, one_mul, ← Complex.ofReal_neg, ← Complex.ofReal_add, ← integral_neg]
     congr 1
     rw [← integral_add (f := fun z ↦ -((Δ φ : 𝓢(E, ℝ)) z * u z)) hi₁.neg hi₂]
     -- Both sides are `∫ h (-Δφ + φ)`, using the weak equation for the part `-Δφ + P φ`.
