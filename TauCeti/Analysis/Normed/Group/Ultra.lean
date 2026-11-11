@@ -88,7 +88,7 @@ section SphericalCompleteness
 
 open Metric
 
-variable {E : Type*} [SeminormedAddCommGroup E] [IsUltrametricDist E]
+variable {E : Type*} [SeminormedAddGroup E] [IsUltrametricDist E]
 
 /-- **A separable ultrametric group is not spherically complete** once its norms take a strictly
 decreasing sequence of values `‖cₙ‖` bounded below by some `ρ > 0`: there are decreasing closed
@@ -100,34 +100,26 @@ theorem exists_antitone_closedBall_iInter_eq_empty [TopologicalSpace.SeparableSp
       ⋂ n, closedBall (a n) ‖c n‖ = ∅ := by
   obtain ⟨x, hx⟩ := TopologicalSpace.exists_dense_seq E
   -- the next centre stays at `b` if `b` is far from `xₙ`, and moves by `cₙ` otherwise
-  let step (n : ℕ) (b : E) : E := if ‖c (n + 1)‖ < ‖b - x n‖ then b else b + c n
+  let step (n : ℕ) (b : E) : E := if ‖c (n + 1)‖ < dist (x n) b then b else b + c n
   have hstep (n : ℕ) (b : E) :
-      ‖step n b - b‖ ≤ ‖c n‖ ∧ ‖c (n + 1)‖ < ‖step n b - x n‖ := by
-    by_cases h : ‖c (n + 1)‖ < ‖b - x n‖
+      dist b (step n b) ≤ ‖c n‖ ∧ ‖c (n + 1)‖ < dist (x n) (step n b) := by
+    by_cases h : ‖c (n + 1)‖ < dist (x n) b
     · simp [step, h]
-    · have hlt : ‖b - x n‖ < ‖c n‖ := (not_lt.mp h).trans_lt (hc n.lt_succ_self)
-      simp only [step, h, ite_false, add_sub_cancel_left, le_rfl, true_and]
-      rw [show b + c n - x n = c n + (b - x n) by abel, norm_add_eq_max_of_norm_ne_norm hlt.ne',
-        max_eq_left hlt.le]
-      exact hc n.lt_succ_self
+    · rw [dist_eq_norm_neg_add] at h
+      have hlt : ‖-x n + b‖ < ‖c n‖ := (not_lt.mp h).trans_lt (hc n.lt_succ_self)
+      simpa [step, h, dist_eq_norm_neg_add, ← add_assoc, norm_add_eq_max_of_norm_ne_norm hlt.ne,
+        hlt.le] using hc n.lt_succ_self
   let a (n : ℕ) : E := Nat.rec a₀ step n
   have hsucc (n : ℕ) : a (n + 1) = step n (a n) := rfl
   refine ⟨a, rfl, antitone_nat_of_succ_le fun n ↦ ?_, Set.eq_empty_of_forall_notMem fun b hb ↦ ?_⟩
   · -- the `(n + 1)`-st centre lies in the `n`-th ball, which it therefore also centres
-    have hmem : a (n + 1) ∈ closedBall (a n) ‖c n‖ := by
-      rw [mem_closedBall, dist_eq_norm, hsucc]
-      exact (hstep n (a n)).1
-    rw [closedBall_eq_of_mem hmem]
+    rw [closedBall_eq_of_mem (mem_closedBall'.mpr (hstep n (a n)).1)]
     exact closedBall_subset_closedBall (hc n.lt_succ_self).le
   · -- a common point `b` is close to some `xₘ`, which then lies in the `(m + 1)`-st ball
     rw [Set.mem_iInter] at hb
     obtain ⟨m, hm⟩ := Metric.denseRange_iff.mp hx b ρ hρ
-    have hle : dist (x m) (a (m + 1)) ≤ ‖c (m + 1)‖ :=
-      (dist_triangle_max _ b _).trans <| max_le (by rw [dist_comm]; exact hm.le.trans (hcρ _))
-        (mem_closedBall.mp (hb (m + 1)))
-    have hfar := (hstep m (a m)).2
-    rw [← hsucc, ← dist_eq_norm, dist_comm] at hfar
-    exact hfar.not_ge hle
+    exact (hstep m (a m)).2.not_ge <| (dist_triangle_max _ b _).trans <|
+      max_le (by rw [dist_comm]; exact hm.le.trans (hcρ _)) (mem_closedBall.mp (hb (m + 1)))
 
 end SphericalCompleteness
 

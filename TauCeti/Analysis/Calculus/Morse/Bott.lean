@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
+import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -25,6 +26,11 @@ restriction of the Hessian to the fibre `{a} × F`, the vertical Hessian, is inv
 (`TauCeti.isInvertible_fderiv_fderiv_slice_right_of_ker_le`): a vector of the fibre in its kernel
 pairs to zero with the fibre directions, and with the base directions by symmetry, so it lies in
 the kernel of the Hessian, which meets the fibre only in `0`.
+
+The same kernel condition makes the zero section isolated among the critical points: near
+`(a, 0)`, the derivative of `f` vanishes exactly on the zero section
+(`TauCeti.eventually_fderiv_eq_zero_iff_snd_eq_zero`), since the derivative of `Df` at `(a, 0)`
+is injective on the fibre directions.
 
 With the parametric Morse lemma this gives the **Morse–Bott lemma** in product coordinates
 (`TauCeti.exists_morseBott_chart_of_contDiffOn`): if `f` is `C^{n+2}` near `(a, 0)`, with
@@ -51,6 +57,8 @@ orthogonal to the fibre.
 
 * `TauCeti.isInvertible_fderiv_fderiv_slice_right_of_ker_le`: the vertical Hessian at a
   Morse–Bott point of the zero section is invertible.
+* `TauCeti.eventually_fderiv_eq_zero_iff_snd_eq_zero`: near a Morse–Bott point of the zero
+  section, the critical points are exactly the points of the zero section.
 * `TauCeti.exists_morseBott_chart_of_contDiffOn`: the Morse–Bott lemma in product coordinates.
 * `TauCeti.exists_congruence_fderiv_fderiv_slice_right`: nearby vertical Hessians are congruent
   by a `C^n` family of invertible operators.
@@ -99,6 +107,22 @@ theorem isInvertible_fderiv_fderiv_slice_right_of_ker_le [FiniteDimensional ℝ 
     simp
   have hmem : ((0 : P), v) ∈ (fderiv ℝ (fderiv ℝ f) (a, 0)).ker := LinearMap.mem_ker.mpr hD
   obtain ⟨u, hu⟩ := hker hmem
+  simpa using (congrArg Prod.snd hu).symm
+
+/-- **A Morse–Bott zero section is isolated among critical points.** If `f` is `C²` at `(a, 0)`,
+every point `(b, 0)` with `b` near `a` is critical, and the kernel of the Hessian at `(a, 0)`
+consists of base directions, then near `(a, 0)` the critical points of `f` are exactly the points
+of the zero section. -/
+theorem eventually_fderiv_eq_zero_iff_snd_eq_zero [FiniteDimensional ℝ F]
+    (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
+    (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
+    ∀ᶠ z in 𝓝 (a, (0 : F)), fderiv ℝ f z = 0 ↔ z.2 = 0 := by
+  have hDf : ContDiffAt ℝ 1 (fderiv ℝ f) (a, 0) := hf.fderiv_right le_rfl
+  refine (hDf.hasStrictFDerivAt (hDf.differentiableAt one_ne_zero).hasFDerivAt one_ne_zero
+    ).eventually_apply_eq_zero_iff_snd_eq_zero hcrit <|
+    (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
+  -- A fibre vector `(0, v)` in the kernel of the Hessian is a base direction, so `v = 0`.
+  obtain ⟨u, hu⟩ := hker (LinearMap.mem_ker.2 hv)
   simpa using (congrArg Prod.snd hu).symm
 
 variable [FiniteDimensional ℝ P] [FiniteDimensional ℝ F] {W : Set (P × F)} {n : ℕ∞}
@@ -163,7 +187,7 @@ theorem exists_morseBott_chart_of_contDiffOn (hW : W ∈ 𝓝 (a, 0))
     filter_upwards [hcrit, hC2b] with b hb hb2
     rw [fderiv_slice_right (hb2.differentiableAt (by norm_num)), hb,
       ContinuousLinearMap.zero_comp]
-  obtain ⟨ψ, U, V, hU, hV, haU, h0V, hsource, hUV, hψfst, hψ0, hψsymm, hψ, hψinv, hψf⟩ :=
+  obtain ⟨ψ, U, V, hU, hV, haU, h0V, hsource, hUV, -, hψfst, hψ0, hψsymm, hψ, hψinv, hψf⟩ :=
     exists_parametric_morse_chart_of_contDiffOn hW hf hcrit' hHa hn
   -- Shrink the base to a ball on which the zero section is critical and the vertical Hessian
   -- invertible; the critical value is constant on that ball.

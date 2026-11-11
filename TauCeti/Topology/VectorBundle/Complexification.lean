@@ -225,7 +225,7 @@ theorem complexification_symm_apply {b : B} (hb : b ∈ e.baseSet) (z : Complexi
     (e.complexification.coordChangeL ℝ e'.complexification b :
       Complexification F →L[ℝ] Complexification F) =
       ((e.coordChangeL ℝ e' b : F →L[ℝ] F).complexify).restrictScalars ℝ := by
-  rw [← Trivialization.restrictScalars_coordChangeL ℝ ℂ e.complexification e'.complexification hb,
+  rw [← Trivialization.restrictScalars_coordChangeL ℝ ℂ e.complexification e'.complexification,
     coordChangeL_complexification e e' hb]
 
 end Bundle.Trivialization

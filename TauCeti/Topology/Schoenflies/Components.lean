@@ -42,8 +42,9 @@ collar and collapses the two pieces outside it to the poles `p` and `-p`
 (`TauCeti.IsBicollar.exists_collapse`). Then `φ y = ⟪g y, p⟫` vanishes exactly on `Σ` and takes
 both signs. So the closures of the two complementary domains of `Σ` are the preimages under `g` of
 the two closed hemispheres, `{0 ≤ ⟪g y, p⟫}` and `{⟪g y, p⟫ ≤ 0}`, and their common frontier `Σ` is
-the preimage of the equator. Once the two outer pieces are known to be cellular, collapsing them
-identifies each preimage with a closed hemisphere.
+the preimage of the equator. The two outer pieces are cellular, and collapsing them identifies each
+preimage with a closed hemisphere; this is Brown's theorem
+(`TauCeti.IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range`).
 
 The hypothesis `m ≥ 2` makes `Sᵐ⁻¹` connected, so that each side of the bicollar is connected. For
 `m = 1` the two sides of the bicollar of two points of the circle need not lie in different
@@ -68,8 +69,9 @@ section Function
 
 variable {φ : sphere (0 : F) 1 → ℝ}
 
+omit [FiniteDimensional ℝ E] in
 /-- **The positive domain of a function vanishing exactly on an embedded sphere.** Let `σ` be a
-continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the
+continuous injection of the unit sphere of a real normed space `E` into the
 unit sphere of a real normed space of dimension `dim E + 1`, and let `φ` be a continuous function
 vanishing exactly on the image of `σ` and taking a negative value. Then the set where `φ` is
 positive is the connected component of each of its points in the complement of that image. -/
@@ -87,8 +89,9 @@ theorem connectedComponentIn_compl_range_eq_setOf_pos (hEF : finrank ℝ F = fin
         (Set.ext hφσ : φ ⁻¹' {0} = range σ)])
     ⟨z, hz⟩ hy
 
+omit [FiniteDimensional ℝ E] in
 /-- **The negative domain of a function vanishing exactly on an embedded sphere.** Let `σ` be a
-continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the
+continuous injection of the unit sphere of a real normed space `E` into the
 unit sphere of a real normed space of dimension `dim E + 1`, and let `φ` be a continuous function
 vanishing exactly on the image of `σ` and taking a positive value. Then the set where `φ` is
 negative is the connected component of each of its points in the complement of that image. -/
