@@ -485,27 +485,33 @@ theorem exposedPoints_momentPolygon (ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c)
 
 /-! ### Rows `2` and `5` -/
 
-/-- Row `2` is the point with parameter `c / (a + c)` on the edge from row `1` to row `6`. -/
+/-- Row `2` is the point with parameter `c / (a + c)` on the affine line through rows `1`
+and `6`. For nonnegative weights `a`, `b`, `c` this parameter lies in `[0, 1]`, so the point
+lies on that edge of the hexagon `momentPolygon a b c`. -/
 theorem fixedMoment_one_eq_lineMap (h : a + c ≠ 0) :
     fixedMoment a b c 1 =
       AffineMap.lineMap (fixedMoment a b c 0) (fixedMoment a b c 5) (c / (a + c)) := by
   ext k
   fin_cases k <;> simp [fixedMoment_def, AffineMap.lineMap_apply_module] <;> field_simp <;> ring
 
-/-- Row `5` is the point with parameter `a / (a + c)` on the edge from row `1` to row `6`. -/
+/-- Row `5` is the point with parameter `a / (a + c)` on the affine line through rows `1`
+and `6`. For nonnegative weights `a`, `b`, `c` this parameter lies in `[0, 1]`, so the point
+lies on that edge of the hexagon `momentPolygon a b c`. -/
 theorem fixedMoment_four_eq_lineMap (h : a + c ≠ 0) :
     fixedMoment a b c 4 =
       AffineMap.lineMap (fixedMoment a b c 0) (fixedMoment a b c 5) (a / (a + c)) := by
   ext k
   fin_cases k <;> simp [fixedMoment_def, AffineMap.lineMap_apply_module] <;> field_simp <;> ring
 
-/-- For positive `a` and `c`, row `2` lies strictly inside the edge from row `1` to row `6`. -/
+/-- For positive `a` and `c`, row `2` lies in the open segment from row `1` to row `6`. When
+`b` is also nonnegative, this segment is an edge of the hexagon `momentPolygon a b c`. -/
 theorem fixedMoment_one_mem_openSegment (ha : 0 < a) (hc : 0 < c) :
     fixedMoment a b c 1 ∈ openSegment ℝ (fixedMoment a b c 0) (fixedMoment a b c 5) := by
   rw [fixedMoment_one_eq_lineMap (by positivity)]
   exact lineMap_mem_openSegment ℝ _ _ ⟨by positivity, (div_lt_one (by positivity)).2 (by linarith)⟩
 
-/-- For positive `a` and `c`, row `5` lies strictly inside the edge from row `1` to row `6`. -/
+/-- For positive `a` and `c`, row `5` lies in the open segment from row `1` to row `6`. When
+`b` is also nonnegative, this segment is an edge of the hexagon `momentPolygon a b c`. -/
 theorem fixedMoment_four_mem_openSegment (ha : 0 < a) (hc : 0 < c) :
     fixedMoment a b c 4 ∈ openSegment ℝ (fixedMoment a b c 0) (fixedMoment a b c 5) := by
   rw [fixedMoment_four_eq_lineMap (by positivity)]
