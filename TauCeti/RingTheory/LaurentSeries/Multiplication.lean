@@ -80,7 +80,6 @@ theorem laurentSeries_orderTop_pow_lt_orderTop_of_order_neg
     (hn : 1 < n) {w : k⸨X⸩} (hw : w.order < 0) :
     (w ^ n).orderTop < w.orderTop := by
   have hw0 : w ≠ 0 := by rintro rfl; simp at hw
-  have hnZ : (1 : ℤ) < n := by exact_mod_cast hn
   rw [laurentSeries_orderTop_pow_of_ne_zero n hw0, ← order_eq_orderTop_of_ne_zero hw0]
   exact_mod_cast (by nlinarith : (n : ℤ) * w.order < w.order)
 
