@@ -67,7 +67,7 @@ private theorem exists_int_of_sub_checkerboardVector_mem [NeZero n] {x : Fin n �
     (hx : x - checkerboardVector n ∈ checkerboardCarrier n) :
     ∃ z : Fin n → ℤ, ∀ i, x i = (z i : ℚ) := by
   choose w hw using ((mem_checkerboardCarrier_iff _).mp hx).1
-  refine ⟨fun i ↦ w i + if i = checkerboardLastIndex n then 1 else 0, fun i ↦ ?_⟩
+  refine ⟨fun i ↦ w i + if i = ⊤ then 1 else 0, fun i ↦ ?_⟩
   have := hw i
   rw [Pi.sub_apply, checkerboardVector_apply] at this
   push_cast
@@ -100,7 +100,7 @@ theorem sub_checkerboardVector_mem_and_form_self_eq_one_iff [NeZero n] (x : Fin 
   · exact fun ⟨hx, hnorm⟩ ↦ exists_eq_single_of_form_self_eq_one hx hnorm
   · rintro ⟨i, hx | hx⟩ <;> subst hx
     · refine ⟨mem_checkerboardCarrier_of
-        (fun j ↦ (if j = i then 1 else 0) - if j = checkerboardLastIndex n then 1 else 0)
+        (fun j ↦ (if j = i then 1 else 0) - if j = ⊤ then 1 else 0)
         (fun j ↦ ?_) ?_, ?_⟩
       · simp only [Pi.sub_apply, Pi.single_apply, checkerboardVector_apply]
         push_cast
@@ -108,7 +108,7 @@ theorem sub_checkerboardVector_mem_and_form_self_eq_one_iff [NeZero n] (x : Fin 
       · simp [Finset.sum_sub_distrib]
       · rw [checkerboardLattice_form_single, Pi.single_eq_same, mul_one]
     · refine ⟨mem_checkerboardCarrier_of
-        (fun j ↦ -(if j = i then 1 else 0) - if j = checkerboardLastIndex n then 1 else 0)
+        (fun j ↦ -(if j = i then 1 else 0) - if j = ⊤ then 1 else 0)
         (fun j ↦ ?_) ?_, ?_⟩
       · simp only [Pi.sub_apply, Pi.neg_apply, Pi.single_apply, checkerboardVector_apply]
         push_cast
@@ -154,7 +154,7 @@ private theorem exists_int_add_half_of_sub_checkerboardCospinor_mem [NeZero n] {
     (hx : x - checkerboardCospinor n ∈ checkerboardCarrier n) (i : Fin n) :
     ∃ z : ℤ, x i = z + 1 / 2 := by
   obtain ⟨z, hz⟩ := ((mem_checkerboardCarrier_iff _).mp hx).1 i
-  refine ⟨z - if i = checkerboardLastIndex n then 1 else 0, ?_⟩
+  refine ⟨z - if i = ⊤ then 1 else 0, ?_⟩
   rw [Pi.sub_apply, checkerboardCospinor_apply] at hz
   push_cast
   linarith
@@ -197,8 +197,7 @@ private theorem sub_checkerboardCospinor_mem_iff [NeZero n] {x : Fin n → ℚ}
     (hx : ∀ i, x i = 1 / 2 ∨ x i = -(1 / 2)) :
     x - checkerboardCospinor n ∈ checkerboardCarrier n ↔ Odd #{i | x i = -(1 / 2)} := by
   have hcoord (i : Fin n) : (x - checkerboardCospinor n) i =
-      ((-(if x i = -(1 / 2) then 1 else 0) + if i = checkerboardLastIndex n then 1 else 0 : ℤ) :
-        ℚ) := by
+      ((-(if x i = -(1 / 2) then 1 else 0) + if i = ⊤ then 1 else 0 : ℤ) : ℚ) := by
     have := sub_checkerboardSpinor_eq hx i
     rw [Pi.sub_apply, checkerboardSpinor_apply] at this
     rw [Pi.sub_apply, checkerboardCospinor_apply]
