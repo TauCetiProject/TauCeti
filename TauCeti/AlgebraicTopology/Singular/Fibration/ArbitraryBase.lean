@@ -18,7 +18,7 @@ Let `p : E ⟶ B` be a Serre fibration over an arbitrary space `B`, path-connect
 CW structure. Pull `p` back along the CW approximation `f : ΓB ⟶ B`
 (`TauCeti.sigmaCWApproximationMap`) to the Serre fibration `p' : E' ⟶ ΓB`, where
 `E' = ΓB ×_B E`. The Serre spectral sequence of `p` is the Serre spectral sequence of `p'` over the
-CW complex `ΓB` (`TauCeti.TopCat.arbitraryBaseSerreSpectralSequence`), the spectral sequence of the
+CW complex `ΓB` (`TopCat.Hom.arbitraryBaseSerreSpectralSequence`), the spectral sequence of the
 filtration of `E'` by the preimages of the skeleta of `ΓB`.
 
 Since `f` is a weak homotopy equivalence, so is the projection `E' ⟶ E`
@@ -36,7 +36,7 @@ homology. So the spectral sequence converges to the homology of `E` itself:
   (`TauCeti.TopCat.isZero_arbitraryBaseSerreSpectralSequence_page_two_X`).
 * **Finite filtration.** In degree `n` the filtration of the abutment vanishes below `0` and is
   everything from `n` on
-  (`TauCeti.TopCat.isZero_arbitraryBaseSerreSpectralObject_abutmentFiltration`,
+  (`TopCat.Hom.isZero_arbitraryBaseSerreSpectralObject_abutmentFiltration`,
   `TauCeti.TopCat.isIso_arbitraryBaseSerreSpectralObject_abutmentFiltrationι`), so it is finite,
   exhaustive and separated.
 * **Strong convergence.** On every late enough page the object at `(a, b)` is the graded piece
@@ -65,30 +65,36 @@ universe u
 
 open CategoryTheory Limits Set Topology Topology.RelCWComplex
 
-namespace TauCeti
+namespace TopCat.Hom
 
-namespace TopCat
-
-section Defs
-
-variable {E B : _root_.TopCat.{u}} (p : E ⟶ B) (R : Type u) [Ring R]
+variable {E B : TopCat.{u}} (p : E ⟶ B) (R : Type u) [Ring R]
 
 /-- **The Serre spectral sequence over an arbitrary base.** For `p : E ⟶ B`, the Serre spectral
 sequence `TauCeti.TopCat.serreSpectralSequence` of the pullback `ΓB ×_B E ⟶ ΓB` of `p` to the CW
 approximation `TauCeti.sigmaCWApproximation B` of `B`, with coefficients in `R`. -/
 abbrev arbitraryBaseSerreSpectralSequence :=
-  serreSpectralSequence (univ : Set (sigmaCWApproximation B))
-    (_root_.TopCat.pullbackFst (sigmaCWApproximationMap B) p) R
+  TauCeti.TopCat.serreSpectralSequence (univ : Set (TauCeti.sigmaCWApproximation B))
+    (TopCat.pullbackFst (TauCeti.sigmaCWApproximationMap B) p) R
 
 /-- **The spectral object of the Serre spectral sequence over an arbitrary base**: the spectral
 object `TauCeti.TopCat.serreSpectralObject` of the pullback of `p` to the CW approximation of `B`.
-Its spectral sequence is `TauCeti.TopCat.arbitraryBaseSerreSpectralSequence`, and its abutment in
+Its spectral sequence is `TopCat.Hom.arbitraryBaseSerreSpectralSequence`, and its abutment in
 degree `-n` is `Hₙ(E; R)` (`TauCeti.TopCat.arbitraryBaseSerreAbutmentIso`). -/
 abbrev arbitraryBaseSerreSpectralObject :=
-  serreSpectralObject (univ : Set (sigmaCWApproximation B))
-    (_root_.TopCat.pullbackFst (sigmaCWApproximationMap B) p) R
+  TauCeti.TopCat.serreSpectralObject (univ : Set (TauCeti.sigmaCWApproximation B))
+    (TopCat.pullbackFst (TauCeti.sigmaCWApproximationMap B) p) R
 
-end Defs
+/-- **The filtration of the abutment of the Serre spectral sequence over an arbitrary base starts at
+`0`**: its pieces `F_b Hₙ(E; R)` vanish for `b < 0`. -/
+theorem isZero_arbitraryBaseSerreSpectralObject_abutmentFiltration {b : ℤ} (hb : b < 0)
+    (n : ℤ) : IsZero ((p.arbitraryBaseSerreSpectralObject R).abutmentFiltration b n) :=
+  TauCeti.TopCat.isZero_serreSpectralObject_abutmentFiltration _ R univ hb n
+
+end TopCat.Hom
+
+namespace TauCeti
+
+namespace TopCat
 
 variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p) (R : Type u) [Ring R]
 
@@ -99,7 +105,7 @@ singular homology `Hₙ(E; R)` of the total space: the abutment `Hₙ(ΓB ×_B E
 sequence of the pullback to the CW approximation, followed by the isomorphism induced by the
 projection `ΓB ×_B E ⟶ E`. -/
 def arbitraryBaseSerreAbutmentIso (n : ℕ) :
-    (arbitraryBaseSerreSpectralObject p R).abutment (-n) ≅
+    (p.arbitraryBaseSerreSpectralObject R).abutment (-n) ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
         (ModuleCat.of R R)).obj E :=
   -- The projection `ΓB ×_B E ⟶ E` is a weak homotopy equivalence, since `ΓB ⟶ B` is one.
@@ -127,7 +133,7 @@ approximation `ΓB`, where `f : ΓB ⟶ B` is the approximation map and `χⱼ(0
 `j`. In the classical indexing this is `E¹_{k,q}`. -/
 def arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma (k q : ℕ) (pq : ℤ × ℤ)
     (hb : pq.2 = k - 1) (ha : pq.1 + pq.2 = -(q + k : ℕ)) :
-    ((arbitraryBaseSerreSpectralSequence p R).page 2).X pq ≅
+    ((p.arbitraryBaseSerreSpectralSequence R).page 2).X pq ≅
       ∐ fun j : cell (univ : Set (sigmaCWApproximation B)) k ↦
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
           (ModuleCat.of R R)).obj (p.fiber (sigmaCWApproximationMap B (map k j 0))) :=
@@ -141,7 +147,7 @@ The object at `pq = (a, b)` of the first page (numbered `2`) vanishes when `0 �
 `E¹_{k,q} = 0` for `q < 0` in the classical indexing. -/
 theorem isZero_arbitraryBaseSerreSpectralSequence_page_two_X (pq : ℤ × ℤ)
     (h : 0 ≤ pq.1 + 2 * pq.2) :
-    IsZero (((arbitraryBaseSerreSpectralSequence p R).page 2).X pq) :=
+    IsZero (((p.arbitraryBaseSerreSpectralSequence R).page 2).X pq) :=
   isZero_serreSpectralSequence_page_two_X
     (mem_serreFibrations_pullbackFst hp _) R univ pq h
 
@@ -150,17 +156,9 @@ everything in finitely many steps.** In degree `n`, every piece `F_b Hₙ(E; R)`
 filtration of the abutment is everything. -/
 theorem isIso_arbitraryBaseSerreSpectralObject_abutmentFiltrationι (n : ℕ) {b : ℤ}
     (hb : n ≤ b) :
-    IsIso ((arbitraryBaseSerreSpectralObject p R).abutmentFiltrationι b (-n)) :=
+    IsIso ((p.arbitraryBaseSerreSpectralObject R).abutmentFiltrationι b (-n)) :=
   isIso_serreSpectralObject_abutmentFiltrationι
     (mem_serreFibrations_pullbackFst hp _) R univ (subset_univ _) n hb
-
-omit hp in
-variable (p) in
-/-- **The filtration of the abutment of the Serre spectral sequence over an arbitrary base starts at
-`0`**: its pieces `F_b Hₙ(E; R)` vanish for `b < 0`. -/
-theorem isZero_arbitraryBaseSerreSpectralObject_abutmentFiltration {b : ℤ} (hb : b < 0)
-    (n : ℤ) : IsZero ((arbitraryBaseSerreSpectralObject p R).abutmentFiltration b n) :=
-  isZero_serreSpectralObject_abutmentFiltration _ R univ hb n
 
 /-- **Strong convergence of the Serre spectral sequence over an arbitrary base.** Let `p : E ⟶ B`
 be a Serre fibration, with no hypothesis on `B`. On every page `r ≥ 2` with `b + 3 ≤ r` and
@@ -169,8 +167,8 @@ filtration of the abutment in degree `a + b`, which is `H_{-(a+b)}(E; R)` by
 `TauCeti.TopCat.arbitraryBaseSerreAbutmentIso`. -/
 def arbitraryBaseSerreSpectralSequencePageXIsoGraded (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
     (hra : pq.2 + 3 ≤ r) (hrb : 2 - pq.1 - 2 * pq.2 ≤ r) :
-    ((arbitraryBaseSerreSpectralSequence p R).page r).X pq ≅
-      cokernel ((arbitraryBaseSerreSpectralObject p R).abutmentFiltrationMap pq.2
+    ((p.arbitraryBaseSerreSpectralSequence R).page r).X pq ≅
+      cokernel ((p.arbitraryBaseSerreSpectralObject R).abutmentFiltrationMap pq.2
         (pq.1 + pq.2)) :=
   serreSpectralSequencePageXIsoGraded (mem_serreFibrations_pullbackFst hp _)
     R (subset_univ _) r hr pq hra hrb
