@@ -62,7 +62,7 @@ theorem map_continuousMap_const_apply (y : Y) (hy : (ContinuousMap.const X y) x 
   refine Quotient.inductionOn a ?_
   intro p
   rw [map_mk]
-  exact congrArg _ (GenLoop.map_continuousMap_const y p)
+  exact congrArg _ (GenLoop.map_continuousMap_const y hy p)
 
 /-- Every homotopy group of a subsingleton space is a subsingleton: any two generalized loops
 in it are equal. This includes dimension zero. -/
