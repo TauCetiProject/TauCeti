@@ -63,21 +63,6 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimen
   [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] [NormedAddCommGroup H]
   [NormedSpace ℝ H] {p : ℝ≥0∞} {Ω : Opens ℂ} {u : ℂ → F}
 
-/-- For `p > 2`, a member of `W^{1,p}_loc(Ω)` agrees almost everywhere on `Ω` with its precise
-representative. -/
-private theorem ae_eq_preciseRepresentative_of_two_lt (hp : 2 < p) (hu : MemWkpLoc p Ω 1 u) :
-    u =ᵐ[volume.restrict Ω] preciseRepresentative volume u :=
-  hu.memLpLoc.ae_eq_preciseRepresentative (one_le_two.trans hp.le)
-
-/-- For `p > 2`, the precise representative of a member of `W^{1,p}_loc(Ω)` is again a member,
-and it is continuous on `Ω`. -/
-private theorem memWkpLoc_preciseRepresentative_of_two_lt (hp : 2 < p)
-    (hu : MemWkpLoc p Ω 1 u) :
-    MemWkpLoc p Ω 1 (preciseRepresentative volume u) ∧
-      ContinuousOn (preciseRepresentative volume u) Ω :=
-  ⟨hu.congr_ae (ae_eq_preciseRepresentative_of_two_lt hp hu),
-    hu.continuousOn_preciseRepresentative hp⟩
-
 /-- **Composition with the continuous representative.** Let `2 < p`, let `u ∈ W^{1,p}_loc(Ω)` and
 let `u*` be its precise representative, which is continuous on `Ω` by Morrey's embedding. If `g` is
 `C¹` on an open set `W` containing `u* '' Ω`, then `g ∘ u*` belongs to `W^{1,p}_loc(Ω)`. No
@@ -86,8 +71,8 @@ theorem MemWkpLoc.contDiffOn_comp_preciseRepresentative (hp : 2 < p) (hu : MemWk
     {g : F → G} {W : Set F} (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W)
     (huW : MapsTo (preciseRepresentative volume u) Ω W) :
     MemWkpLoc p Ω 1 (fun z => g (preciseRepresentative volume u z)) :=
-  let h := memWkpLoc_preciseRepresentative_of_two_lt hp hu
-  h.1.contDiffOn_comp h.2 hW hg huW
+  (hu.congr_ae (hu.memLpLoc.ae_eq_preciseRepresentative (one_le_two.trans hp.le))).contDiffOn_comp
+    (hu.continuousOn_preciseRepresentative hp) hW hg huW
 
 /-- **The weak chain rule with the continuous representative.** Let `2 < p`, let
 `u ∈ W^{1,p}_loc(Ω)` have weak derivative `Du` on `Ω` and let `u*` be its precise representative.
@@ -99,7 +84,7 @@ theorem HasWeakFDerivOn.contDiffOn_comp_preciseRepresentative (hp : 2 < p)
     (huW : MapsTo (preciseRepresentative volume u) Ω W) :
     HasWeakFDerivOn volume Ω (fun z => g (preciseRepresentative volume u z))
       fun z => (fderiv ℝ g (preciseRepresentative volume u z)).comp (Du z) :=
-  (hDu.congr_ae (ae_eq_preciseRepresentative_of_two_lt hp hu)).contDiffOn_comp
+  (hDu.congr_ae (hu.memLpLoc.ae_eq_preciseRepresentative (one_le_two.trans hp.le))).contDiffOn_comp
     (hu.continuousOn_preciseRepresentative hp) hW hg huW
 
 /-- **Composition of `W^{1,p}_loc` maps with `C¹` maps for `p > 2`.** If `2 < p`,
@@ -109,7 +94,7 @@ agrees almost everywhere on `Ω` with `g ∘ u*` for the continuous precise repr
 theorem MemWkpLoc.contDiff_comp_of_two_lt (hp : 2 < p) (hu : MemWkpLoc p Ω 1 u) {g : F → G}
     (hg : ContDiff ℝ 1 g) : MemWkpLoc p Ω 1 (fun z => g (u z)) :=
   (hu.contDiffOn_comp_preciseRepresentative hp isOpen_univ hg.contDiffOn (mapsTo_univ _ _)).congr_ae
-    ((ae_eq_preciseRepresentative_of_two_lt hp hu).fun_comp g).symm
+    ((hu.memLpLoc.ae_eq_preciseRepresentative (one_le_two.trans hp.le)).fun_comp g).symm
 
 /-- **The weak chain rule for `W^{1,p}_loc` maps and `C¹` maps for `p > 2`.** If `2 < p`,
 `u ∈ W^{1,p}_loc(Ω)` has weak derivative `Du` on `Ω` and `g` is globally `C¹`, then `g ∘ u` has
@@ -121,7 +106,8 @@ theorem HasWeakFDerivOn.contDiff_comp_of_two_lt (hp : 2 < p) (hu : MemWkpLoc p �
     HasWeakFDerivOn volume Ω (fun z => g (u z))
       fun z => (fderiv ℝ g (preciseRepresentative volume u z)).comp (Du z) :=
   (hDu.contDiffOn_comp_preciseRepresentative hp hu isOpen_univ hg.contDiffOn
-    (mapsTo_univ _ _)).congr_ae ((ae_eq_preciseRepresentative_of_two_lt hp hu).fun_comp g).symm
+    (mapsTo_univ _ _)).congr_ae
+    ((hu.memLpLoc.ae_eq_preciseRepresentative (one_le_two.trans hp.le)).fun_comp g).symm
 
 variable [CompleteSpace H] in
 /-- **Composition with domain dependence for `p > 2`.** If `2 < p`, `u ∈ W^{1,p}_loc(Ω)` and
@@ -129,10 +115,10 @@ variable [CompleteSpace H] in
 continuity hypothesis on `u`. -/
 theorem MemWkpLoc.contDiff_comp_graph_of_two_lt (hp : 2 < p) (hu : MemWkpLoc p Ω 1 u)
     {g : ℂ × F → H} (hg : ContDiff ℝ 1 g) : MemWkpLoc p Ω 1 (fun z => g (z, u z)) := by
-  obtain ⟨hu₀, hu₀c⟩ := memWkpLoc_preciseRepresentative_of_two_lt hp hu
-  refine (hu₀.contDiffOn_comp_graph hu₀c isOpen_univ hg.contDiffOn fun _ _ => mem_univ _).congr_ae
-    ?_
-  filter_upwards [ae_eq_preciseRepresentative_of_two_lt hp hu] with z hz
+  have hae := hu.memLpLoc.ae_eq_preciseRepresentative (one_le_two.trans hp.le)
+  refine ((hu.congr_ae hae).contDiffOn_comp_graph (hu.continuousOn_preciseRepresentative hp)
+    isOpen_univ hg.contDiffOn fun _ _ => mem_univ _).congr_ae ?_
+  filter_upwards [hae] with z hz
   rw [hz]
 
 /-! ### Check: a smooth map changed at one point -/
