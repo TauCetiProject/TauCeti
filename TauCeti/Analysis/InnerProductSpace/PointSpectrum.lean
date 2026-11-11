@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Semisimple
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.FunctionalCalculus
@@ -1043,5 +1044,23 @@ theorem eigenvalues_ne_eigenvalues_of_disjoint (hA : A.IsSymmetric) (hB : B.IsSy
   rw [restrictedPointSpectrum_top, restrictedPointSpectrum_top] at h
   exact fun hij ↦ Set.disjoint_left.mp h (hA.hasEigenvalue_eigenvalues hn i)
     (hij ▸ hB.hasEigenvalue_eigenvalues hm j)
+
+
+/-- The trial-space spectral bound on the Ritz compression `X† A X`, in quadratic-form shape. -/
+theorem re_inner_ritz_le_of_pointSpectrumIn (hA : A.IsSymmetric) (X : F →ₗ[𝕜] E) {α : ℝ}
+    (h : Module.End.PointSpectrumIn
+      (X.adjoint ∘ₗ A ∘ₗ X) ⊤ (Set.Iic α)) (y : F) :
+    RCLike.re ⟪(X.adjoint ∘ₗ A ∘ₗ X) y, y⟫_𝕜 ≤ α * ‖y‖ ^ 2 :=
+  (hA.adjoint_conj X).re_inner_apply_self_le_of_pointSpectrumIn
+    (fun _ _ => Submodule.mem_top) h Submodule.mem_top
+
+/-- The separated spectral bound on the orthogonal complement of an invariant subspace, in
+quadratic-form shape. -/
+theorem le_re_inner_of_pointSpectrumIn_orthogonal (hA : A.IsSymmetric)
+    {U : Submodule 𝕜 E} (hU : U ∈ Module.End.invtSubmodule A) {β : ℝ}
+    (h : Module.End.PointSpectrumIn A Uᗮ (Set.Ici β)) {y : E} (hy : y ∈ Uᗮ) :
+    β * ‖y‖ ^ 2 ≤ RCLike.re ⟪A y, y⟫_𝕜 :=
+  hA.le_re_inner_apply_self_of_pointSpectrumIn
+    (hA.orthogonalComplement_mem_invtSubmodule hU) h hy
 
 end LinearMap.IsSymmetric

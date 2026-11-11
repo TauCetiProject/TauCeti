@@ -283,6 +283,17 @@ theorem mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
     y ∈ sobolevFields s ↔ ∀ i, (fun z ↦ y z i) ∈ realSobolevFunctions ℂ s 2 :=
   Iff.rfl
 
+/-- Every field of `sobolevFields s` is square integrable, whatever the order `s`. -/
+theorem memLp_of_mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : y ∈ sobolevFields s) : MemLp y 2 volume :=
+  memLp_piLp_iff.2 fun i ↦ memLp_of_mem_realSobolevFunctions (mem_sobolevFields.1 hy i)
+
+/-- A field lies in `sobolevFields 0` exactly when it is square integrable. -/
+@[simp]
+theorem mem_sobolevFields_zero_iff {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
+    y ∈ sobolevFields 0 ↔ MemLp y 2 volume := by
+  simp [mem_sobolevFields, memLp_piLp_iff]
+
 /-- The section `2 (y₂ + i y₃)` of a field of `sobolevFields s` is square integrable. -/
 theorem memLp_sectionValue_of_mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hy : y ∈ sobolevFields s) : MemLp (sectionValue y) 2 volume := by

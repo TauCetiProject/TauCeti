@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.RootSystem.Base
 import TauCeti.Algebra.Lie.AdjointAction.RootExponential
 import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Lie.CartanExists
 import TauCeti.Algebra.Lie.Subalgebra.Engel
 import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.Algebra.Lie.Weights.Dimension
@@ -57,6 +58,8 @@ exact divisions by the parity identity `dim L = rank L + 2 · #Δ⁺`.
   the rank of `L` is the dimension of every splitting Cartan subalgebra.
 * `LieSubalgebra.finrank_eq_rank_add_two_mul_card_isPos`: the parity identity
   `dim L = rank L + 2 · #Δ⁺`.
+* `TauCeti.rank_eq_one_of_finrank_eq_three`: over an algebraically closed field of characteristic
+  zero, a three-dimensional Lie algebra with non-degenerate Killing form has rank one.
 
 ## References
 
@@ -193,3 +196,34 @@ theorem finrank_eq_rank_add_two_mul_card_isPos [CharZero K] [IsKilling K L]
   exact TauCeti.finrank_eq_finrank_cartan_add_two_mul_card_isPos H b
 
 end LieSubalgebra
+
+namespace TauCeti
+
+open LieAlgebra LieModule Module
+
+variable {K L : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L] [IsKilling K L]
+
+/-- **A three-dimensional Lie algebra with non-degenerate Killing form has rank one**, over an
+algebraically closed field of characteristic zero. By the parity identity `d = l + 2 · #Δ⁺` the
+rank is one or three, and a Cartan subalgebra filling all of `L` would make `L` abelian, hence
+zero. -/
+theorem rank_eq_one_of_finrank_eq_three (h : finrank K L = 3) : LieAlgebra.rank K L = 1 := by
+  obtain ⟨H, _, ⟨b⟩⟩ := exists_isCartanSubalgebra_base K L
+  have hd := finrank_eq_finrank_cartan_add_two_mul_ncard_posRoots H b
+  rw [H.rank_eq_finrank_cartan]
+  have hH : finrank K H ≠ 3 := by
+    intro h3
+    have htop : H.toSubmodule = ⊤ := Submodule.eq_top_of_finrank_eq (h3.trans h.symm)
+    have hmem (x : L) : x ∈ H := by
+      rw [← LieSubalgebra.mem_toSubmodule, htop]
+      exact Submodule.mem_top
+    -- The Cartan subalgebra is abelian, so `L` is abelian, hence zero.
+    have : IsLieAbelian L :=
+      ⟨fun x y ↦ by simpa using congrArg Subtype.val (trivial_lie_zero H H ⟨x, hmem x⟩ ⟨y, hmem y⟩)⟩
+    have := (IsKilling.isLieAbelian_iff_subsingleton K L).mp this
+    rw [finrank_zero_of_subsingleton] at h
+    omega
+  omega
+
+end TauCeti
