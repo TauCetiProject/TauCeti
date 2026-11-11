@@ -119,7 +119,7 @@ theorem IsRegularValue.eventually_mem_image_of_curveVelocity_ne_zero
     (hδ.contMDiffAt (hS.mem_nhds hs₀)).mdifferentiableAt one_ne_zero
   have hinj : Injective (mfderiv 𝓘(𝕜, 𝕜) I (δ ∘ (Subtype.val : U → 𝕜)) ⟨s₀, hs₀⟩) := by
     intro v w hvw
-    rw [Manifold.mfderiv_comp_subtype_val_apply hd, Manifold.mfderiv_comp_subtype_val_apply hd,
+    rw [Manifold.mfderiv_comp_subtype_val_apply, Manifold.mfderiv_comp_subtype_val_apply,
       (Manifold.hasMFDerivAt_curveVelocity hd).mfderiv] at hvw
     exact smul_left_injective 𝕜 hv hvw
   have hmem := hreg.eventually_mem_range hf (by rw [finrank_self, add_comm, hdim])
