@@ -17,6 +17,9 @@ direct congruence lemma of this form.
 
 `FirstOrder.Language.Sentence.realize_alls` characterizes satisfaction of the universal closure
 of a bounded formula with no free variables as realization at every tuple of bound variables.
+
+`FirstOrder.Language.Sentence.realize_ex_bdEqual_self_iff` says that the sentence `∃ x, x = x`
+holds exactly in the nonempty structures.
 -/
 
 public section
@@ -47,6 +50,11 @@ theorem Sentence.realize_alls {L : Language} {M : Type*} [L.Structure M] {n : �
     M ⊨ φ.alls ↔ ∀ a : Fin n → M, φ.Realize Empty.elim a := by
   rw [Sentence.Realize, Subsingleton.elim (default : Empty → M) Empty.elim,
     BoundedFormula.realize_alls]
+
+/-- The sentence `∃ x, x = x` holds exactly in the nonempty structures. -/
+theorem Sentence.realize_ex_bdEqual_self_iff {L : Language} {M : Type*} [L.Structure M] :
+    M ⊨ (∃' ((&0 : L.Term (Empty ⊕ Fin 1)) =' &0) : L.Sentence) ↔ Nonempty M := by
+  simp [Sentence.Realize, Formula.Realize]
 
 end Language
 
