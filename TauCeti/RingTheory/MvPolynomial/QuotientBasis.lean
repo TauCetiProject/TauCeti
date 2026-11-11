@@ -470,7 +470,8 @@ theorem IsQuotientBasis.map {source target : Type*} [CommRing source] [CommRing 
     simp only [b, Module.Basis.map_apply, Module.Basis.baseChange_apply,
       basis_apply, e, AlgEquiv.toLinearEquiv_apply, AlgEquiv.trans_apply,
       Algebra.TensorProduct.tensorQuotientEquiv_apply_tmul, Ideal.quotientEquivAlg_mk,
-      algebraTensorAlgEquiv_tmul, one_smul, map_map, ← IsScalarTower.algebraMap_eq]
+      algebraTensorAlgEquiv_tmul, one_smul, map_map, ← IsScalarTower.algebraMap_eq,
+      RingHom.algebraMap_toAlgebra]
   have heq : (fun i ↦ Ideal.Quotient.mk (ideal.map (_root_.MvPolynomial.map scalarMap.toRingHom))
       (_root_.MvPolynomial.map (algebraMap R target) (w i))) = b := (funext hb).symm
   exact ⟨heq.symm ▸ b.linearIndependent, heq.symm ▸ b.span_eq⟩
