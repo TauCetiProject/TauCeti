@@ -333,7 +333,7 @@ theorem exists_integerRing_eq_and_isUnit_norm {z : L}
   simpa only [Algebra.algebraMap_ofSubsemiring_apply, coe_norm_integerRing] using hz
 
 /-- An integer of `L` has unit norm in `𝒪[K]` exactly when it is a unit of `𝒪[L]`. -/
-@[simp]
+-- Not a simp lemma: the general simp lemma `Algebra.isUnit_norm_iff` subsumes it.
 theorem isUnit_norm_integerRing_iff {w : 𝒪[L]} :
     IsUnit (Algebra.norm 𝒪[K] w) ↔ IsUnit w := by
   rw [(Valuation.integer.integers (valuation K)).isUnit_iff_valuation_eq_one,
