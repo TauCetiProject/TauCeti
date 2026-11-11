@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
-public import Mathlib.RingTheory.RootsOfUnity.Complex
-public import Mathlib.RingTheory.RootsOfUnity.Lemmas
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
 
 /-!
 # Gauss's multiplication formula for the Gamma function
@@ -25,11 +24,8 @@ triplication formula, the case `m = 3`.
 
 ## Main results
 
-* `Real.prod_sin_pi_mul_div`: `∏_{k=1}^{m-1} sin(π k / m) = m / 2^{m-1}`.
 * `Real.prod_Gamma_div`, `Complex.prod_Gamma_div`: `∏_{k=1}^{m-1} Γ(k/m) = (2π)^{(m-1)/2} / √m`
   (DLMF 5.5.7).
-* `Real.prod_Gamma_add_div_of_pos`, `Real.Gamma_natCast_mul_of_pos`: DLMF 5.5.6 for
-  `s > 0`.
 * `Complex.prod_Gamma_add_div`, `Complex.Gamma_natCast_mul`: DLMF 5.5.6 for every `s : ℂ`.
 * `Real.prod_Gamma_add_div`, `Real.Gamma_natCast_mul`: DLMF 5.5.6 for every `s : ℝ`.
 * `Complex.Gamma_mul_Gamma_add_third`: Gauss's triplication formula
@@ -38,15 +34,18 @@ triplication formula, the case `m = 3`.
 ## Implementation notes
 
 For `s > 0` the formula follows from the Bohr–Mollerup theorem `Real.eq_Gamma_of_log_convex`.
-The constant is evaluated with Euler's reflection formula and the sine product, which comes
-from `IsPrimitiveRoot.prod_one_sub_pow_eq_order`. The identity theorem then extends the formula
-for `1/Γ` to all complex arguments. Both sides vanish at the poles of `Γ`, under Mathlib's
-convention `Γ(−n) = 0`.
+The constant is evaluated with Euler's reflection formula and the sine product
+`Real.prod_sin_pi_mul_div`. The identity theorem then extends the formula for `1/Γ` to all complex
+arguments, and the real formula for every `s` is read off from the complex one. Both sides vanish
+at the poles of `Γ`, under Mathlib's convention `Γ(−n) = 0`.
 
 ## References
 
 * G. E. Andrews, R. Askey, R. Roy, *Special Functions*, Theorem 1.5.2.
 * [DLMF, §5.5(iii)](https://dlmf.nist.gov/5.5.iii)
+
+The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
+file `DLMF/Gamma/Multiplication.lean`.
 -/
 
 @[expose] public section
@@ -57,165 +56,7 @@ open scoped Topology Real
 
 noncomputable section
 
-namespace Complex
-
-/-- Algebraic identity `1 - exp(I θ) = -2 I exp(I θ / 2) sin(θ / 2)`. -/
-private theorem one_sub_exp_mul_I (θ : ℂ) :
-    1 - exp (I * θ) = -2 * I * exp (I * θ / 2) * sin (θ / 2) := by
-  convert_to 1 - exp (2 * I * (θ / 2)) = -2 * I * exp (I * (θ / 2)) * sin (θ / 2)
-  · congr 1; ring_nf
-  · ring_nf
-  generalize θ / 2 = ω
-  have h0 : exp (I * ω) * exp (-I * ω) = 1 := by
-    rw [← exp_add, ← exp_zero]
-    congr 1
-    ring
-  have h1 : exp (I * ω) * exp (I * ω) = exp (2 * I * ω) := by
-    rw [← exp_add]
-    congr 1
-    ring
-  have hL : -2 * I * exp (I * ω) * sin ω = -I * exp (I * ω) * (2 * sin ω) := by ring
-  rw [hL, two_sin]
-  have hneg : -ω * I = -I * ω := by ring
-  have hpos : ω * I = I * ω := mul_comm _ _
-  simp_rw [hneg, hpos]
-  have hR : -I * exp (I * ω) * ((exp (-I * ω) - exp (I * ω)) * I) =
-      -(I * I) * (exp (I * ω) * exp (-I * ω) - exp (I * ω) * exp (I * ω)) := by
-    ring
-  rw [hR, I_mul_I, h0, h1]
-  ring
-
-/-- The product of `1 - μ^k` over the nontrivial `m`-th roots of unity is `m`. -/
-private theorem prod_one_sub_exp_two_pi {m : ℕ} (hm : 0 < m) :
-    ∏ k ∈ range (m - 1), (1 - exp (2 * π * I / m) ^ (k + 1)) = m := by
-  have hμ : IsPrimitiveRoot (exp (2 * π * I / m)) (m - 1 + 1) := by
-    simpa [Nat.sub_one_add_one_eq_of_pos hm] using isPrimitiveRoot_exp m hm.ne'
-  have h := hμ.prod_one_sub_pow_eq_order
-  have heq : (↑(m - 1) + 1 : ℂ) = m := by
-    rw [← Nat.cast_succ, Nat.succ_eq_add_one, Nat.sub_one_add_one_eq_of_pos hm]
-  exact h.trans heq
-
-/-- `∑_{k<n} k = n(n - 1)/2` in `ℂ`. -/
-private theorem sum_range_id_complex (n : ℕ) :
-    ∑ k ∈ range n, (k : ℂ) = (↑(n * (n - 1)) : ℂ) / 2 := by
-  have h : ((∑ k ∈ range n, k) * 2 : ℂ) = ↑(n * (n - 1)) := by
-    exact_mod_cast sum_range_id_mul_two n
-  rw [← Nat.cast_sum]
-  exact (eq_div_iff_mul_eq (by norm_num : (2 : ℂ) ≠ 0)).2 h
-
-/-- `∑_{k<n} (k + 1) = n(n + 1)/2` in `ℂ`. -/
-private theorem sum_range_succ_coe (n : ℕ) :
-    ∑ k ∈ range n, (k + 1 : ℂ) = (↑(n * (n + 1)) : ℂ) / 2 := by
-  have hsum := sum_range_id_complex n
-  have hconst : ∑ _k ∈ range n, (1 : ℂ) = n := by simp [sum_const, card_range]
-  have h2 : (2 : ℂ) ≠ 0 := by norm_num
-  have hnat : (↑(n * (n - 1)) + ↑n * 2 : ℂ) = ↑(n * (n + 1)) := by
-    exact_mod_cast (by
-      cases n with
-      | zero => simp
-      | succ n =>
-        simp
-        ring)
-  calc
-    ∑ k ∈ range n, (k + 1 : ℂ)
-      = ∑ k ∈ range n, (k : ℂ) + ∑ _k ∈ range n, (1 : ℂ) := by
-        simp [sum_add_distrib]
-    _ = (↑(n * (n - 1)) : ℂ) / 2 + n := by rw [hsum, hconst]
-    _ = (↑(n * (n + 1)) : ℂ) / 2 := by
-        apply (mul_right_inj' h2).mp
-        convert hnat using 1
-        · field
-        · field
-
-/-- `exp(∑_{k<m-1} iπ(k + 1)/m) = i^(m-1)` for `m > 0`. -/
-private theorem exp_sum_pi_div {m : ℕ} (hm : 0 < m) :
-    exp (∑ k ∈ range (m - 1), I * π * (k + 1) / m) = I ^ (m - 1) := by
-  have hm0 : (m : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hm.ne'
-  have hs := sum_range_succ_coe (m - 1)
-  have hsum :
-      ∑ k ∈ range (m - 1), I * π * (k + 1) / m =
-        I * π * ↑(m - 1) / 2 := by
-    have hfactor :
-        ∑ k ∈ range (m - 1), I * π * (k + 1) / m =
-          (I * π / m) * ∑ k ∈ range (m - 1), (k + 1 : ℂ) := by
-      simp_rw [div_eq_mul_inv]
-      refine Eq.trans (sum_congr rfl fun k _ => ?_) (mul_sum _ _ _).symm
-      ring
-    rw [hfactor, hs]
-    have hpred : ((m - 1) * (m - 1 + 1) : ℕ) = (m - 1) * m := by
-      rw [Nat.sub_one_add_one_eq_of_pos hm]
-    simp [hpred]
-    field [hm0]
-  rw [hsum]
-  have : I * π * ↑(m - 1) / 2 = ↑(m - 1) * (π / 2 * I) := by ring
-  rw [this, exp_nat_mul, exp_pi_div_two_mul_I]
-
-/-- With `ω = e^(2πi/m)`: `1 - ω^(k+1) = -2i e^(iπ(k+1)/m) sin(π(k + 1)/m)`. -/
-private theorem one_sub_root_eq_sin {m k : ℕ} (hm : 0 < m) :
-    (1 : ℂ) - exp (2 * π * I / m) ^ (k + 1) =
-      -2 * I * exp (I * π * (k + 1) / m) * (Real.sin (π * (k + 1 : ℝ) / m) : ℂ) := by
-  have hpow : exp (2 * π * I / m) ^ (k + 1) = exp (I * (2 * π * (k + 1) / m)) := by
-    rw [← exp_nat_mul]
-    congr 1
-    push_cast
-    ring
-  have hid := one_sub_exp_mul_I (2 * π * (k + 1 : ℂ) / m)
-  have hm0 : (m : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hm.ne'
-  have harg : (2 * π * (k + 1 : ℂ) / m) / 2 = π * (k + 1 : ℂ) / m := by field
-  have hcast : (π * (k + 1 : ℂ) / m) = ↑(π * (k + 1 : ℝ) / m) := by
-    push_cast
-    ring
-  rw [hpow, hid, harg, hcast, ofReal_sin]
-  congr 2
-  ring_nf
-
-/-- `(-2i)ⁿ iⁿ = 2ⁿ`. -/
-private theorem pow_neg_two_I_mul_I (n : ℕ) : (-2 * I : ℂ) ^ n * I ^ n = (2 : ℂ) ^ n := by
-  rw [mul_pow, mul_assoc, ← pow_add, ← two_mul, pow_mul, I_sq, ← mul_pow]
-  norm_num
-end Complex
-
 namespace Real
-
-/-- `∏_{k=1}^{m-1} sin(π k / m) = m / 2^{m-1}`. Empty product when `m = 1`. -/
-theorem prod_sin_pi_mul_div {m : ℕ} (hm : 0 < m) :
-    ∏ k ∈ Ico 1 m, sin (π * k / m) = m / (2 : ℝ) ^ (m - 1) := by
-  have hrange :
-      ∏ k ∈ range (m - 1), sin (π * (k + 1 : ℝ) / m) =
-        ∏ k ∈ Ico 1 m, sin (π * k / m) := by
-    simpa [add_comm] using
-      (prod_Ico_eq_prod_range (fun k : ℕ => sin (π * k / m)) 1 m).symm
-  have hμ := Complex.prod_one_sub_exp_two_pi hm
-  have hprod :
-      ∏ k ∈ range (m - 1),
-          ((1 : ℂ) - Complex.exp (2 * π * Complex.I / m) ^ (k + 1)) =
-        (-2 * Complex.I) ^ (m - 1) * Complex.I ^ (m - 1) *
-          ∏ k ∈ range (m - 1), (sin (π * (k + 1 : ℝ) / m) : ℂ) := by
-    simp_rw [Complex.one_sub_root_eq_sin hm]
-    rw [prod_mul_distrib, prod_mul_distrib, prod_const, card_range,
-      ← Complex.exp_sum, Complex.exp_sum_pi_div hm]
-  have hmain : (m : ℂ) =
-      (2 : ℂ) ^ (m - 1) *
-        ↑(∏ k ∈ range (m - 1), sin (π * (k + 1 : ℝ) / m)) := by
-    calc
-      (m : ℂ) = ∏ k ∈ range (m - 1),
-          (1 - Complex.exp (2 * π * Complex.I / m) ^ (k + 1)) := hμ.symm
-      _ = (-2 * Complex.I) ^ (m - 1) * Complex.I ^ (m - 1) *
-            ∏ k ∈ range (m - 1), (sin (π * (k + 1 : ℝ) / m) : ℂ) := hprod
-      _ = (2 : ℂ) ^ (m - 1) *
-            ↑(∏ k ∈ range (m - 1), sin (π * (k + 1 : ℝ) / m)) := by
-          rw [Complex.pow_neg_two_I_mul_I, Complex.ofReal_prod]
-  have hreal : (m : ℝ) =
-      (2 : ℝ) ^ (m - 1) *
-        ∏ k ∈ range (m - 1), sin (π * (k + 1 : ℝ) / m) := by
-    apply Complex.ofReal_injective
-    simpa [Complex.ofReal_pow, Complex.ofReal_mul, Complex.ofReal_natCast] using hmain
-  have hne : ((2 : ℝ) ^ (m - 1)) ≠ 0 := pow_ne_zero _ two_ne_zero
-  calc
-    ∏ k ∈ Ico 1 m, sin (π * k / m)
-      = ∏ k ∈ range (m - 1), sin (π * (k + 1 : ℝ) / m) := hrange.symm
-    _ = m / (2 : ℝ) ^ (m - 1) :=
-        (eq_div_iff_mul_eq hne).2 (by rw [mul_comm]; exact hreal.symm)
 
 /-- `∏_{k=1}^{m-1} Γ(k/m) = (2π)^{(m-1)/2} / √m` (DLMF 5.5.7). -/
 theorem prod_Gamma_div {m : ℕ} (hm : 0 < m) :
@@ -458,7 +299,7 @@ private theorem multiplicationGamma_eq_Gamma {m : ℕ} (hm : 0 < m) {s : ℝ} (h
 
 /-- Gauss's multiplication formula (DLMF 5.5.6) for `s > 0`:
 `∏_{k<m} Γ(s + k/m) = (2π)^{(m-1)/2} m^{1/2 - ms} Γ(ms)`. -/
-theorem prod_Gamma_add_div_of_pos {m : ℕ} (hm : 0 < m) {s : ℝ} (hs : 0 < s) :
+private theorem prod_Gamma_add_div_of_pos {m : ℕ} (hm : 0 < m) {s : ℝ} (hs : 0 < s) :
     ∏ k ∈ range m, Gamma (s + k / m) =
       (2 * π) ^ ((m - 1 : ℝ) / 2) * (m : ℝ) ^ (1 / 2 - m * s) * Gamma (m * s) := by
   have hm0 : (0 : ℝ) < m := Nat.cast_pos.mpr hm
@@ -484,36 +325,13 @@ theorem prod_Gamma_add_div_of_pos {m : ℕ} (hm : 0 < m) {s : ℝ} (hs : 0 < s) 
   rw [hrearr, hF, hrpow]
   ring
 
-/-- Gauss's multiplication formula (DLMF 5.5.6, AAR Theorem 1.5.2) for `s > 0`, solved for
-`Γ(ms)`: `Γ(ms) = (2π)^{(1-m)/2} m^{ms - 1/2} ∏_{k<m} Γ(s + k/m)`. -/
-theorem Gamma_natCast_mul_of_pos {m : ℕ} (hm : 0 < m) {s : ℝ} (hs : 0 < s) :
-    Gamma (m * s) =
-      (2 * π) ^ ((1 - m : ℝ) / 2) * (m : ℝ) ^ (m * s - 1 / 2) *
-        ∏ k ∈ range m, Gamma (s + k / m) := by
-  have hm0 : (0 : ℝ) < m := Nat.cast_pos.mpr hm
-  have hs' : 0 < m * s := mul_pos hm0 hs
-  have hF := multiplicationGamma_eq_Gamma hm hs'
-  have harg : ∀ k : ℕ, (m * s + k) / m = s + k / m := fun k => by field
-  simp_rw [multiplicationGamma, harg] at hF
-  have h2π : 0 < 2 * π := mul_pos two_pos pi_pos
-  have hrpowC : (2 * π) ^ ((1 - m : ℝ) / 2) = ((2 * π) ^ ((m - 1 : ℝ) / 2))⁻¹ := by
-    rw [← rpow_neg h2π.le]
-    congr 1
-    ring
-  rw [← hF, hrpowC]
-  field
 end Real
 
 namespace Complex
 
-
-/-- `(2π)^((m-1)/2)` as a complex constant, obtained by coercing the real power. -/
-private def gaussMulConst (m : ℕ) : ℂ :=
-  ↑(Real.rpow (2 * Real.pi) ((m - 1 : ℝ) / 2))
-
-/-- The constant `(2π)^((m-1)/2)` is nonzero. -/
-private theorem gaussMulConst_ne_zero (m : ℕ) : gaussMulConst m ≠ 0 :=
-  ofReal_ne_zero.mpr (Real.rpow_pos_of_pos (mul_pos two_pos Real.pi_pos) _).ne'
+/-- `(2π)^w ≠ 0`. -/
+private theorem two_pi_cpow_ne_zero (w : ℂ) : (2 * π : ℂ) ^ w ≠ 0 :=
+  cpow_ne_zero_iff.mpr (Or.inl (mul_ne_zero two_ne_zero (ofReal_ne_zero.mpr Real.pi_ne_zero)))
 
 /-- `z ↦ ∏_{k<m} 1/Γ(z + k/m)` is entire. -/
 private theorem differentiable_prod_one_div_Gamma_add_div (m : ℕ) :
@@ -524,42 +342,59 @@ private theorem differentiable_prod_one_div_Gamma_add_div (m : ℕ) :
 /-- `z ↦ m^(mz - 1/2) / (Γ(mz) (2π)^((m-1)/2))` is entire. -/
 private theorem differentiable_mul_cpow_one_div_Gamma (m : ℕ) (hm : 0 < m) :
     Differentiable ℂ fun z : ℂ =>
-      (Gamma (m * z))⁻¹ * (m : ℂ) ^ (m * z - 1 / 2) / gaussMulConst m := by
+      (Gamma (m * z))⁻¹ * (m : ℂ) ^ (m * z - 1 / 2) / (2 * π : ℂ) ^ ((m - 1 : ℂ) / 2) := by
   have hm0 : (m : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hm.ne'
-  refine (Differentiable.mul ?_ ?_).div (differentiable_const _) (fun _ => gaussMulConst_ne_zero m)
+  refine (Differentiable.mul ?_ ?_).div (differentiable_const _)
+    (fun _ => two_pi_cpow_ne_zero _)
   · exact differentiable_one_div_Gamma.comp (differentiable_id.const_mul _)
   · exact ((differentiable_id.const_mul (m : ℂ)).sub_const (1 / 2)).const_cpow (Or.inl hm0)
 
-/-- `gaussMulConst m = (2π)^((m-1)/2)` as a complex power. -/
-private theorem gaussMulConst_eq_cpow (m : ℕ) :
-    gaussMulConst m = (2 * π : ℂ) ^ ((m - 1 : ℂ) / 2) := by
-  simpa [gaussMulConst] using
-    ofReal_cpow (mul_nonneg zero_le_two Real.pi_pos.le) ((m - 1 : ℝ) / 2)
+/-- At a real point `s`, Gauss's multiplication formula for the real `Γ` is the coercion of the
+formula for the complex `Γ`. -/
+private theorem prod_Gamma_add_div_ofReal_iff (m : ℕ) (s : ℝ) :
+    (∏ k ∈ range m, Real.Gamma (s + k / m) =
+        (2 * π) ^ ((m - 1 : ℝ) / 2) * (m : ℝ) ^ (1 / 2 - m * s) * Real.Gamma (m * s)) ↔
+      ∏ k ∈ range m, Gamma ((s : ℂ) + k / m) =
+        (2 * π : ℂ) ^ ((m - 1 : ℂ) / 2) * (m : ℂ) ^ (1 / 2 - m * (s : ℂ)) *
+          Gamma (m * (s : ℂ)) := by
+  have hprod : ((∏ k ∈ range m, Real.Gamma (s + k / m) : ℝ) : ℂ) =
+      ∏ k ∈ range m, Gamma ((s : ℂ) + k / m) := by
+    rw [ofReal_prod]
+    refine prod_congr rfl fun k _ => ?_
+    have : ((s + k / m : ℝ) : ℂ) = (s : ℂ) + k / m := by push_cast; ring
+    rw [← this, Gamma_ofReal]
+  have hG : (Real.Gamma (m * s) : ℂ) = Gamma (m * (s : ℂ)) := by
+    have : ((m * s : ℝ) : ℂ) = m * (s : ℂ) := by push_cast; ring
+    rw [← this, Gamma_ofReal]
+  have hM : (((m : ℝ) ^ (1 / 2 - m * s) : ℝ) : ℂ) = (m : ℂ) ^ (1 / 2 - m * (s : ℂ)) := by
+    rw [ofReal_cpow (Nat.cast_nonneg _)]
+    push_cast
+    ring
+  have hC : (((2 * π) ^ ((m - 1 : ℝ) / 2) : ℝ) : ℂ) = (2 * π : ℂ) ^ ((m - 1 : ℂ) / 2) := by
+    rw [ofReal_cpow (mul_nonneg zero_le_two Real.pi_pos.le)]
+    push_cast
+    ring
+  rw [← ofReal_inj, ofReal_mul, ofReal_mul, hprod, hG, hM, hC]
 
 /-- **Gauss's multiplication formula** (DLMF 5.5.6) for every `s : ℂ`:
 `∏_{k<m} Γ(s + k/m) = (2π)^{(m-1)/2} m^{1/2 - ms} Γ(ms)`. -/
 theorem prod_Gamma_add_div {m : ℕ} (hm : 0 < m) (s : ℂ) :
     ∏ k ∈ range m, Gamma (s + k / m) =
       (2 * π : ℂ) ^ ((m - 1 : ℂ) / 2) * (m : ℂ) ^ (1 / 2 - m * s) * Gamma (m * s) := by
-  have hC := gaussMulConst_eq_cpow m
   suffices (fun z : ℂ => ∏ k ∈ range m, (Gamma (z + k / m))⁻¹) =
-      fun z => (Gamma (m * z))⁻¹ * (m : ℂ) ^ (m * z - 1 / 2) / gaussMulConst m by
+      fun z => (Gamma (m * z))⁻¹ * (m : ℂ) ^ (m * z - 1 / 2) /
+        (2 * π : ℂ) ^ ((m - 1 : ℂ) / 2) by
     have h := congr_arg Inv.inv (congr_fun this s)
-    have hL : (∏ k ∈ range m, (Gamma (s + k / m))⁻¹)⁻¹ =
-        ∏ k ∈ range m, Gamma (s + k / m) := by
-      simp [prod_inv_distrib]
-    have hR :
-        ((Gamma (m * s))⁻¹ * (m : ℂ) ^ (m * s - 1 / 2) / gaussMulConst m)⁻¹ =
-          (2 * π : ℂ) ^ ((m - 1 : ℂ) / 2) * (m : ℂ) ^ (1 / 2 - m * s) * Gamma (m * s) := by
-      simp [div_eq_mul_inv, inv_inv, hC, ← cpow_neg]
-      ring
-    exact hL.symm.trans (h.trans hR)
+    simp only [prod_inv_distrib, inv_inv] at h
+    rw [h]
+    simp [div_eq_mul_inv, ← cpow_neg]
+    ring
   have h1 : AnalyticOnNhd ℂ
       (fun z : ℂ => ∏ k ∈ range m, (Gamma (z + k / m))⁻¹) Set.univ :=
     (differentiable_prod_one_div_Gamma_add_div m).differentiableOn.analyticOnNhd isOpen_univ
   have h2 : AnalyticOnNhd ℂ
-      (fun z => (Gamma (m * z))⁻¹ * (m : ℂ) ^ (m * z - 1 / 2) / gaussMulConst m)
-      Set.univ :=
+      (fun z => (Gamma (m * z))⁻¹ * (m : ℂ) ^ (m * z - 1 / 2) /
+        (2 * π : ℂ) ^ ((m - 1 : ℂ) / 2)) Set.univ :=
     (differentiable_mul_cpow_one_div_Gamma m hm).differentiableOn.analyticOnNhd isOpen_univ
   have h3 : Tendsto ((↑) : ℝ → ℂ) (nhdsWithin 1 {1}ᶜ) (nhdsWithin 1 {1}ᶜ) := by
     rw [tendsto_nhdsWithin_iff]
@@ -569,40 +404,8 @@ theorem prod_Gamma_add_div {m : ℕ} (hm : 0 < m) (s : ℂ) :
   refine AnalyticOnNhd.eq_of_frequently_eq h1 h2 (h3.frequently ?_)
   refine ((Eventually.filter_mono nhdsWithin_le_nhds) ?_).frequently
   refine (eventually_gt_nhds zero_lt_one).mp (Eventually.of_forall fun t ht => ?_)
-  have hreal := Real.prod_Gamma_add_div_of_pos hm ht
-  have hm0R : (0 : ℝ) ≤ m := Nat.cast_nonneg _
-  have hprod : ((∏ k ∈ range m, Real.Gamma (t + k / m) : ℝ) : ℂ) =
-      ∏ k ∈ range m, Gamma (↑t + k / m) := by
-    rw [ofReal_prod]
-    refine prod_congr rfl fun k _ => ?_
-    have : ((t + k / m : ℝ) : ℂ) = ↑t + k / m := by push_cast; ring
-    rw [← this, Gamma_ofReal]
-  have hrpow : (((m : ℝ) ^ (1 / 2 - m * t) : ℝ) : ℂ) =
-      (m : ℂ) ^ (1 / 2 - m * (t : ℂ)) := by
-    rw [ofReal_cpow hm0R]
-    push_cast
-    ring
-  have hG : (Real.Gamma (m * t) : ℂ) = Gamma (m * (t : ℂ)) := by
-    have : ((m * t : ℝ) : ℂ) = m * (t : ℂ) := by push_cast; ring
-    rw [← this, Gamma_ofReal]
-  have hneG : Real.Gamma (m * t) ≠ 0 :=
-    (Real.Gamma_pos_of_pos (mul_pos (Nat.cast_pos.mpr hm) ht)).ne'
-  have hneM : (m : ℝ) ^ (1 / 2 - m * t) ≠ 0 :=
-    (Real.rpow_pos_of_pos (Nat.cast_pos.mpr hm) _).ne'
-  have hprodne : ∏ k ∈ range m, Real.Gamma (t + k / m) ≠ 0 := by
-    refine (prod_pos fun k _ => Real.Gamma_pos_of_pos ?_).ne'
-    exact add_pos_of_pos_of_nonneg ht (div_nonneg (Nat.cast_nonneg _) (Nat.cast_nonneg _))
-  have hcoe : (↑(∏ k ∈ range m, Real.Gamma (t + k / m)) : ℂ) =
-      gaussMulConst m * (m : ℂ) ^ (1 / 2 - m * (t : ℂ)) * Gamma (m * (t : ℂ)) := by
-    apply_fun ((↑) : ℝ → ℂ) at hreal
-    rw [hprod] at hreal
-    convert hreal using 1
-    rw [ofReal_mul, ofReal_mul, hrpow, hG, gaussMulConst]
-    rfl
-  apply_fun Inv.inv at hcoe
-  rw [hprod, ← prod_inv_distrib] at hcoe
-  refine hcoe.trans ?_
-  simp [div_eq_mul_inv, ← cpow_neg]
+  have h := (prod_Gamma_add_div_ofReal_iff m t).mp (Real.prod_Gamma_add_div_of_pos hm ht)
+  rw [prod_inv_distrib, h, mul_inv, mul_inv, ← cpow_neg (m : ℂ), neg_sub]
   ring
 
 /-- `∏_{k=1}^{m-1} Γ(k/m) = (2π)^{(m-1)/2} m^{-1/2}` (DLMF 5.5.7), for complex `Γ`. -/
@@ -630,33 +433,17 @@ theorem Gamma_natCast_mul {m : ℕ} (hm : 0 < m) (s : ℂ) :
     Gamma (m * s) =
       (2 * π : ℂ) ^ ((1 - m : ℂ) / 2) * (m : ℂ) ^ (m * s - 1 / 2) *
         ∏ k ∈ range m, Gamma (s + k / m) := by
-  have h := prod_Gamma_add_div hm s
-  have hrpowC : (2 * π : ℂ) ^ ((1 - m : ℂ) / 2) = ((2 * π : ℂ) ^ ((m - 1 : ℂ) / 2))⁻¹ := by
-    rw [← cpow_neg]
-    congr 1
-    ring
-  have hrpowM : ((m : ℂ) ^ (1 / 2 - m * s))⁻¹ = (m : ℂ) ^ (m * s - 1 / 2) := by
-    rw [← cpow_neg]
-    congr 1
-    ring
-  have hC : (2 * π : ℂ) ^ ((m - 1 : ℂ) / 2) ≠ 0 := by
-    rw [← gaussMulConst_eq_cpow]
-    exact gaussMulConst_ne_zero m
+  have h2π : (2 * π : ℂ) ≠ 0 := mul_ne_zero two_ne_zero (ofReal_ne_zero.mpr Real.pi_ne_zero)
   have hm0 : (m : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hm.ne'
-  have hM : (m : ℂ) ^ (1 / 2 - m * s) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hm0)
-  have h1 : Gamma (m * s) =
-      Gamma (m * s) * ((2 * π : ℂ) ^ ((m - 1 : ℂ) / 2) *
-        ((2 * π : ℂ) ^ ((m - 1 : ℂ) / 2))⁻¹) *
-        ((m : ℂ) ^ (1 / 2 - m * s) * ((m : ℂ) ^ (1 / 2 - m * s))⁻¹) := by
-    field
-  rw [h1]
-  have h2 := congr_arg
-      (fun z : ℂ => z * ((2 * π : ℂ) ^ ((m - 1 : ℂ) / 2))⁻¹ *
-        ((m : ℂ) ^ (1 / 2 - m * s))⁻¹) h.symm
-  convert h2 using 1
-  · ring
-  · rw [hrpowC, hrpowM]
-    ring
+  have hC : (2 * π : ℂ) ^ ((1 - m : ℂ) / 2) * (2 * π : ℂ) ^ ((m - 1 : ℂ) / 2) = 1 := by
+    rw [← cpow_add _ _ h2π, show (1 - m : ℂ) / 2 + (m - 1) / 2 = 0 by ring, cpow_zero]
+  have hM : (m : ℂ) ^ (m * s - 1 / 2) * (m : ℂ) ^ (1 / 2 - m * s) = 1 := by
+    rw [← cpow_add _ _ hm0, show (m * s - 1 / 2 : ℂ) + (1 / 2 - m * s) = 0 by ring, cpow_zero]
+  rw [prod_Gamma_add_div hm s]
+  linear_combination
+    (-Gamma (m * s) * (m : ℂ) ^ (m * s - 1 / 2) * (m : ℂ) ^ (1 / 2 - m * s)) * hC -
+      Gamma (m * s) * hM
+
 /-- **Gauss's triplication formula** (DLMF 5.5.6 with `n = 3`): for every `z : ℂ`,
 `Γ(z) Γ(z + ⅓) Γ(z + ⅔) = 2π 3^{½ − 3z} Γ(3z)`. Both sides vanish at the poles of `Γ`, under
 Mathlib's convention `Γ(−n) = 0`. -/
@@ -678,37 +465,8 @@ namespace Real
 `∏_{k<m} Γ(s + k/m) = (2π)^{(m-1)/2} m^{1/2 - ms} Γ(ms)`. -/
 theorem prod_Gamma_add_div {m : ℕ} (hm : 0 < m) (s : ℝ) :
     ∏ k ∈ range m, Gamma (s + k / m) =
-      (2 * π) ^ ((m - 1 : ℝ) / 2) * (m : ℝ) ^ (1 / 2 - m * s) * Gamma (m * s) := by
-  apply Complex.ofReal_injective
-  have h := Complex.prod_Gamma_add_div hm (s : ℂ)
-  have hm0 : (0 : ℝ) ≤ m := Nat.cast_nonneg _
-  have h2π : 0 ≤ 2 * π := mul_nonneg zero_le_two pi_pos.le
-  have hprod : ((∏ k ∈ range m, Gamma (s + k / m) : ℝ) : ℂ) =
-      ∏ k ∈ range m, Complex.Gamma (s + k / m : ℂ) := by
-    rw [Complex.ofReal_prod]
-    refine prod_congr rfl fun k _ => ?_
-    have : ((s + k / m : ℝ) : ℂ) = (s : ℂ) + k / m := by push_cast; ring
-    rw [← this, Complex.Gamma_ofReal]
-  have hrpowM : (((m : ℝ) ^ (1 / 2 - m * s) : ℝ) : ℂ) =
-      (m : ℂ) ^ (1 / 2 - m * (s : ℂ)) := by
-    rw [Complex.ofReal_cpow hm0]
-    push_cast
-    ring
-  have hrpowC : (((2 * π) ^ ((m - 1 : ℝ) / 2) : ℝ) : ℂ) =
-      (2 * π : ℂ) ^ ((m - 1 : ℂ) / 2) := by
-    rw [Complex.ofReal_cpow h2π]
-    push_cast
-    ring
-  have hG : (Gamma (m * s) : ℂ) = Complex.Gamma (m * (s : ℂ)) := by
-    have : ((m * s : ℝ) : ℂ) = m * (s : ℂ) := by push_cast; ring
-    rw [← this, Complex.Gamma_ofReal]
-  have hRHS : (( (2 * π) ^ ((m - 1 : ℝ) / 2) * (m : ℝ) ^ (1 / 2 - m * s) *
-        Gamma (m * s) : ℝ) : ℂ) =
-      (2 * π : ℂ) ^ ((m - 1 : ℂ) / 2) * (m : ℂ) ^ (1 / 2 - m * (s : ℂ)) *
-        Complex.Gamma (m * (s : ℂ)) := by
-    rw [Complex.ofReal_mul, Complex.ofReal_mul, hrpowC, hrpowM, hG]
-  rw [hprod, hRHS]
-  exact h
+      (2 * π) ^ ((m - 1 : ℝ) / 2) * (m : ℝ) ^ (1 / 2 - m * s) * Gamma (m * s) :=
+  (Complex.prod_Gamma_add_div_ofReal_iff m s).mpr (Complex.prod_Gamma_add_div hm s)
 
 /-- Gauss's multiplication formula (DLMF 5.5.6, AAR Theorem 1.5.2) for every `s : ℝ`, solved
 for `Γ(ms)`: `Γ(ms) = (2π)^{(1-m)/2} m^{ms - 1/2} ∏_{k<m} Γ(s + k/m)`. -/
@@ -716,34 +474,15 @@ theorem Gamma_natCast_mul {m : ℕ} (hm : 0 < m) (s : ℝ) :
     Gamma (m * s) =
       (2 * π) ^ ((1 - m : ℝ) / 2) * (m : ℝ) ^ (m * s - 1 / 2) *
         ∏ k ∈ range m, Gamma (s + k / m) := by
-  apply Complex.ofReal_injective
-  have h := Complex.Gamma_natCast_mul hm (s : ℂ)
-  have hm0 : (0 : ℝ) ≤ m := Nat.cast_nonneg _
-  have h2π : 0 ≤ 2 * π := mul_nonneg zero_le_two pi_pos.le
-  have hprod : ((∏ k ∈ range m, Gamma (s + k / m) : ℝ) : ℂ) =
-      ∏ k ∈ range m, Complex.Gamma (s + k / m : ℂ) := by
-    rw [Complex.ofReal_prod]
-    refine prod_congr rfl fun k _ => ?_
-    have : ((s + k / m : ℝ) : ℂ) = (s : ℂ) + k / m := by push_cast; ring
-    rw [← this, Complex.Gamma_ofReal]
-  have hrpowM : (((m : ℝ) ^ (m * s - 1 / 2) : ℝ) : ℂ) =
-      (m : ℂ) ^ (m * (s : ℂ) - 1 / 2) := by
-    rw [Complex.ofReal_cpow hm0]
-    push_cast
-    ring
-  have hrpowC : (((2 * π) ^ ((1 - m : ℝ) / 2) : ℝ) : ℂ) =
-      (2 * π : ℂ) ^ ((1 - m : ℂ) / 2) := by
-    rw [Complex.ofReal_cpow h2π]
-    push_cast
-    ring
-  have hG : (Gamma (m * s) : ℂ) = Complex.Gamma (m * (s : ℂ)) := by
-    have : ((m * s : ℝ) : ℂ) = m * (s : ℂ) := by push_cast; ring
-    rw [← this, Complex.Gamma_ofReal]
-  have hRHS : (( (2 * π) ^ ((1 - m : ℝ) / 2) * (m : ℝ) ^ (m * s - 1 / 2) *
-        ∏ k ∈ range m, Gamma (s + k / m) : ℝ) : ℂ) =
-      (2 * π : ℂ) ^ ((1 - m : ℂ) / 2) * (m : ℂ) ^ (m * (s : ℂ) - 1 / 2) *
-        ∏ k ∈ range m, Complex.Gamma (s + k / m : ℂ) := by
-    rw [Complex.ofReal_mul, Complex.ofReal_mul, hrpowC, hrpowM, hprod]
-  rw [hG, hRHS]
-  exact h
+  have h2π : 0 < 2 * π := mul_pos two_pos pi_pos
+  have hm0 : (0 : ℝ) < m := Nat.cast_pos.mpr hm
+  have hC : (2 * π) ^ ((1 - m : ℝ) / 2) * (2 * π) ^ ((m - 1 : ℝ) / 2) = 1 := by
+    rw [← rpow_add h2π, show (1 - m : ℝ) / 2 + (m - 1) / 2 = 0 by ring, rpow_zero]
+  have hM : (m : ℝ) ^ (m * s - 1 / 2) * (m : ℝ) ^ (1 / 2 - m * s) = 1 := by
+    rw [← rpow_add hm0, show (m * s - 1 / 2 : ℝ) + (1 / 2 - m * s) = 0 by ring, rpow_zero]
+  rw [prod_Gamma_add_div hm s]
+  linear_combination
+    (-Gamma (m * s) * (m : ℝ) ^ (m * s - 1 / 2) * (m : ℝ) ^ (1 / 2 - m * s)) * hC -
+      Gamma (m * s) * hM
+
 end Real
