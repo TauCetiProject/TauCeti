@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Group.Nat.Even
+public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Data.Int.Interval
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Ring.GeomSum
@@ -30,6 +31,8 @@ and the nonpositive half `∑ j ∈ range (N + 1), F (-(j : ℤ))`. In a ring, t
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
 form of Gauss's sum. A sum over the triples `k + i + j < N` can be ordered by `k` and `i + j`, or by
 `k + i + j`, as in the collection of the terms of a product of two expansions with a third index.
+A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
+`f` at `j + d - L` where this index is defined, and vanish otherwise.
 
 ## Main results
 
@@ -45,6 +48,8 @@ form of Gauss's sum. A sum over the triples `k + i + j < N` can be ordered by `k
   `k (k - 1)` for every `k : ℤ`.
 * `Finset.sum_range_diag_flip_triple`: the two orderings of a sum over the triples
   `k + i + j < N`, a three-index form of Mathlib's `Finset.sum_range_diag_flip`.
+* `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
+  sum of `2 L` shifts of `f`.
 -/
 
 public section
@@ -181,5 +186,19 @@ theorem sum_range_diag_flip_triple {M : Type*} [AddCommMonoid M] (F : ℕ → �
     · exact (sum_eq_zero fun k _ ↦ ite_eq_right (by omega)).symm
   rw [sum_congr rfl hL, sum_congr rfl fun i hi ↦ sum_congr rfl (hR i hi)]
   exact sum_comm.trans (sum_congr rfl fun i _ ↦ sum_comm)
+
+/-- A window sum `∑_{j - L ≤ k < j + L} f k` is the sum of `2 L` shifts of `f`: the `d`-th one
+reads `f` at `j + d - L`, where this index is defined. -/
+theorem sum_Ico_sub_add_eq_sum_range_indicator {M : Type*} [AddCommMonoid M] (f : ℕ → M)
+    (L j : ℕ) :
+    ∑ k ∈ Ico (j - L) (j + L), f k =
+      ∑ d ∈ range (2 * L), {i | L ≤ i + d}.indicator (f ∘ fun i ↦ i + d - L) j := by
+  classical
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq, Function.comp_apply]
+  rw [← sum_filter]
+  refine sum_nbij' (fun k ↦ k + L - j) (fun d ↦ j + d - L) (fun k hk ↦ ?_) (fun d hd ↦ ?_)
+    (fun k hk ↦ ?_) (fun d hd ↦ ?_) fun k hk ↦ ?_
+  all_goals simp only [mem_Ico, mem_filter, mem_range] at *
+  all_goals first | omega | (congr 1; omega)
 
 end Finset
