@@ -47,7 +47,7 @@ uncut product `A` at `t = 0` to `A_χ` at `t = 1` (`HomogeneousSymbol.externalPr
 For factors of positive degree, which are continuous across their own zero covector
 (`HomogeneousSymbol.continuous_coefficient`), this homotopy is jointly continuous in the time and
 the covector `(ξ, η) ≠ 0`, and it is homogeneous of the same degree at each time. Since `c ≥ χ`
-for `t ≤ 1`, the lower bound above persists: for normalized factors of degree `1`, every `H_t`
+for `t ≤ 1`, the lower bound above persists: for normalized factors, every `H_t`
 with `t ∈ [0, 1]` satisfies the same ellipticity bounds `ρ² ‖w‖² ≤ 2 ‖H_t w‖²` and
 `ρ² ‖w‖² ≤ 2 ‖H_t* w‖²` as `A_χ`.
 
@@ -464,8 +464,8 @@ theorem continuousOn_externalProductHomotopy [ProperSpace E] [ProperSpace F]
   exact hblock.continuousAt.comp (h₁.prodMk h₂)
 
 variable [CompleteSpace (V₀ ⊗[ℂ] W₀)] [CompleteSpace (V₁ ⊗[ℂ] W₁)] [CompleteSpace (V₁ ⊗[ℂ] W₀)]
-  [CompleteSpace (V₀ ⊗[ℂ] W₁)] {a : HomogeneousSymbol X E V₀ V₁ 1}
-  {b : HomogeneousSymbol Y F W₀ W₁ 1}
+  [CompleteSpace (V₀ ⊗[ℂ] W₁)] {a : HomogeneousSymbol X E V₀ V₁ m}
+  {b : HomogeneousSymbol Y F W₀ W₁ m}
 
 /-- For factors normalized by `a* a = a a* = ‖ξ‖²` and `b* b = b b* = ‖η‖²`, the homotopy at
 time `t` satisfies `H_t* H_t = c₁² ‖ξ‖² + c₂² ‖η‖²`, where `c₁ = lineMap 1 (χ(‖ξ‖² / ρ²)) t` and
