@@ -32,27 +32,31 @@ variable {Γ : Type*} [AddCommMonoid Γ] (R : Type) (L : Type*)
 /-- Symmetrization carries every total-degree piece of the symmetric algebra into the
 corresponding piece of the enveloping algebra. This containment does not require the
 pieces of the original module to form a decomposition. -/
-theorem pbwSymmetrizationMap_totalDegreeSubmodule_le (n : Γ) :
+theorem totalDegreeSubmodule_le_comap_pbwSymmetrizationMap (n : Γ) :
     TauCeti.SymmetricAlgebra.totalDegreeSubmodule ℒ n ≤
       (homogeneousSubmodule ℒ n).comap (pbwSymmetrizationMap R L) := by
   rw [TauCeti.SymmetricAlgebra.totalDegreeSubmodule_le_iff]
   intro l hl
   rw [Submodule.mem_comap]
-  have hprod : (l.map (fun x => SymmetricAlgebra.ι R L (x.2 : L))).prod =
-      ∏ i : Fin l.length, SymmetricAlgebra.ι R L ((l.get i).2 : L) := by
-    exact (Fin.prod_univ_fun_getElem l
-      (fun x => SymmetricAlgebra.ι R L (x.2 : L))).symm
-  rw [hprod, pbwSymmetrizationMap_prod_ι]
+  rw [← Fin.prod_univ_fun_getElem, pbwSymmetrizationMap_prod_ι]
   apply Submodule.smul_mem
   apply Submodule.sum_mem
   intro σ _
-  have hdeg : ((List.ofFn fun i => l.get (σ i)).map Sigma.fst).sum = n := by
-    have hperm : (List.ofFn fun i => l.get (σ i)).Perm l := by
-      simpa only [Function.comp_def, List.ofFn_get] using σ.ofFn_comp_perm l.get
+  have hdeg : ((List.ofFn fun i => l[(σ i).1]).map Sigma.fst).sum = n := by
+    have hperm : (List.ofFn fun i => l[(σ i).1]).Perm l := by
+      simpa only [Function.comp_def, List.ofFn_getElem] using
+        σ.ofFn_comp_perm (fun i : Fin l.length => l[i.1])
     exact (hperm.map Sigma.fst).sum_eq.trans hl
-  have hmem := prod_mem_homogeneousSubmodule ℒ (List.ofFn fun i => l.get (σ i))
+  have hmem := prod_mem_homogeneousSubmodule ℒ (List.ofFn fun i => l[(σ i).1])
   rw [hdeg] at hmem
   simpa only [List.map_ofFn, Function.comp_def] using hmem
+
+/-- Symmetrization preserves the total degree of each homogeneous element. -/
+theorem pbwSymmetrizationMap_mem_homogeneousSubmodule {n : Γ}
+    {p : SymmetricAlgebra R L}
+    (hp : p ∈ TauCeti.SymmetricAlgebra.totalDegreeSubmodule ℒ n) :
+    pbwSymmetrizationMap R L p ∈ homogeneousSubmodule ℒ n :=
+  totalDegreeSubmodule_le_comap_pbwSymmetrizationMap R L ℒ n hp
 
 variable [DecidableEq Γ] [GradedLieAlgebra ℒ]
 
@@ -67,6 +71,20 @@ theorem pbwSymmetrizationMap_decompose (p : SymmetricAlgebra R L) (n : Γ) :
   exact DirectSum.map_decompose_shift
     (TauCeti.SymmetricAlgebra.totalDegreeSubmodule ℒ) (homogeneousSubmodule ℒ)
     (pbwSymmetrizationMap R L).toAddMonoidHom id Function.injective_id
-    (fun n _ hx => pbwSymmetrizationMap_totalDegreeSubmodule_le R L ℒ n hx) n p
+    (fun _ _ hx => pbwSymmetrizationMap_mem_homogeneousSubmodule R L ℒ hx) n p
+
+/-- Symmetrization maps each total-degree piece onto the corresponding homogeneous piece. -/
+@[simp]
+theorem map_totalDegreeSubmodule_pbwSymmetrizationMap (n : Γ) :
+    (TauCeti.SymmetricAlgebra.totalDegreeSubmodule ℒ n).map (pbwSymmetrizationMap R L) =
+      homogeneousSubmodule ℒ n := by
+  apply le_antisymm
+  · exact Submodule.map_le_iff_le_comap.mpr
+      (totalDegreeSubmodule_le_comap_pbwSymmetrizationMap R L ℒ n)
+  · intro a ha
+    obtain ⟨p, rfl⟩ := pbwSymmetrizationMap_surjective R L a
+    refine ⟨DirectSum.decompose (TauCeti.SymmetricAlgebra.totalDegreeSubmodule ℒ) p n,
+      Subtype.property _, ?_⟩
+    rw [pbwSymmetrizationMap_decompose, DirectSum.decompose_of_mem_same _ ha]
 
 end TauCeti.UniversalEnvelopingAlgebra

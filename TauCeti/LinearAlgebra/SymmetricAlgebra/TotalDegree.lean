@@ -88,6 +88,49 @@ instance totalDegreeSubmodule_gradedMonoid : SetLike.GradedMonoid (totalDegreeSu
       simpa [hl, ht] using prod_mem_totalDegreeSubmodule ℳ (l ++ t)
     exact hmul (Submodule.mul_mem_mul ha hb)
 
+/-- A generator belongs to a total-degree piece exactly when it has that degree in the
+original module, even when the pieces do not form a decomposition. -/
+@[simp]
+theorem ι_mem_totalDegreeSubmodule_iff {n : Γ} {x : M} :
+    ι R M x ∈ totalDegreeSubmodule ℳ n ↔ x ∈ ℳ n := by
+  -- As in SymmetricAlgebra.ι_injective, use the same scalar action on both sides.
+  let : Module Rᵐᵒᵖ M := Module.compHom _ ((RingHom.id R).fromOpposite mul_comm)
+  have : IsCentralScalar R M := ⟨fun _ _ => rfl⟩
+  let f := lift (TrivSqZeroExt.inrHom R M)
+  let g := (TrivSqZeroExt.sndHom R M).comp f.toLinearMap
+  -- The square-zero projection retains singleton words and kills all other lengths.
+  have hle : totalDegreeSubmodule ℳ n ≤ (ℳ n).comap g := by
+    rw [totalDegreeSubmodule_le_iff]
+    intro l hl
+    cases l with
+    | nil => simp [g, f]
+    | cons a l =>
+      cases l with
+      | nil =>
+        have ha : a.1 = n := by simpa using hl
+        simp [g, f, ← ha]
+      | cons b l =>
+        simp [g, f, map_list_prod, List.map_map, ← mul_assoc,
+          TrivSqZeroExt.inr_mul_inr]
+  constructor
+  · intro hx
+    simpa [g, f] using hle hx
+  · exact ι_mem_totalDegreeSubmodule ℳ
+
+/-- The lift of a linear map preserving generator degrees preserves total degrees. -/
+theorem totalDegreeSubmodule_le_comap_lift {Γ' A : Type*} [AddCommMonoid Γ']
+    [CommSemiring A] [Algebra R A] (𝒜 : Γ' → Submodule R A)
+    [SetLike.GradedMonoid 𝒜] (T : Γ →+ Γ') (f : M →ₗ[R] A)
+    (hf : ∀ i, ∀ x ∈ ℳ i, f x ∈ 𝒜 (T i)) (n : Γ) :
+    totalDegreeSubmodule ℳ n ≤ (𝒜 (T n)).comap (lift f).toLinearMap := by
+  rw [totalDegreeSubmodule_le_iff]
+  intro l hl
+  have h := SetLike.list_prod_map_mem_graded (A := 𝒜) l (fun x => T x.1)
+    (fun x => f (x.2 : M)) (fun x _ => hf x.1 x.2 x.2.property)
+  have hsum : (l.map (fun x => T x.1)).sum = T n := by
+    simpa only [map_list_sum, List.map_map, Function.comp_def] using congrArg T hl
+  simpa [map_list_prod, List.map_map, Function.comp_def, hsum] using h
+
 variable [DecidableEq Γ] [DirectSum.Decomposition ℳ]
 
 private noncomputable def totalDegreeι : M →ₗ[R] ⨁ n, totalDegreeSubmodule ℳ n :=
@@ -175,7 +218,7 @@ noncomputable instance totalDegreeGradedAlgebra : GradedAlgebra (totalDegreeSubm
 /-- Taking the homogeneous component of a generator is the same as first taking its
 component in the original module. -/
 @[simp]
-theorem coe_decompose_ι (x : M) (n : Γ) :
+theorem coe_decompose_totalDegreeSubmodule_ι (x : M) (n : Γ) :
     (DirectSum.decompose (totalDegreeSubmodule ℳ) (ι R M x) n : SymmetricAlgebra R M) =
       ι R M (DirectSum.decompose ℳ x n : M) :=
   (DirectSum.map_decompose_shift ℳ (totalDegreeSubmodule ℳ) (ι R M).toAddMonoidHom
