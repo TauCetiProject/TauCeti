@@ -23,13 +23,17 @@ degree at most `d` all of whose coefficients lie in `U` form a set of cardinalit
 
 Mathlib uses the *finiteness* of this set inline, as the engine of its `bUnion_roots_finite`
 (the set of roots of all polynomials of bounded degree with coefficients in a finite set is
-finite), where the same injection `f ↦ (f.coeff i)ᵢ` appears, but exposes neither that finiteness
-nor the explicit cardinality bound; this file supplies both.
+finite), where the same injection `f ↦ (f.coeff i)ᵢ` appears, but does not expose that
+finiteness; this file supplies it together with the cardinality bound.
 
 When the allowed values are prescribed coefficient by coefficient, for `coeff 0, …, coeff d`
 only, the count is exact: the coefficient map is then a bijection onto the box of allowed
 coefficient vectors, since every vector is the coefficient vector of a polynomial
-(`Polynomial.ofFn`).
+(`Polynomial.ofFn`). Mathlib's `Polynomial.ncard_boxPoly` (in `Mathlib.NumberTheory.MahlerMeasure`)
+is this exact count for integer polynomials with real interval bounds on each coefficient;
+`TauCeti.Polynomial.ncard_natDegree_le_coeff_mem_pi` generalises it to any semiring and arbitrary
+finite sets of allowed values, and its proof follows the `Polynomial.ofFn` argument of
+`Polynomial.ncard_boxPoly`.
 
 The integer specialisation counts the polynomials of degree `≤ d` whose coefficients are bounded
 in absolute value by `B`: there are exactly `(2 * B + 1) ^ (d + 1)` of them. This is the
@@ -111,7 +115,11 @@ number exactly `∏ᵢ #(s i)`: the coefficient map is a bijection from them ont
 `Fintype.piFinset s`, with inverse `Polynomial.ofFn`. Unlike
 `TauCeti.Polynomial.ncard_natDegree_le_coeff_mem_le`, the allowed values may depend on the
 coefficient, for instance to fix the leading coefficient of a monic polynomial, and only
-`coeff 0, …, coeff d` are constrained. -/
+`coeff 0, …, coeff d` are constrained.
+
+This generalises Mathlib's `Polynomial.ncard_boxPoly`, the case `R = ℤ` with each `s i` the
+integers in a real interval, and the surjectivity half of the proof follows its `ofFn`
+argument (`ofFn_coeff_eq_val_of_lt`, `ofFn_natDegree_lt`). -/
 theorem ncard_natDegree_le_coeff_mem_pi (d : ℕ) (s : Fin (d + 1) → Finset R) :
     {f : R[X] | f.natDegree ≤ d ∧ ∀ i : Fin (d + 1), f.coeff i ∈ s i}.ncard =
       ∏ i, (s i).card := by

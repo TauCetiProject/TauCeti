@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Data.Set.Card.Arithmetic
-public import Mathlib.Data.Int.Interval
 public import TauCeti.Algebra.Polynomial.Card.BoundedCoeff
 
 /-!
