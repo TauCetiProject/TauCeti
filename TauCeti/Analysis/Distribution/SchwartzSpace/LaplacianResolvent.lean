@@ -161,18 +161,25 @@ theorem neg_laplacian_laplacianResolvent_add_smul {c : ℝ} (hc : 0 < c) (f : �
     map_smul, postcompCLM_postcompCLM, reCLM_comp_ofRealLI, postcompCLM_apply,
     ContinuousLinearMap.id_apply] using congrArg (fun u : 𝓢(E, G) ↦ u x) hreal
 
+omit [CompleteSpace G] in
 /-- The resolvent of the Laplacian commutes with the Laplacian. -/
 theorem laplacianResolvent_laplacian {c : ℝ} (f : 𝓢(E, G)) :
     laplacianResolvent c (Δ f) = Δ (laplacianResolvent c f) := by
-  by_cases hg : (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹).HasTemperateGrowth
-  · have hcomplex := fourierMultiplierCLM_laplacian hg
+  by_cases hmain : CompleteSpace (TauCeti.Complexification G) ∧
+      (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹).HasTemperateGrowth
+  · obtain ⟨hG, hg⟩ := hmain
+    have hcomplex := fourierMultiplierCLM_laplacian hg
       (f.postcompCLM (ofRealLI G).toContinuousLinearMap)
     have hreal := congrArg (postcompCLM (reCLM G)) hcomplex
     simpa only [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM] using hreal
-  · have h : fourierMultiplierCLM (TauCeti.Complexification G)
+  · -- Without completeness or temperate growth, the Fourier multiplier is zero.
+    have h : fourierMultiplierCLM (TauCeti.Complexification G)
         (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹) = 0 := by
       ext1 φ
-      simp [fourierMultiplierCLM_apply, smulLeftCLM_of_not_hasTemperateGrowth hg]
+      by_cases hG : CompleteSpace (TauCeti.Complexification G)
+      · have hg := fun hg ↦ hmain ⟨hG, hg⟩
+        simp [fourierMultiplierCLM_apply, smulLeftCLM_of_not_hasTemperateGrowth hg]
+      · simp [fourierMultiplierCLM_apply, fourier_eq_zero_of_not_completeSpace hG]
     simp only [laplacianResolvent, h, ContinuousLinearMap.comp_zero,
       ContinuousLinearMap.zero_comp, zero_apply]
     rw [← laplacianCLM_eq', map_zero]
