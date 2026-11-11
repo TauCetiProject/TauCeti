@@ -12,7 +12,8 @@ public import Mathlib.ModelTheory.Complexity
 
 Mathlib's `FirstOrder.Language.BoundedFormula.iSup` and `FirstOrder.Language.BoundedFormula.iInf`
 form the disjunction and conjunction of a finite family of formulas. This file shows that both are
-quantifier-free when every member of the family is.
+quantifier-free when every member of the family is. Conversely, an implication, a conjunction or
+a disjunction is quantifier-free only when its constituents are.
 
 In an algebraic language, every atomic formula holds in a subsingleton structure: atomic
 formulas can only assert equality of terms.
@@ -54,6 +55,32 @@ theorem iInf [Finite β] {f : β → L.BoundedFormula α n} (hf : ∀ b, (f b).I
   | cons b l ih => exact (hf b).inf ih
 
 end FirstOrder.Language.BoundedFormula.IsQF
+
+namespace FirstOrder.Language.BoundedFormula
+
+variable {L : Language} {α : Type*} {n : ℕ} {φ ψ : L.BoundedFormula α n}
+
+/-- An implication is quantifier-free exactly when its two sides are. -/
+theorem isQF_imp_iff : (φ.imp ψ).IsQF ↔ φ.IsQF ∧ ψ.IsQF := by
+  refine ⟨fun h => ?_, fun h => h.1.imp h.2⟩
+  cases h with
+  | of_isAtomic h => cases h
+  | imp h₁ h₂ => exact ⟨h₁, h₂⟩
+
+/-- A conjunction is quantifier-free exactly when its two conjuncts are. -/
+theorem isQF_inf_iff : (φ ⊓ ψ).IsQF ↔ φ.IsQF ∧ ψ.IsQF :=
+  ⟨fun h => by
+    obtain ⟨h, -⟩ := isQF_imp_iff.1 h
+    obtain ⟨hφ, h⟩ := isQF_imp_iff.1 h
+    exact ⟨hφ, (isQF_imp_iff.1 h).1⟩, fun h => h.1.inf h.2⟩
+
+/-- A disjunction is quantifier-free exactly when its two disjuncts are. -/
+theorem isQF_sup_iff : (φ ⊔ ψ).IsQF ↔ φ.IsQF ∧ ψ.IsQF :=
+  ⟨fun h => by
+    obtain ⟨h, hψ⟩ := isQF_imp_iff.1 h
+    exact ⟨(isQF_imp_iff.1 h).1, hψ⟩, fun h => h.1.sup h.2⟩
+
+end FirstOrder.Language.BoundedFormula
 
 namespace FirstOrder.Language.BoundedFormula
 
