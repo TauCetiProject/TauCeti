@@ -69,6 +69,11 @@ compact-support left and right inverse identities are available in this module.
 * `HasCompactSupport.differentiableAt_integral_sub_inv_smul_of_eq_zero` and
   `TauCeti.differentiableOn_integral_sub_inv_smul_compl`: holomorphy where `f` vanishes, in
   particular off `tsupport f`.
+* `HasCompactSupport.contDiff_cauchyTransform`,
+  `HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport` and
+  `HasCompactSupport.tendsto_cauchyTransform_cobounded`: the normalized transform of compactly
+  supported smooth data is smooth and holomorphic off `tsupport f`, and that of compactly
+  supported integrable data tends to `0` at infinity.
 
 ## References
 
@@ -373,15 +378,20 @@ theorem _root_.HasCompactSupport.conjWirtingerDeriv_integral_sub_inv_smul_apply_
   simp only [FunLike.coe_smul, Pi.smul_apply]
   match_scalars <;> field_simp
 
+omit [CompleteSpace F] in
 /-- The Cauchy transform of a compactly supported `C¹` map `f` is complex differentiable at every
 point where `f` vanishes. -/
 theorem _root_.HasCompactSupport.differentiableAt_integral_sub_inv_smul_of_eq_zero {f : ℂ → F}
     (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) {w : ℂ} (hw : f w = 0) :
     DifferentiableAt ℂ (fun w ↦ ∫ z, (w - z)⁻¹ • f z) w := by
+  by_cases hF : CompleteSpace F
+  swap
+  · simp [integral_of_not_completeSpace hF]
   rw [differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
     (hc.hasFDerivAt_integral_sub_inv_smul hf w).differentiableAt,
     hc.conjWirtingerDeriv_integral_sub_inv_smul_apply_one hf, hw, smul_zero]
 
+omit [CompleteSpace F] in
 /-- The Cauchy transform of a `C¹` map `f` vanishing outside a compact set `k` is holomorphic on
 the complement of `k`. For compactly supported `f`, taking `k = tsupport f` shows that the
 transform is holomorphic off the support of `f`. Applied to a family `g p` vanishing outside a
@@ -474,5 +484,43 @@ theorem _root_.HasCompactSupport.fderiv_cauchyTransform_apply {f : ℂ → F}
   rw [hc.fderiv_cauchyTransform hf, cauchyTransform_apply, cauchyTransform_apply,
     smul_apply, ContinuousLinearMap.integral_apply hi]
   simp only [smul_apply]
+
+section Regularity
+
+open Bornology
+
+variable {c : ℂ → F}
+
+omit [CompleteSpace F] in
+/-- The Cauchy transform of a compactly supported `C¹` map is holomorphic off the support of the
+map. -/
+theorem _root_.HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport
+    (hc : HasCompactSupport c) (hs : ContDiff ℝ 1 c) {w : ℂ} (hw : w ∉ tsupport c) :
+    DifferentiableAt ℂ (cauchyTransform c) w := by
+  have h := (differentiableOn_integral_sub_inv_smul_compl hc
+    (fun x hx ↦ image_eq_zero_of_notMem_tsupport hx) hs).differentiableAt
+    ((isClosed_tsupport c).isOpen_compl.mem_nhds hw)
+  rw [funext (cauchyTransform_apply c)]
+  exact h.const_smul _
+
+omit [CompleteSpace F] in
+/-- The Cauchy transform of a compactly supported integrable map tends to `0` at infinity. -/
+theorem _root_.HasCompactSupport.tendsto_cauchyTransform_cobounded (hc : HasCompactSupport c)
+    (hi : Integrable c) :
+    Tendsto (cauchyTransform c) (cobounded ℂ) (𝓝 0) := by
+  obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
+  have hbound : ∀ᶠ w in cobounded ℂ,
+      ‖cauchyTransform c w‖ ≤ (2 * π⁻¹ * ∫ z, ‖c z‖) * ‖w‖⁻¹ := by
+    filter_upwards [tendsto_norm_cobounded_atTop.eventually
+      (eventually_gt_atTop (max (2 * R) 0))] with w hw
+    rw [le_mul_inv_iff₀ ((le_max_right _ _).trans_lt hw), mul_comm ‖cauchyTransform c w‖]
+    exact norm_mul_norm_cauchyTransform_le ((subset_tsupport c).trans hR) hi
+      ((le_max_left _ _).trans hw.le)
+  have hlim : Tendsto (fun w : ℂ ↦ (2 * π⁻¹ * ∫ z, ‖c z‖) * ‖w‖⁻¹) (cobounded ℂ) (𝓝 0) := by
+    simpa using (tendsto_inv_atTop_zero.comp tendsto_norm_cobounded_atTop).const_mul
+      (2 * π⁻¹ * ∫ z, ‖c z‖)
+  exact squeeze_zero_norm' hbound hlim
+
+end Regularity
 
 end TauCeti

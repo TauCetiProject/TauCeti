@@ -349,7 +349,7 @@ private theorem exists_isDistinguished_of_triangularDegree_dominant [Finite σ] 
       Subtype.ext (coe_algebraMap_isRestrictedSubring _)
     rw [h, norm_C, hνM]
   refine ⟨s, a, hνM,
-    PowerSeries.isDistinguished_of_norm_coeff_sub_lt zero_le_one
+    PowerSeries.isDistinguished_of_norm_coeff_sub_lt
       (by rw [one_pow, mul_one, hGn, hCa])
       (by rw [one_pow, mul_one, hGn]; exact hat.trans_lt hεM)
       (fun m hm ↦ by rw [one_pow, mul_one, hGn]; exact (hbeyond m hm).trans_lt hεM),

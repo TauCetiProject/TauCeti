@@ -68,6 +68,7 @@ theorem isJacobiFieldOn_variationField_maximalGeodesic
       (isOpen_setOfPred_mem_geodesicInterval.mem_nhds ht)
   exact hdom.mono fun q hq ↦ acceleration_maximalGeodesic_eq_zero hq
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The initial value of the geodesic-flow variation field is the velocity of the
 initial-position curve. No regularity hypothesis is needed for this identity. -/
 @[simp]
