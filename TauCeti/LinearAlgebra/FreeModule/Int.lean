@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import Mathlib.LinearAlgebra.Dimension.Localization
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
+-- Proof-only: torsion modules have rank zero.
+import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
 
 /-!
 # Injective maps between free abelian groups of equal rank
@@ -50,9 +52,7 @@ theorem exists_comp_eq_nsmul_id_of_injective {f : M →ₗ[ℤ] N} (hf : Functio
     have hq := (range f).finrank_quotient_add_finrank
     rw [(finrank_range_of_inj hf).trans hrank] at hq
     have hq0 : Module.finrank ℤ (N ⧸ range f) = 0 := by lia
-    exact Module.finite_of_fg_torsion _ <| fun x ↦ by
-      obtain ⟨a, ha, hax⟩ := Module.finrank_eq_zero_iff.mp hq0 x
-      exact ⟨⟨a, mem_nonZeroDivisors_of_ne_zero ha⟩, hax⟩
+    exact Module.finite_of_fg_torsion _ (Module.finrank_eq_zero_iff_isTorsion.mp hq0)
   have : Finite (N ⧸ (range f).toAddSubgroup) := ‹Finite (N ⧸ range f)›
   set c := (range f).toAddSubgroup.index
   let g : N →ₗ[ℤ] M := (LinearEquiv.ofInjective f hf).symm.toLinearMap ∘ₗ
