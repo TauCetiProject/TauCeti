@@ -303,6 +303,13 @@ theorem discriminant_pos_iff (L : IntegralLattice V) :
   classical
   rw [discriminant_def, Int.natAbs_pos, determinant_ne_zero_iff]
 
+/-- The discriminant is zero exactly when the ambient rational form is degenerate. -/
+@[simp]
+theorem discriminant_eq_zero_iff (L : IntegralLattice V) :
+    L.discriminant = 0 ↔ ¬ L.form.Nondegenerate := by
+  rw [← discriminant_pos_iff]
+  omega
+
 end Invariants
 
 namespace Isometry

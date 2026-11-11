@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
+public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
@@ -134,6 +135,24 @@ theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n 
 @[simp] theorem support_rationalBase :
     (t.rationalBase ht).support = (t.simplyConnectedBase ht).support :=
   support_rootPairingBaseChangeBase ..
+
+/-- Rational base change preserves the height of every root in the pinned base. -/
+@[simp] theorem height_rationalBase (i : Fin t.numRoots) :
+    (t.rationalBase ht).height i = (t.simplyConnectedBase ht).height i := by
+  obtain ⟨f, -, -, hf⟩ := (t.simplyConnectedBase ht).exists_root_eq_sum_int i
+  rw [RootPairing.Base.height_eq_sum hf, ← support_rationalBase t ht]
+  apply RootPairing.Base.height_eq_sum
+  rw [support_rationalBase]
+  ext k
+  have hk := congrFun hf k
+  simpa [root_rationalRootSystem, smul_eq_mul] using congrArg (fun z : ℤ => (z : ℚ)) hk
+
+/-- The rational and integral pinned bases define the same set of positive root indices. -/
+theorem posRoots_rationalRootSystem :
+    posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
+      posRoots (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) := by
+  ext i
+  simp only [mem_posRoots, RootPairing.Base.isPos_iff, height_rationalBase]
 
 instance instIsCrystallographicRationalRootSystem : (t.rationalRootSystem ht).IsCrystallographic :=
   isCrystallographic_rootPairingBaseChange ..
