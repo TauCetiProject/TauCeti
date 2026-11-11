@@ -66,14 +66,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Precomposition `u ↦ u ∘ Φ` with a Riemannian isometry, on smooth functions. -/
 private def compSmooth (Φ : RiemannianIsometry I I' M N) :
-    C^∞⟮I', N; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ where
+    C^∞⟮I', N; ℝ⟯ ≃ₗ[ℝ] C^∞⟮I, M; ℝ⟯ where
   toFun u := u.comp Φ.toDiffeomorph.toContMDiffMap
+  invFun u := u.comp Φ.symm.toDiffeomorph.toContMDiffMap
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-
-private theorem compSmooth_symm_compSmooth (Φ : RiemannianIsometry I I' M N)
-    (u : C^∞⟮I', N; ℝ⟯) : compSmooth Φ.symm (compSmooth Φ u) = u :=
-  ContMDiffMap.ext fun y ↦ congrArg u (Φ.apply_symm_apply y)
+  left_inv u := ContMDiffMap.ext fun y ↦ congrArg u (Φ.apply_symm_apply y)
+  right_inv u := ContMDiffMap.ext fun x ↦ congrArg u (Φ.symm_apply_apply x)
 
 variable [FiniteDimensional ℝ E] [CompactSpace M] [IsManifold I 1 M] [MeasurableSpace M]
   [BorelSpace M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
@@ -107,36 +106,15 @@ private theorem norm_ofSmooth_compSmooth (Φ : RiemannianIsometry I I' M N)
   rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner (ofSmooth u)]
   exact congrArg Real.sqrt (inner_ofSmooth_comp Φ u u)
 
-/-- The extension of `u ↦ u ∘ Φ` from smooth functions to `H¹`. -/
-private def compIsometry (Φ : RiemannianIsometry I I' M N) :
-    SobolevH1 I' N →ₗᵢ[ℝ] SobolevH1 I M :=
-  (ofSmooth ∘ₗ compSmooth Φ).extendOfIsometry denseRange_ofSmooth
-    (norm_ofSmooth_compSmooth Φ)
-
-private theorem compIsometry_ofSmooth (Φ : RiemannianIsometry I I' M N)
-    (u : C^∞⟮I', N; ℝ⟯) : compIsometry Φ (ofSmooth u) = ofSmooth (compSmooth Φ u) :=
-  LinearMap.extendOfIsometry_eq _ _ _ u
-
-private theorem compIsometry_symm_compIsometry (Φ : RiemannianIsometry I I' M N)
-    (w : SobolevH1 I' N) : compIsometry Φ.symm (compIsometry Φ w) = w := by
-  induction w using induction_on with
-  | hp =>
-    exact isClosed_eq ((compIsometry Φ.symm).continuous.comp (compIsometry Φ).continuous)
-      continuous_id
-  | h u => rw [compIsometry_ofSmooth, compIsometry_ofSmooth, compSmooth_symm_compSmooth]
-
 /-- **Pullback along a Riemannian isometry on `H¹`.** A Riemannian isometry `Φ : M → N` between
 compact Riemannian manifolds induces the linear isometric equivalence `H¹(N) ≃ₗᵢ H¹(M)` which
 sends the class of a smooth function `u` to the class of `u ∘ Φ`
 (`TauCeti.Manifold.SobolevH1.compRiemannianIsometry_ofSmooth`). Its inverse is pullback along
 `Φ.symm` (`TauCeti.Manifold.SobolevH1.compRiemannianIsometry_symm`). -/
 def compRiemannianIsometry (Φ : RiemannianIsometry I I' M N) :
-    SobolevH1 I' N ≃ₗᵢ[ℝ] SobolevH1 I M where
-  __ := compIsometry Φ
-  invFun := compIsometry Φ.symm
-  left_inv := compIsometry_symm_compIsometry Φ
-  right_inv w := by simpa using compIsometry_symm_compIsometry Φ.symm w
-  norm_map' := (compIsometry Φ).norm_map
+    SobolevH1 I' N ≃ₗᵢ[ℝ] SobolevH1 I M :=
+  (compSmooth Φ).extendOfIsometry ofSmooth ofSmooth denseRange_ofSmooth denseRange_ofSmooth
+    (norm_ofSmooth_compSmooth Φ)
 
 /-- Pullback along a Riemannian isometry sends the class of a smooth function `u` to the class
 of `u ∘ Φ`. -/
@@ -145,27 +123,24 @@ theorem compRiemannianIsometry_ofSmooth (Φ : RiemannianIsometry I I' M N)
     (u : C^∞⟮I', N; ℝ⟯) :
     compRiemannianIsometry Φ (ofSmooth u) =
       ofSmooth (u.comp Φ.toDiffeomorph.toContMDiffMap) :=
-  compIsometry_ofSmooth Φ u
-
-/-- Two continuous functions on `H¹(N)` that agree on smooth functions are equal. -/
-private theorem ext_ofSmooth {F : Type*} [TopologicalSpace F] [T2Space F]
-    {f g : SobolevH1 I' N → F} (hf : Continuous f) (hg : Continuous g)
-    (h : ∀ u : C^∞⟮I', N; ℝ⟯, f (ofSmooth u) = g (ofSmooth u)) : f = g :=
-  funext fun w ↦ induction_on w (isClosed_eq hf hg) h
+  LinearEquiv.extendOfIsometry_eq _ _ _ _ _ _ u
 
 /-- The inverse of pullback along `Φ` is pullback along `Φ.symm`. -/
 @[simp]
 theorem compRiemannianIsometry_symm (Φ : RiemannianIsometry I I' M N) :
     (compRiemannianIsometry Φ).symm = compRiemannianIsometry Φ.symm :=
-  LinearIsometryEquiv.ext fun _ ↦ rfl
+  LinearIsometryEquiv.ext <| congrFun <| denseRange_ofSmooth.equalizer
+    (LinearIsometryEquiv.continuous _) (LinearIsometryEquiv.continuous _) <| funext fun u ↦ by
+      rw [Function.comp_apply, Function.comp_apply, compRiemannianIsometry_ofSmooth]
+      exact LinearEquiv.extendOfIsometry_symm_eq _ _ _ _ _ _ u
 
 /-- Pullback along the identity isometry is the identity of `H¹(M)`. -/
 @[simp]
 theorem compRiemannianIsometry_refl :
     compRiemannianIsometry (RiemannianIsometry.refl I M) = LinearIsometryEquiv.refl ℝ _ :=
-  LinearIsometryEquiv.ext <| congrFun <| ext_ofSmooth (LinearIsometryEquiv.continuous _)
-    continuous_id fun u ↦ by
-      rw [compRiemannianIsometry_ofSmooth]
+  LinearIsometryEquiv.ext <| congrFun <| denseRange_ofSmooth.equalizer
+    (LinearIsometryEquiv.continuous _) continuous_id <| funext fun u ↦ by
+      rw [Function.comp_apply, compRiemannianIsometry_ofSmooth]
       exact congrArg ofSmooth
         (ContMDiffMap.ext fun x ↦ congrArg u (RiemannianIsometry.refl_apply I M x))
 
@@ -179,10 +154,11 @@ theorem compRiemannianIsometry_trans
     (Φ : RiemannianIsometry I I' M N) (Ψ : RiemannianIsometry I' I'' N P) :
     compRiemannianIsometry (Φ.trans Ψ) =
       (compRiemannianIsometry Ψ).trans (compRiemannianIsometry Φ) :=
-  LinearIsometryEquiv.ext <| congrFun <| ext_ofSmooth (LinearIsometryEquiv.continuous _)
-    (LinearIsometryEquiv.continuous _) fun u ↦ by
-      rw [LinearIsometryEquiv.trans_apply, compRiemannianIsometry_ofSmooth,
-        compRiemannianIsometry_ofSmooth, compRiemannianIsometry_ofSmooth]
+  LinearIsometryEquiv.ext <| congrFun <| denseRange_ofSmooth.equalizer
+    (LinearIsometryEquiv.continuous _) (LinearIsometryEquiv.continuous _) <| funext fun u ↦ by
+      rw [Function.comp_apply, Function.comp_apply, LinearIsometryEquiv.trans_apply,
+        compRiemannianIsometry_ofSmooth, compRiemannianIsometry_ofSmooth,
+        compRiemannianIsometry_ofSmooth]
       exact congrArg ofSmooth (ContMDiffMap.ext fun x ↦ congrArg u (Φ.trans_apply Ψ x))
 
 /-- **Compatibility with `L²`.** The value in `L²(M)` of the pullback of `w ∈ H¹(N)` along a
@@ -192,10 +168,12 @@ theorem toLp_compRiemannianIsometry (Φ : RiemannianIsometry I I' M N) (w : Sobo
     toLp (compRiemannianIsometry Φ w) =
       Lp.compMeasurePreserving Φ Φ.measurePreserving_riemannianVolume (toLp w) := by
   have hΦ := Φ.measurePreserving_riemannianVolume
-  refine congrFun (ext_ofSmooth (f := fun w ↦ toLp (compRiemannianIsometry Φ w))
+  refine congrFun (denseRange_ofSmooth.equalizer
+    (g := fun w ↦ toLp (compRiemannianIsometry Φ w))
     (toLp.continuous.comp (LinearIsometryEquiv.continuous _))
-    ((Lp.isometry_compMeasurePreserving hΦ).continuous.comp toLp.continuous) fun u ↦ ?_) w
-  rw [compRiemannianIsometry_ofSmooth]
+    ((Lp.isometry_compMeasurePreserving hΦ).continuous.comp toLp.continuous)
+    (funext fun u ↦ ?_)) w
+  rw [Function.comp_apply, Function.comp_apply, compRiemannianIsometry_ofSmooth]
   refine Lp.ext ((toLp_ofSmooth_ae_eq _).trans ?_)
   refine (Filter.EventuallyEq.trans ?_ (Lp.coeFn_compMeasurePreserving _ hΦ).symm)
   exact (hΦ.quasiMeasurePreserving.ae_eq_comp (toLp_ofSmooth_ae_eq u)).symm
