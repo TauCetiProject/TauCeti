@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.FractionalIdeal.Operations
 public import TauCeti.RingTheory.Ideal.Quotient.Semilocal
 import TauCeti.RingTheory.FractionalIdeal.CoprimeRepresentative
+import TauCeti.RingTheory.Ideal.LinearEquiv
 
 /-!
 # Linear isomorphisms between fractional ideals and the product identity
@@ -35,8 +36,6 @@ to an integral ideal `I'` coprime to `J'`
 
 ## Main definitions
 
-* `Ideal.prodEquivProdInf`: for ideals `I`, `J` and `i ∈ I`, `j ∈ J` with `i + j = 1`, the
-  isomorphism `I × J ≃ R × (I ⊓ J)`, `(x, y) ↦ (x + y, j x - i y)`.
 * `FractionalIdeal.spanSingletonMulEquiv`: multiplication by a left-regular element `a` is an
   isomorphism from `I` onto `(a) I`.
 * `FractionalIdeal.coeIdealEquiv`: an integral ideal is isomorphic to its fractional ideal.
@@ -56,53 +55,6 @@ to an integral ideal `I'` coprime to `J'`
 public section
 
 open scoped nonZeroDivisors
-
-namespace Ideal
-
-variable {R : Type*} [CommRing R] {I J : Ideal R} {i j : R}
-
-/-- For ideals `I` and `J` with `i ∈ I`, `j ∈ J` and `i + j = 1`, the sum map `I × J → R` splits
-with kernel `I ⊓ J`: the map `(x, y) ↦ (x + y, j x - i y)` is an isomorphism
-`I × J ≃ R × (I ⊓ J)`, with inverse `(r, z) ↦ (i r + z, j r - z)`. -/
-def prodEquivProdInf (hi : i ∈ I) (hj : j ∈ J) (hij : i + j = 1) :
-    (I × J) ≃ₗ[R] R × ↥(I ⊓ J) where
-  toFun x := (x.1 + x.2, ⟨j * x.1 - i * x.2,
-    sub_mem ⟨I.mul_mem_left j x.1.2, J.mul_mem_right _ hj⟩
-      ⟨I.mul_mem_right _ hi, J.mul_mem_left i x.2.2⟩⟩)
-  invFun y := (⟨i * y.1 + y.2, add_mem (I.mul_mem_right _ hi) (mem_inf.1 y.2.2).1⟩,
-    ⟨j * y.1 - y.2, sub_mem (J.mul_mem_right _ hj) (mem_inf.1 y.2.2).2⟩)
-  map_add' x y := by ext <;> simp <;> ring
-  map_smul' r x := by ext <;> simp <;> ring
-  left_inv x := by
-    ext
-    · simp; linear_combination (x.1 : R) * hij
-    · simp; linear_combination (x.2 : R) * hij
-  right_inv y := by
-    ext
-    · simp; linear_combination y.1 * hij
-    · simp; linear_combination (y.2 : R) * hij
-
-@[simp]
-theorem prodEquivProdInf_apply_fst (hi : i ∈ I) (hj : j ∈ J) (hij : i + j = 1) (x : I × J) :
-    (prodEquivProdInf hi hj hij x).1 = x.1 + x.2 :=
-  (rfl)
-
-@[simp]
-theorem coe_prodEquivProdInf_apply_snd (hi : i ∈ I) (hj : j ∈ J) (hij : i + j = 1) (x : I × J) :
-    ((prodEquivProdInf hi hj hij x).2 : R) = j * x.1 - i * x.2 :=
-  (rfl)
-
-@[simp]
-theorem coe_prodEquivProdInf_symm_apply_fst (hi : i ∈ I) (hj : j ∈ J) (hij : i + j = 1)
-    (y : R × ↥(I ⊓ J)) : (((prodEquivProdInf hi hj hij).symm y).1 : R) = i * y.1 + y.2 :=
-  (rfl)
-
-@[simp]
-theorem coe_prodEquivProdInf_symm_apply_snd (hi : i ∈ I) (hj : j ∈ J) (hij : i + j = 1)
-    (y : R × ↥(I ⊓ J)) : (((prodEquivProdInf hi hj hij).symm y).2 : R) = j * y.1 - y.2 :=
-  (rfl)
-
-end Ideal
 
 namespace FractionalIdeal
 
