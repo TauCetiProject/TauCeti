@@ -37,6 +37,43 @@ noncomputable section
 
 namespace TauCeti.Manifold
 
+/-- An operation on sections which is additive on globally smooth sections takes equal values on
+two finite sums of globally smooth sections whenever it takes equal values on the summands.  The
+target needs only an addition, without any algebraic laws. -/
+theorem map_sum_eq_of_contMDiff_additive
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
+    [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
+    [FiberBundle G W] [VectorBundle 𝕜 G W]
+    {A : Type*} [Add A] (Φ : (Π x : M, W x) → A)
+    (hadd : ∀ {s s' : Π x : M, W x}, CMDiff n (T% s) → CMDiff n (T% s') →
+      Φ (s + s') = Φ s + Φ s')
+    {ι : Type*} (q : Finset ι) (u v : ι → Π x : M, W x)
+    (hu : ∀ i ∈ q, CMDiff n (T% (u i))) (hv : ∀ i ∈ q, CMDiff n (T% (v i)))
+    (huv : ∀ i ∈ q, Φ (u i) = Φ (v i)) :
+    Φ (∑ i ∈ q, u i) = Φ (∑ i ∈ q, v i) := by
+  classical
+  induction q using Finset.induction_on with
+  | empty => simp only [Finset.sum_empty]
+  | @insert i q hi ih =>
+      simp only [Finset.sum_insert hi]
+      have hmem (j) (hj : j ∈ q) : j ∈ insert i q := Finset.mem_insert_of_mem hj
+      have ih' := ih (fun j hj ↦ hu j (hmem j hj)) (fun j hj ↦ hv j (hmem j hj))
+        (fun j hj ↦ huv j (hmem j hj))
+      have hui := hu i (Finset.mem_insert_self i q)
+      have hvi := hv i (Finset.mem_insert_self i q)
+      have hsu : CMDiff n (T% (∑ j ∈ q, u j)) := by
+        simpa only [Finset.sum_apply] using
+          ContMDiff.sum_section (n := n) (t := fun j x ↦ u j x) fun j hj ↦ hu j (hmem j hj)
+      have hsv : CMDiff n (T% (∑ j ∈ q, v j)) := by
+        simpa only [Finset.sum_apply] using
+          ContMDiff.sum_section (n := n) (t := fun j x ↦ v j x) fun j hj ↦ hv j (hmem j hj)
+      rw [hadd hui hsu, hadd hvi hsv, huv i (Finset.mem_insert_self i q), ih']
+
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -130,29 +167,14 @@ theorem eq_of_contMDiff_tensorial
     have hρ' : ρ y = 1 := by simpa using hρ
     dsimp only [expansion]
     simpa [coeff', frame', hρ', coeff, frame] using hu.symm
-  -- Compare finite sums directly: no additive identity or scalar-action laws on `A` are needed.
-  have hsum (q : Finset (Basis.ofVectorSpaceIndex ℝ G))
-      (u v : Basis.ofVectorSpaceIndex ℝ G → Π x : M, W x)
-      (hu : ∀ i, CMDiff ∞ (T% (u i))) (hv : ∀ i, CMDiff ∞ (T% (v i)))
-      (huv : ∀ i, Φ (u i) = Φ (v i)) :
-      CMDiff ∞ (T% (∑ i ∈ q, u i)) ∧ CMDiff ∞ (T% (∑ i ∈ q, v i)) ∧
-        Φ (∑ i ∈ q, u i) = Φ (∑ i ∈ q, v i) := by
-    induction q using Finset.induction_on with
-    | empty =>
-        simp only [Finset.sum_empty, and_true]
-        exact ⟨contMDiff_zeroSection ℝ W, contMDiff_zeroSection ℝ W⟩
-    | @insert i q hi ih =>
-        simp only [Finset.sum_insert hi]
-        refine ⟨(hu i).add_section ih.1, (hv i).add_section ih.2.1, ?_⟩
-        rw [hadd (hu i) ih.1, hadd (hv i) ih.2.1, huv i, ih.2.2]
   rw [hlocal hs (hexpansion s hs) ((hexpansion_eq s).mono fun y hy ↦ hy.symm),
     hlocal hs' (hexpansion s' hs') ((hexpansion_eq s').mono fun y hy ↦ hy.symm)]
   dsimp only [expansion]
-  refine (hsum Finset.univ (fun i ↦ coeff' s i • frame' i)
+  refine (map_sum_eq_of_contMDiff_additive Φ hadd Finset.univ (fun i ↦ coeff' s i • frame' i)
     (fun i ↦ coeff' s' i • frame' i)
-    (fun i ↦ (hcoeff' s hs i).smul_section (hframe i))
-    (fun i ↦ (hcoeff' s' hs' i).smul_section (hframe i)) ?_).2.2
-  intro i
+    (fun i _ ↦ (hcoeff' s hs i).smul_section (hframe i))
+    (fun i _ ↦ (hcoeff' s' hs' i).smul_section (hframe i)) ?_)
+  intro i _
   rw [hsmul (hcoeff' s hs i) (hframe i), hsmul (hcoeff' s' hs' i) (hframe i)]
   congr 1
   simp only [coeff', ρ.eq_one, one_mul]
