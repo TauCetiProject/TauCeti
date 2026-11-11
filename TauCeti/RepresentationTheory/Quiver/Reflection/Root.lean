@@ -243,11 +243,6 @@ numerical form of the ADE condition -- an indecomposable representation with fin
 vertex spaces has `q(dim M) = 1`. Since a dimension vector is nonnegative, and is nonzero because an
 indecomposable is not the zero object, `dim M` is a *positive* root.
 
-A quiver with positive definite Tits form is acyclic (`TauCeti.isAcyclic_of_titsForm_posDef`),
-which produces a sink-admissible ordering by `TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`;
-since the conclusion does not mention the ordering, the choice is made here rather than by the
-caller.
-
 This is the half of Gabriel's correspondence that produces a positive root from an
 indecomposable; the nonvanishing half is `TauCeti.dimVector_ne_zero_of_indecomposable`. -/
 theorem titsForm_dimVector_eq_one_of_indecomposable [q : _root_.Quiver.{w} V]

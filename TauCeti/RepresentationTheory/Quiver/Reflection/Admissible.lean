@@ -291,11 +291,8 @@ theorem isSinkAdmissible_of_pairwise_of_forall_mem (q : _root_.Quiver.{v} V) {l 
 
 /-! ### Loops along a sink-admissible ordering -/
 
-/-- **No vertex of a sink-admissible list carries a loop.** At its first occurrence in the list the
-vertex is a sink of the reflected quiver, so it carries no loop there; and reflecting at any other
-vertex leaves the loops at a vertex alone (`TauCeti.Quiver.reflectHom_of_ne_of_ne`), because both
-ends of a loop lie on the same side of the reflection. This is the looplessness hypothesis under
-which the composite of the simple reflections along the list preserves the Tits form. -/
+/-- **No vertex of a sink-admissible list carries a loop.** This is the looplessness hypothesis
+under which the composite of the simple reflections along the list preserves the Tits form. -/
 theorem IsSinkAdmissible.isEmpty_hom_self {q : _root_.Quiver.{v} V} {l : List V}
     (hl : IsSinkAdmissible q l) {i : V} (hi : i ∈ l) :
     IsEmpty (@_root_.Quiver.Hom V q i i) := by

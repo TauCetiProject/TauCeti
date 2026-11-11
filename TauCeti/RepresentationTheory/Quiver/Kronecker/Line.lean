@@ -474,11 +474,11 @@ finite-dimensional indecomposable representations with the same dimension vector
 scalars `0` and `1`.
 
 This is the sharpness of `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable`:
-that theorem holds over an acyclic quiver whose Tits form is positive definite, and every
-generalized Kronecker quiver is acyclic, so acyclicity alone does not suffice. Specializing `A` to
-a two-element type gives the boundary case, where the Tits form is still positive semidefinite by
-`TauCeti.Quiver.Kronecker.titsForm_nonneg`; for three or more arrows, covered here too, it is
-indefinite instead. -/
+that theorem holds over a quiver whose Tits form is positive definite (which forces acyclicity),
+and every generalized Kronecker quiver is acyclic, so acyclicity alone does not suffice.
+Specializing `A` to a two-element type gives the boundary case, where the Tits form is still
+positive semidefinite by `TauCeti.Quiver.Kronecker.titsForm_nonneg`; for three or more arrows,
+covered here too, it is indefinite instead. -/
 theorem exists_indecomposable_dimVector_eq_not_nonempty_iso_kronecker (k : Type u) [Field k]
     (A : Type v) [Nontrivial A] :
     ∃ M N : QuiverRep.{u, 0, v, u} k (Quiver.Kronecker A),

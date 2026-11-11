@@ -199,9 +199,7 @@ private theorem nonempty_iso_of_dimVector_eq_of_isZero_iterate
 /-- **An indecomposable representation is determined by its dimension vector.** For a quiver with
 positive definite Tits form -- the numerical form of the ADE condition -- two indecomposable
 representations with finite-dimensional vertex spaces and the same dimension vector are
-isomorphic. The quiver is acyclic by `TauCeti.isAcyclic_of_titsForm_posDef`, which produces a
-sink-admissible ordering by `TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`; since the
-conclusion does not mention the ordering, the choice is made here rather than by the caller.
+isomorphic.
 
 This is the injectivity half of the Gabriel correspondence; that the dimension vector of an
 indecomposable is a positive root is

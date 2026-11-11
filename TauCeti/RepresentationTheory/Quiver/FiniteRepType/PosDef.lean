@@ -23,10 +23,6 @@ and is injective, by `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable`; a
 positive definite integral quadratic form takes the value `1` only finitely often, by
 `QuadraticMap.PosDef.finite_setOf_apply_eq`, so the skeleton is finite.
 
-No acyclicity hypothesis appears, although both consumed theorems ask for one: a directed cycle
-would already contradict positive definiteness, by
-`TauCeti.isAcyclic_of_titsForm_posDef`.
-
 This is the affirming half of Gabriel's dichotomy, and the half that the earlier work leaves to be
 read off: the two theorems it consumes were proved for their own sake, one saying that a dimension
 vector of an indecomposable is a root and one that it determines the indecomposable, and neither
