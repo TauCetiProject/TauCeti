@@ -132,8 +132,8 @@ theorem degree_eq_of_forall_lt [CommSemiring R] (n : MonomialOrder σ)
   · exact le_rfl
   · exact (h a ha hne).le
 
-/-- Orders preserving strict comparisons on a set containing the support and original leading
-exponent of a polynomial give it the same leading exponent. -/
+/-- Orders preserving strict comparisons on a set containing the support of a polynomial give it
+the same leading exponent. -/
 theorem degree_eq_of_forall_mem_lt [CommSemiring R] (n : MonomialOrder σ)
     (f : MvPolynomial σ R) {s : Set (σ →₀ ℕ)}
     (h : ∀ a ∈ s, ∀ b ∈ s, a ≺[m] b → a ≺[n] b)

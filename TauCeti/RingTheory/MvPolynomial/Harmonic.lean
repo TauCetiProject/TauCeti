@@ -320,11 +320,16 @@ theorem exists_laplacian_normSq_mul_eq {p : MvPolynomial σ K} {e : ℕ} (hp : p
   obtain ⟨q, hq⟩ := LinearMap.injective_iff_surjective.1 hT ⟨p, hp⟩
   exact ⟨q, q.2, congrArg Subtype.val hq⟩
 
+omit [Nonempty σ] in
 /-- **The Fischer decomposition**, disjointness: a harmonic polynomial divisible by `r²` with
 homogeneous quotient is zero. -/
 theorem disjoint_ker_laplacian_map_mulLeft_normSq (e : ℕ) :
     Disjoint (LinearMap.ker (laplacian : MvPolynomial σ K →ₗ[K] MvPolynomial σ K))
       ((homogeneousSubmodule σ K e).map (LinearMap.mulLeft K (normSq σ K))) := by
+  rcases isEmpty_or_nonempty σ with hσ | hσ
+  · have h0 : normSq σ K = 0 := by simp [normSq_def]
+    have hz : LinearMap.mulLeft K (normSq σ K) = 0 := by ext; simp [h0]
+    simp [hz]
   rw [Submodule.disjoint_def]
   rintro _ hΔ ⟨q, hq, rfl⟩
   rw [LinearMap.mulLeft_apply, eq_zero_of_laplacian_normSq_mul_eq_zero hΔ, mul_zero]
