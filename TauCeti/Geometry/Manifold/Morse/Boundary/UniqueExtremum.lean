@@ -164,7 +164,7 @@ theorem ncard_morseTrajectorySlice_eq_two_of_unique_index_finrank {p q : M}
     have hp'q : p' ≠ q := by
       rintro rfl
       exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet hfd ⟨hyp', hys⟩)
-    have hlt := h.manifoldMorseIndex_lt hf hp' hq hp'q ⟨y, hyp', hys⟩
+    have hlt := h.manifoldMorseIndex_lt hf hp'q ⟨y, hyp', hys⟩
     have hle : manifoldMorseIndex 𝓘(ℝ, E) f p' ≤ Module.finrank ℝ E :=
       manifoldMorseIndex_le_finrank
     rwa [← huniq p' hp' (by omega)]
@@ -213,7 +213,7 @@ theorem ncard_morseTrajectorySlice_eq_two_of_unique_index_zero {q m : M}
     have hqm' : q ≠ m' := by
       rintro rfl
       exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet hfd ⟨hyu, hym'⟩)
-    have hlt := h.manifoldMorseIndex_lt hf hq hm' hqm' ⟨y, hyu, hym'⟩
+    have hlt := h.manifoldMorseIndex_lt hf hqm' ⟨y, hyu, hym'⟩
     rwa [← huniq m' hm' (by omega)]
   -- Some trajectory runs from `q` to `m`, so the middle level lies strictly between their values.
   obtain ⟨y, hys, hyq⟩ := hXn.exists_mem_stableSet_ne hfn hqn (by omega)

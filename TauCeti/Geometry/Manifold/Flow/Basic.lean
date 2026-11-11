@@ -88,6 +88,15 @@ theorem mem_flowDomain {v : (x : M) → TangentSpace I x} {t : ℝ} {x : M} :
   simp only [flowDomain, mem_preimage, Prod.swap_prod_mk,
     mem_maximalIntegralCurveFlowDomain]
 
+/-- Time zero belongs to the maximal-flow domain of `x` as soon as some time does. -/
+theorem mem_flowDomain_zero_of_mem {v : (x : M) → TangentSpace I x} {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) : ((0 : ℝ), x) ∈ flowDomain v :=
+  mem_flowDomain.mpr (zero_mem_maximalIntegralCurveInterval_of_mem (mem_flowDomain.mp ht))
+
+/-- The maximal flow fixes every point at time zero. -/
+theorem flowOf_zero (v : (x : M) → TangentSpace I x) (x : M) : flowOf v 0 x = x := by
+  rw [flowOf_apply, maximalIntegralCurve_zero]
+
 variable [T2Space M] [BoundarylessManifold I M] [CompleteSpace E]
 
 omit [CompleteSpace E] in
@@ -112,14 +121,6 @@ theorem mem_flowDomain_zero [IsManifold I 1 M] {v : (x : M) → TangentSpace I x
     ((0 : ℝ), x) ∈ flowDomain v := by
   rw [mem_flowDomain]
   exact zero_mem_maximalIntegralCurveInterval hv.contMDiffAt
-
-omit [T2Space M] in
-/-- The maximal flow fixes every point at time zero. -/
-theorem flowOf_zero [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
-    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) :
-    flowOf v 0 x = x := by
-  rw [flowOf_apply]
-  exact maximalIntegralCurve_zero (mem_flowDomain.mp (mem_flowDomain_zero hv x))
 
 omit [CompleteSpace E] in
 /-- A global integral curve of a `C¹` field is the maximal flow through its initial value.
@@ -179,7 +180,7 @@ theorem mfderiv_flowOf_trajectory_zero_apply [IsManifold I 1 M] {v : (x : M) →
   rw [mfderiv_flowOf_trajectory_apply hv (mem_flowDomain_zero hv x)]
   -- The tangent spaces at `flowOf v 0 x` and at `x` are both the model space `E`, so `v` may be
   -- treated as a non-dependent function here.
-  exact congrArg (a • v ·) (flowOf_zero hv x)
+  exact congrArg (a • v ·) (flowOf_zero v x)
 
 /-- On a complete normed model space, the domain of the maximal flow is jointly open in time
 and initial point. -/
@@ -279,7 +280,7 @@ theorem mfderiv_flowOf_zero_apply [IsManifold I 1 M]
   have hG : MDifferentiableAt (𝓘(ℝ).prod I) I (fun y : ℝ × M ↦ flowOf v y.1 y.2) (0, x) :=
     ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
       ((isOpen_flowDomain hv).mem_nhds h0)).mdifferentiableAt one_ne_zero
-  have hspace : (fun z : M ↦ flowOf v 0 z) = id := funext (flowOf_zero hv)
+  have hspace : (fun z : M ↦ flowOf v 0 z) = id := funext (flowOf_zero v)
   have h1 : @Eq E (mfderiv 𝓘(ℝ) I (fun t : ℝ ↦ flowOf v t x) 0 a) (a • v x) :=
     mfderiv_flowOf_trajectory_zero_apply hv x a
   have h2 : @Eq E (mfderiv I I (fun z : M ↦ flowOf v 0 z) x w) w := by
@@ -324,6 +325,7 @@ theorem flowOf_add [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
   refine ⟨mem_flowDomain.mpr hst, ?_⟩
   simpa only [flowOf_apply] using (maximalIntegralCurve_add hv hs' hst).symm
 
+omit [CompleteSpace E] in
 /-- The flow can be run backwards along a trajectory: if time `t` is defined at `x`, then time
 `-t` is defined at `flowOf v t x`. -/
 theorem neg_mem_flowDomain_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
@@ -332,21 +334,24 @@ theorem neg_mem_flowDomain_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpa
   rw [mem_flowDomain, flowOf_apply,
     mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp ht),
     add_neg_cancel, ← mem_flowDomain]
-  exact mem_flowDomain_zero hv x
+  exact mem_flowDomain_zero_of_mem ht
 
+omit [CompleteSpace E] in
 /-- Flowing for time `-t` undoes flowing for time `t`. -/
 theorem flowOf_neg_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
     (ht : (t, x) ∈ flowDomain v) : flowOf v (-t) (flowOf v t x) = x := by
-  rw [(flowOf_add hv ht (neg_mem_flowDomain_flowOf hv ht)).2, add_neg_cancel, flowOf_zero hv]
+  rw [(flowOf_add hv ht (neg_mem_flowDomain_flowOf hv ht)).2, add_neg_cancel, flowOf_zero]
 
+omit [CompleteSpace E] in
 /-- If `x` returns to itself at time `t`, it does so at every natural multiple of `t`. -/
 theorem flowOf_natCast_mul_of_flowOf_eq [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
     (ht : (t, x) ∈ flowDomain v) (hx : flowOf v t x = x) (k : ℕ) :
     ((k : ℝ) * t, x) ∈ flowDomain v ∧ flowOf v ((k : ℝ) * t) x = x := by
   induction k with
-  | zero => simpa only [Nat.cast_zero, zero_mul] using ⟨mem_flowDomain_zero hv x, flowOf_zero hv x⟩
+  | zero =>
+    simpa only [Nat.cast_zero, zero_mul] using ⟨mem_flowDomain_zero_of_mem ht, flowOf_zero v x⟩
   | succ k ih =>
     obtain ⟨hk, hkx⟩ := ih
     obtain ⟨hmem, heq⟩ := flowOf_add hv hk (t := t) (by rwa [hkx])
@@ -389,7 +394,7 @@ theorem mfderiv_flowOf_apply_self [IsManifold I 1 M] {v : (x : M) → TangentSpa
         (hopen.mem_nhds (mem_flowDomain_zero hv x))
     have h₂ : ∀ᶠ s in 𝓝 (0 : ℝ), (t, flowOf v s x) ∈ flowDomain v :=
       (continuousAt_const.prodMk hcurve).preimage_mem_nhds
-        (hopen.mem_nhds (by simpa only [flowOf_zero hv x] using ht))
+        (hopen.mem_nhds (by simpa only [flowOf_zero v x] using ht))
     have h₃ : ∀ᶠ s in 𝓝 (0 : ℝ), (s, flowOf v t x) ∈ flowDomain v :=
       (continuous_id.prodMk continuous_const).continuousAt.preimage_mem_nhds
         (hopen.mem_nhds (mem_flowDomain_zero hv _))
@@ -399,7 +404,7 @@ theorem mfderiv_flowOf_apply_self [IsManifold I 1 M] {v : (x : M) → TangentSpa
     (contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_const contMDiffAt_id ht).mdifferentiableAt
       one_ne_zero
   have key := mfderiv_comp_apply_of_eq (0 : ℝ) hΦ
-    (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv x)) (flowOf_zero hv x) (1 : ℝ)
+    (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv x)) (flowOf_zero v x) (1 : ℝ)
   have hvel' : mfderiv 𝓘(ℝ) I (flowOf v t ∘ fun s ↦ flowOf v s x) 0 (1 : ℝ) =
       v (flowOf v t x) := by
     rw [hcomm.mfderiv_eq]

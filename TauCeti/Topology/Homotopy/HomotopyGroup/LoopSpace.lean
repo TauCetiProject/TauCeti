@@ -51,7 +51,9 @@ concatenation in the matching direction.
 * `HomotopyGroup.piLoopSpaceMulEquiv`, `HomotopyGroup.pathLoopSpaceMulEquiv`: its `π_n` forms,
   the latter for Mathlib's loop space `Ω X x`.
 * `HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv`: its degree-one form
-  `π₁(Ω X x, refl x) ≃* π₂(X, x)`, with the fundamental group of the loop space.
+  `π₁(Ω X x, refl x) ≃* π₂(X, x)`, with the fundamental group of the loop space. It sends the
+  class of a double loop `β` to the class of its square `GenLoop.fromDoubleLoop β`
+  (`HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk`).
 * `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv`: the path components of the double loop space
   `Ω (Ω X x) (Path.refl x)` are the elements of `π₂(X, x)`.
 
@@ -87,6 +89,12 @@ theorem congrEquiv_mk (e : M ≃ N) (p : Ω^ M X x) :
 theorem congrEquiv_symm_mk (e : M ≃ N) (q : Ω^ N X x) :
     (congrEquiv e).symm (⟦q⟧ : HomotopyGroup N X x) = ⟦_root_.GenLoop.congr x e.symm q⟧ :=
   by rw [congrEquiv.eq_1]; rfl
+
+/-- Reindexing the cube directions sends the trivial class to the trivial class. -/
+theorem congrEquiv_const (e : M ≃ N) :
+    congrEquiv e (⟦_root_.GenLoop.const⟧ : HomotopyGroup M X x) = ⟦_root_.GenLoop.const⟧ := by
+  rw [congrEquiv_mk]
+  exact congrArg _ (_root_.GenLoop.ext _ _ fun _ => rfl)
 
 /-- Reindexing the cube directions commutes with the maps induced by based continuous maps. -/
 @[simp]
@@ -425,6 +433,44 @@ theorem fundamentalGroupLoopSpaceMulEquiv_apply (a : FundamentalGroup (Ω X x) (
     fundamentalGroupLoopSpaceMulEquiv a =
       pathLoopSpaceMulEquiv 0 (pi1MulEquivFundamentalGroup.symm a) :=
   by rw [fundamentalGroupLoopSpaceMulEquiv.eq_1]; rfl
+
+/-- The square `(s, t) ↦ β s t` of a double loop `β`, a loop at the constant loop in the loop
+space `Ω X x`. It sends the boundary of the square to `x`, and it represents the image of the
+class of `β` under `fundamentalGroupLoopSpaceMulEquiv`
+(`HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk`). -/
+def _root_.GenLoop.fromDoubleLoop (β : Ω (Ω X x) (Path.refl x)) : Ω^ (Fin 2) X x where
+  val := ⟨fun z => β (z 0) (z 1),
+    (Path.continuous_uncurry_iff.2 β.continuous).comp
+      (((continuous_apply 0).prodMk (continuous_apply 1) :
+        Continuous fun z : I^(Fin 2) => (z 0, z 1)))⟩
+  property := by
+    rintro z ⟨i, hi | hi⟩ <;> fin_cases i <;> simp_all
+
+@[simp]
+theorem _root_.GenLoop.fromDoubleLoop_apply (β : Ω (Ω X x) (Path.refl x)) (z : I^(Fin 2)) :
+    GenLoop.fromDoubleLoop β z = β (z 0) (z 1) :=
+  (rfl)
+
+/-- `fundamentalGroupLoopSpaceMulEquiv` sends the class of a double loop to the class of its
+square. -/
+@[simp]
+theorem fundamentalGroupLoopSpaceMulEquiv_fromPath_mk (β : Ω (Ω X x) (Path.refl x)) :
+    fundamentalGroupLoopSpaceMulEquiv (FundamentalGroup.fromPath (.mk β)) =
+      ⟦GenLoop.fromDoubleLoop β⟧ := by
+  -- `pi1MulEquivFundamentalGroup` is a quotient map, so its inverse is computed on
+  -- representatives
+  have h : pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk β)) =
+      ⟦(genLoopEquivOfUnique (Fin 1)).symm β⟧ := rfl
+  rw [fundamentalGroupLoopSpaceMulEquiv_apply, h, pathLoopSpaceMulEquiv_mk]
+  congr 1
+  ext z
+  simp only [GenLoop.congr_apply, GenLoop.genLoopGenLoopEquiv_apply,
+    GenLoop.map_apply, ContinuousMap.coe_mk, GenLoop.homeomorphOfUnique_symm_apply,
+    GenLoop.genLoopEquivOfUnique_symm_apply, finSumFinEquiv_apply_left, finSumFinEquiv_apply_right]
+  rw [GenLoop.fromDoubleLoop_apply]
+  -- `finSumFinEquiv` sends `inl 0` and `inr 0` to `0` and `1`
+  simp only [Nat.reduceAdd, Fin.default_eq_zero, Fin.isValue, Fin.reduceCastAdd,
+    Fin.natAdd_eq_addNat, Fin.addNat_one, Fin.succ_zero_eq_one]
 
 section Natural
 
