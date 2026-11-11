@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 import Mathlib.GroupTheory.Commutator.Basic
-import Mathlib.Data.Fintype.Sum
 import Mathlib.Data.Set.Finite.Range
 import Mathlib.Tactic.FinCases
 
@@ -15,7 +14,8 @@ import Mathlib.Tactic.FinCases
 # Bounded-twist families of solutions of a commutator equation
 
 Let `a`, `b` be elements of a group `G` and write `[x, y] = x⁻¹ y⁻¹ x y` (Mathlib's
-`⁅x⁻¹, y⁻¹⁆`). The equation `[x, y] = [a, b]` over `G` is a standard orientable quadratic
+`⁅x⁻¹, y⁻¹⁆`). The equation `[x, y] = [a, b]` over `G`
+(`TauCeti.GroupAlgGeom.Quadratic.oneCommutatorEquation`) is a standard orientable quadratic
 equation of genus one, and its basic sequence of automorphisms in the sense of [IFT], §7.1,
 consists of the three Nielsen moves
 
@@ -39,7 +39,6 @@ and `t₁, …, t₆` consists of the six equations saying that `tᵢ` commutes 
 
 ## Main definitions
 
-* `TauCeti.GroupAlgGeom.Lift.oneCommutatorEquation a b`: the equation `[x, y] = [a, b]` over `G`.
 * `TauCeti.GroupAlgGeom.Lift.boundedTwistStages a b t`: the seven pairs `(Aᵢ, Bᵢ)` obtained from
   `(a, b)` by the six left multiplications by `t₁, …, t₆`.
 * `TauCeti.GroupAlgGeom.Lift.boundedTwistPivot a b t i`: the entry left unchanged by the `i`-th
@@ -247,20 +246,11 @@ theorem commutatorElement_boundedTwistPoint :
 
 end Family
 
-/-! ### The commutator equation and the bounded-twist system -/
+/-! ### The bounded-twist system -/
 
 section System
 
 variable (a b : G)
-
-/-- The equation `[x, y] = [a, b]` over `G`, where `[x, y] = x⁻¹ y⁻¹ x y`: the element
-`[x, y] [a, b]⁻¹` of `G[x, y]`. -/
-def oneCommutatorEquation : GX G (Fin 2) :=
-  ⁅(inr (FreeGroup.of 0) : GX G (Fin 2))⁻¹, (inr (FreeGroup.of 1))⁻¹⁆ * inl ⁅a⁻¹, b⁻¹⁆⁻¹
-
-/-- The left side `[x, y] [a, b]⁻¹` of the equation `[x, y] = [a, b]`. -/
-theorem oneCommutatorEquation_def : oneCommutatorEquation a b =
-    ⁅(inr (FreeGroup.of 0) : GX G (Fin 2))⁻¹, (inr (FreeGroup.of 1))⁻¹⁆ * inl ⁅a⁻¹, b⁻¹⁆⁻¹ := (rfl)
 
 /-- The bounded-twist system over `G` in the variables `x`, `y` and `t₁, …, t₆`: the multiplier
 `tᵢ` of the `i`-th twist move commutes with the pivot of that move, and `(x, y)` is the pair
@@ -275,30 +265,7 @@ def boundedTwistSystem : Set (GX G (Fin 2 ⊕ Fin 6)) :=
 theorem finite_boundedTwistSystem : (boundedTwistSystem a b).Finite :=
   (Set.finite_range _).union (Set.toFinite _)
 
-variable {a b} {ι : G →* H} {v : Fin 2 → H}
-
-/-- The value of the left side of `[x, y] = [a, b]` at a pair. -/
-@[simp]
-theorem eval_oneCommutatorEquation : eval ι v (oneCommutatorEquation a b) =
-    ⁅(v 0)⁻¹, (v 1)⁻¹⁆ * ⁅(ι a)⁻¹, (ι b)⁻¹⁆⁻¹ := by
-  simp [oneCommutatorEquation_def, map_commutatorElement]
-
-/-- The solutions of `[x, y] = [a, b]` are the pairs with the commutator of `(a, b)`. -/
-theorem mem_V_oneCommutatorEquation :
-    v ∈ V ι {oneCommutatorEquation a b} ↔ ⁅(v 0)⁻¹, (v 1)⁻¹⁆ = ⁅(ι a)⁻¹, (ι b)⁻¹⁆ := by
-  simp [mul_eq_one_iff_eq_inv]
-
-/-- The equation `[x, y] = [a, b]` is a standard orientable quadratic equation of genus one: it
-has a nontrivial constant if `a` and `b` do not commute, and is `[x, y] = 1` otherwise. -/
-theorem isStandard_oneCommutatorEquation (a b : G) :
-    ∃ S : Quadratic.Standard G (Fin 2),
-      S.toWord = oneCommutatorEquation a b ∧ S.IsOrientable ∧ S.genus = 1 := by
-  by_cases hd : ⁅a⁻¹, b⁻¹⁆⁻¹ = 1
-  · exact ⟨.orientable 1 one_pos ![0] ![1] (by decide),
-      by simp [Quadratic.Standard.toWord_def, oneCommutatorEquation_def, hd], by simp, by simp⟩
-  · exact ⟨.orientableCoeff 1 0 one_pos ![0] ![1] Fin.elim0 (by decide) Fin.elim0
-      (fun j => j.elim0) _ hd, by simp [Quadratic.Standard.toWord_def, oneCommutatorEquation_def],
-      by simp, by simp⟩
+variable {a b} {ι : G →* H}
 
 /-- The solutions of the bounded-twist system: the multipliers commute with the pivots of the
 twist moves of `(a, b)`, and `(x, y)` is the pair reached by the six moves. -/
@@ -318,9 +285,10 @@ theorem mem_V_boundedTwistSystem {v : Fin 2 ⊕ Fin 6 → H} :
 
 /-- Every solution of the bounded-twist system restricts to a solution of `[x, y] = [a, b]`. -/
 theorem comp_inl_mem_V_oneCommutatorEquation {v : Fin 2 ⊕ Fin 6 → H}
-    (hv : v ∈ V ι (boundedTwistSystem a b)) : v ∘ .inl ∈ V ι {oneCommutatorEquation a b} := by
+    (hv : v ∈ V ι (boundedTwistSystem a b)) :
+    v ∘ .inl ∈ V ι {Quadratic.oneCommutatorEquation a b} := by
   rw [mem_V_boundedTwistSystem] at hv
-  rw [mem_V_oneCommutatorEquation]
+  rw [Quadratic.mem_V_oneCommutatorEquation]
   have h := commutatorElement_boundedTwistStages (t := v ∘ Sum.inr) hv.1 6
   rwa [← hv.2] at h
 
@@ -328,8 +296,8 @@ variable (ι) (p : Fin 6 → ℕ)
 
 /-- The members of the twist family of `(a, b)` are solutions of `[x, y] = [a, b]`. -/
 theorem boundedTwistPoint_mem_V :
-    boundedTwistPoint (ι a) (ι b) p ∈ V ι {oneCommutatorEquation a b} :=
-  mem_V_oneCommutatorEquation.2 (commutatorElement_boundedTwistPoint _ _ p)
+    boundedTwistPoint (ι a) (ι b) p ∈ V ι {Quadratic.oneCommutatorEquation a b} :=
+  Quadratic.mem_V_oneCommutatorEquation.2 (commutatorElement_boundedTwistPoint _ _ p)
 
 /-- The bounded-twist system is solvable at every member of the twist family of `(a, b)`, the
 multipliers being the powers of the pivots. -/
