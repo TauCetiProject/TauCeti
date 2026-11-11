@@ -11,6 +11,8 @@ public import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 public import TauCeti.Analysis.Complex.SectorBounds
 public import TauCeti.Analysis.Complex.SlitPlane
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+public import TauCeti.Analysis.Calculus.Deriv.Fract
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.HalfAngle
 public import Mathlib.MeasureTheory.Function.Floor
 
 /-!
@@ -24,6 +26,13 @@ The proof starts from Abel's finite summation formula for `(s + n)⁻¹`. Its re
 integral of `fract t / (s + t)^2`. A sectorial denominator bound controls the integral uniformly
 in the cutoff; Gauss' series identifies the limit. This gives the leading-order consequence of
 [DLMF 5.11.2](https://dlmf.nist.gov/5.11.E2), with the explicit error bound above.
+
+Integrating the sawtooth `fract t - 1/2` in that remainder by parts against the periodic kernel
+`P₂(t) = (fract t ^ 2 - fract t) / 2`, which vanishes at the integers and has `|P₂| ≤ 1/8`, gives
+the second-order bound
+`‖digamma s - log s + 1 / (2s)‖ ≤ 2 / ((1 - cos δ) ^ 3 ‖s‖ ^ 2)` on the same sector
+(`Complex.norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le`). This is the input to Stirling's
+formula on sectors, the leading terms of [DLMF 5.11.1](https://dlmf.nist.gov/5.11.E1).
 
 The finite summation identity is exposed separately for subsequent integral representations
 and gamma asymptotics. All integral endpoints use Mathlib's oriented interval integral.
@@ -303,14 +312,9 @@ theorem norm_digamma_sub_log_le_of_abs_arg_le {s : ℂ} {δ : ℝ}
     ‖digamma s - Complex.log s‖ ≤ (1 + 4 / (1 - Real.cos δ) ^ 2) / ‖s‖ := by
   rcases eq_or_ne s 0 with rfl | hs0
   · simp [digamma_def, logDeriv_apply]
-  have hslit : s ∈ slitPlane := mem_slitPlane_iff_arg.mpr ⟨by
-    intro heq
-    rw [heq, abs_of_pos Real.pi_pos] at hs
-    linarith, hs0⟩
-  have hcos : Real.cos δ < 1 := by
-    have h := Real.cos_lt_cos_of_nonneg_of_le_pi (by norm_num : (0 : ℝ) ≤ 0) hδπ.le hδ
-    simpa using h
-  have hc : 0 < (1 - Real.cos δ) / 2 := by linarith
+  have hslit := mem_slitPlane_of_abs_arg_le hδ hs hs0
+  have hc : 0 < (1 - Real.cos δ) / 2 :=
+    half_pos (TauCeti.one_sub_cos_pos hδ (by linarith [Real.pi_pos]))
   have h := norm_digamma_sub_log_le_of_mul_norm_add_le hslit hc
     (fun t ht ↦ mul_norm_add_le_norm_add_ofReal_of_abs_arg_le hδ hs ht)
   convert h using 1
@@ -332,38 +336,6 @@ theorem isBigO_digamma_sub_log_sector {δ : ℝ} (hδ : 0 < δ) (hδπ : δ < Re
     div_eq_mul_inv] using norm_digamma_sub_log_le_of_abs_arg_le hδ hδπ hs
 
 /-! ### The second-order sectorial digamma bound -/
-
-/-- The periodic kernel `P₂(t) = (fract t ^ 2 - fract t) / 2`, the antiderivative of
-`fract t - 1 / 2` vanishing at the integers, is continuous. -/
-private theorem continuous_fract_kernel :
-    Continuous fun t : ℝ ↦ (Int.fract t ^ 2 - Int.fract t) / 2 :=
-  ContinuousOn.comp_fract'' (f := fun x : ℝ ↦ (x ^ 2 - x) / 2) (by fun_prop) (by norm_num)
-
-/-- `P₂` has right derivative `fract t - 1 / 2` at every point. -/
-private theorem hasDerivWithinAt_fract_kernel (t : ℝ) :
-    HasDerivWithinAt (fun u : ℝ ↦ (Int.fract u ^ 2 - Int.fract u) / 2)
-      (Int.fract t - 1 / 2) (Ioi t) t := by
-  have hp : HasDerivAt (fun u : ℝ ↦ ((u - ⌊t⌋) ^ 2 - (u - ⌊t⌋)) / 2)
-      (Int.fract t - 1 / 2) t := by
-    have h := ((((hasDerivAt_id' t).sub_const (⌊t⌋ : ℝ)).pow 2).sub
-      ((hasDerivAt_id' t).sub_const (⌊t⌋ : ℝ))).div_const 2
-    refine h.congr_deriv ?_
-    rw [← Int.self_sub_floor]
-    ring
-  refine hp.hasDerivWithinAt.congr_of_eventuallyEq ?_ (by rw [← Int.self_sub_floor])
-  have hlt : t < ⌊t⌋ + 1 := Int.lt_floor_add_one t
-  filter_upwards [Ioo_mem_nhdsGT hlt] with u hu
-  have hfl : ⌊u⌋ = ⌊t⌋ := by
-    rw [Int.floor_eq_iff]
-    exact ⟨(Int.floor_le t).trans hu.1.le, hu.2⟩
-  rw [← Int.self_sub_floor, hfl]
-
-/-- `|P₂(t)| ≤ 1 / 8`. -/
-private theorem abs_fract_kernel_le (t : ℝ) : |(Int.fract t ^ 2 - Int.fract t) / 2| ≤ 1 / 8 := by
-  have h0 := Int.fract_nonneg t
-  have h1 := Int.fract_lt_one t
-  rw [abs_le]
-  constructor <;> nlinarith [sq_nonneg (Int.fract t - 1 / 2)]
 
 private theorem integral_inv_add_sq {s : ℂ} (hs : s ∈ slitPlane) (N : ℕ) :
     ∫ t : ℝ in 0..(N : ℝ), ((s + (t : ℂ)) ^ 2)⁻¹ = s⁻¹ - (s + N)⁻¹ := by
@@ -405,11 +377,12 @@ private theorem integral_fract_sub_half_div_add_sq {s : ℂ} (hs : s ∈ slitPla
     constructor <;> linarith [Int.fract_nonneg t, Int.fract_lt_one t]
   have hibp := integral_deriv_mul_eq_sub_of_hasDeriv_right (u := u) (v := v)
     (u' := fun t ↦ ((Int.fract t - 1 / 2 : ℝ) : ℂ)) (v' := fun t ↦ -2 / (s + t) ^ 3)
-    (continuous_ofReal.comp continuous_fract_kernel).continuousOn
+    (continuous_ofReal.comp (Int.continuous_fract_sq_sub_fract.div_const 2)).continuousOn
     (fun t ht ↦ by
       rw [uIcc_of_le hN] at ht
       exact (hvd t ht.1).continuousAt.continuousWithinAt)
-    (fun t _ ↦ (hasDerivWithinAt_fract_kernel t).ofReal_comp)
+    (fun t _ ↦ ((Int.hasDerivWithinAt_fract_sq_sub_fract t).div_const 2).ofReal_comp.congr_deriv
+      (by push_cast; ring))
     (fun t ht ↦ by
       rw [min_eq_left hN] at ht
       exact (hvd t ht.1.le).hasDerivWithinAt)
@@ -433,7 +406,7 @@ private theorem integral_fract_sub_half_div_add_sq {s : ℂ} (hs : s ∈ slitPla
       rw [uIcc_of_le hN] at ht
       exact (hvd t ht.1).continuousAt.continuousWithinAt)
   · exact (hcont3.intervalIntegrable_of_Icc hN).continuousOn_mul
-      (continuous_ofReal.comp continuous_fract_kernel).continuousOn
+      (continuous_ofReal.comp (Int.continuous_fract_sq_sub_fract.div_const 2)).continuousOn
 
 /-- The `P₂` remainder is `O(1 / ‖s‖²)` uniformly in the cutoff. -/
 private theorem norm_integral_fract_kernel_le {s : ℂ} (hs : s ∈ slitPlane) {c : ℝ}
@@ -458,7 +431,8 @@ private theorem norm_integral_fract_kernel_le {s : ℂ} (hs : s ∈ slitPlane) {
     have hpos : 0 < c ^ 3 * (‖s‖ + t) ^ 3 := by positivity
     calc
       _ ≤ (1 / 8) / (c ^ 3 * (‖s‖ + t) ^ 3) :=
-        div_le_div₀ (by norm_num) (abs_fract_kernel_le t) hpos hcube
+        div_le_div₀ (by norm_num)
+          (by rw [abs_div, abs_two]; linarith [Int.abs_fract_sq_sub_fract_le t]) hpos hcube
       _ ≤ (8 * c ^ 3 * ‖s‖)⁻¹ * (1 / (‖s‖ + t) ^ 2) := by
         rw [div_div, show c ^ 3 * (‖s‖ + t) ^ 3 = c ^ 3 * (‖s‖ + t) * (‖s‖ + t) ^ 2 by ring]
         have h1 : c ^ 3 * ‖s‖ ≤ c ^ 3 * (‖s‖ + t) := by gcongr; linarith
@@ -548,14 +522,9 @@ theorem norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le {s : ℂ} {δ : �
     ‖digamma s - Complex.log s + (2 * s)⁻¹‖ ≤ 2 / ((1 - Real.cos δ) ^ 3 * ‖s‖ ^ 2) := by
   rcases eq_or_ne s 0 with rfl | hs0
   · simp [digamma_def, logDeriv_apply]
-  have hslit : s ∈ slitPlane := mem_slitPlane_iff_arg.mpr ⟨by
-    intro heq
-    rw [heq, abs_of_pos Real.pi_pos] at hs
-    linarith, hs0⟩
-  have hcos : Real.cos δ < 1 := by
-    have h := Real.cos_lt_cos_of_nonneg_of_le_pi (by norm_num : (0 : ℝ) ≤ 0) hδπ.le hδ
-    simpa using h
-  have hc : 0 < (1 - Real.cos δ) / 2 := by linarith
+  have hslit := mem_slitPlane_of_abs_arg_le hδ hs hs0
+  have hc : 0 < (1 - Real.cos δ) / 2 :=
+    half_pos (TauCeti.one_sub_cos_pos hδ (by linarith [Real.pi_pos]))
   have h := norm_digamma_sub_log_add_inv_two_mul_le_of_mul_norm_add_le hslit hc
     (fun t ht ↦ mul_norm_add_le_norm_add_ofReal_of_abs_arg_le hδ hs ht)
   convert h using 1

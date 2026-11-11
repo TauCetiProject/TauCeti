@@ -16,8 +16,9 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 For `0 < δ < π` and every nonzero `s` with `|arg s| ≤ π - δ`, the normalized holomorphic
 logarithm of Gamma satisfies
 `‖logGamma s - ((s - 1/2) log s - s + log (2π) / 2)‖ ≤ 2 / ((1 - cos δ) ^ 3 ‖s‖)`,
-with `log` the principal branch ([DLMF 5.11.1](https://dlmf.nist.gov/5.11.E1) with its first
-remainder bound). Taking real parts gives the corresponding statement for `log ‖Γ s‖`.
+with `log` the principal branch. This is the leading-order case of
+[DLMF 5.11.1](https://dlmf.nist.gov/5.11.E1), with an explicit (non-optimal) error constant proved
+here. Taking real parts gives the corresponding statement for `log ‖Γ s‖`.
 
 The proof uses only the derivative of the error
 `E(s) = logGamma s - ((s - 1/2) log s - s + log (2π) / 2)`, which is
@@ -82,9 +83,9 @@ namespace TauCeti
 private noncomputable def stirlingError (s : ℂ) : ℂ :=
   logGamma s - ((s - 1 / 2) * Complex.log s - s + (Real.log (2 * π) / 2 : ℝ))
 
-private theorem mem_slitPlane_of_abs_arg_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ)
-    (hs : |s.arg| ≤ π - δ) (hs0 : s ≠ 0) : s ∈ slitPlane :=
-  mem_slitPlane_iff_arg.mpr ⟨fun h ↦ by rw [h, abs_of_pos pi_pos] at hs; linarith, hs0⟩
+private theorem stirlingError_apply (s : ℂ) :
+    stirlingError s = logGamma s - ((s - 1 / 2) * Complex.log s - s + (Real.log (2 * π) / 2 : ℝ)) :=
+  rfl
 
 /-- The derivative of the Stirling error is `ψ(s) - log s + 1 / (2s)`. -/
 private theorem hasDerivAt_stirlingError {z : ℂ} (hz : z ∈ slitPlane) :
@@ -102,21 +103,9 @@ private theorem hasDerivAt_stirlingError {z : ℂ} (hz : z ∈ slitPlane) :
   field_simp
   ring
 
-/-- On the sector, the derivative of the Stirling error is at most `K / ‖z‖²`. -/
-private theorem norm_deriv_stirlingError_le {z : ℂ} {δ : ℝ} (hδ : 0 < δ) (hδπ : δ < π)
-    (hz : |z.arg| ≤ π - δ) :
-    ‖digamma z - Complex.log z + (2 * z)⁻¹‖ ≤ 2 / (1 - Real.cos δ) ^ 3 / ‖z‖ ^ 2 := by
-  rw [div_div]
-  exact Complex.norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le hδ hδπ hz
-
-private theorem one_sub_cos_pos {δ : ℝ} (hδ : 0 < δ) (hδπ : δ < π) : 0 < 1 - Real.cos δ := by
-  have h := Real.cos_lt_cos_of_nonneg_of_le_pi (le_refl 0) hδπ.le hδ
-  rw [Real.cos_zero] at h
-  linarith
-
 private theorem stirlingConst_nonneg {δ : ℝ} (hδ : 0 < δ) (hδπ : δ < π) :
     0 ≤ 2 / (1 - Real.cos δ) ^ 3 :=
-  div_nonneg zero_le_two (pow_nonneg (one_sub_cos_pos hδ hδπ).le 3)
+  div_nonneg zero_le_two (pow_nonneg (one_sub_cos_pos hδ (by linarith)).le 3)
 
 /-- Along a ray in the sector the Stirling error varies by at most `K / ‖s‖`. -/
 private theorem norm_stirlingError_real_mul_sub_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hδπ : δ < π)
@@ -147,8 +136,9 @@ private theorem norm_stirlingError_real_mul_sub_le {s : ℂ} {δ : ℝ} (hδ : 0
       simpa using h.hasDerivWithinAt)
     (fun y hy ↦ by
       have hy0 : 0 < y := by linarith [hy.1]
-      have hz := norm_deriv_stirlingError_le hδ hδπ
-        (show |((y : ℂ) * s).arg| ≤ π - δ by rwa [arg_real_mul s hy0])
+      have hz := (norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le hδ hδπ
+        (show |((y : ℂ) * s).arg| ≤ π - δ by rwa [arg_real_mul s hy0])).trans_eq
+        (div_div _ _ _).symm
       rw [norm_mul, norm_real, Real.norm_of_nonneg hy0.le] at hz
       rw [norm_mul]
       calc
@@ -191,8 +181,9 @@ private theorem norm_stirlingError_arc_sub_le {δ : ℝ} (hδ : 0 < δ) (hδπ :
   have hmv := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le
     (f := fun ψ : ℝ ↦ stirlingError (r * exp (ψ * I))) (C := K / r)
     (fun φ hφ ↦ (hd hφ).hasDerivWithinAt) (fun φ hφ ↦ by
-      have hz := norm_deriv_stirlingError_le hδ hδπ (z := r * exp (φ * I))
-        (by rw [hargS hφ, abs_le]; exact ⟨hφ.1, hφ.2⟩)
+      have hz := (norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le hδ hδπ
+        (s := r * exp (φ * I)) (by rw [hargS hφ, abs_le]; exact ⟨hφ.1, hφ.2⟩)).trans_eq
+        (div_div _ _ _).symm
       have hn : ‖(r : ℂ) * exp (φ * I)‖ = r := by
         rw [norm_mul, norm_exp_ofReal_mul_I, norm_real, Real.norm_of_nonneg hr.le, mul_one]
       rw [hn] at hz
@@ -202,30 +193,38 @@ private theorem norm_stirlingError_arc_sub_le {δ : ℝ} (hδ : 0 < δ) (hδπ :
         _ = K / r := by field_simp) hS h0 hθS
   simpa [Real.norm_eq_abs] using hmv
 
-/-- **Stirling's formula on a sector**, with an explicit constant: for `0 < δ < π` and nonzero
-`s` with `|arg s| ≤ π - δ`,
-`‖logGamma s - ((s - 1/2) log s - s + log (2π) / 2)‖ ≤ 2 / ((1 - cos δ) ^ 3 ‖s‖)`. -/
-theorem norm_logGamma_sub_stirling_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hδπ : δ < π)
+/-- At the integers the Stirling error tends to zero: this is Stirling's formula for `n!`. -/
+private theorem tendsto_stirlingError_natCast_add_one :
+    Tendsto (fun n : ℕ ↦ stirlingError ((n : ℝ) + 1 : ℝ)) atTop (𝓝 0) := by
+  have h := (continuous_ofReal.tendsto 0).comp Stirling.tendsto_log_factorial_sub_stirling
+  rw [ofReal_zero] at h
+  refine h.congr fun n ↦ ?_
+  have hn : (0 : ℝ) < n + 1 := by positivity
+  rw [Function.comp_apply, stirlingError_apply, logGamma_ofReal hn, Real.Gamma_nat_eq_factorial,
+    ← ofReal_log hn.le]
+  push_cast
+  ring
+
+/-- Scaling a nonzero `s` by `R / ‖s‖` moves it along its ray to the point of norm `R`. -/
+private theorem ofReal_div_norm_mul_self {s : ℂ} (hs0 : s ≠ 0) (R : ℝ) :
+    ((R / ‖s‖ : ℝ) : ℂ) * s = (R : ℂ) * exp (s.arg * I) := by
+  have hr' : (‖s‖ : ℂ) ≠ 0 := ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr hs0)
+  calc ((R / ‖s‖ : ℝ) : ℂ) * s = ((R / ‖s‖ : ℝ) : ℂ) * (‖s‖ * exp (s.arg * I)) :=
+        congrArg _ (norm_mul_exp_arg_mul_I s).symm
+    _ = (R : ℂ) * exp (s.arg * I) := by
+      push_cast
+      field_simp
+
+/-- The Stirling error on the sector is at most `K / ‖s‖`: compare `s` with the real point
+`n + 1` through the ray from `s` and the arc of radius `n + 1`, and let `n → ∞`. -/
+private theorem norm_stirlingError_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hδπ : δ < π)
     (hs : |s.arg| ≤ π - δ) (hs0 : s ≠ 0) :
-    ‖logGamma s - ((s - 1 / 2) * Complex.log s - s + (Real.log (2 * π) / 2 : ℝ))‖ ≤
-      2 / ((1 - Real.cos δ) ^ 3 * ‖s‖) := by
+    ‖stirlingError s‖ ≤ 2 / (1 - Real.cos δ) ^ 3 / ‖s‖ := by
   set K := 2 / (1 - Real.cos δ) ^ 3
-  rw [← div_div]
-  change ‖stirlingError s‖ ≤ K / ‖s‖
   set r := ‖s‖
   have hr : 0 < r := norm_pos_iff.mpr hs0
-  -- the Stirling error at the integers tends to zero
   have hint : Tendsto (fun n : ℕ ↦ ‖stirlingError ((n : ℝ) + 1 : ℝ)‖) atTop (𝓝 0) := by
-    have h : Tendsto (fun n : ℕ ↦ stirlingError ((n : ℝ) + 1 : ℝ)) atTop (𝓝 0) := by
-      have h := (continuous_ofReal.tendsto 0).comp Stirling.tendsto_log_factorial_sub_stirling
-      rw [ofReal_zero] at h
-      refine h.congr fun n ↦ ?_
-      have hn : (0 : ℝ) < n + 1 := by positivity
-      simp only [Function.comp_apply, stirlingError]
-      rw [logGamma_ofReal hn, Real.Gamma_nat_eq_factorial, ← ofReal_log hn.le]
-      push_cast
-      ring
-    simpa using h.norm
+    simpa using tendsto_stirlingError_natCast_add_one.norm
   have hlim : Tendsto (fun n : ℕ ↦ K / r + K / ((n : ℝ) + 1) * π +
       ‖stirlingError ((n : ℝ) + 1 : ℝ)‖) atTop (𝓝 (K / r + 0 * π + 0)) :=
     (tendsto_const_nhds.add ((tendsto_const_nhds.div_atTop
@@ -237,46 +236,42 @@ theorem norm_logGamma_sub_stirling_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hδπ
   have hn0 : (0 : ℝ) < n + 1 := by positivity
   set l := ((n : ℝ) + 1) / r
   have hl : 1 ≤ l := (one_le_div hr).mpr hn1
-  have hls : (l : ℂ) * s = ((n : ℝ) + 1 : ℝ) * exp (s.arg * I) := by
-    conv_lhs => rw [← norm_mul_exp_arg_mul_I s]
-    have hr' : (‖s‖ : ℂ) ≠ 0 := ofReal_ne_zero.mpr hr.ne'
-    simp only [l, r]
-    push_cast
-    field_simp
+  -- along the ray from `s` to `l * s`, then along the arc from `l * s` to `n + 1`
   have h1 := norm_stirlingError_real_mul_sub_le hδ hδπ hs hs0 hl
   have h2 := norm_stirlingError_arc_sub_le hδ hδπ hn0 hs
-  rw [← hls] at h2
-  calc
-    ‖stirlingError s‖ ≤ ‖stirlingError (l * s) - stirlingError s‖ +
-        ‖stirlingError (l * s) - stirlingError ((n : ℝ) + 1 : ℝ)‖ +
-        ‖stirlingError ((n : ℝ) + 1 : ℝ)‖ := by
-      calc
-        ‖stirlingError s‖ = ‖-(stirlingError (l * s) - stirlingError s) +
-            (stirlingError (l * s) - stirlingError ((n : ℝ) + 1 : ℝ)) +
-            stirlingError ((n : ℝ) + 1 : ℝ)‖ := by
-          congr 1
-          ring
-        _ ≤ _ := by
-          refine (norm_add_le _ _).trans ?_
-          gcongr
-          refine (norm_add_le _ _).trans ?_
-          rw [norm_neg]
-    _ ≤ K / r + K / ((n : ℝ) + 1) * π + ‖stirlingError ((n : ℝ) + 1 : ℝ)‖ := by
-      have hK : 0 ≤ K / ((n : ℝ) + 1) :=
-        div_nonneg (stirlingConst_nonneg hδ hδπ) hn0.le
-      have h2' := h2.trans (mul_le_mul_of_nonneg_left (abs_arg_le_pi s) hK)
-      linarith
+  rw [← ofReal_div_norm_mul_self hs0] at h2
+  have htri : ‖stirlingError s‖ ≤ ‖stirlingError (l * s) - stirlingError s‖ +
+      ‖stirlingError (l * s) - stirlingError ((n : ℝ) + 1 : ℝ)‖ +
+      ‖stirlingError ((n : ℝ) + 1 : ℝ)‖ := by
+    have h := norm_add₃_le (a := -(stirlingError (l * s) - stirlingError s))
+      (b := stirlingError (l * s) - stirlingError ((n : ℝ) + 1 : ℝ))
+      (c := stirlingError ((n : ℝ) + 1 : ℝ))
+    rw [norm_neg] at h
+    convert h using 2
+    ring
+  have hK : 0 ≤ K / ((n : ℝ) + 1) := div_nonneg (stirlingConst_nonneg hδ hδπ) hn0.le
+  have h2' := h2.trans (mul_le_mul_of_nonneg_left (abs_arg_le_pi s) hK)
+  linarith
+
+/-- **Stirling's formula on a sector**, with an explicit constant: for `0 < δ < π` and nonzero
+`s` with `|arg s| ≤ π - δ`,
+`‖logGamma s - ((s - 1/2) log s - s + log (2π) / 2)‖ ≤ 2 / ((1 - cos δ) ^ 3 ‖s‖)`. -/
+theorem norm_logGamma_sub_stirling_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hδπ : δ < π)
+    (hs : |s.arg| ≤ π - δ) (hs0 : s ≠ 0) :
+    ‖logGamma s - ((s - 1 / 2) * Complex.log s - s + (Real.log (2 * π) / 2 : ℝ))‖ ≤
+      2 / ((1 - Real.cos δ) ^ 3 * ‖s‖) := by
+  rw [← div_div, ← stirlingError_apply]
+  exact norm_stirlingError_le hδ hδπ hs hs0
 
 /-- Stirling's formula on a sector, existential form: for `0 < δ < π` there is `C` with
 `‖logGamma s - ((s - 1/2) log s - s + log (2π) / 2)‖ ≤ C / ‖s‖` whenever `|arg s| ≤ π - δ` and
-`1 ≤ ‖s‖`. -/
+`s ≠ 0`. -/
 theorem exists_norm_logGamma_sub_stirling_le {δ : ℝ} (hδ : 0 < δ) (hδπ : δ < π) :
-    ∃ C, ∀ s : ℂ, |s.arg| ≤ π - δ → 1 ≤ ‖s‖ →
+    ∃ C, ∀ s : ℂ, |s.arg| ≤ π - δ → s ≠ 0 →
       ‖logGamma s - ((s - 1 / 2) * Complex.log s - s + (Real.log (2 * π) / 2 : ℝ))‖ ≤
-        C / ‖s‖ := by
-  refine ⟨2 / (1 - Real.cos δ) ^ 3, fun s hs hs1 ↦ ?_⟩
-  rw [div_div]
-  exact norm_logGamma_sub_stirling_le hδ hδπ hs (norm_pos_iff.mp (by linarith))
+        C / ‖s‖ :=
+  ⟨2 / (1 - Real.cos δ) ^ 3, fun _ hs hs0 ↦
+    (norm_logGamma_sub_stirling_le hδ hδπ hs hs0).trans_eq (div_div _ _ _).symm⟩
 
 /-- Stirling's formula on a sector: the error is `O(1 / ‖s‖)` as `s → ∞` with
 `|arg s| ≤ π - δ`. -/
