@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Presheaf
+public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.SupSeminorm
 public import TauCeti.RingTheory.Affinoid.Restricted
 public import TauCeti.RingTheory.Affinoid.SupSeminorm
 
@@ -14,7 +14,6 @@ import TauCeti.RingTheory.Affinoid.MaximumModulus
 import TauCeti.RingTheory.Affinoid.PowerBounded
 import TauCeti.RingTheory.Affinoid.QuotientNorm
 import TauCeti.RingTheory.Affinoid.ValueGroup
-import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Polynomial
 
 /-!
 # Relatively compact affinoid subdomains
@@ -50,9 +49,6 @@ in itself over `K`.
 
 ## Main results
 
-* `TauCeti.AffinoidSubdomain.supSeminorm_toSections_lt_iff`: the supremum norm of a function on
-  an affinoid subdomain is less than `r` exactly when its absolute values at the classical points
-  of the subdomain are.
 * `TauCeti.AffinoidSubdomain.isInner_iff_forall_pointNorm_lt`: the pointwise form of the
   definition.
 * `TauCeti.AffinoidSubdomain.isInner_iff_exists_pointNorm_le`: a single bound `ε < 1` in the
@@ -89,35 +85,6 @@ universe u
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 namespace AffinoidSubdomain
-
-section Sections
-
-variable {B : Type u} [CommRing B] [Algebra K B]
-
-/-- **The supremum norm on an affinoid subdomain is computed at its classical points.** For an
-affinoid subdomain `U` of `Sp B` and `r > 0`, the restriction of `b` to `U` has supremum
-seminorm less than `r` exactly when `|b(y)| < r` at every classical point `y` of `U`. -/
-theorem supSeminorm_toSections_lt_iff (hB : IsAffinoidAlgebra K B) (U : AffinoidSubdomain K B)
-    (b : B) {r : ℝ} (hr : 0 < r) :
-    supSeminorm K (U.toSections b) < r ↔ ∀ y ∈ U, pointNorm K y b < r := by
-  have hU (y : MaximalSpectrum B) :
-      y ∈ U ↔ y ∈ Set.range (U.isAffinoidAlgebra.maximalSpectrumComap U.toSections) := by
-    rw [U.isAffinoidSubdomainMap.range_maximalSpectrumComap hB, SetLike.mem_coe]
-  simp_rw [U.isAffinoidAlgebra.supSeminorm_lt_iff hr, hU, Set.forall_mem_range,
-    IsAffinoidAlgebra.pointNorm_maximalSpectrumComap]
-
-/-- For an affinoid subdomain `U` of `Sp B` and `r ≥ 0`, the restriction of `b` to `U` has
-supremum seminorm at most `r` exactly when `|b(y)| ≤ r` at every classical point `y` of `U`. -/
-theorem supSeminorm_toSections_le_iff (hB : IsAffinoidAlgebra K B) (U : AffinoidSubdomain K B)
-    (b : B) {r : ℝ} (hr : 0 ≤ r) :
-    supSeminorm K (U.toSections b) ≤ r ↔ ∀ y ∈ U, pointNorm K y b ≤ r := by
-  have hU (y : MaximalSpectrum B) :
-      y ∈ U ↔ y ∈ Set.range (U.isAffinoidAlgebra.maximalSpectrumComap U.toSections) := by
-    rw [U.isAffinoidSubdomainMap.range_maximalSpectrumComap hB, SetLike.mem_coe]
-  simp_rw [U.isAffinoidAlgebra.supSeminorm_le_iff hr, hU, Set.forall_mem_range,
-    IsAffinoidAlgebra.pointNorm_maximalSpectrumComap]
-
-end Sections
 
 section Inner
 
@@ -244,19 +211,17 @@ theorem isInner_univ_of_finite [CompleteSpace A] (hA : IsAffinoidAlgebra K A)
     obtain ⟨v, rfl⟩ := hg y
     have hc : c ≠ 0 := norm_pos_iff.mp hc0
     refine ⟨∑ i, algebraMap A (IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1)) (v i) *
-      (algebraMap K _ c⁻¹ * ⟨X i, isRestricted_X _ i⟩), ?_⟩
-    have hgv : g v = ∑ i, g (Pi.single i (v i)) := by
-      rw [← map_sum, Finset.univ_sum_single]
-    rw [hgv, map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have hv : Pi.single i (v i) = v i • (Pi.single i 1 : Fin n → A) := by
+      c⁻¹ • ⟨X i, isRestricted_X _ i⟩, ?_⟩
+    have hgv : g v = ∑ i, v i • b i := by
+      simp only [b, ← map_smul, ← map_sum]
+      congr 1
       ext j
       simp [Pi.single_apply]
-    rw [map_mul, map_mul, IsAffinoidAlgebra.restrictedLift_algebraMap, AlgHom.commutes,
-      IsAffinoidAlgebra.restrictedLift_X, hv, LinearMap.map_smul]
-    simp only [Algebra.smul_def, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
-      RingHom.coe_coe, b]
-    rw [← mul_assoc (algebraMap K B c⁻¹), ← map_mul, inv_mul_cancel₀ hc, map_one, one_mul]
+    rw [hgv, map_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [map_mul, IsAffinoidAlgebra.restrictedLift_algebraMap, map_smul,
+      IsAffinoidAlgebra.restrictedLift_X, inv_smul_smul₀ hc]
+    exact (Algebra.smul_def (v i) (b i)).symm
   · rw [IsAffinoidAlgebra.restrictedLift_X]
     exact (hB.pointNorm_le_supSeminorm y _).trans_lt (hcb i)
 
@@ -266,94 +231,7 @@ section Reduction
 
 variable {B : Type u} [CommRing B] [Algebra K B]
 
-/-- A polynomial with coefficients in the unit ball and no constant term, evaluated at elements
-of supremum seminorm at most `ε ≤ 1`, has supremum seminorm at most `ε`. -/
-private theorem supSeminorm_aeval_le {n : ℕ} (hB : IsAffinoidAlgebra K B) {x : Fin n → B}
-    {ε : ℝ} (hε0 : 0 ≤ ε) (hε1 : ε ≤ 1) (hx : ∀ i, supSeminorm K (x i) ≤ ε)
-    {q : MvPolynomial (Fin n) K} (hq0 : q.coeff 0 = 0) (hq : ∀ t, ‖q.coeff t‖ ≤ 1) :
-    supSeminorm K (MvPolynomial.aeval x q) ≤ ε := by
-  classical
-  rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_eq']
-  refine Finset.sum_induction _ (fun b ↦ supSeminorm K b ≤ ε)
-    (fun a b ha hb ↦ (hB.supSeminorm_add_le a b).trans (max_le ha hb))
-    (supSeminorm_zero.trans_le hε0) fun t ht ↦ ?_
-  -- A monomial `xᵗ` with `t ≠ 0` contains a factor `xᵢ` and is otherwise of norm at most one.
-  obtain ⟨i, hi⟩ : ∃ i, t i ≠ 0 := by
-    by_contra! h
-    exact MvPolynomial.mem_support_iff.mp ht (by rw [show t = 0 from Finsupp.ext h, hq0])
-  have hrest : supSeminorm K (∏ j ∈ Finset.univ.erase i, x j ^ t j) ≤ 1 :=
-    Finset.prod_induction _ (fun b ↦ supSeminorm K b ≤ 1)
-      (fun a b ha hb ↦ (hB.supSeminorm_mul_le a b).trans
-        ((mul_le_of_le_one_left (supSeminorm_nonneg b) ha).trans hb))
-      (supSeminorm_le zero_le_one fun _ ↦ pointNorm_one.le) fun j _ ↦
-        supSeminorm_le zero_le_one fun y ↦ by
-          rw [hB.pointNorm_pow]
-          exact pow_le_one₀ (pointNorm_nonneg _)
-            ((hB.pointNorm_le_supSeminorm y _).trans ((hx j).trans hε1))
-  rw [← Algebra.smul_def, hB.supSeminorm_smul, ← Finset.mul_prod_erase _ _ (Finset.mem_univ i)]
-  calc ‖q.coeff t‖ * supSeminorm K (x i ^ t i * ∏ j ∈ Finset.univ.erase i, x j ^ t j)
-      ≤ 1 * (ε * 1) := by
-        refine mul_le_mul (hq t) ((hB.supSeminorm_mul_le _ _).trans (mul_le_mul ?_ hrest
-          (supSeminorm_nonneg _) hε0)) (supSeminorm_nonneg _) zero_le_one
-        rw [hB.supSeminorm_pow _ hi]
-        exact (pow_le_pow_left₀ (supSeminorm_nonneg _) (hx i) _).trans
-          (pow_le_of_le_one hε0 hε1 hi)
-    _ = ε := by ring
-
 local notation "Tate " n:max => IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)
-
-/-- A Tate series of Gauss norm at most one, mapped to `B` by a homomorphism sending the
-variables to elements of supremum seminorm at most `ε ≤ 1`, differs from its constant
-coefficient by an element of supremum seminorm at most `ε`. -/
-private theorem supSeminorm_map_sub_algebraMap_constantCoeff_le {n : ℕ}
-    (hB : IsAffinoidAlgebra K B) (ψ : Tate n →ₐ[K] B) {ε : ℝ} (hε0 : 0 < ε) (hε1 : ε ≤ 1)
-    (hX : ∀ i, supSeminorm K (ψ ⟨X i, isRestricted_X _ i⟩) ≤ ε) {g : Tate n} (hg : ‖g‖ ≤ 1) :
-    supSeminorm K (ψ g - algebraMap K B (constantCoeff (g : MvPowerSeries (Fin n) K))) ≤ ε := by
-  have hT := isAffinoidAlgebra_tate (K := K) (σ := Fin n)
-  -- Approximate `g` within `ε` by a polynomial `p`.
-  obtain ⟨p, hp⟩ := (denseRange_polynomialToRestricted (R := K)
-    (c := fun _ : Fin n ↦ 1)).exists_dist_lt g hε0
-  rw [dist_eq_norm] at hp
-  set P := polynomialToRestricted (fun _ : Fin n ↦ (1 : ℝ)) p with hP
-  have hPg : ‖P‖ ≤ 1 := by
-    have h := (IsUltrametricDist.norm_add_le_max g (P - g)).trans
-      (max_le hg ((norm_sub_rev P g).trans_le (hp.le.trans hε1)))
-    rwa [add_sub_cancel] at h
-  -- On polynomials, `ψ` is evaluation at the images of the variables.
-  have hψp : ψ P = MvPolynomial.aeval (fun i ↦ ψ ⟨X i, isRestricted_X _ i⟩) p := by
-    rw [← AlgHom.comp_apply]
-    congr 1
-    exact MvPolynomial.algHom_ext fun i ↦ by simp
-  set c₀ := p.coeff 0
-  have hcoeff : constantCoeff (g : MvPowerSeries (Fin n) K) = c₀ +
-      constantCoeff ((g - P : Tate n) : MvPowerSeries (Fin n) K) := by
-    simp only [c₀, hP, AddSubgroupClass.coe_sub, coe_polynomialToRestricted, map_sub,
-      ← MvPowerSeries.coeff_zero_eq_constantCoeff_apply, MvPolynomial.coeff_coe]
-    ring
-  -- `ψ g - g₀ = ψ (g - p) - (g - p)₀ + (ψ p - p₀)`, and each part is at most `ε`.
-  have hsplit : ψ g - algebraMap K B (constantCoeff (g : MvPowerSeries (Fin n) K)) =
-      (ψ (g - P) - algebraMap K B (constantCoeff ((g - P : Tate n) : MvPowerSeries (Fin n) K))) +
-        MvPolynomial.aeval (fun i ↦ ψ ⟨X i, isRestricted_X _ i⟩) (p - MvPolynomial.C c₀) := by
-    rw [hcoeff, map_sub, map_sub, map_add, MvPolynomial.aeval_C, ← hψp]
-    ring
-  rw [hsplit]
-  refine (hB.supSeminorm_add_le _ _).trans (max_le ?_ ?_)
-  · have h₁ : supSeminorm K (ψ (g - P)) ≤ ε :=
-      (hT.supSeminorm_map_le hB ψ _).trans ((supSeminorm_eq_norm _).trans_le hp.le)
-    have h₂ : supSeminorm K (algebraMap K B
-        (constantCoeff ((g - P : Tate n) : MvPowerSeries (Fin n) K))) ≤ ε := by
-      refine supSeminorm_le hε0.le fun y ↦ ?_
-      rw [pointNorm_algebraMap]
-      exact (norm_constantCoeff_le _).trans hp.le
-    rw [sub_eq_add_neg]
-    exact (hB.supSeminorm_add_le _ _).trans (max_le h₁ ((hB.supSeminorm_neg _).trans_le h₂))
-  · refine supSeminorm_aeval_le hB hε0.le hε1 hX (by simp [c₀]) fun t ↦ ?_
-    rcases eq_or_ne t 0 with rfl | ht
-    · simp [c₀]
-    · rw [MvPolynomial.coeff_sub, MvPolynomial.coeff_C_of_ne_zero ht, sub_zero]
-      have h := norm_coeff_le_norm P t
-      rw [hP, coe_polynomialToRestricted, MvPolynomial.coeff_coe] at h
-      exact h.trans hPg
 
 /-- **Inner over the base field forces an integral reduction.** If the whole of `Sp B` is
 relatively compact over `K`, then every `f : B` with `|f|sup ≤ 1` is a root of a monic polynomial
@@ -393,7 +271,7 @@ theorem IsInner.exists_monic_supSeminorm_aeval_lt_one (hB : IsAffinoidAlgebra K 
   refine Finset.sum_induction _ (fun b ↦ supSeminorm K b ≤ ε)
     (fun a b ha hb ↦ (hB.supSeminorm_add_le a b).trans (max_le ha hb))
     (supSeminorm_zero.trans_le hε0.le) fun j _ ↦ ?_
-  have hj := supSeminorm_map_sub_algebraMap_constantCoeff_le hB ψ hε0 hε1.le hXε
+  have hj := hB.supSeminorm_map_sub_algebraMap_constantCoeff_le ψ hε0 hε1.le hXε
     (Subring.mem_unitClosedBall.mp (Q.coeff j).2)
   have hfj : supSeminorm K (f ^ j) ≤ 1 := supSeminorm_le zero_le_one fun y ↦ by
     rw [hB.pointNorm_pow]
