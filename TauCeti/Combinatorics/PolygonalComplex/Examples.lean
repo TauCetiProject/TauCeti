@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.PolygonalComplex.Boundary
 public import TauCeti.Combinatorics.PolygonalComplex.SingleFace
-public import TauCeti.Combinatorics.PolygonalComplex.SurfaceModel
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Ring
 
@@ -43,6 +43,11 @@ For infinitely many faces the link is moreover infinite, and every germ then has
 * `TauCeti.SurfaceModel.boundaryDarts_disc`, `TauCeti.SurfaceModel.boundaryDarts_torus`,
   `TauCeti.SurfaceModel.boundaryDarts_projectivePlane`, `TauCeti.SurfaceModel.boundaryDarts_sphere`:
   both darts of the disc are boundary darts, while the closed models have no boundary.
+* `TauCeti.SurfaceModel.card_boundaryComponent_disc`,
+  `TauCeti.SurfaceModel.isEmpty_boundaryComponent_torus`,
+  `TauCeti.SurfaceModel.isEmpty_boundaryComponent_projectivePlane`,
+  `TauCeti.SurfaceModel.isEmpty_boundaryComponent_sphere`: the disc has one boundary component
+  and the closed models have none.
 * `TauCeti.PolygonalComplex.not_hasSurfaceLink_digons`: the vertex of any family of faces `a a⁻¹` on
   the one-petal rose has no surface link (for example, the sphere with two points identified).
 
@@ -153,6 +158,16 @@ theorem boundaryDarts_disc : disc.boundaryDarts = Set.univ :=
     (linkDegree_polygon (α := Unit) [((), true)] (List.cons_ne_nil _ _) e).trans <| by
       obtain ⟨⟨⟩, _ | _⟩ := e <;> decide
 
+/-- The disc has a single boundary component: its boundary graph is one loop at its vertex. -/
+theorem card_boundaryComponent_disc : Nat.card disc.BoundaryComponent = 1 := by
+  have : Subsingleton disc.graph.V := inferInstanceAs (Subsingleton PUnit)
+  have : Subsingleton disc.boundary.V := inferInstanceAs (Subsingleton disc.BoundaryVertex)
+  have : Subsingleton disc.BoundaryComponent :=
+    Quiver.StronglyConnectedComponent.mk_surjective.subsingleton
+  have : Nonempty disc.BoundaryComponent :=
+    ⟨disc.boundaryClass ⟨((), true), boundaryDarts_disc ▸ Set.mem_univ _⟩⟩
+  exact Nat.card_of_subsingleton (Classical.arbitrary _)
+
 /-! ### The torus -/
 
 /-- The torus: two petals `a`, `b` and a single face attached along `a b a⁻¹ b⁻¹`. -/
@@ -191,6 +206,10 @@ theorem boundaryDarts_torus : torus.boundaryDarts = ∅ :=
       obtain ⟨i, b⟩ := e
       fin_cases i <;> cases b <;> decide
 
+/-- The torus has no boundary component. -/
+theorem isEmpty_boundaryComponent_torus : IsEmpty torus.BoundaryComponent :=
+  torus.isEmpty_boundaryComponent_iff.2 boundaryDarts_torus
+
 /-- The torus is orientable: with its face kept as given, the two sides along each edge traverse
 it in opposite directions. -/
 theorem isOrientable_torus : torus.IsOrientable :=
@@ -223,6 +242,10 @@ theorem boundaryDarts_projectivePlane : projectivePlane.boundaryDarts = ∅ :=
   Set.eq_empty_of_forall_notMem fun e => linkDegree_eq_two_iff_notMem_boundaryDarts.1 <|
     (linkDegree_polygon (α := Unit) [((), true), ((), true)] (List.cons_ne_nil _ _) e).trans <| by
       obtain ⟨⟨⟩, _ | _⟩ := e <;> decide
+
+/-- The projective plane has no boundary component. -/
+theorem isEmpty_boundaryComponent_projectivePlane : IsEmpty projectivePlane.BoundaryComponent :=
+  projectivePlane.isEmpty_boundaryComponent_iff.2 boundaryDarts_projectivePlane
 
 /-- The projective plane is not orientable: its two sides traverse the same dart, and orienting
 the single face reverses both of them. -/
@@ -276,6 +299,10 @@ theorem boundaryDarts_sphere : sphere.boundaryDarts = ∅ :=
     refine (linkDegree_singleFace (Γ := SerreGraph.segment) (w := [false, true])
       (hw := List.cons_ne_nil _ _) e).trans ?_
     cases e <;> decide
+
+/-- The sphere has no boundary component. -/
+theorem isEmpty_boundaryComponent_sphere : IsEmpty sphere.BoundaryComponent :=
+  sphere.isEmpty_boundaryComponent_iff.2 boundaryDarts_sphere
 
 end SurfaceModel
 
