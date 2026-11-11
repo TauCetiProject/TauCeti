@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
 import TauCeti.Analysis.Distribution.TemperedDistribution.BesselPotential
-import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Fourier.L2Multiplier
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
@@ -54,9 +53,10 @@ symbols with disjoint supports have orthogonal ranges, so the blocks are almost 
   reconstruction in `𝓢'`.
 
 General orders reduce to order `0`: `J^s` commutes with the blocks, and on the `j`-th block it is
-the multiplier by the Schwartz symbol `(1 + ‖ξ‖²)^{s/2} Ψⱼ`, whose kernel has `L¹` norm `O(2^{js})`
-(`TemperedDistribution.exists_besselPotential_compL_littlewoodPaleyBlock_eq`). Young's inequality
-then gives `‖Δⱼ J^s u‖₂ ≤ C 2^{js} ‖Δⱼ u‖₂`, and the same bound for `J^{-s}` gives the reverse.
+the multiplier by the Schwartz symbol `(1 + ‖ξ‖²)^{s/2} Ψⱼ`, whose kernel has `L¹` norm `O(2^{js})`.
+Young's inequality then gives `‖J^s Δⱼ u‖₂ ≤ C 2^{js} ‖Δⱼ u‖₂`
+(`TemperedDistribution.exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le`), and the same
+bound for `J^{-s}` gives the reverse.
 
 ## References
 
@@ -266,24 +266,6 @@ private theorem exists_eq_and_norm_sq_le_of_summable :
     gcongr
     exact hsq.sum_le_tsum _ fun j _ ↦ by positivity
 
-/-- On a single block, the Bessel potential `J^t` acts as multiplication by `2^{tj}` up to a
-constant: if `Δⱼ w` is an `L²` function `f`, then `Δⱼ (J^t w)` is an `L²` function `g` with
-`‖g‖ ≤ C 2^{tj} ‖f‖`, where `C` depends only on `φ` and `t`. -/
-private theorem exists_littlewoodPaleyBlock_besselPotential_eq_and_norm_le (t : ℝ) :
-    ∃ C : ℝ, ∀ (j : ℕ) (w : 𝓢'(E, F)) (f : Lp F 2 (volume : Measure E)),
-      littlewoodPaleyBlock F φ j w = f → ∃ g : Lp F 2 (volume : Measure E),
-        littlewoodPaleyBlock F φ j (besselPotential E F t w) = g ∧
-          ‖g‖ ≤ C * 2 ^ (t * j) * ‖f‖ := by
-  obtain ⟨C, hC⟩ := exists_besselPotential_compL_littlewoodPaleyBlock_eq (F := F) φ t
-  refine ⟨C, fun j w f hf ↦ ?_⟩
-  obtain ⟨σ, hσ, hσC⟩ := hC j
-  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
-  refine ⟨g, ?_, hgf.trans ?_⟩
-  · rw [littlewoodPaleyBlock_besselPotential_comm, ← ContinuousLinearMap.comp_apply, hσ,
-      ContinuousLinearMap.comp_apply, hf, hg]
-  · rw [mul_comm t, Real.rpow_natCast_mul zero_le_two]
-    gcongr
-
 /-- `∑ⱼ (2^{sj} ‖fⱼ‖)²` controls `‖J^s u‖²` when the `fⱼ` are the blocks of `u`. -/
 private theorem exists_besselPotential_eq_and_norm_sq_le (s : ℝ) :
     ∃ C : ℝ, ∀ (u : 𝓢'(E, F)) (f : ℕ → Lp F 2 (volume : Measure E)),
@@ -291,16 +273,17 @@ private theorem exists_besselPotential_eq_and_norm_sq_le (s : ℝ) :
         Summable (fun j : ℕ ↦ (2 ^ (s * j) * ‖f j‖) ^ 2) →
           ∃ w : Lp F 2 (volume : Measure E), besselPotential E F s u = w ∧
             ‖w‖ ^ 2 ≤ C * ∑' j : ℕ, (2 ^ (s * j) * ‖f j‖) ^ 2 := by
-  obtain ⟨C₁, hC₁⟩ := exists_littlewoodPaleyBlock_besselPotential_eq_and_norm_le (F := F) φ s
+  obtain ⟨C₁, -, hC₁⟩ := exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ s
   obtain ⟨C₂, hC₂0, hC₂⟩ := exists_eq_and_norm_sq_le_of_summable (F := F) φ
   refine ⟨C₂ * C₁ ^ 2, fun u f hf hsum ↦ ?_⟩
-  choose g hg hgf using fun j ↦ hC₁ j u (f j) (hf j)
+  choose g hg hgf using fun j ↦ hC₁ (p := 2) j u (f j) (hf j)
   have hgf' : ∀ j, ‖g j‖ ^ 2 ≤ C₁ ^ 2 * (2 ^ (s * j) * ‖f j‖) ^ 2 := fun j ↦ by
     rw [← mul_pow, ← mul_assoc]
     exact pow_le_pow_left₀ (norm_nonneg _) (hgf j) 2
   have hsum' : Summable fun j ↦ ‖g j‖ ^ 2 :=
     (hsum.mul_left (C₁ ^ 2)).of_nonneg_of_le (fun j ↦ by positivity) hgf'
-  obtain ⟨w, hw, hwg⟩ := hC₂ _ g hg hsum'
+  obtain ⟨w, hw, hwg⟩ :=
+    hC₂ _ g (fun j ↦ (littlewoodPaleyBlock_besselPotential_comm φ s j u).trans (hg j)) hsum'
   refine ⟨w, hw, hwg.trans ?_⟩
   calc C₂ * ∑' j, ‖g j‖ ^ 2 ≤ C₂ * ∑' j : ℕ, C₁ ^ 2 * (2 ^ (s * j) * ‖f j‖) ^ 2 :=
         mul_le_mul_of_nonneg_left (hsum'.tsum_le_tsum hgf' (hsum.mul_left _)) hC₂0
@@ -311,15 +294,16 @@ private theorem exists_littlewoodPaleyBlock_eq_and_sum_sq_le (s : ℝ) :
     ∃ C : ℝ, ∀ (u : 𝓢'(E, F)) (w : Lp F 2 (volume : Measure E)), besselPotential E F s u = w →
       ∃ f : ℕ → Lp F 2 (volume : Measure E), (∀ j, littlewoodPaleyBlock F φ j u = f j) ∧
         ∀ t : Finset ℕ, ∑ j ∈ t, (2 ^ (s * j) * ‖f j‖) ^ 2 ≤ C * ‖w‖ ^ 2 := by
-  obtain ⟨C₁, hC₁⟩ := exists_littlewoodPaleyBlock_besselPotential_eq_and_norm_le (F := F) φ (-s)
+  obtain ⟨C₁, -, hC₁⟩ :=
+    exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ (-s)
   obtain ⟨C₂, hC₂⟩ := exists_sum_norm_sq_littlewoodPaleyBlock_le (F := F) φ
   refine ⟨C₁ ^ 2 * C₂, fun u w hw ↦ ?_⟩
   obtain ⟨g, hg, hgw⟩ := hC₂ w
-  have hu : besselPotential E F (-s) (w : 𝓢'(E, F)) = u := by
-    rw [← hw, besselPotential_besselPotential_apply, add_neg_cancel, besselPotential_zero,
-      ContinuousLinearMap.id_apply]
-  choose f hf hfg using fun j ↦ hC₁ j w (g j) (hg j)
-  refine ⟨f, fun j ↦ hu ▸ hf j, fun t ↦ ?_⟩
+  have hu : besselPotential E F (-s) (w : 𝓢'(E, F)) = u :=
+    (besselPotential_neg_apply_eq_iff s _ _).2 hw
+  choose f hf hfg using fun j ↦ hC₁ (p := 2) j w (g j) (hg j)
+  refine ⟨f, fun j ↦ hu ▸ (littlewoodPaleyBlock_besselPotential_comm φ _ j _).trans (hf j),
+    fun t ↦ ?_⟩
   have hfg' : ∀ j : ℕ, (2 ^ (s * j) * ‖f j‖) ^ 2 ≤ C₁ ^ 2 * ‖g j‖ ^ 2 := fun j ↦ by
     have h2 : (2 : ℝ) ^ (s * j) * 2 ^ (-s * j) = 1 := by
       rw [← Real.rpow_add two_pos, neg_mul, add_neg_cancel, Real.rpow_zero]
