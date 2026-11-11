@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.NovikovModule.KernelMap
-public import TauCeti.RingTheory.NovikovSeries.Topology
+public import TauCeti.RingTheory.NovikovModule.Bilinear
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -61,6 +60,10 @@ which is the form that the energy estimate takes for class-indexed counts.
 * `TauCeti.NovikovModule.novikovMapOfMatrix_mul`, `TauCeti.NovikovModule.novikovMapOfMatrix_one`:
   the map of a product of matrices is the composite of their maps, and the identity matrix gives
   the identity.
+* `TauCeti.NovikovModule.novikovProductOfMatrix_eq_novikovMapOfMatrix_right`,
+  `TauCeti.NovikovModule.novikovProductOfMatrix_eq_novikovMapOfMatrix_left`: fixing one input of
+  the product of a matrix of Novikov series (`TauCeti.NovikovModule.novikovProductOfMatrix`) gives
+  the map of the matrix contracted with the coordinates of that input.
 
 ## References
 
@@ -300,5 +303,42 @@ theorem novikovMapOfMatrix_one [DecidableEq ι₁] :
   rw [novikovMapOfMatrix_eq_toLin, Matrix.transpose_one, Matrix.toLin_one]
 
 end Map
+
+section Product
+
+variable [CommSemiring R] (M : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
+
+/-- **Multiplying by a fixed first input is the map of a matrix.** For the product of a matrix
+`M`, multiplication by `e` on the left is the map of the matrix `∑ᵢ eᵢ Mᵢⱼₖ`, where `eᵢ` are the
+coordinates of `e`. -/
+theorem novikovProductOfMatrix_eq_novikovMapOfMatrix_right [Fintype ι₁] [Finite ι₂] [Finite ι₀]
+    (e : NovikovModule R F₁)
+    (b : NovikovModule R F₂) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ M e b =
+      novikovMapOfMatrix hF₂ hF₀ r₂ r₀
+        (Matrix.of fun j k => ∑ i, coordinates hF₁ r₁ e i * M i j k) b := by
+  have := Fintype.ofFinite ι₂
+  refine (coordinates hF₀ r₀).injective (funext fun k => ?_)
+  simp only [coordinates_novikovProductOfMatrix, coordinates_novikovMapOfMatrix, Matrix.of_apply,
+    Finset.mul_sum]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
+
+/-- **Multiplying by a fixed second input is the map of a matrix.** For the product of a matrix
+`M`, multiplication by `e` on the right is the map of the matrix `∑ⱼ eⱼ Mᵢⱼₖ`, where `eⱼ` are the
+coordinates of `e`. -/
+theorem novikovProductOfMatrix_eq_novikovMapOfMatrix_left [Finite ι₁] [Fintype ι₂] [Finite ι₀]
+    (a : NovikovModule R F₁)
+    (e : NovikovModule R F₂) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ M a e =
+      novikovMapOfMatrix hF₁ hF₀ r₁ r₀
+        (Matrix.of fun i k => ∑ j, coordinates hF₂ r₂ e j * M i j k) a := by
+  have := Fintype.ofFinite ι₁
+  refine (coordinates hF₀ r₀).injective (funext fun k => ?_)
+  simp only [coordinates_novikovProductOfMatrix, coordinates_novikovMapOfMatrix, Matrix.of_apply,
+    Finset.mul_sum]
+  exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
+
+end Product
 
 end TauCeti.NovikovModule

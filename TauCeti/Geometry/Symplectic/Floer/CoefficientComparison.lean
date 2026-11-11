@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
 public import TauCeti.RingTheory.NovikovSeries.Functoriality
+public import TauCeti.RingTheory.NovikovSeries.Grading
 
 /-!
 # Comparing quantum and Floer coefficients
@@ -18,7 +19,8 @@ unital homomorphism of the completed rings. Its coefficients are finite sums eve
 class-group map has infinite kernel or area has dense image.
 
 We allow any class-group homomorphism preserving area. If it also preserves a Chern map,
-the comparison negates Chern number on homogeneous supports. Thus raw Floer coefficient
+the comparison negates Chern number on homogeneous supports
+(`coefficientComparison_mem_gradeBy`). Thus raw Floer coefficient
 degree `2 c₁` becomes quantum coefficient degree after cochain regrading. For a quotient by
 any subgroup of the joint area/Chern kernel, use the descended area and Chern homomorphisms.
 `periodGroupComparison` specializes to the quotient by the entire joint kernel. In that case
@@ -122,6 +124,14 @@ theorem chern_support_coefficientComparison (c : S →+ ℤ) (c' : Γ →+ ℤ)
   intro γ hγ
   obtain ⟨A, hA, rfl⟩ := support_coefficientComparison_subset q hω a hγ
   simp [hc A, ha A hA]
+
+/-- If source and target Chern maps agree under class projection and every class counted by a
+series has Chern number `k`, its comparison has Chern degree `-k`. -/
+theorem coefficientComparison_mem_gradeBy (c : S →+ ℤ) (c' : Γ →+ ℤ)
+    (hc : ∀ A, c' (q A) = c A) {k : ℤ} {a : NovikovSeries R S ω}
+    (ha : ∀ A ∈ a.support, c A = k) :
+    coefficientComparison q hω a ∈ gradeBy R (-Ω) c' (-k) :=
+  mem_gradeBy_iff.2 (chern_support_coefficientComparison q hω c c' hc ha)
 
 end Semiring
 
