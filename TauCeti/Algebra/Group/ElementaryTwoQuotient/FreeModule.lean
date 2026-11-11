@@ -86,10 +86,22 @@ divisibility lemmas. -/
 instance : Finite (ElementaryTwoQuotient (Multiplicative A)) :=
   Nat.finite_of_card_ne_zero (by simp [card_elementaryTwoQuotient_multiplicative])
 
-/-- The 2-rank of a finite-rank free abelian group is its rank:
-`twoRank (Multiplicative A) = finrank ℤ A`. -/
-theorem twoRank_multiplicative : twoRank (Multiplicative A) = Module.finrank ℤ A :=
-  twoRank_eq_of_card_elementaryTwoQuotient_eq_two_pow _
-    (card_elementaryTwoQuotient_multiplicative A)
+omit [Module.Finite ℤ A] in
+/-- The 2-rank of a free abelian group is its rank: `twoRank (Multiplicative A) = finrank ℤ A`.
+For a free group of infinite rank both sides are `0` by the convention of `Module.finrank`. -/
+theorem twoRank_multiplicative : twoRank (Multiplicative A) = Module.finrank ℤ A := by
+  by_cases hA : Module.Finite ℤ A
+  · exact twoRank_eq_of_card_elementaryTwoQuotient_eq_two_pow _
+      (card_elementaryTwoQuotient_multiplicative A)
+  · rw [Module.finrank_of_not_finite hA, twoRank_def, Module.finrank_of_not_finite]
+    intro hE
+    have hE' : Finite (ElementaryTwoQuotient (Multiplicative A)) := Module.finite_of_finite (ZMod 2)
+    have hM : Finite (ModN A 2) := Finite.of_equiv _ (Submodule.Quotient.equiv _ _
+      (AddEquiv.additiveMultiplicative A).toIntLinearEquiv
+      (map_range_lsmul_two_additiveMultiplicative A)).toEquiv
+    have hι : Finite (Module.Free.ChooseBasisIndex ℤ A) :=
+      Finite.of_injective (ModN.basis (n := 2) (Module.Free.chooseBasis ℤ A))
+        (ModN.basis (n := 2) (Module.Free.chooseBasis ℤ A)).injective
+    exact hA (Module.Finite.of_basis (Module.Free.chooseBasis ℤ A))
 
 end TauCeti
