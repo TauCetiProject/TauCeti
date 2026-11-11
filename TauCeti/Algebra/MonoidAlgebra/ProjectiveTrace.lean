@@ -76,9 +76,8 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   let q := pPart p g
   have hmul : s * q = g := pFreePart_mul_pPart p g
   have hsq : Commute s q := commute_pFreePart_pPart p g
-  have hq1 : q ≠ 1 := pPart_ne_one_of_dvd_orderOf Fact.out (orderOf_pos g).ne' hg
-  have hQ : IsPGroup p (Subgroup.zpowers q) :=
-    isPGroup_zpowers_pPart Fact.out (orderOf_pos g).ne'
+  have hq1 : q ≠ 1 := by simp [q, hg, Fact.out, (orderOf_pos g).ne']
+  have hQ : IsPGroup p (Subgroup.zpowers q) := isPGroup_zpowers_pPart p g
   have hpm : ¬p ∣ orderOf s := not_dvd_orderOf_pFreePart Fact.out (orderOf_pos g).ne'
   rw [← hmul]
   -- Restrict `X` to the local group algebra `A[Q]` of `Q = ⟨q⟩`.
