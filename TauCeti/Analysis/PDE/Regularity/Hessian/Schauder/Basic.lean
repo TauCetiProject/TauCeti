@@ -202,13 +202,27 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0} (hα 
     (fun x hx => hdiff x (hVU (hSV hx))) hdir
   rwa [Fintype.card_fin, Nat.cast_add, Nat.cast_one] at hHol
 
-/-- **Local `C^{2,α}` regularity for Poisson's equation.** Let `0 < α < 1`, and let `u` be of class
+/-- **Local `C^{2,α}` regularity for Poisson's equation.** Let `0 ≤ α < 1`, and let `u` be of class
 `C²` on an open set `U ⊆ ℝ^{n+1}` whose Laplacian is locally `α`-Hölder on `U`. Then `D²u` is
 locally `α`-Hölder on `U`: every point of `U` has a neighbourhood on which `D²u` is `α`-Hölder. -/
-theorem exists_mem_nhds_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0} (hα : 0 < α)
+theorem exists_mem_nhds_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0}
     (hα1 : α < 1) {U : Set E} {u : E → ℝ} (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U)
     (hΔ : ∀ x ∈ U, ∃ T ∈ 𝓝 x, ∃ K : ℝ≥0, HolderOnWith K α (Δ u) T) {x : E} (hx : x ∈ U) :
     ∃ T ∈ 𝓝 x, ∃ K : ℝ≥0, HolderOnWith K α (iteratedFDeriv ℝ 2 u) T := by
+  -- For `α = 0` the Hölder condition is boundedness of `D²u`, which holds on a compact ball.
+  rcases eq_or_ne α 0 with rfl | hα0
+  · obtain ⟨r, hr, hrU⟩ := nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hx)
+    have hc : ContinuousOn (iteratedFDeriv ℝ 2 u) U :=
+      ContinuousOn.continuousOn_iteratedFDeriv hu hU (by norm_num)
+    obtain ⟨B, hB⟩ := (isCompact_closedBall x r).exists_bound_of_continuousOn (hc.mono hrU)
+    have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB x (mem_closedBall_self hr.le))
+    refine ⟨closedBall x r, closedBall_mem_nhds x hr, (2 * B).toNNReal,
+      HolderOnWith.of_dist_le fun a ha b hb => ?_⟩
+    have := dist_le_norm_add_norm (iteratedFDeriv ℝ 2 u a) (iteratedFDeriv ℝ 2 u b)
+    simp only [NNReal.coe_zero, Real.rpow_zero, mul_one]
+    rw [Real.coe_toNNReal _ (by positivity)]
+    linarith [hB a ha, hB b hb]
+  have hα : 0 < α := pos_iff_ne_zero.2 hα0
   obtain ⟨C, -, hC⟩ := exists_holderOnWith_iteratedFDeriv_two_of_laplacian (n := n) hα hα1
   obtain ⟨T, hT, K, hK⟩ := hΔ x hx
   obtain ⟨r, hr, hrUT⟩ := nhds_basis_closedBall.mem_iff.1 (Filter.inter_mem (hU.mem_nhds hx) hT)

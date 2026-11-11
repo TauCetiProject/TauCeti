@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
 /-!
@@ -32,6 +33,7 @@ bounds.
   its integral.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
 * `MeasureTheory.tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub`: L² convergence implies
   convergence of the integral of the squared norm.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
@@ -49,6 +51,7 @@ bounds.
   exceeded on a set of nonzero measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
   `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
+* `MeasureTheory.MemLp.integral_norm_le_mul_eLpNorm`: the same bound for a function in `Lᵖ`.
 * `MeasureTheory.Lp.norm_integral_le_of_ae_norm_le_mul`: the resulting bound on the integral of a
   function dominated pointwise by a multiple of the norm of an `Lᵖ` function.
 * `MeasureTheory.Lp.setIntegral_norm_sq_le_norm_sq`: so its integral over a subset of the set it
@@ -220,6 +223,16 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
 
+/-- The squared `L²` norm of the class of a square-integrable function is the integral of its
+squared pointwise norm. -/
+theorem MemLp.norm_toLp_sq {alpha F : Type*} [MeasurableSpace alpha] {m : Measure alpha}
+    [NormedAddCommGroup F] {f : alpha → F} (hf : MemLp f 2 m) :
+    ‖hf.toLp f‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂m := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  refine integral_congr_ae ?_
+  filter_upwards [hf.coeFn_toLp] with x hx
+  rw [hx]
+
 /-- L² convergence implies convergence of the integral of the squared norm, for any measure
 and any normed additive group of values. -/
 theorem tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub {α F ι : Type*}
@@ -230,11 +243,7 @@ theorem tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub {α F ι : Type*}
   have hLp : Tendsto (fun i ↦ (hg i).toLp (g i)) l (𝓝 (hf.toLp f)) := by
     rw [tendsto_iff_edist_tendsto_0]
     simpa only [Lp.edist_toLp_toLp] using ht
-  have hnorm (u : α → F) (hu : MemLp u 2 μ) :
-      ‖hu.toLp u‖ ^ 2 = ∫ x, ‖u x‖ ^ 2 ∂μ := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
-    exact integral_congr_ae (hu.coeFn_toLp.fun_comp fun y ↦ ‖y‖ ^ 2)
-  simpa only [hnorm] using hLp.norm.pow 2
+  simpa only [MemLp.norm_toLp_sq] using hLp.norm.pow 2
 
 /-- On a finite measure space, the `L¹` norm of an `Lᵖ` function, `1 ≤ p`, is at most
 `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. -/
@@ -242,12 +251,7 @@ theorem Lp.integral_norm_le_mul_norm {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [IsFiniteMeasure m] [NormedAddCommGroup F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (f : Lp F p m) :
     ∫ x, ‖f x‖ ∂m ≤ (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := by
-  have hexp : 0 ≤ 1 - 1 / p.toReal := by
-    rcases eq_or_ne p ∞ with rfl | hp
-    · simp
-    · have h1p : 1 ≤ p.toReal := by
-        simpa using ENNReal.toReal_mono hp (Fact.out : 1 ≤ p)
-      exact sub_nonneg.2 (div_le_one_of_le₀ h1p (zero_le_one.trans h1p))
+  have hexp := ENNReal.one_sub_one_div_toReal_nonneg (Fact.out : 1 ≤ p)
   have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := p) (μ := m) Fact.out
     (Lp.aestronglyMeasurable f)
   rw [ENNReal.toReal_one, div_one] at h
@@ -256,6 +260,17 @@ theorem Lp.integral_norm_le_mul_norm {alpha F : Type*} [MeasurableSpace alpha]
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top (Lp.eLpNorm_ne_top f)
     (ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top m _))) h
+
+/-- On a finite measure space, the `L¹` norm of a function in `Lᵖ`, `1 ≤ p`, is at most
+`μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. This is `MeasureTheory.Lp.integral_norm_le_mul_norm`
+for a representative. -/
+theorem MemLp.integral_norm_le_mul_eLpNorm {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [IsFiniteMeasure m] [NormedAddCommGroup F] {p : ℝ≥0∞} (hp : 1 ≤ p)
+    {f : alpha → F} (hf : MemLp f p m) :
+    ∫ x, ‖f x‖ ∂m ≤ (m Set.univ ^ (1 - 1 / p.toReal)).toReal * (eLpNorm f p m).toReal := by
+  have : Fact (1 ≤ p) := ⟨hp⟩
+  have h := Lp.integral_norm_le_mul_norm (hf.toLp f)
+  rwa [integral_congr_ae (hf.coeFn_toLp.mono fun x hx => by rw [hx]), Lp.norm_toLp] at h
 
 /-- On a finite measure space, a function dominated pointwise by `K ‖f‖` for an `Lᵖ` function
 `f`, `1 ≤ p`, has norm of its integral at most `K μ(univ)^{1 - 1/p} ‖f‖`. -/
