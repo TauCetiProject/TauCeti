@@ -149,10 +149,7 @@ theorem isQuadratic_iff_of_level_two_pow {k : ℕ} (χ : DirichletCharacter R (2
         · exact Or.inl h
         · exact Or.inr (Or.inl ⟨dvd_refl 4, h.trans (changeLevel_self _).symm⟩)
   · rintro (rfl | ⟨h, rfl⟩ | ⟨h, rfl⟩ | ⟨h, rfl⟩)
-    · intro a
-      by_cases ha : IsUnit a
-      · exact Or.inr (Or.inl (MulChar.one_apply ha))
-      · exact Or.inl (MulChar.map_nonunit _ ha)
+    · exact MulChar.isQuadratic_one
     · exact (isQuadratic_χ₄.comp _).changeLevel h
     · exact (isQuadratic_χ₈.comp _).changeLevel h
     · exact (isQuadratic_χ₈'.comp _).changeLevel h

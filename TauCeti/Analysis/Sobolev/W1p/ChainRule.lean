@@ -253,7 +253,7 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
     (fun i => hphi (ns i) ▸ hasWeakFDerivOn_comp_restrictL_ofTestFunctionₗ hF hVΩ _)
     hconv1 (by simpa only [enorm_innerSL_sub] using (tendsto_lintegral_enorm_smul_sub
       (fun i => hcont.comp_aestronglyMeasurable (Lp.aestronglyMeasurable _))
-      (fun i => Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
+      (Lp.aestronglyMeasurable _)
       (fun _ => .of_forall fun _ => hM _)
       (hns_ae.mono fun x hx => (hcont.tendsto _).comp hx)
       ((Lp.memLp (W1p.gradient w)).integrable Fact.out).2.ne
@@ -466,7 +466,6 @@ theorem W1p.integrable_norm_gradient_div_value_sq {u : W1p mu Omega 2} (hε : 0 
   · exact (((Lp.aestronglyMeasurable (W1p.gradient u)).aemeasurable.norm.div
       (Lp.aestronglyMeasurable (W1p.value u)).aemeasurable).pow_const 2).aestronglyMeasurable
   · filter_upwards [hu] with x hx
-    have hU : 0 < W1p.value u x := hε.trans_le hx
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), div_pow, div_eq_inv_mul]
     gcongr
 
@@ -704,7 +703,6 @@ theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) (k : ℝ) (u : W1p mu 
     (g := fun _ => W1p.gradient u) (c₀ := fun x => if k < W1p.value u x then 1 else 0)
     (fun n => (contDiff_one_iff_deriv.mp (contDiff_posPartApprox (d n))).2.comp_aestronglyMeasurable
       (((Lp.aestronglyMeasurable _).mono_measure hres).sub aestronglyMeasurable_const))
-    (fun _ => (Lp.aestronglyMeasurable _).mono_measure hres)
     ((Lp.aestronglyMeasurable _).mono_measure hres)
     (fun n => .of_forall fun x => nnnorm_deriv_posPartApprox_le _ _)
     (.of_forall fun x => by

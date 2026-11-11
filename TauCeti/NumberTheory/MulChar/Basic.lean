@@ -29,6 +29,9 @@ A character of order dividing two is `1` at the square of every unit
 (`MulChar.apply_sq_eq_one_of_sq_eq_one`). An integer-valued character pushed into a ring along
 `Int.castRingHom` takes the casts of its integer values
 (`MulChar.ringHomComp_intCast_apply_of_apply_eq`).
+
+The trivial character is quadratic (`MulChar.isQuadratic_one`).
+
 Pushing a character along an injective ring homomorphism of the coefficients preserves its order
 (`MulChar.orderOf_ringHomComp`).
 
@@ -104,14 +107,20 @@ theorem IsQuadratic.mul {M R : Type*} [CommMonoid M] [CommRing R] {χ ψ : MulCh
   rw [mul_apply]
   rcases hχ a with h | h | h <;> rcases hψ a with h' | h' | h' <;> simp [h, h']
 
-/-- A finite product of quadratic characters is quadratic. -/
-theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
-    {s : Finset ι} {χ : ι → MulChar M R} (hχ : ∀ i ∈ s, (χ i).IsQuadratic) :
-    (∏ i ∈ s, χ i).IsQuadratic := by
-  refine Finset.prod_induction χ IsQuadratic (fun _ _ ↦ IsQuadratic.mul) (fun a ↦ ?_) hχ
+/-- The trivial character is quadratic. -/
+@[simp]
+theorem isQuadratic_one {M R : Type*} [CommMonoid M] [CommRing R] :
+    (1 : MulChar M R).IsQuadratic := by
+  intro a
   by_cases ha : IsUnit a
   · exact Or.inr (Or.inl (one_apply ha))
   · exact Or.inl (map_nonunit 1 ha)
+
+/-- A finite product of quadratic characters is quadratic. -/
+theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
+    {s : Finset ι} {χ : ι → MulChar M R} (hχ : ∀ i ∈ s, (χ i).IsQuadratic) :
+    (∏ i ∈ s, χ i).IsQuadratic :=
+  Finset.prod_induction χ IsQuadratic (fun _ _ ↦ IsQuadratic.mul) isQuadratic_one hχ
 
 section Transport
 

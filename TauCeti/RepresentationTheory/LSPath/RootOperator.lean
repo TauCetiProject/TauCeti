@@ -664,7 +664,6 @@ private theorem normalize_reflectRecords_cons_cons (hvw : SameRay 𝕜 v w) (c :
   rcases eq_or_ne v 0 with rfl | hv
   · simp [reflectRecords_zero_cons]
   obtain ⟨μ, hμ, rfl⟩ := hvw.exists_nonneg_left hv
-  have hl := listMinHeight_nonpos (f := f) l
   have hvμ : v + μ • v = (1 + μ) • v := by module
   have hfμ : f (μ • v) = μ * f v := by simp
   rw [hvμ]
