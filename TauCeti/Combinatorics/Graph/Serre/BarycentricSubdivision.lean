@@ -118,7 +118,7 @@ theorem barycentricSubdivision_dart_cases {motive : Γ.barycentricSubdivision.E 
     Γ.barycentricSubdivision.src (Γ.barycentricDart e true) = Γ.barycentricVertex (Γ.src e) :=
   (rfl)
 
-/-- The incoming half of a dart starts at the midpoint of the dart. -/
+/-- The reverse of the outgoing half of a dart starts at the midpoint of the dart. -/
 @[simp] theorem barycentricSubdivision_src_false (e : Γ.E) :
     Γ.barycentricSubdivision.src (Γ.barycentricDart e false) =
       Γ.barycentricMidpoint (Γ.toGeomEdge e) := (rfl)
@@ -132,7 +132,7 @@ theorem barycentricSubdivision_dart_cases {motive : Γ.barycentricSubdivision.E 
     Γ.barycentricSubdivision.tgt (Γ.barycentricDart e true) =
       Γ.barycentricMidpoint (Γ.toGeomEdge e) := (rfl)
 
-/-- The incoming half of a dart ends at the source of the dart. -/
+/-- The reverse of the outgoing half of a dart ends at the source of the dart. -/
 @[simp] theorem barycentricSubdivision_tgt_false (e : Γ.E) :
     Γ.barycentricSubdivision.tgt (Γ.barycentricDart e false) = Γ.barycentricVertex (Γ.src e) :=
   (rfl)
@@ -294,8 +294,8 @@ private theorem isReduced_cons_dart {a : Γ.V} {e : Γ.E} (q : Γ.Path a (Γ.src
       simpa using h (Γ.barycentricDart (Γ.rev d.1) false) (by simp [barycentricHalves])
     exact hne (by simpa using he)
 
-/-- Two darts with the same midpoint are mutually reverse as soon as the incoming half of one
-does not reverse the outgoing half of the other. -/
+/-- Two darts `e` and `f` with the same midpoint are mutually reverse as soon as the reverse of
+the outgoing half of `e` does not reverse the outgoing half of `f`. -/
 private theorem eq_rev_of_toGeomEdge_eq {e f : Γ.E} (hf : Γ.toGeomEdge f = Γ.toGeomEdge e)
     (h : Γ.barycentricDart e false ≠
       Γ.barycentricSubdivision.rev (Γ.barycentricDart f true)) : e = Γ.rev f :=
@@ -324,7 +324,7 @@ private theorem exists_darts_eq_of_isReduced {a : Γ.V} {y : Γ.barycentricSubdi
     obtain ⟨x, hs, ht⟩ := g
     induction x using barycentricSubdivision_dart_cases with | dart e bo
     cases bo
-    · -- The last dart is an incoming half: the path ends at a vertex of the graph.
+    · -- The last dart reverses an outgoing half: the path ends at a vertex of the graph.
       rw [barycentricSubdivision_src_false] at hs
       rw [barycentricSubdivision_tgt_false] at ht
       refine ⟨fun b hb => ?_, fun m hm => by simp [← ht] at hm⟩

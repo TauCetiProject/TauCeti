@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.BarycentricSubdivision
 public import TauCeti.GroupTheory.GTree.Basic
-public import Mathlib.Data.ZMod.Basic
 
 /-!
 # Removing inversions by barycentric subdivision
@@ -19,9 +18,10 @@ when it fixes a vertex or inverts an edge of the original tree: an inverted edge
 midpoint as a fixed vertex. When the action already has no inversions, the tree and its
 subdivision dominate each other, so they lie in the same deformation space.
 
-The group of order two acts on the segment by exchanging its two vertices. This action inverts
-the edge, so the segment with this action is not a `G`-tree; in the subdivided segment the whole
-group fixes the midpoint, while the generator still exchanges the two original vertices.
+The group of order two acts on the segment by exchanging its two vertices,
+`SerreGraph.segmentSwapHom`. This action inverts the edge, so the segment with this action is not
+a `G`-tree; in the subdivided segment the whole group fixes the midpoint, while the generator
+still exchanges the two original vertices.
 
 ## Main declarations
 
@@ -30,7 +30,8 @@ group fixes the midpoint, while the generator still exchanges the two original v
 * `TauCeti.GTree.isElliptic_ofBarycentricSubdivision_iff`: its elliptic elements.
 * `TauCeti.GTree.sameDeformationSpace_ofBarycentricSubdivision`: a `G`-tree and its subdivision
   lie in the same deformation space.
-* `TauCeti.SerreGraph.segmentSwapHom`: the action of the group of order two on the segment.
+* `TauCeti.GTree.isEllipticSubgroup_ofBarycentricSubdivision_segment`: the group of order two
+  acting on the subdivided segment fixes a vertex.
 
 ## References
 
@@ -145,36 +146,7 @@ theorem sameDeformationSpace_ofBarycentricSubdivision :
   sameDeformationSpace_iff.mpr
     ⟨dominates_ofBarycentricSubdivision T, ofBarycentricSubdivision_dominates T⟩
 
-end GTree
-
 /-! ### The group of order two acting on the segment -/
-
-namespace SerreGraph
-
-private theorem zmultiplesHom_segmentSwap_two :
-    zmultiplesHom (Additive segment.Aut) (Additive.ofMul segmentSwap) 2 = 0 := by
-  rw [zmultiplesHom_apply, two_zsmul, ← ofMul_mul, segmentSwap_mul_self, ofMul_one]
-
-/-- The action of the group of order two on the segment in which the generator exchanges the two
-vertices. -/
-def segmentSwapHom : Multiplicative (ZMod 2) →* segment.Aut :=
-  AddMonoidHom.toMultiplicativeLeft (ZMod.lift 2 ⟨_, zmultiplesHom_segmentSwap_two⟩)
-
-@[simp] theorem segmentSwapHom_ofAdd_one :
-    segmentSwapHom (Multiplicative.ofAdd 1) = segmentSwap := by
-  have h := ZMod.lift_coe 2 ⟨_, zmultiplesHom_segmentSwap_two⟩ 1
-  rw [Int.cast_one] at h
-  simpa [segmentSwapHom] using congrArg Additive.toMul h
-
-/-- The generator of the group of order two inverts the edge of the segment, so the segment with
-this action is not a `G`-tree. -/
-theorem segmentSwapHom_ofAdd_one_smul (e : segment.E) :
-    segmentSwapHom (Multiplicative.ofAdd 1) • e = segment.rev e := by
-  rw [segmentSwapHom_ofAdd_one, segmentSwap_smul]
-
-end SerreGraph
-
-namespace GTree
 
 /-- After barycentric subdivision of the segment, the group of order two fixes the midpoint. -/
 theorem isEllipticSubgroup_ofBarycentricSubdivision_segment :
@@ -197,7 +169,7 @@ theorem ofBarycentricSubdivision_segment_ofAdd_one_smul_eq_iff
     Multiplicative.ofAdd (1 : ZMod 2) • x = x ↔ x = segment.barycentricMidpoint default := by
   induction x using barycentricSubdivision_vertex_cases with
   | vertex v =>
-    obtain ⟨e, rfl⟩ : ∃ e, segment.src e = v := ⟨v, rfl⟩
+    obtain ⟨e, rfl⟩ := segment_src_surjective v
     rw [ofBarycentricSubdivision_smul_barycentricVertex, segmentSwapHom_ofAdd_one,
       segmentSwap_smul_src]
     exact iff_of_false

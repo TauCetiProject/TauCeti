@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Graph.Serre.Convex
 public import TauCeti.Combinatorics.Graph.Serre.Dist
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.Combinatorics.Quiver.Cast
+public import Mathlib.Data.ZMod.Basic
 
 /-!
 # Automorphisms of Serre graphs
@@ -23,7 +24,8 @@ two vertices fixes every dart of the reduced path between them, so the fixed ver
 automorphism form a convex set.
 
 The segment carries the automorphism exchanging its two vertices; it maps the edge to its
-reverse, which is the kind of inversion excluded from actions on trees.
+reverse, which is the kind of inversion excluded from actions on trees. It is an involution, so
+the group of order two acts on the segment, `SerreGraph.segmentSwapHom`.
 
 ## References
 
@@ -206,11 +208,31 @@ theorem segmentSwap_smul_tgt (e : segment.E) : segmentSwap • segment.tgt e = s
 /-- The exchange automorphism of the segment is an involution. -/
 @[simp] theorem segmentSwap_mul_self : segmentSwap * segmentSwap = 1 := by
   ext x
-  · obtain ⟨e, rfl⟩ : ∃ e, segment.src e = x := ⟨x, rfl⟩
+  · obtain ⟨e, rfl⟩ := segment_src_surjective x
     rw [← Aut.smul_vertex_def, ← Aut.smul_vertex_def, mul_smul, one_smul, segmentSwap_smul_src,
       segmentSwap_smul_tgt]
   · rw [← Aut.smul_dart_def, ← Aut.smul_dart_def, mul_smul, one_smul, segmentSwap_smul,
       segmentSwap_smul, rev_rev]
+
+private theorem zmultiplesHom_segmentSwap_two :
+    zmultiplesHom (Additive segment.Aut) (Additive.ofMul segmentSwap) 2 = 0 := by
+  rw [zmultiplesHom_apply, two_zsmul, ← ofMul_mul, segmentSwap_mul_self, ofMul_one]
+
+/-- The action of the group of order two on the segment in which the generator exchanges the two
+vertices. -/
+def segmentSwapHom : Multiplicative (ZMod 2) →* segment.Aut :=
+  AddMonoidHom.toMultiplicativeLeft (ZMod.lift 2 ⟨_, zmultiplesHom_segmentSwap_two⟩)
+
+@[simp] theorem segmentSwapHom_ofAdd_one :
+    segmentSwapHom (Multiplicative.ofAdd 1) = segmentSwap := by
+  have h := ZMod.lift_coe 2 ⟨_, zmultiplesHom_segmentSwap_two⟩ 1
+  rw [Int.cast_one] at h
+  simpa [segmentSwapHom] using congrArg Additive.toMul h
+
+/-- The generator of the group of order two inverts the edge of the segment. -/
+theorem segmentSwapHom_ofAdd_one_smul (e : segment.E) :
+    segmentSwapHom (Multiplicative.ofAdd 1) • e = segment.rev e := by
+  rw [segmentSwapHom_ofAdd_one, segmentSwap_smul]
 
 end SerreGraph
 end TauCeti
