@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Horizontal
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.SeamFamily
 
