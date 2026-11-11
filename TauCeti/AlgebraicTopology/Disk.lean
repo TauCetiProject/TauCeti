@@ -96,6 +96,11 @@ instance t3Space_disk (n : ℕ) : T3Space (TopCat.disk.{u} n) :=
   -- ball; instance synthesis does not unfold the `TopCat.disk` wrapper on its own.
   inferInstanceAs (T3Space (ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
+/-- The `n`-dimensional disk is compact, being homeomorphic to a closed ball in Euclidean space. -/
+instance compactSpace_disk (n : ℕ) : CompactSpace (TopCat.disk.{u} n) :=
+  -- As for `TauCeti.TopCat.t3Space_disk`, the carrier is the lift of the metric closed ball.
+  inferInstanceAs (CompactSpace (ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
+
 /-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk is a closed embedding, being an
 injective map from a compact space to a Hausdorff one. -/
 theorem isClosedEmbedding_diskBoundaryInclusion (n : ℕ) :
@@ -316,6 +321,12 @@ lemma sq_diskBoundary_one_eq_one (s : TopCat.diskBoundary.{u} 1) :
 /-- The `n`-sphere is nonempty. -/
 instance nonempty_topCatSphere (n : ℕ) : Nonempty (TopCat.sphere.{u} n) :=
   ⟨ULift.up ⟨EuclideanSpace.single 0 1, by simp⟩⟩
+
+/-- The boundary sphere of a disk of positive dimension is nonempty. Instance search does not
+unfold `TopCat.sphere n` to `TopCat.diskBoundary (n + 1)`, so this restates
+`TauCeti.nonempty_topCatSphere`. -/
+instance nonempty_diskBoundary_succ (n : ℕ) : Nonempty (TopCat.diskBoundary.{u} (n + 1)) :=
+  nonempty_topCatSphere n
 
 /-- The subspace of the pair consisting of the `0`-disk and its boundary is empty.  This lets
 instances about pairs with empty subspace apply to `diskBoundaryPair 0`. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Disk.Prod
 public import TauCeti.Topology.Category.TopCat.DisjointOpens
 public import TauCeti.Topology.Category.TopCat.Limits.Basic
 public import TauCeti.Topology.CWComplex.Abstract.ClosedEmbedding
@@ -61,35 +62,14 @@ namespace TauCeti.TopCat
 
 /-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk extends disjoint open sets: an
 open subset `U` of the sphere is the trace of the open cone `{x | 1 / 2 < ‖x‖ ∧ x / ‖x‖ ∈ U}`,
-and the cones over disjoint sets are disjoint (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn`
-with the radial projection). -/
+and the cones over disjoint sets are disjoint. This is the attaching region of a handle whose
+second factor is a point (`TauCeti.TopCat.extendsDisjointOpens_diskBoundaryInclusion_prodMap`). -/
 theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
-    extendsDisjointOpens (TopCat.diskBoundaryInclusion.{u} n) := by
-  -- The points of the disk and of its boundary as vectors of `E`. The carriers of `TopCat.disk n`
-  -- and `TopCat.diskBoundary n` are, by definition, the lifts of the closed unit ball and of the
-  -- unit sphere; the ascriptions expose these carriers, which the `TopCat` wrappers hide.
-  let ν (z : TopCat.disk.{u} n) : EuclideanSpace ℝ (Fin n) :=
-    ((z : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
-      EuclideanSpace ℝ (Fin n))
-  let μ (s : TopCat.diskBoundary.{u} n) : EuclideanSpace ℝ (Fin n) :=
-    ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
-      EuclideanSpace ℝ (Fin n))
-  have hμ : IsEmbedding μ := IsEmbedding.subtypeVal.comp IsEmbedding.uliftDown
-  have hνμ (s : TopCat.diskBoundary.{u} n) : ν (TopCat.diskBoundaryInclusion n s) = μ s :=
-    coe_diskBoundaryInclusion_apply_down n s
-  have hμ₁ (s : TopCat.diskBoundary.{u} n) : ‖μ s‖ = 1 := mem_sphere_zero_iff_norm.1
-    (s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
-  -- The radial projection, continuous away from the centre, retracts the disk onto the sphere.
-  have hν : Continuous ν := continuous_subtype_val.comp continuous_uliftDown
-  refine extendsDisjointOpens_of_continuousOn _ hμ.isInducing (N := {z | 1 / 2 < ‖ν z‖})
-    (ρ := fun z ↦ ‖ν z‖⁻¹ • ν z) (isOpen_lt continuous_const hν.norm)
-    ((ContinuousOn.inv₀ hν.norm.continuousOn fun z hz ↦ (lt_trans (by norm_num) hz).ne').smul
-      hν.continuousOn) (fun s ↦ ?_) (fun z hz ↦ ?_) (fun s ↦ ?_)
-  · simp [hνμ, hμ₁, show (2 : ℝ)⁻¹ < 1 by norm_num]
-  · have h₁ : ‖‖ν z‖⁻¹ • ν z‖ = 1 :=
-      norm_smul_inv_norm (𝕜 := ℝ) (norm_pos_iff.1 (lt_trans (by norm_num) hz))
-    exact ⟨ULift.up ⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, rfl⟩
-  · simp [hνμ, hμ₁]
+    extendsDisjointOpens (TopCat.diskBoundaryInclusion.{u} n) :=
+  (extendsDisjointOpens.arrow_mk_iso_iff (Arrow.isoMk (TopCat.isoOfHomeo (Homeomorph.prodPUnit _))
+    -- Both composites of the square send `(s, ⋆)` to the boundary point `s` of the disk.
+    (TopCat.isoOfHomeo (Homeomorph.prodPUnit _)) (by ext; rfl))).1
+      (extendsDisjointOpens_diskBoundaryInclusion_prodMap n PUnit)
 
 end TauCeti.TopCat
 
