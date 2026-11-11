@@ -272,13 +272,9 @@ def matchedSubalgebra (M : α → β) : NonUnitalSubalgebra R (StrandsAlgebra R 
     refine ⟨fun χ hχ ↦ ?_, fun χ a b hab ↦ ?_⟩
     · -- A diagram in a product starts where a diagram of `x` starts and ends where one of `y`
       -- ends.
-      rw [repr_mul_apply] at hχ
-      obtain ⟨φ, -, hφ⟩ := exists_ne_zero_of_sum_ne_zero hχ
-      obtain ⟨ψ, -, hψ⟩ := exists_ne_zero_of_sum_ne_zero hφ
-      rw [ne_eq, ite_eq_right_iff, not_imp] at hψ
-      obtain ⟨⟨hc, rfl⟩, hψ⟩ := hψ
+      obtain ⟨φ, ψ, hc, rfl, hφ, hψ⟩ := exists_of_repr_mul_ne_zero hχ
       rw [source_trans_of_target_eq hc.target_eq, target_trans_of_target_eq hc.target_eq]
-      exact ⟨(hx.1 φ (left_ne_zero_of_mul hψ)).1, (hy.1 ψ (right_ne_zero_of_mul hψ)).2⟩
+      exact ⟨(hx.1 φ hφ).1, (hy.1 ψ hψ).2⟩
     -- Reduce to a diagram `χ` with a horizontal strand at `a` that can move to `b`.
     wlog hχ : χ.CanMoveHorizontal a b generalizing a b
     · by_cases hχ' : χ.CanMoveHorizontal b a

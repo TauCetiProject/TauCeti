@@ -267,7 +267,7 @@ theorem connectedComponentIn_ball_diff_sphere_eq_ball_diff_closedBall
     sdiff_sphere_eq_inter_ball_union_sdiff_closedBall (x := ζ) (s := ball c r) ▸ subset_union_right
   refine Subset.antisymm ?_ ((isConnected_ball_diff_closedBall hζ hρ hρ').isPreconnected
     |>.subset_connectedComponentIn hz hsub)
-  rcases subset_inter_ball_or_subset_sdiff_closedBall (x := ζ) (s := ball c r) isOpen_ball
+  rcases subset_inter_ball_or_subset_sdiff_closedBall (x := ζ) (s := ball c r)
     isPreconnected_connectedComponentIn (connectedComponentIn_subset _ _) with h | h
   · exact absurd hz (Set.disjoint_left.mp disjoint_inter_ball_sdiff_closedBall
       (h (mem_connectedComponentIn (hsub hz))))

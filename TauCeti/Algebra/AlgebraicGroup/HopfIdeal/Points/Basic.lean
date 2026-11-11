@@ -36,6 +36,8 @@ the point factors uniquely through the quotient algebra.
   cocommutative, the cut-out point subgroup is commutative.
 * `CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff`: membership in the point subgroup cut out
   by an ideal mapped along a morphism is detected after pullback.
+* `CommHopfAlgCat.Hom.mem_quotientPointsSubgroup_map_iff_of_eq_mkQuotient`: the same along a
+  quotient morphism, with the pullback written through `quotientPointsHom`.
 * `BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff`: transport of
   quotient-subgroup membership along a surjective bialgebra morphism.
 
@@ -243,6 +245,21 @@ theorem mem_quotientPointsSubgroup_map_iff
       rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at hx'
       exact Ideal.mem_comap.mpr (RingHom.mem_ker.mpr hx')
     exact fun y hy ↦ RingHom.mem_ker.mp (hle (HopfIdeal.mem_toIdeal.mpr hy))
+
+/-- For the quotient morphism `q : H ⟶ H ⧸ I`, given with `hq : q = mkQuotient H I`, a point of
+`H ⧸ I` vanishes on the image of a Hopf ideal `J` of `H` exactly when the corresponding point of
+`H` vanishes on `J`. -/
+theorem _root_.CommHopfAlgCat.Hom.mem_quotientPointsSubgroup_map_iff_of_eq_mkQuotient
+    {H : _root_.CommHopfAlgCat.{v} R} {I : HopfIdeal R H} (q : H ⟶ quotient H I)
+    (hq : q = mkQuotient H I) (J : HopfIdeal R H) (A : CommAlgCat.{w} R)
+    (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
+    f ∈ quotientPointsSubgroup (quotient H I) (J.map q.hom) A ↔
+      quotientPointsHom H I A f ∈ quotientPointsSubgroup H J A := by
+  subst hq
+  -- `quotientPointsHom H I A` is by definition the map on points induced by `mkQuotient H I`;
+  -- the remaining `show` in `mem_quotientPointsSubgroup_map_iff` is a type ascription.
+  rw [mem_quotientPointsSubgroup_map_iff, quotientPointsHom]
+  exact Iff.rfl
 
 /-- Precomposition by a surjective bialgebra morphism identifies the points cut out by a Hopf
 ideal with the points cut out by its pullback. -/
