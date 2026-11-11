@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Area.PuncturedDisc
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Geometry.Symplectic.Duality
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.Order.CompleteLattice.Finset
 
