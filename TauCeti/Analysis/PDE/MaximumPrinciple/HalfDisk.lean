@@ -44,8 +44,6 @@ but the drift `div a = (1 - s²) x / ‖x‖²` is unbounded near the boundary p
 
 ## Main declarations
 
-* `TauCeti.PDE.not_exists_tendsto_meyersCoefficient`: for `μ² ≠ 1`, Meyers' coefficient has no
-  limit at the origin within the half-plane `0 < x₀`.
 * `TauCeti.PDE.tendsto_meyersSolution_smul_single_zero_div`: for `μ > 1`, the difference quotients
   of Meyers' solution at the origin in the direction `e₀` tend to `0`.
 * `TauCeti.PDE.exists_uniformlyEllipticOn_energyFormH1_eq_zero_tendsto_div`: **Hopf's lemma fails
@@ -73,47 +71,6 @@ namespace TauCeti
 namespace PDE
 
 variable {μ : ℝ}
-
-/-- Along the ray through `(1, c)`, the entry `a₀₀` of Meyers' coefficient is the constant
-`μ² + (1 - μ²) / (1 + c²)`. -/
-private theorem meyersCoefficient_smul_apply_zero_zero (c : ℝ) {t : ℝ} (ht : t ≠ 0) :
-    meyersCoefficient μ (t • WithLp.toLp 2 ![1, c]) 0 0 = μ ^ 2 + (1 - μ ^ 2) / (1 + c ^ 2) := by
-  have hn : ‖t • WithLp.toLp 2 ![(1 : ℝ), c]‖ ^ 2 = t ^ 2 * (1 + c ^ 2) := by
-    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
-    simp only [PiLp.smul_apply, Matrix.cons_val_zero, Matrix.cons_val_one, smul_eq_mul]
-    ring
-  rw [meyersCoefficient_apply, Matrix.add_apply, Matrix.smul_apply, Matrix.smul_apply, hn]
-  simp only [Matrix.one_apply_eq, smul_eq_mul, mul_one, Matrix.vecMulVec_apply,
-    PiLp.smul_apply, Matrix.cons_val_zero]
-  have h1 : 1 + c ^ 2 ≠ 0 := by positivity
-  field_simp
-
-/-- **Meyers' coefficient is discontinuous at the origin.** For `μ² ≠ 1` it has no limit at the
-origin within the half-plane `0 < x₀`: along the ray through `e₀` its entry `a₀₀` is `1`, and
-along the ray through `e₀ + e₁` it is `(1 + μ²) / 2`. -/
-theorem not_exists_tendsto_meyersCoefficient (hμ : μ ^ 2 ≠ 1) :
-    ¬ ∃ L, Tendsto (meyersCoefficient μ) (𝓝[{x | 0 < x 0}] 0) (𝓝 L) := by
-  rintro ⟨L, hL⟩
-  have key : ∀ c : ℝ, L 0 0 = μ ^ 2 + (1 - μ ^ 2) / (1 + c ^ 2) := by
-    intro c
-    -- The ray `t ↦ t (1, c)`, `t > 0`, approaches the origin inside the half-plane.
-    have hγ : Tendsto (fun t : ℝ => t • WithLp.toLp 2 ![(1 : ℝ), c]) (𝓝[>] 0)
-        (𝓝[{x : EuclideanSpace ℝ (Fin 2) | 0 < x 0}] 0) := by
-      refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-      · simpa using ((continuous_id.smul continuous_const).tendsto (0 : ℝ)).mono_left
-          (nhdsWithin_le_nhds (s := Ioi 0) (a := (0 : ℝ)))
-          (f := fun t : ℝ => t • WithLp.toLp 2 ![(1 : ℝ), c])
-      · filter_upwards [self_mem_nhdsWithin] with t ht
-        simpa using ht
-    have hent : Tendsto (fun t : ℝ => meyersCoefficient μ (t • WithLp.toLp 2 ![1, c]) 0 0)
-        (𝓝[>] 0) (𝓝 (L 0 0)) :=
-      ((continuous_id.matrix_elem 0 0).tendsto L).comp (hL.comp hγ)
-    refine tendsto_nhds_unique hent (tendsto_const_nhds.congr' ?_)
-    filter_upwards [self_mem_nhdsWithin] with t ht
-    exact (meyersCoefficient_smul_apply_zero_zero c (ne_of_gt ht)).symm
-  have h := (key 0).symm.trans (key 1)
-  norm_num at h
-  exact hμ (by linarith)
 
 /-- **Meyers' solution leaves the origin superlinearly.** For `μ > 1` the difference quotients
 `u(t e₀) / t = t ^ (μ - 1)` of Meyers' solution at the origin in the direction `e₀` tend to `0`

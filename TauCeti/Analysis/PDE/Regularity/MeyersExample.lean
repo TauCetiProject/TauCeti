@@ -49,9 +49,12 @@ of the ellipticity ratio, and tends to `2` as the ratio tends to infinity.
 * `TauCeti.PDE.continuous_meyersSolution`, `TauCeti.PDE.meyersSolution_pos`,
   `TauCeti.PDE.meyersSolution_smul_single_zero`: Meyers' solution is continuous, positive on the
   half-plane `0 < x₀`, and equal to `t ^ μ` at `t e₀`.
+* `TauCeti.PDE.not_exists_tendsto_meyersCoefficient`: for `μ² ≠ 1`, Meyers' coefficient has no
+  limit at the origin within the half-plane `0 < x₀`.
 * `TauCeti.PDE.gradient_meyersSolution`, `TauCeti.PDE.norm_gradient_meyersSolution_le`,
   `TauCeti.PDE.mul_rpow_le_norm_gradient_meyersSolution`: away from the origin, the gradient of
-  Meyers' solution and the bounds `μ ‖x‖ ^ (μ - 1) ≤ ‖∇u(x)‖ ≤ 2 ‖x‖ ^ (μ - 1)`.
+  Meyers' solution, the upper bound `‖∇u(x)‖ ≤ (1 + |μ - 1|) ‖x‖ ^ (μ - 1)` for every `μ`, and the
+  lower bound `μ ‖x‖ ^ (μ - 1) ≤ ‖∇u(x)‖` for `0 < μ ≤ 1`.
 * `TauCeti.PDE.gradient_ae_eq_gradient_meyersSolution`: the weak gradient of an element of
   `W^{1,p}(Ω)` equal to Meyers' solution is its classical gradient.
 * `TauCeti.PDE.energyFormH1_meyersCoefficient_eq_zero`: an element of `H¹(Ω)` equal to Meyers'
@@ -74,9 +77,9 @@ form is then `μ ∫ (∂₀φ ∂₁ψ - ∂₁φ ∂₀ψ)`, which vanishes af
 because the mixed derivatives of `φ` commute. The weak form is continuous on `H¹(Ω)`, so it vanishes
 on the closure `H¹₀(Ω)` of the test functions.
 
-For integrability, `μ ‖x‖ ^ (μ - 1) ≤ ‖∇u(x)‖ ≤ 2 ‖x‖ ^ (μ - 1)` for `μ ≤ 1`, and `‖x‖ ^ s` is
-integrable on a disc about the origin exactly when `s > -2`
-(`TauCeti.integrableOn_norm_rpow_ball_iff`).
+For integrability, `‖∇u(x)‖ ≤ (1 + |μ - 1|) ‖x‖ ^ (μ - 1)`, with the lower bound
+`μ ‖x‖ ^ (μ - 1) ≤ ‖∇u(x)‖` for `μ ≤ 1`, and `‖x‖ ^ s` is integrable on a disc about the origin
+exactly when `s > -2` (`TauCeti.integrableOn_norm_rpow_ball_iff`).
 
 ## References
 
@@ -196,9 +199,7 @@ theorem uniformlyEllipticOn_meyersCoefficient_of_one_le (hμ : 1 ≤ μ)
     real_inner_self_eq_norm_sq, real_inner_comm x ξ]
   -- The radial term loses at most `(μ² - 1) ‖ξ‖²`, by the Cauchy–Schwarz inequality.
   have hcs : ⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ ≤ ‖x‖ ^ 2 * ‖ξ‖ ^ 2 := by
-    rw [← mul_pow, ← sq]
-    exact sq_le_sq' (neg_le_of_abs_le (abs_real_inner_le_norm x ξ))
-      (le_of_abs_le (abs_real_inner_le_norm x ξ))
+    simpa only [real_inner_self_eq_norm_sq] using real_inner_mul_inner_self_le x ξ
   have h : (μ ^ 2 - 1) / ‖x‖ ^ 2 * (⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ) ≤ (μ ^ 2 - 1) * ‖ξ‖ ^ 2 := by
     rcases eq_or_ne x 0 with rfl | hx
     · simp only [norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, div_zero,
@@ -217,6 +218,48 @@ theorem stronglyMeasurable_meyersCoefficient : StronglyMeasurable (meyersCoeffic
     fun_prop
   -- The matrix space is metrizable through its underlying function type.
   exact Measurable.stronglyMeasurable (β := Fin 2 → Fin 2 → ℝ) this
+
+/-- Along the ray through `(1, c)`, the entry `a₀₀` of Meyers' coefficient is the constant
+`μ² + (1 - μ²) / (1 + c²)`. -/
+private theorem meyersCoefficient_smul_apply_zero_zero (c : ℝ) {t : ℝ} (ht : t ≠ 0) :
+    meyersCoefficient μ (t • WithLp.toLp 2 ![1, c]) 0 0 = μ ^ 2 + (1 - μ ^ 2) / (1 + c ^ 2) := by
+  have hn : ‖t • WithLp.toLp 2 ![(1 : ℝ), c]‖ ^ 2 = t ^ 2 * (1 + c ^ 2) := by
+    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
+    simp only [PiLp.smul_apply, Matrix.cons_val_zero, Matrix.cons_val_one, smul_eq_mul]
+    ring
+  rw [meyersCoefficient_apply, Matrix.add_apply, Matrix.smul_apply, Matrix.smul_apply, hn]
+  simp only [Matrix.one_apply_eq, smul_eq_mul, mul_one, Matrix.vecMulVec_apply,
+    PiLp.smul_apply, Matrix.cons_val_zero]
+  have h1 : 1 + c ^ 2 ≠ 0 := by positivity
+  field_simp
+
+open Filter in
+/-- **Meyers' coefficient is discontinuous at the origin.** For `μ² ≠ 1` it has no limit at the
+origin within the half-plane `0 < x₀`: along the ray through `e₀` its entry `a₀₀` is `1`, and
+along the ray through `e₀ + e₁` it is `(1 + μ²) / 2`. -/
+theorem not_exists_tendsto_meyersCoefficient (hμ : μ ^ 2 ≠ 1) :
+    ¬ ∃ L, Tendsto (meyersCoefficient μ) (𝓝[{x | 0 < x 0}] 0) (𝓝 L) := by
+  rintro ⟨L, hL⟩
+  have key : ∀ c : ℝ, L 0 0 = μ ^ 2 + (1 - μ ^ 2) / (1 + c ^ 2) := by
+    intro c
+    -- The ray `t ↦ t (1, c)`, `t > 0`, approaches the origin inside the half-plane.
+    have hγ : Tendsto (fun t : ℝ => t • WithLp.toLp 2 ![(1 : ℝ), c]) (𝓝[>] 0)
+        (𝓝[{x : EuclideanSpace ℝ (Fin 2) | 0 < x 0}] 0) := by
+      refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+      · simpa using ((continuous_id.smul continuous_const).tendsto (0 : ℝ)).mono_left
+          (nhdsWithin_le_nhds (s := Ioi 0) (a := (0 : ℝ)))
+          (f := fun t : ℝ => t • WithLp.toLp 2 ![(1 : ℝ), c])
+      · filter_upwards [self_mem_nhdsWithin] with t ht
+        simpa using ht
+    have hent : Tendsto (fun t : ℝ => meyersCoefficient μ (t • WithLp.toLp 2 ![1, c]) 0 0)
+        (𝓝[>] 0) (𝓝 (L 0 0)) :=
+      ((continuous_id.matrix_elem 0 0).tendsto L).comp (hL.comp hγ)
+    refine tendsto_nhds_unique hent (tendsto_const_nhds.congr' ?_)
+    filter_upwards [self_mem_nhdsWithin] with t ht
+    exact (meyersCoefficient_smul_apply_zero_zero c (ne_of_gt ht)).symm
+  have h := (key 0).symm.trans (key 1)
+  norm_num at h
+  exact hμ (by linarith)
 
 /-! ### The radial coordinate functions -/
 
@@ -515,15 +558,11 @@ private theorem mul_rpow_le_norm_radialCoordGradient (hμ0 : 0 < μ) (hμ1 : μ 
   linarith
 
 /-- Away from the origin, the gradient of Meyers' solution has length at most
-`2 ‖x‖ ^ (μ - 1)` for `0 ≤ μ ≤ 2`. -/
-theorem norm_gradient_meyersSolution_le (hμ0 : 0 ≤ μ) (hμ2 : μ ≤ 2)
-    {x : EuclideanSpace ℝ (Fin 2)} (hx : x ≠ 0) :
-    ‖∇ (meyersSolution μ) x‖ ≤ 2 * ‖x‖ ^ (μ - 1) := by
+`(1 + |μ - 1|) ‖x‖ ^ (μ - 1)`. -/
+theorem norm_gradient_meyersSolution_le {x : EuclideanSpace ℝ (Fin 2)} (hx : x ≠ 0) :
+    ‖∇ (meyersSolution μ) x‖ ≤ (1 + |μ - 1|) * ‖x‖ ^ (μ - 1) := by
   rw [gradient_meyersSolution_eq_radialCoordGradient hx]
-  refine (norm_radialCoordGradient_le 0 hx).trans ?_
-  have : |μ - 1| ≤ 1 := abs_le.2 ⟨by linarith, by linarith⟩
-  gcongr
-  linarith
+  exact norm_radialCoordGradient_le 0 hx
 
 /-- Away from the origin, the gradient of Meyers' solution has length at least
 `μ ‖x‖ ^ (μ - 1)`. -/
