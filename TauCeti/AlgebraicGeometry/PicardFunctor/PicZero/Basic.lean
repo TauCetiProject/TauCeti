@@ -43,7 +43,8 @@ products and inverses (`mul_mem_relativePicardDegreeZeroSubfunctor_obj`,
 `relativePicardDegreeZeroFunctor`, with inclusion `relativePicardDegreeZeroFunctorι` into the
 relative Picard presheaf. By additivity, a section of `Pic(X_T) / Pic(T)` killed by a nonzero
 integer `n` has degree zero on every geometric fibre, so the `n`-torsion of `Pic⁰_{X/S}(T)` is
-that of `Pic(X_T) / Pic(T)`. For a scheme over a field which is not a
+that of `Pic(X_T) / Pic(T)`. When `Pic(T)` is trivial, this is also the `n`-torsion of
+`Pic(X_T)`. For a scheme over a field which is not a
 proper curve, `LineBundleClass.eulerDegree` takes the same junk values as the truncated Euler
 characteristic `Scheme.Modules.eulerCharBelow`; the definitions here make sense in general, but
 they are only the degree and `Pic⁰` for families of curves. Local constancy of the degree in flat
@@ -76,7 +77,9 @@ families and representability are not treated here.
 * `TauCeti.AlgebraicGeometry.mem_relativePicardDegreeZeroSubfunctor_obj_of_zpow_eq_one`: for such
   a family, a section of `Pic(X_T) / Pic(T)` killed by a nonzero integer lies in `Pic⁰_{X/S}(T)`;
 * `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroTorsionMulEquiv`: hence, for every nonzero
-  integer `n`, the `n`-torsion of `Pic⁰_{X/S}(T)` is the `n`-torsion of `Pic(X_T) / Pic(T)`.
+  integer `n`, the `n`-torsion of `Pic⁰_{X/S}(T)` is the `n`-torsion of `Pic(X_T) / Pic(T)`;
+* `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroTorsionLineBundleClassMulEquiv`: when
+  `Pic(T)` is trivial, the `n`-torsion of `Pic⁰_{X/S}(T)` is `Pic(X_T)[n]`.
 
 ## References
 
@@ -637,6 +640,59 @@ lemma coe_relativePicardDegreeZeroTorsionMulEquiv_symm_apply (T : (Over S)ᵒᵖ
     ← coe_relativePicardDegreeZeroTorsionMulEquiv_apply f T hn, MulEquiv.apply_symm_apply]
 
 end Smooth
+
+section Torsion
+
+variable [IsProper f] [SmoothOfRelativeDimension 1 f] [GeometricallyConnected f]
+
+/-- **The `n`-torsion of `Pic⁰_{X/S}(T)` is `Pic(X_T)[n]` when `Pic(T)` is trivial**, for a smooth
+proper geometrically connected family of curves and a nonzero integer `n`. This applies to the
+spectrum of any field `L`: the `n`-torsion of the sections of `Pic⁰_{X/S}` at `Spec L ⟶ S` is the
+`n`-torsion of the Picard group of the fibre `X_L`, with no rational point and no condition on
+the characteristic. -/
+def relativePicardDegreeZeroTorsionLineBundleClassMulEquiv (T : (Over S)ᵒᵖ)
+    [Subsingleton (LineBundleClass T.unop.left)] {n : ℤ} (hn : n ≠ 0) :
+    (zpowGroupHom n : (relativePicardDegreeZeroFunctor f).obj T →* _).ker ≃*
+      (zpowGroupHom n : LineBundleClass (pullback T.unop.hom f) →* _).ker :=
+  (relativePicardDegreeZeroTorsionMulEquiv f T hn).trans <|
+    ((relativePicardPresheafObjMulEquiv f T).subgroupMap _).trans <|
+      MulEquiv.subgroupCongr <| by
+        ext a
+        simp only [Subgroup.mem_map, MonoidHom.mem_ker, zpowGroupHom_apply]
+        exact ⟨fun ⟨x, hx, hxa⟩ ↦ by rw [← hxa, ← map_zpow, hx, map_one], fun ha ↦
+          ⟨(relativePicardPresheafObjMulEquiv f T).symm a, by rw [← map_zpow, ha, map_one],
+            MulEquiv.apply_symm_apply _ a⟩⟩
+
+/-- The torsion comparison `relativePicardDegreeZeroTorsionLineBundleClassMulEquiv` sends a
+section of `Pic⁰_{X/S}(T)` to its line-bundle class on `X_T`. -/
+@[simp]
+lemma coe_relativePicardDegreeZeroTorsionLineBundleClassMulEquiv_apply (T : (Over S)ᵒᵖ)
+    [Subsingleton (LineBundleClass T.unop.left)] {n : ℤ} (hn : n ≠ 0)
+    (c : (zpowGroupHom n : (relativePicardDegreeZeroFunctor f).obj T →* _).ker) :
+    (relativePicardDegreeZeroTorsionLineBundleClassMulEquiv f T hn c :
+        LineBundleClass (pullback T.unop.hom f)) =
+      relativePicardPresheafObjMulEquiv f T ((relativePicardDegreeZeroFunctorι f).app T c) := by
+  simp [relativePicardDegreeZeroTorsionLineBundleClassMulEquiv]
+
+/-- The inverse of `relativePicardDegreeZeroTorsionLineBundleClassMulEquiv` sends an `n`-torsion
+line-bundle class on `X_T` to its image in `Pic(X_T) / Pic(T)`, as a section of `Pic⁰_{X/S}(T)`. -/
+@[simp]
+lemma coe_relativePicardDegreeZeroTorsionLineBundleClassMulEquiv_symm_apply (T : (Over S)ᵒᵖ)
+    [Subsingleton (LineBundleClass T.unop.left)] {n : ℤ} (hn : n ≠ 0)
+    (a : (zpowGroupHom n : LineBundleClass (pullback T.unop.hom f) →* _).ker) :
+    ((relativePicardDegreeZeroTorsionLineBundleClassMulEquiv f T hn).symm a :
+        (relativePicardDegreeZeroFunctor f).obj T) =
+      relativePicardDegreeZeroFunctor.mk f ((relativePicardPresheafObjMulEquiv f T).symm a)
+        (mem_relativePicardDegreeZeroSubfunctor_obj_of_zpow_eq_one f (T := T) hn
+          ((map_zpow _ _ _).symm.trans ((congrArg _ (MonoidHom.mem_ker.mp a.2)).trans
+            (map_one _)))) := by
+  apply relativePicardDegreeZeroFunctorι_app_injective f T
+  apply (relativePicardPresheafObjMulEquiv f T).injective
+  rw [relativePicardDegreeZeroFunctorι_app_mk, MulEquiv.apply_symm_apply,
+    ← coe_relativePicardDegreeZeroTorsionLineBundleClassMulEquiv_apply f T hn,
+    MulEquiv.apply_symm_apply]
+
+end Torsion
 
 end
 
