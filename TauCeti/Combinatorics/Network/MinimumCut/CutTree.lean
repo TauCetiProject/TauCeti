@@ -107,9 +107,21 @@ theorem exists_weight_le (hT : IsFlowEquivalentTree f T w) {S : Finset V} {s t :
   obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
   exact ⟨e, p.edges_subset_edgeSet he, hwe ▸ pairMinimumValue_le f hs ht⟩
 
+end IsFlowEquivalentTree
+
+end FlowEquivalent
+
+section CutTree
+
+variable [Fintype V] [Zero K] [LinearOrder K]
+
+namespace IsFlowEquivalentTree
+
+variable {f : Finset V → K} {T : SimpleGraph V} {w : Sym2 V → K}
+
 /-- The minimum cut values between distinct vertices take at most `|V| - 1` distinct values,
 since each is the weight of a tree edge. -/
-theorem card_image_pairMinimumValue_le [Fintype V] [DecidableEq V] [DecidableEq K]
+theorem card_image_pairMinimumValue_le [DecidableEq V] [DecidableEq K]
     (hT : IsFlowEquivalentTree f T w) :
     #((univ.filter fun p : V × V ↦ p.1 ≠ p.2).image fun p ↦ pairMinimumValue f p.1 p.2) ≤
       Fintype.card V - 1 := by
@@ -126,12 +138,6 @@ theorem card_image_pairMinimumValue_le [Fintype V] [DecidableEq V] [DecidableEq 
   exact (card_le_card hsub).trans (card_image_le.trans (by omega))
 
 end IsFlowEquivalentTree
-
-end FlowEquivalent
-
-section CutTree
-
-variable [Fintype V] [Zero K] [LinearOrder K]
 
 /-- A cut tree, or Gomory–Hu tree, for `f`: a flow-equivalent tree in which, for every tree edge
 `s(u, v)`, the side of `u` left by deleting that edge is a minimum `u`–`v` cut. -/

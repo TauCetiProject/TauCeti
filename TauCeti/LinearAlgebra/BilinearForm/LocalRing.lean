@@ -131,7 +131,7 @@ theorem IsSymm.exists_basis_orthogonal (hB : B.IsSymm) {m k : ℕ}
   set T := B.orthogonal S
   have hG₁ : ∀ i j, B (v i) (v j) = 1 * G i j := fun i j ↦ by rw [one_mul, hG]
   have hc : IsCompl S T := (isModular_restrict_span_range (nonZeroDivisors R).one_mem hG₁
-    hdet).isCompl_orthogonal hB (nonZeroDivisors R).one_mem fun _ _ ↦ one_dvd _
+    hdet).isCompl_orthogonal (nonZeroDivisors R).one_mem fun _ _ ↦ one_dvd _
   refine ⟨hc, ?_⟩
   have hli : LinearIndependent R v :=
     linearIndependent_of_isUnit_det (nonZeroDivisors R).one_mem hG₁ hdet

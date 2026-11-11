@@ -114,7 +114,7 @@ lemma relClass₁_homologyMap {Q' : SSetPair.{w}} (f : Q ⟶ Q') :
 class. -/
 lemma ιHomology₁_homologyπ (h : Q.right.δ 0 s = Q.right.δ 1 s) :
     SSet.ιHomology₁ R Q.right s h ≫ Q.homologyπ R 1 = relClass₁ R Q s v₀ v₁ h₀ h₁ := by
-  rw [SSet.ιHomology₁_eq, relClass₁, Category.assoc, SSetPair.homologyπ,
+  rw [SSet.ιHomology₁_def, relClass₁, Category.assoc, SSetPair.homologyπ,
     HomologicalComplex.homologyπ_naturality, ← Category.assoc,
     HomologicalComplex.liftCycles_comp_cyclesMap]
 

@@ -66,6 +66,9 @@ differential forms on an almost complex manifold.
 * `ContinuousAlternatingMap.isOfType_one_zero_iff`,
   `ContinuousAlternatingMap.isOfType_zero_one_iff`, `ContinuousLinearMap.typeProjection_one_zero`
   and `ContinuousLinearMap.typeProjection_zero_one`: one-forms.
+* `ContinuousAlternatingMap.IsOfType.map_smul_complex` and
+  `ContinuousAlternatingMap.IsOfType.map_smul_conj`: on a complex vector space, one-forms of type
+  `(1,0)` are complex-linear and one-forms of type `(0,1)` are conjugate-linear.
 * `ContinuousLinearMap.typeProjection_two_zero_apply`,
   `ContinuousLinearMap.typeProjection_one_one_apply` and
   `ContinuousLinearMap.typeProjection_zero_two_apply`: the type components of two-forms, in terms
@@ -286,14 +289,8 @@ theorem IsOfType.map_smul_complex {U : Type*} [AddCommGroup U] [Module ℂ U] [M
     (h : α.IsOfType (I • ContinuousLinearMap.id ℝ U) 1 0) (c : ℂ) (v : U) :
     α ![c • v] = c • α ![v] := by
   have hI : α ![I • v] = I • α ![v] := (isOfType_one_zero_iff α).1 h v
-  have hU : c • v = c.re • v + c.im • I • v := by
-    conv_lhs => rw [← re_add_im c]
-    rw [add_smul, mul_smul, ← coe_algebraMap, algebraMap_smul, algebraMap_smul]
-  have hF : c • α ![v] = c.re • α ![v] + c.im • I • α ![v] := by
-    conv_lhs => rw [← re_add_im c]
-    rw [add_smul, mul_smul, ← coe_algebraMap, algebraMap_smul, algebraMap_smul]
-  rw [hU, hF, ← hI]
-  rw [← ContinuousAlternatingMap.vecCons_smul, ← ContinuousAlternatingMap.vecCons_smul,
+  rw [← Complex.re_smul_add_im_smul c v, ← Complex.re_smul_add_im_smul c (α ![v]), ← hI,
+    ← ContinuousAlternatingMap.vecCons_smul, ← ContinuousAlternatingMap.vecCons_smul,
     ← ContinuousAlternatingMap.vecCons_add]
 
 /-- On a complex vector space, a one-form of type `(0,1)` for multiplication by `i` is
@@ -651,11 +648,9 @@ end TypeProjection
 
 section Decomposition
 
-variable [ContinuousConstSMul ℝ F]
-
 section Interior
 
-variable {n : ℕ}
+variable [ContinuousConstSMul ℝ F] {n : ℕ}
 
 /-- Inserting `v` into the derivation of a form. -/
 private lemma interior_alternatingDerivation (J : V →L[ℝ] V) (v : V)
@@ -702,6 +697,8 @@ private lemma interior_add_comp_alternatingDerivation {J : V →L[ℝ] V} (hJ : 
 end Interior
 
 section Nodal
+
+variable [ContinuousConstSMul ℝ F]
 
 /-- The derivation of an almost complex structure on `k`-forms is annihilated by the nodal
 polynomial of the type eigenvalues. -/
@@ -765,6 +762,7 @@ annihilates the derivation induced by `J` on complex-valued `k`-forms. -/
 theorem aeval_alternatingDerivation_eq_zero (hJ : ∀ v, J (J v) = -v) {g : ℂ[X]}
     (hg : ∀ p q, p + q = k → g.eval (((p : ℂ) - q) * I) = 0) :
     aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin k]→L[ℝ] F)) g = 0 := by
+  have := IsScalarTower.continuousConstSMul ℝ ℂ F
   obtain ⟨h, rfl⟩ := nodal_dvd fun pq hpq ↦ hg pq.1 pq.2 (Finset.mem_antidiagonal.1 hpq)
   rw [map_mul, aeval_alternatingDerivation_nodal hJ, zero_mul]
 

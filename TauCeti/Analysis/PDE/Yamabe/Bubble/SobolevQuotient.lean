@@ -55,11 +55,11 @@ open MeasureTheory Module
 
 /-- The Yamabe constant of the round sphere as the quotient of the conformal energy
 `n (n - 1) |Sⁿ|` of a bubble by the power `2 / pₙ` of its critical mass `|Sⁿ|`. -/
-theorem sphereYamabeConstant_eq_div {n : ℕ} (hn : n ≠ 0) :
+theorem sphereYamabeConstant_eq_div {n : ℕ} :
     sphereYamabeConstant n =
       (n : ℝ) * (n - 1) * roundSphereVolume n / roundSphereVolume n ^ (2 / criticalExponent n) := by
   rw [eq_div_iff (Real.rpow_pos_of_pos (roundSphereVolume_pos n) _).ne', two_div_criticalExponent]
-  exact sphereYamabeConstant_mul_roundSphereVolume_rpow hn
+  exact sphereYamabeConstant_mul_roundSphereVolume_rpow
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -93,6 +93,6 @@ theorem conformalCoefficient_mul_integral_norm_fderiv_bubble_sq_eq_sphereYamabeC
   rw [conformalCoefficient_mul_integral_norm_fderiv_bubble_sq_eq_roundSphereVolume hn ht b,
     integral_bubble_rpow_criticalExponent_eq_roundSphereVolume (by omega) hn.ne' ht b,
     two_div_criticalExponent,
-    sphereYamabeConstant_mul_roundSphereVolume_rpow (by omega)]
+    sphereYamabeConstant_mul_roundSphereVolume_rpow]
 
 end TauCeti.Yamabe

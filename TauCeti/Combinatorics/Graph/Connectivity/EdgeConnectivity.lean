@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Delete
-public import TauCeti.Combinatorics.Graph.Incidence
+public import TauCeti.Combinatorics.Graph.Incidence.Basic
 public import TauCeti.Data.ENat.Lattice
 
 /-!
