@@ -53,6 +53,10 @@ dense in `L²`, it takes values in `L²` everywhere, with the same bound
 
 * `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg`: the Bessel
   multipliers of orders `s` and `-s` are inverse on Schwartz functions.
+* `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM`: the Bessel
+  multipliers of orders `t` and `t'` compose to the one of order `t + t'`.
+* `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq`: the Bessel multiplier of order `2` is
+  `1 - (2π)⁻² Δ`.
 * `TemperedDistribution.besselPotential_toTemperedDistributionCLM_eq`: the Bessel potential of a
   Schwartz function is its Schwartz-space Fourier multiplier.
 * `SchwartzMap.eLpNorm_rpow_smul_fourier_smulLeftCLM_le`,
@@ -101,6 +105,45 @@ theorem fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg (s : 
     simp [neg_div]
   rw [this, fourierMultiplierCLM_const]
   simp
+
+/-- The Bessel multipliers compose additively on Schwartz functions: the Fourier multipliers with
+symbols `⟨ξ⟩ ^ t'` and then `⟨ξ⟩ ^ t` give the one with symbol `⟨ξ⟩ ^ (t + t')`. -/
+theorem fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM (t t' : ℝ) (ψ : 𝓢(E, F)) :
+    fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ))
+        (fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t' / 2) : ℝ) : ℂ)) ψ) =
+      fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((t + t') / 2) : ℝ) : ℂ)) ψ := by
+  have h : ((fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) *
+      fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t' / 2) : ℝ) : ℂ)) =
+      fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((t + t') / 2) : ℝ) : ℂ) := by
+    ext x
+    rw [Pi.mul_apply, ← Complex.ofReal_mul, ← Real.rpow_add (by positivity), add_div]
+  rw [fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop) (by fun_prop), h]
+
+open scoped Laplacian in
+/-- The Fourier multiplier with symbol `⟨ξ⟩² = 1 + ‖ξ‖²`, the Bessel multiplier of order `2`, is
+the differential operator `1 - (2π)⁻² Δ` on Schwartz functions. -/
+theorem fourierMultiplierCLM_one_add_norm_sq (ψ : 𝓢(E, F)) :
+    fourierMultiplierCLM F (fun x : E ↦ ((1 + ‖x‖ ^ 2 : ℝ) : ℂ)) ψ =
+      ψ - ((2 * Real.pi) ^ 2)⁻¹ • Δ ψ := by
+  have h1 : (fun _ : E ↦ (1 : ℂ)).HasTemperateGrowth := by fun_prop
+  have h2 : (fun x : E ↦ ((‖x‖ ^ 2 : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
+  have hadd : fourierMultiplierCLM F (fun x : E ↦ ((1 + ‖x‖ ^ 2 : ℝ) : ℂ)) ψ =
+      fourierMultiplierCLM F (fun _ : E ↦ (1 : ℂ)) ψ +
+        fourierMultiplierCLM F (fun x : E ↦ ((‖x‖ ^ 2 : ℝ) : ℂ)) ψ := by
+    have hw : (fun x : E ↦ ((1 + ‖x‖ ^ 2 : ℝ) : ℂ)) =
+        (fun _ ↦ (1 : ℂ)) + fun x ↦ ((‖x‖ ^ 2 : ℝ) : ℂ) := by
+      ext x
+      simp
+    rw [hw, fourierMultiplierCLM_apply, smulLeftCLM_add h1 h2, _root_.add_apply,
+      FourierTransform.fourierInv_add]
+    rfl
+  have hreal : fourierMultiplierCLM F (fun x : E ↦ ((‖x‖ ^ 2 : ℝ) : ℂ)) ψ =
+      fourierMultiplierCLM F (fun x : E ↦ ‖x‖ ^ 2) ψ :=
+    fourierMultiplierCLM_ofReal ℂ (Function.hasTemperateGrowth_norm_sq E) ψ
+  have hπ : ((2 * Real.pi) ^ 2)⁻¹ * -(2 * Real.pi) ^ 2 = -1 := by
+    field_simp
+  rw [laplacian_eq_fourierMultiplierCLM, smul_smul, hπ, hadd, fourierMultiplierCLM_const, hreal]
+  simp [sub_eq_add_neg]
 
 omit [CompleteSpace F] in
 /-- The `L²` norm of `⟨ξ⟩ ^ s 𝓕 f`, written as a lower Lebesgue integral of the real-valued

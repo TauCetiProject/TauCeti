@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Quantization
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 
 /-!
 # Quantizations of uniform symbols map Schwartz space to itself
@@ -41,10 +42,13 @@ and each such term is bounded by a continuous seminorm of `u`
 * `TauCeti.Symbol.quantizeUniformCLM`: the quantization of a uniform symbol as a continuous linear
   map `𝓢(ℝⁿ, V) →L[ℂ] 𝓢(ℝⁿ, W)`.
 * `TauCeti.Symbol.quantizeUniformCLM_add`, `TauCeti.Symbol.quantizeUniformCLM_smul`,
-  `TauCeti.Symbol.quantizeUniformCLM_zero`, `TauCeti.Symbol.quantizeUniformCLM_inclusion`: the
-  quantization is linear in the symbol and does not depend on the order.
+  `TauCeti.Symbol.quantizeUniformCLM_zero`, `TauCeti.Symbol.quantizeUniformCLM_sum`,
+  `TauCeti.Symbol.quantizeUniformCLM_inclusion`, `TauCeti.Symbol.quantizeUniformCLM_congr`: the
+  quantization is linear in the symbol and depends only on its coefficient, not on the order.
 * `TauCeti.Symbol.lineDerivOp_quantizeUniformCLM`,
   `TauCeti.Symbol.smulLeftCLM_quantizeUniformCLM`: the two commutator formulas in Schwartz space.
+* `TauCeti.Symbol.quantizeUniformCLM_lineDerivOp`: a derivative on the right of `Op(c)` is the
+  multiplication of `c` by `i ⟪ξ, v⟫`, with no lower-order correction.
 * `TauCeti.Symbol.quantizeUniformCLM_const`: a constant symbol `T` quantizes to the composition
   with `T`.
 
@@ -243,6 +247,22 @@ theorem quantizeUniformCLM_inclusion {m' : ℝ} {a : Symbol n V W m} (ha : a.IsU
   ext u x
   simp
 
+/-- The quantization of a sum of uniform symbols is the sum of their quantizations. -/
+theorem quantizeUniformCLM_sum {ι : Type*} (s : Finset ι) (a : ι → Symbol n V W m)
+    (ha : ∀ i, (a i).IsUniform) (h : (∑ i ∈ s, a i).IsUniform) :
+    quantizeUniformCLM (∑ i ∈ s, a i) h = ∑ i ∈ s, quantizeUniformCLM (a i) (ha i) := by
+  ext u x
+  rw [quantizeUniformCLM_apply, quantizeSchwartzValue_sum_left]
+  simp
+
+/-- The quantization of a uniform symbol depends only on its coefficient, not on the order at
+which the symbol is considered. -/
+theorem quantizeUniformCLM_congr {m' : ℝ} {a : Symbol n V W m} {b : Symbol n V W m'}
+    (ha : a.IsUniform) (hb : b.IsUniform) (h : a.coefficient = b.coefficient) :
+    quantizeUniformCLM a ha = quantizeUniformCLM b hb := by
+  ext u x
+  simp [h]
+
 /-- **Commutator with a derivative.** `∂_j (Op(a) u) = Op(a) (∂_j u) + Op(∂_{x_j} a) u` in
 Schwartz space. -/
 theorem lineDerivOp_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform) (j : Fin n)
@@ -254,6 +274,24 @@ theorem lineDerivOp_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform) (
   have h := congrFun (a.coordinateDeriv_quantizeSchwartzValue j u) x
   rw [coordinateDeriv_cons, coordinateDeriv_nil, ← coe_quantizeUniformCLM a ha] at h
   simpa [SchwartzMap.lineDerivOp_apply_eq_fderiv] using h
+
+/-- **Composition with a derivative on the right is exact.** In the left quantization,
+`Op(c) (∂_v u) = i Op(c ⟪ξ, v⟫) u`, since `∂_v = i D_v` and `D_v` has symbol `⟪ξ, v⟫`. -/
+theorem quantizeUniformCLM_lineDerivOp (c : Symbol n V W m) (hc : c.IsUniform)
+    (v : CoordinateSpace n) (u : 𝓢(CoordinateSpace n, V)) :
+    quantizeUniformCLM c hc (∂_{v} u) =
+      Complex.I • quantizeUniformCLM (c.comp (ofInner v)) (hc.comp (isUniform_ofInner v)) u := by
+  ext x
+  simp only [smul_apply, quantizeUniformCLM_apply, quantizeSchwartzValue_def,
+    coefficient_comp, coefficient_ofInner, SchwartzMap.fourier_lineDerivOp_apply]
+  rw [← integral_smul]
+  refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+  simp only [map_smul, ContinuousLinearMap.comp_smul, ContinuousLinearMap.comp_id,
+    smul_apply, real_inner_smul_left]
+  rw [smul_comm Complex.I (𝐞 _), smul_smul]
+  congr 2
+  push_cast
+  ring
 
 /-- **Commutator with a coordinate function.** `x_j Op(a) u = Op(a) (x_j u) + i Op(∂_{ξ_j} a) u` in
 Schwartz space. -/
