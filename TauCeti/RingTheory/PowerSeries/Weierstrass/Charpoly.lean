@@ -46,6 +46,8 @@ factor of `g`, and `T` acts on it with characteristic polynomial that distinguis
 ## Main results
 
 * `PowerSeries.IsWeierstrassFactorizationAt.finrank_quotient`: `A⟦X⟧ ⧸ (g)` has rank `deg f`.
+* `PowerSeries.IsWeierstrassFactorizationAt.infinite_quotient`: over an infinite ring,
+  `A⟦X⟧ ⧸ (g)` is infinite when `deg f > 0`.
 * `PowerSeries.IsWeierstrassFactorizationAt.natCard_quotSMulTop_quotient_span_C`: for `a : A`, the
   quotient `A⟦X⟧ ⧸ (a, g)` has `#(A ⧸ (a)) ^ deg f` elements.
 * `PowerSeries.IsWeierstrassFactorizationAt.minpoly_mk_X`: the minimal polynomial of the class of
@@ -124,6 +126,14 @@ is free of rank the degree of `f`. -/
 theorem finrank_quotient [Nontrivial A] :
     Module.finrank A (A⟦X⟧ ⧸ Ideal.span {g}) = f.natDegree :=
   H.powerBasis.finrank
+
+/-- For a Weierstrass factorization `g = f * h` over an infinite ring with `deg f > 0`, the
+quotient `A⟦X⟧ ⧸ (g)` is infinite, being free of positive rank over `A`. -/
+theorem infinite_quotient [Infinite A] (hf : 0 < f.natDegree) :
+    Infinite (A⟦X⟧ ⧸ Ideal.span {g}) := by
+  have := H.free_quotient
+  have := Module.nontrivial_of_finrank_pos (R := A) (H.finrank_quotient.symm ▸ hf)
+  exact Module.Free.infinite A _
 
 /-- For a Weierstrass factorization `g = f * h` and any `a : A`, the quotient of `A⟦X⟧ ⧸ (a)` by
 `g` is `A⟦X⟧ ⧸ (a, g) ≃ (A ⧸ (a)) ^ deg f`, so it has `#(A ⧸ (a)) ^ deg f` elements. -/
