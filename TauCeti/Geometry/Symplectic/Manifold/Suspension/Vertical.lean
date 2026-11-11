@@ -24,9 +24,7 @@ vectors with zero circle component and vertical mapping torus component, is the 
 differential of the submersion `(s, y) ↦ (s, p y)` onto the torus `(ℝ / ℤ) × (ℝ / ℤ)`. So `V_X` is
 a smooth distribution of rank `dim M` on `X_φ` as well, and the vertical projections along the
 horizontal plane `H = span(∂_s, T)` used for pseudoholomorphic curves in `X_φ` are projections onto
-the fibres of a smooth vector bundle. In the coordinates `(s, t, x)` of `ℝ × ℝ × M`, the vectors of
-`V_X` at `([s], [t, x])` are exactly the vectors `0 ∂_s + 0 ∂_t + v` with `v` tangent to `M` at `x`,
-and `ω_v` evaluates on `a ∂_s + b ∂_t + v` and `a' ∂_s + b' ∂_t + v'` as `σ(v, v')`.
+the fibres of a smooth vector bundle.
 
 When `σ` is nondegenerate, both vertical bundles are symplectic vector bundles. On `Y_φ` the kernel
 of `σ_v` is the line spanned by `T` (`TauCeti.SmoothMappingTorus.ker_bilinFormAt_fiberForm`), which
@@ -41,11 +39,6 @@ restriction of a block almost complex structure to `V_X` is tamed.
   the differential of `(s, y) ↦ (s, p y)`.
 * `TauCeti.SmoothMappingTorus.isContMDiffDistribution_suspensionVerticalSubspace`: `V_X` is a
   `C^m` distribution of rank `dim M` for every `m ≤ ∞`.
-* `TauCeti.SmoothMappingTorus.symm_tangentSpaceProdEquiv_mem_suspensionVerticalSubspace_iff`,
-  `TauCeti.SmoothMappingTorus.mem_suspensionVerticalSubspace_mk_iff`: the vectors of `V_X` in the
-  coordinates `(s, t, x)`.
-* `TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_mk`: `ω_v` in the coordinates
-  `(s, t, x)`.
 * `TauCeti.SmoothMappingTorus.nondegenerate_restrict_bilinFormAt_fiberForm`: `σ_v` is
   nondegenerate on `V_Y`.
 * `TauCeti.SmoothMappingTorus.ker_bilinFormAt_mpullback_snd_fiberForm`: the kernel of `ω_v` is the
@@ -62,7 +55,7 @@ restriction of a block almost complex structure to `V_X` is tamed.
 
 public section
 
-open Function Manifold Module
+open Manifold Module
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -106,62 +99,9 @@ theorem isContMDiffDistribution_suspensionVerticalSubspace [FiniteDimensional �
   rwa [finrank_prod, finrank_prod, finrank_prod, finrank_self,
     show 1 + (1 + finrank ℝ E) - (1 + 1) = finrank ℝ E by omega] at h
 
-variable {φ}
-
-/-! ### The vertical space and the fiber form in the coordinates `(s, t, x)` -/
-
-/-- In the coordinates `(s, t, x)`, the tangent vector `a ∂_s + b ∂_t + v` of
-`X_φ = (ℝ / ℤ) × Y_φ` at `(θ, [t, x])` is vertical exactly when `a` and `b` vanish. -/
-theorem symm_tangentSpaceProdEquiv_mem_suspensionVerticalSubspace_iff (θ : UnitAddCircle) (t : ℝ)
-    (x : M) (a b : ℝ) (v : TangentSpace I x) :
-    (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) (θ, mk φ t x)).symm
-        (a, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-          ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))) ∈
-        suspensionVerticalSubspace φ (θ, mk φ t x) ↔
-      a = 0 ∧ b = 0 := by
-  rw [mem_suspensionVerticalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply]
-  -- The circle component is `a`, and `dp` sends the mapping torus component to `b`.
-  dsimp only
-  rw [mfderiv_proj_mfderiv_uncurry_mk]
-  exact Iff.rfl
-
-/-- At `(θ, [t, x])`, a tangent vector of `X_φ = (ℝ / ℤ) × Y_φ` is vertical exactly when, in the
-coordinates `(s, t, x)`, it is `0 ∂_s + 0 ∂_t + v` for a tangent vector `v` of `M` at `x`. -/
-theorem mem_suspensionVerticalSubspace_mk_iff {θ : UnitAddCircle} {t : ℝ} {x : M}
-    {ξ : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (θ, mk φ t x)} :
-    ξ ∈ suspensionVerticalSubspace φ (θ, mk φ t x) ↔
-      ∃ v : TangentSpace I x, ξ = (Manifold.tangentSpaceProdEquiv _).symm
-        ((0 : ℝ), mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-          ((Manifold.tangentSpaceProdEquiv (t, x)).symm ((0 : ℝ), v))) := by
-  refine ⟨fun hξ ↦ ?_, fun ⟨v, hv⟩ ↦ hv ▸
-    (symm_tangentSpaceProdEquiv_mem_suspensionVerticalSubspace_iff θ t x 0 0 v).2 ⟨rfl, rfl⟩⟩
-  obtain ⟨a, b, v, rfl⟩ := exists_eq_symm_tangentSpaceProdEquiv θ t x ξ
-  obtain ⟨rfl, rfl⟩ :=
-    (symm_tangentSpaceProdEquiv_mem_suspensionVerticalSubspace_iff θ t x a b v).1 hξ
-  exact ⟨v, rfl⟩
-
-/-- In the coordinates `(s, t, x)` of `ℝ × ℝ × M`, the fiber form `τ_v` pulled back to `X_φ` is
-`τ`: at `(θ, [t, x])` it pairs `a ∂_s + b ∂_t + v` with `a' ∂_s + b' ∂_t + v'` to `τ(v, v')`. -/
-theorem eval₂_mpullback_snd_fiberForm_mk {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {τ : SmoothForm I M F 2} {hτ : SmoothForm.mpullback φ φ.contMDiff τ = τ} (θ : UnitAddCircle)
-    (t : ℝ) (x : M) (a a' b b' : ℝ) (v v' : TangentSpace I x) :
-    SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ τ hτ))
-        (θ, mk φ t x)
-        ((Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) _).symm
-          (a, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-            ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))))
-        ((Manifold.tangentSpaceProdEquiv _).symm
-          (a', mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-            ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b', v')))) =
-      SmoothBundleForm.eval₂ τ x v v' := by
-  rw [SmoothForm.eval₂_mpullback_snd]
-  simp only [ContinuousLinearEquiv.apply_symm_apply]
-  rw [eval₂_fiberForm_mfderiv_uncurry_mk]
-  simp only [ContinuousLinearEquiv.apply_symm_apply]
-
 /-! ### Nondegeneracy on the vertical bundles -/
 
-variable {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
+variable {φ} {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
 
 /-- The fiber form `σ_v` of a nondegenerate two-form `σ` preserved by `φ` is nondegenerate on the
 vertical tangent space `ker dp` at every point of the mapping torus. -/

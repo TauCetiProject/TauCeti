@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Horizontal
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.SeamFamily
-public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Vertical
 
 /-!
 # Curves of zero vertical area for the descended block structures of a symplectic suspension
@@ -86,61 +86,12 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] {φ : M ≃ₘ⟮I, I⟯ M}
 
-/-! ### Structures acting on vertical vectors through a vertical family -/
-
-variable {J : SmoothAlmostComplexStructure (𝓘(ℝ).prod (𝓘(ℝ).prod I))
-    (UnitAddCircle × SmoothMappingTorus φ)}
-  {K : ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (TangentSpace I p.2)}
-
-/-- An almost complex structure on `X_φ` that sends `0 ∂_s + 0 ∂_t + v` to `0 ∂_s + 0 ∂_t + K v`
-in the coordinates `(s, t, x)` preserves the vertical subspace. -/
-private theorem apply_mem_suspensionVerticalSubspace_of_apply_mk
-    (hJ : ∀ (s t : ℝ) (x : M) (v : TangentSpace I x),
-      J ((s : UnitAddCircle), mk φ t x) ((Manifold.tangentSpaceProdEquiv _).symm
-          ((0 : ℝ), mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-            ((Manifold.tangentSpaceProdEquiv (t, x)).symm ((0 : ℝ), v)))) =
-        (Manifold.tangentSpaceProdEquiv _).symm
-          ((0 : ℝ), mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-            ((Manifold.tangentSpaceProdEquiv (t, x)).symm ((0 : ℝ), K ((s, t), x) v))))
-    (q : UnitAddCircle × SmoothMappingTorus φ) {ξ : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q}
-    (hξ : ξ ∈ suspensionVerticalSubspace φ q) : J q ξ ∈ suspensionVerticalSubspace φ q := by
-  obtain ⟨⟨⟨s, t⟩, x⟩, rfl⟩ := suspensionCover_surjective φ q
-  rw [suspensionCover_apply] at hξ ⊢
-  obtain ⟨v, rfl⟩ := mem_suspensionVerticalSubspace_mk_iff.1 hξ
-  rw [hJ]
-  exact mem_suspensionVerticalSubspace_mk_iff.2 ⟨_, rfl⟩
-
-/-- An almost complex structure on `X_φ` that sends `0 ∂_s + 0 ∂_t + v` to `0 ∂_s + 0 ∂_t + K v`
-in the coordinates `(s, t, x)`, for a family `K` tamed by `σ`, has its vertical restriction tamed
-by `ω_v`. -/
-private theorem eval₂_mpullback_snd_fiberForm_pos_of_apply_mk {σ : SmoothTwoForm I M}
-    {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
-    (hJ : ∀ (s t : ℝ) (x : M) (v : TangentSpace I x),
-      J ((s : UnitAddCircle), mk φ t x) ((Manifold.tangentSpaceProdEquiv _).symm
-          ((0 : ℝ), mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-            ((Manifold.tangentSpaceProdEquiv (t, x)).symm ((0 : ℝ), v)))) =
-        (Manifold.tangentSpaceProdEquiv _).symm
-          ((0 : ℝ), mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-            ((Manifold.tangentSpaceProdEquiv (t, x)).symm ((0 : ℝ), K ((s, t), x) v))))
-    (htame : ∀ (p : (ℝ × ℝ) × M) (v : TangentSpace I p.2), v ≠ 0 →
-      0 < SmoothBundleForm.eval₂ σ p.2 v (K p v))
-    (q : UnitAddCircle × SmoothMappingTorus φ) {ξ : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q}
-    (hξ : ξ ∈ suspensionVerticalSubspace φ q) (hξ₀ : ξ ≠ 0) :
-    0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))
-      q ξ (J q ξ) := by
-  obtain ⟨⟨⟨s, t⟩, x⟩, rfl⟩ := suspensionCover_surjective φ q
-  rw [suspensionCover_apply] at hξ hξ₀ ⊢
-  obtain ⟨v, rfl⟩ := mem_suspensionVerticalSubspace_mk_iff.1 hξ
-  have hv : v ≠ 0 := fun hv ↦ hξ₀ ((symm_tangentSpaceProdEquiv_eq_zero_iff _ _ _ _ _ _).2
-    ⟨rfl, rfl, hv⟩)
-  rw [hJ, eval₂_mpullback_snd_fiberForm_mk]
-  exact htame ((s, t), x) v hv
-
 /-! ### The descended block structures -/
 
 section Descended
 
 variable [FiniteDimensional ℝ E]
+  {K : ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (TangentSpace I p.2)}
   (hK : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
     (fun p ↦ Bundle.TotalSpace.mk' (E →L[ℝ] E)
       (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
@@ -154,9 +105,12 @@ variable [FiniteDimensional ℝ E]
 theorem suspensionAlmostComplexStructure_apply_mem_suspensionVerticalSubspace
     (q : UnitAddCircle × SmoothMappingTorus φ) {ξ : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q}
     (hξ : ξ ∈ suspensionVerticalSubspace φ q) :
-    suspensionAlmostComplexStructure φ hK hs ht q ξ ∈ suspensionVerticalSubspace φ q :=
-  apply_mem_suspensionVerticalSubspace_of_apply_mk
-    (fun s t x v ↦ by rw [suspensionAlmostComplexStructure_mk, neg_zero]) q hξ
+    suspensionAlmostComplexStructure φ hK hs ht q ξ ∈ suspensionVerticalSubspace φ q := by
+  obtain ⟨⟨⟨s, t⟩, x⟩, rfl⟩ := suspensionCover_surjective φ q
+  rw [suspensionCover_apply] at hξ ⊢
+  obtain ⟨v, rfl⟩ := mem_suspensionVerticalSubspace_mk_iff.1 hξ
+  rw [suspensionAlmostComplexStructure_mk, neg_zero]
+  exact mem_suspensionVerticalSubspace_mk_iff.2 ⟨_, rfl⟩
 
 /-- If `σ` tames every member of the vertical family, then `ω_v` tames the restriction to the
 vertical subspace of the descended block structure. -/
@@ -167,10 +121,14 @@ theorem eval₂_mpullback_snd_fiberForm_suspensionAlmostComplexStructure_pos
     (q : UnitAddCircle × SmoothMappingTorus φ) {ξ : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q}
     (hξ : ξ ∈ suspensionVerticalSubspace φ q) (hξ₀ : ξ ≠ 0) :
     0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))
-      q ξ (suspensionAlmostComplexStructure φ hK hs ht q ξ) :=
-  eval₂_mpullback_snd_fiberForm_pos_of_apply_mk
-    (fun s t x v ↦ by rw [suspensionAlmostComplexStructure_mk, neg_zero])
-    htame q hξ hξ₀
+      q ξ (suspensionAlmostComplexStructure φ hK hs ht q ξ) := by
+  obtain ⟨⟨⟨s, t⟩, x⟩, rfl⟩ := suspensionCover_surjective φ q
+  rw [suspensionCover_apply] at hξ hξ₀ ⊢
+  obtain ⟨v, rfl⟩ := mem_suspensionVerticalSubspace_mk_iff.1 hξ
+  have hv : v ≠ 0 := fun hv ↦ hξ₀ ((symm_tangentSpaceProdEquiv_eq_zero_iff _ _ _ _ _ _).2
+    ⟨rfl, rfl, hv⟩)
+  rw [suspensionAlmostComplexStructure_mk, neg_zero, eval₂_mpullback_snd_fiberForm_mk]
+  exact htame ((s, t), x) v hv
 
 section Curves
 
@@ -248,14 +206,21 @@ variable [FiniteDimensional ℝ E] {σ : SmoothTwoForm I M}
   (hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ) {J₀ : SmoothAlmostComplexStructure I M}
   (hJ₀ : σ.Compatible J₀)
 
+omit [T2Space M] [LocallyCompactSpace M] in
+/-- Every member of the seam family built from a `σ`-compatible structure `J₀` is tamed by `σ`. -/
+private theorem eval₂_seamFamily_pos (p : (ℝ × ℝ) × M) (v : TangentSpace I p.2) (hv : v ≠ 0) :
+    0 < SmoothBundleForm.eval₂ σ p.2 v (seamFamily hσ hJ₀ p v) := by
+  simpa only [SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply] using
+    (compatible_seamFamily hσ hJ₀ hJ₀.isNondegenerate p).tames v hv
+
 /-- The seam structure built from a `σ`-compatible structure `J₀` preserves the vertical subspace
 `V = pr_Y^* ker dp` of `X_φ`. -/
 theorem seamAlmostComplexStructure_apply_mem_suspensionVerticalSubspace
     (q : UnitAddCircle × SmoothMappingTorus φ) {ξ : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q}
     (hξ : ξ ∈ suspensionVerticalSubspace φ q) :
-    seamAlmostComplexStructure hσ hJ₀ q ξ ∈ suspensionVerticalSubspace φ q :=
-  apply_mem_suspensionVerticalSubspace_of_apply_mk
-    (fun s t x v ↦ by rw [seamAlmostComplexStructure_mk_apply, neg_zero]) q hξ
+    seamAlmostComplexStructure hσ hJ₀ q ξ ∈ suspensionVerticalSubspace φ q := by
+  rw [seamAlmostComplexStructure_def]
+  exact suspensionAlmostComplexStructure_apply_mem_suspensionVerticalSubspace _ _ _ q hξ
 
 /-- The restriction of the seam structure built from a `σ`-compatible structure `J₀` to the
 vertical subspace of `X_φ` is tamed by `ω_v`. -/
@@ -263,13 +228,10 @@ theorem eval₂_mpullback_snd_fiberForm_seamAlmostComplexStructure_pos
     (q : UnitAddCircle × SmoothMappingTorus φ) {ξ : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q}
     (hξ : ξ ∈ suspensionVerticalSubspace φ q) (hξ₀ : ξ ≠ 0) :
     0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))
-      q ξ (seamAlmostComplexStructure hσ hJ₀ q ξ) :=
-  eval₂_mpullback_snd_fiberForm_pos_of_apply_mk
-    (fun s t x v ↦ by rw [seamAlmostComplexStructure_mk_apply, neg_zero])
-    (fun p v hv ↦ by
-      simpa only [SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply] using
-        (compatible_seamFamily hσ hJ₀ hJ₀.isNondegenerate p).tames v hv)
-    q hξ hξ₀
+      q ξ (seamAlmostComplexStructure hσ hJ₀ q ξ) := by
+  rw [seamAlmostComplexStructure_def]
+  exact eval₂_mpullback_snd_fiberForm_suspensionAlmostComplexStructure_pos _ _ _
+    (eval₂_seamFamily_pos hσ hJ₀) q hξ hξ₀
 
 section Curves
 
@@ -294,13 +256,10 @@ theorem range_eq_range_orbitTorus_of_seamAlmostComplexStructure [T2Space C] [Pre
       (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
     {c₀ : C} (hne : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c₀ ≠ 0)
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
-    Set.range u = Set.range (orbitTorus φ (isPeriodicPt_minimalPeriod φ x)) :=
-  range_eq_range_orbitTorus_of_integralTopForm_eq_zero_of_mfderiv_ne_zero hu ho hhol
-    (fun c ↦ seamAlmostComplexStructure_apply_symm_one_zero hσ hJ₀ (u c))
-    (fun c _ hv ↦ seamAlmostComplexStructure_apply_mem_suspensionVerticalSubspace hσ hJ₀ (u c) hv)
-    (fun c _ hv hv₀ ↦
-      eval₂_mpullback_snd_fiberForm_seamAlmostComplexStructure_pos hσ hJ₀ (u c) hv hv₀)
-    h0 hne hc
+    Set.range u = Set.range (orbitTorus φ (isPeriodicPt_minimalPeriod φ x)) := by
+  rw [seamAlmostComplexStructure_def] at hhol
+  exact range_eq_range_orbitTorus_of_suspensionAlmostComplexStructure _ _ _
+    (eval₂_seamFamily_pos hσ hJ₀) hu ho hhol h0 hne hc
 
 /-- **The `Ω`-area of an embedded curve of zero vertical area for the seam structure.** Let `J` be
 the seam structure on `X_φ` built from a `σ`-compatible structure `J₀` on `M`, and let `u` be an
@@ -318,13 +277,10 @@ theorem integralTopForm_mpullback_suspensionForm_of_seamAlmostComplexStructure [
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
     integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 =
-      minimalPeriod φ x :=
-  integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero hu hu₁ ho hhol
-    (fun c ↦ seamAlmostComplexStructure_apply_symm_one_zero hσ hJ₀ (u c))
-    (fun c _ hv ↦ seamAlmostComplexStructure_apply_mem_suspensionVerticalSubspace hσ hJ₀ (u c) hv)
-    (fun c _ hv hv₀ ↦
-      eval₂_mpullback_snd_fiberForm_seamAlmostComplexStructure_pos hσ hJ₀ (u c) hv hv₀)
-    h0 hinj hc
+      minimalPeriod φ x := by
+  rw [seamAlmostComplexStructure_def] at hhol
+  exact integralTopForm_mpullback_suspensionForm_of_suspensionAlmostComplexStructure _ _ _
+    (eval₂_seamFamily_pos hσ hJ₀) hu hu₁ ho hhol h0 hinj hc
 
 end Curves
 
