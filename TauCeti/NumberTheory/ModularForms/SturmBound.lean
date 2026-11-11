@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.LevelOne.DimensionFormula
 public import Mathlib.RingTheory.Polynomial.DegreeLT
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import TauCeti.NumberTheory.ModularForms.Norm.Trace
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
@@ -44,15 +45,6 @@ public noncomputable section
 open UpperHalfPlane Complex Function SlashInvariantForm Periodic Subgroup
 
 open scoped ModularForm Topology Filter Manifold MatrixGroups
-
-/-- The index of a subgroup of `SL(2, ℤ)` equals the number of cosets of its real matrix
-image in `𝒮ℒ`. -/
-theorem Subgroup.card_quotient_mapGL_eq_index (Γ : Subgroup SL(2, ℤ)) :
-    Nat.card (𝒮ℒ ⧸ (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)).subgroupOf 𝒮ℒ) = Γ.index := by
-  rw [← Subgroup.index_eq_card, ← Subgroup.relIndex,
-    MonoidHom.range_eq_map (Matrix.SpecialLinearGroup.mapGL ℝ), ← Subgroup.relIndex_comap,
-    Subgroup.comap_map_eq_self_of_injective Matrix.SpecialLinearGroup.mapGL_injective,
-    Subgroup.relIndex_top_right]
 
 namespace ModularForm
 
