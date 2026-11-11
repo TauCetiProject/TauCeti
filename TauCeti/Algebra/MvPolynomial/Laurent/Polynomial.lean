@@ -102,6 +102,17 @@ theorem toLaurent_injective :
     Function.Injective (toLaurent : MvPolynomial K R → LaurentRing R K) := fun p q h ↦
   MvPolynomial.ext p q fun s ↦ by rw [← coeff_toLaurent, h, coeff_toLaurent]
 
+@[simp]
+theorem toLaurent_inj (p q : MvPolynomial K R) : toLaurent p = toLaurent q ↔ p = q :=
+  toLaurent_injective.eq_iff
+
+@[simp]
+theorem toLaurent_eq_zero {p : MvPolynomial K R} : toLaurent p = 0 ↔ p = 0 :=
+  map_eq_zero_iff _ toLaurent_injective
+
+theorem toLaurent_ne_zero {p : MvPolynomial K R} : toLaurent p ≠ 0 ↔ p ≠ 0 :=
+  map_ne_zero_iff _ toLaurent_injective
+
 /-- A Laurent polynomial is a polynomial exactly when every exponent in its support is
 nonnegative in every variable. -/
 theorem mem_range_toLaurent_iff {f : LaurentRing R K} :
