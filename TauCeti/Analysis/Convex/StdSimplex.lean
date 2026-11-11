@@ -253,7 +253,7 @@ theorem exists_mem_convexHull_inter_norm_sub_le {σ τ : Finset ι} {x y : ι �
     (fun i _ => hnonneg i) hsum (fun i _ => subset_convexHull ℝ _ ⟨r i, hr i, rfl⟩), ?_⟩
   have hterm (i : ι) : ‖x i • ((Pi.single i (1 : ℝ) : ι → ℝ) - Pi.single (r i) 1)‖ ≤ ‖x - y‖ := by
     by_cases hi : i ∈ σ ∩ τ
-    · simp [show r i = i from ite_eq_left hi]
+    · simp [r, Finset.mem_inter.mp hi]
     · have hxi : x i ≤ ‖x - y‖ :=
         apply_le_norm_sub_of_notMem_inter hx hy (by simpa only [← coe_inter, mem_coe] using hi)
       have he : ‖(Pi.single i (1 : ℝ) : ι → ℝ) - Pi.single (r i) 1‖ ≤ 1 :=
