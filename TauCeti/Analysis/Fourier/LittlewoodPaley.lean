@@ -676,7 +676,7 @@ theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow [N
     exact Real.HolderConjugate.conjExponent hP
   obtain ⟨C, hC⟩ := exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le (F := F) φ hq
     ENNReal.ofReal_ne_top
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   refine ⟨2 * L * C, fun m hm f ↦ ?_⟩
   have hm' : ∀ j, m j = (symbol φ j).toLp ∞ volume := fun j ↦ Lp.ext <| by
     filter_upwards [hm j, (symbol φ j).coeFn_toLp ∞ (volume : Measure V)] with ξ h₁ h₂
