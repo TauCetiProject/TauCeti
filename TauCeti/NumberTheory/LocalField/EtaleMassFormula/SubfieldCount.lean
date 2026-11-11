@@ -247,7 +247,7 @@ theorem tsum_inertiaDegree_eq {f : ℕ} (hf : f ≠ 0) (e : ℕ) :
   let _ := finiteIntermediateFieldTopology K (SeparableClosure K) U
   have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) U
   have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) U
-  have : IsUnramified K U := isUnramified_unramifiedExtension hf
+  have : IsUnramified K U := isUnramified_unramifiedExtension
   have hUf : inertiaDegree K U = f := by
     rw [IsUnramified.inertiaDegree_eq_finrank, finrank_unramifiedExtension hf]
   -- A subextension of residue degree `f` contains `U`.
