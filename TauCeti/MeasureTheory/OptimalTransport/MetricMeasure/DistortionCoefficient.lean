@@ -190,7 +190,7 @@ theorem distortionSigma_zero_right : distortionSigma K N t 0 = ENNReal.ofReal t 
 
 /-- For `t ≤ 0`, `K ≤ 0` and `0 ≤ N` the coefficient `σ_{K,N}^{(t)}(θ)` vanishes. -/
 @[simp]
-theorem distortionSigma_of_nonpos (ht : t ≤ 0) (hK : K ≤ 0) (hN : 0 ≤ N) :
+theorem distortionSigma_eq_zero_of_nonpos (ht : t ≤ 0) (hK : K ≤ 0) (hN : 0 ≤ N) :
     distortionSigma K N t θ = 0 := by
   rw [distortionSigma_eq_sigmaOf]
   exact sigmaOf_of_nonpos ht
@@ -266,8 +266,8 @@ theorem antitoneOn_distortionSigma_of_nonneg (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1)
 theorem monotoneOn_distortionSigma_of_nonpos (ht₁ : t ≤ 1) (hK : K ≤ 0) :
     MonotoneOn (fun N ↦ distortionSigma K N t θ) (Ioi 0) := fun N hN N' hN' hNN' ↦ by
   rcases lt_or_ge t 0 with ht₀ | ht₀
-  · simp only [distortionSigma_of_nonpos ht₀.le hK (le_of_lt hN),
-      distortionSigma_of_nonpos ht₀.le hK (le_of_lt hN'), le_refl]
+  · simp only [distortionSigma_eq_zero_of_nonpos ht₀.le hK (le_of_lt hN),
+      distortionSigma_eq_zero_of_nonpos ht₀.le hK (le_of_lt hN'), le_refl]
   refine distortionSigma_mono ht₀ ht₁ ?_
   have := div_le_div_of_nonneg_left
     (neg_nonneg.2 (mul_nonpos_of_nonpos_of_nonneg hK (sq_nonneg θ))) hN hNN'
@@ -286,7 +286,7 @@ theorem ofReal_le_distortionSigma (ht₁ : t ≤ 1) (hN : 0 ≤ N) (hK : 0 ≤ K
 theorem distortionSigma_le_ofReal (ht₁ : t ≤ 1) (hN : 0 ≤ N) (hK : K ≤ 0) :
     distortionSigma K N t θ ≤ ENNReal.ofReal t := by
   rcases lt_or_ge t 0 with ht₀ | ht₀
-  · exact (distortionSigma_of_nonpos ht₀.le hK hN).trans_le zero_le
+  · exact (distortionSigma_eq_zero_of_nonpos ht₀.le hK hN).trans_le zero_le
   · simpa using distortionSigma_left_monotone (θ := θ) ht₀ ht₁ hN hK
 
 /-- The coefficient `σ_{K,N}^{(t)}(θ)` is infinite exactly when `N π² ≤ K θ²`. -/
