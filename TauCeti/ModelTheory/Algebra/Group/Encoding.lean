@@ -94,7 +94,7 @@ theorem listEncode_ne_singleton_mul (t : Language.group[[A]].Term X) :
     t.listEncode ≠ [Sum.inr ⟨2, Sum.inl mulFunc⟩] :=
   Term.listEncode_ne_singleton_inr _ t
 
-variable [Primcodable A] [Primcodable X]
+variable [Primcodable A] [Encodable X]
 
 /-- The code of the multiplication symbol alone decodes to no group term: missing arguments
 are not filled in. -/
