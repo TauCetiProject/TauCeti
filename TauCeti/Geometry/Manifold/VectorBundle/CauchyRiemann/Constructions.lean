@@ -81,6 +81,7 @@ variable [IsManifold I ∞ M] {j : SmoothAlmostComplexStructure I M}
 omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
 /-- A pair of one-forms is a `(0,1)`-form exactly when both components are. -/
+@[simp]
 theorem isZeroOneForm_prod_iff {x : M} {η : TangentSpace I x →L[ℝ] V x}
     {η' : TangentSpace I x →L[ℝ] W x} :
     j.IsZeroOneForm (V := V ×ᵇ W) (η.prod η') ↔ j.IsZeroOneForm η ∧ j.IsZeroOneForm η' := by
