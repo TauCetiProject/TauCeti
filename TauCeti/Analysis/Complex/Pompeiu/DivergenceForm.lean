@@ -25,9 +25,9 @@ This file splits `ξ` into a particular solution built from the Cauchy transform
 `T h = π⁻¹ ∫ (w - z)⁻¹ h z` and a harmonic remainder, using only `bar∂ (T h) = h` and Weyl's
 lemma, with no general second-order theory.
 
-For real `f` and `g` and integrable `h` equal to `f + i g` near the test functions' supports, the
-particular solution is `ξ₀ = ½ Re (T h)`. Indeed, for a real test function `φ` put
-`ψ = ∂ₛφ - i ∂ₜφ = 2 ∂φ`, so that `bar∂ ψ = Δφ / 2` because `Δ = 4 ∂ bar∂`
+For real `f` and `g` and integrable `h` equal to `f + i g` almost everywhere near the test
+functions' supports, the particular solution is `ξ₀ = ½ Re (T h)`. Indeed, for a real test
+function `φ` put `ψ = ∂ₛφ - i ∂ₜφ = 2 ∂φ`, so that `bar∂ ψ = Δφ / 2` because `Δ = 4 ∂ bar∂`
 (`TauCeti.conjWirtingerDeriv_fderiv_sub_I_mul_fderiv_apply_one`). The weak form of
 `bar∂ (T h) = h` (`TauCeti.integral_conjWirtingerDeriv_smul_cauchyTransform`) gives
 `∫ (Δφ / 2) T h = -∫ ψ h`, and taking real parts,
@@ -118,21 +118,23 @@ theorem integral_laplacian_smul_re_cauchyTransform {h : ℂ → ℂ} (hh : Integ
   linarith
 
 /-- **The particular solution of the divergence-form Laplace equation.** Let `h` be integrable
-complex data with `h = f + i g` on `Ω` for real `f` and `g`. Then `ξ₀ = ½ Re (T h)` solves
-`Δ ξ₀ = ∂ₛ f + ∂ₜ g` weakly on `Ω`:
+complex data with `h = f + i g` almost everywhere on `Ω` for real `f` and `g`. Then
+`ξ₀ = ½ Re (T h)` solves `Δ ξ₀ = ∂ₛ f + ∂ₜ g` weakly on `Ω`:
 `∫ Δφ • ξ₀ = -∫ (∂ₛφ • f + ∂ₜφ • g)` for every test function `φ` on `Ω`. -/
 theorem integral_laplacian_smul_half_re_cauchyTransform {Ω : Opens ℂ} {h : ℂ → ℂ}
-    (hh : Integrable h) {f g : ℂ → ℝ} (hfg : ∀ z ∈ Ω, h z = f z + I * g z) (φ : 𝓓(Ω, ℝ)) :
+    (hh : Integrable h) {f g : ℂ → ℝ} (hfg : h =ᵐ[volume.restrict Ω] fun z ↦ f z + I * g z)
+    (φ : 𝓓(Ω, ℝ)) :
     ∫ w, Δ (φ : ℂ → ℝ) w • ((2 : ℝ)⁻¹ * (cauchyTransform h w).re) =
       -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z) := by
   have hcore := integral_laplacian_smul_re_cauchyTransform hh φ.hasCompactSupport
     (φ.contDiff.of_le (by simp))
-  have hfg' : (fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • (h z).re + fderiv ℝ (φ : ℂ → ℝ) z I • (h z).im) =
-      fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z := by
-    funext z
-    by_cases hz : z ∈ Ω
-    · simp [hfg z hz]
-    · have hz' : z ∉ tsupport (φ : ℂ → ℝ) := fun h' ↦ hz (φ.tsupport_subset h')
+  have hfg' : ∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • (h z).re + fderiv ℝ (φ : ℂ → ℝ) z I • (h z).im) =
+      ∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z) := by
+    refine integral_congr_ae ?_
+    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hfg] with z hz
+    by_cases hzΩ : z ∈ Ω
+    · simp [hz hzΩ]
+    · have hz' : z ∉ tsupport (φ : ℂ → ℝ) := fun h' ↦ hzΩ (φ.tsupport_subset h')
       simp [fderiv_of_notMem_tsupport ℝ hz']
   rw [hfg'] at hcore
   simp_rw [smul_eq_mul, mul_left_comm _ ((2 : ℝ)⁻¹)]
@@ -142,15 +144,15 @@ theorem integral_laplacian_smul_half_re_cauchyTransform {Ω : Opens ℂ} {h : �
   ring
 
 /-- **Divergence-form Laplace equation: the harmonic remainder.** Let `ξ` be locally integrable
-on `Ω` and solve `Δ ξ = ∂ₛ f + ∂ₜ g` weakly on `Ω`. If integrable complex data `h` agrees with
-`f + i g` on an open `Ω'' ≤ Ω`, then `ξ - ½ Re (T h)` is weakly harmonic on `Ω''`. Weyl's lemma
-(`TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq`) then makes it harmonic after modification
-on a null set. -/
+on `Ω` and solve `Δ ξ = ∂ₛ f + ∂ₜ g` weakly on `Ω`. If integrable complex data `h` agrees almost
+everywhere with `f + i g` on an open `Ω'' ≤ Ω`, then `ξ - ½ Re (T h)` is weakly harmonic on
+`Ω''`. Weyl's lemma (`TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq`) then makes it
+harmonic after modification on a null set. -/
 theorem weaklyHarmonicOn_sub_half_re_cauchyTransform {Ω Ω'' : Opens ℂ} (hΩ : Ω'' ≤ Ω)
     {ξ f g : ℂ → ℝ} (hξ : LocallyIntegrableOn ξ Ω)
     (hdiv : ∀ φ : 𝓓(Ω, ℝ), ∫ z, Δ (φ : ℂ → ℝ) z • ξ z =
       -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z))
-    {h : ℂ → ℂ} (hh : Integrable h) (hfg : ∀ z ∈ Ω'', h z = f z + I * g z) :
+    {h : ℂ → ℂ} (hh : Integrable h) (hfg : h =ᵐ[volume.restrict Ω''] fun z ↦ f z + I * g z) :
     WeaklyHarmonicOn volume Ω'' (ξ - fun w ↦ (2 : ℝ)⁻¹ * (cauchyTransform h w).re) := by
   have hre : LocallyIntegrable fun w ↦ (2 : ℝ)⁻¹ * (cauchyTransform h w).re := by
     refine locallyIntegrable_iff.2 fun K hK ↦ ?_
@@ -204,8 +206,10 @@ theorem exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {V : 
     HasCompactSupport.intro hUc fun z hz ↦ indicator_of_notMem hz _
   have hdati (i) : Integrable (dat i) :=
     (integrable_indicator_iff hLm).2 ((hdatU i).integrable hr)
-  have hdatfg (i) : ∀ z ∈ U, dat i z = ((c i (f z) : ℝ) : ℂ) + I * ((c i (g z) : ℝ) : ℂ) :=
-    fun z hz ↦ indicator_of_mem (subset_closure hz) _
+  have hdatfg (i) : dat i =ᵐ[volume.restrict U]
+      fun z ↦ ((c i (f z) : ℝ) : ℂ) + I * ((c i (g z) : ℝ) : ℂ) :=
+    ae_restrict_of_forall_mem U.isOpen.measurableSet fun z hz ↦
+      indicator_of_mem (subset_closure hz) _
   -- Step 2: `ξ₀ = ∑ i, (½ Re T (dat i)) • b i` is locally `Lʳ` on the plane, hence locally
   -- integrable on `U`, as are `f` and `g` on `Ω`.
   let ξc : Fin (Module.finrank ℝ V) → ℂ → ℝ := fun i w ↦
