@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.SpectralGap
 public import TauCeti.Analysis.InnerProductSpace.WeakSolution
 public import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Distribution.TestFunction.Lp
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The weak right inverse of the gauge-fixed operator at a plane vortex
@@ -108,27 +109,19 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le
           ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
         ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
   set S := gaugeFixedAdjointToLp μ hx
-  set ι : TestField →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ := TestFunction.ambientToLp 2 μ
+  set ι := (TestFunction.ambientToLp 2 μ : TestField →L[ℝ] _).toLinearMap
   have hS (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
       ⟪u, S η⟫ = ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ :=
     L2.inner_toLp u (memLp_gaugeFixedAdjoint hx η)
   have hι (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
-      ⟪u, ι η⟫ = ∫ z, ⟪u z, η z⟫ ∂μ := by
-    rw [TestFunction.ambientToLp_apply]
-    exact L2.inner_toLp u (η.continuous.memLp_of_hasCompactSupport η.hasCompactSupport)
-  have hnorm {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : MemLp g 2 μ) :
-      ‖hg.toLp g‖ ^ 2 = ∫ z, ‖g z‖ ^ 2 ∂μ := by
-    rw [← real_inner_self_eq_norm_sq, L2.inner_toLp]
-    refine integral_congr_ae ?_
-    filter_upwards [hg.coeFn_toLp] with z hz
-    rw [hz, real_inner_self_eq_norm_sq]
+      ⟪u, ι η⟫ = ∫ z, ⟪u z, η z⟫ ∂μ :=
+    TestFunction.inner_ambientToLp u η
   -- The gap is the lower bound `√c ‖η‖ ≤ ‖L_x* η‖` in `L²`.
   have hbound (η : TestField) : √c * ‖ι η‖ ≤ ‖S η‖ := by
     refine le_of_sq_le_sq ?_ (norm_nonneg _)
-    have hιη : ι η = (η.continuous.memLp_of_hasCompactSupport η.hasCompactSupport).toLp η :=
-      TestFunction.ambientToLp_apply η
     have hSη : S η = (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η) := rfl
-    rw [mul_pow, Real.sq_sqrt hc.le, hιη, hSη, hnorm, hnorm]
+    rw [mul_pow, Real.sq_sqrt hc.le, ContinuousLinearMap.coe_coe, TestFunction.norm_ambientToLp_sq,
+      hSη, MemLp.norm_toLp_sq]
     exact hgap η η.contDiff η.hasCompactSupport
   obtain ⟨Q, hQn, hQK, hQ⟩ := LinearMap.exists_continuousLinearMap_inner_apply_eq_of_mul_norm_le
     S ι (Real.sqrt_pos.2 hc) hbound

@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Sl2.Weyl.Automorphism
+public import TauCeti.Algebra.Lie.Sl2.WeightString
 
 /-!
 # Weyl reflection on a three-element root string
 
 For an `sl₂` triple, the pinned Weyl automorphism carries a lowest-weight vector of weight
-minus two to its second raising bracket divided by two. This fixes the normalization of the
-reflected root vector at a double bond, rather than only identifying its weight space.
-The associative form identifies the same vector with conjugation by the pinned Weyl unit.
+minus two to its second raising bracket divided by two. A highest-weight vector of weight
+two is sent to its second lowering bracket divided by two. This fixes the normalization of
+both signs of the reflected root vector at a double bond, rather than only identifying its
+weight space. The associative forms express these actions as conjugation by the pinned Weyl unit.
 
 ## References
 
@@ -75,6 +77,24 @@ theorem weylAut_apply_of_lie_eq_neg_two_smul (t : IsSl2Triple h e f)
     expAd_apply_of_lie_eq_zero he' heeey
   rw [weylAut_apply he' hf.exists_pow_apply_eq_zero t, hmiddle, map_rat_smul, hE2]
 
+/-- On a highest-weight vector of weight two, the pinned Weyl automorphism is the
+second lowering bracket divided by two. -/
+theorem weylAut_apply_of_lie_eq_two_smul (t : IsSl2Triple h e f)
+    (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f))
+    (hhy : ⁅h, y⁆ = (2 : ℚ) • y) (hey : ⁅e, y⁆ = 0) :
+    weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y =
+      (2⁻¹ : ℚ) • ⁅f, ⁅f, y⁆⁆ := by
+  have hnf : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
+  have hne : IsNilpotent (ad K L (-e)) := by simpa using he.neg
+  have hweight : ⁅-h, y⁆ = (-2 : ℚ) • y := by simp [hhy]
+  have hthird : ⁅-f, ⁅-f, ⁅-f, y⁆⁆⁆ = 0 := by
+    simpa only [pow_succ, pow_zero, one_mul, mul_apply_eq_comp, ad_apply] using
+      t.neg_symm.pow_ad_apply_eq_zero_of_weight_neg_nat hnf 2 hweight (by simp [hey])
+  rw [← t.weylAut_neg_symm he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero
+    hnf.exists_pow_apply_eq_zero hne.exists_pow_apply_eq_zero]
+  simpa only [neg_lie, lie_neg, neg_neg] using
+    t.neg_symm.weylAut_apply_of_lie_eq_neg_two_smul hnf hne hweight (by simp [hey]) hthird
+
 section Associative
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -92,6 +112,17 @@ theorem weylUnit_conj_of_lie_eq_neg_two_smul (t : IsSl2Triple H E F)
   rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
   exact t.weylAut_apply_of_lie_eq_neg_two_smul (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
     (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hHY hFY hEEEY
+
+/-- The pinned Weyl unit conjugates a highest-weight vector of weight two to its
+second lowering bracket divided by two. -/
+theorem weylUnit_conj_of_lie_eq_two_smul (t : IsSl2Triple H E F)
+    (hE : IsNilpotent E) (hF : IsNilpotent F)
+    (hHY : ⁅H, Y⁆ = (2 : ℚ) • Y) (hEY : ⁅E, Y⁆ = 0) :
+    (weylUnit hE hF : A) * Y * ↑(weylUnit hE hF)⁻¹ =
+      (2⁻¹ : ℚ) • ⁅F, ⁅F, Y⁆⁆ := by
+  rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
+  exact t.weylAut_apply_of_lie_eq_two_smul (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hHY hEY
 
 end Associative
 

@@ -295,6 +295,15 @@ theorem le_re_endCoord_of_norm_sub_endCenter_le {q : Puncture} (hq : q ≠ inf) 
     Real.log_le_iff_le_exp (by positivity), div_le_iff₀ (by norm_num), mul_comm r]
   linarith
 
+/-- Off the open disc of radius `1/2` about the center of a positive end `q`, the longitudinal
+coordinate of that end is nonpositive: the disc is bounded by the circle `s = 0` of the end. -/
+theorem re_endCoord_nonpos_of_le_norm_sub_endCenter {q : Puncture} (hq : q ≠ inf) {w : ℂ}
+    (h : 1 / 2 ≤ ‖w - q.endCenter‖) : (q.endCoord w).re ≤ 0 := by
+  have hn : 1 ≤ ‖(w - q.endCenter) / q.endScale‖ := by
+    rwa [norm_div, norm_endScale hq, le_div_iff₀ (by norm_num), one_mul]
+  rw [re_endCoord, neg_div, neg_nonpos]
+  exact div_nonneg (Real.log_nonneg hn) (by positivity)
+
 /-- Off the disc `‖w‖ < exp (-2π) / 2`, the longitudinal coordinate of the end at `0` is at most
 `1`. -/
 theorem re_endCoord_zero_le_one {w : ℂ} (hw : Real.exp (-(2 * π)) / 2 ≤ ‖w‖) :
@@ -699,6 +708,25 @@ theorem measurableSet_preimage_truncation_inter (q : Puncture) (R c : ℝ) :
 /-- The truncations of the thrice-punctured sphere increase with the cutoff. -/
 theorem truncation_mono : Monotone truncation := fun _ _ hRR' _ hw =>
   ⟨hw.1, hw.2.1, fun q => (hw.2.2 q).trans hRR'⟩
+
+/-- The poles `0` and `1` lie outside every truncation. -/
+theorem notMem_truncation_of_eq_zero_or_eq_one {c : ℂ} (hc : c = 0 ∨ c = 1) (R : ℝ) :
+    c ∉ truncation R := fun h => by
+  obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
+  rcases hc with rfl | rfl
+  exacts [h₀ rfl, h₁ rfl]
+
+/-- Near a pole `c ∈ {0, 1}` and a cutoff `R₀`, the points lie outside the truncations `S_R`,
+locally uniformly in the cutoff `R`. -/
+theorem eventually_notMem_truncation {c : ℂ} (hc : c = 0 ∨ c = 1) (R₀ : ℝ) :
+    ∀ᶠ p : ℂ × ℝ in 𝓝 (c, R₀), p.1 ∉ truncation p.2 := by
+  have hR : ∀ᶠ p : ℂ × ℝ in 𝓝 (c, R₀), p.2 < R₀ + 1 :=
+    continuous_snd.continuousAt.eventually (gt_mem_nhds (lt_add_one R₀))
+  have hw : ∀ᶠ p : ℂ × ℝ in 𝓝 (c, R₀), p.1 ∉ truncation (R₀ + 1) :=
+    continuous_fst.continuousAt.eventually ((isCompact_truncation _).isClosed.isOpen_compl.mem_nhds
+      (notMem_truncation_of_eq_zero_or_eq_one hc _))
+  filter_upwards [hR, hw] with p hpR hpw h
+  exact hpw (truncation_mono hpR.le h)
 
 /-- The truncations exhaust the thrice-punctured sphere `S = ℂ ∖ {0, 1}`. -/
 theorem iUnion_truncation : ⋃ R, truncation R = {w : ℂ | w ≠ 0 ∧ w ≠ 1} := by

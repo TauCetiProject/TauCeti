@@ -146,7 +146,8 @@ theorem exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq [Nontri
     filter_upwards [hf.coeFn_toLp] with z hz
     rw [hz, sq]
   set S := schrodingerToLp hP
-  set ι : TestFn E →ₗ[ℝ] Lp ℝ 2 (volume : Measure E) := TestFunction.ambientToLp 2 volume
+  set ι :=
+    (TestFunction.ambientToLp 2 volume : TestFn E →L[ℝ] Lp ℝ 2 (volume : Measure E)).toLinearMap
   have hSφ (φ : TestFn E) : S φ =
       (memLp_neg_laplacian_add_mul hP φ.contDiff φ.hasCompactSupport).toLp _ := rfl
   have hιφ (φ : TestFn E) : ι φ =
