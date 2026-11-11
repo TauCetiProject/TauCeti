@@ -43,7 +43,6 @@ example (K : Type*) [Field K] [NumberField K] {θ : 𝓞 K}
       ZLattice.covolume (K ∙ ![(1 : K), (θ : K)]).integerLattice = 2 := by
   set W : Submodule K (Fin 2 → K) := K ∙ ![(1 : K), (θ : K)]
   let y : Fin 2 → 𝓞 K := ![1, θ]
-  have hy0 : y ≠ 0 := fun h ↦ one_ne_zero (congrFun h 0)
   have hv0 : ![(1 : K), (θ : K)] ≠ 0 := fun h ↦ one_ne_zero (congrFun h 0)
   have hy_cast : (fun i ↦ (y i : K)) = ![(1 : K), (θ : K)] := by
     ext i
@@ -64,7 +63,7 @@ example (K : Type*) [Field K] [NumberField K] {θ : 𝓞 K}
     rw [relativeSubspaceArakelovHeight_span_singleton, ← hy_cast]
     have hprod : arakelovMulHeight (fun i ↦ (y i : K)) * (Ideal.span (range y)).absNorm =
         ∏ w : InfinitePlace K, (∑ i : Fin 2, ‖w.embedding (y i : K)‖ ^ 2) ^ ((w.mult : ℝ) / 2) := by
-      rw [arakelovMulHeight_mul_absNorm_span_range hy0]; congr!
+      rw [arakelovMulHeight_mul_absNorm_span_range y]; congr!
     rw [hspan_top, Ideal.absNorm_top, Nat.cast_one, mul_one] at hprod
     rw [hprod]
     have hfac (w : InfinitePlace K) :
