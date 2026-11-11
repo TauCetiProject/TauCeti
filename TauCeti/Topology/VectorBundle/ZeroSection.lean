@@ -34,6 +34,8 @@ theorem zeroSection_injective : Function.Injective (zeroSection F E) :=
   Function.LeftInverse.injective (g := TotalSpace.proj) (zeroSection_proj F E)
 
 /-- A point `(x, v)` of the total space lies on the zero section exactly when `v = 0`. -/
+-- The priority lets this fire before `Set.mem_range` unfolds the membership.
+@[simp 1001]
 theorem mk_mem_range_zeroSection_iff {x : B} {v : E x} :
     TotalSpace.mk' F x v ∈ range (zeroSection F E) ↔ v = 0 := by
   refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun h ↦ ⟨x, by simp [zeroSection, h]⟩⟩
