@@ -898,10 +898,6 @@ theorem isStronglyConnected_empty :
     @Quiver.IsStronglyConnected ↥N.emptySubnetwork.vertexSet ⟨N.emptySubnetwork.Hom⟩ :=
   isStronglyConnected_of_subsingleton Set.subsingleton_empty
 
-theorem isStronglyConnected_bot :
-    @Quiver.IsStronglyConnected ↥(⊥ : N.Subnetwork).vertexSet ⟨(⊥ : N.Subnetwork).Hom⟩ :=
-  isStronglyConnected_empty
-
 theorem isStronglyConnected_full_iff :
     @Quiver.IsStronglyConnected ↥N.fullSubnetwork.vertexSet ⟨N.fullSubnetwork.Hom⟩ ↔
       @Quiver.IsStronglyConnected V ⟨N.Hom⟩ := by
@@ -909,11 +905,6 @@ theorem isStronglyConnected_full_iff :
   change (∀ x ∈ (⊤ : N.Subnetwork).vertexSet, ∀ y ∈ (⊤ : N.Subnetwork).vertexSet,
       (⊤ : N.Subnetwork).Reachable x y) ↔ _
   simp
-
-theorem isStronglyConnected_top_iff :
-    @Quiver.IsStronglyConnected ↥(⊤ : N.Subnetwork).vertexSet ⟨(⊤ : N.Subnetwork).Hom⟩ ↔
-      @Quiver.IsStronglyConnected V ⟨N.Hom⟩ :=
-  isStronglyConnected_full_iff
 
 /-- Adjoining any directed walk whose endpoints already belong to a strongly connected subnetwork
 preserves strong connectivity. -/
