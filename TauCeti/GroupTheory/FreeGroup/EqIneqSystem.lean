@@ -278,6 +278,12 @@ theorem isSolution_iff_toWord {B : Type*} [DecidableEq B]
       (∀ w ∈ S.ineqs, (eval v c w).toWord ≠ []) := by
   simp only [IsSolution, FreeGroup.toWord_eq_nil_iff, ne_eq]
 
+/-- Over a trivial group every equation holds and every inequation fails: a system has a solution
+exactly when it has no inequations, and then every assignment solves it. -/
+theorem isSolution_iff_of_subsingleton [Subsingleton G] (S : EqIneqSystem X A) (v : X → G)
+    (c : A → G) : S.IsSolution v c ↔ S.ineqs = [] := by
+  simp [IsSolution, Subsingleton.elim (_ : G) 1, List.eq_nil_iff_forall_not_mem]
+
 /-- A single variable inequation is satisfied exactly when that variable is nontrivial. -/
 theorem isSolution_singleton_ineq_iff (x : X) (v : X → G) (c : A → G) :
     (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).IsSolution v c ↔
