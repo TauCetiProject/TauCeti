@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.TangentCone.Chart
+import TauCeti.Geometry.Manifold.ContMDiff.Groupoid
 
 /-!
 # Calculus in the charts of a manifold modelled on its own model space
@@ -37,8 +38,8 @@ open set.
 * `TauCeti.exists_hasFDerivAt_symm_trans`: such a transition map, for `n ≠ 0`, has an invertible
   derivative at each point of its source, which is strict over `ℝ` or `ℂ`
   (`TauCeti.exists_hasStrictFDerivAt_symm_trans`).
-* `TauCeti.exists_hasFDerivAt_symm_trans_of_mem_atlas`: the same when the first chart is only in
-  the atlas, so that no `IsManifold` instance is needed; it rests on
+* `TauCeti.exists_hasFDerivAt_symm_trans_of_mem_atlas`: the same when the first chart is in the
+  atlas, which avoids needing `IsManifold` to know that it lies in the maximal atlas; it rests on
   `TauCeti.contDiffAt_of_mem_contDiffGroupoid`.
 * `TauCeti.fderiv_symm_trans_comp_eq`: the chain rule for transitions between charts of the
   maximal atlas, read through the preferred chart.
@@ -208,14 +209,10 @@ theorem exists_hasFDerivAt_symm_trans (hn : n ≠ 0)
     ((contDiffAt_symm_trans_symm_of_mem_maximalAtlas hq hq'
       ((q.symm.trans q').map_source hz)).differentiableAt hn)
 
-/-- A member of the `C^n` groupoid of the model space is `C^n` at every point of its source. -/
-theorem contDiffAt_of_mem_contDiffGroupoid {f : OpenPartialHomeomorph E E}
-    (hf : f ∈ contDiffGroupoid n 𝓘(𝕜, E)) {z : E} (hz : z ∈ f.source) : ContDiffAt 𝕜 n f z :=
-  (contMDiffOn_of_mem_contDiffGroupoid hf).contDiffOn.contDiffAt (f.open_source.mem_nhds hz)
-
 /-- The transition map `q.symm.trans q'` from a chart `q` of the atlas to a chart `q'` of the
-`C^n` maximal atlas, `n ≠ 0`, has an invertible derivative at each point of its source. Unlike
-`exists_hasFDerivAt_symm_trans`, this needs no `IsManifold` instance, as `q` is in the atlas. -/
+`C^n` maximal atlas, `n ≠ 0`, has an invertible derivative at each point of its source. Since `q`
+is in the atlas, its membership in the `C^n` maximal atlas, which `exists_hasFDerivAt_symm_trans`
+takes as a hypothesis and which in general comes from an `IsManifold` instance, is not needed. -/
 theorem exists_hasFDerivAt_symm_trans_of_mem_atlas (hn : n ≠ 0) (hq : q ∈ atlas E M)
     (hq' : q' ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
     {z : E} (hz : z ∈ (q.symm.trans q').source) :
