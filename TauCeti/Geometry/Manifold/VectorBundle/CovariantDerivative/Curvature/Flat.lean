@@ -10,7 +10,6 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
-import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Analysis.ODE.Frobenius
@@ -403,62 +402,6 @@ theorem exists_contMDiff_apply_eq_and_eventually_cov_eq_zero [BoundarylessManifo
     ∃ σ : Π y : M, V y, CMDiff ∞ (T% σ) ∧ σ x₀ = w₀ ∧ ∀ᶠ y in 𝓝 x₀, cov σ y = 0 :=
   cov.exists_contMDiff_apply_eq_and_eventually_cov_eq_zero_of_isInteriorPoint
     BoundarylessManifold.isInteriorPoint hflat w₀
-
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
-  [cov.ContMDiffCovariantDerivative ∞] in
-/-- If every vector of a basis `b₀` of `V x₀` extends to a smooth section parallel near `x₀`,
-those sections form a smooth local parallel frame on an open neighbourhood of `x₀`. -/
-theorem exists_isLocalFrameOn_parallel_of_forall_exists {ι : Type*}
-    {x₀ : M} {U : Set M} (hU : U ∈ 𝓝 x₀) (b₀ : Basis ι ℝ (V x₀))
-    (hsec : ∀ i : ι, ∃ σ : Π y : M, V y,
-      CMDiff ∞ (T% σ) ∧ σ x₀ = b₀ i ∧ ∀ᶠ y in 𝓝 x₀, cov σ y = 0) :
-    ∃ (s : ι → Π y : M, V y) (W : Set M),
-      (∀ i, CMDiff ∞ (T% (s i))) ∧ IsOpen W ∧ x₀ ∈ W ∧ W ⊆ U ∧
-      IsLocalFrameOn I F ∞ s W ∧ (∀ i, s i x₀ = b₀ i) ∧ ∀ i, ∀ y ∈ W, cov (s i) y = 0 := by
-  let eV := trivializationAt F V x₀
-  have hx₀V : x₀ ∈ eV.baseSet := mem_baseSet_trivializationAt F V x₀
-  have : FiniteDimensional ℝ (V x₀) :=
-    (eV.linearEquivAt ℝ x₀ hx₀V).symm.finiteDimensional
-  have : Fintype ι := FiniteDimensional.fintypeBasisIndex b₀
-  choose s hs_smooth hs_x₀ hs_par using hsec
-  -- Read `s` in `eV` to see that linear independence of `s · y` is an open condition near `x₀`.
-  let coords : M → ι → F := fun y i ↦ (eV ⟨y, s i y⟩).2
-  have hcoords_cont : ContinuousOn coords eV.baseSet :=
-    continuousOn_pi.2 fun i ↦
-      ((eV.contMDiffOn_section_baseSet_iff.1 (hs_smooth i).contMDiffOn).continuousOn)
-  have hli_open : IsOpen (eV.baseSet ∩ coords ⁻¹' {f : ι → F | LinearIndependent ℝ f}) :=
-    hcoords_cont.isOpen_inter_preimage eV.open_baseSet isOpen_setOfPred_linearIndependent
-  have hx₀_li : x₀ ∈ eV.baseSet ∩ coords ⁻¹' {f : ι → F | LinearIndependent ℝ f} := by
-    refine ⟨hx₀V, ?_⟩
-    rw [mem_preimage, mem_ofPred_eq]
-    have hfun : coords x₀ = (eV.linearEquivAt ℝ x₀ hx₀V) ∘ b₀ := by
-      funext i
-      simp [coords, hs_x₀ i]
-    rw [hfun]
-    exact b₀.linearIndependent.map' (eV.linearEquivAt ℝ x₀ hx₀V).toLinearMap (LinearEquiv.ker _)
-  have hpar_all : ∀ᶠ y in 𝓝 x₀, ∀ i, cov (s i) y = 0 := eventually_all.2 hs_par
-  obtain ⟨U₀, hU₀sub, hU₀open, hx₀U₀⟩ := mem_nhds_iff.1 (Filter.inter_mem hU hpar_all)
-  let W : Set M := (eV.baseSet ∩ coords ⁻¹' {f : ι → F | LinearIndependent ℝ f}) ∩ U₀
-  have hWopen : IsOpen W := hli_open.inter hU₀open
-  have hx₀W : x₀ ∈ W := ⟨hx₀_li, hx₀U₀⟩
-  have hli_at {y : M} (hy : y ∈ W) : LinearIndependent ℝ (fun i ↦ s i y) := by
-    have hliF : LinearIndependent ℝ (coords y) := hy.1.2
-    have hfun : (fun i ↦ s i y) = (eV.linearEquivAt ℝ y hy.1.1).symm ∘ coords y := by
-      funext i
-      simpa [coords] using (eV.symm_apply_apply_mk hy.1.1 (s i y)).symm
-    rw [hfun]
-    exact hliF.map' (eV.linearEquivAt ℝ y hy.1.1).symm.toLinearMap (LinearEquiv.ker _)
-  have hframe : IsLocalFrameOn I F ∞ s W := by
-    refine ⟨fun hy ↦ hli_at hy, fun {y} hy ↦ ?_, fun i ↦ (hs_smooth i).contMDiffOn⟩
-    have : FiniteDimensional ℝ (V y) :=
-      (eV.linearEquivAt ℝ y hy.1.1).symm.finiteDimensional
-    have hcard : Fintype.card ι = Module.finrank ℝ (V y) := by
-      rw [← Module.finrank_eq_card_basis b₀,
-        (eV.linearEquivAt ℝ x₀ hx₀V).finrank_eq,
-        (eV.linearEquivAt ℝ y hy.1.1).finrank_eq]
-    exact ((hli_at hy).span_eq_top_of_card_eq_finrank' hcard).ge
-  exact ⟨s, W, hs_smooth, hWopen, hx₀W, fun y hy ↦ (hU₀sub hy.2).1, hframe, hs_x₀,
-    fun i y hy ↦ (hU₀sub hy.2).2 i⟩
 
 /-- **Existence of a smooth local parallel frame at an interior point.** If `cov.curvatureTensor`
 vanishes near an interior point `x₀`, any basis `b₀` of `V x₀` extends to a smooth local parallel

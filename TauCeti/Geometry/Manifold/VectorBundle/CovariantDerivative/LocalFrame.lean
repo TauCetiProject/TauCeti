@@ -29,7 +29,10 @@ derivatives always exist locally. The second summand is tensorial in `σ`, and i
 form `christoffelForm` of `∇` in the frame: `∇` is the flat derivative plus `christoffelForm`.
 
 For an arbitrary local frame, `IsLocalFrameOn.covariantDerivative_eq_sum` gives the same product
-rule directly in its native coefficients.
+rule directly in its native coefficients, and
+`CovariantDerivative.exists_isLocalFrameOn_parallel_of_forall_exists` packages a family of `C^n`
+sections extending a basis of `V x₀` and parallel near `x₀` into a `C^n` local parallel frame on
+an open neighbourhood of `x₀`.
 
 Pairing `e` with a trivialization `eT` of the tangent bundle transports `christoffelForm` to a
 model-space continuous bilinear map `bundleChristoffelMap`, which gives the coordinate formula
@@ -40,6 +43,9 @@ they give the classical coordinate formula for `∇ σ` along a frame direction.
 
 ## Main definitions and results
 
+* `CovariantDerivative.exists_isLocalFrameOn_parallel_of_forall_exists`: if every vector of a
+  basis of `V x₀` extends to a `C^n` section parallel near `x₀`, those sections form a `C^n` local
+  parallel frame on an open neighbourhood of `x₀`.
 * `TauCeti.Manifold.frameCovariantDerivative`: the flat covariant derivative attached to a local
   frame, and `TauCeti.Manifold.isCovariantDerivativeOn_frameCovariantDerivative`, the proof that
   it is a covariant derivative over the trivialization base set, and
@@ -132,6 +138,75 @@ theorem covariantDerivative_eq_sum {n : ℕ∞ω} (hs : IsLocalFrameOn I F n s u
   exact Finset.sum_congr rfl fun i _ ↦ hcov.leibniz (hframe i) (hcoeff i) (mem_of_mem_nhds hu)
 
 end IsLocalFrameOn
+
+namespace CovariantDerivative
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-- If every vector of a basis `b₀` of `V x₀` extends to a `C^n` section parallel near `x₀`,
+those sections form a `C^n` local parallel frame on an open neighbourhood of `x₀`. -/
+theorem exists_isLocalFrameOn_parallel_of_forall_exists (cov : CovariantDerivative I F V)
+    {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] {ι : Type*}
+    {x₀ : M} {U : Set M} (hU : U ∈ 𝓝 x₀) (b₀ : Basis ι 𝕜 (V x₀))
+    (hsec : ∀ i : ι, ∃ σ : Π y : M, V y,
+      CMDiff n (T% σ) ∧ σ x₀ = b₀ i ∧ ∀ᶠ y in 𝓝 x₀, cov σ y = 0) :
+    ∃ (s : ι → Π y : M, V y) (W : Set M),
+      (∀ i, CMDiff n (T% (s i))) ∧ IsOpen W ∧ x₀ ∈ W ∧ W ⊆ U ∧
+      IsLocalFrameOn I F n s W ∧ (∀ i, s i x₀ = b₀ i) ∧ ∀ i, ∀ y ∈ W, cov (s i) y = 0 := by
+  let eV := trivializationAt F V x₀
+  have hx₀V : x₀ ∈ eV.baseSet := mem_baseSet_trivializationAt F V x₀
+  have : FiniteDimensional 𝕜 (V x₀) :=
+    (eV.linearEquivAt 𝕜 x₀ hx₀V).symm.finiteDimensional
+  have : Fintype ι := FiniteDimensional.fintypeBasisIndex b₀
+  choose s hs_smooth hs_x₀ hs_par using hsec
+  -- Read `s` in `eV` to see that linear independence of `s · y` is an open condition near `x₀`.
+  let coords : M → ι → F := fun y i ↦ (eV ⟨y, s i y⟩).2
+  have hcoords_cont : ContinuousOn coords eV.baseSet :=
+    continuousOn_pi.2 fun i ↦
+      (eV.contMDiffOn_section_baseSet_iff.1 (hs_smooth i).contMDiffOn).continuousOn
+  have hli_open : IsOpen (eV.baseSet ∩ coords ⁻¹' {f : ι → F | LinearIndependent 𝕜 f}) :=
+    hcoords_cont.isOpen_inter_preimage eV.open_baseSet isOpen_setOfPred_linearIndependent
+  have hx₀_li : x₀ ∈ eV.baseSet ∩ coords ⁻¹' {f : ι → F | LinearIndependent 𝕜 f} := by
+    refine ⟨hx₀V, ?_⟩
+    rw [mem_preimage, mem_ofPred_eq]
+    have hfun : coords x₀ = (eV.linearEquivAt 𝕜 x₀ hx₀V) ∘ b₀ := by
+      funext i
+      simp [coords, hs_x₀ i]
+    rw [hfun]
+    exact b₀.linearIndependent.map' (eV.linearEquivAt 𝕜 x₀ hx₀V).toLinearMap (LinearEquiv.ker _)
+  have hpar_all : ∀ᶠ y in 𝓝 x₀, ∀ i, cov (s i) y = 0 := Filter.eventually_all.2 hs_par
+  obtain ⟨U₀, hU₀sub, hU₀open, hx₀U₀⟩ := mem_nhds_iff.1 (Filter.inter_mem hU hpar_all)
+  let W : Set M := (eV.baseSet ∩ coords ⁻¹' {f : ι → F | LinearIndependent 𝕜 f}) ∩ U₀
+  have hWopen : IsOpen W := hli_open.inter hU₀open
+  have hx₀W : x₀ ∈ W := ⟨hx₀_li, hx₀U₀⟩
+  have hli_at {y : M} (hy : y ∈ W) : LinearIndependent 𝕜 (fun i ↦ s i y) := by
+    have hliF : LinearIndependent 𝕜 (coords y) := hy.1.2
+    have hfun : (fun i ↦ s i y) = (eV.linearEquivAt 𝕜 y hy.1.1).symm ∘ coords y := by
+      funext i
+      simpa [coords] using (eV.symm_apply_apply_mk hy.1.1 (s i y)).symm
+    rw [hfun]
+    exact hliF.map' (eV.linearEquivAt 𝕜 y hy.1.1).symm.toLinearMap (LinearEquiv.ker _)
+  have hframe : IsLocalFrameOn I F n s W := by
+    refine ⟨fun hy ↦ hli_at hy, fun {y} hy ↦ ?_, fun i ↦ (hs_smooth i).contMDiffOn⟩
+    have : FiniteDimensional 𝕜 (V y) :=
+      (eV.linearEquivAt 𝕜 y hy.1.1).symm.finiteDimensional
+    have hcard : Fintype.card ι = Module.finrank 𝕜 (V y) := by
+      rw [← Module.finrank_eq_card_basis b₀,
+        (eV.linearEquivAt 𝕜 x₀ hx₀V).finrank_eq,
+        (eV.linearEquivAt 𝕜 y hy.1.1).finrank_eq]
+    exact ((hli_at hy).span_eq_top_of_card_eq_finrank' hcard).ge
+  exact ⟨s, W, hs_smooth, hWopen, hx₀W, fun y hy ↦ (hU₀sub hy.2).1, hframe, hs_x₀,
+    fun i y hy ↦ (hU₀sub hy.2).2 i⟩
+
+end CovariantDerivative
 
 namespace TauCeti.Manifold
 
