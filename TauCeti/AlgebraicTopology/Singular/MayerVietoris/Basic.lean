@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
 public import TauCeti.AlgebraicTopology.Singular.Subspace
 
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Equiv
+public import TauCeti.Data.Set.Lattice
 public import TauCeti.Topology.Category.TopCat.Subspace
 public import TauCeti.Topology.Sets.FinTwo
 
@@ -151,8 +152,8 @@ singular simplicial sets of `U ∩ V`, `U` and `V`, precomposed with the inverse
 isomorphism. -/
 def mayerVietorisδ (n m : ℕ) (h : m + 1 = n := by lia) :
     (toSSet.obj X).homology R n ⟶ (toSSet.obj (of ↥(U ∩ V))).homology R m :=
-  (TauCeti.smallSingularHomologyIso R ![U, V] (TauCeti.isOpen_vecCons hU hV)
-    ((TauCeti.iUnion_vecCons U V).trans hUV) n).inv ≫
+  (TauCeti.smallSingularHomologyIso R ![U, V] (hU.vecCons hV)
+    ((U.iUnion_vecCons_pair V).trans hUV) n).inv ≫
     SSet.mayerVietorisδ R (isPushout_toSSet_inter_smallSingularSubcomplex U V) n m h
 
 /-- The Mayer–Vietoris connecting morphism of the open cover restricts, on the homology of the
@@ -163,7 +164,7 @@ lemma homologyMap_ι_comp_mayerVietorisδ (n m : ℕ) (h : m + 1 = n := by lia) 
     SSet.homologyMap (X.smallSingularSubcomplex ![U, V]).ι R n ≫ mayerVietorisδ R hU hV hUV n m h =
       SSet.mayerVietorisδ R (isPushout_toSSet_inter_smallSingularSubcomplex U V) n m h := by
   rw [mayerVietorisδ, SSet.homologyMap, ← TauCeti.smallSingularHomologyIso_hom R ![U, V]
-    (TauCeti.isOpen_vecCons hU hV) ((TauCeti.iUnion_vecCons U V).trans hUV),
+    (hU.vecCons hV) ((U.iUnion_vecCons_pair V).trans hUV),
     Iso.hom_inv_id_assoc]
 
 private lemma mayerVietorisFromBiprod_comp_homologyMap_ι (n : ℕ) :
@@ -198,8 +199,8 @@ lemma mayerVietoris_exact₁ (n m : ℕ) (h : m + 1 = n := by lia) :
   refine (ShortComplex.exact_iff_of_iso ?_).1
     (SSet.mayerVietoris_exact₁ R (isPushout_toSSet_inter_smallSingularSubcomplex U V) n m h)
   refine ShortComplex.isoMk
-    (TauCeti.smallSingularHomologyIso R _ (TauCeti.isOpen_vecCons hU hV)
-      ((TauCeti.iUnion_vecCons U V).trans hUV) n)
+    (TauCeti.smallSingularHomologyIso R _ (hU.vecCons hV)
+      ((U.iUnion_vecCons_pair V).trans hUV) n)
     (Iso.refl _) (Iso.refl _) ?_ (by simp only [Iso.refl_hom, Category.id_comp, Category.comp_id])
   dsimp only
   rw [Iso.refl_hom, Category.comp_id, TauCeti.smallSingularHomologyIso_hom,
@@ -213,8 +214,8 @@ lemma mayerVietoris_exact₂ (n : ℕ) :
   refine (ShortComplex.exact_iff_of_iso ?_).1
     (SSet.mayerVietoris_exact₂ R (isPushout_toSSet_inter_smallSingularSubcomplex U V) n)
   refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _)
-    (TauCeti.smallSingularHomologyIso R _ (TauCeti.isOpen_vecCons hU hV)
-      ((TauCeti.iUnion_vecCons U V).trans hUV) n)
+    (TauCeti.smallSingularHomologyIso R _ (hU.vecCons hV)
+      ((U.iUnion_vecCons_pair V).trans hUV) n)
     (by simp only [Iso.refl_hom, Category.id_comp, Category.comp_id]) ?_
   dsimp only
   rw [TauCeti.smallSingularHomologyIso_hom, Iso.refl_hom, Category.id_comp,
@@ -226,8 +227,8 @@ lemma mayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
   refine (ShortComplex.exact_iff_of_iso ?_).1
     (SSet.mayerVietoris_exact₃ R (isPushout_toSSet_inter_smallSingularSubcomplex U V) n m h)
   refine ShortComplex.isoMk (Iso.refl _)
-    (TauCeti.smallSingularHomologyIso R _ (TauCeti.isOpen_vecCons hU hV)
-      ((TauCeti.iUnion_vecCons U V).trans hUV) n)
+    (TauCeti.smallSingularHomologyIso R _ (hU.vecCons hV)
+      ((U.iUnion_vecCons_pair V).trans hUV) n)
     (Iso.refl _) ?_ ?_
   · dsimp only
     rw [TauCeti.smallSingularHomologyIso_hom, Iso.refl_hom, Category.id_comp,
@@ -305,8 +306,8 @@ lemma mayerVietorisδ_naturality (n m : ℕ) (h : m + 1 = n := by lia) :
   have hf : ∀ i, Set.MapsTo f (![U, V] i) (![U', V'] (id i)) := by
     simp [Fin.forall_fin_two, hfU, hfV]
   have hsmall := TauCeti.smallSingularHomologyIso_naturality R ![U, V]
-    (TauCeti.isOpen_vecCons hU hV) ((TauCeti.iUnion_vecCons U V).trans hUV) ![U', V'] f id hf
-    (TauCeti.isOpen_vecCons hU' hV') ((TauCeti.iUnion_vecCons U' V').trans hUV') n
+    (hU.vecCons hV) ((U.iUnion_vecCons_pair V).trans hUV) ![U', V'] f id hf
+    (hU'.vecCons hV') ((U'.iUnion_vecCons_pair V').trans hUV') n
   have hnat := SSet.mayerVietorisδ_naturality R
     (toSSet.map (ofHom ⟨(hfU.inter_inter hfV).restrict,
       f.hom.continuous.restrict (hfU.inter_inter hfV)⟩))

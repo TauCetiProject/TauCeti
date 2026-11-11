@@ -51,6 +51,12 @@ def componentOfOutgoing (D : OrientedPDCode n)
     (h : {h : Fin (4 * n) // D.orientation h = true}) : D.Component :=
   Sum.inl (Quotient.mk _ h)
 
+/-- The component of an outgoing half-edge is its traversal class in the crossing-bearing
+summand. -/
+theorem componentOfOutgoing_def (D : OrientedPDCode n)
+    (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    D.componentOfOutgoing h = Sum.inl (Quotient.mk _ h) := (rfl)
+
 /-- Two outgoing half-edges represent the same component exactly when traversal joins them. -/
 @[simp] theorem componentOfOutgoing_eq_iff (D : OrientedPDCode n)
     (h k : {h : Fin (4 * n) // D.orientation h = true}) :

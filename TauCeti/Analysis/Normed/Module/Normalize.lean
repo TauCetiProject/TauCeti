@@ -21,6 +21,7 @@ point `e` of the unit sphere.
 * `Filter.Tendsto.normalize`: normalization preserves limits with a nonzero limit.
 * `TauCeti.norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize`: rescaling a vector with the
   direction of `w` by the ratio of the norms recovers `w`.
+* `TauCeti.continuousAt_sphereDirection`: the direction map is continuous away from the origin.
 
 ## Main definitions
 
@@ -113,6 +114,13 @@ theorem sphereDirection_smul_of_pos {r : ℝ} (hr : 0 < r) (u : sphere (0 : E) 1
 @[simp]
 theorem sphereDirection_coe (u : sphere (0 : E) 1) : sphereDirection e (u : E) = u := by
   simpa using sphereDirection_smul_of_pos e one_pos u
+
+/-- The direction map is continuous away from the origin. -/
+theorem continuousAt_sphereDirection (hx : x ≠ 0) : ContinuousAt (sphereDirection e) x := by
+  rw [IsInducing.subtypeVal.continuousAt_iff, ContinuousAt, Function.comp_apply,
+    coe_sphereDirection_of_ne_zero e hx]
+  exact (tendsto_id.normalize hx).congr' <| Filter.mem_of_superset (isOpen_ne.mem_nhds hx)
+    fun y hy ↦ (coe_sphereDirection_of_ne_zero e hy).symm
 
 end Direction
 

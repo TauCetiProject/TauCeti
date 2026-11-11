@@ -278,4 +278,15 @@ theorem isCentral_iff_surjective_algebraMap (K D : Type*) [CommSemiring K] [Comm
   · obtain ⟨a, rfl⟩ := h x
     exact Algebra.mem_bot.mpr ⟨a, rfl⟩
 
+/-- **Centrality transports along an algebra equivalence between algebras in different
+universes.** This is `Algebra.IsCentral.of_algEquiv` with the two algebras allowed to live in
+different universes, which that statement does not allow. -/
+theorem _root_.Algebra.IsCentral.of_algEquiv' (K : Type*) {D D' : Type*} [CommSemiring K]
+    [Semiring D] [Semiring D'] [Algebra K D] [Algebra K D'] [Algebra.IsCentral K D]
+    (e : D ≃ₐ[K] D') : Algebra.IsCentral K D' where
+  out x hx :=
+    have ⟨k, hk⟩ := Algebra.IsCentral.out (K := K)
+      ((MulEquivClass.apply_mem_center_iff e.symm).mpr hx)
+    ⟨k, by simpa [Algebra.ofId] using congr(e $hk)⟩
+
 end TauCeti

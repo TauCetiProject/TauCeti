@@ -206,7 +206,7 @@ positive integers `a + b = c`, Szpiro's bound for Frey curves gives
 `c² ≤ 2 a b c` because `a + b ≤ 2 a b`. -/
 theorem AlgorithmicSzpiroConjecture.abcConjectureWithExponent (h : AlgorithmicSzpiroConjecture) :
     AbcConjectureWithExponent (3 / 2) := by
-  refine (abcConjectureWithExponent_iff_nat _ (by norm_num)).2 fun ε hε ↦ ?_
+  refine (abcConjectureWithExponent_iff_nat _).2 fun ε hε ↦ ?_
   obtain ⟨K, hK⟩ := h.exists_sq_le (ε := 4 * ε) (by positivity)
   set C : ℝ := (4 * max K 0) ^ (1 / 4 : ℝ)
   refine ⟨C, fun a b c ha hb hab habc ↦ ?_⟩
