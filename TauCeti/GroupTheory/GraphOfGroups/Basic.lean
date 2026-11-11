@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Basic
 public import Mathlib.Algebra.Group.Equiv.Defs
+public import Mathlib.Algebra.Group.Subgroup.Ker
 
 /-!
 # Graphs of groups
@@ -30,6 +31,8 @@ through Mathlib's `MulEquiv.cast` along equalities of indices.
 
 * `TauCeti.GraphOfGroups`: a graph of groups over a Serre graph.
 * `TauCeti.GraphOfGroups.α`: the boundary monomorphism `α_e : A_e →* A_{src e}`.
+* `TauCeti.GraphOfGroups.αArrow`, `TauCeti.GraphOfGroups.ωArrow`: the boundary monomorphisms of
+  a dart `e : a ⟶ b` of the quiver of `Γ`, with values in `A_a` and `A_b`.
 * `TauCeti.GraphOfGroups.segment`: the graph of groups of an amalgamated product.
 * `TauCeti.GraphOfGroups.loop`: the graph of groups of an HNN extension.
 
@@ -104,6 +107,89 @@ theorem α_injective (e : Γ.E) : Function.Injective (𝔸.α e) := by
     𝔸.ω (Γ.rev e) c = MulEquiv.cast (M := 𝔸.vertexGroup) (Γ.tgt_rev e).symm
       (𝔸.α e (MulEquiv.cast (M := 𝔸.edgeGroup) (Γ.toGeomEdge_rev e) c)) := by
   simp only [α_apply, MulEquiv.cast_apply, cast_cast, cast_eq]
+
+section Arrow
+
+variable {a b : Γ.V}
+
+/-- The boundary monomorphism `α_e : A_e →* A_a` of a dart `e : a ⟶ b` of the quiver of `Γ`:
+the map `α` of the underlying dart, read in `A_a` through `src e = a`. -/
+def αArrow (e : a ⟶ b) : 𝔸.edgeGroup (Γ.toGeomEdge e.1) →* 𝔸.vertexGroup a :=
+  (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.1).toMonoidHom.comp (𝔸.α e.1)
+
+/-- The boundary monomorphism `ω_e : A_e →* A_b` of a dart `e : a ⟶ b` of the quiver of `Γ`:
+the map `ω` of the underlying dart, read in `A_b` through `tgt e = b`. -/
+def ωArrow (e : a ⟶ b) : 𝔸.edgeGroup (Γ.toGeomEdge e.1) →* 𝔸.vertexGroup b :=
+  (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.2).toMonoidHom.comp (𝔸.ω e.1)
+
+theorem αArrow_apply (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    𝔸.αArrow e c = MulEquiv.cast (M := 𝔸.vertexGroup) e.2.1 (𝔸.α e.1 c) :=
+  (rfl)
+
+theorem ωArrow_apply (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    𝔸.ωArrow e c = MulEquiv.cast (M := 𝔸.vertexGroup) e.2.2 (𝔸.ω e.1 c) :=
+  (rfl)
+
+theorem αArrow_injective (e : a ⟶ b) : Function.Injective (𝔸.αArrow e) :=
+  (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.1).injective.comp (𝔸.α_injective e.1)
+
+theorem ωArrow_injective (e : a ⟶ b) : Function.Injective (𝔸.ωArrow e) :=
+  (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.2).injective.comp (𝔸.ω_injective e.1)
+
+/-- The map `α` of a reversed dart is `ω` of the dart. -/
+theorem αArrow_reverse (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1)) :
+    𝔸.αArrow (Quiver.reverse e) c =
+      𝔸.ωArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by simp) c) := by
+  obtain ⟨e, rfl, rfl⟩ := e
+  -- The reversal of the quiver of `Γ` does not unfold here; transport along its first component.
+  have key : ∀ (f : Γ.E) (_ : f = Γ.rev e) (h₁ : Γ.src f = Γ.tgt e) (h₂ : Γ.tgt f = Γ.src e)
+      (h : Γ.toGeomEdge f = Γ.toGeomEdge e) (c : 𝔸.edgeGroup (Γ.toGeomEdge f)),
+      𝔸.αArrow (⟨f, h₁, h₂⟩ : Γ.tgt e ⟶ Γ.src e) c =
+        𝔸.ωArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) (MulEquiv.cast (M := 𝔸.edgeGroup) h c) := by
+    rintro f rfl h₁ h₂ h c
+    rw [αArrow_apply, ωArrow_apply, α_rev_apply]
+    simp only [MulEquiv.cast_apply]
+    rfl
+  refine key _ (Γ.reverse_val _) ?_ ?_ _ c <;> simp
+
+/-- The map `ω` of a reversed dart is `α` of the dart. -/
+theorem ωArrow_reverse (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1)) :
+    𝔸.ωArrow (Quiver.reverse e) c =
+      𝔸.αArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by simp) c) := by
+  obtain ⟨e, rfl, rfl⟩ := e
+  have key : ∀ (f : Γ.E) (_ : f = Γ.rev e) (h₁ : Γ.src f = Γ.tgt e) (h₂ : Γ.tgt f = Γ.src e)
+      (h : Γ.toGeomEdge f = Γ.toGeomEdge e) (c : 𝔸.edgeGroup (Γ.toGeomEdge f)),
+      𝔸.ωArrow (⟨f, h₁, h₂⟩ : Γ.tgt e ⟶ Γ.src e) c =
+        𝔸.αArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) (MulEquiv.cast (M := 𝔸.edgeGroup) h c) := by
+    rintro f rfl h₁ h₂ h c
+    rw [αArrow_apply, ωArrow_apply, ω_rev_apply]
+    simp only [MulEquiv.cast_apply, cast_cast]
+  refine key _ (Γ.reverse_val _) ?_ ?_ _ c <;> simp
+
+theorem range_αArrow_reverse (e : a ⟶ b) :
+    (𝔸.αArrow (Quiver.reverse e)).range = (𝔸.ωArrow e).range := by
+  ext g
+  refine ⟨fun ⟨c, hc⟩ ↦ ⟨_, (𝔸.αArrow_reverse e c).symm.trans hc⟩, fun ⟨c, hc⟩ ↦ ?_⟩
+  exact ⟨(MulEquiv.cast (M := 𝔸.edgeGroup) (by simp)).symm c, by
+    rw [αArrow_reverse, MulEquiv.apply_symm_apply, hc]⟩
+
+theorem range_ωArrow_reverse (e : a ⟶ b) :
+    (𝔸.ωArrow (Quiver.reverse e)).range = (𝔸.αArrow e).range := by
+  ext g
+  refine ⟨fun ⟨c, hc⟩ ↦ ⟨_, (𝔸.ωArrow_reverse e c).symm.trans hc⟩, fun ⟨c, hc⟩ ↦ ?_⟩
+  exact ⟨(MulEquiv.cast (M := 𝔸.edgeGroup) (by simp)).symm c, by
+    rw [ωArrow_reverse, MulEquiv.apply_symm_apply, hc]⟩
+
+/-- At a vertex where a dart `e'` is followed by its reverse `e`, the image of `ω_{e'}` is the
+image of `α_e`. -/
+theorem range_ωArrow_eq_range_αArrow {c : Γ.V} (e' : a ⟶ b) (e : b ⟶ c) (h : e'.1 = Γ.rev e.1) :
+    (𝔸.ωArrow e').range = (𝔸.αArrow e).range := by
+  have ha : a = c := by rw [← e'.2.1, h, Γ.src_rev, e.2.2]
+  subst ha
+  obtain rfl : e' = Quiver.reverse e := Subtype.ext (h.trans (Γ.reverse_val e).symm)
+  exact 𝔸.range_ωArrow_reverse e
+
+end Arrow
 
 /-- The graph of groups of an amalgamated product `A ∗_C B`: the segment with vertex groups `A`
 at `false` and `B` at `true`, edge group `C`, and monomorphisms `f : C →* A` and `g : C →* B`.
