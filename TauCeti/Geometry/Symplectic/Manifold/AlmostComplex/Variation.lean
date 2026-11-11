@@ -5,54 +5,72 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
-public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
-import Mathlib.MeasureTheory.Integral.Bochner.Set
-import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
-import TauCeti.Geometry.Manifold.MFDeriv.Localized
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
+public import TauCeti.Geometry.Symplectic.Manifold.Flat
+public import Mathlib.Geometry.Manifold.BumpFunction
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
-# Compatible variations of almost complex structures on a manifold at injective points
+# Localized variations of smooth almost complex structures at injective points
 
-Transversality for pseudoholomorphic spheres in a symplectic manifold `(M, σ)` varies the almost
-complex structure `J` of the target. Along a map `u`, a variation `Y` of `J`, a section of the
-endomorphism bundle of `TM`, changes the Cauchy–Riemann operator by `Y(u) w` for the vector field
-`w = ∂ₜu - X_{K_t}(u)` along `u`. A cokernel element is a covector field `η` along `u`, and it must
-be shown to vanish once it annihilates all these terms. This file proves the manifold form of
-`TauCeti.SymplecticForm.exists_contDiff_mem_compatibleTangentSpace_integral_pos`, in which `u` takes
-values in an actual manifold and `Y` is a smooth section of `End(TM)`.
+Transversality for pseudoholomorphic spheres in a symplectic manifold `M` varies the almost
+complex structure `J` of the target. A variation of `J` is a section `Y` of the endomorphism
+bundle `End(TM)` which anticommutes with `J` at every point; along a map `u` it changes the
+Cauchy–Riemann operator by the term `Y(u) w` for the relevant tangent field `w` along `u`, for
+instance `w = ∂ₜu` for a holomorphic sphere or `w = ∂ₜu - X_{K_t}(u)` for an inhomogeneous
+equation. The universal linearized operator is onto as soon as no nonzero cokernel element `η`, a
+covector field along `u`, annihilates all of these terms. A variation of a domain-independent `J`
+is a function of the target point alone, so it is localized near `u(z₀)`, and an *injective
+point* `z₀` (points of the domain whose image is close to `u(z₀)` are close to `z₀`) turns this
+into a localization in the domain.
 
-Let `σ` be a fiberwise nondegenerate smooth two-form, `J` a smooth almost complex structure
-preserving `σ`, and suppose `σ` tames `J` at `u z₀`. The domain `S` of `u` is a locally compact
-Hausdorff space with a measure that is positive on open sets and finite on compact sets. Let `w`
-be a vector field and `η` a covector field along `u`, continuous near `z₀` as maps into the
-tangent and cotangent bundles, with `w z₀ ≠ 0` and `η z₀ ≠ 0`, and let `z₀` be an injective point
-of `u`: `(𝓝 (u z₀)).comap u ≤ 𝓝 z₀`. Then for every neighbourhood `W` of `u z₀` there is a smooth
-section `Y` of `End(TM)` vanishing off a compact subset of `W`, with `Y x` in the compatible
-tangent space of `J x` at every point, such that
+This file proves the resulting pairing statement on the actual tangent bundle of a
+finite-dimensional real manifold `M`, for a smooth almost complex structure
+`J : SmoothAlmostComplexStructure I M` and a domain `S` which is any locally compact Hausdorff
+space with a measure that is positive on open sets and finite on compact sets. The map
+`u : S → M` carries a tangent field `w z ∈ T_{u z} M` and a covector field
+`η z ∈ T*_{u z} M`, continuous near `z₀` as maps into the tangent and cotangent bundles. If
+`w z₀ ≠ 0` and `η z₀ ≠ 0`, then for every neighbourhood `W` of `u z₀` there is a smooth section
+`Y` of `End(TM)` with compact support in `W` such that
 
-`0 < ∫ η z (Y (u z) (w z)) ∂μ`
+`0 < ∫ η z (Y (u z) (w z)) ∂μ`.
 
-(`SmoothTwoForm.IsNondegenerate.exists_contMDiff_mem_compatibleTangentSpace_integral_pos`). Its
-contrapositive
-`SmoothTwoForm.IsNondegenerate.eq_zero_of_forall_mem_compatibleTangentSpace_integral_eq_zero`
-says that a covector field annihilating all such variations vanishes at `z₀`.
+There are two versions, one for each tangent condition:
 
-In a vector space the variation is an average `A + J A J` of a constant skew-adjoint
-endomorphism `A`. On a manifold `σ` is not constant in any chart, so a constant endomorphism is not
-skew-adjoint at other points. The variation here is built from one smooth vector field `a` instead:
-the rank-one endomorphism `v ↦ σ(a, v) a` is skew-adjoint for `σ` at every point, and its average
-with `J` is a compatible variation
-(`TauCeti.SymplecticForm.Invariant.smulRight_add_mul_smulRight_mul_mem_compatibleTangentSpace`).
-At `u z₀` it sends `w` to `σ(a, w) a + σ(a, J w) J a`, and for a suitable value of `a` at `u z₀`
-this vector is not annihilated by `η z₀`
-(`TauCeti.SymplecticForm.Tames.exists_apply_smul_add_apply_smul_ne_zero`). The field `a` is the
-Hamiltonian vector field of a function with prescribed differential at `u z₀`. The variation is
-then cut off by a bump function at `u z₀` supported in a neighbourhood whose preimage lies in a
-compact neighbourhood of `z₀` on which the uncut pairing has a fixed sign.
+* `SmoothAlmostComplexStructure.exists_contMDiffSection_mem_tangentSpace_integral_pos`: `Y x`
+  anticommutes with `J x` at every point, the variations of tame structures;
+* `SmoothTwoForm.IsNondegenerate.exists_contMDiffSection_mem_compatibleTangentSpace_integral_pos`:
+  if `J` preserves a nondegenerate two-form `σ` and is tamed by `σ` at `u z₀`, then `Y x` moreover
+  is skew-adjoint for `σ_x`, the variations of compatible structures.
+
+Their contrapositives,
+`SmoothAlmostComplexStructure.eq_zero_of_forall_mem_tangentSpace_integral_eq_zero` and
+`SmoothTwoForm.IsNondegenerate.eq_zero_of_forall_mem_compatibleTangentSpace_integral_eq_zero`,
+say that a covector field annihilating all such variations vanishes at every injective point
+where `w ≠ 0`.
+
+The variation is `Y = ρ • (A + J A J) / 2` for a smooth bump function `ρ` at `u z₀` and a smooth
+section `A` of `End(TM)` whose value at `u z₀` is a tangent vector at `J (u z₀)` with
+`η z₀ (A (w z₀)) > 0`. Averaging with the conjugate by `J` makes the section anticommute with `J`
+everywhere (`AlmostComplexStructure.add_mul_mul_mem_tangentSpace`), without changing its value at
+`u z₀`. On a manifold there are no constant endomorphism fields: `A` is obtained from a section
+with prescribed value at `u z₀` (`ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset`).
+For the compatible version this section `C` is first replaced by its `σ`-skew part
+`(σ♭)⁻¹ ∘ (β + βᵀ) / 2`, where `β = σ(C ·, ·)` and `σ♭` is the flat map of `σ`
+(`SmoothTwoForm.IsNondegenerate.skewPart`): skew-adjointness
+is a pointwise condition for the varying form `σ_x`, so a section with a skew-adjoint value at one
+point need not be skew-adjoint elsewhere. Averaging with `J` then preserves skew-adjointness
+(`SymplecticForm.Invariant.add_mul_mul_mem_compatibleTangentSpace_of_skew`).
+
+These are the manifold forms of
+`AlmostComplexStructure.exists_contDiff_mem_tangentSpace_integral_pos` and
+`SymplecticForm.exists_contDiff_mem_compatibleTangentSpace_integral_pos`, where the target is a
+vector space with a constant form. They are statements about one cokernel pairing; they do not
+assert density of injective points of simple curves, nor any Sobolev or Fredholm surjectivity.
 
 ## References
 
@@ -66,188 +84,232 @@ public section
 open Bundle Filter MeasureTheory Set Topology
 open scoped Manifold ContDiff
 
-namespace TauCeti.SmoothTwoForm
+namespace TauCeti.SmoothAlmostComplexStructure
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {S : Type*} [TopologicalSpace S] [T2Space S] [LocallyCompactSpace S] [MeasurableSpace S]
+  [OpensMeasurableSpace S] {μ : Measure S} [μ.IsOpenPosMeasure] [IsFiniteMeasureOnCompacts μ]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M]
-  {σ : SmoothTwoForm I M} {J : SmoothAlmostComplexStructure I M}
+  [T2Space M] [IsManifold I ∞ M]
+  {J : SmoothAlmostComplexStructure I M} {u : S → M} {w : (z : S) → TangentSpace I (u z)}
+  {η : (z : S) → TangentSpace I (u z) →L[ℝ] ℝ} {z₀ : S}
 
-/-- The compatible variation `A + J A J` of `J` generated by a vector field `a`, where `A` is the
-rank-one endomorphism `v ↦ σ(a, v) a`. -/
-private noncomputable def rankOneVariation (σ : SmoothTwoForm I M)
-    (J : SmoothAlmostComplexStructure I M) (a : ∀ x : M, TangentSpace I x) (x : M) :
-    TangentSpace I x →L[ℝ] TangentSpace I x :=
-  (σ.flat x (a x)).smulRight (a x) +
-    J.toEndomorphism x ∘L (σ.flat x (a x)).smulRight (a x) ∘L J.toEndomorphism x
+/-- The average `(A + J A J) / 2` of a section `A` of `End(TM)` with its conjugate by `J`. -/
+private noncomputable def average (J : SmoothAlmostComplexStructure I M)
+    (A : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) :
+    Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯ :=
+  (2⁻¹ : ℝ) • (A + J.toEndomorphism.clmComp (A.clmComp J.toEndomorphism))
 
-private theorem rankOneVariation_apply (a : ∀ x : M, TangentSpace I x) (x : M)
-    (v : TangentSpace I x) :
-    rankOneVariation σ J a x v =
-      SmoothBundleForm.eval₂ σ x (a x) v • a x +
-        J x (SmoothBundleForm.eval₂ σ x (a x) (J x v) • a x) := by
-  simp only [rankOneVariation, add_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.smulRight_apply, flat_apply]
+omit [T2Space S] [FiniteDimensional ℝ E] [T2Space M] in
+private theorem coe_average_apply
+    (A : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) (x : M) :
+    (average J A x : Module.End ℝ (TangentSpace I x)) =
+      (2⁻¹ : ℝ) • ((A x : Module.End ℝ (TangentSpace I x)) +
+        (J.almostComplexStructureAt x).toLinearMap * A x *
+          (J.almostComplexStructureAt x).toLinearMap) := by
+  ext v
+  simp [average]
 
-/-- The rank-one variation lies in the compatible tangent space of `J` at every point. -/
-private theorem rankOneVariation_mem_compatibleTangentSpace (hσ : σ.IsNondegenerate)
-    (hJ : σ.Invariant J) (a : ∀ x : M, TangentSpace I x) (x : M) :
-    (rankOneVariation σ J a x : Module.End ℝ (TangentSpace I x)) ∈
-      (hσ.symplecticFormAt x).compatibleTangentSpace (J.almostComplexStructureAt x) := by
-  convert ((hσ.invariant_iff.mp hJ) x).smulRight_add_mul_smulRight_mul_mem_compatibleTangentSpace
-    (a x) using 1
-  refine LinearMap.ext fun v ↦ ?_
-  simp only [ContinuousLinearMap.coe_coe, rankOneVariation_apply, LinearMap.add_apply,
-    mul_apply_eq_comp, LinearMap.smulRight_apply, map_smul,
-    IsNondegenerate.toBilinForm_symplecticFormAt, SmoothForm.bilinFormAt_apply,
-    SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap]
+omit [T2Space S] [FiniteDimensional ℝ E] [T2Space M] in
+/-- The average of a section with its conjugate by `J` anticommutes with `J` at every point. -/
+private theorem average_mem_tangentSpace
+    (A : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) (x : M) :
+    (average J A x : Module.End ℝ (TangentSpace I x)) ∈
+      (J.almostComplexStructureAt x).tangentSpace := by
+  rw [coe_average_apply]
+  exact Submodule.smul_mem _ _ ((J.almostComplexStructureAt x).add_mul_mul_mem_tangentSpace _)
 
-variable [FiniteDimensional ℝ E] [T2Space M]
-
-/-- The rank-one variation generated by a smooth vector field is a smooth section of the
-endomorphism bundle of `TM`. -/
-private theorem contMDiff_rankOneVariation {a : ∀ x : M, TangentSpace I x}
-    (ha : ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, a x⟩ : TangentBundle I M))) :
-    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞ (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
-      (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x
-        (rankOneVariation σ J a x)) := by
-  refine (TauCeti.Manifold.contMDiff_hom_iff _).2 fun s hs ↦ ?_
-  have hJs : ContMDiff I I.tangent ∞ (fun x ↦ TotalSpace.mk' E x (J x (s x))) :=
-    J.contMDiff_apply (b := id) hs
-  have h₁ : ContMDiff I I.tangent ∞
-      (fun x ↦ TotalSpace.mk' E x (SmoothBundleForm.eval₂ σ x (a x) (s x) • a x)) :=
-    ContMDiff.smul_section (SmoothForm.contMDiff_apply σ (b := id) ha hs) ha
-  have h₂ : ContMDiff I I.tangent ∞
-      (fun x ↦ TotalSpace.mk' E x (SmoothBundleForm.eval₂ σ x (a x) (J x (s x)) • a x)) :=
-    ContMDiff.smul_section (SmoothForm.contMDiff_apply σ (b := id) ha hJs) ha
-  convert h₁.add_section (J.contMDiff_apply (b := id) h₂) using 2 with x
-  simp only [rankOneVariation_apply, Pi.add_apply, id]
-
-variable {S : Type*} [TopologicalSpace S] [T2Space S] [LocallyCompactSpace S]
-  [MeasurableSpace S] [OpensMeasurableSpace S] {μ : Measure S} [μ.IsOpenPosMeasure]
-  [IsFiniteMeasureOnCompacts μ]
-  {u : S → M} {w : ∀ z, TangentSpace I (u z)} {η : ∀ z, TangentSpace I (u z) →L[ℝ] ℝ}
-
-/-- **Compatible variations on a manifold detect cokernel elements at injective points.** Let
-`σ` be fiberwise nondegenerate and preserved by `J`, and let `σ` tame `J` at `u z₀`. Let `z₀` be
-an injective point of `u`, in the sense that points whose image is close to `u z₀` are close to
-`z₀`, and let the vector field `w` and the covector field `η` along `u` be continuous near `z₀`
-as maps into the tangent and cotangent bundles, with `w z₀ ≠ 0` and `η z₀ ≠ 0`. Then for any
-neighbourhood `W` of `u z₀`, some smooth section `Y` of `End(TM)` vanishing off a compact subset
-of `W`, with `Y x` in the compatible tangent space of `J x` at every point, pairs positively with
-`η` along `u`: `0 < ∫ η z (Y (u z) (w z)) ∂μ`, the pairing being integrable. -/
-theorem IsNondegenerate.exists_contMDiff_mem_compatibleTangentSpace_integral_pos
-    (hσ : σ.IsNondegenerate) (hJ : σ.Invariant J) {z₀ : S}
-    (hJ₀ : (hσ.symplecticFormAt (u z₀)).Tames (J.almostComplexStructureAt (u z₀)))
+/-- Cutting off the average of a section `A` by a bump function at `u z₀`. If `A (u z₀)`
+anticommutes with `J (u z₀)` and pairs positively with `η z₀` at `w z₀`, a suitable cutoff gives
+a compactly supported section in `W` whose pairing along `u` has positive integral. The cutoff is
+supported in a neighbourhood of `u z₀` whose preimage lies in a compact neighbourhood of `z₀` on
+which the uncut pairing is positive. -/
+private theorem exists_localizedVariation
     (hw : ∀ᶠ z in 𝓝 z₀, ContinuousAt (fun z ↦ (⟨u z, w z⟩ : TangentBundle I M)) z)
     (hη : ∀ᶠ z in 𝓝 z₀, ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z)
-    (hinj : (𝓝 (u z₀)).comap u ≤ 𝓝 z₀) (hw₀ : w z₀ ≠ 0) (hη₀ : η z₀ ≠ 0)
-    {W : Set M} (hW : W ∈ 𝓝 (u z₀)) :
-    ∃ Y : ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x,
-      ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞ (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (Y x)) ∧
-      (∃ K, IsCompact K ∧ K ⊆ W ∧ ∀ x ∉ K, Y x = 0) ∧
-      (∀ x, (Y x : Module.End ℝ (TangentSpace I x)) ∈
-        (hσ.symplecticFormAt x).compatibleTangentSpace (J.almostComplexStructureAt x)) ∧
-      Integrable (fun z ↦ η z (Y (u z) (w z))) μ ∧ 0 < ∫ z, η z (Y (u z) (w z)) ∂μ := by
-  -- A value `a` of the generating vector field at `u z₀` for which the uncut pairing is nonzero.
-  obtain ⟨a, ha⟩ := hJ₀.exists_apply_smul_add_apply_smul_ne_zero hw₀
-    (η := (η z₀ : TangentSpace I (u z₀) →ₗ[ℝ] ℝ)) fun h ↦ hη₀ (ContinuousLinearMap.coe_injective h)
-  -- A smooth vector field taking the value `a` at `u z₀`: a Hamiltonian vector field.
-  obtain ⟨f, hf, -, -, -, hdf⟩ := exists_contMDiff_hasCompactSupport_mvfderiv_eq (I := I)
-    (u z₀) (0 : ℝ) (σ.flat (u z₀) a) univ_mem
-  have hA₀ : σ.hamiltonianVectorField f (u z₀) = a := by
-    rw [hamiltonianVectorField_def, hdf]
-    exact (hσ.isInvertible_flat (u z₀)).inverse_apply_self a
-  have hA : ContMDiff I I.tangent ∞
-      (fun x ↦ (⟨x, σ.hamiltonianVectorField f x⟩ : TangentBundle I M)) :=
-    hσ.contMDiff_hamiltonianVectorField le_rfl (by simpa using hf)
-  set A := σ.hamiltonianVectorField f
-  -- The uncut pairing `G` and its value at `z₀`.
-  set Y₀ := rankOneVariation σ J A
-  have hY₀ := contMDiff_rankOneVariation (σ := σ) (J := J) hA
-  set G : S → ℝ := fun z ↦ η z (Y₀ (u z) (w z))
-  have hGc (z : S) (hwz : ContinuousAt (fun z ↦ (⟨u z, w z⟩ : TangentBundle I M)) z)
-      (hηz : ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z) : ContinuousAt G z :=
-    CotangentBundle.continuousAt_apply hηz ((hY₀.continuous.continuousAt.comp
-      ((FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.comp hwz)).clm_bundle_apply
-        hwz)
-  have hG₀ : G z₀ ≠ 0 := by
-    simpa only [G, Y₀, rankOneVariation_apply, hA₀, map_smul,
-      IsNondegenerate.symplecticFormAt_apply,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-      ContinuousLinearMap.coe_coe] using ha
-  -- A compact neighbourhood `K` of `z₀` on which the data are continuous and `G z₀ * G` is
-  -- positive, and a neighbourhood `W₀` of `u z₀` whose preimage lies in `K`.
+    (hinj : (𝓝 (u z₀)).comap u ≤ 𝓝 z₀)
+    {A : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯}
+    (hA : (A (u z₀) : Module.End ℝ (TangentSpace I (u z₀))) ∈
+      (J.almostComplexStructureAt (u z₀)).tangentSpace)
+    (hpos : 0 < η z₀ (A (u z₀) (w z₀))) {W : Set M} (hW : W ∈ 𝓝 (u z₀)) :
+    ∃ ρ : C^∞⟮I, M; ℝ⟯, IsCompact (ρ • average J A).tsupport ∧
+      (ρ • average J A).tsupport ⊆ W ∧
+      0 < ∫ z, η z ((ρ • average J A) (u z) (w z)) ∂μ := by
+  -- The pairing before the cutoff, and its value `η z₀ (A (w z₀))` at `z₀`.
+  set G : S → ℝ := fun z ↦ η z (average J A (u z) (w z))
+  have hG₀ : G z₀ = η z₀ (A (u z₀) (w z₀)) := by
+    have h := LinearMap.congr_fun (congrArg (fun B : Module.End ℝ (TangentSpace I (u z₀)) ↦ B)
+      (coe_average_apply (J := J) A (u z₀))) (w z₀)
+    rw [AlmostComplexStructure.mul_mul_eq_of_mem_tangentSpace hA, ← two_smul ℝ, smul_smul,
+      inv_mul_cancel₀ (two_ne_zero' ℝ), one_smul] at h
+    simp only [G, ContinuousLinearMap.coe_coe] at h ⊢
+    rw [h]
+  -- A compact neighbourhood `K` of `z₀` on which the data are continuous and `G` is positive,
+  -- and a neighbourhood `W₀` of `u z₀` whose preimage lies in `K`.
   have hev : ∀ᶠ z in 𝓝 z₀,
       (ContinuousAt (fun z ↦ (⟨u z, w z⟩ : TangentBundle I M)) z ∧
-        ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z) ∧ 0 < G z₀ * G z :=
-    (hw.and hη).and ((continuousAt_const.mul (hGc z₀ hw.self_of_nhds hη.self_of_nhds)).eventually
-      (lt_mem_nhds (mul_self_pos.2 hG₀)))
+        ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z) ∧ 0 < G z :=
+    have hGc : ContinuousAt G z₀ :=
+      ContMDiffSection.continuousAt_apply_apply (average J A) hw.self_of_nhds hη.self_of_nhds
+    (hw.and hη).and (hGc.eventually (lt_mem_nhds (hG₀ ▸ hpos)))
   obtain ⟨K, hKn, hKsub, hK⟩ := local_compact_nhds hev
   obtain ⟨W₀, hW₀, hW₀K⟩ := mem_comap.1 (hinj hKn)
-  obtain ⟨ρ, -, hρW⟩ :=
-    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (u z₀)).mem_iff.1 (inter_mem hW₀ hW)
-  -- The variation: the rank-one variation, cut off by `ρ` and scaled by `G z₀`.
-  set Y : ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x := fun x ↦ G z₀ • ρ x • Y₀ x
-  have hpair (z : S) : η z (Y (u z) (w z)) = ρ (u z) * (G z₀ * G z) := by
-    simp only [Y, G, smul_apply, map_smul, smul_eq_mul]
-    ring
-  have hsupp (z : S) (hz : ρ (u z) ≠ 0) : z ∈ K :=
-    hW₀K (mem_preimage.2 (hρW (subset_tsupport _ hz)).1)
-  have hzero (z : S) (hz : z ∉ K) : ρ (u z) * (G z₀ * G z) = 0 := by
-    rw [not_not.1 (mt (hsupp z) hz), zero_mul]
-  have hcont : Continuous fun z ↦ ρ (u z) * (G z₀ * G z) := by
-    refine continuous_iff_continuousAt.2 fun z ↦ ?_
+  obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) (u z₀)).mem_iff.1
+    (inter_mem hW₀ hW)
+  let ρ' : C^∞⟮I, M; ℝ⟯ := ⟨ρ, ρ.contMDiff⟩
+  have hsupp : (ρ' • average J A).tsupport ⊆ tsupport ρ :=
+    (ContMDiffSection.tsupport_smul_function_subset _ _).trans inter_subset_left
+  refine ⟨ρ', ρ.hasCompactSupport.isCompact.of_isClosed_subset
+    (ContMDiffSection.isClosed_tsupport _) hsupp, hsupp.trans (hρ.trans inter_subset_right), ?_⟩
+  have hF : (fun z ↦ η z ((ρ' • average J A) (u z) (w z))) = fun z ↦ ρ (u z) * G z := by
+    funext z
+    simp only [ContMDiffSection.smul_apply, smul_apply, map_smul,
+      smul_eq_mul]
+    rfl
+  have hmemK : ∀ z, ρ (u z) ≠ 0 → z ∈ K := fun z hz ↦
+    hW₀K (mem_preimage.2 (hρ (subset_tsupport _ hz)).1)
+  have hzero : ∀ z ∉ K, ρ (u z) * G z = 0 := fun z hz ↦ by
+    rw [not_not.1 (mt (hmemK z) hz), zero_mul]
+  rw [hF]
+  refine Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero (x := z₀) ?_
+    (HasCompactSupport.intro hK hzero) (fun z ↦ ?_) (by simp [hG₀, hpos.ne'])
+  · refine continuous_iff_continuousAt.2 fun z ↦ ?_
     by_cases hz : z ∈ K
     · obtain ⟨⟨hwz, hηz⟩, -⟩ := hKsub hz
       have hu : ContinuousAt u z :=
         (FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.comp hwz
       exact (ρ.contMDiff.continuous.continuousAt.comp hu).mul
-        (continuousAt_const.mul (hGc z hwz hηz))
+        (ContMDiffSection.continuousAt_apply_apply (average J A) hwz hηz)
     · refine (continuousAt_const (y := (0 : ℝ))).congr ?_
       filter_upwards [hK.isClosed.isOpen_compl.mem_nhds hz] with y hy using (hzero y hy).symm
-  have hcs : HasCompactSupport fun z ↦ ρ (u z) * (G z₀ * G z) := HasCompactSupport.intro hK hzero
-  refine ⟨Y, ?_, ⟨tsupport ρ, ρ.hasCompactSupport.isCompact,
-    hρW.trans inter_subset_right, fun x hx ↦ ?_⟩, fun x ↦ ?_, ?_, ?_⟩
-  · exact (ρ.contMDiff.smul_section hY₀).const_smul_section
-  · simp [Y, image_eq_zero_of_notMem_tsupport hx]
-  · rw [ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.toLinearMap_smul]
-    exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _
-      (rankOneVariation_mem_compatibleTangentSpace hσ hJ A x))
-  · simpa only [hpair] using hcont.integrable_of_hasCompactSupport hcs
-  · simp only [hpair]
-    refine hcont.integral_pos_of_hasCompactSupport_nonneg_ne_zero (x := z₀) hcs (fun z ↦ ?_) ?_
-    · by_cases hz : ρ (u z) = 0
-      · simp [hz]
-      · exact mul_nonneg ρ.nonneg (hKsub (hsupp z hz)).2.le
-    · rw [ρ.eventuallyEq_one.self_of_nhds]
-      simpa using (mul_self_pos.2 hG₀).ne'
+  · by_cases hz : ρ (u z) = 0
+    · simp [hz]
+    · exact mul_nonneg ρ.nonneg (hKsub (hmemK z hz)).2.le
 
-/-- **A covector field annihilating all compatible variations on a manifold vanishes at injective
-points.** Let `σ` be fiberwise nondegenerate and preserved by `J`, tame at `u z₀`. If `η` pairs to
-zero with every smooth section `Y` of `End(TM)` vanishing off a compact subset of a neighbourhood
-`W` of `u z₀`, with `Y x` in the compatible tangent space of `J x` and integrable pairing, then
-`η z₀ = 0` at every injective point `z₀` of `u` where `w z₀ ≠ 0`, provided `w` and `η` are
-continuous near `z₀` as maps into the tangent and cotangent bundles. -/
+/-- **Variations of almost complex structures detect cokernel elements at injective points.**
+Let `J` be a smooth almost complex structure on `M` and let `z₀` be an injective point of
+`u : S → M`, in the sense that points whose image is close to `u z₀` are close to `z₀`. Let the
+tangent field `w` and the covector field `η` along `u` be continuous near `z₀` into the tangent
+and cotangent bundles, with `w z₀ ≠ 0` and `η z₀ ≠ 0`. Then for any neighbourhood `W` of `u z₀`,
+some smooth section `Y` of `End(TM)` with compact support in `W`, anticommuting with `J` at
+every point, pairs positively with `η` along `u`: `0 < ∫ η z (Y (u z) (w z)) ∂μ`. -/
+theorem exists_contMDiffSection_mem_tangentSpace_integral_pos
+    (hw : ∀ᶠ z in 𝓝 z₀, ContinuousAt (fun z ↦ (⟨u z, w z⟩ : TangentBundle I M)) z)
+    (hη : ∀ᶠ z in 𝓝 z₀, ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z)
+    (hinj : (𝓝 (u z₀)).comap u ≤ 𝓝 z₀) (hw₀ : w z₀ ≠ 0) (hη₀ : η z₀ ≠ 0) {W : Set M}
+    (hW : W ∈ 𝓝 (u z₀)) :
+    ∃ Y : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯,
+      IsCompact Y.tsupport ∧ Y.tsupport ⊆ W ∧
+      (∀ x, (Y x : Module.End ℝ (TangentSpace I x)) ∈ (J.almostComplexStructureAt x).tangentSpace) ∧
+      0 < ∫ z, η z (Y (u z) (w z)) ∂μ := by
+  obtain ⟨e, he⟩ : ∃ e, η z₀ e ≠ 0 := by simpa using DFunLike.ne_iff.1 hη₀
+  obtain ⟨A₀, hA₀, hA₀w⟩ :=
+    (J.almostComplexStructureAt (u z₀)).exists_mem_tangentSpace_apply_eq hw₀ ((η z₀ e)⁻¹ • e)
+  obtain ⟨A, hA, -, -⟩ := ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset (n := ⊤)
+    (I := I) (F := E →L[ℝ] E) (V := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (u z₀)
+    (LinearMap.toContinuousLinearMap A₀) univ_mem
+  obtain ⟨ρ, hYc, hYW, hpos⟩ := exists_localizedVariation (μ := μ) (J := J) hw hη hinj (A := A)
+    (by simpa [hA] using hA₀) (by simp [hA, hA₀w, he]) hW
+  refine ⟨_, hYc, hYW, fun x ↦ ?_, hpos⟩
+  rw [ContMDiffSection.smul_apply, ContinuousLinearMap.toLinearMap_smul]
+  exact Submodule.smul_mem _ _ (average_mem_tangentSpace A x)
+
+/-- **A covector field annihilating all variations of an almost complex structure vanishes at
+injective points.** If `η` pairs to zero with every smooth section `Y` of `End(TM)` with compact
+support in a neighbourhood `W` of `u z₀` which anticommutes with `J`, then `η z₀ = 0` at every
+injective point `z₀` of `u` where `w z₀ ≠ 0`, provided `w` and `η` are continuous near `z₀` into
+the tangent and cotangent bundles. -/
+theorem eq_zero_of_forall_mem_tangentSpace_integral_eq_zero
+    (hw : ∀ᶠ z in 𝓝 z₀, ContinuousAt (fun z ↦ (⟨u z, w z⟩ : TangentBundle I M)) z)
+    (hη : ∀ᶠ z in 𝓝 z₀, ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z)
+    (hinj : (𝓝 (u z₀)).comap u ≤ 𝓝 z₀) (hw₀ : w z₀ ≠ 0) {W : Set M} (hW : W ∈ 𝓝 (u z₀))
+    (h : ∀ Y : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯,
+      IsCompact Y.tsupport → Y.tsupport ⊆ W →
+      (∀ x, (Y x : Module.End ℝ (TangentSpace I x)) ∈
+        (J.almostComplexStructureAt x).tangentSpace) →
+      ∫ z, η z (Y (u z) (w z)) ∂μ = 0) :
+    η z₀ = 0 := by
+  by_contra hη₀
+  obtain ⟨Y, hYc, hYW, hYJ, hpos⟩ :=
+    exists_contMDiffSection_mem_tangentSpace_integral_pos (μ := μ) (J := J) hw hη hinj hw₀ hη₀ hW
+  exact hpos.ne' (h Y hYc hYW hYJ)
+
+end TauCeti.SmoothAlmostComplexStructure
+
+namespace TauCeti.SmoothTwoForm
+
+open SmoothAlmostComplexStructure
+
+variable {S : Type*} [TopologicalSpace S] [T2Space S] [LocallyCompactSpace S] [MeasurableSpace S]
+  [OpensMeasurableSpace S] {μ : Measure S} [μ.IsOpenPosMeasure] [IsFiniteMeasureOnCompacts μ]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [T2Space M] [IsManifold I ∞ M] {σ : SmoothTwoForm I M}
+  {J : SmoothAlmostComplexStructure I M} {u : S → M} {w : (z : S) → TangentSpace I (u z)}
+  {η : (z : S) → TangentSpace I (u z) →L[ℝ] ℝ} {z₀ : S}
+
+/-- **Compatible variations of almost complex structures detect cokernel elements at injective
+points.** Let `σ` be a nondegenerate two-form on `M`, let `J` be a smooth almost complex
+structure preserving `σ`, tamed by `σ` at `u z₀`, and let `z₀` be an injective point of
+`u : S → M`. Let the tangent field `w` and the covector field `η` along `u` be continuous near
+`z₀` into the tangent and cotangent bundles, with `w z₀ ≠ 0` and `η z₀ ≠ 0`. Then for any
+neighbourhood `W` of `u z₀`, some smooth section `Y` of `End(TM)` with compact support in `W`,
+lying in the compatible tangent space of `J` (anticommuting with `J` and skew-adjoint for `σ`) at
+every point, pairs positively with `η` along `u`: `0 < ∫ η z (Y (u z) (w z)) ∂μ`. -/
+theorem IsNondegenerate.exists_contMDiffSection_mem_compatibleTangentSpace_integral_pos
+    (hσ : σ.IsNondegenerate) (hJσ : σ.Invariant J)
+    (hJ₀ : (hσ.symplecticFormAt (u z₀)).Tames (J.almostComplexStructureAt (u z₀)))
+    (hw : ∀ᶠ z in 𝓝 z₀, ContinuousAt (fun z ↦ (⟨u z, w z⟩ : TangentBundle I M)) z)
+    (hη : ∀ᶠ z in 𝓝 z₀, ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z)
+    (hinj : (𝓝 (u z₀)).comap u ≤ 𝓝 z₀) (hw₀ : w z₀ ≠ 0) (hη₀ : η z₀ ≠ 0) {W : Set M}
+    (hW : W ∈ 𝓝 (u z₀)) :
+    ∃ Y : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯,
+      IsCompact Y.tsupport ∧ Y.tsupport ⊆ W ∧
+      (∀ x, (Y x : Module.End ℝ (TangentSpace I x)) ∈
+        (hσ.symplecticFormAt x).compatibleTangentSpace (J.almostComplexStructureAt x)) ∧
+      0 < ∫ z, η z (Y (u z) (w z)) ∂μ := by
+  have hJσ' := hσ.invariant_iff.1 hJσ
+  obtain ⟨e, he⟩ : ∃ e, η z₀ e ≠ 0 := by simpa using DFunLike.ne_iff.1 hη₀
+  obtain ⟨A₀, hA₀, hA₀w⟩ := (SymplecticForm.Compatible.of_tames (hJσ' (u z₀)) hJ₀
+    ).exists_mem_compatibleTangentSpace_apply_eq hw₀ ((η z₀ e)⁻¹ • e)
+  obtain ⟨C, hC, -, -⟩ := ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset (n := ⊤)
+    (I := I) (F := E →L[ℝ] E) (V := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (u z₀)
+    (LinearMap.toContinuousLinearMap A₀) univ_mem
+  have hA : hσ.skewPart C (u z₀) = LinearMap.toContinuousLinearMap A₀ := by
+    rw [hσ.skewPart_apply_of_skew C (by
+      simpa [hC] using (SymplecticForm.mem_compatibleTangentSpace.1 hA₀).2), hC]
+  obtain ⟨ρ, hYc, hYW, hpos⟩ := exists_localizedVariation (μ := μ) (J := J) hw hη hinj
+    (A := hσ.skewPart C)
+    (by simpa [hA] using SymplecticForm.compatibleTangentSpace_le_tangentSpace hA₀)
+    (by simp [hA, hA₀w, he]) hW
+  refine ⟨_, hYc, hYW, fun x ↦ ?_, hpos⟩
+  rw [ContMDiffSection.smul_apply, ContinuousLinearMap.toLinearMap_smul, coe_average_apply]
+  exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _
+    ((hJσ' x).add_mul_mul_mem_compatibleTangentSpace_of_skew (hσ.skewPart_skew C x)))
+
+/-- **A covector field annihilating all compatible variations vanishes at injective points.**
+Let `σ` be a nondegenerate two-form on `M` and let `J` be a smooth almost complex structure
+preserving `σ`, tamed by `σ` at `u z₀`. If `η` pairs to zero with every smooth section `Y` of
+`End(TM)` with compact support in a neighbourhood `W` of `u z₀` which lies in the compatible
+tangent space of `J` at every point, then `η z₀ = 0` at every injective point `z₀` of `u` where
+`w z₀ ≠ 0`, provided `w` and `η` are continuous near `z₀` into the tangent and cotangent
+bundles. -/
 theorem IsNondegenerate.eq_zero_of_forall_mem_compatibleTangentSpace_integral_eq_zero
-    (hσ : σ.IsNondegenerate) (hJ : σ.Invariant J) {z₀ : S}
+    (hσ : σ.IsNondegenerate) (hJσ : σ.Invariant J)
     (hJ₀ : (hσ.symplecticFormAt (u z₀)).Tames (J.almostComplexStructureAt (u z₀)))
     (hw : ∀ᶠ z in 𝓝 z₀, ContinuousAt (fun z ↦ (⟨u z, w z⟩ : TangentBundle I M)) z)
     (hη : ∀ᶠ z in 𝓝 z₀, ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z)
     (hinj : (𝓝 (u z₀)).comap u ≤ 𝓝 z₀) (hw₀ : w z₀ ≠ 0) {W : Set M} (hW : W ∈ 𝓝 (u z₀))
-    (h : ∀ Y : ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x,
-      ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞ (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (Y x)) →
-      (∃ K, IsCompact K ∧ K ⊆ W ∧ ∀ x ∉ K, Y x = 0) →
+    (h : ∀ Y : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯,
+      IsCompact Y.tsupport → Y.tsupport ⊆ W →
       (∀ x, (Y x : Module.End ℝ (TangentSpace I x)) ∈
         (hσ.symplecticFormAt x).compatibleTangentSpace (J.almostComplexStructureAt x)) →
-      Integrable (fun z ↦ η z (Y (u z) (w z))) μ → ∫ z, η z (Y (u z) (w z)) ∂μ = 0) :
+      ∫ z, η z (Y (u z) (w z)) ∂μ = 0) :
     η z₀ = 0 := by
   by_contra hη₀
-  obtain ⟨Y, hY, hYK, hYJ, hYi, hpos⟩ :=
-    hσ.exists_contMDiff_mem_compatibleTangentSpace_integral_pos (μ := μ) hJ hJ₀ hw hη hinj hw₀
-      hη₀ hW
-  exact hpos.ne' (h Y hY hYK hYJ hYi)
+  obtain ⟨Y, hYc, hYW, hYJ, hpos⟩ :=
+    hσ.exists_contMDiffSection_mem_compatibleTangentSpace_integral_pos (μ := μ) hJσ hJ₀ hw hη
+      hinj hw₀ hη₀ hW
+  exact hpos.ne' (h Y hYc hYW hYJ)
 
 end TauCeti.SmoothTwoForm

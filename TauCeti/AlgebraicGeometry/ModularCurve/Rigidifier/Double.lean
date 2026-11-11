@@ -57,8 +57,8 @@ theorem doubleRepresentableBy_homEquiv {X : EllObj B}
         ((R.homEquiv (f ≫ V.baseChangeFunctorHom (D.rep V))).2,
           Q.map f.op (D.universal V))) := by
   rw [doubleRepresentableBy, homEquiv_ofIso, Iso.trans_hom, NatTrans.comp_app,
-    types_comp_apply, associator_hom_app_apply, braiding_hom_app_apply,
-    tensorRepresentableBy_homEquiv]
+    types_comp_apply, Functor.Monoidal.associator_hom_app_apply,
+    Functor.Monoidal.braiding_hom_app_apply, tensorRepresentableBy_homEquiv]
 
 /-- The second projection from the scheme of two rigidifications: forget the original
 `Q`-structure and retain the additional relative one. The first projection is the existing
@@ -89,7 +89,8 @@ theorem homEquiv_comp_baseChangeFunctorHom {X : EllObj B}
     (f : X ⟶ V.baseChangeFunctor.obj (D.rep V)) :
     R.homEquiv (f ≫ V.baseChangeFunctorHom (D.rep V)) =
       (P ◁ fst Q Q).app _ ((D.doubleRepresentableBy R).homEquiv f) := by
-  rw [whiskerLeft_app_apply, Functor.Monoidal.fst_app_apply, doubleRepresentableBy_homEquiv]
+  rw [Functor.Monoidal.whiskerLeft_app_apply, Functor.Monoidal.fst_app_apply,
+    doubleRepresentableBy_homEquiv]
   exact Prod.mk.eta.symm
 
 /-- The existing base-change projection classifies the first two structures of the universal

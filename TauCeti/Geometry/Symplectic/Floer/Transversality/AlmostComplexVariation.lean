@@ -100,11 +100,10 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 /-- **`J`-variations of the intrinsic Floer operator detect cokernel elements at injective
 points.** Let `σ` be fiberwise nondegenerate and preserved by the frozen smooth structure `J`,
 tame at `u z₀`. Suppose a covector field `η` along `u` annihilates the derivative of the Floer
-operator along `J + q Y` for every smooth section `Y` of `End(TM)` vanishing off a compact subset
-of a neighbourhood `W` of `u z₀`, with `Y x` in the compatible tangent space of `J x` and integrable
-pairing. Then `η` vanishes at every injective point `z₀` of `u` where `∂t u - X_Kt` is nonzero,
-provided `∂t u - X_Kt` and `η` are continuous near `z₀` as maps into the tangent and cotangent
-bundles. -/
+operator along `J + q Y` for every smooth section `Y` of `End(TM)` with compact support in a
+neighbourhood `W` of `u z₀`, with `Y x` in the compatible tangent space of `J x`. Then `η`
+vanishes at every injective point `z₀` of `u` where `∂t u - X_Kt` is nonzero, provided
+`∂t u - X_Kt` and `η` are continuous near `z₀` as maps into the tangent and cotangent bundles. -/
 theorem IsNondegenerate.eq_zero_of_integral_apply_deriv_floerOperator_eq_zero
     (hσ : σ.IsNondegenerate) (hJ : σ.Invariant J) {z₀ : ℝ × ℝ}
     (hJ₀ : (hσ.symplecticFormAt (u z₀)).Tames (J.almostComplexStructureAt (u z₀)))
@@ -115,25 +114,21 @@ theorem IsNondegenerate.eq_zero_of_integral_apply_deriv_floerOperator_eq_zero
     (hξ₀ : Manifold.curveVelocity I (fun t ↦ u (z₀.1, t)) z₀.2 -
       σ.hamiltonianVectorField (Kt z₀) (u z₀) ≠ 0)
     {W : Set M} (hW : W ∈ 𝓝 (u z₀))
-    (h : ∀ Y : ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x,
-      ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞ (fun x ↦ Bundle.TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (Y x)) →
-      (∃ K, IsCompact K ∧ K ⊆ W ∧ ∀ x ∉ K, Y x = 0) →
+    (h : ∀ Y : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯,
+      IsCompact Y.tsupport → Y.tsupport ⊆ W →
       (∀ x, (Y x : Module.End ℝ (TangentSpace I x)) ∈
         (hσ.symplecticFormAt x).compatibleTangentSpace (J.almostComplexStructureAt x)) →
-      Integrable (fun z ↦ η z (deriv (fun q : ℝ ↦ (σ.floerOperator
-        (fun _ x ↦ J.toEndomorphism x + q • Y x) Ks Kt u z : E)) 0)) μ →
       ∫ z, η z (deriv (fun q : ℝ ↦ (σ.floerOperator
         (fun _ x ↦ J.toEndomorphism x + q • Y x) Ks Kt u z : E)) 0) ∂μ = 0) :
     η z₀ = 0 :=
   hσ.eq_zero_of_forall_mem_compatibleTangentSpace_integral_eq_zero (μ := μ) hJ hJ₀ hξ hη hinj
-    hξ₀ hW fun Y hY hYK hYJ hYi ↦ by
+    hξ₀ hW fun Y hYc hYW hYJ ↦ by
       have hd (z : ℝ × ℝ) : deriv (fun q : ℝ ↦ (σ.floerOperator
           (fun _ x ↦ J.toEndomorphism x + q • Y x) Ks Kt u z : E)) 0 =
             (Y (u z) (Manifold.curveVelocity I (fun t ↦ u (z.1, t)) z.2 -
               σ.hamiltonianVectorField (Kt z) (u z)) : E) :=
         HasDerivAt.deriv (F := E) (hasDerivAt_floerOperator_add_smul σ
-          (fun _ x ↦ J.toEndomorphism x) (fun _ ↦ Y) Ks Kt u z 0)
-      simpa only [hd] using h Y hY hYK hYJ (by simpa only [hd] using hYi)
+          (fun _ x ↦ J.toEndomorphism x) (fun _ x ↦ Y x) Ks Kt u z 0)
+      simpa only [hd] using h Y hYc hYW hYJ
 
 end TauCeti.SmoothTwoForm
