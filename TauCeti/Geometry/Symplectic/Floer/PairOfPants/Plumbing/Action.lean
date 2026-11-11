@@ -83,7 +83,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 omit [FiniteDimensional ℝ V] in
 /-- The plumbing chart maps the part `Re z > 2 - L` of the inserted thrice-punctured sphere into
 the four-punctured sphere, where the plumbed datum is `C¹`. -/
-private theorem differentiableAt_uncurry_plumbedPerturbation_realChart_plumbingMap
+theorem differentiableAt_uncurry_plumbedPerturbation_realChart_plumbingMap
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
     (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℝ × ℝ}
