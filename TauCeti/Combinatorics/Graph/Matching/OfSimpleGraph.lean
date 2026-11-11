@@ -159,16 +159,7 @@ theorem Subgraph.matchingSubgraph_toGraphEdgeSet (S : H.Subgraph) (hS : S.IsMatc
     · intro hx
       obtain ⟨e, heS, hxe⟩ := Set.mem_iUnion₂.mp hx
       exact ⟨⟨e, S.edgeSet_subset heS⟩, heS, hxe⟩
-  · funext x y
-    apply propext
-    constructor
-    · rintro ⟨e, heS, he⟩
-      rw [← SimpleGraph.Subgraph.mem_edgeSet, ← he]
-      exact heS
-    · intro hxy
-      let e : E(Graph.ofSimpleGraph H) :=
-        ⟨s(x, y), S.edgeSet_subset (SimpleGraph.Subgraph.mem_edgeSet.mpr hxy)⟩
-      exact ⟨e, SimpleGraph.Subgraph.mem_edgeSet.mpr hxy, rfl⟩
+  · exact (Sym2.fromRel_eq_fromRel_iff_eq _ _).mp S.edgeSet_matchingSubgraph_toGraphEdgeSet
 
 /-- Matchings of `Graph.ofSimpleGraph H`, represented by selected edge identities, are equivalent
 to matching subgraphs of `H` in Mathlib's canonical representation. -/
