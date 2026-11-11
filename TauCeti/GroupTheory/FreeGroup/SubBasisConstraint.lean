@@ -55,7 +55,7 @@ by sub-bases.
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
   (2005), §4.4, proof of Corollary 9 (equations over free groups with the constraints
   `yᵢ ∈ F[Xᵢ]`).
-* V. Diekert, A. Jeż, W. Plandowski, *Finding all solutions of equations in free groups and
+* V. Diekert, A. Jez, W. Plandowski, *Finding all solutions of equations in free groups and
   monoids with involution*, Inform. and Comput. 251 (2016), §1–§2 (equations with constraints).
 -/
 
