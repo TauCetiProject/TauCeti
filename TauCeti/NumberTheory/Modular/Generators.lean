@@ -5,54 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
-import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
+public import TauCeti.NumberTheory.Modular.Relations
+public import TauCeti.GroupTheory.TriangleGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.NumberTheory.Modular.Relations
 
 /-!
-# The order-three generators of the modular group
+# Pinned generators of the modular triangle group
 
-Besides Mathlib's `S = (0 -1; 1 0)` and `T = (1 1; 0 1)`, the modular group has two standard
-elliptic generators of order three in `PSL(2, ℤ)`:
+The integral matrices `R = S T` and `U = S T⁻¹` have different central signs:
+`R³ = -I`, whereas `U³ = I`. Their projective classes both have order three.
+Together with the class of `S` of order two and the infinite-order class of `T`,
+these give the surjection `modularHom : TriangleGroup 3 2 0 →* PSL(2, ℤ)` sending
+`x, y, z` to `U, S, T`. This convention makes the cusp generator the positive
+translation and fixes the product relation `T S U = 1` projectively, as needed
+for coset permutation triples.
 
-* `R = S * T = (0 -1; 1 1)`, which fixes `ρ = e^{2πi/3}` and satisfies `R³ = -1` in `SL(2, ℤ)`;
-* `U = S * T⁻¹ = (0 -1; 1 -1)`, which fixes `e^{πi/3}` and satisfies `U³ = 1` in `SL(2, ℤ)`.
-
-In `PSL(2, ℤ)` the classes of `S`, `R` and `U` have orders `2`, `3` and `3`, while the class of `T`
-has infinite order. The relation `T * S * U = -1` in `SL(2, ℤ)` makes the classes of `U`, `S`, `T`
-a triple of elements of orders `3`, `2`, `∞` with product `T S U = 1`: they are the images of the
-generators `x`, `y`, `z` of the triangle group `Δ(3, 2, ∞)` under the presentation of `PSL(2, ℤ)`
-(`TauCeti.ModularGroup.modularEquiv`). Through the action of `PSL(2, ℤ)` on the cosets of a
-finite-index subgroup they become the three permutations `σ0`, `σ1`, `σinf` of a permutation
-triple.
-
-The elements of `PSL(2, ℤ)` are written as coercions `(g : PSL(2, ℤ))` of elements of `SL(2, ℤ)`.
-The product `T * S`, used as the order-three generator in
-`TauCeti.NumberTheory.Modular.Relations`, is the conjugate `S⁻¹ R S` of `R`.
-
-## Main declarations
-
-* `TauCeti.ModularGroup.R`, `TauCeti.ModularGroup.U`: the elements `S * T` and `S * T⁻¹` of
-  `SL(2, ℤ)`, with their matrices `coe_R` and `coe_U`.
-* `TauCeti.ModularGroup.S_sq`, `TauCeti.ModularGroup.R_pow_three`,
-  `TauCeti.ModularGroup.U_pow_three`, `TauCeti.ModularGroup.T_mul_S_mul_U`: the relations
-  `S² = -1`, `R³ = -1`, `U³ = 1` and `T S U = -1` in `SL(2, ℤ)`.
-* `TauCeti.ModularGroup.S_mul_R_inv_mul_S_inv`: `S R⁻¹ S⁻¹ = -U`, so that the two order-three
-  generators agree up to sign and conjugation.
-* `TauCeti.ModularGroup.coe_T_mul_coe_S_mul_coe_U`,
-  `TauCeti.ModularGroup.coe_S_mul_coe_R_inv_mul_coe_S_inv`: `T S U = 1` and `S R⁻¹ S⁻¹ = U` in
-  `PSL(2, ℤ)`.
-* `TauCeti.ModularGroup.closure_coe_S_coe_T`: the classes of `S` and `T` generate `PSL(2, ℤ)`.
-* `TauCeti.ModularGroup.orderOf_coe_S`, `TauCeti.ModularGroup.orderOf_coe_R`,
-  `TauCeti.ModularGroup.orderOf_coe_U`, `TauCeti.ModularGroup.orderOf_coe_T`: the orders `2`,
-  `3`, `3` and `0` (infinite order) in `PSL(2, ℤ)`.
+We use Mathlib's quotient projection and coercion into `PSL(2, ℤ)` directly.
+The center is already described by
+`Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`, and the
+projective relations for `S` come from `TauCeti.NumberTheory.Modular.Relations`.
 
 ## References
 
-* Jean-Pierre Serre, *A Course in Arithmetic*, Graduate Texts in Mathematics 7, Springer, 1973,
-  Chapter VII, §1.
-* Jean-Pierre Serre, *Trees*, Springer, 1980, Chapter I, §4.2.
+* J.-P. Serre, *A Course in Arithmetic*, Chapter VII, §1.
 -/
 
 public section
@@ -64,135 +39,133 @@ namespace TauCeti.ModularGroup
 
 open _root_.ModularGroup
 
-/-- The elliptic element `R = S * T = (0 -1; 1 1)` of `SL(2, ℤ)`, of order `6`; it fixes
-`ρ = e^{2πi/3}` and its class in `PSL(2, ℤ)` has order `3`. -/
+/-- The integral generator `R = S T`, whose cube is `-I`. -/
 def R : SL(2, ℤ) := S * T
 
-/-- The elliptic element `U = S * T⁻¹ = (0 -1; 1 -1)` of `SL(2, ℤ)`, of order `3`; it fixes
-`e^{πi/3}`. -/
+/-- The integral generator `U = S T⁻¹`, whose cube is `I`. -/
 def U : SL(2, ℤ) := S * T⁻¹
 
-/-- The definition of `R` as `S * T`. -/
+/-- The pinned product convention for `R`. -/
 theorem R_def : R = S * T := (rfl)
 
-/-- The definition of `U` as `S * T⁻¹`. -/
+/-- The pinned product convention for `U`. -/
 theorem U_def : U = S * T⁻¹ := (rfl)
 
-/-- The matrix of `R = S * T`. -/
+/-- The matrix of `R = S T`. -/
 @[simp]
 theorem coe_R : (R : Matrix (Fin 2) (Fin 2) ℤ) = !![0, -1; 1, 1] := by
-  rw [R_def, SpecialLinearGroup.coe_mul, coe_S, coe_T]
-  simp
+  decide
 
-/-- The matrix of `U = S * T⁻¹`. -/
+/-- The matrix of `U = S T⁻¹`. -/
 @[simp]
 theorem coe_U : (U : Matrix (Fin 2) (Fin 2) ℤ) = !![0, -1; 1, -1] := by
-  rw [U_def, SpecialLinearGroup.coe_mul, coe_S, coe_T_inv]
-  simp
+  decide
 
-/-- `S² = -1` in `SL(2, ℤ)`. -/
-theorem S_sq : S ^ 2 = (-1 : SL(2, ℤ)) :=
-  (sq S).trans (Subtype.ext S_mul_S_eq)
-
-/-- `S` has order `4` in `SL(2, ℤ)`. -/
-theorem S_pow_four : S ^ 4 = (1 : SL(2, ℤ)) := by
-  rw [show 4 = 2 * 2 by rfl, pow_mul, S_sq, neg_one_sq]
-
-/-- `R³ = -1` in `SL(2, ℤ)`. -/
+/-- `R³ = -I`, so the integral lift `R` does not have order three. -/
+@[simp]
 theorem R_pow_three : R ^ 3 = (-1 : SL(2, ℤ)) := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
+  decide
 
-/-- `R` has order `6` in `SL(2, ℤ)`. -/
-theorem R_pow_six : R ^ 6 = (1 : SL(2, ℤ)) := by
-  rw [show 6 = 3 * 2 by rfl, pow_mul, R_pow_three, neg_one_sq]
+/-- `R⁶ = I` in the integral modular group. -/
+theorem R_pow_six : R ^ 6 = 1 := by
+  calc
+    R ^ 6 = (R ^ 3) ^ 2 := pow_mul R 3 2
+    _ = 1 := by rw [R_pow_three]; decide
 
-/-- `U³ = 1` in `SL(2, ℤ)`, unlike `R³ = -1`. -/
-theorem U_pow_three : U ^ 3 = (1 : SL(2, ℤ)) := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
+/-- Unlike `R`, the integral lift `U` already satisfies `U³ = I`. -/
+@[simp]
+theorem U_pow_three : U ^ 3 = 1 := by
+  decide
 
-/-- `T * S * U = -1` in `SL(2, ℤ)`. -/
-theorem T_mul_S_mul_U : T * S * U = (-1 : SL(2, ℤ)) := by
-  rw [U_def, mul_assoc, ← mul_assoc S, ← sq, S_sq, neg_one_mul, mul_neg, mul_inv_cancel]
-
-/-- `S * R⁻¹ * S⁻¹ = -U` in `SL(2, ℤ)`: up to sign, `U` is conjugate to `R⁻¹`. -/
+/-- The integral generators `R⁻¹` and `U` are conjugate up to sign. -/
 theorem S_mul_R_inv_mul_S_inv : S * R⁻¹ * S⁻¹ = -U := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
+  decide
 
-/-- `R * U⁻¹ = S * T² * S⁻¹` in `SL(2, ℤ)`. -/
+/-- Recovering the translation from `R`, with the inverse of `S`. -/
+theorem S_inv_mul_R : S⁻¹ * R = T := by
+  simp [R]
+
+/-- Recovering the translation from `R`, with its central sign retained. -/
+theorem neg_S_mul_R : -S * R = T := by
+  rw [← S_inv, S_inv_mul_R]
+
+/-- Recovering the inverse translation from `U`. -/
+theorem S_inv_mul_U : S⁻¹ * U = T⁻¹ := by
+  simp [U]
+
+/-- The product of the two generators gives a conjugate of the square translation. -/
 theorem R_mul_U_inv : R * U⁻¹ = S * T ^ 2 * S⁻¹ := by
-  rw [R_def, U_def, _root_.mul_inv_rev, inv_inv, sq]
-  simp only [mul_assoc]
+  simp [R, U, pow_two, mul_assoc]
 
-/-- `R³ = 1` in `PSL(2, ℤ)`. -/
+/-- The integral reversed triangle product is `-I`, not `I`. -/
+theorem T_mul_S_mul_U : T * S * U = (-1 : SL(2, ℤ)) := by
+  decide
+
+/-- The projective class of `R` has cube one. -/
 @[simp]
 theorem coe_R_pow_three : (R : PSL(2, ℤ)) ^ 3 = 1 := by
-  rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff,
-    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one, R_pow_three]
-  exact Or.inr rfl
+  rw [← QuotientGroup.mk_pow, R_pow_three, QuotientGroup.eq_one_iff]
+  simp
 
-/-- `U³ = 1` in `PSL(2, ℤ)`. -/
+/-- The projective class of `U` has cube one. -/
 @[simp]
 theorem coe_U_pow_three : (U : PSL(2, ℤ)) ^ 3 = 1 := by
   rw [← QuotientGroup.mk_pow, U_pow_three, QuotientGroup.mk_one]
 
-/-- `T * S * U = 1` in `PSL(2, ℤ)`. -/
-@[simp]
+/-- The triangle relation in the convention with positive cusp translation. -/
 theorem coe_T_mul_coe_S_mul_coe_U : (T : PSL(2, ℤ)) * S * U = 1 := by
-  rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff,
-    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one, T_mul_S_mul_U]
-  exact Or.inr rfl
+  rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, T_mul_S_mul_U,
+    QuotientGroup.eq_one_iff]
+  simp
 
-/-- `S * R⁻¹ * S⁻¹ = U` in `PSL(2, ℤ)`: the classes of the two order-three generators are
-conjugate up to inversion. -/
+/-- Projectively, `U` is conjugate to the inverse of `R` by `S`. -/
 theorem coe_S_mul_coe_R_inv_mul_coe_S_inv :
     (S : PSL(2, ℤ)) * (R : PSL(2, ℤ))⁻¹ * (S : PSL(2, ℤ))⁻¹ = U := by
   rw [← QuotientGroup.mk_inv, ← QuotientGroup.mk_inv, ← QuotientGroup.mk_mul,
-    ← QuotientGroup.mk_mul, S_mul_R_inv_mul_S_inv, QuotientGroup.eq,
+    ← QuotientGroup.mk_mul, S_mul_R_inv_mul_S_inv]
+  apply QuotientGroup.eq.mpr
+  simp [SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
+
+/-- The projective class of `R` has exact order three. -/
+@[simp]
+theorem orderOf_coe_R : orderOf (R : PSL(2, ℤ)) = 3 := by
+  apply orderOf_eq_prime coe_R_pow_three
+  rw [ne_eq, QuotientGroup.eq_one_iff,
     SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
   decide
 
-/-- The classes of `S` and `T` generate `PSL(2, ℤ)`. -/
-theorem closure_coe_S_coe_T : Subgroup.closure {(S : PSL(2, ℤ)), (T : PSL(2, ℤ))} = ⊤ := by
-  have h := congrArg (Subgroup.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))))
-    SpecialLinearGroup.SL2Z_generators
-  rwa [MonoidHom.map_closure, Set.image_pair,
-    Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective _)] at h
-
-/-- The class of `S` has order `2` in `PSL(2, ℤ)`. -/
-@[simp]
-theorem orderOf_coe_S : orderOf (S : PSL(2, ℤ)) = 2 := by
-  refine orderOf_eq_prime coe_S_sq ?_
-  rw [Ne, QuotientGroup.eq_one_iff, SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
-  decide
-
-/-- The class of `R` has order `3` in `PSL(2, ℤ)`. -/
-@[simp]
-theorem orderOf_coe_R : orderOf (R : PSL(2, ℤ)) = 3 := by
-  refine orderOf_eq_prime coe_R_pow_three ?_
-  rw [Ne, QuotientGroup.eq_one_iff, SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
-  decide
-
-/-- The class of `U` has order `3` in `PSL(2, ℤ)`. -/
+/-- The projective class of `U` has exact order three. -/
 @[simp]
 theorem orderOf_coe_U : orderOf (U : PSL(2, ℤ)) = 3 := by
-  refine orderOf_eq_prime coe_U_pow_three ?_
-  rw [Ne, QuotientGroup.eq_one_iff, SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
+  apply orderOf_eq_prime coe_U_pow_three
+  rw [ne_eq, QuotientGroup.eq_one_iff,
+    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
   decide
 
-/-- The class of `T` has infinite order in `PSL(2, ℤ)`: no positive power of `T` is `±1`. -/
+/-- The modular triangle homomorphism with `x ↦ U`, `y ↦ S` and `z ↦ T`. -/
+def modularHom : TriangleGroup 3 2 0 →* PSL(2, ℤ) :=
+  TriangleGroup.lift (U : PSL(2, ℤ)) S T coe_U_pow_three coe_S_sq (pow_zero _)
+    coe_T_mul_coe_S_mul_coe_U
+
+/-- The order-three triangle generator maps to `U`. -/
 @[simp]
-theorem orderOf_coe_T : orderOf (T : PSL(2, ℤ)) = 0 := by
-  refine orderOf_eq_zero_iff'.2 fun n hn h ↦ ?_
-  rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff,
-    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one] at h
-  rcases h with h | h
-  · have := congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 1) h
-    simp [← zpow_natCast, coe_T_zpow] at this
-    omega
-  · have := congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 0) h
-    simp [← zpow_natCast, coe_T_zpow] at this
+theorem modularHom_x : modularHom (TriangleGroup.x 3 2 0) = (U : PSL(2, ℤ)) :=
+  TriangleGroup.lift_x ..
+
+/-- The order-two triangle generator maps to `S`. -/
+@[simp]
+theorem modularHom_y : modularHom (TriangleGroup.y 3 2 0) = (S : PSL(2, ℤ)) :=
+  TriangleGroup.lift_y ..
+
+/-- The cusp triangle generator maps to the positive translation `T`. -/
+@[simp]
+theorem modularHom_z : modularHom (TriangleGroup.z 3 2 0) = (T : PSL(2, ℤ)) :=
+  TriangleGroup.lift_z ..
+
+/-- The modular triangle homomorphism is surjective. -/
+theorem modularHom_surjective : Function.Surjective modularHom := by
+  rw [← MonoidHom.range_eq_top, eq_top_iff, ← closure_coe_S_coe_T, Subgroup.closure_le]
+  exact Set.pair_subset ⟨TriangleGroup.y 3 2 0, modularHom_y⟩
+    ⟨TriangleGroup.z 3 2 0, modularHom_z⟩
 
 end TauCeti.ModularGroup

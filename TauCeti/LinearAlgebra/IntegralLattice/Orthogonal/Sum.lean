@@ -645,7 +645,7 @@ theorem orthogonalSumHom_injective (L : IntegralLattice V) (M : IntegralLattice 
 /-- The obstruction to `O(L) × O(L) = O(L ⊕ L)`: when the ambient space `V` is nonzero (in
 particular when `L` itself is nonzero), the factor swap is a self-isometry of `L ⊕ L` preserving
 neither summand, so it is not in the image of `O(L) × O(L)`. -/
-theorem orthogonalSumComm_not_mem_range_orthogonalSumHom (L : IntegralLattice V) [Nontrivial V] :
+theorem orthogonalSumComm_notMem_range_orthogonalSumHom (L : IntegralLattice V) [Nontrivial V] :
     orthogonalSumComm L L ∉ (orthogonalSumHom L L).range := by
   rintro ⟨p, hp⟩
   obtain ⟨x, hx⟩ := exists_ne (0 : V)
