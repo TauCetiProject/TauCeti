@@ -37,6 +37,10 @@ remainder estimate `HasAsymptoticExpansion.isLittleO` and for uniqueness of the 
 * `Asymptotics.HasAsymptoticExpansion.isLittleO`: the remainder after `N + 1` terms is `o(φ N)`.
 * `Asymptotics.HasAsymptoticExpansion.unique`: uniqueness of the coefficients.
 * `Asymptotics.isAsymptoticScale_pow`: the powers of a function tending to `0` form a scale.
+
+The definitions and proofs are adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file
+`DLMFMathlib/Analysis/Asymptotics/AsymptoticExpansion.lean`.
 -/
 
 @[expose] public section
