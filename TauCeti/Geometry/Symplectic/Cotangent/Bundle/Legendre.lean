@@ -305,7 +305,7 @@ variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
 
 /-- In bundle charts, the differential of the Legendre map keeps the base coordinate, because the
 Legendre map covers the identity of `M`. -/
-private theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
+theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
     (hn : 2 ≤ n) (v : TangentBundle I M) :
     ContinuousLinearMap.fst 𝕜 E (E →L[𝕜] 𝕜) ∘L
         mfderiv I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) v =
@@ -324,7 +324,7 @@ private theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜
 differential of the Legendre map at `v` sends the vertical vector with fibre coordinate `w` to the
 vertical covector with fibre coordinate the fibre Hessian `∂²L/∂v∂v` applied to `w`. It is stated
 for the differential `T` read as a map between the model spaces of the charts. -/
-private theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
+theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
     (hn : 2 ≤ n) (v : TangentBundle I M) {T : E × E →L[𝕜] E × (E →L[𝕜] 𝕜)}
     (hT : mfderiv I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) v = T)
     (w : TangentSpace I v.proj) :

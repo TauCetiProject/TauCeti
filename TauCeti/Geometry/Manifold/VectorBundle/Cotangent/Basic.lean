@@ -97,6 +97,23 @@ theorem extChartAt_apply (z₀ z : CotangentBundle I M) :
         z.2 ∘L (trivializationAt E (TangentSpace I) z₀.proj).symmL 𝕜 z.proj) := by
   simp [ContinuousLinearMap.inCoordinates]
 
+/-- Read in the canonical trivialization of the cotangent bundle at `x`, a covector at `x` itself
+is its own coordinate covector, since over `x` the tangent trivialization at `x` is the
+identity. -/
+@[simp]
+theorem continuousLinearMapAt_trivializationAt_self (x : M) (p : TangentSpace I x →L[𝕜] 𝕜) :
+    (trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x).continuousLinearMapAt
+      𝕜 x p = p := by
+  refine ((trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x
+    ).continuousLinearMapAt_apply_of_mem (R := 𝕜) (FiberBundle.mem_baseSet_trivializationAt' x)
+      p).trans (ContinuousLinearMap.ext fun v ↦ ?_)
+  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
+    Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
+    ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.id_apply,
+    Manifold.symmL_trivializationAt_self]
+  -- Both sides evaluate `p` at `v`; they differ only in reading `v` in `E` or in `T_x M`.
+  rfl
+
 /-- The inverse of the preferred chart of the cotangent bundle at `z₀` sends a point `q` of the
 base chart and a model covector `p` to the covector `p` composed with the tangent chart, at the
 point of `M` with coordinates `q`. -/
