@@ -47,9 +47,8 @@ and sources in finite acyclic quivers are proved in
 ## References
 
 This file supplies the reflected quiver `TauCeti.Quiver.Reflect V i` that the reflection functors
-map into. See
-Derksen--Weyman, *An Introduction to Quiver Representations*, and Bernstein--Gelfand--Ponomarev,
-*Coxeter functors and Gabriel's theorem*.
+map into. See Derksen--Weyman, *An Introduction to Quiver Representations*, and
+Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*.
 -/
 
 public section
@@ -282,12 +281,14 @@ theorem reflectArrowOfNeOfNe_cast {i a b : V} (ha : a ≠ i) (hb : b ≠ i)
 /-- Reflecting at a sink turns it into a source: no arrow of the reflected quiver enters `i`. -/
 theorem IsSink.isSource_reflect {i : V} (h : IsSink i) : @IsSource (Reflect V i) _ i :=
   (@isSource_iff (Reflect V i) _ i).mpr fun a ↦
-    (reflectHom_right i a ▸ h.isEmpty_hom a : IsEmpty (reflectHom i a i))
+    -- an arrow `a ⟶ i` of the reflected quiver is an arrow `i ⟶ a` of `V`
+    (hom_reflect i a i).trans (reflectHom_right i a) ▸ h.isEmpty_hom a
 
 /-- Reflecting at a source turns it into a sink: no arrow of the reflected quiver leaves `i`. -/
 theorem IsSource.isSink_reflect {i : V} (h : IsSource i) : @IsSink (Reflect V i) _ i :=
   (@isSink_iff (Reflect V i) _ i).mpr fun b ↦
-    (reflectHom_left i b ▸ h.isEmpty_hom b : IsEmpty (reflectHom i i b))
+    -- an arrow `i ⟶ b` of the reflected quiver is an arrow `b ⟶ i` of `V`
+    (hom_reflect i i b).trans (reflectHom_left i b) ▸ h.isEmpty_hom b
 
 /-- Reflecting twice at the same vertex restores the original arrow types: reflection at a vertex
 is an involution on quivers. -/
