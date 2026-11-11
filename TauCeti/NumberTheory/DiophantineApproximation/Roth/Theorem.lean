@@ -98,7 +98,7 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
     κ * (1 - ε) * ((1 / 2 - 3 * ε) * n) ≤
       n + (4 * log (12 * b * max 1 (house α)) + 2 * log (2 * max 1 |α|) + 4) / L := by
   set σ := (5 * ε / 4) ^ 2 ^ (n - 1) with hσ_def
-  set C₁ := log (12 * b * max 1 (house α))
+  set C₁ := log (12 * b * max 1 (house α)) with hC₁_def
   set h : ℕ → ℝ := fun k ↦ logHeight₁ (β k)
   have hσ₀ : 0 < σ := by positivity
   have hσ : σ ≤ 5 * ε / 4 :=

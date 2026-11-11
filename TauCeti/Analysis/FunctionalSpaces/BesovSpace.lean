@@ -207,7 +207,7 @@ other bump function `φ'`. -/
 theorem MemBesov.of_bump {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (φ' : ContDiffBump (0 : E)) :
     u.MemBesov φ' s p q := by
   obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
-  obtain ⟨K, L, hK, hKL⟩ := exists_littlewoodPaleyBlock_eq_and_le (F := F) φ φ' s
+  obtain ⟨K, L, _, hKL⟩ := exists_littlewoodPaleyBlock_eq_and_le (F := F) φ φ' s
   obtain ⟨f', hf', hle⟩ := hKL f hf
   refine memBesov_iff.2 ⟨f', hf', ((hmem.sum_Ico_sub_add L).const_mul K).mono fun j ↦ ?_⟩
   rw [Real.norm_of_nonneg (by positivity)]
