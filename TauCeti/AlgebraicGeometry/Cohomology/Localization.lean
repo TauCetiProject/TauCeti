@@ -78,15 +78,6 @@ variable {X : Scheme.{u}} (M : X.Modules)
 
 section MayerVietoris
 
-private lemma mayerVietorisFromProdLinear_comp_prodMap (n : ℕ) {U V U' V' : X.Opens}
-    (hU : U' ≤ U) (hV : V' ≤ V) :
-    mayerVietorisFromProdLinear M U' V' n ∘ₗ
-        (cohomologyOnResLinear M n hU).prodMap (cohomologyOnResLinear M n hV) =
-      cohomologyOnResLinear M n (inf_le_inf hU hV) ∘ₗ mayerVietorisFromProdLinear M U V n := by
-  refine LinearMap.ext fun p ↦ ?_
-  simp only [LinearMap.comp_apply, LinearMap.prodMap_apply, mayerVietorisFromProdLinear_apply,
-    cohomologyOnResLinear_apply, map_sub, cohomologyOnRes_comp_apply]
-
 /-- **Localization propagates along the Mayer-Vietoris sequence.** Let `U' ≤ U` and `V' ≤ V` be
 open subsets and `S` a submonoid of the global functions. If the restriction maps from `U`, `V`
 and `U ⊓ V` to `U'`, `V'` and `U' ⊓ V'` are localizations at `S` in degrees `n` and `n + 1`, then

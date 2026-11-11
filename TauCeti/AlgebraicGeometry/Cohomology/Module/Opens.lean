@@ -287,6 +287,16 @@ lemma mayerVietorisFromProdLinear_apply (U V : X.Opens)
   rw [mayerVietorisFromProdLinear, LinearMap.coprod_apply, LinearMap.neg_apply,
     cohomologyOnResLinear_apply, cohomologyOnResLinear_apply, sub_eq_add_neg]
 
+/-- Restricting both opens commutes with the difference map in the Mayer-Vietoris sequence. -/
+lemma mayerVietorisFromProdLinear_comp_prodMap (n : ℕ) {U V U' V' : X.Opens}
+    (hU : U' ≤ U) (hV : V' ≤ V) :
+    mayerVietorisFromProdLinear M U' V' n ∘ₗ
+        (cohomologyOnResLinear M n hU).prodMap (cohomologyOnResLinear M n hV) =
+      cohomologyOnResLinear M n (inf_le_inf hU hV) ∘ₗ mayerVietorisFromProdLinear M U V n := by
+  refine LinearMap.ext fun p ↦ ?_
+  simp only [LinearMap.comp_apply, LinearMap.prodMap_apply, mayerVietorisFromProdLinear_apply,
+    cohomologyOnResLinear_apply, map_sub, cohomologyOnRes_comp_apply]
+
 /-- Under `AddCommGrpCat.biprodIsoProd`, the Mayer-Vietoris map out of the biproduct is
 `mayerVietorisFromProdLinear`. -/
 private lemma mayerVietorisFromProdLinear_comp_biprodIsoProd (U V : X.Opens) (n : ℕ) :

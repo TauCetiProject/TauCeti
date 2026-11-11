@@ -495,10 +495,9 @@ theorem bijective_cohomologyOnBaseChange_sup_succ [Module.Flat R R'] {U V : X.Op
     induction z using TensorProduct.inductionOn with
     | add a b ha hb => rw [map_add, map_add, ha, hb]
     | tmul r' p =>
-      rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
-        LinearMap.toAddMonoidHom_coe, LinearMap.toAddMonoidHom_coe, LinearMap.toAddMonoidHom_coe,
+      simp only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
         LinearMap.lTensor_tmul, LinearMap.restrictScalars_apply, hi,
-        mayerVietorisFromProdLinear_apply, mayerVietorisFromProdLinear_apply, tmul_sub, map_sub]
+        mayerVietorisFromProdLinear_apply, tmul_sub, map_sub]
       exact congrArg₂ (· - ·)
         (cohomologyOnRes_cohomologyOnBaseChange_tmul H M k (inf_le_left : U ⊓ V ≤ U) r' p.1)
         (cohomologyOnRes_cohomologyOnBaseChange_tmul H M k (inf_le_right : U ⊓ V ≤ V) r' p.2)
@@ -512,10 +511,8 @@ theorem bijective_cohomologyOnBaseChange_sup_succ [Module.Flat R R'] {U V : X.Op
     induction z using TensorProduct.inductionOn with
     | add a b ha hb => rw [map_add, map_add, ha, hb]
     | tmul r' x =>
-      rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
-        LinearMap.toAddMonoidHom_coe, LinearMap.toAddMonoidHom_coe, LinearMap.toAddMonoidHom_coe,
-        LinearMap.lTensor_tmul, LinearMap.restrictScalars_apply, mayerVietorisδLinear_apply,
-        mayerVietorisδLinear_apply]
+      simp only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
+        LinearMap.lTensor_tmul, LinearMap.restrictScalars_apply, mayerVietorisδLinear_apply]
       exact mayerVietorisδ_cohomologyOnBaseChange_tmul H M U V n (n + 1) rfl r' x
   have hto :
       (mayerVietorisToProdLinear N (g ⁻¹ᵁ U) (g ⁻¹ᵁ V) (n + 1)).toAddMonoidHom.comp
@@ -527,9 +524,8 @@ theorem bijective_cohomologyOnBaseChange_sup_succ [Module.Flat R R'] {U V : X.Op
     induction z using TensorProduct.inductionOn with
     | add a b ha hb => rw [map_add, map_add, ha, hb]
     | tmul r' x =>
-      rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
-        LinearMap.toAddMonoidHom_coe, LinearMap.toAddMonoidHom_coe, LinearMap.toAddMonoidHom_coe,
-        LinearMap.lTensor_tmul, LinearMap.restrictScalars_apply, mayerVietorisToProdLinear_apply,
+      simp only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
+        LinearMap.lTensor_tmul, LinearMap.restrictScalars_apply,
         mayerVietorisToProdLinear_apply, hi]
       exact Prod.ext
         (cohomologyOnRes_cohomologyOnBaseChange_tmul H M (n + 1) (le_sup_left : U ≤ U ⊔ V) r' x)
