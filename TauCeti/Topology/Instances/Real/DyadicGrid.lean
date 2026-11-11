@@ -54,11 +54,14 @@ lemma exists_eq_add_mul_div_two_pow_of_le {K : Type*} [DivisionRing K] [NeZero (
     ∃ j : ℕ, j ≤ 2 ^ n ∧ t = a + j * ((b - a) / 2 ^ n) := by
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hmn
   refine ⟨k * 2 ^ d, by rw [pow_add]; gcongr, ?_⟩
+  -- `K` is only a division ring, so `field_simp` does not apply: the central element `2 ^ d` is
+  -- commuted past `b - a` by hand before it cancels.
   have h : (2 : K) ^ d * ((b - a) / 2 ^ d / 2 ^ m) = (b - a) / 2 ^ m := by
     rw [← mul_div_assoc, ← mul_div_assoc, ((Commute.ofNat_left 2 (b - a)).pow_left d).eq,
       mul_div_cancel_right₀ _ (pow_ne_zero d two_ne_zero)]
-  rw [ht, Nat.cast_mul, Nat.cast_pow, Nat.cast_ofNat, mul_assoc, pow_add,
-    div_mul_eq_div_div_swap, h]
+  rw [ht]
+  push_cast
+  rw [mul_assoc, pow_add, div_mul_eq_div_div_swap, h]
 
 /-- A finite-indexed dyadic grid point also belongs to every finer grid. -/
 theorem exists_dyadicPoint_eq_of_le {a b : ℝ} (hab : a ≤ b) {m n : ℕ}
