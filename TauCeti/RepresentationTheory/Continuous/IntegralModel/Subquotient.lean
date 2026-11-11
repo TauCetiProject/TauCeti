@@ -109,6 +109,10 @@ theorem coe_quotientProjection (x : Λ.lattice) :
     (Λ.quotientProjection W hW x : V ⧸ W) = W.mkQ (x : V) :=
   (rfl)
 
+/-- The projection onto the quotient lattice is surjective. -/
+theorem quotientProjection_surjective : Function.Surjective (Λ.quotientProjection W hW) :=
+  (W.mkQ.restrictScalars O).submoduleMap_surjective Λ.lattice
+
 /-- The projection's kernel is exactly the intersection with the invariant subspace,
 viewed inside `Λ`. -/
 @[simp]
@@ -131,7 +135,7 @@ noncomputable def quotientLatticeEquiv :
       (Λ.quotientModel W hW).lattice :=
   (Submodule.quotEquivOfEq _ _ (Λ.ker_quotientProjection W hW).symm).trans
     ((Λ.quotientProjection W hW).quotKerEquivOfSurjective
-      ((W.mkQ.restrictScalars O).submoduleMap_surjective Λ.lattice))
+      (Λ.quotientProjection_surjective W hW))
 
 @[simp]
 theorem quotientLatticeEquiv_mk (x : Λ.lattice) :
