@@ -95,13 +95,13 @@ variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
 
 section Elementary
 
-/-- **The kernel of a distinguished polynomial on an elementary module.** Let `G` be a polynomial
-distinguished at the maximal ideal, and let the `Fⱼ` be distinguished with
+/-- **The kernel of a monic polynomial on an elementary module.** Let `G` be a monic polynomial,
+and let the `Fⱼ` be distinguished with
 `Res(∏ⱼ Fⱼ ^ nⱼ, G) ≠ 0`. Then `G` acts injectively on the elementary module
 `O⟦X⟧ʳ × ∏ᵢ O⟦X⟧ ⧸ (ϖ ^ mᵢ) × ∏ⱼ O⟦X⟧ ⧸ (Fⱼ ^ nⱼ)`. -/
 theorem torsionBy_elementary_eq_bot {ϖ : O} (hϖ : Irreducible ϖ) (r : ℕ) {a b : ℕ} (m : Fin a → ℕ)
     {F : Fin b → O[X]} (hF : ∀ j, (F j).IsDistinguishedAt (maximalIdeal O)) (n : Fin b → ℕ)
-    (hG : G.IsDistinguishedAt (maximalIdeal O)) (hres : (∏ j, F j ^ n j).resultant G ≠ 0) :
+    (hG : G.Monic) (hres : (∏ j, F j ^ n j).resultant G ≠ 0) :
     torsionBy O⟦X⟧ (Elementary O ϖ r m F n) (G : O⟦X⟧) = ⊥ := by
   rw [Polynomial.resultant_prod_left_of_monic _ fun j _ ↦ (hF j).monic.pow _,
     Finset.prod_ne_zero_iff] at hres
@@ -110,12 +110,12 @@ theorem torsionBy_elementary_eq_bot {ϖ : O} (hϖ : Irreducible ϖ) (r : ℕ) {a
   refine ⟨fun _ ↦ ?_, fun i ↦ ?_, fun j ↦ ?_⟩
   · -- The free part: `O⟦X⟧` is a domain and `G ≠ 0`.
     refine (isRegular_iff_ne_zero.2 ?_).left.isSMulRegular
-    exact (Polynomial.coe_eq_zero_iff).not.2 hG.monic.ne_zero
+    exact (Polynomial.coe_eq_zero_iff).not.2 hG.ne_zero
   · rw [isSMulRegular_iff_torsionBy_eq_bot]
     refine torsionBy_quotient_span_C_pow_eq_bot hϖ.prime ?_ (m i)
     -- The reduction of the monic polynomial `G` to the residue field is nonzero.
     rw [← Polynomial.polynomial_map_coe, Ne, Polynomial.coe_eq_zero_iff]
-    exact (hG.monic.map _).ne_zero
+    exact (hG.map _).ne_zero
   · have H := ((hF j).pow (n j)).isWeierstrassFactorizationAt
     rw [isSMulRegular_iff_torsionBy_eq_bot, H.torsionBy_eq_bot_iff, H.norm_mk_coe_eq_resultant]
     exact hres j (Finset.mem_univ j)
@@ -186,9 +186,9 @@ theorem resultant_charPoly_ne_zero_of_finite_quotSMulTop
     ((hf.finite_quotSMulTop_iff TauCeti.PowerSeries.ringKrullDim_of_isDiscreteValuationRing _).1
       hfin)
 
-/-- **Finite invariants.** Let `G` be a polynomial distinguished at the maximal ideal. If `M ⧸ GM`
-is finite, then so is `M[G]`. -/
-theorem finite_torsionBy_of_finite_quotSMulTop (hG : G.IsDistinguishedAt (maximalIdeal O))
+/-- **Finite invariants.** Let `G` be a monic polynomial. If `M ⧸ GM` is finite, then so is
+`M[G]`. -/
+theorem finite_torsionBy_of_finite_quotSMulTop (hG : G.Monic)
     (hfin : Finite (QuotSMulTop (G : O⟦X⟧) M)) : Finite (torsionBy O⟦X⟧ M (G : O⟦X⟧)) := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
   obtain ⟨r, a, b, m, F, n, -, hFn, f, hf⟩ := exists_isPseudoIsomorphism_elementary (M := M) hϖ
@@ -215,8 +215,8 @@ theorem natCard_quotSMulTop_div_natCard_torsionBy (hG : G.IsDistinguishedAt (max
   have hE := (hf.finite_quotSMulTop_iff hdim _).1 hfin
   have hres := resultant_ne_zero_of_finite_quotSMulTop_elementary r m hF n hE
   rw [hf.natCard_quotSMulTop_div_natCard_torsionBy_eq hdim,
-    torsionBy_elementary_eq_bot hϖ r m hF n hG hres, hf.muInvariant_eq_sum hϖ fun j ↦ (hF j).monic,
-    hf.charPoly_eq_prod hϖ hF fun j ↦ (hFn j).2.1]
+    torsionBy_elementary_eq_bot hϖ r m hF n hG.monic hres,
+    hf.muInvariant_eq_sum hϖ fun j ↦ (hF j).monic, hf.charPoly_eq_prod hϖ hF fun j ↦ (hFn j).2.1]
   rcases Nat.eq_zero_or_pos G.natDegree with hd | hd
   · -- If `deg G = 0` then `G = 1`, which acts bijectively, and both sides are `1`.
     obtain rfl := Polynomial.eq_one_of_monic_natDegree_zero hG.monic hd
