@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.HopfRinow
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Geodesic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
+public import TauCeti.Geometry.Manifold.Topology
 
 /-!
 # Completeness lifts along Riemannian coverings
@@ -45,8 +46,6 @@ pullback metric `f^* g` along a smooth covering map with invertible differential
   pullback of a geodesically complete metric along a smooth covering is geodesically complete.
 * `Bundle.ContMDiffRiemannianMetric.completeSpace_pullback_of_isCoveringMap`: on a connected
   cover, the Riemannian distance of the pullback of a geodesically complete metric is complete.
-* `TauCeti.Manifold.t3Space`: a Hausdorff manifold with finite-dimensional model is regular, as
-  needed to install its Riemannian distance.
 
 ## References
 
@@ -61,21 +60,6 @@ open Bundle Manifold Set TauCeti.Manifold
 open scoped ContDiff Manifold
 
 noncomputable section
-
-namespace TauCeti.Manifold
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H]
-  (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
-
-/-- A Hausdorff manifold modelled on a finite-dimensional real space is regular, being locally
-compact. -/
-theorem t3Space (I : ModelWithCorners ℝ E H) : T3Space M :=
-  have := I.locallyCompactSpace
-  have := ChartedSpace.locallyCompactSpace H M
-  inferInstance
-
-end TauCeti.Manifold
 
 namespace TauCeti.IsLocalRiemannianIsometry
 
@@ -93,15 +77,6 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
   {f : M → N}
-
-omit [FiniteDimensional ℝ F] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] in
-/-- A local Riemannian isometry out of a boundaryless manifold is a local diffeomorphism of every
-finite order `n ≥ 1`, by the inverse function theorem. -/
-theorem isLocalDiffeomorph [BoundarylessManifold I M] (hf : IsLocalRiemannianIsometry I J f)
-    {n : ℕ} (hn : 1 ≤ n) : IsLocalDiffeomorph I J n f :=
-  TauCeti.isLocalDiffeomorph_of_mfderiv_eq (hf.contMDiff.of_le (by simp)) (by exact_mod_cast hn)
-    hf.isInvertible_mfderiv
 
 /-- **Lifting all-time geodesics through a Riemannian covering.** If `f : M → N` is a local
 Riemannian isometry out of a boundaryless manifold and a covering map, every geodesic of `N`
@@ -121,8 +96,8 @@ theorem exists_isGeodesicCurveOnFrom_univ_of_isCoveringMap [BoundarylessManifold
     hcov.existsUnique_continuousMap_lifts ⟨γ, hγc⟩ 0 x hγ0.symm
   have hΓγ : f ∘ Γ = γ := hΓ
   have hΓ2 : ContMDiff 𝓘(ℝ) I 2 Γ := by
-    refine ContMDiff.of_comp_isLocalDiffeomorph (hf.isLocalDiffeomorph (n := 2) (by norm_num))
-      Γ.continuous ?_
+    refine ContMDiff.of_comp_isLocalDiffeomorph
+      (hf.isLocalDiffeomorph (n := 2) (by norm_num) (by simp)) Γ.continuous ?_
     rw [hΓγ, ← contMDiffOn_univ]
     exact hγ.isGeodesicCurveOn.contMDiffOn
   have hgeod : IsGeodesicCurveOn I Γ univ := by

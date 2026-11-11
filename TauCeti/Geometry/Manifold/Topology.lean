@@ -14,7 +14,8 @@ public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
 
 The convex model range makes charted spaces locally path-connected; nonempty preconnected
 charted spaces are therefore path-connected. Extended charts also provide simply connected
-neighbourhoods, so real manifolds are semilocally simply connected.
+neighbourhoods, so real manifolds are semilocally simply connected. A Hausdorff manifold modelled on
+a finite-dimensional real space is regular (`TauCeti.Manifold.t3Space`).
 -/
 
 public section
@@ -101,3 +102,18 @@ theorem semilocallySimplyConnectedSpace (I : ModelWithCorners 𝕜 E H) (M : Typ
   exact ⟨d, hd_nhds, hd_sc⟩
 
 end ModelWithCorners
+
+namespace TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H]
+  (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+
+/-- A Hausdorff manifold modelled on a finite-dimensional real space is regular, being locally
+compact. -/
+theorem t3Space (I : ModelWithCorners ℝ E H) : T3Space M :=
+  have := I.locallyCompactSpace
+  have := ChartedSpace.locallyCompactSpace H M
+  inferInstance
+
+end TauCeti.Manifold
