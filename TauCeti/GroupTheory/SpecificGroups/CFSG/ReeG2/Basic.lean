@@ -49,7 +49,8 @@ theorem halfFrobenius_def :
   rw [halfFrobenius_def, primeFrobenius_def,
     G2ShortRoot.PrimeField.specialIsogeny_specialIsogeny]
 
-private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
+/-- The indexed length permutation is the node swap in the short-root carrier. -/
+theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
     finCongr d.rank_eq_two (d.toSuzukiReeIndex.lengthPerm i) =
       Equiv.swap 0 1 (finCongr d.rank_eq_two i) := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
@@ -59,7 +60,8 @@ private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
     fin_cases j <;> decide
   simp [toSuzukiReeIndex, SuzukiReeIndex.lengthPerm_reeG2, Equiv.permCongr_def, hswap]
 
-private theorem carrierExponent (i : Fin d.1.rank) :
+/-- The carrier's positive-root exponent agrees with the indexed source-root exponent. -/
+theorem carrierExponent (i : Fin d.1.rank) :
     G2ShortRoot.PrimeField.specialIsogenyExponent (.inl (finCongr d.rank_eq_two i)) =
       d.toSuzukiReeIndex.exponent i := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of

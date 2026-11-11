@@ -48,14 +48,16 @@ theorem halfFrobenius_def :
   rw [halfFrobenius_def, primeFrobenius_def,
     F4ShortRoot.PrimeField.specialIsogeny_specialIsogeny]
 
-private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
+/-- The indexed length permutation reverses the short-root carrier's four nodes. -/
+theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
     finCongr d.rank_eq_four (d.toSuzukiReeIndex.lengthPerm i) =
       Fin.revPerm (finCongr d.rank_eq_four i) := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
   simp [toSuzukiReeIndex, SuzukiReeIndex.lengthPerm_reeF4, Equiv.permCongr_def,
     lengthPermF4_apply]
 
-private theorem carrierExponent (i : Fin d.1.rank) :
+/-- The carrier's positive-root exponent agrees with the indexed source-root exponent. -/
+theorem carrierExponent (i : Fin d.1.rank) :
     F4ShortRoot.isogenyExponent (.inl (finCongr d.rank_eq_four i)) =
       d.toSuzukiReeIndex.exponent i := by
   rw [exponent_eq]
