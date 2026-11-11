@@ -110,16 +110,14 @@ private theorem toWord_foldl (l : List ((X ⊕ A) × Bool))
   classical
   simp [Term.ofWord]
 
-/-- A term times its inverse denotes the trivial word. -/
-theorem Term.toWord_mul_inv_cancel (t : Language.group[[A]].Term X) :
-    Term.toWord (t * t⁻¹) = 1 := by
+example (t : Language.group[[A]].Term X) : Term.toWord (t * t⁻¹) = 1 := by
   simp
 
 /-- The canonical term of the word of `t * t⁻¹` is the identity term, which is a different term:
 translating a term to a word and back does not recover the term. -/
 theorem Term.ofWord_toWord_ne (t : Language.group[[A]].Term X) :
     Term.ofWord (Term.toWord (t * t⁻¹)) ≠ t * t⁻¹ := by
-  rw [Term.toWord_mul_inv_cancel, Term.ofWord_one]
+  simp only [Term.toWord_mul, Term.toWord_inv, mul_inv_cancel, Term.ofWord_one]
   -- The identity term and a product have different head symbols, of arities zero and two.
   intro h
   cases h
