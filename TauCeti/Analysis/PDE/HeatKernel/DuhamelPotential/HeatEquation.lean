@@ -301,6 +301,7 @@ theorem heatDuhamelPotential_eq_integral (hf : StronglyMeasurable (Function.uncu
   obtain ⟨h₁, h₂, h⟩ := heatDuhamelPotential_eq_integral_add_integral hf hfM hH hα ht x
   rw [intervalIntegral.integral_add h₁ h₂, h]
 
+omit [CompleteSpace F] in
 /-- **Time continuity of the Laplacian of the Duhamel potential.** Let `f` be jointly measurable
 and essentially bounded on `(0, T) × E`, with `f(s, ·)` `α`-Hölder for almost every `0 < s < T`,
 where `0 < α < 2`. Then `σ ↦ Δw(σ, x)` is continuous on `[0, T]`. -/

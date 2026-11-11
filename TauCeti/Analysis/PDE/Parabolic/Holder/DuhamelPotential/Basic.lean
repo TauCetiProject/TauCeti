@@ -420,13 +420,6 @@ private theorem hessian_slabMk (f : HolderSpace α (slab (E := E) 0 T) F) (x : E
     hessian f (slabMk x t) = fderiv ℝ (fderiv ℝ (heatDuhamelPotential (forcing f) t)) x := by
   rw [hessian, space_slabMk, time_slabMk]
 
-variable [CompleteSpace F]
-
-/-- A local shortcut for bounded gradient fields, keeping instance search shallow. -/
-local instance : NormedAddCommGroup (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
-/-- A local shortcut for scalar operations on bounded gradient fields. -/
-local instance : NormedSpace ℝ (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
-
 /-- One constant controls both the supremum and the parabolic `α`-Hölder seminorm of the Hessian:
 `‖D²w‖_∞ ≤ C ‖f‖ T^(α/2)` and `[D²w]_{α,par} ≤ C ‖f‖`. -/
 private theorem exists_hessian_bounds (hα₀ : 0 < α) (hα₁ : α < 1) :
@@ -559,7 +552,6 @@ private theorem norm_timeField_le (hα₀ : 0 < α) (hα₁ : α < 1)
   (norm_add_le _ _).trans (add_le_add_left ((ContinuousLinearMap.norm_id_compHolder₂_apply_le
     _ _).trans (mul_le_mul_of_nonneg_right (HolderSpace.norm_const_le _) (norm_nonneg _))) _)
 
-omit [CompleteSpace F] in
 /-- The gradient of the Duhamel potential is differentiable in space at every time of the slab,
 with derivative the Hessian. -/
 private theorem hasFDerivAt_fderiv (hα₀ : 0 < α) (f : HolderSpace α (slab (E := E) 0 T) F)
@@ -573,6 +565,13 @@ private theorem hasFDerivAt_fderiv (hα₀ : 0 < α) (f : HolderSpace α (slab (
     (ae_of_all _ fun s => ae_of_all _ fun y => norm_forcing_le f s y)
     (ae_of_all _ fun s => holderWith_forcing f s) hα₀ ht
   exact ((h.fderiv_right (m := 1) (by norm_num)).differentiable (by norm_num) x).hasFDerivAt
+
+variable [CompleteSpace F]
+
+/-- A local shortcut for bounded gradient fields, keeping instance search shallow. -/
+local instance : NormedAddCommGroup (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
+/-- A local shortcut for scalar operations on bounded gradient fields. -/
+local instance : NormedSpace ℝ (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
 
 /-- The Duhamel potential of Hölder forcing, assembled from its four fields. -/
 private def potentialTwo (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)

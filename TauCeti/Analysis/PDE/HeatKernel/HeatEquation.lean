@@ -247,7 +247,7 @@ theorem iteratedFDeriv_heatKernel_convolution_eq_integral_sub (ht : 0 < t)
   by_cases hF : CompleteSpace F
   swap
   · ext v
-    rw [convolution_of_not_completeSpace _ _ _ _ hF,
+    rw [convolution_eq_zero_of_not_completeSpace hF,
       ContinuousMultilinearMap.integral_apply
         (integrable_smulRight_iteratedFDeriv_heatKernel_sub ht hg hM m x) v]
     simp [integral_of_not_completeSpace hF]
@@ -357,8 +357,7 @@ theorem laplacian_heatKernel_convolution (ht : 0 < t)
     Δ (heatKernel t ⋆ g) x = (Δ (heatKernel t : E → ℝ) ⋆ g) x := by
   by_cases hF : CompleteSpace F
   swap
-  · rw [convolution_of_not_completeSpace _ _ _ _ hF, laplacian_const]
-    exact (integral_of_not_completeSpace hF).symm
+  · simp [convolution_eq_zero_of_not_completeSpace hF, Pi.zero_def]
   have hD₂ := integrable_iteratedFDeriv_heatKernel (E := E) ht 2
   -- The Laplacian is a continuous linear functional of the Hessian.
   rw [laplacian_eq_traceL_iteratedFDeriv, iteratedFDeriv_convolution_left_of_dominated
@@ -376,7 +375,7 @@ theorem hasDerivAt_heatKernel_convolution (ht : 0 < t) (hM : ∀ᵐ y, ‖g y‖
     HasDerivAt (fun s => (heatKernel s ⋆ g) x) (Δ (heatKernel t ⋆ g) x) t := by
   by_cases hF : CompleteSpace F
   swap
-  · simp only [convolution_of_not_completeSpace _ _ _ _ hF, laplacian_const, Pi.zero_apply]
+  · simp only [convolution_eq_zero_of_not_completeSpace hF, Pi.zero_def, laplacian_const]
     exact hasDerivAt_const t (0 : F)
   by_cases hg : AEStronglyMeasurable g
   swap

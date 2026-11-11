@@ -326,9 +326,6 @@ theorem intervalIntegrable_iteratedFDeriv_heatKernel_convolution
     (aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k x)
     ((hub k hk).mono fun s hs => hs x)
 
-variable [CompleteSpace F]
-
-omit [CompleteSpace F] in
 /-- For forcing `α`-Hölder in space, the derivatives of order `m ≥ 1` of the time slices are
 `O(H (t - s)^((α - m)/2))`. -/
 private theorem exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le {α : ℝ≥0} {m : ℕ}
@@ -351,7 +348,6 @@ private theorem exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le {α : �
   have := mul_le_mul_of_nonneg_left (hC (t - s) hts) H.coe_nonneg
   linarith
 
-omit [CompleteSpace F] in
 /-- Integrable bounds on the time slices and their derivatives up to order two, for forcing
 `α`-Hölder in space with `α > 0`. -/
 private theorem exists_bounds_two (hf : StronglyMeasurable (Function.uncurry f))
@@ -376,7 +372,6 @@ private theorem exists_bounds_two (hf : StronglyMeasurable (Function.uncurry f))
   · simpa using hC₁ hf hfM ht
   · simpa using hC₂ hf hfM hH ht
 
-omit [CompleteSpace F] in
 /-- If `f` is jointly measurable and essentially bounded on `(0, t) × E`, and `f(s, ·)` is
 `α`-Hölder for almost every `0 < s < t`, with `α > 0`, then the time integrands
 `s ↦ D^k (K_{t-s} ⋆ f(s, ·))(x)` of the spatial derivatives of order at most two of the Duhamel
@@ -398,7 +393,8 @@ theorem intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith
 /-- **The first derivative of the Duhamel potential.** For `f` jointly measurable and essentially
 bounded on `(0, t) × E`, the derivatives of `w(t, ·)` of order at most one are computed under
 the time integral: `D^k w(t, x) = ∫₀ᵗ D^k (K_{t-s} ⋆ f(s, ·))(x) ds`. -/
-theorem iteratedFDeriv_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncurry f))
+theorem iteratedFDeriv_heatDuhamelPotential [CompleteSpace F]
+    (hf : StronglyMeasurable (Function.uncurry f))
     (hfM : ∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) (ht : 0 < t) {k : ℕ} (hk : k ≤ 1) :
     iteratedFDeriv ℝ k (heatDuhamelPotential f t) =
       fun x => ∫ s in 0..t, iteratedFDeriv ℝ k (heatKernel (t - s) ⋆ f s) x := by
@@ -407,7 +403,6 @@ theorem iteratedFDeriv_heatDuhamelPotential (hf : StronglyMeasurable (Function.u
   exact iteratedFDeriv_intervalIntegral (ae_contDiff_heatKernel_convolution hfM ht 1)
     (fun k _ => aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k) hb hub hk
 
-omit [CompleteSpace F] in
 /-- For `f` jointly measurable and essentially bounded on `(0, t) × E`, the Duhamel potential
 `w(t, ·)` is `C¹`. -/
 theorem contDiff_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncurry f))
@@ -422,7 +417,6 @@ theorem contDiff_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncurry
   exact contDiff_intervalIntegral (ae_contDiff_heatKernel_convolution hfM ht 1)
     (fun k _ => aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k) hb hub
 
-omit [CompleteSpace F] in
 /-- **The second derivative of the Duhamel potential.** If `f` is jointly measurable and
 essentially bounded on `(0, t) × E`, and `f(s, ·)` is `α`-Hölder with constant `H` for almost
 every `0 < s < t`, with `α > 0`, then the derivatives of `w(t, ·)` of order at most two are
@@ -444,7 +438,6 @@ theorem iteratedFDeriv_heatDuhamelPotential_of_holderWith
   exact iteratedFDeriv_intervalIntegral (ae_contDiff_heatKernel_convolution hfM ht 2)
     (fun k _ => aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k) hb hub hk
 
-omit [CompleteSpace F] in
 /-- If `f` is jointly measurable and essentially bounded on `(0, t) × E`, and `f(s, ·)` is
 `α`-Hölder for almost every `0 < s < t`, with `α > 0`, then the Duhamel potential `w(t, ·)` is
 `C²`. -/
@@ -466,7 +459,7 @@ theorem contDiff_heatDuhamelPotential_of_holderWith
 /-- **The gradient bound for the Duhamel potential.** There is a constant `C`, depending only on
 the dimension, such that `‖D w(t, x)‖ ≤ C M √t` whenever `f` is jointly measurable and
 `‖f(s, y)‖ ≤ M` for almost every `y`, for almost every `0 < s < t`. -/
-theorem exists_norm_fderiv_heatDuhamelPotential_le :
+theorem exists_norm_fderiv_heatDuhamelPotential_le [CompleteSpace F] :
     ∃ C, ∀ {f : ℝ → E → F} {M t : ℝ}, StronglyMeasurable (Function.uncurry f) →
       (∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) → 0 < t → ∀ x,
         ‖fderiv ℝ (heatDuhamelPotential f t) x‖ ≤ C * M * √t := by
@@ -481,7 +474,6 @@ theorem exists_norm_fderiv_heatDuhamelPotential_le :
   norm_num
   ring
 
-omit [CompleteSpace F] in
 /-- Near the singular endpoint, the time integral over `[a, t]` of the Hessians of the slices is
 `O(H (t - a)^(α/2))`. -/
 private theorem exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_le {α : ℝ≥0}
@@ -510,7 +502,6 @@ private theorem exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_l
   rw [h]
   field_simp
 
-omit [CompleteSpace F] in
 /-- **The Hessian bound for the Duhamel potential.** For `α > 0` there is a constant `C`,
 depending only on `α` and the dimension, such that `‖D² w(t, x)‖ ≤ C H t^(α / 2)` whenever `f` is
 jointly measurable and essentially bounded on `(0, t) × E` and `f(s, ·)` is `α`-Hölder with
@@ -532,7 +523,6 @@ theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_le {α : ℝ≥0} (h
 
 /-! ### The Hölder estimate of the Hessian -/
 
-omit [CompleteSpace F] in
 /-- For forcing `α`-Hölder in space, the Hessians of the time slices are Lipschitz in space with
 constant `O(H (t - s)^((α - 3)/2))`. -/
 private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_le {α : ℝ≥0} :
@@ -557,7 +547,6 @@ private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_le 
   rw [Nat.cast_ofNat] at this
   rwa [norm_fderiv_iteratedFDeriv]
 
-omit [CompleteSpace F] in
 /-- **The Hölder estimate for the Hessian of the Duhamel potential.** For `0 < α < 1` there is a
 constant `C`, depending only on `α` and the dimension, such that the Hessian `D² w(t, ·)` is
 `α`-Hölder with constant `C H` whenever `f` is jointly measurable and essentially bounded on
@@ -607,7 +596,6 @@ theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential {α : ℝ≥0}
 
 /-! ### The temporal Hölder estimate of the Hessian -/
 
-omit [CompleteSpace F] in
 /-- Away from the diagonal, the Hessians of the slices at the times `t' < t` differ by
 `O(H (t - t') (t' - s)^((α - 4)/2))`, at almost every `0 < s ≤ t' - (t - t')`. -/
 private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_time_le {α : ℝ≥0} :
