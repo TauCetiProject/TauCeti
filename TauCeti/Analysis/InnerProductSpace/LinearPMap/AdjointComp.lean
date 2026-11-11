@@ -65,12 +65,14 @@ theorem mem_adjointComp_domain {T : E →ₗ.[𝕜] F} {x : E} :
 theorem adjointComp_domain_le (T : E →ₗ.[𝕜] F) : T.adjointComp.domain ≤ T.domain :=
   fun _ hx ↦ (mem_adjointComp_domain.mp hx).choose
 
-/-- Evaluation of the maximal-domain composition. Unfolding composition and domain restriction
-gives the same arguments of `T` and `T†` by proof irrelevance of the membership witnesses. -/
+/-- Evaluating `adjointComp T` at `x` applies `T†` to `T x`. -/
 @[simp]
 theorem adjointComp_apply (T : E →ₗ.[𝕜] F) (x : (adjointComp T).domain) :
     adjointComp T x = T† ⟨T ⟨x, adjointComp_domain_le T x.2⟩,
-      (mem_adjointComp_domain.mp x.2).choose_spec⟩ := (rfl)
+      (mem_adjointComp_domain.mp x.2).choose_spec⟩ :=
+  -- Unfolding composition and domain restriction gives the same arguments of `T` and `T†`
+  -- by proof irrelevance of the membership witnesses.
+  (rfl)
 
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
