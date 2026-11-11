@@ -238,10 +238,10 @@ theorem exists_prod_map_pow_mul_ne_one (hBP : IsBP G) (hG : IsCSA G) {u : G} (hu
         · exact inv_ne_one.2 (hne1 H hH)
         · exact hconj1 (by norm_num))
       (isChain_append_cons_reverse hc
-        (by rw [hHm]; exact hG.not_commute_conj_zpow hu hem one_ne_zero hW₁)
+        (by rw [hHm]; exact hG.not_commute_conj_zpow hem one_ne_zero hW₁)
         (by
           rw [hH₁]
-          exact hG.not_commute_conj_zpow hu he₁ (by norm_num) (by simpa [mul_assoc] using hW₂)))
+          exact hG.not_commute_conj_zpow he₁ (by norm_num) (by simpa [mul_assoc] using hW₂)))
     refine ⟨N, fun k hk h => hN k hk ?_⟩
     have hP : (Hs.map (· ^ k)).prod = z⁻¹ := eq_inv_of_mul_eq_one_left h
     have hrev : ((Hs.map (·⁻¹)).reverse.map (· ^ k)).prod = (Hs.map (· ^ k)).prod⁻¹ := by
@@ -294,7 +294,7 @@ private theorem exists_forall_conjProd_ne_one (hBP : IsBP G) (hG : IsCSA G) {u :
     (fun i => by
       simpa [w, conj_eq_one_iff, IsMulTorsionFree.zpow_eq_one_iff] using
         ⟨hu, he _ (List.getElem_mem _)⟩)
-    (fun i => hG.not_commute_conj_zpow hu (he _ (List.getElem_mem _))
+    (fun i => hG.not_commute_conj_zpow (he _ (List.getElem_mem _))
       (he _ (List.getElem_mem _)) (List.isChain_iff_getElem.1 hc i.1 (by omega)))
   refine ⟨N, fun k hk => ?_⟩
   have h := hN (fun _ => k) (fun _ => hk)
