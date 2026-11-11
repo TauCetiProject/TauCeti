@@ -189,18 +189,11 @@ theorem bijective_trajectoryOperator_const {A₀ : E →L[ℝ] E}
     (hsym : (A₀ : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α) (hgap : ∀ v, α * ‖v‖ ≤ ‖A₀ v‖)
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A₀) :
-    Function.Bijective (trajectoryOperator (p := 2) AL) := by
-  have hker := ker_trajectoryOperator_eq_bot (A := fun _ ↦ A₀) contDiff_const (fun _ ↦ hsym)
-    hα.le (fun _ ↦ hgap) (β := 0) (fun _ v ↦ by simp) (by positivity) AL hAL
-  have hnker := ker_trajectoryOperator_eq_bot (A := fun _ ↦ -A₀) contDiff_const
-    (fun _ x y ↦ by simp [hsym.apply_clm]) hα.le (fun _ v ↦ by simpa using hgap v) (β := 0)
-    (fun _ v ↦ by simp) (by positivity) (-AL)
-    (by filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs; simp only [hs, Pi.neg_apply, hAs])
-  have hLF := ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hsym hα hgap
-  refine ⟨LinearMap.ker_eq_bot.1 hker, (surjective_trajectoryOperator_iff_ker_neg_eq_bot
-    (ae_eq_adjoint_of_ae_eq hAL (hAL.trans (.of_forall fun _ ↦ hsym.clm_adjoint_eq.symm)))
-    (isClosed_range_trajectoryOperator_of_hasLyapunovForm continuous_const hLF hLF
-      tendsto_const_nhds tendsto_const_nhds AL hAL)).2 hnker⟩
+    Function.Bijective (trajectoryOperator (p := 2) AL) :=
+  ⟨LinearMap.ker_eq_bot.1 <| ker_trajectoryOperator_eq_bot (A := fun _ ↦ A₀) contDiff_const
+      (fun _ ↦ hsym) hα.le (fun _ ↦ hgap) (β := 0) (fun _ v ↦ by simp) (by positivity) AL hAL,
+    surjective_trajectoryOperator (A := fun _ ↦ A₀) contDiff_const (fun _ ↦ hsym) hα.le
+      (fun _ ↦ hgap) (β := 0) (fun _ v ↦ by simp) (by positivity) AL hAL⟩
 
 /-- A constant coefficient gives index zero: under the hypotheses of
 `TauCeti.WeakDerivStep.bijective_trajectoryOperator_const` the trajectory operator is bijective. -/
@@ -611,16 +604,14 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
   -- orthogonal complements, so the kernel and cokernel are `W ⊓ U` and `Wᗮ ⊓ Uᗮ`.
   set W := Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)
   set U := Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)
-  have hW : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0) = Wᗮ := by
-    rw [hsymplus.orthogonal_pointSpectralSubspace, compl_Ioi, ← Iio_insert,
-      Module.End.pointSpectralSubspace_insert_zero (LinearMap.ker_eq_bot.2
-        (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
-          (le_inv_mul_iff₀ hα).2 (hplus v)))]
-  have hU : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ioi 0) = Uᗮ := by
-    rw [hsymminus.orthogonal_pointSpectralSubspace, compl_Iio, ← Ioi_insert,
-      Module.End.pointSpectralSubspace_insert_zero (LinearMap.ker_eq_bot.2
-        (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
-          (le_inv_mul_iff₀ hα).2 (hminus v)))]
+  have hW : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0) = Wᗮ :=
+    (hsymplus.orthogonal_pointSpectralSubspace_Ioi_zero (LinearMap.ker_eq_bot.2
+      (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
+        (le_inv_mul_iff₀ hα).2 (hplus v)))).symm
+  have hU : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ioi 0) = Uᗮ :=
+    (hsymminus.orthogonal_pointSpectralSubspace_Iio_zero (LinearMap.ker_eq_bot.2
+      (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
+        (le_inv_mul_iff₀ hα).2 (hminus v)))).symm
   rw [hW, hU, Submodule.inf_orthogonal]
   have h1 := Submodule.finrank_sup_add_finrank_inf_eq W U
   have h2 := (W ⊔ U).finrank_add_finrank_orthogonal

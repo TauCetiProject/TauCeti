@@ -37,6 +37,8 @@ restrict to open subsets and are compared along homeomorphisms.
 ## Main results
 
 * `TauCeti.isIso_localHomologyMap`: excision along an open embedding.
+* `TauCeti.localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap`: the map induced by an
+  open embedding undoes the inverse of this isomorphism.
 * `TauCeti.localHomologyIsoOfIsOpenEmbedding_id`,
   `TauCeti.localHomologyIsoOfIsOpenEmbedding_trans`: these isomorphisms are functorial.
 * `TauCeti.localHomologyTransport_comp_localHomologyIsoOfIsOpenEmbedding_hom`: open embeddings
@@ -107,6 +109,15 @@ lemma localHomologyIsoOfIsOpenEmbedding_hom [T1Space N] {j : M → N} (hj : IsOp
       localHomologyMap R ⟨j, hj.continuous⟩
         (by rw [ContinuousMap.coe_mk, ← image_singleton, hj.injective.preimage_image]) k :=
   (rfl)
+
+/-- The map of local homology induced by an open embedding undoes the inverse of
+`localHomologyIsoOfIsOpenEmbedding`. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+lemma localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap [T1Space N] {j : M → N}
+    (hj : IsOpenEmbedding j) (x : M) (h : j ⁻¹' {j x} ⊆ {x}) (k : ℕ) :
+    (localHomologyIsoOfIsOpenEmbedding R hj x k).inv ≫ localHomologyMap R ⟨j, hj.continuous⟩ h k =
+      𝟙 _ := by
+  rw [Iso.inv_comp_eq, Category.comp_id, localHomologyIsoOfIsOpenEmbedding_hom]
 
 /-- The isomorphism of local homology induced by the identity is the identity. -/
 @[simp]
