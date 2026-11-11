@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.Estimate
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
-import TauCeti.Geometry.Symplectic.CompatibleMetric
 
 /-!
 # The `L²` estimate of the linearized Floer operator on a cylindrical end
