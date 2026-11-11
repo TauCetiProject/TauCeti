@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.NovikovModule.Grading
 public import TauCeti.RingTheory.NovikovModule.MapOfMatrix
 public import TauCeti.Algebra.Ring.NegOnePow
+import TauCeti.Algebra.BigOperators.Ring.Bilinear
 
 /-!
 # The Leibniz rule for supported products
@@ -206,29 +207,10 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_eq_add
   set x := coordinates hF₁ r₁ a
   set y := coordinates hF₂ r₂ b
   -- Each of the three sums is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, with `c(i, j)` one of the
-  -- three sums over `k` of the Leibniz identity.
-  have h₀ : ∑ k, (∑ i, ∑ j, x i * y j * Q i j k) * D₀ k l =
-      ∑ i, ∑ j, x i * y j * ∑ k, Q i j k * D₀ k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum, mul_assoc]
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
-  have h₁ : ∑ k, ∑ j, (∑ i, x i * D₁ i k) * y j * Q k j l =
-      ∑ i, ∑ j, x i * y j * ∑ k, D₁ i k * Q k j l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    rw [Finset.sum_comm]
-    refine (Finset.sum_congr rfl fun j _ => Finset.sum_comm).trans ?_
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
-      Finset.sum_congr rfl fun k _ => by ring
-  have h₂ : ∑ i, ∑ j, (x i * ∑ m, y m * D₂ m j) * Q i j l =
-      ∑ i, ∑ j, x i * y j * ∑ k, D₂ j k * Q i k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
-  -- Termwise, this is the Leibniz identity, with the sign of the orbit of `i` replaced by the
-  -- sign of the degree of `a` on its nonzero coordinates.
-  rw [h₀, h₁, h₂, Finset.smul_sum, ← Finset.sum_add_distrib]
+  -- three sums over `k` of the Leibniz identity. Termwise, this is the Leibniz identity, with the
+  -- sign of the orbit of `i` replaced by the sign of the degree of `a` on its nonzero coordinates.
+  rw [sum_mul_sum_sum_mul_mul _ _ x y _ Q (D₀ · l), sum_sum_sum_mul_mul_mul_left _ _ x y _ D₁,
+    sum_sum_mul_sum_mul_mul_right _ _ x y _ D₂, Finset.smul_sum, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Finset.smul_sum, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun j _ => ?_

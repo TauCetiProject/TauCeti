@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.NovikovModule.Tensor
 public import TauCeti.RingTheory.NovikovModule.Leibniz
 public import TauCeti.Algebra.Homology.SquareZero.Graded
+import TauCeti.Algebra.BigOperators.Ring.Bilinear
 
 /-!
 # Continuation homotopies of supported kernel products
@@ -361,49 +362,11 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_sub_novikovProductOfMatrix_nov
   set x := coordinates hF₁ r₁ a
   set y := coordinates hF₂ r₂ b
   -- Each of the five sums is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, with `c(i, j)` one of the five
-  -- sums of the homotopy identity.
-  have hΦ₀ : ∑ k, (∑ i, ∑ j, x i * y j * Q i j k) * Φ₀ k l =
-      ∑ i, ∑ j, x i * y j * ∑ k, Q i j k * Φ₀ k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum, mul_assoc]
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
-  have hQ' : ∑ k, ∑ m, (∑ i, x i * Φ₁ i k) * (∑ j, y j * Φ₂ j m) * Q' k m l =
-      ∑ i, ∑ j, x i * y j * ∑ k, ∑ m, Φ₁ i k * Φ₂ j m * Q' k m l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    calc _ = ∑ k : κ₁, ∑ i : ι₁, ∑ j : ι₂, ∑ m : κ₂, x i * y j * (Φ₁ i k * Φ₂ j m * Q' k m l) := by
-          refine Finset.sum_congr rfl fun k _ => ?_
-          calc _ = ∑ m : κ₂, ∑ i : ι₁, ∑ j : ι₂, x i * y j * (Φ₁ i k * Φ₂ j m * Q' k m l) :=
-                Finset.sum_congr rfl fun m _ => by
-                  rw [Finset.sum_comm]
-                  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-            _ = _ := by
-                rw [Finset.sum_comm]
-                exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
-      _ = _ := by
-          rw [Finset.sum_comm]
-          exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
-  have hE₀ : ∑ k, (∑ i, ∑ j, x i * y j * K i j k) * E₀ k l =
-      ∑ i, ∑ j, x i * y j * ∑ k, K i j k * E₀ k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum, mul_assoc]
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
-  have hD₁ : ∑ k, ∑ j, (∑ i, x i * D₁ i k) * y j * K k j l =
-      ∑ i, ∑ j, x i * y j * ∑ k, D₁ i k * K k j l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    rw [Finset.sum_comm]
-    refine (Finset.sum_congr rfl fun j _ => Finset.sum_comm).trans ?_
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
-      Finset.sum_congr rfl fun k _ => by ring
-  have hD₂ : ∑ i, ∑ j, (x i * ∑ m, y m * D₂ m j) * K i j l =
-      ∑ i, ∑ j, x i * y j * ∑ k, D₂ j k * K i k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
-  -- Termwise, this is the homotopy identity, with the sign of the orbit of `i` replaced by the
-  -- sign of the degree of `a` on its nonzero coordinates.
-  rw [hΦ₀, hQ', hE₀, hD₁, hD₂, ← Finset.sum_sub_distrib, Finset.smul_sum,
+  -- sums of the homotopy identity. Termwise, this is the homotopy identity, with the sign of the
+  -- orbit of `i` replaced by the sign of the degree of `a` on its nonzero coordinates.
+  rw [sum_mul_sum_sum_mul_mul _ _ x y _ Q (Φ₀ · l), sum_sum_sum_mul_sum_mul_mul _ _ x y _ _ Φ₁ Φ₂,
+    sum_mul_sum_sum_mul_mul _ _ x y _ K (E₀ · l), sum_sum_sum_mul_mul_mul_left _ _ x y _ D₁,
+    sum_sum_mul_sum_mul_mul_right _ _ x y _ D₂, ← Finset.sum_sub_distrib, Finset.smul_sum,
     ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [← Finset.sum_sub_distrib, Finset.smul_sum, ← Finset.sum_add_distrib,
