@@ -6,6 +6,7 @@ Authors: Tau Ceti
 module
 
 public import Mathlib.Geometry.Diffeology.Basic
+public import TauCeti.Geometry.Diffeology.Induced
 public import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
 
 /-!
@@ -118,6 +119,16 @@ protected theorem _root_.ContMDiff.dSmooth
     [DiffeologicalSpace N] [IsContMDiffCompatible F N] {f : M → N}
     (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ f) : DSmooth f :=
   fun _ _ hp => isPlot_iff_contMDiff.mpr (hf.comp (isPlot_iff_contMDiff.mp hp))
+
+/-- A manifold map that is smooth on a subset restricts to a smooth map on that subset with its
+subspace diffeology. -/
+protected theorem _root_.ContMDiffOn.dSmooth_domRestrict
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {N : Type*} [TopologicalSpace N] [ChartedSpace F N]
+    [DiffeologicalSpace N] [IsContMDiffCompatible F N] {f : M → N} {s : Set M}
+    (hf : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ f s) : DSmooth (s.domRestrict f) :=
+  fun _ p hp => isPlot_iff_contMDiff.mpr (hf.comp_contMDiff
+    (isPlot_iff_contMDiff.mp (TauCeti.Diffeology.isPlot_subtype_iff.mp hp)) fun z => (p z).2)
 
 end
 

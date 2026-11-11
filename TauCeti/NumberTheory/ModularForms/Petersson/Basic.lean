@@ -286,7 +286,7 @@ theorem integrableOn_petersson_of_measure_lt_top {F F' : Type*} [FunLike F ℍ �
 open ConjAct in
 /-- **The Petersson integrand of a *singly* slashed cusp form against a cusp form is integrable
 over any set of finite measure** — the orientation
-`peterssonInner_sum_slash_left_adjugateGL` asks its caller for.
+`peterssonInner_sum_slash_left_adjugate` asks its caller for.
 
 Arithmeticity of the conjugate is taken as an instance rather than derived, so that a caller with
 a rational `σ` supplies it from `Subgroup.IsArithmetic.conj` and one with any other source of it

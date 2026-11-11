@@ -213,8 +213,8 @@ private theorem mextDeriv_mlieBracket_apply [CompleteSpace E]
     simpa only [mextDerivₗ_apply] using
       (mextDerivₗ I 1 α).mdifferentiableAt_apply_vectorField (V := fun i y ↦ ![X y, Y y] i)
         fun i ↦ by fin_cases i <;> assumption
-  have hαW : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ α.1 y ![W y]) x := by
-    exact α.mdifferentiableAt_apply_vectorField (V := fun i y ↦ ![W y] i)
+  have hαW : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ α.1 y ![W y]) x :=
+    α.mdifferentiableAt_apply_vectorField (V := fun i y ↦ ![W y] i)
       fun i ↦ by fin_cases i; exact hW
   have hfRg : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ f y * mvfderiv I g y (α.reebVectorField y)) x :=
     (hf.mdifferentiableAt two_ne_zero).mul hRg
@@ -230,45 +230,33 @@ private theorem mextDeriv_mlieBracket_apply [CompleteSpace E]
   have hdd := SmoothForm.mextDeriv_apply_two (φ := mextDerivₗ I 1 α) hXd hYd hW
   simp only [mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv, Pi.zero_apply,
     ContinuousAlternatingMap.coe_zero] at hdd
-  -- The terms differentiating `dα(Y, W)` and `dα(X, W)`.
-  have eYW : (fun y ↦ mextDeriv α.1 y ![Y y, W y]) =
-      fun y ↦ mvfderiv I g y (α.reebVectorField y) * α.1 y ![W y] - mvfderiv I g y (W y) :=
-    funext fun y ↦ hY.mextDeriv_apply_eq y (W y)
-  have eXW : (fun y ↦ mextDeriv α.1 y ![X y, W y]) =
-      fun y ↦ mvfderiv I f y (α.reebVectorField y) * α.1 y ![W y] - mvfderiv I f y (W y) :=
-    funext fun y ↦ hX.mextDeriv_apply_eq y (W y)
   -- The derivatives of `α(W)` along `X` and `Y`, from `L_X α = (R_α f) α` and `L_Y α = (R_α g) α`.
-  have hLX := mlieDerivForm_apply_one (V := X) (α.mdifferentiableAt x) hW
-  rw [hX.mlieDerivForm_apply_eq hXd, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at hLX
-  have hLY := mlieDerivForm_apply_one (V := Y) (α.mdifferentiableAt x) hW
-  rw [hY.mlieDerivForm_apply_eq hYd, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at hLY
+  have hLX := hX.mvfderiv_apply_sub_apply_mlieBracket hXd hW
+  have hLY := hY.mvfderiv_apply_sub_apply_mlieBracket hYd hW
   -- The bracket terms `dα([X, W], Y)` and `dα([Y, W], X)`.
   have hXWY := hY.mextDeriv_apply_eq x (mlieBracket I X W x)
   have hYWX := hX.mextDeriv_apply_eq x (mlieBracket I Y W x)
-  rw [mvfderiv_mlieBracket hg h2 hXd hW] at hXWY
-  rw [mvfderiv_mlieBracket hf h2 hYd hW] at hYWX
-  rw [mextDeriv_apply_swap α.1 x (mlieBracket I X W x),
-    mextDeriv_apply_swap α.1 x (mlieBracket I Y W x)] at hdd
-  -- The derivatives along `W` of `X(g)` and `Y(f)`.
-  have egX : (fun y ↦ mvfderiv I g y (X y)) =
-      fun y ↦ f y * mvfderiv I g y (α.reebVectorField y) + mextDeriv α.1 y ![X y, Y y] :=
-    funext fun y ↦ hY.mvfderiv_apply_eq hX y
+  -- The derivative along `W` of `Y(f)`; that of `X(g)` is `hY.mvfderiv_apply_eq hX`.
   have efY : (fun y ↦ mvfderiv I f y (Y y)) =
       fun y ↦ g y * mvfderiv I f y (α.reebVectorField y) - mextDeriv α.1 y ![X y, Y y] := by
     funext y
     rw [hX.mvfderiv_apply_eq hY y, mextDeriv_apply_swap α.1 y (Y y)]
     ring
-  rw [egX, mvfderiv_fun_add hfRg hA] at hXWY
-  rw [efY, mvfderiv_fun_sub hgRf hA] at hYWX
-  rw [eYW, eXW, mvfderiv_fun_sub hRgαW hdgW, mvfderiv_fun_sub hRfαW hdfW,
+  rw [mvfderiv_mlieBracket hg h2 hXd hW, funext fun y ↦ hY.mvfderiv_apply_eq hX y,
+    mvfderiv_fun_add hfRg hA] at hXWY
+  rw [mvfderiv_mlieBracket hf h2 hYd hW, efY, mvfderiv_fun_sub hgRf hA] at hYWX
+  -- The terms differentiating `dα(Y, W)` and `dα(X, W)`.
+  rw [mextDeriv_apply_swap α.1 x (mlieBracket I X W x),
+    mextDeriv_apply_swap α.1 x (mlieBracket I Y W x),
+    funext fun y ↦ hY.mextDeriv_apply_eq y (W y), funext fun y ↦ hX.mextDeriv_apply_eq y (W y),
+    mvfderiv_fun_sub hRgαW hdgW, mvfderiv_fun_sub hRfαW hdfW,
     mvfderiv_fun_mul hRg hαW, mvfderiv_fun_mul hRf hαW] at hdd
   have hAfRg : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mextDeriv α.1 y ![X y, Y y] +
       f y * mvfderiv I g y (α.reebVectorField y)) x := hA.add hfRg
   rw [mvfderiv_fun_sub hAfRg hgRf, mvfderiv_fun_add hA hfRg]
-  simp only [add_apply, sub_apply,
-    smul_apply, smul_eq_mul] at hdd hXWY hYWX ⊢
+  simp only [add_apply, sub_apply, smul_apply, smul_eq_mul] at hdd hXWY hYWX ⊢
   rw [← hWx]
-  linear_combination hdd - hXWY + hYWX - mvfderiv I g x (α.reebVectorField x) * hLX +
+  linear_combination hdd - hXWY + hYWX + mvfderiv I g x (α.reebVectorField x) * hLX -
     mvfderiv I f x (α.reebVectorField x) * hLY
 
 end IsContactHamiltonianVectorField

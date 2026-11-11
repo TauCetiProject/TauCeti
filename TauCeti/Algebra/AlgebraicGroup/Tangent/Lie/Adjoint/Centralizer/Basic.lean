@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.VectorStabilizer
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Fixed
 import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 
@@ -41,6 +42,8 @@ derivations, where closed subgroups have their Lie subalgebras.
 * `TauCeti.centralizerHopfIdeal`: the Hopf ideal of the centralizer of `x ∈ 𝔤`.
 * `TauCeti.centralizerHopfIdeal_le_ker_iff`: its algebra-valued points are the points whose
   adjoint action fixes `x`.
+* `TauCeti.mem_quotientPointsSubgroup_centralizerHopfIdeal_iff`: a base-field point lies
+  in the centralizer exactly when its adjoint Lie automorphism fixes `x`.
 * `TauCeti.mem_lieSubalgebra_centralizerHopfIdeal_iff` and
   `TauCeti.lieSubalgebra_centralizerHopfIdeal`: its Lie algebra is the kernel of `ad x`.
 * `TauCeti.centralizerHopfIdeal_eq_bot_iff_mem_center`: for a connected group over an
@@ -104,6 +107,28 @@ theorem centralizerHopfIdeal_le_ker_iff (x : Module.Dual k (Bialgebra.CotangentS
     ← (Derivation.tangentScalarExtensionEquiv (R := k) (A := H) (B := A)).injective.eq_iff,
     Derivation.tangentScalarExtensionEquiv_adjointComodule_endOfPoint (CommAlgCat.of k A) g,
     Derivation.tangentScalarExtensionEquiv_tmul, one_smul]
+
+/-- A base-field point lies in the centralizer exactly when its adjoint Lie automorphism,
+transported through the cotangent-dual identification, fixes `x`. -/
+theorem mem_quotientPointsSubgroup_centralizerHopfIdeal_iff
+    (x : Module.Dual k (Bialgebra.CotangentSpace k H))
+    (g : HopfAlgebra.points (H := H) (CommAlgCat.of k k)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+        (centralizerHopfIdeal H x) (CommAlgCat.of k k) ↔
+      (Derivation.cotangentDualLieEquiv (R := k) (H := H)).symm
+        (Derivation.adDerivationLieEquiv k
+          (Derivation.pointInCounitAlgebra (CommAlgCat.of k k) g)
+          (Derivation.cotangentDualLieEquiv (R := k) (H := H) x)) = x := by
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  have hker : (∀ y ∈ centralizerHopfIdeal H x, g.ofConv y = 0) ↔
+      (centralizerHopfIdeal H x).toIdeal ≤ RingHom.ker g.ofConv := by
+    simp only [IsConcreteLE.le_iff, HopfIdeal.mem_toIdeal, RingHom.mem_ker]
+  rw [hker, centralizerHopfIdeal_le_ker_iff,
+    ← (Derivation.cotangentDualLieEquiv (R := k) (H := H)).injective.eq_iff]
+  simp only [LieEquiv.coe_coe, LieEquiv.apply_symm_apply,
+    Derivation.adDerivationLieEquiv_apply,
+    Algebra.ofId_self, Derivation.mapValue_id, LinearMap.id_apply,
+    Derivation.cotangentDualLieEquiv_apply]
 
 /-- An algebra-valued point centralizes `x` precisely when its adjoint action fixes `1 ⊗ x`.
 This criterion retains the equations over nonreduced coefficient algebras. -/

@@ -119,7 +119,7 @@ private theorem finrank_invariants_kummerH1FiniteRepresentation_tprod_of_exactK0
     rw [fdRepK0RingEquiv_of, fdRepK0RingEquiv_of]
     refine hPC.trans ?_
     rw [reductionK0_congr (ZMod ℓ) (torsionByUnitsEquivKummerCoeff sigma ℓ hN),
-      reductionK0_restrictScalarsInt]
+      reductionK0_restrictScalars]
     -- `μ` is `FDRep.of` of the roots-of-unity representation, whose representation is that one.
     rfl
   have hH : fdRepK0RingEquiv (ZMod ℓ) Gal(L/K) (ExactK0.of H) =

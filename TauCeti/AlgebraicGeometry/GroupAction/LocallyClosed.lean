@@ -132,7 +132,8 @@ section Transitivity
 variable [GrpObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
   [LocallyOfFiniteType X.hom]
 
-/-- Rational group points relate any two closed points of a geometric orbit by translation. -/
+/-- Over an algebraically closed field, with `G` and `X` locally of finite type, any two closed
+points of the geometric orbit of `x` are related by translation by a rational point of `G`. -/
 theorem exists_translation_eq_of_mem_orbit_inter_closedPoints
     (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) {p q : X.left}
     (hp : p ∈ orbit G x ∩ closedPoints X.left)
@@ -147,8 +148,9 @@ theorem exists_translation_eq_of_mem_orbit_inter_closedPoints
   rw [← translationMulAction_smul, translationMulAction_smul_apply,
     mul_smul, inv_smul_smul]
 
-/-- An immersed scheme lying in one orbit inherits transitivity on closed points from
-any family of automorphisms intertwining the ambient translations. -/
+/-- Over an algebraically closed field, with `G` and `X` locally of finite type, an immersed
+scheme lying in the geometric orbit of `x` inherits transitivity on closed points from any family
+of automorphisms intertwining the ambient translations by rational points of `G`. -/
 theorem exists_eq_of_equivariant_of_range_subset_orbit
     (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) {Y : Scheme.{u}} (i : Y ⟶ X.left)
     [IsImmersion i] (hrange : Set.range i ⊆ orbit G x)

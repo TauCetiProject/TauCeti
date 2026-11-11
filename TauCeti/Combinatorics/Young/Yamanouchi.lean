@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Finset.Range
 public import TauCeti.Combinatorics.Young.BenderKnuth
+public import TauCeti.Combinatorics.Young.SkewTableau
 
 /-!
 # Yamanouchi tableaux and Stembridge's involution
@@ -103,6 +105,20 @@ theorem contentFromCol_eq_zero_of_rowLen_le (T : SemistandardYoungTableau μ) {j
   have hc' := YoungDiagram.mem_iff_lt_rowLen.mp ((YoungDiagram.mem_cells c).mp hc)
   have := μ.rowLen_anti 0 c.1 (Nat.zero_le _)
   omega
+
+open TauCeti.SkewSemistandardYoungTableau in
+/-- The cells holding `a` in a column at least `j` lie in the rows up to `k`, so their number
+is at most the total row count of the letter `a` in those rows. -/
+theorem contentFromCol_le_sum_rowCount (T : SemistandardYoungTableau μ) {j a k : ℕ}
+    (hzero : ∀ r, k < r → #{c ∈ range (μ.rowLen r) | j ≤ c ∧ T r c = a} = 0) :
+    T.contentFromCol j a ≤ ∑ r ∈ range (k + 1), ((botEquiv μ).symm T).rowCount r a := by
+  have hN : μ.colLen 0 ≤ max (μ.colLen 0) (k + 1) := le_max_left _ _
+  have hkN : k + 1 ≤ max (μ.colLen 0) (k + 1) := le_max_right _ _
+  rw [contentFromCol_eq_sum T j a hN, ← sum_range_ite_lt _ hkN]
+  refine sum_le_sum fun r _ => ?_
+  split_ifs with hr
+  · exact T.card_filter_le_rowCount_symm_botEquiv r j _
+  · exact (hzero r (by omega)).le
 
 /-- The number of entries `k` of `T` in column `j`. -/
 private def colCount (T : SemistandardYoungTableau μ) (j k : ℕ) : ℕ :=

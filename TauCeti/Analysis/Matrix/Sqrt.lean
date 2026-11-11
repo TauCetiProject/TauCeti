@@ -41,6 +41,8 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
   is Hermitian;
 * `Matrix.PosSemidef.rank_sqrt` — the square root of a positive-semidefinite matrix has the same
   rank;
+* `Matrix.PosSemidef.sqrt_mul_transpose_sqrt` — over the reals, the square root times its
+  transpose recovers the matrix;
 * `Matrix.PosSemidef.range_toEuclideanLin_sqrt` — its Euclidean linear map has the same range;
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
@@ -78,6 +80,14 @@ theorem PosSemidef.rank_sqrt {S : Matrix ι ι 𝕜} (hS : S.PosSemidef) :
     rw [hh.eq, CFC.sqrt_mul_sqrt_self S hS.nonneg]
   conv_rhs => rw [← hfac]
   rw [Matrix.rank_conjTranspose_mul_self]
+
+open scoped Classical in
+/-- For a real positive-semidefinite matrix, its square root times its transpose is the matrix. -/
+theorem PosSemidef.sqrt_mul_transpose_sqrt {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
+    CFC.sqrt S * (CFC.sqrt S)ᵀ = S := by
+  rw [← Matrix.conjTranspose_eq_transpose_of_trivial,
+    (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.eq]
+  exact CFC.sqrt_mul_sqrt_self S hS.nonneg
 
 open scoped Classical in
 /-- The Euclidean linear maps of a positive-semidefinite matrix and its square root have the same

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Calculus.Morse.ShapeOperator
 public import TauCeti.Geometry.Manifold.Immersion.SecondFundamentalForm
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
-import TauCeti.Analysis.InnerProductSpace.PointSpectrum.Transport
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.LinearAlgebra.Eigenspace.Transport
 
@@ -408,9 +407,7 @@ private theorem finrank_pointSpectralSubspace_manifoldShapeOperator (ν : V) (Ω
       finrank ℝ
         ((shapeOperator (i ∘ (extChartAt I x).symm) (extChartAt I x x) ν).pointSpectralSubspace
           Ω) := by
-  rw [manifoldShapeOperator,
-    ← map_pointSpectralSubspace_conj (tangentSpaceCastModel I x).toLinearEquiv.symm,
-    LinearEquiv.finrank_map_eq]
+  rw [manifoldShapeOperator, pointSpectralSubspace_conj, LinearEquiv.finrank_map_eq]
 
 /-- **Critical Hessian of squared distance in terms of `manifoldSecondFundamentalForm`.** At a
 critical point (`i x - a ∈ normalSubspace I i x`) of `y ↦ ‖i y - a‖²` along a map `i : M → V`

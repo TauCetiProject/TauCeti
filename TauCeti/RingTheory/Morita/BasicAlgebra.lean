@@ -69,7 +69,7 @@ theorem exists_isIdempotentElem_full_isBasic_corner (A : Type u) [Ring A] [IsSem
     ⟨n, D, hD, ⟨he.cornerQuotientJacobsonEquiv.trans φ⟩⟩⟩
 
 /-- **Morita reduction to a basic algebra.** A semiperfect algebra, for instance a
-finite-dimensional algebra over a field (`TauCeti.isSemiperfectRing_of_finiteDimensional`), is
+finite-dimensional algebra over a field (`TauCeti.IsSemiperfectRing.of_finite`), is
 Morita equivalent to a basic algebra: the corner ring of
 `TauCeti.IsSemiperfectRing.exists_isIdempotentElem_full_isBasic_corner`. -/
 theorem exists_isBasic_isMoritaEquivalent (R : Type*) [CommSemiring R] (A : Type u) [Ring A]

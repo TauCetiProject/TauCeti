@@ -188,7 +188,7 @@ variable [Semiring H] [HopfAlgebra R H] [Module H M] [IsScalarTower R H M]
 `mul' ((S ⊗ 1) t)` acts on the vector. -/
 private theorem contractLeft_tensorPairAction (t : H ⊗[R] H) (φ : Dual R H M) (m : M) :
     contractLeft R M (TensorProduct.map (dualEquiv R H M).toLinearMap LinearMap.id
-        (tensorPairAction R H (Dual R H M) M t (φ ⊗ₜ[R] m))) =
+        (tensorPairAction R (Dual R H M) M t (φ ⊗ₜ[R] m))) =
       dualEquiv R H M φ
         (LinearMap.mul' R H ((HopfAlgebra.antipode R).rTensor H t) • m) := by
   induction t using TensorProduct.inductionOn with
@@ -274,7 +274,7 @@ omit [FiniteDimensional k V] in
 dual by `a` on vectors and by the transpose of the action of `S(b)` on functionals. -/
 private theorem tensorPairAction_map_dualEquiv_symm (a b : H)
     (y : V ⊗[k] Module.Dual k V) :
-    tensorPairAction k H V (Dual k H V) (a ⊗ₜ[k] b)
+    tensorPairAction k V (Dual k H V) (a ⊗ₜ[k] b)
         (TensorProduct.map LinearMap.id (dualEquiv k H V).symm.toLinearMap y) =
       TensorProduct.map LinearMap.id (dualEquiv k H V).symm.toLinearMap
         (TensorProduct.map (Algebra.lsmul k k V a)
@@ -293,7 +293,7 @@ private theorem smul_coevalVec (h : H) :
   -- Under the native identification, the action of `t : H ⊗ H` on the canonical tensor is the
   -- action of `mul' ((1 ⊗ S) t)` on its vector factor, by dinaturality of coevaluation.
   have key (t : H ⊗[k] H) :
-      tensorPairAction k H V (Dual k H V) t
+      tensorPairAction k V (Dual k H V) t
           (TensorProduct.map LinearMap.id (dualEquiv k H V).symm.toLinearMap
             (coevaluation k V 1)) =
         TensorProduct.map LinearMap.id (dualEquiv k H V).symm.toLinearMap

@@ -42,6 +42,8 @@ reducedness is: a reduced word repeats no letter adjacently, and prefixing a red
   left descent of the element it spells.
 * `CoxeterSystem.isReduced_cons_of_isLeftDescent`: a left descent `i` of `w` turns a reduced word
   for `s_i * w` into a reduced word for `w`.
+* `CoxeterSystem.isReduced_cons_of_not_isLeftDescent`: if `i` is not a left descent of `w`, then
+  `i` followed by a reduced word for `w` is a reduced word for `s_i * w`.
 * `CoxeterSystem.mem_rightInvSeq_of_isRightInversion` and
   `CoxeterSystem.mem_leftInvSeq_of_isLeftInversion`: **every inversion occurs in the inversion
   sequence** of any word spelling the element.
@@ -133,6 +135,13 @@ theorem isReduced_cons_of_isLeftDescent {i : B} {w : W} (hd : cs.IsLeftDescent w
     rw [cs.wordProd_cons, hprod, cs.simple_mul_simple_cancel_left]
   have hlen : ℓ (cs.simple i * w) + 1 = ℓ w := cs.isLeftDescent_iff.mp hd
   rw [IsReduced, hw, List.length_cons, ← hω.eq, hprod, hlen]
+
+/-- If `i` is not a left descent of `w`, then prefixing `i` to a reduced word for `w` gives a
+reduced word for `cs.simple i * w`. -/
+theorem isReduced_cons_of_not_isLeftDescent {i : B} {w : W} (hd : ¬cs.IsLeftDescent w i)
+    {ω : List B} (hω : cs.IsReduced ω) (hprod : π ω = w) : cs.IsReduced (i :: ω) := by
+  rw [IsReduced, cs.wordProd_cons, hprod, List.length_cons, ← hω.eq, hprod]
+  exact cs.not_isLeftDescent_iff.mp hd
 
 /-! ### The reflection cocycle -/
 
@@ -273,7 +282,7 @@ private theorem isLiftable_reflectionSwap : M.IsLiftable (reflectionSwap cs) := 
     simp [TauCeti.prod_map_alternatingWord, hm]
   have hseq : ris (CoxeterSystem.alternatingWord i i' (2 * M i i'))
       = (lis (CoxeterSystem.alternatingWord i' i (2 * M i i'))).reverse := by
-    rw [← cs.rightInvSeq_reverse, TauCeti.reverse_alternatingWord_two_mul]
+    rw [← cs.rightInvSeq_reverse, TauCeti.reverse_alternatingWord, ite_eq_left (even_two_mul _)]
   refine Equiv.ext fun p ↦ ?_
   obtain ⟨w, e⟩ := p
   rw [← hprod, prod_map_reflectionSwap_apply, hword, hseq, List.count_reverse,

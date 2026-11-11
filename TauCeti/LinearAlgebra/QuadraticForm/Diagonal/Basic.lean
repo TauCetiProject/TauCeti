@@ -293,6 +293,15 @@ theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares {w : ι → R}
   simpa [QuadraticMap.associated_weightedSumSquares, Pi.single_apply,
     (hw i).left.mul_left_eq_zero_iff] using hx (Pi.single i 1)
 
+/-- The form `⟨1, a, -a⟩` with `a` a unit is nondegenerate when two is invertible. -/
+theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares_one_self_neg (a : Rˣ) :
+    (QuadraticMap.weightedSumSquares R ![1, (a : R), -(a : R)]).Nondegenerate :=
+  QuadraticMap.nondegenerate_weightedSumSquares fun i => by
+    fin_cases i
+    · exact isRegular_one
+    · exact a.isUnit.isRegular
+    · exact (a.isUnit.neg).isRegular
+
 /-- Isometric diagonal forms with unit weights have weight products differing by a square. An
 isometry of the coordinate spaces changes the Gram matrix of a diagonal form by a congruence, so
 it changes its determinant — the product of the weights — by the square of the determinant of that

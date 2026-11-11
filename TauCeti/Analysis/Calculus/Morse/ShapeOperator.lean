@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.ShapeOperator
-import TauCeti.Analysis.InnerProductSpace.PointSpectrum.Transport
 
 /-!
 # Morse index and focal points of squared distance via the shape operator
@@ -106,25 +105,6 @@ theorem isNondegenerateCriticalPoint_norm_sq_sub_self_comp (hi : ContDiffAt ℝ 
   rw [isNondegenerateCriticalPoint_norm_sq_sub_comp_iff hi h]
   simp [Module.End.hasEigenvalue_iff, eigenspace_def, Module.End.one_eq_id]
 
-/-- Conjugating `shapeOperator i x ν` along `Di(x)` onto `(Di(x)).range` produces a symmetric
-endomorphism when `i` is `C²` at `x` with injective derivative. -/
-private theorem isSymmetric_conj_shapeOperator (hi : ContDiffAt ℝ 2 i x)
-    (h : Injective (fderiv ℝ i x)) (ν : E) :
-    ((LinearEquiv.ofInjective (fderiv ℝ i x : V →ₗ[ℝ] E) h).conj
-      (shapeOperator i x ν)).IsSymmetric := by
-  let eR := LinearEquiv.ofInjective (fderiv ℝ i x : V →ₗ[ℝ] E) h
-  have coe_eR (v : V) : (eR v : E) = fderiv ℝ i x v := by simp [eR]
-  intro u w
-  have hu : (u : E) = fderiv ℝ i x (eR.symm u) := by
-    conv_lhs => rw [← eR.apply_symm_apply u]
-    exact coe_eR (eR.symm u)
-  have hw : (w : E) = fderiv ℝ i x (eR.symm w) := by
-    conv_lhs => rw [← eR.apply_symm_apply w]
-    exact coe_eR (eR.symm w)
-  rw [Submodule.coe_inner, Submodule.coe_inner, LinearEquiv.conj_apply_apply,
-    LinearEquiv.conj_apply_apply, coe_eR, coe_eR, hu, hw]
-  exact hi.inner_fderiv_shapeOperator_apply_comm ν (eR.symm u) (eR.symm w)
-
 /-- **Spectral formula for the Morse index of squared distance.** At any critical point `x` of
 `y ↦ ‖i y - a‖²` along a `C²` immersion `i` (degenerate or not), the Morse index equals the
 dimension of the point-spectral subspace of `S_{a - i x}` for eigenvalues strictly greater than
@@ -139,7 +119,7 @@ theorem morseIndex_norm_sq_sub_comp (hi : ContDiffAt ℝ 2 i x) (h : Injective (
   have : FiniteDimensional ℝ R := Module.Finite.equiv eR
   let S : Module.End ℝ V := shapeOperator i x (a - i x)
   let T : Module.End ℝ R := eR.conj S
-  have hT : T.IsSymmetric := isSymmetric_conj_shapeOperator hi h (a - i x)
+  have hT : T.IsSymmetric := hi.isSymmetric_conj_shapeOperator h (a - i x)
   have hn : finrank ℝ R = finrank ℝ V := eR.finrank_eq.symm
   let b := hT.eigenvectorBasis hn
   let b₀ : Module.Basis (Fin (finrank ℝ V)) ℝ V := b.toBasis.map eR.symm
@@ -180,7 +160,7 @@ theorem morseIndex_norm_sq_sub_comp (hi : ContDiffAt ℝ 2 i x) (h : Injective (
     simp only [mem_ofPred_eq, mem_Ioi]
     constructor <;> intro hj <;> linarith
   rw [morseIndex_def, QuadraticForm.sigNeg_of_equiv_weightedSumSquares hequiv, hset,
-    ← hT.finrank_pointSpectralSubspace hn (Ioi 1), ← map_pointSpectralSubspace_conj eR S (Ioi 1),
+    ← hT.finrank_pointSpectralSubspace hn (Ioi 1), S.pointSpectralSubspace_conj eR,
     eR.finrank_map_eq]
 
 /-- **Milnor's focal-point formula for the Morse index of squared distance** (*Morse Theory*,

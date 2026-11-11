@@ -49,6 +49,8 @@ then says that the search reaches every good prime once it runs far enough
 
 ## Main results
 
+* `TauCeti.IsGoodDixonPrime.of_lt`: a prime congruent to `1` modulo the exponent and beyond
+  `max |G| (2⌊√|G|⌋)` is a good Dixon prime.
 * `TauCeti.IsGoodDixonPrime.isSemisimpleRing`: the modular group algebra is semisimple.
 * `TauCeti.IsGoodDixonPrime.exists_isPrimitiveRoot` and
   `TauCeti.IsGoodDixonPrime.splits_X_pow_exponent_sub_one`: `ZMod p` splits `X ^ e - 1`.
@@ -120,6 +122,13 @@ theorem fact_prime (hp : IsGoodDixonPrime G p) : Fact p.Prime := ⟨hp.prime⟩
 already rules out `Nat.card G = 0`; finiteness need not be assumed separately. -/
 theorem finite (hp : IsGoodDixonPrime G p) : Finite G :=
   Nat.finite_of_card_ne_zero fun h => hp.not_dvd_natCard (h ▸ dvd_zero p)
+
+/-- A prime congruent to `1` modulo the exponent of `G` and larger than `max |G| (2⌊√|G|⌋)` is a
+good Dixon prime: being larger than `|G|` keeps it from dividing `|G|`. -/
+theorem of_lt [Finite G] (hprime : p.Prime) (hdvd : Monoid.exponent G ∣ p - 1)
+    (hlt : max (Nat.card G) (2 * Nat.sqrt (Nat.card G)) < p) : IsGoodDixonPrime G p :=
+  ⟨hprime, fun h => (Nat.le_of_dvd Nat.card_pos h).not_gt (lt_of_le_of_lt (le_max_left _ _) hlt),
+    hdvd, lt_of_le_of_lt (le_max_right _ _) hlt⟩
 
 /-! #### The exponent condition -/
 
@@ -229,11 +238,7 @@ theorem exists_isGoodDixonPrime (G : Type*) [Group G] [Finite G] :
   obtain ⟨p, hprime, hgt, hmod⟩ :=
     Nat.exists_prime_gt_modEq_one (k := Monoid.exponent G)
       (max (Nat.card G) (2 * Nat.sqrt (Nat.card G))) Monoid.exponent_ne_zero_of_finite
-  have hcard : 0 < Nat.card G := Nat.card_pos
-  have hlt : Nat.card G < p := lt_of_le_of_lt (le_max_left _ _) hgt
-  refine ⟨p, hprime, fun hdvd => ?_, ?_, lt_of_le_of_lt (le_max_right _ _) hgt⟩
-  · exact absurd (Nat.le_of_dvd hcard hdvd) (by omega)
-  · exact (Nat.modEq_iff_dvd' hprime.one_lt.le).1 hmod.symm
+  exact ⟨p, .of_lt hprime ((Nat.modEq_iff_dvd' hprime.one_lt.le).1 hmod.symm) hgt⟩
 
 /-- The data the Burnside--Dixon--Schneider algorithm runs on: a good Dixon prime `p` for `G`
 together with a chosen primitive `e`-th root of unity modulo `p`, `e` the exponent of `G`. The root

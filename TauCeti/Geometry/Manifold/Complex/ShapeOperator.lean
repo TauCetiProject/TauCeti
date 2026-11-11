@@ -101,12 +101,12 @@ theorem _root_.MDifferentiableAt.normalSubspace_eq_orthogonal_range_mvfderiv
     simpa only [hextC, hextC'] using hi.differentiableAt_comp_extChartAt_symm
   have hR : (mvfderiv 𝓘(ℝ, E) i x).range =
       (fderiv ℝ (i ∘ (chartAt E x).symm) (chartAt E x x)).range := by
-    rw [← (hi.restrictScalars ℝ).fderiv_comp_chartAt_symm]
+    rw [← TauCeti.fderiv_comp_chartAt_symm]
     -- `TangentSpace 𝓘(ℝ, E) x` and `E` are definitionally the same type.
     rfl
   have hC : (mvfderiv 𝓘(ℂ, E) i x).range =
       (fderiv ℂ (i ∘ (chartAt E x).symm) (chartAt E x x)).range := by
-    rw [← hi.fderiv_comp_chartAt_symm]
+    rw [← TauCeti.fderiv_comp_chartAt_symm]
     -- `TangentSpace 𝓘(ℂ, E) x` and `E` are definitionally the same type.
     rfl
   rw [← orthogonal_range_mvfderiv_eq_normalSubspace, hR, hC,

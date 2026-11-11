@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.SecondFundamentalForm
 public import TauCeti.Geometry.Manifold.Immersion.Diffeomorph
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
 
 /-!
@@ -198,9 +198,8 @@ theorem _root_.ContMDiffAt.manifoldSecondFundamentalForm_apply_eq_of_mem_maximal
   have hφ : ContDiffAt 𝕜 2 φ z := hext.contDiffAt_comp_extChartAt_symm
   have hφz : φ z = e.extend I x := by simp [φ, z]
   have hDφ (u : TangentSpace I x) : fderiv 𝕜 φ z (tangentSpaceCastModel I x u) =
-      mvfderiv I (e.extend I) x u := by
-    have h := (hext.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm.symm
-    exact DFunLike.congr_fun h u
+      mvfderiv I (e.extend I) x u :=
+    (mvfderiv_apply_eq_fderiv_comp_extChartAt_symm (e.extend I) x u).symm
   have hinv : (mvfderiv I (e.extend I) x).IsInvertible := by
     unfold mvfderiv
     exact ContinuousLinearMap.IsInvertible.comp ⟨NormedSpace.fromTangentSpace (e.extend I x), rfl⟩

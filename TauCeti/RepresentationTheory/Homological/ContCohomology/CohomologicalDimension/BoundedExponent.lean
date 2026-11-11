@@ -45,17 +45,17 @@ theorem cohomologicalDimensionLE_iff_boundedExponent {n : ℕ} :
     rw [cohomologicalDimensionLE_iff]
     constructor
     · intro h M _ _ _ _ _ _ i hi
-      exact h M (isPPrimaryTorsion_iff.2 fun m ↦ ⟨1, by simp⟩) i hi
+      exact h M (fun m ↦ ⟨1, by simp⟩) i hi
     · intro h M _ _ _ _ _ _ i hi
       exact h M ⟨1, by simp⟩ i hi
   constructor
   · intro h M _ _ _ _ _ ⟨k, hk⟩ i hi
     exact (cohomologicalDimensionLE_iff.1 h) M
-      (isPPrimaryTorsion_iff.2 fun m ↦ ⟨k, hk m⟩) i hi
+      (fun m ↦ ⟨k, hk m⟩) i hi
   · intro h
     apply (cohomologicalDimensionLE_iff_forall_finite hp).2
     intro M _ _ _ _ _ _ hM i hi
-    exact h M hM.exists_pow_smul_eq_zero i hi
+    exact h M (isAddPGroup_iff_exists_pow_nsmul_eq_zero.1 hM) i hi
 
 /-- `cd_p G ≤ n` can be checked using only discrete coefficient modules killed by
 some fixed power of `p`. -/

@@ -89,7 +89,7 @@ theorem exists_isAlmostSplit_arTranslate (M : ModuleCat.{max u v w} A) [Module.F
       (ShortComplex.isoMk e.symm (Iso.refl _) c) hS
   have : IsLocalRing (End M) := isLocalRing_end_of_indecomposable (R := k) hiM
   exact ⟨E, e.hom ≫ i, p ≫ c.hom, _, hE,
-    hS'.isAlmostSplit_iff_isLeftAlmostSplit.mpr (hi.iso_comp e)⟩
+    hS'.isAlmostSplit_iff_isLeftAlmostSplit.mpr (hi.iso_comp e.hom)⟩
 
 include k in
 /-- Over a finite-dimensional algebra, a finitely generated module ends an almost-split sequence

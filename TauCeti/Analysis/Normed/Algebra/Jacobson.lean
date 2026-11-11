@@ -17,7 +17,9 @@ import TauCeti.RingTheory.Jacobson.Spectrum
 # Closedness and quasinilpotence of Jacobson radicals
 
 We compare membership in the nonunital Jacobson radical with membership in the
-Jacobson radical of the external unitization with its ℓ¹ norm. Pulling back
+Jacobson radical of the external unitization with its ℓ¹ norm; in particular one is
+semisimple exactly when the other is, so automatic-continuity theorems for unital semisimple
+targets transfer to nonunital ones. Pulling back
 `TauCeti.Ring.isClosed_jacobson` from `TauCeti.Analysis.Normed.Ring.Units` then proves
 closedness of the nonunital radical and its underlying scalar submodule.
 
@@ -59,6 +61,17 @@ theorem mem_nonUnitalJacobson_iff_toLp_mem_jacobson {a : A} :
   rw [mem_nonUnitalJacobson]
   have hm := SetLike.ext_iff.mp h (WithLp.toLp 1 (a : Unitization 𝕜 A))
   simpa [Submodule.mem_comap, e] using hm
+
+/-- The ℓ¹ unitization of a nonunital normed algebra has zero Jacobson radical exactly when the
+algebra does. -/
+theorem jacobson_withLp_unitization_eq_bot_iff :
+    Ring.jacobson (WithLp 1 (Unitization 𝕜 A)) = ⊥ ↔ nonUnitalJacobson 𝕜 A = ⊥ := by
+  let e := WithLp.unitizationAlgEquiv (𝕜 := 𝕜) (A := A) 𝕜
+  have : RingHomSurjective e.toRingHom := ⟨e.surjective⟩
+  have : RingHomSurjective e.symm.toRingHom := ⟨e.symm.surjective⟩
+  rw [← jacobson_unitization_eq_bot_iff (IsSemisimpleRing.jacobson_eq_bot 𝕜)]
+  exact ⟨Module.jacobson_eq_bot_of_injective e.symm.toRingHom.toSemilinearMap e.symm.injective,
+    Module.jacobson_eq_bot_of_injective e.toRingHom.toSemilinearMap e.injective⟩
 
 variable [HasSummableGeomSeries A]
 

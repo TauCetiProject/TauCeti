@@ -23,6 +23,8 @@ compact sets are replaced by their measurable envelopes.
 
 * `IsSigmaCompact.sigmaFinite_restrict`: a measure that is finite on compact sets has σ-finite
   restriction to every σ-compact set.
+* `IsSigmaCompact.sigmaFinite_comap_subtype`: a measure that is finite on compact sets has σ-finite
+  pullback `μ.comap (↑)` to every measurable σ-compact set.
 -/
 
 public section
@@ -49,3 +51,12 @@ theorem IsSigmaCompact.sigmaFinite_restrict [IsFiniteMeasureOnCompacts μ] {s : 
     exact (measure_mono inter_subset_left).trans_lt
       ((measure_toMeasurable (K n)).trans_lt (hK n).measure_lt_top)
   · rw [← iUnion_union, union_compl_self]
+
+/-- A measure that is finite on compact sets has σ-finite pullback `μ.comap (↑)` to every measurable
+σ-compact set. -/
+theorem IsSigmaCompact.sigmaFinite_comap_subtype [IsFiniteMeasureOnCompacts μ] {s : Set α}
+    (hs : IsSigmaCompact s) (hsm : MeasurableSet s) :
+    SigmaFinite (μ.comap ((↑) : s → α)) := by
+  have hσ : SigmaFinite (μ.restrict s) := hs.sigmaFinite_restrict
+  rw [← map_comap_subtype_coe hsm] at hσ
+  exact SigmaFinite.of_map _ measurable_subtype_coe.aemeasurable hσ

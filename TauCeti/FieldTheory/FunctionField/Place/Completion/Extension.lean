@@ -19,7 +19,9 @@ The induced algebra structure makes the completed extension available for local 
 The algebra structure is explicit, since choosing different places above `P` gives different
 completed extensions. Install `completionExtensionAlgebra` locally. When the constant fields
 agree, `isScalarTower_completionExtensionAlgebra` also identifies the original constant action
-through the completed extension.
+through the completed extension. The completed extension restricts to a local homomorphism
+`completionIntegersExtension` of completed valuation rings, whose algebra
+`completionIntegersExtensionAlgebra` is likewise installed locally.
 No finiteness, separability, or residue-field assumptions are needed.
 
 The construction uses Mathlib's `UniformSpace.Completion.mapRingHom`. The valuation-extension
@@ -148,6 +150,59 @@ theorem completionExtension_algebraMap (c : k) :
   rw [← P.completionEmbedding.commutes c,
     completionExtension_completionEmbedding, ← IsScalarTower.algebraMap_apply k F F',
     IsScalarTower.algebraMap_apply k k' F', P'.completionEmbedding.commutes]
+
+section Integers
+
+/-- The completed extension carries the completed valuation ring of `P` into that of `P'`. -/
+theorem completionExtension_mem_integers {x : P.Completion}
+    (hx : x ∈ P.completionPlace.integers) :
+    P.completionExtension P' hP x ∈ P'.completionPlace.integers := by
+  rw [mem_integers_iff, completionPlace_valuation, valuation_completionExtension]
+  exact pow_le_one' (by simpa using P.completionPlace.mem_integers_iff.mp hx) _
+
+/-- The map of completed valuation rings induced by the completed extension. -/
+noncomputable def completionIntegersExtension :
+    P.completionPlace.integers →+* P'.completionPlace.integers :=
+  (P.completionExtension P' hP).restrict _ _ fun _ hx ↦
+    P.completionExtension_mem_integers P' hP hx
+
+@[simp]
+theorem coe_completionIntegersExtension (x : P.completionPlace.integers) :
+    (P.completionIntegersExtension P' hP x : P'.Completion) = P.completionExtension P' hP x :=
+  (rfl)
+
+/-- The map of completed valuation rings is local. -/
+instance isLocalHom_completionIntegersExtension :
+    IsLocalHom (P.completionIntegersExtension P' hP) where
+  map_nonunit x hx := by
+    rw [P.completionPlace.isUnit_iff_valuation_eq_one, completionPlace_valuation]
+    rw [P'.completionPlace.isUnit_iff_valuation_eq_one, coe_completionIntegersExtension,
+      completionPlace_valuation, valuation_completionExtension] at hx
+    exact (pow_eq_one_iff_left (ramificationIdx_pos F P').ne').mp hx
+
+/-- The completed valuation ring of `P'` is an algebra over the completed valuation ring of `P`.
+Like `TauCeti.Place.completionExtensionAlgebra`, this structure depends on the chosen place over
+`P` and is installed locally. -/
+@[instance_reducible]
+noncomputable def completionIntegersExtensionAlgebra :
+    Algebra P.completionPlace.integers P'.completionPlace.integers :=
+  (P.completionIntegersExtension P' hP).toAlgebra
+
+/-- The chosen algebra map of completed valuation rings is `completionIntegersExtension`. -/
+theorem algebraMap_completionIntegersExtensionAlgebra :
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    algebraMap P.completionPlace.integers P'.completionPlace.integers =
+      P.completionIntegersExtension P' hP :=
+  RingHom.algebraMap_toAlgebra _
+
+/-- The chosen algebra map of completed valuation rings is the completed extension. -/
+theorem coe_algebraMap_completionIntegersExtensionAlgebra (x : P.completionPlace.integers) :
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    (algebraMap P.completionPlace.integers P'.completionPlace.integers x : P'.Completion) =
+      P.completionExtension P' hP x :=
+  (rfl)
+
+end Integers
 
 section Tower
 

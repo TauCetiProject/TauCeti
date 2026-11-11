@@ -13,9 +13,9 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 Mathlib's `Subalgebra.equivOfEq` identifies two equal subalgebras of an algebra `A` over one and
 the same base ring `R`. Two subalgebras of `A` over *different* base rings cannot be equal, since
 they live in different types, but they can still have the same underlying set, and then they are
-the same subring of `A`. This file records the resulting ring isomorphism, which is
-`RingEquiv.subringCongr` on the underlying subrings, together with the fact that it is compatible
-with the two inclusions into `A`.
+the same subsemiring of `A`. This file records the resulting ring isomorphism, which is
+`RingEquiv.subsemiringCongr` on the underlying subsemirings, together with the fact that it is
+compatible with the two inclusions into `A`.
 
 ## Main results
 
@@ -29,15 +29,16 @@ public section
 
 namespace Subalgebra
 
-variable {R₁ R₂ A : Type*} [CommRing R₁] [CommRing R₂] [Ring A] [Algebra R₁ A] [Algebra R₂ A]
+variable {R₁ R₂ A : Type*} [CommSemiring R₁] [CommSemiring R₂] [Semiring A] [Algebra R₁ A]
+  [Algebra R₂ A]
 
 /-- Two subalgebras of `A`, over possibly different base rings, with the same underlying set are
 isomorphic as rings: the identity of `A` restricted to that set. This is the counterpart of
-`Subalgebra.equivOfEq` for subalgebras over different base rings, and is `RingEquiv.subringCongr`
-on the underlying subrings. -/
+`Subalgebra.equivOfEq` for subalgebras over different base rings, and is
+`RingEquiv.subsemiringCongr` on the underlying subsemirings. -/
 def ringEquivOfSetEq (S₁ : Subalgebra R₁ A) (S₂ : Subalgebra R₂ A) (h : (S₁ : Set A) = S₂) :
     S₁ ≃+* S₂ :=
-  RingEquiv.subringCongr (s := S₁.toSubring) (t := S₂.toSubring) (SetLike.ext' h)
+  RingEquiv.subsemiringCongr (s := S₁.toSubsemiring) (t := S₂.toSubsemiring) (SetLike.ext' h)
 
 @[simp]
 theorem coe_ringEquivOfSetEq_apply (S₁ : Subalgebra R₁ A) (S₂ : Subalgebra R₂ A)

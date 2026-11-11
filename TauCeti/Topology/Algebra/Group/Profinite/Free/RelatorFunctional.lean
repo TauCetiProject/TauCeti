@@ -201,6 +201,57 @@ theorem relatorEval_injective (r : R)
   have hq := MonoidHom.mem_ker.1 (hle ▸ Subgroup.mem_top q)
   simpa using hq
 
+/-- Read on `G` through `e`, the transgression of the negative restriction `-h|_R` to `R` of a
+Heisenberg cochain `h` of two cocycles of `F` pulled back from `G` is the explicit cup product of
+the original classes. -/
+private theorem explicitCup11_eq_h2QuotientEquiv_transgression {a b : Z1 (freeProP p X) (ZMod p)}
+    {h : freeProP p X → ZMod p}
+    (hh : IsHeisenbergCochain (AddMonoidHom.mul : ZMod p →+ ZMod p →+ ZMod p) a b h)
+    (haR : ∀ n : R, (a : freeProP p X → ZMod p) n = 0)
+    (hbR : ∀ n : R, (b : freeProP p X → ZMod p) n = 0) {c d : Z1 G (ZMod p)}
+    (hac : ∀ f, (a : freeProP p X → ZMod p) f = (c : G → ZMod p) (e f))
+    (hbd : ∀ f, (b : freeProP p X → ZMod p) f = (d : G → ZMod p) (e f)) :
+    explicitCup11 G (ZMod p) (ZMod p) (ZMod p) AddMonoidHom.mul continuous_mul
+        (smul_mul_smul_of_smul_eq_self htriv) (c : H1 G (ZMod p)) (d : H1 G (ZMod p)) =
+      h2QuotientEquiv e htrivF htriv (transgression (freeProP p X) (ZMod p) R hRc
+        ⟨hh.negRestrict haR hbR, hh.negRestrict_mem_H1ConjInvariants haR hbR⟩) := by
+  have hfix : ∀ (g : G) (m : FixedPoints.addSubgroup R (ZMod p)),
+      (FixedPoints.addSubgroup R (ZMod p)).subtype ((e.symm : G →ₜ* freeProP p X ⧸ R) g • m) =
+        g • (FixedPoints.addSubgroup R (ZMod p)).subtype m := fun g m ↦
+    (congrArg Subtype.val (quotient_smul_fixedPoints_addSubgroup_eq_of_smul_eq htrivF
+      (e.symm g) m)).trans (htriv g m).symm
+  -- The descent of a pulled-back cocycle to `F ⧸ R`, read on `G`, is the original class.
+  have hdesc {a : Z1 (freeProP p X) (ZMod p)} {c : Z1 G (ZMod p)}
+      (hac : ∀ f, (a : freeProP p X → ZMod p) f = (c : G → ZMod p) (e f))
+      (haR : ∀ n : R, (a : freeProP p X → ZMod p) n = 0) :
+      explicitMap1 (freeProP p X ⧸ R) (FixedPoints.addSubgroup R (ZMod p)) G (ZMod p)
+        (e.symm : G →ₜ* freeProP p X ⧸ R) (FixedPoints.addSubgroup R (ZMod p)).subtype
+        continuous_of_discreteTopology hfix ((descendZ1 a haR : Z1 _ _) : H1 _ _) =
+      (c : H1 G (ZMod p)) := by
+    rw [explicitMap1_mk]
+    refine congrArg (fun z : Z1 G (ZMod p) => (z : H1 G (ZMod p)))
+      (Subtype.ext (funext fun g ↦ ?_))
+    obtain ⟨f, hf⟩ := QuotientGroup.mk_surjective (e.symm g)
+    have hef : (e.symm : G →ₜ* freeProP p X ⧸ R) g = (f : freeProP p X ⧸ R) := hf.symm
+    rw [cocyclesMap1_apply, hef, AddSubgroup.coe_subtype, coe_descendZ1_apply_mk, hac, ← hef]
+    exact congrArg _ (e.apply_symm_apply g)
+  have hpair : ∀ (m x : FixedPoints.addSubgroup R (ZMod p)),
+      (FixedPoints.addSubgroup R (ZMod p)).subtype
+          (Subgroup.fixedPointsPairing R AddMonoidHom.mul
+            (fun n ↦ smul_mul_smul_of_smul_eq_self htrivF (n : freeProP p X)) m x) =
+        AddMonoidHom.mul ((FixedPoints.addSubgroup R (ZMod p)).subtype m)
+          ((FixedPoints.addSubgroup R (ZMod p)).subtype x) := fun m x ↦ by
+    simp only [AddSubgroup.coe_subtype]
+    exact Subgroup.coe_fixedPointsPairing R AddMonoidHom.mul _ m x
+  rw [hh.transgression_negRestrict continuous_mul (smul_mul_smul_of_smul_eq_self htrivF) hRc haR
+      hbR, h2QuotientEquiv_apply, explicitMap2_explicitCup11 (freeProP p X ⧸ R) _ _ _ _ _ _ G
+      (ZMod p) (ZMod p) (ZMod p) AddMonoidHom.mul continuous_mul
+      (smul_mul_smul_of_smul_eq_self htriv) (e.symm : G →ₜ* freeProP p X ⧸ R)
+      (FixedPoints.addSubgroup R (ZMod p)).subtype (FixedPoints.addSubgroup R (ZMod p)).subtype
+      (FixedPoints.addSubgroup R (ZMod p)).subtype continuous_of_discreteTopology
+      continuous_of_discreteTopology continuous_of_discreteTopology hfix hfix hfix hpair,
+      hdesc hac haR, hdesc hbd hbR]
+
 variable [Finite X]
 
 /-- **Labute's Proposition 3, on the explicit model.** Let `F` be the free pro-`p` group on a
@@ -232,13 +283,10 @@ theorem relatorEval_explicitCup11 (r : R) (a b : H1 G (ZMod p)) :
     (Z1EquivOfSmulEqSelf htrivF).symm
       (Additive.ofMul ((Additive.toMul (Z1EquivOfSmulEqSelf htriv c)).comp φ))
   have hpull (c : Z1 G (ZMod p)) (g : freeProP p X) :
-      (pull c : freeProP p X → ZMod p) g = (c : G → ZMod p) (φ g) := by
-    simp [pull]
-  have hφ_coe (n : R) : φ n = 1 := by
-    rw [hφ, ContinuousMonoidHom.comp_toFun, Subgroup.quotientMkContinuousMonoidHom_apply,
-      (QuotientGroup.eq_one_iff (n : freeProP p X)).2 n.2, map_one]
+      (pull c : freeProP p X → ZMod p) g = (c : G → ZMod p) (e g) := by
+    simp [pull, hφ]
   have hpullR (c : Z1 G (ZMod p)) (n : R) : (pull c : freeProP p X → ZMod p) n = 0 := by
-    rw [hpull, hφ_coe]
+    rw [hpull, (QuotientGroup.eq_one_iff (n : freeProP p X)).2 n.2, map_one]
     exact groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 c.2).2
   -- A Heisenberg cochain for the pulled-back cocycles: `H²(F, 𝔽_p) = 0`.
   obtain ⟨h, hh⟩ := exists_isHeisenbergCochain_of_subsingleton_H2
@@ -246,55 +294,13 @@ theorem relatorEval_explicitCup11 (r : R) (a b : H1 G (ZMod p)) :
     (smul_mul_smul_of_smul_eq_self htrivF) (pull c) (pull d)
   have haR := hpullR c
   have hbR := hpullR d
-  have htg := hh.transgression_negRestrict continuous_mul (smul_mul_smul_of_smul_eq_self htrivF)
-    hRc haR hbR
-  -- The descent of a pulled-back cocycle to `F ⧸ R`, read on `G`, is the original class.
-  have hfix : ∀ (g : G) (m : FixedPoints.addSubgroup R (ZMod p)),
-      (FixedPoints.addSubgroup R (ZMod p)).subtype ((e.symm : G →ₜ* freeProP p X ⧸ R) g • m) =
-        g • (FixedPoints.addSubgroup R (ZMod p)).subtype m := fun g m ↦
-    (congrArg Subtype.val (quotient_smul_fixedPoints_addSubgroup_eq_of_smul_eq htrivF
-      (e.symm g) m)).trans (htriv g m).symm
-  have hdesc (c : Z1 G (ZMod p)) :
-      explicitMap1 (freeProP p X ⧸ R) (FixedPoints.addSubgroup R (ZMod p)) G (ZMod p)
-        (e.symm : G →ₜ* freeProP p X ⧸ R) (FixedPoints.addSubgroup R (ZMod p)).subtype
-        continuous_of_discreteTopology hfix
-        ((descendZ1 (pull c) (hpullR c) : Z1 _ _) : H1 (freeProP p X ⧸ R) _) =
-      (c : H1 G (ZMod p)) := by
-    rw [explicitMap1_mk]
-    refine congrArg (fun z : Z1 G (ZMod p) => (z : H1 G (ZMod p)))
-      (Subtype.ext (funext fun g ↦ ?_))
-    obtain ⟨f, hf⟩ := QuotientGroup.mk_surjective (e.symm g)
-    have hφf : φ f = g := by
-      rw [hφ, ContinuousMonoidHom.comp_toFun, Subgroup.quotientMkContinuousMonoidHom_apply, hf]
-      exact e.apply_symm_apply g
-    have hef : (e.symm : G →ₜ* freeProP p X ⧸ R) g = (f : freeProP p X ⧸ R) := hf.symm
-    rw [cocyclesMap1_apply, hef, AddSubgroup.coe_subtype, coe_descendZ1_apply_mk, hpull, hφf]
-  have hpair : ∀ (m x : FixedPoints.addSubgroup R (ZMod p)),
-      (FixedPoints.addSubgroup R (ZMod p)).subtype
-          (Subgroup.fixedPointsPairing R AddMonoidHom.mul
-            (fun n ↦ smul_mul_smul_of_smul_eq_self htrivF (n : freeProP p X)) m x) =
-        AddMonoidHom.mul ((FixedPoints.addSubgroup R (ZMod p)).subtype m)
-          ((FixedPoints.addSubgroup R (ZMod p)).subtype x) := fun m x ↦ by
-    simp only [AddSubgroup.coe_subtype]
-    exact Subgroup.coe_fixedPointsPairing R AddMonoidHom.mul _ m x
-  -- The transgression formula, read on `G`.
-  have key : explicitCup11 G (ZMod p) (ZMod p) (ZMod p) AddMonoidHom.mul continuous_mul
-      (smul_mul_smul_of_smul_eq_self htriv) (c : H1 G (ZMod p)) (d : H1 G (ZMod p)) =
-      h2QuotientEquiv e htrivF htriv (transgression (freeProP p X) (ZMod p) R hRc
-        ⟨hh.negRestrict haR hbR, hh.negRestrict_mem_H1ConjInvariants haR hbR⟩) := by
-    rw [htg, h2QuotientEquiv_apply, explicitMap2_explicitCup11 (freeProP p X ⧸ R) _ _ _ _ _ _ G
-      (ZMod p) (ZMod p) (ZMod p) AddMonoidHom.mul continuous_mul
-      (smul_mul_smul_of_smul_eq_self htriv) (e.symm : G →ₜ* freeProP p X ⧸ R)
-      (FixedPoints.addSubgroup R (ZMod p)).subtype (FixedPoints.addSubgroup R (ZMod p)).subtype
-      (FixedPoints.addSubgroup R (ZMod p)).subtype continuous_of_discreteTopology
-      continuous_of_discreteTopology continuous_of_discreteTopology hfix hfix hfix hpair,
-      hdesc c, hdesc d]
   have hr : h r = heisenbergFunctional (Additive.toMul (Z1EquivOfSmulEqSelf htrivF (pull c)))
       (Additive.toMul (Z1EquivOfSmulEqSelf htrivF (pull d))) (gradedMk p (freeProP p X) 1
         ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le (hR r.2)⟩) :=
     hh.apply_eq_heisenbergFunctional htrivF
       ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le (hR r.2)⟩
-  rw [key, relatorEval_h2QuotientEquiv_transgression]
+  rw [explicitCup11_eq_h2QuotientEquiv_transgression hRc e htrivF htriv hh haR hbR (hpull c)
+      (hpull d), relatorEval_h2QuotientEquiv_transgression]
   simp only [H1EquivOfSmulEqSelf_mk, Z1EquivOfSmulEqSelf_apply, toAdd_ofAdd,
     hh.coe_negRestrict haR hbR, hr, degreeOneForm_apply, pull, AddEquiv.apply_symm_apply,
     toMul_ofMul, ContinuousMonoidHom.toMul_continuousZModDualMap]

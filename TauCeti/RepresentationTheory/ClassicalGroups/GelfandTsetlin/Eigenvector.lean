@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.GelfandInvariant.HighestWeight
-public import TauCeti.RepresentationTheory.ClassicalGroups.Differential
+public import TauCeti.RepresentationTheory.ClassicalGroups.Differential.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Line
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rationality
 import TauCeti.Algebra.Lie.Submodule.Atom

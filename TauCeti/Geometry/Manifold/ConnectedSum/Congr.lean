@@ -195,25 +195,21 @@ section CongrLeft
 
 variable {e₁ : E → M} {e₁' : E → M'} {e₂ : E → N} (φ : M ≃ₜ M') (hφ : φ ∘ e₁ =ᶠ[𝓝 0] e₁')
 
-/-- The restriction of `φ` to the punctured first summands. -/
-private def punctureMap (x : puncture e₁) : puncture e₁' :=
-  ⟨φ x, apply_mem_puncture φ.injective hφ.eq_of_nhds x.2⟩
-
 open Classical in
 /-- The connected sum along `e₁'` and `e₂` receives the second punctured summand: a point `e₂ w`
 of the punctured ball, glued to `e₁ (inversion 0 1 w)`, goes to `φ (e₁ (inversion 0 1 w))`, and a
 point outside the ball goes to itself. -/
 private def congrLeftInr (he₁ : Injective e₁) (y : puncture e₂) : ConnectedSum e₁' e₂ :=
   if h : (y : N) ∈ range e₂ then
-    inl e₁' e₂ (punctureMap φ hφ ⟨e₁ (inversion 0 1 (invFun e₂ y)),
+    inl e₁' e₂ (punctureMap φ φ.injective hφ.eq_of_nhds ⟨e₁ (inversion 0 1 (invFun e₂ y)),
       apply_inversion_mem_puncture he₁ fun h0 ↦ mem_puncture.1 y.2 (h0 ▸ invFun_eq h).symm⟩)
   else inr e₁' e₂ y
 
 private theorem congrLeftInr_apply (he₁ : Injective e₁) (he₂ : Injective e₂) {w : E} (hw : w ≠ 0)
     (hy : e₂ w ∈ puncture e₂) :
     congrLeftInr φ hφ he₁ ⟨e₂ w, hy⟩ =
-      inl e₁' e₂
-        (punctureMap φ hφ ⟨e₁ (inversion 0 1 w), apply_inversion_mem_puncture he₁ hw⟩) := by
+      inl e₁' e₂ (punctureMap φ φ.injective hφ.eq_of_nhds
+        ⟨e₁ (inversion 0 1 w), apply_inversion_mem_puncture he₁ hw⟩) := by
   simp only [congrLeftInr, mem_range_self, ↓reduceDIte, leftInverse_invFun he₂ w]
 
 private theorem congrLeftInr_of_notMem (he₁ : Injective e₁) {y : puncture e₂}
@@ -223,12 +219,15 @@ private theorem congrLeftInr_of_notMem (he₁ : Injective e₁) {y : puncture e�
 /-- The map of connected sums induced by `φ`, before it is shown to be a homeomorphism. -/
 private def congrLeftMap (he₁ : Injective e₁) (he₂ : Injective e₂) :
     ConnectedSum e₁ e₂ → ConnectedSum e₁' e₂ :=
-  lift (inl e₁' e₂ ∘ punctureMap φ hφ) (congrLeftInr φ hφ he₁) fun v hv hx hy ↦ by
-    rw [congrLeftInr_apply φ hφ he₁ he₂ (by simpa [inversion_eq_center one_ne_zero] using hv)]
-    simp only [comp_apply, punctureMap, inversion_inversion (0 : E) one_ne_zero]
+  lift (inl e₁' e₂ ∘ punctureMap φ φ.injective hφ.eq_of_nhds) (congrLeftInr φ hφ he₁)
+    fun v hv hx hy ↦ by
+      rw [congrLeftInr_apply φ hφ he₁ he₂ (by simpa [inversion_eq_center one_ne_zero] using hv)]
+      simp only [comp_apply]
+      exact congrArg _ (Subtype.ext (by simp [inversion_inversion (0 : E) one_ne_zero]))
 
 private theorem congrLeftMap_inl (he₁ : Injective e₁) (he₂ : Injective e₂) (x : puncture e₁) :
-    congrLeftMap φ hφ he₁ he₂ (inl e₁ e₂ x) = inl e₁' e₂ (punctureMap φ hφ x) :=
+    congrLeftMap φ hφ he₁ he₂ (inl e₁ e₂ x) =
+      inl e₁' e₂ (punctureMap φ φ.injective hφ.eq_of_nhds x) :=
   lift_inl _ _ _ x
 
 private theorem congrLeftMap_inr (he₁ : Injective e₁) (he₂ : Injective e₂) (y : puncture e₂) :
@@ -254,7 +253,7 @@ private theorem exists_congrLeftInr_eq (he₁ : Injective e₁) (he₂ : Injecti
       rw [← hεφ hdist]
       exact apply_mem_puncture φ.injective hφ.eq_of_nhds (apply_inversion_mem_puncture he₁ hw0)
     rw [congrLeftInr_apply φ hφ he₁ he₂ hw0]
-    exact (congrArg (inl e₁' e₂) (Subtype.ext (hεφ hdist))).trans
+    exact (congrArg (inl e₁' e₂) (Subtype.ext ((coe_punctureMap _ _ _).trans (hεφ hdist)))).trans
       (inl_inversion_eq_inr hw0 hx hy)
   · exact congrLeftInr_of_notMem φ hφ he₁ h
 
@@ -279,14 +278,15 @@ private theorem congrLeftMap_symm_congrLeftMap (hφ' : φ.symm ∘ e₁' =ᶠ[�
     congrLeftMap φ.symm hφ' he₁' he₂ (congrLeftMap φ hφ he₁ he₂ p) = p := by
   obtain ⟨x, rfl⟩ | ⟨⟨y, hy⟩, -, rfl⟩ := exists_eq_inl_or_exists_eq_inr he₁ 0 p
   · rw [congrLeftMap_inl, congrLeftMap_inl]
-    exact congrArg (inl e₁ e₂) (Subtype.ext (φ.symm_apply_apply x))
+    exact congrArg (inl e₁ e₂) (Subtype.ext (by simp))
   rw [congrLeftMap_inr]
   by_cases h : y ∈ range e₂
   · -- `e₂ w` went to `φ (e₁ (inversion 0 1 w))`, which comes back to `e₁ (inversion 0 1 w)`.
     obtain ⟨w, rfl⟩ := h
     have hw : w ≠ 0 := by rintro rfl; exact mem_puncture.1 hy rfl
     rw [congrLeftInr_apply φ hφ he₁ he₂ hw, congrLeftMap_inl]
-    exact (congrArg (inl e₁ e₂) (Subtype.ext (φ.symm_apply_apply _))).trans
+    exact (congrArg (inl e₁ e₂) (Subtype.ext (by simp) :
+      _ = ⟨e₁ (inversion 0 1 w), apply_inversion_mem_puncture he₁ hw⟩)).trans
       (inl_inversion_eq_inr hw _ hy)
   · rw [congrLeftInr_of_notMem φ hφ he₁ h, congrLeftMap_inr]
     exact congrLeftInr_of_notMem φ.symm _ he₁' h
@@ -303,11 +303,11 @@ private theorem continuous_congrLeftMap [ProperSpace E] [T2Space N] (h₁ : IsOp
   obtain ⟨x, rfl⟩ | ⟨y, hy, rfl⟩ := exists_eq_inl_or_exists_eq_inr h₁.injective r p
   · refine (isOpenEmbedding_inl h₁ h₂).continuousAt_iff.1 ?_
     have : congrLeftMap φ hφ h₁.injective h₂.injective ∘ inl e₁ e₂ =
-        inl e₁' e₂ ∘ punctureMap φ hφ :=
+        inl e₁' e₂ ∘ punctureMap φ φ.injective hφ.eq_of_nhds :=
       funext (congrLeftMap_inl φ hφ h₁.injective h₂.injective)
     rw [this]
     exact ((continuous_inl e₁' e₂).comp
-      ((φ.continuous.comp continuous_subtype_val).subtype_mk _)).continuousAt
+      (continuous_punctureMap _ _ φ.continuous)).continuousAt
   · refine (isOpenEmbedding_inr h₁ h₂).continuousAt_iff.1 ?_
     refine (continuous_inr e₁' e₂).continuousAt.congr ?_
     filter_upwards [(hK.isOpen_compl.preimage continuous_subtype_val).mem_nhds hy] with y' hy'
@@ -341,15 +341,17 @@ variable [ProperSpace E] [T2Space N] (h₁ : IsOpenEmbedding e₁) (h₁' : IsOp
 theorem congrLeftHomeomorph_inl (x : puncture e₁) :
     congrLeftHomeomorph φ hφ h₁ h₁' h₂ (inl e₁ e₂ x) =
       inl e₁' e₂ ⟨φ x, apply_mem_puncture φ.injective hφ.eq_of_nhds x.2⟩ :=
-  congrLeftMap_inl φ hφ h₁.injective h₂.injective x
+  (congrLeftMap_inl φ hφ h₁.injective h₂.injective x).trans
+    (congrArg _ (Subtype.ext (coe_punctureMap _ _ _)))
 
 @[simp]
 theorem congrLeftHomeomorph_inr_apply {w : E} (hw : w ≠ 0) (hy : e₂ w ∈ puncture e₂) :
     congrLeftHomeomorph φ hφ h₁ h₁' h₂ (inr e₁ e₂ ⟨e₂ w, hy⟩) =
       inl e₁' e₂ ⟨φ (e₁ (inversion 0 1 w)), apply_mem_puncture φ.injective hφ.eq_of_nhds
         (apply_inversion_mem_puncture h₁.injective hw)⟩ :=
-  (congrLeftMap_inr φ hφ h₁.injective h₂.injective _).trans
-    (congrLeftInr_apply φ hφ h₁.injective h₂.injective hw hy)
+  ((congrLeftMap_inr φ hφ h₁.injective h₂.injective _).trans
+    (congrLeftInr_apply φ hφ h₁.injective h₂.injective hw hy)).trans
+    (congrArg _ (Subtype.ext (coe_punctureMap _ _ _)))
 
 @[simp]
 theorem congrLeftHomeomorph_inr_of_notMem {y : puncture e₂} (hy : (y : N) ∉ range e₂) :
@@ -393,8 +395,9 @@ private theorem contMDiff_congrLeftMap (hφs : ContMDiff I I n φ) :
   · rw [← mk_inl, ← ((hmk (.inl x)).contMDiffAt_comp_iff le_rfl), congrLeftMap, lift_comp_mk,
       contMDiffAt_sumElim_inl]
     have hinl : inl e₁' e₂ = mk e₁' e₂ ∘ Sum.inl := funext fun x ↦ (mk_inl e₁' e₂ x).symm
-    have hφ' : ContMDiff I I n (punctureMap φ hφ) :=
-      (ContMDiff.subtypeVal_comp_iff _ _).1 (hφs.comp contMDiff_subtype_val)
+    have hφ' : ContMDiff I I n (punctureMap φ φ.injective hφ.eq_of_nhds) :=
+      (ContMDiff.subtypeVal_comp_iff _ _).1
+        (by rw [subtypeVal_comp_punctureMap]; exact hφs.comp contMDiff_subtype_val)
     rw [hinl]
     exact (hmk'.contMDiff.comp (ContMDiff.inl.comp hφ')).contMDiffAt
   · rw [← mk_inr, ← ((hmk (.inr y)).contMDiffAt_comp_iff le_rfl), congrLeftMap, lift_comp_mk,

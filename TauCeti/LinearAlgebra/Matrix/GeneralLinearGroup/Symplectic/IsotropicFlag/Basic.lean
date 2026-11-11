@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Solvable
+import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
 # The symplectic isotropic flag matrix subgroup
@@ -194,5 +195,31 @@ instance instIsSolvableMatrixSubgroup : Group.IsSolvable (matrixSubgroup m (A :=
   exact Group.isSolvable_of_isSolvable_injective
     (φ.subgroupComap_injective (upperTriangularGroup (Fin (m + m)) A)
       (((flagOrder m).reindexGL A).injective.comp (Subgroup.subtype_injective _)))
+
+variable {m} in
+/-- The lower-left block of a flag-preserving symplectic matrix, in paired coordinates, is
+zero. -/
+theorem toBlocks₂₁_mulEquivGLSymplectic_eq_zero (g : matrixSubgroup m (A := A)) :
+    (((mulEquivGLSymplectic m A g.val : GLSymplectic (Fin m) A) :
+      GL (Fin m ⊕ Fin m) A) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A).toBlocks₂₁ = 0 := by
+  ext i j
+  have hg := (mem_matrixSubgroup_iff m g.val).mp g.2
+  simpa only [coe_mulEquivGLSymplectic, Equiv.coe_reindexGL,
+    Matrix.submatrix_apply, Matrix.toBlocks₂₁, Matrix.of_apply, Equiv.symm_symm,
+    finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
+    Matrix.zero_apply] using hg.2.2 i j
+
+variable {m} in
+/-- The upper-left block of a flag-preserving symplectic matrix, in paired coordinates, is
+invertible: the matrix is block upper triangular and invertible. -/
+theorem isUnit_toBlocks₁₁_mulEquivGLSymplectic (g : matrixSubgroup m (A := A)) :
+    IsUnit (((mulEquivGLSymplectic m A g.val : GLSymplectic (Fin m) A) :
+      GL (Fin m ⊕ Fin m) A) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A).toBlocks₁₁ := by
+  set M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A :=
+    (((mulEquivGLSymplectic m A g.val : GLSymplectic (Fin m) A) :
+      GL (Fin m ⊕ Fin m) A) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A) with hM
+  have h : IsUnit M := Units.isUnit _
+  rw [← M.fromBlocks_toBlocks, toBlocks₂₁_mulEquivGLSymplectic_eq_zero g] at h
+  exact (Matrix.isUnit_fromBlocks_zero₂₁.mp h).1
 
 end TauCeti.GLSymplecticFin.IsotropicFlag
