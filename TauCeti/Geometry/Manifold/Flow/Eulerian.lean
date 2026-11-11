@@ -37,7 +37,7 @@ composition `(φ ψ)_t = φ_t ∘ ψ_t` one has the **product velocity identity*
 
 (`TauCeti.eulerianField_trans`), and for the pointwise inverse `X_(φ⁻¹) = -(φ_t⁻¹)_* X_φ`
 (`TauCeti.eulerianField_symm`). For a fixed bijection `g`, the conjugate family `g⁻¹ ∘ φ_t ∘ g`
-has Eulerian field `g^* X_φ` (`TauCeti.eulerianField_conj`). A constant family has zero velocity
+has Eulerian field `g^* X_φ` (`Equiv.eulerianField_conj`). A constant family has zero velocity
 (`TauCeti.eulerianField_const`).
 
 These are the identities used to define the flux of a symplectic isotopy, whose velocity one-forms
@@ -138,7 +138,7 @@ theorem eulerianField_symm {z : M}
 /-- **The conjugation identity.** For a fixed bijection `g`, the Eulerian field of the conjugate
 family `t ↦ g⁻¹ ∘ φ_t ∘ g` is `X_(g⁻¹ φ g) = g^* X_φ`: at the point `g⁻¹ z`, it is the image under
 `d(g⁻¹)` of `X_φ(z)`. -/
-theorem eulerianField_conj (g : M ≃ M) {z : M} (hg : MDifferentiableAt I I g.symm z)
+theorem _root_.Equiv.eulerianField_conj (g : M ≃ M) {z : M} (hg : MDifferentiableAt I I g.symm z)
     (hφ : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun u ↦ φ u ((φ t).symm z)) t) :
     eulerianField I (fun u ↦ (g.trans (φ u)).trans g.symm) t (g.symm z) =
       mfderiv I I g.symm z (eulerianField I φ t z) := by
