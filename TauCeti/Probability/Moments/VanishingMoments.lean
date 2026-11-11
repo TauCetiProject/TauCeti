@@ -298,7 +298,7 @@ theorem ae_eq_zero_of_forall_moment_eq_zero_of_exists_integrable_exp
   obtain ⟨a, ha, hexpa⟩ := hexp
   set b := a / 2 with hb
   have hbpos : (0 : ℝ) < b := by positivity
-  have : IsFiniteMeasure ν := isFiniteMeasure_of_integrable_of_one_le hexpa <|
+  have : IsFiniteMeasure ν := hexpa.isFiniteMeasure_of_one_le_norm <|
     Filter.Eventually.of_forall fun x => by
       rw [Real.norm_eq_abs, Real.abs_exp]
       exact Real.one_le_exp (mul_nonneg ha.le (abs_nonneg x))
