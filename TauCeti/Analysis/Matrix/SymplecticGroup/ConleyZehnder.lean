@@ -140,6 +140,7 @@ theorem forall_im_symplecticGraphFrame_mulVec_eq_zero_iff (A : Matrix (n ⊕ n) 
 
 /-- The graph of the identity, the diagonal, is framed by a multiple of the identity, so it is
 carried to `ℝ^(n ⊕ n)`. -/
+@[simp]
 theorem symplecticGraphFrame_one :
     symplecticGraphFrame (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) = (Real.sqrt 2 : ℂ) • 1 := by
   have h2 := ofReal_sqrt_two_ne_zero
@@ -196,6 +197,7 @@ theorem isUnit_symplecticGraphFrame {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
   exact isUnit_of_mul_isUnit_right hu
 
 /-- The graph frame depends continuously on the matrix. -/
+@[fun_prop]
 theorem continuous_symplecticGraphFrame :
     Continuous (symplecticGraphFrame : Matrix (n ⊕ n) (n ⊕ n) ℝ → _) := by
   unfold symplecticGraphFrame
@@ -258,6 +260,7 @@ noncomputable def graphFrame (A : GLSymplectic n ℝ) : unitaryGroup (n ⊕ n) �
   (graphFrameUnit A).polarUnitary
 
 /-- The unitary graph frame depends continuously on the symplectic matrix. -/
+@[fun_prop]
 theorem continuous_graphFrame : Continuous (graphFrame : GLSymplectic n ℝ → _) := by
   have h := Units.continuous_val.comp
     ((contMDiff_toUnits_polarUnitary (n := n ⊕ n) (𝕜 := ℂ) (k := 0)).continuous.comp
@@ -389,6 +392,7 @@ theorem conleyZehnder_refl : conleyZehnder (Path.refl (1 : GLSymplectic n ℝ)) 
 
 /-- **Catenation.** Extending a path `γ` from the identity by a path `δ` changes its
 Conley–Zehnder index by minus the graph Maslov index of `δ`. -/
+@[simp]
 theorem conleyZehnder_trans {A B : GLSymplectic n ℝ} (γ : Path 1 A) (δ : Path A B) :
     conleyZehnder (γ.trans δ) = conleyZehnder γ - graphMaslovIndex δ := by
   rw [conleyZehnder, conleyZehnder, graphMaslovIndex_trans]
