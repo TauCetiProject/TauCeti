@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Kernel.Composition.Comp
 public import Mathlib.Probability.Kernel.Composition.MeasureComp
 public import Mathlib.Probability.ProbabilityMassFunction.Constructions
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Countable transition kernels and probability mass functions
@@ -104,6 +105,7 @@ theorem ofPMF_toPMF [Countable α] [MeasurableSingletonClass α] (κ : Kernel α
   ext a : 1
   rw [ofPMF_apply, toPMF_toMeasure]
 
+omit [Countable β] in
 /-- Nonnegative transition weights with row sums one determine a unique Markov kernel. -/
 theorem existsUnique_isMarkovKernel_of_tsum_eq_one [Countable α]
     [MeasurableSingletonClass α] (p : α → β → ℝ≥0∞) (hp : ∀ a, ∑' b, p a b = 1) :
@@ -111,12 +113,9 @@ theorem existsUnique_isMarkovKernel_of_tsum_eq_one [Countable α]
   let q : α → PMF β := fun a => ⟨p a, CompleteLattice.summable.hasSum_iff.mpr (hp a)⟩
   refine ⟨ofPMF q, ⟨inferInstance, fun a b => ofPMF_apply_singleton q a b⟩, ?_⟩
   intro κ hκ
-  apply Kernel.ext
-  intro a
-  apply Measure.ext_iff_singleton.mpr
-  intro b
-  rw [ofPMF_apply_singleton, hκ.2]
-  rfl
+  have := hκ.1
+  refine Kernel.ext fun a => ?_
+  exact Measure.ext_of_singleton_of_tsum_eq_one (hp a) (hκ.2 a) (ofPMF_apply_singleton q a)
 
 end ToPMF
 
