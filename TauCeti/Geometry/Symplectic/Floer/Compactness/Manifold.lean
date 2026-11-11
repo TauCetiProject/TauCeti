@@ -57,26 +57,7 @@ namespace TauCeti.SmoothTwoForm.IsNondegenerate
 
 variable {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup V]
-  [InnerProductSpace ℝ V]
-
-/-- The hypotheses on a Hamiltonian `K` of
-`TauCeti.SmoothTwoForm.IsNondegenerate.perturbedFDeriv_comp` at a point `x` of the source of a
-smooth partial diffeomorphism `φ`, when the coordinate Hamiltonians `K(z, φ⁻¹ y)` are `C³` near
-`(z, φ x)`: `K z` is its coordinate expression composed with `φ` near `x`, and that expression is
-differentiable at `φ x`. -/
-private theorem chart_hyps (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {x : M}
-    (hx : x ∈ φ.source) {K : ℝ × ℝ → M → ℝ} {W : Set ((ℝ × ℝ) × V)} (hW : IsOpen W)
-    (hK : ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ K p.1 (φ.symm p.2)) W) {z : ℝ × ℝ}
-    (hzx : (z, φ x) ∈ W) :
-    K z =ᶠ[𝓝 x] (fun y ↦ K z (φ.symm y)) ∘ φ ∧
-      DifferentiableAt ℝ (fun y ↦ K z (φ.symm y)) (φ x) := by
-  refine ⟨?_, ?_⟩
-  · filter_upwards [φ.open_source.mem_nhds hx] with y hy
-    exact congrArg (K z) (φ.toPartialEquiv.left_inv hy).symm
-  · have h := ((hK.differentiableOn (by norm_num)) _ hzx).differentiableAt (hW.mem_nhds hzx)
-    exact h.comp (φ x) ((differentiableAt_const z).prodMk differentiableAt_id)
-
-variable [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ V]
+  [InnerProductSpace ℝ V] [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ V]
   {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V} {Ks Kt : ℝ × ℝ → M → ℝ}
 
 /-- At a point `z` with `u z` in the source of a smooth partial diffeomorphism `φ` pulling `ω₀`
@@ -102,11 +83,19 @@ private theorem floerEnergyDensity_comp_and_isComplexLinearMap (hω : ω.IsNonde
           z).toLinearMap := by
   have hφx := φ.mdifferentiableAt (by simp) hx
   have hsurj := (φ.bijective_mvfderiv (by simp) hx).surjective
-  obtain ⟨hKs₁, hKs₂⟩ := chart_hyps φ hx hW hKs hzx
-  obtain ⟨hKt₁, hKt₂⟩ := chart_hyps φ hx hW hKt hzx
-  exact ⟨hω.floerEnergyDensity_comp hu hφx hsurj hφ hKs₁ hKt₁ hKs₂ hKt₂,
-    (hω.isComplexLinearMap_perturbedFDeriv_comp_iff hu hφx hsurj hφ hKs₁ hKt₁ hKs₂ hKt₂
-      hJJ').2 hfl⟩
+  -- Near `u z`, each Hamiltonian is its coordinate expression composed with `φ`, and that
+  -- expression is differentiable at `φ (u z)`.
+  have hK₁ (K : ℝ × ℝ → M → ℝ) : K z =ᶠ[𝓝 (u z)] (fun y ↦ K z (φ.symm y)) ∘ φ :=
+    (φ.toOpenPartialHomeomorph.eventually_left_inverse hx).mono fun y hy ↦
+      congrArg (K z) hy.symm
+  have hK₂ {K : ℝ × ℝ → M → ℝ}
+      (hK : ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ K p.1 (φ.symm p.2)) W) :
+      DifferentiableAt ℝ (fun y ↦ K z (φ.symm y)) (φ (u z)) :=
+    (((hK.differentiableOn (by norm_num)) _ hzx).differentiableAt (hW.mem_nhds hzx)).comp _
+      ((differentiableAt_const z).prodMk differentiableAt_id)
+  exact ⟨hω.floerEnergyDensity_comp hu hφx hsurj hφ (hK₁ Ks) (hK₁ Kt) (hK₂ hKs) (hK₂ hKt),
+    (hω.isComplexLinearMap_perturbedFDeriv_comp_iff hu hφx hsurj hφ (hK₁ Ks) (hK₁ Kt) (hK₂ hKs)
+      (hK₂ hKt) hJJ').2 hfl⟩
 
 variable {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
   {J' : ℝ × ℝ → V → AlmostComplexStructure V}
