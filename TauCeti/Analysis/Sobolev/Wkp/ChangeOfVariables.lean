@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
+import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
@@ -359,10 +360,44 @@ theorem mono {j : ℕ} (h : IsChangeOfVariables k U V Φ L c) (hj : j ≤ k) :
   pos := h.pos
   le_abs_det := h.le_abs_det
 
+/-- A change of variables from `U` into `V` restricts to one from a smaller open set `U₁ ⊆ U` into
+any open set `V₁` containing its image, with the same constants. -/
+theorem restrict {U₁ V₁ : Opens E} (h : IsChangeOfVariables k U V Φ L c) (hU : U₁ ≤ U)
+    (hmaps : MapsTo Φ U₁ V₁) : IsChangeOfVariables k U₁ V₁ Φ L c where
+  contDiffOn := h.contDiffOn.mono hU
+  differentiableOn := h.differentiableOn.mono hU
+  injOn := h.injOn.mono hU
+  mapsTo := hmaps
+  norm_iteratedFDeriv_le i hi hik x hx := h.norm_iteratedFDeriv_le i hi hik x (hU hx)
+  pos := h.pos
+  le_abs_det x hx := h.le_abs_det x (hU hx)
+
 /-- The derivative of a change of variables of order at least one is bounded by `L`. -/
 theorem norm_fderiv_le (h : IsChangeOfVariables (k + 1) U V Φ L c) :
     ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ L := fun x hx => by
   simpa only [norm_iteratedFDeriv_one] using h.norm_iteratedFDeriv_le 1 le_rfl (by omega) x hx
+
+/-- On a convex set, a change of variables of order at least one is `L`-Lipschitz. -/
+theorem lipschitzOnWith (h : IsChangeOfVariables (k + 1) U V Φ L c)
+    (hU : Convex ℝ (U : Set E)) : LipschitzOnWith L.toNNReal Φ U :=
+  hU.lipschitzOnWith_of_nnnorm_fderiv_le
+    (fun x hx => (h.differentiableOn x hx).differentiableAt (U.isOpen.mem_nhds hx))
+    fun x hx => by
+      rw [← NNReal.coe_le_coe, coe_nnnorm]
+      exact (h.norm_fderiv_le x hx).trans (Real.le_coe_toNNReal _)
+
+/-- On a convex set, the derivative of a change of variables of order at least two is
+`L`-Lipschitz. -/
+theorem lipschitzOnWith_fderiv (h : IsChangeOfVariables (k + 2) U V Φ L c)
+    (hU : Convex ℝ (U : Set E)) : LipschitzOnWith L.toNNReal (fderiv ℝ Φ) U := by
+  have hD : ContDiffOn ℝ 1 (fderiv ℝ Φ) U :=
+    h.contDiffOn.fderiv_of_isOpen U.isOpen (by exact_mod_cast (by omega : 2 ≤ k + 2))
+  refine hU.lipschitzOnWith_of_nnnorm_fderiv_le
+    (fun x hx => (hD.differentiableOn one_ne_zero x hx).differentiableAt
+      (U.isOpen.mem_nhds hx)) fun x hx => ?_
+  rw [← NNReal.coe_le_coe, coe_nnnorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+  exact (h.norm_iteratedFDeriv_le 2 (by norm_num) (by omega) x hx).trans
+    (Real.le_coe_toNNReal _)
 
 /-- An invertible continuous linear map `A` mapping `U` into `V` is a change of variables of every
 order, with constants `‖A‖` and `|det A|`. -/

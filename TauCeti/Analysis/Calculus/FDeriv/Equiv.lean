@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import Mathlib.Topology.Sets.Opens
 
@@ -33,6 +34,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply`: the same identities evaluated at a
   vector.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
+* `TauCeti.fderiv_comp_fderiv_eq_id_of_leftInvOn`: `DΨ(Φ y) ∘ DΦ(y) = id` for a left inverse `Ψ`,
+  with the lower bound `TauCeti.norm_le_mul_norm_fderiv_apply_of_leftInvOn`.
 * `ContinuousLinearEquiv.image_vanishingFDeriv_comp`: precomposition by a continuous linear
   equivalence preserves the image of the vanishing-derivative locus.
 
@@ -113,6 +116,33 @@ theorem fderiv_comp_fderiv_eq_id_of_invOn (hΦ : DifferentiableOn 𝕜 Φ U) (hm
   have hid : Φ ∘ Ψ =ᶠ[𝓝 (Φ y)] id :=
     Filter.eventually_of_mem (V.isOpen.mem_nhds hx) fun x hxV => hΦΨ hxV
   exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id (Φ y))
+
+/-- **The derivative of a left inverse.** If `Φ` is differentiable on `U` and maps it into `V`, and
+`Ψ`, differentiable on `V`, satisfies `Ψ ∘ Φ = id` on `U`, then `DΨ(Φ y) ∘ DΦ(y) = id` at every
+`y ∈ U`. -/
+theorem fderiv_comp_fderiv_eq_id_of_leftInvOn (hΦ : DifferentiableOn 𝕜 Φ U)
+    (hmaps : MapsTo Φ U V) (hΨ : DifferentiableOn 𝕜 Ψ V) (hΨΦ : LeftInvOn Ψ Φ U)
+    {y : E} (hy : y ∈ (U : Set E)) :
+    fderiv 𝕜 Ψ (Φ y) ∘L fderiv 𝕜 Φ y = ContinuousLinearMap.id 𝕜 E := by
+  have hcomp : HasFDerivAt (Ψ ∘ Φ) (fderiv 𝕜 Ψ (Φ y) ∘L fderiv 𝕜 Φ y) y :=
+    ((hΨ _ (hmaps hy)).differentiableAt (V.isOpen.mem_nhds (hmaps hy))).hasFDerivAt.comp y
+      ((hΦ y hy).differentiableAt (U.isOpen.mem_nhds hy)).hasFDerivAt
+  have hid : Ψ ∘ Φ =ᶠ[𝓝 y] id :=
+    Filter.eventually_of_mem (U.isOpen.mem_nhds hy) fun x hxU => hΨΦ hxU
+  exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id y)
+
+/-- **A lower bound for the derivative of a map with a left inverse.** Under the hypotheses of
+`TauCeti.fderiv_comp_fderiv_eq_id_of_leftInvOn`, if `‖DΨ‖ ≤ L'` on `V`, then
+`‖v‖ ≤ L' ‖DΦ(y) v‖` for every `y ∈ U` and every `v`. -/
+theorem norm_le_mul_norm_fderiv_apply_of_leftInvOn (hΦ : DifferentiableOn 𝕜 Φ U)
+    (hmaps : MapsTo Φ U V) (hΨ : DifferentiableOn 𝕜 Ψ V) (hΨΦ : LeftInvOn Ψ Φ U) {L' : ℝ}
+    (hL' : ∀ z ∈ (V : Set F), ‖fderiv 𝕜 Ψ z‖ ≤ L') {y : E} (hy : y ∈ (U : Set E)) (v : E) :
+    ‖v‖ ≤ L' * ‖fderiv 𝕜 Φ y v‖ :=
+  calc ‖v‖ = ‖fderiv 𝕜 Ψ (Φ y) (fderiv 𝕜 Φ y v)‖ := by
+        rw [← ContinuousLinearMap.comp_apply,
+          fderiv_comp_fderiv_eq_id_of_leftInvOn hΦ hmaps hΨ hΨΦ hy, ContinuousLinearMap.id_apply]
+    _ ≤ L' * ‖fderiv 𝕜 Φ y v‖ := ((fderiv 𝕜 Ψ (Φ y)).le_opNorm _).trans
+        (mul_le_mul_of_nonneg_right (hL' _ (hmaps hy)) (norm_nonneg _))
 
 end TauCeti
 
