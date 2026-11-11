@@ -62,6 +62,13 @@ theorem pathFromChain_isDGLeftModule :
 
 variable {B b H R}
 
+variable (H R) in
+/-- The point chain of the constant path at `b`, in the chains on the based path space. -/
+noncomputable abbrev reflPathChain : cubicalChainModule (MoorePathFrom B b) H R :=
+  cubicalChainModuleLof (MoorePathFrom B b) H R 0
+    (NormalizedCubicalChain.ofCube (MoorePathFrom B b) R
+      (SingularCube.point (MoorePathFrom.refl B b)))
+
 /-- **The augmentation of the chains on the based path space is linear over the augmentation of
 the loop algebra**: `ε (a · m) = ε(a) ε(m)`. -/
 theorem pathFromChainAugmentation_smul (a : loopChainAlgebra B b R)
