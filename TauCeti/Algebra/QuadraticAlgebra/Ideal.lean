@@ -18,6 +18,10 @@ Let `R` be a commutative semiring and `I` an ideal of `R`. The extension of `I` 
 in the basis `1, ω` (`Module.Basis.mem_smul_top_iff`). Consequently the kernel of a change of
 coefficients `mapRingHom f a b` is the extension of the kernel of `f`.
 
+The statements, their order and the proof plan follow Mathlib's polynomial analogues
+`Polynomial.mem_map_C_iff` and `Polynomial.ker_mapRingHom`, with the basis `1, ω` of
+`QuadraticAlgebra R a b` in place of the monomial basis of `R[X]`.
+
 ## Main results
 
 * `QuadraticAlgebra.mem_map_algebraMap_iff`: the extension of an ideal `I` of `R` to
