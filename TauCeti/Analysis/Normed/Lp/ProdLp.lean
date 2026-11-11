@@ -171,8 +171,8 @@ section Graph
 
 variable {p : ℝ≥0∞} {𝕜 : Type*} [NormedField 𝕜]
 
-/-- The graph of `u` in the `Lᵖ` product is `x ↦ ι₁ x + ι₂ (u x)`, read through the identification
-`WithLp p (E × V) ≃L E × V`. -/
+/-- The map `x ↦ (f x, u x)` into the `Lᵖ` product is `x ↦ ι₁ (f x) + ι₂ (u x)`, read through the
+identification `WithLp p (E × V) ≃L E × V`; for `f = id` this is the graph of `u`. -/
 theorem toLp_prodMk_eq_add {α E V : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
     [SeminormedAddCommGroup V] [NormedSpace 𝕜 V] (f : α → E) (u : α → V) :
     (fun x ↦ WithLp.toLp p (f x, u x)) = fun x ↦
