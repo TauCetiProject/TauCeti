@@ -26,11 +26,6 @@ No compactness, separation, or finite-dimensionality assumption is needed.
 
 The construction uses Mathlib's `Bundle.Trivialization.coordChangeL` and
 `VectorBundleCore` gluing construction.
-
-The fibres `Z.Fiber x` of the bundle glued from any core `Z` are copies of the model fibre, so
-they are topological vector spaces (`VectorBundleCore.isTopologicalAddGroupFiber` and
-`VectorBundleCore.continuousSMulFiber`). These instances let sums and differences of continuous
-linear maps into such fibres, for example into the fibres of a jet bundle, be formed directly.
 -/
 
 public section
@@ -186,20 +181,3 @@ theorem trivializationAt_pointIndexedCoreHomeomorph (b : B)
   trivializationAt_pointIndexedCoreTotalEquiv 𝕜 F E b p hp
 
 end TauCeti
-
-namespace VectorBundleCore
-
-variable {R B F ι : Type*} [NontriviallyNormedField R] [TopologicalSpace B]
-  [NormedAddCommGroup F] [NormedSpace R F] (Z : VectorBundleCore R B F ι)
-
-/-- The fibres of the vector bundle glued from a core are topological additive groups, being
-copies of the model fibre. -/
-instance isTopologicalAddGroupFiber (x : B) : IsTopologicalAddGroup (Z.Fiber x) :=
-  inferInstanceAs (IsTopologicalAddGroup F)
-
-/-- Scalar multiplication on the fibres of the vector bundle glued from a core is continuous,
-the fibres being copies of the model fibre. -/
-instance continuousSMulFiber (x : B) : ContinuousSMul R (Z.Fiber x) :=
-  inferInstanceAs (ContinuousSMul R F)
-
-end VectorBundleCore

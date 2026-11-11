@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
-public import TauCeti.Topology.VectorBundle.Core.Basic
+public import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # A connection splits the first-jet sequence
