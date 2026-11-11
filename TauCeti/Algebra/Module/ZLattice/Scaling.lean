@@ -302,13 +302,38 @@ theorem det_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : Ortho
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
   [IsZLattice ℝ L] in
-/-- For an orthonormal basis `b` and a nonzero natural number `m`, the discriminant group of the
-scaled cubic lattice `√m • ℤ b` has order `det (√m • ℤ b) = mⁿ`, where `n` is the dimension of the
-space. For instance the discriminant group `(ℤ/2)²` of `√2 ℤ²` has order `4`. -/
+/-- For an orthonormal basis `b` and a natural number `m`, the discriminant group of the scaled
+cubic lattice `√m • ℤ b` has `Nat.card` equal to `mⁿ`, where `n` is the dimension of the space,
+which for `m ≠ 0` is `det (√m • ℤ b)`. For `m = 0` the lattice is `0` and its discriminant group is
+the whole space: for `n > 0` it is infinite, so `Nat.card` returns the junk value `0 = 0 ^ n`, and
+for `n = 0` it is trivial and `Nat.card` returns `1 = 0 ^ 0`. For instance the discriminant group
+`(ℤ/2)²` of `√2 ℤ²` has order `4`. -/
 theorem natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) {m : ℕ} (hm : m ≠ 0) :
+    (b : OrthonormalBasis ι ℝ E) {m : ℕ} :
     Nat.card (DiscriminantGroup (√(m : ℝ) • span ℤ (Set.range b))) = m ^ finrank ℝ E := by
   have := b.toBasis.finiteDimensional_of_finite
+  rcases eq_or_ne m 0 with rfl | hm
+  · -- The lattice is `0`, so its discriminant group is the whole space.
+    rw [Nat.cast_zero, Real.sqrt_zero, zero_smul]
+    rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
+    · have hE : finrank ℝ E = 0 := by
+        rw [Module.finrank_eq_card_basis b.toBasis, Fintype.card_eq_zero]
+      have : Subsingleton E := finrank_zero_iff.mp hE
+      have : Unique (DiscriminantGroup (⊥ : Submodule ℤ E)) :=
+        ⟨⟨0⟩, fun x ↦ Subsingleton.elim _ _⟩
+      rw [hE, Nat.card_unique, pow_zero]
+    · have hE : 0 < finrank ℝ E := by
+        rw [Module.finrank_eq_card_basis b.toBasis]
+        exact Fintype.card_pos_iff.mpr ⟨i⟩
+      have hx (t : ℝ) : t • b i ∈ dual (⊥ : Submodule ℤ E) := mem_dual.2 fun y hy ↦ by
+        rw [Submodule.mem_bot] at hy
+        exact ⟨0, by simp [hy]⟩
+      have : Infinite (DiscriminantGroup (⊥ : Submodule ℤ E)) :=
+        Infinite.of_injective (fun t : ℝ ↦ (Submodule.Quotient.mk ⟨t • b i, hx t⟩ :
+          DiscriminantGroup (⊥ : Submodule ℤ E))) fun t u htu ↦ by
+          rw [discriminantGroup_mk_eq_mk_iff, Submodule.mem_bot, ← sub_smul] at htu
+          exact sub_eq_zero.mp ((smul_eq_zero.mp htu).resolve_right (b.orthonormal.ne_zero i))
+      rw [Nat.card_eq_zero_of_infinite, zero_pow hE.ne']
   borelize E
   have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (by positivity)⟩
   have h :=
