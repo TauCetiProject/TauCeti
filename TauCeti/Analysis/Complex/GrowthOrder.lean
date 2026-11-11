@@ -23,8 +23,8 @@ growth input of Hadamard's factorization and of the convexity bounds for L-funct
 ## Main results
 
 * `TauCeti.OrderLE.mono`, `TauCeti.OrderLE.add`, `TauCeti.OrderLE.mul`, `TauCeti.OrderLE.sum`,
-  `TauCeti.OrderLE.prod`: the predicate is monotone in the exponent and closed under the ring
-  operations at a common exponent.
+  `TauCeti.OrderLE.prod`, `TauCeti.OrderLE.multisetProd`: the predicate is monotone in the
+  exponent and closed under the ring operations at a common exponent.
 * `TauCeti.OrderLE.comp_mul_add`: the order does not increase under an affine substitution
   `s ↦ a * s + b`.
 * `Polynomial.orderLE_eval`: polynomials have order at most `0`; constants have every order.
@@ -126,6 +126,16 @@ theorem prod {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ} (h : ∀ i �
     simp only [Finset.prod_insert hi]
     exact (h i (Finset.mem_insert_self i t)).mul
       (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
+
+/-- A product over a multiset of functions of order at most `A` has order at most `A`. -/
+theorem multisetProd {ι : Type*} {m : Multiset ι} {F : ι → ℂ → ℂ}
+    (h : ∀ i ∈ m, OrderLE (F i) A) : OrderLE (fun s ↦ (m.map fun i ↦ F i s).prod) A := by
+  induction m using Multiset.induction_on with
+  | empty => simp
+  | cons i m ih =>
+    simp only [Multiset.map_cons, Multiset.prod_cons]
+    exact (h i (Multiset.mem_cons_self i m)).mul
+      (ih fun j hj ↦ h j (Multiset.mem_cons_of_mem hj))
 
 /-- The order does not increase under an affine substitution `s ↦ a * s + b`. -/
 theorem comp_mul_add (h : OrderLE f A) (a b : ℂ) : OrderLE (fun s ↦ f (a * s + b)) A := by
