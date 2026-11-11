@@ -25,16 +25,19 @@ homotopy sequence, with the fibre replaced by `S³` and the fibre inclusion by t
 `⋯ → π_{k+1}(S⁴ⁿ⁺³) → π_{k+1}(HPⁿ) → π_k(S³) → π_k(S⁴ⁿ⁺³) → π_k(HPⁿ) → ⋯`,
 
 with boundary map `TauCeti.QuaternionicProjectiveSpace.hopfBoundary`. The sphere `S⁴ⁿ⁺³` is
-`(4n + 2)`-connected (`TauCeti.subsingleton_homotopyGroup_sphere_of_lt`), so the sequence gives:
+`(4n + 2)`-connected (`TauCeti.subsingleton_homotopyGroup_sphere_piLp_quaternion`), so the
+sequence gives:
 
-* `HPⁿ` is `3`-connected: `π_k(HPⁿ)` vanishes for `k ≤ 3`, since `S³` is `2`-connected
-  (`TauCeti.QuaternionicProjectiveSpace.subsingleton_homotopyGroup`); in particular `HPⁿ` is simply
+* `HPⁿ` is `3`-connected: `π_k(HPⁿ)` vanishes for `k ≤ 3`
+  (`TauCeti.QuaternionicProjectiveSpace.subsingleton_homotopyGroup`), since `S³` is `2`-connected
+  (`TauCeti.subsingleton_homotopyGroup_sphere_quaternion`); in particular `HPⁿ` is simply
   connected (`TauCeti.QuaternionicProjectiveSpace.instSimplyConnectedSpace`);
 * for `1 ≤ k ≤ 4n + 1` the boundary map `π_{k+1}(HPⁿ) → π_k(S³)` is an isomorphism
   (`TauCeti.QuaternionicProjectiveSpace.hopfBoundaryMulEquiv`). For `n ≥ 1` and `k = 3` this is
   `π₄(HPⁿ) ≅ π₃(S³)`.
 
-The second statement fails for `HP⁰`, a point, which is why the range of `k` depends on `n`.
+The degree-four specialization `π₄(HPⁿ) ≅ π₃(S³)` fails for `HP⁰`, a point, which is why the
+range of `k` depends on `n`.
 
 The layout follows the exact sequence of the sphere bundle `SO(n) → SO(1 + n) → Sⁿ` in
 `TauCeti/Topology/Grassmannian/SphereBundle/Exact.lean`.
@@ -221,20 +224,6 @@ theorem mem_range_homotopyGroupMap_op_smul_iff
 
 /-! ### Homotopy groups of `HPⁿ` -/
 
-omit [Finite N] in
-/-- The unit sphere `S⁴ⁿ⁺³` of `ℍⁿ⁺¹` is `(4n + 2)`-connected. -/
-private theorem subsingleton_homotopyGroup_sphere [Finite N] (hN : Nat.card N < 4 * n + 3)
-    (w : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) :
-    Subsingleton (HomotopyGroup N (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) w) :=
-  subsingleton_homotopyGroup_sphere_of_lt (by rw [finrank_piLp_quaternion, Fintype.card_fin]; ring)
-    hN w
-
-omit [Finite N] in
-/-- The unit quaternions `S³` are `2`-connected. -/
-private theorem subsingleton_homotopyGroup_unitQuaternion [Finite N] (hN : Nat.card N < 3) :
-    Subsingleton (HomotopyGroup N (sphere (0 : ℍ) 1) 1) :=
-  subsingleton_homotopyGroup_sphere_of_lt Quaternion.finrank_eq_four hN 1
-
 /-- **`HPⁿ` is `3`-connected**: `π_k(HPⁿ)` vanishes for `1 ≤ k ≤ 3`, at every base point. For
 `n ≥ 1` every class lifts to `S⁴ⁿ⁺³`, because its boundary lies in a vanishing homotopy group of
 `S³`, and the homotopy groups of `S⁴ⁿ⁺³` vanish in these degrees; `HP⁰` is a point. -/
@@ -244,8 +233,8 @@ theorem subsingleton_homotopyGroup (hN : Nat.card N < 3) (p : QuaternionicProjec
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · infer_instance
   obtain ⟨w, rfl⟩ := mk_surjective n p
-  have := subsingleton_homotopyGroup_unitQuaternion (N := N) hN
-  have := subsingleton_homotopyGroup_sphere (N := Option N) (by simp; omega) w
+  have := subsingleton_homotopyGroup_sphere_quaternion (N := N) hN 1
+  have := subsingleton_homotopyGroup_sphere_piLp_quaternion (N := Option N) (by simp; omega) w
   -- Every class is the image of the trivial class of `S⁴ⁿ⁺³`.
   have h (a : HomotopyGroup (Option N) (QuaternionicProjectiveSpace n) (mk n w)) :
       a = ⟦GenLoop.const⟧ := by
@@ -270,13 +259,13 @@ theorem bijective_hopfBoundary [Nonempty N] (hN : Nat.card N < 4 * n + 2) :
   classical
   refine ⟨?_, fun c ↦ ?_⟩
   · -- The kernel of the boundary is the image of `π_{k+1}(S⁴ⁿ⁺³)`, which is trivial.
-    have := subsingleton_homotopyGroup_sphere (N := Option N) (by simp; omega) v
+    have := subsingleton_homotopyGroup_sphere_piLp_quaternion (N := Option N) (by simp; omega) v
     refine (injective_iff_map_eq_one (hopfBoundaryHom v N)).2 fun a ha ↦ ?_
     rw [coe_hopfBoundaryHom, _root_.HomotopyGroup.one_def] at ha
     obtain ⟨b, rfl⟩ := (mem_range_homotopyGroupMap_mk_iff v).2 ha
     rw [Subsingleton.elim b 1, HomotopyGroup.map_one]
   · -- Every class of the fibre dies in `π_k(S⁴ⁿ⁺³)`, which is trivial, so it is a boundary.
-    have := subsingleton_homotopyGroup_sphere (N := N) (by omega) v
+    have := subsingleton_homotopyGroup_sphere_piLp_quaternion (N := N) (by simp; omega) v
     exact (mem_range_hopfBoundary_iff v).2 (Subsingleton.elim _ _)
 
 /-- For `1 ≤ k ≤ 4n + 1`, the boundary map of the Hopf fibration as an isomorphism

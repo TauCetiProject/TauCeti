@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Connected
 public import TauCeti.Analysis.Normed.Module.Ball.Action
 public import TauCeti.Analysis.Quaternion.Basic
 public import TauCeti.Topology.Algebra.ProperAction.Basic
+import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Quaternionic projective space as a quotient of a sphere
@@ -133,18 +134,14 @@ protected theorem lift_mk {α : Sort*} (f : sphere (0 : PiLp 2 fun _ : Fin (n + 
     QuaternionicProjectiveSpace.lift n f h (mk n x) = f x :=
   (rfl)
 
-/-- The `0`th coordinate of a unit vector of `ℍ¹` is a unit quaternion. -/
-private theorem norm_apply_zero (v : sphere (0 : PiLp 2 fun _ : Fin 1 ↦ ℍ) 1) : ‖v.1 0‖ = 1 := by
-  have h := PiLp.norm_sq_eq_of_L2 (fun _ : Fin 1 ↦ ℍ) v.1
-  rw [mem_sphere_zero_iff_norm.1 v.2, Fin.sum_univ_one] at h
-  nlinarith [norm_nonneg (v.1 0)]
-
 /-- `HP⁰` is a point: two unit vectors `v`, `w` of `ℍ¹` differ by the unit quaternion
 `w₀⁻¹ v₀` on the right. -/
 instance instSubsingletonZero : Subsingleton (QuaternionicProjectiveSpace 0) := by
   refine ⟨fun p p' ↦ ?_⟩
   induction p using QuaternionicProjectiveSpace.inductionOn with | h v => ?_
   induction p' using QuaternionicProjectiveSpace.inductionOn with | h w => ?_
+  have norm_apply_zero (u : sphere (0 : PiLp 2 fun _ : Fin 1 ↦ ℍ) 1) : ‖u.1 0‖ = 1 :=
+    (PiLp.norm_apply_eq_norm u.1 0).trans (mem_sphere_zero_iff_norm.1 u.2)
   have hw : w.1 0 ≠ 0 := norm_ne_zero_iff.1 ((norm_apply_zero w).trans_ne one_ne_zero)
   refine (mk_eq_mk_iff 0 v w).2 ⟨⟨(w.1 0)⁻¹ * v.1 0, mem_sphere_zero_iff_norm.2 ?_⟩,
     Subtype.ext (PiLp.ext fun i ↦ ?_)⟩
