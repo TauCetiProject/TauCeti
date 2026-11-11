@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.Poisson.Zero.Truncated
+public import TauCeti.Probability.Distributions.Poisson.Quantile
 public import TauCeti.Probability.Distributions.Zero.Quantile
+
+import TauCeti.Probability.Distributions.Poisson.Basic
 
 /-!
 # Endpoint limits of zero-truncated Poisson quantiles

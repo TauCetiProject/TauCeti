@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.NegativeBinomial.Zero.Truncated
+public import TauCeti.Probability.Distributions.NegativeBinomial.Quantile
 public import TauCeti.Probability.Distributions.Zero.Quantile
 
 /-!
