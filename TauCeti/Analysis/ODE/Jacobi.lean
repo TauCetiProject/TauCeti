@@ -122,7 +122,7 @@ theorem jacobi_wronskian_eq_zero
     (hK : ∀ r ∈ s, LinearMap.IsSymmetric (K r).toLinearMap)
     (hs : Convex ℝ s) (ha : a ∈ s) (hzero : J a = 0) (ht : t ∈ s) (u v : E) :
     inner ℝ (J t u) (V t v) - inner ℝ (V t u) (J t v) = 0 := by
-  simpa only [hzero, ContinuousLinearMap.zero_apply, inner_zero_left, inner_zero_right, sub_self]
+  simpa only [hzero, zero_apply, inner_zero_left, inner_zero_right, sub_self]
     using jacobi_wronskian_eq hJ hV hK hs ha ht u v
 
 /-- Before singularity, a Jacobi operator with initially vanishing Wronskian has symmetric
