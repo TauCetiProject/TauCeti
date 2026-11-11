@@ -19,8 +19,8 @@ on any Kostant-stable lattice with nilpotent simple-root actions, over every com
 ring. Its matrix form holds in any lattice basis.
 
 Specializing to the integral full-weight diagram symmetry gives
-`scToralDiagramAutPoints_chevalleyRootSubgroup`, the all-root action on the simply connected
-Chevalley point group. No generation hypothesis on the point group is needed.
+`scToralDiagramAutPoints_chevalleyToralRootSubgroupPoints`, the all-root action on the simply
+connected Chevalley point group. No generation hypothesis on the point group is needed.
 
 The Lie-level formula `diagramLieEquiv_chevalleySystem` supplies the signs; the integral
 intertwining theorem for nilpotent exponentials carries it to the base-changed lattice.
@@ -130,7 +130,7 @@ end Matrix
 /-- The full-weight diagram action sends every root point to the point at its diagram image,
 with parameter multiplied by the sign of the action on its Chevalley root vector. -/
 @[simp]
-theorem scToralDiagramAutPoints_chevalleyRootSubgroup
+theorem scToralDiagramAutPoints_chevalleyToralRootSubgroupPoints
     (hσ : σ ∈ t.diagramSymmetry) (α : Fin t.numRoots) (A : Type v) [CommRing A] (u : A) :
     t.scToralDiagramAutPoints ht hσ A
       (chevalleyToralRootSubgroupPoints (t := t) (ht := ht)
