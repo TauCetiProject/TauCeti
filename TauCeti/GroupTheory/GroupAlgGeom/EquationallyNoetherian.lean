@@ -43,6 +43,9 @@ equivalent to none of its finite subsystems.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_finite`,
   `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_finite_Rad_eq`: the finite subsystem, for
   any finite type of variables, with the same algebraic set and the same radical.
+* `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_forall_ge_V_eq`,
+  `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_forall_ge_Rad_eq`: the algebraic sets and
+  the radicals of an increasing sequence of systems are eventually constant.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.of_injective`: subgroups of equationally
   Noetherian groups are equationally Noetherian.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.comp`: restricting the coefficients preserves the
@@ -93,6 +96,25 @@ theorem exists_finite_Rad_eq (h : IsEquationallyNoetherian ι) [Finite X] (S : S
     ∃ S₀ ⊆ S, S₀.Finite ∧ Rad ι S₀ = Rad ι S := by
   obtain ⟨S₀, hS₀, hfin, hV⟩ := h.exists_finite S
   exact ⟨S₀, hS₀, hfin, by rw [Rad_def, Rad_def, hV]⟩
+
+/-- Over an equationally Noetherian group, the algebraic sets of an increasing sequence of systems
+in a finite type of variables form a decreasing sequence which is eventually constant. -/
+theorem exists_forall_ge_V_eq (h : IsEquationallyNoetherian ι) [Finite X]
+    {S : ℕ → Set (GX G X)} (hS : Monotone S) : ∃ m, ∀ k, m ≤ k → V ι (S k) = V ι (S m) := by
+  obtain ⟨S₀, hS₀, hfin, hV⟩ := h.exists_finite (⋃ k, S k)
+  lift S₀ to Finset (GX G X) using hfin
+  obtain ⟨m, hm⟩ := hS.directed_le.exists_mem_subset_of_finset_subset_biUnion hS₀
+  refine ⟨m, fun k hk => (V_antitone ι (hS hk)).antisymm ?_⟩
+  calc V ι (S m) ⊆ V ι S₀ := V_antitone ι hm
+    _ = V ι (⋃ k, S k) := hV
+    _ ⊆ V ι (S k) := V_antitone ι (Set.subset_iUnion S k)
+
+/-- Over an equationally Noetherian group, the radicals of an increasing sequence of systems in a
+finite type of variables are eventually constant. -/
+theorem exists_forall_ge_Rad_eq (h : IsEquationallyNoetherian ι) [Finite X]
+    {S : ℕ → Set (GX G X)} (hS : Monotone S) : ∃ m, ∀ k, m ≤ k → Rad ι (S k) = Rad ι (S m) := by
+  obtain ⟨m, hm⟩ := h.exists_forall_ge_V_eq hS
+  exact ⟨m, fun k hk => by rw [Rad_def, Rad_def, hm k hk]⟩
 
 /-- The source of an injective homomorphism compatible with the coefficients into an equationally
 Noetherian group is equationally Noetherian; in particular so is every subgroup containing the
