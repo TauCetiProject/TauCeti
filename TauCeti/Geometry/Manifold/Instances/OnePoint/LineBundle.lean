@@ -236,12 +236,6 @@ theorem twistCore_localTriv_apply (k : ℤ) (y : OnePoint 𝕜) (s : OnePoint �
     ((twistCore k).localTriv y ⟨p, s p⟩).2 = twistTransition k p y p * s p :=
   (rfl)
 
-/-- In the preferred trivialization at `x`, a fibre element `v` of `𝒪(k)` at `p` has the
-coordinate `twistTransition k p x p * v`. -/
-theorem twistCore_trivializationAt_apply (k : ℤ) (x p : OnePoint 𝕜) (v : 𝕜) :
-    (trivializationAt 𝕜 (twistCore k).Fiber x ⟨p, v⟩).2 = twistTransition k p x p * v :=
-  (rfl)
-
 variable {n : ℕ∞ω}
 
 /-- **Sections of `𝒪(k)` in the two charts.** A section `s` of `𝒪(k)` is `C^n` exactly when its

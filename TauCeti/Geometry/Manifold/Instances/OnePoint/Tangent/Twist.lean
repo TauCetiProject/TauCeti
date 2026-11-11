@@ -92,7 +92,8 @@ private theorem trivializationAt_twistCore_tangentSpaceEquivTwistFiber (x p : On
     (v : ℂ) (hq : p ∈ (chartAt ℂ x).source) :
     (trivializationAt ℂ (twistCore (𝕜 := ℂ) 2).Fiber x ⟨p, tangentSpaceEquivTwistFiber p v⟩).2 =
       (-1 : ℂ) ^ twistIndex x * (trivializationAt ℂ (TangentSpace 𝓘(ℂ)) x ⟨p, v⟩).2 := by
-  refine (twistCore_trivializationAt_apply 2 x p _).trans ?_
+  rw [VectorBundleCore.trivializationAt (twistCore 2) x, ← VectorBundleCore.localTrivAt_def,
+    twistCore_indexAt, twistCore_localTriv_apply 2 x (fun _ ↦ tangentSpaceEquivTwistFiber p v) p]
   rw [tangentSpaceEquivTwistFiber_apply]
   induction x using OnePoint.rec with
   | infty =>
