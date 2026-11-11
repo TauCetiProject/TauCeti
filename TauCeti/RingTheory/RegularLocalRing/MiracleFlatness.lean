@@ -45,7 +45,7 @@ sequence on `B_𝔮`.
 ## Main results
 
 * `TauCeti.Algebra.flat_of_isCohenMacaulay`: **miracle flatness**, Stacks, Lemma 10.128.1 (00R4).
-* `TauCeti.Algebra.flat_of_normal_dim_two`: a finite injective normal local algebra over a
+* `TauCeti.Algebra.flat_of_normal_dim_two`: a finite injective normal domain over a
   two-dimensional regular local ring is flat.
 * `TauCeti.Algebra.free_of_normal_dim_two`: a finite torsion-free algebra over a two-dimensional
   regular local ring whose localizations at maximal ideals are normal domains is free.
@@ -85,19 +85,6 @@ theorem flat_of_isCohenMacaulay {R S : Type*} [CommRing R] [IsRegularLocalRing R
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] [IsRegularLocalRing A]
   [Module.Finite A B]
 
-/-- A finite injective algebra over a two-dimensional regular local ring is flat if it is a
-normal local domain. Locality of the algebra map follows from finiteness and injectivity. -/
-theorem flat_of_normal_dim_two [IsLocalRing B] [IsDomain B] [IsIntegrallyClosed B]
-    (hinj : Function.Injective (algebraMap A B)) (hdim : ringKrullDim A = 2) :
-    Module.Flat A B := by
-  have : FaithfulSMul A B := (faithfulSMul_iff_algebraMap_injective A B).mpr hinj
-  have : IsLocalHom (algebraMap A B) := inferInstance
-  -- Normality makes a parameter pair of the base regular on the algebra.
-  obtain ⟨x, y, hxy, -, hreg⟩ :=
-    TauCeti.IsRegularLocalRing.exists_regular_parameters_of_finite_normal hinj hdim
-  have := TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular hxy hreg.toIsWeaklyRegular
-  infer_instance
-
 /-- A finite torsion-free algebra over a two-dimensional regular local ring is free if its
 localizations at maximal ideals are normal domains. The algebra need not be local, and its
 localizations need not be finite over the base. -/
@@ -134,5 +121,16 @@ theorem free_of_normal_dim_two [Module.IsTorsionFree A B] (hdim : ringKrullDim A
     (TauCeti.isSMulRegular_quotSMulTop_iff.mp hyreg _ _ hcL)
   rw [Ideal.map_span, Set.image_singleton, ← IsScalarTower.algebraMap_apply, ← hd]
   exact mem_span_singleton'.mpr ⟨d, mul_comm _ _⟩
+
+/-- A finite injective algebra over a two-dimensional regular local ring is flat if it is a
+normal domain. The algebra need not be local, and is then free. -/
+theorem flat_of_normal_dim_two [IsDomain B] [IsIntegrallyClosed B]
+    (hinj : Function.Injective (algebraMap A B)) (hdim : ringKrullDim A = 2) :
+    Module.Flat A B := by
+  have : FaithfulSMul A B := (faithfulSMul_iff_algebraMap_injective A B).mpr hinj
+  have := free_of_normal_dim_two (A := A) (B := B) hdim fun 𝔮 _ ↦
+    ⟨inferInstance, isIntegrallyClosed_of_isLocalization _ 𝔮.primeCompl
+      (primeCompl_le_nonZeroDivisors 𝔮)⟩
+  infer_instance
 
 end TauCeti.Algebra
