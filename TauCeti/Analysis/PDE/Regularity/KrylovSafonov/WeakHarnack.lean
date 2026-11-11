@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.PowerDecay
-import Mathlib.Analysis.SpecialFunctions.Log.Base
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
@@ -38,8 +37,8 @@ The power decay of the superlevel sets
 (`TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul`) says that if `u ≤ 1` somewhere
 in `B(c, 2 ℓ √n)` and `R ‖f⁺‖_{Lⁿ} ≤ ε₀ λ`, then `|{u ≥ t} ∩ Q₀| ≤ C t^(-ε) |Q₀|` for all `t > 0`.
 Integrating this by the layer cake formula at the exponent `p = ε / 2`
-(`TauCeti.lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul`) bounds `∫_{Q₀} uᵖ` by a multiple of
-`|Q₀|`. The general case follows by applying this to `u / s` and `f / s` for every
+(`MeasureTheory.Measure.lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul`) bounds `∫_{Q₀} uᵖ` by a
+multiple of `|Q₀|`. The general case follows by applying this to `u / s` and `f / s` for every
 `s > u x + R ‖f⁺‖_{Lⁿ} / (ε₀ λ)` and letting `s` decrease to that value.
 
 ## Main declarations
@@ -129,7 +128,7 @@ private theorem exists_eLpNorm_dyadicCube_le_mul_rpow {κ : ℝ} (hκ : 0 < κ) 
     rw [Measure.restrict_apply' hQm, Measure.restrict_apply_univ]
     exact (measure_mono hsub).trans
       (H hc hR ha hLam hcont hu hnonneg hsuper hf hx (one_pos.trans ht))
-  have hint := lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul (volume.restrict Q)
+  have hint := (volume.restrict Q).lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul
     hum.enorm hp (by simp only [p]; linarith) hC.le hlevel
   rw [Measure.restrict_apply_univ, hvolQ] at hint
   -- Take the `p`-th root.
@@ -290,15 +289,12 @@ theorem exists_eLpNorm_ball_le_mul_rpow_mul_add {κ : ℝ} (hκ : 0 < κ) :
   · simp [ball_eq_empty.2 hr]
   have hn1 : 1 ≤ √(n : ℝ) := Real.one_le_sqrt.2 (Nat.one_le_cast.2 Fintype.card_pos)
   -- The dyadic scale `2ᵏ ∈ [2 r, 4 r)`.
-  set k : ℤ := ⌈Real.logb 2 (2 * r)⌉
-  have hk₁ : 2 * r ≤ 2 ^ k := by
-    rw [← Real.rpow_intCast, ← Real.logb_le_iff_le_rpow one_lt_two (by positivity)]
-    exact Int.le_ceil _
+  obtain ⟨j, hj₁, hj₂⟩ := exists_mem_Ioc_zpow (by positivity : 0 < 2 * r) one_lt_two
+  set k : ℤ := j + 1
+  have hk₁ : 2 * r ≤ 2 ^ k := hj₂
   have hk₂ : (2 : ℝ) ^ k < 4 * r := by
-    rw [← Real.rpow_intCast, show 4 * r = 2 ^ (Real.logb 2 (2 * r) + 1) by
-      rw [Real.rpow_add_one two_ne_zero, Real.rpow_logb two_pos one_lt_two.ne' (by positivity)]
-      ring]
-    exact Real.rpow_lt_rpow_of_exponent_lt one_lt_two (Int.ceil_lt_add_one _)
+    rw [zpow_add_one₀ two_ne_zero]
+    linarith
   -- Translate `c` to the centre `c₀` of the dyadic cube `Q₀` of level `k` at the origin.
   set c₀ : EuclideanSpace ℝ ι := WithLp.toLp 2 fun i ↦ (((0 : ι → ℤ) i : ℝ) + 2⁻¹) * 2 ^ k
   set d := c - c₀

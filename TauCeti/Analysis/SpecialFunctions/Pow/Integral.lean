@@ -95,8 +95,8 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
   `ℝ≥0∞`-valued function.
 * `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`: a function with finite positive
   power integral is carried by a σ-finite part of the measure.
-* `TauCeti.lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul`: a power decay `t ^ (-q)` of the
-  superlevel sets bounds `∫⁻ u ^ p` for `p < q`.
+* `MeasureTheory.Measure.lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul`: a power decay
+  `t ^ (-q)` of the superlevel sets bounds `∫⁻ u ^ p` for `p < q`.
 
 ## References
 
@@ -602,6 +602,14 @@ theorem lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β
         _ ≤ _ := lintegral_mono fun t => mul_le_mul_left (measure_mono hsub) _
     rw [hL, hR, ENNReal.mul_top (ENNReal.ofReal_pos.2 hp).ne']
 
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+open Set TauCeti
+open scoped ENNReal
+
+variable {β : Type*} [MeasurableSpace β]
 
 /-- **Weak-type decay of the superlevel sets bounds the integral of a smaller power.** If the
 superlevel sets of `u` decay like a power, `ν {u > t} ≤ C t ^ (-q) ν univ` for every `t > 1`, then
@@ -666,4 +674,4 @@ theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul (ν : Measure β) {u : �
             ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul hp.le]
           ring
 
-end TauCeti
+end MeasureTheory.Measure
