@@ -30,6 +30,8 @@ convergent sequence of their finite `Lᵖ` norms is bounded, and this bound upgr
 
 ## Main statements
 
+* `MeasureTheory.MemLp.uniformIntegrable_of_enorm_le` — a family dominated almost everywhere
+  in norm by one `Lᵖ` function is uniformly integrable, with a uniform `Lᵖ` bound;
 * `TauCeti.memLp_dist_of_memLp_dist` — two maps with finite `p`-th moment about a basepoint have
   a distance with finite `p`-th moment;
 * `TauCeti.eLpNorm_dist_le_eLpNorm_dist_add`, `MeasureTheory.UnifIntegrable.dist_of_memLp_dist`
@@ -54,6 +56,19 @@ public section
 
 open Filter MeasureTheory Set Topology
 open scoped ENNReal NNReal
+
+/-- A family dominated almost everywhere in norm by one `Lᵖ` function is uniformly integrable
+in `Lᵖ`, including a uniform bound on its `Lᵖ` norms, for `1 ≤ p < ∞`. -/
+theorem MeasureTheory.MemLp.uniformIntegrable_of_enorm_le {α β ι : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup β] {μ : Measure α} {p : ℝ≥0∞}
+    {D : α → β} {V : ι → α → β} (hD : MemLp D p μ) (hp : 1 ≤ p) (hp_top : p ≠ ∞)
+    (hV : ∀ i, AEStronglyMeasurable (V i) μ)
+    (hle : ∀ i, ∀ᵐ x ∂μ, ‖V i x‖ₑ ≤ ‖D x‖ₑ) : UniformIntegrable V p μ := by
+  have hUI : UniformIntegrable (fun _ : ι ↦ D) p μ :=
+    uniformIntegrable_const hp hp_top hD
+  refine ⟨hUI.1.ae_mono hV hle, ?_⟩
+  obtain ⟨B, hB⟩ := hUI.2
+  exact ⟨B, fun i ↦ (eLpNorm_mono_enorm_ae (hV i) (hle i)).trans (hB i)⟩
 
 namespace TauCeti
 

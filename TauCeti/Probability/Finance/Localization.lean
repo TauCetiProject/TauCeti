@@ -5,27 +5,34 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.RunningMaximum
-public import Mathlib.MeasureTheory.Function.UniformIntegrable
+public import TauCeti.Probability.BrownianMotion.PolynomialGrowth
+public import TauCeti.MeasureTheory.Function.UniformIntegrable
 
 /-!
-# Removing localization for prices of linear growth
+# Removing localization for prices of linear or polynomial growth
 
-A price bounded in absolute value by `A (1 + s)` along geometric Brownian motion is
-uniformly integrable when evaluated at any countable family of random times in a fixed
-finite horizon. The times need not be stopping times: only measurability of the evaluated
-prices is needed. This includes the stopped prices appearing in localized pricing identities.
+A price with a uniform bound `|C(s,t)| ≤ A (1 + s^q)` along a positive geometric Brownian
+stock converges in `L²` to its continuous terminal extension, when sampled at any sequence of
+random times in a finite horizon tending almost surely to expiry. In particular, this permits
+the removal of localization in square-integrable pricing identities, not just in expectations.
+The exponent `q` may be any real number, since positive geometric Brownian motion has maximal
+moments of negative orders as well. Mean-square convergence also implies `L¹` convergence on
+the probability space.
 
-If these times converge to maturity, continuity of the price up to maturity gives convergence
-in L¹ to its terminal value. Thus expectations in a stopped identity can be passed to the
-limit without imposing boundedness of the price or of the stock. These results do not assert
-an Itô identity, self-financing, or the martingale property of an arbitrary candidate price.
+The intermediate uniform-integrability result allows a countable family of different sampled
+prices with a common growth bound. The linear-growth `L¹` result additionally permits a zero
+initial stock price. The times need not be stopping times or even measurable: only the sampled
+values must be almost everywhere strongly measurable. Continuity is required only at the
+terminal spot/time pair. No stochastic integral or martingale property is inferred from these
+moment and continuity assumptions.
 
-The maximal-moment input is
-`TauCeti.Probability.IsFilteredPreBrownianReal.lintegral_iSup_geometricBrownianMotion_lt_top`.
+The maximal-moment inputs are
+`IsFilteredPreBrownianReal.lintegral_iSup_geometricBrownianMotion_lt_top` and
+`IsFilteredPreBrownianReal.lintegral_iSup_sq_price_geometricBrownianMotion_lt_top`.
 
 ## References
 
+* I. Karatzas, S. E. Shreve, *Methods of Mathematical Finance*, Springer, 1998, §2.4.
 * S. E. Shreve, *Stochastic Calculus for Finance II: Continuous-Time Models*, Springer,
   2004, §6.4.
 -/
@@ -40,7 +47,7 @@ open scoped NNReal ENNReal Topology
 namespace TauCeti.Probability.IsFilteredPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
-  {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ} {s μ σ A : ℝ} {T : ℝ≥0}
+  {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ} {s μ σ A q : ℝ} {T : ℝ≥0}
 
 /-- Prices with a common linear-growth bound along geometric Brownian motion, sampled at a
 countable family of random times bounded by `T`, are uniformly integrable. No stopping-time
@@ -99,32 +106,83 @@ theorem uniformIntegrable_linearGrowth_geometricBrownianMotion {ι : Type*} [Cou
     simp only [Real.enorm_eq_ofReal_abs, abs_of_nonneg ENNReal.toReal_nonneg,
       ENNReal.ofReal_toReal hω.ne]
     exact le_iSup (fun i ↦ ENNReal.ofReal |V i ω|) i
-  have hUI : UniformIntegrable (fun _ : ι ↦ fun ω ↦ (G ω).toReal) 1 P :=
-    uniformIntegrable_const le_rfl ENNReal.one_ne_top (memLp_one_iff_integrable.2 hGiR)
-  refine ⟨hUI.1.ae_mono hV hle, ?_⟩
-  obtain ⟨C, hC⟩ := hUI.2
-  exact ⟨C, fun i ↦ (eLpNorm_mono_enorm_ae (hV i) (hle i)).trans (hC i)⟩
+  exact (memLp_one_iff_integrable.2 hGiR).uniformIntegrable_of_enorm_le
+    le_rfl ENNReal.one_ne_top hV hle
 
-/-- A continuous terminal extension of a linear-growth price converges in L¹ along bounded
-random times tending almost surely to maturity. Continuity is required only at the terminal
-stock/time pair on almost every path, within positive spot and the declared finite horizon.
-This applies in particular to localized prices once their sampling times exhaust the horizon. -/
-theorem tendsto_eLpNorm_linearGrowth_geometricBrownianMotion
+/-- A common polynomial-growth bound along positive geometric Brownian motion gives uniform
+`L²` integrability at any countable family of bounded random times. Negative growth exponents
+are allowed; no stopping-time or measurability assumption on the times themselves is needed. -/
+theorem uniformIntegrable_polynomialGrowth_geometricBrownianMotion {ι : Type*} [Countable ι]
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
+    (hs : 0 < s) {τ : ι → Ω → ℝ≥0} {V : ι → Ω → ℝ}
+    (hV : ∀ i, AEStronglyMeasurable (V i) P)
+    (hτ : ∀ i, ∀ᵐ ω ∂P, τ i ω ≤ T)
+    (hbound : ∀ i, ∀ᵐ ω ∂P,
+      |V i ω| ≤ A * (1 + geometricBrownianMotion s μ σ W (τ i ω) ω ^ q)) :
+    UniformIntegrable V 2 P := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  -- The countable supremum is measurable even for raw versions of the driving process.
+  let G : Ω → ℝ≥0∞ := fun ω ↦ ⨆ i, ENNReal.ofReal (V i ω ^ 2)
+  have hG : AEMeasurable G P := AEMeasurable.iSup fun i ↦
+    ((hV i).pow 2).aemeasurable.ennreal_ofReal
+  have hmax := hW.lintegral_iSup_sq_price_geometricBrownianMotion_lt_top
+    (C := fun x _ ↦ |A| * (1 + x ^ q)) hcont hs μ σ q
+    (fun x hx _ _ ↦ by rw [abs_of_nonneg (by positivity)])
+  have hGi : ∫⁻ ω, G ω ∂P < ∞ := by
+    refine lt_of_le_of_lt (lintegral_mono_ae ?_) hmax
+    filter_upwards [ae_all_iff.2 hτ, ae_all_iff.2 hbound] with ω ht hb
+    refine iSup_le fun i ↦ ?_
+    have hpos := geometricBrownianMotion_pos hs μ σ W (τ i ω) ω
+    have hb' : |V i ω| ≤ |A| *
+        (1 + geometricBrownianMotion s μ σ W (τ i ω) ω ^ q) :=
+      (hb i).trans (mul_le_mul_of_nonneg_right (le_abs_self A) (by positivity))
+    have hsq := (sq_le_sq₀ (abs_nonneg _) (by positivity)).2 hb'
+    rw [sq_abs] at hsq
+    exact (ENNReal.ofReal_le_ofReal hsq).trans
+      (le_iSup₂ (f := fun t _ ↦ ENNReal.ofReal
+        ((|A| * (1 + geometricBrownianMotion s μ σ W t ω ^ q)) ^ 2)) (τ i ω) (ht i))
+  -- The square root of this supremum is one common L² dominating random variable.
+  let D : Ω → ℝ := fun ω ↦ √((G ω).toReal)
+  have hD : AEStronglyMeasurable D P := hG.ennreal_toReal.sqrt.aestronglyMeasurable
+  have hDsquare : (fun ω ↦ D ω ^ 2) = fun ω ↦ (G ω).toReal := by
+    ext ω
+    exact sq_sqrt ENNReal.toReal_nonneg
+  have hDmem : MemLp D 2 P := (memLp_two_iff_integrable_sq hD).2 <| by
+    rw [hDsquare]
+    exact integrable_toReal_of_lintegral_ne_top hG hGi.ne
+  have hle (i : ι) : ∀ᵐ ω ∂P, ‖V i ω‖ₑ ≤ ‖D ω‖ₑ := by
+    filter_upwards [ae_lt_top' hG hGi.ne] with ω hω
+    have hi : ENNReal.ofReal (V i ω ^ 2) ≤ G ω :=
+      le_iSup (fun j ↦ ENNReal.ofReal (V j ω ^ 2)) i
+    have hsq : V i ω ^ 2 ≤ (G ω).toReal := by
+      exact (ENNReal.ofReal_le_iff_le_toReal hω.ne).1 hi
+    have hroot : |V i ω| ≤ D ω := abs_le_sqrt hsq
+    have hDpos : 0 ≤ D ω := sqrt_nonneg _
+    simpa only [Real.enorm_eq_ofReal_abs, abs_of_nonneg hDpos] using
+      ENNReal.ofReal_le_ofReal hroot
+  exact hDmem.uniformIntegrable_of_enorm_le (by norm_num) (by norm_num) hV hle
+
+/-- A polynomial-growth price with a continuous terminal extension converges in mean square
+along bounded random times tending almost surely to maturity. Continuity is needed only at the
+terminal spot/time pair, within positive spot and the finite horizon. This includes negative
+polynomial exponents and localization times that are not monotone. -/
+theorem tendsto_eLpNorm_polynomialGrowth_geometricBrownianMotion
     (hW : IsFilteredPreBrownianReal ℱ W P) (hcont : ∀ᵐ ω ∂P, Continuous (W · ω))
-    (hs : 0 < s) (hA : 0 ≤ A) {τ : ℕ → Ω → ℝ≥0} {C : ℝ → ℝ≥0 → ℝ}
+    (hs : 0 < s) {τ : ℕ → Ω → ℝ≥0} {C : ℝ → ℝ≥0 → ℝ}
     (hτ : ∀ n, ∀ᵐ ω ∂P, τ n ω ≤ T)
     (hτlim : ∀ᵐ ω ∂P, Tendsto (fun n ↦ τ n ω) atTop (𝓝 T))
     (hC : ∀ n, AEStronglyMeasurable
       (fun ω ↦ C (geometricBrownianMotion s μ σ W (τ n ω) ω) (τ n ω)) P)
-    (hbound : ∀ x > 0, ∀ t ≤ T, |C x t| ≤ A * (1 + x))
+    (hbound : ∀ x > 0, ∀ t ≤ T, |C x t| ≤ A * (1 + x ^ q))
     (hterminal : ∀ᵐ ω ∂P, ContinuousWithinAt (fun p : ℝ × ℝ≥0 ↦ C p.1 p.2)
       (Ioi 0 ×ˢ Iic T) (geometricBrownianMotion s μ σ W T ω, T)) :
     Tendsto (fun n ↦ eLpNorm
       (fun ω ↦ C (geometricBrownianMotion s μ σ W (τ n ω) ω) (τ n ω) -
-        C (geometricBrownianMotion s μ σ W T ω) T) 1 P) atTop (𝓝 0) := by
+        C (geometricBrownianMotion s μ σ W T ω) T) 2 P) atTop (𝓝 0) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hUI := hW.uniformIntegrable_linearGrowth_geometricBrownianMotion
-    (hcont.mono fun ω hω t _ ↦ hω.continuousAt.continuousWithinAt) hs.le hA hC hτ
+  have hUI := hW.uniformIntegrable_polynomialGrowth_geometricBrownianMotion
+    (hcont.mono fun ω hω t _ ↦ hω.continuousAt.continuousWithinAt) hs hC hτ
     (fun n ↦ (hτ n).mono fun ω ht ↦ hbound _
       (geometricBrownianMotion_pos hs μ σ W _ ω) _ ht)
   have hlim : ∀ᵐ ω ∂P, Tendsto
@@ -140,7 +198,7 @@ theorem tendsto_eLpNorm_linearGrowth_geometricBrownianMotion
       exact Eventually.of_forall fun n ↦
         ⟨geometricBrownianMotion_pos hs μ σ W _ ω, hb n⟩
     exact hCt.tendsto.comp hp
-  exact tendsto_Lp_finite_of_tendsto_ae le_rfl ENNReal.one_ne_top hC
+  exact tendsto_Lp_finite_of_tendsto_ae (by norm_num) (by norm_num) hC
     (hUI.memLp_of_ae_tendsto hlim) hUI.1 hlim
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
