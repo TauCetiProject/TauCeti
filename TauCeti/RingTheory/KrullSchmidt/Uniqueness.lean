@@ -54,9 +54,11 @@ instance pair `[IsNoetherian A M] [IsArtinian A M]` on the results indexed by a 
 `IsFiniteLength A M` spelling on the `Finset` results. Independence and nontriviality of the
 summands imply that both index types are finite, by Noetherianity of the ambient module.
 
-The induction is on `Nat.card` of the first index type, and it changes the ambient module: the
-recursive call is made on `↥(⨆ j ≠ j₀, Q j)`. That is why it is packaged as a private auxiliary
-statement quantifying over the module as well, rather than run inside the theorem below.
+The induction is on `Nat.card κ`, the cardinality of the index type of the second family `Q`
+(this is why only `κ` needs to be `Finite` in the auxiliary statement), and it changes the ambient
+module: the recursive call is made on `↥(⨆ j ≠ j₀, Q j)`. That is why it is packaged as a private
+auxiliary statement quantifying over the module as well, rather than run inside the theorem
+below.
 Restricting a decomposition to the submodule it spans is Mathlib's
 `DirectSum.isInternal_biSup_submodule_of_iSupIndep`; transporting one along a linear equivalence is
 Mathlib's `LinearMap.iSupIndep_map` and `Submodule.map_iSup`, and transporting
