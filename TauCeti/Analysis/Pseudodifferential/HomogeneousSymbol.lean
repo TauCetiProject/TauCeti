@@ -48,7 +48,8 @@ The file develops:
   `‖a (x, ξ)‖ ≤ C ‖ξ‖ ^ m`, for a proper (for instance finite-dimensional) frequency space;
   applied to the iterated derivatives above it bounds the mixed derivatives on `ℝⁿ × ℝⁿ`:
   `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency
-  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`);
+  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`), and these mixed derivatives are homogeneous of
+  degree `m - |β|` (`HomogeneousSymbol.mixedDeriv_coefficient_smul_frequency`);
 * the homogeneity of all higher derivatives: the derivative of `a` in `j` position directions
   and `l` frequency directions is homogeneous of degree `m - l`
   (`HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency_append`), and on a proper
@@ -800,6 +801,17 @@ private theorem coefficient_iterSpatialDeriv (a : HomogeneousSymbol (CoordinateS
   | cons j js ih =>
     rw [iterSpatialDeriv, coefficient_spatialDeriv _ _ hξ, coordinateDeriv_cons, funext ih]
 
+/-- At a nonzero frequency, the iterated derivatives `∂_x^α ∂_ξ^β a` as homogeneous symbols
+compute the mixed derivative of the coefficient. -/
+private theorem coefficient_iterSpatialDeriv_iterFrequencyDeriv
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (α β : List (Fin n))
+    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    (iterSpatialDeriv (iterFrequencyDeriv a β) α).coefficient (x, ξ) =
+      mixedDeriv α β a.coefficient x ξ := by
+  rw [coefficient_iterSpatialDeriv _ _ _ hξ, mixedDeriv_def]
+  exact congrArg (coordinateDeriv α · x)
+    (funext fun y => coefficient_iterFrequencyDeriv a β y hξ)
+
 /-- **Growth of the mixed derivatives of a homogeneous symbol.** On a compact set of positions,
 the mixed derivatives of a homogeneous symbol of degree `m` satisfy
 `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency. -/
@@ -810,12 +822,19 @@ theorem exists_norm_mixedDeriv_le
       ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * ‖ξ‖ ^ (m - β.length) := by
   obtain ⟨C, hC, hCK⟩ := (iterSpatialDeriv (iterFrequencyDeriv a β) α).exists_norm_coefficient_le hK
   refine ⟨C, hC, fun x hx ξ hξ => ?_⟩
-  have h : (iterSpatialDeriv (iterFrequencyDeriv a β) α).coefficient (x, ξ) =
-      mixedDeriv α β a.coefficient x ξ := by
-    rw [coefficient_iterSpatialDeriv _ _ _ hξ, mixedDeriv_def]
-    exact congrArg (coordinateDeriv α · x)
-      (funext fun y => coefficient_iterFrequencyDeriv a β y hξ)
-  exact h ▸ hCK x hx ξ
+  exact coefficient_iterSpatialDeriv_iterFrequencyDeriv a α β x hξ ▸ hCK x hx ξ
+
+/-- **Homogeneity of the mixed derivatives.** The mixed derivative `∂_x^α ∂_ξ^β a` of a
+homogeneous symbol of degree `m` is positively homogeneous of degree `m - |β|` in the frequency,
+away from the zero frequency. -/
+theorem mixedDeriv_coefficient_smul_frequency
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (α β : List (Fin n))
+    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) {t : ℝ} (ht : 0 < t) :
+    mixedDeriv α β a.coefficient x (t • ξ) =
+      t ^ (m - β.length) • mixedDeriv α β a.coefficient x ξ := by
+  rw [← coefficient_iterSpatialDeriv_iterFrequencyDeriv a α β x (smul_ne_zero ht.ne' hξ),
+    ← coefficient_iterSpatialDeriv_iterFrequencyDeriv a α β x hξ]
+  exact (iterSpatialDeriv (iterFrequencyDeriv a β) α).homogeneous x ξ t ht
 
 end MixedDeriv
 
