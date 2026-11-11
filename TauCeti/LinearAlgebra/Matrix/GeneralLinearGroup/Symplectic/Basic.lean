@@ -243,7 +243,7 @@ end Map
 
 /-- The inverse algebraic equivalence sends a symplectic matrix to its canonical unit. -/
 @[simp]
-theorem mulEquivSymplecticGroup_symm_apply (A : Matrix.symplecticGroup l R) :
+theorem coe_mulEquivSymplecticGroup_symm_apply (A : Matrix.symplecticGroup l R) :
     ((mulEquivSymplecticGroup l R).symm A : GL (l ⊕ l) R) =
       ofSymplecticGroup l R A := by
   apply Units.ext

@@ -131,7 +131,7 @@ def symplecticGroupContinuousMulEquiv : Matrix.symplecticGroup l R ≃ₜ* GLSym
   continuous_toFun := by
     apply continuous_induced_rng.2
     exact (continuous_ofSymplecticGroup l R).congr fun A ↦
-      (mulEquivSymplecticGroup_symm_apply l R A).symm
+      (coe_mulEquivSymplecticGroup_symm_apply l R A).symm
   continuous_invFun := by
     apply continuous_induced_rng.2
     exact (Units.continuous_val.comp continuous_subtype_val).congr fun A ↦
@@ -142,7 +142,7 @@ def symplecticGroupContinuousMulEquiv : Matrix.symplecticGroup l R ≃ₜ* GLSym
 theorem coe_symplecticGroupContinuousMulEquiv (A : Matrix.symplecticGroup l R) :
     (symplecticGroupContinuousMulEquiv l R A : GL (l ⊕ l) R) =
       ofSymplecticGroup l R A :=
-  mulEquivSymplecticGroup_symm_apply l R A
+  coe_mulEquivSymplecticGroup_symm_apply l R A
 
 /-- The inverse equivalence keeps the underlying matrix of the symplectic unit. -/
 @[simp]
