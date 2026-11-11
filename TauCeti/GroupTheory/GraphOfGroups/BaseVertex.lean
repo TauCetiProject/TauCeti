@@ -22,8 +22,8 @@ The isomorphism is compatible with the embeddings of vertex groups: it sends the
 The images of a subgroup of `A_c` along two paths from the same vertex are conjugate, so the
 change of base vertex carries the image of any subgroup of a vertex group (the vertex group
 itself, or an edge group image `α_e(A_e)` or `ω_e(A_e)`) to a conjugate of its image along any
-chosen path from `b`. Read in `π₁(𝔸, T)`, the change of base vertex is conjugation by the image
-of `p`.
+chosen path from `b`. Read in `π₁(𝔸, T)`, the change of base vertex is conjugation by the inverse
+of the image of `p`, `x ↦ p⁻¹ x p`.
 
 ## Main definitions
 
@@ -140,26 +140,6 @@ conjugate along `p⁻¹ q`. -/
   simp only [vertexHom_apply, mulEquivOfPath_mk, Quiver.Path.reverse_comp,
     Quiver.Path.reverse_reverse, Quiver.Path.comp_assoc]
 
-/-- Prefixing a closed path `s` to the path along which `A_c` is conjugated into `π₁(𝔸, a)`
-conjugates the image by the class of `s`. -/
-theorem vertexHom_comp_apply (s : 𝔸.Path ⟨a⟩ ⟨a⟩) (q : 𝔸.Path ⟨a⟩ ⟨c⟩) (g : 𝔸.vertexGroup c) :
-    vertexHom (s.comp q) g = mk s * vertexHom q g * (mk s)⁻¹ := by
-  simp only [vertexHom_apply, ← mk_reverse, ← mk_comp, Quiver.Path.reverse_comp,
-    Quiver.Path.comp_assoc]
-
-/-- The images in `π₁(𝔸, a)` of a subgroup `H` of a vertex group `A_c` along two paths `q` and
-`r` from `a` to `c` are conjugate, by the class of `r q⁻¹`. -/
-theorem map_vertexHom_eq_map_conj (q r : 𝔸.Path ⟨a⟩ ⟨c⟩) (H : Subgroup (𝔸.vertexGroup c)) :
-    H.map (vertexHom r) =
-      (H.map (vertexHom q)).map (MulAut.conj (mk (r.comp q.reverse)) : π₁ 𝔸 a →* π₁ 𝔸 a) := by
-  have hr : vertexHom r = vertexHom ((r.comp q.reverse).comp q) :=
-    vertexHom_congr (by simpa using (Path.Homotopic.comp_reverse_comp_comp r q .nil).symm)
-  rw [hr, Subgroup.map_map]
-  congr 1
-  ext g
-  rw [vertexHom_comp_apply]
-  simp
-
 /-- The change of base vertex along `p` carries the image of a subgroup `H` of a vertex group
 `A_c` along a path `q` from `a` to a conjugate of its image along any path `r` from `b`: the
 conjugate by the class of `p⁻¹ q r⁻¹`. With `H = ⊤` this is the image of the vertex group, and
@@ -175,22 +155,12 @@ theorem map_mulEquivOfPath_map_vertexHom (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (q : �
   simp
 
 /-- Reading letters in `π₁(𝔸, T)` turns the change of base vertex along `p` into conjugation by
-the image of `p`. -/
+the inverse of the image of `p`, `x ↦ p⁻¹ x p`. -/
 @[simp] theorem toπ₁Tree_mulEquivOfPath (T : Set Γ.E) (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (x : π₁ 𝔸 a) :
     toπ₁Tree 𝔸 b T (mulEquivOfPath p x) = (p.toπ₁Tree T)⁻¹ * toπ₁Tree 𝔸 a T x * p.toπ₁Tree T :=
   induction_on x fun q ↦ by simp [mul_assoc]
 
 end π₁
-
-variable (𝔸) in
-/-- Over a preconnected graph any two vertices are joined by an `𝔸`-path: read the darts of a
-path of the graph as letters. -/
-theorem Path.nonempty_of_preconnected (hΓ : Γ.Preconnected) (a b : Γ.V) :
-    Nonempty (𝔸.Path ⟨a⟩ ⟨b⟩) := by
-  obtain ⟨p⟩ := Γ.preconnected_iff.1 hΓ a b
-  induction p with
-  | nil => exact ⟨.nil⟩
-  | cons _ e ih => exact ⟨ih.some.cons (Letter.dart e)⟩
 
 variable (𝔸) in
 /-- Over a preconnected graph the fundamental groups of a graph of groups at any two vertices are
