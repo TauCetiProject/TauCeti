@@ -36,7 +36,9 @@ vectors of the corresponding eigenspace of `T`
 almost-conjugate subgroups `K₁`, `K₂` (subgroups meeting every conjugacy class of `Q` in the same
 number of elements), Sunada's argument then shows that operators on `M ⧸ K₁` and on `M ⧸ K₂`
 intertwined by pullback with one operator `T` commuting with `Q` have eigenspaces of the same
-dimension (`Subgroup.AlmostConjugate.finrank_eigenspace_eq_of_intertwine`). The representation
+`finrank` (`Subgroup.AlmostConjugate.finrank_eigenspace_eq_of_intertwine`), which is their common
+dimension when they are finite-dimensional; `finrank` is `0` on an infinite-dimensional space, so
+the statement says nothing about infinite-dimensional eigenspaces. The representation
 theory, through Frobenius reciprocity, is
 `Subgroup.AlmostConjugate.finrank_invariants_inf_eigenspace_eq`. In Sunada's construction of
 isospectral manifolds, `T` and `S₁`, `S₂` are the Laplacians of a `Q`-invariant Riemannian metric on
@@ -223,7 +225,10 @@ variable {𝕜 : Type u} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
 maps, and let `K₁`, `K₂` be almost-conjugate subgroups of `Q`. Let `T` be an operator on the
 `C^n` maps `M → F` commuting with the action of `Q`, and `S₁`, `S₂` operators on the `C^n` maps
 on `M ⧸ K₁` and `M ⧸ K₂` intertwined with `T` by pullback along the orbit projections. Then for
-every `μ`, the `μ`-eigenspaces of `S₁` and `S₂` have the same dimension. -/
+every `μ`, the `μ`-eigenspaces of `S₁` and `S₂` have the same `finrank`. This is their common
+dimension when they are finite-dimensional, as for Laplacian eigenspaces on compact quotients;
+since `finrank` is `0` on an infinite-dimensional space, it does not compare infinite-dimensional
+eigenspaces. -/
 theorem finrank_eigenspace_eq_of_intertwine (h : K₁.AlmostConjugate K₂)
     {T : End 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯} (hT : ∀ q, Commute T (smoothFunctionRep 𝕜 I M F n Q q))
     {S₁ : End 𝕜 C^n⟮I, MulAction.orbitRel.Quotient K₁ M; 𝓘(𝕜, F), F⟯}
