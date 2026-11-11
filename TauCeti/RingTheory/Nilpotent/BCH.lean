@@ -81,15 +81,6 @@ private theorem algebra_bch3 (x y : A)
   noncomm_ring [smul_add, smul_sub, smul_smul, smul_neg, add_smul, sub_smul]
   module
 
-private theorem exp_mul_exp_sub_one_pow_four_eq_zero (I : Ideal A) (hI : I ^ 4 = ⊥)
-    {x y : A} (hx : x ∈ I) (hy : y ∈ I) :
-    (IsNilpotent.exp x * IsNilpotent.exp y - 1) ^ 4 = 0 := by
-  have hI0 : I ^ 4 = 0 := by simpa only [Ideal.zero_eq_bot] using hI
-  exact Ideal.pow_eq_zero_of_mem hI0 le_rfl
-    (I.exp_mul_exp_sub_one_mem hx hy
-      ⟨4, Ideal.pow_eq_zero_of_mem hI0 le_rfl hx⟩
-      ⟨4, Ideal.pow_eq_zero_of_mem hI0 le_rfl hy⟩)
-
 /-- **The Baker–Campbell–Hausdorff formula is exact through degree three** for elements of a
 left ideal whose fourth power vanishes. -/
 theorem log_exp_mul_exp_of_pow_four_eq_bot (I : Ideal A) (hI : I ^ 4 = ⊥) {x y : A}
@@ -100,7 +91,7 @@ theorem log_exp_mul_exp_of_pow_four_eq_bot (I : Ideal A) (hI : I ^ 4 = ⊥) {x y
   have hI0 : I ^ 4 = 0 := by simpa only [Ideal.zero_eq_bot] using hI
   have hx4 := Ideal.pow_eq_zero_of_mem hI0 le_rfl hx
   have hy4 := Ideal.pow_eq_zero_of_mem hI0 le_rfl hy
-  have hu4 := exp_mul_exp_sub_one_pow_four_eq_zero I hI hx hy
+  have hu4 := I.exp_mul_exp_sub_one_pow_eq_zero hI hx hy
   have he (z : A) : (∑ i ∈ Finset.range 4, (Nat.factorial i : ℚ)⁻¹ • z ^ i) =
       1 + z + (1 / 2 : ℚ) • z ^ 2 + (1 / 6 : ℚ) • z ^ 3 := by
     simp only [Finset.sum_range_succ, Finset.range_one, Finset.sum_singleton, Nat.factorial,
@@ -133,7 +124,7 @@ theorem exp_bch_of_pow_four_eq_bot (I : Ideal A) (hI : I ^ 4 = ⊥) {x y : A}
         (1 / 12 : ℚ) • (⁅x, ⁅x, y⁆⁆ + ⁅y, ⁅y, x⁆⁆)) =
       IsNilpotent.exp x * IsNilpotent.exp y := by
   rw [← log_exp_mul_exp_of_pow_four_eq_bot I hI hx hy]
-  exact IsNilpotent.exp_log ⟨4, exp_mul_exp_sub_one_pow_four_eq_zero I hI hx hy⟩
+  exact IsNilpotent.exp_log ⟨4, I.exp_mul_exp_sub_one_pow_eq_zero hI hx hy⟩
 
 /-- **The Baker–Campbell–Hausdorff formula through degree two**: for elements of a left ideal
 with vanishing cube, `log (exp x * exp y) = x + y + ½ ⁅x, y⁆`. -/
