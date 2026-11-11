@@ -92,9 +92,9 @@ theorem coefficientMatrix_natAdd_castAdd_of_castAdd_eq
     (N : Subcomodule k C M) (bN : Basis (Fin m) k N) (b : Basis (Fin (m + n)) k M)
     (hb : ∀ j, b (Fin.castAdd n j) = bN j) (i : Fin n) (j : Fin m) :
     coefficientMatrix (C := C) b (Fin.natAdd m i) (Fin.castAdd n j) = 0 := by
-  have hcoord : (b.coord (Fin.natAdd m i)).comp N.carrier.subtype = 0 := by
+  have hcoord : (b.coord (Fin.natAdd m i)).comp (SMulMemClass.subtype N) = 0 := by
     refine bN.ext fun l ↦ ?_
-    rw [LinearMap.comp_apply, Submodule.subtype_apply, ← hb]
+    rw [LinearMap.comp_apply, SMulMemClass.subtype_apply, ← hb]
     simp only [Basis.coord_apply, Basis.repr_self, Finsupp.single_apply, LinearMap.zero_apply]
     refine ite_eq_right fun h ↦ ?_
     have hval := congrArg Fin.val h
@@ -102,7 +102,8 @@ theorem coefficientMatrix_natAdd_castAdd_of_castAdd_eq
     omega
   rw [coefficientMatrix_apply, hb]
   exact N.carrier.matrixCoefficient_eq_zero_of_mem_dualAnnihilator (N.coact_mem (bN j).2)
-    ((Submodule.mem_dualAnnihilator _).2 fun w hw ↦ LinearMap.congr_fun hcoord ⟨w, hw⟩)
+    ((Submodule.mem_dualAnnihilator _).2 fun w hw ↦
+      LinearMap.congr_fun hcoord ⟨w, Subcomodule.mem_carrier.1 hw⟩)
 
 end Semiring
 
