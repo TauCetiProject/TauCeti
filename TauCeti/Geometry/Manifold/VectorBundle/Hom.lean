@@ -20,7 +20,8 @@ import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 A section of a hom bundle with finite-dimensional source fibres is smooth if and only if
 it sends every globally smooth section to a smooth section. This turns smoothness of
 tensorial operations on sections into smoothness of the associated tensor field, by
-applying the criterion once for each argument.
+applying the criterion once for each argument. Its sufficient direction also holds for `C^n`
+smoothness on a set (`TauCeti.Manifold.contMDiffOn_hom_of_forall_contMDiff`).
 
 The criterion applies over arbitrary smooth finite-dimensional manifolds, including
 noncompact manifolds and manifolds with boundary, and places no finite-dimensionality
@@ -155,6 +156,32 @@ theorem contMDiff_hom_iff (A : Π x : M, V x →L[ℝ] W x) :
           dsimp only [Pi.smul_apply']
           simp only [(hu hy).1, Pi.one_apply, one_smul]))
     exact hlocal.contMDiffAt (huopen.mem_nhds hxu)
+
+omit [ContMDiffVectorBundle ∞ G W I] in
+/-- A hom-bundle section with finite-dimensional source fibres is `C^n` on a set as soon as its
+evaluation on every globally smooth section is `C^n` there. -/
+theorem contMDiffOn_hom_of_forall_contMDiff {n : ℕ∞ω} (hn : n ≤ ∞)
+    [ContMDiffVectorBundle n G W I] {u : Set M} {A : Π x : M, V x →L[ℝ] W x}
+    (hA : ∀ s : Π x : M, V x, CMDiff ∞ (T% s) →
+      ContMDiffOn I (I.prod 𝓘(ℝ, G)) n (fun y ↦ TotalSpace.mk' G y (A y (s y))) u) :
+    ContMDiffOn I (I.prod 𝓘(ℝ, F →L[ℝ] G)) n
+      (fun y ↦ TotalSpace.mk' (F →L[ℝ] G) y (A y)) u := by
+  have : ContMDiffVectorBundle n F V I := .of_le hn
+  refine contMDiffOn_of_locally_contMDiffOn fun x _ ↦ ?_
+  let e := trivializationAt F V x
+  let e' := trivializationAt G W x
+  let b := Module.Basis.ofVectorSpace ℝ F
+  have := FiniteDimensional.fintypeBasisIndex b
+  obtain ⟨s, hs, hse⟩ :=
+    e.exists_contMDiff_eventuallyEq_localFrame (I := I) b (mem_baseSet_trivializationAt F V x)
+  obtain ⟨t, ht, hto, hxt⟩ := eventually_nhds_iff.1 (Filter.eventually_all.2 hse)
+  refine ⟨t ∩ (e.baseSet ∩ e'.baseSet), hto.inter (e.open_baseSet.inter e'.open_baseSet),
+    ⟨hxt, mem_baseSet_trivializationAt F V x, mem_baseSet_trivializationAt G W x⟩, ?_⟩
+  refine contMDiffOn_hom_of_localFrame (n := n) (b := b) (e := e) (e' := e') (f := id)
+    (u := u ∩ (t ∩ (e.baseSet ∩ e'.baseSet))) (A := A)
+    (contMDiffOn_id (I := I)) (fun y hy ↦ hy.2.2) fun i ↦ ?_
+  refine ((hA (s i) (hs i)).mono inter_subset_left).congr fun y hy ↦ ?_
+  simp [ht y hy.2.1 i]
 
 section PullbackForm
 

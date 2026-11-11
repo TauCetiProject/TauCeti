@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Connection
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import Mathlib.Geometry.Manifold.Notation
 
 /-!
@@ -17,15 +18,16 @@ structure `j`, let `e` be a trivialization of `V` and `b` a basis of the model f
 that `e.localFrame b` is a smooth real frame of `V` over `e.baseSet`. This file reads a real
 Cauchy–Riemann operator `D` on `V` in that frame.
 
-A real Cauchy–Riemann operator is local: `D σ x` depends only on the germ of `σ` at `x`. Writing
-`σ = ∑ i, σⁱ • eᵢ` over `e.baseSet`, with real coefficients `σⁱ`, the Leibniz rule gives
+A real Cauchy–Riemann operator is local: for sections differentiable at `x`, `D σ x` depends only
+on the germ of `σ` at `x` (`TauCeti.IsRealCauchyRiemannOperator.apply_eq_of_eventuallyEq`).
+Writing `σ = ∑ i, σⁱ • eᵢ` over `e.baseSet`, with real coefficients `σⁱ`, the Leibniz rule gives
 
 `D σ = ∑ i, (∂bar σⁱ) ⊗ eᵢ + ∑ i, σⁱ • D eᵢ`
 
-on `e.baseSet`. The first summand is the `(0,1)`-part of the flat covariant derivative of the
-frame; it is `frameCauchyRiemannOperator`, which satisfies the axioms of a real Cauchy–Riemann
-operator over `e.baseSet` and kills the frame sections. The second summand is a zeroth-order
-term.
+at points of `e.baseSet` where `σ` is differentiable. The first summand is the `(0,1)`-part of
+the flat covariant derivative of the frame; it is `frameCauchyRiemannOperator`, which satisfies the
+axioms of a real Cauchy–Riemann operator over `e.baseSet` and kills the frame sections. The second
+summand is a zeroth-order term.
 
 Finally, if two real Cauchy–Riemann operators send smooth sections to smooth `V`-valued one-forms,
 then their difference, the zeroth-order term `IsRealCauchyRiemannOperator.difference`, is a smooth
@@ -38,11 +40,6 @@ a set to `C^n` sections of `Hom(TM, V)` there.
 
 ## Main results
 
-* `TauCeti.IsRealCauchyRiemannOperator.apply_eq_of_eventuallyEq`: locality of real Cauchy–Riemann
-  operators.
-* `TauCeti.IsRealCauchyRiemannOperator.tensorialAt_sub_zeroOnePart`: a real Cauchy–Riemann
-  operator differs from the `(0,1)`-part of a covariant derivative over a set by a tensorial term
-  at each point of that set.
 * `TauCeti.Manifold.frameCauchyRiemannOperator`: the flat real Cauchy–Riemann operator of a local
   frame, with `TauCeti.Manifold.frameCauchyRiemannOperator_eq_sum` computing it as
   `∑ i, (∂bar σⁱ) ⊗ eᵢ`, and `TauCeti.Manifold.frameCauchyRiemannOperator_add` and
@@ -81,109 +78,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 open SmoothAlmostComplexStructure
 
-namespace IsRealCauchyRiemannOperator
-
-/-! ### Locality -/
-
-/-- A real Cauchy–Riemann operator vanishes on the zero section. -/
-theorem apply_zero [VectorBundle ℝ F V] (hD : IsRealCauchyRiemannOperator F j D) (x : M) :
-    D 0 x = 0 := by
-  simpa using hD.smul_const 0 (σ := 0) (x := x) (mdifferentiableAt_zeroSection ℝ V)
-
-/-- A real Cauchy–Riemann operator commutes with finite sums of sections differentiable at a
-point. -/
-theorem apply_sum [VectorBundle ℝ F V] (hD : IsRealCauchyRiemannOperator F j D) {κ : Type*}
-    {s : Finset κ} {τ : κ → Π x : M, V x} (hτ : ∀ i ∈ s, MDiffAt (T% (τ i)) x) :
-    D (∑ i ∈ s, τ i) x = ∑ i ∈ s, D (τ i) x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using hD.apply_zero x
-  | insert i s hi ih =>
-    simp only [Finset.mem_insert, forall_eq_or_imp] at hτ
-    have hsum : MDiffAt (T% (∑ k ∈ s, τ k)) x := by
-      simpa [Finset.sum_apply] using
-        MDifferentiableAt.sum_section (t := fun k (y : M) ↦ τ k y) (s := s) hτ.2
-    rw [Finset.sum_insert hi, hD.add hτ.1 hsum, ih hτ.2, Finset.sum_insert hi]
-
-/-- **Locality.** If two sections differentiable at `x` agree on a neighbourhood of `x`, then a
-real Cauchy–Riemann operator takes the same value on them at `x`. -/
-theorem apply_eq_of_eqOn (hD : IsRealCauchyRiemannOperator F j D) {s : Set M}
-    (hσ : MDiffAt (T% σ) x) (hσ' : MDiffAt (T% σ') x) (hs : s ∈ 𝓝 x) (h : ∀ y ∈ s, σ y = σ' y) :
-    D σ x = D σ' x := by
-  classical
-  -- Multiply by the indicator `ψ` of `s`: it is locally constant at `x`, so `D (ψ • σ) x = D σ x`.
-  let ψ : M → ℝ := s.indicator 1
-  have hψ : ψ =ᶠ[𝓝 x] fun _ ↦ 1 :=
-    eventually_of_mem hs fun y hy ↦ by simp [ψ, indicator_of_mem hy]
-  have hψx : ψ x = 1 := hψ.eq_of_nhds
-  have hψ' : HasMFDerivAt I 𝓘(ℝ) ψ x 0 := (hasMFDerivAt_const (1 : ℝ) x).congr_of_eventuallyEq hψ
-  have hψd : MDiffAt ψ x := hψ'.mdifferentiableAt
-  have hdψ : d% ψ x = 0 := by simp [mvfderiv, hψ'.mfderiv]
-  have hdbar (τ : Π x : M, V x) : j.dbarSMulRight ψ τ x = 0 := by
-    ext v
-    simp [dbarSMulRight_apply, hdψ]
-  have hsmul : ψ • σ = ψ • σ' := by
-    ext y
-    by_cases hy : y ∈ s
-    · simp [h y hy]
-    · simp [ψ, indicator_of_notMem hy]
-  calc D σ x = D (ψ • σ) x := by rw [hD.leibniz hσ hψd, hψx, one_smul, hdbar, add_zero]
-    _ = D (ψ • σ') x := by rw [hsmul]
-    _ = D σ' x := by rw [hD.leibniz hσ' hψd, hψx, one_smul, hdbar, add_zero]
-
-/-- **Locality.** A real Cauchy–Riemann operator at `x` only depends on the germ at `x` of a section
-differentiable at `x`. -/
-theorem apply_eq_of_eventuallyEq (hD : IsRealCauchyRiemannOperator F j D)
-    (hσ : MDiffAt (T% σ) x) (h : ∀ᶠ y in 𝓝 x, σ y = σ' y) : D σ x = D σ' x := by
-  have hσ' : MDiffAt (T% σ') x :=
-    hσ.congr_of_eventuallyEq (h.mono fun y hy ↦ congrArg (TotalSpace.mk' F y) hy.symm)
-  obtain ⟨s, hs, hss⟩ := h.exists_mem
-  exact hD.apply_eq_of_eqOn hσ hσ' hs hss
-
-end IsRealCauchyRiemannOperator
-
 variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
-
-namespace SmoothAlmostComplexStructure
-
-omit [FiberBundle F V] in
-/-- The `(0,1)`-part of the zero one-form is zero. -/
-@[simp]
-theorem zeroOnePart_zero {x : M} : j.zeroOnePart (0 : TangentSpace I x →L[ℝ] V x) = 0 := by
-  ext v
-  simp [zeroOnePart_apply]
-
-omit [FiberBundle F V] in
-/-- The `(0,1)`-projection commutes with finite sums. -/
-theorem zeroOnePart_sum {κ : Type*} (s : Finset κ) {x : M}
-    (η : κ → TangentSpace I x →L[ℝ] V x) :
-    j.zeroOnePart (∑ i ∈ s, η i) = ∑ i ∈ s, j.zeroOnePart (η i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih => rw [Finset.sum_insert hi, zeroOnePart_add, ih, Finset.sum_insert hi]
-
-end SmoothAlmostComplexStructure
-
-namespace IsRealCauchyRiemannOperator
-
-/-! ### Comparison with the `(0,1)`-part of a covariant derivative -/
-
-/-- At a point of a set over which `cov` is a covariant derivative, a real Cauchy–Riemann operator
-differs from the `(0,1)`-part of `cov` by a tensorial term. -/
-theorem tensorialAt_sub_zeroOnePart (hD : IsRealCauchyRiemannOperator F j D)
-    {cov : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x} {s : Set M}
-    (hcov : IsCovariantDerivativeOn F cov s) (hx : x ∈ s) :
-    TensorialAt I F (fun σ ↦ D σ x - j.zeroOnePart (cov σ x)) x where
-  smul hg hσ := by
-    simp only [hD.leibniz hσ hg, hcov.leibniz hσ hg hx, zeroOnePart_add, zeroOnePart_smul,
-      zeroOnePart_smulRight, smul_sub]
-    abel
-  add hσ hσ' := by
-    simp only [hD.add hσ hσ', hcov.add hσ hσ' hx, zeroOnePart_add]
-    abel
-
-end IsRealCauchyRiemannOperator
 
 /-! ### The flat real Cauchy–Riemann operator of a local frame -/
 
@@ -234,7 +129,7 @@ theorem frameCauchyRiemannOperator_add (hx : x ∈ e.baseSet) (hσ : MDiffAt (T%
     frameCauchyRiemannOperator j b e (σ + σ') x =
       frameCauchyRiemannOperator j b e σ x + frameCauchyRiemannOperator j b e σ' x := by
   simp only [frameCauchyRiemannOperator_apply,
-    (isCovariantDerivativeOn_frameCovariantDerivative b).add hσ hσ' hx, zeroOnePart_add]
+    (isCovariantDerivativeOn_frameCovariantDerivative b).zeroOnePart_add j hx hσ hσ']
 
 /-- The flat real Cauchy–Riemann operator of a frame satisfies the Leibniz rule
 `D (g • σ) = g • D σ + (∂bar g) ⊗ σ` at points of the base set. -/
@@ -243,8 +138,7 @@ theorem frameCauchyRiemannOperator_leibniz (hx : x ∈ e.baseSet) {g : M → ℝ
     frameCauchyRiemannOperator j b e (g • σ) x =
       g x • frameCauchyRiemannOperator j b e σ x + j.dbarSMulRight g σ x := by
   simp only [frameCauchyRiemannOperator_apply,
-    (isCovariantDerivativeOn_frameCovariantDerivative b).leibniz hσ hg hx, zeroOnePart_add,
-    zeroOnePart_smul, zeroOnePart_smulRight]
+    (isCovariantDerivativeOn_frameCovariantDerivative b).zeroOnePart_leibniz j hx hσ hg]
 
 /-- The flat real Cauchy–Riemann operator of a frame kills the frame sections on the base set. -/
 @[simp]
@@ -289,7 +183,7 @@ theorem eq_frameCauchyRiemannOperator_add_sum (hD : IsRealCauchyRiemannOperator 
     Manifold.frameCauchyRiemannOperator_eq_sum, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [hD.leibniz (hframe i) (hcd i), add_comm]
-  rfl
+  simp only [c, LinearMap.piApply_apply_apply]
 
 end IsRealCauchyRiemannOperator
 
@@ -298,42 +192,6 @@ end IsRealCauchyRiemannOperator
 section Smooth
 
 variable [FiniteDimensional ℝ E] [T2Space M] {u : Set M} {n : ℕ∞ω}
-
-omit [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] [FiberBundle F V]
-  [∀ x, Module ℂ (V x)] in
-/-- Over a Hausdorff manifold, a section of a bundle of continuous linear maps out of a `C^∞`
-bundle of finite rank is `C^n` on a set as soon as its evaluations on the globally `C^∞` sections
-are. -/
-private theorem contMDiffOn_hom_of_forall_contMDiff (hn : n ≤ ∞)
-    {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [FiniteDimensional ℝ F₁]
-    {V₁ : M → Type*} [TopologicalSpace (TotalSpace F₁ V₁)] [∀ x, TopologicalSpace (V₁ x)]
-    [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℝ (V₁ x)] [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁]
-    [ContMDiffVectorBundle ∞ F₁ V₁ I]
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {W : M → Type*} [TopologicalSpace (TotalSpace G W)] [∀ x, TopologicalSpace (W x)]
-    [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [FiberBundle G W] [VectorBundle ℝ G W]
-    [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
-    [ContMDiffVectorBundle n G W I] {A : Π x : M, V₁ x →L[ℝ] W x}
-    (hA : ∀ τ : Π x : M, V₁ x, CMDiff ∞ (T% τ) →
-      ContMDiffOn I (I.prod 𝓘(ℝ, G)) n (fun y ↦ TotalSpace.mk' G y (A y (τ y))) u) :
-    ContMDiffOn I (I.prod 𝓘(ℝ, F₁ →L[ℝ] G)) n
-      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] G) (E := fun x ↦ V₁ x →L[ℝ] W x) y (A y)) u := by
-  have : ContMDiffVectorBundle n F₁ V₁ I := .of_le hn
-  refine contMDiffOn_of_locally_contMDiffOn fun x _ ↦ ?_
-  let e := trivializationAt F₁ V₁ x
-  let e' := trivializationAt G W x
-  let b := Basis.ofVectorSpace ℝ F₁
-  have := FiniteDimensional.fintypeBasisIndex b
-  obtain ⟨τ, hτ, hτe⟩ :=
-    e.exists_contMDiff_eventuallyEq_localFrame (I := I) b (mem_baseSet_trivializationAt F₁ V₁ x)
-  obtain ⟨t, ht, hto, hxt⟩ := eventually_nhds_iff.1 (eventually_all.2 hτe)
-  refine ⟨t ∩ (e.baseSet ∩ e'.baseSet), hto.inter (e.open_baseSet.inter e'.open_baseSet),
-    ⟨hxt, mem_baseSet_trivializationAt F₁ V₁ x, mem_baseSet_trivializationAt G W x⟩, ?_⟩
-  refine Manifold.contMDiffOn_hom_of_localFrame (n := n) (b := b) (e := e) (e' := e') (f := id)
-    (u := u ∩ (t ∩ (e.baseSet ∩ e'.baseSet))) (A := A)
-    (contMDiffOn_id (I := I)) (fun y hy ↦ hy.2.2) fun i ↦ ?_
-  refine ((hA (τ i) (hτ i)).mono inter_subset_left).congr fun y hy ↦ ?_
-  simp [ht y hy.2.1 i]
 
 omit [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
 /-- If two real Cauchy–Riemann operators send `C^(n + 1)` sections over `u` to `C^n` sections of
@@ -352,11 +210,10 @@ theorem IsRealCauchyRiemannOperator.contMDiffOn_difference [VectorBundle ℝ F V
   have : ContMDiffVectorBundle n F V I := .of_le (le_self_add.trans hn)
   have : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
     .of_le (le_self_add.trans hn)
-  refine contMDiffOn_hom_of_forall_contMDiff (le_self_add.trans hn) fun τ hτ ↦ ?_
+  refine Manifold.contMDiffOn_hom_of_forall_contMDiff (le_self_add.trans hn) fun τ hτ ↦ ?_
   have hτu : CMDiff[u] (n + 1) (T% τ) := (hτ.of_le hn).contMDiffOn
   refine ((hDs.contMDiff hτu).sub_section (hD's.contMDiff hτu)).congr fun y _ ↦ ?_
-  rw [hD.difference_apply hD' ((hτ y).mdifferentiableAt (by simp))]
-  rfl
+  rw [hD.difference_apply hD' ((hτ y).mdifferentiableAt (by simp)), Pi.sub_apply]
 
 /-- Multiplying a `C^n` section of `Hom(TM, V)` by a complex scalar acting on `V` gives a `C^n`
 section. -/
@@ -370,7 +227,7 @@ private theorem contMDiffOn_complex_smul_hom (hn : n ≤ ∞) [NormedSpace ℂ F
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun x ↦ TangentSpace I x →L[ℝ] V x) y
         ((c • η) y)) u := by
   have : ContMDiffVectorBundle n F V I := .of_le hn
-  refine contMDiffOn_hom_of_forall_contMDiff hn fun τ hτ ↦ ?_
+  refine Manifold.contMDiffOn_hom_of_forall_contMDiff hn fun τ hτ ↦ ?_
   exact ContMDiffOn.smul_totalSpace (a := fun _ ↦ c) contMDiffOn_const
     (hη.clm_bundle_apply ((hτ.of_le hn).contMDiffOn))
 
@@ -385,7 +242,8 @@ theorem contMDiffCovariantDerivativeOn_sectionComplexLinearPart (hn : n + 1 ≤ 
       ContMDiffOn.smul_totalSpace (a := fun _ ↦ Complex.I) contMDiffOn_const hσ
     have h := ((hDs.contMDiff hσ).sub_section (contMDiffOn_complex_smul_hom
       (le_self_add.trans hn) Complex.I (hDs.contMDiff hIσ))).const_smul_section (a := (2⁻¹ : ℝ))
-    exact h.congr fun y _ ↦ by rw [sectionComplexLinearPart_apply]; rfl
+    exact h.congr fun y _ ↦ by
+      simp only [sectionComplexLinearPart_apply, Pi.smul_apply, Pi.sub_apply]
 
 /-- The antilinear part of a real Cauchy–Riemann operator sending `C^(n + 1)` sections over `u`
 to `C^n` sections of `Hom(TM, V)` over `u` is a `C^n` section over `u` of the bundle
@@ -397,16 +255,9 @@ theorem IsRealCauchyRiemannOperator.contMDiffOn_antilinearPart [NormedSpace ℂ 
     ContMDiffOn I (I.prod 𝓘(ℝ, F →L[ℝ] E →L[ℝ] F)) n
       (fun y ↦ TotalSpace.mk' (F →L[ℝ] E →L[ℝ] F)
         (E := fun x ↦ V x →L[ℝ] TangentSpace I x →L[ℝ] V x) y (hD.antilinearPart y)) u := by
-  have hDℂ := hD.isRealCauchyRiemannOperator_sectionComplexLinearPart
-  refine (hD.contMDiffOn_difference hDℂ hn hDs
-    (contMDiffCovariantDerivativeOn_sectionComplexLinearPart hn hDs)).congr fun y _ ↦ ?_
-  have h : hD.antilinearPart y = hD.difference hDℂ y := by
-    ext v : 1
-    have hσ := mdifferentiableAt_extend I F v
-    have h₁ := hD.sectionComplexLinearPart_add_antilinearPart hσ
-    rw [hD.eq_add_difference hDℂ hσ, add_right_inj, extend_apply_self] at h₁
-    exact h₁
-  rw [h]
+  rw [antilinearPart_eq_difference]
+  exact hD.contMDiffOn_difference hD.isRealCauchyRiemannOperator_sectionComplexLinearPart hn hDs
+    (contMDiffCovariantDerivativeOn_sectionComplexLinearPart hn hDs)
 
 end Smooth
 
