@@ -136,7 +136,7 @@ theorem memWkpLoc_succ_of_ae_cauchyRiemann [FiniteDimensional ℝ V] {Ω : Opens
     (hD : HasWeakFDerivOn volume (Opens.interior U) ξ D) (hD1 : MemWkpLoc q U k fun z => D z 1)
     (heq : ∀ᵐ z ∂volume.restrict (interior U), D z 1 + J z (D z I) + S z (ξ z) = η z) :
     MemWkpLoc q U (k + 1) ξ := by
-  set N : ℂ → V := fun z => J z (D z 1 + S z (ξ z) - η z) with hNdef
+  set N : ℂ → V := fun z => J z (D z 1 + S z (ξ z) - η z)
   have hN : MemWkpLoc q U k N :=
     ((hD1.add (hξ.contDiffOn_clm_apply hS hk hU)).sub hη).contDiffOn_clm_apply hJ hk hU
   have hae : ∀ᵐ z ∂volume.restrict (interior U), D z I = N z :=
