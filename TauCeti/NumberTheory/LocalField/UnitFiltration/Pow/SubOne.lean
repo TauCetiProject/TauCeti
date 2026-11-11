@@ -89,7 +89,6 @@ theorem log_normalizedValuationWithZero_pow_sub_one {n : ℕ} (hn : (n : K) ≠ 
   -- Write `d = m` with `m ≥ i`: then `x ∈ U(K,m) \ U(K,m+1)`, and the power map moves this
   -- exact depth by `v_K(n)`.
   obtain ⟨m, hm⟩ : ∃ m : ℕ, d = m := ⟨d.toNat, by omega⟩
-  have him : i ≤ m := by omega
   have hm0 : m ≠ 0 := by omega
   have hxm : x ∈ unitFiltration K m :=
     (mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one hm0 hx1).mpr hm.ge

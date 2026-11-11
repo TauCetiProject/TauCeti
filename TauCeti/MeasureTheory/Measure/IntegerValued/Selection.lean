@@ -71,14 +71,14 @@ private lemma one_le_singleton_low_quantile {μ : Measure ℝ} [IsFiniteMeasure 
     exact hbound.trans_lt hmul
   have hzero : μ (Iio (ν.quantile p)) = 0 := by
     by_contra h
-    have hone := hint.one_le_apply measurableSet_Iio h
+    have hone := hint.one_le_apply h
     have := (ENNReal.toReal_le_toReal (by simp) (measure_ne_top _ _)).2 hone
     exact (not_le_of_gt hlo') this
   have hclosed : μ (Iic (ν.quantile p)) ≠ 0 := by
     intro h
     simp only [Measure.real, h, ENNReal.toReal_zero, mul_zero] at hhi
     exact (not_le_of_gt p.2.1) hhi
-  apply hint.one_le_apply (measurableSet_singleton _)
+  apply hint.one_le_apply
   intro hsingle
   apply hclosed
   rw [← Iio_union_right, measure_union_null hzero hsingle]
