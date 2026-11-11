@@ -39,7 +39,7 @@ theorem quantile_nakagamiMeasure (hm : 0 < m) (hΩ : 0 < Ω) (hu : u ∈ Ioo 0 1
   let _ := isProbabilityMeasure_gammaMeasure hm (div_pos hm hΩ)
   rw [nakagamiMeasure_of_pos hm hΩ,
     Measure.quantile_map_of_monotone (fun _ _ h ↦ sqrt_le_sqrt h) (by fun_prop) hu.1 hu.2,
-    quantile_gammaMeasure hm (div_pos hm hΩ) hu]
+    quantile_gammaMeasure hm (div_pos hm hΩ)]
   congr 1
   field_simp
 

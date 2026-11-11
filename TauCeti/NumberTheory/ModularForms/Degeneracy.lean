@@ -1135,6 +1135,16 @@ theorem CuspForm.restrict_mem_cuspFormCharSpace {M N : ℕ} (χ : (ZMod M)ˣ →
   have := levelRaise_mem_cuspFormCharSpace_of_dvd hdvd χ hf
   rwa [_root_.CuspForm.levelRaise_one] at this
 
+/-- Restricting a cusp form of nebentypus `χ.comp (ZMod.unitsMap h₁)` along a further divisibility
+`h₂` gives a cusp form of nebentypus `χ.comp (ZMod.unitsMap (h₁.trans h₂))`. -/
+theorem CuspForm.restrict_mem_cuspFormCharSpace_comp {M₀ M₁ M₂ : ℕ} (χ : (ZMod M₀)ˣ →* ℂˣ)
+    (h₁ : M₀ ∣ M₁) (h₂ : M₁ ∣ M₂) {g : CuspForm ((Gamma1 M₁).map (mapGL ℝ)) k}
+    (hg : g ∈ cuspFormCharSpace k (χ.comp (ZMod.unitsMap h₁))) :
+    _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd h₂) g ∈
+      cuspFormCharSpace k (χ.comp (ZMod.unitsMap (h₁.trans h₂))) := by
+  have := CuspForm.restrict_mem_cuspFormCharSpace _ h₂ hg
+  rwa [MonoidHom.comp_assoc, ZMod.unitsMap_comp] at this
+
 end Restriction
 
 /-! ### The `q`-expansion of a level-raise -/
