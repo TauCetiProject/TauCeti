@@ -28,14 +28,18 @@ This file proves that they form a nondegenerate family
 (`TauCeti.SymplecticForm.IsDarbouxBasis.isNondegenerateQuadraticFamily_elliptic`): the
 Hamiltonian endomorphisms `A_{Iₖ}` span a Cartan subalgebra of `sp(V, ω)`. This is the elliptic
 type of Williamson's classification of nondegenerate rank-zero singularities of integrable
-systems, in every dimension; with the hyperbolic planes and the focus-focus block
+systems, in every dimension; with the hyperbolic blocks
+(`TauCeti.SymplecticForm.IsDarbouxBasis.isNondegenerateQuadraticFamily_hyperbolic`) and the
+focus-focus block
 (`TauCeti.SymplecticForm.IsDarbouxBasis.isNondegenerateQuadraticFamily_focusFocus`) it makes up
 the normal forms of that classification.
 
 The certificate is a regular element. For any frequencies `c₁, …, cₙ`, the combination
 `P = ∑ₖ cₖ Iₖ` has semisimple Hamiltonian endomorphism, killed by the squarefree polynomial
 `(∏ₜ (X² + t)) X` over the nonzero squares `t = cₖ²`
-(`IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_elliptic`). If the frequencies are nonzero
+(`IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_elliptic`); without the squarefree
+reduction, it is killed by `∏ₖ (X² + cₖ²)`
+(`IsDarbouxBasis.aeval_hamiltonianEnd_sum_smul_elliptic_prod`). If the frequencies are nonzero
 with distinct squares, every quadratic form Poisson-commuting with `P` is a combination of the
 `Iₖ`
 (`IsDarbouxBasis.mem_span_elliptic_of_quadraticPoissonBracket_eq_zero`). Indeed, if `R`
@@ -149,6 +153,20 @@ private theorem IsDarbouxBasis.hamiltonianEnd_sum_smul_elliptic_apply_apply
       hb.hamiltonianEnd_sum_smul_elliptic_apply_fst, smul_smul]
     congr 1
     ring
+
+/-- The Hamiltonian endomorphism of `∑ₖ cₖ Iₖ` is killed by `∏ₖ (X² + cₖ²)`. -/
+theorem IsDarbouxBasis.aeval_hamiltonianEnd_sum_smul_elliptic_prod (hb : ω.IsDarbouxBasis b)
+    (c : Fin n → ℝ) :
+    aeval (ω.hamiltonianEnd (∑ k, c k • elliptic b k)) (∏ k, (X ^ 2 + C (c k ^ 2))) = 0 := by
+  -- The factor of index `j` kills the plane `span(qⱼ, pⱼ)`, and the factors commute.
+  refine b.ext fun i ↦ ?_
+  have hi : aeval (ω.hamiltonianEnd (∑ k, c k • elliptic b k)) (X ^ 2 + C (c i.1 ^ 2))
+      (b i) = 0 := by
+    rw [map_add, map_pow, aeval_X, aeval_C, sq, LinearMap.add_apply, mul_apply_eq_comp,
+      hb.hamiltonianEnd_sum_smul_elliptic_apply_apply, Algebra.algebraMap_eq_smul_one,
+      LinearMap.smul_apply, one_apply_eq_self, neg_smul, neg_add_cancel]
+  rw [LinearMap.zero_apply, ← Finset.prod_erase_mul _ _ (Finset.mem_univ i.1), map_mul,
+    mul_apply_eq_comp, hi, map_zero]
 
 /-- The Hamiltonian endomorphism of `∑ₖ cₖ Iₖ` is semisimple: it is killed by the squarefree
 polynomial `(∏ₜ (X² + t)) X`, the product running over the nonzero squares `t = cₖ²`. -/
