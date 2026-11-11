@@ -228,7 +228,7 @@ theorem structureConstant_eq_natCast_or_eq_neg_natCast
       hx.toIsSl2System.structureConstant α β γ hγ hαβ =
         -((chainBotCoeff α β + 1 : ℕ) : K) :=
   hx.toIsSl2System.structureConstant_eq_natCast_or_eq_neg_natCast_of_killingForm_ratio
-    α β γ hα hβ hγ hαβ ω.toLieHom (hx.map_root α) (hx.map_root β) (hx.map_root γ)
+    α β γ hβ hγ hαβ ω.toLieHom (hx.map_root α) (hx.map_root β) (hx.map_root γ)
     (hx.toIsSl2System.chainTopCoeff_mul_killingForm_root_neg_eq α β γ hα hβ hγ hαβ)
 
 /-- **Root vectors from brackets.** If `γ = α + β` is a genuine root sum, then dividing the bracket

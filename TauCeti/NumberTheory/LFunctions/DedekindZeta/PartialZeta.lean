@@ -315,7 +315,7 @@ theorem exists_differentiableOn_eq_LSeries_rayClassCoeff_sub (𝔪 : Modulus K)
       ∀ s : ℂ, 1 < s.re →
         G s = LSeries (normCoeff K (rayClassCoeff 𝔪 c)) s - rayClassIdealMainTerm 𝔪 / (s - 1) := by
   refine TauCeti.LSeries.exists_differentiableOn_eq_LSeries_sub_div_of_isBigO _ _
-    (sub_le_self _ (by positivity)) ?_ fun s hs ↦ LSeriesSummable_rayClassCoeff 𝔪 c hs
+    ?_ fun s hs ↦ LSeriesSummable_rayClassCoeff 𝔪 c hs
   -- the partial sums are the class counts, which are `κ_𝔪 n + O(n ^ (1 - 1 / [K : ℚ]))`
   have hsum (n : ℕ) : ∑ k ∈ Finset.Icc 1 n, normCoeff K (rayClassCoeff 𝔪 c) k -
       (rayClassIdealMainTerm 𝔪 : ℂ) * n =

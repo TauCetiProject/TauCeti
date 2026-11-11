@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.DerivedCategory.Basic
 public import TauCeti.Algebra.Homology.CochainComplex.Double
+public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Mk
 import TauCeti.CategoryTheory.Triangulated.TriangleIso
 
 /-!
@@ -171,7 +172,7 @@ private theorem isIso_Q_map_doubleι (hS : E.Conflation S) :
     IsIso ((BoundedDerivedCategory.Q E).map
       (mkMap S.doubleι : bSingle 0 S.X₁ ⟶ bDouble S)) :=
   Localization.inverts _ E.acyclicBounded.trW _
-    (E.acyclicBounded_trW_mkMap _ _ _ (acyclic_mappingCone_doubleι hS))
+    (E.acyclicBounded_trW_homMk_quotient_map _ (acyclic_mappingCone_doubleι hS))
 
 /-- The resolution `X ⟶ (Y ⟶ Z)`, as an isomorphism of `Dᵇ(E)`. -/
 private noncomputable def doubleιIso (hS : E.Conflation S) :

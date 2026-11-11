@@ -58,8 +58,7 @@ This includes the deterministic parameters zero and one. -/
 theorem integerWalk_isRecurrent_iff (p : unitInterval) (x : ℤ) :
     (integerWalk p).IsRecurrent x ↔ (p : ℝ) = 1 / 2 := by
   rw [Kernel.isRecurrent_iff_tsum_eq_top, integerWalk_tsum_pow_apply_self,
-    NNReal.tsum_centralBinom_mul_mul_one_sub_pow_eq_top_iff (unitInterval.toNNReal p)
-      (by exact_mod_cast p.2.2)]
+    NNReal.tsum_centralBinom_mul_mul_one_sub_pow_eq_top_iff (unitInterval.toNNReal p)]
   rw [← NNReal.coe_inj]
   simp only [unitInterval.coe_toNNReal, NNReal.coe_div, NNReal.coe_one, NNReal.coe_ofNat]
 

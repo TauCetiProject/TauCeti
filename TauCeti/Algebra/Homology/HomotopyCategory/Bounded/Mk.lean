@@ -12,8 +12,9 @@ public import Mathlib.Algebra.Homology.Double
 # Classes of explicit bounded complexes in the bounded homotopy category
 
 For a bounded cochain complex `K`, `TauCeti.HomotopyCategory.Bounded.mk K hK` is its class in
-`Kᵇ(C)`, whose underlying object of the homotopy category is the class of `K` itself, and
-`TauCeti.HomotopyCategory.Bounded.mkMap` is the class of a map of bounded complexes. With these,
+`Kᵇ(C)` (`TauCeti/Algebra/Homology/HomotopyCategory/Bounded/Basic.lean`), whose underlying object of
+the homotopy category is the class of `K` itself. This file adds
+`TauCeti.HomotopyCategory.Bounded.mkMap`, the class of a map of bounded complexes. With these,
 statements about explicit complexes and chain maps are made in `Kᵇ(C)` without the comparison
 isomorphisms of `TauCeti.HomotopyCategory.Bounded.quotient`. An object placed in degree `n` is
 naturally isomorphic to the class of the complex concentrated in degree `n`, and the class of
@@ -21,7 +22,6 @@ naturally isomorphic to the class of the complex concentrated in degree `n`, and
 
 ## Main definitions
 
-* `TauCeti.HomotopyCategory.Bounded.mk`: the class of a bounded complex.
 * `TauCeti.HomotopyCategory.Bounded.mkMap`: the class of a map of bounded complexes.
 * `TauCeti.HomotopyCategory.Bounded.singleFunctorObjIsoMk`: an object placed in degree `n` is the
   class of the complex concentrated in degree `n`.
@@ -64,11 +64,6 @@ end CochainComplex
 namespace TauCeti.HomotopyCategory.Bounded
 
 variable [Preadditive C]
-
-/-- The class in `Kᵇ(C)` of a bounded cochain complex. -/
-abbrev mk (K : CochainComplex C ℤ) (hK : CochainComplex.bounded C K) :
-    HomotopyCategory.Bounded C :=
-  ⟨_, (HomotopyCategory.bounded_quotient_obj_iff K).2 hK⟩
 
 /-- The class in `Kᵇ(C)` of a map of bounded cochain complexes. -/
 abbrev mkMap {K L : CochainComplex C ℤ} {hK : CochainComplex.bounded C K}
