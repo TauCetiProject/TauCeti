@@ -227,8 +227,8 @@ def W1p.halfDiscFlatTraceL (hp : p ≠ (∞ : ℝ≥0∞)) (r : ℝ) :
 
 /-- **Functions of zero trace on the flat segment.** The subspace of `W^{1,p}(halfDisc r)`,
 `p < ∞`, of functions whose boundary trace vanishes almost everywhere on the flat segment: the
-kernel of `TauCeti.W1p.halfDiscFlatTraceL`. This is the real part of the totally real boundary
-condition `ξ ∈ ℝⁿ` on the flat segment, applied to the imaginary parts of the components. -/
+kernel of `TauCeti.W1p.halfDiscFlatTraceL`. Imposed on the imaginary part of each component of a
+`ℂⁿ`-valued map, it is the totally real boundary condition `ξ ∈ ℝⁿ` on the flat segment. -/
 def W1p.halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ≥0∞)) (r : ℝ) :
     Submodule ℝ (W1p volume (halfDisc r) p) :=
   LinearMap.ker (W1p.halfDiscFlatTraceL hp r).toLinearMap
