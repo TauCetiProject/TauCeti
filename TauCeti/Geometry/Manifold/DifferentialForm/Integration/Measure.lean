@@ -28,9 +28,11 @@ Under a change of chart the coefficient is multiplied by the Jacobian determinan
 transition map, so its absolute value transforms exactly as Lebesgue measure does. Hence the local
 measures agree on chart overlaps and, on a Lindelöf manifold, glue to a unique measure on the
 Borel `σ`-algebra. No orientation is used, the form may vanish, and manifolds with boundary or
-corners are allowed. The same computation shows that a differentiable homeomorphism `Φ : M → N`
-carries `|Φ^* ψ|` to `|ψ|` (`Homeomorph.measurePreserving_measure_mpullback`); in particular a
-diffeomorphism preserving `ψ` preserves `|ψ|`.
+corners are allowed. The measure only depends on the absolute values of the form
+(`TauCeti.RoughForm.measure_eq_of_forall_abs_apply_eq`). The same computation shows that a
+differentiable homeomorphism `Φ : M → N` carries `|Φ^* ψ|` to `|ψ|`
+(`Homeomorph.measurePreserving_measure_mpullback`), also when `M` and `N` are modelled on different
+spaces of the same dimension; in particular a diffeomorphism preserving `ψ` preserves `|ψ|`.
 
 For a continuous form the measure is locally finite, and if moreover the form vanishes nowhere,
 every nonempty open set has positive measure. Applied to the symplectic volume form `ωⁿ / n!`,
@@ -47,6 +49,8 @@ this construction gives the Liouville measure of a symplectic manifold.
 * `TauCeti.RoughForm.eq_measure_iff`: these values characterize `|φ|`.
 * `TauCeti.RoughForm.measure_smul`, `TauCeti.RoughForm.measure_neg`,
   `TauCeti.RoughForm.measure_zero`: `|c • φ| = |c| • |φ|`.
+* `TauCeti.RoughForm.measure_eq_of_forall_abs_apply_eq`: two top forms with the same absolute
+  values have the same measure.
 * `TauCeti.RoughForm.isLocallyFiniteMeasure_measure`: the measure of a continuous form is locally
   finite.
 * `TauCeti.RoughForm.isOpenPosMeasure_measure`: the measure of a continuous nowhere-vanishing form
@@ -213,6 +217,15 @@ theorem measure_zero : (0 : RoughForm I M ℝ k).measure = 0 := by
   rw [← zero_smul ℝ (0 : RoughForm I M ℝ k), measure_smul, abs_zero, ENNReal.ofReal_zero,
     zero_smul]
 
+/-- The measure `|φ|` only depends on the absolute values of `φ`: two top forms with
+`|φ_x(v)| = |ψ_x(v)|` for all tangent vectors have the same measure. -/
+theorem measure_eq_of_forall_abs_apply_eq {φ ψ : RoughForm I M ℝ k}
+    (h : ∀ x v, |φ x v| = |ψ x v|) : φ.measure = ψ.measure := by
+  refine eq_measure_iff.2 fun α s hs hsub ↦ ?_
+  rw [φ.measure_apply_of_subset hs hsub]
+  refine setLIntegral_congr_fun (hs.image_extChartAt α hsub) fun y _ ↦ ?_
+  rw [inChartAt_apply, inChartAt_apply, h]
+
 /-! ### Local finiteness and positivity -/
 
 /-- **The measure of a continuous top form is locally finite.** Near each point the coordinate
@@ -350,18 +363,29 @@ namespace Homeomorph
 
 open TauCeti
 
-variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N]
-  [ChartedSpace H' N] [IsManifold J 1 N] [MeasurableSpace N] [BorelSpace N]
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [hk' : Fact (finrank ℝ E' = k)] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] [MeasurableSpace N] [BorelSpace N]
   [LindelofSpace M] [LindelofSpace N]
 
 /-- **Change of variables for the measure of a top form.** A differentiable homeomorphism
-`Φ : M → N` between manifolds modelled on the same space carries the measure of the pulled-back
-form `Φ^* ψ` to the measure of `ψ`. In particular a diffeomorphism preserving a top form preserves
-its measure. No orientation is involved. -/
+`Φ : M → N` between manifolds modelled on spaces of the same dimension carries the measure of the
+pulled-back form `Φ^* ψ` to the measure of `ψ`. In particular a diffeomorphism preserving a top
+form preserves its measure. No orientation is involved. -/
 theorem measurePreserving_measure_mpullback (Φ : M ≃ₜ N) (hΦ : MDifferentiable I J Φ)
     (ψ : RoughForm J N ℝ k) :
     MeasurePreserving Φ (mpullback I J Φ ψ).measure ψ.measure := by
   refine ⟨Φ.measurable, ?_⟩
+  -- Compare the model spaces through the linear equivalence carrying the basis normalizing the
+  -- coordinate measure of `E` to that of `E'`.
+  set b := finBasisOfFinrankEq ℝ E hk.out
+  set b' := finBasisOfFinrankEq ℝ E' hk'.out
+  set C : E ≃L[ℝ] E' := (b.equiv b' (Equiv.refl _)).toContinuousLinearEquiv
+  have hb : b.map C.toLinearEquiv = b' := by
+    ext i
+    simp [C]
+  have hμ : b.addHaar.map C = b'.addHaar := by
+    rw [b.map_addHaar C, hb]
   -- Near each point `y`, the two measures agree on subsets of a chart source at `y` whose
   -- preimages lie in a chart source at `Φ.symm y`; a countable family of these sets covers `N`.
   set U : N → Set N := fun y ↦
@@ -381,9 +405,9 @@ theorem measurePreserving_measure_mpullback (Φ : M ≃ₜ N) (hΦ : MDifferenti
     simpa only [mem_preimage, Homeomorph.symm_apply_apply] using hx.2.2
   rw [Measure.restrict_apply hs, Measure.restrict_apply hs, Measure.map_apply Φ.measurable hsU,
     RoughForm.measure_apply_of_subset _ hpre (hsub.trans inter_subset_left),
-    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ (ContinuousLinearEquiv.refl ℝ E)
+    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ C
       Φ.injective.injOn (fun x _ ↦ hΦ x) hpre.isChartMeasurable hsub,
-    map_basis_refl, map_measure_refl,
+    hb, hμ,
     image_preimage_eq _ Φ.surjective,
     ψ.measure_apply_of_subset hsU (inter_subset_right.trans inter_subset_left)]
 

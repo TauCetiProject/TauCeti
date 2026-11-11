@@ -13,6 +13,8 @@ public import TauCeti.Analysis.InnerProductSpace.TwoDim
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent
 public import TauCeti.Geometry.Symplectic.Manifold.Surface
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
+import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 
 /-!
 # The Fubini–Study form of the Riemann sphere
@@ -44,8 +46,9 @@ sphere, multiplication by `i` on each tangent space
 (`OnePoint.eval₂_fubiniStudyForm_I_mul`). The form is normalized to total area one: the density
 integrates to `1` over the affine chart
 (`OnePoint.integral_fubiniStudyDensity`), which is the whole sphere except the point `∞`. The area
-`π` of the unit disc and the polar integral `∫₀^∞ 2r / (1 + r²)² dr = 1` give this value. The
-comparison with the integral of the form over the oriented sphere is not carried out here.
+`π` of the unit disc and the polar integral `∫₀^∞ 2r / (1 + r²)² dr = 1` give this value. Since
+the point `∞` is null, the measure `|ω_FS|` of the form gives the whole sphere measure one
+(`OnePoint.measure_fubiniStudyForm_univ`).
 
 This is the area form with which symplectic and holomorphic-curve arguments on the sphere are
 normalized; other areas are obtained by scaling it.
@@ -60,6 +63,7 @@ normalized; other areas are obtained by scaling it.
   values in the preferred chart and in every chart of the atlas.
 * `OnePoint.isSymplectic_fubiniStudyForm`: it is symplectic.
 * `OnePoint.compatible_fubiniStudyForm`: it is compatible with the complex structure.
+* `OnePoint.measure_fubiniStudyForm_univ`: its measure gives the sphere total mass one.
 
 ## References
 
@@ -296,5 +300,60 @@ theorem compatible_fubiniStudyForm :
       exact mul_pos (fubiniStudyDensity_pos _) (pow_pos (norm_pos_iff.2 hv) 2)
     exact (congrArg (SmoothBundleForm.eval₂ fubiniStudyForm x v)
       (SmoothAlmostComplexStructure.ofComplexManifold_apply x v)).trans_gt (h v hv)
+
+/-! ### The total area -/
+
+/-- **The Fubini–Study form has total area one.** The measure `|ω_FS|` of the Fubini–Study form
+gives the Riemann sphere measure `1`: in the affine chart it is Lebesgue measure with density
+`ρ(z) = 1 / (π (1 + |z|²)²)`, which integrates to one (`OnePoint.integral_fubiniStudyDensity`),
+and the remaining point `∞` is null. -/
+theorem measure_fubiniStudyForm_univ {m : MeasurableSpace (OnePoint ℂ)}
+    [BorelSpace (OnePoint ℂ)] :
+    RoughForm.measure fubiniStudyForm.1 (univ : Set (OnePoint ℂ)) = 1 := by
+  have hsrc : (extChartAt 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ)).source = {∞}ᶜ := by
+    simp [affineChart_source]
+  -- The point at infinity is null.
+  have hinf : RoughForm.measure fubiniStudyForm.1 {(∞ : OnePoint ℂ)} = 0 := by
+    rw [RoughForm.measure_apply_of_subset _ (measurableSet_singleton _)
+      (singleton_subset_iff.2 (mem_extChartAt_source (I := 𝓘(ℝ, ℂ)) (∞ : OnePoint ℂ))),
+      image_singleton]
+    exact setLIntegral_measure_zero _ _ (measure_singleton _)
+  -- In the affine chart the coefficient on a basis `b` is `ρ` times the area of `b`.
+  have hcoef (y : ℂ) (b : Module.Basis (Fin 2) ℝ ℂ) :
+      RoughForm.inChartAt fubiniStudyForm.1 ((0 : ℂ) : OnePoint ℂ) y b =
+        fubiniStudyDensity y * Complex.orientation.volumeForm b := by
+    have hy : ((y : ℂ) : OnePoint ℂ) ∈ (extChartAt 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ)).source := by
+      simp
+    have h := RoughForm.inChartAt_chart_apply fubiniStudyForm.1 _ hy b
+    rw [show extChartAt 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ) (y : OnePoint ℂ) = y by simp] at h
+    have hv : (fubiniStudyForm.1 y fun i ↦
+          tangentCoordChange 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ) y y (b i)) =
+        SmoothBundleForm.eval₂ fubiniStudyForm (y : OnePoint ℂ)
+          (tangentCoordChange 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ) y y (b 0))
+          (tangentCoordChange 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ) y y (b 1)) :=
+      ((SmoothBundleForm.eval₂_apply _ _ _ _).trans
+        (congrArg _ (by funext i; fin_cases i <;> rfl))).symm
+    rw [h, hv, eval₂_fubiniStudyForm_tangentCoordChange (by simp), ← Orientation.volumeFormL_apply,
+      Complex.orientation_volumeFormL_apply]
+    simp
+  -- Lebesgue measure of `ℂ` is the Haar measure of `b` scaled by the area of `b`.
+  have hvol (b : Module.Basis (Fin 2) ℝ ℂ) :
+      (volume : Measure ℂ) = ENNReal.ofReal |Complex.orientation.volumeForm b| • b.addHaar := by
+    rw [← AlternatingMap.measure_parallelepiped, Complex.orientation.measure_eq_volume,
+      Module.Basis.addHaar_def, ← Module.Basis.coe_parallelepiped]
+    exact Measure.addHaarMeasure_unique volume b.parallelepiped
+  have hint : Integrable fubiniStudyDensity :=
+    Integrable.of_integral_ne_zero (by rw [integral_fubiniStudyDensity]; exact one_ne_zero)
+  rw [← compl_union_self {(∞ : OnePoint ℂ)}, measure_union disjoint_compl_left
+    (measurableSet_singleton _), hinf, add_zero,
+    RoughForm.measure_apply_of_subset _ (measurableSet_singleton _).compl hsrc.ge]
+  have himage : extChartAt 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ) '' {∞}ᶜ = univ :=
+    eq_univ_of_forall fun y ↦ ⟨(y : OnePoint ℂ), coe_ne_infty y, by simp⟩
+  simp_rw [himage, Measure.restrict_univ, hcoef, abs_mul, abs_of_pos (fubiniStudyDensity_pos _),
+    ENNReal.ofReal_mul (fubiniStudyDensity_pos _).le]
+  rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top, mul_comm, ← smul_eq_mul,
+    ← lintegral_smul_measure, ← hvol, ← ofReal_integral_eq_lintegral_ofReal hint
+      (Eventually.of_forall fun z ↦ (fubiniStudyDensity_pos z).le),
+    integral_fubiniStudyDensity, ENNReal.ofReal_one]
 
 end OnePoint

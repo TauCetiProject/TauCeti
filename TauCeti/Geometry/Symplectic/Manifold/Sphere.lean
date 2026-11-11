@@ -75,6 +75,12 @@ standard orientation of `ℝ³`. It is symplectic (`TauCeti.isSymplectic_sphereA
 def sphereAreaForm : SmoothTwoForm (𝓡 2) S² :=
   (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm
 
+/-- The area form of `S²` is the volume form of the unit sphere for the standard orientation of
+`ℝ³`. -/
+theorem sphereAreaForm_def :
+    sphereAreaForm = (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm :=
+  (rfl)
+
 /-- The area form of `S²` evaluates tangent vectors `v, w` at `x`, read in `ℝ³`, as the triple
 product `x ⬝ (v × w)`. -/
 theorem eval₂_sphereAreaForm (x : S²) (v w : TangentSpace (𝓡 2) x) :

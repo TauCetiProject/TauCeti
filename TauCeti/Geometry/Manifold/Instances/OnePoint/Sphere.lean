@@ -40,8 +40,8 @@ In a chart coordinate `c` both sides are `4 (1 + |c|²)⁻² Re (conj a * b)`: o
 is the conformal factor of inverse stereographic projection
 (`TauCeti.inner_fderiv_stereoInvFunAux`), and on the Fubini–Study side it is `4π` times the density
 `(π (1 + |c|²)²)⁻¹`. The factor `4π` is the area of the unit sphere, matching the normalization of
-`ω_FS` to total area one (`OnePoint.integral_fubiniStudyDensity`); the comparison of areas is not
-carried out here.
+`ω_FS` to total area one (`OnePoint.integral_fubiniStudyDensity`); the comparison of areas is
+carried out in `TauCeti.Geometry.Symplectic.Manifold.Sphere.Area`.
 
 ## Main definitions
 

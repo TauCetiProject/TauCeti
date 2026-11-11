@@ -41,6 +41,7 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.volumeForm_one_apply`: the volume form `σ¹ / 1!` is `σ` itself.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_reindex`: the volume form takes the
   value `1` on Darboux bases.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_volumeForm_apply_ne_zero`: a two-form is
@@ -88,6 +89,22 @@ def volumeForm (σ : SmoothTwoForm I M) (n : ℕ) : SmoothForm I M ℝ (2 * n) :
 theorem volumeForm_apply (σ : SmoothTwoForm I M) (n : ℕ) (x : M) :
     (σ.volumeForm n).1 x = ((n.factorial : ℝ)⁻¹) • (σ.1 x).wedgePow n := by
   rw [volumeForm, Submodule.coe_smul, Pi.smul_apply, SmoothForm.wedgePow_apply]
+
+/-- The symplectic volume form `σ¹ / 1!` is the two-form `σ` itself. On a surface it is the
+volume form of `σ`. -/
+theorem volumeForm_one_apply (σ : SmoothTwoForm I M) (x : M)
+    (v : Fin (2 * 1) → TangentSpace I x) : (σ.volumeForm 1).1 x v = σ.1 x v := by
+  have h := ContinuousAlternatingMap.wedgePow_succ_apply_vecCons (σ.1 x) 0 (v 0) (Fin.tail v)
+  rw [Matrix.vecCons, Fin.cons_self_tail] at h
+  rw [volumeForm_apply, Nat.factorial_one, Nat.cast_one, inv_one, one_smul, h,
+    ContinuousAlternatingMap.pairedWedge_apply_zero_right]
+  simp only [ContinuousLinearMap.mul_apply',
+    ContinuousAlternatingMap.curryLeftTopological_apply_apply,
+    ContinuousAlternatingMap.wedgePow_zero_apply, Nat.cast_zero, zero_add, one_mul, mul_one]
+  -- The two tuples differ only by value-preserving `Fin.cast`s.
+  congr 1
+  ext i
+  fin_cases i <;> rfl
 
 /-- **The symplectic volume form takes the value `1` on Darboux bases.** For a Darboux basis
 `(q₁, p₁, …, qₙ, pₙ)` of the tangent space at `x`, listed in this interleaved order,

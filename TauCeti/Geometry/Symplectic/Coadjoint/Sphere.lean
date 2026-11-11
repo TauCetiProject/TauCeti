@@ -42,7 +42,9 @@ for every `r`,
 
 (`TauCeti.mul_eval₂_sphereAreaForm_sphereRotationAction`). Since the rotations span every tangent
 plane, this determines `r σ`: it is the KKS form of the sphere of radius `r`, transported to `S²`
-along `x ↦ r x`. The total area `4π r` is not computed here.
+along `x ↦ r x`. Its total area `4π r` is computed in
+`TauCeti.Geometry.Symplectic.Manifold.Sphere.Area`
+(`TauCeti.liouvilleMeasure_smul_sphereAreaForm_univ`).
 
 ## Main definitions
 
