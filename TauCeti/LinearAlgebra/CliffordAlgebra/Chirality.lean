@@ -120,8 +120,6 @@ spinors does.
   act faithfully on nonzero positive spinors, and anti-self-dual ones on nonzero negative spinors.
 * `CliffordAlgebra.map_chirality`: the algebra map induced by an isometry `e` of the quadratic
   forms sends the chirality element of `o` to that of the transported orientation.
-* `CliffordAlgebra.map_app_of_forall_ι`: a nonzero map of Clifford modules intertwining the
-  generators along a map `f` forces `f` to preserve the quadratic forms.
 * `CliffordAlgebra.comp_chirality_eq_chirality_comp`: a map of Clifford modules intertwining the
   generators along an orientation-preserving linear isometry intertwines the chirality elements.
 * `CliffordAlgebra.map_mem_positiveHalfSpinors`: a semilinear map of Clifford modules commuting
@@ -669,31 +667,6 @@ variable {K W W' : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module 
   [IsScalarTower ℝ K W] [AddCommGroup W'] [Module K W'] [Module ℝ W'] [IsScalarTower ℝ K W']
   (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W) (o' : Orientation ℝ V' (Fin 4))
   (ρ' : CliffordAlgebra Q' →ₐ[ℝ] Module.End K W')
-
-omit [Fact (finrank ℝ V = 4)] [Fact (finrank ℝ V' = 4)] in
-/-- **A nonzero intertwiner forces an isometry**: if a map `U` of Clifford modules intertwines the
-generators along a map `f`, `U c(v) = c(f v) U`, and `U w ≠ 0` for some `w`, then
-`Q' (f v) = Q v` for every `v`, the condition `QuadraticMap.Isometry.map_app` for `f`. Indeed
-`c(f v)² U w = U c(v)² w`, that is `Q' (f v) • U w = Q v • U w`. -/
-theorem map_app_of_forall_ι {V V' : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup V']
-    [Module ℝ V'] {Q : QuadraticForm ℝ V} {Q' : QuadraticForm ℝ V'}
-    {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W} {ρ' : CliffordAlgebra Q' →ₐ[ℝ] Module.End K W'}
-    {f : V → V'} {U : W →ₗ[K] W'}
-    (hU : ∀ v, U ∘ₗ ρ (ι Q v) = ρ' (ι Q' (f v)) ∘ₗ U) {w : W} (hw : U w ≠ 0) (v : V) :
-    Q' (f v) = Q v := by
-  have h := LinearMap.congr_fun (hU v) (ρ (ι Q v) w)
-  have h₁ : ρ (ι Q v) (ρ (ι Q v) w) = Q v • w := by
-    rw [← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, AlgHom.commutes,
-      Module.algebraMap_end_apply]
-  have h₂ : ρ' (ι Q' (f v)) (ρ' (ι Q' (f v)) (U w)) = Q' (f v) • U w := by
-    rw [← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, AlgHom.commutes,
-      Module.algebraMap_end_apply]
-  have h₃ := LinearMap.congr_fun (hU v) w
-  simp only [LinearMap.comp_apply] at h h₃
-  rw [h₃, h₁, LinearMap.map_smul_of_tower, h₂] at h
-  have h' : (Q v - Q' (f v)) • U w = 0 := by rw [sub_smul, h, sub_self]
-  rw [smul_eq_zero, sub_eq_zero] at h'
-  exact (h'.resolve_right hw).symm
 
 variable {o ρ o' ρ'} in
 /-- A map `U` of Clifford modules that intertwines the generators along an orientation-preserving
