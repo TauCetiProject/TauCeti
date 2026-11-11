@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.MeasureTheory.Measure.Real
 public import TauCeti.MeasureTheory.Measure.Interval
 public import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.Integral.Bochner.Cumulative
 
 /-!
 # Stieltjes measures, cumulative functions and measurable families
@@ -20,7 +21,8 @@ In particular this applies to locally finite measures supported on the nonnegati
 without normalizing them to probability measures.
 
 On the nonnegative half-line, the cumulative mass of a Stieltjes measure is the increment
-of its Stieltjes function from zero.
+of its Stieltjes function from zero. For continuous Stieltjes functions, pathwise locally
+integrable functions have continuous accumulated integrals.
 
 For a family of Stieltjes functions, measurability of evaluations implies measurability of the
 associated measures, without normalization or a uniform bound on their masses. On a bounded
@@ -46,6 +48,20 @@ theorem measure_Iic_nnreal (f : StieltjesFunction ℝ≥0) (t : ℝ≥0) :
   apply f.measure_Iic
   rw [atBot_eq_pure_of_isBot (isBot_bot : IsBot (0 : ℝ≥0))]
   exact tendsto_pure_nhds _ _
+
+/-- Integration of a locally integrable Banach-valued function against a continuous
+Stieltjes function on the half-line has a continuous accumulated integral. No bound on
+the total mass or integrability beyond each finite horizon is required. -/
+theorem continuous_setIntegral_Ioc {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : StieltjesFunction ℝ≥0) (hf : Continuous f) {H : ℝ≥0 → E} (a : ℝ≥0)
+    (hH : ∀ T, IntegrableOn H (Ioc a T) f.measure) :
+    Continuous (fun t ↦ ∫ u in Ioc a t, H u ∂f.measure) := by
+  have : NullSingletonClass f.measure := ⟨fun t ↦ by
+    rw [f.measure_singleton, hf.continuousAt.continuousWithinAt.leftLim_eq, sub_self,
+      ENNReal.ofReal_zero]⟩
+  refine continuous_iff_continuousAt.2 fun t ↦ ?_
+  exact ((hH (t + 1)).continuousOn_integral_Ioc t (by simp)).continuousAt
+    (Iic_mem_nhds (lt_add_one t))
 
 end StieltjesFunction
 
