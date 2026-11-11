@@ -37,8 +37,8 @@ dimension is `0` at every value.
 * `TauCeti.degreeAtRegularValue_of_notMem_range`: the degree vanishes at a value outside the range.
 * `TauCeti.degreeAtRegularValue_id`, `TauCeti.degreeAtRegularValue_const`: the identity has degree
   `1` and a constant map into a manifold of positive dimension has degree `0`.
-* `TauCeti.degreeAtRegularValue_modEq_ncard`: over a regular value with finite fibre the degree has
-  the parity of the number of preimages.
+* `TauCeti.degreeAtRegularValue_modEq_ncard`: over a regular value the degree has the parity of
+  the number of preimages.
 
 ## References
 
@@ -133,17 +133,27 @@ theorem abs_degreeAtRegularValue_le_ncard (h : (f ⁻¹' {y}).Finite) :
   simpa using Finset.sum_le_sum fun x (_ : x ∈ h.toFinset) ↦
     abs_orientationSign_le_one (o := o) (o' := o') (f := f) (x := x)
 
-/-- Over a regular value with finite fibre, the degree has the parity of the number of preimages:
-every orientation sign is `1` or `-1`. -/
-theorem degreeAtRegularValue_modEq_ncard (hy : IsRegularValue I J f y) (h : (f ⁻¹' {y}).Finite) :
+/-- Over a regular value, the degree has the parity of the number of preimages: every orientation
+sign is `1` or `-1`. For an infinite fibre both sides are `0` by the `finsum` and `ncard`
+conventions. -/
+theorem degreeAtRegularValue_modEq_ncard (hy : IsRegularValue I J f y) :
     degreeAtRegularValue o o' f y ≡ (f ⁻¹' {y}).ncard [ZMOD 2] := by
-  rw [degreeAtRegularValue_eq_sum_of_finite h, ncard_eq_toFinset_card _ h, Finset.card_eq_sum_ones,
-    Nat.cast_sum, Nat.cast_one]
-  refine Int.ModEq.sum fun x hx ↦ ?_
-  rcases orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint (o := o) (o' := o')
-    (hy.isRegularPoint ((Finite.mem_toFinset h).1 hx)) with h' | h'
-  · rw [h']
-  · rw [h']
-    decide
+  by_cases h : (f ⁻¹' {y}).Finite
+  · rw [degreeAtRegularValue_eq_sum_of_finite h, ncard_eq_toFinset_card _ h,
+      Finset.card_eq_sum_ones, Nat.cast_sum, Nat.cast_one]
+    refine Int.ModEq.sum fun x hx ↦ ?_
+    rcases orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint (o := o) (o' := o')
+      (hy.isRegularPoint ((Finite.mem_toFinset h).1 hx)) with h' | h'
+    · rw [h']
+    · rw [h']
+      decide
+  · have h0 : degreeAtRegularValue o o' f y = 0 := by
+      refine finsum_mem_eq_zero_of_infinite ?_
+      rw [inter_eq_left.mpr fun x hx ↦ ?_]
+      · exact h
+      · rcases orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint (o := o) (o' := o')
+          (hy.isRegularPoint hx) with h' | h' <;> simp [h']
+    rw [h0, Set.Infinite.ncard h]
+    rfl
 
 end TauCeti

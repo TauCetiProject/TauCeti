@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.Algebra.Module.ZLattice.Family.Action
+public import TauCeti.Algebra.Module.ZLattice.Family.AffineQuotient
 public import TauCeti.Analysis.Complex.RootsOfUnity.Manifold
 
 /-!
@@ -47,6 +48,8 @@ and translation sections and `n = ω`, `Q` is a complex manifold and `t : Q → 
 
 * `TauCeti.torusFamilyCyclicQuotientProjection_mk`: the value on the orbit of a point over `z`
   is `z ^ m`.
+* `TauCeti.torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift`: it is the map of
+  orbit spaces induced by the invariant map `z ↦ z ^ m` of the disc.
 * `TauCeti.torusFamilyCyclicQuotientProjection_mk_eq_mk_iff`: its fibres are the preimages of the
   orbits of the rotations on the base.
 * `TauCeti.torusFamilyCyclicQuotientProjection_eq_zero_iff`: its fibre over `0` lies over the
@@ -115,6 +118,21 @@ noncomputable def torusFamilyCyclicQuotientProjection :
   let _ := periodAddAction P
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
   exact MulAction.orbitRelQuotientLift_mk x
+
+/-- The coordinate `t = z ^ m` on the cyclic quotient
+(`TauCeti.torusFamilyCyclicQuotientProjection`) is the map of orbit spaces induced by the
+invariant map `z ↦ z ^ m` of the disc (`TauCeti.torusFamilyAffineQuotientLift`). -/
+theorem torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul =
+      torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+        (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
+        (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) := by
+  let _ := periodAddAction P
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  exact funext <| Quotient.ind fun x ↦ by
+    rw [torusFamilyCyclicQuotientProjection_mk, torusFamilyAffineQuotientLift_mk]
 
 /-- **The fibres of `t`.** Two points of the cyclic quotient have the same coordinate `t` exactly
 when they lie over points of the disc in one orbit of the rotations. -/

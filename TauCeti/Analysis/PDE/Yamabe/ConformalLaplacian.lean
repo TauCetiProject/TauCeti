@@ -321,17 +321,30 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
   (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
 
-/-- **Scalar curvature from an eigenfunction of the conformal Laplacian.** In dimension `n ≠ 2`,
-let `u` be a positive function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. At a point
-where `L_g u = λ u`, the scalar curvature of `ĝ` is `Scal_ĝ = λ u ^ (-4 / (n - 2))`. -/
+/-- **Scalar curvature from an eigenfunction of the conformal Laplacian.** Let `u` be a positive
+function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. At a point where `L_g u = λ u`,
+the scalar curvature of `ĝ` is `Scal_ĝ = λ u ^ (-4 / (n - 2))`. In dimension `n = 2` the exponent
+is the junk value `0` and `L_g u = Scal_g u`, so both sides equal `λ`. -/
 theorem scalarCurvature_rescale_of_conformalLaplacian_eq_mul
-    (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
+    {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
     {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
     {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} {c : ℝ} {x : M}
     (h : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
       conformalLaplacian I u x) = c * u x) :
     (g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos).scalarCurvature x =
       c * u x ^ (-(4 / ((finrank ℝ E : ℝ) - 2))) := by
+  rcases eq_or_ne (finrank ℝ E) 2 with h2 | hn
+  · have h0 : (finrank ℝ E : ℝ) - 2 = 0 := by rw [h2]; norm_num
+    have hfφ : ∀ y, u y ^ (4 / ((finrank ℝ E : ℝ) - 2)) = Real.exp (2 * (0 : M → ℝ) y) :=
+      fun y ↦ by simp [h0]
+    rw [g.scalarCurvature_rescale hf hf_pos hfφ x]
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    rw [h0]
+    simp only [laplaceBeltrami_zero, div_zero, neg_zero, Real.rpow_zero, inv_one, one_mul,
+      mul_zero, sub_zero, zero_mul, mul_one]
+    rw [conformalLaplacian_def, conformalCoefficient_def, h2, ← g.scalarCurvature_def x] at h
+    norm_num at h
+    exact h.resolve_right (hu_pos x).ne'
   have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
   rw [scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian g hn hu_pos x, h, mul_left_comm,
     ← Real.rpow_add_one (hu_pos x).ne']
@@ -339,11 +352,11 @@ theorem scalarCurvature_rescale_of_conformalLaplacian_eq_mul
   field_simp
   ring
 
-/-- **The sign of the scalar curvature from an eigenfunction.** In dimension `n ≠ 2`, let `u` be a
-positive function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. At a point where
-`L_g u = λ u`, the scalar curvature of `ĝ` has the sign of `λ`. -/
+/-- **The sign of the scalar curvature from an eigenfunction.** Let `u` be a positive function
+such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. At a point where `L_g u = λ u`, the scalar
+curvature of `ĝ` has the sign of `λ`. -/
 theorem sign_scalarCurvature_rescale_of_conformalLaplacian_eq_mul
-    (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
+    {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
     {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
     {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} {c : ℝ} {x : M}
     (h : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
@@ -351,7 +364,7 @@ theorem sign_scalarCurvature_rescale_of_conformalLaplacian_eq_mul
     SignType.sign
         ((g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos).scalarCurvature x) =
       SignType.sign c := by
-  rw [g.scalarCurvature_rescale_of_conformalLaplacian_eq_mul hn hu_pos h, sign_mul,
+  rw [g.scalarCurvature_rescale_of_conformalLaplacian_eq_mul hu_pos h, sign_mul,
     sign_pos (Real.rpow_pos_of_pos (hu_pos x) _), mul_one]
 
 end Bundle.ContMDiffRiemannianMetric

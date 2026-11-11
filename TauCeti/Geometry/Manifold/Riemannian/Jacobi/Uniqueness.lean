@@ -11,6 +11,7 @@ import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bound
+import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Uniqueness of Jacobi fields
@@ -73,6 +74,15 @@ theorem IsJacobiFieldOn.hasDerivWithinAt_norm_sq (h : IsJacobiFieldOn I γ V s)
   have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (h.isGeodesicCurveOn.mdifferentiableOn t ht)
     (h.differentiableWithinAt_sectionCoord ht) (h.differentiableWithinAt_sectionCoord ht)
   simpa only [real_inner_self_eq_norm_sq, real_inner_comm (V t), two_mul] using hd
+
+/-- Away from its zeros, the norm of a Jacobi field has derivative `⟨DJ, J⟩ / ‖J‖`. -/
+theorem IsJacobiFieldOn.hasDerivWithinAt_norm (h : IsJacobiFieldOn I γ V s)
+    (ht : t ∈ s) (hV : V t ≠ 0) :
+    HasDerivWithinAt (fun r ↦ ‖V r‖)
+      (inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s t) (V t) / ‖V t‖) s t := by
+  have hd := (h.hasDerivWithinAt_norm_sq ht).sqrt
+    (pow_ne_zero 2 (norm_ne_zero_iff.mpr hV))
+  simpa only [Real.sqrt_sq (norm_nonneg _), mul_div_mul_left _ _ (two_ne_zero' ℝ)] using hd
 
 /-- **The energy identity for Jacobi fields.** The energy `‖J‖² + ‖DJ‖²` of a Jacobi field has
 derivative `2⟨DJ, J⟩ - 2⟨R(J, γ')γ', DJ⟩`. -/
