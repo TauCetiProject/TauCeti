@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.ContinuationChainSystem
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.RepresentingChainSystem
 import TauCeti.Algebra.Ring.NegOnePow
+import TauCeti.Logic.Function.LevelInduction
 
 /-!
 # Homotopies of twisting chain systems

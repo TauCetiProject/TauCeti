@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.TwistingChainSystem
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Relative
+import TauCeti.Logic.Function.LevelInduction
 
 /-!
 # Existence of representing chain systems
