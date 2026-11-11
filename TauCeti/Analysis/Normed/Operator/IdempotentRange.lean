@@ -26,8 +26,8 @@ No compactness, separation or finite-dimensionality is assumed of the base or th
 * `TauCeti.isOpen_setOf_isUnit_intertwiner`: the intertwining operator of a continuous family is
   invertible on an open set, and `TauCeti.continuousOn_inverse_intertwiner`: its inverse is
   continuous there.
-* `TauCeti.eventually_nonempty_continuousLinearEquiv_range`: the ranges of nearby projections in
-  a continuous family are isomorphic.
+* `TauCeti.eventually_nonempty_continuousLinearEquiv_range`: projections converging to a
+  projection along any filter eventually have ranges isomorphic to its range.
 * `TauCeti.isLocallyConstant_finrank_range`: the rank of a continuous family of projections is
   locally constant.
 
@@ -68,21 +68,26 @@ theorem continuousOn_inverse_intertwiner (hp : Continuous p) (x₀ : B) :
   fun _ hx ↦ ((NormedRing.inverse_continuousAt hx.unit).comp_of_eq
     (continuous_intertwiner hp x₀).continuousAt hx.unit_spec.symm).continuousWithinAt
 
-/-- The ranges of nearby projections in a continuous family are isomorphic. -/
-theorem eventually_nonempty_continuousLinearEquiv_range (hp : Continuous p)
-    (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ : B) :
-    ∀ᶠ x in 𝓝 x₀, Nonempty ((p x₀).range ≃L[𝕜] (p x).range) := by
-  filter_upwards [(isOpen_setOf_isUnit_intertwiner hp x₀).mem_nhds
-    (ContinuousLinearMap.IsIdempotentElem.isUnit_mul_self_add_one_sub_mul_one_sub (hidem x₀))]
-    with x (hx : IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀)))
-  exact ⟨ContinuousLinearMap.IsIdempotentElem.rangeEquiv (hidem x₀) (hidem x) hx⟩
+/-- Projections converging to a projection `q` along a filter eventually have ranges isomorphic to
+the range of `q`. -/
+theorem eventually_nonempty_continuousLinearEquiv_range {ι : Type*} {l : Filter ι}
+    {P : ι → F →L[𝕜] F} {q : F →L[𝕜] F} (hP : Tendsto P l (𝓝 q)) (hq : IsIdempotentElem q)
+    (hidem : ∀ᶠ i in l, IsIdempotentElem (P i)) :
+    ∀ᶠ i in l, Nonempty (q.range ≃L[𝕜] (P i).range) := by
+  have hu : Tendsto (fun i ↦ P i * q + (1 - P i) * (1 - q)) l
+      (𝓝 (q * q + (1 - q) * (1 - q))) :=
+    (hP.mul tendsto_const_nhds).add ((tendsto_const_nhds.sub hP).mul tendsto_const_nhds)
+  filter_upwards [hu.eventually (Units.isOpen.mem_nhds
+    (ContinuousLinearMap.IsIdempotentElem.isUnit_mul_self_add_one_sub_mul_one_sub hq)), hidem]
+    with i hi hPi
+  exact ⟨ContinuousLinearMap.IsIdempotentElem.rangeEquiv hq hPi hi⟩
 
 /-- **The rank of a continuous family of projections is locally constant.** -/
 theorem isLocallyConstant_finrank_range (hp : Continuous p)
     (hidem : ∀ x, IsIdempotentElem (p x)) :
     IsLocallyConstant fun x ↦ Module.finrank 𝕜 ((p x).range) :=
   (IsLocallyConstant.iff_eventually_eq _).mpr fun x₀ ↦
-    (eventually_nonempty_continuousLinearEquiv_range hp hidem x₀).mono fun _ ⟨e⟩ ↦
-      e.toLinearEquiv.finrank_eq.symm
+    (eventually_nonempty_continuousLinearEquiv_range (hp.tendsto x₀) (hidem x₀)
+      (.of_forall hidem)).mono fun _ ⟨e⟩ ↦ e.toLinearEquiv.finrank_eq.symm
 
 end TauCeti

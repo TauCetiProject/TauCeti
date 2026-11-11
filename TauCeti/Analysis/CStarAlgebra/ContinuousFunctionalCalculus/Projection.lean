@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.StarProjection
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
+import Mathlib.Topology.Semicontinuity.Hemicontinuity
+import TauCeti.Topology.Frontier
 
 /-!
 # Star projections from the continuous functional calculus
@@ -16,6 +19,10 @@ a star projection. When `f` is continuous on the spectrum and `a` is self-adjoin
 from multiplicativity of the functional calculus; otherwise `cfc f a` is the junk value `0`. In
 particular the spectral projector `cfc (Ω.indicator 1) a` is a star projection for every set
 `Ω ⊆ ℝ` and every `a`.
+
+The spectral projector of `s` depends continuously on a self-adjoint element `a` as long as the
+frontier of `s` misses the spectrum of `a`: the spectrum is upper hemicontinuous, so nearby
+spectra stay in a compact set on which the indicator is continuous.
 
 When `a` is self-adjoint and invertible, `0` is not in its spectrum, so the spectral projectors
 `P₊ = cfc ((Ioi 0).indicator 1) a` and `P₋ = cfc ((Iio 0).indicator 1) a` onto the positive and
@@ -31,6 +38,10 @@ negative parts of the spectrum are complementary, `P₊ + P₋ = 1`.
   whose frontier is contained in `{0}` is continuous on the spectrum;
 * `TauCeti.cfc_indicator_Ioi_add_cfc_indicator_Iio` — for invertible self-adjoint `a`, the
   positive and negative spectral projectors add up to `1`.
+* `Filter.Tendsto.eventually_disjoint_spectrum` — a closed set missing the spectrum of `a₀`
+  misses the spectra of all elements near `a₀`.
+* `Filter.Tendsto.cfc_indicator` — the spectral projector `cfc (s.indicator 1) a` is continuous
+  in a self-adjoint `a` whose spectrum misses the frontier of `s`.
 -/
 
 public section
@@ -87,3 +98,38 @@ theorem cfc_indicator_Ioi_add_cfc_indicator_Iio {a : A} (ha : IsUnit a)
   · simp [indicator_of_notMem, indicator_of_mem, hx, hx.not_gt]
 
 end TauCeti
+
+section Continuity
+
+open Filter Topology
+
+variable {ι : Type*} {l : Filter ι}
+
+/-- A closed set disjoint from the spectrum of `a₀` is disjoint from the spectra of all elements
+near `a₀`, by upper hemicontinuity of the spectrum. -/
+theorem Filter.Tendsto.eventually_disjoint_spectrum {𝕜 B : Type*} [NormedField 𝕜] [ProperSpace 𝕜]
+    [NormedRing B] [NormedAlgebra 𝕜 B] [CompleteSpace B] {a : ι → B} {a₀ : B} {K : Set 𝕜}
+    (ha : Tendsto a l (𝓝 a₀)) (hK : IsClosed K) (hKa : Disjoint K (spectrum 𝕜 a₀)) :
+    ∀ᶠ i in l, Disjoint K (spectrum 𝕜 (a i)) :=
+  ha.eventually ((upperHemicontinuous_spectrum 𝕜 B).forall_isOpen a₀ _ hK.isOpen_compl
+    hKa.subset_compl_left) |>.mono fun _ h ↦ disjoint_compl_right.mono_right h
+
+/-- **Continuity of spectral projectors.** If self-adjoint elements `a i` converge to a
+self-adjoint `a₀` whose spectrum misses the frontier of `s`, then their spectral projectors onto
+`s` converge to that of `a₀`. -/
+theorem Filter.Tendsto.cfc_indicator {B : Type*} [CStarAlgebra B] {a : ι → B} {a₀ : B}
+    {s : Set ℝ} (ha : Tendsto a l (𝓝 a₀)) (hsa : ∀ᶠ i in l, IsSelfAdjoint (a i))
+    (ha₀ : IsSelfAdjoint a₀) (hs : Disjoint (frontier s) (spectrum ℝ a₀)) :
+    Tendsto (fun i ↦ cfc (s.indicator (1 : ℝ → ℝ)) (a i)) l
+      (𝓝 (cfc (s.indicator (1 : ℝ → ℝ)) a₀)) := by
+  -- Nearby spectra lie in a compact neighbourhood of the spectrum of `a₀` missing `frontier s`.
+  obtain ⟨L, hL, hspec, hLU⟩ := exists_compact_between (spectrum.isCompact a₀)
+    isClosed_frontier.isOpen_compl hs.subset_compl_left
+  have hev : ∀ᶠ i in l, spectrum ℝ (a i) ⊆ L :=
+    ha.eventually ((upperHemicontinuous_spectrum ℝ B).forall_isOpen a₀ _ isOpen_interior hspec)
+      |>.mono fun _ h ↦ h.trans interior_subset
+  exact ha.cfc hL _ hev hsa (hspec.trans interior_subset) ha₀
+    (TauCeti.continuousOn_indicator_of_disjoint_frontier continuousOn_const
+      (disjoint_compl_right.mono_right hLU))
+
+end Continuity
