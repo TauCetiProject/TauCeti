@@ -47,12 +47,12 @@ theorem exists_isIdempotentElem_span_singleton_one_sub_eq {A : Type*} [CommRing 
     by_cases h : P = P₀
     · exact h ▸ Ideal.mul_mem_right _ _ hx
     · exact Ideal.mul_mem_left _ _ (hbP P hP h)
+  have hab' : 1 - b = a := by linear_combination (-1 : A) * hab
   refine ⟨b, ?_, le_antisymm ?_ fun x hx ↦ ?_⟩
   · have := hmem a ha
     rw [isIdempotentElem_iff]
     linear_combination (-1 : A) * this + b * hab
-  · rw [Ideal.span_le, Set.singleton_subset_iff,
-      show 1 - b = a by linear_combination (-1 : A) * hab]
+  · rw [Ideal.span_le, Set.singleton_subset_iff, hab']
     exact ha
   · have := hmem x hx
     exact Ideal.mem_span_singleton'.2 ⟨x, by linear_combination -this⟩
