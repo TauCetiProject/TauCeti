@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Core
-public import TauCeti.Combinatorics.Graph.Serre.Reduction
 public import TauCeti.Combinatorics.Graph.Serre.Tree
 public import TauCeti.Combinatorics.Quiver.Prefunctor
+
+import TauCeti.Data.List.Chain
 
 /-!
 # Cyclically reduced closed paths in a Serre graph
@@ -86,27 +87,6 @@ theorem Hom.isCyclicallyReduced_mapPath_iff {Δ : SerreGraph} (f : Γ.Hom Δ)
   rw [Path.isCyclicallyReduced_iff, Path.isCyclicallyReduced_iff, ← Prefunctor.mapPath_comp,
     Hom.isReduced_mapPath_iff Γ f hf]
 
-/-- The chain condition on a doubled list is invariant under rotating the list. -/
-private theorem isChain_rotate {α : Type*} {R : α → α → Prop} {A B : List α} (hB : B ≠ [])
-    (h : (A ++ B ++ (A ++ B)).IsChain R) : (B ++ A ++ (B ++ A)).IsChain R := by
-  have h1 : (B ++ A ++ B).IsChain R :=
-    List.IsChain.right_of_append (l₁ := A) (by simpa [List.append_assoc] using h)
-  simpa [List.append_assoc] using h1.append_overlap h1.left_of_append hB
-
-/-- Two chains running from `Q` to `S` and from `S` back to `Q` close up to a cyclic chain. -/
-private theorem isChain_circuit {α : Type*} {R : α → α → Prop} {Q S A B : List α} (hQ : Q ≠ [])
-    (hS : S ≠ []) (h1 : (Q ++ A ++ S).IsChain R) (h2 : (S ++ B ++ Q).IsChain R) :
-    (Q ++ A ++ S ++ B ++ (Q ++ A ++ S ++ B)).IsChain R := by
-  have g1 : (Q ++ A ++ S ++ (B ++ Q)).IsChain R :=
-    h1.append_overlap (by simpa [List.append_assoc] using h2) hS
-  have g2 : (Q ++ A ++ S ++ B ++ Q ++ (A ++ S)).IsChain R :=
-    List.IsChain.append_overlap (by simpa [List.append_assoc] using g1)
-      (by simpa [List.append_assoc] using h1) hQ
-  have g3 : (Q ++ A ++ S ++ B ++ Q ++ A ++ S ++ B).IsChain R :=
-    List.IsChain.append_overlap (by simpa [List.append_assoc] using g2)
-      (List.IsChain.left_of_append (l₂ := Q) (by simpa [List.append_assoc] using h2)) hS
-  simpa [List.append_assoc] using g3
-
 /-- A cyclically reduced closed path can be restarted at any of its darts: the rotated path is
 cyclically reduced, begins with that dart, and traverses the same darts. -/
 theorem Path.IsCyclicallyReduced.exists_rotate {a : Γ.V} {p : Γ.Path a a}
@@ -116,11 +96,8 @@ theorem Path.IsCyclicallyReduced.exists_rotate {a : Γ.V} {p : Γ.Path a a}
   obtain ⟨q, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p he
   refine ⟨((Γ.dart e).toPath.comp r).comp q, ?_, by simp, fun f => by simp; tauto⟩
   rw [Path.isCyclicallyReduced_iff_isChain] at hp ⊢
-  simp only [Path.darts_comp, Path.darts_cons, Path.darts_toPath, dart_val,
-    List.append_assoc] at hp ⊢
-  simpa [List.append_assoc] using
-    isChain_rotate (A := Path.darts Γ q) (B := e :: Path.darts Γ r) (by simp)
-      (by simpa [List.append_assoc] using hp)
+  have h := List.isRotated_append (l := Path.darts Γ q) (l' := e :: Path.darts Γ r)
+  simpa using h.isChain_append_self_iff.1 (by simpa using hp)
 
 /-- A cyclically reduced closed path can be restarted, possibly after reversing it, at the
 initial vertex of any dart that it traverses in one of the two directions. -/
@@ -146,11 +123,6 @@ private theorem Path.IsReduced.exists_getLast?_rev_mem_head? {a : Γ.V} {p : Γ.
   simp only [hp, true_and, not_forall, not_not] at hc
   obtain ⟨e, he, f, hf, rfl⟩ := hc
   exact ⟨e, he, hf⟩
-
-/-- A path of positive length traverses a dart. -/
-private theorem Path.darts_ne_nil {a b : Γ.V} {p : Γ.Path a b} (h : 0 < p.length) :
-    Path.darts Γ p ≠ [] := fun h0 => by
-  simp [← Path.length_darts, h0] at h
 
 /-- The darts lying on a cyclically reduced closed path. -/
 def cyclicDarts : Set Γ.E :=
@@ -183,18 +155,14 @@ theorem mem_cyclicVertices_iff_exists_src (a : Γ.V) :
     a ∈ Γ.cyclicVertices ↔ ∃ e ∈ Γ.cyclicDarts, Γ.src e = a := by
   constructor
   · rintro ⟨p, h0, hp⟩
-    obtain ⟨e, he⟩ : ∃ e, e ∈ (Path.darts Γ p).head? := by
-      cases h : Path.darts Γ p with
-      | nil => simp [← Path.length_darts, h] at h0
-      | cons e l => exact ⟨e, rfl⟩
-    exact ⟨e, ⟨a, p, hp, List.mem_of_mem_head? he⟩, Path.src_eq_of_mem_head?_darts Γ p he⟩
+    obtain ⟨e, l, hl⟩ := List.exists_cons_of_ne_nil (Path.darts_ne_nil Γ h0)
+    exact ⟨e, ⟨a, p, hp, by simp [hl]⟩, Path.src_eq_of_mem_head?_darts Γ p (by simp [hl])⟩
   · rintro ⟨e, ⟨b, p, hp, he⟩, rfl⟩
     obtain ⟨p', hp', hhead, -⟩ := hp.exists_rotate Γ he
     refine ⟨p', ?_, hp'⟩
-    rw [← Path.length_darts]
-    cases h : Path.darts Γ p' with
-    | nil => simp [h] at hhead
-    | cons e l => simp
+    rw [← Path.length_darts, List.length_pos_iff]
+    rintro h
+    simp [h] at hhead
 
 theorem src_mem_cyclicVertices {e : Γ.E} (he : e ∈ Γ.cyclicDarts) :
     Γ.src e ∈ Γ.cyclicVertices :=
@@ -313,8 +281,9 @@ theorem mem_cyclicDarts_of_isReduced {a b : Γ.V} (ha : a ∈ Γ.cyclicVertices)
   rw [Path.isCyclicallyReduced_iff_isChain]
   simp only [Path.darts_comp, hdr, hd] at h1
   simp only [Path.darts_comp, Path.darts_reverse] at h2 ⊢
-  exact isChain_circuit (List.ne_nil_of_mem he') (by simpa using List.ne_nil_of_mem he') h2
+  exact h2.append_self_of_overlap
     (h1.infix ⟨(Path.darts Γ r').reverse.map Γ.rev, Path.darts Γ r', by simp⟩)
+    (List.ne_nil_of_mem he') (by simpa using List.ne_nil_of_mem he')
 
 /-- A nonempty reduced path with equal endpoints forces a cyclically reduced closed path:
 either it is one, or removing its first and last darts leaves a shorter one. -/
