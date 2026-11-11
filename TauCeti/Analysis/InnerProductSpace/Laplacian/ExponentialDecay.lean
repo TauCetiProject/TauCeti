@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPrinciple
+import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
@@ -32,6 +33,14 @@ barrier is nonnegative and hence also a supersolution of `-Δ + V`. Such potenti
 solutions of a linear equation `Δ u = V u` of indefinite sign, to which the constant form does not
 apply: both `u` and `-u` are subsolutions of `-Δ + V`, so `|u|` decays at the rate `c`.
 
+A forcing term decaying at the same rate does not change the conclusion, provided the potential
+has a margin `V ≥ c² + δ` with `δ > 0`: if `V u - G exp (-c ‖x‖) ≤ Δ u`, then
+`u x ≤ M exp (-c (‖x‖ - R)) + (G / δ) exp (-c ‖x‖)`. Indeed `u - (G / δ) exp (-c ‖x‖)` is then a
+subsolution of `-Δ + V`. Testing against continuous linear functionals gives the same bound for
+the norm of a vector-valued solution of `Δ D = V • D + H` with `‖H x‖ ≤ G exp (-c ‖x‖)`. This is
+how the derivatives of a solution of a semilinear equation are shown to decay: they solve linear
+equations whose forcing involves only lower derivatives.
+
 This is the decay mechanism of massive fields: for instance, outside a large disc the logarithmic
 modulus defect `-log |α|²` of a plane vortex is such a subsolution for every rate `c < 1 / 2`.
 
@@ -40,6 +49,10 @@ modulus defect `-log |α|²` of a plane vortex is such a subsolution for every r
 * `TauCeti.le_mul_exp_of_mul_le_laplacian`: a subsolution of `-Δ + V`, `V ≥ c²`, on the exterior of
   a ball which tends to zero at infinity is bounded by `M exp (-c (‖x‖ - R))`.
 * `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`: the case of the constant potential `c²`.
+* `TauCeti.le_mul_exp_add_mul_exp_of_mul_sub_le_laplacian`: the forced version, for a potential
+  `V ≥ c² + δ` and a forcing bounded by `G exp (-c ‖x‖)`.
+* `TauCeti.norm_le_mul_exp_add_mul_exp_of_laplacian_eq`: the forced version for the norm of a
+  vector-valued solution of `Δ D = V • D + H`.
 
 ## References
 
@@ -157,5 +170,97 @@ theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 
     u x ≤ M * Real.exp (-(c * (‖x‖ - R))) :=
   le_mul_exp_of_mul_le_laplacian (V := fun _ ↦ c ^ 2) hR hc hM hcont hcd (fun _ _ ↦ le_rfl) hsub
     hbdry hlim hx
+
+/-- **Exponential decay of subsolutions of a forced equation.** Let `u` be continuous on the
+exterior `‖x‖ ≥ R` of a ball of radius `R > 0`, `C²` on `‖x‖ > R`, with
+`V u - G exp (-c ‖x‖) ≤ Δ u` there for a potential `V ≥ c² + δ`, where `c > 0`, `δ > 0` and
+`G ≥ 0`, and with `u → 0` at infinity. If `u ≤ M` on the sphere `‖x‖ = R`, with `M ≥ 0`, then
+`u x ≤ M exp (-c (‖x‖ - R)) + (G / δ) exp (-c ‖x‖)` for every `x` with `‖x‖ ≥ R`. -/
+theorem le_mul_exp_add_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} {R c δ M G : ℝ}
+    (hR : 0 < R) (hc : 0 < c) (hδ : 0 < δ) (hM : 0 ≤ M) (hG : 0 ≤ G)
+    (hcont : ContinuousOn u {x | R ≤ ‖x‖}) (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 u x)
+    (hV : ∀ x, R < ‖x‖ → c ^ 2 + δ ≤ V x)
+    (hsub : ∀ x, R < ‖x‖ → V x * u x - G * Real.exp (-(c * ‖x‖)) ≤ Δ u x)
+    (hbdry : ∀ x, ‖x‖ = R → u x ≤ M) (hlim : Tendsto u (cocompact E) (𝓝 0)) {x : E}
+    (hx : R ≤ ‖x‖) :
+    u x ≤ M * Real.exp (-(c * (‖x‖ - R))) + G / δ * Real.exp (-(c * ‖x‖)) := by
+  set A := G / δ with hA
+  have hA₀ : 0 ≤ A := by positivity
+  have hGA : G = δ * A := by rw [hA]; field_simp
+  -- Subtracting the barrier `A exp (-c ‖x‖)` removes the forcing.
+  set b : E → ℝ := fun y ↦ A * Real.exp (-(c * ‖y‖)) + 0
+  have hbcd : ∀ y : E, y ≠ 0 → ContDiffAt ℝ 2 b y := fun y hy ↦
+    (((contDiffAt_norm ℝ hy).const_smul c).neg.exp.const_smul A).add contDiffAt_const
+  have hwcd : ∀ y, R < ‖y‖ → ContDiffAt ℝ 2 (u - b) y := fun y hy ↦
+    (hcd y hy).sub (hbcd y (norm_pos_iff.mp (hR.trans hy)))
+  have hbnn : ∀ y, 0 ≤ b y := fun y ↦ by positivity
+  have hw := le_mul_exp_of_mul_le_laplacian (u := u - b) (V := V) hR hc.le hM
+    (hcont.sub (fun y hy ↦ (hbcd y (norm_pos_iff.mp
+      (hR.trans_le hy))).continuousAt.continuousWithinAt)) hwcd
+    (fun y hy ↦ by nlinarith [hV y hy])
+    (fun y hy ↦ by
+      have hy₀ : y ≠ 0 := norm_pos_iff.mp (hR.trans hy)
+      have hlap := laplacian_exp_barrier_le hA₀ hc.le le_rfl hy₀
+      have he : 0 < Real.exp (-(c * ‖y‖)) := Real.exp_pos _
+      rw [(hcd y hy).laplacian_sub (hbcd y hy₀)]
+      have hVy := hV y hy
+      have hsy := hsub y hy
+      have hGe : G * Real.exp (-(c * ‖y‖)) = δ * (A * Real.exp (-(c * ‖y‖))) := by
+        rw [hGA]; ring
+      simp only [b, add_zero, Pi.sub_apply] at hlap ⊢
+      nlinarith [mul_nonneg (mul_nonneg hA₀ he.le) (sub_nonneg.2 hVy)])
+    (fun y hy ↦ by
+      have := hbdry y hy
+      simp only [Pi.sub_apply]
+      linarith [hbnn y])
+    (by
+      have hb : Tendsto b (cocompact E) (𝓝 (A * 0 + 0)) :=
+        ((Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp
+          (tendsto_norm_cocompact_atTop.const_mul_atTop hc))).const_mul A).add_const 0
+      exact (by simpa using hlim.sub hb : Tendsto (fun y ↦ u y - b y) (cocompact E) (𝓝 0))) hx
+  simp only [Pi.sub_apply, b, add_zero] at hw
+  linarith
+
+/-- **Exponential decay of vector-valued solutions of a forced equation.** Let `D` be a map into a
+real normed space, continuous on the exterior `‖x‖ ≥ R` of a ball of radius `R > 0` and `C²` on
+`‖x‖ > R`, solving `Δ D = V • D + H` there for a potential `V ≥ c² + δ`, where `c > 0` and
+`δ > 0`, and a forcing with `‖H x‖ ≤ G exp (-c ‖x‖)`. If `D → 0` at infinity and `‖D‖ ≤ M` on the
+sphere `‖x‖ = R`, then `‖D x‖ ≤ M exp (-c (‖x‖ - R)) + (G / δ) exp (-c ‖x‖)` for `‖x‖ ≥ R`. -/
+theorem norm_le_mul_exp_add_mul_exp_of_laplacian_eq {B : Type*} [NormedAddCommGroup B]
+    [NormedSpace ℝ B] {D H : E → B} {V : E → ℝ} {R c δ M G : ℝ} (hR : 0 < R) (hc : 0 < c)
+    (hδ : 0 < δ) (hM : 0 ≤ M) (hG : 0 ≤ G) (hcont : ContinuousOn D {x | R ≤ ‖x‖})
+    (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 D x) (hV : ∀ x, R < ‖x‖ → c ^ 2 + δ ≤ V x)
+    (heq : ∀ x, R < ‖x‖ → Δ D x = V x • D x + H x)
+    (hH : ∀ x, R < ‖x‖ → ‖H x‖ ≤ G * Real.exp (-(c * ‖x‖)))
+    (hbdry : ∀ x, ‖x‖ = R → ‖D x‖ ≤ M) (hlim : Tendsto D (cocompact E) (𝓝 0)) {x : E}
+    (hx : R ≤ ‖x‖) :
+    ‖D x‖ ≤ M * Real.exp (-(c * (‖x‖ - R))) + G / δ * Real.exp (-(c * ‖x‖)) := by
+  -- Each functional `φ` of norm `‖φ‖` turns `D` into a forced scalar subsolution.
+  have hscalar (φ : StrongDual ℝ B) : φ (D x) ≤
+      (M * Real.exp (-(c * (‖x‖ - R))) + G / δ * Real.exp (-(c * ‖x‖))) * ‖φ‖ := by
+    have h := le_mul_exp_add_mul_exp_of_mul_sub_le_laplacian (u := φ ∘ D) (V := V)
+      (M := M * ‖φ‖) (G := G * ‖φ‖) hR hc hδ (by positivity) (by positivity)
+      (φ.continuous.comp_continuousOn hcont) (fun y hy ↦ φ.contDiff.contDiffAt.comp y (hcd y hy))
+      hV (fun y hy ↦ by
+        rw [(hcd y hy).laplacian_CLM_comp_left]
+        simp only [Function.comp_apply]
+        rw [heq y hy, map_add, map_smul, smul_eq_mul]
+        have h₁ : -(G * ‖φ‖ * Real.exp (-(c * ‖y‖))) ≤ φ (H y) := by
+          have := (le_abs_self (-(φ (H y)))).trans ((abs_neg _).trans_le (φ.le_opNorm (H y)))
+          have h₂ := mul_le_mul_of_nonneg_left (hH y hy) (norm_nonneg φ)
+          nlinarith
+        linarith)
+      (fun y hy ↦ (le_abs_self _).trans ((φ.le_opNorm (D y)).trans
+        (by rw [mul_comm]; exact mul_le_mul_of_nonneg_right (hbdry y hy) (norm_nonneg φ))))
+      (by simpa using (φ.continuous.tendsto 0).comp hlim) hx
+    simp only [Function.comp_apply] at h
+    calc φ (D x) ≤ _ := h
+      _ = _ := by field_simp
+  refine NormedSpace.norm_le_dual_bound ℝ (D x) (by positivity) fun φ ↦ ?_
+  rw [Real.norm_eq_abs, abs_le]
+  refine ⟨?_, hscalar φ⟩
+  have := hscalar (-φ)
+  rw [neg_apply, norm_neg] at this
+  linarith
 
 end TauCeti
