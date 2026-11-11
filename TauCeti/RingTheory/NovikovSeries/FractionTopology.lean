@@ -99,18 +99,14 @@ theorem isUniformEmbedding_algebraMap_fractionValuation :
         rw [Set.mem_ofPred_eq, hrestrict, Units.val_one, map_one] at hab
         exact hab
       have hz : b - a = 0 := by
-        by_contra hn
-        obtain ⟨h, _, hh⟩ := (isLeast_order hn).1
-        have ho : (b - a).order = 0 := by simpa [hN] using hh.symm
-        simp [periodValuation_apply_of_ne_zero N hn, ho] at hlt
+        rcases (periodValuation_lt_iff N (b - a) 0).1 (by simpa using hlt) with hz | ho
+        · exact hz
+        · ext h
+          simpa using coeff_eq_zero_of_lt_order (a := b - a) (h := h)
+            (by simpa [hN] using ho)
       exact (periodValuation_le_iff N (b - a) C).1 (by simp [hz])
     -- Otherwise powers of a positive-period monomial give arbitrarily small radii.
-    · obtain ⟨g, hg⟩ : ∃ g, 0 < N g := by
-        obtain ⟨g, hg⟩ := DFunLike.ne_iff.1 hN
-        simp only [AddMonoidHom.zero_apply] at hg
-        rcases hg.lt_or_gt with hg | hg
-        · exact ⟨-g, by simpa using hg⟩
-        · exact ⟨g, hg⟩
+    · obtain ⟨g, hg⟩ := N.exists_pos_of_ne_zero hN
       obtain ⟨n, hn⟩ := exists_lt_nsmul hg C
       let s := algebraMap (NovikovSeries R H N) (WithVal (fractionValuation R N F))
         (single (n • g) 1)
