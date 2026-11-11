@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Path
 
+import Mathlib.Topology.Subpath
+
 /-!
 # Concatenation and base-point invariance of the Maslov index of loops
 
@@ -51,51 +53,28 @@ section
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- The convex combination `(1 - t) a + t b` of two times `a b ∈ [0, 1]`, for `t ∈ [0, 1]`, as a
-time in `[0, 1]`. -/
-private def lerp (a b t : I) : I :=
-  ⟨(1 - t) * a + t * b,
-    ⟨by nlinarith [a.2.1, b.2.1, t.2.1, t.2.2], by nlinarith [a.2.2, b.2.2, t.2.1, t.2.2]⟩⟩
-
-private theorem continuous_lerp (a b : I) : Continuous (lerp a b) := by
-  unfold lerp
-  fun_prop
-
-private theorem lerp_zero (a b : I) : lerp a b 0 = a := by
-  ext
-  simp [lerp]
-
-private theorem lerp_one (a b : I) : lerp a b 1 = b := by
-  ext
-  simp [lerp]
-
 /-- The restriction of a path of maximal totally real subspaces to the segment from time `a` to
 time `b`, reparametrized by `[0, 1]`: `t ↦ Λ ((1 - t) a + t b)`. -/
 def subpath (Λ : TotallyRealPath E) (a b : I) : TotallyRealPath E where
-  toFun t := Λ (lerp a b t)
+  toFun t := Λ (Set.Icc.convexComb a b t)
   exists_frame := by
     obtain ⟨L₀, hL₀, A, hAc, hA⟩ := Λ.exists_frame
-    exact ⟨L₀, hL₀, fun t => A (lerp a b t), hAc.comp (continuous_lerp a b),
-      fun t => hA (lerp a b t)⟩
-
-private theorem subpath_apply_lerp (Λ : TotallyRealPath E) (a b t : I) :
-    Λ.subpath a b t = Λ (lerp a b t) :=
-  (rfl)
+    exact ⟨L₀, hL₀, fun t => A (Set.Icc.convexComb a b t),
+      hAc.comp (Set.Icc.continuous_convexComb a b), fun t => hA (Set.Icc.convexComb a b t)⟩
 
 theorem subpath_apply (Λ : TotallyRealPath E) (a b t : I) :
-    Λ.subpath a b t = Λ ⟨(1 - t) * a + t * b,
-      ⟨by nlinarith [a.2.1, b.2.1, t.2.1, t.2.2], by nlinarith [a.2.2, b.2.2, t.2.1, t.2.2]⟩⟩ :=
+    Λ.subpath a b t = Λ (Set.Icc.convexComb a b t) :=
   (rfl)
 
 /-- The restriction of a path to `[a, b]` starts at `Λ a`. -/
 @[simp]
 theorem subpath_zero (Λ : TotallyRealPath E) (a b : I) : Λ.subpath a b 0 = Λ a :=
-  congrArg Λ (lerp_zero a b)
+  congrArg Λ (Set.Icc.convexComb_zero a b)
 
 /-- The restriction of a path to `[a, b]` ends at `Λ b`. -/
 @[simp]
 theorem subpath_one (Λ : TotallyRealPath E) (a b : I) : Λ.subpath a b 1 = Λ b :=
-  congrArg Λ (lerp_one a b)
+  congrArg Λ (Set.Icc.convexComb_one a b)
 
 /-- A path of maximal totally real subspaces whose endpoints agree, read as a loop. -/
 def toTotallyRealLoop (Λ : TotallyRealPath E) (h : Λ 0 = Λ 1) : TotallyRealLoop E :=
@@ -218,36 +197,24 @@ theorem maslovIndex_shift (Λ : TotallyRealLoop E) (s : I) :
     0 (by simp)
   have hθ (t : I) : Circle.exp (θ t) = Λ.maslovPhasePath t := congr_fun hθ' t
   -- The phases of the two pieces of the shifted loop, as paths in the circle.
-  let γ₁ : Path (Λ.maslovPhasePath s) (Λ.maslovPhasePath 0) :=
-    { toFun := fun t => Λ.maslovPhasePath (TotallyRealPath.lerp s 1 t)
-      continuous_toFun := by
-        have := TotallyRealPath.continuous_lerp s 1
-        fun_prop
-      source' := by rw [TotallyRealPath.lerp_zero]
-      target' := by rw [TotallyRealPath.lerp_one, Path.source, Path.target] }
-  let γ₂ : Path (Λ.maslovPhasePath 0) (Λ.maslovPhasePath s) :=
-    { toFun := fun t => Λ.maslovPhasePath (TotallyRealPath.lerp 0 s t)
-      continuous_toFun := by
-        have := TotallyRealPath.continuous_lerp 0 s
-        fun_prop
-      source' := by rw [TotallyRealPath.lerp_zero]
-      target' := by rw [TotallyRealPath.lerp_one] }
+  let γ₁ := (Λ.maslovPhasePath.subpath s 1).cast rfl Λ.maslovPhasePath.target.symm
+  let γ₂ := (Λ.maslovPhasePath.subpath 0 s).cast Λ.maslovPhasePath.source.symm rfl
   have h₁ : Circle.angleChange γ₁ = θ 1 - θ s := by
-    rw [Circle.angleChange_eq_sub γ₁ (θ := fun t => θ (TotallyRealPath.lerp s 1 t))
-      (θ.continuous.comp (TotallyRealPath.continuous_lerp s 1)) fun t => hθ _]
-    simp only [TotallyRealPath.lerp_zero, TotallyRealPath.lerp_one]
+    rw [Circle.angleChange_eq_sub γ₁ (θ := fun t => θ (Set.Icc.convexComb s 1 t))
+      (θ.continuous.comp (Set.Icc.continuous_convexComb s 1)) fun t => hθ _]
+    simp only [Set.Icc.convexComb_zero, Set.Icc.convexComb_one]
   have h₂ : Circle.angleChange γ₂ = θ s - θ 0 := by
-    rw [Circle.angleChange_eq_sub γ₂ (θ := fun t => θ (TotallyRealPath.lerp 0 s t))
-      (θ.continuous.comp (TotallyRealPath.continuous_lerp 0 s)) fun t => hθ _]
-    simp only [TotallyRealPath.lerp_zero, TotallyRealPath.lerp_one]
+    rw [Circle.angleChange_eq_sub γ₂ (θ := fun t => θ (Set.Icc.convexComb 0 s t))
+      (θ.continuous.comp (Set.Icc.continuous_convexComb 0 s)) fun t => hθ _]
+    simp only [Set.Icc.convexComb_zero, Set.Icc.convexComb_one]
   have hshift : (Λ.shift s).maslovIndex = Circle.degree (γ₁.trans γ₂) := by
     refine (Λ.shift s).maslovIndex_eq_degree hL (γ₁.trans γ₂) fun t => ?_
     rw [Path.trans_apply]
     split_ifs with ht <;>
-    · rw [Path.coe_mk_mk, maslovPhasePath_apply]
+    · rw [Path.cast_coe, Path.subpath, Path.coe_mk_mk, Function.comp_apply, maslovPhasePath_apply]
       exact hL.maslovPhase_congr _ _ (by
         simp only [shift, TotallyRealPath.toTotallyRealLoop_apply, TotallyRealPath.trans_apply, ht,
-          ↓reduceDIte, TotallyRealPath.subpath_apply_lerp, toTotallyRealPath_apply])
+          ↓reduceDIte, TotallyRealPath.subpath_apply, toTotallyRealPath_apply])
   have hdeg := Circle.angleChange_eq_degree_mul (γ₁.trans γ₂)
   rw [Circle.angleChange_trans, h₁, h₂, ← hshift] at hdeg
   have hμ := Circle.sub_eq_degree_mul Λ.maslovPhasePath θ.continuous hθ
