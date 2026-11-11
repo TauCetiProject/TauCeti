@@ -9,6 +9,9 @@ public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 public import TauCeti.Analysis.Meromorphic.Order
+import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.FDeriv.Analytic
+import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Contour.Residue.LogDeriv
 import TauCeti.Analysis.Contour.Residue.Theorem
 
@@ -37,10 +40,19 @@ and the base-independence of confined divisors are proved.
 ## Main results
 
 * `TauCeti.Contour.mem_ball_of_mem_zeroMultiset`: the zeros lie in the open disc.
+* `TauCeti.Contour.mem_zeroMultiset_iff`: with no zero on the circle, the members are exactly the
+  zeros of `g` in the open disc.
 * `TauCeti.Contour.meromorphicOrderAt_eq_count_zeroMultiset` and
   `TauCeti.Contour.analyticOrderAt_eq_count_zeroMultiset`: on the closed disc, the multiplicity of
   a point is the order of vanishing of `g` there.
 * `TauCeti.Contour.sum_map_zeroMultiset_eq_circleIntegral`: the weighted argument principle.
+* `TauCeti.Contour.sum_map_pow_zeroMultiset_eq_circleIntegral_fderiv`: for a slice
+  `w ↦ f (x, w)` of a function on `E × ℂ`, the power sums of its zeros are contour integrals of
+  `ζᵏ ∂_w f / f`.
+* `TauCeti.Contour.differentiableOn_sum_map_pow_zeroMultiset` and
+  `TauCeti.Contour.card_zeroMultiset_eq_of_isPreconnected`: in a holomorphic family of slices,
+  the power sums of the zeros depend holomorphically on the parameter, and the number of zeros is
+  constant on a preconnected parameter set.
 -/
 
 public section
@@ -104,6 +116,23 @@ theorem analyticOrderAt_eq_count_zeroMultiset {g : ℂ → ℂ} {R : ℝ}
   rw [(hg z hz).meromorphicOrderAt_eq] at h
   exact ENat.map_natCast_injective (by simpa using h)
 
+/-- If `g` has no zero on `sphere 0 R`, the members of `zeroMultiset` are exactly the zeros of `g`
+in the open disc. -/
+theorem mem_zeroMultiset_iff {g : ℂ → ℂ} {R : ℝ}
+    (hg : AnalyticOnNhd ℂ g (closedBall 0 R)) (hsphere : ∀ ζ ∈ sphere 0 R, g ζ ≠ 0) {a : ℂ} :
+    a ∈ zeroMultiset hg ↔ a ∈ ball 0 R ∧ g a = 0 := by
+  refine ⟨fun ha ↦ ⟨mem_ball_of_mem_zeroMultiset hg ha, ?_⟩, fun ⟨ha, h0⟩ ↦ ?_⟩
+  · have h := analyticOrderAt_eq_count_zeroMultiset hg hsphere
+      (ball_subset_closedBall (mem_ball_of_mem_zeroMultiset hg ha))
+    by_contra hne
+    rw [(hg a (ball_subset_closedBall (mem_ball_of_mem_zeroMultiset hg ha))).analyticOrderAt_eq_zero
+      |>.2 hne] at h
+    exact Multiset.count_ne_zero.2 ha (by exact_mod_cast h.symm)
+  · have h := analyticOrderAt_eq_count_zeroMultiset hg hsphere (ball_subset_closedBall ha)
+    refine Multiset.count_ne_zero.1 fun hc ↦ ?_
+    rw [hc, Nat.cast_zero, (hg a (ball_subset_closedBall ha)).analyticOrderAt_eq_zero] at h
+    exact h h0
+
 /-- **The weighted argument principle.** If `g` is analytic on `closedBall 0 R` and has no zero on
 `sphere 0 R`, then for every `φ` analytic on the closed disc, the sum of `φ` over the zeros of `g`
 in the open disc, counted with multiplicity, is `(2πi)⁻¹ ∮ φ g' / g`. -/
@@ -152,5 +181,70 @@ theorem sum_map_zeroMultiset_eq_circleIntegral {g φ : ℂ → ℂ} {R : ℝ} (h
     exact residue_eq_of_tendsto_sub_mul ((hφ s hsc).meromorphicAt.mul hgs.logDeriv)
       (hlim.congr fun ζ ↦ by ring)
   rw [hres, hsum_res, inv_mul_cancel_left₀ two_pi_I_ne_zero, hsum_multiset]
+
+section Family
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- **Power sums of the zeros of a slice.** Let `f : E × ℂ → ℂ` be analytic at every point of
+`{x} × closedBall 0 R` with no zero on `{x} × sphere 0 R`. Then the `k`-th power sum of the zeros
+of `w ↦ f (x, w)` in `ball 0 R`, counted with multiplicity, is `(2πi)⁻¹ ∮ ζᵏ ∂_w f / f`. -/
+theorem sum_map_pow_zeroMultiset_eq_circleIntegral_fderiv {f : E × ℂ → ℂ} {x : E} {R : ℝ}
+    (hR : 0 < R) (hf : ∀ ζ ∈ closedBall (0 : ℂ) R, AnalyticAt ℂ f (x, ζ))
+    (hsphere : ∀ ζ ∈ sphere (0 : ℂ) R, f (x, ζ) ≠ 0) (k : ℕ) :
+    ((zeroMultiset (g := fun w ↦ f (x, w)) fun w hw ↦ (hf w hw).curry_right).map (· ^ k)).sum =
+      (2 * π * I)⁻¹ * ∮ ζ in C(0, R), ζ ^ k * (fderiv ℂ f (x, ζ) (0, 1) / f (x, ζ)) := by
+  refine (sum_map_zeroMultiset_eq_circleIntegral (φ := (· ^ k)) hR
+    (fun w hw ↦ (hf w hw).curry_right) hsphere
+    fun z _ ↦ by simpa using (analyticAt_id (𝕜 := ℂ) (z := z)).fun_pow k).trans ?_
+  refine congrArg (_ * ·) (circleIntegral.integral_congr hR.le fun ζ hζ ↦ ?_)
+  have hderiv : deriv (fun w ↦ f (x, w)) ζ = fderiv ℂ f (x, ζ) (0, 1) :=
+    ((hf ζ (sphere_subset_closedBall hζ)).differentiableAt.hasFDerivAt.comp_hasDerivAt ζ
+      ((hasDerivAt_const ζ x).prodMk (hasDerivAt_id' ζ))).deriv
+  rw [logDeriv_apply, hderiv]
+
+/-- **Power sums of zeros in a holomorphic family.** Let `f : E × ℂ → ℂ` be analytic at every
+point of `U ×ˢ closedBall 0 R`, for an open set `U`, with no zero on `U ×ˢ sphere 0 R`. If `Z x`
+is the multiset of zeros of `w ↦ f (x, w)` in `ball 0 R` for each `x ∈ U`, then every power sum
+of `Z x` is a holomorphic function of `x` on `U`. -/
+theorem differentiableOn_sum_map_pow_zeroMultiset {f : E × ℂ → ℂ} {U : Set E} (hU : IsOpen U)
+    {R : ℝ} (hR : 0 < R) (hf : ∀ x ∈ U, ∀ ζ ∈ closedBall (0 : ℂ) R, AnalyticAt ℂ f (x, ζ))
+    (hsphere : ∀ x ∈ U, ∀ ζ ∈ sphere (0 : ℂ) R, f (x, ζ) ≠ 0) {Z : E → Multiset ℂ}
+    (hZ : ∀ x (hx : x ∈ U), Z x =
+      zeroMultiset (g := fun w ↦ f (x, w)) fun w hw ↦ (hf x hx w hw).curry_right) (k : ℕ) :
+    DifferentiableOn ℂ (fun x ↦ ((Z x).map (· ^ k)).sum) U := by
+  intro x hx
+  have hint : DifferentiableAt ℂ (fun y ↦ (2 * π * I)⁻¹ *
+      ∮ ζ in C(0, R), ζ ^ k * (fderiv ℂ f (y, ζ) (0, 1) / f (y, ζ))) x := by
+    refine (HasFDerivAt.differentiableAt (TauCeti.hasFDerivAt_circleIntegral
+      (f := fun q : E × ℂ ↦ q.2 ^ k * (fderiv ℂ f q (0, 1) / f q)) fun ζ hζ ↦ ?_)).const_mul _
+    rw [abs_of_pos hR] at hζ
+    have hfx := hf x hx ζ (sphere_subset_closedBall hζ)
+    exact (analyticAt_snd.fun_pow k).fun_mul
+      ((((ContinuousLinearMap.apply ℂ ℂ ((0 : E), (1 : ℂ))).analyticAt _).comp_of_eq
+        hfx.fderiv rfl).fun_div hfx (hsphere x hx ζ hζ))
+  refine (hint.congr_of_eventuallyEq (Filter.eventually_of_mem (hU.mem_nhds hx) fun y hy ↦ ?_))
+    |>.differentiableWithinAt
+  rw [hZ y hy]
+  exact sum_map_pow_zeroMultiset_eq_circleIntegral_fderiv hR (hf y hy) (hsphere y hy) k
+
+/-- **Constancy of the number of zeros in a holomorphic family.** Under the hypotheses of
+`TauCeti.Contour.differentiableOn_sum_map_pow_zeroMultiset`, if `U` is moreover preconnected,
+then the number of zeros of `w ↦ f (x, w)` in `ball 0 R` does not depend on `x ∈ U`. -/
+theorem card_zeroMultiset_eq_of_isPreconnected {f : E × ℂ → ℂ} {U : Set E} (hU : IsOpen U)
+    (hU_conn : IsPreconnected U) {R : ℝ} (hR : 0 < R)
+    (hf : ∀ x ∈ U, ∀ ζ ∈ closedBall (0 : ℂ) R, AnalyticAt ℂ f (x, ζ))
+    (hsphere : ∀ x ∈ U, ∀ ζ ∈ sphere (0 : ℂ) R, f (x, ζ) ≠ 0) {Z : E → Multiset ℂ}
+    (hZ : ∀ x (hx : x ∈ U), Z x =
+      zeroMultiset (g := fun w ↦ f (x, w)) fun w hw ↦ (hf x hx w hw).curry_right)
+    {x y : E} (hx : x ∈ U) (hy : y ∈ U) : (Z x).card = (Z y).card := by
+  have hcont : ContinuousOn (fun x ↦ (Z x).card) U :=
+    Nat.isClosedEmbedding_coe_real.isInducing.continuousOn_iff.2
+      ((Complex.continuous_re.comp_continuousOn
+        (differentiableOn_sum_map_pow_zeroMultiset hU hR hf hsphere hZ 0).continuousOn).congr
+        fun _ _ ↦ by simp)
+  exact hU_conn.constant hcont hx hy
+
+end Family
 
 end TauCeti.Contour

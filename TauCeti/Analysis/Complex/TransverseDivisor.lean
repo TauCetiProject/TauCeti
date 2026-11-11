@@ -7,11 +7,8 @@ module
 
 public import Mathlib.Analysis.Analytic.Order
 public import TauCeti.Analysis.Contour.Argument.PowerSum
-import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Convex.PathConnected
-import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.RingTheory.Polynomial.PrescribedPowerSums
 
 /-!
@@ -34,17 +31,15 @@ holomorphic family of plane divisors.
 
 The proof is the classical one through symmetric functions. Choose `R > K`. For each `x`, the
 `k`-th power sum of the zeros of the slice in the disc of radius `R` is the contour integral
-`(2πi)⁻¹ ∮ ζᵏ ∂_w f (x, ζ) / f (x, ζ)` (`TauCeti.Contour.sum_map_zeroMultiset_eq_circleIntegral`),
-which is holomorphic in `x` (`TauCeti.differentiable_sum_map_pow_zeroMultiset`). For `k = 0` it is
+`(2πi)⁻¹ ∮ ζᵏ ∂_w f (x, ζ) / f (x, ζ)`
+(`TauCeti.Contour.sum_map_pow_zeroMultiset_eq_circleIntegral_fderiv`), which is holomorphic in `x`
+(`TauCeti.Contour.differentiableOn_sum_map_pow_zeroMultiset`). For `k = 0` it is
 the number of zeros, which is therefore constant, say `N`. The `k`-th power sum is then bounded by
 `N Rᵏ`, so it is constant by Liouville's theorem. By Newton's identities the power sums determine
 the multiset of zeros (`TauCeti.roots_newtonPolynomial_sum_map_pow`).
 
 ## Main results
 
-* `TauCeti.differentiable_sum_map_pow_zeroMultiset`: for `f` holomorphic near `E × closedBall 0 R`
-  and nonvanishing on `E × sphere 0 R`, the power sums of the zeros of the slices in `ball 0 R`
-  depend holomorphically on the base point.
 * `TauCeti.exists_forall_analyticOrderAt_eq_count`: a holomorphic function on `E × ℂ` whose zeros
   are confined to `‖w‖ < K` has a base-independent transverse divisor, given by a multiset of
   points of norm less than `K`.
@@ -67,39 +62,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- **Power sums of zeros in a holomorphic family.** Let `f : E × ℂ → ℂ` be holomorphic near
-`E × closedBall 0 R` with no zero on `E × sphere 0 R`. Then for every `k`, the `k`-th power sum of
-the zeros of the slice `w ↦ f (x, w)` in `ball 0 R`, counted with multiplicity, is a holomorphic
-function of the base point `x`. -/
-theorem differentiable_sum_map_pow_zeroMultiset {f : E × ℂ → ℂ} {R : ℝ} (hR : 0 < R)
-    (hf : AnalyticOnNhd ℂ f (univ ×ˢ closedBall 0 R))
-    (hsphere : ∀ x, ∀ ζ ∈ sphere (0 : ℂ) R, f (x, ζ) ≠ 0) (k : ℕ) :
-    Differentiable ℂ fun x ↦ ((Contour.zeroMultiset ((hf.curry_right (x := x)).mono
-      fun _ hw ↦ mk_mem_prod (mem_univ x) hw)).map (· ^ k)).sum := by
-  intro x
-  have hfx : ∀ ζ ∈ sphere (0 : ℂ) R, AnalyticAt ℂ f (x, ζ) := fun ζ hζ ↦
-    hf (x, ζ) ⟨trivial, sphere_subset_closedBall hζ⟩
-  -- The power sum is `(2πi)⁻¹` times the contour integral of `ζᵏ ∂_w f / f`, whose integrand is
-  -- jointly analytic along `{x} × sphere 0 R`.
-  have hint (y : E) : ((Contour.zeroMultiset ((hf.curry_right (x := y)).mono
-      fun _ hw ↦ mk_mem_prod (mem_univ y) hw)).map (· ^ k)).sum =
-      (2 * π * I)⁻¹ * ∮ ζ in C(0, R), ζ ^ k * (fderiv ℂ f (y, ζ) (0, 1) / f (y, ζ)) := by
-    rw [Contour.sum_map_zeroMultiset_eq_circleIntegral (φ := (· ^ k)) hR _ (hsphere y)
-      fun z _ ↦ by simpa using (analyticAt_id (𝕜 := ℂ) (z := z)).fun_pow k]
-    refine congrArg (_ * ·) (circleIntegral.integral_congr hR.le fun ζ hζ ↦ ?_)
-    have hderiv : deriv (fun w ↦ f (y, w)) ζ = fderiv ℂ f (y, ζ) (0, 1) :=
-      ((hf (y, ζ) ⟨trivial, sphere_subset_closedBall hζ⟩).differentiableAt.hasFDerivAt
-        |>.comp_hasDerivAt ζ ((hasDerivAt_const ζ y).prodMk (hasDerivAt_id' ζ))).deriv
-    rw [logDeriv_apply, hderiv]
-  simp_rw [hint]
-  refine (DifferentiableAt.const_mul (HasFDerivAt.differentiableAt
-    (TauCeti.hasFDerivAt_circleIntegral
-      (f := fun q : E × ℂ ↦ q.2 ^ k * (fderiv ℂ f q (0, 1) / f q)) fun ζ hζ ↦ ?_)) _)
-  rw [abs_of_pos hR] at hζ
-  exact (analyticAt_snd.fun_pow k).fun_mul
-    ((((ContinuousLinearMap.apply ℂ ℂ ((0 : E), (1 : ℂ))).analyticAt _).comp_of_eq
-      (hfx ζ hζ).fderiv rfl).fun_div (hfx ζ hζ) (hsphere x ζ hζ))
-
 /-- **Base-independence of a confined transverse divisor.** Let `f : E × ℂ → ℂ` be holomorphic,
 and suppose that `f (x, w) ≠ 0` whenever `K ≤ ‖w‖`. Then there is a multiset `s` of points of
 norm less than `K` such that for every base point `x` and every `w`, the order of vanishing of
@@ -112,22 +74,22 @@ theorem exists_forall_analyticOrderAt_eq_count {f : E × ℂ → ℂ} (hf : Anal
   set R := max K 0 + 1
   have hR : 0 < R := by positivity
   have hKR : K < R := by grind
-  have hf' : AnalyticOnNhd ℂ f (univ ×ˢ closedBall 0 R) := hf.mono (subset_univ _)
+  have hf' : ∀ x ∈ (univ : Set E), ∀ ζ ∈ closedBall (0 : ℂ) R, AnalyticAt ℂ f (x, ζ) :=
+    fun x _ ζ _ ↦ hf (x, ζ) trivial
   have hslice (x : E) : AnalyticOnNhd ℂ (fun w ↦ f (x, w)) (closedBall 0 R) :=
-    fun w hw ↦ (hf' (x, w) ⟨trivial, hw⟩).curry_right
+    fun w _ ↦ (hf (x, w) trivial).curry_right
   have hsphere (x : E) : ∀ ζ ∈ sphere (0 : ℂ) R, f (x, ζ) ≠ 0 := fun ζ hζ ↦
     hK x ζ (by rw [mem_sphere_zero_iff_norm.1 hζ]; exact hKR.le)
   set Z : E → Multiset ℂ := fun x ↦ Contour.zeroMultiset (hslice x)
   have hdiff (k : ℕ) : Differentiable ℂ fun x ↦ ((Z x).map (· ^ k)).sum :=
-    differentiable_sum_map_pow_zeroMultiset hR hf' hsphere k
+    differentiableOn_univ.1 <| Contour.differentiableOn_sum_map_pow_zeroMultiset isOpen_univ hR
+      hf' (fun x _ ↦ hsphere x) (fun _ _ ↦ rfl) k
   -- The number of zeros is the zeroth power sum: it is continuous and integer valued, hence
   -- constant on the connected base.
-  have hcard (x : E) : (Z x).card = (Z 0).card := by
-    have hcont : Continuous fun x ↦ (Z x).card :=
-      Nat.isClosedEmbedding_coe_real.isInducing.continuous_iff.2
-        ((Complex.continuous_re.comp (hdiff 0).continuous).congr fun _ ↦ by simp)
-    exact (convex_univ : Convex ℝ (univ : Set E)).isPreconnected.constant hcont.continuousOn
-      trivial trivial
+  have hcard (x : E) : (Z x).card = (Z 0).card :=
+    Contour.card_zeroMultiset_eq_of_isPreconnected isOpen_univ
+      (convex_univ : Convex ℝ (univ : Set E)).isPreconnected hR hf' (fun x _ ↦ hsphere x)
+      (fun _ _ ↦ rfl) trivial trivial
   -- Every zero lies in `ball 0 R`, so the `k`-th power sum is bounded by `card (Z 0) * R ^ k`,
   -- and Liouville's theorem makes it constant.
   have hpow (k : ℕ) (x : E) : ((Z x).map (· ^ k)).sum = ((Z 0).map (· ^ k)).sum := by
@@ -150,12 +112,8 @@ theorem exists_forall_analyticOrderAt_eq_count {f : E × ℂ → ℂ} (hf : Anal
     rw [← hZ x]
     exact Contour.analyticOrderAt_eq_count_zeroMultiset (hslice x) (hsphere x) hw
   have hmem (a : ℂ) (ha : a ∈ Z 0) : ‖a‖ < K := by
-    have haR := ball_subset_closedBall (Contour.mem_ball_of_mem_zeroMultiset (hslice 0) ha)
-    have hne : analyticOrderAt (fun w ↦ f (0, w)) a ≠ 0 := by
-      rw [horder 0 haR]
-      exact_mod_cast (Multiset.count_ne_zero.2 ha)
     by_contra hKa
-    exact hne ((hslice 0 a haR).analyticOrderAt_eq_zero.2 (hK 0 a (not_lt.1 hKa)))
+    exact hK 0 a (not_lt.1 hKa) ((Contour.mem_zeroMultiset_iff (hslice 0) (hsphere 0)).1 ha).2
   refine ⟨Z 0, hmem, fun x w ↦ ?_⟩
   by_cases hKw : K ≤ ‖w‖
   · rw [(hf (x, w) trivial).curry_right.analyticOrderAt_eq_zero.2 (hK x w hKw),

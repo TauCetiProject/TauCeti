@@ -13,12 +13,9 @@ import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Analysis.Analytic.Composition
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Polynomial
-import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Analysis.Meromorphic.NormalForm
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.Analysis.Analytic.Multiset
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
@@ -60,10 +57,11 @@ unique zero on `closedBall 0 R`, and then `δ > 0` so that `f (x, ·)` is analyt
 `closedBall 0 R` and nonvanishing on `sphere 0 R` for `x ∈ ball 0 δ`. For each such `x`, the
 residue theorem applied to `ζ ↦ ζ ^ k * logDeriv (f (x, ·)) ζ` expresses the `k`-th power sum of
 the zero multiset of `f (x, ·)` in `ball 0 R` (counted with multiplicity) as a contour integral
-whose integrand is jointly analytic along `ball 0 δ ×ˢ sphere 0 R`. Parametric analyticity of
-contour integrals (`TauCeti.analyticOnNhd_circleIntegral`) makes every power sum — and for `k = 0`
-the total multiplicity, which is therefore locally constant and equal to `d` — analytic on
-`ball 0 δ`. Newton's identities (`TauCeti.analyticAt_esymm_of_forall_analyticAt_sum_map_pow`) and
+whose integrand is jointly analytic along `ball 0 δ ×ˢ sphere 0 R`. Differentiating under the
+integral sign (`TauCeti.Contour.differentiableOn_sum_map_pow_zeroMultiset`) makes every
+power sum — and for `k = 0` the total multiplicity, which is therefore locally constant and
+equal to `d` — holomorphic, hence analytic, on `ball 0 δ`. Newton's identities
+(`TauCeti.analyticAt_esymm_of_forall_analyticAt_sum_map_pow`) and
 Vieta's formula (`Multiset.prod_X_sub_C_coeff`) turn this into analyticity of the coefficients of
 the monic polynomial `P_x` whose roots are those zeros. For each `x`, dividing `f (x, ·)` by `P_x`
 cancels all zeros in `closedBall 0 R`, so its meromorphic normal form `u₀_x` is analytic and
@@ -198,31 +196,14 @@ private theorem exists_analyticOnNhd_zeroPolynomial
     fun w hw ↦ (hF_an x hx w hw).curry_right
   let Z : E → Multiset ℂ := fun x ↦ if hx : x ∈ U then zeroMultiset (hFx_an hx) else 0
   have hZ_eq {x : E} (hx : x ∈ U) : Z x = zeroMultiset (hFx_an hx) := dite_eq_left hx
-  have hpow_int (k : ℕ) {x : E} (hx : x ∈ U) : ((Z x).map (· ^ k)).sum =
-      (2 * π * I)⁻¹ * ∮ ζ in C(0, R), ζ ^ k * (fderiv ℂ F (x, ζ) (0, 1) / F (x, ζ)) := by
-    rw [hZ_eq hx, sum_map_zeroMultiset_eq_circleIntegral hR (hFx_an hx) (hF_sphere x hx)
-      (fun z _ ↦ by simpa using (analyticAt_id (𝕜 := ℂ) (z := z)).fun_pow k)]
-    refine congrArg (_ * ·) (circleIntegral.integral_congr hR.le fun ζ hζ ↦ ?_)
-    have hderiv : deriv (fun w ↦ F (x, w)) ζ = fderiv ℂ F (x, ζ) (0, 1) :=
-      ((hF_an x hx ζ (sphere_subset_closedBall hζ)).differentiableAt.hasFDerivAt.comp_hasDerivAt
-        ζ ((hasDerivAt_const ζ x).prodMk (hasDerivAt_id' ζ))).deriv
-    rw [logDeriv_apply, hderiv]
-  have hpow_an (k : ℕ) : AnalyticOnNhd ℂ (fun x ↦ ((Z x).map (· ^ k)).sum) U := by
-    refine AnalyticOnNhd.congr hU (fun x hx ↦ ?_) fun x hx ↦ (hpow_int k hx).symm
-    refine analyticAt_const.fun_mul (TauCeti.analyticAt_circleIntegral
-      (f := fun q : E × ℂ ↦ q.2 ^ k * (fderiv ℂ F q (0, 1) / F q)) fun ζ hζ ↦ ?_)
-    rw [abs_of_pos hR] at hζ
-    have hFp := hF_an x hx ζ (sphere_subset_closedBall hζ)
-    exact (analyticAt_snd.fun_pow k).fun_mul
-      ((((ContinuousLinearMap.apply ℂ ℂ ((0 : E), (1 : ℂ))).analyticAt _).comp_of_eq
-        hFp.fderiv rfl).fun_div hFp (hF_sphere x hx ζ hζ))
+  have hpow_an (k : ℕ) : AnalyticOnNhd ℂ (fun x ↦ ((Z x).map (· ^ k)).sum) U :=
+    (differentiableOn_sum_map_pow_zeroMultiset hU hR hF_an hF_sphere (fun _ hx ↦ hZ_eq hx)
+      k).analyticOnNhd_of_finiteDimensional hU
   have hZ0 : Z x₀ = Multiset.replicate d 0 :=
     (hZ_eq hx₀).trans (zeroMultiset_eq_replicate_zero hR (hFx_an hx₀) hF_ord hF_only)
   have hcard {x : E} (hx : x ∈ U) : (Z x).card = d := by
-    have hcont : ContinuousOn (fun x ↦ (Z x).card) U :=
-      Nat.isClosedEmbedding_coe_real.isInducing.continuousOn_iff.2
-        ((Complex.continuous_re.comp_continuousOn (hpow_an 0).continuousOn).congr fun _ _ ↦ by simp)
-    simpa [hZ0] using hU_conn.constant hcont hx hx₀
+    simpa [hZ0] using card_zeroMultiset_eq_of_isPreconnected hU hU_conn hR hF_an hF_sphere
+      (fun _ hx ↦ hZ_eq hx) hx hx₀
   refine ⟨fun i x ↦ (-1) ^ (d - (i : ℕ)) * (Z x).esymm (d - (i : ℕ)),
     fun i x hx ↦ analyticAt_const.fun_mul
       (TauCeti.analyticAt_esymm_of_forall_analyticAt_sum_map_pow _ fun j _ _ ↦ hpow_an j x hx),
