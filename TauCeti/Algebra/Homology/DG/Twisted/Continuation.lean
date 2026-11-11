@@ -105,6 +105,15 @@ theorem continuationMap_zero : continuationMap R M (0 : Matrix P Q A) = 0 :=
     simp only [Matrix.zero_apply, op_zero, zero_smul, Finset.sum_const_zero, LinearMap.zero_apply,
       Pi.zero_apply]
 
+/-- The continuation map commutes with every action on `M` that commutes with the right action of
+`A`. For `M = A` acting on itself on the left, this says that the continuation map is left
+`A`-linear. -/
+theorem continuationMap_smul {T : Type*} [Monoid T] [DistribMulAction T M]
+    [SMulCommClass T Aᵐᵒᵖ M] (t : T) (f : P → M) :
+    continuationMap R M ν (t • f) = t • continuationMap R M ν f := by
+  funext y
+  simp only [continuationMap_apply, Pi.smul_apply, Finset.smul_sum, (smul_comm t _ _).symm]
+
 /-- The `y`-component of the continuation map of an elementary tensor `α ⊗ x`. -/
 @[simp]
 theorem continuationMap_single_apply [DecidableEq P] (x : P) (α : M) (y : Q) :
