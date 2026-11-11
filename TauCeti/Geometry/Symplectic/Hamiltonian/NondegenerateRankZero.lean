@@ -38,7 +38,9 @@ This file sets up this notion on a symplectic vector space, the local model of t
   the linear span of the family (`isNondegenerateQuadraticFamily_iff_of_span_eq`), and is
   invariant under linear symplectomorphisms (`isNondegenerateQuadraticFamily_comp_iff`). In
   particular, forms on `V` and the forms they induce on the reduced space of `⊤` are nondegenerate
-  together (`isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`). By
+  together (`isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`), and families induced on
+  reduced spaces are invariant under linear symplectomorphisms
+  (`isNondegenerateQuadraticFamily_reduction_comp_iff`). By
   Mathlib's `LieSubalgebra.normalizer_eq_self_of_engel_le`, a Poisson-commuting family is
   nondegenerate as soon as it contains the Engel subalgebra of one Hamiltonian endomorphism
   (`isNondegenerateQuadraticFamily_of_engel_le`).
@@ -206,6 +208,23 @@ theorem isNondegenerateQuadraticFamily_reduction_iff_of_eq_top {U : Submodule �
   congr! with i
   ext v
   simp
+
+/-- **Invariance of reduced families under linear symplectomorphisms.** If `e : V ≃ V'` carries
+`ω` to `ω'` and `U` onto `U'`, the forms induced on the reduced space of `U` by the pullbacks
+`Q i ∘ e` form a nondegenerate family exactly when the forms induced on the reduced space of `U'`
+by the `Q i` do. -/
+theorem isNondegenerateQuadraticFamily_reduction_comp_iff {V' : Type*} [AddCommGroup V']
+    [Module ℝ V'] [FiniteDimensional ℝ V'] {ω' : SymplecticForm V'} {e : V ≃ₗ[ℝ] V'}
+    (he : IsSymplectomorphism ω ω' e) {U : Submodule ℝ V} {U' : Submodule ℝ V'}
+    (hU : U.map (e : V →ₗ[ℝ] V') = U') (Q : ι → QuadraticForm ℝ V')
+    (hQ : ∀ i, ∀ w ∈ U' ⊓ ω'.orthogonal U', ∀ u ∈ U', QuadraticMap.polar (Q i) w u = 0) :
+    (ω.reduction U).IsNondegenerateQuadraticFamily (fun i ↦ ω.reducedQuadraticForm U
+        ((Q i).comp (e : V →ₗ[ℝ] V')) ((forall_polar_comp_eq_zero_iff he hU (Q i)).2 (hQ i))) ↔
+      (ω'.reduction U').IsNondegenerateQuadraticFamily
+        fun i ↦ ω'.reducedQuadraticForm U' (Q i) (hQ i) := by
+  have h := isNondegenerateQuadraticFamily_comp_iff (isSymplectomorphism_reducedSpaceCongr e he hU)
+    fun i ↦ ω'.reducedQuadraticForm U' (Q i) (hQ i)
+  simpa only [reducedQuadraticForm_comp_reducedSpaceCongr] using h
 
 /-- **Regular elements give Cartan subalgebras.** A family of pairwise Poisson-commuting quadratic
 forms is nondegenerate as soon as the Engel subalgebra of the Hamiltonian endomorphism of some

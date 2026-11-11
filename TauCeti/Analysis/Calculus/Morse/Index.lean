@@ -205,15 +205,23 @@ theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp_left_apply (ℓ : F
   rw [hessianQuadraticForm_apply, fderiv_fderiv_comp_apply ℓ.contDiff.contDiffAt hφ]
   simp [hℓ]
 
+/-- Along the kernel of the differential of a `C²` map `φ` at `x`, the Hessian of `h ∘ φ` only
+involves the differential of `h` at `φ x`: on a vector `v` with `Dφ(x) v = 0` it agrees with the
+Hessian of `Dh(φ x) ∘ φ`. -/
+theorem hessianQuadraticForm_comp_apply_of_fderiv_apply_eq_zero {h : F → ℝ} {φ : E → F}
+    (hh : ContDiffAt ℝ 2 h (φ x)) (hφ : ContDiffAt ℝ 2 φ x) {v : E} (hv : fderiv ℝ φ x v = 0) :
+    hessianQuadraticForm (h ∘ φ) x v = hessianQuadraticForm (fderiv ℝ h (φ x) ∘ φ) x v := by
+  rw [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ, hessianQuadraticForm_apply,
+    fderiv_fderiv_comp_apply hh hφ, hv]
+  simp
+
 /-- At a critical point `x` of a `C²` map `φ`, the Hessian of `h ∘ φ` only involves the
 differential of `h` at `φ x`: it is the Hessian of `Dh(φ x) ∘ φ`. -/
 theorem hessianQuadraticForm_comp_eq_fderiv_comp {h : F → ℝ} {φ : E → F}
     (hh : ContDiffAt ℝ 2 h (φ x)) (hφ : ContDiffAt ℝ 2 φ x) (hc : fderiv ℝ φ x = 0) :
     hessianQuadraticForm (h ∘ φ) x = hessianQuadraticForm (fderiv ℝ h (φ x) ∘ φ) x := by
   ext v
-  rw [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ, hessianQuadraticForm_apply,
-    fderiv_fderiv_comp_apply hh hφ, hc]
-  simp
+  exact hessianQuadraticForm_comp_apply_of_fderiv_apply_eq_zero hh hφ (by simp [hc])
 
 /-- At a `C²` point of `φ`, the Hessians of all the functions `ℓ ∘ φ`, for `ℓ` a continuous linear
 functional, span the same space as the Hessians of the `L i ∘ φ`, for any family `L` spanning the

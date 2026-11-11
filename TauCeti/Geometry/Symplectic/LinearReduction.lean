@@ -71,6 +71,8 @@ form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
 * `TauCeti.SymplecticForm.IsIsotropic.reduction_map`,
   `TauCeti.SymplecticForm.IsLagrangian.reduction_map`: reduction of isotropic and Lagrangian
   subspaces.
+* `TauCeti.SymplecticForm.reducedQuadraticForm_comp_reducedSpaceCongr`: induced quadratic forms
+  are natural under the symplectomorphisms of reduced spaces induced by linear symplectomorphisms.
 
 ## References
 
@@ -245,6 +247,16 @@ theorem reducedQuadraticForm_mk (Q : QuadraticForm ℝ V)
     ω.reducedQuadraticForm U Q hQ (Submodule.Quotient.mk u) = Q u :=
   QuadraticMap.lift_mk _ u
 
+/-- The induced quadratic form on the reduced space only depends on the values of `Q` on `U`. -/
+theorem reducedQuadraticForm_congr {Q Q' : QuadraticForm ℝ V}
+    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0)
+    (hQ' : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q' w u = 0)
+    (h : ∀ u ∈ U, Q u = Q' u) :
+    ω.reducedQuadraticForm U Q hQ = ω.reducedQuadraticForm U Q' hQ' := by
+  ext x
+  induction x using Submodule.Quotient.induction_on with
+  | H u => simpa using h u u.2
+
 end QuadraticForm
 
 section Finrank
@@ -369,6 +381,44 @@ theorem reducedSpaceCongr_symm {e : V ≃ₗ[ℝ] V'} (he : IsSymplectomorphism 
     congr 1
     ext
     simp
+
+/-- A linear symplectomorphism `e` carrying `U` onto `U'` transports the descent condition of
+`TauCeti.SymplecticForm.reducedQuadraticForm`: the polar form of `Q ∘ e` vanishes on
+`(U ∩ U^ω) × U` exactly when the polar form of `Q` vanishes on `(U' ∩ U'^ω') × U'`. -/
+theorem forall_polar_comp_eq_zero_iff {e : V ≃ₗ[ℝ] V'} (he : IsSymplectomorphism ω ω' e)
+    {U : Submodule ℝ V} {U' : Submodule ℝ V'} (hU : U.map (e : V →ₗ[ℝ] V') = U')
+    (Q : QuadraticForm ℝ V') :
+    (∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U,
+        QuadraticMap.polar (Q.comp (e : V →ₗ[ℝ] V')) w u = 0) ↔
+      ∀ w ∈ U' ⊓ ω'.orthogonal U', ∀ u ∈ U', QuadraticMap.polar Q w u = 0 := by
+  have hO : (ω.orthogonal U).map (e : V →ₗ[ℝ] V') = ω'.orthogonal U' := by
+    rw [← hU]
+    exact he.map_orthogonal U
+  -- Membership in `U'` and in `U'^ω'` is membership of the preimage under `e`.
+  have hmem : ∀ v, v ∈ U' ↔ e.symm v ∈ U := fun v ↦ by rw [← hU, Submodule.mem_map_equiv]
+  have hmemO : ∀ v, v ∈ ω'.orthogonal U' ↔ e.symm v ∈ ω.orthogonal U := fun v ↦ by
+    rw [← hO, Submodule.mem_map_equiv]
+  have hpol : ∀ w u, QuadraticMap.polar (Q.comp (e : V →ₗ[ℝ] V')) w u =
+      QuadraticMap.polar Q (e w) (e u) := fun w u ↦ by simp [QuadraticMap.polar]
+  simp only [hpol, Submodule.mem_inf]
+  refine ⟨fun h w hw u hu ↦ ?_, fun h w hw u hu ↦ ?_⟩
+  · simpa using h (e.symm w) ⟨(hmem w).1 hw.1, (hmemO w).1 hw.2⟩ (e.symm u) ((hmem u).1 hu)
+  · exact h (e w) ⟨(hmem _).2 (by simpa using hw.1), (hmemO _).2 (by simpa using hw.2)⟩ (e u)
+      ((hmem _).2 (by simpa using hu))
+
+/-- The quadratic form induced on the reduced space of `U'` by `Q`, pulled back along the map of
+reduced spaces induced by a linear symplectomorphism `e` carrying `U` onto `U'`, is the form
+induced on the reduced space of `U` by `Q ∘ e`. -/
+theorem reducedQuadraticForm_comp_reducedSpaceCongr {e : V ≃ₗ[ℝ] V'}
+    (he : IsSymplectomorphism ω ω' e) {U : Submodule ℝ V} {U' : Submodule ℝ V'}
+    (hU : U.map (e : V →ₗ[ℝ] V') = U') (Q : QuadraticForm ℝ V')
+    (hQ : ∀ w ∈ U' ⊓ ω'.orthogonal U', ∀ u ∈ U', QuadraticMap.polar Q w u = 0) :
+    (ω'.reducedQuadraticForm U' Q hQ).comp (reducedSpaceCongr ω ω' e he hU : _ →ₗ[ℝ] _) =
+      ω.reducedQuadraticForm U (Q.comp (e : V →ₗ[ℝ] V'))
+        ((forall_polar_comp_eq_zero_iff he hU Q).2 hQ) := by
+  ext x
+  induction x using Submodule.Quotient.induction_on with
+  | H u => simp
 
 variable (ω) in
 /-- A group acting on `V` by linear symplectomorphisms that preserve `U` acts by
