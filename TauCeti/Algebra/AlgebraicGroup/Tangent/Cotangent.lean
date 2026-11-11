@@ -161,10 +161,11 @@ variable {R A} {A' : Type*} [CommRing A'] [Bialgebra R A']
 `A` into that of `A'`, hence the cotangent space of `A` to that of `A'`. -/
 noncomputable def cotangentSpaceMap (φ : A →ₐc[R] A') :
     CotangentSpace R A →ₗ[R] CotangentSpace R A' :=
-  Ideal.mapCotangent _ _ (φ : A →ₐ[R] A') fun x hx ↦ by
-    simp only [RingHom.mem_ker, Ideal.mem_comap] at hx ⊢
-    simpa only [_root_.Bialgebra.counitAlgHom_apply, AlgHom.coe_toRingHom, BialgHom.coe_toAlgHom,
-      CoalgHomClass.counit_comp_apply] using hx
+  -- `show` gives the containment proof the type `Ideal.mapCotangent` expects (comap along the
+  -- algebra map `↑φ`, not along `φ`), so rewriting with `Ideal.mapCotangent_toCotangent` applies.
+  Ideal.mapCotangent _ _ (φ : A →ₐ[R] A') fun x hx ↦
+    show x ∈ (AugmentationIdeal R A').comap (φ : A →ₐ[R] A') from
+      (BialgHom.comap_augmentationIdeal φ).ge hx
 
 /-- The cotangent map sends the displacement of `a` from the identity to that of `φ a`. -/
 @[simp]
