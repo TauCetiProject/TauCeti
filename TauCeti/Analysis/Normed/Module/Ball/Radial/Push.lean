@@ -103,16 +103,32 @@ theorem norm_le_norm_radialPush (hr : 0 < r) (hr1 : r ≤ 1) (t : I) (hy : ‖y�
   rw [norm_radialPush hr.le]
   nlinarith [t.2.1]
 
-/-- For every nonnegative radius, `TauCeti.radialPush` maps the closed unit ball into itself. -/
-theorem norm_radialPush_le_one (hr : 0 ≤ r) (t : I) (hy : ‖y‖ ≤ 1) :
-    ‖radialPush r t y‖ ≤ 1 := by
-  have h : r⁻¹ * min ‖y‖ r ≤ 1 := by
-    rcases hr.eq_or_lt with rfl | hr
-    · simp
-    · rw [inv_mul_le_iff₀ hr, mul_one]
-      exact min_le_right _ _
-  rw [norm_radialPush hr]
-  nlinarith [t.2.1, t.2.2, norm_nonneg y]
+/-- For every radius, `TauCeti.radialPush` maps the closed unit ball into itself. -/
+theorem norm_radialPush_le_one (t : I) (hy : ‖y‖ ≤ 1) : ‖radialPush r t y‖ ≤ 1 := by
+  rcases le_or_gt 0 r with hr | hr
+  · have h : r⁻¹ * min ‖y‖ r ≤ 1 := by
+      rcases hr.eq_or_lt with rfl | hr
+      · simp
+      · rw [inv_mul_le_iff₀ hr, mul_one]
+        exact min_le_right _ _
+    rw [norm_radialPush hr]
+    nlinarith [t.2.1, t.2.2, norm_nonneg y]
+  · rcases eq_or_ne ‖y‖ 0 with hy0 | hy0
+    · rw [radialPush_of_norm_eq_zero hy0, norm_smul_of_nonneg (sub_nonneg.mpr t.2.2), hy0]
+      simp
+    · have hy0' : 0 < ‖y‖ := lt_of_le_of_ne (norm_nonneg y) hy0.symm
+      have hpush : r⁻¹ • radialRetraction r y = ‖y‖⁻¹ • y := by
+        rw [radialRetraction_of_le_norm (hr.le.trans (norm_nonneg y)), smul_smul]
+        congr 1
+        have := hr.ne
+        field_simp
+      rw [radialPush, hpush]
+      calc ‖(1 - (t : ℝ)) • y + (t : ℝ) • ‖y‖⁻¹ • y‖
+          ≤ ‖(1 - (t : ℝ)) • y‖ + ‖(t : ℝ) • ‖y‖⁻¹ • y‖ := norm_add_le _ _
+        _ = (1 - (t : ℝ)) * ‖y‖ + (t : ℝ) := by
+          rw [norm_smul_of_nonneg (sub_nonneg.mpr t.2.2), norm_smul_of_nonneg t.2.1,
+            norm_smul_of_nonneg (inv_nonneg.mpr hy0'.le), inv_mul_cancel₀ hy0, mul_one]
+        _ ≤ 1 := by nlinarith [t.2.1, t.2.2]
 
 /-- `TauCeti.radialPush` fixes the unit sphere. -/
 theorem radialPush_of_norm_eq_one (hr : 0 < r) (hr1 : r ≤ 1) (t : I) (hy : ‖y‖ = 1) :

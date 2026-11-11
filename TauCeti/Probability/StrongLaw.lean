@@ -25,8 +25,8 @@ inverting sums in renewal and occupation limit theorems without a finite-mean hy
 
 ## Main results
 
-* `TauCeti.Probability.strong_law_ae_infinitePi` — for `f` measurable and integrable against `Q`,
-  the averages `n⁻¹ • ∑_{i < n} f (xᵢ)` converge `Q^{⊗ℕ}`-almost everywhere to `∫ f dQ`.
+* `TauCeti.Probability.strong_law_ae_infinitePi` — for `f` integrable against `Q`, the averages
+  `n⁻¹ • ∑_{i < n} f (xᵢ)` converge `Q^{⊗ℕ}`-almost everywhere to `∫ f dQ`.
 * `TauCeti.Probability.measurableSet_tendsto_average_integral` — the corresponding convergence
   event is measurable when the probability measure is allowed to vary.
 * `TauCeti.Probability.measure_compl_tendsto_average_integral_eq_zero` — the tagged product law
@@ -36,17 +36,19 @@ inverting sums in renewal and occupation limit theorems without a finite-mean hy
 
 ## Implementation
 
-Independence of the coordinates is Mathlib's `ProbabilityTheory.iIndepFun_infinitePi` for the
-identity variables. Nothing is reproved about product measures.
+Independence and identical distribution of the coordinates are
+`TauCeti.Probability.iIndepFun_eval_infinitePi` and
+`MeasureTheory.Measure.identDistrib_eval_infinitePi`. Nothing is reproved about product measures.
 
 The strong law itself is then Mathlib's, applied to `x ↦ f (x i)`: the three hypotheses come from
-that independence and from `measurePreserving_eval_infinitePi`, which makes the coordinates
-identically distributed, transports integrability, and identifies the limit `𝔼[f ∘ eval 0]` with
-`∫ f dQ`.
+those coordinate facts and from `measurePreserving_eval_infinitePi`, which transports
+integrability and identifies the limit `𝔼[f ∘ eval 0]` with `∫ f dQ`.
 
-`f` is assumed measurable, not merely almost-everywhere strongly measurable as `Integrable f Q`
-gives: it has to be composed with the coordinate maps, so that independence and identical
-distribution of the coordinates transfer to the summands.
+`f` need only be almost-everywhere strongly measurable, as `Integrable f Q` gives: since every
+coordinate has law `Q`, `f` is almost-everywhere measurable for each coordinate's law, which is
+what `IdentDistrib.comp_of_aemeasurable` and `iIndepFun.comp₀` need to transfer identical
+distribution and independence to the summands. The measurable tagged form below still assumes `f`
+measurable, as measurability of its convergence event requires.
 
 The measurable tagged form packages the same theorem for integration over a random law. This is
 general probability theory with no exchangeability in its statements. It is used by the conditional
@@ -78,15 +80,15 @@ namespace Probability
 variable {α : Type*} [MeasurableSpace α] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [CompleteSpace E] [MeasurableSpace E] [BorelSpace E]
 
-/-- **The strong law of large numbers on the canonical i.i.d. model.** For an `f` that is measurable
-and integrable against `Q`, the averages of `f` along the coordinates of `Q^{⊗ℕ}` converge almost
+/-- **The strong law of large numbers on the canonical i.i.d. model.** For an `f` integrable
+against `Q`, the averages of `f` along the coordinates of `Q^{⊗ℕ}` converge almost
 everywhere to `∫ f dQ`.
 
 This is Mathlib's `ProbabilityTheory.strong_law_ae` for the coordinate process of a countable
 power; it is the form in which a statement about *some* i.i.d. sequence becomes a statement about
 the product measure itself, and so can be integrated over a mixing law. -/
 theorem strong_law_ae_infinitePi (Q : Measure α) [IsProbabilityMeasure Q] {f : α → E}
-    (hf : Measurable f) (hint : Integrable f Q) :
+    (hint : Integrable f Q) :
     ∀ᵐ x ∂(Measure.infinitePi fun _ : ℕ => Q),
       Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (x i)) atTop
         (𝓝 (∫ y, f y ∂Q)) := by
@@ -95,20 +97,23 @@ theorem strong_law_ae_infinitePi (Q : Measure α) [IsProbabilityMeasure Q] {f : 
   -- value of the limit all come from that one fact.
   have heval : ∀ i : ℕ, MeasurePreserving (fun x : ℕ → α => x i) P Q := fun i =>
     measurePreserving_eval_infinitePi (fun _ : ℕ => Q) i
-  have hint' : ∀ i : ℕ, Integrable (fun x : ℕ → α => f (x i)) P := fun i =>
-    ((heval i).integrable_comp hint.1).2 hint
+  have hf : ∀ i : ℕ, AEMeasurable f (P.map fun x : ℕ → α => x i) := fun i => by
+    rw [(heval i).map_eq]
+    exact hint.1.aemeasurable
   have hident : ∀ i : ℕ,
       IdentDistrib (fun x : ℕ → α => f (x i)) (fun x : ℕ → α => f (x 0)) P P := fun i =>
-    (Q.identDistrib_eval_infinitePi i 0).comp hf
+    (Q.identDistrib_eval_infinitePi i 0).comp_of_aemeasurable (hf i)
   have hindep : ∀ i j : ℕ, i ≠ j →
       IndepFun (fun x : ℕ → α => f (x i)) (fun x : ℕ → α => f (x j)) P :=
     fun _ _ hij =>
-      ((iIndepFun_eval_infinitePi _).comp (fun _ => f) fun _ => hf).indepFun hij
+      ((iIndepFun_eval_infinitePi _).comp₀ (fun _ => f)
+        (fun i => (measurable_pi_apply i).aemeasurable) hf).indepFun hij
   have hlimit : ∫ x, f (x 0) ∂P = ∫ y, f y ∂Q := by
     rw [← (heval 0).map_eq, integral_map (measurable_pi_apply 0).aemeasurable
       (by rw [(heval 0).map_eq]; exact hint.1)]
   simpa only [hlimit] using
-    strong_law_ae (fun i (x : ℕ → α) => f (x i)) (hint' 0) hindep hident
+    strong_law_ae (fun i (x : ℕ → α) => f (x i)) (((heval 0).integrable_comp hint.1).2 hint)
+      hindep hident
 
 variable [SecondCountableTopology E]
 
@@ -138,7 +143,7 @@ theorem measure_compl_tendsto_average_integral_eq_zero {f : α → E} (hf : Meas
       (Q, x) ∈ {z : ProbabilityMeasure α × (ℕ → α) |
         Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (z.2 i)) atTop
           (𝓝 (∫ y, f y ∂(z.1 : Measure α)))} := by
-    filter_upwards [strong_law_ae_infinitePi (Q : Measure α) hf hint] with x hx
+    filter_upwards [strong_law_ae_infinitePi (Q : Measure α) hint] with x hx
     simpa only [Set.mem_ofPred_eq] using hx
   rw [Measure.dirac_prod, Measure.map_apply measurable_prodMk_left
     (measurableSet_tendsto_average_integral hf).compl]

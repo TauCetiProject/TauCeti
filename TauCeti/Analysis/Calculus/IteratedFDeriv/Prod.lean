@@ -14,9 +14,10 @@ import Mathlib.Analysis.Calculus.FDeriv.Equiv
 # Iterated derivatives in one variable of a product
 
 The iterated derivative of a slice `x ↦ f (p, x)` is the total iterated derivative of `f`
-restricted to directions in the second factor. Consequently these partial derivatives vary
-continuously in both variables when `f` is sufficiently differentiable. This gives the
-joint derivative continuity needed for smooth families in function spaces.
+restricted to directions in the second factor, and likewise for a slice `p ↦ f (p, x)` in the
+first factor. Consequently these partial derivatives vary continuously in both variables when `f`
+is sufficiently differentiable. This gives the joint derivative continuity needed for smooth
+families in function spaces.
 
 The within-set versions require unique derivatives only on the product,
 so they also handle coordinate domains of manifolds with boundary or corners.
@@ -38,6 +39,19 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : WithTop ℕ∞} {f : P × E → F}
+
+/-- The iterated derivative in the first variable is the total iterated derivative restricted
+to directions with zero second component. -/
+theorem iteratedFDeriv_prod_left (hf : ContDiff 𝕜 n f) (m : ℕ) (hm : m ≤ n)
+    (p : P) (x : E) :
+    iteratedFDeriv 𝕜 m (fun q ↦ f (q, x)) p =
+      (iteratedFDeriv 𝕜 m f (p, x)).compContinuousLinearMap
+        (fun _ ↦ ContinuousLinearMap.inl 𝕜 P E) := by
+  have h := (ContinuousLinearMap.inl 𝕜 P E).iteratedFDeriv_comp_right
+    (hf.comp (contDiff_const.add contDiff_id) :
+      ContDiff 𝕜 n (fun z : P × E ↦ f ((0, x) + z))) p hm
+  simpa only [Function.comp_def, ContinuousLinearMap.inl_apply, Prod.mk_add_mk,
+    add_zero, zero_add, iteratedFDeriv_comp_add_left] using h
 
 /-- The iterated derivative in the second variable is the total iterated derivative restricted
 to directions with zero first component. -/
@@ -141,9 +155,9 @@ theorem norm_iteratedFDeriv_snd_mul_comp_fst_le {g : E → A} {k : ℕ} (hg : Co
       ‖z.2‖ * ‖iteratedFDeriv 𝕜 k g z.1‖ + k * ‖iteratedFDeriv 𝕜 (k - 1) g z.1‖ := by
   have hsnd : ContDiff 𝕜 k (Prod.snd : E × A → A) := contDiff_snd
   have hgf : ContDiff 𝕜 k (g ∘ Prod.fst : E × A → A) := hg.comp contDiff_fst
-  have hle (i : ℕ) (hi : i ≤ k) :
+  have hle (i : ℕ) :
       ‖iteratedFDeriv 𝕜 i (g ∘ Prod.fst : E × A → A) z‖ ≤ ‖iteratedFDeriv 𝕜 i g z.1‖ :=
-    norm_iteratedFDeriv_comp_fst_le hg z (by exact_mod_cast hi)
+    norm_iteratedFDeriv_comp_fst_le z
   refine (norm_iteratedFDeriv_mul_le hsnd hgf z le_rfl).trans ?_
   rcases k with _ | m
   · simp
@@ -164,12 +178,12 @@ theorem norm_iteratedFDeriv_snd_mul_comp_fst_le {g : E → A} {k : ℕ} (hg : Co
           ‖iteratedFDeriv 𝕜 m (g ∘ Prod.fst : E × A → A) z‖
         ≤ ((m + 1 : ℕ) : ℝ) * 1 * ‖iteratedFDeriv 𝕜 m g z.1‖ := by
           gcongr
-          exact hle m (Nat.le_succ m)
+          exact hle m
       _ = ((m + 1 : ℕ) : ℝ) * ‖iteratedFDeriv 𝕜 m g z.1‖ := by ring
   · simp only [Nat.choose_zero_right, Nat.cast_one, one_mul, Nat.sub_zero,
       norm_iteratedFDeriv_zero]
     gcongr
-    exact hle _ le_rfl
+    exact hle _
 
 /-- **Derivative bound for a fibrewise multiplication.** For `g : E → A` of class `C^k` with
 `1 ≤ k`, the `k`-th iterated derivative of `z ↦ (z.1, z.2 * g z.1)` on `E × A` has norm at most
