@@ -37,6 +37,8 @@ extension to the completions has the same property.
 
 * `ContinuousLinearMap.norm_completion`: `‖f.completion‖ = ‖f‖`.
 * `ContinuousLinearMap.norm_fromCompletion`: `‖f.fromCompletion‖ = ‖f‖`.
+* `ContinuousLinearMap.enorm_toComplL_comp`: composing with the embedding of the codomain into its
+  completion preserves the operator norm.
 * `ContinuousLinearMap.ball_subset_image_completion_ball` and
   `ContinuousLinearMap.image_completion_ball`: the extension of a metric quotient map to the
   completions is a metric quotient map.
@@ -121,6 +123,21 @@ theorem image_completion_ball {f : E →SL[σ₁₂] F} (hf₁ : ‖f‖ ≤ 1)
     (hf : ∀ r, Metric.ball (0 : F) r ⊆ f '' Metric.ball 0 r) (r : ℝ) :
     f.completion '' Metric.ball 0 r = Metric.ball 0 r :=
   image_ball_eq_ball (f.norm_completion.trans_le hf₁) (ball_subset_image_completion_ball hf) r
+
+section ToCompl
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Composing a bounded linear map with the embedding of its codomain into the completion does
+not change its operator norm. -/
+@[simp]
+theorem enorm_toComplL_comp (T : E →L[𝕜] F) :
+    ‖(Completion.toComplL : F →L[𝕜] Completion F) ∘L T‖ₑ = ‖T‖ₑ := by
+  rw [← ofReal_norm, ← ofReal_norm, ← Completion.toContinuousLinearMap_toComplₗᵢ,
+    LinearIsometry.norm_toContinuousLinearMap_comp]
+
+end ToCompl
 
 end ContinuousLinearMap
 
