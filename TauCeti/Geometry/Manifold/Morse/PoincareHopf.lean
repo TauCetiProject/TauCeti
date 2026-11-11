@@ -63,7 +63,7 @@ private theorem IsMorse.mdifferentiableAt_mgradient_and_isManifoldNondegenerateC
       IsManifoldNondegenerateCriticalPoint I f x := by
   have hf2 : ContMDiff I 𝓘(ℝ) 2 f := hf.contMDiff.of_le (by norm_num)
   refine ⟨Manifold.mdifferentiable_mgradient hf2 x, hf.isManifoldNondegenerateCriticalPoint ?_⟩
-  rw [← ((hf2 x).mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm]
+  rw [← mvfderiv_eq_fderiv_comp_extChartAt_symm]
   exact Manifold.mgradient_eq_zero_iff.mp hx
 
 /-- **The zeros of the gradient of a Morse function are nondegenerate.** For a `C¹` metric, the

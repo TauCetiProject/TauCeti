@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
-public import TauCeti.Geometry.Manifold.VectorField.ChartDerivative
+public import TauCeti.Geometry.Manifold.VectorField.Chart.Derivative
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
@@ -165,7 +165,7 @@ theorem _root_.MDifferentiableAt.mvfderiv_inner_bundle_apply_of_eq_zero
     mvfderiv I (fun y ↦ inner ℝ (σ y) (τ y)) x v =
       inner ℝ (τ x) (vectorFieldChartDerivative I σ x v : TangentSpace I x) := by
   obtain ⟨L, hL, hLv⟩ := exists_hasFDerivAt_inner_comp_extChartAt_symm_of_eq_zero hσ hσ₀ hτ
-  rw [(hσ.inner_bundle_of_eq_zero hσ₀ hτ).mvfderiv_eq_fderiv_comp_extChartAt_symm, hL.fderiv]
+  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm, hL.fderiv]
   exact hLv v
 
 end ProductRule
