@@ -11,6 +11,7 @@ import Mathlib.Analysis.Convolution
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.Pseudodifferential.OutputSupport
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -53,6 +54,14 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   (`TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_sharpIntegrand_le` and its companions).
 * `TauCeti.Symbol.exists_norm_mixedDeriv_le_of_leibniz`: the symbol estimates of a family of
   functions of two symbols which satisfies the Leibniz rules follow from its growth bound.
+* `TauCeti.Symbol.HasCompactSpatialSupport.sharp`: if `a` also has compact spatial support, then
+  so does `a # b`.
+* `TauCeti.Symbol.coefficient_const_id_sharp`: the constant symbol `1` is a left identity,
+  `1 # b = b`.
+* `TauCeti.Symbol.quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue`: `Op(a # b) u = Op(a) w`
+  for the test function `w = Op(b) u`, and
+  `TauCeti.Symbol.coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq`: `a # b` is the only
+  symbol, of any order, whose quantization is `Op(a) ∘ Op(b)`.
 
 The facts used about `b̂` (rapid decay, joint continuity, differentiation in `ξ` and the formula
 `(∂_{x_j} b)^(η, ξ) = 2πi ηⱼ b̂(η, ξ)`) are in `TauCeti.Analysis.Pseudodifferential.Sobolev`.
@@ -819,6 +828,28 @@ theorem IsSmoothing.sharp_left (hbs : b.IsSmoothing) (a : Symbol n W U m')
   rw [coefficient_inclusion, coefficient_sharp_eq_compCoeff, coefficient_sharp_eq_compCoeff]
   exact compCoeff_congr rfl hb'
 
+/-- If the left factor also has compact spatial support, then so does `a # b`. -/
+theorem HasCompactSpatialSupport.sharp (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) : (a.sharp b hb).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  exact hasCompactSpatialSupport_iff.2 ⟨K, hK, fun x hx ξ ↦ by simp [hKa x hx]⟩
+
+/-- The constant symbol `1` is a left identity for the composition: `1 # b = b`. On the level of
+coefficients this is the Fourier inversion formula `∫ exp(2πi ⟪η, x⟫) b̂(η, ξ) dη = b(x, ξ)`. -/
+@[simp]
+theorem coefficient_const_id_sharp [CompleteSpace W] (hb : b.HasCompactSpatialSupport) :
+    ((const (ContinuousLinearMap.id ℂ W)).sharp b hb).coefficient = b.coefficient := by
+  funext ⟨x, ξ⟩
+  set f := hb.sliceSchwartz ξ
+  have hf : (fun y ↦ b.coefficient (y, ξ)) = ⇑f := (hb.coe_sliceSchwartz ξ).symm
+  have hinv : 𝓕⁻ (𝓕 ⇑f) = ⇑f := f.continuous.fourierInv_fourier_eq f.integrable
+    (by rw [← SchwartzMap.fourier_coe]; exact (𝓕 f).integrable)
+  calc ((const (ContinuousLinearMap.id ℂ W)).sharp b hb).coefficient (x, ξ) = 𝓕⁻ (𝓕 ⇑f) x := by
+        rw [coefficient_sharp, Real.fourierInv_eq, ← hf]
+        refine integral_congr_ae (.of_forall fun η ↦ ?_)
+        simp [coefficient_const, Circle.smul_def]
+    _ = b.coefficient (x, ξ) := by rw [hinv, ← hf]
+
 end Sharp
 
 /-! ### The composition of the quantizations -/
@@ -926,6 +957,31 @@ theorem quantizeSchwartzValue_sharp [CompleteSpace W] [CompleteSpace U]
     ContinuousLinearMap.comp_apply, Circle.smul_def, smul_smul, inner_add_left,
     AddChar.map_add_eq_mul, Circle.coe_mul]
   rw [add_comm ((2 * π) • η), mul_comm]
+
+/-- **Composition of quantizations**, as operators: for a symbol `b` with compact spatial support,
+`Op(b) u` is a test function `w` for every Schwartz function `u`, and `Op(a # b) u = Op(a) w`. -/
+theorem quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue [CompleteSpace W] [CompleteSpace U]
+    (hb : b.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (a.sharp b hb).coefficient u x =
+      quantizeSchwartzValue a.coefficient
+        ((hb.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+          (b.contDiff_quantizeSchwartzValue u)) x := by
+  have hw : ⇑((hb.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+      (b.contDiff_quantizeSchwartzValue u)) = quantizeSchwartzValue b.coefficient u :=
+    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  rw [quantizeSchwartzValue_sharp hb, quantizeSchwartzValue_def, SchwartzMap.fourier_coe, hw]
+
+/-- **Uniqueness of the composition symbol.** A symbol `c`, of any order, whose quantization is
+`Op(a) ∘ Op(b)` on compactly supported Schwartz functions has the coefficient of `a # b`. -/
+theorem coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq [CompleteSpace V] [CompleteSpace W]
+    [CompleteSpace U] (hb : b.HasCompactSpatialSupport) {m'' : ℝ} {c : Symbol n V U m''}
+    (h : ∀ u : 𝓢(CoordinateSpace n, V), HasCompactSupport u → ∀ x,
+      quantizeSchwartzValue c.coefficient u x = quantizeSchwartzValue a.coefficient
+        ((hb.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+          (b.contDiff_quantizeSchwartzValue u)) x) :
+    c.coefficient = (a.sharp b hb).coefficient :=
+  coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u hu ↦ funext fun x ↦
+    (h u hu x).trans (quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb u x).symm
 
 end Operator
 
