@@ -45,6 +45,8 @@ coboundaries the inner derivations `a ↦ a m - m a`.
 
 ## Main results
 
+* `TauCeti.hochschildBimoduleCohomology.mk_eq_homologyπ`: the class of a cocycle is the homology
+  class of any cycle of the cochain complex representing it.
 * `TauCeti.hochschildBimoduleCohomology.mk_surjective`,
   `TauCeti.hochschildBimoduleCohomology.mk_eq_zero_iff`,
   `TauCeti.hochschildBimoduleCohomology.mk_eq_mk_iff`: the classes are the cocycles modulo the
@@ -54,6 +56,10 @@ coboundaries the inner derivations `a ↦ a m - m a`.
 * `TauCeti.mem_hochschildBimoduleCoboundaries_one_iff`,
   `TauCeti.hochschildBimoduleCohomology.mk_one_eq_zero_iff`: a degree-one cochain is a coboundary
   exactly when it is an inner derivation.
+
+The construction of the complex and of the class map follows the bounded Hochschild complex in
+`TauCeti.Analysis.Normed.Algebra.HochschildCohomology.Complex` and the Hochschild complex with
+coefficients in `Hom_R(A, M)` in `TauCeti.RingTheory.HochschildCohomology.Complex`.
 
 ## References
 
@@ -225,6 +231,18 @@ def mk (n : ℕ) : hochschildBimoduleCocycles R A M n →ₗ[R] hochschildBimodu
     (fun n ↦ MultilinearMap R (fun _ : Fin n ↦ A) M) (hochschildBimoduleCocycles R A M)
     (hochschildBimoduleCochainComplexXIso R A M)
     (mem_hochschildBimoduleCocycles_iff_complex R A M) n
+
+/-- The class of a Hochschild cocycle `ψ` is the homology class of any cycle of the Hochschild
+cochain complex whose underlying cochain is `ψ`. -/
+theorem mk_eq_homologyπ {n : ℕ} (ψ : hochschildBimoduleCocycles R A M n)
+    (z : (hochschildBimoduleCochainComplex R A M).cycles n)
+    (hz : (hochschildBimoduleCochainComplexXIso R A M n).hom
+      ((hochschildBimoduleCochainComplex R A M).iCycles n z) = ψ) :
+    mk R A M n ψ = (hochschildBimoduleCochainComplex R A M).homologyπ n z :=
+  (hochschildBimoduleCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_homologyπ
+    (fun n ↦ MultilinearMap R (fun _ : Fin n ↦ A) M) (hochschildBimoduleCocycles R A M)
+    (hochschildBimoduleCochainComplexXIso R A M)
+    (mem_hochschildBimoduleCocycles_iff_complex R A M) ψ z hz
 
 /-- Every Hochschild cohomology class is the class of a Hochschild cocycle. -/
 theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) :=
