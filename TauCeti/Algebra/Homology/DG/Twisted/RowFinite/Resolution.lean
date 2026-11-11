@@ -30,7 +30,7 @@ else follows:
 
 * the relative cycles of `ε` are relative boundaries, so `ε` is a quasi-isomorphism
   (`TauCeti.exists_rowFiniteTwistedDifferential_semifreeResolution_eq`);
-* `ε` is onto (`TauCeti.surjective_linearCombination_semifreeResolutionAugmentation`): a
+* `ε` is onto (`TauCeti.linearCombination_semifreeResolutionAugmentation_surjective`): a
   homogeneous `y` is the image of a generator attached along the generator sent to `dN y`.
 
 The lifting theorems of `TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Lifting` apply to this
@@ -56,7 +56,7 @@ semi-free resolution used.
   is the row and the image of a generator.
 * `TauCeti.exists_rowFiniteTwistedDifferential_semifreeResolution_eq`: the relative cycles of the
   augmentation are relative boundaries.
-* `TauCeti.surjective_linearCombination_semifreeResolutionAugmentation`: the augmentation is
+* `TauCeti.linearCombination_semifreeResolutionAugmentation_surjective`: the augmentation is
   onto.
 
 ## References
@@ -389,7 +389,7 @@ theorem exists_rowFiniteTwistedDifferential_semifreeResolution_eq (hN : IsDGLeft
 
 /-- **The augmentation is onto.** A homogeneous `y` of degree `n` is the image of the generator
 attached along `(e, y)`, where `e` is the generator attached along `(0, dN y)`. -/
-theorem surjective_linearCombination_semifreeResolutionAugmentation
+theorem linearCombination_semifreeResolutionAugmentation_surjective
     (hN : IsDGLeftModule hA 𝒩 dN) :
     Function.Surjective (linearCombination A (semifreeResolutionAugmentation 𝒜 d 𝒩 dN)) := by
   intro y
