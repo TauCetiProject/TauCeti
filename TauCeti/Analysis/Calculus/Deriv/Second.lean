@@ -11,8 +11,6 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
@@ -190,20 +188,12 @@ theorem sq_mul_deriv_deriv_comp_log (hv' : DifferentiableAt ℝ (deriv v) (log x
 theorem deriv_deriv_comp_exp (hf' : DifferentiableAt ℝ (deriv f) (exp y)) :
     deriv (deriv fun y ↦ f (exp y)) y =
       exp y * deriv f (exp y) + exp y ^ 2 * deriv (deriv f) (exp y) := by
-  have hev : deriv (fun y ↦ f (exp y)) =ᶠ[𝓝 y] fun y ↦ exp y * deriv f (exp y) := by
-    refine Eventually.of_forall fun z ↦ ?_
-    by_cases hz : DifferentiableAt ℝ f (exp z)
-    · have h : HasDerivAt (fun y ↦ f (exp y)) (deriv f (exp z) * exp z) z :=
-        hz.hasDerivAt.comp z (hasDerivAt_exp z)
-      rw [h.deriv, mul_comm]
-    · -- `Eventually.of_forall` leaves the right-hand side as an unreduced beta-redex.
-      beta_reduce
-      rw [deriv_zero_of_not_differentiableAt hz,
-        deriv_zero_of_not_differentiableAt (mt differentiableAt_comp_exp_iff.1 hz), mul_zero]
+  have hd : deriv (fun y ↦ f (exp y)) = fun y ↦ exp y * deriv f (exp y) :=
+    funext fun _ ↦ deriv_comp_exp
   have h : HasDerivAt (fun y ↦ exp y * deriv f (exp y))
       (exp y * deriv f (exp y) + exp y * (deriv (deriv f) (exp y) * exp y)) y :=
     (hasDerivAt_exp y).mul (hf'.hasDerivAt.comp y (hasDerivAt_exp y))
-  rw [hev.deriv_eq, h.deriv]
+  rw [hd, h.deriv]
   ring
 
 end LogExp

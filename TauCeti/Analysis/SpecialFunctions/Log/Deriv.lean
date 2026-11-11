@@ -25,7 +25,7 @@ open Real Filter Topology
 
 namespace TauCeti
 
-variable {v : ℝ → ℝ} {x : ℝ}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {v : ℝ → E} {x : ℝ}
 
 /-- For `x ≠ 0`, `v ∘ log` is differentiable at `x` exactly when `v` is differentiable at `log x`.
 For `x < 0` this uses that `v ∘ log` is even. -/

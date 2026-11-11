@@ -18,13 +18,14 @@ as it has over `ℂ`, restricted to real scalars. Since every complex derivative
 every real iterated derivative of `Complex.exp` at `z` has norm `‖exp z‖`. This is the input a
 Faà di Bruno bound needs for compositions `Complex.exp ∘ f` with a real-differentiable `f`.
 
-For a real function `f`, `f ∘ exp` is differentiable at `y` exactly when `f` is differentiable at
-`exp y`.
+For a function `f` on `ℝ`, `f ∘ exp` is differentiable at `y` exactly when `f` is differentiable
+at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypothesis on `f`.
 
 ## Main results
 
 * `TauCeti.differentiableAt_comp_exp_iff`: `f ∘ exp` is differentiable at `y` exactly when `f` is
   differentiable at `exp y`.
+* `TauCeti.deriv_comp_exp`: `(f ∘ exp)'(y) = e^y • f'(e^y)`, unconditionally.
 * `TauCeti.norm_iteratedFDeriv_real_cexp`: every real iterated derivative of `Complex.exp` at `z`
   has norm `‖exp z‖`.
 * `ContinuousLinearMap.norm_iteratedFDeriv_cexp_comp_le`: for a real-linear map `ℓ` to `ℂ`, the
@@ -62,7 +63,7 @@ section ExpComp
 
 open Real Filter Topology
 
-variable {f : ℝ → ℝ} {y : ℝ}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {y : ℝ}
 
 /-- `f ∘ exp` is differentiable at `y` exactly when `f` is differentiable at `exp y`. -/
 @[simp]
@@ -73,6 +74,14 @@ theorem differentiableAt_comp_exp_iff :
   refine (h'.comp (exp y) (differentiableAt_log (exp_pos y).ne')).congr_of_eventuallyEq ?_
   filter_upwards [eventually_gt_nhds (exp_pos y)] with z hz
   simp [exp_log hz]
+
+/-- The chain rule for `f ∘ exp`, with no differentiability hypothesis: where `f` is not
+differentiable at `exp y`, neither is `f ∘ exp` at `y`, and both sides are `0`. -/
+theorem deriv_comp_exp : deriv (fun y ↦ f (exp y)) y = exp y • deriv f (exp y) := by
+  by_cases hf : DifferentiableAt ℝ f (exp y)
+  · exact (hf.hasDerivAt.scomp y (hasDerivAt_exp y)).deriv
+  · rw [deriv_zero_of_not_differentiableAt hf, smul_zero,
+      deriv_zero_of_not_differentiableAt (mt differentiableAt_comp_exp_iff.1 hf)]
 
 end ExpComp
 
