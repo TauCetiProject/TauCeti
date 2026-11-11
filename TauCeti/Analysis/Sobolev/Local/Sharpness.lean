@@ -58,7 +58,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Filter MeasureTheory Metric Set Topology TopologicalSpace
+open Filter _root_.MeasureTheory Metric Set Topology TopologicalSpace
 
 open scoped ENNReal
 
