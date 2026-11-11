@@ -468,19 +468,13 @@ theorem bijective_singularHomologyMap_iff (f : C(M, N)) :
   -- The coefficient modules `ULift ℤ` and `ℤ` give naturally isomorphic homology functors.
   let α := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).mapIso
     (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso
-  have hnat : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
-      (ModuleCat.of ℤ ℤ)).map (TopCat.ofHom f) = (α.app (TopCat.of M)).inv ≫
-        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
-          (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom f) ≫ (α.app (TopCat.of N)).hom :=
-    ((Iso.inv_comp_eq _).2 (α.hom.naturality (TopCat.ofHom f))).symm
   -- `ContinuousMap.singularHomologyMap ℤ n f` is by definition the map of the homology functor
   -- with coefficients `ℤ`, but its source and target are stated through `singularChains`.
   change Function.Bijective (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
-    (ModuleCat.of ℤ ℤ)).map (TopCat.ofHom f)).hom ↔ _
-  rw [← o.bijective_singularHomologyFunctor_map_iff o' hE hF f, hnat,
-    ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.coe_comp, LinearMap.coe_comp,
-    Function.Bijective.of_comp_iff _ (ConcreteCategory.bijective_of_isIso _),
-    Function.Bijective.of_comp_iff' (ConcreteCategory.bijective_of_isIso _)]
+    (ModuleCat.of ℤ ℤ)).map (TopCat.ofHom f)) ↔ _
+  rw [← o.bijective_singularHomologyFunctor_map_iff o' hE hF f,
+    ← ConcreteCategory.isIso_iff_bijective, ← ConcreteCategory.isIso_iff_bijective]
+  exact (NatIso.isIso_map_iff α (TopCat.ofHom f)).symm
 
 end Bijective
 
