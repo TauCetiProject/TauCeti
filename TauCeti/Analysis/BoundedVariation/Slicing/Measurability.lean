@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.Slicing.Basic
-import TauCeti.Analysis.BoundedVariation.Countable
 import TauCeti.Analysis.BoundedVariation.Real
 
 /-!
@@ -33,33 +32,8 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-/-- The variation of the restrictions of an integrable function to parallel lines is a.e.
-measurable in the transverse coordinate, even if the ambient variation is infinite. -/
-theorem aemeasurable_totalVariationOn_line {u : E → ℝ} (hu : Integrable u)
-    (e : E) (he : ‖e‖ = 1) :
-    AEMeasurable (fun y : (ℝ ∙ e)ᗮ ↦
-      totalVariationOn volume ⊤ (fun t : ℝ ↦ u ((y : E) + t • e))) volume := by
-  have hint := (measurePreserving_orthogonalLineEquiv e he).integrable_comp_of_integrable hu
-  simpa only [Function.comp_apply, orthogonalLineEquiv_apply] using
-    aemeasurable_totalVariationOn (μ := volume) ⊤ hint.aestronglyMeasurable hint.prod_right_ae
-
-/-- Perimeters of parallel sections of a null-measurable finite-volume set are a.e. measurable
-in the transverse coordinate. Infinite perimeters are allowed. -/
-theorem aemeasurable_perimeter_lineSection {s : Set E} (hs : NullMeasurableSet s volume)
-    (hfin : volume s ≠ ∞) (e : E) (he : ‖e‖ = 1) :
-    AEMeasurable (fun y : (ℝ ∙ e)ᗮ ↦
-      perimeter volume ⊤ {t : ℝ | (y : E) + t • e ∈ s}) volume := by
-  have hu : Integrable (s.indicator (1 : E → ℝ)) volume :=
-    (integrableOn_const hfin).integrable_indicator₀ hs
-  have hm := aemeasurable_totalVariationOn_line hu e he
-  have hline (y : (ℝ ∙ e)ᗮ) : (fun t : ℝ ↦ s.indicator (1 : E → ℝ) ((y : E) + t • e)) =
-      {t : ℝ | (y : E) + t • e ∈ s}.indicator 1 :=
-    funext fun _ ↦ (indicator_comp_right (fun t : ℝ ↦ (y : E) + t • e)).symm
-  simpa only [perimeter_def, hline] using hm
-
 /-- For each fixed unit direction, the set of transverse points whose sections do not agree
-almost everywhere with any interval is null-measurable. The exceptional sets in the section
-measurability and finite-length statements may depend on the direction. -/
+almost everywhere with any interval is null-measurable. -/
 theorem nullMeasurableSet_noninterval_lineSection {s : Set E}
     (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞) (e : E) (he : ‖e‖ = 1) :
     NullMeasurableSet {y : (ℝ ∙ e)ᗮ | ∀ I : Set ℝ, I.OrdConnected →

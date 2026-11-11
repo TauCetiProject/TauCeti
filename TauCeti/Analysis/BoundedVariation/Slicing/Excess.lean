@@ -22,7 +22,8 @@ Consequently, for any null-measurable family `A` of noninterval sections,
 
 The weighted version retains the transverse divergence pairing in the joint slicing inequality.
 It localizes the extra cost to `A`. The full family of noninterval sections is null-measurable,
-so both the weighted and unweighted bounds apply to it without an extra measurability hypothesis.
+so both bounds apply to it by taking `hA := nullMeasurableSet_noninterval_lineSection hs hfin e he`
+and `hbad := .of_forall fun _ ↦ id`.
 
 ## References
 
@@ -117,31 +118,5 @@ theorem two_mul_volume_add_two_mul_volume_le_perimeter_of_noninterval_lineSectio
   have h := two_mul_setLIntegral_add_two_mul_setLIntegral_le_lintegral_mul_perimeter_lineSection
     hs hfin e he hA hbad (fun _ ↦ 1)
   simpa using h.trans (by simpa using lintegral_perimeter_lineSection_le hs hfin e he)
-
-/-- The joint slicing-excess bound for the entire family of noninterval sections. No supplied
-measurable subfamily or finite-perimeter assumption is needed. -/
-theorem two_mul_setLIntegral_add_two_mul_setLIntegral_noninterval_add_ofReal_integral_le_perimeter
-    {s : Set E} (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞)
-    (e : E) (he : ‖e‖ = 1) (φ : 𝓓(⊤, (ℝ ∙ e)ᗮ)) (hφ : ∀ y, ‖φ y‖ ≤ 1) :
-    (2 * (∫⁻ y in {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}},
-        ENNReal.ofReal √(1 - ‖φ y‖ ^ 2)) +
-      2 * (∫⁻ y in {y : (ℝ ∙ e)ᗮ | ∀ I : Set ℝ, I.OrdConnected →
-        ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I},
-        ENNReal.ofReal √(1 - ‖φ y‖ ^ 2))) +
-      ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y *
-        volume.real {t : ℝ | (y : E) + t • e ∈ s}) ≤ perimeter volume ⊤ s :=
-  two_mul_setLIntegral_add_two_mul_setLIntegral_add_ofReal_integral_le_perimeter hs hfin e he
-    (nullMeasurableSet_noninterval_lineSection hs hfin e he) (.of_forall fun _ ↦ id) φ hφ
-
-/-- Perimeter pays twice the transverse measure of all positive-length sections and an
-additional twice the measure of all sections which are not intervals up to null sets. -/
-theorem two_mul_volume_add_two_mul_volume_noninterval_lineSection_le_perimeter
-    {s : Set E} (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞)
-    (e : E) (he : ‖e‖ = 1) :
-    2 * volume {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}} +
-      2 * volume {y : (ℝ ∙ e)ᗮ | ∀ I : Set ℝ, I.OrdConnected →
-        ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I} ≤ perimeter volume ⊤ s :=
-  two_mul_volume_add_two_mul_volume_le_perimeter_of_noninterval_lineSection hs hfin e he
-    (nullMeasurableSet_noninterval_lineSection hs hfin e he) (.of_forall fun _ ↦ id)
 
 end TauCeti

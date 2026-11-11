@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.BoundedVariation.Approximation
+import TauCeti.Analysis.BoundedVariation.Countable
 import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
 import TauCeti.Analysis.Sobolev.WeakDeriv.Slicing
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -315,6 +316,25 @@ private theorem indicator_one_line (s : Set E) (y e : E) :
 private theorem integrable_indicator_one {s : Set E} (hs : NullMeasurableSet s)
     (hfin : volume s ≠ ∞) : Integrable (s.indicator (1 : E → ℝ)) :=
   (integrableOn_const hfin).integrable_indicator₀ hs
+
+/-- The variation of the restrictions of an integrable function to parallel lines is a.e.
+measurable in the transverse coordinate, even if the ambient variation is infinite. -/
+theorem aemeasurable_totalVariationOn_line {u : E → ℝ} (hu : Integrable u)
+    (e : E) (he : ‖e‖ = 1) :
+    AEMeasurable (fun y : (ℝ ∙ e)ᗮ ↦
+      totalVariationOn volume ⊤ (fun t : ℝ ↦ u ((y : E) + t • e))) volume := by
+  have hint := (measurePreserving_orthogonalLineEquiv e he).integrable_comp_of_integrable hu
+  simpa only [Function.comp_apply, orthogonalLineEquiv_apply] using
+    aemeasurable_totalVariationOn (μ := volume) ⊤ hint.aestronglyMeasurable hint.prod_right_ae
+
+/-- Perimeters of parallel sections of a null-measurable finite-volume set are a.e. measurable
+in the transverse coordinate. Infinite perimeters are allowed. -/
+theorem aemeasurable_perimeter_lineSection {s : Set E} (hs : NullMeasurableSet s volume)
+    (hfin : volume s ≠ ∞) (e : E) (he : ‖e‖ = 1) :
+    AEMeasurable (fun y : (ℝ ∙ e)ᗮ ↦
+      perimeter volume ⊤ {t : ℝ | (y : E) + t • e ∈ s}) volume := by
+  simp_rw [perimeter_def, ← indicator_one_line]
+  exact aemeasurable_totalVariationOn_line (integrable_indicator_one hs hfin) e he
 
 /-- **The slicing inequality for perimeter.** For a null-measurable set `s` of finite volume and
 a unit vector `e`, the perimeters in `ℝ` of the line sections `{t | y + t • e ∈ s}` integrate,

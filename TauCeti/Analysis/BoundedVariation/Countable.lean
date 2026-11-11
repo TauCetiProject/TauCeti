@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Function.Holder
 import TauCeti.Topology.Order.CountableSup
 public import Mathlib.MeasureTheory.Measure.SeparableMeasure
 import Mathlib.MeasureTheory.Integral.Prod
@@ -41,24 +41,16 @@ theorem exists_countable_totalVariationOn_eq_iSup :
   let F (φ : {φ : 𝓓(Ω, E) // ∀ x, ‖φ x‖ ≤ 1}) (u : E →₁[μ] ℝ) :=
     ENNReal.ofReal (∫ x, divergenceCLM φ.val x * u x ∂μ)
   have hF (φ) : Continuous (F φ) := by
-    apply ENNReal.continuous_ofReal.comp
-    apply continuous_iff_continuousAt.mpr
-    intro u
-    have hlim : Tendsto (fun v : E →₁[μ] ℝ ↦ ∫⁻ x, ‖v x - u x‖ₑ ∂μ) (𝓝 u) (𝓝 0) := by
-      simp_rw [← L1.ofReal_norm_sub_eq_lintegral]
-      have hc : Continuous (fun v : E →₁[μ] ℝ ↦ ENNReal.ofReal ‖v - u‖) :=
-        ENNReal.continuous_ofReal.comp (continuous_id.sub continuous_const).norm
-      simpa using hc.tendsto u
-    rw [ContinuousAt]
-    simpa only [smul_eq_mul] using
-      MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub
-      (c := fun x ↦ divergenceCLM φ.val x) (s := Set.univ)
-      (.of_forall fun x ↦ (divergenceCLM φ.val : E →ᵇ ℝ).norm_coe_le_norm x)
-      (by simp) (.of_forall fun v ↦ (divergenceCLM φ.val).integrable_smul
-        ((L1.integrable_coeFn v).locallyIntegrable.locallyIntegrableOn Ω))
-      ((divergenceCLM φ.val).integrable_smul
-        ((L1.integrable_coeFn u).locallyIntegrable.locallyIntegrableOn Ω)).aestronglyMeasurable
-      (by simpa using hlim)
+    let c : E →ᵇ ℝ := divergenceCLM φ.val
+    have hc : MemLp c ∞ μ := memLp_top_of_bound c.continuous.aestronglyMeasurable ‖c‖
+      (.of_forall c.norm_coe_le_norm)
+    let B := ContinuousLinearMap.mul ℝ ℝ
+    have hpair (u : E →₁[μ] ℝ) :
+        B.lpPairing μ ∞ 1 (hc.toLp c) u = ∫ x, c x * u x ∂μ := by
+      rw [B.lpPairing_eq_integral]
+      exact integral_congr_ae (hc.coeFn_toLp.mono fun x hx ↦ by simp [B, hx])
+    exact ENNReal.continuous_ofReal.comp
+      ((B.lpPairing μ ∞ 1 (hc.toLp c)).continuous.congr hpair)
   obtain ⟨C, hC, hsup⟩ := exists_countable_iSup_eq_of_continuous hF
   refine ⟨C, hC, fun u hu ↦ ?_⟩
   have hpair (φ : {φ : 𝓓(Ω, E) // ∀ x, ‖φ x‖ ≤ 1}) :
