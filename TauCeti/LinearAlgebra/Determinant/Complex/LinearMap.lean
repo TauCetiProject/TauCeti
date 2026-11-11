@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Complex.KerCoker
+public import TauCeti.LinearAlgebra.LinearMap.RestrictScalars
 public import TauCeti.LinearAlgebra.Determinant.Complex.Orientation
 import TauCeti.LinearAlgebra.Complex.Module
 
@@ -87,28 +87,26 @@ formed from the complex kernel and cokernel with their real structures. -/
 def detLineRestrictScalarsEquiv :
     (f.restrictScalars ℝ).detLine ≃ₗ[ℝ]
       TauCeti.detLine ℝ (ker f) ⊗[ℝ] Dual ℝ (TauCeti.detLine ℝ (N ⧸ range f)) :=
-  TensorProduct.congr (LinearEquiv.detLineCongr f.kerRestrictScalarsEquiv.symm)
-    (LinearEquiv.detLineCongr f.cokerRestrictScalarsEquiv.symm).dualMap
+  TensorProduct.congr (LinearEquiv.detLineCongr (f.kerRestrictScalarsEquiv ℝ).symm)
+    (LinearEquiv.detLineCongr (f.cokerRestrictScalarsEquiv ℝ).symm).dualMap
 
 @[simp]
 theorem detLineRestrictScalarsEquiv_tmul (x : TauCeti.detLine ℝ (ker (f.restrictScalars ℝ)))
     (φ : Dual ℝ (TauCeti.detLine ℝ (N ⧸ range (f.restrictScalars ℝ)))) :
     f.detLineRestrictScalarsEquiv (x ⊗ₜ φ) =
-      LinearEquiv.detLineCongr f.kerRestrictScalarsEquiv.symm x ⊗ₜ
-        (φ ∘ₗ (LinearEquiv.detLineCongr f.cokerRestrictScalarsEquiv.symm).toLinearMap) :=
+      LinearEquiv.detLineCongr (f.kerRestrictScalarsEquiv ℝ).symm x ⊗ₜ
+        (φ ∘ₗ (LinearEquiv.detLineCongr (f.cokerRestrictScalarsEquiv ℝ).symm).toLinearMap) :=
   (rfl)
 
 @[simp]
 theorem detLineRestrictScalarsEquiv_symm_tmul (x : TauCeti.detLine ℝ (ker f))
     (φ : Dual ℝ (TauCeti.detLine ℝ (N ⧸ range f))) :
     f.detLineRestrictScalarsEquiv.symm (x ⊗ₜ φ) =
-      LinearEquiv.detLineCongr f.kerRestrictScalarsEquiv x ⊗ₜ
-        (φ ∘ₗ (LinearEquiv.detLineCongr f.cokerRestrictScalarsEquiv).toLinearMap) := by
-  rw [LinearEquiv.symm_apply_eq, detLineRestrictScalarsEquiv_tmul, comp_assoc,
-    ← LinearEquiv.coe_trans, ← LinearEquiv.detLineCongr_trans, ← LinearEquiv.trans_apply,
-    ← LinearEquiv.detLineCongr_trans, LinearEquiv.self_trans_symm, LinearEquiv.symm_trans_self,
-    LinearEquiv.detLineCongr_refl, LinearEquiv.detLineCongr_refl]
-  rfl
+      LinearEquiv.detLineCongr (f.kerRestrictScalarsEquiv ℝ) x ⊗ₜ
+        (φ ∘ₗ (LinearEquiv.detLineCongr (f.cokerRestrictScalarsEquiv ℝ)).toLinearMap) := by
+  rw [LinearEquiv.symm_apply_eq, detLineRestrictScalarsEquiv_tmul,
+    ← LinearEquiv.detLineCongr_symm, LinearEquiv.symm_apply_apply]
+  simp [comp_assoc, ← LinearEquiv.detLineCongr_symm]
 
 /-- An element of the real determinant line of a complex-linear map `f` is **complex positive** if
 it corresponds to a complex positive element of `det (ker f) ⊗ (det (coker f))^*`, that is, to
@@ -196,13 +194,14 @@ theorem detLineRestrictScalarsEquiv_detLineCongr (z : (f.restrictScalars ℝ).de
         (f.detLineRestrictScalarsEquiv z) := by
   -- The kernel and cokernel isomorphisms induced by the square, read on either side.
   have hk : (e₁.ofSubmodules _ _ ((f.restrictScalars ℝ).map_ker_eq_ker_of_comp_eq e₁.surjective
-      e₂.injective h)).trans f'.kerRestrictScalarsEquiv.symm =
-      f.kerRestrictScalarsEquiv.symm.trans (kerCongrOfComp f e₁ e₂ h) :=
+      e₂.injective h)).trans (f'.kerRestrictScalarsEquiv ℝ).symm =
+      (f.kerRestrictScalarsEquiv ℝ).symm.trans (kerCongrOfComp f e₁ e₂ h) :=
     LinearEquiv.ext fun x ↦ Subtype.ext (by simp only [LinearEquiv.trans_apply,
-      coe_kerRestrictScalarsEquiv_symm_apply, coe_kerCongrOfComp_apply]; rfl)
-  have hc : f'.cokerRestrictScalarsEquiv.symm.trans (Submodule.Quotient.equiv _ _ e₂
+      coe_kerRestrictScalarsEquiv_symm_apply, coe_kerCongrOfComp_apply,
+      LinearEquiv.ofSubmodules_apply])
+  have hc : (f'.cokerRestrictScalarsEquiv ℝ).symm.trans (Submodule.Quotient.equiv _ _ e₂
       ((f.restrictScalars ℝ).map_range_eq_range_of_comp_eq e₁.surjective h)).symm =
-      (cokerCongrOfComp f e₁ e₂ h).symm.trans f.cokerRestrictScalarsEquiv.symm := by
+      (cokerCongrOfComp f e₁ e₂ h).symm.trans (f.cokerRestrictScalarsEquiv ℝ).symm := by
     refine LinearEquiv.ext fun y ↦ ?_
     induction y using Submodule.Quotient.induction_on with
     | H y => simp [Submodule.Quotient.equiv_symm]
@@ -233,10 +232,10 @@ theorem IsComplexPositiveDetLine.detLineCongr {z : (f.restrictScalars ℝ).detLi
   set g₁ := kerCongrOfComp f e₁ e₂ h
   set g₂ := cokerCongrOfComp f e₁ e₂ h
   let G₁ : ker f ≃ₗ[ℂ] ker f' := .ofBijective
-    (g₁.toLinearMap.complexOfMapISmul (kerCongrOfComp_I_smul f e₁ e₂ h he₁))
+    (g₁.toLinearMap.complexOfMapISmul (kerCongrOfComp_smul f e₁ e₂ h he₁))
     (by simpa using g₁.bijective)
   let G₂ : (N ⧸ range f) ≃ₗ[ℂ] N' ⧸ range f' := .ofBijective
-    (g₂.toLinearMap.complexOfMapISmul (cokerCongrOfComp_I_smul f e₁ e₂ h he₂))
+    (g₂.toLinearMap.complexOfMapISmul (cokerCongrOfComp_smul f e₁ e₂ h he₂))
     (by simpa using g₂.bijective)
   have hG₁ : G₁.restrictScalars ℝ = g₁ := LinearEquiv.ext fun _ ↦ by simp [G₁]
   have hG₂ : G₂.restrictScalars ℝ = g₂ := LinearEquiv.ext fun _ ↦ by simp [G₂]
@@ -260,8 +259,8 @@ theorem IsComplexPositiveDetLine.neg_one_pow_smul_detLineCongr [FiniteDimensiona
   have he₂' (y : N) : e₂ (I • y) = (-I) • e₂ y := by rw [he₂, neg_smul]
   rw [isComplexPositiveDetLine_iff, map_smul, detLineRestrictScalarsEquiv_detLineCongr]
   exact IsComplexPositiveTMulDual.neg_one_pow_smul_congr_detLineCongr hz _ _
-    (fun x ↦ by rw [kerCongrOfComp_I_smul f e₁ e₂ h he₁' x, neg_smul])
-    (fun y ↦ by rw [cokerCongrOfComp_I_smul f e₁ e₂ h he₂' y, neg_smul])
+    (fun x ↦ by rw [kerCongrOfComp_smul f e₁ e₂ h he₁' x, neg_smul])
+    (fun y ↦ by rw [cokerCongrOfComp_smul f e₁ e₂ h he₂' y, neg_smul])
 
 end Transport
 
