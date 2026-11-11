@@ -65,8 +65,6 @@ theorem uniformIntegrable_linearGrowth_geometricBrownianMotion {ι : Type*} [Cou
   -- A countable supremum of the sampled prices is measurable, even if the uncountable
   -- running maximum of the raw Brownian version is not literally measurable.
   let G : Ω → ℝ≥0∞ := fun ω ↦ ⨆ i, ENNReal.ofReal |V i ω|
-  have hG : AEMeasurable G P := AEMeasurable.iSup fun i ↦
-    (hV i).norm.aemeasurable.ennreal_ofReal
   have hdom : ∀ᵐ ω ∂P, G ω ≤ ENNReal.ofReal A *
       (1 + ⨆ t ≤ T, ENNReal.ofReal (geometricBrownianMotion s μ σ W t ω)) := by
     filter_upwards [ae_all_iff.2 hτ, ae_all_iff.2 hbound] with ω ht hb
@@ -99,15 +97,8 @@ theorem uniformIntegrable_linearGrowth_geometricBrownianMotion {ι : Type*} [Cou
       _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top
         (ENNReal.add_lt_top.2 ⟨by simp,
           hW.lintegral_iSup_geometricBrownianMotion_lt_top hcont s μ σ⟩)
-  have hGiR : Integrable (fun ω ↦ (G ω).toReal) P :=
-    integrable_toReal_of_lintegral_ne_top hG hGi.ne
-  have hle (i : ι) : ∀ᵐ ω ∂P, ‖V i ω‖ₑ ≤ ‖(G ω).toReal‖ₑ := by
-    filter_upwards [ae_lt_top' hG hGi.ne] with ω hω
-    simp only [Real.enorm_eq_ofReal_abs, abs_of_nonneg ENNReal.toReal_nonneg,
-      ENNReal.ofReal_toReal hω.ne]
-    exact le_iSup (fun i ↦ ENNReal.ofReal |V i ω|) i
-  exact (memLp_one_iff_integrable.2 hGiR).uniformIntegrable_of_enorm_le
-    le_rfl ENNReal.one_ne_top hV hle
+  apply uniformIntegrable_of_lintegral_iSup_enorm_rpow_lt_top le_rfl ENNReal.one_ne_top hV
+  simpa only [ENNReal.toReal_one, ENNReal.rpow_one, Real.enorm_eq_ofReal_abs] using hGi
 
 /-- A common polynomial-growth bound along positive geometric Brownian motion gives uniform
 `L²` integrability at any countable family of bounded random times. Negative growth exponents
@@ -124,8 +115,6 @@ theorem uniformIntegrable_polynomialGrowth_geometricBrownianMotion {ι : Type*} 
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   -- The countable supremum is measurable even for raw versions of the driving process.
   let G : Ω → ℝ≥0∞ := fun ω ↦ ⨆ i, ENNReal.ofReal (V i ω ^ 2)
-  have hG : AEMeasurable G P := AEMeasurable.iSup fun i ↦
-    ((hV i).pow 2).aemeasurable.ennreal_ofReal
   have hmax := hW.lintegral_iSup_sq_price_geometricBrownianMotion_lt_top
     (C := fun x _ ↦ |A| * (1 + x ^ q)) hcont hs μ σ q
     (fun x hx _ _ ↦ by rw [abs_of_nonneg (by positivity)])
@@ -142,26 +131,9 @@ theorem uniformIntegrable_polynomialGrowth_geometricBrownianMotion {ι : Type*} 
     exact (ENNReal.ofReal_le_ofReal hsq).trans
       (le_iSup₂ (f := fun t _ ↦ ENNReal.ofReal
         ((|A| * (1 + geometricBrownianMotion s μ σ W t ω ^ q)) ^ 2)) (τ i ω) (ht i))
-  -- The square root of this supremum is one common L² dominating random variable.
-  let D : Ω → ℝ := fun ω ↦ √((G ω).toReal)
-  have hD : AEStronglyMeasurable D P := hG.ennreal_toReal.sqrt.aestronglyMeasurable
-  have hDsquare : (fun ω ↦ D ω ^ 2) = fun ω ↦ (G ω).toReal := by
-    ext ω
-    exact sq_sqrt ENNReal.toReal_nonneg
-  have hDmem : MemLp D 2 P := (memLp_two_iff_integrable_sq hD).2 <| by
-    rw [hDsquare]
-    exact integrable_toReal_of_lintegral_ne_top hG hGi.ne
-  have hle (i : ι) : ∀ᵐ ω ∂P, ‖V i ω‖ₑ ≤ ‖D ω‖ₑ := by
-    filter_upwards [ae_lt_top' hG hGi.ne] with ω hω
-    have hi : ENNReal.ofReal (V i ω ^ 2) ≤ G ω :=
-      le_iSup (fun j ↦ ENNReal.ofReal (V j ω ^ 2)) i
-    have hsq : V i ω ^ 2 ≤ (G ω).toReal := by
-      exact (ENNReal.ofReal_le_iff_le_toReal hω.ne).1 hi
-    have hroot : |V i ω| ≤ D ω := abs_le_sqrt hsq
-    have hDpos : 0 ≤ D ω := sqrt_nonneg _
-    simpa only [Real.enorm_eq_ofReal_abs, abs_of_nonneg hDpos] using
-      ENNReal.ofReal_le_ofReal hroot
-  exact hDmem.uniformIntegrable_of_enorm_le (by norm_num) (by norm_num) hV hle
+  apply uniformIntegrable_of_lintegral_iSup_enorm_rpow_lt_top (by norm_num) (by norm_num) hV
+  simpa only [ENNReal.toReal_ofNat, ENNReal.rpow_two, Real.enorm_eq_ofReal_abs,
+    ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs] using hGi
 
 /-- A polynomial-growth price with a continuous terminal extension converges in mean square
 along bounded random times tending almost surely to maturity. Continuity is needed only at the

@@ -32,6 +32,8 @@ convergent sequence of their finite `Lᵖ` norms is bounded, and this bound upgr
 
 * `MeasureTheory.MemLp.uniformIntegrable_of_enorm_le` — a family dominated almost everywhere
   in norm by one `Lᵖ` function is uniformly integrable, with a uniform `Lᵖ` bound;
+* `TauCeti.uniformIntegrable_of_lintegral_iSup_enorm_rpow_lt_top` — a countable family with
+  integrable supremum of its `p`-th powers of norms is uniformly integrable in `Lᵖ`;
 * `TauCeti.memLp_dist_of_memLp_dist` — two maps whose distances to a common reference map have
   finite `p`-th moment have a distance with finite `p`-th moment;
 * `TauCeti.eLpNorm_dist_le_eLpNorm_dist_add`, `MeasureTheory.UnifIntegrable.dist_of_memLp_dist`
@@ -59,18 +61,51 @@ open scoped ENNReal NNReal
 
 /-- A family dominated almost everywhere in norm by one `Lᵖ` function is uniformly integrable
 in `Lᵖ`, including a uniform bound on its `Lᵖ` norms, for `1 ≤ p < ∞`. -/
-theorem MeasureTheory.MemLp.uniformIntegrable_of_enorm_le {α β ι : Type*}
-    [MeasurableSpace α] [NormedAddCommGroup β] {μ : Measure α} {p : ℝ≥0∞}
-    {D : α → β} {V : ι → α → β} (hD : MemLp D p μ) (hp : 1 ≤ p) (hp_top : p ≠ ∞)
+theorem MeasureTheory.MemLp.uniformIntegrable_of_enorm_le {α β γ ι : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup β] [NormedAddCommGroup γ]
+    {μ : Measure α} {p : ℝ≥0∞} {D : α → γ} {V : ι → α → β}
+    (hD : MemLp D p μ) (hp : 1 ≤ p) (hp_top : p ≠ ∞)
     (hV : ∀ i, AEStronglyMeasurable (V i) μ)
     (hle : ∀ i, ∀ᵐ x ∂μ, ‖V i x‖ₑ ≤ ‖D x‖ₑ) : UniformIntegrable V p μ := by
   have hUI : UniformIntegrable (fun _ : ι ↦ D) p μ :=
     uniformIntegrable_const hp hp_top hD
-  refine ⟨hUI.1.ae_mono hV hle, ?_⟩
-  obtain ⟨B, hB⟩ := hUI.2
-  exact ⟨B, fun i ↦ (eLpNorm_mono_enorm_ae (hV i) (hle i)).trans (hB i)⟩
+  constructor
+  · refine unifIntegrable_iff.2 fun ε hε ↦ ?_
+    obtain ⟨δ, hδ, hbound⟩ := unifIntegrable_iff.1 hUI.1 ε hε
+    refine ⟨δ, hδ, fun i s hs ↦ ?_⟩
+    exact (eLpNorm_mono_enorm_ae (hV i).restrict
+      ((hle i).filter_mono ae_restrict_le)).trans (hbound i s hs)
+  · obtain ⟨B, hB⟩ := hUI.2
+    exact ⟨B, fun i ↦ (eLpNorm_mono_enorm_ae (hV i) (hle i)).trans (hB i)⟩
 
 namespace TauCeti
+
+/-- A countable family is uniformly integrable in `Lᵖ`, with a uniform `Lᵖ` bound, if the
+supremum of the `p`-th powers of its norms has finite integral, for `1 ≤ p < ∞`.
+The measure need not be finite. -/
+theorem uniformIntegrable_of_lintegral_iSup_enorm_rpow_lt_top {α β ι : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup β] [Countable ι] {μ : Measure α} {p : ℝ≥0∞}
+    {V : ι → α → β} (hp : 1 ≤ p) (hp_top : p ≠ ∞)
+    (hV : ∀ i, AEStronglyMeasurable (V i) μ)
+    (hfin : ∫⁻ x, ⨆ i, ‖V i x‖ₑ ^ p.toReal ∂μ < ∞) : UniformIntegrable V p μ := by
+  have hp_zero : p ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hp)
+  have hp_pos : 0 < p.toReal := ENNReal.toReal_pos hp_zero hp_top
+  let G : α → ℝ≥0∞ := fun x ↦ ⨆ i, ‖V i x‖ₑ
+  have hG : AEMeasurable G μ := AEMeasurable.iSup fun i ↦ (hV i).enorm
+  have hGi : ∫⁻ x, G x ^ p.toReal ∂μ < ∞ := by
+    simpa only [G, ← ENNReal.iSup_rpow_of_pos hp_pos] using hfin
+  have hfinite : ∀ᵐ x ∂μ, G x ≠ ∞ := by
+    filter_upwards [ae_lt_top' (hG.pow_const _) hGi.ne] with x hx
+    exact ((ENNReal.rpow_lt_top_iff_of_pos hp_pos).1 hx).ne
+  have hD : MemLp (fun x ↦ (G x).toReal) p μ := by
+    apply (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp_zero hp_top
+      hG.ennreal_toReal.aestronglyMeasurable).2
+    exact lt_of_eq_of_lt (lintegral_congr_ae <| hfinite.mono fun x hx ↦ by
+      simp only [Real.enorm_toReal hx]) hGi
+  exact hD.uniformIntegrable_of_enorm_le hp hp_top hV fun i ↦
+    hfinite.mono fun x hx ↦ by
+      rw [Real.enorm_toReal hx]
+      exact le_iSup (fun j ↦ ‖V j x‖ₑ) i
 
 variable {X Y : Type*} [PseudoMetricSpace Y]
 
