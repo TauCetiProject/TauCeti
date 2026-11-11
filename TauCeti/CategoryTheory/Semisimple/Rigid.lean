@@ -247,17 +247,13 @@ theorem exists_fusionCoeff_pos_right (S U : SimpleClasses C) : ∃ T, 0 < fusion
   refine ⟨T, ?_⟩
   obtain ⟨f, hf⟩ := (simpleMultiplicities_apply_classOf_ne_zero_iff _ T.repr).1
     (by simpa [SimpleClasses.classOf_repr] using hT)
-  have := isSplitMono_of_nonzero_from_simple hf
-  have hr : retraction f ≠ 0 := fun h ↦ CategoryTheory.id_ne_zero T.repr (by
-    rw [← IsSplitMono.id f, h, comp_zero])
+  obtain ⟨r, hr⟩ := exists_nonzero_from_simple_iff_exists_nonzero_to_simple.1 ⟨f, hf⟩
   obtain ⟨g, hg⟩ : ∃ g : U.repr ⟶ S.repr ⊗ T.repr, g ≠ 0 :=
-    ⟨tensorLeftHomLinearEquiv k U.repr S.repr S.reprᘁ T.repr (retraction f),
+    ⟨tensorLeftHomLinearEquiv k U.repr S.repr S.reprᘁ T.repr r,
       (LinearEquiv.map_ne_zero_iff _).2 hr⟩
-  have := isSplitMono_of_nonzero_from_simple hg
-  have hq : retraction g ≠ 0 := fun h ↦ CategoryTheory.id_ne_zero U.repr (by
-    rw [← IsSplitMono.id g, h, comp_zero])
+  obtain ⟨q, hq⟩ := exists_nonzero_from_simple_iff_exists_nonzero_to_simple.1 ⟨g, hg⟩
   rw [fusionCoeff_def]
-  exact Module.finrank_pos_iff.2 ⟨⟨_, 0, hq⟩⟩
+  exact Module.finrank_pos_iff.2 ⟨⟨q, 0, hq⟩⟩
 
 omit [IsAlgClosed k] in
 /-- **Transitivity** of the fusion rules: for simple classes `S` and `U` there is a simple class
