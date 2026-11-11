@@ -169,7 +169,7 @@ private theorem CoordinatePrimitive.reparam {d : Coordinate} {P : ℂ → ℝ}
     apply hb.mono
     intro t ht
     exact mem_iUnion₂.mpr ⟨θ t, ht, by simp⟩
-  obtain ⟨Φ, hΦ, heΦ⟩ := hθ.exists_continuous_eqOn_Icc zero_le_one
+  obtain ⟨Φ, hΦ, heΦ⟩ := hθ.exists_continuous_eqOn_Icc
   refine ⟨F ∘ Φ, ?_, ?_⟩
   · refine ⟨?_, ?_, u ∪ θ ⁻¹' T, hu.union hpre, ?_⟩
     · exact hcF.comp hΦ

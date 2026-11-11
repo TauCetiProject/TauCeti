@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
@@ -30,6 +31,8 @@ homology of manifolds.
   `StarConvex.coe_complSphereHomotopyEquiv_symm_apply`).
 * `StarConvex.complRadialHomotopy`: the straight-line deformation from the radial projection to
   the identity of `Kᶜ`.
+* `StarConvex.ofHom_complSphereHomotopyEquiv_comp_snd`: the sphere inclusion into `Kᶜ`, followed
+  by the subspace map of the pair map `(E, Kᶜ) ⟶ (E, {p}ᶜ)`, is the sphere inclusion into `{p}ᶜ`.
 
 ## References
 
@@ -46,7 +49,7 @@ public section
 
 noncomputable section
 
-open Metric Set unitInterval
+open CategoryTheory Metric Set unitInterval
 
 namespace StarConvex
 
@@ -155,5 +158,22 @@ theorem coe_complSphereHomotopyEquiv_symm_apply (hK : StarConvex ℝ p K) (hp : 
     ((hK.complSphereHomotopyEquiv hp hKr).symm z : E) =
       p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
   coe_complRadialProjection_apply hp (pos_of_mem_ball (hKr hp)) z
+
+/-- The sphere inclusion `sphere p r → E ∖ K` of `StarConvex.complSphereHomotopyEquiv`, followed by
+the inclusion `E ∖ K ⊆ E ∖ {p}`, is the sphere inclusion `sphere p r → E ∖ {p}`. This identifies
+the subspace map of `(E, E ∖ K) ⟶ (E, E ∖ {p})` up to two homotopy equivalences. -/
+theorem ofHom_complSphereHomotopyEquiv_comp_snd (hK : StarConvex ℝ p K) (hp : p ∈ K)
+    (hKr : K ⊆ ball p r) :
+    (TopCat.ofHom (hK.complSphereHomotopyEquiv hp hKr).toFun :
+        TopCat.of (sphere p r) ⟶ (TopPair.ofSubset (Kᶜ : Set (TopCat.of E))).snd) ≫
+      TopPair.Hom.snd (TopPair.ofSubsetMap (𝟙 (TopCat.of E)) (B := Kᶜ) (B' := {p}ᶜ)
+        (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hp))) =
+      TopCat.ofHom ((starConvex_singleton p).complSphereHomotopyEquiv rfl
+        (Set.singleton_subset_iff.2 (hKr hp))).toFun := by
+  ext z
+  exact Subtype.ext <| (TopPair.ofSubsetMap_snd_apply _ _ _).trans <|
+    (hK.coe_complSphereHomotopyEquiv_apply hp hKr z).trans
+      ((starConvex_singleton p).coe_complSphereHomotopyEquiv_apply rfl
+        (Set.singleton_subset_iff.2 (hKr hp)) z).symm
 
 end StarConvex

@@ -68,10 +68,6 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
 * `RootPairing.finite_aut` proves that the automorphism group of a finite root system is
   finite, and `RootPairing.finite_subgroup_aut` deduces the same for every subgroup of it.
 * `RootPairing.finite_weylGroup` is the resulting finiteness theorem for the Weyl group.
-
-## References
-
-* [Root systems roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/RootSystems/README.md)
 -/
 
 public section
