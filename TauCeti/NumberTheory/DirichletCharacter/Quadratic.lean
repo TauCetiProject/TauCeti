@@ -21,9 +21,10 @@ different levels, taken at their common level, is quadratic.
 
 At a prime level `p`, a nonprincipal quadratic character takes the value `-1` at some unit, which
 is then a nonsquare; since the product of two nonsquares is a square, it takes the value `-1` at
-every nonsquare, and so it is the Legendre character `quadraticChar (ZMod p)`. With values in a
-nontrivial ring of characteristic other than `2`, the Legendre character is nonprincipal, so its
-lift to any nonzero multiple of `p` has conductor `p`.
+every nonsquare, and so it is the Legendre character `quadraticChar (ZMod p)`. For odd `p`, with
+values in a nontrivial ring of characteristic other than `2`, the Legendre character is
+nonprincipal, so its lift to any nonzero multiple of `p` has conductor `p`. (At `p = 2` the
+Legendre character is principal and has conductor `1`.)
 
 A complex Dirichlet character whose values are all real is quadratic, since its values at units
 have absolute value one.
@@ -38,9 +39,9 @@ have absolute value one.
   quadratic.
 * `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_quadraticChar`: at a prime level, the quadratic
   characters are the principal one and the Legendre character.
-* `DirichletCharacter.conductor_changeLevel_quadraticChar`: with values in a nontrivial ring of
-  characteristic other than `2`, the Legendre character lifted to a nonzero multiple of `p` has
-  conductor `p`.
+* `DirichletCharacter.conductor_changeLevel_quadraticChar`: for odd `p`, with values in a
+  nontrivial ring of characteristic other than `2`, the Legendre character lifted to a nonzero
+  multiple of `p` has conductor `p`.
 * `DirichletCharacter.isQuadratic_of_forall_im_eq_zero`: a complex Dirichlet character with real
   values is quadratic.
 
@@ -130,8 +131,8 @@ theorem isQuadratic_iff_eq_one_or_eq_quadraticChar (ψ : DirichletCharacter R p)
     · exact MulChar.isQuadratic_one
     · exact quadraticChar_isQuadratic _ |>.comp _
 
-/-- The Legendre character with values in a nontrivial ring `R` of characteristic other than `2`
-is not principal. -/
+/-- For an odd prime `p`, the Legendre character with values in a nontrivial ring `R` of
+characteristic other than `2` is not principal. -/
 theorem quadraticChar_ringHomComp_ne_one [Nontrivial R] (hR : ringChar R ≠ 2) (hp2 : p ≠ 2) :
     (quadraticChar (ZMod p)).ringHomComp (Int.castRingHom R) ≠ 1 := by
   obtain ⟨a, ha⟩ := quadraticChar_exists_neg_one' (F := ZMod p) (by rwa [ZMod.ringChar_zmod_n])
@@ -139,8 +140,8 @@ theorem quadraticChar_ringHomComp_ne_one [Nontrivial R] (hR : ringChar R ≠ 2) 
   rw [MulChar.ringHomComp_apply, ha, map_neg, map_one]
   exact mt neg_one_eq_one_iff.mp hR
 
-/-- The Legendre character with values in a nontrivial ring `R` of characteristic other than `2`,
-lifted to any nonzero multiple `N` of `p`, has conductor `p`. -/
+/-- For an odd prime `p`, the Legendre character with values in a nontrivial ring `R` of
+characteristic other than `2`, lifted to any nonzero multiple `N` of `p`, has conductor `p`. -/
 theorem conductor_changeLevel_quadraticChar [Nontrivial R] (hR : ringChar R ≠ 2) (hp2 : p ≠ 2)
     {N : ℕ} [NeZero N] (h : p ∣ N) :
     (changeLevel h ((quadraticChar (ZMod p)).ringHomComp (Int.castRingHom R))).conductor = p := by

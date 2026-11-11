@@ -42,8 +42,9 @@ with zero, and the classification for values in any commutative ring.
 
 The prime-level classification `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_quadraticChar`
 and the conductor `p` of the lifted Legendre character,
-`DirichletCharacter.conductor_changeLevel_quadraticChar` (for a nontrivial coefficient ring of
-characteristic other than `2`), are in `TauCeti.NumberTheory.DirichletCharacter.Quadratic`.
+`DirichletCharacter.conductor_changeLevel_quadraticChar` (for odd `p` and a nontrivial
+coefficient ring of characteristic other than `2`), are in
+`TauCeti.NumberTheory.DirichletCharacter.Quadratic`.
 
 ## References
 
