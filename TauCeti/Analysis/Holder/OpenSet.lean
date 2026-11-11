@@ -46,7 +46,7 @@ which gives completeness.
 * `TauCeti.CkHolderSpaceOn k α U F`: maps `U → F` with bounded derivatives through order `k`
   and `α`-Hölder `k`-th derivative on the open set `U`.
 * `TauCeti.CkHolderSpaceOn.iteratedFDeriv`: the bounded continuous `i`-th derivative field on
-  `U`, for `i ≤ k`; `TauCeti.CkHolderSpaceOn.iteratedFDeriv_apply` identifies it with Mathlib's
+  `U`, for `i ≤ k`; `TauCeti.CkHolderSpaceOn.iteratedFDeriv_eq` identifies it with Mathlib's
   `iteratedFDeriv`.
 * `TauCeti.CkHolderSpaceOn.contDiffOn`, `TauCeti.CkHolderSpaceOn.holderOnWith_iteratedFDeriv`:
   the regularity of an element; `TauCeti.CkHolderSpaceOn.ofContDiffOn` is the converse
@@ -57,7 +57,7 @@ which gives completeness.
 * `TauCeti.CkHolderSpaceOn.restrictL`: restriction to a smaller open set, of norm at most one.
 * `TauCeti.CkHolderSpaceOn.inclusionL`: the inclusion `C^{k,α}(U) → C^{k,β}(U)` for `β ≤ α` on a
   bounded open set.
-* `TauCeti.CkHolderSpace.restrictOnL`: restriction of a bounded `C^{k,α}` map on the whole space
+* `TauCeti.CkHolderSpace.restrictL`: restriction of a bounded `C^{k,α}` map on the whole space
   to `U`, of norm at most one.
 
 ## References
@@ -103,20 +103,11 @@ iterated Fréchet derivatives through order `k` bounded on `U` and `k`-th iterat
 -- The module system requires exposure while the declarations below construct and project through
 -- this graph alias. The final `irreducible` attribute restores the abstraction boundary.
 @[expose] def CkHolderSpaceOn : Type _ :=
-  let field (i : Fin (k + 1)) :
-      WithLp 1 ((PiLp 1 fun i : Fin k ↦ U →ᵇ (E [×i]→L[ℝ] F)) ×
-        HolderSpace α U (E [×k]→L[ℝ] F)) →L[ℝ] (U →ᵇ (E [×i]→L[ℝ] F)) :=
-    Fin.lastCases (motive := fun i : Fin (k + 1) ↦ WithLp 1
-        ((PiLp 1 fun i : Fin k ↦ U →ᵇ (E [×i]→L[ℝ] F)) ×
-          HolderSpace α U (E [×k]→L[ℝ] F)) →L[ℝ] (U →ᵇ (E [×i]→L[ℝ] F)))
-      (HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
-      (fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)) i
-  let graph : Submodule ℝ (WithLp 1 ((PiLp 1 fun i : Fin k ↦ U →ᵇ (E [×i]→L[ℝ] F)) ×
-      HolderSpace α U (E [×k]→L[ℝ] F))) :=
+  let graph : Submodule ℝ (CkHolderJet k α U E F) :=
     { carrier := {J | ∀ (j : Fin k) (x : U),
-        HasFDerivAt (Function.extend Subtype.val (field j.castSucc J : U → E [×j]→L[ℝ] F) 0)
-          (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F
-            (field j.succ J x)) x}
+        HasFDerivAt
+          (Function.extend Subtype.val (CkHolderJet.fieldL j.castSucc J : U → E [×j]→L[ℝ] F) 0)
+          (CkHolderJet.curryLeftL E F j (CkHolderJet.fieldL j.succ J x)) x}
       zero_mem' := fun j x ↦ by
         simp only [map_zero, FunLike.coe_zero, Function.extend_zero]
         exact hasFDerivAt_const (x := (x : E)) (c := (0 : E [×j]→L[ℝ] F))
@@ -146,9 +137,7 @@ private def IsJetGraph (J : CkHolderJet k α U E F) : Prop :=
       (curryLeftL E F j (fieldL j.succ J x)) x
 
 /-- Elements are the jets satisfying the derivative identities. This is the identity map: the
-carrier of `CkHolderSpaceOn` states the identities through its local `field`, which is
-`CkHolderJet.fieldL`, and through `continuousMultilinearCurryLeftEquiv`, whose underlying
-continuous linear map is `CkHolderJet.curryLeftL`. -/
+carrier of `CkHolderSpaceOn` is the set of jets satisfying `IsJetGraph`. -/
 private def equivSubtype : CkHolderSpaceOn k α U F ≃ {J : CkHolderJet k α U E F // IsJetGraph J} :=
   Equiv.refl _
 
@@ -193,7 +182,7 @@ private theorem toJetL_apply (f : CkHolderSpaceOn k α U F) : toJetL f = toJet f
   rfl
 
 /-- The bounded continuous `i`-th derivative field on `U` of a `C^{k,α}` map on `U`, for
-`i ≤ k`. It agrees with Mathlib's `iteratedFDeriv` by `CkHolderSpaceOn.iteratedFDeriv_apply`. -/
+`i ≤ k`. It agrees with Mathlib's `iteratedFDeriv` by `CkHolderSpaceOn.iteratedFDeriv_eq`. -/
 def iteratedFDeriv (f : CkHolderSpaceOn k α U F) (i : Fin (k + 1)) : U →ᵇ (E [×i]→L[ℝ] F) :=
   fieldL i (toJet f)
 
@@ -308,16 +297,16 @@ theorem indicator_coe (f : CkHolderSpaceOn k α U F) : (U : Set E).indicator ⇑
 
 /-- The recorded derivative fields are the iterated Fréchet derivatives of the underlying
 function on `U`. -/
-theorem iteratedFDeriv_apply (f : CkHolderSpaceOn k α U F) (i : Fin (k + 1)) (x : U) :
-    f.iteratedFDeriv i x = _root_.iteratedFDeriv ℝ i f x :=
-  (iteratedFDeriv_toFun f i x).symm
+theorem iteratedFDeriv_eq (f : CkHolderSpaceOn k α U F) (i : Fin (k + 1)) (x : U) :
+    _root_.iteratedFDeriv ℝ i f x = f.iteratedFDeriv i x :=
+  iteratedFDeriv_toFun f i x
 
 /-- The `i`-th derivative field is Mathlib's `iteratedFDeriv` of the underlying function,
 restricted to `U`. -/
 @[simp]
 theorem coe_iteratedFDeriv (f : CkHolderSpaceOn k α U F) (i : Fin (k + 1)) :
     ⇑(f.iteratedFDeriv i) = (U : Set E).domRestrict (_root_.iteratedFDeriv ℝ i f) :=
-  funext fun x ↦ iteratedFDeriv_apply f i x
+  funext fun x ↦ (iteratedFDeriv_eq f i x).symm
 
 /-- A `C^{k,α}` map on `U` is `k` times continuously differentiable on `U`. -/
 theorem contDiffOn (f : CkHolderSpaceOn k α U F) : ContDiffOn ℝ k f U :=
@@ -356,6 +345,14 @@ theorem norm_eq (f : CkHolderSpaceOn k α U F) :
   simp only [iteratedFDeriv, fieldL_castSucc, fieldL_last, iteratedFDerivHolder,
     WithLp.ofLp_fst, WithLp.ofLp_snd]
 
+/-- The `C^{k,α}` norm on `U` is the sum of the supremum norms on `U` of the derivative fields
+below order `k` and the norm of the Hölder field. -/
+private theorem norm_eq_sum_add_norm_iteratedFDerivHolder (f : CkHolderSpaceOn k α U F) :
+    ‖f‖ = ∑ j : Fin k, ‖f.iteratedFDeriv j.castSucc‖ + ‖f.iteratedFDerivHolder‖ := by
+  rw [← norm_toJet, WithLp.prod_norm_eq_of_L1, PiLp.norm_eq_of_L1]
+  simp only [iteratedFDeriv, fieldL_castSucc, iteratedFDerivHolder, WithLp.ofLp_fst,
+    WithLp.ofLp_snd]
+
 /-- The supremum norm on `U` of each iterated derivative field is controlled by the `C^{k,α}`
 norm. -/
 theorem norm_iteratedFDeriv_le (f : CkHolderSpaceOn k α U F) (i : Fin (k + 1)) :
@@ -369,7 +366,7 @@ norm. -/
 theorem norm_iteratedFDeriv_apply_le (f : CkHolderSpaceOn k α U F) {i : ℕ} (hi : i ≤ k)
     {x : E} (hx : x ∈ U) : ‖_root_.iteratedFDeriv ℝ i f x‖ ≤ ‖f‖ := by
   calc ‖_root_.iteratedFDeriv ℝ i f x‖
-      = ‖f.iteratedFDeriv ⟨i, Nat.lt_succ_of_le hi⟩ ⟨x, hx⟩‖ := by rw [iteratedFDeriv_apply]
+      = ‖f.iteratedFDeriv ⟨i, Nat.lt_succ_of_le hi⟩ ⟨x, hx⟩‖ := by rw [← iteratedFDeriv_eq]
     _ ≤ ‖f‖ := ((f.iteratedFDeriv _).norm_coe_le_norm _).trans (norm_iteratedFDeriv_le f _)
 
 /-- The values of a `C^{k,α}` map on `U` are controlled by its `C^{k,α}` norm. -/
@@ -591,38 +588,42 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderSpaceOn k 
 
 attribute [irreducible] instNormedAddCommGroup instNormedSpace _root_.TauCeti.CkHolderSpaceOn
 
+/-- Maps agreeing on an open set have the same iterated derivatives there. -/
+private theorem iteratedFDeriv_eq_of_eqOn {s : Set E} (hs : IsOpen s) {f g : E → F}
+    (hfg : EqOn f g s) (i : ℕ) {x : E} (hx : x ∈ s) :
+    _root_.iteratedFDeriv ℝ i f x = _root_.iteratedFDeriv ℝ i g x :=
+  ((eventuallyEq_of_mem (hs.mem_nhds hx) hfg).iteratedFDeriv ℝ i).eq_of_nhds
+
 /-- The derivative fields of a map built by `CkHolderSpaceOn.ofContDiffOn` are the iterated
 derivatives of the given function on `U`. -/
-@[simp]
 theorem iteratedFDeriv_ofContDiffOn_apply (f : E → F) (hf : ContDiffOn ℝ k f U)
     (hbdd : ∀ i ≤ k, ∃ C, ∀ x ∈ U, ‖_root_.iteratedFDeriv ℝ i f x‖ ≤ C)
     (hholder : ∃ C, HolderOnWith C α (_root_.iteratedFDeriv ℝ k f) U) (i : Fin (k + 1))
     (x : U) :
     (ofContDiffOn f hf hbdd hholder).iteratedFDeriv i x = _root_.iteratedFDeriv ℝ i f x := by
-  rw [iteratedFDeriv_apply, coe_ofContDiffOn]
-  exact ((eventuallyEq_of_mem (U.isOpen.mem_nhds x.2) fun y hy ↦
-    indicator_of_mem hy f).iteratedFDeriv ℝ i).eq_of_nhds
+  rw [← iteratedFDeriv_eq, coe_ofContDiffOn]
+  exact iteratedFDeriv_eq_of_eqOn U.isOpen (fun y hy ↦ indicator_of_mem hy f) i x.2
+
+/-- The norm of a `C^{k,α}` map `g` on `V` that agrees on `V` with a function `f` is at most
+`∑ i, C i + H`, where the `C i ≥ 0` bound the iterated derivatives of `f` through order `k` on `V`
+and `H` is an `α`-Hölder constant on `V` of its `k`-th derivative. -/
+private theorem norm_le_of_eqOn {V : Opens E} {g : CkHolderSpaceOn k α V F} {f : E → F}
+    (hgf : EqOn g f V) {C : Fin (k + 1) → ℝ} (hC0 : ∀ i, 0 ≤ C i)
+    (hC : ∀ (i : Fin (k + 1)), ∀ x ∈ V, ‖_root_.iteratedFDeriv ℝ i f x‖ ≤ C i) {H : ℝ≥0}
+    (hH : HolderOnWith H α (_root_.iteratedFDeriv ℝ k f) V) : ‖g‖ ≤ ∑ i, C i + H := by
+  rw [norm_eq]
+  gcongr with i
+  · refine (BoundedContinuousFunction.norm_le (hC0 i)).2 fun x ↦ ?_
+    rw [← iteratedFDeriv_eq, iteratedFDeriv_eq_of_eqOn V.isOpen hgf _ x.2]
+    exact hC i x x.2
+  · rw [show (V : Set E).domRestrict (_root_.iteratedFDeriv ℝ k g) =
+        (V : Set E).domRestrict (_root_.iteratedFDeriv ℝ k f) from
+          funext fun x ↦ iteratedFDeriv_eq_of_eqOn V.isOpen hgf k x.2]
+    exact_mod_cast (HolderWith.restrict_iff.mpr hH).nnholderNorm_le
 
 section Restrict
 
 variable {V : Opens E}
-
-/-- A `C^{k,α}` map on a smaller open set `V` that agrees on `V` with a `C^{k,α}` map on `U`
-has norm at most that of the latter. -/
-private theorem norm_le_of_eqOn (h : V ≤ U) {g : CkHolderSpaceOn k α V F}
-    {f : CkHolderSpaceOn k α U F} (hgf : EqOn g f V) : ‖g‖ ≤ ‖f‖ := by
-  have hderiv (i : ℕ) (x : V) :
-      _root_.iteratedFDeriv ℝ i g x = _root_.iteratedFDeriv ℝ i f x :=
-    ((eventuallyEq_of_mem (V.isOpen.mem_nhds x.2) hgf).iteratedFDeriv ℝ i).eq_of_nhds
-  rw [norm_eq, norm_eq f]
-  gcongr with i
-  · refine (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun x ↦ ?_
-    rw [iteratedFDeriv_apply, hderiv, ← iteratedFDeriv_apply f i ⟨x, h x.2⟩]
-    exact (f.iteratedFDeriv i).norm_coe_le_norm _
-  · rw [show (V : Set E).domRestrict (_root_.iteratedFDeriv ℝ k g) =
-        (V : Set E).domRestrict (_root_.iteratedFDeriv ℝ k f) from funext (hderiv k)]
-    exact_mod_cast (HolderWith.restrict_iff.mpr
-      (f.holderOnWith_iteratedFDeriv.mono (SetLike.coe_subset_coe.2 h))).nnholderNorm_le
 
 /-- Restriction of a `C^{k,α}` map on `U` to a smaller open set `V`, as a continuous linear map
 of norm at most one. -/
@@ -634,8 +635,12 @@ def restrictL (h : V ≤ U) : CkHolderSpaceOn k α U F →L[ℝ] CkHolderSpaceOn
       map_add' f g := ext fun x hx ↦ by simp [indicator_of_mem hx]
       map_smul' c f := ext fun x hx ↦ by simp [indicator_of_mem hx] }
     1 fun f ↦ by
-      rw [one_mul]
-      exact norm_le_of_eqOn h fun x hx ↦ by simp [indicator_of_mem hx]
+      rw [one_mul, norm_eq f]
+      exact norm_le_of_eqOn (fun x hx ↦ by simp [indicator_of_mem hx])
+        (fun i ↦ norm_nonneg (f.iteratedFDeriv i))
+        (fun i x hx ↦ (congrArg norm (iteratedFDeriv_eq f i ⟨x, h hx⟩)).trans_le
+          ((f.iteratedFDeriv i).norm_coe_le_norm _))
+        (f.holderOnWith_iteratedFDeriv.mono (SetLike.coe_subset_coe.2 h))
 
 /-- The restriction of a `C^{k,α}` map on `U` to `V` agrees with it on `V` and vanishes off `V`. -/
 @[simp]
@@ -644,11 +649,10 @@ theorem coe_restrictL (h : V ≤ U) (f : CkHolderSpaceOn k α U F) :
   coe_ofContDiffOn _ _ _ _
 
 /-- The derivative fields of a restriction are the restrictions of the derivative fields. -/
-@[simp]
 theorem iteratedFDeriv_restrictL_apply (h : V ≤ U) (f : CkHolderSpaceOn k α U F)
     (i : Fin (k + 1)) (x : V) :
     (restrictL h f).iteratedFDeriv i x = f.iteratedFDeriv i ⟨x, h x.2⟩ :=
-  (iteratedFDeriv_ofContDiffOn_apply _ _ _ _ i x).trans (iteratedFDeriv_apply f i ⟨x, h x.2⟩).symm
+  (iteratedFDeriv_ofContDiffOn_apply _ _ _ _ i x).trans (iteratedFDeriv_eq f i ⟨x, h x.2⟩)
 
 /-- Restriction to a smaller open set has norm at most one. -/
 theorem norm_restrictL_le (h : V ≤ U) :
@@ -660,16 +664,6 @@ end Restrict
 section Inclusion
 
 variable {β : ℝ≥0} [BoundedSpace U]
-
-/-- The `β`-Hölder seminorm on a bounded open set `U` of the `k`-th derivative of a `C^{k,α}` map
-on `U` is at most its `α`-Hölder seminorm times `D^(α - β)`, for `D` the diameter of `U`. -/
-private theorem nnHolderNorm_iteratedFDeriv_le_of_le (hβα : β ≤ α)
-    (f : CkHolderSpaceOn k α U F) :
-    nnHolderNorm β ((U : Set E).domRestrict (_root_.iteratedFDeriv ℝ k f)) ≤
-      nnHolderNorm α ((U : Set E).domRestrict (_root_.iteratedFDeriv ℝ k f)) *
-        (Metric.diam (univ : Set U)).toNNReal ^ ((α : ℝ) - β) := by
-  simpa only [coe_iteratedFDerivHolder] using
-    HolderSpace.nnHolderNorm_le_of_le hβα f.iteratedFDerivHolder
 
 /-- **The inclusion of Hölder spaces of different exponents.** On a bounded open set `U`, a
 `C^{k,α}` map on `U` is `C^{k,β}` on `U` for every `β ≤ α`, and the inclusion is a bounded linear
@@ -687,24 +681,17 @@ def inclusionL (hβα : β ≤ α) : CkHolderSpaceOn k α U F →L[ℝ] CkHolder
           ‖g‖ ≤ max 1 (((Metric.diam (univ : Set U)).toNNReal : ℝ) ^ ((α : ℝ) - β)) * ‖f‖ := by
         have hfield (i : Fin (k + 1)) : g.iteratedFDeriv i = f.iteratedFDeriv i := by
           ext1 x
-          rw [iteratedFDeriv_apply, iteratedFDeriv_apply, hg]
-        have hD : (nnHolderNorm β ((U : Set E).domRestrict (_root_.iteratedFDeriv ℝ k f)) : ℝ) ≤
-            nnHolderNorm α ((U : Set E).domRestrict (_root_.iteratedFDeriv ℝ k f)) *
-              ((Metric.diam (univ : Set U)).toNNReal : ℝ) ^ ((α : ℝ) - β) := by
-          exact_mod_cast nnHolderNorm_iteratedFDeriv_le_of_le hβα f
-        have h₁ : (1 : ℝ) ≤ max 1 (((Metric.diam (univ : Set U)).toNNReal : ℝ) ^ ((α : ℝ) - β)) :=
-          le_max_left _ _
-        have h₂ : ((Metric.diam (univ : Set U)).toNNReal : ℝ) ^ ((α : ℝ) - β) ≤
-            max 1 (((Metric.diam (univ : Set U)).toNNReal : ℝ) ^ ((α : ℝ) - β)) :=
-          le_max_right _ _
-        have hH : (0 : ℝ) ≤
-            nnHolderNorm α ((U : Set E).domRestrict (_root_.iteratedFDeriv ℝ k f)) :=
-          NNReal.coe_nonneg _
-        have hS : 0 ≤ ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ :=
-          Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
-        rw [norm_eq, norm_eq f, hg]
+          rw [← iteratedFDeriv_eq, ← iteratedFDeriv_eq, hg]
+        have hH : g.iteratedFDerivHolder = HolderSpace.inclusionL hβα f.iteratedFDerivHolder :=
+          HolderSpace.ext fun x ↦ by
+            simp only [HolderSpace.inclusionL_apply, coe_iteratedFDerivHolder, hg]
+        rw [norm_eq_sum_add_norm_iteratedFDerivHolder,
+          norm_eq_sum_add_norm_iteratedFDerivHolder f, hH, mul_add]
         simp only [hfield]
-        nlinarith
+        gcongr ?_ + ?_
+        · exact le_mul_of_one_le_left (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
+            (le_max_left _ _)
+        · exact (HolderSpace.inclusionL hβα).le_of_opNorm_le (HolderSpace.norm_inclusionL_le hβα) _
       exact key _ (by rw [LinearMap.coe_mk, AddHom.coe_mk, coe_ofContDiffOn, indicator_coe])
 
 /-- The inclusion between exponents does not change the underlying function. -/
@@ -713,6 +700,13 @@ theorem coe_inclusionL (hβα : β ≤ α) (f : CkHolderSpaceOn k α U F) :
     ⇑(inclusionL hβα f) = ⇑f := by
   rw [inclusionL, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk,
     coe_ofContDiffOn, indicator_coe]
+
+/-- The inclusion between exponents does not change the derivative fields. -/
+@[simp]
+theorem iteratedFDeriv_inclusionL (hβα : β ≤ α) (f : CkHolderSpaceOn k α U F)
+    (i : Fin (k + 1)) : (inclusionL hβα f).iteratedFDeriv i = f.iteratedFDeriv i := by
+  ext1 x
+  rw [← iteratedFDeriv_eq, ← iteratedFDeriv_eq, coe_inclusionL]
 
 /-- The inclusion between exponents is bounded with norm at most `max 1 (D^(α - β))`, with `D`
 the diameter of `U`. -/
@@ -739,22 +733,12 @@ def restrictL : CkHolderSpace k α E F →L[ℝ] CkHolderSpaceOn k α U F :=
       map_add' f g := CkHolderSpaceOn.ext fun x hx ↦ by simp [indicator_of_mem hx]
       map_smul' c f := CkHolderSpaceOn.ext fun x hx ↦ by simp [indicator_of_mem hx] }
     1 fun f ↦ by
-      have key (g : CkHolderSpaceOn k α U F) (hg : EqOn g f U) : ‖g‖ ≤ ‖f‖ := by
-        have hderiv (i : ℕ) (x : U) :
-            _root_.iteratedFDeriv ℝ i g x = _root_.iteratedFDeriv ℝ i f x :=
-          ((eventuallyEq_of_mem (U.isOpen.mem_nhds x.2) hg).iteratedFDeriv ℝ i).eq_of_nhds
-        rw [CkHolderSpaceOn.norm_eq, norm_eq f]
-        gcongr with i
-        · refine (BoundedContinuousFunction.norm_le (norm_nonneg (f.iteratedFDeriv i))).2
-            fun x ↦ ?_
-          rw [CkHolderSpaceOn.iteratedFDeriv_apply, hderiv, iteratedFDeriv_eq]
-          exact (f.iteratedFDeriv i).norm_coe_le_norm _
-        · rw [show (U : Set E).domRestrict (_root_.iteratedFDeriv ℝ k g) =
-              (U : Set E).domRestrict (_root_.iteratedFDeriv ℝ k f) from funext (hderiv k)]
-          exact_mod_cast (HolderWith.restrict_iff.mpr
-            (f.memHolder_iteratedFDeriv.holderWith.holderOnWith U)).nnholderNorm_le
-      rw [one_mul]
-      exact key _ fun x hx ↦ by simp [indicator_of_mem hx]
+      rw [one_mul, norm_eq f]
+      exact CkHolderSpaceOn.norm_le_of_eqOn (fun x hx ↦ by simp [indicator_of_mem hx])
+        (fun i ↦ norm_nonneg (f.iteratedFDeriv i))
+        (fun i x _ ↦ (congrArg norm (iteratedFDeriv_eq f i x)).trans_le
+          ((f.iteratedFDeriv i).norm_coe_le_norm x))
+        (f.memHolder_iteratedFDeriv.holderWith.holderOnWith U)
 
 /-- The restriction to `U` of a bounded `C^{k,α}` map agrees with it on `U` and vanishes off
 `U`. -/
@@ -762,6 +746,12 @@ def restrictL : CkHolderSpace k α E F →L[ℝ] CkHolderSpaceOn k α U F :=
 theorem coe_restrictL (f : CkHolderSpace k α E F) :
     ⇑(restrictL U f) = (U : Set E).indicator f :=
   CkHolderSpaceOn.coe_ofContDiffOn _ _ _ _
+
+/-- The derivative fields of the restriction to `U` are the restrictions of the derivative
+fields. -/
+theorem iteratedFDeriv_restrictL_apply (f : CkHolderSpace k α E F) (i : Fin (k + 1)) (x : U) :
+    (restrictL U f).iteratedFDeriv i x = f.iteratedFDeriv i x :=
+  (CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn_apply _ _ _ _ i x).trans (iteratedFDeriv_eq f i x)
 
 /-- Restriction to an open set has norm at most one. -/
 theorem norm_restrictL_le : ‖restrictL (k := k) (α := α) (F := F) U‖ ≤ 1 :=

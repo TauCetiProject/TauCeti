@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.Jet
+public import TauCeti.Analysis.Holder.Jet.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Lp.ProdLp
@@ -97,20 +97,10 @@ bounded and whose `k`-th iterated derivative is globally `α`-Hölder. Its norm 
 -- The module system requires exposure while the declarations below construct and project through
 -- this graph alias. The final `irreducible` attribute restores the abstraction boundary.
 @[expose] def CkHolderSpace : Type _ :=
-  let field (i : Fin (k + 1)) :
-      WithLp 1 ((PiLp 1 fun i : Fin k ↦ E →ᵇ (E [×i]→L[ℝ] F)) ×
-        HolderSpace α E (E [×k]→L[ℝ] F)) →L[ℝ] (E →ᵇ (E [×i]→L[ℝ] F)) :=
-    Fin.lastCases (motive := fun i : Fin (k + 1) ↦ WithLp 1
-        ((PiLp 1 fun i : Fin k ↦ E →ᵇ (E [×i]→L[ℝ] F)) ×
-          HolderSpace α E (E [×k]→L[ℝ] F)) →L[ℝ] (E →ᵇ (E [×i]→L[ℝ] F)))
-      (HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
-      (fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)) i
-  let graph : Submodule ℝ (WithLp 1 ((PiLp 1 fun i : Fin k ↦ E →ᵇ (E [×i]→L[ℝ] F)) ×
-      HolderSpace α E (E [×k]→L[ℝ] F))) :=
+  let graph : Submodule ℝ (CkHolderJet k α E E F) :=
     { carrier := {J | ∀ (j : Fin k) (x : E),
-        HasFDerivAt (field j.castSucc J : E → E [×j]→L[ℝ] F)
-          (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F
-            (field j.succ J x)) x}
+        HasFDerivAt (CkHolderJet.fieldL j.castSucc J : E → E [×j]→L[ℝ] F)
+          (CkHolderJet.curryLeftL E F j (CkHolderJet.fieldL j.succ J x)) x}
       zero_mem' := fun j x ↦ by
         simp only [map_zero, FunLike.coe_zero, Pi.zero_apply]
         exact hasFDerivAt_const (x := x) (c := (0 : E [×j]→L[ℝ] F))
@@ -136,11 +126,9 @@ private def IsJetGraph (J : CkHolderJet k α E E F) : Prop :=
     (curryLeftL E F j (fieldL j.succ J x)) x
 
 /-- Elements are the jets satisfying the derivative identities. This is the identity map: the
-carrier of `CkHolderSpace` states the identities through its local `field`, which is
-`CkHolderJet.fieldL`, and through `continuousMultilinearCurryLeftEquiv`, whose underlying
-continuous linear map is `CkHolderJet.curryLeftL`. Besides this map, the carrier is unfolded only
-by `toJetL`, the two norm instances, `norm_toJet` and `instCompleteSpace`, which use that it is a
-submodule of the jet space. -/
+carrier of `CkHolderSpace` is the set of jets satisfying `IsJetGraph`. Besides this map, the
+carrier is unfolded only by `toJetL`, the two norm instances, `norm_toJet` and
+`instCompleteSpace`, which use that it is a submodule of the jet space. -/
 private def equivSubtype :
     CkHolderSpace k α E F ≃ {J : CkHolderJet k α E E F // IsJetGraph J} :=
   Equiv.refl _
