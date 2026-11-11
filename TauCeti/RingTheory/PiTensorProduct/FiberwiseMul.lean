@@ -145,20 +145,19 @@ theorem mulAlgHom_singleAlgHom [DecidableEq σ] (i : σ) (b : B) :
 /-- For a constant family, `PiTensorProduct.fiberwiseMul f` sends a pure tensor to the pure tensor
 of the products of its factors over the fibres of `f`. In particular, an index `j` outside the
 range of `f` receives the empty product `1`. -/
-theorem fiberwiseMul_tprod_eq_tprod_prod [Finite τ] (f : σ → τ) (x : σ → B) :
+theorem fiberwiseMul_tprod_eq_tprod_prod (f : σ → τ) (x : σ → B) :
     fiberwiseMul (R := R) (A := fun _ ↦ B) f (tprod R x) =
       tprod R fun j ↦ ∏ i with f i = j, x i := by
-  have := Fintype.ofFinite τ
-  rw [fiberwiseMul_tprod, tprod_eq_prod_singleAlgHom, ← Finset.prod_fiberwise Finset.univ f]
-  refine Finset.prod_congr rfl fun j _ ↦ ?_
-  rw [map_prod]
-  exact Finset.prod_congr rfl fun i hi ↦ by rw [(Finset.mem_filter.mp hi).2]
+  rw [fiberwiseMul_tprod]
+  simp only [singleAlgHom_apply, ← tprod_prod]
+  congr 1
+  funext j
+  simp [Finset.prod_apply, Finset.prod_filter, Pi.mulSingle_apply, eq_comm]
 
 /-- Along a bijection, `PiTensorProduct.fiberwiseMul` is the reindexing equivalence. -/
 theorem toLinearMap_fiberwiseMul_equiv (e : σ ≃ τ) :
     (fiberwiseMul (R := R) (A := fun _ ↦ B) e).toLinearMap =
       (reindex R (fun _ ↦ B) e).toLinearMap := by
-  have := Finite.of_equiv σ e
   refine ext <| MultilinearMap.ext fun x ↦ ?_
   simp only [LinearMap.compMultilinearMap_apply, AlgHom.toLinearMap_apply,
     LinearEquiv.coe_coe, reindex_tprod, fiberwiseMul_tprod_eq_tprod_prod]
@@ -170,27 +169,36 @@ theorem toLinearMap_fiberwiseMul_equiv (e : σ ≃ τ) :
 /-- `PiTensorProduct.fiberwiseMul` is natural in the index map: reindexing along bijections of the
 source and target carries multiplication along `f` to multiplication along `f'` when the square
 `eτ ∘ f = f' ∘ eσ` commutes. -/
-theorem reindex_fiberwiseMul {σ' τ' : Type*} [Fintype σ'] [Finite τ] [DecidableEq τ']
+theorem reindex_fiberwiseMul {σ' τ' : Type*} [Fintype σ'] [DecidableEq τ']
     (eσ : σ ≃ σ') (eτ : τ ≃ τ') {f : σ → τ} {f' : σ' → τ'}
     (h : eτ ∘ f = f' ∘ eσ) (x : ⨂[R] _ : σ, B) :
     reindex R (fun _ ↦ B) eτ (fiberwiseMul (R := R) (A := fun _ ↦ B) f x) =
       fiberwiseMul (A := fun _ ↦ B) f' (reindex R (fun _ ↦ B) eσ x) := by
-  classical
-  have := Fintype.ofFinite τ
-  simp only [← LinearEquiv.coe_coe, ← toLinearMap_fiberwiseMul_equiv, AlgHom.toLinearMap_apply]
-  rw [← AlgHom.comp_apply, fiberwiseMul_comp, ← AlgHom.comp_apply, fiberwiseMul_comp, h]
+  have key : (reindex R (fun _ ↦ B) eτ).toLinearMap ∘ₗ
+      (fiberwiseMul (R := R) (A := fun _ ↦ B) f).toLinearMap =
+      (fiberwiseMul (R := R) (A := fun _ ↦ B) f').toLinearMap ∘ₗ
+        (reindex R (fun _ ↦ B) eσ).toLinearMap := by
+    refine PiTensorProduct.ext (MultilinearMap.ext fun y ↦ ?_)
+    simp only [LinearMap.compMultilinearMap_apply, LinearMap.coe_comp, Function.comp_apply,
+      LinearEquiv.coe_coe, AlgHom.toLinearMap_apply, fiberwiseMul_tprod_eq_tprod_prod,
+      reindex_tprod]
+    congr 1
+    funext j
+    refine Finset.prod_equiv eσ (fun i ↦ ?_) fun i _ ↦ by simp
+    have := congr_fun h i
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Function.comp_apply] at this ⊢
+    rw [← this, Equiv.eq_symm_apply]
+  exact LinearMap.congr_fun key x
 
 /-- Multiplication along a disjoint union of index maps acts separately on its two tensor
 factors, through the native sum-indexed tensor equivalence. -/
-theorem fiberwiseMul_sum_map {σ' τ' : Type*} [Fintype σ'] [Finite τ] [Finite τ']
+theorem fiberwiseMul_sum_map {σ' τ' : Type*} [Fintype σ']
     [DecidableEq τ'] (f : σ → τ) (g : σ' → τ')
     (x : ⨂[R] _ : σ, B) (y : ⨂[R] _ : σ', B) :
     fiberwiseMul (R := R) (A := fun _ ↦ B) (Sum.map f g)
       (tmulEquiv R B (x ⊗ₜ y)) =
       tmulEquiv R B (fiberwiseMul (A := fun _ ↦ B) f x ⊗ₜ
         fiberwiseMul (A := fun _ ↦ B) g y) := by
-  have := Fintype.ofFinite τ
-  have := Fintype.ofFinite τ'
   induction x using PiTensorProduct.induction_on with
   | smul_tprod r a =>
     induction y using PiTensorProduct.induction_on with
