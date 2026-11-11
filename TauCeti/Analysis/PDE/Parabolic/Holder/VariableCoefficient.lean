@@ -108,11 +108,6 @@ local instance {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] :
 
 /-! ### The estimate for general coefficient fields -/
 
-/-- Absorption: `x ≤ a + c x` with `0 ≤ x` and `c ≤ 1 / 2` gives `x ≤ 2 a`. -/
-private theorem le_two_mul_of_le_add_mul {x a c : ℝ} (hx : 0 ≤ x) (h : x ≤ a + c * x)
-    (hc : c ≤ 1 / 2) : x ≤ 2 * a := by
-  nlinarith
-
 section General
 
 -- Reuse the operator module's Hessian shortcuts, as `Localization` does, so that the coefficient
@@ -173,15 +168,6 @@ theorem parabolicOperatorL_const_eq (hα : α ≤ 1)
     HolderSpace.sub_apply, HolderSpace.const_apply, HolderSpace.zero_apply,
     _root_.sub_apply, _root_.zero_apply]
   abel
-
-/-- Without a second-order coefficient, the spatial operator is bounded by the parabolic Hölder
-norms of the value and the gradient. -/
-private theorem norm_spatialOperatorL_zero_apply_le (hα : α ≤ 1)
-    (B : HolderSpace α (slab (E := E) t₀ t₁) ((E →L[ℝ] ℝ) →L[ℝ] ℝ))
-    (C : HolderSpace α (slab (E := E) t₀ t₁) (ℝ →L[ℝ] ℝ)) (u : ParabolicC2HolderSpace α E ℝ ht) :
-    ‖spatialOperatorL hα 0 B C u‖ ≤
-      ‖B‖ * ‖spatialFDerivHolderL hα u‖ + ‖C‖ * ‖valueHolderL hα u‖ := by
-  simpa using norm_spatialOperatorL_apply_le hα (A := 0) (B := B) (C := C) u
 
 /-- The cutoff-dependent quantity in the localization error bound, for a cutoff of norm at most
 `M` and coefficients `‖A‖ ≤ KA`, `‖B‖ ≤ KB`. -/
@@ -246,7 +232,9 @@ private theorem norm_mul_le_of_norm_le_parabolicOperatorL_const (hα : α ≤ 1)
   -- The freezing error.
   have hFz := (hfreeze v hzero).trans (add_le_add le_rfl (mul_le_mul_of_nonneg_left hvu hC₂))
   -- The lower-order terms, through interpolation.
-  have hLo := (norm_spatialOperatorL_zero_apply_le hα B Cc v).trans
+  have hLo := (show ‖spatialOperatorL hα 0 B Cc v‖ ≤
+      ‖B‖ * ‖spatialFDerivHolderL hα v‖ + ‖Cc‖ * ‖valueHolderL hα v‖ by
+    simpa using norm_spatialOperatorL_apply_le hα (A := 0) (B := B) (C := Cc) v).trans
     (add_le_add (mul_le_mul_of_nonneg_right hB (norm_nonneg _))
       (mul_le_mul_of_nonneg_right hCc (norm_nonneg _)))
   have hi := (hint v).trans (add_le_add le_rfl (mul_le_mul_of_nonneg_left hvu hK₃))
@@ -261,7 +249,7 @@ private theorem norm_mul_le_of_norm_le_parabolicOperatorL_const (hα : α ≤ 1)
   -- Everything is now a real inequality.
   have hKBi := mul_le_mul_of_nonneg_left hi hKB
   have hSi := mul_le_mul_of_nonneg_left hKBi hS
-  refine le_two_mul_of_le_add_mul hv ?_ hη
+  refine TauCeti.le_two_mul_of_le_add_mul hv hη ?_
   nlinarith
 
 variable [FiniteDimensional ℝ E]
@@ -349,8 +337,8 @@ theorem exists_norm_le_parabolicOperatorL_of_spatialTrace_eq_zero (hα₀ : 0 < 
   generalize ‖parabolicOperatorL hα₁.le A B Cc u‖ = NP at hpatch hNP ⊢
   generalize ‖valueL u‖ = NV at hpatch hNV ⊢
   generalize ‖u‖ = NU at hpatch hNU ⊢
-  have h1 := le_two_mul_of_le_add_mul hNU (hpatch.trans_eq (show _ =
-    R * (2 * S) * (24 * Mχ * NP + Kv * NV) + R * (2 * S) * η₁ * NU by ring)) hη₁
+  have h1 := TauCeti.le_two_mul_of_le_add_mul hNU hη₁ (hpatch.trans_eq (show _ =
+    R * (2 * S) * (24 * Mχ * NP + Kv * NV) + R * (2 * S) * η₁ * NU by ring))
   have hVM : (0 : ℝ) ≤ 24 * Mχ := by positivity
   have e1 : 24 * Mχ * NP + Kv * NV ≤ (24 * Mχ + Kv) * (NP + NV) := by
     nlinarith [mul_nonneg hVM hNV, mul_nonneg hKv hNP]

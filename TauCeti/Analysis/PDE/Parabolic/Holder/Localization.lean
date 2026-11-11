@@ -236,13 +236,8 @@ theorem spatialTrace_mul_eq_zero {u : ParabolicC2HolderSpace α E ℝ ht} {t : I
 theorem spatialSecondFDerivL_mul_eq_zero {p : slab (E := E) t₀ t₁} {r : ℝ}
     (hχ : ∀ q, r ≤ dist q p → χ q = 0) (u : ParabolicC2HolderSpace α E ℝ ht)
     {q : slab (E := E) t₀ t₁} (hq : r < dist q p) :
-    spatialSecondFDerivL ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u) q = 0 := by
-  have hU : IsOpen {q' : slab (E := E) t₀ t₁ | r < dist q' p} :=
-    isOpen_lt continuous_const (continuous_id.dist continuous_const)
-  have h : EqOn ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u)
-      (0 : ParabolicC2HolderSpace α E ℝ ht) {q' | r < dist q' p} := fun q' hq' ↦ by
-    simp [hχ q' (le_of_lt hq')]
-  rw [eqOn_spatialSecondFDerivL_of_eqOn hU h hq, map_zero, HolderSpace.zero_apply]
+    spatialSecondFDerivL ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u) q = 0 :=
+  spatialSecondFDerivL_eq_zero_of_forall_lt_dist (fun q' hq' ↦ by simp [hχ q' hq'.le]) q hq
 
 end Localizations
 
