@@ -164,7 +164,6 @@ theorem IsCofinite.exists_pos_le_dist_smul_of_dist_smul_lt (hΓ : Γ.IsCofinite)
     rw [abs_of_neg (by linarith : t ^ 2 - 4 < 0)]
     have h₁ := Real.one_le_cosh (dist (A • y) y)
     have h₂ := Real.one_le_cosh (dist (B • y) y)
-    have hτ₁ := Real.one_le_cosh τ
     nlinarith [mul_le_mul hgτ.le hkτ.le (by linarith) (by linarith)]
   · -- a large rotation: `y` is close to `w`, so `k` moves `w` less than `c`
     rw [not_lt] at hsmall

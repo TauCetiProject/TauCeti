@@ -83,6 +83,10 @@ The second simple root is handled without a second induction: `σᵢ' σᵢ` is 
   `CoxeterMatrix.geometricReflection_apply_single_self` that the `i`-th one negates the `i`-th
   simple root, and `CoxeterMatrix.geometricForm_geometricReflection` that they are orthogonal for
   the canonical form.
+* `CoxeterMatrix.geometricForm_mapDomain_mapDomain` and
+  `CoxeterMatrix.mapDomain_geometricReflection`: **a map of index types along which the Coxeter
+  matrices agree** carries the canonical form to the canonical form and intertwines the simple
+  reflections.
 * `CoxeterMatrix.isLiftable_geometricReflection`: **the simple reflections satisfy the Coxeter
   relations**, so they lift along `CoxeterSystem.lift`.
 * `CoxeterSystem.geometricRepresentation`: **the standard geometric representation**, with
@@ -211,6 +215,39 @@ theorem geometricForm_geometricReflection (i : B) (u v : B →₀ ℝ) :
     LinearMap.smul_apply, smul_eq_mul, geometricForm_single_self,
     M.geometricForm_comm (Finsupp.single i 1) u]
   ring
+
+/-! ### Maps of index types -/
+
+section MapDomain
+
+variable {M} {B' : Type*} {M' : CoxeterMatrix B'} {f : B → B'}
+
+/-- **The canonical forms are compatible with a map of index types** along which the Coxeter
+matrices agree: the induced map of free real vector spaces is an isometry. -/
+theorem geometricForm_mapDomain_mapDomain (hf : ∀ i j, M i j = M' (f i) (f j))
+    (u v : B →₀ ℝ) :
+    M'.geometricForm (u.mapDomain f) (v.mapDomain f) = M.geometricForm u v := by
+  induction u using Finsupp.induction_linear with
+  | zero => simp
+  | add u₁ u₂ h₁ h₂ => simp only [Finsupp.mapDomain_add, map_add, LinearMap.add_apply, h₁, h₂]
+  | single i a =>
+    induction v using Finsupp.induction_linear with
+    | zero => simp
+    | add v₁ v₂ h₁ h₂ => simp only [Finsupp.mapDomain_add, map_add, h₁, h₂]
+    | single j b => simp [Finsupp.mapDomain_single, hf]
+
+/-- **The simple reflections are intertwined by a map of index types** along which the Coxeter
+matrices agree: the induced map sends the `i`-th simple reflection to the `f i`-th one. -/
+theorem mapDomain_geometricReflection (hf : ∀ i j, M i j = M' (f i) (f j)) (i : B)
+    (v : B →₀ ℝ) :
+    (M.geometricReflection i v).mapDomain f =
+      M'.geometricReflection (f i) (v.mapDomain f) := by
+  have hform := geometricForm_mapDomain_mapDomain hf (Finsupp.single i 1) v
+  rw [Finsupp.mapDomain_single] at hform
+  rw [geometricReflection_apply, geometricReflection_apply, Finsupp.mapDomain_sub,
+    Finsupp.mapDomain_smul, Finsupp.mapDomain_single, hform]
+
+end MapDomain
 
 /-! ### The rank-two computation -/
 
