@@ -98,6 +98,7 @@ theorem rademacherSum_smul {M : Type*} [Monoid M] [AddCommGroup E] [DistribMulAc
   simp only [rademacherSum_def, Pi.smul_apply, smul_sum, smul_comm c]
 
 /-- The adjoint of a Rademacher sum is the Rademacher sum of the adjoints. -/
+@[simp]
 theorem star_rademacherSum [AddCommGroup E] [StarAddMonoid E] (x : ι → E) (ε : ι → ℤˣ) :
     star (rademacherSum x ε) = rademacherSum (fun i => star (x i)) ε := by
   simp only [rademacherSum_def, star_sum, star_zsmul]
@@ -280,6 +281,7 @@ theorem signAverage_const_mul [SMulCommClass ℝ R R] (a : R) (f : (ι → ℤˣ
 end Ring
 
 /-- The average over the sign cube commutes with `star`. -/
+@[simp]
 theorem star_signAverage [StarAddMonoid E] [StarModule ℝ E] (f : (ι → ℤˣ) → E) :
     star (signAverage f) = signAverage fun ε => star (f ε) := by
   simp only [signAverage_def, star_smul, star_sum, star_trivial]
