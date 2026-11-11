@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.Representability.LabeledGra
 public import TauCeti.Combinatorics.SimpleGraph.Sum
 public import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.LinearAlgebra.Matrix.PosDef
+public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Graph parameters, connection matrices and reflection positivity
@@ -165,9 +166,10 @@ one-vertex graph `K₁` is `1`.  This is both the way to prove `IsNormalized` an
 it. -/
 theorem isNormalized_iff {f : GraphParam} : IsNormalized f ↔ f 1 ⊥ = 1 := (Iff.rfl)
 
-/-- Reflection positivity for an arbitrary index type.  Every finitely supported test vector is
-carried by a finite principal block of the connection matrix, which is a connection matrix on a
-`Fin n`-indexed family, and Hermitianness is a statement about `2 × 2` blocks. -/
+/-- Reflection positivity for an arbitrary index type.  By `posSemidef_iff_finite_sum` it suffices
+to check nonnegativity on finite families, which are carried by a finite principal block that is a
+connection matrix on a `Fin n`-indexed family, and Hermitianness, a statement about `2 × 2`
+blocks. -/
 theorem IsReflectionPositive.posSemidef {f : GraphParam} (hf : IsReflectionPositive f) {k : ℕ}
     {ι : Type*} (A : ι → LabeledGraph k) : (connectionMatrix f A).PosSemidef := by
   classical
@@ -178,17 +180,14 @@ theorem IsReflectionPositive.posSemidef {f : GraphParam} (hf : IsReflectionPosit
       ext i j
       simp only [connectionMatrix_apply, Matrix.submatrix_apply, Function.comp_apply]
     rwa [hg] at h
-  refine ⟨Matrix.ext fun i j => ?_, fun x => ?_⟩
-  · have h := (hsub 2 ![i, j]).1.apply 0 1
+  refine posSemidef_iff_finite_sum.mpr ⟨fun a b => ?_, fun {ι' : Type} _ v x => ?_⟩
+  · have h := (hsub 2 ![a, b]).1.apply 1 0
     simpa [Matrix.conjTranspose_apply] using h
-  · let e := x.support.equivFin
-    let g : Fin x.support.card → ι := fun s => (e.symm s : ι)
-    have hg : Function.Injective g := fun a b hab => e.symm.injective (Subtype.ext hab)
-    have hx : (x.support : Set ι) ⊆ Set.range g := fun i hi =>
-      ⟨e ⟨i, hi⟩, by simp [g]⟩
-    have h := (hsub _ g).2 (x.comapDomain g hg.injOn)
-    rw [← Finsupp.mapDomain_comapDomain g hg x hx]
-    simpa [Finsupp.sum_mapDomain_index, add_mul, mul_add] using h
+  · let e := Fintype.equivFin ι'
+    have h := (Matrix.posSemidef_submatrix_equiv e.symm (M := Matrix.of fun i j : ι' =>
+      connectionMatrix f A (v i) (v j))).mp (hsub _ (v ∘ e.symm))
+    simpa [dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc] using
+      h.dotProduct_mulVec_nonneg x
 
 /-- The diagonal of a connection matrix is nonnegative: a reflection-positive parameter is
 nonnegative on every self-gluing. -/
