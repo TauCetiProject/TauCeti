@@ -9,9 +9,9 @@ public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
-# Stability of injective differentials in `C²` families
+# Stability of injective differentials in `C¹` families
 
-Injectivity of the differential is open in a jointly `C²` family of maps `F t : M → N`.
+Injectivity of the differential is open in a jointly `C¹` family of maps `F t : M → N`.
 If the family is constant in `t` outside a closed compact set, compactness makes the
 parameter neighborhood uniform: every map of the family near an immersed parameter has an
 injective differential at every point.
@@ -25,18 +25,18 @@ open scoped ContDiff Manifold Topology
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 2 N]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
   {F : ℝ → M → N} {t₀ : ℝ} {x : M}
 
-/-- Injectivity of the source differential persists near an immersed point in a `C²` family. -/
+/-- Injectivity of the source differential persists near an immersed point in a `C¹` family. -/
 theorem ContMDiffAt.eventually_injective_mfderiv
-    (hF : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry F) (t₀, x))
+    (hF : ContMDiffAt (𝓘(ℝ).prod I) J 1 (uncurry F) (t₀, x))
     (hinj : Injective (mfderiv I J (F t₀) x)) :
     ∀ᶠ p : ℝ × M in 𝓝 (t₀, x), Injective (mfderiv I J (F p.1) p.2) := by
-  have hG : ContMDiffAt ((𝓘(ℝ).prod I).prod I) J 2
+  have hG : ContMDiffAt ((𝓘(ℝ).prod I).prod I) J 1
       (uncurry fun (p : ℝ × M) (y : M) ↦ F p.1 y) ((t₀, x), x) :=
     hF.comp ((t₀, x), x)
       ((contMDiffAt_fst.comp ((t₀, x), x) contMDiffAt_fst).prodMk contMDiffAt_snd)
@@ -44,7 +44,7 @@ theorem ContMDiffAt.eventually_injective_mfderiv
     (fun p ↦ mfderiv I J (F p.1) p.2) (t₀, x)
   have hA : ContinuousAt A (t₀, x) :=
     (hG.mfderiv (fun (p : ℝ × M) (y : M) ↦ F p.1 y) (fun p ↦ p.2)
-      contMDiffAt_snd (m := 1) (by norm_num)).continuousAt
+      contMDiffAt_snd (m := 0) (by norm_num)).continuousAt
   have hcoord (p : ℝ × M)
       (hx : p.2 ∈ (trivializationAt E (TangentSpace I) x).baseSet)
       (hy : F p.1 p.2 ∈ (trivializationAt E' (TangentSpace J) (F t₀ x)).baseSet) :
@@ -69,11 +69,11 @@ theorem ContMDiffAt.eventually_injective_mfderiv
 
 namespace TauCeti
 
-/-- A `C²` family of maps that is constant in the parameter outside a closed compact set `K`
+/-- A `C¹` family of maps that is constant in the parameter outside a closed compact set `K`
 has injective differentials everywhere, for all parameters in a neighborhood of `t₀`,
 provided `F t₀` has injective differentials everywhere. -/
 theorem eventually_forall_injective_mfderiv_of_isCompact {K : Set M}
-    (hF : ∀ x ∈ K, ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry F) (t₀, x))
+    (hF : ∀ x ∈ K, ContMDiffAt (𝓘(ℝ).prod I) J 1 (uncurry F) (t₀, x))
     (hinj : ∀ x, Injective (mfderiv I J (F t₀) x))
     (hK : IsCompact K) (hKc : IsClosed K)
     (hFK : ∀ t, ∀ x ∉ K, F t x = F t₀ x) :
