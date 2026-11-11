@@ -49,6 +49,7 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
 * `HolderOnWith.of_dist_le`: a Hölder bound stated with `dist` gives `HolderOnWith`; the converse
   is Mathlib's `HolderOnWith.dist_le`.
 * `HolderOnWith.sub`: differences preserve the exponent and add the Hölder constants.
+* `HolderOnWith.congr`: a Hölder bound on a set transfers to any function agreeing on that set.
 * `holderOnWith_iff_dist_le`: `HolderOnWith` is equivalent to the Hölder bound stated with `dist`.
 * `HolderOnWith.of_le_of_dist_le`: a function satisfying a `β`-Hölder bound between points at
   distance less than `δ > 0`, with values within distance `D` of each other, is `γ`-Hölder for
@@ -139,6 +140,13 @@ theorem HolderOnWith.sub {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
     _ ≤ (C : ℝ) * dist x y ^ (r : ℝ) + (D : ℝ) * dist x y ^ (r : ℝ) :=
       add_le_add (hf.dist_le hx hy) (hg.dist_le hx hy)
     _ = _ := by rw [NNReal.coe_add, add_mul]
+
+/-- A Hölder bound on a set only depends on the values of the function on that set. -/
+theorem HolderOnWith.congr {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    {C r : ℝ≥0} {f g : X → Y} {s : Set X} (hf : HolderOnWith C r f s) (h : Set.EqOn f g s) :
+    HolderOnWith C r g s := fun x hx y hy => by
+  rw [← h hx, ← h hy]
+  exact hf x hx y hy
 
 /-- `HolderOnWith` is equivalent to the Hölder bound stated with `dist`. Compare
 `lipschitzOnWith_iff_dist_le_mul`. -/
