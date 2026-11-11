@@ -173,12 +173,9 @@ theorem disjoint_inf_ker_ker_of_finrank_eq_succ {G : Type*} [AddCommGroup G] [Mo
     (Submodule.comapSubtypeEquivOfLe inf_le_left).finrank_eq] at hkerπ
   have hline : T ⊓ LinearMap.ker π = 𝕜 ∙ v :=
     eq_span_singleton_of_mem_of_finrank_eq_one (by omega) ⟨hvs, hvπ⟩ hv0
-  refine Submodule.disjoint_def.2 fun w ⟨hwT, hwK⟩ hw ↦ ?_
-  have hwv : w ∈ T ⊓ LinearMap.ker π := Submodule.mem_inf.2 ⟨hwT, hw⟩
-  rw [hline] at hwv
-  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hwv
-  have hc : c * dg v = 0 := by simpa using hwK
-  rw [(mul_eq_zero.1 hc).resolve_right hgv, zero_smul]
+  rw [disjoint_iff, inf_right_comm, hline]
+  exact (Submodule.disjoint_span_singleton_of_notMem
+    (s := LinearMap.ker dg) fun h ↦ hgv (LinearMap.mem_ker.1 h)).symm.eq_bot
 
 /-- A subspace with more dimensions than a finite set has elements contains a vector outside the
 span of the set. -/
