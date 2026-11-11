@@ -26,18 +26,19 @@ tempered distributions on a finite-dimensional real inner product space `E`: wri
   (`TemperedDistribution.isVanishingOn_fourier_smulLeftCLM`).
 * If `u ∈ Lᵖ` and `v ∈ L^q` have Fourier transforms vanishing outside compact sets `K₁` and `K₂`,
   and `1/r = 1/p + 1/q` with `r ≥ 1`, then the Fourier transform of the product `u • v ∈ Lʳ`
-  vanishes outside `K₁ + K₂` (`MeasureTheory.Lp.isVanishingOn_fourier_smul`). For balls this reads
-  `R₁ + R₂` for the radii (`MeasureTheory.Lp.isVanishingOn_fourier_smul_closedBall`).
+  vanishes outside `K₁ + K₂` (`MeasureTheory.Lp.isVanishingOn_fourier_smul`). For balls the radii
+  and the centres add (`MeasureTheory.Lp.isVanishingOn_fourier_smul_closedBall`).
 
 This is the spectral localization behind Bony's paraproduct decomposition: the dyadic blocks of a
-tempered distribution are `L^∞` functions with spectra in balls and annuli, and the products
+bounded function, or of an element of a Besov space, are `L^∞` functions with spectra in balls and
+annuli, and the products
 `S_{j-1} f · Δⱼ g` and `Δⱼ f · Δₖ g` that make up the paraproducts and the resonant term then have
 spectra in annuli and balls of comparable size.
 
 ## The argument
 
 For the first statement, `𝓕 (g • u) ψ = u (g • 𝓕 ψ) = 𝓕 u (T_g ψ)`, where `T_g ψ = 𝓕⁻ (g • 𝓕 ψ)`
-is convolution of `ψ` with `𝓕⁻ g = 𝓕 g (-·)` (`SchwartzMap.fourierMultiplierCLM_apply_eq_integral`).
+is convolution of `ψ` with `𝓕⁻ g = 𝓕 g (-·)` (`SchwartzMap.fourierMultiplierCLM_eq_convolution`).
 Hence `T_g ψ` is carried by the closed set `tsupport ψ - K`, which misses `s` when `tsupport ψ`
 misses `s + K`.
 
@@ -73,10 +74,17 @@ by `‖ψ‖_{p'} ‖u‖_p` by Hölder's inequality, and `𝓕 φ • v` is int
 public section
 
 open SchwartzMap MeasureTheory Distribution Function Set Metric Filter
-open scoped ENNReal FourierTransform SchwartzMap Pointwise
+open scoped ENNReal FourierTransform SchwartzMap Pointwise Convolution
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The set `s - K` is closed when `s` is closed and `K` is compact. -/
+private theorem isClosed_sub_of_isCompact {s K : Set E} (hs : IsClosed s) (hK : IsCompact K) :
+    IsClosed (s - K) := by
+  rw [sub_eq_add_neg]
+  exact hs.add_right_of_isCompact hK.neg
 
 namespace TemperedDistribution
 
@@ -99,21 +107,15 @@ theorem isVanishingOn_fourier_smulLeftCLM {u : 𝓢'(E, F)} {s K : Set E}
   refine hu _ ?_
   -- `T_g ψ` is the convolution of `ψ` with `𝓕⁻ g = 𝓕 g (-·)`, so it is carried by `tsupport ψ - K`.
   have hsupp : support (SchwartzMap.fourierMultiplierCLM ℂ (g : E → ℂ) ψ) ⊆ tsupport ψ - K := by
+    have hconv : ⇑(SchwartzMap.fourierMultiplierCLM ℂ (g : E → ℂ) ψ) =
+        ⇑(𝓕⁻ g : 𝓢(E, ℂ)) ⋆[ContinuousLinearMap.lsmul ℂ ℂ] ⇑ψ := funext fun x ↦ by
+      rw [SchwartzMap.fourierMultiplierCLM_eq_convolution, SchwartzMap.convolution_apply]
+    rw [hconv, sub_eq_add_neg]
+    refine (support_convolution_subset_swap ..).trans (add_subset_add (subset_tsupport _) ?_)
     intro ξ hξ
-    by_contra hξK
-    refine hξ ?_
-    have hzero : ∀ y, 𝓕⁻ g (ξ - y) • ψ y = 0 := fun y ↦ by
-      by_cases hy : ψ y = 0
-      · rw [hy, smul_zero]
-      by_cases hg : 𝓕 g (y - ξ) = 0
-      · rw [fourierInv_apply_eq_fourier_neg, neg_sub, hg, zero_smul]
-      exact absurd ⟨y, subset_tsupport _ hy, y - ξ, hgK hg, sub_sub_cancel y ξ⟩ hξK
-    rw [SchwartzMap.fourierMultiplierCLM_apply_eq_integral]
-    simp only [hzero, integral_zero]
-  have hclosed : IsClosed (tsupport ψ - K) := by
-    rw [sub_eq_add_neg]
-    exact (isClosed_tsupport ψ).add_right_of_isCompact hK.neg
-  refine (closure_minimal hsupp hclosed).trans ?_
+    rw [mem_support, fourierInv_apply_eq_fourier_neg] at hξ
+    exact Set.mem_neg.2 (hgK hξ)
+  refine (closure_minimal hsupp (isClosed_sub_of_isCompact (isClosed_tsupport ψ) hK)).trans ?_
   rintro _ ⟨y, hy, t, ht, rfl⟩ hs
   exact hψ hy ⟨y - t, hs, t, ht, sub_add_cancel y t⟩
 
@@ -150,8 +152,8 @@ private theorem integrable_smul_smul {p q : ℝ≥0∞} [hp : Fact (1 ≤ p)] [h
     have hψx : AEStronglyMeasurable (fun y ↦ ψ (x - y)) volume :=
       (ψ.continuous.comp (continuous_sub_left x)).aestronglyMeasurable
     calc ∫⁻ y, ‖ψ (x - y) • u y‖ₑ = eLpNorm ((fun y ↦ ψ (x - y)) • ⇑u) 1 volume := by
-          rw [eLpNorm_one_eq_lintegral_enorm (hψx.smul (Lp.aestronglyMeasurable u))]
-          rfl
+          simp only [eLpNorm_one_eq_lintegral_enorm (hψx.smul (Lp.aestronglyMeasurable u)),
+            Pi.smul_apply']
       _ ≤ eLpNorm (fun y ↦ ψ (x - y)) (1 - p⁻¹)⁻¹ volume * eLpNorm u p volume :=
           eLpNorm_smul_le_mul_eLpNorm hψx (Lp.aestronglyMeasurable u)
       _ = C := by
@@ -176,9 +178,8 @@ theorem isVanishingOn_fourier_smul {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (
       (K₁ + K₂)ᶜ := by
   intro φ hφ
   -- The open set `U = (tsupport φ - K₂)ᶜ` contains `K₁`, and `U + K₂` misses `tsupport φ`.
-  have hU : IsOpen (tsupport φ - K₂)ᶜ := by
-    rw [isOpen_compl_iff, sub_eq_add_neg]
-    exact (isClosed_tsupport φ).add_right_of_isCompact hK₂.neg
+  have hU : IsOpen (tsupport φ - K₂)ᶜ :=
+    (isClosed_sub_of_isCompact (isClosed_tsupport φ) hK₂).isOpen_compl
   have hK₁U : K₁ ⊆ (tsupport φ - K₂)ᶜ := by
     rintro x hx ⟨y, hy, k, hk, rfl⟩
     exact hφ hy ⟨y - k, hx, k, hk, sub_add_cancel y k⟩
@@ -186,7 +187,7 @@ theorem isVanishingOn_fourier_smul {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (
   obtain ⟨χ₀, hχ₀, -, hχ₀1, hχ₀c, hχ₀U⟩ := hK₁.exists_contDiff_cutoff hU hK₁U
   let χ : 𝓢(E, ℂ) := HasCompactSupport.toSchwartzMap (f := fun ξ ↦ (χ₀ ξ : ℂ))
     (hχ₀c.comp_left Complex.ofReal_zero) (Complex.ofRealCLM.contDiff.comp hχ₀)
-  have hχ : ∀ ξ, χ ξ = χ₀ ξ := fun _ ↦ rfl
+  have hχ : ∀ ξ, χ ξ = χ₀ ξ := fun ξ ↦ HasCompactSupport.toSchwartzMap_toFun _ _ ξ
   have hχsupp : support (χ : E → ℂ) = support χ₀ := by
     ext ξ
     simp [hχ]
@@ -238,18 +239,18 @@ theorem isVanishingOn_fourier_smul {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (
     _ = 0 := by simp only [hzero, integral_zero]
 
 /-- **The spectrum of a product of band-limited functions.** If `u ∈ Lᵖ` and `v ∈ L^q` have Fourier
-transforms vanishing outside the closed balls of radii `R₁, R₂ ≥ 0` about the origin, and
+transforms vanishing outside the closed balls of radii `R₁, R₂ ≥ 0` about `a` and `b`, and
 `1/r = 1/p + 1/q` with `r ≥ 1`, then the Fourier transform of `u • v ∈ Lʳ` vanishes outside the
-closed ball of radius `R₁ + R₂`. -/
+closed ball of radius `R₁ + R₂` about `a + b`. -/
 theorem isVanishingOn_fourier_smul_closedBall {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
     [Fact (1 ≤ r)] [p.HolderTriple q r] {u : Lp ℂ p (volume : Measure E)}
-    {v : Lp F q (volume : Measure E)} {R₁ R₂ : ℝ} (hR₁ : 0 ≤ R₁) (hR₂ : 0 ≤ R₂)
-    (hu : IsVanishingOn (𝓕 (u : 𝓢'(E, ℂ)) : 𝓢'(E, ℂ)) (closedBall 0 R₁)ᶜ)
-    (hv : IsVanishingOn (𝓕 (v : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R₂)ᶜ) :
+    {v : Lp F q (volume : Measure E)} {a b : E} {R₁ R₂ : ℝ} (hR₁ : 0 ≤ R₁) (hR₂ : 0 ≤ R₂)
+    (hu : IsVanishingOn (𝓕 (u : 𝓢'(E, ℂ)) : 𝓢'(E, ℂ)) (closedBall a R₁)ᶜ)
+    (hv : IsVanishingOn (𝓕 (v : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall b R₂)ᶜ) :
     IsVanishingOn (𝓕 ((u • v : Lp F r (volume : Measure E)) : 𝓢'(E, F)) : 𝓢'(E, F))
-      (closedBall 0 (R₁ + R₂))ᶜ := by
-  have h := isVanishingOn_fourier_smul (r := r) (isCompact_closedBall 0 R₁)
-    (isCompact_closedBall 0 R₂) hu hv
-  rwa [closedBall_add_closedBall hR₁ hR₂, add_zero] at h
+      (closedBall (a + b) (R₁ + R₂))ᶜ := by
+  have h := isVanishingOn_fourier_smul (r := r) (isCompact_closedBall a R₁)
+    (isCompact_closedBall b R₂) hu hv
+  rwa [closedBall_add_closedBall hR₁ hR₂] at h
 
 end MeasureTheory.Lp
