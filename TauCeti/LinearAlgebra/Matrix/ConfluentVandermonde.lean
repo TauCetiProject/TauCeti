@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.LinearAlgebra.Vandermonde
 import Mathlib.Algebra.Polynomial.Eval.SMul
+import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.Polynomial.Taylor
 
 /-!
@@ -39,20 +40,20 @@ upper unitriangular, and the jet matrix of the new basis is lower triangular wit
   (m i * m j)`; for `a = (1, 0)` and `m = (1, 1)` it is `-1`, which pins the sign.
 * `Matrix.confluentVandermonde_mul`: the jet matrix of a family of polynomials of degree below
   `M` is the confluent Vandermonde matrix times their coefficient matrix.
-* `Matrix.det_of_eval_iterate_derivative`: with ordinary derivatives `D^k` in place of Hasse
-  derivatives the determinant gains the factor `∏ i, ∏_{k < m i} k !`.
+* `Matrix.det_iterate_derivative_eq_prod_factorial_mul_det_confluentVandermonde`: with ordinary
+  derivatives `D^k` in place of Hasse derivatives the determinant gains the factor
+  `∏ i, ∏_{k < m i} k !`.
 * `Matrix.confluentVandermonde_one`, `Matrix.det_confluentVandermonde_one`: for simple nodes the
   matrix is `Matrix.vandermonde a` and the formula is `Matrix.det_vandermonde`.
+* `Matrix.confluentNodePerm_cast_finSigmaFinEquiv`: `confluentNodePerm m σ` sends the jet
+  `⟨i, k⟩` for `m ∘ σ` to the jet `⟨σ i, k⟩` for `m`.
 * `Matrix.det_confluentVandermonde_comp`: reordering the nodes multiplies the determinant by the
   sign of the induced permutation of the rows.
-* `Matrix.det_confluentVandermonde_add_const`, `Matrix.det_confluentVandermonde_smul`:
+* `Matrix.det_confluentVandermonde_add`, `Matrix.det_confluentVandermonde_smul`:
   translation invariance and homogeneity of degree `∑_{i < j} m i * m j`.
 * `Matrix.det_confluentVandermonde_ne_zero_iff`: over a domain the determinant is nonzero iff
-  distinct nodes of nonzero multiplicity are distinct; a repeated node of multiplicity `0` is
-  allowed.
-
-The identification of `confluentVandermonde a m` with the matrix of the Hermite jet map of
-`ArithmeticInterpolationDeterminants` §1.1 is not part of this file.
+  `a i ≠ a j` whenever `i ≠ j` and `m i`, `m j` are both nonzero; a repeated node of
+  multiplicity `0` is allowed.
 
 ## References
 
@@ -61,37 +62,10 @@ The identification of `confluentVandermonde a m` with the matrix of the Hermite 
   sign).
 -/
 
-@[expose] public section
+public section
 
 open Polynomial Finset
 open scoped Nat
-
-/-- The position of the jet `⟨i, k⟩` in the lexicographic order is `∑_{i' < i} m i' + k`. -/
-theorem val_finSigmaFinEquiv_eq_sum_filter {r : ℕ} {m : Fin r → ℕ}
-    (x : (i : Fin r) × Fin (m i)) :
-    (finSigmaFinEquiv x : ℕ) = ∑ i ∈ univ.filter (· < x.1), m i + x.2 := by
-  rw [finSigmaFinEquiv_apply]
-  congr 1
-  refine (sum_map univ (Fin.castLEEmb x.1.2.le) m).symm.trans
-    (congrArg (fun s : Finset (Fin r) => s.sum m) ?_)
-  ext t
-  simp only [mem_map, mem_univ, true_and, Fin.coe_castLEEmb, mem_filter]
-  exact ⟨fun ⟨u, hu⟩ => hu ▸ u.2, fun h => ⟨⟨t, h⟩, rfl⟩⟩
-
-/-- A jet at an earlier node comes earlier in the lexicographic order. -/
-theorem finSigmaFinEquiv_lt_of_fst_lt {r : ℕ} {m : Fin r → ℕ} {x y : (i : Fin r) × Fin (m i)}
-    (h : x.1 < y.1) : finSigmaFinEquiv x < finSigmaFinEquiv y := by
-  rw [Fin.lt_def, val_finSigmaFinEquiv_eq_sum_filter, val_finSigmaFinEquiv_eq_sum_filter]
-  have hsub : insert x.1 (univ.filter (· < x.1)) ⊆ univ.filter (· < y.1) := by
-    intro t ht
-    simp only [mem_insert, mem_filter, mem_univ, true_and] at ht ⊢
-    rcases ht with rfl | ht
-    · exact h
-    · exact ht.trans h
-  have := sum_le_sum_of_subset (f := m) hsub
-  rw [sum_insert (by simp)] at this
-  have := x.2.2
-  omega
 
 namespace Matrix
 
@@ -110,7 +84,7 @@ noncomputable def confluentVandermonde (a : Fin r → R) (m : Fin r → ℕ) :
 theorem confluentVandermonde_apply (a : Fin r → R) (m : Fin r → ℕ) (ρ j : Fin (∑ i, m i)) :
     confluentVandermonde a m ρ j =
       (hasseDeriv ((finSigmaFinEquiv.symm ρ).2 : ℕ) (X ^ (j : ℕ) : R[X])).eval
-        (a (finSigmaFinEquiv.symm ρ).1) := rfl
+        (a (finSigmaFinEquiv.symm ρ).1) := (rfl)
 
 /-- The entry in the row of the jet `⟨i, k⟩` and the column of `X ^ j` is
 `choose j k * a i ^ (j - k)`, which is `0` for `k > j` (Mathlib's `hasseDeriv_monomial`). -/
@@ -186,13 +160,7 @@ theorem det_confluentVandermonde (a : Fin r → R) (m : Fin r → ℕ) :
   set N : Fin (∑ i, m i) → R[X] := fun c => newtonHermite a m (finSigmaFinEquiv.symm c)
   have hdeg (c : Fin (∑ i, m i)) : (N c).natDegree = c := by
     simp [N, natDegree_newtonHermite]
-  have hC : (of fun (j : Fin (∑ i, m i)) c => (N c).coeff j).det = 1 := by
-    rw [det_of_isUpperTriangular]
-    · refine prod_eq_one fun c _ => ?_
-      rw [of_apply, ← hdeg c]
-      exact monic_newtonHermite a m _
-    · intro j c hcj
-      exact coeff_eq_zero_of_natDegree_lt (by rw [hdeg]; exact hcj)
+  have hC := det_matrixOfPolynomials N hdeg fun c => monic_newtonHermite a m _
   have hL : (of fun (ρ : Fin (∑ i, m i)) c => (hasseDeriv ((finSigmaFinEquiv.symm ρ).2 : ℕ)
       (N c)).eval (a (finSigmaFinEquiv.symm ρ).1)).IsLowerTriangular := by
     intro ρ c hρc
@@ -211,7 +179,8 @@ theorem det_confluentVandermonde (a : Fin r → R) (m : Fin r → ℕ) :
 
 /-- The confluent Vandermonde matrix with ordinary derivatives `D^k (X ^ j) (a i)` in place of
 Hasse derivatives: row `⟨i, k⟩` is `k !` times that of `confluentVandermonde a m`. -/
-theorem det_of_eval_iterate_derivative (a : Fin r → R) (m : Fin r → ℕ) :
+theorem det_iterate_derivative_eq_prod_factorial_mul_det_confluentVandermonde (a : Fin r → R)
+    (m : Fin r → ℕ) :
     (of fun ρ (j : Fin (∑ i, m i)) => (derivative^[(finSigmaFinEquiv.symm ρ).2] (X ^ (j : ℕ) :
       R[X])).eval (a (finSigmaFinEquiv.symm ρ).1)).det =
       (∏ i, ∏ k ∈ range (m i), (k ! : R)) * (confluentVandermonde a m).det := by
@@ -253,6 +222,15 @@ def confluentNodePerm (m : Fin r → ℕ) (σ : Equiv.Perm (Fin r)) : Equiv.Perm
     (finSigmaFinEquiv.symm.trans
       ((Equiv.sigmaCongrLeft (β := fun i => Fin (m i)) σ).trans finSigmaFinEquiv))
 
+/-- `confluentNodePerm m σ` sends the jet `⟨i, k⟩` for the multiplicities `m ∘ σ` to the jet
+`⟨σ i, k⟩` for `m`. -/
+@[simp]
+theorem confluentNodePerm_cast_finSigmaFinEquiv (m : Fin r → ℕ) (σ : Equiv.Perm (Fin r))
+    (x : (i : Fin r) × Fin (m (σ i))) :
+    confluentNodePerm m σ (Fin.cast (Equiv.sum_comp σ m) (finSigmaFinEquiv x)) =
+      finSigmaFinEquiv (⟨σ x.1, x.2⟩ : (i : Fin r) × Fin (m i)) := by
+  simp [confluentNodePerm]
+
 /-- Reordering the nodes and multiplicities along `σ` permutes the rows of the confluent
 Vandermonde matrix by `confluentNodePerm m σ`. -/
 theorem confluentVandermonde_comp (a : Fin r → R) (m : Fin r → ℕ) (σ : Equiv.Perm (Fin r)) :
@@ -261,10 +239,8 @@ theorem confluentVandermonde_comp (a : Fin r → R) (m : Fin r → ℕ) (σ : Eq
         (finCongr (Equiv.sum_comp σ m)) (finCongr (Equiv.sum_comp σ m)) := by
   ext ρ j
   obtain ⟨x, rfl⟩ := finSigmaFinEquiv.surjective ρ
-  have hx : confluentNodePerm m σ (finCongr (Equiv.sum_comp σ m) (finSigmaFinEquiv x)) =
-      finSigmaFinEquiv ⟨σ x.1, x.2⟩ := by
-    simp [confluentNodePerm]
-  rw [submatrix_apply, submatrix_apply, hx, confluentVandermonde_finSigmaFinEquiv,
+  rw [submatrix_apply, submatrix_apply, finCongr_apply,
+    confluentNodePerm_cast_finSigmaFinEquiv, confluentVandermonde_finSigmaFinEquiv,
     confluentVandermonde_finSigmaFinEquiv]
   simp
 
@@ -276,7 +252,7 @@ theorem det_confluentVandermonde_comp (a : Fin r → R) (m : Fin r → ℕ) (σ 
   rw [confluentVandermonde_comp, det_submatrix_equiv_self, det_permute]
 
 /-- Translating the nodes leaves the determinant unchanged. -/
-theorem det_confluentVandermonde_add_const (a : Fin r → R) (m : Fin r → ℕ) (c : R) :
+theorem det_confluentVandermonde_add (a : Fin r → R) (m : Fin r → ℕ) (c : R) :
     (confluentVandermonde (fun i => a i + c) m).det = (confluentVandermonde a m).det := by
   simp only [det_confluentVandermonde, add_sub_add_right_eq_sub]
 
@@ -363,12 +339,13 @@ example : (confluentVandermonde ![(0 : ℤ), 1, 2] ![2, 1, 1]).det = 4 := by
 example : (of fun ρ (j : Fin (∑ i, ![2, 1, 1] i)) =>
     (derivative^[(finSigmaFinEquiv.symm ρ).2] (X ^ (j : ℕ) : ℤ[X])).eval
       (![(0 : ℤ), 1, 2] (finSigmaFinEquiv.symm ρ).1)).det = 4 := by
-  rw [det_of_eval_iterate_derivative, det_confluentVandermonde]
-  decide
+  rw [det_iterate_derivative_eq_prod_factorial_mul_det_confluentVandermonde,
+    det_confluentVandermonde]
+  simp [Fin.prod_univ_three, Finset.prod_range_succ]
 
 example : (confluentVandermonde ![(2 : ℤ), 5, 7] (fun _ => 1)).det = 30 := by
   rw [det_confluentVandermonde_one]
-  decide
+  simp [Fin.prod_univ_succ, Fin.prod_Ioi_succ]
 
 /-- One triple node: the matrix is upper unitriangular. -/
 example : confluentVandermonde ![(5 : ℤ)] ![3] = !![1, 5, 25; 0, 1, 10; 0, 0, 1] := by
@@ -385,8 +362,9 @@ example : (confluentVandermonde ![(5 : ℤ)] ![3]).det = 1 := by
 example : (of fun ρ (j : Fin (∑ i, ![3] i)) =>
     (derivative^[(finSigmaFinEquiv.symm ρ).2] (X ^ (j : ℕ) : ℤ[X])).eval
       (![(0 : ℤ)] (finSigmaFinEquiv.symm ρ).1)).det = 2 := by
-  rw [det_of_eval_iterate_derivative, det_confluentVandermonde]
-  decide
+  rw [det_iterate_derivative_eq_prod_factorial_mul_det_confluentVandermonde,
+    det_confluentVandermonde]
+  simp [Finset.prod_range_succ]
 
 /-- No nodes, or all multiplicities zero: the `0 × 0` determinant is `1`. -/
 example (a : Fin 0 → ℤ) (m : Fin 0 → ℕ) : (confluentVandermonde a m).det = 1 := by
