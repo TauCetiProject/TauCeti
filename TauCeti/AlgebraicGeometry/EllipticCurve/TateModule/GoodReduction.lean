@@ -77,6 +77,7 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [IsUnramified K L]
   [DecidableEq L] {W : WeierstrassCurve K} [W.IsElliptic] [IsIntegral 𝒪[K] W]
 
+omit [W.IsElliptic] in
 /-- **Full torsion over an unramified extension is bounded at bad reduction** (Silverman AEC
 VII.7.1). Let `L/K` be an unramified extension of nonarchimedean local fields, and suppose that
 Tate's algorithm, run with a uniformiser `ϖ` of `K`, stops on the integral model of `W` at a

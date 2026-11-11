@@ -21,7 +21,8 @@ public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 Give the objects and the total arrows of a quiver their own topologies. If the source is a
 local homeomorphism and the source-target map is proper, there are finitely many arrows between
-any two objects. In particular, the isotropy of a groupoid with these properties is finite.
+any two objects. In particular, the isotropy of a category with these properties is finite
+(`TauCeti.finite_aut_of_proper_source_target`).
 
 If target is also a local homeomorphism and the arrow space is Hausdorff, the arrows at an
 object admit pairwise disjoint open bisection neighborhoods. After shrinking the object
@@ -153,7 +154,17 @@ open CategoryTheory
 section Category
 
 variable {C : Type*} [Category C] [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)]
-  (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
+
+/-- Every automorphism group is finite in a category with proper source-target map and locally
+homeomorphic source. -/
+theorem finite_aut_of_proper_source_target
+    (hp : IsProperMap (fun a : Quiver.Total C ↦ (a.left, a.right)))
+    (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C)) (x : C) :
+    Finite (Aut x) :=
+  have := finite_hom_of_proper_source_target hp hs x x
+  .of_injective (fun g : Aut x ↦ g.asIso.hom) fun _ _ h ↦ Aut.ext (Iso.ext h)
+
+variable (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
 include hu
 
 /-- In a topological category with continuous units and locally homeomorphic source, the identity
@@ -326,8 +337,7 @@ theorem exists_isotropy_action_of_proper_source_target [T2Space (Quiver.Total C)
   obtain ⟨U₀, W, hU₀, hxU₀, hW, hdisj, hcover⟩ :=
     exists_disjoint_bisections_of_proper_source_target hp hs ht x
   choose hWo hWx hWl _ using hW
-  have := finite_hom_of_proper_source_target hp hs x x
-  have : Finite (Aut x) := .of_equiv _ (Aut.isoEquiv.trans (Groupoid.isoEquivHom x x)).symm
+  have := finite_aut_of_proper_source_target hp hs x
   have hinj (f : x ⟶ x) : InjOn Quiver.Total.left (W f) := fun b hb b' hb' h ↦
     congrArg Subtype.val (@(hWl f).injective ⟨b, hb⟩ ⟨b', hb'⟩ h)
   -- The source restricted to the bisection of each isotropy arrow `g` is a chart `e g`.

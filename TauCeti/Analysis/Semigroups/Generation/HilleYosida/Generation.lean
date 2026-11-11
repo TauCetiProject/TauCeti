@@ -100,9 +100,9 @@ theorem hilleYosidaLimitSemigroup_generator {A : X →ₗ.[ℝ] X} {M : ℝ}
     simpa only [S, hilleYosidaLimitSemigroup_realOperator_apply_of_nonneg hM hres hpow hdense
       ht (x : X)] using
       tendsto_yosidaLimit_of_norm_resolvent_pow_le hM hres hpow hdense ht (x : X)
-  · intro x T hT
+  · intro x T _
     refine (tendstoUniformlyOn_exp_yosidaApproximation_of_norm_resolvent_pow_le
-      hM hres hpow hdense (A x) hT).congr_right fun u hu => ?_
+      hM hres hpow hdense (A x)).congr_right fun u hu => ?_
     exact (hilleYosidaLimitSemigroup_realOperator_apply_of_nonneg hM hres hpow hdense
       hu.1 (A x)).symm
   · intro T _hT

@@ -47,6 +47,8 @@ statements about cofans rather than unrelated degreewise decompositions.
   singular homologies of the `X i`.
 * `TopPair.isColimitCofanSingularChainComplex` and `TopPair.isColimitCofanSingularHomology`: the
   same for the relative singular chains and relative singular homology of `∐ᵢ (Xᵢ, Aᵢ)`.
+* `TopPair.isColimitCofanSingularHomologyOfIsColimit`: relative singular homology carries every
+  coproduct cofan in `TopPair` to a coproduct cofan.
 
 ## Sources
 
@@ -238,6 +240,29 @@ def isColimitCofanSingularHomology :
       fun i ↦ TopPair.singularHomologyMap (sigmaι P i) R k) :=
   isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor C _ k) _ _
     (isColimitCofanSingularChainComplex P C R)
+
+variable {P} in
+/-- **Additivity of relative singular homology along any coproduct of pairs.** If coproducts
+indexed by `ι` are exact in `C`, relative singular homology carries every coproduct cofan of
+topological pairs, not only the disjoint union `∐ᵢ (Xᵢ, Aᵢ)`, to a coproduct cofan in every
+degree. -/
+def isColimitCofanSingularHomologyOfIsColimit {c : Cofan P} (hc : IsColimit c) :
+    IsColimit (Cofan.mk (c.pt.singularHomology R k)
+      fun i ↦ TopPair.singularHomologyMap (c.inj i) R k) :=
+  let e := (sigmaCofanIsColimit P).coconePointUniqueUpToIso hc
+  IsColimit.ofIsoColimit (isColimitCofanSingularHomology P C R k)
+    (Cofan.ext
+      { hom := TopPair.singularHomologyMap e.hom R k
+        inv := TopPair.singularHomologyMap e.inv R k
+        hom_inv_id := by
+          rw [← singularHomologyMap_comp, e.hom_inv_id, singularHomologyMap_id]
+          rfl
+        inv_hom_id := by
+          rw [← singularHomologyMap_comp, e.inv_hom_id, singularHomologyMap_id]
+          rfl }
+      fun i ↦ (singularHomologyMap_comp _ _ _ _).symm.trans
+        (congrArg (TopPair.singularHomologyMap · R k)
+          ((sigmaCofanIsColimit P).comp_coconePointUniqueUpToIso_hom hc ⟨i⟩)))
 
 end Homology
 

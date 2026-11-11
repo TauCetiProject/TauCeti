@@ -19,8 +19,11 @@ nontrivially, as do three subspaces whose dimensions sum to more than twice the 
 and a subspace of rank greater than the rank of a linear map `f` meets `ker f`
 nontrivially. Dually, the preimage of a subspace `W` under a linear map out of an
 `m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
-dimension at least `n` exactly when it contains `n` linearly independent vectors. Two disjoint
-subspaces of a finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
+dimension at least `n` exactly when it contains `n` linearly independent vectors, and a subspace
+of rank at least `k` contains a subspace of rank exactly `k`. Two disjoint subspaces of a
+finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
+A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
+`span 𝕜 {a, x}`.
 A finite-dimensional subspace spanning the whole space together with `V`, of dimension at most the
 codimension of `V`, is a complement of `V`; here `V` itself may be infinite-dimensional.
 
@@ -136,6 +139,39 @@ theorem isCompl_of_codisjoint_of_finrank_le {V S : Submodule 𝕜 E} [FiniteDime
   refine ⟨disjoint_def.mpr fun x hxV hxS ↦ ?_, h⟩
   have : φ ⟨x, hxS⟩ = φ 0 := by simpa [φ] using hxV
   simpa using congrArg Subtype.val (hinj this)
+
+/-- A subspace of rank at least `k` contains a subspace of rank exactly `k`: the span of `k`
+linearly independent vectors of it. The rank of `M` may be an infinite cardinal. -/
+theorem exists_le_rank_eq {M : Submodule 𝕜 E} {k : ℕ} (hk : (k : Cardinal) ≤ Module.rank 𝕜 M) :
+    ∃ N ≤ M, Module.rank 𝕜 N = k := by
+  obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_rank hk
+  have hv' : LinearIndependent 𝕜 (M.subtype ∘ v) := hv.map' M.subtype M.ker_subtype
+  have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range (M.subtype ∘ v))
+  refine ⟨span 𝕜 (Set.range (M.subtype ∘ v)),
+    span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).2), ?_⟩
+  rw [← Module.finrank_eq_rank, finrank_span_eq_card hv', Fintype.card_fin]
+
+/-- A subspace with more dimensions than a finite set has elements contains a vector outside the
+span of the set. -/
+theorem exists_mem_notMem_span_of_ncard_lt {V : Submodule 𝕜 E} {s : Set E} (hs : s.Finite)
+    (h : s.ncard < finrank 𝕜 V) : ∃ z ∈ V, z ∉ span 𝕜 s := by
+  by_contra! hz
+  have : Module.Finite 𝕜 V := Module.finite_of_finrank_pos (by omega)
+  have : FiniteDimensional 𝕜 (span 𝕜 s) := FiniteDimensional.span_of_finite 𝕜 hs
+  have h1 := Submodule.finrank_mono (fun u hu ↦ hz u hu : V ≤ span 𝕜 s)
+  have h2 := finrank_span_le_ncard (R := 𝕜) s hs
+  omega
+
+/-- A subspace of dimension at least three contains a vector `x` outside `𝕜 ∙ a` and a vector `z`
+outside `span {a, x}`. -/
+theorem exists_mem_notMem_span_pair {V : Submodule 𝕜 E} (a : E) (h : 3 ≤ finrank 𝕜 V) :
+    ∃ x ∈ V, x ∉ 𝕜 ∙ a ∧ ∃ z ∈ V, z ∉ span 𝕜 {a, x} := by
+  obtain ⟨x, hxV, hxa⟩ := exists_mem_notMem_span_of_ncard_lt (V := V) (Set.finite_singleton a)
+    (by rw [Set.ncard_singleton]; omega)
+  refine ⟨x, hxV, hxa, exists_mem_notMem_span_of_ncard_lt (Set.toFinite _) ?_⟩
+  have := Set.ncard_insert_le a ({x} : Set E)
+  rw [Set.ncard_singleton] at this
+  omega
 
 end DivisionRing
 

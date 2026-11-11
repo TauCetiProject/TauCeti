@@ -39,7 +39,8 @@ the case where its `Ext¹`-term vanishes.
   every coefficient object.
 * `TopPair.singularKronecker`: the Kronecker map `Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` of
   relative singular cohomology, the Kronecker map of the relative singular chain complex, with
-  `TopPair.singularKronecker_homologyπ` and `TopPair.singularKronecker_naturality`.
+  `TopPair.singularKronecker_homologyπ` and `TopPair.singularKronecker_naturality`;
+  `TopPair.singularKronecker_singularCohomologyπ` compares it with the absolute Kronecker map.
 
 ## References
 
@@ -163,5 +164,13 @@ lemma singularKronecker_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (k : Type
     P.singularKronecker k n (TopPair.singularCohomologyMap f n α) =
       P.singularHomologyMap f R n ≫ P'.singularKronecker k n α :=
   TauCeti.ChainComplex.kronecker_naturality (singularChainComplexMap f R) n α
+
+/-- Evaluating the image in `Hⁿ(X; R, M)` of a relative class `α ∈ Hⁿ(X, A; R, M)` is evaluating
+`α` after the map `Hₙ(X; R) ⟶ Hₙ(X, A; R)`. -/
+lemma singularKronecker_singularCohomologyπ (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C]
+    (n : ℕ) (α : P.singularCohomology R k M n) :
+    P.fst.singularKronecker k n (P.singularCohomologyπ R k M n α) =
+      P.singularHomologyπ R n ≫ P.singularKronecker k n α :=
+  TauCeti.ChainComplex.kronecker_naturality (P.singularChainComplexπ R) n α
 
 end TopPair

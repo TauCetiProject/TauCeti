@@ -46,17 +46,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [T2Space M] {n : ℕ}
 
-/-- Cutting the chart pullback of a determinant off inside its chart gives a smooth form. -/
-private theorem isSmoothForm_bump_smul_chart_det (x : M) (χ : SmoothBumpFunction I x)
-    (b : Module.Basis (Fin n) ℝ E) :
-    IsSmoothForm I ∞ (fun y ↦ χ y •
-      mpullback I 𝓘(ℝ, E) (extChartAt I x) (fun _ ↦ b.continuousDet) y) := by
-  have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  rw [isSmoothForm_def]
-  exact χ.contMDiff.contMDiffOn.smul_section_of_tsupport
-    (isOpen_extChartAt_source x) χ.tsupport_subset_extChartAt_source fun y hy ↦
-      (contMDiffAt_mpullback_extChartAt hy contDiffWithinAt_const).contMDiffWithinAt
-
 omit [T2Space M] in
 /-- A smooth compactly supported top form that equals a bump function times the chart determinant
 has positive unsigned chart integral. -/
@@ -116,7 +105,9 @@ private theorem exists_topForm_integral_ne_zero (o : Manifold.Orientation I M (F
   let α : RoughForm 𝓘(ℝ, E) E ℝ n := fun _ ↦ b.continuousDet
   let p : RoughForm I M ℝ n := mpullback I 𝓘(ℝ, E) (extChartAt I x) α
   let ψ : RoughForm I M ℝ n := fun y ↦ χ y • p y
-  have hs : IsSmoothForm I ∞ ψ := isSmoothForm_bump_smul_chart_det x χ b
+  have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
+  have hs : IsSmoothForm I ∞ ψ := isSmoothForm_smul_mpullback_extChartAt isOpen_univ
+    contDiffOn_const χ.contMDiff (by simpa using χ.tsupport_subset_chartAt_source)
   have hsub : _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) ψ ⊆ _root_.tsupport χ :=
     -- Fix the model-space codomain so Mathlib's function-support lemma can infer the action.
     _root_.tsupport_smul_subset_left χ (show M → E [⋀^Fin n]→L[ℝ] ℝ from p)

@@ -70,9 +70,7 @@ namespace ContRepresentation
 section Unitarization
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-  [FiniteDimensional 𝕜 V]
+  [CompactSpace G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 private local instance instCompleteSpaceUnitaryModel : CompleteSpace V :=
   FiniteDimensional.complete 𝕜 V
@@ -87,6 +85,7 @@ that form (`TauCeti.exists_continuousLinearEquiv_inner_map_map`) conjugates the 
 form into unitarity of `A⁻¹ ∘ π · ∘ A`. -/
 theorem exists_isUnitary_congr (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     ∃ e : V ≃L[𝕜] V, IsUnitary (ContinuousLinearEquiv.congr e π) := by
+  borelize G
   obtain ⟨A, hA⟩ := exists_continuousLinearEquiv_inner_map_map (π.gramOperator hπ)
     (π.isSymmetric_gramOperator hπ) fun _ hv ↦ π.re_inner_gramOperator_self_pos hπ hv
   -- The same standardization with the Gram operator on the second argument, which is the side
@@ -103,7 +102,6 @@ theorem exists_isUnitary_congr (π : ContRepresentation 𝕜 G V) (hπ : Continu
   exact ⟨A.symm, (isUnitary_iff_norm_map _).mpr fun g ↦
     (LinearMap.norm_map_iff_inner_map_map _).mpr (hunitary g)⟩
 
-omit [MeasurableSpace G] [BorelSpace G] in
 /-- **A matrix coefficient of a finite-dimensional continuous representation of a compact group is
 a matrix coefficient of a unitary one**, on the same carrier and at suitably moved vectors.
 
@@ -115,8 +113,6 @@ theorem exists_isUnitary_matrixCoeff_eq (π : ContRepresentation 𝕜 G V) (hπ 
     (v w : V) :
     ∃ (ρ : ContRepresentation 𝕜 G V) (hρ : Continuous ρ), IsUnitary ρ ∧
       ∃ v' w' : V, matrixCoeff π hπ v w = matrixCoeff ρ hρ v' w' :=
-  letI := borel G
-  haveI : BorelSpace G := ⟨rfl⟩
   let ⟨e, he⟩ := exists_isUnitary_congr π hπ
   ⟨ContinuousLinearEquiv.congr e π, ContinuousLinearEquiv.continuous_congr e hπ, he, e v,
       ContinuousLinearMap.adjoint (e.symm : V →L[𝕜] V) w,
