@@ -34,6 +34,8 @@ We realise both spaces without choosing a norm on `V`:
   inclusions `interFst`, `interSnd`.
 * `TauCeti.CompatibleCouple.SumSpace`: the sum, with its norm-nonincreasing inclusions
   `fstToSum`, `sndToSum` and the injective map `sumSpaceEmbed` into `V`.
+* `TauCeti.CompatibleCouple.toSum`: the factorisation through the sum space of a linear map into
+  `V` whose values have bounded preimages in the sum.
 * `TauCeti.CompatibleCouple.sumLift`: the extension to the sum of continuous linear maps on `X₀`
   and `X₁` that agree on the intersection.
 * `TauCeti.CompatibleCouple.norm_sumSpace_lt_iff`, `TauCeti.CompatibleCouple.le_norm_sumSpace_iff`:
@@ -301,6 +303,38 @@ theorem sndToSum_injective : Function.Injective C.sndToSum := fun x y h =>
 theorem fstToSum_interFst (x : C.inter) : C.fstToSum (C.interFst x) = C.sndToSum (C.interSnd x) :=
   C.sumSpace_ext <| by simpa using C.embed₀_interFst x
 
+section ToSum
+
+variable {X : Type*} [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+
+/-- A linear map `T : X → V` whose values `T x` are images of elements of the sum space of norm at
+most `c ‖x‖` factors through the sum space: this is the continuous linear map `X → X₀ + X₁` sending
+`x` to the unique `u` with `sumSpaceEmbed u = T x` (`sumSpaceEmbed_toSum`), of norm at most `c`
+(`norm_toSum_le`). -/
+def toSum (T : X →ₗ[𝕜] V) (c : ℝ) (hT : ∀ x, ∃ u, C.sumSpaceEmbed u = T x ∧ ‖u‖ ≤ c * ‖x‖) :
+    X →L[𝕜] C.SumSpace :=
+  LinearMap.mkContinuous
+    { toFun x := (hT x).choose
+      map_add' x y := C.sumSpace_ext <| (hT (x + y)).choose_spec.1.trans <| by
+        simp only [map_add, (hT x).choose_spec.1, (hT y).choose_spec.1]
+      map_smul' a x := C.sumSpace_ext <| (hT (a • x)).choose_spec.1.trans <| by
+        simp only [RingHom.id_apply, map_smul, (hT x).choose_spec.1] }
+    c fun x => (hT x).choose_spec.2
+
+variable (T : X →ₗ[𝕜] V) (c : ℝ) (hT : ∀ x, ∃ u, C.sumSpaceEmbed u = T x ∧ ‖u‖ ≤ c * ‖x‖)
+
+@[simp]
+theorem sumSpaceEmbed_toSum (x : X) : C.sumSpaceEmbed (C.toSum T c hT x) = T x :=
+  (hT x).choose_spec.1
+
+theorem norm_toSum_le (x : X) : ‖C.toSum T c hT x‖ ≤ c * ‖x‖ :=
+  (hT x).choose_spec.2
+
+theorem toSum_injective (hTi : Function.Injective T) : Function.Injective (C.toSum T c hT) :=
+  fun x y h => hTi <| by rw [← sumSpaceEmbed_toSum C T c hT, h, sumSpaceEmbed_toSum]
+
+end ToSum
+
 section Lift
 
 variable {W : Type*} [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W]
@@ -381,6 +415,20 @@ theorem leftInverse_of_leftInverse {I : C.SumSpace →ₗ[𝕜] D.SumSpace}
   intro u
   obtain ⟨x₀, x₁, rfl⟩ := C.exists_fstToSum_add_sndToSum_eq u
   rw [map_add, map_add, hI₀, hI₁, hP₀, hP₁, h₀, h₁]
+
+/-- If `P₀`, `P₁` are left inverses of `I₀`, `I₁`, the map of sum spaces induced by `P₀`, `P₁`
+is a left inverse of the one induced by `I₀`, `I₁`. -/
+theorem leftInverse_sumLift (I₀ : X₀ →L[𝕜] Y₀) (I₁ : X₁ →L[𝕜] Y₁)
+    (hI : ∀ x : C.inter, D.fstToSum (I₀ (C.interFst x)) = D.sndToSum (I₁ (C.interSnd x)))
+    (P₀ : Y₀ →L[𝕜] X₀) (P₁ : Y₁ →L[𝕜] X₁)
+    (hP : ∀ y : D.inter, C.fstToSum (P₀ (D.interFst y)) = C.sndToSum (P₁ (D.interSnd y)))
+    (hPI₀ : Function.LeftInverse P₀ I₀) (hPI₁ : Function.LeftInverse P₁ I₁) :
+    Function.LeftInverse (D.sumLift (C.fstToSum.comp P₀) (C.sndToSum.comp P₁) hP)
+      (C.sumLift (D.fstToSum.comp I₀) (D.sndToSum.comp I₁) hI) :=
+  leftInverse_of_leftInverse (I := (C.sumLift _ _ hI).toLinearMap)
+    (P := (D.sumLift _ _ hP).toLinearMap) (fun x => C.sumLift_fstToSum _ _ hI x)
+    (fun x => C.sumLift_sndToSum _ _ hI x) (fun y => D.sumLift_fstToSum _ _ hP y)
+    (fun y => D.sumLift_sndToSum _ _ hP y) hPI₀ hPI₁
 
 variable {e : C.SumSpace ≃ₗ[𝕜] D.SumSpace} {e₀ : X₀ ≃L[𝕜] Y₀} {e₁ : X₁ ≃L[𝕜] Y₁}
 

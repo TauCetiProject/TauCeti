@@ -225,6 +225,7 @@ local instance : NormedAddCommGroup (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) :
 /-- A local shortcut for scalar operations on bounded gradient fields. -/
 local instance : NormedSpace ℝ (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
 
+omit [CompleteSpace F] in
 /-- At every nonnegative time the Duhamel potential is differentiable in space. -/
 private theorem differentiable_potential (f : slab (E := E) 0 T →ᵇ F) {t : ℝ} (ht : 0 ≤ t) :
     Differentiable ℝ (heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s) t) := by
@@ -558,6 +559,7 @@ private theorem norm_timeField_le (hα₀ : 0 < α) (hα₁ : α < 1)
   (norm_add_le _ _).trans (add_le_add_left ((ContinuousLinearMap.norm_id_compHolder₂_apply_le
     _ _).trans (mul_le_mul_of_nonneg_right (HolderSpace.norm_const_le _) (norm_nonneg _))) _)
 
+omit [CompleteSpace F] in
 /-- The gradient of the Duhamel potential is differentiable in space at every time of the slab,
 with derivative the Hessian. -/
 private theorem hasFDerivAt_fderiv (hα₀ : 0 < α) (f : HolderSpace α (slab (E := E) 0 T) F)

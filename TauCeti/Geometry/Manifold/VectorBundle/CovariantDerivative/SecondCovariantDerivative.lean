@@ -163,19 +163,10 @@ private theorem secondDerivAux_congr (hσ : CMDiff ∞ (T% σ)) (x : M)
     {Y Y' : Π y : M, TangentSpace I y} (hY : CMDiff ∞ (T% Y)) (hY' : CMDiff ∞ (T% Y'))
     (hYY' : Y x = Y' x) (u : TangentSpace I x) :
     secondDerivAux cov covT σ x Y u = secondDerivAux cov covT σ x Y' u := by
-  refine TauCeti.Manifold.eq_of_contMDiff_tensorial (I := I)
-    (fun Z ↦ secondDerivAux cov covT σ x Z u) x ?_
+  exact TauCeti.Manifold.eq_of_contMDiff_tensorial (I := I)
+    (fun Z ↦ secondDerivAux cov covT σ x Z u) x
     (fun hZ hZ' ↦ secondDerivAux_add cov covT hσ x hZ hZ' u)
     (fun hf hZ ↦ secondDerivAux_smul cov covT hσ x hf hZ u) hY hY' hYY'
-  intro Z Z' hZ hZ' hZZ'
-  have hnhds : Set.univ ∈ nhds x := Filter.univ_mem
-  have hZσ : ∀ᶠ y in nhds x, cov σ y (Z y) = cov σ y (Z' y) := hZZ'.mono fun y hy ↦ by rw [hy]
-  simp only [secondDerivAux,
-    cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq
-      ((cov.contMDiff_apply hZ hσ).mdifferentiable (by simp) x)
-      ((cov.contMDiff_apply hZ' hσ).mdifferentiable (by simp) x) hnhds hZσ,
-    covT.isCovariantDerivativeOnUniv.congr_of_eventuallyEq
-      (hZ.mdifferentiable (by simp) x) (hZ'.mdifferentiable (by simp) x) hnhds hZZ']
 
 /-- The value of `∇²σ` at `(u, v)`, computed with a chosen smooth extension of `v`. -/
 private def secondDerivValue (σ : Π y : M, V y) (x : M) (u v : TangentSpace I x) : V x :=
@@ -269,9 +260,26 @@ theorem secondCovariantDerivative_add {τ : Π y : M, V y} (hσ : CMDiff ∞ (T%
   simp only [add_apply]
   abel
 
+/-- The second covariant derivative of the zero section is zero. -/
+@[simp]
+theorem secondCovariantDerivative_zero (x : M) :
+    cov.secondCovariantDerivative covT (0 : Π y : M, V y) x = 0 := by
+  have h0 : CMDiff ∞ (T% (0 : Π y : M, V y)) := contMDiff_zeroSection ℝ V
+  have := secondCovariantDerivative_add cov covT h0 h0 x
+  simpa using this
+
 /-- The second covariant derivative commutes with multiplication of the section by a constant. -/
-theorem secondCovariantDerivative_const_smul (c : ℝ) (hσ : CMDiff ∞ (T% σ)) (x : M) :
+@[simp]
+theorem secondCovariantDerivative_const_smul (c : ℝ) (x : M) :
     cov.secondCovariantDerivative covT (c • σ) x = c • cov.secondCovariantDerivative covT σ x := by
+  by_cases hσ : CMDiff ∞ (T% σ)
+  swap
+  · rcases eq_or_ne c 0 with rfl | hc
+    · simp
+    · have hcσ : ¬CMDiff ∞ (T% (c • σ)) := fun h ↦ hσ (by
+        simpa [smul_smul, inv_mul_cancel₀ hc] using h.const_smul_section (a := c⁻¹))
+      rw [secondCovariantDerivative_of_not_contMDiff cov covT hcσ,
+        secondCovariantDerivative_of_not_contMDiff cov covT hσ, smul_zero]
   refine ((eq_secondCovariantDerivative_iff cov covT hσ.const_smul_section x _).2
     fun Y hY u ↦ ?_).symm
   have hYσ := cov.contMDiff_apply hY hσ
@@ -283,13 +291,6 @@ theorem secondCovariantDerivative_const_smul (c : ℝ) (hσ : CMDiff ∞ (T% σ)
     hprod, cov.isCovariantDerivativeOnUniv.smul_const c (hYσ.mdifferentiable (by simp) x),
     cov.isCovariantDerivativeOnUniv.smul_const c (hσ.mdifferentiable (by simp) x)]
   simp only [smul_apply, smul_sub]
-
-/-- The second covariant derivative of the zero section is zero. -/
-@[simp]
-theorem secondCovariantDerivative_zero (x : M) :
-    cov.secondCovariantDerivative covT (0 : Π y : M, V y) x = 0 := by
-  simpa using secondCovariantDerivative_const_smul cov covT 0
-    (contMDiff_zeroSection ℝ V : CMDiff ∞ (T% (0 : Π y : M, V y))) x
 
 /-- **Leibniz rule for the second covariant derivative.** For smooth `f` and `σ` and a smooth
 vector field `Y`,
