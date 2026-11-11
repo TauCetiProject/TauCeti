@@ -410,15 +410,4 @@ theorem gaussianBetaGasMeasure_apply (n : ℕ) {β : ℝ} (hβ : 0 < β)
   rw [← gaussianBetaGasWeight_eq_betaGasWeight]
   exact integrable_gaussianBetaGasWeight n hβ
 
-/-- Integrate a function against the Gaussian beta-gas measure. -/
-theorem integral_gaussianBetaGasMeasure_eq_integral_smul {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (n : ℕ) (β : ℝ) (f : (Fin n → ℝ) → E) :
-    ∫ x, f x ∂gaussianBetaGasMeasure n β =
-      ∫ x, gaussianBetaGasDensity n β x • f x
-        ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ) := by
-  rw [gaussianBetaGasMeasure_eq_betaGasMeasure, gaussianBetaGasDensity_eq_betaGasDensity]
-  apply integral_betaGasMeasure_eq_integral_smul
-  exact (measurable_betaGasDensity n β (by fun_prop)).aemeasurable
-
 end TauCeti.Probability
