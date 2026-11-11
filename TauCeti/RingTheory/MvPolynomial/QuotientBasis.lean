@@ -471,7 +471,9 @@ theorem IsQuotientBasis.map {source target : Type*} [CommRing source] [CommRing 
       basis_apply, e, AlgEquiv.toLinearEquiv_apply, AlgEquiv.trans_apply,
       Algebra.TensorProduct.tensorQuotientEquiv_apply_tmul, Ideal.quotientEquivAlg_mk,
       algebraTensorAlgEquiv_tmul, one_smul, map_map,
-      RingHom.algebraMap_toAlgebra, AlgHom.comp_algebraMap]
+      RingHom.algebraMap_toAlgebra]
+    congr 2
+    exact congrArg _root_.MvPolynomial.map (AlgHom.comp_algebraMap scalarMap)
   have heq : (fun i ↦ Ideal.Quotient.mk (ideal.map (_root_.MvPolynomial.map scalarMap.toRingHom))
       (_root_.MvPolynomial.map (algebraMap R target) (w i))) = b := (funext hb).symm
   exact ⟨heq.symm ▸ b.linearIndependent, heq.symm ▸ b.span_eq⟩
