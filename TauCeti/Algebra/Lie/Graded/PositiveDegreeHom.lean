@@ -238,18 +238,33 @@ theorem truncatedMap_mem (f : GradedLieHom T ℒ ℳ) {a : ℕ} (k : ℕ)
   refine (e.mem_truncatedGrading_iff ℳ).mpr ⟨f y, f.map_mem hy, ?_⟩
   simpa only [LieIdeal.mkQ_apply] using (f.truncatedMap_mk k h y).symm
 
-/-- The truncation of a fixed-degree homomorphism commutes with homogeneous components. -/
+/-- For an injective degree map, truncation commutes with homogeneous components
+at any source cutoff allowed by the modulus. -/
 @[simp]
-theorem decompose_truncatedMap {ℳ' : N → Submodule R L'} [GradedLieAlgebra ℳ']
-    [IsPositiveGrading d ℳ'] (f : GradedLieHom (PositiveDegreeMap.id d) ℒ ℳ') (k : ℕ)
-    (x : d.truncatedLie ℒ k) (n : N) :
-    (DirectSum.decompose (d.truncatedGrading ℳ' k) (f.truncatedMap k (by simp) x) n :
-      d.truncatedLie ℳ' k) =
-      f.truncatedMap k (by simp)
-        (DirectSum.decompose (d.truncatedGrading ℒ k) x n : d.truncatedLie ℒ k) :=
-  (DirectSum.map_decompose_shift (d.truncatedGrading ℒ k) (d.truncatedGrading ℳ' k)
-    (f.truncatedMap k (by simp)).toLinearMap.toAddMonoidHom _root_.id Function.injective_id
-    (fun _ _ hx => by simpa using f.truncatedMap_mem k (by simp) hx) n x).symm
+theorem decompose_truncatedMap (f : GradedLieHom T ℒ ℳ) (hT : Function.Injective T)
+    {a : ℕ} (k : ℕ) (h : T.modulus k ≤ a) (x : d.truncatedLie ℒ a) (n : N) :
+    (DirectSum.decompose (e.truncatedGrading ℳ k) (f.truncatedMap k h x) (T n) :
+      e.truncatedLie ℳ k) =
+      f.truncatedMap k h
+        (DirectSum.decompose (d.truncatedGrading ℒ a) x n : d.truncatedLie ℒ a) :=
+  (DirectSum.map_decompose_shift (d.truncatedGrading ℒ a) (e.truncatedGrading ℳ k)
+    (f.truncatedMap k h).toLinearMap.toAddMonoidHom T hT
+    (fun _ _ hx => f.truncatedMap_mem k h hx) n x).symm
+
+/-- A fixed-degree homomorphism commutes with homogeneous components after truncation,
+including when the source cutoff exceeds the target cutoff. -/
+@[simp]
+theorem decompose_truncatedMap_id {ℳ' : N → Submodule R L'} [GradedLieAlgebra ℳ']
+    [IsPositiveGrading d ℳ'] (f : GradedLieHom (PositiveDegreeMap.id d) ℒ ℳ')
+    {a : ℕ} (k : ℕ) (h : k ≤ a) (x : d.truncatedLie ℒ a) (n : N) :
+    (DirectSum.decompose (d.truncatedGrading ℳ' k)
+      (f.truncatedMap k (by simpa using h) x) n : d.truncatedLie ℳ' k) =
+      f.truncatedMap k (by simpa using h)
+        (DirectSum.decompose (d.truncatedGrading ℒ a) x n : d.truncatedLie ℒ a) := by
+  exact (congrArg (fun m => (DirectSum.decompose (d.truncatedGrading ℳ' k)
+    (f.truncatedMap k (by simpa using h) x) m : d.truncatedLie ℳ' k))
+    (PositiveDegreeMap.id_apply n)).symm.trans
+      (f.decompose_truncatedMap (fun i j hij => by simpa using hij) k (by simpa using h) x n)
 
 /-- Truncation sends the identity graded homomorphism to the identity. -/
 @[simp]
