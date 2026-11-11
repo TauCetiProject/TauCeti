@@ -80,28 +80,23 @@ for the cohomology of a product one of whose factors has finitely generated proj
 * `TopCat.singularSlant_homologyπ`: its value on classes of cycles and cocycles.
 * `TopCat.singularKronecker_singularSlant`: the evaluation law `⟨φ / x, y⟩ = ⟨φ, u_*(x × y)⟩`.
 * `TopCat.singularSlant_naturality`: naturality in both spaces.
+* `TopCat.singularSlant_coefficient_naturality`: slanting a class with changed coefficients
+  `f^* φ` along `u` is slanting `φ` along `u ≫ f`.
 * `TopCat.singularSlant_singularCohomologyMap_fst_eq_zero` and
   `TopCat.singularSlant_singularCohomologyMap_snd_eq_zero`: the vanishing of the slant product of a
   class pulled back from one factor in the degrees where the cohomology or homology of a point
   vanishes.
 * `TopCat.singularSlant_homologyπ_singularCohomologyMap_snd` and
   `TopCat.singularSlant_homologyπ_singularCohomologyMap_snd_eq_self`: the slant product of a class
-  pulled back from `Y` by the class of a point of `X`.
+  pulled back from `Y` by the class of a point of `X`, restated for the point classes
+  `TauCeti.singularHomology₀Section` in
+  `TopCat.singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_self`.
 * `TopCat.singularSlant_eq_slant`: through Eilenberg–Zilber, the slant product is the slant
   product on the tensor product of singular chain complexes.
 * `TopCat.singularSlant_singularCross`, `TopCat.singularSlant_singularCross_of_ne` and
   `TopCat.singularSlant_singularCross_leftUnitor`: slant products of cross products.
 * `TopCat.eq_zero_of_forall_singularSlant_eq_zero`: slant products by the homology of a factor
   with projective homology detect the cohomology of the product.
-* `TopCat.singularSlant_homologyMap_of_comp_eq_id`: slant products after a change of chain
-  coefficients.
-* `TopCat.singularSlant_singularCup_singularCohomologyMap_fst_snd`,
-  `TopCat.singularSlant_singularCup_singularCohomologyMap_fst_snd_of_ne`,
-  `TopCat.singularSlant_singularHomology₀Section_singularCohomologyMap_snd` and
-  `TopCat.eq_zero_of_forall_singularSlant_leftUnitor_eq_zero`: the same computations and the
-  detection theorem for the cohomology `H*(X × Y; k)` with coefficients in `k`, where slant
-  products are taken along the multiplication `k ⊗ k ⟶ k` and products of classes are cup
-  products of pullbacks, `(pr₁^* a ⌣ pr₂^* b) / x = ⟨a, x⟩ • b` and `pr₂^* b / [v] = b`.
 
 ## References
 
@@ -195,6 +190,28 @@ lemma singularSlant_naturality {X Y X' Y' : TopCat.{w}} (f : X ⟶ X') (g : Y �
       exact shuffle_naturality_assoc f g R S _)
     p q n h x φ
 
+/-- **Naturality of the slant product in the coefficients**: for coefficient maps
+`u : R ⊗ S ⟶ T` and `f : T ⟶ T'`, slanting along `u` the class `f^* φ`, whose cochains are those
+of `φ` precomposed with the chain map induced by `f`, is slanting `φ` along `u ≫ f`. -/
+lemma singularSlant_coefficient_naturality (X Y : TopCat.{w}) {T' : ModuleCat.{w} k}
+    (u : R ⊗ S ⟶ T) (f : T ⟶ T') (p q n : ℕ) (h : p + q = n)
+    (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj R).obj X)
+    (φ : (X ⊗ Y).singularCohomology T' k M n) :
+    singularSlant k M X Y u p q n h x
+        (homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
+          (((SSet.chainComplexFunctor _).map f).app (toSSet.obj (X ⊗ Y))).op) n φ) =
+      singularSlant k M X Y (u ≫ f) p q n h x φ := by
+  rw [singularSlant_def, singularSlant_def]
+  refine (TauCeti.ChainComplex.slant_naturality
+    (shuffle X Y R S ≫ ((SSet.chainComplexFunctor _).map (u ≫ f)).app (toSSet.obj (X ⊗ Y)))
+    (shuffle X Y R S ≫ ((SSet.chainComplexFunctor _).map u).app (toSSet.obj (X ⊗ Y)))
+    (𝟙 _) (𝟙 _) (((SSet.chainComplexFunctor _).map f).app (toSSet.obj (X ⊗ Y)))
+    (by simp) p q n h x φ).trans ?_
+  -- the identity chain maps induce identities on homology; the remaining `id x` is `x`
+  simp only [op_id, CategoryTheory.Functor.map_id, TauCeti.ChainComplex.linearYonedaFunctor_obj,
+    homologyMap_id, ModuleCat.hom_id, LinearMap.id_coe]
+  rfl
+
 /-- **A class pulled back from the first factor has no slant products in positive codegree**: for
 `a ∈ Hⁿ(X; T, M)` and `x ∈ Hₚ(X; R)` with `p + q = n` and `q ≠ 0`, `pr₁^* a / x = 0`. In particular
 `pr₁^* a` contributes nothing to the slant products by the class of a point (`p = 0`) or by a loop
@@ -281,6 +298,29 @@ theorem singularSlant_homologyπ_singularCohomologyMap_snd_eq_self (X Y : TopCat
   simp only [CategoryTheory.Functor.map_id, NatTrans.id_app, op_id]
   rw [HomologicalComplex.homologyMap_id]
   rfl
+
+/-- **Slanting a class pulled back from the second factor by the class of a point returns the
+class**: `pr₂^* b / [x₀] = b` for the class `[x₀] ∈ H₀(X; R)` of a point `x₀` with coefficient `r`
+(`TauCeti.singularHomology₀Section`), along a coefficient map `u : R ⊗ S ⟶ S` with
+`u (r ⊗ s) = s`. -/
+theorem singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_self
+    (X Y : TopCat.{w}) (u : R ⊗ S ⟶ S) (q : ℕ) (x₀ : X) (r : R) (hu : ∀ s, u (r ⊗ₜ s) = s)
+    (b : Y.singularCohomology S k M q) :
+    singularSlant k M X Y u 0 q q (zero_add q) (TauCeti.singularHomology₀Section R x₀ r)
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) q b) = b := by
+  let z := ((toSSet.obj X).chainComplex R).liftCycles
+    ((toSSet.obj X).ιChainComplex (TopCat.toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp) r
+  have hx : TauCeti.singularHomology₀Section R x₀ r =
+      ((toSSet.obj X).chainComplex R).homologyπ 0 z := by
+    rw [TauCeti.singularHomology₀Section_def, SSet.ιHomology₀_def]
+    -- the class of the vertex is the composite `liftCycles ≫ homologyπ` applied to `r`
+    rfl
+  rw [hx]
+  exact singularSlant_homologyπ_singularCohomologyMap_snd_eq_self M X Y u q z
+    (TopCat.toSSetObj₀Equiv.symm x₀) r
+    (ConcreteCategory.congr_hom (HomologicalComplex.liftCycles_i ((toSSet.obj X).chainComplex R)
+      ((toSSet.obj X).ιChainComplex (TopCat.toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp)) r)
+    hu b
 
 
 /-- **The slant product through Eilenberg–Zilber**: slanting a class `φ` of `X × Y` by `x` is
@@ -373,130 +413,5 @@ theorem eq_zero_of_forall_singularSlant_eq_zero (X Y : TopCat.{w}) [Module.Proje
     ((TauCeti.ChainComplex.eq_zero_of_forall_slant_eq_zero _ fun p q h x ↦ ?_).trans
       (map_zero _).symm)
   exact (singularSlant_eq_slant M X Y p q n h x φ).symm.trans (hφ p q h x)
-
-/-- **Slant products after a change of chain coefficients**: if `u : R ⊗ S ⟶ T` and
-`v : T ⟶ R ⊗ S` satisfy `u ≫ v = 𝟙`, then slanting along `u` the class `v^* φ`, the class
-`φ ∈ Hⁿ(X × Y; R ⊗ S, M)` with its chain coefficients changed along `v`, is slanting `φ` along the
-identity. -/
-theorem singularSlant_homologyMap_of_comp_eq_id (X Y : TopCat.{w}) (u : R ⊗ S ⟶ T)
-    (v : T ⟶ R ⊗ S) (huv : u ≫ v = 𝟙 _) (p q n : ℕ) (h : p + q = n)
-    (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj R).obj X)
-    (φ : (X ⊗ Y).singularCohomology (R ⊗ S) k M n) :
-    singularSlant k M X Y u p q n h x
-        (homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
-          (((SSet.chainComplexFunctor _).map v).app (toSSet.obj (X ⊗ Y))).op) n φ) =
-      singularSlant k M X Y (𝟙 _) p q n h x φ := by
-  rw [singularSlant_def, singularSlant_def]
-  refine (TauCeti.ChainComplex.slant_naturality
-    (shuffle X Y R S ≫ ((SSet.chainComplexFunctor _).map (𝟙 (R ⊗ S))).app (toSSet.obj (X ⊗ Y)))
-    _ (𝟙 _) (𝟙 _) (((SSet.chainComplexFunctor _).map v).app (toSSet.obj (X ⊗ Y)))
-    ?_ p q n h x φ).trans ?_
-  · rw [Category.assoc, ← NatTrans.comp_app, ← Functor.map_comp, huv]
-    simp
-  · -- the identity maps induce identities; `simp` leaves `x` against `id x`
-    simp
-    rfl
-
-section UnitCoefficients
-
-/-! ### Coefficients in `k`
-
-For the cohomology `H*(X × Y; k)` of a product with coefficients in `k` itself, slant products are
-taken along the multiplication `λ : k ⊗ k ⟶ k`. -/
-
-/-- **The slant product of a cup product of pullbacks**: with coefficients in `k`, for
-`a ∈ Hᵖ(X; k)`, `b ∈ H^q(Y; k)` and `x ∈ Hₚ(X; k)`, `(pr₁^* a ⌣ pr₂^* b) / x = ⟨a, x⟩ • b`. -/
-@[simp]
-theorem singularSlant_singularCup_singularCohomologyMap_fst_snd (X Y : TopCat.{w})
-    (p q n : ℕ) (h : p + q = n)
-    (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X)
-    (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (b : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    singularSlant k (𝟙_ (ModuleCat.{w} k)) X Y (λ_ (𝟙_ (ModuleCat.{w} k))).hom p q n h x
-        ((X ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ (𝟙_ (ModuleCat.{w} k))).hom
-          p q n h (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst X Y) p a)
-          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) q b)) =
-      (X.singularKronecker k p a x : k) • b := by
-  rw [TauCeti.singularCup_singularCohomologyMap_fst_snd,
-    singularSlant_homologyMap_of_comp_eq_id _ _ _ _ _ (Iso.hom_inv_id _),
-    singularSlant_singularCross_leftUnitor]
-
-/-- With coefficients in `k`, the slant product of a cup product `pr₁^* a ⌣ pr₂^* b` with
-`a ∈ Hᵖ(X; k)` by a homology class of `X` of degree `p' ≠ p` vanishes. -/
-@[simp]
-theorem singularSlant_singularCup_singularCohomologyMap_fst_snd_of_ne (X Y : TopCat.{w})
-    {p q p' q' n : ℕ} (h : p + q = n) (h' : p' + q' = n) (hp : p' ≠ p)
-    (x : ((singularHomologyFunctor (ModuleCat.{w} k) p').obj (𝟙_ (ModuleCat.{w} k))).obj X)
-    (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (b : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    singularSlant k (𝟙_ (ModuleCat.{w} k)) X Y (λ_ (𝟙_ (ModuleCat.{w} k))).hom p' q' n h' x
-        ((X ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ (𝟙_ (ModuleCat.{w} k))).hom
-          p q n h (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst X Y) p a)
-          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) q b)) = 0 := by
-  rw [TauCeti.singularCup_singularCohomologyMap_fst_snd,
-    singularSlant_homologyMap_of_comp_eq_id _ _ _ _ _ (Iso.hom_inv_id _),
-    singularSlant_singularCross_of_ne _ _ _ _ _ _ hp]
-
-/-- **Slanting a class pulled back from the second factor by a point returns the class**, with
-coefficients in `k`: for a point `v` of `X` and `b ∈ H^q(Y; k)`, `pr₂^* b / [v] = b`. -/
-@[simp]
-theorem singularSlant_singularHomology₀Section_singularCohomologyMap_snd (X Y : TopCat.{w})
-    (v : X) (q : ℕ)
-    (b : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    singularSlant k (𝟙_ (ModuleCat.{w} k)) X Y (λ_ (𝟙_ (ModuleCat.{w} k))).hom 0 q q (zero_add q)
-        (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) v (1 : k))
-        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) q b) = b := by
-  -- the class of the point `v` is the class of the `0`-cycle `1 • v`
-  rw [TauCeti.singularHomology₀Section_def, SSet.ιHomology₀_def]
-  exact singularSlant_homologyπ_singularCohomologyMap_snd_eq_self _ X Y _ q
-    ((((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).liftCycles
-      ((toSSet.obj X).ιChainComplex (toSSetObj₀Equiv.symm v)) 0 (by simp) (by simp)) (1 : k))
-    (toSSetObj₀Equiv.symm v) (1 : k)
-    (by rw [← ConcreteCategory.comp_apply, HomologicalComplex.liftCycles_i])
-    (fun s ↦ by simp) b
-
-/-- **Slant products detect the cohomology of a product with coefficients in `k`**: if the
-homology modules `Hₚ(X; k)` are projective, a class `φ ∈ Hⁿ(X × Y; k)` whose slant products
-`φ / x ∈ H^q(Y; k)` by all classes `x ∈ Hₚ(X; k)`, `p + q = n`, vanish is zero. -/
-theorem eq_zero_of_forall_singularSlant_leftUnitor_eq_zero (X Y : TopCat.{w})
-    [∀ p, Projective (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
-      (𝟙_ (ModuleCat.{w} k))).obj X)] {n : ℕ}
-    (φ : (X ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n)
-    (hφ : ∀ p q (h : p + q = n)
-      (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X),
-      singularSlant k (𝟙_ (ModuleCat.{w} k)) X Y (λ_ (𝟙_ (ModuleCat.{w} k))).hom p q n h x φ = 0) :
-    φ = 0 := by
-  -- changing the chain coefficients along `λ.hom` and back along `λ.inv` is the identity
-  have hcomp (ψ : (X ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n) :
-      homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k (𝟙_ (ModuleCat.{w} k))).map
-          (((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{w} k))).inv).app
-            (toSSet.obj (X ⊗ Y))).op) n
-        (homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k (𝟙_ (ModuleCat.{w} k))).map
-          (((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app
-            (toSSet.obj (X ⊗ Y))).op) n ψ) = ψ := by
-    have key : homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k
-            (𝟙_ (ModuleCat.{w} k))).map (((SSet.chainComplexFunctor _).map
-              (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (toSSet.obj (X ⊗ Y))).op) n ≫
-          homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k
-            (𝟙_ (ModuleCat.{w} k))).map (((SSet.chainComplexFunctor _).map
-              (λ_ (𝟙_ (ModuleCat.{w} k))).inv).app (toSSet.obj (X ⊗ Y))).op) n = 𝟙 _ := by
-      rw [← homologyMap_comp, ← Functor.map_comp, ← op_comp, ← NatTrans.comp_app,
-        ← Functor.map_comp, Iso.inv_hom_id]
-      simp only [TauCeti.ChainComplex.linearYonedaFunctor_obj, CategoryTheory.Functor.map_id,
-        NatTrans.id_app, op_id]
-      exact homologyMap_id _ _
-    exact ConcreteCategory.congr_hom key ψ
-  -- the class with coefficients `k ⊗ k` has vanishing slant products along the identity
-  have he := eq_zero_of_forall_singularSlant_eq_zero (𝟙_ (ModuleCat.{w} k)) X Y
-    (homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k (𝟙_ (ModuleCat.{w} k))).map
-      (((SSet.chainComplexFunctor _).map (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app
-        (toSSet.obj (X ⊗ Y))).op) n φ) fun p q h x ↦
-    (singularSlant_homologyMap_of_comp_eq_id _ X Y (λ_ _).hom (λ_ _).inv (Iso.hom_inv_id _)
-      p q n h x _).symm.trans
-      ((congrArg (singularSlant k _ X Y (λ_ _).hom p q n h x) (hcomp φ)).trans (hφ p q h x))
-  rw [← hcomp φ, he]
-  exact map_zero _
-
-end UnitCoefficients
 
 end TopCat
