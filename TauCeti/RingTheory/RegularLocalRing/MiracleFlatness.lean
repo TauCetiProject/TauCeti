@@ -29,26 +29,25 @@ this matters for the localizations `B_𝔮` of a finite algebra `B` at its maxim
 in general not finite over `R`.
 
 The file also proves finite normal cases in dimension two, where Cohen–Macaulayness of the target
-comes from normality. A finite injective local algebra over a two-dimensional regular local ring
-is free, and hence flat, if it is a normal local domain. More generally, a finite torsion-free
-algebra `B` over a two-dimensional regular local ring `A` is free if every localization of `B` at
-a maximal ideal is a normal domain; here `B` need not be local.
+comes from normality. A finite torsion-free algebra `B` over a two-dimensional regular local ring
+`A` is free if every localization of `B` at a maximal ideal is a normal domain; here `B` need not be
+local. As a corollary, a finite injective algebra over `A` that is a normal domain is flat.
 
-The two dimension-two proofs show that a pair `x, y` generating the maximal ideal of `A` is a
-regular sequence on `B`, and then apply `TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular`. In
-the local case normality of `B` gives this directly. In general `x` is regular because `B` is
-torsion free, and regularity of `y` modulo `x` may be checked after localizing at the maximal
-ideals `𝔮` of `B`. As `A` is factorial, hence integrally closed, going down along `A → B` gives
-`B_𝔮` dimension two, and the normal domain `B_𝔮` is then Cohen–Macaulay, so `x, y` is a regular
-sequence on `B_𝔮`.
+The proof of freeness shows that a pair `x, y` generating the maximal ideal of `A` is a regular
+sequence on `B`, and then applies `TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular`. Here `x` is
+regular because `B` is torsion free, and regularity of `y` modulo `x` may be checked after
+localizing at the maximal ideals `𝔮` of `B`. As `A` is factorial, hence integrally closed, going
+down along `A → B` gives `B_𝔮` dimension two, and the normal domain `B_𝔮` is then Cohen–Macaulay,
+so `x, y` is a regular sequence on `B_𝔮`. For a normal domain `B`, every localization is a normal
+domain, which gives the flatness corollary.
 
 ## Main results
 
 * `TauCeti.Algebra.flat_of_isCohenMacaulay`: **miracle flatness**, Stacks, Lemma 10.128.1 (00R4).
-* `TauCeti.Algebra.flat_of_normal_dim_two`: a finite injective normal domain over a
-  two-dimensional regular local ring is flat.
 * `TauCeti.Algebra.free_of_normal_dim_two`: a finite torsion-free algebra over a two-dimensional
   regular local ring whose localizations at maximal ideals are normal domains is free.
+* `TauCeti.Algebra.flat_of_normal_dim_two`: a finite injective normal domain over a
+  two-dimensional regular local ring is flat, as a corollary.
 
 ## References
 
