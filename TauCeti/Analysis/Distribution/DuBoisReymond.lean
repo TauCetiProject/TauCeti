@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Distribution.TestFunction
@@ -42,6 +43,11 @@ difference of the primitives of two copies of a narrow bump of integral one, cen
 `y`; then `ψ ≥ 0`, and `∫ ψ' f` is the difference of the averages of `f` against the two bumps,
 which are close to `f x` and `f y` by continuity.
 
+For a locally integrable `f` the same test functions show that the averages of `f` against the
+translates of a narrow bump are monotone in the centre. They converge to `f` at almost every point
+by the Lebesgue differentiation theorem, so `f` is monotone on a subset of the interval of full
+measure.
+
 ## Main declarations
 
 * `ContDiff.exists_contDiff_deriv_eq_of_integral_eq_zero`: the primitive of a test function on
@@ -52,6 +58,9 @@ which are close to `f x` and `f y` by continuity.
   functions.
 * `ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos`: a continuous function with nonnegative
   distributional derivative is monotone.
+* `MeasureTheory.LocallyIntegrableOn.exists_ae_mem_monotoneOn_of_integral_deriv_mul_nonpos`: a
+  locally integrable function with nonnegative distributional derivative is monotone on a subset
+  of full measure.
 -/
 
 public section
@@ -324,3 +333,105 @@ theorem _root_.ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos {a b : ℝ} 
   linarith
 
 end TauCeti
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+open Set Filter Topology TauCeti
+open scoped ContDiff Convolution
+
+/-- **The monotone du Bois-Reymond lemma, almost everywhere.** A real function locally integrable
+on an open interval whose distributional derivative is nonnegative, in the sense that
+`∫ x, deriv ψ x * f x ≤ 0` for every nonnegative test function `ψ` on the interval, is monotone
+on a subset of the interval of full measure. -/
+theorem exists_ae_mem_monotoneOn_of_integral_deriv_mul_nonpos
+    {a b : ℝ} {f : ℝ → ℝ} (hf : LocallyIntegrableOn f (Ioo a b))
+    (h : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → (∀ x, 0 ≤ ψ x) →
+      ∫ x, deriv ψ x * f x ≤ 0) :
+    ∃ s ⊆ Ioo a b, (∀ᵐ x ∂volume.restrict (Ioo a b), x ∈ s) ∧ MonotoneOn f s := by
+  -- Normalized bumps `β n` of radius `r n = 1 / (n + 1)`.
+  set r : ℕ → ℝ := fun n ↦ 1 / ((n : ℝ) + 1)
+  have hr : ∀ n, 0 < r n := fun n ↦ by positivity
+  have hr0 : Tendsto r atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
+  have hr_anti : Antitone r := fun m n hmn ↦ one_div_le_one_div_of_le (by positivity)
+    (by exact_mod_cast Nat.add_le_add_right hmn 1)
+  let ρ : ℕ → ContDiffBump (0 : ℝ) := fun n ↦ ⟨r n / 2, r n, half_pos (hr n), half_lt_self (hr n)⟩
+  set β : ℕ → ℝ → ℝ := fun n ↦ (ρ n).normed volume with hβ_def
+  have hβ0 : ∀ n t, r n ≤ |t| → β n t = 0 := fun n t ht ↦ Function.notMem_support.mp <| by
+    simpa [hβ_def, (ρ n).support_normed_eq, ρ] using ht
+  -- The truncations of `f` to the compact subintervals `K q = [a + r q, b - r q]`.
+  set K : ℕ → Set ℝ := fun q ↦ Icc (a + r q) (b - r q)
+  have hK : ∀ q, K q ⊆ Ioo a b := fun q ↦
+    Icc_subset_Ioo (by linarith [hr q]) (by linarith [hr q])
+  have hfK : ∀ q, LocallyIntegrable ((K q).indicator f) volume := fun q ↦
+    ((hf.integrableOn_compact_subset (hK q) isCompact_Icc).integrable_indicator
+      measurableSet_Icc).locallyIntegrable
+  -- Almost every point is a Lebesgue point of every truncation.
+  have hae : ∀ᵐ x, ∀ q, Tendsto (fun n ↦
+      ((ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (K q).indicator f) x) atTop
+        (𝓝 ((K q).indicator f x)) :=
+    ae_all_iff.2 fun q ↦ ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable hr0
+      (K := 2) (Eventually.of_forall fun n ↦ by simp [ρ]; linarith) (hfK q)
+  refine ⟨{x | x ∈ Ioo a b ∧ ∀ q, Tendsto (fun n ↦
+      ((ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (K q).indicator f) x) atTop
+        (𝓝 ((K q).indicator f x))}, fun x hx ↦ hx.1, ?_, ?_⟩
+  · filter_upwards [ae_restrict_mem measurableSet_Ioo, ae_restrict_of_ae hae] with x hx₁ hx₂
+    exact ⟨hx₁, hx₂⟩
+  rintro x ⟨hx, hxl⟩ y ⟨hy, hyl⟩ hxy
+  -- A truncation `K q` that contains `x` and `y` with room `r q` to spare.
+  obtain ⟨q, hq⟩ := (hr0.eventually (gt_mem_nhds
+    (half_pos (lt_min (sub_pos.2 hx.1) (sub_pos.2 hy.2))))).exists
+  have hqx : 2 * r q < x - a := by linarith [min_le_left (x - a) (b - y)]
+  have hqy : 2 * r q < b - y := by linarith [min_le_right (x - a) (b - y)]
+  -- For `n ≥ q`, the convolution at `z ∈ {x, y}` is the average of `f` against `β n (· - z)`.
+  have hconv : ∀ n, q ≤ n → ∀ z, x ≤ z → z ≤ y →
+      ((ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (K q).indicator f) z =
+        ∫ t, β n (t - z) * f t := by
+    intro n hn z hxz hzy
+    rw [convolution_eq_swap]
+    refine integral_congr_ae (Eventually.of_forall fun t ↦ ?_)
+    simp only [ContinuousLinearMap.lsmul_apply, smul_eq_mul]
+    rw [← (ρ n).normed_neg, neg_sub]
+    by_cases ht : |t - z| < r n
+    · have hrn := hr_anti hn
+      rw [indicator_of_mem]
+      rw [abs_lt] at ht
+      exact ⟨by linarith, by linarith⟩
+    · simp [hβ0 n _ (not_lt.mp ht), show (ρ n).normed volume (t - z) = 0 from
+        hβ0 n _ (not_lt.mp ht)]
+  have hlim : ∀ z, x ≤ z → z ≤ y → (∀ q, Tendsto (fun n ↦
+      ((ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (K q).indicator f) z) atTop
+        (𝓝 ((K q).indicator f z))) →
+      Tendsto (fun n ↦ ∫ t, β n (t - z) * f t) atTop (𝓝 (f z)) := by
+    intro z hxz hzy hz
+    have hzK : z ∈ K q := ⟨by linarith [hr q], by linarith [hr q]⟩
+    rw [← indicator_of_mem hzK f]
+    exact (hz q).congr' ((eventually_ge_atTop q).mono fun n hn ↦ hconv n hn z hxz hzy)
+  -- For `n ≥ q`, testing against the difference of primitives of `β n (· - x)` and
+  -- `β n (· - y)` orders the two averages.
+  have hle : ∀ n, q ≤ n → ∫ t, β n (t - x) * f t ≤ ∫ t, β n (t - y) * f t := by
+    intro n hn
+    have hrn := hr_anti hn
+    have hrq := hr q
+    obtain ⟨ψ, hψ, hψnn, hψs, hψd⟩ := exists_nonneg_deriv_eq_sub_bump (ρ n).contDiff_normed
+      (ρ n).nonneg_normed (hβ0 n) (ρ n).integral_normed hxy
+    have hint : ∀ z, x ≤ z → z ≤ y → Integrable fun t ↦ β n (t - z) * f t := by
+      intro z hxz hzy
+      have hIcc : tsupport (fun t ↦ β n (t - z)) ⊆ Icc (z - r n) (z + r n) := by
+        refine closure_minimal (fun t ht ↦ ?_) isClosed_Icc
+        have := not_le.mp (mt (hβ0 n (t - z)) ht)
+        rw [abs_lt] at this
+        exact ⟨by linarith, by linarith⟩
+      have hs : tsupport (fun t ↦ β n (t - z)) ⊆ Ioo a b := hIcc.trans
+        (Icc_subset_Ioo (show a < z - r n by linarith) (show z + r n < b by linarith))
+      have hc : ContDiff ℝ ∞ fun t ↦ β n (t - z) :=
+        (ρ n).contDiff_normed.comp (contDiff_id.sub contDiff_const)
+      exact TestFunction.integrable_smul (Ω := ⟨Ioo a b, isOpen_Ioo⟩)
+        ⟨_, hc, isCompact_Icc.of_isClosed_subset (isClosed_tsupport _) hIcc, hs⟩ hf
+    have h0 := h ψ hψ (hψs.trans (Icc_subset_Ioo (by linarith) (by linarith))) hψnn
+    simp_rw [hψd, sub_mul] at h0
+    rw [integral_sub (hint x le_rfl hxy) (hint y hxy le_rfl)] at h0
+    linarith
+  exact le_of_tendsto_of_tendsto (hlim x le_rfl hxy hxl) (hlim y hxy le_rfl hyl)
+    (eventually_atTop.2 ⟨q, hle⟩)
+
+end MeasureTheory.LocallyIntegrableOn
