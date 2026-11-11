@@ -349,11 +349,13 @@ include ht hs
 private theorem isLocalRing_ringY : IsLocalRing (RingY t s) :=
   (monic_quadratic t s).isLocalRing_adjoinRoot (irreducible_map_residue_quadratic ht hs)
 
-variable [CharP A 2] (hu : ∀ a b : ResidueField A, a ^ 2 + residue A s * b ^ 2 ≠ residue A u)
+variable (hu : ∀ a b : ResidueField A, a ^ 2 + residue A s * b ^ 2 ≠ residue A u)
 include hu
 
-/-- The residue of `u` is not a square in the residue field of `A[y]`: the squares there are
-the residues of `a ^ 2 + s b ^ 2` with `a, b ∈ A`, since `(a + b y) ^ 2 = a ^ 2 + b ^ 2 (s - t y)`.
+/-- The residue of `u` is not a square in the residue field of `A[y]`: a square there is the
+residue of `(a + b y) ^ 2 = a ^ 2 + s b ^ 2 + (2 a b - t b ^ 2) y`. Since the residue of `y` is not
+in the residue field of `A`, a square equal to the residue of `u` has `2 a b = 0` in the residue
+field, so `u` is the residue of `a ^ 2 + s b ^ 2`, contradicting `hu`.
 So the second quadratic has irreducible reduction. -/
 private theorem irreducible_map_residue_quadratic_ringYZ [IsLocalRing (RingY t s)] :
     Irreducible ((quadratic (algebraMap A (RingY t s) t) (algebraMap A (RingY t s) u)).map
@@ -369,17 +371,43 @@ private theorem irreducible_map_residue_quadratic_ringYZ [IsLocalRing (RingY t s
   set b := f.coeff 1
   have hroot := AdjoinRoot.eval₂_root (quadratic t s)
   rw [eval₂_quadratic, ← AdjoinRoot.algebraMap_eq] at hroot
-  have h2 := TauCeti.add_self_eq_zero_of_charTwo A (1 : RingY t s)
   set r := AdjoinRoot.root (quadratic t s)
-  have key : aeval r (C b * X + C a) ^ 2 =
-      algebraMap A _ (a ^ 2 + s * b ^ 2) - algebraMap A _ t * (algebraMap A _ b ^ 2 * r) := by
-    simp only [map_add, map_mul, map_pow, aeval_C, aeval_X]
-    linear_combination algebraMap A _ b ^ 2 * hroot + algebraMap A _ a * algebraMap A _ b * r * h2
+  have key : aeval r (C b * X + C a) ^ 2 = algebraMap A _ (a ^ 2 + s * b ^ 2) +
+      algebraMap A _ (2 * a * b - t * b ^ 2) * r := by
+    simp only [map_add, map_mul, map_pow, map_sub, map_ofNat, aeval_C, aeval_X]
+    linear_combination algebraMap A _ b ^ 2 * hroot
   rw [← map_pow, key] at hc
-  apply hu (residue A a) (residue A b)
-  apply (algebraMap (ResidueField A) (ResidueField (RingY t s))).injective
-  simpa [(residue_eq_zero_iff _).mpr (map_nonunit _ _ ht), ResidueField.algebraMap_residue,
-    ← AdjoinRoot.algebraMap_eq] using hc
+  -- Work in the residue field `L` of `A[y]`, over the residue field `K` of `A`.
+  have hres (x : A) : residue (RingY t s) (algebraMap A _ x) =
+      algebraMap (ResidueField A) (ResidueField (RingY t s)) (residue A x) :=
+    (ResidueField.algebraMap_residue x).symm
+  have ht0 : residue A t = 0 := (residue_eq_zero_iff t).mpr ht
+  have hρ : residue (RingY t s) r ^ 2 =
+      algebraMap (ResidueField A) (ResidueField (RingY t s)) (residue A s) := by
+    have := congr(residue (RingY t s) $(show r ^ 2 + algebraMap A _ t * r = algebraMap A _ s by
+      linear_combination hroot))
+    rw [map_add, map_mul, map_pow, hres t, hres s, ht0, map_zero, zero_mul, add_zero] at this
+    exact this
+  have hp : residue A (a ^ 2 + s * b ^ 2) = residue A a ^ 2 + residue A s * residue A b ^ 2 := by
+    simp
+  have hq : residue A (2 * a * b - t * b ^ 2) = 2 * residue A a * residue A b := by
+    simp only [map_sub, map_mul, map_pow, ht0, zero_mul, sub_zero, map_ofNat]
+  rw [map_add, map_mul, hres, hres, hres, hp, hq] at hc
+  by_cases h2 : (2 : ResidueField A) * residue A a * residue A b = 0
+  · apply hu (residue A a) (residue A b)
+    apply (algebraMap (ResidueField A) (ResidueField (RingY t s))).injective
+    rw [h2, map_zero, zero_mul, add_zero] at hc
+    exact hc
+  · refine hs ((residue A u - (residue A a ^ 2 + residue A s * residue A b ^ 2)) /
+      (2 * residue A a * residue A b)) ?_
+    apply (algebraMap (ResidueField A) (ResidueField (RingY t s))).injective
+    have hρ' : residue (RingY t s) r =
+        algebraMap (ResidueField A) (ResidueField (RingY t s))
+          ((residue A u - (residue A a ^ 2 + residue A s * residue A b ^ 2)) /
+            (2 * residue A a * residue A b)) := by
+      rw [map_div₀, eq_div_iff ((_root_.map_ne_zero _).mpr h2), map_sub]
+      linear_combination hc
+    rw [map_pow, ← hρ', hρ]
 
 /-- `B` is a local ring. -/
 theorem isLocalRing_ringYZ : IsLocalRing (RingYZ t s u) :=
@@ -395,10 +423,13 @@ theorem maximalIdeal_ringYZ [IsLocalRing (RingYZ t s u)] :
     AdjoinRoot.maximalIdeal_eq_map (irreducible_map_residue_quadratic ht hs), Ideal.map_map,
     ← IsScalarTower.algebraMap_eq]
 
-/-- `A → B` is a local homomorphism. -/
+omit ht hs hu in
+/-- `A → B` is a local homomorphism: it is finite, so the preimage of the maximal ideal of the
+local ring `B` is a maximal ideal of the local ring `A`. -/
 theorem isLocalHom_algebraMap_ringYZ [IsLocalRing (RingYZ t s u)] :
     IsLocalHom (algebraMap A (RingYZ t s u)) :=
-  ((local_hom_tfae _).out 1 3).mpr (maximalIdeal_ringYZ ht hs hu).ge
+  ((local_hom_tfae _).out 1 4).mpr (IsLocalRing.eq_maximalIdeal
+    (Ideal.isMaximal_under_of_isIntegral_of_isMaximal (R := A) (maximalIdeal (RingYZ t s u)))).ge
 
 /-- **The residue field of `B` has degree `4` over that of `A`.** -/
 theorem finrank_residueField_ringYZ [IsLocalRing (RingYZ t s u)]
@@ -427,7 +458,7 @@ private theorem isDiscreteValuationRing_ringY :
   ⟨this, (monic_quadratic t s).isDiscreteValuationRing_adjoinRoot
     (irreducible_map_residue_quadratic ht hs)⟩
 
-variable [CharP A 2] (hu : ∀ a b : ResidueField A, a ^ 2 + residue A s * b ^ 2 ≠ residue A u)
+variable (hu : ∀ a b : ResidueField A, a ^ 2 + residue A s * b ^ 2 ≠ residue A u)
 include hu
 
 /-- `B` is a domain. -/
@@ -444,8 +475,6 @@ theorem isDiscreteValuationRing_ringYZ [IsDomain (RingYZ t s u)] :
     (irreducible_map_residue_quadratic_ringYZ ht hs hu)
 
 end Step
-
-variable [CharP A 2]
 
 /-- **`t` is a uniformizer of `B`**: the extension `A → B` has ramification index one. -/
 theorem irreducible_algebraMap_ringYZ (ht : Irreducible t)
@@ -508,7 +537,7 @@ theorem algEquiv_sq_eq_one (σ : RingYZ t s u ≃ₐ[A] RingYZ t s u) : σ ^ 2 =
 the residue field, since it moves the generators by multiples of `t`. -/
 theorem ramificationGroup_zero_eq_top [IsLocalRing (RingYZ t s u)] :
     IsLocalRing.ramificationGroup (RingYZ t s u ≃ₐ[A] RingYZ t s u) (RingYZ t s u) 0 = ⊤ := by
-  have := isLocalHom_algebraMap_ringYZ ht hs hu
+  have := isLocalHom_algebraMap_ringYZ (t := t) (s := s) (u := u)
   have hT : algebraMap A (RingYZ t s u) t ∈ maximalIdeal _ := map_nonunit _ _ ht
   refine eq_top_iff.mpr fun σ _ ↦
     (IsLocalRing.mem_ramificationGroup_iff_of_adjoin_eq_top (adjoin_y_z t s u)).mpr ?_

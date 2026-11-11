@@ -115,8 +115,7 @@ instance : IsDiscreteValuationRing ExtensionRing :=
     sq_ne_residue_s sq_add_residue_s_mul_sq_ne_residue_u
 
 instance : IsLocalHom (algebraMap BaseRing ExtensionRing) :=
-  FierceBiquadratic.isLocalHom_algebraMap_ringYZ t_mem_maximalIdeal
-    sq_ne_residue_s sq_add_residue_s_mul_sq_ne_residue_u
+  FierceBiquadratic.isLocalHom_algebraMap_ringYZ
 
 /-- The parameter remains a uniformizer in the extension: its ramification index is one. -/
 theorem irreducible_algebraMap_t : Irreducible (algebraMap BaseRing ExtensionRing t) :=
