@@ -185,9 +185,7 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence [Nonempty ι
           (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) =
         ∫ x in ball x₀ ρ, f x * W1p.value (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x ∂mu :=
     fun v => by
-      have hres := energyFormH1_restrictL a 0 0 hB u v
-      rw [hu, setIntegral_mul_value_extendByZeroL, setIntegral_inner_gradient_extendByZeroL]
-        at hres
+      have hres := energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_inner hB hu v
       simp only [Opens.coe_mk] at hres
       linarith [energyFormH1_sub_left hcoeff (W1p.restrictL hB u)
         (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2), hw v]
