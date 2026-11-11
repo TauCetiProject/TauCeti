@@ -84,9 +84,12 @@ private theorem hom_ofAdd_isImmersion {m : ℕ∞ω} :
     TauCeti.contMDiff_expUnitHom Complex.I
   apply hs.isImmersion_units_of_injective_mfderiv_val (by simp)
   intro t
-  have hi := TauCeti.injective_mfderiv_coe_circleExp t
-  apply (TauCeti.injective_mvfderiv_iff).mp
-  simpa [hom_ofAdd, Circle.toUnits_apply] using (TauCeti.injective_mvfderiv_iff).mpr hi
+  have hval : (fun s : ℝ ↦ ((hom (Multiplicative.ofAdd s) : ℂˣ) : ℂ)) =
+      fun s ↦ (Circle.exp s : ℂ) := by
+    funext s
+    simp [hom_ofAdd, Circle.toUnits_apply]
+  rw [hval]
+  exact TauCeti.injective_mfderiv_coe_circleExp t
 
 /-- The real exponential parametrization is an immersion at every differentiability order. -/
 theorem isImmersion_hom {m : ℕ∞ω} : Manifold.IsImmersion 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) m hom := by
