@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.Morse.Prod
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Index
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Morse functions on a product manifold
@@ -44,6 +45,9 @@ of the set.
 * `TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_comp_snd`: the
   Morse index of the separated sum is the sum of the indices.
+* `TauCeti.criticalPoints_comp_snd` and `TauCeti.manifoldMorseIndex_comp_snd`: for a function `q`
+  on a normed space `V`, the critical points of `(x, v) ↦ q v` on `M × V` are the points over
+  critical points of `q`, and its Morse index at `(x, v)` is that of `q` at `v`.
 
 ## References
 
@@ -177,6 +181,70 @@ theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_com
   TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd
     ((isManifoldNondegenerateCriticalPoint_iff I).1 hf).contDiffAt
     ((isManifoldNondegenerateCriticalPoint_iff I').1 hg).contDiffAt
+
+section CompSnd
+
+/-! ### Functions of the second factor
+
+A function `q` on a normed space `V` pulls back to the function `(x, v) ↦ q v` on `M × V`, which is
+constant along the slices `M × {v}`. Its critical points and Morse indices are those of `q`. -/
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {q : V → ℝ}
+
+/-- **Critical points of a function of the second factor.** A point `p` of `M × V` is a critical
+point of `(x, v) ↦ q v` exactly when `p.2` is a critical point of `q`. -/
+theorem mem_criticalPoints_comp_snd_iff {p : M × V} :
+    p ∈ criticalPoints (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) ↔ p.2 ∈ criticalPoints 𝓘(ℝ, V) q := by
+  by_cases hq : DifferentiableAt ℝ q p.2
+  swap
+  -- Both derivatives vanish by convention: on the slice `{p.1} × V` the function `q ∘ Prod.snd`
+  -- restricts to `q`, so it is not differentiable at `p` either.
+  · have hq' : ¬MDifferentiableAt (I.prod 𝓘(ℝ, V)) 𝓘(ℝ) (q ∘ Prod.snd) p := fun h ↦
+      hq (mdifferentiableAt_iff_differentiableAt.1
+        (h.comp_of_eq p.2 (mdifferentiableAt_const.prodMk mdifferentiableAt_id) rfl))
+    rw [mem_criticalPoints_iff_mfderiv_eq_zero, mfderiv_zero_of_not_mdifferentiableAt hq',
+      mem_criticalPoints_iff_fderiv_eq_zero, fderiv_zero_of_not_differentiableAt hq]
+    simp
+  have hd (w : TangentSpace (I.prod 𝓘(ℝ, V)) p) :
+      mvfderiv (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) p w = fderiv ℝ q p.2 w.2 := by
+    rw [mvfderiv_comp_apply p hq.mdifferentiableAt mdifferentiableAt_snd, mfderiv_snd,
+      mvfderiv_eq_fderiv_apply]
+    rfl
+  rw [mem_criticalPoints, mem_criticalPoints_iff_fderiv_eq_zero]
+  constructor
+  · intro h
+    ext w
+    simpa using (hd ((0 : E), w)).symm.trans (congr($h ((0 : E), w)).trans (zero_apply _))
+  · intro h
+    ext w
+    rw [hd, h]
+    rfl
+
+/-- The critical set of `(x, v) ↦ q v` on `M × V` is `M` times the critical set of `q`. -/
+theorem criticalPoints_comp_snd :
+    criticalPoints (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) =
+      (univ : Set M) ×ˢ criticalPoints 𝓘(ℝ, V) q := by
+  ext p
+  rw [mem_criticalPoints_comp_snd_iff]
+  simp
+
+/-- **The Morse index of a function of the second factor** at `(x, v)` is the Morse index of `q`
+at `v`: the slice directions contribute nothing to the Hessian. -/
+theorem manifoldMorseIndex_comp_snd [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] {v : V}
+    (hq : ContDiffAt ℝ 2 q v) (x : M) :
+    manifoldMorseIndex (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (x, v) = morseIndex q v := by
+  have hsum : (fun _ : M ↦ (0 : ℝ)) ∘ Prod.fst + q ∘ Prod.snd = q ∘ Prod.snd := by
+    funext p
+    simp
+  -- The zero function has zero Hessian, hence index zero.
+  have hzero : manifoldMorseIndex I (fun _ : M ↦ (0 : ℝ)) x = 0 := by
+    rw [manifoldMorseIndex_def, morseIndex_def]
+    exact (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp fun w ↦ by
+      simp [Function.comp_def, hessianQuadraticForm_apply]
+  rw [← hsum, manifoldMorseIndex_comp_fst_add_comp_snd contDiffAt_const (by simpa using hq),
+    hzero, manifoldMorseIndex_modelSpace, zero_add]
+
+end CompSnd
 
 end TauCeti
 

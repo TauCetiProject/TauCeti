@@ -393,18 +393,6 @@ section Prod
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- A tangent vector at `(x, 0)` in the kernel of the critical Hessian of `q ∘ Prod.snd` has
-vanishing second component when `0` is a nondegenerate critical point of `q`. -/
-private theorem snd_eq_zero_of_criticalHessian_comp_snd_apply_eq_zero {q : V → ℝ}
-    (hq : IsNondegenerateCriticalPoint q 0) (x : M)
-    (v : TangentSpace (I.prod 𝓘(ℝ, V)) (x, (0 : V)))
-    (hv : criticalHessian (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (x, 0) v = 0) : v.2 = 0 := by
-  have hD₂ : fderiv ℝ (fderiv ℝ q) 0 v.2 = 0 := ContinuousLinearMap.ext fun w ↦ by
-    have hw := congrArg (fun L ↦ L ((0 : E), w)) hv
-    exact (criticalHessian_comp_snd_apply hq.contDiffAt x v (0, w)).symm.trans
-      hw
-  exact hq.isInvertible.injective (hD₂.trans (map_zero _).symm)
-
 /-- **The model Morse–Bott function.** If `q` has a nondegenerate critical point at `0`, then the
 slice `M × {0}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v`. The slice is a
 smooth embedding for instance by `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`. -/
@@ -422,7 +410,7 @@ theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ}
       ContinuousLinearMap.zero_comp, ContinuousLinearMap.zero_comp]
   ker_criticalHessian_le x v hv := by
     rw [ofIsSmoothEmbedding_apply] at hv
-    have hv₂ : v.2 = 0 := snd_eq_zero_of_criticalHessian_comp_snd_apply_eq_zero hq x v hv
+    have hv₂ : v.2 = 0 := (mem_ker_criticalHessian_comp_snd_iff hq x).1 hv
     have hD : mfderiv I (I.prod 𝓘(ℝ, V)) (fun y : M ↦ (y, (0 : V))) x =
         (ContinuousLinearMap.id ℝ _).prod 0 :=
       ((hasMFDerivAt_id x).prodMk (hasMFDerivAt_const (0 : V) x)).mfderiv

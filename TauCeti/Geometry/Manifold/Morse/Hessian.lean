@@ -50,7 +50,9 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.criticalHessian_mfderiv_apply_eq_zero`: the critical Hessian vanishes on directions
   tangent to a family of critical points.
 * `TauCeti.criticalHessian_comp_snd_apply`: the critical Hessian of `(x, v) ↦ q v` on `M × V` is the
-  second derivative of `q` on the second components.
+  second derivative of `q` on the second components, and
+  `TauCeti.mem_ker_criticalHessian_comp_snd_iff`: over a nondegenerate critical point of `q`, its
+  kernel consists of the vectors with vanishing second component.
 * `TauCeti.criticalHessian_mfderiv_eq_zero` and `TauCeti.range_mfderiv_le_radical_criticalHessian`:
   tangent vectors to a family of critical points lie in the kernel of the critical Hessian, which is
   the radical of its quadratic form (`TauCeti.radical_toQuadraticMap_toBilinForm_criticalHessian`).
@@ -407,6 +409,24 @@ theorem criticalHessian_comp_snd_apply {q : V → ℝ} {y : V} (hq : ContDiffAt 
   simp only [fderiv_snd, hd, hsnd, ContinuousLinearMap.coe_snd', Pi.zero_apply]
   exact (congrArg (fderiv ℝ (fderiv ℝ q) y v.2 w.2 + ·) (map_zero (fderiv ℝ q y))).trans
     (add_zero _)
+
+/-- At a point `(x, y)` over a nondegenerate critical point `y` of `q`, the kernel of the critical
+Hessian of `q ∘ Prod.snd` consists of the tangent vectors with vanishing second component: these
+are the tangent directions of the slice `M × {y}`. -/
+theorem mem_ker_criticalHessian_comp_snd_iff {q : V → ℝ} {y : V}
+    (hq : IsNondegenerateCriticalPoint q y) (x : M) {v : TangentSpace (I.prod 𝓘(ℝ, V)) (x, y)} :
+    v ∈ (criticalHessian (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (x, y)).ker ↔ v.2 = 0 := by
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
+  constructor
+  · intro hv
+    refine hq.isInvertible.injective (ContinuousLinearMap.ext fun w ↦ ?_)
+    have hw := (criticalHessian_comp_snd_apply hq.contDiffAt x v ((0 : E), w)).symm.trans
+      (congr($hv ((0 : E), w)).trans (zero_apply _))
+    simpa using hw
+  · intro hv
+    ext w
+    rw [criticalHessian_comp_snd_apply hq.contDiffAt, hv]
+    simp
 
 end Prod
 
