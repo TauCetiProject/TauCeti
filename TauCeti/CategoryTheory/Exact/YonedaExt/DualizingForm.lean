@@ -162,9 +162,11 @@ theorem IsDualizingForm.biproduct [HasFiniteBiproducts C]
     fun ξ ↦ by simp [Φ]
   -- The flipped pairings of the summands are injective.
   have hcf : ∀ j X, Function.Injective (costablePairing (φ j) X).flip := fun j X ↦
-    injective_flip_of_surjective hQ ((hφ j).bijective_costablePairing X).2
+    injective_flip_of_surjective
+      (nontrivial_linearMap_of_isMaximal hQ) ((hφ j).bijective_costablePairing X).2
   have hsf : ∀ j B, Function.Injective (stablePairing (φ j) B).flip := fun j B ↦
-    injective_flip_of_surjective hQ ((hφ j).bijective_stablePairing B).2
+    injective_flip_of_surjective
+      (nontrivial_linearMap_of_isMaximal hQ) ((hφ j).bijective_stablePairing B).2
   refine ⟨fun X ↦ ?_, fun B ↦ ?_⟩
   · refine (bijective_of_injective_of_injective_flip hQ ?_ ?_ (hfin _ X)).2.1
     · -- A morphism `a : X ⟶ ⨁ T` outside `ℐ` has a component `a ≫ π_j` outside `ℐ`.
@@ -262,7 +264,8 @@ theorem exists_isDualizingForm [HasFiniteBiproducts C] [IsKrullSchmidt C]
     · exact ⟨0, 0, isDualizingForm_zero_of_isProjective hproj⟩
     · obtain ⟨T, e, he⟩ := hAR P ((IsKrullSchmidt.indecomposable_iff_isLocalRing_end P).mpr hP)
         hproj
-      obtain ⟨φ, hφ⟩ := exists_apply_ne_zero_of_forall_isMaximal hQ
+      obtain ⟨φ, hφ⟩ := exists_apply_ne_zero_of_forall_isMaximal
+        (nontrivial_linearMap_of_isMaximal hQ)
         (fun h0 ↦ e.not_isAlmostSplit_of_mk_eq_zero h0 he)
       exact ⟨T, φ, isDualizingForm_of_isAlmostSplit hQ e he hφ (fun B ↦ hfin B T)
         (fun X ↦ hfin P X)⟩

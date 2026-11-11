@@ -265,7 +265,9 @@ variable [Module.Injective R Q] [Small.{w} R]
   LinearEquiv.ofBijective (costablePairing (D.form Z) X).flip
     (bijective_of_injective_of_injective_flip hQ
       ((D.isDualizingForm Z).bijective_costablePairing X).1
-      (injective_flip_of_surjective hQ ((D.isDualizingForm Z).bijective_costablePairing X).2)
+      (injective_flip_of_surjective
+        (nontrivial_linearMap_of_isMaximal hQ)
+        ((D.isDualizingForm Z).bijective_costablePairing X).2)
       (hfin Z X)).2.2
 
 theorem iso_apply (Z X : C) (ξ : E.Ext1 Z X)
@@ -330,7 +332,8 @@ theorem essSurj_functor [HasFiniteBiproducts C] [IsKrullSchmidt C]
         _ _).mpr ((id_mem_injectivelyTrivialIdeal_iff _).mpr hinj))⟩⟩
     · obtain ⟨Z, e, he⟩ := hleft (P k)
         ((IsKrullSchmidt.indecomposable_iff_isLocalRing_end _).mpr (hP k)) hinj
-      obtain ⟨φ, hφ⟩ := exists_apply_ne_zero_of_forall_isMaximal hQ
+      obtain ⟨φ, hφ⟩ := exists_apply_ne_zero_of_forall_isMaximal
+        (nontrivial_linearMap_of_isMaximal hQ)
         (fun h0 ↦ e.not_isAlmostSplit_of_mk_eq_zero h0 he)
       exact ⟨Z, ⟨costableIsoOfBijective ((D.isDualizingForm Z).bijective_costablePairing)
         fun X' ↦ (bijective_costablePairing_of_isAlmostSplit hQ e he hφ (hfin Z X')).1⟩⟩
@@ -463,7 +466,8 @@ theorem bijective_costablePairing_form (Z X : C) :
     LinearMap.ext fun x ↦ LinearMap.ext fun ξ ↦ A.costablePairing_form Z X x ξ
   rw [hflip]
   exact (bijective_of_injective_of_injective_flip hQ
-    (injective_flip_of_surjective hQ (A.iso Z X).surjective) (A.iso Z X).injective
+    (injective_flip_of_surjective
+      (nontrivial_linearMap_of_isMaximal hQ) (A.iso Z X).surjective) (A.iso Z X).injective
     (hfin Z X)).2.1
 
 variable [HasFiniteBiproducts C] [IsKrullSchmidt C]
@@ -500,7 +504,7 @@ theorem exists_isAlmostSplit_of_indecomposable_of_not_isProjective {Z : C}
     (bijective_costablePairing_comp_pushout (A.bijective_costablePairing_form hQ hfin Z) hb')⟩
   -- `P k` is not injective: in `E/ℐ` it is isomorphic to `τ Z`, which is nonzero.
   intro hPk
-  rw [← MorphismIdeal.isZero_quotientFunctor_obj_iff] at hPk
+  rw [← id_mem_injectivelyTrivialIdeal_iff, ← MorphismIdeal.isZero_quotientFunctor_obj_iff] at hPk
   have h0 : IsZero (E.injectivelyTrivialIdeal.quotientFunctor.obj (A.translateObj Z)) :=
     hPk.of_iso (asIso (E.injectivelyTrivialIdeal.quotientFunctor.map b)).symm
   exact one_ne_zero (α := End (E.injectivelyTrivialIdeal.quotientFunctor.obj (A.translateObj Z)))
@@ -540,8 +544,7 @@ theorem exists_isAlmostSplit_of_indecomposable_of_not_isInjective {X : C}
   obtain ⟨b, hb⟩ := E.injectivelyTrivialIdeal.quotientFunctor.map_surjective (X := X)
     (Y := A.translateObj (P k)) θ.inv
   have hb' : IsIso (E.injectivelyTrivialIdeal.quotientFunctor.map b) := hb ▸ inferInstance
-  exact ⟨P k, exists_isAlmostSplit_of_bijective_costablePairing hQ
-    ((id_mem_injectivelyTrivialIdeal_iff X).not.mpr hXi) (hfin (P k) X)
+  exact ⟨P k, exists_isAlmostSplit_of_bijective_costablePairing hQ hXi (hfin (P k) X)
     (bijective_costablePairing_comp_pushout (A.bijective_costablePairing_form hQ hfin (P k)) hb')⟩
 
 /-- **The translate is the left-hand end of the almost-split conflation**: if `T ⟶ Y ⟶ Z` is
@@ -552,7 +555,7 @@ noncomputable def isoTranslateOfIsAlmostSplit {Z T : C} (e : E.Extension Z T)
       A.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z) :=
   costableIsoOfBijective
     (fun X ↦ (bijective_costablePairing_of_isAlmostSplit hQ e he
-      (exists_apply_ne_zero_of_forall_isMaximal hQ
+      (exists_apply_ne_zero_of_forall_isMaximal (nontrivial_linearMap_of_isMaximal hQ)
         (fun h0 ↦ e.not_isAlmostSplit_of_mk_eq_zero h0 he)).choose_spec (hfin Z X)).1)
     (A.bijective_costablePairing_form hQ hfin Z)
 
