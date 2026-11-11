@@ -45,6 +45,8 @@ its disk map is the identity (`TauCeti.TopCat.diskMap_eq_id_of_det_eq_one`); if 
   is homotopic to the identity.
 * `TauCeti.TopCat.exists_homotopy_diskMap_comp_of_det_eq_one`: for `det g = 1`, precomposing a map
   of pairs with the disk map does not change its homotopy class as a map of pairs.
+* `TauCeti.TopCat.continuous_diskMap_symm`: the inverses of a continuous family of orthogonal disk
+  maps form a continuous family.
 * `TauCeti.TopCat.diskMap_eq_id_of_det_eq_one`,
   `TauCeti.TopCat.diskBoundaryMap_eq_diskBoundaryNeg_of_det_eq_neg_one`: the two orthogonal maps
   of `D¹`.
@@ -218,5 +220,47 @@ theorem diskBoundaryMap_eq_diskBoundaryNeg_of_det_eq_neg_one
     LinearIsometryEquiv.diskBoundaryMap_neg]
 
 end DimensionOne
+
+section Family
+
+variable {P : Type*} [TopologicalSpace P]
+  {g : P → EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n)}
+
+/-- **The inverses of a continuous family of orthogonal disk maps form a continuous family.** If the
+disk maps of linear isometries `g p` of `ℝⁿ` depend continuously on `p`, so do the disk maps of the
+inverses `(g p)⁻¹`. -/
+theorem continuous_diskMap_symm
+    (hg : Continuous fun q : P × TopCat.disk.{u} n ↦ (g q.1).diskMap q.2) :
+    Continuous fun q : P × TopCat.disk.{u} n ↦ (g q.1).symm.diskMap q.2 := by
+  -- The maps `g p` are continuous in `p` on all of `ℝⁿ`: rescaling into the disk,
+  -- `g p v = c • g p (c⁻¹ • v)` with `c = max 1 ‖v‖`.
+  have hc : Continuous fun q : P × EuclideanSpace ℝ (Fin n) ↦ max 1 ‖q.2‖ :=
+    continuous_const.max (continuous_norm.comp continuous_snd)
+  have hpos (q : P × EuclideanSpace ℝ (Fin n)) : 0 < max 1 ‖q.2‖ := lt_max_of_lt_left one_pos
+  have hmem (q : P × EuclideanSpace ℝ (Fin n)) :
+      (max 1 ‖q.2‖)⁻¹ • q.2 ∈ closedBall (0 : EuclideanSpace ℝ (Fin n)) 1 := by
+    rw [mem_closedBall_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hpos q).le,
+      inv_mul_le_iff₀ (hpos q), mul_one]
+    exact le_max_right _ _
+  let r : P × EuclideanSpace ℝ (Fin n) → P × TopCat.disk.{u} n := fun q ↦
+    (q.1, ULift.up ⟨(max 1 ‖q.2‖)⁻¹ • q.2, hmem q⟩)
+  have hr : Continuous r := continuous_fst.prodMk (continuous_uliftUp.comp
+    (((hc.inv₀ fun q ↦ (hpos q).ne').smul continuous_snd).subtype_mk hmem))
+  have he : (fun q : P × EuclideanSpace ℝ (Fin n) ↦ g q.1 q.2) = fun q ↦
+      max 1 ‖q.2‖ • (((g (r q).1).diskMap (r q).2).down : EuclideanSpace ℝ (Fin n)) := by
+    funext q
+    rw [LinearIsometryEquiv.coe_diskMap_apply_down]
+    dsimp only [r]
+    rw [map_smul, smul_smul, mul_inv_cancel₀ (hpos q).ne', one_smul]
+  have hcont : Continuous fun q : P × EuclideanSpace ℝ (Fin n) ↦ (g q.1).symm q.2 := by
+    refine Continuous.linearIsometryEquiv_symm_apply ?_
+    rw [he]
+    exact hc.smul (continuous_subtype_val.comp (continuous_uliftDown.comp (hg.comp hr)))
+  exact (continuous_uliftUp.comp ((hcont.comp (continuous_fst.prodMk (continuous_subtype_val.comp
+    (continuous_uliftDown.comp continuous_snd)))).subtype_mk fun q ↦ mem_closedBall_zero_iff.2
+      (((g q.1).symm.norm_map _).trans_le (mem_closedBall_zero_iff.1 q.2.down.2)))).congr
+    fun q ↦ ULift.ext (Subtype.ext (LinearIsometryEquiv.coe_diskMap_apply_down _ _).symm)
+
+end Family
 
 end TauCeti.TopCat

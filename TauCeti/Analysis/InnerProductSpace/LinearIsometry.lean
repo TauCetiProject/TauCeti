@@ -41,7 +41,8 @@ sections and product integration.
 Along a smooth family of linear isometries of a finite-dimensional real inner product space, the
 inverses again depend smoothly on the parameter: expanding in an orthonormal basis `bᵢ`,
 `(R p)⁻¹ x = ∑ i, ⟪R p bᵢ, x⟫ bᵢ`. So a smooth path of linear isometries moves the unit sphere by
-diffeomorphisms.
+diffeomorphisms. The same expansion shows that the inverses of a continuous family of linear
+isometries form a continuous family.
 
 ## Main definitions
 
@@ -69,6 +70,8 @@ diffeomorphisms.
   a one-dimensional real space, these are the linear isometries of determinant `1` and `-1`.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
+* `Continuous.linearIsometryEquiv_symm_apply`: the inverses along a continuous family of linear
+  isometries of a finite-dimensional space form a continuous family.
 -/
 
 public section
@@ -351,3 +354,22 @@ theorem ContDiff.linearIsometryEquiv_symm_apply {F G : Type*} [NormedAddCommGrou
   rw [hexp]
   exact ContDiff.sum fun i _ =>
     ((hR.comp (contDiff_fst.prodMk contDiff_const)).inner ℝ contDiff_snd).smul contDiff_const
+
+open scoped InnerProductSpace in
+/-- Along a continuous family of linear isometries of a finite-dimensional real inner product
+space, the inverses also depend continuously on the parameter: expanding in an orthonormal basis
+`bᵢ`, `(R p)⁻¹ x = ∑ i, ⟪R p bᵢ, x⟫ bᵢ`. -/
+theorem Continuous.linearIsometryEquiv_symm_apply {F P : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [TopologicalSpace P] {R : P → F ≃ₗᵢ[ℝ] F}
+    (hR : Continuous fun p : P × F => R p.1 p.2) :
+    Continuous fun p : P × F => (R p.1).symm p.2 := by
+  let b := stdOrthonormalBasis ℝ F
+  have hexp : (fun p : P × F => (R p.1).symm p.2) =
+      fun p => ∑ i, ⟪R p.1 (b i), p.2⟫_ℝ • b i := by
+    funext p
+    conv_lhs => rw [← b.sum_repr' ((R p.1).symm p.2)]
+    simp only [LinearIsometryEquiv.inner_map_eq_flip]
+  rw [hexp]
+  exact continuous_finsetSum _ fun i _ =>
+    ((hR.comp (continuous_fst.prodMk continuous_const)).inner continuous_snd).smul
+      continuous_const
