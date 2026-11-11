@@ -146,6 +146,29 @@ theorem mem_boxGradedPart_iff {gr : X → T} {u : BalancedProduct G S T} {φ : X
       ∀ x, φ x ∈ ⨆ s : {s : S // BalancedProduct.mk G s (gr x) = u}, Mg s :=
   Iff.rfl
 
+/-- A row vector supported on `X` has the degree of its `X`-part, whatever the grading of the
+generators `Y` of the other summand. -/
+theorem sumElim_zero_mem_boxGradedPart {Y : Type*} {gr : X → T} {grY : Y → T}
+    {u : BalancedProduct G S T} {φ : X → M} (hφ : φ ∈ boxGradedPart Mg gr u) :
+    Sum.elim φ 0 ∈ boxGradedPart Mg (Sum.elim gr grY) u := by
+  rw [mem_boxGradedPart_iff] at hφ ⊢
+  rintro (x | y)
+  · exact hφ x
+  · exact zero_mem _
+
+/-- Reading the degree of an entry of a row vector at a generator whose grading was translated by a
+central element `k`: it has degree `v` for the translated grading exactly when it has degree
+`k⁻¹ • v` for the original one. -/
+theorem mem_iSup_mk_smul_iff {k : Subgroup.center G} {t : T} {v : BalancedProduct G S T}
+    {m : M} :
+    m ∈ ⨆ s : {s : S // BalancedProduct.mk G s ((k : G) • t) = v}, Mg s ↔
+      m ∈ ⨆ s : {s : S // BalancedProduct.mk G s t = k⁻¹ • v}, Mg s := by
+  have h : (fun s : S ↦ BalancedProduct.mk G s ((k : G) • t) = v) =
+      fun s ↦ BalancedProduct.mk G s t = k⁻¹ • v := by
+    funext s
+    rw [eq_inv_smul_iff, BalancedProduct.center_smul_mk]
+  rw [h]
+
 /-- **Homogeneous morphisms act on graded box tensor products.** If the right action of `A` on `M`
 is graded, `Mg s * Ag g ⊆ Mg (g⁻¹ • s)`, a matrix homogeneous of central degree `c` maps row
 vectors of degree `u` to row vectors of degree `c • u`. -/
