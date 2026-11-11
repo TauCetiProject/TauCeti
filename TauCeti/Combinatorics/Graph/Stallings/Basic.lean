@@ -68,6 +68,13 @@ def word {a : S.graph.V} : ∀ {b : S.graph.V}, S.graph.Path a b → List (α ×
   | nil => simp
   | cons q e ih => simp [ih, List.append_assoc]
 
+/-- The label word of a path is read off its list of darts. -/
+theorem word_eq_map_darts {a b : S.graph.V} (p : S.graph.Path a b) :
+    S.word p = (SerreGraph.Path.darts S.graph p).map S.label := by
+  induction p with
+  | nil => simp
+  | cons p e ih => simp [ih]
+
 /-- The free-group element represented by the word of a path. -/
 def read {a b : S.graph.V} (p : S.graph.Path a b) : FreeGroup α :=
   p.weight fun {i j} (e : @Quiver.Hom S.graph.V S.graph.toQuiver i j) =>

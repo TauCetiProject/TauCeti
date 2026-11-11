@@ -45,6 +45,13 @@ theorem mem_coreDarts_iff (e : Γ.E) :
   exact ⟨p.reverse, (Path.isReduced_reverse Γ p).mpr hp,
     by simpa using List.mem_map_of_mem (f := Γ.rev) (List.mem_reverse.mpr he)⟩
 
+/-- The darts of a closed list of consecutive darts at `v`, none of which is followed by its
+reverse, belong to the core at `v`. -/
+theorem mem_coreDarts_of_isChain {l : List Γ.E} (h : v :: l.map Γ.tgt = l.map Γ.src ++ [v])
+    (hl : l.IsChain fun e f => f ≠ Γ.rev e) {e : Γ.E} (he : e ∈ l) : e ∈ Γ.coreDarts v := by
+  obtain ⟨p, rfl⟩ := Γ.exists_path_darts_eq l h
+  exact ⟨p, (Path.isReduced_iff_isChain Γ p).mpr hl, he⟩
+
 /-- The vertices of the based core, including an isolated base vertex. -/
 def coreVertices : Set Γ.V :=
   {a | a = v ∨ ∃ e ∈ Γ.coreDarts v, Γ.src e = a}
