@@ -62,8 +62,6 @@ after their stronger level-preserving notion of non-ambient isotopy (Definition 
 * `TauCeti.AmbientIsotopy.isotopy` / `TauCeti.AmbientIsotopy.isotopic`: an ambient isotopy
   carries any embedding `f` to the isotopic embedding `Φ.final ∘ f`. This is the "ambient
   isotopy implies isotopy" direction.
-* `TauCeti.AmbientIsotopy.final_homotopicRel_id`: the final map of an ambient isotopy fixing a
-  set `S` at all times is homotopic to the identity relative to `S`.
 * `TauCeti.AmbientIsotopy.final_trans` / `TauCeti.AmbientIsotopy.symm_final_final` /
   `TauCeti.AmbientIsotopy.final_symm_final`: the final maps of the composite and inverse ambient
   isotopies, and that the inverse final map undoes the original on both sides.
@@ -277,16 +275,6 @@ theorem isotopy_apply {f : C(X, Y)} (hf : IsEmbedding f) (t : I) (x : X) :
 into `Y` to the isotopic embedding `Φ.final ∘ f`. -/
 theorem isotopic {f : C(X, Y)} (hf : IsEmbedding f) : Isotopic f (Φ.final.comp f) :=
   ⟨Φ.isotopy hf⟩
-
-/-- The final map of an ambient isotopy fixing every point of `S` at all times is homotopic to the
-identity relative to `S`. -/
-theorem final_homotopicRel_id {S : Set Y} (hΦ : ∀ t, ∀ y ∈ S, Φ.toContinuousMap (t, y) = y) :
-    Φ.final.HomotopicRel (ContinuousMap.id Y) S :=
-  ⟨HomotopyRel.symm
-    { toContinuousMap := Φ.toContinuousMap
-      map_zero_left := Φ.map_zero_left
-      map_one_left _ := rfl
-      prop' t y hy := hΦ t y hy }⟩
 
 /-- The level-preserving total map of an ambient isotopy, bundled as a self-homeomorphism of
 `I × Y`. -/
