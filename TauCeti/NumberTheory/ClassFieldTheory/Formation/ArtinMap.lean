@@ -11,8 +11,8 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Naturality
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Character
 
 import TauCeti.Algebra.Module.CharacterModule
+import TauCeti.CategoryTheory.Monoidal.Braided.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Inflation
-import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Associativity
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Character
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.GradedComm
 
@@ -370,77 +370,25 @@ theorem character_artinMap (a : F.level L.ground)
     congr 1
     rw [cupFundamentalClass_apply, cupClass_apply]
     dsimp only [pairing, sigma]
-    have hstruct :
-        ((λ_ (L.rep F)).hom ▷ Rep.trivial ℤ L.Gal ℤ) ≫ (ρ_ (L.rep F)).hom =
-          (α_ (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (Rep.trivial ℤ L.Gal ℤ)).hom ≫
-            ((𝟙_ (Rep ℤ L.Gal)) ◁ (β_ (L.rep F) (Rep.trivial ℤ L.Gal ℤ)).hom) ≫
-            (α_ (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)).inv ≫
-            ((λ_ (Rep.trivial ℤ L.Gal ℤ)).hom ▷ L.rep F) ≫ (λ_ (L.rep F)).hom := by
-      -- `Rep.trivial ℤ L.Gal ℤ` is the tensor unit, but the braided coherence tactic needs
-      -- that unit displayed as `𝟙_ (Rep ℤ L.Gal)` in order to recognize the unit braiding.
-      change ((λ_ (L.rep F)).hom ▷ (𝟙_ (Rep ℤ L.Gal))) ≫ (ρ_ (L.rep F)).hom =
-        (α_ (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (𝟙_ (Rep ℤ L.Gal))).hom ≫
-          ((𝟙_ (Rep ℤ L.Gal)) ◁ (β_ (L.rep F) (𝟙_ (Rep ℤ L.Gal))).hom) ≫
-          (α_ (𝟙_ (Rep ℤ L.Gal)) (𝟙_ (Rep ℤ L.Gal)) (L.rep F)).inv ≫
-          ((λ_ (𝟙_ (Rep ℤ L.Gal))).hom ▷ L.rep F) ≫ (λ_ (L.rep F)).hom
-      rw [braiding_tensorUnit_right]
-      monoidal
+    -- `Rep.trivial ℤ L.Gal ℤ` is the tensor unit `𝟙_ (Rep ℤ L.Gal)` by definition, so the
+    -- unitor identity and the exchange lemma below apply to it directly.
+    have hstruct : ((λ_ (L.rep F)).hom ▷ Rep.trivial ℤ L.Gal ℤ) ≫ (ρ_ (L.rep F)).hom = _ :=
+      leftUnitor_whiskerRight_comp_rightUnitor_eq (L.rep F)
     simp only [Int.reduceAdd]
     rw [TateCohomology.cup_map_left, ← ModuleCat.comp_apply, ← Functor.map_comp, hstruct,
       Functor.map_comp, Functor.map_comp, Functor.map_comp, Functor.map_comp,
       ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.comp_apply]
-    -- Reassociate so that graded commutativity can exchange the degree-two factors.
-    have hAssoc₁ := TateCohomology.cup_assoc
-      (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (Rep.trivial ℤ L.Gal ℤ)
-      (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₂ := 4) (r := 2)
-      (by omega) (by omega) (by omega) sigma
+    have key := TateCohomology.cup_right_comm (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (𝟙_ (Rep ℤ L.Gal))
+      (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₁' := 0) (r := 2)
+      (by omega) (by omega) (by omega) (by omega) sigma
       ((L.tateHIsoH F 2).inv (cf.fundamentalClass L)) (L.characterConnectingClass chi)
-    have hAssoc₁' :
-        (tateCohomologyFunctor 2).map
-            (α_ (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (Rep.trivial ℤ L.Gal ℤ)).hom
-          (TateCohomology.cup ((𝟙_ (Rep ℤ L.Gal)) ⊗ L.rep F)
-            (Rep.trivial ℤ L.Gal ℤ) 0 2 2 (by omega)
-            (TateCohomology.cup (Rep.trivial ℤ L.Gal ℤ) (L.rep F) (-2) 2 0 (by omega)
-              sigma ((L.tateHIsoH F 2).inv (cf.fundamentalClass L)))
-            (L.characterConnectingClass chi)) =
-          TateCohomology.cup (𝟙_ (Rep ℤ L.Gal))
-            ((L.rep F) ⊗ Rep.trivial ℤ L.Gal ℤ) (-2) 4 2 (by omega) sigma
-            (TateCohomology.cup (L.rep F) (Rep.trivial ℤ L.Gal ℤ) 2 2 4 (by omega)
-              ((L.tateHIsoH F 2).inv (cf.fundamentalClass L))
-              (L.characterConnectingClass chi)) := by
-      exact hAssoc₁
-    rw [hAssoc₁', ← TateCohomology.cup_map_right, TateCohomology.cup_gradedComm]
-    rw [Int.negOnePow_even (2 * 2) ⟨2, rfl⟩, one_smul]
-    -- Reassociate back; the intervening associator and its inverse then cancel.
-    have hAssoc₂ := TateCohomology.cup_assoc
-      (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)
-      (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₂ := 4) (r := 2)
-      (by omega) (by omega) (by omega) sigma (L.characterConnectingClass chi)
-      ((L.tateHIsoH F 2).inv (cf.fundamentalClass L))
-    have hAssoc₂' :
-        (tateCohomologyFunctor 2).map
-            (α_ (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)).hom
-          (TateCohomology.cup ((𝟙_ (Rep ℤ L.Gal)) ⊗ Rep.trivial ℤ L.Gal ℤ)
-            (L.rep F) 0 2 2 (by omega)
-            (TateCohomology.cup (Rep.trivial ℤ L.Gal ℤ) (Rep.trivial ℤ L.Gal ℤ)
-              (-2) 2 0 (by omega) sigma (L.characterConnectingClass chi))
-            ((L.tateHIsoH F 2).inv (cf.fundamentalClass L))) =
-          TateCohomology.cup (𝟙_ (Rep ℤ L.Gal))
-            (Rep.trivial ℤ L.Gal ℤ ⊗ L.rep F) (-2) 4 2 (by omega) sigma
-            (TateCohomology.cup (Rep.trivial ℤ L.Gal ℤ) (L.rep F) 2 2 4 (by omega)
-              (L.characterConnectingClass chi)
-              ((L.tateHIsoH F 2).inv (cf.fundamentalClass L))) := by
-      exact hAssoc₂
-    have hcancel (z : tateCohomology
-        (((𝟙_ (Rep ℤ L.Gal)) ⊗ Rep.trivial ℤ L.Gal ℤ) ⊗ L.rep F) 2) :
-        (tateCohomologyFunctor 2).map
-            (α_ (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)).inv
-          ((tateCohomologyFunctor 2).map
-            (α_ (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)).hom z) = z := by
-      rw [← ModuleCat.comp_apply, ← Functor.map_comp, Iso.hom_inv_id,
-        (tateCohomologyFunctor 2).map_id]
-      rfl
-    rw [← hAssoc₂', hcancel, ← TateCohomology.cup_map_left]
+    rw [Int.negOnePow_even (2 * 2) ⟨2, rfl⟩, one_smul] at key
+    -- The goal mixes `Rep.trivial ℤ L.Gal ℤ` with `𝟙_ (Rep ℤ L.Gal)`, which are definitionally
+    -- equal (Mathlib's `tensorUnit := Rep.trivial k G k`) but not syntactically: `erw` matches
+    -- `key` up to this unfolding, and the final `rfl` closes the goal by the same identification.
+    erw [key]
+    rw [← TateCohomology.cup_map_left]
+    rfl
   rw [hcup, cf.inv_cupFundamentalClass_zero]
   -- The layer's degree `-2` identification is the negative of the generic one, which turns the
   -- generic pairing `-χ(σ)` into `χ(σ)`.

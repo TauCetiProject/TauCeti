@@ -296,6 +296,47 @@ theorem separatesIn (hC : IsNullChain U C) {x y : ℂ} {γ : Path x y}
 
 end IsNullChain
 
+/-- Under the separation hypotheses of `TauCeti.nullChainDomain_succ_subset_of_separatesIn`, the
+component of `U \ C (n + 1)` containing a point of `C (n + 2)` misses `C n`. Here `hcomp` says that
+a crosscut inside `U` lies in one component of the complement of any crosscut disjoint from it, and
+`hsep'` is the separation condition in terms of components. It is private because its hypotheses
+are the local facts established in the proof of that theorem. -/
+private theorem connectedComponentIn_sdiff_succ_subset_sdiff (hUc : IsPreconnected U)
+    (hopen : ∀ k, IsOpen (U \ C k)) (hdisj : ∀ n, Disjoint (C n) (C (n + 1)))
+    (hcomp : ∀ {j k : ℕ}, Disjoint (C j) (C k) → ∀ {v : ℂ}, v ∈ C k ∩ U →
+      C k ∩ U ⊆ connectedComponentIn (U \ C j) v)
+    (hsep' : ∀ (k : ℕ) {z w : ℂ}, z ∈ C 0 ∩ U → w ∈ C (k + 2) ∩ U →
+      z ∈ U \ C (k + 1) ∧ w ∈ U \ C (k + 1) ∧
+        connectedComponentIn (U \ C (k + 1)) z ≠ connectedComponentIn (U \ C (k + 1)) w)
+    {z a b : ℂ} (hz : z ∈ C 0 ∩ U) (ha : a ∈ C (n + 1) ∩ U) (hb : b ∈ C (n + 2) ∩ U) :
+    connectedComponentIn (U \ C (n + 1)) b ⊆ U \ C n := by
+  have hzb := (hsep' n hz hb).2.2
+  intro q hq
+  have hqU : q ∈ U := (connectedComponentIn_subset _ _ hq).1
+  refine ⟨hqU, fun hqC => ?_⟩
+  cases n with
+  | zero => exact (hsep' 0 ⟨hqC, hqU⟩ hb).2.2 (connectedComponentIn_eq hq).symm
+  | succ m =>
+    -- Otherwise `D` contains `C (m + 1) ∩ U`. The component `F` of `U \ C (m + 1)` on the side of
+    -- `C 0` is not all of `U`, so its closure meets `C (m + 1) ∩ U ⊆ D`, and `D` meets `F`.
+    -- But `F` misses `C (m + 2)`, so it lies on the side of `C 0` of `C (m + 2)`, unlike `D`.
+    obtain ⟨hzm, -, hza⟩ := hsep' m hz ha
+    have hCD : C (m + 1) ∩ U ⊆ connectedComponentIn (U \ C (m + 1 + 1)) b := by
+      rw [connectedComponentIn_eq hq]
+      exact hcomp (hdisj (m + 1)).symm ⟨hqC, hqU⟩
+    obtain ⟨p, hp, hpF⟩ := hUc.exists_mem_inter_closure_connectedComponentIn_sdiff (hopen (m + 1))
+      hzm ha.2 fun h => hza (connectedComponentIn_eq h)
+    obtain ⟨y, hyD, hyF⟩ :=
+      mem_closure_iff.mp hpF _ (hopen (m + 1 + 1)).connectedComponentIn (hCD hp)
+    have hFE : connectedComponentIn (U \ C (m + 1)) z ⊆
+        connectedComponentIn (U \ C (m + 1 + 1)) z := by
+      refine isPreconnected_connectedComponentIn.subset_connectedComponentIn
+        (mem_connectedComponentIn hzm) fun v hv => ⟨(connectedComponentIn_subset _ _ hv).1,
+          fun hvC => hza ?_⟩
+      rw [connectedComponentIn_eq hv, connectedComponentIn_eq
+        (hcomp (hdisj (m + 1)) ha ⟨hvC, (connectedComponentIn_subset _ _ hv).1⟩)]
+    exact hzb (by rw [connectedComponentIn_eq (hFE hyF), connectedComponentIn_eq hyD])
+
 /-- **Pommerenke's separation condition forces nesting.** Let `U` be a preconnected open set and
 let `C` be a sequence of closed ranges of crosscuts of `U`, each disjoint from the next. If each
 crosscut `C (n + 1)` separates the points of the first crosscut inside `U` from those of the next
@@ -331,32 +372,8 @@ theorem nullChainDomain_succ_subset_of_separatesIn (hUo : IsOpen U) (hUc : IsPre
       ((hdisj n).mono_right inter_subset_left) ha]
   obtain ⟨hzU, hbU, hzb⟩ := hsep' n hz hb
   -- First, the domain `D` cut off by `C (n + 1)` misses `C n`.
-  have hDC : connectedComponentIn (U \ C (n + 1)) b ⊆ U \ C n := by
-    intro q hq
-    have hqU : q ∈ U := (connectedComponentIn_subset _ _ hq).1
-    refine ⟨hqU, fun hqC => ?_⟩
-    cases n with
-    | zero => exact (hsep' 0 ⟨hqC, hqU⟩ hb).2.2 (connectedComponentIn_eq hq).symm
-    | succ m =>
-      -- Otherwise `D` contains `C (m + 1) ∩ U`. The component `F` of `U \ C (m + 1)` on the side of
-      -- `C 0` is not all of `U`, so its closure meets `C (m + 1) ∩ U ⊆ D`, and `D` meets `F`.
-      -- But `F` misses `C (m + 2)`, so it lies on the side of `C 0` of `C (m + 2)`, unlike `D`.
-      obtain ⟨hzm, -, hza⟩ := hsep' m hz ha
-      have hCD : C (m + 1) ∩ U ⊆ connectedComponentIn (U \ C (m + 1 + 1)) b := by
-        rw [connectedComponentIn_eq hq]
-        exact hcomp (hdisj (m + 1)).symm ⟨hqC, hqU⟩
-      obtain ⟨p, hp, hpF⟩ := hUc.exists_mem_inter_closure_connectedComponentIn_sdiff (hopen (m + 1))
-        hzm ha.2 fun h => hza (connectedComponentIn_eq h)
-      obtain ⟨y, hyD, hyF⟩ :=
-        mem_closure_iff.mp hpF _ (hopen (m + 1 + 1)).connectedComponentIn (hCD hp)
-      have hFE : connectedComponentIn (U \ C (m + 1)) z ⊆
-          connectedComponentIn (U \ C (m + 1 + 1)) z := by
-        refine isPreconnected_connectedComponentIn.subset_connectedComponentIn
-          (mem_connectedComponentIn hzm) fun v hv => ⟨(connectedComponentIn_subset _ _ hv).1,
-            fun hvC => hza ?_⟩
-        rw [connectedComponentIn_eq hv, connectedComponentIn_eq
-          (hcomp (hdisj (m + 1)) ha ⟨hvC, (connectedComponentIn_subset _ _ hv).1⟩)]
-      exact hzb (by rw [connectedComponentIn_eq (hFE hyF), connectedComponentIn_eq hyD])
+  have hDC : connectedComponentIn (U \ C (n + 1)) b ⊆ U \ C n :=
+    connectedComponentIn_sdiff_succ_subset_sdiff hUc hopen hdisj hcomp hsep' hz ha hb
   -- Second, the closure of `D` meets `C (n + 1) ∩ U`, which lies in the domain cut off by `C n`.
   obtain ⟨p, hp, hpD⟩ := hUc.exists_mem_inter_closure_connectedComponentIn_sdiff (hopen (n + 1))
     hbU hzU.1 fun h => hzb (connectedComponentIn_eq h).symm

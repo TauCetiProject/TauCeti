@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
+public import TauCeti.Analysis.InnerProductSpace.Orientation
 
 /-!
 # The Hodge star of alternating forms
@@ -25,6 +26,10 @@ with the orientation. In an even middle degree, such as two-forms in dimension f
 self-adjoint involution whose `±1` eigenspaces are the self-dual and anti-self-dual forms; when
 the degree is positive, each has half the dimension of the `k`-forms.
 
+The star of the form dual to `u₁ ∧ ⋯ ∧ uₖ` is the volume form with `u₁, …, uₖ` inserted in its
+first slots. In degree zero this says `⋆1 = vol` and `⋆vol = 1`; in degree one it says that the
+star of the covector `⟪u, ·⟫` is the contraction `ι_u vol`.
+
 In an arbitrary basis `b`, with dual basis `b*` for the inner product, the star is computed by
 `(⋆α)(w) = ∑ α(b_{i₁}, …, b_{iₖ}) vol(b*_{i₁}, …, b*_{iₖ}, w₁, …, wₗ)`
 (`Orientation.formHodgeStar_apply_eq_sum`). Writing `b*` through the inverse Gram matrix of `b`
@@ -39,6 +44,10 @@ metric this expresses the star through the inverse metric and the volume of the 
 
 * `Orientation.wedge_formHodgeStar_apply`: `α ∧ ⋆β = ⟨α, β⟩ vol`.
 * `Orientation.formHodgeStar_formHodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
+* `Orientation.formHodgeStar_alternatingFormEquiv_ιMulti_apply`: the star of the form dual to
+  `u₁ ∧ ⋯ ∧ uₖ` evaluates on `(w₁, …, wₗ)` as `vol(u₁, …, uₖ, w₁, …, wₗ)`.
+* `Orientation.formHodgeStar_constOfIsEmpty`, `Orientation.formHodgeStar_volumeFormL`:
+  `⋆c = c vol` on constants and `⋆vol = 1`.
 * `Orientation.alternatingFormInner_formHodgeStar`: the star preserves the inner product of forms.
 * `Orientation.alternatingFormInner_formHodgeStar_left`: in an even middle degree the star is an
   involution and is self-adjoint.
@@ -148,6 +157,49 @@ theorem formHodgeStar_neg_orientation {k l : ℕ} (hkl : k + l = finrank ℝ V)
     (α : V [⋀^Fin k]→L[ℝ] ℝ) : (-o).formHodgeStar hkl α = -o.formHodgeStar hkl α := by
   obtain ⟨a, rfl⟩ := (alternatingFormEquiv V k).surjective α
   simp
+
+/-! ### Wedges of vectors and the volume form -/
+
+/-- **The Hodge star of a wedge of vectors**: the star of the form dual to `u₁ ∧ ⋯ ∧ uₖ`
+evaluates on `(w₁, …, wₗ)` as the volume `vol(u₁, …, uₖ, w₁, …, wₗ)`. -/
+theorem formHodgeStar_alternatingFormEquiv_ιMulti_apply {k l : ℕ} (hkl : k + l = finrank ℝ V)
+    (u : Fin k → V) (w : Fin l → V) :
+    o.formHodgeStar hkl (alternatingFormEquiv V k (ιMulti ℝ k u)) w =
+      o.volumeForm (Fin.append u w ∘ Fin.cast (hkl.trans _i.out).symm) := by
+  -- Re-indexing a wedge of vectors along a cast of `Fin` does not change it.
+  have key : ∀ {N : ℕ} (h : N = k + l) (f : Fin (k + l) → V),
+      ExteriorAlgebra.ιMulti ℝ N (f ∘ Fin.cast h) = ExteriorAlgebra.ιMulti ℝ (k + l) f := by
+    rintro N rfl f
+    rfl
+  rw [o.formHodgeStar_apply, LinearEquiv.symm_apply_apply,
+    wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _ (ιMulti ℝ _ (Fin.append u w ∘ Fin.cast hkl.symm))
+      (by rw [ιMulti_apply_coe, ιMulti_apply_coe, ιMulti_apply_coe,
+        ExteriorAlgebra.ιMulti_mul_ιMulti, key]),
+    o.volumeEquiv_ιMulti]
+  simp only [Function.comp_def, finCongr_apply, Fin.cast_cast]
+
+/-- The Hodge star of a constant `c`, a form of degree zero, is `c vol`. -/
+@[simp]
+theorem formHodgeStar_constOfIsEmpty (hn : 0 + n = finrank ℝ V) (c : ℝ) :
+    o.formHodgeStar hn (ContinuousAlternatingMap.constOfIsEmpty ℝ V (Fin 0) c) =
+      c • o.volumeFormL := by
+  -- The constant `1` is the form dual to the empty wedge.
+  have h1 : ContinuousAlternatingMap.constOfIsEmpty ℝ V (Fin 0) c =
+      c • alternatingFormEquiv V 0 (ιMulti ℝ 0 Fin.elim0) := by
+    ext v
+    simp [inner_ιMulti_ιMulti]
+  ext w
+  rw [h1, map_smul, ContinuousAlternatingMap.smul_apply,
+    formHodgeStar_alternatingFormEquiv_ιMulti_apply, ContinuousAlternatingMap.smul_apply,
+    volumeFormL_apply, Fin.elim0_append]
+  simp only [Function.comp_def, Fin.cast_cast, Fin.cast_eq_self]
+
+/-- The Hodge star of the volume form is the constant `1`. -/
+@[simp]
+theorem formHodgeStar_volumeFormL (hn : n + 0 = finrank ℝ V) :
+    o.formHodgeStar hn o.volumeFormL = ContinuousAlternatingMap.constOfIsEmpty ℝ V (Fin 0) 1 := by
+  rw [← one_smul ℝ o.volumeFormL, ← o.formHodgeStar_constOfIsEmpty (by omega),
+    formHodgeStar_formHodgeStar, zero_mul, pow_zero, one_smul]
 
 /-! ### The even middle degree -/
 

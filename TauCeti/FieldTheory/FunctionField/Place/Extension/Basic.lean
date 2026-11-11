@@ -382,6 +382,14 @@ theorem ord_algebraMap_restrict (f : F) :
     ramificationIdx_def, mul_comm] using
     (Valuation.ord_normalization_mul_ordIndex (P'.valuation.comap (algebraMap F F')) f).symm
 
+/-- The order at `P'` of the term `c y ^ i` of a polynomial evaluated at `y`, for `c ≠ 0 ≠ y`:
+`e(P' ∣ P) · ord_P c + i · ord_{P'} y`. -/
+theorem ord_algebraMap_mul_pow {y : F'} (hy0 : y ≠ 0) {c : F} (hc : c ≠ 0) (i : ℕ) :
+    P'.ord (algebraMap F F' c * y ^ i) =
+      ramificationIdx F P' * (P'.restrict k F).ord c + i * P'.ord y := by
+  rw [P'.ord_mul (by simpa using hc) (pow_ne_zero i hy0), P'.ord_pow,
+    ord_algebraMap_restrict k F P']
+
 /-- A function of `F` has a zero at a place of `F'` exactly when it has a zero at the restriction
 of that place, because the ramification index is a positive factor. -/
 theorem ord_algebraMap_pos_iff (f : F) :

@@ -19,7 +19,9 @@ vertices it vanishes exactly on the diagonal, is symmetric, and satisfies the tr
 inequality. Graph morphisms do not increase it.
 
 In an acyclic graph the unique reduced path between two vertices realizes their distance, since
-free reduction never lengthens a path.
+free reduction never lengthens a path. In a preconnected graph, a pair of vertices at minimal
+distance between two nonempty sets of vertices is joined by a reduced path meeting the first set
+only at its start and the second only at its end.
 
 ## References
 
@@ -102,6 +104,37 @@ theorem IsAcyclic.dist_eq_length (h : Γ.IsAcyclic) {a b : Γ.V} {p : Γ.Path a 
   obtain ⟨q, hq⟩ := exists_length_eq_dist ⟨p⟩
   rw [← hq, h.eq_of_isReduced hp (Path.isReduced_reduce Γ q)]
   exact Path.length_reduce_le Γ q
+
+/-! ### Shortest paths between sets of vertices -/
+
+/-- In a preconnected graph, two nonempty sets of vertices are joined by a reduced path whose darts
+end outside the first set and start outside the second: it meets the first set only at its start
+and the second only at its end. -/
+theorem Preconnected.exists_isReduced_path (h : Γ.Preconnected) {A B : Set Γ.V}
+    (hA : A.Nonempty) (hB : B.Nonempty) : ∃ a ∈ A, ∃ b ∈ B, ∃ p : Γ.Path a b,
+      Path.IsReduced Γ p ∧ ∀ e ∈ Path.darts Γ p, Γ.tgt e ∉ A ∧ Γ.src e ∉ B := by
+  classical
+  -- Choose `a ∈ A` and `b ∈ B` at minimal distance, and reduce a shortest path between them.
+  have hex : ∃ n, ∃ a ∈ A, ∃ b ∈ B, Γ.dist a b = n :=
+    ⟨_, hA.some, hA.some_mem, hB.some, hB.some_mem, rfl⟩
+  obtain ⟨a, ha, b, hb, hab⟩ := Nat.find_spec hex
+  have hmin : ∀ a' ∈ A, ∀ b' ∈ B, Nat.find hex ≤ Γ.dist a' b' := fun a' ha' b' hb' =>
+    Nat.find_min' hex ⟨a', ha', b', hb', rfl⟩
+  obtain ⟨s, hs⟩ := exists_length_eq_dist ((preconnected_iff Γ).1 h a b)
+  have hlen : (Path.reduce Γ s).length = Nat.find hex := by
+    have := dist_le_length (Path.reduce Γ s)
+    have := Path.length_reduce_le Γ s
+    omega
+  refine ⟨a, ha, b, hb, Path.reduce Γ s, Path.isReduced_reduce Γ s, fun e he => ?_⟩
+  -- A dart of the path cuts it into two pieces, each strictly shorter than the path.
+  obtain ⟨q, r, hqr⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ _ he
+  have hlen' : q.length + 1 + r.length = Nat.find hex := by
+    rw [← hlen, hqr, Quiver.Path.length_comp, Quiver.Path.length_cons]
+  refine ⟨fun hA' => ?_, fun hB' => ?_⟩
+  · have := (hmin _ hA' b hb).trans (dist_le_length r)
+    omega
+  · have := (hmin a ha _ hB').trans (dist_le_length q)
+    omega
 
 end SerreGraph
 end TauCeti

@@ -16,7 +16,7 @@ public import TauCeti.Analysis.PositiveDefinite.SemigroupGroup.FourierLaplace.Tr
 import Mathlib.MeasureTheory.MeasurableSpace.Prod
 import TauCeti.Analysis.Bochner.Fourier.Convention
 import TauCeti.Analysis.CompletelyMonotone.Laplace.Kernel
-import TauCeti.Probability.Moments.LaplaceDeterminacy
+import TauCeti.Probability.Moments.LaplaceDeterminacy.Basic
 
 /-!
 # Spatial slices of a measure on `ℝ≥0 × V`

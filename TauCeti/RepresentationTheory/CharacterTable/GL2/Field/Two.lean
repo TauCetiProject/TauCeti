@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses
 
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NormalForm
 import TauCeti.FieldTheory.Quadratic
-import TauCeti.NumberTheory.LegendreSymbol.Complex
+import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 
 /-!
 # The character table of `GL₂(𝔽₂)`
@@ -199,7 +199,7 @@ private theorem exists_fieldTwo_row (hF : Fintype.card F = 2) (i : GL2CharacterP
     refine ⟨1, fun j => ?_⟩
     rw [GL2CharacterParam.coe_classFunction_cuspidal_mk,
       character_fieldTwoNormalForm hF hu hout, character_GL2Cuspidal]
-    have hψ := primitiveChar_to_Complex_ne_one F
+    have hψ := (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one
     fin_cases j <;> simp only [fieldTwoNormalForm, Fin.reduceFinMk, Matrix.cons_val,
       gl2FieldTwoCharacterTable_apply, Matrix.of_apply]
     · rw [GL2CuspidalVirtualCharacter_apply_scalar]

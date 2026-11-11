@@ -37,6 +37,8 @@ which Bombieri and Gubler open the proof of the `S`-integral form of the Subspac
 * `NumberField.mulHeight_eq_prod_of_forall_iSup_eq_one` and
   `NumberField.mulHeight_eq_prod_of_isPrimitive`: equality when the local sup norms outside `S`
   are `1`, in particular for an `S`-primitive tuple.
+* `NumberField.log_prod_iSup_eq`: the logarithm of this product of local sup norms as a weighted
+  sum of their logarithms.
 * `NumberField.exists_finset_superset_forall_exists_mulHeight_eq`: every finite `S` is contained
   in a finite `S'` such that every nonzero finite tuple has a nonzero scalar multiple which is
   `S'`-primitive, and whose local sup norms over the infinite places and `S'` multiply to the
@@ -87,6 +89,22 @@ theorem mulHeight_eq_prod_of_forall_iSup_eq_one (S : Finset (HeightOneSpectrum (
   refine finprod_eq_finsetProd_of_mulSupport_subset _ fun v hv ↦ ?_
   by_contra hvS
   exact hv (h v hvS)
+
+/-- The logarithm of the product of the local sup norms of `x` over the infinite places and the
+places of `S`, the form of the height in `NumberField.mulHeight_le_prod` and
+`NumberField.mulHeight_eq_prod_of_isPrimitive`, is the weighted sum of their logarithms when they
+are positive. -/
+theorem log_prod_iSup_eq (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (hI : ∀ w : InfinitePlace K, 0 < ⨆ i, w (x i))
+    (hF : ∀ v ∈ S, 0 < ⨆ i, FinitePlace.mk v (x i)) :
+    Real.log ((∏ w : InfinitePlace K, (⨆ i, w (x i)) ^ w.mult) *
+        ∏ v ∈ S, ⨆ i, FinitePlace.mk v (x i)) =
+      ∑ w : InfinitePlace K, (w.mult : ℝ) * Real.log (⨆ i, w (x i)) +
+        ∑ v ∈ S, Real.log (⨆ i, FinitePlace.mk v (x i)) := by
+  rw [Real.log_mul (Finset.prod_ne_zero_iff.mpr fun w _ ↦ (pow_pos (hI w) _).ne')
+      (Finset.prod_ne_zero_iff.mpr fun v hv ↦ (hF v hv).ne'),
+    Real.log_prod fun w _ ↦ (pow_pos (hI w) _).ne', Real.log_prod fun v hv ↦ (hF v hv).ne']
+  simp only [Real.log_pow]
 
 variable [Finite ι]
 

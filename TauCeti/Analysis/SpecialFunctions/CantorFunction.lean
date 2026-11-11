@@ -242,6 +242,12 @@ theorem eVariationOn_cantorFunction : eVariationOn cantorFunction univ = 1 := by
   refine ENNReal.ofReal_le_one.mpr ?_
   linarith [cantorFunction_le_one p.2, cantorFunction_nonneg p.1]
 
+/-- The constantly extended Cantor function has bounded classical variation on the whole
+line, despite not being integrable there. -/
+theorem boundedVariationOn_cantorFunction : BoundedVariationOn cantorFunction univ := by
+  rw [BoundedVariationOn, eVariationOn_cantorFunction]
+  exact ENNReal.one_ne_top
+
 /-- The Cantor function is not absolutely continuous on `[0, 1]`: its derivative vanishes almost
 everywhere, so it would be constant by the fundamental theorem of calculus. -/
 theorem not_absolutelyContinuousOnInterval_cantorFunction :

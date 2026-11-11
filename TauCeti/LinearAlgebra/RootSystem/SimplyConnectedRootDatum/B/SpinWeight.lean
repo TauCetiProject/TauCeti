@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Datum
 public import TauCeti.RepresentationTheory.Spin.Weight
 import TauCeti.Data.Fin.Basic
-import TauCeti.LinearAlgebra.RootSystem.Chain
+import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
 
 /-!
 # Type `B` spin weights in the simply connected character lattice

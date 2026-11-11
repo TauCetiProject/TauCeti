@@ -148,8 +148,9 @@ theorem exists_diam_image_ball_inter_ball_le_of_locallyConnectedSpace_frontier
       (hb.closure.subset frontier_subset_closure)).isUniformlyLocallyConnected
   obtain ⟨ρ, hρmem, hρr, K, hK, hγK, hKsub, hKp, hdiamK⟩ :=
     exists_isCompact_superset_image_ball_inter_sphere_diam_le hζ hr hf hinj
-      (lintegral_enorm_deriv_sq_ne_top_of_isBounded isOpen_ball hf
-        measurableSet_ball.nullMeasurableSet subset_rfl hinj hb)
+      (lintegral_enorm_deriv_sq_ne_top_of_isBounded
+        (fun _ hz => hf.differentiableAt (isOpen_ball.mem_nhds hz))
+        measurableSet_ball.nullMeasurableSet hinj hb)
       hulc (lt_min hε (half_pos hd)) hρ₀
   refine ⟨ρ, hρmem.1, ?_⟩
   have hKb : IsBounded K := hK.isBounded
@@ -212,7 +213,7 @@ theorem exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier
     (hb : IsBounded (f '' ball c r)) [LocallyConnectedSpace (frontier (f '' ball c r))] :
     ∃ F : ℂ → ℂ, ContinuousOn F (closedBall c r) ∧ EqOn F f (ball c r) := by
   -- every boundary cluster set is a subsingleton, as the extension theorem asks
-  have h := exists_continuousOn_closure_eqOn_of_isBounded isOpen_ball hf.continuousOn hb
+  have h := exists_continuousOn_closure_eqOn_of_isBounded hf.continuousOn hb
     fun w hw => subsingleton_clusterSetOn_of_locallyConnectedSpace_frontier hr hf hinj hb
       (mem_sphere.mp (by rwa [frontier_ball c hr.ne'] at hw))
   rwa [closure_ball c hr.ne'] at h

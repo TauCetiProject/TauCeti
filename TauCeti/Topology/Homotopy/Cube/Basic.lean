@@ -66,6 +66,8 @@ at `0` while releasing the first.
   of `I^(Option N)`.
 * `TauCeti.Cube.prodBoundary`: the boundary of the cube `I × I^N`, matching the boundary of
   `I^(Option N)` by `TauCeti.piOptionEquivProdHomeomorph_mem_prodBoundary_iff`.
+* `TauCeti.Cube.update_mem_prodBoundary`: changing a coordinate of the second component of a
+  boundary point of `I × I^N`, keeping its endpoint values, stays on the boundary.
 * `GenLoop.ofProd`: a map `I × I^N → X` taking the value `x` on `TauCeti.Cube.prodBoundary N`,
   read as a generalized loop in `Ω^ (Option N) X x`; conversely
   `GenLoop.apply_symm_of_mem_prodBoundary` evaluates such a loop on that boundary.
@@ -164,6 +166,20 @@ theorem Cube.mk_mem_prodBoundary {s : I} {t : I^N} (h : s = 1 ∨ t ∈ Cube.bou
     ((s, t) : I × I^N) ∈ Cube.prodBoundary N :=
   h.elim (fun hs => .inl (.inr hs)) .inr
 
+/-- Changing the coordinate `j` of the second component of a point on the boundary of `I × I^N`
+keeps it on the boundary, provided an endpoint value of that coordinate is left unchanged. -/
+theorem Cube.update_mem_prodBoundary [DecidableEq N] {j : N} {w : I × I^N}
+    (hw : w ∈ Cube.prodBoundary N) {a : I} (ha : w.2 j = 0 ∨ w.2 j = 1 → a = w.2 j) :
+    (w.1, Function.update w.2 j a) ∈ Cube.prodBoundary N := by
+  rcases Cube.mem_prodBoundary_iff.1 hw with hs | ⟨i, hi⟩
+  · exact Cube.mem_prodBoundary_iff.2 (.inl hs)
+  refine Cube.mem_prodBoundary_iff.2 (.inr ⟨i, ?_⟩)
+  dsimp only
+  by_cases hij : i = j
+  · subst hij
+    rwa [Function.update_self, ha hi]
+  · rwa [Function.update_of_ne hij]
+
 /-- `TauCeti.piOptionEquivProdHomeomorph` identifies the boundary of `I^(Option N)` with the
 boundary of `I × I^N`. -/
 theorem piOptionEquivProdHomeomorph_mem_prodBoundary_iff {y : I^(Option N)} :
@@ -259,6 +275,11 @@ def cubeContraction (N : Type*) :
 theorem cubeContraction_apply (N : Type*) (t : I) (x : N → I) (i : N) :
     cubeContraction N (t, x) i = Set.Icc.convexComb 0 (x i) t :=
   (rfl)
+
+/-- The straight-line contraction of the cube fixes its corner `0` at all times. -/
+@[simp]
+theorem cubeContraction_apply_zero (N : Type*) (t : I) : cubeContraction N (t, 0) = 0 :=
+  funext fun _ => by rw [cubeContraction_apply]; exact Set.Icc.convexComb_eq _ _
 
 /-- The cube `I^N` is contractible, by the straight-line contraction onto its corner `0`. -/
 instance (N : Type*) : ContractibleSpace (N → I) :=

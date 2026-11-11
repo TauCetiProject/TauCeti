@@ -300,7 +300,8 @@ theorem highestLine_le_of_ne_bot
 /-- The highest line has dimension one. -/
 @[simp]
 theorem finrank_highestLine :
-    (dsimp% only (Module.finrank k (highestLine k).toSubmodule)) = 1 := by
+    (dsimp% only (Module.finrank k (highestLine k))) = 1 := by
+  change Module.finrank k (highestLine k).toSubmodule = 1
   rw [highestLine_toSubmodule]
   exact finrank_span_singleton (by simp)
 
@@ -308,7 +309,7 @@ theorem finrank_highestLine :
 @[simp]
 theorem finrank_eq_one_iff_eq_highestLine
     (N : Subcomodule k (CommHopfAlgCat.baseChange (K := k) coordinateHopfAlgebra) (Fin 26 → k)) :
-    (dsimp% only (Module.finrank k N.toSubmodule = 1 ↔ N = highestLine k)) := by
+    (dsimp% only (Module.finrank k N = 1 ↔ N = highestLine k)) := by
   constructor
   · intro hdim
     have hN' : N.toSubmodule ≠ ⊥ :=

@@ -29,7 +29,7 @@ spin carrier with an independently pinned simply connected group scheme is asser
 * R. W. Carter, *Simple Groups of Lie Type*, §6.4.
 
 The construction uses `TauCeti.Sl2.squareZeroSL2Hom`; the field-valued range argument follows
-the transvection-induction argument in `TauCeti.Algebra.Lie.E7.Minuscule.RankOne`.
+the transvection-induction argument in `TauCeti.Algebra.Lie.E7.Minuscule.RankOne.Basic`.
 -/
 
 public section

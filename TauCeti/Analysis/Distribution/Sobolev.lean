@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Sobolev
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
@@ -42,9 +43,17 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   distributions.
 * `TemperedDistribution.realSobolevSubmodule`: the real `Lᵖ` functions whose complexification
   lies in `H^{s,p}`, as a real submodule of `Lᵖ`.
+* `TemperedDistribution.realSobolevFunctions`: the pointwise representatives of these, as a real
+  submodule of the functions `E → ℝ`.
+* `TemperedDistribution.exists_memSobolev_ae_eq_of_mem_realSobolevFunctions`: two real functions
+  `f`, `g` in `realSobolevFunctions E s p` give a complex `H^{s,p}` function `f + i g`.
+* `TemperedDistribution.memLp_of_mem_realSobolevFunctions`,
+  `TemperedDistribution.mem_realSobolevFunctions_zero_iff`: these lie in `Lᵖ`, and at order `0`
+  they are exactly the real `Lᵖ` functions.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
-  `H^{s,p}`.
+  `H^{s,p}`; a symbol without temperate growth gives the junk value `0`, so only symbols of
+  temperate growth are covered.
 * `MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow`: for
   `1 < p < ∞`, real symbols of order `0`, whose `k`-th derivatives are bounded by
   `C_k (1 + ‖x‖ ^ 2) ^ (-k / 2)`, map `H^{s,p}` to `H^{s,p}`.
@@ -56,8 +65,6 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   `∂_m f ∈ H^{s,p}` for every direction `m`.
 * `TemperedDistribution.memSobolev_natCast_add_one_iff`: at a natural order `k`,
   `f ∈ H^{k+1,p}` exactly when `f ∈ H^{0,p}` and `∂_m f ∈ H^{k,p}` for every direction `m`.
-* `TemperedDistribution.MemSobolev.fourier_memL1_and_memLp`: for `s > dim E / 2`, the Fourier
-  transform of `f ∈ H^s` is an `L¹` function `v` with `(1 + ‖ξ‖ ^ 2) ^ (s / 2) v ∈ L²`.
 
 ## References
 
@@ -169,13 +176,23 @@ section inner
 variable [InnerProductSpace ℂ F] [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- **Mihlin multipliers act on `H^{s,p}`.** For `1 < p < ∞`, the Fourier multiplier with a symbol
-of temperate growth satisfying Mihlin's condition of order `N`, `2N > dim E`, maps `H^{s,p}` to
-`H^{s,p}`. For `p = 2` every bounded symbol does (`MemSobolev.fourierMultiplierCLM_of_bounded`). -/
+satisfying Mihlin's condition of order `N`, `2N > dim E`, away from the origin maps `H^{s,p}` to
+`H^{s,p}`. For `p = 2` every bounded symbol does (`MemSobolev.fourierMultiplierCLM_of_bounded`).
+
+Temperate growth of `g` is not assumed: if `g` lacks it, `fourierMultiplierCLM F g` is the junk
+value `0` (`TemperedDistribution.fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth`), so the
+statement has content only for symbols of temperate growth, and symbols singular at the origin,
+such as the Riesz symbols `ξⱼ / ‖ξ‖`, are not covered. -/
 theorem MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le (hp : 1 < p)
     (hp_top : p ≠ ∞) {s : ℝ} {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {g : E → ℂ}
-    (hg : g.HasTemperateGrowth) {N : ℕ} (hN : finrank ℝ E < 2 * N) {A : ℝ≥0}
+    {N : ℕ} (hN : finrank ℝ E < 2 * N) {A : ℝ≥0}
     (hgA : ∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k g ξ‖ ≤ A / ‖ξ‖ ^ k) :
     MemSobolev s p (fourierMultiplierCLM F g f) := by
+  -- without temperate growth the symbol acts as `0`
+  by_cases hg : g.HasTemperateGrowth
+  swap
+  · rw [fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth hg]
+    exact (sobolevSubmodule E F s p).zero_mem
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- On the zero space every symbol is constant.
     have hconst : g = fun _ ↦ g 0 := funext fun x ↦ congrArg g (Subsingleton.elim x 0)
@@ -196,15 +213,23 @@ theorem MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le (hp : 1 < p)
 /-- **Order-zero real symbols act on `H^{s,p}`.** For `1 < p < ∞`, the Fourier multiplier with a
 real symbol `g` of order `0` in Hörmander's sense, `‖D^k g x‖ ≤ C_k (1 + ‖x‖ ^ 2) ^ (-k / 2)` for
 every `k`, maps `H^{s,p}` to `H^{s,p}`. This is the Japanese-bracket form of Mihlin's condition in
-`MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`. -/
+`MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`. As there, temperate growth of `g` is
+not assumed: without it the multiplier is the junk value `0`. -/
 theorem MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow
     (hp : 1 < p) (hp_top : p ≠ ∞) {s : ℝ} {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {g : E → ℝ}
-    (hg : g.HasTemperateGrowth)
     (hgk : ∀ k : ℕ, ∃ C, ∀ x, ‖iteratedFDeriv ℝ k g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ (-(k : ℝ) / 2)) :
     MemSobolev s p (fourierMultiplierCLM F (fun x ↦ (g x : ℂ)) f) := by
+  -- without temperate growth the multiplier is `0`, and the complexification is temperate only
+  -- if `g` is
+  by_cases hg : g.HasTemperateGrowth
+  swap
+  · have hc : ¬ (fun x ↦ (g x : ℂ)).HasTemperateGrowth := fun hc ↦ hg <| by
+      simpa using (show (fun x ↦ ((g x : ℂ)).re).HasTemperateGrowth by fun_prop)
+    rw [fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth hc]
+    exact (sobolevSubmodule E F s p).zero_mem
   choose C hC using hgk
   set N := finrank ℝ E + 1
-  refine hf.fourierMultiplierCLM_of_norm_iteratedFDeriv_le hp hp_top (by fun_prop) (N := N)
+  refine hf.fourierMultiplierCLM_of_norm_iteratedFDeriv_le hp hp_top (N := N)
     (by omega) (A := ∑ k ∈ Finset.range (N + 1), ‖C k‖₊) fun k hk ξ hξ ↦ ?_
   have hreal : ‖iteratedFDeriv ℝ k (fun x ↦ (g x : ℂ)) ξ‖ = ‖iteratedFDeriv ℝ k g ξ‖ :=
     Complex.ofRealLI.norm_iteratedFDeriv_comp_left hg.1.contDiffAt (mod_cast le_top)
@@ -224,7 +249,7 @@ theorem MemSobolev.mono_of_one_lt (hp : 1 < p) (hp_top : p ≠ ∞) {s s' : ℝ}
     {f : 𝓢'(E, F)} (hf : MemSobolev s p f) : MemSobolev s' p f := by
   rw [← sub_add_cancel s' s, ← memSobolev_besselPotential_iff, besselPotential]
   refine hf.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hp hp_top
-    (by fun_prop) fun k ↦ ?_
+    fun k ↦ ?_
   -- The symbol `(1 + ‖x‖ ^ 2) ^ ((s' - s) / 2)` has nonpositive order.
   obtain ⟨C, hC⟩ := TauCeti.exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (E := E)
     ((s' - s) / 2) k
@@ -241,7 +266,7 @@ theorem MemSobolev.lineDerivOp_of_one_lt (hp : 1 < p) (hp_top : p ≠ ∞) {s : 
   rw [SubNegMonoid.sub_eq_add_neg s 1, add_comm, ← memSobolev_besselPotential_iff,
     besselPotential_neg_one_lineDerivOp_eq f]
   refine (hf.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hp hp_top
-    (by fun_prop) fun k ↦ ?_).smul _
+    fun k ↦ ?_).smul _
   -- The symbol `⟪x, m⟫ (1 + ‖x‖ ^ 2) ^ (-1 / 2)` has order `0`.
   obtain ⟨C, hC⟩ := TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le m
     (-1 / 2) k
@@ -296,29 +321,102 @@ theorem memSobolev_natCast_add_one_iff (hp : 1 < p) (hp_top : p ≠ ∞) {k : �
 
 end inner
 
-section fourier
+section realFunctions
 
-open scoped FourierTransform
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **The Fourier transform of an `H^s` function, `s > n / 2`.** For `s > dim E / 2` the Fourier
-transform of a Sobolev function `f ∈ H^s` is an `L¹` function `v` for which
-`(1 + ‖ξ‖ ^ 2) ^ (s / 2) v` is square integrable. -/
-theorem MemSobolev.fourier_memL1_and_memLp {s : ℝ} (hs : finrank ℝ E < 2 * s) {f : 𝓢'(E, ℂ)}
-    (hf : MemSobolev s 2 f) :
-    ∃ v : Lp ℂ 1 (volume : Measure E), 𝓕 f = (v : 𝓢'(E, ℂ)) ∧
-      MemLp (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * v ξ) 2 := by
-  obtain ⟨v, hv⟩ := hf.fourier_memL1 hs
-  obtain ⟨U, hU⟩ := memSobolev_iff_exists_smulLeftCLM_fourier.1 hf
-  refine ⟨v, hv, (Lp.memLp U).ae_eq ?_⟩
-  -- The `L²` function `U` represents the weight times `v`, by comparing their pairings.
-  have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
-  have hwc : Continuous fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) := hwg.1.continuous
-  refine Lp.ae_eq_of_toTemperedDistribution_apply_eq U ?_ fun φ => ?_
-  · refine locallyIntegrable_iff.2 fun K hK => ?_
-    exact (L1.integrable_coeFn v).integrableOn.continuousOn_mul hwc.continuousOn hK
-  · rw [← hU, hv, Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
-    simp only [smul_eq_mul]
+variable (E) in
+/-- The real functions on `E` that agree almost everywhere with an element of
+`realSobolevSubmodule E s p`: the pointwise representatives of real `H^{s,p}` functions.
+Membership only depends on the function up to a null set
+(`mem_realSobolevFunctions_of_ae_eq`). -/
+def realSobolevFunctions (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] : Submodule ℝ (E → ℝ) where
+  carrier := {f | ∃ u ∈ realSobolevSubmodule E s p, u =ᵐ[volume] f}
+  add_mem' := by
+    rintro f g ⟨u, hu, huf⟩ ⟨v, hv, hvg⟩
+    refine ⟨u + v, add_mem hu hv, ?_⟩
+    filter_upwards [Lp.coeFn_add u v, huf, hvg] with x h h₁ h₂
+    rw [h, Pi.add_apply, h₁, h₂, Pi.add_apply]
+  zero_mem' := ⟨0, zero_mem _, Lp.coeFn_zero ℝ p volume⟩
+  smul_mem' := by
+    rintro c f ⟨u, hu, huf⟩
+    refine ⟨c • u, Submodule.smul_mem _ c hu, ?_⟩
+    filter_upwards [Lp.coeFn_smul c u, huf] with x h h'
+    rw [h, Pi.smul_apply, h', Pi.smul_apply]
 
-end fourier
+/-- A real function lies in `realSobolevFunctions E s p` exactly when it agrees almost everywhere
+with a real `Lᵖ` function whose complexification lies in `H^{s,p}`. -/
+theorem mem_realSobolevFunctions {s : ℝ} {f : E → ℝ} :
+    f ∈ realSobolevFunctions E s p ↔
+      ∃ u : Lp ℝ p (volume : Measure E), u =ᵐ[volume] f ∧
+        MemSobolev s p (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) :=
+  exists_congr fun _ ↦ and_comm
+
+/-- The values of an element of `realSobolevSubmodule E s p` lie in `realSobolevFunctions E s p`. -/
+theorem coeFn_mem_realSobolevFunctions {s : ℝ} {u : Lp ℝ p (volume : Measure E)}
+    (hu : u ∈ realSobolevSubmodule E s p) : (u : E → ℝ) ∈ realSobolevFunctions E s p :=
+  ⟨u, hu, .rfl⟩
+
+/-- Membership in `realSobolevFunctions E s p` is invariant under almost-everywhere equality. -/
+theorem mem_realSobolevFunctions_of_ae_eq {s : ℝ} {f g : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) (hfg : f =ᵐ[volume] g) :
+    g ∈ realSobolevFunctions E s p :=
+  let ⟨u, hu, huf⟩ := hf
+  ⟨u, hu, huf.trans hfg⟩
+
+/-- Two real functions `f`, `g` in `realSobolevFunctions E s p` assemble into a complex `H^{s,p}`
+function: `f + i g` agrees almost everywhere with a complex `Lᵖ` function in `H^{s,p}`. -/
+theorem exists_memSobolev_ae_eq_of_mem_realSobolevFunctions {s : ℝ} {f g : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) (hg : g ∈ realSobolevFunctions E s p) :
+    ∃ h : Lp ℂ p (volume : Measure E), h =ᵐ[volume] (fun x ↦ (f x : ℂ) + Complex.I * g x) ∧
+      MemSobolev s p (h : 𝓢'(E, ℂ)) := by
+  obtain ⟨a, hae, ha⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨b, hbe, hb⟩ := mem_realSobolevFunctions.1 hg
+  refine ⟨Complex.ofRealCLM.compLp a + Complex.I • Complex.ofRealCLM.compLp b, ?_, ?_⟩
+  · filter_upwards [Lp.coeFn_add (Complex.ofRealCLM.compLp a)
+        (Complex.I • Complex.ofRealCLM.compLp b),
+      Lp.coeFn_smul Complex.I (Complex.ofRealCLM.compLp b),
+      Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) a,
+      Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) b, hae, hbe]
+      with x h h' ha' hb' ha'' hb''
+    rw [h, Pi.add_apply, h', Pi.smul_apply, ha', hb']
+    simp [ha'', hb'']
+  · have e := map_add (Lp.toTemperedDistributionCLM ℂ (volume : Measure E) p)
+      (Complex.ofRealCLM.compLp a) (Complex.I • Complex.ofRealCLM.compLp b)
+    rw [map_smul, Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistributionCLM_apply,
+      Lp.toTemperedDistributionCLM_apply] at e
+    rw [e]
+    exact ha.add (hb.smul Complex.I)
+
+/-- Every element of `realSobolevFunctions E s p` lies in `Lᵖ`, whatever the order `s`. -/
+theorem memLp_of_mem_realSobolevFunctions {s : ℝ} {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) : MemLp f p volume :=
+  let ⟨u, _, huf⟩ := hf
+  (Lp.memLp u).ae_eq huf
+
+/-- A real function lies in `realSobolevFunctions E 0 p` exactly when it lies in `Lᵖ`. -/
+@[simp]
+theorem mem_realSobolevFunctions_zero_iff {f : E → ℝ} :
+    f ∈ realSobolevFunctions E 0 p ↔ MemLp f p volume :=
+  ⟨memLp_of_mem_realSobolevFunctions,
+    fun hf ↦ ⟨hf.toLp f, memSobolev_zero_iff.2 ⟨_, rfl⟩, hf.coeFn_toLp⟩⟩
+
+/-- For `1 < p < ∞`, the real `H^{s,p}` functions decrease as the order increases. -/
+theorem realSobolevFunctions_mono (hp : 1 < p) (hp_top : p ≠ ∞) {s s' : ℝ} (h : s' ≤ s) :
+    realSobolevFunctions E s p ≤ realSobolevFunctions E s' p :=
+  fun _ ⟨u, hu, huf⟩ ↦ ⟨u, MemSobolev.mono_of_one_lt hp hp_top h hu, huf⟩
+
+/-- A smooth compactly supported real function lies in every real Bessel-potential space. -/
+theorem mem_realSobolevFunctions_of_hasCompactSupport {f : E → ℝ}
+    (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hc : HasCompactSupport f) (s : ℝ) :
+    f ∈ realSobolevFunctions E s p := by
+  have hm : MemLp f p volume := hf.continuous.memLp_of_hasCompactSupport hc
+  refine ⟨hm.toLp _, ?_, hm.coeFn_toLp⟩
+  refine memSobolev_of_ae_eq_of_hasCompactSupport (u := fun x ↦ (f x : ℂ))
+    (Complex.ofRealCLM.contDiff.comp hf) (hc.comp_left Complex.ofReal_zero) ?_
+  filter_upwards [Complex.ofRealCLM.coeFn_compLp (hm.toLp _), hm.coeFn_toLp] with x h₁ h₂
+  simp [h₁, h₂]
+
+end realFunctions
 
 end TemperedDistribution

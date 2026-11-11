@@ -13,9 +13,9 @@ public import Mathlib.CategoryTheory.Linear.LinearFunctor
 
 A fully faithful `R`-linear functor identifies the morphism space `X ⟶ Y` with `F X ⟶ F Y` as
 `R`-modules. Mathlib supplies the `R`-linear map `CategoryTheory.Functor.mapLinearMap` and,
-separately, the bijectivity of `F.map`; this file records the resulting `R`-linear isomorphism,
-which is what transports a dimension or a finiteness statement about a morphism space along the
-functor.
+separately, the inverse `CategoryTheory.Functor.preimage`; this file records the resulting
+`R`-linear isomorphism, which is what transports a dimension or a finiteness statement about a
+morphism space along the functor.
 -/
 
 public section
@@ -29,21 +29,22 @@ variable {C : Type u} [Category.{v} C] {D : Type u'} [Category.{v'} D] [Preaddit
   [CategoryTheory.Linear R D] (F : C ⥤ D) [F.Additive]
   [F.Linear R] [F.Full] [F.Faithful]
 
-/-- **A fully faithful `R`-linear functor is an isomorphism on morphism spaces.** -/
-noncomputable def Functor.homLinearEquiv (X Y : C) : (X ⟶ Y) ≃ₗ[R] (F.obj X ⟶ F.obj Y) :=
-  LinearEquiv.ofBijective (F.mapLinearMap R) ⟨F.map_injective, F.map_surjective⟩
+/-- **A fully faithful `R`-linear functor is an isomorphism on morphism spaces.** The forward
+map is `F.map` and the inverse is `F.preimage`. -/
+noncomputable def Functor.homLinearEquiv (X Y : C) : (X ⟶ Y) ≃ₗ[R] (F.obj X ⟶ F.obj Y) where
+  toLinearMap := F.mapLinearMap R
+  invFun := F.preimage
+  left_inv := F.preimage_map
+  right_inv := F.map_preimage
 
 @[simp]
 theorem Functor.homLinearEquiv_apply {X Y : C} (f : X ⟶ Y) :
-    F.homLinearEquiv R X Y f = F.map f := by
-  rw [Functor.homLinearEquiv]
-  exact congrFun (Functor.coe_mapLinearMap R F) f
+    F.homLinearEquiv R X Y f = F.map f :=
+  (rfl)
 
-/-- The inverse Hom equivalence lifts a morphism along the fully faithful functor. -/
 @[simp]
-theorem Functor.map_homLinearEquiv_symm_apply {X Y : C} (f : F.obj X ⟶ F.obj Y) :
-    F.map ((F.homLinearEquiv R X Y).symm f) = f := by
-  simpa only [Functor.homLinearEquiv_apply] using
-    (F.homLinearEquiv R X Y).apply_symm_apply f
+theorem Functor.homLinearEquiv_symm_apply {X Y : C} (f : F.obj X ⟶ F.obj Y) :
+    (F.homLinearEquiv R X Y).symm f = F.preimage f :=
+  (rfl)
 
 end CategoryTheory

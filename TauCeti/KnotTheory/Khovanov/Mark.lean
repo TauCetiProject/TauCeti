@@ -201,6 +201,20 @@ theorem khovanovComplexι_khovanovComplexMarkX_f (hj : j' = j - 2) {i : ℤ}
   erw [eqToHom_refl, Category.id_comp, NatTrans.ι_cubeComplexMap_f_assoc]
   rfl
 
+/-- Projecting the marked `X` chain action onto a state gives the marked `X` action of that
+state. -/
+@[reassoc (attr := simp)]
+theorem khovanovComplexMarkX_f_khovanovComplexπ (hj : j' = j - 2) {i : ℤ}
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
+    (D.khovanovComplexMarkX p hD R hj).f i ≫ D.khovanovComplexπ hD R j' S =
+      D.khovanovComplexπ hD R j S ≫
+        (D.toPDCode.resolutionCubeMarkX p hD R (by omega)).app S.1 := by
+  refine D.khovanovComplex_hom_ext hD R j fun T ↦ ?_
+  by_cases h : T = S
+  · subst h
+    simp
+  · simp [h]
+
 /-- The `X` chain action at a mark squares to zero. -/
 @[reassoc (attr := simp)]
 theorem khovanovComplexMarkX_comp_khovanovComplexMarkX (hj : j' = j - 2) (hj' : j'' = j' - 2) :

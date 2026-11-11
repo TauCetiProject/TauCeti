@@ -177,7 +177,7 @@ variable {R : Type v} [Field R]
 
 /-- Induction from `C` scales dimension by the degree of the associated fixed field. -/
 theorem finrank_ind_eq_finrank_shapiroField_mul [IsGalois F (AlgebraicClosure F)]
-    (B : Rep.{max u v} R C) [FiniteDimensional R B] :
+    (B : Rep.{max u v} R C) :
     Module.finrank R (Rep.ind C.subtype B) =
       Module.finrank F (shapiroField F V C) * Module.finrank R B := by
   rw [Rep.finrank_ind, finrank_shapiroField]
@@ -205,7 +205,7 @@ theorem finrank_base_shapiroField [Algebra k F] :
 coefficient dimension by the same index by which passage to the fixed field scales base degree. -/
 theorem finrank_base_mul_finrank_ind_eq_shapiroField
     [IsGalois F (AlgebraicClosure F)] [Algebra k F]
-    (B : Rep.{max u v} R C) [FiniteDimensional R B] :
+    (B : Rep.{max u v} R C) :
     Module.finrank k F * Module.finrank R (Rep.ind C.subtype B) =
       Module.finrank k (shapiroField F V C) * Module.finrank R B := by
   rw [finrank_ind_eq_finrank_shapiroField_mul,

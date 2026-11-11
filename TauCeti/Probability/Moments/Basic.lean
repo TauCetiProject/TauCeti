@@ -119,7 +119,7 @@ variable {f : Ω → ℝ}
 
 /-- **Symmetrization by Jensen's inequality.** For a probability measure `μ`, the moment
 generating function of `f - 𝔼 f` at `t` is at most `∫∫ exp (t (f x - f y)) dμ(x) dμ(y)`. -/
-theorem ofReal_mgf_sub_integral_le_lintegral [IsProbabilityMeasure μ] (hfm : Measurable f)
+theorem ofReal_mgf_sub_integral_le_lintegral [IsProbabilityMeasure μ]
     (hfi : Integrable f μ) {t : ℝ} (hint : Integrable (fun x ↦ exp (t * (f x - ∫ y, f y ∂μ))) μ)
     (hneg : Integrable (fun x ↦ exp (-t * f x)) μ) :
     ENNReal.ofReal (mgf (fun x ↦ f x - ∫ y, f y ∂μ) μ t) ≤
@@ -140,8 +140,12 @@ theorem ofReal_mgf_sub_integral_le_lintegral [IsProbabilityMeasure μ] (hfm : Me
     rw [← hmean]
     exact convexOn_exp.map_integral_le continuous_exp.continuousOn isClosed_univ (by simp)
       (((integrable_const _).sub hfi).const_mul t) (hexpi x)
-  have hF : Measurable fun p : Ω × Ω ↦ ENNReal.ofReal (exp (t * (f p.1 - f p.2))) :=
-    ENNReal.measurable_ofReal.comp (by fun_prop)
+  have hf1 : AEMeasurable (fun p : Ω × Ω ↦ f p.1) (μ.prod μ) :=
+    hfi.aemeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst
+  have hf2 : AEMeasurable (fun p : Ω × Ω ↦ f p.2) (μ.prod μ) :=
+    hfi.aemeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd
+  have hF : AEMeasurable (fun p : Ω × Ω ↦ ENNReal.ofReal (exp (t * (f p.1 - f p.2)))) (μ.prod μ) :=
+    ENNReal.measurable_ofReal.comp_aemeasurable (by fun_prop)
   rw [mgf]
   calc ENNReal.ofReal (∫ x, exp (t * (f x - m)) ∂μ)
       = ∫⁻ x, .ofReal (exp (t * (f x - m))) ∂μ :=
@@ -149,7 +153,7 @@ theorem ofReal_mgf_sub_integral_le_lintegral [IsProbabilityMeasure μ] (hfm : Me
     _ ≤ ∫⁻ x, .ofReal (∫ y, exp (t * (f x - f y)) ∂μ) ∂μ :=
         lintegral_mono fun x ↦ ENNReal.ofReal_le_ofReal (hjensen x)
     _ = ∫⁻ p, .ofReal (exp (t * (f p.1 - f p.2))) ∂μ.prod μ := by
-        rw [lintegral_prod _ hF.aemeasurable]
+        rw [lintegral_prod _ hF]
         refine lintegral_congr fun x ↦ ?_
         rw [ofReal_integral_eq_lintegral_ofReal (hexpi x) (.of_forall fun _ ↦ (exp_pos _).le)]
 

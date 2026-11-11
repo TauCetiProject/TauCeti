@@ -33,6 +33,8 @@ sufficiency of the tail condition; the necessity needs `∫⁻ g ∂μ ≠ ∞`.
 
 * `TauCeti.tendsto_lintegral_of_forall_exists_setLIntegral_le` — uniformly integrable tails along a
   weakly convergent family give convergence of the integrals;
+* `TauCeti.tendsto_lintegral_of_sq_bound` — an eventual uniform second-moment bound gives
+  convergence of the integrals;
 * `TauCeti.exists_setLIntegral_le_of_tendsto_lintegral` — conversely, convergence of the
   integrals to a finite limit gives uniformly integrable tails;
 * `TauCeti.tendsto_lintegral_iff_forall_exists_setLIntegral_le` — the resulting equivalence.
@@ -162,5 +164,45 @@ theorem tendsto_lintegral_iff_forall_exists_setLIntegral_le (hg : Continuous g)
         ∀ᶠ i in L, ∫⁻ x in {x | R ≤ g x}, g x ∂(μs i : Measure Ω) ≤ ε :=
   ⟨fun hlim _ hε ↦ exists_setLIntegral_le_of_tendsto_lintegral hg h hμ hlim hε,
     tendsto_lintegral_of_forall_exists_setLIntegral_le hg h⟩
+
+/-- A uniform second-moment bound for a continuous nonnegative function gives convergence
+of its integrals along weakly convergent finite measures. -/
+theorem tendsto_lintegral_of_sq_bound (hg : Continuous g)
+    (h : Tendsto μs L (𝓝 μ)) {C : ℝ≥0}
+    (hC : ∀ᶠ i in L, ∫⁻ x, (g x : ℝ≥0∞) ^ 2 ∂(μs i : Measure Ω) ≤ C) :
+    Tendsto (fun i ↦ ∫⁻ x, g x ∂(μs i : Measure Ω)) L
+      (𝓝 (∫⁻ x, g x ∂(μ : Measure Ω))) := by
+  apply tendsto_lintegral_of_forall_exists_setLIntegral_le hg h
+  intro ε hε
+  obtain ⟨δ, hδ, hδε⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hε
+  let R : ℝ≥0 := max (C / δ) 1
+  have hR : 0 < R := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
+  have hCR : R⁻¹ * C ≤ δ := by
+    rw [inv_mul_eq_div, div_le_iff₀ hR]
+    calc C ≤ C / δ * δ := (div_mul_cancel₀ C (by exact_mod_cast hδ.ne')).ge
+         _ ≤ δ * R := by rw [mul_comm δ]; gcongr; exact le_max_left _ _
+  refine ⟨R, ?_⟩
+  filter_upwards [hC] with i hi
+  calc
+    ∫⁻ x in {x | R ≤ g x}, g x ∂(μs i : Measure Ω)
+        ≤ ∫⁻ x in {x | R ≤ g x}, (R : ℝ≥0∞)⁻¹ * (g x : ℝ≥0∞) ^ 2
+            ∂(μs i : Measure Ω) := by
+      apply setLIntegral_mono' (measurableSet_le measurable_const hg.measurable)
+      intro x hx
+      have hx' : g x ≤ R⁻¹ * g x ^ 2 := by
+        rw [inv_mul_eq_div, le_div_iff₀ hR, pow_two]
+        gcongr
+        exact hx
+      simpa only [ENNReal.coe_mul, ENNReal.coe_inv hR.ne', ENNReal.coe_pow] using
+        (ENNReal.coe_le_coe.mpr hx')
+    _ = (R : ℝ≥0∞)⁻¹ * ∫⁻ x in {x | R ≤ g x}, (g x : ℝ≥0∞) ^ 2
+        ∂(μs i : Measure Ω) := by
+      rw [lintegral_const_mul _ (hg.measurable.coe_nnreal_ennreal.pow_const 2)]
+    _ ≤ (R : ℝ≥0∞)⁻¹ * C := by
+      gcongr
+      exact (setLIntegral_le_lintegral _ _).trans hi
+    _ ≤ (δ : ℝ≥0∞) := by
+      simpa only [ENNReal.coe_mul, ENNReal.coe_inv hR.ne'] using (ENNReal.coe_le_coe.mpr hCR)
+    _ ≤ ε := hδε.le
 
 end TauCeti

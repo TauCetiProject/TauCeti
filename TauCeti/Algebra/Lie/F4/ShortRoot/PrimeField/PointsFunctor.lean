@@ -128,7 +128,7 @@ theorem coe_rootSubgroupPoints (k : Fin 4 ⊕ Fin 4) (A : Type v) [CommRing A]
     rw [hqdef, MulEquiv.apply_symm_apply]
   have hq := pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap rootGen cartanGen
     rep lattice.toAddSubgroup rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator
-    latticeBasis f4ShortRootWeight (ZMod 2) _root_.TauCeti.F4ShortRoot.definingIdeal_def k
+    latticeBasis f4ShortRootWeight (ZMod 2) k
     (CommAlgCat.of (ZMod 2) A) q
   rw [hu] at hq
   have hcomp :

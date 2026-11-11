@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.Coproduct
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellMap
+import Mathlib.Algebra.Category.ModuleCat.AB
 
 /-!
 # The cellular boundary on a cell generator
@@ -27,6 +28,17 @@ the source cells needs to be exact.
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2, the cellular boundary
 formula.  This file proves its factorization through the attaching map; no identification of
 individual matrix entries with integer degrees is asserted here.
+
+As a first consequence, if the boundary sphere of every `(n + 1)`-cell lies in the
+`(n - 1)`-skeleton, its class comes from `Hₙ(Xⁿ⁻¹)` and so vanishes in `Hₙ(Xⁿ, Xⁿ⁻¹)`: the
+cellular differential leaving degree `n + 1` is zero
+(`TauCeti.cellularDifferential_eq_zero_of_cellFrontier_subset`). In particular, all cellular
+differentials vanish when every cell is attached along the base
+(`TauCeti.cellularChainComplex_d_eq_zero_of_cellFrontier_subset`).
+
+With module coefficients, the same naturality shows that the connecting morphism
+`Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ)` of the skeletal pair takes values in the span of the images of the
+attaching maps of the `(n + 1)`-cells (`TauCeti.skeletonPairδ_mem_iSup_range`).
 -/
 
 public section
@@ -123,5 +135,102 @@ lemma ι_cellularChainGroupIso_inv_comp_cellularDifferential (n : ℕ)
     Category.assoc, singularHomologyDiskBoundaryPairIso_inv_comp_singularHomologyδ_assoc,
     Category.assoc]
   rfl
+
+/-- **The cellular differential vanishes on cells attached two skeleta down.** If the boundary
+sphere of every `(n + 1)`-cell lies in the `(n - 1)`-skeleton `skeletonLT C n`, then the cellular
+differential `Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ, Xⁿ⁻¹)` vanishes. -/
+theorem cellularDifferential_eq_zero_of_cellFrontier_subset (n : ℕ)
+    [HasExactColimitsOfShape (Discrete (cell C (n + 1))) A]
+    (h : ∀ j : cell C (n + 1), cellFrontier (n + 1) j ⊆ skeletonLT C n) :
+    cellularDifferential C R n = 0 := by
+  rw [← cancel_epi (cellularChainGroupIso C R (n + 1)).inv, comp_zero]
+  refine Sigma.hom_ext _ _ fun j ↦ ?_
+  -- The attaching map of `j` factors through the inclusion of the `(n - 1)`-skeleton into the
+  -- `n`-skeleton, and the homology of that inclusion dies in the relative homology of the pair.
+  let g : TopCat.diskBoundary.{w} (n + 1) ⟶ (skeletonPair C n).snd :=
+    TopCat.ofHom ⟨fun z ↦ ⟨cellAttachingMap j z, h j <| by
+        rw [← range_cellAttachingMap]
+        exact Set.mem_range_self z⟩,
+      (continuous_subtype_val.comp (cellAttachingMap j).hom.continuous).subtype_mk _⟩
+  have hzero : SSet.homologyMap (TopCat.toSSet.map (g ≫ (skeletonPair C n).map)) R n ≫
+      (skeletonPair C n).singularHomologyπ R n = 0 := by
+    rw [Functor.map_comp, SSet.homologyMap_comp]
+    exact (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·)
+      ((skeletonPair C n).homologyMap_comp_singularHomologyπ R n)).trans comp_zero
+  rw [ι_cellularChainGroupIso_inv_comp_cellularDifferential, comp_zero]
+  -- `g ≫ (skeletonPair C n).map` is the attaching map of `j` by definition, but the boundary
+  -- formula presents its spaces through `skeletonObj` and `TopCat.sphere`, so the vanishing is
+  -- transported along `congrArg` rather than by rewriting.
+  exact (congrArg (fun t ↦ (reducedSingularHomologyTopCatSphereIso R n).inv ≫
+    (reducedSingularHomologyι R n).app (TopCat.diskBoundary.{w} (n + 1)) ≫ t) hzero).trans
+      ((congrArg (_ ≫ ·) comp_zero).trans comp_zero)
+
+/-- **The cellular differentials of a complex attached along its base vanish.** If the boundary
+sphere of every cell lies in the base `D`, then every differential of the cellular chain complex
+is zero. -/
+theorem cellularChainComplex_d_eq_zero_of_cellFrontier_subset
+    [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
+    (h : ∀ m (j : cell C m), cellFrontier m j ⊆ D) (i j : ℕ) :
+    (cellularChainComplex C R).d i j = 0 := by
+  by_cases hij : i = j + 1
+  · subst hij
+    rw [cellularChainComplex_d, cellularDifferential_eq_zero_of_cellFrontier_subset C R j
+      fun c ↦ (h _ c).trans ((skeletonLT_zero_eq_base (C := C)).symm.subset.trans
+        (skeletonLT_mono zero_le)), zero_comp, comp_zero]
+  · exact (cellularChainComplex C R).shape i j fun h' ↦ hij h'.symm
+
+section Module
+
+variable {k : Type w} [Ring k] (M : ModuleCat.{w} k)
+
+/-- **The connecting morphism of a skeletal pair lands in the span of the attaching maps.** For
+module coefficients `M`, every class in the image of the connecting morphism
+`Hₙ₊₁(Xⁿ⁺¹, Xⁿ; M) ⟶ Hₙ(Xⁿ; M)` is a sum of images of classes of the boundary spheres of the
+`(n + 1)`-cells under their attaching maps. -/
+theorem skeletonPairδ_mem_iSup_range (n : ℕ)
+    (a : cellularChainGroup (A := ModuleCat.{w} k) C M (n + 1)) :
+    (skeletonPairδ C M n).hom a ∈
+      ⨆ j : cell C (n + 1),
+        LinearMap.range (SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) M n).hom := by
+  -- The coproduct of the cell summands is spanned by the summands.
+  set T := ⨆ j : cell C (n + 1), LinearMap.range (Sigma.ι (fun _ : cell C (n + 1) ↦ M) j).hom
+  have hT : ModuleCat.ofHom T.mkQ = 0 := Sigma.hom_ext _ _ fun j ↦ by
+    ext r
+    simpa [Submodule.Quotient.mk_eq_zero] using
+      Submodule.mem_iSup_of_mem j (LinearMap.mem_range_self _ r)
+  have hmem : (cellularChainGroupIso C M (n + 1)).hom a ∈ T := by
+    simpa [Submodule.Quotient.mk_eq_zero] using
+      ConcreteCategory.congr_hom hT ((cellularChainGroupIso C M (n + 1)).hom a)
+  -- It suffices to treat one cell summand at a time.
+  have hle : T ≤ (⨆ j : cell C (n + 1), LinearMap.range
+      (SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) M n).hom).comap
+        ((skeletonPairδ C M n).hom ∘ₗ
+          (cellularChainGroupIso C M (n + 1)).inv.hom) := by
+    refine iSup_le fun j ↦ ?_
+    rintro _ ⟨r, rfl⟩
+    -- On a cell summand, the connecting morphism is the attaching map applied to the boundary
+    -- sphere, by naturality for the characteristic map of the cell.
+    have e₁ := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
+      (ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPairMap C M (n + 1) j))
+      r
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at e₁
+    have e₂ : (SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) M n).hom
+        (((diskBoundaryPair (n + 1)).singularHomologyδ M (n + 1) n).hom
+          ((singularHomologyDiskBoundaryPairIso M (n + 1)).inv.hom r)) =
+        (skeletonPairδ C M n).hom
+          ((TopPair.singularHomologyMap (characteristicCellPairMap C j) M (n + 1)).hom
+            ((singularHomologyDiskBoundaryPairIso M (n + 1)).inv.hom r)) := by
+      rw [← characteristicCellPairMap_snd]
+      -- Both sides apply a composite. The connecting morphism of a pair `P` lands in the
+      -- homology of `(TopPair.toSSetPair.obj P).left`, which is `TopCat.toSSet.obj P.snd` by
+      -- definition (`TopPair.toSSetPair_obj_left`), so `ModuleCat.hom_comp` cannot split the
+      -- composites syntactically.
+      exact ConcreteCategory.congr_hom
+        (TopPair.singularHomologyδ_naturality M (characteristicCellPairMap C j) (n + 1) n) _
+    rw [Submodule.mem_comap, LinearMap.comp_apply, e₁, ← e₂]
+    exact Submodule.mem_iSup_of_mem j (LinearMap.mem_range_self _ _)
+  simpa using hle hmem
+
+end Module
 
 end TauCeti

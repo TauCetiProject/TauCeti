@@ -39,6 +39,8 @@ the two Lorentzians is `TauCeti.HaagerupZsido.integral_weight_mul_mul_inv_sub_in
   `|x| ≥ 1`;
 * `TauCeti.HaagerupZsido.integral_realKernel_mul_sin`: its real form `∫ r(t) sin (x t) dt = 1 / x`
   for `|x| ≥ 1`;
+* `TauCeti.HaagerupZsido.integral_realKernel_mul_sin_mul_div`: its rescaled form
+  `∫ r(t) sin (a t / δ) dt = δ / a` for `0 < δ ≤ |a|`;
 * `TauCeti.HaagerupZsido.fourier_reciprocalKernel`: the same identity in Mathlib's normalisation of
   the Fourier transform, `𝓕 k ξ = -1 / (2 π ξ)` for `2 π |ξ| ≥ 1`.
 
@@ -166,6 +168,18 @@ theorem integral_realKernel_mul_sin {x : ℝ} (hx : 1 ≤ |x|) :
   have : (x : ℂ) * t * Complex.I = ((x * t : ℝ) : ℂ) * Complex.I := by push_cast; ring
   simp [this, reciprocalKernel_def, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im,
     mul_comm]
+
+/-- **The reciprocal sine identity at scale `δ`.** For `0 < δ ≤ |a|`, the real Haagerup–Zsidó
+kernel satisfies `∫ r(t) sin (a t / δ) dt = δ / a`: the rescaled form of
+`TauCeti.HaagerupZsido.integral_realKernel_mul_sin`. -/
+theorem integral_realKernel_mul_sin_mul_div {a δ : ℝ} (hδ : 0 < δ) (ha : δ ≤ |a|) :
+    ∫ t, realKernel t * Real.sin (a * (t / δ)) = δ * a⁻¹ := by
+  have h1 : 1 ≤ |a / δ| := by
+    rw [abs_div, abs_of_pos hδ, one_le_div hδ]
+    exact ha
+  calc _ = ∫ t, realKernel t * Real.sin (a / δ * t) :=
+        integral_congr_ae (.of_forall fun t ↦ by ring_nf)
+    _ = δ * a⁻¹ := by rw [integral_realKernel_mul_sin h1, inv_div, div_eq_mul_inv]
 
 /-- **The exterior reciprocal identity in Mathlib's Fourier normalisation.** With
 `𝓕 f ξ = ∫ e^{-2πitξ} f(t) dt`, the Haagerup–Zsidó kernel satisfies `𝓕 k ξ = -1 / (2 π ξ)` whenever

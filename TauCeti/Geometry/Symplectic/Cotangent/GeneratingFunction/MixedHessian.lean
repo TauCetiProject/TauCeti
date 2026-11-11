@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Basic
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
-public import TauCeti.Geometry.Manifold.MFDeriv.Parametric
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+public import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -153,8 +153,7 @@ theorem mixedHessian_comp_prodMap_apply [IsManifold I 1 M] [IsManifold J 1 N]
     filter_upwards [hnear] with Q' hQ'
     exact (mvfderiv_comp q hQ' hf).symm
   simp only [mixedHessian_def]
-  rw [← heq.mvfderiv_eq, mvfderiv_comp_apply_of_differentiableAt L.differentiableAt (hσ.comp Q hg),
-    ContinuousLinearMap.fderiv, mvfderiv_comp_apply Q hσ hg]
+  rw [← heq.mvfderiv_eq, L.mvfderiv_comp_apply (hσ.comp Q hg), mvfderiv_comp_apply Q hσ hg]
   -- `L φ v` unfolds to `φ (df v)`.
   rfl
 

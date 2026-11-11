@@ -181,11 +181,14 @@ variable {S : Type*} [CommSemiring S]
 /-- A power series `F` over `R[X]` whose constant coefficient is monic of degree `d` and whose
 other coefficients have degree `< d` comes from a monic polynomial over `R⟦X⟧` of degree `d`
 reducing to `g` modulo `t`. -/
-theorem exists_monic_swapPowerSeries_eq [Nontrivial S] {g : S[X]} (hg : g.Monic)
+theorem exists_monic_swapPowerSeries_eq {g : S[X]} (hg : g.Monic)
     {F : S[X]⟦X⟧} (hF₀ : PowerSeries.constantCoeff F = g)
     (hF : ∀ k, 1 ≤ k → PowerSeries.coeff k F ∈ degreeLT S g.natDegree) :
     ∃ G : S⟦X⟧[X], G.Monic ∧ G.natDegree = g.natDegree ∧
       G.map PowerSeries.constantCoeff = g ∧ swapPowerSeries G = F := by
+  rcases subsingleton_or_nontrivial S with _ | _
+  · exact ⟨1, monic_one, by rw [Subsingleton.elim g 1, natDegree_one, natDegree_one],
+      Subsingleton.elim _ _, Subsingleton.elim _ _⟩
   suffices ∃ G : S⟦X⟧[X], G.Monic ∧ swapPowerSeries G = F by
     obtain ⟨G, hG, rfl⟩ := this
     rw [constantCoeff_swapPowerSeries] at hF₀

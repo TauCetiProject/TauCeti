@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 
 /-!
 # Analytic cards of primitive Dirichlet characters
@@ -95,6 +95,12 @@ theorem dirichletData_completed (s : ℂ) :
 @[simp]
 theorem dirichletData_polarOrder : (dirichletData χ hχ).polarOrder =
     if N = 1 then Finsupp.single 0 1 + Finsupp.single 1 1 else 0 := (rfl)
+
+/-- A nonprincipal primitive Dirichlet record has no poles. -/
+theorem dirichletData_polarOrder_eq_zero (hne : χ ≠ 1) :
+    (dirichletData χ hχ).polarOrder = 0 := by
+  have hN : N ≠ 1 := fun h ↦ hne (hχ.eq_one_iff.mpr h)
+  simp [dirichletData_polarOrder, hN]
 
 @[simp]
 theorem dirichletData_degree : (dirichletData χ hχ).degree = 1 := by

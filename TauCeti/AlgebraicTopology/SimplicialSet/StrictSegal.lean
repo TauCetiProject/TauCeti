@@ -35,6 +35,9 @@ the boundary of a triangle need not be the composite of the other two.
 * `SSet.map_eq_of_isStrictSegal`: an `(n + 1)`-simplex whose face opposite to the last vertex is
   constant at a vertex is fixed by any operator that fixes its last edge and collapses the other
   edges of its spine to the vertex `n`.
+* `SSet.IsStrictSegal.of_iso`: the strict Segal condition is invariant under isomorphism; in
+  particular the standard simplices, being isomorphic to nerves of finite linear orders, are
+  strict Segal (`SSet.stdSimplex.isStrictSegal`).
 * `SSet.IsStrictSegal.hom_ext_of_innerHorn`: maps from `Δ[n + 2]` to a strict Segal simplicial
   set agree as soon as they agree on an inner horn.
 * `SSet.innerFibration_of_isStrictSegal`: a map from a quasicategory to a strict Segal simplicial
@@ -105,6 +108,23 @@ theorem map_eq_of_isStrictSegal {n : ℕ} (r : ⦋n + 1⦌ ⟶ ⦋n + 1⦌)
         X.map (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op x := by
       rw [← Functor.map_comp_apply, ← op_comp, Subsingleton.elim (f ≫ _)]
     rw [hσ, key, key]
+
+/-- The strict Segal condition is invariant under isomorphism: an isomorphism `X ≅ Y` matches the
+spines of the simplices of `X` and of `Y`. -/
+theorem IsStrictSegal.of_iso {Y : SSet.{u}} (e : X ≅ Y) : Y.IsStrictSegal where
+  segal n := by
+    have h : Y.spine n = (fun p ↦ p.map e.hom) ∘ X.spine n ∘ e.inv.app _ := by
+      funext y
+      ext <;> simp [Path.map_vertex, Path.map_arrow]
+    rw [h]
+    refine Function.Bijective.comp ?_ ((IsStrictSegal.segal n).comp ?_)
+    · refine Function.bijective_iff_has_inverse.2 ⟨fun p ↦ p.map e.inv, fun p ↦ ?_, fun p ↦ ?_⟩
+      all_goals ext <;> simp [Path.map_vertex, Path.map_arrow]
+    · exact (isIso_iff_bijective _).1 inferInstance
+
+/-- Standard simplices are strict Segal, being isomorphic to nerves of finite linear orders. -/
+instance stdSimplex.isStrictSegal (n : ℕ) : (Δ[n] : SSet.{u}).IsStrictSegal :=
+  .of_iso (stdSimplex.isoNerve n).symm
 
 namespace IsStrictSegal
 

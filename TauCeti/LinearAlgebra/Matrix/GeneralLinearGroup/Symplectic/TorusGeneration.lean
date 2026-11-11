@@ -81,13 +81,12 @@ theorem leviHom_diagGL_mulSingle (i : Fin m) (a : Rˣ) :
     rw [GLSymplectic.coe_leviHom]
     rcases r with r | r <;> rcases s with s | s
     · by_cases hrs : r = s <;> by_cases hri : r = i <;>
-        simp_all [Matrix.SpecialLinearGroup.diag2nUnit_coe, Pi.mulSingle_apply]
-    · simp [Matrix.SpecialLinearGroup.diag2nUnit_coe]
-    · simp [Matrix.SpecialLinearGroup.diag2nUnit_coe]
+        simp_all [Pi.mulSingle_apply]
+    · simp
+    · simp
     · rw [Matrix.fromBlocks_apply₂₂, Matrix.transpose_apply, hinv]
       by_cases hrs : r = s <;> by_cases hri : r = i <;> by_cases hsi : s = i <;>
-        simp_all [Matrix.SpecialLinearGroup.diag2nUnit_coe, Matrix.diagonal_apply,
-          Pi.mulSingle_apply, eq_comm]
+        simp_all [Matrix.diagonal_apply, Pi.mulSingle_apply, eq_comm]
   have hpositive (c : R) :
       ((mulEquivGLSymplectic m R (positiveLongRootTransvectionUnit i c) :
           GLSymplectic (Fin m) R) : GL (Fin m ⊕ Fin m) R) =

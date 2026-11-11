@@ -97,19 +97,9 @@ theorem exists_pos_forall_lipschitzOnWith_of_small_energy
   -- The Cauchy--Riemann equation converts the real-direction estimate into an operator bound.
   have hop : ∀ z ∈ closedBall z₀ (r / 2), ‖fderiv ℝ u z‖ ≤ (C : ℝ) := by
     intro z hz
-    have hreal := hbound z hz
-    have himag : ‖fderiv ℝ u z I‖ ≤ max a 0 * B := by
-      rw [hCR z (hinner hz)]
-      exact ((J (u z)).le_opNorm _).trans (by
-        gcongr
-        exact (ha _ (huK (hinner hz))).trans (le_max_left _ _))
-    refine ContinuousLinearMap.opNorm_le_bound _ C.coe_nonneg fun w ↦ ?_
-    calc
-      ‖fderiv ℝ u z w‖ ≤ (‖fderiv ℝ u z 1‖ + ‖fderiv ℝ u z I‖) * ‖w‖ :=
-        (fderiv ℝ u z).norm_apply_le_norm_one_add_norm_I w
-      _ ≤ (B + max a 0 * B) * ‖w‖ := by
-        gcongr
-      _ = (C : ℝ) * ‖w‖ := by rw [hCcoe]; ring
+    rw [hCcoe]
+    exact (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z (hinner hz))
+      ((ha _ (huK (hinner hz))).trans (le_max_left _ _)) (hbound z hz)
   exact (convex_closedBall z₀ (r / 2)).lipschitzOnWith_of_nnnorm_fderiv_le
     (fun z hz ↦ (hu.contDiffAt (isOpen_ball.mem_nhds (hinner hz))).differentiableAt
       (by norm_num))

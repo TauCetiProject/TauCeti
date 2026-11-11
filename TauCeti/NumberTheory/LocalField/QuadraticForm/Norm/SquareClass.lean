@@ -72,73 +72,89 @@ private theorem valuation_normFamily_div_sub_one {π : 𝒪[K]} (hπ : Irreducib
   rw [hid, map_div₀, map_mul, map_mul, Valuation.map_neg,
     valuation_one_sub_uniformizer_mul_sq hπ s, div_one]
 
+/-- A square quotient in the uniformizer norm family forces the parameters to be congruent
+modulo depth `v_K(2)`: below that depth the quotient differs from one to an odd order. -/
+private theorem valuation_sub_le_two_of_isSquare_div (h2 : (2 : K) ≠ 0)
+    {π : 𝒪[K]} (hπ : Irreducible π) (s t : 𝒪[K])
+    (hv2 : valuation K (2 : K) = valuation K (π : K) ^ natCastValuation K 2 h2)
+    (htwo : valuation K (2 * (s : K)) ≤ valuation K (2 : K)) :
+    IsSquare ((1 - (π : K) * (t : K) ^ 2) / (1 - (π : K) * (s : K) ^ 2)) →
+      valuation K ((t : K) - s) ≤ valuation K (2 : K) := by
+  have hπlt := Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ
+  have hid : (t : K) + s = ((t : K) - s) + 2 * s := by ring
+  intro hsq
+  by_contra hle
+  have hlt : valuation K (2 : K) < valuation K ((t : K) - s) := lt_of_not_ge hle
+  have hdiff0 : (t : K) - s ≠ 0 := by
+    intro h
+    simp [h] at hlt
+  -- The DVR factorization gives the nonnegative order of the parameter difference.
+  obtain ⟨k, u, hu⟩ := _root_.IsDiscreteValuationRing.eq_unit_mul_pow_irreducible (x := t - s)
+    (sub_ne_zero.mpr (fun h => hdiff0 (by rw [h, sub_self]))) hπ
+  have hxv : valuation K ((t : K) - s) = valuation K (π : K) ^ k := by
+    have hvu := (Valuation.Integers.isUnit_iff_valuation_eq_one
+      (Valuation.integer.integers (valuation K))).mp u.isUnit
+    simp only [Algebra.algebraMap_ofSubsemiring_apply] at hvu
+    rw [← AddSubgroupClass.coe_sub, hu, Subring.coe_mul, Subring.coe_pow, map_mul, hvu, one_mul,
+      map_pow]
+  have hk : k < natCastValuation K 2 h2 := by
+    rw [hv2, hxv] at hlt
+    exact (pow_lt_pow_iff_right_of_lt_one₀
+      (Valuation.pos_iff _ |>.mpr (fun h => hπ.ne_zero (Subtype.ext h))) hπlt).mp hlt
+  have hvsum : valuation K ((t : K) + s) = valuation K ((t : K) - s) := by
+    rw [hid]
+    exact (valuation K).map_add_eq_of_lt_left (htwo.trans_lt hlt)
+  obtain ⟨ξ, hξ⟩ := hsq
+  apply valuation_sq_sub_one_ne_pow_odd h2 hπ hk ξ
+  have hξsq : ξ ^ 2 = (1 - (π : K) * (t : K) ^ 2) /
+      (1 - (π : K) * (s : K) ^ 2) := by simpa only [sq] using hξ.symm
+  rw [hξsq, valuation_normFamily_div_sub_one hπ, hvsum, hxv]
+  rw [pow_succ, mul_comm 2 k, pow_mul, sq]
+  ac_rfl
+
+/-- Congruent parameters give a quotient in the square subgroup `U(K, 2 v_K(2) + 1)`. -/
+private theorem isSquare_div_of_valuation_sub_le_two (h2 : (2 : K) ≠ 0)
+    {π : 𝒪[K]} (hπ : Irreducible π) (s t : 𝒪[K])
+    (hv2 : valuation K (2 : K) = valuation K (π : K) ^ natCastValuation K 2 h2)
+    (htwo : valuation K (2 * (s : K)) ≤ valuation K (2 : K)) :
+    valuation K ((t : K) - s) ≤ valuation K (2 : K) →
+      IsSquare ((1 - (π : K) * (t : K) ^ 2) / (1 - (π : K) * (s : K) ^ 2)) := by
+  have hid : (t : K) + s = ((t : K) - s) + 2 * s := by ring
+  intro hdiff
+  have hsum : valuation K ((t : K) + s) ≤ valuation K (2 : K) := by
+    rw [hid]
+    exact ((valuation K).map_add _ _).trans (max_le hdiff htwo)
+  let b : Kˣ := Units.mk0
+    ((1 - (π : K) * (t : K) ^ 2) / (1 - (π : K) * (s : K) ^ 2))
+    (div_ne_zero (one_sub_uniformizer_mul_sq_ne_zero hπ t)
+      (one_sub_uniformizer_mul_sq_ne_zero hπ s))
+  have hb : b ∈ unitFiltration K (2 * natCastValuation K 2 h2 + 1) := by
+    apply (mem_unitFiltration_succ_valuation _ b π hπ).mpr
+    rw [Units.val_mk0, valuation_normFamily_div_sub_one hπ, map_pow]
+    calc
+      valuation K (π : K) * valuation K ((t : K) - s) * valuation K ((t : K) + s) ≤
+          valuation K (π : K) * valuation K (2 : K) * valuation K (2 : K) :=
+        mul_le_mul' (mul_le_mul_right hdiff _) hsum
+      _ = valuation K (π : K) ^ (2 * natCastValuation K 2 h2 + 1) := by
+        rw [hv2, pow_succ, mul_comm 2 (natCastValuation K 2 h2), pow_mul, sq]
+        ac_rfl
+  obtain ⟨c, hc⟩ := unitFiltration_le_range_powMonoidHom_two h2 hb
+  have hbsq : IsSquare b := ⟨c, by simpa only [powMonoidHom_apply, sq] using hc.symm⟩
+  exact Units.isSquare_coe_iff.mpr hbsq
+
 /-- Two members of the uniformizer norm family differ by a square exactly when their
 parameters differ by an element of valuation at least `v_K(2)`. -/
 theorem isSquare_div_one_sub_uniformizer_mul_sq_iff (h2 : (2 : K) ≠ 0)
     {π : 𝒪[K]} (hπ : Irreducible π) (s t : 𝒪[K]) :
     IsSquare ((1 - (π : K) * (t : K) ^ 2) / (1 - (π : K) * (s : K) ^ 2)) ↔
       valuation K ((t : K) - s) ≤ valuation K (2 : K) := by
-  have hπlt := Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ
   have hv2 : valuation K (2 : K) = valuation K (π : K) ^ natCastValuation K 2 h2 := by
     simpa only [Nat.cast_ofNat] using valuation_natCast_eq_pow hπ 2 h2
-  -- Both directions compare `t + s = (t - s) + 2s` with the depth of `2`.
-  have hid : (t : K) + s = ((t : K) - s) + 2 * s := by ring
   have htwo : valuation K (2 * (s : K)) ≤ valuation K (2 : K) := by
     simpa only [map_mul, mul_one] using
       mul_le_mul_right ((Valuation.mem_integer_iff _ _).mp s.2) (valuation K (2 : K))
-  constructor
-  · -- Below depth `v_K(2)`, the quotient differs from one to the odd order `2k + 1`.
-    intro hsq
-    by_contra hle
-    have hlt : valuation K (2 : K) < valuation K ((t : K) - s) := lt_of_not_ge hle
-    have hdiff0 : (t : K) - s ≠ 0 := by
-      intro h
-      simp [h] at hlt
-    -- The DVR factorization gives the nonnegative order of the parameter difference.
-    obtain ⟨k, u, hu⟩ := _root_.IsDiscreteValuationRing.eq_unit_mul_pow_irreducible (x := t - s)
-      (sub_ne_zero.mpr (fun h => hdiff0 (by rw [h, sub_self]))) hπ
-    have hxv : valuation K ((t : K) - s) = valuation K (π : K) ^ k := by
-      have hvu := (Valuation.Integers.isUnit_iff_valuation_eq_one
-        (Valuation.integer.integers (valuation K))).mp u.isUnit
-      simp only [Algebra.algebraMap_ofSubsemiring_apply] at hvu
-      rw [← AddSubgroupClass.coe_sub, hu, Subring.coe_mul, Subring.coe_pow, map_mul, hvu, one_mul,
-        map_pow]
-    have hk : k < natCastValuation K 2 h2 := by
-      rw [hv2, hxv] at hlt
-      exact (pow_lt_pow_iff_right_of_lt_one₀
-        (Valuation.pos_iff _ |>.mpr (fun h => hπ.ne_zero (Subtype.ext h))) hπlt).mp hlt
-    have hvsum : valuation K ((t : K) + s) = valuation K ((t : K) - s) := by
-      rw [hid]
-      exact (valuation K).map_add_eq_of_lt_left (htwo.trans_lt hlt)
-    obtain ⟨ξ, hξ⟩ := hsq
-    apply valuation_sq_sub_one_ne_pow_odd h2 hπ hk ξ
-    have hξsq : ξ ^ 2 = (1 - (π : K) * (t : K) ^ 2) /
-        (1 - (π : K) * (s : K) ^ 2) := by simpa only [sq] using hξ.symm
-    rw [hξsq, valuation_normFamily_div_sub_one hπ, hvsum, hxv]
-    rw [pow_succ, mul_comm 2 k, pow_mul, sq]
-    ac_rfl
-  · -- Congruent parameters give a quotient in the square subgroup `U(K, 2 v_K(2) + 1)`.
-    intro hdiff
-    have hsum : valuation K ((t : K) + s) ≤ valuation K (2 : K) := by
-      rw [hid]
-      exact ((valuation K).map_add _ _).trans (max_le hdiff htwo)
-    let b : Kˣ := Units.mk0
-      ((1 - (π : K) * (t : K) ^ 2) / (1 - (π : K) * (s : K) ^ 2))
-      (div_ne_zero (one_sub_uniformizer_mul_sq_ne_zero hπ t)
-        (one_sub_uniformizer_mul_sq_ne_zero hπ s))
-    have hb : b ∈ unitFiltration K (2 * natCastValuation K 2 h2 + 1) := by
-      apply (mem_unitFiltration_succ_valuation _ b π hπ).mpr
-      rw [Units.val_mk0, valuation_normFamily_div_sub_one hπ, map_pow]
-      calc
-        valuation K (π : K) * valuation K ((t : K) - s) * valuation K ((t : K) + s) ≤
-            valuation K (π : K) * valuation K (2 : K) * valuation K (2 : K) :=
-          mul_le_mul' (mul_le_mul_right hdiff _) hsum
-        _ = valuation K (π : K) ^ (2 * natCastValuation K 2 h2 + 1) := by
-          rw [hv2, pow_succ, mul_comm 2 (natCastValuation K 2 h2), pow_mul, sq]
-          ac_rfl
-    obtain ⟨c, hc⟩ := unitFiltration_le_range_powMonoidHom_two h2 hb
-    have hbsq : IsSquare b := ⟨c, by simpa only [powMonoidHom_apply, sq] using hc.symm⟩
-    exact Units.isSquare_coe_iff.mpr hbsq
+  exact ⟨valuation_sub_le_two_of_isSquare_div h2 hπ s t hv2 htwo,
+    isSquare_div_of_valuation_sub_le_two h2 hπ s t hv2 htwo⟩
 
 /-- Equality of the square classes in the uniformizer norm family is congruence modulo
 `𝓂[K] ^ v_K(2)`. This includes odd residue characteristic, when that quotient is trivial. -/

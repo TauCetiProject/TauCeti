@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import TauCeti.Geometry.Manifold.MFDeriv.Basic
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -173,7 +174,7 @@ differentiable. -/
 theorem mfderiv_injective_of_proj_comp_eq_id {s : B → TotalSpace F V} {b : B}
     (hs : MDifferentiableAt IB (IB.prod 𝓘(𝕜, F)) s b) (hπs : π F V ∘ s = id) :
     Function.Injective (mfderiv IB (IB.prod 𝓘(𝕜, F)) s b) :=
-  Function.LeftInverse.injective (g := mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) (s b)) fun v ↦
-    DFunLike.congr_fun (mfderiv_proj_comp_mfderiv_of_proj_comp_eq_id hs hπs) v
+  TauCeti.mfderiv_injective_of_leftInverse
+    ((contMDiff_proj V (s b)).mdifferentiableAt one_ne_zero) hs (congrFun hπs)
 
 end Bundle

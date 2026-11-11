@@ -17,7 +17,8 @@ concatenation, reversal, paths, cycles, internally disjoint walks, and the induc
 relation.
 
 The interface follows Mathlib's `SimpleGraph.Walk`, adapted so that walks retain actual multigraph
-edge identities.
+edge identities.  The path-composition lemma `Graph.Walk.IsPath.isCycle_append` is adapted from
+Mathlib's theorem of the same name for simple-graph walks.
 -/
 
 public section
@@ -601,6 +602,23 @@ theorem isCycle_reverse (p : G.Walk x x) : p.reverse.IsCycle ↔ p.IsCycle := by
         (q.tail_support_perm_dropLast_support.nodup_iff).mp hq.2.2
       simpa only [support_reverse, List.tail_reverse, List.nodup_reverse] using hd
   exact ⟨fun hp => by simpa using reverse_imp p.reverse hp, reverse_imp p⟩
+
+/-- Two paths with opposite endpoints form a cycle when their interiors and edge identities are
+disjoint and at least one path is nonempty. -/
+theorem IsPath.isCycle_append {p : G.Walk x y} {q : G.Walk y x} (hp : p.IsPath)
+    (hq : q.IsPath) (hv : p.support.tail.Disjoint q.support.tail)
+    (he : p.edges.Disjoint q.edges) (hne : 0 < p.length ∨ 0 < q.length) :
+    (p.append q).IsCycle := by
+  rw [isCycle_def, edges_append, support_append]
+  refine ⟨fun h ↦ ?_, ?_, ?_⟩
+  · have hz : (p.append q).length = 0 := by
+      simpa only [length_nil] using congrArg Walk.length h
+    rw [length_append] at hz
+    omega
+  · exact List.Nodup.append (isTrail_def p |>.mp hp.isTrail)
+      (isTrail_def q |>.mp hq.isTrail) he
+  · simpa only [List.tail_append_of_ne_nil p.support_ne_nil] using
+      List.Nodup.append hp.support_nodup.tail hq.support_nodup.tail hv
 
 /-- Two walks from `x` to `y` are *internally disjoint* when they share no vertex other than `x`
 and `y`. -/

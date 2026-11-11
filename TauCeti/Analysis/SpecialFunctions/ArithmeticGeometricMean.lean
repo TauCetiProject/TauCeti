@@ -6,6 +6,7 @@ Authors: Bastiaan J Braams, The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ArithmeticGeometricMean
+import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
 # Quadratic bounds for the arithmetic-geometric mean
@@ -18,6 +19,9 @@ gives the bound
 This upper bound decays to zero only when `x < 9 * y`, equivalently
 `(x - y) / (8 * y) < 1`. Mathlib's `NNReal.agmSequences` has its zeroth term
 already one step after the input pair.
+
+We also show that the weighted differences of squares of the two means tend to zero.
+This controls the remainder in the AGM series for the second-kind elliptic integral.
 
 The quadratic estimate follows `Carlson.agmSeq_gap_succ` from Bastiaan J Braams'
 `lean-codes`, adapted to Mathlib's existing AGM sequences and their indexing.
@@ -104,5 +108,54 @@ theorem agmSequences_snd_sub_fst_le {x y : ℝ≥0} (hy : 0 < y) (hxy : y ≤ x)
           rw [pow_succ (2 : ℕ), pow_mul]
           field_simp
           ring
+
+/-- The square of any geometric AGM mean is at most the square of any arithmetic AGM mean. -/
+theorem agmSequences_fst_sq_le_snd_sq (x y : ℝ≥0) (n m : ℕ) :
+    ((agmSequences x y n).1 : ℝ) ^ 2 ≤ ((agmSequences x y m).2 : ℝ) ^ 2 :=
+  pow_le_pow_left₀ (by positivity) (NNReal.coe_le_coe.2 (agmSequences_fst_le_snd n m)) 2
+
+/-- An AGM step turns the difference of squares into one quarter of the squared gap. -/
+theorem agmSequences_succ_snd_sq_sub_fst_sq (x y : ℝ≥0) (n : ℕ) :
+    ((agmSequences x y (n + 1)).2 : ℝ) ^ 2 -
+        ((agmSequences x y (n + 1)).1 : ℝ) ^ 2 =
+      (((agmSequences x y n).2 : ℝ) - ((agmSequences x y n).1 : ℝ)) ^ 2 / 4 := by
+  rw [agmSequences_succ']
+  simp only [NNReal.coe_div, NNReal.coe_add, NNReal.coe_ofNat, Real.coe_sqrt,
+    NNReal.coe_mul, Real.sq_sqrt (by positivity :
+      0 ≤ ((agmSequences x y n).1 : ℝ) * ((agmSequences x y n).2 : ℝ))]
+  ring
+
+/-- The weighted difference of squares decays geometrically:
+`2ⁿ⁺¹ (aₙ₊₁² - gₙ₊₁²) ≤ dist x y ² / 8 · (1/2)ⁿ`, where
+`(gₙ₊₁, aₙ₊₁) = agmSequences x y (n + 1)`. -/
+theorem two_pow_mul_agmSequences_snd_sq_sub_fst_sq_le (x y : ℝ≥0) (n : ℕ) :
+    (2 : ℝ) ^ (n + 1) * (((agmSequences x y (n + 1)).2 : ℝ) ^ 2 -
+        ((agmSequences x y (n + 1)).1 : ℝ) ^ 2) ≤
+      dist x y ^ 2 / 8 * (1 / 2 : ℝ) ^ n := by
+  have hnonneg := sub_nonneg.2 (NNReal.coe_le_coe.2
+    (agmSequences_fst_le_snd (x := x) (y := y) n n))
+  have hgap := dist_agmSequences_fst_snd (x := x) (y := y) n
+  rw [dist_comm, NNReal.dist_eq, abs_of_nonneg hnonneg] at hgap
+  rw [agmSequences_succ_snd_sq_sub_fst_sq]
+  calc
+    _ ≤ 2 ^ (n + 1) * ((dist x y / 2 ^ (n + 1)) ^ 2 / 4) := by
+      gcongr
+    _ = _ := by
+      rw [div_pow, pow_succ, one_div_pow]
+      field_simp
+      ring
+
+/-- The differences of squares of the AGM means tend to zero even after multiplication
+by `2ⁿ`. This controls remainders in second-kind elliptic integral evaluation. -/
+theorem tendsto_two_pow_mul_agmSequences_snd_sq_sub_fst_sq (x y : ℝ≥0) :
+    Filter.Tendsto (fun n ↦ (2 : ℝ) ^ n *
+      (((agmSequences x y n).2 : ℝ) ^ 2 - ((agmSequences x y n).1 : ℝ) ^ 2))
+      Filter.atTop (nhds 0) := by
+  rw [← Filter.tendsto_add_atTop_iff_nat 1]
+  apply squeeze_zero (fun n ↦ mul_nonneg (by positivity)
+    (sub_nonneg.2 (agmSequences_fst_sq_le_snd_sq x y (n + 1) (n + 1))))
+    (two_pow_mul_agmSequences_snd_sq_sub_fst_sq_le x y)
+  simpa using (_root_.tendsto_pow_atTop_nhds_zero_of_lt_one
+    (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)).const_mul (dist x y ^ 2 / 8)
 
 end NNReal

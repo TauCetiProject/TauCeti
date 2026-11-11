@@ -249,70 +249,53 @@ theorem mk_mem_of_j_eq_intCast_pow_three {τ : ℍ} {n : ℕ} (hn : 3 ≤ n) (h�
     (hj : j τ = (v : ℂ) ^ 3) :
     (n, v) ∈ ({(3, 0), (11, -32), (19, -96), (43, -960), (67, -5280), (163, -640320)} :
       Finset (ℕ × ℤ)) := by
-  have hnorm : ‖(v : ℂ)‖ = |(v : ℝ)| := Complex.norm_intCast v
   simp only [Finset.mem_insert, Finset.mem_singleton] at hv
   rcases hv with rfl | rfl | rfl | rfl | rfl | rfl
   · -- `v = 0`: `n = 3`.
-    have h₁ := le_of_j_eq_pow_three (m := 3) (m' := 4) (α := 1.88e-3) hτ hj rfl
-      (exp_neg_pi_mul_sqrt_le (s := 2) (c := 0.2831) 6 (by norm_num) (by norm_num)
-        (by norm_num) (by norm_num) (by norm_num [Finset.sum_range_succ, Nat.factorial]))
-      (by norm_num) (by rw [hnorm]; norm_num)
-    obtain rfl : n = 3 := by omega
+    obtain rfl : n = 3 := by
+      refine le_antisymm (le_of_j_eq_pow_three (m := 3) (m' := 4) (α := 1.88e-3) hτ hj rfl
+        (exp_neg_pi_mul_sqrt_le (s := 2) (c := 0.2831) 6 ?_ ?_ ?_ ?_ ?_) ?_ ?_) hn <;>
+      norm_num [Finset.sum_range_succ, Nat.factorial]
     simp
   · -- `v = -32`: `n = 11`.
-    have h₁ := le_of_j_eq_pow_three (m := 11) (m' := 12) (α := 1.89e-5) hτ hj rfl
-      (exp_neg_pi_mul_sqrt_le (s := 3.464101) (c := 0.8827) 10 (by norm_num) (by norm_num)
-        (by norm_num) (by norm_num) (by norm_num [Finset.sum_range_succ, Nat.factorial]))
-      (by norm_num) (by rw [hnorm]; norm_num)
-    have h₂ := le_of_j_eq_pow_three' (m := 11) (m' := 10) (β := 4.84e-5) hτ hn hj rfl
-      (le_exp_neg_pi_mul_sqrt (s := 3.162278) (d := 0.0654) 10 (by norm_num) (by norm_num)
-        (by norm_num) (by norm_num) (by norm_num [Finset.sum_range_succ, Nat.factorial]))
-      (by norm_num) (by rw [hnorm]; norm_num) (by rw [hnorm]; norm_num)
-    obtain rfl : n = 11 := by omega
+    obtain rfl : n = 11 := by
+      refine le_antisymm (le_of_j_eq_pow_three (m := 11) (m' := 12) (α := 1.89e-5) hτ hj rfl
+        (exp_neg_pi_mul_sqrt_le (s := 3.464101) (c := 0.8827) 10 ?_ ?_ ?_ ?_ ?_) ?_ ?_)
+        (le_of_j_eq_pow_three' (m := 11) (m' := 10) (β := 4.84e-5) hτ hn hj rfl
+          (le_exp_neg_pi_mul_sqrt (s := 3.162278) (d := 0.0654) 10 ?_ ?_ ?_ ?_ ?_) ?_ ?_ ?_) <;>
+      norm_num [Finset.sum_range_succ, Nat.factorial]
     simp
   · -- `v = -96`: `n = 19`.
-    have h₁ := le_of_j_eq_pow_three (m := 19) (m' := 20) (α := 7.92e-7) hτ hj rfl
-      (exp_neg_pi_mul_sqrt_le (s := 4.472135) (c := 0.0496) 14 (by norm_num) (by norm_num)
-        (by norm_num) (by norm_num) (by norm_num [Finset.sum_range_succ, Nat.factorial]))
-      (by norm_num) (by rw [hnorm]; norm_num)
-    have h₂ := le_of_j_eq_pow_three' (m := 19) (m' := 18) (β := 1.62e-6) hτ hn hj rfl
-      (le_exp_neg_pi_mul_sqrt (s := 4.242641) (d := 0.6713) 14 (by norm_num) (by norm_num)
-        (by norm_num) (by norm_num) (by norm_num [Finset.sum_range_succ, Nat.factorial]))
-      (by norm_num) (by rw [hnorm]; norm_num) (by rw [hnorm]; norm_num)
-    obtain rfl : n = 19 := by omega
+    obtain rfl : n = 19 := by
+      refine le_antisymm (le_of_j_eq_pow_three (m := 19) (m' := 20) (α := 7.92e-7) hτ hj rfl
+        (exp_neg_pi_mul_sqrt_le (s := 4.472135) (c := 0.0496) 14 ?_ ?_ ?_ ?_ ?_) ?_ ?_)
+        (le_of_j_eq_pow_three' (m := 19) (m' := 18) (β := 1.62e-6) hτ hn hj rfl
+          (le_exp_neg_pi_mul_sqrt (s := 4.242641) (d := 0.6713) 14 ?_ ?_ ?_ ?_ ?_) ?_ ?_ ?_) <;>
+      norm_num [Finset.sum_range_succ, Nat.factorial]
     simp
   · -- `v = -960`: `n = 43`.
-    have h₁ := le_of_j_eq_pow_three (m := 43) (m' := 44) (α := 8.92e-10) hτ hj rfl
-      (exp_neg_pi_mul_sqrt_le (s := 6.633249) (c := 0.8389) 20 (by norm_num) (by norm_num)
-        (by norm_num) (by norm_num) (by norm_num [Finset.sum_range_succ, Nat.factorial]))
-      (by norm_num) (by rw [hnorm]; norm_num)
-    have h₂ := le_of_j_eq_pow_three' (m := 43) (m' := 42) (β := 1.43e-9) hτ hn hj rfl
-      (le_exp_neg_pi_mul_sqrt (s := 6.480741) (d := 0.6401) 21 (by norm_num) (by norm_num)
-        (by norm_num) (by norm_num) (by norm_num [Finset.sum_range_succ, Nat.factorial]))
-      (by norm_num) (by rw [hnorm]; norm_num) (by rw [hnorm]; norm_num)
-    obtain rfl : n = 43 := by omega
+    obtain rfl : n = 43 := by
+      refine le_antisymm (le_of_j_eq_pow_three (m := 43) (m' := 44) (α := 8.92e-10) hτ hj rfl
+        (exp_neg_pi_mul_sqrt_le (s := 6.633249) (c := 0.8389) 20 ?_ ?_ ?_ ?_ ?_) ?_ ?_)
+        (le_of_j_eq_pow_three' (m := 43) (m' := 42) (β := 1.43e-9) hτ hn hj rfl
+          (le_exp_neg_pi_mul_sqrt (s := 6.480741) (d := 0.6401) 21 ?_ ?_ ?_ ?_ ?_) ?_ ?_ ?_) <;>
+      norm_num [Finset.sum_range_succ, Nat.factorial]
     simp
   · -- `v = -5280`: `n = 67`.
-    have h₁ := le_of_j_eq_pow_three (m := 67) (m' := 68) (α := 5.62e-12) hτ hj rfl
-      (exp_neg_pi_mul_sqrt_le (s := 8.246211) (c := 0.9062) 25 (by norm_num) (by norm_num)
-        (by norm_num) (by norm_num) (by norm_num [Finset.sum_range_succ, Nat.factorial]))
-      (by norm_num) (by rw [hnorm]; norm_num)
-    have h₂ := le_of_j_eq_pow_three' (m := 67) (m' := 66) (β := 8.23e-12) hτ hn hj rfl
-      (le_exp_neg_pi_mul_sqrt (s := 8.124039) (d := 0.4775) 26 (by norm_num) (by norm_num)
-        (by norm_num) (by norm_num) (by norm_num [Finset.sum_range_succ, Nat.factorial]))
-      (by norm_num) (by rw [hnorm]; norm_num) (by rw [hnorm]; norm_num)
-    obtain rfl : n = 67 := by omega
+    obtain rfl : n = 67 := by
+      refine le_antisymm (le_of_j_eq_pow_three (m := 67) (m' := 68) (α := 5.62e-12) hτ hj rfl
+        (exp_neg_pi_mul_sqrt_le (s := 8.246211) (c := 0.9062) 25 ?_ ?_ ?_ ?_ ?_) ?_ ?_)
+        (le_of_j_eq_pow_three' (m := 67) (m' := 66) (β := 8.23e-12) hτ hn hj rfl
+          (le_exp_neg_pi_mul_sqrt (s := 8.124039) (d := 0.4775) 26 ?_ ?_ ?_ ?_ ?_) ?_ ?_ ?_) <;>
+      norm_num [Finset.sum_range_succ, Nat.factorial]
     simp
   · -- `v = -640320`: `n = 163`.
-    have h₁ := le_of_j_eq_pow_three (m := 163) (m' := 164) (α := 3.38e-18) hτ hj rfl
-      (exp_neg_pi_mul_sqrt_le (s := 12.806248) (c := 0.232) 40 (by norm_num) (by norm_num)
-        (by norm_num) (by norm_num) (by norm_num [Finset.sum_range_succ, Nat.factorial]))
-      (by norm_num) (by rw [hnorm]; norm_num)
-    have h₂ := le_of_j_eq_pow_three' (m := 163) (m' := 162) (β := 4.30e-18) hτ hn hj rfl
-      (le_exp_neg_pi_mul_sqrt (s := 12.727923) (d := 0.014) 40 (by norm_num) (by norm_num)
-        (by norm_num) (by norm_num) (by norm_num [Finset.sum_range_succ, Nat.factorial]))
-      (by norm_num) (by rw [hnorm]; norm_num) (by rw [hnorm]; norm_num)
-    obtain rfl : n = 163 := by omega
+    obtain rfl : n = 163 := by
+      refine le_antisymm (le_of_j_eq_pow_three (m := 163) (m' := 164) (α := 3.38e-18) hτ hj rfl
+        (exp_neg_pi_mul_sqrt_le (s := 12.806248) (c := 0.232) 40 ?_ ?_ ?_ ?_ ?_) ?_ ?_)
+        (le_of_j_eq_pow_three' (m := 163) (m' := 162) (β := 4.30e-18) hτ hn hj rfl
+          (le_exp_neg_pi_mul_sqrt (s := 12.727923) (d := 0.014) 40 ?_ ?_ ?_ ?_ ?_) ?_ ?_ ?_) <;>
+      norm_num [Finset.sum_range_succ, Nat.factorial]
     simp
 
 /-- **The six singular values of `j` determine the discriminant.** If `Im τ = √n / 2` with `n ≥ 3`

@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Points
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FormalPoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
+import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Point
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 
 /-!
@@ -176,32 +177,21 @@ private theorem dblAddXYZ_formalW_eq_smul_of_Δ_ne_zero {O : Type*} [CommRing O]
       W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hz₂ hz₂0,
       W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hFc hF0]
     exact W.thetaPoint_add_of_subst_separates hΔ' hχ hz₁ hz₂ hz₁0 hz₂0 hχ₁ hχ₂ hFc hF0
-  -- so the `Z`-coordinate of `ρ ∘ D` is nonzero, and its affine coordinates are those of `θ(F)`
-  have hwF : (ρ ∘ ![F, -1, PowerSeries.subst F W.formalW]) 2 ≠ 0 :=
-    W.algebraMap_subst_formalW_ne_zero hFc hF0
-  rw [Projective.Point.toAffine_of_Z_ne_zero (W.nonsingular_algebraMap_comp hΔ' hFc) hwF] at hsum
-  have hDz : (ρ ∘ D) 2 ≠ 0 := fun hz ↦ by
-    rw [Projective.Point.toAffine_of_Z_eq_zero hz] at hsum
-    cases hsum
   have hDN : W'.toProjective.Nonsingular (ρ ∘ D) :=
     (Projective.equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero hΔ' hD0).mp
       (hD ▸ hN₁.left.dblAddXYZ hN₂.left)
-  rw [Projective.Point.toAffine_of_Z_ne_zero hDN hDz, Affine.Point.some.injEq,
-    div_eq_div_iff hDz hwF, div_eq_div_iff hDz hwF] at hsum
-  obtain ⟨h₀, h₁⟩ := hsum
-  simp only [Function.comp_apply, Matrix.cons_val, map_neg, map_one] at h₀ h₁ hwF
-  -- cancelling `ρ (w(F)) ≠ 0`, the coordinates of `D` are `-D₁` times `(F, -1, w(F))`
-  have hinj : Function.Injective ρ := IsFractionRing.injective _ KK
-  have e₂ : D 2 = -D 1 * PowerSeries.subst F W.formalW := hinj <| by
-    rw [map_mul, map_neg]
-    linear_combination h₁
-  have e₀ : D 0 = -D 1 * F := hinj <| mul_right_cancel₀ hwF <| by
-    rw [map_mul, map_neg]
-    linear_combination h₀ + ρ F * h₁
+  -- equal affine points are projectively equivalent: `ρ ∘ D = u • ρ ∘ (F, -1, w(F))`
+  obtain ⟨u, hu⟩ := (Projective.Point.toAffine_eq_toAffine_iff hDN
+    (W.nonsingular_algebraMap_comp hΔ' hFc)).mp hsum
+  have h₁ : ρ (D 1) = -u := by simpa [Units.smul_def] using (congrFun hu 1).symm
   rw [← hF, ← Projective.dblAddXYZ_Y, ← hDdef]
   clear_value D
   funext k
-  fin_cases k <;> simp [e₀, e₂]
+  refine IsFractionRing.injective _ KK ?_
+  have hk : ρ (D k) = u * ρ (![F, -1, PowerSeries.subst F W.formalW] k) := by
+    simpa [Units.smul_def] using (congrFun hu k).symm
+  simp only [Pi.smul_apply, smul_eq_mul, map_mul, map_neg]
+  linear_combination hk + ρ (![F, -1, PowerSeries.subst F W.formalW] k) * h₁
 
 /-- **The Bosma–Lenstra addition law at the formal points.** Let `z₁` and `z₂` be the two variables
 of `R⟦z₁, z₂⟧`. At the points `[z₁ : -1 : w(z₁)]` and `[z₂ : -1 : w(z₂)]`, where `w` is the

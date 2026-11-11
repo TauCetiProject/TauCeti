@@ -39,9 +39,11 @@ For a DG right module `ℳ` and a one-sided cocycle (`m x y = 0` whenever `ind x
 coefficient differential on `P →₀ M` preserves the filtration, so its stages are subcomplexes
 `RowFiniteTwistingCocycle.indexCochainComplex` of the coefficient complex, exhaustive with no
 finiteness hypothesis on `P` (`RowFiniteTwistingCocycle.exists_mem_range_indexSubobject_arrow_f`).
-The graded piece `F_{p+1} / F_p` is the complex `rowFiniteIndexGradedPieceComplex` of
-finite-support families of coefficients on the generators of index `p + 1`, with the coefficient
-differential in each coordinate (`RowFiniteTwistingCocycle.indexShortComplex_shortExact`).
+For generator indices bounded above, the filtration reaches the whole complex
+(`RowFiniteTwistingCocycle.indexSubobject_eq_top`). The graded piece `F_{p+1} / F_p` is the
+complex `rowFiniteIndexGradedPieceComplex` of finite-support families of coefficients on the
+generators of index `p + 1`, with the coefficient differential in each coordinate
+(`RowFiniteTwistingCocycle.indexShortComplex_shortExact`).
 
 ## References
 
@@ -583,6 +585,20 @@ theorem indexSubobject_eq_bot {p : ℤ} (hp : ∀ x, p < ind x) :
   apply (m.coefficientCochainComplexXEquiv hM n).injective
   apply Subtype.ext
   simpa using hf
+
+/-- Above every generator index the index filtration is the whole coefficient complex. -/
+theorem indexSubobject_eq_top {p : ℤ} (hp : ∀ x, ind x ≤ p) :
+    m.indexSubobject hM hm p = ⊤ := by
+  have : ∀ n, IsIso ((m.indexCochainComplexι hM hm p).f n) := fun n ↦
+    (ConcreteCategory.isIso_iff_bijective _).mpr
+      ⟨(ModuleCat.mono_iff_injective _).mp inferInstance, fun f ↦ by
+        have hf := (m.mem_range_indexSubobject_arrow_f_iff hM hm p n f).mpr
+          fun x hx ↦ absurd (hp x) (not_le.mpr hx)
+        rw [indexSubobject_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk] at hf
+        obtain ⟨g, rfl⟩ := hf
+        exact ⟨_, rfl⟩⟩
+  have := HomologicalComplex.Hom.isIso_of_components (m.indexCochainComplexι hM hm p)
+  exact Subobject.mk_eq_top_of_isIso _
 
 /-! ### The graded pieces of the index filtration -/
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Lagrangian
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Roots
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Roots
 
 /-!
 # The rootful rank-24 lattices glued from the table
@@ -26,8 +27,9 @@ and one dual representative of each of these words (`lattice_carrier_eq_sup_span
 representatives can be chosen to be shortest vectors of their cosets, of norm `μ(w)`
 (`exists_lattice_carrier_eq_sup_span_glueMinimum`).
 
-Uniformly in the row, `N_r` is even, positive definite and of rank `24`, and it is unimodular
-exactly when `H_r` has the displayed order `|H|`, since `|H|² = |A_R|`.
+Uniformly in the row, `N_r` is even, positive definite and of rank `24`, its discriminant form is
+`H_r⊥ / H_r` in glue-word coordinates (`discriminantIsometry`), and it is unimodular exactly when
+`H_r` has the displayed order `|H|`, since `|H|² = |A_R|`.
 
 The finite checks of the table, proved for every row in
 `TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Lagrangian`, then specialize these statements:
@@ -36,6 +38,14 @@ word has minimum norm at least `4`.  By the coset-minimum theorem, `N_r` then ha
 norm-`2` vectors of `R_r`, and its root sublattice is literally the carrier of `R_r`.  This
 root-system statement is derived from the glue minima, not from evenness, unimodularity or a root
 count.
+
+Two numerical invariants of the root sublattice, preserved by every isometry, then separate the 23
+lattices: the number of roots, which is the displayed root count `∑ numRoots` of the row, and the
+index of the root sublattice, which is the displayed glue order `|H|`.  Hence the 23 lattices are
+pairwise non-isometric (`nonempty_isometry_lattice_iff`).
+
+Each of the 23 lattices also has a stable name, such as `TauCeti.niemeierD24`, which is a reducible
+abbreviation of `r.lattice` for its row, so the uniform theorems apply to it directly.
 
 ## Main declarations
 
@@ -49,10 +59,19 @@ count.
 * `TauCeti.RootfulNiemeierType.isEven_lattice`, `isPosDef_lattice`, `finrank_lattice`.
 * `TauCeti.RootfulNiemeierType.isUnimodular_lattice_iff`: `N_r` is unimodular exactly when
   `|H_r| = |H|`.
+* `TauCeti.RootfulNiemeierType.discriminantIsometry`: the discriminant form of `N_r` is
+  `H_r⊥ / H_r`.
 * `TauCeti.RootfulNiemeierType.isUnimodular_lattice`,
   `TauCeti.RootfulNiemeierType.image_vectorsOfNorm_two_lattice`,
+  `TauCeti.RootfulNiemeierType.mem_rootLattice_carrier_of_form_self_eq_two`,
   `TauCeti.RootfulNiemeierType.span_vectorsOfNorm_two_lattice`: unimodularity, the norm-`2`
   vectors and the root sublattice of every row.
+* `TauCeti.RootfulNiemeierType.representationNumber_lattice_two`,
+  `TauCeti.RootfulNiemeierType.index_span_vectorsOfNorm_two_lattice`: the number of roots of `N_r`
+  and the index of its root sublattice.
+* `TauCeti.RootfulNiemeierType.nonempty_isometry_lattice_iff`: the 23 lattices are pairwise
+  non-isometric.
+* `TauCeti.niemeierD24`, …, `TauCeti.niemeierA1TwentyFourth`: the 23 lattices by name.
 
 ## References
 
@@ -172,6 +191,39 @@ theorem isUnimodular_lattice_iff (r : RootfulNiemeierType) :
     ← glueOrder_sq_eq_natCard_glueModule]
   exact (Nat.pow_left_injective two_ne_zero).eq_iff
 
+/-! ### The discriminant form -/
+
+/-- **The discriminant form of `N_r` in glue-word coordinates**: the isometry
+`A_(N_r) ≅ H_r⊥ / H_r` of finite quadratic modules, where `H_r⊥` is the orthogonal complement of
+the glue subgroup in the module of glue words of the row. -/
+noncomputable def discriminantIsometry (r : RootfulNiemeierType) :
+    FiniteQuadraticModule.Isometry (r.lattice.discriminantQuadraticModule r.isEven_lattice)
+      (r.glueModule.orthogonalQuotient r.glueSubgroup r.isIsotropic_glueSubgroup) :=
+  DynkinType.gluedLatticeDiscriminantIsometry _ _ _ _ _
+
+/-- Every dual vector of `N_r` is a dual vector of `R_r`. -/
+theorem dualCarrier_lattice_le (r : RootfulNiemeierType) :
+    r.lattice.dualCarrier ≤ r.rootLattice.dualCarrier :=
+  DynkinType.dualCarrier_gluedLattice_le _ _ _ _ _
+
+/-- **The glue word of a dual vector of `N_r` is orthogonal to `H_r`**: the class of a dual vector
+`y` of `N_r` in the discriminant group of `R_r` has its glue word in `H_r⊥`. -/
+theorem glueWordIsometry_symm_mk_mem_orthogonalComplement (r : RootfulNiemeierType)
+    (y : r.lattice.dualCarrier) :
+    (DynkinType.glueWordIsometry r.componentType r.isSimplyLaced_componentType
+        r.valid_componentType).symm (Submodule.Quotient.mk ⟨y, r.dualCarrier_lattice_le y.2⟩) ∈
+      r.glueModule.toFiniteBilinearModule.orthogonalComplement r.glueSubgroup :=
+  DynkinType.glueWordIsometry_symm_mk_mem_orthogonalComplement _ _ _ _ _ y
+
+/-- The discriminant isometry of `N_r` sends the class of a dual vector `y` to the class in
+`H_r⊥ / H_r` of the glue word of `y`. -/
+@[simp]
+theorem discriminantIsometry_mk (r : RootfulNiemeierType) (y : r.lattice.dualCarrier) :
+    r.discriminantIsometry (Submodule.Quotient.mk y) =
+      r.glueModule.orthogonalQuotientMk r.glueSubgroup r.isIsotropic_glueSubgroup
+        ⟨_, r.glueWordIsometry_symm_mk_mem_orthogonalComplement y⟩ :=
+  DynkinType.gluedLatticeDiscriminantIsometry_mk _ _ _ _ _ y
+
 /-! ### Unimodularity and the root sublattice -/
 
 /-- **The lattice of every row is unimodular.** -/
@@ -197,6 +249,172 @@ theorem span_vectorsOfNorm_two_lattice (r : RootfulNiemeierType) :
   DynkinType.span_vectorsOfNorm_two_gluedLattice _ _ r.valid_componentType _ _
     (fun _ hw hw0 ↦ four_le_sum_glueMinimum_of_mem_glueSubgroup r hw hw0) (by norm_num)
 
+/-- **A norm-`2` vector of `N_r` lies in `R_r`**: gluing along the table subgroup creates no new
+roots. -/
+theorem mem_rootLattice_carrier_of_form_self_eq_two (r : RootfulNiemeierType)
+    {x : ∀ i, Fin (r.componentType i).rank → ℚ} (hx : x ∈ r.lattice.carrier)
+    (h2 : r.lattice.form x x = 2) : x ∈ r.rootLattice.carrier := by
+  have hx2 : x ∈ (fun x : r.lattice ↦ (x : ∀ i, Fin (r.componentType i).rank → ℚ)) ''
+      r.lattice.vectorsOfNorm 2 :=
+    ⟨⟨x, hx⟩, by rwa [mem_vectorsOfNorm, norm_def], rfl⟩
+  rw [image_vectorsOfNorm_two_lattice] at hx2
+  obtain ⟨y, -, rfl⟩ := hx2
+  exact y.2
+
+/-! ### Isometry invariants and pairwise non-isometry -/
+
+/-- **`R_r` has the displayed number of roots**: the number of its norm-`2` vectors is the sum of
+the root counts of the components, which is the displayed root count of the row. -/
+@[simp]
+theorem representationNumber_rootLattice_two (r : RootfulNiemeierType) :
+    r.rootLattice.representationNumber 2 = r.rootCount := by
+  rw [representationNumber_pi_two (fun i ↦ (r.componentType i).isPosDef_rootLattice _)
+    (fun i ↦ (r.componentType i).isEven_rootLattice _)]
+  simp only [DynkinType.representationNumber_rootLattice_two _ _ (r.valid_componentType _)]
+  cases r <;> decide
+
+/-- **`N_r` has the displayed number of roots**: gluing adds no roots, so `N_r` has as many norm-`2`
+vectors as `R_r`. -/
+@[simp]
+theorem representationNumber_lattice_two (r : RootfulNiemeierType) :
+    r.lattice.representationNumber 2 = r.rootCount := by
+  have himage := congrArg Set.ncard r.image_vectorsOfNorm_two_lattice
+  rw [Set.ncard_image_of_injective _ Subtype.val_injective,
+    Set.ncard_image_of_injective _ Subtype.val_injective] at himage
+  rw [representationNumber_def, himage, ← representationNumber_def,
+    representationNumber_rootLattice_two]
+
+/-- **The root sublattice of `N_r` has index `|H|`**: the sublattice of `N_r` spanned by its
+norm-`2` vectors is `R_r`, of index the displayed glue order of the row. -/
+@[simp]
+theorem index_span_vectorsOfNorm_two_lattice (r : RootfulNiemeierType) :
+    (Submodule.span ℤ (r.lattice.vectorsOfNorm 2)).toAddSubgroup.index = r.glueOrder := by
+  have hmap : (Submodule.span ℤ (r.lattice.vectorsOfNorm 2)).map r.lattice.carrier.subtype =
+      r.rootLattice.carrier := by
+    rw [Submodule.map_span]
+    exact r.span_vectorsOfNorm_two_lattice
+  have hcomap : Submodule.span ℤ (r.lattice.vectorsOfNorm 2) =
+      r.rootLattice.carrier.comap r.lattice.carrier.subtype := by
+    rw [← hmap, Submodule.comap_map_eq_of_injective (Submodule.injective_subtype _)]
+  rw [hcomap, ← natCard_glueSubgroup, ← relIndex_rootLattice_lattice]
+  -- The comap of `R_r` along the inclusion of `N_r` is, as an additive subgroup, the subgroup
+  -- `addSubgroupOf` whose index defines the relative index.
+  rfl
+
+/-- **The 23 lattices are pairwise non-isometric.**  An isometry `N_r ≅ N_s` preserves the number
+of roots and the index of the root sublattice, and these two numbers, the displayed root count and
+glue order, already separate the rows. -/
+@[simp]
+theorem nonempty_isometry_lattice_iff {r s : RootfulNiemeierType} :
+    Nonempty (Isometry r.lattice s.lattice) ↔ r = s := by
+  refine ⟨fun ⟨e⟩ ↦ ?_, fun h ↦ h ▸ ⟨Isometry.refl _⟩⟩
+  have hinj : Function.Injective fun r : RootfulNiemeierType ↦ (r.rootCount, r.glueOrder) := by
+    decide
+  have hroots := e.representationNumber_eq 2
+  have hindex := e.index_span_vectorsOfNorm_eq 2
+  rw [representationNumber_lattice_two, representationNumber_lattice_two] at hroots
+  rw [index_span_vectorsOfNorm_two_lattice, index_span_vectorsOfNorm_two_lattice] at hindex
+  exact hinj (Prod.ext hroots hindex)
+
 end RootfulNiemeierType
+
+/-! ### Named lattices
+
+Each row's lattice gets a stable name.  The names are reducible abbreviations of `r.lattice`, so
+every theorem stated uniformly over the table, such as `RootfulNiemeierType.isUnimodular_lattice`,
+applies to a named lattice by specializing the row, with no second case analysis.
+-/
+
+/-- The Niemeier lattice with root system `D₂₄`, glued from the table row
+`RootfulNiemeierType.d24`. -/
+noncomputable abbrev niemeierD24 := RootfulNiemeierType.d24.lattice
+
+/-- The Niemeier lattice with root system `D₁₆ E₈`, glued from the table row
+`RootfulNiemeierType.d16e8`. -/
+noncomputable abbrev niemeierD16E8 := RootfulNiemeierType.d16e8.lattice
+
+/-- The Niemeier lattice with root system `E₈³`, glued from the table row
+`RootfulNiemeierType.e8Cubed`. -/
+noncomputable abbrev niemeierE8Cubed := RootfulNiemeierType.e8Cubed.lattice
+
+/-- The Niemeier lattice with root system `A₂₄`, glued from the table row
+`RootfulNiemeierType.a24`. -/
+noncomputable abbrev niemeierA24 := RootfulNiemeierType.a24.lattice
+
+/-- The Niemeier lattice with root system `D₁₂²`, glued from the table row
+`RootfulNiemeierType.d12Squared`. -/
+noncomputable abbrev niemeierD12Squared := RootfulNiemeierType.d12Squared.lattice
+
+/-- The Niemeier lattice with root system `A₁₇ E₇`, glued from the table row
+`RootfulNiemeierType.a17e7`. -/
+noncomputable abbrev niemeierA17E7 := RootfulNiemeierType.a17e7.lattice
+
+/-- The Niemeier lattice with root system `D₁₀ E₇²`, glued from the table row
+`RootfulNiemeierType.d10e7Squared`. -/
+noncomputable abbrev niemeierD10E7Squared := RootfulNiemeierType.d10e7Squared.lattice
+
+/-- The Niemeier lattice with root system `A₁₅ D₉`, glued from the table row
+`RootfulNiemeierType.a15d9`. -/
+noncomputable abbrev niemeierA15D9 := RootfulNiemeierType.a15d9.lattice
+
+/-- The Niemeier lattice with root system `D₈³`, glued from the table row
+`RootfulNiemeierType.d8Cubed`. -/
+noncomputable abbrev niemeierD8Cubed := RootfulNiemeierType.d8Cubed.lattice
+
+/-- The Niemeier lattice with root system `A₁₂²`, glued from the table row
+`RootfulNiemeierType.a12Squared`. -/
+noncomputable abbrev niemeierA12Squared := RootfulNiemeierType.a12Squared.lattice
+
+/-- The Niemeier lattice with root system `A₁₁ D₇ E₆`, glued from the table row
+`RootfulNiemeierType.a11d7e6`. -/
+noncomputable abbrev niemeierA11D7E6 := RootfulNiemeierType.a11d7e6.lattice
+
+/-- The Niemeier lattice with root system `E₆⁴`, glued from the table row
+`RootfulNiemeierType.e6Fourth`. -/
+noncomputable abbrev niemeierE6Fourth := RootfulNiemeierType.e6Fourth.lattice
+
+/-- The Niemeier lattice with root system `A₉² D₆`, glued from the table row
+`RootfulNiemeierType.a9SquaredD6`. -/
+noncomputable abbrev niemeierA9SquaredD6 := RootfulNiemeierType.a9SquaredD6.lattice
+
+/-- The Niemeier lattice with root system `D₆⁴`, glued from the table row
+`RootfulNiemeierType.d6Fourth`. -/
+noncomputable abbrev niemeierD6Fourth := RootfulNiemeierType.d6Fourth.lattice
+
+/-- The Niemeier lattice with root system `A₈³`, glued from the table row
+`RootfulNiemeierType.a8Cubed`. -/
+noncomputable abbrev niemeierA8Cubed := RootfulNiemeierType.a8Cubed.lattice
+
+/-- The Niemeier lattice with root system `A₇² D₅²`, glued from the table row
+`RootfulNiemeierType.a7SquaredD5Squared`. -/
+noncomputable abbrev niemeierA7SquaredD5Squared := RootfulNiemeierType.a7SquaredD5Squared.lattice
+
+/-- The Niemeier lattice with root system `A₆⁴`, glued from the table row
+`RootfulNiemeierType.a6Fourth`. -/
+noncomputable abbrev niemeierA6Fourth := RootfulNiemeierType.a6Fourth.lattice
+
+/-- The Niemeier lattice with root system `A₅⁴ D₄`, glued from the table row
+`RootfulNiemeierType.a5FourthD4`. -/
+noncomputable abbrev niemeierA5FourthD4 := RootfulNiemeierType.a5FourthD4.lattice
+
+/-- The Niemeier lattice with root system `D₄⁶`, glued from the table row
+`RootfulNiemeierType.d4Sixth`. -/
+noncomputable abbrev niemeierD4Sixth := RootfulNiemeierType.d4Sixth.lattice
+
+/-- The Niemeier lattice with root system `A₄⁶`, glued from the table row
+`RootfulNiemeierType.a4Sixth`. -/
+noncomputable abbrev niemeierA4Sixth := RootfulNiemeierType.a4Sixth.lattice
+
+/-- The Niemeier lattice with root system `A₃⁸`, glued from the table row
+`RootfulNiemeierType.a3Eighth`. -/
+noncomputable abbrev niemeierA3Eighth := RootfulNiemeierType.a3Eighth.lattice
+
+/-- The Niemeier lattice with root system `A₂¹²`, glued from the table row
+`RootfulNiemeierType.a2Twelfth`. -/
+noncomputable abbrev niemeierA2Twelfth := RootfulNiemeierType.a2Twelfth.lattice
+
+/-- The Niemeier lattice with root system `A₁²⁴`, glued from the table row
+`RootfulNiemeierType.a1TwentyFourth`. -/
+noncomputable abbrev niemeierA1TwentyFourth := RootfulNiemeierType.a1TwentyFourth.lattice
 
 end TauCeti

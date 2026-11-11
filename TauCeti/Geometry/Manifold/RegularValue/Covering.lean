@@ -69,9 +69,8 @@ The source is boundaryless; the target may have boundary or corners. -/
 theorem isCoveringMapOn_setOf_isRegularValue
     (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') (hf : ContMDiff I J n f) (hn : 1 ≤ n)
     (hp : IsProperMap f) : IsCoveringMapOn f {y | IsRegularValue I J f y} := by
-  have hn0 : n ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hn)
   refine hp.isClosedMap.isCoveringMapOn_of_isLocalHomeomorphOn
-    (fun _ hy ↦ hy.finite_preimage_of_isProperMap hdim hf hn0 hp) ?_
+    (fun _ hy ↦ hy.finite_preimage_of_isProperMap hdim hp) ?_
   have hloc : IsLocalDiffeomorphOn I J n f (f ⁻¹' {y | IsRegularValue I J f y}) :=
     fun x ↦ (x.2.isRegularPoint rfl).isLocalDiffeomorphAt hdim hf hn
       BoundarylessManifold.isInteriorPoint

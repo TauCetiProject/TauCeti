@@ -26,9 +26,10 @@ which `G` is vertex-connected; it is `0` on the empty vertex type and finite on 
 
 Adjacent vertices are `k`-vertex-reachable for every `k`, since no deletion of other vertices can
 separate them. Vertex reachability is therefore not transitive, and for adjacent vertices it
-says nothing about internally disjoint paths. For distinct nonadjacent vertices on a finite
-vertex type, Menger's theorem identifies `k`-vertex-reachability with the existence of `k` paths
-pairwise sharing no vertex other than their ends. On a finite graph with more than `k` vertices,
+says nothing beyond the single edge. On a finite vertex type, Menger's theorem identifies
+`k`-vertex-reachability of any two vertices with the existence of `k` paths pairwise sharing
+no vertex other than their ends; both sides hold trivially for equal or adjacent vertices. On a
+finite graph with more than `k` vertices,
 `k`-vertex-connectivity is the existence of `k` such paths between every two distinct vertices,
 adjacent ones included.
 
@@ -80,14 +81,17 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
   `SimpleGraph.vertexConnectivity_le_edgeConnectivity`: **Whitney's inequality**: a
   `k`-vertex-connected graph is `k`-edge-connected, so vertex connectivity is at most edge
   connectivity. No finiteness assumption is needed.
-* `SimpleGraph.isVertexReachable_iff_exists_paths`: **Menger's theorem**, predicate form, for
-  nonadjacent vertices.
+* `SimpleGraph.isVertexReachable_iff_exists_paths`: **Menger's theorem**, predicate form.
 * `SimpleGraph.isVertexConnected_iff_forall_exists_paths`: the **global form of Menger's
-  theorem**: on a finite vertex type with more than `k` vertices, `k`-vertex-connectivity is the
-  existence of `k` distinct internally disjoint paths between every two distinct vertices.
+  theorem**: on a vertex type `V` with `k < Nat.card V` (which forces `V` to be finite),
+  `k`-vertex-connectivity is the existence of `k` distinct internally disjoint paths between every
+  two distinct vertices.
 * `SimpleGraph.Walk.reachable_induce_coe_of_mem_support`,
   `SimpleGraph.Walk.reachable_start_induce_coe`: lifting walks in `G` with `toSubgraph ≤ K` to
   reachability in induced subgraphs of `K.coe`.
+* `SimpleGraph.reachable_induce_compl_of_mem_verts_toSubgraph_of_encard_le_one`: after deleting at
+  most one vertex of `K`, every remaining vertex of a path in `K` between two vertices of a
+  subgraph `L ≤ K` is joined to a remaining vertex of `L`.
 * `SimpleGraph.Walk.IsCycle.isVertexConnected_two_toSubgraph`: the subgraph traced by a cycle is
   `2`-vertex-connected, with no finiteness assumption.
 
@@ -375,6 +379,78 @@ theorem Walk.reachable_start_induce_coe {K : G.Subgraph} {s : Set K.verts}
       ⟨x, hrs x hx⟩ :=
   r.reachable_induce_coe_of_mem_support hrK hrs r.start_mem_support hx
 
+/-- If a path `p` with both ends in `L` lies in `K ≥ L` and at most one vertex `s` of `K` is
+deleted, every remaining vertex of `p` is still joined in `K` to a remaining vertex of `L`. -/
+theorem reachable_induce_compl_of_mem_verts_toSubgraph_of_encard_le_one {K L : G.Subgraph}
+    {u v : V} {p : G.Walk u v} (hp : p.IsPath) (hpK : p.toSubgraph ≤ K) (hu : u ∈ L.verts)
+    (hv : v ∈ L.verts) (hLK : L ≤ K) {s : Set K.verts} (hs1 : s.encard ≤ 1) {w : K.verts}
+    (hws : w ∉ s) (hwp : w.1 ∈ p.toSubgraph.verts) :
+    ∃ z : L.verts, ∃ hz : (⟨z.1, hLK.1 z.2⟩ : K.verts) ∉ s,
+      (K.coe.induce sᶜ).Reachable ⟨w, hws⟩ ⟨⟨z.1, hLK.1 z.2⟩, hz⟩ := by
+  classical
+  rw [Walk.mem_verts_toSubgraph] at hwp
+  obtain ⟨q, r, -, -, hqr⟩ := hp.mem_support_iff_exists_append.mp hwp
+  have hqK : q.toSubgraph ≤ K :=
+    le_trans le_sup_left (by rw [← Walk.toSubgraph_append, ← hqr]; exact hpK)
+  have hrK : r.toSubgraph ≤ K :=
+    le_trans le_sup_right (by rw [← Walk.toSubgraph_append, ← hqr]; exact hpK)
+  by_cases hqs : ∃ x₀ : K.verts, x₀.1 ∈ q.support ∧ x₀ ∈ s
+  · obtain ⟨x₀, hx₀q, hx₀s⟩ := hqs
+    have hrs : ∀ z : K.verts, z.1 ∈ r.support → z ∉ s := by
+      intro z hzr hzs
+      have hzx₀ : z = x₀ := Set.encard_le_one_iff.mp hs1 z x₀ hzs hx₀s
+      have hx₀w : x₀.1 ≠ w.1 := fun heq ↦ hws (Subtype.ext heq.symm ▸ hx₀s)
+      exact (hqr ▸ hp).ne_of_mem_support_of_append hx₀w hx₀q (hzx₀ ▸ hzr) rfl
+    have hvs : (⟨v, hLK.1 hv⟩ : K.verts) ∉ s := hrs _ r.end_mem_support
+    exact ⟨⟨v, hv⟩, hvs,
+      r.reachable_induce_coe_of_mem_support hrK hrs r.start_mem_support r.end_mem_support⟩
+  · push Not at hqs
+    have hus : (⟨u, hLK.1 hu⟩ : K.verts) ∉ s := hqs _ q.start_mem_support
+    exact ⟨⟨u, hu⟩, hus,
+      q.reachable_induce_coe_of_mem_support hqK hqs q.end_mem_support q.start_mem_support⟩
+
+/-- Deleting a nonempty set `s` of at most one vertex from the subgraph traced by a cycle leaves the
+remaining vertices pairwise reachable. -/
+private theorem Walk.IsCycle.reachable_induce_coe_compl_of_encard_le_one {c : G.Walk u u}
+    (hc : c.IsCycle) {s : Set c.toSubgraph.verts} {x₀ : c.toSubgraph.verts} (hx₀ : x₀ ∈ s)
+    (hs1 : s.encard ≤ 1) (p q' : ↑(sᶜ : Set c.toSubgraph.verts)) :
+    (c.toSubgraph.coe.induce sᶜ).Reachable p q' := by
+  classical
+  have hx₀_supp : x₀.1 ∈ c.support := c.mem_verts_toSubgraph.mp x₀.2
+  let c' := c.rotate x₀.1 hx₀_supp
+  have hc' : c'.IsCycle := hc.rotate hx₀_supp
+  have hc'sub : c'.toSubgraph = c.toSubgraph := c.toSubgraph_rotate hx₀_supp
+  cases hcons : c' with
+  | nil => exact (hc'.not_nil (hcons ▸ Walk.Nil.nil)).elim
+  | @cons _ y _ hxy q =>
+    have hq : q.IsPath := ((Walk.cons_isCycle_iff q hxy).mp (hcons ▸ hc')).1
+    cases hqr : q.reverse with
+    | nil => exact (hxy.ne rfl).elim
+    | @cons _ z _ hxz r =>
+      have hxr : x₀.1 ∉ r.support := by
+        have hp_cons : (Walk.cons hxz r).IsPath := hqr ▸ hq.reverse
+        exact ((Walk.cons_isPath_iff hxz r).mp hp_cons).2
+      have hr_sub : r.toSubgraph ≤ c.toSubgraph := by
+        have h1 : r.toSubgraph ≤ (Walk.cons hxz r).toSubgraph := le_sup_right
+        rw [← hqr, Walk.toSubgraph_reverse] at h1
+        have h2 : q.toSubgraph ≤ (Walk.cons hxy q).toSubgraph := le_sup_right
+        rw [← hcons, hc'sub] at h2
+        exact h1.trans h2
+      have hrs : ∀ x : c.toSubgraph.verts, x.1 ∈ r.support → x ∉ s := fun x hxr' hxs ↦
+        hxr (Set.encard_le_one_iff.mp hs1 x x₀ hxs hx₀ ▸ hxr')
+      have hmem_r : ∀ p : ↑(sᶜ : Set c.toSubgraph.verts), p.1.1 ∈ r.support := by
+        intro p
+        have hpx : p.1.1 ≠ x₀.1 := fun heq ↦ p.2 (Subtype.ext heq ▸ hx₀)
+        have hpc' : p.1.1 ∈ c'.support :=
+          c'.mem_verts_toSubgraph.mp (hc'sub.symm ▸ p.1.2)
+        rw [hcons, Walk.support_cons, List.mem_cons] at hpc'
+        have hpq : p.1.1 ∈ q.reverse.support := by
+          rw [Walk.support_reverse, List.mem_reverse]
+          exact hpc'.resolve_left hpx
+        rw [hqr, Walk.support_cons, List.mem_cons] at hpq
+        exact hpq.resolve_left hpx
+      exact r.reachable_induce_coe_of_mem_support hr_sub hrs (hmem_r p) (hmem_r q')
+
 /-- The subgraph traced by any cycle in a simple graph is `2`-vertex-connected, with no finiteness
 assumption. -/
 theorem Walk.IsCycle.isVertexConnected_two_toSubgraph {c : G.Walk u u} (hc : c.IsCycle) :
@@ -402,43 +478,7 @@ theorem Walk.IsCycle.isVertexConnected_two_toSubgraph {c : G.Walk u u} (hc : c.I
     · intro p q
       exact c.reachable_induce_coe_of_mem_support le_rfl (fun _ _ h ↦ h)
         (c.mem_verts_toSubgraph.mp p.1.2) (c.mem_verts_toSubgraph.mp q.1.2)
-    · classical
-      have hs1 : s.encard ≤ 1 := Order.le_of_lt_add_one hs
-      have hx₀_supp : x₀.1 ∈ c.support := c.mem_verts_toSubgraph.mp x₀.2
-      let c' := c.rotate x₀.1 hx₀_supp
-      have hc' : c'.IsCycle := hc.rotate hx₀_supp
-      have hc'sub : c'.toSubgraph = c.toSubgraph := c.toSubgraph_rotate hx₀_supp
-      cases hcons : c' with
-      | nil => exact (hc'.not_nil (hcons ▸ Walk.Nil.nil)).elim
-      | @cons _ y _ hxy q =>
-        have hq : q.IsPath := ((Walk.cons_isCycle_iff q hxy).mp (hcons ▸ hc')).1
-        cases hqr : q.reverse with
-        | nil => exact (hxy.ne rfl).elim
-        | @cons _ z _ hxz r =>
-          have hxr : x₀.1 ∉ r.support := by
-            have hp_cons : (Walk.cons hxz r).IsPath := hqr ▸ hq.reverse
-            exact ((Walk.cons_isPath_iff hxz r).mp hp_cons).2
-          have hr_sub : r.toSubgraph ≤ c.toSubgraph := by
-            have h1 : r.toSubgraph ≤ (Walk.cons hxz r).toSubgraph := le_sup_right
-            rw [← hqr, Walk.toSubgraph_reverse] at h1
-            have h2 : q.toSubgraph ≤ (Walk.cons hxy q).toSubgraph := le_sup_right
-            rw [← hcons, hc'sub] at h2
-            exact h1.trans h2
-          have hrs : ∀ x : c.toSubgraph.verts, x.1 ∈ r.support → x ∉ s := fun x hxr' hxs ↦
-            hxr (Set.encard_le_one_iff.mp hs1 x x₀ hxs hx₀ ▸ hxr')
-          have hmem_r : ∀ p : ↑(sᶜ : Set c.toSubgraph.verts), p.1.1 ∈ r.support := by
-            intro p
-            have hpx : p.1.1 ≠ x₀.1 := fun heq ↦ p.2 (Subtype.ext heq ▸ hx₀)
-            have hpc' : p.1.1 ∈ c'.support :=
-              c'.mem_verts_toSubgraph.mp (hc'sub.symm ▸ p.1.2)
-            rw [hcons, Walk.support_cons, List.mem_cons] at hpc'
-            have hpq : p.1.1 ∈ q.reverse.support := by
-              rw [Walk.support_reverse, List.mem_reverse]
-              exact hpc'.resolve_left hpx
-            rw [hqr, Walk.support_cons, List.mem_cons] at hpq
-            exact hpq.resolve_left hpx
-          intro p q'
-          exact r.reachable_induce_coe_of_mem_support hr_sub hrs (hmem_r p) (hmem_r q')
+    · exact hc.reachable_induce_coe_compl_of_encard_le_one hx₀ (Order.le_of_lt_add_one hs)
 
 /-! ### The numerical invariant -/
 
@@ -522,14 +562,13 @@ theorem vertexConnectivity_top : (⊤ : SimpleGraph V).vertexConnectivity = ENat
 
 /-! ### Menger's theorem -/
 
-/-- **Menger's theorem for vertex reachability.** Two distinct nonadjacent vertices `s` and `t` of
+/-- **Menger's theorem for vertex reachability.** Two vertices `s` and `t` of
 a simple graph on a finite vertex type are `k`-vertex-reachable exactly when there are `k` paths
 from `s` to `t` pairwise sharing no vertex other than `s` and `t`. -/
-theorem isVertexReachable_iff_exists_paths [Finite V] {s t : V} (hst : s ≠ t) (hadj : ¬G.Adj s t)
-    (k : ℕ) :
+theorem isVertexReachable_iff_exists_paths [Finite V] {s t : V} (k : ℕ) :
     G.IsVertexReachable k s t ↔ ∃ P : Fin k → G.Walk s t, (∀ i, (P i).IsPath) ∧
       Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) :=
-  ⟨fun h ↦ (forall_reachable_induce_iff_exists_paths hst hadj k).1 fun X hs ht hX ↦
+  ⟨fun h ↦ (forall_reachable_induce_iff_exists_paths k).1 fun X hs ht hX ↦
       h (by simpa using hX) hs ht,
     fun ⟨_, _, hP⟩ ↦ isVertexReachable_of_pairwise_internallyDisjoint hP⟩
 
@@ -549,13 +588,14 @@ private theorem reachable_induce_deleteEdges_of_isVertexReachable {x y : V} {X :
   · rw [Walk.support_transfer] at hz
     exact fun hzX ↦ hp z hz (Set.mem_insert_of_mem _ hzX)
 
-/-- **The global form of Menger's theorem.** A simple graph on a finite vertex type with more than
-`k` vertices is `k`-vertex-connected exactly when every two distinct vertices `s` and `t`,
-adjacent or not, are joined by `k` distinct paths pairwise sharing no vertex other than `s` and
-`t`. -/
-theorem isVertexConnected_iff_forall_exists_paths [Finite V] {k : ℕ} (hk : k < Nat.card V) :
+/-- **The global form of Menger's theorem.** A simple graph on a vertex type `V` with
+`k < Nat.card V` (which forces `V` to be finite) is `k`-vertex-connected exactly when every two
+distinct vertices `s` and `t`, adjacent or not, are joined by `k` distinct paths pairwise sharing
+no vertex other than `s` and `t`. -/
+theorem isVertexConnected_iff_forall_exists_paths {k : ℕ} (hk : k < Nat.card V) :
     G.IsVertexConnected k ↔ ∀ s t, s ≠ t → ∃ P : Fin k → G.Walk s t, Function.Injective P ∧
       (∀ i, (P i).IsPath) ∧ Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) := by
+  have : Finite V := Nat.finite_of_card_ne_zero (by omega)
   have hcard : (k : ℕ∞) + 1 ≤ ENat.card V := by
     have := Fintype.ofFinite V
     rw [ENat.card_eq_coe_fintype_card, ← Nat.card_eq_fintype_card]

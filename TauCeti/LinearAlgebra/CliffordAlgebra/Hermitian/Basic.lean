@@ -35,6 +35,8 @@ by `‖v‖`.
   module.
 * `CliffordAlgebra.norm_map_ι_apply_sq`: `‖c(v) ψ‖² = -Q v ‖ψ‖²` on a Hermitian Clifford module,
   and `CliffordAlgebra.norm_map_ι_apply`: `‖c(v) ψ‖ = ‖v‖ ‖ψ‖` when `Q v = -‖v‖²`.
+* `CliffordAlgebra.re_inner_map_ι_apply_map_ι_apply`: its polarization,
+  `Re ⟪c(v) ψ, c(w) ψ⟫ = -polar Q v w ‖ψ‖² / 2`.
 
 ## References
 
@@ -118,6 +120,17 @@ theorem norm_map_ι_apply_sq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ
   simp only [RCLike.ofReal_eq_complex_ofReal, Complex.conj_ofReal]
   push_cast
   ring
+
+/-- On a Hermitian Clifford module, the real part of `⟪c(v) ψ, c(w) ψ⟫` is
+`-polar Q v w ‖ψ‖² / 2`, the polarization of `‖c(v) ψ‖² = -Q v ‖ψ‖²`. -/
+theorem re_inner_map_ι_apply_map_ι_apply (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (v w : M) (ψ : W) :
+    (inner ℂ (ρ (ι Q v) ψ) (ρ (ι Q w) ψ)).re = -QuadraticMap.polar Q v w / 2 * ‖ψ‖ ^ 2 := by
+  have h := norm_add_sq (𝕜 := ℂ) (ρ (ι Q v) ψ) (ρ (ι Q w) ψ)
+  rw [← LinearMap.add_apply, ← map_add, ← map_add, norm_map_ι_apply_sq hρ,
+    norm_map_ι_apply_sq hρ, norm_map_ι_apply_sq hρ] at h
+  simp only [QuadraticMap.polar, RCLike.re_to_complex] at h ⊢
+  linarith
 
 end Module
 

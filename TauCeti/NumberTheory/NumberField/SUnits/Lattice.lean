@@ -54,6 +54,9 @@ the covolume of this lattice is what one calls the `S`-regulator.
 * `TauCeti.NumberField.SUnit.isFundSystem_iff_exists_basis`: a family of `S`-units is a
   fundamental system exactly when its `S`-logarithmic images form a basis of the lattice, and
   `TauCeti.NumberField.SUnit.basisOfIsFundSystem` is that basis.
+* `TauCeti.NumberField.SUnit.exists_forall_abs_log_sub_le`: every vector of logarithms at the
+  infinite places and the places of `S` summing to `0` lies within a bounded distance, depending
+  only on `K` and `S`, of the logarithms of an `S`-unit.
 
 ## References
 
@@ -303,6 +306,67 @@ theorem isFundSystem_iff_exists_basis {ι : Type*}
     rw [Basis.map_apply, LinearEquiv.eq_symm_apply, Subtype.ext_iff, logEmbeddingEquiv_mk, hb]
   rw [isFundSystem_iff, hmk]
   exact ⟨Basis.linearIndependent _, Basis.span_eq _⟩
+
+/-! ### Approximating a sum-zero vector by the logarithms of an `S`-unit -/
+
+variable (S) in
+open Classical in
+/-- **Every sum-zero vector of logarithms lies within bounded distance of the logarithms of an
+`S`-unit.** There is `R ≥ 0`, depending only on `K` and `S`, such that for all real numbers
+`z w` at the infinite places and `z' v` at the places `v ∈ S` with total sum `0`, some `S`-unit
+`u` has `|mult w * log (w u) - z w| ≤ R` at every infinite place `w` and
+`|log ‖u‖_v - z' v| ≤ R` at every `v ∈ S`.
+
+This is the cocompactness of the `S`-unit lattice: the vector of the `z` with the coordinate at
+`w₀` omitted is within the diameter of a fundamental parallelepiped of a lattice vector, and the
+omitted coordinates agree up to the sum of the others because both vectors sum to `0`. The
+sum-zero hypothesis is needed, since the weighted logarithms of an `S`-unit always sum to `0`
+(`TauCeti.NumberField.SUnit.sum_mult_mul_log_add_sum_log_finitePlace`). -/
+theorem exists_forall_abs_log_sub_le :
+    ∃ R : ℝ, 0 ≤ R ∧ ∀ (z : InfinitePlace K → ℝ) (z' : HeightOneSpectrum (𝓞 K) → ℝ),
+      ∑ w, z w + ∑ v ∈ S, z' v = 0 →
+      ∃ u : (S : Set (HeightOneSpectrum (𝓞 K))).unit K,
+        (∀ w, |w.mult * Real.log (w ((u : Kˣ) : K)) - z w| ≤ R) ∧
+          ∀ v ∈ S, |Real.log (FinitePlace.mk v ((u : Kˣ) : K)) - z' v| ≤ R := by
+  let b := (basisUnitLattice S).ofZLatticeBasis ℝ (unitLattice S)
+  set R₀ := ∑ i, ‖b i‖
+  set n := Fintype.card ({w : InfinitePlace K // w ≠ w₀} ⊕ S)
+  have hR₀ : 0 ≤ R₀ := Finset.sum_nonneg fun i _ ↦ norm_nonneg _
+  refine ⟨(n + 1) * R₀, by positivity, fun z z' hz ↦ ?_⟩
+  let y : logSpace S := Sum.elim (fun w ↦ z w.1) (fun v ↦ z' v.1)
+  have hmem : (ZSpan.floor b y : logSpace S) ∈ unitLattice S := by
+    rw [← Basis.ofZLatticeBasis_span ℝ (unitLattice S) (basisUnitLattice S)]
+    exact (ZSpan.floor b y).2
+  obtain ⟨u, hu⟩ := mem_unitLattice_iff.mp hmem
+  -- every coordinate of `y` is within `R₀` of the corresponding coordinate of the image of `u`
+  have hcoord (i) : |y i - logEmbedding S (Additive.ofMul u) i| ≤ R₀ := by
+    rw [← Real.norm_eq_abs, ← Pi.sub_apply]
+    refine (norm_le_pi_norm _ i).trans ?_
+    rw [hu, ← ZSpan.fract_apply]
+    exact ZSpan.norm_fract_le b y
+  have hR₀n : R₀ ≤ (n + 1) * R₀ := le_mul_of_one_le_left hR₀ (by linarith [n.cast_nonneg' (α := ℝ)])
+  refine ⟨u, fun w ↦ ?_, fun v hv ↦ ?_⟩
+  · by_cases hw : w = w₀
+    · subst hw
+      -- both vectors sum to `0`, so the omitted coordinates are minus the sums of the others
+      have hy : z w₀ = -∑ i, y i := by
+        rw [Fintype.sum_eq_add_sum_subtype_ne _ w₀, ← Finset.sum_coe_sort S] at hz
+        simp only [y, Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr]
+        linarith
+      have hL := sum_logEmbedding S u
+      have hdiff : ((w₀ (K := K)).mult : ℝ) * Real.log (w₀ ((u : Kˣ) : K)) - z w₀ =
+          ∑ i, (y i - logEmbedding S (Additive.ofMul u) i) := by
+        rw [hy, Finset.sum_sub_distrib]
+        linarith
+      rw [hdiff]
+      calc |∑ i, (y i - logEmbedding S (Additive.ofMul u) i)|
+          ≤ ∑ i, |y i - logEmbedding S (Additive.ofMul u) i| := Finset.abs_sum_le_sum_abs _ _
+        _ ≤ ∑ _i : {w : InfinitePlace K // w ≠ w₀} ⊕ S, R₀ :=
+            Finset.sum_le_sum fun i _ ↦ hcoord i
+        _ = n * R₀ := by simp [n]
+        _ ≤ (n + 1) * R₀ := by nlinarith
+    · simpa [y, abs_sub_comm] using (hcoord (Sum.inl ⟨w, hw⟩)).trans hR₀n
+  · simpa [y, abs_sub_comm] using (hcoord (Sum.inr ⟨v, hv⟩)).trans hR₀n
 
 end
 

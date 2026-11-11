@@ -60,7 +60,7 @@ weights.
   different coordinates and a sum with a different unordered index pair differ regularly at some
   coordinate.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
-  sum and a coordinate sum on two different coordinates differ regularly at some coordinate.
+  sum and a coordinate sum differ regularly at some coordinate.
 -/
 
 /-- **A tuple with vanishing initial segment is a one-point family.**  Appending `x` to the zero
@@ -322,14 +322,25 @@ public theorem exists_isRegular_single_add_single_sub {i j : ι} (hij : i ≠ j)
     exact ⟨b, by simpa [hab, hbi, hbj] using h1⟩
   exact ⟨a, by simpa [hab, hai, haj] using h1⟩
 
-/-- If `i ≠ j`, then the negative sum of standard coordinate vectors `-(eₐ + e_b)` and the sum
-`eᵢ + eⱼ` differ by a regular scalar at some coordinate, provided `2` is regular. -/
+/-- The negative sum of standard coordinate vectors `-(eₐ + e_b)` and the sum `eᵢ + eⱼ` differ by
+a regular scalar at some coordinate, provided `2` is regular. -/
 public theorem exists_isRegular_neg_single_add_single_sub_single_add_single
-    (h2 : IsRegular (2 : K)) {i j : ι} (hij : i ≠ j) (a b : ι) :
+    (h2 : IsRegular (2 : K)) (i j a b : ι) :
     ∃ k, IsRegular
       ((-(Pi.single a 1 + Pi.single b 1) - (Pi.single i 1 + Pi.single j 1) : ι → K) k) := by
   have h1 : IsRegular (-1 : K) := isUnit_neg_one.isRegular
   have hneg2 : IsRegular (-(2 : K)) := by simpa using h1.mul h2
+  rcases eq_or_ne i j with rfl | hij
+  · by_cases hai : a = i <;> by_cases hbi : b = i
+    · have h4 : IsRegular (-(2 : K) * 2) := hneg2.mul h2
+      exact ⟨i, by convert h4 using 1; norm_num [hai, hbi]⟩
+    · exact ⟨b, by simpa [hai, hbi, Ne.symm hbi] using h1⟩
+    · by_cases hab : b = a
+      · exact ⟨a, by convert hneg2 using 1; norm_num [hab, hai]⟩
+      · exact ⟨a, by simpa [hai, hab, Ne.symm hai, Ne.symm hab] using h1⟩
+    · by_cases hab : b = a
+      · exact ⟨a, by convert hneg2 using 1; norm_num [hab, hai]⟩
+      · exact ⟨a, by simpa [hai, hab, Ne.symm hai, Ne.symm hab] using h1⟩
   by_cases hai : a = i <;> by_cases hbi : b = i
   · subst a b
     exact ⟨j, by simpa [hij] using h1⟩

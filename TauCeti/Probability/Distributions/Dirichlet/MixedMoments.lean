@@ -119,10 +119,10 @@ theorem lintegral_prod_rpow_dirichletMeasure {a q : ι → ℝ}
   rw [lintegral_const_mul _ (measurable_dirichletChartPDF _ i₀),
     lintegral_dirichletChartPDF_eq_one hq i₀, mul_one]
 
-private theorem ae_nonneg_prod_rpow_dirichletMeasure {a q : ι → ℝ}
-    (ha : ∀ i, 0 < a i) :
+omit [Nonempty ι] in
+private theorem ae_nonneg_prod_rpow_dirichletMeasure {a q : ι → ℝ} :
     0 ≤ᵐ[dirichletMeasure a] fun x ↦ ∏ i, x i ^ q i := by
-  filter_upwards [ae_pos_dirichletMeasure ha] with x hx
+  filter_upwards [ae_pos_dirichletMeasure (a := a)] with x hx
   exact Finset.prod_nonneg fun i _ ↦ Real.rpow_nonneg (hx i).le _
 
 omit [Nonempty ι] in
@@ -136,7 +136,7 @@ theorem integrable_prod_rpow_dirichletMeasure {a q : ι → ℝ}
   · let : Nonempty ι := h.1
     have hm : Measurable fun x : EuclideanSpace ℝ ι ↦ ∏ i, x i ^ q i := by fun_prop
     refine ⟨hm.aestronglyMeasurable,
-      (hasFiniteIntegral_iff_ofReal (ae_nonneg_prod_rpow_dirichletMeasure h.2)).2 ?_⟩
+      (hasFiniteIntegral_iff_ofReal ae_nonneg_prod_rpow_dirichletMeasure).2 ?_⟩
     rw [lintegral_prod_rpow_dirichletMeasure h.2 hq]
     exact ENNReal.ofReal_lt_top
   · rw [dirichletMeasure_eq_zero_of_invalid h]
@@ -149,7 +149,7 @@ theorem integral_prod_rpow_dirichletMeasure {a q : ι → ℝ}
     ∫ x, (∏ i, x i ^ q i) ∂dirichletMeasure a =
       Real.Gamma (∑ i, a i) / Real.Gamma ((∑ i, a i) + ∑ i, q i) *
         ∏ i, Real.Gamma (a i + q i) / Real.Gamma (a i) := by
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_nonneg_prod_rpow_dirichletMeasure ha)
+  rw [integral_eq_lintegral_of_nonneg_ae ae_nonneg_prod_rpow_dirichletMeasure
     (integrable_prod_rpow_dirichletMeasure hq).aestronglyMeasurable,
     lintegral_prod_rpow_dirichletMeasure ha hq,
     ENNReal.toReal_ofReal (dirichletMomentConst_nonneg ha hq), Finset.sum_add_distrib]

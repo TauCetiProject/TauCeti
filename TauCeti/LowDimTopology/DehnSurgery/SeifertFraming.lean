@@ -38,9 +38,9 @@ complement `X ∖ K`, `K` the image of `f`
   (`TauCeti.IsSolidTorusNeighborhood.preferredFramedBoundaryTorus`). The preferred longitude `λ₀`
   is null-homologous in `X ∖ K`, and it generates the kernel of `H₁(T) → H₁(X ∖ K)`: in the
   preferred framing a class goes to its meridian coordinate. For a knot in `S³` this is the
-  classical Seifert framing, whose longitude bounds a Seifert surface (Seifert surfaces are not
-  formalized here); the `0`-framing of surgery theory and the `ℚ ∪ {∞}` surgery coefficients
-  refer to it.
+  classical Seifert framing, whose longitude bounds a Seifert surface (`TauCeti.SeifertSurface`,
+  which this file does not use); the `0`-framing of surgery theory and the `ℚ ∪ {∞}` surgery
+  coefficients refer to it.
 
 The homology hypotheses are stated for reduced singular homology in degrees `1` and `2`. For the
 unit sphere of a four-dimensional real inner product space they are
@@ -273,8 +273,8 @@ private theorem openToTorus_puncturedToOpen (h : IsSolidTorusNeighborhood f Φ)
   simp [openToTorus, this]
 
 /-- The meridian at radius `1 / 2` dies in the open solid torus. -/
-private theorem H1map_puncturedToOpen_torusClass_zero (h : IsSolidTorusNeighborhood f Φ)
-    (p : ℤ) :
+private theorem singularHomologyMap_puncturedToOpen_torusClass_eq_zero
+    (h : IsSolidTorusNeighborhood f Φ) (p : ℤ) :
     singularHomologyMap ℤ 1 (puncturedToOpen f Φ)
       (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass p 0)) = 0 := by
   rw [← singularHomologyMap_comp, singularHomologyMap_eq_of_homotopic ℤ 1 ⟨h.contractHomotopy⟩,
@@ -286,8 +286,8 @@ private theorem H1map_puncturedToOpen_torusClass_zero (h : IsSolidTorusNeighborh
 
 /-- A class at radius `1 / 2` with a nonzero longitude coordinate survives in the open solid
 torus. -/
-private theorem eq_zero_of_H1map_puncturedToOpen_eq_zero (h : IsSolidTorusNeighborhood f Φ)
-    {p q : ℤ}
+private theorem eq_zero_of_singularHomologyMap_puncturedToOpen_torusClass_eq_zero
+    (h : IsSolidTorusNeighborhood f Φ) {p q : ℤ}
     (hpq : singularHomologyMap ℤ 1 (puncturedToOpen f Φ)
       (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass p q)) = 0) :
     q = 0 := by
@@ -334,7 +334,11 @@ private def expandHomotopy (h : IsSolidTorusNeighborhood f Φ) :
         (radialPoint_one q _)).symm)
 
 include h₁ h₂ in
-private theorem mayerVietoris (h : IsSolidTorusNeighborhood f Φ) :
+/-- The Mayer–Vietoris consequences for `H₁` of the punctured open solid torus: a class killed in
+both the open solid torus and the knot complement is zero, and every class of the knot complement
+is the image of a class killed in the open solid torus. -/
+private theorem eq_zero_and_exists_of_map_puncturedToOpen_eq_zero
+    (h : IsSolidTorusNeighborhood f Φ) :
     (∀ x, singularHomologyMap ℤ 1 (puncturedToOpen f Φ) x = 0 →
       singularHomologyMap ℤ 1 (puncturedToComplement f Φ) x = 0 → x = 0) ∧
     ∀ c, ∃ x, singularHomologyMap ℤ 1 (puncturedToOpen f Φ) x = 0 ∧
@@ -355,10 +359,11 @@ private theorem exists_zsmul_eq (h : IsSolidTorusNeighborhood f Φ)
     (c : ((singularChains ℤ).obj (TopCat.of ↥(range f)ᶜ)).homology 1) :
     ∃ k : ℤ, k • singularHomologyMap ℤ 1 (puncturedToComplement f Φ)
       (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass 1 0)) = c := by
-  obtain ⟨x, hxU, rfl⟩ := (h.mayerVietoris h₁ h₂).2 c
+  obtain ⟨x, hxU, rfl⟩ :=
+    (h.eq_zero_and_exists_of_map_puncturedToOpen_eq_zero h₁ h₂).2 c
   obtain ⟨y, rfl⟩ := (h.torusHomotopyEquiv.bijective_singularHomologyMap ℤ 1).2 x
   obtain ⟨p, q, rfl⟩ := exists_eq_torusClass y
-  obtain rfl := h.eq_zero_of_H1map_puncturedToOpen_eq_zero hxU
+  obtain rfl := h.eq_zero_of_singularHomologyMap_puncturedToOpen_torusClass_eq_zero hxU
   refine ⟨p, ?_⟩
   rw [torusClass_eq p 0, zero_smul, add_zero, map_zsmul, map_zsmul]
 
@@ -367,9 +372,11 @@ include h₁ h₂ in
 private theorem eq_zero_of_zsmul_eq_zero (h : IsSolidTorusNeighborhood f Φ) {k : ℤ}
     (hk : k • singularHomologyMap ℤ 1 (puncturedToComplement f Φ)
       (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass 1 0)) = 0) : k = 0 := by
-  have hx := (h.mayerVietoris h₁ h₂).1
+  have hx := (h.eq_zero_and_exists_of_map_puncturedToOpen_eq_zero h₁ h₂).1
     (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (k • torusClass 1 0))
-    (by rw [map_zsmul, map_zsmul, h.H1map_puncturedToOpen_torusClass_zero]; exact zsmul_zero k)
+    (by
+      rw [map_zsmul, map_zsmul, h.singularHomologyMap_puncturedToOpen_torusClass_eq_zero]
+      exact zsmul_zero k)
     (by rw [map_zsmul, map_zsmul, hk])
   rw [← map_zero (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun)] at hx
   have hk0 : torusClass k 0 = 0 := by

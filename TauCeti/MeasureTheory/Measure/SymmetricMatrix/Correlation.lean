@@ -6,11 +6,13 @@ Authors: Claude, Codex
 module
 
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
-public import TauCeti.Analysis.Matrix.PartialCorrelation
+public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Basic
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
+import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.LinearAlgebra.Matrix.Cholesky.Topology
 import TauCeti.Topology.Constructions.Pi
 import Mathlib.Analysis.Convex.Measure
 import Mathlib.Analysis.Calculus.Deriv.Prod
@@ -62,6 +64,8 @@ of a positive-definite correlation matrix and reads off its partial correlations
   reference measure for random correlation matrices.
 * `TauCeti.correlationLebesgue_of_le_one` — in dimension at most one it is the Dirac measure at
   the identity.
+* `TauCeti.map_correlationMatrix_withDensity` — densities with respect to it, read in
+  coordinates.
 * `TauCeti.map_symmetricCongruenceLinearMap_permMatrix_correlationLebesgue`,
   `TauCeti.map_symmetricCongruenceLinearMap_diagonal_correlationLebesgue` — invariance under
   permutation and sign-change conjugation.
@@ -75,9 +79,15 @@ of a positive-definite correlation matrix and reads off its partial correlations
 * `TauCeti.bijOn_correlationCoordinatesOfPartialCorrelation`,
   `TauCeti.image_correlationCoordinatesOfPartialCorrelation` — the forward map is a bijection from
   the open cube onto the positive-definite region.
+* `TauCeti.map_withDensity_correlationCoordinatesOfPartialCorrelation` — the change of variables
+  to partial correlations, as an identity of measures.
+* `TauCeti.setIntegral_comp_correlationCoordinatesOfPartialCorrelation`,
+  `TauCeti.integrableOn_comp_correlationCoordinatesOfPartialCorrelation_iff` — integration over
+  the positive-definite region in partial-correlation coordinates.
 * `TauCeti.partialCorrelationOfCorrelationCoordinates`,
-  `TauCeti.invOn_partialCorrelationOfCorrelationCoordinates` — its inverse, which reads the partial
-  correlations off the Cholesky factor and maps the region into the open cube.
+  `TauCeti.invOn_partialCorrelationOfCorrelationCoordinates` — the inverse of the forward map,
+  which reads the partial correlations off the Cholesky factor and maps the region into the open
+  cube; it is measurable (`TauCeti.measurable_partialCorrelationOfCorrelationCoordinates`).
 * `TauCeti.volume_posDefCorrelationRegion_pos`, `TauCeti.volume_posDefCorrelationRegion_lt_top`.
 * `TauCeti.closure_posDefCorrelationRegion` — the closure is the positive-semidefinite region.
 * `TauCeti.frontier_posDefCorrelationRegion`, `TauCeti.volume_frontier_posDefCorrelationRegion` —
@@ -94,7 +104,7 @@ public section
 noncomputable section
 
 open MeasureTheory Topology Filter Set
-open scoped ContDiff
+open scoped ContDiff ENNReal
 
 namespace TauCeti
 
@@ -270,6 +280,16 @@ theorem correlationLebesgue_apply (s : Set (selfAdjoint.submodule ℝ (Matrix (F
     correlationLebesgue p s = volume (correlationMatrix p ⁻¹' s) :=
   (measurableEmbedding_correlationMatrix p).map_apply _ _
 
+/-- A density with respect to `TauCeti.correlationLebesgue p` is the image of the same density,
+read in strictly lower correlation coordinates, with respect to Lebesgue measure. -/
+theorem map_correlationMatrix_withDensity
+    {g : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → ℝ≥0∞} (hg : Measurable g) :
+    ((volume : Measure (strictLowerTriangle p → ℝ)).withDensity fun x ↦
+        g (correlationMatrix p x)).map (correlationMatrix p) =
+      (correlationLebesgue p).withDensity g :=
+  Measure.map_withDensity_eq_withDensity (jac := 1) (correlationMatrix p).continuous.measurable
+    measurable_const hg (by rw [withDensity_one]; rfl) (ae_of_all _ fun _ ↦ one_mul _)
+
 variable (p) in
 /-- `TauCeti.correlationLebesgue p`-almost every symmetric matrix has unit diagonal. -/
 theorem ae_correlationLebesgue_diag_eq_one :
@@ -303,6 +323,15 @@ def posDefCorrelationRegion : Set (strictLowerTriangle p → ℝ) :=
 theorem mem_posDefCorrelationRegion {x : strictLowerTriangle p → ℝ} :
     x ∈ posDefCorrelationRegion p ↔ (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ).PosDef :=
   Iff.rfl
+
+variable (p) in
+/-- The positive-definite correlation region is the preimage of the positive-definite symmetric
+matrices under `TauCeti.correlationMatrix p`. -/
+theorem preimage_correlationMatrix_setOf_posDef :
+    correlationMatrix p ⁻¹' {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosDef} =
+      posDefCorrelationRegion p :=
+  (rfl)
 
 variable (p) in
 theorem isOpen_posDefCorrelationRegion : IsOpen (posDefCorrelationRegion p) :=
@@ -823,6 +852,22 @@ theorem partialCorrelationOfCorrelationCoordinates_of_mem {x : strictLowerTriang
         (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1 := by
   simp only [partialCorrelationOfCorrelationCoordinates, hx, ↓reduceDIte]
 
+/-- The inverse partial-correlation map is Borel measurable. -/
+@[fun_prop]
+theorem measurable_partialCorrelationOfCorrelationCoordinates :
+    Measurable (partialCorrelationOfCorrelationCoordinates (p := p)) := by
+  classical
+  have hL : Continuous fun x : posDefCorrelationRegion p ↦
+      (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 x.2⟩).1 :=
+    continuous_subtype_val.comp <| continuous_cholesky.comp <|
+      ((correlationMatrix p).continuous.comp continuous_subtype_val).subtype_mk _
+  have hP : Measurable (Matrix.partialCorrelationOfCholesky (p := p)) := by
+    refine Measurable.of_eval fun ij ↦ ?_
+    simp only [Matrix.partialCorrelationOfCholesky_apply]
+    fun_prop
+  exact Measurable.dite (hP.comp hL.measurable) measurable_const
+    (measurableSet_posDefCorrelationRegion p)
+
 /-- Outside the positive-definite correlation region, the inverse map is `0`. -/
 @[simp]
 theorem partialCorrelationOfCorrelationCoordinates_of_notMem {x : strictLowerTriangle p → ℝ}
@@ -968,6 +1013,77 @@ set. -/
 theorem volume_frontier_posDefCorrelationRegion :
     volume (frontier (posDefCorrelationRegion p)) = 0 :=
   (convex_posDefCorrelationRegion p).addHaar_frontier _
+
+/-! ### Integration in partial-correlation coordinates -/
+
+private theorem hasFDerivWithinAt_correlationCoordinatesOfPartialCorrelation
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
+    HasFDerivWithinAt (correlationCoordinatesOfPartialCorrelation (p := p))
+      (fderiv ℝ correlationCoordinatesOfPartialCorrelation z)
+      {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1} z :=
+  ((contDiffOn_correlationCoordinatesOfPartialCorrelation.differentiableOn
+    (by simp)).differentiableAt
+      (isOpen_setOf_forall_abs_lt_one.mem_nhds hz)).hasFDerivAt.hasFDerivWithinAt
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Change of variables to partial correlations, integrability.** A function is integrable on
+the positive-definite correlation region exactly when its composite with the partial-correlation
+forward map, weighted by the Jacobian `∏ √(1 - z ij ^ 2) ^ (p - j - 2)` (zero-based column `j`),
+is integrable on the open cube. -/
+theorem integrableOn_comp_correlationCoordinatesOfPartialCorrelation_iff
+    (g : (strictLowerTriangle p → ℝ) → E) :
+    IntegrableOn (fun z ↦ (∏ ij : strictLowerTriangle p,
+        Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2)) •
+          g (correlationCoordinatesOfPartialCorrelation z)) {z | ∀ ij, |z ij| < 1} ↔
+      IntegrableOn g (posDefCorrelationRegion p) := by
+  rw [← image_correlationCoordinatesOfPartialCorrelation,
+    integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume
+      isOpen_setOf_forall_abs_lt_one.measurableSet
+      (fun _ hz ↦ hasFDerivWithinAt_correlationCoordinatesOfPartialCorrelation hz)
+      injOn_correlationCoordinatesOfPartialCorrelation]
+  refine integrableOn_congr_fun (fun z hz ↦ ?_) isOpen_setOf_forall_abs_lt_one.measurableSet
+  rw [abs_det_fderiv_correlationCoordinatesOfPartialCorrelation hz]
+
+/-- **Change of variables to partial correlations.** The integral of a function over the
+positive-definite correlation region is the integral over the open cube of its composite with the
+partial-correlation forward map, weighted by the Jacobian `∏ √(1 - z ij ^ 2) ^ (p - j - 2)`
+(zero-based column `j`). -/
+theorem setIntegral_comp_correlationCoordinatesOfPartialCorrelation
+    (g : (strictLowerTriangle p → ℝ) → E) :
+    ∫ z in {z | ∀ ij, |z ij| < 1}, (∏ ij : strictLowerTriangle p,
+        Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2)) •
+          g (correlationCoordinatesOfPartialCorrelation z) =
+      ∫ x in posDefCorrelationRegion p, g x := by
+  rw [← image_correlationCoordinatesOfPartialCorrelation,
+    integral_image_eq_integral_abs_det_fderiv_smul volume
+      isOpen_setOf_forall_abs_lt_one.measurableSet
+      (fun _ hz ↦ hasFDerivWithinAt_correlationCoordinatesOfPartialCorrelation hz)
+      injOn_correlationCoordinatesOfPartialCorrelation]
+  refine setIntegral_congr_fun isOpen_setOf_forall_abs_lt_one.measurableSet fun z hz ↦ ?_
+  rw [abs_det_fderiv_correlationCoordinatesOfPartialCorrelation hz]
+
+/-! ### Measure-level change of variables to partial correlations -/
+
+/-- **Change of variables to partial correlations.** Lebesgue measure on the open cube, weighted
+by the Jacobian `∏ √(1 - z ij ^ 2) ^ (p - j - 2)` (zero-based column `j`), is sent by the
+partial-correlation forward map to Lebesgue measure on the positive-definite correlation
+region. -/
+theorem map_withDensity_correlationCoordinatesOfPartialCorrelation :
+    ((volume.restrict {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1}).withDensity fun z ↦
+        ENNReal.ofReal (∏ ij : strictLowerTriangle p,
+          Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2))).map
+        correlationCoordinatesOfPartialCorrelation =
+      volume.restrict (posDefCorrelationRegion p) := by
+  have hcube := isOpen_setOf_forall_abs_lt_one (ι := strictLowerTriangle p)
+  rw [← image_correlationCoordinatesOfPartialCorrelation,
+    ← map_withDensity_abs_det_fderiv_eq_addHaar volume hcube.measurableSet.nullMeasurableSet
+      (fun z hz ↦ ((contDiffOn_correlationCoordinatesOfPartialCorrelation.differentiableOn
+        (by simp)).differentiableAt (hcube.mem_nhds hz)).hasFDerivAt.hasFDerivWithinAt)
+      injOn_correlationCoordinatesOfPartialCorrelation]
+  refine congrArg _ (withDensity_congr_ae ?_)
+  filter_upwards [ae_restrict_mem hcube.measurableSet] with z hz
+  rw [abs_det_fderiv_correlationCoordinatesOfPartialCorrelation hz]
 
 /-! ### Invariance under permutations and sign changes
 

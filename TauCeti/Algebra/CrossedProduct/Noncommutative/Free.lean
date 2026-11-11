@@ -62,6 +62,12 @@ instance isScalarTower_rightSubgroup :
     simp only [MulOpposite.algebraMap_apply, unop_op, AlgHom.commutes]
     exact (_root_.Algebra.commutes r x).symm.trans (_root_.Algebra.smul_def r x).symm
 
+/-- Left multiplication commutes with the right action of the subgroup crossed product. -/
+instance smulCommClass_rightSubgroup :
+    SMulCommClass (Algebra c) (Algebra (c.comap H.subtype))ᵐᵒᵖ (Algebra c) :=
+  SMul.comp.smulCommClass' (α := Algebra c) (β := Algebra c)
+    (comapHom c H.subtype).toRingHom.op
+
 private noncomputable def coefficientTwist (q : G ⧸ H) (h : H) : D ≃+ D :=
   (c.action q.out).toAddEquiv.trans (AddAut.mulRight (c.factor q.out h))
 

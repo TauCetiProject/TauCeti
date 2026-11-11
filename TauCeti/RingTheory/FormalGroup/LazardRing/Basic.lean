@@ -10,7 +10,7 @@ public import Mathlib.Data.PNat.Defs
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.FormalGroup.BaseChange
-public import TauCeti.RingTheory.FormalGroup.Rescale
+public import TauCeti.RingTheory.FormalGroup.Rescale.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 import TauCeti.RingTheory.MvPowerSeries.Substitution

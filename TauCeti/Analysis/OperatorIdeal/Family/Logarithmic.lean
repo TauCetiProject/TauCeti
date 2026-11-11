@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Equivalence
+public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Isometry
 public import TauCeti.Analysis.OperatorIdeal.Family.KyFan.Dominance
+public import TauCeti.Analysis.OperatorIdeal.Family.Modulus
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
 
@@ -296,6 +297,26 @@ theorem mem_finiteSubmodule_logarithmic_iff_bddAbove (T : E →L[𝕜] F) :
     convert hN using 3
     push_cast
     ring
+
+/-- Operators with the same approximation numbers lie in `L^(1,∞)` simultaneously, even across
+different Hilbert-space universes. -/
+theorem _root_.ContinuousLinearMap.SameSingularValues.mem_finiteSubmodule_logarithmic_iff
+    {G H : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
+    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
+    {S : G →L[𝕜] H} {T : E →L[𝕜] F} (h : ContinuousLinearMap.SameSingularValues S T) :
+    S ∈ ((logarithmic 𝕜).operatorGauge G H).finiteSubmodule ↔
+      T ∈ ((logarithmic 𝕜).operatorGauge E F).finiteSubmodule := by
+  rw [mem_finiteSubmodule_logarithmic_iff_bddAbove, mem_finiteSubmodule_logarithmic_iff_bddAbove,
+    h.kyFanLogMean_eq]
+
+/-- Conjugation by a linear isometric equivalence preserves membership in `L^(1,∞)`, even across
+different Hilbert-space universes. -/
+theorem _root_.LinearIsometryEquiv.conjStarAlgEquiv_mem_finiteSubmodule_logarithmic_iff
+    (e : E ≃ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
+    e.conjStarAlgEquiv T ∈ ((logarithmic 𝕜).operatorGauge F F).finiteSubmodule ↔
+      T ∈ ((logarithmic 𝕜).operatorGauge E E).finiteSubmodule :=
+  (ContinuousLinearMap.sameSingularValues_comp_linearIsometryEquiv T e.symm
+    e).mem_finiteSubmodule_logarithmic_iff
 
 /-- An operator whose logarithmic means are bounded by a bounded sequence lies in `L^(1,∞)`. -/
 theorem mem_finiteSubmodule_logarithmic_of_forall_kyFanLogMean_le {T : E →L[𝕜] F} (g : ℕ →ᵇ ℝ)

@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Basic
 
+import TauCeti.Analysis.Convex.Combination
 import TauCeti.Analysis.Convex.SecantEstimate
+import TauCeti.Analysis.Convex.StdSimplex
 
 /-!
 # Secant maps of smooth triangulations
@@ -49,6 +51,8 @@ whose simplices are uniformly fat, this is Munkres' secant approximation theorem
 * `AbstractSimplicialComplex.isSimplexImmersion_secantMap_comp_faceInclusion`: the secant map of
   a map that is close to an injective linear map on a closed simplex is an immersion of that
   simplex.
+* `AbstractSimplicialComplex.isSimplexImmersion_secantMap_comp_faceInclusion_of_injOn`: a secant
+  map which is injective on a closed simplex is an immersion of that simplex.
 * `TauCeti.IsSimplexImmersion.exists_continuousOn_hasFDerivWithinAt`: a `C¹` immersion of a
   simplex into a normed space has a continuous derivative within the simplex, injective on its
   directions.
@@ -191,6 +195,45 @@ theorem isSimplexImmersion_secantMap_comp_faceInclusion [DecidableEq ι] {f : Re
   funext a
   exact abs_eq_zero.mp ((Finset.sum_eq_zero_iff_of_nonneg fun b _ => abs_nonneg _).mp hsum a
     (Finset.mem_univ a))
+
+/-- A secant map which is injective on a closed simplex is a `Cⁿ` immersion of that simplex, for
+every `n`. -/
+theorem isSimplexImmersion_secantMap_comp_faceInclusion_of_injOn {f : Realization K → E}
+    {σ : Face K} (hinj : InjOn (K.secantMap f) (range (faceInclusion K σ))) :
+    TauCeti.IsSimplexImmersion 𝓘(ℝ, E) n (K.secantMap f ∘ faceInclusion K σ) := by
+  classical
+  set L := Fintype.linearCombination ℝ fun a : σ.1 => f (vertex K a)
+  have hL : K.secantMap f ∘ faceInclusion K σ = fun x : StandardSimplex σ.1 => L fun a => x.1 a :=
+    funext fun x => by rw [comp_apply, secantMap_faceInclusion, Fintype.linearCombination_apply]
+  rw [hL]
+  refine LinearMap.isSimplexImmersion _ fun v hv hLv => ?_
+  -- Moving the barycenter along a direction killed by `L` would not change its value, so `L` is
+  -- injective on the directions of the standard simplex, the convex hull of the unit vectors.
+  refine L.toAffineMap.eq_zero_of_injOn_convexHull
+    (s := range fun a : σ.1 => Pi.single a (1 : ℝ)) ?_ ?_ (by simpa using hLv)
+  · -- Points of the convex hull are the coordinates of points of the closed simplex.
+    have hhull : convexHull ℝ (range fun a : σ.1 => Pi.single a (1 : ℝ)) ⊆
+        range fun x : StandardSimplex σ.1 => fun a : σ.1 => x.1 a := by
+      rw [Finset.range_standardSimplex_coordinates]
+      exact convexHull_min (range_subset_iff.2 fun a => ⟨.single a, by
+        simp [Finsupp.single_eq_pi_single]⟩)
+        (Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ σ.1)
+    rintro _ hw₁ _ hw₂ hw
+    obtain ⟨x₁, rfl⟩ := hhull hw₁
+    obtain ⟨x₂, rfl⟩ := hhull hw₂
+    have heq := congrArg Subtype.val (hinj ⟨x₁, rfl⟩ ⟨x₂, rfl⟩
+      (by simpa only [comp_apply] using (congrFun hL x₁).trans (hw.trans (congrFun hL x₂).symm)))
+    rw [faceInclusion_val, faceInclusion_val] at heq
+    exact congrArg (fun w : ι →₀ ℝ => fun a : σ.1 => w a) heq
+  · obtain ⟨a₀, ha₀⟩ := K.isRelLowerSet_faces.prop_of_mem σ.2
+    -- A vector with zero coordinate sum is a combination of edge vectors from the vertex `a₀`.
+    have hsum : v = ∑ a, v a •
+        ((Pi.single a (1 : ℝ) : σ.1 → ℝ) -ᵥ Pi.single ⟨a₀, ha₀⟩ (1 : ℝ)) := by
+      simpa only [vsub_eq_sub, smul_sub, Finset.sum_sub_distrib, ← Finset.sum_smul, hv, zero_smul,
+        sub_zero] using pi_eq_sum_univ' v
+    rw [hsum]
+    exact Submodule.sum_mem _ fun a _ => Submodule.smul_mem _ _ <|
+      vsub_mem_vectorSpan ℝ (mem_range_self a) (mem_range_self _)
 
 end AbstractSimplicialComplex
 

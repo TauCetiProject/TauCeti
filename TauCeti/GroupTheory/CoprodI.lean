@@ -23,28 +23,27 @@ fundamental group of a wedge of circles as a free group.
 
 public section
 
-namespace TauCeti
-
 open Monoid
+
+namespace MulEquiv
 
 variable {ι : Type*} {M N : ι → Type*} [∀ i, Monoid (M i)] [∀ i, Monoid (N i)]
 
 /-- A family of isomorphisms of monoids `M i ≃* N i` induces an isomorphism of their free
 products, acting on the `i`-th factor by the `i`-th isomorphism. -/
-def _root_.MulEquiv.coprodICongr (e : ∀ i, M i ≃* N i) : CoprodI M ≃* CoprodI N :=
+def coprodICongr (e : ∀ i, M i ≃* N i) : CoprodI M ≃* CoprodI N :=
   MonoidHom.toMulEquiv (CoprodI.lift fun i => CoprodI.of.comp (e i).toMonoidHom)
     (CoprodI.lift fun i => CoprodI.of.comp (e i).symm.toMonoidHom)
-    (CoprodI.ext_hom _ _ fun i => MonoidHom.ext fun m => by simp)
-    (CoprodI.ext_hom _ _ fun i => MonoidHom.ext fun m => by simp)
+    (by ext; simp) (by ext; simp)
 
 @[simp]
-theorem _root_.MulEquiv.coprodICongr_apply_of (e : ∀ i, M i ≃* N i) {i : ι} (m : M i) :
-    MulEquiv.coprodICongr e (CoprodI.of m) = CoprodI.of (e i m) := by
-  simp [MulEquiv.coprodICongr]
+theorem coprodICongr_apply_of (e : ∀ i, M i ≃* N i) {i : ι} (m : M i) :
+    coprodICongr e (CoprodI.of m) = CoprodI.of (e i m) :=
+  CoprodI.lift_of _ _
 
 @[simp]
-theorem _root_.MulEquiv.coprodICongr_symm (e : ∀ i, M i ≃* N i) :
-    (MulEquiv.coprodICongr e).symm = MulEquiv.coprodICongr fun i => (e i).symm :=
+theorem coprodICongr_symm (e : ∀ i, M i ≃* N i) :
+    (coprodICongr e).symm = coprodICongr fun i => (e i).symm :=
   (rfl)
 
-end TauCeti
+end MulEquiv

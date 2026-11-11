@@ -36,6 +36,8 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 * `MvPolynomial.polynomial_eval_finSuccEquiv'`: evaluating the polynomial variable at `a`
   substitutes `a` for `X p`.
 * `MvPolynomial.finSuccEquiv'_zero`: for `p = 0` this is Mathlib's `MvPolynomial.finSuccEquiv`.
+* `MvPolynomial.degreeOf_eval_C_finSuccEquiv_le`: specializing `X₀ = a` via `finSuccEquiv` bounds
+  the degree in `Xⱼ` by `P.degreeOf j.succ`.
 * `MvPolynomial.finSuccEquiv'_map`, `MvPolynomial.finSuccEquiv_map`: singling out a variable
   commutes with mapping the coefficients along a ring homomorphism.
 * `MvPolynomial.polynomial_eval_map_finSuccEquiv'`, `MvPolynomial.polynomial_eval_map_finSuccEquiv`:
@@ -202,6 +204,14 @@ theorem polynomial_eval_map_finSuccEquiv (φ : R →+* S) (s : Fin n → S) (y :
     polynomial_eval_map_finSuccEquiv' φ 0 s y f
 
 end Map
+
+/-- Specializing `X₀ = a` via `finSuccEquiv` bounds the degree in `Xⱼ` by `P.degreeOf j.succ`. -/
+theorem degreeOf_eval_C_finSuccEquiv_le (a : R) (P : MvPolynomial (Fin (n + 1)) R) (j : Fin n) :
+    ((finSuccEquiv R n P).eval (C a)).degreeOf j ≤ P.degreeOf j.succ := by
+  rw [Polynomial.eval_eq_sum_range]
+  refine (degreeOf_sum_le j _ _).trans (Finset.sup_le fun i _ ↦ ?_)
+  rw [← map_pow]
+  exact (degreeOf_mul_C_le _ j _).trans (degreeOf_coeff_finSuccEquiv P j i)
 
 /-- Rotating the last variable to coordinate zero before singling it out is the same as
 singling out the last variable directly. This identifies the coordinate-zero convention for

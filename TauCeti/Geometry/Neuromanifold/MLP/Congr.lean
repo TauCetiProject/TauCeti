@@ -16,10 +16,11 @@ two networks with the same widths and the same state at a layer have the same st
 layer if their parameters and hidden activations agree between those layers. This comparison
 allows the inputs and the earlier parts of the two networks to differ.
 
-The comparison uses a record update of the activations, keeping the widths and hence the
-parameter spaces unchanged. The affine and bias-free realization comparisons retain the
-linear output-head convention: there is no output activation to compare. The statements include
-zero depth and zero widths.
+Equality of specifications transports parameters and realization by the corresponding finite
+input and output index casts (`realize_cast`, `realizeWeights_cast`). The activation comparison
+uses a record update, keeping the widths and hence the parameter spaces unchanged. The affine
+and bias-free realization comparisons retain the linear output-head convention: there is no output
+activation to compare. The statements include zero depth and zero widths.
 
 The realization convention follows Marchetti–Shahverdi–Mereta–Trager–Kohn,
 *Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,
@@ -32,6 +33,26 @@ public section
 namespace TauCeti.Neuromanifold.MLPSpec
 
 variable {K : Type*} {L : ℕ} [NonUnitalNonAssocSemiring K]
+
+/-- Transporting affine parameters along equality of specifications transports realization
+by the corresponding input and output index casts. -/
+theorem realize_cast {A B : MLPSpec K L} (h : A = B) (θ : A.Parameters)
+    (x : Fin (B.width 0) → K) (j : Fin (B.width (Fin.last L))) :
+    B.realize (cast (congrArg Parameters h) θ) x j =
+      A.realize θ (x ∘ Fin.cast (congrArg (fun C => C.width 0) h))
+        (Fin.cast (congrArg (fun C => C.width (Fin.last L)) h).symm j) := by
+  subst B
+  rfl
+
+/-- Transporting weight-only parameters along equality of specifications transports realization
+by the corresponding input and output index casts. -/
+theorem realizeWeights_cast {A B : MLPSpec K L} (h : A = B) (w : A.Weights)
+    (x : Fin (B.width 0) → K) (j : Fin (B.width (Fin.last L))) :
+    B.realizeWeights (cast (congrArg Weights h) w) x j =
+      A.realizeWeights w (x ∘ Fin.cast (congrArg (fun C => C.width 0) h))
+        (Fin.cast (congrArg (fun C => C.width (Fin.last L)) h).symm j) := by
+  subst B
+  rfl
 
 /-- Agreement of two prefix states propagates through an interval of layers on which the
 parameters and hidden activations agree. Nothing is required of layers outside the interval. -/

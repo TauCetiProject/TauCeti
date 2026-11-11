@@ -436,7 +436,7 @@ theorem IsDemushkin.eq_zero_and_eq_zero_of_range_demushkinCharacter_eq_zpowers_n
   -- Every value of the character is `±1`.
   have hmem : ∀ i, demushkinCharacter hG (e.symm (presentedProPGen 2 n _ i)) = 1 ∨
       demushkinCharacter hG (e.symm (presentedProPGen 2 n _ i)) = -1 := fun i ↦
-    (Subgroup.mem_zpowers_neg_one_iff PadicInt.units_neg_one_ne_one).mp
+    Subgroup.mem_zpowers_neg_one_iff.mp
       (by rw [← hA]; exact ⟨_, rfl⟩)
   refine ⟨?_, ?_⟩
   · rcases hmem 1 with h | h

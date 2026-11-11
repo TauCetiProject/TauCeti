@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Completeness
+public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.Topology.MetricSpace.Contracting
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
 
 /-!
 # Stability of surjectivity under small perturbations
@@ -35,9 +37,14 @@ locus of such maps inside `E →L[𝕜] F`, not of any one of them.
   condition on continuous linear maps.
 * `LinearMap.surjective_add_of_norm_le`: a surjective linear map into a Banach space stays
   surjective under a perturbation bounded by `θ < 1` times the map.
+* `ContinuousLinearMap.surjective_of_norm_sub_lt_inv_rightInverse`: a perturbation smaller than
+  the reciprocal bound of a given bounded nonlinear right inverse stays surjective.
 * `TauCeti.surjective_of_norm_sub_apply_le`: an additive endomorphism of a complete normed
   group (for instance a linear map over any ring) uniformly closer than `1` to the identity is
   surjective.
+* `ContinuousLinearMap.surjective_coprod_toSpanSingleton_iff`: a continuous linear map extended
+  by the line through a vector is surjective exactly when its range and the vector span the
+  target.
 -/
 
 public section
@@ -153,3 +160,45 @@ theorem surjective_of_norm_sub_apply_le {v : F} {c : ℝ} (hc : c < 1)
 end TauCeti
 
 end
+
+public section
+
+namespace ContinuousLinearMap
+
+open Set
+open scoped Topology
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A perturbation smaller than the reciprocal bound of a nonlinear right inverse stays onto.
+No complement to the kernel is needed. -/
+theorem surjective_of_norm_sub_lt_inv_rightInverse [CompleteSpace E]
+    (T S : E →L[𝕜] F) (R : T.NonlinearRightInverse)
+    (h : ‖S - T‖ < (R.nnnorm : ℝ)⁻¹) : Function.Surjective S := by
+  have ha : ApproximatesLinearOn (S : E → F) T univ ‖S - T‖₊ := by
+    intro x _ y _
+    have he : S x - S y - T (x - y) = (S - T) (x - y) := by
+      simp only [map_sub, sub_apply]
+      abel
+    rw [he]
+    exact (S - T).le_opNorm _
+  have hnn : ‖S - T‖₊ < R.nnnorm⁻¹ := by exact_mod_cast h
+  have hopen : IsOpen (Set.range S) := by
+    simpa only [image_univ] using ha.open_image R isOpen_univ (Or.inr hnn)
+  apply LinearMap.range_eq_top.1
+  apply Submodule.eq_top_of_nonempty_interior'
+  rw [LinearMap.coe_range, ContinuousLinearMap.coe_coe, hopen.interior_eq]
+  exact ⟨0, 0, map_zero S⟩
+
+/-- A continuous linear map and a vector together span the target exactly when the map extended
+by the line through the vector is surjective. -/
+theorem surjective_coprod_toSpanSingleton_iff {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace 𝕜 V] (L : V →L[𝕜] F) (v : F) :
+    Function.Surjective (L.coprod (toSpanSingleton 𝕜 v)) ↔
+      LinearMap.range (L : V →ₗ[𝕜] F) ⊔ (𝕜 ∙ v) = ⊤ := by
+  rw [← coe_coe, ← LinearMap.range_eq_top, range_coprod, toLinearMap_toSpanSingleton,
+    LinearMap.range_toSpanSingleton]
+
+end ContinuousLinearMap

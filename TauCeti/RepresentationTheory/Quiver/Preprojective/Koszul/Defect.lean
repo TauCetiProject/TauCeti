@@ -225,6 +225,40 @@ private theorem exists_ne_zero_forall_ofArrow_reverse_mul_eq_zero
       (preprojectiveMk_mem_preprojectiveGrade k Q (ofArrow_mem_grade_one _)) (by omega)] at h0
   exact preprojectiveMk_vertexIdempotent_ne_zero k (Symmetrify.of.obj v) h0
 
+/-- If `y₁` is killed on the right by every arrow, then right multiplication of its cut-down
+`y₁ e_u` by any element of the preprojective algebra stays on the line spanned by `y₁ e_u`: the
+scalar is the coefficient of `e_u`. -/
+private theorem exists_mul_vertexIdempotent_mul_eq_smul {y₁ : Π}
+    (hright : ∀ {i j : Symmetrify Q} (c : i ⟶ j), y₁ * π (ofArrow c) = 0)
+    (u : Symmetrify Q) (r : Π) :
+    ∃ t : k, y₁ * π (vertexIdempotent k u) * r = t • (y₁ * π (vertexIdempotent k u)) := by
+  classical
+  obtain ⟨f, rfl⟩ := preprojectiveMk_surjective k Q r
+  induction f using PathAlgebra.induction_linear with
+  | zero => exact ⟨0, by rw [map_zero, mul_zero, zero_smul]⟩
+  | add f f' hf hf' =>
+    obtain ⟨t, ht⟩ := hf
+    obtain ⟨t', ht'⟩ := hf'
+    exact ⟨t + t', by rw [map_add, mul_add, ht, ht', add_smul]⟩
+  | single x c =>
+    obtain ⟨i, j, p⟩ := x
+    rw [single_eq_smul_ofPath, map_smul, mul_smul_comm]
+    cases p with
+    | nil =>
+      rw [← vertexIdempotent_eq_ofPath, mul_assoc, ← map_mul]
+      by_cases hi : u = i
+      · subst hi
+        exact ⟨c, by rw [vertexIdempotent_mul_self]⟩
+      · exact ⟨0, by rw [vertexIdempotent_mul_vertexIdempotent_of_ne hi, map_zero, mul_zero,
+          smul_zero, zero_smul]⟩
+    | cons p' c' =>
+      refine ⟨0, ?_⟩
+      rw [← ofArrow_mul_ofPath, map_mul, ← mul_assoc, mul_assoc y₁, ← map_mul,
+        vertexIdempotent_mul_ofArrow]
+      split_ifs
+      · rw [hright, zero_mul, smul_zero, zero_smul]
+      · rw [map_zero, mul_zero, zero_mul, smul_zero, zero_smul]
+
 /-- **The left Koszul kernel of a finite-dimensional preprojective algebra is a line.** At every
 vertex `v` there are a degree `n`, a vertex `u` and a nonzero `y ∈ e_v Π_n e_u`, killed by the
 reverse `b*` of every arrow `b` of the doubled quiver into `v`, such that every `z ∈ e_v Π` killed
@@ -281,40 +315,10 @@ theorem exists_mem_preprojectiveCorner_forall_exists_eq_smul [FiniteDimensional 
       (preprojectiveMk_mem_preprojectiveGrade k Q (ofArrow_mem_grade_one c)), hc⟩
     omega
   -- Cut `y₁` down on the right to a vertex `u` where it does not vanish.
-  obtain ⟨u, -, hu⟩ : ∃ u ∈ Finset.univ, y₁ * π (vertexIdempotent k u) ≠ 0 := by
-    by_contra! h
-    refine hy₁0 ?_
-    rw [← mul_one y₁, ← map_one π, one_def, map_sum, Finset.mul_sum]
-    exact Finset.sum_eq_zero h
+  obtain ⟨u, hu⟩ := exists_mul_preprojectiveMk_vertexIdempotent_ne_zero k hy₁0
+  have hline := exists_mul_vertexIdempotent_mul_eq_smul k hright u
   set y := y₁ * π (vertexIdempotent k u) with hy_def
   have hy : K y := hmul hy₁ _
-  -- Right multiplication by `Π` acts on the line `k y` through the coefficient of `e_u`.
-  have hline (r : Π) : ∃ t : k, y * r = t • y := by
-    obtain ⟨f, rfl⟩ := preprojectiveMk_surjective k Q r
-    induction f using PathAlgebra.induction_linear with
-    | zero => exact ⟨0, by rw [map_zero, mul_zero, zero_smul]⟩
-    | add f f' hf hf' =>
-      obtain ⟨t, ht⟩ := hf
-      obtain ⟨t', ht'⟩ := hf'
-      exact ⟨t + t', by rw [map_add, mul_add, ht, ht', add_smul]⟩
-    | single x c =>
-      obtain ⟨i, j, p⟩ := x
-      rw [single_eq_smul_ofPath, map_smul, mul_smul_comm]
-      cases p with
-      | nil =>
-        rw [← vertexIdempotent_eq_ofPath, hy_def, mul_assoc, ← map_mul]
-        by_cases hi : u = i
-        · subst hi
-          exact ⟨c, by rw [vertexIdempotent_mul_self]⟩
-        · exact ⟨0, by rw [vertexIdempotent_mul_vertexIdempotent_of_ne hi, map_zero, mul_zero,
-            smul_zero, zero_smul]⟩
-      | cons p' c' =>
-        refine ⟨0, ?_⟩
-        rw [← ofArrow_mul_ofPath, map_mul, hy_def, ← mul_assoc, mul_assoc y₁, ← map_mul,
-          vertexIdempotent_mul_ofArrow]
-        split_ifs
-        · rw [hright, zero_mul, smul_zero, zero_smul]
-        · rw [map_zero, mul_zero, zero_mul, smul_zero, zero_smul]
   obtain ⟨u, rfl⟩ : ∃ u' : Q, Symmetrify.of.obj u' = u := ⟨u, rfl⟩
   refine ⟨sSup L, u, y, mem_preprojectiveCorner_iff.2 ⟨?_, ?_⟩, hu, hy.2, fun z hz hzb => ?_⟩
   · simpa only [add_zero] using mul_mem_preprojectiveGrade k Q hy₁n (h0 _)

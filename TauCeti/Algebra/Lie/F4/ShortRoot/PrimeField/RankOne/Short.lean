@@ -21,7 +21,7 @@ simply connected group. No finiteness or simplicity assertion is made.
 
 Containment is deduced from the every-field integral rank-one image theorem in
 `TauCeti.Algebra.Lie.F4.ShortRoot.RankOne.Points`, without repeating SL₂ induction.
-The range argument follows `TauCeti.Algebra.Lie.E7.Minuscule.RankOne`.
+The range argument follows `TauCeti.Algebra.Lie.E7.Minuscule.RankOne.Basic`.
 
 ## References
 

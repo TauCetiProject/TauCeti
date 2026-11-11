@@ -329,30 +329,9 @@ private theorem eq_map_const_of_isStrictSegal [X.IsStrictSegal] {n : ℕ}
 are discrete: sending an edge from `x` to `y` to the totally degenerate simplices at the
 corresponding vertex is an isomorphism from the discrete simplicial set on these edges. -/
 instance isIso_constHomEquiv_symm [X.IsStrictSegal] :
-    IsIso ((constHomEquiv (X.Edge x y)).symm (obj₀Equiv (x := x) (y := y)).symm) := by
-  rw [NatTrans.isIso_iff_isIso_app]
-  rintro ⟨⟨n⟩⟩
-  rw [isIso_iff_bijective]
-  -- The comparison sends an edge to the totally degenerate simplex at the corresponding vertex.
-  have happ (e : X.Edge x y) :
-      ((constHomEquiv (X.Edge x y)).symm (obj₀Equiv (x := x) (y := y)).symm).app (op ⦋n⦌) e =
-        (X.rightMappingSpace x y : SSet.{u}).map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op
-          (obj₀Equiv.symm e) := by
-    rw [← constHomEquiv_symm_app_zero (X.Edge x y) obj₀Equiv.symm e]
-    exact (NatTrans.naturality_apply ((constHomEquiv (X.Edge x y)).symm obj₀Equiv.symm)
-      (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op
-      (e : ((Functor.const SimplexCategoryᵒᵖ).obj (X.Edge x y)).obj (op ⦋0⦌)))
-  refine ⟨fun e e' h ↦ ?_, fun s ↦ ⟨obj₀Equiv ((X.rightMappingSpace x y : SSet.{u}).map
-    (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)).op s), ?_⟩⟩
-  · -- The last vertex of the totally degenerate simplex at a vertex is that vertex.
-    have h' := congrArg ((X.rightMappingSpace x y : SSet.{u}).map
-      (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)).op) ((happ e).symm.trans (h.trans (happ e')))
-    simp only [← Functor.map_comp_apply, ← op_comp, Subsingleton.elim
-      (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n) ≫ SimplexCategory.const ⦋n⦌ ⦋0⦌ 0) (𝟙 _),
-      op_id] at h'
-    exact obj₀Equiv.symm.injective (by simpa using h')
-  · rw [happ, Equiv.symm_apply_apply]
-    exact (eq_map_const_of_isStrictSegal s).symm
+    IsIso ((constHomEquiv (X.Edge x y)).symm (obj₀Equiv (x := x) (y := y)).symm) :=
+  SSet.isIso_constHomEquiv_symm obj₀Equiv.symm.bijective fun _ s ↦
+    ⟨_, (eq_map_const_of_isStrictSegal s).symm⟩
 
 variable (x y) in
 /-- The right mapping space `Hom^R_X(x, y)` of a strict Segal simplicial set, such as the nerve of

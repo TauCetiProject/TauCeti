@@ -38,6 +38,12 @@ Between two cores with the same chart domains, a fixed coordinate operator inter
 transition maps is a bundle map with that operator on every fibre (`constHom`), and a fixed
 intertwining coordinate equivalence is an isomorphism (`constIso`).
 
+A map into the total space of `trivial 𝕜 B n` is continuous exactly when its base point and its
+coordinate vector in `Fin n → 𝕜` are (`continuous_trivial_iff`). Hence bundle maps into a trivial
+core are exactly the fibrewise linear maps to `Fin n → 𝕜` that are continuous on the source total
+space: `continuous_fiberMap_trivial` gives one direction, and over a complete scalar field
+`toTrivial` gives the other.
+
 The construction uses Mathlib's vector-bundle cores and preadditive-category interfaces,
 and the coordinate descent and Hom-bundle inversion API in the imported modules.
 -/
@@ -191,6 +197,51 @@ def trivial (n : ℕ) : FiniteRankBundleCore 𝕜 B where
 
 @[simp] theorem coordChange_trivial (n : ℕ) (i j x : B) :
     (trivial 𝕜 B n).core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin n → 𝕜) := (rfl)
+
+section ToTrivial
+
+variable {X : Type*} [TopologicalSpace X] {n : ℕ}
+
+/-- A map into the total space of a trivial core is continuous exactly when its base point and
+its coordinate vector depend continuously on the argument. -/
+theorem continuous_trivial_iff {f : X → (trivial 𝕜 B n).core.TotalSpace} :
+    Continuous f ↔
+      Continuous (fun y ↦ (f y).proj) ∧ Continuous (fun y ↦ ((f y).2 : Fin n → 𝕜)) := by
+  refine ⟨fun h ↦ ⟨(FiberBundle.continuous_proj _ _).comp h,
+    continuous_iff_continuousAt.2 fun y ↦
+      ((FiberBundle.continuousAt_totalSpace _ f).1 h.continuousAt).2⟩, fun h ↦ ?_⟩
+  exact continuous_iff_continuousAt.2 fun y ↦
+    (FiberBundle.continuousAt_totalSpace _ f).2 ⟨h.1.continuousAt, h.2.continuousAt⟩
+
+/-- The coordinate vector of a point of a trivial core depends continuously on the point. -/
+theorem continuous_trivial_snd :
+    Continuous fun p : (trivial 𝕜 B n).core.TotalSpace ↦ (p.2 : Fin n → 𝕜) :=
+  (continuous_trivial_iff.1 continuous_id).2
+
+/-- The fibre maps of a bundle map into a trivial core form a continuous map from the source total
+space to the coordinate space. -/
+theorem continuous_fiberMap_trivial (f : A ⟶ trivial 𝕜 B n) :
+    Continuous fun p : A.core.TotalSpace ↦ (f.fiberMap p.proj p.2 : Fin n → 𝕜) := by
+  have h := f.continuous_totalSpaceMap
+  rw [CoordinateHom.totalSpaceMap_def] at h
+  exact continuous_trivial_snd.comp h
+
+variable [CompleteSpace 𝕜]
+
+/-- A family of linear maps from the fibres of a core to `Fin n → 𝕜` which is continuous on the
+total space is a bundle map into the trivial core of rank `n`. -/
+def toTrivial (f : B → (Fin A.rank → 𝕜) →L[𝕜] (Fin n → 𝕜))
+    (hf : Continuous fun p : A.core.TotalSpace ↦ f p.proj p.2) : A ⟶ trivial 𝕜 B n :=
+  CoordinateHom.ofContinuous f <|
+    (continuous_hom_bundle_iff (E₁ := A.core.Fiber) (E₂ := (trivial 𝕜 B n).core.Fiber) f).2 <|
+      continuous_trivial_iff.2 ⟨A.core.continuous_proj, hf⟩
+
+@[simp] theorem fiberMap_toTrivial (f : B → (Fin A.rank → 𝕜) →L[𝕜] (Fin n → 𝕜))
+    (hf : Continuous fun p : A.core.TotalSpace ↦ f p.proj p.2) (x : B) :
+    (toTrivial f hf).fiberMap x = f x :=
+  congrFun (CoordinateHom.fiberMap_ofContinuous _ _) x
+
+end ToTrivial
 
 /-- A core of rank zero is a zero object: its fibres are zero spaces. -/
 theorem isZero_of_rank_eq_zero (A : FiniteRankBundleCore 𝕜 B) (h : A.rank = 0) : IsZero A where

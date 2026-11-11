@@ -64,16 +64,16 @@ variable [NormedAddCommGroup Y] [NormedSpace ℝ Y] [FiniteDimensional ℝ Y] [M
 
 /-- **Fiber measures of a Lipschitz map are almost everywhere measurable.** Let `f` be Lipschitz
 on `A`, with values in an `m`-dimensional real normed space with additive Haar measure `μ`, and
-let `t ≥ 0`. If `A` contains a σ-compact set `S` with `μH[m + t] (A \ S) = 0`, then
+let `t` be real. If `A` contains a σ-compact set `S` with `μH[m + t] (A \ S) = 0`, then
 `y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere measurable. -/
 theorem LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage {f : X → Y} {A S : Set X}
-    (hf : LipschitzOnWith K f A) (ht : 0 ≤ t) (hSA : S ⊆ A) (hS : IsSigmaCompact S)
+    (hf : LipschitzOnWith K f A) (hSA : S ⊆ A) (hS : IsSigmaCompact S)
     (hAS : μH[finrank ℝ Y + t] (A \ S) = 0) :
     AEMeasurable (fun y ↦ μH[t] (A ∩ f ⁻¹' {y})) μ := by
   refine (hS.measurable_hausdorffMeasure_inter_preimage (hf.continuousOn.mono hSA)
     t).aemeasurable.congr ?_
   -- By Eilenberg's inequality, almost every fiber of the null part `A \ S` is null.
-  filter_upwards [(hf.mono sdiff_subset).ae_hausdorffMeasure_inter_preimage_eq_zero μ ht hAS]
+  filter_upwards [(hf.mono sdiff_subset).ae_hausdorffMeasure_inter_preimage_eq_zero μ hAS]
     with y hy
   exact measure_eq_measure_of_null_sdiff (inter_subset_inter_left _ hSA)
     (by rwa [← inter_sdiff_distrib_right])
@@ -98,8 +98,7 @@ theorem LipschitzOnWith.aemeasurable_euclideanHausdorffMeasure_inter_preimage {E
       euclideanHausdorffMeasure_eq_zero_iff] at h
     exact nonpos_iff_eq_zero.1 ((hausdorffMeasure_mono (by exact_mod_cast hk) _).trans h.le)
   simp only [euclideanHausdorffMeasure_def, _root_.smul_apply]
-  exact (hf.aemeasurable_hausdorffMeasure_inter_preimage μ k.cast_nonneg hSA hS
-    hnull).const_smul _
+  exact (hf.aemeasurable_hausdorffMeasure_inter_preimage μ hSA hS hnull).const_smul _
 
 end Lipschitz
 

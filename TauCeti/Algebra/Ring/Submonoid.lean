@@ -25,5 +25,5 @@ theorem Commute.add_pow_mem_of_mul_pow_mem {R S : Type*} [Semiring R] [SetLike S
     (h : ∀ k ≤ n, a ^ k * b ^ (n - k) ∈ G) : (a + b) ^ n ∈ G := by
   rw [hab.add_pow]
   refine sum_mem fun k hk ↦ ?_
-  simpa only [nsmul_eq_mul, Nat.cast_comm] using
-    nsmul_mem (h k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))) (n.choose k)
+  rw [← nsmul_eq_mul']
+  exact nsmul_mem (h k (Finset.mem_range_succ_iff.mp hk)) _

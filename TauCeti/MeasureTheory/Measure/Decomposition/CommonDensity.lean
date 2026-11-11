@@ -7,11 +7,12 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
-# Densities of finitely many signed differences against a common measure
+# Densities against a common measure, and normalizing a density
 
 Let `λ` be a measure and let `ν₁ i`, `ν₂ i` be finitely many pairs of measures on a σ-compact
 topological space, all finite on compact sets. The sum `ρ = λ + ∑ i, (ν₁ i + ν₂ i)` is finite on
@@ -23,6 +24,12 @@ This is how a vector-valued functional, given componentwise as differences of me
 represented by a single vector-valued density against one measure `ρ` which also dominates a
 prescribed variation measure `λ`. Its pointwise norm is then compared with the density of `λ`
 with respect to `ρ`, as in a polar decomposition.
+
+The file also contains the normalization step of a polar decomposition
+(`MeasureTheory.Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq`): a measurable field `g`
+dominated by the density `dλ/dρ` of `λ ≪ ρ` agrees `ρ`-almost everywhere with
+`(dλ/dρ).toReal • σ`, where `σ` is a measurable field of norm at most one `λ`-almost everywhere.
+This `σ` is the unit field of the polar decomposition.
 
 ## References
 
@@ -75,5 +82,31 @@ theorem exists_common_density_sub {X ι : Type*} [TopologicalSpace X] [SigmaComp
   refine ⟨h₁'.sub h₂', ?_⟩
   rw [integral_sub h₁' h₂', integral_toReal_rnDeriv_mul (hac (Or.inl rfl)),
     integral_toReal_rnDeriv_mul (hac (Or.inr rfl))]
+
+/-- **Normalizing a density.** If a measurable field `g` has pointwise norm at most the density
+`dλ/dρ` of a measure `λ ≪ ρ` (up to a `ρ`-null set), then `g` agrees `ρ`-almost everywhere with
+`(dλ/dρ).toReal • σ` for a measurable field `σ` of norm at most one `λ`-almost everywhere. -/
+theorem exists_norm_le_one_toReal_rnDeriv_smul_eq {X E : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+    [SecondCountableTopology E] {lam ρ : Measure X} [SigmaFinite lam] (hlam : lam ≪ ρ)
+    {g : X → E} (hgm : Measurable g) (hbound : ∀ᵐ x ∂ρ, ‖g x‖ₑ ≤ lam.rnDeriv ρ x) :
+    ∃ σ : X → E, Measurable σ ∧ (∀ᵐ x ∂lam, ‖σ x‖ ≤ 1) ∧
+      ∀ᵐ x ∂ρ, (lam.rnDeriv ρ x).toReal • σ x = g x := by
+  refine ⟨fun x => (lam.rnDeriv ρ x).toReal⁻¹ • g x,
+    ((Measure.measurable_rnDeriv _ _).ennreal_toReal.inv).smul hgm, hlam.ae_le ?_, ?_⟩
+  · filter_upwards [hbound, Measure.rnDeriv_lt_top lam ρ] with x hx hk
+    have hle : ‖g x‖ ≤ (lam.rnDeriv ρ x).toReal := by
+      rwa [← ofReal_norm, ENNReal.ofReal_le_iff_le_toReal hk.ne] at hx
+    rw [norm_smul, norm_inv, Real.norm_of_nonneg ENNReal.toReal_nonneg, inv_mul_eq_div]
+    exact div_le_one_of_le₀ hle ENNReal.toReal_nonneg
+  · filter_upwards [hbound, Measure.rnDeriv_lt_top lam ρ] with x hx hk
+    rcases eq_or_ne (lam.rnDeriv ρ x).toReal 0 with h0 | h0
+    · have : g x = 0 := by
+        rw [ENNReal.toReal_eq_zero_iff] at h0
+        rcases h0 with h0 | h0
+        · simpa [h0] using hx
+        · exact absurd h0 hk.ne
+      simp [h0, this]
+    · rw [smul_inv_smul₀ h0]
 
 end MeasureTheory.Measure

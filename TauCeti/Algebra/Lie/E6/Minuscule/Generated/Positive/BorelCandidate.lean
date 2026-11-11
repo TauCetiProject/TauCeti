@@ -75,7 +75,7 @@ theorem upperTriangular_le_definingIdeal :
     exact isUpperTriangular_rootSubgroupPoints_inl i B (AdditiveGroup.gaPointsMulEquiv q)
   · apply GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker
     intro i j hji
-    rw [generatorCoordinateMap_inr]
+    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, generatorCoordinateMap_inr]
     rw [GeneralLinear.hom_weightTorusBaseChangeCoordinateMap, BialgHom.coe_toAlgHom]
     simpa only [hji.ne', ↓reduceIte] using
       GeneralLinear.weightTorusCoordinateBialgHom_X (S := A) weightTable.weight i j
