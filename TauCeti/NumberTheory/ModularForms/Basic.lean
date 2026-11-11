@@ -73,6 +73,8 @@ AINTLIB `LeanModularForms` project
 * `TauCeti.ModularForm.SL_slash_neg`, `TauCeti.ModularForm.SL_slash_zpow_eq_self_of_slash_eq`:
   for `A ∈ SL(2, ℤ)`, `f ∣[k] (-A) = (-1)^k • f ∣[k] A`, and invariance under `A` passes to
   every integer power of `A`.
+* `TauCeti.ModularForm.SL_slash_S_slash_S`: `(f ∣[k] S) ∣[k] S = (-1)^k • f`, the action of
+  `S² = -I`.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
 * `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
   vanishes when its group has finite-index intersection with the modular group.
@@ -209,6 +211,15 @@ theorem SL_slash_neg (k : ℤ) (f : ℍ → ℂ) (A : SL(2, ℤ)) :
     _root_.ModularForm.slash_neg_one]
   -- Mathlib states the `-I` law with the constant function `(-1) ^ k`; as a scalar it is `•`.
   exact ModularForm.SL_smul_slash k A f ((-1 : ℂ) ^ k)
+
+/-- The inversion `S` of `SL(2, ℤ)` acts twice by `S² = -I`, hence on the weight-`k` slash action
+by the scalar `(-1)^k`. -/
+@[simp]
+theorem SL_slash_S_slash_S (k : ℤ) (f : ℍ → ℂ) :
+    (f ∣[k] ModularGroup.S) ∣[k] ModularGroup.S = (-1 : ℂ) ^ k • f := by
+  have hS : ModularGroup.S * ModularGroup.S = (-1 : SL(2, ℤ)) :=
+    Subtype.ext (by simpa using ModularGroup.S_mul_S_eq)
+  rw [← SlashAction.slash_mul, hS, SL_slash_neg, SlashAction.slash_one]
 
 /-- Invariance under an element of `SL(2, ℤ)` passes to all its integer powers: the
 `SL(2, ℤ)` form of `slash_zpow_eq_self_of_slash_eq`. -/
