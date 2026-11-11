@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
-import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Caratheodory
+import TauCeti.Analysis.ODE.EnergyEstimate.Weighted
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 
 /-!
@@ -23,18 +23,18 @@ weighted spaces through this conjugate, the trajectory operator with coefficient
 `s ↦ A s - w' s • id`.
 
 Its kernel consists of the solutions of `u' + A u = 0` that lie in `L²_w`
-(`TauCeti.squareIntegrableSolutions_sub_smul_id`); these are recorded by
-`TauCeti.weightedSquareIntegrableSolutions A w`. Its limits are `A± - δ±`, so the weights move the
-limiting spectra. For symmetric limits, `D_A` is Fredholm on the weighted spaces exactly when
-neither `δ±` is an eigenvalue of `A±`, and its index is then the number of eigenvalues of `A⁻`
-below `δ⁻` minus the number of eigenvalues of `A⁺` below `δ⁺`, counted with multiplicity. A
-weight can therefore make `D_A` Fredholm when a limit is degenerate, as for Morse–Bott
-trajectories: for `A = 0` and a weight with `δ⁻ < 0 < δ⁺`, the index is `-dim E`.
+(`TauCeti.squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutions`); these are
+recorded by `TauCeti.weightedSquareIntegrableSolutions A w`. Its limits are `A± - δ±`, so the
+weights move the limiting spectra. For symmetric limits, `D_A` is Fredholm on the weighted spaces
+exactly when neither `δ±` is an eigenvalue of `A±`, and its index is then the number of
+eigenvalues of `A⁻` below `δ⁻` minus the number of eigenvalues of `A⁺` below `δ⁺`, counted with
+multiplicity. A weight can therefore make `D_A` Fredholm when a limit is degenerate, as for
+Morse–Bott trajectories: for `A = 0` and a weight with `δ⁻ < 0 < δ⁺`, the index is `-dim E`.
 
 When the weight is bounded below and the limits keep Lyapunov forms along `A± - t δ±` for
-`t ∈ [0, 1]`, the index does not change, and comparing kernels and cokernels shows that every
-square-integrable solution of `u' + A u = 0` already lies in `L²_w`
-(`TauCeti.weightedSquareIntegrableSolutions_eq_squareIntegrableSolutions`). For symmetric limits
+`t ∈ [0, 1]`, every square-integrable solution of `u' + A u = 0` already lies in `L²_w`
+(`TauCeti.weightedSquareIntegrableSolutions_eq_squareIntegrableSolutions`); this restates
+`TauCeti.squareIntegrableSolutions_sub_smul_id` in terms of weighted solutions. For symmetric limits
 with spectral gap `α` this says that square-integrable solutions decay exponentially at every rate
 `δ < α`: `e^{δ |s|} u ∈ L²` (`TauCeti.memLp_exp_mul_abs_smul_of_hasDerivAt`).
 
@@ -42,8 +42,9 @@ with spectral gap `α` this says that square-integrable solutions decay exponent
 
 * `TauCeti.weightedSquareIntegrableSolutions A w`: the initial values of the solutions of
   `u' + A u = 0` with `e^w u` square integrable.
-* `TauCeti.squareIntegrableSolutions_sub_smul_id`: multiplication by `e^w` identifies them with the
-  square-integrable solutions of `v' + (A - w') v = 0`.
+* `TauCeti.squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutions`:
+  multiplication by `e^w` identifies them with the square-integrable solutions of
+  `v' + (A - w') v = 0`.
 * `TauCeti.weightedSquareIntegrableSolutions_le_of_le_add`: a larger weight gives fewer
   solutions.
 * `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator_sub_smul_id`: the kernel of the weighted
@@ -90,7 +91,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {A : ℝ → F �
 /-- The initial values at time `0` of the solutions `u : ℝ → F` of `u' + A(s) u = 0` on the whole
 line for which `e^{w(s)} u(s)` is square integrable. For a weight `w` with derivative `w'`, this is
 a model of the kernel of the trajectory operator `D_A` on `e^w`-weighted spaces
-(`TauCeti.squareIntegrableSolutions_sub_smul_id`). -/
+(`TauCeti.squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutions`). -/
 def weightedSquareIntegrableSolutions (A : ℝ → F →L[ℝ] F) (w : ℝ → ℝ) : Submodule ℝ F where
   carrier := {x | ∃ u : ℝ → F, u 0 = x ∧ (∀ s, HasDerivAt u (-A s (u s)) s) ∧
     MemLp (fun s ↦ exp (w s) • u s) 2}
@@ -155,22 +156,13 @@ theorem squareIntegrableSolutions_le_weightedSquareIntegrableSolutions {w : ℝ 
   exact weightedSquareIntegrableSolutions_le_of_le_add hwm (C := c)
     fun s ↦ by simpa using hc (mem_range_self s)
 
-/-- Multiplying a solution of `u' = -B u` by `e^c` gives a solution of `v' = -(B - c') v`. -/
-private theorem hasDerivAt_exp_smul {B : ℝ → F →L[ℝ] F} {c c' : ℝ → ℝ} {u : ℝ → F}
-    (hc : ∀ s, HasDerivAt c (c' s) s) (hu : ∀ s, HasDerivAt u (-B s (u s)) s) (s : ℝ) :
-    HasDerivAt (fun s ↦ exp (c s) • u s)
-      (-(B s - c' s • ContinuousLinearMap.id ℝ F) (exp (c s) • u s)) s := by
-  convert (hc s).exp.smul (hu s) using 1
-  simp only [sub_apply, smul_apply, ContinuousLinearMap.id_apply, map_smul, smul_neg]
-  module
-
 /-- **Weighted solutions are solutions of the conjugate equation.** For a weight `w` with
 derivative `w'`, multiplication by `e^w` carries the solutions `u` of `u' + A u = 0` with `e^w u`
 square integrable onto the square-integrable solutions of `v' + (A - w') v = 0`. So the kernel of
 the trajectory operator with coefficient `A - w'`, which is `D_A` conjugated from the
 `e^w`-weighted spaces, consists of the weighted solutions of `u' + A u = 0`. -/
-theorem squareIntegrableSolutions_sub_smul_id {w w' : ℝ → ℝ}
-    (hw : ∀ s, HasDerivAt w (w' s) s) :
+theorem squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutions
+    {w w' : ℝ → ℝ} (hw : ∀ s, HasDerivAt w (w' s) s) :
     squareIntegrableSolutions (fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) =
       weightedSquareIntegrableSolutions A w := by
   ext x
@@ -178,7 +170,7 @@ theorem squareIntegrableSolutions_sub_smul_id {w w' : ℝ → ℝ}
   · intro hx
     obtain ⟨v, rfl, hv, hv2⟩ := mem_squareIntegrableSolutions.1 hx
     have hu (s : ℝ) : HasDerivAt (fun s ↦ exp (-w s) • v s) (-A s (exp (-w s) • v s)) s := by
-      convert hasDerivAt_exp_smul (fun s ↦ (hw s).neg) hv s using 3
+      convert hasDerivAt_exp_smul_sub_smul_id (hw s).neg (hv s) using 3
       ext y
       simp
     have hx : exp (-w 0) • v 0 ∈ weightedSquareIntegrableSolutions A w :=
@@ -188,7 +180,8 @@ theorem squareIntegrableSolutions_sub_smul_id {w w' : ℝ → ℝ}
   · rintro ⟨u, rfl, hu, hu2⟩
     have hx : exp (w 0) • u 0 ∈
         squareIntegrableSolutions (fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) :=
-      mem_squareIntegrableSolutions.2 ⟨_, rfl, hasDerivAt_exp_smul hw hu, hu2⟩
+      mem_squareIntegrableSolutions.2
+        ⟨_, rfl, fun s ↦ hasDerivAt_exp_smul_sub_smul_id (hw s) (hu s), hu2⟩
     simpa [smul_smul, ← exp_add] using (squareIntegrableSolutions _).smul_mem (exp (-w 0)) hx
 
 end Solutions
@@ -216,7 +209,8 @@ theorem finrank_ker_trajectoryOperator_sub_smul_id (hA : Continuous A)
       Module.finrank ℝ (weightedSquareIntegrableSolutions A w) := by
   have hB : Continuous fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F :=
     hA.sub (hw'.smul continuous_const)
-  rw [finrank_ker_trajectoryOperator hB AL hAL, squareIntegrableSolutions_sub_smul_id hw]
+  rw [finrank_ker_trajectoryOperator hB AL hAL,
+    squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutions hw]
 
 end Kernel
 
@@ -400,13 +394,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 of operators on a finite-dimensional real inner product space with limits `A±`, and `w` a weight
 bounded below whose continuous derivative `w'` tends to `δ±` at `±∞`. If `A± - t δ±` has a
 Lyapunov form for every `t ∈ [0, 1]`, then every square-integrable solution `u` of
-`u' + A u = 0` has `e^w u` square integrable.
-
-The trajectory operators conjugated from the weighted and the unweighted spaces have the same
-index, since the limits stay hyperbolic along the deformation. The weighted solutions of
-`u' + A u = 0` are among the square-integrable ones, while for the adjoint equation, with the
-weight `-w` bounded above, the inclusion goes the other way. Equality of the indices forces both
-inclusions to be equalities. -/
+`u' + A u = 0` has `e^w u` square integrable. This is
+`TauCeti.squareIntegrableSolutions_sub_smul_id` transported along the conjugation by `e^w`. -/
 theorem weightedSquareIntegrableSolutions_eq_squareIntegrableSolutions (hA : Continuous A)
     (hw : ∀ s, HasDerivAt w (w' s) s) (hw' : Continuous w') (hwb : BddBelow (range w))
     {Aminus Aplus : E →L[ℝ] E} {δminus δplus : ℝ}
@@ -417,61 +406,8 @@ theorem weightedSquareIntegrableSolutions_eq_squareIntegrableSolutions (hA : Con
     (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
     (hw'bot : Tendsto w' atBot (𝓝 δminus)) (hw'top : Tendsto w' atTop (𝓝 δplus)) :
     weightedSquareIntegrableSolutions A w = squareIntegrableSolutions A := by
-  set B : ℝ → E →L[ℝ] E := fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ E with hBdef
-  have hB : Continuous B := hA.sub (hw'.smul continuous_const)
-  have hBbot := hbot.sub (hw'bot.smul_const (ContinuousLinearMap.id ℝ E))
-  have hBtop := htop.sub (hw'top.smul_const (ContinuousLinearMap.id ℝ E))
-  -- `L∞` classes of the two continuous families with limits.
-  have hclass (C : ℝ → E →L[ℝ] E) (hC : Continuous C) {Cm Cp : E →L[ℝ] E}
-      (hCb : Tendsto C atBot (𝓝 Cm)) (hCt : Tendsto C atTop (𝓝 Cp)) :
-      ∃ CL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
-        CL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] C := by
-    obtain ⟨M, hM⟩ := exists_forall_norm_le_of_tendsto hC hCb hCt
-    have hmem : MemLp C ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
-      memLp_top_of_bound hC.aestronglyMeasurable M (.of_forall hM)
-    exact ⟨hmem.toLp C, hmem.coeFn_toLp⟩
-  obtain ⟨AL, hAL⟩ := hclass A hA hbot htop
-  obtain ⟨BL, hBL⟩ := hclass B hB hBbot hBtop
-  have hAL' : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ A s - (fun _ ↦ (0 : ℝ)) s • ContinuousLinearMap.id ℝ E := by
-    simpa using hAL
-  have h0 : ∀ s, HasDerivAt (0 : ℝ → ℝ) ((fun _ ↦ (0 : ℝ)) s) s := fun s ↦ hasDerivAt_const s 0
-  have hAm := hminus 0 (left_mem_Icc.2 zero_le_one)
-  have hAp := hplus 0 (left_mem_Icc.2 zero_le_one)
-  have hBm := hminus 1 (right_mem_Icc.2 zero_le_one)
-  have hBp := hplus 1 (right_mem_Icc.2 zero_le_one)
-  simp only [zero_mul, one_mul] at hAm hAp hBm hBp
-  -- The two indices agree along the deformation `A - t w'`.
-  have hdeform (T : E →L[ℝ] E) (δ t : ℝ) :
-      (1 - t) • T + t • (T - δ • ContinuousLinearMap.id ℝ E) =
-        T - (t * δ) • ContinuousLinearMap.id ℝ E := by
-    ext v
-    simp only [add_apply, smul_apply, sub_apply, ContinuousLinearMap.id_apply, mul_smul]
-    module
-  have hindex := index_trajectoryOperator_eq_of_forall_hasLyapunovForm hA hB hbot htop hBbot hBtop
-    AL BL hAL hBL (fun t ht ↦ by simpa only [hdeform] using hminus t ht)
-    (fun t ht ↦ by simpa only [hdeform] using hplus t ht)
-  rw [index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank (δminus := 0) (δplus := 0) hA h0
-      continuous_const (by simpa using hAm) (by simpa using hAp) hbot htop tendsto_const_nhds
-      tendsto_const_nhds AL hAL',
-    index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank hA hw hw' hBm hBp hbot htop hw'bot
-      hw'top BL hBL] at hindex
-  -- Compare the solution spaces of the equation and of its adjoint.
-  have hwm : Measurable w := (continuous_iff_continuousAt.2 fun s ↦ (hw s).continuousAt).measurable
-  have hle := weightedSquareIntegrableSolutions_le_squareIntegrableSolutions (A := A) hwb
-  have hle' := squareIntegrableSolutions_le_weightedSquareIntegrableSolutions
-    (A := fun s ↦ -ContinuousLinearMap.adjoint (A s)) hwm.neg
-    (by
-      obtain ⟨c, hc⟩ := hwb
-      refine ⟨-c, ?_⟩
-      rintro _ ⟨s, rfl⟩
-      simpa using hc (mem_range_self s))
-  rw [neg_zero, weightedSquareIntegrableSolutions_zero, weightedSquareIntegrableSolutions_zero]
-    at hindex
-  have h₁ := Submodule.finrank_mono hle
-  have h₂ := Submodule.finrank_mono hle'
-  refine Submodule.eq_of_le_of_finrank_eq hle ?_
-  omega
+  rw [← squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutions hw]
+  exact squareIntegrableSolutions_sub_smul_id hA hbot htop hw hw' hwb hw'bot hw'top hminus hplus
 
 /-- **Exponential decay below the spectral gap.** Let `A` be a continuous family of operators on a
 finite-dimensional real inner product space whose limits `A±` are symmetric with `α ‖v‖ ≤ ‖A± v‖`.
@@ -485,22 +421,16 @@ theorem memLp_exp_mul_abs_smul_of_hasDerivAt (hA : Continuous A) {Aminus Aplus :
     (hu2 : MemLp u 2) :
     MemLp (fun s ↦ exp (δ * |s|) • u s) 2 := by
   -- The weight `δ log cosh s`, with derivative `δ tanh s` tending to `∓δ`.
-  have hw (s : ℝ) : HasDerivAt (fun s ↦ δ * log (cosh s)) (δ * tanh s) s := by
-    convert ((hasDerivAt_cosh s).log (cosh_pos s).ne').const_mul δ using 2
-    rw [tanh_eq_sinh_div_cosh]
+  have hw (s : ℝ) : HasDerivAt (fun s ↦ δ * log (cosh s)) (δ * tanh s) s :=
+    (hasDerivAt_log_cosh s).const_mul δ
   have hwb : BddBelow (range fun s ↦ δ * log (cosh s)) :=
     ⟨0, by
       rintro _ ⟨s, rfl⟩
       exact mul_nonneg hδ0 (log_nonneg (one_le_cosh s))⟩
   -- Shifting a symmetric limit by at most `δ` keeps a Lyapunov form.
   have hlyap (T : E →L[ℝ] E) (hT : (T : E →ₗ[ℝ] E).IsSymmetric) (hgap : ∀ v, α * ‖v‖ ≤ ‖T v‖)
-      (c : ℝ) (hc : |c| ≤ δ) : (T - c • ContinuousLinearMap.id ℝ E).HasLyapunovForm := by
-    refine ContinuousLinearMap.hasLyapunovForm_of_isSymmetric (isSymmetric_sub_smul_id hT c)
-      (sub_pos.2 hδ) fun v ↦ ?_
-    have h := norm_sub_norm_le (T v) (c • v)
-    rw [norm_smul, Real.norm_eq_abs] at h
-    simp only [sub_apply, smul_apply, ContinuousLinearMap.id_apply]
-    nlinarith [hgap v, mul_le_mul_of_nonneg_right hc (norm_nonneg v)]
+      (c : ℝ) (hc : |c| ≤ δ) : (T - c • ContinuousLinearMap.id ℝ E).HasLyapunovForm :=
+    ContinuousLinearMap.hasLyapunovForm_sub_smul_id_of_isSymmetric hT hgap (hc.trans_lt hδ)
   have hmem : u 0 ∈ weightedSquareIntegrableSolutions A fun s ↦ δ * log (cosh s) := by
     rw [weightedSquareIntegrableSolutions_eq_squareIntegrableSolutions hA hw
       (continuous_const.mul continuous_tanh) hwb
@@ -514,13 +444,9 @@ theorem memLp_exp_mul_abs_smul_of_hasDerivAt (hA : Continuous A) {Aminus Aplus :
       hbot htop (by simpa using tendsto_tanh_atBot.const_mul δ)
       (by simpa using tendsto_tanh_atTop.const_mul δ)]
     exact mem_squareIntegrableSolutions.2 ⟨u, rfl, hu, hu2⟩
-  -- `δ |s| ≤ δ log cosh s + δ log 2`, since `exp |s| ≤ 2 cosh s`.
+  -- `δ |s| ≤ δ log cosh s + δ log 2`, since `|s| - log 2 ≤ log cosh s`.
   have hcmp : ∀ s, δ * |s| ≤ δ * log (cosh s) + δ * log 2 := fun s ↦ by
-    rw [← mul_add, ← log_mul (cosh_pos s).ne' two_ne_zero]
-    refine mul_le_mul_of_nonneg_left ?_ hδ0
-    rw [le_log_iff_exp_le (by positivity), cosh_eq]
-    rcases abs_cases s with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h] <;>
-      nlinarith [exp_pos s, exp_pos (-s)]
+    nlinarith [mul_le_mul_of_nonneg_left (abs_sub_log_two_le_log_cosh s) hδ0]
   obtain ⟨v, hv0, hv, hv2⟩ := weightedSquareIntegrableSolutions_le_of_le_add
     (measurable_const.mul continuous_abs.measurable) hcmp hmem
   have hcont : Continuous fun s ↦ -A s := hA.neg
