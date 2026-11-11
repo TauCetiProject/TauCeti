@@ -41,14 +41,17 @@ section UnitSummand
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [HasZeroMorphisms C]
   [RightRigidCategory C] [Simple (𝟙_ C)]
 
+/-- The right dual of the representative of the unit class is isomorphic to the tensor unit. -/
+def unitReprDualIso : (SimpleClasses.classOf (𝟙_ C)).reprᘁ ≅ 𝟙_ C :=
+  rightDualIso (RightRigidCategory.rightDual _).exact
+    (exactPairingCongrLeft (Y := 𝟙_ C) (SimpleClasses.classOfReprIso (𝟙_ C)))
+
 /-- The summand indexed by the class of the tensor unit is canonically isomorphic to `X`.
 The dual of the chosen representative is identified with the unit by uniqueness of right duals. -/
 def inductionUnitSummandIso (X : C) :
     (SimpleClasses.classOf (𝟙_ C)).repr ⊗ X ⊗ (SimpleClasses.classOf (𝟙_ C)).reprᘁ ≅ X :=
-  let e := SimpleClasses.classOfReprIso (𝟙_ C)
-  let d := rightDualIso (RightRigidCategory.rightDual _).exact
-    (@exactPairingCongrLeft C _ _ _ _ _ exactPairingUnit e)
-  tensorIso e (tensorIso (Iso.refl X) d) ≪≫ (λ_ _) ≪≫ (ρ_ X)
+  tensorIso (SimpleClasses.classOfReprIso (𝟙_ C)) (tensorIso (Iso.refl X) unitReprDualIso) ≪≫
+    (λ_ _) ≪≫ (ρ_ X)
 
 /-- The unit-summand identification uses the representative's isomorphism to the unit,
 uniqueness of its right dual, and the two unitors. -/
@@ -56,9 +59,7 @@ theorem inductionUnitSummandIso_hom (X : C) :
     (inductionUnitSummandIso X).hom =
       (SimpleClasses.classOfReprIso (𝟙_ C)).hom ▷
           (X ⊗ (SimpleClasses.classOf (𝟙_ C)).reprᘁ) ≫
-        (𝟙_ C) ◁ X ◁ (rightDualIso (RightRigidCategory.rightDual _).exact
-          (@exactPairingCongrLeft C _ _ _ _ _ exactPairingUnit
-            (SimpleClasses.classOfReprIso (𝟙_ C)))).hom ≫
+        (𝟙_ C) ◁ X ◁ (unitReprDualIso (C := C)).hom ≫
         (λ_ (X ⊗ 𝟙_ C)).hom ≫ (ρ_ X).hom := by
   simp [inductionUnitSummandIso, tensorHom_def]
 
@@ -103,10 +104,6 @@ instance induction_faithful : (induction k C).Faithful where
     have h' : inductionMap f = inductionMap g := by
       simpa only [induction_map_f, induction_obj, inductionCenterObj_fst] using
         congrArg (fun t ↦ t.f) h
-    have := congrArg (fun t ↦ (inductionUnitSummandIso X).inv ≫
-      biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) ≫ t ≫
-      biproduct.π (inductionSummand Y) (SimpleClasses.classOf (𝟙_ C)) ≫
-      (inductionUnitSummandIso Y).hom) h'
-    simpa only [inductionMap_unit_component] using this
+    rw [← inductionMap_unit_component f, h', inductionMap_unit_component]
 
 end CategoryTheory.Center
