@@ -213,7 +213,7 @@ theorem complexProjectiveBadRankLocus_subset (d : ι → ℕ) :
 /-- A pair `(c, [v])` lies in the bad-rank locus exactly when every equation `c i` vanishes at
 `v` and the cone Jacobian of the equations at `v` is not surjective, for any representative
 `v`. -/
-theorem mk_mem_complexProjectiveBadRankLocus_iff [Finite ι]
+theorem mk_mem_complexProjectiveBadRankLocus_iff
     (c : ∀ i, homogeneousSubmodule (Fin N) ℂ (d i)) (v : Fin N → ℂ) (hv : v ≠ 0) :
     (c, Projectivization.mk ℂ v hv) ∈ complexProjectiveBadRankLocus N d ↔
       (∀ i, eval v (c i : MvPolynomial (Fin N) ℂ) = 0) ∧
