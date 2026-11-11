@@ -81,7 +81,7 @@ variable {S : Type u} [CommRing S] {w : S}
 
 /-- Every map between the cokernels of the reductions of two matrix factorizations is induced by
 a morphism of matrix factorizations. -/
-private theorem exists_cokernelFunctor_map_eq (hw : w ∈ nonZeroDivisors S)
+theorem exists_cokernelFunctor_map_eq (hw : w ∈ nonZeroDivisors S)
     {X Y : MatrixFactorization S w}
     (φ : cokernelFunctor.obj ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X) ⟶
       cokernelFunctor.obj ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y)) :
@@ -194,7 +194,7 @@ private theorem exists_sub_mem_range_d₀_and_comp_d₀_mem_range_smul
 
 /-- If the cokernel of the reduction of `g` factors through a projective `S/(w)`-module, then `g`
 is null-homotopic. -/
-private theorem mem_nullHomotopic_of_cokernelFunctor_map_eq_comp (hw : w ∈ nonZeroDivisors S)
+theorem mem_nullHomotopic_of_cokernelFunctor_map_eq_comp (hw : w ∈ nonZeroDivisors S)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) {Q : ModuleCat.{u} (S ⧸ Ideal.span {w})}
     [Projective Q]
     (i : (cokernelFunctor.obj
