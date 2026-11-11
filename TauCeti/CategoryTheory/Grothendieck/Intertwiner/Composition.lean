@@ -1,5 +1,5 @@
 /-
-Copyright (c) 2026 Mei contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Codex
 -/
@@ -24,7 +24,7 @@ pushforward and reindexed limit maps.
 Adapted from `Mei/CategoryTheory/Grothendieck/Intertwiner/Composition.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
-Original copyright and author credit are retained.
+Original author credit is retained; the file uses the required Tau Ceti copyright header.
 -/
 
 public section
