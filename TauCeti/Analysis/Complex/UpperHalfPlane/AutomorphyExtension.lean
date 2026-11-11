@@ -142,17 +142,22 @@ theorem automorphyExtension_smul {g : SL(2, ℝ)} (hg : g ∈ Γ') (τ : ℍ) :
     rw [automorphyExtension_of_notMem hgτ, automorphyExtension_of_notMem
       (mem_smul_set_iff_exists_smul_mem.not.mpr hτ), mul_zero]
 
+omit hf in
 /-- **Uniqueness of the extension on the saturation.** A function satisfying the weight-`k`
 transformation law for every element of `Γ'` and agreeing with `f` on `U` agrees with the
-extension on the saturation `Γ' • U`. -/
+extension on the saturation `Γ' • U`. The compatibility of `f` follows from these hypotheses. -/
 theorem eqOn_automorphyExtension {F : ℍ → ℂ} (hF : ∀ g ∈ Γ', ∀ τ : ℍ,
     F (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * F τ) (hFU : EqOn F f U) :
     EqOn F (automorphyExtension Γ' U k f) ((Γ' : Set SL(2, ℝ)) • U) := by
   intro τ hτ
   obtain ⟨g, hg, hgτ⟩ := mem_smul_set_iff_exists_smul_mem.mp hτ
+  have hf : ∀ g ∈ Γ', ∀ τ ∈ U, g • τ ∈ U →
+      f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ :=
+    fun g hg τ hτ hgτ ↦ by rw [← hFU hgτ, ← hFU hτ, hF g hg τ]
   rw [automorphyExtension_eq hf hg hgτ, ← hFU hgτ, hF g hg τ, ← mul_assoc,
     zpow_neg_mul_zpow_self k (denom_ne_zero _ _), one_mul]
 
+omit hf in
 /-- **Uniqueness of the extension.** A function satisfying the weight-`k` transformation law for
 every element of `Γ'`, agreeing with `f` on `U` and vanishing off the saturation `Γ' • U` is the
 extension. -/
@@ -162,7 +167,7 @@ theorem eq_automorphyExtension {F : ℍ → ℂ} (hF : ∀ g ∈ Γ', ∀ τ : �
     F = automorphyExtension Γ' U k f := by
   ext τ
   by_cases hτ : τ ∈ (Γ' : Set SL(2, ℝ)) • U
-  · exact eqOn_automorphyExtension hf hF hFU hτ
+  · exact eqOn_automorphyExtension hF hFU hτ
   · rw [hF0 τ hτ, automorphyExtension_of_notMem hτ]
 
 /-- **The extension is holomorphic on the saturation.** If `U` is open and `f` is holomorphic on
