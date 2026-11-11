@@ -887,26 +887,6 @@ open StrandDiagram StrandGradingGroup
 variable {R : Type*} [CommSemiring R]
 variable {α β : Type*} [LinearOrder α] [Fintype α] [LinearOrder β] [Fintype β]
 
-/-- A linear isomorphism of strands algebras given on basis elements by a bijection of diagrams
-which transforms gradings by an injective map `F` carries the part of grading `g` onto the part of
-grading `F g`. -/
-private theorem mem_gradedPart_iff_of_basis (L : StrandsAlgebra R α ≃ₗ[R] StrandsAlgebra R β)
-    (E : StrandDiagram α ≃ StrandDiagram β) {F : StrandGradingGroup α → StrandGradingGroup β}
-    (hF : F.Injective) (hL : ∀ φ, L (of φ) = of (E φ)) (hE : ∀ φ, (E φ).grading = F φ.grading)
-    {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :
-    L x ∈ gradedPart R (F g) ↔ x ∈ gradedPart R g := by
-  have himage : E '' {φ | φ.grading = g} = {ψ | ψ.grading = F g} := by
-    rw [E.image_eq_preimage_symm]
-    ext ψ
-    simp only [Set.mem_preimage, Set.mem_ofPred_eq]
-    rw [← hF.eq_iff, ← hE, Equiv.apply_symm_apply]
-  have hmap : (gradedPart R g).map (L : StrandsAlgebra R α →ₗ[R] StrandsAlgebra R β) =
-      gradedPart R (F g) := by
-    rw [gradedPart_eq_span, gradedPart_eq_span, Submodule.map_span, Set.image_image]
-    simp only [LinearEquiv.coe_coe, hL]
-    rw [← Set.image_image of E, himage]
-  rw [← hmap, Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply]
-
 /-- Relabelling along an order isomorphism `e` carries the part of grading `g` onto the part of
 grading `StrandGradingGroup.map e g`. -/
 @[simp]
