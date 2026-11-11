@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Basic
+public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import Mathlib.GroupTheory.Commutator.Basic
+public import Mathlib.GroupTheory.Subgroup.Centralizer
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.Data.ZMod.Defs
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 import Mathlib.Data.ZMod.Basic
+import TauCeti.GroupTheory.FreeGroup.Centralizer
 import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Logic.Equiv.Set
 import Mathlib.Order.Concept
@@ -75,6 +79,14 @@ normal closure of `x ^ n` when `n ≠ 1`.
   unique roots and injective coefficients, the radical of the one-variable equation
   `x ^ n * b ^ n` (`n ≠ 0`) is the normal closure of `x * b`. For `n ≠ 1`, the element `x * b`
   does not lie in the normal closure of `x ^ n * d`, whatever the coefficients `b` and `d`.
+* `TauCeti.GroupAlgGeom.Rad_pow_eq_I_univ`, `TauCeti.GroupAlgGeom.inr_of_mem_Rad_pow_iff`: over a
+  group `H` all of whose elements have `n`-th power `1`, every point solves `x ^ n = 1` and its
+  radical is the ideal of all points; in general `x` lies in the radical of `x ^ n` exactly when
+  `H` has no nonidentity element of `n`-th power `1`.
+* `TauCeti.GroupAlgGeom.V_image_commutatorElement`,
+  `TauCeti.GroupAlgGeom.V_singleton_commutatorElement_of`: centralizers of sets of coefficients
+  are algebraic, cut out by the commutator equations `[x, m] = 1`; over a free group, the
+  solutions of `[x, a] = 1` for a free generator `a` are the powers of `a`.
 
 ## References
 
@@ -791,6 +803,40 @@ theorem rad_sq :
   ⟨Rad_pow_eq_normalClosure Function.injective_id two_ne_zero,
     normalClosure_pow_ne_normalClosure (by decide) ()⟩
 
+end Pow
+
+/-! ### Equations of exponent type over a group with torsion -/
+
+section Torsion
+
+open FreeGroup
+
+/-- The solutions of the equation `x ^ n = 1` in the variable `x` are the points whose
+`x`-coordinate has `n`-th power `1`. -/
+theorem V_singleton_inr_of_pow (x : X) (n : ℕ) :
+    V ι {(inr (of x) : GX G X) ^ n} = {v | v x ^ n = 1} := by
+  ext
+  simp
+
+/-- Every point solves `x ^ n = 1` exactly when every element of `H` has `n`-th power `1`. -/
+theorem V_singleton_inr_of_pow_eq_univ_iff (x : X) {n : ℕ} :
+    V ι {(inr (of x) : GX G X) ^ n} = Set.univ ↔ ∀ h : H, h ^ n = 1 := by
+  rw [V_singleton_inr_of_pow, Set.eq_univ_iff_forall]
+  exact ⟨fun hV h => hV fun _ => h, fun hH v => hH (v x)⟩
+
+/-- Over a group `H` all of whose elements have `n`-th power `1`, the radical of `x ^ n = 1` is
+the ideal of all points: the equation carries no information. -/
+theorem Rad_pow_eq_I_univ {n : ℕ} (hH : ∀ h : H, h ^ n = 1) (x : X) :
+    Rad ι {(inr (of x) : GX G X) ^ n} = I ι Set.univ := by
+  rw [Rad_def, (V_singleton_inr_of_pow_eq_univ_iff x).2 hH]
+
+/-- The variable `x` lies in the radical of `x ^ n = 1` over `H` exactly when `H` has no
+nonidentity element of `n`-th power `1`. -/
+theorem inr_of_mem_Rad_pow_iff (x : X) {n : ℕ} :
+    (inr (of x) : GX G X) ∈ Rad ι {(inr (of x) : GX G X) ^ n} ↔ ∀ h : H, h ^ n = 1 → h = 1 := by
+  simp only [mem_Rad, V_singleton_inr_of_pow, Set.mem_ofPred_eq, eval_inr_of]
+  exact ⟨fun hV h hn => hV (fun _ => h) hn, fun hH v hn => hH (v x) hn⟩
+
 /-- The radical depends on the group in which solutions are taken: over `G = F(a, b)`, the
 variable `x` lies in the radical of `x²` over `G`, but not over `G × ℤ/2`, where `(1, 1)` is a
 nontrivial solution of `x² = 1`. -/
@@ -800,14 +846,56 @@ theorem rad_sq_prod_zmod_two :
       (inr (of ()) : GX (FreeGroup (Fin 2)) Unit) ∉
         Rad (.inl (FreeGroup (Fin 2)) (Multiplicative (ZMod 2))) {inr (of ()) ^ 2} := by
   refine ⟨rad_sq.1 ▸ subset_normalClosure rfl, fun h => ?_⟩
-  have hv : (fun _ => (1, .ofAdd 1)) ∈
-      V (.inl (FreeGroup (Fin 2)) (Multiplicative (ZMod 2))) {inr (of ()) ^ 2} := by
-    simp only [mem_V, Set.mem_singleton_iff, forall_eq, map_pow, eval_inr, lift_apply_of,
-      Prod.pow_mk, one_pow, Prod.mk_eq_one, true_and]
-    decide
-  have := mem_Rad.1 h _ hv
-  simp [Prod.ext_iff] at this
+  have := (inr_of_mem_Rad_pow_iff ()).1 h (1, .ofAdd 1) (by decide)
+  exact absurd this (by decide)
 
-end Pow
+/-- Over `G = ℤ/2` with one variable `x`, every point solves `x² = 1`, so the radical of `x²` is
+the ideal of all points. -/
+theorem Rad_sq_zmod_two :
+    Rad (.id (Multiplicative (ZMod 2))) {(inr (of ()) : GX (Multiplicative (ZMod 2)) Unit) ^ 2} =
+      I (.id (Multiplicative (ZMod 2))) Set.univ :=
+  Rad_pow_eq_I_univ (by decide) ()
+
+/-- Over `G = ℤ/2` with one variable `x`, the radical of `x²` is not the normal closure of `x`,
+in contrast with the torsion-free case. -/
+theorem Rad_sq_zmod_two_ne_normalClosure :
+    Rad (.id (Multiplicative (ZMod 2))) {(inr (of ()) : GX (Multiplicative (ZMod 2)) Unit) ^ 2} ≠
+      normalClosure {inr (of ())} := fun h =>
+  absurd ((inr_of_mem_Rad_pow_iff ()).1 (h ▸ subset_normalClosure rfl) (.ofAdd 1) (by decide))
+    (by decide)
+
+end Torsion
+
+/-! ### Centralizers as algebraic sets -/
+
+section Centralizer
+
+open FreeGroup
+open scoped commutatorElement
+
+/-- The centralizer of a set of coefficients is algebraic: the solutions of the commutator
+equations `[x, m] = 1`, `m ∈ M`, in the variable `x` are the points whose `x`-coordinate
+centralizes the image of `M` in `H`. -/
+theorem V_image_commutatorElement (x : X) (M : Set G) :
+    V ι ((fun m => ⁅(inr (of x) : GX G X), inl m⁆) '' M) = {v | v x ∈ centralizer (ι '' M)} := by
+  ext v
+  simp only [mem_V, Set.forall_mem_image, map_commutatorElement, eval_inr_of, eval_inl,
+    commutatorElement_eq_one_iff_mul_comm, Set.mem_ofPred_eq, mem_centralizer_iff]
+  exact forall₂_congr fun _ _ => eq_comm
+
+/-- The solutions of the commutator equation `[x, g] = 1` in the variable `x` are the points whose
+`x`-coordinate centralizes the image of the coefficient `g` in `H`. -/
+theorem V_singleton_commutatorElement (x : X) (g : G) :
+    V ι {⁅(inr (of x) : GX G X), inl g⁆} = {v | v x ∈ centralizer {ι g}} := by
+  simpa using V_image_commutatorElement (ι := ι) x {g}
+
+/-- Over a free group `F`, the solutions of the commutator equation `[x, a] = 1` for a free
+generator `a` are the points whose `x`-coordinate is a power of `a`. -/
+theorem V_singleton_commutatorElement_of {α : Type*} (x : X) (a : α) :
+    V (.id (FreeGroup α)) {⁅(inr (of x) : GX (FreeGroup α) X), inl (of a)⁆} =
+      {v | v x ∈ zpowers (of a)} := by
+  rw [V_singleton_commutatorElement, MonoidHom.id_apply, centralizer_singleton_of]
+
+end Centralizer
 
 end TauCeti.GroupAlgGeom
