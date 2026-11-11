@@ -110,7 +110,7 @@ def handleCoreRetraction (k l : ℕ) :
     have hy : Continuous fun p : TopCat.disk.{u} k × TopCat.disk.{u} l ↦ p.2.down.1 :=
       continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd)
     exact (continuous_uliftUp.comp (hp.snd.subtype_mk _)).prodMk
-      (continuous_uliftUp.comp ((continuous_div_norm_smul hp.fst hy
+      (continuous_uliftUp.comp ((hp.fst.div_norm_smul hy
         (fun p ↦ (ballRadialProjection_spec _).1.1)
         ballRadialProjection_handleCylinderPoint_fst_le).subtype_mk _))
 
