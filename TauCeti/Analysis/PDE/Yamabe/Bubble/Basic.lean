@@ -165,13 +165,16 @@ theorem bubble_pos {t : ℝ} (ht : 0 < t) (b x : E) : 0 < bubble t b x := by
   rw [bubble_apply]
   positivity
 
+/-- A bubble of scale `0` is constant, equal to `0 ^ ((n - 2) / 2)`. -/
+theorem bubble_zero_left (b : E) :
+    bubble 0 b = fun _ ↦ (0 : ℝ) ^ (((Module.finrank ℝ E : ℝ) - 2) / 2) := by
+  funext x
+  simp [bubble_apply]
+
 /-- A bubble is smooth. For `t = 0` it is constant, equal to `0 ^ ((n - 2) / 2)`. -/
 theorem contDiff_bubble (t : ℝ) (b : E) {m : WithTop ℕ∞} : ContDiff ℝ m (bubble t b) := by
   rcases eq_or_ne t 0 with rfl | ht
-  · have : bubble 0 b = fun _ ↦ (0 : ℝ) ^ (((Module.finrank ℝ E : ℝ) - 2) / 2) := by
-      funext x
-      simp [bubble_apply]
-    rw [this]
+  · rw [bubble_zero_left]
     exact contDiff_const
   rw [contDiff_iff_contDiffAt]
   intro x
@@ -265,9 +268,7 @@ theorem hasFDerivAt_bubble (t : ℝ) (b x : E) :
       (toDualMap ℝ E
         (-(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b))) x := by
   rcases eq_or_ne t 0 with rfl | ht
-  · have hc : bubble 0 b = fun _ ↦ (0 : ℝ) ^ (((Module.finrank ℝ E : ℝ) - 2) / 2) := by
-      funext y
-      simp [bubble_apply]
+  · have hc := bubble_zero_left (E := E) b
     have h0 : ((finrank ℝ E : ℝ) - 2) / (0 ^ 2 + ‖x - b‖ ^ 2) * bubble 0 b x = 0 := by
       rw [hc]
       by_cases hk : ((finrank ℝ E : ℝ) - 2) / 2 = 0
