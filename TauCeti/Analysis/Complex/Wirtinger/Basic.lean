@@ -39,6 +39,7 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   `\bar∂g(x) : V →L⋆[ℂ] W`.
 * `TauCeti.wirtingerPartsCLM a b`: the real-linear map `v ↦ v • a + conj v • b` of the plane with
   Wirtinger parts `a` and `b`.
+* `TauCeti.wirtingerPartsL`: the continuous real-linear map `(a, b) ↦ wirtingerPartsCLM a b`.
 
 ## Main results
 
@@ -68,7 +69,10 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   one-variable conjugate Wirtinger derivative of the restriction of `g` to the complex line
   `t ↦ x + t • v`.
 * `TauCeti.fderiv_eq_wirtingerPartsCLM`, `TauCeti.wirtingerPartsCLM_inj`: in one variable the
-  real derivative is `wirtingerPartsCLM` of its two Wirtinger parts, which it determines.
+  real derivative is `wirtingerPartsCLM` of its two Wirtinger parts, which it determines; the
+  Wirtinger parts of `wirtingerPartsCLM a b` are `a` and `b`
+  (`TauCeti.wirtingerDeriv_wirtingerPartsCLM_apply_one`,
+  `TauCeti.conjWirtingerDeriv_wirtingerPartsCLM_apply_one`).
 * `ContDiffAt.hasFDerivAt_conjWirtingerDeriv_apply`: the derivative of `y ↦ \bar∂g(y) u` for a
   `C²` map `g`, in terms of the second derivative of `g`.
 * `TauCeti.conjWirtingerDeriv_conjWirtingerDeriv_comm`: second conjugate Wirtinger derivatives
@@ -426,43 +430,58 @@ theorem conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero {f : ℂ → W} {x : �
 
 /-! ### Real-linear maps through their Wirtinger parts -/
 
+/-- The continuous real-linear map `(a, b) ↦ (v ↦ v • a + conj v • b)` sending a pair of Wirtinger
+parts to the real-linear map of the plane with these parts (`TauCeti.wirtingerPartsCLM`). -/
+noncomputable def wirtingerPartsL : W × W →L[ℝ] ℂ →L[ℝ] W :=
+  (ContinuousLinearMap.lsmul ℝ ℂ).flip.coprod
+    (((ContinuousLinearMap.compL ℝ ℂ ℂ W).flip conjCLE.toContinuousLinearMap).comp
+      (ContinuousLinearMap.lsmul ℝ ℂ).flip)
+
 /-- The real-linear map `v ↦ v • a + conj v • b` of the plane into `W`. Its Wirtinger parts are
-`a` and `b` (`TauCeti.fderiv_eq_wirtingerPartsCLM`), and it determines them
-(`TauCeti.wirtingerPartsCLM_inj`). -/
+`a` and `b` (`TauCeti.wirtingerDeriv_wirtingerPartsCLM_apply_one`,
+`TauCeti.conjWirtingerDeriv_wirtingerPartsCLM_apply_one`), it determines them
+(`TauCeti.wirtingerPartsCLM_inj`), and every real derivative in one variable has this form
+(`TauCeti.fderiv_eq_wirtingerPartsCLM`). It is jointly real-linear in `(a, b)`
+(`TauCeti.wirtingerPartsL`). -/
 noncomputable def wirtingerPartsCLM (a b : W) : ℂ →L[ℝ] W :=
-  (ContinuousLinearMap.lsmul ℝ ℂ).flip a +
-    ((ContinuousLinearMap.lsmul ℝ ℂ).flip b).comp conjCLE.toContinuousLinearMap
+  wirtingerPartsL (a, b)
+
+@[simp]
+theorem wirtingerPartsL_apply (ab : W × W) : wirtingerPartsL ab = wirtingerPartsCLM ab.1 ab.2 := by
+  rw [wirtingerPartsCLM]
 
 @[simp]
 theorem wirtingerPartsCLM_apply (a b : W) (v : ℂ) :
     wirtingerPartsCLM a b v = v • a + conj v • b := by
-  simp [wirtingerPartsCLM]
+  simp [wirtingerPartsCLM, wirtingerPartsL]
 
 @[simp]
-theorem wirtingerPartsCLM_zero : wirtingerPartsCLM (0 : W) 0 = 0 := by
-  ext v
-  simp
+theorem wirtingerPartsCLM_zero : wirtingerPartsCLM (0 : W) 0 = 0 :=
+  map_zero wirtingerPartsL
 
 theorem wirtingerPartsCLM_add (a b a' b' : W) :
-    wirtingerPartsCLM (a + a') (b + b') = wirtingerPartsCLM a b + wirtingerPartsCLM a' b' := by
-  ext v
-  simp only [wirtingerPartsCLM_apply, add_apply, smul_add]
-  abel
+    wirtingerPartsCLM (a + a') (b + b') = wirtingerPartsCLM a b + wirtingerPartsCLM a' b' :=
+  map_add wirtingerPartsL (a, b) (a', b')
 
 theorem wirtingerPartsCLM_neg (a b : W) :
-    wirtingerPartsCLM (-a) (-b) = -wirtingerPartsCLM a b := by
-  ext v
-  simp only [wirtingerPartsCLM_apply, neg_apply, smul_neg, neg_add]
+    wirtingerPartsCLM (-a) (-b) = -wirtingerPartsCLM a b :=
+  map_neg wirtingerPartsL (a, b)
 
 theorem wirtingerPartsCLM_sub (a b a' b' : W) :
-    wirtingerPartsCLM (a - a') (b - b') = wirtingerPartsCLM a b - wirtingerPartsCLM a' b' := by
-  simp only [sub_eq_add_neg, wirtingerPartsCLM_add, wirtingerPartsCLM_neg]
+    wirtingerPartsCLM (a - a') (b - b') = wirtingerPartsCLM a b - wirtingerPartsCLM a' b' :=
+  map_sub wirtingerPartsL (a, b) (a', b')
 
 theorem wirtingerPartsCLM_smul {S : Type*} [Monoid S] [DistribMulAction S W]
     [SMulCommClass ℂ S W] [SMulCommClass ℝ S W] [ContinuousConstSMul S W] (s : S) (a b : W) :
     wirtingerPartsCLM (s • a) (s • b) = s • wirtingerPartsCLM a b := by
   ext v
   simp only [wirtingerPartsCLM_apply, smul_apply, smul_add, smul_comm v s, smul_comm (conj v) s]
+
+/-- `x ↦ wirtingerPartsCLM (a x) (b x)` is continuous when both parts are. -/
+theorem _root_.Continuous.wirtingerPartsCLM {X : Type*} [TopologicalSpace X] {a b : X → W}
+    (ha : Continuous a) (hb : Continuous b) :
+    Continuous fun x ↦ wirtingerPartsCLM (a x) (b x) :=
+  wirtingerPartsL.continuous.comp (ha.prodMk hb)
 
 /-- The operator norm of `v ↦ v • a + conj v • b` is at most `‖a‖ + ‖b‖`. -/
 theorem norm_wirtingerPartsCLM_le (a b : W) : ‖wirtingerPartsCLM a b‖ ≤ ‖a‖ + ‖b‖ := by
@@ -499,6 +518,22 @@ theorem fderiv_eq_wirtingerPartsCLM (f : ℂ → W) (x : ℂ) :
     fderiv ℝ f x = wirtingerPartsCLM (wirtingerDeriv f x 1) (conjWirtingerDeriv f x 1) := by
   ext v
   rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, wirtingerPartsCLM_apply]
+
+/-- The complex-linear Wirtinger part of `v ↦ v • a + conj v • b` is `a`. -/
+@[simp]
+theorem wirtingerDeriv_wirtingerPartsCLM_apply_one (a b : W) (x : ℂ) :
+    wirtingerDeriv (wirtingerPartsCLM a b) x 1 = a := by
+  have h := fderiv_eq_wirtingerPartsCLM (wirtingerPartsCLM a b) x
+  rw [ContinuousLinearMap.fderiv] at h
+  exact (wirtingerPartsCLM_inj.1 h).1.symm
+
+/-- The complex-antilinear Wirtinger part of `v ↦ v • a + conj v • b` is `b`. -/
+@[simp]
+theorem conjWirtingerDeriv_wirtingerPartsCLM_apply_one (a b : W) (x : ℂ) :
+    conjWirtingerDeriv (wirtingerPartsCLM a b) x 1 = b := by
+  have h := fderiv_eq_wirtingerPartsCLM (wirtingerPartsCLM a b) x
+  rw [ContinuousLinearMap.fderiv] at h
+  exact (wirtingerPartsCLM_inj.1 h).2.symm
 
 /-! ### Second conjugate Wirtinger derivatives -/
 

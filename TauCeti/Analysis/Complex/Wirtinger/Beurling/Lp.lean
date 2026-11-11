@@ -71,25 +71,22 @@ section Parts
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- `a ↦ (v ↦ v • a)`, the complex-linear part. -/
-private def holPartL : F →L[ℝ] ℂ →L[ℝ] F := (ContinuousLinearMap.lsmul ℝ ℂ).flip
-
-/-- `b ↦ (v ↦ conj v • b)`, the complex-antilinear part. -/
-private def antiPartL : F →L[ℝ] ℂ →L[ℝ] F :=
-  ((ContinuousLinearMap.compL ℝ ℂ ℂ F).flip conjCLE.toContinuousLinearMap).comp holPartL
-
-private theorem wirtingerPartsCLM_eq (a b : F) :
-    wirtingerPartsCLM a b = holPartL a + antiPartL b := by
-  ext v
-  simp [holPartL, antiPartL]
+/-- `x ↦ wirtingerPartsCLM (a x) (b x)` is almost everywhere strongly measurable when both parts
+are. -/
+theorem _root_.MeasureTheory.AEStronglyMeasurable.wirtingerPartsCLM {α : Type*}
+    [MeasurableSpace α] {μ : Measure α} {a b : α → F} (ha : AEStronglyMeasurable a μ)
+    (hb : AEStronglyMeasurable b μ) :
+    AEStronglyMeasurable (fun x ↦ TauCeti.wirtingerPartsCLM (a x) (b x)) μ := by
+  simpa only [wirtingerPartsL_apply] using
+    wirtingerPartsL.continuous.comp_aestronglyMeasurable (ha.prodMk hb)
 
 /-- Pointwise combination of two `Lᵖ` maps through `wirtingerPartsCLM` stays in `Lᵖ`. -/
 theorem _root_.MeasureTheory.MemLp.wirtingerPartsCLM {α : Type*} [MeasurableSpace α]
     {μ : Measure α} {p : ℝ≥0∞} {a b : α → F} (ha : MemLp a p μ) (hb : MemLp b p μ) :
-    MemLp (fun x ↦ TauCeti.wirtingerPartsCLM (a x) (b x)) p μ := by
-  refine ((holPartL.comp_memLp' ha).add (antiPartL.comp_memLp' hb)).ae_eq
-    (.of_forall fun x ↦ ?_)
-  simp only [Pi.add_apply, comp_apply, wirtingerPartsCLM_eq]
+    MemLp (fun x ↦ TauCeti.wirtingerPartsCLM (a x) (b x)) p μ :=
+  (ha.norm.add hb.norm).of_le (ha.aestronglyMeasurable.wirtingerPartsCLM hb.aestronglyMeasurable)
+    (.of_forall fun x ↦
+      (norm_wirtingerPartsCLM_le _ _).trans_eq (Real.norm_of_nonneg (by positivity)).symm)
 
 /-- The `Lᵖ` norm of a map built by `wirtingerPartsCLM` is at most the sum of the `Lᵖ` norms of
 its parts. -/
@@ -97,12 +94,8 @@ theorem eLpNorm_wirtingerPartsCLM_le {α : Type*} [MeasurableSpace α] {μ : Mea
     {q : ℝ≥0∞} (hq : 1 ≤ q) {a b : α → F} (ha : AEStronglyMeasurable a μ)
     (hb : AEStronglyMeasurable b μ) :
     eLpNorm (fun x ↦ wirtingerPartsCLM (a x) (b x)) q μ ≤ eLpNorm a q μ + eLpNorm b q μ := by
-  have hm : AEStronglyMeasurable (fun x ↦ wirtingerPartsCLM (a x) (b x)) μ := by
-    refine ((holPartL.continuous.comp_aestronglyMeasurable ha).add
-      (antiPartL.continuous.comp_aestronglyMeasurable hb)).congr (.of_forall fun x ↦ ?_)
-    simp only [Pi.add_apply, wirtingerPartsCLM_eq]
   calc _ ≤ eLpNorm (fun x ↦ ‖a x‖ + ‖b x‖) q μ :=
-        eLpNorm_mono_real hm fun x ↦ norm_wirtingerPartsCLM_le _ _
+        eLpNorm_mono_real (ha.wirtingerPartsCLM hb) fun x ↦ norm_wirtingerPartsCLM_le _ _
     _ ≤ eLpNorm a q μ + eLpNorm b q μ := by
         refine (eLpNorm_add_le (f := fun x ↦ ‖a x‖) (g := fun x ↦ ‖b x‖) hq).trans_eq ?_
         rw [eLpNorm_norm _ ha, eLpNorm_norm _ hb]
@@ -116,6 +109,21 @@ theorem eLpNorm_wirtingerPartsCLM_sub_le {α : Type*} [MeasurableSpace α] {μ :
       eLpNorm (a - a') q μ + eLpNorm (b - b') q μ := by
   simp only [← wirtingerPartsCLM_sub]
   exact eLpNorm_wirtingerPartsCLM_le hq ha hb
+
+/-- If the parts `a' i`, `b' i` tend to `a`, `b` in `Lᵖ`, then the maps
+`wirtingerPartsCLM (a' i) (b' i)` tend to `wirtingerPartsCLM a b` in `Lᵖ`. -/
+theorem tendsto_eLpNorm_wirtingerPartsCLM_sub {α ι : Type*} [MeasurableSpace α] {μ : Measure α}
+    {q : ℝ≥0∞} (hq : 1 ≤ q) {l : Filter ι} {a b : α → F} {a' b' : ι → α → F}
+    (ha : ∀ i, AEStronglyMeasurable (a' i - a) μ) (hb : ∀ i, AEStronglyMeasurable (b' i - b) μ)
+    (ha' : Tendsto (fun i ↦ eLpNorm (a' i - a) q μ) l (𝓝 0))
+    (hb' : Tendsto (fun i ↦ eLpNorm (b' i - b) q μ) l (𝓝 0)) :
+    Tendsto (fun i ↦ eLpNorm
+        (fun x ↦ wirtingerPartsCLM (a' i x) (b' i x) - wirtingerPartsCLM (a x) (b x)) q μ)
+      l (𝓝 0) := by
+  have hup := ha'.add hb'
+  rw [add_zero] at hup
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hup (fun _ ↦ zero_le)
+    fun i ↦ eLpNorm_wirtingerPartsCLM_sub_le hq (ha i) (hb i)
 
 end Parts
 
@@ -159,11 +167,11 @@ private theorem hasWeakFDerivOn_cauchyTransform_ball (hp : 1 < p) (hp_top : p �
       (fun _ ↦ zero_le) fun n ↦ (eLpNorm_sub_comm _ _ _ _).trans_le (hgf n)
     rw [← ENNReal.ofReal_zero]
     exact ENNReal.tendsto_ofReal tendsto_one_div_add_atTop_nhds_zero_nat
+  have hgLp := (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' g hgm f hf).2 hlim
   -- `B g → B f` in `Lᵖ(ℂ)`.
   have hBlim : Tendsto (fun n ↦ eLpNorm (⇑(B ((hgm n).toLp (g n))) - ⇑(B (hf.toLp f))) p volume)
-      atTop (𝓝 0) := by
-    refine (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1 ((B.continuous.tendsto _).comp ?_)
-    exact (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' g hgm f hf).2 hlim
+      atTop (𝓝 0) :=
+    (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1 ((B.continuous.tendsto _).comp hgLp)
   -- The weak derivative of each smooth approximant.
   have hweak (n : ℕ) : HasWeakFDerivOn volume Ω (cauchyTransform (g n))
       fun w ↦ wirtingerPartsCLM (B ((hgm n).toLp (g n)) w) (g n w) := by
@@ -190,20 +198,18 @@ private theorem hasWeakFDerivOn_cauchyTransform_ball (hp : 1 < p) (hp_top : p �
           (hgc n))).aestronglyMeasurable.sub
             (locallyIntegrable_cauchyTransform hfint).aestronglyMeasurable).restrict
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (tendsto_eLpNorm_cauchyTransform_sub (R := R) hp.le hf hgm hfs hgs hlim) (fun _ ↦ zero_le)
+      ((Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ _).1
+        (tendsto_toLp_cauchyTransform hf hgm hfs hgs hgLp R)) (fun _ ↦ zero_le)
       fun n ↦ eLpNorm_mono_measure _ (Measure.restrict_mono_set _ ball_subset_closedBall)
   · -- `D (T g) → D (T f)` in `L¹` on the disc.
     refine (MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm hp.le ?_).congr fun n ↦
       eLpNorm_one_eq_lintegral_enorm ((MemLp.wirtingerPartsCLM (Lp.memLp _)
         (hgm n)).aestronglyMeasurable.sub hD.aestronglyMeasurable).restrict
-    have hup := hBlim.add hlim
-    rw [add_zero] at hup
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hup (fun _ ↦ zero_le)
-      fun n ↦ ?_
-    exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
-      (eLpNorm_wirtingerPartsCLM_sub_le hp.le
-        ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))
-        ((hgm n).sub hf).aestronglyMeasurable)
+    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (tendsto_eLpNorm_wirtingerPartsCLM_sub hp.le
+        (fun _ ↦ (Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))
+        (fun n ↦ ((hgm n).sub hf).aestronglyMeasurable) hBlim hlim) (fun _ ↦ zero_le)
+      fun n ↦ eLpNorm_mono_measure _ Measure.restrict_le_self
 
 /-- **The weak derivative of the Cauchy transform of `Lᵖ` data.** For `1 < p < ∞` and `f ∈ Lᵖ(ℂ)`
 supported in a closed disc, the Cauchy transform `T f` is weakly differentiable on every open
@@ -328,13 +334,10 @@ theorem continuous_toLp_wirtingerPartsCLM_beurlingLp (hp : 1 < p) (hp_top : p �
   have h := (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ hf _ (hf x)).1 (hcont.tendsto x)
   have hB := (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
     (((beurlingLp p hp hp_top).continuous.comp hcont).tendsto x)
-  refine (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ _).2 ?_
-  have hup := hB.add h
-  rw [add_zero] at hup
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hup (fun _ ↦ zero_le)
-    fun y ↦ eLpNorm_wirtingerPartsCLM_sub_le hp.le
-      ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))
-      ((hf y).sub (hf x)).aestronglyMeasurable
+  exact (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ _).2
+    (tendsto_eLpNorm_wirtingerPartsCLM_sub hp.le
+      (fun _ ↦ (Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))
+      (fun y ↦ ((hf y).sub (hf x)).aestronglyMeasurable) hB h)
 
 end Weak
 
