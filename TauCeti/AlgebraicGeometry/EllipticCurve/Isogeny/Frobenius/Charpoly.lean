@@ -59,7 +59,11 @@ open WeierstrassCurve WeierstrassCurve.Affine
 
 namespace TauCeti.Isogeny
 
-variable {F : Type*} [Field F] [Finite F] (W : WeierstrassCurve.Affine F) [W.IsElliptic]
+variable {F : Type*} [Field F]
+
+section Finite
+
+variable [Finite F] (W : WeierstrassCurve.Affine F) [W.IsElliptic]
 
 namespace Hom
 
@@ -158,12 +162,14 @@ theorem pointMap_frobeniusIsogeny_add_pointMap_dualFrobeniusIsogeny [DecidableEq
   rw [← Hom.add_pointMap, ofIsogeny_frobeniusIsogeny_add_ofIsogeny_dualFrobeniusIsogeny,
     Hom.zsmul_pointMap, Hom.id_pointMap]
 
+end Finite
+
 /-- **The `q`-power map on points is a root of `X² - a_q X + q`**: for an elliptic curve over a
 finite field `F` with `q` elements and any extension `K` of `F`, the map `Fr` raising the
 coordinates of the points over `K` to the `q`-th power satisfies `Fr (Fr P) = a_q • Fr P - q • P`,
 where `a_q` is the trace of Frobenius. -/
-theorem map_frobeniusAlgHom_map_frobeniusAlgHom [Fintype F] {K : Type*} [Field K] [Algebra F K]
-    [DecidableEq K] (P : (W⁄K).toAffine.Point) :
+theorem map_frobeniusAlgHom_map_frobeniusAlgHom [Fintype F] (W : WeierstrassCurve.Affine F)
+    [W.IsElliptic] {K : Type*} [Field K] [Algebra F K] [DecidableEq K] (P : (W⁄K).toAffine.Point) :
     Point.map (FiniteField.frobeniusAlgHom F K) (Point.map (FiniteField.frobeniusAlgHom F K) P) =
       W.frobeniusTrace • Point.map (FiniteField.frobeniusAlgHom F K) P - Nat.card F • P := by
   -- base change `π ∘ π = a_q π - q` to `K`; `W⁄K` and `W.map (algebraMap F K)` are the same curve,

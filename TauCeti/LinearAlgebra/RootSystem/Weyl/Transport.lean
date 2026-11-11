@@ -38,6 +38,8 @@ isomorphism of Weyl groups is compatible with both.
 * `RootPairing.Equiv.autCongr_reflection`: conjugation carries the reflection in the root `i` to
   the reflection in the root `e.indexEquiv i`.
 * `RootPairing.Equiv.map_weylGroup`: conjugation maps the Weyl group of `P` onto that of `Q`.
+  For `Q = P` it makes the Weyl group a normal subgroup of the automorphism group
+  (`RootPairing.weylGroup_normal`).
 * `RootPairing.Equiv.weylGroupEquiv_ofIdx`: the isomorphism of Weyl groups matches up the
   reflections in the indexed roots along `e.indexEquiv`.
 * `RootPairing.Equiv.weylGroupToPerm_weylGroupEquiv`: it is equivariant for the permutation
@@ -94,6 +96,14 @@ theorem _root_.RootPairing.Equiv.map_weylGroup (e : P.Equiv Q) :
     (weylGroup P).map (e.autCongr : Aut P →* Aut Q) = weylGroup Q := by
   rw [RootPairing.weylGroup, MonoidHom.map_closure, image_range_reflection e,
     RootPairing.weylGroup]
+
+/-- **The Weyl group is a normal subgroup of the automorphism group**: conjugation by an
+automorphism `g` maps the Weyl group onto itself (`RootPairing.Equiv.map_weylGroup` for
+`e := g`). -/
+instance _root_.RootPairing.weylGroup_normal : (weylGroup P).Normal where
+  conj_mem w hw g := by
+    rw [← RootPairing.Equiv.map_weylGroup g]
+    exact ⟨w, hw, by rw [MonoidHom.coe_ofClass, RootPairing.Equiv.autCongr_apply, mul_assoc]; rfl⟩
 
 /-- **The Weyl group transported along an equivalence of root pairings.** Conjugation by `e`
 restricts to a group isomorphism of Weyl groups. -/
