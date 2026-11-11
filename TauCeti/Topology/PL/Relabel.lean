@@ -37,14 +37,19 @@ injections preserves and reflects PL regularity on the relabeled domain. -/
 theorem isPLOn_extendByZero_iff :
     IsPLOn (fun y : κ → ℝ => Function.extend d (f (y ∘ e)) 0)
       ((Function.ExtendByZero.continuousLinearMap ℝ ℝ e) '' s) ↔ IsPLOn f s := by
+  -- `Pi.compRightL_apply` is stated coordinatewise; simp needs the whole restricted input.
+  have hres (y : κ → ℝ) : Pi.compRightL ℝ (fun _ : κ ↦ ℝ) e y = fun i ↦ y (e i) :=
+    funext (Pi.compRightL_apply ℝ (fun _ : κ ↦ ℝ) e y)
   simpa only [ContinuousLinearMap.coe_toContinuousAffineMap, Function.comp_def,
-    Function.ExtendByZero.continuousLinearMap_apply, Function.ExtendByZero.restriction_apply]
+    Function.ExtendByZero.continuousLinearMap_apply, hres]
     using isPLOn_affine_transport_iff (f := f) (s := s)
     (Function.ExtendByZero.continuousLinearMap ℝ ℝ e).toContinuousAffineMap
-    (Function.ExtendByZero.restriction ℝ ℝ e).toContinuousAffineMap
+    (Pi.compRightL ℝ (fun _ : κ ↦ ℝ) e).toContinuousAffineMap
     (Function.ExtendByZero.continuousLinearMap ℝ ℝ d).toContinuousAffineMap
-    (Function.ExtendByZero.restriction ℝ ℝ d).toContinuousAffineMap
-    (fun x _ ↦ Function.ExtendByZero.restriction_leftInverse ℝ ℝ e e.injective x)
-    (fun x _ ↦ Function.ExtendByZero.restriction_leftInverse ℝ ℝ d d.injective (f x))
+    (Pi.compRightL ℝ (fun _ : β ↦ ℝ) d).toContinuousAffineMap
+    (fun x _ ↦
+      Function.ExtendByZero.leftInverse_compRightL_continuousLinearMap ℝ ℝ e e.injective x)
+    (fun x _ ↦
+      Function.ExtendByZero.leftInverse_compRightL_continuousLinearMap ℝ ℝ d d.injective (f x))
 
 end TauCeti

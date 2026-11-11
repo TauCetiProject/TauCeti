@@ -12,8 +12,9 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 
 Mathlib's `Function.ExtendByZero.linearMap` is continuous for the product topologies of
 module-valued coordinates: each output coordinate is either a fixed input coordinate or zero.
-No finiteness assumption on the coordinate types is needed. For an injective index map, restriction
-recovers the original function, including when the target has unused coordinates.
+No finiteness assumption on the coordinate types is needed. For an injective index map, Mathlib's
+coordinate restriction `Pi.compRightL` recovers the original function, including when the target
+has unused coordinates.
 
 This construction lets affine coordinate formulas pass to enlarged vertex sets of
 simplicial complexes. It uses Mathlib's existing extension by zero rather than choosing
@@ -58,19 +59,10 @@ noncomputable def continuousLinearMap : (ι → M) →L[R] (κ → M) :=
 theorem continuousLinearMap_apply (x : ι → M) :
     continuousLinearMap R M e x = Function.extend e x 0 := (rfl)
 
-/-- Restrict coordinate functions along an index map, as a continuous linear map. -/
-def restriction : (κ → M) →L[R] (ι → M) :=
-  ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj (e i)
-
-/-- Coordinate restriction is precomposition with the index map. -/
-@[simp]
-theorem restriction_apply (x : κ → M) : restriction R M e x = x ∘ e := by
-  ext i
-  simp [restriction]
-
-/-- Restriction recovers every function extended along an injective index map. -/
-theorem restriction_leftInverse (he : Function.Injective e) :
-    Function.LeftInverse (restriction R M e) (continuousLinearMap R M e) := by
+/-- Mathlib's coordinate restriction `Pi.compRightL` recovers every function extended by zero
+along an injective index map. -/
+theorem leftInverse_compRightL_continuousLinearMap (he : Function.Injective e) :
+    Function.LeftInverse (Pi.compRightL R (fun _ : κ ↦ M) e) (continuousLinearMap R M e) := by
   intro x
   ext i
   simp [he]

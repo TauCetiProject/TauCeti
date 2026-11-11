@@ -65,11 +65,11 @@ theorem isPLOn_restriction_comp_extendByZero
     (hcoord : ∀ x : {x : Realization A // x.1.support ∈ P.map e},
       f (x.1.1 : κ → ℝ) = (h x).1.1) :
     IsPLOn
-        (Function.ExtendByZero.restriction ℝ ℝ d ∘ f ∘
+        (Pi.compRightL ℝ (fun _ : ν ↦ ℝ) d ∘ f ∘
           Function.ExtendByZero.continuousLinearMap ℝ ℝ e)
         (range (fun x : {x : Realization K // x.1.support ∈ P} => (x.1.1 : α → ℝ))) ∧
       ∀ x : {x : Realization K // x.1.support ∈ P},
-        (Function.ExtendByZero.restriction ℝ ℝ d ∘ f ∘
+        (Pi.compRightL ℝ (fun _ : ν ↦ ℝ) d ∘ f ∘
           Function.ExtendByZero.continuousLinearMap ℝ ℝ e) (x.1.1 : α → ℝ) =
             (((Q.relabelingHomeomorph d hL hB).symm ∘ h ∘
               P.relabelingHomeomorph e hK hA) x).1.1 := by
@@ -79,7 +79,7 @@ theorem isPLOn_restriction_comp_extendByZero
     rw [P.range_coe_map_eq_image_extendByZero e hK hA]
     exact mapsTo_image _ _
   refine ⟨(isPLOn_continuousAffineMap
-    (Function.ExtendByZero.restriction ℝ ℝ d).toContinuousAffineMap univ).comp
+    (Pi.compRightL ℝ (fun _ : ν ↦ ℝ) d).toContinuousAffineMap univ).comp
       (hf.comp (isPLOn_continuousAffineMap
         (Function.ExtendByZero.continuousLinearMap ℝ ℝ e).toContinuousAffineMap _) hmap)
       (fun _ _ => mem_univ _), ?_⟩
@@ -101,10 +101,10 @@ theorem PLHomeomorphic.of_common_relabeling
   let rB := B.relabelingHomeomorph d (le_top _) (le_top _)
   let ψ := rA.trans (φ.trans rB.symm)
   let f' : (α → ℝ) → (α → ℝ) :=
-    Function.ExtendByZero.restriction ℝ ℝ d ∘ f ∘
+    Pi.compRightL ℝ (fun _ : κ ↦ ℝ) d ∘ f ∘
       Function.ExtendByZero.continuousLinearMap ℝ ℝ e
   let g' : (α → ℝ) → (α → ℝ) :=
-    Function.ExtendByZero.restriction ℝ ℝ e ∘ g ∘
+    Pi.compRightL ℝ (fun _ : κ ↦ ℝ) e ∘ g ∘
       Function.ExtendByZero.continuousLinearMap ℝ ℝ d
   have hf' := isPLOn_restriction_comp_extendByZero A B e d
     (le_top _) (le_top _) (le_top _) (le_top _) φ f hf hφ
@@ -126,12 +126,12 @@ theorem PLHomeomorphic.relabeling {γ δ : Type*} [DecidableEq δ]
     PLHomeomorphic P (P.map e) := by
   let r := P.relabelingHomeomorph e (le_top P) (le_top (P.map e))
   let f : (γ → ℝ) → (δ → ℝ) := Function.ExtendByZero.continuousLinearMap ℝ ℝ e
-  let g : (δ → ℝ) → (γ → ℝ) := Function.ExtendByZero.restriction ℝ ℝ e
+  let g : (δ → ℝ) → (γ → ℝ) := Pi.compRightL ℝ (fun _ : δ ↦ ℝ) e
   refine PLHomeomorphic.intro r f g
     (isPLOn_continuousAffineMap
       (Function.ExtendByZero.continuousLinearMap ℝ ℝ e).toContinuousAffineMap _)
     (isPLOn_continuousAffineMap
-      (Function.ExtendByZero.restriction ℝ ℝ e).toContinuousAffineMap _) ?_ ?_
+      (Pi.compRightL ℝ (fun _ : δ ↦ ℝ) e).toContinuousAffineMap _) ?_ ?_
   · intro x
     simpa only [r, f] using (relabelingHomeomorph_coe_eq_extendByZero
       P e (le_top P) (le_top (P.map e)) x).symm
