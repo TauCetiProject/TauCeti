@@ -276,7 +276,6 @@ private theorem sq_le_mul_one_sub_sq {δ t : ℝ} (hδ : 0 < δ) (ht : t ∈ Icc
     δ ^ 2 ≤ t * (1 - t ^ 2) := by
   obtain ⟨h₁, h₂⟩ := ht
   have h₃ : δ * δ ≤ t * (1 - t) := mul_le_mul h₁ (by linarith) hδ.le (by linarith)
-  have h₄ : 0 ≤ t * (1 - t) := by nlinarith
   nlinarith
 
 variable {X : Type*} {g : X → ℝ → ℝ} {s : Set X} {δ : ℝ}

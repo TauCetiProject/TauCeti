@@ -688,8 +688,6 @@ private theorem integral_norm_fourierIntegral_gaussian_eq_one {t : ℝ} (ht : 0 
   have hg_pd : Matrix.PosSemidef
       fun a b : V => Complex.exp (-(t * ‖a - b‖ ^ 2 : ℝ)) :=
     posSemidef_cexp_neg_mul_sq_norm ht.le
-  have hg_int : Integrable fun x : V => Complex.exp (-(t * ‖x‖ ^ 2 : ℝ)) :=
-    integrable_cexp_neg_mul_sq_norm ht
   have hg_cont : Continuous fun x : V => Complex.exp (-(t * ‖x‖ ^ 2 : ℝ)) :=
     continuous_cexp_neg_mul_sq_norm t
   have hft_int := integrable_fourierIntegral_gaussian (V := V) ht

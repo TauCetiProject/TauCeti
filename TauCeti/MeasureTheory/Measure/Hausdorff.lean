@@ -71,7 +71,7 @@ theorem hausdorffMeasure_zero_eq_count {X : Type*} [EMetricSpace X] [MeasurableS
   have hfinite (s : Set X) (hs : s.Finite) : μH[0] s = count s := by
     simpa [count_apply_finite _ hs] using
       (sum_measure_singleton (μ := μH[0]) (s := hs.toFinset)).symm
-  ext s hs
+  ext s _
   rcases s.finite_or_infinite with hfin | hinf
   · exact hfinite s hfin
   · rw [count_apply_infinite hinf]
@@ -234,7 +234,7 @@ theorem hausdorffMeasure_le_of_forall_exists_closedBall_cover {X : Type u} [Metr
     have hT : Tendsto (fun n : ℕ => ENNReal.ofReal (2 * (1 / (n + 1))) ^ d) atTop (𝓝 ⊤) := by
       simpa only [ENNReal.zero_rpow_of_neg hd] using hδ.ennrpow_const d
     refine le_top.trans (le_of_tendsto_of_tendsto hT hlim (Eventually.of_forall fun n => ?_))
-    obtain ⟨i, hi⟩ := mem_iUnion.1 (hA n ha)
+    obtain ⟨i, _⟩ := mem_iUnion.1 (hA n ha)
     exact (ENNReal.rpow_le_rpow_of_nonpos
       (ENNReal.ofReal_le_ofReal (by linarith [hrδ n i])) hd.le).trans
       ((le_tsum _ i).trans (hsum n))

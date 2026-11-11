@@ -318,7 +318,7 @@ theorem IsCompact.exists_holderOnWith_thickening_and_norm_le {X Y : Type*} [Pseu
   set δ : ℝ≥0 := ⟨δ₀ / 2, by positivity⟩
   have hδ : 0 < δ := by rw [← NNReal.coe_pos]; exact half_pos hδ₀
   refine ⟨δ₀ / 2, half_pos hδ₀, ∑ z ∈ t, L z + 2 * M * δ ^ (-(α : ℝ)), M, ?_, hM⟩
-  refine HolderOnWith.of_dist_lt_of_dist_le hδ (fun y hy y' hy' hyy' => ?_) fun y hy y' hy' => ?_
+  refine HolderOnWith.of_dist_lt_of_dist_le hδ (fun y hy y' _ hyy' => ?_) fun y hy y' hy' => ?_
   · obtain ⟨z, hzt, hyz, hy'z⟩ := hball y hy y' hyy'
     refine ((hL z (htK z hzt)).dist_le hyz hy'z).trans ?_
     gcongr

@@ -95,7 +95,6 @@ theorem exists_antitone_closedBall_iInter_eq_empty [TopologicalSpace.SeparableSp
       simpa [step, h, dist_eq_norm_neg_add, ← add_assoc, norm_add_eq_max_of_norm_ne_norm hlt.ne,
         hlt.le] using hc n.lt_succ_self
   let a (n : ℕ) : E := Nat.rec a₀ step n
-  have hsucc (n : ℕ) : a (n + 1) = step n (a n) := rfl
   refine ⟨a, rfl, antitone_nat_of_succ_le fun n ↦ ?_, Set.eq_empty_of_forall_notMem fun b hb ↦ ?_⟩
   · -- the `(n + 1)`-st centre lies in the `n`-th ball, which it therefore also centres
     rw [closedBall_eq_of_mem (mem_closedBall'.mpr (hstep n (a n)).1)]

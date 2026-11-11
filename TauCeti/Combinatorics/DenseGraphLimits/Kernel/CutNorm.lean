@@ -197,7 +197,7 @@ theorem cutNorm_le_iff {K : SymmKernel Ω μ} {C : ℝ} :
     cutNorm μ K ≤ C ↔
       ∀ S, MeasurableSet S → ∀ T, MeasurableSet T → |K.rectIntegral μ S T| ≤ C := by
   constructor
-  · intro h S hS T hT
+  · intro h S _ T _
     exact (abs_rectIntegral_le_cutNorm μ K S T).trans h
   · exact cutNorm_le μ
 
@@ -288,7 +288,7 @@ theorem cutNorm_sub_rev (K L : SymmKernel Ω μ) :
 theorem cutNorm_add_le (K L : SymmKernel Ω μ) :
     cutNorm μ (K + L) ≤ cutNorm μ K + cutNorm μ L := by
   apply cutNorm_le μ
-  intro S hS T hT
+  intro S _ T _
   rw [SymmKernel.rectIntegral_add]
   exact (abs_add_le _ _).trans (add_le_add
     (abs_rectIntegral_le_cutNorm μ K S T) (abs_rectIntegral_le_cutNorm μ L S T))
