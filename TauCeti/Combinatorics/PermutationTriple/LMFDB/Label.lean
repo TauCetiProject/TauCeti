@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.Passport.Label
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.String
+import TauCeti.Data.String.SplitOn
 import Std.Data.String.ToNat
 
 /-!
@@ -19,8 +20,9 @@ degree and uses the transitive-group recognizer for the group component. Decimal
 have their canonical spelling, without leading zeroes or whitespace. Parts may be written in
 any order: the mathematical output is a multiset.
 
-A map label appends a nonempty lowercase orbit identifier. This identifier is retained as
-external data, not interpreted as a Galois invariant. Neither parser asserts existence of a
+A map label is a passport label followed by a hyphen and a nonempty lowercase orbit identifier
+(`TauCeti.PermutationTriple.LMFDB.parseMapLabel_eq_some_iff_append`). This identifier is retained
+as external data, not interpreted as a Galois invariant. Neither parser asserts existence of a
 triple with the given passport.
 
 ## References
@@ -138,5 +140,30 @@ orbit identifier is a nonempty string of lowercase letters. -/
   unfold parseMapLabel
   split <;> simp_all [-parsePassportLabel_eq_some_iff, Option.map_eq_some_iff]
   grind
+
+/-- **The grammar of map labels.** A map label is a passport label, a hyphen, and a nonempty
+string of lowercase letters identifying the orbit; it parses to the parsed passport label together
+with that identifier. -/
+theorem parseMapLabel_eq_some_iff_append {n : ℕ} {s orbit : String} {L : PassportLabel n} :
+    parseMapLabel n s = some (L, orbit) ↔
+      ∃ p : String, s = p ++ "-" ++ orbit ∧ orbit ≠ "" ∧
+        (∀ c ∈ orbit.toList, 'a' ≤ c ∧ c ≤ 'z') ∧ parsePassportLabel n p = some L := by
+  rw [parseMapLabel_eq_some_iff]
+  constructor
+  · rintro ⟨group, partitions, hs, hne, hlow, hL⟩
+    refine ⟨group ++ "-" ++ partitions, String.ext ?_, hne, hlow, hL⟩
+    rw [String.toList_eq_intercalate_of_splitOn_eq hs]
+    simp
+  · rintro ⟨p, rfl, hne, hlow, hL⟩
+    obtain ⟨group, partitions, -, -, -, hp, -⟩ := parsePassportLabel_eq_some_iff.mp hL
+    have hgp : group ++ "-" ++ partitions = p := by
+      refine String.ext ?_
+      rw [String.toList_eq_intercalate_of_splitOn_eq hp]
+      simp
+    have hmem : '-' ∉ orbit.toList := fun h => absurd (hlow '-' h).1 (by decide)
+    have happ : (p ++ "-" ++ orbit).toList = p.toList ++ '-' :: orbit.toList := by simp
+    refine ⟨group, partitions, ?_, hne, hlow, hgp ▸ hL⟩
+    rw [happ, List.splitOn_append_cons_self, List.splitOn_eq_singleton hmem, List.map_append, hp]
+    simp
 
 end TauCeti.PermutationTriple.LMFDB

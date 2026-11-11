@@ -65,8 +65,7 @@ theorem support_cond_stableLevyMeasure_one {α ε : ℝ} (hα : α ∈ Ioo 0 2) 
     (volume.withDensity (s.indicator fun x ↦ ENNReal.ofReal (stableLevyDensity α 1 x))).support =
         closure (Ioi ε) := by
       apply Measure.support_withDensity_eq_closure_of_subset
-      · exact (measurable_stableLevyDensity.comp
-          (by fun_prop : Measurable (fun x : ℝ ↦ ((α, (1 : ℝ)), x)))).ennreal_ofReal.indicator hs
+      · exact (measurable_stableLevyDensity_apply α 1).ennreal_ofReal.indicator hs
       · exact isOpen_Ioi
       · intro x hx
         rw [Function.mem_support, Set.indicator_of_mem]
@@ -110,9 +109,7 @@ theorem support_cond_stableLevyMeasure_neg_one {α ε : ℝ} (hα : α ∈ Ioo 0
         (s.indicator fun x ↦ ENNReal.ofReal (stableLevyDensity α (-1) x))).support =
       closure (Iio (-ε)) := by
       apply Measure.support_withDensity_eq_closure_of_subset
-      · exact (measurable_stableLevyDensity.comp
-          (by fun_prop : Measurable
-            (fun x : ℝ ↦ ((α, (-1 : ℝ)), x)))).ennreal_ofReal.indicator hs
+      · exact (measurable_stableLevyDensity_apply α (-1)).ennreal_ofReal.indicator hs
       · exact isOpen_Iio
       · intro x hx
         simp only [mem_Iio] at hx
@@ -184,8 +181,7 @@ theorem support_cond_stableLevyMeasure_of_abs_lt_one {α β ε : ℝ} (hα : α 
     (volume.withDensity
         (s.indicator fun x ↦ ENNReal.ofReal (stableLevyDensity α β x))).support =
       closure s := Measure.support_withDensity_eq_closure
-          ((measurable_stableLevyDensity.comp
-            (by fun_prop : Measurable (fun x : ℝ ↦ ((α, β), x)))).ennreal_ofReal.indicator hs)
+          ((measurable_stableLevyDensity_apply α β).ennreal_ofReal.indicator hs)
           hs_open hsupp
     _ = Iic (-ε) ∪ Ici ε := by
       have hs_eq : s = Iio (-ε) ∪ Ioi ε := by
@@ -205,7 +201,7 @@ theorem support_stableCompensatedPoissonMeasure_one {α ε : ℝ} (hα : α ∈ 
   let s : Set ℝ := {x | ε < |x|}
   let c := ∫ y in s, sin y ∂ν
   have hr : (ν s).toNNReal ≠ 0 := ENNReal.toNNReal_ne_zero.mpr
-    ⟨(stableLevyMeasure_abs_gt_pos hα (by norm_num) hε).ne',
+    ⟨(stableLevyMeasure_abs_gt_pos hα (by norm_num)).ne',
       stableLevyMeasure_abs_gt_ne_top hε⟩
   rw [stableCompensatedPoissonMeasure_def]
   -- The defining equation expands `ν`, `s`, and `c`; fold them back to the local names.
@@ -232,7 +228,7 @@ theorem support_stableCompensatedPoissonMeasure_neg_one {α ε : ℝ} (hα : α 
   let s : Set ℝ := {x | ε < |x|}
   let c := ∫ y in s, sin y ∂ν
   have hr : (ν s).toNNReal ≠ 0 := ENNReal.toNNReal_ne_zero.mpr
-    ⟨(stableLevyMeasure_abs_gt_pos hα (by norm_num) hε).ne',
+    ⟨(stableLevyMeasure_abs_gt_pos hα (by norm_num)).ne',
       stableLevyMeasure_abs_gt_ne_top hε⟩
   rw [stableCompensatedPoissonMeasure_def]
   -- The defining equation expands `ν`, `s`, and `c`; fold them back to the local names.
@@ -256,7 +252,7 @@ theorem support_stableCompensatedPoissonMeasure_of_abs_lt_one {α β ε : ℝ}
   let s : Set ℝ := {x | ε < |x|}
   let c := ∫ y in s, sin y ∂ν
   have hr : (ν s).toNNReal ≠ 0 := ENNReal.toNNReal_ne_zero.mpr
-    ⟨(stableLevyMeasure_abs_gt_pos hα hβ.le hε).ne',
+    ⟨(stableLevyMeasure_abs_gt_pos hα hβ.le).ne',
       stableLevyMeasure_abs_gt_ne_top hε⟩
   rw [stableCompensatedPoissonMeasure_def]
   -- The defining equation expands `ν`, `s`, and `c`; fold them back to the local names.

@@ -89,14 +89,33 @@ theorem exists_span_pair_eq_maximalIdeal (hdim : ringKrullDim A = 2) :
     Finset.card_eq_two.mp (hcard.trans (spanFinrank_maximalIdeal_eq_two hdim))
   exact ⟨x, y, by simpa using hspan⟩
 
-/-- Over a two-dimensional regular local ring, a finite module is free as soon as some pair
-generating the maximal ideal is a weakly regular sequence on it. -/
+/-- Over a regular local ring, a finite module is free as soon as some pair generating the
+maximal ideal is a weakly regular sequence on it. The ring then has dimension two, unless the
+module is zero. -/
 theorem free_of_isWeaklyRegular {M : Type*} [AddCommGroup M] [Module A M] [Module.Finite A M]
-    (hdim : ringKrullDim A = 2) {x y : A} (hxy : span {x, y} = maximalIdeal A)
+    {x y : A} (hxy : span {x, y} = maximalIdeal A)
     (hM : IsWeaklyRegular M [x, y]) : Module.Free A M := by
+  rcases subsingleton_or_nontrivial M with _ | _
+  · infer_instance
   have hxm := mem_maximalIdeal_of_span_pair_eq_maximalIdeal hxy
-  have hx2 := notMem_sq_of_span_pair_eq_maximalIdeal hdim hxy
-  have hx0 := ne_zero_of_span_pair_eq_maximalIdeal hdim hxy
+  -- A weakly regular sequence of length two on a nonzero finite module forces dimension two.
+  have hdim : ringKrullDim A = 2 := by
+    refine le_antisymm ?_ ?_
+    · have hle : (maximalIdeal A).spanFinrank ≤ 2 := by
+        rw [← hxy]
+        exact (Submodule.spanFinrank_span_le_ncard_of_finite (Set.toFinite {x, y})).trans
+          ((Set.ncard_insert_le x {y}).trans (by simp))
+      exact (ringKrullDim_le_spanFinrank_maximalIdeal A).trans (by exact_mod_cast hle)
+    · have hreg : IsRegular M [x, y] := by
+        refine (IsLocalRing.isRegular_iff_isWeaklyRegular_of_subset_maximalIdeal ?_).mpr hM
+        intro r hr
+        rcases List.mem_pair.mp hr with rfl | rfl
+        exacts [hxm, hxy ▸ subset_span (by simp)]
+      simpa using hreg.length_le_supportDim.trans (Module.supportDim_le_ringKrullDim A M)
+  have hprin : ¬ (maximalIdeal A).IsPrincipal :=
+    not_isPrincipal_maximalIdeal_of_one_lt_ringKrullDim (hdim ▸ by decide)
+  have hx2 := notMem_sq_of_span_pair_eq_maximalIdeal hprin hxy
+  have hx0 := ne_zero_of_span_pair_eq_maximalIdeal hprin hxy
   -- The quotient by `x` is a discrete valuation ring with uniformizer the image of `y`.
   let Q := A ⧸ span {x}
   have : IsRegularLocalRing Q := quotient_span_singleton hxm hx2
@@ -134,10 +153,12 @@ theorem isPrincipal_of_ne_maximalIdeal (hdim : ringKrullDim A ≤ 2) {p : Ideal 
     exact IsPrincipalIdealRing.principal p
   obtain ⟨x, y, hxy⟩ := exists_span_pair_eq_maximalIdeal hdim
   have hxm := mem_maximalIdeal_of_span_pair_eq_maximalIdeal hxy
-  have hx2 := notMem_sq_of_span_pair_eq_maximalIdeal hdim hxy
-  have hx0 := ne_zero_of_span_pair_eq_maximalIdeal hdim hxy
+  have hprin : ¬ (maximalIdeal A).IsPrincipal :=
+    not_isPrincipal_maximalIdeal_of_one_lt_ringKrullDim (hdim ▸ by decide)
+  have hx2 := notMem_sq_of_span_pair_eq_maximalIdeal hprin hxy
+  have hx0 := ne_zero_of_span_pair_eq_maximalIdeal hprin hxy
   have hprime : (span {x}).IsPrime := span_singleton_isPrime_of_notMem_sq hxm hx2
-  have hy := notMem_span_singleton_of_span_pair_eq_maximalIdeal hdim hxy
+  have hy := notMem_span_singleton_of_span_pair_eq_maximalIdeal hprin hxy
   -- `p` does not contain both parameters, since it is not the maximal ideal.
   have hxy_p : x ∉ p ∨ y ∉ p := by
     by_contra! h
@@ -160,7 +181,7 @@ theorem isPrincipal_of_ne_maximalIdeal (hdim : ringKrullDim A ≤ 2) {p : Ideal 
       · exact (‹p.IsPrime›.mem_or_mem (by rw [mul_comm, hd]; exact a.2)).resolve_left h
       · exact (‹p.IsPrime›.mem_or_mem (hcd ▸ c.2)).resolve_left h
     exact ⟨⟨d, hdp⟩, Submodule.mem_top, Subtype.ext (by simp [← hd, mul_comm])⟩
-  have : Module.Free A p := free_of_isWeaklyRegular hdim hxy hreg
+  have : Module.Free A p := free_of_isWeaklyRegular hxy hreg
   exact (Submodule.rank_le_one_iff_isPrincipal p).mp
     ((Submodule.rank_le p).trans_eq (Module.rank_self A))
 
@@ -177,8 +198,10 @@ theorem uniqueFactorizationMonoid_of_ringKrullDim_le_two (hdim : ringKrullDim A 
   by_cases hpm : p = maximalIdeal A
   · obtain ⟨x, y, hxy⟩ := exists_span_pair_eq_maximalIdeal hdim
     have hxm := mem_maximalIdeal_of_span_pair_eq_maximalIdeal hxy
-    exact ⟨x, hpm ▸ hxm, (span_singleton_prime (ne_zero_of_span_pair_eq_maximalIdeal hdim hxy)).mp
-      (span_singleton_isPrime_of_notMem_sq hxm (notMem_sq_of_span_pair_eq_maximalIdeal hdim hxy))⟩
+    have hprin : ¬ (maximalIdeal A).IsPrincipal :=
+      not_isPrincipal_maximalIdeal_of_one_lt_ringKrullDim (hdim ▸ by decide)
+    exact ⟨x, hpm ▸ hxm, (span_singleton_prime (ne_zero_of_span_pair_eq_maximalIdeal hprin hxy)).mp
+      (span_singleton_isPrime_of_notMem_sq hxm (notMem_sq_of_span_pair_eq_maximalIdeal hprin hxy))⟩
   · obtain ⟨f, rfl⟩ := (isPrincipal_of_ne_maximalIdeal hdim.le hpm).principal
     have hf0 : f ≠ 0 := by rintro rfl; simp at hp0
     exact ⟨f, mem_span_singleton_self f, (span_singleton_prime hf0).mp hp⟩
@@ -195,7 +218,7 @@ theorem free_dual (hdim : ringKrullDim A ≤ 2) (N : Type*) [AddCommGroup N] [Mo
   have hreg : IsRegular A [x, y] := isRegular_of_ofList_eq_maximalIdeal
     (by simpa [ofList_cons, ofList_singleton, ← span_insert] using hxy)
     (by simp [spanFinrank_maximalIdeal_eq_two hdim])
-  exact free_of_isWeaklyRegular hdim hxy (hreg.toIsWeaklyRegular.linearMap (by simp))
+  exact free_of_isWeaklyRegular hxy (hreg.toIsWeaklyRegular.linearMap (by simp))
 
 /-- **Reflexive modules are free in dimension two.** Over a regular local ring of dimension at
 most two, a finite reflexive module is free, being isomorphic to the dual of its dual. -/

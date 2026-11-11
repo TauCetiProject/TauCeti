@@ -18,9 +18,11 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 # Integrals of continuous functions on a compact space
 
 On a compact space `X`, every continuous function is integrable against a finite measure
-(`ContinuousMap.integrable`), and integration against a finite measure is Lipschitz, hence
-continuous, in the integrand for the sup norm on `C(X, E)`. This is what lets an identity between
-integrals pass from a dense subset of `C(X, E)` to all of it.
+(`Continuous.integrable_of_compactSpace`, `ContinuousMap.integrable`), as is its product with an
+integrable function against any measure (`MeasureTheory.Integrable.mul_continuous_of_compactSpace`),
+and integration against a finite measure is Lipschitz, hence continuous, in the integrand for the
+sup norm on `C(X, E)`. This is what lets an identity between integrals pass from a dense subset of
+`C(X, E)` to all of it.
 
 For `𝕜 = ℝ` or `ℂ`, integration against a finite measure is a positive linear functional on
 `C(X, 𝕜)` (`ContinuousMap.integralPositiveLinearMap`), the compact-space, `𝕜`-valued counterpart of
@@ -39,11 +41,29 @@ public section
 open MeasureTheory Set
 open scoped ComplexOrder
 
+section Integrable
+
+variable {X : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
+  [OpensMeasurableSpace X]
+
 /-- On a compact space, a continuous function is integrable against every finite measure. -/
-theorem ContinuousMap.integrable {X E : Type*} [TopologicalSpace X] [CompactSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup E] (f : C(X, E))
+theorem Continuous.integrable_of_compactSpace {E : Type*} [NormedAddCommGroup E] {f : X → E}
+    (hf : Continuous f) {μ : Measure X} [IsFiniteMeasure μ] : Integrable f μ :=
+  hf.integrable_of_hasCompactSupport (.of_compactSpace _)
+
+/-- On a compact space, a continuous function is integrable against every finite measure. -/
+theorem ContinuousMap.integrable {E : Type*} [NormedAddCommGroup E] (f : C(X, E))
     (μ : Measure X) [IsFiniteMeasure μ] : Integrable f μ :=
-  f.continuous.integrable_of_hasCompactSupport (.of_compactSpace _)
+  f.continuous.integrable_of_compactSpace
+
+/-- On a compact space, the product of an integrable function with a continuous function is
+integrable. -/
+theorem MeasureTheory.Integrable.mul_continuous_of_compactSpace {𝕜 : Type*} [NormedRing 𝕜]
+    {φ f : X → 𝕜} {μ : Measure X} (hφ : Integrable φ μ) (hf : Continuous f) :
+    Integrable (fun x ↦ φ x * f x) μ :=
+  hφ.mul_of_top_left (hf.memLp_top_of_hasCompactSupport (.of_compactSpace _) μ)
+
+end Integrable
 
 section integralPositiveLinearMap
 

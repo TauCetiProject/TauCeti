@@ -11,11 +11,11 @@ public import TauCeti.CategoryTheory.Exact.Biproduct
 /-!
 # The positive horseshoe step for complete resolutions
 
-A map into a finitely generated projective module extends across a monomorphism whose cokernel
-is Gorenstein-projective. Consequently, copresentations of the ends of a short exact sequence
-can be combined into a copresentation of its middle term, with middle module the direct sum of
-the prescribed copresenting modules. Only the left copresenting module must be finite
-projective. The cokernel is an extension of the two prescribed cokernels.
+A map into a projective module extends across a monomorphism whose cokernel is
+Gorenstein-projective. Consequently, copresentations of the ends of a short exact sequence can be
+combined into a copresentation of its middle term, with middle module the direct sum of the
+prescribed copresenting modules. Only the left copresenting module must be projective. The
+cokernel is an extension of the two prescribed cokernels.
 
 This is the positive-degree step of the complete horseshoe construction. Unlike an injective
 horseshoe, it does not require projective modules to be injective among all modules. Only the
@@ -50,7 +50,7 @@ variable {A : Type u} [Ring A]
 
 /-- **The positive horseshoe step.** Copresentations of the two ends of a short exact sequence
 with Gorenstein-projective quotient combine to a copresentation of the middle term. The left
-copresenting module is finite projective; no injectivity or projectivity is required of the
+copresenting module is projective; no injectivity or projectivity is required of the
 right copresenting module. The new cokernel is an extension of the prescribed cokernels, and
 all four squares of the horseshoe commute. -/
 theorem IsGorensteinProjective.exists_copresentation_horseshoe
@@ -60,7 +60,7 @@ theorem IsGorensteinProjective.exists_copresentation_horseshoe
     (hTX : (ShortComplex.mk iX pX hX).ShortExact)
     {iZ : S.X₃ ⟶ PZ} {pZ : PZ ⟶ KZ} {hZ : iZ ≫ pZ = 0}
     (hTZ : (ShortComplex.mk iZ pZ hZ).ShortExact)
-    [Module.Finite A PX] [Module.Projective A PX] :
+    [Module.Projective A PX] :
     ∃ (K : ModuleCat.{v} A) (i : S.X₂ ⟶ PX ⊞ PZ) (p : PX ⊞ PZ ⟶ K)
       (hip : i ≫ p = 0) (a : KX ⟶ K) (b : K ⟶ KZ) (hab : a ≫ b = 0),
       (ShortComplex.mk i p hip).ShortExact ∧ (ShortComplex.mk a b hab).ShortExact ∧
@@ -88,16 +88,10 @@ theorem IsGorensteinProjective.exists_copresentation_horseshoe
       (biprod.map (0 : PX ⟶ 0) pZ) hz) :=
     E.conflation_biprod (E.conflation_id_zero PX)
       ((ExactStructure.abelian_conflation _).mpr hTZ)
-  have hzero : (sp.isoBinaryBiproduct.hom ≫ biprod.map (𝟙 PX) iZ) ≫
-      biprod.map (0 : PX ⟶ 0) pZ = 0 := by
-    rw [Category.assoc, hz, comp_zero]
   have hnext : E.Conflation (ShortComplex.mk
       (sp.isoBinaryBiproduct.hom ≫ biprod.map (𝟙 PX) iZ)
-      (biprod.map (0 : PX ⟶ 0) pZ) hzero) := by
-    refine E.conflation_of_iso ?_ hbip
-    exact ShortComplex.isoMk sp.isoBinaryBiproduct.symm (Iso.refl _) (Iso.refl _)
-      (by simp only [Iso.symm_hom, Iso.refl_hom, Iso.inv_hom_id_assoc, Category.comp_id])
-      (by simp only [Iso.refl_hom, Category.id_comp, Category.comp_id])
+      (biprod.map (0 : PX ⟶ 0) pZ) (by rw [Category.assoc, hz, comp_zero])) :=
+    E.conflation_iso_hom_comp sp.isoBinaryBiproduct hbip
   rw [cobaseChange_def] at hmiddle
   -- Noether's conflations give the middle copresentation and the extension of cokernels.
   obtain ⟨K, p, a, b, hip, hab, hK, hC, hcomm, hright⟩ :=

@@ -52,6 +52,10 @@ quotient `Spec A ⟶ Spec Aᴳ` for arbitrary target schemes.
   finitely many compatible ring endomorphisms are the localization of the fixed elements.
 * `TauCeti.FixedPoints.isLocalization`: for finite `G`, `(M⁻¹A)ᴳ` is the localization of `Aᴳ`
   at `M`.
+* `Ideal.exists_mem_forall_smul_notMem`: for finite `G`, prime avoidance for the translates
+  `g⁻¹ • Q` of a prime `Q`.
+* `Ideal.exists_notMem_dvd_of_forall_smul_notMem`: for finite `G`, an element outside every
+  `g⁻¹ • Q` divides an invariant outside `Q`.
 * `TauCeti.FixedPoints.localRingHom_injective`: for finite `G`, `(Aᴳ)_P → A_Q` is injective.
 
 ## References
@@ -221,36 +225,49 @@ section LocalRingHom
 
 variable [Finite G]
 
+/-- **Prime avoidance for the translates of a prime.** For a finite group `G`, if an ideal `I`
+of `A` is contained in no translate `g⁻¹ • Q` of a prime `Q`, then some `u ∈ I` satisfies
+`g • u ∉ Q` for every `g`. -/
+theorem _root_.Ideal.exists_mem_forall_smul_notMem (Q : Ideal A) [Q.IsPrime] {I : Ideal A}
+    (hI : ∀ g : G, ¬ I ≤ Q.comap (MulSemiringAction.toRingHom G A g)) :
+    ∃ u ∈ I, ∀ g : G, g • u ∉ Q := by
+  have := Fintype.ofFinite G
+  by_contra! h
+  have hsub : (I : Set A) ⊆ ⋃ g ∈ (Finset.univ : Finset G),
+      (Q.comap (MulSemiringAction.toRingHom G A g) : Set A) := fun u hu ↦ by
+    obtain ⟨g, hg⟩ := h u hu
+    exact Set.mem_biUnion (Finset.mem_coe.mpr (Finset.mem_univ g)) hg
+  obtain ⟨g, -, hg⟩ := (Ideal.subset_union_prime 1 1
+    (fun g _ _ _ ↦ Ideal.comap_isPrime _ Q)).mp hsub
+  exact hI g hg
+
+/-- **Norms of elements avoiding every translate of a prime.** For a finite group `G`, if
+`g • u ∉ Q` for every `g`, then the invariant norm `∏ g, g • u` lies outside `Q` and is divisible
+by `u`. -/
+theorem _root_.Ideal.exists_notMem_dvd_of_forall_smul_notMem (Q : Ideal A) [Q.IsPrime] {u : A}
+    (hu : ∀ g : G, g • u ∉ Q) : ∃ r : FixedPoints.subring A G, (r : A) ∉ Q ∧ u ∣ r := by
+  have := Fintype.ofFinite G
+  refine ⟨⟨∏ g : G, g • u, fun g ↦ Finset.smul_prod_perm u g⟩, fun hmem ↦ ?_, ?_⟩
+  · obtain ⟨g, -, hg⟩ := (Ideal.IsPrime.prod_mem_iff (p := Q)).mp hmem
+    exact hu g hg
+  · simpa using Finset.dvd_prod_of_mem (fun g : G ↦ g • u) (Finset.mem_univ 1)
+
 /-- If an invariant `x` is killed by an element outside a prime `Q`, it is killed by an invariant
 element outside `Q`. This is prime avoidance for the `G`-stable annihilator of `x` and the
 finitely many primes `g⁻¹ • Q`. -/
 theorem exists_mul_eq_zero_of_mul_eq_zero (Q : Ideal A) [Q.IsPrime] (x : FixedPoints.subring A G)
     {t : A} (htQ : t ∉ Q) (htx : t * x = 0) :
     ∃ s ∈ FixedPoints.subring A G, s ∉ Q ∧ s * x = 0 := by
-  have := Fintype.ofFinite G
   set I : Ideal A := (Ideal.span {(x : A)}).annihilator
   have hI (u : A) : u ∈ I ↔ u * x = 0 := by
     rw [Submodule.mem_annihilator_span_singleton, smul_eq_mul]
-  obtain ⟨u, huI, hu⟩ : ∃ u ∈ I, ∀ g : G, g • u ∉ Q := by
-    by_contra! h
-    have hsub : (I : Set A) ⊆ ⋃ g ∈ (Finset.univ : Finset G),
-        (Q.comap (MulSemiringAction.toRingHom G A g) : Set A) := fun u hu ↦ by
-      obtain ⟨g, hg⟩ := h u hu
-      exact Set.mem_biUnion (Finset.mem_coe.mpr (Finset.mem_univ g)) hg
-    obtain ⟨g, -, hg⟩ := (Ideal.subset_union_prime 1 1
-      (fun g _ _ _ ↦ Ideal.comap_isPrime _ Q)).mp hsub
+  obtain ⟨u, huI, hu⟩ := Q.exists_mem_forall_smul_notMem (G := G) (I := I) fun g hg ↦ by
     -- The annihilator of `x` is `G`-stable, so it contains `g⁻¹ • t`, and then `t ∈ Q`.
     have hmem : g⁻¹ • t ∈ I := by
       rw [hI, ← x.2 g⁻¹, ← smul_mul', htx, smul_zero]
     exact htQ (by simpa using hg hmem)
-  refine ⟨∏ g : G, g • u, fun h ↦ ?_, ?_, ?_⟩
-  · rw [Finset.smul_prod']
-    exact Fintype.prod_equiv (Equiv.mulLeft h) _ _ fun g ↦ (mul_smul h g u).symm
-  · exact fun hmem ↦ by
-      obtain ⟨g, -, hg⟩ := (Ideal.IsPrime.prod_mem_iff (p := Q)).mp hmem
-      exact hu g hg
-  · obtain ⟨c, hc⟩ := Finset.dvd_prod_of_mem (fun g : G ↦ g • u) (Finset.mem_univ 1)
-    rw [hc, one_smul, mul_comm u, mul_assoc, (hI u).mp huI, mul_zero]
+  obtain ⟨r, hrQ, c, hc⟩ := Q.exists_notMem_dvd_of_forall_smul_notMem hu
+  exact ⟨r, r.2, hrQ, by rw [hc, mul_comm u, mul_assoc, (hI u).mp huI, mul_zero]⟩
 
 /-- **Invariants inject into stalks.** For a finite group `G`, a prime `Q` of `A` and the prime
 `P` of `Aᴳ` below it, the induced homomorphism of local rings `(Aᴳ)_P → A_Q` is injective. -/

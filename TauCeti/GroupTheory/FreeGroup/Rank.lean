@@ -23,6 +23,10 @@ Conversely, a free basis has at most as many elements as any generating family. 
 `H` with basis `ι` is the image of `FreeGroup α` for a finite type `α`, then `ι` is finite and
 `#ι ≤ #α`: the homomorphisms `H →* ℤ/2`, which correspond to the functions `ι → ℤ/2`, are
 determined by their values on the images of the elements of `α`.
+
+Consequently, a group with a free basis is finitely generated exactly when the basis is
+finite, and its rank is the cardinality of that basis. These results allow rank computations
+from explicit free coordinates, for example the non-tree edges of a graph.
 -/
 
 public section
@@ -62,5 +66,30 @@ theorem card_le_of_surjective (b : FreeGroupBasis ι H) [Finite α] (hf : Functi
   rw [Nat.card_fun, Nat.card_fun, Nat.card_eq_fintype_card (α := Multiplicative (ZMod 2)),
     Fintype.card_multiplicative, ZMod.card] at hcard
   exact (Nat.pow_le_pow_iff_right Nat.one_lt_two).mp hcard
+
+/-- A free basis of a finitely generated group has finitely many elements. -/
+theorem finite_of_fg (b : FreeGroupBasis ι H) [Group.FG H] : Finite ι := by
+  obtain ⟨S, hS : Finite S, f, hf⟩ := Group.fg_iff_exists_freeGroup_hom_surjective.mp
+    (inferInstance : Group.FG H)
+  exact b.finite_of_surjective (f := f) hf
+
+/-- A group with a free basis is finitely generated exactly when the basis is finite. -/
+theorem fg_iff_finite (b : FreeGroupBasis ι H) : Group.FG H ↔ Finite ι := by
+  refine ⟨fun h => b.finite_of_fg, fun h => ?_⟩
+  exact Group.fg_of_surjective (f := b.repr.symm.toMonoidHom) b.repr.symm.surjective
+
+/-- The minimum number of generators of a finitely generated free group equals the
+cardinality of any of its free bases. -/
+theorem rank_eq_nat_card (b : FreeGroupBasis ι H) [Group.FG H] :
+    Group.rank H = Nat.card ι := by
+  classical
+  have := b.finite_of_fg
+  refine le_antisymm ((Group.rank_congr b.repr).trans_le (TauCeti.rank_freeGroup_le ι)) ?_
+  obtain ⟨S, hcard, hS⟩ := Group.rank_spec H
+  have hsurj : Function.Surjective (FreeGroup.lift (Subtype.val : S → H)) := by
+    rw [FreeGroup.lift_surjective_iff_closure_range_eq_top, Subtype.range_coe]
+    exact hS
+  simpa only [Nat.card_eq_fintype_card (α := S), Fintype.card_coe, hcard] using
+    b.card_le_of_surjective hsurj
 
 end FreeGroupBasis

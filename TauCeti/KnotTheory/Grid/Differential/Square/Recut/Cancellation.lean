@@ -66,9 +66,9 @@ theorem sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut (S : Fi
     obtain ⟨hDS, hdisj⟩ := Finset.mem_filter.mp hD
     have hone := ((f D).hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left hdisj
     obtain ⟨hfirst, hsecond⟩ := hempty D hDS
-    have hsymm := h.symm hone hfirst hsecond
+    have hsymm := h.symm hfirst hsecond
     refine ⟨Finset.mem_filter.mpr ⟨hE, (f E).not_hasDisjointSides_of_hasOneCommonSide
-      (hasOneCommonSide_of_isRecut hsymm hzx)⟩, hsymm, hw E hE D hDS hsymm.isRepartition,
+      (hasOneCommonSide_of_isRecut hsymm)⟩, hsymm, hw E hE D hDS hsymm.isRepartition,
       fun hED => h.middle_ne (by rw [hED])⟩
   -- The recut partner of a member of `T` is unique.
   have unique : ∀ D ∈ T, ∀ E ∈ S, ∀ E' ∈ S, (f D).IsRecut (f E) → (f D).IsRecut (f E') →

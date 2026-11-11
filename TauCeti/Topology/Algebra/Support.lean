@@ -25,6 +25,10 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
 * `Homeomorph.tsupport_comp_symm_subset_interior_image`: support in the interior of a set is
   transported to support in the interior of its image, with multiplicative version
   `Homeomorph.mulTSupport_comp_symm_subset_interior_image`.
+* `Continuous.smul_of_continuousOn_of_tsupport_subset`: a continuous function supported
+  in `U`, times a function continuous on `U`, is continuous.
+* `TauCeti.tsupport_snd_smul_fst_subset`: the topological support of `(x, y) ↦ f y • g x` lies in
+  `tsupport g ×ˢ tsupport f`.
 -/
 
 public section
@@ -42,7 +46,47 @@ theorem mulTSupport_comp_div_right (f : X → G) (x : X) :
   simpa [div_eq_mul_inv, Function.comp_def] using
     mulTSupport_comp_eq_preimage f (Homeomorph.mulRight x⁻¹)
 
+section Prod
+
+variable {Y R M : Type*} [Zero R] [Zero M] [SMulWithZero R M]
+
+omit [TopologicalSpace X] [Group X] [SeparatelyContinuousMul X] in
+/-- The function `(x, y) ↦ f y • g x` is supported in `support g ×ˢ support f`. -/
+theorem support_snd_smul_fst_subset (f : Y → R) (g : X → M) :
+    Function.support (fun p : X × Y ↦ f p.2 • g p.1) ⊆ Function.support g ×ˢ Function.support f :=
+  fun _ hp ↦ ⟨right_ne_zero_of_smul hp, left_ne_zero_of_smul hp⟩
+
+omit [Group X] [SeparatelyContinuousMul X] in
+/-- The function `(x, y) ↦ f y • g x` is supported in `tsupport g ×ˢ tsupport f`. -/
+theorem tsupport_snd_smul_fst_subset [TopologicalSpace Y] (f : Y → R) (g : X → M) :
+    tsupport (fun p : X × Y ↦ f p.2 • g p.1) ⊆ tsupport g ×ˢ tsupport f :=
+  closure_minimal ((support_snd_smul_fst_subset f g).trans
+    (Set.prod_mono (subset_tsupport _) (subset_tsupport _)))
+    ((isClosed_tsupport _).prod (isClosed_tsupport _))
+
+end Prod
+
 end TauCeti
+
+namespace Continuous
+
+/-- A function `b` continuous with topological support in `U`, times a function `a` continuous
+on `U`, is continuous. The function `a` need not be continuous off `U`, and `U` need not be
+open. -/
+theorem smul_of_continuousOn_of_tsupport_subset {Z 𝕜 F : Type*} [TopologicalSpace Z]
+    [TopologicalSpace 𝕜] [Zero F] [TopologicalSpace F] [SMulZeroClass 𝕜 F]
+    [ContinuousSMul 𝕜 F] {a : Z → 𝕜} {b : Z → F} {U : Set Z} (hb : Continuous b)
+    (hbU : tsupport b ⊆ U) (ha : ContinuousOn a U) : Continuous fun x ↦ a x • b x := by
+  have hzero : ∀ x ∈ Uᶜ, b x = 0 := fun x hx ↦
+    image_eq_zero_of_notMem_tsupport fun h ↦ hx (hbU h)
+  refine continuous_of_tsupport fun x hx ↦ ?_
+  have hxU : x ∈ U := hbU (tsupport_smul_subset_right _ _ hx)
+  rw [← continuousWithinAt_univ, ← Set.union_compl_self U, continuousWithinAt_union]
+  refine ⟨(ha x hxU).smul hb.continuousAt.continuousWithinAt, ?_⟩
+  exact (continuousWithinAt_const.smul hb.continuousAt.continuousWithinAt).congr
+    (fun y hy ↦ by simp [hzero y hy]) rfl
+
+end Continuous
 
 namespace Homeomorph
 

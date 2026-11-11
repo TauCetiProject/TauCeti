@@ -112,7 +112,7 @@ theorem exists_algEquiv_apply_eq (hL : IsNarrowGenusField d L y)
   have hminpoly {N : Type u} [Field N] [NumberField N] {w : N}
       (hN : IsNarrowGenusField d N w) :
       minpoly ℚ w = Polynomial.X ^ 2 - Polynomial.C ((d : ℤ) : ℚ) := by
-    apply TauCeti.Algebra.minpoly_eq_X_sq_sub_C_of_sq_eq_of_natDegree_eq_two
+    refine TauCeti.Algebra.minpoly_eq_X_pow_sub_C_of_pow_eq_of_natDegree_eq two_ne_zero ?_ ?_
     · rw [hN.root_sq, IsScalarTower.algebraMap_apply ℤ ℚ N]
       norm_num
     · rw [← IntermediateField.adjoin.finrank (Algebra.IsIntegral.isIntegral w)]

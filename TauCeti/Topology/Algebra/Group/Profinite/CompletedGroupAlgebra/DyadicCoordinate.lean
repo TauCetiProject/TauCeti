@@ -149,7 +149,7 @@ the elements whose `C₂`-coordinate is `1` and whose `ℤ₂`-coordinate is div
 `ℤ₂[[Γ]]` to `U_m` is the principal ideal `((1 + X) ^ (2 ^ m) - 1)`
 (`ker_proj_comp_dyadicCoordinate`). -/
 noncomputable def dyadicLevel : OpenNormalSubgroup Γ :=
-  ((openNormalSubgroupBot (Multiplicative (ZMod 2))).prod (padicIntLevel 2 m)).comap e
+  ((⊥ : OpenNormalSubgroup (Multiplicative (ZMod 2))).prod (padicIntLevel 2 m)).comap e
     (map_continuous e)
 
 /-- The level `U_m` consists of the elements whose `C₂`-coordinate is `1` and whose
@@ -158,14 +158,14 @@ noncomputable def dyadicLevel : OpenNormalSubgroup Γ :=
 theorem mem_dyadicLevel_iff {γ : Γ} :
     γ ∈ dyadicLevel e m ↔ (e γ).1 = 1 ∧ (2 : ℤ_[2]) ^ m ∣ Multiplicative.toAdd (e γ).2 := by
   rw [dyadicLevel, OpenNormalSubgroup.mem_comap, OpenNormalSubgroup.mem_prod,
-    mem_openNormalSubgroupBot, mem_padicIntLevel_iff, Nat.cast_ofNat, MonoidHom.coe_ofClass]
+    OpenNormalSubgroup.mem_bot, mem_padicIntLevel_iff, Nat.cast_ofNat, MonoidHom.coe_ofClass]
 
 /-- Transported back along `e`, the level `U_m` of `Γ` is the level `{1} × 2^m ℤ₂` of
 `C₂ × ℤ₂`. -/
 theorem comap_dyadicLevel_symm :
     (dyadicLevel e m).comap (e.symm : Multiplicative (ZMod 2) × Multiplicative ℤ_[2] →* Γ)
         (map_continuous e.symm) =
-      (openNormalSubgroupBot (Multiplicative (ZMod 2))).prod (padicIntLevel 2 m) :=
+      (⊥ : OpenNormalSubgroup (Multiplicative (ZMod 2))).prod (padicIntLevel 2 m) :=
   SetLike.ext fun x ↦ by
     rw [OpenNormalSubgroup.mem_comap, dyadicLevel, OpenNormalSubgroup.mem_comap,
       MonoidHom.coe_ofClass, MonoidHom.coe_ofClass, ContinuousMulEquiv.apply_symm_apply]
@@ -200,8 +200,8 @@ theorem exists_dyadicLevel_le (V : OpenNormalSubgroup Γ) : ∃ m, dyadicLevel e
     (W.comap (MonoidHom.inr _ _) (continuous_inr _ _)).toOpenSubgroup
   refine ⟨m, fun γ hγ ↦ ?_⟩
   rw [dyadicLevel, OpenNormalSubgroup.mem_comap, MonoidHom.coe_ofClass] at hγ
-  have h : e γ ∈ W := openNormalSubgroupBot_prod_comap_inr_le W
-    (openNormalSubgroupBot_prod_mono (fun x hx ↦ hm hx) hγ)
+  have h : e γ ∈ W := bot_prod_comap_inr_le W
+    (bot_prod_mono (fun x hx ↦ hm hx) hγ)
   rwa [OpenNormalSubgroup.mem_comap, MonoidHom.coe_ofClass,
     ContinuousMulEquiv.symm_apply_apply] at h
 

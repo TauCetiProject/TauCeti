@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.Infinitary.CodedConnectives
 public import TauCeti.ModelTheory.Infinitary.Equiv
 public import TauCeti.ModelTheory.Infinitary.LanguageMap
+public import TauCeti.ModelTheory.Infinitary.ConstantSupport
 public import Mathlib.Data.Set.Countable
 
 /-!
@@ -35,9 +36,14 @@ is a model of the image of a theory exactly when it is a model of the theory.
 
 * `FirstOrder.Language.Theoryω.realize_conjunction_iff`: a structure satisfies the conjunction of
   a countable theory exactly when it is a model of the theory.
+* `FirstOrder.Language.Theoryω.model_constantsOn_update_iff`: reinterpreting a constant absent
+  from a theory preserves modelhood.
 * `FirstOrder.Language.Theoryω.Model.mono`, `FirstOrder.Language.Theoryω.model_empty`,
   `FirstOrder.Language.Theoryω.model_union_iff`, `FirstOrder.Language.Theoryω.model_insert_iff`:
   the basic laws of modelhood.
+* `FirstOrder.Language.Theoryω.Model.bot_notMem`, `FirstOrder.Language.Theoryω.Model.not_notMem`
+  and `FirstOrder.Language.Theoryω.Model.realize_of_imp_mem` with its companions: a theory with a
+  model contains no contradiction, and the components of its compound sentences are true there.
 * `FirstOrder.Language.Theoryω.model_image_toOmega_iff`: a structure is a model of the image of
   a first-order theory exactly when it is a model of the first-order theory.
 * `FirstOrder.Language.StrongHomClass.theoryω_model_iff`: isomorphic structures are models of the
@@ -63,7 +69,7 @@ is a model of the image of a theory exactly when it is a model of the theory.
 
 public section
 
-universe u v u' v' w w'
+universe u v u' v' w w' uγ
 
 namespace FirstOrder
 
@@ -127,6 +133,44 @@ theorem model_image_toOmega_iff {T : L.Theory} :
     Model (BoundedFormula.toOmega '' T) M ↔ M ⊨ T := by
   simp only [model_iff, Set.forall_mem_image, Sentence.realize_toInf, Theory.model_iff]
 
+/-! ### Sentences of a theory with a model
+
+In a model of `T`, the components of a compound sentence of `T` that a consistency property adds
+are true. -/
+
+/-- A theory with a model does not contain `⊥`. -/
+theorem Model.bot_notMem (h : T.Model M) : (⊥ : L.Sentenceω) ∉ T := fun hb =>
+  SentenceInf.realize_bot.1 (h.realize_of_mem hb)
+
+/-- A theory with a model does not contain a sentence together with its negation. -/
+theorem Model.not_notMem (h : T.Model M) {φ : L.Sentenceω} (hφ : φ ∈ T) : φ.not ∉ T := fun hn =>
+  SentenceInf.realize_not.1 (h.realize_of_mem hn) (h.realize_of_mem hφ)
+
+/-- In a model of `T`, an implication in `T` has a false hypothesis or a true conclusion. -/
+theorem Model.realize_of_imp_mem (h : T.Model M) {φ ψ : L.Sentenceω} (hφψ : φ.imp ψ ∈ T) :
+    SentenceInf.Realize φ.not M ∨ SentenceInf.Realize ψ M := by
+  rw [SentenceInf.realize_not]
+  exact imp_iff_not_or.1 (SentenceInf.realize_imp.1 (h.realize_of_mem hφψ))
+
+/-- In a model of `T`, a negated implication in `T` has a true hypothesis and a false
+conclusion. -/
+theorem Model.realize_of_not_imp_mem (h : T.Model M) {φ ψ : L.Sentenceω}
+    (hφψ : (φ.imp ψ).not ∈ T) : SentenceInf.Realize φ M ∧ SentenceInf.Realize ψ.not M := by
+  simpa only [SentenceInf.realize_not, SentenceInf.realize_imp, Classical.not_imp] using
+    h.realize_of_mem hφψ
+
+/-- In a model of `T`, a negated conjunction in `T` has a false conjunct. -/
+theorem Model.realize_of_not_iInf_mem (h : T.Model M) {φs : ℕ → L.Sentenceω}
+    (hφs : (BoundedFormulaInf.iInf φs).not ∈ T) : ∃ k, SentenceInf.Realize (φs k).not M := by
+  simpa only [SentenceInf.realize_not, SentenceInf.realize_iInf, not_forall] using
+    h.realize_of_mem hφs
+
+/-- In a model of `T`, every disjunct of a negated disjunction in `T` is false. -/
+theorem Model.realize_of_not_iSup_mem (h : T.Model M) {φs : ℕ → L.Sentenceω}
+    (hφs : (BoundedFormulaInf.iSup φs).not ∈ T) (k : ℕ) : SentenceInf.Realize (φs k).not M :=
+  SentenceInf.realize_not.2 fun hk =>
+    SentenceInf.realize_not.1 (h.realize_of_mem hφs) (SentenceInf.realize_iSup.2 ⟨k, hk⟩)
+
 /-! ### The conjunction of a countable theory -/
 
 /-- The **conjunction of a countable theory**: its sentences, enumerated into the carrier `ℕ`
@@ -150,6 +194,20 @@ theorem realize_conjunction_iff (hT : T.Countable) :
   rw [SentenceInf.realize_def, FormulaInf.realize_def, conjunction_def,
     BoundedFormulaInf.realize_iInfAlong, model_iff]
   simp only [Subtype.forall, SentenceInf.realize_def, FormulaInf.realize_def]
+
+/-- Reinterpreting a constant absent from every sentence of a theory preserves modelhood. -/
+theorem model_constantsOn_update_iff {γ : Type uγ} [DecidableEq γ]
+    {M : Type w} [L.Structure M] (e : γ → M) {c : γ} (m : M)
+    {T : L[[γ]].Theoryω} (hc : ∀ φ ∈ T, c ∉ φ.constantSupport) :
+    @Model _ T M (@withConstantsStructure L M _ γ
+      (constantsOn.structure (Function.update e c m))) ↔
+      @Model _ T M (@withConstantsStructure L M _ γ (constantsOn.structure e)) := by
+  simp only [model_iff, SentenceInf.realize_def, FormulaInf.realize_def]
+  apply forall₂_congr
+  intro φ hφ
+  exact φ.realize_congr_of_eqOn_constantSupport
+    (fun d hd => Function.update_of_ne (by rintro rfl; exact hc φ hφ hd : d ≠ c) m e)
+    Empty.elim default
 
 end Theoryω
 

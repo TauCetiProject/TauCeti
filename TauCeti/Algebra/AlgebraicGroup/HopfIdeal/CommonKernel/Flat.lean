@@ -64,7 +64,6 @@ instance isTorsionFree_quotient_commonKernelHopfIdeal
   have hI : scalarTorsionIdeal R Q = ⊥ := by
     simpa only [T, HopfIdeal.scalarTorsion_toIdeal, HopfIdeal.bot_toIdeal] using
       congrArg HopfIdeal.toIdeal hT
-  rw [← scalarTorsionIdeal_restrictScalars, hI]
-  rfl
+  rw [← restrictScalars_scalarTorsionIdeal, hI, Submodule.restrictScalars_bot]
 
 end TauCeti.CommHopfAlgCat

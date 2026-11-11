@@ -148,7 +148,8 @@ theorem finrank_quotient_jacobsonRadicalSubmodule_biproduct {J : Type*} [Fintype
     [∀ j, FiniteDimensional k ((P j ⟶ Y) ⧸ jacobsonRadicalSubmodule k (P j) Y)] :
     Module.finrank k ((⨁ P ⟶ Y) ⧸ jacobsonRadicalSubmodule k (⨁ P) Y) =
       ∑ j, Module.finrank k ((P j ⟶ Y) ⧸ jacobsonRadicalSubmodule k (P j) Y) := by
-  exact finrank_quotient_eq_sum_of_equiv_pi k (homBiproductLinearEquiv k P Y)
+  exact finrank_quotient_eq_sum_of_surjective_pi k (homBiproductLinearEquiv k P Y).toLinearMap
+    (homBiproductLinearEquiv k P Y).surjective
     (jacobsonRadicalSubmodule k (⨁ P) Y) (fun j ↦ jacobsonRadicalSubmodule k (P j) Y)
     fun f ↦ by simp [mem_jacobsonRadicalSubmodule, mem_jacobsonRadical_biproduct_left_iff]
 
@@ -159,7 +160,8 @@ theorem finrank_quotient_jacobsonRadicalSubmodule_biproduct_right {J : Type*} [F
     [∀ j, FiniteDimensional k ((Y ⟶ P j) ⧸ jacobsonRadicalSubmodule k Y (P j))] :
     Module.finrank k ((Y ⟶ ⨁ P) ⧸ jacobsonRadicalSubmodule k Y (⨁ P)) =
       ∑ j, Module.finrank k ((Y ⟶ P j) ⧸ jacobsonRadicalSubmodule k Y (P j)) := by
-  exact finrank_quotient_eq_sum_of_equiv_pi k (homToBiproductLinearEquiv k P Y)
+  exact finrank_quotient_eq_sum_of_surjective_pi k (homToBiproductLinearEquiv k P Y).toLinearMap
+    (homToBiproductLinearEquiv k P Y).surjective
     (jacobsonRadicalSubmodule k Y (⨁ P)) (fun j ↦ jacobsonRadicalSubmodule k Y (P j))
     fun f ↦ by simp [mem_jacobsonRadicalSubmodule, mem_jacobsonRadical_biproduct_right_iff]
 

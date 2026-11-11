@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.Instances.Icc
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
@@ -55,6 +55,10 @@ the unit tangent vector at every time.
 * `TauCeti.homotopyOperator`: the homotopy operator `h`.
 * `TauCeti.IsSmoothForm.homotopyOperator`: `h` preserves `C^r` regularity.
 * `TauCeti.homotopyOperator_add`: `h` is additive on continuous forms.
+* `TauCeti.homotopyOperator_mpullback_prodMap_id`: `h` commutes with pullback along `g × id` for
+  a map `g` with invertible derivatives.
+* `TauCeti.homotopyOperator_mpullback_prodMap_id_of_isSmoothForm`: the same for a continuous form
+  and an arbitrary differentiable map `g`.
 * `TauCeti.mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv`: the cochain-homotopy
   identity `d (h φ) + h (d φ) = ι₁^* φ - ι₀^* φ`.
 * `TauCeti.mextDeriv_homotopyOperator`: for a closed form, `d (h φ) = ι₁^* φ - ι₀^* φ`.
@@ -111,6 +115,26 @@ theorem homotopyOperator_apply (φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0
           (.inl ℝ E (EuclideanSpace ℝ (Fin 1)))) 0 1 volume :=
   (rfl)
 
+/-- The homotopy operator vanishes at `x` when, at every time `t`, the form `φ (x, t)` vanishes on
+every family whose first vector is the unit time vector `∂ₜ = (0, 1)`. -/
+theorem homotopyOperator_apply_eq_zero
+    {φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)} {x : M}
+    (h : ∀ (t : Icc (0 : ℝ) 1) (v : Fin k → E × EuclideanSpace ℝ (Fin 1)),
+      φ (x, t) (Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) t)) v) = 0) :
+    homotopyOperator φ x = 0 := by
+  rw [homotopyOperator_apply]
+  -- The integrand vanishes: its first argument is `∂ₜ`.
+  refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : E [⋀^Fin k]→L[ℝ] F))
+    fun t _ ↦ ?_).trans (intervalIntegral.integral_zero (E := E [⋀^Fin k]→L[ℝ] F))
+  refine ContinuousAlternatingMap.ext fun w ↦ ?_
+  -- `curryLeft_apply_apply` does not fire: the tangent spaces of the cylinder are the model
+  -- spaces only by definition. So state the evaluation of the curried form on `∂ₜ` followed by
+  -- the included vectors explicitly.
+  change φ (x, projIcc 0 1 zero_le_one t)
+    (Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)))
+      fun i ↦ ((w i : E), (0 : EuclideanSpace ℝ (Fin 1)))) = 0
+  exact h _ _
+
 /-- The homotopy operator of the zero form is zero. -/
 @[simp]
 theorem homotopyOperator_zero :
@@ -127,6 +151,61 @@ theorem homotopyOperator_smul (c : ℝ)
   funext x
   -- The integrand of `c • φ` is `c` times the integrand of `φ`.
   exact intervalIntegral.integral_smul (μ := volume) (a := 0) (b := 1) c (homotopyIntegrand φ x)
+
+/-- The integrand of the homotopy operator of a pullback along `g × id` is the integrand at the
+image point, evaluated on the images of the vectors under the derivative of `g`. -/
+private theorem homotopyIntegrand_mpullback_prodMap_id_apply {E' H' M' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] {g : M' → M}
+    (hg : MDifferentiable I' I g) (φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1))
+    (y : M') (t : ℝ) (v : Fin k → E') :
+    homotopyIntegrand (mpullback (I'.prod (𝓡∂ 1)) (I.prod (𝓡∂ 1)) (Prod.map g id) φ) y t v =
+      homotopyIntegrand φ (g y) t fun i ↦ mfderiv I' I g y (v i) := by
+  -- Both sides evaluate `φ` at `(g y, t)` on `∂ₜ` and the vectors `(dg (v i), 0)`; the
+  -- derivative of `g × id` acts componentwise.
+  refine (mpullback_apply _ φ _ (Fin.cons _ fun i ↦ ((v i : E'),
+    (0 : EuclideanSpace ℝ (Fin 1))))).trans (congrArg _ (funext fun i ↦ ?_))
+  rw [mfderiv_prodMap (hg y) mdifferentiableAt_id, mfderiv_id]
+  cases i using Fin.cases with
+  | zero => exact Prod.ext (map_zero (mfderiv I' I g y)) rfl
+  | succ j => rfl
+
+/-- **Naturality of the homotopy operator.** Pulling a form on the cylinder back along `g × id`
+commutes with the homotopy operator, for a differentiable map `g` whose derivatives are
+invertible, for instance a diffeomorphism. For continuous forms the derivatives of `g` may be
+arbitrary (`TauCeti.homotopyOperator_mpullback_prodMap_id_of_isSmoothForm`). -/
+theorem homotopyOperator_mpullback_prodMap_id {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {g : M' → M} (hg : MDifferentiable I' I g)
+    (hdg : ∀ y, (mfderiv I' I g y).IsInvertible)
+    (φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)) :
+    homotopyOperator (mpullback (I'.prod (𝓡∂ 1)) (I.prod (𝓡∂ 1)) (Prod.map g id) φ) =
+      mpullback I' I g (homotopyOperator φ) := by
+  funext y
+  obtain ⟨D, hD⟩ := hdg y
+  -- The derivative of `g` at `y`, with the model-space tangent identifications made explicit.
+  let Dm : E' →L[ℝ] E := mfderiv I' I g y
+  let D' : E' ≃L[ℝ] E := D
+  have hD' : (D' : E' →L[ℝ] E) = Dm := hD
+  have hL (a : E [⋀^Fin k]→L[ℝ] F) :
+      D'.symm.continuousAlternatingMapCongrLeft a = a.compContinuousLinearMap Dm := by
+    rw [ContinuousLinearEquiv.continuousAlternatingMapCongrLeft_apply,
+      ContinuousLinearEquiv.symm_symm, hD']
+  -- The values of both forms at `y` are alternating maps on the model space `E'`.
+  change @Eq (E' [⋀^Fin k]→L[ℝ] F) _ _
+  calc _ = ∫ t in (0 : ℝ)..1, D'.symm.continuousAlternatingMapCongrLeft
+          (homotopyIntegrand φ (g y) t) :=
+        intervalIntegral.integral_congr fun t _ ↦ by
+          rw [hL]
+          ext v
+          exact homotopyIntegrand_mpullback_prodMap_id_apply hg φ y t v
+    _ = D'.symm.continuousAlternatingMapCongrLeft
+          (∫ t in (0 : ℝ)..1, homotopyIntegrand φ (g y) t) :=
+        ContinuousLinearEquiv.intervalIntegral_comp_comm _ _
+    _ = _ := by
+        rw [hL]
+        ext v
+        exact (mpullback_apply (I := I') (I' := I) g (homotopyOperator φ) y v).symm
 
 /-! ### The chart expression of the homotopy operator -/
 
@@ -191,6 +270,22 @@ private theorem curryLeft_mpullbackWithin_cylinder [IsManifold I 1 M] (x₀ : M)
           exact Prod.ext_iff.2 ⟨rfl, zero_smul ℝ _⟩
     _ = _ := rfl
 
+/-- Read in the chart at `x₀`, through the chart derivative `D`, the integrand of the homotopy
+operator is the integrand of the flat cylinder homotopy operator of the pullback of the form to the
+flat cylinder over `s`. -/
+private theorem continuousAlternatingMapCongrLeft_homotopyIntegrand [IsManifold I 1 M] (x₀ : M)
+    {s : Set E} (hs : s ⊆ (extChartAt I x₀).target) (hsu : UniqueDiffOn ℝ s)
+    (ψ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)) {y : E} (hy : y ∈ s) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) {D : E ≃L[ℝ] E}
+    (hD : (D : E →L[ℝ] E) = mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) y) :
+    D.symm.continuousAlternatingMapCongrLeft (homotopyIntegrand ψ ((extChartAt I x₀).symm y) t) =
+      (ContinuousAlternatingMap.curryLeft (E := E × ℝ) (mpullbackWithin 𝓘(ℝ, E × ℝ)
+        (I.prod (𝓡∂ 1)) (cylinderChart I x₀) (s ×ˢ Icc 0 1) ψ (y, t))
+          (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) := by
+  rw [ContinuousLinearEquiv.continuousAlternatingMapCongrLeft_apply,
+    ContinuousLinearEquiv.symm_symm, hD, curryLeft_mpullbackWithin_cylinder x₀ hs hsu ψ hy ht]
+  exact congrArg _ (mfderivWithin_extChartAt_symm_of_subset x₀ hs hsu hy).symm
+
 /-- In the chart at `x₀`, the homotopy operator is the flat cylinder homotopy operator of the
 pullback of the form to the flat cylinder over `s`. -/
 private theorem inChartAt_homotopyOperator [IsManifold I 1 M] (x₀ : M) {s : Set E}
@@ -221,8 +316,7 @@ private theorem inChartAt_homotopyOperator [IsManifold I 1 M] (x₀ : M) {s : Se
         refine Eq.trans ?_ (cylinderHomotopy_apply _ y).symm
         refine intervalIntegral.integral_congr fun t ht ↦ ?_
         rw [uIcc_of_le zero_le_one] at ht
-        rw [hL, curryLeft_mpullbackWithin_cylinder x₀ hs hsu ψ hy ht]
-        exact congrArg _ (mfderivWithin_extChartAt_symm_of_subset x₀ hs hsu hy).symm
+        exact continuousAlternatingMapCongrLeft_homotopyIntegrand x₀ hs hsu ψ hy ht hD'
 
 /-- The cylinder chart over a subset of the chart target is as smooth as the manifold. -/
 private theorem contMDiffOn_cylinderChart {n : WithTop ℕ∞} [IsManifold I n M] (x₀ : M) {s : Set E}
@@ -327,6 +421,64 @@ theorem homotopyOperator_add [IsManifold I 1 M]
       (prod_mono (singleton_subset_iff.2 hxs) subset_rfl)
   rw [Pi.add_apply, key, key, key, mpullbackWithin_add]
   exact cylinderHomotopy_add_apply (hc hφ) (hc hψ)
+
+/-- For a continuous form on the cylinder, the integrand of the homotopy operator at a point is
+interval integrable: in the chart at that point it is the integrand of the flat cylinder homotopy
+operator, which is continuous in time, composed with an invertible chart derivative. -/
+private theorem intervalIntegrable_homotopyIntegrand [IsManifold I 1 M]
+    {φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)}
+    (hφ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 φ) (x₀ : M) :
+    IntervalIntegrable (homotopyIntegrand φ x₀) volume 0 1 := by
+  have : IsManifold I ((0 : ℕ∞) + 1 : WithTop ℕ∞) M := by simpa only [zero_add]
+  obtain ⟨s, hsub, hsu, -, -, hxs, -⟩ :=
+    exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt (I := I) x₀
+  obtain ⟨D, hD⟩ := isInvertible_mfderivWithin_extChartAt_symm (hsub hxs)
+  let D' : E ≃L[ℝ] E := D
+  let L : (E [⋀^Fin k]→L[ℝ] F) ≃L[ℝ] E [⋀^Fin k]→L[ℝ] F :=
+    D'.symm.continuousAlternatingMapCongrLeft
+  -- The integrand of the flat cylinder homotopy operator in the chart is interval integrable.
+  have h := intervalIntegrable_curryLeft_inl_of_continuousOn
+    ((contDiffOn_mpullbackWithin_cylinder (r := 0) x₀ hsub hsu hφ).continuousOn.mono
+      (prod_mono (singleton_subset_iff.2 hxs) subset_rfl))
+  have hL : IntervalIntegrable (fun t ↦ L.symm ((ContinuousAlternatingMap.curryLeft
+      (E := E × ℝ) (mpullbackWithin 𝓘(ℝ, E × ℝ) (I.prod (𝓡∂ 1)) (cylinderChart I x₀)
+        (s ×ˢ Icc 0 1) φ (extChartAt I x₀ x₀, t)) (0, 1)).compContinuousLinearMap
+          (.inl ℝ E ℝ))) volume 0 1 :=
+    ⟨L.symm.integrable_comp_iff.2 h.1, L.symm.integrable_comp_iff.2 h.2⟩
+  refine (intervalIntegrable_congr fun t ht ↦ ?_).mp hL
+  rw [uIoc_of_le zero_le_one] at ht
+  rw [← continuousAlternatingMapCongrLeft_homotopyIntegrand x₀ hsub hsu φ hxs
+    (Ioc_subset_Icc_self ht) (D := D') hD, extChartAt_to_inv]
+  exact L.symm_apply_apply _
+
+/-- **Naturality of the homotopy operator** for continuous forms. Pulling a continuous form on
+the cylinder, with values in a Banach space, back along `g × id` commutes with the homotopy
+operator, for every differentiable map `g`. Unlike `TauCeti.homotopyOperator_mpullback_prodMap_id`,
+the derivatives of `g` need not be invertible: `g` may be the inclusion `x ↦ (x, c)` of a slice of
+a product, for instance. -/
+theorem homotopyOperator_mpullback_prodMap_id_of_isSmoothForm {E' H' M' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I 1 M]
+    [CompleteSpace F] {g : M' → M} (hg : MDifferentiable I' I g)
+    {φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)}
+    (hφ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 φ) :
+    homotopyOperator (mpullback (I'.prod (𝓡∂ 1)) (I.prod (𝓡∂ 1)) (Prod.map g id) φ) =
+      mpullback I' I g (homotopyOperator φ) := by
+  funext y
+  -- Composition with the derivative of `g` at `y`, as a continuous linear map.
+  let Dm : E' →L[ℝ] E := mfderiv I' I g y
+  let L := ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin k) (F := F) Dm
+  -- The values of both forms at `y` are alternating maps on the model space `E'`.
+  change @Eq (E' [⋀^Fin k]→L[ℝ] F) _ _
+  calc _ = ∫ t in (0 : ℝ)..1, L (homotopyIntegrand φ (g y) t) :=
+        intervalIntegral.integral_congr fun t _ ↦ by
+          ext v
+          exact homotopyIntegrand_mpullback_prodMap_id_apply hg φ y t v
+    _ = L (∫ t in (0 : ℝ)..1, homotopyIntegrand φ (g y) t) :=
+        L.intervalIntegral_comp_comm (intervalIntegrable_homotopyIntegrand hφ (g y))
+    _ = _ := by
+        ext v
+        exact (mpullback_apply (I := I') (I' := I) g (homotopyOperator φ) y v).symm
 
 /-- **The cochain-homotopy identity** for the homotopy operator on the cylinder `M × [0, 1]`:
 for a `C¹` form `φ` with values in a Banach space on a `C²` manifold, possibly with boundary or

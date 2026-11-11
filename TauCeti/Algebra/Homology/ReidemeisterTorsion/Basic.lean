@@ -156,7 +156,9 @@ private def bracketBasis : Basis (Fin p ⊕ Fin q) F (C.X (j + 1)) :=
     (exact_subtype_rangeRestrict (by simp) (by simp) h) b₁ b₀ s fun k ↦ Subtype.ext (hs k)
 
 include c h b₁ b₀ in
-private theorem eq_add_of_exactAt : n (j + 1) = p + q := by
+/-- In a degree `j + 1` where `C` is exact, the dimension `n (j + 1)` of `Cⱼ₊₁` is the sum of the
+dimensions `p` and `q` of the boundaries `Bⱼ₊₁` and `Bⱼ`. -/
+theorem eq_add_of_exactAt : n (j + 1) = p + q := by
   let _ : Module.Finite F (C.X (j + 1)) := .of_basis (c (j + 1))
   have hdim := (exact_subtype_rangeRestrict (i := j + 1 + 1) (k := j)
     (by simp) (by simp) h).finrank_eq_add
@@ -333,7 +335,7 @@ variable {C c} (hn : {i | n i ≠ 0}.Finite) (h : C.Acyclic)
 
 include hn in
 /-- For a bounded complex, the alternating brackets have finite multiplicative support. -/
-private theorem hasFiniteMulSupport_torsionBracket
+theorem hasFiniteMulSupport_torsionBracket
     (b : ∀ j, Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) F
       (LinearMap.range (C.d (j + 1) j).hom))
     (s : ∀ j, Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom)) → C.X (j + 1))
@@ -560,7 +562,7 @@ private def shortExactBoundaryBasis (h'' : C''.ExactAt (j + 1))
     (ht : ∀ k, (C''.d (j + 1) j).hom ((g.f (j + 1)).hom (t k)) = b'' k) :
     Basis (Fin (p' + p'')) F (LinearMap.range (C.d (j + 1) j).hom) :=
   (Basis.ofExactLift (f.boundaryMap_injective (j + 1) (hf j))
-    (Hom.exact_boundaryMap (by simp) (by simp) (hfg (j + 1)) (hfg j) (hg (j + 1 + 1)) h'') b' b''
+    (Hom.exact_boundaryMap (by simp) (by simp) (hfg (j + 1)) (hg (j + 1 + 1)) h'') b' b''
     (fun k ↦ ⟨(C.d (j + 1) j).hom (t k), t k, rfl⟩)
     fun k ↦ Subtype.ext ((Hom.coe_boundaryMap g _ _ _).trans
       ((Hom.comm_apply g _ _ _).symm.trans (ht k)))).reindex finSumFinEquiv

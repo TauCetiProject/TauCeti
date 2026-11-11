@@ -111,6 +111,33 @@ noncomputable def kostantNumberedSymmetryMatrix (A : Type v) [CommRing A] :
   Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMulEquiv
     (AddEquiv.baseChangeInvariantRestrictUnit (R := A) θ.toAddEquiv M hθM)
 
+/-- Taking the symmetry matrix preserves composition of lattice symmetries. -/
+theorem kostantNumberedSymmetryMatrix_mul (η : V ≃ₗ[ℚ] V)
+    (hηM : ∀ v, η v ∈ M ↔ v ∈ M) (A : Type v) [CommRing A] :
+    kostantNumberedSymmetryMatrix M b (θ * η)
+        (fun v => by simpa only [mul_apply_eq_comp] using (hθM (η v)).trans (hηM v)) A =
+      kostantNumberedSymmetryMatrix M b θ hθM A *
+        kostantNumberedSymmetryMatrix M b η hηM A := by
+  have hrestrict :
+      AddEquiv.invariantRestrict (θ * η).toAddEquiv M
+          (fun v => by
+            simpa only [LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+              mul_apply_eq_comp] using (hθM (η v)).trans (hηM v)) =
+        AddEquiv.invariantRestrict θ.toAddEquiv M hθM *
+          AddEquiv.invariantRestrict η.toAddEquiv M hηM := by
+    ext x
+    simp only [mul_apply_eq_comp, AddEquiv.coe_invariantRestrict_apply,
+      LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply]
+  unfold kostantNumberedSymmetryMatrix
+  rw [← map_mul]
+  apply congrArg (Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMonoidHom)
+  apply Units.ext
+  apply LinearMap.ext
+  intro z
+  rw [AddEquiv.val_baseChangeInvariantRestrictUnit_apply, hrestrict, LinearEquiv.baseChange_mul]
+  simp only [Units.val_mul, mul_apply_eq_comp,
+    AddEquiv.val_baseChangeInvariantRestrictUnit_apply]
+
 /-- The matrix of the numbered symmetry commutes with extension of the value ring. -/
 theorem map_kostantNumberedSymmetryMatrix {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
     (φ : A →+* B) :

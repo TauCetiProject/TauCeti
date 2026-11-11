@@ -560,18 +560,20 @@ private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopo
   simp [div_eq_mul_inv, ENNReal.ofReal_pow, ENNReal.ofReal_inv_of_pos]
   ring
 
-/-- **Minkowski's second theorem**, upper bound. Let `L` be a discrete `ℤ`-submodule of an
+/-- **Minkowski's second theorem**, upper bound. Let `L` be a `ℤ`-submodule of an
 `n`-dimensional real normed space `E`, `μ` a Haar measure on `E`, and `K ⊆ E` convex and symmetric
 about `0`. Let
 `a 0, …, a (n - 1)` be `ℝ`-linearly independent vectors of `L` and `g 0, …, g (n - 1)`
 nonnegative numbers such that every `v ∈ L` with `gauge K v < g j` lies in the span of
 `a 0, …, a (j - 1)`. Then `(∏ i, g i) * μ K ≤ 2 ^ n * covolume L μ`.
-The full independent family already implies that the discrete submodule `L` is a full lattice.
+If some `g i` vanishes the bound is trivial. Otherwise, when `K` has nonempty interior, the gap
+condition at index `0` (where `g 0 > 0`) makes `L` discrete, and the full independent family then
+implies that `L` is a full lattice.
 
 Independent lattice vectors realizing the successive minima `λ₀ ≤ ⋯ ≤ λₙ₋₁` of `L` with respect to
 `K` satisfy the hypothesis with `g = λ`, which gives the classical form
 `λ₀ ⋯ λₙ₋₁ · μ K ≤ 2ⁿ · covolume L μ`. -/
-theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E) [DiscreteTopology L]
+theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E)
     (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] {K : Set E}
     (hK : Convex ℝ K) (hKs : ∀ x ∈ K, -x ∈ K) {n : ℕ} (hn : n = finrank ℝ E) {a : Fin n → E}
     (haL : ∀ i, a i ∈ L) (ha : LinearIndependent ℝ a) {g : Fin n → ℝ} (hg0 : ∀ i, 0 ≤ g i)
@@ -587,6 +589,25 @@ theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E) [Discrete
   · simp [← hKint, hempty]
   -- Otherwise `K` is a neighbourhood of `0`, being convex and symmetric.
   have h0 : (0 : E) ∈ interior K := hK.zero_mem_interior_of_symmetric hKs ⟨x₀, hx₀⟩
+  -- The gap condition at index `0` makes `0` isolated in `L`, so `L` is discrete.
+  have : DiscreteTopology L := by
+    rcases Nat.eq_zero_or_pos n with rfl | hnpos
+    · have : Subsingleton E := Module.finrank_zero_iff.1 hn.symm
+      infer_instance
+    refine discreteTopology_of_isOpen_singleton_zero ?_
+    have hopen : IsOpen {v : E | gauge K v < g ⟨0, hnpos⟩} :=
+      isOpen_lt (continuous_gauge hK (mem_interior_iff_mem_nhds.1 h0)) continuous_const
+    convert hopen.preimage (continuous_subtype_val (p := (· ∈ L))) using 1
+    ext v
+    simp only [mem_singleton_iff, mem_preimage, mem_ofPred_eq]
+    refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩
+    · simp [hv, (hg0 ⟨0, hnpos⟩).lt_of_ne' (hgz _)]
+    · have hIio : Iio (⟨0, hnpos⟩ : Fin n) = ∅ := by
+        ext i
+        simp [Fin.lt_def]
+      have h := hgap ⟨0, hnpos⟩ v v.2 hv
+      rw [hIio, image_empty, span_empty, mem_bot] at h
+      exact Subtype.ext h
   -- Replace `g` by its running maximum `G`, which is monotone and still satisfies `hgap`.
   let G : Fin n → ℝ := fun j ↦ (Finset.Iic j).sup' ⟨j, Finset.mem_Iic.2 le_rfl⟩ g
   have hgG : ∀ i, g i ≤ G i := fun i ↦ Finset.le_sup' g (Finset.mem_Iic.2 le_rfl)
@@ -674,10 +695,11 @@ theorem successiveMin_pow_mul_measureReal_le_two_pow_mul_covolume (L : Submodule
 
 /-! ### The lower bound -/
 
+omit [FiniteDimensional ℝ E] in
 /-- **Minkowski's second theorem**, lower bound, general form. Let `L` be a discrete `ℤ`-submodule
 of an `n`-dimensional real normed space `E`, `μ` a Haar measure on `E`, and `K ⊆ E` convex,
 containing `0` and symmetric about it. If `b` is a basis of `E` over `ℝ` made of vectors of `L` and
-the positive numbers `a i` satisfy `b i ∈ a i • K`, then `2 ^ n / n! * covolume L μ ≤
+the nonnegative numbers `a i` satisfy `b i ∈ a i • K`, then `2 ^ n / n! * covolume L μ ≤
 (∏ i, a i) * μ K`. The basis already implies that `L` is a full lattice.
 
 A basis attaining the successive minima `λ₀ ≤ ⋯ ≤ λₙ₋₁` of `L` with respect to `K` satisfies the
@@ -686,11 +708,16 @@ hypothesis with `a = λ`, which gives the classical form `2ⁿ / n! · covolume 
 theorem two_pow_div_factorial_mul_covolume_le_prod_mul_measure (L : Submodule ℤ E)
     [DiscreteTopology L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] {K : Set E}
     (hK : Convex ℝ K) (h0 : (0 : E) ∈ K) (hKs : ∀ x ∈ K, -x ∈ K) {ι : Type*} [Fintype ι]
-    (b : Basis ι ℝ E) (hbL : ∀ i, b i ∈ L) {a : ι → ℝ} (ha : ∀ i, 0 < a i)
+    (b : Basis ι ℝ E) (hbL : ∀ i, b i ∈ L) {a : ι → ℝ} (ha : ∀ i, 0 ≤ a i)
     (hbK : ∀ i, b i ∈ a i • K) :
     ENNReal.ofReal (2 ^ finrank ℝ E / (finrank ℝ E).factorial * ZLattice.covolume L μ) ≤
       ENNReal.ofReal (∏ i, a i) * μ K := by
   classical
+  have := Module.Finite.of_basis b
+  -- `hbK` excludes `a i = 0`, since `b i ≠ 0`.
+  replace ha : ∀ i, 0 < a i := fun i ↦ (ha i).lt_of_ne fun hz ↦ by
+    obtain ⟨x, -, hx⟩ := hbK i
+    exact b.ne_zero i (by simpa [← hz] using hx.symm)
   -- The fundamental parallelepiped of `b` bounds the covolume of `L`, the cross-polytope spanned
   -- by the `(a i)⁻¹ • b i` lies in `K`, and the two measures differ by `2 ^ n / n! / ∏ i, a i`.
   have hprod : 0 < ∏ i, a i := Finset.prod_pos fun i _ ↦ ha i
@@ -710,6 +737,7 @@ theorem two_pow_div_factorial_mul_covolume_le_prod_mul_measure (L : Submodule �
       gcongr
       exact hK.weighted_crosspolytope_subset h0 hKs b ha hbK
 
+omit [FiniteDimensional ℝ E] in
 /-- **Minkowski's second theorem**, lower bound, in terms of the successive minima. For a full
 lattice `L` in a real normed space `E` of dimension `n`, a Haar measure `μ` on `E`, and a convex
 body `K` symmetric about `0` with `0` in its interior, the successive minima
@@ -721,8 +749,9 @@ theorem two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measure (L 
       ENNReal.ofReal (∏ i, successiveMin L K i) * μ K := by
   obtain ⟨b, hbL, -, hbK, -⟩ := exists_basis_gauge_eq_successiveMin L hK
   exact two_pow_div_factorial_mul_covolume_le_prod_mul_measure L μ K.convex (interior_subset hK)
-    hKs b hbL (successiveMin_pos L hK) hbK
+    hKs b hbL (successiveMin_nonneg L K) hbK
 
+omit [FiniteDimensional ℝ E] in
 /-- **Minkowski's second theorem**, lower bound, in terms of the successive minima and with real
 measures: `2ⁿ / n! · covolume L μ ≤ λ₀ ⋯ λₙ₋₁ · μ.real K`. -/
 theorem two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measureReal
@@ -731,6 +760,7 @@ theorem two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measureReal
     (hKs : ∀ x ∈ K, -x ∈ K) :
     2 ^ finrank ℝ E / (finrank ℝ E).factorial * ZLattice.covolume L μ ≤
       (∏ i, successiveMin L K i) * μ.real K := by
+  have := ConvexBody.finiteDimensional_of_zero_mem_interior hK
   have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     K.isCompact.measure_lt_top.ne)
     (two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measure L μ hK hKs)

@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Frattini
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.GroupTheory.QuotientGroup.MulAut
-import Mathlib.GroupTheory.GroupAction.Quotient
+import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
 # Automorphisms acting trivially modulo the Frattini subgroup
@@ -100,17 +100,14 @@ theorem card_dvd_card_pow_of_le_frattini [IsCoatomic (Subgroup G)] [Finite ι] {
     (hs : closure (Set.range s) = ⊤) (hN : N ≤ frattini G)
     (hH : ∀ α ∈ H, ∀ x : G, (α x : G ⧸ N) = x) :
     Nat.card H ∣ Nat.card N ^ Nat.card ι := by
-  -- `H` acts freely on the lifts of `s`: each lift generates, so its stabilizer is trivial.
-  have hfree (y : liftsMod s N H hH) : MulAction.stabilizer H y = ⊥ := by
-    refine eq_bot_iff.mpr fun α hα ↦ mem_bot.mpr (Subtype.ext (MulEquiv.toMonoidHom_injective ?_))
-    refine MonoidHom.eq_of_eqOn_dense
-      (closure_range_eq_top_of_le_frattini hs hN (mem_liftsMod.mp y.2)) ?_
-    rintro _ ⟨i, rfl⟩
-    simpa [Subgroup.smul_def, MulAut.smul_def] using
-      congrFun (congrArg Subtype.val (MulAction.mem_stabilizer_iff.mp hα)) i
-  have hcard := Nat.card_congr (MulAction.selfEquivOrbitsQuotientProd hfree)
-  rw [Nat.card_prod, Nat.card_congr (liftsModEquiv s hH), Nat.card_fun] at hcard
-  exact Dvd.intro_left _ hcard.symm
+  -- `H` acts freely on the lifts of `s`: each lift generates, so only the identity fixes it.
+  have : IsCancelSMul H (liftsMod s N H hH) := isCancelSMul_iff_eq_one_of_smul_eq.mpr
+    fun α y hα ↦ Subtype.ext <| MulEquiv.toMonoidHom_injective <| MonoidHom.eq_of_eqOn_dense
+      (closure_range_eq_top_of_le_frattini hs hN (mem_liftsMod.mp y.2)) <| by
+        rintro _ ⟨i, rfl⟩
+        simpa [Subgroup.smul_def, MulAut.smul_def] using congrFun (congrArg Subtype.val hα) i
+  simpa [Nat.card_congr (liftsModEquiv s hH), Nat.card_fun] using
+    MulAction.natCard_dvd_natCard_of_isCancelSMul (G := H) (X := liftsMod s N H hH)
 
 /-- **Automorphisms acting trivially modulo a `p`-subgroup of the Frattini subgroup.** If `G` is
 finite and `N ≤ frattini G` is a `p`-group, then every group of automorphisms of `G` fixing each

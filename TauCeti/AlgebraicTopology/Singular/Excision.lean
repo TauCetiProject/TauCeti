@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Topology.Category.TopPair
+import TauCeti.Topology.Closure
 
 /-!
 # Excision for relative singular homology
@@ -193,44 +194,68 @@ lemma excisionMap_fst_apply (x : (interPair A B).fst) : Hom.fst (excisionMap A B
 lemma excisionMap_snd_apply (x : (interPair A B).snd) :
     (Hom.snd (excisionMap A B) x).1 = x.1.1 := (rfl)
 
+/-- The excision map is an embedding of ambient spaces. -/
+lemma isEmbedding_fst_excisionMap : IsEmbedding (Hom.fst (excisionMap A B)) :=
+  IsEmbedding.subtypeVal
+
+/-- The excision map has image `A` on ambient spaces. -/
+@[simp]
+lemma range_fst_excisionMap : Set.range (Hom.fst (excisionMap A B)) = A :=
+  Subtype.range_coe
+
+/-- The subspace `A ∩ B` of `(A, A ∩ B)` is the full preimage of `B` under the excision map. -/
+lemma mem_range_map_of_fst_excisionMap_mem (x : (interPair A B).fst)
+    (hx : Hom.fst (excisionMap A B) x ∈ Set.range (ofSubset B).map) :
+    x ∈ Set.range (interPair A B).map := by
+  rw [range_ofSubset_map, excisionMap_fst_apply] at hx
+  rw [range_ofSubset_map]
+  exact hx
+
+/-- If the interiors of `A` and `B` cover `X`, then each of them lies in the subspace `B` of
+`(X, B)` or in the image of the excision map: this is the cover to which the general excision
+theorems for maps of pairs are applied. -/
+lemma interior_subset_range_or_subset_range_fst_excisionMap (b : Bool) :
+    (bif b then interior A else interior B) ⊆ Set.range (ofSubset B).map ∨
+      (bif b then interior A else interior B) ⊆ Set.range (Hom.fst (excisionMap A B)) := by
+  cases b
+  · exact Or.inl (interior_subset.trans (range_ofSubset_map (B := B)).ge)
+  · exact Or.inr (interior_subset.trans (range_fst_excisionMap A B).ge)
+
 /-- **Excision.** If the interiors of `A` and `B` cover `X`, the inclusion of pairs
 `(A, A ∩ B) ⟶ (X, B)` induces isomorphisms on relative singular homology. -/
 theorem isIso_singularHomologyMap_excisionMap (h : interior A ∪ interior B = Set.univ)
     (n : ℕ) : IsIso (TopPair.singularHomologyMap (excisionMap A B) R n) := by
-  refine isIso_singularHomologyMap_of_open_cover R (excisionMap A B) IsEmbedding.subtypeVal ?_
+  exact isIso_singularHomologyMap_of_open_cover R (excisionMap A B)
+    (isEmbedding_fst_excisionMap A B) (mem_range_map_of_fst_excisionMap_mem A B)
     (fun b : Bool ↦ bif b then interior A else interior B)
-    (fun b ↦ by cases b <;> exact isOpen_interior) ?_ ?_ n
-  · rintro x ⟨y, hy⟩
-    have hy' : y.1 = x.1 := hy
-    exact ⟨⟨x, (hy' ▸ y.2 : x.1 ∈ B)⟩, rfl⟩
-  · rw [← Set.union_eq_iUnion]
-    exact h
-  · intro b
-    cases b
-    · exact Or.inl (interior_subset.trans fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩)
-    · exact Or.inr (interior_subset.trans fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩)
+    (fun b ↦ by cases b <;> exact isOpen_interior) (Set.union_eq_iUnion.symm.trans h)
+    (interior_subset_range_or_subset_range_fst_excisionMap A B) n
 
 /-- **Excision of a set with closure in the interior of the subspace.** If `closure Z ⊆ interior B`,
 the inclusion of pairs `(X ∖ Z, B ∖ Z) ⟶ (X, B)` induces isomorphisms on relative singular
 homology. -/
 theorem isIso_singularHomologyMap_excisionMap_compl (Z : Set X) (h : closure Z ⊆ interior B)
     (n : ℕ) : IsIso (TopPair.singularHomologyMap (excisionMap Zᶜ B) R n) := by
-  refine isIso_singularHomologyMap_excisionMap R Zᶜ B ?_ n
-  rw [interior_compl, Set.eq_univ_iff_forall]
-  intro x
-  by_cases hx : x ∈ closure Z
-  · exact Or.inr (h hx)
-  · exact Or.inl hx
+  exact isIso_singularHomologyMap_excisionMap R Zᶜ B
+    (TauCeti.interior_compl_union_interior_eq_univ_iff.2 h) n
+
+/-- **Excision onto a neighbourhood of the closure.** If `U` is open and contains the closure of
+`K`, the inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative singular
+homology. -/
+theorem isIso_singularHomologyMap_excisionMap_of_closure_subset {U K : Set X} (hU : IsOpen U)
+    (hKU : closure K ⊆ U) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) R n) := by
+  refine isIso_singularHomologyMap_excisionMap R U Kᶜ ?_ n
+  rw [hU.interior_eq, interior_compl]
+  exact Set.eq_univ_of_subset (Set.union_subset_union_left _ hKU) (Set.union_compl_self _)
 
 /-- **Excision onto a neighbourhood.** If `U` is open and contains the closed set `K`, the
 inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative singular
 homology. -/
 theorem isIso_singularHomologyMap_excisionMap_of_isClosed_subset {U K : Set X} (hU : IsOpen U)
     (hK : IsClosed K) (hKU : K ⊆ U) (n : ℕ) :
-    IsIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) R n) := by
-  refine isIso_singularHomologyMap_excisionMap R U Kᶜ ?_ n
-  rw [hU.interior_eq, hK.isOpen_compl.interior_eq]
-  exact Set.eq_univ_of_subset (Set.union_subset_union_left _ hKU) (Set.union_compl_self K)
+    IsIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) R n) :=
+  isIso_singularHomologyMap_excisionMap_of_closure_subset R hU (hK.closure_eq.symm ▸ hKU) n
 
 variable {A B} {Y : TopCat.{w}} (g : X ⟶ Y) {A' B' : Set Y}
   (hA : Set.MapsTo g A A') (hB : Set.MapsTo g B B')
@@ -269,6 +294,14 @@ lemma interPairMap_comp {Z : TopCat.{w}} (g' : Y ⟶ Z) {A'' B'' : Set Z}
   · exact Subtype.ext (Subtype.ext (by simp))
   · exact Subtype.ext (by simp)
 
+/-- For subsets `U` and `B₁ ⊆ B₂` of `X`, the inclusion `(U, U ∩ B₁) ⟶ (U, U ∩ B₂)` is the map of
+excision data induced by the identity of `X`. -/
+lemma ofSubsetMap_id_eq_interPairMap {U B₁ B₂ : Set X} (h : B₁ ⊆ B₂) :
+    ofSubsetMap (𝟙 (TopCat.of U)) (B := Subtype.val ⁻¹' B₁) (B' := Subtype.val ⁻¹' B₂)
+        (fun _ hz ↦ h hz) =
+      interPairMap (𝟙 X) (Set.mapsTo_id U) h := by
+  ext : 2 <;> rfl
+
 /-- The excision maps are natural in the excision data. -/
 @[reassoc]
 lemma interPairMap_comp_excisionMap :
@@ -279,26 +312,22 @@ lemma interPairMap_comp_excisionMap :
 
 omit hA hB in
 /-- **Excision is compatible with shrinking the excised set.** Let `U` be open and let
-`L₂ ⊆ L₁ ⊆ U` be closed. The inclusion `(U, U ∖ L₁) ⟶ (U, U ∖ L₂)` induces isomorphisms on
+`L₂ ⊆ L₁` with `closure L₁ ⊆ U`. The inclusion `(U, U ∖ L₁) ⟶ (U, U ∖ L₂)` induces isomorphisms on
 relative singular homology exactly when `(X, X ∖ L₁) ⟶ (X, X ∖ L₂)` does, since both pairs in `U`
 are carried isomorphically to the corresponding pairs in `X` by excision. -/
 theorem isIso_singularHomologyMap_ofSubsetMap_compl_iff {U L₁ L₂ : Set X} (hU : IsOpen U)
-    (hL₁ : IsClosed L₁) (hL₂ : IsClosed L₂) (hL₁U : L₁ ⊆ U) (h : L₂ ⊆ L₁) (n : ℕ) :
+    (hL₁U : closure L₁ ⊆ U) (h : L₂ ⊆ L₁) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 (TopCat.of U))
         (B := Subtype.val ⁻¹' L₁ᶜ) (B' := Subtype.val ⁻¹' L₂ᶜ)
         fun _ hz ↦ Set.compl_subset_compl.2 h hz) R n) ↔
       IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) (Set.compl_subset_compl.2 h)) R n) := by
-  have := isIso_singularHomologyMap_excisionMap_of_isClosed_subset R hU hL₁ hL₁U n
-  have := isIso_singularHomologyMap_excisionMap_of_isClosed_subset R hU hL₂ (h.trans hL₁U) n
-  -- The inclusion in `U` is `TopPair.interPairMap` for the identity of `X`.
-  have hU : ofSubsetMap (𝟙 (TopCat.of U)) (B := Subtype.val ⁻¹' L₁ᶜ) (B' := Subtype.val ⁻¹' L₂ᶜ)
-      (fun _ hz ↦ Set.compl_subset_compl.2 h hz) =
-      interPairMap (𝟙 X) (Set.mapsTo_id U) (Set.compl_subset_compl.2 h) := by
-    ext : 2 <;> rfl
+  have := isIso_singularHomologyMap_excisionMap_of_closure_subset R hU hL₁U n
+  have := isIso_singularHomologyMap_excisionMap_of_closure_subset R hU
+    ((closure_mono h).trans hL₁U) n
   have hw := congrArg (TopPair.singularHomologyMap · R n)
     (interPairMap_comp_excisionMap (𝟙 X) (Set.mapsTo_id U) (Set.compl_subset_compl.2 h))
   simp only [TopPair.singularHomologyMap_comp] at hw
-  rw [hU]
+  rw [ofSubsetMap_id_eq_interPairMap]
   exact ⟨fun _ ↦ IsIso.of_isIso_fac_left hw.symm, fun _ ↦ IsIso.of_isIso_fac_right hw⟩
 
 end Subsets

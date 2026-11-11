@@ -456,11 +456,8 @@ private theorem exists_map_pairCoding_visible_eq [Nonempty α] [IsFiniteMeasure 
       (Measurable.of_eval fun k => hdatum (d k))).prodMk (Measurable.of_eval fun i => hdatum (g i))
   -- The visible increasing pairs, as visible off-diagonal pairs of the array.
   set ι : {t : ℕ × ℕ // t.1 < t.2} → V₂ := fun t => ⟨(g t.1.1, g t.1.2), hge _, hge _, hg t.2⟩
-  have hι : Function.Injective ι := by
-    intro t t' h
-    have h' := congrArg Subtype.val h
-    simp only [ι, Prod.mk.injEq] at h'
-    exact Subtype.ext (Prod.ext (hg.injective h'.1) (hg.injective h'.2))
+  have hι : Function.Injective ι := fun _ _ h =>
+    Subtype.ext ((hg.injective.prodMap hg.injective) (congrArg Subtype.val h))
   set M : (H → α) × (V₂ → α × α) → _ := fun r => (read r.1, fun t => r.2 (ι t))
   have hM : Measurable M :=
     (hread.comp measurable_fst).prodMk (Measurable.of_eval fun _ =>
@@ -473,16 +470,6 @@ private theorem exists_map_pairCoding_visible_eq [Nonempty α] [IsFiniteMeasure 
     hread.comp (Set.measurable_restrict H)
   have hsel : Measurable fun (c : V₂ → I) (t : {t : ℕ × ℕ // t.1 < t.2}) => c (ι t) :=
     Measurable.of_eval fun _ => measurable_pi_apply _
-  have hcodeP : Measurable fun q : (ℕ × ℕ → α) × (V₂ → I) =>
-      (H.domRestrict q.1,
-        fun p : V₂ => G (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p)) :=
-    ((Set.measurable_restrict H).comp measurable_fst).prodMk (Measurable.of_eval fun p =>
-      hG.comp (((measurable_offDiagonalPairSquareContext e p.1.1 p.1.2).comp
-        measurable_fst).prodMk ((measurable_pi_apply p).comp measurable_snd)))
-  have hpairs : Measurable fun x : ℕ × ℕ → α =>
-      (H.domRestrict x, fun p : V₂ => (x p.1, x p.1.swap)) :=
-    (Set.measurable_restrict H).prodMk (Measurable.of_eval fun p =>
-      (measurable_pi_apply p.1).prodMk (measurable_pi_apply p.1.swap))
   -- Reading the vertex data and the visible pairs off the pair coding.
   have hfac : M ∘ (fun q : (ℕ × ℕ → α) × (V₂ → I) => (H.domRestrict q.1,
         fun p : V₂ => G (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p))) =
@@ -494,12 +481,11 @@ private theorem exists_map_pairCoding_visible_eq [Nonempty α] [IsFiniteMeasure 
       simp [datum, vertexDatum]
     simp only [Function.comp_apply, Prod.map, M, Λ, ι, read, visibleSquareContext, hdatum,
       Set.domRestrict_apply, squareContextOfVertexData_vertexDatum]
-  have hunif : (Measure.infinitePi fun _ : V₂ => (volume : Measure I)).map (fun c t => c (ι t)) =
-      Measure.infinitePi fun _ : {t : ℕ × ℕ // t.1 < t.2} => (volume : Measure I) :=
-    Measure.map_infinitePi_infinitePi_of_inj hι
   have hP' := congrArg (Measure.map M) hP
-  rw [Measure.map_map hM hcodeP, Measure.map_map hM hpairs, hfac,
-    ← Measure.map_map hΛ (hV.prodMap hsel), ← Measure.map_prod_map _ _ hV hsel, hunif] at hP'
+  rw [Measure.map_map hM (measurable_restrict_pairCoding H V₂ e hG),
+    Measure.map_map hM (measurable_restrict_pairs H V₂), hfac,
+    ← Measure.map_map hΛ (hV.prodMap hsel), ← Measure.map_prod_map _ _ hV hsel,
+    Measure.map_infinitePi_infinitePi_of_inj hι] at hP'
   exact hP'
 
 omit [StandardBorelSpace α] in
@@ -586,6 +572,71 @@ private theorem exists_map_vertexLayerData_eq [Nonempty α] [IsProbabilityMeasur
   rw [hΘφ, ← Measure.map_map hV (hφ.prodMap measurable_id),
     ← Measure.map_prod_map _ _ hφ measurable_id, Measure.map_id, hφB, hvcode']
 
+/-- There are three families of vertices with pairwise disjoint ranges, the first two injective and
+the third strictly increasing. For example, take the vertices `3 a`, `3 a + 1` and `3 a + 2`. -/
+private theorem exists_injective_strictMono_disjoint_ranges :
+    ∃ e d g : ℕ → ℕ, Function.Injective e ∧ Function.Injective d ∧ StrictMono g ∧
+      Disjoint (Set.range e) (Set.range d) ∧ Disjoint (Set.range e) (Set.range g) ∧
+      Disjoint (Set.range d) (Set.range g) :=
+  ⟨fun a => 3 * a, fun a => 3 * a + 1, fun a => 3 * a + 2, fun a b h => by simp only at *; omega,
+    fun a b h => by simp only at *; omega, fun a b h => by simp only at *; omega,
+    Set.disjoint_left.2 fun _ ⟨a, ha⟩ ⟨b, hb⟩ => by simp only at *; omega,
+    Set.disjoint_left.2 fun _ ⟨a, ha⟩ ⟨b, hb⟩ => by simp only at *; omega,
+    Set.disjoint_left.2 fun _ ⟨a, ha⟩ ⟨b, hb⟩ => by simp only at *; omega⟩
+
+omit [StandardBorelSpace α] in
+/-- Coding the visible pairs from the generated vertex data and the cell variables, and assembling
+the array along the visible vertices, reproduces the law of the array. -/
+private theorem map_assembleArray_pairCoding_eq [IsProbabilityMeasure ρ]
+    (hρ : JointlyExchangeable ρ fun p x => x p) {e d g : ℕ → ℕ} (hg : Function.Injective g)
+    {Θ : I × (ℕ → I) →
+      ((ℕ × ℕ → α) × (ℕ → (ℕ → α × α) × α)) × (ℕ → (ℕ → α × α) × α)}
+    (hΘ : Measurable Θ)
+    (hΘlaw : ((volume : Measure I).prod
+      (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map Θ = ρ.map (vertexLayerData e d g))
+    {G : ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) ×
+      (α × α) → I → α × α} (hG : Measurable (Function.uncurry G))
+    (hGcode : ((ρ.map (vertexLayerData e d g)).prod
+          (Measure.infinitePi fun _ : {t : ℕ × ℕ // t.1 < t.2} => (volume : Measure I))).map
+        (fun q => (q.1, fun t => G (visibleSquareContext t q.1) (q.2 t))) =
+      ρ.map fun x => (vertexLayerData e d g x, visiblePairs g x)) :
+    (((volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).prod
+      (Measure.infinitePi fun _ : {t : ℕ × ℕ // t.1 < t.2} => (volume : Measure I))).map
+      (fun r => assembleArray (Θ r.1).2 fun t => G (visibleSquareContext t (Θ r.1)) (r.2 t)) =
+        ρ := by
+  have hA' : Measurable fun r : (((ℕ × ℕ → α) × (ℕ → (ℕ → α × α) × α)) ×
+      (ℕ → (ℕ → α × α) × α)) × ({t : ℕ × ℕ // t.1 < t.2} → α × α) => assembleArray r.1.2 r.2 :=
+    measurable_assembleArray.comp ((measurable_snd.comp measurable_fst).prodMk measurable_snd)
+  have hΛ := measurable_visiblePairCoding hG
+  have hR := measurable_vertexLayerData (α := α) e d g
+  -- Coding the pairs from the generated vertex data factors through the vertex data.
+  have hAΘ : (fun r : (I × (ℕ → I)) × ({t : ℕ × ℕ // t.1 < t.2} → I) =>
+        assembleArray (Θ r.1).2 fun t => G (visibleSquareContext t (Θ r.1)) (r.2 t)) =
+      ((fun r : _ × ({t : ℕ × ℕ // t.1 < t.2} → α × α) => assembleArray r.1.2 r.2) ∘
+        fun q : _ × ({t : ℕ × ℕ // t.1 < t.2} → I) =>
+          (q.1, fun t => G (visibleSquareContext t q.1) (q.2 t))) ∘ Prod.map Θ id := by
+    funext r
+    simp only [Function.comp_apply, Prod.map_fst, Prod.map_snd, id_eq]
+  rw [hAΘ,
+    ← Measure.map_map (hA'.comp hΛ) (hΘ.prodMap measurable_id),
+    ← Measure.map_prod_map _ _ hΘ measurable_id, Measure.map_id, hΘlaw,
+    ← Measure.map_map hA' hΛ, hGcode, Measure.map_map hA' (hR.prodMk (measurable_visiblePairs g))]
+  exact (congrArg (ρ.map ·) (funext (assembleArray_visiblePairs e d g))).trans
+    ((hρ.map_arrayBlock_diag_eq (fun p => (measurable_pi_apply p).aemeasurable)
+      hg).trans Measure.map_id')
+
+omit [StandardBorelSpace α] in
+/-- The pair `(F (u₀, u j, u k, s), F (u₀, u k, u j, s))` of a coding `F` read with the two
+orders of the vertex variables is measurable in `((u₀, u), s)`. -/
+private theorem measurable_orientedPair {F : I × I × I × I → α} (hF : Measurable F) (j k : ℕ) :
+    Measurable fun r : (I × (ℕ → I)) × I =>
+      (F (r.1.1, r.1.2 j, r.1.2 k, r.2), F (r.1.1, r.1.2 k, r.1.2 j, r.2)) := by
+  have h₁ : Measurable fun r : (I × (ℕ → I)) × I => r.1.1 := measurable_fst.comp measurable_fst
+  have hu (k : ℕ) : Measurable fun r : (I × (ℕ → I)) × I => r.1.2 k :=
+    (measurable_pi_apply k).comp (measurable_snd.comp measurable_fst)
+  exact (hF.comp (h₁.prodMk ((hu _).prodMk ((hu _).prodMk measurable_snd)))).prodMk
+    (hF.comp (h₁.prodMk ((hu _).prodMk ((hu _).prodMk measurable_snd))))
+
 /-- **The Aldous--Hoover representation of a jointly exchangeable array.** Every jointly
 exchangeable probability law `ρ` on arrays with values in a standard Borel space is the law of a
 measurable joint Aldous--Hoover coding: there is a measurable `F : I × I × I × I → α` with `ρ` the
@@ -598,27 +649,14 @@ theorem JointlyExchangeable.exists_map_jointArray_eq [IsProbabilityMeasure ρ]
   -- A probability law on arrays forces the value space to be nonempty.
   obtain ⟨x₀, -⟩ := nonempty_of_measure_ne_zero (μ := ρ) (s := Set.univ) (by simp)
   have : Nonempty α := ⟨x₀ (0, 0)⟩
-  -- Hide the vertices `3 a`, keep the vertices `3 a + 1` as a reservoir, and read the array along
-  -- the visible vertices `3 a + 2`.
-  set e : ℕ → ℕ := fun a => 3 * a with he_def
-  set d : ℕ → ℕ := fun a => 3 * a + 1 with hd_def
-  set g : ℕ → ℕ := fun a => 3 * a + 2 with hg_def
-  have he : Function.Injective e := fun a b h => by simp only [he_def] at h; omega
-  have hd : Function.Injective d := fun a b h => by simp only [hd_def] at h; omega
-  have hg : StrictMono g := fun a b h => by simp only [hg_def]; omega
-  have hed : Disjoint (Set.range e) (Set.range d) := Set.disjoint_left.2 fun _ ⟨a, ha⟩ ⟨b, hb⟩ => by
-    simp only [he_def, hd_def] at ha hb; omega
-  have heg : Disjoint (Set.range e) (Set.range g) := Set.disjoint_left.2 fun _ ⟨a, ha⟩ ⟨b, hb⟩ => by
-    simp only [he_def, hg_def] at ha hb; omega
-  have hdg : Disjoint (Set.range d) (Set.range g) := Set.disjoint_left.2 fun _ ⟨a, ha⟩ ⟨b, hb⟩ => by
-    simp only [hd_def, hg_def] at ha hb; omega
+  -- Hide the vertices `e`, keep the vertices `d` as a reservoir, and read the array along the
+  -- visible vertices `g`.
+  obtain ⟨e, d, g, he, hd, hg, hed, heg, hdg⟩ := exists_injective_strictMono_disjoint_ranges
   have hge (i : ℕ) : g i ∉ Set.range e := fun h => Set.disjoint_left.1 heg h ⟨i, rfl⟩
   -- The outer two layers: the hidden square and the reservoir data are coded by the global
   -- variable, and the visible vertex data by the vertex variables.
   obtain ⟨φ, v, hφ, hv, hΘlaw⟩ :=
     exists_map_vertexLayerData_eq hρ he hd hg.injective hed heg hdg
-  set R := vertexLayerData (α := α) e d g
-  have hR : Measurable R := measurable_vertexLayerData e d g
   set Θ : I × (ℕ → I) → ((ℕ × ℕ → α) × (ℕ → (ℕ → α × α) × α)) × (ℕ → (ℕ → α × α) × α) :=
     fun q => (φ q.1, fun i => v (φ q.1) (q.2 i))
   have hΘ : Measurable Θ := (hφ.comp measurable_fst).prodMk
@@ -637,13 +675,8 @@ theorem JointlyExchangeable.exists_map_jointArray_eq [IsProbabilityMeasure ρ]
       jointCoding φ v G (q.1, q.2 t.1.2, q.2 t.1.1, s))
   have hGt (t) : Measurable (Function.uncurry (Gt t)) := hG.comp
     (((measurable_visibleSquareContext t).comp (hΘ.comp measurable_fst)).prodMk measurable_snd)
-  have hΦt (t) : Measurable (Function.uncurry (Φt t)) := by
-    have hF := measurable_jointCoding hφ hv hG
-    have h₁ : Measurable fun r : (I × (ℕ → I)) × I => r.1.1 := measurable_fst.comp measurable_fst
-    have hu (k : ℕ) : Measurable fun r : (I × (ℕ → I)) × I => r.1.2 k :=
-      (measurable_pi_apply k).comp (measurable_snd.comp measurable_fst)
-    exact (hF.comp (h₁.prodMk ((hu _).prodMk ((hu _).prodMk measurable_snd)))).prodMk
-      (hF.comp (h₁.prodMk ((hu _).prodMk ((hu _).prodMk measurable_snd))))
+  have hΦt (t) : Measurable (Function.uncurry (Φt t)) :=
+    measurable_orientedPair (measurable_jointCoding hφ hv hG) t.1.1 t.1.2
   set A : (I × (ℕ → I)) × ({t : ℕ × ℕ // t.1 < t.2} → α × α) → ℕ × ℕ → α :=
     fun r => assembleArray (Θ r.1).2 r.2
   have hA : Measurable A := measurable_assembleArray.comp
@@ -651,43 +684,25 @@ theorem JointlyExchangeable.exists_map_jointArray_eq [IsProbabilityMeasure ρ]
   -- Orienting the pairs by their vertices codes the array read along the visible vertices, which
   -- has the law of the array.
   have hindex : (μ₀.prod (Measure.infinitePi fun _ : {t : ℕ × ℕ // t.1 < t.2} =>
-      (volume : Measure I))).map (A ∘ fun r => (r.1, fun t => Gt t r.1 (r.2 t))) = ρ := by
-    have hA' : Measurable fun r : (((ℕ × ℕ → α) × (ℕ → (ℕ → α × α) × α)) ×
-        (ℕ → (ℕ → α × α) × α)) × ({t : ℕ × ℕ // t.1 < t.2} → α × α) => assembleArray r.1.2 r.2 :=
-      measurable_assembleArray.comp ((measurable_snd.comp measurable_fst).prodMk measurable_snd)
-    have hΛ := measurable_visiblePairCoding hG
-    -- Coding the pairs from the generated vertex data factors through the vertex data.
-    have hAΘ : A ∘ (fun r : _ × ({t : ℕ × ℕ // t.1 < t.2} → I) =>
-          (r.1, fun t => Gt t r.1 (r.2 t))) =
-        ((fun r : _ × ({t : ℕ × ℕ // t.1 < t.2} → α × α) => assembleArray r.1.2 r.2) ∘
-          fun q : _ × ({t : ℕ × ℕ // t.1 < t.2} → I) =>
-            (q.1, fun t => G (visibleSquareContext t q.1) (q.2 t))) ∘ Prod.map Θ id := by
-      funext r
-      simp [A, Gt]
-    rw [hAΘ,
-      ← Measure.map_map (hA'.comp hΛ) (hΘ.prodMap measurable_id),
-      ← Measure.map_prod_map _ _ hΘ measurable_id, Measure.map_id, hΘlaw,
-      ← Measure.map_map hA' hΛ, hGcode, Measure.map_map hA' (hR.prodMk (measurable_visiblePairs g))]
-    exact (congrArg (ρ.map ·) (funext (assembleArray_visiblePairs e d g))).trans
-      ((hρ.map_arrayBlock_diag_eq (fun p => (measurable_pi_apply p).aemeasurable)
-        hg.injective).trans Measure.map_id')
+      (volume : Measure I))).map (A ∘ fun r => (r.1, fun t => Gt t r.1 (r.2 t))) = ρ :=
+    by simpa only [A, Gt, μ₀, Function.comp_def] using
+      map_assembleArray_pairCoding_eq hρ hg.injective hΘ hΘlaw hG hGcode
   -- Orienting each pair by its vertex variables instead does not change the law of its coding.
   have hae (t : {t : ℕ × ℕ // t.1 < t.2}) :
       ∀ᵐ q ∂μ₀, (volume : Measure I).map (Gt t q) = (volume : Measure I).map (Φt t q) := by
     have hlaw : μ₀.map (visibleSquareContext t ∘ Θ) =
         ρ.map (offDiagonalPairSquareContext e (g t.1.1) (g t.1.2)) := by
       rw [← Measure.map_map (measurable_visibleSquareContext t) hΘ, hΘlaw,
-        Measure.map_map (measurable_visibleSquareContext t) hR]
+        Measure.map_map (measurable_visibleSquareContext t) (measurable_vertexLayerData e d g)]
       exact congrArg (ρ.map ·) (funext (visibleSquareContext_vertexLayerData e d g t))
     exact ae_map_jointCoding_eq hρ (hg.injective.ne t.2.ne) (hge _) (hge _) hφ hv hG
       (map_pairCoding_visiblePair_eq hG hGcode t) t.2.ne hlaw
   -- The joint coding is the coding oriented by the vertex variables, read off the split noise.
   have hnoise : (fun (u : NoiseIndex Unit (Sym2 ℕ) → I) p => jointArray (jointCoding φ v G) p u) =
-      (A ∘ fun r => (r.1, fun t => Φt t r.1 (r.2 t))) ∘ splitJointNoise :=
-    by
-      funext u
-      simpa only [Function.comp_apply, splitJointNoise_apply] using
-        jointArray_jointCoding φ v G u
+      (A ∘ fun r => (r.1, fun t => Φt t r.1 (r.2 t))) ∘ splitJointNoise := by
+    funext u
+    simpa only [Function.comp_apply, splitJointNoise_apply] using
+      jointArray_jointCoding φ v G u
   have hΦ := measurable_fst.prodMk (measurable_pi_uncurry_prod hΦt)
   rw [hnoise, ← Measure.map_map (hA.comp hΦ) measurable_splitJointNoise,
     map_splitJointNoise_noiseMeasure, ← Measure.map_map hA hΦ,
