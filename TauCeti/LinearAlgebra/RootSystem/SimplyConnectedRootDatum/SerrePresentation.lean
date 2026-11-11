@@ -72,13 +72,14 @@ Through the isomorphism, a representation of the presented algebra is a represen
 
 ## Implementation notes
 
-The split reductive group scheme over `ℤ` is constructed via a Chevalley basis and the Kostant
-`ℤ`-form of the enveloping algebra. `TauCeti.serreKostantForm` of
-`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/Serre.lean` is that Kostant form, written against
-`Matrix.ToLieAlgebra ℚ CM`; this file pins `CM` to the numbered Cartan matrix of a Dynkin type and
-identifies the presented algebra's image with the concrete carrier `TauCeti.DynkinType.lieAlgebra`.
-The Lie-type indices of the classification of finite simple groups reach a Dynkin type through
-`TauCeti.ValidLieTypeIndex.dynkinType` and `TauCeti.ValidLieTypeIndex.dynkinType_valid`.
+Chevalley's construction builds the split reductive group scheme over `ℤ` from a Chevalley basis and
+the Kostant `ℤ`-form of the enveloping algebra; the group scheme itself is not formalised here.
+`TauCeti.serreKostantForm` of `TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/Serre.lean` is that
+Kostant form, written against `Matrix.ToLieAlgebra ℚ CM`; this file pins `CM` to the numbered Cartan
+matrix of a Dynkin type and identifies the presented algebra's image with the concrete carrier
+`TauCeti.DynkinType.lieAlgebra`. The Lie-type indices of the classification of finite simple groups
+reach a Dynkin type through `TauCeti.ValidLieTypeIndex.dynkinType` and
+`TauCeti.ValidLieTypeIndex.dynkinType_valid`.
 
 The higher Serre relations come from `TauCeti/Algebra/Lie/Presentation/Serre/Basis.lean`, which
 proves them for any `LieAlgebra.Basis` on a Noetherian Lie algebra. The root-string form in

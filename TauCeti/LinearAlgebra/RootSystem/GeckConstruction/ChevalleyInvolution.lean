@@ -38,18 +38,18 @@ the Chevalley involution on the concrete split semisimple Lie algebra produced f
 
 ## Implementation notes
 
-The split reductive group scheme over `ℤ` is built via a Chevalley basis and the Kostant `ℤ`-form
-of the enveloping algebra of `TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/`. The involution
-constructed here is characterized on the simple generators and supplies the concrete compatibility
-needed when one chooses opposite root vectors; extended to a normalized root-vector system, it
-gives the sign symmetry of the structure constants (Humphreys §25.2, Carter §4.1).
-`TauCeti.serreChevalleyInvolution` of `TauCeti/Algebra/Lie/Presentation/Serre/Automorphism.lean`
-is that automorphism on the presented Lie algebra; this file supplies it on the concrete side.
-Geck's construction is the explicit realisation of a root datum by a matrix Lie algebra, proved
-semisimple with the given root system upstream, and
-`TauCeti.serreLift_comp_serreChevalleyInvolution` transports the presented involution to any such
-concrete algebra once the two are identified. For the pinned algebra
-`TauCeti.DynkinType.lieAlgebra` the resulting intertwining is
+Chevalley's construction builds the split reductive group scheme over `ℤ` from a Chevalley basis and
+the Kostant `ℤ`-form of the enveloping algebra, which is formed in
+`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/`; the group scheme itself is not formalised here.
+The involution constructed here is characterized on the simple generators and supplies the concrete
+compatibility needed when one chooses opposite root vectors; extended to a normalized root-vector
+system, it gives the sign symmetry of the structure constants (Humphreys §25.2, Carter §4.1).
+`TauCeti.serreChevalleyInvolution` of `TauCeti/Algebra/Lie/Presentation/Serre/Automorphism.lean` is
+that automorphism on the presented Lie algebra; this file supplies it on the concrete side. Geck's
+construction is the explicit realisation of a root datum by a matrix Lie algebra, proved semisimple
+with the given root system upstream, and `TauCeti.serreLift_comp_serreChevalleyInvolution`
+transports the presented involution to any such concrete algebra once the two are identified. For
+the pinned algebra `TauCeti.DynkinType.lieAlgebra` the resulting intertwining is
 `TauCeti.DynkinType.serreLift_serreChevalleyInvolution`, which rests on the generator formulas
 `TauCeti.geckChevalleyInvolution_e` and `TauCeti.geckChevalleyInvolution_f` proved here.
 

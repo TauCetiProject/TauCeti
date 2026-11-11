@@ -55,10 +55,11 @@ stated that way.
 
 ## Implementation notes
 
-The split reductive group scheme over `ℤ` is built via a Chevalley basis and the Kostant `ℤ`-form
-of the enveloping algebra. `TauCeti.IsChevalleySystem` of
-`TauCeti/Algebra/Lie/Weights/Chevalley/System.lean` is that Chevalley basis, carried as a
-hypothesis, and `TauCeti.IsSl2System.isChevalleyNormalized_iff_exists_isChevalleySystem` of
+Chevalley's construction builds the split reductive group scheme over `ℤ` from a Chevalley basis and
+the Kostant `ℤ`-form of the enveloping algebra; the group scheme itself is not formalised here.
+`TauCeti.IsChevalleySystem` of `TauCeti/Algebra/Lie/Weights/Chevalley/System.lean` is that Chevalley
+basis, carried as a hypothesis, and
+`TauCeti.IsSl2System.isChevalleyNormalized_iff_exists_isChevalleySystem` of
 `TauCeti/Algebra/Lie/Weights/Chevalley/Involution.lean` reduces producing one to normalising the
 structure constants to `±(p + 1)`. Carter's §4.2 performs that normalisation by recursion over the
 extraspecial pairs enumerated here.
