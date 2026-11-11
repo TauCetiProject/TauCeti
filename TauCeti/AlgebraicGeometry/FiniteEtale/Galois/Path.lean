@@ -26,7 +26,7 @@ whose identity, inverse and composition are those of natural isomorphisms (`Iso.
 `Iso.trans`).
 
 The fundamental group `π₁(S, y)` acts on the paths from `x` to `y` by composition, and this
-action is simply transitive (`TauCeti.FiniteEtaleScheme.EtalePath.existsUnique_smul_eq`). Over a
+action is simply transitive (`CategoryTheory.Aut.existsUnique_smul_eq`, applied to paths). Over a
 connected base any two geometric points are joined by a path
 (`TauCeti.FiniteEtaleScheme.nonempty_fiber_iso`), so the paths from `x` to `y` form a torsor
 under `π₁(S, y)` (`CategoryTheory.Aut.instTorsorIso`). Over a disconnected base, paths exist
@@ -43,8 +43,6 @@ exactly between geometric points of the same connected component when that compo
 
 ## Main results
 
-* `TauCeti.FiniteEtaleScheme.EtalePath.existsUnique_smul_eq`: `π₁(S, y)` acts simply transitively
-  on the étale paths from `x` to `y`.
 * `TauCeti.FiniteEtaleScheme.instNonemptyEtalePath`: over a connected base, the étale paths from
   `x` to `y` are nonempty, so they form a torsor under `π₁(S, y)`.
 
@@ -80,18 +78,5 @@ abbrev EtalePath (x : Spec (.of Ω) ⟶ S) (y : Spec (.of Ω') ⟶ S) :=
 instance instNonemptyEtalePath [ConnectedSpace S] (x : Spec (.of Ω) ⟶ S)
     (y : Spec (.of Ω') ⟶ S) : Nonempty (EtalePath x y) :=
   nonempty_fiber_iso x y
-
-namespace EtalePath
-
-variable {x : Spec (.of Ω) ⟶ S} {y : Spec (.of Ω') ⟶ S}
-
-/-- **The étale fundamental group `π₁(S, y)` acts simply transitively on the étale paths from `x`
-to `y`**: any two paths differ by a unique loop at `y`. Over a connected base the paths form a
-torsor under `π₁(S, y)`. -/
-theorem existsUnique_smul_eq (γ δ : EtalePath x y) :
-    ∃! σ : EtaleFundamentalGroup y, σ • γ = δ :=
-  Aut.existsUnique_smul_eq δ γ
-
-end EtalePath
 
 end TauCeti.FiniteEtaleScheme
