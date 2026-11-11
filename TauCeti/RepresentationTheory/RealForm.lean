@@ -88,9 +88,6 @@ indicator in `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/Realiza
 
 ## References
 
-This builds the `IsRealForm` and `IsRealizableOverReal` targets of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md`.
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2.
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 4.
 -/
