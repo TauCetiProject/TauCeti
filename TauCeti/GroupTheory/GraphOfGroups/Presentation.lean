@@ -271,20 +271,20 @@ noncomputable def dartWord (O T : Set Γ.E) (e : Γ.E) : FreeGroup ↥(O \ T) :=
   if h₁ : e ∈ O \ T then FreeGroup.of ⟨e, h₁⟩
   else if h₂ : Γ.rev e ∈ O \ T then (FreeGroup.of ⟨Γ.rev e, h₂⟩)⁻¹ else 1
 
-theorem dartWord_of_mem {e : Γ.E} (he : e ∈ O \ T) :
+@[simp] theorem dartWord_of_mem {e : Γ.E} (he : e ∈ O \ T) :
     dartWord O T e = FreeGroup.of ⟨e, he⟩ := by
   simp [dartWord, he]
 
-theorem dartWord_of_rev_mem {e : Γ.E} (he : e ∉ O \ T) (hr : Γ.rev e ∈ O \ T) :
+@[simp] theorem dartWord_of_rev_mem {e : Γ.E} (he : e ∉ O \ T) (hr : Γ.rev e ∈ O \ T) :
     dartWord O T e = (FreeGroup.of ⟨Γ.rev e, hr⟩)⁻¹ := by
   simp [dartWord, he, hr]
 
-theorem dartWord_of_notMem {e : Γ.E} (he : e ∉ O \ T) (hr : Γ.rev e ∉ O \ T) :
+@[simp] theorem dartWord_of_notMem {e : Γ.E} (he : e ∉ O \ T) (hr : Γ.rev e ∉ O \ T) :
     dartWord O T e = 1 := by
   simp [dartWord, he, hr]
 
 /-- Reversing a dart inverts its coordinate. -/
-theorem dartWord_rev (hO : Γ.IsOrientation O) (e : Γ.E) :
+@[simp] theorem dartWord_rev (hO : Γ.IsOrientation O) (e : Γ.E) :
     dartWord O T (Γ.rev e) = (dartWord O T e)⁻¹ := by
   by_cases he : e ∈ O \ T
   · have hr : Γ.rev e ∉ O \ T := fun h =>
@@ -327,7 +327,7 @@ noncomputable def equivFreeGroup (hO : Γ.IsOrientation O)
           have := hT _ (not_not.1 fun h => hr ⟨hrO, h⟩)
           rwa [Γ.rev_rev] at this
       simp [edge_eq_one heT])
-    (FreeGroup.ext_hom _ _ fun x => by simp [dartWord_of_mem x.2])
+    (FreeGroup.ext_hom _ _ fun x => by simp)
 
 /-- The free-group coordinate of a dart generator is the signed coordinate of the dart. -/
 theorem equivFreeGroup_edge_eq_dartWord (hO : Γ.IsOrientation O)
