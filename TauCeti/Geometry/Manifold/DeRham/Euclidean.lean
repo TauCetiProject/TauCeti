@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
 import TauCeti.Geometry.Manifold.DeRham.NormedSpace
 import TauCeti.Geometry.Manifold.DeRham.RealLine
-import TauCeti.Geometry.Manifold.DeRham.Sphere
+import TauCeti.Geometry.Manifold.DeRham.Sphere.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct

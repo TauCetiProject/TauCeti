@@ -102,6 +102,7 @@ def spherePeriod (φ : RoughForm I M F 2) (x : M) (a : π_ 2 M x) : F := by
   else 0
 
 /-- The period of a form vanishing on spheres vanishes. -/
+@[simp]
 theorem VanishesOnSpheres.spherePeriod_eq_zero {φ : RoughForm I M F 2}
     (hφ : VanishesOnSpheres φ) (a : π_ 2 M x) : spherePeriod φ x a = 0 := by
   rw [spherePeriod]
@@ -112,11 +113,13 @@ theorem VanishesOnSpheres.spherePeriod_eq_zero {φ : RoughForm I M F 2}
   · rfl
 
 /-- The periods of exact two-forms vanish. -/
+@[simp]
 theorem spherePeriod_mextDeriv [IsManifold I 2 M] {α : RoughForm I M F 1}
     (hα : IsSmoothForm I 1 α) (a : π_ 2 M x) : spherePeriod (mextDeriv α) x a = 0 :=
   (vanishesOnSpheres_mextDeriv hα).spherePeriod_eq_zero a
 
 /-- The period is linear in the form: scalar multiples. -/
+@[simp]
 theorem spherePeriod_smul (c : ℝ) (φ : RoughForm I M F 2) (a : π_ 2 M x) :
     spherePeriod (c • φ) x a = c • spherePeriod φ x a := by
   simp only [spherePeriod]
@@ -124,7 +127,13 @@ theorem spherePeriod_smul (c : ℝ) (φ : RoughForm I M F 2) (a : π_ 2 M x) :
   · exact rectangleIntegral_smul c φ _ _ _
   · exact (smul_zero c).symm
 
+/-- The period of the zero form vanishes. -/
+@[simp]
+theorem spherePeriod_zero (a : π_ 2 M x) : spherePeriod (0 : RoughForm I M F 2) x a = 0 := by
+  simpa using spherePeriod_smul 0 (0 : RoughForm I M F 2) a
+
 /-- The period is linear in the form: sums of continuous forms. -/
+@[simp]
 theorem spherePeriod_add [IsManifold I 1 M] {φ ψ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
     (hψ : IsSmoothForm I 0 ψ) (a : π_ 2 M x) :
     spherePeriod (φ + ψ) x a = spherePeriod φ x a + spherePeriod ψ x a := by
@@ -572,6 +581,7 @@ theorem spherePeriod_mul {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
     rectangleIntegral_squareConcat (hφ.of_le (by simp)) (hw.of_le (by simp)) hv'x hu'x, add_comm]
 
 /-- The period of the identity of `π₂(M, x)`, the class of the constant sphere, vanishes. -/
+@[simp]
 theorem spherePeriod_one {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) : spherePeriod φ x 1 = 0 := by
   have hx : MapsSquareBoundaryTo (fun _ : ℝ × ℝ ↦ x) x :=
