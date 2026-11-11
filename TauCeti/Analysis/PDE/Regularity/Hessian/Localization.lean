@@ -153,7 +153,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
   -- remainder `T = ∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ` vanishes off the support of `ζ`.
   obtain ⟨w, hw0, hwv⟩ := Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul hp_top hζ hcpt hts 2 u
   obtain ⟨TL, hD, hTK, hTnorm, hζD⟩ :=
-    Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul hζ hcpt hM₁ hM₂ hwv
+    Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul hζ hM₁ hM₂ hwv
   have hζ_top := hζ.continuous.memLp_top_of_hasCompactSupport hcpt (volume.restrict Omega)
   -- The forcing term `ζ f + ∑ᵢⱼ aᵢⱼ Tᵢⱼ` of the equation for `ζ u`.
   have hEmeas : AEStronglyMeasurable (fun x => Matrix.contraction (a x) (TL x))

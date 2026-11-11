@@ -17,6 +17,15 @@ of every positively oriented orthonormal basis `(e₀, e₁)` to the second, `J 
 
 On the complex plane, the continuous oriented volume form is normalized on the standard complex
 basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`.
+
+An orthonormal basis `b` of a Euclidean plane identifies the plane with `ℂ` by
+`Complex.isometryOfOrthonormal b`, and the complex coordinate so defined carries the orientation of
+`b` to the standard orientation of `ℂ` (`Complex.map_isometryOfOrthonormal_symm_orientation`). This
+is the hypothesis under which Mathlib computes the area form, the quarter turn, the Kähler form,
+the oriented angle and the rotations of an oriented plane in a complex coordinate
+(`Orientation.areaForm_map_complex`, `Orientation.rightAngleRotation_map_complex`,
+`Orientation.kahler_map_complex`, `Orientation.oangle_map_complex`,
+`Orientation.rotation_map_complex`).
 -/
 
 public section
@@ -51,6 +60,18 @@ theorem rightAngleRotation_basis_one (hb : b.toBasis.orientation = o) :
 end Orientation
 
 namespace Complex
+
+/-- The complex coordinate of a Euclidean plane given by an orthonormal basis `b`, the inverse of
+`Complex.isometryOfOrthonormal b`, carries the orientation of `b` to the standard orientation of
+`ℂ`. -/
+theorem map_isometryOfOrthonormal_symm_orientation {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] (b : OrthonormalBasis (Fin 2) ℝ E) :
+    Orientation.map (Fin 2) (Complex.isometryOfOrthonormal b).symm.toLinearEquiv
+      b.toBasis.orientation = Complex.orientation := by
+  rw [← Module.Basis.orientation_map, Complex.orientation]
+  congr 1
+  ext i
+  fin_cases i <;> simp [Complex.isometryOfOrthonormal_symm_apply]
 
 attribute [local instance] Complex.finrank_real_complex_fact
 
