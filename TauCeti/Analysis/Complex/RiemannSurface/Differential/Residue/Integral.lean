@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Divisor
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Basic
 public import TauCeti.Analysis.Contour.Residue.Cutoff
 
@@ -27,9 +26,8 @@ residue of `ω` at `x` is computed by integrals of `f` in the chart:
 
 The left-hand sides are computed in an arbitrary chart of the maximal atlas, the right-hand sides
 do not depend on it (`TauCeti.RiemannSurface.OneForm.residue_eq_of_mem_maximalAtlas`). On a compact
-Riemann surface a `1`-form meromorphic everywhere has nonzero residue at only finitely many points
-(`TauCeti.RiemannSurface.OneForm.finite_support_residue`), so the sum of its residues is a finite
-sum.
+Riemann surface the sum of the residues of a `1`-form meromorphic everywhere is a finite sum
+(`TauCeti.RiemannSurface.OneForm.finite_support_residue`).
 
 These are the local ingredients of the residue theorem on a compact Riemann surface proved by
 Stokes' theorem (Forster, Theorem 10.21): with cutoffs `χᵢ` in coordinate discs about the poles,
@@ -54,17 +52,6 @@ namespace TauCeti.RiemannSurface.OneForm
 
 variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   {ω : OneForm X} {x : X}
-
-/-- On a compact Riemann surface, a `1`-form meromorphic everywhere has nonzero residue at only
-finitely many points: a nonzero residue forces a pole. -/
-theorem finite_support_residue [CompactSpace X] (hω : ∀ x, ω.MeromorphicAt x) :
-    (support ω.residue).Finite := by
-  refine (finite_support_untop₀_order hω).subset fun y hy ↦ ?_
-  have hneg : ω.order y < 0 := lt_of_not_ge fun h ↦ hy (residue_eq_zero_of_order_nonneg h)
-  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.1 (hneg.trans (WithTop.coe_lt_top 0)).ne
-  rw [← hn] at hneg
-  simp only [mem_support, ← hn, WithTop.untop₀_coe]
-  exact_mod_cast hneg.ne
 
 variable {e : OpenPartialHomeomorph X ℂ} {R : ℝ}
 

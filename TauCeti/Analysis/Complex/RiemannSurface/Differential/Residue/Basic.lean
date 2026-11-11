@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Basic
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Divisor
 public import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 
 /-!
@@ -25,7 +26,8 @@ holomorphic. The differential of a meromorphic function has residue `0`
 (`TauCeti.RiemannSurface.OneForm.residue_mvfderiv`), and the logarithmic differential `df / f` has
 residue the order of `f` (`TauCeti.RiemannSurface.OneForm.residue_inv_smul_mvfderiv`). These are
 the local facts behind the residue pairing of Serre duality and the vanishing of the degree of a
-principal divisor.
+principal divisor. On a compact Riemann surface a `1`-form meromorphic everywhere has nonzero
+residue at only finitely many points (`TauCeti.RiemannSurface.OneForm.finite_support_residue`).
 
 ## References
 
@@ -118,6 +120,17 @@ theorem residue_eq_of_mem_maximalAtlas (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (
   rw [residue_def, Contour.residue_congr_nhdsNE ((coeff_eventuallyEq ω he
     (chart_mem_maximalAtlas x) hx hcx).filter_mono nhdsWithin_le_nhds), ← hψx]
   exact Contour.residue_comp_mul_deriv hψ hψ'
+
+/-- On a compact Riemann surface, a `1`-form meromorphic everywhere has nonzero residue at only
+finitely many points: a nonzero residue forces a pole. -/
+theorem finite_support_residue [CompactSpace X] (hω : ∀ x, ω.MeromorphicAt x) :
+    (support ω.residue).Finite := by
+  refine (finite_support_untop₀_order hω).subset fun y hy ↦ ?_
+  have hneg : ω.order y < 0 := lt_of_not_ge fun h ↦ hy (residue_eq_zero_of_order_nonneg h)
+  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.1 (hneg.trans (WithTop.coe_lt_top 0)).ne
+  rw [← hn] at hneg
+  simp only [mem_support, ← hn, WithTop.untop₀_coe]
+  exact_mod_cast hneg.ne
 
 variable {f : X → ℂ}
 
