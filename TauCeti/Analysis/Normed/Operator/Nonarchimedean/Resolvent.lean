@@ -231,8 +231,9 @@ end Algebraic
 
 section Analytic
 
-variable [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+variable [NormedCommRing R] [IsUltrametricDist R]
 
+variable [NormOneClass R] in
 /-- **Resolvent entries of a map with finitely many nonzero rows.** If the rows of `w` outside a
 finite set `F` vanish and `r i` bounds the `i`-th row of `w`, then `c ≥ 0` bounds the entries
 of `w.resolventCoeff m` in `F × F` whenever it bounds `∏ i ∈ s, r i` for every `m`-element set
@@ -260,6 +261,7 @@ private theorem norm_matrixCoeff_resolventCoeff_le_of_row_eq_zero
   simpa only [prod_map, Function.Embedding.coe_subtype] using
     hs (s.map (Function.Embedding.subtype _)) (by rw [card_map, hs'])
 
+variable [NormOneClass R] in
 /-- **The Fredholm determinant is entire.** For a row-compact `u`, the principal-minor series
 `det (1 - T u)` is a restricted power series at every radius. -/
 theorem IsRowCompact.isEntire_charPowerSeries {u : C₀(I, R) →L[R] C₀(I, R)}
@@ -444,12 +446,12 @@ theorem resolventAt_mem_closure_adjoin (u : C₀(I, R) →L[R] C₀(I, R)) (a : 
 
 variable [IsUltrametricDist R]
 
-/-- **Operator-norm bound for the value of the Fredholm resolvent.** If `c ≥ 0` bounds
+/-- **Operator-norm bound for the value of the Fredholm resolvent.** If `c` bounds
 `‖a‖ ^ m * ‖Vₘ‖` for every `m`, then it bounds the operator norm of `V(a)`. -/
-theorem ringOpNorm_resolventAt_le (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) {c : ℝ} (hc : 0 ≤ c)
+theorem ringOpNorm_resolventAt_le (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) {c : ℝ}
     (h : ∀ m, ‖a‖ ^ m * ‖u.resolventCoeff m‖ ≤ c) : ‖u.resolventAt a‖ ≤ c := by
   rw [resolventAt_eq_evalScalar]
-  exact PowerSeries.norm_evalScalar_le (F := u.resolventSeries) hc fun m ↦ by
+  exact PowerSeries.norm_evalScalar_le (F := u.resolventSeries) fun m ↦ by
     simpa only [coeff_resolventSeries] using h m
 
 variable [CompleteSpace R]

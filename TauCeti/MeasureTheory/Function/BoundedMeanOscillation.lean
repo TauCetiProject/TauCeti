@@ -56,13 +56,16 @@ easy half of Sarason's characterization.
 * `TauCeti.bmoSeminorm_le_two_mul_eLpNorm_top` and `MeasureTheory.MemLp.memBMO`: `L^∞ ⊆ BMO`.
 * `TauCeti.bmoSeminorm_eq_zero_iff`: the seminorm vanishes exactly on a.e. constant functions.
 * `TauCeti.bmoSeminorm_comp_add_right`, `TauCeti.bmoSeminorm_comp_smul`: translation and
-  dilation invariance.
+  dilation invariance, and `TauCeti.vmoModulus_comp_add_right`: translation invariance of the VMO
+  modulus.
 * `TauCeti.vmoModulus`, `TauCeti.MemVMO`: the VMO modulus and the space of functions of
   vanishing mean oscillation.
 * `TauCeti.memVMO_of_tendsto_bmoSeminorm`: VMO is closed in BMO.
 * `UniformContinuous.memVMO`, `Continuous.memVMO_of_hasCompactSupport`: uniformly continuous
   functions of bounded mean oscillation, and continuous functions with compact support, have
   vanishing mean oscillation.
+* `TauCeti.enorm_setAverage_ball_sub_setAverage_ball_le`: for an additive Haar measure, the
+  averages over the concentric balls `B(c, 2ʲ r)` drift by at most `2ⁿ ‖f‖_{BMO}` per doubling.
 
 ## References
 
@@ -542,6 +545,24 @@ theorem bmoSeminorm_comp_add_right {G : Type*} [SeminormedAddCommGroup G] [Measu
     (fun c r => ⟨c + b, r, by simp [preimage_add_right_ball]⟩)
     (fun c' r' => ⟨c' - b, r', by simp [preimage_add_right_ball]⟩) f
 
+/-- The VMO modulus is invariant under translation for a right-invariant measure. -/
+@[simp]
+theorem vmoModulus_comp_add_right {G : Type*} [SeminormedAddCommGroup G] [MeasurableSpace G]
+    [MeasurableAdd G] {μ : Measure G} [μ.IsAddRightInvariant] (f : G → F) (b : G) (r : ℝ) :
+    vmoModulus (fun x => f (x + b)) μ r = vmoModulus f μ r := by
+  have hosc (c : G) (s : ℝ) :
+      ⨍⁻ y in ball c s, ‖f (y + b) - ⨍ z in ball c s, f (z + b) ∂μ‖ₑ ∂μ =
+        ⨍⁻ y in ball (c + b) s, ‖f y - ⨍ z in ball (c + b) s, f z ∂μ‖ₑ ∂μ := by
+    simpa [preimage_add_right_ball] using
+      setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul (μ := μ) (ν := μ)
+        (e := MeasurableEquiv.addRight b) (a := 1) (by simpa using map_add_right_eq_self μ b)
+        one_ne_zero ENNReal.one_ne_top f (ball (c + b) s)
+  refine le_antisymm (vmoModulus_le fun c s hs => ?_) (vmoModulus_le fun c s hs => ?_)
+  · rw [hosc]
+    exact setLAverage_enorm_sub_setAverage_le_vmoModulus f μ _ hs
+  · have h := setLAverage_enorm_sub_setAverage_le_vmoModulus (fun x => f (x + b)) μ (c - b) hs
+    rwa [hosc, sub_add_cancel] at h
+
 /-- The BMO seminorm is invariant under dilation `x ↦ t • x`, `t ≠ 0`, for an additive Haar
 measure on a finite-dimensional real normed space. -/
 @[simp]
@@ -558,5 +579,61 @@ theorem bmoSeminorm_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     inv_mul_cancel₀ (norm_ne_zero_iff.2 ht), one_mul]
 
 end Invariance
+
+/-! ### Averages over concentric balls -/
+
+section ConcentricBalls
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [CompleteSpace F]
+
+/-- **Averages over concentric dyadic balls.** For an additive Haar measure on a real normed space
+of finite dimension `n`, the averages of `b` over the balls `B(c, 2ʲ r)` move by at most
+`2ⁿ ‖b‖_{BMO}` at each doubling of the radius, so they stay within `(j + 1) 2ⁿ ‖b‖_{BMO}` of the
+average over `B(c, 2 r)`. -/
+theorem enorm_setAverage_ball_sub_setAverage_ball_le {b : E → F} (hb : AEStronglyMeasurable b μ)
+    (c : E) {r : ℝ} (hr : 0 < r) (j : ℕ) :
+    ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 * r), b y ∂μ‖ₑ ≤
+      (j + 1) * 2 ^ Module.finrank ℝ E * bmoSeminorm b μ := by
+  set n := Module.finrank ℝ E
+  have htri (u v w : F) : ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
+    simpa only [edist_eq_enorm_sub] using edist_triangle u v w
+  have hstep : ∀ ρ : ℝ, 0 < ρ →
+      ‖(⨍ y in ball c ρ, b y ∂μ) - ⨍ y in ball c (2 * ρ), b y ∂μ‖ₑ ≤ 2 ^ n * bmoSeminorm b μ :=
+    fun ρ hρ => by
+    have h0 : μ (ball c ρ) ≠ 0 := (measure_ball_pos μ c hρ).ne'
+    have htop : μ (ball c ρ) ≠ ∞ := measure_ball_lt_top.ne
+    refine (enorm_setAverage_sub_le_of_subset (ball_subset_ball (by linarith : ρ ≤ 2 * ρ)) h0
+      measure_ball_lt_top.ne hb.restrict _).trans ?_
+    rw [μ.addHaar_ball_mul_of_pos c two_pos, μ.addHaar_ball_center c,
+      ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat, ← μ.addHaar_ball_center c,
+      ENNReal.mul_div_cancel_right h0 htop]
+    gcongr
+    exact setLAverage_enorm_sub_setAverage_le_bmoSeminorm b μ c (2 * ρ)
+  have hind : ∀ j : ℕ, ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ ≤
+      j * 2 ^ n * bmoSeminorm b μ := by
+    intro j
+    induction j with
+    | zero => simp
+    | succ j ih =>
+      calc ‖(⨍ y in ball c (2 ^ (j + 1) * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ
+          ≤ ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 ^ (j + 1) * r), b y ∂μ‖ₑ +
+              ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ := by
+            rw [enorm_sub_rev (⨍ y in ball c (2 ^ j * r), b y ∂μ), add_comm]
+            exact htri _ _ _
+        _ ≤ 2 ^ n * bmoSeminorm b μ + j * 2 ^ n * bmoSeminorm b μ := by
+            gcongr
+            rw [pow_succ, mul_comm _ (2 : ℝ), mul_assoc]
+            exact hstep _ (by positivity)
+        _ = ((j + 1 : ℕ) : ℝ≥0∞) * 2 ^ n * bmoSeminorm b μ := by push_cast; ring
+  calc ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 * r), b y ∂μ‖ₑ
+      ≤ ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ +
+          ‖(⨍ y in ball c r, b y ∂μ) - ⨍ y in ball c (2 * r), b y ∂μ‖ₑ :=
+        htri _ _ _
+    _ ≤ j * 2 ^ n * bmoSeminorm b μ + 2 ^ n * bmoSeminorm b μ := add_le_add (hind j) (hstep r hr)
+    _ = (j + 1) * 2 ^ n * bmoSeminorm b μ := by ring
+
+end ConcentricBalls
 
 end TauCeti

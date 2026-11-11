@@ -57,8 +57,9 @@ theorem flat_iff_algebraMap_mem_nonZeroDivisors_of_isBezout [IsDomain R] [IsBezo
 omit [Flat R A] in
 /-- A domain is flat over a Bezout domain mapping injectively into it: over a Bezout domain,
 torsion-free modules are flat. -/
-theorem of_algebraMap_injective_of_isBezout [IsDomain R] [IsBezout R] [IsDomain A]
+theorem of_algebraMap_injective_of_isBezout [IsBezout R] [IsDomain A]
     (h : Function.Injective (algebraMap R A)) : Flat R A := by
+  have : IsDomain R := h.isDomain (algebraMap R A)
   rwa [flat_iff_torsion_eq_bot_of_isBezout, ← Submodule.isTorsionFree_iff_torsion_eq_bot,
     isTorsionFree_iff_algebraMap_injective]
 

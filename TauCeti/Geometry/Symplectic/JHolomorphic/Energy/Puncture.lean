@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.Calculus.FDeriv.CircleMap
+import TauCeti.Analysis.Complex.OperatorNorm
 
 /-!
 # Finite-energy `J`-holomorphic curves near a puncture
@@ -166,25 +167,19 @@ theorem tendsto_norm_sub_mul_norm_fderiv_nhdsNE
     (hE : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
     Tendsto (fun z ↦ ‖z - z₀‖ * ‖fderiv ℝ u z‖) (𝓝[≠] z₀) (𝓝 0) := by
   obtain ⟨a, ha⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
-  obtain ⟨C, -, hC⟩ := Complex.basisOneI.exists_opNorm_le (F := V)
   have h := (tendsto_norm_sub_mul_norm_fderiv_one_nhdsNE hW hJ hK hKW hJsq hR hu hCR huK
-    hE).const_mul (C * (1 + max a 0))
+    hE).const_mul (1 + max a 0)
   rw [mul_zero] at h
   refine squeeze_zero' (Eventually.of_forall fun z ↦ by positivity) ?_ h
   filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (ball_mem_nhds z₀ hR)] with z hz hzR
   have hz' : z ∈ ball z₀ R \ {z₀} := ⟨hzR, hz⟩
   -- The Cauchy--Riemann equation bounds `‖∂ₜu‖ = ‖J(u) ∂ₛu‖` by a multiple of `‖∂ₛu‖`.
-  have hI : ‖fderiv ℝ u z I‖ ≤ max a 0 * ‖fderiv ℝ u z 1‖ := by
-    rw [hCR z hz']
-    exact ((J (u z)).le_opNorm _).trans
-      (by gcongr; exact (ha _ (huK hz')).trans (le_max_left _ _))
-  have hop : ‖fderiv ℝ u z‖ ≤ C * ((1 + max a 0) * ‖fderiv ℝ u z 1‖) := by
-    refine hC (by positivity) fun i ↦ ?_
-    have h1 : 0 ≤ max a 0 * ‖fderiv ℝ u z 1‖ := by positivity
-    fin_cases i <;> simp [Complex.coe_basisOneI] <;> linarith [norm_nonneg (fderiv ℝ u z 1)]
-  calc ‖z - z₀‖ * ‖fderiv ℝ u z‖ ≤ ‖z - z₀‖ * (C * ((1 + max a 0) * ‖fderiv ℝ u z 1‖)) := by
+  have hop : ‖fderiv ℝ u z‖ ≤ (1 + max a 0) * ‖fderiv ℝ u z 1‖ :=
+    (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz') ((ha _ (huK hz')).trans (le_max_left _ _))
+      le_rfl
+  calc ‖z - z₀‖ * ‖fderiv ℝ u z‖ ≤ ‖z - z₀‖ * ((1 + max a 0) * ‖fderiv ℝ u z 1‖) := by
         gcongr
-    _ = C * (1 + max a 0) * (‖z - z₀‖ * ‖fderiv ℝ u z 1‖) := by ring
+    _ = (1 + max a 0) * (‖z - z₀‖ * ‖fderiv ℝ u z 1‖) := by ring
 
 /-- **Circles about a puncture have shrinking images.** Under the hypotheses of
 `TauCeti.tendsto_norm_sub_mul_norm_fderiv_one_nhdsNE`, the image under a finite-energy solution

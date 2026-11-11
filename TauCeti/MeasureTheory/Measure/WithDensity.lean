@@ -34,8 +34,7 @@ A map that is injective only on part of the line admits the same change of varia
 price of restricting Lebesgue measure to that part and inserting the absolute derivative into the
 weight. The substitution `x = t ^ 2` on the positive half-line is the case a square-root law needs.
 
-Finally, a weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite
-measure finite.
+A weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite measure finite.
 
 ## Main statements
 
@@ -47,6 +46,8 @@ measure finite.
   through a map whose Jacobian identity is already known transports that weight to the image.
 * `MeasureTheory.Measure.map_withDensity_comp`: the image of a measure weighted by a pulled-back
   weight is the image measure weighted by that weight.
+* `MeasurableEmbedding.map_withDensity_comp`: the same along a measurable embedding, with no
+  measurability of the weight.
 * `MeasureTheory.Measure.map_add_right_withDensity`: translating a weighted right-invariant
   measure translates the weight.
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
@@ -143,7 +144,7 @@ on nonempty open sets.
 
 This form allows the density to take arbitrary values on the boundary. -/
 theorem support_withDensity_eq_closure_of_subset {X : Type*} [TopologicalSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure]
+    [MeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure]
     {f : X → ℝ≥0∞} {U : Set X} (hf : Measurable f) (hU : IsOpen U)
     (hU_support : U ⊆ Function.support f)
     (hsupport_closure : Function.support f ⊆ closure U) :
@@ -155,7 +156,8 @@ theorem support_withDensity_eq_closure_of_subset {X : Type*} [TopologicalSpace X
   · rw [support_eq_forall_isOpen]
     intro x hx V hxV hV
     obtain ⟨y, hyV, hyU⟩ := mem_closure_iff.mp hx V hV hxV
-    rw [withDensity_apply _ hV.measurableSet, setLIntegral_pos_iff hf]
+    refine lt_of_lt_of_le ?_ (withDensity_apply_le f V)
+    rw [setLIntegral_pos_iff hf]
     exact ((hU.inter hV).measure_pos μ ⟨y, hyU, hyV⟩).trans_le
       (measure_mono fun _ hz ↦ ⟨hU_support hz.1, hz.2⟩)
 
@@ -163,7 +165,7 @@ theorem support_withDensity_eq_closure_of_subset {X : Type*} [TopologicalSpace X
 topological support equal to the closure of that set, provided the reference measure is positive
 on nonempty open sets. -/
 theorem support_withDensity_eq_closure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
-    [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → ℝ≥0∞}
+    {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → ℝ≥0∞}
     {U : Set X} (hf : Measurable f) (hU : IsOpen U) (hsupp : Function.support f = U) :
     (μ.withDensity f).support = closure U := by
   exact support_withDensity_eq_closure_of_subset hf hU (hsupp.ge)
@@ -212,6 +214,17 @@ theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : 
 theorem map_withDensity_comp {μ : Measure α} {f : α → β} {g : β → ℝ≥0∞} (hf : Measurable f)
     (hg : Measurable g) : (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g :=
   map_withDensity_eq_withDensity (jac := fun _ => 1) hf measurable_const hg (by simp) (by simp)
+
+/-- **A pulled-back weight is pushed forward along a measurable embedding.** Unlike
+`map_withDensity_comp`, no measurability of the weight `g` is needed. -/
+theorem _root_.MeasurableEmbedding.map_withDensity_comp {μ : Measure α} {f : α → β}
+    (hf : MeasurableEmbedding f) (g : β → ℝ≥0∞) :
+    (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g := by
+  ext s hs
+  rw [Measure.map_apply hf.measurable hs, withDensity_apply _ (hf.measurable hs),
+    withDensity_apply _ hs, ← lintegral_indicator (hf.measurable hs), ← lintegral_indicator hs,
+    hf.lintegral_map]
+  exact lintegral_congr fun x ↦ Set.indicator_comp_right f
 
 /-- **Translating a weighted invariant measure translates its weight.** If `μ` is invariant under
 right translation, then pushing `μ.withDensity f` forward along `x ↦ x + y` gives `μ` weighted by
@@ -328,12 +341,14 @@ theorem continuous_eq_of_withDensity_ofReal_eq {X : Type*} [TopologicalSpace X]
 /-- A measure with log-density bounded above almost everywhere against a finite measure is
 finite. -/
 theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    [IsFiniteMeasure μ] {g : α → ℝ} {M : ℝ} (hg : AEMeasurable g μ) (hgM : ∀ᵐ x ∂μ, g x ≤ M) :
+    [IsFiniteMeasure μ] {g : α → ℝ} {M : ℝ} (hgM : ∀ᵐ x ∂μ, g x ≤ M) :
     IsFiniteMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (Real.exp (g x))) := by
-  refine isFiniteMeasure_withDensity_ofReal (Integrable.of_bound
-    (Real.measurable_exp.comp_aemeasurable hg).aestronglyMeasurable (Real.exp M)
-    (hgM.mono fun x hx ↦ ?_)).2
-  rwa [Function.comp_apply, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
+  refine ⟨?_⟩
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+  refine lt_of_le_of_lt (lintegral_mono_ae (g := fun _ ↦ ENNReal.ofReal (Real.exp M))
+    (hgM.mono fun x hx ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 hx))) ?_
+  rw [lintegral_const]
+  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (measure_lt_top _ _)
 
 end MeasureTheory
 

@@ -21,10 +21,10 @@ The complete installation inventory is in the [setup manual](https://github.com/
 The no-stacking workflow pins its batching implementation separately in
 `.github/workflows/stack-policy.yml`. Before local no-stacking commands or tests,
 materialize the helpers using that workflow's Tools revision. The project default
-and other workflow pins remain independent. `test_stack_policy.py` runs in
-`stack-policy.yml` against that workflow's Tools pin.
-`test_stack_checkpoint_restore.py` runs in both the policy workflow and main CI
-and does not depend on the Tools pin.
+and other workflow pins remain independent. `infrastructure-tests.yml` selects
+the same stack-policy Tools pin to run `test_stack_policy.py` and the project-owned
+`test_stack_checkpoint_restore.py`. Workflow pin tests require those production
+and regression-test pins to agree.
 
 The `finalize-merge-group-build` job in `.github/workflows/pr-build.yml` pins its
 Tools version separately from the project default. `.github/workflows/retry-ci-status.yml`

@@ -212,14 +212,16 @@ end CommRing
 
 namespace Module.Basis
 
-variable {K L : Type*} [CommRing K] [Nontrivial K] [CommRing L] [Algebra K L]
+variable {K L : Type*} [CommRing K] [CommRing L] [Algebra K L]
 
 /-- **The norm form of a basis `(1, θ)`.** For a basis `B` of a commutative algebra `L` over a
-nontrivial commutative ring `K` with `B 0 = 1` and `θ = B 1`, the norm of `w = x + y θ` is
+commutative ring `K` with `B 0 = 1` and `θ = B 1`, the norm of `w = x + y θ` is
 `x² + x y Tr(θ) + y² N(θ)`. -/
 theorem norm_eq_of_apply_zero_eq_one (B : Module.Basis (Fin 2) K L) (hB : B 0 = 1) (w : L) :
     Algebra.norm K w = B.repr w 0 ^ 2 + B.repr w 0 * B.repr w 1 * Algebra.trace K L (B 1) +
       B.repr w 1 ^ 2 * Algebra.norm K (B 1) := by
+  rcases subsingleton_or_nontrivial K with _ | _
+  · exact Subsingleton.elim _ _
   have : Algebra.IsQuadraticExtension K L :=
     { toFree := .of_basis B
       finrank_eq_two' := by rw [Module.finrank_eq_card_basis B, Fintype.card_fin] }
@@ -370,7 +372,7 @@ variable {K L : Type*} [Field K] [CommRing L] [Algebra K L]
 exactly the unit values of `x² - d y²`. The scalar extension can be split or nonreduced;
 it is not required to be a field. -/
 theorem mem_range_normUnits_baseChange_iff_exists_sq_sub_mul_sq
-    (F : Type*) [CommRing F] [Nontrivial F] [Algebra K F] {θ : L} {d : K}
+    (F : Type*) [CommRing F] [Algebra K F] {θ : L} {d : K}
     (hθ : θ ∉ Set.range (algebraMap K L)) (hθ2 : θ ^ 2 = algebraMap K L d) (a : Fˣ) :
     a ∈ (Algebra.normUnits F (S := F ⊗[K] L)).range ↔
       ∃ x y : F, (a : F) = x ^ 2 - algebraMap K F d * y ^ 2 := by

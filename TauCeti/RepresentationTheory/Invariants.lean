@@ -99,6 +99,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   `S`-invariants.
 * `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
   does not change the invariants.
+* `Representation.map_subtype_invariants_subrepresentation`: the invariants of the restriction to
+  a `G`-stable submodule `W` are `ρ.invariants ⊓ W`.
 * `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
   invariant.
 * `Representation.finrank_invariants_tprod_of_comp`: invariant dimensions of tensor products may
@@ -237,6 +239,30 @@ theorem mem_invariants_iff_of_closure_eq_top {k G V : Type*} [CommRing k] [Group
   | inv g _ hg =>
     conv_lhs => rw [← hg]
     rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self]
+
+section Subrepresentation
+
+variable {k G V : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
+  (ρ : Representation k G V) {W : Submodule k V} (hW : ∀ g, W ≤ W.comap (ρ g))
+
+-- Not `@[simp]`: Mathlib's `@[simp] Representation.mem_invariants` already rewrites the left-hand
+-- side, so the attribute would be a `simpNF` violation. This is the `rw`-usable form.
+/-- A vector of a `G`-stable submodule `W` is invariant for the restriction of `ρ` to `W` exactly
+when it is invariant for `ρ`: the restricted action is the ambient action. -/
+theorem mem_invariants_subrepresentation {x : W} :
+    x ∈ (ρ.subrepresentation W hW).invariants ↔ (x : V) ∈ ρ.invariants := by
+  simp [Subtype.ext_iff]
+
+/-- The invariants of the restriction of `ρ` to a `G`-stable submodule `W` are, as a subspace of
+`V`, the invariant vectors of `ρ` lying in `W`. -/
+theorem map_subtype_invariants_subrepresentation :
+    (ρ.subrepresentation W hW).invariants.map W.subtype = ρ.invariants ⊓ W := by
+  ext v
+  refine ⟨?_, fun hv ↦ ⟨⟨v, hv.2⟩, (ρ.mem_invariants_subrepresentation hW).2 hv.1, rfl⟩⟩
+  rintro ⟨x, hx, rfl⟩
+  exact ⟨(ρ.mem_invariants_subrepresentation hW).1 hx, x.2⟩
+
+end Subrepresentation
 
 end Representation
 

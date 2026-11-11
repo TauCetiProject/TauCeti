@@ -29,7 +29,7 @@ primitive reduced binary quadratic forms of discriminant `-n`
 that the principal form is the only one. Since `ℚ(√(-n))` is `ℚ(√(-d))` for the Heegner numbers
 `d ≡ 3 (mod 4)`, this covers seven of the nine radicands; for `d = 1, 2` the model `ℚ(√(-d))` is
 handled by Minkowski's bound
-(`QuadraticAlgebra.classNumber_eq_one_of_mod_four_ne_one_of_natAbs_le_two`). Every quadratic field
+(`QuadraticAlgebra.classNumber_eq_one_of_natAbs_le_two`). Every quadratic field
 of discriminant `-n` has the same class number as `ℚ(√(-n))`
 (`TauCeti.BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms_of_discr_eq`), so the nine
 discriminants have class number one in any quadratic field.
@@ -121,9 +121,8 @@ number one. -/
 theorem classNumber_eq_one_of_mem_heegnerNumbers {d : ℕ} [NeZero d] (hd : d ∈ heegnerNumbers) :
     NumberField.classNumber (QuadraticAlgebra ℚ ((-d : ℤ) : ℚ) 0) = 1 := by
   by_cases h : d = 1 ∨ d = 2
-  · refine QuadraticAlgebra.classNumber_eq_one_of_mod_four_ne_one_of_natAbs_le_two
-      (Int.squarefree_natAbs.mp (by simpa using squarefree_of_mem_heegnerNumbers hd))
-      ?_ ?_ <;> rcases h with rfl | rfl <;> decide
+  · refine QuadraticAlgebra.classNumber_eq_one_of_natAbs_le_two ?_
+    rcases h with rfl | rfl <;> decide
   · refine classNumber_neg_eq_one_of_mem_heegnerDiscriminants ?_
     simp only [mem_heegnerNumbers] at hd
     simp only [mem_heegnerDiscriminants]

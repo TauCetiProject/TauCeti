@@ -15,6 +15,7 @@ import TauCeti.RingTheory.IntegralClosure.GoingDown
 import TauCeti.RingTheory.KrullDimension.Fiber
 import TauCeti.RingTheory.KrullDimension.Module
 import TauCeti.RingTheory.LocalRing.Quotient
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # Regular sequences in Cohen–Macaulay modules
@@ -58,8 +59,8 @@ for regular local rings (Stacks, Lemma 58.21.3 (0BMA)).
 
 * `Module.IsCohenMacaulay.isSMulRegular_of_supportDim_quotSMulTop_lt`: an element `x` with
   `dim M ⧸ x M < dim M` is `M`-regular (Stacks, Lemma 10.103.3 (00N5), part (a)).
-* `Module.IsCohenMacaulay.isSMulRegular_iff_supportDim_quotSMulTop_lt`: for `x ∈ 𝔪` and `M ≠ 0`,
-  this is a characterization of `M`-regular elements.
+* `Module.IsCohenMacaulay.isSMulRegular_iff_supportDim_quotSMulTop_lt`: for `M ≠ 0`, this is a
+  characterization of `M`-regular elements.
 * `Module.IsCohenMacaulay.quotSMulTop`: under the same hypothesis `M ⧸ x M` is again
   Cohen–Macaulay (Stacks, Lemma 10.103.3 (00N5), part (b)).
 * `Module.IsCohenMacaulay.isRegular_iff_supportDim_add_length_eq_supportDim`: for `M ≠ 0`, a
@@ -129,26 +130,34 @@ theorem isSMulRegular_of_supportDim_quotSMulTop_lt (h : IsCohenMacaulay R M) {x 
   -- By unmixedness `dim R ⧸ p = dim M`, so the dimension does not drop.
   exact (h.ringKrullDim_quotient_eq_supportDim hp ▸ hle).not_gt hx
 
-/-- For `x` in the maximal ideal and a nonzero finite Cohen–Macaulay module `M` over a Noetherian
-local ring, `x` is `M`-regular if and only if `dim M ⧸ x M < dim M`; the drop is then exactly one
-(`Module.supportDim_quotSMulTop_succ_eq_supportDim`). -/
+/-- For a nonzero finite Cohen–Macaulay module `M` over a Noetherian local ring, `x` is
+`M`-regular if and only if `dim M ⧸ x M < dim M`; for `x` in the maximal ideal the drop is then
+exactly one (`Module.supportDim_quotSMulTop_succ_eq_supportDim`). -/
 theorem isSMulRegular_iff_supportDim_quotSMulTop_lt [Nontrivial M] (h : IsCohenMacaulay R M)
-    {x : R} (hx : x ∈ maximalIdeal R) :
-    IsSMulRegular M x ↔ supportDim R (QuotSMulTop x M) < supportDim R M := by
+    (x : R) : IsSMulRegular M x ↔ supportDim R (QuotSMulTop x M) < supportDim R M := by
   refine ⟨fun reg ↦ ?_, h.isSMulRegular_of_supportDim_quotSMulTop_lt⟩
+  by_cases hx : x ∈ maximalIdeal R
+  swap
+  · have := QuotSMulTop.subsingleton_of_isUnit (M := M) (notMem_maximalIdeal.mp hx)
+    rw [supportDim_eq_bot_of_subsingleton]
+    exact bot_lt_iff_ne_bot.2 (supportDim_ne_bot_of_nontrivial R M)
   obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := R) (M := M)
   rw [hk]
   exact ENat.WithBot.lt_natCast_of_add_one_eq
     (hk ▸ supportDim_quotSMulTop_succ_eq_supportDim reg hx)
 
-/-- If `x ∈ 𝔪` satisfies `dim M ⧸ x M < dim M` for a finite Cohen–Macaulay module `M` over a
+/-- If `x` satisfies `dim M ⧸ x M < dim M` for a finite Cohen–Macaulay module `M` over a
 Noetherian local ring, then `M ⧸ x M` is Cohen–Macaulay. Stacks, Lemma 10.103.3 (00N5),
 part (b). -/
 @[stacks 00N5 "(b)"]
-theorem quotSMulTop (h : IsCohenMacaulay R M) {x : R} (hx : x ∈ maximalIdeal R)
+theorem quotSMulTop (h : IsCohenMacaulay R M) {x : R}
     (hdim : supportDim R (QuotSMulTop x M) < supportDim R M) :
-    IsCohenMacaulay R (QuotSMulTop x M) :=
-  (isCohenMacaulay_quotSMulTop_iff (h.isSMulRegular_of_supportDim_quotSMulTop_lt hdim) hx).2 h
+    IsCohenMacaulay R (QuotSMulTop x M) := by
+  by_cases hx : x ∈ maximalIdeal R
+  · exact (isCohenMacaulay_quotSMulTop_iff (h.isSMulRegular_of_supportDim_quotSMulTop_lt hdim)
+      hx).2 h
+  · have := QuotSMulTop.subsingleton_of_isUnit (M := M) (notMem_maximalIdeal.mp hx)
+    exact isCohenMacaulay_of_subsingleton
 
 /-- **Regular sequences in a Cohen–Macaulay module.** For a nonzero finite Cohen–Macaulay module
 `M` over a Noetherian local ring, a sequence `r₁, …, rₙ` of elements of the maximal ideal is
@@ -177,17 +186,23 @@ theorem isRegular_iff_supportDim_add_length_eq_supportDim [Nontrivial M]
     have := nontrivial_quotSMulTop_of_mem_maximalIdeal M hx
     -- Now `dim N + 1 = dim M`, and the induction hypothesis applies to `N`.
     rw [← supportDim_quotSMulTop_succ_eq_supportDim reg hx, ENat.WithBot.add_one_cancel] at hdim
-    exact (isRegular_cons_iff M x rs).2 ⟨reg, ih (h.quotSMulTop hx hlt) hrs' hdim⟩
+    exact (isRegular_cons_iff M x rs).2 ⟨reg, ih (h.quotSMulTop hlt) hrs' hdim⟩
 
-/-- **Systems of parameters are regular sequences.** Let `M` be a nonzero finite Cohen–Macaulay
-module over a Noetherian local ring `(R, 𝔪)`. A sequence `r₁, …, rₙ` of `dim M` elements of `𝔪`
-such that `(r₁, …, rₙ) + Ann M` has radical `𝔪` is `M`-regular. This is the case of
+/-- **Systems of parameters are regular sequences.** Let `M` be a finite Cohen–Macaulay
+module over a Noetherian local ring `(R, 𝔪)`; it is nonzero since its dimension is a length. A
+sequence `r₁, …, rₙ` of `dim M` elements of `𝔪` such that `(r₁, …, rₙ) + Ann M` has radical `𝔪`
+is `M`-regular. This is the case of
 `isRegular_iff_supportDim_add_length_eq_supportDim` (Stacks, Proposition 10.103.4 (00N6)) in
 which `M ⧸ (r₁, …, rₙ) M` is supported at the closed point, hence has dimension zero. -/
-theorem isRegular_of_le_radical [Nontrivial M] (h : IsCohenMacaulay R M) {rs : List R}
+theorem isRegular_of_le_radical (h : IsCohenMacaulay R M) {rs : List R}
     (hrs : ∀ r ∈ rs, r ∈ maximalIdeal R)
     (hrad : maximalIdeal R ≤ (ofList rs ⊔ annihilator R M).radical)
     (hlen : (rs.length : WithBot ℕ∞) = supportDim R M) : IsRegular M rs := by
+  have : Nontrivial M := by
+    rw [← not_subsingleton_iff_nontrivial]
+    intro hM
+    rw [supportDim_eq_bot_of_subsingleton] at hlen
+    exact WithBot.coe_ne_bot (by exact_mod_cast hlen)
   refine (h.isRegular_iff_supportDim_add_length_eq_supportDim rs hrs).2 ?_
   set N := M ⧸ ofList rs • (⊤ : Submodule R M)
   have hle : ofList rs ≤ maximalIdeal R := span_le.2 hrs

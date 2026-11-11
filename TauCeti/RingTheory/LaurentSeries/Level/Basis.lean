@@ -53,6 +53,8 @@ The contraction and decomposition API follows the design proposed in
 * `TauCeti.puiseuxField.isAlgebraic_laurentSeries`: every Puiseux series is algebraic over
   `K⸨X⸩`.
 * `TauCeti.puiseuxField.level_le_level_iff`: level `n` lies in level `m` exactly when `n ∣ m`.
+* `TauCeti.puiseuxField.finrank_restrict_level`: level `n` has degree `n` over `K⸨X⸩` as an
+  intermediate field of level `m`.
 * `TauCeti.puiseuxField.level_inf_level`: levels `n` and `m` intersect in level `gcd n m`.
 * `TauCeti.puiseuxField.level_sup_level`: levels `n` and `m` generate level `lcm n m`.
 * `TauCeti.puiseuxField.iSup_level`: the levels exhaust the Puiseux field.
@@ -439,6 +441,25 @@ theorem level_le_level_iff (K : Type*) [Field K] {n m : ℕ+} :
   obtain ⟨f, rfl⟩ := (AlgHom.mem_range _).mp hx
   have hf := h ((mem_level_iff K n (levelEmbedding K n f)).mpr ⟨f, rfl⟩)
   rwa [mem_level_iff, mem_range_levelEmbedding_iff, coe_levelEmbedding] at hf
+
+/-- For `n ∣ m`, level `n` has degree `n` over `K⸨X⸩`, as an intermediate field of level `m`. -/
+theorem finrank_restrict_level (K : Type*) [Field K] {n m : ℕ+} (h : n ∣ m) :
+    Module.finrank K⸨X⸩ (IntermediateField.restrict (level_le_level_of_dvd K h)) = n := by
+  rw [← (IntermediateField.restrictAlgEquiv _).toLinearEquiv.finrank_eq, level_finrank]
+
+/-- For `n ∣ m` and `n' ∣ m`, level `n` is contained in level `n'`, as intermediate fields of
+level `m`, exactly when `n ∣ n'`. -/
+@[simp]
+theorem restrict_level_le_restrict_level_iff (K : Type*) [Field K] {n n' m : ℕ+} (h : n ∣ m)
+    (h' : n' ∣ m) :
+    IntermediateField.restrict (level_le_level_of_dvd K h) ≤
+      IntermediateField.restrict (level_le_level_of_dvd K h') ↔ n ∣ n' := by
+  rw [← level_le_level_iff K]
+  refine ⟨fun hle x hx ↦ ?_, fun hle x hx ↦ ?_⟩
+  · exact (IntermediateField.mem_restrict _ ⟨x, level_le_level_of_dvd K h hx⟩).mp
+      (hle ((IntermediateField.mem_restrict _ _).mpr hx))
+  · exact (IntermediateField.mem_restrict _ x).mpr
+      (hle ((IntermediateField.mem_restrict _ x).mp hx))
 
 /-- Level one is the base field `K⸨X⸩`. -/
 @[simp]

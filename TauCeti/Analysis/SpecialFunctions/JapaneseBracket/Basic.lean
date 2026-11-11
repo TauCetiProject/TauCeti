@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The integral and the moments of the Japanese bracket
@@ -46,8 +47,14 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 
 * `TauCeti.one_add_norm_sq_rpow_mul_norm_le`: one power of `‖x‖` costs one order of the
   Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
+* `TauCeti.one_add_mul_norm_pow_le`: the linear weight `(1 + c ‖x‖) ^ i` is at most
+  `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
+* `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
+  `x ↦ (1 + ‖x‖ ^ 2) ^ (-(n + 1) / 2)` is integrable.
+* `TauCeti.integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq`: the weight
+  `(1 + c ‖x‖) ^ i` times `(1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable when `dim V + i < r`.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
   `TauCeti.integral_norm_rpow_mul_rpow_neg_one_add_norm_sq`: integrability and value of the
   radial moments of the Japanese bracket, for every additive Haar measure.
@@ -76,6 +83,20 @@ theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [NormedAddCommGroup E] (x :
   rw [add_div, Real.rpow_add (by positivity), ← Real.sqrt_eq_rpow]
   gcongr
   exact Real.le_sqrt_of_sq_le (by linarith)
+
+/-- A linear weight is dominated by the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
+`(1 + c ‖x‖) ^ i ≤ (1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`. -/
+theorem one_add_mul_norm_pow_le {E : Type*} [NormedAddCommGroup E] {c : ℝ} (hc : 0 ≤ c) (x : E)
+    (i : ℕ) : (1 + c * ‖x‖) ^ i ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) := by
+  have hle : 1 + c * ‖x‖ ≤ (1 + c) * √(1 + ‖x‖ ^ 2) := by
+    have h1 : 1 ≤ √(1 + ‖x‖ ^ 2) := Real.one_le_sqrt.2 (by nlinarith [sq_nonneg ‖x‖])
+    have h2 : ‖x‖ ≤ √(1 + ‖x‖ ^ 2) := Real.le_sqrt_of_sq_le (by linarith)
+    nlinarith
+  have hsqrt : (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) = √(1 + ‖x‖ ^ 2) ^ i := by
+    rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast (by positivity)]
+    ring_nf
+  rw [hsqrt, ← mul_pow]
+  exact pow_le_pow_left₀ (by positivity) hle i
 
 variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
 
@@ -119,6 +140,34 @@ theorem integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.I
     ‖x‖ ^ p * (1 + ‖x‖ ^ 2) ^ (-r / 2)
         ≤ (1 + ‖x‖ ^ 2) ^ (p / 2) * (1 + ‖x‖ ^ 2) ^ (-r / 2) := by gcongr
     _ = (1 + ‖x‖ ^ 2) ^ (-(r - p) / 2) := by rw [← Real.rpow_add hA, hexp]
+
+/-- On `ℝⁿ` the Japanese bracket weight `⟨x⟩ ^ (-(n + 1))` is integrable for every additive Haar
+measure, its decay exponent exceeding the dimension by one. -/
+theorem integrable_one_add_norm_sq_rpow_neg_succ_div_two {n : ℕ}
+    {μ : Measure (EuclideanSpace ℝ (Fin n))} [μ.IsAddHaarMeasure] :
+    Integrable (fun x : EuclideanSpace ℝ (Fin n) ↦ (1 + ‖x‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)) μ :=
+  integrable_rpow_neg_one_add_norm_sq (by rw [finrank_euclideanSpace_fin]; linarith)
+
+/-- A polynomial weight `(1 + c ‖x‖) ^ i`, `c ≥ 0`, times the Japanese bracket
+`(1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable for every additive Haar measure when the decay exponent
+exceeds `dim V + i`. -/
+theorem integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq (μ : Measure V)
+    [μ.IsAddHaarMeasure] {c : ℝ} (hc : 0 ≤ c) (i : ℕ) {r : ℝ}
+    (hr : (finrank ℝ V : ℝ) + i < r) :
+    Integrable (fun x : V ↦ (1 + c * ‖x‖) ^ i * (1 + ‖x‖ ^ 2) ^ (-r / 2)) μ := by
+  have hmajorant := (integrable_rpow_neg_one_add_norm_sq (E := V) (μ := μ)
+    (show (finrank ℝ V : ℝ) < r - i by linarith)).const_mul ((1 + c) ^ i)
+  refine hmajorant.mono' (by fun_prop) (.of_forall fun x ↦ ?_)
+  have hA : 0 < 1 + ‖x‖ ^ 2 := by positivity
+  rw [Real.norm_of_nonneg (by positivity)]
+  calc
+    (1 + c * ‖x‖) ^ i * (1 + ‖x‖ ^ 2) ^ (-r / 2)
+        ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖x‖ ^ 2) ^ (-r / 2) := by
+          gcongr
+          exact one_add_mul_norm_pow_le hc x i
+    _ = (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ (-(r - i) / 2) := by
+          rw [mul_assoc, ← Real.rpow_add hA]
+          ring_nf
 
 end Integrability
 
@@ -400,10 +449,7 @@ theorem integral_rpow_neg_one_add_norm_sq {r : ℝ} (hr : (finrank ℝ V : ℝ) 
   rcases subsingleton_or_nontrivial V with hV | hV
   · -- In dimension zero the integral is the value at the only point, of volume one.
     have hvol : volume.real (univ : Set V) = 1 := by
-      have h := (stdOrthonormalBasis ℝ V).volume_parallelepiped
-      rw [Subsingleton.eq_univ_of_nonempty
-        ⟨0, (mem_parallelepiped_iff _ _).2 ⟨0, ⟨le_rfl, zero_le_one⟩, by simp⟩⟩] at h
-      rw [measureReal_def, h, ENNReal.toReal_one]
+      rw [measureReal_def, volume_eq_one_of_subsingleton univ_nonempty, ENNReal.toReal_one]
     have : Unique V := uniqueOfSubsingleton 0
     rw [integral_unique, hvol, finrank_zero_of_subsingleton, Subsingleton.elim (default : V) 0]
     simp [(Gamma_pos_of_pos (half_pos hr0)).ne']

@@ -65,7 +65,7 @@ carries a highest weight vector (`TauCeti.exists_isHighestWeightVector`), whose 
 hypothesis; two irreducible modules with highest weight vectors of the same weight are equivalent,
 so the module is isotypic of that type. Passing from isotypy to the isotypic component being
 everything is Mathlib's `isotypicComponent_eq_top_iff` read through the enveloping-algebra
-dictionary, `LieModule.isotypicComponent_eq_top_iff_of_ι_smul`.
+dictionary, `LieModule.isotypicComponent_eq_top_iff`.
 
 ## Main results
 
@@ -287,9 +287,7 @@ theorem isotypicComponent_eq_top_of_isHighestWeightVector_of_forall_isHighestWei
     LieModule.isotypicComponent K L M N = ⊤ :=
   have _ : ComplementedLattice (LieSubmodule K L M) :=
     complementedLattice_lieSubmodule_of_isKilling K L M
-  (LieModule.isotypicComponent_eq_top_iff_of_ι_smul
-      (UniversalEnvelopingAlgebra.asModule_ι_smul K L M) N
-      (UniversalEnvelopingAlgebra.asModule_ι_smul K L N)).mpr
+  (LieModule.isotypicComponent_eq_top_iff N).mpr
     (isIsotypicOfType_of_forall_isHighestWeightVector hw h)
 
 /-- **The single-weight isotypic criterion at the fixed carrier `L(lam)`**, which is the criterion

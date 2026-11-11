@@ -238,14 +238,13 @@ theorem sum_abs_logEmbedding_le_two_mul_logHeight₁ (u : (𝓞 L)ˣ) :
   exact le_add_of_nonneg_right (abs_nonneg _)
 
 open Classical in
-/-- Twice the relative logarithmic height of a unit is at most twice the `ℓ¹` norm of its
-logarithmic embedding. -/
-theorem two_mul_logHeight₁_le_two_mul_sum_abs_logEmbedding (u : (𝓞 L)ˣ) :
-    2 * Height.logHeight₁ (u : L) ≤
-      2 * ∑ w, |logEmbedding L (Additive.ofMul u) w| := by
-  rw [two_mul_logHeight₁_eq_sum_abs_logEmbedding]
-  nlinarith [Finset.abs_sum_le_sum_abs (fun w ↦ logEmbedding L (Additive.ofMul u) w)
-    Finset.univ]
+/-- The relative logarithmic height of a unit is at most the `ℓ¹` norm of its logarithmic
+embedding. -/
+theorem logHeight₁_le_sum_abs_logEmbedding (u : (𝓞 L)ˣ) :
+    Height.logHeight₁ (u : L) ≤ ∑ w, |logEmbedding L (Additive.ofMul u) w| := by
+  have h := two_mul_logHeight₁_eq_sum_abs_logEmbedding u
+  have := Finset.abs_sum_le_sum_abs (fun w ↦ logEmbedding L (Additive.ofMul u) w) Finset.univ
+  linarith
 
 open Classical in
 /-- The supremum norm of the logarithmic embedding of a unit is at most its relative
@@ -285,7 +284,7 @@ theorem absLogHeight₁_le_sum_abs_logEmbedding_div_finrank (u : (𝓞 L)ˣ) :
       (∑ w, |logEmbedding L (Additive.ofMul u) w|) / Module.finrank ℚ L := by
   rw [NumberField.absLogHeight₁_eq_div]
   refine div_le_div_of_nonneg_right ?_ (by positivity)
-  nlinarith [two_mul_logHeight₁_le_two_mul_sum_abs_logEmbedding u]
+  exact logHeight₁_le_sum_abs_logEmbedding u
 
 open Classical in
 /-- The relative logarithmic height of a unit equals the sum of the positive parts of the kept

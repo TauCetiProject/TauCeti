@@ -24,9 +24,7 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
 ## Main declarations
 
 * `TauCeti.globalFlow`: the flow of a complete `C¹` vector field;
-  `TauCeti.flowOf_eq_globalFlow`: it agrees with the maximal flow `flowOf`;
-  `TauCeti.flowOf_flowOf_neg`: the time-`(-t)` map inverts the time-`t` map, so
-  (`TauCeti.flowOf_surjective`) the time-`t` map is surjective.
+  `TauCeti.flowOf_eq_globalFlow`: it agrees with the maximal flow `flowOf`.
 * `TauCeti.isMIntegralCurve_globalFlow`: its orbits are integral curves of the field.
 * `TauCeti.apply_globalFlow_eq_sub`: a function `f` with `df(v) = -1` on a band decreases at unit
   speed along the flow while the flow stays in the band;
@@ -78,7 +76,7 @@ noncomputable def globalFlow (v : (x : M) → TangentSpace I x)
   map_add' t₁ t₂ x := by
     rw [add_comm, maximalIntegralCurve_add hv (hcomplete.mem_maximalIntegralCurveInterval _ _)
       (hcomplete.mem_maximalIntegralCurveInterval _ _)]
-  map_zero' x := maximalIntegralCurve_zero (hcomplete.mem_maximalIntegralCurveInterval x 0)
+  map_zero' x := maximalIntegralCurve_zero
 
 variable (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
   (hcomplete : IsCompleteVectorField v)
@@ -95,22 +93,12 @@ theorem flowOf_eq_globalFlow : flowOf v = globalFlow v hv hcomplete := by
   funext t x
   rw [flowOf_apply, globalFlow_apply]
 
-/-- For a complete `C¹` vector field, the time-`(-t)` map of the maximal flow inverts the time-`t`
-map. -/
-theorem flowOf_flowOf_neg (t : ℝ) (x : M) : flowOf v t (flowOf v (-t) x) = x := by
-  rw [flowOf_eq_globalFlow hv hcomplete, ← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]
-
-/-- For a complete `C¹` vector field, the time-`t` map of the maximal flow is surjective. -/
-theorem flowOf_surjective (t : ℝ) : Function.Surjective (flowOf v t) :=
-  fun x ↦ ⟨flowOf v (-t) x, flowOf_flowOf_neg hv hcomplete t x⟩
-
 /-- The orbits of the flow are integral curves of the field. -/
 theorem isMIntegralCurve_globalFlow (x : M) :
     IsMIntegralCurve (fun t ↦ globalFlow v hv hcomplete t x) v := by
   simp only [globalFlow_apply]
-  rw [isMIntegralCurve_iff_isMIntegralCurveOn,
-    ← hcomplete.maximalIntegralCurveInterval_eq_univ x]
-  exact isMIntegralCurveOn_maximalIntegralCurve hv
+  exact isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv
+    (hcomplete.maximalIntegralCurveInterval_eq_univ x)
 
 /-- **Unit-speed descent along a flow.** Let `v` be a complete `C¹` vector field with
 `df(v) = -1` on an open set `U` containing the band `a ≤ f ≤ b`. If `f x ≤ b`, then `f` decreases
@@ -236,23 +224,8 @@ theorem contMDiff_globalFlow_apply {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M
 of a complete `C¹` vector field `v` carries `v` at `x` to `v` at the image of `x`. -/
 theorem mfderiv_globalFlow_apply_self (t : ℝ) (x : M) :
     mfderiv I I (globalFlow v hv hcomplete t) x (v x) = v (globalFlow v hv hcomplete t x) := by
-  set ψ := globalFlow v hv hcomplete
-  -- The velocity of an orbit at time `0` is the field at its starting point.
-  have hvel : ∀ y, Manifold.curveVelocityWithin I (fun τ ↦ ψ τ y) univ 0 = v y := fun y ↦ by
-    rw [Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
-      (isMIntegralCurve_globalFlow hv hcomplete y 0).hasMFDerivWithinAt uniqueDiffWithinAt_univ]
-    exact congrArg v (ψ.map_zero_apply y)
-  -- The curve `τ ↦ ψ_t (ψ_τ x)` is the orbit `τ ↦ ψ_τ (ψ_t x)`, so at `τ = 0` its velocity is
-  -- both `dψ_t (v x)`, by the chain rule, and `v (ψ_t x)`.
-  have hcomp : (ψ t ∘ fun τ ↦ ψ τ x) = fun τ ↦ ψ τ (ψ t x) := by
-    funext τ
-    simp only [comp_apply, ← Flow.map_add, add_comm]
-  have key := Manifold.curveVelocityWithin_map (s := univ) (t := 0)
-    ((contMDiff_globalFlow_apply hcomplete le_rfl hv t).mdifferentiableAt one_ne_zero)
-    uniqueDiffWithinAt_univ
-    (isMIntegralCurve_globalFlow hv hcomplete x 0).mdifferentiableAt.mdifferentiableWithinAt
-  rw [hcomp, hvel, hvel, Flow.map_zero_apply] at key
-  exact key.symm
+  rw [← flowOf_eq_globalFlow hv hcomplete]
+  exact mfderiv_flowOf_apply_self hv (hcomplete.mem_flowDomain t x)
 
 omit hv in
 /-- The time-`t` map of the flow of a complete `C^n` vector field, `1 ≤ n`, as a `C^n`

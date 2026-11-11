@@ -52,9 +52,7 @@ theorem exists_kernel_of_ae_condExpKernel_arrayTail
     ∃ κ : ProbabilityTheory.Kernel unitInterval (ℕ × ℕ → α), IsMarkovKernel κ ∧
       (∀ᵐ u ∂(volume : Measure unitInterval), P (κ u)) ∧
       κ ∘ₘ (volume : Measure unitInterval) = ρ := by
-  have hm := arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
-    (fun p _ _ => measurable_pi_apply p)
-  exact exists_kernel_of_ae_condExpKernel hm hP
+  exact exists_kernel_of_ae_condExpKernel hP
 
 /-- **An array law is sampled by two independent uniform variables**, the first selecting a
 corner-tail conditional law and the second sampling from it. The coding is jointly measurable, and
@@ -66,9 +64,7 @@ theorem exists_coding_of_ae_condExpKernel_arrayTail
       Measurable (Function.uncurry f) ∧
       (∀ᵐ u ∂(volume : Measure unitInterval), P ((volume : Measure unitInterval).map (f u))) ∧
       ((volume : Measure unitInterval).prod volume).map (Function.uncurry f) = ρ := by
-  have hm := arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
-    (fun p _ _ => measurable_pi_apply p)
-  exact exists_coding_of_ae_condExpKernel hm hP
+  exact exists_coding_of_ae_condExpKernel hP
 
 end TauCeti.Probability
 

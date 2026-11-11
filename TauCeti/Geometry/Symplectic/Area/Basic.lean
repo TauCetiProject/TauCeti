@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 
 /-!
@@ -160,9 +161,7 @@ theorem loopArea_comp_sub_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Func
     rw [deriv_comp_mul_left (2 * π) (fun x ↦ g (θ₀ - x)) t, deriv_comp_const_sub, smul_neg,
       neg_smul]
   have hper : Function.Periodic (fun θ ↦ ω (g θ) (deriv g θ)) (2 * π) := fun θ ↦ by
-    have hd : deriv g (θ + 2 * π) = deriv g θ := by
-      rw [← deriv_comp_add_const, show (fun x ↦ g (x + 2 * π)) = g from funext hg]
-    simp only [hd, hg θ]
+    simp only [hg.deriv θ, hg θ]
   -- Substitute `θ = θ₀ - 2πt`, then shift the period interval to `[-π, π]`.
   have hsub := intervalIntegral.integral_comp_sub_mul (fun θ ↦ ω (g θ) (deriv g θ))
     (a := 0) (b := 1) (mul_ne_zero two_ne_zero Real.pi_ne_zero) θ₀
@@ -193,6 +192,18 @@ theorem loopArea_comp_add_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Func
   simp only [hloop, deriv_comp_neg, map_neg] at h
   rw [h, intervalIntegral.integral_neg,
     intervalIntegral.integral_comp_neg (fun θ ↦ ω (g θ) (deriv g θ)), neg_neg]
+  ring
+
+/-- **The loop area of a loop traversed backwards.** If `x` is `1`-periodic, the loop
+`t ↦ x(-t)` has the opposite loop area. -/
+theorem loopArea_comp_neg (ω : SymplecticForm V) {x : ℝ → V} (hx : Function.Periodic x 1) :
+    ω.loopArea (fun t ↦ x (-t)) = -ω.loopArea x := by
+  have hper : Function.Periodic (fun t ↦ ω (x t) (deriv x t)) 1 := fun t ↦ by
+    simp only [hx t, hx.deriv t]
+  have h := hper.intervalIntegral_add_eq (-1) 0
+  rw [neg_add_cancel, zero_add] at h
+  simp only [loopArea_def, deriv_comp_neg, map_neg, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_neg (fun t ↦ ω (x t) (deriv x t)), neg_zero, h]
   ring
 
 variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {a b : ℝ}
@@ -260,7 +271,7 @@ the outer boundary action minus the inner boundary action for the primitive `λ�
 This identity does not require any regularity on the inner disc or a holomorphicity hypothesis. -/
 theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
     (ω : SymplecticForm V) {u : ℂ → V} (z₀ : ℂ) {a b : ℝ}
-    (ha : 0 < a) (hab : a ≤ b)
+    (ha : 0 ≤ a) (hab : a ≤ b)
     (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 2 u z) :
     ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b},
       ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
@@ -279,10 +290,10 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
         fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I) := by
     have hm : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
       simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-        abs_of_nonneg (le_trans ha.le hr.1)] using (mem_Icc.mp hr)
+        abs_of_nonneg (le_trans ha hr.1)] using (mem_Icc.mp hr)
     exact (((hu _ hm).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
       (hasDerivAt_circleMap z₀ r θ)).deriv
-  have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha.le hab hu
+  have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha hab hu
   simp only [hskew, integral_const_mul] at hgreen
   simp only [hB, ← hcircle b ⟨hab, le_rfl⟩, ← hcircle a ⟨le_rfl, hab⟩] at hgreen
   linarith
