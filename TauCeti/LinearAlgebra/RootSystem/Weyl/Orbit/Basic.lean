@@ -17,7 +17,7 @@ file proves that covering statement, at the level of root indices, and draws the
 concerns lengths: a root-positive form takes on the roots exactly the values it takes on the simple
 roots.
 
-The proof is the lowering argument of Layer 1, packaged by Mathlib as
+The proof is the lowering argument, packaged by Mathlib as
 `RootPairing.Base.induction_reflect`: reflecting a positive root in a suitable simple root
 decreases its height, and reflection in a root sends that root to its negative, so induction on
 height reaches a simple root from anywhere.
@@ -37,10 +37,9 @@ height reaches a simple root from anywhere.
 
 ## References
 
-This file shows that the simple-root Weyl orbits cover all roots, as part of Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4-6*, Ch. VI §1.5, and Humphreys, *Introduction to Lie Algebras and
-Representation Theory*, §10.3, where the same statement is proved by the same induction.
+See Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §1.5, and Humphreys,
+*Introduction to Lie Algebras and Representation Theory*, §10.3, where the same statement is proved
+by the same induction.
 -/
 
 public section
