@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Norm
 
 /-!
 # Derivatives and norms
 
 A map whose norm is locally constant has derivative orthogonal to its value. In particular, the
-derivative of a map into a sphere is tangent to the sphere.
+derivative of a map into a sphere is tangent to the sphere. Away from the origin, a vanishing
+derivative of a norm-composition forces the one-dimensional profile derivative to vanish.
 -/
 
 public section
@@ -20,6 +23,22 @@ open Filter
 open scoped Topology RealInnerProductSpace
 
 namespace TauCeti
+
+/-- Away from the origin, a vanishing totalized derivative of a radial function forces its
+one-dimensional profile derivative to vanish. The profile need not be differentiable. -/
+theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {v : ℝ → ℝ} {x : E} (hx : x ≠ 0)
+    (hcrit : fderiv ℝ (fun y : E ↦ v ‖y‖) x = 0) : deriv v ‖x‖ = 0 := by
+  have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
+  by_contra hv
+  have hvd := differentiableAt_of_deriv_ne_zero hv
+  have hn : DifferentiableAt ℝ (fun y : E ↦ ‖y‖) x := differentiableAt_id.norm ℝ hx
+  have hd := hvd.hasDerivAt.comp_hasFDerivAt x hn.hasFDerivAt
+  have hz : deriv v ‖x‖ • fderiv ℝ (fun y : E ↦ ‖y‖) x = 0 := hd.fderiv.symm.trans hcrit
+  have hnorm := norm_fderiv_norm hn
+  rw [(smul_eq_zero.mp hz).resolve_left hv, norm_zero] at hnorm
+  exact zero_ne_one hnorm
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]

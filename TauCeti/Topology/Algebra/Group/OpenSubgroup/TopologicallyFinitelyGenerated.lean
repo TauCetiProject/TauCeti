@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Index
 import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Topology.Algebra.Group.Generation
+import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
 # Open subgroups of a topologically finitely generated compact group
@@ -166,7 +167,6 @@ over the finite quotients into a statement about a sequence. -/
 theorem exists_antitone_openNormalSubgroup_cofinal (hG : IsTopologicallyFinitelyGenerated G) :
     ∃ N : ℕ → OpenNormalSubgroup G, Antitone N ∧ ∀ U : OpenNormalSubgroup G, ∃ k, N k ≤ U := by
   have hcount := hG.countable_openNormalSubgroup
-  have hne : Nonempty (OpenNormalSubgroup G) := ⟨{ toOpenSubgroup := ⟨⊤, isOpen_univ⟩ }⟩
   obtain ⟨f, hf⟩ := exists_surjective_nat (OpenNormalSubgroup G)
   -- Take the intersection of the first `k + 1` members of an enumeration.
   refine ⟨fun k ↦ Nat.rec (f 0) (fun i N ↦ N ⊓ f (i + 1)) k, antitone_nat_of_succ_le fun k ↦

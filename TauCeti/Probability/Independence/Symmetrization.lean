@@ -258,5 +258,4 @@ theorem ConvexOn.symmetrization_inequality_of_map_eq_rademacherMeasure {Ω ι : 
     ∫ ω, Φ (∑ i, X i ω) ∂μ ≤ ∫ ω, Φ (∑ i, (X i ω - X' i ω)) ∂μ ∧
       ∫ ω, Φ (∑ i, (X i ω - X' i ω)) ∂μ = ∫ ω, Φ (∑ i, ε i ω * (X i ω - X' i ω)) ∂μ :=
   hΦ.symmetrization_inequality hind hid hX hX' hε hint h0 hindep
-    (fun i ↦ TauCeti.Probability.ae_eq_one_or_eq_neg_one_of_map_eq_rademacherMeasure (hε i)
-      (hlaw i)) h1 h2
+    (fun i ↦ TauCeti.Probability.ae_eq_one_or_eq_neg_one_of_map_eq_rademacherMeasure (hlaw i)) h1 h2

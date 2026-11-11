@@ -52,7 +52,7 @@ this construction returns.
   integral root--coroot span.
 * `TauCeti.IsChevalleySystem.chevalleyWeightBasis` and
   `TauCeti.IsChevalleySystem.chevalleyWeightBasisFin`: the weight basis of the Chevalley lattice,
-  the latter numbered by `Fin`, paired with `TauCeti.IsChevalleySystem.chevalleyWeightFin`.
+  the latter numbered by `Fin`, paired with `TauCeti.rootCorootWeightFin`.
 * `TauCeti.IsChevalleySystem.chevalleyTorusPoints`: the torus of coroot cocharacters on the points
   of the Chevalley lattice.
 
@@ -168,6 +168,25 @@ noncomputable abbrev rootCorootWeightBasisCard (x : Weight ℚ H L → L) : ℕ 
       (UniversalEnvelopingAlgebra.representation ℚ L L)
       (rootCorootSpan x).toAddSubgroup μ))
 
+omit [LieModule.IsTriangularizable ℚ H L] in
+/-- The weight carried by each vector of the numbered weight basis of the integral root--coroot
+span of `x`: the first component of the index numbered `i`. Like
+`TauCeti.rootCorootWeightBasisCard` it is defined for an arbitrary family `x`, since the numbering
+of the index needs no Chevalley system; for a Chevalley system it is the weight function paired
+with `TauCeti.IsChevalleySystem.chevalleyWeightBasisFin`. -/
+noncomputable def rootCorootWeightFin (x : Weight ℚ H L → L) :
+    Fin (rootCorootWeightBasisCard x) → Weight ℚ H L → ℤ :=
+  UniversalEnvelopingAlgebra.kostantWeightFin (corootFamily H)
+    (UniversalEnvelopingAlgebra.representation ℚ L L) (rootCorootSpan x).toAddSubgroup
+
+omit [LieModule.IsTriangularizable ℚ H L] in
+/-- The defining equation of `TauCeti.rootCorootWeightFin`. -/
+theorem rootCorootWeightFin_def (x : Weight ℚ H L → L) :
+    rootCorootWeightFin x =
+      UniversalEnvelopingAlgebra.kostantWeightFin (corootFamily H)
+        (UniversalEnvelopingAlgebra.representation ℚ L L) (rootCorootSpan x).toAddSubgroup :=
+  (rfl)
+
 namespace IsChevalleySystem
 
 variable {ω : L ≃ₗ⁅ℚ⁆ L} {x : Weight ℚ H L → L} (hx : IsChevalleySystem ω x)
@@ -248,26 +267,12 @@ theorem chevalleyWeightBasisFin_def :
         hx.kostantForm_apply_mem_rootCorootSpan hx.toIsSl2System.mem_iSup_jointWeightSpace :=
   (rfl)
 
-/-- The weight carried by each vector of the numbered weight basis of the Chevalley lattice. -/
-noncomputable def chevalleyWeightFin :
-    Fin (rootCorootWeightBasisCard x) → Weight ℚ H L → ℤ :=
-  UniversalEnvelopingAlgebra.kostantWeightFin x (corootFamily H) _ _
-    hx.kostantForm_apply_mem_rootCorootSpan hx.toIsSl2System.mem_iSup_jointWeightSpace
-
-/-- The defining equation of `TauCeti.IsChevalleySystem.chevalleyWeightFin`. -/
-theorem chevalleyWeightFin_def :
-    hx.chevalleyWeightFin =
-      UniversalEnvelopingAlgebra.kostantWeightFin x (corootFamily H)
-        (UniversalEnvelopingAlgebra.representation ℚ L L) (rootCorootSpan x).toAddSubgroup
-        hx.kostantForm_apply_mem_rootCorootSpan hx.toIsSl2System.mem_iSup_jointWeightSpace :=
-  (rfl)
-
 /-- **The numbered weight basis consists of weight vectors** of the recorded weights. Together with
 `TauCeti.IsChevalleySystem.chevalleyWeightBasisFin` this is the weight datum that the split torus of
 the pinning takes as given. -/
 theorem isCartanWeightVector_chevalleyWeightBasisFin (i : Fin (rootCorootWeightBasisCard x)) :
     UniversalEnvelopingAlgebra.IsCartanWeightVector (corootFamily H)
-      (UniversalEnvelopingAlgebra.representation ℚ L L) (hx.chevalleyWeightFin i)
+      (UniversalEnvelopingAlgebra.representation ℚ L L) (rootCorootWeightFin x i)
       ((hx.chevalleyWeightBasisFin i : (rootCorootSpan x).toAddSubgroup) : L) :=
   UniversalEnvelopingAlgebra.isCartanWeightVector_kostantWeightBasisFin x (corootFamily H) _ _
     hx.kostantForm_apply_mem_rootCorootSpan hx.toIsSl2System.mem_iSup_jointWeightSpace i
@@ -284,7 +289,7 @@ section Torus
 
 /-- **The diagonal coroot-parameter torus action on the Chevalley lattice.** Over any commutative
 ring `A` it acts on `A ⊗[ℤ] L_ℤ`, scaling the base-changed weight-basis vector `b i` by the value at
-`s` of its character `chevalleyWeightFin i`.
+`s` of its character `rootCorootWeightFin x i`.
 
 The parameter is indexed by all weights of `L` rather than by the roots alone; at the zero weight
 the coroot vanishes, and with it both the cocharacter
@@ -296,7 +301,7 @@ noncomputable def chevalleyTorusPoints (A : Type*) [CommRing A] [Algebra ℤ A] 
     (Weight ℚ H L → Aˣ) →*
       LinearMap.GeneralLinearGroup A (A ⊗[ℤ] (rootCorootSpan x).toAddSubgroup) :=
   UniversalEnvelopingAlgebra.kostantTorusPoints (rootCorootSpan x).toAddSubgroup
-    hx.chevalleyWeightBasisFin hx.chevalleyWeightFin A
+    hx.chevalleyWeightBasisFin (rootCorootWeightFin x) A
 
 /-- The image of the diagonal coroot-parameter action in the general linear group. -/
 noncomputable def chevalleyTorusSubgroup (A : Type*) [CommRing A] [Algebra ℤ A] :
@@ -320,14 +325,14 @@ theorem chevalleyTorusPoints_tmul_of_isCartanWeightVector {A : Type*} [CommRing 
     (hx.chevalleyTorusPoints A s).val (a ⊗ₜ[ℤ] m) = ((torusCharacter s μ : A) * a) ⊗ₜ[ℤ] m :=
   UniversalEnvelopingAlgebra.kostantTorusPoints_tmul_of_isCartanWeightVector (corootFamily H)
     (UniversalEnvelopingAlgebra.representation ℚ L L) _
-    hx.chevalleyWeightBasisFin hx.chevalleyWeightFin
+    hx.chevalleyWeightBasisFin (rootCorootWeightFin x)
     hx.isCartanWeightVector_chevalleyWeightBasisFin hm s a
 
 /-- A Chevalley torus point scales a base-changed weight-basis vector by its recorded character. -/
 @[simp] theorem chevalleyTorusPoints_tmul_basis {A : Type*} [CommRing A] [Algebra ℤ A]
     (s : Weight ℚ H L → Aˣ) (a : A) (i : Fin (rootCorootWeightBasisCard x)) :
     (hx.chevalleyTorusPoints A s).val (a ⊗ₜ[ℤ] hx.chevalleyWeightBasisFin i) =
-      ((torusCharacter s (hx.chevalleyWeightFin i) : A) * a) ⊗ₜ[ℤ]
+      ((torusCharacter s (rootCorootWeightFin x i) : A) * a) ⊗ₜ[ℤ]
         hx.chevalleyWeightBasisFin i := by
   exact UniversalEnvelopingAlgebra.kostantTorusPoints_tmul_basis _ _ _ s a i
 
@@ -363,12 +368,12 @@ noncomputable def chevalleyTorusMatrix {A : Type*} [CommRing A] [Algebra ℤ A] 
     (Weight ℚ H L → Aˣ) →* Matrix.GeneralLinearGroup
       (Fin (rootCorootWeightBasisCard x)) A :=
   UniversalEnvelopingAlgebra.kostantTorusMatrix (rootCorootSpan x).toAddSubgroup
-    hx.chevalleyWeightBasisFin hx.chevalleyWeightFin
+    hx.chevalleyWeightBasisFin (rootCorootWeightFin x)
 
 /-- In the Chevalley weight basis, a torus point is diagonal with its weight characters. -/
 @[simp] theorem chevalleyTorusMatrix_apply {A : Type*} [CommRing A] [Algebra ℤ A]
     (s : Weight ℚ H L → Aˣ) :
-    hx.chevalleyTorusMatrix s = diagGL fun i => torusCharacter s (hx.chevalleyWeightFin i) := by
+    hx.chevalleyTorusMatrix s = diagGL fun i => torusCharacter s (rootCorootWeightFin x i) := by
   exact UniversalEnvelopingAlgebra.kostantTorusMatrix_apply _ _ _ s
 
 end Torus

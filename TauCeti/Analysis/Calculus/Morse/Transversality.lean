@@ -150,7 +150,7 @@ theorem exists_unstableSet_inter_stableSet_chart (hp : IsNondegenerateCriticalPo
   obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ := hp.exists_unstableSet_chart hfs hf hyu
   obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ := hq.exists_stableSet_chart hfs hf hys
   obtain ⟨e, hye, he, hes, hS⟩ := exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top
-    hn0 (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ hyu hys he₁ he₂
+    hn0 (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ he₁ he₂
     ((hes₁ _ (e₁.map_source hy₁)).differentiableAt hn0)
     ((hes₂ _ (e₂.map_source hy₂)).differentiableAt hn0) htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
@@ -180,7 +180,7 @@ theorem span_tangentConeAt_unstableSet_inter_stableSet (hp : IsNondegenerateCrit
   obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ :=
     hq.exists_stableSet_chart (n := 1) (by simpa [one_add_one_eq_two] using hfs) hf hys
   exact span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top one_ne_zero
-    (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ hyu hys he₁ he₂
+    (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ he₁ he₂
     ((hes₁ _ (e₁.map_source hy₁)).differentiableAt one_ne_zero)
     ((hes₂ _ (e₂.map_source hy₂)).differentiableAt one_ne_zero) htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
