@@ -33,6 +33,9 @@ action of its functionals accessible through coordinates.
 * `ContinuousLinearMap.sum_norm_lp_single_rpow_le`: for `p < ∞`, the coordinate values of a
   functional on `ℓ^q` have finite partial sums of `p`-th powers of norms bounded by the `p`-th
   power of its norm.
+* `lp.memℓp_lp_single`: the coordinate values of a functional on `ℓ^q` form an `ℓᵖ` family.
+* `lp.norm_le_of_forall_eq_lp_single`: an `ℓᵖ` family of coordinate values of a functional on
+  `ℓ^q` has norm at most the norm of the functional.
 * `lp.dualEquiv`: the isometric equivalence `ℓᵖ ≃ₗᵢ (ℓ^q)*`.
 * `ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`: the norm of a functional on ℓ¹ is the
   supremum of the norms of its coordinate values.
@@ -181,7 +184,7 @@ section Coordinates
 variable [DecidableEq ι]
 
 /-- The coordinate values of a functional on `ℓ^q` form an `ℓᵖ` family. -/
-private theorem memℓp_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) :
+theorem memℓp_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) :
     Memℓp (fun i ↦ f (lp.single q i 1)) p := by
   rcases eq_or_ne p ∞ with rfl | hp
   · refine memℓp_infty ⟨‖f‖, ?_⟩
@@ -191,7 +194,7 @@ private theorem memℓp_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜)
 
 /-- An `ℓᵖ` family of coordinate values of a functional on `ℓ^q` has norm at most the norm of the
 functional. -/
-private theorem norm_le_of_forall_eq_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q))
+theorem norm_le_of_forall_eq_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q))
     (a : lp (fun _ : ι ↦ 𝕜) p) (ha : ∀ i, a i = f (lp.single q i 1)) : ‖a‖ ≤ ‖f‖ := by
   rcases eq_or_ne p ∞ with rfl | hp
   · exact norm_le_of_forall_le (norm_nonneg f) fun i ↦ ha i ▸ f.norm_apply_lp_single_le i
