@@ -556,18 +556,7 @@ theorem finrank_inertiaField_eq_card :
     Module.finrank (inertiaField F P) F' = Nat.card (P.integers.inertiaSubgroup F) := by
   rw [inertiaField, ← Subgroup.card_map_of_injective (Subgroup.subtype_injective _)]
   generalize (P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype = H
-  by_cases hH : Finite H
-  · have := Fintype.ofFinite H
-    rw [Nat.card_eq_fintype_card]
-    exact FixedPoints.finrank_eq_card H F'
-  · -- an infinite group cannot act faithfully on a finite extension of its fixed field
-    have := not_finite_iff_infinite.mp hH
-    rw [Nat.card_eq_zero_of_infinite]
-    refine Module.finrank_of_not_finite fun hfin ↦ hH <| Finite.of_injective
-      (fun h : H ↦ (⟨(h : F' ≃ₐ[F] F').toRingEquiv.toRingHom, fun x ↦ x.2 h⟩ :
-        F' →ₐ[IntermediateField.fixedField H] F')) fun a b hab ↦
-      Subtype.ext (AlgEquiv.ext fun x ↦
-        congrArg (fun f : F' →ₐ[IntermediateField.fixedField H] F' ↦ f x) hab)
+  exact IntermediateField.finrank_fixedField_eq_natCard H
 
 end FixedField
 
