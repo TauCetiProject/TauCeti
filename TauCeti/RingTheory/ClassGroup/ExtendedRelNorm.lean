@@ -58,9 +58,8 @@ that elaboration problem rather than escaping it.
 
 ## Provenance
 
-⚠ *mathlib-track*. `TauCetiRoadmap/EllipticCurves/README.md:1092` lists
-`ClassGroup.extendedRelNormHom` among the components of D. Angdinata's shared isogeny development,
-under the same flag the sibling `Isogeny` files carry.
+⚠ *mathlib-track*, with the sibling `Isogeny` files: `ClassGroup.extendedRelNormHom` is one of the
+components of D. Angdinata's shared isogeny development.
 
 No AINTLIB material is ported, but that repository carries the two nearest relatives, and the
 shape of this file follows from how each falls short of the composite. At
