@@ -214,17 +214,22 @@ the equilibrium and has derivative zero there, then the local stable graph map a
 zero at the origin. When `P` is the commuting projection of an exponential dichotomy,
 `ContinuousLinearMap.apply_localStableGraphMap` then identifies this as tangency of the graph to
 `range P`. -/
-theorem hasFDerivAt_localStableGraphMap_zero (hr0 : 0 < r) (hN0 : N 0 = 0)
+theorem hasFDerivAt_localStableGraphMap_zero (hN0 : N 0 = 0)
     (hN' : HasFDerivAt N (0 : X →L[ℝ] X) 0) :
     HasFDerivAt (localStableGraphMap A P N r hs hu hr hN hsmall)
       (0 : X →L[ℝ] X) 0 := by
-  have hretract : TauCeti.radialRetraction r =ᶠ[𝓝 (0 : X)] id :=
-    TauCeti.radialRetraction_eventuallyEq_id (by simpa using hr0)
-  have hcutoff : N ∘ TauCeti.radialRetraction r =ᶠ[𝓝 (0 : X)] N := by
-    simpa only [Function.comp_id] using hretract.fun_comp N
-  exact hasFDerivAt_lyapunovPerronGraphMap_zero hs hu (pos_of_two_mul_mul_lt hsmall)
-    (hN.comp_radialRetraction hr) hsmall (by simp [hN0])
-    (hN'.congr_of_eventuallyEq hcutoff)
+  refine hasFDerivAt_lyapunovPerronGraphMap_zero hs hu (pos_of_two_mul_mul_lt hsmall)
+    (hN.comp_radialRetraction hr) hsmall (by simp [hN0]) ?_
+  rcases hr.eq_or_lt with rfl | hr0
+  · have hconst : N ∘ TauCeti.radialRetraction 0 = fun _ : X ↦ (0 : X) := by
+      ext x
+      simp [TauCeti.radialRetraction_def, hN0]
+    simpa [hconst] using hasFDerivAt_const (0 : X) (0 : X)
+  · have hretract : TauCeti.radialRetraction r =ᶠ[𝓝 (0 : X)] id :=
+      TauCeti.radialRetraction_eventuallyEq_id (by simpa using hr0)
+    have hcutoff : N ∘ TauCeti.radialRetraction r =ᶠ[𝓝 (0 : X)] N := by
+      simpa only [Function.comp_id] using hretract.fun_comp N
+    exact hN'.congr_of_eventuallyEq hcutoff
 
 /-- A ball around each cut-off solution value stays in the confinement ball, with radius
 `r - B * ρ`, where `B` is the solution bound and the parameter has norm at most `ρ`.
@@ -296,6 +301,7 @@ variable (hN0 : N 0 = 0) (hP : IsIdempotentElem P) (hAP : Commute A P)
 
 include hs hu hr hN hsmall hN0 hP hAP
 
+omit hr in
 /-- **A confined forward solution tends to the equilibrium.** The ball of confinement is where the
 nonlinearity is small, so a solution that never leaves it is a Lyapunov--Perron solution of the
 cut-off equation, and those decay. This is what makes the set below a *stable* set. -/
@@ -303,6 +309,7 @@ theorem tendsto_of_isIntegralCurveOn_mapsTo_closedBall {y : ℝ → X}
     (hy : IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Ici 0))
     (hmaps : MapsTo y (Ici 0) (closedBall 0 r)) :
     Tendsto y atTop (𝓝 0) := by
+  have hr : 0 ≤ r := (norm_nonneg _).trans (mem_closedBall_zero_iff.1 (hmaps (mem_Ici.2 le_rfl)))
   have hα : 0 < α := pos_of_two_mul_mul_lt hsmall
   have hMlip : LipschitzWith (ε * 2) (N ∘ TauCeti.radialRetraction r) :=
     hN.comp_radialRetraction hr
@@ -469,14 +476,14 @@ theorem localUnstableGraphMap_zero (hN0 : N 0 = 0) :
 /-- **The local unstable graph map is flat at the equilibrium.** If the nonlinear remainder fixes
 the equilibrium and has derivative zero there, then the local unstable graph map also has
 derivative zero at the origin. -/
-theorem hasFDerivAt_localUnstableGraphMap_zero (hr0 : 0 < r) (hN0 : N 0 = 0)
+theorem hasFDerivAt_localUnstableGraphMap_zero (hN0 : N 0 = 0)
     (hN' : HasFDerivAt N (0 : X →L[ℝ] X) 0) :
     HasFDerivAt (localUnstableGraphMap A P N r hs hu hr hN hsmall)
       (0 : X →L[ℝ] X) 0 := by
   rw [localUnstableGraphMap]
   exact hasFDerivAt_localStableGraphMap_zero
     (norm_exp_smul_neg_id_sub_apply_le A P hu)
-    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall hr0
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall
     (by simp [hN0]) (by simpa using hN'.neg)
 
 /-- **The local unstable graph map is `C^n`** under the hypotheses of
@@ -527,7 +534,7 @@ equilibrium in backward time. -/
 theorem tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall
     (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
     (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
-    (hr : 0 ≤ r) (hN : LipschitzOnWith ε N (closedBall 0 r))
+    (hN : LipschitzOnWith ε N (closedBall 0 r))
     (hsmall : 2 * K * (ε * 2) < α) (hN0 : N 0 = 0)
     (hP : IsIdempotentElem P) (hAP : Commute A P) {y : ℝ → X}
     (hy : IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0))
@@ -543,7 +550,7 @@ theorem tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall
         (s := Iic 0) (a := -1) (by norm_num)).mpr hy
   have hforward := tendsto_of_isIntegralCurveOn_mapsTo_closedBall
     (norm_exp_smul_neg_id_sub_apply_le A P hu)
-    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hN.neg hsmall
     (by simp [hN0]) hP.one_sub ((Commute.one_right (-A)).sub_right hAP.neg_left)
     hy' hmaps'
   simpa only [Function.comp_def, neg_neg] using hforward.comp tendsto_neg_atBot_atTop

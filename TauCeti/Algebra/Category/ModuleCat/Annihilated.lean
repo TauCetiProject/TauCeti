@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import Mathlib.RingTheory.Ideal.Quotient.Operations
+import Mathlib.RingTheory.Ideal.IdempotentFG
 
 /-!
 # Modules annihilated by an idempotent ideal
@@ -21,6 +22,12 @@ For a commutative ring, idempotence is necessary: closure under extensions, appl
 kernel sequence of `R / I² → R / I`, forces `I` to annihilate `R / I²`, hence `I ⊆ I²`.
 Thus, for `R`-modules in the universe of `R`, annihilation by an ideal of a commutative ring
 is a Serre property exactly for idempotent ideals.
+
+Over a domain the only idempotent principal ideals are `0` and `R`, so annihilation by a single
+element `a` is a Serre property exactly when `a` is zero or a unit. For `R = ℤ`: abelian groups
+killed by a fixed integer `n` form a Serre class only for `n ∈ {0, 1, -1}`. In particular, for
+`d ≥ 2` and `m ≥ 1`, the groups killed by `dᵐ` are not closed under extensions (`ℤ/d²ᵐ` is an
+extension of `ℤ/dᵐ` by itself), whereas the groups killed by some power of `d` are a Serre class.
 
 ## References
 
@@ -97,3 +104,17 @@ theorem isSerreClass_isTorsionBySet_iff (I : Ideal R) :
     h.toIsClosedUnderExtensions, I.isSerreClass_isTorsionBySet⟩
 
 end Ideal
+
+namespace TauCeti
+
+/-- Over a domain, modules in the universe of `R` killed by a single element `a` form a Serre
+class exactly when `a` is zero or a unit. -/
+theorem isSerreClass_isTorsionBy_iff {R : Type u} [CommRing R] [IsDomain R] (a : R) :
+    ObjectProperty.IsSerreClass (fun M : ModuleCat.{u} R ↦ Module.IsTorsionBy R M a) ↔
+      a = 0 ∨ IsUnit a := by
+  simp_rw [← Module.isTorsionBySet_span_singleton_iff]
+  rw [(Ideal.span {a}).isSerreClass_isTorsionBySet_iff,
+    Ideal.isIdempotentElem_iff_eq_bot_or_top _ (Submodule.fg_span_singleton a),
+    Ideal.span_singleton_eq_bot, Ideal.span_singleton_eq_top]
+
+end TauCeti

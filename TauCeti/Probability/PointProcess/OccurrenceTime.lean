@@ -84,19 +84,26 @@ theorem occurrenceTime_eq_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
 theorem occurrenceTime_zero_measure (n : ℕ) : (0 : Measure ℝ≥0).occurrenceTime n = ∞ := by
   simp [occurrenceTime_eq_top_iff]
 
+/-- The occurrence threshold is attained at `t` whenever the measure is finite on
+some larger closed observation window. No global local finiteness is required. -/
+theorem occurrenceTime_le_iff_of_measure_Iic_ne_top (μ : Measure ℝ≥0)
+    (n : ℕ) (t : ℝ≥0) (hfin : ∃ s > t, μ (Iic s) ≠ ∞) :
+    μ.occurrenceTime n ≤ t ↔ (n + 1 : ℝ≥0∞) ≤ μ (Iic t) := by
+  refine ⟨fun h => ?_, μ.occurrenceTime_le_of_le⟩
+  apply ge_of_tendsto (tendsto_measure_Iic_nhdsGT (μ := μ) hfin)
+  filter_upwards [self_mem_nhdsWithin] with s hs
+  obtain ⟨u, hus, hu⟩ := (μ.occurrenceTime_lt_iff n s).1
+    (h.trans_lt (by exact_mod_cast hs))
+  exact hu.trans (measure_mono (Iic_subset_Iic.2 (by exact_mod_cast hus.le)))
+
 /-- For a locally finite measure the threshold is attained at every finite occurrence
 time. The closed endpoint includes all occurrences at the observation time. -/
 @[simp]
 theorem occurrenceTime_le_iff (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ]
     (n : ℕ) (t : ℝ≥0) :
-    μ.occurrenceTime n ≤ t ↔ (n + 1 : ℝ≥0∞) ≤ μ (Iic t) := by
-  refine ⟨fun h => ?_, μ.occurrenceTime_le_of_le⟩
-  apply ge_of_tendsto (tendsto_measure_Iic_nhdsGT (μ := μ)
-    ⟨t + 1, lt_add_one t, (measure_Iic_lt_top (μ := μ)).ne⟩)
-  filter_upwards [self_mem_nhdsWithin] with s hs
-  obtain ⟨u, hus, hu⟩ := (μ.occurrenceTime_lt_iff n s).1
-    (h.trans_lt (by exact_mod_cast hs))
-  exact hu.trans (measure_mono (Iic_subset_Iic.2 (by exact_mod_cast hus.le)))
+    μ.occurrenceTime n ≤ t ↔ (n + 1 : ℝ≥0∞) ≤ μ (Iic t) :=
+  μ.occurrenceTime_le_iff_of_measure_Iic_ne_top n t
+    ⟨t + 1, lt_add_one t, (measure_Iic_lt_top (μ := μ)).ne⟩
 
 /-- Restricting to a closed observation window retains exactly the occurrences in
 that window; all subsequent occurrence times become infinite. -/

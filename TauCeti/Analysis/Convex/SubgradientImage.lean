@@ -236,8 +236,8 @@ theorem _root_.ConvexOn.exists_forall_add_inner_le {Ω : Set E} {u : E → ℝ} 
     (hu : ConvexOn ℝ Ω u) {x : E} (hx : x ∈ Ω) :
     ∃ p : E, ∀ y ∈ Ω, u x + inner ℝ (y - x) p ≤ u y := by
   classical
-  obtain ⟨p, hp⟩ := nonempty_subdifferential_of_mem_interior (convex_epigraph_ite hu) ite_ne_bot
-    (by rwa [setOf_ite_ne_top, hΩ.interior_eq])
+  obtain ⟨p, hp⟩ := nonempty_subdifferential_of_mem_interior
+    (convexOn_iff_convex_epigraph_ite.1 hu) ite_ne_bot (by rwa [setOf_ite_ne_top, hΩ.interior_eq])
   exact ⟨p, by simpa only [innerₗ_apply_apply] using
     (mem_subdifferential_ite_iff (innerₗ E) hx).1 hp⟩
 
