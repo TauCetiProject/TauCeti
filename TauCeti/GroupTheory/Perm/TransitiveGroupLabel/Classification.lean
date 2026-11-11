@@ -359,8 +359,8 @@ theorem TransitiveGroupLabel.eq_of_four {j k : TransitiveGroupIndex 4}
 
 /-- A subgroup of order four of the symmetric group on four points that is not killed by squaring
 is cyclic and carries the label `4T1`. -/
-theorem transitiveGroupLabel_four_zero_of_exists_sq_ne_one (G : Subgroup (Perm (Fin 4)))
-    (hG : Nat.card G = 4) (hcyc : ∃ g ∈ G, g ^ 2 ≠ 1) :
+theorem _root_.Subgroup.transitiveGroupLabel_four_zero_of_exists_sq_ne_one
+    (G : Subgroup (Perm (Fin 4))) (hG : Nat.card G = 4) (hcyc : ∃ g ∈ G, g ^ 2 ≠ 1) :
     TransitiveGroupLabel (⟨0, by simp⟩ : TransitiveGroupIndex 4) G := by
   obtain ⟨g, hg, hg2⟩ := hcyc
   have hg4 : g ^ 4 = 1 := by
@@ -386,7 +386,7 @@ private theorem exists_transitiveGroupLabel_four_of_natCard_eq_four (G : Subgrou
   -- Either `G` contains an element of order four, which generates it, or every element of `G`
   -- is an involution.
   by_cases hcyc : ∃ g ∈ G, g ^ 2 ≠ 1
-  · exact ⟨_, transitiveGroupLabel_four_zero_of_exists_sq_ne_one G hG hcyc⟩
+  · exact ⟨_, G.transitiveGroupLabel_four_zero_of_exists_sq_ne_one hG hcyc⟩
   · push Not at hcyc
     -- The action is regular, so a nontrivial element of `G` fixes no point.
     have hfree : ∀ g ∈ G, g ≠ 1 → ∀ x, g x ≠ x := by
@@ -767,8 +767,8 @@ private theorem exists_transitiveGroupLabel_five_of_natCard_dvd_twenty
 
 /-- Every subgroup of the symmetric group on five points of order divisible by five carries a
 label. -/
-theorem exists_transitiveGroupLabel_five_of_five_dvd_natCard (G : Subgroup (Perm (Fin 5)))
-    (h5 : 5 ∣ Nat.card G) : ∃ j, TransitiveGroupLabel j G := by
+theorem _root_.Subgroup.exists_transitiveGroupLabel_five_of_five_dvd_natCard
+    (G : Subgroup (Perm (Fin 5))) (h5 : 5 ∣ Nat.card G) : ∃ j, TransitiveGroupLabel j G := by
   have hmem := natCard_mem_of_five_dvd_natCard (by simp) G h5
   simp only [Finset.mem_insert, Finset.mem_singleton] at hmem
   have hmul := G.index_mul_card
@@ -790,7 +790,7 @@ theorem exists_transitiveGroupLabel_five_of_five_dvd_natCard (G : Subgroup (Perm
 /-- Every transitive subgroup of the symmetric group on five points carries a label. -/
 theorem exists_transitiveGroupLabel_five (G : Subgroup (Perm (Fin 5)))
     [IsPretransitive G (Fin 5)] : ∃ j, TransitiveGroupLabel j G :=
-  exists_transitiveGroupLabel_five_of_five_dvd_natCard G
+  G.exists_transitiveGroupLabel_five_of_five_dvd_natCard
     (by simpa using natCard_dvd_natCard_of_isPretransitive (G := G) (X := Fin 5))
 
 /-- A transitive subgroup of the symmetric group on five points carries exactly one label, one of

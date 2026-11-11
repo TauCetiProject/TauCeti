@@ -119,7 +119,7 @@ theorem transitiveGroupLabel_five_iff_natCard_eq (j : TransitiveGroupIndex 5)
       have := (transitiveGroupLabel_referenceSubgroup 5 j).isPretransitive
       simpa [h] using natCard_dvd_natCard_of_isPretransitive (G := referenceSubgroup 5 j)
         (X := Fin 5)
-    obtain ⟨k, hk⟩ := exists_transitiveGroupLabel_five_of_five_dvd_natCard G h5
+    obtain ⟨k, hk⟩ := G.exists_transitiveGroupLabel_five_of_five_dvd_natCard h5
     have hjk : j = k := by
       have h2 : Nat.card (referenceSubgroup 5 j) = Nat.card (referenceSubgroup 5 k) :=
         h.symm.trans hk.natCard_eq
@@ -149,7 +149,7 @@ theorem transitiveGroupLabel_four_zero_iff (G : Subgroup (Perm (Fin 4))) :
   · rintro ⟨hcard, hcyc⟩
     obtain ⟨g, hg⟩ := hcyc.exists_generator
     have hord : orderOf g = 4 := (orderOf_eq_card_of_forall_mem_zpowers hg).trans hcard
-    refine transitiveGroupLabel_four_zero_of_exists_sq_ne_one G hcard ⟨g, g.2, fun h => ?_⟩
+    refine G.transitiveGroupLabel_four_zero_of_exists_sq_ne_one hcard ⟨g, g.2, fun h => ?_⟩
     have hdvd : orderOf g ∣ 2 := orderOf_dvd_of_pow_eq_one (Subtype.ext h)
     rw [hord] at hdvd
     omega
