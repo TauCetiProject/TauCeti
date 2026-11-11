@@ -8,120 +8,124 @@ module
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.LoopSpace
 public import TauCeti.AlgebraicTopology.Homotopy.KillHomotopyGroups
-public import TauCeti.Topology.Homotopy.MappingPath.PathFibration
+public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
+public import TauCeti.Topology.Homotopy.MappingPath.Exact
 public import TauCeti.Topology.Homotopy.SerreFibration.Connected
 
 /-!
-# `n`-connected covers
+# The `n`-connected cover of a space
 
-Let `X` be a Hausdorff, path-connected space with a base point `x`, and let `n` be a natural
-number. Killing the homotopy groups of `X` above dimension `n` gives a space
-`K = killHomotopyGroups (n + 1) X x` containing `X`, whose homotopy groups are those of `X` up to
-dimension `n` and vanish above it. The **`n`-connected cover** `X⟨n⟩ → X`
-(`TauCeti.nConnectedCover n X x`, with projection `TauCeti.nConnectedCoverProj n X x`) is the
-homotopy fibre of the inclusion `ι : X → K` over `ι x`: its points are the points `y` of `X`
-together with a path in `K` from `ι y` to `ι x`. It is the space `Z'` in the fibre sequence
-`ΩK → Z' → Z` of the one-step argument behind Serre's mod-`𝒞` Hurewicz theorem, and the
-successive stages of the Whitehead tower of `X` are obtained by iterating it.
+Let `X` be a Hausdorff space with a base point `x` and let `n` be a natural number. Attaching
+cells of dimension at least `n + 2` to `X` kills its homotopy groups above dimension `n` and keeps
+the others (`TauCeti.killHomotopyGroups`); this is the `n`-th Postnikov section `j : X → Pₙ X`.
+The **`n`-connected cover** `X⟨n⟩` of `X` (`TauCeti.nConnectedCover n X x`) is the homotopy fibre
+of `j` over `j x`: the space of the points `z` of `X` together with a path from `j z` to `j x` in
+`Pₙ X`. Its projection `X⟨n⟩ → X`, `(z, γ) ↦ z` (`TauCeti.nConnectedCoverProj`), is a Hurewicz
+fibration whose fibre over `x` is the loop space of `Pₙ X`, and
 
-* The projection `X⟨n⟩ → X` is a Hurewicz fibration
-  (`TauCeti.isHurewiczFibration_nConnectedCoverProj`), whose fibre over `y` is the space of paths
-  from `ι y` to `ι x`, the loop space `Ω K (ι x)` over `y = x`
-  (`TauCeti.MappingPathFiber.projFiberHomeomorphPath`).
-* The space `X⟨n⟩` is `n`-connected: it is path-connected and `πₖ(X⟨n⟩)` vanishes for `k ≤ n`
-  at every point (`TauCeti.subsingleton_homotopyGroup_nConnectedCover`).
-* Above dimension `n` the projection is an isomorphism: `πₖ(X⟨n⟩) → πₖ(X)` is bijective for
-  `k > n` at every point (`TauCeti.bijective_homotopyGroupMap_nConnectedCoverProj`).
-* For an `(n + 1)`-connected `X`, the fibre of the projection of `X⟨n + 2⟩` over `x` is an
-  Eilenberg--Mac Lane space of type `K(πₙ₊₂(X, x), n + 1)`
-  (`TauCeti.isEilenbergMacLaneSpace_nConnectedCoverProj_fiber`): it is the loop space of the
-  `K(πₙ₊₂(X, x), n + 2)` space `killHomotopyGroups (n + 3) X x`.
+* `X⟨n⟩` is `n`-connected: its homotopy groups `πₖ` vanish for `1 ≤ k ≤ n`
+  (`TauCeti.subsingleton_homotopyGroup_nConnectedCover`), and it is path-connected when `X` is
+  (`TauCeti.pathConnectedSpace_nConnectedCover`), in which case `πₖ(X⟨n⟩, y)` vanishes for every
+  `k ≤ n` and every point `y`
+  (`TauCeti.subsingleton_homotopyGroup_nConnectedCover_of_pathConnectedSpace`);
+* the projection is bijective on `πₖ` for every `k > n`, at every point of `X⟨n⟩`
+  (`TauCeti.bijective_homotopyGroupMap_nConnectedCoverProj`), and so induces an isomorphism
+  `πₖ(X⟨n⟩) ≅ πₖ(X)` (`TauCeti.nConnectedCoverHomotopyGroupMulEquiv`).
 
-## Main definitions
+Except where stated, no connectivity hypothesis on `X` is needed for these. When `X` is
+`(n - 1)`-connected, `Pₙ X` is an Eilenberg--Mac Lane space `K(πₙ X, n)`
+(`TauCeti.isEilenbergMacLaneSpace_killHomotopyGroups`), so the fibre of `X⟨n⟩ → X` is a
+`K(πₙ X, n - 1)` (`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). Iterating the
+construction gives the stages of the Whitehead tower of `X`, along which homotopy groups are
+studied one at a time through the fibrations `K(πₙ X, n - 1) → X⟨n⟩ → X`.
 
-* `TauCeti.nConnectedCover n X x`: the `n`-connected cover of `(X, x)`.
-* `TauCeti.nConnectedCoverProj n X x`: its projection to `X`.
-* `TauCeti.nConnectedCoverBasepoint n X x`: its base point, over `x`.
-* `TauCeti.nConnectedCoverHomotopyGroupMulEquiv n X x k`: for `k > n`, the isomorphism
-  `πₖ(X⟨n⟩) ≃* πₖ(X)` induced by the projection.
+The vanishing of `πₖ(X⟨n⟩)` at the base point and the path-connectedness are read off from the
+exact homotopy sequence of the map `j`
+(`TopCat.Hom.mem_range_homotopyGroupMap_homotopyFiberProj_iff`,
+`TopCat.Hom.eq_const_of_homotopyGroupMap_homotopyFiberProj_eq_const`): `j` is bijective on
+`πₖ` for `k ≤ n` and `πₖ(Pₙ X)` is trivial for `k > n`, so `j` is surjective on every homotopy
+group (`TauCeti.surjective_homotopyGroupMap_killHomotopyGroupsIncl`).
 
-## Main results
+The statements at an arbitrary point `y` of `X⟨n⟩` instead read off the endpoint map `E → Pₙ X`
+of the mapping-path replacement `E ≃ X` of `j`, a Hurewicz fibration whose fibre over `j x` is
+`X⟨n⟩`. Above dimension `n` the homotopy groups of `Pₙ X` vanish, so the fibre inclusion
+`X⟨n⟩ → E` is bijective on `πₖ` for `k > n`
+(`TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`). For path-connected
+`X` the map `j` is `(n + 1)`-connected (`TauCeti.isNConnected_killHomotopyGroupsIncl`), so is the
+endpoint map, and its fibres are therefore `n`-connected
+(`TauCeti.TopCat.isNConnected_iff_of_mem_serreFibrations`).
 
-* `TauCeti.isHurewiczFibration_nConnectedCoverProj`: the projection is a Hurewicz fibration.
-* `TauCeti.subsingleton_homotopyGroup_nConnectedCover`: `πₖ(X⟨n⟩)` vanishes for `k ≤ n`.
-* `TauCeti.bijective_homotopyGroupMap_nConnectedCoverProj`: the projection is bijective on `πₖ`
-  for `k > n`.
-* `TauCeti.isEilenbergMacLaneSpace_nConnectedCoverProj_fiber`: for an `(n + 1)`-connected `X`, the
-  fibre of `X⟨n + 2⟩ → X` over `x` is a `K(πₙ₊₂(X, x), n + 1)`.
+## Main declarations
 
-## Implementation notes
-
-The connectivity statements are read off the endpoint map `E → K` of the mapping-path replacement
-`E ≃ X` of `ι`, a Hurewicz fibration whose fibre over `ι x` is `X⟨n⟩`. Since `ι` is
-`(n + 1)`-connected (`TauCeti.isNConnected_killHomotopyGroupsIncl`), so is the endpoint map, and
-its fibres are therefore `n`-connected (`TauCeti.TopCat.isNConnected_iff_of_mem_serreFibrations`).
-Above dimension `n` the homotopy groups of `K` vanish, so the fibre inclusion `X⟨n⟩ → E` is
-bijective on `πₖ` for `k > n`
-(`TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`).
+* `TauCeti.nConnectedCover`: the `n`-connected cover `X⟨n⟩`, with its projection
+  `TauCeti.nConnectedCoverProj` to `X` and base point `TauCeti.nConnectedCoverBasepoint`.
+* `TauCeti.subsingleton_homotopyGroup_nConnectedCover`: `πₖ(X⟨n⟩)` is trivial for `1 ≤ k ≤ n`.
+* `TauCeti.subsingleton_homotopyGroup_nConnectedCover_of_pathConnectedSpace`: for path-connected
+  `X`, `πₖ(X⟨n⟩, y)` is trivial for `k ≤ n` at every point `y`.
+* `TauCeti.bijective_homotopyGroupMap_nConnectedCoverProj`,
+  `TauCeti.nConnectedCoverHomotopyGroupMulEquiv`: `πₖ(X⟨n⟩) ≅ πₖ(X)` for `k > n`.
+* `TauCeti.nConnectedCoverFiberHomeomorph`: the fibre of `X⟨n⟩ → X` over `x` is a loop space.
+* `TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`: for `n ≥ 2` and `X`
+  `(n - 1)`-connected, that fibre is a `K(πₙ X, n - 1)`.
 
 ## References
 
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 4.3, Whitehead towers.
-* J.-P. Serre, *Groupes d'homotopie et classes de groupes abéliens*, Ann. of Math. 58 (1953).
+* A. Hatcher, *Algebraic Topology*, Section 4.3, Postnikov towers and Whitehead towers.
 -/
 
 public section
 
 noncomputable section
 
-open CategoryTheory Topology
-open scoped Topology.Homotopy unitInterval
+open CategoryTheory
+open scoped Topology Topology.Homotopy unitInterval
 
-universe u w
+universe u
 
 namespace TauCeti
 
 variable (n : ℕ) (X : TopCat.{u}) (x : X)
 
-/-- The **`n`-connected cover** of `(X, x)`: the homotopy fibre, over the image of `x`, of the
-inclusion of `X` into the space `killHomotopyGroups (n + 1) X x` obtained by killing the homotopy
-groups of `X` above dimension `n`. A point is a point `y` of `X` together with a path from the
-image of `y` to the image of `x`. -/
-abbrev nConnectedCover : Type u :=
-  MappingPathFiber (killHomotopyGroupsIncl (n + 1) X x).hom (killHomotopyGroupsIncl (n + 1) X x x)
+/-- The **`n`-connected cover** `X⟨n⟩` of `X`: the homotopy fibre of the inclusion
+`j : X → TauCeti.killHomotopyGroups (n + 1) X x` over `j x`, of the points `z` of `X` with a path
+from `j z` to `j x`. -/
+abbrev nConnectedCover : TopCat.{u} :=
+  TopCat.of (MappingPathFiber (killHomotopyGroupsIncl (n + 1) X x).hom
+    (killHomotopyGroupsIncl (n + 1) X x x))
 
-/-- The projection of the `n`-connected cover to `X`, forgetting the path. -/
-def nConnectedCoverProj : C(nConnectedCover n X x, X) :=
-  MappingPathFiber.proj _ _
+/-- The projection `(z, γ) ↦ z` of the `n`-connected cover to `X`, a Hurewicz fibration
+(`TopCat.Hom.isHurewiczFibration_homotopyFiberProj`). -/
+abbrev nConnectedCoverProj : nConnectedCover n X x ⟶ X :=
+  (killHomotopyGroupsIncl (n + 1) X x).homotopyFiberProj x
+
+/-- The base point of the `n`-connected cover: the point `x` with the constant path. -/
+abbrev nConnectedCoverBasepoint : nConnectedCover n X x :=
+  ((killHomotopyGroupsIncl (n + 1) X x).homotopyFiberBasepoint x).1
+
+/-- The base point of the `n`-connected cover lies over `x`. -/
+@[simp]
+theorem nConnectedCoverProj_nConnectedCoverBasepoint :
+    nConnectedCoverProj n X x (nConnectedCoverBasepoint n X x) = x :=
+  Set.mem_singleton_iff.1 (TopCat.Hom.homotopyFiberBasepoint _ x).2
+
+/-- The projection of the `n`-connected cover is a Serre fibration. -/
+theorem serreFibrations_nConnectedCoverProj :
+    TopCat.serreFibrations (nConnectedCoverProj n X x) :=
+  TopCat.Hom.serreFibrations_homotopyFiberProj _ x
+
+/-- The fibre over `x` of the projection of the `n`-connected cover is the loop space of
+`TauCeti.killHomotopyGroups (n + 1) X x` at the image of `x`. -/
+def nConnectedCoverFiberHomeomorph :
+    (nConnectedCoverProj n X x).fiber x ≃ₜ
+      Ω (killHomotopyGroups (n + 1) X x) (killHomotopyGroupsIncl (n + 1) X x x) :=
+  TopCat.Hom.homotopyFiberFiberHomeomorph _ x
 
 @[simp]
-theorem nConnectedCoverProj_apply (y : nConnectedCover n X x) :
-    nConnectedCoverProj n X x y = y.val.1 :=
-  MappingPathFiber.proj_apply _ _ y
-
-/-- The base point of the `n`-connected cover: the base point of `X` with the constant path. -/
-def nConnectedCoverBasepoint : nConnectedCover n X x :=
-  ⟨(x, .const I (killHomotopyGroupsIncl (n + 1) X x x)), rfl, rfl⟩
-
-@[simp]
-theorem nConnectedCoverBasepoint_val :
-    (nConnectedCoverBasepoint n X x).val = (x, .const I (killHomotopyGroupsIncl (n + 1) X x x)) :=
-  (rfl)
-
-theorem nConnectedCoverProj_basepoint :
-    nConnectedCoverProj n X x (nConnectedCoverBasepoint n X x) = x := by
-  simp
-
-/-- **The projection of the `n`-connected cover is a Hurewicz fibration**, for test spaces in
-every universe. -/
-theorem isHurewiczFibration_nConnectedCoverProj :
-    IsHurewiczFibration.{w} (nConnectedCoverProj n X x) :=
-  MappingPathFiber.isHurewiczFibration_proj _ _
+theorem nConnectedCoverFiberHomeomorph_apply (p : (nConnectedCoverProj n X x).fiber x) (t : I) :
+    nConnectedCoverFiberHomeomorph n X x p t = p.1.val.2 t :=
+  TopCat.Hom.homotopyFiberFiberHomeomorph_apply _ x p t
 
 /-! ### The endpoint fibration -/
-
-section Endpoint
 
 /-- The endpoint map of the mapping-path replacement of the inclusion of `X` into
 `killHomotopyGroups (n + 1) X x`, as a morphism of `TopCat`. -/
@@ -138,9 +142,54 @@ private def nConnectedCoverHomeomorphFiber :
     nConnectedCover n X x ≃ₜ (endpointHom n X x).fiber (killHomotopyGroupsIncl (n + 1) X x x) :=
   MappingPathFiber.endpointHomeomorph _ _
 
+variable [T2Space X]
+
+/-- A class of `πₖ(X⟨n⟩)` which projects to the trivial class of `X` is trivial. -/
+private theorem eq_const_of_homotopyGroupMap_nConnectedCoverProj_eq_const {k : ℕ}
+    {c : π_ k (nConnectedCover n X x) (nConnectedCoverBasepoint n X x)}
+    (hc : HomotopyGroup.map (nConnectedCoverProj n X x).hom
+      (nConnectedCoverProj_nConnectedCoverBasepoint n X x) c = ⟦GenLoop.const⟧) :
+    c = ⟦GenLoop.const⟧ :=
+  TopCat.Hom.eq_const_of_homotopyGroupMap_homotopyFiberProj_eq_const _ x
+    (surjective_homotopyGroupMap_killHomotopyGroupsIncl (n + 1) X x) hc
+
+/-- **The `n`-connected cover is `n`-connected**: its homotopy groups `πₖ` vanish for
+`1 ≤ k ≤ n`. -/
+theorem subsingleton_homotopyGroup_nConnectedCover {k : ℕ} (hk0 : k ≠ 0) (hk : k ≤ n) :
+    Subsingleton (π_ k (nConnectedCover n X x) (nConnectedCoverBasepoint n X x)) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk0
+  refine ⟨fun c c' ↦ ?_⟩
+  -- Every class projects to a class of `X` killed by the inclusion, which is injective on
+  -- `π_{m + 1}`; so it projects to the trivial class, and is trivial.
+  suffices h : ∀ c : π_ (m + 1) (nConnectedCover n X x) (nConnectedCoverBasepoint n X x),
+      c = ⟦GenLoop.const⟧ from (h c).trans (h c').symm
+  intro c
+  refine eq_const_of_homotopyGroupMap_nConnectedCoverProj_eq_const n X x ?_
+  have hinj := (bijective_homotopyGroupMap_killHomotopyGroupsIncl (n + 1) X x
+    (N := Option (Fin m)) (by simp; omega)).1
+  have hrange := (TopCat.Hom.mem_range_homotopyGroupMap_homotopyFiberProj_iff
+    (killHomotopyGroupsIncl (n + 1) X x) x).1 ⟨HomotopyGroup.congrEquiv (finSuccEquiv m) c, rfl⟩
+  rw [← GenLoop.map_const (killHomotopyGroupsIncl (n + 1) X x).hom rfl,
+    ← HomotopyGroup.map_mk] at hrange
+  apply (HomotopyGroup.congrEquiv (X := X) (x := x) (finSuccEquiv m)).injective
+  rw [← HomotopyGroup.map_congrEquiv, hinj hrange, HomotopyGroup.congrEquiv_const]
+
+/-- **The `n`-connected cover of a path-connected space is path-connected.** -/
+instance pathConnectedSpace_nConnectedCover [PathConnectedSpace X] :
+    PathConnectedSpace (nConnectedCover n X x) := by
+  have : Subsingleton (π_ 0 X x) := HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
+  have : Subsingleton (π_ 0 (nConnectedCover n X x) (nConnectedCoverBasepoint n X x)) :=
+    ⟨fun c c' ↦ (eq_const_of_homotopyGroupMap_nConnectedCoverProj_eq_const n X x
+      (Subsingleton.elim _ _)).trans (eq_const_of_homotopyGroupMap_nConnectedCoverProj_eq_const
+        n X x (Subsingleton.elim _ _)).symm⟩
+  exact pathConnectedSpace_iff_zerothHomotopy.2
+    ⟨⟨⟦nConnectedCoverBasepoint n X x⟧⟩,
+      (HomotopyGroup.pi0EquivZerothHomotopy
+        (x := nConnectedCoverBasepoint n X x)).symm.subsingleton⟩
+
 /-- The endpoint map is `(n + 1)`-connected, since the inclusion of `X` is and the constant-path
 inclusion of `X` into its mapping-path replacement is a homotopy equivalence. -/
-private theorem isNConnected_endpointHom [T2Space X] [PathConnectedSpace X] :
+private theorem isNConnected_endpointHom [PathConnectedSpace X] :
     (endpointHom n X x).hom.IsNConnected (n + 1) := by
   let e := MappingPathSpace.homotopyEquiv (killHomotopyGroupsIncl (n + 1) X x).hom
   have h : (endpointHom n X x).hom.comp e.toFun = (killHomotopyGroupsIncl (n + 1) X x).hom :=
@@ -150,32 +199,20 @@ private theorem isNConnected_endpointHom [T2Space X] [PathConnectedSpace X] :
   rw [← e.isWeakHomotopyEquivalence.isNConnected_comp_iff', h]
   exact isNConnected_killHomotopyGroupsIncl (n + 1) X x
 
-end Endpoint
-
-/-! ### Homotopy groups of the connected cover -/
-
-/-- **The `n`-connected cover is `n`-connected**: for a Hausdorff, path-connected space `X`, the
-homotopy groups `πₖ(X⟨n⟩, y)` are trivial for every `k ≤ n` and every point `y`. For `k = 0` this
-says that `X⟨n⟩` is path-connected. -/
-theorem subsingleton_homotopyGroup_nConnectedCover [T2Space X] [PathConnectedSpace X]
+/-- **The `n`-connected cover of a path-connected space is `n`-connected at every point**: the
+homotopy groups `πₖ(X⟨n⟩, y)` are trivial for every `k ≤ n` and every point `y`. -/
+theorem subsingleton_homotopyGroup_nConnectedCover_of_pathConnectedSpace [PathConnectedSpace X]
     (y : nConnectedCover n X x) {k : ℕ} (hk : k ≤ n) :
     Subsingleton (π_ k (nConnectedCover n X x) y) :=
   (HomotopyGroup.homeomorphEquiv (nConnectedCoverHomeomorphFiber n X x) y).subsingleton_congr.2 <|
     ((TopCat.isNConnected_iff_of_mem_serreFibrations (endpointHom_mem_serreFibrations n X x)
       (n + 1)).1 (isNConnected_endpointHom n X x) _).2 _ k (Nat.lt_succ_of_le hk)
 
-/-- The `n`-connected cover of a Hausdorff, path-connected space is path-connected. -/
-instance instPathConnectedSpaceNConnectedCover [T2Space X] [PathConnectedSpace X] :
-    PathConnectedSpace (nConnectedCover n X x) :=
-  (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (nConnectedCoverBasepoint n X x)).2
-    (subsingleton_homotopyGroup_nConnectedCover n X x _ n.zero_le)
-
-/-- **Above dimension `n`, the projection of the `n`-connected cover is bijective on homotopy
-groups**: for a Hausdorff space `X`, the map `πₖ(X⟨n⟩, y) → πₖ(X, z)` induced by the projection,
-for `z` the image of `y`, is bijective for every `k > n` and every point `y`. -/
-theorem bijective_homotopyGroupMap_nConnectedCoverProj [T2Space X] (y : nConnectedCover n X x)
-    {z : X} (hz : nConnectedCoverProj n X x y = z) {k : ℕ} (hk : n < k) :
-    Function.Bijective (HomotopyGroup.map (N := Fin k) (nConnectedCoverProj n X x) hz) := by
+/-- **The `n`-connected cover has the homotopy groups of `X` above dimension `n`**: the projection
+`X⟨n⟩ → X` is bijective on `πₖ` for `k > n`, at every point `y` of `X⟨n⟩`. -/
+theorem bijective_homotopyGroupMap_nConnectedCoverProj (y : nConnectedCover n X x) {z : X}
+    (hz : nConnectedCoverProj n X x y = z) {k : ℕ} (hk : n < k) :
+    Function.Bijective (HomotopyGroup.map (N := Fin k) (nConnectedCoverProj n X x).hom hz) := by
   -- Above dimension `n` the homotopy groups of `killHomotopyGroups (n + 1) X x` vanish.
   obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
   have hK (i : ℕ) (hi : n < i + 1) : Subsingleton (π_ (i + 1) (killHomotopyGroups (n + 1) X x)
@@ -187,11 +224,11 @@ theorem bijective_homotopyGroupMap_nConnectedCoverProj [T2Space X] (y : nConnect
   let ψ := (nConnectedCoverHomeomorphFiber n X x).toHomotopyEquiv
   have hψ (y : nConnectedCover n X x) : nConnectedCoverProj n X x y =
       MappingPathSpace.proj (killHomotopyGroupsIncl (n + 1) X x).hom (ψ.toFun y).1 := by
-    rw [nConnectedCoverProj_apply, MappingPathSpace.proj_apply]
+    rw [TopCat.Hom.homotopyFiberProj_apply, MappingPathSpace.proj_apply]
     exact congrArg Prod.fst (MappingPathFiber.endpointHomeomorph_val _ _ y).symm
   have hcomp : (MappingPathSpace.proj (killHomotopyGroupsIncl (n + 1) X x).hom).comp
       (((endpointHom n X x).fiberι (killHomotopyGroupsIncl (n + 1) X x x)).hom.comp ψ.toFun) =
-        nConnectedCoverProj n X x :=
+        (nConnectedCoverProj n X x).hom :=
     ContinuousMap.ext fun y ↦ (congrArg (MappingPathSpace.proj _)
       (TopCat.Hom.fiberι_apply _ _ (ψ.toFun y))).trans (hψ y).symm
   have hproj : (MappingPathSpace.proj
@@ -210,35 +247,30 @@ theorem bijective_homotopyGroupMap_nConnectedCoverProj [T2Space X] (y : nConnect
   convert h using 1
   exact funext (HomotopyGroup.map_congr hcomp.symm _ _)
 
-/-- For `k > n`, the projection of the `n`-connected cover of a Hausdorff space `X` induces an
-isomorphism `πₖ(X⟨n⟩) ≃* πₖ(X)` at the base points. -/
-def nConnectedCoverHomotopyGroupMulEquiv [T2Space X] (k : ℕ) [NeZero k] (hk : n < k) :
+/-- For `k > n`, the projection of the `n`-connected cover induces an isomorphism
+`πₖ(X⟨n⟩) ≃* πₖ(X)`. -/
+def nConnectedCoverHomotopyGroupMulEquiv (k : ℕ) [NeZero k] (hk : n < k) :
     π_ k (nConnectedCover n X x) (nConnectedCoverBasepoint n X x) ≃* π_ k X x :=
-  MulEquiv.ofBijective
-    (HomotopyGroup.mapHom (nConnectedCoverProj n X x) (nConnectedCoverProj_basepoint n X x))
+  MulEquiv.ofBijective (HomotopyGroup.mapHom (nConnectedCoverProj n X x).hom
+    (nConnectedCoverProj_nConnectedCoverBasepoint n X x))
     (bijective_homotopyGroupMap_nConnectedCoverProj n X x _ _ hk)
 
-/-- The isomorphism of `πₖ` is the map induced by the projection. -/
 @[simp]
-lemma nConnectedCoverHomotopyGroupMulEquiv_apply [T2Space X] (k : ℕ) [NeZero k] (hk : n < k)
-    (a : π_ k (nConnectedCover n X x) (nConnectedCoverBasepoint n X x)) :
-    nConnectedCoverHomotopyGroupMulEquiv n X x k hk a =
-      HomotopyGroup.map (nConnectedCoverProj n X x) (nConnectedCoverProj_basepoint n X x) a :=
-  HomotopyGroup.mapHom_apply _ _ a
+theorem nConnectedCoverHomotopyGroupMulEquiv_apply (k : ℕ) [NeZero k] (hk : n < k)
+    (c : π_ k (nConnectedCover n X x) (nConnectedCoverBasepoint n X x)) :
+    nConnectedCoverHomotopyGroupMulEquiv n X x k hk c =
+      HomotopyGroup.map (nConnectedCoverProj n X x).hom
+        (nConnectedCoverProj_nConnectedCoverBasepoint n X x) c :=
+  HomotopyGroup.mapHom_apply _ _ c
 
-/-! ### The fibre of the projection -/
-
-/-- **The fibre of the projection of a connected cover is an Eilenberg--Mac Lane space.** For a
-Hausdorff, path-connected space `X` whose homotopy groups `πₖ(X, x)` vanish for `0 < k < n + 2`,
-the fibre over `x` of the projection `X⟨n + 2⟩ → X` is an Eilenberg--Mac Lane space of type
-`K(πₙ₊₂(X, x), n + 1)`: it is the loop space of the `K(πₙ₊₂(X, x), n + 2)` space
-`killHomotopyGroups (n + 3) X x`. -/
-theorem isEilenbergMacLaneSpace_nConnectedCoverProj_fiber [T2Space X] [PathConnectedSpace X]
-    (hX : ∀ k, k ≠ 0 → k < n + 2 → Subsingleton (π_ k X x)) :
-    IsEilenbergMacLaneSpace (π_ (n + 2) X x) (n + 1)
-      {y : nConnectedCover (n + 2) X x // nConnectedCoverProj (n + 2) X x y = x}
-      ⟨nConnectedCoverBasepoint (n + 2) X x, nConnectedCoverProj_basepoint (n + 2) X x⟩ :=
-  (isEilenbergMacLaneSpace_killHomotopyGroups (n + 2) X x hX).loopSpace.of_homotopyEquiv
-    (MappingPathFiber.projFiberHomeomorphPath _ _ x).symm.toHomotopyEquiv _
+/-- **The fibre of the `n`-connected cover of an `(n - 1)`-connected space is a `K(πₙ X, n - 1)`**,
+for `n ≥ 2`: it is the loop space of the Eilenberg--Mac Lane space `K(πₙ X, n)` obtained from `X`
+by killing its homotopy groups above `n`. -/
+theorem isEilenbergMacLaneSpace_fiber_nConnectedCoverProj [PathConnectedSpace X] (m : ℕ)
+    (hX : ∀ k, k ≠ 0 → k < m + 2 → Subsingleton (π_ k X x)) :
+    IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1) ((nConnectedCoverProj (m + 2) X x).fiber x)
+      (TopCat.Hom.homotopyFiberBasepoint _ x) :=
+  (isEilenbergMacLaneSpace_killHomotopyGroups (m + 2) X x hX).loopSpace.of_homotopyEquiv
+    (nConnectedCoverFiberHomeomorph (m + 2) X x).symm.toHomotopyEquiv _
 
 end TauCeti

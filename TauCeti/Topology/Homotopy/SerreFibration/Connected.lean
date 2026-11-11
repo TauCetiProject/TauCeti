@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap
+public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
 public import TauCeti.Topology.Homotopy.SerreFibration.Exact
 
 /-!
@@ -96,11 +96,7 @@ private theorem isNConnected_of_forall_fiber (hp : serreFibrations p)
       -- In positive degrees the induced map is a homomorphism, and by exactness at `π_k(E)` its
       -- kernel comes from the trivial group `π_k(F)`.
       have := (hF (p x)).2 ⟨x, rfl⟩ (k + 1) hk
-      refine (injective_iff_map_eq_one
-        (HomotopyGroup.mapHom (N := Fin (k + 1)) (x := x) p.hom rfl)).2 fun c hc ↦ ?_
-      rw [HomotopyGroup.mapHom_apply, ← HomotopyGroup.mk_const_eq_one] at hc
-      obtain ⟨a, rfl⟩ := (mem_range_homotopyGroupMap_fiberι_iff hp (e := ⟨x, rfl⟩)).2 hc
-      rw [Subsingleton.elim a 1, HomotopyGroup.map_one]
+      exact injective_homotopyGroupMap_of_subsingleton (N := Fin (k + 1)) hp (e := ⟨x, rfl⟩)
   · cases k with
     | zero =>
       -- In degree zero, every point of `B` is the projection of a point of its fibre.
@@ -113,8 +109,8 @@ private theorem isNConnected_of_forall_fiber (hp : serreFibrations p)
       have := (hF (p x)).2 ⟨x, rfl⟩ k hk
       let φ := (finSuccEquiv k).symm
       intro c
-      obtain ⟨a, ha⟩ := (mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp (e := ⟨x, rfl⟩)
-        (a := (HomotopyGroup.congrEquiv φ).symm c)).2 (Subsingleton.elim _ _)
+      obtain ⟨a, ha⟩ := surjective_homotopyGroupMap_of_subsingleton hp (e := ⟨x, rfl⟩)
+        ((HomotopyGroup.congrEquiv φ).symm c)
       exact ⟨HomotopyGroup.congrEquiv φ a,
         (HomotopyGroup.map_congrEquiv _ _ φ a).trans ((Equiv.eq_symm_apply _).1 ha)⟩
 
