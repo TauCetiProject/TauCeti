@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.SphereBundle
-public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Cohomology.Excision
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Push
+import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
@@ -195,57 +195,33 @@ private lemma discCollarHomotopy_apply (p : I × discBundle F E) :
     discCollarHomotopy hnorm p = discCollar hnorm p :=
   rfl
 
-open Classical in
-/-- The collar deformation of the disc bundle, transported to its image in `Z` and extended by the
-identity of `X`. -/
-private def attachCollarFun (p : I × Z) : Z :=
-  if h : p.2 ∈ range φ then φ (discCollar hnorm (p.1, hφ.isEmbedding.toHomeomorph.symm ⟨p.2, h⟩))
-  else p.2
-
-private lemma attachCollarFun_of_mem_range (t : I) {z : Z} (h : z ∈ range φ) :
-    attachCollarFun hnorm hφ (t, z) =
-      φ (discCollar hnorm (t, hφ.isEmbedding.toHomeomorph.symm ⟨z, h⟩)) :=
-  dite_eq_left h
-
-private lemma attachCollarFun_apply (t : I) (v : discBundle F E) :
-    attachCollarFun hnorm hφ (t, φ v) = φ (discCollar hnorm (t, v)) := by
-  rw [attachCollarFun_of_mem_range hnorm hφ t (mem_range_self v),
-    hφ.isEmbedding.toHomeomorph_symm_apply]
-
-include hφX in
-private lemma attachCollarFun_of_mem (t : I) {z : Z} (hz : z ∈ X) :
-    attachCollarFun hnorm hφ (t, z) = z := by
-  by_cases h : z ∈ range φ
-  · obtain ⟨v, rfl⟩ := h
-    rw [attachCollarFun_apply, discCollar_of_mem_sphereBundle hnorm t (hφX v hz)]
-  · exact dite_eq_right h
-
 include hX hφX hcover in
-private lemma continuous_attachCollarFun : Continuous (attachCollarFun hnorm hφ) := by
-  rw [← continuousOn_univ, ← univ_prod_univ, ← hcover, prod_union]
-  refine ContinuousOn.union_of_isClosed ?_ ?_ (isClosed_univ.prod hX)
-    (isClosed_univ.prod hφ.isClosed_range)
-  · exact continuous_snd.continuousOn.congr fun p hp ↦
-      attachCollarFun_of_mem hnorm hφ hφX p.1 hp.2
-  · rw [continuousOn_iff_continuous_domRestrict]
-    have : (univ ×ˢ range φ).domRestrict (attachCollarFun hnorm hφ) =
-        fun q : ↥(univ ×ˢ range φ) ↦
-          φ (discCollar hnorm (q.1.1, hφ.isEmbedding.toHomeomorph.symm ⟨q.1.2, q.2.2⟩)) := by
-      ext q
-      exact attachCollarFun_of_mem_range hnorm hφ q.1.1 q.2.2
-    rw [this]
-    exact φ.continuous.comp ((discCollar hnorm).continuous.comp
-      ((continuous_fst.comp continuous_subtype_val).prodMk
-        (hφ.isEmbedding.toHomeomorph.symm.continuous.comp
-          ((continuous_snd.comp continuous_subtype_val).subtype_mk _))))
-
-/-- The collar deformation of the attached space, as a continuous map. -/
+/-- The collar deformation of the disc bundle, transported to its image in `Z` and extended by the
+identity of `X`: the gluing of the projection `I × X → Z` and `φ ∘ discCollar` along the closed
+embeddings of `I × X` and `I × D(E)` into `I × Z`. -/
 private def attachCollar : C(I × Z, Z) :=
-  ⟨attachCollarFun hnorm hφ, continuous_attachCollarFun hnorm hφ hX hφX hcover⟩
+  ContinuousMap.glueClosedEmbeddings (i := Prod.map id ((↑) : X → Z)) (j := Prod.map id φ)
+    ⟨fun p ↦ p.2, by fun_prop⟩ (φ.comp (discCollar hnorm))
+    (IsClosedEmbedding.id.prodMap hX.isClosedEmbedding_subtypeVal)
+    (IsClosedEmbedding.id.prodMap hφ)
+    (eq_univ_of_forall fun p ↦ by
+      obtain hz | ⟨v, hv⟩ := (hcover.symm ▸ mem_univ p.2 : p.2 ∈ X ∪ range φ)
+      · exact Or.inl ⟨(p.1, ⟨p.2, hz⟩), rfl⟩
+      · exact Or.inr ⟨(p.1, v), Prod.ext rfl hv⟩)
+    (by
+      rintro ⟨t, x⟩ ⟨s, v⟩ h
+      obtain ⟨rfl, hx⟩ : t = s ∧ (x : Z) = φ v := Prod.ext_iff.1 h
+      change (x : Z) = φ (discCollar hnorm (t, v))
+      rw [discCollar_of_mem_sphereBundle hnorm t (hφX v (hx ▸ x.2))]
+      exact hx)
 
-private lemma attachCollar_apply (p : I × Z) :
-    attachCollar hnorm hφ hX hφX hcover p = attachCollarFun hnorm hφ p :=
-  rfl
+private lemma attachCollar_apply (t : I) (v : discBundle F E) :
+    attachCollar hnorm hφ hX hφX hcover (t, φ v) = φ (discCollar hnorm (t, v)) :=
+  ContinuousMap.glueClosedEmbeddings_apply_right _ _ _ _ _ _ (t, v)
+
+private lemma attachCollar_of_mem (t : I) {z : Z} (hz : z ∈ X) :
+    attachCollar hnorm hφ hX hφX hcover (t, z) = z :=
+  ContinuousMap.glueClosedEmbeddings_apply_left _ _ _ _ _ _ (t, (⟨z, hz⟩ : X))
 
 /-- The collar deformation of the attached space as a homotopy from the identity. -/
 private def attachCollarHomotopy :
@@ -253,8 +229,9 @@ private def attachCollarHomotopy :
   toContinuousMap := attachCollar hnorm hφ hX hφX hcover
   map_zero_left z := by
     obtain hz | ⟨v, rfl⟩ := (hcover.symm ▸ mem_univ z : z ∈ X ∪ range φ)
-    · exact attachCollarFun_of_mem hnorm hφ hφX 0 hz
-    · exact (attachCollarFun_apply hnorm hφ 0 v).trans (congrArg φ (discCollar_zero hnorm v))
+    · exact attachCollar_of_mem hnorm hφ hX hφX hcover 0 hz
+    · exact (attachCollar_apply hnorm hφ hX hφX hcover 0 v).trans
+        (congrArg φ (discCollar_zero hnorm v))
   map_one_left _ := rfl
 
 private lemma attachCollarHomotopy_apply (p : I × Z) :
@@ -275,25 +252,25 @@ private lemma discCollarHomotopy_mem_outerCollar (t : I) {v : discBundle F E}
 
 private lemma attachCollarHomotopy_mem (t : I) {z : Z} (hz : z ∈ X) :
     attachCollarHomotopy hnorm hφ hX hφX hcover (t, z) ∈ X := by
-  rwa [attachCollarHomotopy_apply, attachCollar_apply, attachCollarFun_of_mem hnorm hφ hφX t hz]
+  rwa [attachCollarHomotopy_apply, attachCollar_of_mem hnorm hφ hX hφX hcover t hz]
 
 private lemma attachCollarHomotopy_mem_thickening (t : I) {z : Z}
     (hz : z ∈ thickening (X := X) φ) :
     attachCollarHomotopy hnorm hφ hX hφX hcover (t, z) ∈ thickening (X := X) φ := by
-  rw [attachCollarHomotopy_apply, attachCollar_apply]
+  rw [attachCollarHomotopy_apply]
   obtain hz | ⟨v, hv, rfl⟩ := hz
-  · rw [attachCollarFun_of_mem hnorm hφ hφX t hz]
+  · rw [attachCollar_of_mem hnorm hφ hX hφX hcover t hz]
     exact Or.inl hz
-  · rw [attachCollarFun_apply]
+  · rw [attachCollar_apply]
     exact Or.inr ⟨_, discCollar_mem_outerCollar hnorm t hv, rfl⟩
 
 include hφS in
 private lemma mapsTo_attachCollar_thickening :
     MapsTo ((attachCollar hnorm hφ hX hφX hcover).curry 1) (thickening (X := X) φ) X := by
   rintro z (hz | ⟨v, hv, rfl⟩)
-  · rw [ContinuousMap.curry_apply, attachCollar_apply, attachCollarFun_of_mem hnorm hφ hφX 1 hz]
+  · rw [ContinuousMap.curry_apply, attachCollar_of_mem hnorm hφ hX hφX hcover 1 hz]
     exact hz
-  · rw [ContinuousMap.curry_apply, attachCollar_apply, attachCollarFun_apply]
+  · rw [ContinuousMap.curry_apply, attachCollar_apply]
     exact hφS _ (discCollar_one_mem_sphereBundle hnorm hv)
 
 end Thickening
