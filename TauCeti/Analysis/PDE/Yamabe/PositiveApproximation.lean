@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Yamabe.LowerBound
 import Mathlib.Topology.Order.DenselyOrdered
+import TauCeti.Geometry.Manifold.ContMDiff.Sqrt
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Integral.AbsRpow
@@ -17,16 +18,16 @@ import TauCeti.MeasureTheory.Integral.ContinuousMap
 # Positive smooth test functions for the Yamabe quotient
 
 On a nonempty closed Riemannian manifold of dimension greater than two, the infimum of the
-Yamabe quotient over nonzero smooth real functions equals its infimum over strictly positive
-smooth functions. More precisely, every strict upper bound for the quotient of a signed smooth
-test function is also realized by a positive smooth test function.
+Yamabe quotient over nonzero `C^n` real functions equals its infimum over strictly positive
+`C^n` functions, for every `n ≥ 1`. More precisely, every strict upper bound for the quotient of a
+signed test function is also realized by a positive test function of the same regularity.
 
 The regularization `v = √(u² + ε)`, for `ε > 0`, decreases the gradient term, while its scalar
 curvature term differs from that of `u` by `ε ∫ Scal`. Its critical mass converges to that of
 `u`. This argument needs no assumption on the sign of scalar curvature and does not require
 regularity of the nodal set of `u`.
 
-These are statements about smooth test functions, not an identification of their infimum with
+These are statements about `C^n` test functions, not an identification of their infimum with
 an infimum over a weak Sobolev domain.
 
 ## References
@@ -46,11 +47,6 @@ namespace TauCeti.Yamabe
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-private theorem contMDiff_regularized {n : ℕ∞ω} {u : M → ℝ}
-    (hu : ContMDiff I 𝓘(ℝ) n u) {ε : ℝ} (hε : 0 < ε) :
-    ContMDiff I 𝓘(ℝ) n (fun x ↦ Real.sqrt (u x ^ 2 + ε)) := fun x ↦
-  (Real.contDiffAt_sqrt (by positivity)).comp_contMDiffAt ((hu.pow 2).add contMDiff_const x)
 
 variable [FiniteDimensional ℝ E] [T2Space M] [CompactSpace M]
   [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
@@ -72,7 +68,7 @@ private theorem regularized_energy_le (hn : 2 < finrank ℝ E) {u : M → ℝ}
   let S := (CovariantDerivative.leviCivitaConnection I M).scalarCurvature
   have hS : Continuous S :=
     (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
-  have hv := contMDiff_regularized hu hε
+  have hv := hu.sqrt_sq_add_const hε
   have hgrad (x : M) : ‖mgradient I (fun y ↦ Real.sqrt (u y ^ 2 + ε)) x‖ ^ 2 ≤
       ‖mgradient I u x‖ ^ 2 := by
     have hx : 0 < u x ^ 2 + ε := by positivity
@@ -120,11 +116,13 @@ private theorem continuous_regularized_criticalMass (hn : 2 < finrank ℝ E) {u 
   exact (((hu.comp continuous_snd).pow 2 |>.add continuous_fst).sqrt.abs).rpow_const
     (fun _ ↦ Or.inr (criticalExponent_pos hn).le)
 
-/-- Every strict upper bound for the Yamabe quotient of a nonzero smooth real function is
-realized by a strictly positive smooth function. No sign condition on scalar curvature is needed. -/
-theorem exists_contMDiff_pos_yamabeQuotient_lt (hn : 2 < finrank ℝ E) {u : M → ℝ}
-    (hu : ContMDiff I 𝓘(ℝ) ∞ u) (hu0 : u ≠ 0) {c : ℝ} (hc : yamabeQuotient I u < c) :
-    ∃ v : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ v ∧ (∀ x, 0 < v x) ∧ yamabeQuotient I v < c := by
+/-- Every strict upper bound for the Yamabe quotient of a nonzero `C^n` real function, `n ≥ 1`,
+is realized by a strictly positive `C^n` function. No sign condition on scalar curvature is
+needed. -/
+theorem exists_contMDiff_pos_yamabeQuotient_lt (hn : 2 < finrank ℝ E) {n : ℕ∞ω}
+    (hn1 : 1 ≤ n) {u : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) n u) (hu0 : u ≠ 0)
+    {c : ℝ} (hc : yamabeQuotient I u < c) :
+    ∃ v : M → ℝ, ContMDiff I 𝓘(ℝ) n v ∧ (∀ x, 0 < v x) ∧ yamabeQuotient I v < c := by
   let μ := riemannianVolume I M
   let S := (CovariantDerivative.leviCivitaConnection I M).scalarCurvature
   let A := ∫ x, (conformalCoefficient (finrank ℝ E) * ‖mgradient I u x‖ ^ 2 +
@@ -155,35 +153,37 @@ theorem exists_contMDiff_pos_yamabeQuotient_lt (hn : 2 < finrank ℝ E) {u : M �
     Filter.Eventually.and self_mem_nhdsWithin hev
   obtain ⟨ε, hε, hbound⟩ := hev'.exists
   refine ⟨fun x ↦ Real.sqrt (u x ^ 2 + ε), ?_, ?_, ?_⟩
-  · exact contMDiff_regularized hu hε
+  · exact hu.sqrt_sq_add_const hε
   · intro x
     exact Real.sqrt_pos.2 (by positivity)
   · apply lt_of_le_of_lt _ hbound
     rw [yamabeQuotient_def]
-    exact div_le_div_of_nonneg_right (regularized_energy_le hn (hu.of_le (by simp)) hε)
+    exact div_le_div_of_nonneg_right (regularized_energy_le hn (hu.of_le hn1) hε)
       (Real.rpow_nonneg (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
 
 /-- On a nonempty closed manifold of dimension greater than two, the infimum of the Yamabe
-quotient over positive smooth functions is its infimum over all nonzero smooth real functions. -/
-theorem sInf_yamabeQuotient_pos_eq [Nonempty M] (hn : 2 < finrank ℝ E) :
-    sInf (yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, 0 < u x}) =
-      sInf (yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ u ≠ 0}) := by
-  let P := yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, 0 < u x}
-  let T := yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ u ≠ 0}
+quotient over positive `C^n` functions is its infimum over all nonzero `C^n` real functions,
+for every `n ≥ 1`. -/
+theorem sInf_yamabeQuotient_pos_eq [Nonempty M] (hn : 2 < finrank ℝ E) {n : ℕ∞ω}
+    (hn1 : 1 ≤ n) :
+    sInf (yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) n u ∧ ∀ x, 0 < u x}) =
+      sInf (yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) n u ∧ u ≠ 0}) := by
+  let P := yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) n u ∧ ∀ x, 0 < u x}
+  let T := yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) n u ∧ u ≠ 0}
   have hPT : P ⊆ T := by
     rintro _ ⟨u, hu, rfl⟩
     exact ⟨u, ⟨hu.1, fun h ↦ (hu.2 (Classical.arbitrary M)).ne' (congrFun h _)⟩, rfl⟩
   have hP : P.Nonempty := ⟨_, ⟨fun _ ↦ 1, ⟨contMDiff_const, fun _ ↦ one_pos⟩, rfl⟩⟩
   have hbT : BddBelow T := (bddBelow_image_yamabeQuotient (I := I) hn).mono (by
     rintro _ ⟨u, hu, rfl⟩
-    exact ⟨u, ⟨hu.1.of_le (by simp), hu.2⟩, rfl⟩)
+    exact ⟨u, ⟨hu.1.of_le hn1, hu.2⟩, rfl⟩)
   have hbP := hbT.mono hPT
   apply le_antisymm
   · apply le_csInf (hP.mono hPT)
     rintro _ ⟨u, hu, rfl⟩
     apply le_of_forall_gt_imp_ge_of_dense
     intro c hc
-    obtain ⟨v, hv, hvpos, hvc⟩ := exists_contMDiff_pos_yamabeQuotient_lt hn hu.1 hu.2 hc
+    obtain ⟨v, hv, hvpos, hvc⟩ := exists_contMDiff_pos_yamabeQuotient_lt hn hn1 hu.1 hu.2 hc
     exact (csInf_le hbP ⟨v, ⟨hv, hvpos⟩, rfl⟩).trans hvc.le
   · exact csInf_le_csInf hbT hP hPT
 
