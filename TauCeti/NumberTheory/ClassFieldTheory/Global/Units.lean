@@ -184,7 +184,7 @@ private def unitsToUnitLattice :
     -- in `logSpace L`, the two sides are `logEmbedding` of `σ • x` and `logSpaceRep K L σ` of
     -- `logEmbedding` of `x`: `codRestrict` and the restricted action have these underlying maps
     Subtype.ext <| (logEmbedding_smul σ x).trans
-      (Representation.restrictScalarsInt_apply _ _ _).symm
+      (Representation.restrictScalars_apply ℤ _ _ _).symm
 
 variable {K L}
 

@@ -34,6 +34,11 @@ homogeneous elements, `D₀ (f a) = f (D₁ a)`, sends cocycles to cocycles and 
 coboundaries, so it induces a linear map on cohomology in each degree (`LinearMap.cohomologyMap`).
 If three such maps intertwine two products up to coboundaries on cocycles, then the induced maps
 intertwine the products on cohomology (`LinearMap.cohomologyMap_cohomologyProduct`).
+Likewise, if the two composites `μ' (μ a b) c` and `ν' a (ν b c)` of products differ by a
+coboundary on cocycles, then the induced products on cohomology are associative
+(`LinearMap.cohomologyProduct_assoc`), and if `μ a b - (-1)^(i j) μ' b a` is a coboundary on
+cocycles of degrees `i` and `j`, then they are graded commutative
+(`LinearMap.cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct`).
 
 ## Main definitions
 
@@ -62,6 +67,11 @@ intertwine the products on cohomology (`LinearMap.cohomologyMap_cohomologyProduc
   of induced maps, in the orientation used by `simp`.
 * `LinearMap.cohomologyMap_cohomologyProduct`: maps intertwining two products up to coboundaries
   intertwine the products on cohomology.
+* `LinearMap.cohomologyProduct_assoc`: products whose two composites differ by coboundaries on
+  cocycles induce associative products on cohomology.
+* `LinearMap.cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct`: products which commute
+  up to the Koszul sign and coboundaries on cocycles induce graded-commutative products on
+  cohomology.
 -/
 
 public section
@@ -335,5 +345,83 @@ theorem cohomologyMap_cohomologyProduct {i j k : ℤ} (hk : i + j + ε = k)
   exact hnat a.2 b.2
 
 end Naturality
+
+section Associativity
+
+variable {R M₁ M₂ M₃ M₁₂ M₂₃ M₀ : Type*} [CommRing R]
+  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃] [Module R M₃]
+  [AddCommGroup M₁₂] [Module R M₁₂] [AddCommGroup M₂₃] [Module R M₂₃]
+  [AddCommGroup M₀] [Module R M₀]
+  {D₁ : M₁ →ₗ[R] M₁} {D₂ : M₂ →ₗ[R] M₂} {D₃ : M₃ →ₗ[R] M₃} {D₁₂ : M₁₂ →ₗ[R] M₁₂}
+  {D₂₃ : M₂₃ →ₗ[R] M₂₃} {D₀ : M₀ →ₗ[R] M₀}
+  {G₁ : ℤ → Submodule R M₁} {G₂ : ℤ → Submodule R M₂} {G₃ : ℤ → Submodule R M₃}
+  {G₁₂ : ℤ → Submodule R M₁₂} {G₂₃ : ℤ → Submodule R M₂₃} {G₀ : ℤ → Submodule R M₀}
+  {μ : M₁ →ₗ[R] M₂ →ₗ[R] M₁₂} {μ' : M₁₂ →ₗ[R] M₃ →ₗ[R] M₀}
+  {ν : M₂ →ₗ[R] M₃ →ₗ[R] M₂₃} {ν' : M₁ →ₗ[R] M₂₃ →ₗ[R] M₀} {ε ε' η η' : ℤ}
+  {hμdeg : ∀ {i j : ℤ} {a : M₁} {b : M₂}, a ∈ G₁ i → b ∈ G₂ j → μ a b ∈ G₁₂ (i + j + ε)}
+  {hμL : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → ∀ b,
+    D₁₂ (μ a b) = μ (D₁ a) b + negOnePowCast R i • μ a (D₂ b)}
+  {hμ'deg : ∀ {i j : ℤ} {a : M₁₂} {b : M₃}, a ∈ G₁₂ i → b ∈ G₃ j → μ' a b ∈ G₀ (i + j + ε')}
+  {hμ'L : ∀ {i : ℤ} {a : M₁₂}, a ∈ G₁₂ i → ∀ b,
+    D₀ (μ' a b) = μ' (D₁₂ a) b + negOnePowCast R i • μ' a (D₃ b)}
+  {hνdeg : ∀ {i j : ℤ} {a : M₂} {b : M₃}, a ∈ G₂ i → b ∈ G₃ j → ν a b ∈ G₂₃ (i + j + η)}
+  {hνL : ∀ {i : ℤ} {a : M₂}, a ∈ G₂ i → ∀ b,
+    D₂₃ (ν a b) = ν (D₂ a) b + negOnePowCast R i • ν a (D₃ b)}
+  {hν'deg : ∀ {i j : ℤ} {a : M₁} {b : M₂₃}, a ∈ G₁ i → b ∈ G₂₃ j → ν' a b ∈ G₀ (i + j + η')}
+  {hν'L : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → ∀ b,
+    D₀ (ν' a b) = ν' (D₁ a) b + negOnePowCast R i • ν' a (D₂₃ b)}
+
+/-- **Associativity on cohomology.** Let `μ`, `μ'` and `ν`, `ν'` be products inducing products on
+cohomology, composed in the two orders `μ' (μ a b) c` and `ν' a (ν b c)`. If the two composites
+differ by a coboundary on cocycles of degrees `i`, `j`, `k`, then the induced products on
+cohomology are associative: `([a] [b]) [c] = [a] ([b] [c])`. -/
+theorem cohomologyProduct_assoc {i j k l l' m : ℤ} (hl : i + j + ε = l) (hm : l + k + ε' = m)
+    (hl' : j + k + η = l') (hm' : i + l' + η' = m)
+    (hassoc : ∀ {a : M₁} {b : M₂} {c : M₃}, a ∈ D₁.cocycles G₁ i → b ∈ D₂.cocycles G₂ j →
+      c ∈ D₃.cocycles G₃ k → μ' (μ a b) c - ν' a (ν b c) ∈ D₀.coboundaries G₀ m)
+    (x : D₁.cohomology G₁ i) (y : D₂.cohomology G₂ j) (z : D₃.cohomology G₃ k) :
+    cohomologyProduct μ' hμ'deg hμ'L hm (cohomologyProduct μ hμdeg hμL hl x y) z =
+      cohomologyProduct ν' hν'deg hν'L hm' x (cohomologyProduct ν hνdeg hνL hl' y z) := by
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  induction y using Submodule.Quotient.induction_on with | H b => ?_
+  induction z using Submodule.Quotient.induction_on with | H c => ?_
+  simp only [cohomologyProduct_mk]
+  rw [cohomology_mk_eq_mk_iff]
+  exact hassoc a.2 b.2 c.2
+
+end Associativity
+
+section Commutativity
+
+variable {R M₁ M₂ M₀ : Type*} [CommRing R]
+  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₀] [Module R M₀]
+  {D₁ : M₁ →ₗ[R] M₁} {D₂ : M₂ →ₗ[R] M₂} {D₀ : M₀ →ₗ[R] M₀}
+  {G₁ : ℤ → Submodule R M₁} {G₂ : ℤ → Submodule R M₂} {G₀ : ℤ → Submodule R M₀}
+  {μ : M₁ →ₗ[R] M₂ →ₗ[R] M₀} {μ' : M₂ →ₗ[R] M₁ →ₗ[R] M₀} {ε ε' : ℤ}
+  {hμdeg : ∀ {i j : ℤ} {a : M₁} {b : M₂}, a ∈ G₁ i → b ∈ G₂ j → μ a b ∈ G₀ (i + j + ε)}
+  {hμL : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → ∀ b,
+    D₀ (μ a b) = μ (D₁ a) b + negOnePowCast R i • μ a (D₂ b)}
+  {hμ'deg : ∀ {i j : ℤ} {a : M₂} {b : M₁}, a ∈ G₂ i → b ∈ G₁ j → μ' a b ∈ G₀ (i + j + ε')}
+  {hμ'L : ∀ {i : ℤ} {a : M₂}, a ∈ G₂ i → ∀ b,
+    D₀ (μ' a b) = μ' (D₂ a) b + negOnePowCast R i • μ' a (D₁ b)}
+
+/-- **Graded commutativity on cohomology.** Let `μ` and `μ'` be products inducing products on
+cohomology, with their inputs in the two orders. If `μ a b - (-1)^(i j) μ' b a` is a coboundary
+for all cocycles `a` and `b` of degrees `i` and `j`, then the induced products on cohomology
+satisfy `[a] [b] = (-1)^(i j) [b] [a]`. -/
+theorem cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct {i j k : ℤ}
+    (hk : i + j + ε = k) (hk' : j + i + ε' = k)
+    (hcomm : ∀ {a : M₁} {b : M₂}, a ∈ D₁.cocycles G₁ i → b ∈ D₂.cocycles G₂ j →
+      μ a b - negOnePowCast R (i * j) • μ' b a ∈ D₀.coboundaries G₀ k)
+    (x : D₁.cohomology G₁ i) (y : D₂.cohomology G₂ j) :
+    cohomologyProduct μ hμdeg hμL hk x y =
+      negOnePowCast R (i * j) • cohomologyProduct μ' hμ'deg hμ'L hk' y x := by
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  induction y using Submodule.Quotient.induction_on with | H b => ?_
+  rw [cohomologyProduct_mk, cohomologyProduct_mk, ← Submodule.Quotient.mk_smul,
+    cohomology_mk_eq_mk_iff]
+  exact hcomm a.2 b.2
+
+end Commutativity
 
 end LinearMap

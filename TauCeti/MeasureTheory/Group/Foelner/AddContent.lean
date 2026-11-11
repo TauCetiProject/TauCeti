@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Group.FoelnerFilter
-public import TauCeti.MeasureTheory.Measure.AddContent
+public import TauCeti.MeasureTheory.Measure.AddContent.Basic
 
 /-!
 # The density-limit content of a Følner family

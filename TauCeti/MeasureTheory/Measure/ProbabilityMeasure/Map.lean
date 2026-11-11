@@ -23,8 +23,8 @@ when the product topology has measurable opens.
 instead of requiring the target's measurable space to be Borel. Its proof uses the same
 bounded-continuous-test-function characterization of weak convergence.
 
-`MeasureTheory.ProbabilityMeasure.continuous_map_of_forall_continuous`: the laws of a family of
-random variables that depends continuously on a parameter, for every outcome, depend continuously
+`MeasureTheory.ProbabilityMeasure.continuous_map_of_ae_continuous`: the laws of a family of random
+variables that depends continuously on a parameter, for almost every outcome, depend continuously
 on that parameter. For example, the time marginals of a law on a space of continuous paths form a
 continuous curve of probability measures.
 
@@ -49,11 +49,8 @@ lemma continuous_map_of_measurable {f : X → Y} (hf : Continuous f) (hm : Measu
     Continuous (fun μ : ProbabilityMeasure X ↦ μ.map f) := by
   rw [continuous_iff_forall_continuous_lintegral]
   intro g
-  have hmap (μ : ProbabilityMeasure X) :
-      (∫⁻ y, g y ∂(μ.map f).toMeasure) = ∫⁻ x, g (f x) ∂μ.toMeasure := by
-    rw [toMeasure_map, lintegral_map (by fun_prop) hm]
-  simp_rw [hmap]
-  exact continuous_lintegral_boundedContinuousFunction (g.compContinuous ⟨f, hf⟩)
+  simpa [lintegral_map (by fun_prop : Measurable fun y ↦ (g y : ENNReal)) hm]
+    using continuous_lintegral_boundedContinuousFunction (g.compContinuous ⟨f, hf⟩)
 
 end MeasureTheory.ProbabilityMeasure
 
@@ -61,8 +58,7 @@ namespace MeasureTheory.ProbabilityMeasure
 
 open TopologicalSpace
 
-variable {T X Y : Type*} [TopologicalSpace T] [MeasurableSpace T] [OpensMeasurableSpace T]
-    [SecondCountableTopology T] [PseudoMetrizableSpace T]
+variable {T X Y : Type*} [TopologicalSpace T] [SecondCountableTopology T] [PseudoMetrizableSpace T]
     [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
     [SecondCountableTopology X] [PseudoMetrizableSpace X]
     [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
@@ -72,33 +68,32 @@ parameter and its input probability law. -/
 lemma continuous_map_of_continuous_uncurry {f : T → X → Y}
     (hf : Continuous (Function.uncurry f)) :
     Continuous (fun p : T × ProbabilityMeasure X ↦ p.2.map (f p.1)) := by
-  have hprod : Continuous (fun p : T × ProbabilityMeasure X ↦
-      (diracProba p.1).prod p.2) :=
-    continuous_prod.comp ((continuous_diracProba.comp continuous_fst).prodMk continuous_snd)
-  have h := (continuous_map hf).comp hprod
-  apply h.congr
-  intro p
-  apply ProbabilityMeasure.toMeasure_injective
-  simp only [Function.comp_def, toMeasure_map, toMeasure_prod]
+  -- The Borel σ-algebra of `T` is only used to view `T` as a space of Dirac masses.
+  borelize T
+  have h : Continuous fun p : T × ProbabilityMeasure X ↦
+      ((diracProba p.1).prod p.2).map (Function.uncurry f) := by
+    have := continuous_diracProba (X := T)
+    fun_prop
+  refine h.congr fun p ↦ toMeasure_injective ?_
   -- `diracProba` bundles `Measure.dirac` with its probability-measure instance.
   have hd : (diracProba p.1).toMeasure = Measure.dirac p.1 := (rfl)
-  rw [hd, Measure.dirac_prod, Measure.map_map hf.measurable (by fun_prop)]
-  simp only [Function.comp_def, Function.uncurry]
+  simp [hd, Measure.dirac_prod, Measure.map_map hf.measurable measurable_prodMk_left,
+    Function.comp_def]
 
 end MeasureTheory.ProbabilityMeasure
 
 namespace MeasureTheory.ProbabilityMeasure
 
-variable {T Ω E : Type*} [TopologicalSpace T] [FirstCountableTopology T] [MeasurableSpace Ω]
+variable {T Ω E : Type*} [TopologicalSpace T] [SequentialSpace T] [MeasurableSpace Ω]
   [TopologicalSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
 
-/-- If `f t ω` depends continuously on `t` for every `ω`, then the laws `P.map (f t)` depend
-continuously on `t` for the weak topology. For instance, the time marginals of a law on a space
-of continuous paths form a continuous curve. -/
-lemma continuous_map_of_forall_continuous (P : ProbabilityMeasure Ω) {f : T → Ω → E}
-    (hf : ∀ t, AEMeasurable (f t) P) (hcont : ∀ ω, Continuous fun t ↦ f t ω) :
+/-- If `f t ω` depends continuously on `t` for almost every `ω`, then the laws `P.map (f t)`
+depend continuously on `t` for the weak topology. For instance, the time marginals of a law on a
+space of continuous paths form a continuous curve. -/
+lemma continuous_map_of_ae_continuous (P : ProbabilityMeasure Ω) {f : T → Ω → E}
+    (hf : ∀ t, AEMeasurable (f t) P) (hcont : ∀ᵐ ω ∂(P : Measure Ω), Continuous fun t ↦ f t ω) :
     Continuous fun t ↦ P.map (f t) :=
-  continuous_iff_continuousAt.2 fun t ↦ (tendstoInDistribution_of_ae_tendsto hf (hf t)
-    (ae_of_all _ fun ω ↦ (hcont ω).tendsto t)).tendsto
+  continuous_iff_seqContinuous.2 fun _ t hx ↦ (tendstoInDistribution_of_ae_tendsto
+    (fun _ ↦ hf _) (hf t) (hcont.mono fun _ h ↦ (h.tendsto t).comp hx)).tendsto
 
 end MeasureTheory.ProbabilityMeasure

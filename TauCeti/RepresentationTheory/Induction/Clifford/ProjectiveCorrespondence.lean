@@ -38,7 +38,8 @@ field.
 Together with `TauCeti.IsProjectiveInertiaExtension.tensorRepEquiv`, this identifies the irreducible
 representations of `T` lying over `A` with the irreducible projective representations of `T/N`
 whose factor set is `β⁻¹`, the inverse of a cocycle representing the Clifford obstruction
-`TauCeti.cliffordObstruction A`: `σ ↦ Hom_N(A, σ)` and `U ↦ A ⊗ U` are mutually inverse up to
+`TauCeti.cliffordObstruction A hScalar`, with `hScalar` supplied by Schur's lemma:
+`σ ↦ Hom_N(A, σ)` and `U ↦ A ⊗ U` are mutually inverse up to
 isomorphism.
 
 ## Main definitions

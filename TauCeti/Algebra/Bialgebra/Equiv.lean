@@ -32,7 +32,8 @@ public section
 namespace BialgEquiv
 
 variable {R A₁ A₂ A₁' A₂' : Type*} [CommSemiring R] [Semiring A₁] [Semiring A₂] [Semiring A₁']
-  [Semiring A₂'] [Bialgebra R A₁] [Bialgebra R A₂] [Bialgebra R A₁'] [Bialgebra R A₂']
+  [Semiring A₂'] [Algebra R A₁] [Algebra R A₂] [Algebra R A₁'] [Algebra R A₂']
+  [CoalgebraStruct R A₁] [CoalgebraStruct R A₂] [CoalgebraStruct R A₁'] [CoalgebraStruct R A₂']
 
 /-- If `A₁` is equivalent to `A₁'` and `A₂` is equivalent to `A₂'` as bialgebras, then the type of
 bialgebra homomorphisms `A₁ →ₐc[R] A₂` is equivalent to the type of bialgebra homomorphisms

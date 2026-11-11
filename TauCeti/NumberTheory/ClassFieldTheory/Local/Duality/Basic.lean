@@ -77,21 +77,13 @@ noncomputable def internalHomModule (A : GalRep n F) :
 
 attribute [local instance] internalHomModule
 
-/-- The conjugation action on `Hom(A, μₙ)` commutes with its `ZMod n`-scalar action. -/
-theorem internalHom_smulCommClass (A : GalRep n F) :
-    SMulCommClass (Field.absoluteGaloisGroup F) (ZMod n)
-      (InternalHom (Field.absoluteGaloisGroup F) A.V (muNRep n F).V) :=
-  ⟨fun g c φ => ZMod.map_smul
-    (DistribSMul.toAddMonoidHom
-      (InternalHom (Field.absoluteGaloisGroup F) A.V (muNRep n F).V) g) c φ⟩
-
 /-- Scalar multiplication on the discrete internal hom is continuous. -/
 theorem internalHom_continuousSMul (A : GalRep n F) :
     ContinuousSMul (ZMod n)
       (InternalHom (Field.absoluteGaloisGroup F) A.V (muNRep n F).V) :=
   ⟨continuous_of_discreteTopology⟩
 
-attribute [local instance] internalHom_smulCommClass internalHom_continuousSMul
+attribute [local instance] internalHom_continuousSMul
 
 /-- **The Tate dual** `A' = Hom(A, μₙ)`, with the conjugation action. -/
 def tateDual (A : GalRep n F) : GalRep n F :=
@@ -156,13 +148,14 @@ instance instFiniteTateDual [NeZero n] (A : GalRep n F) [Finite A.V] : Finite (t
   inferInstanceAs (Finite (InternalHom (Field.absoluteGaloisGroup F) A.V (muNRep n F).V))
 
 /-- The Tate dual of a finite smooth discrete module is smooth discrete. -/
-theorem isSmoothDiscrete_tateDual (A : GalRep n F) [DiscreteTopology A.V] [Finite A.V]
+theorem isSmoothDiscrete_tateDual (A : GalRep n F) [Finite A.V]
     (hA : IsSmoothDiscrete (ZMod n) A) : IsSmoothDiscrete (ZMod n) (tateDual A) := by
+  let _ := hA.discreteTopology
   let _ := hA.continuousSMul
   exact ofDiscreteModule_isSmoothDiscrete (ZMod n) (Field.absoluteGaloisGroup F) _
 
 /-- Smoothness of the Tate dual, available to local-duality consumers by instance search. -/
-instance instFactIsSmoothDiscreteTateDual (A : GalRep n F) [DiscreteTopology A.V] [Finite A.V]
+instance instFactIsSmoothDiscreteTateDual (A : GalRep n F) [Finite A.V]
     [hA : Fact (IsSmoothDiscrete (ZMod n) A)] : Fact (IsSmoothDiscrete (ZMod n) (tateDual A)) :=
   ⟨isSmoothDiscrete_tateDual A hA.out⟩
 

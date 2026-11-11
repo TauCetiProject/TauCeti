@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Circle
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Smash.Basic
-public import TauCeti.CategoryTheory.Category.Pointed.Smash.Power
+import TauCeti.CategoryTheory.Category.Pointed.Smash.Power
 public import TauCeti.CategoryTheory.FiniteBijection
 -- Proof-only: the degreewise description of the smash power unfolds the bodies of
 -- `toSimplicialPointed` and `fromSimplicialPointed`, which are not exposed.
@@ -67,7 +67,7 @@ public section
 
 universe u
 
-open CategoryTheory MonoidalCategory Simplicial
+open CategoryTheory MonoidalCategory
 
 namespace TauCeti.PointedSSet
 
@@ -231,6 +231,16 @@ lemma smashPowReindexIso_hom (e : ι ≃ κ) :
 lemma smashPowReindexIso_inv (e : ι ≃ κ) :
     (X.smashPowReindexIso e).inv = X.smashPowReindex e.symm := (rfl)
 
+@[reassoc (attr := simp)]
+lemma smashPowReindex_comp_smashPowReindex_symm (e : ι ≃ κ) :
+    X.smashPowReindex e ≫ X.smashPowReindex e.symm = 𝟙 _ :=
+  (X.smashPowReindexIso e).hom_inv_id
+
+@[reassoc (attr := simp)]
+lemma smashPowReindex_symm_comp_smashPowReindex (e : ι ≃ κ) :
+    X.smashPowReindex e.symm ≫ X.smashPowReindex e = 𝟙 _ :=
+  (X.smashPowReindexIso e).inv_hom_id
+
 /-! ### Concatenation -/
 
 variable (X ι κ) in
@@ -289,6 +299,16 @@ lemma smashPowAppendIso_hom : (smashPowAppendIso X ι κ).hom = smashPowAppend X
 @[simp]
 lemma smashPowAppendIso_inv : (smashPowAppendIso X ι κ).inv = smashPowSplit X ι κ := (rfl)
 
+@[reassoc (attr := simp)]
+lemma smashPowAppend_comp_smashPowSplit :
+    smashPowAppend X ι κ ≫ smashPowSplit X ι κ = 𝟙 _ :=
+  (smashPowAppendIso X ι κ).hom_inv_id
+
+@[reassoc (attr := simp)]
+lemma smashPowSplit_comp_smashPowAppend :
+    smashPowSplit X ι κ ≫ smashPowAppend X ι κ = 𝟙 _ :=
+  (smashPowAppendIso X ι κ).inv_hom_id
+
 /-! ### The unit -/
 
 variable (X ι) in
@@ -331,10 +351,20 @@ noncomputable def smashPowUnitIso [IsEmpty ι] : 𝟙_ PointedSSet.{u} ≅ X.sma
 @[simp]
 lemma smashPowUnitIso_inv [IsEmpty ι] : (smashPowUnitIso X ι).inv = smashPowToUnit X ι := (rfl)
 
+@[reassoc (attr := simp)]
+lemma smashPowUnitIso_hom_comp_smashPowToUnit [IsEmpty ι] :
+    (smashPowUnitIso X ι).hom ≫ smashPowToUnit X ι = 𝟙 _ :=
+  (smashPowUnitIso X ι).hom_inv_id
+
+@[reassoc (attr := simp)]
+lemma smashPowToUnit_comp_smashPowUnitIso_hom [IsEmpty ι] :
+    smashPowToUnit X ι ≫ (smashPowUnitIso X ι).hom = 𝟙 _ :=
+  (smashPowUnitIso X ι).inv_hom_id
+
 @[simp]
 lemma smashPowUnitIso_hom_app_tensorUnitSimplex [IsEmpty ι] :
     (smashPowUnitIso X ι).hom.right.app n (tensorUnitSimplex n) = smashPowMk isEmptyElim := by
-  simpa using ConcreteCategory.congr_hom
+  simpa [-smashPowToUnit_comp_smashPowUnitIso_hom] using ConcreteCategory.congr_hom
     (congr_app (congrArg Under.Hom.right (smashPowUnitIso X ι).inv_hom_id) n)
     (smashPowMk (isEmptyElim : ι → X.right.obj n))
 
@@ -406,6 +436,16 @@ lemma smashPowMapIso_hom (e : X ≅ Y) : (smashPowMapIso e ι).hom = smashPowMap
 
 @[simp]
 lemma smashPowMapIso_inv (e : X ≅ Y) : (smashPowMapIso e ι).inv = smashPowMap e.inv ι := (rfl)
+
+@[reassoc (attr := simp)]
+lemma smashPowMap_hom_comp_smashPowMap_inv (e : X ≅ Y) :
+    smashPowMap e.hom ι ≫ smashPowMap e.inv ι = 𝟙 _ :=
+  (smashPowMapIso e ι).hom_inv_id
+
+@[reassoc (attr := simp)]
+lemma smashPowMap_inv_comp_smashPowMap_hom (e : X ≅ Y) :
+    smashPowMap e.inv ι ≫ smashPowMap e.hom ι = 𝟙 _ :=
+  (smashPowMapIso e ι).inv_hom_id
 
 end Functoriality
 
@@ -584,12 +624,7 @@ lemma smashPowFunctor_δ_app_smashPowMk {k l : FiniteBijection}
     (h : Fin (k ⊗ l).len → X.right.obj n) :
     (Functor.OplaxMonoidal.δ (smashPowFunctor X) k l).right.app n (smashPowMk h) =
       smashMk (smashPowMk (h ∘ Fin.castAdd l.len)) (smashPowMk (h ∘ Fin.natAdd k.len)) := by
-  refine (congrArg ((smashPowSplit X (Fin k.len) (Fin l.len)).right.app n)
-    (smashPowReindex_app_smashPowMk finSumFinEquiv.symm h)).trans ?_
-  rw [smashPowSplit_app_smashPowMk, Equiv.symm_symm]
-  exact congrArg₂ smashMk
-    (congrArg smashPowMk (funext fun i ↦ congrArg h (finSumFinEquiv_apply_left i)))
-    (congrArg smashPowMk (funext fun i ↦ congrArg h (finSumFinEquiv_apply_right i)))
+  simp [Function.comp_def]
 
 /-- The block swap of `FiniteBijection` acts on `X^∧(k + l)` as the swap of the two smash factors
 `X^∧k ∧ X^∧l`, so the symmetric sequence of smash powers is a braided monoidal functor. -/

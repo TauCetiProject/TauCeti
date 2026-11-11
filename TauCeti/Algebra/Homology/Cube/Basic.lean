@@ -44,7 +44,7 @@ degree is the height `#S` itself, and the terms are finite biproducts.
 * `CategoryTheory.Functor.cubeComplex F`: the signed totalization of the cube `F`; its terms are
   biproducts with summand inclusions `Functor.cubeComplexι` and projections
   `Functor.cubeComplexπ`, and its differential is characterised on summands by
-  `Functor.ι_cubeComplex_d`.
+  `Functor.ι_cubeComplex_d` and, into a vertex, by `Functor.cubeComplex_d_π`.
 * `CategoryTheory.NatTrans.cubeComplexMap α`: the cochain map induced by a map of cubes.
 * `CategoryTheory.cubeComplexFunctor C ι`: the totalization as an additive functor of the cube.
 
@@ -305,6 +305,63 @@ lemma ι_cubeComplex_d {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
     dite_eq_left (by rw [card_insert_of_notMem (mem_compl.1 a.2), Nat.cast_succ, S.2])]
   -- `cubeComplexι` is the biproduct inclusion.
   rfl
+
+/-- The cube differential into the vertex `F(T)` of height `r + 1` is the sum, over the indices
+`a ∈ T`, of the projection onto the vertex `F(T \ {a})` followed by the edge map
+`F(T \ {a}) ⟶ F(T)`, with sign `(-1)` to the number of elements of `T \ {a}` below `a`. -/
+@[reassoc]
+lemma cubeComplex_d_π {r : ℤ} (T : {T : Finset ι // (#T : ℤ) = r + 1}) :
+    F.cubeComplex.d r (r + 1) ≫ F.cubeComplexπ T =
+      ∑ a : T.1, ((-1 : ℤ) ^ #{b ∈ T.1.erase a.1 | b < a.1}) •
+        F.cubeComplexπ ⟨T.1.erase a.1, by have := card_erase_add_one a.2; have := T.2; omega⟩ ≫
+          F.map (homOfLE (T.1.erase_subset a.1)) := by
+  refine F.cubeComplex_hom_ext fun U ↦ ?_
+  rw [F.ι_cubeComplex_d_assoc, Preadditive.sum_comp, Preadditive.comp_sum]
+  simp only [Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc]
+  by_cases hU : ∃ c ∉ U.1, insert c U.1 = T.1
+  · obtain ⟨c, hc, hT⟩ := hU
+    have hcT : c ∈ T.1 := hT ▸ mem_insert_self c U.1
+    have hU' : T.1.erase c = U.1 := hT ▸ erase_insert hc
+    rw [Finset.sum_eq_single_of_mem (⟨c, mem_compl.2 hc⟩ : (U.1ᶜ : Finset ι)) (mem_univ _) ?hL,
+      Finset.sum_eq_single_of_mem (⟨c, hcT⟩ : T.1) (mem_univ _) ?hR]
+    case hL =>
+      rintro ⟨a, ha⟩ - hac
+      rw [F.cubeComplexι_π_of_ne, comp_zero, smul_zero]
+      intro h
+      have ha' : a ∈ T.1 := congrArg Subtype.val h ▸ mem_insert_self a U.1
+      rw [← hT] at ha'
+      exact hac (Subtype.ext ((mem_insert.1 ha').resolve_right (mem_compl.1 ha)))
+    case hR =>
+      rintro ⟨a, ha⟩ - hac
+      rw [F.cubeComplexι_π_of_ne_assoc, zero_comp, smul_zero]
+      intro h
+      have hU : U.1 = T.1.erase a := congrArg Subtype.val h
+      have haU : a ∈ U.1 := by
+        rw [← hT] at ha
+        exact (mem_insert.1 ha).resolve_left fun h ↦ hac (Subtype.ext h)
+      exact notMem_erase a T.1 (hU ▸ haU)
+    -- Both sides are the edge map `F(U) ⟶ F(T)` with the same sign.
+    have key {s : ℤ} (V W : {S : Finset ι // (#S : ℤ) = s}) (h : V.1 = W.1) :
+        F.cubeComplexι V ≫ F.cubeComplexπ W = F.map (eqToHom h) := by
+      obtain ⟨V, hV⟩ := V
+      obtain ⟨W, hW⟩ := W
+      dsimp only at h
+      subst h
+      simp
+    have hs : #{b ∈ T.1.erase c | b < c} = #{b ∈ U.1 | b < c} := by rw [hU']
+    dsimp only
+    rw [hs, key _ T hT, reassoc_of% (key U _ hU'.symm), ← F.map_comp, ← F.map_comp]
+    exact congrArg (fun f ↦ ((-1 : ℤ) ^ #{b ∈ U.1 | b < c}) • F.map f) (Subsingleton.elim _ _)
+  · push Not at hU
+    rw [Finset.sum_eq_zero, Finset.sum_eq_zero]
+    · rintro ⟨a, ha⟩ -
+      rw [F.cubeComplexι_π_of_ne_assoc, zero_comp, smul_zero]
+      intro h
+      have hU' : U.1 = T.1.erase a := congrArg Subtype.val h
+      exact hU a (hU' ▸ notMem_erase a T.1) (by rw [hU', insert_erase ha])
+    · rintro ⟨a, ha⟩ -
+      rw [F.cubeComplexι_π_of_ne, comp_zero, smul_zero]
+      exact fun h ↦ hU a (mem_compl.1 ha) (congrArg Subtype.val h)
 
 /-- The cube complex vanishes in negative degrees. -/
 lemma isZero_cubeComplex_X_of_neg {r : ℤ} (hr : r < 0) : IsZero (F.cubeComplex.X r) := by

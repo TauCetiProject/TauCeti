@@ -60,6 +60,8 @@ products. Consequently `ρ(x* x) = det(ρ x)` on `W^ε`.
   `ε`-eigenspace of `Γ`.
 * `CliffordAlgebra.halfSpinCliffordMul o ρ ε`: Clifford multiplication `v ↦ c(v)` from the
   `ε`-eigenspace of `Γ` to the `-ε`-eigenspace, the odd Clifford action `W^± → W^∓`.
+* `CliffordAlgebra.halfSpinCliffordMulEquiv`: for `Q v ≠ 0`, the complex-linear equivalence
+  between opposite chirality spaces, with inverse `c(v) / Q(v)`.
 
 ## Main results
 
@@ -303,28 +305,71 @@ theorem coe_halfSpinCliffordMul_apply_apply (ε : ℂ) (v : V)
     (halfSpinCliffordMul o ρ ε v ψ : W) = ρ (ι Q v) ψ :=
   (rfl)
 
-variable [FiniteDimensional ℂ W]
+section ChiralEquiv
 
-/-- Clifford multiplication by a nonzero vector embeds the `ε`-eigenspace of `Γ` into the
-`-ε`-eigenspace. -/
-private theorem finrank_eigenspace_chirality_le_neg (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
-    (ε : ℂ) :
-    finrank ℂ (eigenspace (ρ (chirality Q o)) ε) ≤
-      finrank ℂ (eigenspace (ρ (chirality Q o)) (-ε)) := by
-  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
-  obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  have hinj := map_ι_injective ρ (v := v) (by simpa [hQ] using hv)
-  exact LinearMap.finrank_le_finrank_of_injective (f := halfSpinCliffordMul o ρ ε v)
-    fun ψ φ h ↦ Subtype.ext (hinj (congrArg Subtype.val h))
+omit hQ
+variable (ρ) (ε : ℂ)
+
+/-- Clifford multiplication by a nonisotropic vector, as an equivalence between opposite
+chirality spaces. The inverse is Clifford multiplication divided by `Q v`. -/
+def halfSpinCliffordMulEquiv {v : V} (hv : Q v ≠ 0) :
+    eigenspace (ρ (chirality Q o)) ε ≃ₗ[ℂ] eigenspace (ρ (chirality Q o)) (-ε) where
+  toLinearMap := halfSpinCliffordMul o ρ ε v
+  invFun χ := ⟨((Q v : ℂ)⁻¹) • ρ (ι Q v) χ, by
+    apply Submodule.smul_mem
+    simpa only [neg_neg] using map_ι_apply_mem_eigenspace_chirality_neg o χ.property v⟩
+  left_inv ψ := by
+    apply Subtype.ext
+    simp only [LinearMap.toFun_eq_coe, coe_halfSpinCliffordMul_apply_apply,
+      map_ι_apply_map_ι_apply, smul_smul]
+    rw [inv_mul_cancel₀ (by exact_mod_cast hv), one_smul]
+  right_inv χ := by
+    apply Subtype.ext
+    simp only [LinearMap.toFun_eq_coe, coe_halfSpinCliffordMul_apply_apply,
+      map_smul, map_ι_apply_map_ι_apply, smul_smul]
+    rw [inv_mul_cancel₀ (by exact_mod_cast hv), one_smul]
+
+/-- The chiral equivalence has the original Clifford multiplication as its forward map. -/
+@[simp]
+theorem halfSpinCliffordMulEquiv_toLinearMap {v : V} (hv : Q v ≠ 0) :
+    (halfSpinCliffordMulEquiv o ρ ε hv).toLinearMap = halfSpinCliffordMul o ρ ε v :=
+  (rfl)
+
+/-- The chiral equivalence acts by Clifford multiplication on the ambient module. -/
+@[simp]
+theorem coe_halfSpinCliffordMulEquiv_apply {v : V} (hv : Q v ≠ 0)
+    (ψ : eigenspace (ρ (chirality Q o)) ε) :
+    (halfSpinCliffordMulEquiv o ρ ε hv ψ : W) = ρ (ι Q v) ψ :=
+  coe_halfSpinCliffordMul_apply_apply o (ρ := ρ) ε v ψ
+
+/-- The inverse chiral symbol has opposite source and target and is `c(v) / Q(v)`. -/
+@[simp]
+theorem coe_halfSpinCliffordMulEquiv_symm_apply {v : V} (hv : Q v ≠ 0)
+    (χ : eigenspace (ρ (chirality Q o)) (-ε)) :
+    ((halfSpinCliffordMulEquiv o ρ ε hv).symm χ : W) =
+      (Q v : ℂ)⁻¹ • ρ (ι Q v) χ :=
+  (rfl)
+
+/-- With the negative metric convention, the inverse chiral symbol is `-c(v) / ‖v‖²`. -/
+theorem coe_halfSpinCliffordMulEquiv_symm_apply_of_neg_norm_sq
+    (hQ : ∀ v, Q v = -‖v‖ ^ 2) {v : V} (hv : v ≠ 0)
+    (χ : eigenspace (ρ (chirality Q o)) (-ε)) :
+    ((halfSpinCliffordMulEquiv o ρ ε (v := v) (by simpa [hQ] using hv)).symm χ : W) =
+      -((‖v‖ : ℂ) ^ 2)⁻¹ • ρ (ι Q v) χ := by
+  simp [hQ]
+
+end ChiralEquiv
 
 variable (ρ) in
 /-- The two eigenspaces of `Γ` have the same dimension: `dim W⁻ = dim W⁺`. -/
 theorem finrank_eigenspace_chirality_neg (ε : ℂ) :
     finrank ℂ (eigenspace (ρ (chirality Q o)) (-ε)) =
       finrank ℂ (eigenspace (ρ (chirality Q o)) ε) := by
-  refine le_antisymm ?_ (finrank_eigenspace_chirality_le_neg o hQ ρ ε)
-  have h := finrank_eigenspace_chirality_le_neg o hQ ρ (-ε)
-  rwa [neg_neg] at h
+  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  exact (halfSpinCliffordMulEquiv o ρ ε (v := v) (by simpa [hQ] using hv)).finrank_eq.symm
+
+variable [FiniteDimensional ℂ W]
 
 /-- **Clifford multiplication by a nonzero spinor is a real isomorphism.** For a nonzero `ψ` in
 the `ε`-eigenspace of `Γ`, when that eigenspace has complex dimension two, the real-linear map
@@ -350,6 +395,24 @@ theorem coe_cliffordMulEquiv_apply {ε : ℂ} {ψ : W} (hψ : ψ ∈ eigenspace 
   (rfl)
 
 end Module
+
+section Topology
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℂ W]
+  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ)
+
+omit hQ in
+/-- Chiral Clifford multiplication depends continuously on the vector in the operator norm. -/
+theorem continuous_halfSpinCliffordMul_toContinuousLinearMap :
+    Continuous (fun v ↦ (halfSpinCliffordMul o ρ ε v).toContinuousLinearMap) := by
+  -- Restrict the continuous complex scalar action to real scalars
+  -- to apply finite-dimensional continuity.
+  let : ContinuousSMul ℝ (eigenspace (ρ (chirality Q o)) ε →L[ℂ]
+      eigenspace (ρ (chirality Q o)) (-ε)) := IsScalarTower.continuousSMul ℂ
+  exact (((LinearMap.toContinuousLinearMap).restrictScalars ℝ).toLinearMap.comp
+    (halfSpinCliffordMul o ρ ε)).continuous_of_finiteDimensional
+
+end Topology
 
 variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
   {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}

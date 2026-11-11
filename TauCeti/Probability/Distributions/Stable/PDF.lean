@@ -43,6 +43,8 @@ is a Dirac mass, which has no density; its characteristic function is not integr
   functions are integrable.
 * `TauCeti.Probability.stableMeasure_eq_withDensity`: for positive scale the law is
   `volume.withDensity (stablePDF α β s m)`.
+* `TauCeti.Probability.integrable_stablePDFReal`: the chosen real density is integrable for every
+  parameter value.
 * `TauCeti.Probability.stablePDFReal_nonneg`, `TauCeti.Probability.continuous_stablePDFReal` and
   `TauCeti.Probability.stablePDFReal_le`: nonnegativity, continuity and the uniform bound.
 * `TauCeti.Probability.hasPDF_of_hasLaw_stableMeasure`,
@@ -178,6 +180,13 @@ theorem stablePDFReal_le (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s) 
     abs_of_pos (NNReal.coe_pos.2 hs), smul_eq_mul]
   field_simp
 
+/-- For valid shapes and positive scale, the norm of the stable density is at most
+`Γ(1/α) / (π α s)`. -/
+theorem norm_stablePDFReal_le (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s) (m x : ℝ) :
+    ‖stablePDFReal α β s m x‖ ≤ Real.Gamma α⁻¹ / (π * α * s) := by
+  rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β s m x)]
+  exact stablePDFReal_le hα hβ hs m x
+
 /-! ### The law as a measure with density -/
 
 /-- **Stable laws of positive scale have a density.** The law is Lebesgue measure weighted by
@@ -186,6 +195,38 @@ theorem stableMeasure_eq_withDensity (α β : ℝ) (hs : 0 < s) (m : ℝ) :
     stableMeasure α β s m = volume.withDensity (stablePDF α β s m) := by
   simp_rw [funext (stablePDF_eq_ofReal α β s m), stablePDFReal_def]
   exact Measure.eq_withDensity_charFunDensity (integrable_charFun_stableMeasure α β hs m)
+
+/-- **Stable laws of positive scale have a real-valued density.** The law is Lebesgue measure
+weighted by `ENNReal.ofReal ∘ stablePDFReal`. -/
+theorem stableMeasure_eq_withDensity_ofReal (α β : ℝ) (hs : 0 < s) (m : ℝ) :
+    stableMeasure α β s m =
+      volume.withDensity fun x ↦ ENNReal.ofReal (stablePDFReal α β s m x) := by
+  rw [stableMeasure_eq_withDensity α β hs, funext (stablePDF_eq_ofReal α β s m)]
+
+/-- The chosen real stable density is integrable for every parameter value. At zero scale and
+at invalid parameters this uses the library's zero-density convention. -/
+theorem integrable_stablePDFReal (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
+    Integrable (stablePDFReal α β s m) := by
+  rcases eq_zero_or_pos s with rfl | hs
+  · exact (integrable_zero ℝ ℝ volume).congr
+      (ae_of_all _ fun x ↦ (stablePDFReal_zero_scale α β m x).symm)
+  · exact Probability.integrable_of_eq_withDensity
+      (stableMeasure_eq_withDensity_ofReal α β hs m)
+      (measurable_stablePDFReal α β s m).aemeasurable
+      (.of_forall fun x ↦ stablePDFReal_nonneg α β s m x)
+
+/-- A positive-scale stable law is absolutely continuous with respect to Lebesgue measure.
+This includes invalid shapes, for which the stable law is the zero measure. -/
+theorem stableMeasure_absolutelyContinuous (hs : 0 < s) :
+    stableMeasure α β s m ≪ volume := by
+  rw [stableMeasure_eq_withDensity α β hs]
+  exact MeasureTheory.withDensity_absolutelyContinuous volume (stablePDF α β s m)
+
+/-- A positive-scale stable law gives every singleton zero mass. -/
+@[simp]
+theorem stableMeasure_singleton (hs : 0 < s) (x : ℝ) :
+    stableMeasure α β s m {x} = 0 :=
+  stableMeasure_absolutelyContinuous hs (measure_singleton x)
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {m : ℝ}
 

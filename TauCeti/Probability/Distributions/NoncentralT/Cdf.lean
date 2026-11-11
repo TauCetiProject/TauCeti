@@ -10,7 +10,7 @@ public import TauCeti.Probability.Quantile
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Probability.Cdf.Density
 import TauCeti.Probability.Distributions.Gaussian.Cdf
-import TauCeti.Probability.Distributions.Mixture
+import TauCeti.Probability.Distributions.Mixture.Basic
 
 /-!
 # Cdfs and quantiles of noncentral t laws
@@ -65,7 +65,7 @@ theorem cdf_noncentralTMeasure_eq (hν : 0 < ν) (δ x : ℝ) :
   have hpre : (· / √(v / ν)) ⁻¹' Iic x = Iic (x * √(v / ν)) := by
     ext y
     simp [div_le_iff₀ hv]
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, hpre, ← cdf_eq_real,
+  rw [Measure.cdf_map _ _ (by fun_prop), hpre, ← cdf_eq_real,
     cdf_gaussianReal_eq _ one_ne_zero, cdf_gaussianReal_eq _ one_ne_zero, sub_zero]
 
 /-- For positive degrees, the cdf of the noncentral t law is strictly increasing. -/
@@ -111,7 +111,7 @@ theorem strictMonoOn_quantile_noncentralTMeasure (hν : 0 < ν) (δ : ℝ) :
 /-- For positive degrees, the noncentral t quantile is continuous on `(0, 1)`. -/
 theorem continuousOn_quantile_noncentralTMeasure (hν : 0 < ν) (δ : ℝ) :
     ContinuousOn (noncentralTMeasure ν δ).quantile (Ioo 0 1) :=
-  Measure.continuousOn_quantile _ (continuous_cdf_noncentralTMeasure hν δ)
+  Measure.continuousOn_quantile _
     ((strictMono_cdf_noncentralTMeasure hν δ).strictMonoOn _)
 
 /-- Noncentral t quantiles tend to minus infinity as the probability level tends to zero from

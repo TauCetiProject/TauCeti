@@ -25,8 +25,9 @@ Coefficients are an object `R` of an abelian category with coproducts, as everyw
 singular homology.
 
 With coefficients in a module `M`, the singular homology of a contractible space is free or
-finitely generated when `M` is, and over a nontrivial ring it has the rank of `M` in degree zero
-and vanishes in positive degrees (`ModuleCat.finrank_singularHomology_of_contractibleSpace`).
+finitely generated when `M` is, it is trivial in positive degrees
+(`ModuleCat.subsingleton_singularHomology_of_contractibleSpace`), and over a nontrivial ring it has
+the rank of `M` in degree zero (`ModuleCat.finrank_singularHomology_of_contractibleSpace`).
 
 The results follow Hatcher, *Algebraic Topology*, Section 2.1: the vanishing of reduced homology
 for contractible spaces after Corollary 2.11 and Example 2.23 for the disk and its boundary sphere.
@@ -166,6 +167,12 @@ instance subsingleton_reducedSingularHomology_of_contractibleSpace (q : ℕ) :
   ModuleCat.isZero_iff_subsingleton.mp
     (isZero_reducedSingularHomologyFunctor_of_contractibleSpace M X q)
 
+/-- The positive-degree singular homology of a contractible space is trivial. -/
+instance subsingleton_singularHomology_of_contractibleSpace (q : ℕ) :
+    Subsingleton (((singularHomologyFunctor (ModuleCat.{w} k) (q + 1)).obj M).obj X) :=
+  ModuleCat.isZero_iff_subsingleton.mp
+    (isZero_singularHomologyFunctor_of_contractibleSpace M X q.succ_ne_zero)
+
 /-- The singular homology of a contractible space with coefficients in a free module is free. -/
 instance free_singularHomology_of_contractibleSpace [Module.Free k M] (q : ℕ) :
     Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) :=
@@ -191,8 +198,6 @@ theorem finrank_singularHomology_of_contractibleSpace [Nontrivial k] (q : ℕ) :
     exact e.toLinearEquiv.finrank_eq
   | succ q =>
     rw [ite_eq_right q.succ_ne_zero]
-    have := ModuleCat.isZero_iff_subsingleton.mp
-      (isZero_singularHomologyFunctor_of_contractibleSpace M X q.succ_ne_zero)
     exact Module.finrank_zero_of_subsingleton
 
 end Free

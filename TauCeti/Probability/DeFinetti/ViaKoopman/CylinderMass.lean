@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.DeFinetti.ViaKoopman.BlockFactorization
 public import TauCeti.Probability.Process.Cylinder
+import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Exchangeability.PathSpace.Invariant.BlockTransport
 import TauCeti.MeasureTheory.Integral.ENNRealProd
 
@@ -94,16 +95,7 @@ theorem measure_inter_blockCylinder_eq_setLIntegral_of_measurableSet_invariants
     simp only [hPdef, hQdef]
     exact Finset.prod_congr rfl fun i _ => hx i
   -- `Q` is bounded by one, pointwise: each factor is a probability of a set.
-  have hQ_bdd : ∀ x, ‖Q x‖ ≤ 1 := by
-    intro x
-    have h0 : ∀ i : Fin r, (0 : ℝ) ≤
-        ((invariantConditionalProbabilityMeasure ρ x : Measure α)).real (B i) :=
-      fun i => measureReal_nonneg
-    have h1 : ∀ i : Fin r,
-        ((invariantConditionalProbabilityMeasure ρ x : Measure α)).real (B i) ≤ 1 :=
-      fun i => measureReal_le_one
-    rw [Real.norm_eq_abs, hQdef, abs_of_nonneg (Finset.prod_nonneg fun i _ => h0 i)]
-    exact Finset.prod_le_one₀ (fun i _ => h0 i) fun i _ => h1 i
+  have hQ_bdd : ∀ x, ‖Q x‖ ≤ 1 := fun x => Finset.norm_prod_measureReal_le_one _ _ _
   have hP_meas : Measurable P := by
     refine Finset.measurable_prod _ fun i _ => ?_
     exact (stronglyMeasurable_condExp.measurable).mono
@@ -116,24 +108,13 @@ theorem measure_inter_blockCylinder_eq_setLIntegral_of_measurableSet_invariants
     hk hB hA_inv]
   set C : Set (ℕ → α) :=
     blockCylinder (fun j (x : ℕ → α) => x j) (fun i : Fin r => (i : ℕ)) B with hCdef
-  have hcyl : MeasurableSet C :=
-    measurableSet_blockCylinder (fun i => measurable_pi_apply _) hB
-  -- The prefix cylinder's mass, as a real integral of the indicator product.
-  have hstep3 : (ρ (A ∩ C)).toReal
-      = ∫ x in A, ∏ i : Fin r, (B i).indicator (fun _ => (1 : ℝ)) (x (i : ℕ)) ∂ρ := by
-    have hrw : ∀ x : ℕ → α,
-        ∏ i : Fin r, (B i).indicator (fun _ => (1 : ℝ)) (x (i : ℕ))
-          = C.indicator (fun _ => (1 : ℝ)) x := by
-      intro x
-      rw [hCdef, ← blockIndicatorProd_eq_indicator (fun j (y : ℕ → α) => y j)
-        (fun i : Fin r => (i : ℕ)) B, blockIndicatorProd_apply]
-    simp only [hrw]
-    rw [setIntegral_indicator hcyl, setIntegral_const, smul_eq_mul, mul_one, measureReal_def]
   -- The block factorization, already specialised to weight one and named as the witness.
-  have hmass : (ρ (A ∩ C)).toReal = ∫ x in A, Q x ∂ρ :=
-    hstep3.trans
-      (hρ.setIntegral_blockIndicatorProd_prefix_eq_prod_invariantConditionalProbabilityMeasure
-        hA_inv r B hB)
+  have hmass : (ρ (A ∩ C)).toReal = ∫ x in A, Q x ∂ρ := by
+    rw [toReal_measure_inter_blockCylinder_eq_setIntegral_blockIndicatorProd A
+      (fun i => (measurable_pi_apply _).aemeasurable) hB]
+    simp only [blockIndicatorProd_apply]
+    exact hρ.setIntegral_blockIndicatorProd_prefix_eq_prod_invariantConditionalProbabilityMeasure
+      hA_inv r B hB
   -- Cross to `ℝ≥0∞`, once.
   have hne : ∀ᵐ x ∂ρ.restrict A,
       (∏ i : Fin r, (invariantConditionalProbabilityMeasure ρ x : Measure α) (B i)) ≠ ∞ :=

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.WeierstrassGaps
 
+import TauCeti.FieldTheory.FunctionField.Place.ConstantField
+
 /-!
 # Separation of rational places in positive genus
 
@@ -46,12 +48,13 @@ theorem Divisor.dim_ofPoint_eq_one_of_genus_pos (hF : IsFunctionField k F)
 /-- Linearly equivalent places coincide if one is rational and the function field has
 positive genus and exact constants. The second place need not be assumed rational. -/
 theorem Place.eq_of_linearlyEquivalent_ofPoint_of_genus_pos (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : 0 < genus k F) {P Q : Place k F} (hP : P.degree = 1)
+    (hg : 0 < genus k F) {P Q : Place k F} (hP : P.degree = 1)
     (h : (Place.orderSystem hF).LinearlyEquivalent
       (WeilDivisor.ofPoint P) (WeilDivisor.ofPoint Q)) : P = Q := by
+  have hex := P.isIntegrallyClosedIn_of_degree_eq_one hP
   exact WeilDivisor.ofPoint_injective (Divisor.eq_of_linearlyEquivalent_of_dim_eq_one hF
-    (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P))
-    (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint Q))
+    (WeilDivisor.ofPoint_nonneg P)
+    (WeilDivisor.ofPoint_nonneg Q)
     (Divisor.dim_ofPoint_eq_one_of_genus_pos hF hex hg hP) h)
 
 namespace Place
@@ -61,11 +64,11 @@ variable {P₀ : Place k F}
 /-- **Distinct places of degree one of a positive-genus function field have distinct classes**
 relative to a base place. -/
 theorem eq_of_divisorClass_pointDifference_eq (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : 0 < genus k F) {P Q : Place k F} (hP : P.degree = 1)
+    (hg : 0 < genus k F) {P Q : Place k F} (hP : P.degree = 1)
     (h : (Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P P₀) =
       (Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference Q P₀)) :
     P = Q := by
-  apply eq_of_linearlyEquivalent_ofPoint_of_genus_pos hF hex hg hP
+  apply eq_of_linearlyEquivalent_ofPoint_of_genus_pos hF hg hP
   apply ((Place.orderSystem hF).divisorClass_eq_iff).mp
   simpa [WeilDivisor.pointDifference] using h
 

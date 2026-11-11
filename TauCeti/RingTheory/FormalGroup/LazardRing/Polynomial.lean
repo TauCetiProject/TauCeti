@@ -43,6 +43,8 @@ formal group law exist over every ring surjecting onto its coefficient ring.
 ## Main results
 
 * `TauCeti.LazardRing.adjoin_range_generator`: the generators `xₙ` generate `L` as a ring.
+* `TauCeti.LazardRing.hurewicz_injective`: the Hurewicz homomorphism `L →+* ℤ[b₁, b₂, …]` is
+  injective.
 * `TauCeti.LazardRing.mvPolynomialEquiv_mem_grading_iff`: the isomorphism carries the polynomials
   that are homogeneous of degree `n`, for `xₖ` of degree `2k`, onto `Lₙ`.
 * `TauCeti.LazardRing.exists_comp_eq_of_surjective`: a ring homomorphism `L →+* S` factors
@@ -75,16 +77,10 @@ private theorem augmentationIdeal_le_span_generator_sup_sq :
   -- the generators.
   set z : augmentationIdeal := (cotangentBasis.repr (augmentationIdeal.toCotangent ⟨y, hy⟩)).sum
     fun n k ↦ k • ⟨generator n, generator_mem_augmentationIdeal n⟩
-  have hz : augmentationIdeal.toCotangent z = augmentationIdeal.toCotangent ⟨y, hy⟩ := by
-    conv_rhs => rw [← cotangentBasis.linearCombination_repr (augmentationIdeal.toCotangent _)]
-    simp only [z, Finsupp.linearCombination_apply, map_finsuppSum, map_zsmul, cotangentBasis_apply]
   have hzspan : (z : LazardRing) ∈ Ideal.span (Set.range generator) := by
     simp only [z, Finsupp.sum, Submodule.coe_sum, Submodule.coe_smul_of_tower]
     exact sum_mem fun n _ ↦ Submodule.smul_of_tower_mem _ _ (Ideal.subset_span ⟨n, rfl⟩)
-  have hsq : y - z ∈ augmentationIdeal ^ 2 := by
-    rw [← neg_sub]
-    exact (augmentationIdeal ^ 2).neg_mem (augmentationIdeal.toCotangent_eq.1 hz)
-  exact Submodule.mem_sup.2 ⟨z, hzspan, y - z, hsq, add_sub_cancel _ _⟩
+  exact Submodule.mem_sup.2 ⟨z, hzspan, y - z, sub_sum_generator_mem_sq hy, add_sub_cancel _ _⟩
 
 /-- **Lazard's theorem, generation**: the generators `xₙ ∈ L₂ₙ` generate the Lazard ring as a
 ring. -/
@@ -129,6 +125,20 @@ theorem mvPolynomialEquiv_X (n : ℕ+) : mvPolynomialEquiv (MvPolynomial.X n) = 
 theorem mvPolynomialEquiv_symm_generator (n : ℕ+) :
     mvPolynomialEquiv.symm (generator n) = MvPolynomial.X n := by
   rw [AlgEquiv.symm_apply_eq, mvPolynomialEquiv_X]
+
+/-- **The Hurewicz homomorphism of the Lazard ring is injective**: the homomorphism
+`L →+* ℤ[b₁, b₂, …]` classifying the additive formal group law transported along the strict
+coordinate `X + ∑ bᵢ X^(i + 1)` embeds `L` in `ℤ[b₁, b₂, …]`. -/
+theorem hurewicz_injective : Function.Injective hurewicz := by
+  -- Through `L ≃ ℤ[x₁, x₂, …]`, the Hurewicz homomorphism is evaluation at the images of the `xₙ`.
+  have h (p : MvPolynomial ℕ+ ℤ) :
+      hurewicz (mvPolynomialEquiv p) = MvPolynomial.aeval (hurewicz ∘ generator) p := by
+    rw [mvPolynomialEquiv_apply]
+    exact MvPolynomial.comp_aeval_apply generator hurewicz.toIntAlgHom p
+  intro x y hxy
+  apply mvPolynomialEquiv.symm.injective
+  apply algebraicIndependent_iff_injective_aeval.1 algebraicIndependent_hurewicz_generator
+  rw [← h, ← h, AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply, hxy]
 
 attribute [local instance] MvPolynomial.weightedGradedAlgebra
 

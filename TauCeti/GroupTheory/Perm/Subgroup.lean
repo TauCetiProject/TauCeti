@@ -20,18 +20,17 @@ namespace TauCeti
 
 /-- Restricting `MulAction.toPermHom` to its image leaves its action on points unchanged. -/
 @[simp]
-theorem subgroupOfMulAction_apply (G H : Type*) [Group G] [MulAction G H]
+theorem subgroupOfMulAction_apply {G H : Type*} [Group G] [MulAction G H]
     [FaithfulSMul G H] (g : G) (x : H) :
     ((Equiv.Perm.subgroupOfMulAction G H g : (MulAction.toPermHom G H).range) :
       Equiv.Perm H) x = g • x := rfl
 
 /-- The inverse permutation associated to `g` acts by `g⁻¹`. -/
 @[simp]
-theorem subgroupOfMulAction_inv_apply (G H : Type*) [Group G] [MulAction G H]
+theorem subgroupOfMulAction_inv_apply {G H : Type*} [Group G] [MulAction G H]
     [FaithfulSMul G H] (g : G) (x : H) :
     (((Equiv.Perm.subgroupOfMulAction G H g : (MulAction.toPermHom G H).range) :
       Equiv.Perm H)⁻¹) x = g⁻¹ • x := by
-  simpa only [map_inv, Subgroup.coe_inv] using
-    subgroupOfMulAction_apply G H g⁻¹ x
+  simpa only [map_inv, Subgroup.coe_inv] using subgroupOfMulAction_apply g⁻¹ x
 
 end TauCeti

@@ -14,11 +14,13 @@ For two real points `c₁`, `c₂` of the complex plane, the difference of the t
 `|z - c|² - |C - c|²` is affine in the real part of `z` and vanishes when `z.re = C.re`
 (`Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`): the radical axis of two circles centred on
 the real line is the vertical line through their intersection points. This file also records the
-real points of such a circle and on which side of a second circle its points lie.
+real points of such a circle and on which side of a second circle its points lie. It also bounds
+the norm along upward vertical rays leaving a point of the closed upper half-plane.
 
 ## Main results
 
 * `Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`: the radical-line identity.
+* `Complex.norm_sq_add_I_mul_div_sqrt_two`: the squared norm of a normalized complex pair.
 * `Complex.norm_sub_eq_of_normSq_sub_eq`: a point at squared distance `ρ ^ 2` is at distance `ρ`.
 * `Complex.eq_sub_of_normSq_eq_of_lt_re`, `Complex.eq_add_of_normSq_eq_of_re_lt`: a real point of
   the circle of centre `m` and radius `ρ` is `m - ρ` or `m + ρ`, according to its side.
@@ -30,11 +32,21 @@ real points of such a circle and on which side of a second circle its points lie
   points that lie on or outside a second circle, lie on or outside the second circle.
 * `Complex.norm_one_add_sq_div_sq_of_norm_eq`: on the circle `‖z‖ = R`, `‖1 + z² / R²‖` is
   `2 |re z| / R`.
+* `Complex.norm_le_norm_add_ofReal_mul_I`: for `0 ≤ z.im` and `0 ≤ s`, `‖z‖ ≤ ‖z + s * I‖`.
+* `Complex.norm_add_div_two_le_norm_add_ofReal_mul_I`: for `0 ≤ z.im` and `0 ≤ s`,
+  `(‖z‖ + s) / 2 ≤ ‖z + s * I‖`.
 -/
 
 public section
 
 namespace Complex
+
+/-- The squared norm of a complex number with real part `x` and imaginary part `y`, divided by
+`√2`, is `(x ^ 2 + y ^ 2) / 2`. -/
+theorem norm_sq_add_I_mul_div_sqrt_two (x y : ℝ) :
+    ‖((x : ℂ) + Complex.I * y) / (Real.sqrt 2 : ℝ)‖ ^ 2 = (x ^ 2 + y ^ 2) / 2 := by
+  rw [Complex.sq_norm, map_div₀, Complex.normSq_ofReal, mul_comm Complex.I,
+    Complex.normSq_add_mul_I, Real.mul_self_sqrt (by norm_num)]
 
 /-- The "radical line" identity: for real centres `c₁` and `c₂`, the difference of the two power
 functions `|z - c|² - |C - c|²` of `z` is affine in `z.re` and vanishes at `C.re`. -/
@@ -133,5 +145,29 @@ theorem norm_one_add_sq_div_sq_of_norm_eq {z : ℂ} {R : ℝ} (hz : ‖z‖ = R)
   simp only [norm_div, norm_mul, norm_pow, hz, norm_real, Real.norm_eq_abs,
     abs_two, abs_of_pos hR]
   field_simp
+
+/-- For `z` in the closed upper half-plane, every point `z + s * I` (`s ≥ 0`) of the vertical ray
+going upward from `z` is at least as far from the origin as `z`. -/
+theorem norm_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) {s : ℝ} (hs : 0 ≤ s) :
+    ‖z‖ ≤ ‖z + (s : ℂ) * Complex.I‖ := by
+  have hsq : ‖z‖ ^ 2 ≤ ‖z + (s : ℂ) * Complex.I‖ ^ 2 := by
+    simp only [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.add_re,
+      Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
+      Complex.I_re, Complex.I_im]
+    nlinarith
+  have h := Real.sqrt_le_sqrt hsq
+  rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_sq (norm_nonneg _)] at h
+
+/-- The points of a vertical ray leaving a point `z` of the closed upper half-plane upward, at
+height `s` above `z`, are at distance at least `(‖z‖ + s) / 2` from the origin. -/
+theorem norm_add_div_two_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) {s : ℝ}
+    (hs : 0 ≤ s) : (‖z‖ + s) / 2 ≤ ‖z + (s : ℂ) * Complex.I‖ := by
+  have h1 := norm_le_norm_add_ofReal_mul_I hz hs
+  have h2 : s ≤ ‖z + (s : ℂ) * Complex.I‖ := by
+    refine le_trans ?_ (le_trans (le_abs_self _) (abs_im_le_norm (z + (s : ℂ) * Complex.I)))
+    simp only [Complex.add_im, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
+      Complex.I_re, Complex.I_im]
+    linarith
+  linarith
 
 end Complex

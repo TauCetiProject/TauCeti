@@ -27,10 +27,11 @@ Nijenhuis tensor `N_J = TauCeti.SmoothAlmostComplexStructure.nijenhuis`:
 evaluations of the components `∂bar ∂bar f` and `∂∂f` of `d²f = 0`, by the formulas of
 `TauCeti.Geometry.Manifold.DifferentialForm.Nijenhuis` for the components of bidegree `(-1,2)`
 and `(2,-1)` of `d` on one-forms. The component of type `(1,1)` of `d²f = 0` gives
-`∂ ∂bar f + ∂bar ∂f = 0` on every almost complex manifold. When `N_J = 0`, `∂² = 0` and
-`∂bar² = 0` on functions and `d = ∂ + ∂bar` on one-forms. Wherever `d = ∂ + ∂bar` on the forms of
+`∂ ∂bar f + ∂bar ∂f = 0` on every almost complex manifold. Wherever `d = ∂ + ∂bar` on the forms of
 two consecutive degrees, the components of `d² = 0` give `∂² = 0`, `∂bar² = 0` and
-`∂ ∂bar + ∂bar ∂ = 0`.
+`∂ ∂bar + ∂bar ∂ = 0`. When `N_J = 0`, the components of bidegrees `(2,-1)` and `(-1,2)` of `d`
+vanish in every degree, so `d = ∂ + ∂bar`, `∂² = 0`, `∂bar² = 0` and `∂ ∂bar + ∂bar ∂ = 0` on all
+smooth forms.
 
 ## Main declarations
 
@@ -54,7 +55,11 @@ two consecutive degrees, the components of `d² = 0` give `∂² = 0`, `∂bar²
   `TauCeti.SmoothAlmostComplexStructure.del_apply_eq_zero_iff`: `∂bar f` (respectively `∂f`)
   vanishes at a point exactly when `df ∘ J = i df` (respectively `-i df`).
 * `TauCeti.SmoothAlmostComplexStructure.mextDerivₗ_eq_del_add_delBar_of_nijenhuis_eq_zero`:
-  `d = ∂ + ∂bar` on one-forms when `N_J = 0`.
+  `d = ∂ + ∂bar` when `N_J = 0`.
+* `TauCeti.SmoothAlmostComplexStructure.del_del_eq_zero_of_nijenhuis_eq_zero`,
+  `TauCeti.SmoothAlmostComplexStructure.delBar_delBar_eq_zero_of_nijenhuis_eq_zero`,
+  `TauCeti.SmoothAlmostComplexStructure.del_delBar_add_delBar_del_of_nijenhuis_eq_zero`:
+  `∂² = 0`, `∂bar² = 0` and `∂ ∂bar + ∂bar ∂ = 0` when `N_J = 0`.
 
 ## References
 
@@ -112,6 +117,14 @@ theorem delBar_apply (φ : SmoothForm I M F k) :
       J.typeProjection pq.1 (pq.2 + 1) (mextDerivₗ I k (J.typeProjection pq.1 pq.2 φ)) :=
   (rfl)
 
+/-- The Dolbeault differential commutes with transport across an equality of total degrees. -/
+theorem delBar_cast {l : ℕ} (h : k = l) (φ : SmoothForm I M F k) :
+    J.delBar (LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h φ) =
+      LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n)
+        (congrArg (· + 1) h) (J.delBar φ) := by
+  subst l
+  rfl
+
 end SmoothAlmostComplexStructure
 
 namespace SmoothForm
@@ -160,6 +173,18 @@ end SmoothForm
 namespace SmoothAlmostComplexStructure
 
 variable (J : SmoothAlmostComplexStructure I M)
+
+/-- The restriction of `∂bar` to forms of type `(p,q)`, with codomain the forms of type
+`(p,q+1)`. This restriction is available even without integrability. -/
+def delBarType (p q : ℕ) :
+    J.typeForms (F := F) p q →ₗ[ℂ] J.typeForms (F := F) p (q + 1) :=
+  (J.delBar.comp (J.typeForms (F := F) p q).subtype).codRestrict _ fun φ ↦
+    (J.mem_typeForms p (q + 1) _).mpr ((J.mem_typeForms p q _).mp φ.2).delBar
+
+/-- The differential on type forms agrees with `∂bar` on the underlying smooth forms. -/
+@[simp]
+theorem coe_delBarType (p q : ℕ) (φ : J.typeForms (F := F) p q) :
+    (J.delBarType p q φ : SmoothForm I M F (p + (q + 1))) = J.delBar φ.1 := (rfl)
 
 /-! ### Type components of `∂` and `∂bar` -/
 
@@ -327,6 +352,13 @@ theorem del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar (φ : Smooth
   J.map_eq_zero_of_forall_isOfType (f := J.del ∘ₗ J.delBar + J.delBar ∘ₗ J.del)
     (fun _ _ _ _ hψ ↦ (del_del_and_delBar_delBar_of_isOfType hd hd' hψ).2.1) φ
 
+/-- If `d = ∂ + ∂bar` on `k`-forms and on `(k+1)`-forms, then
+`∂bar ∂φ = -∂ ∂bar φ`. -/
+theorem delBar_del_of_mextDerivₗ_eq_del_add_delBar (φ : SmoothForm I M F k) :
+    J.delBar (J.del φ) = -J.del (J.delBar φ) :=
+  eq_neg_of_add_eq_zero_right
+    (del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar hd hd' φ)
+
 end DelAddDelBar
 
 /-! ### Functions -/
@@ -418,34 +450,41 @@ theorem del_del_apply (f : SmoothForm I M F 0) (x : M) (v w : TangentSpace I x) 
     SmoothForm.neg_toRoughForm, Pi.neg_apply, ContinuousAlternatingMap.neg_apply, neg_smul]
   exact congrArg Neg.neg (hf.delBar.typeProjection_two_zero_mextDerivₗ_apply x v w)
 
-/-- If the Nijenhuis tensor vanishes, `∂bar ∂bar f = 0` for every smooth function `f`. -/
-theorem delBar_delBar_eq_zero_of_nijenhuis_eq_zero (hJ : J.nijenhuis = 0)
-    (f : SmoothForm I M F 0) : J.delBar (J.delBar f) = 0 := by
-  have hf := SmoothForm.isOfType_zero_zero f J
-  rw [hf.delBar.delBar_eq, mextDerivₗ_delBar, map_neg,
-    hf.del.typeProjection_zero_two_mextDerivₗ_eq_zero hJ, neg_zero]
+/-! ### Vanishing Nijenhuis tensor -/
 
-/-- If the Nijenhuis tensor vanishes, `∂∂f = 0` for every smooth function `f`. -/
-theorem del_del_eq_zero_of_nijenhuis_eq_zero (hJ : J.nijenhuis = 0)
-    (f : SmoothForm I M F 0) : J.del (J.del f) = 0 := by
-  have hf := SmoothForm.isOfType_zero_zero f J
-  rw [hf.del.del_eq, ← neg_eq_iff_eq_neg.2 (mextDerivₗ_delBar J f), map_neg,
-    hf.delBar.typeProjection_two_zero_mextDerivₗ_eq_zero hJ, neg_zero]
-
-/-! ### One-forms -/
-
-/-- If the Nijenhuis tensor vanishes, `d = ∂ + ∂bar` on smooth one-forms. -/
+/-- If the Nijenhuis tensor vanishes, `d = ∂ + ∂bar` on smooth forms of every degree. -/
 theorem mextDerivₗ_eq_del_add_delBar_of_nijenhuis_eq_zero (hJ : J.nijenhuis = 0)
-    (α : SmoothForm I M F 1) : mextDerivₗ I 1 α = J.del α + J.delBar α := by
-  have h₁₀ := J.isOfType_typeProjection (F := F) (k := 1) (p := 1) (q := 0) rfl α
-  have h₀₁ := J.isOfType_typeProjection (F := F) (k := 1) (p := 0) (q := 1) rfl α
-  rw [← J.typeProjection_one_zero_add_zero_one α, map_add, map_add, map_add,
-    h₁₀.mextDerivₗ_eq_add_del_add_delBar_add,
-    h₀₁.mextDerivₗ_eq_add_del_add_delBar_add, h₁₀.typeProjection_zero_two_mextDerivₗ_eq_zero hJ,
-    h₀₁.typeProjection_two_zero_mextDerivₗ_eq_zero hJ]
-  simp only [Nat.reduceAdd, Nat.zero_sub, J.typeProjection_eq_zero (show 3 + 0 ≠ 2 by omega),
-    J.typeProjection_eq_zero (show 0 + 3 ≠ 2 by omega), LinearMap.zero_apply, zero_add, add_zero]
-  abel
+    (φ : SmoothForm I M F k) : mextDerivₗ I k φ = J.del φ + J.delBar φ :=
+  J.map_eq_of_forall_isOfType (f := mextDerivₗ I k) (g := J.del + J.delBar)
+    (fun p q hpq ψ hψ ↦ by
+      have h₀₂ : J.typeProjection (p - 1) (q + 2) (mextDerivₗ I k ψ) = 0 := by
+        rcases Nat.eq_zero_or_pos p with rfl | hp
+        · rw [J.typeProjection_eq_zero (by omega : 0 - 1 + (q + 2) ≠ k + 1), LinearMap.zero_apply]
+        · exact hψ.typeProjection_mextDerivₗ_eq_zero_of_nijenhuis_eq_zero hJ (Or.inr (by omega))
+      rw [LinearMap.add_apply, hψ.mextDerivₗ_eq_add_del_add_delBar_add,
+        hψ.typeProjection_mextDerivₗ_eq_zero_of_nijenhuis_eq_zero hJ (Or.inl rfl), h₀₂, zero_add,
+        add_zero]) φ
+
+/-- If the Nijenhuis tensor vanishes, `∂∂φ = 0` for every smooth form `φ`. -/
+theorem del_del_eq_zero_of_nijenhuis_eq_zero (hJ : J.nijenhuis = 0) (φ : SmoothForm I M F k) :
+    J.del (J.del φ) = 0 :=
+  del_del_eq_zero_of_mextDerivₗ_eq_del_add_delBar
+    (J.mextDerivₗ_eq_del_add_delBar_of_nijenhuis_eq_zero hJ)
+    (J.mextDerivₗ_eq_del_add_delBar_of_nijenhuis_eq_zero hJ) φ
+
+/-- If the Nijenhuis tensor vanishes, `∂bar ∂bar φ = 0` for every smooth form `φ`. -/
+theorem delBar_delBar_eq_zero_of_nijenhuis_eq_zero (hJ : J.nijenhuis = 0)
+    (φ : SmoothForm I M F k) : J.delBar (J.delBar φ) = 0 :=
+  delBar_delBar_eq_zero_of_mextDerivₗ_eq_del_add_delBar
+    (J.mextDerivₗ_eq_del_add_delBar_of_nijenhuis_eq_zero hJ)
+    (J.mextDerivₗ_eq_del_add_delBar_of_nijenhuis_eq_zero hJ) φ
+
+/-- If the Nijenhuis tensor vanishes, `∂ ∂bar φ + ∂bar ∂φ = 0` for every smooth form `φ`. -/
+theorem del_delBar_add_delBar_del_of_nijenhuis_eq_zero (hJ : J.nijenhuis = 0)
+    (φ : SmoothForm I M F k) : J.del (J.delBar φ) + J.delBar (J.del φ) = 0 :=
+  del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar
+    (J.mextDerivₗ_eq_del_add_delBar_of_nijenhuis_eq_zero hJ)
+    (J.mextDerivₗ_eq_del_add_delBar_of_nijenhuis_eq_zero hJ) φ
 
 end SmoothAlmostComplexStructure
 

@@ -37,6 +37,10 @@ which Bombieri and Gubler open the proof of the `S`-integral form of the Subspac
 * `NumberField.mulHeight_eq_prod_of_forall_iSup_eq_one` and
   `NumberField.mulHeight_eq_prod_of_isPrimitive`: equality when the local sup norms outside `S`
   are `1`, in particular for an `S`-primitive tuple.
+* `NumberField.mulHeight_eq_prod_of_isPrimitive_image_maximalIdeal`: the same equality with `S`
+  given as a finite set of finite places.
+* `NumberField.log_prod_iSup_eq`: the logarithm of this product of local sup norms as a weighted
+  sum of their logarithms.
 * `NumberField.exists_finset_superset_forall_exists_mulHeight_eq`: every finite `S` is contained
   in a finite `S'` such that every nonzero finite tuple has a nonzero scalar multiple which is
   `S'`-primitive, and whose local sup norms over the infinite places and `S'` multiply to the
@@ -88,6 +92,22 @@ theorem mulHeight_eq_prod_of_forall_iSup_eq_one (S : Finset (HeightOneSpectrum (
   by_contra hvS
   exact hv (h v hvS)
 
+/-- The logarithm of the product of the local sup norms of `x` over the infinite places and the
+places of `S`, the form of the height in `NumberField.mulHeight_le_prod` and
+`NumberField.mulHeight_eq_prod_of_isPrimitive`, is the weighted sum of their logarithms when they
+are positive. -/
+theorem log_prod_iSup_eq (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (hI : ∀ w : InfinitePlace K, 0 < ⨆ i, w (x i))
+    (hF : ∀ v ∈ S, 0 < ⨆ i, FinitePlace.mk v (x i)) :
+    Real.log ((∏ w : InfinitePlace K, (⨆ i, w (x i)) ^ w.mult) *
+        ∏ v ∈ S, ⨆ i, FinitePlace.mk v (x i)) =
+      ∑ w : InfinitePlace K, (w.mult : ℝ) * Real.log (⨆ i, w (x i)) +
+        ∑ v ∈ S, Real.log (⨆ i, FinitePlace.mk v (x i)) := by
+  rw [Real.log_mul (Finset.prod_ne_zero_iff.mpr fun w _ ↦ (pow_pos (hI w) _).ne')
+      (Finset.prod_ne_zero_iff.mpr fun v hv ↦ (hF v hv).ne'),
+    Real.log_prod fun w _ ↦ (pow_pos (hI w) _).ne', Real.log_prod fun v hv ↦ (hF v hv).ne']
+  simp only [Real.log_pow]
+
 variable [Finite ι]
 
 /-- **The height of a nonzero tuple of `S`-integers is at most the product of its local sup norms
@@ -126,6 +146,20 @@ theorem mulHeight_eq_prod_of_isPrimitive (S : Finset (HeightOneSpectrum (𝓞 K)
       * ∏ v ∈ S, ⨆ i, FinitePlace.mk v (x i) :=
   mulHeight_eq_prod_of_forall_iSup_eq_one S hx.ne_zero fun v hv ↦
     (Set.isPrimitive_iff_finitePlace _ hx.ne_zero).mp hx v (by simpa using hv)
+
+/-- **The height of a tuple that is primitive at a finite set `S₀` of finite places is the
+product of its local sup norms over the infinite places and the places of `S₀`.** This is
+`NumberField.mulHeight_eq_prod_of_isPrimitive` with `S₀` given as finite places rather than as
+height one primes. -/
+theorem mulHeight_eq_prod_of_isPrimitive_image_maximalIdeal (S₀ : Finset (FinitePlace K))
+    (hx : (FinitePlace.maximalIdeal '' (S₀ : Set (FinitePlace K))).IsPrimitive x) :
+    mulHeight x = (∏ v : InfinitePlace K, (⨆ i, v (x i)) ^ v.mult) * ∏ v ∈ S₀, ⨆ i, v (x i) := by
+  have hS : FinitePlace.maximalIdeal '' (S₀ : Set (FinitePlace K)) =
+      ↑(S₀.map FinitePlace.equivHeightOneSpectrum.toEmbedding) := by
+    simp
+  rw [hS] at hx
+  rw [mulHeight_eq_prod_of_isPrimitive _ hx, Finset.prod_map]
+  simp
 
 /-- **The height of every point is computed by finitely many places.** Every finite set `S` of
 finite places is contained in a finite set `S'` such that every nonzero finite tuple has a nonzero

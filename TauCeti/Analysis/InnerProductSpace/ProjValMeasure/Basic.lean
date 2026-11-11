@@ -24,6 +24,7 @@ public import Mathlib.MeasureTheory.Measure.Filter
 public import Mathlib.MeasureTheory.Measure.OuterMeasure
 public import Mathlib.MeasureTheory.Measure.Sum
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
+public import TauCeti.MeasureTheory.Measure.DisjointUnion
 public import Mathlib.MeasureTheory.Measure.NullMeasurable
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 
@@ -176,25 +177,16 @@ lemma inner_proj_eq_inner_proj_proj (P : ProjValMeasure X H)
     _ = ⟪T (T ψ), ξ⟫_ℂ := by rw [P.proj_apply_proj]
     _ = ⟪T ψ, T ξ⟫_ℂ := hsym (T ψ) ξ
 
-/-- For each measurable set `B`, the operator `P(B)` is positive. -/
-theorem isPositive_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B) :
-    (P.proj B hB).IsPositive := by
-  rw [ContinuousLinearMap.isPositive_def']
-  constructor
-  · exact P.isSelfAdjoint_proj B hB
-  · intro ξ
-    -- `reApplyInnerSelf` is `re ⟪T ξ, ξ⟫`; the weld gives `⟪ξ, T ξ⟫`, and its
-    -- value is an embedded real, so flipping the slots by conjugation changes
-    -- nothing — leaving the nonnegative real `toReal`:
-    have hval := P.inner_proj_apply_left B hB ξ
-    rw [ContinuousLinearMap.reApplyInnerSelf, hval]
-    simp
-
 /-- Each measurable-set value of a PVM is an orthogonal (`star`) projection. -/
 theorem isStarProjection_proj (P : ProjValMeasure X H) (B : Set X)
     (hB : MeasurableSet B) : IsStarProjection (P.proj B hB) := by
   exact (isStarProjection_iff' (p := P.proj B hB)).2
     ⟨P.proj_idem B hB, (P.isSelfAdjoint_proj B hB).star_eq⟩
+
+/-- For each measurable set `B`, the operator `P(B)` is positive. -/
+theorem isPositive_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B) :
+    (P.proj B hB).IsPositive :=
+  .of_isStarProjection (P.isStarProjection_proj B hB)
 
 /-- Measurable-set projections commute, because intersection is symmetric. -/
 theorem proj_mul_comm (P : ProjValMeasure X H) (B C : Set X)
@@ -235,15 +227,8 @@ range of `P(C)`. -/
 theorem proj_range_mono (P : ProjValMeasure X H) {B C : Set X}
     (hBC : B ⊆ C) (hB : MeasurableSet B) (hC : MeasurableSet C) :
     (P.proj B hB).range ≤ (P.proj C hC).range := by
-  intro v hv
-  obtain ⟨x, hvx⟩ := hv
-  use (P.proj B hB) x
-  calc
-    (P.proj C hC) ((P.proj B hB) x) =
-        ((P.proj C hC) * (P.proj B hB)) x :=
-          (mul_apply_eq_comp (P.proj C hC) (P.proj B hB) x).symm
-    _ = (P.proj B hB) x := by rw [P.proj_mul_eq_right_of_subset hBC hB hC]
-    _ = v := hvx
+  rw [← P.proj_mul_eq_right_of_subset hBC hB hC]
+  exact LinearMap.range_comp_le_range _ _
 
 /-- For disjoint measurable sets, the projection of their union is the sum of
 their projections. -/
@@ -312,11 +297,7 @@ theorem diag_univ (P : ProjValMeasure X H) (ξ : H) :
 lemma norm_proj_apply_le (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B)
     (ξ : H) :
     ‖P.proj B hB ξ‖ ≤ ‖ξ‖ := by
-  have hsq : ‖P.proj B hB ξ‖ ^ 2 ≤ ‖ξ‖ ^ 2 := by
-    rw [norm_sq_proj_apply, ← P.diag_univ_toReal ξ]
-    exact ENNReal.toReal_mono (measure_ne_top (μ := P.diag ξ) (s := Set.univ))
-      (measure_mono (Set.subset_univ B))
-  exact (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq
+  simpa using (P.proj B hB).le_of_opNorm_le (P.isStarProjection_proj B hB).norm_le ξ
 
 /-! ## Strong countable additivity
 
@@ -387,136 +368,60 @@ private theorem partialSum_mul_univ (P : ProjValMeasure X H) {f : ℕ → Set X}
       (hf n) (MeasurableSet.iUnion hf)]
 
 
-/-
-**Strong countable additivity, vector-wise (in the strong operator topology).**  Let
-`(f n)` be a pairwise-disjoint family of measurable sets and write
-`B = ⋃ n, f n`; let `S n = ∑_{k < n} P(f k)`, `μ` the diagonal measure of
-`ξ`, `U = μ B`, and `p n = ∑_{k < n} μ (f k)`.  Then:
+/-- The diagonal-measure mass `∑_{k < n} μ_ξ(B_k)` of the first `n` sets equals the squared norm of
+`(∑_{k < n} P(B_k)) ξ`. -/
+private theorem norm_sq_partialSum (P : ProjValMeasure X H) {f : ℕ → Set X}
+    (hf : ∀ n, MeasurableSet (f n)) (hdisj : Pairwise (Disjoint on f)) (ξ : H) (n : ℕ) :
+    ‖partialSum P f hf n ξ‖ ^ 2 = (∑ k ∈ Finset.range n, P.diag ξ (f k)).toReal := by
+  have hfin : ∀ k ∈ Finset.range n, P.diag ξ (f k) ≠ ⊤ :=
+    fun k _ => measure_ne_top (μ := P.diag ξ) (s := f k)
+  have hdiagCore : ⟪ξ, partialSum P f hf n ξ⟫_ℂ =
+      (((∑ k ∈ Finset.range n, P.diag ξ (f k)).toReal : ℝ) : ℂ) := by
+    rw [ENNReal.toReal_sum hfin]
+    push_cast
+    simp only [partialSum, Nat.Iio_eq_range, sum_apply, inner_sum]
+    exact Finset.sum_congr rfl fun k _ => P.inner_proj (f k) (hf k) ξ
+  have hself : ⟪partialSum P f hf n ξ, partialSum P f hf n ξ⟫_ℂ =
+      (((∑ k ∈ Finset.range n, P.diag ξ (f k)).toReal : ℝ) : ℂ) := by
+    calc
+      ⟪partialSum P f hf n ξ, partialSum P f hf n ξ⟫_ℂ
+          = ⟪ξ, partialSum P f hf n (partialSum P f hf n ξ)⟫_ℂ :=
+        (partialSum_selfAdjoint P hf n).isSymmetric ξ _
+      _ = ⟪ξ, partialSum P f hf n ξ⟫_ℂ := by
+        rw [← mul_apply_eq_comp, partialSum_idem P hf hdisj n]
+      _ = _ := hdiagCore
+  rw [norm_sq_eq_re_inner (𝕜 := ℂ), hself]
+  simp
 
-* **Measure-theoretic input** (`hUeq`): countable additivity of the measure
-  `μ` gives `U = ∑' k, μ (f k)` — the only place a property of `Measure X`
-  is used; everything else is linear algebra.
-* Self-adjointness, idempotence and absorption give the partial-sum norm
-  `‖(S n) ξ‖² = (p n).toReal` and the mixed inner product
-  `⟪(S n) ξ, P_B ξ⟫ = (p n).toReal`.
-* The Hilbert-space identity `norm_sub_sq` reduces the squared distance to
-  `‖(S n) ξ - (P_B) ξ‖² = U.toReal - (p n).toReal` (`hdist`).
-* The `p n` converge to `U` along the finite sets (`ENNReal.tendsto_nat_tsum`),
-  so the uncovered real mass `U.toReal - (p n).toReal` converges to `0`
-  (`h0`); `Real.sqrt` is continuous at `0`, and `‖x‖ = Real.sqrt (‖x‖²)`,
-  so the distance tends to `0` (`hnorm`); and a norm-convergent sequence in a
-  normed space is convergent (`tendsto_zero_iff_norm_tendsto_zero`), leaving
-  the constant `(P_B) ξ` behind.
--/
+/-- The squared distance from `(∑_{k < n} P(B_k)) ξ` to `P(⋃ B_k) ξ` is the mass of the union not
+yet covered by the first `n` sets. -/
+private theorem norm_sq_partialSum_sub (P : ProjValMeasure X H) {f : ℕ → Set X}
+    (hf : ∀ n, MeasurableSet (f n)) (hdisj : Pairwise (Disjoint on f)) (ξ : H) (n : ℕ) :
+    ‖partialSum P f hf n ξ - P.proj (⋃ k, f k) (MeasurableSet.iUnion hf) ξ‖ ^ 2 =
+      (P.diag ξ (⋃ k, f k) - ∑ k ∈ Finset.range n, P.diag ξ (f k)).toReal := by
+  have hUle := sum_measure_le_measure_iUnion (μ := P.diag ξ) (fun k => (hf k).nullMeasurableSet)
+    hdisj.aedisjoint (Finset.range n)
+  rw [ContinuousLinearMap.norm_sub_sq_of_selfAdjoint_idempotent_absorption _ _
+    (partialSum_selfAdjoint P hf n) (partialSum_idem P hf hdisj n) (partialSum_mul_univ P hf n) ξ,
+    P.norm_sq_proj_apply, norm_sq_partialSum P hf hdisj ξ n,
+    ENNReal.toReal_sub_of_le hUle (measure_ne_top (μ := P.diag ξ) (s := ⋃ k, f k))]
+
 /-- For pairwise disjoint measurable sets, the finite sums of their projections,
 applied to any vector, converge to the projection of their union applied to that vector. -/
 theorem tendsto_sum_proj_of_pairwise_disjoint {P : ProjValMeasure X H} {f : ℕ → Set X}
     (hf : ∀ n, MeasurableSet (f n)) (hdisj : Pairwise (Disjoint on f)) (ξ : H) :
     Tendsto (fun n => (∑ k < n, P.proj (f k) (hf k) : H →L[ℂ] H) ξ) Filter.atTop
         (𝓝 (P.proj (⋃ k, f k) (MeasurableSet.iUnion hf) ξ)) := by
-  set μ := P.diag ξ
-  set B : Set X := ⋃ k, f k
-  set hB : MeasurableSet B := MeasurableSet.iUnion hf
-  set P_B := P.proj B hB
-  set S : ℕ → (H →L[ℂ] H) := fun n => partialSum P f hf n
-  set U := μ B
-  set p : ℕ → ENNReal := fun n => ∑ k ∈ Finset.range n, (μ (f k) : ℝ≥0∞)
-  -- The diagonal measure is finite, so its values are never `⊤`:
-  have hUfin : U ≠ ⊤ := measure_ne_top (μ := μ) (s := B)
-  -- **The measure-theoretic input:** countable additivity of the measure `μ`
-  -- gives `μ B` as the `tsum` of the disjoint diagonal values:
-  have hUeq : U = (∑' k, (μ (f k) : ℝ≥0∞)) := by
-    have h1 : μ (⋃ k, f k) = (∑' k, (μ (f k) : ℝ≥0∞)) :=
-      measure_iUnion₀ (hdisj.aedisjoint) fun k => (hf k).nullMeasurableSet
-    simpa [U, B] using h1
-  -- The `n`-th diagonal partial sum is at most the mass of the union:
-  have hUle (n : ℕ) : p n ≤ U := by
-    rw [hUeq, tsum_eq_iSup_sum]
-    exact le_iSup (fun (s : Finset ℕ) => (∑ k ∈ s, (μ (f k) : ℝ≥0∞))) (Finset.range n)
-  -- (1) Diagonal inner products needed by the law of cosines.
-  --
-  -- Map application and inner products both distribute over finite sums.
-  -- The only scalar conversion required is Mathlib's `ENNReal.toReal_sum`.
-  have hdiagCore (n : ℕ) : ⟪ξ, (partialSum P f hf n) ξ⟫_ℂ =
-      (((p n).toReal) : ℂ) := by
-    have hfin : ∀ k ∈ Finset.range n, μ (f k) ≠ ⊤ :=
-      fun k _ => measure_ne_top (μ := μ) (s := f k)
-    have hmapsum :
-        (∑ k ∈ Finset.range n, (((μ (f k)).toReal) : ℂ)) =
-          (((∑ k ∈ Finset.range n, μ (f k)).toReal) : ℂ) := by
-      rw [ENNReal.toReal_sum hfin]
-      push_cast
-      rfl
-    calc
-      ⟪ξ, (partialSum P f hf n) ξ⟫_ℂ =
-          ∑ k ∈ Finset.range n, ⟪ξ, P.proj (f k) (hf k) ξ⟫_ℂ := by
-        simp only [partialSum, Nat.Iio_eq_range, sum_apply, inner_sum]
-      _ = ∑ k ∈ Finset.range n, (((μ (f k)).toReal) : ℂ) := by
-        apply Finset.sum_congr rfl
-        intro k _
-        simpa only [μ] using P.inner_proj (f k) (hf k) ξ
-      _ = (((p n).toReal) : ℂ) := by
-        simpa only [p] using hmapsum
-  -- The scalar norm of the partial projection comes directly from the
-  -- diagonal core; the total projection's norm comes from `norm_sq_proj_apply`.
-  have hnormS (n : ℕ) : ‖(S n) ξ‖ ^ 2 = (p n).toReal := by
-    rw [norm_sq_eq_re_inner (𝕜 := ℂ)]
-    have hself : ⟪(S n) ξ, (S n) ξ⟫_ℂ = (((p n).toReal) : ℂ) := by
-      calc
-        ⟪(S n) ξ, (S n) ξ⟫_ℂ = ⟪ξ, (S n) ((S n) ξ)⟫_ℂ :=
-          (partialSum_selfAdjoint P hf n).isSymmetric ξ ((S n) ξ)
-        _ = ⟪ξ, (S n) ξ⟫_ℂ := by
-          rw [← mul_apply_eq_comp, partialSum_idem P hf hdisj n]
-        _ = (((p n).toReal) : ℂ) := hdiagCore n
-    rw [hself]
-    simp
-  have hnormB : ‖(P_B) ξ‖ ^ 2 = U.toReal := by
-    simpa [P_B, U, μ] using P.norm_sq_proj_apply B hB ξ
-  -- The generic projection-absorption identity replaces separate calculations
-  -- of both mixed inner products and the full Hilbert-space expansion.
-  have hdist (n : ℕ) : ‖(S n) ξ - (P_B) ξ‖ ^ 2 = (U - p n).toReal := by
-    calc
-      ‖(S n) ξ - (P_B) ξ‖ ^ 2 = ‖(P_B) ξ‖ ^ 2 - ‖(S n) ξ‖ ^ 2 :=
-        ContinuousLinearMap.norm_sub_sq_of_selfAdjoint_idempotent_absorption (S n) P_B
-          (partialSum_selfAdjoint P hf n) (partialSum_idem P hf hdisj n)
-          (partialSum_mul_univ P hf n) ξ
-      _ = U.toReal - (p n).toReal := by rw [hnormB, hnormS n]
-      _ = (U - p n).toReal :=
-        (ENNReal.toReal_sub_of_le (hUle n) hUfin).symm
-  -- (3) The uncovered mass `U.toReal - (p n).toReal` tends to `0`:
-  have hT : Tendsto (fun n : ℕ => (p n).toReal) Filter.atTop (𝓝 (U.toReal)) := by
-    -- the `ENNReal`-valued partial sums converge to their tsum, which is `U`:
-    have hTenn : Tendsto (fun n : ℕ => p n)
-        Filter.atTop (𝓝 (∑' k, (μ (f k) : ℝ≥0∞))) := by
-      simpa [p] using ENNReal.tendsto_nat_tsum (fun k => μ (f k))
-    -- `toReal` is continuous at the finite point `U = ∑' k, μ (f k)`, and
-    -- restricts the limit to the `ℕ`-indexed partial sums:
-    rw [← Function.comp_def]
-    simpa [hUeq] using
-      (ENNReal.continuousAt_toReal (by
-        rw [← hUeq]
-        exact hUfin)).tendsto.comp hTenn
-  have h0 : Tendsto (fun n : ℕ => (U - p n).toReal) Filter.atTop (𝓝 0) := by
-    have heq : (fun n : ℕ => (U - p n).toReal) =
-        (fun n : ℕ => U.toReal - (p n).toReal) := by
-      funext n
-      exact ENNReal.toReal_sub_of_le (hUle n) hUfin
-    rw [heq]
-    have hconst : Tendsto (fun _ : ℕ => U.toReal) Filter.atTop (𝓝 U.toReal) :=
-      tendsto_const_nhds
-    simpa only [sub_self] using hconst.sub hT
-  -- (4) The norm tends to `0`:
-  --     `‖x‖ = Real.sqrt (‖x‖²)` and `Real.sqrt` is continuous at `0`:
-  have hnorm : Tendsto (fun n => ‖(S n) ξ - (P_B) ξ‖) Filter.atTop (𝓝 0) := by
-    have hsq : (fun n : ℕ => ‖(S n) ξ - (P_B) ξ‖) =
-        (fun n : ℕ => Real.sqrt ((U - p n).toReal)) := by
-      funext n
-      rw [(Real.sqrt_sq (norm_nonneg _)).symm, hdist n]
-    rw [hsq, ← Function.comp_def, ← Real.sqrt_zero]
-    exact (Continuous.tendsto Real.continuous_sqrt 0).comp h0
-  -- (5) Norm convergence is precisely strong convergence at `P_B ξ`.
-  apply (tendsto_iff_norm_sub_tendsto_zero).2
-  simpa [S, B, P_B, partialSum] using hnorm
+  refine tendsto_iff_norm_sub_tendsto_zero.2 ?_
+  -- The uncovered mass of the union tends to zero, by countable additivity of `P.diag ξ`.
+  have hmass := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+    (tendsto_measure_iUnion_sub_sum_range (μ := P.diag ξ) (fun k => (hf k).nullMeasurableSet)
+      hdisj.aedisjoint (measure_ne_top _ _))
+  have hsq := (hmass.sqrt : Tendsto _ _ (𝓝 (Real.sqrt (ENNReal.toReal 0))))
+  rw [ENNReal.toReal_zero, Real.sqrt_zero] at hsq
+  refine hsq.congr fun n => ?_
+  simp only [Function.comp_apply]
+  rw [← norm_sq_partialSum_sub P hf hdisj ξ n, Real.sqrt_sq (norm_nonneg _), partialSum]
 
 /-- **Unconditional** strong countable additivity: disjoint measurable-set
 projections form a summable family of vectors, and their sum is the projection

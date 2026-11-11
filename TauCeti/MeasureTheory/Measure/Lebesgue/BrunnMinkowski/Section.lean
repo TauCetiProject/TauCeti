@@ -22,7 +22,8 @@ point, so the Brunn–Minkowski inequality in `F` shows that the dimension root 
 volume, `p ↦ volume (Prod.mk p ⁻¹' s) ^ (1 / m)`, is concave on the projection `Prod.fst '' s`.
 This is **Brunn's concavity principle**. When the fibers have finite volume, a concave function
 on a finite-dimensional base is continuous on the interior of its domain, hence so is the fiber
-volume itself.
+volume itself. No finiteness is needed for the continuity: if one fiber has infinite volume, then
+so does every fiber over the interior of the projection.
 
 The main specialization concerns the hyperplane sections `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}` of a
 convex set `s` in a Euclidean space of dimension `n`, along a unit vector `e`. Their volume,
@@ -40,6 +41,8 @@ continuity hold trivially.
 ## Main results
 
 * `Convex.concaveOn_volume_real_preimage_prodMk_rpow`: Brunn's concavity principle for fibers.
+* `Convex.volume_preimage_prodMk_eq_top`: one fiber of infinite volume makes every fiber over
+  the interior of the projection infinite.
 * `Convex.continuousOn_volume_real_preimage_prodMk`: continuity of fiber volumes on the interior
   of the projection.
 * `Convex.concaveOn_volume_real_hyperplaneSection_rpow`: concavity of hyperplane sections.
@@ -112,20 +115,72 @@ variable {P F : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensi
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace F] [BorelSpace F]
 
-/-- If every fiber of a convex set has finite volume, the fiber volume is continuous on the
-interior of the projection of the set. This follows from Brunn's concavity principle. -/
-theorem Convex.continuousOn_volume_real_preimage_prodMk {s : Set (P × F)} (hs : Convex ℝ s)
-    (hfin : ∀ p, volume (Prod.mk p ⁻¹' s) ≠ ∞) :
+omit [FiniteDimensional ℝ P] in
+/-- If one fiber of a convex set has infinite volume, then so does every fiber over the interior
+of the projection of the set. -/
+theorem Convex.volume_preimage_prodMk_eq_top {s : Set (P × F)} (hs : Convex ℝ s) {p z : P}
+    (hp : volume (Prod.mk p ⁻¹' s) = ∞) (hz : z ∈ interior (Prod.fst '' s)) :
+    volume (Prod.mk z ⁻¹' s) = ∞ := by
+  -- An interior point `z` is a proper convex combination of `p` and a point `q` of the projection
+  -- a little beyond `z`, so Brunn's extended inequality makes the fiber over `z` infinite.
+  rcases eq_or_ne (Module.finrank ℝ F) 0 with hn | hn
+  · -- In dimension zero the volume is finite.
+    have : Subsingleton F := Module.finrank_zero_iff.1 hn
+    exact absurd hp (measure_ne_top _ _)
+  -- Push `z` slightly beyond itself, away from `p`, staying in the interior.
+  have hev : ∀ᶠ t in nhds (1 : ℝ), p + t • (z - p) ∈ interior (Prod.fst '' s) :=
+    (continuous_const.add (continuous_id.smul continuous_const)).continuousAt.preimage_mem_nhds
+      (isOpen_interior.mem_nhds (by simpa using hz))
+  obtain ⟨t, ht1, htI⟩ := hev.exists_gt
+  have ht0 : (0 : ℝ) < t := one_pos.trans ht1
+  obtain ⟨⟨q, w⟩, hw, hq⟩ := interior_subset htI
+  have hr : (0 : ℝ) < (Module.finrank ℝ F : ℝ)⁻¹ := by positivity
+  have ha : (0 : ℝ) < 1 - t⁻¹ := sub_pos.2 (inv_lt_one_of_one_lt₀ ht1)
+  have key := hs.mul_volume_preimage_prodMk_rpow_add_mul_volume_preimage_prodMk_rpow_le
+    (nonempty_of_measure_ne_zero (hp ▸ ENNReal.top_ne_zero)) ⟨w, hw⟩ ha.le
+    (inv_pos.2 ht0).le (sub_add_cancel 1 t⁻¹)
+  have hcomb : (1 - t⁻¹) • p + t⁻¹ • q = z := by
+    dsimp only at hq
+    rw [hq, smul_add, smul_smul, inv_mul_cancel₀ ht0.ne', one_smul]
+    module
+  rw [hcomb, hp, ENNReal.top_rpow_of_pos hr, ENNReal.mul_top (by simpa using ha), top_add,
+    top_le_iff] at key
+  exact (ENNReal.rpow_eq_top_iff_of_pos hr).1 key
+
+/-- The fiber volume of a convex set is continuous on the interior of the projection of the set.
+The fibers need not have finite volume: `volume.real` reads an infinite fiber volume as `0`. -/
+theorem Convex.continuousOn_volume_real_preimage_prodMk {s : Set (P × F)} (hs : Convex ℝ s) :
     ContinuousOn (fun p ↦ volume.real (Prod.mk p ⁻¹' s)) (interior (Prod.fst '' s)) := by
+  set I := interior (Prod.fst '' s)
   rcases eq_or_ne (Module.finrank ℝ F) 0 with hn | hn
   · -- In dimension zero every nonempty fiber is the whole space.
     have : Subsingleton F := Module.finrank_zero_iff.1 hn
     refine continuousOn_const (c := volume.real (univ : Set F)).congr fun p hp ↦ ?_
     obtain ⟨⟨p, y⟩, hy, rfl⟩ := interior_subset hp
     rw [(Subsingleton.eq_univ_of_nonempty ⟨y, hy⟩ : Prod.mk p ⁻¹' s = univ)]
-  · refine ((hs.concaveOn_volume_real_preimage_prodMk_rpow hfin).continuousOn_interior.pow
-      (Module.finrank ℝ F)).congr fun p _ ↦ ?_
-    exact (Real.rpow_inv_natCast_pow ENNReal.toReal_nonneg hn).symm
+  by_cases hinf : ∃ p ∈ I, volume (Prod.mk p ⁻¹' s) = ∞
+  · -- Then every fiber over `I` is infinite, and the function is `0` on `I`.
+    obtain ⟨p, -, hp⟩ := hinf
+    exact continuousOn_const (c := 0).congr fun z hz ↦ by
+      simp [measureReal_def, hs.volume_preimage_prodMk_eq_top hp hz]
+  -- Otherwise apply Brunn's concavity principle to the part `s'` of `s` over `I`.
+  set s' := s ∩ Prod.fst ⁻¹' I
+  have hfib {p : P} (hp : p ∈ I) : Prod.mk p ⁻¹' s' = Prod.mk p ⁻¹' s := by ext; simp [s', hp]
+  have hfin (p : P) : volume (Prod.mk p ⁻¹' s') ≠ ∞ := by
+    by_cases hp : p ∈ I
+    · exact fun h ↦ hinf ⟨p, hp, hfib hp ▸ h⟩
+    · have hempty : Prod.mk p ⁻¹' s' = ∅ := by ext; simp [s', hp]
+      simp [hempty]
+  have hs' : Convex ℝ s' :=
+    hs.inter ((hs.linear_image (LinearMap.fst ℝ P F)).interior.linear_preimage
+      (LinearMap.fst ℝ P F))
+  have hI : I ⊆ interior (Prod.fst '' s') := interior_maximal (fun p hp ↦ by
+    obtain ⟨⟨p, y⟩, hy, rfl⟩ := interior_subset hp
+    exact ⟨(p, y), ⟨hy, hp⟩, rfl⟩) isOpen_interior
+  refine (((hs'.concaveOn_volume_real_preimage_prodMk_rpow hfin).continuousOn_interior.pow
+    (Module.finrank ℝ F)).mono hI).congr fun p hp ↦ ?_
+  rw [Pi.pow_apply, hfib hp]
+  exact (Real.rpow_inv_natCast_pow ENNReal.toReal_nonneg hn).symm
 
 end FiberContinuous
 
@@ -206,14 +261,14 @@ theorem _root_.Convex.concaveOn_volume_real_hyperplaneSection_rpow {s : Set E} (
       (norm_ne_zero_iff.1 (he ▸ one_ne_zero))]
   exact (convex_hyperplaneFibers e hs).concaveOn_volume_real_preimage_prodMk_rpow hfin
 
-/-- If the hyperplane sections of a convex set along a unit vector have finite volume, their
-volume is continuous on the interior of the interval `⟪e, s⟫`. -/
+/-- The volume of the hyperplane sections of a convex set along a unit vector is continuous on
+the interior of the interval `⟪e, s⟫`. -/
 theorem _root_.Convex.continuousOn_volume_real_hyperplaneSection {s : Set E} (hs : Convex ℝ s)
-    {e : E} (he : ‖e‖ = 1) (hfin : ∀ t : ℝ, volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} ≠ ∞) :
+    {e : E} (he : ‖e‖ = 1) :
     ContinuousOn (fun t : ℝ ↦ volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s})
       (interior ((fun x ↦ ⟪e, x⟫) '' s)) := by
   rw [← fst_image_hyperplaneFibers e he]
-  exact (convex_hyperplaneFibers e hs).continuousOn_volume_real_preimage_prodMk hfin
+  exact (convex_hyperplaneFibers e hs).continuousOn_volume_real_preimage_prodMk
 
 /-- For a bounded Borel convex set, the volume of the part below the hyperplane `⟪e, x⟫ = c` is
 differentiable in `c` at every height interior to `⟪e, s⟫`, and its derivative is the volume of
@@ -252,7 +307,7 @@ theorem _root_.Convex.hasDerivAt_volume_real_sep_inner_le {s : Set E} (hs : Conv
       fun _ _ ↦ ENNReal.toReal_nonneg)
   -- By Brunn's concavity principle `φ` is continuous at the interior height `c`.
   have hcont : ContinuousAt φ c :=
-    (hs.continuousOn_volume_real_hyperplaneSection he hfin).continuousAt
+    (hs.continuousOn_volume_real_hyperplaneSection he).continuousAt
       (isOpen_interior.mem_nhds hc)
   exact (intervalIntegral.integral_hasDerivAt_right hφi.intervalIntegrable
     hm.ennreal_toReal.stronglyMeasurable.stronglyMeasurableAtFilter hcont).congr_of_eventuallyEq

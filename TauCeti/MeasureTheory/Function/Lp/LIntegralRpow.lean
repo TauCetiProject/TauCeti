@@ -27,8 +27,11 @@ covers comparing a function with its derivative.
 * `TauCeti.eLpNorm_rpow_eq_lintegral`: for an a.e. measurable `ℝ≥0∞`-valued function, the `p`-th
   power of the `Lᵖ` seminorm is the integral `∫⁻ f ^ p`; `TauCeti.eLpNorm_eq_lintegral_rpow` is
   the same identity solved for the seminorm.
-* `TauCeti.eLpNorm_le_of_ae_tendsto_ennreal`: an `ℝ≥0∞`-valued Fatou lemma for the `Lᵖ`
-  seminorm.
+* `TauCeti.eLpNorm_le_of_ae_tendsto_ennreal` and `TauCeti.eLpNorm_ennreal_le_of_ae_tendsto`:
+  `ℝ≥0∞`-valued Fatou lemmas for the `Lᵖ` seminorm (for sequences at finite nonzero exponents, and
+  along any countably generated filter at arbitrary `p : ℝ≥0∞`).
+* `TauCeti.ae_lt_top_of_eLpNorm_ne_top`: at any nonzero exponent, an `ℝ≥0∞`-valued function with
+  finite `Lᵖ` seminorm is finite almost everywhere.
 * `TauCeti.eLpNorm_le_eLpNorm_of_lintegral_rpow_le`: for an a.e. strongly measurable `v`, from
   `∫⁻ ‖v‖ₑ ^ p ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p` conclude `‖v‖_p ≤ c * ‖w‖_p`; no measurability of `w` is
   needed.
@@ -93,71 +96,136 @@ theorem eLpNorm_le_of_ae_tendsto_ennreal {α : Type*} [MeasurableSpace α] {μ :
           exact ENNReal.rpow_le_rpow (hle n) hr.le
   exact (ENNReal.rpow_le_rpow_iff hr).1 key
 
+/-- **Fatou's lemma for the `Lᵖ` seminorm of `ℝ≥0∞`-valued functions**, at every exponent
+`p : ℝ≥0∞` (including `0` and `∞`) and along any countably generated `NeBot` filter. Almost
+everywhere measurability of the limit is deduced from the pointwise convergence. -/
+theorem eLpNorm_ennreal_le_of_ae_tendsto {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {p : ℝ≥0∞} {ι : Type*} {u : Filter ι} [NeBot u] [IsCountablyGenerated u]
+    {f : ι → α → ℝ≥0∞} {g : α → ℝ≥0∞} {C : ℝ≥0∞}
+    (hf : ∀ i, AEMeasurable (f i) μ)
+    (hlim : ∀ᵐ x ∂μ, Tendsto (fun i ↦ f i x) u (𝓝 (g x)))
+    (hle : ∀ᶠ i in u, eLpNorm (f i) p μ ≤ C) :
+    eLpNorm g p μ ≤ C := by
+  obtain ⟨v, hv⟩ := exists_seq_tendsto u
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (hv.eventually hle)
+  let f' : ℕ → α → ℝ≥0∞ := fun n ↦ f (v (n + N))
+  have hf' : ∀ n, AEMeasurable (f' n) μ := fun n ↦ hf (v (n + N))
+  have hlim' : ∀ᵐ x ∂μ, Tendsto (fun n ↦ f' n x) atTop (𝓝 (g x)) :=
+    hlim.mono fun x hx ↦ (hx.comp hv).comp (tendsto_add_atTop_nat N)
+  have hle' : ∀ n, eLpNorm (f' n) p μ ≤ C := fun n ↦ hN (n + N) (Nat.le_add_left N n)
+  have hg : AEMeasurable g μ := ENNReal.aemeasurable_of_tendsto hf' hlim'
+  rcases eq_or_ne p 0 with rfl | hp0
+  · rw [eLpNorm_exponent_zero hg.aestronglyMeasurable]
+    exact zero_le
+  rcases eq_or_ne p ∞ with rfl | hp
+  · rw [eLpNorm_exponent_top hg.aestronglyMeasurable, eLpNormEssSup_eq_essSup_enorm]
+    simp only [enorm_eq_self]
+    have hcongr : essSup g μ = essSup (fun x ↦ atTop.liminf fun n ↦ f' n x) μ :=
+      essSup_congr_ae (hlim'.mono fun x hx ↦ hx.liminf_eq.symm)
+    rw [hcongr]
+    refine (ENNReal.essSup_liminf_le f').trans
+      (liminf_le_of_frequently_le' (.of_forall fun n ↦ ?_))
+    simpa [eLpNorm_exponent_top (hf' n).aestronglyMeasurable, eLpNormEssSup_eq_essSup_enorm] using
+      hle' n
+  · exact eLpNorm_le_of_ae_tendsto_ennreal hp0 hp hf' hlim' hle'
+
+/-- At any nonzero exponent (including `∞`), an `ℝ≥0∞`-valued function with finite `Lᵖ` seminorm is
+finite almost everywhere. -/
+theorem ae_lt_top_of_eLpNorm_ne_top {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) {f : α → ℝ≥0∞} (h : eLpNorm f p μ ≠ ∞) :
+    ∀ᵐ x ∂μ, f x < ∞ := by
+  have hf : AEMeasurable f μ := (aestronglyMeasurable_of_eLpNorm_ne_top h).aemeasurable
+  rcases eq_or_ne p ∞ with rfl | hp
+  · rw [eLpNorm_exponent_top hf.aestronglyMeasurable, eLpNormEssSup_eq_essSup_enorm] at h
+    simp only [enorm_eq_self] at h
+    exact ae_lt_of_essSup_lt h.lt_top
+  · have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+    have hint : ∫⁻ x, f x ^ p.toReal ∂μ ≠ ∞ := by
+      rw [← eLpNorm_rpow_eq_lintegral hp0 hp hf]
+      exact (ENNReal.rpow_lt_top_of_nonneg hr.le h).ne
+    filter_upwards [ae_lt_top' (hf.pow_const p.toReal) hint] with x hx
+    rwa [← ENNReal.lt_rpow_inv_iff hr, ENNReal.top_rpow_of_pos (inv_pos.2 hr)] at hx
+
 /-- Turn a bound between the `∫⁻ ‖·‖ₑ ^ p` integrals into a bound between the `Lᵖ` seminorms.
 The two functions may have different codomains, which is what lets such a bound compare a
 function with its derivative; only a topology and an extended norm on each is needed.
 
 Only the function on the left has to be a.e. strongly measurable: without that its `Lᵖ` seminorm
 is `∞` by definition, whatever the integral bound says, while a non-measurable `w` only makes the
-right-hand side larger. -/
-theorem eLpNorm_le_eLpNorm_of_lintegral_rpow_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
+right-hand side larger. The exponent `0` is allowed, where the left-hand side vanishes. The two
+integrals may be taken against different measures `μ` and `ν`, as when an estimate is transported
+by a change of variables. -/
+theorem eLpNorm_le_eLpNorm_of_lintegral_rpow_le {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
     {G H : Type*} [ENorm G] [TopologicalSpace G] [ENorm H] [TopologicalSpace H]
     {v : α → G} {w : α → H} {c : ℝ}
-    (hc : 0 ≤ c) {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp : p ≠ ∞) (hv : AEStronglyMeasurable v μ)
+    (hc : 0 ≤ c) {p : ℝ≥0∞} (hp : p ≠ ∞) (hv : AEStronglyMeasurable v μ)
     (h : ∫⁻ x, ‖v x‖ₑ ^ p.toReal ∂μ ≤
-      ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂μ) :
-    eLpNorm v p μ ≤ ENNReal.ofReal c * eLpNorm w p μ := by
+      ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) :
+    eLpNorm v p μ ≤ ENNReal.ofReal c * eLpNorm w p ν := by
+  rcases eq_or_ne p 0 with rfl | hp₀
+  · rw [eLpNorm_exponent_zero hv]
+    exact zero_le
   have hr0 : (0 : ℝ) < p.toReal := ENNReal.toReal_pos hp₀ hp
-  have hwle : (∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) ≤ eLpNorm w p μ := by
-    by_cases hw : AEStronglyMeasurable w μ
+  have hwle : (∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) ^ (1 / p.toReal) ≤ eLpNorm w p ν := by
+    by_cases hw : AEStronglyMeasurable w ν
     · exact (eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp hw).ge
     · simp [eLpNorm_of_not_aestronglyMeasurable hw]
   rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp hv]
   calc (∫⁻ x, ‖v x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal)
-      ≤ (ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
+      ≤ (ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) ^ (1 / p.toReal) :=
         ENNReal.rpow_le_rpow h (by positivity)
-    _ = ENNReal.ofReal c * (∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
+    _ = ENNReal.ofReal c * (∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
         rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
           ← ENNReal.ofReal_rpow_of_nonneg hc hr0.le, ← ENNReal.rpow_mul,
           mul_one_div_cancel hr0.ne', ENNReal.rpow_one]
-    _ ≤ ENNReal.ofReal c * eLpNorm w p μ := by gcongr
+    _ ≤ ENNReal.ofReal c * eLpNorm w p ν := by gcongr
 
 /-- **Hölder's inequality in extended-valued `∫⁻` form**, raised to the power `r`: the `L¹`
 integral of `u : α → ℝ≥0∞` is controlled by its `L^r` integral at the cost of the factor
 `μ univ ^ (r - 1)`.  Stated for an `ℝ≥0∞`-valued `u`, so a norm-valued application passes
-`fun x => ‖f x‖ₑ` and needs only that this composite is measurable.
+`fun x => ‖f x‖ₑ`; no measurability of `u` is needed.
 
 On a finite measure space this is the nesting `L^r ⊆ L¹`; for a general `μ` it is only the
 displayed inequality, which does not by itself give that inclusion.  No finiteness is assumed, and
 the bound is not vacuous when `μ univ = ∞`: arithmetic in `ℝ≥0∞` makes the right-hand side `0`
-rather than `∞` whenever `∫⁻ ‖f‖ₑ ^ r = 0`, and the inequality still holds there because `f` then
-vanishes almost everywhere. -/
+rather than `∞` whenever `∫⁻ ‖f‖ₑ ^ r = 0`, and the inequality still holds there: a zero lower
+integral of `u ^ r` forces a zero lower integral of `u`.  (This does not make a nonmeasurable `u`
+vanish almost everywhere.) -/
 theorem rpow_lintegral_le_measure_univ_rpow_mul {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {u : α → ℝ≥0∞} (hu : AEMeasurable u μ) {r : ℝ} (hr : 1 ≤ r) :
+    {μ : Measure α} {u : α → ℝ≥0∞} {r : ℝ} (hr : 1 ≤ r) :
     (∫⁻ x, u x ∂μ) ^ r ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, u x ^ r ∂μ := by
-  have hf : AEStronglyMeasurable u μ := hu.aestronglyMeasurable
-  have hr0 : (0 : ℝ) < r := one_pos.trans_le hr
-  have hCr : eLpNorm u (ENNReal.ofReal r) μ = (∫⁻ x, u x ^ r ∂μ) ^ (1 / r) := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by simpa using hr0) ENNReal.ofReal_ne_top hf,
-      ENNReal.toReal_ofReal hr0.le]
-    simp only [enorm_eq_self]
-  have holder : ∫⁻ x, u x ∂μ
-      ≤ (∫⁻ x, u x ^ r ∂μ) ^ (1 / r) * μ Set.univ ^ (1 - 1 / r) := by
-    have hle : (1 : ℝ≥0∞) ≤ ENNReal.ofReal r := by
-      rw [← ENNReal.ofReal_one]; exact ENNReal.ofReal_le_ofReal hr
-    have := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (f := u) (μ := μ) hle hf
-    rw [eLpNorm_one_eq_lintegral_enorm hf, hCr, ENNReal.toReal_one,
-      ENNReal.toReal_ofReal hr0.le, div_one] at this
-    simpa only [enorm_eq_self] using this
-  have hinv : 1 / r * r = 1 := by field_simp
-  have hexp : (1 - 1 / r) * r = r - 1 := by field_simp
-  calc (∫⁻ x, u x ∂μ) ^ r
-      ≤ ((∫⁻ x, u x ^ r ∂μ) ^ (1 / r) * μ Set.univ ^ (1 - 1 / r)) ^ r :=
-        ENNReal.rpow_le_rpow holder hr0.le
-    _ = ((∫⁻ x, u x ^ r ∂μ) ^ (1 / r)) ^ r * (μ Set.univ ^ (1 - 1 / r)) ^ r :=
-        ENNReal.mul_rpow_of_nonneg _ _ hr0.le
-    _ = (∫⁻ x, u x ^ r ∂μ) * μ Set.univ ^ (r - 1) := by
-        rw [← ENNReal.rpow_mul, ← ENNReal.rpow_mul, hinv, hexp, ENNReal.rpow_one]
-    _ = μ Set.univ ^ (r - 1) * ∫⁻ x, u x ^ r ∂μ := mul_comm _ _
+  have main (g : α → ℝ≥0∞) (hu : AEMeasurable g μ) :
+      (∫⁻ x, g x ∂μ) ^ r ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, g x ^ r ∂μ := by
+    have hf : AEStronglyMeasurable g μ := hu.aestronglyMeasurable
+    have hr0 : (0 : ℝ) < r := one_pos.trans_le hr
+    have hCr : eLpNorm g (ENNReal.ofReal r) μ = (∫⁻ x, g x ^ r ∂μ) ^ (1 / r) := by
+      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by simpa using hr0) ENNReal.ofReal_ne_top hf,
+        ENNReal.toReal_ofReal hr0.le]
+      simp only [enorm_eq_self]
+    have holder : ∫⁻ x, g x ∂μ
+        ≤ (∫⁻ x, g x ^ r ∂μ) ^ (1 / r) * μ Set.univ ^ (1 - 1 / r) := by
+      have hle : (1 : ℝ≥0∞) ≤ ENNReal.ofReal r := by
+        rw [← ENNReal.ofReal_one]; exact ENNReal.ofReal_le_ofReal hr
+      have := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (f := g) (μ := μ) hle hf
+      rw [eLpNorm_one_eq_lintegral_enorm hf, hCr, ENNReal.toReal_one,
+        ENNReal.toReal_ofReal hr0.le, div_one] at this
+      simpa only [enorm_eq_self] using this
+    have hinv : 1 / r * r = 1 := by field_simp
+    have hexp : (1 - 1 / r) * r = r - 1 := by field_simp
+    calc (∫⁻ x, g x ∂μ) ^ r
+        ≤ ((∫⁻ x, g x ^ r ∂μ) ^ (1 / r) * μ Set.univ ^ (1 - 1 / r)) ^ r :=
+          ENNReal.rpow_le_rpow holder hr0.le
+      _ = ((∫⁻ x, g x ^ r ∂μ) ^ (1 / r)) ^ r * (μ Set.univ ^ (1 - 1 / r)) ^ r :=
+          ENNReal.mul_rpow_of_nonneg _ _ hr0.le
+      _ = (∫⁻ x, g x ^ r ∂μ) * μ Set.univ ^ (r - 1) := by
+          rw [← ENNReal.rpow_mul, ← ENNReal.rpow_mul, hinv, hexp, ENNReal.rpow_one]
+      _ = μ Set.univ ^ (r - 1) * ∫⁻ x, g x ^ r ∂μ := mul_comm _ _
+  -- Replace `u` by a measurable minorant `g ≤ u` with the same lower integral.
+  obtain ⟨g, hgm, hgu, hg⟩ := exists_measurable_le_lintegral_eq μ u
+  calc (∫⁻ x, u x ∂μ) ^ r = (∫⁻ x, g x ∂μ) ^ r := by rw [hg]
+    _ ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, g x ^ r ∂μ := main g hgm.aemeasurable
+    _ ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, u x ^ r ∂μ := by
+        gcongr with x
+        exact hgu x
 
 end TauCeti

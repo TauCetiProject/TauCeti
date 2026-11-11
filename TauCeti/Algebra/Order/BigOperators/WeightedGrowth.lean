@@ -31,6 +31,8 @@ matrix `2I - c` is not positive definite; see
 
 * `TauCeti.add_one_mul_le_of_two_mul_le_add`: a sequence with `2 s_0 ≤ s_1` and
   `2 s_{j+1} ≤ s_{j+2} + s_j` up to `n` satisfies `(n + 1) s_0 ≤ s_n`.
+* `TauCeti.two_mul_sum_mul_le_sum_mul_sum_mul`: a weight `δ` with `2 δ_i ≤ ∑_j c_{ij} δ_j` doubles
+  the weighted sum of a nonnegative vector `e` at most up to the weighted sum of `c^T e`.
 * `TauCeti.add_one_mul_sum_mul_le_sum_mul`: under these hypotheses,
   `(m + 1) ∑_j δ_j d_0(j) ≤ ∑_j δ_j d_m(j)`.
 -/
@@ -61,6 +63,21 @@ theorem add_one_mul_le_of_two_mul_le_add {S : Type*} [CommRing S] [LinearOrder S
     push_cast
     linarith
 
+/-- **Weighting by `δ` doubles at most to the weighted transposed sum.** If `2 δ_i ≤ ∑_j c_{ij} δ_j`
+and `e ≥ 0`, then `2 ∑_i δ_i e_i ≤ ∑_j δ_j ∑_i c_{ij} e_i`. -/
+theorem two_mul_sum_mul_le_sum_mul_sum_mul {ι : Type*} [Fintype ι] {S : Type*} [CommRing S]
+    [LinearOrder S] [IsStrictOrderedRing S] (c : ι → ι → S) {δ : ι → S}
+    (hδ : ∀ i, 2 * δ i ≤ ∑ j, c i j * δ j) {e : ι → S} (he : 0 ≤ e) :
+    2 * ∑ i, δ i * e i ≤ ∑ j, δ j * ∑ i, c i j * e i :=
+  calc 2 * ∑ i, δ i * e i = ∑ i, (2 * δ i) * e i := by
+        rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun i _ => by ring
+    _ ≤ ∑ i, (∑ j, c i j * δ j) * e i :=
+        Finset.sum_le_sum fun i _ => mul_le_mul_of_nonneg_right (hδ i) (he i)
+    _ = ∑ j, δ j * ∑ i, c i j * e i := by
+        simp only [Finset.sum_mul, Finset.mul_sum]
+        rw [Finset.sum_comm]
+        exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i _ => by ring
+
 /-- **Linear growth of weighted sums under a second-order inequality.** If `d_m(j) ≥ 0` satisfy
 `∑_i c_{ij} d_0(i) ≤ d_1(j)` and `∑_i c_{ij} d_{m+1}(i) ≤ d_{m+2}(j) + d_m(j)`, and a
 nonnegative weight `δ` satisfies `2 δ_i ≤ ∑_j c_{ij} δ_j`, then the weighted sums
@@ -76,16 +93,8 @@ theorem add_one_mul_sum_mul_le_sum_mul {ι : Type*} [Fintype ι] {S : Type*} [Co
   have key : ∀ e f : ι → S, 0 ≤ e → (∀ j, ∑ i, c i j * e i ≤ f j) →
       2 * ∑ i, δ i * e i ≤ ∑ j, δ j * f j := by
     intro e f he hef
-    calc 2 * ∑ i, δ i * e i = ∑ i, (2 * δ i) * e i := by
-          rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun i _ => by ring
-      _ ≤ ∑ i, (∑ j, c i j * δ j) * e i :=
-          Finset.sum_le_sum fun i _ => mul_le_mul_of_nonneg_right (hδ i) (he i)
-      _ = ∑ j, δ j * ∑ i, c i j * e i := by
-          simp only [Finset.sum_mul, Finset.mul_sum]
-          rw [Finset.sum_comm]
-          exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i _ => by ring
-      _ ≤ ∑ j, δ j * f j :=
-          Finset.sum_le_sum fun j _ => mul_le_mul_of_nonneg_left (hef j) (hδ0 j)
+    exact (two_mul_sum_mul_le_sum_mul_sum_mul c hδ he).trans
+      (Finset.sum_le_sum fun j _ => mul_le_mul_of_nonneg_left (hef j) (hδ0 j))
   have hs1 : 2 * s 0 ≤ s 1 := key _ _ (hd0 0) h1
   have hs2 : ∀ m, 2 * s (m + 1) ≤ s (m + 2) + s m := by
     intro m

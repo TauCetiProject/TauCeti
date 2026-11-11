@@ -73,11 +73,18 @@ theorem index_normGroup_of_isCyclic [IsCyclic (L ≃ₐ[K] L)] :
   rw [← natCard_H2_units_eq_finrank K L, Subgroup.index]
   exact Nat.card_congr (Additive.ofMul.trans (cyclicNormQuotientEquiv hg).toEquiv)
 
+omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [ValuativeExtension K L] in
 /-- **The local `H²` bound.** For a finite Galois extension `L/K` of nonarchimedean local fields,
-the order of `H²(Gal(L/K), Lˣ)` divides `[L : K]`. -/
+the order of `H²(Gal(L/K), Lˣ)` divides `[L : K]`. The statement involves only the field structure
+of `L` (a finite Galois extension of `K`); no valuation or topology on `L` is assumed. -/
 theorem natCard_H2_units_dvd_finrank :
     Nat.card (groupCohomology (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) 2) ∣
       finrank K L := by
+  let _ := algebraicExtensionValuativeRel K L
+  let _ := algebraicExtensionNormedFieldTopology K L
+  have := finiteExtension_isNonarchimedeanLocalField K L
+  have := algebraicExtension_valuativeExtension K L
   refine natCard_groupCohomology_two_units_dvd_finrank (K := K) (L := L) fun E F _ hp ↦ ?_
   let _ := finiteIntermediateFieldValuativeRel K L E
   let _ := finiteIntermediateFieldTopology K L E

@@ -173,8 +173,7 @@ theorem wassersteinEDist_eq_eLpNorm_quantile_sub {p : ℝ≥0∞} (hp : 1 ≤ p)
   rcases eq_or_ne p ∞ with rfl | hp_top
   · -- The exponent `∞`: both sides are the limits of their finite-exponent values.
     refine tendsto_nhds_unique ((tendsto_wassersteinEDist_atTop μ ν).congr' ?_)
-      (tendsto_eLpNorm_atTop ((Measure.measurable_quantile μ).sub
-        (Measure.measurable_quantile ν)).aestronglyMeasurable)
+      tendsto_eLpNorm_atTop
     filter_upwards [eventually_ge_atTop 1] with q hq
     exact hfin q (by exact_mod_cast hq) ENNReal.coe_ne_top
   · exact hfin p hp hp_top

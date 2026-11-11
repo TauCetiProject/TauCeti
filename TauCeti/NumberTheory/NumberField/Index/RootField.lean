@@ -61,7 +61,7 @@ noncomputable def rootIntegralPrimitiveElement (hβ : β ∈ (minpoly ℚ (θ : 
   ⟨⟨⟨β, mem_fixedField_stabilizer β⟩, by
       rw [mem_integralClosure_iff,
         ← isIntegral_algebraMap_iff (A := fixedField (stabilizer (M ≃ₐ[ℚ] M) β)) (B := M)]
-      exact isIntegral_of_mem_rootSet hβ⟩,
+      exact isIntegral_of_aeval_eq_zero (aeval_eq_zero_of_mem_rootSet hβ)⟩,
     adjoin_eq_top_of_fixedField_stabilizer β⟩
 
 variable (hβ : β ∈ (minpoly ℚ (θ : K)).rootSet M)
@@ -77,13 +77,11 @@ is `minpoly ℤ θ`. -/
 @[simp]
 theorem minpoly_rootIntegralPrimitiveElement :
     minpoly ℤ (rootIntegralPrimitiveElement hβ).1 = minpoly ℤ θ := by
-  set E := fixedField (stabilizer (M ≃ₐ[ℚ] M) β)
-  have h : minpoly ℚ ((rootIntegralPrimitiveElement hβ).1 : E) = minpoly ℚ (θ : K) := by
-    rw [← minpoly.algebraMap_eq (algebraMap E M).injective]
-    exact minpoly_rat_eq_of_mem_rootSet hβ
-  rw [_root_.NumberField.RingOfIntegers.minpoly_rat_coe,
-    _root_.NumberField.RingOfIntegers.minpoly_rat_coe] at h
-  exact Polynomial.map_injective _ (algebraMap ℤ ℚ).injective_int h
+  rw [← _root_.NumberField.RingOfIntegers.minpoly_coe]
+  refine minpoly_int_eq_of_aeval_eq_zero ?_
+  rw [← aeval_algebraMap_eq_zero_iff M, IntermediateField.algebraMap_apply,
+    coe_coe_rootIntegralPrimitiveElement]
+  exact aeval_eq_zero_of_mem_rootSet hβ
 
 /-- If `minpoly ℤ θ` is squarefree modulo `p`, then `p` does not divide the conductor exponent
 of a root of `minpoly ℚ θ` in its own field. -/

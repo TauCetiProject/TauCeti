@@ -11,6 +11,9 @@ public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Polish
 /-!
 # Topology of Pontryagin duals
 
+Multiplication and inversion of characters are pointwise, as recorded by
+`PontryaginDual.mul_apply` and `PontryaginDual.inv_apply`.
+
 The Pontryagin dual of a second-countable locally compact monoid is Polish. For locally compact
 abelian groups this ensures that finite Borel measures on the dual are tight and determined by
 their Fourier–Stieltjes transforms.
@@ -34,6 +37,20 @@ concrete unit circle, where a character becomes the monomial `z ↦ zⁿ`.
 public section
 
 noncomputable section
+
+namespace PontryaginDual
+
+variable {A : Type*} [Monoid A] [TopologicalSpace A]
+
+/-- Multiplication of characters is pointwise. -/
+@[simp]
+theorem mul_apply (χ ψ : PontryaginDual A) (a : A) : (χ * ψ) a = χ a * ψ a := (rfl)
+
+/-- Inversion of characters is pointwise. -/
+@[simp]
+theorem inv_apply (χ : PontryaginDual A) (a : A) : χ⁻¹ a = (χ a)⁻¹ := (rfl)
+
+end PontryaginDual
 
 namespace TauCeti
 

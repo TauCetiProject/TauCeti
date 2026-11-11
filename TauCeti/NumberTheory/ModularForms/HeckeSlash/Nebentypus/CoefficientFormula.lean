@@ -46,7 +46,7 @@ The statement is the coefficient formula `fourierCoeff_heckeT_n_period_one` from
 
 public section
 
-open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 
 open scoped MatrixGroups
 

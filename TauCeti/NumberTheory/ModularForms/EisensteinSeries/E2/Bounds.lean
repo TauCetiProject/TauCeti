@@ -18,7 +18,8 @@ Consequently, `E₂` is bounded in weight two at every cusp of the modular group
 ## Main results
 
 * `TauCeti.EisensteinSeries.tendsto_D2_atImInfty`: the anomalous term tends to zero.
-* `TauCeti.EisensteinSeries.tendsto_E2_slash_atImInfty`: every integral translate tends to `1`.
+* `TauCeti.EisensteinSeries.tendsto_E2_slash_atImInfty`: every integral weight-two slash of `E₂`
+  tends to `1` at infinity.
 * `TauCeti.EisensteinSeries.isBoundedAtImInfty_D2`: the anomalous transformation term is bounded
   at infinity.
 * `TauCeti.EisensteinSeries.isBoundedAtImInfty_E2_slash`: every integral weight-two slash of `E₂`
@@ -41,19 +42,16 @@ lemma tendsto_D2_atImInfty (γ : SL(2, ℤ)) : Tendsto (D2 γ) atImInfty (𝓝 0
   rw [tendsto_zero_iff_norm_tendsto_zero]
   have hinv : Tendsto (fun z : ℍ ↦ z.im⁻¹) atImInfty (𝓝 (0 : ℝ)) :=
     tendsto_inv_atTop_zero.comp tendsto_comap
-  refine squeeze_zero (fun _ ↦ norm_nonneg _) ?_
-    (by simpa only [mul_zero] using hinv.const_mul (‖(2 * Real.pi * Complex.I : ℂ)‖))
-  intro z
-  have hd : 0 < ‖denom γ z‖ := norm_pos_iff.mpr (denom_ne_zero γ z)
+  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun z ↦ ?_)
+    (by simpa only [mul_zero] using hinv.const_mul ‖(2 * Real.pi * Complex.I : ℂ)‖)
   have hci : ‖(γ 1 0 : ℂ)‖ * z.im ≤ ‖denom γ z‖ := by
-    simpa [ModularGroup.denom_apply, Complex.mul_im, Complex.add_im,
-      abs_mul, abs_of_pos z.im_pos] using Complex.abs_im_le_norm (denom γ z)
-  rw [D2, norm_div, norm_mul, ← div_eq_mul_inv]
-  apply (div_le_div_iff₀ hd z.im_pos).mpr
-  simpa only [mul_assoc] using mul_le_mul_of_nonneg_left hci
-    (norm_nonneg (2 * Real.pi * Complex.I : ℂ))
+    simpa [ModularGroup.denom_apply, mul_im, abs_mul, abs_of_pos z.im_pos] using
+      abs_im_le_norm (denom γ z)
+  rw [D2, norm_div, norm_mul, ← div_eq_mul_inv,
+    div_le_div_iff₀ (norm_pos_iff.mpr (denom_ne_zero γ z)) z.im_pos, mul_assoc]
+  gcongr
 
-/-- Every integral weight-two translate of `E₂` has limit `1` at infinity. -/
+/-- Every integral weight-two slash of `E₂` has limit `1` at infinity. -/
 lemma tendsto_E2_slash_atImInfty (γ : SL(2, ℤ)) :
     Tendsto (E2 ∣[(2 : ℤ)] γ) atImInfty (𝓝 1) := by
   rw [E2_slash_action]

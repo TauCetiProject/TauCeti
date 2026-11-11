@@ -116,6 +116,19 @@ theorem weightedLogCanonicalDegree_pos_of_componentDegree_pos [Fintype ι] {v : 
   rw [weightedLogCanonicalDegree_def, G.logCanonicalDegree_def]
   omega
 
+/-- A vertex of nonpositive weighted log-canonical degree has map degree zero. -/
+theorem componentDegree_eq_zero_of_weightedLogCanonicalDegree_nonpos [Fintype ι] {v : G.Vertex}
+    (hv : D.weightedLogCanonicalDegree v ≤ 0) : D.componentDegree v = 0 := by
+  by_contra hd
+  exact (not_lt_of_ge hv)
+    (D.weightedLogCanonicalDegree_pos_of_componentDegree_pos (Nat.pos_of_ne_zero hd))
+
+/-- At a degree-zero vertex, the weighted and ordinary log-canonical degrees agree. -/
+theorem weightedLogCanonicalDegree_eq_of_componentDegree_eq_zero [Fintype ι] {v : G.Vertex}
+    (hv : D.componentDegree v = 0) :
+    D.weightedLogCanonicalDegree v = G.logCanonicalDegree v := by
+  simp [weightedLogCanonicalDegree_def, hv]
+
 /-- The contracted-component stability criterion is equivalent to positivity of
 `2g(v) - 2 + val(v) + n(v) + 3d(v)` at every vertex. -/
 theorem isStable_iff_weightedLogCanonicalDegree_pos [Fintype ι] :
@@ -135,6 +148,30 @@ theorem sum_weightedLogCanonicalDegree [Fintype ι] :
   rw [sum_congr rfl fun v _ ↦ D.weightedLogCanonicalDegree_def v, sum_add_distrib,
     G.sum_logCanonicalDegree]
   simp [totalDegree, ← mul_sum]
+
+/-- In the numerical stable range, a zero-weighted-degree vertex is a rational tail with one
+marking or an unmarked rational bridge. -/
+theorem isRationalTail_or_isRationalBridge_of_weightedLogCanonicalDegree_eq_zero [Fintype ι]
+    (hrange : 0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι + 3 * D.totalDegree)
+    {v : G.Vertex} (hv : D.weightedLogCanonicalDegree v = 0) :
+    (G.IsRationalTail v ∧ G.numMarkings v = 1) ∨
+      (G.IsRationalBridge v ∧ ∀ i, G.marking i ≠ v) := by
+  have hd := D.componentDegree_eq_zero_of_weightedLogCanonicalDegree_nonpos hv.le
+  have hlog : G.logCanonicalDegree v = 0 := by
+    rwa [D.weightedLogCanonicalDegree_eq_of_componentDegree_eq_zero hd] at hv
+  have hw : ∃ w, w ≠ v := by
+    by_contra! h
+    have hsum : ∑ w, D.weightedLogCanonicalDegree w = 0 := by
+      apply sum_eq_zero
+      intro w _
+      rw [h w, hv]
+    rw [D.sum_weightedLogCanonicalDegree] at hsum
+    omega
+  rcases G.isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos hlog.le hw with
+      ⟨ht, _⟩ | hb
+  · have htail := ht.logCanonicalDegree_eq
+    exact .inl ⟨ht, by omega⟩
+  · exact .inr hb
 
 /-- Stability is unchanged when two decorations have the same degree-zero components. -/
 theorem isStable_congr [Fintype ι] {D' : G.DegreeDecoration}

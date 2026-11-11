@@ -72,6 +72,38 @@ theorem Continuous.isOpen_setOf_mem_extChartAt_source {g : P × M → N} (hg : C
   refine (isOpen_extChartAt_source (I := J) y).preimage (hg.comp (continuous_fst.prodMk ?_))
   exact ((continuousOn_extChartAt_symm x).domRestrict).comp continuous_snd
 
+/-- The coordinate representative of a jointly `C^n` family `g` on `P × M`, read in the extended
+charts around `p₀` and `x`, has partial `m`-th derivatives in the source variable that are jointly
+continuous on the product of the open pieces `W₁` and `U'` of the two chart targets. The
+derivative is taken within the source chart target piece, so boundary points are covered, provided
+the family lands in the target chart source there. -/
+private lemma continuousOn_iteratedFDerivWithin_coordinateRepresentative {g : P × M → N}
+    (hg : ContMDiff (I'.prod I) J n g) (p₀ : P) (x : M) (y : N) {W₁ : Set E'} {U' : Set E}
+    (hW₁o : IsOpen W₁) (hU'o : IsOpen U')
+    (hmapsTo : MapsTo
+      (fun w : E' × E ↦ g ((extChartAt I' p₀).symm w.1, (extChartAt I x).symm w.2))
+      (((extChartAt I' p₀).target ∩ W₁) ×ˢ ((extChartAt I x).target ∩ U')) (chartAt G y).source)
+    (m : ℕ) (hm : m ≤ n) :
+    ContinuousOn (fun z : E' × E ↦ iteratedFDerivWithin 𝕜 m (fun b ↦ extChartAt J y
+      (g ((extChartAt I' p₀).symm z.1, (extChartAt I x).symm b)))
+        ((extChartAt I x).target ∩ U') z.2)
+      (((extChartAt I' p₀).target ∩ W₁) ×ˢ ((extChartAt I x).target ∩ U')) := by
+  set S : Set E' := (extChartAt I' p₀).target ∩ W₁
+  set T : Set E := (extChartAt I x).target ∩ U'
+  have h1 : ContMDiffOn 𝓘(𝕜, E' × E) J n
+      (fun w : E' × E ↦ g ((extChartAt I' p₀).symm w.1, (extChartAt I x).symm w.2))
+      ((extChartAt I' p₀).target ×ˢ (extChartAt I x).target) :=
+    contMDiffOn_prod_modelWithCornersSelf_iff.mp <| hg.comp_contMDiffOn
+      ((contMDiffOn_extChartAt_symm p₀).prodMap (contMDiffOn_extChartAt_symm x))
+  have h2 : ContDiffOn 𝕜 n (fun w : E' × E ↦ extChartAt J y
+      (g ((extChartAt I' p₀).symm w.1, (extChartAt I x).symm w.2))) (S ×ˢ T) :=
+    ((contMDiffOn_extChartAt (I := J) (n := n) (x := y)).comp
+      (h1.mono (prod_mono inter_subset_left inter_subset_left)) hmapsTo).contDiffOn
+  have hST : UniqueDiffOn 𝕜 (S ×ˢ T) :=
+    UniqueDiffOn.prod ((uniqueDiffOn_extChartAt_target p₀).inter hW₁o)
+      ((uniqueDiffOn_extChartAt_target x).inter hU'o)
+  exact h2.continuousOn_iteratedFDerivWithin_prod_right hST m hm
+
 /-- On the open set where a jointly `C^n` map on `P × M`, read as a family of maps `M → N`, is
 visible in the extended chart around `y`, the `m`-th coordinate derivative of the family depends
 continuously on the parameter and the source-chart point jointly. The derivative is taken within
@@ -93,63 +125,43 @@ theorem ContMDiff.continuousOn_iteratedFDerivWithin_extChartAt {g : P × M → N
   -- Move the chart neighbourhood `U` of `z₀` and the parameter neighbourhood `W` of `p₀` into
   -- the two model spaces, where the coordinate representative can be differentiated.
   obtain ⟨U', hU'o, hU'⟩ := isOpen_induced_iff.mp hUo
-  set O : Set P := (chartAt H' p₀).source ∩ W
-  have hOo : IsOpen O := (chartAt H' p₀).open_source.inter hWo
-  have hp₀O : p₀ ∈ O := ⟨mem_chart_source H' p₀, hpW⟩
+  set O : Set P := (extChartAt I' p₀).source ∩ W
+  have hOo : IsOpen O := (isOpen_extChartAt_source p₀).inter hWo
+  have hp₀O : p₀ ∈ O := ⟨mem_extChartAt_source p₀, hpW⟩
   obtain ⟨W₁, hW₁o, hW₁⟩ :=
     continuousOn_iff'.mp (continuousOn_extChartAt_symm (I := I') p₀) O hOo
+  have hW : ∀ a ∈ (extChartAt I' p₀).target, (extChartAt I' p₀).symm a ∈ O ↔ a ∈ W₁ := fun a ha ↦
+    ⟨fun h ↦ ((Set.ext_iff.mp hW₁ a).1 ⟨h, ha⟩).1, fun h ↦ ((Set.ext_iff.mp hW₁ a).2 ⟨h, ha⟩).1⟩
   set S : Set E' := (extChartAt I' p₀).target ∩ W₁
-  set T : Set E := (extChartAt I x).target ∩ U' with hT_def
+  set T : Set E := (extChartAt I x).target ∩ U'
   -- The coordinate representative is `C^n` on `S ×ˢ T`.
   have hmapsTo : MapsTo
       (fun w : E' × E ↦ g ((extChartAt I' p₀).symm w.1, (extChartAt I x).symm w.2))
       (S ×ˢ T) (chartAt G y).source := by
     rintro ⟨a, b⟩ ⟨ha, hb⟩
-    have hpa : (extChartAt I' p₀).symm a ∈ W := by
-      have ha' : a ∈ (extChartAt I' p₀).symm ⁻¹' O ∩ (extChartAt I' p₀).target := by
-        rw [hW₁]; exact ⟨ha.2, ha.1⟩
-      exact ha'.1.2
     have hzb : (⟨b, hb.1⟩ : (extChartAt I x).target) ∈ U := by rw [← hU']; exact hb.2
-    have := hWU (Set.mk_mem_prod hpa hzb)
+    have := hWU (Set.mk_mem_prod ((hW a ha.1).2 ha.2).2 hzb)
     rw [Set.mem_ofPred_eq, extChartAt_source] at this
     exact this
-  have h1 : ContMDiffOn 𝓘(𝕜, E' × E) J n
-      (fun w : E' × E ↦ g ((extChartAt I' p₀).symm w.1, (extChartAt I x).symm w.2))
-      ((extChartAt I' p₀).target ×ˢ (extChartAt I x).target) :=
-    contMDiffOn_prod_modelWithCornersSelf_iff.mp <| hg.comp_contMDiffOn
-      ((contMDiffOn_extChartAt_symm p₀).prodMap (contMDiffOn_extChartAt_symm x))
-  have h2 : ContDiffOn 𝕜 n (fun w : E' × E ↦ extChartAt J y
-      (g ((extChartAt I' p₀).symm w.1, (extChartAt I x).symm w.2))) (S ×ˢ T) :=
-    ((contMDiffOn_extChartAt (I := J) (n := n) (x := y)).comp
-      (h1.mono (prod_mono inter_subset_left inter_subset_left)) hmapsTo).contDiffOn
-  have hST : UniqueDiffOn 𝕜 (S ×ˢ T) :=
-    UniqueDiffOn.prod ((uniqueDiffOn_extChartAt_target p₀).inter hW₁o)
-      ((uniqueDiffOn_extChartAt_target x).inter hU'o)
-  have hcont := h2.continuousOn_iteratedFDerivWithin_prod_right hST m hm
+  have hcont := continuousOn_iteratedFDerivWithin_coordinateRepresentative hg p₀ x y
+    hW₁o hU'o hmapsTo m hm
   -- Read the derivative back on the parameter manifold and in the full source chart target.
   have hmapsTo2 : MapsTo (fun z : P × (extChartAt I x).target ↦ (extChartAt I' p₀ z.1, (↑z.2 : E)))
       (O ×ˢ U) (S ×ˢ T) := by
     rintro ⟨p, z⟩ ⟨hp, hz⟩
-    have hpsource : p ∈ (extChartAt I' p₀).source := by rw [extChartAt_source]; exact hp.1
-    refine ⟨⟨(extChartAt I' p₀).map_source hpsource, ?_⟩, ⟨z.2, ?_⟩⟩
-    · have hp' : extChartAt I' p₀ p ∈ W₁ ∩ (extChartAt I' p₀).target := by
-        rw [← hW₁]
-        refine ⟨?_, (extChartAt I' p₀).map_source hpsource⟩
-        rw [mem_preimage, (extChartAt I' p₀).left_inv hpsource]
-        exact hp
-      exact hp'.1
+    refine ⟨⟨(extChartAt I' p₀).map_source hp.1, ?_⟩, ⟨z.2, ?_⟩⟩
+    · exact (hW _ ((extChartAt I' p₀).map_source hp.1)).1
+        (by rw [(extChartAt I' p₀).left_inv hp.1]; exact hp)
     · rw [← hU'] at hz; exact hz
   have hd : ContinuousOn d (O ×ˢ U) := by
     refine (hcont.comp ?_ hmapsTo2).congr ?_
-    · exact ((continuousOn_extChartAt p₀).mono (fun p (hp : p ∈ O) ↦ by
-        rw [extChartAt_source]; exact hp.1)).comp continuousOn_fst
+    · exact ((continuousOn_extChartAt p₀).mono (fun p (hp : p ∈ O) ↦ hp.1)).comp continuousOn_fst
         (fun z (hz : z ∈ O ×ˢ U) ↦ hz.1) |>.prodMk
           (continuous_subtype_val.comp_continuousOn continuousOn_snd)
     · rintro ⟨p, z⟩ ⟨hp, hz⟩
-      have hpsource : p ∈ (extChartAt I' p₀).source := by rw [extChartAt_source]; exact hp.1
       have hzU' : (↑z : E) ∈ U' := by rw [← hU'] at hz; exact hz
-      simp only [Function.comp_apply, hd_def, (extChartAt I' p₀).left_inv hpsource]
-      rw [hT_def, iteratedFDerivWithin_inter_open hU'o hzU']
+      simp only [Function.comp_apply, hd_def, (extChartAt I' p₀).left_inv hp.1]
+      rw [iteratedFDerivWithin_inter_open hU'o hzU']
   exact hd.continuousAt ((hOo.prod hUo).mem_nhds (Set.mk_mem_prod hp₀O hzU))
 
 /-- Joint `C^n` regularity gives continuity into the weak Whitney topology on manifold-valued

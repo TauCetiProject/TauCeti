@@ -40,9 +40,9 @@ plane.
   `s ≥ 0` with `‖P_{Vᗮ} u‖ ≤ s ‖u‖` for every `u ∈ U`.
 * `Submodule.disjoint_orthogonal_of_directedProjectionGap_lt_one`: if the directed gap from `U`
   to `V` is less than `1`, then `U ⊓ Vᗮ = ⊥`.
-* `Submodule.directedProjectionGap_le_directedProjectionGap_of_finrank_le`: for
-  finite-dimensional subspaces, the directed gap from the lower-dimensional one is at most the
-  directed gap from the other.
+* `Submodule.directedProjectionGap_le_directedProjectionGap_of_finrank_le`: for a
+  finite-dimensional subspace and a subspace of at least its dimension, the directed gap from the
+  former is at most the directed gap from the latter.
 * `Submodule.directedProjectionGap_comm_of_finrank_eq` and
   `Submodule.projectionGap_eq_directedProjectionGap_of_finrank_eq`: for finite-dimensional
   subspaces of equal dimension the two directed gaps agree, and the gap equals either of them.
@@ -221,10 +221,10 @@ theorem disjoint_orthogonal_of_directedProjectionGap_lt_one (h : directedProject
   rw [starProjection_eq_self_iff.2 hxV] at hx
   exact norm_eq_zero.1 <| le_antisymm (by nlinarith [norm_nonneg x]) (norm_nonneg x)
 
-/-- For finite-dimensional subspaces with `dim V ≤ dim U`, the directed gap from `V` to `U` is at
-most the directed gap from `U` to `V`: `‖P_{Uᗮ} P_V‖ ≤ ‖P_{Vᗮ} P_U‖`. -/
-theorem directedProjectionGap_le_directedProjectionGap_of_finrank_le [FiniteDimensional 𝕜 U]
-    [FiniteDimensional 𝕜 V] (h : Module.finrank 𝕜 V ≤ Module.finrank 𝕜 U) :
+/-- For a finite-dimensional subspace `V` and a subspace `U` with `dim V ≤ dim U`, the directed gap
+from `V` to `U` is at most the directed gap from `U` to `V`: `‖P_{Uᗮ} P_V‖ ≤ ‖P_{Vᗮ} P_U‖`. -/
+theorem directedProjectionGap_le_directedProjectionGap_of_finrank_le [FiniteDimensional 𝕜 V]
+    (h : Module.finrank 𝕜 V ≤ Module.finrank 𝕜 U) :
     directedProjectionGap V U ≤ directedProjectionGap U V := by
   -- By the Pythagorean theorem, `‖P_{Vᗮ} u‖ ≤ s ‖u‖` is `(1 - s²) ‖u‖² ≤ ‖P_V u‖²`.
   set s := directedProjectionGap U V

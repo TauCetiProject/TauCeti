@@ -79,29 +79,22 @@ theorem exists_finset_monic_isGroebnerBasis (I : Ideal (MvPolynomial σ k)) :
     ∃ G : Finset (MvPolynomial σ k), (∀ g ∈ G, m.Monic g) ∧ m.IsGroebnerBasis G I := by
   classical
   obtain ⟨B, hB⟩ := m.exists_finset_isGroebnerBasis I
-  let normalize (p : MvPolynomial σ k) := C (m.leadingCoeff p)⁻¹ * p
-  have hdegree (p : MvPolynomial σ k) (hp : p ≠ 0) :
-      m.degree (normalize p) = m.degree p := by
-    dsimp only [normalize]
-    rw [m.degree_mul (C_ne_zero.2 (inv_ne_zero (m.leadingCoeff_ne_zero_iff.2 hp))) hp,
-      m.degree_C, zero_add]
-  have hmonic (p : MvPolynomial σ k) (hp : p ≠ 0) : m.Monic (normalize p) := by
-    simp [normalize, Monic, m.leadingCoeff_ne_zero_iff.2 hp]
-  have hGmonic : ∀ g ∈ (B.erase 0).image normalize, m.Monic g := by
+  have hGmonic : ∀ g ∈ (B.erase 0).image m.monicNormalize, m.Monic g := by
     intro g hg
     obtain ⟨p, hp, rfl⟩ := Finset.mem_image.1 hg
-    exact hmonic p (Finset.mem_erase.1 hp).1
-  refine ⟨(B.erase 0).image normalize, hGmonic, ?_⟩
+    exact monic_monicNormalize (Finset.mem_erase.1 hp).1
+  refine ⟨(B.erase 0).image m.monicNormalize, hGmonic, ?_⟩
   apply (m.isGroebnerBasis_iff_forall_exists_degree_le_degree
     (fun g hg _ ↦ (hGmonic g hg).leadingCoeff_eq_one.symm ▸ isUnit_one)).2
   refine ⟨?_, ?_⟩
   · intro g hg
     obtain ⟨p, hp, rfl⟩ := Finset.mem_image.1 hg
+    rw [monicNormalize_def]
     exact I.mul_mem_left _ (hB.subset (Finset.mem_erase.1 hp).2)
   · intro p hp hp0
     obtain ⟨b, hb, hb0, hbp⟩ := hB.exists_degree_le_degree hp hp0
-    exact ⟨normalize b, Finset.mem_image.2 ⟨b, Finset.mem_erase.2 ⟨hb0, hb⟩, rfl⟩,
-      (hmonic b hb0).ne_zero, (hdegree b hb0) ▸ hbp⟩
+    exact ⟨m.monicNormalize b, Finset.mem_image.2 ⟨b, Finset.mem_erase.2 ⟨hb0, hb⟩, rfl⟩,
+      (monic_monicNormalize hb0).ne_zero, (degree_monicNormalize b).symm ▸ hbp⟩
 
 end Field
 
