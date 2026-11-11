@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Equicontinuity
 public import TauCeti.Analysis.Complex.Wirtinger.SecondDerivative
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Convergence of the derivatives of Floer solutions
@@ -59,45 +60,6 @@ open scoped NNReal ContDiff
 namespace TauCeti.Floer
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-
-section Composition
-
-variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {Φ : ℂ × F → G} {W : Set (ℂ × F)}
-
-/-- The derivative of `z ↦ Φ (z, u z)` has norm at most `‖DΦ‖ (1 + ‖Du‖)`. -/
-private theorem hasFDerivAt_comp_prodMk {u : ℂ → F} {y : ℂ}
-    (hΦ : DifferentiableAt ℝ Φ (y, u y)) (hu : DifferentiableAt ℝ u y) :
-    DifferentiableAt ℝ (fun z ↦ Φ (z, u z)) y ∧
-      ‖fderiv ℝ (fun z ↦ Φ (z, u z)) y‖ ≤ ‖fderiv ℝ Φ (y, u y)‖ * (1 + ‖fderiv ℝ u y‖) := by
-  have h : HasFDerivAt (fun z ↦ Φ (z, u z))
-      ((fderiv ℝ Φ (y, u y)).comp ((ContinuousLinearMap.id ℝ ℂ).prod (fderiv ℝ u y))) y :=
-    hΦ.hasFDerivAt.comp y ((hasFDerivAt_id y).prodMk hu.hasFDerivAt)
-  refine ⟨h.differentiableAt, ?_⟩
-  rw [h.fderiv]
-  refine (ContinuousLinearMap.opNorm_comp_le _ _).trans
-    (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-  rw [ContinuousLinearMap.opNorm_prod, Prod.norm_def]
-  exact max_le ((ContinuousLinearMap.norm_id_le).trans (le_add_of_nonneg_right (norm_nonneg _)))
-    (le_add_of_nonneg_left zero_le_one)
-
-/-- Along maps `uₙ` with values in `K` and `‖Duₙ‖ ≤ M` on a compact set `C`, the derivatives of
-`z ↦ Φ (z, uₙ z)` are uniformly bounded on `C`, for `Φ` of class `C¹` near `C × K`. -/
-private theorem exists_bound_norm_fderiv_comp_prodMk {C : Set ℂ} {K : Set F} {u : ℕ → ℂ → F}
-    {M : ℝ} (hW : IsOpen W) (hΦ : ContDiffOn ℝ 1 Φ W) (hC : IsCompact C) (hK : IsCompact K)
-    (hCKW : C ×ˢ K ⊆ W) (huK : ∀ n, MapsTo (u n) C K)
-    (hdu : ∀ n, ∀ y ∈ C, DifferentiableAt ℝ (u n) y)
-    (hM : ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u n) y‖ ≤ M) :
-    ∃ B, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (fun z ↦ Φ (z, u n z)) y‖ ≤ B := by
-  obtain ⟨B, hB⟩ := (hC.prod hK).exists_bound_of_continuousOn
-    ((hΦ.continuousOn_fderiv_of_isOpen hW le_rfl).mono hCKW)
-  refine ⟨B * (1 + M), fun n y hy ↦ ?_⟩
-  have hmem : (y, u n y) ∈ C ×ˢ K := ⟨hy, huK n hy⟩
-  have hB' := hB _ hmem
-  refine (hasFDerivAt_comp_prodMk ((hΦ.differentiableOn one_ne_zero).differentiableAt
-    (hW.mem_nhds (hCKW hmem))) (hdu n y hy)).2.trans ?_
-  exact mul_le_mul hB' (by linarith [hM n y hy]) (by positivity) ((norm_nonneg _).trans hB')
-
-end Composition
 
 /-- The Floer equation `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` for `J² = -1` is the
 equation `∂ₛu + J(z, u) ∂ₜu = X(z, u) 1 + J(z, u) X(z, u) i`. -/
@@ -171,16 +133,17 @@ theorem exists_pos_forall_exists_strictMono_tendstoLocallyUniformlyOn_fderiv
     ((hu n).differentiableOn (by simp) y hy).differentiableAt (hΩ.mem_nhds hy)
   have hequi : EquicontinuousOn (fun n ↦ fderiv ℝ (u n)) Ω := by
     refine hδ (A := fun n z ↦ J (z, u n z)) (f := fun n z ↦ h (z, u n z)) hΩ hu
-      (fun n y hy ↦ (hasFDerivAt_comp_prodMk ((hJ.differentiableOn one_ne_zero).differentiableAt
-        (hW.mem_nhds (hmem n y hy))) (hdu n y hy)).1.differentiableWithinAt)
+      (fun n y hy ↦ (((hJ.differentiableOn one_ne_zero).differentiableAt
+        (hW.mem_nhds (hmem n y hy))).comp y
+          (differentiableAt_id.prodMk (hdu n y hy))).differentiableWithinAt)
       (fun n z hz ↦ hJI z hz (u n z) (huK n hz)) (fun C hC hCΩ ↦ ?_)
       (fun n y hy ↦ fderiv_one_add_eq_of_fderiv_I_sub_eq (hJsq y hy _ (huK n hy)) (hCR n y hy))
     obtain ⟨M, hM⟩ := hbd C hC hCΩ
     have hCKW : C ×ˢ K ⊆ W := (prod_mono hCΩ subset_rfl).trans hΩKW
     have hCK : ∀ n, MapsTo (u n) C K := fun n ↦ (huK n).mono_left hCΩ
     have hdC : ∀ n, ∀ y ∈ C, DifferentiableAt ℝ (u n) y := fun n y hy ↦ hdu n y (hCΩ hy)
-    obtain ⟨BJ, hBJ⟩ := exists_bound_norm_fderiv_comp_prodMk hW hJ hC hK hCKW hCK hdC hM
-    obtain ⟨Bh, hBh⟩ := exists_bound_norm_fderiv_comp_prodMk hW hh hC hK hCKW hCK hdC hM
+    obtain ⟨BJ, hBJ⟩ := exists_bound_norm_fderiv_comp_graph hW hJ hC hK hCKW hCK hdC hM
+    obtain ⟨Bh, hBh⟩ := exists_bound_norm_fderiv_comp_graph hW hh hC hK hCKW hCK hdC hM
     exact ⟨max (max BJ Bh) M, fun n y hy ↦ ⟨(hBJ n y hy).trans (by simp),
       (hBh n y hy).trans (by simp), (hM n y hy).trans (by simp)⟩⟩
   obtain ⟨φ, hφ, hv, hconv⟩ := exists_strictMono_tendstoLocallyUniformlyOn_fderiv hΩ

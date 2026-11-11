@@ -31,9 +31,10 @@ there, where each `A(z)` is a real-linear map on `F` within `δ` of multiplicati
   derivative of `u` is used.
 * **The interior `W^{2,p}` estimate.** For `1 < p < ∞`, applying the interior `Lᵖ` estimate for
   the variable-coefficient operator (`TauCeti.exists_eLpNorm_fderiv_le_of_norm_sub_I_smul_le`) to
-  `ξ` bounds `‖Dξ‖_{Lᵖ(K)}` on a compact `K ⊆ U` by a constant depending only on bounds `M` for
-  `‖DA‖`, `‖Df‖` and `L` for `‖Du‖` on `U` (`TauCeti.exists_eLpNorm_fderiv_fderiv_apply_le`). So
-  uniform `C¹` bounds on solutions and coefficients give uniform bounds on second derivatives.
+  `ξ` bounds `‖Dξ‖_{Lᵖ(K)}` on a compact `K ⊆ U` by a constant depending only on `U`, `K`, `p`,
+  `F` and bounds `M` for `‖DA‖`, `‖Df‖` and `L` for `‖Du‖` on `U`
+  (`TauCeti.exists_eLpNorm_fderiv_fderiv_apply_le`). So uniform `C¹` bounds on solutions and
+  coefficients give uniform bounds on second derivatives.
 * **Equicontinuity of the derivatives.** For `p = 4 > 2 = dim ℂ`, Morrey's inequality on small
   balls (`TauCeti.enorm_sub_le_of_mem_ball_of_finrank_lt`) turns these `L⁴` bounds into a common
   Hölder modulus for the first derivatives. Hence a family of solutions whose first derivatives,
@@ -42,8 +43,9 @@ there, where each `A(z)` is a real-linear map on `F` within `δ` of multiplicati
   (`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_fderiv`) this is the step from `C⁰` to
   `C¹` convergence in compactness arguments for pseudoholomorphic curves and Floer solutions.
 
-The threshold `δ` depends only on `F`, through the Calderón–Zygmund constant. The estimates are
-stated for smooth `u`, the regularity required by the interior `Lᵖ` estimate.
+In the interior estimate the threshold `δ` depends only on `p` and `F`, through the
+Calderón–Zygmund constant; in the equicontinuity result, where `p = 4`, it depends only on `F`.
+The estimates are stated for smooth `u`, the regularity required by the interior `Lᵖ` estimate.
 
 ## References
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
@@ -70,6 +71,10 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
 * `TauCeti.fderiv_apply_mk_one_zero`: the derivative of a function in a scalar first variable,
   applied to `(1, 0)`, is the derivative of its first-variable slice.
 * `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `x ↦ f (x, u x)`.
+* `TauCeti.norm_fderiv_comp_graph_le`: the derivative along a graph has norm at most
+  `‖Df‖ (1 + ‖Du‖)`.
+* `TauCeti.exists_bound_norm_fderiv_comp_graph`: along maps with values in a compact set and
+  uniformly bounded derivatives, the derivatives of `x ↦ f (x, uᵢ x)` are uniformly bounded.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
 * `DifferentiableAt.hasFDerivAt_fst_prodMk_of_slices`: the derivative of a graph map from its
@@ -170,6 +175,38 @@ theorem fderiv_comp_graph_apply {u : E → F} {f : E × F → G} (hu : Different
   rw [h.fderiv, fderiv_slice_right hf, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.comp_apply, ← map_add]
   simp
+
+/-- The derivative of `fun x ↦ f (x, u x)` has norm at most `‖Df‖ (1 + ‖Du‖)`. -/
+theorem norm_fderiv_comp_graph_le {u : E → F} {f : E × F → G} (hu : DifferentiableAt 𝕜 u a)
+    (hf : DifferentiableAt 𝕜 f (a, u a)) :
+    ‖fderiv 𝕜 (fun x ↦ f (x, u x)) a‖ ≤ ‖fderiv 𝕜 f (a, u a)‖ * (1 + ‖fderiv 𝕜 u a‖) := by
+  have h : HasFDerivAt (fun x ↦ f (x, u x))
+      ((fderiv 𝕜 f (a, u a)).comp ((ContinuousLinearMap.id 𝕜 E).prod (fderiv 𝕜 u a))) a :=
+    hf.hasFDerivAt.comp a ((hasFDerivAt_id a).prodMk hu.hasFDerivAt)
+  rw [h.fderiv]
+  refine (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
+  rw [ContinuousLinearMap.opNorm_prod, Prod.norm_def]
+  exact max_le ((ContinuousLinearMap.norm_id_le).trans (le_add_of_nonneg_right (norm_nonneg _)))
+    (le_add_of_nonneg_left zero_le_one)
+
+/-- Along maps `uᵢ` with values in `K` and `‖Duᵢ‖ ≤ M` on a compact set `C`, the derivatives of
+`x ↦ f (x, uᵢ x)` are uniformly bounded on `C`, for `f` of class `C¹` on an open set containing
+`C × K`. -/
+theorem exists_bound_norm_fderiv_comp_graph {ι : Type*} {f : E × F → G} {W : Set (E × F)}
+    {C : Set E} {K : Set F} {u : ι → E → F} {M : ℝ} (hW : IsOpen W) (hf : ContDiffOn 𝕜 1 f W)
+    (hC : IsCompact C) (hK : IsCompact K) (hCKW : C ×ˢ K ⊆ W) (huK : ∀ i, Set.MapsTo (u i) C K)
+    (hdu : ∀ i, ∀ x ∈ C, DifferentiableAt 𝕜 (u i) x)
+    (hM : ∀ i, ∀ x ∈ C, ‖fderiv 𝕜 (u i) x‖ ≤ M) :
+    ∃ B, ∀ i, ∀ x ∈ C, ‖fderiv 𝕜 (fun y ↦ f (y, u i y)) x‖ ≤ B := by
+  obtain ⟨B, hB⟩ := (hC.prod hK).exists_bound_of_continuousOn
+    ((hf.continuousOn_fderiv_of_isOpen hW le_rfl).mono hCKW)
+  refine ⟨B * (1 + M), fun i x hx ↦ ?_⟩
+  have hmem : (x, u i x) ∈ C ×ˢ K := ⟨hx, huK i hx⟩
+  have hB' := hB _ hmem
+  refine (norm_fderiv_comp_graph_le (hdu i x hx) ((hf.differentiableOn one_ne_zero).differentiableAt
+    (hW.mem_nhds (hCKW hmem)))).trans ?_
+  exact mul_le_mul hB' (by linarith [hM i x hx]) (by positivity) ((norm_nonneg _).trans hB')
 
 /-- Along a differentiable graph through a point where the derivative in the second variable
 vanishes, the derivative of a function on a product equals the derivative of its first-variable
