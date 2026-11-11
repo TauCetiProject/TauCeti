@@ -260,7 +260,7 @@ theorem IsLocallyNormal.comp_monoCLM (hT : IsLocallyNormal T) (h : Ω' ≤ Ω) :
     rw [isLocallyNormal_finZero_iff, coe_comp]
     exact HasLocallyFiniteMass.comp_monoCLM hT h
   | succ k =>
-    rw [isLocallyNormal_succ_iff, comp_monoCLM_comp_extDerivCLM h, coe_comp, coe_comp]
+    rw [isLocallyNormal_succ_iff, comp_monoCLM_comp_extDerivCLM, coe_comp, coe_comp]
     exact ⟨hT.1.comp_monoCLM h, hT.2.comp_monoCLM h⟩
 
 /-- **Restriction.** The restriction of a normal current to an open subset `Ω' ⊆ Ω` is normal: its
@@ -277,7 +277,7 @@ theorem IsNormal.comp_monoCLM (hT : IsNormal T) :
     rw [isNormal_finZero_iff, coe_comp]
     exact ne_top_of_le_ne_top hT (mass_comp_monoCLM_le h)
   | succ k =>
-    rw [isNormal_succ_iff, comp_monoCLM_comp_extDerivCLM h, coe_comp, coe_comp]
+    rw [isNormal_succ_iff, comp_monoCLM_comp_extDerivCLM, coe_comp, coe_comp]
     exact ⟨ne_top_of_le_ne_top hT.1 (mass_comp_monoCLM_le h),
       ne_top_of_le_ne_top hT.2 (mass_comp_monoCLM_le h)⟩
 

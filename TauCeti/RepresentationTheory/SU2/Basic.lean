@@ -419,6 +419,11 @@ theorem torusExp_zero : torusExp 0 = 1 := by rw [torusExp, Circle.exp_zero, map_
 theorem torusExp_neg (θ : ℝ) : torusExp (-θ) = (torusExp θ)⁻¹ :=
   eq_inv_of_mul_eq_one_left (by rw [← torusExp_add, neg_add_cancel, torusExp_zero])
 
+/-- The torus element `diag (e^{iθ}, e^{-iθ})` is the identity exactly when `θ` is an integer
+multiple of `2π`. -/
+theorem torusExp_eq_one_iff {θ : ℝ} : torusExp θ = 1 ↔ ∃ n : ℤ, θ = n * (2 * Real.pi) := by
+  rw [torusExp, ← map_one torusHom, torusHom_injective.eq_iff, Circle.exp_eq_one]
+
 theorem continuous_torusExp : Continuous torusExp :=
   (continuous_torusHom.comp Circle.exp.continuous).congr fun θ => by
     rw [Function.comp_apply, torusExp]
