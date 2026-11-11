@@ -23,6 +23,8 @@ Restriction of a complement to an intermediate subgroup uses Dedekind's modular 
 
 public section
 
+open scoped Pointwise
+
 namespace Subgroup
 
 variable {G G' : Type*} [Group G] [Group G'] {N K H L : Subgroup G}
@@ -99,6 +101,17 @@ theorem isLocalComplement_top_iff [N.Normal] :
     rw [← normal_mul, h.sup_eq, coe_top]
   · intro h
     exact ⟨disjoint_iff.mp h.disjoint, h.sup_eq_top⟩
+
+/-- A conjugate of a complement of the normal subgroup `N` is again a complement of `N`. -/
+theorem IsComplement'.conj_smul [N.Normal] {D : Subgroup G} (h : N.IsComplement' D) (g : G) :
+    N.IsComplement' (MulAut.conj g • D) := by
+  have hN : N.map (MulAut.conj g).toMonoidHom = N :=
+    (pointwise_smul_def N).symm.trans (‹N.Normal›.conj_smul_eq_self g N)
+  have h' := ((isLocalComplement_top_iff (N := N)).mpr h).map (f := (MulAut.conj g).toMonoidHom)
+    (MulEquiv.injective _)
+  rw [map_top_of_surjective _ (MulEquiv.surjective _), hN, isLocalComplement_top_iff] at h'
+  convert h' using 1
+  exact pointwise_smul_def D
 
 /-- A global complement restricts to a local complement in every intermediate subgroup. -/
 theorem IsComplement'.isLocalComplement_inf (h : N.IsComplement' K) (hNH : N ≤ H) :

@@ -56,20 +56,6 @@ namespace IsLocalComplement
 
 variable (h : N.IsLocalComplement K H)
 
-omit [IsMulCommutative N] in
-/-- On `N` the left projection is the identity, hence equivariant for conjugation by `G`. -/
-private theorem smul_leftProjection_of_mem (g : G) (x y : H) (hx : (x : G) ∈ N)
-    (hy : (y : G) = g * x * g⁻¹) : g • h.leftProjection x = h.leftProjection y := by
-  obtain ⟨x, hxH⟩ := x
-  obtain ⟨y, hyH⟩ := y
-  dsimp only at hx hy
-  subst hy
-  have hx' : h.leftProjection ⟨x, hxH⟩ = ⟨x, hx⟩ := h.leftProjection_left ⟨x, hx⟩
-  have hy' : h.leftProjection ⟨_, hyH⟩ = ⟨_, ‹N.Normal›.conj_mem x hx g⟩ :=
-    h.leftProjection_left ⟨_, ‹N.Normal›.conj_mem x hx g⟩
-  rw [hx', hy']
-  exact Subtype.ext (coe_conjugationAction_smul N g _)
-
 variable [H.FiniteIndex] (t : G ⧸ H → G)
   (ht : ∀ u : G ⧸ H, (QuotientGroup.mk (t u) : G ⧸ H) = u)
 
@@ -93,11 +79,19 @@ transversal gives a conjugate of it by an element of `N`
 noncomputable def gaschutzComplement : Subgroup G :=
   zeroLocus (h.isCocycle₁_crossedTransfer_leftProjection_pow t ht)
 
+/-- Membership in the Gaschütz complement means that the normalized crossed transfer is
+trivial, without any coprimality assumption. -/
+@[simp]
+theorem mem_gaschutzComplement_iff_pow_eq_one {g : G} :
+    g ∈ h.gaschutzComplement t ht ↔
+      crossedTransfer H t ht h.leftProjection g ^ ((H.index : ZMod (Nat.card N))⁻¹).val = 1 := by
+  rw [gaschutzComplement, mem_zeroLocus, ofMul_eq_zero]
+
 /-- When `[G : H]` is prime to `|N|`, the Gaschütz complement consists of the elements at which
 the crossed transfer of the projection along `K` is trivial. -/
 theorem mem_gaschutzComplement (hcop : Nat.Coprime H.index (Nat.card N)) {g : G} :
     g ∈ h.gaschutzComplement t ht ↔ crossedTransfer H t ht h.leftProjection g = 1 := by
-  rw [gaschutzComplement, mem_zeroLocus, ofMul_eq_zero]
+  rw [h.mem_gaschutzComplement_iff_pow_eq_one]
   refine ⟨fun hg => ?_, fun hg => by rw [hg, one_pow]⟩
   rw [← pow_zmod_val_inv_pow hcop.symm (crossedTransfer H t ht h.leftProjection g), hg, one_pow]
 

@@ -101,17 +101,6 @@ theorem crossedProjection_eq_one_iff (g : G) : h.crossedProjection g = 1 ↔ g �
   rw [← Subtype.coe_inj]
   exact h.coe_equiv_fst_eq_one_iff_mem N.one_mem
 
-include h in
-/-- A conjugate of a complement of the normal subgroup `N` is again a complement of `N`. -/
-theorem conj_smul (g : G) : N.IsComplement' (MulAut.conj g • D) := by
-  have hN : N.map (MulAut.conj g).toMonoidHom = N :=
-    (pointwise_smul_def N).symm.trans (‹N.Normal›.conj_smul_eq_self g N)
-  have h' := ((isLocalComplement_top_iff (N := N)).mpr h).map (f := (MulAut.conj g).toMonoidHom)
-    (MulEquiv.injective _)
-  rw [map_top_of_surjective _ (MulEquiv.surjective _), hN, isLocalComplement_top_iff] at h'
-  convert h' using 1
-  exact pointwise_smul_def D
-
 /-- **Equivariance of crossed projections.** The crossed projection along the conjugate
 complement `g D g⁻¹` is `x ↦ g • c (g⁻¹ * x * g)`, where `c` is the crossed projection along
 `D`. -/
@@ -136,12 +125,10 @@ variable [IsMulCommutative N]
 the crossed projection along `D` times the principal crossed map `x ↦ x • a / a`. -/
 theorem crossedProjection_conj_coe_smul (a : N) (x : G) :
     (h.conj_smul a).crossedProjection x = h.crossedProjection x * (x • a / a) := by
-  have hc := h.isMulCocycle₁_crossedProjection
-  have hinv : h.crossedProjection (a : G)⁻¹ = a⁻¹ := by
-    rw [← coe_inv, crossedProjection_coe]
-  rw [h.crossedProjection_conj_smul, conjugationAction_coe_smul, hc, hc, crossedProjection_coe,
-    hinv, mul_smul, ← coe_inv, conjugationAction_coe_smul, conjugationAction_coe_smul,
-    div_eq_mul_inv]
+  rw [h.crossedProjection_conj_smul]
+  have hc (g k : G) := h.isMulCocycle₁_crossedProjection g k
+  simp only [hc, ← coe_inv, crossedProjection_coe,
+    mul_smul, conjugationAction_coe_smul, div_eq_mul_inv]
   ac_rfl
 
 /-- Two complements of an abelian normal subgroup `N` are conjugate by `a ∈ N` exactly when
@@ -158,6 +145,20 @@ theorem eq_conj_smul_iff_crossedProjection_eq {D' : Subgroup G} (h' : N.IsComple
       h.crossedProjection_conj_coe_smul]
 
 end IsComplement'
+
+/-- On `N` the left projection is the identity, hence equivariant for conjugation by `G`. -/
+theorem IsLocalComplement.smul_leftProjection_of_mem {K H : Subgroup G}
+    (h : N.IsLocalComplement K H) (g : G) (x y : H) (hx : (x : G) ∈ N)
+    (hy : (y : G) = g * x * g⁻¹) : g • h.leftProjection x = h.leftProjection y := by
+  obtain ⟨x, hxH⟩ := x
+  obtain ⟨y, hyH⟩ := y
+  dsimp only at hx hy
+  subst hy
+  have hx' : h.leftProjection ⟨x, hxH⟩ = ⟨x, hx⟩ := h.leftProjection_left ⟨x, hx⟩
+  have hy' : h.leftProjection ⟨_, hyH⟩ = ⟨_, ‹N.Normal›.conj_mem x hx g⟩ :=
+    h.leftProjection_left ⟨_, ‹N.Normal›.conj_mem x hx g⟩
+  rw [hx', hy']
+  exact Subtype.ext (coe_conjugationAction_smul N g _)
 
 /-- The left projection of a local complement `K` of `N` in `H` satisfies the crossed identity
 for the conjugation action of `H` on `N`. -/
