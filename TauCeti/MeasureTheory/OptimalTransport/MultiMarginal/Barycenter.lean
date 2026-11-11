@@ -449,10 +449,11 @@ variable {J X : Type*} [Fintype J] [MetricSpace X] [MeasurableSpace X] [BorelSpa
   [ProperSpace X] {w : J → ℝ≥0} {p : ℝ≥0∞}
 
 /-- **The barycentric and multi-marginal problems have the same value.** On a proper metric
-space, for `1 ≤ p ≤ ∞` and weights summing to `1`, the infimum over probability laws `ν` of the
-weighted `p`-Wasserstein cost `∑ j, w j * W_p(ν, μ j) ^ p` equals the infimum over multi-marginal
-couplings `γ` of the laws `μ j` of the multi-marginal cost `∫ inf_z ∑ j, w j * d(z, x j) ^ p dγ`.
--/
+space, for `1 ≤ p ≤ ∞` and weights summing to `1`, the infimum over probability laws `ν` of
+`∑ j, w j * W_p(ν, μ j) ^ p.toReal` equals the infimum over multi-marginal couplings `γ` of the
+laws `μ j` of `∫ inf_z ∑ j, w j * d(z, x j) ^ p.toReal dγ`. At `p = ∞` we have `p.toReal = 0`, so
+this is a convention-level identity, not a statement about an `∞`-Wasserstein barycenter: every
+power is `1` and both sides equal `1`. -/
 theorem iInf_sum_mul_wassersteinEDist_rpow_eq (hp : 1 ≤ p) (hw : ∑ j, w j = 1)
     (μ : J → Measure X) [∀ j, IsProbabilityMeasure (μ j)] :
     ⨅ (ν : Measure X) (_ : IsProbabilityMeasure ν),
