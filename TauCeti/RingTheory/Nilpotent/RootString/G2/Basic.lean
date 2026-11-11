@@ -270,18 +270,6 @@ private theorem mul_eq_zero_of_le_of_chainG2Order {B : Type*} [MulZeroClass B]
           · -- Every other index is below its bound, so either weighting forces `ks ≤ e`.
             simp [hvs e (by omega)]
 
-/-- The base-changed exponential of an element that is not nilpotent is zero, since its
-nilpotency class is the junk value `0` and the defining sum is empty. -/
-private theorem baseChangeExp_eq_zero_of_not_isNilpotent {x : A} (M : S)
-    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) (hx : ¬IsNilpotent x) (t : R) :
-    baseChangeExp x M hM t = 0 := by
-  have h : {k | x ^ k = 0} = ∅ := Set.eq_empty_of_forall_notMem fun k hk ↦ hx ⟨k, hk⟩
-  have hc : nilpotencyClass x = 0 := by rw [nilpotencyClass, h, Nat.sInf_empty]
-  refine LinearMap.ext fun z ↦ ?_
-  induction z using TensorProduct.inductionOn with
-  | tmul r v => simp [baseChangeExp_tmul, hc]
-  | add y z hy hz => simp only [map_add, hy, hz, LinearMap.zero_apply, add_zero]
-
 /-- **The Chevalley commutator relation in type `G₂`.** If
 
 ```text
@@ -363,8 +351,10 @@ theorem baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul
       (forall_baseChange_integralDividedPower_eq_zero_of_le (R := R) s M hMs hks)
 
 /-- The conjugation form of the Chevalley commutator relation in type `G₂`: conjugating the
-one-parameter subgroup of `y` by that of `x` multiplies it by the one-parameter subgroups of `z`,
-`w`, `v`, and `s`, at the parameters `t * u`, `t ^ 2 * u`, `t ^ 3 * u`, and `t ^ 3 * u ^ 2`. -/
+base-changed exponential of `y` by that of `x` multiplies it by the base-changed exponentials of
+`z`, `w`, `v`, and `s`, at the parameters `t * u`, `t ^ 2 * u`, `t ^ 3 * u`, and `t ^ 3 * u ^ 2`.
+No nilpotence of `y` is needed; when `y` is nilpotent these exponentials form a one-parameter
+subgroup. -/
 theorem baseChangeExp_conj_of_commutator_eq_three_nsmul
     {x y z w v s : A} (M : S) (hxy : x * y = y * x + z) (hxz : x * z = z * x + 2 • w)
     (hxw : x * w = w * x + 3 • v) (hwz : w * z = z * w + 3 • s) (hxv : Commute x v)
@@ -382,9 +372,6 @@ theorem baseChangeExp_conj_of_commutator_eq_three_nsmul
       baseChangeExp y M hMy u * baseChangeExp z M hMz (t * u) *
         baseChangeExp w M hMw (t ^ 2 * u) * baseChangeExp v M hMv (t ^ 3 * u) *
         baseChangeExp s M hMs (t ^ 3 * u ^ 2) := by
-  by_cases hy : IsNilpotent y
-  swap
-  · simp [baseChangeExp_eq_zero_of_not_isNilpotent M hMy hy]
   rw [baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul M hxy hxz hxw hwz hxv hxs hyz
       hwv hzs hws hvs hz hw hMx hMy hMz hMw hMv hMs t u,
     mul_assoc, ← baseChangeExp_add x M hMx hx t (-t), add_neg_cancel,

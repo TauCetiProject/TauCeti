@@ -40,6 +40,8 @@ ring has positive characteristic.
 * `TauCeti.baseChange_integralDividedPower_eq_zero_of_le`: a restricted divided power
   vanishes on base change above the nilpotency index.
 * `TauCeti.baseChangeExp`: the finite divided-power exponential on `R ⊗[ℤ] M` for an element of `A`.
+* `TauCeti.baseChangeExp_eq_zero_of_not_isNilpotent`: the exponential of a non-nilpotent element is
+  zero, since its nilpotency class is the junk value `0`.
 * `TauCeti.commute_baseChangeExp`: exponentials of commuting elements commute, without nilpotence
   hypotheses.
 * `TauCeti.map_baseChangeExp`: naturality of the exponential under a map of parameter rings.
@@ -283,6 +285,19 @@ theorem baseChangeExp_tmul (x : A) (M : S)
       ∑ n ∈ range (nilpotencyClass x), (t ^ n * r) ⊗ₜ[ℤ]
         integralDividedPower x M n (hM n) v := by
   simp [baseChangeExp, smul_tmul']
+
+/-- The base-changed exponential of an element that is not nilpotent is zero, since its
+nilpotency class is the junk value `0` and the defining sum is empty. -/
+@[simp]
+theorem baseChangeExp_eq_zero_of_not_isNilpotent {x : A} (M : S)
+    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) (hx : ¬IsNilpotent x) (t : R) :
+    baseChangeExp x M hM t = 0 := by
+  have h : {k | x ^ k = 0} = ∅ := Set.eq_empty_of_forall_notMem fun k hk ↦ hx ⟨k, hk⟩
+  have hc : nilpotencyClass x = 0 := by rw [nilpotencyClass, h, Nat.sInf_empty]
+  refine LinearMap.ext fun z ↦ ?_
+  induction z using TensorProduct.inductionOn with
+  | tmul r v => simp [baseChangeExp_tmul, hc]
+  | add y z hy hz => simp only [map_add, hy, hz, LinearMap.zero_apply, add_zero]
 
 /-- The base-changed divided-power exponential is natural under maps of parameter rings carrying
 explicit `ℤ`-algebra structures. -/
