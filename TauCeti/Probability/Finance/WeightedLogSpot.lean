@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
 import TauCeti.Probability.Finance.LogSpot
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Prices reconstructed from bounded weighted log-spot maps

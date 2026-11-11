@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Deriv.Second
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # The pricing equation in log-spot coordinates

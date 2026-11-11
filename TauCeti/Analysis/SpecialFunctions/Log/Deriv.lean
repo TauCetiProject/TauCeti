@@ -17,6 +17,7 @@ For `x ≠ 0`, a function `v ∘ log` is differentiable at `x` exactly when `v` 
 
 * `TauCeti.differentiableAt_comp_log_iff`: differentiability of `v ∘ log` at `x ≠ 0` is
   differentiability of `v` at `log x`.
+* `TauCeti.mul_deriv_comp_log`: under `x = e^y` the operator `x d/dx` is `d/dy`.
 -/
 
 public section
@@ -43,5 +44,24 @@ theorem differentiableAt_comp_log_iff (hx : x ≠ 0) :
     · rwa [abs_of_pos hpos]
   exact (hg.comp (log x) differentiableAt_exp).congr_of_eventuallyEq
     (Eventually.of_forall fun y ↦ by simp [log_exp])
+
+section
+
+variable {v : ℝ → ℝ} {x : ℝ}
+
+/-- Under the change of variables `x = e^y` the operator `x d/dx` is `d/dy`:
+`x (v ∘ log)'(x) = v'(log x)` for `x ≠ 0`. If `v` is not differentiable at `log x`, then `v ∘ log`
+is not differentiable at `x` either, and both sides are `0`. -/
+theorem mul_deriv_comp_log (hx : x ≠ 0) :
+    x * deriv (fun x ↦ v (log x)) x = deriv v (log x) := by
+  by_cases hv : DifferentiableAt ℝ v (log x)
+  · have h : HasDerivAt (fun x ↦ v (log x)) (deriv v (log x) * x⁻¹) x :=
+      hv.hasDerivAt.comp x (hasDerivAt_log hx)
+    rw [h.deriv]
+    field_simp
+  · rw [deriv_zero_of_not_differentiableAt hv,
+      deriv_zero_of_not_differentiableAt (mt (differentiableAt_comp_log_iff hx).1 hv), mul_zero]
+
+end
 
 end TauCeti

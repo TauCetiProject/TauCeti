@@ -47,9 +47,8 @@ coefficients `x` and `x²` degenerate at `0`, into equations with constant coeff
   second derivatives of the affine line `t ↦ a + t • b`.
 * `TauCeti.deriv_deriv_sqrt_quadratic`: the second derivative of `s ↦ √(a + b s + c s ^ 2)`, and
   `TauCeti.deriv_deriv_sqrt_quadratic_zero` its value at `0`.
-* `TauCeti.mul_deriv_comp_log`, `TauCeti.sq_mul_deriv_deriv_comp_log`,
-  `TauCeti.deriv_deriv_comp_exp`: the first and second derivatives under the change of variables
-  `x = e^y`.
+* `TauCeti.sq_mul_deriv_deriv_comp_log`, `TauCeti.deriv_deriv_comp_exp`: the second derivatives
+  under the change of variables `x = e^y`.
 -/
 
 public section
@@ -156,19 +155,6 @@ theorem deriv_deriv_sqrt_quadratic_zero {a b c : ℝ} (ha : 0 < a) :
 section LogExp
 
 variable {f v : ℝ → ℝ} {x y : ℝ}
-
-/-- Under the change of variables `x = e^y` the operator `x d/dx` is `d/dy`:
-`x (v ∘ log)'(x) = v'(log x)` for `x ≠ 0`. If `v` is not differentiable at `log x`, then `v ∘ log`
-is not differentiable at `x` either, and both sides are `0`. -/
-theorem mul_deriv_comp_log (hx : x ≠ 0) :
-    x * deriv (fun x ↦ v (log x)) x = deriv v (log x) := by
-  by_cases hv : DifferentiableAt ℝ v (log x)
-  · have h : HasDerivAt (fun x ↦ v (log x)) (deriv v (log x) * x⁻¹) x :=
-      hv.hasDerivAt.comp x (hasDerivAt_log hx)
-    rw [h.deriv]
-    field_simp
-  · rw [deriv_zero_of_not_differentiableAt hv,
-      deriv_zero_of_not_differentiableAt (mt (differentiableAt_comp_log_iff hx).1 hv), mul_zero]
 
 /-- Under the change of variables `x = e^y` the operator `x² d²/dx²` is `d²/dy² - d/dy`:
 `x² (v ∘ log)''(x) = v''(log x) - v'(log x)` for `x ≠ 0`. -/
