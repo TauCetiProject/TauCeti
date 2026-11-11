@@ -39,6 +39,8 @@ same operators on smooth chains.
   to subdivision on those chains.
 * `TauCeti.homologyMap_subcomplexSubdivisionChainMap`: subdivision induces the identity on their
   homology.
+* `TauCeti.AffineChain.subcomplexChain_subdivision_iterate`: pushing affine chains forward along a
+  simplex of the subcomplex commutes with iterated subdivision.
 * `TauCeti.subcomplexSubdivisionChainMap_naturality`, `TauCeti.subcomplexPrismX_naturality`: both
   operators commute with maps of subcomplexes lying over continuous maps.
 
@@ -69,6 +71,12 @@ class IsAffineStable (S : (TopCat.toSSet.obj X).Subcomplex) : Prop where
     (v : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) :
     (X.toSSetObjEquiv _).symm ((X.toSSetObjEquiv _ σ).comp (StdSimplex.continuousAffineMapMk v)) ∈
       S.obj (op ⦋k⦌)
+
+/-- The intersection of two affinely stable subcomplexes is affinely stable. -/
+instance (S T : (TopCat.toSSet.obj X).Subcomplex) [S.IsAffineStable] [T.IsAffineStable] :
+    (S ⊓ T).IsAffineStable where
+  comp_affineMapMk_mem hσ v :=
+    ⟨IsAffineStable.comp_affineMapMk_mem hσ.1 v, IsAffineStable.comp_affineMapMk_mem hσ.2 v⟩
 
 end SSet.Subcomplex
 
@@ -168,6 +176,39 @@ lemma subcomplexSubdivisionChainMap_ι :
       SSet.chainComplexMap S.ι R ≫ singularSubdivisionChainMap R X := by
   ext n : 1
   simp
+
+/-- Iterated restricted subdivision commutes with the inclusion into singular chains. -/
+@[reassoc]
+lemma subcomplexSubdivisionChainMap_pow_f_ι (n k : ℕ) :
+    (End.of (subcomplexSubdivisionChainMap R S) ^ n).asHom.f k ≫
+        (SSet.chainComplexMap S.ι R).f k =
+      (SSet.chainComplexMap S.ι R).f k ≫
+        (End.of (singularSubdivisionChainMap R X) ^ n).asHom.f k := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [HomologicalComplex.pow_f_succ, HomologicalComplex.pow_f_succ, Category.assoc,
+      subcomplexSubdivisionChainMap_f, subcomplexSubdivisionX_ι, reassoc_of% ih,
+      singularSubdivisionChainMap_f]
+
+/-- Pushing the standard simplex forward along a simplex of an affinely stable subcomplex gives
+the summand of that simplex. -/
+@[simp]
+lemma AffineChain.subcomplexChain_simplex {n : ℕ} (σ : (S : SSet) _⦋n⦌) :
+    subcomplexChain R S σ n (simplex n) = (S : SSet).ιChainComplex σ := by
+  apply (cancel_mono ((SSet.chainComplexMap S.ι R).f n)).1
+  rw [subcomplexChain_ι, singularChain_simplex, SSet.ι_chainComplexMap_f]
+  rfl
+
+/-- Pushing an iterated barycentric subdivision of an affine chain forward along a simplex of an
+affinely stable subcomplex is the corresponding iterate of the restricted subdivision. -/
+lemma AffineChain.subcomplexChain_subdivision_iterate {m k n : ℕ} (σ : (S : SSet) _⦋m⦌)
+    (c : (Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) →₀ ℤ) :
+    subcomplexChain R S σ k ((subdivision _ k)^[n] c) =
+      subcomplexChain R S σ k c ≫ (End.of (subcomplexSubdivisionChainMap R S) ^ n).asHom.f k := by
+  apply (cancel_mono ((SSet.chainComplexMap S.ι R).f k)).1
+  rw [subcomplexChain_ι, Category.assoc, subcomplexSubdivisionChainMap_pow_f_ι,
+    subcomplexChain_ι_assoc, singularChain_subdivision_iterate]
 
 /-- The prism operator of barycentric subdivision restricted to the chains of an affinely stable
 subcomplex. -/
