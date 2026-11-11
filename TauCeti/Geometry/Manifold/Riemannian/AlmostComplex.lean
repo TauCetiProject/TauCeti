@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.AlmostComplexType
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.Riemannian.HodgeStar

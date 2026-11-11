@@ -125,9 +125,9 @@ theorem CohomologicalDimensionLE.nsmul_right_injective {n : ℕ}
   -- the short exact sequence `0 → pM → M → M ⧸ pM → 0`
   let S₂ := DiscreteShortExact.ofAddSubgroup I hI
   -- `M[p]` and `M ⧸ pM` are killed by `p`, so their cohomology vanishes above `n`
-  have hKp : IsPPrimaryTorsion p K :=
-    isPPrimaryTorsion_iff.2 fun m ↦ ⟨1, Subtype.ext (by simpa [K] using AddMonoidHom.mem_ker.1 m.2)⟩
-  have hQp : IsPPrimaryTorsion p (M ⧸ I) := isPPrimaryTorsion_iff.2 fun q ↦ by
+  have hKp : IsAddPGroup p K :=
+    fun m ↦ ⟨1, Subtype.ext (by simpa [K] using AddMonoidHom.mem_ker.1 m.2)⟩
+  have hQp : IsAddPGroup p (M ⧸ I) := fun q ↦ by
     induction q using QuotientAddGroup.induction_on with
     | H m => exact ⟨1, (QuotientAddGroup.eq_zero_iff _).2 (by simp [I])⟩
   have := cohomologicalDimensionLE_iff.1 h K hKp (j + 1) (by omega)

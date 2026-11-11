@@ -16,7 +16,9 @@ A vertex of a simple graph is a cut vertex when deleting it separates two vertic
 previously connected. The predicate is defined through the native multigraph cut-vertex API for
 `Graph.ofSimpleGraph`, and `SimpleGraph.isCutVertex_iff_exists_forall_walk_mem_support` restates it
 with walks of the simple graph itself: a cut vertex lies on every walk between two other mutually
-reachable vertices.
+reachable vertices. Conversely, `Graph.isCutVertex_iff_toSimpleGraph_isCutVertex` identifies the
+cut vertices of a multigraph with those of its underlying simple graph on the actual vertices, so
+loops and parallel edges do not affect cut vertices.
 
 For a vertex set inducing a connected graph without cut vertices, any two of its vertices other
 than a given vertex are joined by a walk inside the set avoiding it
@@ -61,6 +63,15 @@ theorem isCutVertex_iff_exists_forall_walk_mem_support {G : SimpleGraph V} {v : 
   · obtain ⟨z, hz, rfl⟩ := h p.toGraph (by simp)
     simpa using hz
   · exact ⟨v, by simpa using h p.toSimpleGraph, rfl⟩
+
+/-- A cut vertex is not isolated. -/
+theorem IsCutVertex.not_isIsolated {G : SimpleGraph V} {v : V} (h : G.IsCutVertex v) :
+    ¬G.IsIsolated v := by
+  classical
+  intro hiso
+  obtain ⟨u, w, huv, -, ⟨p⟩, hp⟩ := isCutVertex_iff_exists_forall_walk_mem_support.1 h
+  exact not_reachable_of_neighborSet_right_eq_empty huv hiso.neighborSet_eq_empty
+    (p.takeUntil v (hp p)).reachable
 
 /-- If `x` is not a cut vertex, then two vertices other than `x` that are reachable from each other
 are joined by a walk avoiding `x`. -/
@@ -182,3 +193,27 @@ theorem Walk.IsPath.not_isCutVertex_induce_union_support (hconn : (G.induce B).C
 end Induce
 
 end SimpleGraph
+
+namespace Graph
+
+variable {α : Type*} {β : Type*} {G : Graph α β}
+
+/-- A native multigraph cut vertex is a cut vertex of the underlying simple graph on the actual
+vertices. -/
+theorem isCutVertex_iff_toSimpleGraph_isCutVertex {v : α} (hv : v ∈ V(G)) :
+    G.IsCutVertex v ↔ G.toSimpleGraph.IsCutVertex ⟨v, hv⟩ := by
+  rw [Graph.isCutVertex_def, SimpleGraph.isCutVertex_iff_exists_forall_walk_mem_support]
+  constructor
+  · rintro ⟨x, y, hxv, hyv, hxy, hdelete⟩
+    refine ⟨⟨x, hxy.left_mem⟩, ⟨y, hxy.right_mem⟩, fun h ↦ hxv (congrArg Subtype.val h),
+      fun h ↦ hyv (congrArg Subtype.val h), hxy.toSimpleGraph_reachable, fun p ↦ ?_⟩
+    by_contra hvp
+    refine hdelete (toSimpleGraph_reachable_deleteVerts_iff_exists_walk.mpr ⟨p, fun z hz hzv ↦ ?_⟩)
+    exact hvp ((Subtype.ext (Set.mem_singleton_iff.mp hzv) : z = ⟨v, hv⟩) ▸ hz)
+  · rintro ⟨x, y, hxv, hyv, hxy, hall⟩
+    refine ⟨x, y, fun h ↦ hxv (Subtype.ext h), fun h ↦ hyv (Subtype.ext h),
+      toSimpleGraph_reachable_iff.mp hxy, fun hdelete ↦ ?_⟩
+    obtain ⟨p, hp⟩ := toSimpleGraph_reachable_deleteVerts_iff_exists_walk.mp hdelete
+    exact hp _ (hall p) rfl
+
+end Graph

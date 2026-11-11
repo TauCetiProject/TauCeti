@@ -80,7 +80,7 @@ theorem hasNaturalDensity_frobeniusPrimeSet_galEquivZMod_symm
   have h := hasNaturalDensity_frobeniusPrimeSet ℚ F
     (ConjClasses.mk ((Rat.galEquivZMod m F).symm a))
   rwa [Nat.card_coe_set_eq, ConjClasses.ncard_carrier_mk_of_mem_center
-    (Subgroup.mem_center_iff.mpr fun _ ↦ mul_comm' _ _), Nat.cast_one,
+    (Submonoid.mem_center_iff.mpr fun _ ↦ mul_comm' _ _), Nat.cast_one,
     card_aut_eq_totient ℚ F (Polynomial.cyclotomic.irreducible_rat (NeZero.pos m))] at h
 
 /-- Each arithmetic Frobenius fibre of a fifth cyclotomic field has natural density `1/4`,

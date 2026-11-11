@@ -10,6 +10,8 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
+public import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Orthogonal line coordinates and Lebesgue sections
@@ -28,6 +30,11 @@ of the corresponding part of the set. Hyperplane sections of bounded sets have f
 and hyperplane sections through interior points have positive volume. The heights of interior
 points form an open set, and a set has positive volume at any open set of heights containing the
 height of an interior point.
+
+Pairing the line integrals `y ↦ ∫ f (y + t • e) dt` with a bounded transverse weight `ψ` is an
+integral of `ψ (y) f (y + t • e)` over product coordinates
+(`TauCeti.integral_mul_integral_line_eq`), so this pairing is continuous for `L¹` convergence on the
+whole space (`TauCeti.tendsto_integral_mul_integral_line`).
 
 More generally, for any subspace `K`, Tonelli's theorem splits Lebesgue integrals over `E` along
 the orthogonal decomposition `E = Kᗮ ⊕ K` (`Submodule.lintegral_eq_lintegral_lintegral_add`),
@@ -101,6 +108,41 @@ theorem exists_strictMono_ae_tendsto_lintegral_line (e : E) (he : ‖e‖ = 1)
   exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral
     (fun n ↦ aemeasurable_lintegral_line e he (hg n))
     (by simpa only [lintegral_eq_lintegral_lintegral_line e he (hg _)] using h)
+
+/-- The pairing of the line integrals of `f` with a bounded transverse weight `ψ` is an
+integral in orthogonal line coordinates. -/
+theorem integral_mul_integral_line_eq {f : E → ℝ} (hf : Integrable f) (e : E)
+    (he : ‖e‖ = 1) {ψ : (ℝ ∙ e)ᗮ → ℝ} (hψ : AEStronglyMeasurable ψ) {C : ℝ}
+    (hC : ∀ y, ‖ψ y‖ ≤ C) :
+    ∫ y : (ℝ ∙ e)ᗮ, ψ y * ∫ t : ℝ, f ((y : E) + t • e) =
+      ∫ p : (ℝ ∙ e)ᗮ × ℝ, ψ p.1 * f (orthogonalLineEquiv e he p) ∂(volume.prod volume) := by
+  have hint : Integrable (fun p : (ℝ ∙ e)ᗮ × ℝ ↦ ψ p.1 * f (orthogonalLineEquiv e he p))
+      (volume.prod volume) :=
+    ((measurePreserving_orthogonalLineEquiv e he).integrable_comp_of_integrable hf).bdd_mul
+      hψ.comp_fst (.of_forall fun p ↦ hC p.1)
+  rw [integral_prod _ hint]
+  simp only [orthogonalLineEquiv_apply, integral_const_mul]
+
+open Filter Topology in
+/-- Pairing line integrals with a bounded transverse weight is continuous for `L¹` convergence on
+the whole space. -/
+theorem tendsto_integral_mul_integral_line {ι : Type*} {l : Filter ι} {w : ι → E → ℝ}
+    {u : E → ℝ} (hw : ∀ n, Integrable (w n)) (hu : Integrable u)
+    (hlim : Tendsto (fun n ↦ ∫⁻ x, ‖w n x - u x‖ₑ) l (𝓝 0)) (e : E) (he : ‖e‖ = 1)
+    {ψ : (ℝ ∙ e)ᗮ → ℝ} (hψ : AEStronglyMeasurable ψ) {C : ℝ} (hC : ∀ y, ‖ψ y‖ ≤ C) :
+    Tendsto (fun n ↦ ∫ y : (ℝ ∙ e)ᗮ, ψ y * ∫ t : ℝ, w n ((y : E) + t • e)) l
+      (𝓝 (∫ y : (ℝ ∙ e)ᗮ, ψ y * ∫ t : ℝ, u ((y : E) + t • e))) := by
+  have hL := measurePreserving_orthogonalLineEquiv e he
+  simp_rw [integral_mul_integral_line_eq (hw _) e he hψ hC,
+    integral_mul_integral_line_eq hu e he hψ hC]
+  refine MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (s := univ)
+    (.of_forall fun p ↦ hC p.1) (.of_forall fun _ h ↦ absurd (mem_univ _) h)
+    (.of_forall fun n ↦ (hL.integrable_comp_of_integrable (hw n)).bdd_mul hψ.comp_fst
+      (.of_forall fun p ↦ hC p.1))
+    (hψ.comp_fst.mul (hu.aestronglyMeasurable.comp_measurePreserving hL)) ?_
+  simpa only [Measure.restrict_univ, Function.comp_apply] using
+    hlim.congr fun n ↦ (hL.lintegral_comp_emb
+      (orthogonalLineEquiv e he).toHomeomorph.measurableEmbedding _).symm
 
 /-- Volume-a.e. equal sets have a.e. equal parallel sections for almost every transverse point.
 The exceptional transverse null set is allowed to depend on the direction. -/
@@ -266,6 +308,19 @@ theorem volume_sep_inner_mem_eq_setLIntegral (e : E) (he : ‖e‖ = 1) {s : Set
     (hs.inter (hI.preimage hm).nullMeasurableSet), ← lintegral_indicator hI]
   congr 1 with t
   by_cases ht : t ∈ I <;> simp [ht, inner_add_smul e he]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- On the line through `y` parallel to `e`, the second-moment integrand of a set `u` is
+`‖y‖ ^ 2 + t ^ 2` on the section of `u`. -/
+theorem lintegral_line_indicator_norm_sq_eq (e : E) (he : ‖e‖ = 1) {u : Set E}
+    (y : (ℝ ∙ e)ᗮ)
+    (hu : NullMeasurableSet {t : ℝ | (y : E) + t • e ∈ u} volume) :
+    ∫⁻ t : ℝ, u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) ((y : E) + t • e) =
+      ∫⁻ t in {t : ℝ | (y : E) + t • e ∈ u}, ENNReal.ofReal (‖y‖ ^ 2 + t ^ 2) := by
+  rw [← lintegral_indicator₀ hu]
+  refine lintegral_congr fun t ↦ ?_
+  classical
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq, norm_add_smul_sq e he]
 
 end TauCeti
 

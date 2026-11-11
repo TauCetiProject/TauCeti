@@ -174,8 +174,7 @@ theorem measureReal_Ioc_betaMeasure (hα : 0 < α) (hβ : 0 < β) {y : ℝ} (hyx
 theorem measureReal_Ioi_betaMeasure (hα : 0 < α) (hβ : 0 < β) (x : ℝ) :
     (betaMeasure α β).real (Ioi x) = 1 - regularizedIncompleteBeta α β x := by
   have hp : IsProbabilityMeasure (betaMeasure α β) := isProbabilityMeasureBeta hα hβ
-  rw [← compl_Iic, measureReal_compl measurableSet_Iic, measureReal_Iic_betaMeasure hα hβ]
-  simp
+  rw [Measure.measureReal_Ioi_eq_one_sub_cdf, cdf_betaMeasure_eq hα hβ]
 
 /-- The cumulative distribution function of a beta law is continuous: `I_·(α, β)` is continuous
 even at the two endpoints of the support, where for `α < 1` or `β < 1` the beta integrand blows

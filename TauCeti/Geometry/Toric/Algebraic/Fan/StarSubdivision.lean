@@ -490,7 +490,7 @@ theorem inf_mem_starSubdivision_cones {τ₀ C : PointedCone ℝ V} (h : τ₀.I
   have hface : (C ⊓ τ₀).IsFaceOf C := h.inf_of_le (starSubdivisionCone_le hi _ hτ.toIsToricCone S)
   have hhull : C ⊓ τ₀ = PointedCone.hull ℝ
       (i '' (starSubdivisionGenerator hi (B.map e) hτ.toIsToricCone '' S) ∩ τ₀) := by
-    refine (PointedCone.Face.eq_hull_inter_of_eq_hull ⟨_, hface⟩ _
+    refine (hface.eq_hull_inter_of_eq_hull
       (starSubdivisionCone_def hi _ hτ.toIsToricCone S)).trans (congrArg _ ?_)
     ext x
     exact and_congr_right fun hx ↦ ⟨fun hx' ↦ hx'.2, fun hx' ↦ ⟨PointedCone.subset_hull hx, hx'⟩⟩

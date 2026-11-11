@@ -11,8 +11,6 @@ public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Orientation
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
-import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -32,8 +30,9 @@ and real scalar action.
 
 Conversely, every even-dimensional real inner product space carries an orthogonal almost complex
 structure: transport multiplication by `i` along a real linear isometry with `ℂⁿ`. In dimension
-four, any unit vector extends to a positively oriented unitary orthonormal frame
-(`TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one_of_orientation`).
+four, any unit vector extends to an oriented unitary orthonormal frame for a compatible symplectic
+form
+(`exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`).
 
 ## Main definitions
 
@@ -49,10 +48,11 @@ four, any unit vector extends to a positively oriented unitary orthonormal frame
 * `TauCeti.AlmostComplexStructure.toBasis_orientation_eq_symplecticForm_orientation`: every adapted
   orthonormal basis in dimension `2 * n` induces the symplectic orientation of `ω(v, w) = ⟪J v, w⟫`.
 * `TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one`,
-  `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`,
-  `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation`, and
-  `TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one_of_orientation`:
+  `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`, and
+  `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation`:
   existence of oriented unitary frames and completion of a unit vector in dimension four.
+* `OrthonormalBasis.exists_almostComplexStructure_finFour`: every orthonormal four-frame carries
+  an almost complex structure with `J e₀ = e₁` and `J e₂ = e₃`, without an orientation assumption.
 
 ## References
 
@@ -299,25 +299,24 @@ theorem exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientatio
     exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one hg hξ
   exact ⟨e, he, h₀, h₂⟩
 
-/-- **Completing any unit vector to a positively oriented unitary frame.** If `(o, J)` admits one
-positively oriented unitary orthonormal frame `e`, then every unit vector `ξ` (`‖ξ‖ = 1`) extends to
-a positively oriented unitary orthonormal frame `e'` with `e' 0 = ξ`, `J (e' 0) = e' 1`, and
-`J (e' 2) = e' 3`. -/
-theorem exists_unitary_orthonormalBasis_of_norm_eq_one_of_orientation
-    {o : Orientation ℝ V (Fin 4)} {e : OrthonormalBasis (Fin 4) ℝ V}
-    (he : e.toBasis.orientation = o) {J : AlmostComplexStructure V}
-    (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) {ξ : V} (hξ : ‖ξ‖ = 1) :
-    ∃ e' : OrthonormalBasis (Fin 4) ℝ V,
-      e'.toBasis.orientation = o ∧ e' 0 = ξ ∧ J (e' 0) = e' 1 ∧ J (e' 2) = e' 3 := by
-  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  let ω := J.symplecticForm hJ
-  have hω : ∀ v w, ω v w = ⟪J v, w⟫ := J.symplecticForm_apply hJ
-  obtain ⟨e', he'₀, h'₀, h'₂⟩ := exists_unitary_orthonormalBasis_of_norm_eq_one hJ hξ
-  have ho : e'.toBasis.orientation = o := by
-    rw [toBasis_orientation_eq_symplecticForm_orientation_four hω h'₀ h'₂,
-      ← toBasis_orientation_eq_symplecticForm_orientation_four hω h₀ h₂, he]
-  exact ⟨e', ho, he'₀, h'₀, h'₂⟩
-
 end DimensionFour
 
 end TauCeti.AlmostComplexStructure
+
+namespace OrthonormalBasis
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- An orthonormal four-frame carries an almost complex structure rotating its two coordinate
+planes: `J e₀ = e₁` and `J e₂ = e₃`. -/
+theorem exists_almostComplexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
+    ∃ J : TauCeti.AlmostComplexStructure V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
+  let L := e.toBasis.constr ℝ ![e 1, -e 0, e 3, -e 2]
+  have hL (i : Fin 4) : L (e i) = ![e 1, -e 0, e 3, -e 2] i := e.toBasis.constr_basis ℝ _ i
+  have hsquare : L.comp L = -LinearMap.id := by
+    apply e.toBasis.ext
+    intro i
+    fin_cases i <;> simp [LinearMap.comp_apply, hL, map_neg]
+  exact ⟨⟨L, hsquare⟩, hL 0, hL 2⟩
+
+end OrthonormalBasis

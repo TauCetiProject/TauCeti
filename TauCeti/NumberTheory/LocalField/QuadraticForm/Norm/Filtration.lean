@@ -38,6 +38,58 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
+/-- The final stage of the norm containment: given an optimal square approximation `ξ²` of `a`
+with defect `x` of valuation `v(π) ^ d`, every principal unit of depth `2 v_K(2) - d + 1` is a
+norm from `K(√a)`. -/
+private theorem mem_quadraticNormSubgroup_of_unitFiltration (h2 : (2 : K) ≠ 0) {a : Kˣ}
+    {d : ℕ} (hdle : d ≤ 2 * natCastValuation K 2 h2) {π : 𝒪[K]} (hπ : Irreducible π)
+    {ξ : K} {x : Kˣ} (hx : (x : K) = a - ξ ^ 2)
+    (hxv : valuation K (x : K) = valuation K (π : K) ^ d) (hξv : valuation K (ξ ^ 2) = 1)
+    (hξ0 : ξ ≠ 0) {b : Kˣ} (hb : b ∈ unitFiltration K (2 * natCastValuation K 2 h2 - d + 1)) :
+    b ∈ quadraticNormSubgroup (a : K) := by
+  have hπ1 : valuation K (π : K) < 1 :=
+    Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ
+  have hsquares : unitFiltration K (2 * natCastValuation K 2 h2 + 1) ≤
+      Subgroup.square Kˣ := by simpa using unitFiltration_le_square h2
+  have hbv := ((mem_unitFiltration_iff_valuation_le hπ).mp hb).2
+  -- The discriminant of the norm equation is a square by the local square theorem.
+  let c : K := -(x : K) * ((b : K) - 1) / ξ ^ 2
+  have hcv : valuation K c ≤ valuation K (π : K) ^ (2 * natCastValuation K 2 h2 + 1) := by
+    dsimp [c]
+    rw [map_div₀, map_mul, Valuation.map_neg, hξv, div_one, hxv]
+    calc
+      _ ≤ valuation K (π : K) ^ d *
+          valuation K (π : K) ^ (2 * natCastValuation K 2 h2 - d + 1) :=
+        mul_le_mul' le_rfl hbv
+      _ = _ := by rw [← pow_add]; congr 1; omega
+  have hc1 : valuation K c < 1 :=
+    hcv.trans_lt (pow_lt_one₀ zero_le hπ1 (by omega))
+  have hu0 : 1 + c ≠ 0 := by
+    intro h
+    have hval := (valuation K).map_one_add_of_lt hc1
+    simp [h] at hval
+  let u : Kˣ := Units.mk0 (1 + c) hu0
+  have humem : u ∈ unitFiltration K (2 * natCastValuation K 2 h2 + 1) := by
+    rw [mem_unitFiltration_succ_valuation _ _ π hπ]
+    simpa [u] using hcv
+  obtain ⟨z, hz⟩ := Subgroup.mem_square.mp (hsquares humem)
+  have hz' : (z : K) ^ 2 = 1 + c := by
+    simpa [u, sq] using (congrArg (fun w : Kˣ => (w : K)) hz).symm
+  -- Solve `N(1 + t(ξ + √a)) = b` using this square root.
+  let t : K := ξ * ((z : K) - 1) / (ξ ^ 2 - a)
+  have hden : ξ ^ 2 - (a : K) ≠ 0 := by
+    intro h
+    apply x.ne_zero
+    rw [hx, ← sub_eq_zero.mp h, sub_self]
+  have hnorm : (1 + ξ * t) ^ 2 - (a : K) * t ^ 2 = b := by
+    dsimp [c] at hz'
+    dsimp [t]
+    rw [hx] at hz'
+    field_simp at hz' ⊢
+    linear_combination (ξ ^ 2 - (a : K)) * hz'
+  apply (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr
+  exact ⟨⟨1 + ξ * t, t⟩, by simpa [QuadraticAlgebra.norm_def, sq, mul_assoc] using hnorm⟩
+
 /-- If a local unit has finite quadratic defect exponent `d`, then every principal unit of
 depth `2 v_K(2) - d + 1` is a norm from its quadratic extension. -/
 theorem unitFiltration_le_quadraticNormSubgroup_of_defectExponent_eq (h2 : (2 : K) ≠ 0)
@@ -78,43 +130,6 @@ theorem unitFiltration_le_quadraticNormSubgroup_of_defectExponent_eq (h2 : (2 : 
       (hxv ▸ pow_lt_one₀ zero_le hπ1 hdpos.ne')), ha]
   have hξ0 : ξ ≠ 0 := by rintro rfl; simp at hξv
   intro b hb
-  have hbv := ((mem_unitFiltration_iff_valuation_le hπ).mp hb).2
-  -- The discriminant of the norm equation is a square by the local square theorem.
-  let c : K := -(x : K) * ((b : K) - 1) / ξ ^ 2
-  have hcv : valuation K c ≤ valuation K (π : K) ^ (2 * natCastValuation K 2 h2 + 1) := by
-    dsimp [c]
-    rw [map_div₀, map_mul, Valuation.map_neg, hξv, div_one, hxv]
-    calc
-      _ ≤ valuation K (π : K) ^ d *
-          valuation K (π : K) ^ (2 * natCastValuation K 2 h2 - d + 1) :=
-        mul_le_mul' le_rfl hbv
-      _ = _ := by rw [← pow_add]; congr 1; omega
-  have hc1 : valuation K c < 1 :=
-    hcv.trans_lt (pow_lt_one₀ zero_le hπ1 (by omega))
-  have hu0 : 1 + c ≠ 0 := by
-    intro h
-    have hval := (valuation K).map_one_add_of_lt hc1
-    simp [h] at hval
-  let u : Kˣ := Units.mk0 (1 + c) hu0
-  have humem : u ∈ unitFiltration K (2 * natCastValuation K 2 h2 + 1) := by
-    rw [mem_unitFiltration_succ_valuation _ _ π hπ]
-    simpa [u] using hcv
-  obtain ⟨z, hz⟩ := Subgroup.mem_square.mp (hsquares humem)
-  have hz' : (z : K) ^ 2 = 1 + c := by
-    simpa [u, sq] using (congrArg (fun w : Kˣ => (w : K)) hz).symm
-  -- Solve `N(1 + t(ξ + √a)) = b` using this square root.
-  let t : K := ξ * ((z : K) - 1) / (ξ ^ 2 - a)
-  have hden : ξ ^ 2 - (a : K) ≠ 0 := by
-    intro h
-    apply x.ne_zero
-    rw [hx, ← sub_eq_zero.mp h, sub_self]
-  have hnorm : (1 + ξ * t) ^ 2 - (a : K) * t ^ 2 = b := by
-    dsimp [c] at hz'
-    dsimp [t]
-    rw [hx] at hz'
-    field_simp at hz' ⊢
-    linear_combination (ξ ^ 2 - (a : K)) * hz'
-  apply (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr
-  exact ⟨⟨1 + ξ * t, t⟩, by simpa [QuadraticAlgebra.norm_def, sq, mul_assoc] using hnorm⟩
+  exact mem_quadraticNormSubgroup_of_unitFiltration h2 hdle hπ hx hxv hξv hξ0 hb
 
 end TauCeti

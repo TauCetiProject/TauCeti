@@ -277,6 +277,28 @@ private theorem isFrobeniusIntegrableAt_flatteningField {y : E} (hW : (lc).weylT
   simp only [neg_apply, neg_inj]
   exact sub_eq_zero.1 h
 
+/-- **A smooth solution of the flattening system through a prescribed jet.** Where the Weyl and
+Cotton tensors vanish near `x₀`, the coordinate conformal flattening system has, for every initial
+value `q₀`, a solution `σ` which is smooth on an open neighbourhood `V` of `x₀` and takes the value
+`q₀` at `x₀`. -/
+private theorem exists_contDiffOn_hasFDerivAt_flatteningField {x₀ : E}
+    (hW : ∀ᶠ y in 𝓝 x₀, (lc).weylTensor y = 0) (hC : ∀ᶠ y in 𝓝 x₀, (lc).cottonTensor y = 0)
+    (q₀ : ℝ × (E →L[ℝ] ℝ)) :
+    ∃ (σ : E → ℝ × (E →L[ℝ] ℝ)) (V : Set E), IsOpen V ∧ x₀ ∈ V ∧ ContDiffOn ℝ ∞ σ V ∧
+      σ x₀ = q₀ ∧ ∀ x ∈ V, HasFDerivAt σ (flatteningField E (x, σ x)) x := by
+  -- The Frobenius condition holds near `(x₀, q₀)`, so the system has a smooth solution family.
+  have hint : ∀ᶠ p in 𝓝 (x₀, q₀), IsFrobeniusIntegrableAt (flatteningField E) p :=
+    ((continuous_fst.tendsto (x₀, q₀)).eventually (hW.and hC)).mono fun p hp ↦
+      isFrobeniusIntegrableAt_flatteningField hp.1 hp.2 p.2
+  obtain ⟨s, U, hU, hx₀U, hs, hs₀, -, hsol⟩ :=
+    exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt (n := ⊤)
+      (contDiff_flatteningField.contDiffOn (s := univ) |>.of_le (by simp)) univ_mem hint
+  -- The slice through `q₀` is smooth on the open set `V` and solves the system there.
+  exact ⟨fun x ↦ s (x, q₀), (fun x ↦ (x, q₀)) ⁻¹' U,
+    hU.preimage (continuous_id.prodMk continuous_const), hx₀U,
+    (hs.comp (contDiffOn_id.prodMk contDiffOn_const) fun _ hx ↦ hx).of_le (by simp), hs₀,
+    fun x hx ↦ hsol (x, q₀) hx⟩
+
 /-- **Local solutions of the conformal flattening equation.** Let `g` be a smooth Riemannian
 metric on a finite-dimensional real normed space `E` whose Weyl and Cotton tensors vanish near
 `x₀`. Then for every `c : ℝ` and every tangent vector `ξ` at `x₀` there is a smooth function `φ`
@@ -291,21 +313,8 @@ theorem exists_eventually_hessian_eq_model_space {x₀ : E}
       ∀ᶠ y in 𝓝 x₀, ∀ u v : TangentSpace 𝓘(ℝ, E) y, hessian 𝓘(ℝ, E) φ y u v =
         (lc).conformalFlatteningForm y (mgradient 𝓘(ℝ, E) φ y) u v := by
   set q₀ : ℝ × (E →L[ℝ] ℝ) := (c, metricCoeff E x₀ (tangentSpaceCastModel 𝓘(ℝ, E) x₀ ξ))
-  -- The Frobenius condition holds near `(x₀, q₀)`, so the system has a smooth solution family.
-  have hint : ∀ᶠ p in 𝓝 (x₀, q₀), IsFrobeniusIntegrableAt (flatteningField E) p :=
-    ((continuous_fst.tendsto (x₀, q₀)).eventually (hW.and hC)).mono fun p hp ↦
-      isFrobeniusIntegrableAt_flatteningField hp.1 hp.2 p.2
-  obtain ⟨s, U, hU, hx₀U, hs, hs₀, -, hsol⟩ :=
-    exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt (n := ⊤)
-      (contDiff_flatteningField.contDiffOn (s := univ) |>.of_le (by simp)) univ_mem hint
-  -- The slice through `q₀` is smooth on the open set `V` and solves the system there.
-  set σ : E → ℝ × (E →L[ℝ] ℝ) := fun x ↦ s (x, q₀)
-  set V : Set E := (fun x ↦ (x, q₀)) ⁻¹' U
-  have hV : IsOpen V := hU.preimage (continuous_id.prodMk continuous_const)
-  have hσ : ContDiffOn ℝ ∞ σ V :=
-    (hs.comp (contDiffOn_id.prodMk contDiffOn_const) fun _ hx ↦ hx).of_le (by simp)
-  have hσsol (x : E) (hx : x ∈ V) : HasFDerivAt σ (flatteningField E (x, σ x)) x :=
-    hsol (x, q₀) hx
+  obtain ⟨σ, V, hV, hx₀V, hσ, hσ₀, hσsol⟩ :=
+    exists_contDiffOn_hasFDerivAt_flatteningField hW hC q₀
   -- Its first component `φ₀` has differential the second component and second derivative `f`.
   set φ₀ : E → ℝ := fun x ↦ (σ x).1
   have hDφ₀ (x : E) (hx : x ∈ V) : fderiv ℝ φ₀ x = (σ x).2 := by
@@ -323,25 +332,25 @@ theorem exists_eventually_hessian_eq_model_space {x₀ : E}
     simp
   -- Cut `φ₀` off to a globally smooth function, equal to it near `x₀`.
   obtain ⟨χ, hχ, -, hχ₁, -, hχV⟩ :=
-    (isCompact_singleton (x := x₀)).exists_contDiff_cutoff hV (singleton_subset_iff.2 hx₀U)
+    (isCompact_singleton (x := x₀)).exists_contDiff_cutoff_eventuallyEq_one hV
+      (singleton_subset_iff.2 hx₀V)
   set φ : E → ℝ := fun x ↦ χ x • φ₀ x
   have hφ : ContDiff ℝ ∞ φ :=
     (contDiffOn_fst.comp hσ (mapsTo_univ _ _)).contDiff_smul_of_tsupport_subset hV
       hχ.contDiffOn hχV
   have hφφ₀ : ∀ᶠ y in 𝓝 x₀, φ =ᶠ[𝓝 y] φ₀ := by
-    filter_upwards [isOpen_interior.eventually_mem (singleton_subset_iff.1 hχ₁)] with y hy
-    filter_upwards [isOpen_interior.mem_nhds hy] with z hz
-    have hz₁ : χ z = 1 := interior_subset hz
-    simp [φ, hz₁]
-  have hVx₀ : ∀ᶠ y in 𝓝 x₀, y ∈ V := hV.mem_nhds hx₀U
+    filter_upwards [(hχ₁ x₀ rfl).eventually_nhds] with y hy
+    filter_upwards [hy] with z hz
+    simp [φ, hz]
+  have hVx₀ : ∀ᶠ y in 𝓝 x₀, y ∈ V := hV.mem_nhds hx₀V
   have hDφx₀ : fderiv ℝ φ x₀ = (σ x₀).2 := by
-    rw [hφφ₀.self_of_nhds.fderiv_eq, hDφ₀ x₀ hx₀U]
+    rw [hφφ₀.self_of_nhds.fderiv_eq, hDφ₀ x₀ hx₀V]
   refine ⟨φ, contMDiff_iff_contDiff.2 hφ, ?_, ?_, ?_⟩
   · rw [hφφ₀.self_of_nhds.eq_of_nhds]
-    simp [φ₀, σ, hs₀, q₀]
+    simp [φ₀, hσ₀, q₀]
   · refine (eq_mgradient_iff.2 fun v ↦ ?_).symm
     rw [mvfderiv_eq_fderiv, hDφx₀]
-    simp [σ, hs₀, q₀, inner_eq_metricCoeff, NormedSpace.fromTangentSpace]
+    simp [hσ₀, q₀, inner_eq_metricCoeff, NormedSpace.fromTangentSpace]
   · filter_upwards [hφφ₀, hVx₀] with y hy hyV u v
     have h := hessian_sub_conformalFlatteningForm_model_space (hφ.contDiffAt.of_le (by simp) :
       ContDiffAt ℝ 2 φ y) (tangentSpaceCastModel 𝓘(ℝ, E) y u) (tangentSpaceCastModel 𝓘(ℝ, E) y v)

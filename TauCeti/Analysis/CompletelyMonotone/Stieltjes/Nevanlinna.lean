@@ -68,6 +68,33 @@ private lemma one_add_sq_div_mul_div_add_eq (t : ℝ) {y : ℝ} (hy : y ≠ 0) (
   field_simp
   ring
 
+/-- The reflected Nevanlinna kernel is a constant minus a multiple of the Stieltjes kernel:
+`(t y - 1) / (t + y) = t - (1 + t ^ 2) (t + y)⁻¹`. -/
+private lemma reflected_nevanlinnaKernel_eq (t : ℝ) {y : ℝ} (hty : t + y ≠ 0) :
+    (t * y - 1) / (t + y) = t - (1 + t ^ 2) * (t + y)⁻¹ := by
+  field_simp
+  ring
+
+/-- The reflected Nevanlinna kernel is integrable against a finite measure on `ℝ≥0`, since it
+differs from the Stieltjes kernel `(t + y)⁻¹` by an affine change. -/
+private lemma integrable_reflected_nevanlinnaKernel (ν : Measure ℝ≥0) [IsFiniteMeasure ν] {t : ℝ}
+    (ht : 0 < t) : Integrable (fun y : ℝ≥0 => (t * y - 1) / (t + y)) ν :=
+  ((integrable_const t).sub ((integrable_inv_add (integrable_stieltjesWeight ν) ht).const_mul
+    (1 + t ^ 2))).congr (.of_forall fun y => by
+      simp only [Pi.sub_apply]
+      exact (reflected_nevanlinnaKernel_eq t (by positivity)).symm)
+
+/-- The reflected Nevanlinna integral splits into a constant and a multiple of the Stieltjes
+transform: `(t y - 1) / (t + y) = t - (1 + t ^ 2) (t + y)⁻¹`. -/
+private lemma integral_reflected_nevanlinnaKernel (ν : Measure ℝ≥0) [IsFiniteMeasure ν] {t : ℝ}
+    (ht : 0 < t) : ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν =
+      ν.real univ * t - (1 + t ^ 2) * ∫ y : ℝ≥0, (t + (y : ℝ))⁻¹ ∂ν := by
+  rw [integral_congr_ae (g := fun y : ℝ≥0 => t - (1 + t ^ 2) * (t + (y : ℝ))⁻¹)
+    (.of_forall fun y => reflected_nevanlinnaKernel_eq t (by positivity)),
+    integral_sub (integrable_const t)
+    ((integrable_inv_add (integrable_stieltjesWeight ν) ht).const_mul _), integral_const_mul,
+    integral_const, smul_eq_mul]
+
 /-- **Complete Bernstein functions from reflected Nevanlinna data.** A function that agrees on
 `(0, ∞)` with `c + b t + ∫ y, (t y - 1) / (t + y) ∂ν`, for a finite measure `ν` on `ℝ≥0` and
 `b ≥ 0`, and is nonnegative there, agrees on `(0, ∞)` with a complete Bernstein function.
@@ -80,92 +107,49 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanli
     (hf : ∀ t : ℝ, 0 < t → f t = c + b * t + ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν)
     (hpos : ∀ t : ℝ, 0 < t → 0 ≤ f t) :
     ∃ g : ℝ → ℝ, IsCompleteBernsteinFunction g ∧ EqOn g f (Ioi 0) := by
-  have hint : ∀ t : ℝ, 0 < t → Integrable (fun y : ℝ≥0 => (t + (y : ℝ))⁻¹) ν :=
-    fun t ht => integrable_inv_add (integrable_stieltjesWeight ν) ht
   have hKnonneg : ∀ t : ℝ, 0 < t → 0 ≤ ∫ y : ℝ≥0, (t + (y : ℝ))⁻¹ ∂ν :=
     fun t ht => integral_nonneg fun y => by positivity
-  -- Rewrite the representation with the Stieltjes transform of `ν` as its only integral.
-  have hrep : ∀ t : ℝ, 0 < t →
-      f t = c + (b + ν.real univ) * t - (1 + t ^ 2) * ∫ y : ℝ≥0, (t + (y : ℝ))⁻¹ ∂ν := by
-    intro t ht
-    have hsplit : ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν
-        = ν.real univ * t - (1 + t ^ 2) * ∫ y : ℝ≥0, (t + (y : ℝ))⁻¹ ∂ν := by
-      calc ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν
-          = ∫ y : ℝ≥0, (t - (1 + t ^ 2) * (t + (y : ℝ))⁻¹) ∂ν := by
-            refine integral_congr_ae (.of_forall fun y => ?_)
-            field_simp
-            ring
-        _ = (∫ _y : ℝ≥0, t ∂ν) - (1 + t ^ 2) * ∫ y : ℝ≥0, (t + (y : ℝ))⁻¹ ∂ν := by
-            rw [integral_sub (integrable_const t) ((hint t ht).const_mul _), integral_const_mul]
-        _ = ν.real univ * t - (1 + t ^ 2) * ∫ y : ℝ≥0, (t + (y : ℝ))⁻¹ ∂ν := by
-            rw [integral_const, smul_eq_mul]
-    rw [hf t ht, hsplit]
-    ring
   -- Nonnegativity forces an affine bound on the Stieltjes transform of `ν` near the origin.
   have hbound : ∀ t : ℝ, 0 < t →
       (∫ y : ℝ≥0, (t + (y : ℝ))⁻¹ ∂ν) ≤ c + (b + ν.real univ) * t := by
     intro t ht
     have h1 := hpos t ht
-    rw [hrep t ht] at h1
+    rw [hf t ht, integral_reflected_nevanlinnaKernel ν ht] at h1
     nlinarith [hKnonneg t ht, sq_nonneg t]
-  have hc : 0 ≤ c := by
-    have hle : ∀ t : ℝ, 0 < t → 0 ≤ c + (b + ν.real univ) * t := fun t ht =>
-      le_trans (hKnonneg t ht) (hbound t ht)
-    have htend : Tendsto (fun t : ℝ => c + (b + ν.real univ) * t) (𝓝[>] 0) (𝓝 c) := by
-      have : Tendsto (fun t : ℝ => c + (b + ν.real univ) * t) (𝓝 0)
-          (𝓝 (c + (b + ν.real univ) * 0)) :=
-        tendsto_const_nhds.add (tendsto_const_nhds.mul tendsto_id)
-      simpa using this.mono_left nhdsWithin_le_nhds
-    exact ge_of_tendsto htend (eventually_nhdsWithin_of_forall hle)
+  have htend : Tendsto (fun t : ℝ => c + (b + ν.real univ) * t) (𝓝[>] 0) (𝓝 c) :=
+    ((by fun_prop : Continuous fun t : ℝ => c + (b + ν.real univ) * t).tendsto' 0 c
+      (by simp)).mono_left nhdsWithin_le_nhds
+  have hc : 0 ≤ c := ge_of_tendsto htend
+    (eventually_nhdsWithin_of_forall (s := Ioi 0) fun t ht => (hKnonneg t ht).trans (hbound t ht))
   -- The pivot: `∫ y⁻¹ ∂ν` is finite and bounded by `c`.
   have hmeas : AEMeasurable (fun y : ℝ≥0 => (y : ℝ≥0∞)⁻¹) ν := by fun_prop
-  have hlint := lintegral_inv_le_of_forall_integral_inv_add_le
-    (integrable_stieltjesWeight ν) hbound
-  have hlinttop : ∫⁻ y : ℝ≥0, (y : ℝ≥0∞)⁻¹ ∂ν ≠ ⊤ :=
-    ne_top_of_le_ne_top ENNReal.ofReal_ne_top hlint
-  have hν0 : ν {0} = 0 := by
-    have hset : {y : ℝ≥0 | (y : ℝ≥0∞)⁻¹ = ⊤} = {0} := by
-      ext y
-      simp
-    simpa [hset] using measure_eq_top_of_lintegral_ne_top hmeas hlinttop
-  have hane : ∀ᵐ y ∂ν, y ≠ 0 := by
-    rw [ae_iff]
-    simpa using hν0
+  have hlint := lintegral_inv_le_of_eventually_integral_inv_add_le (integrable_stieltjesWeight ν)
+    htend (eventually_nhdsWithin_of_forall hbound)
+  have hlinttop := (hlint.trans_lt ENNReal.ofReal_lt_top).ne
+  have hfin := ae_lt_top' hmeas hlinttop
+  have hane : ∀ᵐ y ∂ν, y ≠ 0 := hfin.mono fun y hy => by
+    simpa [pos_iff_ne_zero] using hy
   have hyint : Integrable (fun y : ℝ≥0 => ((y : ℝ))⁻¹) ν := by
     simpa [ENNReal.toReal_inv] using integrable_toReal_of_lintegral_ne_top hmeas hlinttop
-  set I : ℝ := ∫ y : ℝ≥0, ((y : ℝ))⁻¹ ∂ν with hIdef
-  have hIc : I ≤ c := by
-    have hfin : ∀ᵐ y : ℝ≥0 ∂ν, (y : ℝ≥0∞)⁻¹ < ⊤ := by
-      filter_upwards [hane] with y hy
-      simpa [pos_iff_ne_zero] using hy
-    have hI : I = (∫⁻ y : ℝ≥0, (y : ℝ≥0∞)⁻¹ ∂ν).toReal := by
-      rw [hIdef, ← integral_toReal hmeas hfin]
-      simp [ENNReal.toReal_inv]
-    rw [hI, ← ENNReal.toReal_ofReal hc]
-    exact ENNReal.toReal_mono ENNReal.ofReal_ne_top hlint
+  have hIc : ∫ y : ℝ≥0, ((y : ℝ))⁻¹ ∂ν ≤ c := by
+    simpa [ENNReal.toReal_inv] using (integral_toReal hmeas hfin).trans_le
+      (ENNReal.toReal_le_of_le_ofReal hc hlint)
   -- The weighted measure carrying the complete-Bernstein representation.
-  set d : ℝ≥0 → ℝ≥0 := fun y => (1 + y ^ 2) / y with hd
-  have hdmeas : Measurable d := by fun_prop
-  have hdcoe : ∀ y : ℝ≥0, (d y : ℝ) = (1 + (y : ℝ) ^ 2) / (y : ℝ) := by
-    intro y
-    rw [hd]
-    push_cast
-    ring
+  set d : ℝ≥0 → ℝ≥0 := fun y => (1 + y ^ 2) / y
+  have hdcoe : ∀ y : ℝ≥0, (d y : ℝ) = (1 + (y : ℝ) ^ 2) / (y : ℝ) := fun y => by simp [d]
   set μ : Measure ℝ≥0 := ν.withDensity (fun y => (d y : ℝ≥0∞)) with hμdef
-  have hμ0 : μ {0} = 0 := by
-    rw [hμdef, withDensity_apply _ (measurableSet_singleton 0),
-      setLIntegral_measure_zero _ _ hν0]
+  -- the density vanishes at `0` only since division by zero is `0` in `ℝ≥0`
+  have hd0 : d 0 = 0 := by simp [d]
+  have hμ0 : μ {0} = 0 := by simp [hμdef, withDensity_apply, hd0]
   have hμw : Integrable stieltjesWeight μ := by
-    rw [hμdef, integrable_withDensity_iff_integrable_smul hdmeas]
-    have hmul : Measurable fun y : ℝ≥0 => (d y : ℝ) * stieltjesWeight y :=
-      hdmeas.coe_nnreal_real.mul measurable_stieltjesWeight
-    have hsm : AEStronglyMeasurable (fun y : ℝ≥0 => d y • stieltjesWeight y) ν :=
-      hmul.aestronglyMeasurable.congr
-        (.of_forall fun y => by simp only [NNReal.smul_def, smul_eq_mul])
-    refine (hyint.add (integrable_const (1 : ℝ))).mono' hsm ?_
+    rw [hμdef, integrable_withDensity_iff_integrable_smul (by fun_prop)]
+    refine (hyint.add (integrable_const (1 : ℝ))).mono' (by fun_prop) ?_
     filter_upwards [hane] with y hy
-    have hsub : ((y : ℝ))⁻¹ + 1 - (1 + (y : ℝ) ^ 2) / (y : ℝ) * (1 + (y : ℝ))⁻¹
-        = 2 / (1 + (y : ℝ)) := by
+    have hy' : (y : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hy
+    have hy1 : 1 + (y : ℝ) ≠ 0 := by positivity
+    -- `y⁻¹ + 1` exceeds the density times the weight by `2 / (1 + y)`.
+    have hsub : (y : ℝ)⁻¹ + 1 - (1 + (y : ℝ) ^ 2) / (y : ℝ) * (1 + (y : ℝ))⁻¹ =
+        2 / (1 + (y : ℝ)) := by
       field_simp
       ring
     simp only [Pi.add_apply, NNReal.smul_def, smul_eq_mul, stieltjesWeight_apply, hdcoe,
@@ -173,30 +157,18 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanli
     rw [abs_of_nonneg (by positivity), ← sub_nonneg, hsub]
     positivity
   -- The reflected Nevanlinna integral in terms of the weighted measure.
-  have hdint : ∀ t : ℝ, 0 < t →
-      Integrable (fun y : ℝ≥0 => (d y : ℝ) * (t / (t + y))) ν := by
-    intro t ht
-    have h := (integrable_inv_add hμw ht).const_mul t
-    rw [hμdef, integrable_withDensity_iff_integrable_smul hdmeas] at h
-    refine h.congr (.of_forall fun y => ?_)
-    simp only [NNReal.smul_def, smul_eq_mul, div_eq_mul_inv]
-  have hkey : ∀ t : ℝ, 0 < t →
-      ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν
-        = (∫ y : ℝ≥0, (d y : ℝ) * (t / (t + y)) ∂ν) - I := by
-    intro t ht
-    rw [hIdef, ← integral_sub (hdint t ht) hyint]
+  refine ⟨stieltjesBernsteinTransform μ (c - ∫ y : ℝ≥0, ((y : ℝ))⁻¹ ∂ν).toNNReal b.toNNReal,
+    isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ0 hμw, fun t ht => ?_⟩
+  have ht := mem_Ioi.mp ht
+  have hkey : ∫ y : ℝ≥0, d y • (t / (t + y)) ∂ν =
+      ∫ y : ℝ≥0, (y : ℝ)⁻¹ ∂ν + ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν := by
+    rw [← integral_add hyint (integrable_reflected_nevanlinnaKernel ν ht)]
     refine integral_congr_ae ?_
     filter_upwards [hane] with y hy
-    have hY : (0 : ℝ) < y := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hy)
-    rw [hdcoe, one_add_sq_div_mul_div_add_eq t hY.ne' (by positivity)]
-    ring
-  refine ⟨stieltjesBernsteinTransform μ (c - I).toNNReal b.toNNReal,
-    isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ0 hμw, fun t ht => ?_⟩
-  have htpos : (0 : ℝ) < t := mem_Ioi.mp ht
-  rw [stieltjesBernsteinTransform_apply, hf t htpos, hkey t htpos,
-    Real.coe_toNNReal _ (sub_nonneg.mpr hIc), Real.coe_toNNReal _ hb, hμdef,
-    integral_withDensity_eq_integral_smul hdmeas]
-  simp only [NNReal.smul_def, smul_eq_mul]
+    rw [NNReal.smul_def, smul_eq_mul, hdcoe,
+      one_add_sq_div_mul_div_add_eq t (NNReal.coe_ne_zero.2 hy) (by positivity)]
+  rw [stieltjesBernsteinTransform_apply, hf t ht, Real.coe_toNNReal _ (sub_nonneg.mpr hIc),
+    Real.coe_toNNReal _ hb, hμdef, integral_withDensity_eq_integral_smul (by fun_prop), hkey]
   ring
 
 /-- The reflection `x = -y` transporting the Nevanlinna kernel to `ℝ≥0`: negating numerator and

@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.CartanMap
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Idempotents
--- Idempotent.Projective imports this privately; the brick criterion is needed below.
+-- Idempotent.Projective.Basic imports this privately; the brick criterion is needed below.
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 
 /-!
@@ -104,7 +104,6 @@ theorem isExhaustiveGradedIndecomposableProjectiveFamily_zigzagAlgebraGradedProj
   let _ := Fintype.ofFinite V
   exact isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalIdempotents
     (completeOrthogonalIdempotents_zigzagAlgebraBasis_inl k G)
-    (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G)
     (isHomogeneous_span_zigzagAlgebraBasis_inl k G)
     (indecomposable_zigzagAlgebraGradedProjective k G)
 

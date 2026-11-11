@@ -44,6 +44,8 @@ assembles a `ℤ`-indexed complex of modules from the same kind of data.
   with values in one piece of the grading.
 * `TopRep.gradedCochainComplexMap`: the chain map induced by a morphism of degree zero commuting
   with the differentials.
+* `TopRep.gradedCochainComplexIso`: an isomorphism preserving and detecting degrees induces
+  an isomorphism of complexes when it commutes with the differentials.
 * `TopRep.gradedCochainComplexResMap`: the chain map from the restricted complex of a graded
   representation induced by a morphism of degree zero.
 
@@ -267,6 +269,65 @@ theorem gradedCochainComplexMap_f_apply (F : M ⟶ M')
       v).1 = F.hom v.1 := by
   simp only [gradedCochainComplexMap, gradedCochainComplexLift_apply, comp_apply,
     gradedCochainComplexι_apply]
+
+/-- An isomorphism preserving and detecting degrees and commuting with the differentials induces
+an isomorphism of the associated cochain complexes. -/
+noncomputable def gradedCochainComplexIso (F : M ≅ M')
+    (hF : ∀ n x, F.hom.hom x ∈ ℳ' n ↔ x ∈ ℳ n)
+    (hFd : d ≫ F.hom = F.hom ≫ d') :
+    M.gradedCochainComplex ℳ hρ d hd hdd ≅ M'.gradedCochainComplex ℳ' hρ' d' hd' hdd' := by
+  have hhom : TauCeti.LinearMap.IsHomogeneous F.hom.hom.toLinearMap ℳ ℳ' 0 :=
+    TauCeti.LinearMap.isHomogeneous_def.2 fun n x hx ↦ by
+      rw [add_zero]
+      exact (hF n x).2 hx
+  have hinv : TauCeti.LinearMap.IsHomogeneous F.inv.hom.toLinearMap ℳ' ℳ 0 :=
+    TauCeti.LinearMap.isHomogeneous_def.2 fun n x hx ↦ by
+      rw [add_zero]
+      exact (hF n (F.inv.hom x)).1 (by simpa using hx)
+  have hdinv : d' ≫ F.inv = F.inv ≫ d := by
+    apply (cancel_mono F.hom).1
+    simp only [Category.assoc, F.inv_hom_id, Category.comp_id]
+    rw [hFd, F.inv_hom_id_assoc]
+  exact
+    { hom := gradedCochainComplexMap F.hom hhom hFd
+      inv := gradedCochainComplexMap F.inv hinv hdinv
+      hom_inv_id := by
+        apply HomologicalComplex.Hom.ext
+        funext n
+        refine ConcreteCategory.hom_ext _ _ fun x ↦ Subtype.ext ?_
+        simp only [HomologicalComplex.comp_f, comp_apply,
+          gradedCochainComplexMap_f_apply, HomologicalComplex.id_f, id_apply]
+        exact ConcreteCategory.congr_hom F.hom_inv_id x.1
+      inv_hom_id := by
+        apply HomologicalComplex.Hom.ext
+        funext n
+        refine ConcreteCategory.hom_ext _ _ fun x ↦ Subtype.ext ?_
+        simp only [HomologicalComplex.comp_f, comp_apply,
+          gradedCochainComplexMap_f_apply, HomologicalComplex.id_f, id_apply]
+        exact ConcreteCategory.congr_hom F.inv_hom_id x.1 }
+
+/-- The induced complex isomorphism applies the original isomorphism in each degree. -/
+@[simp]
+theorem gradedCochainComplexIso_hom_f_apply (F : M ≅ M')
+    (hF : ∀ n x, F.hom.hom x ∈ ℳ' n ↔ x ∈ ℳ n)
+    (hFd : d ≫ F.hom = F.hom ≫ d') (n : ℕ)
+    (x : ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V) :
+    (((gradedCochainComplexIso (hρ' := hρ') (hd' := hd') (hdd' := hdd')
+      F hF hFd).hom.f n).hom x).1 = F.hom.hom x.1 := by
+  dsimp only [gradedCochainComplexIso]
+  simp only [gradedCochainComplexMap_f_apply]
+
+/-- The inverse complex isomorphism applies the inverse original isomorphism in each degree. -/
+@[simp]
+theorem gradedCochainComplexIso_inv_f_apply (F : M ≅ M')
+    (hF : ∀ n x, F.hom.hom x ∈ ℳ' n ↔ x ∈ ℳ n)
+    (hFd : d ≫ F.hom = F.hom ≫ d') (n : ℕ)
+    (x : ((M'.gradedCochainComplex ℳ' hρ' d' hd' hdd').X n).V) :
+    (((gradedCochainComplexIso (hρ := hρ) (hd := hd) (hdd := hdd)
+      (hρ' := hρ') (hd' := hd') (hdd' := hdd')
+      F hF hFd).inv.f n).hom x).1 = F.inv.hom x.1 := by
+  dsimp only [gradedCochainComplexIso]
+  simp only [gradedCochainComplexMap_f_apply]
 
 end Map
 

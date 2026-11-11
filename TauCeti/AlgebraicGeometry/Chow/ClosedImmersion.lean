@@ -58,7 +58,7 @@ noncomputable def cyclesPushforward {k : ℤ} : cyclesOfDimension Z k →+ cycle
       rintro _ ⟨y, hy, rfl⟩
       simpa only [mem_pointsOfDimension, Scheme.Hom.height_apply_eq_height] using
         mem_cyclesOfDimension_iff.mp α.2 hy⟩)
-    fun α β ↦ Subtype.ext (AlgebraicCycle.map_height_add_of_isClosedImmersion i _ _)
+    fun α β ↦ Subtype.ext (AlgebraicCycle.map_add i height height _ _)
 
 variable {i}
 

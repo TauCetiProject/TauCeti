@@ -46,6 +46,8 @@ groups over `ℝ` and `ℚ_p` are studied.
   automorphism group.
 * `TauCeti.QuadraticMap.instLocallyCompactSpaceOrthogonalGroup`: the orthogonal group is locally
   compact over a locally compact field.
+* `QuadraticMap.continuous_equivFun_orthogonalGroup_apply_basis`: the coordinates of the image of
+  a basis vector under an orthogonal transformation depend continuously on it.
 * `QuadraticMap.continuous_specialOrthogonalToOrthogonal`: the inclusion of the special
   orthogonal group into the orthogonal group is continuous.
 -/
@@ -145,6 +147,30 @@ theorem _root_.QuadraticMap.continuous_specialOrthogonalToOrthogonal :
     fun g ↦ Subtype.ext (_root_.QuadraticMap.coe_specialOrthogonalToOrthogonal g).symm
 
 end Inclusion
+
+section BasisCoordinates
+
+variable {K V ι : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
+  [AddCommGroup V] [Module K V] [Finite ι]
+
+/-- The coordinates of the image of a basis vector under an orthogonal transformation depend
+continuously on the transformation. -/
+theorem _root_.QuadraticMap.continuous_equivFun_orthogonalGroup_apply_basis
+    (Q : QuadraticForm K V) (b : Module.Basis ι K V) (i : ι) :
+    Continuous (fun g : orthogonalGroup Q ↦ b.equivFun ((g : V ≃ₗ[K] V) (b i))) := by
+  classical
+  have := Fintype.ofFinite ι
+  have hM : Continuous (fun g : orthogonalGroup Q ↦
+      LinearMap.toMatrix b b (g : V ≃ₗ[K] V).toLinearMap) :=
+    (IsModuleTopology.continuous_of_linearMap
+      (LinearMap.toMatrixAlgEquiv b).toLinearMap).comp
+      (continuous_linearEquiv_toLinearMap.comp continuous_subtype_val)
+  exact (continuous_pi fun k ↦ ((continuous_apply i).comp
+    ((continuous_apply k).comp hM))).congr fun g ↦ by
+      ext k
+      exact LinearMap.toMatrix_apply b b (g : V ≃ₗ[K] V).toLinearMap k i
+
+end BasisCoordinates
 
 end QuadraticMap
 

@@ -25,12 +25,19 @@ If `n ∣ m` but `q * n ∤ m` for a prime `q`, then `m` and `n` have the same `
 `q * m` and `q * n`; this pins down the gcd and lcm of `m` and `q * n`, which are used to compare
 a level `q * n` with a multiple `q * m` of the same `q`-part, as for congruence subgroups.
 
+For coprime natural bases `b ≤ a`, a prime dividing `a ^ n - b ^ n` with `n > 0` divides
+neither base; this ensures that their ratio modulo the prime is a unit.
+
 ## Main declarations
 
 * `Nat.Primes.instFactPrime`: for `p : Nat.Primes`, the instance `Fact (p : ℕ).Prime`.
 * `Nat.Prime.not_dvd_six_of_five_le`: a prime `p ≥ 5` does not divide `6`.
 * `Nat.Prime.gcd_mul_eq_of_dvd_of_not_mul_dvd`, `Nat.Prime.lcm_mul_eq_of_dvd_of_not_mul_dvd`:
   if `n ∣ m` and `q * n ∤ m`, then `gcd m (q * n) = n` and `lcm m (q * n) = q * m`.
+* `Nat.Prime.dvd_gcd_of_dvd_pow_sub_pow_of_dvd_mul`: a prime dividing both
+  `a ^ n - b ^ n` and `a * b`, with `b ≤ a` and `n > 0`, divides `a.gcd b`.
+* `Nat.Coprime.not_dvd_mul_of_dvd_pow_sub_pow`: for coprime natural bases `b ≤ a`, prime
+  divisors of `a ^ n - b ^ n` with `n > 0` do not divide the product of the bases.
 -/
 
 public section
@@ -66,3 +73,29 @@ theorem Nat.Prime.lcm_mul_eq_of_dvd_of_not_mul_dvd {q n m : ℕ} (hq : q.Prime) 
   have := Nat.gcd_mul_lcm m (q * n)
   rw [hq.gcd_mul_eq_of_dvd_of_not_mul_dvd hnm hqnm] at this
   rw [this, Nat.mul_left_comm, Nat.mul_comm m, Nat.mul_left_comm]
+
+namespace Nat
+
+/-- A prime dividing both a positive-index difference of powers and the product of the
+bases divides their gcd. The inequality prevents truncation of natural subtraction. -/
+theorem Prime.dvd_gcd_of_dvd_pow_sub_pow_of_dvd_mul {p : ℕ} (hp : p.Prime)
+    {a b n : ℕ} (hba : b ≤ a) (hn : 0 < n) (hdiv : p ∣ a ^ n - b ^ n)
+    (hmul : p ∣ a * b) : p ∣ a.gcd b := by
+  have hle := Nat.pow_le_pow_left hba n
+  rcases hp.dvd_mul.mp hmul with ha | hb
+  · exact Nat.dvd_gcd ha (hp.dvd_of_dvd_pow
+      ((Nat.dvd_sub_iff_right hle (ha.pow hn.ne')).mp hdiv))
+  · exact Nat.dvd_gcd (hp.dvd_of_dvd_pow
+      ((Nat.dvd_sub_iff_left hle (hb.pow hn.ne')).mp hdiv)) hb
+
+/-- A prime divisor of a positive-index difference of powers of coprime bases divides
+neither base. The inequality prevents truncation of natural subtraction. -/
+theorem Coprime.not_dvd_mul_of_dvd_pow_sub_pow {a b n p : ℕ} (hab : a.Coprime b)
+    (hp : p.Prime) (hba : b ≤ a) (hn : 0 < n) (hdiv : p ∣ a ^ n - b ^ n) :
+    ¬ p ∣ a * b := by
+  intro hmul
+  have h := hp.dvd_gcd_of_dvd_pow_sub_pow_of_dvd_mul hba hn hdiv hmul
+  rw [hab.gcd_eq_one] at h
+  exact hp.not_dvd_one h
+
+end Nat

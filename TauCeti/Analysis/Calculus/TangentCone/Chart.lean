@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Tangent cones of sets flattened by a differentiable chart
@@ -29,11 +31,18 @@ charts used to verify it.
   derivative there.
 * `TauCeti.image_tangentConeAt_eq_tangentConeAt_preimage_symm`: the invertible derivative `A` of a
   chart at a point carries the tangent cone of a set there onto the tangent cone of its image.
+* `TauCeti.image_tangentConeAt_eq_of_preimage_eq`: the same for a homeomorphism carrying one set
+  onto another.
 * `TauCeti.IsSliceChart.tangentConeAt_eq_preimage`: the tangent cone of a set flattened onto a
   closed subspace is the preimage of that subspace under the derivative of the chart.
 * `TauCeti.IsSliceChart.span_tangentConeAt_eq_comap`: hence the span of the tangent cone is that
   preimage, viewed as a subspace, and it has the dimension of the model subspace
   (`TauCeti.IsSliceChart.finrank_span_tangentConeAt`).
+* `TauCeti.IsSliceChart.tangentConeAt_eq_empty`: at a point of the source outside the flattened
+  set, its tangent cone is empty, because a neighbourhood misses the set
+  (`TauCeti.IsSliceChart.exists_mem_nhds_disjoint`); near such a point a `C^n` chart with `C^n`
+  inverse flattens any set missing a neighbourhood onto the zero subspace
+  (`TauCeti.exists_isSliceChart_bot_of_disjoint`).
 -/
 
 public section
@@ -96,6 +105,19 @@ theorem image_tangentConeAt_eq_tangentConeAt_preimage_symm {e : OpenPartialHomeo
     rintro _ ⟨w, ⟨hwS, -⟩, rfl⟩
     exact hwS
 
+/-- **A homeomorphism transports tangent cones.** If a homeomorphism `Φ` carries `S` onto `T`, in
+the sense that `Φ ⁻¹' T = S`, and has invertible derivative `A` at `y`, then `A` maps the tangent
+cone of `S` at `y` onto the tangent cone of `T` at `Φ y`. -/
+theorem image_tangentConeAt_eq_of_preimage_eq {Φ : E ≃ₜ F} {S : Set E} {T : Set F} {y : E}
+    {A : E ≃L[𝕜] F} (hST : Φ ⁻¹' T = S) (hA : HasFDerivAt Φ (A : E →L[𝕜] F) y) :
+    A '' tangentConeAt 𝕜 S y = tangentConeAt 𝕜 T (Φ y) := by
+  have hA' : HasFDerivAt Φ.toOpenPartialHomeomorph (A : E →L[𝕜] F) y := by
+    rwa [Homeomorph.toOpenPartialHomeomorph_apply]
+  have h := image_tangentConeAt_eq_tangentConeAt_preimage_symm (S := S) (mem_univ y) hA'
+  subst hST
+  rwa [Homeomorph.toOpenPartialHomeomorph_symm_apply, Homeomorph.toOpenPartialHomeomorph_apply,
+    Homeomorph.preimage_symm, Φ.image_preimage] at h
+
 namespace IsSliceChart
 
 variable {e : OpenPartialHomeomorph E F} {L : Submodule 𝕜 F} {S : Set E} {y : E}
@@ -136,6 +158,61 @@ theorem finrank_span_tangentConeAt (h : IsSliceChart e (L : Set F) S)
   exact (Submodule.comap_equiv_eq_map_symm A.toLinearEquiv L) ▸
     LinearEquiv.finrank_map_eq A.symm.toLinearEquiv L
 
+/-- The tangent cone of a flattened set vanishes at a point of the chart's source outside the
+set. -/
+theorem tangentConeAt_eq_empty (h : IsSliceChart e (L : Set F) S) (hL : IsClosed (L : Set F))
+    (hy : y ∈ e.source) (hyS : y ∉ S) : tangentConeAt 𝕜 S y = ∅ := by
+  obtain ⟨U, hU, hdisj⟩ := h.exists_mem_nhds_disjoint hL hy hyS
+  rw [← tangentConeAt_inter_nhds hU, inter_comm, hdisj.inter_eq]
+  refine Set.not_nonempty_iff_eq_empty.1 fun hne => ?_
+  simpa using mem_closure_of_nonempty_tangentConeAt hne
+
 end IsSliceChart
+
+section Flatten
+
+open scoped ContDiff
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- Near a point missing a flattened set, a `C^n` chart with `C^n` inverse flattens that set onto
+the zero subspace: it is empty there, and a restricted translation avoids `0`. -/
+theorem exists_isSliceChart_bot_of_disjoint {n : ℕ∞ω} {A U : Set E} {y : E} [Nontrivial E]
+    (hU : U ∈ 𝓝 y) (hA : Disjoint U A) :
+    ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧
+      (∀ z ∈ e.source, ContDiffAt 𝕜 n e z) ∧
+      (∀ z ∈ e.target, ContDiffAt 𝕜 n e.symm z) ∧
+      IsSliceChart e ((⊥ : Submodule 𝕜 E) : Set E) A := by
+  obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.1 hU
+  have : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  obtain ⟨c, hc⟩ := exists_norm_eq E hr.le
+  let e : OpenPartialHomeomorph E E :=
+    (Homeomorph.addRight (c - y)).toOpenPartialHomeomorph.restrOpen (Metric.ball y r)
+      Metric.isOpen_ball
+  have he_apply (x : E) : e x = x + (c - y) := by
+    simp only [e, OpenPartialHomeomorph.coe_restrOpen, Homeomorph.toOpenPartialHomeomorph_apply,
+      Homeomorph.coe_addRight]
+  have hesymm_apply (x : E) : e.symm x = x + -(c - y) := by
+    simp only [e, OpenPartialHomeomorph.coe_restrOpen_symm,
+      Homeomorph.toOpenPartialHomeomorph_symm_apply]
+    refine (Homeomorph.addRight (c - y)).symm_apply_eq.2 ?_
+    simp only [Homeomorph.coe_addRight]
+    abel
+  refine ⟨e, by simp [e, hr], fun z _ => ?_, fun z _ => ?_, isSliceChart_iff.2 fun z hz => ?_⟩
+  · have : (e : E → E) = fun x => x + (c - y) := funext he_apply
+    rw [this]
+    exact contDiffAt_id.add contDiffAt_const
+  · have : (e.symm : E → E) = fun x => x + -(c - y) := funext hesymm_apply
+    rw [this]
+    exact contDiffAt_id.add contDiffAt_const
+  · have hz' : z ∈ Metric.ball y r := by simpa [e] using hz
+    refine iff_of_false (fun hzA => Set.disjoint_left.1 hA (hrU hz') hzA) ?_
+    intro h0
+    have h0' : z + (c - y) = 0 := by rw [← he_apply]; exact Submodule.mem_bot 𝕜 |>.1 h0
+    have hzc : z - y = -c := eq_neg_of_add_eq_zero_left (by rw [← h0']; abel)
+    rw [Metric.mem_ball, dist_eq_norm, hzc, norm_neg, hc] at hz'
+    exact lt_irrefl _ hz'
+
+end Flatten
 
 end TauCeti
