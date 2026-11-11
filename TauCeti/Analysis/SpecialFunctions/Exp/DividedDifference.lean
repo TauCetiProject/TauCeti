@@ -5,16 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # Positive divided differences of the real exponential
 
 The divided difference of the exponential is the integral of the exponential along the segment
 between its arguments. In particular it is strictly positive, including when the arguments
-coincide. These are the scalar coefficients in the derivative of the matrix exponential at a
-Hermitian matrix.
+coincide. It is jointly real analytic, including on the diagonal. These divided differences
+are the scalar coefficients in the derivative of the matrix exponential at a Hermitian matrix.
 
 Averaging the monotone exponential along the segment places the divided difference between the
 values at the endpoints, `exp (min a b) ≤ dslope exp a b ≤ exp (max a b)`. For nearby arguments
@@ -32,9 +34,13 @@ differential equation into a potential multiplying a difference of solutions.
 * `Real.abs_dslope_exp_sub_exp_le`: it differs from `exp a` by at most `exp a |b - a|`.
 * `Real.abs_exp_sub_exp_sub_exp_add_exp_sub_dslope_mul_le`: a second difference of `exp` is a
   divided difference times the second difference of the arguments, up to a quadratic error.
+* `Real.dslope_exp_eq_exp_mul_dslope_zero`: translation to zero extracts the factor `exp a`.
+* `Real.contDiff_dslope_exp`: it is jointly smooth and real analytic.
 -/
 
 public section
+
+open scoped ContDiff
 
 namespace Real
 
@@ -137,5 +143,29 @@ theorem abs_exp_sub_exp_sub_exp_add_exp_sub_dslope_mul_le {a b c d : ℝ} (ha : 
       _ ≤ _ := by gcongr
   rw [hid, abs_mul]
   exact mul_le_mul_of_nonneg_left hVW (abs_nonneg _)
+
+/-- Translating the real exponential divided difference to zero extracts the factor `exp a`. -/
+theorem dslope_exp_eq_exp_mul_dslope_zero (a b : ℝ) :
+    dslope exp a b = exp a * dslope exp 0 (b - a) := by
+  rw [dslope_exp_eq_integral a b, dslope_exp_eq_integral 0 (b - a),
+    ← intervalIntegral.integral_const_mul]
+  apply intervalIntegral.integral_congr
+  intro t _
+  dsimp only
+  rw [← exp_add]
+  congr 1
+  ring
+
+/-- The real exponential divided difference is jointly smooth, including its removable
+value at equal arguments. The regularity parameter also permits real analyticity. -/
+theorem contDiff_dslope_exp (m : ℕ∞ω) :
+    ContDiff ℝ m (fun p : ℝ × ℝ ↦ dslope exp p.1 p.2) := by
+  have hz : ContDiff ℝ m (dslope exp 0) :=
+    ((analyticOnNhd_rexp (u := Set.univ)).dslope 0).contDiff
+  have h : ContDiff ℝ m (fun p : ℝ × ℝ ↦ exp p.1 * dslope exp 0 (p.2 - p.1)) :=
+    (contDiff_fst.exp).mul (hz.comp (contDiff_snd.sub contDiff_fst))
+  convert h using 1
+  funext p
+  exact dslope_exp_eq_exp_mul_dslope_zero p.1 p.2
 
 end Real
