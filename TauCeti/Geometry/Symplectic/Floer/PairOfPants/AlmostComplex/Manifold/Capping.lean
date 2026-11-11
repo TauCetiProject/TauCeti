@@ -47,7 +47,7 @@ such an input of a pair of pants with end families `Jb`, the capping structure
 `Jb q` into the end `q`. It is the manifold plumbed structure
 `TauCeti.SmoothTwoForm.Compatible.plumbedAlmostComplex` whose inserted pair of pants has the input
 families `J₀`, on the four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, and `J₀` at the three missing
-points.
+points (`TauCeti.SmoothTwoForm.Compatible.cappingAlmostComplex_of_not`).
 
 * On every tangent fiber of the four-punctured sphere it is the linear plumbed structure
   (`TauCeti.SmoothTwoForm.Compatible.almostComplexStructureAt_cappingAlmostComplex`).
@@ -222,23 +222,40 @@ theorem contMDiff_negativePlaneAlmostComplex {F G N : Type*} [NormedAddCommGroup
 section UpdateInf
 
 omit [FiniteDimensional ℝ E] in
-/-- Families indexed by the ends that are `K` at `∞` and the constant family `J₀` at the inputs
-inherit any property shared by `K` and the constant family. -/
-private theorem forall_update_inf {K : ℝ → SmoothAlmostComplexStructure I M}
-    {P : (ℝ → SmoothAlmostComplexStructure I M) → Prop} (h₀ : P fun _ => J₀) (hK : P K)
-    (q : Puncture) : P (update (fun _ _ => J₀) inf K q) := by
-  rcases eq_or_ne q inf with rfl | hq
-  · simpa using hK
-  · simpa [update_of_ne hq] using h₀
-
-include h₀ in
-omit [FiniteDimensional ℝ E] in
-/-- The end families of the negative plane, `K` at `∞` and the compatible base structure `J₀` at
-the inputs, are tame when `K` is. -/
-theorem tames_update_inf {K : ℝ → SmoothAlmostComplexStructure I M}
-    (hK : ∀ t, σ.Tames (K t)) (q : Puncture) (t : ℝ) :
+/-- The end families of the negative plane, `K` at `∞` and a tame base structure `J₀` at the
+inputs, are tame when `K` is. -/
+theorem _root_.TauCeti.SmoothTwoForm.tames_update_inf (h₀ : σ.Tames J₀)
+    {K : ℝ → SmoothAlmostComplexStructure I M} (hK : ∀ t, σ.Tames (K t)) (q : Puncture) (t : ℝ) :
     σ.Tames (update (fun _ _ => J₀) inf K q t) :=
-  forall_update_inf (P := fun f => ∀ t, σ.Tames (f t)) (fun _ => h₀.tames) hK q t
+  (forall_update_iff (fun _ _ => J₀) fun _ f => ∀ t, σ.Tames (f t)).2 ⟨hK, fun _ _ _ => h₀⟩ q t
+
+omit [FiniteDimensional ℝ E] in
+/-- The end families of the negative plane, `K` at `∞` and the constant family `J₀` at the inputs,
+have period one when `K` does. -/
+theorem _root_.TauCeti.SmoothAlmostComplexStructure.periodic_update_inf
+    {K : ℝ → SmoothAlmostComplexStructure I M} (hK : Periodic K 1) (q : Puncture) :
+    Periodic (update (fun _ _ => J₀) inf K q) 1 :=
+  (forall_update_iff (fun _ _ => J₀) fun _ f => Periodic f 1).2 ⟨hK, fun _ _ _ => rfl⟩ q
+
+omit [FiniteDimensional ℝ E] in
+/-- The end families of the negative plane, `K` at `∞` and the constant family `J₀` at the inputs,
+are `C^n` on `ℝ × M` when `K` is. -/
+theorem _root_.TauCeti.SmoothAlmostComplexStructure.contMDiff_update_inf {n : ℕ∞ω}
+    [ENat.LEInfty n] {K : ℝ → SmoothAlmostComplexStructure I M}
+    (hK : ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
+        p.2 ((K p.1).toEndomorphism p.2)))
+    (q : Puncture) :
+    ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
+        p.2 ((update (fun _ _ => J₀) inf K q p.1).toEndomorphism p.2)) :=
+  (forall_update_iff (fun _ _ => J₀) fun _ f => ContMDiff (𝓘(ℝ).prod I)
+      (I.prod 𝓘(ℝ, E →L[ℝ] E)) n (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
+        p.2 ((f p.1).toEndomorphism p.2))).2
+    ⟨hK, fun _ _ => (J₀.toEndomorphism.contMDiff.of_le ENat.LEInfty.out).comp contMDiff_snd⟩ q
 
 omit [FiniteDimensional ℝ E] in
 /-- On a tangent fiber, the end families of the plane are the linear end families of the plane. -/
@@ -285,7 +302,7 @@ families `J₀`, and it is `J₀` at the three missing points. -/
 def cappingAlmostComplex (q : Puncture) (L : ℝ) (w : ℂ) : SmoothAlmostComplexStructure I M :=
   if hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1 then
     h₀.plumbedAlmostComplex h₀ (update (fun _ _ => J₀) inf (Jb q)) Jb
-      (tames_update_inf h₀ (hJb q)) hJb q L w hw
+      (tames_update_inf h₀.tames (hJb q)) hJb q L w hw
   else J₀
 
 /-- On the four-punctured sphere the capping structure is the plumbed structure whose inserted
@@ -294,8 +311,31 @@ theorem cappingAlmostComplex_eq_plumbedAlmostComplex {w : ℂ}
     (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) :
     h₀.cappingAlmostComplex Jb hJb q L w =
       h₀.plumbedAlmostComplex h₀ (update (fun _ _ => J₀) inf (Jb q)) Jb
-        (tames_update_inf h₀ (hJb q)) hJb q L w hw :=
+        (tames_update_inf h₀.tames (hJb q)) hJb q L w hw :=
   dite_eq_left hw
+
+/-- At the points `0`, `1` and `ψ(1)` missing from the four-punctured sphere, the capping
+structure is `J₀`. -/
+theorem cappingAlmostComplex_of_not {w : ℂ} (hw : ¬((w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1)) :
+    h₀.cappingAlmostComplex Jb hJb q L w = J₀ :=
+  dite_eq_right hw
+
+/-- At the puncture `0` the capping structure is `J₀`. -/
+@[simp]
+theorem cappingAlmostComplex_zero : h₀.cappingAlmostComplex Jb hJb q L 0 = J₀ :=
+  cappingAlmostComplex_of_not h₀ Jb hJb fun h => h.1.1 rfl
+
+/-- At the puncture `1` the capping structure is `J₀`. -/
+@[simp]
+theorem cappingAlmostComplex_one : h₀.cappingAlmostComplex Jb hJb q L 1 = J₀ :=
+  cappingAlmostComplex_of_not h₀ Jb hJb fun h => h.1.2 rfl
+
+/-- At the image `ψ(1)` of the input `1` of the inserted pair of pants, the capping structure is
+`J₀`. -/
+@[simp]
+theorem cappingAlmostComplex_plumbingMap_one :
+    h₀.cappingAlmostComplex Jb hJb q L (q.plumbingMap L 1) = J₀ :=
+  cappingAlmostComplex_of_not h₀ Jb hJb fun h => h.2 rfl
 
 /-- On every tangent fiber of the four-punctured sphere, the capping structure is the linear
 plumbed structure of the fiberwise end families, with base inputs on the inserted piece. -/
@@ -320,7 +360,7 @@ theorem tames_cappingAlmostComplex (w : ℂ) : σ.Tames (h₀.cappingAlmostCompl
   by_cases hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1
   · rw [cappingAlmostComplex_eq_plumbedAlmostComplex h₀ Jb hJb hw]
     exact tames_plumbedAlmostComplex h₀ h₀ _ _ _ _ w hw
-  · rw [cappingAlmostComplex, dite_eq_right hw]
+  · rw [cappingAlmostComplex_of_not h₀ Jb hJb hw]
     exact h₀.tames
 
 /-- The capping structure is compatible with the two-form when the end structures are. -/
@@ -329,8 +369,9 @@ theorem compatible_cappingAlmostComplex (hJbc : ∀ r t, σ.Compatible (Jb r t))
   by_cases hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1
   · rw [cappingAlmostComplex_eq_plumbedAlmostComplex h₀ Jb hJb hw]
     exact compatible_plumbedAlmostComplex h₀ h₀ _ _ _ _
-      (forall_update_inf (P := fun f => ∀ t, σ.Compatible (f t)) (fun _ => h₀) (hJbc q)) hJbc w hw
-  · rw [cappingAlmostComplex, dite_eq_right hw]
+      ((forall_update_iff (fun _ _ => J₀) fun _ f => ∀ t, σ.Compatible (f t)).2
+        ⟨hJbc q, fun _ _ _ => h₀⟩) hJbc w hw
+  · rw [cappingAlmostComplex_of_not h₀ Jb hJb hw]
     exact h₀
 
 /-- **The capped disc.** For a neck length `L > 2`, the capping structure is `J₀` on the disc of
@@ -344,7 +385,7 @@ theorem cappingAlmostComplex_eq_of_norm_sub_endCenter_le (hq : q ≠ inf) (hL : 
     rw [almostComplexStructureAt_cappingAlmostComplex h₀ Jb hJb hw']
     exact Floer.plumbedAlmostComplex_update_inf_eq
       (Jb := fun r t _ => (Jb r t).almostComplexStructureAt x) (h₀.compatibleAt x) hq hL hw ()
-  · rw [cappingAlmostComplex, dite_eq_right hw']
+  · exact cappingAlmostComplex_of_not h₀ Jb hJb hw'
 
 /-- Off the width-two collar `Re z > L - 2` of the end `q`, the capping structure is the structure
 of the receiving pair of pants. -/
@@ -357,7 +398,7 @@ theorem cappingAlmostComplex_of_re_endCoord_le (hq : q ≠ inf) {w : ℂ}
 
 /-- **The plane in the plumbing coordinate.** Deep in the end `q`, the capping structure is the
 negative plane structure with end family `Jb q` at the point `(w - c_q) / ψ'` of the plane. This
-holds on an open set independent of the neck length. -/
+holds on the part `2 < Re z` of the end `q`, off the punctures `0`, `1` and `ψ(1)`. -/
 theorem cappingAlmostComplex_eq_negativePlaneAlmostComplex (hq : q ≠ inf) {w : ℂ}
     (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) (h2 : 2 < (q.endCoord w).re) :
     h₀.cappingAlmostComplex Jb hJb q L w =
@@ -402,11 +443,6 @@ theorem contMDiff_cappingAlmostComplex
             hp'.le)
   -- Off it, the point lies in the plumbed four-punctured sphere. Restrict the family to the open
   -- set of parameters whose domain point lies there.
-  have hc : f p ≠ q.endCenter := fun h => by
-    rw [h, sub_self, norm_zero] at hge
-    exact (by positivity : 0 < ρ (ℓ p)).not_ge hge
-  have h₁ : f p ≠ q.plumbingMap (ℓ p) 1 := fun h =>
-    (h ▸ norm_plumbingMap_one_sub_endCenter_lt hq (ℓ p)).not_ge hge
   have hψ : Continuous fun y => q.plumbingMap (ℓ y) 1 := by
     simp only [plumbingMap_apply]
     exact continuous_const.add
@@ -415,20 +451,15 @@ theorem contMDiff_cappingAlmostComplex
     ⟨{y | (f y ≠ 0 ∧ f y ≠ 1) ∧ f y ≠ q.plumbingMap (ℓ y) 1},
       ((isOpen_ne_fun hf.continuous continuous_const).inter
         (isOpen_ne_fun hf.continuous continuous_const)).inter (isOpen_ne_fun hf.continuous hψ)⟩
-  -- The end families of the inserted plane inherit periodicity and smoothness from `Jb q`.
-  have hJap : ∀ r, Periodic (update (fun _ _ => J₀) inf (Jb q) r) 1 :=
-    forall_update_inf (P := fun f => Periodic f 1) (fun _ => rfl) (hJbp q)
-  have hJas := forall_update_inf (P := fun f => ContMDiff (𝓘(ℝ).prod I)
-      (I.prod 𝓘(ℝ, E →L[ℝ] E)) n (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-        p.2 ((f p.1).toEndomorphism p.2)))
-    ((J₀.toEndomorphism.contMDiff.of_le ENat.LEInfty.out).comp contMDiff_snd) (hJbs q)
   have hU := contMDiff_plumbedAlmostComplex h₀ h₀ (update (fun _ _ => J₀) inf (Jb q)) Jb
-    (tames_update_inf h₀ (hJb q)) hJb hJap hJas hJbp hJbs hq
+    (tames_update_inf h₀.tames (hJb q)) hJb
+    (SmoothAlmostComplexStructure.periodic_update_inf (hJbp q))
+    (SmoothAlmostComplexStructure.contMDiff_update_inf (hJbs q)) hJbp hJbs hq
     (update_self inf (Jb q) fun _ _ => J₀).symm (hℓ.comp contMDiff_subtype_val)
     (hf.comp contMDiff_subtype_val) (hb.comp contMDiff_subtype_val) (fun y : U => hL y)
     (fun y : U => y.2)
-  refine contMDiffAt_subtype_iff (U := U) (x := ⟨p, ⟨(hS p).resolve_left hc, h₁⟩⟩).mp ?_
+  refine contMDiffAt_subtype_iff (U := U)
+    (x := ⟨p, mem_plumbedSphere_of_le_norm_sub_endCenter hq (hS p) hge⟩).mp ?_
   refine (hU _).congr_of_eventuallyEq (Filter.Eventually.of_forall fun y => ?_)
   simp only [comp_apply, cappingAlmostComplex_eq_plumbedAlmostComplex h₀ Jb hJb y.2]
 
