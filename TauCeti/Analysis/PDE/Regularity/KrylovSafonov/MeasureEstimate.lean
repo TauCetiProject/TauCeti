@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
-public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
+public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Sobolev
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.Analysis.Sobolev.Wkp.Classical
+import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
@@ -26,7 +28,9 @@ right-hand side is small, `R ‖f⁺‖_{Lⁿ(B(c, R))} ≤ ε₀ λ`:
 
 `μ |B(c, θ R)| ≤ |{u < M} ∩ B(c, θ R)|`
 
-(`TauCeti.PDE.exists_mul_volume_ball_le_volume_setOf_lt_inter_ball`). The constants `M`, `μ`
+(`TauCeti.PDE.exists_mul_volume_ball_le_volume_setOf_lt_inter_ball`), and the same holds for strong
+supersolutions `u ∈ W^{2,n}(B(c, R))`
+(`TauCeti.PDE.exists_mul_volume_ball_le_volume_setOf_lt_inter_ball_of_wkp`). The constants `M`, `μ`
 and `ε₀` depend only on the dimension, on `κ` and on the radii ratios `θ > 0` and `0 < τ < 1`;
 they do not depend on `R`, the centre, `λ`, the coefficients or `u`. This is the step that
 converts the Aleksandrov–Bakelman–Pucci maximum principle into information about the distribution
@@ -62,12 +66,21 @@ radius `1 / (2 R)` by an integral over the upper contact set of `v`. That contac
 `Ω'`, where `u < -φ ≤ M`, so the integral is at most a multiple of `‖f⁺‖ⁿ_{Lⁿ}` plus a multiple of
 `|{u < M} ∩ B(c, θ R)|`. When `f` is small the first term is absorbed.
 
-The estimate is proved for classical supersolutions, the class to which
-`TauCeti.PDE.volume_ball_le_setLIntegral_upperContactSet` applies; no regularity of `a` beyond the
-pointwise bounds is used, not even measurability. Nor need `a` be symmetric: since the Hessian of
-`u` is symmetric, `a` may be replaced by its symmetric part
-(`TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`), which has the same ellipticity
-constants.
+The argument uses `u` only through the Aleksandrov–Bakelman–Pucci estimate for `v` on `Ω'`, so it
+applies to every class of functions for which that estimate is available, with the same constants.
+
+* For classical supersolutions it is
+  `TauCeti.PDE.volume_ball_le_setLIntegral_upperContactSet`. No regularity of `a` beyond the
+  pointwise bounds is used, not even measurability. Nor need `a` be symmetric: since the Hessian
+  of `u` is symmetric, `a` may be replaced by its symmetric part
+  (`TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`), which has the same ellipticity
+  constants.
+* For strong supersolutions, functions `u ∈ W^{2,n}(B(c, R))` with a representative continuous on
+  `closedBall c R` satisfying `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere for the weak Hessian, it is
+  `TauCeti.PDE.volume_ball_le_setLIntegral_upperContactSet_of_wkp`, applied on `Ω'` to the
+  restriction of `u` minus the Sobolev function represented by the smooth barrier term. Here `a` is
+  taken symmetric, as in the non-divergence theory of strong solutions; again no measurability of
+  `a` is needed.
 
 ## Main declarations
 
@@ -78,6 +91,8 @@ constants.
 * `TauCeti.PDE.neg_mul_le_sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add`: the global lower bound.
 * `TauCeti.PDE.exists_mul_volume_ball_le_volume_setOf_lt_inter_ball`: **the basic measure
   estimate**.
+* `TauCeti.PDE.exists_mul_volume_ball_le_volume_setOf_lt_inter_ball_of_wkp`: the basic measure
+  estimate for strong supersolutions.
 
 ## References
 
@@ -93,7 +108,7 @@ public section
 
 noncomputable section
 
-open InnerProductSpace Matrix Metric MeasureTheory Set
+open InnerProductSpace Matrix Metric MeasureTheory Set TopologicalSpace
 open scoped ENNReal RealInnerProductSpace
 
 namespace TauCeti
@@ -240,40 +255,24 @@ private theorem sum_mul_fderiv_fderiv_mul_sub_sub_const (A : Matrix ι ι ℝ)
   ring
 
 omit [DecidableEq ι] in
-/-- **The comparison set.** Let `u` be continuous on `closedBall c R`, `C²` in `B(c, R)` and
-nonnegative on the sphere, let `g` be `C²` with the constant value `g₁` on the sphere, and let
-`x₀ ∈ B(c, R)` satisfy `u x₀ ≤ 1` and `A g x₀ - A g₁ ≥ 2`. Then `v = A g - u - A g₁` is
-continuous on the closure of the open set `Ω' = B(c, R) ∩ {v > 0}`, `C²` in `Ω'` and at most `0`
-on its frontier, and `x₀ ∈ Ω'` with `v x₀ ≥ 1`. -/
-private theorem barrier_comparison {R A g₁ : ℝ} {c x₀ : EuclideanSpace ℝ ι}
-    {u g : EuclideanSpace ℝ ι → ℝ} (hcont : ContinuousOn u (closedBall c R))
-    (hu : ContDiffOn ℝ 2 u (ball c R)) (hg : ContDiff ℝ 2 g)
-    (hbdry : ∀ z ∈ sphere c R, 0 ≤ u z) (hg₁ : ∀ z ∈ sphere c R, g z = g₁)
-    (hx₀ : x₀ ∈ ball c R) (hux₀ : u x₀ ≤ 1) (hgx₀ : 2 ≤ A * g x₀ - A * g₁) :
-    let v := fun y ↦ A * g y - u y - A * g₁
+/-- **The comparison set.** If `v` is continuous on `closedBall c R` and at most `0` on the
+sphere, then `Ω' = B(c, R) ∩ {v > 0}` is open, `v` is continuous on its closure, and `v` is at most
+`0` on its frontier. -/
+private theorem comparison_set {R : ℝ} {c : EuclideanSpace ℝ ι} {v : EuclideanSpace ℝ ι → ℝ}
+    (hv : ContinuousOn v (closedBall c R)) (hbdry : ∀ z ∈ sphere c R, v z ≤ 0) :
     IsOpen (ball c R ∩ v ⁻¹' Ioi 0) ∧ ContinuousOn v (closure (ball c R ∩ v ⁻¹' Ioi 0)) ∧
-      ContDiffOn ℝ 2 v (ball c R ∩ v ⁻¹' Ioi 0) ∧ x₀ ∈ ball c R ∩ v ⁻¹' Ioi 0 ∧ 1 ≤ v x₀ ∧
       ∀ z ∈ frontier (ball c R ∩ v ⁻¹' Ioi 0), v z ≤ 0 := by
-  intro v
-  have hvc : ContinuousOn v (closedBall c R) :=
-    ((continuous_const.mul hg.continuous).continuousOn.sub hcont).sub continuousOn_const
   have hΩ' : IsOpen (ball c R ∩ v ⁻¹' Ioi 0) :=
-    (hvc.mono ball_subset_closedBall).isOpen_inter_preimage isOpen_ball isOpen_Ioi
+    (hv.mono ball_subset_closedBall).isOpen_inter_preimage isOpen_ball isOpen_Ioi
   have hcl : closure (ball c R ∩ v ⁻¹' Ioi 0) ⊆ closedBall c R :=
     (closure_mono inter_subset_left).trans closure_ball_subset_closedBall
-  have hv₀ : 1 ≤ v x₀ := by linarith
-  refine ⟨hΩ', hvc.mono hcl, ((contDiff_const.mul hg).contDiffOn.sub
-    (hu.mono inter_subset_left)).sub contDiffOn_const,
-    ⟨hx₀, mem_preimage.2 (mem_Ioi.2 (zero_lt_one.trans_le hv₀))⟩, hv₀, fun z hz ↦ ?_⟩
-  -- On the frontier of `Ω'`, either `v = 0` inside the ball, or `v = -u ≤ 0` on the sphere.
+  refine ⟨hΩ', hv.mono hcl, fun z hz ↦ ?_⟩
+  -- On the frontier of `Ω'`, either `v = 0` inside the ball, or `z` lies on the sphere.
   rw [frontier, hΩ'.interior_eq] at hz
   by_cases hzb : z ∈ ball c R
   · exact not_lt.1 fun h ↦ hz.2 ⟨hzb, h⟩
-  · have hzs : z ∈ sphere c R := by
-      rw [mem_sphere]
-      exact le_antisymm (mem_closedBall.1 (hcl hz.1)) (not_lt.1 fun h ↦ hzb (mem_ball.2 h))
-    simp only [v, hg₁ z hzs]
-    linarith [hbdry z hzs]
+  · exact hbdry z (mem_sphere.2 (le_antisymm (mem_closedBall.1 (hcl hz.1))
+      (not_lt.1 fun h ↦ hzb (mem_ball.2 h))))
 
 variable [Nonempty ι]
 
@@ -309,20 +308,19 @@ private theorem neg_indicator_le_mul_sum_mul_fderiv_fderiv_barrier {lam Lam κ R
     nlinarith [mul_le_mul hd hd (by positivity) (norm_nonneg _)]
 
 /-- **The Aleksandrov–Bakelman–Pucci estimate with a split right-hand side.** Let `Ω ⊆ B(c, R)` be
-open, `v` continuous on `closure Ω` and `C²` in `Ω`, at most `0` on `frontier Ω` and at least `1`
-at some point of `Ω`. If on the upper contact set `Γ⁺` the matrices `a` are positive definite with
-`det a ≥ λⁿ`, `F ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv` and `F⁻ ≤ p + q 1_B` with `p ≥ 0`, `q ≥ 0`, then
+open, let `v x₀ ≥ 1` at some `x₀ ∈ Ω`, and suppose that `v` satisfies the Aleksandrov–Bakelman–Pucci
+estimate `|B(0, v x₀ / diam Ω)| ≤ ∫_{Γ⁺} (F⁻ / n)ⁿ / det a` over its upper contact set `Γ⁺`. If on
+`Ω` the matrices `a` have `det a ≥ λⁿ` and `F⁻ ≤ p + q 1_B` with `p ≥ 0` and `q ≥ 0`, then
 `|B(0, 1 / (2 R))| ≤ (2 / (n λ))ⁿ (∫_{Γ⁺} pⁿ + qⁿ |B ∩ Γ⁺|)`. -/
 private theorem volume_ball_le_of_upperContactSet {Ω B : Set (EuclideanSpace ℝ ι)}
     {v F p : EuclideanSpace ℝ ι → ℝ} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam q R : ℝ}
-    {c x₀ : EuclideanSpace ℝ ι} (hΩR : Ω ⊆ ball c R) (hΩ : IsOpen Ω)
-    (hcont : ContinuousOn v (closure Ω)) (hv : ContDiffOn ℝ 2 v Ω) (hlam : 0 < lam)
-    (ha : ∀ y ∈ upperContactSet v Ω, (a y).PosDef ∧ lam ^ Fintype.card ι ≤ (a y).det)
-    (hF : ∀ y ∈ upperContactSet v Ω, F y ≤ ∑ i, ∑ j, a y i j *
-      fderiv ℝ (fderiv ℝ v) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
-    (hFp : ∀ y ∈ upperContactSet v Ω, (F y)⁻ ≤ p y + B.indicator (fun _ ↦ q) y)
-    (hp : ∀ y, 0 ≤ p y) (hq : 0 ≤ q) (hB : MeasurableSet B)
-    (hfront : ∀ z ∈ frontier Ω, v z ≤ 0) (hx₀ : x₀ ∈ Ω) (hvx₀ : 1 ≤ v x₀) :
+    {c x₀ : EuclideanSpace ℝ ι} (hΩR : Ω ⊆ ball c R) (hΩ : IsOpen Ω) (hlam : 0 < lam)
+    (ha : ∀ y ∈ Ω, lam ^ Fintype.card ι ≤ (a y).det)
+    (hFp : ∀ y ∈ Ω, (F y)⁻ ≤ p y + B.indicator (fun _ ↦ q) y)
+    (hp : ∀ y, 0 ≤ p y) (hq : 0 ≤ q) (hB : MeasurableSet B) (hx₀ : x₀ ∈ Ω) (hvx₀ : 1 ≤ v x₀)
+    (hABP : volume (ball (0 : EuclideanSpace ℝ ι) ((v x₀ - 0) / diam Ω)) ≤
+      ∫⁻ y in upperContactSet v Ω,
+        ENNReal.ofReal (((F y)⁻ / Fintype.card ι) ^ Fintype.card ι / (a y).det)) :
     volume (ball (0 : EuclideanSpace ℝ ι) (1 / (2 * R))) ≤
       ENNReal.ofReal ((2 / (Fintype.card ι * lam)) ^ Fintype.card ι) *
           (∫⁻ y in upperContactSet v Ω, ENNReal.ofReal (p y ^ Fintype.card ι)) +
@@ -330,9 +328,6 @@ private theorem volume_ball_le_of_upperContactSet {Ω B : Set (EuclideanSpace �
           volume (B ∩ upperContactSet v Ω) := by
   set N := Fintype.card ι
   set c₁ : ℝ := (2 / (N * lam)) ^ N
-  have hΓ := measurableSet_upperContactSet hΩ (hv.of_le (by norm_num))
-  have hABP := volume_ball_le_setLIntegral_upperContactSet (isBounded_ball.subset hΩR) hΩ hcont
-    hv (fun y hy ↦ (ha y hy).1) hF hfront hx₀
   -- `Ω` is a nonempty open subset of `B(c, R)`, so `0 < diam Ω ≤ 2 R`.
   have hR : 0 < R := pos_of_mem_ball (hΩR hx₀)
   have hdiam0 : 0 < diam Ω := by
@@ -344,12 +339,15 @@ private theorem volume_ball_le_of_upperContactSet {Ω B : Set (EuclideanSpace �
   have hrad : 1 / (2 * R) ≤ (v x₀ - 0) / diam Ω := by
     rw [sub_zero, div_le_div_iff₀ (by positivity) hdiam0]
     nlinarith
-  -- Split the integrand into the `p` part and the part carried by `B`.
-  have hpt : ∀ y ∈ upperContactSet v Ω, ENNReal.ofReal (((F y)⁻ / N) ^ N / (a y).det) ≤
-      ENNReal.ofReal c₁ * ENNReal.ofReal (p y ^ N) +
-        B.indicator (fun _ ↦ ENNReal.ofReal (c₁ * q ^ N)) y := by
-    intro y hy
-    have h := div_pow_div_le Fintype.card_pos hlam (ha y hy).2 (hFp y hy) (hp y)
+  -- Split the integrand into the `p` part and the part carried by `B`, at almost every point of
+  -- the contact set, all of which lie in `Ω`.
+  have hpt : ∀ᵐ y ∂volume.restrict (upperContactSet v Ω),
+      ENNReal.ofReal (((F y)⁻ / N) ^ N / (a y).det) ≤
+        ENNReal.ofReal c₁ * ENNReal.ofReal (p y ^ N) +
+          B.indicator (fun _ ↦ ENNReal.ofReal (c₁ * q ^ N)) y := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset upperContactSet_subset
+      (ae_restrict_mem hΩ.measurableSet)] with y hy
+    have h := div_pow_div_le Fintype.card_pos hlam (ha y hy) (hFp y hy) (hp y)
       (indicator_nonneg (fun _ _ ↦ hq) y)
     rw [← ENNReal.ofReal_mul (by positivity)]
     refine (ENNReal.ofReal_le_ofReal h).trans (ENNReal.ofReal_add_le.trans
@@ -359,7 +357,7 @@ private theorem volume_ball_le_of_upperContactSet {Ω B : Set (EuclideanSpace �
       exact le_rfl
     · simp [indicator_of_notMem hyB, Fintype.card_ne_zero]
   refine (measure_mono (ball_subset_ball hrad)).trans (hABP.trans
-    ((setLIntegral_mono' hΓ hpt).trans_eq ?_))
+    ((lintegral_mono_ae hpt).trans_eq ?_))
   rw [lintegral_add_right _ (measurable_const.indicator hB), lintegral_indicator_const hB,
     Measure.restrict_apply hB, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
 
@@ -438,68 +436,102 @@ private theorem ofReal_mul_volume_ball_le_of_volume_ball_le {Γ S : Set (Euclide
   rw [e3]
   linarith
 
-/-- The measure estimate for a fixed normalization `A` of the barrier, with `β = n κ`,
-`A ((τ² + θ²)^(-β) - (1 + θ²)^(-β)) = 2`, `M = A (θ²)^(-β)` and
-`K₁ = 4 A β κ (θ²)^(-β-1)`. -/
-private theorem ofReal_mul_volume_ball_le_volume_lt_inter_ball {κ θ τ A lam Lam R : ℝ}
-    {c x₀ : EuclideanSpace ℝ ι} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {u f : EuclideanSpace ℝ ι → ℝ} (hκ : 0 < κ) (hθ : 0 < θ) (hτ : τ < 1) (hA : 0 < A)
-    (hAG : A * ((τ ^ 2 + θ ^ 2) ^ (-(Fintype.card ι * κ)) -
-      (1 ^ 2 + θ ^ 2) ^ (-(Fintype.card ι * κ))) = 2)
-    (hR : 0 < R) (ha : UniformlyEllipticOn (ball c R) a lam Lam) (hLam : Lam ≤ κ * lam)
-    (hsymm : ∀ x ∈ ball c R, (a x).IsSymm) (hcont : ContinuousOn u (closedBall c R))
-    (hu : ContDiffOn ℝ 2 u (ball c R)) (hbdry : ∀ x ∈ sphere c R, 0 ≤ u x)
-    (hsuper : ∀ x ∈ ball c R, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ f x)
-    (hf : ENNReal.ofReal R * eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
-      (volume.restrict (ball c R)) ≤ ENNReal.ofReal (Fintype.card ι *
-        ((volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal / 2) ^ (Fintype.card ι : ℝ)⁻¹ / 4 *
-          lam))
-    (hx₀ : x₀ ∈ ball c (τ * R)) (hux₀ : u x₀ ≤ 1) :
-    ENNReal.ofReal (1 / (2 ^ (Fintype.card ι + 1) *
-        (4 * A * (Fintype.card ι * κ) * κ * (θ ^ 2) ^ (-(Fintype.card ι * κ) - 1)) ^
-          Fintype.card ι * θ ^ Fintype.card ι)) * volume (ball c (θ * R)) ≤
-      volume ({x | u x < A * (θ ^ 2) ^ (-(Fintype.card ι * κ))} ∩ ball c (θ * R)) := by
-  set n : ℝ := (Fintype.card ι : ℝ)
-  set β := n * κ
+/-- **The measure estimate from the Aleksandrov–Bakelman–Pucci estimate.** Let `θ > 0`,
+`0 < τ < 1` and `κ > 0`. There are constants `M, μ, ε₀ > 0` and a normalization `A > 0` of the
+barrier `g = (R⁻² ‖· - c‖² + θ²)^(-n κ)`, depending only on the dimension, `κ`, `θ` and `τ`, with
+the following property. Let `a` be symmetric and uniformly elliptic on `B(c, R)` with
+`λ ≤ Λ ≤ κ λ`, let `u` be continuous on `closedBall c R` and nonnegative on the sphere, with
+`u ≤ 1` somewhere in `B(c, τ R)` and `R ‖f⁺‖_{Lⁿ(B(c, R))} ≤ ε₀ λ`, and let
+`v = A g - u - A g₁` be the comparison function, where `g₁ = (1 + θ²)^(-n κ)` is the value of `g`
+on the sphere, so that `v ≤ 0` there.
+Suppose that on every open `Ω ⊆ B(c, R)` on whose closure `v` is continuous and on whose frontier
+`v ≤ 0`, the function `v` satisfies the Aleksandrov–Bakelman–Pucci estimate in measure form with
+right-hand side `A ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼg - f`. Then `μ |B(c, θ R)| ≤ |{u < M} ∩ B(c, θ R)|`.
+
+For a classical supersolution `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f`, and for a strong one, the Aleksandrov–Bakelman–
+Pucci estimate of the corresponding class supplies this hypothesis. -/
+private theorem exists_mul_volume_ball_le_volume_setOf_lt_inter_ball_of_volume_ball_le
+    {κ θ τ : ℝ} (hκ : 0 < κ) (hθ : 0 < θ) (hτ₀ : 0 < τ) (hτ : τ < 1) :
+    ∃ M μ ε₀ A : ℝ, 0 < M ∧ 0 < μ ∧ 0 < ε₀ ∧ 0 < A ∧
+      ∀ ⦃lam Lam R : ℝ⦄ ⦃c : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
+        ⦃u f v : EuclideanSpace ℝ ι → ℝ⦄, 0 < R → UniformlyEllipticOn (ball c R) a lam Lam →
+        Lam ≤ κ * lam → (∀ x ∈ ball c R, (a x).IsSymm) → ContinuousOn u (closedBall c R) →
+        (∀ x ∈ sphere c R, 0 ≤ u x) →
+        ENNReal.ofReal R * eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
+          (volume.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam) →
+        v = (fun y ↦ A * ((R ^ 2)⁻¹ * ‖y - c‖ ^ 2 + θ ^ 2) ^ (-(Fintype.card ι * κ)) - u y -
+          A * (1 ^ 2 + θ ^ 2) ^ (-(Fintype.card ι * κ))) →
+        (∀ Ω ⊆ ball c R, IsOpen Ω → ContinuousOn v (closure Ω) → (∀ z ∈ frontier Ω, v z ≤ 0) →
+          ∀ x ∈ Ω, volume (ball (0 : EuclideanSpace ℝ ι) ((v x - 0) / diam Ω)) ≤
+            ∫⁻ y in upperContactSet v Ω, ENNReal.ofReal (((A * ∑ i, ∑ j, a y i j *
+              fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ ι ↦
+                ((R ^ 2)⁻¹ * ‖z - c‖ ^ 2 + θ ^ 2) ^ (-(Fintype.card ι * κ))) y
+                (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) - f y)⁻ /
+              Fintype.card ι) ^ Fintype.card ι / (a y).det)) →
+        (∃ x ∈ ball c (τ * R), u x ≤ 1) →
+        ENNReal.ofReal μ * volume (ball c (θ * R)) ≤
+          volume ({x | u x < M} ∩ ball c (θ * R)) := by
+  set N := Fintype.card ι
+  set n : ℝ := (N : ℝ)
+  have hn : 0 < n := Nat.cast_pos.2 Fintype.card_pos
+  set β : ℝ := n * κ
   have hβ : 0 < β := by positivity
+  -- The barrier `(t² + θ²)^(-β)` drops by `2 / A` between the radii `τ` and `1`.
+  have hG : (1 ^ 2 + θ ^ 2) ^ (-β) < (τ ^ 2 + θ ^ 2) ^ (-β) :=
+    Real.rpow_lt_rpow_of_neg (by positivity) (by nlinarith) (by nlinarith)
+  set A := 2 / ((τ ^ 2 + θ ^ 2) ^ (-β) - (1 ^ 2 + θ ^ 2) ^ (-β))
+  have hA : 0 < A := div_pos two_pos (sub_pos.2 hG)
+  have hAG : A * ((τ ^ 2 + θ ^ 2) ^ (-β) - (1 ^ 2 + θ ^ 2) ^ (-β)) = 2 :=
+    div_mul_cancel₀ _ (sub_pos.2 hG).ne'
+  set ω := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
+  have hω : 0 < ω :=
+    ENNReal.toReal_pos (measure_ball_pos volume _ one_pos).ne' measure_ball_lt_top.ne
+  refine ⟨A * (θ ^ 2) ^ (-β), 1 / (2 ^ (N + 1) * (4 * A * β * κ * (θ ^ 2) ^ (-β - 1)) ^ N *
+    θ ^ N), n * (ω / 2) ^ n⁻¹ / 4, A, by positivity, by positivity, by positivity, hA, ?_⟩
+  intro lam Lam R c a u f v hR ha hLam hsymm hcont hbdry hf hv hABP ⟨x₀, hx₀, hux₀⟩
   have hlam := ha.pos
   set g : EuclideanSpace ℝ ι → ℝ := fun y ↦ ((R ^ 2)⁻¹ * ‖y - c‖ ^ 2 + θ ^ 2) ^ (-β)
+  have hvy (y : EuclideanSpace ℝ ι) : v y = A * g y - u y - A * (1 ^ 2 + θ ^ 2) ^ (-β) :=
+    congrFun hv y
   have hgG (y : EuclideanSpace ℝ ι) : g y = ((‖y - c‖ / R) ^ 2 + θ ^ 2) ^ (-β) := by
     simp only [g, div_pow, inv_mul_eq_div]
   have hg2 (y : EuclideanSpace ℝ ι) : ContDiffAt ℝ 2 g y :=
     contDiffAt_rpow_mul_norm_sq_sub_add (by positivity) (by positivity) β
-  -- The barrier has risen by `2 / A` at `x₀`, and it is constant on the sphere.
+  -- `v` is continuous on the closed ball and equals `-u ≤ 0` on the sphere, where `g` is constant.
+  have hvc : ContinuousOn v (closedBall c R) :=
+    (((continuous_const.mul (contDiff_iff_contDiffAt.2 hg2).continuous).continuousOn.sub
+      hcont).sub continuousOn_const).congr fun y _ ↦ hvy y
+  have hvs (z : EuclideanSpace ℝ ι) (hz : z ∈ sphere c R) : v z ≤ 0 := by
+    rw [hvy, hgG, mem_sphere_iff_norm.1 hz, div_self hR.ne']
+    linarith [hbdry z hz]
+  obtain ⟨hΩ', hvcl, hfront⟩ := comparison_set hvc hvs
+  -- The barrier has risen by `2 / A` at `x₀`, so `v x₀ ≥ 1`.
   have hgx₀ : (τ ^ 2 + θ ^ 2) ^ (-β) ≤ g x₀ := by
     have : ‖x₀ - c‖ / R ≤ τ := (div_le_iff₀ hR).2 (mem_ball_iff_norm.1 hx₀).le
     exact hgG x₀ ▸ Real.rpow_le_rpow_of_nonpos (by positivity) (by gcongr) (by nlinarith)
-  obtain ⟨hΩ', hvc, hv2, hx₀Ω', hvx₀, hfront⟩ := barrier_comparison (A := A)
-    (g₁ := (1 ^ 2 + θ ^ 2) ^ (-β)) hcont hu (contDiff_iff_contDiffAt.2 hg2) hbdry
-    (fun z hz ↦ by rw [hgG, mem_sphere_iff_norm.1 hz, div_self hR.ne'])
-    (ball_subset_ball (by nlinarith) hx₀) hux₀ (by nlinarith [mul_le_mul_of_nonneg_left hgx₀ hA.le])
-  set v : EuclideanSpace ℝ ι → ℝ := fun y ↦ A * g y - u y - A * (1 ^ 2 + θ ^ 2) ^ (-β)
+  have hvx₀ : 1 ≤ v x₀ := by
+    rw [hvy]
+    nlinarith [mul_le_mul_of_nonneg_left hgx₀ hA.le]
+  have hx₀Ω' : x₀ ∈ ball c R ∩ v ⁻¹' Ioi 0 :=
+    ⟨ball_subset_ball (by nlinarith) hx₀, mem_preimage.2 (mem_Ioi.2 (zero_lt_one.trans_le hvx₀))⟩
   have hΓ : upperContactSet v (ball c R ∩ v ⁻¹' Ioi 0) ⊆ ball c R :=
     upperContactSet_subset.trans inter_subset_left
   set K := A * (2 * (R ^ 2)⁻¹ * β * (θ ^ 2) ^ (-β - 1) * (n * κ * lam))
   have hK : 0 ≤ K := by positivity
-  -- `v = -(u + φ)` satisfies `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv ≥ -f - K 1_{B(c, θ R)}`, by the barrier inequality.
+  -- By the barrier inequality, `A ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼg - f ≥ -f - K 1_{B(c, θ R)}`.
   have h := volume_ball_le_of_upperContactSet (p := fun y ↦ (f y)⁺)
-    (F := fun y ↦ -f y - (ball c (θ * R)).indicator (fun _ ↦ K) y) inter_subset_left hΩ' hvc
-    hv2 hlam (fun y hy ↦ ⟨ha.posDef (hΓ hy) (hsymm _ (hΓ hy)),
-      ha.pow_card_le_det (hΓ hy) (hsymm _ (hΓ hy))⟩)
-    (fun y hy ↦ by
-      rw [sum_mul_fderiv_fderiv_mul_sub_sub_const _ (hu.contDiffAt (isOpen_ball.mem_nhds
-        (hΓ hy))) (hg2 y)]
-      linarith [neg_indicator_le_mul_sum_mul_fderiv_fderiv_barrier ha hLam hκ hR hθ hA.le (hΓ hy),
-        hsuper y (hΓ hy)])
-    (fun y _ ↦ sup_le (by linarith [le_posPart (f y)])
+    inter_subset_left hΩ' hlam (fun y hy ↦ ha.pow_card_le_det hy.1 (hsymm _ hy.1))
+    (fun y hy ↦ sup_le (by linarith [le_posPart (f y),
+      neg_indicator_le_mul_sum_mul_fderiv_fderiv_barrier ha hLam hκ hR hθ hA.le hy.1])
       (add_nonneg (posPart_nonneg _) (indicator_nonneg (fun _ _ ↦ hK) _)))
-    (fun y ↦ posPart_nonneg _) hK measurableSet_ball hfront hx₀Ω' hvx₀
+    (fun y ↦ posPart_nonneg _) hK measurableSet_ball hx₀Ω' hvx₀
+    (hABP _ inter_subset_left hΩ' hvcl hfront x₀ hx₀Ω')
   -- On the contact set `v > 0`, so `u < A g ≤ M`.
   have hS : ball c (θ * R) ∩ upperContactSet v (ball c R ∩ v ⁻¹' Ioi 0) ⊆
       {x | u x < A * (θ ^ 2) ^ (-β)} ∩ ball c (θ * R) := by
     rintro y ⟨hyθ, hy⟩
-    have hv : 0 < A * g y - u y - A * (1 ^ 2 + θ ^ 2) ^ (-β) := (upperContactSet_subset hy).2
+    have hv : 0 < v y := (upperContactSet_subset hy).2
+    rw [hvy] at hv
     have hgle : A * g y ≤ A * (θ ^ 2) ^ (-β) := mul_le_mul_of_nonneg_left
       (Real.rpow_le_rpow_of_nonpos (by positivity) (le_add_of_nonneg_left (by positivity))
         (by linarith)) hA.le
@@ -507,9 +539,9 @@ private theorem ofReal_mul_volume_ball_le_volume_lt_inter_ball {κ θ τ A lam L
   refine ofReal_mul_volume_ball_le_of_volume_ball_le hlam hR hθ (by positivity) hΓ
     ((measure_mono inter_subset_right).trans_lt measure_ball_lt_top).ne hK ?_ hf
     (h.trans (by gcongr))
-  simp only [K, β, n]
+  simp only [K, β, n, N]
   field_simp
-  norm_num
+  ring
 
 /-- **The basic measure estimate of Krylov and Safonov** (Caffarelli–Cabré, Lemma 4.5, for
 classical supersolutions of linear equations). Let `θ > 0`, `0 < τ < 1` and `κ > 0`. There are
@@ -534,28 +566,121 @@ theorem exists_mul_volume_ball_le_volume_setOf_lt_inter_ball {κ θ τ : ℝ} (h
         (∃ x ∈ ball c (τ * R), u x ≤ 1) →
         ENNReal.ofReal μ * volume (ball c (θ * R)) ≤
           volume ({x | u x < M} ∩ ball c (θ * R)) := by
-  set N := Fintype.card ι
-  set n : ℝ := (N : ℝ)
-  have hn : 0 < n := Nat.cast_pos.2 Fintype.card_pos
-  set β : ℝ := n * κ
-  have hβ : 0 < β := by positivity
-  -- The barrier `(t² + θ²)^(-β)` drops by `2 / A` between the radii `τ` and `1`.
-  have hG : (1 ^ 2 + θ ^ 2) ^ (-β) < (τ ^ 2 + θ ^ 2) ^ (-β) :=
-    Real.rpow_lt_rpow_of_neg (by positivity) (by nlinarith) (by nlinarith)
-  set A := 2 / ((τ ^ 2 + θ ^ 2) ^ (-β) - (1 ^ 2 + θ ^ 2) ^ (-β))
-  have hA : 0 < A := div_pos two_pos (sub_pos.2 hG)
-  set ω := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
-  have hω : 0 < ω :=
-    ENNReal.toReal_pos (measure_ball_pos volume _ one_pos).ne' measure_ball_lt_top.ne
-  refine ⟨A * (θ ^ 2) ^ (-β), 1 / (2 ^ (N + 1) * (4 * A * β * κ * (θ ^ 2) ^ (-β - 1)) ^ N *
-    θ ^ N), n * (ω / 2) ^ n⁻¹ / 4, by positivity, by positivity, by positivity, ?_⟩
-  intro lam Lam R c a u f hR ha hLam hcont hu hbdry hsuper hf ⟨x₀, hx₀, hux₀⟩
+  obtain ⟨M, μ, ε₀, A, hM, hμ, hε₀, -, H⟩ :=
+    exists_mul_volume_ball_le_volume_setOf_lt_inter_ball_of_volume_ball_le (ι := ι) hκ hθ hτ₀ hτ
+  refine ⟨M, μ, ε₀, hM, hμ, hε₀, ?_⟩
+  intro lam Lam R c a u f hR ha hLam hcont hu hbdry hsuper hf hx
+  have hg : ContDiff ℝ 2 fun z : EuclideanSpace ℝ ι ↦
+      ((R ^ 2)⁻¹ * ‖z - c‖ ^ 2 + θ ^ 2) ^ (-(Fintype.card ι * κ)) :=
+    contDiff_iff_contDiffAt.2 fun _ ↦
+      contDiffAt_rpow_mul_norm_sq_sub_add (by positivity) (by positivity) _
   -- Replace `a` by its symmetric part, which the Hessian of `u` cannot distinguish from `a`.
-  exact ofReal_mul_volume_ball_le_volume_lt_inter_ball hκ hθ hτ hA
-    (div_mul_cancel₀ _ (sub_pos.2 hG).ne') hR ha.coefficientSymmetricPart hLam
-    (fun _ _ ↦ coefficientSymmetricPart_isSymm _) hcont hu hbdry
-    (fun x hx ↦ (sum_coefficientSymmetricPart_mul_fderiv_fderiv
-      (hu.contDiffAt (isOpen_ball.mem_nhds hx))).trans_le (hsuper x hx)) hf hx₀ hux₀
+  refine H hR ha.coefficientSymmetricPart hLam (fun _ _ ↦ coefficientSymmetricPart_isSymm _)
+    hcont hbdry hf rfl (fun Ω hΩR hΩ hvcl hfront x hx ↦ ?_) hx
+  have hu' : ContDiffOn ℝ 2 u Ω := hu.mono hΩR
+  refine volume_ball_le_setLIntegral_upperContactSet (isBounded_ball.subset hΩR) hΩ hvcl
+    (((contDiff_const.mul hg).contDiffOn.sub hu').sub contDiffOn_const)
+    (fun y hy ↦ ha.coefficientSymmetricPart.posDef (hΩR (upperContactSet_subset hy))
+      (coefficientSymmetricPart_isSymm _)) (fun y hy ↦ ?_) hfront hx
+  have hyΩ := upperContactSet_subset hy
+  rw [sum_mul_fderiv_fderiv_mul_sub_sub_const _ (hu'.contDiffAt (hΩ.mem_nhds hyΩ))
+    (hg.contDiffAt)]
+  linarith [(sum_coefficientSymmetricPart_mul_fderiv_fderiv (hu'.contDiffAt
+    (hΩ.mem_nhds hyΩ))).trans_le (hsuper y (hΩR hyΩ))]
+
+/-- **The basic measure estimate of Krylov and Safonov for strong supersolutions**
+(Gilbarg–Trudinger, Section 9.7, for `W^{2,n}` functions). Let `θ > 0`, `0 < τ < 1` and `κ > 0`.
+There are constants `M, μ, ε₀ > 0`, depending only on the dimension, `κ`, `θ` and `τ`, with the
+following property. Let `R > 0`, let the coefficient matrix `a` be symmetric and uniformly elliptic
+on `B(c, R)` with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(B(c, R))` have a representative
+`ū` continuous on `closedBall c R` and nonnegative on the sphere `‖x - c‖ = R`, with
+`∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere in `B(c, R)` for the weak Hessian of `u` and
+`R ‖f⁺‖_{Lⁿ(B(c, R))} ≤ ε₀ λ`. If `ū ≤ 1` somewhere in `B(c, τ R)`, then
+`μ |B(c, θ R)| ≤ |{ū < M} ∩ B(c, θ R)|`. -/
+theorem exists_mul_volume_ball_le_volume_setOf_lt_inter_ball_of_wkp {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p = Fintype.card ι) {κ θ τ : ℝ} (hκ : 0 < κ) (hθ : 0 < θ) (hτ₀ : 0 < τ) (hτ : τ < 1) :
+    ∃ M μ ε₀ : ℝ, 0 < M ∧ 0 < μ ∧ 0 < ε₀ ∧
+      ∀ ⦃lam Lam R : ℝ⦄ ⦃c : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
+        ⦃ū f : EuclideanSpace ℝ ι → ℝ⦄ (u : Wkp volume ⟨ball c R, isOpen_ball⟩ p 2), 0 < R →
+        UniformlyEllipticOn (ball c R) a lam Lam → Lam ≤ κ * lam →
+        (∀ x ∈ ball c R, (a x).IsSymm) →
+        ContinuousOn ū (closedBall c R) →
+        (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (ball c R)] ū →
+        (∀ x ∈ sphere c R, 0 ≤ ū x) →
+        (∀ᵐ x ∂volume.restrict (ball c R), ∑ i, ∑ j, a x i j *
+          Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i ≤ f x) →
+        ENNReal.ofReal R * eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
+          (volume.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam) →
+        (∃ x ∈ ball c (τ * R), ū x ≤ 1) →
+        ENNReal.ofReal μ * volume (ball c (θ * R)) ≤
+          volume ({x | ū x < M} ∩ ball c (θ * R)) := by
+  obtain ⟨M, μ, ε₀, A, hM, hμ, hε₀, -, H⟩ :=
+    exists_mul_volume_ball_le_volume_setOf_lt_inter_ball_of_volume_ball_le (ι := ι) hκ hθ hτ₀ hτ
+  refine ⟨M, μ, ε₀, hM, hμ, hε₀, ?_⟩
+  intro lam Lam R c a ū f u hR ha hLam hsymm hcont hū hbdry hsuper hf hx
+  refine H hR ha hLam hsymm hcont hbdry hf rfl (fun Ω hΩR hΩ hvcl hfront x hx ↦ ?_) hx
+  set g : EuclideanSpace ℝ ι → ℝ := fun z ↦
+    ((R ^ 2)⁻¹ * ‖z - c‖ ^ 2 + θ ^ 2) ^ (-(Fintype.card ι * κ)) with hg_def
+  set g₁ : ℝ := (1 ^ 2 + θ ^ 2) ^ (-(Fintype.card ι * κ))
+  -- The smooth part `w = A g - A g₁` of the comparison function `v = w - ū`.
+  set w : EuclideanSpace ℝ ι → ℝ := fun z ↦ A * g z - A * g₁
+  have hg : ContDiff ℝ 2 g := contDiff_iff_contDiffAt.2 fun _ ↦
+    contDiffAt_rpow_mul_norm_sq_sub_add (by positivity) (by positivity) _
+  have hw : ContDiff ℝ 2 w := (contDiff_const.mul hg).sub contDiff_const
+  -- On `Ω`, the comparison function is the Sobolev function `W - u|_Ω`, where `W` represents `w`.
+  have hO : (⟨Ω, hΩ⟩ : Opens (EuclideanSpace ℝ ι)) ≤ ⟨ball c R, isOpen_ball⟩ := hΩR
+  obtain ⟨W, hW⟩ := Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := volume) (p := p)
+    (Omega := ⟨Ω, hΩ⟩) 2 isOpen_univ (hw.contDiffOn.of_le (by norm_num))
+    (isCompact_closedBall c R) (hΩR.trans ball_subset_closedBall) (subset_univ _)
+  set V := W - Wkp.restrictL hO 2 u
+  have hΩu : ∀ᵐ y ∂volume.restrict Ω, y ∈ ball c R :=
+    ae_restrict_of_forall_mem hΩ.measurableSet hΩR
+  have hV : (Wkp.value 2 V : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω]
+      fun y ↦ A * g y - ū y - A * g₁ := by
+    have hsub : Wkp.value 2 V = Wkp.value 2 W - Wkp.value 2 (Wkp.restrictL hO 2 u) := by
+      rw [← Wkp.valueL_apply, map_sub, Wkp.valueL_apply, Wkp.valueL_apply]
+    rw [hsub]
+    filter_upwards [Lp.coeFn_sub (Wkp.value 2 W) (Wkp.value 2 (Wkp.restrictL hO 2 u)), hW,
+      Wkp.value_restrictL_ae hO 2 u, ae_restrict_of_ae_restrict_of_subset hΩR hū] with y h1 h2 h3 h4
+    rw [h1, Pi.sub_apply, h2, h3, h4]
+    ring
+  -- The second derivative of `w = A g - A g₁` is `A` times that of `g`.
+  have hfd : fderiv ℝ w = A • fderiv ℝ g := funext fun z ↦ by
+    simp only [w, Pi.smul_apply]
+    rw [fderiv_sub_const, fderiv_const_mul (hg.differentiable (by norm_num) z)]
+  -- The weak Hessian of `V` is `A ∇²g - ∇²u` almost everywhere on `Ω`.
+  have hHess : ∀ᵐ y ∂volume.restrict Ω, ∀ i j : ι,
+      Wkp.iteratedGradient 1 V y (EuclideanSpace.single j 1) i =
+        A * fderiv ℝ (fderiv ℝ g) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) -
+          Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i := by
+    have hsub : ⇑(Wkp.iteratedGradient 1 V) =ᵐ[volume.restrict Ω]
+        ⇑(Wkp.iteratedGradient 1 W) - ⇑(Wkp.iteratedGradient 1 (Wkp.restrictL hO 2 u)) := by
+      rw [← Wkp.iteratedGradientL_apply 1 V, map_sub, Wkp.iteratedGradientL_apply,
+        Wkp.iteratedGradientL_apply]
+      exact Lp.coeFn_sub _ _
+    filter_upwards [hsub, Wkp.iteratedGradient_ae_eq_of_contDiffOn 1 W
+        (hw.contDiffOn.of_le (by norm_num)) hW,
+      Wkp.iteratedGradient_restrictL_ae hO 1 u] with y h1 h2 h3 i j
+    rw [h1, Pi.sub_apply, h2, h3, iteratedGradientChain_succ, iteratedGradientChain_zero,
+      fderiv_gradient, sub_apply, PiLp.sub_apply,
+      hessianOperator_single_apply hw.contDiffAt, hfd,
+      fderiv_const_smul ((hg.fderiv_right (m := 1) (by norm_num)).differentiable
+        (by norm_num) y)]
+    simp only [smul_apply, smul_eq_mul]
+  refine volume_ball_le_setLIntegral_upperContactSet_of_wkp (Ω := ⟨Ω, hΩ⟩)
+    (isBounded_ball.subset hΩR) hp V hvcl hV ?_ ?_ hfront hx
+  · filter_upwards [ae_restrict_of_ae_restrict_of_subset upperContactSet_subset hΩu] with y hy
+    exact ha.posDef hy (hsymm y hy)
+  · filter_upwards [ae_restrict_of_ae_restrict_of_subset upperContactSet_subset
+      (hΩu.and (hHess.and (ae_restrict_of_ae_restrict_of_subset hΩR hsuper)))] with y hy
+    obtain ⟨-, hy₂, hy₃⟩ := hy
+    have hsum : ∑ i, ∑ j, a y i j * Wkp.iteratedGradient 1 V y (EuclideanSpace.single j 1) i =
+        A * ∑ i, ∑ j, a y i j * fderiv ℝ (fderiv ℝ g) y (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) -
+        ∑ i, ∑ j, a y i j * Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i := by
+      simp only [hy₂, Finset.mul_sum, ← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+    linarith
 
 end PDE
 
