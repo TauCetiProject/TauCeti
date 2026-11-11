@@ -33,7 +33,8 @@ either symmetric or the negative of its flip.
 Away from characteristic two the second alternative is exactly alternation, which gives the
 orthogonal/symplectic dichotomy: an irreducible representation carries at most a line of invariant
 forms, and any nonzero one on it is either symmetric or alternating (in characteristic two it is
-symmetric).  The values `+1` and `-1` of the Frobenius-Schur indicator
+symmetric).  For an irreducible representation of a finite group over an algebraically closed
+field of characteristic zero, the values `+1` and `-1` of the Frobenius-Schur indicator
 `TauCeti.Representation.frobeniusSchurIndicator` are characterized by these invariant symmetric
 and alternating forms; this file supplies the forms, not the count.
 
