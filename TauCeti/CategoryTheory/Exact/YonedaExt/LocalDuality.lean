@@ -10,7 +10,7 @@ public import TauCeti.CategoryTheory.Exact.YonedaExt.AlmostSplit
 public import TauCeti.CategoryTheory.Exact.YonedaExt.BaerSum
 public import TauCeti.CategoryTheory.Exact.YonedaExt.TrivialIdeal
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Linear
-import TauCeti.CategoryTheory.Preadditive.Radical.Basic
+import TauCeti.CategoryTheory.Preadditive.Radical.TopDual
 
 /-!
 # The local Auslander–Reiten duality of an exact category
@@ -262,30 +262,6 @@ theorem bijective_costablePairing_of_isAlmostSplit (e : E.Extension A T)
     exact hφ (by
       rw [← ha, ← costablePairing_map, ← LinearMap.flip_apply, hξ, LinearMap.zero_apply])
 
-omit [HasZeroObject C] [HasBinaryBiproducts C] in
-/-- For an ideal `I` not containing `𝟙 X`, with `End X` local, a linear form on `(C/I)(X, X)` that
-is nonzero at the identity and vanishes on the classes of the non-isomorphisms, which form the
-radical of `End X`. -/
-private theorem exists_linearMap_quotient_end (I : MorphismIdeal C) (X : C)
-    [IsLocalRing (End X)] (hX : 𝟙 X ∉ I.hom X X) :
-    ∃ ψ : (I.quotientFunctor.obj X ⟶ I.quotientFunctor.obj X) →ₗ[R] Q,
-      ψ (I.quotientFunctor.map (𝟙 X)) ≠ 0 ∧
-        ∀ c : X ⟶ X, ¬ IsIso c → ψ (I.quotientFunctor.map c) = 0 := by
-  obtain ⟨ψ, hψ1, hψ⟩ := exists_apply_ne_zero_of_notMem (nontrivial_linearMap_of_isMaximal hQ)
-    (N := jacobsonRadicalSubmodule R X X) (m := 𝟙 X) (by
-      rw [mem_jacobsonRadicalSubmodule, mem_jacobsonRadical_iff_not_isIso, not_not]
-      infer_instance)
-  -- A morphism of `I` is not an isomorphism, so `ψ` descends to `(C/I)(X, X)`.
-  refine ⟨(I.homSubmodule R X X).liftQ ψ (fun c hc ↦ LinearMap.mem_ker.mpr (hψ c (by
-      simpa using I.not_isIso_of_mem hX ((MorphismIdeal.mem_homSubmodule R I c).mp hc)))) ∘ₗ
-    (I.homLinearEquiv R X X).symm.toLinearMap, ?_, fun c hc ↦ ?_⟩
-  · rw [LinearMap.comp_apply, LinearEquiv.coe_coe,
-      MorphismIdeal.homLinearEquiv_symm_quotientFunctor_map, Submodule.liftQ_apply]
-    exact hψ1
-  · rw [LinearMap.comp_apply, LinearEquiv.coe_coe,
-      MorphismIdeal.homLinearEquiv_symm_quotientFunctor_map, Submodule.liftQ_apply]
-    exact hψ c (by simpa using hc)
-
 /-- **The converse from the stable pairing.** Let `A` and `T` have local endomorphism rings, with
 `A` not projective and `Ext¹_E(A, T)` of finite length. If `stablePairing φ B` is bijective for
 every `B`, there is an almost-split conflation `T ⟶ Y ⟶ A`. -/
@@ -296,7 +272,8 @@ theorem exists_isAlmostSplit_of_bijective_stablePairing [IsLocalRing (End A)]
   have hflip : ∀ B, Function.Injective (stablePairing φ B).flip := fun B ↦
     injective_flip_of_surjective (nontrivial_linearMap_of_isMaximal hQ) (hφ B).2
   -- The class `δ` dual to a linear form on the top of `(E/𝒫)(A, A)`.
-  obtain ⟨ψ, hψ1, hψ⟩ := exists_linearMap_quotient_end hQ E.projectivelyTrivialIdeal A
+  obtain ⟨ψ, hψ1, hψ⟩ := MorphismIdeal.exists_linearMap_quotient_end
+    (nontrivial_linearMap_of_isMaximal hQ) E.projectivelyTrivialIdeal A
     ((id_mem_projectivelyTrivialIdeal_iff A).not.mpr hA)
   obtain ⟨δ, hδ⟩ := (bijective_of_injective_of_injective_flip hQ (hφ A).1 (hflip A) hAT).2.2.2 ψ
   have hδc : ∀ c : A ⟶ A,
@@ -324,7 +301,8 @@ theorem exists_isAlmostSplit_of_bijective_costablePairing [IsLocalRing (End A)]
   have hflip : ∀ X, Function.Injective (costablePairing φ X).flip := fun X ↦
     injective_flip_of_surjective (nontrivial_linearMap_of_isMaximal hQ) (hφ X).2
   -- The class `δ` dual to a linear form on the top of `(E/ℐ)(T, T)`.
-  obtain ⟨ψ, hψ1, hψ⟩ := exists_linearMap_quotient_end hQ E.injectivelyTrivialIdeal T
+  obtain ⟨ψ, hψ1, hψ⟩ := MorphismIdeal.exists_linearMap_quotient_end
+    (nontrivial_linearMap_of_isMaximal hQ) E.injectivelyTrivialIdeal T
     ((id_mem_injectivelyTrivialIdeal_iff T).not.mpr hT)
   obtain ⟨δ, hδ⟩ := (bijective_of_injective_of_injective_flip hQ (hφ T).1 (hflip T) hAT).2.2.2 ψ
   have hδa : ∀ a : T ⟶ T,
