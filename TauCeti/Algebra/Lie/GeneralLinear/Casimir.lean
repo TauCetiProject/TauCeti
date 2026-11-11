@@ -292,9 +292,9 @@ theorem glCasimir_eigenvalue_glHalfStaircase
       ring
 
 /-- Lowering the `t`-th entry of the half-shifted staircase changes the Casimir sum by
-`-3 N + 2 * (1 / 2) + 2 + 4 t`. The constant is written as `2 * (1 / 2) + 2` (which is `3`), so
-that no invertibility of `2` is needed in the proof. -/
-theorem glCasimir_sum_glHalfStaircase_sub_single
+`-3 N + 2 * (1 / 2) + 2 + 4 t`. The constant `2 * (1 / 2) + 2` equals `3` when `2` is invertible;
+it is written this way so that no invertibility of `2` is needed. -/
+private theorem glCasimir_sum_glHalfStaircase_sub_single
     {F : Type*} [Field F] (N : ℕ) (t : Fin N) :
     (∑ i : Fin N, (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
       ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
