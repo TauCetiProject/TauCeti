@@ -10,7 +10,7 @@ import Mathlib.Analysis.Complex.Convex
 import TauCeti.Topology.Frontier
 
 /-!
-# Affine bijections of horizontal strips
+# Horizontal strips
 
 Positive real scalings and complex translations map horizontal strips bijectively
 onto the strips whose endpoints undergo the corresponding real affine map. These
@@ -37,6 +37,22 @@ theorem bijOn_ofReal_mul_add_horizontalStrip {s : ℝ} (hs : 0 < s) (c : ℂ) (l
 
 end TauCeti
 
+namespace IsPreconnected
+
+open Complex Set
+
+/-- If the frontier of a set `U ⊆ ℂ` is, to the right of `R`, exactly the two horizontal lines at
+heights `hi` and `lo`, then a preconnected set `s` lying to the right of `R` and avoiding both
+lines is contained in `U` as soon as it meets `U`. -/
+theorem subset_of_frontier_eq_horizontal {U s : Set ℂ} {R hi lo : ℝ} (hs : IsPreconnected s)
+    (hline : ∀ w : ℂ, R < w.re → (w ∈ frontier U ↔ w.im = hi ∨ w.im = lo))
+    (havoid : ∀ w ∈ s, R < w.re ∧ w.im ≠ hi ∧ w.im ≠ lo) (hmeet : (s ∩ U).Nonempty) : s ⊆ U :=
+  hs.subset_of_disjoint_frontier (Set.disjoint_left.mpr fun w hw hwfr =>
+    let h := havoid w hw
+    ((hline w h.1).mp hwfr).elim h.2.1 h.2.2) hmeet
+
+end IsPreconnected
+
 namespace IsOpen
 
 open Complex Set
@@ -55,12 +71,8 @@ private theorem im_lt_or_lt_im_of_mem_of_frontier_eq {U : Set ℂ} (hUo : IsOpen
   rw [hline w hwR, not_or] at hne
   by_contra! hw
   have hS := (convex_halfSpace_re_gt R).inter ((convex_halfSpace_im_gt lo).inter
-    (convex_halfSpace_im_lt hi)) |>.isPreconnected.subset_of_disjoint_frontier
-    (Set.disjoint_left.mpr fun v hv hvfr => by
-      have := (hline v hv.1).mp hvfr
-      rcases this with h | h
-      · exact hv.2.2.ne h
-      · exact hv.2.1.ne' h)
+    (convex_halfSpace_im_lt hi)) |>.isPreconnected.subset_of_frontier_eq_horizontal hline
+    (fun v hv => ⟨hv.1, hv.2.2.ne, hv.2.1.ne'⟩)
     ⟨w, ⟨hwR, lt_of_le_of_ne hw.1 (Ne.symm hne.2), lt_of_le_of_ne hw.2 hne.1⟩, hwU⟩
   exact hz (hS ⟨hzR, hzlo, hzhi⟩)
 
@@ -91,23 +103,17 @@ theorem mem_iff_im_lt_or_lt_im_of_frontier_eq {U : Set ℂ} (hUo : IsOpen U) {R 
   have habove : {w : ℂ | R < w.re ∧ hi < w.im} ⊆ U := by
     obtain ⟨u, huU, huR, hu⟩ := hnear hi (Or.inl rfl)
     refine ((convex_halfSpace_re_gt R).inter
-      (convex_halfSpace_im_gt hi)).isPreconnected.subset_of_disjoint_frontier
-      (Set.disjoint_left.mpr fun v hv hvfr => ?_)
+      (convex_halfSpace_im_gt hi)).isPreconnected.subset_of_frontier_eq_horizontal hline
+      (fun v hv => ⟨hv.1, hv.2.ne', (hgap.trans hv.2).ne'⟩)
       ⟨u, ⟨huR, (hout huR huU).resolve_left fun h => ?_⟩, huU⟩
-    · rcases (hline v hv.1).mp hvfr with h | h
-      · exact hv.2.ne' h
-      · exact (hgap.trans hv.2).ne' h
-    · linarith [(abs_lt.mp hu).1]
+    linarith [(abs_lt.mp hu).1]
   have hbelow : {w : ℂ | R < w.re ∧ w.im < lo} ⊆ U := by
     obtain ⟨u, huU, huR, hu⟩ := hnear lo (Or.inr rfl)
     refine ((convex_halfSpace_re_gt R).inter
-      (convex_halfSpace_im_lt lo)).isPreconnected.subset_of_disjoint_frontier
-      (Set.disjoint_left.mpr fun v hv hvfr => ?_)
+      (convex_halfSpace_im_lt lo)).isPreconnected.subset_of_frontier_eq_horizontal hline
+      (fun v hv => ⟨hv.1, (hv.2.trans hgap).ne, hv.2.ne⟩)
       ⟨u, ⟨huR, (hout huR huU).resolve_right fun h => ?_⟩, huU⟩
-    · rcases (hline v hv.1).mp hvfr with h | h
-      · exact (hv.2.trans hgap).ne h
-      · exact hv.2.ne h
-    · linarith [(abs_lt.mp hu).2]
+    linarith [(abs_lt.mp hu).2]
   exact ⟨hout hwR, fun hw => hw.elim (fun h => hbelow ⟨hwR, h⟩) (fun h => habove ⟨hwR, h⟩)⟩
 
 end IsOpen
