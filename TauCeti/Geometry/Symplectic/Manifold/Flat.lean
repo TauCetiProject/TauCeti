@@ -93,6 +93,12 @@ def flat (σ : SmoothTwoForm I M) (x : M) : TangentSpace I x →L[ℝ] TangentSp
   -- The tangent space is the model space `E`, whose norm gives continuous currying.
   ContinuousAlternatingMap.flatL ℝ E ℝ (σ.1 x)
 
+/-- The flat map at a point is the currying `ContinuousAlternatingMap.flatL` of the value of the
+form there. -/
+theorem flat_def (σ : SmoothTwoForm I M) (x : M) :
+    σ.flat x = ContinuousAlternatingMap.flatL ℝ E ℝ (σ.1 x) :=
+  (rfl)
+
 /-- The flat map evaluates as the two-form. -/
 @[simp]
 theorem flat_apply (σ : SmoothTwoForm I M) (x : M) (v w : TangentSpace I x) :
