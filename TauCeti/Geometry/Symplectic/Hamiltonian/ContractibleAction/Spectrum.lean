@@ -165,8 +165,8 @@ private theorem eq_const_of_mem_contractiblePeriodicSolutions (h : σ.IsNondegen
   have hint := (mem_periodicSolutions_const_iff.1 hint).1
   -- `F` is constant along `γ`, since `dF(X_{s F}) = s dF(X_F) = 0`.
   have hlev (t : ℝ) : F (γ t) = F (γ 0) :=
-    (hint.isMIntegralCurveOn univ).apply_eq_of_mvfderiv_apply_eq_zero isOpen_univ
-      isPreconnected_univ (fun _ _ ↦ hF _) (fun u _ ↦ by
+    (hint.isMIntegralCurveOn univ).apply_eq_of_mvfderiv_apply_eq_zero isPreconnected_univ
+      (fun _ _ ↦ hF _) (fun u _ ↦ by
         rw [hamiltonianVectorField_const_smul, map_smul,
           (h.isHamiltonianVectorField_hamiltonianVectorField F).mvfderiv_apply_self, smul_zero])
       (mem_univ 0) (mem_univ t)
