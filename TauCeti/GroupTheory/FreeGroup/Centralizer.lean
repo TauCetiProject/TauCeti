@@ -28,6 +28,7 @@ free basis.
   of `of a`.
 * `FreeGroup.center_eq_bot_of_nontrivial`: the centre of a free group on at least two generators
   is trivial.
+* `FreeGroup.commute_of_zpow_of_zpow_iff`: nonzero powers of distinct generators do not commute.
 * `IsFreeGroup.commute_of_commute`: in a free group, two elements commuting with a common
   nontrivial element commute with each other.
 * `IsFreeGroup.isCyclic_centralizer`: the centralizer of a nontrivial element of a free group is
@@ -135,3 +136,21 @@ theorem isCyclic_centralizer {x : G} (hx : x ≠ 1) : IsCyclic (Subgroup.central
   Subgroup.isCyclic_of_isMulCommutative _
 
 end IsFreeGroup
+
+namespace FreeGroup
+
+variable {α : Type*}
+
+/-- Nonzero powers of distinct generators of a free group do not commute: `of a ^ m` and
+`of b ^ n` commute only when `m = 0` or `n = 0`. -/
+theorem commute_of_zpow_of_zpow_iff {a b : α} (hab : a ≠ b) {m n : ℤ} :
+    Commute (of a ^ m) (of b ^ n) ↔ m = 0 ∨ n = 0 := by
+  refine ⟨fun h => or_iff_not_imp_right.2 fun hn => ?_, by rintro (rfl | rfl) <;> simp⟩
+  -- `of a ^ m` commutes with `of b ^ n ≠ 1`, hence with `of b`, so it is a power of `of b`.
+  have hbn : of b ^ n ≠ 1 := fun h1 =>
+    hn (eq_of_of_zpow_eq_of_zpow hab.symm (h1.trans (zpow_zero (of a)).symm)).1
+  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_of_of_commute
+    (IsFreeGroup.commute_of_commute hbn h ((Commute.refl (of b)).zpow_left n)))
+  exact (eq_of_of_zpow_eq_of_zpow hab hj.symm).1
+
+end FreeGroup

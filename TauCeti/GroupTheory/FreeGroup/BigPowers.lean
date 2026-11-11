@@ -21,6 +21,8 @@ then `u₀ ^ e₀ * ⋯ * u_k ^ e_k ≠ 1` as soon as every exponent is large en
 ## Main results
 
 * `FreeGroup.isBP`, `IsFreeGroup.isBP`: free groups have the big powers property.
+* `FreeGroup.of_zpow_mul_of_zpow_eq_one_iff`: for distinct basis elements, `a ^ p * b ^ q = 1`
+  only for `p = q = 0`.
 
 ## Implementation notes
 
@@ -230,3 +232,15 @@ end FreeGroup
 theorem IsFreeGroup.isBP {G : Type*} [Group G] [IsFreeGroup G] : Group.IsBP G :=
   FreeGroup.isBP.of_injective (f := (IsFreeGroup.toFreeGroup G).toMonoidHom)
     (IsFreeGroup.toFreeGroup G).injective
+
+namespace FreeGroup
+
+/-- For distinct basis elements `a ≠ b` of a free group, `a ^ p * b ^ q = 1` only for `p = q = 0`.
+In particular `a ^ p * b ^ q ≠ 1` for all `p, q ≥ 1`: the noncommuting pair `(a, b)` satisfies the
+big powers condition with bound `1`. -/
+theorem of_zpow_mul_of_zpow_eq_one_iff {α : Type*} {a b : α} (hab : a ≠ b) {p q : ℤ} :
+    of a ^ p * of b ^ q = 1 ↔ p = 0 ∧ q = 0 := by
+  refine ⟨fun h => ?_, fun ⟨hp, hq⟩ => by simp [hp, hq]⟩
+  simpa using eq_of_of_zpow_eq_of_zpow hab ((mul_eq_one_iff_eq_inv.1 h).trans (zpow_neg _ q).symm)
+
+end FreeGroup
