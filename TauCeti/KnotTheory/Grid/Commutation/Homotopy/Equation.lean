@@ -75,7 +75,6 @@ theorem mem_sameSidePentagonPartners_or_mem_mixedSidePentagonPartners {x z : Gri
   obtain ⟨⟨m, P, Q⟩, ⟨hP, hQ⟩, hD⟩ := exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff G C
     C.reverse C.reverse_column C.reverse_turnRow C.X_column_below C.X_next_above
     (G.mem_commutationHexagons_iff_XSet_inter_eq C)
-    (G.cutColumn_X_mem_toGridRectangle_coveredSquares C)
     ((G.mem_hexagonCompositeDecompositions_iff_mem_disjSum C F).mp hFc)
     (fun F' hF' => hnot F' ((G.mem_hexagonCompositeDecompositions_iff_mem_disjSum C F').mpr hF'))
     (G.hasMixedSideOverlap_of_mem_unpairedHexagonComposites C hzx hF)

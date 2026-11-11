@@ -80,7 +80,7 @@ namespace SkewZigzagParameter
 
 section ExteriorCycle
 
-variable (k : Type w) [CommRing k] (m : ℕ) [NeZero m]
+variable (k : Type w) [CommRing k] (m : ℕ)
 
 /-- The **exterior skew-zigzag parameter of a cycle graph**.  On a cycle with at least three
 vertices, the two backtracks at a vertex sum to zero.  On such an odd cycle over a commutative ring
@@ -97,7 +97,7 @@ theorem exteriorCycle_ratio {i j j' : Fin m} (h : (cycleGraph m).Adj i j)
     (exteriorCycle k m).ratio h h' = if j = j' then 1 else -1 :=
   exterior_ratio _ h h'
 
-variable {k m}
+variable {k m} [NeZero m]
 
 /-- **The monodromy of the exterior parameter around a cycle graph on `m` vertices is
 `(-1) ^ m`.** Every one of the `m` vertices contributes the sign between its two distinct
