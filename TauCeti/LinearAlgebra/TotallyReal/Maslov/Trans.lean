@@ -31,7 +31,8 @@ intermediate family `t ↦ A (s, t) L₀` to be closed.
 
 Paths are cut into pieces with `TauCeti.TotallyRealPath.subpath`, the restriction of a path to the
 segment between two times, and a path with equal endpoints is read as a loop with
-`TauCeti.TotallyRealPath.toTotallyRealLoop`.
+`TauCeti.TotallyRealPath.toTotallyRealLoop`; both are in
+`TauCeti/LinearAlgebra/TotallyReal/Maslov/Path.lean`.
 
 ## References
 
@@ -46,61 +47,6 @@ open Real
 open scoped unitInterval
 
 namespace TauCeti
-
-namespace TotallyRealPath
-
-section
-
-variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
-
-/-- The restriction of a path of maximal totally real subspaces to the segment from time `a` to
-time `b`, reparametrized by `[0, 1]`: `t ↦ Λ ((1 - t) a + t b)`. -/
-def subpath (Λ : TotallyRealPath E) (a b : I) : TotallyRealPath E where
-  toFun t := Λ (Set.Icc.convexComb a b t)
-  exists_frame := by
-    obtain ⟨L₀, hL₀, A, hAc, hA⟩ := Λ.exists_frame
-    exact ⟨L₀, hL₀, fun t => A (Set.Icc.convexComb a b t),
-      hAc.comp (Set.Icc.continuous_convexComb a b), fun t => hA (Set.Icc.convexComb a b t)⟩
-
-theorem subpath_apply (Λ : TotallyRealPath E) (a b t : I) :
-    Λ.subpath a b t = Λ (Set.Icc.convexComb a b t) :=
-  (rfl)
-
-/-- The restriction of a path to `[a, b]` starts at `Λ a`. -/
-@[simp]
-theorem subpath_zero (Λ : TotallyRealPath E) (a b : I) : Λ.subpath a b 0 = Λ a :=
-  congrArg Λ (Set.Icc.convexComb_zero a b)
-
-/-- The restriction of a path to `[a, b]` ends at `Λ b`. -/
-@[simp]
-theorem subpath_one (Λ : TotallyRealPath E) (a b : I) : Λ.subpath a b 1 = Λ b :=
-  congrArg Λ (Set.Icc.convexComb_one a b)
-
-/-- A path of maximal totally real subspaces whose endpoints agree, read as a loop. -/
-def toTotallyRealLoop (Λ : TotallyRealPath E) (h : Λ 0 = Λ 1) : TotallyRealLoop E :=
-  ⟨Λ.toFun, Λ.exists_frame, h⟩
-
-@[simp]
-theorem toTotallyRealLoop_apply (Λ : TotallyRealPath E) (h : Λ 0 = Λ 1) (t : I) :
-    Λ.toTotallyRealLoop h t = Λ t :=
-  (rfl)
-
-/-- Reading a loop as a path and back gives the loop. -/
-@[simp]
-theorem _root_.TauCeti.TotallyRealLoop.toTotallyRealPath_toTotallyRealLoop
-    (Λ : TotallyRealLoop E) :
-    Λ.toTotallyRealPath.toTotallyRealLoop (by simpa using Λ.toFun_zero_eq_toFun_one) = Λ :=
-  TotallyRealLoop.ext fun t => by simp
-
-/-- Reading a closed path as a loop and back gives the path. -/
-@[simp]
-theorem toTotallyRealLoop_toTotallyRealPath (Λ : TotallyRealPath E) (h : Λ 0 = Λ 1) :
-    (Λ.toTotallyRealLoop h).toTotallyRealPath = Λ :=
-  ext fun t => by simp
-
-end
-
-end TotallyRealPath
 
 namespace TotallyRealLoop
 
@@ -147,6 +93,26 @@ noncomputable def shift (Λ : TotallyRealLoop E) (s : I) : TotallyRealLoop E :=
       (by simpa using Λ.toFun_zero_eq_toFun_one.symm))
     (by simp)
 
+/-- The loop `Λ` read from time `s` onwards is the catenation of the restrictions of `Λ` to
+`[s, 1]` and to `[0, s]`. -/
+@[simp]
+theorem toTotallyRealPath_shift (Λ : TotallyRealLoop E) (s : I) :
+    (Λ.shift s).toTotallyRealPath =
+      (Λ.toTotallyRealPath.subpath s 1).trans (Λ.toTotallyRealPath.subpath 0 s)
+        (by simpa using Λ.toFun_zero_eq_toFun_one.symm) := by
+  simp [shift]
+
+/-- The loop `Λ` read from time `s` onwards is `Λ` on `[s, 1]` at double speed on `[0, 1 / 2]`
+and `Λ` on `[0, s]` at double speed after. -/
+theorem shift_apply (Λ : TotallyRealLoop E) (s t : I) :
+    Λ.shift s t =
+      if ht : (t : ℝ) ≤ 1 / 2 then
+        Λ (Set.Icc.convexComb s 1 ⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨t.2.1, ht⟩⟩)
+      else Λ (Set.Icc.convexComb 0 s
+        ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.2.2⟩⟩) := by
+  simp only [shift, TotallyRealPath.toTotallyRealLoop_apply, TotallyRealPath.trans_apply,
+    TotallyRealPath.subpath_apply, toTotallyRealPath_apply]
+
 /-- The loop `Λ` read from time `s` onwards is based at `Λ s`. -/
 @[simp]
 theorem shift_zero (Λ : TotallyRealLoop E) (s : I) : Λ.shift s 0 = Λ s := by
@@ -156,12 +122,6 @@ end
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
 
-/-- The Maslov index is the degree of the loop of Maslov phases `t ↦ ρ(Λ 0, Λ t)`. -/
-private theorem maslovIndex_eq_degree_maslovPhasePath (Λ : TotallyRealLoop E) :
-    Λ.maslovIndex = Circle.degree Λ.maslovPhasePath :=
-  Λ.maslovIndex_eq_degree (Λ.isMaximalTotallyReal 0) Λ.maslovPhasePath fun t =>
-    maslovPhasePath_apply Λ t
-
 /-- **Concatenation of loops adds Maslov indices:** for loops `Λ`, `Γ` with the same base
 subspace, `μ(Λ ⬝ Γ) = μ(Λ) + μ(Γ)`. -/
 @[simp]
@@ -170,7 +130,8 @@ theorem maslovIndex_trans (Λ Γ : TotallyRealLoop E) (h : Λ 0 = Γ 0) :
   -- Read all phases relative to the common base subspace `Λ 0 = Γ 0`.
   rw [(Λ.trans Γ h).maslovIndex_eq_degree (Λ.isMaximalTotallyReal 0)
     (Λ.maslovPhasePath.trans Γ.maslovPhasePath) fun t => ?_, Circle.degree_trans,
-    maslovIndex_eq_degree_maslovPhasePath, maslovIndex_eq_degree_maslovPhasePath]
+    ← Λ.maslovIndex_eq_degree _ _ Λ.maslovPhasePath_apply,
+    ← Γ.maslovIndex_eq_degree _ _ Γ.maslovPhasePath_apply]
   rw [Path.trans_apply]
   split_ifs with ht
   · rw [maslovPhasePath_apply]
@@ -212,13 +173,11 @@ theorem maslovIndex_shift (Λ : TotallyRealLoop E) (s : I) :
     rw [Path.trans_apply]
     split_ifs with ht <;>
     · rw [Path.cast_coe, Path.subpath, Path.coe_mk_mk, Function.comp_apply, maslovPhasePath_apply]
-      exact hL.maslovPhase_congr _ _ (by
-        simp only [shift, TotallyRealPath.toTotallyRealLoop_apply, TotallyRealPath.trans_apply, ht,
-          ↓reduceDIte, TotallyRealPath.subpath_apply, toTotallyRealPath_apply])
+      exact hL.maslovPhase_congr _ _ (by simp only [shift_apply, ht, ↓reduceDIte])
   have hdeg := Circle.angleChange_eq_degree_mul (γ₁.trans γ₂)
   rw [Circle.angleChange_trans, h₁, h₂, ← hshift] at hdeg
   have hμ := Circle.sub_eq_degree_mul Λ.maslovPhasePath θ.continuous hθ
-  rw [← maslovIndex_eq_degree_maslovPhasePath] at hμ
+  rw [← Λ.maslovIndex_eq_degree _ _ Λ.maslovPhasePath_apply] at hμ
   have h2π : (2 * π : ℝ) ≠ 0 := by positivity
   exact_mod_cast mul_right_cancel₀ h2π (by linarith : ((Λ.shift s).maslovIndex : ℝ) * (2 * π) =
     Λ.maslovIndex * (2 * π))
