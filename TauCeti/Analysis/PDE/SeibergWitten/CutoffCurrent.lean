@@ -305,18 +305,20 @@ theorem extDeriv_cutoffCurrent (hα : ContDiff ℝ 3 α) (hb : ContDiff ℝ 2 b)
 /-- The cutoff current vanishes at a point `x` with `α x ≠ 0` where `χ` is `1` near `|α x|²`:
 there `d(χ(|α|²) τ) = dτ = db`. -/
 theorem cutoffCurrent_eq_zero (hα : ContDiffAt ℝ 2 α x) (h : α x ≠ 0)
-    (hb : DifferentiableAt ℝ b x) (hχ : χ =ᶠ[𝓝 (normSq (α x))] 1) :
-    cutoffCurrent χ b α x = 0 := by
+    (hχ : χ =ᶠ[𝓝 (normSq (α x))] 1) : cutoffCurrent χ b α x = 0 := by
+  have hτ := (contDiffAt_phaseForm hα h le_rfl).differentiableAt one_ne_zero
   rw [cutoffCurrent_apply,
     (cutoffPhaseForm_eventuallyEq_covariantPhaseForm hα.continuousAt hχ).extDeriv_eq,
-    covariantPhaseForm,
-    extDeriv_add ((contDiffAt_phaseForm hα h le_rfl).differentiableAt one_ne_zero) hb,
-    extDeriv_phaseForm hα h, zero_add, sub_self]
+    covariantPhaseForm]
+  by_cases hb : DifferentiableAt ℝ b x
+  · rw [extDeriv_add hτ hb, extDeriv_phaseForm hα h, zero_add, sub_self]
+  · have hs : ¬ DifferentiableAt ℝ (phaseForm α + b) x := fun h' ↦ hb (by simpa using h'.sub hτ)
+    rw [extDeriv_of_not_differentiableAt hb, extDeriv_of_not_differentiableAt hs, sub_zero]
 
 /-- **Support of the cutoff current.** If `χ = 1` on `(c, ∞)` with `c ≥ 0`, the cutoff current is
 supported in `{|α|² ≤ c}`. -/
 theorem tsupport_cutoffCurrent_subset {c : ℝ} (hc : 0 ≤ c) (hα : ContDiff ℝ 2 α)
-    (hb : Differentiable ℝ b) (hχ : EqOn χ 1 (Ioi c)) :
+    (hχ : EqOn χ 1 (Ioi c)) :
     tsupport (cutoffCurrent χ b α) ⊆ {x | normSq (α x) ≤ c} := by
   refine closure_minimal (fun x hx ↦ ?_)
     (isClosed_le (continuous_normSq.comp hα.continuous) continuous_const)
@@ -326,7 +328,7 @@ theorem tsupport_cutoffCurrent_subset {c : ℝ} (hc : 0 ≤ c) (hα : ContDiff �
     rintro h
     rw [h, normSq_zero] at hlt
     exact hlt.not_ge hc
-  exact hx (cutoffCurrent_eq_zero hα.contDiffAt h₀ (hb x)
+  exact hx (cutoffCurrent_eq_zero hα.contDiffAt h₀
     (eventuallyEq_of_mem (Ioi_mem_nhds hlt) hχ))
 
 /-! ### Gauge invariance -/
@@ -512,21 +514,26 @@ theorem contDiff_modulusPotential (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0
     funext fun t ↦ (hasDerivAt_modulusPotential hχ hχ₀ t).deriv]
   exact hχ.div_id_of_eventuallyEq_zero hχ₀
 
-/-- The modulus potential is constant near `0`, for a continuous cutoff vanishing near `0`. -/
-theorem modulusPotential_eventuallyEq (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) :
+/-- The modulus potential is constant near `0`, for a cutoff vanishing near `0`. -/
+theorem modulusPotential_eventuallyEq (hχ₀ : χ =ᶠ[𝓝 0] 0) :
     modulusPotential χ =ᶠ[𝓝 0] fun _ ↦ modulusPotential χ 0 := by
   obtain ⟨ε, hε, hzero⟩ := (nhds_basis_Ioo_pos (0 : ℝ)).eventually_iff.1 hχ₀
   rw [zero_sub, zero_add] at hzero
-  have hcont := hχ.div_id_of_eventuallyEq_zero hχ₀
   filter_upwards [Ioo_mem_nhds (neg_lt_zero.2 hε) hε] with s hs
   have hsub : uIcc 0 s ⊆ Ioo (-ε) ε := ordConnected_Ioo.uIcc_subset ⟨by linarith, hε⟩ hs
+  have hf0 : EqOn (fun t ↦ χ t / t) 0 (uIcc 0 s) := fun t ht ↦ by simp [hzero (hsub ht)]
+  have hint : IntervalIntegrable (fun t ↦ χ t / t) volume 0 s :=
+    intervalIntegrable_iff.2 (integrableOn_zero.congr_fun
+      (fun t ht ↦ (hf0 (uIoc_subset_uIcc ht)).symm) measurableSet_uIoc)
   have h0s : (∫ t in (0 : ℝ)..s, χ t / t) = 0 := by
-    rw [intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ by
-      simp [hzero (hsub ht)]]
+    rw [intervalIntegral.integral_congr hf0]
     exact intervalIntegral.integral_zero
-  rw [modulusPotential, modulusPotential,
-    ← intervalIntegral.integral_add_adjacent_intervals (hcont.intervalIntegrable _ _)
-      (hcont.intervalIntegrable _ _), h0s, add_zero]
+  by_cases h : IntervalIntegrable (fun t ↦ χ t / t) volume 1 0
+  · rw [modulusPotential, modulusPotential,
+      ← intervalIntegral.integral_add_adjacent_intervals h hint, h0s, add_zero]
+  · have h' : ¬ IntervalIntegrable (fun t ↦ χ t / t) volume 1 s := fun h's ↦ h (h's.trans hint.symm)
+    rw [modulusPotential, modulusPotential, intervalIntegral.integral_undef h,
+      intervalIntegral.integral_undef h']
 
 /-- **Pointwise bound on the modulus potential.** If `χ` vanishes on `(0, c)` and `|χ| ≤ 1`, then
 `|H(s)| ≤ |s - 1| / c` for `s ≥ 0`. -/
