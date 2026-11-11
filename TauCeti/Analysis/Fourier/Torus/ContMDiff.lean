@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Analysis.Fourier.Torus.Smooth
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
 # Smooth functions on the torus as a product of two circles

@@ -269,9 +269,7 @@ theorem cauchyRiemannOperatorₗ_apply
     (x : UnitAddCircle × UnitAddCircle) :
     cauchyRiemannOperatorₗ σ x =
       _root_.UnitAddTorus.conjWirtingerDeriv (σ ∘ prodEquiv) (prodEquiv.symm x) := by
-  rw [cauchyRiemannOperatorₗ, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.coe_coe, coe_contMDiffMapEquiv_symm_apply, Function.comp_apply,
-    LinearMap.restrictScalars_apply, coe_conjWirtingerDerivₗ_apply, coe_contMDiffMapEquiv_apply]
+  simp [cauchyRiemannOperatorₗ]
 
 /-- `∂bar σ` is `cauchyRiemannOperatorₗ σ` times `dzbar`. -/
 theorem cauchyRiemannOperator_eq_cauchyRiemannOperatorₗ_smul_dzbar

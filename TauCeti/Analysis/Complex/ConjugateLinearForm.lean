@@ -27,9 +27,7 @@ namespace Complex
 theorem conjCLE_comp_equivRealProdCLM_symm_apply (v : ℝ × ℝ) :
     (conjCLE.toContinuousLinearMap ∘L equivRealProdCLM.symm.toContinuousLinearMap) v =
       v.1 - v.2 * I := by
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.coe_coe, equivRealProdCLM_symm_apply, conjCLE_apply, map_add, map_mul,
-    conj_ofReal, conj_ofReal, conj_I, mul_neg, sub_eq_add_neg]
+  simp [equivRealProdCLM_symm_apply, sub_eq_add_neg]
 
 /-- A real linear form `η` on `ℝ × ℝ` satisfies `η (-b, a) = -i η (a, b)` exactly when it is
 `η (1, 0)` times the conjugate coordinate `(a, b) ↦ a - i b`. -/
@@ -46,16 +44,11 @@ theorem forall_apply_neg_snd_fst_eq_iff (η : ℝ × ℝ →L[ℝ] ℂ) :
     have hv : v = v.1 • ((1, 0) : ℝ × ℝ) + v.2 • ((0, 1) : ℝ × ℝ) := by ext <;> simp
     rw [smul_apply, conjCLE_comp_equivRealProdCLM_symm_apply, hv, map_add,
       map_smul, map_smul, ht]
-    simp only [real_smul, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul,
-      mul_one, mul_zero, add_zero, zero_add]
-    ring_nf
-  · intro h v
-    rw [h, smul_apply, smul_apply,
-      conjCLE_comp_equivRealProdCLM_symm_apply, conjCLE_comp_equivRealProdCLM_symm_apply,
-      smul_eq_mul, smul_eq_mul, smul_eq_mul]
-    ring_nf
-    rw [I_sq]
-    push_cast
+    simp [real_smul]
     ring
+  · intro h v
+    rw [h]
+    simp only [smul_apply, conjCLE_comp_equivRealProdCLM_symm_apply, smul_eq_mul, ofReal_neg]
+    linear_combination -(η (1, 0) * v.2) * I_mul_I
 
 end Complex
