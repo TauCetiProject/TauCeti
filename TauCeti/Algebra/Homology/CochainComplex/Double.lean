@@ -18,6 +18,9 @@ and `1`. It receives `X` in degree `0` through `S.doubleι`, contains `Z` in deg
 `Z[-1] ⟶ (Y ⟶ Z) ⟶ Y` is split in each degree, and its connecting morphism `Y[0] ⟶ Z[-1][1]`
 is `g`, up to the identification `Z[-1][1] ≅ Z[0]`.
 
+The complex, its structural maps and `doubleMap` need only zero morphisms; the degreewise splitting
+and its connecting morphism need a preadditive category.
+
 ## Main definitions
 
 * `CategoryTheory.ShortComplex.double`: the two-term complex `Y ⟶ Z`.
@@ -47,7 +50,9 @@ theorem ComplexShape.up_rel_zero_one : (ComplexShape.up ℤ).Rel 0 1 := by simp
 
 namespace CategoryTheory.ShortComplex
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] (S : ShortComplex C)
+section ZeroMorphisms
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasZeroObject C] (S : ShortComplex C)
 
 /-- The two-term complex `Y ⟶ Z` of a short complex `X ⟶ Y ⟶ Z`, in degrees `0` and `1`. -/
 noncomputable abbrev double : CochainComplex C ℤ :=
@@ -120,50 +125,6 @@ noncomputable abbrev doubleTopShortComplex : ShortComplex (CochainComplex C ℤ)
       exact (HomologicalComplex.isZero_single_obj_X _ 0 _ 1 (by simp)).eq_of_tgt _ _
     · exact (HomologicalComplex.isZero_single_obj_X _ 1 _ n hn).eq_of_src _ _)
 
-/-- The short complex `Z[-1] ⟶ (Y ⟶ Z) ⟶ Y[0]` is split in each degree. -/
-noncomputable def doubleTopSplitting :
-    ∀ n, (S.doubleTopShortComplex.map (HomologicalComplex.eval C _ n)).Splitting
-  | Int.ofNat 0 => .ofIsZeroOfIsIso _
-      (HomologicalComplex.isZero_single_obj_X (.up ℤ) 1 S.X₃ (Int.ofNat 0) (by simp))
-      (inferInstanceAs (IsIso (S.doubleπ.f 0)))
-  | Int.ofNat 1 => .ofIsIsoOfIsZero _ (inferInstanceAs (IsIso (S.doubleTopι.f 1)))
-      (HomologicalComplex.isZero_single_obj_X (.up ℤ) 0 S.X₂ (Int.ofNat 1) (by simp))
-  | Int.ofNat (k + 2) => .ofIsZeroOfIsIso _
-      (HomologicalComplex.isZero_single_obj_X (.up ℤ) 1 S.X₃ (Int.ofNat (k + 2)) (by lia))
-      (isIso_of_source_target_iso_zero _ (S.isZero_double_X (by lia) (by lia)).isoZero
-        (HomologicalComplex.isZero_single_obj_X (.up ℤ) 0 S.X₂ (Int.ofNat (k + 2))
-          (by lia)).isoZero)
-  | Int.negSucc k => .ofIsZeroOfIsIso _
-      (HomologicalComplex.isZero_single_obj_X (.up ℤ) 1 S.X₃ (Int.negSucc k) (by lia))
-      (isIso_of_source_target_iso_zero _ (S.isZero_double_X (by lia) (by lia)).isoZero
-        (HomologicalComplex.isZero_single_obj_X (.up ℤ) 0 S.X₂ (Int.negSucc k)
-          (by lia)).isoZero)
-
-/-- **The connecting morphism of the split sequence `Z[-1] ⟶ (Y ⟶ Z) ⟶ Y[0]` is `g`**, up to the
-identification `Z[-1][1] ≅ Z[0]`. -/
-theorem homOfDegreewiseSplit_doubleTopSplitting_comp_shiftIso :
-    CochainComplex.homOfDegreewiseSplit _ S.doubleTopSplitting ≫
-      ((CochainComplex.singleFunctors C).shiftIso 1 0 1 (by simp)).hom.app S.X₃ =
-        (HomologicalComplex.single C (.up ℤ) 0).map S.g := by
-  apply HomologicalComplex.from_single_hom_ext
-  rw [HomologicalComplex.comp_f, CochainComplex.homOfDegreewiseSplit_f]
-  -- The cocycle of a degreewise splitting is, by definition, `s ≫ d ≫ r` for the sections and
-  -- retractions of the splittings; in degree `0` these are the inverses of the isomorphisms
-  -- `(doubleπ).f 0` and `(doubleTopι).f 1`.
-  have h : (CochainComplex.cocycleOfDegreewiseSplit _ S.doubleTopSplitting).1.v 0 (0 + 1) rfl =
-      inv (S.doubleπ.f 0) ≫ S.double.d 0 1 ≫ inv (S.doubleTopι.f 1) := rfl
-  have h₁ : inv (S.doubleπ.f 0) = (HomologicalComplex.singleObjXSelf (.up ℤ) 0 S.X₂).hom ≫
-      (HomologicalComplex.doubleXIso₀ S.g ComplexShape.up_rel_zero_one).inv :=
-    IsIso.inv_eq_of_hom_inv_id (by simp [doubleπ_f_zero])
-  have h₂ : inv (S.doubleTopι.f 1) =
-      (HomologicalComplex.doubleXIso₁ S.g ComplexShape.up_rel_zero_one (by simp)).hom ≫
-        (HomologicalComplex.singleObjXSelf (.up ℤ) 1 S.X₃).inv :=
-    IsIso.inv_eq_of_hom_inv_id (by simp [doubleTopι_f_one])
-  rw [h, h₁, h₂, HomologicalComplex.double_d S.g ComplexShape.up_rel_zero_one (by simp),
-    HomologicalComplex.single_map_f_self]
-  simp [CochainComplex.singleFunctors, HomologicalComplex.singleObjXSelf,
-    HomologicalComplex.singleObjXIsoOfEq]
-
 variable {S} {S' : ShortComplex C} (φ : S ⟶ S')
 
 /-- The map of two-term complexes induced by a morphism of short complexes. -/
@@ -224,5 +185,57 @@ theorem doubleTopι_doubleMap : S.doubleTopι ≫ doubleMap φ =
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, doubleTopι_f_one, doubleTopι_f_one,
     HomologicalComplex.single_map_f_self, doubleMap, HomologicalComplex.mkHomFromDouble_f₁]
   simp
+
+end ZeroMorphisms
+
+section Preadditive
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] (S : ShortComplex C)
+
+/-- The short complex `Z[-1] ⟶ (Y ⟶ Z) ⟶ Y[0]` is split in each degree. -/
+noncomputable def doubleTopSplitting :
+    ∀ n, (S.doubleTopShortComplex.map (HomologicalComplex.eval C _ n)).Splitting
+  | Int.ofNat 0 => .ofIsZeroOfIsIso _
+      (HomologicalComplex.isZero_single_obj_X (.up ℤ) 1 S.X₃ (Int.ofNat 0) (by simp))
+      (inferInstanceAs (IsIso (S.doubleπ.f 0)))
+  | Int.ofNat 1 => .ofIsIsoOfIsZero _ (inferInstanceAs (IsIso (S.doubleTopι.f 1)))
+      (HomologicalComplex.isZero_single_obj_X (.up ℤ) 0 S.X₂ (Int.ofNat 1) (by simp))
+  | Int.ofNat (k + 2) => .ofIsZeroOfIsIso _
+      (HomologicalComplex.isZero_single_obj_X (.up ℤ) 1 S.X₃ (Int.ofNat (k + 2)) (by lia))
+      (isIso_of_source_target_iso_zero _ (S.isZero_double_X (by lia) (by lia)).isoZero
+        (HomologicalComplex.isZero_single_obj_X (.up ℤ) 0 S.X₂ (Int.ofNat (k + 2))
+          (by lia)).isoZero)
+  | Int.negSucc k => .ofIsZeroOfIsIso _
+      (HomologicalComplex.isZero_single_obj_X (.up ℤ) 1 S.X₃ (Int.negSucc k) (by lia))
+      (isIso_of_source_target_iso_zero _ (S.isZero_double_X (by lia) (by lia)).isoZero
+        (HomologicalComplex.isZero_single_obj_X (.up ℤ) 0 S.X₂ (Int.negSucc k)
+          (by lia)).isoZero)
+
+/-- **The connecting morphism of the split sequence `Z[-1] ⟶ (Y ⟶ Z) ⟶ Y[0]` is `g`**, up to the
+identification `Z[-1][1] ≅ Z[0]`. -/
+theorem homOfDegreewiseSplit_doubleTopSplitting_comp_shiftIso :
+    CochainComplex.homOfDegreewiseSplit _ S.doubleTopSplitting ≫
+      ((CochainComplex.singleFunctors C).shiftIso 1 0 1 (by simp)).hom.app S.X₃ =
+        (HomologicalComplex.single C (.up ℤ) 0).map S.g := by
+  apply HomologicalComplex.from_single_hom_ext
+  rw [HomologicalComplex.comp_f, CochainComplex.homOfDegreewiseSplit_f]
+  -- The cocycle of a degreewise splitting is, by definition, `s ≫ d ≫ r` for the sections and
+  -- retractions of the splittings; in degree `0` these are the inverses of the isomorphisms
+  -- `(doubleπ).f 0` and `(doubleTopι).f 1`.
+  have h : (CochainComplex.cocycleOfDegreewiseSplit _ S.doubleTopSplitting).1.v 0 (0 + 1) rfl =
+      inv (S.doubleπ.f 0) ≫ S.double.d 0 1 ≫ inv (S.doubleTopι.f 1) := rfl
+  have h₁ : inv (S.doubleπ.f 0) = (HomologicalComplex.singleObjXSelf (.up ℤ) 0 S.X₂).hom ≫
+      (HomologicalComplex.doubleXIso₀ S.g ComplexShape.up_rel_zero_one).inv :=
+    IsIso.inv_eq_of_hom_inv_id (by simp [doubleπ_f_zero])
+  have h₂ : inv (S.doubleTopι.f 1) =
+      (HomologicalComplex.doubleXIso₁ S.g ComplexShape.up_rel_zero_one (by simp)).hom ≫
+        (HomologicalComplex.singleObjXSelf (.up ℤ) 1 S.X₃).inv :=
+    IsIso.inv_eq_of_hom_inv_id (by simp [doubleTopι_f_one])
+  rw [h, h₁, h₂, HomologicalComplex.double_d S.g ComplexShape.up_rel_zero_one (by simp),
+    HomologicalComplex.single_map_f_self]
+  simp [CochainComplex.singleFunctors, HomologicalComplex.singleObjXSelf,
+    HomologicalComplex.singleObjXIsoOfEq]
+
+end Preadditive
 
 end CategoryTheory.ShortComplex
