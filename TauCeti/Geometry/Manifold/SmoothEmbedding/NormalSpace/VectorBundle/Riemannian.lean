@@ -79,6 +79,7 @@ private theorem normalRepresentative_normalClass_eq_sub_inverse_pullback
     exact ContMDiffRiemannianMetric.pullback_inner _ _ _ _ _ _ _
   simpa only [hflat, hg] using f.normalRepresentative_normalClass_eq_sub_mfderiv_inverse x hn v
 
+omit [FiniteDimensional ℝ E] in
 /-- Orthogonal normal projection is `C^m` on the pulled-back ambient tangent bundle for a
 `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. Both the base point and the
 ambient tangent vector may vary. -/
@@ -89,6 +90,12 @@ theorem contMDiff_normalRepresentative_normalClass
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
         (⟨f p.proj, f.normalRepresentative p.proj hn (f.normalClass p.proj hn p.2)⟩ :
           TangentBundle J N)) := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · exact fun p ↦ isEmptyElim p.proj
+  -- the differential of an immersion embeds `E` in the finite-dimensional space `V`
+  have : FiniteDimensional ℝ E :=
+    Module.Finite.of_injective (mfderiv I J f x₀ : E →L[ℝ] V).toLinearMap
+      (f.isImmersion.mfderiv_injective hn x₀)
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let : CompleteSpace E := FiniteDimensional.complete ℝ E
   -- The induced metric identifies tangent vectors with covectors on the source.
