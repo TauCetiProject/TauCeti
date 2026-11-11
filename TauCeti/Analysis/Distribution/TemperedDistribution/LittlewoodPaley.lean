@@ -86,16 +86,6 @@ namespace ContDiffBump
 
 variable (φ : ContDiffBump (0 : E))
 
-/-- **The dyadic kernels are `L¹`-dilates of one another.** Since `ψ_{j+1} = ψ₁ (2^{-j} ·)`, the
-kernel `𝓕⁻ ψ_{j+1}` is `2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in dimension `n`, so it has the same `L¹` norm as
-`𝓕⁻ ψ₁`. -/
-theorem integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) :
-    ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) x‖ =
-      ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) x‖ := by
-  simp_rw [φ.inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply j]
-  exact TauCeti.integral_norm_fourierInv_comp_smul
-    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) (inv_ne_zero (pow_ne_zero _ two_ne_zero))
-
 /-- **The moments of the dyadic kernels decay geometrically.** Since `𝓕⁻ ψ_{j+1}` is the
 `L¹`-normalised dilate of `𝓕⁻ ψ₁` by `2^j`, its `α`-th moment is `2^{-jα}` times that of
 `𝓕⁻ ψ₁`. -/
@@ -108,6 +98,14 @@ theorem integral_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ (α 
     (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) (inv_ne_zero (pow_ne_zero _ two_ne_zero)),
     abs_of_pos (by positivity), Real.inv_rpow (by positivity), ← Real.rpow_natCast,
     ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ)]
+
+/-- **The dyadic kernels are `L¹`-dilates of one another.** Since `ψ_{j+1} = ψ₁ (2^{-j} ·)`, the
+kernel `𝓕⁻ ψ_{j+1}` is `2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in dimension `n`, so it has the same `L¹` norm as
+`𝓕⁻ ψ₁`. -/
+theorem integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) :
+    ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) x‖ =
+      ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) x‖ := by
+  simpa using φ.integral_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ 0 j
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The piece `ψⱼ` of the inhomogeneous Littlewood–Paley partition, as a complex Schwartz

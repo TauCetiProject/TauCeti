@@ -127,14 +127,6 @@ theorem fourierInv_comp_smul (f : E → F) (c : ℝ) (y : E) :
     𝓕⁻ (fun x ↦ f (c • x)) y = |c ^ finrank ℝ E|⁻¹ • 𝓕⁻ f (c⁻¹ • y) := by
   simp only [Real.fourierInv_eq_fourier_neg, fourier_comp_smul f, smul_neg]
 
-/-- Dilating a function does not change the `L¹` norm of its inverse Fourier transform:
-`∫ ‖𝓕⁻ (f (c • ·))‖ = ∫ ‖𝓕⁻ f‖`. -/
-theorem integral_norm_fourierInv_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) :
-    ∫ y, ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = ∫ y, ‖𝓕⁻ f y‖ := by
-  simp_rw [fourierInv_comp_smul f, norm_smul, norm_inv, Real.norm_eq_abs, abs_abs]
-  rw [integral_const_mul, Measure.integral_comp_inv_smul volume (fun y ↦ ‖𝓕⁻ f y‖), smul_eq_mul,
-    ← mul_assoc, inv_mul_cancel₀ (abs_ne_zero.2 (pow_ne_zero _ hc)), one_mul]
-
 /-- Dilating a function by `c` multiplies the `α`-th moment of the norm of its inverse Fourier
 transform by `|c| ^ α`: `∫ ‖y‖ ^ α ‖𝓕⁻ (f (c • ·)) y‖ = |c| ^ α ∫ ‖y‖ ^ α ‖𝓕⁻ f y‖`. -/
 theorem integral_rpow_mul_norm_fourierInv_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) (α : ℝ) :
@@ -151,6 +143,12 @@ theorem integral_rpow_mul_norm_fourierInv_comp_smul (f : E → F) {c : ℝ} (hc 
   rw [integral_const_mul, Measure.integral_comp_inv_smul volume g, smul_eq_mul,
     mul_comm _ (|c| ^ α), mul_assoc, ← mul_assoc _ |c ^ finrank ℝ E|,
     inv_mul_cancel₀ (abs_ne_zero.2 (pow_ne_zero _ hc)), one_mul]
+
+/-- Dilating a function does not change the `L¹` norm of its inverse Fourier transform:
+`∫ ‖𝓕⁻ (f (c • ·))‖ = ∫ ‖𝓕⁻ f‖`. -/
+theorem integral_norm_fourierInv_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) :
+    ∫ y, ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = ∫ y, ‖𝓕⁻ f y‖ := by
+  simpa using integral_rpow_mul_norm_fourierInv_comp_smul f hc 0
 
 /-- **Dilating a function rescales the `Lʳ` norm of its inverse Fourier transform:** for `R > 0`,
 the inverse Fourier transform of `ξ ↦ g (R⁻¹ • ξ)` has `Lʳ` norm `R ^ (n - n / r)` times that of
