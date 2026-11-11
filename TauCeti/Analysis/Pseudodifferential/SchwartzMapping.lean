@@ -49,6 +49,10 @@ and each such term is bounded by a continuous seminorm of `u`
   `TauCeti.Symbol.smulLeftCLM_quantizeUniformCLM`: the two commutator formulas in Schwartz space.
 * `TauCeti.Symbol.quantizeUniformCLM_lineDerivOp`: a derivative on the right of `Op(c)` is the
   multiplication of `c` by `i ⟪ξ, v⟫`, with no lower-order correction.
+* `TauCeti.Symbol.laplacianCommutator`, `TauCeti.Symbol.laplacian_quantizeUniformCLM`: applying
+  both derivative formulas twice in every coordinate gives the exact commutator
+  `Δ (Op(a) u) = Op(a) (Δ u) + Op((Δ_x + 2i ⟪ξ, ∇_x⟫) a) u`, whose symbol is uniform of order
+  `m + 1`.
 * `TauCeti.Symbol.quantizeUniformCLM_const`: a constant symbol `T` quantizes to the composition
   with `T`.
 
@@ -292,6 +296,64 @@ theorem quantizeUniformCLM_lineDerivOp (c : Symbol n V W m) (hc : c.IsUniform)
   congr 2
   push_cast
   ring
+
+/-- The symbol `(Δ_x + 2i ⟪ξ, ∇_x⟫) a` of order `m + 1`, so that the composition `Δ ∘ Op(a)` is
+`Op(a) ∘ Δ + Op((Δ_x + 2i ⟪ξ, ∇_x⟫) a)` (`TauCeti.Symbol.laplacian_quantizeUniformCLM`). -/
+def laplacianCommutator (a : Symbol n V W m) : Symbol n V W (m + 1) :=
+  ∑ j : Fin n, ((2 * Complex.I) • (spatialDeriv j a).comp (ofInner (EuclideanSpace.single j 1)) +
+    inclusion (by linarith) (spatialDeriv j (spatialDeriv j a)))
+
+/-- The coefficient of `(Δ_x + 2i ⟪ξ, ∇_x⟫) a` at `(x, ξ)` is
+`∑ⱼ (2i ξⱼ ∂_{x_j} a(x, ξ) + ∂_{x_j}² a(x, ξ))`. -/
+@[simp]
+theorem coefficient_laplacianCommutator (a : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (laplacianCommutator a).coefficient p =
+      ∑ j : Fin n, ((2 * Complex.I * p.2 j) • (spatialDeriv j a).coefficient p +
+        (spatialDeriv j (spatialDeriv j a)).coefficient p) := by
+  simp only [laplacianCommutator, coefficient_sum, Finset.sum_apply, coefficient_add,
+    coefficient_smul, coefficient_comp, coefficient_ofInner, coefficient_inclusion, Pi.add_apply,
+    Pi.smul_apply, ContinuousLinearMap.comp_smul, ContinuousLinearMap.comp_id, smul_smul]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  congr 2
+  simp [EuclideanSpace.inner_single_right]
+
+/-- The commutator symbol of a uniform symbol is uniform. -/
+theorem IsUniform.laplacianCommutator {a : Symbol n V W m} (ha : a.IsUniform) :
+    a.laplacianCommutator.IsUniform :=
+  Finset.sum_induction _ IsUniform (fun _ _ ↦ IsUniform.add) isUniform_zero fun j _ ↦
+    (((ha.spatialDeriv j).comp (isUniform_ofInner _)).smul _).add
+      (((ha.spatialDeriv j).spatialDeriv j).inclusion _)
+
+open scoped Laplacian in
+/-- **Commutator with the Laplacian.** For a uniform symbol `a`,
+`Δ (Op(a) u) = Op(a) (Δ u) + Op((Δ_x + 2i ⟪ξ, ∇_x⟫) a) u` in Schwartz space. The commutator
+`[Δ, Op(a)]` is thus again the quantization of a uniform symbol, of order `m + 1`. -/
+theorem laplacian_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform)
+    (u : 𝓢(CoordinateSpace n, V)) :
+    Δ (quantizeUniformCLM a ha u) =
+      quantizeUniformCLM a ha (Δ u) +
+        quantizeUniformCLM a.laplacianCommutator ha.laplacianCommutator u := by
+  have hX (j : Fin n) := ((ha.spatialDeriv j).comp (isUniform_ofInner (V := V)
+    (EuclideanSpace.single j (1 : ℝ)))).smul (2 * Complex.I)
+  have hY (j : Fin n) := ((ha.spatialDeriv j).spatialDeriv j).inclusion (m' := m + 1)
+    (by linarith)
+  -- `laplacianCommutator a` is by definition the sum over `j` of these symbols.
+  have hsum : quantizeUniformCLM a.laplacianCommutator ha.laplacianCommutator =
+      ∑ j, quantizeUniformCLM _ ((hX j).add (hY j)) :=
+    quantizeUniformCLM_sum _ _ _ _
+  rw [hsum]
+  simp only [SchwartzMap.laplacian_eq_sum (EuclideanSpace.basisFun (Fin n) ℝ),
+    EuclideanSpace.basisFun_apply, map_sum, sum_apply,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [quantizeUniformCLM_add (hX j) (hY j),
+    quantizeUniformCLM_smul ((ha.spatialDeriv j).comp (isUniform_ofInner _)),
+    quantizeUniformCLM_inclusion ((ha.spatialDeriv j).spatialDeriv j),
+    lineDerivOp_quantizeUniformCLM, LineDeriv.lineDerivOp_add, lineDerivOp_quantizeUniformCLM,
+    lineDerivOp_quantizeUniformCLM, quantizeUniformCLM_lineDerivOp _ (ha.spatialDeriv j)]
+  simp only [add_apply, smul_apply]
+  module
 
 /-- **Commutator with a coordinate function.** `x_j Op(a) u = Op(a) (x_j u) + i Op(∂_{ξ_j} a) u` in
 Schwartz space. -/

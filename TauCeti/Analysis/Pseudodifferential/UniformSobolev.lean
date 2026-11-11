@@ -34,7 +34,8 @@ Applying both twice in every coordinate gives the exact formula
 
 `Δ (Op(a) u) = Op(a) (Δ u) + Op((Δ_x + 2i ⟪ξ, ∇_x⟫) a) u`
 
-(`TauCeti.Symbol.laplacian_quantizeUniformCLM`), whose commutator symbol
+(`TauCeti.Symbol.laplacian_quantizeUniformCLM`, in
+`TauCeti.Analysis.Pseudodifferential.SchwartzMapping`), whose commutator symbol
 `TauCeti.Symbol.laplacianCommutator a` is a uniform symbol of order `m + 1`.
 
 ## Even steps
@@ -54,8 +55,11 @@ composition of `J^t` with `Op(a)` on the left for every real `t`.
 
 ## Main results
 
-* `TauCeti.Symbol.laplacianCommutator`: the symbol `(Δ_x + 2i ⟪ξ, ∇_x⟫) a` of order `m + 1`.
-* `TauCeti.Symbol.laplacian_quantizeUniformCLM`: the commutator of `Δ` with `Op(a)`.
+* `TauCeti.Symbol.quantizeUniformCLM_comp_besselMultiplier`: `Op(a) ∘ J^t` is the quantization
+  of `a ⟨ξ / 2π⟩ ^ t`.
+* `TauCeti.Symbol.besselMultiplier_two_quantizeUniformCLM`,
+  `TauCeti.Symbol.quantizeUniformCLM_comp_besselPotential_two`: the commutator of `J²` with
+  `Op(a)`, so that `J² ∘ Op(a)` is the quantization of a uniform symbol of order `m + 2`.
 * `TauCeti.Symbol.exists_quantizeUniformSobolev_of_sub_eq_two_mul`: the Sobolev mapping
   `H^s → H^{s - m}` for uniform symbols when `s - m ∈ 2ℤ`.
 
@@ -79,77 +83,17 @@ namespace Symbol
 
 variable {n : ℕ} {m : ℝ}
 
-/-! ### The commutator with the Laplacian -/
-
-section Commutator
-
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W]
-
-/-- The symbol `(Δ_x + 2i ⟪ξ, ∇_x⟫) a` of order `m + 1`, so that the composition `Δ ∘ Op(a)` is
-`Op(a) ∘ Δ + Op((Δ_x + 2i ⟪ξ, ∇_x⟫) a)` (`TauCeti.Symbol.laplacian_quantizeUniformCLM`). -/
-def laplacianCommutator (a : Symbol n V W m) : Symbol n V W (m + 1) :=
-  ∑ j : Fin n, ((2 * Complex.I) • (spatialDeriv j a).comp (ofInner (EuclideanSpace.single j 1)) +
-    inclusion (by linarith) (spatialDeriv j (spatialDeriv j a)))
-
-/-- The coefficient of `(Δ_x + 2i ⟪ξ, ∇_x⟫) a` at `(x, ξ)` is
-`∑ⱼ (2i ξⱼ ∂_{x_j} a(x, ξ) + ∂_{x_j}² a(x, ξ))`. -/
-theorem coefficient_laplacianCommutator (a : Symbol n V W m)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    (laplacianCommutator a).coefficient p =
-      ∑ j : Fin n, ((2 * Complex.I * p.2 j) • (spatialDeriv j a).coefficient p +
-        (spatialDeriv j (spatialDeriv j a)).coefficient p) := by
-  simp only [laplacianCommutator, coefficient_sum, Finset.sum_apply, coefficient_add,
-    coefficient_smul, coefficient_comp, coefficient_ofInner, coefficient_inclusion, Pi.add_apply,
-    Pi.smul_apply, ContinuousLinearMap.comp_smul, ContinuousLinearMap.comp_id, smul_smul]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  congr 2
-  simp [EuclideanSpace.inner_single_right]
-
-/-- The commutator symbol of a uniform symbol is uniform. -/
-theorem IsUniform.laplacianCommutator {a : Symbol n V W m} (ha : a.IsUniform) :
-    a.laplacianCommutator.IsUniform :=
-  Finset.sum_induction _ IsUniform (fun _ _ ↦ IsUniform.add) isUniform_zero fun j _ ↦
-    (((ha.spatialDeriv j).comp (isUniform_ofInner _)).smul _).add
-      (((ha.spatialDeriv j).spatialDeriv j).inclusion _)
-
-/-- **Commutator with the Laplacian.** For a uniform symbol `a`,
-`Δ (Op(a) u) = Op(a) (Δ u) + Op((Δ_x + 2i ⟪ξ, ∇_x⟫) a) u` in Schwartz space. The commutator
-`[Δ, Op(a)]` is thus again the quantization of a uniform symbol, of order `m + 1`. -/
-theorem laplacian_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform)
-    (u : 𝓢(CoordinateSpace n, V)) :
-    Δ (quantizeUniformCLM a ha u) =
-      quantizeUniformCLM a ha (Δ u) +
-        quantizeUniformCLM a.laplacianCommutator ha.laplacianCommutator u := by
-  have hX (j : Fin n) := ((ha.spatialDeriv j).comp (isUniform_ofInner (V := V)
-    (EuclideanSpace.single j (1 : ℝ)))).smul (2 * Complex.I)
-  have hY (j : Fin n) := ((ha.spatialDeriv j).spatialDeriv j).inclusion
-    (show m ≤ m + 1 by linarith)
-  -- `laplacianCommutator a` is by definition the sum over `j` of these symbols.
-  have hsum : quantizeUniformCLM a.laplacianCommutator ha.laplacianCommutator =
-      ∑ j, quantizeUniformCLM _ ((hX j).add (hY j)) :=
-    quantizeUniformCLM_sum _ _ _ _
-  rw [hsum]
-  simp only [SchwartzMap.laplacian_eq_sum (EuclideanSpace.basisFun (Fin n) ℝ),
-    EuclideanSpace.basisFun_apply, map_sum, sum_apply,
-    ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [quantizeUniformCLM_add (hX j) (hY j),
-    quantizeUniformCLM_smul ((ha.spatialDeriv j).comp (isUniform_ofInner _)),
-    quantizeUniformCLM_inclusion ((ha.spatialDeriv j).spatialDeriv j),
-    lineDerivOp_quantizeUniformCLM, LineDeriv.lineDerivOp_add, lineDerivOp_quantizeUniformCLM,
-    lineDerivOp_quantizeUniformCLM, quantizeUniformCLM_lineDerivOp _ (ha.spatialDeriv j)]
-  simp only [add_apply, smul_apply]
-  module
-
 /-! ### Composition with Bessel multipliers -/
 
-variable [CompleteSpace V] [CompleteSpace W]
+section BesselMultiplier
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
 
 omit [CompleteSpace W] in
 /-- **Composition with a Bessel multiplier on the right is exact.** `Op(a) ∘ J^t` is the
 quantization of `a ⟨ξ / 2π⟩ ^ t`. -/
-private theorem quantizeUniformCLM_comp_besselMultiplier (a : Symbol n V W m) (ha : a.IsUniform)
+theorem quantizeUniformCLM_comp_besselMultiplier (a : Symbol n V W m) (ha : a.IsUniform)
     (t : ℝ) :
     quantizeUniformCLM a ha ∘L SchwartzMap.fourierMultiplierCLM V
         (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) =
@@ -163,7 +107,7 @@ private theorem quantizeUniformCLM_comp_besselMultiplier (a : Symbol n V W m) (h
 
 /-- **Commutator with `J²`.** For a uniform symbol `a`,
 `J² (Op(a) u) = Op(a) (J² u) - (2π)⁻² Op((Δ_x + 2i ⟪ξ, ∇_x⟫) a) u`. -/
-private theorem besselMultiplier_two_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform)
+theorem besselMultiplier_two_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform)
     (u : 𝓢(CoordinateSpace n, V)) :
     SchwartzMap.fourierMultiplierCLM W
         (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ ((2 : ℝ) / 2) : ℝ) : ℂ))
@@ -180,27 +124,9 @@ private theorem besselMultiplier_two_quantizeUniformCLM (a : Symbol n V W m) (ha
     ContinuousLinearMap.map_smul_of_tower, smul_add]
   abel
 
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- Multiplying by `⟨ξ / 2π⟩ ^ t` and then by `⟨ξ / 2π⟩ ^ t'` multiplies by
-`⟨ξ / 2π⟩ ^ (t + t')`. -/
-private theorem coefficient_comp_besselPotential_comp_besselPotential (a : Symbol n V W m)
-    (t t' : ℝ) :
-    ((a.comp (besselPotential t)).comp (besselPotential t')).coefficient =
-      (a.comp (besselPotential (t + t'))).coefficient := by
-  ext1 p
-  simp only [coefficient_comp, coefficient_besselPotential, ContinuousLinearMap.comp_smul,
-    ContinuousLinearMap.comp_id, smul_smul, ← Complex.ofReal_mul]
-  rw [← Real.rpow_add (by positivity), add_div, add_comm (t' / 2)]
-
-omit [CompleteSpace V] [CompleteSpace W] in
-private theorem coefficient_comp_besselPotential_zero (a : Symbol n V W m) :
-    (a.comp (besselPotential 0)).coefficient = a.coefficient := by
-  ext1 p
-  simp [coefficient_comp]
-
 /-- The commutator with `J²` in the form `Op(a) ∘ J² = J² ∘ Op(a) + (2π)⁻² Op(c)`, where
 `c = (Δ_x + 2i ⟪ξ, ∇_x⟫) a` and `Op(a) ∘ J²` is the quantization of `a ⟨ξ / 2π⟩²`. -/
-private theorem quantizeUniformCLM_comp_besselPotential_two (a : Symbol n V W m)
+theorem quantizeUniformCLM_comp_besselPotential_two (a : Symbol n V W m)
     (ha : a.IsUniform) :
     quantizeUniformCLM (a.comp (besselPotential 2)) (ha.comp (isUniform_besselPotential 2)) =
       SchwartzMap.fourierMultiplierCLM W
@@ -212,7 +138,7 @@ private theorem quantizeUniformCLM_comp_besselPotential_two (a : Symbol n V W m)
     ContinuousLinearMap.comp_apply, besselMultiplier_two_quantizeUniformCLM, smul_apply]
   abel
 
-end Commutator
+end BesselMultiplier
 
 /-! ### Extension to Bessel-potential spaces -/
 
@@ -381,9 +307,10 @@ private theorem hasSobolevExtension_quantizeUniformCLM_of_le (k : ℕ) :
       quantizeUniformCLM_comp_besselPotential_two c' hc']
     have e₁ := (hJ (-(2 * k))).comp (ih c hc (by linarith))
     have e₂ := (hJ (-(2 * k))).comp (ih c' hc' (by linarith))
-    have e₃ := (ih _ hc'.laplacianCommutator (by linarith)).mono
-      (show -(2 * (k : ℝ)) - 2 ≤ -(2 * k) by linarith)
-    rw [show -(2 * ((k : ℝ) + 1)) = -(2 * k) - 2 by ring]
+    have e₃ := (ih _ hc'.laplacianCommutator (by linarith)).mono (r' := -(2 * k) - 2)
+      (by linarith)
+    have hr : -(2 * ((k : ℝ) + 1)) = -(2 * k) - 2 := by ring
+    rw [hr]
     exact e₁.add ((e₂.add (e₃.smul_real _)).smul_real _)
 
 /-- **Sobolev mapping of uniform symbols at even steps**, for complex Hilbert fibres. -/

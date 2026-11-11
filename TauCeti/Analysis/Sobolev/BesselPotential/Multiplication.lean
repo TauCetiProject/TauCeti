@@ -134,9 +134,7 @@ theorem fourierMultiplierCLM_one_add_norm_sq (ψ : 𝓢(E, F)) :
         (fun _ ↦ (1 : ℂ)) + fun x ↦ ((‖x‖ ^ 2 : ℝ) : ℂ) := by
       ext x
       simp
-    rw [hw, fourierMultiplierCLM_apply, smulLeftCLM_add h1 h2, _root_.add_apply,
-      FourierTransform.fourierInv_add]
-    rfl
+    rw [hw, fourierMultiplierCLM_add h1 h2, _root_.add_apply]
   have hreal : fourierMultiplierCLM F (fun x : E ↦ ((‖x‖ ^ 2 : ℝ) : ℂ)) ψ =
       fourierMultiplierCLM F (fun x : E ↦ ‖x‖ ^ 2) ψ :=
     fourierMultiplierCLM_ofReal ℂ (Function.hasTemperateGrowth_norm_sq E) ψ
