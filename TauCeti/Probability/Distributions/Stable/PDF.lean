@@ -168,31 +168,30 @@ theorem measurable_stablePDFReal (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
 theorem measurable_stablePDF (α β : ℝ) (s : ℝ≥0) (m : ℝ) : Measurable (stablePDF α β s m) :=
   (measurable_stablePDFReal α β s m).ennreal_ofReal
 
-/-- **The stable density is bounded.** For valid shapes and positive scale it is at most
-`Γ(1/α) / (π α s)`, which is `(2π)⁻¹ ∫ |φ|`. -/
-theorem stablePDFReal_le (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s) (m x : ℝ) :
+/-- **The stable density is bounded.** For `0 < α ≤ 2` it is at most `Γ(1/α) / (π α s)`, which is
+`(2π)⁻¹ ∫ |φ|` for valid skewness and positive scale. For invalid skewness and at scale zero the
+density vanishes and the bound holds by the division-by-zero convention. -/
+theorem stablePDFReal_le (hα : α ∈ Ioc 0 2) (s : ℝ≥0) (m x : ℝ) :
     stablePDFReal α β s m x ≤ Real.Gamma α⁻¹ / (π * α * s) := by
-  have h := integral_abs_rpow_mul_exp_neg_abs_rpow hα.1 (q := 0) (by norm_num)
-  simp only [Real.rpow_zero, one_mul, zero_add, one_div] at h
-  refine (Measure.charFunDensity_le _ x).trans_eq ?_
-  simp_rw [norm_charFun_stableMeasure hα hβ]
-  rw [Measure.integral_comp_mul_left (fun t : ℝ ↦ Real.exp (-|t| ^ α)), h, abs_inv,
-    abs_of_pos (NNReal.coe_pos.2 hs), smul_eq_mul]
-  field_simp
-
-/-- For `0 < α ≤ 2`, the norm of the stable density is at most `Γ(1/α) / (π α s)`. For invalid
-skewness and at scale zero the density vanishes and the bound holds by the division-by-zero
-convention. -/
-theorem norm_stablePDFReal_le (hα : α ∈ Ioc 0 2) (s : ℝ≥0) (m x : ℝ) :
-    ‖stablePDFReal α β s m x‖ ≤ Real.Gamma α⁻¹ / (π * α * s) := by
-  rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β s m x)]
   by_cases hβ : |β| ≤ 1
   · rcases eq_zero_or_pos s with rfl | hs
     · simp
-    · exact stablePDFReal_le hα hβ hs m x
+    · have h := integral_abs_rpow_mul_exp_neg_abs_rpow hα.1 (q := 0) (by norm_num)
+      simp only [Real.rpow_zero, one_mul, zero_add, one_div] at h
+      refine (Measure.charFunDensity_le _ x).trans_eq ?_
+      simp_rw [norm_charFun_stableMeasure hα hβ]
+      rw [Measure.integral_comp_mul_left (fun t : ℝ ↦ Real.exp (-|t| ^ α)), h, abs_inv,
+        abs_of_pos (NNReal.coe_pos.2 hs), smul_eq_mul]
+      field_simp
   · rw [stablePDFReal_of_invalid (Or.inr (Or.inr (not_le.1 hβ)))]
     have := hα.1
     positivity
+
+/-- For `0 < α ≤ 2`, the norm of the stable density is at most `Γ(1/α) / (π α s)`. -/
+theorem norm_stablePDFReal_le (hα : α ∈ Ioc 0 2) (s : ℝ≥0) (m x : ℝ) :
+    ‖stablePDFReal α β s m x‖ ≤ Real.Gamma α⁻¹ / (π * α * s) := by
+  rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β s m x)]
+  exact stablePDFReal_le hα s m x
 
 /-! ### The law as a measure with density -/
 

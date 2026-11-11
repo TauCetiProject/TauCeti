@@ -123,12 +123,7 @@ theorem charFun_of_conv_stableCompensatedPoissonMeasure_eq
         (t * sin x : ℝ) * Complex.I ∂stableLevyMeasure α β) := by
   let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   -- An invalid skewness would make the right-hand side the zero measure, not a probability law.
-  have hβ : |β| ≤ 1 := by
-    by_contra h
-    have h1 := (inferInstance : IsProbabilityMeasure
-      ((μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r)).measure_univ
-    rw [hμ, stableMeasure_of_invalid (Or.inr (Or.inr (not_le.1 h)))] at h1
-    simp at h1
+  have hβ := abs_le_one_of_conv_stableCompensatedPoissonMeasure_eq hμ
   let ν := stableLevyMeasure α β
   let f := fun x : ℝ ↦ Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
     (t * sin x : ℝ) * Complex.I
