@@ -40,9 +40,6 @@ hypothesis.
 * `hasPDF_of_hasLaw_studentTMeasure`, `pdf_eq_studentTPDF_of_hasLaw_studentTMeasure` and
   `rnDeriv_studentTMeasure` — the `HasPDF` bridge, the density, and the Radon–Nikodym derivative;
 * `studentTMeasure_map_neg` — the law is invariant under reflection in the origin;
-* `measure_Iic_eq_measure_Ioi_neg`, `measureReal_Iic_eq_measureReal_Ioi_neg` — a negation-invariant
-  measure on an ordered additive group gives `Iic x` and `Ioi (-x)` the same measure (and mass)
-  when `{-x}` is null;
 * `studentTMeasure_one` — one degree of freedom gives the standard Cauchy law
   `ProbabilityTheory.cauchyMeasure 0 1`;
 * `measurable_studentTMeasure` — the family is measurable in its parameter, so it can be used as a
@@ -303,22 +300,6 @@ theorem studentTMeasure_map_neg (ν : ℝ) :
 /-- Student's t law is invariant under negation, including its invalid zero-measure branch. -/
 instance isNegInvariant_studentTMeasure (ν : ℝ) : (studentTMeasure ν).IsNegInvariant :=
   ⟨studentTMeasure_map_neg ν⟩
-
-/-- A negation-invariant measure on an ordered additive group gives the same measure to `Iic x` as
-to `Ioi (-x)`, provided the point `-x` is null. -/
-theorem measure_Iic_eq_measure_Ioi_neg {α : Type*} [AddCommGroup α] [PartialOrder α]
-    [IsOrderedAddMonoid α] [MeasurableSpace α] [MeasurableNeg α] (μ : Measure α)
-    [μ.IsNegInvariant] {x : α} (hnull : μ {-x} = 0) : μ (Iic x) = μ (Ioi (-x)) := by
-  have h2 : μ (Iic x) = μ (Ici (-x)) := by
-    simpa only [Set.neg_Iic] using (Measure.measure_neg μ (Iic x)).symm
-  rw [h2, (measure_congr (Ioi_ae_eq_Ici' hnull)).symm]
-
-/-- A negation-invariant measure on an ordered additive group gives the same mass to `Iic x` as to
-`Ioi (-x)`, provided the point `-x` is null. -/
-theorem measureReal_Iic_eq_measureReal_Ioi_neg {α : Type*} [AddCommGroup α] [PartialOrder α]
-    [IsOrderedAddMonoid α] [MeasurableSpace α] [MeasurableNeg α] (μ : Measure α)
-    [μ.IsNegInvariant] {x : α} (hnull : μ {-x} = 0) : μ.real (Iic x) = μ.real (Ioi (-x)) := by
-  rw [Measure.real, Measure.real, measure_Iic_eq_measure_Ioi_neg μ hnull]
 
 /-! ### One degree of freedom -/
 

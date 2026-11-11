@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
 public import TauCeti.Probability.Distributions.StudentT.Basic
 public import TauCeti.Probability.Cdf
 import TauCeti.Analysis.Calculus.RealCharts
+import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.Probability.Cdf.Density
 import TauCeti.Probability.Distributions.StudentT.WeightedIntegral
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
@@ -194,7 +195,7 @@ theorem cdf_studentTMeasure_eq (hν : 0 < ν) (x : ℝ) :
   · -- negative branch: reflection in the origin gives `cdf(x) = tail(-x)`
     have hxneg : x < 0 := by linarith
     have hmy : 0 ≤ -x := by linarith
-    have hreal := measureReal_Iic_eq_measureReal_Ioi_neg (studentTMeasure ν)
+    have hreal := Measure.measureReal_Iic_eq_measureReal_Ioi_neg (studentTMeasure ν)
       ((studentTMeasure_absolutelyContinuous ν) (measure_singleton (-x)))
     have h9 : (-x) ^ 2 / (ν + (-x) ^ 2) = 1 - z := by
       simp only [hz, neg_sq]; field_simp; ring
