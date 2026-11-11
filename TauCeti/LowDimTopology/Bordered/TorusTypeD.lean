@@ -91,6 +91,7 @@ theorem torusRho₁₂TypeD_coeff (x y : Unit) : (torusRho₁₂TypeD R).coeff x
   (rfl)
 
 /-- **The iterates of `δ¹ x = ρ₁₂ ⊗ x`** are `δᵏ x = ρ₁₂ ⊗ ⋯ ⊗ ρ₁₂ ⊗ x`, with `k` factors `ρ₁₂`. -/
+@[simp]
 theorem iteratedCoeff_torusRho₁₂TypeD (k : ℕ) (x z : Unit) :
     (torusRho₁₂TypeD R).iteratedCoeff k x z = PiTensorProduct.tprod R fun _ ↦ torusRho₁₂ R :=
   (torusRho₁₂TypeD R).iteratedCoeff_self_of_forall_ne
