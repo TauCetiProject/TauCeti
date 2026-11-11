@@ -20,6 +20,9 @@ weak dual produces such functionals, and this lemma turns them into points of th
 
 Over `𝕜 = ℝ` or `ℂ`, the dual `WeakDual 𝕜 F` is also a real vector space. A real multiple `c • f`
 is the multiple of `f` by the scalar `(c : 𝕜)`, and acts pointwise as multiplication by `(c : 𝕜)`.
+The instances `WeakDual.instIsScalarTowerReal` and `WeakDual.instLocallyConvexSpaceReal` record
+that this real structure is compatible with the `𝕜`-structure and that the weak-star topology is
+real locally convex, as needed for real Hahn–Banach separation and the Krein–Milman theorem.
 -/
 
 public section
@@ -53,6 +56,16 @@ theorem real_smul_apply (c : ℝ) (f : WeakDual 𝕜 F) (x : F) : (c • f) x = 
 of `𝕜`. -/
 theorem real_smul_eq_coe_smul (c : ℝ) (f : WeakDual 𝕜 F) : c • f = (c : 𝕜) • f :=
   DFunLike.ext _ _ fun x ↦ real_smul_apply c f x
+
+/-- The real action on `WeakDual 𝕜 F` is compatible with the `𝕜`-action. -/
+instance instIsScalarTowerReal : IsScalarTower ℝ 𝕜 (WeakDual 𝕜 F) :=
+  inferInstanceAs (IsScalarTower ℝ 𝕜 (StrongDual 𝕜 F))
+
+/-- The weak-star topology on `WeakDual 𝕜 F` is real locally convex: it is defined by the
+seminorms of the canonical dual pairing. -/
+instance instLocallyConvexSpaceReal {F : Type*} [AddCommGroup F] [Module 𝕜 F]
+    [TopologicalSpace F] : LocallyConvexSpace ℝ (WeakDual 𝕜 F) :=
+  inferInstanceAs (LocallyConvexSpace ℝ (WeakBilin (topDualPairing 𝕜 F)))
 
 end RCLike
 

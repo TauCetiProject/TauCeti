@@ -18,7 +18,7 @@ the matrix, for the weak topology on probability measures. In particular it is m
 the entrywise measurable structure on matrices. This allows a random non-Hermitian matrix to
 be treated as a random probability measure, even when its eigenvalues collide.
 
-The construction follows `TauCeti.Sym.coeffHomeomorph`: the lower coefficients of a monic
+The construction follows `Sym.coeffHomeomorph`: the lower coefficients of a monic
 polynomial determine its root multiset continuously as a point of the symmetric power.
 The empirical-measure map descends continuously from ordered tuples to that symmetric power,
 using `TauCeti.Probability.continuous_empiricalMeasureOfFintype`. Thus no continuous ordering of
@@ -55,20 +55,20 @@ theorem continuous_eigenvalueMeasure :
     rw [hcomp]
     exact continuous_empiricalMeasureOfFintype
   have hroots (A : Matrix n n ℂ) :
-      (((TauCeti.Sym.coeffHomeomorph ℂ (Fintype.card n)).symm
+      (((Sym.coeffHomeomorph ℂ (Fintype.card n)).symm
         (fun i => A.charpoly.coeff i) : Sym ℂ (Fintype.card n)) : Multiset ℂ) =
         A.charpoly.roots := by
-    rw [TauCeti.Sym.coeffHomeomorph_symm_apply,
-      TauCeti.Sym.coeffEquiv_symm_coeff_of_monic A.charpoly_monic (charpoly_natDegree_eq_dim A)]
+    rw [Sym.coeffHomeomorph_symm_apply,
+      Sym.coeffEquiv_symm_coeff_of_monic A.charpoly_monic (charpoly_natDegree_eq_dim A)]
   have hmeasure : eigenvalueMeasure = μ ∘ fun A : Matrix n n ℂ =>
-      (TauCeti.Sym.coeffHomeomorph ℂ (Fintype.card n)).symm
+      (Sym.coeffHomeomorph ℂ (Fintype.card n)).symm
         (fun i => A.charpoly.coeff i) := by
     funext A
     rw [eigenvalueMeasure_def]
     apply empiricalMeasureOfFintype_eq_of_map_univ_val_eq
     simp only [Multiset.map_univ_coe, hroots]
   rw [hmeasure]
-  exact hμ.comp ((TauCeti.Sym.coeffHomeomorph ℂ (Fintype.card n)).symm.continuous.comp
+  exact hμ.comp ((Sym.coeffHomeomorph ℂ (Fintype.card n)).symm.continuous.comp
     (continuous_pi fun i => continuous_charpoly_coeff i))
 
 /-- A complex matrix's empirical eigenvalue measure is measurable for the entrywise
