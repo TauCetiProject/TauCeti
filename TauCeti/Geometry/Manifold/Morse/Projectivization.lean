@@ -47,6 +47,7 @@ block of the same sign to its inertia.
 ## Main declarations
 
 * `TauCeti.projectiveMomentFunction`: the moment function with weights `w`.
+* `TauCeti.projectiveMomentFunction_mem_Icc`: its values lie between the bounds of the weights.
 * `TauCeti.contMDiff_projectiveMomentFunction`: it is smooth.
 * `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_iff`: for arbitrary weights its critical
   points are the eigenlines of the diagonal form.
@@ -366,6 +367,21 @@ def projectiveMomentFunction (w : Fin (n + 1) → ℝ) : ℙ 𝕜 (Fin (n + 1) �
 theorem projectiveMomentFunction_mk (w : Fin (n + 1) → ℝ) (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) :
     projectiveMomentFunction 𝕜 w (mk 𝕜 v hv) = (∑ i, w i * ‖v i‖ ^ 2) / ∑ i, ‖v i‖ ^ 2 :=
   (rfl)
+
+/-- The moment function takes its values between any lower and upper bounds of the weights. -/
+theorem projectiveMomentFunction_mem_Icc {w : Fin (n + 1) → ℝ} {a b : ℝ}
+    (hw : ∀ i, w i ∈ Icc a b) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    projectiveMomentFunction 𝕜 w x ∈ Icc a b := by
+  induction x using Projectivization.ind with
+  | h v hv =>
+    obtain ⟨j, hj⟩ := Function.ne_iff.1 hv
+    have hpos : 0 < ∑ i, ‖v i‖ ^ 2 :=
+      Finset.sum_pos' (fun i _ ↦ by positivity)
+        ⟨j, Finset.mem_univ j, pow_pos (norm_pos_iff.2 hj) 2⟩
+    rw [projectiveMomentFunction_mk, mem_Icc, le_div_iff₀ hpos, div_le_iff₀ hpos, Finset.mul_sum,
+      Finset.mul_sum]
+    exact ⟨Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (hw i).1 (by positivity),
+      Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (hw i).2 (by positivity)⟩
 
 /-- In the affine chart at the coordinate `k`, the moment function with weights `w` is the chart
 model with `a = w k` and `ν = w ∘ k.succAbove`. -/
