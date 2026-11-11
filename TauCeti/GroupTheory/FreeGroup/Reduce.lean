@@ -15,6 +15,8 @@ import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGroup.Reduce`:
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
 formal inverses, and reducedness of words `w u w⁻¹` in which no letter cancels at either join.
+A word without repeated generators is reduced, a reduced word representing the identity is
+empty, and a word that is not reduced admits a step of free reduction.
 
 The last section controls cancellation under left multiplication: if the reduced word of `g` does
 not begin with the formal inverse of `x₂`, then the reduced word of `(x₁ ++ x₂) * g` still begins
@@ -90,6 +92,46 @@ theorem IsReduced.invRev_ne_self {w : List (α × Bool)} (hw : IsReduced w) (hw�
     rw [← inv_mk, inv_mul_cancel]
   rw [pow_eq_one_iff_left (Nat.succ_ne_zero 1), one_eq_mk] at hsq
   exact hw₀ (hw.eq_of_mk_eq IsReduced.nil hsq)
+
+/-- Conjugating a nonempty reduced word not involving the generator `x` by the letter `(x, b)`
+gives a reduced word. -/
+theorem IsReduced.singleton_append_append_invRev {R : List (α × Bool)} {x : α} {b : Bool}
+    (hR : IsReduced R) (hR₀ : R ≠ []) (hxR : x ∉ R.map Prod.fst) :
+    IsReduced ([(x, b)] ++ R ++ FreeGroup.invRev [(x, b)]) := by
+  refine IsReduced.singleton.append_append_invRev hR hR₀ ?_ ?_ <;>
+    intro a ha <;> rw [List.getLast?_singleton, Option.mem_some_iff] at ha <;> subst ha <;>
+    intro hmem <;> apply hxR
+  exacts [List.mem_map_of_mem (List.mem_of_mem_head? hmem),
+    List.mem_map_of_mem (List.mem_of_mem_getLast? hmem)]
+
+/-- A word in which no generator occurs twice is reduced. -/
+theorem isReduced_of_nodup_map_fst {L : List (α × Bool)} (h : (L.map Prod.fst).Nodup) :
+    IsReduced L :=
+  ((List.pairwise_map.1 h).imp fun hab heq => absurd heq hab).isChain
+
+/-- A reduced word representing the identity is empty. -/
+theorem IsReduced.eq_nil_of_mk_eq_one {L : List (α × Bool)} (hL : IsReduced L) (h : mk L = 1) :
+    L = [] :=
+  hL.eq_of_mk_eq IsReduced.nil (h.trans one_eq_mk)
+
+/-- If the product of two reduced words is trivial, the second is the formal inverse of the
+first. -/
+theorem IsReduced.eq_invRev_of_mk_append_eq_one {L₁ L₂ : List (α × Bool)} (h₁ : IsReduced L₁)
+    (h₂ : IsReduced L₂) (h : mk (L₁ ++ L₂) = 1) : L₂ = FreeGroup.invRev L₁ := by
+  refine h₂.eq_of_mk_eq h₁.invRev ?_
+  rw [← inv_mk]
+  exact eq_inv_of_mul_eq_one_right (by rwa [mul_mk])
+
+/-- A word that is not reduced contains a letter followed by its inverse. -/
+theorem exists_eq_append_cons_cons_of_not_isReduced {L : List (α × Bool)} (h : ¬IsReduced L) :
+    ∃ L₁ L₂ x b, L = L₁ ++ (x, b) :: (x, !b) :: L₂ := by
+  simp only [isReduced_iff_not_step, not_forall, not_not] at h
+  obtain ⟨_, ⟨⟩⟩ := h
+  exact ⟨_, _, _, _, rfl⟩
+
+/-- A step of free reduction does not change the element represented. -/
+theorem Red.Step.mk_eq {L₁ L₂ : List (α × Bool)} (h : Red.Step L₁ L₂) : mk L₁ = mk L₂ :=
+  Red.exact.2 ⟨_, h.to_red, Red.refl⟩
 
 section Prefix
 

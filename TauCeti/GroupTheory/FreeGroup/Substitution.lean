@@ -39,6 +39,22 @@ the assigned word for a negative letter. -/
 @[simp] theorem substituteLetter_false (f : α → List (β × Bool)) (a : α) :
     substituteLetter f (a, false) = invRev (f a) := by simp [substituteLetter]
 
+/-- Substitution without free reduction only depends on the words assigned to the generators
+that occur. -/
+theorem flatMap_substituteLetter_congr {f g : α → List (β × Bool)} {w : List (α × Bool)}
+    (h : ∀ a ∈ w, f a.1 = g a.1) :
+    w.flatMap (substituteLetter f) = w.flatMap (substituteLetter g) :=
+  List.flatMap_congr fun a ha => by simp [substituteLetter, h a ha]
+
+/-- Renaming the generators of a word along `g` and then substituting `f` is substituting
+`f ∘ g`. -/
+theorem flatMap_substituteLetter_map {γ : Type*} (f : α → List (β × Bool)) (g : γ → α)
+    (w : List (γ × Bool)) :
+    (w.map (Prod.map g id)).flatMap (substituteLetter f) =
+      w.flatMap (substituteLetter (f ∘ g)) := by
+  rw [List.flatMap_map]
+  exact List.flatMap_congr fun a _ => by simp [substituteLetter]
+
 /-- Substitution without free reduction commutes with formal inverses. -/
 theorem flatMap_substituteLetter_invRev (f : α → List (β × Bool)) (w : List (α × Bool)) :
     (invRev w).flatMap (substituteLetter f) = invRev (w.flatMap (substituteLetter f)) := by
