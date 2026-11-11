@@ -34,6 +34,8 @@ orthogonal class, `CategoryTheory.ObjectProperty.isEquivalence_ι_comp_of_le_rig
 
 ## Main results
 
+* `TauCeti.ExactStructure.acyclicBounded_rightOrthogonal_quotient_obj`: a bounded complex of
+  injectives is right orthogonal to the acyclic complexes in `Kᵇ(C)`.
 * `TauCeti.ExactStructure.injectivePlus_le_rightOrthogonal`: bounded below complexes of
   injectives are right orthogonal to the acyclic complexes in `K⁺(C)`.
 * `TauCeti.ExactStructure.EnoughInjectives.isEquivalence_injectivePlus_ι_comp_Q`: with enough
@@ -132,6 +134,23 @@ theorem injectivePlus_le_rightOrthogonal : E.injectivePlus ≤ E.acyclicPlus.rig
   have h : e₁.inv ≫ f.hom ≫ e₂.hom = 0 := by rw [← hφ, hK.quotient_map_eq_zero φ hI n]
   ext
   simpa using h
+
+/-- **The class of a bounded complex of injectives is right orthogonal to the acyclic complexes**
+in `Kᵇ(C)`: maps from an acyclic complex to a bounded below complex of injectives are
+null-homotopic. -/
+theorem acyclicBounded_rightOrthogonal_quotient_obj (K : CochainComplex.Bounded C)
+    (hK : ∀ n, E.isInjective (K.obj.X n)) :
+    E.acyclicBounded.rightOrthogonal ((HomotopyCategory.Bounded.quotient C).obj K) := by
+  intro Y f hY
+  obtain ⟨L, _, hL, ⟨e⟩⟩ := (E.boundedAcyclic_iff _).1 ((E.acyclicBounded_iff Y).1 hY)
+  obtain ⟨hL⟩ := (E.acyclic_iff L).1 hL
+  obtain ⟨a, _, _, _⟩ := (CochainComplex.bounded_iff C K.obj).1 K.property
+  obtain ⟨g, hg⟩ := (_root_.HomotopyCategory.quotient C (.up ℤ)).map_surjective
+    (e.inv ≫ f.hom ≫ eqToHom (HomotopyCategory.Bounded.quotient_obj_obj C K))
+  have h0 := hL.quotient_map_eq_zero g hK a
+  apply ObjectProperty.hom_ext
+  rw [← cancel_epi e.inv, ← cancel_mono (eqToHom (HomotopyCategory.Bounded.quotient_obj_obj C K))]
+  simpa [hg] using h0
 
 namespace EnoughInjectives
 

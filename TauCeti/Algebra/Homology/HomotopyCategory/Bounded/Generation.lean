@@ -31,6 +31,8 @@ group. Both results now use `CochainComplex.bounded_induction` and
   passing from the brutal truncation below the top degree to the complex.
 * `TauCeti.HomotopyCategory.nonempty_iso_quotient_obj_mappingCone_ιTop`: the mapping cone of the
   inclusion of the top term is the brutal truncation below it, in the homotopy category.
+* `TauCeti.HomotopyCategory.Bounded.ιTop`: the inclusion of the top term as a morphism of
+  `Kᵇ(C)`.
 * `TauCeti.HomotopyCategory.Bounded.exists_distTriang_top`: the distinguished triangle of the
   bounded homotopy category splitting off the top term of a bounded complex.
 * `TauCeti.HomotopyCategory.Bounded.prop_quotient_obj`: a triangulated subcategory containing
@@ -120,6 +122,25 @@ end HomotopyCategory
 namespace HomotopyCategory.Bounded
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C] [HasZeroObject C]
+
+/-- The inclusion `Kⁿ[-n] ⟶ K` of the top term of a bounded complex `K` vanishing above degree `n`,
+as a morphism of the bounded homotopy category. -/
+noncomputable def ιTop (K : CochainComplex C ℤ) (n : ℤ) [K.IsStrictlyLE n]
+    (hK : _root_.CochainComplex.bounded C K) :
+    (⟨(_root_.HomotopyCategory.quotient C (.up ℤ)).obj
+        ((HomologicalComplex.single C (.up ℤ) n).obj (K.X n)),
+      (HomotopyCategory.bounded_quotient_obj_iff _).2
+        ((_root_.CochainComplex.bounded_iff C _).2 ⟨n, n, inferInstance, inferInstance⟩)⟩ :
+      HomotopyCategory.Bounded C) ⟶
+      ⟨_, (HomotopyCategory.bounded_quotient_obj_iff K).2 hK⟩ :=
+  ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (K.ιTop n))
+
+omit [HasBinaryBiproducts C] in
+@[simp]
+theorem ιTop_hom (K : CochainComplex C ℤ) (n : ℤ) [K.IsStrictlyLE n]
+    (hK : _root_.CochainComplex.bounded C K) :
+    (ιTop K n hK).hom = (_root_.HomotopyCategory.quotient C (.up ℤ)).map (K.ιTop n) := by
+  simp [ιTop]
 
 /-- **Splitting off the top term**: for a bounded complex `K` vanishing above degree `b + 1`, there
 is a distinguished triangle of the bounded homotopy category whose vertices are the top term

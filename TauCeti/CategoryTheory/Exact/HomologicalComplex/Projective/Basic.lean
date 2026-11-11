@@ -86,9 +86,8 @@ theorem homotopyStepDown_comp_d :
 repeated. -/
 theorem sub_d_comp_homotopyStepDown_comp_p :
     (φ.f n - P.d n (n + 1) ≫ hA.homotopyStepDown φ hP h hh) ≫ hA.p n = 0 := by
-  rw [← cancel_mono (hA.i (n + 1)), zero_comp, Category.assoc, hA.fac, Preadditive.sub_comp,
-    φ.comm, Category.assoc, homotopyStepDown_comp_d, Preadditive.comp_sub,
-    HomologicalComplex.d_comp_d_assoc, zero_comp, sub_zero, sub_self]
+  rw [← cancel_mono (hA.i (n + 1)), Category.assoc, hA.fac]
+  simp [φ.comm, homotopyStepDown_comp_d]
 
 end homotopyStepDown
 
@@ -101,10 +100,9 @@ variable [P.IsStrictlyLE 0]
 private theorem sub_comp_p_eq_zero_zero :
     (φ.f (Int.negSucc 0 + 1) - P.d (Int.negSucc 0 + 1) (Int.negSucc 0 + 1 + 1) ≫ 0) ≫
       hA.p (Int.negSucc 0 + 1) = 0 := by
-  rw [comp_zero, sub_zero, ← cancel_mono (hA.i (Int.negSucc 0 + 1 + 1)), zero_comp,
-    Category.assoc, hA.fac, φ.comm,
-    (P.isZero_of_isStrictlyLE 0 (Int.negSucc 0 + 1 + 1) (by decide)).eq_of_tgt
-      (P.d (Int.negSucc 0 + 1) (Int.negSucc 0 + 1 + 1)) 0, zero_comp]
+  have hd : P.d 0 1 = 0 := (P.isZero_of_isStrictlyLE 0 1 (by decide)).eq_of_tgt _ _
+  rw [← cancel_mono (hA.i (Int.negSucc 0 + 1 + 1)), Category.assoc, hA.fac]
+  simp [φ.comm, hd]
 
 include hP in
 /-- The components `Pⁿ⁺¹ ⟶ Aⁿ` of the null-homotopy in negative degrees `n`, by repeated

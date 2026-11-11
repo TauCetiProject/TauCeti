@@ -9,7 +9,6 @@ public import TauCeti.CategoryTheory.Exact.DerivedCategory.Basic
 public import TauCeti.CategoryTheory.Exact.Projective
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Generation
 public import TauCeti.CategoryTheory.Exact.HomologicalComplex.Projective.Basic
-public import TauCeti.CategoryTheory.Exact.HomologicalComplex.Injective.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.MappingCone
 public import Mathlib.CategoryTheory.Triangulated.Orthogonal
 
@@ -40,8 +39,6 @@ the stable category of `E`.
 
 * `TauCeti.ExactStructure.acyclicBounded_leftOrthogonal_quotient_obj`: a bounded complex of
   projectives is left orthogonal to the acyclic complexes in `Kᵇ(C)`.
-* `TauCeti.ExactStructure.acyclicBounded_rightOrthogonal_quotient_obj`: dually, a bounded
-  complex of injectives is right orthogonal to the acyclic complexes in `Kᵇ(C)`.
 * `TauCeti.ExactStructure.boundedProjective_Q_obj_singleFunctor_obj`: a projective object in
   degree zero lies in `Kᵇ(proj E)`.
 * `TauCeti.ExactStructure.boundedProjective_trW_Q_map_ιTop`: splitting off the top term of a
@@ -108,23 +105,6 @@ theorem acyclicBounded_leftOrthogonal_quotient_obj (K : CochainComplex.Bounded C
     ← cancel_mono e.hom]
   simpa [hg] using h0
 
-/-- **The class of a bounded complex of injectives is right orthogonal to the acyclic complexes**
-in `Kᵇ(C)`: maps from an acyclic complex to a bounded below complex of injectives are
-null-homotopic. -/
-theorem acyclicBounded_rightOrthogonal_quotient_obj (K : CochainComplex.Bounded C)
-    (hK : ∀ n, E.isInjective (K.obj.X n)) :
-    E.acyclicBounded.rightOrthogonal ((HomotopyCategory.Bounded.quotient C).obj K) := by
-  intro Y f hY
-  obtain ⟨L, _, hL, ⟨e⟩⟩ := (E.boundedAcyclic_iff _).1 ((E.acyclicBounded_iff Y).1 hY)
-  obtain ⟨hL⟩ := (E.acyclic_iff L).1 hL
-  obtain ⟨a, _, _, _⟩ := (CochainComplex.bounded_iff C K.obj).1 K.property
-  obtain ⟨g, hg⟩ := (_root_.HomotopyCategory.quotient C (.up ℤ)).map_surjective
-    (e.inv ≫ f.hom ≫ eqToHom (HomotopyCategory.Bounded.quotient_obj_obj C K))
-  have h0 := hL.quotient_map_eq_zero g hK a
-  apply ObjectProperty.hom_ext
-  rw [← cancel_epi e.inv, ← cancel_mono (eqToHom (HomotopyCategory.Bounded.quotient_obj_obj C K))]
-  simpa [hg] using h0
-
 /-- A projective object placed in degree zero is in `E.boundedProjective`. -/
 theorem boundedProjective_Q_obj_singleFunctor_obj {P : C} (hP : E.isProjective P) :
     E.boundedProjective ((BoundedDerivedCategory.Q E).obj
@@ -186,20 +166,12 @@ variable {E} in
 `n`, a bounded complex of projectives. -/
 theorem boundedProjective_trW_Q_map_ιTop (K : CochainComplex C ℤ) (n : ℤ) [K.IsStrictlyLE n]
     (hK : CochainComplex.bounded C K) (hP : ∀ k < n, E.isProjective (K.X k)) :
-    E.boundedProjective.trW ((BoundedDerivedCategory.Q E).map
-      (ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (K.ιTop n)) :
-        (⟨_, (HomotopyCategory.bounded_quotient_obj_iff _).2
-          ((CochainComplex.bounded_iff C _).2 ⟨n, n, inferInstance, inferInstance⟩)⟩ :
-          HomotopyCategory.Bounded C) ⟶
-          ⟨_, (HomotopyCategory.bounded_quotient_obj_iff K).2 hK⟩)) := by
+    E.boundedProjective.trW
+      ((BoundedDerivedCategory.Q E).map (HomotopyCategory.Bounded.ιTop K n hK)) := by
   obtain ⟨b, rfl⟩ : ∃ b, n = b + 1 := ⟨n - 1, by lia⟩
   rw [← ObjectProperty.inverseImage_trW_iff]
-  obtain ⟨Z, g, h, hT⟩ := distinguished_cocone_triangle
-    (ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (K.ιTop (b + 1))) :
-      (⟨_, (HomotopyCategory.bounded_quotient_obj_iff _).2
-        ((CochainComplex.bounded_iff C _).2 ⟨b + 1, b + 1, inferInstance, inferInstance⟩)⟩ :
-        HomotopyCategory.Bounded C) ⟶
-        ⟨_, (HomotopyCategory.bounded_quotient_obj_iff K).2 hK⟩)
+  obtain ⟨Z, g, h, hT⟩ :=
+    distinguished_cocone_triangle (HomotopyCategory.Bounded.ιTop K (b + 1) hK)
   refine ((E.boundedProjective.inverseImage (BoundedDerivedCategory.Q E)).trW_iff_of_distinguished _
     hT).2 ?_
   have e := isoTriangleOfIso₁₂ _ _ ((HomotopyCategory.Bounded.ι C).map_distinguished _ hT)
