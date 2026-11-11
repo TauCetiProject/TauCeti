@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Completion
 public import TauCeti.Algebra.Lie.Graded.Truncation
 public import TauCeti.Algebra.PositiveDegrees.Completion
+public import Mathlib.Algebra.Lie.TransferInstance
 
 /-!
 # The convolution Lie algebra of homogeneous products
@@ -24,8 +25,8 @@ are not determined by the type of the product.
 
 The linear comparison and its finite-cutoff reconstruction are
 `TauCeti.PositiveDegrees.completionEquivPi`. The verification of the Lie identities
-uses the quotient-wise bracket on `LieIdeal.completion`, following Mathlib's
-transport construction `DirectSum.decomposeLieEquiv` for direct sums.
+uses the quotient-wise bracket on `LieIdeal.completion` and Mathlib's transport
+constructors `AddEquiv.lieRing` and `LinearEquiv.lieAlgebra`.
 
 Adapted from `Mei/Algebra/Lie/Graded/{Completion,Product}.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -128,6 +129,15 @@ private theorem productEquiv_lie (x y : d.completedLie ℒ) :
       simpa only [LinearEquiv.symm_apply_apply] using
         component_lie_inverse d ℒ (productEquiv d ℒ x) (productEquiv d ℒ y) n
 
+private theorem transported_bracket (x y : ∀ n, ℒ n) :
+    letI := (productEquiv d ℒ).symm.toAddEquiv.lieRing
+    ⁅x, y⁆ = piLieBracket d ℒ x y := by
+  -- The transport bracket computes through the underlying additive equivalence;
+  -- forgetting linearity leaves its forward and inverse functions unchanged.
+  change productEquiv d ℒ ⁅(productEquiv d ℒ).symm x, (productEquiv d ℒ).symm y⁆ = _
+  simpa only [LinearEquiv.apply_symm_apply] using
+    productEquiv_lie d ℒ ((productEquiv d ℒ).symm x) ((productEquiv d ℒ).symm y)
+
 /-- The convolution Lie ring on all homogeneous families. Use as a local instance;
 the positive degree data cannot be inferred from the product type. -/
 -- The inherited operations must compute to retain the usual componentwise addition.
@@ -135,24 +145,17 @@ the positive degree data cannot be inferred from the product type. -/
 noncomputable def lieRingPi : LieRing (∀ n, ℒ n) where
   bracket := piLieBracket d ℒ
   add_lie x y z := by
-    obtain ⟨x, rfl⟩ := (productEquiv d ℒ).surjective x
-    obtain ⟨y, rfl⟩ := (productEquiv d ℒ).surjective y
-    obtain ⟨z, rfl⟩ := (productEquiv d ℒ).surjective z
-    simp only [← map_add, ← productEquiv_lie, add_lie]
+    simpa only [transported_bracket] using
+      ((productEquiv d ℒ).symm.toAddEquiv.lieRing).add_lie x y z
   lie_add x y z := by
-    obtain ⟨x, rfl⟩ := (productEquiv d ℒ).surjective x
-    obtain ⟨y, rfl⟩ := (productEquiv d ℒ).surjective y
-    obtain ⟨z, rfl⟩ := (productEquiv d ℒ).surjective z
-    simp only [← map_add, ← productEquiv_lie, lie_add]
+    simpa only [transported_bracket] using
+      ((productEquiv d ℒ).symm.toAddEquiv.lieRing).lie_add x y z
   lie_self x := by
-    obtain ⟨x, rfl⟩ := (productEquiv d ℒ).surjective x
-    rw [← productEquiv_lie, lie_self, map_zero]
+    simpa only [transported_bracket] using
+      ((productEquiv d ℒ).symm.toAddEquiv.lieRing).lie_self x
   leibniz_lie x y z := by
-    obtain ⟨x, rfl⟩ := (productEquiv d ℒ).surjective x
-    obtain ⟨y, rfl⟩ := (productEquiv d ℒ).surjective y
-    obtain ⟨z, rfl⟩ := (productEquiv d ℒ).surjective z
-    simp only [← productEquiv_lie, ← map_add]
-    exact congrArg (productEquiv d ℒ) (leibniz_lie x y z)
+    simpa only [transported_bracket] using
+      ((productEquiv d ℒ).symm.toAddEquiv.lieRing).leibniz_lie x y z
 
 /-- The convolution bracket is compatible with the componentwise scalar action. -/
 -- The inherited module must compute to retain the usual componentwise scalar action.
@@ -163,11 +166,10 @@ noncomputable def lieAlgebraPi :
   letI := d.lieRingPi ℒ
   exact
     { lie_smul := fun r x y => by
-        obtain ⟨x, rfl⟩ := (productEquiv d ℒ).surjective x
-        obtain ⟨y, rfl⟩ := (productEquiv d ℒ).surjective y
         -- The chosen bracket is the convolution field of the explicit Lie ring structure.
         change piLieBracket d ℒ _ _ = r • piLieBracket d ℒ _ _
-        simp only [← map_smul, ← productEquiv_lie, lie_smul] }
+        simpa only [transported_bracket] using
+          ((productEquiv d ℒ).symm.lieAlgebra).lie_smul r x y }
 
 /-- The Lie ring bracket is the homogeneous convolution operation. -/
 @[simp]
