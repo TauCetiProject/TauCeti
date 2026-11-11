@@ -458,9 +458,10 @@ theorem flux_eq_zero_of_homotopy_refl (σ : closedForms J M 2)
   -- Running `G` backwards in `s` joins the constant motion to the motion of `Φ`.
   have hfinal : Φ.final = (refl J ∞ M).final :=
     (refl J ∞ M).final_eq_of_homotopy (G := fun q ↦ G (q.1, unitInterval.symm q.2))
-      (fun p ↦ by rw [unitInterval.symm_one, hG₀]) fun x s ↦ by rw [h₁, final_refl]; rfl
+      (fun p ↦ by rw [unitInterval.symm_one, hG₀]) fun x s ↦ by
+        rw [h₁, final_refl, Diffeomorph.coe_refl, id_eq]
   rw [← Φ.flux_eq_of_homotopy σ hΦ hG hG₀ (fun p ↦ by rw [hG₁, cylinderMap_apply, refl_apply])
-    h₀ fun x s ↦ by rw [h₁, hfinal, final_refl]; rfl, flux_refl]
+    h₀ fun x s ↦ by rw [h₁, hfinal, final_refl, Diffeomorph.coe_refl, id_eq], flux_refl]
 
 end Homotopy
 
