@@ -38,6 +38,7 @@ is drawn in `TauCeti/RepresentationTheory/SU2/Character.lean`.
 
 * `TauCeti.SU2.isConj_iff_trace_eq`: two elements of `SU(2)` are conjugate if and only if they
   have the same trace.
+* `TauCeti.SU2.trace_eq_two_iff`: the identity is the only element of trace `2`.
 * `TauCeti.SU2.isConj_torusExp_iff_cos_eq`: on the maximal torus that criterion reads as the
   equality of the cosines of the angles, the cosine being the invariant of the Weyl action on
   angles read modulo `2π`.
@@ -116,6 +117,13 @@ theorem isConj_iff_trace_eq {g h : SU2} :
   rw [coe_torusHom] at hg hh
   refine hz.trans (IsConj.trans (isConj_torusHom_iff.mpr ?_) hw.symm)
   exact eq_or_eq_inv_of_trace_torusMatrix_eq (by rw [← hg, ← hh]; exact htr.symm)
+
+/-- **The identity is the only element of `SU(2)` of trace `2`**: an element of trace `2` has the
+trace of the identity, so it is conjugate to the identity. -/
+theorem trace_eq_two_iff {g : SU2} :
+    Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ) = 2 ↔ g = 1 := by
+  refine ⟨fun h => isConj_one_left.mp (isConj_iff_trace_eq.mpr ?_), fun h => ?_⟩ <;>
+    simp [h, Matrix.trace_one]
 
 /-! ### Conjugacy on the maximal torus -/
 
