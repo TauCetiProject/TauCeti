@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ComplexManifold
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+import Mathlib.Geometry.Manifold.Complex
 
 /-!
 # The `∂bar`-closed functions are the holomorphic functions
@@ -31,6 +32,13 @@ and for a finite-dimensional model the kernel of `∂bar` on smooth `0`-forms is
 space of holomorphic functions `M → F` (`TauCeti.kerDelBarZeroEquiv`). This is the Dolbeault
 cohomology `H^(0,0)` of `M` with coefficients in `F`, since there are no forms of degree `-1`.
 
+On a compact connected complex manifold the holomorphic functions are constant, by the maximum
+principle `MDifferentiable.exists_eq_const_of_compactSpace`. So the kernel of `∂bar` on smooth
+functions is `F` itself, and for complex valued functions on a closed Riemann surface it has real
+dimension `2`. This is the kernel of the Cauchy–Riemann operator on the trivial line bundle, the
+first ingredient of its index on a closed Riemann surface. The check at the end shows that the
+identity of the noncompact manifold `ℂ` is a `∂bar`-closed function that is not constant.
+
 ## Main declarations
 
 * `TauCeti.SmoothAlmostComplexStructure.delBar_apply_eq_zero_iff_isPseudoholomorphicAt`,
@@ -41,11 +49,17 @@ cohomology `H^(0,0)` of `M` with coefficients in `F`, since there are no forms o
   manifold, `∂bar f = 0` exactly when `f` is holomorphic.
 * `TauCeti.kerDelBarZeroEquiv`: the `∂bar`-closed smooth functions are the holomorphic
   functions.
+* `TauCeti.kerDelBarZeroEquivOfCompactSpace`,
+  `TauCeti.finrank_real_ker_delBar_zero_ofComplexManifold_complex`: on a compact connected
+  complex manifold, the `∂bar`-closed smooth functions are the constants; for complex valued
+  functions they form a real vector space of dimension `2`.
 
 ## References
 
 * Daniel Huybrechts, *Complex Geometry: An Introduction*, Universitext, Springer, 2005,
   Sections 1.3 and 2.6.
+* Dusa McDuff and Dietmar Salamon, *J-holomorphic Curves and Symplectic Topology*, second
+  edition, AMS Colloquium Publications 52, 2012, Appendix C.1 and the proof of Theorem C.1.10.
 -/
 
 public section
@@ -161,5 +175,85 @@ theorem coe_kerDelBarZeroEquiv_symm_apply (g : C^∞⟮𝓘(ℂ, E), M; 𝓘(ℂ
     ((kerDelBarZeroEquiv E M F).symm g).1.1 = RoughForm.ofFunction 𝓘(ℝ, E) g := by
   rw [kerDelBarZeroEquiv]
   rfl
+
+/-! ### Compact complex manifolds -/
+
+section Compact
+
+variable [CompactSpace M] [ConnectedSpace M]
+
+variable (E M F) in
+/-- **The `∂bar`-closed functions on a compact connected complex manifold are the constants.** By
+the maximum principle the holomorphic functions `M → F` are constant, so the kernel of `∂bar` on
+smooth `F`-valued functions is complex linearly equivalent to `F`, by the value at any point. -/
+def kerDelBarZeroEquivOfCompactSpace :
+    LinearMap.ker ((ofComplexManifold E M).delBar (F := F) (k := 0)) ≃ₗ[ℂ] F :=
+  (kerDelBarZeroEquiv E M F).trans <|
+    (LinearEquiv.ofLinearMap ((LinearMap.proj (Classical.arbitrary M)).comp
+        (ContMDiffMap.coeFnLinearMap (𝕜 := ℂ) (n := ∞) (I := 𝓘(ℂ, E)) (N := M) (V := F)))
+      ({ toFun := ContMDiffMap.const
+         map_add' _ _ := ContMDiffMap.ext fun _ ↦ rfl
+         map_smul' _ _ := ContMDiffMap.ext fun _ ↦ rfl } : F →ₗ[ℂ] C^∞⟮𝓘(ℂ, E), M; 𝓘(ℂ, F), F⟯)
+      (LinearMap.ext fun c ↦ by
+        rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.proj_apply,
+          ContMDiffMap.coeFnLinearMap_apply, LinearMap.coe_mk, AddHom.coe_mk, ContMDiffMap.const,
+          ContMDiffMap.coeFn_mk, LinearMap.id_apply])
+      (LinearMap.ext fun g ↦ by
+        obtain ⟨c, hc⟩ := (g.contMDiff.mdifferentiable (by simp)).exists_eq_const_of_compactSpace
+        refine ContMDiffMap.ext fun x ↦ ?_
+        rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.proj_apply,
+          ContMDiffMap.coeFnLinearMap_apply, LinearMap.coe_mk, AddHom.coe_mk, ContMDiffMap.const,
+          ContMDiffMap.coeFn_mk, LinearMap.id_apply, hc, Function.const_apply,
+          Function.const_apply]) :
+      C^∞⟮𝓘(ℂ, E), M; 𝓘(ℂ, F), F⟯ ≃ₗ[ℂ] F)
+
+/-- On a compact connected complex manifold, the constant value of a `∂bar`-closed smooth function
+is its value at any point. -/
+theorem kerDelBarZeroEquivOfCompactSpace_apply
+    (φ : LinearMap.ker ((ofComplexManifold E M).delBar (F := F) (k := 0))) (x : M) :
+    kerDelBarZeroEquivOfCompactSpace E M F φ = φ.1.1 x 0 := by
+  obtain ⟨c, hc⟩ := ((kerDelBarZeroEquiv E M F φ).contMDiff.mdifferentiable
+    (by simp)).exists_eq_const_of_compactSpace
+  rw [← kerDelBarZeroEquiv_apply, kerDelBarZeroEquivOfCompactSpace, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofLinearMap, LinearMap.comp_apply, LinearMap.proj_apply,
+    ContMDiffMap.coeFnLinearMap_apply, hc, Function.const_apply, Function.const_apply]
+
+/-- On a compact connected complex manifold, the `∂bar`-closed smooth function of a vector `c` is
+the constant `0`-form `c`. -/
+@[simp]
+theorem coe_kerDelBarZeroEquivOfCompactSpace_symm_apply (c : F) :
+    ((kerDelBarZeroEquivOfCompactSpace E M F).symm c).1.1 =
+      RoughForm.ofFunction 𝓘(ℝ, E) fun _ : M ↦ c := by
+  rw [kerDelBarZeroEquivOfCompactSpace, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
+    LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap, LinearMap.coe_mk, AddHom.coe_mk,
+    coe_kerDelBarZeroEquiv_symm_apply, ContMDiffMap.const, ContMDiffMap.coeFn_mk]
+
+variable (E M F) in
+/-- On a compact connected complex manifold, the kernel of `∂bar` on smooth `F`-valued functions
+has the real dimension of `F`. -/
+theorem finrank_real_ker_delBar_zero_ofComplexManifold :
+    Module.finrank ℝ (LinearMap.ker ((ofComplexManifold E M).delBar (F := F) (k := 0))) =
+      Module.finrank ℝ F :=
+  ((kerDelBarZeroEquivOfCompactSpace E M F).restrictScalars ℝ).finrank_eq
+
+variable (E M) in
+/-- On a compact connected complex manifold, for instance a closed Riemann surface, the kernel of
+`∂bar` on smooth complex valued functions has real dimension `2`. -/
+theorem finrank_real_ker_delBar_zero_ofComplexManifold_complex :
+    Module.finrank ℝ (LinearMap.ker ((ofComplexManifold E M).delBar (F := ℂ) (k := 0))) = 2 := by
+  rw [finrank_real_ker_delBar_zero_ofComplexManifold, Complex.finrank_real_complex]
+
+end Compact
+
+/-! ### Checks -/
+
+/-- Compactness is needed for the `∂bar`-closed functions to be constant: on `ℂ`, the identity is
+`∂bar`-closed and takes different values at `0` and `1`. -/
+example : ∃ φ : LinearMap.ker ((ofComplexManifold ℂ ℂ).delBar (F := ℂ) (k := 0)),
+    φ.1.1 0 0 ≠ φ.1.1 1 0 :=
+  ⟨(kerDelBarZeroEquiv ℂ ℂ ℂ).symm ContMDiffMap.id, by
+    rw [coe_kerDelBarZeroEquiv_symm_apply, RoughForm.ofFunction_apply, RoughForm.ofFunction_apply,
+      ContMDiffMap.id, ContMDiffMap.coeFn_mk, id_eq, id_eq]
+    exact zero_ne_one⟩
 
 end TauCeti
