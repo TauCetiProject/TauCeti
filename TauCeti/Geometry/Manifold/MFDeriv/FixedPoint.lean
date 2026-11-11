@@ -332,12 +332,13 @@ theorem eq_zero_of_pow_apply_eq (h : IsNondegenerateUpToPeriod I f N) {k m : ℕ
   h.eq_zero_of_pow_apply_eq_smul hk hm one_pos (by rwa [mul_one]) hx hD (one_pow 1)
     (by rwa [one_smul])
 
-/-- **Determinant form of `TauCeti.IsNondegenerateUpToPeriod.eq_zero_of_pow_apply_eq_smul`.** In
-finite dimension, if `f` is nondegenerate up to period `N`, `x` has period `k > 0` and `D` is the
+/-- **Determinant form of `TauCeti.IsNondegenerateUpToPeriod.eq_zero_of_pow_apply_eq_smul`.** If
+`f` is nondegenerate up to period `N`, `x` has period `k > 0` and `D` is the
 differential of `f^[k]` at `x`, then `det (ε - D ^ m) ≠ 0` for `ε ^ j = 1`, `m, j > 0` and
 `k * m * j ≤ N`. For `j = 2`, nondegeneracy up to period `2 * N` gives `det (±1 - D ^ m) ≠ 0` for
-all covers of period `k * m ≤ N`. -/
-theorem det_smul_one_sub_pow_ne_zero [FiniteDimensional 𝕜 E]
+all covers of period `k * m ≤ N`. In infinite dimension `LinearMap.det` is `1`, so the statement
+holds by convention. -/
+theorem det_smul_one_sub_pow_ne_zero
     (h : IsNondegenerateUpToPeriod I f N) {k m j : ℕ} (hk : 0 < k) (hm : 0 < m) (hj : 0 < j)
     (hkmj : k * m * j ≤ N) (hx : IsPeriodicPt f k x)
     {D : TangentSpace I x →L[𝕜] TangentSpace I x} (hD : HasMFDerivAt I I f^[k] x D) {ε : 𝕜}
@@ -345,8 +346,10 @@ theorem det_smul_one_sub_pow_ne_zero [FiniteDimensional 𝕜 E]
     LinearMap.det
       ((ε • 1 - D ^ m : TangentSpace I x →L[𝕜] TangentSpace I x) :
         TangentSpace I x →ₗ[𝕜] TangentSpace I x) ≠ 0 := by
-  -- The tangent space is the model space `E`.
-  have : FiniteDimensional 𝕜 (TangentSpace I x) := ‹FiniteDimensional 𝕜 E›
+  by_cases hfin : Module.Finite 𝕜 (TangentSpace I x)
+  swap
+  · rw [LinearMap.det_eq_one_of_not_module_finite hfin]
+    exact one_ne_zero
   rw [Ne, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not, eq_bot_iff]
   intro v hv
   refine (Submodule.mem_bot 𝕜).2 (h.eq_zero_of_pow_apply_eq_smul hk hm hj hkmj hx hD hε ?_)
@@ -450,15 +453,18 @@ theorem isNondegenerateFixedPt_iff_det_id_sub_ne_zero [FiniteDimensional 𝕜 E]
   exact ⟨fun h v hv ↦ h.eq_zero_of_mfderiv_apply_eq (sub_eq_zero.1 hv).symm,
     fun h ↦ ⟨x.2, hf, fun v hv ↦ h v (sub_eq_zero.2 hv.symm)⟩⟩
 
-/-- On a compact manifold modelled on a finite-dimensional space over a complete field, a
-continuous map that is differentiable at its fixed points, with `det (1 - df_x) ≠ 0` at each of
-them, has only finitely many fixed points. -/
-theorem finite_fixedPoints_of_det_id_sub_ne_zero [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
+/-- On a compact manifold over a complete field (whose model space is then finite-dimensional when
+the manifold is nonempty), a continuous map that is differentiable at its fixed points, with
+`det (1 - df_x) ≠ 0` at each of them, has only finitely many fixed points. -/
+theorem finite_fixedPoints_of_det_id_sub_ne_zero [CompleteSpace 𝕜]
     [CompactSpace M] [T2Space M] (hf : Continuous f)
     (hdf : ∀ x : {x // f x = x}, MDifferentiableAt I I f x.1)
     (h : ∀ x : {x // f x = x}, LinearMap.det (LinearMap.id - fixedPointDerivative I f x) ≠ 0) :
-    (fixedPoints f).Finite :=
-  finite_fixedPoints_of_isNondegenerateFixedPt hf fun x hx ↦
+    (fixedPoints f).Finite := by
+  rcases isEmpty_or_nonempty M with hM | hM
+  · exact Set.toFinite _
+  have : FiniteDimensional 𝕜 E := FiniteDimensional.of_locallyCompact_manifold (M := M) I
+  exact finite_fixedPoints_of_isNondegenerateFixedPt hf fun x hx ↦
     (isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x, hx⟩ (hdf ⟨x, hx⟩)).2 (h ⟨x, hx⟩)
 
 /-- **`det (1 - df_x)` is intrinsic.** If `f` is differentiable at a fixed point `x`, then in any

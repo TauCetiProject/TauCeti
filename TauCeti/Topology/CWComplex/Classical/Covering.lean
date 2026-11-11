@@ -78,7 +78,7 @@ public section
 
 noncomputable section
 
-open Metric Set Topology Topology.RelCWComplex
+open CategoryTheory Metric Set Topology Topology.RelCWComplex
 
 universe u
 
@@ -545,6 +545,24 @@ def preimageSMul (g : G) : TopCat.of (p ⁻¹' C) ⟶ TopCat.of (p ⁻¹' C) :=
 theorem coe_preimageSMul_apply (g : G) (x : p ⁻¹' C) :
     (preimageSMul C hG g x : E) = g • (x : E) :=
   (rfl)
+
+/-- Translation by the identity is the identity on the preimage subset. -/
+@[simp]
+theorem preimageSMul_one : preimageSMul C hG (1 : G) = 𝟙 _ := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact (coe_preimageSMul_apply C hG 1 x).trans (one_smul G x.1)
+
+/-- Translation by a product is successive translation on the preimage subset. -/
+theorem preimageSMul_mul (g h : G) :
+    preimageSMul C hG (g * h) = preimageSMul C hG h ≫ preimageSMul C hG g := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact (coe_preimageSMul_apply C hG (g * h) x).trans ((mul_smul g h x.1).trans
+    ((coe_preimageSMul_apply C hG g (preimageSMul C hG h x)).trans
+      (congrArg (g • ·) (coe_preimageSMul_apply C hG h x))).symm)
 
 variable [CWComplex C]
 

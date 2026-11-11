@@ -168,7 +168,7 @@ theorem exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul [C
   classical
   -- Split `f^*φ` into its parts on the sheets of the stack of records over `y`, change variables
   -- on each sheet according to the orientation sign there, and sum.
-  set s := (hy.finite_preimage rfl hf one_ne_zero).toFinset
+  set s := (hy.finite_preimage rfl hf.continuous).toFinset
   have hs (x : M) : x ∈ s ↔ f x = y := by simp [s]
   obtain ⟨e, -, hfe, hsgn, hdisj, V, hV, hVt, hVs⟩ :=
     exists_stack_of_records o o' hf hy s hs

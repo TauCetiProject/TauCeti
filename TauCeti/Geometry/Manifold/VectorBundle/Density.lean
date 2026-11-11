@@ -9,7 +9,7 @@ public import TauCeti.Topology.VectorBundle.Density
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.Algebra.SMul
-import TauCeti.Analysis.Calculus.FDeriv.Det
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!

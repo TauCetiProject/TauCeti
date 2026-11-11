@@ -53,6 +53,7 @@ recovers the law.
   corresponding `Icc`, `Ioo`, and `Ico` forms)
 * `ProbabilityTheory.integrable_cond_of_norm_le`
 * `ProbabilityTheory.map_cond_preimage`
+* `ProbabilityTheory.cond_univ_restrict`
 * `ProbabilityTheory.cond_compl_singleton_real`,
   `ProbabilityTheory.cond_compl_singleton_real_singleton`,
   `ProbabilityTheory.integrable_cond_compl_singleton_iff`,
@@ -348,6 +349,11 @@ theorem integral_cond_compl_singleton_of_eq_zero {E : Type*} [NormedAddCommGroup
     ENNReal.toReal_inv, ← measureReal_def, probReal_compl_eq_one_sub (measurableSet_singleton a)]
 
 end ComplSingleton
+
+/-- Conditioning the restriction of a measure to `s` on the whole space is conditioning on `s`. -/
+@[simp]
+theorem cond_univ_restrict (μ : Measure Ω) (s : Set Ω) : (μ.restrict s)[|univ] = μ[|s] := by
+  rw [cond, cond, Measure.restrict_apply_univ, Measure.restrict_univ]
 
 end ProbabilityTheory
 

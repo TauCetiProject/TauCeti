@@ -10,6 +10,7 @@ import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.BoundedVariation.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -108,7 +109,7 @@ private theorem exists_cutoff_approximation (hu : Integrable u μ) :
   refine ⟨fun n => χ n * u, fun n => ⟨hv n, (hχc n).mul_right⟩, hlim, b, hb, fun n => ?_⟩
   have hgrad (x : E) : ‖fderiv ℝ (χ n) x‖ ≤ c / (n + 1) := by
     have hr : 2 * ((n : ℝ) + 1) - (n + 1) = n + 1 := by ring
-    simpa only [← toDual_gradient (𝕜 := ℝ), LinearIsometryEquiv.norm_map, hr] using hχgrad n x
+    simpa only [← norm_gradient_eq_norm_fderiv (𝕜 := ℝ), hr] using hχgrad n x
   simpa only [b, ENNReal.ofReal_one, one_mul, Opens.coe_top, Measure.restrict_univ] using
     totalVariationOn_top_mul_le (μ := μ) (u := u) (c := 1) (Ω := ⊤) (hχ n)
       (fun x => by simpa only [Real.norm_eq_abs] using hχnorm n x)

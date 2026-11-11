@@ -236,7 +236,7 @@ theorem isPoleNumber_two_of_one_lt_ramificationIdx {P : Place k F} (hP : P.degre
 theorem weierstrassGaps_eq_image_range_of_one_lt_ramificationIdx {P : Place k F}
     (hP : P.degree = 1) (hram : 1 < ramificationIdx k⟮x⟯ P) :
     P.weierstrassGaps = (Finset.range (genus k F)).image fun i ↦ 2 * i + 1 :=
-  weierstrassGaps_eq_image_range_of_isPoleNumber_two hF hex hP
+  weierstrassGaps_eq_image_range_of_isPoleNumber_two hF hP
     (isPoleNumber_two_of_one_lt_ramificationIdx hF hex hx hdeg hP hram)
 
 /-- **No number up to the genus is a pole number at an unramified rational place.** -/
@@ -262,7 +262,7 @@ theorem weierstrassGaps_eq_Icc_of_ramificationIdx_eq_one {P : Place k F} (hP : P
   · obtain ⟨hm1, hmg⟩ := Finset.mem_Icc.mp hm
     exact (P.mem_weierstrassGaps_iff_isGap hF hex m).mpr
       (isGap_of_ramificationIdx_eq_one hF hex hx hdeg hP hram hm1 hmg)
-  · rw [card_weierstrassGaps hF hex hP, Nat.card_Icc, Nat.add_sub_cancel]
+  · rw [card_weierstrassGaps hF hP, Nat.card_Icc, Nat.add_sub_cancel]
 
 /-- **For `g ≥ 2`, `2` is a pole number at a rational place exactly when the place ramifies over
 `k(x)`.** In particular the rational places whose gap sequence is not `1, …, g` are exactly the
@@ -283,13 +283,13 @@ weight. -/
 theorem weierstrassWeight_eq_genus_choose_two_iff_one_lt_ramificationIdx (hg : 2 ≤ genus k F)
     {P : Place k F} (hP : P.degree = 1) :
     P.weierstrassWeight = (genus k F).choose 2 ↔ 1 < ramificationIdx k⟮x⟯ P :=
-  (weierstrassWeight_eq_genus_choose_two_iff hF hex hP).trans
+  (weierstrassWeight_eq_genus_choose_two_iff hF hP).trans
     (isPoleNumber_two_iff_one_lt_ramificationIdx hF hex hx hdeg hg hP)
 
 /-- **A rational place unramified over `k(x)` has Weierstrass weight zero.** -/
 theorem weierstrassWeight_eq_zero_of_ramificationIdx_eq_one {P : Place k F} (hP : P.degree = 1)
     (hram : ramificationIdx k⟮x⟯ P = 1) : P.weierstrassWeight = 0 :=
-  (weierstrassWeight_eq_zero_iff hF hex hP).mpr
+  (weierstrassWeight_eq_zero_iff hF hP).mpr
     (weierstrassGaps_eq_Icc_of_ramificationIdx_eq_one hF hex hx hdeg hP hram)
 
 end Place
