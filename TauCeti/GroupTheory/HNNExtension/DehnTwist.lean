@@ -16,7 +16,8 @@ associated subgroup `A` defines an automorphism fixing the base group and sendin
 `t * of z`. These twists compose in the same order as their parameters. The parameter is
 recovered from the image of `t`, so a twist is the identity exactly when its parameter is one.
 In particular, centrality of the parameter does not make an HNN twist trivial: in
-`⟨a, t | t a t⁻¹ = a⟩` the generator `a` is central and the twist `t ↦ t a` is not the identity.
+`⟨a, t | t a t⁻¹ = a⟩` the generator `a` is central (`HNNExtension.of_ofAdd_one_mem_center`)
+and the twist `t ↦ t a` is not the identity (`HNNExtension.dehnTwist_ofAdd_one_ne_one`).
 
 The centralizer hypothesis is necessary: an endomorphism fixing the base group and sending `t`
 to `t * of z` exists exactly when `z` centralizes `A`
@@ -151,27 +152,7 @@ theorem eq_one_iff_of_map_t_eq {z : G} (τ : MulAut (HNNExtension G A B φ))
   rw [← eq_id_iff_of_map_t_eq φ τ.toMonoidHom hof ht]
   exact MulEquiv.toMonoidHom_injective.eq_iff.symm
 
-/-! ### Central parameters -/
-
-/-- A central element of the base group lying in the source associated subgroup and fixed by
-the identification of the associated subgroups is central in the HNN extension. -/
-theorem of_mem_center {z : G} (hz : z ∈ Subgroup.center G) (hzA : z ∈ A)
-    (hφ : (φ ⟨z, hzA⟩ : G) = z) :
-    of z ∈ Subgroup.center (HNNExtension G A B φ) := by
-  have key (x : HNNExtension G A B φ) : Commute x (of z) := by
-    induction x using induction_on with
-    | of g => exact Commute.map (Subgroup.mem_center_iff.mp hz g) of
-    | t => exact (by simpa [hφ] using t_mul_of (φ := φ) ⟨z, hzA⟩ : t * of z = of z * t)
-    | mul x y hx hy => exact hx.mul_left hy
-    | inv x hx => exact hx.inv_left
-  exact Subgroup.mem_center_iff.mpr fun x => (key x).eq
-
-/-- In the HNN extension `⟨a, t | t a t⁻¹ = a⟩` of an infinite cyclic group `⟨a⟩` along the
-identity of `⟨a⟩`, the generator `a` is central. -/
-theorem of_ofAdd_one_mem_center :
-    of (Multiplicative.ofAdd (1 : ℤ)) ∈ Subgroup.center
-      (HNNExtension (Multiplicative ℤ) ⊤ ⊤ (MulEquiv.refl _)) :=
-  of_mem_center _ (Subgroup.mem_center_iff.mpr fun g => mul_comm g _) (Subgroup.mem_top _) (rfl)
+/-! ### The identity HNN extension of an infinite cyclic group -/
 
 /-- In the HNN extension `⟨a, t | t a t⁻¹ = a⟩` of an infinite cyclic group `⟨a⟩` along the
 identity of `⟨a⟩`, the twist `t ↦ t a` by the central element `a` is not the identity. -/

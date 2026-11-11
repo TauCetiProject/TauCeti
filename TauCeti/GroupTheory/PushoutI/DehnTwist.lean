@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.PushoutI
-public import Mathlib.GroupTheory.Subgroup.Centralizer
+public import TauCeti.GroupTheory.PushoutI.Basic
 
 /-!
 # Dehn twists of amalgamated products
@@ -17,10 +16,10 @@ factor by that parameter. The inverse uses the inverse parameter, and compositio
 multiplication of parameters in the same order. When the boundary maps are injective, the
 twist is the identity exactly when its parameter is central in the right factor.
 
-The construction works even for noninjective boundary maps; only the converse identity
-criterion needs injectivity. The two factors are indexed by `false` and `true`. Subgroup
-image formulas express preservation of their conjugacy classes, as used in modular groups
-of one-edge splittings. The construction uses Mathlib's `Monoid.PushoutI.lift`.
+The construction works even for noninjective boundary maps; the identity criterion and the
+necessity of the centralizer hypothesis need injectivity. The two factors are indexed by `false`
+and `true`. Subgroup image formulas express preservation of their conjugacy classes, as used in
+modular groups of one-edge splittings. The construction uses Mathlib's `Monoid.PushoutI.lift`.
 
 The centralizer hypothesis is necessary: with injective boundary maps, the rule fixing the left
 factor and conjugating the right factor by an element `z` of the right factor extends to an
@@ -88,15 +87,10 @@ private theorem twistHom_one : twistHom φ 1 (fun _ => Commute.one_left _) = Mon
   · simp [twistHom_of_false]
   · simp [twistHom_of_true]
 
-private theorem commute_of_base (i : Bool) (z : Subgroup.centralizer (Set.range (φ i))) (c : C) :
-    Commute (of (φ := φ) i (z : G i)) (base φ c) := by
-  rw [← of_apply_eq_base φ i]
-  exact (Commute.map (Subgroup.mem_centralizer_iff.mp z.property (φ i c) ⟨c, rfl⟩) (of i)).symm
-
 /-- The endomorphism underlying the twist by a parameter of the right factor. -/
 private abbrev rightHom (z : Subgroup.centralizer (Set.range (φ true))) :
     PushoutI φ →* PushoutI φ :=
-  twistHom φ (of true (z : G true)) (commute_of_base φ true z)
+  twistHom φ (of true (z : G true)) (commute_of_base_of_mem_centralizer z.property)
 
 private theorem rightHom_comp (z w : Subgroup.centralizer (Set.range (φ true))) :
     (rightHom φ z).comp (rightHom φ w) = rightHom φ (z * w) :=
@@ -116,13 +110,14 @@ def dehnTwist (z : Subgroup.centralizer (Set.range (φ true))) :
 /-- The left factor is fixed pointwise. -/
 @[simp] theorem dehnTwist_of_false
     (z : Subgroup.centralizer (Set.range (φ true))) (a : G false) :
-    dehnTwist φ z (of false a) = of false a := twistHom_of_false φ _ (commute_of_base φ true z) a
+    dehnTwist φ z (of false a) = of false a :=
+  twistHom_of_false φ _ (commute_of_base_of_mem_centralizer z.property) a
 
 /-- The right factor is conjugated by the image of the parameter. -/
 @[simp] theorem dehnTwist_of_true
     (z : Subgroup.centralizer (Set.range (φ true))) (b : G true) :
     dehnTwist φ z (of true b) = of true z * of true b * (of true z)⁻¹ :=
-  twistHom_of_true φ _ (commute_of_base φ true z) b
+  twistHom_of_true φ _ (commute_of_base_of_mem_centralizer z.property) b
 
 /-- The amalgamating group is fixed pointwise. -/
 @[simp] theorem dehnTwist_base
@@ -224,7 +219,7 @@ theorem exists_map_of_true_eq_iff_mem_centralizer (hφ : ∀ i, Function.Injecti
 /-- The endomorphism underlying the twist by a parameter of the left factor. -/
 private abbrev leftHom (z : Subgroup.centralizer (Set.range (φ false))) :
     PushoutI φ →* PushoutI φ :=
-  twistHom φ (of false (z : G false)) (commute_of_base φ false z)
+  twistHom φ (of false (z : G false)) (commute_of_base_of_mem_centralizer z.property)
 
 private theorem leftHom_comp (z w : Subgroup.centralizer (Set.range (φ false))) :
     (leftHom φ z).comp (leftHom φ w) = leftHom φ (w * z) :=
@@ -246,13 +241,13 @@ def leftDehnTwist (z : Subgroup.centralizer (Set.range (φ false))) : MulAut (Pu
 @[simp] theorem leftDehnTwist_of_false
     (z : Subgroup.centralizer (Set.range (φ false))) (a : G false) :
     leftDehnTwist φ z (of false a) = of false a :=
-  twistHom_of_false φ _ (commute_of_base φ false z) a
+  twistHom_of_false φ _ (commute_of_base_of_mem_centralizer z.property) a
 
 /-- The right factor is conjugated by the image of the parameter in the left factor. -/
 @[simp] theorem leftDehnTwist_of_true
     (z : Subgroup.centralizer (Set.range (φ false))) (b : G true) :
     leftDehnTwist φ z (of true b) = of false z * of true b * (of false z)⁻¹ :=
-  twistHom_of_true φ _ (commute_of_base φ false z) b
+  twistHom_of_true φ _ (commute_of_base_of_mem_centralizer z.property) b
 
 /-- The amalgamating group is fixed pointwise. -/
 @[simp] theorem leftDehnTwist_base
@@ -275,14 +270,6 @@ theorem leftDehnTwist_mul (z w : Subgroup.centralizer (Set.range (φ false))) :
     leftDehnTwist φ z⁻¹ = (leftDehnTwist φ z)⁻¹ := by
   apply eq_inv_of_mul_eq_one_left
   rw [← leftDehnTwist_mul, mul_inv_cancel, leftDehnTwist_one]
-
-/-- Applying the twist by `w` and then the twist by `z`, both parameters in the left factor,
-conjugates the right factor by `w * z`. -/
-theorem leftDehnTwist_leftDehnTwist_of_true
-    (z w : Subgroup.centralizer (Set.range (φ false))) (b : G true) :
-    leftDehnTwist φ z (leftDehnTwist φ w (of true b)) =
-      of false (w * z : G false) * of true b * (of false (w * z : G false))⁻¹ := by
-  simp [mul_assoc]
 
 /-- Every subgroup of the left factor is fixed. -/
 @[simp] theorem map_leftDehnTwist_map_of_false
