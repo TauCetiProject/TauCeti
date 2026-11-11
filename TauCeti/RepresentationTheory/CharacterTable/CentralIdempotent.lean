@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Data.Nat.Cast.Card
 public import TauCeti.RepresentationTheory.CharacterTable.CentralCharacter
 
 /-!
@@ -62,7 +63,7 @@ completeness of the irreducible characters.
   character sum of an irreducible representation by the scalar its central character records.
 * `TauCeti.Representation.centralCharacter_characterSumCenter_mul_character_one`: that scalar,
   times the degree, is `|G|` for isomorphic representations and `0` otherwise.
-* `TauCeti.Representation.isUnit_char_one`: the degree of an irreducible representation is a unit
+* `Representation.isUnit_char_one`: the degree of an irreducible representation is a unit
   in `k`.
 * `TauCeti.Representation.primitiveCentralIdempotent_eq_of_nonempty_equiv`: `e_ρ` depends only on
   the isomorphism class of `ρ`.
@@ -270,10 +271,10 @@ no irreducible degree.
 This is the diagonal case of
 `TauCeti.Representation.centralCharacter_characterSumCenter_mul_character_one`: the degree times
 the scalar by which the character sum acts is `|G|`, which is a unit by hypothesis. -/
-theorem isUnit_char_one : IsUnit (ρ.character 1) := by
+theorem _root_.Representation.isUnit_char_one : IsUnit (ρ.character 1) := by
   classical
   have : Finite G :=
-    Nat.finite_of_card_ne_zero fun h ↦ Invertible.ne_zero (Nat.card G : k) (by simp [h])
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   have : Fintype G := Fintype.ofFinite G
   have h := centralCharacter_characterSumCenter_mul_character_one ρ ρ
   rw [ite_eq_left ⟨_root_.Representation.Equiv.refl ρ⟩, mul_one] at h
@@ -372,7 +373,7 @@ theorem centralCharacter_primitiveCentralIdempotentCenter :
     centralCharacter σ (primitiveCentralIdempotentCenter ρ) =
       if Nonempty (ρ.Equiv σ) then 1 else 0 := by
   have hne : (Nat.card G : k) ≠ 0 := Invertible.ne_zero _
-  refine mul_right_cancel₀ (isUnit_char_one σ).ne_zero ?_
+  refine mul_right_cancel₀ (σ.isUnit_char_one).ne_zero ?_
   rw [primitiveCentralIdempotentCenter_eq_smul, map_smul, smul_eq_mul, mul_assoc,
     centralCharacter_characterSumCenter_mul_character_one ρ σ]
   rcases isEmpty_or_nonempty (ρ.Equiv σ) with hE | hN
@@ -430,7 +431,7 @@ theorem primitiveCentralIdempotent_ne_zero : primitiveCentralIdempotent ρ ≠ 0
   have hcoeff : (primitiveCentralIdempotent ρ).coeff 1 = 0 := by rw [h]; simp
   rw [primitiveCentralIdempotent_coeff, inv_one] at hcoeff
   have hcard : ((Nat.card G : k))⁻¹ ≠ 0 := inv_ne_zero (Invertible.ne_zero _)
-  have hdeg := (isUnit_char_one ρ).ne_zero
+  have hdeg := (ρ.isUnit_char_one).ne_zero
   exact mul_ne_zero (mul_ne_zero hcard hdeg) hdeg hcoeff
 
 end Idempotent

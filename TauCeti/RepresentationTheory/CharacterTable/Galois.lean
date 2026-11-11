@@ -87,7 +87,7 @@ universe u v w
 namespace Representation
 
 variable {k : Type u} {G : Type v} {V : Type w} [Field k] [IsAlgClosed k] [Monoid G]
-  [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+  [AddCommGroup V] [Module k V]
 
 /-- **The Galois action on character values is by power maps.** If `g ^ n = 1` and the ring
 endomorphism `σ` of the coefficient field raises every `n`-th root of unity to the `j`-th power,
@@ -96,8 +96,10 @@ dimensions of the eigenspaces they are weighted by. -/
 theorem map_character_eq_character_pow (ρ : Representation k G V) {g : G} {n j : ℕ}
     (hn : (n : k) ≠ 0) (hg : g ^ n = 1) (σ : k →+* k) (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
     σ (ρ.character g) = ρ.character (g ^ j) := by
-  simp only [Representation.character, map_pow]
-  exact Module.End.map_trace_eq_trace_pow hn (by rw [← map_pow, hg, map_one]) σ hσ
+  by_cases hV : FiniteDimensional k V
+  · simp only [Representation.character, map_pow]
+    exact Module.End.map_trace_eq_trace_pow hn (by rw [← map_pow, hg, map_one]) σ hσ
+  · simp [ρ.character_eq_zero_of_not_finite hV]
 
 omit [IsAlgClosed k] in
 /-- **The Galois action on character values is by power maps**, in the form where the power `j` is
@@ -150,10 +152,7 @@ theorem Representation.map_ofCharacter_eq_powMap (ρ : Representation k G V) {n 
       (ClassFunction.powMap j (ClassFunction.ofCharacter ρ)).1 := by
   funext g
   simp only [Function.comp_apply, ClassFunction.powMap_apply, ClassFunction.ofCharacter_apply]
-  by_cases hV : FiniteDimensional k V
-  · exact Representation.map_character_eq_character_pow ρ hn (hG g) σ hσ
-  · -- Without finite dimension every character is zero.
-    simp [Representation.character, TauCeti.LinearMap.trace_eq_zero_of_not_finite hV]
+  exact Representation.map_character_eq_character_pow ρ hn (hG g) σ hσ
 
 end ClassFunction
 

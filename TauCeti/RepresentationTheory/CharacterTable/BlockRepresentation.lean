@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Data.Nat.Cast.Card
 public import TauCeti.RepresentationTheory.CharacterTable.Wedderburn
 public import TauCeti.RepresentationTheory.Irreducible
 public import Mathlib.LinearAlgebra.Matrix.ToLin
@@ -177,7 +178,7 @@ theorem exists_irreducible_family_conjClasses :
     ∃ (d : ConjClasses G → ℕ) (ρ : ∀ C, Representation k G (Fin (d C) → k)),
       (∀ C, (ρ C).IsIrreducible) ∧ (Pairwise fun C D => IsEmpty ((ρ C).Equiv (ρ D))) ∧
         ∑ᶠ C, d C ^ 2 = Nat.card G := by
-  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
+  have : Finite G := TauCeti.finite_of_natCast_card_ne_zero (NeZero.ne (Nat.card G : k))
   obtain ⟨d, hd, hsum, ⟨e⟩⟩ := exists_algEquiv_pi_matrix_conjClasses k G
   have := hd
   exact ⟨d, blockRepresentation e, fun C => isIrreducible_blockRepresentation e C,

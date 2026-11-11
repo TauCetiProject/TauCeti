@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Data.Nat.Cast.Card
 public import TauCeti.RepresentationTheory.CharacterTable.Pairing
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Dimension.Finite
@@ -91,7 +92,7 @@ theorem linearIndependent_ofCharacter (ρ : ∀ i, Representation k G (V i))
     [∀ i, (ρ i).IsIrreducible] (h : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j))) :
     LinearIndependent k fun i => ofCharacter (ρ i) := by
   have : Finite G :=
-    Nat.finite_of_card_ne_zero fun h ↦ Invertible.ne_zero (Nat.card G : k) (by simp [h])
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ := Fintype.ofFinite G
   refine LinearMap.BilinForm.linearIndependent_of_iIsOrtho
     (LinearMap.BilinForm.iIsOrtho_def.mpr fun i j hij =>
@@ -118,7 +119,7 @@ theorem linearIndependent_ofFDRep (X : ι → FDRep k G) [∀ i, CategoryTheory.
     (h : Pairwise fun i j => IsEmpty (X i ≅ X j)) :
     LinearIndependent k fun i => ofFDRep (X i) := by
   have : Finite G :=
-    Nat.finite_of_card_ne_zero fun h ↦ Invertible.ne_zero (Nat.card G : k) (by simp [h])
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ := Fintype.ofFinite G
   refine LinearMap.BilinForm.linearIndependent_of_iIsOrtho
     (LinearMap.BilinForm.iIsOrtho_def.mpr fun i j hij =>
@@ -158,7 +159,7 @@ theorem _root_.Representation.nonempty_equiv_of_character_eq_of_isIrreducible
     [ρ.IsIrreducible] [σ.IsIrreducible] (h : ρ.character = σ.character) :
     Nonempty (σ.Equiv ρ) := by
   have : Finite G :=
-    Nat.finite_of_card_ne_zero fun h ↦ Invertible.ne_zero (Nat.card G : k) (by simp [h])
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ := Fintype.ofFinite G
   rw [← not_isEmpty_iff]
   intro hempty
@@ -203,7 +204,7 @@ theorem _root_.FDRep.nonempty_iso_of_character_eq_of_simple (X Y : FDRep k G)
     [CategoryTheory.Simple X] [CategoryTheory.Simple Y]
     (h : X.character = Y.character) : Nonempty (X ≅ Y) := by
   have : Finite G :=
-    Nat.finite_of_card_ne_zero fun h ↦ Invertible.ne_zero (Nat.card G : k) (by simp [h])
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ := Fintype.ofFinite G
   rw [← not_isEmpty_iff]
   intro hempty
@@ -234,7 +235,7 @@ theorem card_le_card_conjClasses (ρ : ∀ i, Representation k G (V i))
     [∀ i, (ρ i).IsIrreducible] (h : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j))) :
     Fintype.card ι ≤ Nat.card (ConjClasses G) := by
   have : Finite G :=
-    Nat.finite_of_card_ne_zero fun h ↦ Invertible.ne_zero (Nat.card G : k) (by simp [h])
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ := Fintype.ofFinite G
   have hle := (linearIndependent_ofCharacter ρ h).fintype_card_le_finrank
   rwa [finrank_eq_card_conjClasses] at hle
@@ -245,7 +246,7 @@ theorem card_le_card_conjClasses_fdRep (X : ι → FDRep k G) [∀ i, CategoryTh
     (h : Pairwise fun i j => IsEmpty (X i ≅ X j)) :
     Fintype.card ι ≤ Nat.card (ConjClasses G) := by
   have : Finite G :=
-    Nat.finite_of_card_ne_zero fun h ↦ Invertible.ne_zero (Nat.card G : k) (by simp [h])
+    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ := Fintype.ofFinite G
   have hle := (linearIndependent_ofFDRep X h).fintype_card_le_finrank
   rwa [finrank_eq_card_conjClasses] at hle

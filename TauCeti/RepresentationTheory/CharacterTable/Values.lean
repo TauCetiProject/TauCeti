@@ -234,7 +234,7 @@ theorem conj_char_eq_char_inv (ρ : Representation ℂ G V) {g : G} {n : ℕ} (h
     (hg : g ^ n = 1) : (starRingEnd ℂ) (ρ.character g) = ρ.character g⁻¹ := by
   by_cases hV : FiniteDimensional ℂ V
   swap
-  · simp [Representation.character, TauCeti.LinearMap.trace_eq_zero_of_not_finite hV]
+  · simp [ρ.character_eq_zero_of_not_finite hV]
   have hf : ρ g ^ n = 1 := by rw [← map_pow, hg, map_one]
   have hinv : g⁻¹ = g ^ (n - 1) :=
     inv_eq_of_mul_eq_one_right (by rw [mul_pow_sub_one hn, hg])
