@@ -264,7 +264,6 @@ theorem exists_intCast_pow_mul_schneider_term (α β γ : K) :
     rw [house_intCast, house_nat_mul]
     push_cast
     rw [abs_mul, Nat.abs_cast]
-    have hβH : |(c₀ : ℝ)| + house ((c₀ : K) * β) ≤ H := by linarith
     nlinarith
   have hc₀H' : house (c₀ : K) ≤ H := by rwa [house_intCast, Int.cast_abs]
   have hαH : house ((c₀ : K) * α) ≤ H := by linarith
@@ -398,7 +397,6 @@ private theorem schneider_exponent_add_le {c₁ H : ℝ} {c L D₁ D₂ : ℕ} (
   have hlogL : 1 / 2 ≤ Real.log L := by
     linarith [Real.log_two_gt_d9, Real.log_le_log (by norm_num) hL']
   have hD₁ : (0 : ℝ) ≤ D₁ := D₁.cast_nonneg
-  have hD₂ : (0 : ℝ) ≤ D₂ := D₂.cast_nonneg
   have hlogH := Real.log_nonneg hH
   have hlogc : 0 ≤ Real.log (2 * c + 2) := Real.log_nonneg (by linarith [c.cast_nonneg' (α := ℝ)])
   have hE : 0 ≤ E := by positivity

@@ -167,7 +167,7 @@ theorem isDiscriminatedBy (hF : IsFullyResiduallyFree F) (c : ICE F G ι) :
     IsDiscriminatedBy ι (.id F) := by
   induction c with
   | refl => exact .self _
-  | @step G _ ι c r n h ih =>
+  | @step G _ ι _ r n h ih =>
     -- The top `G` of the shorter chain is fully residually free, so the new step is
     -- discriminated by `G`; compose with the discrimination of `G` by `F`.
     have hG := hF.of_isDiscriminatedBy ih

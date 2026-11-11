@@ -358,9 +358,6 @@ theorem fixedField_frobenius_fiber_inertiaDeg_eq_one_card_mul
   have hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
       Algebra.IsUnramifiedAt (𝓞 K) R :=
     (mem_frobeniusPrimeSet_iff.mp hp).choose
-  have hord : orderOf τ = orderOf w :=
-    (orderOf_injective (AlgEquiv.restrictScalarsHom K)
-      (AlgEquiv.restrictScalarsHom_injective K) τ).symm
   -- The absolute fibre `U` of `w` above `p`.
   let U := {Q : HeightOneSpectrum (𝓞 L) //
     Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) w Q.asIdeal}

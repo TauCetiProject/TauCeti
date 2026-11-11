@@ -59,7 +59,7 @@ degree `2 deg a` is `leadingCoeff a · leadingCoeff b`: the top terms of `a b'` 
 contribute `(deg a + 1)` and `deg a` times this product. -/
 theorem coeff_wronskian_of_natDegree_eq_succ {a b : R[X]} (h : b.natDegree = a.natDegree + 1) :
     (wronskian a b).coeff (2 * a.natDegree) = a.leadingCoeff * b.leadingCoeff := by
-  set d := a.natDegree with hd
+  set d := a.natDegree
   have hab' : (a * derivative b).coeff (d + d) = (d + 1) * (a.leadingCoeff * b.leadingCoeff) := by
     rw [coeff_mul_add_eq_of_natDegree_le le_rfl (natDegree_derivative_le b |>.trans (by omega)),
       coeff_derivative, leadingCoeff, leadingCoeff, h]

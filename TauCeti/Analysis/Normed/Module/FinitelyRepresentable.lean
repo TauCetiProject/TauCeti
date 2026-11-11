@@ -270,7 +270,6 @@ theorem finitelyRepresentable_iff_banachMazurDist_lt :
     set c := ‖(e.symm : G →L[𝕜] S)‖
     have h₁ : 1 ≤ k * c := (one_le_banachMazurDist hne).trans (banachMazurDist_le e)
     have hc : 0 ≤ c := norm_nonneg _
-    have hk_nonneg : 0 ≤ k := norm_nonneg _
     have hk : 0 < k := by nlinarith
     obtain ⟨a, ha₁, ha₂⟩ := NormedField.exists_lt_norm_lt 𝕜 hc ((lt_div_iff₀' hk).2 he)
     refine ⟨a • G.subtypeL.comp (e : S →L[𝕜] G), fun x ↦ ?_⟩

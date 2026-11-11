@@ -249,7 +249,7 @@ private theorem sum_degenerate_le (A B : Finset V) :
   have hI' (a : V) (s : Finset V) : ∑ b ∈ s, (if b = a then (1 : ℝ) else 0) ≤ 1 := by
     rw [sum_ite_eq']
     split_ifs <;> norm_num
-  have h₁ : ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if x = x' then (1 : ℝ) else 0) ≤
+  have h₁ : ∑ _ ∈ B, ∑ _ ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if x = x' then (1 : ℝ) else 0) ≤
       #B * #B * #A := by
     calc _ ≤ ∑ _y ∈ B, ∑ _y' ∈ B, ∑ _x ∈ A, (1 : ℝ) :=
           sum_le_sum fun _ _ ↦ sum_le_sum fun _ _ ↦ sum_le_sum fun x _ ↦ hI x A

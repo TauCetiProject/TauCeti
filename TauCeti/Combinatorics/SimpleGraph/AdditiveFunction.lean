@@ -329,7 +329,7 @@ theorem Preconnected.eq_zero_of_graphCartanMatrix_mulVec_nonneg {G : SimpleGraph
   obtain ⟨p⟩ := hG i j
   induction p with
   | nil => exact hi
-  | cons hij p ih =>
+  | cons hij _ ih =>
     exact ih (G.eq_zero_of_adj_of_graphCartanMatrix_mulVec_nonneg ha hCa hij hi)
 
 /-- Every nonzero nonnegative vector with nonnegative Cartan image on a preconnected graph is

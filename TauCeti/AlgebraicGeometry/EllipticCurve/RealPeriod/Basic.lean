@@ -359,8 +359,6 @@ private theorem ofReal_abs_mul_inv_sqrt_eq_normDet_fderiv_mul {r : ℝ → ℝ} 
   have hnormDet : (fderiv ℝ r x).normDet = |c * sx| := by
     rw [hd.hasFDerivAt.fderiv, LinearMap.normDet_eq_norm_apply_one]
     simp
-  have hsx' : 0 < |sx| := abs_pos.mpr hsx
-  have hΨx : 0 < √a := Real.sqrt_pos.mpr ha
   rw [hnormDet, hΨ, ← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (abs_nonneg _),
     Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs, abs_mul]
   congr 1

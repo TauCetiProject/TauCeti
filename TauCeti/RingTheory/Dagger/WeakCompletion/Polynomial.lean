@@ -181,7 +181,6 @@ private theorem integral_of_mem {π : O} (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖
     have hdeg : (Q j).totalDegree < t.degree := by
       have hdiv : (c + 1) * k ≤ t.degree := Nat.mul_div_le _ _
       have hj' := mem_range.mp hj
-      have hk' : 0 < k := Nat.pos_of_ne_zero hk
       nlinarith [hQ j]
     rw [MvPolynomial.coeff_eq_zero_of_totalDegree_lt hdeg, mul_zero]
   have hb := norm_sub_le_of_eval_eq hπ hπ1 z p k (by
@@ -244,7 +243,7 @@ private theorem mem_of_integral {π : O} (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖
   have hQrange (j : ℕ) : ∃ p : P, p.map (Subring.unitClosedBall K).subtype = Q j := by
     apply MvPolynomial.mem_range_map_iff_coeffs_subset.mpr
     intro a ha
-    obtain ⟨t, ht, rfl⟩ := MvPolynomial.mem_coeffs_iff.mp ha
+    obtain ⟨t, _, rfl⟩ := MvPolynomial.mem_coeffs_iff.mp ha
     exact ⟨⟨(Q j).coeff t, Subring.mem_unitClosedBall.mpr (hQ1 j t)⟩, rfl⟩
   choose Q' hQ' using hQrange
   apply mem_of_coefficient_hasSum hπ hπ1 z c Q'

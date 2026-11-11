@@ -74,14 +74,12 @@ private def Splits {X : C} (e : X ⟶ X) : Prop :=
 in which every idempotent of `X'` splits. If an idempotent `g` of `X` kills a map `α : P ⟶ X` whose
 composite with the projection to `P` is invertible, then `g` splits. -/
 private theorem splits_of_comp_eq_zero {X P X' : C} {i₀ : P ⟶ X} {r₀ : X ⟶ P} {j : X' ⟶ X}
-    {s : X ⟶ X'} (hj : j ≫ s = 𝟙 X') (hjr : j ≫ r₀ = 0)
+    {s : X ⟶ X'} (_ : j ≫ s = 𝟙 X') (_ : j ≫ r₀ = 0)
     (htot : r₀ ≫ i₀ + s ≫ j = 𝟙 X) (hX' : ∀ d : X' ⟶ X', d ≫ d = d → Splits d)
     {α : P ⟶ X} [IsIso (α ≫ r₀)] {g : X ⟶ X} (hg : g ≫ g = g) (hαg : α ≫ g = 0) :
     Splits g := by
   -- A new projection `s'` onto `X'`, vanishing on `α`, gives the decomposition `X = α(P) ⊞ X'`.
   set s' := s - r₀ ≫ inv (α ≫ r₀) ≫ α ≫ s with hs'
-  have hjs' : j ≫ s' = 𝟙 X' := by
-    rw [hs', Preadditive.comp_sub, hj, reassoc_of% hjr, zero_comp, sub_zero]
   have htot' : r₀ ≫ inv (α ≫ r₀) ≫ α + s' ≫ j = 𝟙 X := by
     have h : 𝟙 X - s ≫ j = r₀ ≫ i₀ := by rw [← htot]; abel
     have h' : r₀ ≫ inv (α ≫ r₀) ≫ α ≫ r₀ ≫ i₀ = r₀ ≫ i₀ := by
@@ -96,7 +94,7 @@ private theorem splits_of_comp_eq_zero {X P X' : C} {i₀ : P ⟶ X} {r₀ : X �
   have hg' : g = s' ≫ j ≫ g := by
     conv_lhs => rw [← Category.id_comp g, ← htot']
     simp only [Preadditive.add_comp, Category.assoc, hαg, comp_zero, zero_add]
-  set h := j ≫ g with hhdef
+  set h := j ≫ g
   have hh : h ≫ s' ≫ h = h := by
     calc (j ≫ g) ≫ s' ≫ (j ≫ g) = j ≫ (g ≫ (s' ≫ j ≫ g)) := by simp only [Category.assoc]
       _ = j ≫ g := by rw [← hg', hg]

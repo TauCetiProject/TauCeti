@@ -178,8 +178,6 @@ private lemma false_of_weight_zero_eq
   have htstep : t - 2 = (t - 3) + 1 := by omega
   rw [htstep, add_nsmul, one_nsmul] at hmPen
   have hm0pos : (0 : ℤ) < T.multiplicity (c 0) := by simp
-  have hm0zero : (2 * (T.multiplicity (c 0) : ℤ) - T.multiplicity (c 0)) = 0 := by
-    omega
   exfalso
   omega
 

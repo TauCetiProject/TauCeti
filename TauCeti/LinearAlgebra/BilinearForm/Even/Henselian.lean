@@ -352,7 +352,6 @@ private theorem equivalent_of_isSquare_det_mul_det_of_even (hR : Nat.card (Resid
   induction n using Nat.strong_induction_on with
   | _ n ih =>
   intro P Q _ _ _ _ B C hB hC hBeven hCeven b c hBdet hCdet hsq
-  have h2 := two_mem_maximalIdeal_of_card_residueField_eq_two hR
   obtain hn | hn := lt_or_ge n 2
   · exact equivalent_of_lt_two_of_even hR hn hBeven b c hBdet
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 + 1 := ⟨n - 2, by omega⟩

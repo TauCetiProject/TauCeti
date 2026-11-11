@@ -316,8 +316,6 @@ private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
   · exact exists_basis_iIsOrtho_apply_self_eq_of_card_eq_one hv hP
   -- Choose a vector representing some `vⱼ` with an odd complement, rescaled to represent `vⱼ`.
   obtain ⟨j, x, y, hxv, hyu, hxy⟩ := exists_toZModPow_three_apply_self_eq hb hbu hv hP hS
-  have hxu : IsUnit (B x x) :=
-    isUnit_iff_toZModPow_three_mul_self.mpr (hxv ▸ isUnit_iff_toZModPow_three_mul_self.mp (hv j))
   obtain ⟨s, -, hsv⟩ := exists_eq_sq_mul_of_toZModPow_three_eq (hv j) hxv
   set x' := s • x with hx'
   have hx'x' : B x' x' = v j := by

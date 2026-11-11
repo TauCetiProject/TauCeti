@@ -55,7 +55,6 @@ theorem firstVisitCanonical_map (w : List α) (f : α → β)
     firstVisitCanonical (w.map f) = firstVisitCanonical w := by
   apply List.ext_getElem (by simp [firstVisitCanonical])
   intro i hi₁ hi₂
-  have hi₁' : i < w.length := by simpa using hi₁
   have hi₂' : i < w.length := by simpa using hi₂
   have himap : i < (w.map f).length := by simpa using hi₁
   rw [firstVisitCanonical_getElem (w.map f) himap, firstVisitCanonical_getElem w hi₂']
@@ -108,7 +107,7 @@ theorem firstVisitCanonical_eq_self_iff_isFirstVisitLabeled (w : List ℕ) :
 theorem firstVisitCanonical_idempotent (w : List α) :
     firstVisitCanonical (firstVisitCanonical w) = firstVisitCanonical w := by
   exact firstVisitCanonical_map w (fun x => w.idxOf x) (by
-    intro x y hx hy hxy
+    intro x y hx _ hxy
     exact (List.idxOf_inj hx).1 hxy)
 
 /-- Every first-visit canonical labeling is first-visit labeled. -/
