@@ -42,6 +42,25 @@ variable {X Y ι : Type*} [MeasurableSpace X] [StandardBorelSpace X]
   {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)}
   [IsFiniteMeasure μ] [NullSingletonClass μ]
 
+omit [StandardBorelSpace X] in
+/-- Disjoint measurable sets `Z i`, together with the complement of their union as one more cell
+indexed by `none`, form a measurable partition of the space. -/
+private theorem measurable_disjoint_iUnion_option {κ : Type*} [Countable κ] {Z : κ → Set X}
+    (hZm : ∀ i, MeasurableSet (Z i)) (hZd : Pairwise (Disjoint on Z)) :
+    (∀ o : Option κ, MeasurableSet (o.elim (⋃ i, Z i)ᶜ Z)) ∧
+      Pairwise (Disjoint on fun o : Option κ ↦ o.elim (⋃ i, Z i)ᶜ Z) ∧
+      ⋃ o : Option κ, o.elim (⋃ i, Z i)ᶜ Z = univ := by
+  refine ⟨?_, ?_, ?_⟩
+  · rintro (_ | i)
+    exacts [(MeasurableSet.iUnion hZm).compl, hZm _]
+  · rintro (_ | i) (_ | j) hij
+    · exact absurd rfl hij
+    · exact disjoint_compl_left_iff_subset.2 (subset_iUnion Z j)
+    · exact (disjoint_compl_left_iff_subset.2 (subset_iUnion Z i)).symm
+    · exact hZd fun h ↦ hij (congrArg some h)
+  · rw [iUnion_option]
+    exact compl_union_self _
+
 /-- Let `π` be concentrated on a union of disjoint measurable pieces `S i`, and let `Z i` be
 disjoint measurable source sets with `μ (Z i) = π (S i)`. Then one transport map sends `μ`
 restricted to each `Z i` to the second marginal of `π` restricted to `S i`, and the sets `Z i`
@@ -64,18 +83,7 @@ theorem exists_measurePreserving_restrict (hπ : IsCoupling π μ ν) {S : ι �
   -- The null remainder of the source becomes one more cell, carrying the zero law.
   let A : Option ι → Set X := fun o ↦ o.elim (⋃ i, Z i)ᶜ Z
   let ν' : Option ι → Measure Y := extend some (fun i ↦ (π.restrict (S i)).snd) 0
-  have hAm (o : Option ι) : MeasurableSet (A o) := by
-    cases o
-    exacts [(MeasurableSet.iUnion hZm).compl, hZm _]
-  have hAd : Pairwise (Disjoint on A) := by
-    rintro (_ | i) (_ | j) hij
-    · exact absurd rfl hij
-    · exact disjoint_compl_left_iff_subset.2 (subset_iUnion Z j)
-    · exact (disjoint_compl_left_iff_subset.2 (subset_iUnion Z i)).symm
-    · exact hZd fun h ↦ hij (congrArg some h)
-  have hAu : ⋃ o, A o = univ := by
-    rw [iUnion_option]
-    exact compl_union_self _
+  obtain ⟨hAm, hAd, hAu⟩ := measurable_disjoint_iUnion_option hZm hZd
   have hmass (o : Option ι) : μ (A o) = ν' o univ := by
     cases o
     · simpa [A, ν', extend_apply'] using hZcov
@@ -123,18 +131,8 @@ theorem exists_measurePreserving_graphPlan_prod_eq (hπ : IsCoupling π μ ν)
   have hI : I.Countable := Measure.countable_meas_pos_of_disjoint_iUnion hAm hAd
   have : Countable I := hI.to_subtype
   let A' : Option I → Set X := fun o ↦ o.elim (⋃ i : I, A i)ᶜ fun i ↦ A i
-  have hA'm (o : Option I) : MeasurableSet (A' o) := by
-    cases o
-    exacts [(MeasurableSet.iUnion fun i : I ↦ hAm i).compl, hAm _]
-  have hA'd : Pairwise (Disjoint on A') := by
-    rintro (_ | i) (_ | j) hij
-    · exact absurd rfl hij
-    · exact disjoint_compl_left_iff_subset.2 (subset_iUnion (fun i : I ↦ A i) j)
-    · exact (disjoint_compl_left_iff_subset.2 (subset_iUnion (fun i : I ↦ A i) i)).symm
-    · exact hAd fun h ↦ hij (congrArg some (Subtype.ext h))
-  have hA'u : ⋃ o, A' o = univ := by
-    rw [iUnion_option]
-    exact compl_union_self _
+  obtain ⟨hA'm, hA'd, hA'u⟩ := measurable_disjoint_iUnion_option (Z := fun i : I ↦ A i)
+    (fun i ↦ hAm i) fun i j hij ↦ hAd fun h ↦ hij (Subtype.ext h)
   obtain ⟨T, hT, hcell⟩ :=
     hπ.exists_measurePreserving_graphPlan_prod_eq_of_countable hA'm hA'd hA'u
   refine ⟨T, hT, fun i B hB ↦ ?_⟩
