@@ -50,6 +50,7 @@ lemma comap_apply (D : locallyFinsupp X Y) (x : X') : comap e he he' D x = D (e 
   (rfl)
 
 /-- The support of a pullback is the preimage of the support. -/
+@[simp]
 lemma support_comap (D : locallyFinsupp X Y) :
     (comap e he he' D).support = e ⁻¹' D.support :=
   (rfl)

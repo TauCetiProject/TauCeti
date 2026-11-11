@@ -16,8 +16,8 @@ import TauCeti.AlgebraicGeometry.Scheme.LocalDimension
 Let `k` be a field and `j : U ⟶ X` an open immersion of schemes locally of finite type over `k`.
 The restriction of a cycle `α` on `X` to `U` is `α ∘ j`, which sends `[V]` to `[V ∩ U]`: the flat
 pullback along the open immersion `j`, of relative dimension zero. Over a field, `j` preserves the
-dimension of points (`Chow.height_apply_of_isOpenImmersion`, since its residue degrees are one), so
-restriction sends `n`-cycles to `n`-cycles.
+dimension of points (`TauCeti.AlgebraicGeometry.height_apply_of_isOpenImmersion`, since its
+residue degrees are one), so restriction sends `n`-cycles to `n`-cycles.
 
 * `Chow.cyclesRestrict k j`: the restriction `Z_n(X) →+ Z_n(U)`, with `Chow.cyclesRestrict_id`
   and `Chow.cyclesRestrict_comp`.
@@ -42,13 +42,6 @@ variable (k : Type u) [Field k] {X U V : Scheme.{u}}
   [X.Over (Spec (.of k))] [U.Over (Spec (.of k))] [V.Over (Spec (.of k))]
   [LocallyOfFiniteType (X ↘ Spec (.of k))] [LocallyOfFiniteType (U ↘ Spec (.of k))]
   [LocallyOfFiniteType (V ↘ Spec (.of k))]
-
-/-- Over a field, an open immersion preserves the dimension of points: its residue degrees are
-one, so a point and its image have residue fields of the same transcendence degree over `k`. -/
-lemma height_apply_of_isOpenImmersion (j : U ⟶ X) [IsOpenImmersion j] [j.IsOver (Spec (.of k))]
-    (u : U) : height (j u) = height u :=
-  height_apply_eq_height_of_residueDegree_ne_zero k j
-    (by rw [Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks]; exact one_ne_zero)
 
 /-- Over a field, restricting an `n`-cycle along an open immersion gives an `n`-cycle. -/
 lemma comap_mem_cyclesOfDimension (j : U ⟶ X) [IsOpenImmersion j] [j.IsOver (Spec (.of k))]
