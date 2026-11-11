@@ -145,7 +145,7 @@ private theorem integral_inner_eq_sum {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     simp
   have hint (j : Fin 4) : Integrable (fun z ↦ η z j * u j z) volume :=
     ((η.postcompCLM (EuclideanSpace.proj j)).memLp 2).integrable_mul (Lp.memLp (u j))
-  simp_rw [hcpt, Lp.toTemperedDistribution_ofRealCLM_compLp_apply, ← ofReal_sum]
+  simp_rw [hcpt, Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM, ← ofReal_sum]
   congr 1
   simp only [SchwartzMap.postcompCLM_apply, PiLp.proj_apply]
   rw [← integral_finsetSum _ fun j _ ↦ hint j]

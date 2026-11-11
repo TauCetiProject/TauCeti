@@ -251,12 +251,8 @@ theorem hasCompactSupport_cappedPerturbation_apply (a L : ℝ) (u : ℝ × ℝ �
 /-- **The datum vanishes near the poles `0` and `1`.** -/
 theorem eventually_cappedPerturbation_eq_zero_of_eq_zero_or_eq_one {c : ℂ} (hc : c = 0 ∨ c = 1) :
     ∀ᶠ w in 𝓝 c, ∀ x : M, cappedPerturbation a L H w x = 0 := by
-  have hT : c ∉ truncation (L + 3) := by
-    intro h
-    obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
-    rcases hc with rfl | rfl
-    exacts [h₀ rfl, h₁ rfl]
-  filter_upwards [(isCompact_truncation (L + 3)).isClosed.isOpen_compl.mem_nhds hT] with w hw x
+  filter_upwards [(isCompact_truncation (L + 3)).isClosed.isOpen_compl.mem_nhds
+    (notMem_truncation_of_eq_zero_or_eq_one hc _)] with w hw x
   exact cappedPerturbation_eq_zero_of_notMem_truncation hw x
 
 /-- **The datum vanishes near the pole `∞`.** -/
