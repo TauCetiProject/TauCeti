@@ -294,6 +294,18 @@ theorem norm_plumbingMap_one_sub_endCenter_lt {q : Puncture} (hq : q ≠ inf) (L
   have := Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos] : -(2 * π * L) < -(2 * π * (L - 1)))
   linarith [Real.exp_pos (-(2 * π * L))]
 
+/-- At a positive end `q`, a point of the capped cylinder `ℂ ∖ {c_q'}`, that is the capped
+puncture `c_q` or a point of `ℂ ∖ {0, 1}`, which lies off the open disc
+`‖· - c_q‖ < exp (-2π(L - 1)) / 2` lies in the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`. -/
+theorem mem_plumbedSphere_of_le_norm_sub_endCenter {q : Puncture} (hq : q ≠ inf) {L : ℝ} {w : ℂ}
+    (hw : w = q.endCenter ∨ w ≠ 0 ∧ w ≠ 1)
+    (hle : Real.exp (-(2 * π * (L - 1))) / 2 ≤ ‖w - q.endCenter‖) :
+    (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1 := by
+  refine ⟨hw.resolve_left fun h => ?_,
+    fun h => (h ▸ norm_plumbingMap_one_sub_endCenter_lt hq L).not_ge hle⟩
+  rw [h, sub_self, norm_zero] at hle
+  exact (by positivity : 0 < Real.exp (-(2 * π * (L - 1))) / 2).not_ge hle
+
 /-- **The plumbing map preserves the angular forms.** It pulls the angular form `dt` of the end
 `q` back to the angular form `dt` of the end at `∞`. -/
 theorem endAngularForm_plumbingMap (q : Puncture) (L : ℝ) (w v : ℂ) :
