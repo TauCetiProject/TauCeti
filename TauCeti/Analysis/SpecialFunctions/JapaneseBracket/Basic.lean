@@ -11,6 +11,7 @@ public import TauCeti.Analysis.SpecialFunctions.Beta
 public import Mathlib.NumberTheory.Harmonic.Defs
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -51,6 +52,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integrable_add_norm_rpow_neg`, `TauCeti.integral_add_norm_rpow_neg`: integrability
   and rescaling of the shifted power `x ↦ (T + ‖x‖) ^ (-q)`, for every additive Haar measure.
+* `TauCeti.norm_integral_mul_le_rpow_one_sub`: an integral over `ℝ` whose integrand is bounded
+  by `T ^ (-q)` where `c |s| ≤ T` and by `|s| ^ (-q)` elsewhere is `O(T ^ (1 - q))` for `q > 1`.
 * `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-(n + 1) / 2)` is integrable.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
@@ -126,6 +129,53 @@ theorem integral_add_norm_rpow_neg (μ : Measure V) [μ.IsAddHaarMeasure] (q : �
   rw [integral_const_mul,
     Measure.integral_comp_inv_smul_of_nonneg μ (fun x ↦ (1 + ‖x‖) ^ (-q)) hT.le, smul_eq_mul,
     ← mul_assoc, ← Real.rpow_natCast, ← Real.rpow_add hT, neg_add_eq_sub]
+
+/-- **Splitting an integral at `c |s| = T`.** Let `q > 1`, `T > 0` and `c > 0`. If `‖S s‖ ≤ A`
+everywhere, `‖h s‖ ≤ C T ^ (-q)` where `c |s| ≤ T`, and `‖h s S s‖ ≤ D |s| ^ (-q)` where
+`T ≤ c |s|`, then `‖∫ h S‖ ≤ K T ^ (1 - q)`, with `K` depending only on `c`, `q`, `A`, `C` and
+`D`: both bounds are dominated by a multiple of `(T + |s|) ^ (-q)`, whose integral is
+`T ^ (1 - q) ∫ (1 + |σ|) ^ (-q) dσ`. -/
+theorem norm_integral_mul_le_rpow_one_sub {𝕜 : Type*} [NormedRing 𝕜] [NormedSpace ℝ 𝕜]
+    {h S : ℝ → 𝕜} {T c q A C D : ℝ} (hT : 0 < T) (hc : 0 < c) (hq : 1 < q)
+    (hS : ∀ s, ‖S s‖ ≤ A) (hnear : ∀ s, c * |s| ≤ T → ‖h s‖ ≤ C * T ^ (-q))
+    (hfar : ∀ s, T ≤ c * |s| → ‖h s * S s‖ ≤ D * |s| ^ (-q)) :
+    ‖∫ s, h s * S s‖ ≤ max (C * A * (1 + 1 / c) ^ q) (D * (c + 1) ^ q) *
+      (T ^ (1 - q) * ∫ σ : ℝ, (1 + |σ|) ^ (-q)) := by
+  have hA : 0 ≤ A := (norm_nonneg _).trans (hS 0)
+  have hC : 0 ≤ C := nonneg_of_mul_nonneg_left
+    ((norm_nonneg _).trans (hnear 0 (by simpa using hT.le))) (rpow_pos_of_pos hT _)
+  have hint : Integrable (fun s : ℝ ↦ (T + |s|) ^ (-q)) := by
+    simpa [Real.norm_eq_abs] using
+      integrable_add_norm_rpow_neg (volume : Measure ℝ) (by simpa using hq) hT
+  have heq : ∫ s : ℝ, (T + |s|) ^ (-q) = T ^ (1 - q) * ∫ σ : ℝ, (1 + |σ|) ^ (-q) := by
+    simpa [Real.norm_eq_abs] using integral_add_norm_rpow_neg (volume : Measure ℝ) q hT
+  set K := max (C * A * (1 + 1 / c) ^ q) (D * (c + 1) ^ q)
+  rw [← heq, ← integral_const_mul]
+  refine norm_integral_le_of_norm_le (hint.const_mul K) (Eventually.of_forall fun s ↦ ?_)
+  have hTs : 0 < T + |s| := by positivity
+  rcases le_total (c * |s|) T with hs | hs
+  · have hcmp : T ^ (-q) ≤ (1 + 1 / c) ^ q * (T + |s|) ^ (-q) := by
+      refine rpow_neg_le_mul_rpow_neg hTs hT (by positivity) (by linarith) ?_
+      have : |s| ≤ T / c := by rw [le_div_iff₀ hc]; linarith
+      calc T + |s| ≤ T + T / c := by linarith
+        _ = (1 + 1 / c) * T := by ring
+    calc ‖h s * S s‖ ≤ ‖h s‖ * ‖S s‖ := norm_mul_le _ _
+      _ ≤ C * T ^ (-q) * A := mul_le_mul (hnear s hs) (hS s) (norm_nonneg _) (by positivity)
+      _ ≤ C * ((1 + 1 / c) ^ q * (T + |s|) ^ (-q)) * A := by gcongr
+      _ = C * A * (1 + 1 / c) ^ q * (T + |s|) ^ (-q) := by ring
+      _ ≤ K * (T + |s|) ^ (-q) := by gcongr; exact le_max_left _ _
+  · have hs0 : 0 < |s| := by
+      refine (abs_nonneg s).lt_of_ne fun h0 ↦ ?_
+      rw [← h0, mul_zero] at hs
+      linarith
+    have hcmp : |s| ^ (-q) ≤ (c + 1) ^ q * (T + |s|) ^ (-q) :=
+      rpow_neg_le_mul_rpow_neg hTs hs0 (by positivity) (by linarith) (by linarith)
+    have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hfar s hs))
+      (rpow_pos_of_pos hs0 _)
+    calc ‖h s * S s‖ ≤ D * |s| ^ (-q) := hfar s hs
+      _ ≤ D * ((c + 1) ^ q * (T + |s|) ^ (-q)) := by gcongr
+      _ = D * (c + 1) ^ q * (T + |s|) ^ (-q) := by ring
+      _ ≤ K * (T + |s|) ^ (-q) := by gcongr; exact le_max_right _ _
 
 /-- The radial moment `x ↦ ‖x‖ ^ p (1 + ‖x‖ ^ 2) ^ (-r / 2)` of order `p ≥ 0` of the Japanese
 bracket is integrable for every additive Haar measure when its decay exponent exceeds

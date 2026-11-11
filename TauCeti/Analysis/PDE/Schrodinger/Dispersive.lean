@@ -60,6 +60,8 @@ dominated convergence.
 * `TauCeti.norm_fourierInv_phaseSymbol_smul_fourier_le`: for a Schwartz function `f`, the
   dispersive estimate holds at every point for the Schwartz representative
   `𝓕⁻ (exp(-4π² i t ‖·‖²) 𝓕 f)` of `S(t) f`.
+* `TauCeti.norm_integral_cexp_quadratic_le`: the same estimate as a bound for the oscillatory
+  integral `∫ exp(2πi (⟪ξ, x⟫ + s ‖ξ‖²)) ψ(ξ) dξ` of a Schwartz function `ψ`.
 * `TauCeti.coeFn_schrodingerPropagator_toLp_gaussian`: the evolution of the Gaussian
   `g(x) = exp(-π ‖x‖²)`, `S(t) g (x) = (1 + 4πit)^(-n/2) exp(-π ‖x‖² / (1 + 4πit))`.
 
@@ -352,6 +354,32 @@ theorem norm_fourierInv_phaseSymbol_smul_fourier_le {t : ℝ} (ht : t ≠ 0) (f 
   rw [hU.measure_eq_zero_iff (μ := volume)] at h0
   rw [← hG]
   exact not_lt.1 fun hx ↦ (Set.eq_empty_iff_forall_notMem.1 h0 x) hx
+
+open scoped RealInnerProductSpace in
+/-- **The dispersive estimate as an oscillatory integral bound.** For a Schwartz function `ψ` and
+`s ≠ 0`, `|∫ exp(2πi (⟪ξ, x⟫ + s ‖ξ‖²)) ψ(ξ) dξ| ≤ (2|s|)^(-n/2) ‖𝓕⁻ ψ‖₁` at every point `x`. -/
+theorem norm_integral_cexp_quadratic_le (ψ : 𝓢(E, ℂ)) {s : ℝ} (hs : s ≠ 0) (x : E) :
+    ‖∫ ξ, cexp (((2 * π * (⟪ξ, x⟫ + s * ‖ξ‖ ^ 2) : ℝ) : ℂ) * I) * ψ ξ‖ ≤
+      (2 * |s|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ∫ y, ‖𝓕⁻ (ψ : E → ℂ) y‖ := by
+  have hτ : -s / (2 * π) ≠ 0 := div_ne_zero (neg_ne_zero.2 hs) (by positivity)
+  have h := norm_fourierInv_phaseSymbol_smul_fourier_le hτ (𝓕⁻ ψ) x
+  have hψ : 𝓕 (⇑(𝓕⁻ ψ : 𝓢(E, ℂ)) : E → ℂ) = ψ := by
+    rw [← SchwartzMap.fourier_coe, FourierTransform.fourier_fourierInv_eq]
+  have h4 : 4 * π * |-s / (2 * π)| = 2 * |s| := by
+    rw [abs_div, abs_neg, abs_of_pos (by positivity : (0 : ℝ) < 2 * π)]
+    field_simp
+    ring
+  rw [hψ, h4, SchwartzMap.fourierInv_coe] at h
+  refine le_of_eq_of_le ?_ h
+  rw [fourierInv_eq']
+  congr 2
+  ext ξ
+  rw [phaseSymbol_apply, laplacianSymbol_apply, smul_eq_mul, smul_eq_mul, ← mul_assoc,
+    ← Complex.exp_add]
+  congr 2
+  push_cast
+  field_simp
+  ring
 
 /-! ### The evolution of a Gaussian -/
 
