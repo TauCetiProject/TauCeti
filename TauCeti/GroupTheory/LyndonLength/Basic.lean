@@ -331,8 +331,10 @@ theorem isFree_zero_iff : (0 : LyndonLength G Λ).IsFree ↔ Subsingleton G := b
     simp
   · exact absurd (Subsingleton.elim g 1) hg
 
+omit [IsOrderedAddMonoid Λ] in
 /-- The zero length function is regular. Together with `TauCeti.LyndonLength.isFree_zero_iff`, it
 is a regular Lyndon length function that is not free on any nontrivial group. -/
+@[simp]
 theorem isRegular_zero : (0 : LyndonLength G Λ).IsRegular := fun g f =>
   ⟨1, g, f, by simp, by simp, by simp, by simp, by simp [gromovProduct]⟩
 
