@@ -30,7 +30,7 @@ Transporting a fundamental-group computation across a homeomorphism is the group
 computing fundamental groups of spaces identified with already-known ones: for example the
 fundamental group of the unit circle `Circle ⊆ ℂ` is read off from the additive-circle computation
 through Mathlib's `AddCircle.homeomorphCircle`, and the same transport feeds the computation of
-`π₁(ℝPⁿ)`. The construction mirrors `TauCeti.FundamentalGroup.prodMulEquiv`, the analogous
+`π₁(ℝPⁿ)`. The construction mirrors `FundamentalGroup.prodMulEquiv`, the analogous
 product-group isomorphism used in the torus computation.
 
 ## Main declarations
