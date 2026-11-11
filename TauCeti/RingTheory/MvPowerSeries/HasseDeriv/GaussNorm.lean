@@ -72,17 +72,16 @@ theorem norm_coeff_hasseDeriv_le (d m : σ →₀ ℕ) :
   exact IsUltrametricDist.norm_nsmul_le _ _
 
 variable (f) in
-/-- For a polyradius `c ≥ 0`, the weighted coefficient norms of `∂^d f`, multiplied by `cᵈ`, are
-bounded by those of `f`. -/
-theorem prod_pow_mul_norm_coeff_hasseDeriv_le (hc : 0 ≤ c) (d m : σ →₀ ℕ) :
+/-- For a polyradius `c` whose weight `cᵐ⁺ᵈ` is nonnegative (for instance `c ≥ 0`), the weighted
+coefficient norms of `∂^d f`, multiplied by `cᵈ`, are bounded by those of `f`. -/
+theorem prod_pow_mul_norm_coeff_hasseDeriv_le (d m : σ →₀ ℕ)
+    (hmd : 0 ≤ (m + d).prod (c · ^ ·)) :
     d.prod (c · ^ ·) * (‖coeff m (hasseDeriv d f)‖ * m.prod (c · ^ ·)) ≤
       ‖coeff (m + d) f‖ * (m + d).prod (c · ^ ·) := by
-  have hprod (t : σ →₀ ℕ) : 0 ≤ t.prod (c · ^ ·) :=
-    Finset.prod_nonneg fun i _ ↦ pow_nonneg (hc i) _
   calc d.prod (c · ^ ·) * (‖coeff m (hasseDeriv d f)‖ * m.prod (c · ^ ·))
       = ‖coeff m (hasseDeriv d f)‖ * (m + d).prod (c · ^ ·) := by rw [prod_pow_add]; ring
     _ ≤ ‖coeff (m + d) f‖ * (m + d).prod (c · ^ ·) :=
-      mul_le_mul_of_nonneg_right (norm_coeff_hasseDeriv_le f d m) (hprod _)
+      mul_le_mul_of_nonneg_right (norm_coeff_hasseDeriv_le f d m) hmd
 
 /-- **The Gauss-norm estimate for Hasse derivatives**: for a polyradius `c`,
 `cᵈ ‖∂^d f‖_c ≤ ‖f‖_c` whenever `f` has bounded weighted coefficient norms. -/
@@ -94,11 +93,11 @@ theorem prod_pow_mul_gaussNorm_hasseDeriv_le (hf : f.HasGaussNorm norm c) (d : �
       (gaussNorm_nonneg norm c _ fun _ ↦ norm_nonneg _)).trans hg
   rw [gaussNorm, Real.mul_iSup_of_nonneg hd]
   refine Real.iSup_le (fun m ↦ ?_) hg
-  rw [show d.prod (c · ^ ·) * (‖coeff m (hasseDeriv d f)‖ * m.prod (c · ^ ·)) =
-    ‖coeff m (hasseDeriv d f)‖ * (m + d).prod (c · ^ ·) by rw [prod_pow_add]; ring]
   rcases lt_or_ge ((m + d).prod (c · ^ ·)) 0 with hm | hm
-  · exact (mul_nonpos_of_nonneg_of_nonpos (norm_nonneg (coeff m (hasseDeriv d f))) hm.le).trans hg
-  · exact (mul_le_mul_of_nonneg_right (norm_coeff_hasseDeriv_le f d m) hm).trans
+  · rw [show d.prod (c · ^ ·) * (‖coeff m (hasseDeriv d f)‖ * m.prod (c · ^ ·)) =
+      ‖coeff m (hasseDeriv d f)‖ * (m + d).prod (c · ^ ·) by rw [prod_pow_add]; ring]
+    exact (mul_nonpos_of_nonneg_of_nonpos (norm_nonneg (coeff m (hasseDeriv d f))) hm.le).trans hg
+  · exact (prod_pow_mul_norm_coeff_hasseDeriv_le f d m hm).trans
       (le_gaussNorm norm c f hf (m + d))
 
 /-- For a polyradius `c ≥ 0` that is nonzero in every variable in which `∂^d` differentiates,
@@ -109,7 +108,8 @@ theorem HasGaussNorm.hasseDeriv (hc : 0 ≤ c) {d : σ →₀ ℕ} (hd : ∀ i �
     Finset.prod_pos fun i hi ↦ pow_pos ((hc i).lt_of_ne' (hd i hi)) _
   refine ⟨(d.prod (c · ^ ·))⁻¹ * gaussNorm norm c f, Set.forall_mem_range.2 fun m ↦ ?_⟩
   rw [le_inv_mul_iff₀ hpos]
-  exact (prod_pow_mul_norm_coeff_hasseDeriv_le f hc d m).trans (le_gaussNorm norm c f hf (m + d))
+  exact (prod_pow_mul_norm_coeff_hasseDeriv_le f d m
+    (Finset.prod_nonneg fun i _ ↦ pow_nonneg (hc i) _)).trans (le_gaussNorm norm c f hf (m + d))
 
 end SeminormedRing
 
@@ -127,7 +127,8 @@ theorem IsRestricted.hasseDeriv {d : σ →₀ ℕ} (hd : ∀ i ∈ d.support, c
     Finset.prod_pos fun i hi ↦ pow_pos (abs_pos.2 (hd i hi)) _
   -- the weighted coefficient norms of `∂^d f` are those of `f`, shifted by `d` and divided by `cᵈ`
   refine squeeze_zero (fun m ↦ mul_nonneg (norm_nonneg _) (prod_abs_pow_nonneg m))
-    (fun m ↦ (le_inv_mul_iff₀ hpos).2 (prod_pow_mul_norm_coeff_hasseDeriv_le f hc d m)) ?_
+    (fun m ↦ (le_inv_mul_iff₀ hpos).2 (prod_pow_mul_norm_coeff_hasseDeriv_le f d m
+      (Finset.prod_nonneg fun i _ ↦ pow_nonneg (hc i) _))) ?_
   simpa using ((hf.comp (add_left_injective d).tendsto_cofinite).const_mul
     (d.prod (|c| · ^ ·))⁻¹)
 
