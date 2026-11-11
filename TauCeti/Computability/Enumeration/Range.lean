@@ -31,18 +31,6 @@ procedure for membership in the limiting set.
 
 public section
 
-namespace Computable
-
-/-- The range of a total computable sequence is c.e. -/
-theorem rePred_mem_range {α : Type*} [Primcodable α] {f : ℕ → α} (hf : Computable f) :
-    REPred (· ∈ Set.range f) := by
-  classical
-  have heq : ComputablePred fun p : α × ℕ => f p.2 = p.1 :=
-    (Primrec.eq.decide.to_comp.comp (hf.comp Computable.snd) Computable.fst).computablePred
-  exact heq.rePred_exists
-
-end Computable
-
 namespace REPred
 
 /-- A nonempty c.e. set has a total computable range presentation. -/

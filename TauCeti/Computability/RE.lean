@@ -20,7 +20,8 @@ computable pieces:
 * `ComputablePred.exists_lt`: a bounded existential quantifier over a computable predicate is
   computable, uniformly in the bound;
 * `ComputablePred.rePred_exists`: an unbounded existential quantifier over a computable predicate
-  is c.e., by unbounded search.
+  is c.e., by unbounded search;
+* `Computable.rePred_mem_range`: the range of a total computable sequence is c.e.
 
 ## References
 
@@ -81,3 +82,15 @@ theorem rePred_exists {p : α → ℕ → Prop} (hp : ComputablePred fun x : α 
   simpa using Nat.rfind_dom (p := fun n => Part.some (decide (p a n)))
 
 end ComputablePred
+
+namespace Computable
+
+/-- The range of a total computable sequence is c.e. -/
+theorem rePred_mem_range {α : Type*} [Primcodable α] {f : ℕ → α} (hf : Computable f) :
+    REPred (· ∈ Set.range f) := by
+  classical
+  have heq : ComputablePred fun p : α × ℕ => f p.2 = p.1 :=
+    (Primrec.eq.decide.to_comp.comp (hf.comp Computable.snd) Computable.fst).computablePred
+  exact heq.rePred_exists
+
+end Computable
