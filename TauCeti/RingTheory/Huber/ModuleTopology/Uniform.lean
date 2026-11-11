@@ -15,7 +15,6 @@ import Mathlib.RingTheory.Smooth.Flat
 import Mathlib.Topology.Algebra.Algebra
 import TauCeti.LinearAlgebra.Charpoly.Projective
 import TauCeti.LinearAlgebra.PolynomialFamily
-import TauCeti.RingTheory.Huber.Matrix
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.Topology.Algebra.Nonarchimedean.GeometricSeries
 
@@ -50,8 +49,6 @@ degree one, and value `N_{B/A}(1 - t b)` at `t ∈ A`, which lies in `A°` when 
 
 ## Main results
 
-* `TauCeti.Huber.IsPowerBounded.projectiveNorm`: over a nonarchimedean ring, the norm of a
-  power-bounded element of a finite projective algebra is power-bounded.
 * `TauCeti.Huber.isBounded_image_projectiveTrace`: over a complete uniform Tate ring, the traces
   of the power-bounded elements of a finite projective algebra form a bounded set.
 * `TauCeti.Huber.IsUniform.of_isModuleTopology_of_etale`: a finite étale algebra over a complete
@@ -72,35 +69,7 @@ namespace TauCeti.Huber
 
 variable {A : Type*} [CommRing A] {B : Type*} [CommRing B] [Algebra A B]
 
-/-! ### Norms and traces of power-bounded elements -/
-
-/-- **The norm of a power-bounded element is power-bounded.** For a finite projective algebra
-`B` over a nonarchimedean ring `A`, with its natural topology, the norm `N_{B/A}(b)` of a
-power-bounded `b ∈ B` is power-bounded in `A`. -/
-theorem IsPowerBounded.projectiveNorm [TopologicalSpace A] [NonarchimedeanRing A]
-    [TopologicalSpace B] [IsModuleTopology A B] [Module.Finite A B] [Module.Projective A B]
-    {b : B} (hb : IsPowerBounded b) : IsPowerBounded (Algebra.projectiveNorm A b) := by
-  have : IsTopologicalRing B := IsModuleTopology.isTopologicalRing A B
-  obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective A B
-  -- the coordinates of a bounded subset of `B` form a bounded subset of `A`
-  have hcoord (ℓ : B →ₗ[A] A) {S : Set B} (hS : IsBounded S) : IsBounded (ℓ '' S) :=
-    isModuleBounded_self_iff.mp ((hS.isModuleBounded (continuous_algebraMap A B).continuousAt).image
-      (IsModuleTopology.continuous_of_linearMap ℓ).continuousAt)
-  -- `N_{B/A}(bʲ)` is the determinant of `σ ∘ (bʲ ·) ∘ π + (1 - σ ∘ π)` on `Aⁿ`, whose matrix
-  -- entries lie in the bounded set `T`
-  set T : Set A := ⋃ i, ⋃ k, ({((1 - σ ∘ₗ π) (Pi.single k 1) : Fin n → A) i} +
-    (LinearMap.proj i ∘ₗ σ) '' (Set.range (b ^ ·) * {π (Pi.single k 1)}))
-  have hT : IsBounded T := isBounded_iUnion fun i ↦ isBounded_iUnion fun k ↦
-    (isBounded_singleton _).add (hcoord _ ((isPowerBounded_iff.mp hb).mul (isBounded_singleton _)))
-  refine isPowerBounded_iff.mpr ((isBounded_image_det (n := Fin n) hT).subset ?_)
-  rintro _ ⟨j, rfl⟩
-  refine ⟨LinearMap.toMatrix' (σ ∘ₗ Algebra.lmul A B (b ^ j) ∘ₗ π + (1 - σ ∘ₗ π)),
-    fun i k ↦ ?_, ?_⟩
-  · refine Set.mem_iUnion.mpr ⟨i, Set.mem_iUnion.mpr ⟨k, ?_⟩⟩
-    refine ⟨_, rfl, _, ⟨b ^ j * π (Pi.single k 1), ⟨_, ⟨j, rfl⟩, _, rfl, rfl⟩, rfl⟩, ?_⟩
-    simp [LinearMap.toMatrix'_apply, add_comm]
-  · rw [LinearMap.det_toMatrix', ← LinearMap.projectiveDet_eq_det_of_comp_eq_id π σ h,
-      ← Algebra.projectiveNorm_apply, map_pow]
+/-! ### Traces of power-bounded elements -/
 
 section Trace
 
