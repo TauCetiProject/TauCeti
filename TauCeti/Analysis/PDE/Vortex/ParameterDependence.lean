@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Minimizer
-import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -16,9 +15,12 @@ import Mathlib.Topology.Instances.EReal.Lemmas
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.PDE.Vortex.Variational
-import TauCeti.Analysis.Polynomial.CoeffConvergence
+import TauCeti.Analysis.Polynomial.Coeff.Convergence
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Analysis.SpecialFunctions.Exp.Modular
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
@@ -55,13 +57,16 @@ The proof is a Γ-convergence argument with three ingredients.
   `ε > 0`, and the coefficients `c_i = 2 ‖(P i)'‖² / (1 + ‖P i‖²)² - (1 + ‖P i‖²)⁻¹ / 8`
   (`TauCeti.Vortex.backgroundSource`) of the linear term are dominated by
   a fixed multiple of `(1 + ‖z‖)⁻²` and converge to `c₀` in `L²`. These follow from the uniform
-  polynomial bounds of `TauCeti.Analysis.Polynomial.CoeffConvergence`. They also make the
+  polynomial bounds of `TauCeti.Analysis.Polynomial.Coeff.Convergence`. They also make the
   coercivity of `TauCeti.Vortex.exists_forall_norm_le_of_sobolevReducedFunctional_le` uniform.
-* **The lower bound.** Replacing `h_i` by `h₀ - ε` and `c_i` by `c₀` changes `I_(P i)` on a
-  bounded set by an error tending to zero, and the resulting functional is weakly lower
-  semicontinuous (`TauCeti.Vortex.lowerSemicontinuous_add_lintegral_ofReal_mul_exp_sub_one_sub`).
-  Letting `ε → 0` by monotone convergence bounds `I_(P i)` below near any weak limit point by
-  `I_(P₀)` there.
+* **The lower bound.** Since eventually `h_i ≥ h₀ - ε`, replacing `h_i` by `h₀ - ε` can only
+  lower the potential, so the functional `I_(P₀),ε` with weight `h₀ - ε` and linear coefficient
+  `c_i` is at most `I_(P i)`. Separately, replacing `c_i` by `c₀` changes the linear term on a
+  bounded set of `H¹(ℂ)` by an error tending to zero, by the `L²` convergence of the coefficients.
+  The functional with weight `h₀ - ε` and coefficient `c₀` is weakly lower semicontinuous
+  (`TauCeti.Vortex.lowerSemicontinuous_add_lintegral_ofReal_mul_exp_sub_one_sub`). Finally, as
+  `ε → 0` it increases to `I_(P₀)` pointwise by monotone convergence. Together these bound
+  `I_(P i)` below near any weak limit point by `I_(P₀)` there.
 * **The upper bound.** For `v ∈ H¹(ℂ)` of finite energy, the smooth caps
   `v_k = v - log (1 + exp (v - k)) + log (1 + exp (-k))` are bounded above, so their potential is
   integrable without the weight, and `I_(P i)(v_k) → I_(P₀)(v_k)` by dominated convergence; as
@@ -90,75 +95,11 @@ variable {ι : Type*} {l : Filter ι} {P : ι → Polynomial ℂ} {P₀ : Polyno
 
 /-! ### The coefficients of Taubes's functional along a converging family -/
 
-/-- For a polynomial, the source `k` is the coefficient
-`2 ‖P'‖² / (1 + ‖P‖²)² - (1 + ‖P‖²)⁻¹ / 8` of the linear term of Taubes's functional. -/
-private theorem backgroundSource_eval (Q : Polynomial ℂ) (z : ℂ) :
-    backgroundSource Q.eval z =
-      2 * ‖Q.derivative.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2) ^ 2 - (1 + ‖Q.eval z‖ ^ 2)⁻¹ / 8 := by
-  rw [backgroundSource_def, Polynomial.deriv, backgroundWeight_def]
-  field_simp
-  ring
-
-private theorem one_sub_backgroundWeight (f : ℂ → ℂ) (z : ℂ) :
-    1 - backgroundWeight f z = (1 + ‖f z‖ ^ 2)⁻¹ := by
-  rw [backgroundWeight_def]
-  field_simp
-  ring
-
-/-- The weight is `1`-Lipschitz in the value of the function. -/
-private theorem abs_backgroundWeight_sub_backgroundWeight_le (f g : ℂ → ℂ) (z : ℂ) :
-    |backgroundWeight f z - backgroundWeight g z| ≤ ‖f z - g z‖ := by
-  set a := ‖f z‖
-  set b := ‖g z‖
-  have ha : 0 ≤ a := norm_nonneg _
-  have hb : 0 ≤ b := norm_nonneg _
-  have hab : |a - b| ≤ ‖f z - g z‖ := abs_norm_sub_norm_le _ _
-  have hden : 0 < (1 + a ^ 2) * (1 + b ^ 2) := by positivity
-  have heq : backgroundWeight f z - backgroundWeight g z =
-      (a - b) * (a + b) / ((1 + a ^ 2) * (1 + b ^ 2)) := by
-    rw [backgroundWeight_def, backgroundWeight_def]
-    field_simp
-    ring
-  rw [heq, abs_div, abs_mul, abs_of_pos hden, abs_of_nonneg (by positivity : 0 ≤ a + b),
-    div_le_iff₀ hden]
-  -- `a + b ≤ 1 + a² + b² ≤ (1 + a²)(1 + b²)`.
-  have hsum : a + b ≤ (1 + a ^ 2) * (1 + b ^ 2) := by
-    nlinarith [sq_nonneg (a - 1), sq_nonneg (b - 1), mul_nonneg (sq_nonneg a) (sq_nonneg b)]
-  calc |a - b| * (a + b) ≤ |a - b| * ((1 + a ^ 2) * (1 + b ^ 2)) :=
-        mul_le_mul_of_nonneg_left hsum (abs_nonneg _)
-    _ ≤ ‖f z - g z‖ * ((1 + a ^ 2) * (1 + b ^ 2)) :=
-        mul_le_mul_of_nonneg_right hab hden.le
-
 section Coefficients
 
 variable (hm : 0 < P₀.natDegree) (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
   (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k)))
 include hm hdeg hP
-
-omit hdeg in
-/-- Eventually the polynomials of the family have degree at least one. -/
-private theorem eventually_natDegree_pos : ∀ᶠ i in l, 0 < (P i).natDegree := by
-  have hlead : P₀.coeff P₀.natDegree ≠ 0 := by
-    rw [Polynomial.coeff_natDegree]
-    exact Polynomial.leadingCoeff_ne_zero.mpr (Polynomial.ne_zero_of_natDegree_gt hm)
-  filter_upwards [(hP P₀.natDegree).eventually_ne hlead] with i hi
-  exact hm.trans_le (Polynomial.le_natDegree_of_ne_zero hi)
-
-/-- Eventually the polynomials of the family have modulus at least one outside a fixed disc. -/
-private theorem exists_eventually_forall_one_le_norm_eval :
-    ∃ R : ℝ, ∀ᶠ i in l, ∀ z ∉ closedBall (0 : ℂ) R, 1 ≤ ‖(P i).eval z‖ := by
-  obtain ⟨c, hc, R, hR, hb⟩ := Polynomial.exists_eventually_forall_mul_pow_le_norm_eval
-    (Polynomial.ne_zero_of_natDegree_gt hm) hdeg hP
-  refine ⟨max R c⁻¹, ?_⟩
-  filter_upwards [hb] with i hi z hz
-  rw [mem_closedBall_zero_iff, not_le] at hz
-  have hzR : R ≤ ‖z‖ := (le_max_left _ _).trans hz.le
-  have hz1 : 1 ≤ ‖z‖ := hR.trans hzR
-  calc (1 : ℝ) = c * c⁻¹ := (mul_inv_cancel₀ hc.ne').symm
-    _ ≤ c * ‖z‖ ^ P₀.natDegree := by
-        gcongr
-        exact ((le_max_right _ _).trans hz.le).trans (le_self_pow₀ hz1 hm.ne')
-    _ ≤ ‖(P i).eval z‖ := hi z hzR
 
 /-- The weights are eventually bounded below by `h₀ - ε`, uniformly on the plane. -/
 private theorem eventually_forall_backgroundWeight_sub_le {ε : ℝ} (hε : 0 < ε) :
@@ -241,23 +182,6 @@ private theorem tendsto_backgroundSource (z : ℂ) :
   exact (((hd.pow 2).const_mul 2).div ((tendsto_const_nhds.add (h.pow 2)).pow 2)
     (by positivity)).sub (((tendsto_const_nhds.add (h.pow 2)).inv₀ (by positivity)).div_const 8)
 
-end Coefficients
-
-/-- `(1 + ‖z‖)⁻⁴` is integrable on the plane. -/
-private theorem integrable_inv_one_add_norm_pow_four :
-    Integrable fun z : ℂ ↦ ((1 + ‖z‖) ^ 4)⁻¹ := by
-  have h := integrable_one_add_norm (E := ℂ) (μ := volume) (r := 4)
-    (by simp [Complex.finrank_real_complex]; norm_num)
-  refine h.congr (ae_of_all _ fun z ↦ ?_)
-  simp only
-  rw [Real.rpow_neg (by positivity), Real.rpow_ofNat]
-
-section Coefficients'
-
-variable (hm : 0 < P₀.natDegree) (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
-  (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k)))
-include hm hdeg hP
-
 /-- A common bound `|c_i|, |c₀| ≤ K (1 + ‖z‖)⁻²` for the linear coefficients of the family and of
 the limit. -/
 private theorem exists_eventually_forall_abs_backgroundSource_le_and :
@@ -298,7 +222,8 @@ private theorem tendsto_integral_backgroundSource_sub_sq [l.IsCountablyGenerated
           = |backgroundSource (P i).eval z - backgroundSource P₀.eval z| ^ 2 := (sq_abs _).symm
         _ ≤ (2 * K / (1 + ‖z‖) ^ 2) ^ 2 := pow_le_pow_left₀ (abs_nonneg _) h3 2
         _ = (2 * K) ^ 2 * ((1 + ‖z‖) ^ 4)⁻¹ := by field_simp)
-    (integrable_inv_one_add_norm_pow_four.const_mul _)
+    ((integrable_inv_one_add_norm_pow (volume : Measure ℂ) (n := 4)
+      (by simp [Complex.finrank_real_complex])).const_mul _)
     (ae_of_all _ fun z ↦ by
       simpa using
         ((tendsto_backgroundSource hdeg hP z).sub_const (backgroundSource P₀.eval z)).pow 2)
@@ -311,37 +236,18 @@ private theorem exists_eventually_integral_backgroundSource_sq_le :
   refine ⟨∫ z : ℂ, K ^ 2 * ((1 + ‖z‖) ^ 4)⁻¹, ?_⟩
   filter_upwards [hK] with i hi
   refine integral_mono_of_nonneg (ae_of_all _ fun z ↦ sq_nonneg _)
-    (integrable_inv_one_add_norm_pow_four.const_mul _) (ae_of_all _ fun z ↦ ?_)
+    ((integrable_inv_one_add_norm_pow (volume : Measure ℂ) (n := 4)
+      (by simp [Complex.finrank_real_complex])).const_mul _) (ae_of_all _ fun z ↦ ?_)
   calc backgroundSource (P i).eval z ^ 2 = |backgroundSource (P i).eval z| ^ 2 := (sq_abs _).symm
     _ ≤ (K / (1 + ‖z‖) ^ 2) ^ 2 := pow_le_pow_left₀ (abs_nonneg _) (hi z).1 2
     _ = K ^ 2 * ((1 + ‖z‖) ^ 4)⁻¹ := by field_simp
 
-end Coefficients'
+end Coefficients
 
 /-- The linear coefficient of a polynomial of degree at least one is square integrable. -/
 private theorem memLp_backgroundSource_eval {Q : Polynomial ℂ} (hQ : 0 < Q.natDegree) :
     MemLp (backgroundSource Q.eval) 2 :=
   funext (backgroundSource_eval Q) ▸ memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hQ
-
-/-- The change of the linear term of Taubes's functional under a change of its coefficient is
-controlled by the `L²` distance of the coefficients:
-`(∫ c u - ∫ c' u)² ≤ ∫ (c - c')² · ‖u‖₂²`. -/
-private theorem sq_integral_mul_sub_integral_mul_le {c c' : ℂ → ℝ} (hc : MemLp c 2)
-    (hc' : MemLp c' 2) (u : W1p (volume : Measure ℂ) ⊤ 2) :
-    ((∫ z, c z * W1p.value u z) - ∫ z, c' z * W1p.value u z) ^ 2 ≤
-      (∫ z, (c z - c' z) ^ 2) * ‖W1p.value u‖ ^ 2 := by
-  have hu : MemLp (W1p.value u : ℂ → ℝ) 2 := W1p.memLp_value u
-  have e1 : ∫ z, (c z - c' z) * W1p.value u z =
-      (∫ z, c z * W1p.value u z) - ∫ z, c' z * W1p.value u z := by
-    simp only [sub_mul]
-    exact integral_sub (hc.integrable_mul hu) (hc'.integrable_mul hu)
-  have e2 : ∫ z, (W1p.value u z) ^ 2 = ‖W1p.value u‖ ^ 2 := by
-    simpa using W1p.integral_value_sq_eq_norm_value_sq u
-  calc ((∫ z, c z * W1p.value u z) - ∫ z, c' z * W1p.value u z) ^ 2
-      = (∫ z, (c z - c' z) * W1p.value u z) ^ 2 := by rw [e1]
-    _ ≤ (∫ z, (c z - c' z) ^ 2) * ∫ z, (W1p.value u z) ^ 2 :=
-        sq_integral_mul_le_integral_sq_mul_integral_sq (hc.sub hc') hu
-    _ = (∫ z, (c z - c' z) ^ 2) * ‖W1p.value u‖ ^ 2 := by rw [e2]
 
 /-- **Uniform bounded sublevel sets along a converging family.** If the coefficients of `P i`
 converge to those of `P₀`, with `deg P₀ ≥ 1` and `deg P i ≤ deg P₀` eventually, then for every
@@ -353,12 +259,13 @@ theorem exists_eventually_norm_le_of_sobolevReducedFunctional_le (hm : 0 < P₀.
     (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) (t : ℝ) :
     ∃ C : ℝ, ∀ᶠ i in l, ∀ u : W1p (volume : Measure ℂ) ⊤ 2,
       sobolevReducedFunctional (P i) u ≤ t → ‖u‖ ≤ C := by
-  obtain ⟨R, hR⟩ := exists_eventually_forall_one_le_norm_eval hm hdeg hP
+  obtain ⟨R, hR⟩ := Polynomial.exists_eventually_forall_one_le_norm_eval hm hdeg hP
   obtain ⟨K, hK⟩ := exists_eventually_integral_backgroundSource_sq_le hm hdeg hP
   obtain ⟨C, hC⟩ := exists_forall_norm_le_of_sobolevReducedFunctional_le R K t
   refine ⟨C, ?_⟩
-  filter_upwards [eventually_natDegree_pos hm hP, hR, hK] with i hpos hRi hKi
-  exact hC (P i) hpos hRi (by simpa only [backgroundSource_eval] using hKi)
+  filter_upwards [Polynomial.eventually_natDegree_le_natDegree_of_tendsto_coeff hP, hR, hK]
+    with i hle hRi hKi
+  exact hC (P i) (hm.trans_le hle) hRi (by simpa only [backgroundSource_eval] using hKi)
 
 /-! ### Smooth caps
 
@@ -439,21 +346,16 @@ private theorem sq_cap_le (k t : ℝ) : cap k t ^ 2 ≤ t ^ 2 := by
   · obtain ⟨h1, h2⟩ := le_cap_and_nonpos (k := k) ht
     nlinarith
 
-private theorem tendsto_exp_sub_natCast (t : ℝ) :
-    Tendsto (fun k : ℕ ↦ Real.exp (t - k)) atTop (𝓝 0) := by
-  refine Real.tendsto_exp_atBot.comp ?_
-  simp only [sub_eq_add_neg]
-  exact tendsto_atBot_add_const_left _ t (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
-
 private theorem tendsto_cap (t : ℝ) : Tendsto (fun k : ℕ ↦ cap k t) atTop (𝓝 t) := by
-  have h1 := ((tendsto_exp_sub_natCast t).const_add 1).log (by norm_num)
-  have h2 := ((tendsto_exp_sub_natCast 0).const_add 1).log (by norm_num)
+  have h1 := ((Real.tendsto_exp_sub_natCast_atTop_nhds_zero t).const_add 1).log (by norm_num)
+  have h2 := ((Real.tendsto_exp_sub_natCast_atTop_nhds_zero 0).const_add 1).log (by norm_num)
   simp only [zero_sub] at h2
   simpa [cap] using (h1.const_sub t).add h2
 
 private theorem tendsto_deriv_cap (t : ℝ) :
     Tendsto (fun k : ℕ ↦ deriv (cap k) t) atTop (𝓝 1) := by
-  simpa [deriv_cap] using ((tendsto_exp_sub_natCast t).const_add 1).inv₀ (by norm_num)
+  simpa [deriv_cap] using
+    ((Real.tendsto_exp_sub_natCast_atTop_nhds_zero t).const_add 1).inv₀ (by norm_num)
 
 /-! ### The potential of Taubes's functional -/
 
@@ -524,11 +426,6 @@ private theorem continuous_deriv_cap (k : ℝ) : Continuous (deriv (cap k)) := b
   simp only [funext (deriv_cap k)]
   fun_prop (disch := intro x; positivity)
 
-/-- The integrand `exp (2t) - 1 - 2t` of the potential is continuous. -/
-private theorem continuous_exp_two_mul_sub :
-    Continuous fun t : ℝ ↦ Real.exp (2 * t) - 1 - 2 * t := by
-  fun_prop
-
 /-- The potential of a capped element is dominated by the potential of the element. -/
 private theorem integrable_backgroundWeight_mul_capH {Q : Polynomial ℂ}
     {v : W1p (volume : Measure ℂ) ⊤ 2}
@@ -537,7 +434,7 @@ private theorem integrable_backgroundWeight_mul_capH {Q : Polynomial ℂ}
     Integrable fun z ↦ backgroundWeight Q.eval z *
       (Real.exp (2 * W1p.value (capH k v) z) - 1 - 2 * W1p.value (capH k v) z) := by
   refine hv.mono' ((continuous_backgroundWeight Q.continuous).aestronglyMeasurable.mul
-    (continuous_exp_two_mul_sub.comp_aestronglyMeasurable
+    (Real.continuous_exp_two_mul_sub_one_sub_two_mul.comp_aestronglyMeasurable
       (W1p.memLp_value (capH k v)).aestronglyMeasurable)) ?_
   filter_upwards [value_capH k v] with z hz
   rw [hz, Real.norm_of_nonneg (mul_nonneg (backgroundWeight_nonneg _ z)
@@ -553,7 +450,7 @@ private theorem integrable_backgroundWeight_mul_capH_of_nonneg (Q : Polynomial �
   refine (((W1p.memLp_value v).integrable_sq).const_mul
     (4 * (Real.exp (2 * (k + 1)) + 2))).mono'
     ((continuous_backgroundWeight Q.continuous).aestronglyMeasurable.mul
-    (continuous_exp_two_mul_sub.comp_aestronglyMeasurable
+    (Real.continuous_exp_two_mul_sub_one_sub_two_mul.comp_aestronglyMeasurable
       (W1p.memLp_value (capH k v)).aestronglyMeasurable)) ?_
   filter_upwards [value_capH k v] with z hz
   have hφ := Real.exp_two_mul_sub_one_sub_two_mul_nonneg (cap k (W1p.value v z))
@@ -604,7 +501,8 @@ private theorem tendsto_integral_backgroundWeight_mul_capH {Q : Polynomial ℂ}
     exact mul_le_mul_of_nonneg_left (exp_two_mul_cap_sub_le k _) (backgroundWeight_nonneg _ z)
   · filter_upwards [ae_all_iff.mpr fun k : ℕ ↦ value_capH k v] with z hz
     simp only [hz]
-    exact tendsto_const_nhds.mul ((continuous_exp_two_mul_sub.tendsto _).comp (tendsto_cap _))
+    exact tendsto_const_nhds.mul
+      ((Real.continuous_exp_two_mul_sub_one_sub_two_mul.tendsto _).comp (tendsto_cap _))
 
 /-- The linear terms of the caps of `v` converge to that of `v`. -/
 private theorem tendsto_integral_backgroundSource_mul_capH {Q : Polynomial ℂ} (hQ : 0 < Q.natDegree)
@@ -642,18 +540,6 @@ private theorem tendsto_sobolevReducedFunctional_capH {Q : Polynomial ℂ} (hQ :
     ((tendsto_integral_backgroundWeight_mul_capH hpot).div_const 16)).add
     (tendsto_integral_backgroundSource_mul_capH hQ v)
 
-/-- A sequence whose squares are dominated by a sequence tending to zero tends to zero. -/
-private theorem tendsto_zero_of_eventually_sq_le {f g : ι → ℝ} (h : ∀ᶠ i in l, f i ^ 2 ≤ g i)
-    (hg : Tendsto g l (𝓝 0)) : Tendsto f l (𝓝 0) := by
-  have hs : Tendsto (fun i ↦ √(g i)) l (𝓝 0) := by
-    have h := (Real.continuous_sqrt.tendsto 0).comp hg
-    rw [Real.sqrt_zero] at h
-    exact h
-  refine squeeze_zero_norm' ?_ hs
-  filter_upwards [h] with i hi
-  rw [Real.norm_eq_abs, ← Real.sqrt_sq_eq_abs]
-  exact Real.sqrt_le_sqrt hi
-
 /-- **Recovery along the family.** For a fixed level `k ≥ 0`, the values of Taubes's functionals
 `I_(P i)` at the cap `v_k` converge to `I_(P₀)(v_k)`. -/
 private theorem tendsto_sobolevReducedFunctional_capH_of_tendsto_coeff [l.IsCountablyGenerated]
@@ -686,12 +572,12 @@ private theorem tendsto_sobolevReducedFunctional_capH_of_tendsto_coeff [l.IsCoun
   · -- The linear terms converge since the coefficients converge in `L²`.
     rw [← tendsto_sub_nhds_zero_iff]
     have hlim := (tendsto_integral_backgroundSource_sub_sq hm hdeg hP).mul_const
-      (‖W1p.value (capH k v)‖ ^ 2)
+      (∫ z, W1p.value (capH k v) z ^ 2)
     rw [zero_mul] at hlim
-    refine tendsto_zero_of_eventually_sq_le ?_ hlim
-    filter_upwards [eventually_natDegree_pos hm hP] with i hi
-    exact sq_integral_mul_sub_integral_mul_le (memLp_backgroundSource_eval hi)
-      (memLp_backgroundSource_eval hm) _
+    refine Real.tendsto_zero_of_eventually_sq_le ?_ hlim
+    filter_upwards [Polynomial.eventually_natDegree_le_natDegree_of_tendsto_coeff hP] with i hi
+    exact sq_integral_mul_sub_integral_mul_le (memLp_backgroundSource_eval (hm.trans_le hi))
+      (memLp_backgroundSource_eval hm) (W1p.memLp_value _)
 
 /-! ### The lower bound -/
 
@@ -719,7 +605,7 @@ private theorem tendsto_lowerFunctional (Q : Polynomial ℂ) (u : W1p (volume : 
   have hφ := Real.exp_two_mul_sub_one_sub_two_mul_nonneg
   have hmeas : AEStronglyMeasurable (fun z ↦
       Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) :=
-    continuous_exp_two_mul_sub.comp_aestronglyMeasurable
+    Real.continuous_exp_two_mul_sub_one_sub_two_mul.comp_aestronglyMeasurable
       (W1p.memLp_value u).aestronglyMeasurable
   have hpot : Tendsto (fun n : ℕ ↦ ∫⁻ z, ENNReal.ofReal ((backgroundWeight Q.eval z - 1 / (n + 1)) *
       (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z))) atTop
@@ -774,14 +660,16 @@ private theorem integral_backgroundSource_mul_le_add {Q Q' : Polynomial ℂ} (hQ
   have hle : ((∫ z, backgroundSource Q.eval z * W1p.value u z) -
       ∫ z, backgroundSource Q'.eval z * W1p.value u z) ^ 2 ≤ δ ^ 2 := by
     refine (sq_integral_mul_sub_integral_mul_le (memLp_backgroundSource_eval hQ)
-      (memLp_backgroundSource_eval hQ') u).trans ?_
+      (memLp_backgroundSource_eval hQ') (W1p.memLp_value u)).trans ?_
     have h1 : (∫ z, (backgroundSource Q.eval z - backgroundSource Q'.eval z) ^ 2) =
         ∫ z, (backgroundSource Q'.eval z - backgroundSource Q.eval z) ^ 2 := by
       congr 1 with z
       ring
     have h2 : ‖W1p.value u‖ ^ 2 ≤ (|C| + 1) ^ 2 :=
       pow_le_pow_left₀ (norm_nonneg _) (by linarith) 2
-    rw [h1]
+    have e2 : ∫ z, W1p.value u z ^ 2 = ‖W1p.value u‖ ^ 2 := by
+      simpa using W1p.integral_value_sq_eq_norm_value_sq u
+    rw [h1, e2]
     calc (∫ z, (backgroundSource Q'.eval z - backgroundSource Q.eval z) ^ 2) * ‖W1p.value u‖ ^ 2
         ≤ (δ / (|C| + 1)) ^ 2 * (|C| + 1) ^ 2 :=
           mul_le_mul hl.le h2 (sq_nonneg _) (sq_nonneg _)
@@ -816,8 +704,8 @@ private theorem exists_mem_nhds_eventually_lt [l.IsCountablyGenerated] (hm : 0 <
   have hδC : 0 < (δ / (|C| + 1)) ^ 2 := by positivity
   filter_upwards [eventually_forall_backgroundWeight_sub_le hm hdeg hP hε,
     (tendsto_integral_backgroundSource_sub_sq hm hdeg hP).eventually (gt_mem_nhds hδC),
-    eventually_natDegree_pos hm hP] with i hw hl hpos w hwU hwC
-  have hlin := integral_backgroundSource_mul_le_add hm hpos hδ hl hwC
+    Polynomial.eventually_natDegree_le_natDegree_of_tendsto_coeff hP] with i hw hl hle w hwU hwC
+  have hlin := integral_backgroundSource_mul_le_add hm (hm.trans_le hle) hδ hl hwC
   have hcomp := lowerFunctional_le_add (hw := hw) hlin
   -- `b' < lowered ≤ I_(P i) + δ` and `b' = b + δ` give `b < I_(P i)`.
   by_contra hlt

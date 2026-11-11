@@ -20,6 +20,10 @@ For square-integrable real functions `f` and `g`,
 for real integrals with real exponents and roots
 (`MeasureTheory.integral_mul_le_Lp_mul_Lq_of_nonneg`); this is the squared form for `p = q = 2`,
 without roots or sign conditions, as it is used in energy estimates.
+
+Applied to a difference of coefficients, it controls how a linear functional `∫ c u` changes with
+its coefficient: `(∫ c u - ∫ c' u)² ≤ (∫ (c - c')²) (∫ u²)`
+(`TauCeti.sq_integral_mul_sub_integral_mul_le`).
 -/
 
 public section
@@ -49,5 +53,18 @@ theorem sq_integral_mul_le_integral_sq_mul_integral_sq {α : Type*} [MeasurableS
         pow_le_pow_left₀ (integral_nonneg fun x ↦ by positivity) h 2
     _ = (∫ x, f x ^ 2 ∂μ) * ∫ x, g x ^ 2 ∂μ := by
         rw [mul_pow, Real.sq_sqrt hF, Real.sq_sqrt hG]
+
+/-- Changing the coefficient of the linear functional `∫ c u` changes it by at most the `L²`
+distance of the coefficients times the `L²` norm of `u`:
+`(∫ c u - ∫ c' u)² ≤ (∫ (c - c')²) (∫ u²)`. -/
+theorem sq_integral_mul_sub_integral_mul_le {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {c c' u : α → ℝ} (hc : MemLp c 2 μ) (hc' : MemLp c' 2 μ) (hu : MemLp u 2 μ) :
+    ((∫ x, c x * u x ∂μ) - ∫ x, c' x * u x ∂μ) ^ 2 ≤
+      (∫ x, (c x - c' x) ^ 2 ∂μ) * ∫ x, u x ^ 2 ∂μ := by
+  have e : ∫ x, (c x - c' x) * u x ∂μ = (∫ x, c x * u x ∂μ) - ∫ x, c' x * u x ∂μ := by
+    simp only [sub_mul]
+    exact integral_sub (hc.integrable_mul hu) (hc'.integrable_mul hu)
+  rw [← e]
+  exact sq_integral_mul_le_integral_sq_mul_integral_sq (hc.sub hc') hu
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.SpecialFunctions.Exp
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -25,6 +26,7 @@ vortices.
 
 ## Main results
 
+* `Real.continuous_exp_two_mul_sub_one_sub_two_mul`: the potential is continuous.
 * `Real.exp_two_mul_sub_one_sub_two_mul_nonneg`: for every real `t`, `0 ≤ exp (2t) - 1 - 2t`.
 * `Real.sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul`: for every real `t`,
   `√(1 + t²) - 1 ≤ exp (2t) - 1 - 2t`.
@@ -38,6 +40,11 @@ vortices.
 public section
 
 namespace Real
+
+/-- The potential `exp (2t) - 1 - 2t` is continuous. -/
+theorem continuous_exp_two_mul_sub_one_sub_two_mul :
+    Continuous fun t : ℝ ↦ exp (2 * t) - 1 - 2 * t := by
+  fun_prop
 
 /-- The potential `exp (2t) - 1 - 2t` is nonnegative. -/
 theorem exp_two_mul_sub_one_sub_two_mul_nonneg (t : ℝ) : 0 ≤ exp (2 * t) - 1 - 2 * t := by

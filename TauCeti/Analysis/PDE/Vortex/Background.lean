@@ -123,6 +123,37 @@ theorem backgroundWeight_lt_one (f : ℂ → ℂ) (z : ℂ) : backgroundWeight f
   rw [backgroundWeight_def, div_lt_one (by positivity)]
   exact lt_one_add _
 
+/-- The defect `1 - h` of the coefficient `h = ‖f‖² / (1 + ‖f‖²)` from one is `(1 + ‖f‖²)⁻¹`. -/
+theorem one_sub_backgroundWeight (f : ℂ → ℂ) (z : ℂ) :
+    1 - backgroundWeight f z = (1 + ‖f z‖ ^ 2)⁻¹ := by
+  rw [backgroundWeight_def]
+  field_simp
+  ring
+
+/-- The coefficient `h = ‖f‖² / (1 + ‖f‖²)` is `1`-Lipschitz in the value of `f`. -/
+theorem abs_backgroundWeight_sub_backgroundWeight_le (f g : ℂ → ℂ) (z : ℂ) :
+    |backgroundWeight f z - backgroundWeight g z| ≤ ‖f z - g z‖ := by
+  set a := ‖f z‖
+  set b := ‖g z‖
+  have ha : 0 ≤ a := norm_nonneg _
+  have hb : 0 ≤ b := norm_nonneg _
+  have hab : |a - b| ≤ ‖f z - g z‖ := abs_norm_sub_norm_le _ _
+  have hden : 0 < (1 + a ^ 2) * (1 + b ^ 2) := by positivity
+  have heq : backgroundWeight f z - backgroundWeight g z =
+      (a - b) * (a + b) / ((1 + a ^ 2) * (1 + b ^ 2)) := by
+    rw [backgroundWeight_def, backgroundWeight_def]
+    field_simp
+    ring
+  rw [heq, abs_div, abs_mul, abs_of_pos hden, abs_of_nonneg (by positivity : 0 ≤ a + b),
+    div_le_iff₀ hden]
+  -- `a + b ≤ 1 + a² + b² ≤ (1 + a²)(1 + b²)`.
+  have hsum : a + b ≤ (1 + a ^ 2) * (1 + b ^ 2) := by
+    nlinarith [sq_nonneg (a - 1), sq_nonneg (b - 1), mul_nonneg (sq_nonneg a) (sq_nonneg b)]
+  calc |a - b| * (a + b) ≤ |a - b| * ((1 + a ^ 2) * (1 + b ^ 2)) :=
+        mul_le_mul_of_nonneg_left hsum (abs_nonneg _)
+    _ ≤ ‖f z - g z‖ * ((1 + a ^ 2) * (1 + b ^ 2)) :=
+        mul_le_mul_of_nonneg_right hab hden.le
+
 theorem continuous_backgroundWeight (hf : Continuous f) : Continuous (backgroundWeight f) := by
   have hh : backgroundWeight f = fun z ↦ ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) :=
     funext (backgroundWeight_def f)

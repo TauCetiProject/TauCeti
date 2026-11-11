@@ -20,7 +20,8 @@ positive operators close to the identity. The file also records that the square 
 `1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `1 ≤ √(1 + t²)`, `|t / √(1 + t²)| ≤ 1`, that the
 modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, that `c √u` tends
 to `0` as
-`u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
+`u → 0`, and through positive values as `u → 0⁺` when `c > 0`, that a function whose square is
+dominated by a function tending to `0` tends to `0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
 `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`.
 
@@ -41,6 +42,7 @@ to `0` as
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
 * `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
+* `Real.tendsto_zero_of_eventually_sq_le`: if `f² ≤ g` eventually and `g → 0`, then `f → 0`.
 * `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
   `c √u → 0⁺` as `u → 0⁺`.
 * `Real.add_sqrt_sq_add_pos`, `Real.hasDerivAt_add_sqrt_sq_add`,
@@ -195,6 +197,17 @@ theorem abs_mul_inv_sqrt_sq_mul_mul {d c : ℝ} (hd : d ≠ 0) (hc : 0 ≤ c) (p
 theorem tendsto_mul_sqrt_nhds_zero (c : ℝ) : Tendsto (fun u => c * √u) (𝓝 0) (𝓝 0) := by
   have h : Continuous fun u => c * √u := by fun_prop
   simpa using h.tendsto 0
+
+/-- A real function whose squares are eventually dominated by a function tending to `0` tends to
+`0` itself. -/
+theorem tendsto_zero_of_eventually_sq_le {ι : Type*} {l : Filter ι} {f g : ι → ℝ}
+    (h : ∀ᶠ i in l, f i ^ 2 ≤ g i) (hg : Tendsto g l (𝓝 0)) : Tendsto f l (𝓝 0) := by
+  have hs : Tendsto (fun i ↦ √(g i)) l (𝓝 0) := by
+    simpa [Function.comp_def] using (continuous_sqrt.tendsto 0).comp hg
+  refine squeeze_zero_norm' ?_ hs
+  filter_upwards [h] with i hi
+  rw [norm_eq_abs, ← sqrt_sq_eq_abs]
+  exact sqrt_le_sqrt hi
 
 /-- For `c > 0`, `c √u` tends to `0` through positive values as `u → 0⁺`. -/
 theorem tendsto_mul_sqrt_nhdsGT_zero {c : ℝ} (hc : 0 < c) :

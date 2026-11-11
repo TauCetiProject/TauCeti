@@ -67,8 +67,10 @@ the energy. This gives, on `H¹(ℂ)`:
 The constants depend on `P` only through a radius outside which `‖P‖ ≥ 1` and an upper bound for
 the squared `L²` norm of the coefficient of the linear term
 (`TauCeti.Vortex.exists_forall_le_two_mul_sobolevReducedFunctional_add`,
-`TauCeti.Vortex.exists_forall_norm_le_of_sobolevReducedFunctional_le`), so they are uniform along
-families of polynomials with converging coefficients.
+`TauCeti.Vortex.exists_forall_norm_le_of_sobolevReducedFunctional_le`). Both are uniform along a
+family `P i` whose coefficients converge to those of a polynomial `P₀` with `deg P₀ ≥ 1`, provided
+`deg P i ≤ deg P₀` eventually, so the sublevel sets are then eventually uniformly bounded
+(`TauCeti.Vortex.exists_eventually_norm_le_of_sobolevReducedFunctional_le`).
 
 For compactly supported `C¹` functions these specialize to
 `TauCeti.Vortex.exists_le_two_mul_reducedFunctional_add`,
@@ -373,17 +375,6 @@ private theorem setIntegral_compl_closedBall_le {R : ℝ}
         setIntegral_le_integral (hpint.const_mul 2)
           (Eventually.of_forall fun z ↦ mul_nonneg zero_le_two (potential_nonneg w z))
 
-/-- A nonconstant polynomial has modulus at least one outside a closed disc. -/
-private theorem exists_forall_one_le_norm_eval (hm : 0 < P.natDegree) :
-    ∃ R : ℝ, ∀ z ∉ closedBall (0 : ℂ) R, 1 ≤ ‖P.eval z‖ := by
-  obtain ⟨R, -, hR⟩ := (hasBasis_cobounded_compl_closedBall (0 : ℂ)).eventually_iff.mp
-    (by
-      rw [cobounded_eq_cocompact]
-      exact (P.tendsto_norm_atTop (Polynomial.natDegree_pos_iff_degree_pos.mp hm)
-        tendsto_norm_cocompact_atTop).eventually_ge_atTop 1 :
-      ∀ᶠ z in Bornology.cobounded ℂ, 1 ≤ ‖P.eval z‖)
-  exact ⟨R, hR⟩
-
 /-- The energy `‖∇u‖₂² / 2 + (1 / 16) ∫ h (exp (2u) - 1 - 2u)` controls `‖u‖₂²`: its square is at
 most a constant times the cube of one plus the energy. The constant depends only on a radius `R`
 outside which `1 ≤ ‖P‖`, not otherwise on `P`. -/
@@ -491,7 +482,7 @@ theorem exists_le_two_mul_sobolevReducedFunctional_add (hm : 0 < P.natDegree) :
       ((‖W1p.gradient u‖ ^ 2 / 2 + (∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
         (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) / 16 : ℝ) : EReal) ≤
         2 * sobolevReducedFunctional P u + C := by
-  obtain ⟨R, hR⟩ := exists_forall_one_le_norm_eval hm
+  obtain ⟨R, hR⟩ := Polynomial.exists_forall_one_le_norm_eval hm
   obtain ⟨C, hC⟩ := exists_forall_le_two_mul_sobolevReducedFunctional_add R
     (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) ^ 2)
@@ -556,7 +547,7 @@ level `t`, the elements `u ∈ H¹(ℂ)` with `I(u) ≤ t` are bounded in `H¹(�
 `TauCeti.Vortex.sobolevReducedFunctional P`. -/
 theorem exists_norm_le_of_sobolevReducedFunctional_le (hm : 0 < P.natDegree) (t : ℝ) :
     ∃ C : ℝ, ∀ u : W1p (volume : Measure ℂ) ⊤ 2, sobolevReducedFunctional P u ≤ t → ‖u‖ ≤ C := by
-  obtain ⟨R, hR⟩ := exists_forall_one_le_norm_eval hm
+  obtain ⟨R, hR⟩ := Polynomial.exists_forall_one_le_norm_eval hm
   obtain ⟨C, hC⟩ := exists_forall_norm_le_of_sobolevReducedFunctional_le R
     (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) ^ 2) t

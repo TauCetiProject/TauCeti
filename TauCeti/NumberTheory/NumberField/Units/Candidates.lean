@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
-import TauCeti.Analysis.Polynomial.CoeffBound
+import TauCeti.Analysis.Polynomial.Coeff.Bound
 import TauCeti.Algebra.Polynomial.Card.BoundedCoeff
 import TauCeti.NumberTheory.NumberField.Index.PowerBasis
 import TauCeti.NumberTheory.NumberField.Minpoly

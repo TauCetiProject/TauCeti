@@ -26,7 +26,11 @@ This file records the estimates which make such a family behave uniformly:
   (`Polynomial.exists_eventually_forall_norm_eval_le`);
 * if the degrees are eventually at most `deg P₀` and `P₀ ≠ 0`, the values also grow at least like
   `‖z‖ ^ deg P₀` outside a fixed ball, again with constants independent of `i`
-  (`Polynomial.exists_eventually_forall_mul_pow_le_norm_eval`).
+  (`Polynomial.exists_eventually_forall_mul_pow_le_norm_eval`). In particular, if `deg P₀ ≥ 1`,
+  then eventually `‖P i‖ ≥ 1` outside a fixed ball
+  (`Polynomial.exists_eventually_forall_one_le_norm_eval`);
+* in any case the degree can only jump up in the limit: eventually `deg P₀ ≤ deg P i`
+  (`Polynomial.eventually_natDegree_le_natDegree_of_tendsto_coeff`).
 
 The degree bound cannot be dropped: `z + z ^ 2 / i` has coefficients converging to those of `z`,
 but a root at `-i`, which escapes to infinity.
@@ -150,6 +154,39 @@ theorem exists_eventually_forall_mul_pow_le_norm_eval (hP₀ : P₀ ≠ 0)
   have := norm_sub_norm_le ((P i).coeff N * z ^ N) (-∑ k ∈ range N, (P i).coeff k * z ^ k)
   rw [norm_neg, sub_neg_eq_add, add_comm] at this
   linarith
+
+/-- **The degree is lower semicontinuous.** If the coefficients of `P i` converge to those of
+`P₀`, then eventually `deg P₀ ≤ deg P i`. -/
+theorem eventually_natDegree_le_natDegree_of_tendsto_coeff
+    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) :
+    ∀ᶠ i in l, P₀.natDegree ≤ (P i).natDegree := by
+  rcases eq_or_ne P₀ 0 with rfl | hP₀
+  · exact Eventually.of_forall fun i ↦ by simp
+  have hlead : P₀.coeff P₀.natDegree ≠ 0 := by
+    rw [coeff_natDegree]
+    exact leadingCoeff_ne_zero.mpr hP₀
+  filter_upwards [(hP P₀.natDegree).eventually_ne hlead] with i hi
+  exact le_natDegree_of_ne_zero hi
+
+/-- **Uniform modulus at least one outside a ball.** If `P₀` has degree at least one, the degrees
+of `P i` are eventually at most that of `P₀`, and the coefficients converge, then there is a radius
+`R` such that eventually `1 ≤ ‖P i z‖` for every `z` outside the closed ball of radius `R`. -/
+theorem exists_eventually_forall_one_le_norm_eval (hm : 0 < P₀.natDegree)
+    (hN : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
+    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) :
+    ∃ R : ℝ, ∀ᶠ i in l, ∀ z ∉ closedBall (0 : 𝕜) R, 1 ≤ ‖(P i).eval z‖ := by
+  obtain ⟨c, hc, R, hR, hb⟩ :=
+    exists_eventually_forall_mul_pow_le_norm_eval (ne_zero_of_natDegree_gt hm) hN hP
+  refine ⟨max R c⁻¹, ?_⟩
+  filter_upwards [hb] with i hi z hz
+  rw [mem_closedBall_zero_iff, not_le] at hz
+  have hzR : R ≤ ‖z‖ := (le_max_left _ _).trans hz.le
+  have hz1 : 1 ≤ ‖z‖ := hR.trans hzR
+  calc (1 : ℝ) = c * c⁻¹ := (mul_inv_cancel₀ hc.ne').symm
+    _ ≤ c * ‖z‖ ^ P₀.natDegree := by
+        gcongr
+        exact ((le_max_right _ _).trans hz.le).trans (le_self_pow₀ hz1 hm.ne')
+    _ ≤ ‖(P i).eval z‖ := hi z hzR
 
 /-- **Uniform decay of `(1 + ‖P‖²)⁻¹`.** If `P₀` has degree at least one, the degrees of `P i` are
 eventually at most that of `P₀`, and the coefficients converge, then

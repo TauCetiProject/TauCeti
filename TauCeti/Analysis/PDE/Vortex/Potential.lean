@@ -19,11 +19,11 @@ vortex equation gives the potential
 
 `∫ (|P|² / (1 + |P|²)) (exp(2w) - 1 - 2w)`.
 
-This file treats it as an extended nonnegative integral on real `L²(ℂ)`, for any measure on the
-plane and any measurable weight in place of `|P|² / (1 + |P|²)`. It is weakly lower semicontinuous,
-including at functions where it is infinite, and finite on continuous compactly supported
-corrections. Thus passage to a weak limit does not lose the
-nonlinear potential in the variational existence argument
+This file treats it as an extended nonnegative integral on real `Lᵖ` with `1 ≤ p`, for any
+measure and any a.e.-measurable weight in place of `|P|² / (1 + |P|²)`, where it is weakly lower
+semicontinuous, including at functions where it is infinite. For the polynomial weight and
+Lebesgue measure on the plane it is finite on continuous compactly supported corrections. Thus
+passage to a weak limit does not lose the nonlinear potential in the variational existence argument
 (`TauCeti.Vortex.exists_forall_sobolevReducedFunctional_le`).
 
 ## References
@@ -43,17 +43,17 @@ open scoped ENNReal
 namespace TauCeti.Vortex
 
 /-- The nonlinear potential `∫ h (exp(2u) - 1 - 2u)` of the background-subtracted vortex equation
-is weakly lower semicontinuous on real `L²(ℂ, μ)`, for every measure `μ` on the plane against which
-both the `L²` space and the potential are taken, and every a.e.-measurable real weight `h`. Where
+is weakly lower semicontinuous on real `Lᵖ(α, μ)` for `1 ≤ p`, for every measure `μ` against which
+both the `Lᵖ` space and the potential are taken, and every a.e.-measurable real weight `h`. Where
 `h` is negative the integrand is cut off at zero by `ENNReal.ofReal`. No integrability assumption
-on the potential is needed. The weight of the vortex equation with zero divisor `P` is
-`h = ‖P‖² / (1 + ‖P‖²)`. -/
-theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub {μ : Measure ℂ} {h : ℂ → ℝ}
-    (hh : AEMeasurable h μ) :
-    LowerSemicontinuous (fun u : WeakSpace ℝ (Lp ℝ 2 μ) ↦
+on the potential is needed. The vortex equation with zero divisor `P` uses `α = ℂ`, `p = 2` and
+the weight `h = ‖P‖² / (1 + ‖P‖²)`. -/
+theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {p : ℝ≥0∞} [Fact (1 ≤ p)] {h : α → ℝ} (hh : AEMeasurable h μ) :
+    LowerSemicontinuous (fun u : WeakSpace ℝ (Lp ℝ p μ) ↦
       ∫⁻ z, ENNReal.ofReal (h z *
-        (Real.exp (2 * ((toWeakSpace ℝ (Lp ℝ 2 μ)).symm u z)) - 1 -
-          2 * ((toWeakSpace ℝ (Lp ℝ 2 μ)).symm u z))) ∂μ) := by
+        (Real.exp (2 * ((toWeakSpace ℝ (Lp ℝ p μ)).symm u z)) - 1 -
+          2 * ((toWeakSpace ℝ (Lp ℝ p μ)).symm u z))) ∂μ) := by
   let Φ : ℝ → ℝ := fun t ↦ Real.exp (2 * t) - 1 - 2 * t
   have hΦ : Continuous Φ := by dsimp [Φ]; fun_prop
   have hconv : ConvexOn ℝ univ Φ := by
@@ -61,7 +61,7 @@ theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub {μ : Measure �
     simpa only [preimage_univ, Pi.sub_def, Function.comp_def, LinearMap.mulLeft_apply, Φ] using
       ((convexOn_exp.comp_linearMap (LinearMap.mulLeft ℝ (2 : ℝ))).sub
         (concaveOn_const (1 : ℝ) convex_univ)).sub hlin
-  have heq (u : Lp ℝ 2 μ) :
+  have heq (u : Lp ℝ p μ) :
       (∫⁻ z, ENNReal.ofReal (Φ (u z)) ∂(μ.withDensity (fun z ↦ ENNReal.ofReal (h z)))) =
         ∫⁻ z, ENNReal.ofReal (h z * Φ (u z)) ∂μ := by
     have hmeas : AEMeasurable (fun z ↦ ENNReal.ofReal (Φ (u z))) μ :=
@@ -70,7 +70,7 @@ theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub {μ : Measure �
     apply lintegral_congr
     intro z
     rw [ENNReal.ofReal_mul' (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _), Pi.mul_apply]
-  have hlsc := lowerSemicontinuous_lintegral_ofReal_comp_toWeakSpace_symm (p := 2)
+  have hlsc := lowerSemicontinuous_lintegral_ofReal_comp_toWeakSpace_symm (p := p)
     (withDensity_absolutelyContinuous μ (fun z ↦ ENNReal.ofReal (h z))) hΦ hconv
   simpa only [heq, Φ] using hlsc
 
