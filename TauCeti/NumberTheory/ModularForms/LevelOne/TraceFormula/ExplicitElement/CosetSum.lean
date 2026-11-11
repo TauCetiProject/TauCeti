@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.ExchangeRelations
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.DoubleCoset
 import Mathlib.Tactic.LinearCombination
-import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.CosetCriterion
 
 /-!
 # The right coset sums of Popa–Zagier's explicit element
@@ -17,8 +16,7 @@ For `ξ = ∑ c_M M ∈ k[ℳₙ]` and a right coset `K = M Γ` of `Γ = PSL(2, 
 `⟨ξ, K⟩ = ∑_{M ∈ K} c_M`. Popa and Zagier's explicit Hecke element `Tₙ` (written with a tilde
 in their paper, their eq. (15)) has `⟨Tₙ, K⟩ = -1` for every right coset `K` and every `n > 0`
 (their Theorem 4(b), first part). Together with the exchange relations (B), this coset identity
-is the input from which they deduce that `Tₙ` satisfies the period relation (A); summing over
-the `σ₁(n)` right cosets also gives the total coefficient sum `∑ c_M = -σ₁(n)`.
+is the input from which they deduce that `Tₙ` satisfies the period relation (A).
 
 The proof reduces to a single coset in each double coset. Since `Tₙ` satisfies (B), its coset
 sums are constant on double cosets (Popa–Zagier, Theorem 2(a)), and every double coset contains
@@ -37,8 +35,6 @@ in eq. (15).
 
 * `TauCeti.TraceFormulaMatrixModule.mapDomain_orbitRel_mk_coeff_popaZagierElement`:
   `⟨Tₙ, K⟩ = -1` for every right coset `K` of `ℳₙ`, `n > 0`.
-* `TauCeti.TraceFormulaMatrixModule.sum_coeff_popaZagierElement`: for `n > 0`, the coefficients
-  of `Tₙ` sum to `-σ₁(n)`.
 
 ## References
 
@@ -367,15 +363,6 @@ theorem mapDomain_orbitRel_mk_coeff_popaZagierElement [DivisionRing k] (h12 : (1
     popaZagierElement_eq_inv_smul_ofWeight, coeff_smul, Finsupp.mapDomain_smul,
     Finsupp.smul_apply, mapDomain_orbitRel_mk_coeff_ofWeight hn.ne',
     finsum_mem_orbit_mk_diagonal_weight hd₀ hm h, smul_eq_mul, mul_neg, inv_mul_cancel₀ h12]
-
-/-- For `n > 0` and `12 ≠ 0` in `k`, the coefficients of Popa–Zagier's explicit element `Tₙ` sum
-to `-σ₁(n)` in total: `ℳₙ` decomposes into `σ₁(n)` right cosets of `PSL(2, ℤ)` and each right
-coset sum is `-1`. -/
-theorem sum_coeff_popaZagierElement [DivisionRing k] (h12 : (12 : k) ≠ 0) (hn : 0 < n) :
-    ((popaZagierElement k n).coeff.sum fun _ a ↦ a) =
-      -(ArithmeticFunction.sigma 1 n.natAbs : k) := by
-  rw [sum_coeff_of_mapDomain_orbitRel_mk_eq hn.ne'
-    (mapDomain_orbitRel_mk_coeff_popaZagierElement h12 hn), smul_neg, nsmul_one]
 
 end TraceFormulaMatrixModule
 

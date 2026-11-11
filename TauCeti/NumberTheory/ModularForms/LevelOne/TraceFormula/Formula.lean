@@ -7,16 +7,14 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Trace
 public import TauCeti.NumberTheory.HurwitzClassNumber
-import TauCeti.Data.Int.Interval
-import TauCeti.NumberTheory.Divisors
-import TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial.Finrank
 import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Hyperbolic
 import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Parabolic
+import TauCeti.NumberTheory.Divisors
 
 /-!
 # The class-number trace formula for Popa–Zagier's explicit element
 
-This file assembles the trace of Popa–Zagier's explicit element `Tₙ` on the space `V_w` of
+This file assembles the trace of Popa–Zagier's explicit element `Tₙ` on the ambient space `V_w` of
 even-degree binary forms and, for `w ≠ 0`, on the full period-polynomial space `W_w`. For even `w`
 and `n > 0` over a field of characteristic zero, the trace is
 
@@ -24,10 +22,8 @@ and `n > 0` over a field of characteristic zero, the trace is
 
 Here Popa–Zagier's `P_{w+2}(t,n)` is `(dickson 2 n w).eval t`, the degree-`w`
 second-kind Dickson polynomial evaluated at `t`. The convention `H(0) = -1/12` absorbs the
-repeated-root contribution: when `n = a²` is a square (`a > 0`), the parabolic weights `2` at
-`t = 2a` and `0` at `t = -2a` divide by `12` to give `(1/6) P_{w+2}(2a, n)`, matching
-`-H(0) P_{w+2}(2a, n) - H(0) P_{w+2}(-2a, n)` by even parity of `P_{w+2}`. For `w > 0`, the trace
-is on `W_w`, not on cusp forms: the latter requires the Hecke-equivariant Eichler–Shimura
+repeated-root contribution. For `w > 0`, the trace on `W_w` equals the ambient trace on `V_w` by
+Popa–Zagier's trace reduction; passing to cusp forms uses the Hecke-equivariant Eichler–Shimura
 comparison and subtraction of the Eisenstein eigenvalue `σ_{w+1}(n)`, followed by division by two.
 
 The inputs are the fixed-trace assembly in `ExplicitElement.Trace` and the elliptic,
@@ -36,36 +32,19 @@ removes the sign asymmetry of the explicit representative. Split hyperbolic trac
 to unordered positive factorizations `n = ad`; the Dickson root formula changes their
 contribution into `d^{w+1} - a^{w+1}`.
 
-In degree `w = 0`, comparing the closed-form trace on `V_0` (`P_2(t, n) = 1`) with the degree-zero
-trace `-∑_{d ∣ n} d` (`TauCeti.TraceFormulaMatrixModule.trace_periodAction_popaZagierElement_zero`)
-gives the **Kronecker–Hurwitz class number relation**
-
-`(∑_{|t| ≤ √(4 n)} H(4 n - t²)) + ∑_{a d = n} min(a, d) = 2 ∑_{d ∣ n} d`.
-
-At `n = 1` and positive even `w`, the trace formula on `W_w` simplifies to `dim W_w`; at `n = 2`
-and `w = 10` (weight `12`), it evaluates to `2001 = σ₁₁(2) + 2 · (-24)`.
-
 ## Main results
 
 * `trace_periodAction_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber` and
   `trace_periodActionRestrict_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber`
   (in `TauCeti.TraceFormulaMatrixModule`): the class-number trace formula on `V_w` (for even `w`)
   and on `W_w` (for positive even `w`).
-* `TauCeti.sum_Icc_hurwitzClassNumber_add_sum_divisorsAntidiagonal_min`: the Kronecker–Hurwitz
-  class number relation.
-* `TauCeti.TraceFormulaMatrixModule.trace_periodActionRestrict_popaZagierElement_one` and
-  `TauCeti.TraceFormulaMatrixModule.trace_periodActionRestrict_popaZagierElement_two_ten`: the
-  specialisations `n = 1` (`tr(T₁ | W_w) = dim W_w`) and `n = 2, w = 10` (`tr(T₂ | W₁₀) = 2001`).
 
 ## References
 
 * A. Popa and D. Zagier, *An elementary proof of the Eichler–Selberg trace formula*,
-  J. Reine Angew. Math. **762** (2020), 105–122, arXiv:1711.00327, §§1, 2, 4, eqs. (2) and (15),
-  Theorem 4.
-* D. Zagier, *Nombres de classes et formes modulaires de poids 3/2*, C. R. Acad. Sci. Paris
-  Sér. A-B **281** (1975), 883–886.
-* D. Zagier, *The Eichler–Selberg trace formula on `SL₂(ℤ)`*, appendix to S. Lang,
-  *Introduction to Modular Forms*, Springer, 1976, for the convention `H(0) = -1/12`.
+  J. Reine Angew. Math. **762** (2020), 105–122, arXiv:1711.00327, §§2, 4.
+* D. Zagier, *The Eichler–Selberg trace formula on SL₂(ℤ)*, appendix to S. Lang,
+  *Introduction to Modular Forms*, for the convention `H(0) = -1/12`.
 -/
 
 public section
@@ -73,9 +52,7 @@ public section
 open Matrix MvPolynomial Polynomial
 open scoped ArithmeticFunction.sigma
 
-namespace TauCeti
-
-namespace TraceFormulaMatrixModule
+namespace TauCeti.TraceFormulaMatrixModule
 
 private noncomputable def fibreWeight (t n : ℤ) : ℚ :=
   ∑ᶠ A : traceDetFiber (Fin 2) t n, (PopaZagier.weight A.1 : ℚ)
@@ -347,100 +324,4 @@ theorem trace_periodActionRestrict_popaZagierElement_eq_sigma_sub_min_sub_hurwit
   rw [(exchangeRelations_popaZagierElement K (n : ℤ)).trace_periodActionRestrict_eq_trace hw hw₀,
     trace_periodAction_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber n hn w hw]
 
-end TraceFormulaMatrixModule
-
-open TraceFormulaMatrixModule in
-/-- **The Kronecker–Hurwitz class number relation.** For every nonzero natural number `n`,
-
-`(∑_{|t| ≤ √(4 n)} H(4 n - t²)) + ∑_{a d = n} min(a, d) = 2 ∑_{d ∣ n} d`,
-
-where `H` is the Hurwitz class number (`H 0 = -1/12`). It follows from equating the closed-form
-trace of Popa–Zagier's explicit element on constant binary forms (`w = 0`, where `P_2(t, n) = 1`)
-with its coefficient sum `-σ₁(n)`. -/
-theorem sum_Icc_hurwitzClassNumber_add_sum_divisorsAntidiagonal_min {n : ℕ} (hn : n ≠ 0) :
-    (∑ t ∈ Finset.Icc (-(Nat.sqrt (4 * n) : ℤ)) (Nat.sqrt (4 * n)),
-        hurwitzClassNumber (4 * (n : ℤ) - t ^ 2).toNat) +
-      (∑ p ∈ n.divisorsAntidiagonal, (↑(min p.1 p.2) : ℚ)) =
-    2 * ∑ d ∈ n.divisors, (d : ℚ) := by
-  have h :=
-    trace_periodAction_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber
-      (K := ℚ) n (Nat.pos_of_ne_zero hn) 0 .zero
-  have hsqrt : (4 * (n : ℤ)).sqrt = Nat.sqrt (4 * n) := by norm_cast
-  rw [trace_periodAction_popaZagierElement_zero (by norm_num) hn, neg_mul,
-    Int.filter_sq_le_Icc_neg_eq_Icc_sqrt (by positivity), hsqrt] at h
-  have hd0 (t : ℤ) : (dickson 2 (n : ℚ) 0).eval (t : ℚ) = 1 := by norm_num
-  simp only [zero_add, pow_one, hd0, mul_one, Rat.cast_id,
-    ArithmeticFunction.sigma_one_apply, Nat.cast_sum] at h
-  linear_combination h
-
-namespace TraceFormulaMatrixModule
-
-/-- **At `n = 1`, the trace of Popa–Zagier's explicit element on `W_w` equals `dim W_w`** for
-positive even `w` over a field of characteristic zero: the `t = ±2`, `0`, `±1` terms evaluate via
-`H 0 = -1/12`, `H 4 = 1/2`, `H 3 = 1/3` and the periodic values `P_{w+2}(0, 1)` and
-`P_{w+2}(±1, 1)` to `2 ⌈w / 4⌉ + 2 ⌈w / 3⌉ - (w + 1)`. -/
-theorem trace_periodActionRestrict_popaZagierElement_one {K : Type*} [Field K] [CharZero K]
-    {w : ℕ} (hw : Even w) (hw₀ : w ≠ 0) :
-    LinearMap.trace K (periodPolynomials K w)
-        ((exchangeRelations_popaZagierElement K 1).periodActionRestrict hw) =
-      (Module.finrank K (periodPolynomials K w) : K) := by
-  have hsqrt : (4 : ℕ).sqrt = 2 := (Nat.eq_sqrt.mpr (by decide)).symm
-  have hIcc : Finset.Icc (-2 : ℤ) 2 = {-2, -1, 0, 1, 2} := by decide
-  have hp2 : (dickson 2 (1 : K) w).eval 2 = w + 1 := by
-    simpa using dickson_two_sq_eval_two_mul (1 : K) w
-  have htr :=
-    trace_periodActionRestrict_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber
-      (K := K) 1 one_pos w hw hw₀
-  rw [neg_mul] at htr
-  simp only [Nat.cast_one, mul_one] at htr
-  rw [Int.filter_sq_le_Icc_neg_eq_Icc_sqrt (by decide),
-    Int.sqrt_ofNat, hsqrt, Nat.cast_ofNat (R := ℤ) (n := 2)] at htr
-  rw [htr, hIcc,
-    ArithmeticFunction.sigma_apply, Nat.divisors_one, Nat.divisorsAntidiagonal_one]
-  norm_num [hurwitzClassNumber_zero, hurwitzClassNumber_three, hurwitzClassNumber_four, hw, hp2]
-  have hW := congrArg (Nat.cast : ℕ → K) (finrank_periodPolynomials_add_eq (K := K) hw hw₀)
-  obtain ⟨q, r, hr, rfl⟩ : ∃ q r,
-      (r = 0 ∨ r = 2 ∨ r = 4 ∨ r = 6 ∨ r = 8 ∨ r = 10) ∧ w = 12 * q + r :=
-    ⟨w / 12, w % 12, by obtain ⟨m, rfl⟩ := hw; omega, (Nat.div_add_mod w 12).symm⟩
-  have h12q : 12 * q + r = 6 * (2 * q) + r := by ring
-  have h1 : (dickson 2 (1 : K) (12 * q + r)).eval 1 =
-      (dickson 2 (1 : K) r).eval 1 := by
-    rw [h12q, dickson_two_one_eval_one_six_mul_add]
-  rw [h1]
-  have h4 : (12 * q + r + 3) / 4 = 3 * q + (r + 3) / 4 := by omega
-  have h3 : (12 * q + r + 2) / 3 = 4 * q + (r + 2) / 3 := by omega
-  have hev : 12 * q + r = 2 * (6 * q + r / 2) := by
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> omega
-  have h0 : (dickson 2 (1 : K) (12 * q + r)).eval 0 =
-      (-1 : K) ^ (6 * q + r / 2) := by
-    rw [hev, dickson_two_eval_zero_two_mul]
-  rw [h4, h3] at hW
-  rw [h0, pow_add, Even.neg_one_pow ⟨3 * q, by ring⟩, one_mul]
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;>
-  · norm_num [dickson_two, dickson_add_two]
-    push_cast at hW ⊢
-    linear_combination -hW
-
-/-- **At `n = 2` and `w = 10` (weight `12`), the trace of Popa–Zagier's explicit element on `W₁₀`
-equals `2001`** (`= σ₁₁(2) + 2 · (-24)`, matching Ramanujan's `τ(2) = -24` on `S₁₂ = ℂ Δ`). -/
-theorem trace_periodActionRestrict_popaZagierElement_two_ten {K : Type*} [Field K] [CharZero K] :
-    LinearMap.trace K (periodPolynomials K 10)
-        ((exchangeRelations_popaZagierElement K 2).periodActionRestrict ⟨5, rfl⟩) = 2001 := by
-  have hsqrt : (8 : ℕ).sqrt = 2 := (Nat.eq_sqrt.mpr (by decide)).symm
-  have hIcc : Finset.Icc (-2 : ℤ) 2 = {-2, -1, 0, 1, 2} := by decide
-  have hdiv : (2 : ℕ).divisors = {1, 2} := by decide
-  have hanti : (2 : ℕ).divisorsAntidiagonal = {(1, 2), (2, 1)} := by decide
-  have htr :=
-    trace_periodActionRestrict_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber
-      (K := K) 2 (by decide) 10 ⟨5, rfl⟩ (by decide)
-  have h8 : (4 : ℤ) * ((2 : ℕ) : ℤ) = 8 := by decide
-  rw [neg_mul, h8, Int.filter_sq_le_Icc_neg_eq_Icc_sqrt (by decide),
-    Int.sqrt_ofNat, hsqrt, Nat.cast_ofNat] at htr
-  rw [htr, hIcc, Nat.cast_ofNat,
-    ArithmeticFunction.sigma_apply, hdiv, hanti]
-  norm_num [hurwitzClassNumber_four, hurwitzClassNumber_seven, hurwitzClassNumber_eight,
-    dickson_add_two, dickson_two]
-
-end TraceFormulaMatrixModule
-
-end TauCeti
+end TauCeti.TraceFormulaMatrixModule

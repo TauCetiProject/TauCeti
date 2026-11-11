@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.Trace
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.ExchangeRelations
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.TraceReduction
-import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.CosetSum
 
 /-!
 # Assembling the trace of Popa–Zagier's explicit element
@@ -29,17 +28,12 @@ The sum is over integral matrices, not projective classes. Each projective coeff
 `(weight A + weight (-A)) / 12`, so no additional factor of two occurs. This is distinct from
 the factor of two in the later transfer from `W_w` to cusp forms.
 
-In degree `0`, every matrix acts trivially on constant binary forms, so `tr(Tₙ | V_0)` is the
-total coefficient sum `-∑_{d ∣ n} d`.
-
 ## Main results
 
 * `TauCeti.TraceFormulaMatrixModule.trace_periodAction_popaZagierElement_eq_finsum`: the ambient
   trace as a weight sum over determinant-`n` matrices.
 * `TauCeti.TraceFormulaMatrixModule.trace_periodAction_popaZagierElement_eq_sum_trace_fibres`:
   the ambient trace grouped by integral trace.
-* `TauCeti.TraceFormulaMatrixModule.trace_periodAction_popaZagierElement_zero`: in degree `0`,
-  `tr(Tₙ | V_0) = -∑_{d ∣ n} d`.
 
 The analogous theorem `trace_periodActionRestrict_popaZagierElement_eq_sum_trace_fibres` gives
 this formula on period polynomials of positive even degree.
@@ -141,15 +135,5 @@ theorem trace_periodActionRestrict_popaZagierElement_eq_sum_trace_fibres [CharZe
           (Polynomial.dickson 2 (n : K) w).eval (t : K) := by
   rw [(exchangeRelations_popaZagierElement K n).trace_periodActionRestrict_eq_trace hw hw₀,
     trace_periodAction_popaZagierElement_eq_sum_trace_fibres hn w hw]
-
-/-- In degree `0`, every matrix acts trivially on `V_0`, so the trace of Popa–Zagier's explicit
-element `Tₙ` on `V_0` is the sum of its coefficients, `-∑_{d ∣ n} d`. -/
-theorem trace_periodAction_popaZagierElement_zero (h12 : (12 : K) ≠ 0) {n : ℕ} (hn : n ≠ 0) :
-    LinearMap.trace K (homogeneousSubmodule (Fin 2) K 0)
-        (periodAction .zero (popaZagierElement K n)) =
-      - ∑ d ∈ n.divisors, (d : K) := by
-  have hn' : (0 : ℤ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
-  rw [trace_periodAction_zero, sum_coeff_popaZagierElement h12 hn', Int.natAbs_natCast,
-    ArithmeticFunction.sigma_one_apply, Nat.cast_sum]
 
 end TauCeti.TraceFormulaMatrixModule
