@@ -80,6 +80,14 @@ noncomputable def graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n �
     (A.toBlocks₁₁.map (↑) + Complex.I • A.toBlocks₂₁.map (↑))
     (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑))
 
+omit [Fintype n] in
+/-- The graph frame in blocks: `fromBlocks 1 (-i) (A₁₁ + i A₂₁) (A₁₂ + i A₂₂)`. -/
+theorem graphFrame_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    graphFrame A = fromBlocks 1 (-(Complex.I • 1))
+      (A.toBlocks₁₁.map (↑) + Complex.I • A.toBlocks₂₁.map (↑))
+      (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑)) :=
+  (rfl)
+
 /-- The graph frame sends the real point `x` to `(conj (φ x), φ (A x))`, where `φ (x, y) = x + i y`.
 -/
 theorem graphFrame_mulVec (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (x : n ⊕ n → ℝ) :
@@ -163,6 +171,11 @@ is, the set of `(conj (φ x), φ (A x))` (`Matrix.mem_graphSubspace_iff`). -/
 noncomputable def graphSubspace (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     Submodule ℝ (EuclideanSpace ℂ (n ⊕ n)) :=
   (graphFrame A).realImage
+
+/-- The graph of `A` is the image of the real points under the graph frame. -/
+theorem realImage_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    (graphFrame A).realImage = graphSubspace A :=
+  (rfl)
 
 /-- A vector of `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}` lies on the graph of `A` exactly when it is
 `(conj (φ x), φ (A x))` for a real vector `x`, where `φ (x, y) = x + i y`. -/
