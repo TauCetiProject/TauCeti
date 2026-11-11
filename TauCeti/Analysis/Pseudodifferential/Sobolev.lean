@@ -914,15 +914,12 @@ theorem toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply
         BesselPotentialSpace.postcomp _ s 2 (e₁ : V →L[ℂ] V'))
         (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
       ∫ x, φ x • quantizeSchwartzValue a.coefficient u x := by
-  have hc : (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient =
-      fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
-    funext fun p ↦ by simp
   have hq (x : CoordinateSpace n) :
       quantizeSchwartzValue
           (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient
           (u.postcompCLM (e₁ : V →L[ℂ] V')) x =
         e₂ (quantizeSchwartzValue a.coefficient u x) := by
-    rw [hc, quantizeSchwartzValue_arrowCongr]
+    rw [coefficient_map_arrowCongr, quantizeSchwartzValue_arrowCongr]
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
     BesselPotentialSpace.toDistr_postcomp_apply, hT]

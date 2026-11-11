@@ -10,10 +10,13 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import TauCeti.Analysis.SpecialFunctions.Beta
 public import Mathlib.NumberTheory.Harmonic.Defs
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # The integral and the moments of the Japanese bracket
@@ -51,6 +54,10 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
+* `TauCeti.not_integrableOn_rpow_neg_one_add_norm_sq`: for `r ≤ d` the bracket
+  `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is not integrable over any open cone containing a nonzero vector.
+* `TauCeti.memLp_two_one_add_norm_rpow_neg`: the power `x ↦ (1 + ‖x‖) ^ (-r)` is square
+  integrable for `d < 2 r`, for every additive Haar measure.
 * `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-(n + 1) / 2)` is integrable.
 * `TauCeti.integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq`: the weight
@@ -118,6 +125,105 @@ theorem integrable_rpow_neg_sq_add_norm_sq (μ : Measure V) [μ.IsAddHaarMeasure
   beta_reduce
   rw [← Real.mul_rpow (by positivity) (by positivity), norm_smul, mul_pow, norm_inv,
     Real.norm_eq_abs, inv_pow, sq_abs, mul_add, mul_one, mul_inv_cancel_left₀ hc2]
+
+section Cone
+
+open scoped Pointwise
+
+omit [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V] in
+/-- On the dilate `t • ball ξ ρ`, for `t ≥ 1` and `ρ ≤ ‖ξ‖ / 2`, the bracket
+`(1 + ‖x‖ ^ 2) ^ (-r / 2)` with `r ≤ d` is at least `κ t ^ (-d)`, where
+`κ = (1 + (3 ‖ξ‖ / 2) ^ 2) ^ (-d / 2)`. -/
+private theorem le_rpow_neg_one_add_norm_sq_of_mem_smul_ball {ξ : V} {ρ t r d : ℝ}
+    (hρ : ρ ≤ ‖ξ‖ / 2) (ht : 1 ≤ t) (hr : r ≤ d) (hd : 0 ≤ d) {x : V} (hx : x ∈ t • ball ξ ρ) :
+    (1 + (3 * ‖ξ‖ / 2) ^ 2) ^ (-d / 2) * t ^ (-d) ≤ (1 + ‖x‖ ^ 2) ^ (-r / 2) := by
+  have hx' := (norm_bounds_of_mem_smul_ball hρ (by positivity) hx).2
+  have hbase : 1 + ‖x‖ ^ 2 ≤ t ^ 2 * (1 + (3 * ‖ξ‖ / 2) ^ 2) := by
+    have : ‖x‖ ^ 2 ≤ (t * (3 * ‖ξ‖ / 2)) ^ 2 := by
+      gcongr
+      linarith
+    nlinarith
+  calc (1 + (3 * ‖ξ‖ / 2) ^ 2) ^ (-d / 2) * t ^ (-d)
+      = (t ^ 2 * (1 + (3 * ‖ξ‖ / 2) ^ 2)) ^ (-d / 2) := by
+        rw [Real.mul_rpow (by positivity) (by positivity), Real.sq_rpow_div_two (by positivity),
+          mul_comm]
+    _ ≤ (1 + ‖x‖ ^ 2) ^ (-d / 2) :=
+        Real.rpow_le_rpow_of_nonpos (by positivity) hbase (by linarith)
+    _ ≤ (1 + ‖x‖ ^ 2) ^ (-r / 2) :=
+        Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖x‖]) (by linarith)
+
+/-- **The Japanese bracket is not integrable over an open cone at the critical decay.** If
+`r ≤ d`, where `d` is the dimension, then `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is not integrable over an
+open set `Γ` that contains a nonzero vector and is closed under multiplication by positive reals,
+for any additive Haar measure. So the condition `d < r` of `integrable_rpow_neg_one_add_norm_sq` is
+also necessary on every open cone. -/
+theorem not_integrableOn_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsAddHaarMeasure] {r : ℝ}
+    (hr : r ≤ finrank ℝ V) {Γ : Set V} (hΓ : IsOpen Γ)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ x ∈ Γ, t • x ∈ Γ) {ξ : V} (hξΓ : ξ ∈ Γ) (hξ : ξ ≠ 0) :
+    ¬ IntegrableOn (fun x : V ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)) Γ μ := by
+  intro hint
+  set d : ℝ := (finrank ℝ V : ℝ)
+  -- A ball `A` around `ξ` inside `Γ`, of radius at most `‖ξ‖ / 2`. Its dilates `4 ^ k • A` are
+  -- disjoint pieces of `Γ` on which the bracket integrates to at least `κ μ A`.
+  obtain ⟨ρ, hρ, hball⟩ := Metric.isOpen_iff.1 hΓ ξ hξΓ
+  set A := ball ξ (min ρ (‖ξ‖ / 2))
+  have hA : A ⊆ Γ := (ball_subset_ball (min_le_left _ _)).trans hball
+  have hAμ : μ A ≠ 0 := by
+    have := norm_pos_iff.2 hξ
+    exact (measure_ball_pos μ ξ (lt_min hρ (by positivity))).ne'
+  have hS (k : ℕ) : ((4 : ℝ) ^ k) • A ⊆ Γ := by
+    rintro _ ⟨y, hy, rfl⟩
+    exact hcone _ (by positivity) y (hA hy)
+  have hSm (k : ℕ) : MeasurableSet (((4 : ℝ) ^ k) • A) :=
+    (isOpen_ball.smul₀ (by positivity : (4 : ℝ) ^ k ≠ 0)).measurableSet
+  set κ : ℝ := (1 + (3 * ‖ξ‖ / 2) ^ 2) ^ (-d / 2)
+  have hκ : 0 < κ := by positivity
+  have hpiece (k : ℕ) : ENNReal.ofReal κ * μ A ≤
+      ∫⁻ x in ((4 : ℝ) ^ k) • A, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ := by
+    -- The measure of the dilate is `4 ^ (d k) μ A`.
+    have hμ : μ (((4 : ℝ) ^ k) • A) = ENNReal.ofReal (((4 : ℝ) ^ k) ^ d) * μ A := by
+      rw [Measure.addHaar_smul, abs_of_nonneg (by positivity), Real.rpow_natCast]
+    calc ENNReal.ofReal κ * μ A
+        = ENNReal.ofReal (κ * ((4 : ℝ) ^ k) ^ (-d)) * μ (((4 : ℝ) ^ k) • A) := by
+          rw [hμ, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), mul_assoc,
+            ← Real.rpow_add (by positivity), neg_add_cancel, Real.rpow_zero, mul_one]
+      _ = ∫⁻ x in ((4 : ℝ) ^ k) • A, ENNReal.ofReal (κ * ((4 : ℝ) ^ k) ^ (-d)) ∂μ :=
+          (setLIntegral_const _ _).symm
+      _ ≤ ∫⁻ x in ((4 : ℝ) ^ k) • A, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ := by
+          refine setLIntegral_mono' (hSm k) fun x hx ↦ ?_
+          rw [← ofReal_norm]
+          exact ENNReal.ofReal_le_ofReal ((le_rpow_neg_one_add_norm_sq_of_mem_smul_ball
+            (min_le_right _ _) (one_le_pow₀ (by norm_num)) hr (Nat.cast_nonneg _) hx).trans
+            (Real.le_norm_self _))
+  -- Summing over the disjoint pieces contradicts integrability over `Γ`.
+  have htop : ⊤ ≤ ∫⁻ x in Γ, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ :=
+    calc (⊤ : ENNReal) = ∑' _ : ℕ, ENNReal.ofReal κ * μ A :=
+          (ENNReal.tsum_const_eq_top_of_ne_zero
+            (mul_ne_zero (ENNReal.ofReal_pos.2 hκ).ne' hAμ)).symm
+      _ ≤ ∑' k : ℕ, ∫⁻ x in ((4 : ℝ) ^ k) • A, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ :=
+          tsum_le_tsum hpiece
+      _ = ∫⁻ x in ⋃ k : ℕ, ((4 : ℝ) ^ k) • A, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ :=
+          (lintegral_iUnion hSm (pairwise_disjoint_pow_smul_ball (by norm_num) (min_le_right _ _))
+            _).symm
+      _ ≤ ∫⁻ x in Γ, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ := lintegral_mono_set (iUnion_subset hS)
+  exact lt_irrefl _ (hint.hasFiniteIntegral.trans_le htop)
+
+end Cone
+
+/-- The power `x ↦ (1 + ‖x‖) ^ (-r)` is square integrable for every additive Haar measure on a
+finite-dimensional real normed space of dimension `d < 2 r`. -/
+theorem memLp_two_one_add_norm_rpow_neg (μ : Measure V) [μ.IsAddHaarMeasure] {r : ℝ}
+    (hr : (finrank ℝ V : ℝ) < 2 * r) : MemLp (fun x : V ↦ (1 + ‖x‖) ^ (-r)) 2 μ := by
+  have hcont : Continuous fun x : V ↦ (1 + ‖x‖) ^ (-r) :=
+    (continuous_const.add continuous_norm).rpow_const fun _ ↦
+      Or.inl (add_pos_of_pos_of_nonneg one_pos (norm_nonneg _)).ne'
+  refine (memLp_two_iff_integrable_sq_norm hcont.aestronglyMeasurable).2
+    ((integrable_one_add_norm (μ := μ) hr).congr (.of_forall fun x ↦ ?_))
+  beta_reduce
+  rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
+  congr 1
+  push_cast
+  ring
 
 /-- The radial moment `x ↦ ‖x‖ ^ p (1 + ‖x‖ ^ 2) ^ (-r / 2)` of order `p ≥ 0` of the Japanese
 bracket is integrable for every additive Haar measure when its decay exponent exceeds

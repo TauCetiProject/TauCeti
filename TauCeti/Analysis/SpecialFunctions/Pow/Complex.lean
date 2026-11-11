@@ -89,6 +89,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `Complex.tendsto_neg_two_cpow_half_mul_inv_atTop` -- continuity at `0`, derivative on `(0, ∞)` and
   limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`. Continuity holds for arbitrary `x` and
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
+* `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
 -/
 
 public section
@@ -598,6 +599,14 @@ theorem im_cpow_ofReal_eq_zero {u : ℂ} {r : ℝ} (h : arg u * r = 0 ∨ arg u 
     (u ^ (r : ℂ)).im = 0 := by
   rw [cpow_ofReal_im]
   rcases h with h | h <;> rw [h] <;> simp
+
+/-- A real power of a positive real number grows at most exponentially in the exponent. -/
+theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
+    ‖(a : ℂ) ^ w‖ ≤ Real.exp (|Real.log a| * ‖w‖) := by
+  rw [norm_cpow_eq_rpow_re_of_pos ha, Real.rpow_def_of_pos ha]
+  exact Real.exp_le_exp.mpr <| (le_abs_self _).trans <| by
+    rw [abs_mul]
+    exact mul_le_mul_of_nonneg_left (abs_re_le_norm w) (abs_nonneg _)
 
 end Complex
 
