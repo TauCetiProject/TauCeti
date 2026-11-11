@@ -25,8 +25,8 @@ If the action is moreover free and properly discontinuous, the orbit space `M �
 manifold and the orbit projection `π : M → M ⧸ G` is a surjective `C^n` local diffeomorphism
 (`TauCeti.isLocalDiffeomorph_quotientMk`). Pullback along `π` then identifies the `C^n` maps on
 `M ⧸ G` with the `G`-invariant `C^n` maps on `M` (`TauCeti.smoothQuotientEquivInvariants`): a
-`G`-invariant `C^n` map descends to a map on the orbit space (`ContMDiffMap.descend`), which is
-again `C^n` because `π` is a local diffeomorphism.
+`G`-invariant `C^n` map descends to a map on the orbit space
+(`ContMDiffMap.orbitRelQuotientLift`), which is again `C^n` because `π` is a local diffeomorphism.
 
 This is how spectral problems on a quotient are lifted to its cover. If an operator `T` on the
 functions on `M` and an operator `S` on the functions on `M ⧸ G` are intertwined by pullback,
@@ -147,11 +147,12 @@ def smoothQuotientEquivInvariants :
       (smoothFunctionRep 𝕜 I M F n G).invariants where
   toFun u := ⟨u.comp (smoothQuotientMk I M n G),
     mem_invariants_smoothFunctionRep_iff.2 fun _ _ ↦ by simp⟩
-  invFun f := (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯).descend (mem_invariants_smoothFunctionRep_iff.1 f.2)
+  invFun f :=
+    (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯).orbitRelQuotientLift (mem_invariants_smoothFunctionRep_iff.1 f.2)
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  left_inv u := ((u.comp (smoothQuotientMk I M n G)).eq_descend_iff _).2 rfl |>.symm
-  right_inv f := Subtype.ext (ContMDiffMap.descend_comp_smoothQuotientMk _ _)
+  left_inv u := ((u.comp (smoothQuotientMk I M n G)).eq_orbitRelQuotientLift_iff _).2 rfl |>.symm
+  right_inv f := Subtype.ext (ContMDiffMap.orbitRelQuotientLift_comp_smoothQuotientMk _ _)
 
 @[simp]
 theorem coe_smoothQuotientEquivInvariants_apply
@@ -164,7 +165,8 @@ theorem coe_smoothQuotientEquivInvariants_apply
 theorem smoothQuotientEquivInvariants_symm_apply
     (f : (smoothFunctionRep 𝕜 I M F n G).invariants) :
     (smoothQuotientEquivInvariants 𝕜 I M F n G).symm f =
-      (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯).descend (mem_invariants_smoothFunctionRep_iff.1 f.2) :=
+      (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯).orbitRelQuotientLift
+        (mem_invariants_smoothFunctionRep_iff.1 f.2) :=
   (rfl)
 
 /-- Pullback along the orbit projection, as a linear map into the `C^n` maps on `M`, has range the

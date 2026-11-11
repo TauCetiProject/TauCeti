@@ -28,8 +28,8 @@ because both orbit projections are local diffeomorphisms.
 
 The same descent is packaged for bundled `C^n` maps: the orbit projection is the bundled `C^n` map
 `TauCeti.smoothQuotientMk`, and an invariant bundled `C^n` map descends to the bundled `C^n` map
-`ContMDiffMap.descend`, the unique map whose pullback along the orbit projection it is
-(`ContMDiffMap.eq_descend_iff`).
+`ContMDiffMap.orbitRelQuotientLift`, the unique map whose pullback along the orbit projection it
+is (`ContMDiffMap.eq_orbitRelQuotientLift_iff`).
 
 Over `𝕜 = ℂ` with `n = m = ∞` this is holomorphic descent: an invariant holomorphic map on a
 complex manifold descends to a holomorphic map on the quotient by a free properly discontinuous
@@ -49,8 +49,8 @@ that is only smooth after restricting scalars to `ℝ` gives the real statement 
   equivariant `C^n` submersion with complement `F` is a `C^n` submersion with complement `F`;
   `TauCeti.isSubmersion_orbitRelQuotientMap` is the version without a fixed complement.
 * `TauCeti.smoothQuotientMk`: the orbit projection, as a `C^n` map.
-* `ContMDiffMap.descend`: a `G`-invariant `C^n` map into any manifold, as a `C^n` map on the
-  orbit space.
+* `ContMDiffMap.orbitRelQuotientLift`: a `G`-invariant `C^n` map into any manifold, as a `C^n`
+  map on the orbit space.
 
 ## References
 
@@ -178,32 +178,36 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A `C^n` map constant on the orbits of a free, properly discontinuous action by `C^n` maps
 descends to a `C^n` map on the orbit space. -/
-def descend (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
+def orbitRelQuotientLift (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
     C^n⟮I, MulAction.orbitRel.Quotient G M; I', N⟯ :=
   ⟨MulAction.orbitRelQuotientLift f hf, (contMDiff_orbitRelQuotientLift_iff le_rfl).2 f.contMDiff⟩
 
-/-- The underlying function of `ContMDiffMap.descend` is the descent
+/-- The underlying function of `ContMDiffMap.orbitRelQuotientLift` is the descent
 `TauCeti.MulAction.orbitRelQuotientLift` of the underlying function. -/
-theorem coe_descend (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
-    ⇑(f.descend hf) = MulAction.orbitRelQuotientLift f hf :=
+theorem coe_orbitRelQuotientLift (f : C^n⟮I, M; I', N⟯)
+    (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
+    ⇑(f.orbitRelQuotientLift hf) = MulAction.orbitRelQuotientLift f hf :=
   (rfl)
 
 @[simp]
-theorem descend_apply_mk (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x)
-    (x : M) : f.descend hf (Quotient.mk (MulAction.orbitRel G M) x) = f x :=
+theorem orbitRelQuotientLift_apply_mk (f : C^n⟮I, M; I', N⟯)
+    (hf : ∀ (g : G) (x : M), f (g • x) = f x) (x : M) :
+    f.orbitRelQuotientLift hf (Quotient.mk (MulAction.orbitRel G M) x) = f x :=
   MulAction.orbitRelQuotientLift_mk x
 
 @[simp]
-theorem descend_comp_smoothQuotientMk (f : C^n⟮I, M; I', N⟯)
+theorem orbitRelQuotientLift_comp_smoothQuotientMk (f : C^n⟮I, M; I', N⟯)
     (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
-    (f.descend hf).comp (smoothQuotientMk I M n G) = f :=
+    (f.orbitRelQuotientLift hf).comp (smoothQuotientMk I M n G) = f :=
   ContMDiffMap.ext fun x ↦ by simp
 
 /-- The descent of `f` is the unique map on the orbit space whose pullback is `f`. -/
-theorem eq_descend_iff (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x)
+theorem eq_orbitRelQuotientLift_iff (f : C^n⟮I, M; I', N⟯)
+    (hf : ∀ (g : G) (x : M), f (g • x) = f x)
     {u : C^n⟮I, MulAction.orbitRel.Quotient G M; I', N⟯} :
-    u = f.descend hf ↔ u.comp (smoothQuotientMk I M n G) = f := by
-  refine ⟨fun h ↦ h ▸ descend_comp_smoothQuotientMk f hf, fun h ↦ ContMDiffMap.ext fun y ↦ ?_⟩
+    u = f.orbitRelQuotientLift hf ↔ u.comp (smoothQuotientMk I M n G) = f := by
+  refine ⟨fun h ↦ h ▸ orbitRelQuotientLift_comp_smoothQuotientMk f hf,
+    fun h ↦ ContMDiffMap.ext fun y ↦ ?_⟩
   induction y using Quotient.inductionOn with
   | h x => simpa using DFunLike.congr_fun h x
 
