@@ -11,6 +11,10 @@ public import Mathlib.GroupTheory.Submonoid.Center
 /-!
 # Products along lists in a noncommutative monoid
 
+Along a word of labelled letters whose consecutive labels differ, the product of the letters lies
+in a set attached to the label of the first letter, as soon as each letter carries the sets
+attached to the other labels into the set attached to its own.
+
 `List.prod_map_mul` splits the product of a list of pairwise products `f i * g i` into the product
 of the `f i` times the product of the `g i`, in a commutative monoid. The same splitting holds in
 any monoid as soon as the second factors are central, since each `g i` can then be moved past the
@@ -20,6 +24,9 @@ entries whose relative order differs has commuting images.
 
 ## Main results
 
+* `List.prod_map_snd_mem_of_isChain`: the product of the second components of a list of labelled
+  letters with no two consecutive equal labels lies in a set determined by the first label, when
+  each admissible letter carries the sets of the other labels into it.
 * `List.prod_map_mul_of_mem_center`: `∏ (f i * g i) = (∏ f i) * (∏ g i)` along a list, when
   `g i` lies in the center for every entry `i` of the list.
 * `List.prod_map_erase_of_eq_one`: `∏_{i ∈ l.erase a} f i = ∏_{i ∈ l} f i` when `f a = 1`.
@@ -30,6 +37,30 @@ entries whose relative order differs has commuting images.
 public section
 
 namespace List
+
+section IsChain
+
+variable {κ M : Type*} [Mul M] [One M]
+
+/-- **Induction along a word with no two consecutive equal labels.** Let `P` single out the
+admissible labelled letters `(k, a)`. If multiplying an admissible letter with label `k` onto an
+element of `T k` lands in `V k`, each `T k` contains `1`, and `V k' ⊆ T k` for `k ≠ k'`, then the
+product of the letters of every admissible word whose consecutive labels differ lies in `V k`,
+where `k` is the label of its first letter. -/
+theorem prod_map_snd_mem_of_isChain (P : κ × M → Prop) (V T : κ → Set M)
+    (hcons : ∀ x : κ × M, P x → ∀ q ∈ T x.1, x.2 * q ∈ V x.1) (h1 : ∀ k, (1 : M) ∈ T k)
+    (hVT : ∀ k k', k ≠ k' → V k' ⊆ T k) (x : κ × M) (W : List (κ × M))
+    (hW : ((x :: W).map Prod.fst).IsChain (· ≠ ·)) (hP : ∀ y ∈ x :: W, P y) :
+    ((x :: W).map Prod.snd).prod ∈ V x.1 := by
+  induction W generalizing x with
+  | nil => simpa using hcons x (hP x mem_cons_self) 1 (h1 x.1)
+  | cons x' W ih =>
+    simp only [map_cons, isChain_cons_cons] at hW
+    rw [map_cons, prod_cons]
+    exact hcons x (hP x mem_cons_self) _ (hVT _ _ hW.1
+      (ih x' (by simpa using hW.2) fun y hy ↦ hP y (.tail _ hy)))
+
+end IsChain
 
 variable {ι M : Type*} [Monoid M]
 

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 import Mathlib.Algebra.Algebra.Operations
 import Mathlib.Data.List.Chain
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.BigOperators.Group.List
 import TauCeti.Algebra.BigOperators.Ring.List
 
 /-!
@@ -540,16 +541,17 @@ theorem iSup_fiber (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) (g : ι → �
       (Submodule.span_mul_span R (S x.1) (T x.1) ▸ Submodule.mul_mem_mul (hS hx.1 hx.2) hq)
   -- By induction along the word, the value of a centred alternating word in the subalgebras
   -- generated over the fibres, with first label `k`, lies in the span of `V k`.
-  have key := List.prod_map_snd_mem_span_of_isChain
-    (fun x : κ × A ↦ x.2 ∈ ⨆ (i) (_ : g i = x.1), B i ∧ φ x.2 = 0) V T hcons
+  have key := List.prod_map_snd_mem_of_isChain
+    (fun x : κ × A ↦ x.2 ∈ ⨆ (i) (_ : g i = x.1), B i ∧ φ x.2 = 0)
+    (fun k ↦ Submodule.span R (V k)) (fun k ↦ Submodule.span R (T k)) hcons
     (fun k => Submodule.subset_span ⟨[], by simp, by simp, by simp, by simp, by simp⟩)
-    (fun k k' hk => by
+    (fun k k' hk => Submodule.span_mono <| by
       rintro _ ⟨w, -, halt', hw, hc', hg, rfl⟩
       exact ⟨w, halt', hw, hc', fun y hy => (hg y hy).trans_ne hk.symm, rfl⟩)
   intro W hne halt hW hc
   obtain ⟨x, W, rfl⟩ := List.exists_cons_of_ne_nil hne
   refine isFreelyIndependent_iff_span_le_ker.1 h (Submodule.span_mono ?_
-    (key W x halt fun y hy ↦ ⟨hW y hy, hc y hy⟩))
+    (key x W halt fun y hy ↦ ⟨hW y hy, hc y hy⟩))
   rintro _ ⟨w, hne, halt, hw, hc, -, rfl⟩
   exact ⟨w, hne, halt, hw, hc, rfl⟩
 
