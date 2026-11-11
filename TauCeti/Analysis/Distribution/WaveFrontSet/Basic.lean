@@ -11,6 +11,8 @@ public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.LinearEquiv
 public import TauCeti.Analysis.Distribution.Restriction
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Inversion
@@ -38,7 +40,8 @@ not microlocally smooth.
 
 ## Main declarations
 
-* `Distribution.localFourier T φ`: the Fourier transform `η ↦ T (φ e_η)` of `φ T`.
+* `Distribution.localFourier T φ`: the Fourier transform `η ↦ T (φ e_η)` of `φ T`; it is
+  continuous (`Distribution.continuous_localFourier`).
 * `Distribution.IsMicrolocallySmoothAt T x ξ`: microlocal smoothness at `(x, ξ)`.
 * `Distribution.waveFrontSet T`: the wave front set.
 
@@ -156,6 +159,24 @@ theorem localFourier_zero_cutoff (T : 𝓓'(Ω, ℂ)) (η : E) : T.localFourier 
 theorem localFourier_at_zero (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
     T.localFourier φ 0 = T.complexPairing φ :=
   localFourier_eq T φ fun x ↦ by simp
+
+/-- The localized Fourier transform `η ↦ T (φ e_η)` is continuous in the frequency. -/
+theorem continuous_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    Continuous (T.localFourier φ) := by
+  set ψ : E → 𝓓(Ω, ℂ) := fun η ↦
+    bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ
+  have hT : T.localFourier φ = fun η ↦ T.complexPairing (ψ η) :=
+    funext fun η ↦ localFourier_eq T φ fun x ↦ by
+      simp [ψ, bilinLeftCLM_apply, TauCeti.fourierAtom_eq_fourierChar,
+        -TauCeti.fourierAtom_apply]
+  rw [hT]
+  -- The modulated cutoffs `φ e_η` share the support of `φ` and depend smoothly on `η`.
+  refine T.complexPairing.continuous.comp (continuous_of_contDiff_uncurry
+    φ.hasCompactSupport.isCompact φ.tsupport_subset (fun η ↦ ?_) ?_)
+  · simp only [ψ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+    exact tsupport_mul_subset_left
+  · simp only [ψ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+    exact (φ.contDiff.comp contDiff_snd).mul TauCeti.contDiff_uncurry_fourierAtom
 
 /-- The localized Fourier transform of a smooth multiple `g T` with cutoff `φ` is that of `T` with
 cutoff `g φ`. -/
@@ -306,21 +327,13 @@ theorem isMicrolocallySmoothAt_conj_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} :
   have key {S : 𝓓'(Ω, ℂ)} {ζ : E} (h : S.IsMicrolocallySmoothAt x (-ζ)) :
       (mapCLM conjCLE.toContinuousLinearMap S).IsMicrolocallySmoothAt x ζ := by
     obtain ⟨φ, hφ, Γ, hΓ, hζ, hcone, hdecay⟩ := h
-    have hφφ : postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap
-        (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ) = φ := by
-      ext y
-      simp
     refine ⟨postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ, by simpa using hφ,
       Neg.neg ⁻¹' Γ, hΓ.preimage continuous_neg, hζ, fun t ht η hη => ?_, fun N => ?_⟩
     · simpa [smul_neg] using hcone t ht (-η) hη
     · obtain ⟨C, hC⟩ := hdecay N
-      exact ⟨C, fun η hη => by simpa [localFourier_conj, hφφ] using hC (-η) hη⟩
-  have hconj : mapCLM conjCLE.toContinuousLinearMap (mapCLM conjCLE.toContinuousLinearMap T) =
-      T := by
-    ext φ
-    simp [mapCLM_apply]
+      exact ⟨C, fun η hη => by simpa [localFourier_conj] using hC (-η) hη⟩
   refine ⟨fun h => ?_, key⟩
-  rw [← hconj]
+  rw [← mapCLM_conj_mapCLM_conj T]
   exact key (by rwa [neg_neg])
 
 /-- Complex conjugation reflects the wave front set in the frequency variable. -/
