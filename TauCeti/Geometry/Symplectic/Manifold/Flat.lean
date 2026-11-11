@@ -29,7 +29,9 @@ smooth section as well, by `ContMDiff.clm_bundle_inverse`.
 Inverting the flat map turns covector fields into vector fields: a Hamiltonian vector field is
 `(σ♭)⁻¹ df`, and the Liouville field of a primitive `α` is `(σ♭)⁻¹ α`. For a nondegenerate form,
 in any dimension, a vector field is determined by its contraction with the form
-(`TauCeti.SmoothTwoForm.IsNondegenerate.interior_injective`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.interior_injective`), and a linear map between two tangent
+spaces of `M` that preserves the form is surjective in finite dimensions
+(`TauCeti.SmoothTwoForm.IsNondegenerate.surjective_of_eval₂_map`).
 
 On smooth sections, contraction `X ↦ ι_X σ` is a linear map from smooth vector fields to smooth
 one-forms (`TauCeti.SmoothTwoForm.interiorₗ`). For a nondegenerate form on a finite-dimensional
@@ -48,6 +50,8 @@ inverse sends a one-form `α` to the vector field `(σ♭)⁻¹ α`.
   two-forms along a map depend smoothly on the parameter.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_isInvertible_flat`: nondegeneracy is invertibility of
   the flat maps, in finite dimensions.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.surjective_of_eval₂_map`: a linear map between tangent
+  spaces preserving a nondegenerate form is surjective, in finite dimensions.
 * `TauCeti.SmoothTwoForm.interiorₗ`: contraction of smooth vector fields, as a linear map to smooth
   one-forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv`: for a nondegenerate form in finite
@@ -175,6 +179,19 @@ theorem isNondegenerate_iff_isInvertible_flat [FiniteDimensional ℝ E] :
 theorem IsNondegenerate.isInvertible_flat [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
     (x : M) : (σ.flat x).IsInvertible :=
   isNondegenerate_iff_isInvertible_flat.1 h x
+
+/-- **Linear maps preserving a nondegenerate form are surjective.** A linear map `D` from the
+tangent space at `x` to the tangent space at `y` with `σ_y(D u, D v) = σ_x(u, v)` is injective
+because `σ` is nondegenerate, hence surjective in finite dimension. -/
+theorem IsNondegenerate.surjective_of_eval₂_map [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
+    {x y : M} {D : TangentSpace I x →L[ℝ] TangentSpace I y}
+    (hD : ∀ u v, SmoothBundleForm.eval₂ σ y (D u) (D v) = SmoothBundleForm.eval₂ σ x u v) :
+    Function.Surjective D := by
+  have hinj : Function.Injective D :=
+    (injective_iff_map_eq_zero D).2 fun u hu ↦
+      isNondegenerate_iff_separatingLeft.1 h x u fun w ↦ by
+        rw [← hD, hu, ← flat_apply, map_zero, zero_apply]
+  exact (LinearMap.injective_iff_surjective (f := (D.toLinearMap : E →ₗ[ℝ] E))).1 hinj
 
 /-! ### Contraction of smooth vector fields -/
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.CompoundPoisson.Basic
 public import TauCeti.Probability.Moments.ConvolutionPower
 public import Mathlib.Probability.ConditionalProbability
-import TauCeti.Probability.Distributions.Mixture
+import TauCeti.Probability.Distributions.Mixture.Basic
 
 /-!
 # Exponential moments of compound Poisson laws
