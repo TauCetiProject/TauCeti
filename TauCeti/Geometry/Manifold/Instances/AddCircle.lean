@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Add
 public import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Covering.AddCircle
 public import Mathlib.Topology.Instances.ZMultiples
 public import TauCeti.Geometry.Manifold.Algebra.LieGroup
@@ -75,6 +76,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   `AddCircle.mfderiv_prodMap_coe`: the quotient map
   `ℝ × ℝ → AddCircle p × AddCircle q` is an analytic local diffeomorphism whose differential is the
   identity of `ℝ × ℝ`.
+* `AddCircle.mvfderiv_prodMap_coe_apply`: the differential of a vector-valued function on
+  `AddCircle p × AddCircle q` is the derivative of its lift to `ℝ × ℝ`.
 * `AddCircle.hasMFDerivAt_add_coe_comp`: the velocity of a curve `s ↦ x + [f s]` is the derivative
   of `f`.
 * `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
@@ -707,5 +710,20 @@ theorem mfderiv_prodMap_coe (z : ℝ × ℝ) :
         (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z =
       ContinuousLinearMap.id ℝ (ℝ × ℝ) :=
   (hasMFDerivAt_prodMap_coe p q z).mfderiv
+
+variable {p q} in
+/-- At the image of `z`, the differential of a vector-valued function `σ` on
+`AddCircle p × AddCircle q` is the derivative of its lift to `ℝ × ℝ`. -/
+theorem mvfderiv_prodMap_coe_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {σ : AddCircle p × AddCircle q → F} {z : ℝ × ℝ}
+    (hσ : MDifferentiableAt (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, F) σ
+      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) z)) (v : ℝ × ℝ) :
+    mvfderiv (𝓘(ℝ).prod 𝓘(ℝ)) σ
+        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) z) v =
+      fderiv ℝ (σ ∘ Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z v := by
+  have hπ := hasMFDerivAt_prodMap_coe p q z
+  have h := mvfderiv_comp_apply z hσ hπ.mdifferentiableAt v
+  rw [hπ.mfderiv, mvfderiv_eq_fderiv] at h
+  exact h.symm
 
 end AddCircle
