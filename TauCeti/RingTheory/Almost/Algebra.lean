@@ -288,13 +288,6 @@ theorem isAlmostIso_adj_unit_app (R : CommAlgCat.{u} V) :
     exact IsIso.id _
   exact IsIso.of_isIso_comp_right _ ((adj S).counit.app _)
 
-/-- For the classical setup, the unit `R → (R^a)_*` is an isomorphism. -/
-instance isIso_adj_unit_classical : IsIso (adj (BasicSetup.classical V)).unit := by
-  have (R : CommAlgCat.{u} V) : IsIso ((adj (BasicSetup.classical V)).unit.app R) :=
-    (ConcreteCategory.isIso_iff_bijective _).mpr (BasicSetup.isAlmostIso_classical_iff.mp
-      (isAlmostIso_adj_unit_app (BasicSetup.classical V) R))
-  exact NatIso.isIso_of_isIso_app _
-
 /-- For the classical setup `(V, V)`, almostification of algebras is an equivalence of
 categories. -/
 instance isEquivalence_toAlmost_classical : (toAlmost (BasicSetup.classical V)).IsEquivalence where

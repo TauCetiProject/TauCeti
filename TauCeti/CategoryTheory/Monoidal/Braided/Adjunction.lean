@@ -77,7 +77,7 @@ theorem _root_.CategoryTheory.Adjunction.μ_comp_map_braiding_hom (adj : F ⊣ G
 
 /-- A braided strong monoidal left adjoint gives a compatible lax monoidal right adjoint a
 lax braided structure, with the given lax monoidal structure on `G`. -/
-@[instance_reducible]
+@[expose, instance_reducible]
 def _root_.CategoryTheory.Adjunction.rightAdjointLaxBraided (adj : F ⊣ G)
     [F.Braided] [G.LaxMonoidal] [adj.IsMonoidal] : G.LaxBraided where
   toLaxMonoidal := inferInstance

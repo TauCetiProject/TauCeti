@@ -181,9 +181,8 @@ noncomputable instance elementsLaxMonoidal : (elements S).LaxMonoidal :=
 `M ↦ M^a`, the comparison `M_* ⊗[V] N_* → (M ⊗ N)_*` is compatible with the symmetries. Hence
 almost elements send commutative monoid objects to commutative monoid objects, that is, almost
 algebras to commutative `V`-algebras. -/
-noncomputable instance elementsLaxBraided : (elements S).LaxBraided where
-  toLaxMonoidal := elementsLaxMonoidal S
-  braided := (adjElements S).μ_comp_map_braiding_hom fun _ _ ↦ by simp
+noncomputable instance elementsLaxBraided : (elements S).LaxBraided :=
+  (adjElements S).rightAdjointLaxBraided
 
 /-- The unit comparison `V → (𝟙_)_*` of almost elements sends `1` to the almost element
 `V^a → 𝟙_` given by the monoidal structure of `M ↦ M^a`. -/
