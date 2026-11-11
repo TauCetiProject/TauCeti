@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.FormalCompletion
 public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.FinitePresentation
 
 /-!
 # Coherent formal modules on adic thickening systems
@@ -24,7 +25,12 @@ Grothendieck's existence theorem (Stacks, Section 30.23); for general `X` the de
 finitely presented systems.
 
 The category `CoherentFormalModule 𝔛` is preadditive, with sums and differences of morphisms
-computed levelwise. The *completion functor*
+computed levelwise. It has cokernels, also computed levelwise: the cokernel of a morphism of
+finitely presented modules is finitely presented, and pullback along the transition maps preserves
+cokernels, being a left adjoint. Consequently a morphism is an epimorphism if and only if it is one
+at every level. Kernels are not computed levelwise, since pullback is only right exact; for the
+formal completion of a Noetherian scheme the category is nevertheless abelian
+(Stacks, Lemma 30.23.2). The *completion functor*
 `Scheme.formalCompletion.completionFunctor X I`, from finitely presented `𝒪_X`-modules to
 coherent formal modules on `X.formalCompletion I`, sends `M` to the system of its restrictions
 `M / I ^ (n + 1) M` to the infinitesimal neighbourhoods `V(I ^ (n + 1))`, i.e. to the pullbacks of
@@ -41,6 +47,10 @@ required to be finitely presented rather than merely coherent.
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.isoMk`: an isomorphism of
   coherent formal modules from compatible levelwise isomorphisms; a morphism is an isomorphism iff
   it is one at every level (`CoherentFormalModule.isIso_iff_forall_isIso_app`).
+* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.cokernelCocone`: the
+  levelwise cokernel of a morphism, a cokernel by
+  `CoherentFormalModule.cokernelIsColimit`; a morphism is an epimorphism if and only if it is one at
+  every level (`CoherentFormalModule.epi_iff_forall_epi_app`).
 * `AlgebraicGeometry.Scheme.formalCompletion.completionFunctor`: the completion functor from
   finitely presented `𝒪_X`-modules to coherent formal modules on the formal completion.
 
@@ -230,9 +240,107 @@ instance : Preadditive (CoherentFormalModule 𝔛) where
   add_comp _ _ _ _ _ _ := hom_ext fun _ ↦ Preadditive.add_comp _ _ _ _ _ _
   comp_add _ _ _ _ _ _ := hom_ext fun _ ↦ Preadditive.comp_add _ _ _ _ _ _
 
+/-- A coherent formal module is zero if and only if each of its levels is zero. -/
+theorem isZero_iff_forall_isZero_obj (M : CoherentFormalModule 𝔛) :
+    IsZero M ↔ ∀ n, IsZero (M.obj n) := by
+  simp only [IsZero.iff_id_eq_zero]
+  exact ⟨fun h n ↦ by rw [← id_app, h, zero_app], fun h ↦ hom_ext fun n ↦ by simp [h n]⟩
+
 end
 
 end Preadditive
+
+/-! ### Cokernels -/
+
+section Cokernels
+
+noncomputable section
+
+variable {M N : CoherentFormalModule 𝔛} (f : M ⟶ N)
+
+/-- The reduction isomorphisms of the levelwise cokernel: pullback along `ι n` preserves the
+cokernel of `f.app (n + 1)`, which the reduction isomorphisms of `M` and `N` then identify with the
+cokernel of `f.app n`. -/
+def cokernelTransitionIso (n : ℕ) :
+    (Scheme.Modules.pullback (𝔛.ι n)).obj (cokernel (f.app (n + 1))) ≅ cokernel (f.app n) :=
+  PreservesCokernel.iso _ _ ≪≫
+    cokernel.mapIso _ _ (M.transitionIso n) (N.transitionIso n) (f.naturality n)
+
+@[reassoc (attr := simp)]
+theorem map_π_cokernelTransitionIso_hom (n : ℕ) :
+    (Scheme.Modules.pullback (𝔛.ι n)).map (cokernel.π (f.app (n + 1))) ≫
+        (cokernelTransitionIso f n).hom =
+      (N.transitionIso n).hom ≫ cokernel.π (f.app n) := by
+  simp [cokernelTransitionIso]
+
+/-- The cokernel of a morphism `f : M ⟶ N` of coherent formal modules, computed levelwise: its
+`n`-th level is the cokernel of `f.app n`, which is finitely presented, and its reduction
+isomorphisms come from pullback along `ι n` preserving cokernels. -/
+-- `@[expose]` is forced by dependent typing: without the levels of `(cokernelCocone f).pt`
+-- reducing definitionally to `cokernel (f.app n)`, `cokernelCocone_pt_transitionIso` and
+-- `cokernelCocone_π_app` do not typecheck.
+@[expose]
+def cokernelCocone : CokernelCofork f :=
+  CokernelCofork.ofπ
+    (Z := ⟨fun n ↦ cokernel (f.app n), fun n ↦
+      have := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation (M.obj n)
+      have := SheafOfModules.instIsFiniteTypeOfIsFinitePresentation (M.obj n)
+      inferInstance, cokernelTransitionIso f⟩)
+    { app n := cokernel.π (f.app n) } (by ext n; simp)
+
+@[simp]
+theorem cokernelCocone_pt_obj (n : ℕ) : (cokernelCocone f).pt.obj n = cokernel (f.app n) :=
+  (rfl)
+
+@[simp]
+theorem cokernelCocone_pt_transitionIso (n : ℕ) :
+    (cokernelCocone f).pt.transitionIso n = cokernelTransitionIso f n :=
+  (rfl)
+
+@[simp]
+theorem cokernelCocone_π_app (n : ℕ) :
+    (Cofork.π (cokernelCocone f)).app n = cokernel.π (f.app n) :=
+  (rfl)
+
+private lemma π_app_comp_eq_zero (s : CokernelCofork f) (n : ℕ) :
+    f.app n ≫ (Cofork.π s).app n = 0 := by
+  rw [← comp_app, CokernelCofork.condition, zero_app]
+
+/-- The levelwise descents through the cokernels of a cokernel cofork are compatible with the
+reduction isomorphisms. -/
+private lemma desc_naturality (s : CokernelCofork f) (n : ℕ) :
+    (Scheme.Modules.pullback (𝔛.ι n)).map
+        (cokernel.desc (f.app (n + 1)) ((Cofork.π s).app (n + 1)) (π_app_comp_eq_zero f s _)) ≫
+        (s.pt.transitionIso n).hom =
+      (cokernelTransitionIso f n).hom ≫
+        cokernel.desc (f.app n) ((Cofork.π s).app n) (π_app_comp_eq_zero f s n) := by
+  refine (cancel_epi ((Scheme.Modules.pullback (𝔛.ι n)).map (cokernel.π (f.app (n + 1))))).mp ?_
+  rw [← Functor.map_comp_assoc, cokernel.π_desc, map_π_cokernelTransitionIso_hom_assoc,
+    cokernel.π_desc, Hom.naturality]
+
+/-- The levelwise cokernel is a cokernel in the category of coherent formal modules. -/
+def cokernelIsColimit : IsColimit (cokernelCocone f) :=
+  Cofork.IsColimit.mk _
+    (fun s ↦
+      { app n := cokernel.desc (f.app n) ((Cofork.π s).app n) (π_app_comp_eq_zero f s n)
+        naturality := desc_naturality f s })
+    (fun s ↦ hom_ext fun n ↦ cokernel.π_desc _ _ _)
+    (fun s m hm ↦ hom_ext fun n ↦ (cancel_epi (cokernel.π (f.app n))).mp <| by
+      rw [cokernel.π_desc]
+      exact congrArg (·.app n) hm)
+
+instance : HasCokernels (CoherentFormalModule 𝔛) where
+  has_colimit f := ⟨⟨_, cokernelIsColimit f⟩⟩
+
+/-- A morphism of coherent formal modules is an epimorphism if and only if it is one at every
+level. -/
+theorem epi_iff_forall_epi_app : Epi f ↔ ∀ n, Epi (f.app n) := by
+  rw [Preadditive.epi_iff_isZero_cokernel' _ (cokernelIsColimit f), isZero_iff_forall_isZero_obj]
+  exact forall_congr' fun n ↦ (Preadditive.epi_iff_isZero_cokernel (f.app n)).symm
+
+end
+
+end Cokernels
 
 end CoherentFormalModule
 
