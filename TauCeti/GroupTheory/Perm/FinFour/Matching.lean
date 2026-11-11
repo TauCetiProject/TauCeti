@@ -41,6 +41,8 @@ The homomorphism `q` is surjective, and its kernel is the Klein four-group
 * `TauCeti.symmetricGroupFourMatching_symmetricGroupFourMatchingHom_apply`: `q σ` sends `m` to
   the matching whose double transposition is the conjugate by `σ` of that of `m`.
 * `TauCeti.symmetricGroupFourMatchingHom_surjective`: `q` is surjective.
+* `TauCeti.mem_centralizer_symmetricGroupFourMatching_iff`: the stabilizer of a matching is the
+  centralizer of its double transposition.
 * `TauCeti.mem_ker_symmetricGroupFourMatchingHom_iff`: the kernel of `q` consists of the
   identity and the three double transpositions.
 * `TauCeti.ker_symmetricGroupFourMatchingHom`: the kernel of `q` is the Klein four-group.
@@ -159,6 +161,16 @@ theorem symmetricGroupFourMatching_symmetricGroupFourMatchingHom_apply (σ : Per
     symmetricGroupFourMatching (symmetricGroupFourMatchingHom σ m) =
       σ * symmetricGroupFourMatching m * σ⁻¹ :=
   symmetricGroupFourMatching_matchingIndex_conj σ m
+
+/-- **A permutation fixes the matching `m` exactly when it commutes with its double
+transposition**: the stabilizer of `m` under `q` is the centralizer of that double
+transposition. -/
+theorem mem_centralizer_symmetricGroupFourMatching_iff {σ : Perm (Fin 4)} {m : Fin 3} :
+    σ ∈ Subgroup.centralizer {symmetricGroupFourMatching m} ↔
+      symmetricGroupFourMatchingHom σ m = m := by
+  rw [Subgroup.mem_centralizer_singleton_iff, ← symmetricGroupFourMatching_injective.eq_iff,
+    symmetricGroupFourMatching_symmetricGroupFourMatchingHom_apply, mul_inv_eq_iff_eq_mul,
+    eq_comm]
 
 /-- The transposition `(01)` fixes `M₀ = 01|23` and swaps `M₁ = 03|12` with `M₂ = 02|13`. -/
 @[simp]

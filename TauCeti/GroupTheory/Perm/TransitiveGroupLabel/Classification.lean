@@ -8,8 +8,8 @@ module
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 public import Mathlib.GroupTheory.Sylow
 public import TauCeti.GroupTheory.Perm.SylowFive
+public import TauCeti.GroupTheory.Perm.FinFour.Matching
 import TauCeti.GroupTheory.GroupAction.Transitive
-import TauCeti.GroupTheory.Perm.FinFour.Matching
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Cyclic
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.KleinFour
 
@@ -69,6 +69,8 @@ of the rotation group `5T1`.
   `TauCeti.referenceSubgroup_four_le_alternatingGroup_iff`: the parities of the five quartic labels,
   and `TauCeti.referenceSubgroup_five_le_alternatingGroup_iff`: the parities of the five quintic
   labels.
+* `TauCeti.centralizer_symmetricGroupFourMatching_two_eq_closure`: the reference subgroup of `4T3`
+  is the stabilizer of a perfect matching of `Fin 4`.
 * `TauCeti.exists_le_map_conj_referenceSubgroup_four_two_iff`: a reference subgroup of degree four
   lies in a conjugate of the dihedral group of `4T3` exactly for the labels `4T1`, `4T2` and
   `4T3`.
@@ -202,6 +204,14 @@ theorem closure_finRotate_four_swap_eq_centralizer :
     obtain ⟨i, j, rfl⟩ := hword σ (Subgroup.mem_centralizer_singleton_iff.1 hσ)
     exact mul_mem (pow_mem (Subgroup.subset_closure (by simp)) _)
       (pow_mem (Subgroup.subset_closure (by simp)) _)
+
+/-- The reference subgroup of `4T3` is the stabilizer of the perfect matching `M₂ = 02|13`: the
+centralizer of its double transposition `(02)(13) = finRotate 4 ^ 2`. -/
+theorem centralizer_symmetricGroupFourMatching_two_eq_closure :
+    Subgroup.centralizer {symmetricGroupFourMatching 2} =
+      Subgroup.closure {finRotate 4, swap 0 2} := by
+  rw [closure_finRotate_four_swap_eq_centralizer, symmetricGroupFourMatching_two,
+    show finRotate 4 ^ 2 = swap 0 2 * swap 1 3 by decide]
 
 /-- The reference subgroup of `4T1` has order `4`. -/
 theorem natCard_referenceSubgroup_four_zero :
