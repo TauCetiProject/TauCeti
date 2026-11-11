@@ -90,9 +90,11 @@ theorem hasDerivAt_compactSlice {f : E × ℝ → F} (hf : ContDiff ℝ 2 f)
     (ddu := fun s x ↦ fderiv ℝ dt (x, s) (0, 1))
     (hK := (norm_nonneg _).trans (hK (0, 0)))
   · intro s x
-    simpa only [compactSlice_apply] using TauCeti.hasDerivAt_slice_right (hf.differentiable (by norm_num) (x, s))
+    simpa only [compactSlice_apply] using
+      TauCeti.hasDerivAt_slice_right (hf.differentiable (by norm_num) (x, s))
   · intro s x
-    simpa only [compactSlice_apply] using TauCeti.hasDerivAt_slice_right (hdt.differentiable (by norm_num) (x, s))
+    simpa only [compactSlice_apply] using
+      TauCeti.hasDerivAt_slice_right (hdt.differentiable (by norm_num) (x, s))
   · exact fun s x ↦ hK (x, s)
 
 end BoundedContinuousFunction
