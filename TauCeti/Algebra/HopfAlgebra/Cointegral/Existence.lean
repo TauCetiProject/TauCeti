@@ -27,8 +27,9 @@ theorem of Larson and Sweedler. A nonzero cointegral supplies the hypothesis of 
 `TauCeti.Algebra.HopfAlgebra.Frobenius`, so the antipode is bijective
 (`TauCeti.HopfAlgebra.antipode_bijective_of_finiteDimensional`) and the left and right integrals
 form lines (`TauCeti.finrank_leftIntegral`, `TauCeti.finrank_rightIntegral`). Precomposition
-with the antipode then exchanges right and left cointegrals, so the left cointegrals form a line
-too (`TauCeti.finrank_leftCointegrals`).
+with the antipode then exchanges right and left cointegrals
+(`TauCeti.isLeftCointegral_comp_antipode`, `TauCeti.isRightCointegral_comp_antipode`), so the
+left cointegrals form a line too (`TauCeti.finrank_leftCointegrals`).
 
 ## References
 
@@ -114,27 +115,6 @@ private theorem antipodeContract_mul (φ : Module.Dual R H) (x y : H) :
     | add u v hu hv => simp only [mul_add, map_add, add_mul, hu, hv]
     | tmul c d => simp [HopfAlgebra.antipode_mul_antidistrib]
 
-/-- `Σ g(h₁) S(h₂) h₃ = g(h)` for any linear map `g`. -/
-private theorem mul'_rTensor_mul'_map_antipode_comul (g : H →ₗ[R] H) (h : H) :
-    LinearMap.mul' R H ((LinearMap.mul' R H ∘ₗ TensorProduct.map g (HopfAlgebra.antipode R) ∘ₗ
-      Coalgebra.comul).rTensor H (Coalgebra.comul h)) = g h := by
-  have hz (z : H ⊗[R] (H ⊗[R] H)) :
-      LinearMap.mul' R H ((LinearMap.mul' R H ∘ₗ
-        TensorProduct.map g (HopfAlgebra.antipode R)).rTensor H
-          ((TensorProduct.assoc R H H H).symm z)) =
-        LinearMap.mul' R H (TensorProduct.map g
-          (LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).rTensor H) z) := by
-    induction z with
-    | add z z' hz hz' => simp only [map_add, hz, hz']
-    | tmul a w =>
-      induction w with
-      | add w w' hw hw' => simp only [tmul_add, map_add, hw, hw']
-      | tmul b c => simp [mul_assoc]
-  rw [← LinearMap.comp_assoc, LinearMap.rTensor_comp_apply, ← Coalgebra.coassoc_symm_apply, hz,
-    LinearMap.map_lTensor, LinearMap.comp_assoc, HopfAlgebra.mul_antipode_rTensor_comul,
-    ← LinearMap.map_lTensor, Coalgebra.lTensor_counit_comul]
-  simp
-
 /-- Evaluating at `1` after acting by `Σ φ • h₁ ⊗ h₂` gives `Σ φ(h₁) h₂`. -/
 private theorem dualTensorHom_rTensor_dualMulLeftAct_mk_one (φ : Module.Dual R H)
     (w : H ⊗[R] H) :
@@ -169,13 +149,13 @@ theorem isHopfModuleAction_dualMulLeftAct :
           (HopfAlgebra.antipode R) ∘ₗ Coalgebra.comul := by
       ext y
       exact antipodeContract_mul φ x y
-    rw [hg, mul'_rTensor_mul'_map_antipode_comul]
+    rw [hg, TauCeti.HopfAlgebra.mul'_rTensor_mul'_map_antipode_comul]
     simp [antipodeContract]
 
 /-- The fixed vectors of the Hopf module `H*` are exactly the right cointegrals. A fixed vector
 `φ` satisfies `S(Σ φ(x₁) x₂) = φ(x) 1`; colinearity of the action at `x = 1` removes the
 antipode. -/
-theorem mem_fixedSubcomodule_dual_iff (φ : Module.Dual R H) :
+theorem mem_fixedSubcomodule_dual_iff {φ : Module.Dual R H} :
     φ ∈ fixedSubcomodule R H (Module.Dual R H) ↔ IsRightCointegral φ := by
   rw [isRightCointegral_def]
   constructor
@@ -253,7 +233,7 @@ theorem finrank_rightIntegral : Module.finrank k (rightIntegral k H) = 1 := by
   exact (hφ.isFrobeniusFunctional h0).finrank_rightIntegral
 
 /-- Precomposition with the antipode sends right cointegrals to left cointegrals. -/
-private theorem isLeftCointegral_comp_antipode {φ : Module.Dual k H} (hφ : IsRightCointegral φ) :
+theorem isLeftCointegral_comp_antipode {φ : Module.Dual k H} (hφ : IsRightCointegral φ) :
     IsLeftCointegral (φ ∘ₗ HopfAlgebra.antipode k) := by
   rw [isLeftCointegral_def]
   intro x
@@ -271,7 +251,7 @@ private theorem isLeftCointegral_comp_antipode {φ : Module.Dual k H} (hφ : IsR
   simp
 
 /-- Precomposition with the antipode sends left cointegrals to right cointegrals. -/
-private theorem isRightCointegral_comp_antipode {φ : Module.Dual k H} (hφ : IsLeftCointegral φ) :
+theorem isRightCointegral_comp_antipode {φ : Module.Dual k H} (hφ : IsLeftCointegral φ) :
     IsRightCointegral (φ ∘ₗ HopfAlgebra.antipode k) := by
   rw [isRightCointegral_def]
   intro x

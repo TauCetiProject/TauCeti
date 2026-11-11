@@ -34,7 +34,7 @@ finite-dimensional Hopf algebra it produces cointegrals.
 ## Main declarations
 
 * `TauCeti.Comodule.IsHopfModuleAction`: the Hopf-module laws for a right action.
-* `TauCeti.Comodule.hopfModuleProj`: the projection `m ↦ Σ m₀ • S(m₁)`.
+* `LinearMap.hopfModuleProj`: the projection `m ↦ Σ m₀ • S(m₁)`.
 * `TauCeti.Comodule.IsHopfModuleAction.hopfModuleProj_mem_fixedSubcomodule`: it lands in the
   fixed subcomodule.
 * `TauCeti.Comodule.IsHopfModuleAction.range_hopfModuleProj`: its image is exactly the fixed
@@ -114,56 +114,23 @@ section HopfAlgebra
 
 variable [Semiring H] [HopfAlgebra R H] [AddCommMonoid M] [Module R M] [Comodule R H M]
 
-variable (act : M ⊗[R] H →ₗ[R] M)
-
 /-- The projection `m ↦ Σ m₀ • S(m₁)` of a Hopf module onto its fixed vectors. -/
-noncomputable def hopfModuleProj : M →ₗ[R] M :=
+noncomputable def _root_.LinearMap.hopfModuleProj (act : M ⊗[R] H →ₗ[R] M) : M →ₗ[R] M :=
   act ∘ₗ (HopfAlgebra.antipode R).lTensor M ∘ₗ coact
 
 /-- Unfolding `hopfModuleProj`: it applies the antipode to the coefficient of the coaction and
 then acts. -/
-theorem hopfModuleProj_apply (m : M) :
-    hopfModuleProj act m = act ((HopfAlgebra.antipode R).lTensor M (coact (C := H) m)) :=
+theorem _root_.LinearMap.hopfModuleProj_apply (act : M ⊗[R] H →ₗ[R] M) (m : M) :
+    act.hopfModuleProj m = act ((HopfAlgebra.antipode R).lTensor M (coact (C := H) m)) :=
   (rfl)
 
-variable {act}
-
-/-- The Hopf-algebra identity `Σ (S c₂)₁ ⊗ c₁ (S c₂)₂ = S c ⊗ 1` underlying the invariance of
-`hopfModuleProj`. -/
-private theorem lTensor_mul'_leftComm_comul_antipode_comul (c : H) :
-    (LinearMap.mul' R H).lTensor H (TensorProduct.leftComm R H H H
-      ((Coalgebra.comul ∘ₗ HopfAlgebra.antipode R).lTensor H (Coalgebra.comul c))) =
-      HopfAlgebra.antipode R c ⊗ₜ 1 := by
-  have hu (u : H ⊗[R] H) :
-      (LinearMap.mul' R H).lTensor H (TensorProduct.leftComm R H H H
-        ((TensorProduct.map (HopfAlgebra.antipode R) (HopfAlgebra.antipode R) ∘ₗ
-          (TensorProduct.comm R H H).toLinearMap).lTensor H
-            (TensorProduct.assoc R H H H (Coalgebra.comul.rTensor H u)))) =
-        TensorProduct.comm R H H (TensorProduct.map (Algebra.linearMap R H)
-          (HopfAlgebra.antipode R) (Coalgebra.counit.rTensor H u)) := by
-    induction u with
-    | add u v hu hv => simp only [map_add, hu, hv]
-    | tmul a d =>
-      have hx (x : H ⊗[R] H) :
-          (LinearMap.mul' R H).lTensor H (TensorProduct.leftComm R H H H
-            ((TensorProduct.map (HopfAlgebra.antipode R) (HopfAlgebra.antipode R) ∘ₗ
-              (TensorProduct.comm R H H).toLinearMap).lTensor H
-                (TensorProduct.assoc R H H H (x ⊗ₜ d)))) =
-            HopfAlgebra.antipode R d ⊗ₜ
-              LinearMap.mul' R H ((HopfAlgebra.antipode R).lTensor H x) := by
-        induction x with
-        | add x y hx hy => simp only [add_tmul, map_add, tmul_add, hx, hy]
-        | tmul x y => simp
-      simp [hx]
-  rw [TauCeti.HopfAlgebra.antipode_comul_antidistrib, ← LinearMap.comp_assoc,
-    LinearMap.lTensor_comp_apply, ← Coalgebra.coassoc_apply, hu, Coalgebra.rTensor_counit_comul]
-  simp
+variable {act : M ⊗[R] H →ₗ[R] M}
 
 namespace IsHopfModuleAction
 
 /-- The projection `m ↦ Σ m₀ • S(m₁)` takes values in the fixed subcomodule. -/
 theorem hopfModuleProj_mem_fixedSubcomodule (hact : IsHopfModuleAction act) (m : M) :
-    hopfModuleProj act m ∈ fixedSubcomodule R H M := by
+    act.hopfModuleProj m ∈ fixedSubcomodule R H M := by
   set S := HopfAlgebra.antipode R (A := H)
   -- The diagonal coaction of `m' ⊗ S c` only needs the coaction of `m'`.
   have hcoact (y : M ⊗[R] H) :
@@ -196,31 +163,28 @@ theorem hopfModuleProj_mem_fixedSubcomodule (hact : IsHopfModuleAction act) (m :
         induction w with
         | add w w' hw hw' => simp only [tmul_add, map_add, hw, hw']
         | tmul a b => simpa using hleg m' a (Coalgebra.comul (S b))
-      rw [LinearMap.lTensor_tmul, hw, lTensor_mul'_leftComm_comul_antipode_comul]
+      rw [LinearMap.lTensor_tmul, hw,
+        TauCeti.HopfAlgebra.lTensor_mul'_leftComm_comul_antipode_comul]
       simp [S]
-  rw [mem_fixedSubcomodule, hopfModuleProj_apply, ← LinearMap.comp_apply (coact (C := H)),
-    hact.coact_comp_act, LinearMap.comp_apply, hcoact,
+  rw [mem_fixedSubcomodule, LinearMap.hopfModuleProj_apply,
+    ← LinearMap.comp_apply (coact (C := H)), hact.coact_comp_act, LinearMap.comp_apply, hcoact,
     ← (TensorProduct.assoc R M H H).symm_apply_apply (coact.rTensor H (coact m)), coassoc_apply,
     hy]
 
 /-- Every vector of a Hopf module is recovered from its projection: `Σ P(m₀) • m₁ = m`. -/
 theorem act_rTensor_hopfModuleProj_coact (hact : IsHopfModuleAction act) (m : M) :
-    act ((hopfModuleProj act).rTensor H (coact m)) = m := by
+    act (act.hopfModuleProj.rTensor H (coact m)) = m := by
   have hS : (LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).rTensor H) ∘ₗ Coalgebra.comul =
       Algebra.linearMap R H ∘ₗ Coalgebra.counit := by
     rw [LinearMap.comp_assoc, HopfAlgebra.mul_antipode_rTensor_comul]
   have hassoc (x : (M ⊗[R] H) ⊗[R] H) :
       TensorProduct.assoc R M H H (((HopfAlgebra.antipode R).lTensor M).rTensor H x) =
-        ((HopfAlgebra.antipode R).rTensor H).lTensor M (TensorProduct.assoc R M H H x) := by
-    induction x with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    | tmul y b =>
-      induction y with
-      | add y z hy hz => simp only [add_tmul, map_add, hy, hz]
-      | tmul m a => simp
+        ((HopfAlgebra.antipode R).rTensor H).lTensor M (TensorProduct.assoc R M H H x) :=
+    (LinearMap.congr_fun (LinearMap.lTensor_rTensor_comp_assoc (P := M) (Q := H)
+      (x := HopfAlgebra.antipode R (A := H))) x).symm
   -- `Σ (m₀₀ • S(m₀₁)) • m₁ = Σ m₀ • (S(m₁) m₂) = Σ m₀ • ε(m₁) = m`, by associativity of the
   -- action, coassociativity of the coaction, the antipode axiom and the counit law.
-  rw [hopfModuleProj, LinearMap.rTensor_comp_apply, LinearMap.rTensor_comp_apply,
+  rw [LinearMap.hopfModuleProj, LinearMap.rTensor_comp_apply, LinearMap.rTensor_comp_apply,
     hact.act_rTensor_act, hassoc, coassoc_apply, ← LinearMap.lTensor_comp_apply,
     ← LinearMap.lTensor_comp_apply, hS, LinearMap.lTensor_comp_apply,
     lTensor_counit_coact]
@@ -229,7 +193,7 @@ theorem act_rTensor_hopfModuleProj_coact (hact : IsHopfModuleAction act) (m : M)
 /-- The projection sends `n • h` to `ε(h) n` when `n` is fixed. -/
 theorem hopfModuleProj_act_of_mem_fixedSubcomodule (hact : IsHopfModuleAction act) {n : M}
     (hn : n ∈ fixedSubcomodule R H M) (h : H) :
-    hopfModuleProj act (act (n ⊗ₜ h)) = Coalgebra.counit (R := R) h • n := by
+    act.hopfModuleProj (act (n ⊗ₜ h)) = Coalgebra.counit (R := R) h • n := by
   have hx (x : H ⊗[R] H) :
       act ((HopfAlgebra.antipode R).lTensor M
         ((act ∘ₗ TensorProduct.mk R M H n).rTensor H x)) =
@@ -237,18 +201,18 @@ theorem hopfModuleProj_act_of_mem_fixedSubcomodule (hact : IsHopfModuleAction ac
     induction x with
     | add x y hx hy => simp only [map_add, tmul_add, hx, hy]
     | tmul a b => simp [hact.act_act]
-  rw [hopfModuleProj_apply, hact.coact_act_of_mem_fixedSubcomodule hn, hx,
+  rw [LinearMap.hopfModuleProj_apply, hact.coact_act_of_mem_fixedSubcomodule hn, hx,
     HopfAlgebra.mul_antipode_lTensor_comul_apply, Algebra.algebraMap_eq_smul_one, tmul_smul,
     map_smul, hact.act_one]
 
 /-- The projection fixes the fixed vectors. -/
 theorem hopfModuleProj_of_mem_fixedSubcomodule (hact : IsHopfModuleAction act) {n : M}
-    (hn : n ∈ fixedSubcomodule R H M) : hopfModuleProj act n = n := by
+    (hn : n ∈ fixedSubcomodule R H M) : act.hopfModuleProj n = n := by
   simpa [hact.act_one] using hact.hopfModuleProj_act_of_mem_fixedSubcomodule hn 1
 
 /-- The image of the projection `m ↦ Σ m₀ • S(m₁)` is the fixed subcomodule. -/
 theorem range_hopfModuleProj (hact : IsHopfModuleAction act) :
-    LinearMap.range (hopfModuleProj act) = (fixedSubcomodule R H M).toSubmodule := by
+    LinearMap.range act.hopfModuleProj = (fixedSubcomodule R H M).toSubmodule := by
   ext m
   refine ⟨?_, fun hm ↦ ⟨m, hact.hopfModuleProj_of_mem_fixedSubcomodule
     (Subcomodule.mem_toSubmodule.mp hm)⟩⟩
@@ -260,7 +224,7 @@ theorem range_hopfModuleProj (hact : IsHopfModuleAction act) :
 noncomputable def fixedTensorEquiv (hact : IsHopfModuleAction act) :
     (fixedSubcomodule R H M).toSubmodule ⊗[R] H ≃ₗ[R] M :=
   LinearEquiv.ofLinearMap (act ∘ₗ (fixedSubcomodule R H M).toSubmodule.subtype.rTensor H)
-    (((hopfModuleProj act).codRestrict (fixedSubcomodule R H M).toSubmodule
+    ((act.hopfModuleProj.codRestrict (fixedSubcomodule R H M).toSubmodule
       fun m ↦ Subcomodule.mem_toSubmodule.mpr
         (hact.hopfModuleProj_mem_fixedSubcomodule m)).rTensor H ∘ₗ coact)
     (by
@@ -270,7 +234,7 @@ noncomputable def fixedTensorEquiv (hact : IsHopfModuleAction act) :
       refine TensorProduct.ext' fun n h ↦ ?_
       have hn : (n : M) ∈ fixedSubcomodule R H M := Subcomodule.mem_toSubmodule.mp n.2
       have hx (x : H ⊗[R] H) :
-          ((hopfModuleProj act).codRestrict (fixedSubcomodule R H M).toSubmodule
+          (act.hopfModuleProj.codRestrict (fixedSubcomodule R H M).toSubmodule
               fun m ↦ Subcomodule.mem_toSubmodule.mpr
                 (hact.hopfModuleProj_mem_fixedSubcomodule m)).rTensor H
             ((act ∘ₗ TensorProduct.mk R M H n).rTensor H x) =
@@ -293,7 +257,7 @@ theorem fixedTensorEquiv_tmul (hact : IsHopfModuleAction act)
 /-- The inverse of `fixedTensorEquiv` is `m ↦ Σ P(m₀) ⊗ m₁`. -/
 theorem rTensor_subtype_fixedTensorEquiv_symm (hact : IsHopfModuleAction act) (m : M) :
     (fixedSubcomodule R H M).toSubmodule.subtype.rTensor H (hact.fixedTensorEquiv.symm m) =
-      (hopfModuleProj act).rTensor H (coact m) := by
+      act.hopfModuleProj.rTensor H (coact m) := by
   simp [fixedTensorEquiv, ← LinearMap.rTensor_comp_apply]
 
 end IsHopfModuleAction
