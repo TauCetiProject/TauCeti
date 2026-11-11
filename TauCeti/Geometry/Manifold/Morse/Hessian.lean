@@ -50,6 +50,8 @@ Morse index is the negative index of inertia of the critical Hessian.
   computes the Hessian `criticalHessian I f x v w`.
 * `TauCeti.criticalHessian_mfderiv_apply_eq_zero`: the critical Hessian vanishes on directions
   tangent to a family of critical points.
+* `TauCeti.criticalHessian_comp_apply`: the second-order chain rule at a critical point, for a
+  `C²` map between boundaryless manifolds.
 * `TauCeti.criticalHessian_comp_snd_apply`: the critical Hessian of `(x, v) ↦ q v` on `M × V` is the
   second derivative of `q` on the second components.
 * `TauCeti.criticalHessian_mfderiv_eq_zero` and `TauCeti.range_mfderiv_le_radical_criticalHessian`:
@@ -658,6 +660,47 @@ theorem range_mfderiv_le_radical_criticalHessian (hf : ContMDiffAt I 𝓘(ℝ) 2
   exact criticalHessian_mfderiv_eq_zero hf hi hcrit u
 
 end Family
+
+section Comp
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless] [TopologicalSpace M'] [ChartedSpace H' M']
+  {φ : M' → M} {y : M'}
+
+/-- **The second-order chain rule at a critical point.** If `x = φ y` is a critical point of a
+function `f` which is `C²` there, and `φ` is `C²` at `y`, then the critical Hessian of `f ∘ φ` at
+`y` is the critical Hessian of `f` at `x` evaluated on the images of the tangent vectors under the
+derivative of `φ`. The first-order term of the chain rule vanishes because `df = 0` at `x`. No
+condition is put on the derivative of `φ`, which may fail to be injective or surjective. Naming
+the image point `x` lets the result be stated where `φ y` is only propositionally equal to it. -/
+theorem criticalHessian_comp_apply {x : M} (hφx : φ y = x) (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (hφ : ContMDiffAt I' I 2 φ y) (hcrit : x ∈ criticalPoints I f) (u w : TangentSpace I' y) :
+    criticalHessian I' (f ∘ φ) y u w =
+      criticalHessian I f x (mfderiv I' I φ y u) (mfderiv I' I φ y w) := by
+  subst hφx
+  have hφd : MDifferentiableAt I' I φ y := hφ.mdifferentiableAt two_ne_zero
+  have hy : writtenInExtChartAt I' I y φ (extChartAt I' y y) = extChartAt I (φ y) (φ y) := by
+    simp [writtenInExtChartAt]
+  -- Near the chart image of `y`, the coordinate expression of `f ∘ φ` factors through the
+  -- coordinate expression of `φ` in the charts at `y` and `φ y`.
+  have heq : (f ∘ φ) ∘ (extChartAt I' y).symm =ᶠ[𝓝 (extChartAt I' y y)]
+      (f ∘ (extChartAt I (φ y)).symm) ∘ writtenInExtChartAt I' I y φ := by
+    simpa [writtenInExtChartAt, I'.range_eq_univ, Function.comp_assoc] using
+      writtenInExtChartAt_comp (I := I') (I' := I) (I'' := 𝓘(ℝ)) (f := φ) (g := f) (s := univ)
+        hφd.continuousAt.continuousWithinAt
+  have hcrit' : fderiv ℝ (f ∘ (extChartAt I (φ y)).symm)
+      (writtenInExtChartAt I' I y φ (extChartAt I' y y)) = 0 := by
+    rw [hy, ← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
+    exact mem_criticalPoints.mp hcrit
+  have key := fderiv_fderiv_comp_apply_of_fderiv_eq_zero
+    (hy ▸ hf.contDiffAt_comp_extChartAt_symm) hφ.contDiffAt_writtenInExtChartAt hcrit' u w
+  rw [criticalHessian_def, heq.fderiv.fderiv_eq]
+  refine key.trans ?_
+  rw [hy, hφd.mfderiv_eq_fderiv_extChartAt_conj rfl]
+  -- `writtenInExtChartAt` is by definition `φ` read in the extended charts at `y` and `φ y`.
+  rfl
+
+end Comp
 
 section Chart
 

@@ -74,8 +74,8 @@ locally flat embedded discs are the objects used to define topological sliceness
 * `TauCeti.isLocallyFlat_iff_isSliceEmbedding`, `TauCeti.isLocallyFlat_iff` and
   `TauCeti.IsLocallyFlat.exists_isSliceChart`: the defining flattening charts, as the slice
   embedding for the standard slice, in pointwise form, and as an eliminator.
-* `TauCeti.IsLocallyFlat.restrict` and `TauCeti.IsLocallyFlat.of_forall_exists_isOpen`: local
-  flatness is a local property of the domain.
+* `TauCeti.IsLocallyFlat.restrict` and `TauCeti.IsLocallyFlat.of_forall_exists_isOpen`: for a
+  topological embedding, local flatness is a local property of the domain.
 * `TauCeti.IsLocallyFlat.isOpenEmbedding_comp`, `TauCeti.IsLocallyFlat.of_isOpenEmbedding_comp`,
   `TauCeti.IsLocallyFlat.codRestrict`, `TauCeti.IsLocallyFlat.homeomorph_comp`,
   `TauCeti.IsLocallyFlat.comp_isOpenEmbedding`, `TauCeti.IsLocallyFlat.comp_homeomorph`: invariance
@@ -541,8 +541,10 @@ theorem restrict (h : IsSliceEmbedding S f) {U : Set N} (hU : IsOpen U) :
   · rw [hrange]
     exact hφ.restrOpen hV
 
-/-- Being a slice embedding is a local property of the domain: if every point of `N` has an open
-neighbourhood on which the restriction of `f` is a slice embedding, then `f` is one. -/
+/-- For a topological embedding `f`, being a slice embedding is a local property of the domain: if
+every point of `N` has an open neighbourhood on which the restriction of `f` is a slice embedding,
+then `f` is one. The embedding hypothesis does not follow from the local ones, since a map can be
+injective near every point without being injective. -/
 theorem of_forall_exists_isOpen (hf : IsEmbedding f)
     (h : ∀ x : N, ∃ U : Set N, IsOpen U ∧ x ∈ U ∧ IsSliceEmbedding S (f ∘ ((↑) : U → N))) :
     IsSliceEmbedding S f := by
@@ -719,8 +721,10 @@ theorem restrict (h : IsLocallyFlat F F' f) {U : Set N} (hU : IsOpen U) :
     IsLocallyFlat F F' (f ∘ ((↑) : U → N)) :=
   IsSliceEmbedding.restrict h hU
 
-/-- Local flatness is a local property of the domain: if every point of `N` has an open
-neighbourhood on which the restriction of `f` is locally flat, then `f` is locally flat. -/
+/-- For a topological embedding `f`, local flatness is a local property of the domain: if every
+point of `N` has an open neighbourhood on which the restriction of `f` is locally flat, then `f` is
+locally flat. The embedding hypothesis does not follow from the local ones, since a map can be
+injective near every point without being injective. -/
 theorem of_forall_exists_isOpen (hf : IsEmbedding f)
     (h : ∀ x : N, ∃ U : Set N, IsOpen U ∧ x ∈ U ∧ IsLocallyFlat F F' (f ∘ ((↑) : U → N))) :
     IsLocallyFlat F F' f :=
