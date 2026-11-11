@@ -37,6 +37,8 @@ dimension is `0` at every value.
 * `TauCeti.degreeAtRegularValue_of_notMem_range`: the degree vanishes at a value outside the range.
 * `TauCeti.degreeAtRegularValue_id`, `TauCeti.degreeAtRegularValue_const`: the identity has degree
   `1` and a constant map into a manifold of positive dimension has degree `0`.
+* `TauCeti.degreeAtRegularValue_eq_ncard`: over a finite fibre on which `f` preserves
+  orientation, the degree is the number of preimages.
 * `TauCeti.degreeAtRegularValue_modEq_ncard`: over a regular value the degree has the parity of
   the number of preimages.
 
@@ -132,6 +134,16 @@ theorem abs_degreeAtRegularValue_le_ncard (h : (f ⁻¹' {y}).Finite) :
   refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
   simpa using Finset.sum_le_sum fun x (_ : x ∈ h.toFinset) ↦
     abs_orientationSign_le_one (o := o) (o' := o') (f := f) (x := x)
+
+/-- Over a finite fibre at every point of which `f` preserves the orientations, the degree is the
+number of preimages. -/
+theorem degreeAtRegularValue_eq_ncard (h : (f ⁻¹' {y}).Finite)
+    (ho : ∀ x, f x = y → IsOrientationPreservingAt o o' f x) :
+    degreeAtRegularValue o o' f y = (f ⁻¹' {y}).ncard := by
+  rw [degreeAtRegularValue_eq_sum_of_finite h, ncard_eq_toFinset_card _ h,
+    Finset.card_eq_sum_ones, Nat.cast_sum, Nat.cast_one]
+  exact Finset.sum_congr rfl fun x hx ↦
+    orientationSign_of_isOrientationPreservingAt (ho x ((Finite.mem_toFinset h).1 hx))
 
 /-- Over a regular value, the degree has the parity of the number of preimages: every orientation
 sign is `1` or `-1`. For an infinite fibre both sides are `0` by the `finsum` and `ncard`

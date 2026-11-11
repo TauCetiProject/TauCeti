@@ -497,6 +497,37 @@ public theorem IntegrableTopForm.smul {φ : RoughForm I M ℝ k}
     simpa only [zero_smul] using IntegrableTopForm.zero (I := I) (M := M) b
   · exact (integrableTopForm_smul_iff c φ hc).mpr hφ
 
+/-- Multiplication by a bounded continuous function preserves top-form integrability. This is how
+a partition of unity localizes an integrable top form. -/
+public theorem IntegrableTopForm.fun_smul {φ : RoughForm I M ℝ k} (hφ : IntegrableTopForm φ)
+    {g : M → ℝ} (hg : Continuous g) {C : ℝ} (hC : ∀ x, |g x| ≤ C) :
+    IntegrableTopForm (fun x ↦ g x • φ x) := by
+  let : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  rw [integrableTopForm_iff] at hφ ⊢
+  refine ⟨hφ.1.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _), hφ.2.1,
+    fun b α ↦ ?_⟩
+  -- The coefficient vanishes off the chart target, so only the values of `g` on the source of
+  -- the chart matter, and there `g` is continuous in the chart coordinate.
+  set t := (extChartAt I α).target
+  have heq : RoughForm.signedInChartAt (I := I) (fun x ↦ g x • φ x) b α (fun _ ↦ 1) =
+      fun y ↦ t.indicator (g ∘ (extChartAt I α).symm) y *
+        φ.signedInChartAt b α (fun _ ↦ 1) y := by
+    funext y
+    rw [RoughForm.signedInChartAt_fun_smul]
+    by_cases hy : y ∈ t
+    · rw [indicator_of_mem hy, Function.comp_apply]
+    · rw [indicator_of_notMem hy, zero_mul, RoughForm.signedInChartAt_apply, dite_eq_right hy,
+        mul_zero]
+  rw [heq]
+  refine (hφ.2.2 b α).bdd_mul (c := C) ((aestronglyMeasurable_indicator_iff
+    (measurableSet_extChartAt_target α)).2 ((hg.comp_continuousOn
+      (continuousOn_extChartAt_symm α)).aestronglyMeasurable
+        (measurableSet_extChartAt_target α))) (Filter.Eventually.of_forall fun y ↦ ?_)
+  by_cases hy : y ∈ t
+  · simpa [indicator_of_mem hy] using hC _
+  · simpa [indicator_of_notMem hy] using (abs_nonneg _).trans (hC α)
+
 /-- Negation preserves top-form integrability. -/
 public theorem IntegrableTopForm.neg {φ : RoughForm I M ℝ k}
     (hφ : IntegrableTopForm φ) : IntegrableTopForm (-φ) := by

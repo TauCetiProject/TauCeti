@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.RegularValue
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Topology.DiscreteSubset
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 
@@ -31,6 +32,8 @@ function theorem.
   over a regular value is finite.
 * `TauCeti.IsRegularValue.finite_preimage_of_isProperMap`: for a proper map, the fibre over a
   regular value is finite.
+* `IsLocalDiffeomorph.isRegularValue`: every value of a local diffeomorphism is regular, so all
+  fibres of a local diffeomorphism from a compact manifold are finite.
 
 ## References
 
@@ -81,5 +84,12 @@ theorem IsRegularValue.finite_preimage_of_isProperMap
     (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') (hf : IsProperMap f)
     (hy : IsRegularValue I J f y) : (f ⁻¹' {y}).Finite :=
   (hf.isCompact_preimage isCompact_singleton).finite (hy.isDiscrete_preimage hdim)
+
+omit [IsRCLikeNormedField 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 E'] in
+/-- Every value of a local diffeomorphism is a regular value: its manifold derivative is invertible
+at every point. -/
+theorem _root_.IsLocalDiffeomorph.isRegularValue {n : WithTop ℕ∞}
+    (hf : IsLocalDiffeomorph I J n f) (hn : n ≠ 0) (y : N) : IsRegularValue I J f y :=
+  isRegularValue_iff.2 fun x _ ↦ isRegularPoint_iff.2 (hf.isInvertible_mfderiv hn x).surjective
 
 end TauCeti
