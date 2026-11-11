@@ -26,9 +26,10 @@ which `G` is vertex-connected; it is `0` on the empty vertex type and finite on 
 
 Adjacent vertices are `k`-vertex-reachable for every `k`, since no deletion of other vertices can
 separate them. Vertex reachability is therefore not transitive, and for adjacent vertices it
-says nothing about internally disjoint paths. For distinct nonadjacent vertices on a finite
-vertex type, Menger's theorem identifies `k`-vertex-reachability with the existence of `k` paths
-pairwise sharing no vertex other than their ends. On a finite graph with more than `k` vertices,
+says nothing beyond the single edge. On a finite vertex type, Menger's theorem identifies
+`k`-vertex-reachability of any two vertices with the existence of `k` paths pairwise sharing
+no vertex other than their ends; both sides hold trivially for equal or adjacent vertices. On a
+finite graph with more than `k` vertices,
 `k`-vertex-connectivity is the existence of `k` such paths between every two distinct vertices,
 adjacent ones included.
 
@@ -80,8 +81,7 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
   `SimpleGraph.vertexConnectivity_le_edgeConnectivity`: **Whitney's inequality**: a
   `k`-vertex-connected graph is `k`-edge-connected, so vertex connectivity is at most edge
   connectivity. No finiteness assumption is needed.
-* `SimpleGraph.isVertexReachable_iff_exists_paths`: **Menger's theorem**, predicate form, for
-  nonadjacent vertices.
+* `SimpleGraph.isVertexReachable_iff_exists_paths`: **Menger's theorem**, predicate form.
 * `SimpleGraph.isVertexConnected_iff_forall_exists_paths`: the **global form of Menger's
   theorem**: on a vertex type `V` with `k < Nat.card V` (which forces `V` to be finite),
   `k`-vertex-connectivity is the existence of `k` distinct internally disjoint paths between every
@@ -562,14 +562,13 @@ theorem vertexConnectivity_top : (⊤ : SimpleGraph V).vertexConnectivity = ENat
 
 /-! ### Menger's theorem -/
 
-/-- **Menger's theorem for vertex reachability.** Two distinct nonadjacent vertices `s` and `t` of
+/-- **Menger's theorem for vertex reachability.** Two vertices `s` and `t` of
 a simple graph on a finite vertex type are `k`-vertex-reachable exactly when there are `k` paths
 from `s` to `t` pairwise sharing no vertex other than `s` and `t`. -/
-theorem isVertexReachable_iff_exists_paths [Finite V] {s t : V} (hst : s ≠ t) (hadj : ¬G.Adj s t)
-    (k : ℕ) :
+theorem isVertexReachable_iff_exists_paths [Finite V] {s t : V} (k : ℕ) :
     G.IsVertexReachable k s t ↔ ∃ P : Fin k → G.Walk s t, (∀ i, (P i).IsPath) ∧
       Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) :=
-  ⟨fun h ↦ (forall_reachable_induce_iff_exists_paths hst hadj k).1 fun X hs ht hX ↦
+  ⟨fun h ↦ (forall_reachable_induce_iff_exists_paths k).1 fun X hs ht hX ↦
       h (by simpa using hX) hs ht,
     fun ⟨_, _, hP⟩ ↦ isVertexReachable_of_pairwise_internallyDisjoint hP⟩
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 import TauCeti.Analysis.Calculus.Bilinear
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -128,9 +129,7 @@ private theorem truncation_eventuallyEq_zero (T : ℝ) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z = 0 ∨ Complex.equivRealProdCLM.symm z = 1) :
     truncation T =ᶠ[𝓝 z] 0 := by
   have hz' : z ∉ Complex.equivRealProdCLM.symm ⁻¹' ThricePuncturedSphere.truncation (T + 1) :=
-    fun h ↦ by
-      obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
-      exact hz.elim h₀ h₁
+    ThricePuncturedSphere.notMem_truncation_of_eq_zero_or_eq_one hz _
   filter_upwards [(isCompact_preimage_truncation (T + 1)).isClosed.isOpen_compl.mem_nhds hz']
     with z' hz' using truncation_eq_zero_of_notMem hz'
 
@@ -485,9 +484,6 @@ private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
     simp only [x, endChart_apply, Complex.equivRealProdCLM_symm_apply]
     push_cast at h ⊢
     rw [h]
-  have hper' : Periodic (deriv x) 1 := fun t ↦ by
-    rw [← deriv_comp_add_const]
-    exact congrArg (deriv · t) (funext hper)
   -- The integrand is continuous and periodic, so its integral over any period is the same.
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦
     ((huq t).continuousAt).comp (continuous_const.prodMk continuous_id).continuousAt
@@ -500,7 +496,7 @@ private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
     (hHc q).comp (continuous_id.prodMk hxc)
   have hωc : Continuous fun t ↦ ω (x t) (deriv x t) := ω.continuous_apply_comp hxc hdxc
   have hG : Periodic (fun t ↦ H q t (x t) + 1 / 2 * ω (x t) (deriv x t)) 1 := fun t ↦ by
-    simp only [hper t, hper' t, hH q t]
+    simp only [hper t, hper.deriv t, hH q t]
   calc _ = ∫ t in (-1 / 2 : ℝ)..(-1 / 2 + 1), (H q t (x t) + 1 / 2 * ω (x t) (deriv x t)) := by
         rw [intervalIntegral.integral_of_le (by norm_num), ← integral_Ico_eq_integral_Ioc,
           show (-1 / 2 : ℝ) + 1 = 1 / 2 by norm_num]

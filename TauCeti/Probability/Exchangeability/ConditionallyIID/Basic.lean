@@ -133,6 +133,13 @@ theorem ConditionallyIIDWith.measurable_directing {μ : Measure Ω} {X : ι → 
     {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν) : Measurable ν :=
   h.2.1
 
+/-- The directing measure together with the path of a `ConditionallyIIDWith` family is almost
+everywhere measurable. -/
+theorem ConditionallyIIDWith.aemeasurable_directing_path [Countable ι] {μ : Measure Ω}
+    {X : ι → Ω → α} {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν) :
+    AEMeasurable (fun ω => (ν ω, fun i => X i ω)) μ :=
+  h.measurable_directing.aemeasurable.prodMk (AEMeasurable.of_eval h.aemeasurable)
+
 /-- The defining joint-law disintegration of a `ConditionallyIIDWith` witness. -/
 theorem ConditionallyIIDWith.jointLaw_eq_disintegration {μ : Measure Ω} {X : ι → Ω → α}
     {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν)

@@ -521,11 +521,18 @@ theorem chiSquaredMeasure_conv_chiSquaredMeasure (hk : 0 ≤ k) (hl : 0 ≤ l) :
 /-- A finite sum of independent chi-squared variables has the chi-squared law whose degrees of
 freedom are the sum of the individual degrees of freedom. -/
 theorem iIndepFun.hasLaw_sum_chiSquared {ι : Type*} [Fintype ι]
-    {Y : ι → Ω → ℝ} {k : ι → ℝ} (hindep : iIndepFun Y P) (hk : ∀ i, 0 ≤ k i)
+    {Y : ι → Ω → ℝ} {k : ι → ℝ} (hindep : iIndepFun Y P)
     (hlaw : ∀ i, HasLaw (Y i) (chiSquaredMeasure (k i)) P) :
     HasLaw (fun ω ↦ ∑ i, Y i ω) (chiSquaredMeasure (∑ i, k i)) P := by
   classical
   let _ : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  have hk (i : ι) : 0 ≤ k i := by
+    by_contra h
+    have hp : P.map (Y i) univ = 1 := by
+      rw [Measure.map_apply_of_aemeasurable (hlaw i).aemeasurable MeasurableSet.univ]
+      simp
+    rw [(hlaw i).map_eq, chiSquaredMeasure_of_neg (not_le.1 h)] at hp
+    simp at hp
   have hsum (s : Finset ι) :
       HasLaw (∑ i ∈ s, Y i) (chiSquaredMeasure (∑ i ∈ s, k i)) P := by
     induction s using Finset.induction_on with

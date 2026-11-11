@@ -120,7 +120,7 @@ theorem exists_contDiff_support_subset_holderWith_tendstoUniformly
       _ ≤ dist a 0 + dist b c := dist_add_add_le _ _ _ _
       _ ≤ 1 + r := add_le_add (ha.trans hρ) (mem_closedBall.mp (hfs hb))
       _ = r + 1 := add_comm _ _
-  · have h := holderWith_integral_kernel_smul_sub (μ := volume) (ρ n).integrable_normed hα hf hM
+  · have h := holderWith_integral_kernel_smul_sub (μ := volume) (ρ n).integrable_normed hα hf
     have heq : g n = fun w ↦ ∫ z, (ρ n).normed volume z • f (w - z) := by
       funext w
       dsimp only [g]
