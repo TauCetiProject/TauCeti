@@ -96,9 +96,12 @@ theorem modByMonic_mem_degreeLT (hg : g.Monic) (q : R[X]) :
   nontriviality R
   exact (mem_degreeLT_natDegree_iff hg.ne_zero).mpr (degree_modByMonic_lt q hg)
 
-theorem divByMonic_mem_degreeLT (hg : g.Monic) (hq : q ∈ degreeLT R (g.natDegree + n)) :
+theorem divByMonic_mem_degreeLT (hq : q ∈ degreeLT R (g.natDegree + n)) :
     q /ₘ g ∈ degreeLT R n := by
   nontriviality R
+  by_cases hg : g.Monic
+  swap
+  · simp [divByMonic_eq_of_not_monic _ hg]
   rw [mem_degreeLT] at hq ⊢
   rcases eq_or_ne (q /ₘ g) 0 with h | h
   · simp [h]
@@ -132,7 +135,7 @@ theorem _root_.IsCoprime.exists_mem_degreeLT_mul_add_mul_eq {g h c : R[X]} (hgh 
     rw [eq_sub_of_add_eq hab]
     exact sub_mem hc (mul_comm a h ▸ mem_degreeLT.mpr
       (degree_mul_lt_of_degree_lt_of_natDegree_le (mem_degreeLT.mp ha) le_rfl))
-  simpa [mul_divByMonic_cancel_left _ hg] using divByMonic_mem_degreeLT hg hgb
+  simpa [mul_divByMonic_cancel_left _ hg] using divByMonic_mem_degreeLT hgb
 
 /-- Uniqueness in `IsCoprime.exists_mem_degreeLT_mul_add_mul_eq`: if `g` is monic and coprime to
 `h`, and `a` has degree `< g.natDegree`, then `g * b + h * a = 0` forces `a = 0` and `b = 0`. -/
