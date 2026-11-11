@@ -96,20 +96,6 @@ theorem coe_grassmannConnection_apply (he : IsIdempotentElem e) (δ : derivation
     (he.grassmannConnection δ ξ : ι → A) = e *ᵥ ((δ : Module.End k A) ∘ ξ) :=
   (rfl)
 
-/-- The coordinate derivative of a column vector `ξ` fixed by an idempotent `e` splits as
-`δ(ξ) = δ(e) ξ + e δ(ξ)`. -/
-private theorem comp_eq_map_mulVec_add (he : IsIdempotentElem e) (δ : derivationLieAlgebra k A)
-    (ξ : range (Matrix.mulVecBilin A Aᵐᵒᵖ e)) :
-    (δ : Module.End k A) ∘ (ξ : ι → A) =
-      e.map (δ : Module.End k A) *ᵥ ξ + e *ᵥ ((δ : Module.End k A) ∘ ξ) := by
-  conv_lhs => rw [← he.mem_range_mulVecBilin_iff.1 ξ.2]
-  exact derivationLieAlgebra.comp_mulVec δ e ξ
-
-/-- `e δ(e) e = 0` for an idempotent matrix `e` and the entrywise derivation `δ`. -/
-private theorem mul_map_mul_self_eq_zero (he : IsIdempotentElem e)
-    (δ : derivationLieAlgebra k A) : e * e.map (δ : Module.End k A) * e = 0 := by
-  simpa using derivationLieAlgebra.mul_apply_mul_eq_zero (derivationLieAlgebra.mapMatrix δ) he
-
 /-- The curvature of the Grassmann connections along commuting derivations `δ₁` and `δ₂` is left
 multiplication by `e (δ₁(e) δ₂(e) - δ₂(e) δ₁(e))`. -/
 theorem coe_curvature_grassmannConnection_apply (he : IsIdempotentElem e)
@@ -128,8 +114,9 @@ theorem coe_curvature_grassmannConnection_apply (he : IsIdempotentElem e)
           e *ᵥ ((δ : Module.End k A) ∘ (δ' : Module.End k A) ∘ (ξ : ι → A)) := by
     have h₁ : (e * e.map (δ : Module.End k A)) *ᵥ ((δ' : Module.End k A) ∘ (ξ : ι → A)) =
         (e * e.map (δ : Module.End k A) * e.map (δ' : Module.End k A)) *ᵥ (ξ : ι → A) := by
-      rw [comp_eq_map_mulVec_add he δ' ξ, mulVec_add, mulVec_mulVec, mulVec_mulVec,
-        mul_map_mul_self_eq_zero he δ, zero_mulVec, add_zero]
+      rw [derivationLieAlgebra.comp_eq_map_mulVec_add_of_mulVec_eq δ'
+          (he.mem_range_mulVecBilin_iff.1 ξ.2), mulVec_add, mulVec_mulVec, mulVec_mulVec,
+        he.mul_map_mul_eq_zero δ, zero_mulVec, add_zero]
     rw [derivationLieAlgebra.comp_mulVec, mulVec_add, mulVec_mulVec, mulVec_mulVec, he.eq, h₁]
   simp only [DerivationConnection.curvature_apply, Submodule.coe_sub,
     coe_grassmannConnection_apply, key, hcomm, Matrix.mul_sub, sub_mulVec, ← Matrix.mul_assoc]
@@ -175,33 +162,6 @@ section Trace
 
 variable {M : Type*} [AddCommGroup M] [Module k M] {τ : A →ₗ[k] M}
 
-/-- For a trace `τ` invariant under `δ`, the matrix `e δ(t) e` of the commutator of the Grassmann
-connection with an endomorphism `t` of `e Aⁱ` has trace zero. -/
-private theorem map_trace_mul_map_endToMatrix_mul_eq_zero (he : IsIdempotentElem e)
-    (hτ : ∀ x y, τ (x * y) = τ (y * x)) {δ : derivationLieAlgebra k A}
-    (hδ : ∀ x, τ ((δ : Module.End k A) x) = 0)
-    (t : Module.End Aᵐᵒᵖ (range (Matrix.mulVecBilin A Aᵐᵒᵖ e))) :
-    τ (e * (he.endToMatrix t).map (δ : Module.End k A) * e).trace = 0 := by
-  set T := he.endToMatrix t
-  -- Differentiating `T = T e` gives `δ(T) e = δ(T) - T δ(e)`.
-  have hL : T.map (δ : Module.End k A) =
-      T.map (δ : Module.End k A) * e + T * e.map (δ : Module.End k A) := by
-    simpa [T, endToMatrix_mul] using
-      derivationLieAlgebra.leibniz (derivationLieAlgebra.mapMatrix δ) T e
-  have h₀ : τ (T.map (δ : Module.End k A)).trace = 0 := by
-    simp [Matrix.trace, hδ]
-  have h₁ : τ (T * e.map (δ : Module.End k A)).trace = 0 := by
-    calc τ (T * e.map (δ : Module.End k A)).trace
-        _ = τ (e * T * e.map (δ : Module.End k A)).trace := by rw [mul_endToMatrix]
-        _ = τ (T * e.map (δ : Module.End k A) * e).trace := by
-          rw [Matrix.mul_assoc, map_trace_mul_comm τ hτ e]
-        _ = τ (T * e * e.map (δ : Module.End k A) * e).trace := by rw [endToMatrix_mul]
-        _ = 0 := by
-          rw [Matrix.mul_assoc T, Matrix.mul_assoc T, mul_map_mul_self_eq_zero he δ,
-            Matrix.mul_zero, trace_zero, map_zero]
-  rw [Matrix.mul_assoc, map_trace_mul_comm τ hτ e, Matrix.mul_assoc, he.eq,
-    eq_sub_of_add_eq hL.symm, trace_sub, map_sub, h₀, h₁, sub_zero]
-
 /-- **The curvature-trace formula.** Let `τ` be a trace on `A` invariant under commuting
 derivations `δ₁` and `δ₂`. For every pair of connections `∇₁` and `∇₂` along `δ₁` and `δ₂` on the
 right module `e Aⁱ` of an idempotent matrix `e`, the trace `τ (Tr F)` of the matrix of their
@@ -226,8 +186,10 @@ theorem map_trace_endToMatrix_curvature (he : IsIdempotentElem e)
   -- The change of curvature has trace zero.
   simp only [map_add, map_neg, map_sub, map_mul, trace_add, trace_neg, trace_sub,
     endToMatrix_curvature_grassmannConnection, endToMatrix_lie_grassmannConnection,
-    map_trace_mul_map_endToMatrix_mul_eq_zero he hτ hδ₁ (D₂ -ᵥ he.grassmannConnection δ₂),
-    map_trace_mul_map_endToMatrix_mul_eq_zero he hτ hδ₂ (D₁ -ᵥ he.grassmannConnection δ₁),
+    he.map_trace_mul_map_mul_eq_zero hτ hδ₁ (he.mul_endToMatrix (D₂ -ᵥ he.grassmannConnection δ₂))
+      (he.endToMatrix_mul _),
+    he.map_trace_mul_map_mul_eq_zero hτ hδ₂ (he.mul_endToMatrix (D₁ -ᵥ he.grassmannConnection δ₁))
+      (he.endToMatrix_mul _),
     map_trace_mul_comm τ hτ (he.endToMatrix (D₁ -ᵥ he.grassmannConnection δ₁)), sub_self,
     neg_zero, add_zero]
   -- The Grassmann curvature `e X e` has the trace of `e X`.
