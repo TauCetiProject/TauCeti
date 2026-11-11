@@ -309,7 +309,7 @@ private theorem sum_pentagonWeight_mul_pentagonWeight_self
     cases P.sigma_eq_of_left_eq Q P' Q' ((P.isEmpty_and_isEmpty_iff Q).mp hD)
       ((P'.isEmpty_and_isEmpty_iff Q').mp hE)
     rfl
-  · rw [← GridPentagonBetween.exists_left_eq_iff C.column_ne_next rfl]
+  · rw [← GridPentagonBetween.exists_left_eq_iff rfl]
     constructor
     · rintro ⟨⟨m, P, Q⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,
@@ -345,7 +345,7 @@ private theorem sum_initialPentagonWeight_mul_initialPentagonWeight_self
     cases P.sigma_eq_of_right_eq Q P' Q' ((P.isEmpty_and_isEmpty_iff Q).mp hD)
       ((P'.isEmpty_and_isEmpty_iff Q').mp hE)
     rfl
-  · rw [← GridInitialPentagonBetween.exists_right_eq_iff C.column_ne_next rfl]
+  · rw [← GridInitialPentagonBetween.exists_right_eq_iff rfl]
     constructor
     · rintro ⟨⟨m, P, Q⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,

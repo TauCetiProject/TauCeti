@@ -132,6 +132,21 @@ theorem norm_one_sub_of_norm_lt_one {R : Type*} [SeminormedRing R] [NormOneClass
   · simp [hx.le]
   · exact ne_of_gt (by simpa using hx)
 
+/-- In an ultrametric seminormed ring, multiplication by a perturbation `1 + a` of one with
+`‖a‖ < 1` preserves norms. -/
+@[simp]
+theorem norm_one_add_mul_of_norm_lt_one {A : Type*} [SeminormedRing A] [IsUltrametricDist A]
+    {a : A} (ha : ‖a‖ < 1) (x : A) : ‖(1 + a) * x‖ = ‖x‖ := by
+  rw [add_mul, one_mul]
+  have hax : ‖a * x‖ ≤ ‖a‖ * ‖x‖ := norm_mul_le _ _
+  rcases (norm_nonneg x).eq_or_lt with hx | hx
+  · have h0 : ‖a * x‖ = 0 := le_antisymm (by simpa [← hx] using hax) (norm_nonneg _)
+    rw [← hx]
+    refine le_antisymm ?_ (norm_nonneg _)
+    simpa [← hx, h0] using IsUltrametricDist.norm_add_le_max x (a * x)
+  · have hlt : ‖a * x‖ < ‖x‖ := hax.trans_lt (by simpa using mul_lt_mul_of_pos_right ha hx)
+    rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hlt.ne', max_eq_left hlt.le]
+
 /-- An element at distance less than one from one has norm one. -/
 theorem norm_eq_one_of_norm_one_sub_lt_one {R : Type*} [SeminormedRing R] [NormOneClass R]
     [IsUltrametricDist R] {x : R} (hx : ‖1 - x‖ < 1) : ‖x‖ = 1 := by

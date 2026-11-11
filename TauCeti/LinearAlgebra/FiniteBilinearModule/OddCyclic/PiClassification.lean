@@ -209,7 +209,7 @@ private theorem nonempty_isometry_pi_oddCyclic_of_prod_legendreSym_eq_fin (hp : 
           (oddCyclic (p ^ k 0) hp.pow (η 0))) := by
         rcases h0 with h0 | h0
         · exact nonempty_isometry_oddCyclic_of_eq_zero hp h0 _ _
-        · exact nonempty_isometry_oddCyclic_of_legendreSym_eq hp (k 0) (hθ' 0) (hη 0) h0
+        · exact nonempty_isometry_oddCyclic_of_legendreSym_eq hp (k 0) (hθ' 0) h0
       obtain ⟨g'⟩ := ih (fun i ↦ k i.succ) (fun i ↦ hθ' i.succ) (fun i ↦ hη i.succ)
         fun m hm ↦ Fin.prod_filter_succ_eq_of_prod_filter_eq (k · = m) (h' m hm)
           (fun _ h ↦ ((ZMod.isUnit_intCast_iff_isCoprime _ p).2 (hθ' 0)).ne_zero

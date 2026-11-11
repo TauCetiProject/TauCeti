@@ -28,6 +28,12 @@ for set and probability integrals.
 * `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
   between real Banach spaces.
 
+## Differences of integrals
+
+* `TauCeti.MeasureTheory.enorm_integral_sub_integral_le_lintegral_enorm_sub` bounds the difference
+  of two integrals by the integral of the norm of the difference, with no integrability
+  assumption.
+
 ## Counting measures of multisets
 
 * `Multiset.integrable_sum_map_dirac` and `Multiset.integral_sum_map_dirac`: every function is
@@ -205,6 +211,24 @@ theorem integrable_exp_neg_of_ae_nonneg {Ω : Type*} [MeasurableSpace Ω] {μ : 
   (integrable_const 1).mono' hf.neg.exp.aestronglyMeasurable <| by
     filter_upwards [hf0] with x hx
     simpa [Real.abs_exp] using hx
+
+/-- The difference of the integrals of two almost everywhere strongly measurable functions is at
+most the integral of the norm of their difference. No integrability is assumed: when `u - v` is
+integrable, `u` and `v` are either both integrable or both not, and in the latter case both
+integrals vanish. -/
+theorem enorm_integral_sub_integral_le_lintegral_enorm_sub {α E : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup E] [NormedSpace ℝ E] {u v : α → E}
+    (hu : AEStronglyMeasurable u μ) (hv : AEStronglyMeasurable v μ) :
+    ‖∫ x, u x ∂μ - ∫ x, v x ∂μ‖ₑ ≤ ∫⁻ x, ‖u x - v x‖ₑ ∂μ := by
+  rcases eq_or_ne (∫⁻ x, ‖u x - v x‖ₑ ∂μ) ∞ with h | h
+  · simp [h]
+  have huv : Integrable (fun x => u x - v x) μ := ⟨hu.sub hv, lt_top_iff_ne_top.2 h⟩
+  by_cases hvi : Integrable v μ
+  · rw [← integral_sub ((huv.add hvi).congr (.of_forall fun x => by simp)) hvi]
+    exact enorm_integral_le_lintegral_enorm _
+  · have hui : ¬Integrable u μ := fun hui =>
+      hvi ((hui.sub huv).congr (.of_forall fun x => by simp))
+    simp [integral_undef hui, integral_undef hvi]
 
 /-- An even function obtained by composing with absolute value is integrable on the whole real
 line whenever the original function is integrable on the positive half-line. -/

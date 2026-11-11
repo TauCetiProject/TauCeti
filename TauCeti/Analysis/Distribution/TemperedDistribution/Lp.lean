@@ -113,6 +113,11 @@ theorem toTemperedDistribution_smul (c : ℂ) (f : Lp F p μ) :
     ((c • f : Lp F p μ) : 𝓢'(E, F)) = c • (f : 𝓢'(E, F)) :=
   map_smul (toTemperedDistributionCLM F μ p) c f
 
+@[simp]
+theorem toTemperedDistribution_sum {ι : Type*} (t : Finset ι) (f : ι → Lp F p μ) :
+    ((∑ i ∈ t, f i : Lp F p μ) : 𝓢'(E, F)) = ∑ i ∈ t, (f i : 𝓢'(E, F)) :=
+  map_sum (toTemperedDistributionCLM F μ p) f t
+
 end Linear
 
 section NormedSpace
