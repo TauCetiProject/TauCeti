@@ -147,8 +147,6 @@ instance : Inhabited ConicCutoff :=
 `χ(a / (a + b))² a + χ(b / (a + b))² b` is at least `(a + b) / 2`. -/
 theorem add_le_two_mul {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
     a + b ≤ 2 * (χ (a / (a + b)) ^ 2 * a + χ (b / (a + b)) ^ 2 * b) := by
-  have h₁ := χ.nonneg (a / (a + b))
-  have h₂ := χ.nonneg (b / (a + b))
   rcases (add_nonneg ha hb).eq_or_lt with hab | hab
   · rw [← hab]
     positivity
