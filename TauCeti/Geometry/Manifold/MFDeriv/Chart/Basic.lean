@@ -106,7 +106,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   charts is differentiable within the model range with zero derivative.
 * `TauCeti.fderiv_comp_extChartAt_symm_apply_zero_one`: the preferred chart of `M × 𝕜` is the
   identity on `𝕜`, so the derivative of a coordinate expression in the direction `(0, 1)` is the
-  derivative along `𝕜`, read without any chart.
+  derivative along `𝕜`, read without any chart; `TauCeti.deriv_prodMk_eventuallyEq_fderiv` is the
+  same identity near a point, in the preferred chart at that point.
 * `ContMDiff.contMDiff_deriv_prodMk` and `ContMDiff.continuous_deriv_prodMk`: the derivative along
   `𝕜` of a `C^(n + 1)` function on `M × 𝕜` is `C^n`, and that of a `C¹` function is continuous.
 -/
@@ -892,17 +893,17 @@ theorem fderiv_comp_extChartAt_symm_apply_zero_one {z : X × 𝕜} {x : X} {s : 
 `f : X × 𝕜 → F` is `C¹`, the derivative of `f` along `𝕜` at `(x, t)` is the derivative of the
 coordinate expression of `f` in the preferred chart at `z₀`, in the direction `(0, 1)`, at the chart
 image `(φ x, t)` of `(x, t)`. -/
-private theorem deriv_prodMk_eventuallyEq_fderiv {z₀ : X × 𝕜}
+theorem deriv_prodMk_eventuallyEq_fderiv {z₀ : X × 𝕜}
     (hf : ContDiffAt 𝕜 1 (f ∘ (extChartAt (I.prod 𝓘(𝕜)) z₀).symm)
       (extChartAt I z₀.1 z₀.1, z₀.2)) :
-    (fun z : X × 𝕜 ↦ fderiv 𝕜 (f ∘ (extChartAt (I.prod 𝓘(𝕜)) z₀).symm)
-        (extChartAt I z₀.1 z.1, z.2) (0, 1)) =ᶠ[𝓝 z₀]
-      fun z ↦ deriv (fun s ↦ f (z.1, s)) z.2 := by
+    (fun z : X × 𝕜 ↦ deriv (fun s ↦ f (z.1, s)) z.2) =ᶠ[𝓝 z₀]
+      fun z ↦ fderiv 𝕜 (f ∘ (extChartAt (I.prod 𝓘(𝕜)) z₀).symm)
+        (extChartAt I z₀.1 z.1, z.2) (0, 1) := by
   have hφ : ContinuousAt (fun z : X × 𝕜 ↦ (extChartAt I z₀.1 z.1, z.2)) z₀ :=
     ((continuousAt_extChartAt z₀.1).comp continuousAt_fst).prodMk continuousAt_snd
   filter_upwards [continuousAt_fst.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I) z₀.1),
     hφ.eventually (hf.eventually (by simp))] with z hz hzG
-  exact fderiv_comp_extChartAt_symm_apply_zero_one hz (hzG.differentiableAt one_ne_zero)
+  exact (fderiv_comp_extChartAt_symm_apply_zero_one hz (hzG.differentiableAt one_ne_zero)).symm
 
 variable [I.Boundaryless]
 
@@ -923,7 +924,7 @@ theorem _root_.ContMDiff.contMDiff_deriv_prodMk {n : WithTop ℕ∞}
       (fun z : X × 𝕜 ↦ (extChartAt I z₀.1 z.1, z.2)) z₀ :=
     (contMDiffAt_extChartAt.comp z₀ contMDiffAt_fst).prodMk_space contMDiffAt_snd
   refine ContMDiffAt.congr_of_eventuallyEq ?_
-    (deriv_prodMk_eventuallyEq_fderiv (hG₀.of_le le_add_self)).symm
+    (deriv_prodMk_eventuallyEq_fderiv (hG₀.of_le le_add_self))
   exact ((hG₀.fderiv_right le_rfl).clm_apply contDiffAt_const).contMDiffAt.comp z₀ hφ
 
 /-- **The derivative along `𝕜` of a `C¹` function on `X × 𝕜` is continuous.** On a boundaryless

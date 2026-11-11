@@ -292,13 +292,13 @@ section Rescaling
 variable {δ K : ℝ}
 
 /-- **The rescaling factor is smooth.** Let `f` be a `C^(n + 1)` function on `M × ℝ`, independent
-of the time for `t < δ` and for `t > 1 - δ`, with `∂ₜ f < C t (1 - t²)` in the open slab. Then the
+of the time for `t < δ` and for `t > 1 - δ`, with `∂ₜ f ≠ C t (1 - t²)` in the open slab. Then the
 rescaling factor `λ = C t (1 - t²) / (C t (1 - t²) - ∂ₜ f)` is `C^n` on all of `M × ℝ`: it is a
 quotient with nonvanishing denominator in the open slab, and `1` near the end levels. -/
 theorem _root_.ContMDiff.continuationRescaling {n : WithTop ℕ∞}
     (hf : ContMDiff (I.prod 𝓘(ℝ)) 𝓘(ℝ) (n + 1) f) (hδ : 0 < δ)
     (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0)) (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1))
-    (hlt : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t < C * t * (1 - t ^ 2)) :
+    (hne : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t ≠ C * t * (1 - t ^ 2)) :
     ContMDiff (I.prod 𝓘(ℝ)) 𝓘(ℝ) n (TauCeti.continuationRescaling C f) := by
   intro z
   by_cases ht : z.2 ∈ Ioo 0 1
@@ -306,7 +306,7 @@ theorem _root_.ContMDiff.continuationRescaling {n : WithTop ℕ∞}
     have ha : ContMDiff (I.prod 𝓘(ℝ)) 𝓘(ℝ) n fun z : M × ℝ ↦ C * z.2 * (1 - z.2 ^ 2) :=
       (by fun_prop : ContDiff ℝ n fun t : ℝ ↦ C * t * (1 - t ^ 2)).contMDiff.comp contMDiff_snd
     have hden : C * z.2 * (1 - z.2 ^ 2) - deriv (fun s ↦ f (z.1, s)) z.2 ≠ 0 :=
-      (sub_pos.2 (hlt z.1 z.2 ht)).ne'
+      sub_ne_zero.2 (hne z.1 z.2 ht).symm
     have hg : ContDiffAt ℝ n (fun p : ℝ × ℝ ↦ 1 + p.1 / (p.2 - p.1))
         (deriv (fun s ↦ f (z.1, s)) z.2, C * z.2 * (1 - z.2 ^ 2)) :=
       contDiffAt_const.add (contDiffAt_fst.div (contDiffAt_snd.sub contDiffAt_fst) hden)
@@ -332,12 +332,12 @@ private theorem continuous_continuationRescaling_and_mem_Icc
     (hb : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, |deriv (fun s ↦ f (x, s)) t| ≤ K * t * (1 - t ^ 2)) :
     Continuous (continuationRescaling C f) ∧
       ∀ z : M × ℝ, continuationRescaling C f z ∈ Icc (C / (C + K)) (C / (C - K)) := by
-  have hlt : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t < C * t * (1 - t ^ 2) :=
+  have hne : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t ≠ C * t * (1 - t ^ 2) :=
     fun x t ht ↦ by
       have hw : 0 < t * (1 - t ^ 2) := mul_pos ht.1 (by nlinarith [ht.1, ht.2])
       have := (le_abs_self _).trans (hb x t ht)
-      nlinarith
-  refine ⟨(ContMDiff.continuationRescaling (n := 0) (by simpa using hf) hδ hf₀ hf₁ hlt).continuous,
+      exact ne_of_lt (by nlinarith)
+  refine ⟨(ContMDiff.continuationRescaling (n := 0) (by simpa using hf) hδ hf₀ hf₁ hne).continuous,
     fun z ↦ continuationRescaling_mem_Icc hK hKC (hb z.1 z.2) fun ht ↦ ?_⟩
   exact deriv_prodMk_eq_zero_of_notMem_Icc hf₀ hf₁ fun h ↦ ht ⟨hδ.trans_le h.1, by linarith [h.2]⟩
 
@@ -346,13 +346,13 @@ variable {V : (z : M × ℝ) → TangentSpace (I.prod 𝓘(ℝ)) z} {γ : ℝ �
 omit [I.Boundaryless] in
 /-- **The rescaled continuation field projects to the base field.** Let `V` be a vector field on
 `M × ℝ` whose time component is `C t (1 - t²) - ∂ₜ f`, as for the negative gradient of the
-continuation potential for any metric `dt² + g_t`, with `∂ₜ f < C t (1 - t²)` in the open slab and
+continuation potential for any metric `dt² + g_t`, with `∂ₜ f ≠ C t (1 - t²)` in the open slab and
 `∂ₜ f = 0` outside it. Along an integral curve of `λ • V`, the time component `τ` solves the base
 equation `τ' = C τ (1 - τ²)` of `TauCeti.intervalBasePotential`. -/
 theorem _root_.IsMIntegralCurve.hasDerivAt_snd_of_continuationRescaling_smul
     (hγ : IsMIntegralCurve γ fun z ↦ continuationRescaling C f z • V z)
     (hV : ∀ z, (V z : E × ℝ).2 = C * z.2 * (1 - z.2 ^ 2) - deriv (fun s ↦ f (z.1, s)) z.2)
-    (hlt : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t < C * t * (1 - t ^ 2))
+    (hne : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t ≠ C * t * (1 - t ^ 2))
     (hend : ∀ x, ∀ t ∉ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t = 0) (s : ℝ) :
     HasDerivAt (fun s ↦ (γ s).2) (C * (γ s).2 * (1 - (γ s).2 ^ 2)) s := by
   have hmap : IsMIntegralCurveOn (Prod.snd ∘ γ)
@@ -363,7 +363,7 @@ theorem _root_.IsMIntegralCurve.hasDerivAt_snd_of_continuationRescaling_smul
     have hz : deriv (fun s ↦ f (z.1, s)) z.2 ≠ C * z.2 * (1 - z.2 ^ 2) ∨
         deriv (fun s ↦ f (z.1, s)) z.2 = 0 := by
       by_cases ht : z.2 ∈ Ioo 0 1
-      · exact .inl (hlt z.1 z.2 ht).ne
+      · exact .inl (hne z.1 z.2 ht)
       · exact .inr (hend z.1 z.2 ht)
     rw [mfderiv_snd]
     -- The tangent space of `M × ℝ` is the product `E × ℝ`, on which `snd` and the scalar action

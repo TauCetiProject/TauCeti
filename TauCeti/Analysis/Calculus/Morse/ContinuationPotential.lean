@@ -517,6 +517,7 @@ theorem continuationRescaling_apply (C : ℝ) (f : E × ℝ → ℝ) (z : E × �
       (C * z.2 * (1 - z.2 ^ 2) - deriv (fun s ↦ f (z.1, s)) z.2) := (rfl)
 
 /-- The rescaling factor is `1` where the time derivative of `f` vanishes. -/
+@[simp]
 theorem continuationRescaling_of_deriv_eq_zero (h : deriv (fun s ↦ f (z.1, s)) z.2 = 0) :
     continuationRescaling C f z = 1 := by
   simp [continuationRescaling_apply, h]
