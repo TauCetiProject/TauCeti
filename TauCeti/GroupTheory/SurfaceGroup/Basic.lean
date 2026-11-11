@@ -45,6 +45,9 @@ out of a surface group correspond to tuples of elements at which the surface wor
   universal properties, and `TauCeti.SurfaceGroup.Orientable.homEquiv` and
   `TauCeti.SurfaceGroup.Nonorientable.homEquiv`, the bijections between homomorphisms out of a
   surface group and the tuples satisfying its relation.
+* `TauCeti.SurfaceGroup.OrientableGenerator.equivSum` and
+  `TauCeti.SurfaceGroup.NonorientableGenerator.equivSum`: the generators of the presentations as
+  sums of finite types.
 
 ## References
 
@@ -122,6 +125,70 @@ inductive NonorientableGenerator (g m : ℕ) : Type
   | c (i : Fin g) : NonorientableGenerator g m
   /-- The peripheral generator `pⱼ`, a loop around the `j`-th boundary component. -/
   | peripheral (j : Fin m) : NonorientableGenerator g m
+
+/-- The generators of `S⁺(g, m)` are the two families `a₁, …, a_g` and `b₁, …, b_g` together with
+the peripheral generators `p₁, …, p_m`. -/
+def OrientableGenerator.equivSum (g m : ℕ) :
+    OrientableGenerator g m ≃ (Fin g ⊕ Fin g) ⊕ Fin m where
+  toFun
+    | .a i => .inl (.inl i)
+    | .b i => .inl (.inr i)
+    | .peripheral j => .inr j
+  invFun := Sum.elim (Sum.elim .a .b) .peripheral
+  left_inv := by rintro (i | i | j) <;> rfl
+  right_inv := by rintro ((i | i) | j) <;> rfl
+
+/-- The generators of `S⁻(g, m)` are the family `c₁, …, c_g` together with the peripheral
+generators `p₁, …, p_m`. -/
+def NonorientableGenerator.equivSum (g m : ℕ) : NonorientableGenerator g m ≃ Fin g ⊕ Fin m where
+  toFun
+    | .c i => .inl i
+    | .peripheral j => .inr j
+  invFun := Sum.elim .c .peripheral
+  left_inv := by rintro (i | j) <;> rfl
+  right_inv := by rintro (i | j) <;> rfl
+
+namespace OrientableGenerator
+
+variable {g m : ℕ}
+
+@[simp]
+theorem equivSum_a (i : Fin g) : equivSum g m (.a i) = .inl (.inl i) := (rfl)
+
+@[simp]
+theorem equivSum_b (i : Fin g) : equivSum g m (.b i) = .inl (.inr i) := (rfl)
+
+@[simp]
+theorem equivSum_peripheral (j : Fin m) : equivSum g m (.peripheral j) = .inr j := (rfl)
+
+@[simp]
+theorem equivSum_symm_inl_inl (i : Fin g) : (equivSum g m).symm (.inl (.inl i)) = .a i := (rfl)
+
+@[simp]
+theorem equivSum_symm_inl_inr (i : Fin g) : (equivSum g m).symm (.inl (.inr i)) = .b i := (rfl)
+
+@[simp]
+theorem equivSum_symm_inr (j : Fin m) : (equivSum g m).symm (.inr j) = .peripheral j := (rfl)
+
+end OrientableGenerator
+
+namespace NonorientableGenerator
+
+variable {g m : ℕ}
+
+@[simp]
+theorem equivSum_c (i : Fin g) : equivSum g m (.c i) = .inl i := (rfl)
+
+@[simp]
+theorem equivSum_peripheral (j : Fin m) : equivSum g m (.peripheral j) = .inr j := (rfl)
+
+@[simp]
+theorem equivSum_symm_inl (i : Fin g) : (equivSum g m).symm (.inl i) = .c i := (rfl)
+
+@[simp]
+theorem equivSum_symm_inr (j : Fin m) : (equivSum g m).symm (.inr j) = .peripheral j := (rfl)
+
+end NonorientableGenerator
 
 /-- The defining relator `[a₁, b₁] ⋯ [a_g, b_g] p₁ ⋯ p_m` of `S⁺(g, m)` in the free group on its
 generators. -/

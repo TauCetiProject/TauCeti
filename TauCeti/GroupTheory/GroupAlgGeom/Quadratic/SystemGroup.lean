@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.GroupTheory.GroupAlgGeom.CoefficientFree
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 public import TauCeti.GroupTheory.SurfaceGroup.LowGenus
+import TauCeti.Logic.Equiv.Set
 
 /-!
 # The groups of the standard quadratic equations without coefficients
@@ -60,21 +61,6 @@ open SurfaceGroup
 
 variable {G X : Type*} [Group G] {n : ℕ}
 
-open Classical in
-/-- If `f` enumerates some of the variables of `X` without repetition, then `X` consists of the
-indices of `f`, here labelled by `α`, and of the variables that `f` does not enumerate. -/
-private noncomputable def varEquiv {α ι : Type*} (g : α ≃ ι) {f : ι → X} (hf : f.Injective) :
-    α ⊕ ↥(Set.range f)ᶜ ≃ X :=
-  ((g.trans (Equiv.ofInjective f hf)).sumCongr (.refl _)).trans (Equiv.Set.sumCompl (Set.range f))
-
-private theorem varEquiv_inl {α ι : Type*} (g : α ≃ ι) {f : ι → X} (hf : f.Injective) (a : α) :
-    varEquiv g hf (.inl a) = f (g a) := by
-  simp [varEquiv]
-
-private theorem varEquiv_inr {α ι : Type*} (g : α ≃ ι) {f : ι → X} (hf : f.Injective)
-    (v : ↥(Set.range f)ᶜ) : varEquiv g hf (.inr v) = v := by
-  simp [varEquiv]
-
 /-! ### Type (1): products of commutators -/
 
 section Orientable
@@ -89,30 +75,24 @@ theorem toWord_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
   simp [toWord_def, orientableWord_def, commutatorElement_def, map_list_prod, List.map_ofFn,
     Function.comp_def]
 
-/-- The generators of the closed orientable surface group of genus `n` are indexed by two copies
-of `Fin n`. -/
-private def orientableGeneratorEquiv (n : ℕ) : OrientableGenerator n 0 ≃ Fin n ⊕ Fin n where
-  toFun
-    | .a i => .inl i
-    | .b i => .inr i
-    | .peripheral j => j.elim0
-  invFun := Sum.elim .a .b
-  left_inv := by rintro (i | i | j) <;> first | rfl | exact j.elim0
-  right_inv := by rintro (i | i) <;> rfl
-
 /-- The variables of `X` are the generators of the closed orientable surface group, sent to the
 variables of the equation, together with the variables that do not occur in the equation. -/
-private noncomputable abbrev orientableVarEquiv (inj : (Sum.elim x y).Injective) :
+private noncomputable def orientableVarEquiv (inj : (Sum.elim x y).Injective) :
     OrientableGenerator n 0 ⊕ ↥(Set.range (Sum.elim x y))ᶜ ≃ X :=
-  varEquiv (orientableGeneratorEquiv n) inj
+  (((OrientableGenerator.equivSum n 0).trans (Equiv.sumEmpty _ _)).sumCongr (.refl _)).trans
+    (Equiv.ofInjectiveSumCompl _ inj)
 
 private theorem orientableVarEquiv_a (inj : (Sum.elim x y).Injective) (i : Fin n) :
-    orientableVarEquiv inj (.inl (.a i)) = x i :=
-  varEquiv_inl _ inj _
+    orientableVarEquiv inj (.inl (.a i)) = x i := by
+  simp [orientableVarEquiv]
 
 private theorem orientableVarEquiv_b (inj : (Sum.elim x y).Injective) (i : Fin n) :
-    orientableVarEquiv inj (.inl (.b i)) = y i :=
-  varEquiv_inl _ inj _
+    orientableVarEquiv inj (.inl (.b i)) = y i := by
+  simp [orientableVarEquiv]
+
+private theorem orientableVarEquiv_inr (inj : (Sum.elim x y).Injective)
+    (v : ↥(Set.range (Sum.elim x y))ᶜ) : orientableVarEquiv inj (.inr v) = v := by
+  simp [orientableVarEquiv]
 
 private theorem normalClosure_toWord_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
     normalClosure {(orientable (G := G) n hn x y inj).toWord} =
@@ -156,7 +136,7 @@ theorem orientableSystemGroupEquiv_mk_inr_of_y (i : Fin n) :
 theorem orientableSystemGroupEquiv_mk_inr_of_val (v : ↥(Set.range (Sum.elim x y))ᶜ) :
     orientableSystemGroupEquiv G hn inj ((inr (FreeGroup.of (v : X)) : GX G X) : SystemGroup G _) =
       inr (inr (FreeGroup.of v)) := by
-  simp [orientableSystemGroupEquiv, ← varEquiv_inr (orientableGeneratorEquiv n) inj]
+  simp [orientableSystemGroupEquiv, ← orientableVarEquiv_inr inj]
 
 @[simp]
 theorem orientableSystemGroupEquiv_symm_inl (g : G) :
@@ -249,25 +229,20 @@ theorem toWord_nonorientable (hn : 0 < n) (inj : x.Injective) :
       inr (nonorientableWord (fun i => FreeGroup.of (x i)) ![]) := by
   simp [toWord_def, nonorientableWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
 
-/-- The generators of the closed non-orientable surface group of genus `n` are indexed by
-`Fin n`. -/
-private def nonorientableGeneratorEquiv (n : ℕ) : NonorientableGenerator n 0 ≃ Fin n where
-  toFun
-    | .c i => i
-    | .peripheral j => j.elim0
-  invFun := .c
-  left_inv := by rintro (i | j) <;> first | rfl | exact j.elim0
-  right_inv _ := rfl
-
 /-- The variables of `X` are the generators of the closed non-orientable surface group, sent to
 the variables of the equation, together with the variables that do not occur in the equation. -/
-private noncomputable abbrev nonorientableVarEquiv (inj : x.Injective) :
+private noncomputable def nonorientableVarEquiv (inj : x.Injective) :
     NonorientableGenerator n 0 ⊕ ↥(Set.range x)ᶜ ≃ X :=
-  varEquiv (nonorientableGeneratorEquiv n) inj
+  (((NonorientableGenerator.equivSum n 0).trans (Equiv.sumEmpty _ _)).sumCongr (.refl _)).trans
+    (Equiv.ofInjectiveSumCompl _ inj)
 
 private theorem nonorientableVarEquiv_c (inj : x.Injective) (i : Fin n) :
-    nonorientableVarEquiv inj (.inl (.c i)) = x i :=
-  varEquiv_inl _ inj _
+    nonorientableVarEquiv inj (.inl (.c i)) = x i := by
+  simp [nonorientableVarEquiv]
+
+private theorem nonorientableVarEquiv_inr (inj : x.Injective) (v : ↥(Set.range x)ᶜ) :
+    nonorientableVarEquiv inj (.inr v) = v := by
+  simp [nonorientableVarEquiv]
 
 private theorem normalClosure_toWord_nonorientable (hn : 0 < n) (inj : x.Injective) :
     normalClosure {(nonorientable (G := G) n hn x inj).toWord} =
@@ -307,7 +282,7 @@ theorem nonorientableSystemGroupEquiv_mk_inr_of_val (v : ↥(Set.range x)ᶜ) :
     nonorientableSystemGroupEquiv G hn inj
         ((inr (FreeGroup.of (v : X)) : GX G X) : SystemGroup G _) =
       inr (inr (FreeGroup.of v)) := by
-  simp [nonorientableSystemGroupEquiv, ← varEquiv_inr (nonorientableGeneratorEquiv n) inj]
+  simp [nonorientableSystemGroupEquiv, ← nonorientableVarEquiv_inr inj]
 
 @[simp]
 theorem nonorientableSystemGroupEquiv_symm_inl (g : G) :
