@@ -25,7 +25,10 @@ On its length interval, the factor is Mathlib's `naturalParameterization`.
 
 We use Mathlib's `variationOnFromTo`, its continuity criterion, and the exact variation formula
 for composition with a monotone map. Length is always `eVariationOn`; its conversion to a real
-parameter is justified by the bounded-variation hypothesis.
+parameter is justified by the bounded-variation hypothesis. Results stated without
+`BoundedVariationOn` use the `toReal` of the variation, which is `0` when the variation is
+infinite; there the length interval is `{0}` and the statement only carries content for
+rectifiable curves.
 
 ## References
 
