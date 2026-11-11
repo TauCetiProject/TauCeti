@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 public import Mathlib.MeasureTheory.Measure.FiniteMeasure
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
-import TauCeti.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
 
 /-!
 # The continuity equation with boundary-time terms

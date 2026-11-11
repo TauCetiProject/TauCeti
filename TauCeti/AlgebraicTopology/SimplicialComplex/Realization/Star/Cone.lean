@@ -65,7 +65,7 @@ theorem starToCone_of_not_lt (x : closedStarRealization K {v})
 /-- The image of a closed star under `starToCone` lies in the cone over its link. -/
 theorem starToCone_mem (x : closedStarRealization K {v}) :
     starToCone v (x.1.1 : ι → ℝ) ∈
-      (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))).cone := by
+      (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))).cone ℝ := by
   by_cases hx : x.1.1 v < 1
   · rw [starToCone_of_lt x hx]
     exact (smul_mem_cone_iff _ (sub_pos.mpr hx)).mpr (mem_range_self _)

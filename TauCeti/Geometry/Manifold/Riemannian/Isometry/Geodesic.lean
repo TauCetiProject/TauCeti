@@ -6,15 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.AlongCurve
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.AlongCurve.Acceleration
 
 /-!
 # Geodesics under Riemannian isometries
 
-A smooth Riemannian isometry carries geodesics to geodesics. This holds on an arbitrary
+A local Riemannian isometry carries geodesics to geodesics. This holds on an arbitrary
 parameter set with unique derivatives, and the tangent map carries the initial velocity to the
-initial velocity of the image geodesic. Applying the result to the inverse isometry gives
-equivalences for interval-aware geodesics, all-time geodesics, and geodesics with initial data.
+initial velocity of the image geodesic. For a global isometry, applying the result to its inverse
+gives equivalences for interval-aware geodesics, all-time geodesics, and geodesics with initial
+data.
 
 This is the geodesic form of naturality of the Levi-Civita connection; see do Carmo,
 *Riemannian Geometry*, Chapter 2, Theorem 3.6, and Chapter 3, Section 2. The equivalence for
@@ -23,6 +24,8 @@ maximal geodesic intervals and intertwines the exponential maps, `Φ ∘ exp_p =
 
 ## Main results
 
+* `IsLocalRiemannianIsometry.isGeodesicCurveOn_comp`: local isometries preserve geodesics.
+* `IsLocalRiemannianIsometry.isGeodesicCurveOn_comp_iff`: reflection for `C²` source curves.
 * `RiemannianIsometry.isGeodesicCurveOn_comp_iff`: an isometry preserves the geodesic equation
   on a parameter set.
 * `RiemannianIsometry.isGeodesicCurve_comp_iff`: the all-time specialization.
@@ -37,7 +40,7 @@ open scoped ContDiff Manifold Topology
 
 noncomputable section
 
-namespace TauCeti.RiemannianIsometry
+namespace TauCeti
 
 open TauCeti.Manifold
 
@@ -55,36 +58,30 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
 
-private theorem isGeodesicCurveOn_comp (Φ : RiemannianIsometry I J M N)
+namespace IsLocalRiemannianIsometry
+
+/-- A local Riemannian isometry carries geodesics to geodesics on the same parameter set. -/
+theorem isGeodesicCurveOn_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
     {γ : ℝ → M} {s : Set ℝ} (h : IsGeodesicCurveOn I γ s) :
-    IsGeodesicCurveOn J (Φ ∘ γ) s where
+    IsGeodesicCurveOn J (f ∘ γ) s where
   uniqueDiffOn := h.uniqueDiffOn
-  contMDiffOn :=
-    (Φ.toDiffeomorph.contMDiff.of_le (by norm_num)).comp_contMDiffOn h.contMDiffOn
-  accelerationWithin_eq_zero t ht := by
-    have hvelocity (r : ℝ) (hr : r ∈ s) :
-        curveVelocityWithin J (Φ ∘ γ) s r =
-          mfderiv I J Φ (γ r) (curveVelocityWithin I γ s r) :=
-      curveVelocityWithin_map (Φ.mdifferentiableAt (γ r)) (h.uniqueDiffOn r hr)
-        (h.mdifferentiableOn r hr)
-    have hvelocity_eventually :
-        curveVelocityWithin J (Φ ∘ γ) s =ᶠ[𝓝[s] t]
-          fun r ↦ mfderiv I J Φ (γ r) (curveVelocityWithin I γ s r) := by
-      filter_upwards [self_mem_nhdsWithin] with r hr
-      exact hvelocity r hr
-    have hsourceCoord : DifferentiableWithinAt ℝ
-        (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ t)) s t :=
-      differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn h.contMDiffOn ht
-        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-    have hnaturality := Φ.mfderiv_alongCurveWithin (h.uniqueDiffOn t ht)
-      (h.mdifferentiableOn t ht) hsourceCoord
-    have hmappedZero : alongCurveWithin (leviCivitaConnection J N) (Φ ∘ γ)
-        (fun r ↦ mfderiv I J Φ (γ r) (curveVelocityWithin I γ s r)) s t = 0 := by
-      rw [← accelerationWithin_def, h.accelerationWithin_eq_zero t ht, map_zero] at hnaturality
-      exact hnaturality.symm
-    rw [accelerationWithin_def, alongCurveWithin_congr (leviCivitaConnection J N) (Φ ∘ γ)
-      (curveVelocityWithin J (Φ ∘ γ) s) hvelocity_eventually (hvelocity t ht)]
-    exact hmappedZero
+  contMDiffOn := (hf.contMDiff.of_le (by norm_num)).comp_contMDiffOn h.contMDiffOn
+  accelerationWithin_eq_zero t ht :=
+    (hf.accelerationWithin_comp_eq_zero_iff h.uniqueDiffOn h.contMDiffOn ht).2
+      (h.accelerationWithin_eq_zero t ht)
+
+/-- A `C²` curve is a geodesic exactly when its image under a local Riemannian isometry is.
+The source regularity prevents discontinuous changes between different local sheets. -/
+theorem isGeodesicCurveOn_comp_iff {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
+    {γ : ℝ → M} {s : Set ℝ} (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s) :
+    IsGeodesicCurveOn J (f ∘ γ) s ↔ IsGeodesicCurveOn I γ s := by
+  refine ⟨fun h ↦ ⟨h.uniqueDiffOn, hγ, fun t ht ↦ ?_⟩, hf.isGeodesicCurveOn_comp⟩
+  exact (hf.accelerationWithin_comp_eq_zero_iff h.uniqueDiffOn hγ ht).1
+    (h.accelerationWithin_eq_zero t ht)
+
+end IsLocalRiemannianIsometry
+
+namespace RiemannianIsometry
 
 /-- A smooth Riemannian isometry preserves the geodesic equation on every parameter set with
 unique derivatives. -/
@@ -94,13 +91,13 @@ theorem isGeodesicCurveOn_comp_iff (Φ : RiemannianIsometry I J M N)
     IsGeodesicCurveOn J (Φ ∘ γ) s ↔ IsGeodesicCurveOn I γ s := by
   constructor
   · intro h
-    have h' := isGeodesicCurveOn_comp Φ.symm h
+    have h' := Φ.symm.isLocalRiemannianIsometry.isGeodesicCurveOn_comp h
     have hcomp : Φ.symm ∘ (Φ ∘ γ) = γ := by
       funext t
       exact Φ.symm_apply_apply (γ t)
     rw [hcomp] at h'
     exact h'
-  · exact isGeodesicCurveOn_comp Φ
+  · exact Φ.isLocalRiemannianIsometry.isGeodesicCurveOn_comp
 
 /-- A smooth Riemannian isometry preserves all-time geodesics. -/
 @[simp]
@@ -162,6 +159,8 @@ theorem isGeodesicCurveOnFrom_comp_iff (Φ : RiemannianIsometry I J M N)
       _ = TotalSpace.mk' F (Φ p) (mfderiv I J Φ p v) :=
         TotalSpace.ext tangentMap_proj (heq_of_eq tangentMap_snd)
 
-end TauCeti.RiemannianIsometry
+end RiemannianIsometry
+
+end TauCeti
 
 end

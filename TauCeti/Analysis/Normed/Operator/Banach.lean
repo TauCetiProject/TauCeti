@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Banach
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 
 /-!
@@ -23,6 +24,9 @@ ball, as happens when the adjoint is bounded below; this is how surjectivity is 
 closed-range theorem. The scalar actions need no compatibility with the norms; only additivity
 and continuity of the map enter the argument.
 
+The file also records the form of the open mapping theorem used to invert operators pointwise:
+a bijective continuous linear map between Banach spaces is invertible.
+
 ## Main declarations
 
 * `ContinuousLinearMap.exists_preimage_norm_le_of_approx`: approximate preimages of controlled
@@ -30,6 +34,8 @@ and continuity of the map enter the argument.
 * `ContinuousLinearMap.exists_preimage_norm_le_of_mem_closure`: if every `y` lies in the closure of
   the image of the closed ball of radius `C * ‖y‖`, then every `y` has a preimage of norm at most
   `2 * C * ‖y‖`.
+* `ContinuousLinearMap.isInvertible_iff_bijective`: by the open mapping theorem, a continuous
+  linear map between Banach spaces is invertible exactly when it is bijective.
 
 ## References
 
@@ -128,5 +134,19 @@ theorem exists_preimage_norm_le_of_mem_closure (f : E →SL[σ] F) {C : ℝ}
   · rw [dist_comm]
     exact hxy.le
   · simpa using hx
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+/-- By the open mapping theorem, a continuous linear map between Banach spaces is invertible, that
+is, a continuous linear equivalence, exactly when it is bijective. -/
+theorem isInvertible_iff_bijective {f : E →L[𝕜] F} : f.IsInvertible ↔ Bijective f :=
+  ⟨IsInvertible.bijective, fun h ↦ ⟨.ofBijective f (LinearMap.ker_eq_bot.2 h.1)
+    (LinearMap.range_eq_top.2 h.2), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩⟩
 
 end ContinuousLinearMap

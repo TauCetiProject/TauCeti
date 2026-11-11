@@ -19,7 +19,8 @@ The same bound holds for the target Gram operators `A A†` and `B B†`. These 
 control of a rectangular operator perturbation to its positive Gram operators, whose spectra
 determine the squared singular values. They apply in arbitrary dimension, including trivial
 source or target spaces. In finite dimension, pointwise bounds on algebraic linear maps give a
-corresponding pointwise source-Gram perturbation estimate.
+corresponding pointwise Gram perturbation estimates. The target-Gram version
+assumes a nontrivial source to infer nonnegativity of the pointwise bounds.
 
 The identities expose the two terms linear in the perturbation `A - B`. The target-space
 statements follow from the source-space statements by taking adjoints. The proofs use Mathlib's
@@ -30,6 +31,10 @@ isometric adjoint equivalence and the submultiplicativity of the operator norm.
 The pointwise source-Gram perturbation estimate for finite-dimensional linear maps is adapted
 from `ForTauCeti/Analysis/InnerProductSpace/Singular/Subspace.lean` in the AIQ-Kitware DKPS
 formalization (Kitware, Inc.; Apache-2.0), by Jon Crall and Claude Opus 4.8.
+
+The pointwise target-Gram estimate is extracted from the left singular-vector bound adapted
+from `YuWangSamworth2015/YuWangSamworth2015/Rectangular/Theorem4.lean` in the same Kitware
+formalization (Jon Crall and GPT 5.6 High; Apache-2.0).
 
 ## References
 
@@ -125,6 +130,33 @@ theorem norm_adjoint_comp_self_sub_adjoint_comp_self_apply_le (A B : E →ₗ[�
   simpa only [_root_.sub_apply, ContinuousLinearMap.comp_apply,
     ← adjoint_toContinuousLinearMap, coe_toContinuousLinearMap',
     LinearMap.sub_apply, LinearMap.comp_apply] using
+    (ContinuousLinearMap.le_of_opNorm_le _ hGram x)
+
+/-- **Pointwise target-Gram perturbation bound.** Bounds on two rectangular linear maps and
+on their difference imply `‖(A A† - B B†) x‖ ≤ (a + b) ε ‖x‖` for each target vector.
+The nontrivial source ensures that the three pointwise bounds have nonnegative constants. -/
+theorem norm_self_comp_adjoint_sub_self_comp_adjoint_apply_le [Nontrivial E]
+    (A B : E →ₗ[𝕜] F) {a b ε : ℝ}
+    (hA : ∀ x, ‖A x‖ ≤ a * ‖x‖) (hB : ∀ x, ‖B x‖ ≤ b * ‖x‖)
+    (hAB : ∀ x, ‖(A - B) x‖ ≤ ε * ‖x‖) (x : F) :
+    ‖((A ∘ₗ A.adjoint) - (B ∘ₗ B.adjoint)) x‖ ≤ (a + b) * ε * ‖x‖ := by
+  obtain ⟨y, hy⟩ := exists_ne (0 : E)
+  have hypos := norm_pos_iff.mpr hy
+  have ha := nonneg_of_mul_nonneg_left ((norm_nonneg (A y)).trans (hA y)) hypos
+  have hb := nonneg_of_mul_nonneg_left ((norm_nonneg (B y)).trans (hB y)) hypos
+  have hε := nonneg_of_mul_nonneg_left ((norm_nonneg ((A - B) y)).trans (hAB y)) hypos
+  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  let : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have hAop := A.toContinuousLinearMap.opNorm_le_bound ha hA
+  have hBop := B.toContinuousLinearMap.opNorm_le_bound hb hB
+  have hABop := (A.toContinuousLinearMap - B.toContinuousLinearMap).opNorm_le_bound hε hAB
+  have hGram := (ContinuousLinearMap.norm_self_comp_adjoint_sub_self_comp_adjoint_le
+    A.toContinuousLinearMap B.toContinuousLinearMap).trans
+      (mul_le_mul (add_le_add hAop hBop) hABop
+        (norm_nonneg _) (add_nonneg ha hb))
+  simpa only [LinearMap.sub_apply, LinearMap.comp_apply,
+    _root_.sub_apply, ContinuousLinearMap.comp_apply,
+    ← adjoint_toContinuousLinearMap, coe_toContinuousLinearMap'] using
     (ContinuousLinearMap.le_of_opNorm_le _ hGram x)
 
 end LinearMap

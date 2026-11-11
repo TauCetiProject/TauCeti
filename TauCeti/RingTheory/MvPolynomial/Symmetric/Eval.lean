@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 
 /-!

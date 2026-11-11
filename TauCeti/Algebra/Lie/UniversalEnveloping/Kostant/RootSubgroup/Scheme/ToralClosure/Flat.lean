@@ -15,6 +15,10 @@ its represented root subgroups and weight torus. The coordinate algebras of thes
 are torsion-free over `ℤ`, so the common-kernel quotient defining the carrier is torsion-free
 and therefore flat over `ℤ`.
 
+The instance `flat_kostantToralGroupScheme` also applies to
+`TauCeti.DynkinType.ChevalleyDatum.groupScheme`, which abbreviates `kostantToralGroupScheme`
+with the datum's representation, lattice, basis, and actual coordinate weights.
+
 This controls scalar torsion in the integral carrier before comparison with the pinned
 simply connected group scheme. It does not assert that its special fibers are smooth, or
 that formation of the generated subgroup commutes with specialization.
@@ -30,6 +34,8 @@ flatness follows from the common-kernel scalar-torsion criterion.
 -/
 
 public section
+
+open AlgebraicGeometry
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
@@ -56,5 +62,10 @@ instance isTorsionFree_kostantToralCoordinateHopfAlgebra :
         (kostantToralDefiningIdeal e h ρ M hM hnil b wt)) := by
   rw [← kostantTorusSubsystemDefiningIdeal_univ e h ρ M hM b wt (hnil := hnil)]
   infer_instance
+
+/-- The structural morphism of an integral Kostant toral closure is flat. -/
+instance flat_kostantToralGroupScheme :
+    Flat (kostantToralGroupScheme e h ρ M hM hnil b wt).X.hom :=
+  (moduleFlat_iff_flat_hopfSpec ℤ _).mp inferInstance
 
 end TauCeti.UniversalEnvelopingAlgebra

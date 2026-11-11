@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Metric
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 
 /-!
 # Roots and paths to them in the connected components of a graph
@@ -13,8 +13,8 @@ public import Mathlib.Combinatorics.SimpleGraph.Metric
 Every connected component of a simple graph has a representative vertex, and every vertex of the
 graph is joined to the representative of its component by a walk. Choosing these once for all, as
 the representatives themselves are not canonical, gives a **root** for every vertex together with a
-**root path** from that root to the vertex. Two adjacent vertices lie in the same connected
-component, so they have the same root.
+**root path** from that root to the vertex. Two vertices have the same root exactly when they lie
+in the same connected component.
 
 These choices are the scaffolding for the statements which integrate a quantity along a path from a
 root in every connected component: the product of the values of a `1`-cochain along the root path
@@ -29,7 +29,8 @@ of a vertex, or the product of transition factors along it.
 
 * `SimpleGraph.reachable_componentRoot`: the root of a vertex reaches it.
 * `SimpleGraph.isPath_componentPath`: the chosen walk is a path.
-* `SimpleGraph.componentRoot_eq_of_adj`: adjacent vertices have the same root.
+* `SimpleGraph.componentRoot_eq_componentRoot_iff`: two vertices have the same root if and only if
+  they are reachable from each other.
 -/
 
 public section
@@ -42,25 +43,25 @@ variable {V : Type u} (G : SimpleGraph V)
 
 /-- The chosen root of the connected component of a vertex. -/
 noncomputable def componentRoot (v : V) : V :=
-  (G.connectedComponentMk v).nonempty_supp.some
+  (G.connectedComponentMk v).out
 
 /-- The root of the connected component of a vertex reaches it. -/
 theorem reachable_componentRoot (v : V) : G.Reachable (componentRoot G v) v :=
-  SimpleGraph.ConnectedComponent.exact
-    ((G.connectedComponentMk v).nonempty_supp.some_mem)
+  ConnectedComponent.exact (G.connectedComponentMk v).out_eq
 
 /-- A chosen walk from the root of the connected component of a vertex to that vertex. -/
 noncomputable def componentPath (v : V) : G.Walk (componentRoot G v) v :=
-  (reachable_componentRoot G v).exists_path_of_dist.choose
+  (reachable_componentRoot G v).exists_isPath.choose
 
 /-- The chosen walk from the root of a connected component to a vertex is a path. -/
 theorem isPath_componentPath (v : V) : (componentPath G v).IsPath :=
-  (reachable_componentRoot G v).exists_path_of_dist.choose_spec.1
+  (reachable_componentRoot G v).exists_isPath.choose_spec
 
-/-- The roots of adjacent vertices are the same. -/
-theorem componentRoot_eq_of_adj {v w : V} (h : G.Adj v w) :
-    componentRoot G w = componentRoot G v :=
-  congrArg (fun C : G.ConnectedComponent => C.nonempty_supp.some)
-    (SimpleGraph.ConnectedComponent.sound h.symm.reachable)
+/-- Two vertices have the same root if and only if they lie in the same connected component. -/
+@[simp]
+theorem componentRoot_eq_componentRoot_iff {v w : V} :
+    componentRoot G v = componentRoot G w ↔ G.Reachable v w :=
+  ⟨fun h => (reachable_componentRoot G v).symm.trans (h ▸ reachable_componentRoot G w),
+    fun h => congrArg Quot.out (ConnectedComponent.sound h)⟩
 
 end SimpleGraph

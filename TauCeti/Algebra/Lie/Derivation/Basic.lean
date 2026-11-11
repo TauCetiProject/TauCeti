@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Derivation.Basic
 public import Mathlib.Algebra.Lie.NonUnitalNonAssocAlgebra
 public import Mathlib.Algebra.Lie.Submodule
 public import Mathlib.RingTheory.Derivation.Lie
+import TauCeti.Algebra.Lie.AdjointAction.Basic
 
 /-!
 # Derivations of a non-associative algebra
@@ -282,6 +283,12 @@ theorem coe_innerDerivation (z : A) :
     (innerDerivation R z : Module.End R A) = LieAlgebra.ad R A z :=
   (rfl)
 
+/-- A central element induces the zero inner derivation. -/
+theorem innerDerivation_eq_zero_of_mem_center {z : A} (hz : z ∈ Subalgebra.center R A) :
+    innerDerivation R z = 0 := by
+  ext a
+  simp [coe_innerDerivation, (TauCeti.LieAlgebra.ad_eq_zero_iff_mem_center (R := R) z).mpr hz]
+
 /-- **The bracket of a derivation with an inner derivation is inner**: `⁅D, ad z⁆ = ad (D z)`.
 This is the identity making the image of `innerDerivation` an ideal of `Der A`. It is the
 associative-algebra analogue of Mathlib's `LieDerivation.lie_der_ad_eq_ad_der`. -/
@@ -291,6 +298,14 @@ theorem lie_innerDerivation (D : derivationLieAlgebra R A) (z : A) :
   simp only [LieSubalgebra.coe_bracket, Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp,
     coe_innerDerivation, LieAlgebra.ad_apply, map_sub, derivationLieAlgebra.leibniz]
   abel
+
+variable {R} in
+/-- **A derivation kills the scalars**: it vanishes on the image of `algebraMap`. This is the
+analogue of Mathlib's `Derivation.map_algebraMap`. -/
+@[simp]
+theorem derivationLieAlgebra.map_algebraMap (D : derivationLieAlgebra R A) (r : R) :
+    (D : Module.End R A) (algebraMap R A r) = 0 := by
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, derivationLieAlgebra.apply_one_eq_zero, smul_zero]
 
 end Associative
 

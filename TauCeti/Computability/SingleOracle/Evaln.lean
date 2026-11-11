@@ -320,6 +320,11 @@ stage use does not record whether the run succeeded. -/
 def stageUse (σ : ℕ → Option ℕ) (k : ℕ) (c : Code) (n : ℕ) : ℕ :=
   ((evaln σ k c n).map Halt.use).getD 0
 
+/-- Equal stage runs have equal stage uses, including when both runs fail. -/
+theorem stageUse_congr {τ : ℕ → Option ℕ} {k' : ℕ} {c : Code}
+    (h : evaln σ k c n = evaln τ k' c n) : stageUse σ k c n = stageUse τ k' c n := by
+  simp only [stageUse, h]
+
 /-- The stage use of a successful run is its use. -/
 theorem stageUse_eq_of_evaln_eq_some {c : Code} (h : evaln σ k c n = some d) :
     stageUse σ k c n = d.use := by
@@ -452,6 +457,31 @@ theorem evaln_sound {O : ℕ →. ℕ} {k : ℕ} {c : Code} (h : evaln σ k c n 
   split_ifs at hy with hz
   exact hσ z hz y hy
 
+/-- The `rfind'` case of `exists_evaln_eq_some_of_mem_eval`: if every value of the body `cf` is the
+output of a successful run of `evaln` against `σ`, then so is every value of `rfind' cf`. -/
+private theorem exists_evaln_eq_some_of_mem_eval_rfind' {O : ℕ →. ℕ} {cf : Code} {y : ℕ}
+    (hf : ∀ {n y : ℕ}, y ∈ eval O cf n → ∃ k d, evaln σ k cf n = some d ∧ d.output = y)
+    (h : y ∈ eval O (rfind' cf) n) : ∃ k d, evaln σ k (rfind' cf) n = some d ∧ d.output = y := by
+  obtain ⟨a, m, rfl⟩ := exists_eq_pair n
+  -- induction on the distance `y - m` the search still has to cover
+  obtain ⟨j, rfl⟩ : ∃ j, y = j + m := ⟨y - m, by have := le_of_mem_eval_rfind' h; omega⟩
+  induction j generalizing m with
+  | zero =>
+    obtain ⟨x, hx, ⟨rfl, -⟩ | ⟨-, hy⟩⟩ := mem_eval_rfind'.1 h
+    · obtain ⟨k, dx, hdx, hx0⟩ := hf hx
+      exact ⟨max k (Nat.pair a m) + 1, _, evaln_succ_rfind'_eq_some.2
+        ⟨by omega, dx, evaln_mono (by omega) hdx, Or.inl ⟨hx0, rfl⟩⟩, by simp⟩
+    · have := le_of_mem_eval_rfind' hy
+      omega
+  | succ j ih =>
+    obtain ⟨x, hx, ⟨-, hy⟩ | ⟨hx0, hy⟩⟩ := mem_eval_rfind'.1 h
+    · omega
+    · obtain ⟨k₁, dx, hdx, rfl⟩ := hf hx
+      obtain ⟨k₂, d', hd', hd'y⟩ := ih (m + 1) (by rwa [← Nat.add_assoc, Nat.add_right_comm])
+      exact ⟨max (max k₁ k₂) (Nat.pair a m) + 1, _, evaln_succ_rfind'_eq_some.2
+        ⟨by omega, dx, evaln_mono (by omega) hdx,
+          Or.inr ⟨hx0, d', evaln_mono (by omega) hd', rfl⟩⟩, by simp [hd'y]; omega⟩
+
 /-- **Completeness.** If the answers `σ` give every value of the oracle `O`, every value of a
 program relative to `O` is the output of a successful run against `σ` at some fuel. The answers
 may go beyond `O` at addresses where `O` is undefined. -/
@@ -503,26 +533,7 @@ theorem exists_evaln_eq_some_of_mem_eval {O : ℕ →. ℕ} (hσ : ∀ z y, y �
       obtain ⟨k₂, d₂, hd₂, rfl⟩ := hg hy
       exact ⟨max (max k₁ k₂) (Nat.pair a (m + 1)) + 1, _, evaln_succ_prec_succ_eq_some.2
         ⟨by omega, d₁, d₂, evaln_mono (by omega) hd₁, evaln_mono (by omega) hd₂, rfl⟩, rfl⟩
-  | rfind' cf hf =>
-    obtain ⟨a, m, rfl⟩ := exists_eq_pair n
-    -- induction on the distance `y - m` the search still has to cover
-    obtain ⟨j, rfl⟩ : ∃ j, y = j + m := ⟨y - m, by have := le_of_mem_eval_rfind' h; omega⟩
-    induction j generalizing m with
-    | zero =>
-      obtain ⟨x, hx, ⟨rfl, -⟩ | ⟨-, hy⟩⟩ := mem_eval_rfind'.1 h
-      · obtain ⟨k, dx, hdx, hx0⟩ := hf hx
-        exact ⟨max k (Nat.pair a m) + 1, _, evaln_succ_rfind'_eq_some.2
-          ⟨by omega, dx, evaln_mono (by omega) hdx, Or.inl ⟨hx0, rfl⟩⟩, by simp⟩
-      · have := le_of_mem_eval_rfind' hy
-        omega
-    | succ j ih =>
-      obtain ⟨x, hx, ⟨-, hy⟩ | ⟨hx0, hy⟩⟩ := mem_eval_rfind'.1 h
-      · omega
-      · obtain ⟨k₁, dx, hdx, rfl⟩ := hf hx
-        obtain ⟨k₂, d', hd', hd'y⟩ := ih (m + 1) (by rwa [← Nat.add_assoc, Nat.add_right_comm])
-        exact ⟨max (max k₁ k₂) (Nat.pair a m) + 1, _, evaln_succ_rfind'_eq_some.2
-          ⟨by omega, dx, evaln_mono (by omega) hdx,
-            Or.inr ⟨hx0, d', evaln_mono (by omega) hd', rfl⟩⟩, by simp [hd'y]; omega⟩
+  | rfind' cf hf => exact exists_evaln_eq_some_of_mem_eval_rfind' hf h
 
 /-- **Correspondence with evaluation.** If the answers `σ` are exactly the values of the oracle
 `O`, the values of a program relative to `O` are exactly the outputs of its successful runs
@@ -532,20 +543,24 @@ theorem mem_eval_iff_exists_evaln {O : ℕ →. ℕ} (hσ : ∀ z y, σ z = some
   ⟨exists_evaln_eq_some_of_mem_eval fun z y => (hσ z y).2, fun ⟨_, _, h, hy⟩ =>
     hy ▸ evaln_sound h fun z _ y' hy' => (hσ z y').1 hy'⟩
 
+/-- A run with fuel `k` depends only on the first `k` answers of a total oracle. Truncating
+that oracle to a string of length `k` preserves failure as well as output and use. -/
+theorem evaln_range_map (O : ℕ → ℕ) (k : ℕ) (c : Code) (n : ℕ) :
+    evaln (fun z => ((List.range k).map O)[z]?) k c n =
+      evaln (fun z => some (O z)) k c n := by
+  apply Option.ext
+  intro d
+  constructor <;> intro hd <;>
+    refine evaln_eq_some_of_eqOn hd fun z hz => ?_
+  all_goals simp [(Set.mem_Iio.1 hz).trans_le (evaln_use_le hd)]
+
 /-- **Evaluation through finite initial segments.** For a total oracle `O`, the values of a
 program relative to `O` are exactly the outputs of its successful runs, at some fuel `k`, against
 the finite oracle string `O 0, …, O (k - 1)`. -/
 theorem mem_eval_iff_exists_evaln_range_map {O : ℕ → ℕ} {c : Code} {n y : ℕ} :
     y ∈ eval (O : ℕ →. ℕ) c n ↔
       ∃ k d, evaln (fun z => ((List.range k).map O)[z]?) k c n = some d ∧ d.output = y := by
-  constructor
-  · intro h
-    obtain ⟨k, d, hd, rfl⟩ := exists_evaln_eq_some_of_mem_eval (σ := fun z => some (O z))
-      (fun z y hy => by rw [PFun.coe_val, Part.mem_some_iff] at hy; rw [hy]) h
-    -- the run at fuel `k` reads only addresses below `k`, where the string is correct
-    refine ⟨k, d, evaln_eq_some_of_eqOn hd fun z hz => ?_, rfl⟩
-    simp [(Set.mem_Iio.1 hz).trans_le (evaln_use_le hd)]
-  · rintro ⟨k, d, hd, rfl⟩
-    exact evaln_sound hd fun z _ y hy => by simp_all [List.getElem?_eq_some_iff]
+  simp_rw [evaln_range_map]
+  exact mem_eval_iff_exists_evaln (σ := fun z => some (O z)) (by simp [eq_comm])
 
 end TauCeti.Oracle.Single.Code

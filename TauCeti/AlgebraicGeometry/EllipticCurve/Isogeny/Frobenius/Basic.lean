@@ -160,10 +160,12 @@ theorem frobeniusIsogeny_ne_id : frobeniusIsogeny W ≠ id W := fun h ↦ by
 
 /-- **The Frobenius isogeny has separable degree one**, as pure inseparability in Silverman
 II.2.11(b) requires. -/
+@[simp]
 theorem separableDegree_frobeniusIsogeny : (frobeniusIsogeny W).separableDegree = 1 :=
   separableDegree_eq_one_of_isPurelyInseparable (frobeniusIsogeny W)
 
 /-- **The Frobenius isogeny has inseparable degree `q`**, combining Silverman II.2.11(b,c). -/
+@[simp]
 theorem inseparableDegree_frobeniusIsogeny :
     (frobeniusIsogeny W).inseparableDegree = Nat.card F := by
   rw [inseparableDegree_eq_degree_of_isPurelyInseparable, degree_frobeniusIsogeny]

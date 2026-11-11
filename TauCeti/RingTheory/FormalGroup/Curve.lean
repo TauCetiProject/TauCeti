@@ -66,8 +66,9 @@ yields Cartier's relations over every commutative ring:
 
 ## Main results
 
-* `FormalGroup.toPowerSeries_frobeniusCurve`: explicit power-series formula for `(f_n γ)(T)` via
-  `MvPowerSeries.symmetricSubalgebra.evalTopEsymm` and `FormalGroup.Curve.symmSum`.
+* `FormalGroup.Curve.coe_symmSum_add` and `FormalGroup.toPowerSeries_frobeniusCurve`: formal-group
+  addition formula for `FormalGroup.Curve.symmSum` and explicit power-series formula for
+  `(f_n γ)(T)` via `MvPowerSeries.symmetricSubalgebra.evalTopEsymm`.
 * `FormalGroup.subst_verschiebungCurve_log` and `FormalGroup.subst_frobeniusCurve_log`: action of
   `V_n` and `f_n` on the formal logarithm over a `ℚ`-algebra.
 * `FormalGroup.frobeniusCurve_one`, `FormalGroup.frobeniusCurve_frobeniusCurve`,
@@ -281,6 +282,13 @@ theorem coe_symmSum (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ] (γ
 theorem symmSum_zero (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ] :
     symmSum F σ (0 : F.Curve) = 0 :=
   Subtype.ext (by simp [zero_apply])
+
+/-- On a sum of curves, `symmSum` substitutes the individual `symmSum` series into `F`. -/
+theorem coe_symmSum_add (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ]
+    (γ₁ γ₂ : F.Curve) :
+    (symmSum F σ (γ₁ + γ₂) : MvPowerSeries σ R) =
+      F.toPowerSeries.subst ![symmSum F σ γ₁, symmSum F σ γ₂] := by
+  simp only [coe_symmSum, map_add, Finset.sum_add_distrib, add_apply]
 
 theorem constantCoeff_symmSum (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ]
     (γ : F.Curve) :
@@ -548,6 +556,7 @@ theorem verschiebungCurve_one (F : FormalGroup R) (γ : F.Curve) :
     F.verschiebungCurve 1 one_ne_zero γ = γ :=
   Curve.ext (by simp)
 
+@[simp]
 theorem verschiebungCurve_verschiebungCurve (F : FormalGroup R) {m n : ℕ} (hm : m ≠ 0)
     (hn : n ≠ 0) (γ : F.Curve) :
     F.verschiebungCurve m hm (F.verschiebungCurve n hn γ) =
@@ -616,9 +625,9 @@ noncomputable def frobeniusCurve (F : FormalGroup R) [F.IsComm] (n : ℕ) (hn : 
     have hsum : Curve.symmSum F (Fin n) (γ₁ + γ₂) =
         ⟨F.toPowerSeries.subst (fun t ↦ (s t).1),
           (mem_symmetricSubalgebra _).mpr <| IsSymmetric.subst (hasSubst_of_constantCoeff_zero hs0)
-            (fun j ↦ symmetricSubalgebra.isSymmetric (s j))⟩ := Subtype.ext <| by
-      simp only [Curve.coe_symmSum, map_add, Finset.sum_add_distrib, add_apply]
-      exact congrArg F.toPowerSeries.subst (funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
+            (fun j ↦ symmetricSubalgebra.isSymmetric (s j))⟩ :=
+      Subtype.ext <| (Curve.coe_symmSum_add F (Fin n) γ₁ γ₂).trans <|
+        congrArg F.toPowerSeries.subst (funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
     dsimp only [Curve.toPowerSeries_add]
     rw [hsum, symmetricSubalgebra.evalTopEsymm_subst F.toPowerSeries s hs0]
     exact congrArg F.toPowerSeries.subst (funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
@@ -935,6 +944,7 @@ theorem frobeniusCurve_one (F : FormalGroup R) [F.IsComm] (γ : F.Curve) :
 
 /-- **Cartier's composition law `f_m ∘ f_n = f_{m n}`** on curves of a commutative formal group
 law over any commutative ring. -/
+@[simp]
 theorem frobeniusCurve_frobeniusCurve (F : FormalGroup R) [F.IsComm] {m n : ℕ} (hm : m ≠ 0)
     (hn : n ≠ 0) (γ : F.Curve) :
     F.frobeniusCurve m hm (F.frobeniusCurve n hn γ) =
@@ -950,6 +960,7 @@ theorem frobeniusCurve_frobeniusCurve (F : FormalGroup R) [F.IsComm] {m n : ℕ}
 
 /-- **Cartier's identity `f_n ∘ V_n = [n]_F`**: Frobenius after Verschiebung of the same index `n`
 multiplies curves by `n` in the formal group law, over any commutative ring. -/
+@[simp]
 theorem frobeniusCurve_verschiebungCurve_self (F : FormalGroup R) [F.IsComm] (n : ℕ) (hn : n ≠ 0)
     (γ : F.Curve) :
     F.frobeniusCurve n hn (F.verschiebungCurve n hn γ) = n • γ :=

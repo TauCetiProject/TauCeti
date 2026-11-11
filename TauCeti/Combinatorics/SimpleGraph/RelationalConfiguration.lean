@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Basic
+public import TauCeti.ModelTheory.RelationalConfiguration.Structure
 public import Mathlib.ModelTheory.Graph
 public import Mathlib.MeasureTheory.Constructions.SimpleGraph
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
@@ -211,6 +212,12 @@ theorem eval_toRelationalConfiguration_adjAtom (G : SimpleGraph V) (u v : V) :
     G.toRelationalConfiguration.eval (adjAtom u v) = decide (G.Adj u v) := by
   simp only [toRelationalConfiguration, adjAtom, eval_ofStructure]
   rfl
+
+/-- The configuration of a simple graph decodes to the graph's structure. -/
+@[simp]
+theorem toStructure_toRelationalConfiguration (G : SimpleGraph V) :
+    G.toRelationalConfiguration.toStructure = G.structure :=
+  toStructure_ofStructure _
 
 theorem isSimpleGraph_toRelationalConfiguration (G : SimpleGraph V) :
     IsSimpleGraph G.toRelationalConfiguration := by

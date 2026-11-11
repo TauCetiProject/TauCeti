@@ -27,9 +27,11 @@ hypothesis, while `TauCeti.Measure.exists_measurable_isCoupling_map_chainMeasure
 measurable pathwise limit when almost every trajectory is Cauchy.
 
 The finite-prefix results project this path law to any initial segment of the supplied countable
-chain; see `TauCeti.Measure.map_adjacent_prefixChainMeasure`. This is the iteration of the two-plan
-gluing lemma needed by optimal transport, without rebuilding Mathlib's trajectory-measure
-construction.
+chain; see `TauCeti.Measure.map_adjacent_prefixChainMeasure`. Complementing sequential chains,
+`MeasureTheory.Measure.starMeasure` glues a countable star of finite plans sharing a common first
+marginal onto `X₀ × (∀ n, Y n)`, realizing every plan simultaneously as the `(w.1, w.2 n)`-marginal.
+This supplies the countable gluing constructions needed by optimal transport without rebuilding
+Mathlib's trajectory-measure construction.
 -/
 
 public section
@@ -126,7 +128,7 @@ private theorem map_adjacent_chainMeasure_of_map_eval
   have htraj : (chainMeasure pi).map (fun x ↦ (frestrictLe n x, x (n + 1))) =
       (chainMeasure pi).map (frestrictLe n) ⊗ₘ chainKernel pi n := by
     simpa only [chainMeasure] using
-      (Kernel.map_frestrictLe_trajMeasure_compProd_of_sFinite
+      (Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure_of_sFinite
         (μ₀ := (pi 0).fst) (κ := chainKernel pi) n).symm
   have hmarginal : ((chainMeasure pi).map (frestrictLe n)).map last = (pi n).fst := by
     simpa only [MeasureTheory.Measure.map_map hlast (measurable_frestrictLe n), heval] using hn
@@ -261,3 +263,145 @@ end CouplingChain
 end Measure
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+open TauCeti (IsCoupling)
+
+universe u
+
+section Star
+
+variable {X₀ : Type u} [MeasurableSpace X₀] {Y : ℕ → Type u} [∀ n, MeasurableSpace (Y n)]
+
+private abbrev starCarrier (X₀ : Type u) (Y : ℕ → Type u) : ℕ → Type u
+  | 0 => X₀
+  | n + 1 => Y n
+
+private instance instMeasurableSpaceStarCarrier : ∀ k, MeasurableSpace (starCarrier X₀ Y k)
+  | 0 => inferInstanceAs (MeasurableSpace X₀)
+  | n + 1 => inferInstanceAs (MeasurableSpace (Y n))
+
+private theorem measurable_toStar :
+    Measurable (fun x : (k : ℕ) → starCarrier X₀ Y k ↦ (x 0, fun n ↦ x (n + 1))) :=
+  (measurable_pi_apply 0).prodMk (Measurable.of_eval fun n ↦ measurable_pi_apply (n + 1))
+
+variable [∀ n, StandardBorelSpace (Y n)] [∀ n, Nonempty (Y n)]
+
+private noncomputable def starKernel (pi : ∀ n, Measure (X₀ × Y n)) [∀ n, IsFiniteMeasure (pi n)]
+    (n : ℕ) : Kernel ((i : Iic n) → starCarrier X₀ Y i) (starCarrier X₀ Y (n + 1)) :=
+  (pi n).condKernel.comap
+    (fun x : (i : Iic n) → starCarrier X₀ Y i ↦ x ⟨0, mem_Iic.mpr (Nat.zero_le n)⟩)
+    (measurable_pi_apply (X := fun i : Iic n ↦ starCarrier X₀ Y i)
+      ⟨0, mem_Iic.mpr (Nat.zero_le n)⟩)
+
+private instance starKernel.instIsMarkovKernel (pi : ∀ n, Measure (X₀ × Y n))
+    [∀ n, IsFiniteMeasure (pi n)] (n : ℕ) : IsMarkovKernel (starKernel pi n) := by
+  rw [starKernel]
+  infer_instance
+
+/-- The joint law on `X₀ × (∀ n, Y n)` obtained by disintegrating each finite plan `pi n` over
+`X₀` and gluing the conditional kernels conditionally independently over `μ₀`. -/
+noncomputable def starMeasure (μ₀ : Measure X₀) (pi : ∀ n, Measure (X₀ × Y n))
+    [∀ n, IsFiniteMeasure (pi n)] : Measure (X₀ × ((n : ℕ) → Y n)) :=
+  (Kernel.trajMeasure (X := starCarrier X₀ Y) μ₀ (starKernel pi)).map
+    fun x ↦ (x 0, fun n ↦ x (n + 1))
+
+instance starMeasure.instIsFiniteMeasure (μ₀ : Measure X₀) [IsFiniteMeasure μ₀]
+    (pi : ∀ n, Measure (X₀ × Y n)) [∀ n, IsFiniteMeasure (pi n)] :
+    IsFiniteMeasure (starMeasure μ₀ pi) := by
+  rw [starMeasure]
+  infer_instance
+
+instance starMeasure.instIsProbabilityMeasure (μ₀ : Measure X₀) [IsProbabilityMeasure μ₀]
+    (pi : ∀ n, Measure (X₀ × Y n)) [∀ n, IsFiniteMeasure (pi n)] :
+    IsProbabilityMeasure (starMeasure μ₀ pi) := by
+  rw [starMeasure]
+  exact (Measure.isProbabilityMeasure_map_iff measurable_toStar.aemeasurable).2 inferInstance
+
+private theorem map_eval_zero_trajMeasure_starKernel (μ₀ : Measure X₀)
+    (pi : ∀ n, Measure (X₀ × Y n)) [∀ n, IsFiniteMeasure (pi n)] :
+    (Kernel.trajMeasure (X := starCarrier X₀ Y) μ₀ (starKernel pi)).map (fun x ↦ x 0) = μ₀ := by
+  let e : ((i : Iic 0) → starCarrier X₀ Y i) ≃ᵐ X₀ :=
+    MeasurableEquiv.piUnique (fun i : Iic 0 ↦ starCarrier X₀ Y i)
+  have heval : (fun x : (k : ℕ) → starCarrier X₀ Y k ↦ x 0) = e ∘ frestrictLe 0 := rfl
+  have hprefix :
+      (Kernel.trajMeasure (X := starCarrier X₀ Y) μ₀ (starKernel pi)).map (frestrictLe 0) =
+        μ₀.map e.symm := by
+    simp [Kernel.trajMeasure, e, MeasureTheory.Measure.map_comp _ _ (measurable_frestrictLe 0),
+      Kernel.traj_map_frestrictLe, Kernel.partialTraj_self, MeasureTheory.Measure.id_comp]
+  rw [heval, ← MeasureTheory.Measure.map_map e.measurable (measurable_frestrictLe 0), hprefix]
+  simp
+
+/-- The first marginal of `starMeasure μ₀ pi` is `μ₀`, with no compatibility assumption on `pi`. -/
+@[simp]
+theorem fst_starMeasure (μ₀ : Measure X₀) (pi : ∀ n, Measure (X₀ × Y n))
+    [∀ n, IsFiniteMeasure (pi n)] :
+    (starMeasure μ₀ pi).fst = μ₀ := by
+  rw [starMeasure, Measure.fst, MeasureTheory.Measure.map_map measurable_fst measurable_toStar]
+  exact map_eval_zero_trajMeasure_starKernel μ₀ pi
+
+/-- The first projection from `starMeasure μ₀ pi` to `μ₀` is measure-preserving. -/
+theorem measurePreserving_fst_starMeasure (μ₀ : Measure X₀) (pi : ∀ n, Measure (X₀ × Y n))
+    [∀ n, IsFiniteMeasure (pi n)] :
+    MeasurePreserving Prod.fst (starMeasure μ₀ pi) μ₀ :=
+  ⟨measurable_fst, fst_starMeasure μ₀ pi⟩
+
+/-- **Countable star gluing.** Whenever `(pi n).fst = μ₀`, projecting `starMeasure μ₀ pi` to the
+base coordinate and the `n`th fiber coordinate recovers `pi n`. -/
+theorem map_prodMk_starMeasure (μ₀ : Measure X₀)
+    (pi : ∀ n, Measure (X₀ × Y n)) [∀ n, IsFiniteMeasure (pi n)] {n : ℕ}
+    (hn : (pi n).fst = μ₀) :
+    (starMeasure μ₀ pi).map (fun w ↦ (w.1, w.2 n)) = pi n := by
+  have : IsFiniteMeasure μ₀ := hn ▸ inferInstance
+  let Q := Kernel.trajMeasure (X := starCarrier X₀ Y) μ₀ (starKernel pi)
+  let first : ((i : Iic n) → starCarrier X₀ Y i) → X₀ :=
+    fun x ↦ x ⟨0, mem_Iic.mpr (Nat.zero_le n)⟩
+  have hfirst : Measurable first := measurable_pi_apply _
+  have hproj : Measurable (fun w : X₀ × ((k : ℕ) → Y k) ↦ (w.1, w.2 n)) :=
+    measurable_fst.prodMk ((measurable_pi_apply n).comp measurable_snd)
+  have hpair : (fun x : (k : ℕ) → starCarrier X₀ Y k ↦ (x 0, x (n + 1))) =
+      Prod.map first id ∘ (fun x ↦ (frestrictLe n x, x (n + 1))) := rfl
+  have htraj : Q.map (fun x ↦ (frestrictLe n x, x (n + 1))) =
+      Q.map (frestrictLe n) ⊗ₘ starKernel pi n :=
+    (Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure_of_sFinite
+      (μ₀ := μ₀) (κ := starKernel pi) n).symm
+  have hmarginal : (Q.map (frestrictLe n)).map first = (pi n).fst := by
+    rw [MeasureTheory.Measure.map_map hfirst (measurable_frestrictLe n)]
+    exact (map_eval_zero_trajMeasure_starKernel μ₀ pi).trans hn.symm
+  calc
+    (starMeasure μ₀ pi).map (fun w ↦ (w.1, w.2 n))
+        = Q.map (fun x ↦ (x 0, x (n + 1))) := by
+            rw [starMeasure, MeasureTheory.Measure.map_map hproj measurable_toStar]
+            rfl
+    _ = (Q.map (fun x ↦ (frestrictLe n x, x (n + 1)))).map (Prod.map first id) := by
+          rw [hpair, ← MeasureTheory.Measure.map_map (hfirst.prodMap measurable_id) (by fun_prop)]
+    _ = (Q.map (frestrictLe n) ⊗ₘ starKernel pi n).map (Prod.map first id) := by rw [htraj]
+    _ = (Q.map (frestrictLe n)).map first ⊗ₘ (pi n).condKernel :=
+          Measure.map_prodMap_compProd_comap _ _ hfirst
+    _ = (pi n).fst ⊗ₘ (pi n).condKernel := by rw [hmarginal]
+    _ = pi n := MeasureTheory.Measure.disintegrate _ _
+
+/-- Along `starMeasure μ₀ pi`, if each `pi n` couples `μ₀` with `ν n`, then `(w.1, w.2 n)` has
+joint law `pi n`. -/
+theorem map_prodMk_starMeasure_of_isCoupling {μ₀ : Measure X₀}
+    {ν : ∀ n, Measure (Y n)} {pi : ∀ n, Measure (X₀ × Y n)} [∀ n, IsFiniteMeasure (pi n)]
+    (hpi : ∀ n, IsCoupling (pi n) μ₀ (ν n)) (n : ℕ) :
+    (starMeasure μ₀ pi).map (fun w ↦ (w.1, w.2 n)) = pi n :=
+  map_prodMk_starMeasure μ₀ pi (hpi n).fst_eq
+
+/-- Whenever each `pi n` couples `μ₀` with `ν n`, the `n`th fiber coordinate `w ↦ w.2 n` on
+`starMeasure μ₀ pi` is measure-preserving to `ν n`. -/
+theorem measurePreserving_eval_snd_starMeasure {μ₀ : Measure X₀}
+    {ν : ∀ n, Measure (Y n)} {pi : ∀ n, Measure (X₀ × Y n)} [∀ n, IsFiniteMeasure (pi n)]
+    (hpi : ∀ n, IsCoupling (pi n) μ₀ (ν n)) (n : ℕ) :
+    MeasurePreserving (fun w ↦ w.2 n) (starMeasure μ₀ pi) (ν n) := by
+  have hm : Measurable fun w : X₀ × ((k : ℕ) → Y k) ↦ w.2 n :=
+    (measurable_pi_apply n).comp measurable_snd
+  refine ⟨hm, ?_⟩
+  rw [← Measure.snd_map_prodMk measurable_fst hm,
+    map_prodMk_starMeasure_of_isCoupling hpi n, (hpi n).snd_eq]
+
+end Star
+
+end MeasureTheory.Measure

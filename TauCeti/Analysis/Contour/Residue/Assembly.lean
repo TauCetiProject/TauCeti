@@ -95,8 +95,8 @@ theorem hasCauchyPV_analyticRemainder_add_residue_sum {f : ℂ → ℂ} {S : Fin
       (2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b ↑s * residue f ↑s) := fun s _ =>
     (decomp.hasCauchyPVAt_polarPart s h_imm hab hclosed (h_interior s) (h_flat s)
       (h_B s)).hasCauchyPV
-  have h_sum := h_rem.add h_imm.continuousOn (HasCauchyPV.sum h_imm.continuousOn h_polar)
-  have h_total := h_sum.congr_along_curve_off h_imm.continuousOn S fun t ht h_off =>
+  have h_sum := h_rem.add (HasCauchyPV.sum h_polar)
+  have h_total := h_sum.congr_along_curve_off S fun t ht h_off =>
     (decomp.f_eq (γ t) ⟨hγU t (uIoo_subset_uIcc_self ht), h_off⟩).symm
   have h_val : (∫ t in a..b, deriv γ t • decomp.analyticRemainder (γ t)) + ∑ s ∈ S.attach,
       2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b ↑s * residue f ↑s

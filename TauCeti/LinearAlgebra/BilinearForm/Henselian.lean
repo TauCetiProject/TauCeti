@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Henselian
 import TauCeti.Algebra.Group.Units.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.RingTheory.Henselian.Basic
 

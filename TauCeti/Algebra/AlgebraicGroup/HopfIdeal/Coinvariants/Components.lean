@@ -50,7 +50,6 @@ theorem coinvariants_identityComponentHopfIdeal_eq_range
     (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).coinvariants =
       (componentCoordinateMap H).range := by
   let C := ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H))
-  let _ : Algebra.IsGeometricallyReduced k C := isGeometricallyReduced_of_smooth k C
   have hmap : (componentCoordinateHom H).hom.toAlgHom = componentCoordinateMap H :=
     AlgHom.ext (componentCoordinateHom_apply H)
   rw [← hmap, ← kernelHopfIdeal_componentCoordinateHom H]
@@ -66,7 +65,6 @@ noncomputable def componentCoinvariantsIso (H : FiniteTypeCommHopfAlgCat.{u, u} 
         (ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H))) ≅
       CommHopfAlgCat.coinvariants (isNormal_identityComponentHopfIdeal H) := by
   let C := ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H))
-  let _ : Algebra.IsGeometricallyReduced k C := isGeometricallyReduced_of_smooth k C
   let f := CommHopfAlgCat.liftCoinvariants (isNormal_identityComponentHopfIdeal H)
     (componentCoordinateHom H) (kernelHopfIdeal_componentCoordinateHom H).le
   have hff := (CommHopfAlgCat.faithfullyFlat_iff_injective_of_isGeometricallyReduced

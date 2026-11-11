@@ -68,7 +68,7 @@ in `rootGeneratorWeight_carrierNode_eq_root_simpleIndex`.
 
 The same carrier-and-Frobenius material on the branches already assembled is in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeA.lean`,
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE6.lean` and
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE6/Basic.lean` and
 `TauCeti/GroupTheory/SpecificGroups/CFSG/Unimodular.lean`.
 
 ## Main declarations

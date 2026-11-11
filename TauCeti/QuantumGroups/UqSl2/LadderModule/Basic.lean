@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
+public import TauCeti.QuantumGroups.QuantumInteger.Factorial
 public import TauCeti.QuantumGroups.UqSl2.Commutator
 public import TauCeti.QuantumGroups.UqSl2.QuantumTrace
 public import TauCeti.QuantumGroups.UqSl2.Weights
@@ -429,7 +430,7 @@ variable {V : Type*} [AddCommGroup V] [Module ℂ V]
 variable (q) in
 /-- The normalized lowering string `F^j v / ([1]_q ⋯ [j]_q)` through a vector `v`. -/
 private def string (v : V) (j : ℕ) : V :=
-  (∏ i ∈ Finset.range j, quantumInteger q (i + 1))⁻¹ • f q ^ j • v
+  (quantumFactorial q j)⁻¹ • f q ^ j • v
 
 section String
 
@@ -445,7 +446,7 @@ include hq in
 private theorem f_smul_string (j : ℕ) :
     f q • string q v j = quantumInteger q (j + 1) • string q v (j + 1) := by
   have hj : quantumInteger q ((j : ℤ) + 1) ≠ 0 := quantumInteger_ne_zero hq (by omega)
-  rw [string, string, smul_smul, Finset.prod_range_succ, mul_inv, mul_left_comm,
+  rw [string, string, smul_smul, quantumFactorial_succ, mul_inv, mul_left_comm,
     mul_inv_cancel₀ hj, mul_one, smul_comm, pow_succ', mul_smul]
 
 omit [Fact (q ≠ 0)] in
@@ -479,11 +480,10 @@ private theorem e_smul_string (j : ℕ) :
   rw [string, string, smul_comm, h]
   generalize f q ^ j • v = w
   match_scalars
-  have hP : ∏ i ∈ Finset.range j, quantumInteger q (i + 1) ≠ 0 :=
-    Finset.prod_ne_zero_iff.mpr fun i _ => quantumInteger_ne_zero hq (by omega)
-  rw [Finset.prod_range_succ, quantumInteger_def q ((m : ℤ) - j), zpow_sub₀ hq0, zpow_neg,
+  have hP := quantumFactorial_ne_zero hq j
+  rw [quantumFactorial_succ, quantumInteger_def q ((m : ℤ) - j), zpow_sub₀ hq0, zpow_neg,
     zpow_sub₀ hq0, zpow_natCast, zpow_natCast]
-  generalize ∏ i ∈ Finset.range j, quantumInteger q (i + 1) = P at hP ⊢
+  generalize quantumFactorial q j = P at hP ⊢
   generalize quantumInteger q (j + 1) = Q at hj ⊢
   have hq1 := hq.sub_inv_ne_zero
   rw [inv_pow]
@@ -561,7 +561,7 @@ variable (hq : IsGenericQuantumParameter q) {v : V} (hv : v ∈ weightSpace q V 
 /-- The map induced by `v` sends `v_j` to `F^j v / ([1]_q ⋯ [j]_q)`. -/
 theorem lift_vec (j : ℕ) :
     lift hq hv he hf (vec q m ε j) =
-      (∏ i ∈ Finset.range j, quantumInteger q (i + 1))⁻¹ • f q ^ j • v :=
+      (quantumFactorial q j)⁻¹ • f q ^ j • v :=
   constr_vec hf j
 
 /-- The map induced by `v` sends the highest vector `v₀` to `v`. -/
@@ -628,6 +628,15 @@ theorem nonempty_linearEquiv_iff (hq : IsGenericQuantumParameter q) {n : ℕ} {�
   rw [hconj, trace_rep_kInv hq.sub_inv_ne_zero, trace_rep_kInv hq.sub_inv_ne_zero] at htr
   have hδε : ((δ : ℤ) : ℂ) = ε := mul_right_cancel₀ (quantumInteger_ne_zero hq (by omega)) htr
   exact Units.ext (Int.cast_injective hδε).symm
+
+/-- At a generic parameter, no module isomorphism exists between `L_m^ε` and `L_n^δ` when
+`m ≠ n` or `ε ≠ δ`. -/
+theorem isEmpty_linearEquiv_of_ne (hq : IsGenericQuantumParameter q) {n : ℕ} {δ : ℤˣ}
+    (h : m ≠ n ∨ ε ≠ δ) :
+    IsEmpty (LadderModule q m ε ≃ₗ[UqSl2 q] LadderModule q n δ) := by
+  rw [← not_nonempty_iff, nonempty_linearEquiv_iff hq]
+  rintro ⟨rfl, rfl⟩
+  exact h.elim (· rfl) (· rfl)
 
 end LadderModule
 

@@ -15,7 +15,8 @@ For an inertia representation whose restriction to the normal subgroup is semisi
 and isotypic of type `A`, postcomposition identifies its intertwiners with the maps
 of its crossed-product multiplicity module. The target representation is arbitrary.
 Thus the multiplicity functor is fully faithful on semisimple isotypic representations,
-including over nonsplitting fields and for infinite inertia quotients.
+including over nonsplitting fields and for infinite inertia quotients. Its Hom
+correspondence is linear over the ground field.
 
 The inverse sends a multiplicity map `h` to the map determined by
 `f(x) ↦ h(f)(x)`. Balanced evaluation constructs this map: coefficient linearity
@@ -32,7 +33,7 @@ public section
 namespace FDRep
 
 open CategoryTheory MulOpposite TauCeti TauCeti.CliffordExtension
-open scoped MonoidAlgebra
+open scoped MonoidAlgebra ModuleCat.Algebra
 
 universe u v
 
@@ -177,11 +178,12 @@ theorem cliffordMultiplicityFunctor_map_bijective :
     exact ⟨cliffordMultiplicityPreimage A s hs hW h,
       cliffordMultiplicityFunctor_map_preimage A s hs hW h⟩
 
-/-- Intertwiners are exactly the maps of crossed-product multiplicity modules when
-the source has semisimple isotypic restriction to the normal subgroup. -/
+/-- Intertwiners are linearly equivalent to the maps of crossed-product multiplicity
+modules when the source has semisimple isotypic restriction to the normal subgroup. -/
 noncomputable def cliffordMultiplicityHomEquiv :
-    (W ⟶ W') ≃ ((C).obj W ⟶ (C).obj W') :=
-  Equiv.ofBijective (C).map (cliffordMultiplicityFunctor_map_bijective A s hs hW)
+    (W ⟶ W') ≃ₗ[k] ((C).obj W ⟶ (C).obj W') :=
+  LinearEquiv.ofBijective ((C).mapLinearMap k)
+    (cliffordMultiplicityFunctor_map_bijective A s hs hW)
 
 /-- The Hom correspondence is postcomposition on multiplicities. -/
 @[simp]
@@ -194,7 +196,7 @@ theorem cliffordMultiplicityHomEquiv_symm_apply (h : (C).obj W ⟶ (C).obj W') :
     (cliffordMultiplicityHomEquiv A s hs hW).symm h =
       cliffordMultiplicityPreimage A s hs hW h := by
   apply (cliffordMultiplicityHomEquiv A s hs hW).injective
-  rw [Equiv.apply_symm_apply, cliffordMultiplicityHomEquiv_apply,
+  rw [LinearEquiv.apply_symm_apply, cliffordMultiplicityHomEquiv_apply,
     cliffordMultiplicityFunctor_map_preimage]
 
 end FDRep

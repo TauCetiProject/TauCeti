@@ -25,8 +25,6 @@ equations of `D - div g` and of `E` at each codimension-one point gives `E = D -
 
 ## Main declarations
 
-* `SchemeWeilDivisor.inv_localEquation_mem_sections`: the inverse of a local equation for `D` on
-  `U` is a section of `𝒪_X(D)` over `U`;
 * `SchemeWeilDivisor.IsLocallyPrincipal.exists_rationalFunctionsMul_eq`: every `𝒪_X`-linear map
   `𝒪_X(D) ⟶ 𝒦_X` is the inclusion followed by multiplication by a rational function;
 * `SchemeWeilDivisor.IsLocallyPrincipal.exists_sheafι_app_ne_zero`: `𝒪_X(D)` has a section which
@@ -79,15 +77,48 @@ section LocallyNoetherian
 
 variable [IsLocallyNoetherian X]
 
-/-- The inverse of a local equation for `D` on `U` is a section of `𝒪_X(D)` over `U`: its order
-at a codimension-one point of `U` is exactly `-D`. -/
-lemma inv_localEquation_mem_sections {D : SchemeWeilDivisor X} {U : X.Opens} [Nonempty U]
-    {f : Additive X.functionFieldˣ}
-    (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y f) :
-    (Scheme.rationalFunctionsEquiv U).symm
-        ((Additive.toMul f : X.functionFieldˣ) : X.functionField)⁻¹ ∈ sections D U := by
-  refine mem_sections.mpr fun y hy ↦ Or.inr ?_
-  rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, hf y hy, orderAt_apply]
+/-- Let `ψ` be an `𝒪_X`-linear map from `𝒪_X(D)` to the rational functions, and `s₀` a section
+over a neighbourhood `U₀` of the generic point which `𝒪_X(D) → 𝒦_X` sends to `fK⁻¹`. Then over any
+open subset the image of a section `s` is the image of `s` in `𝒦_X` times the rational function
+`fK` times the image of `s₀` under `ψ`: the sections `s` and `s₀` differ near the generic point by
+a regular function. -/
+private lemma rationalFunctionsEquiv_app_eq_mul {D : SchemeWeilDivisor X}
+    {ψ : sheaf D ⟶ Scheme.rationalFunctions X} {U₀ U : X.Opens} [Nonempty U₀] [Nonempty U]
+    (hU₀ : genericPoint X ∈ U₀) {fK : X.functionField} (hfK : fK ≠ 0) {s₀ : Γ(sheaf D, U₀)}
+    (hιs₀ : Scheme.rationalFunctionsEquiv U₀ (Scheme.Modules.Hom.app (sheafι D) U₀ s₀) = fK⁻¹)
+    (s : Γ(sheaf D, U)) :
+    Scheme.rationalFunctionsEquiv U (Scheme.Modules.Hom.app ψ U s) =
+      fK * Scheme.rationalFunctionsEquiv U₀ (Scheme.Modules.Hom.app ψ U₀ s₀) *
+        Scheme.rationalFunctionsEquiv U (Scheme.Modules.Hom.app (sheafι D) U s) := by
+  -- `NatTrans.naturality_apply` for the underlying map of presheaves, read in the
+  -- `Scheme.Modules.Hom.app` normal form used below
+  have hnat {M N : X.Modules} (χ : M ⟶ N) {V W : X.Opens} (i : W ⟶ V) (x : Γ(M, V)) :
+      Scheme.Modules.Hom.app χ W (M.presheaf.map i.op x) =
+        N.presheaf.map i.op (Scheme.Modules.Hom.app χ V x) :=
+    χ.mapPresheaf.naturality_apply i.op x
+  set t := Scheme.rationalFunctionsEquiv U (Scheme.Modules.Hom.app (sheafι D) U s) with htdef
+  have hgen : genericPoint X ∈ (U ⊓ U₀ : X.Opens) :=
+    ⟨Scheme.genericPoint_mem U, hU₀⟩
+  -- shrink to an open subset on which the rational function `t * f` is regular
+  obtain ⟨W, hWV, hgenW, a, ha⟩ := X.presheaf.exists_le_germ_eq (t * fK) hgen
+  have : Nonempty W := ⟨⟨_, hgenW⟩⟩
+  have hWU : W ≤ U := hWV.trans inf_le_left
+  have hWU₀ : W ≤ U₀ := hWV.trans inf_le_right
+  have hgerm : X.germToFunctionField W a = t * fK := ha
+  -- the restriction of `s` to `W` is `a` times the restriction of `s₀`
+  have hres : (sheaf D).presheaf.map (homOfLE hWU).op s =
+      a • (sheaf D).presheaf.map (homOfLE hWU₀).op s₀ := by
+    refine sheafι_app_injective D W ((Scheme.rationalFunctionsEquiv W).injective ?_)
+    rw [hnat (sheafι D) (homOfLE hWU) s, Scheme.rationalFunctionsEquiv_map,
+      Scheme.Modules.Hom.app_smul, map_smul, hnat (sheafι D) (homOfLE hWU₀) s₀,
+      Scheme.rationalFunctionsEquiv_map, hιs₀, Algebra.smul_def,
+      RingHom.algebraMap_toAlgebra, hgerm, ← htdef, mul_assoc, mul_inv_cancel₀ hfK, mul_one]
+  rw [← Scheme.rationalFunctionsEquiv_map (homOfLE hWU)
+    (Scheme.Modules.Hom.app ψ U s), ← hnat ψ (homOfLE hWU) s, hres,
+    Scheme.Modules.Hom.app_smul, map_smul, hnat ψ (homOfLE hWU₀) s₀,
+    Scheme.rationalFunctionsEquiv_map, Algebra.smul_def, RingHom.algebraMap_toAlgebra,
+    hgerm]
+  ring
 
 end LocallyNoetherian
 
@@ -99,12 +130,6 @@ resulting multiplier is independent of the open subset because `𝒦_X` is the c
 theorem IsLocallyPrincipal.exists_rationalFunctionsMul_eq {D : SchemeWeilDivisor X}
     (hD : IsLocallyPrincipal D) (ψ : sheaf D ⟶ Scheme.rationalFunctions X) :
     ∃ g : X.functionField, ψ = sheafι D ≫ Scheme.rationalFunctionsMul X g := by
-  -- `NatTrans.naturality_apply` for the underlying map of presheaves, read in the
-  -- `Scheme.Modules.Hom.app` normal form used below
-  have hnat {M N : X.Modules} (χ : M ⟶ N) {V W : X.Opens} (i : W ⟶ V) (x : Γ(M, V)) :
-      Scheme.Modules.Hom.app χ W (M.presheaf.map i.op x) =
-        N.presheaf.map i.op (Scheme.Modules.Hom.app χ V x) :=
-    χ.mapPresheaf.naturality_apply i.op x
   obtain ⟨U₀, hU₀, f, hf⟩ := isLocallyPrincipal_iff.mp hD (genericPoint X)
   have : Nonempty U₀ := ⟨⟨_, hU₀⟩⟩
   set fK : X.functionField := ((Additive.toMul f : X.functionFieldˣ) : X.functionField)
@@ -114,7 +139,6 @@ theorem IsLocallyPrincipal.exists_rationalFunctionsMul_eq {D : SchemeWeilDivisor
       fK⁻¹ := by
     rw [hs₀, LinearEquiv.apply_symm_apply]
   refine ⟨fK * Scheme.rationalFunctionsEquiv U₀ (Scheme.Modules.Hom.app ψ U₀ s₀), ?_⟩
-  set g := fK * Scheme.rationalFunctionsEquiv U₀ (Scheme.Modules.Hom.app ψ U₀ s₀) with hgdef
   refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
   ext s
   rw [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply]
@@ -122,38 +146,7 @@ theorem IsLocallyPrincipal.exists_rationalFunctionsMul_eq {D : SchemeWeilDivisor
   by_cases hU : Nonempty U
   · refine (Scheme.rationalFunctionsEquiv U).injective ?_
     rw [Scheme.rationalFunctionsEquiv_rationalFunctionsMul_app]
-    rcases eq_or_ne (Scheme.rationalFunctionsEquiv U
-      (Scheme.Modules.Hom.app (sheafι D) U s)) 0 with h0 | h0
-    · have hs0 : s = 0 :=
-        sheafι_app_injective D U
-          ((Scheme.rationalFunctionsEquiv U).injective (by simp [h0]))
-      rw [hs0]
-      simp
-    · set t := Scheme.rationalFunctionsEquiv U (Scheme.Modules.Hom.app (sheafι D) U s) with htdef
-      have hgen : genericPoint X ∈ (U ⊓ U₀ : X.Opens) :=
-        ⟨Scheme.genericPoint_mem U, hU₀⟩
-      -- shrink to an open subset on which the rational function `t * f` is regular
-      obtain ⟨W, hWV, hgenW, a, ha⟩ := X.presheaf.exists_le_germ_eq (t * fK) hgen
-      have : Nonempty W := ⟨⟨_, hgenW⟩⟩
-      have hWU : W ≤ U := hWV.trans inf_le_left
-      have hWU₀ : W ≤ U₀ := hWV.trans inf_le_right
-      have hgerm : X.germToFunctionField W a = t * fK := ha
-      -- the restriction of `s` to `W` is `a` times the restriction of `s₀`
-      have hres : (sheaf D).presheaf.map (homOfLE hWU).op s =
-          a • (sheaf D).presheaf.map (homOfLE hWU₀).op s₀ := by
-        refine sheafι_app_injective D W ((Scheme.rationalFunctionsEquiv W).injective ?_)
-        rw [hnat (sheafι D) (homOfLE hWU) s, Scheme.rationalFunctionsEquiv_map,
-          Scheme.Modules.Hom.app_smul, map_smul, hnat (sheafι D) (homOfLE hWU₀) s₀,
-          Scheme.rationalFunctionsEquiv_map, hιs₀, Algebra.smul_def,
-          RingHom.algebraMap_toAlgebra, hgerm, ← htdef, mul_assoc, mul_inv_cancel₀ hfK, mul_one]
-      have hψ : Scheme.rationalFunctionsEquiv U (Scheme.Modules.Hom.app ψ U s) = g * t := by
-        rw [← Scheme.rationalFunctionsEquiv_map (homOfLE hWU)
-          (Scheme.Modules.Hom.app ψ U s), ← hnat ψ (homOfLE hWU) s, hres,
-          Scheme.Modules.Hom.app_smul, map_smul, hnat ψ (homOfLE hWU₀) s₀,
-          Scheme.rationalFunctionsEquiv_map, Algebra.smul_def, RingHom.algebraMap_toAlgebra,
-          hgerm, hgdef]
-        ring
-      rw [hψ]
+    exact rationalFunctionsEquiv_app_eq_mul hU₀ hfK hιs₀ s
   · have := Scheme.subsingleton_rationalFunctions U (eq_bot_of_not_nonempty hU)
     exact Subsingleton.elim _ _
 
@@ -244,31 +237,7 @@ theorem linearlyEquivalent_of_nonempty_iso_sheaf {D E : SchemeWeilDivisor X}
       rwa [hcancel] at h2
   -- comparing local equations at a codimension-one point turns that into equal coefficients
   have hFlp : IsLocallyPrincipal F := hD.sub (isLocallyPrincipal_principalDivisor γ)
-  have hcoeff : ∀ y : CodimensionOnePoint X, WeilDivisor.coeff F y = WeilDivisor.coeff E y := by
-    intro y
-    obtain ⟨U₁, hy₁, h₁, hh₁⟩ := isLocallyPrincipal_iff.mp hFlp (y : X)
-    obtain ⟨U₂, hy₂, h₂, hh₂⟩ := isLocallyPrincipal_iff.mp hE (y : X)
-    have hyU : (y : X) ∈ (U₁ ⊓ U₂ : X.Opens) := ⟨hy₁, hy₂⟩
-    have : Nonempty (U₁ ⊓ U₂ : X.Opens) := ⟨⟨_, hyU⟩⟩
-    have m1 : (Scheme.rationalFunctionsEquiv (U₁ ⊓ U₂ : X.Opens)).symm
-        ((Additive.toMul h₁ : X.functionFieldˣ) : X.functionField)⁻¹ ∈
-          sections E (U₁ ⊓ U₂ : X.Opens) := by
-      rw [← hsec]
-      exact inv_localEquation_mem_sections fun z hz ↦ hh₁ z hz.1
-    have m2 : (Scheme.rationalFunctionsEquiv (U₁ ⊓ U₂ : X.Opens)).symm
-        ((Additive.toMul h₂ : X.functionFieldˣ) : X.functionField)⁻¹ ∈
-          sections F (U₁ ⊓ U₂ : X.Opens) := by
-      rw [hsec]
-      exact inv_localEquation_mem_sections fun z hz ↦ hh₂ z hz.2
-    have b1 := (mem_sections.mp m1 y hyU).resolve_left (by
-      simp only [LinearEquiv.apply_symm_apply, inv_eq_zero]
-      exact Units.ne_zero _)
-    have b2 := (mem_sections.mp m2 y hyU).resolve_left (by
-      simp only [LinearEquiv.apply_symm_apply, inv_eq_zero]
-      exact Units.ne_zero _)
-    rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, ← orderAt_apply, ← hh₁ y hy₁] at b1
-    rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, ← orderAt_apply, ← hh₂ y hy₂] at b2
-    omega
+  have hcoeff := coeff_eq_of_sections_eq hFlp hE hsec
   refine (WeilDivisor.OrderSystem.linearlyEquivalent_iff_exists_principalDivisor _).mpr ⟨γ, ?_⟩
   rw [← WeilDivisor.ext hcoeff, hFdef]
   abel

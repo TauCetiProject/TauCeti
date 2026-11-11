@@ -29,6 +29,11 @@ Induction can therefore continue without assuming that two is invertible.
   unimodular form has a unit-diagonal orthogonal basis.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_isUnit_orthogonal_span_singleton`: so does
   the orthogonal complement of a unit vector, once that complement represents a unit.
+* `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det`: when `2` is a unit,
+  every symmetric form with unit Gram determinant has a unit-diagonal orthogonal basis, since a
+  unit Gram entry gives a unit self-pairing.
+* `LinearMap.BilinForm.IsSymm.exists_equivalent_weightedSumSquares_of_isUnit_det`: such a form is
+  isometric to a unit diagonal quadratic form, with a determinant change-of-basis equation.
 
 ## References
 
@@ -158,6 +163,45 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_orthogonal_span_singleton (hB : B.
       simp [hxy]
   exact (hB.restrict _).exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self t hTdet
     ⟨⟨y, hyMem⟩, hy⟩
+
+/-- A symmetric form with unit Gram determinant over a local ring with two invertible has
+an orthogonal basis with unit self-pairings. The input basis is arbitrary. -/
+theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det (hB : B.IsSymm)
+    (h2 : IsUnit (2 : R)) {n : ℕ} (b : Basis (Fin n) R M)
+    (hdet : IsUnit (B.toMatrix b).det) :
+    ∃ c : Basis (Fin n) R M, B.iIsOrtho c ∧ ∀ i, IsUnit (B (c i) (c i)) := by
+  cases n with
+  | zero => exact ⟨b, fun i ↦ i.elim0, fun i ↦ i.elim0⟩
+  | succ n =>
+    -- A unit determinant has a unit Gram entry; a minimal self-pairing is then a unit.
+    obtain ⟨j, _, hj⟩ := IsLocalRing.exists_of_isUnit_sum
+      (Matrix.det_succ_row_zero (B.toMatrix b) ▸ hdet)
+    have hentry : IsUnit (B (b 0) (b j)) := by
+      simpa only [toMatrix_apply] using
+        isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_left hj)
+    obtain ⟨x, hx⟩ := hB.exists_forall_apply_self_dvd_of_forall_dvd h2 (fun _ _ ↦ hentry.dvd)
+    exact hB.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self b hdet
+      ⟨x, isUnit_of_dvd_unit (hx (b 0) (b j)) hentry⟩
+
+/-- A symmetric form with unit Gram determinant over a local ring with two invertible is
+isometric to a unit diagonal form. The product of its coefficients equals the original Gram
+determinant times the square of a change-of-basis determinant. -/
+theorem IsSymm.exists_equivalent_weightedSumSquares_of_isUnit_det (hB : B.IsSymm)
+    (h2 : IsUnit (2 : R)) {n : ℕ} (b : Basis (Fin n) R M)
+    (hdet : IsUnit (B.toMatrix b).det) :
+    ∃ w : Fin n → Rˣ, B.toQuadraticMap.Equivalent (QuadraticMap.weightedSumSquares R w) ∧
+      ∃ d : R, (∏ i, (w i : R)) = d ^ 2 * (B.toMatrix b).det := by
+  classical
+  let := h2.invertible
+  obtain ⟨c, hc, hu⟩ := hB.exists_orthogonal_basis_isUnit_of_isUnit_det h2 b hdet
+  let w : Fin n → Rˣ := fun i ↦ (hu i).unit
+  have hw i : (w i : R) = B (c i) (c i) := (hu i).unit_spec
+  have hmatrix : B.toMatrix c = Matrix.diagonal (fun i ↦ (w i : R)) := by
+    simpa only [hw] using hc.toMatrix_eq_diagonal
+  refine ⟨w, ?_, (b.toMatrix c).det, ?_⟩
+  · simpa only [QuadraticMap.weightedSumSquares_units, hw] using
+      hB.equivalent_weightedSumSquares_of_iIsOrtho c hc
+  · rw [← Matrix.det_diagonal, ← hmatrix, det_toMatrix_eq_det_sq_mul_det b c]
 
 end LinearMap.BilinForm
 

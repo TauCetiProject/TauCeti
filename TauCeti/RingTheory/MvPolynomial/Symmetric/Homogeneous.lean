@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
-public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 
 /-!
 # The symmetric homogeneous polynomials of a fixed degree
@@ -17,10 +16,7 @@ degree, each graded piece being the intersection of `MvPolynomial.symmetricSubal
 homogeneous polynomials `MvPolynomial.homogeneousSubmodule` of that degree.  This file names that
 intersection, `TauCeti.symmetricHomogeneousSubmodule`; it is the module the classical families of
 symmetric polynomials are bases of, one degree at a time: the monomial symmetric polynomials over
-any commutative semiring, and the Schur polynomials over a commutative ring.  Under the fundamental
-theorem of symmetric polynomials (`MvPolynomial.esymmAlgEquiv`), a symmetric polynomial homogeneous
-of degree `m` corresponds to a polynomial in `e₁, …, eₙ` that is weighted homogeneous of weight `m`
-for the weights `i ↦ i + 1`.
+any commutative semiring, and the Schur polynomials over a commutative ring.
 
 ## Main definitions
 
@@ -36,9 +32,6 @@ for the weights `i ↦ i + 1`.
   degree `k`.
 * `MvPolynomial.isHomogeneous_hsymm`: the complete homogeneous symmetric polynomial `hₖ` is
   homogeneous of degree `k`.
-* `MvPolynomial.isWeightedHomogeneous_esymmAlgEquiv_symm`: the expression of a degree-`m`
-  homogeneous symmetric polynomial in `e₁, …, eₙ` is weighted homogeneous of weight `m` for weights
-  `i ↦ i + 1`.
 -/
 
 public section
@@ -100,23 +93,5 @@ theorem isHomogeneous_hsymm [Fintype σ] [DecidableEq σ] (k : ℕ) :
     | empty => simpa using isHomogeneous_one σ R
     | cons a t ih => simpa [add_comm] using (isHomogeneous_X R a).mul ih
   exact IsHomogeneous.sum _ _ _ fun s _ => by simpa [s.2] using h s.1
-
-/-- If `p ∈ symmetricSubalgebra σ R` is homogeneous of degree `m`, then its unique expression in the
-elementary symmetric polynomials `e₁, …, eₙ` (`n = Fintype.card σ`) is weighted homogeneous of
-weight `m` for the weights `i ↦ i + 1`. -/
-theorem isWeightedHomogeneous_esymmAlgEquiv_symm {σ R : Type*} [Fintype σ] [CommRing R] {n : ℕ}
-    (hn : Fintype.card σ = n) {p : symmetricSubalgebra σ R} {m : ℕ}
-    (hp : (p : MvPolynomial σ R).IsHomogeneous m) :
-    ((esymmAlgEquiv σ R hn).symm p).IsWeightedHomogeneous (fun i : Fin n ↦ (i : ℕ) + 1) m := by
-  have hinj : Function.Injective
-      (aeval (R := R) fun i : Fin n ↦ esymm σ R ((i : ℕ) + 1)) := by
-    intro q₁ q₂ hq
-    exact esymmAlgHom_injective R hn.ge (Subtype.ext (by simpa [esymmAlgHom_apply] using hq))
-  refine isWeightedHomogeneous_of_isHomogeneous_aeval
-    (fun i : Fin n ↦ isHomogeneous_esymm (σ := σ) (R := R) ((i : ℕ) + 1)) hinj ?_
-  have happly : aeval (fun i : Fin n ↦ esymm σ R ((i : ℕ) + 1))
-      ((esymmAlgEquiv σ R hn).symm p) = (p : MvPolynomial σ R) := by
-    rw [← esymmAlgHom_apply, ← esymmAlgEquiv_apply σ R hn, AlgEquiv.apply_symm_apply]
-  rwa [happly]
 
 end MvPolynomial

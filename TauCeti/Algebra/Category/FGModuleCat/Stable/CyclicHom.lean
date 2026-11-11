@@ -23,9 +23,11 @@ left annihilator of `a`. This gives the dimension of the stable morphism space a
 For the truncated polynomial algebra `A = K[X]/(X ^ n)` over a field `K`, with `x` the class of
 `X` and `M_i = A ⧸ (x ^ i)`, both terms are explicit: the first is `min i j` and the second is
 `j - min j (n - i)` (`TauCeti.FGModuleCat.finrank_cyclicModule_hom_root_pow`,
-`TauCeti.FGModuleCat.finrank_map_ker_smul_op_root_pow`). Hence for `i, j ≤ n`
+`TauCeti.FGModuleCat.finrank_map_ker_smul_op_root_pow`). Hence for `j ≤ n`
 
-`dim_K Hom_stable(M_i, M_j) = min (min i j) (min (n - i) (n - j))`.
+`dim_K Hom_stable(M_i, M_j) = min (min i j) (min (n - i) (n - j))`,
+
+and the same formula holds for `j > n`, where `M_j = A` is free and both sides are `0`.
 
 In particular `M_n = A` has no nonzero stable endomorphisms, and the stable dimensions are
 unchanged when `(i, j)` is replaced by `(n - i, n - j)`, as they must be since the syzygy
@@ -157,17 +159,27 @@ variable {K : Type u} [Field K] {n : ℕ}
 
 /-- **Stable morphisms between the cyclic modules of `K[X]/(X ^ n)`.** With `x` the class of `X`
 and `M_i = A ⧸ (x ^ i)`, the space of stable morphisms `M_i ⟶ M_j` has dimension
-`min (min i j) (min (n - i) (n - j))` for `i, j ≤ n`, over any field `K`. -/
-theorem finrank_stableModuleHom_cyclicModule_root_pow {i j : ℕ} (hi : i ≤ n) (hj : j ≤ n) :
+`min (min i j) (min (n - i) (n - j))`, over any field `K`. For `j > n` the target
+`M_j = A ⧸ 0` is free, so the dimension is `0`. -/
+theorem finrank_stableModuleHom_cyclicModule_root_pow {i j : ℕ} :
     finrank K ((stableModuleFunctor (AdjoinRoot (X ^ n : K[X]))).obj
         (cyclicModule (AdjoinRoot.root (X ^ n : K[X]) ^ i)) ⟶
       (stableModuleFunctor _).obj (cyclicModule (AdjoinRoot.root (X ^ n : K[X]) ^ j))) =
       min (min i j) (min (n - i) (n - j)) := by
   have := (monic_X_pow n).finite_adjoinRoot (R := K)
+  -- `x ^ n = 0`, so `x ^ j = x ^ min j n` and we may assume `j ≤ n`.
+  have hx : AdjoinRoot.root (X ^ n : K[X]) ^ n = 0 := by
+    rw [AdjoinRoot.root, ← map_pow, AdjoinRoot.mk_self]
+  have hxj : AdjoinRoot.root (X ^ n : K[X]) ^ j = AdjoinRoot.root (X ^ n : K[X]) ^ (min j n) := by
+    rcases le_total j n with h | h
+    · rw [min_eq_left h]
+    · rw [min_eq_right h, hx, pow_eq_zero_of_le h hx]
+  have hj : min j n ≤ n := min_le_right _ _
+  rw [hxj]
   have h := finrank_stableModuleHom_cyclicModule_add_finrank K
-    (AdjoinRoot.root (X ^ n : K[X]) ^ i) (AdjoinRoot.root (X ^ n : K[X]) ^ j)
+    (AdjoinRoot.root (X ^ n : K[X]) ^ i) (AdjoinRoot.root (X ^ n : K[X]) ^ (min j n))
   rw [← (cyclicModuleHomEquiv K _).finrank_eq, finrank_cyclicModule_hom_root_pow hj,
-    finrank_map_ker_smul_op_root_pow hi hj] at h
+    finrank_map_ker_smul_op_root_pow hj] at h
   omega
 
 end TruncatedPolynomial
