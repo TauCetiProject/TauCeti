@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Extension
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Horodisc
 public import TauCeti.Analysis.Complex.RootsOfUnity.TwistedDescent
+import TauCeti.Analysis.Complex.Fuchsian.Cusp.ChangeScaling
+import TauCeti.Analysis.Complex.Fuchsian.Cusp.Conj
 import TauCeti.Analysis.Complex.Periodic
 import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
@@ -64,6 +66,14 @@ where `r ∈ {0, 1}` is fixed by `ε ^ k = (-1) ^ r`. Precisely:
   (`TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent_differentialFrame`), of order `j = k / 2`
   at the cusp (`TauCeti.Subgroup.CuspDatum.analyticOrderAt_automorphyDescent_differentialFrame`).
 
+The frames at two cusps of the same `Γ`-orbit, or at two cusp data at the same cusp, differ by
+a nonzero constant after transport along `Γ`: if `γ ∈ Γ` carries the cusp of `D` to that of `D'`
+and `h` lifts `γ`, then `automorphyFrame D' s' k r (h • τ)` is `denom h τ ^ k` times a nonzero
+constant times `automorphyFrame D s k r τ`
+(`TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_smul_cusp_eq`). This is the transition
+function between the trivializations of the automorphy sheaf in the charts at two cusp data
+representing the same cusp of `X(Γ)`.
+
 At a regular cusp, or in even weight, `ε ^ k = 1`, so `r = 0`: the frame is `denom s τ ^ (-k)` and
 the coefficient is the usual expansion of `f ∣[k] s⁻¹` in `q`. At an irregular cusp in odd weight
 `ε ^ k = -1`, so `r = 1`: the `q₂`-expansion of `f ∣[k] s⁻¹` has only odd terms, the order of a
@@ -93,6 +103,8 @@ formulas of Diamond–Shurman §3.5.
   `TauCeti.Subgroup.CuspDatum.differentialFrame_smul` and
   `TauCeti.Subgroup.CuspDatum.mdifferentiable_differentialFrame`: the weight-`2 * j` function of
   `(dq) ^ j`, a local section of weight `2 * j` holomorphic on all of `ℍ`.
+* `TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_smul_cusp_eq`: the frames at two cusps of
+  the same orbit differ by a nonzero constant after transport along `Γ`.
 * `TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent_differentialFrame` and
   `TauCeti.Subgroup.CuspDatum.analyticOrderAt_automorphyDescent_differentialFrame`: its
   coefficient `(2 * π * I / w) ^ j * q ^ j` with respect to the automorphy frame.
@@ -576,5 +588,93 @@ theorem analyticOrderAt_automorphyDescent_differentialFrame (j : ℕ) :
     simp
   rw [analyticOrderAt_congr heq, analyticOrderAt_mul analyticAt_const (by fun_prop),
     analyticAt_const.analyticOrderAt_eq_zero.mpr hc, analyticOrderAt_centeredMonomial, zero_add]
+
+/-! ### Transport of the frame along `Γ` -/
+
+variable {D' : Γ.CuspDatum} {s' h : SL(2, ℝ)} {γ : Γ}
+
+/-- The lift `s' * h * s⁻¹` of `σ' γ σ⁻¹`. -/
+private theorem coe_scaling_mul_mul_inv (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hs' : (s' : PSL(2, ℝ)) = D'.scaling) (hh : (h : PSL(2, ℝ)) = γ) :
+    ((s' * h * s⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) = D'.scaling * γ * D.scaling⁻¹ := by
+  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv, hs, hs', hh]
+
+/-- If `γ` carries the cusp of `D` to that of `D'`, then `σ' γ σ⁻¹` fixes `∞`, so its lift
+`s' * h * s⁻¹` is upper triangular. -/
+private theorem scaling_mul_mul_inv_apply_one_zero (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hs' : (s' : PSL(2, ℝ)) = D'.scaling) (hh : (h : PSL(2, ℝ)) = γ)
+    (hγ : γ • D.cusp = D'.cusp) : (s' * h * s⁻¹) 1 0 = 0 := by
+  have hg : ((s' * h * s⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) • (OnePoint.infty : OnePoint ℝ) =
+      OnePoint.infty := by
+    rw [coe_scaling_mul_mul_inv hs hs' hh, mul_smul, mul_smul,
+      inv_smul_eq_iff.mpr D.scaling_smul_cusp.symm, ← Subgroup.smul_def, hγ,
+      D'.scaling_smul_cusp]
+  rwa [OnePoint.pslMk_smul, OnePoint.smul_infty_eq_self_iff,
+    Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at hg
+
+include hs in
+/-- **The transition function between the frames at two cusps of the same orbit is constant.**
+Let `D` and `D'` be cusp data whose cusps are related by `γ ∈ Γ`, `γ • c = c'`, and let `s`, `s'`
+and `h` lift their scalings `σ`, `σ'` and `γ`. Then `t = s' * h * s⁻¹` is upper triangular, and
+the frame at the cusp of `D'`, read at `h • τ`, is the weight-`k` automorphy factor
+`denom h τ ^ k` times the frame at the cusp of `D`, read at `τ`, times the nonzero constant
+`t₁₁ ^ (-k) * exp (π * I * t₀₁ * t₁₁ / w) ^ r`, for the width `w` of `D`.
+
+In the scaling coordinates `γ` is the affine map `x ↦ t₀₀ ^ 2 * x + t₀₀ * t₀₁`, the widths
+satisfy `w' = t₀₀ ^ 2 * w`, and the width parameters satisfy
+`q₂'(h • τ) = exp (π * I * t₀₁ * t₁₁ / w) * q₂(τ)`. For `γ = 1` this compares the frames of two
+cusp data at the same cusp. For `D' = D`, `s' = s` and `h` a lift of the generator of `D`, the
+constant is `ε ^ (-k) * (-1) ^ r` for the sign `ε` of `s * h * s⁻¹`, which is `1` exactly under
+the sign condition of `TauCeti.Subgroup.CuspDatum.automorphyFrame_smul`. -/
+theorem automorphyFrame_smul_of_smul_cusp_eq (hs' : (s' : PSL(2, ℝ)) = D'.scaling)
+    (hh : (h : PSL(2, ℝ)) = γ) (hγ : γ • D.cusp = D'.cusp) (τ : ℍ) :
+    automorphyFrame D' s' k r (h • τ) =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ h) τ ^ k *
+        ((((s' * h * s⁻¹) 1 1 : ℝ) : ℂ) ^ (-k) *
+          Complex.exp (Real.pi * Complex.I * ((s' * h * s⁻¹) 0 1 * (s' * h * s⁻¹) 1 1) /
+            D.width) ^ r) *
+        automorphyFrame D s k r τ := by
+  set t := s' * h * s⁻¹ with ht_def
+  have ht : t 1 0 = 0 := scaling_mul_mul_inv_apply_one_zero hs hs' hh hγ
+  have hdet : (t 0 0 : ℂ) * t 1 1 = 1 := by
+    have h := t.det_coe
+    rw [Matrix.det_fin_two, ht, mul_zero, sub_zero] at h
+    exact_mod_cast h
+  -- in the scaling coordinates `γ` is the affine map `x ↦ t₀₀ ^ 2 * x + t₀₀ * t₀₁`
+  have hσ (x : ℍ) : ((D'.scaling • (γ : PSL(2, ℝ)) • x : ℍ) : ℂ) =
+      (t 0 0 : ℂ) ^ 2 * (D.scaling • x : ℍ) + t 0 0 * t 0 1 := by
+    rw [← coe_smul_of_apply_zero_one_eq_zero ht, ← UpperHalfPlane.pslMk_smul,
+      coe_scaling_mul_mul_inv hs hs' hh, mul_smul, mul_smul, inv_smul_smul]
+  -- hence the widths satisfy `w' = t₀₀ ^ 2 * w`, comparing `D'` with the transport of `D`
+  have hw : D'.width = t 0 0 ^ 2 * D.width := by
+    have hc := Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer γ.2)
+    have h := TauCeti.cuspDatum_width_eq_mul (D := D.conj hc) (D' := D')
+      (by rw [_root_.Subgroup.CuspDatum.conj_cusp, ← hγ, Subgroup.smul_def])
+      (a := t 0 0 ^ 2) (b := t 0 0 * t 0 1) fun x ↦ by
+        rw [_root_.Subgroup.CuspDatum.conj_scaling, mul_smul, Complex.ofReal_pow,
+          Complex.ofReal_mul, ← hσ, smul_inv_smul]
+    rwa [_root_.Subgroup.CuspDatum.conj_width] at h
+  -- the automorphy factors: `denom s' (h • τ) * denom h τ = t₁₁ * denom s τ`
+  have hden : denom (Matrix.SpecialLinearGroup.mapGL ℝ s') ((h • τ : ℍ) : ℂ) =
+      (t 1 1 : ℂ) * denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ /
+        denom (Matrix.SpecialLinearGroup.mapGL ℝ h) τ := by
+    have hts : s' * h = t * s := by rw [ht_def]; group
+    rw [eq_div_iff (denom_ne_zero _ _), ← Matrix.SpecialLinearGroup.denom_mapGL_mul, hts,
+      Matrix.SpecialLinearGroup.denom_mapGL_mul]
+    simp [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix, ht]
+  -- the width parameters differ by the constant `exp (π * I * t₀₁ * t₁₁ / w)`
+  have hq : sqrtCoordinate D' (h • τ) =
+      Complex.exp (Real.pi * Complex.I * (t 0 1 * t 1 1) / D.width) * sqrtCoordinate D τ := by
+    have hw0 : (D.width : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr D.width_pos.ne'
+    have ha : (t 0 0 : ℂ) ≠ 0 := left_ne_zero_of_mul_eq_one hdet
+    rw [sqrtCoordinate_def, sqrtCoordinate_def, ← UpperHalfPlane.pslMk_smul, hh, hσ, hw,
+      Periodic.qParam, Periodic.qParam, ← Complex.exp_add]
+    congr 1
+    push_cast
+    field_simp
+    linear_combination (-(t 0 1 : ℂ)) * hdet
+  rw [automorphyFrame_def, automorphyFrame_def, hq, hden, div_eq_mul_inv, mul_zpow, mul_zpow,
+    inv_zpow', neg_neg, mul_pow]
+  ring
 
 end TauCeti.Subgroup.CuspDatum

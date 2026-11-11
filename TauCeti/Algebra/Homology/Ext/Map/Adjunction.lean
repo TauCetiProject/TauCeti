@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
 public import TauCeti.Algebra.Homology.Ext.Basic
+import Mathlib.CategoryTheory.Adjunction.Additive
 
 /-!
 # Exact adjunctions and Ext with fixed coefficients
@@ -39,11 +40,16 @@ variable {C : Type u} [Category.{v} C] [Abelian C]
   [PreservesFiniteLimits F] [PreservesFiniteColimits F]
   [PreservesFiniteLimits G] [PreservesFiniteColimits G]
 
+omit [G.Additive] [PreservesFiniteLimits G] in
 /-- Under an exact adjunction, bijectivity of the map on Ext is equivalent to bijectivity of
 postcomposition with the adjunction unit on the coefficient object. -/
 theorem mapExt_bijective_iff_postcomp_unit_app (adj : F ⊣ G) (X Y : C) (n : ℕ) :
     Function.Bijective (F.mapExtAddHom.{w, w'} X Y n) ↔
       Function.Bijective ((Ext.mk₀ (adj.unit.app Y)).postcomp X (add_zero n)) := by
+  -- A right adjoint of an additive functor is additive and preserves finite limits.
+  have := adj.right_adjoint_additive
+  have : G.IsRightAdjoint := adj.isRightAdjoint
+  have : PreservesFiniteLimits G := inferInstance
   have he : adj.extEquiv.symm ∘
       (Ext.mk₀ (adj.unit.app Y)).postcomp X (add_zero n) = F.mapExtAddHom X Y n := by
     funext a
@@ -52,6 +58,7 @@ theorem mapExt_bijective_iff_postcomp_unit_app (adj : F ⊣ G) (X Y : C) (n : �
   rw [← he]
   exact adj.extEquiv.symm.bijective.of_comp_iff' _
 
+omit [G.Additive] [PreservesFiniteLimits G] in
 /-- For an adjunction `F ⊣ G` between exact functors, `F` preserves Ext bijectively with
 coefficients in any object on which the unit is an isomorphism. The source object is
 unrestricted. -/

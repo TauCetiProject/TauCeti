@@ -38,7 +38,7 @@ The proofs are adapted from `PrimeNumberTheoremAnd/Wiener.lean` in the Apache-2.
 `second_fourier`, and `limiting_fourier_aux`. The statements here use Mathlib's
 `LSeriesSummable` directly, remove the source project's local `nterm` wrapper, and rely on
 Mathlib's APIs together with the local vertical-line continuity theorem
-`LSeriesSummable.continuous_LSeries_vertical`.
+`TauCeti.LSeries.continuous_vertical`.
 
 ## References
 
@@ -252,7 +252,8 @@ private lemma integrable_LSeries_mul_mul_cpow (hpsi : Integrable psi) (hx : 0 < 
         simp only [_root_.LSeries.norm_term_eq]
         simp
   exact (hpsi.bdd_mul (f := fun t : ℝ ↦ LSeries a ((sigma : ℂ) + t * I) * (x : ℂ) ^ (t * I))
-    (hsigmaSum.continuous_LSeries_vertical.mul (continuous_cpow_mul_I hx)).aestronglyMeasurable
+    ((TauCeti.LSeries.continuous_vertical a (sigma : ℂ)).mul
+      (continuous_cpow_mul_I hx)).aestronglyMeasurable
     (.of_forall hLbound)).congr (.of_forall fun t ↦ by ring)
 
 /-- Subtracting the simple-pole Fourier identity from the Dirichlet-series identity leaves exactly

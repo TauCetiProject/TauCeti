@@ -144,6 +144,13 @@ theorem negativePlanePerturbation_def (H : ℝ → M → ℝ) (w : ℂ) (x : M) 
         inf.endAngularForm w :=
   (rfl)
 
+/-- The negative plane datum of the zero Hamiltonian vanishes. -/
+@[simp]
+theorem negativePlanePerturbation_zero (w : ℂ) (x : M) :
+    negativePlanePerturbation (0 : ℝ → M → ℝ) w x = 0 := by
+  ext v
+  simp [negativePlanePerturbation_def]
+
 /-- **The plane is a pair of pants with zero inputs.** The pair-of-pants perturbation whose input
 Hamiltonians vanish and whose output Hamiltonian is `H` is the negative plane perturbation of
 `H`. -/
