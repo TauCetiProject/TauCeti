@@ -16,7 +16,7 @@ A pair of morphisms of schemes `s t : R ⟶ U` is an *étale equivalence relatio
 for every scheme `T` the image of `R(T)` in `U(T) × U(T)` is an equivalence relation, and `s` and
 `t` are étale (Stacks, Definition 39.3.1 (022P) and Spaces, Definition 65.9.2 (02WS)). The
 equivalence relation is Mathlib's internal `CategoryTheory.IsEquivalenceRelation t s`, which
-`CategoryTheory.isEquivalenceRelation_iff` describes through points.
+`TauCeti.CategoryTheory.isEquivalenceRelation_iff` describes through points.
 
 ## Main definitions
 
