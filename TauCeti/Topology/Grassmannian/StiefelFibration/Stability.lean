@@ -1,0 +1,95 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Topology.Grassmannian.StiefelFibration.ForgetLast
+
+/-!
+# The stable range of the special orthogonal groups
+
+The block embedding `SO(n + 1) → SO(r + n + 1)`, `B ↦ diag(1_r, B)`, is the inclusion of the fibre
+of the Stiefel fibration `SO(r + n + 1) → V_r(ℝ^(r + n + 1))` over the standard frame
+(`TauCeti.specialOrthogonalFrameFiberHomeomorph`). The base is `n`-connected
+(`TauCeti.finiteOrthonormalFrame.subsingleton_homotopyGroup`), so the inclusion of the fibre is an
+`n`-connected map (`TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`). Hence the block
+embedding induces isomorphisms `π_k(SO(n + 1)) → π_k(SO(r + n + 1))` for `k < n` and surjections
+for `k = n`: the homotopy groups of `SO(m)` stabilize, `π_k(SO(m))` being independent of `m` once
+`m ≥ k + 2`.
+
+## Main results
+
+* `TauCeti.isNConnected_fromBlocksOne`: the block embedding `SO(n + 1) → SO(r + n + 1)` is
+  `n`-connected.
+* `TauCeti.bijective_homotopyGroupMap_fromBlocksOne`,
+  `TauCeti.surjective_homotopyGroupMap_fromBlocksOne`: it is bijective on `π_k` for `k < n` and
+  surjective for `k = n`.
+
+## References
+
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, §4.2, the stable range of
+  `SO(n)` following Example 4.53.
+* N. Steenrod, *The Topology of Fibre Bundles*, Princeton University Press, 1951, §25.
+* J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
+  Applications to cotangent bundles*, arXiv:2404.07953, Lemma 6.35, which compares
+  `π_(n-1)(SO(n))` with the stable groups.
+-/
+
+public section
+
+open Matrix
+
+noncomputable section
+
+namespace TauCeti
+
+open finiteOrthonormalFrame
+
+variable (r n : ℕ)
+
+/-- **Stability of the special orthogonal groups.** The block embedding
+`SO(n + 1) → SO(r + n + 1)`, `B ↦ diag(1_r, B)`, is an `n`-connected map: it induces isomorphisms
+on `π_k` for `k < n` and surjections for `k = n`. -/
+theorem isNConnected_fromBlocksOne :
+    (⟨SpecialOrthogonalGroup.fromBlocksOne ℝ r (n + 1), continuous_fromBlocksOne (n + 1)⟩ :
+      C(specialOrthogonalGroup (Fin (n + 1)) ℝ,
+        specialOrthogonalGroup (Fin (r + (n + 1))) ℝ)).IsNConnected n := by
+  let p : _root_.TopCat.of (specialOrthogonalGroup (Fin (r + (n + 1))) ℝ) ⟶
+      _root_.TopCat.of (finiteOrthonormalFrame ℝ r (r + (n + 1))) :=
+    _root_.TopCat.ofHom ⟨specialOrthogonalFrameMap r (n + 1),
+      continuous_specialOrthogonalFrameMap r (n + 1)⟩
+  -- The base `V_r(ℝ^(r + n + 1))` is `n`-connected, so the fibre over the standard frame is
+  -- `n`-connected in the total space.
+  have hfib : (p.fiberι (specialOrthogonalFrameMap r (n + 1) 1)).hom.IsNConnected n :=
+    TopCat.isNConnected_fiberι_of_mem_serreFibrations specialOrthogonalFrameMap_mem_serreFibrations
+      fun k hk ↦ finiteOrthonormalFrame.subsingleton_homotopyGroup (by simp; omega) _
+  -- The block embedding is the fibre inclusion after the homeomorphism of `SO(n + 1)` with the
+  -- fibre.
+  let φ := specialOrthogonalFrameFiberHomeomorph r (n + 1)
+  convert hfib.comp (φ.toHomotopyEquiv.isWeakHomotopyEquivalence.isNConnected n) using 1
+  ext B : 1
+  exact (coe_specialOrthogonalFrameFiberHomeomorph_apply B).symm.trans
+    (TopCat.Hom.fiberι_apply p _ (φ B)).symm
+
+/-- The block embedding `SO(n + 1) → SO(r + n + 1)` induces a bijection on the homotopy group
+indexed by a finite type of fewer than `n` cube directions. -/
+theorem bijective_homotopyGroupMap_fromBlocksOne (N : Type*) [Finite N] (hN : Nat.card N < n)
+    (B : specialOrthogonalGroup (Fin (n + 1)) ℝ) :
+    Function.Bijective (HomotopyGroup.map (N := N)
+      ⟨SpecialOrthogonalGroup.fromBlocksOne ℝ r (n + 1), continuous_fromBlocksOne (n + 1)⟩
+      (rfl : SpecialOrthogonalGroup.fromBlocksOne ℝ r (n + 1) B = _)) :=
+  ⟨(isNConnected_fromBlocksOne r n).map_injective N hN B,
+    (isNConnected_fromBlocksOne r n).map_surjective N hN.le B⟩
+
+/-- The block embedding `SO(n + 1) → SO(r + n + 1)` induces a surjection on the homotopy group
+indexed by a finite type of at most `n` cube directions. -/
+theorem surjective_homotopyGroupMap_fromBlocksOne (N : Type*) [Finite N] (hN : Nat.card N ≤ n)
+    (B : specialOrthogonalGroup (Fin (n + 1)) ℝ) :
+    Function.Surjective (HomotopyGroup.map (N := N)
+      ⟨SpecialOrthogonalGroup.fromBlocksOne ℝ r (n + 1), continuous_fromBlocksOne (n + 1)⟩
+      (rfl : SpecialOrthogonalGroup.fromBlocksOne ℝ r (n + 1) B = _)) :=
+  (isNConnected_fromBlocksOne r n).map_surjective N hN B
+
+end TauCeti
