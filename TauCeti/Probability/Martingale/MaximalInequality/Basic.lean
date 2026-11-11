@@ -53,6 +53,8 @@ this is how the running maximum of an exponential martingale is shown to be inte
   martingale norms.
 * `MeasureTheory.Martingale.measure_exists_le_norm_lt_le`: a terminal L¹ bound gives an outer
   probability bound for the path-error event.
+* `MeasureTheory.Martingale.tendsto_measure_exists_le_norm_sub_lt`: terminal L¹ convergence
+  implies uniform convergence in outer probability on the same horizon.
 
 ## References
 
@@ -334,5 +336,32 @@ theorem measure_exists_le_norm_lt_le (hM : Martingale M ℱ μ) {T : ι}
       ENNReal.ofReal_le_ofReal hterminal
   exact (ENNReal.mul_le_mul_iff_right (by exact_mod_cast hε.ne') (by finiteness)).1
     (hmax.trans hbound)
+
+/-- Terminal L¹ convergence of right-continuous martingales implies uniform convergence
+in outer probability on that horizon. The exceptional sets need not be measurable.
+Right continuity is required only almost surely and before the terminal date. -/
+theorem tendsto_measure_exists_le_norm_sub_lt {α : Type*} {Y : ι → Ω → E}
+    (hY : Martingale Y ℱ μ) {M : α → ι → Ω → E} (hM : ∀ n, Martingale (M n) ℱ μ)
+    {T : ι} {l : Filter α}
+    (hYcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ Y u ω) (Ioi t) t)
+    (hMcont : ∀ n, ∀ᵐ ω ∂μ, ∀ t < T,
+      ContinuousWithinAt (fun u ↦ M n u ω) (Ioi t) t)
+    (hlim : Tendsto (fun n ↦ eLpNorm (M n T - Y T) 1 μ) l (𝓝 0))
+    {ε : ℝ≥0} (hε : 0 < ε) :
+    Tendsto (fun n ↦ μ {ω | ∃ t ≤ T, (ε : ℝ) < ‖M n t ω - Y t ω‖}) l (𝓝 0) := by
+  have hε0 : (ε : ℝ≥0∞) ≠ 0 := by exact_mod_cast hε.ne'
+  have hbound (n : α) : μ {ω | ∃ t ≤ T, (ε : ℝ) < ‖M n t ω - Y t ω‖} ≤
+      eLpNorm (M n T - Y T) 1 μ / ε := by
+    apply (ENNReal.le_div_iff_mul_le (.inl hε0) (.inl ENNReal.coe_ne_top)).2
+    have h := ((hM n).sub hY).mul_measure_exists_le_norm_lt_le (T := T) (by
+      filter_upwards [hMcont n, hYcont] with ω h₁ h₂ t ht
+      exact (h₁ t ht).sub (h₂ t ht)) ε
+    rw [ofReal_integral_norm_eq_lintegral_enorm (((hM n).sub hY).integrable T)] at h
+    simpa only [mul_comm, Pi.sub_apply, eLpNorm_one_eq_lintegral_enorm
+      (((hM n).integrable T).sub (hY.integrable T)).aestronglyMeasurable] using h
+  have hdiv := ENNReal.Tendsto.div_const hlim (.inr hε0)
+  simp only [ENNReal.zero_div] at hdiv
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hdiv
+    (fun _ ↦ zero_le) hbound
 
 end MeasureTheory.Martingale
