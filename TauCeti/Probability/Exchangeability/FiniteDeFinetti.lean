@@ -102,7 +102,7 @@ theorem ExchangeableAt.finiteDeFinetti
   · simpa using sampleWithoutReplacement_le_sampleWithReplacement_add
       (ρ := prefixLaw μ X n) hA
   · simpa using sampleWithReplacement_le_sampleWithoutReplacement_add
-      (ρ := prefixLaw μ X n) hA
+      (ι := Fin m) (ρ := prefixLaw μ X n) (A := A)
 
 /-- **Finite de Finetti with the exact collision error.** The discrepancy on any measurable
 event between an exchangeable prefix and its with-replacement sample (the empirical-product
@@ -129,7 +129,7 @@ theorem ExchangeableAt.finiteDeFinetti_exact_collision
         (ρ := prefixLaw μ X n) hA
   · simpa using
       sampleWithReplacement_le_sampleWithoutReplacement_add_collision
-        (ρ := prefixLaw μ X n) hA
+        (ι := Fin m) (ρ := prefixLaw μ X n) (A := A)
 
 /-- **Exact finite de Finetti bound, exchangeable law to empirical mixture.** Under finite
 exchangeability and `m ≤ n`, the prefix law exceeds its with-replacement sample on a measurable
