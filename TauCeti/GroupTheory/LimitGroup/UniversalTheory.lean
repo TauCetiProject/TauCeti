@@ -34,11 +34,14 @@ sentences pass to subgroups:
 
 * a nonabelian residually free group contains a free group of rank two, so a nonabelian fully
   residually free group has the universal theory of `F₂`;
-* a nontrivial finitely generated torsion-free abelian group contains `ℤ` and is a free abelian
-  group of finite rank, hence discriminated by `ℤ`, so it has the universal theory of `ℤ`;
+* a nontrivial torsion-free abelian group contains `ℤ`, and each of its finitely generated
+  subgroups is a free abelian group of finite rank, hence discriminated by `ℤ`; as a universal
+  sentence holds in a group as soon as it holds in its finitely generated subgroups, such a group
+  has the universal theory of `ℤ`;
 * a trivial group is the free group of rank zero.
 
-Hence a finitely generated group is fully residually free if and only if it has the universal
+Hence a fully residually free group has the universal theory of a free group of rank at most two,
+and a finitely generated group is fully residually free if and only if it has the universal
 theory of a free group of finite rank, which is the equivalence of conditions (3) and (5) in
 Theorem 1.1 of Champetier and Guirardel; the three cases are their Theorem 5.1.
 
@@ -55,11 +58,10 @@ Theorem 1.1 of Champetier and Guirardel; the three cases are their Theorem 5.1.
   groups.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.realize_iff_freeGroup_of_not_isMulCommutative`: a
   nonabelian fully residually free group has the universal theory of `F₂`.
-* `TauCeti.LimitGroup.realize_iff_multiplicative_int_of_isMulTorsionFree`: a nontrivial finitely
-  generated torsion-free abelian group has the universal theory of `ℤ`.
-* `TauCeti.LimitGroup.IsFullyResiduallyFree.exists_forall_realize_iff_freeGroup`: a finitely
-  generated fully residually free group has the universal theory of a free group of rank at most
-  two.
+* `TauCeti.LimitGroup.realize_iff_multiplicative_int_of_isMulTorsionFree`: a nontrivial
+  torsion-free abelian group has the universal theory of `ℤ`.
+* `TauCeti.LimitGroup.IsFullyResiduallyFree.exists_forall_realize_iff_freeGroup`: a fully
+  residually free group has the universal theory of a free group of rank at most two.
 * `TauCeti.LimitGroup.isFullyResiduallyFree_iff_exists_forall_realize_iff`: a finitely generated
   group is fully residually free if and only if it has the universal theory of a free group of
   finite rank.
@@ -152,31 +154,26 @@ theorem IsFullyResiduallyFree.realize_iff_freeGroup_of_not_isMulCommutative
     (hσ : σ.IsUniversal) : G ⊨ σ ↔ FreeGroup (Fin 2) ⊨ σ :=
   ⟨h.isResiduallyFree.realize_freeGroup_of_isUniversal hG hσ, h.realize_of_isUniversal hσ⟩
 
-/-- A nontrivial finitely generated torsion-free abelian group has the universal theory of the
-infinite cyclic group `ℤ`: it contains `ℤ`, and it is a free abelian group of finite rank, hence
-discriminated by `ℤ`. -/
+/-- A nontrivial torsion-free abelian group has the universal theory of the infinite cyclic group
+`ℤ`: it contains `ℤ`, and each of its finitely generated subgroups is a free abelian group of
+finite rank, hence discriminated by `ℤ`. -/
 theorem realize_iff_multiplicative_int_of_isMulTorsionFree [IsMulCommutative G]
-    [IsMulTorsionFree G] [Group.FG G] [Nontrivial G] {σ : Language.group.Sentence}
-    (hσ : σ.IsUniversal) : G ⊨ σ ↔ Multiplicative ℤ ⊨ σ := by
+    [IsMulTorsionFree G] [Nontrivial G] {σ : Language.group.Sentence} (hσ : σ.IsUniversal) :
+    G ⊨ σ ↔ Multiplicative ℤ ⊨ σ := by
   classical
-  refine ⟨fun hG => ?_, fun hZ => ?_⟩
+  refine ⟨fun hG => ?_, fun hZ => group.realize_of_isUniversal_of_forall_closure hσ fun S => ?_⟩
   · obtain ⟨g, hg⟩ := exists_ne (1 : G)
     exact (zpowersHom G g).realize_of_isUniversal_of_injective
       (injective_zpow_iff_not_isOfFinOrder.2 (not_isOfFinOrder_of_isMulTorsionFree hg)) hσ hG
-  · obtain ⟨S, hS, hfin⟩ := Group.fg_iff.1 ‹Group.FG G›
-    lift S to Finset G using hfin
-    obtain ⟨k, -, ⟨e⟩⟩ := Subgroup.exists_mulEquiv_closure_of_pairwise_commute
+  · obtain ⟨k, -, ⟨e⟩⟩ := Subgroup.exists_mulEquiv_closure_of_pairwise_commute
       (s := S) fun a _ b _ _ => mul_comm' a b
-    rw [hS] at e
-    exact ((Subgroup.topEquiv.symm.trans e).realize_sentence_iff σ).2
+    exact (e.realize_sentence_iff σ).2
       ((isDiscriminatedBy_multiplicative_pi_int (Fin k)).realize_group_of_isUniversal hσ hZ)
 
-/-- **The universal theory of a fully residually free group.** A finitely generated fully
-residually free group has the universal theory of a free group: of the trivial group if it is
-trivial, of `ℤ` if it is abelian and nontrivial, and of the free group of rank two if it is not
-abelian. -/
-theorem IsFullyResiduallyFree.exists_forall_realize_iff_freeGroup [Group.FG G]
-    (h : IsFullyResiduallyFree G) :
+/-- **The universal theory of a fully residually free group.** A fully residually free group has
+the universal theory of a free group: of the trivial group if it is trivial, of `ℤ` if it is
+abelian and nontrivial, and of the free group of rank two if it is not abelian. -/
+theorem IsFullyResiduallyFree.exists_forall_realize_iff_freeGroup (h : IsFullyResiduallyFree G) :
     ∃ n : ℕ, ∀ σ : Language.group.Sentence, σ.IsUniversal →
       (G ⊨ σ ↔ FreeGroup (Fin n) ⊨ σ) := by
   by_cases hG : IsMulCommutative G
