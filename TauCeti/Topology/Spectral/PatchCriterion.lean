@@ -145,12 +145,16 @@ lemma quasiSeparatedSpace_of_isClopen_generateFrom (htU : t = generateFrom U)
 lemma quasiSober_of_isClopen_generateFrom (htU : t = generateFrom U)
     (hcomp : @CompactSpace X t') (hU : ∀ s ∈ U, @IsClopen X t' s) : QuasiSober X := by
   have hB := isTopologicalBasis_sInter_of_patch htU
+  -- the witness topology `t'` is finer than the generated topology `t`, since every member
+  -- of `U` is witness-open
   have hle : t' ≤ t := htU ▸ le_generateFrom fun s hs ↦ @IsClopen.isOpen X t' s (hU s hs)
   refine ⟨fun {Z} hZ hZc ↦ ?_⟩
-  -- `Z` is closed, hence compact, for the coarser witness topology
+  -- `Z` is closed for the generated topology, hence for the finer witness topology, and so
+  -- compact for the compact witness topology
   have hZcomp : @IsCompact X t' Z := @IsClosed.isCompact X t' Z hcomp (hZc.mono hle)
-  -- the basic opens meeting `Z` are witness-closed, and any finitely many of them have a
-  -- common point in the irreducible `Z`; by compactness some `x ∈ Z` lies in all of them
+  -- the basic opens of the generated topology that meet `Z` are witness-clopen, hence
+  -- witness-closed, and any finitely many of them have a common point in the irreducible `Z`;
+  -- by witness compactness of `Z` some `x ∈ Z` lies in all of them
   obtain ⟨x, hxZ, hx⟩ := @IsCompact.nonempty_inter_sInter X t' Z hZcomp
     {b | b ∈ (fun f ↦ ⋂₀ f) '' { f : Set (Set X) | f.Finite ∧ f ⊆ U } ∧ (Z ∩ b).Nonempty}
     (fun b hb ↦ @IsClopen.isClosed X t' _ (isClopen_patch_of_mem_basis hU hb.1))
@@ -159,7 +163,8 @@ lemma quasiSober_of_isClopen_generateFrom (htU : t = generateFrom U)
       simpa only [Set.Finite.coe_toFinset] using isIrreducible_iff_sInter.mp hZ haf.toFinset
         (fun b hb ↦ hB.isOpen (ha (haf.mem_toFinset.mp hb)).1)
         fun b hb ↦ (ha (haf.mem_toFinset.mp hb)).2
-  -- every basic open meeting `Z` contains `x`, so `x` is a generic point of `Z`
+  -- `x` is a generic point of `Z`: the closure of `{x}` lies in the closed set `Z`, and every
+  -- basic open around a point `w ∈ Z` meets `Z`, so contains `x`, putting `w` in that closure
   refine ⟨x, isGenericPoint_def.mpr <| subset_antisymm
     (closure_minimal (Set.singleton_subset_iff.mpr hxZ) hZc) fun w hw ↦ ?_⟩
   exact hB.mem_closure_iff.mpr fun o ho hwo ↦ ⟨x, hx o ⟨ho, w, hw, hwo⟩, Set.mem_singleton x⟩
