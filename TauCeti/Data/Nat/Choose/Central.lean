@@ -39,13 +39,13 @@ theorem centralBinom_mul_sqrt_le_four_pow (n : ℕ) :
     induction n with
     | zero => norm_num
     | succ n ih =>
-      have hrec : ((n + 1 : ℕ) : ℝ) * (Nat.centralBinom (n + 1) : ℝ) =
+      have hrec : ((n + 1 : ℕ) : ℝ) * (centralBinom (n + 1) : ℝ) =
           2 * (2 * n + 1) * (n.centralBinom : ℝ) := by
-        exact_mod_cast Nat.succ_mul_centralBinom_succ n
+        exact_mod_cast succ_mul_centralBinom_succ n
       have hrec_sq := congrArg (fun x : ℝ ↦ x ^ 2) hrec
       have hpos : 0 < (n + 1 : ℝ) ^ 2 := by positivity
       apply (mul_le_mul_iff_right₀ hpos).mp
-      simp only [Nat.cast_add, Nat.cast_one, pow_succ] at *
+      simp only [cast_add, cast_one, pow_succ] at *
       nlinarith [mul_le_mul_of_nonneg_left ih (by positivity : 0 ≤ 16 * (n + 1 : ℝ) ^ 2),
         sq_nonneg (n.centralBinom : ℝ)]
   have hsqrt : Real.sqrt (2 * n + 1) ^ 2 = (2 * n + 1 : ℝ) :=
@@ -60,19 +60,19 @@ theorem centralBinom_mul_sqrt_le_four_pow (n : ℕ) :
 theorem choose_middle_mul_sqrt_le_two_pow (k : ℕ) :
     (k.choose (k / 2) : ℝ) * Real.sqrt (k + 1) ≤ 2 ^ k := by
   obtain ⟨n, rfl | rfl⟩ : ∃ n, k = 2 * n ∨ k = 2 * n + 1 := ⟨k / 2, by omega⟩
-  · convert Nat.centralBinom_mul_sqrt_le_four_pow n using 1 <;>
-      norm_num [Nat.centralBinom, pow_mul]
-  · have hchoose : 2 * (Nat.choose (2 * n + 1) n : ℝ) =
-        (Nat.centralBinom (n + 1) : ℝ) := by
+  · convert centralBinom_mul_sqrt_le_four_pow n using 1 <;>
+      norm_num [centralBinom, pow_mul]
+  · have hchoose : 2 * (choose (2 * n + 1) n : ℝ) =
+        (centralBinom (n + 1) : ℝ) := by
       have hrow : 2 * (n + 1) = (2 * n + 1) + 1 := by omega
-      rw [Nat.centralBinom, hrow, Nat.choose_succ_succ', Nat.choose_symm_half]
+      rw [centralBinom, hrow, choose_succ_succ', choose_symm_half]
       push_cast
       ring
     have hsqrt : Real.sqrt ((2 * n + 1 : ℕ) + 1) ≤ Real.sqrt (2 * (n + 1) + 1) := by
       apply Real.sqrt_le_sqrt
       push_cast
       linarith
-    have h := Nat.centralBinom_mul_sqrt_le_four_pow (n + 1)
+    have h := centralBinom_mul_sqrt_le_four_pow (n + 1)
     have hdiv : (2 * n + 1) / 2 = n := by omega
     rw [hdiv]
     have hpow : (4 : ℝ) ^ (n + 1) = 2 * 2 ^ (2 * n + 1) := by
@@ -82,7 +82,7 @@ theorem choose_middle_mul_sqrt_le_two_pow (k : ℕ) :
     rw [hpow, ← hchoose] at h
     push_cast at h hsqrt ⊢
     nlinarith [mul_le_mul_of_nonneg_left hsqrt (by positivity :
-      0 ≤ (Nat.choose (2 * n + 1) n : ℝ))]
+      0 ≤ (choose (2 * n + 1) n : ℝ))]
 
 /-- Middle binomial coefficients are supermultiplicative in the row index. -/
 theorem choose_middle_mul_choose_middle_le (a b : ℕ) :
@@ -90,11 +90,11 @@ theorem choose_middle_mul_choose_middle_le (a b : ℕ) :
   calc
     a.choose (a / 2) * b.choose (b / 2) ≤
         (a + b).choose (a / 2 + b / 2) := by
-      rw [Nat.add_choose_eq]
+      rw [add_choose_eq]
       have hmem : (a / 2, b / 2) ∈ Finset.antidiagonal (a / 2 + b / 2) := by simp
       exact Finset.single_le_sum (f := fun ij : ℕ × ℕ ↦ a.choose ij.1 * b.choose ij.2)
-        (fun _ _ ↦ Nat.zero_le _) hmem
-    _ ≤ (a + b).choose ((a + b) / 2) := Nat.choose_le_middle _ _
+        (fun _ _ ↦ zero_le _) hmem
+    _ ≤ (a + b).choose ((a + b) / 2) := choose_le_middle _ _
 
 /-- A finite product of middle binomial coefficients is bounded by the middle
 coefficient of the sum of their row indices. -/
@@ -105,6 +105,6 @@ theorem prod_choose_middle_le_choose_sum_middle {ι : Type*} (s : Finset ι) (d 
   | empty => simp
   | @insert i s hi ih =>
     simp only [Finset.prod_insert hi, Finset.sum_insert hi]
-    exact (Nat.mul_le_mul_left _ ih).trans (Nat.choose_middle_mul_choose_middle_le _ _)
+    exact (mul_le_mul_left _ ih).trans (choose_middle_mul_choose_middle_le _ _)
 
 end Nat
