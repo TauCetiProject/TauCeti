@@ -17,6 +17,9 @@ locally constant functions: `LocallyConstant.denseRange_toContinuousMap`. This i
 statement used to extend functionals from locally constant test functions to all continuous
 ones, for instance to extend the coefficients of measures on profinite spaces.
 
+For a discrete codomain, locally constant functions are the continuous maps:
+`LocallyConstant.equivContinuousMap`.
+
 `ContinuousMap.intCastLocallyConstant` casts integer-valued continuous functions to locally
 constant functions with values in any type with an integer cast.
 -/
@@ -24,6 +27,15 @@ constant functions with values in any type with an integer cast.
 public section
 
 namespace LocallyConstant
+
+/-- For a discrete codomain, locally constant functions are the same as continuous maps. -/
+@[expose, simps]
+def equivContinuousMap (X Y : Type*) [TopologicalSpace X] [TopologicalSpace Y]
+    [DiscreteTopology Y] : LocallyConstant X Y ≃ C(X, Y) where
+  toFun := toContinuousMap
+  invFun f := ⟨f, (IsLocallyConstant.iff_continuous f).2 f.continuous⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
 
 variable {X V : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
   [TotallyDisconnectedSpace X] [UniformSpace V]

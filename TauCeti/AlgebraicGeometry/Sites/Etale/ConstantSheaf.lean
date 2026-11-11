@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Sites.AffineEtale
 public import Mathlib.AlgebraicGeometry.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
+public import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
 # The constant étale sheaf is the sheaf of locally constant functions
@@ -49,8 +50,8 @@ example the sheaves of sections of split finite étale covers.
 
 * `AlgebraicGeometry.Scheme.isSheaf_etaleLocallyConstantPresheaf`: locally constant functions form
   an étale sheaf.
-* `AlgebraicGeometry.Scheme.bot_mem_smallEtaleTopology`: an étale `S`-scheme with empty
-  underlying space is covered by the empty sieve.
+* `AlgebraicGeometry.Scheme.bot_mem_smallGrothendieckTopology`: on a small site of `S`, such as
+  the small étale site, an object with empty underlying space is covered by the empty sieve.
 * `AlgebraicGeometry.Scheme.toSheafify_comp_constantSheafToEtaleLocallyConstantSheaf_hom`: the
   comparison sends the class of `m` to the constant function `m`.
 
@@ -98,11 +99,7 @@ theorem isSheaf_etaleLocallyConstantPresheaf (M : Type u) :
       exact isSheaf_fpqcTopology_continuousMapPresheaf M)
   -- For the discrete topology on `M`, locally constant functions are continuous maps.
   refine (Presheaf.isSheaf_of_iso_iff (NatIso.ofComponents (fun U ↦ Equiv.toIso
-    (show LocallyConstant U.unop.left M ≃ C(U.unop.left, M) from
-      { toFun g := g.toContinuousMap
-        invFun f := ⟨f, (IsLocallyConstant.iff_continuous f).2 f.continuous⟩
-        left_inv _ := rfl
-        right_inv _ := rfl })) fun _ ↦ rfl)).2 h
+    (LocallyConstant.equivContinuousMap U.unop.left M)) fun _ ↦ rfl)).2 h
 
 /-- The étale sheaf of locally constant functions with values in `M`, `U ↦ LocallyConstant U M`,
 as a functor of `M`. It is the constant étale sheaf, by
@@ -120,14 +117,14 @@ def constToEtaleLocallyConstantPresheaf :
   app M := { app U := TypeCat.ofHom fun m ↦ LocallyConstant.const _ m }
 
 variable {S} in
-/-- An étale `S`-scheme with empty underlying space is covered by the empty sieve. -/
-theorem bot_mem_smallEtaleTopology (U : S.Etale) [IsEmpty U.left] :
-    ⊥ ∈ smallEtaleTopology S U := by
-  refine (smallEtaleTopology S).superset_covering ?_
-    ((ofArrows_mem_smallEtaleTopology_iff (Z := (PEmpty.elim : PEmpty.{1} → S.Etale))
-      (fun i ↦ i.elim)).2 (Set.eq_univ_of_forall isEmptyElim))
-  rw [Sieve.ofArrows, Sieve.generate_le_iff, Presieve.ofArrows_le_iff]
-  exact fun i ↦ i.elim
+/-- On the small site of `S` defined by a morphism property `P`, for example the small étale
+site, an object with empty underlying space is covered by the empty sieve. -/
+theorem bot_mem_smallGrothendieckTopology {P : MorphismProperty Scheme.{u}}
+    [P.IsStableUnderBaseChange] [P.IsMultiplicative] (U : P.Over ⊤ S) [IsEmpty U.left] :
+    ⊥ ∈ S.smallGrothendieckTopology P U := by
+  rw [Functor.mem_restrictedTopology_iff, GrothendieckTopology.mem_over_iff,
+    Sieve.functorPushforward_bot, map_bot]
+  exact bot_mem_grothendieckTopology (P := P) U.left
 
 /-- Constant sections that agree are locally equal: two different constants agree only over an
 empty étale `S`-scheme, which is covered by the empty sieve. -/
@@ -138,7 +135,11 @@ instance (M : Type u) : Presheaf.IsLocallyInjective (smallEtaleTopology S)
     · subst hm
       simp
     · have : IsEmpty U.unop.left := ⟨fun x ↦ hm ?_⟩
-      · exact (smallEtaleTopology S).superset_covering bot_le (bot_mem_smallEtaleTopology _)
+      · exact (smallEtaleTopology S).superset_covering bot_le
+          (bot_mem_smallGrothendieckTopology _)
+      -- By definition, the sections of `(etaleLocallyConstantPresheaf S).obj M` over `U` are
+      -- `LocallyConstant U.unop.left M`, and the component of `constToEtaleLocallyConstantPresheaf`
+      -- at `U` is `TypeCat.ofHom` of `LocallyConstant.const`, so `h` is this equation.
       have h' : LocallyConstant.const U.unop.left m = LocallyConstant.const U.unop.left m' := h
       simpa using congr($h' x)
 
@@ -147,6 +148,8 @@ each of its fibres, and these are open subschemes covering the source. -/
 instance (M : Type u) : Presheaf.IsLocallySurjective (smallEtaleTopology S)
     ((constToEtaleLocallyConstantPresheaf S).app M) where
   imageSieve_mem {U} s' := by
+    -- By definition, the sections of `(etaleLocallyConstantPresheaf S).obj M` over `U` are
+    -- `LocallyConstant U.left M`.
     let s : LocallyConstant U.left M := s'
     -- The fibre of `s` over `m`, an open subscheme of `U`, hence étale over `S`.
     let V (m : M) : U.left.Opens := ⟨s ⁻¹' {m}, s.isLocallyConstant.isOpen_fiber m⟩
@@ -154,6 +157,8 @@ instance (M : Type u) : Presheaf.IsLocallySurjective (smallEtaleTopology S)
     refine (smallEtaleTopology S).superset_covering ?_
       ((ofArrows_mem_smallEtaleTopology_iff f).2 ?_)
     · rw [Sieve.ofArrows, Sieve.generate_le_iff, Presieve.ofArrows_le_iff]
+      -- Restriction along `f m` is `LocallyConstant.comap` of the inclusion of the fibre `V m`, on
+      -- which `s` is the constant `m`.
       exact fun m ↦ ⟨m, LocallyConstant.ext fun x ↦ x.2.symm⟩
     · exact Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.2 ⟨s x, ⟨x, rfl⟩, rfl⟩
 
@@ -232,11 +237,41 @@ noncomputable def constantSheafSectionsEquiv (M : Type u) (U : S.Etale) :
   (((sheafToPresheaf _ _).mapIso ((constantSheafIsoEtaleLocallyConstantSheaf S).app M)).app
     (op U)).toEquiv
 
+/-- The sections equivalence is the component at `U` of the comparison map. -/
+theorem constantSheafSectionsEquiv_apply (M : Type u) (U : S.Etale)
+    (x : ((constantSheaf (smallEtaleTopology S) (Type u)).obj M).obj.obj (op U)) :
+    constantSheafSectionsEquiv S M U x =
+      (constantSheafToEtaleLocallyConstantSheaf S M).hom.app (op U) x :=
+  (rfl)
+
 /-- The class of `m` in the constant étale sheaf corresponds to the constant function `m`. -/
+@[simp]
 theorem constantSheafSectionsEquiv_toSheafify_app (M : Type u) (U : S.Etale) (m : M) :
-    constantSheafSectionsEquiv S M U
-      ((toSheafify (smallEtaleTopology S) ((Functor.const _).obj M)).app (op U) m) =
+    -- The source is written as `M` rather than `((Functor.const _).obj M).obj (op U)`, the form
+    -- `simp` reaches through `Functor.const_obj_obj`.
+    constantSheafSectionsEquiv S M U (ConcreteCategory.hom (X := M)
+      ((toSheafify (smallEtaleTopology S) ((Functor.const _).obj M)).app (op U)) m) =
       LocallyConstant.const _ m :=
   congr($(toSheafify_comp_constantSheafToEtaleLocallyConstantSheaf_hom S M).app (op U) m)
+
+/-- Restricting a section of the constant étale sheaf along `f : V ⟶ U` corresponds to composing
+the locally constant function with `f`. -/
+@[simp]
+theorem constantSheafSectionsEquiv_map (M : Type u) {U V : S.Etale} (f : V ⟶ U)
+    (x : ((constantSheaf (smallEtaleTopology S) (Type u)).obj M).obj.obj (op U)) :
+    constantSheafSectionsEquiv S M V
+      (((constantSheaf (smallEtaleTopology S) (Type u)).obj M).obj.map f.op x) =
+      (constantSheafSectionsEquiv S M U x).comap f.left.base.hom :=
+  congr($(((constantSheafToEtaleLocallyConstantSheaf S M).hom.naturality f.op)) x)
+
+/-- The map of constant étale sheaves induced by `φ : M ⟶ M'` corresponds to composing locally
+constant functions with `φ`. -/
+@[simp]
+theorem constantSheafSectionsEquiv_naturality {M M' : Type u} (φ : M ⟶ M') (U : S.Etale)
+    (x : ((constantSheaf (smallEtaleTopology S) (Type u)).obj M).obj.obj (op U)) :
+    constantSheafSectionsEquiv S M' U
+      (((constantSheaf (smallEtaleTopology S) (Type u)).map φ).hom.app (op U) x) =
+      (constantSheafSectionsEquiv S M U x).map φ :=
+  congr($(constantSheafToEtaleLocallyConstantSheaf_naturality S φ).hom.app (op U) x)
 
 end AlgebraicGeometry.Scheme
