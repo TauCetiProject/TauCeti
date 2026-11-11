@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Calculus.Morse.FlowExistence
 import TauCeti.Analysis.Calculus.Morse.GlobalChart
 import TauCeti.Analysis.Calculus.Morse.Transversality
 import TauCeti.Analysis.Calculus.TangentCone.Chart
-import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Analysis.ODE.EnergyEstimate.HalfLine
 import TauCeti.Dynamics.Flow.TangentCone
 
@@ -94,6 +93,14 @@ private theorem hasDerivAt_fderiv_negativeGradientFlow_apply (hf : LipschitzWith
     (hasDerivAt_fderiv_negativeGradientFlow f hf hfs y s)
   simpa [fderiv_gradient, Function.comp_def] using h
 
+/-- The coefficient `s ↦ Hess f(φ s y)` of the linearized equation is continuous. -/
+private theorem continuous_hessianOperator_negativeGradientFlow (hf : LipschitzWith K (∇ f))
+    (hfs : ContDiff ℝ 2 f) (y : E) :
+    Continuous fun s ↦ hessianOperator f (negativeGradientFlow f hf s y) :=
+  (hfs.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp
+    ((contDiff_negativeGradientFlow f hf hfs).continuous.comp
+      (continuous_id.prodMk continuous_const))
+
 /-- The initial values `v` for which `s ↦ Dφ_s(y) v` lies in `L²(μ)`. -/
 private def memLpSolutions (hf : LipschitzWith K (∇ f)) (y : E) (μ : Measure ℝ) :
     Submodule ℝ E where
@@ -153,7 +160,7 @@ theorem mem_span_tangentConeAt_stableSet_iff_memLp (hq : IsNondegenerateCritical
     v ∈ Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) ↔
       MemLp (fun s ↦ fderiv ℝ (negativeGradientFlow f hf s) y v) 2 (volume.restrict (Ici 0)) := by
   set φ := negativeGradientFlow f hf with hφ
-  set B := hessianOperator f q with hB
+  set B := hessianOperator f q
   have hBsym := hq.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
   obtain ⟨α, hα, hBα⟩ := hq.exists_pos_mul_norm_le_hessianOperator
   have hA : Tendsto (fun s ↦ hessianOperator f (φ s y)) atTop (𝓝 B) :=
@@ -162,7 +169,7 @@ theorem mem_span_tangentConeAt_stableSet_iff_memLp (hq : IsNondegenerateCritical
   have hw (v : E) := hasDerivAt_fderiv_negativeGradientFlow_apply hf hfs y v
   have hd (t : ℝ) (z : E) : DifferentiableAt ℝ (φ t) z :=
     differentiable_negativeGradientFlow_apply f hf hfs t z
-  obtain ⟨c, hc, hceig⟩ := hBsym.exists_pos_forall_le_abs_eigenvalues rfl
+  obtain ⟨c, hc, hcs, hcu⟩ := hq.contDiffAt.exists_pos_mul_norm_sq_le_inner_hessianOperator
   -- Tangent vectors give solutions that are square integrable on `[0, ∞)`.
   have hle : Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet φ q) y) ≤
       memLpSolutions hf y (volume.restrict (Ici 0)) := by
@@ -170,12 +177,7 @@ theorem mem_span_tangentConeAt_stableSet_iff_memLp (hq : IsNondegenerateCritical
     obtain ⟨e, hqe, hed, heC, heCs, heS⟩ :=
       hq.exists_stableSet_chart_hasFDerivAt_id (n := 1) hfs hf
     have hcone := (isSliceChart_iff.2 heS).eventually_forall_mem_span_tangentConeAt_inner_nonneg
-      (Submodule.closed_of_finiteDimensional _) (B := B) hqe hed heC heCs hc fun u hu ↦ by
-        have := hBsym.mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace rfl
-          (fun i hi ↦ by simpa [abs_of_pos hi] using hceig i hi.ne')
-          ((hBsym.mem_positiveSpectralSubspace_iff rfl).2
-            (hq.contDiffAt.mem_stableLinearSubspace_iff.1 hu))
-        simpa only [ContinuousLinearMap.coe_coe, RCLike.re_to_real, ← hB] using this
+      (Submodule.closed_of_finiteDimensional _) (B := B) hqe hed heC heCs hc hcs
     refine memLp_restrict_Ici_of_eventually_inner_nonneg hA hBsym hα hBα (hw v) ?_ 0
     filter_upwards [(Flow.mem_stableSet.1 hy).eventually hcone] with s hs
     rw [real_inner_comm]
@@ -187,12 +189,7 @@ theorem mem_span_tangentConeAt_stableSet_iff_memLp (hq : IsNondegenerateCritical
       Module.finrank ℝ E := by
     obtain ⟨T, hT⟩ := (eventually_not_memLp_restrict_Ici_of_inner_neg hA hBsym hα hBα 0).exists
     rw [← hq.contDiffAt.finrank_unstableLinearSubspace]
-    refine finrank_memLpSolutions_add_finrank_le hf hfs y hc (fun u hu ↦ ?_) hT
-    have := hBsym.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace rfl
-      (fun i hi ↦ by simpa [abs_of_neg hi] using hceig i hi.ne)
-      ((hBsym.mem_negativeSpectralSubspace_iff rfl).2
-        (hq.contDiffAt.mem_unstableLinearSubspace_iff.1 hu))
-    simpa only [ContinuousLinearMap.coe_coe, RCLike.re_to_real, ← hB] using this
+    exact finrank_memLpSolutions_add_finrank_le hf hfs y hc hcu hT
   have heq := Submodule.eq_of_le_of_finrank_le hle (by
     have := hq.finrank_span_tangentConeAt_stableSet_add_morseIndex hfs hf hy
     rw [← hφ] at this
@@ -210,7 +207,7 @@ theorem mem_span_tangentConeAt_unstableSet_iff_memLp (hp : IsNondegenerateCritic
     v ∈ Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ↔
       MemLp (fun s ↦ fderiv ℝ (negativeGradientFlow f hf s) y v) 2 (volume.restrict (Iic 0)) := by
   set φ := negativeGradientFlow f hf with hφ
-  set B := hessianOperator f p with hB
+  set B := hessianOperator f p
   have hBsym := hp.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
   obtain ⟨α, hα, hBα⟩ := hp.exists_pos_mul_norm_le_hessianOperator
   have hA : Tendsto (fun s ↦ hessianOperator f (φ s y)) atBot (𝓝 B) :=
@@ -219,7 +216,7 @@ theorem mem_span_tangentConeAt_unstableSet_iff_memLp (hp : IsNondegenerateCritic
   have hw (v : E) := hasDerivAt_fderiv_negativeGradientFlow_apply hf hfs y v
   have hd (t : ℝ) (z : E) : DifferentiableAt ℝ (φ t) z :=
     differentiable_negativeGradientFlow_apply f hf hfs t z
-  obtain ⟨c, hc, hceig⟩ := hBsym.exists_pos_forall_le_abs_eigenvalues rfl
+  obtain ⟨c, hc, hcs, hcu⟩ := hp.contDiffAt.exists_pos_mul_norm_sq_le_inner_hessianOperator
   -- Tangent vectors give solutions that are square integrable on `(-∞, 0]`.
   have hle : Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet φ p) y) ≤
       memLpSolutions hf y (volume.restrict (Iic 0)) := by
@@ -228,13 +225,8 @@ theorem mem_span_tangentConeAt_unstableSet_iff_memLp (hp : IsNondegenerateCritic
       hp.exists_unstableSet_chart_hasFDerivAt_id (n := 1) hfs hf
     have hcone := (isSliceChart_iff.2 heS).eventually_forall_mem_span_tangentConeAt_inner_nonneg
       (Submodule.closed_of_finiteDimensional _) (B := -B) hpe hed heC heCs hc fun u hu ↦ by
-        have := hBsym.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace rfl
-          (fun i hi ↦ by simpa [abs_of_neg hi] using hceig i hi.ne)
-          ((hBsym.mem_negativeSpectralSubspace_iff rfl).2
-            (hp.contDiffAt.mem_unstableLinearSubspace_iff.1 hu))
-        simp only [ContinuousLinearMap.coe_coe, RCLike.re_to_real, ← hB] at this
-        simp only [neg_apply, inner_neg_left]
-        linarith
+        rw [neg_apply, inner_neg_left]
+        linarith [hcu u hu]
     refine memLp_restrict_Iic_of_eventually_inner_nonpos hA hBsym hα hBα (hw v) ?_ 0
     filter_upwards [(Flow.mem_unstableSet.1 hy).eventually hcone] with s hs
     have h := hs (Flow.isInvariant_unstableSet φ p s hy) (fderiv ℝ (φ s) y v) (by
@@ -249,13 +241,8 @@ theorem mem_span_tangentConeAt_unstableSet_iff_memLp (hp : IsNondegenerateCritic
     -- Backward time is the forward-time argument for `-B`.
     refine finrank_memLpSolutions_add_finrank_le hf hfs y (B := -B) hc (fun u hu ↦ ?_)
       fun w hw' hneg ↦ hT w hw' (by simpa [inner_neg_right] using hneg)
-    have := hBsym.mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace rfl
-      (fun i hi ↦ by simpa [abs_of_pos hi] using hceig i hi.ne')
-      ((hBsym.mem_positiveSpectralSubspace_iff rfl).2
-        (hp.contDiffAt.mem_stableLinearSubspace_iff.1 hu))
-    simp only [ContinuousLinearMap.coe_coe, RCLike.re_to_real, ← hB] at this
-    simp only [neg_apply, inner_neg_left]
-    linarith
+    rw [neg_apply, inner_neg_left]
+    linarith [hcs u hu]
   have heq := Submodule.eq_of_le_of_finrank_le hle (by
     have := hp.finrank_span_tangentConeAt_unstableSet hfs hf hy
     rw [← hφ] at this
@@ -280,10 +267,7 @@ theorem squareIntegrableSolutions_hessianOperator_negativeGradientFlow
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
         Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
   set φ := negativeGradientFlow f hf
-  have hAc : Continuous fun s ↦ hessianOperator f (φ s y) :=
-    (hfs.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp
-      ((contDiff_negativeGradientFlow f hf hfs).continuous.comp
-        (continuous_id.prodMk continuous_const))
+  have hAc := continuous_hessianOperator_negativeGradientFlow hf hfs y
   have hw (v : E) := hasDerivAt_fderiv_negativeGradientFlow_apply hf hfs y v
   have hw0 (v : E) : fderiv ℝ (φ 0) y v = v := by simp [φ, Flow.map_zero]
   have hwc (v : E) : Continuous fun s ↦ fderiv ℝ (φ s) y v :=
@@ -323,11 +307,8 @@ theorem finrank_ker_trajectoryOperator_hessianOperator_negativeGradientFlow
         (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
           Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) :
             Submodule ℝ E) := by
-  have hAc : Continuous fun s ↦ hessianOperator f (negativeGradientFlow f hf s y) :=
-    (hfs.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp
-      ((contDiff_negativeGradientFlow f hf hfs).continuous.comp
-        (continuous_id.prodMk continuous_const))
-  rw [WeakDerivStep.finrank_ker_trajectoryOperator hAc AL hAL,
+  rw [WeakDerivStep.finrank_ker_trajectoryOperator
+      (continuous_hessianOperator_negativeGradientFlow hf hfs y) AL hAL,
     squareIntegrableSolutions_hessianOperator_negativeGradientFlow hp hq hfs hf hyu hys]
 
 open WeakDerivStep in
@@ -364,9 +345,7 @@ theorem surjective_trajectoryOperator_hessianOperator_negativeGradientFlow_iff
     exact hfs.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric.clm_adjoint_eq.symm
   -- The kernel of the formal adjoint is finite dimensional: it is a space of solutions of a linear
   -- equation on `E`.
-  have hA : Continuous fun s ↦ -hessianOperator f (negativeGradientFlow f hf s y) :=
-    ((hfs.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp
-      hγ.continuous).neg
+  have hA := (continuous_hessianOperator_negativeGradientFlow hf hfs y).neg
   have := (kerTrajectoryOperatorEquiv hA (-AL) (by
     filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs
     simp only [hs, Pi.neg_apply, hAs])).symm.finiteDimensional

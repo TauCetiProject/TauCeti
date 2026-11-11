@@ -177,37 +177,13 @@ namespace IsSliceChart
 
 open scoped RealInnerProductSpace
 
-/-- **Tangent spaces near a point of tangency stay in a coercive cone.** Near a point `x` at which
-a `C¹` chart `e` flattening `S` onto a closed subspace `L` is tangent to the identity, the tangent
-spaces of `S` lie in the cone `⟪B v, v⟫ ≥ 0`, as soon as the form `⟪B u, u⟫` is coercive on `L`. -/
-theorem eventually_forall_mem_span_tangentConeAt_inner_nonneg {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] {e : OpenPartialHomeomorph H H} {L : Submodule ℝ H} {S : Set H}
-    (hS : IsSliceChart e (L : Set H) S) (hLc : IsClosed (L : Set H)) {B : H →L[ℝ] H} {x : H}
-    (hxe : x ∈ e.source) (hed : HasFDerivAt e (ContinuousLinearMap.id ℝ H) x)
-    (heC : ∀ z ∈ e.source, ContDiffAt ℝ 1 e z) (heCs : ∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z)
-    {c : ℝ} (hc : 0 < c) (hL : ∀ u ∈ L, c * ‖u‖ ^ 2 ≤ ⟪B u, u⟫) :
-    ∀ᶠ z in 𝓝 x, z ∈ S → ∀ v ∈ Submodule.span ℝ (tangentConeAt ℝ S z), 0 ≤ ⟪B v, v⟫ := by
-  set δ : ℝ := min (1 / 2) (c / (12 * (‖B‖ + 1))) with hδ
-  have hδpos : 0 < δ := lt_min (by norm_num) (by positivity)
-  have hfd : Tendsto (fun z ↦ fderiv ℝ e z) (𝓝 x) (𝓝 (ContinuousLinearMap.id ℝ H)) := by
-    have h := (heC x hxe).continuousAt_fderiv one_ne_zero
-    rwa [ContinuousAt, hed.fderiv] at h
-  filter_upwards [e.open_source.mem_nhds hxe, hfd.eventually (Metric.ball_mem_nhds _ hδpos)]
-    with z hz hzd hzS v hv
-  obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hz ((heC z hz).differentiableAt one_ne_zero)
-    ((heCs _ (e.map_source hz)).differentiableAt one_ne_zero)
-  rw [hS.span_tangentConeAt_eq_comap hLc hz hzS hA] at hv
-  -- The vector `u = A v` lies in `L` and is `δ`-close to `v`.
-  set u := A v with hudef
-  have hu := hL u hv
-  have huv : ‖u - v‖ ≤ δ * ‖v‖ := by
-    have h : u - v = (fderiv ℝ e z - ContinuousLinearMap.id ℝ H) v := by
-      rw [hA.fderiv, hudef, sub_apply, ContinuousLinearMap.id_apply,
-        ContinuousLinearEquiv.coe_coe]
-    rw [h]
-    refine ((fderiv ℝ e z - _).le_opNorm v).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg v))
-    simpa [dist_eq_norm] using hzd.le
-  -- Compare the forms at `u` and at `v`.
+/-- The form `⟪B v, v⟫` stays nonnegative under a small relative perturbation of a vector `u` on
+which it is coercive: if `c ‖u‖ ^ 2 ≤ ⟪B u, u⟫` and `‖u - v‖ ≤ δ ‖v‖` with `δ ≤ 1 / 2` and
+`‖B‖ δ ≤ c / 12`, then `0 ≤ ⟪B v, v⟫`. -/
+private theorem inner_nonneg_of_norm_sub_le {H : Type*} [NormedAddCommGroup H]
+    [InnerProductSpace ℝ H] {B : H →L[ℝ] H} {c δ : ℝ} (hc : 0 ≤ c) (hδ : 0 ≤ δ)
+    (hδ₁ : δ ≤ 1 / 2) (hδ₂ : ‖B‖ * δ ≤ c / 12) {u v : H} (hu : c * ‖u‖ ^ 2 ≤ ⟪B u, u⟫)
+    (huv : ‖u - v‖ ≤ δ * ‖v‖) : 0 ≤ ⟪B v, v⟫ := by
   have hexp : ⟪B v, v⟫ = ⟪B u, u⟫ - ⟪B (u - v), u⟫ - ⟪B v, u - v⟫ := by
     simp only [map_sub, inner_sub_left, inner_sub_right]
     ring
@@ -215,11 +191,6 @@ theorem eventually_forall_mem_span_tangentConeAt_inner_nonneg {H : Type*} [Norme
     (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right (B.le_opNorm _) (norm_nonneg _))
   have h₂ : ⟪B v, u - v⟫ ≤ ‖B‖ * ‖v‖ * ‖u - v‖ :=
     (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right (B.le_opNorm _) (norm_nonneg _))
-  have hδ₁ : δ ≤ 1 / 2 := min_le_left _ _
-  have hδ₂ : ‖B‖ * δ ≤ c / 12 := by
-    have h : δ ≤ c / (12 * (‖B‖ + 1)) := min_le_right _ _
-    rw [le_div_iff₀ (by positivity)] at h
-    nlinarith [norm_nonneg B]
   have hun : ‖v‖ / 2 ≤ ‖u‖ := by
     have := norm_sub_norm_le v u
     rw [norm_sub_rev] at this
@@ -233,9 +204,41 @@ theorem eventually_forall_mem_span_tangentConeAt_inner_nonneg {H : Type*} [Norme
   have h₄ : ‖B‖ * ‖v‖ * ‖u - v‖ ≤ ‖B‖ * ‖v‖ * (δ * ‖v‖) :=
     mul_le_mul_of_nonneg_left huv (by positivity)
   have h₅ : c * (‖v‖ / 2) ^ 2 ≤ c * ‖u‖ ^ 2 :=
-    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hun 2) hc.le
+    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hun 2) hc
   have h₆ := mul_le_mul_of_nonneg_right hδ₂ (sq_nonneg ‖v‖)
   nlinarith
+
+/-- **Tangent spaces near a point of tangency stay in a coercive cone.** Near a point `x` at which
+a `C¹` chart `e` flattening `S` onto a closed subspace `L` is tangent to the identity, the tangent
+spaces of `S` lie in the cone `⟪B v, v⟫ ≥ 0`, as soon as the form `⟪B u, u⟫` is coercive on `L`. -/
+theorem eventually_forall_mem_span_tangentConeAt_inner_nonneg {H : Type*} [NormedAddCommGroup H]
+    [InnerProductSpace ℝ H] {e : OpenPartialHomeomorph H H} {L : Submodule ℝ H} {S : Set H}
+    (hS : IsSliceChart e (L : Set H) S) (hLc : IsClosed (L : Set H)) {B : H →L[ℝ] H} {x : H}
+    (hxe : x ∈ e.source) (hed : HasFDerivAt e (ContinuousLinearMap.id ℝ H) x)
+    (heC : ∀ z ∈ e.source, ContDiffAt ℝ 1 e z) (heCs : ∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z)
+    {c : ℝ} (hc : 0 < c) (hL : ∀ u ∈ L, c * ‖u‖ ^ 2 ≤ ⟪B u, u⟫) :
+    ∀ᶠ z in 𝓝 x, z ∈ S → ∀ v ∈ Submodule.span ℝ (tangentConeAt ℝ S z), 0 ≤ ⟪B v, v⟫ := by
+  set δ : ℝ := min (1 / 2) (c / (12 * (‖B‖ + 1))) with hδ
+  have hδpos : 0 < δ := lt_min (by norm_num) (by positivity)
+  have hδ₂ : ‖B‖ * δ ≤ c / 12 := by
+    have h : δ ≤ c / (12 * (‖B‖ + 1)) := min_le_right _ _
+    rw [le_div_iff₀ (by positivity)] at h
+    nlinarith [norm_nonneg B]
+  have hfd : Tendsto (fun z ↦ fderiv ℝ e z) (𝓝 x) (𝓝 (ContinuousLinearMap.id ℝ H)) := by
+    have h := (heC x hxe).continuousAt_fderiv one_ne_zero
+    rwa [ContinuousAt, hed.fderiv] at h
+  filter_upwards [e.open_source.mem_nhds hxe, hfd.eventually (Metric.ball_mem_nhds _ hδpos)]
+    with z hz hzd hzS v hv
+  obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hz ((heC z hz).differentiableAt one_ne_zero)
+    ((heCs _ (e.map_source hz)).differentiableAt one_ne_zero)
+  rw [hS.span_tangentConeAt_eq_comap hLc hz hzS hA] at hv
+  -- The vector `A v` lies in `L` and is `δ`-close to `v`.
+  refine inner_nonneg_of_norm_sub_le (u := A v) hc.le hδpos.le (min_le_left _ _) hδ₂ (hL _ hv) ?_
+  have h : A v - v = (fderiv ℝ e z - ContinuousLinearMap.id ℝ H) v := by
+    rw [hA.fderiv, sub_apply, ContinuousLinearMap.id_apply, ContinuousLinearEquiv.coe_coe]
+  rw [h]
+  refine ((fderiv ℝ e z - _).le_opNorm v).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg v))
+  simpa [dist_eq_norm] using hzd.le
 
 end IsSliceChart
 
