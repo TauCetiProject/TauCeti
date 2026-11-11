@@ -242,8 +242,7 @@ theorem eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn {U : Set ℂ} (hUb : IsBounde
       (add_I_ne_zero_of_im_nonneg (by simp)) h
     exact_mod_cast this
   obtain ⟨hc, hu⟩ := eq_zero_and_eq_one_of_unitDiscStandardAutomorphismFormula_eq_self
-    (hne h₁₂) (hne h₁₃) (hne h₂₃) (one_sub_conj_mul_sub_I_div_add_I_ne_zero c x₁)
-    (one_sub_conj_mul_sub_I_div_add_I_ne_zero c x₂) (one_sub_conj_mul_sub_I_div_add_I_ne_zero c x₃)
+    (hne h₁₂) (hne h₁₃) (hne h₂₃)
     (hfix x₁ hf₁ hg₁) (hfix x₂ hf₂ hg₂) (hfix x₃ hf₃ hg₃)
   intro z hz
   rw [(hf' z hz).2, hg' z hz, hc, hu]

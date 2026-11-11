@@ -257,6 +257,14 @@ theorem swapHorizontal_idOn {s : Finset α} (ha : a ∈ s) (hb : b ∉ s) :
   simp only [hxb, false_and, ne_eq, not_false_eq_true, true_and, false_or]
   tauto
 
+/-- A diagram with a single moving strand has no horizontal strand to move. -/
+theorem swapHorizontal_single {i j : α} (h : i < j) (a b : α) :
+    (single i j h.le).swapHorizontal a b = single i j h.le := by
+  have key (a b : α) : ¬(single i j h.le).CanMoveHorizontal a b := fun hm ↦ by
+    obtain ⟨rfl, rfl⟩ := mem_single.1 hm.mem
+    exact h.ne rfl
+  exact swapHorizontal_of_not (key a b) (key b a)
+
 /-! ### Strands crossing a horizontal strand -/
 
 /-- The number of strands of `φ` that cross a horizontal strand at `c`: the strands starting below
