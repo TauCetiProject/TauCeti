@@ -24,8 +24,12 @@ decay for its second derivatives: outside a compact set,
 
 `‖D² log |α|²‖ ≤ K exp (-c |z|)`.
 
-In the winding end trivialization the connection of a vortex is `(1 / 2) ⋆ dℓ`, so this is the
-decay of the first derivatives of the connection there.
+If moreover the vortex is normalized at its end, that is, its section equals `|α|` times the
+winding phase `(z / |z|)^m` outside a compact set, then there its connection differs from the
+reference connection by `(i / 2) ⋆ dℓ` (`TauCeti.Vortex.sub_referenceField_apply_zero`,
+`TauCeti.Vortex.sub_referenceField_apply_one`), so this bound gives the decay of the first
+derivatives of the connection in the winding end trivialization
+(`TauCeti.Vortex.exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp`).
 
 The argument works with mixed second differences
 `D (w) = ℓ (w + h + k) - ℓ (w + h) - ℓ (w + k) + ℓ (w)` outside a large disc, where `ℓ` solves
