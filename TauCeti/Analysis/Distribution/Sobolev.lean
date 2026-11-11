@@ -46,8 +46,9 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_smul`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_sum`: the element of `H^{s,p}` defined
   by a tempered distribution in `H^{s,p}` depends linearly on it.
-* `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul`: the
-  same for a finite linear combination of `Lᵠ` functions in `H^{s,p}`.
+* `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_smul`,
+  `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul`: the
+  same for a multiple and for a finite linear combination of `Lᵠ` functions in `H^{s,p}`.
 * `TemperedDistribution.sobolevSubmodule`: `H^{s,p}` as a complex submodule of tempered
   distributions.
 * `TemperedDistribution.realSobolevSubmodule`: the real `Lᵖ` functions whose complexification
@@ -198,6 +199,14 @@ theorem MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul {ι : 
   simp only [Lp.toTemperedDistribution_sum, Lp.toTemperedDistribution_smul,
     MemSobolev.toBesselPotentialSpace_sum fun i hi ↦ (hf i hi).smul (a i),
     fun (i : t) ↦ (hf i i.2).toBesselPotentialSpace_smul (a i)]
+
+/-- The element of `H^{s,p}` defined by a complex multiple of an `Lᵠ` function in `H^{s,p}` is the
+same multiple of the element defined by that function. -/
+theorem MemSobolev.toBesselPotentialSpace_toTemperedDistribution_smul {s : ℝ} {p q : ENNReal}
+    [Fact (1 ≤ p)] [Fact (1 ≤ q)] {μ : Measure E} [μ.HasTemperateGrowth] (c : ℂ) {f : Lp F q μ}
+    (hf : MemSobolev s p (f : 𝓢'(E, F))) (h : MemSobolev s p ((c • f : Lp F q μ) : 𝓢'(E, F))) :
+    h.toBesselPotentialSpace = c • hf.toBesselPotentialSpace :=
+  BesselPotentialSpace.ext (by simp [Lp.toTemperedDistribution_smul])
 
 /-- An `Lᵖ` function that agrees almost everywhere with a smooth compactly supported function lies
 in every Bessel-potential space `H^{s,p}`. -/

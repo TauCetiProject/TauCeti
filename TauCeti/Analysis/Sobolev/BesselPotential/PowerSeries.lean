@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
+import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
@@ -33,6 +34,19 @@ condition is a bound on `‖u‖_{H^s}`. This is how analytic functions act on t
 without any composition (Moser) estimate. In particular, for `U ∈ H^s` the function `exp U - 1`
 lies in `H^s`, and for a real `f ∈ H^s` so do `exp (c f) - 1`, `cos f - 1` and `sin f`.
 
+The action is moreover locally Lipschitz. Differences of powers satisfy
+`‖u ^ (n + 1) - w ^ (n + 1)‖_{H^s} ≤ (n + 1) (C R) ^ n ‖u - w‖_{H^s}` for
+`‖u‖_{H^s}, ‖w‖_{H^s} ≤ R`
+(`TemperedDistribution.exists_norm_toBesselPotentialSpace_pow_sub_pow_le`), so the power series
+above satisfies
+
+`‖f(u) - f(w)‖_{H^s} ≤ (∑ₙ |aₙ| (n + 1) (C R) ^ n) ‖u - w‖_{H^s}`
+
+(`TemperedDistribution.exists_norm_toBesselPotentialSpace_sub_le_of_hasSum_mul_pow`). For the
+exponential the factor is `exp (C R)`, and for `log (1 + z)` it is `(1 - C R)⁻¹` when `C R < 1`.
+These estimates make `U ↦ exp U - 1` and `U ↦ log (1 + U)` continuous for the `H^s` norm, which is
+what the charts of a gauge group modelled on `H^s` require.
+
 ## Main declarations
 
 * `TemperedDistribution.exists_hasSum_mul_pow`: a power series without constant term whose
@@ -45,6 +59,12 @@ lies in `H^s`, and for a real `f ∈ H^s` so do `exp (c f) - 1`, `cos f - 1` and
 * `TemperedDistribution.cos_sub_one_mem_realSobolevFunctions`,
   `TemperedDistribution.sin_mem_realSobolevFunctions`: for a real `f ∈ H^s`, the real functions
   `cos f - 1` and `sin f` lie in `H^s`.
+* `TemperedDistribution.exists_norm_toBesselPotentialSpace_sub_le_of_hasSum_mul_pow`: the
+  Lipschitz estimate for power series without constant term.
+* `TemperedDistribution.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp_sub_one`:
+  `‖(exp U - 1) - (exp W - 1)‖_{H^s} ≤ exp (C R) ‖U - W‖_{H^s}`.
+* `TemperedDistribution.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_log_one_add`:
+  `‖log (1 + U) - log (1 + W)‖_{H^s} ≤ (1 - C R)⁻¹ ‖U - W‖_{H^s}` when `C R < 1`.
 
 ## References
 
@@ -206,5 +226,169 @@ theorem sin_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s) {f :
     have h2 := Complex.two_sin (f x : ℂ)
     simp only [neg_mul, mul_comm Complex.I] at h2 ⊢
     linear_combination (-2⁻¹ : ℂ) * h2
+
+/-- **Power series act Lipschitz continuously on `H^s`, `s > n / 2`.** There is a constant `C`,
+depending only on `s` and `E`, with the following property. Let `u, w` be `L²` functions in `H^s`
+with `‖u‖_{H^s}, ‖w‖_{H^s} ≤ R`, and let `aₙ` be complex coefficients with
+`∑ₙ |aₙ| (n + 1) (C R) ^ n < ∞`. If `v` and `v'` are `L²` functions in `H^s` which are almost
+everywhere the sums of `∑ₙ aₙ u ^ (n + 1)` and `∑ₙ aₙ w ^ (n + 1)`, then
+
+`‖v - v'‖_{H^s} ≤ (∑ₙ |aₙ| (n + 1) (C R) ^ n) ‖u - w‖_{H^s}`.
+
+The majorant is the derivative of the majorant series of `exists_hasSum_mul_pow`, which provides
+such `v` and `v'`. -/
+theorem exists_norm_toBesselPotentialSpace_sub_le_of_hasSum_mul_pow {s : ℝ}
+    (hs : finrank ℝ E < 2 * s) :
+    ∃ C, 0 ≤ C ∧ ∀ {u w : Lp ℂ 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, ℂ)))
+      (hw : MemSobolev s 2 (w : 𝓢'(E, ℂ))) {R : ℝ}, ‖hu.toBesselPotentialSpace‖ ≤ R →
+      ‖hw.toBesselPotentialSpace‖ ≤ R → ∀ {a : ℕ → ℂ},
+      Summable (fun n ↦ ‖a n‖ * (n + 1) * (C * R) ^ n) →
+      ∀ {v v' : Lp ℂ 2 (volume : Measure E)} (hv : MemSobolev s 2 (v : 𝓢'(E, ℂ)))
+        (hv' : MemSobolev s 2 (v' : 𝓢'(E, ℂ))),
+        (∀ᵐ x ∂volume, HasSum (fun n ↦ a n * u x ^ (n + 1)) (v x)) →
+        (∀ᵐ x ∂volume, HasSum (fun n ↦ a n * w x ^ (n + 1)) (v' x)) →
+        ‖hv.toBesselPotentialSpace - hv'.toBesselPotentialSpace‖ ≤
+          (∑' n, ‖a n‖ * (n + 1) * (C * R) ^ n) *
+            ‖hu.toBesselPotentialSpace - hw.toBesselPotentialSpace‖ := by
+  have hs0 : 0 ≤ s := by
+    have := (finrank ℝ E).cast_nonneg (α := ℝ)
+    linarith
+  obtain ⟨C, hC, hdiff⟩ := exists_norm_toBesselPotentialSpace_pow_sub_pow_le (E := E) hs
+  refine ⟨C, hC, fun {u w} hu hw {R} huR hwR {a} ha {v v'} hv hv' hvu hvw ↦ ?_⟩
+  set δ := ‖hu.toBesselPotentialSpace - hw.toBesselPotentialSpace‖
+  -- The differences of powers, with their `H^s` elements `D n`.
+  choose d hdu hd hdn using hdiff hu hw huR hwR
+  set D : ℕ → H^{s}(E) := fun n ↦ (hd n).toBesselPotentialSpace
+  have hD (n : ℕ) : ‖a n • D n‖ ≤ δ * (‖a n‖ * (n + 1) * (C * R) ^ n) := by
+    rw [norm_smul]
+    calc ‖a n‖ * ‖D n‖ ≤ ‖a n‖ * ((n + 1) * (C * R) ^ n * δ) := by gcongr; exact hdn n
+      _ = δ * (‖a n‖ * (n + 1) * (C * R) ^ n) := by ring
+  have hsum : Summable fun n ↦ a n • D n := (ha.mul_left δ).of_norm_bounded hD
+  set F := ∑' n, a n • D n
+  -- The limit `F` is the `H^s` element of an `L²` function `g`.
+  obtain ⟨g, hFg⟩ := memSobolev_zero_iff.1 (F.memSobolev_toDistr.mono hs0)
+  have hg : MemSobolev s 2 (g : 𝓢'(E, ℂ)) := hFg ▸ F.memSobolev_toDistr
+  have hgF : hg.toBesselPotentialSpace = F := BesselPotentialSpace.ext (by simp [hFg])
+  -- The partial sums converge to `F` in `H^s`, hence almost everywhere, to `v - v'`.
+  set S : ℕ → Lp ℂ 2 (volume : Measure E) := fun N ↦ ∑ n ∈ Finset.range N, a n • d n
+  have hS (N : ℕ) : MemSobolev s 2 (S N : 𝓢'(E, ℂ)) := by
+    simpa only [S, Lp.toTemperedDistribution_sum, Lp.toTemperedDistribution_smul] using
+      MemSobolev.sum fun n (_ : n ∈ Finset.range N) ↦ (hd n).smul (a n)
+  have hlim := ae_tendsto_of_tendsto_toBesselPotentialSpace hs hS hg <| by
+    simpa only [MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul
+      fun n _ ↦ hd n, Finset.sum_attach _ fun n ↦ a n • (hd n).toBesselPotentialSpace, hgF] using
+      hsum.hasSum.tendsto_sum_nat
+  have hpart : ∀ᵐ x ∂volume, ∀ N,
+      S N x = ∑ n ∈ Finset.range N, (a n * u x ^ (n + 1) - a n * w x ^ (n + 1)) :=
+    ae_all_iff.2 fun N ↦ by
+      filter_upwards [(Lp.coeFn_finsetSum _ _).trans <| eventuallyEq_sum fun n _ ↦
+        (Lp.coeFn_smul (a n) (d n)).trans ((hdu n).const_smul (a n))] with x h
+      simpa [S, mul_sub] using h
+  have hgv : g = v - v' := by
+    refine Lp.ext ?_
+    filter_upwards [hlim, hpart, hvu, hvw, Lp.coeFn_sub v v'] with x hx hSx h₁ h₂ hsub
+    rw [hsub, Pi.sub_apply]
+    refine tendsto_nhds_unique hx ?_
+    simpa only [hSx] using (h₁.sub h₂).tendsto_sum_nat
+  subst hgv
+  have hvF : hv.toBesselPotentialSpace - hv'.toBesselPotentialSpace = F := by
+    rw [← hgF]
+    exact BesselPotentialSpace.ext (by simp [Lp.toTemperedDistribution_sub])
+  rw [hvF, ← tsum_mul_right]
+  refine tsum_of_norm_bounded ((ha.mul_right δ).hasSum) fun n ↦ (hD n).trans_eq (mul_comm _ _)
+
+/-- **The exponential is locally Lipschitz on `H^s`, `s > n / 2`.** There is a constant `C`,
+depending only on `s` and `E`, such that for `L²` functions `U, W ∈ H^s` with
+`‖U‖_{H^s}, ‖W‖_{H^s} ≤ R`, the `H^s` functions `exp U - 1` and `exp W - 1`
+(`exists_memSobolev_ae_eq_exp_sub_one`) satisfy
+`‖(exp U - 1) - (exp W - 1)‖_{H^s} ≤ exp (C R) ‖U - W‖_{H^s}`. -/
+theorem exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp_sub_one {s : ℝ}
+    (hs : finrank ℝ E < 2 * s) :
+    ∃ C, 0 ≤ C ∧ ∀ {U W : Lp ℂ 2 (volume : Measure E)} (hU : MemSobolev s 2 (U : 𝓢'(E, ℂ)))
+      (hW : MemSobolev s 2 (W : 𝓢'(E, ℂ))) {R : ℝ}, ‖hU.toBesselPotentialSpace‖ ≤ R →
+      ‖hW.toBesselPotentialSpace‖ ≤ R →
+      ∀ {v v' : Lp ℂ 2 (volume : Measure E)} (hv : MemSobolev s 2 (v : 𝓢'(E, ℂ)))
+        (hv' : MemSobolev s 2 (v' : 𝓢'(E, ℂ))),
+        v =ᵐ[volume] (fun x ↦ Complex.exp (U x) - 1) →
+        v' =ᵐ[volume] (fun x ↦ Complex.exp (W x) - 1) →
+        ‖hv.toBesselPotentialSpace - hv'.toBesselPotentialSpace‖ ≤
+          Real.exp (C * R) * ‖hU.toBesselPotentialSpace - hW.toBesselPotentialSpace‖ := by
+  obtain ⟨C, hC, hlip⟩ := exists_norm_toBesselPotentialSpace_sub_le_of_hasSum_mul_pow hs
+  refine ⟨C, hC, fun {U W} hU hW {R} hUR hWR {v v'} hv hv' hvU hvW ↦ ?_⟩
+  -- The exponential series `∑ₙ z ^ (n + 1) / (n + 1)!`, whose majorant is `∑ₙ x ^ n / n!`.
+  have ha (n : ℕ) : ‖(((n + 1)! : ℂ))⁻¹‖ * (n + 1) * (C * R) ^ n = (C * R) ^ n / n ! := by
+    rw [norm_inv, Complex.norm_natCast, Nat.factorial_succ]
+    push_cast
+    field_simp
+  have hser (z : ℂ) : HasSum (fun n ↦ (((n + 1)! : ℂ))⁻¹ * z ^ (n + 1)) (Complex.exp z - 1) := by
+    have h := (hasSum_nat_add_iff' 1).2 (NormedSpace.expSeries_div_hasSum_exp z)
+    simp only [Finset.range_one, Finset.sum_singleton, pow_zero, Nat.factorial_zero, Nat.cast_one,
+      div_one, ← Complex.exp_eq_exp_ℂ] at h
+    simpa only [div_eq_inv_mul] using h
+  have h := hlip hU hW hUR hWR (a := fun n ↦ (((n + 1)! : ℂ))⁻¹)
+    (by simpa only [ha] using Real.summable_pow_div_factorial (C * R)) hv hv'
+    (by filter_upwards [hvU] with x hx; rw [hx]; exact hser _)
+    (by filter_upwards [hvW] with x hx; rw [hx]; exact hser _)
+  have hexp : Real.exp (C * R) = ∑' n, (C * R) ^ n / n ! := by
+    rw [Real.exp_eq_exp_ℝ, NormedSpace.exp_eq_tsum_div]
+  rwa [tsum_congr ha, ← hexp] at h
+
+/-- **The logarithm is Lipschitz near `1` on `H^s`, `s > n / 2`.** There is a constant `C`,
+depending only on `s` and `E`, such that for `L²` functions `U, W ∈ H^s` with
+`‖U‖_{H^s}, ‖W‖_{H^s} ≤ R` and `C R < 1`, any `L²` functions in `H^s` agreeing almost everywhere
+with `log (1 + U)` and `log (1 + W)` satisfy
+`‖log (1 + U) - log (1 + W)‖_{H^s} ≤ (1 - C R)⁻¹ ‖U - W‖_{H^s}`. The condition `C R < 1` makes
+`|U|, |W| < 1` almost everywhere, by the Sobolev embedding, so that the logarithm series
+converges; such functions exist by `exists_hasSum_mul_pow`. -/
+theorem exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_log_one_add {s : ℝ}
+    (hs : finrank ℝ E < 2 * s) :
+    ∃ C, 0 ≤ C ∧ ∀ {U W : Lp ℂ 2 (volume : Measure E)} (hU : MemSobolev s 2 (U : 𝓢'(E, ℂ)))
+      (hW : MemSobolev s 2 (W : 𝓢'(E, ℂ))) {R : ℝ}, ‖hU.toBesselPotentialSpace‖ ≤ R →
+      ‖hW.toBesselPotentialSpace‖ ≤ R → C * R < 1 →
+      ∀ {v v' : Lp ℂ 2 (volume : Measure E)} (hv : MemSobolev s 2 (v : 𝓢'(E, ℂ)))
+        (hv' : MemSobolev s 2 (v' : 𝓢'(E, ℂ))),
+        v =ᵐ[volume] (fun x ↦ Complex.log (1 + U x)) →
+        v' =ᵐ[volume] (fun x ↦ Complex.log (1 + W x)) →
+        ‖hv.toBesselPotentialSpace - hv'.toBesselPotentialSpace‖ ≤
+          (1 - C * R)⁻¹ * ‖hU.toBesselPotentialSpace - hW.toBesselPotentialSpace‖ := by
+  obtain ⟨C₁, hC₁, hlip⟩ := exists_norm_toBesselPotentialSpace_sub_le_of_hasSum_mul_pow hs
+  obtain ⟨C₂, hC₂, hsup⟩ :=
+    exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace (E := E) (F := ℂ) hs
+  refine ⟨max C₁ C₂, le_max_of_le_left hC₁, fun {U W} hU hW {R} hUR hWR hCR {v v'} hv hv' hvU
+    hvW ↦ ?_⟩
+  set C := max C₁ C₂
+  have hR : 0 ≤ R := (norm_nonneg _).trans hUR
+  have hC₁R : 0 ≤ C₁ * R := by positivity
+  have hC₁R' : C₁ * R < 1 := (mul_le_mul_of_nonneg_right (le_max_left _ _) hR).trans_lt hCR
+  -- The logarithm series `∑ₙ (-1)ⁿ z ^ (n + 1) / (n + 1)`, whose majorant is geometric.
+  set a : ℕ → ℂ := fun n ↦ (-1) ^ n / (n + 1)
+  have ha (n : ℕ) : ‖a n‖ * (n + 1) * (C₁ * R) ^ n = (C₁ * R) ^ n := by
+    rw [norm_div, norm_pow, norm_neg, norm_one, one_pow, ← Nat.cast_add_one,
+      Complex.norm_natCast]
+    push_cast
+    field_simp
+  have hser {z : ℂ} (hz : ‖z‖ < 1) : HasSum (fun n ↦ a n * z ^ (n + 1)) (Complex.log (1 + z)) := by
+    have h := (hasSum_nat_add_iff' 1).2 (Complex.hasSum_taylorSeries_log hz)
+    simp only [Finset.range_one, Finset.sum_singleton, pow_zero, CharP.cast_eq_zero, div_zero,
+      sub_zero] at h
+    convert h using 1
+    ext n
+    simp only [a]
+    push_cast
+    ring
+  have hsmall {X : Lp ℂ 2 (volume : Measure E)} (hX : MemSobolev s 2 (X : 𝓢'(E, ℂ)))
+      (hXR : ‖hX.toBesselPotentialSpace‖ ≤ R) : ∀ᵐ x ∂volume, ‖X x‖ < 1 := by
+    filter_upwards [hsup hX] with x hx
+    calc ‖X x‖ ≤ C₂ * ‖hX.toBesselPotentialSpace‖ := hx
+      _ ≤ C * R := by gcongr; exact le_max_right _ _
+      _ < 1 := hCR
+  have h := hlip hU hW hUR hWR (a := a)
+    (by simpa only [ha] using summable_geometric_of_lt_one hC₁R hC₁R') hv hv'
+    (by filter_upwards [hvU, hsmall hU hUR] with x hx hx'; rw [hx]; exact hser hx')
+    (by filter_upwards [hvW, hsmall hW hWR] with x hx hx'; rw [hx]; exact hser hx')
+  rw [tsum_congr ha, tsum_geometric_of_lt_one hC₁R hC₁R'] at h
+  have hle : C₁ * R ≤ C * R := mul_le_mul_of_nonneg_right (le_max_left _ _) hR
+  have hinv : (1 - C₁ * R)⁻¹ ≤ (1 - C * R)⁻¹ := inv_anti₀ (by linarith) (by linarith)
+  exact h.trans (mul_le_mul_of_nonneg_right hinv (norm_nonneg _))
 
 end TemperedDistribution
