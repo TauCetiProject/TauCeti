@@ -64,12 +64,6 @@ section Int
 
 variable {a b d e : ℤ}
 
-/-- Reducing `d = discr a b` along the cast from `ℤ` gives the discriminant of the reduced
-coefficients. -/
-theorem intCast_eq_discr_of_eq_discr {R : Type*} [CommRing R] (hd : d = discr a b) :
-    (d : R) = discr (a : R) (b : R) := by
-  rw [hd, discr_intCast]
-
 /-- Over `ℤ` the index-two comparison is injective. -/
 theorem algHomOfDiscrZero_injective (hd : d = discr a b) (he : e = 0) :
     Function.Injective (algHomOfDiscrZero a b hd he) :=
@@ -111,7 +105,7 @@ algebras over `ℤ/m`, the reduced comparison is the comparison over `ℤ/m`. -/
 theorem quotientSpanNatCastEquiv_quotientRingHomOfDiscrZero (hd : d = discr a b) (he : e = 0)
     (m : ℕ) (x : QuadraticAlgebra ℤ d e ⧸ Ideal.span {(m : QuadraticAlgebra ℤ d e)}) :
     quotientSpanNatCastEquiv a b m (quotientRingHomOfDiscrZero a b hd he m x) =
-      algHomOfDiscrZero (a : ZMod m) (b : ZMod m) (intCast_eq_discr_of_eq_discr hd)
+      algHomOfDiscrZero (a : ZMod m) (b : ZMod m) (by rw [hd, discr_intCast])
         (by rw [he, Int.cast_zero]) (quotientSpanNatCastEquiv d e m x) := by
   obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective x
   ext <;> simp
@@ -122,7 +116,7 @@ comparison is bijective exactly when `m` is odd. -/
 theorem bijective_quotientRingHomOfDiscrZero_iff (hd : d = discr a b) (he : e = 0) {m : ℕ} :
     Function.Bijective (quotientRingHomOfDiscrZero a b hd he m) ↔ Odd m := by
   have h : ⇑(quotientRingHomOfDiscrZero a b hd he m) = (quotientSpanNatCastEquiv a b m).symm ∘
-      algHomOfDiscrZero (a : ZMod m) (b : ZMod m) (intCast_eq_discr_of_eq_discr hd)
+      algHomOfDiscrZero (a : ZMod m) (b : ZMod m) (by rw [hd, discr_intCast])
         (by rw [he, Int.cast_zero]) ∘ quotientSpanNatCastEquiv d e m := by
     funext x
     rw [Function.comp_apply, Function.comp_apply, RingEquiv.eq_symm_apply,

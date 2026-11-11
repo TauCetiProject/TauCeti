@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
+public import TauCeti.Algebra.QuadraticAlgebra.Discriminant
 
 /-!
 # Changes of generator and the comparison with discriminant zero
@@ -36,7 +36,6 @@ reduced parameter `f 0` is not syntactically `0`.
 * `QuadraticAlgebra.star_changeGenerator`, `norm_changeGenerator`, `trace_changeGenerator`,
   `mapRingHom_changeGenerator`: compatibility of every change of generator with conjugation,
   norm, trace and coefficients.
-* `QuadraticAlgebra.map_discr`: a ring map commutes with `discr`.
 * `QuadraticAlgebra.mem_range_algHomOfDiscrZero_iff`: the image of `algHomOfDiscrZero` is
   `{z | 2 ∣ z.im}`.
 * `QuadraticAlgebra.injective_algHomOfDiscrZero_iff`, `bijective_algHomOfDiscrZero_iff`:
@@ -48,10 +47,6 @@ public section
 namespace QuadraticAlgebra
 
 variable {R S : Type*} [CommRing R] [CommRing S]
-
-/-- A ring map commutes with the discriminant. -/
-theorem map_discr (f : R →+* S) (a b : R) : f (discr a b) = discr (f a) (f b) := by
-  simp [discr_def, map_ofNat]
 
 section changeGenerator
 
