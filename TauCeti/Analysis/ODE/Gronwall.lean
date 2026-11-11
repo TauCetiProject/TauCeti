@@ -11,6 +11,7 @@ public import TauCeti.Analysis.ODE.Gronwall.Interior
 import Mathlib.Analysis.Calculus.Monotone
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -51,6 +52,9 @@ The general closed-interval bound is supplied by
 `TauCeti.norm_le_gronwallBound_of_norm_derivWithin_le`; its interior-derivative variant is
 `TauCeti.norm_le_gronwallBound_of_norm_deriv_le`. This is the uniqueness argument for linear
 differential equations by energy estimates.
+Averaging the reversed Grönwall bound over `[s, s + 1]` shows that such a function, if it is
+square integrable on the line, is bounded by its `L²` norm: `‖f s‖² ≤ exp (2 K) ∫ ‖f‖²`
+(`TauCeti.norm_sq_le_exp_mul_integral_norm_sq`).
 
 ## References
 
@@ -106,13 +110,18 @@ theorem le_mul_exp_of_le_add_mul_integral {φ : ℝ → ℝ} {a b c K : ℝ}
           ring
 
 /-- **Grönwall's inequality for monotone functions, almost-everywhere form.** Let `g` be monotone
-on `[s, t]` with `g s ≥ 0`. If `k g ≤ g'` at almost every point of `(s, t)`, for an interval
-integrable `k`, then `g s · exp (∫ₛᵗ k) ≤ g t`. No continuity of `g` is needed. -/
+on `[s, t]` with `g s ≥ 0`. If `k g ≤ g'` at almost every point of `(s, t)`, then
+`g s · exp (∫ₛᵗ k) ≤ g t`. No continuity of `g` is needed. If `k` is not interval integrable, the
+integral is the junk value `0` and the bound is just monotonicity. -/
 theorem mul_exp_integral_le_of_mul_le_deriv {g k : ℝ → ℝ} {s t : ℝ} (hst : s ≤ t)
-    (hg : MonotoneOn g (Icc s t)) (hgs : 0 ≤ g s) (hk : IntervalIntegrable k volume s t)
+    (hg : MonotoneOn g (Icc s t)) (hgs : 0 ≤ g s)
     (h : ∀ᵐ σ, σ ∈ Ioo s t → k σ * g σ ≤ deriv g σ) :
     g s * Real.exp (∫ σ in s..t, k σ) ≤ g t := by
   have hgst : g s ≤ g t := hg ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst
+  by_cases hk : IntervalIntegrable k volume s t
+  swap
+  · rw [intervalIntegral.integral_undef hk, Real.exp_zero, mul_one]
+    exact hgst
   rcases hgs.eq_or_lt with hgs0 | hgs0
   · rw [← hgs0, zero_mul]
     exact hgs.trans hgst
@@ -234,5 +243,39 @@ theorem eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc {E : Type*} [NormedAdd
     (δ := 0) (ε := 0) (by simp only [hfc, norm_zero, le_refl])
     (fun y hy ↦ by simpa only [add_zero] using bound y hy) x hx
   simpa only [gronwallBound_ε0_δ0, norm_le_zero_iff] using h
+
+/-- **A square-integrable path with derivative controlled by its norm is bounded.** If
+`‖u'‖ ≤ K ‖u‖` with `K ≥ 0` and `u` is square integrable on the line, then
+`‖u s‖² ≤ exp (2 K) ∫ ‖u‖²` for every `s`. -/
+theorem norm_sq_le_exp_mul_integral_norm_sq {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {u u' : ℝ → F} {K : ℝ} (hK : 0 ≤ K)
+    (hu : ∀ s, HasDerivAt u (u' s) s) (hu' : ∀ s, ‖u' s‖ ≤ K * ‖u s‖) (hu2 : MemLp u 2)
+    (s : ℝ) : ‖u s‖ ^ 2 ≤ Real.exp (2 * K) * ∫ t, ‖u t‖ ^ 2 := by
+  -- Grönwall backwards in time: `‖u s‖ ≤ exp K ‖u t‖` for `t ∈ [s, s + 1]`.
+  have hback (t : ℝ) (ht : t ∈ Icc s (s + 1)) :
+      ‖u s‖ ^ 2 ≤ Real.exp (2 * K) * ‖u t‖ ^ 2 := by
+    have hrev (r : ℝ) : HasDerivAt (fun r ↦ u (-r)) (-u' (-r)) r := by
+      simpa [Function.comp_def] using (hu (-r)).scomp r (hasDerivAt_neg r)
+    have hg := norm_le_gronwallBound_of_norm_deriv_right_le (f := fun r ↦ u (-r))
+      (f' := fun r ↦ -u' (-r)) (δ := ‖u t‖) (K := K) (ε := 0) (a := -t) (b := -s)
+      (fun r _ ↦ (hrev r).continuousAt.continuousWithinAt)
+      (fun r _ ↦ (hrev r).hasDerivWithinAt) (by simp)
+      (fun r _ ↦ by simpa using hu' (-r)) (-s) ⟨by linarith [ht.1], le_rfl⟩
+    rw [gronwallBound_ε0, neg_neg] at hg
+    have hexp : Real.exp (K * (-s - -t)) ≤ Real.exp K :=
+      Real.exp_le_exp.2 (by nlinarith [ht.1, ht.2])
+    have hle : ‖u s‖ ≤ ‖u t‖ * Real.exp K := hg.trans (by gcongr)
+    calc ‖u s‖ ^ 2 ≤ (‖u t‖ * Real.exp K) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hle 2
+      _ = Real.exp (2 * K) * ‖u t‖ ^ 2 := by rw [two_mul, Real.exp_add]; ring
+  -- Average the pointwise bound over `[s, s + 1]`.
+  have hint : Integrable fun t ↦ ‖u t‖ ^ 2 :=
+    (memLp_two_iff_integrable_sq_norm hu2.aestronglyMeasurable).1 hu2
+  calc ‖u s‖ ^ 2 = ∫ _ in Icc s (s + 1), ‖u s‖ ^ 2 := by simp
+    _ ≤ ∫ t in Icc s (s + 1), Real.exp (2 * K) * ‖u t‖ ^ 2 :=
+      setIntegral_mono_on (by simp) (hint.integrableOn.const_mul _) measurableSet_Icc hback
+    _ = Real.exp (2 * K) * ∫ t in Icc s (s + 1), ‖u t‖ ^ 2 := integral_const_mul _ _
+    _ ≤ Real.exp (2 * K) * ∫ t, ‖u t‖ ^ 2 :=
+      mul_le_mul_of_nonneg_left (setIntegral_le_integral hint (.of_forall fun _ ↦ by positivity))
+        (Real.exp_pos _).le
 
 end TauCeti

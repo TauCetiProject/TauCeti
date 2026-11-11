@@ -209,7 +209,6 @@ theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 1 f)
     have hcard : (0 : ℝ) < Fintype.card ι * max C 0 + 1 := by positivity
     have h3 : ‖s‖ * (Fintype.card ι * max C 0 + 1) < m := by
       rwa [lt_div_iff₀ hcard] at hs
-    have h4 : 0 ≤ (Fintype.card ι * max C 0 : ℝ) := by positivity
     nlinarith [hmA x hx, norm_nonneg s]
   · -- Off the supports the perturbation agrees with `f` near `x`.
     have hev : perturb f h s =ᶠ[𝓝 x] f :=
@@ -676,7 +675,7 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   set u : ℝ → E := fun t ↦ (fderiv ℝ (perturbedFlow f h hf hh hc t) (x, 0) (0, e)).1
   set b : ℝ → E := fun t ↦ ∑ i, e i • ∇ (h i) (φ t x)
   have hs : ∀ t, DifferentiableAt ℝ (φ (-t)) (φ t x) := fun t ↦ hφd (-t) _
-  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ Flow.ringInverse_fderiv (hs t) (hφd t x)
+  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ Flow.ringInverse_fderiv (hφd t x)
   have hMN : ∀ t v, M t (N t v) = v := fun t v ↦
     congrArg (· v) (Flow.fderiv_comp_neg (hs t) (hφd t x))
   have hM : ∀ t, HasDerivAt M (-(fderiv ℝ (∇ f) (φ t x)).comp (M t)) t :=

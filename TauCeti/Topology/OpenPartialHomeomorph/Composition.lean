@@ -22,9 +22,18 @@ This file supplements `Mathlib.Topology.OpenPartialHomeomorph.Composition`:
 * `Homeomorph.refl_transOpenPartialHomeomorph`: precomposing an open partial homeomorphism with
   `Homeomorph.refl` changes nothing; together with `Homeomorph.trans_transOpenPartialHomeomorph`
   this makes `Homeomorph.transOpenPartialHomeomorph` an action of homeomorphisms.
+* `Homeomorph.symm_transOpenPartialHomeomorph_transOpenPartialHomeomorph` and
+  `Homeomorph.transOpenPartialHomeomorph_symm_transOpenPartialHomeomorph`: precomposing with a
+  homeomorphism and then with its inverse, in either order, changes nothing.
+* `Homeomorph.eventuallyEq_symm_comp_transOpenPartialHomeomorph` and
+  `Homeomorph.symm_eventuallyEq_symm_transOpenPartialHomeomorph_comp`: near a point of the
+  source, `h` is recovered from `h.transOpenPartialHomeomorph e` by applying `e.symm`, and `h.symm`
+  from `e` by applying the inverse of `h.transOpenPartialHomeomorph e`.
 -/
 
 public section
+
+open Topology
 
 namespace OpenPartialHomeomorph
 
@@ -75,5 +84,40 @@ unchanged. -/
 theorem refl_transOpenPartialHomeomorph (c : OpenPartialHomeomorph X Y) :
     (Homeomorph.refl X).transOpenPartialHomeomorph c = c := by
   simp [transOpenPartialHomeomorph_eq_trans]
+
+variable {Z : Type*} [TopologicalSpace Z]
+
+/-- Precomposing an open partial homeomorphism with a homeomorphism `h` and then with `h.symm`
+leaves it unchanged. -/
+@[simp, mfld_simps]
+theorem symm_transOpenPartialHomeomorph_transOpenPartialHomeomorph (h : X ≃ₜ Y)
+    (c : OpenPartialHomeomorph Y Z) :
+    h.symm.transOpenPartialHomeomorph (h.transOpenPartialHomeomorph c) = c := by
+  simp [← trans_transOpenPartialHomeomorph]
+
+/-- Precomposing an open partial homeomorphism with `h.symm` for a homeomorphism `h` and then
+with `h` leaves it unchanged. -/
+@[simp, mfld_simps]
+theorem transOpenPartialHomeomorph_symm_transOpenPartialHomeomorph (h : X ≃ₜ Y)
+    (c : OpenPartialHomeomorph X Z) :
+    h.transOpenPartialHomeomorph (h.symm.transOpenPartialHomeomorph c) = c := by
+  simp [← trans_transOpenPartialHomeomorph]
+
+/-- Near a point whose image under `h` lies in the source of `e`, the homeomorphism `h` is the
+inverse of `e` after `h.transOpenPartialHomeomorph e`. -/
+theorem eventuallyEq_symm_comp_transOpenPartialHomeomorph (h : X ≃ₜ Y)
+    {e : OpenPartialHomeomorph Y Z} {x : X} (hx : h x ∈ e.source) :
+    h =ᶠ[𝓝 x] e.symm ∘ h.transOpenPartialHomeomorph e := by
+  filter_upwards [(h.transOpenPartialHomeomorph e).open_source.mem_nhds
+    (by simpa using hx)] with x' hx'
+  simp [e.left_inv (by simpa using hx')]
+
+/-- Near a point of the source of `e`, the inverse of the homeomorphism `h` is the inverse of
+`h.transOpenPartialHomeomorph e` after `e`. -/
+theorem symm_eventuallyEq_symm_transOpenPartialHomeomorph_comp (h : X ≃ₜ Y)
+    {e : OpenPartialHomeomorph Y Z} {y : Y} (hy : y ∈ e.source) :
+    h.symm =ᶠ[𝓝 y] (h.transOpenPartialHomeomorph e).symm ∘ e := by
+  filter_upwards [e.open_source.mem_nhds hy] with y' hy'
+  simp [e.left_inv hy']
 
 end Homeomorph

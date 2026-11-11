@@ -145,9 +145,10 @@ theorem bijective_mapBaseChange_of_basis {ι : Type*} (bS : Basis ι S Ω[S⁄R]
   exact LinearEquiv.bijective _
 
 /-- **The Jacobian criterion for étaleness.** If `T` is smooth over `R` and the differentials
-`d aᵢ` of finitely many elements `aᵢ` of `T` form a basis of `Ω[T⁄R]`, then `T` is étale over the
-polynomial ring `R[Xᵢ]` via `Xᵢ ↦ aᵢ`. -/
-theorem etale_aeval_of_basis [Algebra.Smooth R T] {ι : Type*} [Finite ι] (a : ι → T)
+`d aᵢ` of elements `aᵢ` of `T` form a basis of `Ω[T⁄R]`, then `T` is étale over the
+polynomial ring `R[Xᵢ]` via `Xᵢ ↦ aᵢ`. The index type is then automatically finite unless `T` is
+trivial. -/
+theorem etale_aeval_of_basis [Algebra.Smooth R T] {ι : Type*} (a : ι → T)
     (b : Basis ι T Ω[T⁄R]) (hb : ∀ i, b i = D R T (a i)) :
     (MvPolynomial.aeval (R := R) a).toRingHom.Etale := by
   let := (MvPolynomial.aeval (R := R) a).toAlgebra
@@ -158,8 +159,15 @@ theorem etale_aeval_of_basis [Algebra.Smooth R T] {ι : Type*} [Finite ι] (a : 
       bijective_mapBaseChange_of_basis (mvPolynomialBasis R ι) b fun i ↦ by
         rw [mvPolynomialBasis_apply, map_D, hb, RingHom.algebraMap_toAlgebra]
         simp
-  have : Algebra.FinitePresentation (MvPolynomial ι R) T :=
-    .of_restrict_scalars_finitePresentation R _ _
+  have : Algebra.FinitePresentation (MvPolynomial ι R) T := by
+    by_cases hT : Subsingleton T
+    · -- the zero ring is the quotient of `R[Xᵢ]` by the unit ideal
+      exact .of_surjective (f := Algebra.ofId (MvPolynomial ι R) T)
+        (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩)
+        (by rw [RingHom.ker_eq_top_of_subsingleton]; exact Ideal.fg_top _)
+    · have := not_subsingleton_iff_nontrivial.mp hT
+      have : Finite ι := Module.Finite.finite_basis b
+      exact .of_restrict_scalars_finitePresentation R _ _
   exact RingHom.etale_algebraMap.mpr ⟨inferInstance, inferInstance⟩
 
 end TauCeti
@@ -173,7 +181,7 @@ open KaehlerDifferential MvPolynomial
 `A`. It is the base change of the étale map `A[Xᵢ] → W`, `Xᵢ ↦ xᵢ`
 (`TauCeti.etale_aeval_of_basis`), along `A[Xᵢ] → A[Xᵢ] ⧸ (Xᵢ) ≃ A`. -/
 theorem etale_quotient_span_range {A W : Type*} [CommRing A] [CommRing W] [Algebra A W]
-    [Algebra.Smooth A W] {ι : Type*} [Finite ι] {x : ι → W}
+    [Algebra.Smooth A W] {ι : Type*} {x : ι → W}
     (b : Basis ι W Ω[W⁄A]) (hb : ∀ i, b i = D A W (x i)) :
     Algebra.Etale A (W ⧸ Ideal.span (Set.range x)) := by
   let R := MvPolynomial ι A

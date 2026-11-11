@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
@@ -124,11 +125,8 @@ theorem exists_forall_norm_sub_le_mul_integral_of_nondegenerate (hH : ContDiff �
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   have hS : Continuous S := ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc
   -- The a priori estimate for periodic solutions of `ξ' = S ξ + f`.
-  have hunit : IsUnit ((1 : ℝ) • (1 : V →L[ℝ] V) - dysonSeriesLeft S 1) := by
-    refine ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.2
-      ((LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun v hv ↦ hnd v ?_))
-    have hv' : v - dysonSeriesLeft S 1 v = 0 := by simpa using hv
-    exact (sub_eq_zero.1 hv').symm
+  have hunit : IsUnit ((1 : ℝ) • (1 : V →L[ℝ] V) - dysonSeriesLeft S 1) :=
+    ContinuousLinearMap.isUnit_smul_one_sub fun v hv ↦ hnd v (by simpa using hv)
   obtain ⟨C₀, hC₀, hA⟩ := exists_forall_norm_le_mul_integral_norm hS zero_le_one hunit
   -- The linearization error `r` is at most `ε₁ ‖ξ‖`, small enough to be absorbed.
   set ε₁ : ℝ := 1 / (2 * (C₀ + 1))
@@ -277,7 +275,7 @@ theorem exists_abs_hamiltonianAction_sub_le_of_nondegenerate (hH : ContDiff ℝ 
   -- The `L¹` norm of the defect is at most its `L²` norm.
   have hN0 : 0 ≤ N := integral_nonneg zero_le_one fun _ _ ↦ norm_nonneg _
   have hN2 : N ^ 2 ≤ ∫ t in (0 : ℝ)..1, ‖η t‖ ^ 2 := by
-    have h := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one (fun t _ ↦ norm_nonneg (η t))
+    have h := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one
       ((hηc.norm.pow 2).intervalIntegrable _ _)
     rw [sub_zero, Real.sqrt_one, one_mul] at h
     calc N ^ 2 ≤ √(∫ t in (0 : ℝ)..1, ‖η t‖ ^ 2) ^ 2 := by gcongr
@@ -406,7 +404,7 @@ theorem exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity
       (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hsa).norm.congr fun t ↦ by
         rw [sliceDefect_def]
   -- By Cauchy–Schwarz, the `L¹` norm of the defect is at most its `L²` norm.
-  have hCS := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one (fun t _ ↦ norm_nonneg _)
+  have hCS := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one
     ((hηc.pow 2).intervalIntegrable 0 1)
   rw [sub_zero, Real.sqrt_one, one_mul] at hCS
   have hint := integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity hH hu hc hJc hJM hfloer
@@ -478,7 +476,8 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
     tendsto_nhds_unique (hux₀.tendsto_at t) ((hux.tendsto_at t).comp hφ)
   rw [hx₀] at hlim
   -- The action defect `f s = A_H(x) - A_H(u(s, ·))` is nonnegative and nonincreasing.
-  have hmono : MonotoneOn A (Ioi a) := monotoneOn_hamiltonianAction_of_floer hH1 hu hper hJ hfloer
+  have hmono : MonotoneOn A (Ioi a) :=
+    ω.monotoneOn_hamiltonianAction_of_floer isOpen_Ioi hH1 hu hper hJ hfloer
   set f : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H x - A s with hfdef
   have hf0 (s : ℝ) (hs : a < s) : 0 ≤ f s :=
     sub_nonneg.2 (ge_of_tendsto hlim ((eventually_ge_atTop s).mono fun s' h ↦
@@ -522,7 +521,7 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
     have : f s - f (s + K) = A (s + K) - A s := by simp only [hfdef]; ring
     linarith
   -- Halving over every step of length `K` is exponential decay at the rate `log 2 / K`.
-  obtain hdecay := fun s (hs : s₀ ≤ s) ↦ le_div_mul_exp_of_antitoneOn hKpos (by norm_num)
+  obtain hdecay := fun s (hs : s₀ ≤ s) ↦ le_div_mul_exp_of_antitoneOn (by norm_num)
     (by norm_num) hfanti (hf0 s₀ hs₀a) hstep hs
   set κ : ℝ := Real.log 2 / K
   refine ⟨κ, div_pos (Real.log_pos one_lt_two) hKpos, 2 * f s₀ * Real.exp (κ * s₀),

@@ -74,6 +74,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   a strict subsolution of `L`, with an explicit lower bound for `L w`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_add_smul`,
   `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_const_mul`: the principal part commutes with multiplication
+  by a constant.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
 * `TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`: the principal part only sees the
@@ -272,6 +274,17 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_neg (A : Matrix ι ι ℝ)
       (EuclideanSpace.single j 1) + fderiv ℝ f x v) := by
   have h : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
   simp only [h, fderiv_neg, _root_.neg_apply, mul_neg, Finset.sum_neg_distrib, neg_add]
+
+/-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ` commutes with multiplication by a constant. -/
+theorem sum_mul_fderiv_fderiv_const_mul (A : Matrix ι ι ℝ) (u : EuclideanSpace ℝ ι → ℝ)
+    (r : ℝ) (x : EuclideanSpace ℝ ι) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y ↦ r * u y) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
+      r * ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ u) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+  have h : (fun y ↦ r * u y) = r • u := rfl
+  simp only [h, fderiv_fderiv_const_smul, _root_.smul_apply, smul_eq_mul, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
 
 /-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the squared norm `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`. -/
 theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
@@ -543,7 +556,6 @@ theorem le_add_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier
   have hg (y : EuclideanSpace ℝ ι) : g y = m + F / lam * Real.exp (α * d) - r * w y := by
     simp only [g, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     ring
-  have hα : 1 ≤ α := le_add_of_nonneg_left (div_nonneg hβ hlam.le)
   have hFl : 0 ≤ F / lam := div_nonneg hF hlam.le
   -- On `K`, `F / λ ≤ r w ≤ (F / λ) exp (α d)`, so `m ≤ g ≤ m + (exp (α d) - 1) F / λ`.
   have hrwK (y : EuclideanSpace ℝ ι) (hy : y ∈ K) :
