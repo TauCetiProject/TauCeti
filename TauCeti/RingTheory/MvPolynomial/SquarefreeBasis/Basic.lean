@@ -33,6 +33,18 @@ public section
 
 open MvPolynomial Polynomial
 
+namespace MvPolynomial
+
+/-- A nontrivial coefficient ring is a domain as soon as the polynomial ring over it is a
+normalized GCD monoid. -/
+theorem isDomain_of_normalizedGCDMonoid {σ R : Type*} [CommRing R] [Nontrivial R]
+    [NormalizedGCDMonoid (MvPolynomial σ R)] : IsDomain R := by
+  have : NoZeroDivisors R :=
+    (C_injective σ R).noZeroDivisors C (map_zero _) (map_mul C)
+  exact NoZeroDivisors.to_isDomain R
+
+end MvPolynomial
+
 namespace Finset.IsSquarefreeBasis
 
 variable {R : Type*} [CommRing R] {n : ℕ}
@@ -40,8 +52,6 @@ variable {R : Type*} [CommRing R] {n : ℕ}
   {F B : Finset (Polynomial (MvPolynomial (Fin n) R))}
 
 section Orders
-
-variable [IsDomain R]
 
 /-- The ambient order of an input is the order of its content plus the sum of the
 orders of the basis factors, weighted by their exponents in its factorization.
@@ -52,6 +62,10 @@ theorem exists_orderAt_eq_content_add_sum (hB : F.IsSquarefreeBasis B)
       ((finSuccEquiv R n).symm f).orderAt a =
         f.content.orderAt (Fin.tail a) +
           ∑ b ∈ B, e b • ((finSuccEquiv R n).symm b).orderAt a := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact ⟨0, fun a ↦ by
+    simp [Subsingleton.elim ((finSuccEquiv R n).symm f) 0, Subsingleton.elim f.content 0]⟩
+  have := isDomain_of_normalizedGCDMonoid (σ := Fin n) (R := R)
   obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_unit_mul_prod hf
   refine ⟨e, fun a ↦ ?_⟩
   have hC (g : MvPolynomial (Fin n) R) :
