@@ -349,18 +349,29 @@ def point : Fin Ω.numItems → FreeGroup A :=
 @[simp]
 theorem point_apply (k : Fin Ω.numItems) : U.point k = FreeGroup.mk (U.word k) := (rfl)
 
+/-- Evaluating a word in the items and the letters of `A` at the point of a solution is
+substituting the words of the items and reducing. -/
+theorem eval_point_mk (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
+    EqIneqSystem.eval U.point FreeGroup.of (FreeGroup.mk w) =
+      FreeGroup.mk (substituteVars U.word w) := by
+  rw [mk_substituteVars, EqIneqSystem.eval_eq_lift]
+  rfl
+
 /-- A solution of a generalised equation is a solution of the system `Ω*` in `F(A)`. -/
 theorem point_mem_V : U.point ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem := by
   refine Ω.mem_V_toSystem_iff.2 fun e he => ?_
-  have h (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
-      FreeGroup.lift (Sum.elim U.point (MonoidHom.id (FreeGroup A) ∘ FreeGroup.of))
-        (FreeGroup.mk w) = FreeGroup.mk (substituteVars U.word w) := by
-    have hU : Sum.elim U.point FreeGroup.of =
-        Sum.elim (fun k => FreeGroup.mk (U.word k)) FreeGroup.of := by
-      funext y
-      cases y <;> simp
-    rw [mk_substituteVars, MonoidHom.coe_id, Function.id_comp, hU]
-  rw [h, h, U.subst_eq e he]
+  rw [MonoidHom.coe_id, Function.id_comp, ← EqIneqSystem.eval_eq_lift, U.eval_point_mk,
+    U.eval_point_mk, U.subst_eq e he]
+
+/-- In a solution, a nonempty word in the items and the letters of `A` has a nonempty substituted
+word: every item carries a nonempty word. -/
+theorem substituteVars_word_ne_nil {w : List ((Fin Ω.numItems ⊕ A) × Bool)} (hw : w ≠ []) :
+    substituteVars U.word w ≠ [] := by
+  obtain ⟨⟨c | a, s⟩, w, rfl⟩ := List.exists_cons_of_ne_nil hw
+  · rw [FreeGroup.substituteVars_cons]
+    cases s <;> simp [U.word_ne_nil c, FreeGroup.invRev]
+  · rw [FreeGroup.substituteVars_cons]
+    simp
 
 /-- The `F(A)`-homomorphism `F_{R(Ω)} → F(A)` of a solution, sending each item to its word. -/
 def toHom : GHom (CoordGroup.coeff (MonoidHom.id (FreeGroup A)) Ω.toSystem)
@@ -505,7 +516,6 @@ private theorem not_overlap {a b c d : ℕ} (hab : a < b) (hb : b ≤ Ω.numItem
       substituteVars_append, substituteVars_append, FreeGroup.invRev_append] at heq
     have hX := U.length_substituteVars_segment_add_prefixLength true hac
     have hZ := U.length_substituteVars_segment_add_prefixLength true hbd
-    have hC := U.length_substituteVars_segment_add_prefixLength true hcb.le
     have hXZ : (substituteVars U.word (Ω.segment a c true)).length =
         (FreeGroup.invRev (substituteVars U.word (Ω.segment b d true))).length := by
       rw [FreeGroup.invRev_length]
@@ -514,11 +524,8 @@ private theorem not_overlap {a b c d : ℕ} (hab : a < b) (hb : b ≤ Ω.numItem
     have hCred : FreeGroup.IsReduced (substituteVars U.word (Ω.segment c b true)) := by
       refine hred.infix ⟨substituteVars U.word (Ω.segment a c true), [], ?_⟩
       rw [List.append_nil, ← substituteVars_append, Ω.segment_append hac hcb.le hb]
-    have hCne : substituteVars U.word (Ω.segment c b true) ≠ [] := by
-      have := U.prefixLength_lt hcb hb
-      intro h
-      rw [h, List.length_nil] at hC
-      omega
+    have hCne : substituteVars U.word (Ω.segment c b true) ≠ [] :=
+      U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos (by rw [length_segment]; omega))
     exact hCred.invRev_ne_self hCne hCC.symm
   · -- The base `[c, d]` lies strictly inside `[a, b]`, so its word is shorter.
     have := U.prefixLength_mono hac
