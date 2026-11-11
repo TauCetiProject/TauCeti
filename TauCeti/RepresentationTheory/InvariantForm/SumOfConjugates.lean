@@ -21,7 +21,7 @@ needs no invertibility of the group order.  The sum over the conjugates of a sym
 symmetric.
 
 Over an ordered field the construction also produces a *nonzero* invariant symmetric form on any
-nontrivial finite-dimensional representation: sum the coordinate dot product read in a basis.
+nontrivial representation: sum the coordinate dot product read in a basis.
 Positivity is what makes the sum nonzero -- the sum of the nonnegative numbers
 `B₀ (σ g x) (σ g x)` is at least its term at `g = 1`, which is positive -- so it is the ordering of
 the field, not a division by `|G|`, that does the work.  For an irreducible complex representation
@@ -44,8 +44,7 @@ is the nonzero invariant symmetric form that gives Frobenius-Schur indicator `+1
   `Representation.posDef_toQuadraticMap_sumOfConjugatesForm`: over an ordered semiring, that sum
   dominates the form on the diagonal, and is positive definite if the form is.
 * `Representation.exists_isInvariantForm_isSymm_ne_zero`: **a representation of a finite group on a
-  nontrivial finite-dimensional space over an ordered field carries a nonzero invariant symmetric
-  form.**
+  nontrivial space over an ordered field carries a nonzero invariant symmetric form.**
 
 ## References
 
@@ -160,27 +159,42 @@ symmetric form.**  Take the dot product read in a basis and sum it over the conj
 preserves symmetry, and it dominates its term at `g = 1`, which is the value `B₀ x x` of the dot
 product itself and is positive for `x ≠ 0`.  So the sum does not vanish.  This is the input over
 `ℝ` to the orthogonality of a representation with a real form. -/
-theorem exists_isInvariantForm_isSymm_ne_zero (σ : Representation k G W)
-    [FiniteDimensional k W] [Nontrivial W] :
+theorem exists_isInvariantForm_isSymm_ne_zero (σ : Representation k G W) [Nontrivial W] :
     ∃ B : BilinForm k W, IsInvariantForm σ B ∧ B.IsSymm ∧ B ≠ 0 := by
   classical
   have : Fintype G := Fintype.ofFinite G
-  set b := Module.finBasis k W with _
-  set B₀ : BilinForm k W := Matrix.toBilin b 1 with hB₀
-  have hB₀apply : ∀ x y : W, B₀ x y = ⇑(b.repr x) ⬝ᵥ ⇑(b.repr y) := by
-    intro x y
-    simp [hB₀, Matrix.toBilin_apply, Matrix.one_apply, Finset.sum_ite_eq, dotProduct]
-  have hB₀symm : B₀.IsSymm := (Matrix.isSymm_toBilin_iff_isSymm b).mpr Matrix.isSymm_one
+  set b := Module.Free.chooseBasis k W with _
+  -- The dot product of the coordinate vectors: the sum over their joint support of the products
+  -- of matching coordinates, which is a finite sum even when the basis is infinite.
+  let D : (Module.Free.ChooseBasisIndex k W →₀ k) →ₗ[k]
+      (Module.Free.ChooseBasisIndex k W →₀ k) →ₗ[k] k :=
+    Finsupp.lsum k fun i => LinearMap.toSpanSingleton k _ (Finsupp.lapply i)
+  have hD : ∀ x y, D x y = ∑ i ∈ x.support ∪ y.support, x i * y i := fun x y => by
+    simp only [D, Finsupp.lsum_apply, Finsupp.sum, LinearMap.sum_apply,
+      LinearMap.toSpanSingleton_apply, LinearMap.smul_apply, Finsupp.lapply_apply, smul_eq_mul]
+    refine Finset.sum_subset Finset.subset_union_left fun i _ hi => ?_
+    simp_all
+  set B₀ : BilinForm k W := D.compl₁₂ b.repr.toLinearMap b.repr.toLinearMap with hB₀
+  have hB₀apply : ∀ x y : W, B₀ x y
+      = ∑ i ∈ (b.repr x).support ∪ (b.repr y).support, b.repr x i * b.repr y i := fun x y => by
+    rw [hB₀, LinearMap.compl₁₂_apply, hD]
+    rfl
+  have hB₀symm : B₀.IsSymm :=
+    ⟨fun x y => by simp only [hB₀apply, Finset.union_comm, mul_comm]⟩
   have hB₀nonneg : ∀ x : W, 0 ≤ B₀ x x := fun x => by
-    rw [hB₀apply, dotProduct]
+    rw [hB₀apply]
     exact Finset.sum_nonneg fun i _ => mul_self_nonneg _
   refine ⟨sumOfConjugatesForm σ B₀, isInvariantForm_sumOfConjugatesForm σ B₀,
     isSymm_sumOfConjugatesForm hB₀symm, ?_⟩
   obtain ⟨x, hx⟩ := exists_ne (0 : W)
   have hpos : 0 < B₀ x x := by
-    refine (hB₀nonneg x).lt_of_ne (Ne.symm ?_)
-    rw [hB₀apply, ne_eq, dotProduct_self_eq_zero, Finsupp.coe_eq_zero]
-    exact fun h => hx (b.repr.map_eq_zero_iff.mp h)
+    obtain ⟨i, hi⟩ : ∃ i, b.repr x i ≠ 0 := by
+      by_contra h
+      push Not at h
+      exact hx (b.repr.map_eq_zero_iff.mp (Finsupp.ext h))
+    rw [hB₀apply]
+    refine Finset.sum_pos' (fun i _ => mul_self_nonneg _) ⟨i, ?_, mul_self_pos.mpr hi⟩
+    simpa using hi
   have hle : B₀ x x ≤ sumOfConjugatesForm σ B₀ x x := le_sumOfConjugatesForm_apply_self hB₀nonneg x
   intro hzero
   rw [hzero] at hle
