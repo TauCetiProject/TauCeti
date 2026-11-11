@@ -25,7 +25,8 @@ the representatives used to compute the fundamental group and first homology of 
 naturally in the matrix.
 
 A torus of rank `r` has at most `n ^ r` points of order dividing `n`
-(`TauCeti.natCard_torsion_pi_le_of_isSMulRegular`): there are at most `n` on each circle. For
+(`TauCeti.natCard_torsion_pi_le_of_isSMulRegular`), since these points are the families of such
+points of its circles (`TauCeti.torsionPiEquiv`): there are at most `n` on each circle. For
 `n = 2` this bounds the elementary abelian `2`-subgroups that a torus can contain.
 -/
 
@@ -59,9 +60,19 @@ section Torsion
 variable {𝕜 : Type*} [AddCommGroup 𝕜] (p : ι → 𝕜) (n : ℕ)
 
 /-- The points of order dividing `n` of a torus are the families of such points of its circles. -/
-private def torsionPiEquiv :
+def torsionPiEquiv :
     {x : ∀ i, AddCircle (p i) // n • x = 0} ≃ ∀ i, {y : AddCircle (p i) // n • y = 0} :=
   (Equiv.subtypeEquivRight fun _ ↦ by simp [funext_iff]).trans Equiv.subtypePiEquivPi
+
+@[simp]
+theorem coe_torsionPiEquiv_apply (x : {x : ∀ i, AddCircle (p i) // n • x = 0}) (i : ι) :
+    (torsionPiEquiv p n x i : AddCircle (p i)) = (x : ∀ i, AddCircle (p i)) i :=
+  (rfl)
+
+@[simp]
+theorem coe_torsionPiEquiv_symm_apply (y : ∀ i, {y : AddCircle (p i) // n • y = 0}) :
+    ((torsionPiEquiv p n).symm y : ∀ i, AddCircle (p i)) = fun i ↦ (y i : AddCircle (p i)) :=
+  (rfl)
 
 /-- A torus with finitely many circles has finitely many points of order dividing `n`, when
 multiplication by `n` is injective on the coefficients, as it is on `ℝ` for `n ≠ 0`. -/

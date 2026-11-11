@@ -53,8 +53,6 @@ tori is not proved in this file.
 
 ## Main results
 
-* `CliffordAlgebra.basis_mem_spinGroup`: an even basis monomial of an orthogonal basis whose
-  generator norms multiply to one is a Spin element.
 * `TauCeti.mem_spinSevenElementaryAbelian_iff`: the elements are exactly the signed basis
   monomials `±e_s` with `s ∈ spinSevenSupports`.
 * `TauCeti.mul_self_eq_one_of_mem_spinSevenElementaryAbelian`,
@@ -76,23 +74,6 @@ public section
 open scoped symmDiff
 
 open Function
-
-namespace CliffordAlgebra
-
-variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Invertible (2 : R)]
-  {Q : QuadraticForm R M} [LinearOrder I] {b : Module.Basis I R M}
-
-/-- **An even basis monomial of an orthogonal basis is a Spin element** when the norms of its
-generators multiply to one: `e_s = ι Q (b i₁) * ⋯ * ι Q (b iₖ)`, for `s = {i₁ < ⋯ < iₖ}` of even
-cardinality with `Q (b i₁) * ⋯ * Q (b iₖ) = 1`, lies in `spinGroup Q`. -/
-theorem basis_mem_spinGroup (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {s : Finset I}
-    (hs : Even s.card) (hQ : ∏ i ∈ s, Q (b i) = 1) : basis Q b s ∈ spinGroup Q := by
-  rw [basis_eq_prod_map_sort hb]
-  refine prod_map_ι_mem_spinGroup (by simpa using hs) ?_
-  rw [List.map_map, ← hQ, ← Finset.prod_map_toList]
-  exact ((Finset.sort_perm_toList s _).map _).prod_eq
-
-end CliffordAlgebra
 
 open CliffordAlgebra
 
@@ -123,12 +104,6 @@ theorem even_card_of_mem_spinSevenSupports {s : Finset (Fin (0 + 7))}
   revert s
   decide +kernel
 
-/-- The signs of `e_s * e_t` and `e_t * e_s` in `CliffordAlgebra.basis_mul_basis` agree for any
-two supports, since any two of them meet in an even number of indices. -/
-private theorem crossing_parity : ∀ s ∈ spinSevenSupports, ∀ t ∈ spinSevenSupports,
-    (∑ i ∈ s, (t.filter (· < i)).card) % 2 = (∑ i ∈ t, (s.filter (· < i)).card) % 2 := by
-  decide +kernel
-
 /-- The sign of `e_s * e_s` in `CliffordAlgebra.basis_mul_basis`, together with the sign
 `(-1) ^ #s` of the squares of the generators, is `+1` for every support. -/
 private theorem square_parity : ∀ s ∈ spinSevenSupports,
@@ -137,19 +112,13 @@ private theorem square_parity : ∀ s ∈ spinSevenSupports,
 
 /-! ### Signed basis monomials -/
 
-/-- Every coordinate generator of the negative-definite form squares to `-1`. -/
-private theorem realCliffordForm_basisFun (i : Fin (0 + 7)) :
-    realCliffordForm 0 7 (Pi.basisFun ℝ (Fin (0 + 7)) i) = -1 := by
-  rw [Pi.basisFun_apply, realCliffordForm_apply_single, realCliffordWeight_of_le (Nat.zero_le _)]
-  norm_num
-
 /-- The Spin element `e_s` of an even support `s`. -/
 private noncomputable def spinBasis (s : Finset (Fin (0 + 7))) (hs : Even s.card) :
     realCliffordSpinGroup 0 7 :=
   ⟨basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s,
     basis_mem_spinGroup (isOrthoᵢ_associated_realCliffordForm 0 7) hs <| by
-      rw [Finset.prod_congr rfl fun i _ ↦ realCliffordForm_basisFun i, Finset.prod_const,
-        hs.neg_one_pow]⟩
+      simp_rw [Pi.basisFun_apply, realCliffordForm_single_one_of_le (Nat.zero_le _),
+        Finset.prod_const, hs.neg_one_pow]⟩
 
 /-- The central element `-1` of the Spin group of `realCliffordForm 0 7`. -/
 private noncomputable def spinNegOne : realCliffordSpinGroup 0 7 :=
@@ -168,7 +137,9 @@ private theorem IsSignedBasis.mul {g h : realCliffordSpinGroup 0 7} {s t : Finse
   unfold IsSignedBasis at *
   rw [Submonoid.coe_mul]
   rcases basis_mul_basis_eq_or (isOrthoᵢ_associated_realCliffordForm 0 7)
-      (fun i ↦ Or.inr (realCliffordForm_basisFun i)) s t with hst | hst <;>
+      (fun i ↦ Or.inr <| by
+        rw [Pi.basisFun_apply, realCliffordForm_single_one_of_le (Nat.zero_le _)]) s t
+      with hst | hst <;>
     rcases hg with hg | hg <;> rcases hh with hh | hh <;>
     simp only [hg, hh, neg_mul, mul_neg, neg_neg, hst, true_or, or_true]
 
@@ -177,30 +148,13 @@ private theorem IsSignedBasis.mul_self {g : realCliffordSpinGroup 0 7} {s : Fins
     (hg : IsSignedBasis g s) (hs : s ∈ spinSevenSupports) : g * g = 1 := by
   have hss : basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s *
       basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s = 1 := by
-    rw [basis_mul_basis (isOrthoᵢ_associated_realCliffordForm 0 7), symmDiff_self,
-      Finset.bot_eq_empty, basis_empty, Finset.inter_self,
-      Finset.prod_congr rfl fun i _ ↦ realCliffordForm_basisFun i, Finset.prod_const, ← pow_add,
-      neg_one_pow_eq_pow_mod_two, square_parity s hs, pow_zero, one_smul]
+    simp_rw [basis_mul_basis (isOrthoᵢ_associated_realCliffordForm 0 7), symmDiff_self,
+      Finset.bot_eq_empty, basis_empty, Finset.inter_self, Pi.basisFun_apply,
+      realCliffordForm_single_one_of_le (Nat.zero_le _), Finset.prod_const]
+    rw [← pow_add, neg_one_pow_eq_pow_mod_two, square_parity s hs, pow_zero, one_smul]
   refine Subtype.ext ?_
   rw [Submonoid.coe_mul, OneMemClass.coe_one]
   rcases hg with hg | hg <;> simp only [hg, neg_mul_neg, hss]
-
-/-- Two signed basis monomials `±e_s` and `±e_t` with `s` and `t` supports commute. -/
-private theorem IsSignedBasis.mul_comm {g h : realCliffordSpinGroup 0 7}
-    {s t : Finset (Fin (0 + 7))} (hg : IsSignedBasis g s) (hh : IsSignedBasis h t)
-    (hs : s ∈ spinSevenSupports) (ht : t ∈ spinSevenSupports) : g * h = h * g := by
-  have hst : basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s *
-      basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) t =
-      basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) t *
-        basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s := by
-    rw [basis_mul_basis (isOrthoᵢ_associated_realCliffordForm 0 7),
-      basis_mul_basis (isOrthoᵢ_associated_realCliffordForm 0 7), symmDiff_comm,
-      Finset.inter_comm, neg_one_pow_eq_pow_mod_two, crossing_parity s hs t ht,
-      ← neg_one_pow_eq_pow_mod_two]
-  refine Subtype.ext ?_
-  rw [Submonoid.coe_mul, Submonoid.coe_mul]
-  rcases hg with hg | hg <;> rcases hh with hh | hh <;>
-    simp only [hg, hh, neg_mul, mul_neg, neg_neg, hst]
 
 /-- Two Spin elements that are signed basis monomials of the same support agree up to `-1`. -/
 private theorem IsSignedBasis.eq_or_eq_negOne_mul {g h : realCliffordSpinGroup 0 7}
@@ -257,14 +211,20 @@ private theorem exists_mem_isSignedBasis {s : Finset (Fin (0 + 7))}
   · exact hA
   · exact hB
   · exact hC
-  · exact (show ({0, 1, 2, 3} : Finset (Fin (0 + 7))) ∆ {0, 1, 4, 5} = {2, 3, 4, 5} by
-      decide) ▸ hmul hA hB
-  · exact (show ({0, 1, 2, 3} : Finset (Fin (0 + 7))) ∆ {0, 2, 4, 6} = {1, 3, 4, 6} by
-      decide) ▸ hmul hA hC
-  · exact (show ({0, 1, 4, 5} : Finset (Fin (0 + 7))) ∆ {0, 2, 4, 6} = {1, 2, 5, 6} by
-      decide) ▸ hmul hB hC
-  · exact (show ({0, 1, 2, 3} : Finset (Fin (0 + 7))) ∆ {0, 1, 4, 5} ∆ {0, 2, 4, 6} =
-      {0, 3, 5, 6} by decide) ▸ hmul (hmul hA hB) hC
+  · have h : ({0, 1, 2, 3} : Finset (Fin (0 + 7))) ∆ {0, 1, 4, 5} = {2, 3, 4, 5} := by decide
+    rw [← h]
+    exact hmul hA hB
+  · have h : ({0, 1, 2, 3} : Finset (Fin (0 + 7))) ∆ {0, 2, 4, 6} = {1, 3, 4, 6} := by decide
+    rw [← h]
+    exact hmul hA hC
+  · have h : ({0, 1, 4, 5} : Finset (Fin (0 + 7))) ∆ {0, 2, 4, 6} = {1, 2, 5, 6} := by decide
+    rw [← h]
+    exact hmul hB hC
+  · have h : ({0, 1, 2, 3} : Finset (Fin (0 + 7))) ∆ {0, 1, 4, 5} ∆ {0, 2, 4, 6} =
+        {0, 3, 5, 6} := by
+      decide
+    rw [← h]
+    exact hmul (hmul hA hB) hC
 
 /-- **The elements of the elementary abelian subgroup are the signed basis monomials** `±e_s`,
 for the eight supports `s ∈ spinSevenSupports`. -/
@@ -297,13 +257,15 @@ theorem mul_self_eq_one_of_mem_spinSevenElementaryAbelian {g : realCliffordSpinG
   obtain ⟨s, hs, hgs⟩ := mem_spinSevenElementaryAbelian_iff.mp hg
   exact IsSignedBasis.mul_self hgs hs
 
-/-- **Any two elements of the elementary abelian subgroup commute.** -/
+/-- **Any two elements of the elementary abelian subgroup commute**, as every element squares to
+`1` (`Commute.of_orderOf_dvd_two`). -/
 theorem mul_comm_of_mem_spinSevenElementaryAbelian {g h : realCliffordSpinGroup 0 7}
     (hg : g ∈ spinSevenElementaryAbelian) (hh : h ∈ spinSevenElementaryAbelian) :
-    g * h = h * g := by
-  obtain ⟨s, hs, hgs⟩ := mem_spinSevenElementaryAbelian_iff.mp hg
-  obtain ⟨t, ht, hht⟩ := mem_spinSevenElementaryAbelian_iff.mp hh
-  exact IsSignedBasis.mul_comm hgs hht hs ht
+    g * h = h * g :=
+  congrArg Subtype.val <| Commute.eq <| Commute.of_orderOf_dvd_two
+    (fun x : spinSevenElementaryAbelian ↦ orderOf_dvd_of_pow_eq_one <|
+      Subtype.ext (by rw [pow_two]; exact mul_self_eq_one_of_mem_spinSevenElementaryAbelian x.2))
+    ⟨g, hg⟩ ⟨h, hh⟩
 
 /-- **The elementary abelian subgroup is commutative.** -/
 instance spinSevenElementaryAbelian_isMulCommutative :
@@ -316,7 +278,7 @@ theorem natCard_spinSevenElementaryAbelian : Nat.card spinSevenElementaryAbelian
   have hb := isOrthoᵢ_associated_realCliffordForm 0 7
   have hQ (i : Fin (0 + 7)) : realCliffordForm 0 7 (Pi.basisFun ℝ (Fin (0 + 7)) i) = 1 ∨
       realCliffordForm 0 7 (Pi.basisFun ℝ (Fin (0 + 7)) i) = -1 :=
-    Or.inr (realCliffordForm_basisFun i)
+    Or.inr <| by rw [Pi.basisFun_apply, realCliffordForm_single_one_of_le (Nat.zero_le _)]
   -- The signed monomial `u • e_s` of a support `s` and a sign `u`.
   let F : spinSevenSupports × ℤˣ → realCliffordSpinGroup 0 7 := fun p ↦
     (if p.2 = 1 then 1 else spinNegOne) * spinBasis p.1 (even_card_of_mem_spinSevenSupports p.1.2)
@@ -379,12 +341,7 @@ theorem mul_self_eq_one_of_mem_realSpinSevenElementaryAbelian {g : realCliffordS
 /-- The elementary abelian subgroup of `Spin(7)` is commutative. -/
 instance realSpinSevenElementaryAbelian_isMulCommutative :
     IsMulCommutative realSpinSevenElementaryAbelian :=
-  ⟨⟨fun g h ↦ by
-    obtain ⟨x, hx, hxg⟩ := Subgroup.mem_map.mp g.2
-    obtain ⟨y, hy, hyh⟩ := Subgroup.mem_map.mp h.2
-    refine Subtype.ext ?_
-    rw [Subgroup.coe_mul, Subgroup.coe_mul, ← hxg, ← hyh, ← map_mul, ← map_mul,
-      mul_comm_of_mem_spinSevenElementaryAbelian hx hy]⟩⟩
+  Subgroup.map_isMulCommutative _ _
 
 /-- The elementary abelian subgroup of `Spin(7)` has order `16`. -/
 theorem natCard_realSpinSevenElementaryAbelian : Nat.card realSpinSevenElementaryAbelian = 16 := by
