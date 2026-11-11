@@ -128,7 +128,7 @@ private theorem exists_lieBasis_e_mem_of_root_inf_ne_bot
   have hxI : x ∈ I := hx.1
   have hxroot : x ∈ LieAlgebra.rootSpace H chi := hx.2
   obtain ⟨i, j, hij, hsub | hadd | hneg⟩ :=
-    (rootSpace_typeDDiagonalCartan_ne_bot_iff (K := K) two_ne_zero chi hchi).mp
+    (rootSpace_typeDDiagonalCartan_ne_bot_iff (K := K) chi hchi).mp
       (fun hbot => hcomp (by simp [hbot]))
   · subst chi
     -- The root-space classification is stated for the underlying submodule membership.

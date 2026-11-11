@@ -62,7 +62,7 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
   derivatives.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
-  commute.
+  commute; `TauCeti.coordinateDeriv_pair_comm`: so do two partial derivatives in one variable.
 * `TauCeti.mixedDeriv`: the mixed position-frequency derivative `∂_x^α ∂_ξ^β`.
 * `TauCeti.mixedDeriv_eq_iteratedFDerivAlong`, `TauCeti.iteratedFDerivAlong_map_mixedDirection`:
   mixed derivatives are the iterated directional derivatives `TauCeti.iteratedFDerivAlong` along

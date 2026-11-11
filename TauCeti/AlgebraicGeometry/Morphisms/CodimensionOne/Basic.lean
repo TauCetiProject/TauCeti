@@ -13,9 +13,9 @@ public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 /-!
 # Codimension-one points under quasi-finite morphisms
 
-Let `f : X ⟶ Y` be a locally quasi-finite dominant morphism of irreducible schemes, for instance a
-finite dominant morphism of integral schemes. A point of `X` lying over a point of codimension one
-of `Y` has codimension one: its codimension is at most that of its image
+Let `f : X ⟶ Y` be a locally quasi-finite dominant morphism from an irreducible scheme, for
+instance a finite dominant morphism of integral schemes. A point of `X` lying over a point of
+codimension one of `Y` has codimension one: its codimension is at most that of its image
 (`AlgebraicGeometry.Scheme.Hom.coheight_le_coheight_apply`), and it is not the generic point of
 `X`, which `f` sends to the generic point of `Y`.
 
@@ -35,8 +35,8 @@ finite and dominant) the map is surjective, and when `f` is quasi-compact its fi
 * `AlgebraicGeometry.Scheme.Hom.coheight_eq_one_of_coheight_apply_eq_one`: a point over a point
   of codimension one has codimension one.
 * `AlgebraicGeometry.Scheme.Hom.codimensionOneMap_surjective`: for a surjective, locally
-  quasi-finite morphism of irreducible schemes, every codimension-one point of the target is the
-  image of a codimension-one point.
+  quasi-finite morphism from an irreducible scheme, every codimension-one point of the target is
+  the image of a codimension-one point.
 * `AlgebraicGeometry.Scheme.Hom.codimensionOneMap_finite_preimage_singleton`: the fibres of
   `codimensionOneMap` of a quasi-compact locally quasi-finite morphism are finite.
 * `AlgebraicGeometry.Scheme.Hom.codimensionOneMap_comp` and
@@ -67,11 +67,12 @@ universe u
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
-/-- For a locally quasi-finite dominant morphism of irreducible schemes, a point lying over a point
-of coheight one has coheight one. -/
+/-- For a locally quasi-finite dominant morphism from an irreducible scheme, a point lying over a
+point of coheight one has coheight one. -/
 theorem coheight_eq_one_of_coheight_apply_eq_one [LocallyQuasiFinite f] [IsDominant f]
-    [IrreducibleSpace X] [IrreducibleSpace Y] (x : X) (hx : coheight (f x) = 1) :
+    [IrreducibleSpace X] (x : X) (hx : coheight (f x) = 1) :
     coheight x = 1 := by
+  have := f.irreducibleSpace_of_isDominant
   -- The coheight of `x` is at most that of `f x`, and `x` is not the generic point of `X`,
   -- which `f` sends to the generic point of `Y`, of coheight zero.
   have hle : coheight x ≤ 1 := hx ▸ f.coheight_le_coheight_apply x
@@ -99,11 +100,11 @@ theorem codimensionOneMap_apply (hf : ∀ x : X, coheight x = 1 → coheight (f 
     (codimensionOneMap f hf x : Y) = f x :=
   (rfl)
 
-/-- For a surjective locally quasi-finite morphism of irreducible schemes (for instance a finite
-dominant morphism of integral schemes), every codimension-one point of the target is the image of
-a codimension-one point. -/
+/-- For a surjective locally quasi-finite morphism from an irreducible scheme (for instance a
+finite dominant morphism of integral schemes), every codimension-one point of the target is the
+image of a codimension-one point. -/
 theorem codimensionOneMap_surjective [Surjective f] [LocallyQuasiFinite f]
-    [IrreducibleSpace X] [IrreducibleSpace Y]
+    [IrreducibleSpace X]
     (hf : ∀ x : X, coheight x = 1 → coheight (f x) = 1) :
     Function.Surjective (codimensionOneMap f hf) := by
   intro y

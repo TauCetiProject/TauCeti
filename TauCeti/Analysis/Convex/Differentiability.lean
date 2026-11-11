@@ -297,7 +297,7 @@ theorem ConvexOn.inner_gradient_sub_le {E : Type*} [NormedAddCommGroup E]
     {x : E} (hd : DifferentiableAt ℝ u x) (y : E) :
     inner ℝ (gradient u x) (y - x) ≤ u y - u x := by
   have hepi : Convex ℝ {p : E × ℝ | (u p.1 : EReal) ≤ p.2} := by
-    simpa only [Set.mem_univ, ite_true] using convex_epigraph_ite (Ω := Set.univ) hu
+    simpa only [Set.mem_univ, ite_true] using convexOn_iff_convex_epigraph_ite.1 hu
   have hd' : DifferentiableAt ℝ (fun z ↦ (u z : EReal).toReal) x := by
     simpa only [EReal.toReal_coe] using hd
   have hgrad := gradient_toReal_mem_subdifferential hepi (fun z ↦ EReal.coe_ne_bot (u z))
