@@ -41,7 +41,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → 
 Only finiteness of the extended mean is required; the positive mean follows from the
 nondegeneracy assumption on the increments. -/
 theorem tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
-    (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+    (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
     (hzero : P {ω | T 0 ω = 0} < 1)
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂P.map (T 0)) ≠ ∞)
@@ -52,7 +52,7 @@ theorem tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
       (𝓝 ((P.map (T 0)).equilibriumExcessLaw.real (Ioi (x : ℝ)))) := by
   have := hindep.isProbabilityMeasure
   have hF : (P.map (T 0)) {0} < 1 := by
-    rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)]
+    rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0)]
   have htail : Antitone (fun u : ℝ≥0 ↦ (P.map (T 0)).real (Ioi (u + x))) :=
     fun _ _ h ↦ measureReal_mono (Ioi_subset_Ioi (by gcongr))
   simp_rw [measureReal_lt_renewalExcess hindep hid]
@@ -92,7 +92,7 @@ theorem tendsto_measureReal_renewalExcess_le_of_tendsto_measureReal_Ioc
   rw [hcomp]
   exact tendsto_const_nhds.sub
     (tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
-      hT hindep hid hzero hmean hlim x)
+      hindep hid hzero hmean hlim x)
 
 /-- Renewal interval limits give convergence of the CDF of the real-valued excess at every
 real threshold, including negative thresholds and zero. This also supplies the CDF input
