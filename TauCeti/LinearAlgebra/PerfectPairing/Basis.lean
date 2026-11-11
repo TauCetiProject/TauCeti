@@ -28,6 +28,9 @@ the Gram matrix of a perfect pairing in any such pair of bases has unit determin
 
 * `Module.Basis.isPerfPair_of_apply_eq_ite`: a pairing whose Gram matrix in finite bases is the
   matrix of a bijection of the index sets is a perfect pairing.
+* `Module.Basis.toMatrix_dualBasis_eq_transpose_toMatrix₂`: for finite bases `b` of `M` and `c` of
+  `N`, the matrix of the map `M → Dual R N` given by a pairing, in `b` and the dual basis of `c`,
+  is the transpose of its Gram matrix in `b` and `c`.
 * `Module.Basis.isPerfPair_of_isUnit_det`: a pairing whose Gram matrix in finite bases has unit
   determinant is a perfect pairing.
 * `Module.Basis.isUnit_det_of_isPerfPair`: the Gram matrix of a perfect pairing in finite bases has
@@ -59,9 +62,25 @@ theorem isPerfPair_of_apply_eq_ite (b : Basis ι R M) (c : Basis κ R N) (B : M 
 
 end CommSemiring
 
-section CommRing
-
 open Matrix
+
+section GramMatrix
+
+variable {ι κ R M N : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+  [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- **The map of a pairing into the dual has the transposed Gram matrix.** In the basis `b` of `M`
+and the dual basis of `c`, the matrix of `B`, read as a linear map from `M` to the dual of `N`, is
+the transpose of the Gram matrix of `B` in `b` and `c`. -/
+theorem toMatrix_dualBasis_eq_transpose_toMatrix₂ (b : Basis ι R M) (c : Basis κ R N)
+    (B : M →ₗ[R] N →ₗ[R] R) :
+    LinearMap.toMatrix b c.dualBasis B = (LinearMap.toMatrix₂ b c B)ᵀ := by
+  ext i j
+  simp [LinearMap.toMatrix_apply, LinearMap.toMatrix₂_apply]
+
+end GramMatrix
+
+section CommRing
 
 variable {ι R M N : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -71,22 +90,19 @@ theorem isPerfPair_of_isUnit_det (b : Basis ι R M) (c : Basis ι R N) (B : M �
     (h : IsUnit (LinearMap.toMatrix₂ b c B).det) : B.IsPerfPair := by
   have : Module.Finite R N := .of_basis c
   have : Module.Free R N := .of_basis c
-  have hm : LinearMap.toMatrix b c.dualBasis B = (LinearMap.toMatrix₂ b c B)ᵀ := by
-    ext i j
-    simp [LinearMap.toMatrix_apply, LinearMap.toMatrix₂_apply]
   refine .of_bijective B ?_
   rw [← LinearEquiv.coe_ofIsUnitDet (v := b) (v' := c.dualBasis) (f := B)
-    (by rwa [hm, det_transpose]), LinearEquiv.coe_coe]
+    (by rwa [toMatrix_dualBasis_eq_transpose_toMatrix₂, det_transpose]), LinearEquiv.coe_coe]
   exact LinearEquiv.bijective _
 
 /-- **The Gram matrix of a perfect pairing in finite bases has unit determinant.** -/
 theorem isUnit_det_of_isPerfPair (b : Basis ι R M) (c : Basis ι R N) (B : M →ₗ[R] N →ₗ[R] R)
     (h : B.IsPerfPair) : IsUnit (LinearMap.toMatrix₂ b c B).det := by
-  have hm : LinearMap.toMatrix b c.dualBasis (LinearEquiv.ofBijective B h.bijective_left) =
-      (LinearMap.toMatrix₂ b c B)ᵀ := by
-    ext i j
-    simp [LinearMap.toMatrix_apply, LinearMap.toMatrix₂_apply]
-  simpa [hm] using (LinearEquiv.ofBijective B h.bijective_left).isUnit_det b c.dualBasis
+  -- `B`, read as a linear map into the dual of `N`, is the linear equivalence it induces.
+  have he : (LinearEquiv.ofBijective B h.bijective_left : M →ₗ[R] Module.Dual R N) = B :=
+    LinearMap.ext (LinearEquiv.ofBijective_apply B)
+  rw [← det_transpose, ← toMatrix_dualBasis_eq_transpose_toMatrix₂, ← he]
+  exact (LinearEquiv.ofBijective B h.bijective_left).isUnit_det b c.dualBasis
 
 end CommRing
 
