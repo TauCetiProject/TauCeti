@@ -71,7 +71,9 @@ namespace TauCeti.Dagger
 
 open _root_.MvPowerSeries
 
-variable (K : Type*) [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+section Algebraic
+
+variable (K : Type*) [NormedField K] [IsUltrametricDist K]
   (A : Type*) [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
 
 local notation "W" => washnitzerAlgebra (Fin (presentationDim K A)) K
@@ -81,6 +83,20 @@ local notation "I" => RingHom.ker (presentation K A)
 `W_n ⧸ ker (presentation K A)` of the chosen minimal presentation. -/
 noncomputable def residueAlgEquiv : A ≃ₐ[K] W ⧸ I :=
   (Ideal.quotientKerAlgEquivOfSurjective (presentation_surjective K A)).symm
+
+/-- The residue isomorphism sends the image of a series to its quotient class. -/
+@[simp] theorem residueAlgEquiv_presentation (f : W) :
+    residueAlgEquiv K A (presentation K A f) = Ideal.Quotient.mk _ f := by
+  have h := Ideal.quotientKerAlgEquivOfSurjective_mk (presentation_surjective K A) f
+  simp only [residueAlgEquiv, ← h, AlgEquiv.symm_apply_apply]
+
+end Algebraic
+
+variable (K : Type*) [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  (A : Type*) [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+
+local notation "W" => washnitzerAlgebra (Fin (presentationDim K A)) K
+local notation "I" => RingHom.ker (presentation K A)
 
 /-- The residue norm on a dagger algebra: the norm `‖x‖ = ‖residueAlgEquiv K A x‖`,
 transported from the quotient Gauss norm of the chosen minimal presentation. It is an
@@ -111,13 +127,6 @@ theorem isUltrametricDist_residueNormedCommRing :
   IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ by
     simpa only [← norm_residueAlgEquiv, map_add] using
       IsUltrametricDist.norm_add_le_max (residueAlgEquiv K A x) (residueAlgEquiv K A y)
-
-omit [CompleteSpace K] in
-/-- The residue isomorphism sends the image of a series to its quotient class. -/
-@[simp] theorem residueAlgEquiv_presentation (f : W) :
-    residueAlgEquiv K A (presentation K A f) = Ideal.Quotient.mk _ f := by
-  have h := Ideal.quotientKerAlgEquivOfSurjective_mk (presentation_surjective K A) f
-  simp only [residueAlgEquiv, ← h, AlgEquiv.symm_apply_apply]
 
 /-- The residue norm of the image of a series is at most its Gauss norm. -/
 theorem norm_presentation_le (f : W) :
