@@ -34,6 +34,8 @@ apply to `e ∘ R`.
 
 ## Main results
 
+* `TauCeti.exists_comp_eq_of_isLocalDiffeomorphAt`: descent of a `C^n` map constant on the
+  fibres of a local diffeomorphism on an open set.
 * `ContMDiffWithinAt.of_comp_isLocalDiffeomorph`: pointwise-within cancellation.
 * `ContMDiffOn.of_comp_isLocalDiffeomorph`: on-set cancellation.
 * `ContMDiff.of_comp_isLocalDiffeomorph`: global cancellation.
@@ -48,8 +50,8 @@ apply to `e ∘ R`.
 
 public section
 
-open Set
-open scoped Manifold ContDiff
+open Set Filter Function
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
@@ -123,6 +125,41 @@ theorem _root_.IsLocalDiffeomorph.contMDiff_comp_iff {m : ℕ∞ω} {g : B → N
   refine ⟨fun hg y ↦ ?_, fun hg ↦ hg.comp (hp.contMDiff.of_le hm)⟩
   obtain ⟨x, rfl⟩ := hsurj y
   exact ((hp x).contMDiffAt_comp_iff hm).1 (hg x)
+
+/-! ### Descent along a local diffeomorphism -/
+
+section Descent
+
+variable {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace 𝕜 EX] [TopologicalSpace HX]
+  {IX : ModelWithCorners 𝕜 EX HX} [TopologicalSpace X] [ChartedSpace HX X] [Nonempty X]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace 𝕜 EN] [TopologicalSpace HN]
+  {IN : ModelWithCorners 𝕜 EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+
+/-- A map `χ` which is `C^n` on an open set `S` and constant on the fibres of a map `Ψ` that is a
+local diffeomorphism at every point of `S` descends along `Ψ`: some `φ` satisfies `φ ∘ Ψ = χ` on
+`S` and is `C^n` near every point of `Ψ '' S`, being `χ` composed with a local inverse of `Ψ`. -/
+theorem exists_comp_eq_of_isLocalDiffeomorphAt {Ψ : X → M} {χ : X → N} {S : Set X}
+    (hS : IsOpen S) (hΨ : ∀ q ∈ S, IsLocalDiffeomorphAt IX I n Ψ q)
+    (hχ : ContMDiffOn IX IN n χ S) (hfib : ∀ q ∈ S, ∀ q' ∈ S, Ψ q = Ψ q' → χ q = χ q') :
+    ∃ φ : M → N, (∀ q ∈ S, φ (Ψ q) = χ q) ∧
+      ∀ q ∈ S, ∃ O : Set M, IsOpen O ∧ Ψ q ∈ O ∧ ContMDiffOn I IN n φ O := by
+  classical
+  have hφΨ (q) (hq : q ∈ S) : χ (invFunOn Ψ S (Ψ q)) = χ q :=
+    hfib _ (invFunOn_mem ⟨q, hq, rfl⟩) q hq (invFunOn_eq ⟨q, hq, rfl⟩)
+  refine ⟨fun y ↦ χ (invFunOn Ψ S y), hφΨ, fun q hq ↦ ?_⟩
+  -- Near `Ψ q` the descended map is `χ` composed with a local inverse `k` of `Ψ`.
+  set k := (hΨ q hq).localInverse
+  refine ⟨k.source ∩ k ⁻¹' S, k.contMDiffOn_toFun.continuousOn.isOpen_inter_preimage k.open_source
+    hS, ⟨(hΨ q hq).localInverse_mem_source, ?_⟩, ?_⟩
+  · rw [mem_preimage, (hΨ q hq).localInverse_left_inv (hΨ q hq).localInverse_mem_target]
+    exact hq
+  · refine (hχ.comp (k.contMDiffOn_toFun.mono inter_subset_left) fun z hz ↦ hz.2).congr
+      fun z hz ↦ ?_
+    rw [comp_apply, ← hφΨ _ hz.2, (hΨ q hq).localInverse_right_inv hz.1]
+
+end Descent
 
 section Prod
 

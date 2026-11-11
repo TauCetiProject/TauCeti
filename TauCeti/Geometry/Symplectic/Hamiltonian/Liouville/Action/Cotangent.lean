@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Chart
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.IsotropicSection
@@ -196,41 +197,6 @@ private theorem image_actionAngleChart (A : (ι → ℝ) → ι → ℝ) (V : Se
     rw [hq₀, ContinuousLinearEquiv.symm_apply_apply]
 
 end Model
-
-/-! ### Descent along a local diffeomorphism -/
-
-section Descent
-
-variable {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
-  {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X] [Nonempty X]
-  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
-  {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N]
-
-/-- A map `χ` which is smooth on an open set `S` and constant on the fibres of a map `Ψ` that is a
-local diffeomorphism at every point of `S` descends along `Ψ`: some `φ` satisfies `φ ∘ Ψ = χ` on
-`S` and is smooth near every point of `Ψ '' S`, being `χ` composed with a local inverse of `Ψ`. -/
-private theorem exists_comp_eq_of_isLocalDiffeomorphAt {Ψ : X → M} {χ : X → N} {S : Set X}
-    (hS : IsOpen S) (hΨ : ∀ q ∈ S, IsLocalDiffeomorphAt IX I ∞ Ψ q)
-    (hχ : ContMDiffOn IX IN ∞ χ S) (hfib : ∀ q ∈ S, ∀ q' ∈ S, Ψ q = Ψ q' → χ q = χ q') :
-    ∃ φ : M → N, (∀ q ∈ S, φ (Ψ q) = χ q) ∧
-      ∀ q ∈ S, ∃ O : Set M, IsOpen O ∧ Ψ q ∈ O ∧ ContMDiffOn I IN ∞ φ O := by
-  classical
-  have hφΨ (q) (hq : q ∈ S) : χ (invFunOn Ψ S (Ψ q)) = χ q :=
-    hfib _ (invFunOn_mem ⟨q, hq, rfl⟩) q hq (invFunOn_eq ⟨q, hq, rfl⟩)
-  refine ⟨fun y ↦ χ (invFunOn Ψ S y), hφΨ, fun q hq ↦ ?_⟩
-  -- Near `Ψ q` the descended map is `χ` composed with a local inverse `k` of `Ψ`.
-  set k := (hΨ q hq).localInverse
-  refine ⟨k.source ∩ k ⁻¹' S, k.contMDiffOn_toFun.continuousOn.isOpen_inter_preimage k.open_source
-    hS, ⟨(hΨ q hq).localInverse_mem_source, ?_⟩, ?_⟩
-  · rw [mem_preimage, (hΨ q hq).localInverse_left_inv (hΨ q hq).localInverse_mem_target]
-    exact hq
-  · refine (hχ.comp (k.contMDiffOn_toFun.mono inter_subset_left) fun z hz ↦ hz.2).congr
-      fun z hz ↦ ?_
-    rw [comp_apply, ← hφΨ _ hz.2, (hΨ q hq).localInverse_right_inv hz.1]
-
-end Descent
 
 /-! ### Action–angle coordinates into `T*Tⁿ` -/
 

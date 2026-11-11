@@ -113,7 +113,7 @@ theorem contMDiff_torusCover :
   rfl
 
 /-- The base point of the cover of `T*Tⁿ` depends on the angles alone, with derivative the
-identity. -/
+first projection `(δθ, δℓ) ↦ δθ`. -/
 theorem hasMFDerivAt_proj_torusCover (q : (ι → ℝ) × ((ι → ℝ) →L[ℝ] ℝ)) :
     HasMFDerivAt 𝓘(ℝ, (ι → ℝ) × ((ι → ℝ) →L[ℝ] ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
       (fun q ↦ (torusCover p q).proj) q
