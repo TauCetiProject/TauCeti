@@ -232,8 +232,7 @@ theorem Setoid.hasCantorAntichainOn_univ_of_isMeagre {X : Type*} [TopologicalSpa
     rw [not_neBot, ← isOpen_singleton_iff_punctured_nhds] at h
     refine not_isMeagre_of_isOpen (h.prod h) ⟨(x, x), rfl, rfl⟩ (hE.mono ?_)
     rintro ⟨a, b⟩ ⟨ha, hb⟩
-    change a = x at ha
-    change b = x at hb
+    simp only [Set.mem_singleton_iff] at ha hb
     subst ha hb
     exact E.refl _
   obtain ⟨f, hf, -, hfE⟩ := TauCeti.mycielski_prod hE
