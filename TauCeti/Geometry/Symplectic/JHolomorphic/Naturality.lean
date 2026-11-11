@@ -103,7 +103,7 @@ theorem cauchyRiemannLinearization_comp
 
 /-- At a zero of the Cauchy–Riemann defect, the linearization is natural under a `C²`
 target coordinate change. No integrability of the target structures is required. -/
-theorem cauchyRiemannLinearization_comp_of_eq_zero
+theorem cauchyRiemannLinearization_comp_of_cauchyRiemannOperator_eq_zero
     (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (K : W → W →L[ℝ] W)
     (u ξ : U → V) (Φ : V → W) (x : U)
     (hu : DifferentiableAt ℝ u x) (hξ : DifferentiableAt ℝ ξ x)

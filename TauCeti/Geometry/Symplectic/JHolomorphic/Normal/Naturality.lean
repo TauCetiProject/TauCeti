@@ -13,8 +13,9 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 # Target-coordinate covariance of the normal Cauchy–Riemann operator
 
 The normal fiber of a parametrized curve `u` is the quotient by the actual derivative image
-`range (du)`. A differentiable target map `Φ` carries this image into `range (d(Φ ∘ u))`, so
-its differential induces a map of normal quotients using `Submodule.mapQ`.
+`range (du)`. The differential of any target map `Φ` carries this image into
+`range (d(Φ ∘ u))`, so it induces the map of normal quotients `normalFDerivMap`, built with
+`Submodule.mapQ`.
 
 At a pseudoholomorphic map, this quotient map intertwines the normal linearizations when
 `Φ` is `C²` and intertwines the target structures near the image point. In particular, local
@@ -43,10 +44,36 @@ variable {U V W : Type*}
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup W] [NormedSpace ℝ W]
 
+/-- The differential of any target map carries the derivative image of `u` into that of
+`Φ ∘ u`. No differentiability is needed: otherwise one of the derivatives is zero. -/
+theorem range_fderiv_le_comap_range_fderiv_comp (u : U → V) (Φ : V → W) (x : U) :
+    (fderiv ℝ u x).toLinearMap.range ≤
+      (fderiv ℝ (Φ ∘ u) x).toLinearMap.range.comap (fderiv ℝ Φ (u x)).toLinearMap := by
+  by_cases hΦ : DifferentiableAt ℝ Φ (u x)
+  · by_cases hu : DifferentiableAt ℝ u x
+    · rintro _ ⟨a, rfl⟩
+      exact ⟨a, by simp [fderiv_comp x hΦ hu]⟩
+    · simp [fderiv_zero_of_not_differentiableAt hu]
+  · simp [fderiv_zero_of_not_differentiableAt hΦ]
+
+/-- The map of normal quotients `V ⧸ range (du x) → W ⧸ range (d(Φ ∘ u) x)` induced by the
+differential of a target map `Φ`. -/
+def normalFDerivMap (u : U → V) (Φ : V → W) (x : U) :
+    (V ⧸ (fderiv ℝ u x).toLinearMap.range) →ₗ[ℝ]
+      W ⧸ (fderiv ℝ (Φ ∘ u) x).toLinearMap.range :=
+  (fderiv ℝ u x).toLinearMap.range.mapQ _ (fderiv ℝ Φ (u x)).toLinearMap
+    (range_fderiv_le_comap_range_fderiv_comp u Φ x)
+
+/-- The induced normal map sends the class of `w` to the class of `dΦ (u x) w`. -/
+@[simp]
+theorem normalFDerivMap_mk (u : U → V) (Φ : V → W) (x : U) (w : V) :
+    normalFDerivMap u Φ x (Submodule.Quotient.mk w) =
+      Submodule.Quotient.mk (fderiv ℝ Φ (u x) w) := (rfl)
+
 /-- The map of normal quotients induced by a `C²` target map intertwines the normal
 Cauchy–Riemann linearizations at a zero of the nonlinear defect. The hypothesis on the
 target structures is local near `u x`, as needed for coordinate overlaps. -/
-theorem normalCauchyRiemannLinearization_comp
+theorem normalCauchyRiemannLinearization_comp_of_cauchyRiemannOperator_eq_zero
     (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (K : W → W →L[ℝ] W)
     (u ξ : U → V) (Φ : V → W) (x : U)
     (hu : DifferentiableAt ℝ u x) (hξ : DifferentiableAt ℝ ξ x)
@@ -55,18 +82,13 @@ theorem normalCauchyRiemannLinearization_comp
     (hJK : ∀ᶠ y in 𝓝 (u x), (fderiv ℝ Φ y).comp (J y) =
       (K (Φ y)).comp (fderiv ℝ Φ y))
     (hhol : cauchyRiemannOperator j J u x = 0) :
-    ((fderiv ℝ u x).toLinearMap.range.mapQ
-        (fderiv ℝ (Φ ∘ u) x).toLinearMap.range (fderiv ℝ Φ (u x)).toLinearMap
-        (by
-          rintro _ ⟨a, rfl⟩
-          exact ⟨a, by simp [fderiv_comp x (hΦ.differentiableAt (by norm_num)) hu]⟩)).comp
-        (normalCauchyRiemannLinearization j J u ξ x) =
+    (normalFDerivMap u Φ x).comp (normalCauchyRiemannLinearization j J u ξ x) =
       normalCauchyRiemannLinearization j K (Φ ∘ u)
         (fun y ↦ fderiv ℝ Φ (u y) (ξ y)) x := by
   ext v
   simp only [LinearMap.comp_apply, normalCauchyRiemannLinearization_apply,
-    Submodule.mkQ_apply, Submodule.mapQ_apply]
-  rw [cauchyRiemannLinearization_comp_of_eq_zero j J K u ξ Φ x hu hξ hΦ hJ hK hJK hhol]
-  rfl
+    Submodule.mkQ_apply, normalFDerivMap_mk]
+  rw [cauchyRiemannLinearization_comp_of_cauchyRiemannOperator_eq_zero j J K u ξ Φ x
+    hu hξ hΦ hJ hK hJK hhol, ContinuousLinearMap.comp_apply]
 
 end TauCeti
