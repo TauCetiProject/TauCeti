@@ -181,7 +181,7 @@ theorem pointMultiplicity_eq_sum_gt (p : α) (δ : α → ℤ) :
   rw [pointMultiplicity_apply, h]
   ring
 
-/-- **The symmetric part of `L`** is the product of the total sums of the boundaries:
+/-- **The symmetric part of `L`** is minus the product of the total sums of the boundaries:
 `L(β₁, β₂) + L(β₂, β₁) = -(∑ ∂β₁) (∑ ∂β₂)`. So `L` is antisymmetric on the classes of
 `H₁([1, n], {1, …, n})`, whose boundaries have total sum zero. -/
 theorem linking_add_linking_swap (δ₁ δ₂ : α → ℤ) :

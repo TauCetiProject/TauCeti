@@ -621,7 +621,8 @@ end StrandsAlgebra
 
 namespace StrandGradingGroup
 
-variable {α β : Type*} [LinearOrder α] [Fintype α] [LinearOrder β] [Fintype β]
+variable {α β γ : Type*} [LinearOrder α] [Fintype α] [LinearOrder β] [Fintype β]
+  [LinearOrder γ] [Fintype γ]
 
 /-- The multiplicity of a class at a point does not change when the points are relabelled along
 an order isomorphism. -/
@@ -663,6 +664,17 @@ theorem map_boundary (e : α ≃o β) (g : StrandGradingGroup α) (y : β) :
 
 @[simp]
 theorem map_symm (e : α ≃o β) : (map e).symm = map e.symm := by
+  ext g y
+  · simp [map]
+  · simp [map]
+
+@[simp]
+theorem map_refl : map (OrderIso.refl α) = MulEquiv.refl (StrandGradingGroup α) := by
+  ext g y
+  · simp [map]
+  · simp [map]
+
+theorem map_trans (e : α ≃o β) (e' : β ≃o γ) : map (e.trans e') = (map e).trans (map e') := by
   ext g y
   · simp [map]
   · simp [map]
@@ -744,13 +756,27 @@ theorem reverse_symm_boundary (g : (StrandGradingGroup αᵒᵈ)ᵐᵒᵖ) (x : 
     (reverse.symm g).boundary x = -g.unop.boundary (toDual x) := by
   simp [reverse]
 
+/-- Reversal commutes with relabelling, which becomes relabelling along the dual order
+isomorphism `e.dual : αᵒᵈ ≃o βᵒᵈ`. -/
+theorem reverse_map (e : α ≃o β) (g : StrandGradingGroup α) :
+    (reverse (map e g)).unop = map e.dual (reverse g).unop := by
+  ext x
+  · simp
+  · simp
+
+/-- Reversing twice is the identity, up to the identification `α ≃o αᵒᵈᵒᵈ`. -/
+theorem reverse_reverse (g : StrandGradingGroup α) :
+    (reverse (reverse g).unop).unop = map (OrderIso.dualDual α) g := by
+  ext x
+  · simp
+  · simp
+
 /-- Reversal fixes the central element `λ`, so the differential keeps its degree `λ⁻¹`. -/
 @[simp]
 theorem reverse_lambda : reverse (lambda : StrandGradingGroup α) = op lambda :=
   unop_injective <| by ext <;> simp
 
-/-- Reversal preserves the subgroup `G'(n)` of half-integral Maslov components and boundaries of
-total sum zero. -/
+/-- Reversal preserves the subgroup `G'(n)`. -/
 @[simp]
 theorem unop_reverse_mem_gPrime_iff {g : StrandGradingGroup α} :
     (reverse g).unop ∈ gPrime ↔ g ∈ gPrime := by
@@ -778,6 +804,16 @@ theorem rev_maslov (g : StrandGradingGroup (Fin n)) : (rev n g).unop.maslov = g.
 @[simp]
 theorem rev_boundary (g : StrandGradingGroup (Fin n)) (i : Fin n) :
     (rev n g).unop.boundary i = -g.boundary i.rev := by
+  simp [rev, MulEquiv.op]
+
+@[simp]
+theorem rev_symm_maslov (g : (StrandGradingGroup (Fin n))ᵐᵒᵖ) :
+    ((rev n).symm g).maslov = g.unop.maslov := by
+  simp [rev, MulEquiv.op]
+
+@[simp]
+theorem rev_symm_boundary (g : (StrandGradingGroup (Fin n))ᵐᵒᵖ) (i : Fin n) :
+    ((rev n).symm g).boundary i = -g.unop.boundary i.rev := by
   simp [rev, MulEquiv.op]
 
 @[simp]
