@@ -435,8 +435,9 @@ private theorem exists_besselPotential_toDistr_eq_and_norm_le :
   choose h hh hhn using fun j ↦ exists_fourierMultiplierCLM_eq_and_norm_le (σ j) (u.block j)
   have hbound (j : ℕ) : ‖h j‖ ≤ max C 0 * ‖u‖ * (1 / 2) ^ j := by
     have h2 : ((2 : ℝ) ^ j) ^ (s - 1) = 2 ^ (s * j) * (1 / 2) ^ j := by
-      rw [Real.rpow_sub_one (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul zero_le_two,
-        mul_comm, div_eq_mul_inv, one_div, inv_pow, Real.rpow_natCast]
+      rw [Real.rpow_sub_one (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul zero_le_two]
+      field_simp
+      simp
     calc ‖h j‖ ≤ (∫ x, ‖𝓕⁻ (σ j : E → ℂ) x‖) * ‖u.block j‖ := hhn j
       _ ≤ max C 0 * ((2 : ℝ) ^ j) ^ (s - 1) * ‖u.block j‖ := by
         gcongr
@@ -472,16 +473,13 @@ private def besselPotentialLp : BesovSpace F φ s p q →L[ℂ] Lp F p (volume :
     (q := q)).choose_spec
   have hinj : Function.Injective (Lp.toTemperedDistributionCLM F volume p) :=
     LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot
+  have key (u : BesovSpace F φ s p q) : Lp.toTemperedDistributionCLM F volume p (hC u).choose =
+      besselPotential E F (s - 1) u.toDistr := (hC u).choose_spec.1.symm
   LinearMap.mkContinuous
     { toFun u := (hC u).choose
-      map_add' u v := hinj <| by
-        rw [map_add, Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistributionCLM_apply,
-          Lp.toTemperedDistributionCLM_apply, ← (hC u).choose_spec.1, ← (hC v).choose_spec.1,
-          ← (hC (u + v)).choose_spec.1, toDistr_add, map_add]
-      map_smul' c u := hinj <| by
-        rw [map_smul, Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistributionCLM_apply,
-          ← (hC u).choose_spec.1, ← (hC (c • u)).choose_spec.1, toDistr_smul, map_smul,
-          RingHom.id_apply] }
+      map_add' u v := hinj <| (key (u + v)).trans <| by simp only [map_add, key, toDistr_add]
+      map_smul' c u := hinj <| (key (c • u)).trans <| by
+        simp only [map_smul, key, toDistr_smul, RingHom.id_apply] }
     _ fun u ↦ (hC u).choose_spec.2
 
 /-- `besselPotentialLp` computes the Bessel potential `J^{s-1}`. -/
