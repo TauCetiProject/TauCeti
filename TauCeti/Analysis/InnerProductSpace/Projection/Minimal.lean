@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Hull
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Topology.MetricSpace.Bounded
 
+import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.Abel
@@ -37,6 +38,9 @@ finite tail convex combinations `w n ∈ convexHull ℝ (f '' Set.Ici n)` that c
   space, those metric projections converge in norm to a point of `⋂ n, K n`.
 * `TauCeti.exists_tendsto_mem_convexHull_image_Ici`: every bounded sequence in a complete real inner
   product space admits a norm-convergent sequence of finite tail convex combinations.
+* `TauCeti.exists_tendsto_sum_smul_of_isBounded_range`: explicit-coefficient form giving finite sets
+  `s n : Finset ℕ` and nonnegative weights `w n` summing to `1` such that
+  `∑ i ∈ s n, w n i • f (n + i)` converges in norm.
 -/
 
 public section
@@ -168,6 +172,31 @@ theorem exists_tendsto_mem_convexHull_image_Ici {f : ℕ → E}
   refine squeeze_zero (fun _ ↦ dist_nonneg) hbound ?_
   simpa using tendsto_one_div_add_atTop_nhds_zero_nat.add
     (tendsto_iff_dist_tendsto_zero.1 hp_tendsto)
+
+/-- **Explicit norm-convergent tail convex combinations in a Hilbert space.** Every bounded
+sequence `f : ℕ → E` in a complete real inner product space admits a vector `v : E`, finite index
+sets `s : ℕ → Finset ℕ`, and weights `w : ℕ → ℕ → ℝ` with `∀ i ∈ s n, 0 ≤ w n i` and
+`∑ i ∈ s n, w n i = 1` such that `∑ i ∈ s n, w n i • f (n + i)` converges to `v` in norm. -/
+theorem exists_tendsto_sum_smul_of_isBounded_range {f : ℕ → E}
+    (hbdd : Bornology.IsBounded (range f)) :
+    ∃ (v : E) (s : ℕ → Finset ℕ) (w : ℕ → ℕ → ℝ),
+      (∀ n i, i ∈ s n → 0 ≤ w n i) ∧ (∀ n, ∑ i ∈ s n, w n i = 1) ∧
+      Tendsto (fun n ↦ ∑ i ∈ s n, w n i • f (n + i)) atTop (𝓝 v) := by
+  obtain ⟨v, y, hy_mem, hy_tendsto⟩ := exists_tendsto_mem_convexHull_image_Ici hbdd
+  have himg (n : ℕ) : f '' Ici n = range fun i ↦ f (n + i) := by
+    ext z; simp only [mem_image, mem_Ici, mem_range]
+    exact ⟨fun ⟨k, hnk, hfk⟩ ↦ ⟨k - n, by rw [Nat.add_sub_of_le hnk]; exact hfk⟩,
+      fun ⟨i, hfi⟩ ↦ ⟨n + i, Nat.le_add_right n i, hfi⟩⟩
+  have hunpack (n : ℕ) :
+      ∃ (s : Finset ℕ) (w : ℕ → ℝ),
+        (∀ i ∈ s, 0 ≤ w i) ∧ ∑ i ∈ s, w i = 1 ∧ ∑ i ∈ s, w i • f (n + i) = y n := by
+    have hyn := hy_mem n
+    rw [himg n, convexHull_range_eq_exists_affineCombination] at hyn
+    obtain ⟨s, w, hw, hsum, hcomb⟩ := hyn
+    rw [Finset.affineCombination_eq_linear_combination _ _ _ hsum] at hcomb
+    exact ⟨s, w, hw, hsum, hcomb⟩
+  choose s w hw0 hw1 hsum_eq using hunpack
+  exact ⟨v, s, w, hw0, hw1, hy_tendsto.congr fun n ↦ (hsum_eq n).symm⟩
 
 end Complete
 
