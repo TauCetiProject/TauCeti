@@ -90,6 +90,51 @@ theorem ordIndex_eq_one_of_surjective (hv : Function.Surjective v) : ordIndex v 
   have hS : {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n}.Nonempty := ⟨1, Nat.one_pos, f, hf⟩
   exact Nat.le_antisymm (ordIndex_le v Nat.one_pos hf) (Nat.sInf_mem hS).1
 
+/-- If one order function is a natural-number multiple of another, their indices differ
+by the same factor. This includes a zero factor and trivial valuations. -/
+theorem ordIndex_eq_mul_of_forall_ord_eq (w : _root_.Valuation F ℤᵐ⁰) {e : ℕ}
+    (hord : ∀ f : F, ord v f = e * ord w f) : ordIndex v = e * ordIndex w := by
+  have hpos : ∀ (u : _root_.Valuation F ℤᵐ⁰) {f : F}, 0 < ord u f → 0 < ordIndex u :=
+    fun u {f} hf ↦
+      (Nat.sInf_mem (s := {n : ℕ | 0 < n ∧ ∃ g : F, ord u g = n})
+        ⟨(ord u f).toNat, by omega, f, by omega⟩).1
+  obtain rfl | he := eq_or_ne e 0
+  · rw [zero_mul]
+    by_contra h
+    obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex v
+    rw [hord f] at hf
+    simp only [Nat.cast_zero, zero_mul] at hf
+    omega
+  have he' : (0 : ℤ) < e := by exact_mod_cast Nat.pos_of_ne_zero he
+  by_cases hb : ordIndex w = 0
+  · rw [hb, mul_zero]
+    by_contra ha
+    obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex v
+    have hm : 0 < ord w f := by
+      by_contra hle
+      have := hord f
+      nlinarith [Nat.pos_of_ne_zero ha]
+    have := hpos w hm
+    omega
+  obtain ⟨g, hg⟩ := exists_ord_eq_ordIndex w
+  obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex v
+  have hbpos : 0 < ordIndex w := Nat.pos_of_ne_zero hb
+  have h1 : ord v g = ((e * ordIndex w : ℕ) : ℤ) := by rw [hord g, hg]; push_cast; rfl
+  have hebpos : 0 < e * ordIndex w := Nat.mul_pos (Nat.pos_of_ne_zero he) hbpos
+  refine le_antisymm (ordIndex_le v hebpos h1) ?_
+  have hapos : 0 < ordIndex v := hpos v (f := g) (by rw [h1]; exact_mod_cast hebpos)
+  have h2 : (ordIndex v : ℤ) = e * ord w f := by rw [← hf, hord f]
+  have hm : 0 < ord w f := by
+    by_contra hle
+    have : (0 : ℤ) < ordIndex v := by exact_mod_cast hapos
+    nlinarith
+  have h3 := ordIndex_le w (n := (ord w f).toNat) (by omega) (f := f) (by omega)
+  have h4 : ((e * (ord w f).toNat : ℕ) : ℤ) = ordIndex v := by
+    push_cast
+    rw [Int.toNat_of_nonneg hm.le]
+    exact h2.symm
+  exact (Nat.mul_le_mul_left e h3).trans (by exact_mod_cast h4.le)
+
 end Ring
 
 section DivisionRing
@@ -140,20 +185,6 @@ theorem ordIndex_dvd_ord (f : F) : (ordIndex v : ℤ) ∣ ord v f := by
   have := ordIndex_le v (n := (ord v f % (ordIndex v : ℤ)).toNat) (by omega)
     (f := f / t ^ (ord v f / (ordIndex v : ℤ))) (by rw [hord]; omega)
   omega
-
-/-- If one order function is a natural-number multiple of another, their indices differ
-by the same factor. This includes a zero factor and trivial valuations. -/
-theorem ordIndex_eq_mul_of_forall_ord_eq (w : _root_.Valuation F ℤᵐ⁰) {e : ℕ}
-    (hord : ∀ f : F, ord v f = e * ord w f) : ordIndex v = e * ordIndex w := by
-  apply Nat.dvd_antisymm
-  · obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex w
-    have h := ordIndex_dvd_ord v f
-    rw [hord, hf, ← Nat.cast_mul] at h
-    exact Int.natCast_dvd_natCast.mp h
-  · obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex v
-    have h := mul_dvd_mul_left (e : ℤ) (ordIndex_dvd_ord w f)
-    rw [← hord, hf, ← Nat.cast_mul] at h
-    exact Int.natCast_dvd_natCast.mp h
 
 /-- **A nontrivial valuation has nonzero order index.** This is the hypothesis
 `Valuation.normalization_surjective` asks for, so it is what lets a nontrivial valuation be
