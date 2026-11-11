@@ -135,8 +135,6 @@ theorem deriv_keplerActionHamiltonian_fst_eq_div_radialPeriod {m κ ℓ E r₁ r
   have hE := kepler_energy_neg hm hℓ h₁ hlt hr₁ hr₂
   have hκ := kepler_kappa_pos hm hℓ h₁ hlt hr₁ hr₂
   have ha : 0 < (r₁ + r₂) / 2 := by linarith
-  have hb : 0 < √(m / κ) := sqrt_pos.2 (div_pos hm hκ)
-  have hc : 0 < √((r₁ + r₂) / 2) := sqrt_pos.2 ha
   have htotal : 0 < radialAction m (fun r ↦ -κ / r) ℓ E r₁ r₂ + |ℓ| := by
     rw [kepler_radialAction hm hℓ h₁ hlt hr₁ hr₂, sub_add_cancel]
     exact mul_pos hκ (sqrt_pos.2 (div_pos hm (by linarith)))
