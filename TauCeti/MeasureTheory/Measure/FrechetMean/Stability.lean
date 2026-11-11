@@ -252,8 +252,7 @@ theorem exists_isFrechetBarycenter_tendsto_comp {μs : ℕ → Measure Y}
       ∃ φ : ℕ → ℕ, StrictMono φ ∧ Tendsto (b ∘ φ) atTop (𝓝 c) := by
   -- Finite `W_p`-distance to the probability law `μs n` forces `μ` to be a probability law.
   obtain ⟨n, hn⟩ := (hμ.eventually (gt_mem_nhds zero_lt_one)).exists
-  obtain ⟨π, hπ⟩ := exists_isCoupling_of_wassersteinEDist_ne_top hn.ne_top
-  have := hπ.isProbabilityMeasure_right
+  have := isProbabilityMeasure_right_of_wassersteinEDist_ne_top hn.ne_top
   obtain ⟨K, hK, hbK⟩ := exists_isCompact_eventually_mem hp hμ hb
   obtain ⟨c, -, φ, hφ, hbφ⟩ := tendsto_subseq_of_frequently_bounded hK.isBounded hbK.frequently
   exact ⟨c, isFrechetBarycenter_of_mapClusterPt hp hμ hb
@@ -272,8 +271,7 @@ theorem tendsto_of_isFrechetBarycenter {ι : Type v} {l : Filter ι} {μs : ι �
   · exact tendsto_bot
   -- Finite `W_p`-distance to the probability law `μs i` forces `μ` to be a probability law.
   obtain ⟨i, hi⟩ := (hμ.eventually (gt_mem_nhds zero_lt_one)).exists
-  obtain ⟨π, hπ⟩ := exists_isCoupling_of_wassersteinEDist_ne_top hi.ne_top
-  have := hπ.isProbabilityMeasure_right
+  have := isProbabilityMeasure_right_of_wassersteinEDist_ne_top hi.ne_top
   obtain ⟨K, hK, hbK⟩ := exists_isCompact_eventually_mem hp hμ hb
   exact hK.tendsto_nhds_of_unique_mapClusterPt hbK fun y _ hy ↦
     hu (mem_frechetBarycenters.2 (isFrechetBarycenter_of_mapClusterPt hp hμ hb hy))

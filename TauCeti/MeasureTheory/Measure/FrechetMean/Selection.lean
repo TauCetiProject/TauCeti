@@ -94,8 +94,7 @@ theorem IsFrechetBarycenter.sum_mul_edist_rpow_eq_iInf {x : J → X}
   · have : Nonempty X := ⟨b⟩
     simp [h]
   obtain ⟨hp0, hp⟩ : p ≠ 0 ∧ p ≠ ⊤ := by
-    rw [ne_eq, ne_eq, ← not_or, ← ENNReal.toReal_eq_zero_iff]
-    exact h
+    simpa [ENNReal.toReal_eq_zero_iff, not_or] using h
   have hm (z : X) : AEMeasurable (fun y ↦ edist z y) (∑ j, w j • Measure.dirac (x j)) :=
     (continuous_const.edist continuous_id).measurable.aemeasurable
   have hb' := ((isFrechetBarycenter_iff_forall_frechetPower_le hp0 hp hm).1 hb).2
@@ -169,11 +168,12 @@ section PseudoMetric
 variable [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
 
 /-- In a pseudometric space, the `p`-Fréchet radius of a weighted law of finitely many points is
-finite at every center. The distance to the center is bounded by its largest value on the
-finitely many atoms, and the law has finite total mass. -/
+finite at every center, for every exponent `p`. -/
 theorem frechetRadius_sum_smul_dirac_ne_top {p : ℝ≥0∞}
     (w : J → ℝ≥0) (y : J → X) (x : X) :
     frechetRadius p (∑ j, w j • Measure.dirac (y j)) x ≠ ⊤ := by
+  -- The distance to the center is bounded by its largest value on the finitely many atoms, and
+  -- the law has finite total mass.
   set μ : Measure X := ∑ j, w j • Measure.dirac (y j)
   set C : ℝ≥0∞ := ⨆ j, edist x (y j)
   have hC : C ≠ ⊤ := by
