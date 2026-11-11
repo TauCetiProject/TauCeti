@@ -108,7 +108,6 @@ section FiniteDimensional
 
 variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [Invertible (2 : K)] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-  [TopologicalSpace V] [IsModuleTopology K V]
   (Q : QuadraticForm K V)
 
 local instance : IsTopologicalRing K := IsTopologicalSemiring.toIsTopologicalRing inferInstance
@@ -118,6 +117,8 @@ local instance : IsTopologicalRing K := IsTopologicalSemiring.toIsTopologicalRin
 theorem continuous_lipschitzVectorAction_toLinearMap :
     Continuous (fun x : lipschitzGroup Q =>
       (lipschitzVectorAction Q x : Module.End K V)) := by
+  let _ : TopologicalSpace V := moduleTopology K V
+  have : IsModuleTopology K V := ⟨rfl⟩
   let b := Module.finBasis K V
   rw [b.continuous_iff_apply]
   intro j
