@@ -179,6 +179,17 @@ theorem _root_.IsOpen.semialgebraicDim_eq (hs : IsOpen s) (hne : s.Nonempty) :
 theorem semialgebraicDim_univ : semialgebraicDim (univ : Set (Fin n → ℝ)) = n :=
   isOpen_univ.semialgebraicDim_eq univ_nonempty
 
+/-- If `m ⊆ ℝ ^ n` has an open embedding into `ℝ ^ d`, then every nonempty open subset of `m`
+that lies in `u` shows that `u` has dimension at least `d`. -/
+private theorem le_semialgebraicDim_of_isOpen {u m : Set (Fin n → ℝ)} {d : ℕ} {f : m → Fin d → ℝ}
+    (hf : IsOpenEmbedding f) {V : Set m} (hV : IsOpen V) (hne : V.Nonempty)
+    (hVu : Subtype.val '' V ⊆ u) : (d : WithBot ℕ∞) ≤ semialgebraicDim u := by
+  have := hne.to_subtype
+  refine le_semialgebraicDim (X := V) (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal) ?_
+    (hf.comp hV.isOpenEmbedding_subtypeVal)
+  rintro _ ⟨y, rfl⟩
+  exact hVu ⟨y, y.2, rfl⟩
+
 /-- **Dimension of finite unions.** The dimension of a finite union of locally closed subsets of
 `ℝ ^ n` is the largest of their dimensions. -/
 theorem semialgebraicDim_iUnion_of_isLocallyClosed {ι : Type*} [Finite ι]
@@ -192,13 +203,8 @@ theorem semialgebraicDim_iUnion_of_isLocallyClosed {ι : Type*} [Finite ι]
   obtain ⟨i, x, hx⟩ := nonempty_interior_of_iUnion_of_isLocallyClosed
     (fun i ↦ (hu i).preimage continuous_subtype_val)
     (eq_univ_of_forall fun x ↦ by simpa using ht x.2)
-  have : Nonempty (interior ((Subtype.val : t → Fin n → ℝ) ⁻¹' u i)) := ⟨⟨x, hx⟩⟩
-  refine le_iSup_of_le i <| le_semialgebraicDim
-    (X := interior ((Subtype.val : t → Fin n → ℝ) ⁻¹' u i))
-    (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal) ?_
-    (hf.comp isOpen_interior.isOpenEmbedding_subtypeVal)
-  rintro _ ⟨y, rfl⟩
-  exact interior_subset (s := (Subtype.val : t → Fin n → ℝ) ⁻¹' u i) y.2
+  exact le_iSup_of_le i <| le_semialgebraicDim_of_isOpen hf isOpen_interior ⟨x, hx⟩
+    (image_subset_iff.2 interior_subset)
 
 /-- **Dimension of finite unions.** The dimension of the union of a finite family of locally
 closed subsets of `ℝ ^ n` is the largest of their dimensions. -/
@@ -256,13 +262,8 @@ theorem semialgebraicDim_union_of_isLocallyClosed (hs : IsLocallyClosed s)
   by_cases hint : (interior ((Subtype.val : m → Fin n → ℝ) ⁻¹' s)).Nonempty
   · -- `s` has an interior point in `m`, and near it `m` lies in `s`.
     obtain ⟨x, hx⟩ := hint
-    have : Nonempty (interior ((Subtype.val : m → Fin n → ℝ) ⁻¹' s)) := ⟨⟨x, hx⟩⟩
-    refine le_max_of_le_left <| le_semialgebraicDim
-      (X := interior ((Subtype.val : m → Fin n → ℝ) ⁻¹' s))
-      (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal) ?_
-      (hf.comp isOpen_interior.isOpenEmbedding_subtypeVal)
-    rintro _ ⟨y, rfl⟩
-    exact interior_subset (s := (Subtype.val : m → Fin n → ℝ) ⁻¹' s) y.2
+    exact le_max_of_le_left <| le_semialgebraicDim_of_isOpen hf isOpen_interior ⟨x, hx⟩
+      (image_subset_iff.2 interior_subset)
   · -- Otherwise `s` is nowhere dense in `m`, so an open part of `m` lies in `t`.
     have hK : IsNowhereDense ((Subtype.val : m → Fin n → ℝ) ⁻¹' s) :=
       (hs.preimage continuous_subtype_val).isNowhereDense_iff.2 (not_nonempty_iff_eq_empty.1 hint)
@@ -272,12 +273,10 @@ theorem semialgebraicDim_union_of_isLocallyClosed (hs : IsLocallyClosed s)
       rw [not_nonempty_iff_eq_empty, compl_empty_iff] at h
       rw [IsNowhereDense, h, interior_univ] at hK
       exact univ_nonempty.ne_empty hK
-    have := hY.to_subtype
-    refine le_max_of_le_right <| le_semialgebraicDim (X := Y)
-      (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal) ?_
-      (hf.comp isClosed_closure.isOpen_compl.isOpenEmbedding_subtypeVal)
-    rintro _ ⟨y, rfl⟩
-    exact (hm (y : m).2).resolve_left fun h ↦ y.2 (subset_closure h)
+    exact le_max_of_le_right <| le_semialgebraicDim_of_isOpen hf isClosed_closure.isOpen_compl hY
+      (by
+        rintro _ ⟨y, hy, rfl⟩
+        exact (hm y.2).resolve_left fun h ↦ hy (subset_closure h))
 
 /-- **Dimension of unions.** The dimension of the union of a semialgebraic set and any other set is
 the larger of their dimensions. -/
