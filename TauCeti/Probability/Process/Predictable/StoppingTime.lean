@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Process.Predictable
-public import Mathlib.Probability.Process.Stopping
+public import TauCeti.Probability.Process.StochasticInterval
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Order.MonotoneConvergence
 
@@ -250,32 +249,6 @@ theorem piecewise (hτ : IsPredictableTime ℱ τ) (hη : IsPredictableTime ℱ 
 end IsPredictableTime
 
 end TauCeti
-
-namespace MeasureTheory.IsStoppingTime
-
-variable {Ω : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
-  {τ : Ω → WithTop ℝ≥0}
-
-/-- The open stochastic ray after any stopping time is predictable on a raw filtration. -/
-theorem measurableSet_predictable_lt (hτ : IsStoppingTime ℱ τ) :
-    MeasurableSet[ℱ.predictable] {p : ℝ≥0 × Ω | τ p.2 < p.1} := by
-  obtain ⟨u, hu⟩ := TopologicalSpace.exists_dense_seq ℝ≥0
-  have he : {p : ℝ≥0 × Ω | τ p.2 < p.1} =
-      ⋃ n, Ioi (u n) ×ˢ {ω | τ ω ≤ u n} := by
-    ext ⟨t, ω⟩
-    simp only [mem_ofPred_eq, mem_iUnion, mem_prod, mem_Ioi]
-    constructor
-    · intro h
-      lift τ ω to ℝ≥0 using ne_top_of_lt h with a ha
-      obtain ⟨n, hn⟩ := hu.exists_mem_open isOpen_Ioo
-        (nonempty_Ioo.mpr (WithTop.coe_lt_coe.mp h))
-      exact ⟨n, hn.2, WithTop.coe_le_coe.mpr hn.1.le⟩
-    · rintro ⟨n, hnt, hτn⟩
-      exact hτn.trans_lt (WithTop.coe_lt_coe.mpr hnt)
-  rw [he]
-  exact MeasurableSet.iUnion fun n ↦ measurableSet_predictable_Ioi_prod (hτ (u n))
-
-end MeasureTheory.IsStoppingTime
 
 namespace TauCeti.IsPredictableTime
 
