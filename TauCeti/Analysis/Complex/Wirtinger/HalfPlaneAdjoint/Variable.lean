@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Green.HalfPlane
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Normed.Group.CompactSupport
 
 /-!
 # Green's formula on the half-plane for `∂_s + J ∂_t + S` with variable coefficients
@@ -45,7 +44,7 @@ inner product space.
   `TauCeti.setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_mem`: if `φ` and `ξ` take values
   on `ℝ` in a subspace `F` with `⟪F, J(s) F⟫ = 0`, the boundary term vanishes and the weak
   equation (B.4.3) holds.
-* `TauCeti.inner_ofReal_I_mul_ofReal`: on `V = ℂ` the real line satisfies this condition for
+* `Real.inner_ofReal_I_mul_ofReal`: on `V = ℂ` the real line satisfies this condition for
   `J = i`.
 
 ## References
@@ -192,7 +191,7 @@ private theorem inner_apply_eq_zero_of_mem (F : Submodule ℝ V) (hφU : tsuppor
 in a subspace `F` with `⟪F, J(s) F⟫ = 0`, for instance `F = ℝⁿ ⊆ ℂⁿ` and `J(s) = i`, the boundary
 term of `setIntegral_im_pos_inner_cauchyRiemann_adjoint` vanishes:
 `∫_{0 < t} ⟪∂_s φ + Jᵀ ∂_t φ - Sᵀ φ, ξ⟫ = -∫_{0 < t} ⟪φ, D ξ + (∂_t J) ξ⟫`. -/
-theorem setIntegral_im_pos_inner_cauchyRiemann_adjoint_of_mem (F : Submodule ℝ V)
+theorem setIntegral_im_pos_inner_cauchyRiemann_adjoint_of_mem {F : Submodule ℝ V}
     (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContDiffOn ℝ 1 ξ U)
     (hJ : ContDiffOn ℝ 1 J U) (hS : ContinuousOn S U) (hφU : tsupport φ ⊆ U)
     (hJF : ∀ s : ℝ, (s : ℂ) ∈ U → ∀ v ∈ F, ∀ w ∈ F, ⟪v, J s w⟫_ℝ = 0)
@@ -207,7 +206,7 @@ theorem setIntegral_im_pos_inner_cauchyRiemann_adjoint_of_mem (F : Submodule ℝ
 /-- **The weak equation (B.4.3) on the half-disc.** If on `(-r, r)` the maps `φ` and `ξ` take
 values in a subspace `F` with `⟪F, J(s) F⟫ = 0`, the boundary term of
 `setIntegral_halfDisc_inner_cauchyRiemann_adjoint` vanishes. -/
-theorem setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_mem (F : Submodule ℝ V) {r : ℝ}
+theorem setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_mem {F : Submodule ℝ V} {r : ℝ}
     (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hξ : ContDiffOn ℝ 1 ξ (ball 0 r))
     (hJ : ContDiffOn ℝ 1 J (ball 0 r)) (hS : ContinuousOn S (ball 0 r))
     (hφr : tsupport φ ⊆ ball 0 r)
@@ -222,7 +221,7 @@ theorem setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_mem (F : Submodule �
 
 /-- On `V = ℂ` with `J = i`, the real line satisfies the boundary condition of
 `setIntegral_im_pos_inner_cauchyRiemann_adjoint_of_mem`: `⟪x, i y⟫ = 0` for real `x`, `y`. -/
-theorem inner_ofReal_I_mul_ofReal (x y : ℝ) : ⟪(x : ℂ), I * y⟫_ℝ = 0 := by
+theorem _root_.Real.inner_ofReal_I_mul_ofReal (x y : ℝ) : ⟪(x : ℂ), I * y⟫_ℝ = 0 := by
   simp [Complex.inner]
 
 end TauCeti
