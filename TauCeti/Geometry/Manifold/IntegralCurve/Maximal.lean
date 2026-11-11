@@ -298,6 +298,15 @@ theorem maximalIntegralCurve_zero : maximalIntegralCurve v x 0 = x := by
     rw [heq, hx]
   · exact maximalIntegralCurve_eq_of_not_mem h
 
+/-- A global integral curve of `v` through `x` at time `0` makes the maximal interval of existence
+all of `ℝ`. No regularity of `v` or hypothesis on `M` is needed. -/
+theorem _root_.IsMIntegralCurve.maximalIntegralCurveInterval_eq_univ (hγ : IsMIntegralCurve γ v)
+    (hx : γ 0 = x) : maximalIntegralCurveInterval v x = univ :=
+  eq_univ_of_forall fun t ↦ by
+    have habs := abs_nonneg t
+    exact (hγ.isMIntegralCurveOn (Ioo (-(|t| + 1)) (|t| + 1))).subset_maximalIntegralCurveInterval
+      ⟨by linarith, by linarith⟩ hx ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
+
 variable [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
 
 /-- **The maximal integral curve extends every integral curve through `x`.** An integral curve of
@@ -537,9 +546,6 @@ stated. -/
 theorem maximalIntegralCurveInterval_eq_univ_iff
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     maximalIntegralCurveInterval v x = univ ↔ ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurve γ v := by
-  refine ⟨fun h ↦ ⟨maximalIntegralCurve v x, maximalIntegralCurve_zero, ?_⟩,
-    fun ⟨γ, hx, hγ⟩ ↦ eq_univ_of_forall fun t ↦ ?_⟩
-  · exact TauCeti.isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv h
-  · have habs := abs_nonneg t
-    refine (hγ.isMIntegralCurveOn (Ioo (-(|t| + 1)) (|t| + 1))).subset_maximalIntegralCurveInterval
-      ⟨by linarith, by linarith⟩ hx ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
+  refine ⟨fun h ↦ ⟨maximalIntegralCurve v x, maximalIntegralCurve_zero,
+    TauCeti.isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv h⟩,
+    fun ⟨γ, hx, hγ⟩ ↦ hγ.maximalIntegralCurveInterval_eq_univ hx⟩

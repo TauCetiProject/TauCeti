@@ -35,7 +35,8 @@ with the native degree spaces.
   `MvPolynomial.restrictTotalDegree_eq_restrictSupport`
   (`TauCeti/RingTheory/MvPolynomial/RestrictTotalDegree.lean`).
 * `MvPolynomial.degreeOf_lt_of_mem_restrictSupport`: a support restriction bounding the exponent
-  of one variable bounds `degreeOf`.
+  of one variable bounds `degreeOf`. Conversely, `MvPolynomial.mem_restrictSupport_of_degreeOf_lt`
+  gives a support restriction from a strict partial-degree bound.
 * `MvPolynomial.uniqueAlgEquiv_mem_degreeLT_iff`, `MvPolynomial.map_restrictSupport_uniqueAlgEquiv`:
   in one variable, the box `{μ | μ default < N}` corresponds to `Polynomial.degreeLT R N` under
   `MvPolynomial.uniqueAlgEquiv`.
@@ -166,5 +167,11 @@ theorem map_restrictSupport_uniqueAlgEquiv [Unique σ] (N : ℕ) :
   ext q
   rw [Submodule.mem_map_equiv, ← uniqueAlgEquiv_mem_degreeLT_iff]
   exact iff_of_eq (congrArg (· ∈ _) ((uniqueAlgEquiv R σ).apply_symm_apply q))
+
+/-- A polynomial of `n`-degree below `d` is supported on the exponents `μ` with `μ n < d`. -/
+theorem mem_restrictSupport_of_degreeOf_lt {n : σ} {d : ℕ} {F : MvPolynomial σ R}
+    (hF : F.degreeOf n < d) : F ∈ restrictSupport R {μ : σ →₀ ℕ | μ n < d} :=
+  (mem_restrictSupport_iff (R := R)).mpr fun μ hμ ↦
+    (degreeOf_lt_iff ((Nat.zero_le _).trans_lt hF)).mp hF μ hμ
 
 end MvPolynomial

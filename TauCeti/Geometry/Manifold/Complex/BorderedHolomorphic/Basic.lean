@@ -210,6 +210,14 @@ instance closedUnderRestriction_borderedHolomorphicGroupoid :
 
 namespace ClosedUpperHalfPlane
 
+/-- Members of the bordered holomorphic groupoid send real points, and only those, to real
+points. -/
+theorem preservesRealAxis_of_mem_borderedHolomorphicGroupoid
+    {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane}
+    (he : e ∈ borderedHolomorphicGroupoid) : PreservesRealAxis e :=
+  preservesRealAxis_of_mem_contDiffGroupoid (borderedHolomorphicGroupoid_le_contDiffGroupoid he)
+    (by simp)
+
 /-! ### Complex linearity of the derivatives -/
 
 /-- The real derivative, within the closed upper half-plane, of a member of the bordered
