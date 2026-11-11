@@ -78,6 +78,35 @@ theorem _root_.IntermediateField.extendScalars_sup_right_eq_adjoin (A D : Interm
     IntermediateField.adjoin_self]
 
 open IntermediateField in
+/-- If `A` is linearly disjoint from `D` over `k`, the rank of `A` over `k` is at most the rank of
+`D[A]` over `D`. No algebraicity is needed: the rank of `D[A]` over the image of `D` in `L` equals
+that of `A` over `k`, and the image of `D` is isomorphic to `D`. -/
+theorem _root_.IntermediateField.LinearDisjoint.rank_le_adjoin_rank_left
+    {A D : IntermediateField k L} (hAD : A.LinearDisjoint D) :
+    Module.rank k A ≤ Module.rank D (adjoin D (A : Set L)) := by
+  set D' := (IsScalarTower.toAlgHom k D L).range
+  let i : D ≃ₐ[k] D' := AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k D L)
+  have hr : Module.rank D' (Algebra.adjoin D' (A : Set L)) = Module.rank k A :=
+    Subalgebra.LinearDisjoint.adjoin_rank_eq_rank_left hAD
+  have hmem : ∀ x ∈ Algebra.adjoin D' (A : Set L), x ∈ adjoin D (A : Set L) := by
+    intro x hx
+    induction hx using Algebra.adjoin_induction with
+    | mem x hx => exact subset_adjoin D _ hx
+    | algebraMap r =>
+      obtain ⟨y, hy⟩ := r.2
+      rw [show algebraMap D' L r = algebraMap D L y from hy.symm]
+      exact IntermediateField.algebraMap_mem _ y
+    | add x y _ _ hx hy => exact add_mem hx hy
+    | mul x y _ _ hx hy => exact mul_mem hx hy
+  rw [← hr]
+  -- The scalar compatibility `(i r • x).1 = r • x.1` holds by definition: `i r` is `r` viewed
+  -- in the range subalgebra `D'`, whose scalar action on `L` is multiplication by that element.
+  exact rank_le_of_injective_injectiveₛ (fun r : D ↦ i r)
+    (AddMonoidHom.mk' (fun x ↦ (⟨x.1, hmem x.1 x.2⟩ : adjoin D (A : Set L))) fun _ _ ↦ rfl)
+    i.injective (fun _ _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h))
+    fun _ _ ↦ Subtype.ext rfl
+
+open IntermediateField in
 /-- An extension linearly disjoint from `D` has the same degree after adjoining `D`. When `A` is
 not algebraic over `k` both degrees are `0`, because the rank of `D[A]` over `D` is at least the
 rank of `A` over `k`. -/
@@ -85,37 +114,15 @@ theorem _root_.IntermediateField.relfinrank_sup_right_eq_finrank_of_linearDisjoi
     (A D : IntermediateField k L) (hAD : A.LinearDisjoint D) :
     IntermediateField.relfinrank D (A ⊔ D) =
       Module.finrank k A := by
+  rw [IntermediateField.relfinrank_eq_finrank_of_le (le_sup_right : D ≤ A ⊔ D),
+    IntermediateField.extendScalars_sup_right_eq_adjoin]
   by_cases hA : Algebra.IsAlgebraic k A
-  · rw [IntermediateField.relfinrank_eq_finrank_of_le (le_sup_right : D ≤ A ⊔ D),
-      IntermediateField.extendScalars_sup_right_eq_adjoin]
-    exact congrArg Cardinal.toNat hAD.adjoin_rank_eq_rank_left_of_isAlgebraic_left
+  · exact congrArg Cardinal.toNat hAD.adjoin_rank_eq_rank_left_of_isAlgebraic_left
   · have hk : ¬ Module.Finite k A := fun hf ↦ hA (Algebra.IsAlgebraic.of_finite k A)
-    rw [Module.finrank_of_not_finite hk,
-      IntermediateField.relfinrank_eq_finrank_of_le (le_sup_right : D ≤ A ⊔ D),
-      IntermediateField.extendScalars_sup_right_eq_adjoin]
+    rw [Module.finrank_of_not_finite hk]
     refine Module.finrank_of_not_finite fun hfin ↦ hk ?_
-    set D' := (IsScalarTower.toAlgHom k D L).range
-    let i : D ≃ₐ[k] D' := AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k D L)
-    have hr : Module.rank D' (Algebra.adjoin D' (A : Set L)) = Module.rank k A :=
-      Subalgebra.LinearDisjoint.adjoin_rank_eq_rank_left hAD
-    have hmem : ∀ x ∈ Algebra.adjoin D' (A : Set L), x ∈ adjoin D (A : Set L) := by
-      intro x hx
-      induction hx using Algebra.adjoin_induction with
-      | mem x hx => exact subset_adjoin D _ hx
-      | algebraMap r =>
-        obtain ⟨y, hy⟩ := r.2
-        rw [show algebraMap D' L r = algebraMap D L y from hy.symm]
-        exact IntermediateField.algebraMap_mem _ y
-      | add x y _ _ hx hy => exact add_mem hx hy
-      | mul x y _ _ hx hy => exact mul_mem hx hy
-    have hle : Module.rank D' (Algebra.adjoin D' (A : Set L)) ≤
-        Module.rank D (adjoin D (A : Set L)) :=
-      rank_le_of_injective_injectiveₛ (fun r : D ↦ i r)
-        (AddMonoidHom.mk' (fun x ↦ (⟨x.1, hmem x.1 x.2⟩ : adjoin D (A : Set L))) fun _ _ ↦ rfl)
-        i.injective (fun _ _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h))
-        fun _ _ ↦ Subtype.ext rfl
-    rw [hr] at hle
-    exact Module.rank_lt_aleph0_iff.1 (hle.trans_lt (Module.rank_lt_aleph0 D _))
+    exact Module.rank_lt_aleph0_iff.1
+      (hAD.rank_le_adjoin_rank_left.trans_lt (Module.rank_lt_aleph0 D _))
 
 /-- **The compositum with an algebraic extension is a span.** If `A` is algebraic over `k`, the
 compositum `A ⊔ D` is the `A`-span of `D`: it is the ring `A[D]`, and `D` is closed under
