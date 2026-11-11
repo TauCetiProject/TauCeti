@@ -95,7 +95,7 @@ theorem exists_continuousLinearEquiv_inner_map_map (S : V →L[𝕜] V)
 
 /-- **Factoring a positive-definite operator through a prescribed direction.** Let `A` be a
 symmetric operator on a finite-dimensional inner product space with `λ ‖ξ‖² ≤ re ⟪A ξ, ξ⟫` for
-some `λ > 0`, and let `ν ≠ 0`. Then there is a continuous linear automorphism `e` with
+some `λ > 0`, and let `ν` be a vector. Then there is a continuous linear automorphism `e` with
 `e e† = A`, whose adjoint maps `ν` to a positive real multiple of `ν`, and with
 `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`.
 
@@ -108,7 +108,7 @@ adjoint `e†` of a continuous linear map can be formed, and instance search fin
 theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric
     [CompleteSpace V] (A : V →L[𝕜] V) (hA : (A : V →ₗ[𝕜] V).IsSymmetric) {lam : ℝ}
     (hlam : 0 < lam)
-    (hpos : ∀ ξ : V, lam * ‖ξ‖ ^ 2 ≤ re ⟪A ξ, ξ⟫_𝕜) {ν : V} (hν : ν ≠ 0) :
+    (hpos : ∀ ξ : V, lam * ‖ξ‖ ^ 2 ≤ re ⟪A ξ, ξ⟫_𝕜) {ν : V} :
     ∃ e : V ≃L[𝕜] V, (e : V →L[𝕜] V) ∘L (e : V →L[𝕜] V).adjoint = A ∧
       (∃ c : ℝ, 0 < c ∧ (e : V →L[𝕜] V).adjoint ν = (c : 𝕜) • ν) ∧
       ∀ x : V, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖ := by
@@ -126,12 +126,14 @@ theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_
     have : ‖x‖ ^ 2 ≤ 0 := by nlinarith
     exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm this (sq_nonneg _)))
   set Rc : V ≃L[𝕜] V := (LinearEquiv.ofInjectiveEndo R hRinj).toContinuousLinearEquiv
-  have hRν : R ν ≠ 0 := fun h => hν (hRinj (h.trans (map_zero R).symm))
+  have hRν : ν ≠ 0 → R ν ≠ 0 := fun hν h => hν (hRinj (h.trans (map_zero R).symm))
   -- the reflection `O` carries `ν` to the direction of `R ν`, with the same norm
   set w : V := ((‖ν‖ / ‖R ν‖ : ℝ) : 𝕜) • R ν
   have hw : ‖ν‖ = ‖w‖ := by
+    rcases eq_or_ne ν 0 with rfl | hν
+    · simp [w]
     rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by positivity),
-      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hRν)]
+      div_mul_cancel₀ _ (norm_ne_zero_iff.2 (hRν hν))]
   -- `⟪ν, w⟫` is real, since `R` is symmetric and `w` is a real multiple of `R ν`
   have hνw : ⟪ν, w⟫_𝕜 = ⟪w, ν⟫_𝕜 := by
     rw [inner_smul_right, inner_smul_left, RCLike.conj_ofReal, hT.sqrt_isSymmetric]
@@ -150,13 +152,16 @@ theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_
     refine ext_inner_right 𝕜 fun y => ?_
     rw [ContinuousLinearMap.adjoint_inner_left, ContinuousLinearEquiv.coe_coe, he,
       ← hT.sqrt_isSymmetric, hOinner]
-  refine ⟨e, ?_, ⟨‖R ν‖ / ‖ν‖, by positivity, ?_⟩, fun x => ?_⟩
+  refine ⟨e, ?_, ?_, fun x => ?_⟩
   · ext x
     rw [ContinuousLinearMap.comp_apply, hadj, ContinuousLinearEquiv.coe_coe, he, hOO,
       ← LinearMap.comp_apply, hT.sqrt_sq, ContinuousLinearMap.coe_coe]
-  · have hRw : R ν = ((‖R ν‖ / ‖ν‖ : ℝ) : 𝕜) • w := by
+  · rcases eq_or_ne ν 0 with rfl | hν
+    · exact ⟨1, one_pos, by simp⟩
+    refine ⟨‖R ν‖ / ‖ν‖, by have := norm_pos_iff.2 (hRν hν); positivity, ?_⟩
+    have hRw : R ν = ((‖R ν‖ / ‖ν‖ : ℝ) : 𝕜) • w := by
       rw [smul_smul, ← RCLike.ofReal_mul, div_mul_div_cancel₀ (norm_ne_zero_iff.2 hν),
-        div_self (norm_ne_zero_iff.2 hRν), RCLike.ofReal_one, one_smul]
+        div_self (norm_ne_zero_iff.2 (hRν hν)), RCLike.ofReal_one, one_smul]
     rw [hadj]
     exact (congrArg O hRw).trans (by rw [map_smul, hOw])
   · -- `λ ‖y‖² ≤ ‖R (O y)‖² = ‖e y‖²`

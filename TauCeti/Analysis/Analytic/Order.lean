@@ -19,7 +19,9 @@ monotone under domination (`=O`), hence invariant under equivalence up to consta
 and characterized by comparison with the powers `(z - z₀) ^ n`, and at a zero the divided
 difference `dslope f a` has order one less than `f`. The order is finite at a point with a
 punctured neighbourhood free of zeros, in particular wherever the zeros nearby are confined to a
-finite set. The finiteness of the zero set itself on a compact is
+finite set. The exponent `m` of a local factorization `(w - z) ^ m v w`, with `v` continuous and
+nonzero at `z`, is unique, and multiplying an analytic function by a factor continuous and nonzero
+at `z` keeps its order as that exponent. The finiteness of the zero set itself on a compact is
 `AnalyticOnNhd.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
 `TauCeti.Analysis.Analytic.IsolatedZeros`, which mentions no order.
 
@@ -53,6 +55,11 @@ finite set. The finiteness of the zero set itself on a compact is
   ball has finite order at its centre.
 * `TauCeti.analyticOrderAt_ne_top_of_zeros_subset`: if the zeros in an open set `U` lie in a
   finite set, the order is finite at every point of `U`.
+* `TauCeti.eq_of_eventually_sub_pow_mul_eq`: the exponent of a local factorization
+  `(w - z) ^ m v w`, with `v` continuous and nonzero at `z`, is unique.
+* `TauCeti.exists_eventually_mul_eq_sub_pow_mul`, `TauCeti.eq_of_eventually_mul_eq_sub_pow_mul`:
+  for `Φ` continuous and nonzero at `z` and `σ` analytic of order `n` at `z`, `Φ σ` factors with
+  exponent `n`, and every such factorization has exponent `n`.
 
 ## References
 
@@ -254,6 +261,52 @@ theorem analyticOrderAt_ne_top_of_zeros_subset {E : Type*} [NormedAddCommGroup E
     (hU.inter (S.finite_toSet.sdiff (t := {z₀})).isClosed.isOpen_compl) z₀ ⟨hz, by simp⟩
   exact analyticOrderAt_ne_top_of_forall_ne_zero hρ fun w hw hwz hw0 ↦
     (hball hw).2 ⟨hzeros w (hball hw).1 hw0, hwz⟩
+
+/-- The exponent of a local factorization `(w - z) ^ m * v w`, with `v` continuous and nonzero at
+`z`, is unique. -/
+theorem eq_of_eventually_sub_pow_mul_eq {z : 𝕜} {m n : ℕ} {u v : 𝕜 → 𝕜}
+    (hu : ContinuousAt u z) (hu₀ : u z ≠ 0) (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
+    (h : ∀ᶠ w in 𝓝 z, (w - z) ^ m * u w = (w - z) ^ n * v w) : m = n := by
+  wlog hmn : m < n generalizing m n u v
+  · rcases (not_lt.mp hmn).eq_or_lt with h' | h'
+    · exact h'.symm
+    · exact (this hv hv₀ hu hu₀ (h.mono fun w hw ↦ hw.symm) h').symm
+  exfalso
+  -- Off `z`, cancelling `(w - z) ^ m` gives `u w = (w - z) ^ (n - m) * v w`, which tends to `0`.
+  have hlim : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 (u z)) := by
+    refine (hu.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
+    filter_upwards [nhdsWithin_le_nhds h, self_mem_nhdsWithin] with w hw hwz
+    apply mul_left_cancel₀ (pow_ne_zero m (sub_ne_zero.mpr hwz))
+    rw [hw, ← mul_assoc, ← pow_add, Nat.add_sub_cancel' hmn.le]
+  have h0 : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 0) := by
+    have hc : ContinuousAt (fun w ↦ (w - z) ^ (n - m) * v w) z :=
+      ((continuousAt_id.sub continuousAt_const).pow _).mul hv
+    simpa [zero_pow (Nat.sub_ne_zero_of_lt hmn)] using hc.tendsto.mono_left nhdsWithin_le_nhds
+  exact hu₀ (tendsto_nhds_unique hlim h0)
+
+/-- If `Φ` is continuous and nonzero at `z` and `σ` is analytic with a zero of order `n` at `z`,
+then `Φ σ` factors near `z` as `(w - z) ^ n` times a function continuous and nonzero at `z`. -/
+theorem exists_eventually_mul_eq_sub_pow_mul {Φ σ : 𝕜 → 𝕜} {z : 𝕜} {n : ℕ}
+    (hΦ : ContinuousAt Φ z) (hΦ₀ : Φ z ≠ 0) (hσ : AnalyticAt 𝕜 σ z)
+    (hn : analyticOrderAt σ z = n) :
+    ∃ v : 𝕜 → 𝕜, ContinuousAt v z ∧ v z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, Φ w * σ w = (w - z) ^ n * v w := by
+  obtain ⟨g, hg, hg₀, hgσ⟩ := hσ.analyticOrderAt_eq_natCast.mp hn
+  refine ⟨fun w ↦ Φ w * g w, hΦ.mul hg.continuousAt, mul_ne_zero hΦ₀ hg₀, ?_⟩
+  filter_upwards [hgσ] with w hw
+  rw [hw, smul_eq_mul]
+  ring
+
+/-- The zero orders of `Φ σ` are those of `σ`: for `Φ` continuous and nonzero at `z` and `σ`
+analytic with a zero of order `n` at `z`, every local factorization `Φ σ = (w - z) ^ m v`, with `v`
+continuous and nonzero at `z`, has `m = n`. -/
+theorem eq_of_eventually_mul_eq_sub_pow_mul {Φ σ v : 𝕜 → 𝕜} {z : 𝕜} {m n : ℕ}
+    (hΦ : ContinuousAt Φ z) (hΦ₀ : Φ z ≠ 0) (hσ : AnalyticAt 𝕜 σ z)
+    (hn : analyticOrderAt σ z = n) (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
+    (h : ∀ᶠ w in 𝓝 z, Φ w * σ w = (w - z) ^ m * v w) : m = n := by
+  obtain ⟨u, hu, hu₀, hσu⟩ := exists_eventually_mul_eq_sub_pow_mul hΦ hΦ₀ hσ hn
+  exact eq_of_eventually_sub_pow_mul_eq hv hv₀ hu hu₀ <| by
+    filter_upwards [h, hσu] with w hw hw'
+    rw [← hw, hw']
 
 end TauCeti
 
