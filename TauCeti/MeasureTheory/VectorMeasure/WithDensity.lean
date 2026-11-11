@@ -50,7 +50,7 @@ that of `⟪ξ, ψ⟫`.
 * `MeasureTheory.VectorMeasure.integral_withDensityᵥ`: integration against `ν.withDensityᵥ g`
   through a bilinear pairing is the Bochner integral of the pairing against `ν`.
 * `MeasureTheory.VectorMeasure.integral_mul_withDensityᵥ`: the scalar form
-  `∫ᵛ x, f x ∂[mul ℝ 𝕜; ν.withDensityᵥ g] = ∫ x, f x * g x ∂ν` for essentially bounded `f`.
+  `∫ᵛ x, f x ∂[mul ℝ 𝕜; ν.withDensityᵥ g] = ∫ x, f x * g x ∂ν` for every `f`.
 * `MeasureTheory.withDensityᵥ_one_apply`, `MeasureTheory.Measure.variation_withDensityᵥ_one` and
   `MeasureTheory.VectorMeasure.integral_mul_withDensityᵥ_one`: a finite positive measure as a
   scalar measure, its values, its variation, and integration against it.
@@ -85,30 +85,44 @@ variable {X E F G : Type*} [MeasurableSpace X] {ν : Measure X}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G]
 
+/-- The variation of a vector measure with density `g` with respect to `ν` is at most the measure
+with density `‖g‖ₑ` with respect to `ν`. This is an equality when the space is complete and `g` is
+integrable with respect to `ν`, see `MeasureTheory.Measure.variation_withDensityᵥ`. -/
+theorem Measure.variation_withDensityᵥ_le (ν : Measure X) (g : X → F) :
+    (ν.withDensityᵥ g).variation ≤ ν.withDensity fun x => ‖g x‖ₑ := by
+  by_cases hg : Integrable g ν
+  · refine VectorMeasure.variation_le_of_forall_enorm_le fun s hs => ?_
+    rw [withDensityᵥ_apply hg hs, withDensity_apply _ hs]
+    exact enorm_integral_le_lintegral_enorm _
+  · simp only [Measure.withDensityᵥ, hg, dite_false, VectorMeasure.variation_zero]
+    exact Measure.zero_le _
+
 /-- The variation of a vector measure with density with respect to `ν` is absolutely continuous
 with respect to `ν`. -/
-theorem Measure.variation_withDensityᵥ_absolutelyContinuous [CompleteSpace F] (ν : Measure X)
-    (g : X → F) : (ν.withDensityᵥ g).variation ≪ ν := by
-  by_cases hg : Integrable g ν
-  · rw [Measure.variation_withDensityᵥ hg]
-    exact withDensity_absolutelyContinuous _ _
-  · simp [Measure.withDensityᵥ, hg]
+theorem Measure.variation_withDensityᵥ_absolutelyContinuous (ν : Measure X) (g : X → F) :
+    (ν.withDensityᵥ g).variation ≪ ν :=
+  (Measure.absolutelyContinuous_of_le (Measure.variation_withDensityᵥ_le ν g)).trans
+    (withDensity_absolutelyContinuous _ _)
 
 namespace VectorMeasure
 
 variable [CompleteSpace F] {g : X → F} {f : X → E}
 
-omit [NormedSpace ℝ E] in
+omit [NormedSpace ℝ E] [CompleteSpace F] in
 /-- A `ν`-a.e. strongly measurable, essentially bounded function is integrable against the vector
-measure with an integrable density with respect to `ν`. -/
-theorem integrable_withDensityᵥ_of_bound (hg : Integrable g ν) (hf : AEStronglyMeasurable f ν)
+measure with density with respect to `ν`. -/
+theorem integrable_withDensityᵥ_of_bound (hf : AEStronglyMeasurable f ν)
     (C : ℝ) (hfC : ∀ᵐ x ∂ν, ‖f x‖ ≤ C) : (ν.withDensityᵥ g).Integrable f := by
   have hac := Measure.variation_withDensityᵥ_absolutelyContinuous ν g
-  have : IsFiniteMeasure (ν.withDensityᵥ g).variation := by
-    rw [Measure.variation_withDensityᵥ hg]
-    exact isFiniteMeasure_withDensity hg.2.ne
+  by_cases hg : Integrable g ν
+  swap
+  · simp [VectorMeasure.Integrable, Measure.withDensityᵥ, hg]
+  have : IsFiniteMeasure (ν.withDensity fun x => ‖g x‖ₑ) := isFiniteMeasure_withDensity hg.2.ne
+  have : IsFiniteMeasure (ν.withDensityᵥ g).variation :=
+    isFiniteMeasure_of_le _ (Measure.variation_withDensityᵥ_le ν g)
   exact Integrable.of_bound (hf.mono_ac hac) C (hac.ae_le hfC)
 
+omit [CompleteSpace F] in
 /-- A change of the integrand on a `ν`-null set does not change its integral against a vector
 measure with density with respect to `ν`. -/
 theorem integral_withDensityᵥ_congr_ae (B : E →L[ℝ] F →L[ℝ] G) {f₁ f₂ : X → E}
@@ -181,12 +195,30 @@ theorem integral_withDensityᵥ (B : E →L[ℝ] F →L[ℝ] G) (hg : Integrable
 variable {𝕜 : Type*} [RCLike 𝕜]
 
 /-- **Integration against a scalar measure with density.** For an integrable scalar density `g`
-with respect to `ν` and a `ν`-a.e. strongly measurable, essentially bounded `f`,
-`∫ᵛ x, f x ∂[mul ℝ 𝕜; ν.withDensityᵥ g] = ∫ x, f x * g x ∂ν`. -/
-theorem integral_mul_withDensityᵥ {g : X → 𝕜} (hg : Integrable g ν) {f : X → 𝕜}
-    (hf : AEStronglyMeasurable f ν) (M : ℝ) (hfM : ∀ᵐ x ∂ν, ‖f x‖ ≤ M) :
+with respect to `ν`,
+`∫ᵛ x, f x ∂[mul ℝ 𝕜; ν.withDensityᵥ g] = ∫ x, f x * g x ∂ν`. Both sides vanish when `f` is not
+integrable against the variation of `ν.withDensityᵥ g`. -/
+theorem integral_mul_withDensityᵥ {g : X → 𝕜} (hg : Integrable g ν) {f : X → 𝕜} :
     ∫ᵛ x, f x ∂[ContinuousLinearMap.mul ℝ 𝕜; ν.withDensityᵥ g] = ∫ x, f x * g x ∂ν := by
-  simp [integral_withDensityᵥ _ hg (integrable_withDensityᵥ_of_bound hg hf M hfM)]
+  by_cases hf : (ν.withDensityᵥ g).Integrable f
+  · simp [integral_withDensityᵥ _ hg hf]
+  rw [integral_undef hf, eq_comm]
+  refine MeasureTheory.integral_undef fun hfg ↦ hf ?_
+  rw [VectorMeasure.Integrable, Measure.variation_withDensityᵥ hg,
+    integrable_withDensity_iff_integrable_smul₀' hg.aestronglyMeasurable.enorm
+      (ae_of_all _ fun _ => enorm_lt_top)]
+  simp only [toReal_enorm]
+  refine hfg.norm.mono' ?_ (ae_of_all _ fun x => ?_)
+  · have : (fun x => ‖g x‖ • f x) = fun x => (f x * g x) * ((‖g x‖ : 𝕜) * (g x)⁻¹) := by
+      ext x
+      by_cases hx : g x = 0
+      · simp [hx]
+      · simp [RCLike.real_smul_eq_coe_mul]
+        field_simp
+    rw [this]
+    exact hfg.1.mul ((RCLike.continuous_ofReal.comp_aestronglyMeasurable hg.1.norm).mul
+      hg.1.inv₀)
+  · simp [norm_smul, norm_mul, mul_comm]
 
 end VectorMeasure
 
@@ -385,10 +417,9 @@ theorem withDensity_withDensity_mul (hg : μ.Integrable g) (h : X → 𝕜) :
   rw [withDensity_apply hh, withDensity_apply ((integrable_withDensity_mul_iff hg).1 hh),
     restrict_withDensity hg, integral_withDensity_mul hg.restrict]
 
-/-- A constant density `c` with respect to a scalar measure of finite variation multiplies the
-measure by `c`. -/
+/-- A constant density `c` with respect to a scalar measure multiplies the measure by `c`. -/
 @[simp]
-theorem withDensity_const_mul [IsFiniteMeasure μ.variation] (c : 𝕜) :
+theorem withDensity_const_mul (c : 𝕜) :
     μ.withDensity (fun _ => c) (ContinuousLinearMap.mul ℝ 𝕜) = c • μ := by
   ext s hs : 1
   rw [withDensity_apply (integrable_const c), setIntegral_const, ContinuousLinearMap.mul_apply',

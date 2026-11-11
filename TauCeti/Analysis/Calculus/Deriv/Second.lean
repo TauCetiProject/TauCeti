@@ -138,7 +138,6 @@ theorem deriv_deriv_sqrt_quadratic {a b c t : ℝ} (ht : 0 < a + b * t + c * t ^
     hpos.mono fun s hs ↦ (HasDerivAt.sqrt (hQ s) hs.ne').deriv
   have hnum : HasDerivAt (fun s ↦ b + 2 * c * s) (2 * c) t := by
     simpa using HasDerivAt.const_add b (HasDerivAt.const_mul (2 * c) (hasDerivAt_id t))
-  have hsqrt := Real.sqrt_pos.2 ht
   have hden : HasDerivAt (fun s ↦ 2 * √(a + b * s + c * s ^ 2))
       (2 * ((b + 2 * c * t) / (2 * √(a + b * t + c * t ^ 2)))) t :=
     HasDerivAt.const_mul 2 (HasDerivAt.sqrt (hQ t) ht.ne')
