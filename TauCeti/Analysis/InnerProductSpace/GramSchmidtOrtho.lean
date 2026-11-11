@@ -23,15 +23,17 @@ The file also proves that the Gram-Schmidt process, normalized or not, depends c
 input at every linearly independent family. Only an initial segment of the input has to be
 linearly independent: for the `n`-th Gram-Schmidt vector, the inputs strictly before `n`; for the
 `n`-th normalized one, the inputs up to and including `n`, as in Mathlib's
-`InnerProductSpace.gramSchmidt_ne_zero_coe`. This independence keeps every denominator
-`‖gramSchmidt 𝕜 f i‖ ^ 2`, `i < n`, of the recursive formula `gramSchmidt_def''` away from zero,
-so continuity follows by well-founded induction on the index. This is what makes
-orthonormalization a continuous retraction of linearly independent frames onto orthonormal ones.
+`InnerProductSpace.gramSchmidt_ne_zero_coe`. Likewise only the inputs up to and including `n`
+have to vary continuously, since the `n`-th vector does not depend on later inputs. This
+independence keeps every denominator `‖gramSchmidt 𝕜 f i‖ ^ 2`, `i < n`, of the recursive formula
+`gramSchmidt_def''` away from zero, so continuity follows by well-founded induction on the index.
+This is what makes orthonormalization a continuous retraction of linearly independent frames onto
+orthonormal ones.
 The induction is the fixed-space form of the sectionwise argument of Patrick Massot and Michael
 Rothgang in Mathlib PR [#26221](https://github.com/leanprover-community/mathlib4/pull/26221), which
 `ContinuousWithinAt.gramSchmidt_bundle` adapts to continuous Riemannian vector bundles.
 
-The same recursion preserves real smoothness under the same independence hypotheses: the norm
+The same recursion preserves real smoothness under the same hypotheses: the norm
 is smooth away from zero, and each denominator stays nonzero. This also applies to complex
 inner-product spaces, with smoothness taken over `ℝ`.
 
@@ -47,9 +49,9 @@ continues to hold when the input family loses rank.
   `InnerProductSpace.gramSchmidtNormed_eq_self_of_inner_eq_zero` — the process fixes an input
   (unit) vector orthogonal to all earlier inputs, so it fixes an orthonormal initial segment.
 * `ContinuousWithinAt.gramSchmidt`, `ContinuousWithinAt.gramSchmidtNormed` — Gram-Schmidt applied to
-  a family of vectors depending continuously on a parameter is continuous at every parameter where
-  the relevant initial segment of the family is linearly independent, with `ContinuousAt`,
-  `ContinuousOn` and `Continuous` variants for the normalized process.
+  a family of vectors depending continuously on a parameter, up to the index, is continuous at
+  every parameter where the relevant initial segment of the family is linearly independent, with
+  `ContinuousAt`, `ContinuousOn` and `Continuous` variants for the normalized process.
 * `InnerProductSpace.inner_gramSchmidt_eq_norm_sq`,
   `InnerProductSpace.inner_gramSchmidtNormed_eq_norm` — pairing the residual or normalized
   vector with its original input gives its squared norm or its residual norm.
@@ -142,10 +144,10 @@ variable {X : Type*} [TopologicalSpace X] {v : ι → X → E} {s : Set X} {x : 
 
 attribute [local instance] IsWellOrder.toHasWellFounded
 
-/-- The Gram-Schmidt process applied to a continuously varying family of vectors is continuous at
-every parameter where the input vectors strictly before the index are linearly independent. The
-input vector at the index itself may lie in their span. -/
-theorem ContinuousWithinAt.gramSchmidt (hv : ∀ i, ContinuousWithinAt (v i) s x) (n : ι)
+/-- The Gram-Schmidt process is continuous at every parameter where the input vectors up to and
+including the index are continuous and those strictly before the index are linearly independent.
+The input vector at the index itself may lie in their span. -/
+theorem ContinuousWithinAt.gramSchmidt (n : ι) (hv : ∀ i ≤ n, ContinuousWithinAt (v i) s x)
     (hli : LinearIndepOn 𝕜 (fun i ↦ v i x) (Set.Iio n)) :
     ContinuousWithinAt (fun y ↦ InnerProductSpace.gramSchmidt 𝕜 (fun i ↦ v i y) n) s x := by
   induction n using WellFoundedLT.induction with
@@ -158,52 +160,50 @@ theorem ContinuousWithinAt.gramSchmidt (hv : ∀ i, ContinuousWithinAt (v i) s x
               InnerProductSpace.gramSchmidt 𝕜 (fun j ↦ v j y) i :=
       eq_sub_of_add_eq (InnerProductSpace.gramSchmidt_def'' 𝕜 (fun i ↦ v i y) n).symm
     simp only [hformula]
-    refine (hv n).sub <| tendsto_finsetSum _ fun i hi ↦ ?_
+    refine (hv n le_rfl).sub <| tendsto_finsetSum _ fun i hi ↦ ?_
     have hi := mem_Iio.mp hi
-    have hgi := ih i hi (hli.mono (Set.Iio_subset_Iio hi.le))
+    have hgi := ih i hi (fun k hk ↦ hv k (hk.trans hi.le)) (hli.mono (Set.Iio_subset_Iio hi.le))
     have hnorm : ContinuousWithinAt
         (fun y ↦ ((‖InnerProductSpace.gramSchmidt 𝕜 (fun j ↦ v j y) i‖ : ℝ) : 𝕜)) s x :=
       RCLike.continuous_ofReal.continuousAt.comp_continuousWithinAt hgi.norm
-    exact ((hgi.inner (hv n)).div (hnorm.pow 2) (pow_ne_zero 2 <| RCLike.ofReal_ne_zero.2 <|
+    exact ((hgi.inner (hv n le_rfl)).div (hnorm.pow 2) (pow_ne_zero 2 <| RCLike.ofReal_ne_zero.2 <|
       norm_ne_zero_iff.2 <| InnerProductSpace.gramSchmidt_ne_zero_coe i
         (hli.mono (Set.Iic_subset_Iio.2 hi)).linearIndependent)).smul hgi
 
-/-- The normalized Gram-Schmidt process applied to a continuously varying family of vectors is
-continuous at every parameter where the input vectors up to and including the index are linearly
-independent. -/
-theorem ContinuousWithinAt.gramSchmidtNormed (hv : ∀ i, ContinuousWithinAt (v i) s x) (n : ι)
+/-- The normalized Gram-Schmidt process is continuous at every parameter where the input vectors
+up to and including the index are continuous and linearly independent. -/
+theorem ContinuousWithinAt.gramSchmidtNormed (n : ι) (hv : ∀ i ≤ n, ContinuousWithinAt (v i) s x)
     (hli : LinearIndepOn 𝕜 (fun i ↦ v i x) (Set.Iic n)) :
     ContinuousWithinAt (fun y ↦ InnerProductSpace.gramSchmidtNormed 𝕜 (fun i ↦ v i y) n) s x := by
-  have hg := ContinuousWithinAt.gramSchmidt hv n (hli.mono Set.Iio_subset_Iic_self)
+  have hg := ContinuousWithinAt.gramSchmidt n hv (hli.mono Set.Iio_subset_Iic_self)
   have hnorm : ContinuousWithinAt
       (fun y ↦ ((‖InnerProductSpace.gramSchmidt 𝕜 (fun i ↦ v i y) n‖ : ℝ) : 𝕜)) s x :=
     RCLike.continuous_ofReal.continuousAt.comp_continuousWithinAt hg.norm
   exact (hnorm.inv₀ <| RCLike.ofReal_ne_zero.2 <| norm_ne_zero_iff.2 <|
     InnerProductSpace.gramSchmidt_ne_zero_coe n hli.linearIndependent).smul hg
 
-/-- The normalized Gram-Schmidt process applied to a continuously varying family of vectors is
-continuous at every parameter where the input vectors up to and including the index are linearly
-independent. -/
-theorem ContinuousAt.gramSchmidtNormed (hv : ∀ i, ContinuousAt (v i) x) (n : ι)
+/-- The normalized Gram-Schmidt process is continuous at every parameter where the input vectors
+up to and including the index are continuous and linearly independent. -/
+theorem ContinuousAt.gramSchmidtNormed (n : ι) (hv : ∀ i ≤ n, ContinuousAt (v i) x)
     (hli : LinearIndepOn 𝕜 (fun i ↦ v i x) (Set.Iic n)) :
     ContinuousAt (fun y ↦ InnerProductSpace.gramSchmidtNormed 𝕜 (fun i ↦ v i y) n) x := by
   simp only [← continuousWithinAt_univ] at hv ⊢
-  exact ContinuousWithinAt.gramSchmidtNormed hv n hli
+  exact ContinuousWithinAt.gramSchmidtNormed n hv hli
 
-/-- The normalized Gram-Schmidt process preserves continuity on a set at each of whose points the
-input vectors up to and including the index are linearly independent. -/
-theorem ContinuousOn.gramSchmidtNormed (hv : ∀ i, ContinuousOn (v i) s) (n : ι)
+/-- The normalized Gram-Schmidt process is continuous on a set on which the input vectors up to
+and including the index are continuous and, at each point, linearly independent. -/
+theorem ContinuousOn.gramSchmidtNormed (n : ι) (hv : ∀ i ≤ n, ContinuousOn (v i) s)
     (hli : ∀ y ∈ s, LinearIndepOn 𝕜 (fun i ↦ v i y) (Set.Iic n)) :
     ContinuousOn (fun y ↦ InnerProductSpace.gramSchmidtNormed 𝕜 (fun i ↦ v i y) n) s :=
-  fun y hy ↦ ContinuousWithinAt.gramSchmidtNormed (fun i ↦ hv i y hy) n (hli y hy)
+  fun y hy ↦ ContinuousWithinAt.gramSchmidtNormed n (fun i hi ↦ hv i hi y hy) (hli y hy)
 
-/-- The normalized Gram-Schmidt process preserves continuity of a family whose input vectors up to
-and including the index are linearly independent at every parameter. -/
-theorem Continuous.gramSchmidtNormed (hv : ∀ i, Continuous (v i)) (n : ι)
+/-- The normalized Gram-Schmidt process is continuous when the input vectors up to and including
+the index are continuous and linearly independent at every parameter. -/
+theorem Continuous.gramSchmidtNormed (n : ι) (hv : ∀ i ≤ n, Continuous (v i))
     (hli : ∀ y, LinearIndepOn 𝕜 (fun i ↦ v i y) (Set.Iic n)) :
     Continuous (fun y ↦ InnerProductSpace.gramSchmidtNormed 𝕜 (fun i ↦ v i y) n) := by
   simp only [← continuousOn_univ] at hv ⊢
-  exact ContinuousOn.gramSchmidtNormed hv n (fun y _ ↦ hli y)
+  exact ContinuousOn.gramSchmidtNormed n hv (fun y _ ↦ hli y)
 
 end Continuity
 
@@ -230,9 +230,10 @@ private theorem gramSchmidt_norm_smooth
   exact ⟨(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).contDiff.contDiffAt.comp_contDiffWithinAt x
     (hg.norm 𝕜 hne), RCLike.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr hne)⟩
 
-/-- Gram–Schmidt preserves real smoothness at every input family whose vectors strictly before the
-index are linearly independent. The input vector at the index itself may lie in their span. -/
-theorem ContDiffWithinAt.gramSchmidt (hv : ∀ i, ContDiffWithinAt ℝ n (v i) s x) (j : ι)
+/-- Gram–Schmidt is real smooth at every parameter where the input vectors up to and including the
+index are real smooth and those strictly before the index are linearly independent. The input
+vector at the index itself may lie in their span. -/
+theorem ContDiffWithinAt.gramSchmidt (j : ι) (hv : ∀ i ≤ j, ContDiffWithinAt ℝ n (v i) s x)
     (hli : LinearIndepOn 𝕜 (fun i ↦ v i x) (Set.Iio j)) :
     ContDiffWithinAt ℝ n (fun y ↦ InnerProductSpace.gramSchmidt 𝕜 (fun i ↦ v i y) j) s x := by
   induction j using WellFoundedLT.induction with
@@ -244,45 +245,45 @@ theorem ContDiffWithinAt.gramSchmidt (hv : ∀ i, ContDiffWithinAt ℝ n (v i) s
               InnerProductSpace.gramSchmidt 𝕜 (fun k ↦ v k y) i :=
       eq_sub_of_add_eq (gramSchmidt_def'' 𝕜 (fun i ↦ v i y) j).symm
     simp only [hformula]
-    refine (hv j).sub <| ContDiffWithinAt.sum fun i hi ↦ ?_
+    refine (hv j le_rfl).sub <| ContDiffWithinAt.sum fun i hi ↦ ?_
     have hi := mem_Iio.mp hi
-    have hgi := ih i hi (hli.mono (Set.Iio_subset_Iio hi.le))
+    have hgi := ih i hi (fun k hk ↦ hv k (hk.trans hi.le)) (hli.mono (Set.Iio_subset_Iio hi.le))
     obtain ⟨hn, hne⟩ := gramSchmidt_norm_smooth i hgi (hli.mono (Set.Iic_subset_Iio.2 hi))
-    have hc := (hgi.inner 𝕜 (hv j)).mul ((hn.pow 2).inv (pow_ne_zero 2 hne))
+    have hc := (hgi.inner 𝕜 (hv j le_rfl)).mul ((hn.pow 2).inv (pow_ne_zero 2 hne))
     simpa only [div_eq_mul_inv, Pi.smul_def', Pi.inv_apply] using hc.smul hgi
 
-/-- Normalized Gram–Schmidt preserves real smoothness at every input family whose vectors up to
-and including the index are linearly independent. -/
-theorem ContDiffWithinAt.gramSchmidtNormed (hv : ∀ i, ContDiffWithinAt ℝ n (v i) s x) (j : ι)
+/-- Normalized Gram–Schmidt is real smooth at every parameter where the input vectors up to and
+including the index are real smooth and linearly independent. -/
+theorem ContDiffWithinAt.gramSchmidtNormed (j : ι) (hv : ∀ i ≤ j, ContDiffWithinAt ℝ n (v i) s x)
     (hli : LinearIndepOn 𝕜 (fun i ↦ v i x) (Set.Iic j)) :
     ContDiffWithinAt ℝ n (fun y ↦ InnerProductSpace.gramSchmidtNormed 𝕜 (fun i ↦ v i y) j) s x := by
-  have hg := ContDiffWithinAt.gramSchmidt hv j (hli.mono Set.Iio_subset_Iic_self)
+  have hg := ContDiffWithinAt.gramSchmidt j hv (hli.mono Set.Iio_subset_Iic_self)
   obtain ⟨hn, hne⟩ := gramSchmidt_norm_smooth j hg hli
   exact (hn.inv hne).smul hg
 
-/-- Normalized Gram–Schmidt preserves real smoothness at every input family whose vectors up to
-and including the index are linearly independent. -/
-theorem ContDiffAt.gramSchmidtNormed (hv : ∀ i, ContDiffAt ℝ n (v i) x) (j : ι)
+/-- Normalized Gram–Schmidt is real smooth at every parameter where the input vectors up to and
+including the index are real smooth and linearly independent. -/
+theorem ContDiffAt.gramSchmidtNormed (j : ι) (hv : ∀ i ≤ j, ContDiffAt ℝ n (v i) x)
     (hli : LinearIndepOn 𝕜 (fun i ↦ v i x) (Set.Iic j)) :
     ContDiffAt ℝ n (fun y ↦ InnerProductSpace.gramSchmidtNormed 𝕜 (fun i ↦ v i y) j) x := by
   simp only [← contDiffWithinAt_univ] at hv ⊢
-  exact ContDiffWithinAt.gramSchmidtNormed hv j hli
+  exact ContDiffWithinAt.gramSchmidtNormed j hv hli
 
-/-- Normalized Gram–Schmidt preserves real smoothness on a set at each of whose points the input
-vectors up to and including the index are linearly independent. -/
-theorem ContDiffOn.gramSchmidtNormed (hv : ∀ i, ContDiffOn ℝ n (v i) s) (j : ι)
+/-- Normalized Gram–Schmidt is real smooth on a set on which the input vectors up to and including
+the index are real smooth and, at each point, linearly independent. -/
+theorem ContDiffOn.gramSchmidtNormed (j : ι) (hv : ∀ i ≤ j, ContDiffOn ℝ n (v i) s)
     (hli : ∀ y ∈ s, LinearIndepOn 𝕜 (fun i ↦ v i y) (Set.Iic j)) :
     ContDiffOn ℝ n (fun y ↦ InnerProductSpace.gramSchmidtNormed 𝕜 (fun i ↦ v i y) j) s := by
   intro y hy
-  exact ContDiffWithinAt.gramSchmidtNormed (fun i ↦ hv i y hy) j (hli y hy)
+  exact ContDiffWithinAt.gramSchmidtNormed j (fun i hi ↦ hv i hi y hy) (hli y hy)
 
-/-- Normalized Gram–Schmidt preserves real smoothness of a family whose input vectors up to and
-including the index are linearly independent at every parameter. -/
-theorem ContDiff.gramSchmidtNormed (hv : ∀ i, ContDiff ℝ n (v i)) (j : ι)
+/-- Normalized Gram–Schmidt is real smooth when the input vectors up to and including the index
+are real smooth and linearly independent at every parameter. -/
+theorem ContDiff.gramSchmidtNormed (j : ι) (hv : ∀ i ≤ j, ContDiff ℝ n (v i))
     (hli : ∀ y, LinearIndepOn 𝕜 (fun i ↦ v i y) (Set.Iic j)) :
     ContDiff ℝ n (fun y ↦ InnerProductSpace.gramSchmidtNormed 𝕜 (fun i ↦ v i y) j) := by
   simp only [← contDiffOn_univ] at hv ⊢
-  exact ContDiffOn.gramSchmidtNormed hv j (fun y _ ↦ hli y)
+  exact ContDiffOn.gramSchmidtNormed j hv (fun y _ ↦ hli y)
 
 end Smoothness
 
