@@ -351,6 +351,16 @@ private theorem toL2_mulAux (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) :
   rw [mulAux, toL2_toBesselPotentialSpace]
   exact MemLp.coeFn_toLp _
 
+private theorem toL2_add_ae (h0 : 0 ≤ s) (u v : H^{s}(E)) :
+    toL2 h0 (u + v) =ᵐ[volume] toL2 h0 u + toL2 h0 v := by
+  rw [map_add]
+  exact Lp.coeFn_add _ _
+
+private theorem toL2_smul_ae (h0 : 0 ≤ s) (c : ℂ) (u : H^{s}(E)) :
+    toL2 h0 (c • u) =ᵐ[volume] c • toL2 h0 u := by
+  rw [map_smul]
+  exact Lp.coeFn_smul _ _
+
 /-- **Pointwise multiplication on `H^s(E)`, `s > dim E / 2`**, as a continuous bilinear map. The
 product of `u` and `v` has `L²` function the pointwise product of theirs
 (`BesselPotentialSpace.toL2_mulCLM`); continuity is the algebra estimate
@@ -361,26 +371,22 @@ def mulCLM (hs : finrank ℝ E < 2 * s) : H^{s}(E) →L[ℂ] H^{s}(E) →L[ℂ] 
     (LinearMap.mk₂ ℂ (mulAux hs)
       (fun u₁ u₂ v ↦ ext_ae h0 <| by
         filter_upwards [toL2_mulAux hs (u₁ + u₂) v, toL2_mulAux hs u₁ v, toL2_mulAux hs u₂ v,
-          Lp.coeFn_add (toL2 h0 (mulAux hs u₁ v)) (toL2 h0 (mulAux hs u₂ v)),
-          Lp.coeFn_add (toL2 h0 u₁) (toL2 h0 u₂)] with x h h₁ h₂ h₃ h₄
-        rw [map_add, h₃, Pi.add_apply, h, h₁, h₂, map_add, h₄, Pi.add_apply, add_mul])
+          toL2_add_ae h0 (mulAux hs u₁ v) (mulAux hs u₂ v), toL2_add_ae h0 u₁ u₂]
+          with x h h₁ h₂ h₃ h₄
+        simp only [h, h₁, h₂, h₃, h₄, Pi.add_apply, add_mul])
       (fun c u v ↦ ext_ae h0 <| by
         filter_upwards [toL2_mulAux hs (c • u) v, toL2_mulAux hs u v,
-          Lp.coeFn_smul c (toL2 h0 (mulAux hs u v)), Lp.coeFn_smul c (toL2 h0 u)]
-          with x h h₁ h₂ h₃
-        rw [map_smul, h₂, Pi.smul_apply, h, h₁, map_smul, h₃, Pi.smul_apply, smul_eq_mul,
-          smul_eq_mul, mul_assoc])
+          toL2_smul_ae h0 c (mulAux hs u v), toL2_smul_ae h0 c u] with x h h₁ h₂ h₃
+        simp only [h, h₁, h₂, h₃, Pi.smul_apply, smul_eq_mul, mul_assoc])
       (fun u v₁ v₂ ↦ ext_ae h0 <| by
         filter_upwards [toL2_mulAux hs u (v₁ + v₂), toL2_mulAux hs u v₁, toL2_mulAux hs u v₂,
-          Lp.coeFn_add (toL2 h0 (mulAux hs u v₁)) (toL2 h0 (mulAux hs u v₂)),
-          Lp.coeFn_add (toL2 h0 v₁) (toL2 h0 v₂)] with x h h₁ h₂ h₃ h₄
-        rw [map_add, h₃, Pi.add_apply, h, h₁, h₂, map_add, h₄, Pi.add_apply, mul_add])
+          toL2_add_ae h0 (mulAux hs u v₁) (mulAux hs u v₂), toL2_add_ae h0 v₁ v₂]
+          with x h h₁ h₂ h₃ h₄
+        simp only [h, h₁, h₂, h₃, h₄, Pi.add_apply, mul_add])
       (fun c u v ↦ ext_ae h0 <| by
         filter_upwards [toL2_mulAux hs u (c • v), toL2_mulAux hs u v,
-          Lp.coeFn_smul c (toL2 h0 (mulAux hs u v)), Lp.coeFn_smul c (toL2 h0 v)]
-          with x h h₁ h₂ h₃
-        rw [map_smul, h₂, Pi.smul_apply, h, h₁, map_smul, h₃, Pi.smul_apply, smul_eq_mul,
-          smul_eq_mul, mul_left_comm]))
+          toL2_smul_ae h0 c (mulAux hs u v), toL2_smul_ae h0 c v] with x h h₁ h₂ h₃
+        simp only [h, h₁, h₂, h₃, Pi.smul_apply, smul_eq_mul, mul_left_comm]))
     (exists_norm_toBesselPotentialSpace_mul_le hs).choose fun u v ↦ by
       have h := (exists_norm_toBesselPotentialSpace_mul_le hs).choose_spec.2
         (memSobolev_toL2 h0 u) (memSobolev_toL2 h0 v)
@@ -403,8 +409,7 @@ theorem mulCLM_toBesselPotentialSpace (hs : finrank ℝ E < 2 * s)
   refine ext_ae h0 ?_
   filter_upwards [toL2_mulCLM hs h0 hu.toBesselPotentialSpace hv.toBesselPotentialSpace,
     (hu.memLp_mul hs v).coeFn_toLp] with x h h'
-  rw [h, toL2_toBesselPotentialSpace, toL2_toBesselPotentialSpace, toL2_toBesselPotentialSpace,
-    h']
+  simp only [h, toL2_toBesselPotentialSpace, h']
 
 /-- Multiplication on `H^s(E)` is commutative. -/
 theorem mulCLM_comm (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) :

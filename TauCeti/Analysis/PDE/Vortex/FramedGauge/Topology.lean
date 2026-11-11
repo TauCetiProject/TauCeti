@@ -134,8 +134,7 @@ theorem sobolevGaugeCoord_mul (u v : sobolevGaugeGroup hs) :
     toL2_mulCLM (finrank_real_complex_lt_two_mul hs) h0 (sobolevGaugeCoord u)
       (sobolevGaugeCoord v),
     toL2_sobolevGaugeCoord h0 u, toL2_sobolevGaugeCoord h0 v] with z h₁ h₂ h₃ hu hv
-  rw [h₁, Pi.add_apply, h₂, Pi.add_apply, h₃, hu, hv, Subgroup.coe_mul, Pi.mul_apply,
-    Circle.coe_mul]
+  simp only [h₁, h₂, h₃, hu, hv, Pi.add_apply, Subgroup.coe_mul, Pi.mul_apply, Circle.coe_mul]
   ring
 
 /-- **Inversion in `G_s` in `H^s` coordinates.** The coordinate `w` of `u⁻¹` is the quasi-inverse
@@ -145,7 +144,7 @@ theorem sobolevGaugeCoord_inv (u : sobolevGaugeGroup hs) :
       (sobolevGaugeCoord u) (sobolevGaugeCoord u⁻¹) := by
   have h := sobolevGaugeCoord_mul u u⁻¹
   rw [mul_inv_cancel, sobolevGaugeCoord_one] at h
-  rw [eq_sub_iff_add_eq, eq_neg_iff_add_eq_zero, add_comm, ← add_assoc, h.symm]
+  linear_combination (norm := module) -h
 
 /-- **Multiplication in `G_s` is continuous for the `H^s` distance.** -/
 theorem _root_.Filter.Tendsto.sobolevGaugeCoord_mul {α : Type*} {l : Filter α}
