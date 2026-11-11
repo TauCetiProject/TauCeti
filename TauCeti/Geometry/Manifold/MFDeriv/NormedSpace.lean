@@ -118,7 +118,7 @@ derivative at `x`, a tangent vector at `x` being read as a vector of the model s
 theorem mvfderiv_apply_of_eventuallyEq_extChartAt {f : M → E} {x : M}
     (hf : f =ᶠ[𝓝 x] extChartAt I x) (v : TangentSpace I x) : mvfderiv I f x v = v := by
   rw [hf.mvfderiv_eq]
-  simp only [mvfderiv, mfderiv_extChartAt_self_eq_id]
+  simp only [mvfderiv, mfderiv_extChartAt_eq_id]
   -- Both tangent identifications are the identity of `E` across type synonyms.
   rfl
 
