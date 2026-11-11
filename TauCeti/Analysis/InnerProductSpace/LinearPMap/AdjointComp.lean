@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
 
-import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.GraphProjection
 
 /-!
 # The operator `T†T` for a closed densely defined operator
@@ -100,39 +100,13 @@ private theorem adjointComp_isFormalAdjoint {T : E →ₗ.[𝕜] F}
 
 variable [CompleteSpace F]
 
-/-- Orthogonal projection onto the closed graph solves the weak equation for `I + T†T`. -/
-private theorem exists_inner_sub_eq_inner (T : E →ₗ.[𝕜] F) (hT : T.IsClosed) (z : E) :
-    ∃ u : T.domain, ∀ v : T.domain, ⟪z - (u : E), (v : E)⟫ = ⟪T u, T v⟫ := by
-  let e := WithLp.prodContinuousLinearEquiv 2 𝕜 E F
-  let K : Submodule 𝕜 (WithLp 2 (E × F)) := T.graph.comap e.toLinearMap
-  have hK : _root_.IsClosed (K : Set (WithLp 2 (E × F))) := hT.preimage e.continuous
-  let : CompleteSpace K := hK.completeSpace_coe
-  let a : WithLp 2 (E × F) := WithLp.toLp 2 (z, (0 : F))
-  let p := K.starProjection a
-  have hp : e p ∈ T.graph := K.starProjection_apply_mem a
-  simp only [e, WithLp.prodContinuousLinearEquiv_apply] at hp
-  obtain ⟨u, hu1, hu2⟩ := T.mem_graph_iff.mp hp
-  refine ⟨u, fun v ↦ ?_⟩
-  have hv : WithLp.toLp 2 ((v : E), T v) ∈ K := by
-    apply Submodule.mem_comap.mpr
-    -- The comap uses `e.toLinearMap`, whose underlying function is `e`.
-    change e (WithLp.toLp 2 ((v : E), T v)) ∈ T.graph
-    simpa only [e, WithLp.prodContinuousLinearEquiv_apply, WithLp.ofLp_toLp] using T.mem_graph v
-  have h : ⟪z, (v : E)⟫ -
-      (⟪(WithLp.ofLp p).1, (v : E)⟫ + ⟪(WithLp.ofLp p).2, T v⟫) = 0 := by
-    simpa only [inner_sub_left, WithLp.prod_inner_apply, a, WithLp.ofLp_toLp, inner_zero_left,
-      add_zero] using K.starProjection_inner_eq_zero a _ hv
-  rw [← hu1, ← hu2] at h
-  rw [inner_sub_left]
-  linear_combination h
-
 /-- For a closed densely defined `T`, every vector is `x + T†T x` for a point in the maximal
 composition domain. -/
 theorem surjective_add_adjointComp (T : E →ₗ.[𝕜] F) (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) :
     Function.Surjective (fun x : (adjointComp T).domain ↦ (x : E) + adjointComp T x) := by
   intro z
-  obtain ⟨u, hu⟩ := exists_inner_sub_eq_inner T hT z
+  obtain ⟨u, hu⟩ := hT.exists_inner_sub_eq_inner_map z
   have hTu : T u ∈ T†.domain := mem_adjoint_domain_of_exists _ ⟨z - (u : E), hu⟩
   refine ⟨⟨u, mem_adjointComp_domain.mpr ⟨u.2, hTu⟩⟩, ?_⟩
   dsimp only
