@@ -86,8 +86,7 @@ theorem eventually_notMem_nhdsLT_maximalGeodesic {b : ℝ}
     (V := fun x : M ↦ TangentSpace I x)
   obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_geodesicInterval_of_isLUB hb
   rw [← maximalIntegralCurveInterval_geodesicSpray] at hb
-  filter_upwards [eventually_notMem_nhdsLT_maximalIntegralCurve contMDiff_one_geodesicSpray
-    ((maximalIntegralCurveInterval_geodesicSpray p v).symm ▸ zero_mem_geodesicInterval) hb
+  filter_upwards [eventually_notMem_nhdsLT_maximalIntegralCurve contMDiff_one_geodesicSpray hb
     (hK.norm_le_bundle ‖v‖), Ioo_mem_nhdsLT (ha.trans hb0)] with t hnot ht hmem
   exact hnot (maximalIntegralCurve_geodesicSpray_mem_norm_le (hsub ht) hmem)
 
@@ -101,8 +100,7 @@ theorem eventually_notMem_nhdsGT_maximalGeodesic {a : ℝ}
     (V := fun x : M ↦ TangentSpace I x)
   obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_geodesicInterval_of_isGLB ha
   rw [← maximalIntegralCurveInterval_geodesicSpray] at ha
-  filter_upwards [eventually_notMem_nhdsGT_maximalIntegralCurve contMDiff_one_geodesicSpray
-    ((maximalIntegralCurveInterval_geodesicSpray p v).symm ▸ zero_mem_geodesicInterval) ha
+  filter_upwards [eventually_notMem_nhdsGT_maximalIntegralCurve contMDiff_one_geodesicSpray ha
     (hK.norm_le_bundle ‖v‖), Ioo_mem_nhdsGT (ha0.trans hb)] with t hnot ht hmem
   exact hnot (maximalIntegralCurve_geodesicSpray_mem_norm_le (hsub ht) hmem)
 
