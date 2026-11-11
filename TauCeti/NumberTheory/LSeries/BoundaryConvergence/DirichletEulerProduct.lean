@@ -120,7 +120,7 @@ theorem tendsto_prod_primesLE_filter_notMem_inv_LFunction_one [NeZero N] (hχ : 
   exact TauCeti.LSeries.tendsto_prod_primesLE_filter_notMem_inv_of_tendsto_sum
     (c := fun n ↦ χ n) (fun p _ ↦ χ.norm_le_one p)
     (fun _ hn ↦ χ.eulerLogCoeff_eq_zero_of_not_isPrimePow hn)
-    (fun _ _ hp hk ↦ χ.eulerLogCoeff_prime_pow hp hk) hL hS
+    (fun _ _ hp _ ↦ χ.eulerLogCoeff_prime_pow hp) hL hS
 
 /-- **The ordered Euler product of a Dirichlet `L`-function at `s = 1`.** For a nontrivial
 Dirichlet character `χ` of positive level, the finite Euler products `∏ p ≤ B, (1 - χ p / p)⁻¹`
@@ -162,7 +162,7 @@ theorem exists_tendsto_sum_primesLE_div [NeZero N] (hχ : χ ≠ 1) :
   refine ⟨_, (TauCeti.LSeries.tendsto_sum_Icc_div_iff_tendsto_sum_primesLE_div
     (c := fun n ↦ χ n) (fun p _ ↦ χ.norm_le_one p)
     (fun _ hn ↦ χ.eulerLogCoeff_eq_zero_of_not_isPrimePow hn)
-    (fun _ _ hp hk ↦ χ.eulerLogCoeff_prime_pow hp hk)).mp hL, ?_⟩
+    (fun _ _ hp _ ↦ χ.eulerLogCoeff_prime_pow hp)).mp hL, ?_⟩
   rwa [sub_add_cancel]
 
 end DirichletCharacter

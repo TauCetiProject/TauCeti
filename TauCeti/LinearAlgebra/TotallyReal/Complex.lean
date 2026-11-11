@@ -326,6 +326,17 @@ theorem map_linearEquiv (A : E ≃ₗ[ℂ] E) :
   rw [isMaximalTotallyReal_iff, ← Submodule.map_comp, hcomm, Submodule.map_comp]
   exact Submodule.isCompl_map (A.restrictScalars ℝ) hL.isCompl
 
+omit hL in
+/-- If a complex-linear automorphism carries `L` onto a maximal totally real subspace `L'`, then
+`L` is maximal totally real. -/
+theorem of_map_linearEquiv {L' : Submodule ℝ E}
+    (hL' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L')
+    (A : E ≃ₗ[ℂ] E) (h : L' = L.map ((A : E →ₗ[ℂ] E).restrictScalars ℝ)) :
+    IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L := by
+  have h' : L'.map ((A.symm : E →ₗ[ℂ] E).restrictScalars ℝ) = L :=
+    (Submodule.map_symm_eq_iff (A.restrictScalars ℝ)).2 h.symm
+  simpa only [h'] using hL'.map_linearEquiv A.symm
+
 /-- A maximal totally real subspace has real dimension equal to the complex dimension of the
 ambient module. -/
 theorem finrank_eq_finrank_complex : finrank ℝ L = finrank ℂ E := by
