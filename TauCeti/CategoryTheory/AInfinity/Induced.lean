@@ -490,7 +490,7 @@ theorem totalHomMap_taylor_induced {X Y : InducedQuiver C F}
     {w : ReducedTensorWords R (TotalHom R (InducedQuiver C F))} (hw : w ∈ composableWords R X Y) :
     totalHomMap R F ((𝒞.induced F).taylor w) =
       𝒞.taylor (ReducedTensorWords.map (R := R) (totalHomMap R F) w) := by
-  refine composableWords_induction (fun n hn a b z hz hab _ _ ↦ ?_) (by simp)
+  refine composableWords_induction (fun n hn a b z hz hab _ _ ↦ ?_)
     (fun x y hx hy ↦ by simp only [map_add, hx, hy]) (fun r x hx ↦ by simp only [map_smul, hx]) hw
   · rw [ReducedTensorWords.map_of_tprod, AInfinityAlgebra.taylor_of_tprod,
       AInfinityAlgebra.taylor_of_tprod, (𝒞.induced F).grading_eq, 𝒞.grading_eq]

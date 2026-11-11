@@ -26,10 +26,9 @@ of their position relative to a center. Such equations describe equality in the 
 inequality for closed plane curves.
 
 For a continuous, time-dependent real coefficient `g`, a differentiable solution of `P' = g • P`
-on an open interval `J` is `P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`
-(`TauCeti.eq_exp_integral_smul_of_hasDerivAt_smul`), by the integrating factor `exp (-∫ₛᵘ g)`.
-The same holds on a closed interval `[a, b]` when the derivative within `[a, b]` exists at its
-points (`TauCeti.eq_exp_integral_smul_of_hasDerivWithinAt_smul`).
+on an interval `J`, open or closed, is `P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`
+(`TauCeti.eq_exp_integral_smul_of_hasDerivWithinAt_smul`), by the integrating factor
+`exp (-∫ₛᵘ g)`.
 -/
 
 public section
@@ -114,60 +113,38 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- **Integrating factor.** On an open interval `J`, a solution of the linear equation
-`P' = g • P` with continuous real coefficient `g` satisfies `P t = exp (∫ₛᵗ g) • P s` for all
-`s, t ∈ J`. -/
-theorem eq_exp_integral_smul_of_hasDerivAt_smul {J : Set ℝ} (hJo : IsOpen J)
-    (hJc : J.OrdConnected) {g : ℝ → ℝ} (hg : ContinuousOn g J) {P : ℝ → V}
-    (hP : ∀ u ∈ J, HasDerivAt P (g u • P u) u) {s t : ℝ} (hs : s ∈ J) (ht : t ∈ J) :
+/-- **Integrating factor.** On an order-connected set `J`, a solution of the linear equation
+`P' = g • P` within `J`, with real coefficient `g` continuous on `J`, satisfies
+`P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`, in either order. -/
+theorem eq_exp_integral_smul_of_hasDerivWithinAt_smul {J : Set ℝ} (hJc : J.OrdConnected)
+    {g : ℝ → ℝ} (hg : ContinuousOn g J) {P : ℝ → V}
+    (hP : ∀ u ∈ J, HasDerivWithinAt P (g u • P u) J u) {s t : ℝ} (hs : s ∈ J) (ht : t ∈ J) :
     P t = Real.exp (∫ u in s..t, g u) • P s := by
-  set G : ℝ → ℝ := fun u ↦ ∫ τ in s..u, g τ
-  have hG (u : ℝ) (hu : u ∈ J) : HasDerivAt G (g u) u :=
-    intervalIntegral.integral_hasDerivAt_right
-      ((hg.mono (hJc.uIcc_subset hs hu)).intervalIntegrable)
-      (hg.stronglyMeasurableAtFilter hJo u hu) (hg.continuousAt (hJo.mem_nhds hu))
-  -- `u ↦ e^{-G u} P u` has zero derivative on the interval `J`, so it is constant there.
-  have hderiv (u : ℝ) (hu : u ∈ J) : HasDerivAt (fun u ↦ Real.exp (-G u) • P u) 0 u := by
-    refine ((hG u hu).neg.exp.smul (hP u hu)).congr_deriv ?_
-    module
-  have hconst := hJo.is_const_of_deriv_eq_zero hJc.isPreconnected
-    (fun u hu ↦ (hderiv u hu).differentiableAt.differentiableWithinAt)
-    (fun u hu ↦ (hderiv u hu).deriv) ht hs
-  have hG0 : G s = 0 := intervalIntegral.integral_same
-  rw [hG0, neg_zero, Real.exp_zero, one_smul] at hconst
-  have hPt : P t = Real.exp (G t) • (Real.exp (-G t) • P t) := by
-    rw [smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
-  rw [hconst] at hPt
-  exact hPt
-
-/-- **Integrating factor on a closed interval.** On `[a, b]`, a solution of the linear equation
-`P' = g • P` with continuous real coefficient `g` satisfies `P b = exp (∫ₐᵇ g) • P a`. The
-derivative is only required within `[a, b]`, one-sided at the endpoints. -/
-theorem eq_exp_integral_smul_of_hasDerivWithinAt_smul {a b : ℝ} (hab : a ≤ b) {g : ℝ → ℝ}
-    (hg : ContinuousOn g (Icc a b)) {P : ℝ → V}
-    (hP : ∀ u ∈ Icc a b, HasDerivWithinAt P (g u • P u) (Icc a b) u) :
-    P b = Real.exp (∫ u in a..b, g u) • P a := by
-  -- Extend `g` continuously to the whole line by clamping to `[a, b]`.
-  set g' : ℝ → ℝ := fun u ↦ g (projIcc a b hab u)
+  -- Work on the interval `[[s, t]] ⊆ J`, and extend `g` continuously from it to all of `ℝ`, so
+  -- that its primitive `G` is differentiable everywhere.
+  have hsub : uIcc s t ⊆ J := hJc.uIcc_subset hs ht
+  have hle : s ⊓ t ≤ s ⊔ t := inf_le_sup
+  set g' : ℝ → ℝ := fun u ↦ g (projIcc (s ⊓ t) (s ⊔ t) hle u)
   have hg' : Continuous g' :=
-    hg.comp_continuous (continuous_subtype_val.comp continuous_projIcc) fun u ↦ Subtype.mem _
-  have hgg' (u : ℝ) (hu : u ∈ Icc a b) : g' u = g u := by simp [g', projIcc_of_mem hab hu]
-  set G : ℝ → ℝ := fun u ↦ ∫ τ in a..u, g' τ
-  have hG (u : ℝ) : HasDerivAt G (g' u) u := (hg'.integral_hasStrictDerivAt a u).hasDerivAt
-  -- `u ↦ e^{-G u} P u` has zero derivative on `[a, b]`, so it is constant there.
-  have hderiv (u : ℝ) (hu : u ∈ Icc a b) :
-      HasDerivWithinAt (fun u ↦ Real.exp (-G u) • P u) 0 (Icc a b) u := by
-    refine ((hG u).hasDerivWithinAt.neg.exp.smul (hP u hu)).congr_deriv ?_
+    (hg.mono hsub).comp_continuous (continuous_subtype_val.comp continuous_projIcc)
+      fun u ↦ Subtype.mem _
+  have hgg' (u : ℝ) (hu : u ∈ uIcc s t) : g' u = g u := by
+    simp only [g', projIcc_of_mem hle hu]
+  set G : ℝ → ℝ := fun u ↦ ∫ τ in s..u, g' τ
+  -- `u ↦ e^{-G u} P u` has zero derivative within `[[s, t]]`, so it is constant there.
+  have hderiv (u : ℝ) (hu : u ∈ uIcc s t) :
+      HasDerivWithinAt (fun u ↦ Real.exp (-G u) • P u) 0 (uIcc s t) u := by
+    have hG := (hg'.integral_hasStrictDerivAt s u).hasDerivAt.hasDerivWithinAt (s := uIcc s t)
+    refine (hG.neg.exp.smul ((hP u (hsub hu)).mono hsub)).congr_deriv ?_
     rw [hgg' u hu]
     module
-  have hconst := constant_of_has_deriv_right_zero
-    (fun u hu ↦ (hderiv u hu).continuousWithinAt)
-    (fun u hu ↦ (hderiv u (Ico_subset_Icc_self hu)).mono_of_mem_nhdsWithin
-      (Icc_mem_nhdsGE_of_mem hu)) b ⟨hab, le_rfl⟩
-  have hGa : G a = 0 := intervalIntegral.integral_same
-  have hGb : G b = ∫ u in a..b, g u :=
-    intervalIntegral.integral_congr fun u hu ↦ hgg' u (by rwa [uIcc_of_le hab] at hu)
-  rw [hGa, neg_zero, Real.exp_zero, one_smul] at hconst
-  rw [← hGb, ← hconst, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
+  have hconst : Real.exp (-G t) • P t = Real.exp (-G s) • P s := by
+    have h := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le hderiv (fun _ _ ↦ norm_zero.le)
+      (convex_uIcc s t) left_mem_uIcc right_mem_uIcc
+    rwa [zero_mul, norm_le_zero_iff, sub_eq_zero] at h
+  have hGs : G s = 0 := intervalIntegral.integral_same
+  have hGt : G t = ∫ u in s..t, g u := intervalIntegral.integral_congr fun u hu ↦ hgg' u hu
+  rw [hGs, neg_zero, Real.exp_zero, one_smul] at hconst
+  rw [← hconst, smul_smul, ← Real.exp_add, ← hGt, add_neg_cancel, Real.exp_zero, one_smul]
 
 end TauCeti

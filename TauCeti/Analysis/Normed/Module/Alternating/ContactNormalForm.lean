@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.Normed.Module.Alternating.ContactFlat
+public import TauCeti.Analysis.Normed.Module.Alternating.Curry
+import Mathlib.Topology.Algebra.Module.Equiv.Prod
 import TauCeti.LinearAlgebra.BilinearForm.Contact.NormalForm
 
 /-!
@@ -49,7 +50,17 @@ theorem exists_continuousLinearEquiv_stdContact {a : V [⋀^Fin 1]→L[ℝ] ℝ}
   let B : LinearMap.BilinForm ℝ V := (flatL ℝ V ℝ ω).toLinearMap₁₂
   have hB (v w : V) : B v w = ω ![v, w] := flatL_apply_apply ω v w
   have hBalt : B.IsAlt := isAlt_toLinearMap₁₂_flatL ω
-  have hcon : Module.Dual.IsContact (toDual a : V →ₗ[ℝ] ℝ) B := isContact_toDual hne hnd
+  have hcon : Module.Dual.IsContact (toDual a : V →ₗ[ℝ] ℝ) B := by
+    refine (Module.Dual.isContact_iff_of_isRefl hBalt.isRefl).2
+      ⟨fun h0 ↦ hne ?_, fun v hv hvw ↦ hnd v (by simpa using hv) fun w hw ↦ by
+        simpa [hB] using hvw w (by simpa using hw)⟩
+    ext m
+    have hm : m = ![m 0] := by
+      funext i
+      rw [Subsingleton.elim i 0]
+      rfl
+    rw [hm, ← toDual_apply]
+    exact LinearMap.congr_fun h0 (m 0)
   obtain ⟨n, e₁, ha₁, hB₁⟩ := hcon.exists_linearEquiv_eq_stdContact hBalt
   let L := (EuclideanSpace.equiv (Fin n) ℝ).symm
   let e : V ≃L[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ :=

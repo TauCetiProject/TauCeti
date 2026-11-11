@@ -22,14 +22,25 @@ Conjugation also preserves norms (Mathlib's `Complex.norm_conj`), so the norm of
 expression is the denominator of the Möbius automorphisms of the unit disc and of the
 pseudo-hyperbolic expression.
 
+Inversion preserves the open right half-plane: `z⁻¹` has positive real part exactly when `z`
+does (`Complex.inv_re_pos`).
+
 The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real `r`.
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
+
+Two integers whose images in `ℂ` are at distance less than `1` are equal.
 -/
 
 public section
 
 open scoped ComplexConjugate
+
+/-- A complex number and its inverse lie in the open right half-plane together. -/
+theorem Complex.inv_re_pos {z : ℂ} : 0 < z⁻¹.re ↔ 0 < z.re := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  · rw [inv_re, div_pos_iff_of_pos_right (normSq_pos.mpr hz)]
 
 /-- The scalar Cayley expression has unit norm at real `r`, including when `z = r`
 under the totalized inverse convention. -/
@@ -86,6 +97,13 @@ theorem continuousOn_mapsTo_prodMap_conj (hτ : ContinuousOn τ U) (hτU : Set.M
     conj_mem_ball_of_im_eq_zero (by simp) hz
   exact ⟨hτ.prodMap Complex.continuous_conj.continuousOn, hτU.prodMap hconjBall,
     hτU.prodMap fun z hz ↦ ⟨hconjBall hz.1, by simpa using hz.2⟩⟩
+
+/-- **Two integers whose complex images are closer than `1` are equal.** -/
+theorem eq_of_dist_intCast_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1) : m = n := by
+  by_contra hne
+  have : (1 : ℝ) ≤ dist (m : ℂ) (n : ℂ) := by
+    rw [Complex.isometry_intCast.dist_eq]; exact Int.pairwise_one_le_dist hne
+  linarith
 
 end TauCeti
 
