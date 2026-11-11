@@ -57,6 +57,9 @@ components of the complement of the image
 
 ## References
 
+* M. Brown, *A proof of the generalized Schoenflies theorem*, Bull. Amer. Math. Soc. 66 (1960),
+  74–76. The identification of the two sides of a bicollared sphere with the complementary
+  components (`TauCeti.IsBicollar.exists_pathComponents_sphere`) is a step of its proof.
 * M. Brown, *Locally flat imbeddings of topological manifolds*, Annals of Mathematics 75 (1962),
   331–341.
 * R. J. Daverman and G. A. Venema, *Embeddings in Manifolds*, Graduate Studies in Mathematics
@@ -145,7 +148,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 unit sphere of `E` into the unit sphere of `F`, where `dim F = dim E + 1` and `dim E ≥ 2`. Then
 the complement of the image of `f` is the union of two disjoint open path-connected sets `A` and
 `B`, its two path components, with the positive side of the bicollar in `A` and the negative side
-in `B`. -/
+in `B`. This is a step of Brown's proof of the generalized Schoenflies theorem (Brown, 1960). -/
 theorem IsBicollar.exists_pathComponents_sphere (h : IsBicollar f b) (hE : 2 ≤ finrank ℝ E)
     (hEF : finrank ℝ F = finrank ℝ E + 1) :
     ∃ A B : Set (sphere (0 : F) 1), IsOpen A ∧ IsOpen B ∧ Disjoint A B ∧
