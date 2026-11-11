@@ -110,7 +110,7 @@ theorem souriau_eq_cayley_of_coe_eq_mul {U : unitaryGroup n ℂ} {A M : Matrix n
         simp only [Matrix.mul_assoc]
     _ = X * (X⁻¹ * Y⁻¹) * X := by rw [hNN, Matrix.mul_inv_rev]
     _ = Y⁻¹ * X := by rw [mul_nonsing_inv_cancel_left _ _ hX]
-    _ = cayley (A.map (↑)) := hAc.cayley_eq_inv_mul.symm
+    _ = cayley (A.map (↑)) := (cayley_eq_inv_mul _).symm
 
 /-- The determinant of the Cayley transform of a real symmetric matrix, as a point of the
 circle. -/

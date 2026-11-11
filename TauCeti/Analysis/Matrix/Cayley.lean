@@ -36,7 +36,7 @@ determinant is `z / conj z` for `z = det (1 + i A)` (`Matrix.IsHermitian.det_cay
   `1 ± i A` is invertible for Hermitian `A`.
 * `Matrix.IsHermitian.cayley_mul_one_sub_I_smul`: the characterization
   `cayley A * (1 - i A) = 1 + i A`.
-* `Matrix.IsHermitian.cayley_eq_inv_mul`: the factors may be taken in either order.
+* `Matrix.cayley_eq_inv_mul`: the factors may be taken in either order.
 * `Matrix.IsHermitian.cayley_mem_unitaryGroup`: the Cayley transform of a Hermitian matrix is
   unitary.
 * `Matrix.cayley_conj`: naturality under conjugation.
@@ -112,6 +112,17 @@ theorem commute_one_add_I_smul_one_sub_I_smul (A : Matrix n n ℂ) :
   ((Commute.one_left _).add_left ((Commute.one_right _).smul_left I)).sub_right
     (((Commute.one_left _).smul_right I).add_left ((Commute.refl A).smul_left I |>.smul_right I))
 
+/-- The two factors of the Cayley transform may be taken in either order:
+`(1 + i A) (1 - i A)⁻¹ = (1 - i A)⁻¹ (1 + i A)`. -/
+theorem cayley_eq_inv_mul (A : Matrix n n ℂ) : cayley A = (1 - I • A)⁻¹ * (1 + I • A) := by
+  by_cases hY : IsUnit (1 - I • A).det
+  · calc cayley A = (1 - I • A)⁻¹ * ((1 - I • A) * (1 + I • A)) * (1 - I • A)⁻¹ := by
+          rw [← Matrix.mul_assoc, nonsing_inv_mul _ hY, Matrix.one_mul, cayley]
+      _ = (1 - I • A)⁻¹ * (1 + I • A) := by
+          rw [← (commute_one_add_I_smul_one_sub_I_smul A).eq, Matrix.mul_assoc, Matrix.mul_assoc,
+            mul_nonsing_inv _ hY, Matrix.mul_one]
+  · rw [cayley, nonsing_inv_apply_not_isUnit _ hY, Matrix.mul_zero, Matrix.zero_mul]
+
 namespace IsHermitian
 
 variable {A : Matrix n n ℂ}
@@ -140,16 +151,6 @@ theorem det_one_sub_I_smul (hA : A.IsHermitian) :
 theorem cayley_mul_one_sub_I_smul (hA : A.IsHermitian) : cayley A * (1 - I • A) = 1 + I • A := by
   rw [cayley, Matrix.mul_assoc, nonsing_inv_mul _ hA.isUnit_det_one_sub_I_smul, Matrix.mul_one]
 
-/-- The two factors of the Cayley transform of a Hermitian matrix may be taken in either order:
-`(1 + i A) (1 - i A)⁻¹ = (1 - i A)⁻¹ (1 + i A)`. -/
-theorem cayley_eq_inv_mul (hA : A.IsHermitian) : cayley A = (1 - I • A)⁻¹ * (1 + I • A) := by
-  have hY := hA.isUnit_det_one_sub_I_smul
-  calc cayley A = (1 - I • A)⁻¹ * ((1 - I • A) * (1 + I • A)) * (1 - I • A)⁻¹ := by
-        rw [← Matrix.mul_assoc, nonsing_inv_mul _ hY, Matrix.one_mul, cayley]
-    _ = (1 - I • A)⁻¹ * (1 + I • A) := by
-        rw [← (commute_one_add_I_smul_one_sub_I_smul A).eq, Matrix.mul_assoc, Matrix.mul_assoc,
-          mul_nonsing_inv _ hY, Matrix.mul_one]
-
 /-- **The Cayley transform of a Hermitian matrix is unitary.** -/
 theorem cayley_mem_unitaryGroup (hA : A.IsHermitian) : cayley A ∈ unitaryGroup n ℂ := by
   have hstar : star (1 + I • A) = 1 - I • A := by
@@ -160,7 +161,7 @@ theorem cayley_mem_unitaryGroup (hA : A.IsHermitian) : cayley A ∈ unitaryGroup
   rw [mem_unitaryGroup_iff']
   calc star (cayley A) * cayley A
       = star (cayley A) * ((1 - I • A)⁻¹ * (1 + I • A)) :=
-        congrArg (star (cayley A) * ·) hA.cayley_eq_inv_mul
+        congrArg (star (cayley A) * ·) (cayley_eq_inv_mul A)
     _ = (1 + I • A)⁻¹ * ((1 - I • A) * ((1 - I • A)⁻¹ * (1 + I • A))) := by
         rw [cayley_def, star_mul, hstarInv, hstar, Matrix.mul_assoc]
     _ = 1 := by
