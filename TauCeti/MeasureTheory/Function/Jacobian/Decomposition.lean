@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
+public import TauCeti.Analysis.Normed.Module.RelativeApproximation
 
 /-!
 # Injective pieces of a differentiable map
@@ -36,77 +37,6 @@ open Set Function MeasureTheory Metric Module
 open scoped NNReal ENNReal
 
 namespace TauCeti
-
-section Approximation
-
-variable {U V 𝓕 : Type*} [SeminormedAddCommGroup U] [SeminormedAddCommGroup V] [FunLike 𝓕 U V]
-  [AddMonoidHomClass 𝓕 U V] {f : U → V} {p : Set U} {A : 𝓕} {δ : ℝ}
-
-/-- A map within relative error `δ` of an additive map `A` on `p` satisfies
-`(1 - δ) ‖A x - A y‖ ≤ ‖f x - f y‖` there. -/
-theorem one_sub_mul_norm_sub_le_norm_sub
-    (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ δ * ‖A (x - y)‖) {x y : U} (hx : x ∈ p)
-    (hy : y ∈ p) : (1 - δ) * ‖A x - A y‖ ≤ ‖f x - f y‖ := by
-  have h := happ x hx y hy
-  rw [map_sub] at h
-  have := norm_sub_norm_le (A x - A y) (f x - f y)
-  rw [norm_sub_rev (A x - A y)] at this
-  linarith
-
-/-- A map within relative error `δ` of an additive map `A` on `p` satisfies
-`‖f x - f y‖ ≤ (1 + δ) ‖A x - A y‖` there. -/
-theorem norm_sub_le_one_add_mul_norm_sub
-    (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ δ * ‖A (x - y)‖) {x y : U} (hx : x ∈ p)
-    (hy : y ∈ p) : ‖f x - f y‖ ≤ (1 + δ) * ‖A x - A y‖ := by
-  have h := happ x hx y hy
-  rw [map_sub] at h
-  have := norm_sub_norm_le (f x - f y) (A x - A y)
-  linarith
-
-/-- A map `f` within relative error `ε < 1` of an injective additive map `A` on `p`, read through
-`A`, is `(1 + ε)`-Lipschitz on `A '' p` with `(1 - ε)⁻¹`-Lipschitz inverse. -/
-theorem _root_.Function.Injective.lipschitzOnWith_and_antilipschitzWith_of_approx {ε : ℝ≥0}
-    (hA : Injective A) (hε : ε < 1)
-    (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ ε * ‖A (x - y)‖) :
-    LipschitzOnWith (1 + ε) (f ∘ invFun A) (A '' p) ∧
-      AntilipschitzWith (1 - ε)⁻¹ ((A '' p).domRestrict (f ∘ invFun A)) := by
-  have hinv (x : U) : invFun A (A x) = x := leftInverse_invFun hA x
-  have hε' : (0 : ℝ) < ((1 - ε : ℝ≥0) : ℝ) := NNReal.coe_pos.2 (tsub_pos_of_lt hε)
-  refine ⟨LipschitzOnWith.of_dist_le_mul ?_, AntilipschitzWith.of_le_mul_dist ?_⟩
-  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
-    simp only [comp_apply, hinv, dist_eq_norm, NNReal.coe_add, NNReal.coe_one]
-    exact norm_sub_le_one_add_mul_norm_sub happ hx hy
-  · rintro ⟨_, x, hx, rfl⟩ ⟨_, y, hy, rfl⟩
-    simp only [Subtype.dist_eq, domRestrict_apply, comp_apply, hinv, dist_eq_norm, NNReal.coe_inv]
-    rw [le_inv_mul_iff₀ hε', NNReal.coe_sub hε.le, NNReal.coe_one]
-    exact one_sub_mul_norm_sub_le_norm_sub happ hx hy
-
-end Approximation
-
-/-- A map within relative error `δ < 1` of an injective linear map on `p` has a Lipschitz inverse
-on `p`. -/
-theorem exists_antilipschitzWith_domRestrict_of_approx {𝕜 U V 𝓕 : Type*}
-    [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedAddCommGroup U] [NormedSpace 𝕜 U]
-    [FiniteDimensional 𝕜 U] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FunLike 𝓕 U V]
-    [LinearMapClass 𝓕 𝕜 U V] {f : U → V} {p : Set U} {A : 𝓕} {δ : ℝ}
-    (hA : p.Nonempty → Injective A) (hδ : δ < 1)
-    (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ δ * ‖A (x - y)‖) :
-    ∃ L : ℝ≥0, AntilipschitzWith L (p.domRestrict f) := by
-  rcases p.eq_empty_or_nonempty with rfl | hp
-  · exact ⟨1, fun x ↦ x.2.elim⟩
-  obtain ⟨c, -, hAc⟩ := (A : U →ₗ[𝕜] V).injective_iff_antilipschitz.mp (hA hp)
-  have hδ' : 0 < 1 - δ := sub_pos.2 hδ
-  refine ⟨c * (Real.toNNReal (1 - δ))⁻¹, AntilipschitzWith.of_le_mul_dist fun x y ↦ ?_⟩
-  have hxy : ‖(x : U) - y‖ ≤ c * ‖A x - A y‖ := by
-    simpa [map_sub] using hAc.le_mul_dist (x - y : U) 0
-  have h := one_sub_mul_norm_sub_le_norm_sub happ x.2 y.2
-  simp only [Subtype.dist_eq, domRestrict_apply, dist_eq_norm, NNReal.coe_mul, NNReal.coe_inv,
-    Real.coe_toNNReal _ hδ'.le]
-  calc ‖(x : U) - y‖ ≤ c * ‖A x - A y‖ := hxy
-    _ ≤ c * ((1 - δ)⁻¹ * ‖f x - f y‖) := by
-        gcongr
-        rwa [le_inv_mul_iff₀ hδ']
-    _ = c * (1 - δ)⁻¹ * ‖f x - f y‖ := by ring
 
 /-- A measurable set on which the derivative is injective has, for every `δ > 0`, a countable
 measurable partition into pieces `p n`, each with a linear map `A n` that is injective whenever
