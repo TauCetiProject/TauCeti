@@ -52,6 +52,20 @@ theorem isComplexAntilinear_cauchyRiemannSymbol (j : AlmostComplexStructure U)
   intro v
   simp [J.apply_smul, neg_smul, smul_neg, sub_eq_add_neg]
 
+/-- The real Cauchy–Riemann symbol corestricted to complex-antilinear covectors. -/
+def cauchyRiemannSymbolAntilinear (j : AlmostComplexStructure U)
+    (J : AlmostComplexStructure V) (ℓ : U →ₗ[ℝ] ℝ) :
+    V →ₗ[ℝ] complexAntilinearMaps j.toLinearMap J.toLinearMap :=
+  (cauchyRiemannSymbol j J ℓ).codRestrict _ fun q ↦
+    mem_complexAntilinearMaps.2 (isComplexAntilinear_cauchyRiemannSymbol j J ℓ q)
+
+/-- Forgetting the corestriction recovers the real Cauchy–Riemann symbol. -/
+@[simp]
+theorem cauchyRiemannSymbolAntilinear_apply (j : AlmostComplexStructure U)
+    (J : AlmostComplexStructure V) (ℓ : U →ₗ[ℝ] ℝ) (q : V) :
+    (cauchyRiemannSymbolAntilinear j J ℓ q : U →ₗ[ℝ] V) =
+      cauchyRiemannSymbol j J ℓ q := (rfl)
+
 /-- Evaluating the symbol at `v` is invertible whenever the covector is nonzero on the
 complex span of `v`. The inverse is `(λ(j v) Id + λ(v) J) / (λ(j v)² + λ(v)²)`. -/
 theorem bijective_cauchyRiemannSymbol_apply (j : AlmostComplexStructure U)
@@ -78,13 +92,10 @@ theorem bijective_cauchyRiemannSymbol_apply (j : AlmostComplexStructure U)
 
 /-- On a complex line the symbol at every nonzero real covector is an isomorphism onto
 complex-antilinear covectors. This is ellipticity, stated without a choice of normal frame. -/
-theorem bijective_cauchyRiemannSymbol (J : AlmostComplexStructure V) (ℓ : ℂ →ₗ[ℝ] ℝ)
-    (hℓ : ℓ ≠ 0) :
-    Function.Bijective (fun q ↦
-      (⟨cauchyRiemannSymbol (AlmostComplexStructure.ofComplexModule ℂ) J ℓ q,
-        mem_complexAntilinearMaps.2 (isComplexAntilinear_cauchyRiemannSymbol _ _ _ _)⟩ :
-          complexAntilinearMaps (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
-            J.toLinearMap)) := by
+theorem bijective_cauchyRiemannSymbolAntilinear (J : AlmostComplexStructure V)
+    (ℓ : ℂ →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0) :
+    Function.Bijective
+      (cauchyRiemannSymbolAntilinear (AlmostComplexStructure.ofComplexModule ℂ) J ℓ) := by
   have hpair : ℓ Complex.I ^ 2 + ℓ 1 ^ 2 ≠ 0 := by
     intro h
     have h₁ : ℓ 1 = 0 := by nlinarith [sq_nonneg (ℓ Complex.I)]
@@ -111,5 +122,22 @@ theorem bijective_cauchyRiemannSymbol (J : AlmostComplexStructure V) (ℓ : ℂ 
       have hf := (mem_complexAntilinearMaps.1 f.property).apply 1
       simpa [Complex.coe_basisOneI, AlmostComplexStructure.ofComplexModule_apply] using
         hs.trans ((congrArg (fun q ↦ -J q) hq).trans hf.symm)
+
+/-- The elliptic real Cauchy–Riemann symbol on a complex line as a linear equivalence.
+Its inverse recovers the section value from a complex-antilinear covector. -/
+noncomputable def cauchyRiemannSymbolEquiv (J : AlmostComplexStructure V)
+    (ℓ : ℂ →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0) :
+    V ≃ₗ[ℝ] complexAntilinearMaps (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+      J.toLinearMap :=
+  LinearEquiv.ofBijective
+    (cauchyRiemannSymbolAntilinear (AlmostComplexStructure.ofComplexModule ℂ) J ℓ)
+    (bijective_cauchyRiemannSymbolAntilinear J ℓ hℓ)
+
+/-- The symbol equivalence has the corestricted symbol as its forward map. -/
+@[simp]
+theorem cauchyRiemannSymbolEquiv_apply (J : AlmostComplexStructure V)
+    (ℓ : ℂ →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0) (q : V) :
+    cauchyRiemannSymbolEquiv J ℓ hℓ q =
+      cauchyRiemannSymbolAntilinear (AlmostComplexStructure.ofComplexModule ℂ) J ℓ q := (rfl)
 
 end TauCeti

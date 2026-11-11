@@ -16,7 +16,7 @@ The derivative of a pseudoholomorphic map has invariant image. Thus its actual n
 quotient inherits an almost complex structure. The normal linearization takes values in
 complex-antilinear covectors, and its Leibniz rule is the real Cauchy–Riemann symbol for this
 quotient structure. In a holomorphic coordinate on a curve, the symbol is bijective at every
-nonzero real covector by `bijective_cauchyRiemannSymbol`.
+nonzero real covector by `bijective_cauchyRiemannSymbolAntilinear`.
 
 No complement, metric or integrability assumption on the ambient structure is used. The
 statements apply even without immersivity; for an immersion the quotient is the normal fiber.
@@ -74,8 +74,9 @@ theorem isComplexAntilinear_normalCauchyRiemannLinearization
 
 /-- The Leibniz remainder of the actual normal linearization is the intrinsic real
 Cauchy–Riemann symbol on the normal quotient. Together with
-`bijective_cauchyRiemannSymbol`, this identifies its elliptic symbol over a source curve. -/
-theorem normalCauchyRiemannLinearization_fun_smul_eq_symbol
+`bijective_cauchyRiemannSymbolAntilinear`, this identifies its elliptic symbol over a source
+curve. -/
+theorem normalCauchyRiemannLinearization_fun_smul_eq_smul_add_cauchyRiemannSymbol
     [FiniteDimensional ℝ U] [FiniteDimensional ℝ V]
     (j : AlmostComplexStructure U) (J : V → AlmostComplexStructure V)
     (u ξ : U → V) (f : U → ℝ) (x v : U)
