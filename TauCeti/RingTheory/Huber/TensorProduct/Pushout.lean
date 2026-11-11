@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Huber.TensorProduct.Pair
+-- Proof-only: the completion of a Huber pair, used in the proof of `hom_ext`.
+import TauCeti.RingTheory.Huber.Completion.Basic
 
 /-!
 # Completed pushouts of Huber pairs
@@ -93,9 +94,7 @@ theorem hom_ext {a b : Pair.Hom W V} (hi : a.comp i = b.comp i)
     (h.existsUnique_desc (UniformSpace.Completion D) V.completion _ _ hab).unique
       ⟨by rw [Pair.Hom.comp_assoc, hi, Pair.Hom.comp_assoc],
         by rw [Pair.Hom.comp_assoc, hj, Pair.Hom.comp_assoc]⟩ ⟨rfl, rfl⟩
-  ext x
-  exact UniformSpace.Completion.coe_injective D
-    (by simpa using congrArg (fun k : Pair.Hom W V.completion ↦ k.toRingHom x) key)
+  exact Pair.Hom.ext_of_completionHom_comp key
 
 end IsCompletedPushout
 
