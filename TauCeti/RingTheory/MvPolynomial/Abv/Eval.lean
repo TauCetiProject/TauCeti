@@ -91,9 +91,13 @@ theorem apply_prod_pow_le (v : AbsoluteValue R ℝ) {s L : ι → ℕ} (hs : ∀
 /-- A term `c_s ∏ i, x_i ^ s_i` of the value at `x` of an integer polynomial `P` with partial
 degrees `degreeOf i P ≤ L i` has absolute value at most `v(c_s) ∏ i, max(v(x_i), 1) ^ L i`. -/
 theorem apply_coeff_mul_prod_pow_le (v : AbsoluteValue R ℝ) {P : MvPolynomial ι ℤ} {L : ι → ℕ}
-    (hL : ∀ i, P.degreeOf i ≤ L i) (x : ι → R) {s : ι →₀ ℕ} (hs : s ∈ P.support) :
+    (hL : ∀ i, P.degreeOf i ≤ L i) (x : ι → R) {s : ι →₀ ℕ} :
     v (algebraMap ℤ R (P.coeff s) * ∏ i, x i ^ s i) ≤
       v (P.coeff s : R) * ∏ i, max (v (x i)) 1 ^ L i := by
+  by_cases hs : s ∈ P.support
+  swap
+  · rw [notMem_support_iff.1 hs]
+    simp
   rw [v.map_mul, algebraMap_int_eq, eq_intCast]
   exact mul_le_mul_of_nonneg_left
     (v.apply_prod_pow_le (fun i ↦ (monomial_le_degreeOf i hs).trans (hL i)) x) (v.nonneg _)
@@ -109,7 +113,7 @@ theorem apply_aeval_le (v : AbsoluteValue R ℝ) {P : MvPolynomial ι ℤ} {L : 
   have hc : v (P.coeff s : R) ≤ |(P.coeff s : ℝ)| := by
     rw [← v.apply_natAbs_eq]
     exact (v.apply_nat_le_self _).trans_eq (by rw [Nat.cast_natAbs, Int.cast_abs])
-  exact (v.apply_coeff_mul_prod_pow_le hL x hs).trans
+  exact (v.apply_coeff_mul_prod_pow_le hL x).trans
     (mul_le_mul_of_nonneg_right hc (by positivity))
 
 /-- **The trivial bound for the value of a polynomial.** If `P` has partial degrees
