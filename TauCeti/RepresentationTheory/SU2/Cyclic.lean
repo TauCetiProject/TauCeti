@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
+public import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 public import TauCeti.RepresentationTheory.SU2.Basic
 
 /-!
@@ -126,12 +126,8 @@ theorem mem_cyclicSubgroup_iff_mem_torus_and_pow_eq_one {g : SU2} :
   · rintro ⟨hg, hz⟩
     obtain ⟨z, rfl⟩ := mem_torus_iff_exists_torusHom.mp hg
     have hzn : z ^ n = 1 := torusHom_injective (by simpa using hz)
-    let w : rootsOfUnity n Circle := ⟨toUnits z, (mem_rootsOfUnity' n _).2 hzn⟩
-    obtain ⟨j, hj⟩ := (bijective_rootsOfUnityAddChar n).surjective w
-    apply (mem_cyclicSubgroup_iff n).2
-    refine ⟨j, congrArg torusHom ?_⟩
-    simpa only [ZMod.rootsOfUnityAddChar_val, w, val_toUnits_apply] using
-      congrArg (fun u : rootsOfUnity n Circle => (u.val : Circle)) hj
+    obtain ⟨j, hj⟩ := ZMod.exists_toCircle_eq_of_pow_eq_one hzn
+    exact (mem_cyclicSubgroup_iff n).2 ⟨j, congrArg torusHom hj⟩
 
 /-- The parameter-one cyclic model is the trivial subgroup. -/
 @[simp]
