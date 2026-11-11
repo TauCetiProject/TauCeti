@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
 # The asymptotic expansion of the adjoint symbol
@@ -294,7 +295,8 @@ private theorem hasDerivAt_scaledAdjoint
     rw [norm_smul, Complex.norm_I, one_mul]
     exact hC j _ (hball t ht) x ξ θ
   have hbound_int : Integrable bound :=
-    integrable_finsetSum _ fun j _ ↦ (integrable_one_add_norm_rpow_neg.mul_const _).const_mul _
+    integrable_finsetSum _ fun j _ ↦
+      (integrable_one_add_norm_rpow_neg_add_one.mul_const _).const_mul _
   obtain ⟨-, h⟩ := hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (F := fun t θ ↦ shiftIntegrand a (t * (2 * π)) x ξ θ) (F' := F')
     (Metric.ball_mem_nhds t₀ one_pos)

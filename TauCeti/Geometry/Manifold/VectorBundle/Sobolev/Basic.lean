@@ -44,6 +44,8 @@ subsequence. Forgetting the highest derivative of every component gives the cont
 
 ## Main definitions
 
+* `TauCeti.SobolevData.mapL`: a continuous linear map on each chart applied to every component of a
+  tuple in that chart.
 * `TauCeti.FiniteBundleAtlas.chartValueL`: the `F`-valued `Lᵖ` function on `A.image i` assembled
   from the chart-`i` Sobolev components of a tuple.
 * `TauCeti.sobolevSections A μ p k`: the tuples of chartwise Sobolev components of sections.
@@ -92,6 +94,26 @@ variable (A : FiniteBundleAtlas E M F V) (μ : Measure E) [μ.IsAddHaarMeasure] 
 of the standard basis `Module.finBasis ℝ F` of the model fibre. -/
 abbrev SobolevData : Type u :=
   ∀ (i : Fin A.n) (_ : Fin (finrank ℝ F)), Wkp μ (A.image i) p k
+
+namespace SobolevData
+
+variable {A μ p k} {k' : ℕ}
+
+/-- Applies a continuous linear map between scalar Sobolev spaces of the image of chart `i` to
+every chart-`i` component of a tuple. -/
+def mapL (T : ∀ i : Fin A.n, Wkp μ (A.image i) p k →L[ℝ] Wkp μ (A.image i) p k') :
+    SobolevData A μ p k →L[ℝ] SobolevData A μ p k' :=
+  ContinuousLinearMap.piMap fun i ↦ ContinuousLinearMap.piMap fun _ ↦ T i
+
+omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
+  [FiniteDimensional ℝ F] in
+@[simp]
+theorem mapL_apply (T : ∀ i : Fin A.n, Wkp μ (A.image i) p k →L[ℝ] Wkp μ (A.image i) p k')
+    (w : SobolevData A μ p k) (i : Fin A.n) (j : Fin (finrank ℝ F)) :
+    mapL T w i j = T i (w i j) := by
+  rfl
+
+end SobolevData
 
 namespace FiniteBundleAtlas
 
@@ -333,11 +355,7 @@ theorem eq_of_ae_eq_coord {w w' : SobolevSection A μ p k} {s : ∀ x, V x}
 /-- The continuous inclusion `W^{k+1,p}(V) → W^{k,p}(V)`, forgetting the highest derivative of
 every component. -/
 def lowerOrderL : SobolevSection A μ p (k + 1) →L[ℝ] SobolevSection A μ p k :=
-  ((ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi fun j ↦ (Wkp.lowerOrderL k).comp
-    ((ContinuousLinearMap.proj (R := ℝ)
-      (φ := fun _ : Fin (finrank ℝ F) ↦ Wkp μ (A.image i) p (k + 1)) j).comp
-      (ContinuousLinearMap.proj (R := ℝ)
-        (φ := fun i : Fin A.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp μ (A.image i) p (k + 1)) i))).comp
+  ((SobolevData.mapL fun _ ↦ Wkp.lowerOrderL k).comp
     (sobolevSections A μ p (k + 1)).subtypeL).codRestrict (sobolevSections A μ p k) fun w ↦ by
       obtain ⟨s, hs⟩ := w.2
       refine ⟨s, fun i ↦ ?_⟩

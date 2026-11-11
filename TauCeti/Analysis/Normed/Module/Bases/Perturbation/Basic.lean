@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Bases.Map
+public import TauCeti.Analysis.Normed.Module.Bases.Perturbation.Ambient
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 
@@ -38,22 +38,7 @@ variable {β 𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {L : SummationFilter β} (b : GeneralSchauderBasis β 𝕜 E L) (c : β → E)
 
-private def perturbationError : E →L[𝕜] E :=
-  ∑' i, (b.coord i).smulRight (b i - c i)
-
-private theorem norm_perturbationError_le
-    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖b i - c i‖)) :
-    ‖b.perturbationError c‖ ≤ ∑' i, ‖b.coord i‖ * ‖b i - c i‖ :=
-  tsum_of_norm_bounded hs.hasSum fun i ↦
-    (ContinuousLinearMap.norm_smulRight_apply (b.coord i) (b i - c i)).le
-
 variable [CompleteSpace E]
-
-private theorem summable_perturbationError
-    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖b i - c i‖)) :
-    Summable (fun i ↦ (b.coord i).smulRight (b i - c i)) :=
-  hs.of_norm_bounded fun i ↦
-    (ContinuousLinearMap.norm_smulRight_apply (b.coord i) (b i - c i)).le
 
 /-- The bounded equivalence sending a basis to a small perturbation of its vectors.
 The weighted error series must be summable and have sum strictly less than one. -/
@@ -61,7 +46,8 @@ def smallPerturbationEquiv
     (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖b i - c i‖))
     (hδ : (∑' i, ‖b.coord i‖ * ‖b i - c i‖) < 1) : E ≃L[𝕜] E :=
   ContinuousLinearEquiv.ofUnit
-    (Units.oneSub (b.perturbationError c) ((b.norm_perturbationError_le c hs).trans_lt hδ))
+    (Units.oneSub (∑' i, (b.coord i).smulRight (b i - c i))
+      ((b.norm_tsum_coord_smulRight_le (fun i ↦ b i - c i) hs).trans_lt hδ))
 
 /-- As a bounded operator, the perturbing equivalence is the identity minus the
 norm-convergent series of rank-one errors. -/
@@ -79,19 +65,37 @@ theorem smallPerturbationEquiv_apply
       x - ∑' i, b.coord i x • (b i - c i) := by
   rw [← ContinuousLinearEquiv.coe_coe, smallPerturbationEquiv_toContinuousLinearMap]
   simp only [sub_apply, one_apply_eq_self,
-    tsum_apply (b.summable_perturbationError c hs),
+    tsum_apply (b.summable_coord_smulRight (fun i ↦ b i - c i) hs),
     ContinuousLinearMap.smulRight_apply]
+
+/-- The same-space perturbing equivalence is the ambient perturbing map for the identity
+embedding. -/
+theorem smallPerturbationEquiv_eq_ambientPerturbationMap
+    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖b i - c i‖))
+    (hδ : (∑' i, ‖b.coord i‖ * ‖b i - c i‖) < 1) :
+    (b.smallPerturbationEquiv c hs hδ : E →L[𝕜] E) =
+      b.ambientPerturbationMap (LinearIsometry.id : E →ₗᵢ[𝕜] E) c := by
+  ext x
+  rw [ContinuousLinearEquiv.coe_coe, smallPerturbationEquiv_apply,
+    ambientPerturbationMap_apply b _ c
+      (by simpa only [LinearIsometry.id_apply, norm_sub_rev] using hs)]
+  simp only [LinearIsometry.id_apply]
+  have herror : (∑' i, b.coord i x • (c i - b i)) =
+      -∑' i, b.coord i x • (b i - c i) := by
+    rw [← tsum_neg]
+    apply tsum_congr
+    intro i
+    rw [← smul_neg, neg_sub]
+  rw [herror, sub_eq_add_neg]
 
 @[simp]
 theorem smallPerturbationEquiv_apply_basis
     (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖b i - c i‖))
     (hδ : (∑' i, ‖b.coord i‖ * ‖b i - c i‖) < 1) (i : β) :
     b.smallPerturbationEquiv c hs hδ (b i) = c i := by
-  classical
-  rw [smallPerturbationEquiv_apply, tsum_eq_single i]
-  · simp [b.ortho]
-  · intro j hji
-    simp [b.ortho, hji.symm]
+  rw [← ContinuousLinearEquiv.coe_coe, smallPerturbationEquiv_eq_ambientPerturbationMap]
+  exact b.ambientPerturbationMap_apply_basis LinearIsometry.id c
+    (by simpa only [LinearIsometry.id_apply, norm_sub_rev] using hs) i
 
 /-- The norm of the perturbing equivalence is at most one plus the weighted error. -/
 theorem norm_smallPerturbationEquiv_le
@@ -99,9 +103,10 @@ theorem norm_smallPerturbationEquiv_le
     (hδ : (∑' i, ‖b.coord i‖ * ‖b i - c i‖) < 1) :
     ‖(b.smallPerturbationEquiv c hs hδ : E →L[𝕜] E)‖ ≤
       1 + ∑' i, ‖b.coord i‖ * ‖b i - c i‖ := by
-  rw [smallPerturbationEquiv_toContinuousLinearMap]
-  exact (norm_sub_le _ _).trans
-    (add_le_add (ContinuousLinearMap.norm_id_le) (b.norm_perturbationError_le c hs))
+  rw [smallPerturbationEquiv_eq_ambientPerturbationMap]
+  simpa only [LinearIsometry.id_apply, norm_sub_rev] using
+    b.norm_ambientPerturbationMap_le LinearIsometry.id c
+      (by simpa only [LinearIsometry.id_apply, norm_sub_rev] using hs)
 
 /-- The inverse equivalence has the geometric-series bound. -/
 theorem norm_smallPerturbationEquiv_symm_le
@@ -111,18 +116,14 @@ theorem norm_smallPerturbationEquiv_symm_le
       (1 - ∑' i, ‖b.coord i‖ * ‖b i - c i‖)⁻¹ := by
   let δ := ∑' i, ‖b.coord i‖ * ‖b i - c i‖
   let e := b.smallPerturbationEquiv c hs hδ
-  have herr (x : E) : ‖x - e x‖ ≤ δ * ‖x‖ := by
-    have hx : x - e x = b.perturbationError c x := by
-      simp [e, smallPerturbationEquiv_apply, perturbationError,
-        tsum_apply (b.summable_perturbationError c hs)]
-    rw [hx]
-    exact (b.perturbationError c).le_of_opNorm_le (b.norm_perturbationError_le c hs) x
   apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
   intro y
-  have h := herr (e.symm y)
-  have htri := norm_le_norm_sub_add (e.symm y) y
-  simp only [e.apply_symm_apply] at h
-  have hlower : (1 - δ) * ‖e.symm y‖ ≤ ‖y‖ := by linarith
+  have hlower : (1 - δ) * ‖e.symm y‖ ≤ ‖y‖ := by
+    have h := b.mul_norm_le_norm_ambientPerturbationMap LinearIsometry.id c
+      (by simpa only [LinearIsometry.id_apply, norm_sub_rev] using hs) (e.symm y)
+    rw [← smallPerturbationEquiv_eq_ambientPerturbationMap b c hs hδ] at h
+    simpa only [δ, e, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
+      LinearIsometry.id_apply, norm_sub_rev] using h
   calc
     ‖e.symm y‖ ≤ ‖y‖ / (1 - δ) :=
       (le_div_iff₀ (sub_pos.mpr hδ)).mpr ((mul_comm _ _).trans_le hlower)

@@ -302,7 +302,7 @@ theorem Linked.split {t : ℚ} {l₁ l₂ : List (P.weylGroup × ℚ)} {w : P.we
 `∑_{m < j} d_m g(τ_m λ)` at the `j`-th break differs by an integer from `a_j g(τ_j λ)`, where
 `a_j = ∑_{m < j} d_m`, for every integral linear form `g`. This is
 `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain` for the break times of the list. -/
-theorem Linked.exists_sum_take_sub_mul_eq_intCast [P.flip.IsReduced]
+theorem Linked.exists_sum_take_sub_mul_eq_intCast
     (hlam : lam ∈ dominantChamber P b) {l : List (P.weylGroup × ℚ)} (hl : Linked P b lam 0 l)
     (g : Module.Dual ℤ M) {j : ℕ} (hj : j < l.length) :
     ∃ z : ℤ, ((l.take j).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum -

@@ -23,7 +23,8 @@ symbols satisfying this identity form a closed subalgebra containing the identit
 conjugate. By the Stone–Weierstrass theorem this subalgebra is everything. This is the
 two-space form of Mathlib's `Commute.cfc`, and the proof follows that of `Commute.cfcHom`.
 
-For unitary operators the adjoint hypothesis is automatic, since the adjoint is the inverse.
+For unitary operators the adjoint hypothesis is automatic, since the adjoint is the inverse;
+more generally it suffices that `a` is a coisometry and `b` an isometry.
 For normal operators it is the content of the Fuglede–Putnam–Rosenblum theorem, which Mathlib
 proves as `SemiconjBy.star_right` for elements of a single C⋆-algebra.
 
@@ -31,8 +32,9 @@ proves as `SemiconjBy.star_right` for elements of a single C⋆-algebra.
 
 * `ContinuousLinearMap.comp_cfc_eq_cfc_comp`: an operator intertwining `a, b` and their adjoints
   intertwines `cfc f a` and `cfc f b`.
-* `ContinuousLinearMap.comp_star_eq_star_comp_of_mem_unitary`: an operator intertwining two
-  unitaries intertwines their adjoints.
+* `ContinuousLinearMap.comp_star_eq_star_comp_of_mul_star_self_of_star_mul_self`: an operator
+  intertwining a coisometry and an isometry, in particular two unitaries, intertwines their
+  adjoints.
 
 ## References
 
@@ -86,9 +88,7 @@ theorem comp_cfc_eq_cfc_comp {p : (E →L[𝕜] E) → Prop} {q : (F →L[𝕜] 
     induction g using ContinuousMap.induction_on_of_compact with
     | const r =>
       have hr : ContinuousMap.const K r = algebraMap 𝕜 C(K, 𝕜) r := by ext; simp
-      rw [hr, AlgHomClass.commutes, AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one,
-        Algebra.algebraMap_eq_smul_one, comp_smul, smul_comp]
-      simp only [one_def, comp_id, id_comp]
+      simp [hr, Algebra.algebraMap_eq_smul_one, one_def]
     | id => rwa [hφa_id, hφb_id]
     | star_id => rwa [map_star, map_star, hφa_id, hφb_id]
     | add f g hf hg => rw [map_add, map_add, comp_add, add_comp, hf, hg]
@@ -96,10 +96,8 @@ theorem comp_cfc_eq_cfc_comp {p : (E →L[𝕜] E) → Prop} {q : (F →L[𝕜] 
       rw [map_mul, map_mul, mul_def, mul_def, ← comp_assoc, hf, comp_assoc, hg, comp_assoc]
     | frequently g hg =>
       have hclosed : IsClosed {g : C(K, 𝕜) | X ∘L φa g = φb g ∘L X} :=
-        isClosed_eq ((compL 𝕜 E E F X).continuous.comp hφa)
-          (((compL 𝕜 E F F).flip X).continuous.comp hφb)
-      exact hclosed.closure_subset_iff.mpr subset_rfl
-        (mem_closure_iff_frequently.mpr hg)
+        isClosed_eq (by fun_prop) (by fun_prop)
+      exact hclosed.closure_subset_iff.mpr subset_rfl (mem_closure_iff_frequently.mpr hg)
   -- `cfc f a` and `cfc f b` are the two calculi at the restriction of `f` to `K`.
   have hf : ContinuousOn f K :=
     hfa.union_of_isClosed hfb hca.isClosed hcb.isClosed
@@ -111,16 +109,14 @@ theorem comp_cfc_eq_cfc_comp {p : (E →L[𝕜] E) → Prop} {q : (F →L[𝕜] 
     exact congrArg (cfcHom hb) (ContinuousMap.ext fun _ => rfl)
   rw [hfa', hfb', key]
 
-/-- An operator intertwining two unitaries also intertwines their adjoints, which are their
-inverses. -/
-theorem comp_star_eq_star_comp_of_mem_unitary (X : E →L[𝕜] F) {u : E →L[𝕜] E} {v : F →L[𝕜] F}
-    (hu : u ∈ unitary (E →L[𝕜] E)) (hv : v ∈ unitary (F →L[𝕜] F)) (h : X ∘L u = v ∘L X) :
-    X ∘L star u = star v ∘L X := by
-  have hu' : X ∘L (u * star u) = X := by rw [Unitary.mul_star_self_of_mem hu, one_def, comp_id]
-  have hv' : (star v * v) ∘L X = X := by rw [Unitary.star_mul_self_of_mem hv, one_def, id_comp]
-  calc X ∘L star u = (star v * v) ∘L X ∘L star u := by rw [← comp_assoc, hv']
+/-- If `X` intertwines a coisometry `u` and an isometry `v`, then it also intertwines their
+adjoints. In particular this holds for unitaries `u` and `v`. -/
+theorem comp_star_eq_star_comp_of_mul_star_self_of_star_mul_self (X : E →L[𝕜] F)
+    {u : E →L[𝕜] E} {v : F →L[𝕜] F} (hu : u * star u = 1) (hv : star v * v = 1)
+    (h : X ∘L u = v ∘L X) : X ∘L star u = star v ∘L X :=
+  calc X ∘L star u = (star v * v) ∘L X ∘L star u := by rw [hv, one_def, id_comp]
     _ = star v ∘L X ∘L (u * star u) := by
         rw [mul_def, mul_def, comp_assoc, ← comp_assoc v, ← h, comp_assoc]
-    _ = star v ∘L X := by rw [hu']
+    _ = star v ∘L X := by rw [hu, one_def, comp_id]
 
 end ContinuousLinearMap

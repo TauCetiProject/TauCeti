@@ -35,6 +35,8 @@ and scaling API used when the kernel is integrated against a source to form a Ne
   zeros of `f`.
 * `TauCeti.contDiffAt_planarNewtonianKernel`: smoothness away from the origin.
 * `TauCeti.laplacian_planarNewtonianKernel`: the pointwise equation `Δ G = 0` off the pole.
+* `TauCeti.tendsto_planarNewtonianKernel_sub_sub_cocompact`: moving the pole changes the kernel
+  by a function vanishing at infinity.
 -/
 
 public section
@@ -43,7 +45,7 @@ noncomputable section
 
 namespace TauCeti
 
-open InnerProductSpace Laplacian
+open Filter InnerProductSpace Laplacian Topology
 
 /-- The Newtonian kernel for the negative Laplacian on the plane, represented as `ℂ`.
 
@@ -66,6 +68,11 @@ theorem planarNewtonianKernel_zero : planarNewtonianKernel 0 = 0 := by
 theorem planarNewtonianKernel_neg (z : ℂ) :
     planarNewtonianKernel (-z) = planarNewtonianKernel z := by
   simp [planarNewtonianKernel]
+
+/-- The planar Newtonian kernel is radial: its value only depends on the norm of its argument. -/
+theorem planarNewtonianKernel_eq_of_norm_eq {z w : ℂ} (h : ‖z‖ = ‖w‖) :
+    planarNewtonianKernel z = planarNewtonianKernel w := by
+  rw [planarNewtonianKernel_def, planarNewtonianKernel_def, h]
 
 /-- The planar Newtonian kernel is invariant under multiplication by a unit complex number. -/
 theorem planarNewtonianKernel_unit_mul {u z : ℂ} (hu : ‖u‖ = 1) :
@@ -145,6 +152,53 @@ theorem laplacian_planarNewtonianKernel_sub {z a : ℂ} (hza : z ≠ a) :
     Δ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z = 0 :=
   (harmonicAt_planarNewtonianKernel_sub hza).2.self_of_nhds
 
+/-- Moving the pole of the planar Newtonian kernel by at most `R` changes its value at a point `z`
+with `2 R ≤ ‖z‖` by at most `π⁻¹ R / ‖z‖`. -/
+theorem abs_planarNewtonianKernel_sub_sub_le {z y : ℂ} {R : ℝ} (hy : ‖y‖ ≤ R)
+    (hz : 2 * R ≤ ‖z‖) (hz₀ : 0 < ‖z‖) :
+    |planarNewtonianKernel (z - y) - planarNewtonianKernel z| ≤ Real.pi⁻¹ * (R / ‖z‖) := by
+  have hR : 0 ≤ R := (norm_nonneg y).trans hy
+  have hzy : ‖z‖ - R ≤ ‖z - y‖ := by linarith [norm_sub_norm_le z y]
+  have hzy' : ‖z - y‖ ≤ ‖z‖ + R := by linarith [norm_sub_le z y]
+  have hhalf : ‖z‖ / 2 ≤ ‖z - y‖ := by linarith
+  have hpos : 0 < ‖z - y‖ := by linarith
+  -- `|log a - log b| ≤ |a - b| / min a b`, here with `|a - b| ≤ R` and `min a b ≥ ‖z‖ / 2`.
+  have hlog : |Real.log ‖z - y‖ - Real.log ‖z‖| ≤ 2 * (R / ‖z‖) := by
+    have h₁ : Real.log ‖z - y‖ - Real.log ‖z‖ ≤ R / ‖z‖ := by
+      rw [← Real.log_div hpos.ne' hz₀.ne']
+      refine (Real.log_le_sub_one_of_pos (div_pos hpos hz₀)).trans ?_
+      rw [div_sub_one hz₀.ne']
+      exact div_le_div_of_nonneg_right (by linarith) hz₀.le
+    have h₂ : Real.log ‖z‖ - Real.log ‖z - y‖ ≤ 2 * (R / ‖z‖) := by
+      rw [← Real.log_div hz₀.ne' hpos.ne']
+      refine (Real.log_le_sub_one_of_pos (div_pos hz₀ hpos)).trans ?_
+      rw [div_sub_one hpos.ne']
+      calc (‖z‖ - ‖z - y‖) / ‖z - y‖ ≤ R / (‖z‖ / 2) :=
+            div_le_div₀ hR (by linarith) (by positivity) hhalf
+        _ = 2 * (R / ‖z‖) := by field_simp
+    have : 0 ≤ R / ‖z‖ := div_nonneg hR hz₀.le
+    rw [abs_le]
+    constructor <;> linarith
+  rw [planarNewtonianKernel_def, planarNewtonianKernel_def, ← mul_sub, abs_mul, abs_neg,
+    abs_inv, abs_of_pos (by positivity : (0 : ℝ) < 2 * Real.pi)]
+  calc (2 * Real.pi)⁻¹ * |Real.log ‖z - y‖ - Real.log ‖z‖|
+      ≤ (2 * Real.pi)⁻¹ * (2 * (R / ‖z‖)) := by gcongr
+    _ = Real.pi⁻¹ * (R / ‖z‖) := by field_simp
+
+/-- Moving the pole of the planar Newtonian kernel changes it by a function vanishing at
+infinity: `G(z - y) - G z → 0` as `z → ∞`. -/
+theorem tendsto_planarNewtonianKernel_sub_sub_cocompact (y : ℂ) :
+    Tendsto (fun z ↦ planarNewtonianKernel (z - y) - planarNewtonianKernel z) (cocompact ℂ)
+      (𝓝 0) := by
+  set R := max ‖y‖ 1
+  have hR : 0 < R := lt_of_lt_of_le one_pos (le_max_right _ _)
+  have hlim : Tendsto (fun z : ℂ ↦ Real.pi⁻¹ * (R / ‖z‖)) (cocompact ℂ) (𝓝 0) := by
+    have h := (tendsto_inv_atTop_zero.comp (tendsto_norm_cocompact_atTop (E := ℂ))).const_mul R
+    simpa [Function.comp_def, div_eq_mul_inv] using h.const_mul Real.pi⁻¹
+  refine squeeze_zero_norm' ?_ hlim
+  filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop (2 * R)] with z hz
+  rw [Real.norm_eq_abs]
+  exact abs_planarNewtonianKernel_sub_sub_le (le_max_left _ _) hz (by linarith)
 end TauCeti
 
 end

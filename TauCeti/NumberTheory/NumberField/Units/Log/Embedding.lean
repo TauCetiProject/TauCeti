@@ -254,10 +254,7 @@ theorem norm_logEmbedding_le_logHeight₁ (u : (𝓞 L)ˣ) :
   rw [pi_norm_le_iff_of_nonneg (by positivity)]
   intro w
   rw [Real.norm_eq_abs, logEmbedding_component]
-  have h := TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁
-    (Sum.inr w.1) (u : L)
-  simpa [TauCeti.GlobalNumberFields.normalizedAbsValue_inr, Real.log_pow, abs_mul,
-    Nat.abs_cast] using h
+  exact InfinitePlace.abs_mult_mul_log_le_logHeight₁ w.1 _
 
 open Classical in
 /-- The relative logarithmic height of a unit is bounded by the unit rank times the supremum

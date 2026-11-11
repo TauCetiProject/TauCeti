@@ -61,6 +61,15 @@ theorem ext {D E : GridTwoStepDecomposition A B x z}
   cases E
   simp_all
 
+/-- When each constituent domain is unique between its endpoints, two decompositions are equal
+as soon as their intermediate states agree. -/
+theorem ext_of_middle_eq [∀ y, Subsingleton (A x y)] [∀ y, Subsingleton (B y z)]
+    {D E : GridTwoStepDecomposition A B x z} (hmiddle : D.middle = E.middle) : D = E := by
+  obtain ⟨m, P, Q⟩ := D
+  obtain ⟨m', P', Q'⟩ := E
+  obtain rfl : m = m' := hmiddle
+  rw [Subsingleton.elim P P', Subsingleton.elim Q Q']
+
 private def sigmaEquiv :
     GridTwoStepDecomposition A B x z ≃ Σ y : GridState n, Σ _first : A x y, B y z where
   toFun D := ⟨D.middle, D.first, D.second⟩

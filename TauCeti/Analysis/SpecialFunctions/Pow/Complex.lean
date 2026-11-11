@@ -40,8 +40,9 @@ quotient tends to half that second derivative. These coefficients describe the i
 a Schwarz--Christoffel map in the reciprocal coordinate at infinity.
 
 For a nonpositive real exponent `r`, the principal power `(t + x) ^ r` of a translate of `x` along
-the positive real axis is `O(t ^ r)` for `t > 0` when `x ∈ slitPlane ∪ {0}`, and bounded, indeed
-`O((1 + t) ^ r)`, for `t ≥ 0` when `x ∈ slitPlane`. More generally, for `z ∈ slitPlane`, `t ≥ 0`,
+the positive real axis is `O(t ^ r)` for `t > 0` when `x ∈ slitPlane ∪ {0}`, and bounded for
+`t ≥ 0` when `x ∈ slitPlane`; in the latter case it is `O((1 + t) ^ r)` for `t ≥ 0`, for a real
+exponent `r` of either sign. More generally, for `z ∈ slitPlane`, `t ≥ 0`,
 and any complex exponent `s` (with no sign restriction on `s.re`), `‖((t : ℂ) + w) ^ s‖` is bounded
 above by `C * (1 + t) ^ s.re` (with `C > 0`) locally uniformly in `w` near `z`, and
 `‖((t : ℂ) + z) ^ s‖` is bounded below by `c * (1 + t) ^ s.re` (with `c > 0`) at each fixed
@@ -71,7 +72,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   lowers or raises the exponent by one, including at the base `0`.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
   `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
-  `r ≤ 0` along the positive real axis.
+  real `r` along the positive real axis; only the last allows `r > 0`.
 * `TauCeti.exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow`,
   `TauCeti.exists_pos_mul_one_add_rpow_le_norm_ofReal_add_cpow` -- locally uniform upper and
   pointwise lower bounds comparing `‖((t : ℂ) + w) ^ s‖` with `(1 + t) ^ s.re` for `w` near
@@ -330,29 +331,6 @@ theorem exists_norm_ofReal_add_cpow_le_mul_rpow {x : ℂ} (hx : x ∈ slitPlane 
     rw [Set.mem_singleton_iff.mp hx, add_zero, Complex.norm_real,
       Real.norm_of_nonneg ht.le, one_mul]
 
-/-- For `x ∈ slitPlane` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is bounded
-for `t ≥ 0`. -/
-theorem exists_norm_ofReal_add_cpow_le {x : ℂ} (hx : x ∈ slitPlane) {r : ℝ} (hr : r ≤ 0) :
-    ∃ C, ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + x) ^ (r : ℂ)‖ ≤ C := by
-  simp only [Complex.norm_cpow_real]
-  obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hx
-  refine ⟨c ^ r, fun t ht => ?_⟩
-  have h1 : c ≤ ‖(t : ℂ) + x‖ := by
-    have : c * (1 + t) ≤ ‖x + (t : ℂ)‖ := h x (Metric.mem_ball_self hc) ⟨t, ht⟩
-    rw [add_comm]
-    nlinarith
-  exact Real.rpow_le_rpow_of_nonpos hc h1 hr
-
-/-- For `x ∈ slitPlane` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
-`O((1 + t) ^ r)` for `t ≥ 0`. -/
-theorem exists_norm_ofReal_add_cpow_le_mul_one_add_rpow {x : ℂ} (hx : x ∈ slitPlane) {r : ℝ}
-    (hr : r ≤ 0) :
-    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + x) ^ (r : ℂ)‖ ≤ C * (1 + t) ^ r := by
-  obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
-  refine ⟨c ^ r, by positivity, fun t ht => ?_⟩
-  rw [Complex.norm_cpow_real, ← Real.mul_rpow hc.le (by linarith)]
-  exact Real.rpow_le_rpow_of_nonpos (by positivity) (h t ht) hr
-
 /-- Near any `z ∈ slitPlane`, the principal power `((t : ℂ) + w) ^ s` is bounded by a constant
 multiple of `(1 + t) ^ s.re` uniformly in `w` and in `t ≥ 0`, with no sign restriction on `s`. -/
 theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz : z ∈ slitPlane)
@@ -406,6 +384,21 @@ theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz :
     _ ≤ (max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re) * Real.exp (Real.pi * |s.im|) :=
         mul_le_mul hrpow hexp (by positivity) (by positivity)
     _ = max (c ^ s.re) (M ^ s.re) * Real.exp (Real.pi * |s.im|) * (1 + t) ^ s.re := by ring
+
+/-- For `x ∈ slitPlane` and any real exponent `r`, the principal power `(t + x) ^ r` is
+`O((1 + t) ^ r)` for `t ≥ 0`. -/
+theorem exists_norm_ofReal_add_cpow_le_mul_one_add_rpow {x : ℂ} (hx : x ∈ slitPlane) (r : ℝ) :
+    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + x) ^ (r : ℂ)‖ ≤ C * (1 + t) ^ r := by
+  obtain ⟨U, hU, -, C, hC, h⟩ := exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow hx r
+  exact ⟨C, hC, fun t ht => by simpa using h x (mem_of_mem_nhds hU) t ht⟩
+
+/-- For `x ∈ slitPlane` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is bounded
+for `t ≥ 0`. -/
+theorem exists_norm_ofReal_add_cpow_le {x : ℂ} (hx : x ∈ slitPlane) {r : ℝ} (hr : r ≤ 0) :
+    ∃ C, ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + x) ^ (r : ℂ)‖ ≤ C := by
+  obtain ⟨C, hC, h⟩ := exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hx r
+  exact ⟨C, fun t ht => (h t ht).trans <| mul_le_of_le_one_right hC.le <|
+    Real.rpow_le_one_of_one_le_of_nonpos (by linarith) hr⟩
 
 /-- For `z ∈ slitPlane` and any `s : ℂ`, `‖((t : ℂ) + z) ^ s‖` is bounded below by a positive
 multiple of `(1 + t) ^ s.re` for all `t ≥ 0`. -/
