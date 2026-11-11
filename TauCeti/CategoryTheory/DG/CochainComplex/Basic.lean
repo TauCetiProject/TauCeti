@@ -33,10 +33,6 @@ conventions of every later differential graded construction.
   differential graded category.
 * `TauCeti.xIsoOfEq_hom_v` and `TauCeti.dgComp_v`: component formulas for degree transport and
   composition.
-* `CochainComplex.HomComplex.Cochain.v_apply_mem_ker_of_δ_eq_zero`: a closed degree-zero cochain
-  of complexes of modules sends closed elements to closed elements.
-* `CochainComplex.HomComplex.δ_v_apply_of_d_eq_zero`: on a closed element, the differential of a
-  cochain of complexes of modules is the differential of its value.
 
 ## Main definitions
 
