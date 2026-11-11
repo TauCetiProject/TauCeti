@@ -198,7 +198,7 @@ theorem aeval_quotientBasisCoord (p : MvPolynomial n R) (k : ι) :
   simp
 
 /-- If `v` satisfies the relations, the coordinates of `w l` are `e_l`. -/
-theorem quotientBasisCoord_map_eq_ite_of_relations
+@[simp] theorem quotientBasisCoord_map_eq_ite_of_relations
     (hv : ∀ x ∈ quotientBasisRelations w, aeval v x = 0) (l k : ι) :
     quotientBasisCoord v (map (algebraMap R A) (w l)) k = if l = k then 1 else 0 := by
   have h := hv _ (Ideal.subset_span (Or.inl ⟨(l, k), rfl⟩))
@@ -387,7 +387,7 @@ theorem isQuotientBasis_map_quotientBasisIdeal {A : Type*} [CommRing A] [Algebra
 
 /-- The coordinates of the monomials in the basis attached to the extension of the universal
 ideal along `φ` are the images under `φ` of the universal coordinates. -/
-theorem repr_mk_map_quotientBasisIdeal {A : Type*} [CommRing A] [Algebra R A]
+@[simp] theorem repr_mk_map_quotientBasisIdeal {A : Type*} [CommRing A] [Algebra R A]
     (φ : QuotientBasisRing w →ₐ[R] A)
     (hI : IsQuotientBasis w ((quotientBasisIdeal w).map (map φ.toRingHom)))
     (x : (n →₀ ℕ) × ι) :
