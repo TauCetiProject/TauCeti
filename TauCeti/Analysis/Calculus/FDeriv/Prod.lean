@@ -62,6 +62,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   of a function on a product are the restrictions of its derivative.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
   derivative along the first factor.
+* `HasDerivAt.hasFDerivAt_comp_snd`: a function `p ↦ x p.2` of a scalar second variable alone has
+  derivative `(σ, τ) ↦ τ • x'`.
 * `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right`: the derivative of a function
   on a product is the sum of the derivatives of its two slices.
 * `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
@@ -156,6 +158,14 @@ theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
       have h' : DifferentiableAt 𝕜 (fun w : E × F ↦ f w.2) (z.1, z.2) := h
       exact hf (h'.comp z.2 (hasFDerivAt_prodMk_right (𝕜 := 𝕜) z.1 z.2).differentiableAt)
     simp [fderiv_zero_of_not_differentiableAt hf']
+
+/-- A function `p ↦ x p.2` of a scalar second variable alone, where `x` has derivative `x'` at
+`z.2`, has derivative `(σ, τ) ↦ τ • x'` at `z`. -/
+theorem _root_.HasDerivAt.hasFDerivAt_comp_snd {x : 𝕜 → G} {x' : G} {z : E × 𝕜}
+    (hx : HasDerivAt x x' z.2) :
+    HasFDerivAt (fun p : E × 𝕜 ↦ x p.2) ((ContinuousLinearMap.snd 𝕜 E 𝕜).smulRight x') z := by
+  refine (hx.hasFDerivAt.comp z (hasFDerivAt_snd (p := z))).congr_fderiv ?_
+  ext <;> simp
 
 /-- **The chain rule along a graph.** The derivative of `fun x ↦ f (x, u x)` is the derivative of
 `f` in the first variable plus its derivative in the second variable applied to the derivative

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Linearization
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 
 /-!
@@ -47,7 +48,7 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   as finite-energy solutions at a nondegenerate orbit do, then the error on the neck is
   `O(e^{-κ R})` uniformly
   (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`). For solutions `u`
-  and `v` this bounds the error everywhere (`TauCeti.SymplecticForm.`
+  and `v` this bounds the error on all of `ℝ × [0, 1]` (`TauCeti.SymplecticForm.`
   `exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero`).
 
 Estimates are stated on the fundamental domain `t ∈ [0, 1]` of the cylinder, so no periodicity is
@@ -147,6 +148,26 @@ theorem pregluingCutoff_le_one (s : ℝ) : pregluingCutoff s ≤ 1 :=
 theorem contDiff_pregluingCutoff {n : ℕ∞} : ContDiff ℝ n pregluingCutoff :=
   Real.smoothTransition.contDiff.comp ((contDiff_const.sub contDiff_id).div_const _)
 
+/-- The cutoff is locally constant, so has zero derivative, off `[-1, 1]`. -/
+theorem deriv_pregluingCutoff_of_one_lt_abs {s : ℝ} (hs : 1 < |s|) :
+    deriv pregluingCutoff s = 0 := by
+  rcases lt_abs.1 hs with hs | hs
+  · rw [Filter.EventuallyEq.deriv_eq (f := fun _ ↦ 0), deriv_const]
+    exact (eventually_gt_nhds hs).mono fun _ h ↦ pregluingCutoff_of_one_le h.le
+  · rw [Filter.EventuallyEq.deriv_eq (f := fun _ ↦ 1), deriv_const]
+    exact (eventually_lt_nhds (by linarith : s < -1)).mono fun _ h ↦
+      pregluingCutoff_of_le_neg_one h.le
+
+/-- The derivative of the cutoff is bounded. -/
+theorem exists_abs_deriv_pregluingCutoff_le : ∃ B, ∀ s, |deriv pregluingCutoff s| ≤ B := by
+  obtain ⟨B, hB⟩ := (isCompact_Icc (a := (-1 : ℝ)) (b := 1)).exists_bound_of_continuousOn
+    (contDiff_pregluingCutoff (n := 1)).continuous_deriv_one.continuousOn
+  refine ⟨B, fun s ↦ ?_⟩
+  by_cases hs : 1 < |s|
+  · rw [deriv_pregluingCutoff_of_one_lt_abs hs, abs_zero]
+    exact (norm_nonneg _).trans (hB 0 ⟨by norm_num, by norm_num⟩)
+  · simpa using hB s (abs_le.1 (not_lt.1 hs))
+
 /-- **The pre-glued map** of a map `u`, asymptotic to the loop `x` as `s → +∞`, and a map `v`,
 asymptotic to `x` as `s → -∞`, with gluing parameter `R`:
 `w_R(s, t) = x(t) + ρ(s) (u(s + R, t) - x(t)) + ρ(-s) (v(s - R, t) - x(t))` for the cutoff
@@ -214,20 +235,13 @@ theorem norm_preglue_sub_le :
   · exact mul_le_of_le_one_left (norm_nonneg _) (pregluingCutoff_le_one _)
   · exact mul_le_of_le_one_left (norm_nonneg _) (pregluingCutoff_le_one _)
 
-/-- The stationary cylinder `p ↦ x(p.2)` over a loop `x` with derivative `x'` at `z.2` has
-derivative `(σ, τ) ↦ τ x'` at `z`. -/
-private theorem hasFDerivAt_comp_snd {x' : V} (hx : HasDerivAt x x' z.2) :
-    HasFDerivAt (fun p : ℝ × ℝ ↦ x p.2) ((snd ℝ ℝ ℝ).smulRight x') z := by
-  refine (hx.hasFDerivAt.comp z (hasFDerivAt_snd (p := z))).congr_fderiv ?_
-  ext <;> simp
-
 /-- The derivative of `p ↦ f(p + (c, 0)) - x(p.2)` at `z`, for `f` differentiable at `z + (c, 0)`
 and `x` with derivative `x'` at `z.2`. -/
 private theorem hasFDerivAt_comp_add_sub {f : ℝ × ℝ → V} {x' : V} {c : ℝ}
     (hx : HasDerivAt x x' z.2) (hf : DifferentiableAt ℝ f (z + (c, 0))) :
     HasFDerivAt (fun p : ℝ × ℝ ↦ f (p + (c, 0)) - x p.2)
       (fderiv ℝ f (z + (c, 0)) - (snd ℝ ℝ ℝ).smulRight x') z :=
-  ((hasFDerivAt_comp_add_right (c, 0)).2 hf.hasFDerivAt).sub (hasFDerivAt_comp_snd hx)
+  ((hasFDerivAt_comp_add_right (c, 0)).2 hf.hasFDerivAt).sub hx.hasFDerivAt_comp_snd
 
 /-- The derivative of `p ↦ ρ(a p.1)` at `z`, for the cutoff `ρ` and a real `a`. -/
 private theorem hasFDerivAt_pregluingCutoff_comp (a : ℝ) :
@@ -237,13 +251,6 @@ private theorem hasFDerivAt_pregluingCutoff_comp (a : ℝ) :
     (contDiff_pregluingCutoff (n := 1).differentiable one_ne_zero _).hasDerivAt
   refine (hρ.hasFDerivAt.comp z ((hasFDerivAt_fst (p := z)).const_mul a)).congr_fderiv ?_
   ext <;> simp [mul_comm]
-
-/-- An operator `(c • fst).smulRight y` has norm at most `|c| ‖y‖`. -/
-private theorem norm_smul_fst_smulRight_le (c : ℝ) (y : V) :
-    ‖(c • fst ℝ ℝ ℝ).smulRight y‖ ≤ |c| * ‖y‖ := by
-  rw [norm_smulRight_apply, norm_smul, Real.norm_eq_abs]
-  exact mul_le_mul_of_nonneg_right (mul_le_of_le_one_right (abs_nonneg _) (norm_fst_le ℝ ℝ ℝ))
-    (norm_nonneg _)
 
 /-- Scaling by a value of the cutoff does not increase norms. -/
 private theorem norm_pregluingCutoff_smul_le (s : ℝ) (A : ℝ × ℝ →L[ℝ] V) :
@@ -263,7 +270,11 @@ theorem norm_fderiv_preglue_sub_le {x' : V} (hx : HasDerivAt x x' z.2)
       (|deriv pregluingCutoff (-z.1)| * ‖v (z - (R, 0)) - x z.2‖ +
         ‖fderiv ℝ v (z - (R, 0)) - (snd ℝ ℝ ℝ).smulRight x'‖) := by
   have hzR : z + (-R, 0) = z - (R, 0) := by ext <;> simp [sub_eq_add_neg]
-  have hw := ((hasFDerivAt_comp_snd hx).add ((hasFDerivAt_pregluingCutoff_comp 1).smul
+  have hfst (c : ℝ) (y : V) : ‖(c • fst ℝ ℝ ℝ).smulRight y‖ ≤ |c| * ‖y‖ := by
+    rw [norm_smulRight_apply, norm_smul, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_right (mul_le_of_le_one_right (abs_nonneg _) (norm_fst_le ℝ ℝ ℝ))
+      (norm_nonneg _)
+  have hw := (hx.hasFDerivAt_comp_snd.add ((hasFDerivAt_pregluingCutoff_comp 1).smul
     (hasFDerivAt_comp_add_sub (c := R) hx hu))).add
     ((hasFDerivAt_pregluingCutoff_comp (-1)).smul
       (hasFDerivAt_comp_add_sub (c := -R) hx (hzR ▸ hv)))
@@ -275,8 +286,7 @@ theorem norm_fderiv_preglue_sub_le {x' : V} (hx : HasDerivAt x x' z.2)
     simp [preglue, sub_eq_add_neg]
   rw [hpre, hw.fderiv, add_assoc, add_sub_cancel_left, hzR]
   refine (norm_add_le_of_le (norm_add_le_of_le (norm_pregluingCutoff_smul_le _ _)
-    (norm_smul_fst_smulRight_le _ _)) (norm_add_le_of_le (norm_pregluingCutoff_smul_le _ _)
-    (norm_smul_fst_smulRight_le _ _))).trans_eq ?_
+    (hfst _ _)) (norm_add_le_of_le (norm_pregluingCutoff_smul_le _ _) (hfst _ _))).trans_eq ?_
   simp only [one_mul, neg_mul, abs_neg]
   ring
 
@@ -395,9 +405,7 @@ theorem exists_eventually_norm_floerOperator_preglue_le (ω : SymplecticForm V)
     (isCompact_closedBall (0 : V) δ₁)).exists_bound_of_continuousOn
     (f := fun p : ℝ × V ↦ J p.1 (x p.1 + p.2))
     (hJ.comp (continuous_fst.prodMk ((hxc.comp continuous_fst).add continuous_snd))).continuousOn
-  -- The cutoff has bounded derivative on `[-1, 1]`.
-  obtain ⟨B, hB⟩ := (isCompact_Icc (a := (-1 : ℝ)) (b := 1)).exists_bound_of_continuousOn
-    (contDiff_pregluingCutoff (n := 1)).continuous_deriv_one.continuousOn
+  obtain ⟨B, hB⟩ := exists_abs_deriv_pregluingCutoff_le
   set C₀ := max C 0
   have hC₀ : 0 ≤ C₀ := le_max_right _ _
   set K := (1 + M) * (1 + B) + M * L
@@ -440,10 +448,8 @@ theorem exists_eventually_norm_floerOperator_preglue_le (ω : SymplecticForm V)
     simpa using hM (z.2, preglue x u v R z - x z.2) ⟨hz₂, by simpa using hξ⟩
   have hXz : ‖X z.2 (preglue x u v R z) - X z.2 (x z.2)‖ ≤ L * ‖preglue x u v R z - x z.2‖ :=
     (hL₀ z.2 hz₂ _ hξ).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
-  have hB₁ : |deriv pregluingCutoff z.1| ≤ B := by
-    simpa using hB z.1 ⟨hz₁, hz₁'⟩
-  have hB₂ : |deriv pregluingCutoff (-z.1)| ≤ B := by
-    simpa using hB (-z.1) ⟨by linarith, by linarith⟩
+  have hB₁ : |deriv pregluingCutoff z.1| ≤ B := hB z.1
+  have hB₂ : |deriv pregluingCutoff (-z.1)| ≤ B := hB (-z.1)
   have hK : 0 ≤ K := by
     have hM0 : 0 ≤ M := (norm_nonneg _).trans hJz
     have hB0 : 0 ≤ B := (abs_nonneg _).trans hB₁
@@ -457,8 +463,7 @@ theorem exists_eventually_norm_floerOperator_preglue_le (ω : SymplecticForm V)
 /-- **The pre-gluing error of two Floer cylinders.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`, suppose moreover that `u`
 and `v` solve the Floer equation on `ℝ × [0, 1]`. Then for every large gluing parameter `R`, the
-Floer operator of the pre-glued map `w_R` is at most `C' e^{-κ R}` on all of `ℝ × [0, 1]`, and it
-vanishes outside the neck `[-1, 1] × [0, 1]`. -/
+Floer operator of the pre-glued map `w_R` is at most `C' e^{-κ R}` on all of `ℝ × [0, 1]`. -/
 theorem exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero
     (ω : SymplecticForm V)
     {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {x : ℝ → V} {u v : ℝ × ℝ → V} {C κ : ℝ}
