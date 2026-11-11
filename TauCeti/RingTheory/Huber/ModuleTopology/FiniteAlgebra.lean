@@ -50,7 +50,7 @@ Tate, the image of a pseudouniformiser of `A` is one of `B`.
   preserves power-boundedness.
 * `TauCeti.Huber.isOpen_integralClosure_map_algebraMap`: the integral closure in `B` of the image
   of an open subring of `A` is open.
-* `TauCeti.Huber.IsPowerBounded.projectiveNorm`: over a nonarchimedean ring, the norm of a
+* `TauCeti.Huber.IsPowerBounded.projectiveNorm`: over a topological ring, the norm of a
   power-bounded element of a finite projective, not necessarily commutative, algebra is
   power-bounded.
 
@@ -190,9 +190,9 @@ section Norm
 variable [Ring B] [Algebra A B]
 
 /-- **The norm of a power-bounded element is power-bounded.** For a finite projective, not
-necessarily commutative, algebra `B` over a nonarchimedean ring `A`, with its natural topology, the
+necessarily commutative, algebra `B` over a topological ring `A`, with its natural topology, the
 norm `N_{B/A}(b)` of a power-bounded `b ∈ B` is power-bounded in `A`. -/
-theorem IsPowerBounded.projectiveNorm [NonarchimedeanRing A]
+theorem IsPowerBounded.projectiveNorm [IsTopologicalRing A]
     [TopologicalSpace B] [IsModuleTopology A B] [Module.Finite A B] [Module.Projective A B]
     {b : B} (hb : IsPowerBounded b) : IsPowerBounded (Algebra.projectiveNorm A b) := by
   have : IsTopologicalRing B := IsModuleTopology.isTopologicalRing A B
