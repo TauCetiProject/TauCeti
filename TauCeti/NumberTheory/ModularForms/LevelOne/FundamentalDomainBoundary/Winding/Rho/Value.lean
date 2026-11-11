@@ -109,7 +109,7 @@ private lemma telescope_rho_piece_arc_first (H : ℝ) :
     (fun t _ ↦ (hasDerivAt_fdBoundarySegment2 t).differentiableAt.sub_const _)
     (by rw [hd]; fun_prop)
     (fun t ht ↦ heval t ht ▸
-      fdBoundary_sub_rho_arc_mem_slitPlane_of_lt_three H ht.1 (by linarith [ht.2]))
+      fdBoundary_sub_rho_arc_mem_slitPlane_of_lt_three H (by linarith [ht.2]))
     (fun t ht ↦ congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval t ⟨ht.1.le, ht.2.le⟩))
     (congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval 1 (left_mem_Icc.mpr (by norm_num))))
     (congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval 2 (right_mem_Icc.mpr (by norm_num))))
@@ -143,7 +143,7 @@ private lemma telescope_rho_piece_arc_second (H : ℝ) (hδL : 0 < δL) (hδL1 :
     (fun t _ ↦ (hasDerivAt_fdBoundarySegment3 t).differentiableAt.sub_const _)
     (by rw [hd]; fun_prop)
     (fun t ht ↦ heval t ht ▸
-      fdBoundary_sub_rho_arc_mem_slitPlane_of_lt_three H (by linarith [ht.1]) (by linarith [ht.2]))
+      fdBoundary_sub_rho_arc_mem_slitPlane_of_lt_three H (by linarith [ht.2]))
     (fun t ht ↦ congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval t ⟨ht.1.le, ht.2.le⟩))
     (congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval 2 (left_mem_Icc.mpr hab)))
     (congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval (3 - δL) (right_mem_Icc.mpr hab)))
@@ -175,7 +175,7 @@ private lemma telescope_rho_piece_left_vertical (hH : Real.sqrt 3 / 2 < H) (hδR
     (fun t _ ↦ (hasDerivAt_fdBoundarySegment4 H t).differentiableAt.sub_const _)
     (by rw [hd]; exact continuousOn_const)
     (fun t ht ↦ heval t ht ▸
-      fdBoundary_sub_rho_mem_slitPlane_of_three_lt hH (by linarith [ht.1]) ht.2)
+      fdBoundary_sub_rho_mem_slitPlane_of_three_lt hH (by linarith [ht.1]))
     (fun t ht ↦ congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval t ⟨ht.1.le, ht.2.le⟩))
     (congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval (3 + δR) (left_mem_Icc.mpr hab)))
     (congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval 4 (right_mem_Icc.mpr hab)))

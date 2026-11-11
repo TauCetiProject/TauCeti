@@ -108,12 +108,16 @@ theorem fdBoundary_sub_rho_mem_slitPlane_of_le_one (H : ℝ) (ht : t ∈ Icc (0 
   rw [Complex.sub_re, re_fdBoundarySegment1 H ht]
   norm_num [UpperHalfPlane.ρ]
 
-/-- Before the corner the arc stays right of the corner column: the real part of the
-shifted contour is `cos((t+1)·π/6) + 1/2 > 0`, so it lies in the slit plane. -/
-theorem fdBoundary_sub_rho_arc_mem_slitPlane_of_lt_three (H : ℝ) (ht1 : 1 ≤ t)
-    (ht3 : t < 3) :
+/-- Before the corner the contour stays right of the corner column: on the arc the real part of
+the shifted contour is `cos((t+1)·π/6) + 1/2 > 0`, and on the right vertical it is `1`, so it lies
+in the slit plane. -/
+theorem fdBoundary_sub_rho_arc_mem_slitPlane_of_lt_three (H : ℝ) (ht3 : t < 3) :
     fdBoundary H t - (UpperHalfPlane.ρ : ℂ) ∈ Complex.slitPlane := by
   refine Complex.mem_slitPlane_iff.mpr (Or.inl ?_)
+  rcases le_or_gt t 1 with ht1 | ht1
+  · rw [Complex.sub_re, re_fdBoundary_of_le_one ht1]
+    norm_num [UpperHalfPlane.ρ]
+  replace ht1 : 1 ≤ t := ht1.le
   have hcurve : fdBoundary H t = circleMap 0 1 ((t + 1) * (Real.pi / 6)) :=
     eqOn_fdBoundary_arc H ⟨ht1, ht3.le⟩
   rw [Complex.sub_re, hcurve, circleMap_zero_re, one_mul]
@@ -127,12 +131,16 @@ theorem fdBoundary_sub_rho_arc_mem_slitPlane_of_lt_three (H : ℝ) (ht1 : 1 ≤ 
   rw [hrho]
   linarith
 
-/-- Above the corner the left vertical is purely imaginary of positive height: slit
-plane. -/
+/-- Above the corner the left vertical is purely imaginary of positive height, and the ceiling
+has positive height `H - √3/2`: slit plane. -/
 theorem fdBoundary_sub_rho_mem_slitPlane_of_three_lt (hH : Real.sqrt 3 / 2 < H)
-    (ht3 : 3 < t) (ht4 : t ≤ 4) :
+    (ht3 : 3 < t) :
     fdBoundary H t - (UpperHalfPlane.ρ : ℂ) ∈ Complex.slitPlane := by
   refine Complex.mem_slitPlane_iff.mpr (Or.inr ?_)
+  rcases le_or_gt t 4 with ht4 | ht4
+  swap
+  · rw [Complex.sub_im, im_fdBoundary_of_gt_four ht4, rho_im]
+    linarith
   rw [fdBoundary_sub_rho_of_mem_Icc_three_four H ⟨ht3.le, ht4⟩]
   have him : ((((t - 3) * (H - Real.sqrt 3 / 2) : ℝ) : ℂ) * Complex.I).im =
       (t - 3) * (H - Real.sqrt 3 / 2) := by
@@ -204,15 +212,15 @@ theorem log_fdBoundary_three_add_sub_rho (hH : Real.sqrt 3 / 2 < H) (hδ : 0 < �
 
 
 /-- The contour passes through `ρ` only at the corner `t = 3`. -/
-theorem eq_three_of_fdBoundary_eq_rho (hH : H ≠ Real.sqrt 3 / 2) (ht : t ∈ Icc (0 : ℝ) 5)
+theorem eq_three_of_fdBoundary_eq_rho (hH : H ≠ Real.sqrt 3 / 2)
     (heq : fdBoundary H t = (UpperHalfPlane.ρ : ℂ)) : t = 3 := by
   have h0 : ‖fdBoundary H t - (UpperHalfPlane.ρ : ℂ)‖ = 0 := by
     rw [heq]
     simp
   rcases le_or_gt t 1 with h1 | h1
-  · have := norm_fdBoundary_sub_rho_segment1 H ⟨ht.1, h1⟩
-    rw [h0] at this
-    norm_num at this
+  · have hre := congrArg Complex.re (norm_eq_zero.mp h0)
+    rw [Complex.sub_re, re_fdBoundary_of_le_one h1] at hre
+    norm_num [UpperHalfPlane.ρ] at hre
   · rcases le_or_gt t 3 with h3 | h3
     · rw [norm_fdBoundary_sub_rho_arc H ⟨h1.le, h3⟩] at h0
       have hsin : Real.sin ((t - 3) * (Real.pi / 12)) = 0 :=
@@ -233,8 +241,7 @@ theorem eq_three_of_fdBoundary_eq_rho (hH : H ≠ Real.sqrt 3 / 2) (ht : t ∈ I
         · exact absurd (by linarith) hH
       · have hz : fdBoundary H t - (UpperHalfPlane.ρ : ℂ) = 0 := norm_eq_zero.mp h0
         have him := congrArg Complex.im hz
-        rw [Complex.sub_im, im_fdBoundarySegment5 H ⟨h4.le, ht.2⟩, rho_im,
-          Complex.zero_im] at him
+        rw [Complex.sub_im, im_fdBoundary_of_gt_four h4, rho_im, Complex.zero_im] at him
         exact absurd (by linarith) hH
 
 end ModularForm
