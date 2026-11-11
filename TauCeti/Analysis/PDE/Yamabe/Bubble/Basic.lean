@@ -310,7 +310,6 @@ theorem norm_fderiv_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
 theorem norm_fderiv_bubble_sq {t : ℝ} (ht : 0 < t) (b x : E) :
     ‖fderiv ℝ (bubble t b) x‖ ^ 2 = (((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2 * ‖x - b‖ ^ 2 *
       (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E := by
-  have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
   have hU2 : bubble t b x ^ 2 =
       (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E / (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ 2 := by
     have ha : 0 < 2 * t / (t ^ 2 + ‖x - b‖ ^ 2) := by positivity
