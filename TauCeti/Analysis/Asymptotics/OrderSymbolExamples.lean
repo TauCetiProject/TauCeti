@@ -31,6 +31,9 @@ sector `|ph z| ≤ π/2 - δ` but not in the open half-plane `|ph z| < π/2`.
 * `Complex.tsum_tail_isBigO_pow`: the tail from index `n` of a power series that converges near
   `0` is `O(zⁿ)` (DLMF 2.1.8).
 * `Complex.exp_sub_one_sub_isBigO_sq`: `e^z = 1 + z + O(z²)` as `z → 0` (DLMF 2.1.9).
+
+The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
 -/
 
 @[expose] public section
