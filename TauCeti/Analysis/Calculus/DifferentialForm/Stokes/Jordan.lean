@@ -60,8 +60,11 @@ theorem integral_oneForm_jordan {ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ} {γ 
     let L := (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1)).symm (ω (γ t))
     have hv : deriv γ t = (deriv γ t).re • (1 : ℂ) + (deriv γ t).im • Complex.I := by
       simpa only [Complex.real_smul, mul_one] using (Complex.re_add_im (deriv γ t)).symm
-    change _ = L (deriv γ t)
-    rw [hv, map_add, map_smul, map_smul]
+    -- Evaluating `ω (γ t)` on the constant family is evaluating its linear representative `L`.
+    have hL : (ω (γ t) fun _ ↦ deriv γ t) = L (deriv γ t) := by
+      rw [← (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1)).apply_symm_apply (ω (γ t)),
+        ContinuousAlternatingMap.ofSubsingleton_apply_apply]
+    rw [hL, hv, map_add, map_smul, map_smul]
     simp only [L, ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply, smul_eq_mul,
       Green.circulationFun, P, Q]
     ring
