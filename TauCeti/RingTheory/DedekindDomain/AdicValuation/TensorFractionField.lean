@@ -36,6 +36,8 @@ over `A` with the classical completions `K_v ⊗[K] B` in the case `B = K`.
 
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersTensorEquiv_tmul`: it sends `c ⊗ x`
   to `c x`.
+* `IsDedekindDomain.HeightOneSpectrum.valued_adicCompletionIntegersTensorEquiv_one_tmul`: the
+  image of `1 ⊗ x` has the valuation of `x`.
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersTensorEquiv_mem_iff`: an element of
   `𝒪_v ⊗[A] K` maps into `𝒪_v` exactly when it lies in the image of `𝒪_v`.
 
@@ -65,25 +67,16 @@ private theorem bijective_lift_ofId_toAlgHom :
   have hf (c : v.adicCompletionIntegers K) (x : K) :
       f (c ⊗ₜ x) = c * algebraMap K (v.adicCompletion K) x := by
     simp [f]
-  refine ⟨(injective_iff_map_eq_zero f).2 fun y hy ↦ ?_, fun z ↦ ?_⟩
-  · -- Clearing a denominator `s ∈ A` writes `s • y` as a pure tensor `c ⊗ 1`.
-    obtain ⟨⟨c, s⟩, h⟩ := IsLocalizedModule.surj A⁰ (TensorProduct.mk A K
-      (v.adicCompletionIntegers K) 1) (TensorProduct.comm A _ _ y)
-    replace h : (1 ⊗ₜ algebraMap A K s) * y = c ⊗ₜ 1 := by
-      have := congrArg (TensorProduct.comm A _ _).symm h
-      dsimp only at this
-      rw [Submonoid.smul_def, map_smul, LinearEquiv.symm_apply_apply, mk_apply,
-        comm_symm_tmul] at this
-      rw [← this, ← Algebra.TensorProduct.algebraMap_apply']
-      exact (Algebra.smul_def _ _).symm
-    have hc : c = 0 := by
-      have := congrArg f h
-      rw [map_mul, hy, mul_zero, hf, map_one, mul_one] at this
-      exact_mod_cast this.symm
-    have hs : algebraMap A K s ≠ 0 :=
-      IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.2
-    have := congrArg ((1 : v.adicCompletionIntegers K) ⊗ₜ[A] (algebraMap A K s)⁻¹ * ·) h
-    simpa [← mul_assoc, hs, hc, ← Algebra.TensorProduct.one_def] using this
+  refine ⟨fun x y hxy ↦ ?_, fun z ↦ ?_⟩
+  · -- `K` is a localization of `A`, so it suffices to test injectivity on `𝒪_v ⊗ 1`.
+    have := IsLocalizedModule.injective_of_map_zero A⁰
+      (TensorProduct.mk A K (v.adicCompletionIntegers K) 1)
+      (g := f.toLinearMap.restrictScalars A ∘ₗ (TensorProduct.comm A _ _).toLinearMap)
+      fun c hc ↦ by
+        rw [LinearMap.comp_apply, LinearEquiv.coe_coe, mk_apply, comm_tmul,
+          LinearMap.restrictScalars_apply, AlgHom.toLinearMap_apply, hf, map_one, mul_one] at hc
+        rw [mk_apply, show c = 0 from Subtype.ext hc, tmul_zero]
+    exact (TensorProduct.comm A _ _).symm.injective (this (by simpa using hxy))
   · -- `z = (z / b) * b` for some `b ∈ K` with the valuation of `z`.
     rcases eq_or_ne z 0 with rfl | hz
     · exact ⟨0, map_zero f⟩
@@ -111,6 +104,13 @@ variable {K v}
 theorem adicCompletionIntegersTensorEquiv_tmul (c : v.adicCompletionIntegers K) (x : K) :
     adicCompletionIntegersTensorEquiv K v (c ⊗ₜ x) = c * algebraMap K (v.adicCompletion K) x := by
   simp [adicCompletionIntegersTensorEquiv]
+
+/-- The image of `1 ⊗ x` in `K_v` has the valuation of `x`. -/
+theorem valued_adicCompletionIntegersTensorEquiv_one_tmul (x : K) :
+    Valued.v (adicCompletionIntegersTensorEquiv K v (1 ⊗ₜ x)) = v.valuation K x := by
+  rw [adicCompletionIntegersTensorEquiv_tmul, OneMemClass.coe_one, one_mul,
+    algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply,
+    valuedAdicCompletion_eq_valuation']
 
 /-- An element of `𝒪_v ⊗[A] K` is sent into `𝒪_v` exactly when it lies in the image of `𝒪_v`,
 the bottom `𝒪_v`-subalgebra. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.TensorFractionField
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Units
@@ -68,13 +69,6 @@ namespace TauCeti.OrderIdeles
 
 variable {A : Type*} [CommRing A] [IsDedekindDomain A]
   {K : Type*} [Field K] [Algebra A K] [IsFractionRing A K]
-
-omit [IsDedekindDomain A] [IsFractionRing A K] in
-variable (A K) in
-/-- The base ring spans its fraction field. -/
-theorem span_bot_eq_top : span K ((⊥ : Subalgebra A K) : Set K) = ⊤ :=
-  eq_top_iff.2 (Ideal.span_singleton_one.ge.trans
-    (span_mono (Set.singleton_subset_iff.2 (one_mem (⊥ : Subalgebra A K)))))
 
 /-- The completion `Λ_v` of the order `A ⊆ K` consists of the elements of `𝒪_v ⊗[A] K` whose
 image in `K_v` is integral. -/
@@ -162,7 +156,7 @@ the idele equal to `b` at `w` and to `1` elsewhere has lattice `b A`. For instan
 and a rational prime `p`, the idele `α_p = p`, `α_q = 1` for `q ≠ p` has lattice `pℤ`. -/
 theorem lattice_bot_mulSingle_principal [DecidableEq (HeightOneSpectrum A)]
     {w : HeightOneSpectrum A} {b : Kˣ} (hb : ∀ v ≠ w, v.valuation K (b : K) = 1) :
-    lattice K ⊥ (.mulSingle _ w (principal K ⊥ (span_bot_eq_top A K) b w)) =
+    lattice K ⊥ (.mulSingle _ w (principal K ⊥ (⊥ : Subalgebra A K).span_coe_eq_top b w)) =
       span A {(b : K)} := by
   rw [lattice_mulSingle_principal (Ring.not_isField_of_ne_of_ne w.ne_bot w.isPrime.ne_top),
     Algebra.toSubmodule_bot, Units.smul_def, smul_one_eq_span]
@@ -171,9 +165,8 @@ theorem lattice_bot_mulSingle_principal [DecidableEq (HeightOneSpectrum A)]
   have hval (c : K) (hc : v.valuation K c = 1) :
       (1 : v.adicCompletionIntegers K) ⊗ₜ[A] c ∈
         (⊥ : Subalgebra A K).baseChange (v.adicCompletionIntegers K) := by
-    rw [mem_baseChange_bot_iff, adicCompletionIntegersTensorEquiv_tmul, OneMemClass.coe_one,
-      one_mul, mem_adicCompletionIntegers, algebraMap_adicCompletion, Function.comp_apply,
-      Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation', hc]
+    rw [mem_baseChange_bot_iff, mem_adicCompletionIntegers,
+      valued_adicCompletionIntegersTensorEquiv_one_tmul, hc]
   refine (Submonoid.mem_units_iff _ _).2 ⟨?_, ?_⟩
   · rw [coe_principal_apply]
     exact hval _ (hb v hv)
@@ -192,10 +185,8 @@ theorem not_forall_apply_eq_tmul_algebraMap {S : Set (HeightOneSpectrum A)} (hS 
   -- The finite idele of `K` attached to `α` is a local unit at all but finitely many places.
   obtain ⟨v, hvS, hv⟩ := ((Filter.frequently_cofinite_iff_infinite.2 hS).and_eventually
     (eventually_valued_coe_units_apply_eq_one (finiteIdelesBotEquiv A K α))).exists
-  rw [coe_finiteIdelesBotEquiv_apply, h v hvS, adicCompletionIntegersTensorEquiv_tmul,
-    OneMemClass.coe_one, one_mul, algebraMap_adicCompletion, Function.comp_apply,
-    Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation', valuation_of_algebraMap]
-    at hv
+  rw [coe_finiteIdelesBotEquiv_apply, h v hvS, valued_adicCompletionIntegersTensorEquiv_one_tmul,
+    valuation_of_algebraMap] at hv
   exact (v.intValuation_lt_one_iff_mem _).2 (ha v hvS) |>.ne hv
 
 end TauCeti.OrderIdeles
