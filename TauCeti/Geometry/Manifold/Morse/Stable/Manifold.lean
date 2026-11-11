@@ -118,6 +118,28 @@ theorem finrank_stableSubspace_add_manifoldMorseIndex :
   rw [stableSubspace]
   omega
 
+omit [FiniteDimensional ℝ E] in
+/-- **The stable subspaces of a Morse chart and of its negation span the model space.** The stable
+subspace of the negated chart is the subspace where the coordinates of positive weight vanish, so
+every vector is the sum of a vector of each of the two subspaces. -/
+theorem stableSubspace_sup_stableSubspace_neg
+    (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    φ.stableSubspace ⊔ (φ.neg h).stableSubspace = ⊤ := by
+  refine eq_top_iff.2 fun v _ ↦ ?_
+  -- Split `v` into its coordinates of positive weight and its coordinates of negative weight.
+  have hv : v = φ.coord.symm (fun i ↦ if φ.weight i < 0 then 0 else φ.coord v i) +
+      φ.coord.symm (fun i ↦ if φ.weight i < 0 then φ.coord v i else 0) := by
+    rw [← map_add, ← φ.coord.symm_apply_apply v]
+    congr 1
+    ext i
+    simp only [LinearEquiv.apply_symm_apply, Pi.add_apply]
+    split_ifs <;> simp
+  rw [hv]
+  refine Submodule.add_mem_sup (φ.mem_stableSubspace.2 fun i hi ↦ by simp [hi]) ?_
+  rw [mem_stableSubspace, neg_weight, neg_coord]
+  intro i hi
+  simp [not_lt.2 (neg_neg_iff_pos.1 hi).le]
+
 end MorseChart
 
 namespace IsAdaptedPseudoGradient
