@@ -50,7 +50,9 @@ absorb lower-order terms in parabolic Schauder estimates.
 * `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_add_norm_spatialFDerivHolderL_le`,
   `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul` and
   `TauCeti.ParabolicC2HolderSpace.exists_norm_valueHolderL_add_norm_spatialFDerivHolderL_le`:
-  the absorption of the lower-order parabolic Hölder norms.
+  the absorption of the lower-order parabolic Hölder norms, with the separate bounds
+  `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_le_mul` and
+  `TauCeti.ParabolicC2HolderSpace.norm_spatialFDerivHolderL_le_mul`.
 
 ## References
 
@@ -383,6 +385,18 @@ theorem norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul (hα : α ≤ 1)
   have h := norm_valueHolderL_add_norm_spatialFDerivHolderL_le hα f one_pos le_rfl
   simp only [Real.one_rpow, mul_one] at h
   linarith [norm_valueL_le f]
+
+/-- The parabolic Hölder norm of the value is at most `24 ‖u‖`. -/
+theorem norm_valueHolderL_le_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpace α E F hab) :
+    ‖valueHolderL hα f‖ ≤ 24 * ‖f‖ :=
+  (le_add_of_nonneg_right (norm_nonneg _)).trans
+    (norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα f)
+
+/-- The parabolic Hölder norm of the spatial gradient is at most `24 ‖u‖`. -/
+theorem norm_spatialFDerivHolderL_le_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpace α E F hab) :
+    ‖spatialFDerivHolderL hα f‖ ≤ 24 * ‖f‖ :=
+  (le_add_of_nonneg_left (norm_nonneg _)).trans
+    (norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα f)
 
 /-- **Absorption with a prescribed small constant.** For `α < 1` and every `η > 0` there is a
 constant `C`, depending only on `α` and `η`, such that on every slab
