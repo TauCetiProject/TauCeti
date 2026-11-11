@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Taylor
+public import TauCeti.Analysis.Calculus.Taylor.Basic
 public import TauCeti.MeasureTheory.Integral.Pi
 public import TauCeti.MeasureTheory.Integral.Prod
 
@@ -64,7 +64,8 @@ theorem abs_integral_sub_integral_le {μ ν : Measure ℝ} [IsFiniteMeasure μ]
   have hRc : Continuous fun t ↦ g t - T t := hg.continuous.sub hPc
   have hRb : ∀ t, ‖g t - T t‖ ≤ M / (r + 1)! * |t| ^ (r + 1) := fun t ↦ by
     rw [Real.norm_eq_abs, div_mul_eq_mul_div]
-    simpa [T, sub_zero] using abs_sub_taylorWithinEval_le (x₀ := 0) hg fun s _ ↦ hM s
+    simpa [T, sub_zero] using
+      abs_sub_taylorWithinEval_le (x₀ := 0) (fun t _ ↦ hg.contDiffAt) fun s _ ↦ hM s
   have hPterm : ∀ (ρ : Measure ℝ) [IsFiniteMeasure ρ],
       Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) ρ →
       ∀ k ∈ range (r + 1),

@@ -29,7 +29,7 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti
+namespace CategoryTheory.Subobject
 
 universe v u
 
@@ -37,7 +37,7 @@ variable {C : Type u} [Category.{v} C] {X Y Z : C}
 
 /-- Factoring through a subobject is unchanged after precomposing with the isomorphism induced by
 an equality of source objects. -/
-theorem _root_.CategoryTheory.Subobject.factors_eqToHom_comp_iff (P : Subobject Z) (hXY : X = Y)
+theorem factors_eqToHom_comp_iff (P : Subobject Z) (hXY : X = Y)
     (f : Y ⟶ Z) : P.Factors (eqToHom hXY ≫ f) ↔ P.Factors f := by
   constructor
   · rw [Subobject.factors_iff, Subobject.factors_iff]
@@ -49,7 +49,7 @@ theorem _root_.CategoryTheory.Subobject.factors_eqToHom_comp_iff (P : Subobject 
 
 /-- A morphism factors through the image of a subobject under an isomorphism `e` of ambient
 objects exactly when its composite with `e.inv` factors through the original subobject. -/
-theorem _root_.CategoryTheory.Subobject.factors_mapIsoToOrderIso_iff (e : Y ≅ Z)
+theorem factors_mapIsoToOrderIso_iff (e : Y ≅ Z)
     (P : Subobject Y) (f : X ⟶ Z) :
     (Subobject.mapIsoToOrderIso e P).Factors f ↔ P.Factors (f ≫ e.inv) := by
   induction P using Subobject.ind with
@@ -68,7 +68,7 @@ theorem _root_.CategoryTheory.Subobject.factors_mapIsoToOrderIso_iff (e : Y ≅ 
 
 /-- A morphism factors through a subobject exactly when it has a unique lift through the
 subobject's representing arrow. -/
-theorem _root_.CategoryTheory.Subobject.factors_iff_existsUnique (P : Subobject Y) (f : X ⟶ Y) :
+theorem factors_iff_existsUnique (P : Subobject Y) (f : X ⟶ Y) :
     P.Factors f ↔ ∃! g : X ⟶ (P : C), g ≫ P.arrow = f := by
   constructor
   · intro hf
@@ -80,4 +80,4 @@ theorem _root_.CategoryTheory.Subobject.factors_iff_existsUnique (P : Subobject 
     rw [← hg]
     exact Subobject.factors_comp_arrow g
 
-end TauCeti
+end CategoryTheory.Subobject

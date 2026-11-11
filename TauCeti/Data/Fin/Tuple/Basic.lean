@@ -19,7 +19,9 @@ the entry of an insertion at one of them in the other position, and compares upd
 insertions there. It also shows how `Fin.snoc` interacts with reindexing along a map extended to
 send the last position to the last position. The image of an initial segment under `Fin.cons`
 is obtained by inserting the first entry into the corresponding image for the tail.
-A tuple of length three is determined by its three entries.
+A tuple of length three is determined by its three entries. A tuple in a sum type that starts on
+the left, ends on the right and never steps from right to left steps from left to right exactly
+once.
 
 ## Main results
 
@@ -67,6 +69,8 @@ A tuple of length three is determined by its three entries.
 * `Fin.injective_comp_succAbove_of_eq` and `Fin.range_comp_succAbove_of_eq`: if `b p = b q`,
   deleting the entry at `p` or at `q` gives an injective tuple in the same cases, and does not
   change the set of entries.
+* `Fin.existsUnique_isLeft_castSucc_and_isRight_succ`: a tuple in `α ⊕ β` from the left summand to
+  the right one that never steps back steps from left to right exactly once.
 -/
 
 public section
@@ -413,5 +417,38 @@ theorem range_comp_succAbove_of_eq {α : Type*} {n : ℕ} {b : Fin (n + 1) → �
     exact ⟨z, by simp [hz, hi, h]⟩
   · obtain ⟨z, hz⟩ := exists_succAbove_eq hi
     exact ⟨z, by simp [hz]⟩
+
+/-- A tuple in `α ⊕ β` that starts in `α`, ends in `β` and never steps from `β` back to `α` steps
+from `α` to `β` at exactly one position. -/
+theorem existsUnique_isLeft_castSucc_and_isRight_succ {α β : Type*} {n : ℕ}
+    (x : Fin (n + 1) → α ⊕ β) (h0 : (x 0).isLeft) (hlast : (x (last n)).isRight)
+    (hstep : ∀ l : Fin n, (x l.castSucc).isRight → (x l.succ).isRight) :
+    ∃! l : Fin n, (x l.castSucc).isLeft ∧ (x l.succ).isRight := by
+  -- The level `0` on `α` and `1` on `β` is monotone along the tuple.
+  set v : Fin (n + 1) → ℕ := fun k => if (x k).isLeft then 0 else 1 with hv
+  have hmono : Monotone v := monotone_iff_le_succ.mpr fun l => by
+    by_cases h : (x l.castSucc).isLeft
+    · simp [hv, h]
+    · have := hstep l (by simpa using h)
+      simp [hv, h, Sum.not_isLeft.mpr this]
+  have hcross (l : Fin n) : (x l.castSucc).isLeft → (x l.succ).isRight →
+      v l.castSucc = 0 ∧ v l.succ = 1 := fun h₁ h₂ => by
+    simp [hv, h₁, Sum.not_isLeft.mpr h₂]
+  obtain ⟨l₀, h₁, h₂⟩ : ∃ l₀ : Fin n, (x l₀.castSucc).isLeft ∧ (x l₀.succ).isRight := by
+    by_contra! hne
+    have hleft (k : Fin (n + 1)) : (x k).isLeft := by
+      induction k using Fin.induction with
+      | zero => exact h0
+      | succ k ih => simpa using hne k ih
+    exact absurd (hleft (last n)) (Sum.not_isLeft.mpr hlast)
+  refine ⟨l₀, ⟨h₁, h₂⟩, fun l ⟨hl₁, hl₂⟩ => ?_⟩
+  obtain ⟨hv₁, hv₂⟩ := hcross l hl₁ hl₂
+  obtain ⟨hv₀₁, hv₀₂⟩ := hcross l₀ h₁ h₂
+  by_contra hne
+  rcases lt_or_gt_of_ne hne with h | h
+  · have := hmono (castSucc_lt_iff_succ_le.mp (castSucc_lt_castSucc_iff.mpr h))
+    omega
+  · have := hmono (castSucc_lt_iff_succ_le.mp (castSucc_lt_castSucc_iff.mpr h))
+    omega
 
 end Fin

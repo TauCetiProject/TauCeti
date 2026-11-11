@@ -155,8 +155,7 @@ private theorem subgroupOf_le_ker_restrictAux :
     rw [this]
     exact isClosed_singleton.preimage (hh.continuous.comp continuous_subtype_val)
   rw [pLowerCentralSeries_succ p G 1]
-  refine (pLowerCentralStep_subgroupOf_le_ker_iff (isClosed_pLowerCentralSeries 1) _ hker).mpr
-    ⟨fun n ↦ ?_, fun g n ↦ ?_⟩
+  refine (pLowerCentralStep_subgroupOf_le_ker_iff _ hker).mpr ⟨fun n ↦ ?_, fun g n ↦ ?_⟩
   · rw [restrictAux_apply, ← ofAdd_nsmul, hP, ofAdd_zero]
   · rw [restrictAux_apply, restrictAux_apply, MulAut.conjNormal_apply]
     have e := hh.apply_conj haN hbN g⁻¹ n

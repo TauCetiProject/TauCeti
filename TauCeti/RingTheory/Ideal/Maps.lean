@@ -11,7 +11,8 @@ public import Mathlib.RingTheory.Ideal.Maps
 # Transport of ideals along ring homomorphisms
 
 Taking radicals before extending an ideal does not change the radical of its extension.
-Powers of ideals commute with pullback along a ring equivalence, and extension along a bijective
+Powers of ideals commute with pullback along a ring equivalence, a ring homomorphism carrying `I`
+into `J` carries each power of `I` into the same power of `J`, and extension along a bijective
 ring homomorphism preserves and reflects primality. Extension preserves coprimality to an ideal
 whose contraction is coprime to the original ideal. Extending an ideal to an algebra and then along
 an algebra homomorphism is extending it directly. An algebra equivalence
@@ -65,6 +66,12 @@ theorem map_map_algebraMap {R A B F : Type*} [CommSemiring R] [Semiring A] [Semi
     (I.map (algebraMap R A)).map φ = I.map (algebraMap R B) := by
   rw [← (AlgHom.ofClass φ).comp_algebraMap, ← Ideal.map_map]
   rfl
+
+/-- A ring homomorphism `f` with `I ≤ J.comap f` maps `I ^ n` into `J ^ n`. -/
+theorem map_mem_pow_of_le_comap {R S : Type*} [CommSemiring R] [CommSemiring S] (f : R →+* S)
+    {I : Ideal R} {J : Ideal S} (h : I ≤ J.comap f) {n : ℕ} {x : R} (hx : x ∈ I ^ n) :
+    f x ∈ J ^ n :=
+  le_comap_pow f n (pow_right_mono h n hx)
 
 open scoped Pointwise in
 /-- If `f r` is a unit, `r • I ≤ (t)`, and `t ∈ I`, then `I` generates the principal ideal
