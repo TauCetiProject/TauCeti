@@ -187,7 +187,7 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_unpaired :
         ∑ D ∈ G.unpairedHexagonComposites C x z, G.hexagonCompositeWeight C R D =
           ∑ D ∈ G.pentagonPairDecompositions C x z, G.pentagonPairWeight C R D := by
   rw [G.unblockedDifferential_commutationHomotopy_add_eq_iff_overlap C R]
-  have hoff : ∀ x z : GridState n, z ≠ x →
+  have hoff : ∀ x z : GridState n,
       (∑ D ∈ (G.hexagonRectangleDecompositions C x z).filter
           (fun D => ¬D.toRectangleDecomposition.HasDisjointSides),
           G.hexagonRectangleWeight C R D) +
@@ -195,7 +195,7 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_unpaired :
           (fun D => ¬D.toRectangleDecomposition.HasDisjointSides),
           G.rectangleHexagonWeight C R D =
         ∑ D ∈ G.unpairedHexagonComposites C x z, G.hexagonCompositeWeight C R D :=
-    fun x z _ => by
+    fun x z => by
       rw [← G.sum_hexagonCompositeWeight_filter_not_hasDisjointSides C R,
         G.sum_hexagonCompositeWeight_overlap_eq_sum_unpaired C R]
   constructor
@@ -203,13 +203,13 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_unpaired :
     refine ⟨fun x => ?_, fun x z hzx => ?_⟩
     · simpa only [GridRectangleDecomposition.filter_not_hasDisjointSides_eq_self, eq_self,
         ite_true] using h x x
-    · simpa only [hoff x z hzx, ite_eq_right (Ne.symm hzx), zero_add] using h x z
+    · simpa only [hoff x z, ite_eq_right (Ne.symm hzx), zero_add] using h x z
   · rintro ⟨hdiag, hunpaired⟩ x z
     by_cases hzx : z = x
     · subst z
       simpa only [GridRectangleDecomposition.filter_not_hasDisjointSides_eq_self, eq_self,
         ite_true] using hdiag x
-    · rw [hoff x z hzx, ite_eq_right (Ne.symm hzx), zero_add]
+    · rw [hoff x z, ite_eq_right (Ne.symm hzx), zero_add]
       exact hunpaired x z hzx
 
 end GridDiagram
