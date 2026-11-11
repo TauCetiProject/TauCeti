@@ -76,10 +76,10 @@ variable {k : Type*} {A : Type*} [CommRing k] [Ring A] [Algebra k A]
   [AddCommGroup N] [Module A N] [Module k N] [IsScalarTower k A N]
 
 /-- **Maps into a vertex-`j` module.** Let the classes of a complete family of orthogonal
-idempotents `e` span `A ⧸ J` over `k`, so that modules killed by `J` are modules over a product
-of copies of `k`. If `J` kills `M` and `N`, and `e j` acts as the identity on `N`, then
-restricting to the piece `e j M` identifies `A`-linear maps `M → N` with `k`-linear maps
-`e j M → N`. The inverse sends `ψ` to `x ↦ ψ (e j • x)`. -/
+idempotents `e` span `A ⧸ J` over `k`, so that modules killed by `J` are modules over a quotient
+of a finite product of copies of `k`. If `J` kills `M` and `N`, and `e j` acts as the identity
+on `N`, then restricting to the piece `e j M` identifies `A`-linear maps `M → N` with `k`-linear
+maps `e j M → N`. The inverse sends `ψ` to `x ↦ ψ (e j • x)`. -/
 noncomputable def linearMapEquivSMulTopLinearMap (he : CompleteOrthogonalIdempotents e)
     (hquot : Submodule.span k (Set.range fun i ↦ Ideal.Quotient.mk J (e i)) = ⊤)
     (hM : Module.IsTorsionBySet A M J) (hN : Module.IsTorsionBySet A N J) (j : ι)

@@ -12,8 +12,9 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 # Complete orthogonal idempotents spanning a quotient
 
 Let `A` be a `k`-algebra, `J` a two-sided ideal of `A`, and `e : ι → A` a complete family of
-orthogonal idempotents whose classes span `A ⧸ J` over `k`, so that `A ⧸ J` is a product of
-copies of `k`. Then every element `a` of `A` acts on the `j`-th idempotent through a scalar: both
+orthogonal idempotents whose classes span `A ⧸ J` over `k`, so that `A ⧸ J` is a quotient of a
+finite product of copies of `k` (a finite product of copies of `k` itself when `k` is a field).
+Then every element `a` of `A` acts on the `j`-th idempotent through a scalar: both
 `e j * a` and `a * e j` are congruent to `c • e j` modulo `J` for a single `c : k`.
 
 ## Main results
