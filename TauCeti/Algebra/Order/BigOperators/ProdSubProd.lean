@@ -18,12 +18,15 @@ of the products is controlled by the sum of the pointwise differences:
 ‖∏ i ∈ s, a i - ∏ i ∈ s, b i‖ ≤ ∑ i ∈ s, ‖a i - b i‖
 ```
 
-Only `‖a i‖ ≤ 1` and `‖b i‖ ≤ 1` are needed, and the norm enters only through subadditivity and
-submultiplicativity, so the bound holds in any seminormed commutative ring, `ℝ` and `ℂ` included.
+Only `‖a i‖ ≤ 1` and `‖b i‖ ≤ 1` are assumed: the bound `norm_prod_sub_prod_le_sum_norm_sub` holds
+in any seminormed commutative ring, `ℝ` and `ℂ` included, without assuming `‖1‖ = 1`. For an empty
+`s` both sides are `0`.
 
-The file also records the auxiliary bounds `norm_prod_le_prod_norm` (the seminormed version of
-Mathlib's `Finset.norm_prod_le`) and `norm_prod_le_one`, and the real-valued corollary
-`abs_prod_sub_prod_le_sum_abs_sub`, phrased with `|·|`.
+The file also records three auxiliary bounds. `norm_prod_le_one_of_nonempty` puts a product of
+unit-ball elements over a nonempty index set in the unit ball, again without `‖1‖ = 1`.
+`norm_prod_le_prod_norm` (the seminormed version of Mathlib's `Finset.norm_prod_le`) and
+`norm_prod_le_one` also cover the empty product, which is `1`, so they assume `‖1‖ = 1`. The
+real-valued corollary `abs_prod_sub_prod_le_sum_abs_sub` is phrased with `|·|`.
 
 This is the elementary step that turns coordinatewise convergence of finitely many bounded
 observables into convergence of their product, without Hölder or dominated-convergence machinery.
