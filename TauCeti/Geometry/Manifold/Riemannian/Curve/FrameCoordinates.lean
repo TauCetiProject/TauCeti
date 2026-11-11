@@ -18,11 +18,11 @@ For a pair of tangent fields `s = (s₀, s₁)` and a curve `γ` in a Riemannian
 number `⟪s₀, γ'⟫ + i ⟪s₁, γ'⟫` is the coordinate of the velocity `γ'(t)` in the frame
 (`TauCeti.Manifold.frameVelocityCoordinates`). When `s` is a local frame of a surface, orthonormal
 at `γ t`, it determines the velocity, `γ' = Re z • s₀ + Im z • s₁`, and has the same norm, so it
-vanishes only where the velocity does. It is periodic along a periodic curve, and `C¹` along a `C²`
-curve for a `C¹` frame and metric.
+vanishes only where the velocity does. It is periodic along a periodic curve, continuous along a
+`C¹` curve for a continuous metric, and `C¹` along a `C²` curve for a `C¹` frame and metric.
 
-For a regular periodic `C²` curve inside the domain of an orthonormal frame, the unit coordinates
-`z / ‖z‖` form a loop in the unit circle `Circle`, the unit tangent read in the frame
+For a regular periodic `C¹` curve inside the domain of a frame orthonormal along it, the unit
+coordinates `z / ‖z‖` form a loop in the unit circle `Circle`, the unit tangent read in the frame
 (`TauCeti.Manifold.exists_path_eq_frameVelocityCoordinates_div_norm`). If `θ` is a continuous
 angle of this loop, the unit tangent is `T = cos θ s₀ + sin θ s₁`.
 
@@ -31,6 +31,7 @@ angle of this loop, the unit tangent is `T = cos θ s₀ + sin θ s₁`.
 * `TauCeti.Manifold.curveVelocity_eq_frameVelocityCoordinates`: reconstruction of the velocity.
 * `TauCeti.Manifold.norm_frameVelocityCoordinates`: the coordinates have the norm of the velocity.
 * `TauCeti.Manifold.periodic_frameVelocityCoordinates`: periodicity along periodic curves.
+* `TauCeti.Manifold.continuous_frameVelocityCoordinates`: continuity along `C¹` curves.
 * `TauCeti.Manifold.contDiff_frameVelocityCoordinates`: `C¹` regularity along `C²` curves.
 * `TauCeti.Manifold.exists_path_eq_frameVelocityCoordinates_div_norm`: the unit tangent loop in
   the frame.
@@ -121,6 +122,63 @@ theorem periodic_frameVelocityCoordinates (s : Fin 2 → Π x : M, TangentSpace 
   unfold frameVelocityCoordinates
   rw [hv, hp t]
 
+section Continuous
+
+variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (TangentSpace I : M → Type _)]
+
+/-- For a local frame on an open set and a continuous metric, the frame coordinates of the
+velocity of a `C¹` curve in that set are continuous. -/
+theorem continuous_frameVelocityCoordinates {n : ℕ∞ω} {s : Fin 2 → Π x : M, TangentSpace I x}
+    {u : Set M} (hs : IsLocalFrameOn I E n s u) (hu : IsOpen u) {γ : ℝ → M}
+    (hγ : ContMDiff 𝓘(ℝ) I 1 γ) (hγu : ∀ t, γ t ∈ u) :
+    Continuous (frameVelocityCoordinates s γ) := by
+  have hv : Continuous (fun t ↦ TotalSpace.mk' E (γ t) (curveVelocity I γ t)) :=
+    (ContMDiff.continuous_curveVelocityLift hγ).congr fun t ↦ curveVelocityLift_apply γ t
+  have hframe (i : Fin 2) : Continuous (fun t ↦ TotalSpace.mk' E (γ t) (s i (γ t))) :=
+    continuous_iff_continuousAt.mpr fun t ↦
+      (hs.contMDiffAt hu (hγu t) i).continuousAt.comp hγ.continuous.continuousAt
+  have hi (i : Fin 2) : Continuous (fun t ↦ inner ℝ (s i (γ t)) (curveVelocity I γ t)) :=
+    Continuous.inner_bundle (F := E) (E := fun x : M ↦ TangentSpace I x) (b := γ)
+      (v := fun t ↦ s i (γ t)) (w := fun t ↦ curveVelocity I γ t) (hframe i) hv
+  have h : Continuous (fun t ↦
+      (inner ℝ (s 0 (γ t)) (curveVelocity I γ t) : ℂ) +
+        (inner ℝ (s 1 (γ t)) (curveVelocity I γ t) : ℂ) * Complex.I) :=
+    (Complex.continuous_ofReal.comp (hi 0)).add
+      ((Complex.continuous_ofReal.comp (hi 1)).mul continuous_const)
+  convert h using 1
+  funext t
+  exact (Complex.re_add_im (frameVelocityCoordinates s γ t)).symm
+
+/-- **The unit tangent loop in an orthonormal frame.** For a regular `1`-periodic `C¹` curve `γ`
+in the open domain `u` of a local frame orthonormal along `γ`, the normalized frame coordinates
+`z / ‖z‖` of the velocity form a loop in the unit circle. -/
+theorem exists_path_eq_frameVelocityCoordinates_div_norm {n : ℕ∞ω}
+    {s : Fin 2 → Π x : M, TangentSpace I x} {u : Set M} (hs : IsLocalFrameOn I E n s u)
+    (hu : IsOpen u) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ) I 1 γ) (hγu : ∀ t, γ t ∈ u)
+    (ho : ∀ t, Orthonormal ℝ (fun i ↦ s i (γ t))) (hp : Function.Periodic γ 1)
+    (hne : ∀ t, curveVelocity I γ t ≠ 0) :
+    ∃ v : Circle, ∃ p : Path v v, ∀ t : unitInterval,
+      (p t : ℂ) = frameVelocityCoordinates s γ t / (‖frameVelocityCoordinates s γ t‖ : ℂ) := by
+  let z := frameVelocityCoordinates s γ
+  have hz : Continuous z := continuous_frameVelocityCoordinates hs hu hγ hγu
+  have hz0 (t : ℝ) : z t ≠ 0 :=
+    frameVelocityCoordinates_ne_zero hs (hγu t) (ho t) (hne t)
+  let U (t : ℝ) : Circle := ⟨z t / (‖z t‖ : ℂ), by
+    apply mem_sphere_zero_iff_norm.mpr
+    rw [norm_div, Complex.norm_real, Real.norm_eq_abs, abs_norm]
+    exact div_self (norm_ne_zero_iff.mpr (hz0 t))⟩
+  have hU : Continuous U :=
+    (hz.div (Complex.continuous_ofReal.comp hz.norm) fun t ↦
+      Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr (hz0 t))).subtype_mk _
+  have hclosed : U 1 = U 0 := by
+    have hper : z 1 = z 0 := by
+      simpa only [zero_add] using
+        periodic_frameVelocityCoordinates s hp (hγ.mdifferentiable one_ne_zero) 0
+    exact Circle.ext (by simp only [U, hper])
+  exact ⟨U 0, ⟨⟨fun t ↦ U t, hU.comp continuous_subtype_val⟩, rfl, hclosed⟩, fun t ↦ rfl⟩
+
+end Continuous
+
 variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (TangentSpace I : M → Type _)]
 
 /-- For a `C¹` local frame on an open set and a `C¹` metric, the frame coordinates of the
@@ -155,33 +213,5 @@ theorem contDiff_frameVelocityCoordinates {n : ℕ∞ω} {s : Fin 2 → Π x : M
   convert h using 1
   funext t
   exact (Complex.re_add_im (frameVelocityCoordinates s γ t)).symm
-
-/-- **The unit tangent loop in an orthonormal frame.** For a regular `1`-periodic `C²` curve `γ`
-in the open domain `u` of a `C¹` local frame orthonormal on `u`, the normalized frame coordinates
-`z / ‖z‖` of the velocity form a loop in the unit circle. -/
-theorem exists_path_eq_frameVelocityCoordinates_div_norm {n : ℕ∞ω}
-    {s : Fin 2 → Π x : M, TangentSpace I x} {u : Set M} (hs : IsLocalFrameOn I E n s u)
-    (hn : 1 ≤ n) (hu : IsOpen u) (ho : ∀ x ∈ u, Orthonormal ℝ (fun i ↦ s i x)) {γ : ℝ → M}
-    (hγ : ContMDiff 𝓘(ℝ) I 2 γ) (hγu : ∀ t, γ t ∈ u) (hp : Function.Periodic γ 1)
-    (hne : ∀ t, curveVelocity I γ t ≠ 0) :
-    ∃ v : Circle, ∃ p : Path v v, ∀ t : unitInterval,
-      (p t : ℂ) = frameVelocityCoordinates s γ t / (‖frameVelocityCoordinates s γ t‖ : ℂ) := by
-  let z := frameVelocityCoordinates s γ
-  have hz : Continuous z := (contDiff_frameVelocityCoordinates hs hn hu hγ hγu).continuous
-  have hz0 (t : ℝ) : z t ≠ 0 :=
-    frameVelocityCoordinates_ne_zero hs (hγu t) (ho _ (hγu t)) (hne t)
-  let U (t : ℝ) : Circle := ⟨z t / (‖z t‖ : ℂ), by
-    apply mem_sphere_zero_iff_norm.mpr
-    rw [norm_div, Complex.norm_real, Real.norm_eq_abs, abs_norm]
-    exact div_self (norm_ne_zero_iff.mpr (hz0 t))⟩
-  have hU : Continuous U :=
-    (hz.div (Complex.continuous_ofReal.comp hz.norm) fun t ↦
-      Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr (hz0 t))).subtype_mk _
-  have hclosed : U 1 = U 0 := by
-    have hper : z 1 = z 0 := by
-      simpa only [zero_add] using
-        periodic_frameVelocityCoordinates s hp (hγ.mdifferentiable two_ne_zero) 0
-    exact Circle.ext (by simp only [U, hper])
-  exact ⟨U 0, ⟨⟨fun t ↦ U t, hU.comp continuous_subtype_val⟩, rfl, hclosed⟩, fun t ↦ rfl⟩
 
 end TauCeti.Manifold
