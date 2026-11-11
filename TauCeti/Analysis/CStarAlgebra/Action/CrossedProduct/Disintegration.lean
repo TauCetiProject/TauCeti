@@ -13,9 +13,9 @@ public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Multiplier
 
 Let `L` be a nondegenerate representation of the full crossed product `A ⋊_α G` on a Hilbert
 space `H`. Extending `L` to the multiplier algebra by `NonUnitalStarAlgHom.multiplierExtension`
-and composing with the canonical multipliers `i_A` and `i_G` gives a covariant pair
+(written `L'`) and composing with the canonical multipliers `i_A` and `i_G` gives a covariant pair
 
-`π(a) = L̃(i_A(a))` and `U_s = L̃(i_G(s))`,
+`π(a) = L'(i_A(a))` and `U_s = L'(i_G(s))`,
 
 `NonUnitalStarAlgHom.toCovariantRepresentation`. Its coefficient representation is nondegenerate
 and its extended integrated form is `L` itself. Together with the uniqueness theorem
@@ -133,8 +133,8 @@ section
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   (L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (hL : L.IsNondegenerate)
 
-/-- The covariant pair `(L̃ ∘ i_A, L̃ ∘ i_G)` of a nondegenerate representation `L` of the full
-crossed product, where `L̃` is the extension of `L` to the multiplier algebra. Its integrated form
+/-- The covariant pair `(L' ∘ i_A, L' ∘ i_G)` of a nondegenerate representation `L` of the full
+crossed product, where `L'` is the extension of `L` to the multiplier algebra. Its integrated form
 is `L` (`integratedFull_toCovariantRepresentation`). -/
 def toCovariantRepresentation : CovariantRepresentation α H where
   coefficient := (L.multiplierExtension hL).toNonUnitalStarAlgHom.comp (coefficientMultiplier α μ)
