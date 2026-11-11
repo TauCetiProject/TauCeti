@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.DirectSum.RestrictScalars
 public import TauCeti.Algebra.Lie.Graded.Truncation
+public import TauCeti.Algebra.Lie.Quotient
 public import TauCeti.Algebra.Lie.RestrictScalars
 public import TauCeti.Algebra.PositiveDegrees.RestrictScalars
 
@@ -55,40 +56,16 @@ theorem degreeIdeal_restrictScalars (k : ℕ) :
 /-- Restricting scalars commutes with finite Lie truncation. -/
 def truncatedRestrictScalarsEquiv (k : ℕ) :
     d.truncatedLie (fun n => (ℒ n).restrictScalars R) k ≃ₗ⁅R⁆
-      d.truncatedLie ℒ k := by
-  let e : d.truncatedLie (fun n => (ℒ n).restrictScalars R) k ≃ₗ[R]
-      L ⧸ (d.degreeIdeal ℒ k).restrictScalars R :=
-    Submodule.quotEquivOfEq (R := R)
-      (d.degreeIdeal (fun n => (ℒ n).restrictScalars R) k).toSubmodule
-      ((d.degreeIdeal ℒ k).restrictScalars R).toSubmodule (by simp)
-  have he (x : L) : e (Submodule.Quotient.mk x) = Submodule.Quotient.mk x :=
-    Submodule.quotEquivOfEq_mk _ _ _ x
-  let e' : d.truncatedLie (fun n => (ℒ n).restrictScalars R) k ≃ₗ⁅R⁆
-      L ⧸ (d.degreeIdeal ℒ k).restrictScalars R :=
-    { e with
-      map_lie' {x y} := by
-        induction x using Submodule.Quotient.induction_on with | _ x
-        induction y using Submodule.Quotient.induction_on with | _ y
-        -- Expose the linear equivalence behind the Lie-equivalence structure fields.
-        change e (Submodule.Quotient.mk ⁅x, y⁆) =
-          ⁅e (Submodule.Quotient.mk x), e (Submodule.Quotient.mk y)⁆
-        rw [he, he, he]
-        exact LieSubmodule.Quotient.mk_bracket _ _ _ }
-  exact e'.trans ((d.degreeIdeal ℒ k).quotientRestrictScalarsEquiv R)
+      d.truncatedLie ℒ k :=
+  (LieIdeal.quotEquivOfEq _ _ (d.degreeIdeal_restrictScalars ℒ k)).trans
+    ((d.degreeIdeal ℒ k).quotientRestrictScalarsEquiv R)
 
 /-- The truncation comparison preserves representatives. -/
 @[simp]
 theorem truncatedRestrictScalarsEquiv_mk (k : ℕ) (x : L) :
     d.truncatedRestrictScalarsEquiv (R := R) ℒ k (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk x := by
-  simp only [truncatedRestrictScalarsEquiv, LieEquiv.trans_apply]
-  -- The first Lie equivalence wraps a linear equivalence; expose it to use its API.
-  change (d.degreeIdeal ℒ k).quotientRestrictScalarsEquiv R
-      (Submodule.quotEquivOfEq (R := R)
-        (d.degreeIdeal (fun n => (ℒ n).restrictScalars R) k).toSubmodule
-        ((d.degreeIdeal ℒ k).restrictScalars R).toSubmodule (by simp)
-        (Submodule.Quotient.mk x)) = Submodule.Quotient.mk x
-  rw [Submodule.quotEquivOfEq_mk, LieIdeal.quotientRestrictScalarsEquiv_mk]
+  simp [truncatedRestrictScalarsEquiv]
 
 /-- The inverse comparison preserves quotient representatives. -/
 @[simp]

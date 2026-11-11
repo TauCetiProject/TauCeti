@@ -173,30 +173,28 @@ instance instLieAlgebraQuotientRestrictScalars (I : LieIdeal S L) :
 /-- Quotienting by a Lie ideal commutes with restriction of scalars. -/
 def quotientRestrictScalarsEquiv (I : LieIdeal S L) (R : Type*) [CommRing R]
     [LieAlgebra R L] [SMul R S] [IsScalarTower R S L] :
-    (L ⧸ I.restrictScalars R) ≃ₗ⁅R⁆ L ⧸ I := by
-  let e : (L ⧸ I.restrictScalars R) ≃ₗ[R] L ⧸ I := by
-    -- Lie quotients use the underlying submodule; expose that carrier to rewrite it.
-    change (L ⧸ (I.restrictScalars R).toSubmodule) ≃ₗ[R] L ⧸ I.toSubmodule
-    rw [LieSubmodule.restrictScalars_toSubmodule]
-    exact Submodule.Quotient.restrictScalarsEquiv R I.toSubmodule
-  exact
-    { e with
-      map_lie' {x y} := by
-        induction x using Submodule.Quotient.induction_on
-        induction y using Submodule.Quotient.induction_on
-        rfl }
+    (L ⧸ I.restrictScalars R) ≃ₗ⁅R⁆ L ⧸ I where
+  -- Restricting a Lie ideal restricts its underlying submodule definitionally.
+  __ := Submodule.Quotient.restrictScalarsEquiv R I.toSubmodule
+  map_lie' {x y} := by
+    induction x using Submodule.Quotient.induction_on
+    induction y using Submodule.Quotient.induction_on
+    -- The underlying equivalence preserves representatives definitionally.
+    rfl
 
 /-- The comparison sends the class of `x` to its class in the original quotient. -/
 @[simp]
 theorem quotientRestrictScalarsEquiv_mk (I : LieIdeal S L) (x : L) :
     I.quotientRestrictScalarsEquiv R (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk x := (rfl)
+      Submodule.Quotient.mk x :=
+  Submodule.Quotient.restrictScalarsEquiv_mk R I.toSubmodule x
 
 /-- The inverse comparison also preserves representatives. -/
 @[simp]
 theorem quotientRestrictScalarsEquiv_symm_mk (I : LieIdeal S L) (x : L) :
     (I.quotientRestrictScalarsEquiv R).symm (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk x := (rfl)
+      Submodule.Quotient.mk x :=
+  Submodule.Quotient.restrictScalarsEquiv_symm_mk R I.toSubmodule x
 
 /-- The comparison intertwines the two canonical quotient homomorphisms. -/
 @[simp]

@@ -99,22 +99,15 @@ theorem degreeIdeal_baseChange (k : ℕ) :
 noncomputable def truncatedBaseChangeEquiv (k : ℕ) :
     d.truncatedLie (fun n => (ℒ n).baseChange S) k ≃ₗ⁅S⁆
       S ⊗[R] d.truncatedLie ℒ k :=
-  Eq.rec (motive := fun I _ => ((S ⊗[R] L) ⧸ I) ≃ₗ⁅S⁆ S ⊗[R] d.truncatedLie ℒ k)
+  (LieIdeal.quotEquivOfEq _ _ (d.degreeIdeal_baseChange ℒ k).symm).trans
     (LieIdeal.quotientBaseChangeEquiv S (d.degreeIdeal ℒ k))
-    (d.degreeIdeal_baseChange ℒ k)
 
 /-- The comparison commutes with the scalar extension of the quotient projection. -/
 @[simp]
 theorem truncatedBaseChangeEquiv_mk (k : ℕ) (z : S ⊗[R] L) :
     d.truncatedBaseChangeEquiv ℒ k (LieSubmodule.Quotient.mk z) =
       LieHom.baseChange S (d.degreeIdeal ℒ k).mkQ z := by
-  unfold truncatedBaseChangeEquiv truncatedLie
-  -- Eliminate the transport of the quotient before using the representative formula.
-  generalize_proofs
-  rename_i h
-  generalize d.degreeIdeal (fun n => (ℒ n).baseChange S) k = I at h ⊢
-  cases h
-  exact LieIdeal.quotientBaseChangeEquiv_mk S (d.degreeIdeal ℒ k) z
+  simp [truncatedBaseChangeEquiv]
 
 /-- The comparison sends the class of a pure tensor to the tensor of the class. -/
 theorem truncatedBaseChangeEquiv_mk_tmul (k : ℕ) (s : S) (x : L) :
