@@ -70,7 +70,22 @@ def sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℂ :=
 theorem sectionValue_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue x z = 2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I) := (rfl)
 
+/-- The section of a sum of fields is the sum of their sections. -/
+@[simp]
+theorem sectionValue_add (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue (x + y) z = sectionValue x z + sectionValue y z := by
+  simp only [sectionValue_apply, Pi.add_apply, PiLp.add_apply, ofReal_add]
+  ring
+
+/-- The section of a real multiple of a field is the multiple of its section. -/
+@[simp]
+theorem sectionValue_smul (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue (t • x) z = t * sectionValue x z := by
+  simp only [sectionValue_apply, Pi.smul_apply, PiLp.smul_apply, smul_eq_mul, ofReal_mul]
+  ring
+
 /-- The section of a difference of fields is the difference of their sections. -/
+@[simp]
 theorem sectionValue_sub (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue (x - y) z = sectionValue x z - sectionValue y z := by
   simp only [sectionValue_apply, Pi.sub_apply, PiLp.sub_apply, ofReal_sub]
@@ -100,6 +115,13 @@ theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) 
   rw [sectionValue_apply, ← normSq_eq_norm_sq, normSq_apply]
   simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
   ring
+
+/-- The section of a field is bounded by the field: `|α| ≤ 2 |x|`. -/
+theorem norm_sectionValue_le (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖sectionValue x z‖ ≤ 2 * ‖x z‖ := by
+  rw [← sq_le_sq₀ (norm_nonneg _) (by positivity), sq_norm_sectionValue, mul_pow,
+    EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
+  nlinarith [sq_nonneg (x z 0), sq_nonneg (x z 1)]
 
 /-- The section of a field vanishes exactly where `p ^ 2 + q ^ 2` does, for `p, q` its real
 coordinates. -/
@@ -190,6 +212,25 @@ theorem differentiableAt_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {
   exact (differentiableAt_const _).mul ((ofRealCLM.differentiableAt.comp z hp).add
     ((ofRealCLM.differentiableAt.comp z hq).mul_const I))
 
+/-- The section of a field differentiable at a point is differentiable there. -/
+theorem differentiableAt_sectionValue_of_differentiableAt
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hx : DifferentiableAt ℝ x z) :
+    DifferentiableAt ℝ (sectionValue x) z :=
+  differentiableAt_sectionValue
+    ((EuclideanSpace.proj (𝕜 := ℝ) (2 : Fin 4)).differentiableAt.comp z hx :)
+    ((EuclideanSpace.proj (𝕜 := ℝ) (3 : Fin 4)).differentiableAt.comp z hx :)
+
+/-- The section of a field `C^n` at a point is `C^n` there. -/
+theorem contDiffAt_sectionValue_of_contDiffAt {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    {n : WithTop ℕ∞} (hx : ContDiffAt ℝ n x z) : ContDiffAt ℝ n (sectionValue x) z := by
+  have hi (i : Fin 4) : ContDiffAt ℝ n (fun w ↦ ((x w i : ℝ) : ℂ)) z :=
+    ofRealCLM.contDiff.contDiffAt.comp z
+      ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.contDiffAt.comp z hx :)
+  have h : sectionValue x = fun w ↦ 2 * (((x w 2 : ℝ) : ℂ) + ((x w 3 : ℝ) : ℂ) * I) :=
+    funext (sectionValue_apply x)
+  rw [h]
+  exact contDiffAt_const.mul ((hi 2).add ((hi 3).mul contDiffAt_const))
+
 /-- The derivative of the section `α = 2 (p + i q)` in terms of those of its real coordinates. -/
 theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
     (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
@@ -270,8 +311,6 @@ continuous. -/
 theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ 1 x)
     (v : ℂ) : Continuous fun z ↦ covariantDerivative x z v := by
   have hxi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i := (contDiff_piLp 2).1 hx i
-  have hdx (i : Fin 4) : Continuous fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
-    ((hxi i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   have := hx.continuous
   simp only [covariantDerivative_apply, sectionValue_apply,
     fderiv_sectionValue_apply ((hxi 2).differentiable one_ne_zero _)

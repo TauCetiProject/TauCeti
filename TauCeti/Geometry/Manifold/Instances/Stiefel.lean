@@ -56,6 +56,8 @@ manifold structure.
 * `TauCeti.isCompact_stiefel`: the Stiefel manifold is compact.
 * `TauCeti.contMDiff_coe_stiefel` and `TauCeti.contMDiff_stiefelProj`: the inclusion into
   `Fin k → E` and the projections to the unit sphere are smooth.
+* `TauCeti.continuous_stiefelProj`: the projections to the unit sphere are continuous in every
+  dimension.
 * `TauCeti.range_mfderiv_coe_stiefel`: the tangent space of the Stiefel manifold at `v`, as the
   range of the differential of the inclusion, is the kernel of the derivative of the Gram map;
   `TauCeti.gramSym2Deriv_mfderiv_coe_stiefel` is the inclusion of the range in the kernel.
@@ -308,6 +310,13 @@ variable {E k} in
 @[simp]
 theorem coe_stiefelProj (i : Fin k) (v : stiefel E k) : (stiefelProj E k i v : E) = v.1 i :=
   (rfl)
+
+variable {E k} in
+/-- The projection of a frame to its `i`th vector is continuous, for every real inner product
+space. -/
+@[fun_prop]
+theorem continuous_stiefelProj (i : Fin k) : Continuous (stiefelProj E k i) :=
+  continuous_induced_rng.2 ((continuous_apply i).comp continuous_subtype_val)
 
 /-- The projection of a frame to its `i`th vector is smooth, for Mathlib's manifold structure on
 the unit sphere. The `FiniteDimensional` instance, which also follows from the `Fact`, is the one
