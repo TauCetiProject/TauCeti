@@ -5,7 +5,6 @@ Authors: Tau Ceti
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 
@@ -37,7 +36,7 @@ of the summands with `M` derivatives
 derivative `∂_v` has principal symbol `i ⟪ξ, v⟫`. The coefficients need no bounds, since the
 estimates of classical symbols are only required on compact sets of positions. As an example, the
 negative Laplacian `-Δ` (`TauCeti.ClassicalSymbol.negLaplacian`) has full and principal symbol
-`‖ξ‖² id`, which is elliptic (`TauCeti.ClassicalSymbol.isElliptic_principal_negLaplacian`), and its
+`‖ξ‖² id`, which is elliptic (`TauCeti.ClassicalSymbol.isElliptic_negLaplacian`), and its
 quantization is `-Δ` on Schwartz input
 (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_negLaplacian`).
 
@@ -170,6 +169,14 @@ private theorem differentialSymbol_filter_smul_snd (j : ℕ) (x ξ : CoordinateS
   · rw [Finset.filter_eq_empty_iff.2 fun i hi h ↦ by omega]
     simp
 
+/-- The summands of a differential expression of order at most `M` with exactly `M - j` derivatives,
+as a classical symbol of order `M` whose only nonzero homogeneous term is the `j`-th. -/
+private def ClassicalSymbol.ofDifferentialSymbolPart (j : ℕ) : ClassicalSymbol n V W M :=
+  ClassicalSymbol.inclusion j rfl
+    (ClassicalSymbol.ofContDiff (differentialSymbol {i ∈ s | M - k i = j} v b)
+      (contDiff_differentialSymbol _ v b fun i hi ↦ hb i (Finset.mem_filter.1 hi).1)
+      fun x ξ t _ ↦ differentialSymbol_filter_smul_snd M s v b hk j x ξ t)
+
 /-- The full symbol `σ(x, ξ) = ∑ i ∈ s, (∏ⱼ i ⟪ξ, vᵢⱼ⟫) bᵢ(x)` of a differential expression
 `u ↦ ∑ i ∈ s, bᵢ (∂^{vᵢ} u)` of order at most `M` with smooth coefficients, as a classical symbol
 of order `M`. Its homogeneous term of degree `M - j` collects the summands with exactly `M - j`
@@ -179,21 +186,32 @@ principal symbol collects those with `M` derivatives
 coefficients is needed, since classical symbols only carry estimates on compact sets of
 positions. -/
 def ClassicalSymbol.ofDifferentialSymbol : ClassicalSymbol n V W M :=
-  ∑ j ∈ Finset.range (M + 1), ClassicalSymbol.inclusion j rfl
-    (ClassicalSymbol.ofContDiff (differentialSymbol {i ∈ s | M - k i = j} v b)
-      (contDiff_differentialSymbol _ v b fun i hi ↦ hb i (Finset.mem_filter.1 hi).1)
-      fun x ξ t _ ↦ differentialSymbol_filter_smul_snd M s v b hk j x ξ t)
+  ∑ j ∈ Finset.range (M + 1), ClassicalSymbol.ofDifferentialSymbolPart M s v b hb hk j
 
 namespace ClassicalSymbol
+
+/-- Away from `ξ = 0`, the `j`-th homogeneous term of the `l`-th part is the symbol of the summands
+with exactly `M - j` derivatives when `l = j`, and zero otherwise. -/
+private theorem coefficient_term_ofDifferentialSymbolPart (l j : ℕ) {x ξ : CoordinateSpace n}
+    (hξ : ξ ≠ 0) : ((ofDifferentialSymbolPart M s v b hb hk l).term j).coefficient (x, ξ) =
+      if l = j then differentialSymbol {i ∈ s | M - k i = j} v b (x, ξ) else 0 := by
+  rw [ofDifferentialSymbolPart, term_inclusion]
+  split_ifs with h₁ h₂ h₂
+  · subst h₂
+    simp [coefficient_term_ofContDiff _ _ _ _ hξ]
+  · rw [HomogeneousSymbol.coefficient_castDegree, coefficient_term_ofContDiff _ _ _ _ hξ]
+    simp only [show j - l ≠ 0 by omega, ↓reduceIte]
+  · omega
+  · simp
 
 /-- The full symbol of `ofDifferentialSymbol` is the differential symbol. -/
 @[simp]
 theorem coefficient_toSymbol_ofDifferentialSymbol :
     (ofDifferentialSymbol M s v b hb hk).toSymbol.coefficient = differentialSymbol s v b := by
   funext p
-  simp only [ofDifferentialSymbol, toSymbol_sum, Symbol.coefficient_sum, Finset.sum_apply,
-    toSymbol_inclusion, Symbol.coefficient_inclusion, coefficient_toSymbol_ofContDiff,
-    differentialSymbol_def]
+  simp only [ofDifferentialSymbol, ofDifferentialSymbolPart, toSymbol_sum, Symbol.coefficient_sum,
+    Finset.sum_apply, toSymbol_inclusion, Symbol.coefficient_inclusion,
+    coefficient_toSymbol_ofContDiff, differentialSymbol_def]
   exact Finset.sum_fiberwise_of_maps_to (fun i hi ↦ Finset.mem_range.2 (by omega)) _
 
 /-- Away from `ξ = 0`, the homogeneous term of degree `M - j` of the classical symbol of a
@@ -201,20 +219,9 @@ differential expression is the symbol of its summands with exactly `M - j` deriv
 theorem coefficient_term_ofDifferentialSymbol (j : ℕ) {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
     ((ofDifferentialSymbol M s v b hb hk).term j).coefficient (x, ξ) =
       differentialSymbol {i ∈ s | M - k i = j} v b (x, ξ) := by
-  have h (l : ℕ) : ((inclusion l rfl (ofContDiff (differentialSymbol {i ∈ s | M - k i = l} v b)
-      (contDiff_differentialSymbol _ v b fun i hi ↦ hb i (Finset.mem_filter.1 hi).1)
-      fun x ξ t _ ↦ differentialSymbol_filter_smul_snd M s v b hk l x ξ t)).term j).coefficient
-        (x, ξ) = if l = j then differentialSymbol {i ∈ s | M - k i = j} v b (x, ξ) else 0 := by
-    rw [term_inclusion]
-    split_ifs with h₁ h₂ h₂
-    · subst h₂
-      simp [coefficient_term_ofContDiff _ _ _ _ hξ]
-    · rw [HomogeneousSymbol.coefficient_castDegree, coefficient_term_ofContDiff _ _ _ _ hξ]
-      simp only [show j - l ≠ 0 by omega, ↓reduceIte]
-    · omega
-    · simp
   simp only [ofDifferentialSymbol, term_sum, HomogeneousSymbol.coefficient_sum, Finset.sum_apply,
-    h, Finset.sum_ite_eq', Finset.mem_range]
+    coefficient_term_ofDifferentialSymbolPart M s v b hb hk _ j hξ, Finset.sum_ite_eq',
+    Finset.mem_range]
   split_ifs with hj
   · rfl
   · rw [Finset.filter_eq_empty_iff.2 fun i _ h ↦ by omega]
@@ -232,6 +239,21 @@ theorem coefficient_principal_ofDifferentialSymbol {x ξ : CoordinateSpace n} (h
 
 /-! ### The negative Laplacian -/
 
+/-- The differential symbol of `-∑ⱼ ∂ⱼ²` is `‖ξ‖² id`: each coordinate contributes
+`-(i ξⱼ)² = ξⱼ²`. -/
+private theorem differentialSymbol_negLaplacian (p : CoordinateSpace n × CoordinateSpace n) :
+    differentialSymbol Finset.univ
+        (fun j : Fin n ↦ ![EuclideanSpace.single j 1, EuclideanSpace.single j 1])
+        (fun _ _ ↦ -ContinuousLinearMap.id ℂ V) p =
+      ((‖p.2‖ ^ 2 : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := by
+  simp only [differentialSymbol_def, Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+    EuclideanSpace.inner_single_right, conj_trivial, one_mul, EuclideanSpace.norm_sq_eq,
+    Real.norm_eq_abs, sq_abs, smul_neg, ← neg_smul, ← Finset.sum_smul]
+  push_cast
+  congr 1
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  linear_combination (-(p.2 j : ℂ) ^ 2) * Complex.I_sq
+
 variable (V) in
 /-- The classical symbol of order `2` of the negative Laplacian `-Δ = -∑ⱼ ∂ⱼ²` on `V`-valued
 functions, where `∂ⱼ` is the derivative along the `j`-th coordinate vector. -/
@@ -245,29 +267,19 @@ def negLaplacian : ClassicalSymbol n V V 2 :=
 theorem coefficient_toSymbol_negLaplacian (p : CoordinateSpace n × CoordinateSpace n) :
     (negLaplacian V).toSymbol.coefficient p =
       ((‖p.2‖ ^ 2 : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := by
-  simp only [negLaplacian, coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_def,
-    Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-    EuclideanSpace.inner_single_right, conj_trivial, one_mul, EuclideanSpace.norm_sq_eq,
-    Real.norm_eq_abs, sq_abs, smul_neg, ← neg_smul, ← Finset.sum_smul]
-  push_cast
-  -- Each coordinate contributes `-(i ξⱼ)² = ξⱼ²`.
-  congr 1
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  linear_combination (-(p.2 j : ℂ) ^ 2) * Complex.I_sq
+  rw [negLaplacian, coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_negLaplacian]
 
 /-- Away from `ξ = 0`, the principal symbol of the negative Laplacian `-∑ⱼ ∂ⱼ²` is `‖ξ‖² id`. -/
 theorem coefficient_principal_negLaplacian {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
     (negLaplacian V).principal.coefficient (x, ξ) =
       ((‖ξ‖ ^ 2 : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := by
   rw [negLaplacian, coefficient_principal_ofDifferentialSymbol _ _ _ _ _ _ hξ,
-    Finset.filter_true_of_mem fun _ _ ↦ rfl]
-  exact (congrFun (coefficient_toSymbol_ofDifferentialSymbol 2 _ _ _ (fun _ _ ↦ contDiff_const)
-    fun _ _ ↦ le_rfl) (x, ξ)).symm.trans (coefficient_toSymbol_negLaplacian (x, ξ))
+    Finset.filter_true_of_mem fun _ _ ↦ rfl, differentialSymbol_negLaplacian]
 
 /-- **The negative Laplacian is elliptic**: its principal symbol `‖ξ‖² id` is invertible at every
 nonzero frequency. -/
-theorem isElliptic_principal_negLaplacian : (negLaplacian (n := n) V).principal.IsElliptic := by
-  refine HomogeneousSymbol.isElliptic_iff.2 fun x ξ hξ ↦ ?_
+theorem isElliptic_negLaplacian : (negLaplacian (n := n) V).IsElliptic := by
+  refine isElliptic_iff.2 fun x ξ hξ ↦ ?_
   rw [coefficient_principal_negLaplacian hξ, ContinuousLinearMap.isInvertible_smul_iff
     (by exact_mod_cast pow_ne_zero 2 (norm_ne_zero_iff.2 hξ))]
   simpa using ContinuousLinearMap.isInvertible_equiv (f := .refl ℂ V)
