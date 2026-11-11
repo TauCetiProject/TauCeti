@@ -217,19 +217,32 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {3} ℚ K]
 
-/-- A primary element `x` of `𝓞 K = ℤ[ω]` generates an ideal whose norm is prime to `3`: writing
-`x = a + b ω` with `a ≡ 2` and `b ≡ 0` modulo `3`, its norm `a ^ 2 - a b + b ^ 2` is `1`
-modulo `3`. -/
+omit [IsCyclotomicExtension {3} ℚ K] in
+/-- A primary element `x` of the ring of integers of a number field generates an ideal whose norm
+is prime to `3`, in every number field `K`. (When `K = ℚ(ω)`, so `𝓞 K = ℤ[ω]`, writing
+`x = a + b ω` with `a ≡ 2` and `b ≡ 0` modulo `3` shows directly that the norm `a ^ 2 - a b + b ^ 2`
+is `1` modulo `3`.) -/
 theorem IsPrimaryEisenstein.absNorm_span_singleton_coprime_three {x : 𝓞 K}
     (hx : IsPrimaryEisenstein x) : (Ideal.absNorm (Ideal.span {x})).Coprime 3 := by
-  have hζ := IsCyclotomicExtension.zeta_spec 3 ℚ K
-  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
-  obtain ⟨ha, hb⟩ := hζ.isPrimaryEisenstein_add_mul_iff.mp hx
-  obtain ⟨s, rfl⟩ : ∃ s, a = 3 * s + 2 := ⟨a / 3, by unfold Int.ModEq at ha; omega⟩
-  obtain ⟨t, rfl⟩ : ∃ t, b = 3 * t := ⟨b / 3, by unfold Int.ModEq at hb; omega⟩
-  rw [Ideal.absNorm_span_singleton, hζ.norm_intCast_add_intCast_mul_toInteger_of_three,
-    ← Int.natAbs_natCast 3, ← Int.isCoprime_iff_nat_coprime]
-  exact ⟨1, -(3 * s ^ 2 + 4 * s + 1 - 3 * s * t - 2 * t + 3 * t ^ 2), by push_cast; ring⟩
+  -- A maximal ideal over `3` containing `x` would contain `x`, `3` and hence `x - 3 y = 2`
+  -- (where `x = 2 + 3 y`), so `1 = 3 - 2`.
+  refine ((Nat.Prime.coprime_iff_not_dvd Nat.prime_three).mpr fun h3 => ?_).symm
+  obtain ⟨P, hPmax, hunder, hPdvd⟩ :=
+    Ideal.exists_isMaximal_dvd_of_dvd_absNorm' Nat.prime_three _ h3
+  have hxP : x ∈ P := (Ideal.span_singleton_le_iff_mem P).mp (Ideal.le_of_dvd hPdvd)
+  have h3P : (3 : 𝓞 K) ∈ P := by
+    have h : ((3 : ℕ) : ℤ) ∈ Ideal.span {((3 : ℕ) : ℤ)} := Ideal.mem_span_singleton_self _
+    rw [← hunder, Ideal.under, Ideal.mem_comap] at h
+    simpa using h
+  obtain ⟨y, hy⟩ := hx
+  have h2P : (2 : 𝓞 K) ∈ P := by
+    have h2 : (2 : 𝓞 K) = x - 3 * y := by linear_combination -hy
+    rw [h2]
+    exact P.sub_mem hxP (P.mul_mem_right y h3P)
+  refine hPmax.ne_top ((Ideal.eq_top_iff_one P).mpr ?_)
+  have h1 : (1 : 𝓞 K) = 3 - 2 := by norm_num
+  rw [h1]
+  exact P.sub_mem h3P h2P
 
 section Examples
 
