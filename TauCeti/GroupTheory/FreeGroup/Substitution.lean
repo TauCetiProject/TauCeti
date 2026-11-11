@@ -66,29 +66,15 @@ theorem flatMap_substituteLetter_update_of_notMem [DecidableEq α] {w : List (α
   flatMap_substituteLetter_congr fun a ha =>
     Function.update_of_ne (fun h : a.1 = y => hy (h ▸ List.mem_map_of_mem ha)) _ _
 
-/-- Changing the word assigned to a generator `y` whose two signed letters end one word and begin
-a later one, in a list of words in which `y` occurs nowhere else, changes only the substitutions
-into these two words, and only at these two letters. -/
-theorem map_flatMap_substituteLetter_update [DecidableEq α]
-    {Vpre Vmid Vpost : List (List (α × Bool))} {A C : List (α × Bool)} {y : α} {c : Bool}
-    (hy : y ∉ ((Vpre.flatten ++ A) ++ Vmid.flatten ++ (C ++ Vpost.flatten)).map Prod.fst)
+/-- Changing the word assigned to a generator that occurs in none of a list of words does not
+change the substitutions without free reduction into these words. -/
+theorem map_flatMap_substituteLetter_update_of_notMem [DecidableEq α]
+    {V : List (List (α × Bool))} {y : α} (hy : y ∉ V.flatten.map Prod.fst)
     (f : α → List (β × Bool)) (s : List (β × Bool)) :
-    (Vpre ++ (A ++ [(y, c)]) :: (Vmid ++ ((y, !c) :: C) :: Vpost)).map
-        (·.flatMap (substituteLetter (Function.update f y s))) =
-      Vpre.map (·.flatMap (substituteLetter f)) ++
-        (A.flatMap (substituteLetter f) ++ substituteLetter (Function.update f y s) (y, c)) ::
-        (Vmid.map (·.flatMap (substituteLetter f)) ++
-          (substituteLetter (Function.update f y s) (y, !c) ++ C.flatMap (substituteLetter f)) ::
-          Vpost.map (·.flatMap (substituteLetter f))) := by
-  simp only [List.map_append, List.mem_append, List.map_flatten, not_or] at hy
-  have hFs : ∀ V : List (List (α × Bool)), y ∉ (V.map (List.map Prod.fst)).flatten →
-      V.map (·.flatMap (substituteLetter (Function.update f y s))) =
-        V.map (·.flatMap (substituteLetter f)) :=
-    fun V hV => List.map_congr_left fun v hv => flatMap_substituteLetter_update_of_notMem
-      (fun h => hV (List.mem_flatten.2 ⟨_, List.mem_map_of_mem hv, h⟩)) f s
-  simp [hFs Vpre hy.1.1.1, hFs Vmid hy.1.2, hFs Vpost hy.2.2,
-    flatMap_substituteLetter_update_of_notMem hy.1.1.2,
-    flatMap_substituteLetter_update_of_notMem hy.2.1]
+    V.map (·.flatMap (substituteLetter (Function.update f y s))) =
+      V.map (·.flatMap (substituteLetter f)) :=
+  List.map_congr_left fun v hv => flatMap_substituteLetter_update_of_notMem
+    (fun h => hy (List.map_subset _ (fun _ ha => List.mem_flatten.2 ⟨v, hv, ha⟩) h)) f s
 
 /-- Substitution without free reduction commutes with formal inverses. -/
 theorem flatMap_substituteLetter_invRev (f : α → List (β × Bool)) (w : List (α × Bool)) :

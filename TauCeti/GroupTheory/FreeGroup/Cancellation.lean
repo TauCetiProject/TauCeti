@@ -114,7 +114,7 @@ theorem isReduced_of_mem_patterns {v : List (Z × Bool)} (hv : v ∈ P.patterns)
 
 /-- Every signed letter of `Z^{±1}` occurs exactly once in `V₀ ⋯ V_{l-1}`. -/
 @[simp]
-theorem count_flatten_patterns [DecidableEq Z] (z : Z) (b : Bool) :
+theorem count_flatten_patterns [BEq Z] [LawfulBEq Z] (z : Z) (b : Bool) :
     P.patterns.flatten.count (z, b) = 1 :=
   List.count_eq_one_of_mem P.nodup_flatten_patterns (P.mem_flatten_patterns z b)
 
@@ -245,11 +245,19 @@ private theorem nonempty_of_continue {ws : List (List (α × Bool))} (P : Cancel
     · subst hz
       cases c <;> simp [hu, ht, hx]
     · simpa [hu, Function.update_of_ne hz] using P.piece_ne_nil z
-  · have hy := List.notMem_map_fst_of_nodup_append_cons_append_cons (L₁ := Vpre.flatten ++ A)
+  · -- The letter `y` occurs nowhere else, so only the two displayed letters change.
+    have hy := List.notMem_map_fst_of_nodup_append_cons_append_cons (L₁ := Vpre.flatten ++ A)
       (L₂ := Vmid.flatten) (L₃ := C ++ Vpost.flatten) (y := y) (c := c)
       (by simpa [hP] using P.nodup_flatten_patterns)
-    rw [hP, hu, map_flatMap_substituteLetter_update hy, ← hu, hc, hnc]
-    simp [ht]
+    simp only [List.map_append, List.mem_append, not_or] at hy
+    obtain ⟨⟨⟨hpre, hA⟩, hmid⟩, hC, hpost⟩ := hy
+    have hV {V : List (List (Z × Bool))} (hV : y ∉ V.flatten.map Prod.fst) :
+        V.map (·.flatMap (substituteLetter u)) = V.map (·.flatMap (substituteLetter P.piece)) :=
+      map_flatMap_substituteLetter_update_of_notMem hV _ _
+    have hw {w : List (Z × Bool)} (hw : y ∉ w.map Prod.fst) :
+        w.flatMap (substituteLetter u) = w.flatMap (substituteLetter P.piece) :=
+      flatMap_substituteLetter_update_of_notMem hw _ _
+    simp [hP, hV hpre, hV hmid, hV hpost, hw hA, hw hC, hc, hnc, ht]
 
 /-- If the patterns of `P` contain a block `A (z, c) B` followed (after empty blocks) by a block
 `C (z, !c) D`, then the word `B C` between the two occurrences of `z` is trivial. -/
@@ -361,20 +369,20 @@ private theorem pairwise_insertPiece {f : Z → Z'} (hf : f.Injective) {n : Z'} 
       z ∈ (v ++ [(n, c)]).map Prod.fst ∨ z ∈ ((n, c) :: v).map Prod.fst →
       z ∈ v.map Prod.fst ∨ z = n := fun h => by simpa [or_comm] using h
   have hn' : ∀ w : List (Z × Bool), n ∉ (w.map (Prod.map f id)).map Prod.fst := by simp [hn]
-  refine List.pairwise_map_append_cons_append_cons h
+  refine h.map_append_cons_append_cons
     (fun v w h => (h.image f).anti fun z hz => key hz.1 hz.2)
-    (fun w => ⟨fun h => (h.image f).anti fun z ⟨hv, hw⟩ => ?_,
-      fun h => (h.image f).anti fun z ⟨hv, hw⟩ => ?_⟩)
-    (fun w => ⟨fun h => (h.image f).anti fun z ⟨hv, hw⟩ => ?_,
-      fun h => (h.image f).anti fun z ⟨hv, hw⟩ => ?_⟩) ?_
-  · rcases hext (Or.inl hv) with hv | rfl
-    exacts [key hv hw, absurd hw (hn' w)]
+    (fun w _ h => (h.image f).anti fun z ⟨hv, hw⟩ => ?_)
+    (fun w _ h => (h.image f).anti fun z ⟨hv, hw⟩ => ?_)
+    (fun w _ h => (h.image f).anti fun z ⟨hv, hw⟩ => ?_)
+    (fun w _ h => (h.image f).anti fun z ⟨hv, hw⟩ => ?_) ?_
   · rcases hext (Or.inl hw) with hw | rfl
     exacts [key hv hw, absurd hv (hn' w)]
-  · rcases hext (Or.inr hv) with hv | rfl
+  · rcases hext (Or.inl hv) with hv | rfl
     exacts [key hv hw, absurd hw (hn' w)]
   · rcases hext (Or.inr hw) with hw | rfl
     exacts [key hv hw, absurd hv (hn' w)]
+  · rcases hext (Or.inr hv) with hv | rfl
+    exacts [key hv hw, absurd hw (hn' w)]
   · -- The two blocks of the new piece share only the new letter.
     refine fun _ => (Set.subsingleton_singleton (a := n)).anti fun z hz => ?_
     rcases hext (Or.inl hz.1) with h₁ | rfl
@@ -440,13 +448,17 @@ private theorem nonempty_of_new {p : ℕ} {ws : List (List (α × Bool))}
     piece_ne_nil := fun z => ?_
     map_flatMap_patterns := map_flatMap_insertPiece (Fin.snoc_comp_castSucc ..) (Fin.snoc_last ..)
       Vpre Vmid Vpost v₁ v₂
-    nodup_flatten_patterns := hnew ▸ List.Nodup.map_prodMap_append_cons_cons
-      (Fin.castSucc_injective p) Fin.castSucc_ne_last (hflat ▸ P.nodup_flatten_patterns)
+    nodup_flatten_patterns := by
+      rw [hnew, List.nodup_append_cons_cons, ← List.map_append, ← hflat]
+      simpa [Fin.castSucc_ne_last] using P.nodup_flatten_patterns.map
+        ((Fin.castSucc_injective p).prodMap Function.injective_id)
     mem_flatten_patterns := mem_flatten_insertPiece hmid (hflat ▸ P.mem_flatten_patterns)
     nodup_map_fst := nodup_map_fst_insertPiece (Fin.castSucc_injective p) Fin.castSucc_ne_last
       (hP ▸ P.nodup_map_fst)
     mk_flatten_patterns := by
-      rw [hnew, mk_map_append_cons_cons, ← hflat, P.mk_flatten_patterns, _root_.map_one]
+      rw [hnew, mk_append_cons_cons_of_ne Bool.false_ne_true.symm, ← List.map_append, ← hflat]
+      simpa only [Prod.map_def, id_eq, map.mk, _root_.map_one] using
+        congrArg (FreeGroup.map Fin.castSucc) P.mk_flatten_patterns
     pairwise_subsingleton := pairwise_insertPiece (Fin.castSucc_injective p)
       Fin.castSucc_ne_last (hP ▸ P.pairwise_subsingleton) hdisj }⟩
   · induction z using Fin.lastCases with

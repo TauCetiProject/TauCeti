@@ -16,7 +16,8 @@ Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGrou
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
 formal inverses, and reducedness of words `w u w⁻¹` in which no letter cancels at either join.
 A word without repeated generators is reduced, a reduced word representing the identity is
-empty, and a word that is not reduced admits a step of free reduction.
+empty, a word that is not reduced admits a step of free reduction, and inserting a letter followed
+by its inverse does not change the element represented.
 Free reductions are non-crossing: in a trivial word, the subword between the only two occurrences
 of a generator is trivial; and a cancelling pair in a concatenation of reduced words straddles
 two consecutive nonempty words.
@@ -200,16 +201,11 @@ theorem exists_eq_append_cons_append_cons_of_flatten_eq {ws : List (List (α × 
         have hw := (hws _ List.mem_cons_self).infix (L₁ := [(x, b), (x, !b)]) ⟨L₁, bs, by simp⟩
         simp [isReduced_cons_cons] at hw
 
-/-- Renaming the letters and inserting a cancelling pair does not change the element of the free
-group represented, up to renaming. -/
-theorem mk_map_append_cons_cons {β : Type*} (f : α → β) (n : β) (X Y : List (α × Bool)) :
-    mk (X.map (Prod.map f id) ++ (n, true) :: (n, false) :: Y.map (Prod.map f id)) =
-      FreeGroup.map f (mk (X ++ Y)) := by
-  have h := (Red.Step.not (L₁ := X.map (Prod.map f id)) (L₂ := Y.map (Prod.map f id)) (x := n)
-    (b := true)).mk_eq
-  rw [Bool.not_true] at h
-  rw [h, map.mk, ← List.map_append, Prod.map_def]
-  rfl
+/-- Inserting a letter followed by its inverse does not change the element represented. -/
+theorem mk_append_cons_cons_of_ne {X Y : List (α × Bool)} {x : α} {b c : Bool} (hbc : b ≠ c) :
+    mk (X ++ (x, b) :: (x, c) :: Y) = mk (X ++ Y) := by
+  obtain rfl := Bool.eq_not_of_ne hbc.symm
+  exact Red.Step.not.mk_eq
 
 section Prefix
 
