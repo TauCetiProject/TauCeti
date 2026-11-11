@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Cycle.Basis
+public import TauCeti.Combinatorics.Graph.Serre.Cycle.Coordinates
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
@@ -19,7 +20,9 @@ two with the binary cycle space, not merely with an abstract vector space of the
 Spanning-forest bases prove the comparison is bijective. The coordinate formula shows that
 it is independent of the forest and carries integral fundamental cycles to the fundamental
 cycles over the new coefficient ring. No finiteness, connectedness or orientation assumption
-is needed; loops and parallel edges are retained.
+is needed; loops and parallel edges are retained. On a loop, the integral unit cycle reduces
+to the binary unit cycle on the same loop, in finitely supported and in finite-function
+coordinates.
 
 ## References
 
@@ -98,13 +101,26 @@ noncomputable def cycleLatticeModTwoEquiv (Γ : SerreGraph) (O : Set Γ.E) :
     (Γ.cycleLatticeModTwoEquiv O (r ⊗ₜ[ℤ] c)).val e = r * (c.val e : ZMod 2) := by
   simp [cycleLatticeModTwoEquiv]
 
-/-- The integral unit cycle on a loop reduces to the binary unit cycle on the same loop. -/
-theorem cycleLatticeModTwoEquiv_one_tmul_single (e : O) (h : Γ.src e.1 = Γ.tgt e.1) :
-    (Γ.cycleLatticeModTwoEquiv O
-      (1 ⊗ₜ[ℤ] ⟨Finsupp.single e 1, (single_mem_cycleLattice_iff e).mpr h⟩)).val =
-        Finsupp.single e 1 := by
+/-- The integral unit cycle on a dart reduces to the binary unit cycle on the same dart. The
+unit chain on a dart is an integral cycle exactly when the dart is a loop
+(`single_mem_cycleLattice_iff`). -/
+@[simp] theorem cycleLatticeModTwoEquiv_one_tmul_single (e : O)
+    (hc : Finsupp.single e 1 ∈ Γ.cycleLattice O) :
+    (Γ.cycleLatticeModTwoEquiv O (1 ⊗ₜ[ℤ] ⟨Finsupp.single e 1, hc⟩)).val =
+      Finsupp.single e 1 := by
   classical
   ext f
   simp [Finsupp.single_apply]
+
+-- Not `@[simp]`: `simp` already proves it from `cycleSpaceFinsuppEquiv_apply`,
+-- `cycleLatticeModTwoEquiv_one_tmul_single` and `Finsupp.linearEquivFunOnFinite_single`.
+/-- The integral unit cycle on a dart reduces to the binary unit cycle on the same dart in
+finite-function coordinates. -/
+theorem cycleSpaceFinsuppEquiv_cycleLatticeModTwoEquiv_one_tmul_single [Finite Γ.V]
+    [Finite O] [DecidableEq O] (e : O) (hc : Finsupp.single e 1 ∈ Γ.cycleLattice O) :
+    (Γ.cycleSpaceFinsuppEquiv O
+      (Γ.cycleLatticeModTwoEquiv O (1 ⊗ₜ[ℤ] ⟨Finsupp.single e 1, hc⟩))).val =
+        Pi.single e 1 := by
+  simp
 
 end TauCeti.SerreGraph

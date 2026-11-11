@@ -5,19 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Cycle.Coefficients
-public import TauCeti.Combinatorics.Graph.Serre.Cycle.Coordinates
+public import TauCeti.Combinatorics.Graph.Serre.Cycle.Basis
 
 /-!
 # Cycle modules of roses and of the segment
 
 This file computes the incidence kernel, the cycle rank, the number of components and the
-spanning forests of two families of small graphs, over an arbitrary coefficient ring.
+spanning forests of two families of small graphs. The incidence kernels are computed over an
+arbitrary ring, the cycle ranks over any ring with the strong rank condition, such as the
+integers and `ZMod 2`.
 
 Every dart of a rose is a loop. Its incidence boundary is therefore zero, every chain is a
-cycle, the cycle rank is the number of petals, and the only spanning forest is empty. The
-unit chain on a petal is a nonzero cycle; its reduction modulo two is the unit chain on the
-same petal, in finitely supported and in finite-function coordinates.
+cycle, the cycle rank is the number of petals, and the only spanning forest is empty.
 
 The positive dart of the segment is a spanning forest of itself. The segment therefore has
 no nonzero cycle and a single component.
@@ -30,20 +29,7 @@ no nonzero cycle and a single component.
 
 public section
 
-open scoped TensorProduct
-
 namespace TauCeti.SerreGraph
-
-/-- The reduction modulo two of the integral unit cycle on a loop is the unit chain on that
-loop in finite-function coordinates. -/
-theorem cycleSpaceFinsuppEquiv_cycleLatticeModTwoEquiv_one_tmul_single {Γ : SerreGraph}
-    {O : Set Γ.E} [Finite Γ.V] [Finite O] [DecidableEq O] (e : O)
-    (h : Γ.src e.1 = Γ.tgt e.1) :
-    (Γ.cycleSpaceFinsuppEquiv O (Γ.cycleLatticeModTwoEquiv O
-      (1 ⊗ₜ[ℤ] ⟨Finsupp.single e 1, (single_mem_cycleLattice_iff e).mpr h⟩))).val =
-        Pi.single e 1 := by
-  rw [cycleSpaceFinsuppEquiv_apply, cycleLatticeModTwoEquiv_one_tmul_single e h,
-    Finsupp.linearEquivFunOnFinite_single]
 
 section Rose
 
@@ -69,8 +55,8 @@ theorem isSpanningForest_rose_iff {F : Set (rose α).E} : (rose α).IsSpanningFo
   ⟨fun hF => hF.eq_empty fun _ _ => rfl, fun h => h ▸ isSpanningForest_empty_iff.mpr
     fun _ _ => rfl⟩
 
-/-- The cycle rank of a rose is its number of petals, over any coefficient ring. The
-one-petal rose has integral rank and binary dimension one. -/
+/-- The cycle rank of a rose is its number of petals, over any coefficient ring with the strong
+rank condition. The one-petal rose has integral rank and binary dimension one. -/
 theorem finrank_ker_incidenceBoundary_rose [StrongRankCondition R] :
     Module.finrank R ((rose α).incidenceBoundary {e | e.2 = true} R).ker = Nat.card α := by
   rw [finrank_ker_incidenceBoundary_of_forall_src_eq_tgt fun _ _ => rfl]
