@@ -249,7 +249,7 @@ theorem exists_mem_frontier_mem_clusterSetOn (hUb : Bornology.IsBounded U)
         (hfi.mono interior_subset)) (mem_image_of_mem f hui)
     refine ⟨u, ⟨subset_closure hu, hui⟩, ?_⟩
     rw [clusterSetOn_eq_singleton_of_continuousWithinAt hu (hfd.continuousOn u hu)]
-    rfl
+    exact mem_singleton _
   · exact exists_mem_frontier_mem_clusterSetOn_of_notMem_image hUb.isCompact_closure
       hfd.continuousOn (frontier_subset_closure hv) hvn
 
