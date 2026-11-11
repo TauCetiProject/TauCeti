@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.LocallyConvex.WeakDual
 public import Mathlib.Analysis.RCLike.Basic
-public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
+public import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
 # Weak-star continuous functionals and real structure on a weak dual
@@ -20,10 +20,10 @@ weak dual produces such functionals, and this lemma turns them into points of th
 
 Over `𝕜 = ℝ` or `ℂ`, the dual `WeakDual 𝕜 F` is also a real vector space. A real multiple `c • f`
 is the multiple of `f` by the scalar `(c : 𝕜)`, and acts pointwise as multiplication by `(c : 𝕜)`.
-The instances `WeakDual.instIsScalarTower` and `WeakDual.instLocallyConvexSpaceReal` record
-that this real structure is compatible with the `𝕜`-structure and that the weak-star topology is
-real locally convex, as needed for real Hahn–Banach separation and the Krein–Milman theorem. The
-first is stated for any scalar tower `R`, `S` of actions on `𝕜`, not only for `ℝ` and `𝕜`.
+This real structure is compatible with the `𝕜`-structure by the general scalar tower instance
+`WeakDual.instIsScalarTower` from `TauCeti.Topology.Algebra.Module.Spaces.WeakDual`, and the
+instance `WeakDual.instLocallyConvexSpaceReal` records that the weak-star topology is real locally
+convex, as needed for real Hahn–Banach separation and the Krein–Milman theorem.
 -/
 
 public section
@@ -41,21 +41,6 @@ theorem exists_forall_apply_eq_apply {𝕜 F : Type*} [NontriviallyNormedField �
   refine ⟨x, fun φ ↦ ?_⟩
   simp only [WeakBilin.eval, LinearMap.coe_mk, AddHom.coe_mk]
   exact topDualPairing_apply φ x
-
-section Semiring
-
-variable {𝕜 F : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
-  [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
-
-/-- Scalar actions on `𝕜` that form a scalar tower induce a scalar tower on `WeakDual 𝕜 F`. For
-`RCLike 𝕜` this makes the real action on `WeakDual 𝕜 F` compatible with the `𝕜`-action. -/
-instance instIsScalarTower {R S : Type*} [Monoid R] [Monoid S] [SMul R S]
-    [DistribMulAction R 𝕜] [SMulCommClass 𝕜 R 𝕜] [ContinuousConstSMul R 𝕜]
-    [DistribMulAction S 𝕜] [SMulCommClass 𝕜 S 𝕜] [ContinuousConstSMul S 𝕜]
-    [IsScalarTower R S 𝕜] : IsScalarTower R S (WeakDual 𝕜 F) :=
-  inferInstanceAs (IsScalarTower R S (StrongDual 𝕜 F))
-
-end Semiring
 
 section RCLike
 
