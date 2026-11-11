@@ -10,12 +10,13 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Analysis.MeanInequalities
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+import Mathlib.Analysis.SpecialFunctions.Sigmoid
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Algebra.Order.Floor.Digits
 import TauCeti.MeasureTheory.Function.LpSeminorm.Indicator
+import TauCeti.MeasureTheory.Integral.Lebesgue.OrdConnected
 
 /-!
 # The Christ–Kiselev lemma
@@ -44,8 +45,8 @@ diverges at every `t ∈ (0, 1)` for `f = 1_{[0, 1]}`.
 
 ## The argument
 
-The cumulative mass `s ↦ ∫_{-∞}^s ‖f‖^p`, made strictly increasing by adding
-`ε (arctan s / π + 1/2)` and divided by `M = ‖f‖_p^p + ε`, is a strictly increasing map
+The cumulative mass `s ↦ ∫_{-∞}^s ‖f‖^p`, made strictly increasing by adding `ε σ(s)` for the
+logistic sigmoid `σ` and divided by `M = ‖f‖_p^p + ε`, is a strictly increasing map
 `φ : ℝ → [0, 1)`. Pulling back the dyadic intervals of `[0, 1)` along `φ` cuts `ℝ` into
 intervals `I_{m, j} = {s | ⌊2^m φ(s)⌋ = j}` with `∫_{I_{m, j}} ‖f‖^p ≤ M 2^{-m}`. The region
 `s < t` is the disjoint union of the dyadic Whitney rectangles
@@ -76,72 +77,6 @@ open MeasureTheory Set Filter Topology
 open scoped ENNReal NNReal
 
 namespace TauCeti
-
-/-! ### Binary digits of points of `[0, 1)` -/
-
-/-- Truncating a binary expansion: the first `m` digits of `x` are the first `m + d` digits with
-the last `d` dropped. -/
-private theorem floor_two_pow_mul_eq_div (x : ℝ) (m d : ℕ) :
-    ⌊2 ^ m * x⌋₊ = ⌊2 ^ (m + d) * x⌋₊ / 2 ^ d := by
-  rw [← Nat.floor_div_natCast]
-  congr 1
-  push_cast
-  rw [pow_add]
-  field_simp
-
-/-- Two points `x < y` of `[0, 1)` lie in sibling dyadic intervals at exactly one level: the
-first level `n + 1` at which their binary digits differ. -/
-private theorem exists_floor_two_pow_mul_eq {x y : ℝ} (hx : 0 ≤ x) (hxy : x < y) (hy : y < 1) :
-    ∃ n k : ℕ, ⌊2 ^ (n + 1) * x⌋₊ = 2 * k ∧ ⌊2 ^ (n + 1) * y⌋₊ = 2 * k + 1 := by
-  have hex : ∃ m : ℕ, ⌊2 ^ m * x⌋₊ ≠ ⌊2 ^ m * y⌋₊ := by
-    obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt (y - x)⁻¹ (by norm_num : (1 : ℝ) < 2)
-    have h : ⌊2 ^ m * x⌋₊ + 1 ≤ ⌊2 ^ m * y⌋₊ := by
-      rw [← Nat.floor_add_one (by positivity)]
-      refine Nat.floor_mono ?_
-      have h := (inv_lt_iff_one_lt_mul₀ (sub_pos.2 hxy)).1 hm
-      nlinarith
-    exact ⟨m, by omega⟩
-  classical
-  have hzero : ⌊2 ^ 0 * x⌋₊ = ⌊2 ^ 0 * y⌋₊ := by
-    rw [pow_zero, one_mul, one_mul, Nat.floor_eq_zero.2 (hxy.trans hy), Nat.floor_eq_zero.2 hy]
-  have hpos : Nat.find hex ≠ 0 := by
-    intro h
-    have := Nat.find_spec hex
-    rw [h] at this
-    exact this hzero
-  obtain ⟨n, hn⟩ : ∃ n, Nat.find hex = n + 1 := Nat.exists_eq_add_one.2 (Nat.pos_of_ne_zero hpos)
-  have hdiff := Nat.find_spec hex
-  have hsame : ⌊2 ^ n * x⌋₊ = ⌊2 ^ n * y⌋₊ := by
-    by_contra h
-    exact Nat.find_min hex (by omega) h
-  rw [hn] at hdiff
-  have hle : ⌊2 ^ (n + 1) * x⌋₊ ≤ ⌊2 ^ (n + 1) * y⌋₊ := Nat.floor_mono (by gcongr)
-  have h₁ := floor_two_pow_mul_eq_div x n 1
-  have h₂ := floor_two_pow_mul_eq_div y n 1
-  refine ⟨n, ⌊2 ^ n * x⌋₊, ?_, ?_⟩ <;> omega
-
-/-- The level at which two points lie in sibling dyadic intervals is unique. -/
-private theorem eq_of_floor_two_pow_mul_eq {x y : ℝ} {n k n' k' : ℕ}
-    (h₁ : ⌊2 ^ (n + 1) * x⌋₊ = 2 * k) (h₂ : ⌊2 ^ (n + 1) * y⌋₊ = 2 * k + 1)
-    (h₁' : ⌊2 ^ (n' + 1) * x⌋₊ = 2 * k') (h₂' : ⌊2 ^ (n' + 1) * y⌋₊ = 2 * k' + 1) :
-    n = n' ∧ k = k' := by
-  -- At a level where the digits differ, they differ at every finer level.
-  have key : ∀ {n k n' k' : ℕ}, ⌊2 ^ (n + 1) * x⌋₊ = 2 * k → ⌊2 ^ (n + 1) * y⌋₊ = 2 * k + 1 →
-      ⌊2 ^ (n' + 1) * x⌋₊ = 2 * k' → ⌊2 ^ (n' + 1) * y⌋₊ = 2 * k' + 1 → ¬ n < n' := by
-    intro n k n' k' h₁ h₂ h₁' h₂' hlt
-    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hlt
-    have ex := floor_two_pow_mul_eq_div x (n + 1) d
-    have ey := floor_two_pow_mul_eq_div y (n + 1) d
-    have ex' := floor_two_pow_mul_eq_div x (n + 1 + d) 1
-    have ey' := floor_two_pow_mul_eq_div y (n + 1 + d) 1
-    have h₁'' : ⌊2 ^ (n + 1 + d + 1) * x⌋₊ = 2 * k' := h₁'
-    have h₂'' : ⌊2 ^ (n + 1 + d + 1) * y⌋₊ = 2 * k' + 1 := h₂'
-    have : ⌊2 ^ (n + 1 + d) * x⌋₊ = ⌊2 ^ (n + 1 + d) * y⌋₊ := by omega
-    rw [this] at ex
-    omega
-  have hn : n = n' := le_antisymm (not_lt.1 (key h₁' h₂' h₁ h₂)) (not_lt.1 (key h₁ h₂ h₁' h₂'))
-  subst hn
-  exact ⟨rfl, by omega⟩
 
 /-! ### The dyadic Whitney decomposition of `{s < t}` -/
 
@@ -235,57 +170,6 @@ private theorem enorm_setIntegral_fst_lt_snd_le_tsum {E F G : Type*} [NormedAddC
 
 /-! ### Measure bounds -/
 
-/-- The integral of `h` over an interval `J ⊆ ℝ` is at most any common bound for its integrals
-over the closed subintervals of `J`. -/
-private theorem setLIntegral_le_of_ordConnected {h : ℝ → ℝ≥0∞} {J : Set ℝ} (hJ : J.OrdConnected)
-    {c : ℝ≥0∞} (hc : ∀ s ∈ J, ∀ t ∈ J, s ≤ t → ∫⁻ x in Icc s t, h x ≤ c) :
-    ∫⁻ x in J, h x ≤ c := by
-  set D : Set (ℚ × ℚ) := {q | (q.1 : ℝ) ∈ J ∧ (q.2 : ℝ) ∈ J}
-  set U : Set ℝ := ⋃ q ∈ D, Icc (q.1 : ℝ) q.2
-  set R : Set ℝ := {s ∈ J | ∀ x ∈ J, s ≤ x} ∪ {s ∈ J | ∀ x ∈ J, x ≤ s}
-  -- Every point of `J` other than its endpoints lies between two rational points of `J`.
-  have hJUR : J ⊆ U ∪ R := by
-    intro s hs
-    by_cases h₁ : ∀ x ∈ J, s ≤ x
-    · exact Or.inr (Or.inl ⟨hs, h₁⟩)
-    by_cases h₂ : ∀ x ∈ J, x ≤ s
-    · exact Or.inr (Or.inr ⟨hs, h₂⟩)
-    push Not at h₁ h₂
-    obtain ⟨x₁, hx₁, hx₁s⟩ := h₁
-    obtain ⟨x₂, hx₂, hsx₂⟩ := h₂
-    obtain ⟨q₁, hq₁, hq₁s⟩ := exists_rat_btwn hx₁s
-    obtain ⟨q₂, hq₂, hq₂s⟩ := exists_rat_btwn hsx₂
-    refine Or.inl (mem_biUnion (x := (q₁, q₂)) ⟨hJ.out hx₁ hs ⟨hq₁.le, hq₁s.le⟩,
-      hJ.out hs hx₂ ⟨hq₂.le, hq₂s.le⟩⟩ ⟨hq₁s.le, hq₂.le⟩)
-  have hR : volume R = 0 := by
-    refine measure_union_null (Set.Subsingleton.measure_zero ?_ _)
-      (Set.Subsingleton.measure_zero ?_ _)
-    · exact fun s hs s' hs' => le_antisymm (hs.2 s' hs'.1) (hs'.2 s hs.1)
-    · exact fun s hs s' hs' => le_antisymm (hs'.2 s hs.1) (hs.2 s' hs'.1)
-  have hD : D.Countable := D.to_countable
-  have hU : MeasurableSet U := MeasurableSet.biUnion hD fun _ _ => measurableSet_Icc
-  calc ∫⁻ x in J, h x ≤ ∫⁻ x in U ∪ R, h x := lintegral_mono_set hJUR
-    _ ≤ (∫⁻ x in U, h x) + ∫⁻ x in R, h x := lintegral_union_le _ _ _
-    _ = volume.withDensity h U := by rw [setLIntegral_measure_zero _ _ hR, add_zero,
-        withDensity_apply _ hU]
-    _ = ⨆ q ∈ D, volume.withDensity h (Icc (q.1 : ℝ) q.2) := by
-        refine measure_biUnion_eq_iSup hD fun q hq q' hq' => ⟨(min q.1 q'.1, max q.2 q'.2),
-          ⟨?_, ?_⟩, ?_, ?_⟩
-        · rcases min_choice q.1 q'.1 with h | h <;> rw [h]
-          exacts [hq.1, hq'.1]
-        · rcases max_choice q.2 q'.2 with h | h <;> rw [h]
-          exacts [hq.2, hq'.2]
-        · exact Icc_subset_Icc (by exact_mod_cast min_le_left _ _)
-            (by exact_mod_cast le_max_left _ _)
-        · exact Icc_subset_Icc (by exact_mod_cast min_le_right _ _)
-            (by exact_mod_cast le_max_right _ _)
-    _ ≤ c := by
-        refine iSup₂_le fun q hq => ?_
-        rw [withDensity_apply _ measurableSet_Icc]
-        rcases le_or_gt (q.1 : ℝ) q.2 with hle | hlt
-        · exact hc _ hq.1 _ hq.2 hle
-        · simp [Icc_eq_empty_of_lt hlt]
-
 /-- The geometric decay of the level-`n` contribution: `(X 2^{-(n + 1)})^a 2^{n(1 - b)}` is at most
 `X^a (2^{1 - a - b})ⁿ`. -/
 private theorem rpow_div_two_pow_mul_le {a b : ℝ} (ha : 0 ≤ a) (X : ℝ≥0∞) (n : ℕ) :
@@ -306,24 +190,6 @@ private theorem rpow_div_two_pow_mul_le {a b : ℝ} (ha : 0 ≤ a) (X : ℝ≥0�
         rw [← mul_pow, ENNReal.inv_rpow, ← ENNReal.rpow_neg,
           ← ENNReal.rpow_add _ _ two_ne_zero ENNReal.ofNat_ne_top]
         ring_nf
-
-/-- A strictly increasing function from `ℝ` to `(0, 1)`. -/
-private theorem exists_strictMono_pos_lt_one :
-    ∃ σ : ℝ → ℝ, StrictMono σ ∧ ∀ s, 0 < σ s ∧ σ s < 1 := by
-  refine ⟨fun s => Real.arctan s / Real.pi + 1 / 2, fun s t hst => ?_, fun s => ⟨?_, ?_⟩⟩
-  · have := Real.arctan_strictMono hst
-    dsimp only
-    gcongr
-  · have : -(1 / 2) < Real.arctan s / Real.pi := by
-      rw [lt_div_iff₀ Real.pi_pos]
-      linarith [Real.neg_pi_div_two_lt_arctan s]
-    dsimp only
-    linarith
-  · have : Real.arctan s / Real.pi < 1 / 2 := by
-      rw [div_lt_iff₀ Real.pi_pos]
-      linarith [Real.arctan_lt_pi_div_two s]
-    dsimp only
-    linarith
 
 /-- The integral of `h` over `[s, t]` is the increment of its cumulative integral. -/
 private theorem setLIntegral_Icc_le {h : ℝ → ℝ≥0∞} (hm : ∫⁻ x, h x ≠ ∞) {s t : ℝ} (hst : s ≤ t) :
@@ -364,7 +230,8 @@ private theorem exists_strictMono_setLIntegral_level_le {h : ℝ → ℝ≥0∞}
     {ε : ℝ} (hε : 0 < ε) :
     ∃ φ : ℝ → ℝ, StrictMono φ ∧ (∀ s, 0 ≤ φ s) ∧ (∀ s, φ s < 1) ∧
       ∀ n j, ∫⁻ x in level φ n j, h x ≤ ((∫⁻ x, h x) + ENNReal.ofReal ε) / 2 ^ n := by
-  obtain ⟨σ, hσ, hσ01⟩ := exists_strictMono_pos_lt_one
+  obtain ⟨σ, hσ, hσ01⟩ : ∃ σ : ℝ → ℝ, StrictMono σ ∧ ∀ s, 0 < σ s ∧ σ s < 1 :=
+    ⟨Real.sigmoid, Real.sigmoid_strictMono, fun s => ⟨Real.sigmoid_pos s, Real.sigmoid_lt_one s⟩⟩
   -- The cumulative integral `Φ(s) = ∫_{-∞}^s h`, perturbed by `ε σ` and divided by `M = m + ε`.
   have hΦ (s : ℝ) : (∫⁻ x in Iic s, h x).toReal ≤ (∫⁻ x, h x).toReal :=
     ENNReal.toReal_mono hm (setLIntegral_le_lintegral _ _)
@@ -473,7 +340,8 @@ private theorem enorm_setIntegral_fst_lt_snd_eq_zero {E F G : Type*} [NormedAddC
       ‖∫ z in I ×ˢ J, β z‖ₑ ≤ A * eLpNorm (I.indicator f) p * eLpNorm (J.indicator g) r)
     (h0 : A * eLpNorm f p * eLpNorm g r = 0) :
     ‖∫ z in {z : ℝ × ℝ | z.1 < z.2}, β z‖ₑ = 0 := by
-  obtain ⟨σ, hσ, hσ01⟩ := exists_strictMono_pos_lt_one
+  obtain ⟨σ, hσ, hσ01⟩ : ∃ σ : ℝ → ℝ, StrictMono σ ∧ ∀ s, 0 < σ s ∧ σ s < 1 :=
+    ⟨Real.sigmoid, Real.sigmoid_strictMono, fun s => ⟨Real.sigmoid_pos s, Real.sigmoid_lt_one s⟩⟩
   have hterm (I J : Set ℝ) (hI : MeasurableSet I) (hJ : MeasurableSet J) :
       A * eLpNorm (I.indicator f) p * eLpNorm (J.indicator g) r = 0 := by
     refine le_antisymm (le_trans ?_ h0.le) bot_le
