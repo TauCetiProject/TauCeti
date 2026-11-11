@@ -117,6 +117,7 @@ theorem duistermaatHeckmanMeasure_add_const [Add F] [MeasurableAdd F] (hμ : Mea
 
 /-- **Rescaling the form.** Replacing `σ` by `r • σ` multiplies the Duistermaat–Heckman measure by
 `|r|ⁿ`. -/
+@[simp]
 theorem duistermaatHeckmanMeasure_smul (hμ : Measurable μ) (r : ℝ) :
     (r • σ).duistermaatHeckmanMeasure n μ =
       ENNReal.ofReal (|r| ^ n) • σ.duistermaatHeckmanMeasure n μ := by

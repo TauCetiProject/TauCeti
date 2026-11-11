@@ -359,6 +359,21 @@ variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [T
   [ChartedSpace H' N] [IsManifold J 1 N] [MeasurableSpace N] [BorelSpace N]
   [LindelofSpace M] [LindelofSpace N] {f : M → N}
 
+/-- The chart-local case of `MeasurableEmbedding.map_measure_mpullback`: on a measurable set `A`
+inside a chart source at `x` and mapped by `f` into a chart source at `f x`, the measure of `f^* ψ`
+is the measure of `ψ` on `f '' A`. -/
+private theorem measure_mpullback_apply_of_subset (hf : MeasurableEmbedding f)
+    (hfd : MDifferentiable I J f) (ψ : RoughForm J N ℝ k) {x : M} {A : Set M}
+    (hA : MeasurableSet A)
+    (hAsub : A ⊆ (extChartAt I x).source ∩ f ⁻¹' (extChartAt J (f x)).source) :
+    (mpullback I J f ψ).measure A = ψ.measure (f '' A) := by
+  rw [RoughForm.measure_apply_of_subset _ hA (hAsub.trans inter_subset_left),
+    ψ.measure_apply_of_subset (hf.measurableSet_image.2 hA)
+      (image_subset_iff.2 (hAsub.trans inter_subset_right)),
+    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ (ContinuousLinearEquiv.refl ℝ E)
+      hf.injective.injOn (fun x _ ↦ hfd x) hA.isChartMeasurable hAsub,
+    map_basis_refl, map_measure_refl]
+
 /-- **Change of variables for the measure of a top form along an embedding.** A differentiable
 measurable embedding `f : M → N` between manifolds modelled on the same space, such as the
 inclusion of an open subset, carries the measure of the pulled-back form `f^* ψ` to the
@@ -390,20 +405,13 @@ theorem map_measure_mpullback (hf : MeasurableEmbedding f) (hfd : MDifferentiabl
     simp [U, inter_assoc]
   simp only [U, Option.elim_some]
   ext s hs
-  have hsV : MeasurableSet (f ⁻¹' s ∩ V z) := (hf.measurable hs).inter (hV z).measurableSet
-  have himage : f '' (f ⁻¹' s ∩ V z) = s ∩ f '' V z := image_preimage_inter f (V z) s
-  have hsub : s ∩ f '' V z ⊆ (extChartAt J (f z)).source := by
-    rintro _ ⟨-, x, hx, rfl⟩
-    exact hx.2
+  -- Both sides are the measure of the chart piece `f ⁻¹' s ∩ V z` and of its image.
+  have hrange : s ∩ f '' V z ⊆ range f := inter_subset_right.trans (image_subset_range f _)
   rw [Measure.restrict_apply hs, Measure.restrict_apply hs, hf.map_apply,
-    Measure.restrict_apply' hf.measurableSet_range,
-    inter_eq_left.2 (inter_subset_right.trans (image_subset_range f _)), preimage_inter,
-    preimage_image_eq _ hf.injective,
-    RoughForm.measure_apply_of_subset _ hsV (inter_subset_right.trans inter_subset_left),
-    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ (ContinuousLinearEquiv.refl ℝ E)
-      hf.injective.injOn (fun x _ ↦ hfd x) hsV.isChartMeasurable
-      (fun x hx ↦ hx.2), map_basis_refl, map_measure_refl, himage,
-    ψ.measure_apply_of_subset (hs.inter (hf.measurableSet_image.2 (hV z).measurableSet)) hsub]
+    Measure.restrict_apply' hf.measurableSet_range, inter_eq_left.2 hrange, preimage_inter,
+    preimage_image_eq _ hf.injective, ← image_preimage_inter]
+  exact measure_mpullback_apply_of_subset hf hfd ψ
+    ((hf.measurable hs).inter (hV z).measurableSet) inter_subset_right
 
 /-- **The measure of a top form pulled back along an embedding.** For a differentiable measurable
 embedding `f : M → N` between manifolds modelled on the same space, the measure of `f^* ψ` is the
