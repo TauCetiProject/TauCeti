@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Cone
 public import TauCeti.Analysis.Distribution.Mass.Augmentation
 public import TauCeti.Analysis.Distribution.Mass.Normal
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
 /-!
 # Mass bounds and normality for the Euclidean cone over a current
