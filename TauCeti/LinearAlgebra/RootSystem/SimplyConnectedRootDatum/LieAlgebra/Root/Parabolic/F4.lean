@@ -40,25 +40,10 @@ open TensorProduct TauCeti.UniversalEnvelopingAlgebra
 -- The two double-string alternatives retain their orientation: interchanging the inputs
 -- inverts the commutator. No root-parameter coefficient is inverted.
 private theorem f4_simple_pair_cases (ht : F4.Valid) (i : Fin F4.rank) (β : Fin F4.numRoots) :
-    let r := (F4.simplyConnectedRootDatum ht).root
-    let α := F4.simpleIndex ht i
-    (r α + r β ∉ Set.range r ∨
-      ∃ γ, r γ = r α + r β ∧
-        2 • r α + r β ∉ Set.range r ∧ r α + 2 • r β ∉ Set.range r) ∨
-    ((∃ γ, r γ = r α + r β ∧ ∃ δ, r δ = 2 • r α + r β ∧
-      3 • r α + r β ∉ Set.range r ∧ r α + 2 • r β ∉ Set.range r) ∨
-      ∃ γ, r γ = r β + r α ∧ ∃ δ, r δ = 2 • r β + r α ∧
-      3 • r β + r α ∉ Set.range r ∧ r β + 2 • r α ∉ Set.range r) := by
+    SimplePairStringCases (F4.simplyConnectedRootDatum ht).root (F4.simpleIndex ht i) β := by
   have table : ∀ (i : Fin 4) (β : Fin 48),
-      let r := f4Root
-      let α := Fin.castAdd 44 i
-      (r α + r β ∉ Set.range r ∨
-        ∃ γ, r γ = r α + r β ∧
-          2 • r α + r β ∉ Set.range r ∧ r α + 2 • r β ∉ Set.range r) ∨
-      ((∃ γ, r γ = r α + r β ∧ ∃ δ, r δ = 2 • r α + r β ∧
-        3 • r α + r β ∉ Set.range r ∧ r α + 2 • r β ∉ Set.range r) ∨
-        ∃ γ, r γ = r β + r α ∧ ∃ δ, r δ = 2 • r β + r α ∧
-        3 • r β + r α ∉ Set.range r ∧ r β + 2 • r α ∉ Set.range r) := by
+      SimplePairStringCases f4Root (Fin.castAdd 44 i) β := by
+    unfold SimplePairStringCases
     -- Decide equality pointwise and range membership by finite search, rather than the
     -- noncomputable set-membership instances, so the root-table check reduces in the kernel.
     let eqDec : DecidableEq (Fin 4 → ℤ) := Fintype.decidablePiFintype
@@ -68,7 +53,6 @@ private theorem f4_simple_pair_cases (ht : F4.Valid) (i : Fin F4.rank) (β : Fin
     -- in the generated auxiliary proof when it captures the local decision instances.
     refine @of_decide_eq_true _ (inferInstance) ?_
     decide +kernel
-  dsimp only
   -- Rewrite the native maps, but keep the dependent index types and their scalar instances.
   rw [simpleIndex_F4 ht i, simplyConnectedRootDatum_F4, f4SimplyConnectedRootDatum_root]
   exact table i β

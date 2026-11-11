@@ -29,6 +29,21 @@ namespace TauCeti.DynkinType
 open TensorProduct TauCeti.UniversalEnvelopingAlgebra
 open scoped commutatorElement
 
+/-- Root-pair configurations giving zero, one, or two Chevalley commutator factors.
+The two-factor alternatives retain their orientation, since exchanging the inputs inverts
+the commutator. No positivity or simple-root hypothesis is included.
+
+This is an abbreviation so finite root-table checks can unfold it and synthesize computable
+decision instances for the individual cases. -/
+abbrev SimplePairStringCases {ι L : Type*} [AddCommMonoid L] (r : ι → L) (α β : ι) : Prop :=
+  (r α + r β ∉ Set.range r ∨
+    ∃ γ, r γ = r α + r β ∧
+      2 • r α + r β ∉ Set.range r ∧ r α + 2 • r β ∉ Set.range r) ∨
+  ((∃ γ, r γ = r α + r β ∧ ∃ δ, r δ = 2 • r α + r β ∧
+    3 • r α + r β ∉ Set.range r ∧ r α + 2 • r β ∉ Set.range r) ∨
+    ∃ γ, r γ = r β + r α ∧ ∃ δ, r δ = 2 • r β + r α ∧
+    3 • r β + r α ∉ Set.range r ∧ r β + 2 • r α ∉ Set.range r)
+
 variable {t : DynkinType} {ht : t.Valid} {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
   (M : AddSubgroup V)
@@ -46,15 +61,7 @@ with that simple root has a one- or two-factor Chevalley commutator formula. -/
 theorem range_simple_le_normalizer_posRoots_diff_singleton_of_pair_cases
     (i : Fin t.rank) (A : CommAlgCat ℤ)
     (hcases : ∀ β : Fin t.numRoots,
-      let r := (t.simplyConnectedRootDatum ht).root
-      let α := t.simpleIndex ht i
-      (r α + r β ∉ Set.range r ∨
-        ∃ γ, r γ = r α + r β ∧
-          2 • r α + r β ∉ Set.range r ∧ r α + 2 • r β ∉ Set.range r) ∨
-      ((∃ γ, r γ = r α + r β ∧ ∃ δ, r δ = 2 • r α + r β ∧
-        3 • r α + r β ∉ Set.range r ∧ r α + 2 • r β ∉ Set.range r) ∨
-        ∃ γ, r γ = r β + r α ∧ ∃ δ, r δ = 2 • r β + r α ∧
-        3 • r β + r α ∉ Set.range r ∧ r β + 2 • r α ∉ Set.range r)) :
+      SimplePairStringCases (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) β) :
     (chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A).range ≤
       Subgroup.normalizer
         (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
@@ -99,7 +106,7 @@ theorem range_simple_le_normalizer_posRoots_diff_singleton_of_pair_cases
     linarith
   -- Each nontrivial commutator has one or two positive sum-root factors.
   have hpair := hcases β.val
-  dsimp only at hpair
+  unfold SimplePairStringCases at hpair
   rcases hpair with (hsum | ⟨γ, hγ, hi, hj⟩) |
     (⟨γ, hγ, δ, hδ, hi, hj⟩ | ⟨γ, hγ, δ, hδ, hi, hj⟩)
   · have hc := commute_chevalleyRootSubgroup ρ M hM hnil hsum hzero A u.toAdd v.toAdd
