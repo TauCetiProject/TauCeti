@@ -75,8 +75,10 @@ variable {B : Type*} [TopologicalSpace B] {B' : Type*} [TopologicalSpace B']
   [∀ b, Module ℝ (E' b)] [∀ b, Module ℂ (E' b)] [∀ b, IsScalarTower ℝ ℂ (E' b)]
   [∀ b, TopologicalSpace (E' b)] [FiberBundle F E'] [VectorBundle ℂ F E']
 
-local instance : VectorBundle ℝ F E := VectorBundle.restrictScalars ℝ ℂ F E
-local instance : VectorBundle ℝ F E' := VectorBundle.restrictScalars ℝ ℂ F E'
+local instance instVectorBundleRealComplexFiberwiseSource : VectorBundle ℝ F E :=
+  VectorBundle.restrictScalars ℝ ℂ F E
+local instance instVectorBundleRealComplexFiberwiseTarget : VectorBundle ℝ F E' :=
+  VectorBundle.restrictScalars ℝ ℂ F E'
 
 /-- A complex-linear isomorphism `E'_{b'} ≃ E_b` of fibres of complex vector bundles with the same
 model fibre carries the canonical orientation of `E'_{b'}` to that of `E_b`. -/
@@ -115,7 +117,8 @@ variable {B : Type w} [TopologicalSpace B] {B' : Type w} [TopologicalSpace B']
   [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℂ F E]
   {r : ℕ}
 
-local instance : VectorBundle ℝ F E := VectorBundle.restrictScalars ℝ ℂ F E
+local instance instVectorBundleRealComplexEulerClassFiberwise : VectorBundle ℝ F E :=
+  VectorBundle.restrictScalars ℝ ℂ F E
 
 /-- The canonical orientation reindexed by `Fin (2r + 2)`, as in `complexEulerClass_def`. -/
 private abbrev complexFin (hF : finrank ℂ F = r + 1) (E : B → Type w)
@@ -143,7 +146,8 @@ variable {E' : B' → Type w} [TopologicalSpace (TotalSpace F E')] [∀ b, AddCo
   [∀ b, Module ℝ (E' b)] [∀ b, Module ℂ (E' b)] [∀ b, IsScalarTower ℝ ℂ (E' b)]
   [∀ b, TopologicalSpace (E' b)] [FiberBundle F E'] [VectorBundle ℂ F E']
 
-local instance : VectorBundle ℝ F E' := VectorBundle.restrictScalars ℝ ℂ F E'
+local instance instVectorBundleRealComplexEulerClassFiberwise' : VectorBundle ℝ F E' :=
+  VectorBundle.restrictScalars ℝ ℂ F E'
 
 /-- **Naturality of the Euler class of a complex vector bundle under complex-linear bundle maps.**
 For a fibrewise complex-linear isomorphism `φ b' : E'_{b'} ≃ E_{g b'}` over a continuous map
