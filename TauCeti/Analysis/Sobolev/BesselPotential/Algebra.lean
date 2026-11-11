@@ -250,11 +250,9 @@ theorem exists_norm_toBesselPotentialSpace_pow_sub_pow_le {s : ℝ} (hs : finran
   set C := max C₁ C₂
   set δ := ‖hu.toBesselPotentialSpace - hw.toBesselPotentialSpace‖
   have hR : 0 ≤ R := (norm_nonneg _).trans huR
-  have he : MemSobolev s 2 ((u - w : Lp ℂ 2 (volume : Measure E)) : 𝓢'(E, ℂ)) := by
-    rw [Lp.toTemperedDistribution_sub]
-    exact hu.sub hw
+  have he := hu.toTemperedDistribution_sub hw
   have heδ : ‖he.toBesselPotentialSpace‖ = δ := by
-    simp only [δ, Lp.toTemperedDistribution_sub, hu.toBesselPotentialSpace_sub hw]
+    rw [hu.toBesselPotentialSpace_toTemperedDistribution_sub hw he]
   -- Induction on `n`, through `u ^ (n + 2) - w ^ (n + 2) = u (u ^ (n + 1) - w ^ (n + 1)) +
   -- (u - w) w ^ (n + 1)`.
   induction n with
@@ -269,22 +267,17 @@ theorem exists_norm_toBesselPotentialSpace_pow_sub_pow_le {s : ℝ} (hs : finran
     have h₂ := he.mul hs hp
     set x₁ := (hu.memLp_mul hs d).toLp _
     set x₂ := (he.memLp_mul hs p).toLp _
-    have h₁₂ : MemSobolev s 2 ((x₁ + x₂ : Lp ℂ 2 (volume : Measure E)) : 𝓢'(E, ℂ)) := by
-      rw [Lp.toTemperedDistribution_add]
-      exact h₁.add h₂
+    have h₁₂ := h₁.toTemperedDistribution_add h₂
     refine ⟨x₁ + x₂, ?_, h₁₂, ?_⟩
     · filter_upwards [Lp.coeFn_add x₁ x₂, (hu.memLp_mul hs d).coeFn_toLp,
         (he.memLp_mul hs p).coeFn_toLp, hdu, hpw, Lp.coeFn_sub u w] with x h h₁ h₂ hd hp hsub
       rw [h, Pi.add_apply, h₁, h₂, hd, hp, hsub, Pi.sub_apply]
       ring
-    · have hsum : h₁₂.toBesselPotentialSpace =
-          h₁.toBesselPotentialSpace + h₂.toBesselPotentialSpace :=
-        BesselPotentialSpace.ext (by simp [Lp.toTemperedDistribution_add])
-      have hC₁C : C₁ ≤ C := le_max_left _ _
+    · have hC₁C : C₁ ≤ C := le_max_left _ _
       have hpn' : ‖hp.toBesselPotentialSpace‖ ≤ C ^ n * R ^ (n + 1) :=
         hpn.trans (by gcongr; exact le_max_right _ _)
       have hδ : 0 ≤ δ := norm_nonneg _
-      rw [hsum]
+      rw [h₁.toBesselPotentialSpace_toTemperedDistribution_add h₂ h₁₂]
       calc ‖h₁.toBesselPotentialSpace + h₂.toBesselPotentialSpace‖
           ≤ ‖h₁.toBesselPotentialSpace‖ + ‖h₂.toBesselPotentialSpace‖ := norm_add_le _ _
         _ ≤ C₁ * ‖hu.toBesselPotentialSpace‖ * ‖hd.toBesselPotentialSpace‖ +
