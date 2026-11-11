@@ -27,7 +27,8 @@ noncommutative, and no flatness or separatedness is assumed.
 Adapted from `yuma-mizuno-lean/Mei`, commit
 `7f1e4c7714fb020473694755ad8748c8f15d0e7f`,
 `Mei/RingTheory/FilteredAlgebra/TensorProduct/Basic.lean` and `Completion.lean`
-(Apache 2.0).
+(Apache 2.0). Filtration bounds for the completed inclusions and pairing are adapted
+from the same files at commit `a79c57178cc83666fc244ca6e6eeaa722e9b8bc7`.
 -/
 
 public section
@@ -200,6 +201,35 @@ theorem completedTensor_one_right (x : F.completion) :
 theorem completedTensor_one_left (y : G.completion) :
     F.completedTensor R G 1 y = F.includeRightCompletion R G y := by
   simp [completedTensor_apply]
+
+/-- The completed left inclusion preserves every filtration order. -/
+theorem includeLeftCompletion_mem_completionIdeal {k : ℕ} {x : F.completion}
+    (hx : x ∈ F.completionIdeal k) :
+    F.includeLeftCompletion R G x ∈ (F.tensorProduct R G).completionIdeal k := by
+  cases k with
+  | zero => simp
+  | succ k =>
+    exact F.mapCompletionₐ_mem_completionIdeal _ _ id monotone_id _ k hx
+
+/-- The completed right inclusion preserves every filtration order. -/
+theorem includeRightCompletion_mem_completionIdeal {k : ℕ} {y : G.completion}
+    (hy : y ∈ G.completionIdeal k) :
+    F.includeRightCompletion R G y ∈ (F.tensorProduct R G).completionIdeal k := by
+  cases k with
+  | zero => simp
+  | succ k =>
+    exact G.mapCompletionₐ_mem_completionIdeal _ _ id monotone_id _ k hy
+
+/-- Completed pure tensors add the filtration orders of their factors. -/
+@[grind .]
+theorem completedTensor_mem_completionIdeal {a b : ℕ}
+    {x : F.completion} {y : G.completion}
+    (hx : x ∈ F.completionIdeal a) (hy : y ∈ G.completionIdeal b) :
+    F.completedTensor R G x y ∈ (F.tensorProduct R G).completionIdeal (a + b) := by
+  rw [completedTensor_apply]
+  exact (F.tensorProduct R G).mul_mem_completionIdeal
+    (F.includeLeftCompletion_mem_completionIdeal R G hx)
+    (F.includeRightCompletion_mem_completionIdeal R G hy)
 
 end Completion
 
