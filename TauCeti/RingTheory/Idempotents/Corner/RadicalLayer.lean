@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import TauCeti.RingTheory.Ideal.LeftIdealSMul
 public import TauCeti.RingTheory.Idempotents.Module
 public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
@@ -23,14 +24,6 @@ the classes of the elements `f x g` with `x ∈ J`. For idempotents `f` and `g`,
   `A ⧸ J ^ 2`.
 * `IsIdempotentElem.smulTopRadicalLayerEquiv`: for idempotents `f` and `g`, the piece `f M` of
   the first radical layer `M` of `Ag` is the corner `f (J / J²) g`.
-
-## Main results
-
-* `TauCeti.coe_mem_of_mem_smul` and `TauCeti.coe_mem_sq_of_mem_smul`: the elements of `J • N`
-  lie in `J`, and those of `J • K` lie in `J ^ 2` when `K ≤ J • N`, for submodules `N` and `K`
-  of a left ideal.
-* `TauCeti.exists_mem_smul_coe_eq_mul`: conversely, every element of `J ^ 2 g` comes from
-  `J • (J • Ag)`.
 
 ## References
 
@@ -65,37 +58,6 @@ theorem mem_radicalLayerCorner {J : Ideal A} [J.IsTwoSided] {f g : A} {z : A ⧸
   simp [radicalLayerCorner, Ideal.Quotient.mkₐ_eq_mk]
 
 end Corner
-
-/-- The elements of `J • N` lie in `J`. -/
-theorem coe_mem_of_mem_smul {A : Type*} [Ring A] {J : Ideal A} [J.IsTwoSided]
-    {P : Submodule A A} {N : Submodule A P} {y : P}
-    (hy : y ∈ J • N) : (y : A) ∈ J :=
-  Submodule.smul_induction_on hy (fun r hr n _ ↦ J.mul_mem_right _ hr)
-    fun _ _ h₁ h₂ ↦ by simpa using J.add_mem h₁ h₂
-
-/-- If `K ≤ J • N`, the elements of `J • K` lie in `J ^ 2`. -/
-theorem coe_mem_sq_of_mem_smul {A : Type*} [Ring A] {J : Ideal A} [J.IsTwoSided]
-    {P : Submodule A A} {K : Submodule A P}
-    {N : Submodule A P} (hK : K ≤ J • N) {y : K} (hy : y ∈ J • (⊤ : Submodule A K)) :
-    ((y : P) : A) ∈ J ^ 2 :=
-  Submodule.smul_induction_on hy
-    (fun r hr n _ ↦ by
-      rw [Submodule.pow_succ, Submodule.pow_one]
-      exact Ideal.mul_mem_mul hr (coe_mem_of_mem_smul (hK n.property)))
-    fun _ _ h₁ h₂ ↦ by simpa using (J ^ 2).add_mem h₁ h₂
-
-/-- Every element of `J ^ 2 g` is the underlying element of some element of `J • (J • Ag)`. -/
-theorem exists_mem_smul_coe_eq_mul {A : Type*} [Ring A] {J : Ideal A} {g z : A}
-    (hz : z ∈ J ^ 2) :
-    ∃ t ∈ J • (⊤ : Submodule A ↥(J • (⊤ : Submodule A (Ideal.span {g} : Ideal A)))),
-      ((t : (Ideal.span {g} : Ideal A)) : A) = z * g := by
-  have h : z • spanSingletonGenerator g ∈
-      J • J • (⊤ : Submodule A (Ideal.span {g} : Ideal A)) := by
-    rw [Submodule.pow_succ, Submodule.pow_one] at hz
-    rw [← Submodule.mul_smul]
-    exact Submodule.smul_mem_smul hz Submodule.mem_top
-  exact ⟨⟨_, Submodule.smul_le_right h⟩, (Submodule.mem_smul_top_iff _ _ _).mpr h,
-    by simp [coe_spanSingletonGenerator]⟩
 
 end TauCeti
 

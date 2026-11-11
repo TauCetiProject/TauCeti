@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Projective.RadicalExt
+public import TauCeti.RingTheory.Idempotents.Corner.RadicalLayer
 public import TauCeti.RingTheory.Idempotents.Projective
 public import TauCeti.RingTheory.Idempotents.Simple.Top
 import TauCeti.RingTheory.Idempotents.Jacobson

@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Torsion.ScalarAction
-public import TauCeti.RingTheory.Idempotents.Corner.RadicalLayer
-public import TauCeti.RingTheory.Idempotents.QuotientSpan
+public import TauCeti.RingTheory.Ideal.LeftIdealSMul
+public import TauCeti.RingTheory.Idempotents.Module
+public import TauCeti.RingTheory.Idempotents.Primitive.Basic
+public import TauCeti.RingTheory.Idempotents.Quotient.Span
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
