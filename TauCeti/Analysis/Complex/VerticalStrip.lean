@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Interval.Set.Group
 public import Mathlib.Analysis.Complex.Hadamard
 
 /-!
@@ -35,14 +36,14 @@ theorem mem_verticalClosedStrip_iff : z ∈ verticalClosedStrip a b ↔ z.re ∈
 /-- Reflection by `z ↦ w - z` reverses the real endpoints of an open vertical strip. -/
 theorem sub_mem_verticalStrip_iff (w z : ℂ) :
     w - z ∈ verticalStrip a b ↔ z ∈ verticalStrip (w.re - b) (w.re - a) := by
-  simp only [mem_verticalStrip_iff, mem_Ioo, sub_re]
-  constructor <;> rintro ⟨_, _⟩ <;> constructor <;> linarith
+  simpa only [mem_verticalStrip_iff, sub_re] using
+    (Set.sub_mem_Ioo_iff_right (a := w.re) (b := z.re) (c := a) (d := b))
 
 /-- Reflection by `z ↦ w - z` reverses the real endpoints of a closed vertical strip. -/
 theorem sub_mem_verticalClosedStrip_iff (w z : ℂ) :
     w - z ∈ verticalClosedStrip a b ↔ z ∈ verticalClosedStrip (w.re - b) (w.re - a) := by
-  simp only [mem_verticalClosedStrip_iff, mem_Icc, sub_re]
-  constructor <;> rintro ⟨_, _⟩ <;> constructor <;> linarith
+  simpa only [mem_verticalClosedStrip_iff, sub_re] using
+    (Set.sub_mem_Icc_iff_right (a := w.re) (b := z.re) (c := a) (d := b))
 
 /-- Reflection in the middle of the unit strip preserves open-strip membership. -/
 theorem one_sub_mem_verticalStrip_iff :

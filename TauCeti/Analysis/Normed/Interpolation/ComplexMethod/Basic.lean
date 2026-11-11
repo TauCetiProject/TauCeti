@@ -438,11 +438,11 @@ end Lift
 
 /-- The inclusion of `[X₀, X₁]_θ` into the sum space, `F ↦ F θ`. -/
 def toSum : C.ComplexMethodSpace θ →L[ℂ] C.SumSpace :=
-  (C.stripEval θ).ker.liftQL (C.stripEval θ) le_rfl
+  lift (C.stripEval θ) (fun _ h => h)
 
 @[simp]
-theorem toSum_mk (g : C.stripTraces) : toSum (mk θ g) = C.stripEval θ g :=
-  (rfl)
+theorem toSum_mk (g : C.stripTraces) : toSum (mk θ g) = C.stripEval θ g := by
+  rw [toSum, lift_mk]
 
 theorem toSum_injective : Function.Injective (toSum : C.ComplexMethodSpace θ → C.SumSpace) := by
   intro u v huv
@@ -846,16 +846,15 @@ variable (θ) in
 `x₀ + x₁ ↦ T₀ x₀ + T₁ x₁` of sum spaces (`ComplexMethodSpace.toSum_map`), and its norm is at most
 `M₀ ^ (1 - θ) * M₁ ^ θ` when `M₀`, `M₁` bound `T₀`, `T₁` (`ComplexMethodSpace.norm_map_le`). -/
 def map : C.ComplexMethodSpace θ →L[ℂ] D.ComplexMethodSpace θ :=
-  (C.stripEval θ).ker.liftQL ((mk θ).comp (stripTracesMap T₀ T₁ h)) fun g hg => by
-    simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-      ContinuousLinearMap.comp_apply] at hg ⊢
+  lift ((mk θ).comp (stripTracesMap T₀ T₁ h)) fun g hg => by
+    simp only [ContinuousLinearMap.comp_apply]
     rw [← map_zero (mk (C := D) θ), mk_eq_mk_iff, stripEval_stripTracesMap, hg, map_zero,
       map_zero]
 
 @[simp]
 theorem map_mk (g : C.stripTraces) :
-    map θ T₀ T₁ h (mk θ g) = mk θ (stripTracesMap T₀ T₁ h g) :=
-  (rfl)
+    map θ T₀ T₁ h (mk θ g) = mk θ (stripTracesMap T₀ T₁ h g) := by
+  rw [map, lift_mk, ContinuousLinearMap.comp_apply]
 
 /-- The induced map lies over the map `x₀ + x₁ ↦ T₀ x₀ + T₁ x₁` of sum spaces. -/
 @[simp]
