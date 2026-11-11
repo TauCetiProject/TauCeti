@@ -226,6 +226,12 @@ theorem isCompact_closure_image [T2Space E] (i : Fin A.n) :
   (A.isCompact_chart_image_closure_dom i).closure_of_subset
     (A.image_subset_chart_image_closure_dom i)
 
+/-- The closure of the image of chart `i` lies in the chart target. -/
+theorem closure_image_subset_target [T2Space E] (i : Fin A.n) :
+    closure (A.image i : Set E) ⊆ (A.chart i).target :=
+  (A.closure_image_subset_chart_image_closure_dom i).trans
+    ((A.chart_image_closure_dom_subset i).trans inter_subset_left)
+
 end FiniteBundleAtlas
 
 end Atlas
@@ -253,6 +259,14 @@ theorem differentiableOn_transition [IsManifold 𝓘(ℝ, E) 1 M] (i i' : Fin A.
     preimage_id_eq]
   exact ⟨(A.chart i').map_source hx', by
     rw [(A.chart i').left_inv hx']; exact A.dom_subset_chart_source i hx.1⟩
+
+/-- A `Cⁿ` function on `M`, read in chart `i`, is `Cⁿ` on the chart target. -/
+theorem contDiffOn_comp_chart_symm {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {n : WithTop ℕ∞} [IsManifold 𝓘(ℝ, E) n M] {φ : M → G} (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, G) n φ)
+    (i : Fin A.n) :
+    ContDiffOn ℝ n (fun y ↦ φ ((A.chart i).symm y)) (A.chart i).target := by
+  rw [← contMDiffOn_iff_contDiffOn]
+  exact hφ.contMDiffOn.comp (t := univ) contMDiffOn_chart_symm fun _ _ ↦ mem_univ _
 
 /-- **Chart transitions preserve null sets.** A property holding almost everywhere on the image of
 chart `i` holds, after composition with the chart transition, almost everywhere on the overlap of
@@ -292,11 +306,16 @@ theorem coord_add (i : Fin A.n) (s t : ∀ x, V x) {y : E} (hy : y ∈ A.image i
   simp only [coord, Pi.add_apply, ← (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) h,
     map_add]
 
-theorem coord_smul (i : Fin A.n) (c : ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ A.image i) :
-    A.coord i (c • s) y = c • A.coord i s y := by
+/-- The chart coordinates of `x ↦ φ x • s x` are those of `s` multiplied by `φ` read in the
+chart, because the bundle chart is fibrewise linear. -/
+theorem coord_fun_smul (i : Fin A.n) (φ : M → ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ A.image i) :
+    A.coord i (fun x ↦ φ x • s x) y = φ ((A.chart i).symm y) • A.coord i s y := by
   have h := A.dom_subset_baseSet i (A.symm_mem_dom hy)
-  simp only [coord, Pi.smul_apply, ← (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) h,
-    map_smul]
+  simp only [coord, ← (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) h, map_smul]
+
+theorem coord_smul (i : Fin A.n) (c : ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ A.image i) :
+    A.coord i (c • s) y = c • A.coord i s y :=
+  A.coord_fun_smul i (fun _ ↦ c) s hy
 
 theorem coord_zero (i : Fin A.n) {y : E} (hy : y ∈ A.image i) : A.coord i (0 : ∀ x, V x) y = 0 := by
   simpa using A.coord_smul i 0 0 hy

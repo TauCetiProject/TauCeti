@@ -42,8 +42,9 @@ collar and collapses the two pieces outside it to the poles `p` and `-p`
 (`TauCeti.IsBicollar.exists_collapse`). Then `φ y = ⟪g y, p⟫` vanishes exactly on `Σ` and takes
 both signs. So the closures of the two complementary domains of `Σ` are the preimages under `g` of
 the two closed hemispheres, `{0 ≤ ⟪g y, p⟫}` and `{⟪g y, p⟫ ≤ 0}`, and their common frontier `Σ` is
-the preimage of the equator. Once the two outer pieces are known to be cellular, collapsing them
-identifies each preimage with a closed hemisphere.
+the preimage of the equator. The two outer pieces are cellular, and collapsing them identifies each
+preimage with a closed hemisphere; this is Brown's theorem
+(`TauCeti.IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range`).
 
 The hypothesis `m ≥ 2` makes `Sᵐ⁻¹` connected, so that each side of the bicollar is connected. For
 `m = 1` the two sides of the bicollar of two points of the circle need not lie in different
