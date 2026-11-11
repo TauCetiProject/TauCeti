@@ -94,31 +94,24 @@ namespace LinearMap.BilinForm
 open LinearMap (BilinForm)
 open Module Matrix
 
-section Division
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M} {a : R}
-
-/-- If `a` is a non-zero-divisor dividing every value of `B`, then `B` is `a` times a bilinear
-form. -/
-theorem exists_smul_eq_of_forall_dvd (ha : a ∈ nonZeroDivisors R) (h : ∀ x y, a ∣ B x y) :
-    ∃ C : BilinForm R M, a • C = B := by
-  choose c hc using h
-  have hcan : ∀ r s, a * r = a * s → r = s := fun r s ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp
-  refine ⟨LinearMap.mk₂ R c (fun x₁ x₂ y ↦ hcan _ _ ?_) (fun r x y ↦ hcan _ _ ?_)
-    (fun x y₁ y₂ ↦ hcan _ _ ?_) (fun r x y ↦ hcan _ _ ?_), ?_⟩
-  · rw [← hc, mul_add, ← hc, ← hc, map_add, LinearMap.add_apply]
-  · rw [← hc, smul_eq_mul, mul_left_comm, ← hc, map_smul, LinearMap.smul_apply, smul_eq_mul]
-  · rw [← hc, mul_add, ← hc, ← hc, map_add]
-  · rw [← hc, smul_eq_mul, mul_left_comm, ← hc, map_smul, smul_eq_mul]
-  · ext x y
-    simp [hc]
-
-end Division
-
 section Basic
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   {B : BilinForm R M} {a : R}
+
+/-- If `a` is a regular element dividing every value of `B`, then `B` is `a` times a bilinear
+form. -/
+theorem exists_smul_eq_of_forall_dvd (ha : IsLeftRegular a) (h : ∀ x y, a ∣ B x y) :
+    ∃ C : BilinForm R M, a • C = B := by
+  choose c hc using h
+  refine ⟨LinearMap.mk₂ R c (fun x₁ x₂ y ↦ ha ?_) (fun r x y ↦ ha ?_)
+    (fun x y₁ y₂ ↦ ha ?_) (fun r x y ↦ ha ?_), ?_⟩
+  · simp only [mul_add, ← hc, map_add, LinearMap.add_apply]
+  · simp only [← hc, smul_eq_mul, mul_left_comm a, map_smul, LinearMap.smul_apply]
+  · simp only [mul_add, ← hc, map_add]
+  · simp only [← hc, smul_eq_mul, mul_left_comm a, map_smul]
+  · ext x y
+    simp [hc]
 
 /-- A bilinear form `B` is **`a`-modular** when it is `a` times a perfect pairing: `B = a • C`
 for a form `C` identifying `M` with its dual on both sides. Over a discrete valuation ring with
@@ -271,7 +264,8 @@ theorem isModular_iff (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors R) :
     obtain ⟨x, hx⟩ := hC.bijective_left.2 f
     exact ⟨x, fun y ↦ by rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul, hx]⟩
   · rintro ⟨hdvd, hsep, hrep⟩
-    obtain ⟨C, rfl⟩ := exists_smul_eq_of_forall_dvd ha hdvd
+    obtain ⟨C, rfl⟩ := exists_smul_eq_of_forall_dvd (isRegular_iff_mem_nonZeroDivisors.mpr ha).left
+      hdvd
     have hbij : Function.Bijective C := by
       refine ⟨(injective_iff_map_eq_zero C).mpr fun x hx ↦ hsep x fun y ↦ ?_, fun f ↦ ?_⟩
       · simp [hx]
@@ -347,7 +341,8 @@ theorem IsModular.isCompl_orthogonal (ha : a ∈ nonZeroDivisors R)
     (hdvd : ∀ x y, a ∣ B x y) {S : Submodule R M} (h : (B.restrict S).IsModular a) :
     IsCompl S (B.orthogonal S) := by
   have hcan : ∀ r s, a * r = a * s → r = s := fun r s ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp
-  obtain ⟨B', rfl⟩ := exists_smul_eq_of_forall_dvd ha hdvd
+  obtain ⟨B', rfl⟩ := exists_smul_eq_of_forall_dvd (isRegular_iff_mem_nonZeroDivisors.mpr ha).left
+    hdvd
   obtain ⟨C, hC, hCp⟩ := h
   have hCB : C = B'.restrict S := LinearMap.ext₂ fun x y ↦ hcan _ _ (by
     simpa using congrArg (fun D : BilinForm R S ↦ D x y) hC)
