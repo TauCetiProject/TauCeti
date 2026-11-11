@@ -41,7 +41,7 @@ variable {B A : Type*} [Ring A] [Algebra ℚ A]
 /-- At a directed Cartan entry minus two, the pinned Weyl unit of a Serre system carries
 `E j` to one half of its second raising bracket. The matrix convention is `⁅H i, E j⁆ =
 CM i j • E j`. -/
-theorem weylUnit_conj_of_cartan_eq_neg_two (hs : IsSerreSystem ℚ CM H E F)
+theorem weylUnit_conj_E_of_cartan_eq_neg_two (hs : IsSerreSystem ℚ CM H E F)
     {i j : B} (hii : CM i i = 2) (hij : CM i j = -2)
     (hE : IsNilpotent (E i)) (hF : IsNilpotent (F i)) :
     (weylUnit hE hF : A) * E j * ↑(weylUnit hE hF)⁻¹ =

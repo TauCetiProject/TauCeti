@@ -41,7 +41,7 @@ variable {B A : Type*} [Ring A] [Algebra ℚ A]
 
 /-- At a directed Cartan entry minus three, the pinned Weyl unit carries the raising
 generator to one sixth of its third raising bracket. -/
-theorem weylUnit_conj_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
+theorem weylUnit_conj_E_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
     {i j : B} (hii : CM i i = 2) (hij : CM i j = -3)
     (hE : IsNilpotent (E i)) (hF : IsNilpotent (F i)) :
     (weylUnit hE hF : A) * E j * ↑(weylUnit hE hF)⁻¹ =

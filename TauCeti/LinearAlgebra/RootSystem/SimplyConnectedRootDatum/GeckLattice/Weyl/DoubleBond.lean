@@ -63,7 +63,7 @@ theorem weylUnit_geckRepresentation_conj_of_cartan_eq_neg_two (i j : Fin t.rank)
   -- Expand the representation composite and signed generators; the Serre matrix is transposed.
   simpa only [Function.comp_apply, ρ, LieHom.comp_apply, AlgHom.toLieHom_apply,
     LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
-    ((t.isSerreSystem_lieBasis ht).map ρ).weylUnit_conj_of_cartan_eq_neg_two
+    ((t.isSerreSystem_lieBasis ht).map ρ).weylUnit_conj_E_of_cartan_eq_neg_two
       (t.cartanMatrix_apply_same i) hji
       (by simpa only [Function.comp_apply, ρ, LieHom.comp_apply, AlgHom.toLieHom_apply,
           LieAlgebra.Basis.rootGenerator_inl] using
