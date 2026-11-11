@@ -27,9 +27,8 @@ covers comparing a function with its derivative.
 * `TauCeti.eLpNorm_rpow_eq_lintegral`: for an a.e. measurable `ℝ≥0∞`-valued function, the `p`-th
   power of the `Lᵖ` seminorm is the integral `∫⁻ f ^ p`; `TauCeti.eLpNorm_eq_lintegral_rpow` is
   the same identity solved for the seminorm.
-* `TauCeti.eLpNorm_le_of_ae_tendsto_ennreal` and `TauCeti.eLpNorm_ennreal_le_of_ae_tendsto`:
-  `ℝ≥0∞`-valued Fatou lemmas for the `Lᵖ` seminorm (for sequences at finite nonzero exponents, and
-  along any countably generated filter at arbitrary `p : ℝ≥0∞`).
+* `TauCeti.eLpNorm_ennreal_le_of_ae_tendsto`: the `ℝ≥0∞`-valued Fatou lemma for the `Lᵖ` seminorm,
+  along any countably generated filter at arbitrary `p : ℝ≥0∞`.
 * `TauCeti.ae_lt_top_of_eLpNorm_ne_top`: at any nonzero exponent, an `ℝ≥0∞`-valued function with
   finite `Lᵖ` seminorm is finite almost everywhere.
 * `TauCeti.eLpNorm_le_eLpNorm_of_lintegral_rpow_le`: for an a.e. strongly measurable `v`, from
@@ -69,65 +68,43 @@ theorem eLpNorm_eq_lintegral_rpow {α : Type*} [MeasurableSpace α]
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hf.aestronglyMeasurable]
   simp only [eNorm_eq_self]
 
-/-- **Fatou's lemma for the `Lᵖ` seminorm of `ℝ≥0∞`-valued functions.** For a finite nonzero
-exponent, an almost everywhere pointwise limit of functions whose `Lᵖ` seminorms are bounded by
-`c` also has `Lᵖ` seminorm at most `c`. -/
-theorem eLpNorm_le_of_ae_tendsto_ennreal {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : ℕ → α → ℝ≥0∞} {g : α → ℝ≥0∞}
-    {c : ℝ≥0∞} (hf : ∀ n, AEMeasurable (f n) μ)
-    (hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ f n x) atTop (𝓝 (g x)))
-    (hle : ∀ n, eLpNorm (f n) p μ ≤ c) :
-    eLpNorm g p μ ≤ c := by
-  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  have hg : AEMeasurable g μ := ENNReal.aemeasurable_of_tendsto hf hlim
-  have key : eLpNorm g p μ ^ p.toReal ≤ c ^ p.toReal := by
-    rw [eLpNorm_rpow_eq_lintegral hp0 hp hg]
-    calc ∫⁻ x, g x ^ p.toReal ∂μ
-        = ∫⁻ x, atTop.liminf (fun n ↦ f n x ^ p.toReal) ∂μ := by
-          refine lintegral_congr_ae ?_
-          filter_upwards [hlim] with x hx
-          exact (Tendsto.liminf_eq
-            (((ENNReal.continuous_rpow_const (y := p.toReal)).tendsto (g x)).comp hx)).symm
-      _ ≤ atTop.liminf fun n ↦ ∫⁻ x, f n x ^ p.toReal ∂μ :=
-          lintegral_liminf_le' fun n ↦ (hf n).pow_const _
-      _ ≤ c ^ p.toReal := by
-          refine liminf_le_of_frequently_le' (.of_forall fun n ↦ ?_)
-          rw [← eLpNorm_rpow_eq_lintegral hp0 hp (hf n)]
-          exact ENNReal.rpow_le_rpow (hle n) hr.le
-  exact (ENNReal.rpow_le_rpow_iff hr).1 key
-
 /-- **Fatou's lemma for the `Lᵖ` seminorm of `ℝ≥0∞`-valued functions**, at every exponent
-`p : ℝ≥0∞` (including `0` and `∞`) and along any countably generated `NeBot` filter. Almost
-everywhere measurability of the limit is deduced from the pointwise convergence. -/
+`p : ℝ≥0∞` (including `0` and `∞`) and along any countably generated filter: an almost everywhere
+pointwise limit of functions whose `Lᵖ` seminorms are frequently at most `C` also has `Lᵖ`
+seminorm at most `C`. Almost everywhere measurability of the limit is deduced from the pointwise
+convergence. -/
 theorem eLpNorm_ennreal_le_of_ae_tendsto {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    {p : ℝ≥0∞} {ι : Type*} {u : Filter ι} [NeBot u] [IsCountablyGenerated u]
+    {p : ℝ≥0∞} {ι : Type*} {u : Filter ι} [IsCountablyGenerated u]
     {f : ι → α → ℝ≥0∞} {g : α → ℝ≥0∞} {C : ℝ≥0∞}
     (hf : ∀ i, AEMeasurable (f i) μ)
     (hlim : ∀ᵐ x ∂μ, Tendsto (fun i ↦ f i x) u (𝓝 (g x)))
-    (hle : ∀ᶠ i in u, eLpNorm (f i) p μ ≤ C) :
+    (hle : ∃ᶠ i in u, eLpNorm (f i) p μ ≤ C) :
     eLpNorm g p μ ≤ C := by
-  obtain ⟨v, hv⟩ := exists_seq_tendsto u
-  obtain ⟨N, hN⟩ := eventually_atTop.1 (hv.eventually hle)
-  let f' : ℕ → α → ℝ≥0∞ := fun n ↦ f (v (n + N))
-  have hf' : ∀ n, AEMeasurable (f' n) μ := fun n ↦ hf (v (n + N))
-  have hlim' : ∀ᵐ x ∂μ, Tendsto (fun n ↦ f' n x) atTop (𝓝 (g x)) :=
-    hlim.mono fun x hx ↦ (hx.comp hv).comp (tendsto_add_atTop_nat N)
-  have hle' : ∀ n, eLpNorm (f' n) p μ ≤ C := fun n ↦ hN (n + N) (Nat.le_add_left N n)
-  have hg : AEMeasurable g μ := ENNReal.aemeasurable_of_tendsto hf' hlim'
+  -- Pass to a sequence along which the bound holds at every index.
+  obtain ⟨v, hv, hle⟩ := exists_seq_forall_of_frequently hle
+  replace hf (n : ℕ) : AEMeasurable (f (v n)) μ := hf (v n)
+  replace hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ f (v n) x) atTop (𝓝 (g x)) :=
+    hlim.mono fun x hx ↦ hx.comp hv
+  have hg : AEMeasurable g μ := ENNReal.aemeasurable_of_tendsto hf hlim
   rcases eq_or_ne p 0 with rfl | hp0
-  · rw [eLpNorm_exponent_zero hg.aestronglyMeasurable]
-    exact zero_le
+  · simp [eLpNorm_exponent_zero hg.aestronglyMeasurable]
   rcases eq_or_ne p ∞ with rfl | hp
-  · rw [eLpNorm_exponent_top hg.aestronglyMeasurable, eLpNormEssSup_eq_essSup_eNorm]
-    simp only [eNorm_eq_self]
-    have hcongr : essSup g μ = essSup (fun x ↦ atTop.liminf fun n ↦ f' n x) μ :=
-      essSup_congr_ae (hlim'.mono fun x hx ↦ hx.liminf_eq.symm)
-    rw [hcongr]
-    refine (ENNReal.essSup_liminf_le f').trans
-      (liminf_le_of_frequently_le' (.of_forall fun n ↦ ?_))
-    simpa [eLpNorm_exponent_top (hf' n).aestronglyMeasurable, eLpNormEssSup_eq_essSup_eNorm] using
-      hle' n
-  · exact eLpNorm_le_of_ae_tendsto_ennreal hp0 hp hf' hlim' hle'
+  · simp only [eLpNorm_exponent_top, hg.aestronglyMeasurable, (hf _).aestronglyMeasurable,
+      eLpNormEssSup_eq_essSup_eNorm, eNorm_eq_self] at hle ⊢
+    rw [essSup_congr_ae (hlim.mono fun x hx ↦ hx.liminf_eq.symm)]
+    exact (ENNReal.essSup_liminf_le _).trans (liminf_le_of_frequently_le' (.of_forall hle))
+  · have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+    rw [← ENNReal.rpow_le_rpow_iff hr, eLpNorm_rpow_eq_lintegral hp0 hp hg]
+    calc ∫⁻ x, g x ^ p.toReal ∂μ
+        = ∫⁻ x, atTop.liminf (fun n ↦ f (v n) x ^ p.toReal) ∂μ :=
+          lintegral_congr_ae <| hlim.mono fun x hx ↦
+            ((ENNReal.continuous_rpow_const.tendsto (g x)).comp hx).liminf_eq.symm
+      _ ≤ atTop.liminf fun n ↦ ∫⁻ x, f (v n) x ^ p.toReal ∂μ :=
+          lintegral_liminf_le' fun n ↦ (hf n).pow_const _
+      _ ≤ C ^ p.toReal := by
+          refine liminf_le_of_frequently_le' (.of_forall fun n ↦ ?_)
+          rw [← eLpNorm_rpow_eq_lintegral hp0 hp (hf n)]
+          exact ENNReal.rpow_le_rpow (hle n) hr.le
 
 /-- At any nonzero exponent (including `∞`), an `ℝ≥0∞`-valued function with finite `Lᵖ` seminorm is
 finite almost everywhere. -/

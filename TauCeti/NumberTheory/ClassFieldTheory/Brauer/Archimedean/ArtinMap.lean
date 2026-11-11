@@ -217,7 +217,7 @@ theorem infiniteArtinAt_eq_one_iff_of_isReal (x : w.Completionˣ) :
     have hsq : Units.mk0 r hr0 ^ 2 = y := Units.ext <|
       (Completion.extensionEmbeddingOfIsReal hw).injective <| by
         rw [Units.val_pow_eq_pow_val, Units.val_mk0, map_pow, hr, Real.sq_sqrt hy.le]
-    rw [← hsq, map_pow, sq_eq_one_fieldAbsoluteGaloisGroupAbelianization_of_isReal w hw]
+    rw [← hsq, map_pow, sq_eq_one_fieldAbsoluteGaloisGroupAbelianization w]
   refine ⟨fun hx ↦ ?_, hpos x⟩
   by_contra hneg
   -- If a negative element were killed, so would be every element: each is either positive or
@@ -254,9 +254,9 @@ theorem infiniteArtinAt_rootsOfUnity_of_isReal (m : ℕ) [NeZero m] (x : w.Compl
       ZMod.val_neg_one]
     -- `Field.absoluteGaloisGroup w.Completion` is by definition
     -- `Gal(AlgebraicClosure w.Completion/w.Completion)`, and `σ.toRingEquiv` applies `σ`.
-    exact (fieldAbsoluteGaloisGroup_apply_eq_inv_of_isReal w hw hσ1 n.succ_ne_zero hz).trans
+    exact (fieldAbsoluteGaloisGroup_apply_eq_inv w hσ1 n.succ_ne_zero hz).trans
       (eq_inv_of_mul_eq_one_left (by rw [← pow_succ, hz])).symm
-  · have hσ1 : σ = 1 := eq_one_of_mk_eq_one_of_isReal w hw
+  · have hσ1 : σ = 1 := eq_one_of_mk_eq_one w
       (hσ.trans ((infiniteArtinAt_eq_one_iff_of_isReal w hw x).mpr hpos))
     rw [realCyclotomicSymbol_of_pos _ _ (by simpa using hpos), Units.val_one,
       ZMod.val_one_eq_one_mod]
@@ -317,15 +317,15 @@ theorem infiniteArtinAt_norm (w : InfinitePlace L) (v : InfinitePlace K) [w.Lies
         rw [← hτ]
         refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
         · rw [injective_absoluteGaloisGroupExtend v.Completion w.Completion iota
-            ((eq_one_of_mk_eq_one_of_isReal v hv h).trans (map_one _).symm), QuotientGroup.mk_one]
-        · rw [eq_one_of_mk_eq_one_of_isReal w hw h, map_one, QuotientGroup.mk_one]
+            ((eq_one_of_mk_eq_one v h).trans (map_one _).symm), QuotientGroup.mk_one]
+        · rw [eq_one_of_mk_eq_one w h, map_one, QuotientGroup.mk_one]
       have hRHS : infiniteArtinAt v (Units.map (Algebra.norm v.Completion :
           w.Completion →* v.Completion) x) = 1 ↔ infiniteArtinAt w x = 1 := by
         rw [infiniteArtinAt_eq_one_iff_of_isReal v hv, infiniteArtinAt_eq_one_iff_of_isReal w hw,
           Units.coe_map, Completion.extensionEmbeddingOfIsReal_norm_of_isReal hv hw]
       by_cases h1 : infiniteArtinAt w x = 1
       · rw [hLHS.mpr h1, hRHS.mpr h1]
-      · exact eq_of_ne_one_fieldAbsoluteGaloisGroupAbelianization_of_isReal v hv
+      · exact eq_of_ne_one_fieldAbsoluteGaloisGroupAbelianization v
           (fun h ↦ h1 (hLHS.mp h)) (fun h ↦ h1 (hRHS.mp h))
     · -- `ℂ/ℝ`: `G_{K_w}` is trivial, and the norm `|x|²` is positive.
       have := subsingleton_fieldAbsoluteGaloisGroup_of_isComplex w hw

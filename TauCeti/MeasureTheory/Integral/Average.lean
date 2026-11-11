@@ -423,7 +423,7 @@ theorem ae_restrict_eq_setAverage_of_setLAverage_enorm_sub_setAverage_eq_zero
   rw [setLAverage_eq, ENNReal.div_eq_zero_iff] at h
   refine h.elim (fun h => ?_) fun h => absurd h hs
   filter_upwards [(lintegral_eq_zero_iff' (hf.sub aestronglyMeasurable_const).eNorm).1 h] with y hy
-  exact sub_eq_zero.1 (eNorm_eq_zero'.1 hy)
+  exact sub_eq_zero.1 (eNorm_eq_zero.1 hy)
 
 end Oscillation
 
@@ -761,7 +761,7 @@ theorem setIntegral_norm_sub_setAverage_sq_le_add_of_subset {t : Set X} {f H : X
       MeasureTheory.setIntegral_norm_add_sq_le
         (hf.integrableOn_norm_sub_sq_of_subset subset_rfl ht _) hHf
   have step4 : ∫ x in s, ‖f x - H x‖ ^ 2 ∂μ ≤ ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ :=
-    setIntegral_mono_set hfH (ae_of_all _ fun _ => by positivity) hst.eventuallyLE
+    setIntegral_mono_set hfH (ae_of_all _ fun _ => by positivity) hst.eventuallySubset
   have := mul_le_mul_of_nonneg_left step3 hK
   linarith
 
@@ -1159,7 +1159,7 @@ variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup 
 theorem enorm_sub_setAverage_eq_zero_of_subsingleton [Subsingleton X] (x : X)
     (hS₀ : μ S ≠ 0) (hS_top : μ S ≠ ∞) : ‖u x - ⨍ y in S, u y ∂μ‖ₑ = 0 := by
   have hu : u = fun _ => u x := funext fun y => congrArg u (Subsingleton.elim y x)
-  rw [hu, setAverage_const hS₀ hS_top, sub_self, eNorm_one']
+  rw [hu, setAverage_const hS₀ hS_top, sub_self, eNorm_zero]
 
 end Subsingleton
 

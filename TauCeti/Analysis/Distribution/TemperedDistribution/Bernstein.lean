@@ -26,7 +26,8 @@ function, with
 
 for a constant `C` depending only on `E`, `p` and `q`
 (`TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`). The case `k = 0`
-is the gain of integrability `‖f‖_q ≤ C R ^ (n (1/p - 1/q)) ‖f‖_p` of a band-limited function, and
+is the gain of integrability `‖f‖_q ≤ C R ^ (n (1/p - 1/q)) ‖f‖_p` of a band-limited function
+(`TauCeti.exists_eq_and_norm_le_of_isVanishingOn_fourier`), and
 the case `p = q`, `k = 1` says that differentiating costs at most a factor `C R`.
 
 If moreover `𝓕 u` vanishes on the ball of radius `R`, so that the spectrum of `f` lies in the
@@ -73,6 +74,8 @@ annulus.
 
 ## Main declarations
 
+* `TauCeti.exists_eq_and_norm_le_of_isVanishingOn_fourier`: Bernstein's inequality without
+  derivatives, the gain of integrability of a band-limited function.
 * `TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`: Bernstein's
   inequalities.
 * `OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`,
@@ -142,11 +145,12 @@ private theorem cutoff_eq_comp {R : ℝ} (hR : 0 < R) :
 
 variable [CompleteSpace F]
 
-/-- **Bernstein's inequality without derivatives.** For `1 ≤ p ≤ q ≤ ∞`, an `Lᵖ` function whose
-Fourier transform vanishes outside the ball of radius `R` is in `Lᵠ`, with
-`‖f‖_q ≤ C R ^ (n (1/p - 1/q)) ‖f‖_p`. -/
-private theorem exists_eq_and_norm_le {p q : ℝ≥0∞} [hp : Fact (1 ≤ p)] [Fact (1 ≤ q)]
-    (hpq : p ≤ q) :
+/-- **Bernstein's inequality without derivatives.** For `1 ≤ p ≤ q ≤ ∞` there is a constant `C`,
+depending only on `E`, `p` and `q`, such that an `Lᵖ` function `f` whose Fourier transform vanishes
+outside the closed ball of radius `R > 0` is an `Lᵠ` function `g`, with
+`‖g‖_q ≤ C R ^ (n (1/p - 1/q)) ‖f‖_p`, where `n` is the dimension of `E` and `1/∞ = 0`. -/
+theorem exists_eq_and_norm_le_of_isVanishingOn_fourier {p q : ℝ≥0∞} [hp : Fact (1 ≤ p)]
+    [Fact (1 ≤ q)] (hpq : p ≤ q) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ →
       ∃ g : Lp F q (volume : Measure E), (f : 𝓢'(E, F)) = g ∧
@@ -300,7 +304,7 @@ theorem exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier {p q 
       ∃ g : Lp F q (volume : Measure E), ∂^{m} (f : 𝓢'(E, F)) = g ∧
         ‖g‖ ≤ C ^ (k + 1) * R ^ ((k : ℝ) + finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹)) *
           (∏ i, ‖m i‖) * ‖f‖ := by
-  obtain ⟨C₀, hC₀, h₀⟩ := exists_eq_and_norm_le (E := E) (F := F) hpq
+  obtain ⟨C₀, hC₀, h₀⟩ := exists_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F) hpq
   obtain ⟨C₁, hC₁, hderiv⟩ :=
     exists_iteratedLineDerivOp_eq_and_norm_le (E := E) (F := F) (p := p)
   -- The derivatives at the exponent `p`, then the gain of integrability from `p` to `q`.

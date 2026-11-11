@@ -323,7 +323,7 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
   have hlip (v w : S) : ‖tateNodeStep q (U v) s - tateNodeStep q (U w) s‖ ≤
       ‖s‖ * ‖((U v : Kˣ) : K) - (U w : Kˣ)‖ := by
     have h := norm_prod_sub_prod_le (s := .univ) (f := fun _ : Fin 3 ↦ 1 - ((U v : Kˣ) : K))
-      (g := fun _ ↦ 1 - ((U w : Kˣ) : K)) zero_le_one (norm_nonneg _) (fun _ _ ↦ (hU₁ v).le)
+      (g := fun _ ↦ 1 - ((U w : Kˣ) : K)) (norm_nonneg _) (fun _ _ ↦ (hU₁ v).le)
       (fun _ _ ↦ (hU₁ w).le) fun _ _ ↦ by rw [sub_sub_sub_cancel_left, norm_sub_rev]
     simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, one_pow, mul_one] at h
     have hrw (c d E F : K) :

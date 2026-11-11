@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
-public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!
 # The de la Vallée Poussin criterion
@@ -121,7 +121,7 @@ theorem exists_convexOn_superlinear_integrable {f : α → F} (hf : Integrable f
       Tendsto (fun t ↦ Φ t / t) atTop atTop ∧ Integrable (fun a ↦ Φ ‖f a‖) μ := by
   -- The positive parts `(‖f‖ - s)⁺` have integrals tending to zero as `s → ∞`.
   have htail : Tendsto (fun s : ℝ ↦ ∫⁻ a, ENNReal.ofReal (‖f a‖ - s) ∂μ) atTop (𝓝 0) := by
-    refine ((tendsto_lintegral_tsub_atTop hf.aestronglyMeasurable.eNorm
+    refine ((tendsto_lintegral_tsub_atTop
       hf.hasFiniteIntegral.ne).comp Real.tendsto_toNNReal_atTop).congr' ?_
     filter_upwards [eventually_ge_atTop 0] with s hs
     simp only [Function.comp_apply, ← ofReal_norm, ENNReal.ofReal_sub _ hs]

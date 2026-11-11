@@ -28,10 +28,10 @@ They impose no global integrability condition on the possibly unbounded domain.
 
 This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
-supported in the domain), decreasing the integrability exponent, and decreasing the derivative
-order. On an open set, local `Lᵖ` membership is detected on the open subsets with compact closure
-inside it. Smoothness on an open neighbourhood gives membership, without requiring a global smooth
-extension.
+supported in the domain), pairing, decreasing the integrability exponent, and decreasing the
+derivative order. On an open set, local `Lᵖ` membership is detected on the open subsets with
+compact closure inside it. Smoothness on an open neighbourhood gives membership, without requiring
+a global smooth extension.
 On a relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane the interior is
 `Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`). No boundary trace is asserted here;
 extension across the real axis is in `TauCeti.Analysis.Sobolev.Local.Reflection`. On open
@@ -374,6 +374,16 @@ theorem MemWkpLoc.clm_comp [CompleteSpace G] (hf : MemWkpLoc p U k f)
     obtain ⟨hp, D, hD, hk⟩ := hf
     exact ⟨hp.clm_comp A, fun z => A.comp (D z), hD.clm_comp A,
       ih hk ((ContinuousLinearMap.compL ℝ ℂ F G) A)⟩
+
+/-- **Pairs of local Sobolev maps.** Two maps in the local Sobolev class of order `k` pair to a map
+in the same class, with values in the product. -/
+theorem MemWkpLoc.prodMk [CompleteSpace F] [CompleteSpace G] {g : ℂ → G}
+    (hf : MemWkpLoc p U k f) (hg : MemWkpLoc p U k g) :
+    MemWkpLoc p U k (fun z => (f z, g z)) := by
+  have h := (hf.clm_comp (ContinuousLinearMap.inl ℝ F G)).add
+    (hg.clm_comp (ContinuousLinearMap.inr ℝ F G))
+  convert h using 1
+  ext z <;> simp
 
 /-- A continuous linear change of codomain preserves and reflects every local weak
 Sobolev order. -/

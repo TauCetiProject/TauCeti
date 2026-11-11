@@ -878,8 +878,7 @@ theorem lintegral_rpow_tsum_maximalFunction_rpow_le (μ : Measure E) [μ.IsAddHa
     rw [Real.holderConjugate_iff_eq_conjExponent ((one_lt_div hr0).2 hrp)]
     field_simp
   rw [← one_div_div p (p - r)]
-  exact lintegral_rpow_le_of_forall_le
-    (Measurable.tsum fun i => (measurable_maximalFunction μ (f i)).pow_const r) hqs.pos
+  exact lintegral_rpow_le_of_forall_le hqs.pos
     fun φ hφ hφF hfin => lintegral_rpow_le_of_le_tsum_maximalFunction_rpow hf hr hqs hφ hφF hfin
 
 end VectorValued

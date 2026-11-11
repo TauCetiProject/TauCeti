@@ -13,11 +13,7 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 /-!
 # Consequences of dominated convergence for Lebesgue integrals
 
-A function `f : α → ℝ≥0∞` of finite Lebesgue integral exceeds a large constant `M` only by an
-amount of small integral: `∫⁻ x, f x - M ∂μ → 0` as `M → ∞`. This is dominated convergence with
-the bound `f`, since `f x - M` vanishes for `M ≥ f x` and `f` is almost everywhere finite.
-
-The file also records a squeeze principle: if `f n ≤ g n + h n` and the integrals of `g n` and
+This file records a squeeze principle: if `f n ≤ g n + h n` and the integrals of `g n` and
 `h n` tend to `0`, so does the integral of `f n`; and the reverse Fatou lemma for integrals over
 sets: the integrals of a function of finite integral over measurable sets `s n` have limit
 superior at most its integral over `limsup s n`, the set of points lying in infinitely many
@@ -29,10 +25,9 @@ is pointwise and the vector-valued factor converges only in `L¹`.
 
 ## Main statements
 
-* `TauCeti.tendsto_lintegral_tsub_atTop`: the integral of the excess of `f` over the constant `M`
-  tends to `0` as `M → ∞`.
 * `TauCeti.tendsto_lintegral_zero_of_le_add`: the integral of a function bounded by the sum of
   two functions with integrals tending to `0` tends to `0`.
+* `TauCeti.tendsto_setLIntegral_enorm_add_sub`: `L¹` convergence on a set is preserved by sums.
 * `TauCeti.tendsto_lintegral_enorm_smul_sub`: bounded, almost everywhere convergent scalar
   coefficients preserve `L¹` convergence in any seminormed module.
 * `TauCeti.limsup_setLIntegral_le`: `limsup ∫⁻_{s n} f ≤ ∫⁻_{limsup s n} f` when the `s n` lie
@@ -48,24 +43,6 @@ open scoped ENNReal NNReal
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 
-/-- **Uniformly small tails.** If `f : α → ℝ≥0∞` is almost everywhere measurable with finite
-Lebesgue integral, then the integral of its excess `f x - M` over a finite level `M` tends to `0`
-as `M → ∞`. -/
-theorem tendsto_lintegral_tsub_atTop {f : α → ℝ≥0∞} (hf : AEMeasurable f μ)
-    (hfi : ∫⁻ x, f x ∂μ ≠ ∞) :
-    Tendsto (fun M : ℝ≥0 ↦ ∫⁻ x, f x - M ∂μ) atTop (𝓝 0) := by
-  have h := tendsto_lintegral_filter_of_dominated_convergence' (l := atTop)
-    (F := fun (M : ℝ≥0) x ↦ f x - M) (f := fun _ ↦ 0) f
-    (Eventually.of_forall fun M ↦ hf.sub aemeasurable_const)
-    (Eventually.of_forall fun M ↦ ae_of_all _ fun x ↦ tsub_le_self) hfi ?_
-  · simpa using h
-  -- At a point where `f` is finite, the excess vanishes once `M ≥ f x`.
-  filter_upwards [ae_lt_top' hf hfi] with x hx
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [eventually_ge_atTop (f x).toNNReal] with M hM
-  rw [eq_comm, tsub_eq_zero_iff_le]
-  exact (ENNReal.coe_toNNReal hx.ne).symm.trans_le (ENNReal.coe_le_coe.2 hM)
-
 /-- If eventually `f i ≤ g i + h i` almost everywhere and `g i` is almost everywhere measurable,
 and the Lebesgue integrals of `g i` and `h i` tend to `0`, then so do those of `f i`. -/
 theorem tendsto_lintegral_zero_of_le_add {ι : Type*} {l : Filter ι} {f g h : ι → α → ℝ≥0∞}
@@ -78,6 +55,19 @@ theorem tendsto_lintegral_zero_of_le_add {ι : Type*} {l : Filter ι} {f g h : �
   filter_upwards [hfgh, hg] with i hi hgi
   rw [← lintegral_add_left' hgi]
   exact lintegral_mono_ae hi
+
+/-- If two families converge in `L¹` on `W`, so does their sum. Only the errors of the first
+family need to be almost everywhere strongly measurable. -/
+theorem tendsto_setLIntegral_enorm_add_sub {H ι : Type*} [NormedAddCommGroup H] {W : Set α}
+    {l : Filter ι} {a b : ι → α → H} {a₀ b₀ : α → H}
+    (ha : ∀ n, AEStronglyMeasurable (fun x => a n x - a₀ x) (μ.restrict W))
+    (h₁ : Tendsto (fun n => ∫⁻ x in W, ‖a n x - a₀ x‖ₑ ∂μ) l (𝓝 0))
+    (h₂ : Tendsto (fun n => ∫⁻ x in W, ‖b n x - b₀ x‖ₑ ∂μ) l (𝓝 0)) :
+    Tendsto (fun n => ∫⁻ x in W, ‖a n x + b n x - (a₀ x + b₀ x)‖ₑ ∂μ) l (𝓝 0) :=
+  tendsto_lintegral_zero_of_le_add (μ := μ.restrict W)
+    (.of_forall fun n ↦ .of_forall fun x ↦ by
+      simpa only [Pi.add_apply, add_sub_add_comm] using eNorm_add_le _ _)
+    (.of_forall fun n ↦ (ha n).eNorm) h₁ h₂
 
 /-- If bounded coefficients `c i` converge almost everywhere to `c₀` and `g i → g₀` in `L¹`,
 then `c i • g i → c₀ • g₀` in `L¹`. The coefficients lie in any seminormed ring `𝕜` and the

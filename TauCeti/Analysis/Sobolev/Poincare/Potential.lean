@@ -129,7 +129,7 @@ theorem setLIntegral_closedBall_lintegral_segment_le {g : E → ℝ≥0∞}
         ∫⁻ w, g w * ‖x - w‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · have hzero : ∀ y : E, ‖x - y‖ₑ = 0 := fun y => by
-      rw [Subsingleton.elim x y, sub_self, eNorm_one']
+      rw [Subsingleton.elim x y, sub_self, eNorm_zero]
     simp [hzero]
   set n := finrank ℝ E
   have hn : 0 < n := finrank_pos
