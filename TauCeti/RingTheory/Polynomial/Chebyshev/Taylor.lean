@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.Polynomial.Chebyshev
 import Mathlib.Algebra.Polynomial.Div
 import Mathlib.Tactic.IntervalCases
+import TauCeti.Algebra.Polynomial.Derivative
 
 /-!
 # Rescaled Chebyshev polynomials near `X = 2`
@@ -48,12 +49,31 @@ private theorem taylor_two_C_coeff_eq_intCast (n : ℤ) (k : ℕ) :
     (taylor 2 (C R n)).coeff k = ((taylor 2 (C ℤ n)).coeff k : ℤ) := by
   rw [← eq_intCast (Int.castRingHom R), ← coeff_map, map_taylor, map_C, map_ofNat]
 
+/-- The `k`-th derivative of `p(2X)` at `1` is `2ᵏ` times the `k`-th derivative of `p` at `2`:
+the chain rule `iterate_derivative_comp_C_mul_X` at `a = 2`, evaluated at `1`. -/
+private theorem iterate_derivative_comp_two_mul_X_eval_one (p : R[X]) (k : ℕ) :
+    (derivative^[k] (p.comp (2 * X))).eval 1 = 2 ^ k * (derivative^[k] p).eval 2 := by
+  -- Write the polynomial `2` as the constant `Polynomial.C 2`, the form the chain rule expects.
+  rw [← map_ofNat Polynomial.C 2, iterate_derivative_comp_C_mul_X]
+  simp only [eval_mul, eval_C, eval_comp, eval_X, mul_one]
+
+/-- Differentiating `Cₙ(2X) = 2Tₙ(X)` `k` times at `X = 1` gives `2ᵏ Cₙ⁽ᵏ⁾(2) = 2 Tₙ⁽ᵏ⁾(1)`. -/
+private theorem two_pow_mul_iterate_derivative_C_eval_two (n : ℤ) (k : ℕ) :
+    2 ^ k * (derivative^[k] (C R n)).eval 2 = 2 * (derivative^[k] (T R n)).eval 1 := by
+  -- After `C_comp_two_mul_X`, write the factor `2` of `2Tₙ` as `Polynomial.C 2` to pull it out.
+  rw [← iterate_derivative_comp_two_mul_X_eval_one, C_comp_two_mul_X, ← map_ofNat Polynomial.C 2,
+    iterate_derivative_C_mul, eval_C_mul]
+
+/-- Differentiating `Sₙ(2X) = Uₙ(X)` `k` times at `X = 1` gives `2ᵏ Sₙ⁽ᵏ⁾(2) = Uₙ⁽ᵏ⁾(1)`. -/
+private theorem two_pow_mul_iterate_derivative_S_eval_two (n : ℤ) (k : ℕ) :
+    2 ^ k * (derivative^[k] (S R n)).eval 2 = (derivative^[k] (U R n)).eval 1 := by
+  rw [← iterate_derivative_comp_two_mul_X_eval_one, S_comp_two_mul_X]
+
 /-- The linear Taylor coefficient of `Cₙ` at `2`. -/
 theorem taylor_two_C_coeff_one (n : ℤ) : (taylor 2 (C R n)).coeff 1 = (n : R) ^ 2 := by
   have h : (taylor 2 (C ℤ n)).coeff 1 = n ^ 2 := by
-    have h₁ := congrArg (fun p ↦ (derivative p).eval 1) (C_comp_two_mul_X ℤ n)
-    simp only [derivative_comp, derivative_mul, derivative_ofNat, derivative_X, zero_mul, zero_add,
-      mul_one, eval_mul, eval_comp, eval_ofNat, eval_X, derivative_T_eval_one, Int.cast_id] at h₁
+    have h₁ := two_pow_mul_iterate_derivative_C_eval_two (R := ℤ) n 1
+    rw [Function.iterate_one, derivative_T_eval_one, Int.cast_id] at h₁
     rw [taylor_coeff_one]
     linarith
   rw [taylor_two_C_coeff_eq_intCast, h, Int.cast_pow]
@@ -62,12 +82,11 @@ theorem taylor_two_C_coeff_one (n : ℤ) : (taylor 2 (C R n)).coeff 1 = (n : R) 
 theorem twelve_mul_taylor_two_C_coeff_two (n : ℤ) :
     12 * (taylor 2 (C R n)).coeff 2 = (n : R) ^ 2 * ((n : R) ^ 2 - 1) := by
   have h : 12 * (taylor 2 (C ℤ n)).coeff 2 = n ^ 2 * (n ^ 2 - 1) := by
-    have h₂ := congrArg (fun p ↦ (derivative (derivative p)).eval 1) (C_comp_two_mul_X ℤ n)
-    simp only [derivative_comp, derivative_mul, derivative_ofNat, derivative_X, zero_mul, zero_add,
-      mul_one, eval_mul, eval_comp, eval_ofNat, eval_X] at h₂
+    have h₂ := two_pow_mul_iterate_derivative_C_eval_two (R := ℤ) n 2
     have hT := iterate_derivative_T_eval_one (R := ℤ) n 2
     have hH := congrArg (fun f ↦ (f (C ℤ n)).eval 2) (factorial_smul_hasseDeriv (R := ℤ) 2)
-    simp [Finset.prod_range_succ] at hT hH
+    -- Unfold `derivative^[2]` and evaluate the numerals `2 ^ 2`, `2!` and the products.
+    simp [Finset.prod_range_succ] at h₂ hT hH
     rw [taylor_coeff]
     linarith
   rw [taylor_two_C_coeff_eq_intCast]
@@ -76,9 +95,8 @@ theorem twelve_mul_taylor_two_C_coeff_two (n : ℤ) :
 /-- Six times the linear Taylor coefficient of `Sₙ` at `2`. -/
 theorem six_mul_taylor_two_S_coeff_one (n : ℤ) :
     6 * (taylor 2 (S R n)).coeff 1 = ((n : R) + 2) * ((n : R) + 1) * n := by
-  have h₁ := congrArg (fun p ↦ (derivative p).eval 1) (S_comp_two_mul_X R n)
-  simp only [derivative_comp, derivative_mul, derivative_ofNat, derivative_X, zero_mul, zero_add,
-    mul_one, eval_mul, eval_comp, eval_ofNat, eval_X] at h₁
+  have h₁ := two_pow_mul_iterate_derivative_S_eval_two (R := R) n 1
+  rw [Function.iterate_one] at h₁
   rw [taylor_coeff_one]
   linear_combination 3 * h₁ + derivative_U_eval_one (R := R) n
 
