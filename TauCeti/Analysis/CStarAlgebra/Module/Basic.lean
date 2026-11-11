@@ -16,7 +16,9 @@ Right Hilbert `A`-modules are represented with Mathlib's class as `CStarModule A
 action is `x a = MulOpposite.op a • x` and the usual `A`-valued inner product is
 `⟨x, y⟩_A = MulOpposite.unop (inner Aᵐᵒᵖ x y)`. This file restates Mathlib's inner-product
 identities and Cauchy–Schwarz inequalities in this right-module form, and proves the basic norm
-estimates for the right action.
+estimates for the right action. The coefficient-valued inner product also separates vectors in
+either variable, so identities of module operators can be checked by pairing against arbitrary
+vectors, without a scalar-valued Riesz theorem.
 
 The key computation is that `⟨x a, x a⟩_A = (|x| a)⋆ (|x| a)` for the positive square root
 `|x| = ⟨x, x⟩_A ^ (1/2)`. Hence `‖x a‖ = ‖|x| a‖ ≤ ‖x‖ ‖a‖`, and likewise
@@ -28,6 +30,8 @@ approximate unit of `A`, with no boundedness assumption on the approximate unit.
 
 * `CStarModule.inner_polarization`: the polarization identity expressing `⟪x, y⟫_A` through the
   inner products `⟪z, z⟫_A`.
+* `CStarModule.ext_inner_left`, `CStarModule.ext_inner_right`: vectors are determined by their
+  inner products against all vectors.
 * `CStarModule.star_unop_inner_mul_unop_inner_le`: the Cauchy–Schwarz inequality
   `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² ⟨y, y⟩_A`.
 * `CStarModule.isGreatest_norm_unop_inner`: norm recovery, `‖x‖` is the largest value of
@@ -87,6 +91,18 @@ lemma inner_polarization (x y : E) :
     inner_smul_left_complex, inner_smul_right_complex, Complex.star_def, conj_I, smul_add,
     smul_sub, smul_neg, smul_smul, neg_smul, I_mul_I]
   module
+
+/-- Vectors are determined by their inner products against all vectors in the first slot. -/
+theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
+  apply sub_eq_zero.mp
+  apply (inner_self (A := A)).mp
+  simp [inner_sub_right, h]
+
+/-- Vectors are determined by their inner products against all vectors in the second slot. -/
+theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y := by
+  apply ext_inner_left (A := A)
+  intro z
+  simpa using congrArg star (h z)
 
 end Algebraic
 

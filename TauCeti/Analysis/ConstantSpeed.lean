@@ -128,5 +128,5 @@ theorem LocallyBoundedVariationOn.addHaar_image_eq_zero {α E : Type*} [LinearOr
     [MeasurableSpace E] [BorelSpace E] {f : α → E} {s : Set α}
     (hf : LocallyBoundedVariationOn f s) (μ : Measure E) [μ.IsAddHaarMeasure]
     (hd : 1 < Module.finrank ℝ E) : μ (f '' s) = 0 :=
-  addHaar_eq_zero_of_dimH_lt_finrank μ
+  μ.addHaar_eq_zero_of_dimH_lt_finrank
     (hf.dimH_image_le_one.trans_lt (by exact_mod_cast hd))
