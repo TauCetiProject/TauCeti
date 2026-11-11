@@ -24,9 +24,10 @@ group, every closed set `Y ⊆ H^X` is an irredundant finite union `Y₁ ∪ ⋯
 algebraic sets. The `Yᵢ` are the maximal irreducible subsets of `Y`, so the
 decomposition is unique (`TauCeti.eq_setOf_maximal_isIrreducible_of_isAntichain`). Each `Yᵢ` is
 the solution set of a finite system, and two irredundant families of systems for `Y` have the same
-solution sets up to a bijection of the indices. More generally, if the irreducible solution sets
-of finitely many systems cover `Y`, possibly with repetitions and with members contained in
-others, the components of `Y` are the inclusion-maximal members of the cover.
+solution sets up to a bijection of the indices (`TauCeti.exists_equiv_eq_of_iUnion_eq`, solution
+sets being closed). More generally, if the irreducible solution sets of finitely many systems
+cover `Y`, possibly with repetitions and with members contained in others, the components of `Y`
+are the inclusion-maximal members of the cover (`TauCeti.maximal_isIrreducible_subset_iUnion_iff`).
 
 If the solution set of `S` is covered by those of systems `Tᵢ`, contained in it, the coordinate
 group `G_{R(S)}` embeds in `∏ᵢ G_{R(Tᵢ)}` compatibly with the coefficients, because
@@ -45,10 +46,6 @@ of an algebraic set in the product of the coordinate groups of its components.
   are irredundant finite unions of irreducible algebraic sets.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_finite_irreducible_systems`: closed sets
   are irredundant finite unions of irreducible solution sets of finite systems.
-* `TauCeti.GroupAlgGeom.maximal_isIrreducible_subset_iUnion_V_iff`: the maximal irreducible
-  subsets of a finite union of irreducible solution sets are its inclusion-maximal members.
-* `TauCeti.GroupAlgGeom.exists_equiv_V_eq_of_iUnion_V_eq`: irredundant families of systems with
-  irreducible solution sets and the same union have the same solution sets, up to reindexing.
 * `TauCeti.GroupAlgGeom.CoordGroup.toPi_injective`: the coordinate group embeds in the product of
   the coordinate groups of a covering family.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_injective_coordGroup_toPi`: the coordinate
@@ -167,31 +164,6 @@ theorem IsEquationallyNoetherian.exists_finite_irreducible_systems
     exact hanti.eq (e.symm i).2 (e.symm j).2 hij
   · simp_rw [hVT, Set.sUnion_eq_iUnion]
     exact (e.symm.surjective.iUnion_comp _).symm
-
-/-- If the solution sets of finitely many systems `Tᵢ` are irreducible, then the maximal
-irreducible subsets of their union are exactly the inclusion-maximal `V_H(Tᵢ)`. The family may
-contain repeated solution sets and solution sets contained in others. -/
-theorem maximal_isIrreducible_subset_iUnion_V_iff {κ : Type*} [Finite κ]
-    {T : κ → Set (GX G X)} (hT : ∀ i, @IsIrreducible (X → H) (zariskiTopology ι X) (V ι (T i)))
-    {Z : Set (X → H)} :
-    Maximal (fun Z ↦ @IsIrreducible (X → H) (zariskiTopology ι X) Z ∧ Z ⊆ ⋃ i, V ι (T i)) Z ↔
-      ∃ i, Z = V ι (T i) ∧ ∀ j, V ι (T i) ⊆ V ι (T j) → V ι (T j) ⊆ V ι (T i) := by
-  let := zariskiTopology ι X
-  exact maximal_isIrreducible_subset_iUnion_iff (fun i ↦ isClosed_V (T i)) hT
-
-/-- Two irredundant finite families of systems with irreducible solution sets and the same union
-of solution sets have the same solution sets, up to a bijection of the indices. -/
-theorem exists_equiv_V_eq_of_iUnion_V_eq {κ κ' : Type*} [Finite κ] [Finite κ']
-    {T : κ → Set (GX G X)} {T' : κ' → Set (GX G X)}
-    (hT : ∀ i, @IsIrreducible (X → H) (zariskiTopology ι X) (V ι (T i)))
-    (hTinj : ∀ i j, V ι (T i) ⊆ V ι (T j) → i = j)
-    (hT' : ∀ k, @IsIrreducible (X → H) (zariskiTopology ι X) (V ι (T' k)))
-    (hT'inj : ∀ k l, V ι (T' k) ⊆ V ι (T' l) → k = l)
-    (h : ⋃ i, V ι (T i) = ⋃ k, V ι (T' k)) :
-    ∃ e : κ ≃ κ', ∀ i, V ι (T i) = V ι (T' (e i)) := by
-  let := zariskiTopology ι X
-  exact exists_equiv_eq_of_iUnion_eq (fun i ↦ isClosed_V (T i)) hT hTinj
-    (fun k ↦ isClosed_V (T' k)) hT' hT'inj h
 
 /-- The maximal irreducible subsets of a finite set of tuples of coefficients are its points.
 The enumeration of the points may be empty or repeat points. -/
