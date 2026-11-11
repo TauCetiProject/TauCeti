@@ -61,19 +61,19 @@ private lemma valid_or_stablePDFReal_eq_zero (α β : ℝ) (s : ℝ≥0) (m : �
 /-- The convolution of an integrable function with a stable density exists. -/
 lemma convolutionExists_stablePDFReal {f : ℝ → ℝ} (hf : Integrable f) (α β : ℝ) (s : ℝ≥0)
     (m : ℝ) : ConvolutionExists f (stablePDFReal α β s m) (mul ℝ ℝ) volume := by
-  rcases valid_or_stablePDFReal_eq_zero α β s m with ⟨hα, hβ, hs⟩ | h
+  rcases valid_or_stablePDFReal_eq_zero α β s m with ⟨hα, -, -⟩ | h
   · exact convolutionExists_of_integrable_of_ae_norm_le (mul ℝ ℝ) hf
       (continuous_stablePDFReal α β s m).aestronglyMeasurable
-      (.of_forall (norm_stablePDFReal_le hα hβ hs m))
+      (.of_forall (norm_stablePDFReal_le hα s m))
   · intro x
     simp [h, ConvolutionExistsAt]
 
 /-- The convolution of an integrable function with a stable density is continuous. -/
 lemma continuous_convolution_stablePDFReal {f : ℝ → ℝ} (hf : Integrable f) (α β : ℝ) (s : ℝ≥0)
     (m : ℝ) : Continuous (f ⋆[mul ℝ ℝ] stablePDFReal α β s m) := by
-  rcases valid_or_stablePDFReal_eq_zero α β s m with ⟨hα, hβ, hs⟩ | h
+  rcases valid_or_stablePDFReal_eq_zero α β s m with ⟨hα, -, -⟩ | h
   · exact BddAbove.continuous_convolution_right_of_integrable (mul ℝ ℝ)
-      ⟨Real.Gamma α⁻¹ / (Real.pi * α * s), forall_mem_range.2 (norm_stablePDFReal_le hα hβ hs m)⟩
+      ⟨Real.Gamma α⁻¹ / (Real.pi * α * s), forall_mem_range.2 (norm_stablePDFReal_le hα s m)⟩
       hf (continuous_stablePDFReal α β s m)
   · rw [h, convolution_zero]
     exact continuous_const
