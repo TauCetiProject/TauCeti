@@ -134,6 +134,13 @@ theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n 
     (t.rationalBase ht).support = (t.simplyConnectedBase ht).support :=
   support_rootPairingBaseChangeBase ..
 
+/-- Rational base change preserves the positive roots of the pinned integral datum. -/
+theorem mem_posRoots_rationalBase_iff (i : Fin t.numRoots) :
+    i ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) ↔
+      i ∈ posRoots (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) := by
+  rw [mem_posRoots, mem_posRoots, rationalBase]
+  exact isPos_rootPairingBaseChangeBase_iff ..
+
 instance instIsCrystallographicRationalRootSystem : (t.rationalRootSystem ht).IsCrystallographic :=
   isCrystallographic_rootPairingBaseChange ..
 

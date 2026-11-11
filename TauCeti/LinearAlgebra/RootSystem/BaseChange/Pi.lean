@@ -268,6 +268,24 @@ def supportEquivRootPairingBaseChangeBase :
         (supportEquivRootPairingBaseChangeBase S P hP b j) :=
   pairingIn_rootPairingBaseChange S P hP i j
 
+/-- Entrywise base change preserves the integral height of each root. -/
+@[simp] theorem height_rootPairingBaseChangeBase [CharZero R] [CharZero S] (i : ι) :
+    (rootPairingBaseChangeBase S P hP b).height i = b.height i := by
+  obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int i
+  have hf' : (rootPairingBaseChange S P hP).root i =
+      ∑ j ∈ (rootPairingBaseChangeBase S P hP b).support,
+        f j • (rootPairingBaseChange S P hP).root j := by
+    simpa only [root_rootPairingBaseChange, support_rootPairingBaseChangeBase,
+      map_sum, map_zsmul] using congrArg (Pi.algebraMap κ R S) hf
+  rw [RootPairing.Base.height_eq_sum hf', support_rootPairingBaseChangeBase,
+    b.height_eq_sum hf]
+
+/-- A root is positive after entrywise base change exactly when it was positive before. -/
+theorem isPos_rootPairingBaseChangeBase_iff [CharZero R] [CharZero S] (i : ι) :
+    (rootPairingBaseChangeBase S P hP b).IsPos i ↔ b.IsPos i := by
+  rw [RootPairing.Base.isPos_iff, RootPairing.Base.isPos_iff,
+    height_rootPairingBaseChangeBase]
+
 end Base
 
 /-! ## Root strings -/
