@@ -94,6 +94,12 @@ theorem binaryDeterminant23_primPart :
     gramMatrix_binaryDeterminant23Basis]
   norm_num [Matrix.det_fin_two]
 
+/-- The lattice is even. -/
+theorem binaryDeterminant23_isEven : binaryDeterminant23.IsEven := by
+  rw [isEven_iff_basis _ binaryDeterminant23Basis]
+  intro i
+  fin_cases i <;> simp [integralNorm_apply, ← gramMatrix_apply, Int.even_iff]
+
 /-- The lattice is nondegenerate. -/
 instance : binaryDeterminant23.IsNondegenerate :=
   ⟨binaryDeterminant23.determinant_ne_zero_iff.mp (by simp)⟩
