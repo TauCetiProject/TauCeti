@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Pseudoreflection
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Hyperplane.Jacobian
-public import TauCeti.RepresentationTheory.SymmetricAlgebra.ProductOfDegrees
 
 /-!
 # Polynomial invariants of a Weyl group: exponents and the Jacobian
@@ -103,7 +102,7 @@ private theorem natCard_inertia_span_coroot' (i : ι) :
       P.exists_mem_posRoots_eq_ofIdx_of_finrank_quotient_fixedSubmodule_eq_one b
         (by rw [hfix]; exact ρ.finrank_quotient_of_mem_reflectingHyperplanes hH)
     rw [fixedSubmodule_weylGroupRootRep_ofIdx] at hfix
-    exact weylGroup.ext fun x ↦ by simp [P.reflection_eq_of_ker_coroot'_le hfix.le]
+    exact weylGroup.ofIdx_eq_of_ker_coroot'_le P hfix.le
   rw [← SetLike.coe_sort_coe, hset, Nat.card_coe_set_eq,
     Set.ncard_pair (weylGroup.ofIdx_ne_one P i).symm]
 
