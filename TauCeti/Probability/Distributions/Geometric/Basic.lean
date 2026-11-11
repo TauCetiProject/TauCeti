@@ -138,7 +138,7 @@ theorem integrable_cast_geometricMeasure :
       rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
       have hp0 := unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)
       let := isProbabilityMeasure_negativeBinomialMeasure zero_le_one hp0 p.2.2
-      exact (memLp_id_map_cast_negativeBinomialMeasure zero_le_one hp0 p.2.2 1).integrable le_rfl
+      exact (memLp_id_map_cast_negativeBinomialMeasure 1).integrable le_rfl
     exact (integrable_map_measure aestronglyMeasurable_id
       (Measurable.of_discrete (f := (Nat.cast : ℕ → ℝ))).aemeasurable).mp hgeom
 

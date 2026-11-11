@@ -106,7 +106,7 @@ theorem variance_id_map_cast_negativeBinomialMeasure_cond_compl_zero (hr : 0 ≤
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
   rw [Measure.variance_id_map_natCast_cond_compl_zero _
       (integrable_pow_of_mem_interior_integrableExpSet
-        (zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp) 2),
+        zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure 2),
     integral_sq_map_cast_negativeBinomialMeasure hr.le hp hp1,
     integral_id_map_cast_negativeBinomialMeasure hr.le hp hp1,
     negativeBinomialMeasure_real_singleton_zero hr.le hp hp1]

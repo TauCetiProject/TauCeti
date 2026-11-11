@@ -85,7 +85,7 @@ theorem integral_id_map_cast_negativeBinomialMeasure_atomMixture_zero (hr : 0 ‚â
       (1 - (w : ‚Ñù)) * (r * (1 - p) / p) := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr hp hp1
   rw [Measure.map_natCast_atomMixture_zero, Measure.integral_id_atomMixture _ _ _
-      ((memLp_id_map_cast_negativeBinomialMeasure hr hp hp1 1).integrable le_rfl),
+      ((memLp_id_map_cast_negativeBinomialMeasure 1).integrable le_rfl),
     integral_id_map_cast_negativeBinomialMeasure hr hp hp1]
   ring
 
@@ -97,7 +97,7 @@ theorem variance_id_map_cast_negativeBinomialMeasure_atomMixture_zero (hr : 0 ‚â
       (1 - (w : ‚Ñù)) * r * (1 - p) * (1 + (w : ‚Ñù) * r * (1 - p)) / p ^ 2 := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr hp hp1
   rw [Measure.map_natCast_atomMixture_zero, Measure.variance_id_atomMixture _ _ _
-      (memLp_id_map_cast_negativeBinomialMeasure hr hp hp1 2),
+      (memLp_id_map_cast_negativeBinomialMeasure 2),
     variance_id_map_cast_negativeBinomialMeasure hr hp hp1,
     integral_id_map_cast_negativeBinomialMeasure hr hp hp1]
   field_simp
