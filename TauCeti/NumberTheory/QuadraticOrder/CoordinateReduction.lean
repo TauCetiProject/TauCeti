@@ -29,7 +29,7 @@ variable (a b : ℤ) (m : ℕ)
 
 /-- Reduction preserves the number of elements of a rectangle on whose coordinate sets
 integer casting is injective. This remains valid at modulus zero. -/
-theorem ncard_image_reduction_setOf_re_mem_im_mem {U V : Set ℤ}
+theorem ncard_image_mapRingHom_setOf_re_mem_im_mem {U V : Set ℤ}
     (hU : Set.InjOn (Int.cast : ℤ → ZMod m) U)
     (hV : Set.InjOn (Int.cast : ℤ → ZMod m) V) :
     ((mapRingHom (Int.castRingHom (ZMod m)) a b) ''
@@ -49,13 +49,13 @@ theorem ncard_setOf_re_mem_im_mem_le_sq [NeZero m] {U V : Set ℤ}
   have h := Set.ncard_le_card
     ((mapRingHom (Int.castRingHom (ZMod m)) a b) ''
       {z : QuadraticAlgebra ℤ a b | z.re ∈ U ∧ z.im ∈ V})
-  rw [ncard_image_reduction_setOf_re_mem_im_mem a b m hU hV] at h
+  rw [ncard_image_mapRingHom_setOf_re_mem_im_mem a b m hU hV] at h
   simpa [Nat.card_congr (equivProd ((a : ZMod m)) ((b : ZMod m))),
     Nat.card_prod, Nat.card_zmod, pow_two, ncard_setOf_re_mem_im_mem] using h
 
 /-- Two half-open coordinate intervals of length at most the positive modulus reduce
 injectively, with arbitrary integer starting points. -/
-theorem injOn_reduction_setOf_re_mem_Ico_im_mem_Ico [NeZero m]
+theorem injOn_mapRingHom_setOf_re_mem_Ico_im_mem_Ico [NeZero m]
     (s t u v : ℤ) (hst : t - s ≤ m) (huv : v - u ≤ m) :
     Set.InjOn (mapRingHom (Int.castRingHom (ZMod m)) a b)
       {z : QuadraticAlgebra ℤ a b | z.re ∈ Set.Ico s t ∧ z.im ∈ Set.Ico u v} :=
@@ -65,7 +65,7 @@ theorem injOn_reduction_setOf_re_mem_Ico_im_mem_Ico [NeZero m]
 
 /-- The endpoint-removed closed intervals `[s, s + m - 1]` and `[t, t + m - 1]`
 give an injectively reduced coordinate rectangle. -/
-theorem injOn_reduction_setOf_re_mem_Icc_im_mem_Icc [NeZero m] (s t : ℤ) :
+theorem injOn_mapRingHom_setOf_re_mem_Icc_im_mem_Icc [NeZero m] (s t : ℤ) :
     Set.InjOn (mapRingHom (Int.castRingHom (ZMod m)) a b)
       {z : QuadraticAlgebra ℤ a b |
         z.re ∈ Set.Icc s (s + m - 1) ∧ z.im ∈ Set.Icc t (t + m - 1)} :=
