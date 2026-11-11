@@ -61,38 +61,22 @@ open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
-private theorem norm_compress_operatorMultiplication_le {r : ℕ} (A : BlockSymbol r) :
-    ‖(blockHardyEquiv r).toLinearIsometry.toContinuousLinearMap ∘L
-        (blockHardySubmodule r).orthogonalProjectionOnto ∘L
-        Lp.operatorMultiplication 2 A ∘L
-        (blockHardySubmodule r).subtypeL ∘L
-        (blockHardyEquiv r).symm.toLinearIsometry.toContinuousLinearMap‖ ≤ ‖A‖ := by
-  apply ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg A)
-  intro f
-  simp only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
-    LinearIsometryEquiv.coe_toLinearIsometry, LinearIsometryEquiv.norm_map]
-  exact ((blockHardySubmodule r).norm_orthogonalProjectionOnto_apply_le _).trans <|
-    (Lp.norm_operatorMultiplication_apply_le (p := 2) A _).trans <| by
-      rw [Submodule.subtypeL_apply, Submodule.norm_coe, LinearIsometryEquiv.norm_map]
-
 /-- The block Toeplitz symbol map, sending an essentially bounded `(r × r)` matrix symbol
 `A : BlockSymbol r` on the unit circle to the compression of `Lp.operatorMultiplication 2 A` onto
 `BlockHardySpace r`. -/
 def blockToeplitz (r : ℕ) :
     BlockSymbol r →L[ℂ] BlockHardySpace r →L[ℂ] BlockHardySpace r :=
-  LinearMap.mkContinuous
-    { toFun A := (blockHardyEquiv r).toLinearIsometry.toContinuousLinearMap ∘L
-        (blockHardySubmodule r).orthogonalProjectionOnto ∘L
-        Lp.operatorMultiplication 2 A ∘L
-        (blockHardySubmodule r).subtypeL ∘L
-        (blockHardyEquiv r).symm.toLinearIsometry.toContinuousLinearMap
-      map_add' A B := by
-        simp only [Lp.operatorMultiplication_add, ContinuousLinearMap.add_comp,
-          ContinuousLinearMap.comp_add]
-      map_smul' c A := by
-        simp only [Lp.operatorMultiplication_smul, ContinuousLinearMap.smul_comp,
-          ContinuousLinearMap.comp_smul, RingHom.id_apply] }
-    1 fun A ↦ (one_mul ‖A‖).symm ▸ norm_compress_operatorMultiplication_le A
+  ContinuousLinearMap.compL ℂ (BlockHardySpace r)
+      (Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1))) (BlockHardySpace r)
+      ((blockHardyEquiv r).toLinearIsometry.toContinuousLinearMap ∘L
+        (blockHardySubmodule r).orthogonalProjectionOnto) ∘L
+    (ContinuousLinearMap.compL ℂ (BlockHardySpace r)
+        (Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1)))
+        (Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1)))).flip
+      ((blockHardySubmodule r).subtypeL ∘L
+        (blockHardyEquiv r).symm.toLinearIsometry.toContinuousLinearMap) ∘L
+    (ContinuousLinearMap.id ℂ (EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r))).holderL
+      (AddCircle.haarAddCircle (T := 1)) ∞ 2 2
 
 /-- Definition of `blockToeplitz r A` as compression of `Lp.operatorMultiplication 2 A`. -/
 theorem blockToeplitz_apply (r : ℕ) (A : BlockSymbol r) :
@@ -101,8 +85,9 @@ theorem blockToeplitz_apply (r : ℕ) (A : BlockSymbol r) :
         (blockHardySubmodule r).orthogonalProjectionOnto ∘L
         Lp.operatorMultiplication 2 A ∘L
         (blockHardySubmodule r).subtypeL ∘L
-        (blockHardyEquiv r).symm.toLinearIsometry.toContinuousLinearMap :=
-  (rfl)
+        (blockHardyEquiv r).symm.toLinearIsometry.toContinuousLinearMap := by
+  simp only [blockToeplitz, ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply,
+    ContinuousLinearMap.flip_apply, Lp.holderL_id_apply, ContinuousLinearMap.comp_assoc]
 
 /-- Under `(blockHardyEquiv r).symm`, the ambient `L²` value of `blockToeplitz r A f` is the
 orthogonal projection onto `blockHardySubmodule r` of `Lp.operatorMultiplication 2 A` applied to
@@ -152,19 +137,6 @@ theorem piLpEquiv_operatorMultiplication_symm_single {r : ℕ} (A : BlockSymbol 
   rw [h₁, h₂, h₃, hsingle, map_smul, PiLp.smul_apply, h₄, Pi.smul_apply', h₅, smul_eq_mul,
     smul_eq_mul, mul_comm]
 
-/-- A block Hardy vector concentrated in coordinate `j` embeds into ambient vector `L²` as a single
-coordinate under `Lp.piLpEquiv`. -/
-theorem coe_blockHardyEquiv_symm_single {r : ℕ} (j : Fin r) (h : HardySpace) :
-    ((blockHardyEquiv r).symm (PiLp.single 2 j h) :
-      Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1))) =
-      (Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1))).symm
-        (PiLp.single 2 j (h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))) := by
-  apply (Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1))).injective
-  rw [LinearIsometryEquiv.apply_symm_apply]
-  ext k : 1
-  rw [piLpEquiv_coe_blockHardyEquiv_symm]
-  by_cases hkj : k = j <;> simp [hkj]
-
 /-- The `(i, j)` block entry of `blockToeplitz r A` is the scalar Toeplitz operator of the `(i, j)`
 entry of `A`. -/
 @[simp]
@@ -185,16 +157,6 @@ theorem blockToeplitz_apply_apply {r : ℕ} (A : BlockSymbol r) (f : BlockHardyS
     blockToeplitz r A f i = ∑ j : Fin r, toeplitz (blockSymbolEntry r i j A) (f j) := by
   rw [ContinuousLinearMap.apply_eq_sum_piLpEntry]
   simp only [piLpEntry_blockToeplitz]
-
-/-- In `blockHardyBasis r`, matrix elements of any operator `T` on `BlockHardySpace r` are the
-Hardy-basis matrix elements of its `piLpEntry` blocks. -/
-theorem inner_blockHardyBasis_apply {r : ℕ} (T : BlockHardySpace r →L[ℂ] BlockHardySpace r)
-    (m n : ℕ) (i j : Fin r) :
-    ⟪blockHardyBasis r (m, i), T (blockHardyBasis r (n, j))⟫_ℂ =
-      ⟪hardyBasis m, T.piLpEntry i j (hardyBasis n)⟫_ℂ := by
-  rw [blockHardyBasis_apply, blockHardyBasis_apply, PiLp.inner_apply,
-    Finset.sum_eq_single i (fun k _ hki ↦ by simp [hki]) (by simp)]
-  simp
 
 /-- **Block matrix Fourier-entry formula (operator form).** In `blockHardyBasis r`, the matrix
 element between `(m, i)` and `(n, j)` of `blockToeplitz r A` is the `(i, j)` entry of the
@@ -223,41 +185,6 @@ theorem adjoint_blockToeplitz {r : ℕ} (A : BlockSymbol r) :
   rw [inner_blockToeplitz_apply, ← inner_conj_symm, inner_blockToeplitz_apply, inner_conj_symm,
     ← ContinuousLinearMap.adjoint_inner_left, Lp.adjoint_operatorMultiplication]
 
-/-- The `(i, j)` scalar entry of a constant matrix symbol is the corresponding constant scalar
-symbol. -/
-@[simp]
-theorem blockSymbolEntry_const {r : ℕ}
-    (M : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) (i j : Fin r) :
-    blockSymbolEntry r i j (Lp.const ∞ (AddCircle.haarAddCircle (T := 1)) M) =
-      Lp.const ∞ (AddCircle.haarAddCircle (T := 1)) (M (EuclideanSpace.single j 1) i) := by
-  apply Lp.ext
-  filter_upwards [blockSymbolEntry_ae i j (Lp.const ∞ (AddCircle.haarAddCircle (T := 1)) M),
-    Lp.coeFn_const ∞ (AddCircle.haarAddCircle (T := 1)) M,
-    Lp.coeFn_const ∞ (AddCircle.haarAddCircle (T := 1))
-      (M (EuclideanSpace.single j 1) i)] with x h₁ h₂ h₃
-  rw [h₁, h₂, h₃]; rfl
-
-/-- The `(i, j)` scalar entry of a scalar symbol tensor the identity matrix is `a` on the diagonal
-and `0` off the diagonal. -/
-theorem blockSymbolEntry_smul_const_one {r : ℕ}
-    (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) (i j : Fin r) :
-    blockSymbolEntry r i j
-      (a • Lp.const ∞ (AddCircle.haarAddCircle (T := 1))
-        (1 : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) : BlockSymbol r) =
-      if i = j then a else 0 := by
-  let oneSym : BlockSymbol r := Lp.const ∞ (AddCircle.haarAddCircle (T := 1)) 1
-  have hone := Lp.coeFn_const ∞ (AddCircle.haarAddCircle (T := 1))
-    (1 : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r))
-  by_cases hij : i = j
-  · subst hij; rw [ite_eq_left rfl]; apply Lp.ext
-    filter_upwards [blockSymbolEntry_ae i i (a • oneSym), Lp.coeFn_lpSMul (r := ∞) a oneSym,
-      hone] with x h₁ h₂ h₃
-    rw [h₁, h₂, Pi.smul_apply', h₃]; simp [EuclideanSpace.single]
-  · rw [ite_eq_right hij]; apply Lp.ext
-    filter_upwards [blockSymbolEntry_ae i j (a • oneSym), Lp.coeFn_lpSMul (r := ∞) a oneSym,
-      hone, Lp.coeFn_zero ℂ ∞ (AddCircle.haarAddCircle (T := 1))] with x h₁ h₂ h₃ h₀
-    rw [h₁, h₂, Pi.smul_apply', h₃, h₀]; simp [EuclideanSpace.single, hij]
-
 /-- A scalar symbol tensor the identity matrix acts on `BlockHardySpace r` by diagonal amplification
 of its scalar Toeplitz operator. -/
 theorem blockToeplitz_smul_const_one {r : ℕ}
@@ -273,6 +200,7 @@ theorem blockToeplitz_smul_const_one {r : ℕ}
   split_ifs <;> simp
 
 /-- The constant identity symbol acts as the identity operator on `BlockHardySpace r`. -/
+@[simp]
 theorem blockToeplitz_const_one (r : ℕ) :
     blockToeplitz r
       (Lp.const ∞ (AddCircle.haarAddCircle (T := 1))
@@ -296,8 +224,14 @@ theorem blockToeplitz_fourierLp_one_smul_const_one_blockHardyBasis {r : ℕ} (n 
 
 /-- The operator norm of `blockToeplitz r A` is at most the `L∞` operator norm of `A`. -/
 theorem norm_blockToeplitz_le {r : ℕ} (A : BlockSymbol r) :
-    ‖blockToeplitz r A‖ ≤ ‖A‖ :=
-  norm_compress_operatorMultiplication_le A
+    ‖blockToeplitz r A‖ ≤ ‖A‖ := by
+  rw [blockToeplitz_apply]
+  grw [ContinuousLinearMap.opNorm_comp_le, ContinuousLinearMap.opNorm_comp_le,
+    ContinuousLinearMap.opNorm_comp_le, ContinuousLinearMap.opNorm_comp_le,
+    LinearIsometry.norm_toContinuousLinearMap_le, Submodule.orthogonalProjectionOnto_norm_le,
+    Lp.norm_operatorMultiplication_le, Submodule.norm_subtypeL_le,
+    LinearIsometry.norm_toContinuousLinearMap_le]
+  simp
 
 private theorem norm_inner_operatorMultiplication_le_of_mem_span {r : ℕ} (A : BlockSymbol r)
     {f g : Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1))}
@@ -399,11 +333,20 @@ theorem exists_blockToeplitz_eq_iff_inner_blockHardyBasis_succ {r : ℕ}
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     have hij : blockSymbolEntry r i j
         (∑ k : Fin r, ∑ l : Fin r, blockSymbolSingle r k l (a k l)) = a i j := by
-      simp only [map_sum, blockSymbolEntry_blockSymbolSingle]
-      rw [Finset.sum_eq_single i
-        (fun k _ hki ↦ Finset.sum_eq_zero fun l _ ↦ by simp [hki.symm]) (by simp),
-        Finset.sum_eq_single j (fun l _ hlj ↦ by simp [hlj.symm]) (by simp)]
-      simp
+      have hmap (f : Fin r → BlockSymbol r) :
+          blockSymbolEntry r i j (∑ x, f x) = ∑ x, blockSymbolEntry r i j (f x) :=
+        map_sum (blockSymbolEntry r i j).toLinearMap.toAddMonoidHom f Finset.univ
+      rw [hmap, Finset.sum_eq_single i
+        (fun k _ hki ↦ by
+          rw [hmap]
+          exact Finset.sum_eq_zero fun l _ ↦ by
+            rw [blockSymbolEntry_blockSymbolSingle, ite_eq_right (fun h ↦ hki h.1.symm)])
+        (fun hi ↦ absurd (Finset.mem_univ _) hi),
+        hmap, Finset.sum_eq_single j
+          (fun l _ hlj ↦ by
+            rw [blockSymbolEntry_blockSymbolSingle, ite_eq_right (fun h ↦ hlj h.2.symm)])
+          (fun hj ↦ absurd (Finset.mem_univ _) hj),
+        blockSymbolEntry_blockSymbolSingle, ite_eq_left ⟨rfl, rfl⟩]
     rw [hij, ha i j]
 
 /-- **Block Brown–Halmos theorem.** A bounded operator `T` on `BlockHardySpace r` equals

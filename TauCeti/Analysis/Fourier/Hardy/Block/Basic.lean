@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import TauCeti.Analysis.Fourier.Hardy.Basic
 public import TauCeti.Analysis.InnerProductSpace.Amplification
 public import TauCeti.Analysis.Normed.Lp.Interchange
@@ -28,8 +29,9 @@ space `lp (fun _ : ℕ ↦ EuclideanSpace ℂ (Fin r)) 2`.
 This file also introduces the operator-normed matrix symbol space `TauCeti.BlockSymbol r`
 (`Lp (EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) ∞ haarAddCircle`) together with its
 continuous scalar matrix-entry extraction (`TauCeti.blockSymbolEntry`) and insertion
-(`TauCeti.blockSymbolSingle`), relating scalar entrywise Fourier coefficients and conjugation to the
-operator-valued Fourier coefficients and Hilbert-space adjoint.
+(`TauCeti.blockSymbolSingle`), relating scalar entrywise Fourier coefficients, constant and
+continuous symbols, and conjugation to the operator-valued Fourier coefficients and Hilbert-space
+adjoint.
 
 ## References
 
@@ -105,7 +107,7 @@ theorem fourierCoeff_euclideanSpace_apply {r : ℕ}
     ((Lp.memLp f).integrable one_le_two).fourier_smul (-n)
   rw [fourierCoeff, eval_integral_piLp (fun j ↦ hint.eval_piLp j) i,
     fourierCoeff_congr_ae (Lp.coeFn_piLpEquiv_apply (𝕜 := ℂ) f i), fourierCoeff]
-  rfl
+  simp only [PiLp.smul_apply]
 
 private def coordIncl (r : ℕ) (i : Fin r) :
     Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)) →L[ℂ]
@@ -257,6 +259,19 @@ theorem piLpEquiv_coe_blockHardyEquiv_symm {r : ℕ} (g : BlockHardySpace r) (i 
       (g i : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) := by
   rw [← coe_blockHardyEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
 
+/-- A block Hardy vector concentrated in coordinate `j` embeds into ambient vector `L²` as a single
+coordinate under `Lp.piLpEquiv`. -/
+theorem coe_blockHardyEquiv_symm_single {r : ℕ} (j : Fin r) (h : HardySpace) :
+    ((blockHardyEquiv r).symm (PiLp.single 2 j h) :
+      Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1))) =
+      (Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1))).symm
+        (PiLp.single 2 j (h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))) := by
+  apply (Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1))).injective
+  rw [LinearIsometryEquiv.apply_symm_apply]
+  ext k : 1
+  rw [piLpEquiv_coe_blockHardyEquiv_symm]
+  by_cases hkj : k = j <;> simp [hkj]
+
 /-- Orthogonal projection onto `blockHardySubmodule r` acts coordinatewise as scalar Hardy
 projection. -/
 @[simp]
@@ -399,6 +414,16 @@ theorem blockHardyBasis_apply (r : ℕ) (p : ℕ × Fin r) :
     blockHardyBasis r p = PiLp.single 2 p.2 (hardyBasis p.1) :=
   congrFun (HilbertBasis.coe_mkOfOrthogonalEqBot _ _) p
 
+/-- In `blockHardyBasis r`, matrix elements of any operator `T` on `BlockHardySpace r` are the
+Hardy-basis matrix elements of its `piLpEntry` blocks. -/
+theorem inner_blockHardyBasis_apply {r : ℕ} (T : BlockHardySpace r →L[ℂ] BlockHardySpace r)
+    (m n : ℕ) (i j : Fin r) :
+    ⟪blockHardyBasis r (m, i), T (blockHardyBasis r (n, j))⟫_ℂ =
+      ⟪hardyBasis m, T.piLpEntry i j (hardyBasis n)⟫_ℂ := by
+  rw [blockHardyBasis_apply, blockHardyBasis_apply, PiLp.inner_apply,
+    Finset.sum_eq_single i (fun k _ hki ↦ by simp [hki]) (by simp)]
+  simp
+
 /-! ### Operator-normed matrix symbols on the unit circle -/
 
 /-- Essentially bounded `(r × r)`-block symbols on the unit circle, modeled as
@@ -408,73 +433,43 @@ abbrev BlockSymbol (r : ℕ) :=
   Lp (EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) ∞
     (AddCircle.haarAddCircle (T := 1))
 
-/-- Continuous linear functional extracting the `(i, j)` scalar matrix entry of an endomorphism of
-`EuclideanSpace ℂ (Fin r)`. -/
-def euclideanMatrixEntryCLM (r : ℕ) (i j : Fin r) :
-    (EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) →L[ℂ] ℂ :=
-  EuclideanSpace.proj i ∘L ContinuousLinearMap.apply ℂ (EuclideanSpace ℂ (Fin r))
-    (EuclideanSpace.single j 1)
-
-/-- Evaluation of `euclideanMatrixEntryCLM r i j` on an endomorphism `M`. -/
-@[simp]
-theorem euclideanMatrixEntryCLM_apply (r : ℕ) (i j : Fin r)
-    (M : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) :
-    euclideanMatrixEntryCLM r i j M = M (EuclideanSpace.single j 1) i := (rfl)
-
-/-- The standard `(i, j)` matrix unit `v ↦ v j • e_i` on `EuclideanSpace ℂ (Fin r)`. -/
-def euclideanMatrixUnit (r : ℕ) (i j : Fin r) :
-    EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r) :=
-  (ContinuousLinearMap.toSpanSingleton ℂ (EuclideanSpace.single i (1 : ℂ))).comp
-    (EuclideanSpace.proj j)
-
-/-- Coordinatewise evaluation of `euclideanMatrixUnit r i j`. -/
-@[simp]
-theorem euclideanMatrixUnit_apply (r : ℕ) (i j : Fin r) (v : EuclideanSpace ℂ (Fin r)) (k : Fin r) :
-    euclideanMatrixUnit r i j v k = if k = i then v j else 0 := by
-  simp [euclideanMatrixUnit, EuclideanSpace.single]
-
-private theorem eq_sum_single_euclideanSpace {r : ℕ} (v : EuclideanSpace ℂ (Fin r)) :
-    v = ∑ j : Fin r, v j • EuclideanSpace.single j (1 : ℂ) := by
-  ext m; simp [EuclideanSpace.single, Pi.single_apply]
-
-/-- Every continuous linear endomorphism of `EuclideanSpace ℂ (Fin r)` expands in the standard
-matrix units weighted by its scalar matrix entries. -/
-theorem eq_sum_euclideanMatrixUnit {r : ℕ}
-    (M : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) :
-    M = ∑ i : Fin r, ∑ j : Fin r,
-      euclideanMatrixEntryCLM r i j M • euclideanMatrixUnit r i j := by
-  ext v k
-  conv_lhs => rw [eq_sum_single_euclideanSpace v]
-  simp only [map_sum, map_smul, sum_apply, smul_apply, WithLp.ofLp_sum, Finset.sum_apply,
-    WithLp.ofLp_smul, Pi.smul_apply, euclideanMatrixUnit_apply, euclideanMatrixEntryCLM_apply,
-    smul_eq_mul]
-  rw [eq_comm, Finset.sum_eq_single k
-    (fun i _ hik ↦ Finset.sum_eq_zero fun _ _ ↦ by simp [hik.symm]) (by simp)]
-  exact Finset.sum_congr rfl fun _ _ ↦ by simp [mul_comm]
-
 /-- Extract the `(i, j)` scalar `L∞` entry of a block symbol `A : BlockSymbol r`. -/
 def blockSymbolEntry (r : ℕ) (i j : Fin r) :
     BlockSymbol r →L[ℂ] Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)) :=
-  (euclideanMatrixEntryCLM r i j).compLpL ∞ (AddCircle.haarAddCircle (T := 1))
+  (EuclideanSpace.proj i ∘L
+    ContinuousLinearMap.apply ℂ (EuclideanSpace ℂ (Fin r)) (EuclideanSpace.single j 1)).compLpL ∞
+    (AddCircle.haarAddCircle (T := 1))
 
-/-- Insert a scalar `L∞` symbol into the `(i, j)` entry of a block symbol. -/
+/-- Insert a scalar `L∞` symbol into the `(i, j)` entry of a block symbol via
+`Matrix.toEuclideanCLM (Matrix.single i j 1)`. -/
 def blockSymbolSingle (r : ℕ) (i j : Fin r) :
     Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)) →L[ℂ] BlockSymbol r :=
-  (ContinuousLinearMap.toSpanSingleton ℂ (euclideanMatrixUnit r i j)).compLpL ∞
+  (ContinuousLinearMap.toSpanSingleton ℂ
+    (Matrix.toEuclideanCLM (n := Fin r) (𝕜 := ℂ) (Matrix.single i j 1))).compLpL ∞
     (AddCircle.haarAddCircle (T := 1))
 
 /-- Almost-everywhere evaluation of the `(i, j)` scalar entry of a block symbol. -/
 theorem blockSymbolEntry_ae {r : ℕ} (i j : Fin r) (A : BlockSymbol r) :
     blockSymbolEntry r i j A =ᵐ[AddCircle.haarAddCircle (T := 1)]
-      fun x ↦ A x (EuclideanSpace.single j 1) i :=
-  (euclideanMatrixEntryCLM r i j).coeFn_compLpL A
+      fun x ↦ A x (EuclideanSpace.single j 1) i := by
+  rw [blockSymbolEntry]
+  filter_upwards [(EuclideanSpace.proj i ∘L
+    ContinuousLinearMap.apply ℂ (EuclideanSpace ℂ (Fin r))
+      (EuclideanSpace.single j 1)).coeFn_compLpL A] with x hx
+  simp only [hx, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
+    PiLp.proj_apply]
 
 /-- Almost-everywhere evaluation of a single-entry block symbol. -/
 theorem blockSymbolSingle_ae {r : ℕ} (i j : Fin r)
     (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     blockSymbolSingle r i j a =ᵐ[AddCircle.haarAddCircle (T := 1)]
-      fun x ↦ a x • euclideanMatrixUnit r i j :=
-  (ContinuousLinearMap.toSpanSingleton ℂ (euclideanMatrixUnit r i j)).coeFn_compLpL a
+      fun x ↦ Matrix.toEuclideanCLM (n := Fin r) (𝕜 := ℂ) (Matrix.single i j (a x)) := by
+  rw [blockSymbolSingle]
+  filter_upwards [(ContinuousLinearMap.toSpanSingleton ℂ
+    (Matrix.toEuclideanCLM (n := Fin r) (𝕜 := ℂ) (Matrix.single i j 1))).coeFn_compLpL a]
+    with x hx
+  rw [hx, ContinuousLinearMap.toSpanSingleton_apply, ← map_smul, Matrix.smul_single, smul_eq_mul,
+    mul_one]
 
 /-- Extracting the `(i, j)` entry of `blockSymbolSingle r k l a` recovers `a` at `(k, l)` and `0`
 elsewhere. -/
@@ -489,15 +484,12 @@ theorem blockSymbolEntry_blockSymbolSingle {r : ℕ} (i j k l : Fin r)
       blockSymbolSingle_ae i j a] with x h₁ h₂
     simp [h₁, h₂, EuclideanSpace.single]
   · rw [ite_eq_right h]
+    have hkl : ¬(k = i ∧ l = j) := fun ⟨hki, hlj⟩ ↦ h ⟨hki.symm, hlj.symm⟩
     filter_upwards [blockSymbolEntry_ae i j (blockSymbolSingle r k l a),
       blockSymbolSingle_ae k l a,
       Lp.coeFn_zero ℂ ∞ (AddCircle.haarAddCircle (T := 1))] with x h₁ h₂ h₀
     rw [h₁, h₂, h₀]
-    by_cases hik : i = k
-    · subst hik
-      have hlj : l ≠ j := fun hlj ↦ h ⟨rfl, hlj.symm⟩
-      simp [EuclideanSpace.single, hlj]
-    · simp [EuclideanSpace.single, hik]
+    simp [EuclideanSpace.single, hkl]
 
 /-- Every block symbol is the finite sum of its scalar matrix entries along the matrix units. -/
 theorem eq_sum_blockSymbolSingle {r : ℕ} (A : BlockSymbol r) :
@@ -505,17 +497,75 @@ theorem eq_sum_blockSymbolSingle {r : ℕ} (A : BlockSymbol r) :
   have hsum_inner (i : Fin r) :
       (∑ j : Fin r, blockSymbolSingle r i j (blockSymbolEntry r i j A))
         =ᵐ[AddCircle.haarAddCircle (T := 1)]
-          fun x ↦ ∑ j : Fin r, euclideanMatrixEntryCLM r i j (A x) • euclideanMatrixUnit r i j := by
+          fun x ↦ ∑ j : Fin r,
+            Matrix.toEuclideanCLM (n := Fin r) (𝕜 := ℂ)
+              (Matrix.single i j (A x (EuclideanSpace.single j 1) i)) := by
     filter_upwards [Lp.coeFn_fun_finsetSum Finset.univ
       (fun j ↦ blockSymbolSingle r i j (blockSymbolEntry r i j A)),
       ae_all_iff.mpr fun j ↦ (blockSymbolSingle_ae i j (blockSymbolEntry r i j A)).and
         (blockSymbolEntry_ae i j A)] with x hsum hj
-    exact hsum.trans <| Finset.sum_congr rfl fun j _ ↦ by rw [(hj j).1, (hj j).2]; rfl
+    exact hsum.trans <| Finset.sum_congr rfl fun j _ ↦ by rw [(hj j).1, (hj j).2]
   filter_upwards [Lp.coeFn_fun_finsetSum Finset.univ
     (fun i ↦ ∑ j : Fin r, blockSymbolSingle r i j (blockSymbolEntry r i j A)),
     ae_all_iff.mpr hsum_inner] with x hsum hi
   rw [hsum, Finset.sum_congr rfl fun i _ ↦ hi i]
-  exact eq_sum_euclideanMatrixUnit (A x)
+  set X := (Matrix.toEuclideanCLM (n := Fin r) (𝕜 := ℂ)).symm (A x)
+  have hAX : A x = Matrix.toEuclideanCLM (n := Fin r) (𝕜 := ℂ) X :=
+    ((Matrix.toEuclideanCLM (n := Fin r) (𝕜 := ℂ)).apply_symm_apply (A x)).symm
+  have hX (i j : Fin r) : A x (EuclideanSpace.single j 1) i = X i j := by
+    simp [hAX, EuclideanSpace.single]
+  simp_rw [hX, ← map_sum, ← Matrix.matrix_eq_sum_single X, hAX]
+
+/-- The `(i, j)` scalar entry of a constant matrix symbol is the corresponding constant scalar
+symbol. -/
+@[simp]
+theorem blockSymbolEntry_const {r : ℕ}
+    (M : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) (i j : Fin r) :
+    blockSymbolEntry r i j (Lp.const ∞ (AddCircle.haarAddCircle (T := 1)) M) =
+      Lp.const ∞ (AddCircle.haarAddCircle (T := 1)) (M (EuclideanSpace.single j 1) i) := by
+  apply Lp.ext
+  filter_upwards [blockSymbolEntry_ae i j (Lp.const ∞ (AddCircle.haarAddCircle (T := 1)) M),
+    Lp.coeFn_const ∞ (AddCircle.haarAddCircle (T := 1)) M,
+    Lp.coeFn_const ∞ (AddCircle.haarAddCircle (T := 1))
+      (M (EuclideanSpace.single j 1) i)] with x h₁ h₂ h₃
+  simp only [h₁, h₂, h₃, Function.const_apply]
+
+/-- The `(i, j)` scalar entry of a scalar symbol tensor the identity matrix is `a` on the diagonal
+and `0` off the diagonal. -/
+theorem blockSymbolEntry_smul_const_one {r : ℕ}
+    (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) (i j : Fin r) :
+    blockSymbolEntry r i j
+      (a • Lp.const ∞ (AddCircle.haarAddCircle (T := 1))
+        (1 : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) : BlockSymbol r) =
+      if i = j then a else 0 := by
+  let oneSym : BlockSymbol r := Lp.const ∞ (AddCircle.haarAddCircle (T := 1)) 1
+  have hone := Lp.coeFn_const ∞ (AddCircle.haarAddCircle (T := 1))
+    (1 : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r))
+  by_cases hij : i = j
+  · subst hij; rw [ite_eq_left rfl]; apply Lp.ext
+    filter_upwards [blockSymbolEntry_ae i i (a • oneSym), Lp.coeFn_lpSMul (r := ∞) a oneSym,
+      hone] with x h₁ h₂ h₃
+    rw [h₁, h₂, Pi.smul_apply', h₃]; simp [EuclideanSpace.single]
+  · rw [ite_eq_right hij]; apply Lp.ext
+    filter_upwards [blockSymbolEntry_ae i j (a • oneSym), Lp.coeFn_lpSMul (r := ∞) a oneSym,
+      hone, Lp.coeFn_zero ℂ ∞ (AddCircle.haarAddCircle (T := 1))] with x h₁ h₂ h₃ h₀
+    rw [h₁, h₂, Pi.smul_apply', h₃, h₀]; simp [EuclideanSpace.single, hij]
+
+/-- Extracting the `(i, j)` scalar entry commutes with `ContinuousMap.toLp ∞`. -/
+@[simp]
+theorem blockSymbolEntry_toLp {r : ℕ}
+    (F : C(UnitAddCircle, EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)))
+    (i j : Fin r) :
+    blockSymbolEntry r i j (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ F) =
+      ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ
+        ⟨fun x ↦ F x (EuclideanSpace.single j 1) i, by fun_prop⟩ := by
+  apply Lp.ext
+  filter_upwards [blockSymbolEntry_ae i j
+      (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ F),
+    ContinuousMap.coeFn_toLp (p := ∞) (𝕜 := ℂ) (AddCircle.haarAddCircle (T := 1)) F,
+    ContinuousMap.coeFn_toLp (p := ∞) (𝕜 := ℂ) (AddCircle.haarAddCircle (T := 1))
+      ⟨fun x ↦ F x (EuclideanSpace.single j 1) i, by fun_prop⟩] with x h₁ h₂ h₃
+  rw [h₁, h₂, h₃]; simp
 
 /-- Taking the `(i, j)` scalar entry of the adjoint symbol `star A` gives the conjugate of the
 `(j, i)` scalar entry of `A`. -/
@@ -535,10 +585,15 @@ operator-valued Fourier coefficient `fourierCoeff A n`. -/
 theorem fourierCoeff_blockSymbolEntry {r : ℕ} (A : BlockSymbol r) (i j : Fin r) (n : ℤ) :
     fourierCoeff (blockSymbolEntry r i j A) n =
       fourierCoeff A n (EuclideanSpace.single j 1) i := by
+  let entry : (EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) →L[ℂ] ℂ :=
+    EuclideanSpace.proj i ∘L
+      ContinuousLinearMap.apply ℂ (EuclideanSpace ℂ (Fin r)) (EuclideanSpace.single j 1)
   have hint := ((Lp.memLp A).integrable le_top).fourier_smul (-n)
-  rw [← euclideanMatrixEntryCLM_apply, fourierCoeff_congr_ae (blockSymbolEntry_ae i j A),
-    fourierCoeff, fourierCoeff, ← (euclideanMatrixEntryCLM r i j).integral_comp_comm hint]
-  congr 1
+  have hentry (M : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) :
+      M (EuclideanSpace.single j 1) i = entry M := by simp [entry]
+  rw [hentry (fourierCoeff A n), fourierCoeff_congr_ae (blockSymbolEntry_ae i j A),
+    fourierCoeff, fourierCoeff, ← entry.integral_comp_comm hint]
+  exact integral_congr_ae <| .of_forall fun x ↦ by simp [entry]
 
 /-- Matrix-element form of `fourierCoeff_blockSymbolEntry` in the standard basis of
 `EuclideanSpace ℂ (Fin r)`. -/
@@ -554,8 +609,10 @@ theorem fourierCoeff_star_blockSymbol {r : ℕ} (A : BlockSymbol r) (n : ℤ) :
     fourierCoeff (star A : BlockSymbol r) n =
       ContinuousLinearMap.adjoint (fourierCoeff A (-n)) := by
   refine ContinuousLinearMap.ext fun v ↦ PiLp.ext fun i ↦ ?_
-  rw [eq_sum_single_euclideanSpace v, map_sum, map_sum, WithLp.ofLp_sum, WithLp.ofLp_sum,
-    Finset.sum_apply, Finset.sum_apply]
+  conv_lhs => rw [← (EuclideanSpace.basisFun (Fin r) ℂ).sum_repr v]
+  conv_rhs => rw [← (EuclideanSpace.basisFun (Fin r) ℂ).sum_repr v]
+  simp only [EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply, map_sum,
+    WithLp.ofLp_sum, Finset.sum_apply]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [map_smul, map_smul, PiLp.smul_apply, PiLp.smul_apply, smul_eq_mul, smul_eq_mul]
   congr 1

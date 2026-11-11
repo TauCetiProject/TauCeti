@@ -7,13 +7,14 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Lp.lpSpace
+import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Interchange between sequence `lp` and finite `PiLp`
 
 For an arbitrary index type `α`, a finite index type `ι`, and a family `E : α → ι → Type*` of normed
 groups, a sequence `f : ∀ a, PiLp q (E a)` belongs to `lp (fun a ↦ PiLp q (E a)) p` if and only if
-every coordinate sequence `a ↦ f a i` belongs to `lp (fun a ↦ E a i) p` (`memℓp_piLp_iff`).
+every coordinate sequence `a ↦ f a i` belongs to `lp (fun a ↦ E a i) p` (`TauCeti.memℓp_piLp_iff`).
 
 When the sequence and fibre exponents coincide (`q = p`) and `1 ≤ p ≤ ∞`, coordinatewise evaluation
 is moreover an exact linear isometry equivalence `lp.piLpEquiv`:
@@ -29,7 +30,7 @@ sums of scalar or fibrewise `ℓ²` sequence spaces.
 
 ## Main results
 
-* `memℓp_piLp_iff`: `Memℓp f p ↔ ∀ i, Memℓp (fun a ↦ f a i) p`.
+* `TauCeti.memℓp_piLp_iff`: `Memℓp f p ↔ ∀ i, Memℓp (fun a ↦ f a i) p`.
 * `lp.piLpEquiv_apply`, `lp.piLpEquiv_symm_apply`: coordinatewise evaluation formulas for
   `lp.piLpEquiv` and its inverse.
 -/
@@ -45,6 +46,8 @@ section Memℓp
 variable {α ι : Type*} [Fintype ι] {E : α → ι → Type*} [∀ a i, NormedAddCommGroup (E a i)]
   {p q : ℝ≥0∞} [Fact (1 ≤ q)]
 
+namespace TauCeti
+
 /-- A sequence of finite `PiLp` vectors lies in `ℓᵖ` if and only if each coordinate sequence lies
 in `ℓᵖ`. -/
 theorem memℓp_piLp_iff {f : ∀ a, PiLp q (E a)} :
@@ -57,10 +60,11 @@ theorem memℓp_piLp_iff {f : ∀ a, PiLp q (E a)} :
     induction s using Finset.induction_on with
     | empty => simpa using (zero_mem_ℓp' (E := fun a ↦ PiLp q (E a)) (p := p))
     | insert j s hj ih => simpa only [Finset.sum_insert hj, Pi.add_def] using (hsingle j).add ih
-  exact (show (fun a ↦ ∑ i, PiLp.single q i (f a i)) = f by funext a; ext j; simp) ▸
-    hsum Finset.univ
+  simpa only [PiLp.univ_sum_single] using hsum Finset.univ
 
-alias ⟨Memℓp.eval_piLp, Memℓp.of_eval_piLp⟩ := memℓp_piLp_iff
+end TauCeti
+
+alias ⟨Memℓp.eval_piLp, Memℓp.of_eval_piLp⟩ := TauCeti.memℓp_piLp_iff
 
 end Memℓp
 

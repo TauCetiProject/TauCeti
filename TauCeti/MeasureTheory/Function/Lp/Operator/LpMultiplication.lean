@@ -59,6 +59,12 @@ variable (p) in
 def operatorMultiplication (A : Lp (E →L[𝕜] F) ∞ μ) : Lp E p μ →L[𝕜] Lp F p μ :=
   (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p A
 
+/-- Applying the bilinear Hölder map `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p` to `A`
+produces `operatorMultiplication p A`. -/
+theorem holderL_id_apply (A : Lp (E →L[𝕜] F) ∞ μ) :
+    (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p A = operatorMultiplication p A :=
+  (rfl)
+
 /-- `operatorMultiplication` acts by pointwise operator application almost everywhere. -/
 theorem operatorMultiplication_ae (A : Lp (E →L[𝕜] F) ∞ μ) (f : Lp E p μ) :
     operatorMultiplication p A f =ᵐ[μ] fun x ↦ A x (f x) := by
@@ -145,15 +151,21 @@ theorem operatorMultiplication_comp_holderL (A : Lp (F →L[𝕜] G) ∞ μ) (B 
   rw [ContinuousLinearMap.holderL_apply_apply, hAB, ContinuousLinearMap.compL_apply,
     ContinuousLinearMap.comp_apply, hA, hB]
 
+/-- For endomorphism-valued `L∞` symbols, `compL.holderL` agrees with the pointwise `L∞` product
+`A • B`. -/
+theorem compL_holderL_eq_smul (A B : Lp (E →L[𝕜] E) ∞ μ) :
+    (ContinuousLinearMap.compL 𝕜 E E E).holderL μ ∞ ∞ ∞ A B =
+      (A • B : Lp (E →L[𝕜] E) ∞ μ) := Lp.ext <| by
+  filter_upwards [(ContinuousLinearMap.compL 𝕜 E E E).coeFn_holder (r := ∞) A B,
+    Lp.coeFn_lpSMul (r := ∞) A B] with x h₁ h₂
+  rw [ContinuousLinearMap.holderL_apply_apply, h₁, h₂, ContinuousLinearMap.compL_apply,
+    Pi.smul_apply', smul_eq_mul, ContinuousLinearMap.mul_def]
+
 /-- Composing endomorphism-valued `L∞` multipliers multiplies their symbols in the same order. -/
 theorem operatorMultiplication_comp_operatorMultiplication (A B : Lp (E →L[𝕜] E) ∞ μ) :
     operatorMultiplication p A ∘L operatorMultiplication p B =
       operatorMultiplication p (A • B : Lp (E →L[𝕜] E) ∞ μ) := by
-  ext1 f; symm; rw [ContinuousLinearMap.comp_apply, operatorMultiplication_eq_iff]
-  filter_upwards [Lp.coeFn_lpSMul (r := ∞) A B,
-    operatorMultiplication_ae A (operatorMultiplication p B f), operatorMultiplication_ae B f]
-    with x hAB hA hB
-  rw [hAB, Pi.smul_apply', smul_eq_mul, mul_apply_eq_comp, hA, hB]
+  rw [operatorMultiplication_comp_holderL, compL_holderL_eq_smul]
 
 end NormedSpace
 

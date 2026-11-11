@@ -11,7 +11,8 @@ public import Mathlib.Analysis.Normed.Lp.PiLp
 # Comparisons of finite product norms and distances
 
 The finite `Lᵖ` norm is nonnegative for every exponent and respects coordinatewise bounds on
-norms, including when the two families have different target spaces. This compares scalar
+norms, including when the two families have different target spaces. Every finite `PiLp` vector is
+the sum of its coordinate `PiLp.single` vectors (`PiLp.univ_sum_single`). This compares scalar
 evaluations of a vector family with the vector family's `Lᵖ` norm. For constant fibres we
 deduce the bound for the image of a family under a map of bounded growth, the norm of a family
 of multiples of one vector, and the invariance of the norm under reindexing.
@@ -45,6 +46,12 @@ open scoped ENNReal
 namespace PiLp
 
 variable {ι : Type*} [Fintype ι] {p : ℝ≥0∞} {E F : ι → Type*}
+
+/-- Every finite `PiLp` vector is the sum of its coordinate `PiLp.single` vectors; compare
+`Finset.univ_sum_single`. -/
+theorem univ_sum_single [DecidableEq ι] [∀ i, AddCommGroup (E i)] (x : PiLp p E) :
+    ∑ i, single p i (x i) = x :=
+  WithLp.ofLp_injective p <| by simp [WithLp.ofLp_sum, Finset.univ_sum_single]
 
 /-- Coordinatewise domination of norms implies domination of finite `Lᵖ` norms.
 The dominating family only needs a norm: the coordinate bounds ensure its nonnegativity. -/
