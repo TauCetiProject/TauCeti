@@ -42,7 +42,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
 /-- The composition `T†T` on its maximal domain. -/
-@[expose] def adjointComp (T : E →ₗ.[𝕜] F) : E →ₗ.[𝕜] E :=
+def adjointComp (T : E →ₗ.[𝕜] F) : E →ₗ.[𝕜] E :=
   let D := (Submodule.comap T.toFun T†.domain).map T.domain.subtype
   T†.comp (T.domRestrict D) fun x ↦ by
     obtain ⟨⟨y, hy⟩, hy', hxy⟩ := x.2.1
@@ -53,6 +53,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 /-- The domain of `adjointComp T` is precisely the maximal composition domain. -/
 theorem mem_adjointComp_domain {T : E →ₗ.[𝕜] F} {x : E} :
     x ∈ T.adjointComp.domain ↔ ∃ hx : x ∈ T.domain, T ⟨x, hx⟩ ∈ T†.domain := by
+  -- Composition preserves the restricted domain; `domRestrict` intersects it with `T.domain`.
   change x ∈ (Submodule.comap T.toFun T†.domain).map T.domain.subtype ⊓ T.domain ↔ _
   constructor
   · rintro ⟨⟨⟨y, hy⟩, h, rfl⟩, _⟩
@@ -64,12 +65,12 @@ theorem mem_adjointComp_domain {T : E →ₗ.[𝕜] F} {x : E} :
 theorem adjointComp_domain_le (T : E →ₗ.[𝕜] F) : T.adjointComp.domain ≤ T.domain :=
   fun _ hx ↦ (mem_adjointComp_domain.mp hx).choose
 
-/-- Evaluation of the maximal-domain composition. -/
+/-- Evaluation of the maximal-domain composition. Unfolding composition and domain restriction
+gives the same arguments of `T` and `T†` by proof irrelevance of the membership witnesses. -/
 @[simp]
 theorem adjointComp_apply (T : E →ₗ.[𝕜] F) (x : (adjointComp T).domain) :
     adjointComp T x = T† ⟨T ⟨x, adjointComp_domain_le T x.2⟩,
-      (mem_adjointComp_domain.mp x.2).choose_spec⟩ := rfl
-
+      (mem_adjointComp_domain.mp x.2).choose_spec⟩ := (rfl)
 
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
@@ -109,19 +110,18 @@ private theorem exists_inner_sub_eq_inner (T : E →ₗ.[𝕜] F) (hT : T.IsClos
   let a : WithLp 2 (E × F) := WithLp.toLp 2 (z, (0 : F))
   let p := K.starProjection a
   have hp : e p ∈ T.graph := K.starProjection_apply_mem a
-  rw [show e p = WithLp.ofLp p from WithLp.prodContinuousLinearEquiv_apply ..] at hp
+  simp only [e, WithLp.prodContinuousLinearEquiv_apply] at hp
   obtain ⟨u, hu1, hu2⟩ := T.mem_graph_iff.mp hp
   refine ⟨u, fun v ↦ ?_⟩
   have hv : WithLp.toLp 2 ((v : E), T v) ∈ K := by
+    apply Submodule.mem_comap.mpr
+    -- The comap uses `e.toLinearMap`, whose underlying function is `e`.
     change e (WithLp.toLp 2 ((v : E), T v)) ∈ T.graph
-    rw [show e (WithLp.toLp 2 ((v : E), T v)) = ((v : E), T v) from
-      WithLp.prodContinuousLinearEquiv_apply ..]
-    exact T.mem_graph v
-  have h := K.starProjection_inner_eq_zero a _ hv
-  simp only [inner_sub_left, WithLp.prod_inner_apply, a,
-    inner_zero_left, add_zero] at h
-  change ⟪z, (v : E)⟫ -
-    (⟪(WithLp.ofLp p).1, (v : E)⟫ + ⟪(WithLp.ofLp p).2, T v⟫) = 0 at h
+    simpa only [e, WithLp.prodContinuousLinearEquiv_apply, WithLp.ofLp_toLp] using T.mem_graph v
+  have h : ⟪z, (v : E)⟫ -
+      (⟪(WithLp.ofLp p).1, (v : E)⟫ + ⟪(WithLp.ofLp p).2, T v⟫) = 0 := by
+    simpa only [inner_sub_left, WithLp.prod_inner_apply, a, WithLp.ofLp_toLp, inner_zero_left,
+      add_zero] using K.starProjection_inner_eq_zero a _ hv
   rw [← hu1, ← hu2] at h
   rw [inner_sub_left]
   linear_combination h
@@ -137,6 +137,7 @@ theorem surjective_add_adjointComp (T : E →ₗ.[𝕜] F) (hT : T.IsClosed)
   refine ⟨⟨u, mem_adjointComp_domain.mpr ⟨u.2, hTu⟩⟩, ?_⟩
   dsimp only
   rw [adjointComp_apply]
+  -- Both subtype arguments of `T†` have value `T u`; only their membership proofs differ.
   change (u : E) + T† ⟨T u, hTu⟩ = z
   rw [adjoint_apply_eq hd _ hu]
   abel
