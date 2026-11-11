@@ -39,6 +39,11 @@ and to one plus the radius from radius one onward. -/
 noncomputable def radialExhaustionProfile (r : ℝ) : ℝ :=
   1 + r * Real.smoothTransition (2 * r - 1)
 
+/-- The defining equation of the radial exhaustion profile. -/
+theorem radialExhaustionProfile_def (r : ℝ) :
+    radialExhaustionProfile r = 1 + r * Real.smoothTransition (2 * r - 1) :=
+  (rfl)
+
 /-- The radial exhaustion profile is infinitely differentiable on the whole real line. -/
 theorem radialExhaustionProfile_contDiff : ContDiff ℝ ∞ radialExhaustionProfile :=
   contDiff_const.add (contDiff_id.mul (Real.smoothTransition.contDiff.comp
@@ -154,7 +159,7 @@ noncomputable def rescaledRadialExhaustionProfile (c t r : ℝ) : ℝ :=
   radialExhaustionProfile (Real.exp (c * t) * r)
 
 /-- Evaluation of the exponentially rescaled radial profile. -/
-theorem rescaledRadialExhaustionProfile_apply (c t r : ℝ) :
+@[simp] theorem rescaledRadialExhaustionProfile_apply (c t r : ℝ) :
     rescaledRadialExhaustionProfile c t r = radialExhaustionProfile (Real.exp (c * t) * r) :=
   (rfl)
 
