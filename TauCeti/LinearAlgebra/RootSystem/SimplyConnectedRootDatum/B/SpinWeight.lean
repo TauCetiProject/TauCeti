@@ -354,8 +354,7 @@ theorem typeBSpinReflection_eq_insert_erase_of_not_mem {n : ℕ} {i : Fin n}
     {s : Finset (Fin n)} (hi : i ∉ s) (hj : Order.succ i ∈ s) :
     typeBSpinReflection i s = insert i (s.erase (Order.succ i)) := by
   have hne : i ≠ Order.succ i := fun heq => hi (heq ▸ hj)
-  have h : (i : ℕ) + 1 < n := lt_of_not_ge fun h ↦
-    hne (IsMax.succ_eq fun j _ ↦ Fin.le_def.2 (by have := j.isLt; omega)).symm
+  have h : (i : ℕ) + 1 < n := by_contra fun h ↦ hne (Fin.orderSucc_eq_self_of_not_lt h).symm
   ext a
   rw [mem_typeBSpinReflection_iff_of_lt h]
   by_cases ha : a = i
@@ -369,8 +368,7 @@ theorem typeBSpinReflection_eq_insert_erase_of_mem {n : ℕ} {i : Fin n}
     {s : Finset (Fin n)} (hi : i ∈ s) (hj : Order.succ i ∉ s) :
     typeBSpinReflection i s = insert (Order.succ i) (s.erase i) := by
   have hne : i ≠ Order.succ i := fun heq => hj (heq ▸ hi)
-  have h : (i : ℕ) + 1 < n := lt_of_not_ge fun h ↦
-    hne (IsMax.succ_eq fun j _ ↦ Fin.le_def.2 (by have := j.isLt; omega)).symm
+  have h : (i : ℕ) + 1 < n := by_contra fun h ↦ hne (Fin.orderSucc_eq_self_of_not_lt h).symm
   ext a
   rw [mem_typeBSpinReflection_iff_of_lt h]
   by_cases ha : a = i
