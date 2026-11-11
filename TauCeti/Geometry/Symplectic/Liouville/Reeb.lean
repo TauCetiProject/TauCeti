@@ -205,8 +205,7 @@ theorem isContactForm_mpullback (h : IsLiouvilleCompletion ω α W)
 `ι : S → M` be a smooth map with injective differentials into the frontier of the Liouville
 domain, from a manifold of one dimension less. For `t > 0`, the differential of `ψ_t ∘ ι` sends
 the Reeb vector field of the contact form `ι^* α` to `-X_r` at `ψ_t (ι s)`. -/
-theorem mfderiv_flowOf_comp_reebVectorField [FiniteDimensional ℝ E']
-    (h : IsLiouvilleCompletion ω α W)
+theorem mfderiv_flowOf_comp_reebVectorField (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιW : ∀ s, ι s ∈ frontier W)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
