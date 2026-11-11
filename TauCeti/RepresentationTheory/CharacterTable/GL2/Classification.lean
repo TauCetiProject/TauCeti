@@ -20,6 +20,8 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses
 import TauCeti.RepresentationTheory.CharacterTable.Determined
 -- Non-public: `AddChar.IsPrimitive.ne_one`, the canonical additive character is nontrivial.
 import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
+-- Non-public: maps with the same fibres have images of equal cardinality.
+import TauCeti.Data.Set.Card
 -- Non-public: the character group of a finite commutative group is a `Fintype`.
 import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 -- Non-public: `ℂ`, being algebraically closed, has enough roots of unity of every order, so the
@@ -451,11 +453,9 @@ private theorem GL2CuspidalVirtualCharacter_apply_eq_of_eq (θ θ' : Eˣ →* �
   · rfl
   · rw [GL2CuspidalVirtualCharacter_comp_powMonoidHom]
 
-/-- **There are `½ q (q - 1)` cuspidal characters of `GL₂(F)`**, one for each orbit `{θ, θ^q}` of
-the characters `θ` of `Eˣ` with `θ^q ≠ θ`: the other three families account for
-`2 (q - 1) + ½ (q - 1) (q - 2)` of the `q² - 1` irreducible characters.  The count does not depend
-on the additive character `ψ`, since the fibres of `θ ↦ χ_θ` are the orbits for every `ψ`; it is
-computed from the classification for a nontrivial one. -/
+/-- For every additive character `ψ`, the virtual characters `χ_θ` with `θ^q ≠ θ` take
+`½ q (q - 1)` distinct values, one for each orbit `{θ, θ^q}` of characters of `Eˣ`.
+For nontrivial `ψ`, these are the cuspidal characters of `GL₂(F)`. -/
 @[simp]
 theorem ncard_image_GL2CuspidalVirtualCharacter (ψ : AddChar F ℂ) :
     ((fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1) ''
@@ -463,20 +463,11 @@ theorem ncard_image_GL2CuspidalVirtualCharacter (ψ : AddChar F ℂ) :
       Fintype.card F * (Fintype.card F - 1) / 2 := by
   have hψ₀ := (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one
   refine Eq.trans ?_ (ncard_image_GL2CuspidalVirtualCharacter_of_ne_one F E hψ₀)
-  refine Set.ncard_congr
-    (fun x hx => (GL2CuspidalVirtualCharacter F E hx.choose
-      (AddChar.FiniteField.primitiveChar_to_Complex F)).1) (fun x hx => ?_)
-    (fun x y hx hy hxy => ?_) (fun y hy => ?_)
-  · exact ⟨hx.choose, hx.choose_spec.1, rfl⟩
-  · obtain ⟨-, hxeq⟩ := hx.choose_spec
-    obtain ⟨-, hyeq⟩ := hy.choose_spec
-    rw [← hxeq, ← hyeq]
-    exact GL2CuspidalVirtualCharacter_apply_eq_of_eq F E _ _ _ _ hxy
-  · obtain ⟨θ, hθ, rfl⟩ := hy
-    have hx : (GL2CuspidalVirtualCharacter F E θ ψ).1 ∈
-        (fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1) ''
-          {θ | θ.comp (powMonoidHom (Fintype.card F)) ≠ θ} := ⟨θ, hθ, rfl⟩
-    exact ⟨_, hx, GL2CuspidalVirtualCharacter_apply_eq_of_eq F E _ _ _ _ hx.choose_spec.2⟩
+  simp only [Set.ncard_def]
+  apply congrArg ENat.toNat
+  exact Set.encard_image_eq_encard_image_of_eq_iff (fun θ θ' =>
+    ⟨GL2CuspidalVirtualCharacter_apply_eq_of_eq F E θ θ' _ _,
+      GL2CuspidalVirtualCharacter_apply_eq_of_eq F E θ θ' _ _⟩) _
 
 end Classification
 
