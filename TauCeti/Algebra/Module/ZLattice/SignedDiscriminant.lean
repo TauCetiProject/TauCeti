@@ -320,8 +320,10 @@ theorem isCoprime_signedDiscr_of_isCoprime_level {d : ℤ} (hd : IsCoprime d (le
   rw [Nat.coprime_iff_gcd_eq_one, ← Int.natAbs_natCast (level L), ← Int.gcd_eq_natAbs_gcd_natAbs]
   exact Int.isCoprime_iff_gcd_eq_one.mp hd
 
-/-- **The signed discriminant of an even full lattice of even rank is a discriminant**, congruent
-to `0` or `1` modulo `4`. -/
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- **The signed discriminant of an even lattice in a space of even dimension is a discriminant**,
+congruent to `0` or `1` modulo `4`. For a lattice that does not span the space, the discriminant
+group is infinite, so `Nat.card` and the signed discriminant are `0`. -/
 theorem IsEven.signedDiscr_modEq_zero_or_one (hL : IsEven L) (hE : Even (finrank ℝ E)) :
     signedDiscr L ≡ 0 [ZMOD 4] ∨ signedDiscr L ≡ 1 [ZMOD 4] := by
   obtain ⟨k, hk⟩ := hE
@@ -344,20 +346,20 @@ theorem IsIntegral.signedDiscr_sqrt_smul_ne_zero (h : IsIntegral L) {m : ℕ} (h
   have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))⟩
   exact (h.sqrt_smul m).signedDiscr_ne_zero
 
-/-- For an even full lattice `L` of even rank and `m ≠ 0`, `signedDiscr (√m • L)` is congruent to
-`0` or `1` modulo `4`. -/
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- For an even lattice `L` in a space of even dimension, `signedDiscr (√m • L)` is congruent to
+`0` or `1` modulo `4`; if `L` does not span the space, the signed discriminant is `0`. -/
 theorem IsEven.signedDiscr_sqrt_smul_modEq_zero_or_one (hL : IsEven L) (hE : Even (finrank ℝ E))
-    {m : ℕ} (hm : m ≠ 0) :
-    signedDiscr (√(m : ℝ) • L) ≡ 0 [ZMOD 4] ∨ signedDiscr (√(m : ℝ) • L) ≡ 1 [ZMOD 4] := by
-  have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))⟩
-  exact (hL.sqrt_smul m).signedDiscr_modEq_zero_or_one hE
+    {m : ℕ} :
+    signedDiscr (√(m : ℝ) • L) ≡ 0 [ZMOD 4] ∨ signedDiscr (√(m : ℝ) • L) ≡ 1 [ZMOD 4] :=
+  (hL.sqrt_smul m).signedDiscr_modEq_zero_or_one hE
 
 /-- In even ambient dimension, scaling an even full lattice `L` by `√m` (`m ≠ 0`) preserves the
 conductor of its Kronecker character `(D_L / ·)`. -/
 theorem IsEven.conductor_kroneckerChar_signedDiscr_sqrt_smul (R : Type*) [CommRing R]
     (hL : IsEven L) (hE : Even (finrank ℝ E)) {m : ℕ} (hm : m ≠ 0) :
     (TauCeti.kroneckerChar R (signedDiscr (√(m : ℝ) • L))
-      (hL.signedDiscr_sqrt_smul_modEq_zero_or_one hE hm)
+      (hL.signedDiscr_sqrt_smul_modEq_zero_or_one hE)
       (hL.isIntegral.signedDiscr_sqrt_smul_ne_zero hm)).conductor =
       (TauCeti.kroneckerChar R (signedDiscr L)
         (hL.signedDiscr_modEq_zero_or_one hE)
@@ -370,10 +372,10 @@ theorem IsEven.conductor_kroneckerChar_signedDiscr_sqrt_smul (R : Type*) [CommRi
 /-- In even ambient dimension, scaling an even full lattice `L` by `√m` (`m ≠ 0`) preserves the
 primitive character values of `(D_L / ·)` at every integer `a`. -/
 theorem IsEven.primitiveCharacter_kroneckerChar_signedDiscr_sqrt_smul_apply
-    (R : Type*) [CommRing R] [Nontrivial R] (hL : IsEven L) (hE : Even (finrank ℝ E))
+    (R : Type*) [CommRing R] (hL : IsEven L) (hE : Even (finrank ℝ E))
     {m : ℕ} (hm : m ≠ 0) (a : ℤ) :
     (TauCeti.kroneckerChar R (signedDiscr (√(m : ℝ) • L))
-      (hL.signedDiscr_sqrt_smul_modEq_zero_or_one hE hm)
+      (hL.signedDiscr_sqrt_smul_modEq_zero_or_one hE)
       (hL.isIntegral.signedDiscr_sqrt_smul_ne_zero hm)).primitiveCharacter a =
       (TauCeti.kroneckerChar R (signedDiscr L)
         (hL.signedDiscr_modEq_zero_or_one hE)
@@ -417,7 +419,7 @@ theorem IsEven.conductor_kroneckerChar_signedDiscr_sqrt_level_smul_dual (R : Typ
 rank and level `N`, the primitive Kronecker characters of `L` and of its Fricke partner `√N • L^∨`
 agree at every integer `a`. -/
 theorem IsEven.primitiveCharacter_kroneckerChar_signedDiscr_sqrt_level_smul_dual_apply
-    (R : Type*) [CommRing R] [Nontrivial R] (hL : IsEven L) (hE : Even (finrank ℝ E)) (a : ℤ) :
+    (R : Type*) [CommRing R] (hL : IsEven L) (hE : Even (finrank ℝ E)) (a : ℤ) :
     (TauCeti.kroneckerChar R (signedDiscr (√(level L : ℝ) • dual L))
       (hL.isIntegral.signedDiscr_sqrt_level_smul_dual_modEq_zero_or_one hE)
       hL.isIntegral.signedDiscr_sqrt_level_smul_dual_ne_zero).primitiveCharacter a =
