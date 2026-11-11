@@ -80,6 +80,8 @@ inclusion is a `C^n` family of split injections `A x : F' →L[𝕜] F`; adjoini
 * `Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ`: the ranges of a `C^n` family of
   operators of constant rank on the model fibre, read through a trivialization, have `C^n` local
   frames.
+* `TauCeti.hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range`: the ranges of a `C^n`
+  fibrewise operator on `E` of constant rank have `C^n` local frames.
 * `TauCeti.IsSubbundleFrameOn.contMDiffAt_totalSpace_subbundle`: the canonical inclusion of a
   frame-trivialized `C^n` subbundle into `TotalSpace F E` is `C^n`.
 * `TauCeti.isImmersion_totalSpace_subbundle`, `TauCeti.isSmoothEmbedding_totalSpace_subbundle`:
@@ -547,6 +549,79 @@ theorem _root_.Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ {r : 
       comp_def]
 
 end Operators
+
+section FibrewiseProjections
+
+variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [CompleteSpace 𝕜']
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] {n : ℕ∞ω}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace 𝕜' F]
+  [FiniteDimensional 𝕜' F] {E : B → Type*}
+  [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, Module 𝕜' (E x)]
+  [TopologicalSpace (TotalSpace F E)] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
+  [VectorBundle 𝕜 F E] [VectorBundle 𝕜' F E] [ContMDiffVectorBundle n F E IB]
+
+/-- **Local frames from a smooth fibrewise operator of constant rank.** Let `P x` be
+`𝕜'`-linear endomorphisms of the fibres `E x` whose ranges `V x` all have dimension `r`, and such
+that `p ↦ P p.proj p` is a `C^n` self-map of the total space. Then `V` has `C^n` local frames of
+size `r`: near `x₀`, apply `P` to a local frame of `E` and keep a subfamily that is linearly
+independent at `x₀`. Typical examples of `P` are fibrewise orthogonal projections. -/
+theorem hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range {r : ℕ}
+    {V : Π x, Submodule 𝕜' (E x)} (P : Π x, E x →ₗ[𝕜'] E x)
+    (hP : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n
+      (fun p : TotalSpace F E ↦ (⟨p.proj, P p.proj p.2⟩ : TotalSpace F E)))
+    (hPV : ∀ x, LinearMap.range (P x) = V x) (hV : ∀ x, finrank 𝕜' (V x) = r) :
+    HasLocalContMDiffSubbundleFrames IB n F (Fin r) V := by
+  refine hasLocalContMDiffSubbundleFrames_iff.mpr fun x₀ ↦ ?_
+  let e := trivializationAt F E x₀
+  have hx₀ : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
+  let b := Module.finBasis 𝕜' F
+  -- Apply `P` to the local frame of `E` read off from `b`.
+  let Y : Fin (finrank 𝕜' F) → Π x, E x := fun j x ↦ P x (e.symm x (b j))
+  have hY (j : Fin (finrank 𝕜' F)) : CMDiff[e.baseSet] n (T% (Y j)) :=
+    hP.comp_contMDiffOn (e.contMDiffOn_section_symm e.open_baseSet subset_rfl contMDiffOn_const)
+  have hspan : Submodule.span 𝕜' (range (Y · x₀)) = V x₀ := by
+    have hY₀ : (Y · x₀) = (P x₀ ∘ₗ e.symmₗ 𝕜' x₀) ∘ b :=
+      funext fun j ↦ by simp [Y, e.symmₗ_apply hx₀]
+    have hsurj : LinearMap.range (e.symmₗ 𝕜' x₀) = ⊤ :=
+      LinearMap.range_eq_top.mpr fun v ↦ ⟨_, e.symmₗ_linearMapAt hx₀ v⟩
+    rw [hY₀, range_comp, ← Submodule.map_span, b.span_eq, Submodule.map_top,
+      LinearMap.range_comp_of_range_eq_top _ hsurj, hPV]
+  -- A subfamily of the `Y j x₀` that is a basis of `V x₀`.
+  obtain ⟨κ, a, ha, hsa, hla⟩ := exists_linearIndependent' 𝕜' (Y · x₀)
+  have : Finite κ := Finite.of_injective a ha
+  let := Fintype.ofFinite κ
+  have hκ : Fintype.card κ = r := by
+    rw [← finrank_span_eq_card hla, hsa, hspan, hV x₀]
+  let k : Fin r → Fin (finrank 𝕜' F) := a ∘ (Fintype.equivFinOfCardEq hκ).symm
+  -- Read in the trivialization, the subfamily stays a basis of `V` near `x₀`.
+  let L := fun x ↦ e.linearMapAt 𝕜' x
+  have hL {x : B} (hx : x ∈ e.baseSet) : Function.Injective (L x) :=
+    fun v w h ↦ by
+      rw [← e.symmₗ_linearMapAt (R := 𝕜') hx v, ← e.symmₗ_linearMapAt (R := 𝕜') hx w]
+      exact congrArg _ h
+  let T : B → Fin r → F := fun x j ↦ L x (Y (k j) x)
+  have hT : ContinuousOn T e.baseSet := by
+    refine continuousOn_pi.mpr fun j ↦ ?_
+    refine (continuous_snd.comp_continuousOn ((e.continuousOn).comp (hY (k j)).continuousOn
+      fun x hx ↦ e.mem_source.mpr hx)).congr fun x hx ↦ ?_
+    simp [T, L, e.coe_linearMapAt_of_mem hx]
+  obtain ⟨U, hUe, hU, hx₀U, hTU⟩ := exists_isOpen_linearIndependent_span_range_eq e.open_baseSet
+    hT (W := fun x ↦ (V x).map (L x))
+    (fun x _ j ↦ Submodule.mem_map_of_mem (hPV x ▸ LinearMap.mem_range_self _ _))
+    (fun x hx ↦ by
+      rw [← hV x]
+      exact (Submodule.equivMapOfInjective _ (hL hx) _).finrank_eq.symm) hx₀
+    ((hla.comp _ (Fintype.equivFinOfCardEq hκ).symm.injective).map' (L x₀)
+      (LinearMap.ker_eq_bot.mpr (hL hx₀)))
+  refine ⟨U, hU, hx₀U, fun j ↦ Y (k j), ⟨fun j ↦ ((hY (k j)).mono hUe).continuousOn,
+    fun {x} hx ↦ (hTU x hx).1.of_comp (L x), fun {x} hx ↦ ?_⟩, fun j ↦ (hY (k j)).mono hUe⟩
+  apply Submodule.map_injective_of_injective (hL (hUe hx))
+  rw [Submodule.map_span, ← range_comp]
+  exact (hTU x hx).2
+
+end FibrewiseProjections
 
 section SubbundleInclusion
 

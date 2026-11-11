@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
@@ -72,15 +71,23 @@ variable (I J) in
 /-- The normal space of a map `f : M → N` at `x : M`: the orthogonal complement of the range of
 the differential `mfderiv I J f x` in `T_{f x} N`. For an immersion these are the fibres of its
 normal bundle `ν_f`. -/
-@[expose] def orthogonalNormalSpace (f : M → N) (x : M) : Submodule ℝ (TangentSpace J (f x)) :=
+def orthogonalNormalSpace (f : M → N) (x : M) : Submodule ℝ (TangentSpace J (f x)) :=
   (LinearMap.range (mfderiv I J f x).toLinearMap)ᗮ
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
+/-- The normal space is the orthogonal complement of the range of the differential. -/
+theorem orthogonalNormalSpace_def (f : M → N) (x : M) :
+    orthogonalNormalSpace I J f x = (LinearMap.range (mfderiv I J f x).toLinearMap)ᗮ :=
+  (rfl)
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
 /-- A vector is normal exactly when it is orthogonal to the differential of every tangent
 vector. -/
 theorem mem_orthogonalNormalSpace_iff {f : M → N} {x : M} {w : TangentSpace J (f x)} :
-    w ∈ orthogonalNormalSpace I J f x ↔ ∀ u : TangentSpace I x, inner ℝ (mfderiv I J f x u) w = 0 :=
-  Submodule.mem_orthogonal' _ _ |>.trans
+    w ∈ orthogonalNormalSpace I J f x ↔
+      ∀ u : TangentSpace I x, inner ℝ (mfderiv I J f x u) w = 0 := by
+  rw [orthogonalNormalSpace_def]
+  exact Submodule.mem_orthogonal' _ _ |>.trans
     ⟨fun h u ↦ by rw [real_inner_comm]; exact h _ ⟨u, rfl⟩,
       fun h _ ⟨u, hu⟩ ↦ by rw [← hu, real_inner_comm]; exact h u⟩
 
@@ -88,7 +95,7 @@ omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
 /-- The identity map has zero normal spaces. -/
 @[simp]
 theorem orthogonalNormalSpace_id (y : N) : orthogonalNormalSpace J J id y = ⊥ := by
-  rw [orthogonalNormalSpace, mfderiv_id]
+  rw [orthogonalNormalSpace_def, mfderiv_id]
   simp
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
@@ -97,7 +104,7 @@ a point immersed in `N`. -/
 @[simp]
 theorem orthogonalNormalSpace_const (y : N) (x : M) :
     orthogonalNormalSpace I J (fun _ : M ↦ y) x = ⊤ := by
-  rw [orthogonalNormalSpace, mfderiv_const]
+  rw [orthogonalNormalSpace_def, mfderiv_const]
   simp
 
 omit [FiniteDimensional ℝ E] in
@@ -109,7 +116,7 @@ theorem finrank_orthogonalNormalSpace_add_finrank {f : M → N} {x : M}
   have h := Submodule.finrank_add_finrank_orthogonal
     (LinearMap.range (mfderiv I J f x).toLinearMap)
   rw [LinearMap.finrank_range_of_inj hinj] at h
-  rw [orthogonalNormalSpace, add_comm]
+  rw [orthogonalNormalSpace_def, add_comm]
   exact h
 
 /-- The orthogonal projection onto the normal space subtracts the tangential component of an
@@ -135,7 +142,8 @@ theorem starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse {f : M → N
     have hpair' : inner ℝ (d (a.inverse φ)) (d z) = inner ℝ v (d z) := hpair
     rw [inner_sub_right, real_inner_comm v (d z), real_inner_comm (d (a.inverse φ)) (d z), hpair',
       sub_self]
-  · exact Submodule.le_orthogonal_orthogonal _ ⟨_, rfl⟩
+  · rw [orthogonalNormalSpace_def]
+    exact Submodule.le_orthogonal_orthogonal _ ⟨_, rfl⟩
 
 variable {n m : ℕ∞ω} [IsManifold J 1 N] [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)]
@@ -214,82 +222,14 @@ theorem hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace {r : ℕ} {f : C^
   let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
   let : ContMDiffVectorBundle m V (f *ᵖ (TangentSpace J)) I :=
     ContMDiffVectorBundle.pullback V (TangentSpace J) I fc
+  -- Elaborate in the fibres `TangentSpace J (f x)`, not in the pullback fibres.
+  have hrange (x : M) : LinearMap.range ((orthogonalNormalSpace I J f x).starProjection :
+      TangentSpace J (f x) →ₗ[ℝ] TangentSpace J (f x)) = orthogonalNormalSpace I J f x :=
+    Submodule.range_starProjection _
   have hfin (x : M) : finrank ℝ (orthogonalNormalSpace I J f x) = r := by
     have := finrank_orthogonalNormalSpace_add_finrank (hinj x)
     omega
-  refine hasLocalContMDiffSubbundleFrames_iff.mpr fun x₀ ↦ ?_
-  let e := trivializationAt V (f *ᵖ (TangentSpace J)) x₀
-  have hx₀ : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
-  have he (x : M) (hx : x ∈ e.baseSet) (v : TangentSpace J (f x)) :
-      e.continuousLinearEquivAt ℝ x hx v = (e ⟨x, v⟩).2 :=
-    congrFun (e.continuousLinearEquivAt_apply ℝ x hx) v
-  let b := Module.finBasis ℝ V
-  -- The local frame of `f *ᵖ TN` read off from `b`, and its normal projections.
-  let σ : Fin (finrank ℝ V) → ∀ x, TangentSpace J (f x) := fun j x ↦ e.symm x (b j)
-  have hσ (j : Fin (finrank ℝ V)) :
-      ContMDiffOn I (I.prod 𝓘(ℝ, V)) m (fun x ↦ TotalSpace.mk' V (E := f *ᵖ (TangentSpace J)) x
-        (σ j x)) e.baseSet :=
-    Manifold.contMDiffOn_symm_baseSet (I := I) (e := e) (b j)
-  let Y : Fin (finrank ℝ V) → ∀ x, TangentSpace J (f x) :=
-    fun j x ↦ (orthogonalNormalSpace I J f x).starProjection (σ j x)
-  have hY (j : Fin (finrank ℝ V)) :
-      ContMDiffOn I (I.prod 𝓘(ℝ, V)) m (fun x ↦ TotalSpace.mk' V (E := f *ᵖ (TangentSpace J)) x
-        (Y j x)) e.baseSet :=
-    (contMDiff_starProjection_orthogonalNormalSpace hinj hm).comp_contMDiffOn (hσ j)
-  have hYmem (j : Fin (finrank ℝ V)) (x : M) : Y j x ∈ orthogonalNormalSpace I J f x :=
-    Submodule.starProjection_apply_mem _ _
-  -- On the base set, the `Y j x` span the normal space.
-  have hspan (x : M) (hx : x ∈ e.baseSet) :
-      Submodule.span ℝ (range (Y · x)) = orthogonalNormalSpace I J f x := by
-    let ex := e.continuousLinearEquivAt ℝ x hx
-    have hσx : (σ · x) = b.map ex.symm.toLinearEquiv := by
-      funext j
-      apply ex.injective
-      simp [ex, σ, e.apply_mk_symm hx]
-    refine le_antisymm (Submodule.span_le.mpr (range_subset_iff.mpr fun j ↦ hYmem j x))
-      fun w hw ↦ ?_
-    let P : TangentSpace J (f x) →ₗ[ℝ] TangentSpace J (f x) :=
-      (orthogonalNormalSpace I J f x).starProjection
-    have hYP : (Y · x) = P ∘ (σ · x) := rfl
-    have htop : Submodule.span ℝ (range (σ · x)) = ⊤ := by
-      rw [hσx]
-      exact (b.map ex.symm.toLinearEquiv).span_eq
-    rw [hYP, range_comp, ← Submodule.map_span, htop]
-    exact ⟨w, Submodule.mem_top, Submodule.starProjection_eq_self_iff.mpr hw⟩
-  -- A linearly independent subfamily of the `Y j x₀` spanning the normal space at `x₀`.
-  obtain ⟨κ, a, ha, hsa, hla⟩ := exists_linearIndependent' ℝ (Y · x₀)
-  have : Finite κ := Finite.of_injective a ha
-  let := Fintype.ofFinite κ
-  have hκ : Fintype.card κ = r := by
-    rw [← finrank_span_eq_card hla, hsa, hspan x₀ hx₀, hfin x₀]
-  let k : Fin r → Fin (finrank ℝ V) := a ∘ (Fintype.equivFinOfCardEq hκ).symm
-  let Z : Fin r → ∀ x, TangentSpace J (f x) := fun j ↦ Y (k j)
-  -- Read in the trivialization, linear independence of the frame is an open condition.
-  let T : M → Fin r → V := fun x j ↦ (e ⟨x, Z j x⟩).2
-  have hT : ContinuousOn T e.baseSet := continuousOn_pi.mpr fun j ↦
-    continuous_snd.comp_continuousOn ((e.continuousOn).comp (hY (k j)).continuousOn
-      fun x hx ↦ e.mem_source.mpr hx)
-  have hTli (x : M) (hx : x ∈ e.baseSet) :
-      LinearIndependent ℝ (T x) ↔ LinearIndependent ℝ (Z · x) := by
-    have : T x = (e.continuousLinearEquivAt ℝ x hx) ∘ (Z · x) :=
-      funext fun j ↦ (he x hx _).symm
-    rw [this]
-    exact LinearMap.linearIndependent_iff (e.continuousLinearEquivAt ℝ x hx).toLinearMap
-      (LinearEquiv.ker _)
-  let U := e.baseSet ∩ T ⁻¹' {v | LinearIndependent ℝ v}
-  have hUli {x : M} (hx : x ∈ U) : LinearIndependent ℝ (Z · x) := (hTli x hx.1).mp hx.2
-  refine ⟨U, hT.isOpen_inter_preimage e.open_baseSet isOpen_setOfPred_linearIndependent,
-    ⟨hx₀, (hTli x₀ hx₀).mpr (hla.comp _ (Fintype.equivFinOfCardEq hκ).symm.injective)⟩, Z, ?_,
-    fun j ↦ (hY (k j)).mono inter_subset_left⟩
-  exact
-    { continuousOn := fun j ↦ ((hY (k j)).mono inter_subset_left).continuousOn
-      linearIndependent := hUli
-      span_eq := fun {x} hx ↦ by
-        -- Elaborate in the fibre `TangentSpace J (f x)`, not in the pullback fibre.
-        have hle : Submodule.span ℝ (range (Z · x)) ≤ orthogonalNormalSpace I J f x :=
-          Submodule.span_le.mpr (range_subset_iff.mpr fun j ↦ hYmem (k j) x)
-        have h := Submodule.eq_of_le_of_finrank_eq hle
-          (by rw [finrank_span_eq_card (hUli hx), Fintype.card_fin, hfin x])
-        exact h }
+  exact hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range _
+    (contMDiff_starProjection_orthogonalNormalSpace hinj hm) hrange hfin
 
 end TauCeti

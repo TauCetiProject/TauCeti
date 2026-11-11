@@ -67,7 +67,8 @@ theorem contMDiff_normalRepresentative_normalClass
   have hP := contMDiff_starProjection_orthogonalNormalSpace (f := fn)
     (f.isImmersion.mfderiv_injective hn) hm
   exact ((Pullback.contMDiff_lift fc fc.contMDiff).comp hP).congr fun p =>
-    congrArg (TotalSpace.mk (f p.proj)) (f.normalRepresentative_normalClass p.proj hn p.2)
+    congrArg (TotalSpace.mk (f p.proj)) ((f.normalRepresentative_normalClass p.proj hn p.2).trans
+      (by dsimp only; rw [orthogonalNormalSpace_def]; rfl))
 
 /-- The map taking an intrinsic normal vector to its orthogonal representative in the ambient
 tangent bundle is `C^m` for a `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. -/
