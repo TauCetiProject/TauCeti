@@ -233,6 +233,8 @@ theorem radical_unipotenceIdeal_eq (M N : FGComoduleCat.{u, u, u} k H)
     let g : H →ₐ[k] K := (IsScalarTower.toAlgHom k P.ResidueField K).comp
       (IsScalarTower.toAlgHom k H P.ResidueField)
     have hker : RingHom.ker g = P := by
+      -- `g` unfolds to the composite of the two residue-field `algebraMap`s, so the kernel of the
+      -- underlying ring homomorphism can be computed with `RingHom.ker_comp_of_injective`.
       change RingHom.ker ((algebraMap P.ResidueField K).comp (algebraMap H P.ResidueField)) = P
       rw [RingHom.ker_comp_of_injective _ (algebraMap P.ResidueField K).injective,
         Ideal.ker_algebraMap_residueField]
