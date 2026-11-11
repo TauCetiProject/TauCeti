@@ -19,8 +19,9 @@ nontrivially, as do three subspaces whose dimensions sum to more than twice the 
 and a subspace of rank greater than the rank of a linear map `f` meets `ker f`
 nontrivially. Dually, the preimage of a subspace `W` under a linear map out of an
 `m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
-dimension at least `n` exactly when it contains `n` linearly independent vectors. Two disjoint
-subspaces of a finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
+dimension at least `n` exactly when it contains `n` linearly independent vectors, and a subspace
+of rank at least `k` contains a subspace of rank exactly `k`. Two disjoint subspaces of a
+finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
 A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
 `span 𝕜 {a, x}`.
 A finite-dimensional subspace spanning the whole space together with `V`, of dimension at most the
@@ -138,6 +139,17 @@ theorem isCompl_of_codisjoint_of_finrank_le {V S : Submodule 𝕜 E} [FiniteDime
   refine ⟨disjoint_def.mpr fun x hxV hxS ↦ ?_, h⟩
   have : φ ⟨x, hxS⟩ = φ 0 := by simpa [φ] using hxV
   simpa using congrArg Subtype.val (hinj this)
+
+/-- A subspace of rank at least `k` contains a subspace of rank exactly `k`: the span of `k`
+linearly independent vectors of it. The rank of `M` may be an infinite cardinal. -/
+theorem exists_le_rank_eq {M : Submodule 𝕜 E} {k : ℕ} (hk : (k : Cardinal) ≤ Module.rank 𝕜 M) :
+    ∃ N ≤ M, Module.rank 𝕜 N = k := by
+  obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_rank hk
+  have hv' : LinearIndependent 𝕜 (M.subtype ∘ v) := hv.map' M.subtype M.ker_subtype
+  have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range (M.subtype ∘ v))
+  refine ⟨span 𝕜 (Set.range (M.subtype ∘ v)),
+    span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).2), ?_⟩
+  rw [← Module.finrank_eq_rank, finrank_span_eq_card hv', Fintype.card_fin]
 
 /-- A subspace with more dimensions than a finite set has elements contains a vector outside the
 span of the set. -/

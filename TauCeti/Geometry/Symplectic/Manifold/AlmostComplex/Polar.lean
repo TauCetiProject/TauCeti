@@ -48,7 +48,13 @@ invariant metric, whose polar normalization is then invariant. For a finite grou
 by symplectomorphisms, averaging the pullbacks of a smooth metric
 (`TauCeti.averageRiemannianMetric`) thus gives a compatible smooth almost complex structure for
 which every action map is complex linear
-(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply`). The same holds for
+a compact Hausdorff topological group that is a smooth manifold, for instance a compact Lie group,
+acting smoothly by symplectomorphisms on a boundaryless manifold, averaging against the normalized
+Haar measure (`TauCeti.measureAverageRiemannianMetric`)
+(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply_of_compactSpace`).
+This invariant compatible structure is the starting point for the local normal forms of compact
+Hamiltonian group actions near fixed points and orbits.
 
 Smoothness is checked in a trivialization of the tangent bundle. There `g` and `σ` become smooth
 families of bilinear forms on a model fibre, and the polar normalization becomes the expression of
@@ -78,6 +84,9 @@ inversion, each of which depends smoothly on its argument.
   metric and the form intertwine the polar normalizations.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply`: a finite group
   acting smoothly by symplectomorphisms preserves some compatible smooth almost complex structure.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply_of_compactSpace`:
+  so does a compact group, such as a compact Lie group, acting smoothly by symplectomorphisms on a
+  boundaryless manifold.
 
 ## References
 
@@ -87,6 +96,9 @@ inversion, each of which depends smoothly on its argument.
   Riemannian metric).
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
   American Mathematical Society, 2012, Section 2.2.
+* M. Audin, *Torus Actions on Symplectic Manifolds*, second revised edition, Progress in
+  Mathematics 93, Birkhäuser, 2004 (invariant compatible almost complex structures for compact
+  group actions).
 -/
 
 public section
@@ -366,6 +378,35 @@ theorem exists_compatible_mfderiv_smul_apply [T2Space M] [SigmaCompactSpace M] {
   exact ⟨h.polarComplexStructure, h.compatible_polarComplexStructure, fun a x v ↦
     h.mfderiv_polarComplexStructure_apply h rfl (averageRiemannianMetric_inner_mfderiv G g a x)
       (hσ a x) v⟩
+
+/-- **Existence of invariant compatible almost complex structures for compact groups.** If a
+compact Hausdorff topological group, which is also a smooth manifold, acts smoothly on a
+boundaryless Hausdorff σ-compact manifold by maps preserving a fiberwise nondegenerate smooth
+two-form `σ`, then `σ` admits a compatible smooth almost complex structure `J` for which every
+action map is complex linear: `d(a •)_x ∘ J_x = J_(a • x) ∘ d(a •)_x`. It is the polar
+normalization of `σ` for the Haar average of the pullbacks of a smooth Riemannian metric. -/
+theorem exists_compatible_mfderiv_smul_apply_of_compactSpace [T2Space M] [SigmaCompactSpace M]
+    [I.Boundaryless] {EG HG G : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG]
+    [TopologicalSpace HG] {IG : ModelWithCorners ℝ EG HG} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [CompactSpace G] [T2Space G] [ChartedSpace HG G] [IsManifold IG ∞ G]
+    [MulAction G M] [ContMDiffSMul IG I ∞ G M] (h : σ.IsNondegenerate)
+    (hσ : ∀ (a : G) (x : M) (u v : TangentSpace I x),
+      σ.eval₂ (a • x) (mfderiv I I (a • ·) x u) (mfderiv I I (a • ·) x v) = σ.eval₂ x u v) :
+    ∃ J : SmoothAlmostComplexStructure I M, σ.Compatible J ∧
+      ∀ (a : G) (x : M) (v : TangentSpace I x),
+        mfderiv I I (a • ·) x (J x v) = J (a • x) (mfderiv I I (a • ·) x v) := by
+  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
+    (E := fun x : M ↦ TangentSpace I x)
+  -- Haar averaging needs the action to be `C^(n + 1)` for a `C^n` metric; for `n = ∞` this is
+  -- smoothness.
+  have : ContMDiffSMul IG I (∞ + 1) G M := by
+    rwa [ENat.coe_top_add_one]
+  obtain ⟨g', hg'⟩ := exists_contMDiffRiemannianMetric_inner_mfderiv (G := G) (n := ⊤) IG g
+  let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩
+  let : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
+    Bundle.instIsContMDiffRiemannianBundle g'
+  exact ⟨h.polarComplexStructure, h.compatible_polarComplexStructure, fun a x v ↦
+    h.mfderiv_polarComplexStructure_apply h rfl (hg' a x) (hσ a x) v⟩
 
 end SmoothTwoForm.IsNondegenerate
 
