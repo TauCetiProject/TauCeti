@@ -149,6 +149,20 @@ theorem isLocalComplement_iff_isComplement'_subgroupOf [(N.subgroupOf H).Normal]
       simpa only [map_sup, map_subgroupOf_eq_of_le hNH, map_subgroupOf_eq_of_le hKH,
         map_top, range_subtype] using hm
 
+/-- A local complement of `N` in `H` exists precisely when `N.subgroupOf H` has a complement in
+the group `H`. -/
+theorem exists_isLocalComplement_iff_exists_isComplement'_subgroupOf [(N.subgroupOf H).Normal]
+    (hNH : N ≤ H) :
+    (∃ K : Subgroup G, N.IsLocalComplement K H) ↔
+      ∃ K : Subgroup H, (N.subgroupOf H).IsComplement' K := by
+  constructor
+  · rintro ⟨K, h⟩
+    exact ⟨_, (isLocalComplement_iff_isComplement'_subgroupOf hNH h.right_le).mp h⟩
+  · rintro ⟨K, hK⟩
+    refine ⟨K.map H.subtype, ?_⟩
+    have h := (isLocalComplement_top_iff.mpr hK).map H.subtype_injective
+    simpa only [map_subgroupOf_eq_of_le hNH, map_top, range_subtype] using h
+
 /-- The whole ambient subgroup complements the trivial subgroup locally. -/
 @[simp]
 theorem isLocalComplement_bot_left : (⊥ : Subgroup G).IsLocalComplement K H ↔ K = H := by
