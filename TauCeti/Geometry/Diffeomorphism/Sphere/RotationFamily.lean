@@ -83,13 +83,11 @@ def sphereRotationPlane (p : sphere (0 : E) 1) (v : sphere (0 : (ℝ ∙ (p : E)
     -- `p` and `v` are orthonormal, and `Re w ^ 2 + Im w ^ 2 = ‖w‖ ^ 2`.
     refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
     have hv : ‖((v : (ℝ ∙ (p : E))ᗮ) : E)‖ = 1 := norm_eq_of_mem_sphere v
-    have h : ‖w.re • (p : E) + w.im • ((v : (ℝ ∙ (p : E))ᗮ) : E)‖ ^ 2 = ‖w‖ ^ 2 := by
-      rw [norm_add_sq_real, norm_smul, norm_smul, real_inner_smul_left, real_inner_smul_right,
-        Submodule.mem_orthogonal_singleton_iff_inner_right.1 (v : (ℝ ∙ (p : E))ᗮ).2,
-        norm_eq_of_mem_sphere p, hv, Complex.sq_norm, Complex.normSq_apply,
-        Real.norm_eq_abs, Real.norm_eq_abs, mul_pow, mul_pow, sq_abs, sq_abs]
-      ring
-    simpa using h
+    have hpv : ⟪(p : E), ((v : (ℝ ∙ (p : E))ᗮ) : E)⟫ = 0 :=
+      Submodule.mem_orthogonal_singleton_iff_inner_right.1 (v : (ℝ ∙ (p : E))ᗮ).2
+    simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right, hpv, hv,
+      Complex.sq_norm, Complex.normSq_apply]
+    ring
 
 @[simp]
 theorem sphereRotationPlane_apply (p : sphere (0 : E) 1) (v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1)
@@ -121,10 +119,8 @@ def sphereRotationIsometry (p : sphere (0 : E) 1)
 theorem sphereRotationIsometry_apply_self (p : sphere (0 : E) 1)
     (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) :
     sphereRotationIsometry p x p = sphereRotationFamily p x := by
-  have h := (sphereRotationPlane p x.1).planeRotation_apply_map ⟨x.2, x.2.2⟩ 1
-  rw [mul_one, sphereRotationPlane_apply, Complex.one_re, Complex.one_im, one_smul, zero_smul,
-    add_zero] at h
-  rw [sphereRotationIsometry, h, coe_sphereRotationFamily, sphereRotationPlane_apply]
+  simpa [sphereRotationIsometry] using
+    (sphereRotationPlane p x.1).planeRotation_apply_map ⟨x.2, x.2.2⟩ 1
 
 /-- The rotation sends the tangent vector `v` to `-Im z • p + Re z • v`. -/
 @[simp]
@@ -132,10 +128,8 @@ theorem sphereRotationIsometry_apply_tangent (p : sphere (0 : E) 1)
     (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) :
     sphereRotationIsometry p x ((x.1 : (ℝ ∙ (p : E))ᗮ) : E) =
       -(x.2 : ℂ).im • (p : E) + (x.2 : ℂ).re • ((x.1 : (ℝ ∙ (p : E))ᗮ) : E) := by
-  have h := (sphereRotationPlane p x.1).planeRotation_apply_map ⟨x.2, x.2.2⟩ Complex.I
-  rw [sphereRotationPlane_apply, Complex.I_re, Complex.I_im, zero_smul, one_smul, zero_add] at h
-  rw [sphereRotationIsometry, h, sphereRotationPlane_apply]
-  simp
+  simpa [sphereRotationIsometry] using
+    (sphereRotationPlane p x.1).planeRotation_apply_map ⟨x.2, x.2.2⟩ Complex.I
 
 /-- The rotation fixes the vectors orthogonal to `p` and to `v`. -/
 theorem sphereRotationIsometry_apply_of_inner_eq_zero (p : sphere (0 : E) 1)
