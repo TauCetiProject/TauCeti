@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Isoperimetric
-import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Topology.MetricSpace.Annulus
 
 /-!
 # Boundary control of energy on annuli and half-annuli
@@ -56,11 +56,7 @@ private theorem mul_integral_norm_fderiv_one_sq_le_integral_apply {u : ℂ → V
   have hE : IntegrableOn (fun z ↦ c * ‖fderiv ℝ u z 1‖ ^ 2) A :=
     (continuousOn_const.mul ((hDu.clm_apply continuousOn_const).norm.pow 2)).integrableOn_compact
       hA
-  have harea : IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) A := by
-    simpa only [Function.comp_apply, LinearMap.toContinuousBilinearMap_apply] using
-      ((ω.toBilinForm.toContinuousBilinearMap.continuous.comp_continuousOn
-        (hDu.clm_apply continuousOn_const)).clm_apply
-        (hDu.clm_apply continuousOn_const)).integrableOn_compact hA
+  have harea := ω.integrableOn_fderiv_apply_of_contDiffAt hA fun z hz ↦ (hu z hz).of_le one_le_two
   have hmono := setIntegral_mono_on hE harea hA.measurableSet fun z hz ↦ by
     rw [hCR z hz]
     exact htame z hz (fderiv ℝ u z 1)
@@ -84,11 +80,7 @@ theorem integral_norm_fderiv_one_sq_annulus_le {u : ℂ → V} {J : V → V →L
       ((∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ b θ)) θ‖ ^ 2) +
         ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ a θ)) θ‖ ^ 2) / (2 * c) := by
   let A := {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
-  have hclosed : IsClosed A :=
-    (isClosed_le continuous_const (continuous_id.sub continuous_const).norm).inter
-      (isClosed_le (continuous_id.sub continuous_const).norm continuous_const)
-  have hcompact : IsCompact A := (isCompact_closedBall z₀ b).of_isClosed_subset hclosed
-    (fun z hz ↦ by simpa only [Metric.mem_closedBall, dist_eq_norm] using hz.2)
+  have hcompact : IsCompact A := isCompact_setOf_le_norm_sub_le z₀ a b
   have hmono := mul_integral_norm_fderiv_one_sq_le_integral_apply hcompact hu hCR htame
   have hbound := ω.abs_integral_fderiv_apply_annulus_le z₀ hg ha hab hu
   have h := hmono.trans ((le_abs_self _).trans hbound)

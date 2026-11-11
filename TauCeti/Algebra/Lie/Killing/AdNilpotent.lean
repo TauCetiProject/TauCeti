@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.Lie.TraceForm
+-- Non-public: this appears only inside proofs, never in the type of an exported declaration.
+import TauCeti.Algebra.Lie.Killing.Basic
 
 /-!
 # Ad-nilpotent elements of a Killing Lie algebra as brackets with themselves
 
-Let `L` be a finite-dimensional Lie algebra over a field whose Killing form `κ` is nondegenerate,
-and let `x : L` be an element whose adjoint action `ad x` is nilpotent.  Then there is a `t : L`
-with
+Let `L` be a Lie algebra over a field whose Killing form `κ` is nondegenerate (so `L` is
+finite-dimensional, `TauCeti.finite_of_isKilling`), and let `x : L` be an element whose adjoint
+action `ad x` is nilpotent.  Then there is a `t : L` with
 
 `⁅x, t⁆ = x`,
 
@@ -171,8 +173,7 @@ end Orthogonal
 
 section Killing
 
-variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
-  [LieAlgebra.IsKilling K L]
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [LieAlgebra.IsKilling K L]
 
 /-- **The range of `(ad x) ^ n` is the Killing-orthogonal complement of its kernel.** This is
 `TauCeti.orthogonal_range_ad_pow_eq_ker_ad_pow` read backwards through the double orthogonal
@@ -180,6 +181,7 @@ complement of a nondegenerate symmetric form on a finite-dimensional space. -/
 theorem range_ad_pow_eq_orthogonal_ker_ad_pow (x : L) (n : ℕ) :
     LinearMap.range (ad K L x ^ n) =
       (killingForm K L).orthogonal (LinearMap.ker (ad K L x ^ n)) := by
+  have := finite_of_isKilling (R := K) (L := L)
   rw [← orthogonal_range_ad_pow_eq_ker_ad_pow x n,
     LinearMap.BilinForm.orthogonal_orthogonal (LieAlgebra.IsKilling.killingForm_nondegenerate K L)
       (LieModule.traceForm_isSymm K L L).isRefl]
@@ -217,15 +219,15 @@ end Killing
 
 section CharZero
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
 
 /-- **An ad-nilpotent element is Killing-orthogonal to everything its adjoint action kills
 twice.** This is `TauCeti.traceForm_eq_zero_of_isNilpotent_of_lie_lie_eq_zero` for the adjoint
 representation. -/
 theorem killingForm_eq_zero_of_isNilpotent_ad_of_lie_lie_eq_zero {x z : L}
     (hx : IsNilpotent (ad K L x)) (hz : ⁅x, ⁅x, z⁆⁆ = 0) :
-    killingForm K L x z = 0 :=
-  traceForm_eq_zero_of_isNilpotent_of_lie_lie_eq_zero hx hz
+    killingForm K L x z = 0 := by
+  exact traceForm_eq_zero_of_isNilpotent_of_lie_lie_eq_zero hx hz
 
 variable [LieAlgebra.IsKilling K L]
 

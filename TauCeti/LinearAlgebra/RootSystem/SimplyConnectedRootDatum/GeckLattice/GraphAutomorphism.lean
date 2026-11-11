@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.NumberedSymmetry
-public import TauCeti.CategoryTheory.Aut.Basic
 public import TauCeti.LinearAlgebra.RootSystem.GeckConstruction.PinnedSymmetry
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GroupScheme
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.PointsFunctor
@@ -170,7 +169,7 @@ private theorem geckGraphAut_hom (hsigma : sigma ∈ t.diagramSymmetry) :
     (t.geckGraphAut ht hsigma).asIso.hom =
       eqToHom (t.geckGroupScheme_def ht) ≫ (toralGraphAut ht hsigma).asIso.hom ≫
         eqToHom (t.geckGroupScheme_def ht).symm := by
-  rw [geckGraphAut, TauCeti.CategoryTheory.autMulEquivOfIso_hom, eqToIso.inv, eqToIso.hom]
+  simp [geckGraphAut]
 
 /-- The graph automorphism renumbers every pinned raising and lowering root subgroup by the diagram
 symmetry, without changing its additive parameter. -/

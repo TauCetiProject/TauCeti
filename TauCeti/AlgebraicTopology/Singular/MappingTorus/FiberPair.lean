@@ -235,7 +235,6 @@ private lemma cylinderHomotopy_mem_cylinderBoundary (τ : I) (p : TopCat.of (X �
 private lemma cylinderHomotopy_mem_cylinderEnds (τ : I) (p : TopCat.of (X × I))
     (hp : p ∈ cylinderEnds X) : cylinderHomotopy X (τ, p) ∈ cylinderEnds X := by
   have hτ₀ := τ.2.1
-  have hτ₁ := τ.2.2
   have ht₀ := p.2.2.1
   have ht₁ := p.2.2.2
   have hval : ((cylinderHomotopy X (τ, p)).2 : ℝ) = (1 - τ) * p.2 + τ * collapse p.2 := by
