@@ -137,13 +137,14 @@ variable [Semiring S] [Algebra R S]
 variable (S) in
 /-- **Algebra maps out of `AdjoinRoot f` are the roots of `f`.** An `R`-algebra map
 `AdjoinRoot f →ₐ[R] S` is determined by the image of the root, which can be any root of `f` in
-`S`. The target need not be commutative, since `R` acts centrally on it; the inverse is therefore
-built from `Ideal.Quotient.liftₐ` rather than from `AdjoinRoot.liftAlgHom`, which asks for a
-commutative target. Mathlib's `AdjoinRoot.equiv` is the version over a field with values in a
-domain, indexed by the multiset of roots. -/
+`S`. The target need not be commutative, since `R` acts centrally on it. Mathlib's
+`AdjoinRoot.equiv` is the version over a field with values in a domain, indexed by the multiset of
+roots. -/
 noncomputable def algHomEquiv (f : R[X]) :
     (AdjoinRoot f →ₐ[R] S) ≃ {x : S // aeval x f = 0} where
   toFun φ := ⟨φ (root f), by rw [← algHom_mk, mk_self, map_zero]⟩
+  -- `AdjoinRoot.liftAlgHom` asks for a commutative target, so the inverse uses
+  -- `Ideal.Quotient.liftₐ` instead.
   invFun x := Ideal.Quotient.liftₐ _ (aeval x.1) fun p hp ↦ by
     obtain ⟨q, rfl⟩ := Ideal.mem_span_singleton'.mp hp
     rw [map_mul, x.2, mul_zero]
