@@ -198,14 +198,14 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
   have hψM' : ∀ x ∈ Omega, |ψ x| ≤ M := fun x _ => hψM x
   have hgradM' : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M := fun x _ => hgradM x
   -- The power `w = u^{p/2}` and the product `z = ψ w ∈ H¹₀(Ω)`.
-  obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_rpow (by simp) hε
+  obtain ⟨w, hwv, -⟩ := W1p.exists_value_gradient_ae_eq_rpow (by simp) hε
     (by linarith : p / 2 ≤ 1) hεu
   set z := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w
   have hz : z ∈ w1p0Submodule mu Omega 2 :=
     W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM' hgradM' hcpt
       hts w
   -- The Caccioppoli inequality for powers, in terms of `w`.
-  have hcacc := h.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow ha hu hε hεu hp hwv hwg hψ
+  have hcacc := h.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow ha hu hε hεu hp hwv hψ
     hcpt hts
   -- The cutoff term is controlled on `B(x₀, ρ)`.
   have hI : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤

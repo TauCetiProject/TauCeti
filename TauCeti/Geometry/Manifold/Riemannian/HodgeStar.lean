@@ -69,8 +69,11 @@ namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [FiniteDimensional ℝ E] [IsManifold I 1 M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [FiniteDimensional ℝ E]
+
+section Main
+
+variable [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {m k l : ℕ}
 
 namespace RoughForm
@@ -352,6 +355,18 @@ def hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) :
   (RoughForm.hodgeStar o hkl).restrict fun φ hφ ↦
     ((SmoothForm.isSmoothForm ⟨φ, hφ⟩).hodgeStar o hkl).mem_smoothBundleForms
 
+end SmoothForm
+
+end Main
+
+section Theorems
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {m k l : ℕ}
+  [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+namespace SmoothForm
+
 /-- The Hodge star of a smooth form is the Hodge star of the underlying rough form. -/
 @[simp]
 theorem coe_hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
@@ -395,5 +410,7 @@ theorem hodgeStar_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : 
   Subtype.ext (RoughForm.hodgeStar_neg_orientation o hkl α)
 
 end SmoothForm
+
+end Theorems
 
 end TauCeti

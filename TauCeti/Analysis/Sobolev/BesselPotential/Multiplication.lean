@@ -273,7 +273,7 @@ theorem exists_besselPotential_smulLeftCLM_eq_and_norm_le (s : ℝ) (φ : 𝓢(E
   have hT (ψ : 𝓢(E, F)) : T (ψ.toLp 2 volume) = ((M ψ).toLp 2 volume : 𝓢'(E, F)) := by
     simp only [T, M, ContinuousLinearMap.comp_apply, Lp.toTemperedDistributionCLM_apply,
       Lp.toTemperedDistribution_toLp_eq, besselPotential_toTemperedDistributionCLM_eq,
-      smulLeftCLM_toTemperedDistributionCLM_eq φ.hasTemperateGrowth, Λ]
+      smulLeftCLM_toTemperedDistributionCLM_eq, Λ]
   have hu : u = besselPotential E F (-s) v := by
     rw [← hv, besselPotential_besselPotential_apply]
     simp

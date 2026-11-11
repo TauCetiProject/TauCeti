@@ -137,7 +137,7 @@ private theorem mem_support_standardStableMeasure_of_eventually (hα : α ∈ Io
     (existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ (hr n)).exists
   -- The small-jump factors converge weakly to the point mass at zero.
   have hball := ProbabilityMeasure.le_liminf_measure_open_of_tendsto
-    (tendsto_smallJumpFactor_dirac hα hβ hr hrlim hρ) (Metric.isOpen_ball (x := 0) (ε := δ))
+    (tendsto_smallJumpFactor_dirac hα hrlim hρ) (Metric.isOpen_ball (x := 0) (ε := δ))
   have hpos : ∀ᶠ n in atTop, 0 < (ρ n : Measure ℝ) (Metric.ball 0 δ) := by
     refine eventually_lt_of_lt_liminf (lt_of_lt_of_le ?_ hball)
     simp [Metric.mem_ball, hδ]
