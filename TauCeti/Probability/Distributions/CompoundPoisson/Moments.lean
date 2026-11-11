@@ -184,26 +184,13 @@ jump mean. -/
 @[simp]
 theorem integral_continuousLinearMap_compoundPoissonMeasure (L : E →L[ℝ] ℝ) (r : ℝ≥0) :
     ∫ x, L x ∂compoundPoissonMeasure r μ = (r : ℝ) * ∫ x, L x ∂μ := by
-  by_cases hL : Integrable L μ
-  swap
-  · rw [integral_undef hL, mul_zero]
-    rcases eq_or_ne r 0 with rfl | hr
-    · rw [compoundPoissonMeasure_zero,
-        integral_dirac' _ _ L.continuous.measurable.stronglyMeasurable]
-      simp
-    refine integral_undef fun h ↦ hL ?_
-    have hmap : Integrable id ((compoundPoissonMeasure r μ).map L) :=
-      (integrable_map_measure aestronglyMeasurable_id (by fun_prop)).2 (by simpa using h)
-    have htransport := map_compoundPoissonMeasure r μ L.toAddMonoidHom L.continuous.measurable
-    simp only [LinearMap.toAddMonoidHom_coe, ContinuousLinearMap.coe_coe] at htransport
-    rw [htransport, ← memLp_one_iff_integrable,
-      memLp_id_compoundPoissonMeasure_iff ENNReal.one_ne_top hr, memLp_one_iff_integrable] at hmap
-    exact (integrable_map_measure aestronglyMeasurable_id (by fun_prop)).1 hmap
-  have hint := integrable_continuousLinearMap_compoundPoissonMeasure L hL r
-  rw [compoundPoissonMeasure_def] at hint ⊢
-  rw [Measure.integral_bind Measurable.of_discrete.aemeasurable hint]
-  simp_rw [μ.integral_continuousLinearMap_convolutionPower L hL]
-  rw [integral_mul_const, integral_natCast_poissonMeasure]
+  have hLm : Measurable L := L.continuous.measurable
+  have htransport := map_compoundPoissonMeasure r μ L.toAddMonoidHom hLm
+  simp only [LinearMap.toAddMonoidHom_coe, ContinuousLinearMap.coe_coe] at htransport
+  have h := integral_id_compoundPoissonMeasure (μ := μ.map L) r
+  rw [← htransport, integral_map (f := fun x : ℝ ↦ x) hLm.aemeasurable aestronglyMeasurable_id,
+    integral_map (f := fun x : ℝ ↦ x) hLm.aemeasurable aestronglyMeasurable_id] at h
+  simpa only [smul_eq_mul] using h
 
 /-- The covariance of two linear observables of a compound Poisson sum is the rate times
 their uncentered jump cross moment. Only the two observed second moments need be finite. -/
