@@ -81,6 +81,7 @@ theorem torusDifferential_apply_mfderiv {x : AddAction.orbitRel.Quotient L ℂ} 
     one_ne_zero).symm_apply_apply v
 
 /-- **The pullback of the torus differential to `ℂ` is `dz`.** -/
+@[simp]
 theorem pullback_torusDifferential :
     (torusDifferential L).pullback (Quotient.mk (AddAction.orbitRel L ℂ)) = mvfderiv 𝓘(ℂ) id := by
   funext z
