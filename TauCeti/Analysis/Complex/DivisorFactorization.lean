@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.BranchLogRoot
 public import TauCeti.Analysis.Meromorphic.Order
 public import TauCeti.Analysis.Meromorphic.Divisor
 public import Mathlib.Analysis.Meromorphic.NormalForm
+public import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Analysis.Meromorphic.FactorizedRational
 
 /-!
@@ -29,7 +30,10 @@ an infinite-order germ, so the divisor of an identically zero function is zero.
 
 On a closed disc, `AnalyticOnNhd.exists_eq_finprod_zpow_mul` divides out the zeros lying in a
 smaller concentric closed disc: `f = (∏ᶠ ρ, (· - ρ) ^ m_ρ) * G` with `G` zero-free on the smaller
-disc and `m_ρ` the divisor of `f` there.
+disc and `m_ρ` the divisor of `f` there. For a finitely supported exponent `d`, the value of
+`∏ᶠ u, (· - u) ^ d u` at a point is a finite product
+(`Function.FactorizedRational.finprod_apply_eq_prod`), and its logarithmic derivative at a point
+`z` with `d z = 0` is `∑ᶠ u, d u / (z - u)` (`Function.FactorizedRational.logDeriv_eq_finsum`).
 -/
 
 public section
@@ -86,6 +90,39 @@ theorem exists_differentiableOn_eqOn_mul_exp_of_divisor_eq {U : Set ℂ} {f g : 
     _ = g z * exp (L z) := congrArg (fun a ↦ g z * a) (heq hz).symm
 
 end TauCeti
+
+namespace Function.FactorizedRational
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {d : 𝕜 → ℤ}
+
+/-- The value at `y` of the finitely supported product `∏ᶠ u, (· - u) ^ d u`, as a finite
+product over the support of `d`. -/
+theorem finprod_apply_eq_prod (hd : d.support.Finite) (y : 𝕜) :
+    (∏ᶠ u, (· - u) ^ d u) y = ∏ u ∈ hd.toFinset, (y - u) ^ d u :=
+  (congrFun (finprod_eq_fun hd) y).trans <|
+    finprod_eq_prod_of_mulSupport_subset _ fun u hu ↦
+      hd.mem_toFinset.2 fun h ↦ hu (by simp [h])
+
+/-- **Logarithmic derivative of a factorized rational function.** At a point `z` with `d z = 0`,
+the logarithmic derivative of `∏ᶠ u, (· - u) ^ d u` is `∑ᶠ u, d u / (z - u)`. -/
+theorem logDeriv_eq_finsum (hd : d.support.Finite) {z : 𝕜} (hz : d z = 0) :
+    logDeriv (∏ᶠ u, (· - u) ^ d u) z = ∑ᶠ u, (d u : 𝕜) / (z - u) := by
+  classical
+  have hzu (u : 𝕜) (hu : u ∈ hd.toFinset) : z - u ≠ 0 :=
+    sub_ne_zero.2 fun h ↦ hd.mem_toFinset.1 hu (h ▸ hz)
+  rw [finprod_eq_prod_of_mulSupport_subset _ (s := hd.toFinset)
+      (by rw [mulSupport d, hd.coe_toFinset]),
+    show (∏ u ∈ hd.toFinset, (· - u) ^ d u : 𝕜 → 𝕜) = ∏ u ∈ hd.toFinset, fun w ↦ (w - u) ^ d u
+      from rfl,
+    logDeriv_prod (f := fun u w ↦ (w - u) ^ d u) (fun u hu ↦ zpow_ne_zero _ (hzu u hu))
+      fun u hu ↦ (differentiableAt_id.sub_const u).zpow (.inl (hzu u hu)),
+    finsum_eq_sum_of_support_subset (s := hd.toFinset)]
+  · refine Finset.sum_congr rfl fun u _ ↦ ?_
+    rw [logDeriv_fun_zpow (f := fun w ↦ w - u) (by fun_prop)]
+    simp [logDeriv_apply, div_eq_mul_inv]
+  · exact fun u hu ↦ hd.mem_toFinset.2 fun h ↦ hu (by simp [h])
+
+end Function.FactorizedRational
 
 namespace AnalyticOnNhd
 

@@ -27,7 +27,7 @@ The value `‖a‖` cannot simply replace `‖f c‖` in Mathlib's bound: for `f
 
 * `AnalyticOnNhd.sum_divisor_le_analyticOrderNatAt_add` — Jensen's bound for the number of zeros
   of `f` in a disc about a point where `f` has finite order.
-* `AnalyticOnNhd.finsum_divisor_le_log_div_log`, `AnalyticOnNhd.finsum_divisor_half_le`: the
+* `AnalyticOnNhd.sum_divisor_le_log_div_log`, `AnalyticOnNhd.sum_divisor_half_le`: the
   number of zeros in `closedBall z₀ r` under a relative bound `‖f w‖ ≤ M ‖f z₀‖` on
   `sphere z₀ R`, with `f z₀ ≠ 0`.
 
@@ -165,7 +165,7 @@ theorem one_le_of_forall_mem_sphere_norm_le_mul (hf : AnalyticOnNhd ℂ f (close
 /-- **Jensen's count with a relative bound.** If `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`, then the
 number of zeros of `f` in `closedBall z₀ r`, counted with multiplicity, is at most
 `log M / log (R / r)`. -/
-theorem finsum_divisor_le_log_div_log (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
+theorem sum_divisor_le_log_div_log (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
     (hr : 0 < r) (hrR : r < R) (hz₀ : f z₀ ≠ 0) {M : ℝ}
     (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) :
     ((∑ᶠ ρ, divisor f (closedBall z₀ r) ρ : ℤ) : ℝ) ≤ Real.log M / Real.log (R / r) := by
@@ -184,10 +184,10 @@ theorem finsum_divisor_le_log_div_log (hf : AnalyticOnNhd ℂ f (closedBall z₀
 
 /-- **Jensen's count in the classical normalization**: at most `log M / log 2` zeros of `f` in
 `closedBall z₀ (R / 2)` when `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`. -/
-theorem finsum_divisor_half_le (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
+theorem sum_divisor_half_le (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
     (hR : 0 < R) (hz₀ : f z₀ ≠ 0) {M : ℝ} (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) :
     ((∑ᶠ ρ, divisor f (closedBall z₀ (R / 2)) ρ : ℤ) : ℝ) ≤ Real.log M / Real.log 2 := by
-  have := hf.finsum_divisor_le_log_div_log (r := R / 2) (by linarith) (by linarith) hz₀ hM
+  have := hf.sum_divisor_le_log_div_log (r := R / 2) (by linarith) (by linarith) hz₀ hM
   rwa [div_div_cancel₀ hR.ne'] at this
 
 end AnalyticOnNhd
