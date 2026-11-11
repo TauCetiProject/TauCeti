@@ -119,8 +119,8 @@ private theorem surjective_localization_abhyankarModel (hϖ : Irreducible ϖ) {�
   have key : φ (algebraMap B (abhyankarModel ϖ u e d) ↑v⁻¹ * t *
       algebraMap (standardTameCover B u e) _ (AdjoinRoot.root (X ^ e - C u)) ^ k) =
         β ^ (d * k) * c := by
-    rw [map_mul, map_mul, map_pow, ht, AlgHom.commutes, hφy, pow_mul, ← hγ, map_mul, map_pow]
-    linear_combination (algebraMap B S ϖ ^ k * c * γ ^ k) * hv
+    simp only [map_mul, map_pow, ht, AlgHom.commutes, hφy]
+    linear_combination (algebraMap B S ϖ ^ k * c * γ ^ k) * hv + c * congrArg (· ^ k) hγ
   rw [← hψ, ← hψx] at key
   obtain ⟨r, hr⟩ := (IsDiscreteValuationRing.map_pow_dvd_map_iff ψ hx (hψx ▸ hβ)
     (hψx ▸ hβ₀)).mp ⟨c, key⟩
@@ -155,13 +155,17 @@ theorem exists_algEquiv_localization_abhyankarModel (hϖ : Irreducible ϖ) (hu :
     exact hϖ.not_isUnit this.2
   -- `(β ^ d) ^ e` and `ϖ ^ e` are associated, so `γ = β ^ d / ϖ` lies in the integrally closed
   -- ring `S`, and `γ ^ e = u`.
+  have hβ' : (β ^ d) ^ e = algebraMap B S u * algebraMap B S ϖ ^ e := by
+    rw [← map_pow, ← map_mul, ← hβ]
+    ring
   have hassoc : Associated (algebraMap B S ϖ ^ e) ((β ^ d) ^ e) :=
     ⟨(hu.map (algebraMap B S)).unit, by
-      rw [← pow_mul, mul_comm d e, hβ, map_mul, map_pow, IsUnit.unit_spec, mul_comm]⟩
+      rw [IsUnit.unit_spec]
+      linear_combination -hβ'⟩
   obtain ⟨γ, hγ'⟩ := (Associated.pow_iff he₀).mp hassoc
   have hγ : (γ : S) ^ e = algebraMap B S u := by
     apply mul_left_cancel₀ (pow_ne_zero e hϖS)
-    rw [← mul_pow, hγ', ← pow_mul, mul_comm d e, hβ, map_mul, map_pow, mul_comm]
+    linear_combination congrArg (· ^ e) hγ' + hβ'
   obtain ⟨φ, hφx, hφy⟩ := exists_algHom_abhyankarModel (d := d) hγ hγ'.symm
   set M := (maximalIdeal S).comap φ
   obtain ⟨_, _⟩ := isMaximal_comap_maximalIdeal he₀ hd φ
