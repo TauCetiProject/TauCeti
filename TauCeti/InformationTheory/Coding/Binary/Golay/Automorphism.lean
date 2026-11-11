@@ -22,8 +22,8 @@ coordinate permutation automorphism of `code` that fixes at least five points of
 that octad as a codeword and stabilizes its eight-point support setwise.
 
 Combining octad rigidity with systematic encoding (`encodingEquiv`) and Euclidean self-duality
-(`euclideanDual_code`) gives a concrete seven-point base `![0, 1, 2, 3, 4, 17, 5]` for the full
-permutation automorphism group `AdditiveCode.permutationAut code.toAddSubgroup`:
+(`euclideanDual_code`) gives the seven-point base `base 0, …, base 6 = 0, 1, 2, 3, 4, 17, 5` for
+the full permutation automorphism group `AdditiveCode.permutationAut code.toAddSubgroup`:
 
 * The unique octad containing `{0, 1, 2, 3, 4}` has support `{0, 1, 2, 3, 4, 17, 21, 23}`. Every
   automorphism fixing `0, 1, 2, 3, 4` maps `17` into `{17, 21, 23}`, and every automorphism fixing
