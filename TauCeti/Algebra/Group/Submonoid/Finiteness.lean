@@ -12,12 +12,12 @@ public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.Algebra.Order.Monoid.Prod
 import Mathlib.Algebra.Order.Pi
-import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Data.Int.Interval
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.Finiteness.Cardinality
+import TauCeti.LinearAlgebra.Basis.Order
 
 /-!
 # Finiteness of preimages and saturations of additive submonoids
@@ -106,25 +106,7 @@ namespace AddSubmonoid
 
 section AmbientLattice
 
-variable {L : Type*} [AddCommGroup L]
-
-private theorem abs_repr_le_of_nsmul_eq_sum {ι : Type*} (b : Module.Basis ι ℤ L)
-    {m n : ℕ} (hn : 0 < n) (a : Fin m → L) (r : Fin m → ℕ) (hr : ∀ j, r j < n) {z : L}
-    (hz : n • z = ∑ j, r j • a j) (i : ι) :
-    |b.repr z i| ≤ ∑ j, |b.repr (a j) i| := by
-  have hle : (n : ℤ) * |b.repr z i| ≤ (n : ℤ) * ∑ j, |b.repr (a j) i| := by
-    calc (n : ℤ) * |b.repr z i|
-      _ = |b.repr (n • z) i| := by simp [abs_mul]
-      _ = |∑ j, (r j : ℤ) * b.repr (a j) i| := by simp [hz]
-      _ ≤ ∑ j, |(r j : ℤ) * b.repr (a j) i| := Finset.abs_sum_le_sum_abs _ _
-      _ ≤ ∑ j, (n : ℤ) * |b.repr (a j) i| := Finset.sum_le_sum fun j _ => by
-          rw [abs_mul, Nat.abs_cast]
-          gcongr
-          exact (hr j).le
-      _ = (n : ℤ) * ∑ j, |b.repr (a j) i| := (Finset.mul_sum _ _ _).symm
-  exact le_of_mul_le_mul_left hle (by exact_mod_cast hn)
-
-variable [Module.Finite ℤ L] [HasUniqueDiv L]
+variable {L : Type*} [AddCommGroup L] [Module.Finite ℤ L] [HasUniqueDiv L]
 
 /-- **Bounded shifts for submonoid saturation.** If `S` is a finitely generated submonoid of a
 finitely generated torsion-free abelian group `L`, there is a finite subset `F ⊆ S.nsmulSaturation`
@@ -171,7 +153,7 @@ theorem FG.exists_finset_subset_nsmulSaturation_add {S : AddSubmonoid L} (hS : S
   have hz_sat : z ∈ S.nsmulSaturation :=
     mem_nsmulSaturation.mpr ⟨n, hn, hnz ▸ hg ▸ ⟨r, rfl⟩⟩
   have hz_bound : ∀ i, |b.repr z i| ≤ B i :=
-    abs_repr_le_of_nsmul_eq_sum b hn a r (fun j => Nat.mod_lt _ hn) (hnz.trans (hg_eq r))
+    b.abs_repr_le_of_nsmul_eq_sum hn (fun j _ => (Nat.mod_lt _ hn).le) (hnz.trans (hg_eq r))
   exact ⟨z, (Set.Finite.mem_toFinset hfin).mpr ⟨hz_sat, hz_bound⟩,
     s, hg ▸ ⟨q, rfl⟩, (sub_add_cancel x s).symm⟩
 

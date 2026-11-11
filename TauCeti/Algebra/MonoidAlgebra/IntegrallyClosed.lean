@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.MonoidAlgebra.GroupCompletion
 public import TauCeti.Algebra.MonoidAlgebra.Saturation
 public import TauCeti.Geometry.Convex.Cone.Saturation
-import Mathlib.Algebra.MonoidAlgebra.Degree
 import Mathlib.Algebra.MonoidAlgebra.Grading
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 import Mathlib.LinearAlgebra.FreeModule.PID
@@ -16,6 +15,7 @@ import Mathlib.RingTheory.Localization.LocalizationLocalization
 import TauCeti.Algebra.Group.Submonoid.Finiteness
 import TauCeti.Algebra.Group.UniqueProds.Submonoid
 import TauCeti.Algebra.Group.UniqueProds.TorsionFree
+import TauCeti.Algebra.MonoidAlgebra.Degree
 import TauCeti.Algebra.MonoidAlgebra.Finite
 import TauCeti.RingTheory.IntegralClosure.Transfer
 import TauCeti.RingTheory.MvPolynomial.IntegrallyClosed
@@ -198,66 +198,6 @@ end CoeffAndFreeGroup
 
 section HalfSpaceAndGroupClosure
 
-private theorem le_inf_support_pow_coe {R G : Type*} [Semiring R] [AddCommMonoid G] (φ : G →+ ℤ)
-    {f : AddMonoidAlgebra R G} {μ : ℤ} (hf : ∀ g ∈ f.coeff.support, μ ≤ φ g) (n : ℕ) :
-    ((n • μ : ℤ) : WithTop ℤ) ≤ (f ^ n).coeff.support.inf fun g => (φ g : WithTop ℤ) :=
-  have hf_inf : (μ : WithTop ℤ) ≤ f.coeff.support.inf fun g => (φ g : WithTop ℤ) :=
-    Finset.le_inf_iff.mpr fun g hg => WithTop.coe_le_coe.mpr (hf g hg)
-  (WithTop.coe_nsmul μ n).trans_le <| (nsmul_le_nsmul_right hf_inf n).trans <|
-    le_inf_support_pow (by simp) (fun a b => by simp [map_add, ← WithTop.coe_add]) n f
-
-private theorem lt_apply_of_mem_support_pow_sub_pow {R G : Type*} [CommRing R] [AddCommMonoid G]
-    (φ : G →+ ℤ) {f f₀ f₁ : AddMonoidAlgebra R G} (hf_split : f = f₀ + f₁) {μ : ℤ}
-    (hf : ∀ g ∈ f.coeff.support, μ ≤ φ g) (hf₀ : ∀ g ∈ f₀.coeff.support, μ ≤ φ g)
-    (hf₁ : ∀ g ∈ f₁.coeff.support, μ < φ g) (n : ℕ) :
-    ∀ g ∈ (f ^ n - f₀ ^ n).coeff.support, n • μ < φ g := by
-  let degt : G → WithTop ℤ := fun g => (φ g : WithTop ℤ)
-  have degtm : ∀ a b, degt a + degt b ≤ degt (a + b) := fun a b => by
-    simp [degt, map_add, ← WithTop.coe_add]
-  have hf₀_inf : (μ : WithTop ℤ) ≤ f₀.coeff.support.inf degt :=
-    Finset.le_inf_iff.mpr fun g hg => WithTop.coe_le_coe.mpr (hf₀ g hg)
-  have hf₁_inf : ((μ + 1 : ℤ) : WithTop ℤ) ≤ f₁.coeff.support.inf degt :=
-    Finset.le_inf_iff.mpr fun g hg => WithTop.coe_le_coe.mpr (Int.add_one_le_iff.mpr (hf₁ g hg))
-  suffices ((n • μ + 1 : ℤ) : WithTop ℤ) ≤ (f ^ n - f₀ ^ n).coeff.support.inf degt from
-    fun g hg => Int.add_one_le_iff.mp (WithTop.coe_le_coe.mp (Finset.le_inf_iff.mp this g hg))
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have hid : f ^ (n + 1) - f₀ ^ (n + 1) = (f ^ n - f₀ ^ n) * f₀ + f ^ n * f₁ := by
-      rw [hf_split, pow_succ, pow_succ]
-      ring
-    rw [hid]
-    refine (le_inf ?_ ?_).trans (le_inf_support_coeff_add degt _ _)
-    · rw [show (n + 1) • μ + 1 = (n • μ + 1) + μ by rw [succ_nsmul]; ring, WithTop.coe_add]
-      exact (add_le_add ih hf₀_inf).trans (le_inf_support_coeff_mul degtm _ _)
-    · rw [show (n + 1) • μ + 1 = n • μ + (μ + 1) by rw [succ_nsmul]; ring, WithTop.coe_add]
-      exact (add_le_add (le_inf_support_pow_coe φ hf n) hf₁_inf).trans
-        (le_inf_support_coeff_mul degtm _ _)
-
-private theorem lt_apply_of_mem_support_sum_mul_pow {R A G : Type*} [CommRing R] [Semiring A]
-    [AddCommMonoid G] (σ : A →+* AddMonoidAlgebra R G) (φ : G →+ ℤ)
-    (hσ : ∀ a : A, ∀ g ∈ (σ a).coeff.support, 0 ≤ φ g) {f : AddMonoidAlgebra R G} {μ : ℤ}
-    (hμ_neg : μ < 0) (hf : ∀ g ∈ f.coeff.support, μ ≤ φ g) (c : ℕ → A) (d : ℕ) :
-    ∀ g ∈ (∑ i ∈ Finset.range d, σ (c i) * f ^ i).coeff.support, d • μ < φ g := by
-  let degt : G → WithTop ℤ := fun g => (φ g : WithTop ℤ)
-  have degtm : ∀ a b, degt a + degt b ≤ degt (a + b) := fun a b => by
-    simp [degt, map_add, ← WithTop.coe_add]
-  intro g hg
-  have hsum_ne : ∑ i ∈ Finset.range d, (σ (c i) * f ^ i).coeff g ≠ 0 := by
-    simpa [coeff_sum, Finsupp.finsetSum_apply] using Finsupp.mem_support_iff.mp hg
-  obtain ⟨i, hi, hgi_ne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsum_ne
-  have hσ_inf : ((0 : ℤ) : WithTop ℤ) ≤ (σ (c i)).coeff.support.inf degt :=
-    Finset.le_inf_iff.mpr fun x hx => WithTop.coe_le_coe.mpr (hσ (c i) x hx)
-  have hterm_inf : ((i • μ : ℤ) : WithTop ℤ) ≤ (σ (c i) * f ^ i).coeff.support.inf degt := by
-    simpa using (add_le_add hσ_inf (le_inf_support_pow_coe φ hf i)).trans
-      (le_inf_support_coeff_mul degtm _ _)
-  have hterm : i • μ ≤ φ g :=
-    WithTop.coe_le_coe.mp (Finset.le_inf_iff.mp hterm_inf g (Finsupp.mem_support_iff.mpr hgi_ne))
-  have hlt : d • μ < i • μ := by
-    simpa [nsmul_eq_mul] using
-      mul_lt_mul_of_neg_right (Nat.cast_lt.mpr (Finset.mem_range.mp hi)) hμ_neg
-  exact hlt.trans_le hterm
-
 /-- **Half-space integral closedness.** Let `R` be a domain, `G` a torsion-free abelian group, and
 `φ : G →+ ℤ` an additive functional. If a ring homomorphism `σ : A →+* R[G]` lands in elements
 whose support satisfies `0 ≤ φ`, then every element `f : R[G]` integral over `σ` also has support
@@ -305,9 +245,10 @@ theorem nonneg_on_support_coeff_of_isIntegralElem {R A G : Type*} [CommRing R] [
     intro g hg
     rw [coeff_neg, Finsupp.support_neg, coeff_add] at hg
     rcases Finset.mem_union.mp (Finsupp.support_add hg) with hg_diff | hg_sum
-    · exact lt_apply_of_mem_support_pow_sub_pow φ hf_split hμ_le
-        (fun x hx => (hf₀_grade x hx).ge) hf₁_gt d g hg_diff
-    · exact lt_apply_of_mem_support_sum_mul_pow σ φ hσ hμ_neg hμ_le p.coeff d g hg_sum
+    · exact nsmul_lt_apply_of_mem_support_coeff_add_pow_sub_pow φ
+        (fun x hx => (hf₀_grade x hx).ge) hf₁_gt d (hf_split ▸ hg_diff)
+    · exact nsmul_lt_apply_of_mem_support_coeff_sum_mul_pow φ
+        (fun i _ => hσ (p.coeff i)) hμ_neg hμ_le hg_sum
   -- Since `R[G]` is a domain, `f₀ ^ d ≠ 0`, contradicting `φ = d • μ` on its support.
   have hpow_ne : f₀ ^ d ≠ 0 := pow_ne_zero d hf₀_ne
   obtain ⟨gMin', hgMin'⟩ : (f₀ ^ d).coeff.support.Nonempty :=
