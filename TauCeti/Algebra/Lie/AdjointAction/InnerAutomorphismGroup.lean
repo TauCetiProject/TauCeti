@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Sl2
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.InnerAutomorphism
+public import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
 # The group of inner automorphisms of a Lie algebra
@@ -163,12 +163,8 @@ variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ
 `(g h, g e, g f)`. -/
 theorem smul_of_mem_intLieAlgebra {g : LinearMap.GeneralLinearGroup K L}
     (hg : g ∈ intLieAlgebra K L) {h e f : L} (t : IsSl2Triple h e f) :
-    IsSl2Triple (g • h) (g • e) (g • f) where
-  h_ne_zero := (smul_ne_zero_iff_ne g).mpr t.h_ne_zero
-  lie_e_f := by rw [← map_lie_of_mem_intLieAlgebra hg, t.lie_e_f]
-  lie_h_e_nsmul := by rw [← map_lie_of_mem_intLieAlgebra hg, t.lie_h_e_nsmul, smul_comm]
-  lie_h_f_nsmul := by
-    rw [← map_lie_of_mem_intLieAlgebra hg, t.lie_h_f_nsmul, smul_neg, smul_comm]
+    IsSl2Triple (g • h) (g • e) (g • f) :=
+  t.map (intLieAlgebraLieEquiv ⟨g, hg⟩).toLieHom ((smul_ne_zero_iff_ne g).mpr t.h_ne_zero)
 
 end IsSl2Triple
 
