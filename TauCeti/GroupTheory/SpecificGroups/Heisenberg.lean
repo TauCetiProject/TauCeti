@@ -94,6 +94,10 @@ theorem equivProd_apply (a : HeisenbergGroup R) : equivProd a = (a.x, a.y, a.z) 
 theorem equivProd_symm_apply (a : R × R × R) : equivProd.symm a = ⟨a.1, a.2.1, a.2.2⟩ :=
   (rfl)
 
+/-- The Heisenberg carrier is nonempty whenever its coefficient type is nonempty. -/
+instance [Nonempty R] : Nonempty (HeisenbergGroup R) :=
+  Nonempty.map equivProd.symm inferInstance
+
 instance [Fintype R] : Fintype (HeisenbergGroup R) := Fintype.ofEquiv _ equivProd.symm
 
 instance [Finite R] : Finite (HeisenbergGroup R) := Finite.of_equiv _ equivProd.symm
