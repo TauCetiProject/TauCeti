@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Gauge
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.Convex.Gauge
 
 /-!
 # The finite-dimensional ℓ¹ unit ball
@@ -80,11 +81,12 @@ theorem absorbent_l1Ball : Absorbent ℝ (l1Ball ι) :=
 
 /-- The gauge of the ℓ¹ unit ball is the sum of absolute coordinates. -/
 theorem gauge_l1Ball (x : ι → ℝ) : gauge (l1Ball ι) x = ∑ i, |x i| := by
-  -- Transport along `WithLp.toLp 1`, which commutes with scalar multiplication: the gauge of
-  -- the preimage ball at `x` is the gauge of the `PiLp 1` closed ball at `toLp 1 x`.
+  -- Transport along `WithLp.toLp 1`, the linear equivalence `(WithLp.linearEquiv 1 ℝ _).symm`:
+  -- the gauge of the preimage ball at `x` is the gauge of the `PiLp 1` closed ball at `toLp 1 x`.
   have hg : gauge (l1Ball ι) x =
       gauge (Metric.closedBall (0 : PiLp 1 (fun _ : ι ↦ ℝ)) 1) (WithLp.toLp 1 x) := by
-    simp only [l1Ball_eq_preimage_closedBall, gauge_def', Set.mem_preimage, WithLp.toLp_smul]
+    rw [l1Ball_eq_preimage_closedBall, ← WithLp.coe_symm_linearEquiv 1 ℝ (ι → ℝ)]
+    exact (WithLp.linearEquiv 1 ℝ (ι → ℝ)).symm.toLinearMap.gauge_preimage _ x
   -- The `PiLp 1` norm of `toLp 1 x` is the sum of the absolute coordinates of `x`.
   rw [hg, gauge_closedBall zero_le_one, div_one, PiLp.norm_eq_of_L1]
   simp
