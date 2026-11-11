@@ -8,9 +8,13 @@ module
 public import TauCeti.Probability.Distributions.Stable.Cdf
 public import TauCeti.Probability.Distributions.Stable.Support
 public import TauCeti.Probability.Quantile
+import TauCeti.Probability.Distributions.Dirac
 
 /-!
 # Quantiles of stable laws
+
+For a valid zero-scale stable law, every positive quantile level at most one gives its location,
+and both one-sided endpoint limits remain at that location.
 
 For a positive-scale stable law with strict interior skewness `|β| < 1`, the cdf is strictly
 increasing on the whole real line. Every interior probability level therefore has a unique
@@ -39,6 +43,33 @@ open scoped NNReal
 namespace TauCeti.Probability
 
 variable {α β : ℝ} {s : ℝ≥0} {m u x : ℝ}
+
+/-! ### Zero-scale boundary -/
+
+/-- Every positive quantile level at most one of a valid zero-scale stable law is its location. -/
+theorem quantile_stableMeasure_zero_scale (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
+    (hu : u ∈ Ioc 0 1) : (stableMeasure α β 0 m).quantile u = m := by
+  rw [stableMeasure_zero_scale hα hβ, Measure.quantile_dirac m hu.1 hu.2]
+
+/-- Zero-scale stable quantiles tend to their location as the level decreases to zero. -/
+theorem tendsto_quantile_stableMeasure_zero_scale_nhdsGT_zero (hα : α ∈ Ioc 0 2)
+    (hβ : |β| ≤ 1) (m : ℝ) :
+    Tendsto (fun u ↦ ((stableMeasure α β 0 m).quantile u : EReal))
+      (nhdsWithin 0 (Ioi 0)) (nhds m) := by
+  apply tendsto_const_nhds.congr'
+  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+  rw [quantile_stableMeasure_zero_scale hα hβ ⟨hu.1, hu.2.le⟩]
+
+/-- Zero-scale stable quantiles tend to their location as the level increases to one. -/
+theorem tendsto_quantile_stableMeasure_zero_scale_nhdsLT_one (hα : α ∈ Ioc 0 2)
+    (hβ : |β| ≤ 1) (m : ℝ) :
+    Tendsto (fun u ↦ ((stableMeasure α β 0 m).quantile u : EReal))
+      (nhdsWithin 1 (Iio 1)) (nhds m) := by
+  apply tendsto_const_nhds.congr'
+  filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+  rw [quantile_stableMeasure_zero_scale hα hβ ⟨hu.1, hu.2.le⟩]
+
+/-! ### Positive-scale laws -/
 
 /-- A positive-scale stable cdf with strict interior skewness is strictly increasing on `ℝ`,
 including at shapes one and two. -/
