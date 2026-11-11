@@ -332,23 +332,23 @@ end ProbabilityTheory
 
 namespace ProbabilityTheory
 
-/-- Equal increment laws of a.e. nondecreasing natural-valued processes remain equal after
-casting the processes to the integers. The sample spaces may differ. -/
-theorem IdentDistrib.natCast_sub_of_monotone {T Ω Ω' : Type*} [Preorder T]
+/-- Equal laws of differences of natural-valued random variables remain equal after casting
+to the integers, provided the subtrahends are a.e. at most the minuends.
+The sample spaces may differ. -/
+theorem IdentDistrib.natCast_sub_of_le {Ω Ω' : Type*}
     [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
-    {X : T → Ω → ℕ} {Y : T → Ω' → ℕ} {s t : T}
-    (h : IdentDistrib (fun ω ↦ X t ω - X s ω) (fun ω ↦ Y t ω - Y s ω) P Q)
-    (hmonoX : ∀ᵐ ω ∂P, Monotone (fun t ↦ X t ω))
-    (hmonoY : ∀ᵐ ω ∂Q, Monotone (fun t ↦ Y t ω)) (hst : s ≤ t) :
-    IdentDistrib (fun ω ↦ (X t ω : ℤ) - X s ω)
-      (fun ω ↦ (Y t ω : ℤ) - Y s ω) P Q := by
+    {a b : Ω → ℕ} {a' b' : Ω' → ℕ}
+    (h : IdentDistrib (fun ω ↦ b ω - a ω) (fun ω ↦ b' ω - a' ω) P Q)
+    (hab : ∀ᵐ ω ∂P, a ω ≤ b ω) (hab' : ∀ᵐ ω ∂Q, a' ω ≤ b' ω) :
+    IdentDistrib (fun ω ↦ (b ω : ℤ) - a ω)
+      (fun ω ↦ (b' ω : ℤ) - a' ω) P Q := by
   have hcast := h.comp (measurable_of_countable (fun n : ℕ ↦ (n : ℤ)))
-  have hx : (fun ω ↦ ((X t ω - X s ω : ℕ) : ℤ)) =ᵐ[P]
-      (fun ω ↦ (X t ω : ℤ) - X s ω) := by
-    filter_upwards [hmonoX] with ω hω using Int.ofNat_sub (hω hst)
-  have hy : (fun ω ↦ ((Y t ω - Y s ω : ℕ) : ℤ)) =ᵐ[Q]
-      (fun ω ↦ (Y t ω : ℤ) - Y s ω) := by
-    filter_upwards [hmonoY] with ω hω using Int.ofNat_sub (hω hst)
+  have hx : (fun ω ↦ ((b ω - a ω : ℕ) : ℤ)) =ᵐ[P]
+      (fun ω ↦ (b ω : ℤ) - a ω) := by
+    filter_upwards [hab] with ω hω using Int.ofNat_sub hω
+  have hy : (fun ω ↦ ((b' ω - a' ω : ℕ) : ℤ)) =ᵐ[Q]
+      (fun ω ↦ (b' ω : ℤ) - a' ω) := by
+    filter_upwards [hab'] with ω hω using Int.ofNat_sub hω
   exact (IdentDistrib.of_ae_eq hcast.aemeasurable_fst hx).symm.trans
     (hcast.trans (IdentDistrib.of_ae_eq hcast.aemeasurable_snd hy))
 
@@ -376,7 +376,8 @@ theorem HasIndepIncrements.identDistrib_nat {T Ω Ω' : Type*} [LinearOrder T] [
     filter_upwards [h0Y] with ω hω using by simp [hω]
   have hdist := (hX.natCast hmonoX).identDistrib (hY.natCast hmonoY)
     hmXZ hmYZ h0XZ h0YZ (fun s t hst ↦
-      (hlaw s t hst).natCast_sub_of_monotone hmonoX hmonoY hst)
+      (hlaw s t hst).natCast_sub_of_le
+        (hmonoX.mono fun _ hω ↦ hω hst) (hmonoY.mono fun _ hω ↦ hω hst))
   simpa only [Function.comp_def, Int.toNat_natCast] using
     hdist.comp (Measurable.of_eval fun _ ↦
       (measurable_of_countable Int.toNat).comp (measurable_pi_apply _))
