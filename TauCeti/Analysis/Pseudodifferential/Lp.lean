@@ -133,7 +133,7 @@ private theorem IsUniform.exists_integral_norm_le {a : Symbol n V W m} (ha : a.I
 
 /-- A uniform symbol of order `m < -n` has a kernel with uniformly bounded row and column
 integrals. -/
-private theorem IsUniform.exists_lintegral_enorm_quantizationKernel_le {a : Symbol n V W m}
+theorem IsUniform.exists_lintegral_enorm_quantizationKernel_le {a : Symbol n V W m}
     (ha : a.IsUniform) (hm : m < -n) :
     ∃ B : ℝ≥0, (∀ x, ∫⁻ y, ‖quantizationKernel a.coefficient x y‖ₑ ≤ B) ∧
       ∀ y, ∫⁻ x, ‖quantizationKernel a.coefficient x y‖ₑ ≤ B := by
@@ -149,6 +149,13 @@ private theorem IsUniform.exists_lintegral_enorm_quantizationKernel_le {a : Symb
     exact a.lintegral_enorm_quantizationKernel_right_le hm one_pos (h₀ x) (h₁' x)
   · rw [ENNReal.ofNNReal_toNNReal]
     exact a.lintegral_enorm_quantizationKernel_left_le hm one_pos h₀ h₁' y
+
+/-- A uniform symbol of order `m < -n` has integrable kernel slices `y ↦ K_a(x, y)`. -/
+theorem IsUniform.integrable_quantizationKernel {a : Symbol n V W m} (ha : a.IsUniform)
+    (hm : m < -n) (x : CoordinateSpace n) : Integrable (quantizationKernel a.coefficient x) := by
+  obtain ⟨B, hB, -⟩ := ha.exists_lintegral_enorm_quantizationKernel_le hm
+  exact ⟨(continuous_quantizationKernel_right
+    (a.integrable_coefficient hm x)).aestronglyMeasurable, (hB x).trans_lt ENNReal.coe_lt_top⟩
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 

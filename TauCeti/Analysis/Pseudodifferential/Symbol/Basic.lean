@@ -1291,6 +1291,39 @@ theorem isSmoothing_of_coefficient_eq_zero {a : Symbol n V W m} (R : ℝ)
     (ha : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing :=
   fun _ => ⟨ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R ha, rfl⟩
 
+/-- A uniform symbol vanishing at every frequency of norm at least `R` is a uniform symbol of every
+order `m'`: its mixed derivatives vanish for `‖ξ‖ > R`, and on the ball `‖ξ‖ ≤ R` the weights of any
+two orders are comparable. -/
+theorem IsUniform.ofBoundedFrequencySupport {a : Symbol n V W m} (ha : a.IsUniform) (R : ℝ)
+    (hR : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) :
+    (ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R hR :
+      Symbol n V W m').IsUniform := by
+  intro α β
+  obtain ⟨C, hC, hCa⟩ := ha α β
+  refine ⟨C * (1 + R ^ 2) ^ (|m - m'| / 2), by positivity, fun x ξ => ?_⟩
+  rw [coefficient_ofBoundedFrequencySupport]
+  rcases le_or_gt ‖ξ‖ R with hξ | hξ
+  · have h1 : 1 ≤ 1 + ‖ξ‖ ^ 2 := by nlinarith [sq_nonneg ‖ξ‖]
+    have hw : (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) ≤
+        (1 + R ^ 2) ^ (|m - m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
+      rw [show (m - β.length) / 2 = (m - m') / 2 + (m' - β.length) / 2 by ring,
+        Real.rpow_add (by positivity)]
+      refine mul_le_mul_of_nonneg_right ?_ (by positivity)
+      calc (1 + ‖ξ‖ ^ 2) ^ ((m - m') / 2)
+          ≤ (1 + ‖ξ‖ ^ 2) ^ (|m - m'| / 2) :=
+            Real.rpow_le_rpow_of_exponent_le h1 (by linarith [le_abs_self (m - m')])
+        _ ≤ (1 + R ^ 2) ^ (|m - m'| / 2) := by gcongr
+    calc ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
+          hCa x ξ
+      _ ≤ C * ((1 + R ^ 2) ^ (|m - m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2)) := by
+          gcongr
+      _ = _ := by ring
+  · have hzero : a.coefficient =ᶠ[nhds (x, ξ)] 0 :=
+      Filter.eventually_of_mem ((isOpen_lt continuous_const
+        (continuous_norm.comp continuous_snd)).mem_nhds hξ) fun p hp => hR p.1 p.2 hp.le
+    rw [hzero.mixedDeriv_eq, mixedDeriv_zero, norm_zero]
+    positivity
+
 /-- A smooth coefficient that agrees with a symbol `b` of order `m` at all frequencies of norm at
 least `R` is itself a symbol of order `m`: the difference vanishes at large frequencies. -/
 theorem exists_coefficient_eq_of_forall_le_norm
