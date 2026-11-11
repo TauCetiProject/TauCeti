@@ -386,6 +386,7 @@ theorem project_toLinearMap_apply (j : ContMDiffAlmostComplexStructure IP n P)
       (j.horizontalEndomorphism (I := I) (M := M) q).toLinearMap
       (J.toEndomorphism q).toLinearMap (A q).toLinearMap := by
   ext v
+  rw [complexAntilinearPart_apply]
   exact project_apply j J A q v
 
 /-- The projection is a retraction onto the native submodule of forcing terms. -/

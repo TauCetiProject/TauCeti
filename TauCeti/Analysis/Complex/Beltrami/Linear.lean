@@ -200,7 +200,7 @@ theorem antilinearMap_mem_cayleyBall_iff (μ : ℂ) :
     rw [Complex.normSq_eq_norm_sq] at h1
     nlinarith [norm_nonneg μ]
   · intro h
-    refine ⟨isComplexAntilinear_antilinearMap μ, fun z hz => ?_⟩
+    refine ⟨isComplexAntilinear_iff.mp (isComplexAntilinear_antilinearMap μ), fun z hz => ?_⟩
     simp only [stdComplexSymplecticForm_apply_ofComplexModule,
       ContinuousLinearMap.coe_coe, antilinearMap_apply,
       Complex.normSq_mul, Complex.normSq_conj]
@@ -216,14 +216,16 @@ def cayleyBallEquiv :
   toFun C := ⟨C.val 1, by
     have he : (antilinearMap (C.val 1)).toLinearMap = C.val := by
       ext z
-      exact (antilinear_apply (SymplecticForm.mem_cayleyBall.mp C.property).1 z).symm
+      exact (antilinear_apply
+        (isComplexAntilinear_iff.mpr (SymplecticForm.mem_cayleyBall.mp C.property).1) z).symm
     exact (antilinearMap_mem_cayleyBall_iff _).mp (he.symm ▸ C.property)⟩
   invFun μ := ⟨(antilinearMap μ.val).toLinearMap,
     (antilinearMap_mem_cayleyBall_iff _).mpr μ.property⟩
   left_inv C := by
     apply Subtype.ext
     ext z
-    exact (antilinear_apply (SymplecticForm.mem_cayleyBall.mp C.property).1 z).symm
+    exact (antilinear_apply
+      (isComplexAntilinear_iff.mpr (SymplecticForm.mem_cayleyBall.mp C.property).1) z).symm
   right_inv μ := by
     apply Subtype.ext
     simp
@@ -262,7 +264,7 @@ theorem linearMap_intertwines (J : AlmostComplexStructure ℂ)
   let C := J₀.cayley J
   have hC := stdComplexSymplecticForm_compatible.cayley_mem_cayleyBall hJ
   have ha : IsComplexAntilinear J₀.toLinearMap J₀.toLinearMap C :=
-    (SymplecticForm.mem_cayleyBall.mp hC).1
+    isComplexAntilinear_iff.mpr (SymplecticForm.mem_cayleyBall.mp hC).1
   have hrel := LinearMap.congr_fun
     (stdComplexSymplecticForm_tames.cayley_mul_one_sub_mul hJ) z
   simp only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.add_apply,
