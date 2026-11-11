@@ -35,6 +35,50 @@ public section
 
 namespace TauCeti
 
+private theorem exists_lower_bound {K ι : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] [Finite ι] {a b : ι → K}
+    (hpos : ∀ i, 0 < a i → 0 ≤ b i)
+    (hpair : ∀ i j, a i < 0 → 0 < a j → a i * b j ≤ a j * b i) :
+    ∃ L : K, 0 ≤ L ∧ (∀ i, a i < 0 → b i / a i ≤ L) ∧
+      (∀ i, 0 < a i → L ≤ b i / a i) ∧
+      (∀ T, 0 < T → (∀ i, a i < 0 → b i / a i < T) → L < T) := by
+  classical
+  let := Fintype.ofFinite ι
+  let s : Finset K := insert 0 ((Finset.univ.filter (fun i => a i < 0)).image
+    (fun i => b i / a i))
+  have hs : (0 : K) ∈ s := Finset.mem_insert_self _ _
+  refine ⟨s.max' ⟨0, hs⟩, s.le_max' 0 hs, ?_, ?_, ?_⟩
+  · intro i hi
+    exact s.le_max' _ (Finset.mem_insert_of_mem (Finset.mem_image.mpr
+      ⟨i, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hi⟩, rfl⟩))
+  · intro i hi
+    apply s.max'_le
+    intro z hz
+    rcases Finset.mem_insert.mp hz with rfl | hz
+    · exact div_nonneg (hpos i hi) hi.le
+    · obtain ⟨j, hj, rfl⟩ := Finset.mem_image.mp hz
+      have hjneg : a j < 0 := (Finset.mem_filter.mp hj).2
+      rw [div_le_iff_of_neg hjneg, div_mul_eq_mul_div, div_le_iff₀ hi]
+      simpa only [mul_comm] using hpair j i hjneg hi
+  · intro T hT hneg
+    apply (Finset.max'_lt_iff _ _).mpr
+    intro z hz
+    rcases Finset.mem_insert.mp hz with rfl | hz
+    · exact hT
+    · obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hz
+      exact hneg i (Finset.mem_filter.mp hi).2
+
+private theorem mul_le_of_bounds {K ι : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b : ι → K} {t : K}
+    (hz : ∀ i, a i = 0 → 0 ≤ b i)
+    (hlow : ∀ i, a i < 0 → b i / a i ≤ t)
+    (hupp : ∀ i, 0 < a i → t ≤ b i / a i) : ∀ i, a i * t ≤ b i := by
+  intro i
+  rcases lt_trichotomy (a i) 0 with hi | hi | hi
+  · exact (div_le_iff_of_neg' hi).mp (hlow i hi)
+  · simpa only [hi, zero_mul] using hz i hi
+  · exact (le_div_iff₀' hi).mp (hupp i hi)
+
 /-- Eliminate one nonnegative variable from finitely many scalar inequalities.
 The right side uses only multiplication, addition, and order, so rational input
 coefficients lead to rational compatibility inequalities. -/
@@ -43,8 +87,6 @@ theorem exists_nonneg_mul_le_iff {K ι : Type*} [Field K] [LinearOrder K]
     (∃ t : K, 0 ≤ t ∧ ∀ i, a i * t ≤ b i) ↔
       (∀ i, 0 ≤ a i → 0 ≤ b i) ∧
       (∀ i j, a i < 0 → 0 < a j → a i * b j ≤ a j * b i) := by
-  classical
-  let := Fintype.ofFinite ι
   constructor
   · rintro ⟨t, ht, h⟩
     refine ⟨fun i hi => (mul_nonneg hi ht).trans (h i), ?_⟩
@@ -53,28 +95,9 @@ theorem exists_nonneg_mul_le_iff {K ι : Type*} [Field K] [LinearOrder K]
     have h₂ := mul_le_mul_of_nonpos_left (h j) hi.le
     nlinarith
   · rintro ⟨hzero, hpair⟩
-    let s : Finset K := insert 0 ((Finset.univ.filter (fun i => a i < 0)).image
-      (fun i => b i / a i))
-    have hs : (0 : K) ∈ s := Finset.mem_insert_self _ _
-    let t := s.max' ⟨0, hs⟩
-    refine ⟨t, s.le_max' 0 hs, ?_⟩
-    intro i
-    rcases lt_trichotomy (a i) 0 with hi | hi | hi
-    · have hmem : b i / a i ∈ s := Finset.mem_insert_of_mem
-        (Finset.mem_image.mpr ⟨i, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hi⟩, rfl⟩)
-      exact (div_le_iff_of_neg' hi).mp (s.le_max' _ hmem)
-    · simpa [hi] using hzero i hi.ge
-    · rw [mul_comm (a i)]
-      apply (le_div_iff₀ hi).mp
-      dsimp only [t]
-      apply s.max'_le
-      intro z hz
-      rcases Finset.mem_insert.mp hz with rfl | hz
-      · exact div_nonneg (hzero i hi.le) hi.le
-      · obtain ⟨j, hj, rfl⟩ := Finset.mem_image.mp hz
-        have hjneg : a j < 0 := (Finset.mem_filter.mp hj).2
-        rw [div_le_iff_of_neg hjneg, div_mul_eq_mul_div, div_le_iff₀ hi]
-        simpa only [mul_comm] using hpair j i hjneg hi
+    obtain ⟨L, hL, hlow, hupp, _⟩ :=
+      exists_lower_bound (fun i hi => hzero i hi.le) hpair
+    exact ⟨L, hL, mul_le_of_bounds (fun i hi => hzero i hi.ge) hlow hupp⟩
 
 /-- Eliminate a variable in a strict bounded interval from finitely many weak
 linear inequalities. The pair conditions remain weak: a singleton feasible set
@@ -86,8 +109,6 @@ theorem exists_pos_lt_mul_le_iff {K ι : Type*} [Field K] [LinearOrder K]
         (∀ i, 0 < a i → 0 < b i) ∧
         (∀ i, a i < 0 → a i * T < b i) ∧
         (∀ i j, a i < 0 → 0 < a j → a i * b j ≤ a j * b i) := by
-  classical
-  let := Fintype.ofFinite ι
   constructor
   · rintro ⟨t, ht, htT, h⟩
     refine ⟨ht.trans htT, ?_, ?_, ?_, ?_⟩
@@ -97,45 +118,15 @@ theorem exists_pos_lt_mul_le_iff {K ι : Type*} [Field K] [LinearOrder K]
       exact (mul_pos hi ht).trans_le (h i)
     · intro i hi
       exact (mul_lt_mul_of_neg_left htT hi).trans_le (h i)
-    · intro i j hi hj
-      have h₁ := mul_le_mul_of_nonneg_left (h i) hj.le
-      have h₂ := mul_le_mul_of_nonpos_left (h j) hi.le
-      nlinarith
+    · exact (exists_nonneg_mul_le_iff.mp ⟨t, ht.le, h⟩).2
   · rintro ⟨hT, hz, hp, hn, hpair⟩
-    -- The largest lower bound is below T and below every upper bound.
-    let s : Finset K := insert 0 ((Finset.univ.filter (fun i => a i < 0)).image
-      (fun i => b i / a i))
-    have hs : (0 : K) ∈ s := Finset.mem_insert_self _ _
-    let L := s.max' ⟨0, hs⟩
-    have hL : 0 ≤ L := s.le_max' 0 hs
-    have hLT : L < T := by
-      apply (Finset.max'_lt_iff _ _).mpr
-      intro z hz'
-      rcases Finset.mem_insert.mp hz' with rfl | hz'
-      · exact hT
-      · obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hz'
-        exact (div_lt_iff_of_neg (Finset.mem_filter.mp hi).2).mpr
-          (by simpa only [mul_comm] using hn i (Finset.mem_filter.mp hi).2)
-    have hlow (i : ι) (hi : a i < 0) : b i / a i ≤ L := by
-      apply s.le_max'
-      exact Finset.mem_insert_of_mem (Finset.mem_image.mpr
-        ⟨i, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hi⟩, rfl⟩)
-    have hupp (i : ι) (hi : 0 < a i) : L ≤ b i / a i := by
-      apply s.max'_le
-      intro z hz'
-      rcases Finset.mem_insert.mp hz' with rfl | hz'
-      · exact (div_pos (hp i hi) hi).le
-      · obtain ⟨j, hj, rfl⟩ := Finset.mem_image.mp hz'
-        have hj' := (Finset.mem_filter.mp hj).2
-        rw [div_le_iff_of_neg hj', div_mul_eq_mul_div, div_le_iff₀ hi]
-        simpa only [mul_comm] using hpair j i hj' hi
+    obtain ⟨L, hL, hlow, hupp, hstrict⟩ :=
+      exists_lower_bound (fun i hi => (hp i hi).le) hpair
+    have hLT : L < T := hstrict T hT (fun i hi =>
+      (div_lt_iff_of_neg hi).mpr (by simpa only [mul_comm] using hn i hi))
     have feasible (t : K) (hlt : L ≤ t)
-        (htu : ∀ i, 0 < a i → t ≤ b i / a i) : ∀ i, a i * t ≤ b i := by
-      intro i
-      rcases lt_trichotomy (a i) 0 with hi | hi | hi
-      · exact (div_le_iff_of_neg' hi).mp ((hlow i hi).trans hlt)
-      · simpa only [hi, zero_mul] using hz i hi
-      · exact (le_div_iff₀' hi).mp (htu i hi)
+        (htu : ∀ i, 0 < a i → t ≤ b i / a i) : ∀ i, a i * t ≤ b i :=
+      mul_le_of_bounds hz (fun i hi => (hlow i hi).trans hlt) htu
     -- A positive largest lower bound is a witness, even if it equals an upper
     -- bound. When it is zero, choose a common positive gap below all upper bounds.
     rcases hL.eq_or_lt with hLzero | hLpos

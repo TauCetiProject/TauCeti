@@ -35,7 +35,8 @@ public section
 
 namespace ContinuousLinearMap
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {P : Set V} {n : V}
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] {P : Set V} {n : V}
 
 /-- The affine projection recovering the base point of a transverse sweep.
 When `f n = 1`, its image lies in the hyperplane `f x = c`. -/
@@ -64,6 +65,7 @@ theorem sweepProjection_inv_smul_apply (x : V) :
   rw [sweepProjection_apply, smul_smul, div_eq_mul_inv]
   module
 
+omit [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] in
 /-- Moving a point of the face backward along a transverse direction by `s` makes the
 crossing parameter `-s`. -/
 @[simp↓]
@@ -114,7 +116,7 @@ theorem sweepProjection_inv_smul_eq_add_smul
 /-- A sweep projection followed by displacement in a transverse direction
 covers the whole space. No condition on the sweeping vector is needed: the
 projection fixes the hyperplane, and the displacement supplies its complement. -/
-theorem surjective_smul_add_sweepProjection
+theorem smul_add_sweepProjection_surjective
     (f : V →L[ℝ] ℝ) (c : ℝ) (n v : V)
     (hv : f v ≠ 0) :
     Function.Surjective (fun z : V × ℝ => z.2 • v + sweepProjection f c n z.1) := by
@@ -136,14 +138,15 @@ namespace Set
 
 open ContinuousLinearMap
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {P : Set V} {n : V}
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] {P : Set V} {n : V}
 
 /-- The explicit projection presents the sweep as a halfspace intersected with
 an affine preimage, with no boundedness hypothesis on the base. -/
 theorem sweep_eq_halfspace_inter_preimage {P : Set V} {n : V}
     (f : V →L[ℝ] ℝ) (c : ℝ) (hn : f n = 1)
     (hP : ∀ x ∈ P, f x = c) :
-    sweep P n = {y | f y ≤ c} ∩ sweepProjection f c n ⁻¹' P := by
+    sweep ℝ P n = {y | f y ≤ c} ∩ sweepProjection f c n ⁻¹' P := by
   ext y
   simpa only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_preimage,
     sweepProjection_apply, ContinuousLinearMap.coe_coe] using
@@ -152,26 +155,21 @@ theorem sweep_eq_halfspace_inter_preimage {P : Set V} {n : V}
 /-- Sweeping an entire transverse affine hyperplane produces its closed negative
 halfspace. In particular no boundedness or absence of lineality is required. -/
 theorem sweep_hyperplane (f : V →L[ℝ] ℝ) (c : ℝ) {n : V} (hn : f n = 1) :
-    sweep {x : V | f x = c} n = {x : V | f x ≤ c} := by
+    sweep ℝ {x : V | f x = c} n = {x : V | f x ≤ c} := by
   rw [sweep_eq_halfspace_inter_preimage f c hn (fun _ hx => hx)]
   ext y
   simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_preimage]
   exact and_iff_left (sweepProjection_height f c hn y)
 
-/-- An unbounded base with lineality: the horizontal axis sweeps to the closed
-lower half-plane under the positive vertical sweeping vector. -/
-theorem sweep_horizontal_axis :
-    sweep {p : ℝ × ℝ | p.2 = 0} (0, 1) = {p : ℝ × ℝ | p.2 ≤ 0} :=
-  sweep_hyperplane (ContinuousLinearMap.snd ℝ ℝ ℝ) 0 rfl
-
+omit [ContinuousSMul ℝ V] in
 /-- A relative interior point of a transverse sweep has its base point in the
 relative interior of the base. No convexity or closedness is required. -/
 theorem mem_intrinsicInterior_of_sub_smul_mem_intrinsicInterior_sweep
     (hn : n ∉ vectorSpan ℝ P) {x : V} (hx : x ∈ P) {t : ℝ}
-    (hy : x - t • n ∈ intrinsicInterior ℝ (sweep P n)) :
+    (hy : x - t • n ∈ intrinsicInterior ℝ (sweep ℝ P n)) :
     x ∈ intrinsicInterior ℝ P := by
   let A := affineSpan ℝ P
-  let B := affineSpan ℝ (sweep P n)
+  let B := affineSpan ℝ (sweep ℝ P n)
   have hnB : n ∈ B.direction := by
     rw [direction_affineSpan, vectorSpan_sweep ⟨x, hx⟩]
     exact (le_sup_right : Submodule.span ℝ {n} ≤ _) (Submodule.mem_span_singleton_self n)
@@ -184,44 +182,36 @@ theorem mem_intrinsicInterior_of_sub_smul_mem_intrinsicInterior_sweep
   have hf : Continuous f :=
     (continuous_subtype_val.sub continuous_const).subtype_mk _
   let xA : A := ⟨x, subset_affineSpan ℝ P hx⟩
-  have hfy : f xA ∈ interior (Subtype.val ⁻¹' sweep P n : Set B) := by
+  have hfy : f xA ∈ interior (Subtype.val ⁻¹' sweep ℝ P n : Set B) := by
     obtain ⟨y, hy, he⟩ := hy
     have heq : y = f xA := Subtype.ext he
     exact heq ▸ hy
-  have hpre : f ⁻¹' (Subtype.val ⁻¹' sweep P n : Set B) ⊆
+  have hpre : f ⁻¹' (Subtype.val ⁻¹' sweep ℝ P n : Set B) ⊆
       (Subtype.val ⁻¹' P : Set A) := by
     intro z hz
     obtain ⟨p, hp, s, hs, he⟩ := mem_sweep_iff_exists.mp hz
     dsimp only [f] at he
-    obtain ⟨g, c, hgn, hgP⟩ := exists_sweep_height ⟨x, hx⟩ hn
-    have hgA : ∀ z : A, g z.val = c := by
-      intro z
-      exact AffineMap.eqOn_affineSpan (f := g.toAffineMap)
-        (g := AffineMap.const ℝ V c) (fun z hz => hgP z hz) z.property
-    have hts : t = s := by
-      have hh := congrArg g he
-      simp only [map_sub, map_smul, hgA z, hgP p hp, hgn, smul_eq_mul, mul_one,
-        sub_right_inj] at hh
-      exact hh
-    have hzp : z.val = p := by
-      exact sub_left_inj.mp (hts ▸ he)
+    have hzp := (sweep_coordinates_unique hn z.property
+      (subset_affineSpan ℝ P hp) he).1
     rw [Set.mem_preimage, hzp]
     exact hp
   exact ⟨xA, mem_interior_iff_mem_nhds.mpr
     (Filter.mem_of_superset (hf.continuousAt.preimage_mem_nhds
       (mem_interior_iff_mem_nhds.mp hfy)) hpre), rfl⟩
 
+omit [ContinuousSMul ℝ V] in
 /-- Sweeping bases in a common transverse affine subspace preserves disjoint
 relative interiors. The bases need not be convex or closed. -/
 theorem disjoint_intrinsicInterior_sweep {P Q : Set V} {n : V}
     (hn : n ∉ vectorSpan ℝ (P ∪ Q))
     (hPQ : Disjoint (intrinsicInterior ℝ P) (intrinsicInterior ℝ Q)) :
-    Disjoint (intrinsicInterior ℝ (sweep P n)) (intrinsicInterior ℝ (sweep Q n)) := by
+    Disjoint (intrinsicInterior ℝ (sweep ℝ P n)) (intrinsicInterior ℝ (sweep ℝ Q n)) := by
   apply Set.disjoint_left.mpr
   intro y hyP hyQ
   obtain ⟨p, hp, t, ht, he⟩ := mem_sweep_iff_exists.mp (intrinsicInterior_subset hyP)
   obtain ⟨q, hq, s, hs, he'⟩ := mem_sweep_iff_exists.mp (intrinsicInterior_subset hyQ)
-  obtain ⟨hpq, hts⟩ := sweep_coordinates_unique hn (Or.inl hp) (Or.inr hq)
+  obtain ⟨hpq, hts⟩ := sweep_coordinates_unique hn (subset_affineSpan ℝ _ (Or.inl hp))
+    (subset_affineSpan ℝ _ (Or.inr hq))
     (he.symm.trans he')
   subst q
   exact Set.disjoint_left.mp hPQ
@@ -230,27 +220,30 @@ theorem disjoint_intrinsicInterior_sweep {P Q : Set V} {n : V}
     (mem_intrinsicInterior_of_sub_smul_mem_intrinsicInterior_sweep
       (fun hm => hn (vectorSpan_mono ℝ Set.subset_union_right hm)) hq (he' ▸ hyQ))
 
-variable [FiniteDimensional ℝ V]
+end Set
+
+namespace Set
+
+open ContinuousLinearMap
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [FiniteDimensional ℝ V] {P : Set V} {n : V}
 
 /-- A closed transverse base has a closed sweep, even when unbounded. -/
 theorem _root_.IsClosed.sweep {P : Set V} {n : V} (hP : IsClosed P)
-    (hn : n ∉ vectorSpan ℝ P) : IsClosed (sweep P n) := by
+    (hn : n ∉ vectorSpan ℝ P) : IsClosed (sweep ℝ P n) := by
   rcases P.eq_empty_or_nonempty with he | hne
   · subst P
     simp only [sweep_empty, isClosed_empty]
   · obtain ⟨f, c, hfn, hfP⟩ := exists_sweep_height hne hn
-    have he : Set.sweep P n = {y | f y ≤ c} ∩
-        (fun y => y + (c - f y) • n) ⁻¹' P := by
-      ext y
-      exact mem_sweep_iff_of_height f c hfn hfP
-    rw [he]
-    exact (isClosed_le f.continuous_of_finiteDimensional continuous_const).inter
-      (hP.preimage (continuous_id.add
-        ((continuous_const.sub f.continuous_of_finiteDimensional).smul continuous_const)))
+    let f' := LinearMap.toContinuousLinearMap f
+    rw [sweep_eq_halfspace_inter_preimage f' c hfn hfP]
+    exact (isClosed_le f'.continuous continuous_const).inter
+      (hP.preimage (sweepProjection f' c n).continuous)
 
 /-- The prism parameterization is a homeomorphism for every transverse base. -/
 noncomputable def sweepHomeomorph (hn : n ∉ vectorSpan ℝ P) :
-    (P × {t : ℝ // 0 ≤ t}) ≃ₜ sweep P n where
+    (P × {t : ℝ // 0 ≤ t}) ≃ₜ sweep ℝ P n where
   toEquiv := sweepEquiv P n hn
   continuous_toFun := by
     rw [Equiv.toFun_as_coe]
@@ -261,16 +254,21 @@ noncomputable def sweepHomeomorph (hn : n ∉ vectorSpan ℝ P) :
   continuous_invFun := by
     rw [Equiv.invFun_as_coe]
     rcases P.eq_empty_or_nonempty with rfl | hP
-    · have : IsEmpty (sweep (∅ : Set V) n) := by
+    · have : IsEmpty (sweep ℝ (∅ : Set V) n) := by
         rw [sweep_empty]
         infer_instance
       exact continuous_of_discreteTopology
     · obtain ⟨f, c, hfn, hfP⟩ := exists_sweep_height hP hn
-      have hf : Continuous (fun y : sweep P n => f (y : V)) :=
-        f.continuous_of_finiteDimensional.comp continuous_subtype_val
+      let f' := LinearMap.toContinuousLinearMap f
+      have hf : Continuous (fun y : sweep ℝ P n => f (y : V)) :=
+        f'.continuous.comp continuous_subtype_val
+      have hproj : Continuous (fun y : sweep ℝ P n =>
+          (y : V) + (c - f y) • n) := by
+        simpa only [Function.comp_def, sweepProjection_apply, f',
+          LinearMap.coe_toContinuousLinearMap'] using
+          (sweepProjection f' c n).continuous.comp continuous_subtype_val
       rw [funext (sweepEquiv_symm_apply hn f c hfn hfP)]
-      exact (Continuous.subtype_mk
-        (continuous_subtype_val.add ((continuous_const.sub hf).smul continuous_const)) _).prodMk
+      exact (Continuous.subtype_mk hproj _).prodMk
         (Continuous.subtype_mk (continuous_const.sub hf) _)
 
 /-- Forgetting the topology recovers the algebraic prism equivalence. -/
@@ -280,7 +278,7 @@ theorem sweepHomeomorph_toEquiv (hn : n ∉ vectorSpan ℝ P) :
 
 /-- The inverse homeomorphism has the same coordinates as the algebraic prism equivalence. -/
 @[simp]
-theorem sweepHomeomorph_symm_apply (hn : n ∉ vectorSpan ℝ P) (y : sweep P n) :
+theorem sweepHomeomorph_symm_apply (hn : n ∉ vectorSpan ℝ P) (y : sweep ℝ P n) :
     (sweepHomeomorph hn).symm y = (sweepEquiv P n hn).symm y := (rfl)
 
 /-- The topological prism uses the original negative-ray parameterization. -/

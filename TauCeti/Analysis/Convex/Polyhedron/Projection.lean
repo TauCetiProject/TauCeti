@@ -134,18 +134,16 @@ theorem setOf_exists_nonneg_add_smul_forall_le_eq [Finite ι]
   have he (j : ι) (y : V) (t : ℝ) :
       g j (y + t • n) = g j y + (g j).linear n * t := by
     rw [add_comm y]
-    simpa only [vadd_eq_add, map_smul, smul_eq_mul, mul_comm, add_comm,
-      AffineMap.toFun_eq_coe, ContinuousAffineMap.coe_toAffineMap] using
-      (g j).map_vadd' y (t • n)
+    simpa [vadd_eq_add, mul_comm, add_comm] using (g j).toAffineMap.map_vadd y (t • n)
   simp_rw [he]
   exact setOf_exists_nonneg_affine_le_eq g (fun i => (g i).linear n)
 
 /-- Sweeping any convex polyhedron along a negative ray preserves polyhedrality,
 including tangent vectors and arbitrary unbounded bases. -/
 theorem IsConvexPolyhedron.sweep {P : Set V}
-    (hP : IsConvexPolyhedron P) (n : V) : IsConvexPolyhedron (Set.sweep P n) := by
+    (hP : IsConvexPolyhedron P) (n : V) : IsConvexPolyhedron (Set.sweep ℝ P n) := by
   obtain ⟨k, g, rfl⟩ := isConvexPolyhedron_iff.mp hP
-  have he : Set.sweep {x | ∀ j, g j x ≤ 0} n =
+  have he : Set.sweep ℝ {x | ∀ j, g j x ≤ 0} n =
       {y | ∃ t : ℝ, 0 ≤ t ∧ ∀ j, g j (y + t • n) ≤ 0} := by
     ext y
     exact Set.mem_sweep_iff

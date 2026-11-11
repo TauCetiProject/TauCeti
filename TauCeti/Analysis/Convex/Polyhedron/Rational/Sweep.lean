@@ -88,7 +88,7 @@ noncomputable def sweep (P : RationalAffinePolyhedron h) (n : N) :
 its carrier, including for tangent sweeping vectors. -/
 @[simp]
 theorem carrier_sweep (P : RationalAffinePolyhedron h) (n : N) :
-    (P.sweep n).carrier = Set.sweep P.carrier (i n) := by
+    (P.sweep n).carrier = Set.sweep ℝ P.carrier (i n) := by
   ext y
   unfold sweep
   rw [mem_carrier_ofFinite, Set.mem_sweep_iff]
@@ -118,13 +118,13 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 
 /-- The negative-ray sweep along a lattice vector has rational normals. -/
 theorem IsRationalNormalPolyhedron.sweep (hP : IsRationalNormalPolyhedron h P) (n : N) :
-    IsRationalNormalPolyhedron h (Set.sweep P (i n)) := by
+    IsRationalNormalPolyhedron h (Set.sweep ℝ P (i n)) := by
   obtain ⟨Q, rfl⟩ := isRationalNormalPolyhedron_iff.mp hP
   exact isRationalNormalPolyhedron_iff.mpr ⟨Q.sweep n, Q.carrier_sweep n⟩
 
 /-- Negative-ray sweeping preserves rational normals and rational offsets. -/
 theorem IsRationalPolyhedron.sweep (hP : IsRationalPolyhedron h P) (n : N) :
-    IsRationalPolyhedron h (Set.sweep P (i n)) := by
+    IsRationalPolyhedron h (Set.sweep ℝ P (i n)) := by
   obtain ⟨Q, rfl, hQ⟩ := isRationalPolyhedron_iff.mp hP
   exact isRationalPolyhedron_iff.mpr ⟨Q.sweep n, Q.carrier_sweep n, hQ.sweep n⟩
 
