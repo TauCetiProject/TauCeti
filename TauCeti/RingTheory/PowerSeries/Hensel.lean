@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.PowerSeries.Inverse
 public import TauCeti.RingTheory.Henselian.Basic
 public import TauCeti.RingTheory.Polynomial.DegreeLT
 public import TauCeti.RingTheory.PowerSeries.Swap
+import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Depressed
 
@@ -52,9 +53,8 @@ each step gives uniqueness of the factorization.
   power of `X` factors into two monic factors of positive degree. This is the degree-lowering
   splitting step of the Newton–Puiseux algorithm, combining the coprime splitting of the reduction
   (`Polynomial.Monic.exists_isCoprime_mul_eq_of_nextCoeff_eq_zero`) with Hensel lifting.
-* `PowerSeries.henselianLocalRing`: over a field `K`, `K⟦t⟧` is a Henselian local ring. This is
-  the degree-one case of coprime-factor lifting: a simple root of the reduction splits off the
-  coprime linear factor `X - c`.
+* `PowerSeries.henselianLocalRing`: over a field `K`, `K⟦t⟧` is a Henselian local ring, being
+  complete for its maximal ideal `(t)`.
 * `PowerSeries.exists_pow_eq_of_constantCoeff_eq_pow` and `PowerSeries.exists_pow_eq_of_isUnit`:
   a unit of `K⟦t⟧` whose constant coefficient is a nonzero `n`-th power, with `n` invertible in
   `K`, is an `n`-th power; over an algebraically closed field every unit of `K⟦t⟧` has an `n`-th
@@ -302,37 +302,14 @@ namespace PowerSeries
 variable {K : Type*} [Field K]
 
 /-- **Hensel's lemma for `K⟦t⟧`.** Over a field `K`, the power series ring `K⟦t⟧` is a Henselian
-local ring. If `a₀` is a root modulo `t` of a monic polynomial `f` with `f' (a₀)` a unit, its
-constant coefficient `c` is a simple root of the reduction of `f`, which therefore factors as
-`(X - c) * h` with `X - c` coprime to `h`; lifting this factorization
-(`Polynomial.Monic.exists_monic_mul_eq_of_isCoprime`) gives a linear factor `X - a` of `f` with
-`a ≡ a₀ mod t`. -/
-instance henselianLocalRing : HenselianLocalRing K⟦X⟧ where
-  toIsLocalRing := inferInstance
-  is_henselian f hf a₀ h₁ h₂ := by
-    rw [← ker_coeff_eq_max_ideal, RingHom.mem_ker] at h₁
-    have hred (p : K⟦X⟧[X]) :
-        (p.map constantCoeff).eval (constantCoeff a₀) = constantCoeff (p.eval a₀) := by
-      rw [Polynomial.eval_map, Polynomial.eval₂_hom]
-    have hroot : (f.map constantCoeff).IsRoot (constantCoeff a₀) := by
-      rw [Polynomial.IsRoot, hred, h₁]
-    have hder : (f.map constantCoeff).derivative.eval (constantCoeff a₀) ≠ 0 := by
-      rw [Polynomial.derivative_map, hred]
-      exact (h₂.map constantCoeff).ne_zero
-    obtain ⟨G, H, hG, -, hGg, -, hGH⟩ := hf.exists_monic_mul_eq_of_isCoprime
-      (Polynomial.monic_X_sub_C _)
-      (Polynomial.isCoprime_of_is_root_of_eval_derivative_ne_zero _ _ hder)
-      (Polynomial.mul_divByMonic_eq_iff_isRoot.mpr hroot).symm
-    have hdeg : G.natDegree = 1 := by
-      rw [← hG.natDegree_map constantCoeff, hGg, Polynomial.natDegree_X_sub_C]
-    obtain ⟨b, rfl⟩ : ∃ b, G = Polynomial.X + Polynomial.C b := ⟨_, hG.eq_X_add_C hdeg⟩
-    -- The constant coefficient of `b` is `-c`, read off from the reduction of `X + C b`.
-    have hb : constantCoeff b = -constantCoeff a₀ := by
-      simpa using congrArg (Polynomial.coeff · 0) hGg
-    refine ⟨-b, ?_, ?_⟩
-    · rw [← hGH, Polynomial.IsRoot, Polynomial.eval_mul]
-      simp
-    · rw [← ker_coeff_eq_max_ideal, RingHom.mem_ker, map_sub, map_neg, hb, neg_neg, sub_self]
+local ring: it is complete for its maximal ideal `(t)`, so this is Mathlib's
+`IsAdicComplete.henselianRing` at the maximal ideal, read through
+`TauCeti.IsAdicComplete.henselianLocalRing`. -/
+instance henselianLocalRing : HenselianLocalRing K⟦X⟧ :=
+  have : IsAdicComplete (IsLocalRing.maximalIdeal K⟦X⟧) K⟦X⟧ := by
+    rw [maximalIdeal_eq_span_X]
+    infer_instance
+  TauCeti.IsAdicComplete.henselianLocalRing _
 
 /-- **`n`-th roots of units in `K⟦t⟧`.** If `n` is invertible in `K` and the constant
 coefficient of `u` is `c ^ n` for some `c ≠ 0`, then `u` has an `n`-th root with constant

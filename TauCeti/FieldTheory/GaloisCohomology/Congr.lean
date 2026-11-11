@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Congr
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.MapDegreeTwo
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Map.DegreeTwo
 
 /-!
 # Unit-valued Galois cohomology of isomorphic fields
@@ -122,8 +122,9 @@ theorem unitsH2Congr_symm_mk (e : K ≃+* L)
       (cocyclesMap2 (AbsoluteGaloisGroup L) (UnitsCoeff L)
         (AbsoluteGaloisGroup K) (UnitsCoeff K) e.absoluteGaloisGroupCongr.symm
         e.unitsCoeffCongr.symm.toAddMonoidHom continuous_of_discreteTopology
-        (AddEquiv.symm_map_smul_of_map_mulEquiv_smul e.unitsCoeffCongr
-          e.absoluteGaloisGroupCongr.toMulEquiv e.unitsCoeffCongr_smul) c :
+        (AddEquiv.symm_map_smul_of_map_smul_of_rightInverse e.unitsCoeffCongr
+          e.absoluteGaloisGroupCongr e.absoluteGaloisGroupCongr.symm
+          e.absoluteGaloisGroupCongr.apply_symm_apply e.unitsCoeffCongr_smul) c :
         H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) := by
   unfold unitsH2Congr
   exact (explicitMap2Equiv_symm_apply (AbsoluteGaloisGroup K) (UnitsCoeff K)

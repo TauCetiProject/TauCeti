@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Manifold.SymmetricPower.Manifold
 import TauCeti.Analysis.Polynomial.SymmetricPower.Cons
+import TauCeti.Data.Fin.Sum
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Topology.Algebra.Module.Equiv.Pi
@@ -23,7 +24,7 @@ coordinates. The source block may have degree zero; repeated points cause no los
 The resulting analytic embedding parametrizes the basepoint divisor of the symmetric power,
 as in Ozsváth–Szabó, *Holomorphic disks and topological invariants for closed three-manifolds*
 ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206)), §2.2. The local calculation uses
-`TauCeti.Sym.analyticAt_coeffEquiv_cons_coeffEquiv_symm`.
+`Sym.analyticAt_coeffEquiv_cons_coeffEquiv_symm`.
 -/
 
 public section
@@ -236,8 +237,8 @@ private theorem isImmersionAt_cons_of_common_charts [T2Space α] [ChartedSpace �
 
 /-- Adjoining a fixed point to unordered tuples on a Hausdorff complex curve is an analytic
 smooth embedding for the elementary-symmetric charted structures. Its image is the basepoint
-divisor, by `TauCeti.Sym.range_cons`. No distinctness or positive-degree assumption is needed. -/
-theorem Sym.isSmoothEmbedding_cons [T2Space α] [ChartedSpace ℂ α] [IsManifold 𝓘(ℂ) 1 α]
+divisor, by `Sym.range_cons`. No distinctness or positive-degree assumption is needed. -/
+theorem _root_.Sym.isSmoothEmbedding_cons [T2Space α] [ChartedSpace ℂ α] [IsManifold 𝓘(ℂ) 1 α]
     (z : α) :
     letI := symChartedSpace (K := ℂ) (α := α) (n := n)
     letI := symChartedSpace (K := ℂ) (α := α) (n := n + 1)
@@ -274,8 +275,8 @@ theorem Sym.isSmoothEmbedding_cons [T2Space α] [ChartedSpace ℂ α] [IsManifol
     rw [Sym.coe_sumSubtype, ← hq₀, Sym.coe_sumSubtype]
     simpa only [q, V] using
       r.sum_comp (fun i => (q₀ i : Multiset (V₀ i)).map Subtype.val)
-  let e := (Sym.nonempty_sigmaFinEquiv hm).some
-  let e' := (Sym.nonempty_sigmaFinEquiv hp).some
+  let e := (nonempty_sigmaFinEquiv hm).some
+  let e' := (nonempty_sigmaFinEquiv hp).some
   let hq' : Nonempty (∀ i, Sym (V i) (m i)) := ⟨q⟩
   have hz : z ∈ V none := hmem₀ j
   let hr : Nonempty (∀ i, Sym (V i) (consDegrees m i)) := ⟨consParts ⟨z, hz⟩ q⟩

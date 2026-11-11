@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Semigroups.Dissipative.Basic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 
 /-!
-# The Hilbert-space characterization of dissipativity
+# The inner-product characterization of dissipativity
 
 On a real inner-product space the Banach-space definition of dissipativity,
 `lambda * ‖x‖ ≤ ‖lambda • x - A x‖` for all `lambda > 0`, collapses to the familiar
@@ -23,8 +23,8 @@ the correction term nonnegative, and conversely dividing the resulting inequalit
 `2 lambda ⟪A x, x⟫ ≤ ‖A x‖²` by `lambda` and letting `lambda → ∞` forces `⟪A x, x⟫ ≤ 0`.
 
 Combined with `TauCeti.Semigroups.ContractionSemigroup.isDissipative_generator`, this gives the
-Hilbert-space form of the converse of the Lumer--Phillips theorem: the generator of a
-contraction semigroup on a real Hilbert space satisfies `⟪A x, x⟫ ≤ 0`.
+inner-product form of the converse of the Lumer--Phillips theorem: the generator of a
+contraction semigroup on a real inner-product space satisfies `⟪A x, x⟫ ≤ 0`.
 
 ## References
 
@@ -84,10 +84,8 @@ theorem isDissipative_iff_real_inner_nonpos (A : X →ₗ.[ℝ] X) :
 
 namespace ContractionSemigroup
 
-variable [CompleteSpace X]
-
-/-- **The converse of the Lumer--Phillips theorem on a Hilbert space.** The generator of a
-contraction semigroup on a real Hilbert space satisfies `⟪A x, x⟫ ≤ 0` on its domain. -/
+/-- **The converse of the Lumer--Phillips theorem on an inner-product space.** The generator of a
+contraction semigroup on a real inner-product space satisfies `⟪A x, x⟫ ≤ 0` on its domain. -/
 theorem real_inner_generator_nonpos (S : ContractionSemigroup X)
     (x : S.toStronglyContinuousSemigroup.generator.domain) :
     ⟪S.toStronglyContinuousSemigroup.generator x, (x : X)⟫_ℝ ≤ 0 :=

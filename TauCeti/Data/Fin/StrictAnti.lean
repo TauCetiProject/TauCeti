@@ -19,18 +19,17 @@ the index gap: `StrictAnti.add_sub_le_nat`.  This is what makes a strictly decre
 `n` natural numbers a sequence of beta-numbers of a Young diagram.  The increasing analogue indexed
 by all of `ℕ` is `StrictMono.add_le_nat`.
 
-Over any linear order, an *injective* sequence becomes strictly antitone after precomposition with a
-suitable permutation of the indices (`Function.Injective.exists_strictAnti_comp`), and over any
-partial order that permutation is unique (`StrictAnti.perm_eq`): sorting into decreasing order is
-possible and unambiguous.  Mathlib's `Tuple.sort` sorts into *increasing* order; composing with the
-reversal `Fin.revPerm` turns it around.
+Over any linear order, an *injective* sequence becomes strictly antitone after precomposition with
+Mathlib's decreasing sort `Tuple.sortDesc` (`Function.Injective.strictAnti_sortDesc`), and over any
+partial order a permutation with this property is unique (`StrictAnti.perm_eq`): sorting into
+decreasing order is possible and unambiguous.
 
 ## Main results
 
 * `StrictAnti.add_sub_le_nat`: a strictly antitone sequence of naturals drops by at least the index
   gap.
-* `Function.Injective.exists_strictAnti_comp`: an injective sequence can be sorted into decreasing
-  order.
+* `Function.Injective.strictAnti_sortDesc`: `Tuple.sortDesc` sorts an injective sequence into
+  strictly decreasing order.
 * `StrictAnti.perm_eq`: the sorting permutation is unique.
 -/
 
@@ -48,18 +47,13 @@ theorem StrictAnti.add_sub_le_nat {η : Fin n → ℕ} (hη : StrictAnti η) {i 
   simp only [Fin.le_def] at hij
   induction j, hij using Nat.le_induction with
   | base => simp
-  | succ k hik ih =>
-    have := hη (Fin.mk_lt_mk.mpr k.lt_succ_self : (⟨k, by omega⟩ : Fin n) < ⟨k + 1, hj⟩)
-    grind
+  | succ k hik ih => grind [hη (show (⟨k, by omega⟩ : Fin n) < ⟨k + 1, hj⟩ by simp)]
 
 /-- **Sorting into decreasing order.**  Precomposing an injective sequence indexed by `Fin n` with
-a suitable permutation of the indices makes it strictly antitone. -/
-theorem Function.Injective.exists_strictAnti_comp [LinearOrder α] {f : Fin n → α}
-    (hf : Function.Injective f) : ∃ τ : Perm (Fin n), StrictAnti (f ∘ τ) := by
-  have hmono : StrictMono (f ∘ Tuple.sort f) :=
-    (Tuple.monotone_sort f).strictMono_of_injective (hf.comp (Tuple.sort f).injective)
-  refine ⟨Fin.revPerm.trans (Tuple.sort f), fun i j hij => ?_⟩
-  simpa using hmono (Fin.rev_lt_rev.mpr hij)
+its decreasing sort `Tuple.sortDesc` makes it strictly antitone. -/
+theorem Function.Injective.strictAnti_sortDesc [LinearOrder α] {f : Fin n → α}
+    (hf : Function.Injective f) : StrictAnti (f ∘ Tuple.sortDesc f) :=
+  (Tuple.antitone_sortDesc f).strictAnti_of_injective (hf.comp (Tuple.sortDesc f).injective)
 
 /-- **The sorting permutation is unique.**  Two permutations of the indices that both make a
 sequence strictly antitone are equal. -/

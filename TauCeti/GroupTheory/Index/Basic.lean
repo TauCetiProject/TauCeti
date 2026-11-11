@@ -36,6 +36,7 @@ centre gives the `Γ.withCenter` readings.
   centre already lies inside `Γ`.
 * `Subgroup.relIndex_sup_of_le_normalizer`: if `H` normalises `N`, the relative index of `H` in
   `H ⊔ N` is that in `N`.
+* `Subgroup.finiteIndex_of_index_coprime`: an index prime to some `p ≠ 1` is finite.
 * `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: the relative index `2`
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
@@ -261,6 +262,13 @@ theorem infinite_of_finiteIndex {G : Type*} [Group G] [Infinite G] (H : Subgroup
   by_contra h
   have := (finite_iff_finite_and_finiteIndex H).mpr ⟨not_infinite_iff_finite.mp h, ‹_›⟩
   exact not_finite G
+
+/-- A subgroup whose index is prime to some `p ≠ 1` has finite index: `0` is prime to `1` only. -/
+@[to_additive /-- An additive subgroup whose index is prime to some `p ≠ 1` has finite index: `0`
+is prime to `1` only. -/]
+theorem finiteIndex_of_index_coprime {G : Type*} [Group G] (H : Subgroup G) {p : ℕ} (hp : p ≠ 1)
+    (hcop : H.index.Coprime p) : H.FiniteIndex :=
+  ⟨fun h => hp ((Nat.coprime_zero_left p).1 (h ▸ hcop))⟩
 
 /-- The image of a finite-index subgroup under a surjective homomorphism has finite index. -/
 @[to_additive /-- The image of a finite-index additive subgroup under a surjective homomorphism

@@ -54,7 +54,6 @@ subrepresentation has an invariant complement. -/
 theorem isSemisimpleRepresentation_of_continuous (ρ : Representation 𝕜 G V)
     (hρ : ∀ (f : Module.Dual 𝕜 V) (v : V), Continuous fun g => f (ρ g v)) :
     ρ.IsSemisimpleRepresentation := by
-  borelize G
   let b := Module.finBasis 𝕜 V
   -- Transport `ρ` to a continuous representation on a Euclidean space along the basis `b`.
   let T : V ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 V)) :=

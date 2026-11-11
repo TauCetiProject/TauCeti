@@ -32,6 +32,9 @@ Lemma 58.31.1 (0EYD).
   surjective when `κ(x)` is integral over `κ(s)`.
 * `AlgebraicGeometry.Scheme.Pullback.closure_range_residueFieldMap_eq_top`: in that case `κ(t)`
   is generated as a ring by the images of `κ(x)` and `κ(y)`.
+* `AlgebraicGeometry.Scheme.Pullback.surjective_liftEquiv_residueFieldMap`: consequently, for
+  rings `K ⟶ K'` such that `κ(t)` is a `K'`-algebra containing the image of `κ(y)`, the induced
+  map `K' ⊗[K] κ(x) ⟶ κ(t)` is surjective.
 -/
 
 public section
@@ -102,5 +105,36 @@ theorem closure_range_residueFieldMap_eq_top (t : ↑(pullback f g))
     ← CommRingCat.hom_comp, h₁, h₂]
   -- `ConcreteCategory.hom` and `CommRingCat.Hom.hom` agree definitionally.
   rfl
+
+/-- Let `t` be a point of `X ×_S Y` over `x ∈ X`, with `κ(x)` integral over `κ(f x)`, let `K ⟶ K'`
+be rings, and let `ψ : κ(x) → κ(t)` be the residue field map of the first projection, as an
+algebra map over `K`. If `κ(t)` is a `K'`-algebra, compatibly with `K`, and every element in the
+image of the residue field map of the second projection comes from `K'`, then the induced
+`K'`-algebra map `K' ⊗[K] κ(x) → κ(t)` is surjective. -/
+theorem surjective_liftEquiv_residueFieldMap (t : ↑(pullback f g))
+    (h : (f.residueFieldMap (pullback.fst f g t)).hom.IsIntegral) {K K' : Type*} [CommRing K]
+    [CommRing K'] [Algebra K K'] [Algebra K ((pullback f g).residueField t)]
+    [Algebra K' ((pullback f g).residueField t)]
+    [IsScalarTower K K' ((pullback f g).residueField t)]
+    [Algebra K (X.residueField (pullback.fst f g t))]
+    (ψ : X.residueField (pullback.fst f g t) →ₐ[K] (pullback f g).residueField t)
+    (hψ : ∀ l, ψ l = (pullback.fst f g).residueFieldMap t l)
+    (hK' : ∀ z ∈ Set.range ((pullback.snd f g).residueFieldMap t),
+      z ∈ Set.range (algebraMap K' ((pullback f g).residueField t))) :
+    Function.Surjective (AlgHom.liftEquiv K K' _ _ ψ) := by
+  set R := (AlgHom.liftEquiv K K' _ _ ψ).range
+  have h₁ (l : X.residueField (pullback.fst f g t)) :
+      (pullback.fst f g).residueFieldMap t l ∈ R :=
+    (AlgHom.mem_range _).mpr ⟨1 ⊗ₜ l, by rw [AlgHom.liftEquiv_tmul, one_smul, hψ]⟩
+  have h₂ (z : Y.residueField (pullback.snd f g t)) :
+      (pullback.snd f g).residueFieldMap t z ∈ R := by
+    obtain ⟨k, hk⟩ := hK' _ ⟨z, rfl⟩
+    refine (AlgHom.mem_range _).mpr ⟨k ⊗ₜ 1, ?_⟩
+    exact (AlgHom.liftEquiv_tmul _ _ _).trans <| ((congrArg (k • ·) (map_one ψ)).trans
+      (Algebra.algebraMap_eq_smul_one k).symm).trans hk
+  have hle := (Subring.closure_le (t := R.toSubring)).mpr
+    (Set.union_subset (Set.range_subset_iff.mpr h₁) (Set.range_subset_iff.mpr h₂))
+  rw [closure_range_residueFieldMap_eq_top t h] at hle
+  exact fun z ↦ (AlgHom.mem_range _).mp (hle (Subring.mem_top z))
 
 end AlgebraicGeometry.Scheme.Pullback

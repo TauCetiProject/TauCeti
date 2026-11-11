@@ -70,7 +70,6 @@ theorem HasLocallyFiniteMass.comp_smulLeftCLM {T : 𝓓^{n}(Ω, F) → V}
     (hT : HasLocallyFiniteMass T) (hf : ContDiff ℝ n f) :
     HasLocallyFiniteMass (T ∘ smulLeftCLM hf) :=
   hT.comp_of_norm_apply_le
-    (fun ψ => (tsupport_smulLeftCLM_subset hf ψ).trans inter_subset_right)
     (continuous_norm.comp hf.continuous) fun ψ x => by simp [norm_smul]
 
 variable [NormedSpace ℝ V] {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) V]
@@ -100,7 +99,6 @@ theorem HasLocallyFiniteMass.comp_oneFormWedgeCLM
     (hα : ContDiff ℝ n α) :
     HasLocallyFiniteMass (T ∘ oneFormWedgeCLM (k := k) hα) :=
   hT.comp_of_norm_apply_le
-    (fun ω => (tsupport_oneFormWedgeCLM_subset hα ω).trans inter_subset_right)
     (continuous_const.mul (continuous_norm.comp hα.continuous))
     (norm_oneFormWedgeCLM_apply_le hα)
 

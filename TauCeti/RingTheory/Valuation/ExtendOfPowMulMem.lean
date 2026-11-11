@@ -33,9 +33,9 @@ is carried into `R` by a power of `s`.
 
 ## Well-definedness
 
-Independence of `n` reduces to the case of comparing `n` with `n + j`, where
-`s ^ (n + j) * a = s ^ j * (sⁿ * a)` splits off a factor whose `w`-value is `(w s) ^ j`, exactly
-cancelling the extra `(w s)⁻ʲ`. Two arbitrary exponents are then compared through their sum.
+Independence of `n` holds because two exponents `m` and `n` that both work give
+`sⁿ * (sᵐ * a) = sᵐ * (sⁿ * a)`, so `(w s)ⁿ * w (sᵐ * a) = (w s)ᵐ * w (sⁿ * a)`, and dividing by
+`(w s) ^ (m + n)` gives the two quotients.
 
 The two valuation axioms reach a shared exponent differently. For a product, each argument keeps
 its *own* workable exponent — `x` at `m` and `y` at `n` — and only the product is evaluated at
@@ -94,19 +94,12 @@ private theorem pow_add_mul_mem {s : A} (hs : s ∈ R) {a : A} {k : ℕ} (hk : s
 private theorem extend_aux (w : Valuation R Γ₀) {s : A} (hs : s ∈ R) (hw : w ⟨s, hs⟩ ≠ 0)
     {a : A} {m n : ℕ} (hm : s ^ m * a ∈ R) (hn : s ^ n * a ∈ R) :
     w ⟨s ^ m * a, hm⟩ * (w ⟨s, hs⟩)⁻¹ ^ m = w ⟨s ^ n * a, hn⟩ * (w ⟨s, hs⟩)⁻¹ ^ n := by
-  -- one step: comparing `k` with `k + j`
-  have step : ∀ {k : ℕ} (hk : s ^ k * a ∈ R) (j : ℕ),
-      w ⟨s ^ k * a, hk⟩ * (w ⟨s, hs⟩)⁻¹ ^ k =
-        w ⟨s ^ (k + j) * a, pow_add_mul_mem hs hk j⟩ * (w ⟨s, hs⟩)⁻¹ ^ (k + j) := by
-    intro k hk j
-    have hsplit : (⟨s ^ (k + j) * a, pow_add_mul_mem hs hk j⟩ : R) =
-        ⟨s, hs⟩ ^ j * ⟨s ^ k * a, hk⟩ :=
-      Subtype.ext (by simp [← mul_assoc, ← pow_add, Nat.add_comm])
-    rw [hsplit, map_mul, map_pow, pow_add, mul_comm (w ⟨s, hs⟩ ^ j), mul_mul_mul_comm,
-      ← mul_pow, mul_inv_cancel₀ hw, one_pow, mul_one]
-  -- compare both exponents with their sum
-  rw [step hm n, step hn m]
-  exact congrArg₂ (· * ·) (congrArg w (Subtype.ext (by simp [add_comm]))) (by rw [add_comm])
+  -- `sⁿ * (sᵐ * a)` and `sᵐ * (sⁿ * a)` are both `s ^ (m + n) * a`
+  have key : w ⟨s, hs⟩ ^ n * w ⟨s ^ m * a, hm⟩ = w ⟨s, hs⟩ ^ m * w ⟨s ^ n * a, hn⟩ := by
+    simp only [← map_pow, ← map_mul]
+    exact congrArg w (Subtype.ext (by simp [← mul_assoc, ← pow_add, add_comm]))
+  simp only [inv_pow, ← div_eq_mul_inv]
+  rw [div_eq_div_iff (pow_ne_zero _ hw) (pow_ne_zero _ hw), mul_comm, key, mul_comm]
 
 /-- **The extension of `w` from `R` to `A`**, when every element of `A` is carried into `R` by
 some power of a central element `s`. For any `n` with `sⁿ * a ∈ R` the value is
@@ -182,8 +175,8 @@ theorem eq_extendOfPowMulMem (w : Valuation R Γ₀) {s : A} (hs : s ∈ R)
   obtain ⟨n, hn⟩ := hpow a
   have hval : w ⟨s ^ n * a, hn⟩ = w ⟨s, hs⟩ ^ n * v a := by
     rw [← hv ⟨s ^ n * a, hn⟩, ← hv ⟨s, hs⟩, ← map_pow, ← map_mul]
-  rw [extendOfPowMulMem_apply w hs hcomm hpow hw a hn, hval, mul_right_comm, ← mul_pow,
-    mul_inv_cancel₀ hw, one_pow, one_mul]
+  rw [extendOfPowMulMem_apply w hs hcomm hpow hw a hn, hval, mul_comm, inv_pow,
+    inv_mul_cancel_left₀ (pow_ne_zero n hw)]
 
 /-- **The extension does not depend on `s`**: two central elements of `R` whose powers carry
 `A` into `R` and at which `w` is nonzero give the same extension. -/

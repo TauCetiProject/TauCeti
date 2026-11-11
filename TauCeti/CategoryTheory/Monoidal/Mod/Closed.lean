@@ -67,7 +67,7 @@ lemma isModHom_ihomHomEquiv_iff (M K N : Mod C A)
 
 variable [HasCoequalizers C]
   [∀ X : C, PreservesColimitsOfSize.{0, 0} (MonoidalCategory.tensorLeft X)]
-  [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorRight X)]
+  [∀ X : C, PreservesColimitsOfSize.{0, 0} (MonoidalCategory.tensorRight X)]
 
 /-- Balanced tensoring with `M` is left adjoint to the module of linear maps out of `M`:
 the bijection is currying after precomposing with the balanced quotient. -/
@@ -174,5 +174,32 @@ lemma tensorπ_ihom_ev_app_hom (M N : Mod C A) :
   rw [internalHomAdjunction, Adjunction.mkOfHomEquiv_counit_app,
     tensorπ_tensorHomEquiv_symm_apply_hom]
   simp
+
+/-- Precomposition of internal module maps is ambient precomposition after inclusion. -/
+@[reassoc]
+lemma pre_app_hom_comp_ihomι {M M' : Mod C A} (f : M ⟶ M') (N : Mod C A) :
+    ((MonoidalClosed.pre f).app N).hom ≫ ihomι M N =
+      ihomι M' N ≫ (MonoidalClosed.pre f.hom).app N.X := by
+  let p : (internalHom M').obj N ⟶ (internalHom M).obj N := (MonoidalClosed.pre f).app N
+  -- Use the selected internal-hom module carriers before uncurrying in the base category.
+  change p.hom ≫ ihomι M N = _
+  apply uncurry_injective
+  rw [uncurry_natural_left, uncurry_pre_app]
+  let e : M ⊗ (internalHom M).obj N ⟶ N := (CategoryTheory.ihom.ev M).app N
+  let e' : M' ⊗ (internalHom M').obj N ⟶ N := (CategoryTheory.ihom.ev M').app N
+  have he : tensorπ M ((internalHom M).obj N) ≫ e.hom = uncurry (ihomι M N) :=
+    tensorπ_ihom_ev_app_hom M N
+  have he' : tensorπ M' ((internalHom M').obj N) ≫ e'.hom = uncurry (ihomι M' N) :=
+    tensorπ_ihom_ev_app_hom M' N
+  have h : M ◁ p ≫ e = f ▷ (internalHom M').obj N ≫ e' :=
+    id_tensor_pre_app_comp_ev f N
+  have h' : (M ◁ p).hom ≫ e.hom = (f ▷ (internalHom M').obj N).hom ≫ e'.hom :=
+    congrArg Hom.hom h
+  calc
+    _ = tensorπ M ((internalHom M').obj N) ≫ (M ◁ p).hom ≫ e.hom := by
+      rw [tensorπ_whiskerLeft_hom_assoc, he]
+    _ = tensorπ M ((internalHom M').obj N) ≫
+        (f ▷ (internalHom M').obj N).hom ≫ e'.hom := by rw [h']
+    _ = _ := by rw [tensorπ_whiskerRight_hom_assoc, he']
 
 end CategoryTheory.Mod

@@ -18,8 +18,9 @@ nontrivial central element is commutative, and, since subgroups of free groups a
 centralizer of a nontrivial element of a free group is therefore abelian, hence cyclic.
 
 These are the facts from which maximal roots of elements of a free group are built, in
-`TauCeti.GroupTheory.FreeGroup.MaximalRoot`. Free groups are also shown to have unique roots for
-a fixed nonzero exponent, transporting Mathlib's instance for `FreeGroup α` along a free basis.
+`TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic`. Free groups are also shown to have unique
+roots for a fixed nonzero exponent, transporting Mathlib's instance for `FreeGroup α` along a
+free basis.
 
 ## Main results
 

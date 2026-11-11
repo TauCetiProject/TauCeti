@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Stable.Approximation.Basic
-public import TauCeti.Probability.Distributions.Stable.SmallJumpRemainder
+public import TauCeti.Probability.Distributions.Stable.SmallJump.Remainder
 public import TauCeti.Probability.Distributions.CompoundPoisson.Intensity
 
 /-!

@@ -15,14 +15,15 @@ Package `AlgHom.toOpposite` when commutativity of the domain supplies its commut
 
 public section
 
+variable {K L A : Type*} [CommSemiring K] [CommSemiring L] [Semiring A] [Algebra K L]
+  [Algebra K A]
+
 /-- The opposite-valued algebra homomorphism induced by a map from commutative `L`. -/
-def AlgHom.toOppositeOfComm {K L A : Type*} [CommSemiring K] [CommSemiring L]
-    [Semiring A] [Algebra K L] [Algebra K A] (f : L →ₐ[K] A) : L →ₐ[K] Aᵐᵒᵖ :=
-  f.toOpposite fun x y ↦ by simp [commute_iff_eq, ← map_mul, mul_comm]
+def AlgHom.toOppositeOfComm (f : L →ₐ[K] A) : L →ₐ[K] Aᵐᵒᵖ :=
+  f.toOpposite fun x y ↦ (Commute.all x y).map f
 
 /-- The induced homomorphism sends `x` to the opposite of `f x`. -/
 @[simp]
-theorem AlgHom.toOppositeOfComm_apply {K L A : Type*} [CommSemiring K] [CommSemiring L]
-    [Semiring A] [Algebra K L] [Algebra K A] (f : L →ₐ[K] A) (x : L) :
-    f.toOppositeOfComm x = MulOpposite.op (f x) := by
-  rfl
+theorem AlgHom.toOppositeOfComm_apply (f : L →ₐ[K] A) (x : L) :
+    f.toOppositeOfComm x = MulOpposite.op (f x) :=
+  (rfl)

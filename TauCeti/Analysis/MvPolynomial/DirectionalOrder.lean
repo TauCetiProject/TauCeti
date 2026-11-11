@@ -110,4 +110,20 @@ theorem exists_analyticAt_eval_add_smul_eq_pow_mul [RCLike 𝕜]
   obtain ⟨u, hu, hu0, heq⟩ := hG.eventually_analyticOrderAt_eq_natCast_iff.1 hv
   exact ⟨v, u, hu, hu0, by simpa only [sub_zero, smul_eq_mul] using heq⟩
 
+/-- Along a direction `v` on which the lowest-degree Taylor component of `p` at `a` does not
+vanish, the line `t ↦ a + t • v` is analytic at `0` and detects the ambient order of `p`
+at `a`. -/
+theorem analyticAt_and_analyticOrderAt_eval_add_smul [NontriviallyNormedField 𝕜]
+    (p : MvPolynomial σ 𝕜) (a v : σ → 𝕜) {m : ℕ} (hm : (m : ℕ∞) = p.orderAt a)
+    (hv : eval v (homogeneousComponent m (taylor a p)) ≠ 0) :
+    AnalyticAt 𝕜 (fun t : 𝕜 ↦ eval (a + t • v) p) 0 ∧
+      analyticOrderAt (fun t : 𝕜 ↦ eval (a + t • v) p) 0 = m := by
+  have heq : (fun t : 𝕜 ↦ eval (a + t • v) p) = fun t ↦
+      (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p).eval t :=
+    _root_.funext fun t ↦ (p.eval_aeval_C_add_C_mul_X a v t).symm
+  rw [heq]
+  refine ⟨(AnalyticOnNhd.eval_polynomial _) 0 (Set.mem_univ _), ?_⟩
+  rw [Polynomial.analyticOrderAt_eval_zero]
+  exact (p.trailingDegree_aeval_C_add_C_mul_X_eq_iff a v hm.symm).2 hv
+
 end MvPolynomial

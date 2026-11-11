@@ -28,7 +28,8 @@ has Euler-characteristic degree `-dim_k Γ(D, 𝒪_D)`
 (`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_toInvertibleSheaf`).
 
 Twisting the exact sequence by a line bundle `L` with finite-dimensional `H⁰` and `H¹` gives
-`χ(L ⊗ I) = χ(L) - dim_k Γ(D, 𝒪_D)` (`Scheme.IdealSheafData.eulerCharBelow_tensor_sheaf`), so
+`χ(L ⊗ I) = χ(L) - dim_k Γ(D, 𝒪_D)` (the rank-one case of
+`Scheme.IdealSheafData.eulerCharBelow_tensor_sheaf`), so
 twisting by `𝒪_X(-D)` and by `𝒪_X(D)` is additive on degrees
 (`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_mk_mul_mk_toInvertibleSheaf` and
 `Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_mk_mul_inv_mk_toInvertibleSheaf`), without
@@ -98,11 +99,19 @@ theorem IsEffectiveCartier.eulerDegree_mk_mul_mk_toInvertibleSheaf (hI : I.IsEff
     LineBundleClass.eulerDegree k
         (LineBundleClass.mk L * LineBundleClass.mk hI.toInvertibleSheaf) =
       L.eulerDegree k + hI.toInvertibleSheaf.eulerDegree k := by
+  -- `L` is a vector bundle of rank one.
+  let E := (InvertibleSheaf.toFixedRankOne X).obj L
+  have hE : E.obj.obj = L.obj := by
+    rw [InvertibleSheaf.toFixedRankOne_obj_obj, ObjectProperty.ιOfLE_obj_obj]
+  have : FiniteDimensional k (Cohomology E.obj.obj 0) := hE ▸ inferInstance
+  have : FiniteDimensional k (Cohomology E.obj.obj 1) := hE ▸ inferInstance
+  have h := eulerCharBelow_tensor_sheaf k I E default
+  rw [hE, Nat.cast_one, one_mul] at h
   rw [hI.eulerDegree_toInvertibleSheaf k I default, ← LineBundleClass.mk_tensorProduct,
     LineBundleClass.eulerDegree_mk, InvertibleSheaf.eulerDegree_def,
     InvertibleSheaf.eulerDegree_def,
     eulerCharBelow_congr k (InvertibleSheaf.tensorProductObjIso _ _) 2,
-    IsEffectiveCartier.toInvertibleSheaf_obj, eulerCharBelow_tensor_sheaf k I L default]
+    IsEffectiveCartier.toInvertibleSheaf_obj, h]
   ring
 
 /-- **Twisting by `𝒪_X(D)` raises the degree by `deg D`.** On a scheme over a field `k` with
@@ -127,7 +136,10 @@ theorem IsEffectiveCartier.eulerDegree_mk_mul_inv_mk_toInvertibleSheaf
   let e' : M.obj ⊗ I.sheaf ≅ L.obj :=
     eqToIso (by rw [IsEffectiveCartier.toInvertibleSheaf_obj]) ≪≫
       (InvertibleSheaf.tensorProductObjIso M hI.toInvertibleSheaf).symm ≪≫ e
-  have hfin := (I.finiteDimensional_cohomology_tensor_sheaf_iff (k := k) (L := M)).mp fun i hi ↦
+  have hiff := I.finiteDimensional_cohomology_tensor_sheaf_iff (k := k)
+    (E := (InvertibleSheaf.toFixedRankOne X).obj M)
+  rw [InvertibleSheaf.toFixedRankOne_obj_obj, ObjectProperty.ιOfLE_obj_obj] at hiff
+  have hfin := hiff.mp fun i hi ↦
     (finiteDimensional_cohomology_congr k e' i).mpr (by interval_cases i <;> infer_instance)
   have := hfin 0 (by omega)
   have := hfin 1 (by omega)

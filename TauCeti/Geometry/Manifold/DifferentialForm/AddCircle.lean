@@ -31,6 +31,9 @@ The time form is invariant under the translations of the circle. Multiplication 
 `dt_q` back to `dt_p`. Its integral along the curve `t ↦ q_p t` from `a` to `b` is `b - a`; one
 circuit `0 ≤ t ≤ p` of the circle has integral `p`.
 
+On the cylinder `AddCircle p × ℝ`, the wedge of the pulled-back time form and the real
+coordinate form evaluates as the determinant in the real tangent coordinates.
+
 ## Main definitions
 
 * `AddCircle.timeForm p`: the time form `dt_p` of `AddCircle p`, a smooth real one-form.
@@ -98,6 +101,18 @@ def timeForm : SmoothForm 𝓘(ℝ) (AddCircle p) ℝ 1 :=
 theorem timeForm_apply (x : AddCircle p) (v : Fin 1 → TangentSpace 𝓘(ℝ) x) :
     (timeForm p).1 x v = v 0 :=
   (rfl)
+
+/-- On the circle cylinder, the wedge of the angular time form and the real coordinate form
+evaluates as the determinant of the two tangent vectors. -/
+theorem eval₂_wedge_timeForm_realLineCoordForm (y : AddCircle p × ℝ)
+    (v w : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) y) :
+    SmoothBundleForm.eval₂
+      (SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (timeForm p))
+        (SmoothForm.mpullback Prod.snd contMDiff_snd SmoothForm.realLineCoordForm)) y v w =
+      v.1 * w.2 - w.1 * v.2 := by
+  simp only [SmoothForm.eval₂_wedge_one_one, SmoothForm.mpullback_fst_apply,
+    SmoothForm.mpullback_snd_apply, timeForm_apply, SmoothForm.realLineCoordForm_apply,
+    Manifold.tangentSpaceProdEquiv_apply, Matrix.cons_val_zero]
 
 /-- As a section of the cotangent bundle, the time form is the constant section `id`. -/
 @[simp]

@@ -112,6 +112,11 @@ noncomputable def pointMapHom (f : Hom W₁ W₂) : W₁.Point →+ W₂.Point :
 theorem pointMapHom_apply (f : Hom W₁ W₂) (P : W₁.Point) : f.pointMapHom P = f.pointMap P :=
   (rfl)
 
+/-- A point belongs to the kernel exactly when its image under the morphism is zero. -/
+theorem mem_ker_pointMapHom_iff (f : Hom W₁ W₂) (P : W₁.Point) :
+    P ∈ f.pointMapHom.ker ↔ f.pointMap P = 0 := by
+  rw [AddMonoidHom.mem_ker, pointMapHom_apply]
+
 /-- The underlying function of `f.pointMapHom` is `f.pointMap`. -/
 theorem coe_pointMapHom (f : Hom W₁ W₂) : ⇑f.pointMapHom = f.pointMap :=
   funext f.pointMapHom_apply
@@ -179,11 +184,14 @@ noncomputable def compLeftHom [W₃.IsElliptic] (h : Hom W₂ W₃) :
 theorem compLeftHom_apply [W₃.IsElliptic] (h : Hom W₂ W₃) (f : Hom W₁ W₂) :
     compLeftHom h f = h.comp f := (rfl)
 
+omit [W₁.IsElliptic] in
 /-- **Composition commutes with negation in the inner morphism.** -/
 @[simp]
 theorem comp_neg [W₃.IsElliptic] (h : Hom W₂ W₃) (f : Hom W₁ W₂) :
-    h.comp (-f) = -h.comp f :=
-  (compLeftHom h).map_neg f
+    h.comp (-f) = -h.comp f := by
+  have h1 : h.comp (-1) = -h := by
+    rw [← compLeftHom_apply, _root_.map_neg, compLeftHom_apply, one_def, comp_id]
+  rw [neg_def f, ofIsogeny_negIsogeny, ← comp_assoc, h1, neg_comp]
 
 /-- **Composition respects subtraction in the inner morphism.** -/
 @[simp]

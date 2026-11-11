@@ -127,7 +127,7 @@ theorem continuousOn_extendFrom_schwarzChristoffelPrimitive (a e : ι → ℝ)
   · have hre := ofReal_re_eq_of_mem_closure_of_notMem hz hzH
     rw [← hre]
     exact ⟨_, tendsto_schwarzChristoffelPrimitive_boundary a e z₀ z.re
-      (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite z.re)⟩
+      (forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite z.re)⟩
 
 /-- The value of the extension at a point of the closed upper half-plane lies in the image of the
 open half-plane or on the compactified boundary path. -/
@@ -148,7 +148,7 @@ private theorem extendFrom_schwarzChristoffelPrimitive_mem (a e : ι → ℝ) (z
     refine (extendFrom_eq hz ?_).symm
     rw [← hre]
     exact tendsto_schwarzChristoffelPrimitive_boundary a e z₀ z.re
-      (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite z.re)
+      (forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite z.re)
 
 /-- Far out in the upper half-plane the primitive stays within any prescribed distance of the
 vertex at infinity. -/
@@ -238,7 +238,7 @@ theorem closure_image_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : Upp
       rw [schwarzChristoffelCompactifiedBoundary_coe]
       have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
       exact mem_closure_of_tendsto (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x
-          (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite x))
+          (forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite x))
         (eventually_mem_nhdsWithin.mono fun z hz => mem_image_of_mem F hz)
 
 /-- **The frontier of the image of the Schwarz--Christoffel primitive** is the part of the
@@ -334,7 +334,7 @@ theorem isClosed_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive (a
     exact ⟨hzH', hK.mem_of_tendsto (hcont.tendsto.mono_left nhdsWithin_le_nhds) hFK⟩
   · have hre := ofReal_re_eq_of_mem_closure_of_notMem hzH hzH'
     have ht := (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ z.re
-      (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite z.re)).mono_left
+      (forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite z.re)).mono_left
         (nhdsWithin_mono _ (inter_subset_left (t := F ⁻¹' K)))
     rw [hre] at ht
     exact absurd (mem_range_self z.re) (disjoint_left.mp hKB (hK.mem_of_tendsto ht hFK))

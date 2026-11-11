@@ -75,6 +75,77 @@ first against the kernels and then against `π` turns its dual value into
 `p`-th power of `W_p (κ x, η x')` plus the quantization displacements
 (`TauCeti.ofReal_integral_add_integral_le_wassersteinEDist_add_rpow`). -/
 
+/-- **Duality on a finite subspace.** For measurable maps `q₁`, `q₂` into a finite subspace `t`, if
+the distance of the kernel laws, enlarged by the two displacements of `q₁` and `q₂`, is almost
+everywhere at most `G`, then the Wasserstein distance of the quantized mixtures is at most the
+`L^p (π)` seminorm of `G`. This is strong Kantorovich duality for the quantized mixtures combined
+with weak duality for each pair of kernel laws. -/
+private theorem wassersteinEDist_map_comp_map_comp_le_eLpNorm (hp1 : 1 ≤ p) (hp : p ≠ ∞)
+    {μ : Measure X} {ν : Measure X'} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    {κ : Kernel X Y} {η : Kernel X' Y} [IsMarkovKernel κ] [IsMarkovKernel η]
+    {π : Measure (X × X')} (hπ : IsCoupling π μ ν) {t : Finset Y} {q₁ q₂ : Y → (t : Set Y)}
+    (hq₁ : Measurable q₁) (hq₂ : Measurable q₂) {G : X × X' → ℝ≥0∞} (hG : AEMeasurable G π)
+    (hκη : ∀ᵐ z ∂π, wassersteinEDist p (κ z.1) (η z.2) +
+      (eLpNorm (fun y ↦ edist y (q₁ y : Y)) p (κ z.1) +
+        eLpNorm (fun y ↦ edist y (q₂ y : Y)) p (η z.2)) ≤ G z) :
+    wassersteinEDist p ((κ ∘ₘ μ).map q₁) ((η ∘ₘ ν).map q₂) ≤ eLpNorm G p π := by
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
+  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  set α := (κ ∘ₘ μ).map q₁
+  set β := (η ∘ₘ ν).map q₂
+  have : IsProbabilityMeasure α := inferInstanceAs (IsProbabilityMeasure ((κ ∘ₘ μ).map q₁))
+  have : IsProbabilityMeasure β := inferInstanceAs (IsProbabilityMeasure ((η ∘ₘ ν).map q₂))
+  refine (ENNReal.rpow_le_rpow_iff hr).1 ?_
+  rw [wassersteinEDist_rpow_eq_transportCost measurable_edist hp0 hp,
+    eLpNorm_rpow_eq_lintegral hp0 hp hG]
+  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
+  set c : ↥(t : Set Y) × ↥(t : Set Y) → ℝ := fun z ↦ dist z.1 z.2 ^ p.toReal
+  have hc : Continuous c := continuous_dist.rpow_const fun _ ↦ Or.inr hr.le
+  obtain ⟨φ, ψ, hφc, hψc, hfeas, hle⟩ := exists_continuous_forall_add_le_transportCost_le
+    (μ := α) (ν := β) hc (fun _ ↦ by positivity) (NNReal.coe_pos.2 hε)
+  have hcost : (fun z : ↥(t : Set Y) × ↥(t : Set Y) ↦ edist z.1 z.2 ^ p.toReal)
+      = fun z ↦ ENNReal.ofReal (c z) := by
+    funext z
+    rw [edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg hr.le]
+  rw [hcost]
+  refine hle.trans (ENNReal.ofReal_add_le.trans ?_)
+  rw [ENNReal.ofReal_coe_nnreal]
+  gcongr
+  -- the potentials, read through the quantizers, are bounded and measurable
+  obtain ⟨Cφ, hCφ⟩ := isCompact_univ.exists_bound_of_continuousOn hφc.continuousOn
+  obtain ⟨Cψ, hCψ⟩ := isCompact_univ.exists_bound_of_continuousOn hψc.continuousOn
+  have hf₁ (ρ : Measure Y) [IsFiniteMeasure ρ] : Integrable (fun y ↦ φ (q₁ y)) ρ :=
+    .of_bound (hφc.measurable.comp hq₁).aestronglyMeasurable Cφ
+      (.of_forall fun y ↦ hCφ _ (mem_univ _))
+  have hf₂ (ρ : Measure Y) [IsFiniteMeasure ρ] : Integrable (fun y ↦ ψ (q₂ y)) ρ :=
+    .of_bound (hψc.measurable.comp hq₂).aestronglyMeasurable Cψ
+      (.of_forall fun y ↦ hCψ _ (mem_univ _))
+  -- a mixture is the composition of its kernel with a constant kernel, so integrals against
+  -- it are iterated integrals
+  have hint₁ : ∫ y, φ (q₁ y) ∂(κ ∘ₘ μ) = ∫ x, ∫ y, φ (q₁ y) ∂κ x ∂μ := by
+    rw [Measure.comp_eq_comp_const_apply, Kernel.integral_comp (hf₁ _), Kernel.const_apply]
+  have hint₂ : ∫ y, ψ (q₂ y) ∂(η ∘ₘ ν) = ∫ x, ∫ y, ψ (q₂ y) ∂η x ∂ν := by
+    rw [Measure.comp_eq_comp_const_apply, Kernel.integral_comp (hf₂ _), Kernel.const_apply]
+  have hF₁ : Integrable (fun x ↦ ∫ y, φ (q₁ y) ∂κ x) μ := by
+    simpa only [Kernel.const_apply] using (hf₁ ((κ ∘ₖ Kernel.const Unit μ) ())).integral_comp
+  have hF₂ : Integrable (fun x ↦ ∫ y, ψ (q₂ y) ∂η x) ν := by
+    simpa only [Kernel.const_apply] using (hf₂ ((η ∘ₖ Kernel.const Unit ν) ())).integral_comp
+  -- integrating the potentials against the kernels turns the dual value into an integral
+  -- against the source coupling
+  have hvalue : kantorovichDualValue α β φ ψ =
+      ∫ z, ((∫ y, φ (q₁ y) ∂κ z.1) + ∫ y, ψ (q₂ y) ∂η z.2) ∂π := by
+    rw [kantorovichDualValue_def,
+      integral_map hq₁.aemeasurable hφc.aestronglyMeasurable,
+      integral_map hq₂.aemeasurable hψc.aestronglyMeasurable, hint₁, hint₂,
+      ← kantorovichDualValue_def, kantorovichDualValue_eq_integral hπ hF₁ hF₂]
+  rw [hvalue]
+  refine TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal.trans
+    (lintegral_mono_ae (hκη.mono fun z hz ↦ ?_))
+  -- pointwise, weak duality for the pair of kernel laws
+  refine (ofReal_integral_add_integral_le_wassersteinEDist_add_rpow hp1 hp
+    (measurable_subtype_coe.comp hq₁) (measurable_subtype_coe.comp hq₂)
+    (fun y y' ↦ hfeas (q₁ y) (q₂ y')) (hf₁ _) (hf₂ _)).trans (ENNReal.rpow_le_rpow hz hr.le)
+
 /-- **The quantized estimate.** For quantizers `Q₁`, `Q₂` with values in a common finite set, the
 Wasserstein distance of the quantized mixtures is at most the `L^p (π)` seminorm of a bound on the
 pointwise distances of the kernels, enlarged by the two quantization displacements. -/
@@ -88,8 +159,6 @@ private theorem wassersteinEDist_map_comp_map_comp_le (hp1 : 1 ≤ p) (hp : p �
     wassersteinEDist p ((κ ∘ₘ μ).map Q₁) ((η ∘ₘ ν).map Q₂) ≤
       eLpNorm g p π + (eLpNorm (fun y ↦ edist y (Q₁ y)) p (κ ∘ₘ μ) +
         eLpNorm (fun y ↦ edist y (Q₂ y)) p (η ∘ₘ ν)) := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
-  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   -- the quantizers, read as maps to the finite subspace `t`
   let q₁ : Y → (t : Set Y) := fun y ↦ ⟨Q₁ y, Finset.mem_coe.2 (hQ₁t y)⟩
   let q₂ : Y → (t : Set Y) := fun y ↦ ⟨Q₂ y, Finset.mem_coe.2 (hQ₂t y)⟩
@@ -104,8 +173,8 @@ private theorem wassersteinEDist_map_comp_map_comp_le (hp1 : 1 ≤ p) (hp : p �
   have hd₂ : Measurable fun y ↦ edist y (Q₂ y) := measurable_id.edist hQ₂
   set e₁ : X → ℝ≥0∞ := fun x ↦ eLpNorm (fun y ↦ edist y (Q₁ y)) p (κ x)
   set e₂ : X' → ℝ≥0∞ := fun x ↦ eLpNorm (fun y ↦ edist y (Q₂ y)) p (η x)
-  have he₁ : Measurable e₁ := measurable_eLpNorm_kernel hp0 hp κ hd₁
-  have he₂ : Measurable e₂ := measurable_eLpNorm_kernel hp0 hp η hd₂
+  have he₁ : Measurable e₁ := measurable_eLpNorm_kernel κ hd₁.stronglyMeasurable
+  have he₂ : Measurable e₂ := measurable_eLpNorm_kernel η hd₂.stronglyMeasurable
   -- the inclusion of `t` is an isometry, so it does not increase the distance
   have hα : α.map (↑) = (κ ∘ₘ μ).map Q₁ := Measure.map_map measurable_subtype_coe hq₁
   have hβ : β.map (↑) = (η ∘ₘ ν).map Q₂ := Measure.map_map measurable_subtype_coe hq₂
@@ -118,58 +187,9 @@ private theorem wassersteinEDist_map_comp_map_comp_le (hp1 : 1 ≤ p) (hp : p �
   set G : X × X' → ℝ≥0∞ := fun z ↦ g z + (e₁ z.1 + e₂ z.2)
   have hGm : AEMeasurable G π :=
     hg.add ((he₁.comp measurable_fst).add (he₂.comp measurable_snd)).aemeasurable
-  have hdual : wassersteinEDist p α β ≤ eLpNorm G p π := by
-    refine (ENNReal.rpow_le_rpow_iff hr).1 ?_
-    rw [wassersteinEDist_rpow_eq_transportCost measurable_edist hp0 hp,
-      eLpNorm_rpow_eq_lintegral hp0 hp hGm]
-    refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
-    set c : ↥(t : Set Y) × ↥(t : Set Y) → ℝ := fun z ↦ dist z.1 z.2 ^ p.toReal
-    have hc : Continuous c := continuous_dist.rpow_const fun _ ↦ Or.inr hr.le
-    obtain ⟨φ, ψ, hφc, hψc, hfeas, hle⟩ := exists_continuous_forall_add_le_transportCost_le
-      (μ := α) (ν := β) hc (fun _ ↦ by positivity) (NNReal.coe_pos.2 hε)
-    have hcost : (fun z : ↥(t : Set Y) × ↥(t : Set Y) ↦ edist z.1 z.2 ^ p.toReal)
-        = fun z ↦ ENNReal.ofReal (c z) := by
-      funext z
-      rw [edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg hr.le]
-    rw [hcost]
-    refine hle.trans (ENNReal.ofReal_add_le.trans ?_)
-    rw [ENNReal.ofReal_coe_nnreal]
-    gcongr
-    -- the potentials, read through the quantizers, are bounded and measurable
-    obtain ⟨Cφ, hCφ⟩ := isCompact_univ.exists_bound_of_continuousOn hφc.continuousOn
-    obtain ⟨Cψ, hCψ⟩ := isCompact_univ.exists_bound_of_continuousOn hψc.continuousOn
-    have hf₁ (ρ : Measure Y) [IsFiniteMeasure ρ] : Integrable (fun y ↦ φ (q₁ y)) ρ :=
-      .of_bound (hφc.measurable.comp hq₁).aestronglyMeasurable Cφ
-        (.of_forall fun y ↦ hCφ _ (mem_univ _))
-    have hf₂ (ρ : Measure Y) [IsFiniteMeasure ρ] : Integrable (fun y ↦ ψ (q₂ y)) ρ :=
-      .of_bound (hψc.measurable.comp hq₂).aestronglyMeasurable Cψ
-        (.of_forall fun y ↦ hCψ _ (mem_univ _))
-    -- a mixture is the composition of its kernel with a constant kernel, so integrals against
-    -- it are iterated integrals
-    have hint₁ : ∫ y, φ (q₁ y) ∂(κ ∘ₘ μ) = ∫ x, ∫ y, φ (q₁ y) ∂κ x ∂μ := by
-      rw [Measure.comp_eq_comp_const_apply, Kernel.integral_comp (hf₁ _), Kernel.const_apply]
-    have hint₂ : ∫ y, ψ (q₂ y) ∂(η ∘ₘ ν) = ∫ x, ∫ y, ψ (q₂ y) ∂η x ∂ν := by
-      rw [Measure.comp_eq_comp_const_apply, Kernel.integral_comp (hf₂ _), Kernel.const_apply]
-    have hF₁ : Integrable (fun x ↦ ∫ y, φ (q₁ y) ∂κ x) μ := by
-      simpa only [Kernel.const_apply] using (hf₁ ((κ ∘ₖ Kernel.const Unit μ) ())).integral_comp
-    have hF₂ : Integrable (fun x ↦ ∫ y, ψ (q₂ y) ∂η x) ν := by
-      simpa only [Kernel.const_apply] using (hf₂ ((η ∘ₖ Kernel.const Unit ν) ())).integral_comp
-    -- integrating the potentials against the kernels turns the dual value into an integral
-    -- against the source coupling
-    have hvalue : kantorovichDualValue α β φ ψ =
-        ∫ z, ((∫ y, φ (q₁ y) ∂κ z.1) + ∫ y, ψ (q₂ y) ∂η z.2) ∂π := by
-      rw [kantorovichDualValue_def,
-        integral_map hq₁.aemeasurable hφc.aestronglyMeasurable,
-        integral_map hq₂.aemeasurable hψc.aestronglyMeasurable, hint₁, hint₂,
-        ← kantorovichDualValue_def, kantorovichDualValue_eq_integral hπ hF₁ hF₂]
-    rw [hvalue]
-    refine TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal.trans
-      (lintegral_mono_ae (hκη.mono fun z hz ↦ ?_))
-    -- pointwise, weak duality for the pair of kernel laws
-    refine (ofReal_integral_add_integral_le_wassersteinEDist_add_rpow hp1 hp hQ₁ hQ₂
-      (fun y y' ↦ hfeas (q₁ y) (q₂ y')) (hf₁ _) (hf₂ _)).trans ?_
-    gcongr
-    exact add_le_add_left hz _
+  have hdual : wassersteinEDist p α β ≤ eLpNorm G p π :=
+    wassersteinEDist_map_comp_map_comp_le_eLpNorm hp1 hp hπ hq₁ hq₂ hGm
+      (hκη.mono fun z hz ↦ add_le_add_left hz _)
   -- Minkowski's inequality splits the bound into its three contributions
   calc wassersteinEDist p ((κ ∘ₘ μ).map Q₁) ((η ∘ₘ ν).map Q₂)
       ≤ eLpNorm G p π := hincl.trans hdual
@@ -181,8 +201,8 @@ private theorem wassersteinEDist_map_comp_map_comp_le (hp1 : 1 ≤ p) (hp : p �
           eLpNorm_comp_measurePreserving he₁.aestronglyMeasurable hπ.measurePreserving_fst
         have h₂ : eLpNorm (fun z : X × X' ↦ e₂ z.2) p π = eLpNorm e₂ p ν :=
           eLpNorm_comp_measurePreserving he₂.aestronglyMeasurable hπ.measurePreserving_snd
-        rw [h₁, h₂, eLpNorm_eLpNorm_kernel hp0 hp κ μ hd₁,
-          eLpNorm_eLpNorm_kernel hp0 hp η ν hd₂]
+        rw [h₁, h₂, eLpNorm_eLpNorm_kernel κ μ hd₁.aestronglyMeasurable,
+          eLpNorm_eLpNorm_kernel η ν hd₂.aestronglyMeasurable]
 
 variable [StandardBorelSpace Y]
 

@@ -30,6 +30,7 @@ being the unit ideal.
 
 * `Ideal.faithfullyFlat_baseChange_iff_map_eq_top`: the spectral-complement criterion for
   faithful flatness after base change.
+* `RingHom.FaithfullyFlat.comp`: composition preserves faithful flatness across universes.
 * `RingHom.FaithfullyFlat.lTensor`: scalar extension preserves faithful flatness.
 * `RingHom.FaithfullyFlat.pi_of_exists_map_ne_top`: the criterion above.
 * `RingHom.FaithfullyFlat.pi_algebraMap_localizationAway`: in particular, the product of the
@@ -65,6 +66,15 @@ theorem faithfullyFlat_baseChange_iff_map_eq_top
 end Ideal
 
 namespace RingHom.FaithfullyFlat
+
+/-- The composite of faithfully flat ring homomorphisms is faithfully flat, even when the
+three rings live in different universes. -/
+theorem comp {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
+    {f : R →+* S} {g : S →+* T} (hf : f.FaithfullyFlat) (hg : g.FaithfullyFlat) :
+    (g.comp f).FaithfullyFlat := by
+  refine iff_flat_and_comap_surjective.mpr ⟨hf.flat.comp hg.flat, ?_⟩
+  exact (iff_flat_and_comap_surjective.mp hf).2.comp
+    (iff_flat_and_comap_surjective.mp hg).2
 
 section lTensor
 

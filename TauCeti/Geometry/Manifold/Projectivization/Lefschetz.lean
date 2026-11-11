@@ -165,7 +165,7 @@ private theorem exists_openEmbedding_isMorse_affineChartInvOneAddDistSq
         (hvw.trans (mvfderiv_apply_eq_mfderiv_apply ι z w).symm))
   have hinj_mfR (z : (Projectivization.affineChart i).symm ⁻¹' X) :
       Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, EuclideanSpace ℂ (Fin n)) ι z) :=
-    ((hιC z).mdifferentiableAt (by simp)).injective_mfderiv_restrictScalars ℝ (hinj_mfC z)
+    injective_mfderiv_restrictScalars ℝ (hinj_mfC z)
   -- Step 3: choose a generic centre `c` so `ρ(z) = ‖ι z - c‖²` is Morse on `Z`, and identify the
   -- pullback `F ∘ j` of `affineChartInvOneAddDistSq i c` with `(1 + ρ)⁻¹`.
   let _ : InnerProductSpace ℝ (EuclideanSpace ℂ (Fin n)) := InnerProductSpace.rclikeToReal ℂ _

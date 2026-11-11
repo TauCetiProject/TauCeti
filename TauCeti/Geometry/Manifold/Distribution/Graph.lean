@@ -175,22 +175,23 @@ theorem lieBracket_mem_graphDistribution {f : E × F → E →L[𝕜] F}
   rw [lieBracket_mem_graphDistribution_iff hf hV hW hVD hWD, ← hVp, ← hWp]
   exact isFrobeniusIntegrableAt_iff.1 hint _ _
 
-/-- An involutive distribution that agrees near `p` with the graph distribution of `f`, where `f`
-is differentiable near `p`, makes `f` satisfy the Frobenius integrability condition at `p`. The
-condition is the tangency of the brackets of the vector fields `q ↦ (v, f q v)`, which are tangent
-to the distribution near `p`. -/
-theorem IsInvolutiveDistribution.isFrobeniusIntegrableAt {D : E × F → Submodule 𝕜 (E × F)}
-    {f : E × F → E →L[𝕜] F} {p : E × F} (hD : IsInvolutiveDistribution 𝓘(𝕜, E × F) D)
+/-- A distribution involutive on a neighbourhood of `p` that agrees near `p` with the graph
+distribution of `f`, where `f` is differentiable near `p`, makes `f` satisfy the Frobenius
+integrability condition at `p`. The condition is the tangency of the brackets of the vector fields
+`q ↦ (v, f q v)`, which are tangent to the distribution near `p`. -/
+theorem IsInvolutiveDistributionOn.isFrobeniusIntegrableAt {D : E × F → Submodule 𝕜 (E × F)}
+    {f : E × F → E →L[𝕜] F} {p : E × F} {s : Set (E × F)}
+    (hD : IsInvolutiveDistributionOn 𝓘(𝕜, E × F) D s) (hs : s ∈ 𝓝 p)
     (hDf : ∀ᶠ q in 𝓝 p, D q = graphDistribution f q)
     (hf : ∀ᶠ q in 𝓝 p, DifferentiableAt 𝕜 f q) : IsFrobeniusIntegrableAt f p := by
-  obtain ⟨U, hUf, hU, hpU⟩ := eventually_nhds_iff.1 (hDf.and hf)
+  obtain ⟨U, hUf, hU, hpU⟩ := eventually_nhds_iff.1 (hDf.and (hf.and (eventually_mem_set.2 hs)))
   refine isFrobeniusIntegrableAt_iff.2 fun v w ↦ ?_
   -- The vector field `q ↦ (v, f q v)`, tangent to the graph distribution everywhere.
   let V (v : E) : Π q : E × F, TangentSpace 𝓘(𝕜, E × F) q := fun q ↦ (v, f q v)
   have hVdiff (v : E) {q : E × F} (hq : q ∈ U) : DifferentiableAt 𝕜 (V v) q :=
-    (differentiableAt_const v).prodMk ((hUf q hq).2.clm_apply (differentiableAt_const v))
+    (differentiableAt_const v).prodMk ((hUf q hq).2.1.clm_apply (differentiableAt_const v))
   have hVD (v : E) (q : E × F) : V v q ∈ graphDistribution f q := mem_graphDistribution.2 rfl
-  have hmem := hD.mlieBracket_mem hU
+  have hmem := hD.mlieBracket_mem hU (fun q hq ↦ (hUf q hq).2.2)
     (mdifferentiableOn_vectorSpace_iff_differentiableOn.2 fun q hq ↦
       (hVdiff v hq).differentiableWithinAt)
     (mdifferentiableOn_vectorSpace_iff_differentiableOn.2 fun q hq ↦
@@ -198,8 +199,16 @@ theorem IsInvolutiveDistribution.isFrobeniusIntegrableAt {D : E × F → Submodu
     (fun q hq ↦ (hUf q hq).1 ▸ hVD v q) (fun q hq ↦ (hUf q hq).1 ▸ hVD w q) hpU
   rw [mlieBracket_eq_lieBracket, (hUf p hpU).1] at hmem
   -- The tangent spaces of the model space `E × F` are `E × F` itself, by definition.
-  exact (lieBracket_mem_graphDistribution_iff (hUf p hpU).2 (hVdiff v hpU) (hVdiff w hpU)
+  exact (lieBracket_mem_graphDistribution_iff (hUf p hpU).2.1 (hVdiff v hpU) (hVdiff w hpU)
     (Eventually.of_forall (hVD v)) (Eventually.of_forall (hVD w))).1 hmem
+
+/-- An involutive distribution that agrees near `p` with the graph distribution of `f`, where `f`
+is differentiable near `p`, makes `f` satisfy the Frobenius integrability condition at `p`. -/
+theorem IsInvolutiveDistribution.isFrobeniusIntegrableAt {D : E × F → Submodule 𝕜 (E × F)}
+    {f : E × F → E →L[𝕜] F} {p : E × F} (hD : IsInvolutiveDistribution 𝓘(𝕜, E × F) D)
+    (hDf : ∀ᶠ q in 𝓝 p, D q = graphDistribution f q)
+    (hf : ∀ᶠ q in 𝓝 p, DifferentiableAt 𝕜 f q) : IsFrobeniusIntegrableAt f p :=
+  (hD.isInvolutiveDistributionOn univ).isFrobeniusIntegrableAt univ_mem hDf hf
 
 /-- **Involutivity of a graph distribution is the Frobenius integrability condition.** For a
 differentiable family `f`, the graph distribution of `f` is involutive exactly when `f` satisfies

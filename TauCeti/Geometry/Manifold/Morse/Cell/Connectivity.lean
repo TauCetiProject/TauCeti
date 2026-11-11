@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.CellDimension
-public import TauCeti.AlgebraicTopology.Singular.Triple
-public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
-public import TauCeti.Geometry.Manifold.Morse.Exhaustion
+public import TauCeti.Geometry.Manifold.Morse.Cell.Band
 public import TauCeti.Geometry.Manifold.Morse.OpenEmbedding
 
 import TauCeti.Topology.Homotopy.DeformationRetract
+import TauCeti.Topology.Homotopy.HomotopyGroup.Sublevel
 
 /-!
 # Low-degree connectivity across Morse bands and compactified pairs
@@ -26,11 +25,15 @@ of a boundaryless manifold on which `F ∘ j` is Morse. Across a compact band `F
   the inclusion `{F ≤ a} ↪ {F ≤ b}` induces surjections `π_k({F ≤ a}, x₀) → π_k({F ≤ b}, x₀)` for
   `k < n` and bijections for `k + 1 < n`;
 * in homology, the relative singular homology `H_k({F ≤ b}, {F ≤ a}; R)` vanishes for `k < n` in
-  every abelian category with coproducts
-  (`TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_isOpenEmbedding`), so
-  `{F ≤ a} ↪ {F ≤ b}` induces epimorphisms on `H_k` for `k < n` and isomorphisms for `k + 1 < n`.
+  every abelian category with coproducts (see
+  `TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_le_manifoldMorseIndex_of_isOpenEmbedding`
+  below), so `{F ≤ a} ↪ {F ≤ b}` induces epimorphisms on `H_k` for `k < n` and isomorphisms for
+  `k + 1 < n`.
 
-Taking `j = id` specializes these statements to a Morse function on `M` itself.
+Taking `j = id` specializes these statements to a Morse function on `M` itself (with relative
+homology vanishing already given by
+`TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_le_manifoldMorseIndex` in
+`TauCeti.Geometry.Manifold.Morse.Cell.Band`).
 
 Now suppose `A ⊆ X` lies in `{F ≤ 0}`, `F ≤ 0` outside `range j`, `F` is bounded above, every
 positive band `F⁻¹[a, b]` is compact, and `A` sits inside a subset `W ⊆ X` containing some positive
@@ -48,11 +51,11 @@ without any smoothness assumption on `X` along `A`.
   `TauCeti.IsMorse.bijective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding`: homotopy
   connectivity across a compact band on a space with an open manifold part (and their manifold
   specializations without `_of_isOpenEmbedding`).
-* `TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_isOpenEmbedding`,
-  `TauCeti.IsMorse.epi_homologyMap_sublevelInclusion_of_isOpenEmbedding`,
+* `TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_le_manifoldMorseIndex_of_isOpenEmbedding`
+  and `TauCeti.IsMorse.epi_homologyMap_sublevelInclusion_of_isOpenEmbedding`,
   `TauCeti.IsMorse.isIso_homologyMap_sublevelInclusion_of_isOpenEmbedding`: low-degree homology
-  vanishing and inclusion-induced epimorphisms/isomorphisms across a compact band (and their
-  manifold specializations without `_of_isOpenEmbedding`).
+  vanishing and inclusion-induced epimorphisms/isomorphisms across a compact band (and the
+  inclusion-map manifold specializations without `_of_isOpenEmbedding`).
 * `TauCeti.IsMorse.subsingleton_relHomotopyGroup_ofSubset_of_isOpenEmbedding`,
   `TauCeti.IsMorse.surjective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding`,
   `TauCeti.IsMorse.bijective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding`,
@@ -245,7 +248,7 @@ theorem IsMorse.surjective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding
     Surjective (HomotopyGroup.map (N := N) (sublevelInclusion F a b hab)
       (rfl : sublevelInclusion F a b hab x = sublevelInclusion F a b hab x)) := by
   rw [HomotopyGroup.surjective_map_congr (sublevelInclusion_eq_inclusion F hab) rfl rfl,
-    ← HomotopyGroup.congrEquiv_symm_comp_map_comp_congrEquiv _ rfl (Finite.equivFin N)]
+    HomotopyGroup.map_eq_congrEquiv_symm_comp _ rfl (Finite.equivFin N)]
   exact (Equiv.surjective _).comp
     (((sublevelBandConnected_of_isOpenEmbedding hj hF hf hab hcompact hA ha hb
       hindex).surjective hN x).comp (Equiv.surjective _))
@@ -264,7 +267,7 @@ theorem IsMorse.injective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding
     Injective (HomotopyGroup.map (N := N) (sublevelInclusion F a b hab)
       (rfl : sublevelInclusion F a b hab x = sublevelInclusion F a b hab x)) := by
   rw [HomotopyGroup.injective_map_congr (sublevelInclusion_eq_inclusion F hab) rfl rfl,
-    ← HomotopyGroup.congrEquiv_symm_comp_map_comp_congrEquiv _ rfl (Finite.equivFin N)]
+    HomotopyGroup.map_eq_congrEquiv_symm_comp _ rfl (Finite.equivFin N)]
   exact (Equiv.injective _).comp
     (((sublevelBandConnected_of_isOpenEmbedding hj hF hf hab hcompact hA ha hb
       hindex).injective hN x).comp (Equiv.injective _))
@@ -371,8 +374,8 @@ variable {E H : Type*} {M X : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
 `F⁻¹[a, b]` be a compact band between regular values of `F ∘ j` with `F < a` outside `range j`. If
 every critical point of `F ∘ j` in the band has Morse index at least `n`, then
 `H_k({F ≤ b}, {F ≤ a}; R)` vanishes for every `k < n`. -/
-theorem IsMorse.isZero_singularHomology_sublevelPair_of_isOpenEmbedding (hj : IsOpenEmbedding j)
-    (hF : Continuous F) (hf : IsMorse I (F ∘ j)) {a b : ℝ} (hab : a ≤ b)
+theorem IsMorse.isZero_singularHomology_sublevelPair_of_le_manifoldMorseIndex_of_isOpenEmbedding
+    (hj : IsOpenEmbedding j) (hF : Continuous F) (hf : IsMorse I (F ∘ j)) {a b : ℝ} (hab : a ≤ b)
     (hcompact : IsCompact (F ⁻¹' Icc a b)) (hA : ∀ x ∉ range j, F x < a)
     (ha : IsRegularValue I 𝓘(ℝ) (F ∘ j) a) (hb : IsRegularValue I 𝓘(ℝ) (F ∘ j) b)
     (hindex : ∀ p ∈ criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc a b,
@@ -408,8 +411,8 @@ theorem IsMorse.epi_homologyMap_sublevelInclusion_of_isOpenEmbedding (hj : IsOpe
       (TopCat.toSSet.map (TopCat.ofHom (sublevelInclusion F a b hab))) R k) := by
   rw [sublevelInclusion_eq_inclusion]
   exact (sublevelPair F hab).epi_homologyMap_map_of_isZero R
-    (hf.isZero_singularHomology_sublevelPair_of_isOpenEmbedding hj hF hab hcompact hA ha hb hindex
-      R hk)
+    (hf.isZero_singularHomology_sublevelPair_of_le_manifoldMorseIndex_of_isOpenEmbedding hj hF hab
+      hcompact hA ha hb hindex R hk)
 
 /-- **Isomorphism on `H_k` for `k + 1 < n` across a Morse band.** -/
 theorem IsMorse.isIso_homologyMap_sublevelInclusion_of_isOpenEmbedding (hj : IsOpenEmbedding j)
@@ -423,20 +426,10 @@ theorem IsMorse.isIso_homologyMap_sublevelInclusion_of_isOpenEmbedding (hj : IsO
       (TopCat.toSSet.map (TopCat.ofHom (sublevelInclusion F a b hab))) R k) := by
   rw [sublevelInclusion_eq_inclusion]
   exact (sublevelPair F hab).isIso_homologyMap_map_of_isZero R
-    (hf.isZero_singularHomology_sublevelPair_of_isOpenEmbedding hj hF hab hcompact hA ha hb hindex
-      R hk)
-    (hf.isZero_singularHomology_sublevelPair_of_isOpenEmbedding hj hF hab hcompact hA ha hb hindex
-      R (by omega))
-
-/-- **Relative singular homology vanishes below the Morse index bound on a manifold.** -/
-theorem IsMorse.isZero_singularHomology_sublevelPair {f : M → ℝ}
-    (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
-    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b)
-    (hindex : ∀ p ∈ criticalPoints I f ∩ f ⁻¹' Icc a b, n ≤ manifoldMorseIndex I f p)
-    (R : A_cat) {k : ℕ} (hk : k < n) :
-    IsZero ((sublevelPair f hab).singularHomology R k) :=
-  hf.isZero_singularHomology_sublevelPair_of_isOpenEmbedding .id hf.contMDiff.continuous hab
-    hcompact (fun _ h ↦ (h (mem_range_self _)).elim) ha hb hindex R hk
+    (hf.isZero_singularHomology_sublevelPair_of_le_manifoldMorseIndex_of_isOpenEmbedding hj hF hab
+      hcompact hA ha hb hindex R hk)
+    (hf.isZero_singularHomology_sublevelPair_of_le_manifoldMorseIndex_of_isOpenEmbedding hj hF hab
+      hcompact hA ha hb hindex R (by omega))
 
 /-- **Epimorphism on `H_k` for `k < n` across a Morse band on a manifold.** -/
 theorem IsMorse.epi_homologyMap_sublevelInclusion {f : M → ℝ}
@@ -464,41 +457,12 @@ end SublevelHomology
 
 section PairConnectivity
 
-private theorem surjective_homotopyGroupMap_subtypeVal_sublevel_iff
-    {X : Type u} [TopologicalSpace X] {N : Type v} [Finite N] {F : X → ℝ} {a b : ℝ} (hab : a ≤ b)
-    (hFb : ∀ x, F x ≤ b) (y : {x | F x ≤ a}) :
-    Surjective (HomotopyGroup.map (N := N) (x := y)
-        (ContinuousMap.subtypeVal {x | F x ≤ a}) rfl) ↔
-      Surjective (HomotopyGroup.map (N := N) (x := y) (sublevelInclusion F a b hab) rfl) :=
-  (ContinuousMap.HomotopyEquiv.refl _).isWeakHomotopyEquivalence.surjective_map_iff_of_comp_eq
-    (sublevelHomeomorphUniv hFb).toHomotopyEquiv.isWeakHomotopyEquivalence
-    (ContinuousMap.ext fun x ↦ by simp) N y
-
-private theorem injective_homotopyGroupMap_subtypeVal_sublevel_iff
-    {X : Type u} [TopologicalSpace X] {N : Type v} [Finite N] {F : X → ℝ} {a b : ℝ} (hab : a ≤ b)
-    (hFb : ∀ x, F x ≤ b) (y : {x | F x ≤ a}) :
-    Injective (HomotopyGroup.map (N := N) (x := y)
-        (ContinuousMap.subtypeVal {x | F x ≤ a}) rfl) ↔
-      Injective (HomotopyGroup.map (N := N) (x := y) (sublevelInclusion F a b hab) rfl) :=
-  (ContinuousMap.HomotopyEquiv.refl _).isWeakHomotopyEquivalence.injective_map_iff_of_comp_eq
-    (sublevelHomeomorphUniv hFb).toHomotopyEquiv.isWeakHomotopyEquivalence
-    (ContinuousMap.ext fun x ↦ by simp) N y
-
-private theorem sublevelInclusion_comp_sublevelHomeomorphUniv
-    {X : Type u} [TopologicalSpace X] {F : X → ℝ} {a b : ℝ} (hab : a ≤ b) (hFb : ∀ x, F x ≤ b) :
-    TopCat.ofHom (sublevelInclusion F a b hab) ≫
-        (TopCat.isoOfHomeo (X := TopCat.of ↥{x | F x ≤ b}) (Y := TopCat.of X)
-          (sublevelHomeomorphUniv hFb)).hom =
-      TopCat.ofHom (ContinuousMap.subtypeVal {x | F x ≤ a}) := by
-  ext x
-  simp
-
 variable {E H : Type*} {M X : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [TopologicalSpace X] [T2Space X]
   {j : M → X} {F : X → ℝ} {A W : Set X} {n : ℕ}
 
-omit [FiniteDimensional ℝ E] [T2Space M] [T2Space X] in
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [T2Space X] in
 /-- Choose a regular value `0 < a < δ` of `F ∘ j` and an upper bound `b > F` so `{F ≤ a} ⊆ W` and
 `{F ≤ b} = univ`. -/
 private theorem IsMorse.exists_sandwich_levels (hj : IsOpenEmbedding j)
@@ -560,7 +524,7 @@ theorem IsMorse.surjective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding
   let y : {x | F x ≤ a} := ContinuousMap.inclusion hAa a₀
   have hsurj_sub : Surjective (HomotopyGroup.map (N := N) (x := y)
       (ContinuousMap.subtypeVal {x | F x ≤ a}) rfl) :=
-    (surjective_homotopyGroupMap_subtypeVal_sublevel_iff hab (fun x ↦ (hFb x).le) y).2
+    (HomotopyGroup.surjective_map_subtypeVal_iff_sublevelInclusion hab (fun x ↦ (hFb x).le) y).2
       (hf.surjective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding hj hF hab hcpt hA_lt
         ha_reg hb_reg (fun p hp ↦ hindex p hp.1) hN y)
   have hsurj_W : Surjective (HomotopyGroup.map (N := N) (x := ContinuousMap.inclusion haW y)
@@ -585,7 +549,7 @@ theorem IsMorse.injective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding
   let y : {x | F x ≤ a} := ContinuousMap.inclusion hAa a₀
   have hinj_sub : Injective (HomotopyGroup.map (N := N) (x := y)
       (ContinuousMap.subtypeVal {x | F x ≤ a}) rfl) :=
-    (injective_homotopyGroupMap_subtypeVal_sublevel_iff hab (fun x ↦ (hFb x).le) y).2
+    (HomotopyGroup.injective_map_subtypeVal_iff_sublevelInclusion hab (fun x ↦ (hFb x).le) y).2
       (hf.injective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding hj hF hab hcpt hA_lt
         ha_reg hb_reg (fun p hp ↦ hindex p hp.1) hN y)
   have hinj_α : Injective (HomotopyGroup.map (N := N) (x := a₀)

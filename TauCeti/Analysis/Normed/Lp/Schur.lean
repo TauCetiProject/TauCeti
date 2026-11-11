@@ -99,6 +99,34 @@ private theorem two_mul_sum_norm_sub_norm_le_of_hasSum {y : lp (fun _ : ι ↦ �
   rw [sub_sub_cancel, norm_sub_rev, hnorm_cast] at hlow
   linarith
 
+/-- The phase functional: for finite sets `A 0 ⊆ A 1 ⊆ ⋯` and vectors `y k` in ℓ¹, there is a
+continuous linear functional `F` on ℓ¹ that is the phase of `y k` on each block `A (k + 1) \ A k`,
+so that `‖F (y k)‖` is at least twice the mass of `y k` on that block minus `‖y k‖`. -/
+private theorem exists_strongDual_two_mul_sum_norm_sub_norm_le [DecidableEq ι]
+    {A : ℕ → Finset ι} (hA : Monotone A) (y : ℕ → lp (fun _ : ι ↦ 𝕜) 1) :
+    ∃ F : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) 1), ∀ k,
+      2 * ∑ i ∈ A (k + 1) \ A k, ‖y k i‖ - ‖y k‖ ≤ ‖F (y k)‖ := by
+  classical
+  -- The bounded family: on the block `A (k + 1) \ A k` it is the phase of `y k`.
+  choose c hc_norm hc_mul using RCLike.exists_norm_eq_mul_self (K := 𝕜)
+  let a : ι → 𝕜 := fun i ↦ if h : ∃ k, i ∈ A (k + 1) then c (y (Nat.find h) i) else 0
+  have ha_norm (i : ι) : ‖a i‖ ≤ 1 := by
+    simp only [a]
+    split_ifs
+    · exact (hc_norm _).le
+    · simp
+  have ha_block (k : ℕ) {i : ι} (hi : i ∈ A (k + 1) \ A k) : a i * y k i = ‖y k i‖ := by
+    rw [Finset.mem_sdiff] at hi
+    have h : ∃ k, i ∈ A (k + 1) := ⟨k, hi.1⟩
+    have hfind : Nat.find h = k := (Nat.find_eq_iff h).2
+      ⟨hi.1, fun j hj hij ↦ hi.2 (hA (Nat.succ_le_of_lt hj) hij)⟩
+    have ha : a i = c (y (Nat.find h) i) := dite_eq_left_of_eq_true (eq_true h)
+    rw [ha, hfind, ← hc_mul]
+  let F : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) 1) :=
+    dualEquiv 𝕜 ι ⊤ 1 ENNReal.one_ne_top ⟨a, memℓp_infty ⟨1, by rintro _ ⟨i, rfl⟩; exact ha_norm i⟩⟩
+  refine ⟨F, fun k ↦ two_mul_sum_norm_sub_norm_le_of_hasSum ha_norm (fun i hi ↦ ha_block k hi) ?_⟩
+  simpa [F] using F.hasSum_lp_single_mul ENNReal.one_ne_top (y k)
+
 /-- **Schur's theorem**, in the weakly null sequential form: a sequence in ℓ¹ on which every
 continuous linear functional tends to zero tends to zero in norm. -/
 private theorem tendsto_zero_of_forall_eval_tendsto {x : ℕ → lp (fun _ : ι ↦ 𝕜) 1}
@@ -121,29 +149,12 @@ private theorem tendsto_zero_of_forall_eval_tendsto {x : ℕ → lp (fun _ : ι 
       tendsto_finsetSum A fun i _ ↦ (hx (lp.evalCLM 𝕜 (fun _ : ι ↦ 𝕜) 1 i)).norm
   obtain ⟨m, A, hmono, hAmono, hmA⟩ :=
     exists_strictMono_monotone_of_frequently_le hcoord (δ := ε / 8) (by positivity) hlarge
-  -- The bounded family: on the block `A (k + 1) \ A k` it is the phase of `x (m k)`.
-  choose c hc_norm hc_mul using RCLike.exists_norm_eq_mul_self (K := 𝕜)
-  let a : ι → 𝕜 := fun i ↦ if h : ∃ k, i ∈ A (k + 1) then c (x (m (Nat.find h)) i) else 0
-  have ha_norm (i : ι) : ‖a i‖ ≤ 1 := by
-    simp only [a]
-    split_ifs
-    · exact (hc_norm _).le
-    · simp
-  have ha_block (k : ℕ) {i : ι} (hi : i ∈ A (k + 1) \ A k) : a i * x (m k) i = ‖x (m k) i‖ := by
-    rw [Finset.mem_sdiff] at hi
-    have h : ∃ k, i ∈ A (k + 1) := ⟨k, hi.1⟩
-    have hfind : Nat.find h = k := (Nat.find_eq_iff h).2
-      ⟨hi.1, fun j hj hij ↦ hi.2 (hAmono (Nat.succ_le_of_lt hj) hij)⟩
-    have ha : a i = c (x (m (Nat.find h)) i) := dite_eq_left_of_eq_true (eq_true h)
-    rw [ha, hfind, ← hc_mul]
-  let F : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) 1) :=
-    dualEquiv 𝕜 ι ⊤ 1 ENNReal.one_ne_top ⟨a, memℓp_infty ⟨1, by rintro _ ⟨i, rfl⟩; exact ha_norm i⟩⟩
+  obtain ⟨F, hblock⟩ := exists_strongDual_two_mul_sum_norm_sub_norm_le hAmono fun k ↦ x (m k)
   -- Every `F (x (m k))` stays at least `ε / 2` in norm.
   have hF (k : ℕ) : ε / 2 < ‖F (x (m k))‖ := by
     obtain ⟨h1, h2, h3⟩ := hmA k
-    have hblock := two_mul_sum_norm_sub_norm_le_of_hasSum ha_norm (fun i hi ↦ ha_block k hi)
-      (by simpa [F] using (F.hasSum_lp_single_mul ENNReal.one_ne_top (x (m k))))
-    rw [Finset.sum_sdiff_eq_sub (hAmono k.le_succ)] at hblock
+    have hk := hblock k
+    rw [Finset.sum_sdiff_eq_sub (hAmono k.le_succ)] at hk
     linarith
   have hlim : Tendsto (fun k ↦ ‖F (x (m k))‖) atTop (𝓝 0) := by
     simpa using ((hx F).comp hmono.tendsto_atTop).norm

@@ -42,7 +42,7 @@ simultaneous diagonalization.
 
 public section
 
-open Matrix.SpecialLinearGroup CongruenceSubgroup
+open Matrix.SpecialLinearGroup CongruenceSubgroup TauCeti
 open scoped MatrixGroups
 
 namespace TauCeti.CuspForm

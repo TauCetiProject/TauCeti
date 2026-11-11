@@ -42,6 +42,7 @@ Gilbarg--Trudinger, *Elliptic Partial Differential Equations of Second Order*, C
   exponential barrier's Laplacian.
 * `TauCeti.fderiv_exp_inner_apply`, `TauCeti.fderiv_fderiv_exp_inner_apply`: the first and
   second derivatives of the same barrier.
+* `TauCeti.gradient_exp_inner`: the gradient of the same barrier.
 * `TauCeti.not_isLocalMax_of_laplacian_add_fderiv_pos` /
   `TauCeti.not_isLocalMin_of_laplacian_add_fderiv_neg`: a strict sign of `Δ u + ⟪b, ∇u⟫`
   forbids an interior local extremum, with no hypothesis on `b`.
@@ -102,6 +103,16 @@ form `α² ⟪u, v⟫ ⟪u, w⟫` scaled by the barrier itself. -/
   rw [funext fun y ↦ (hasFDerivAt_exp_inner α u y).fderiv,
     ((hasFDerivAt_exp_inner α u x).smul_const (α • innerSL ℝ u)).fderiv]
   simp only [ContinuousLinearMap.smulRight_apply, smul_apply, innerSL_apply_apply, smul_eq_mul]
+  ring
+
+/-- The gradient of the exponential barrier `y ↦ exp (α ⟪u, y⟫)` is `α exp (α ⟪u, x⟫) • u`. -/
+@[simp] theorem gradient_exp_inner [CompleteSpace E] (α : ℝ) (u x : E) :
+    gradient (fun y : E ↦ Real.exp (α * ⟪u, y⟫)) x = (α * Real.exp (α * ⟪u, x⟫)) • u := by
+  refine HasGradientAt.gradient (hasGradientAt_iff_hasFDerivAt.2 ?_)
+  refine (hasFDerivAt_exp_inner α u x).congr_fderiv ?_
+  ext v
+  rw [toDual_apply_apply, real_inner_smul_left, smul_apply, smul_apply, innerSL_apply_apply,
+    smul_eq_mul, smul_eq_mul]
   ring
 
 section FiniteDimensional

@@ -29,13 +29,9 @@ the same degree. Only the coefficients up to `p.natDegree` need to be checked. -
 theorem degree_map_eq_of_map_coeff_eq_zero_iff
     (h : ∀ i ≤ p.natDegree, φ (p.coeff i) = 0 ↔ ψ (p.coeff i) = 0) :
     (p.map φ).degree = (p.map ψ).degree := by
-  have h' (i : ℕ) : φ (p.coeff i) = 0 ↔ ψ (p.coeff i) = 0 := by
-    rcases le_or_gt i p.natDegree with hi | hi
-    · exact h i hi
-    · simp [coeff_eq_zero_of_natDegree_lt hi]
-  have key (n : WithBot ℕ) : (p.map φ).degree ≤ n ↔ (p.map ψ).degree ≤ n := by
-    simp only [degree_le_iff_coeff_zero, coeff_map, h']
-  exact le_antisymm ((key _).2 le_rfl) ((key _).1 le_rfl)
+  have h' (i : ℕ) : φ (p.coeff i) = 0 ↔ ψ (p.coeff i) = 0 :=
+    (le_or_gt i p.natDegree).elim (h i) fun hi ↦ by simp [coeff_eq_zero_of_natDegree_lt hi]
+  exact eq_of_forall_ge_iff fun n ↦ by simp only [degree_le_iff_coeff_zero, coeff_map, h']
 
 /-- If `φ` and `ψ` send the same coefficients of `p` to zero, then `p.map φ` vanishes exactly
 when `p.map ψ` does. Only the coefficients up to `p.natDegree` need to be checked. -/
