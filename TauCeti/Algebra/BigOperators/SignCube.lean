@@ -35,6 +35,8 @@ noncommutative ring, such as a C⋆-algebra, so products are kept in order throu
   second sign moments, `𝔼 εᵢ = 0` and `𝔼 εᵢ εⱼ = δᵢⱼ`.
 * `TauCeti.signAverage_rademacherSum`, `TauCeti.signAverage_rademacherSum_mul_self`: a
   Rademacher sum `S` has `𝔼 S = 0` and `𝔼 S² = ∑ᵢ xᵢ²`.
+* `TauCeti.signAverage_units_smul_rademacherSum`: the coefficients of a Rademacher sum are
+  recovered as `𝔼 εₖ S = xₖ`.
 * `TauCeti.signAverage_rademacherSum_mul_four`: in a possibly noncommutative, possibly
   nonunital ring, the fourth moment of a Rademacher sum expands over the three pairings of four
   indices as `𝔼 S⁴ = (∑ᵢ xᵢ²)² + ∑ᵢ xᵢ (∑ⱼ xⱼ²) xᵢ + ∑ᵢ ∑ⱼ xᵢ xⱼ xᵢ xⱼ - 2 ∑ᵢ xᵢ⁴`. For
@@ -319,6 +321,14 @@ theorem signAverage_rademacherSum [AddCommGroup E] [Module ℝ E] (x : ι → E)
   have h : rademacherSum x = fun ε => ∑ i, (ε i : ℤ) • x i := funext (rademacherSum_def x)
   rw [h, signAverage_sum]
   simp
+
+/-- The coefficients of a Rademacher sum are recovered by averaging against the signs:
+`𝔼 εₖ (∑ᵢ εᵢ xᵢ) = xₖ`. -/
+@[simp]
+theorem signAverage_units_smul_rademacherSum [AddCommGroup E] [Module ℝ E] (x : ι → E) (k : ι) :
+    signAverage (fun ε => (ε k : ℤ) • rademacherSum x ε) = x k := by
+  simp only [rademacherSum_def, Finset.smul_sum, smul_smul, signAverage_sum,
+    signAverage_units_mul_units_smul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
 
 variable {R : Type*} [NonUnitalRing R] [Module ℝ R]
 
