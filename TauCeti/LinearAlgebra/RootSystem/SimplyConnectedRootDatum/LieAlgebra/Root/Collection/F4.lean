@@ -92,12 +92,6 @@ theorem commutator_range_chevalleyRootSubgroup_F4_le (A : CommAlgCat ℤ)
     max (b.height α) (b.height β) < b.height γ}, X γ
   have hαpos : 0 < b.height α := (mem_posRoots _ _ _).mp hα
   have hβpos : 0 < b.height β := (mem_posRoots _ _ _).mp hβ
-  have hmem {γ : Fin F4.numRoots} (hγ : max (b.height α) (b.height β) < b.height γ)
-      (u : Multiplicative A) : chevalleyRootSubgroup ρ M hM hnil γ A u ∈ Z := by
-    apply le_iSup₂ (f := fun γ _ => X γ) γ _ ⟨u, rfl⟩
-    simp only [Finset.mem_filter, mem_posRootsFinset, mem_posRoots,
-      RootPairing.Base.isPos_iff]
-    exact ⟨lt_trans (lt_max_of_lt_left hαpos) hγ, hγ⟩
   have hcases := f4_positive_pair_cases α β ⟨hlt, (mem_posRoots_F4_iff ht β).mp hβ⟩
   -- Replace only the root table, so the following formulas retain the original lattice maps.
   rw [← f4SimplyConnectedRootDatum_root, ← simplyConnectedRootDatum_F4 ht] at hcases
@@ -111,10 +105,11 @@ theorem commutator_range_chevalleyRootSubgroup_F4_le (A : CommAlgCat ℤ)
     rw [commutatorElement_eq_one_iff_commute.mpr hc']
     exact Z.one_mem
   · have hγheight : b.height γ = b.height α + b.height β :=
-      height_rationalBase_of_root_eq_add F4 ht hγ
+      height_rationalBase_add F4 ht hγ
+    dsimp only [b] at hαpos hβpos hγheight
     rw [← ofAdd_toAdd u, ← ofAdd_toAdd v,
       commutatorElement_chevalleyRootSubgroup_of_root_eq_add ρ M hM hnil hγ hi hj]
-    exact hmem (by omega) _
+    exact chevalleyRootSubgroup_mem_biSup_of_height_lt ρ M hM hnil hα (by omega) A _
   · exact commutatorElement_chevalleyRootSubgroup_mem_biSup_of_root_eq_two_nsmul_add
       ρ M hM hnil hγ hδ hi hj hα hβ A u.toAdd v.toAdd
   · rw [← commutatorElement_inv]

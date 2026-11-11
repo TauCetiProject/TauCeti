@@ -112,7 +112,7 @@ theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n 
     smul_eq_mul, ← Int.cast_mul, ← Int.cast_add, Int.cast_inj]
 
 /-- An integral root sum gives the corresponding sum of heights in the rational base. -/
-theorem height_rationalBase_of_root_eq_add {α β γ : Fin t.numRoots}
+theorem height_rationalBase_add {α β γ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β) :
     (t.rationalBase ht).height γ = (t.rationalBase ht).height α +

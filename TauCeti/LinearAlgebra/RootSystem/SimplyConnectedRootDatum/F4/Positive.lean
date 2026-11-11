@@ -26,7 +26,7 @@ public section
 namespace TauCeti.DynkinType
 
 /-- The height of a pinned F₄ root in fundamental-weight coordinates. -/
-theorem height_rationalBase_F4 (ht : F4.Valid) (i : Fin F4.numRoots) :
+@[simp↓] theorem height_rationalBase_F4 (ht : F4.Valid) (i : Fin F4.numRoots) :
     (F4.rationalBase ht).height i =
       11 * f4Root i 0 + 21 * f4Root i 1 + 15 * f4Root i 2 + 8 * f4Root i 3 := by
   let f : (Fin F4.rank → ℚ) →+ ℚ :=
@@ -61,5 +61,13 @@ theorem height_rationalBase_F4 (ht : F4.Valid) (i : Fin F4.numRoots) :
   simp only [TauCeti.mem_posRoots, RootPairing.Base.isPos_iff]
   rw [height_rationalBase_F4]
   decide +revert
+
+/-- The positive F₄ root finset consists of the first twenty-four table indices. -/
+theorem posRootsFinset_F4 (ht : F4.Valid) :
+    posRootsFinset (F4.rationalRootSystem ht) (F4.rationalBase ht) =
+      Finset.univ.filter (fun i => i.val < 24) := by
+  ext i
+  simp only [mem_posRootsFinset, mem_posRoots_F4_iff, Finset.mem_filter,
+    Finset.mem_univ, true_and]
 
 end TauCeti.DynkinType
