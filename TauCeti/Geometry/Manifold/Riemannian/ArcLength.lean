@@ -36,6 +36,8 @@ that energy less than `(b - a) / 2` forces length less than `b - a`.
 
 ## Main results
 
+* `TauCeti.Manifold.pathELength_eq_setLIntegral_enorm_curveVelocity_Icc` and its `Ioo` variant:
+  the Riemannian length of any curve is the integral of its speed.
 * `ContMDiffOn.continuousOn_norm_curveVelocityWithin`: the speed of a `C¹` curve is continuous on
   a parameter set with unique derivatives, and `ContMDiffOn.continuousOn_norm_curveVelocity` is
   its open-set case.
@@ -85,6 +87,23 @@ variable
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 /-! ### Length as the integral of speed -/
+
+omit [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
+/-- The Riemannian length of a curve from `a` to `b` is the integral of its speed over `Icc a b`.
+No regularity of the curve is assumed. -/
+theorem pathELength_eq_setLIntegral_enorm_curveVelocity_Icc {γ : ℝ → M} {a b : ℝ} :
+    Manifold.pathELength I γ a b = ∫⁻ t in Icc a b, ‖curveVelocity I γ t‖ₑ := by
+  simp only [Manifold.pathELength_eq_lintegral_mfderiv_Icc, curveVelocity_apply]
+  -- Mathlib evaluates `mfderiv% γ t` at `1 : TangentSpace 𝓘(ℝ) t`, while `curveVelocity_apply`
+  -- evaluates it at `1 : ℝ`; the two agree because that tangent space is `ℝ` by definition.
+  rfl
+
+omit [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
+/-- The Riemannian length of a curve from `a` to `b` is the integral of its speed over `Ioo a b`.
+No regularity of the curve is assumed, and its velocities at `a` and `b` play no role. -/
+theorem pathELength_eq_setLIntegral_enorm_curveVelocity_Ioo {γ : ℝ → M} {a b : ℝ} :
+    Manifold.pathELength I γ a b = ∫⁻ t in Ioo a b, ‖curveVelocity I γ t‖ₑ := by
+  rw [pathELength_eq_setLIntegral_enorm_curveVelocity_Icc, restrict_Ioo_eq_restrict_Icc]
 
 /-- The Riemannian speed of a `C¹` curve, read within a parameter set with unique derivatives, is
 continuous on that set. -/

@@ -95,9 +95,7 @@ private theorem hausdorffMeasure_image_Icc_le (hγ : ContMDiffOn 𝓘(ℝ) I 1 �
     μH[1] (γ '' Icc p q) ≤ ∫⁻ s in Ioo p q, ‖curveVelocity I γ s‖ₑ := by
   calc μH[1] (γ '' Icc p q) ≤ eVariationOn γ (Icc p q) := eVariationOn.hausdorffMeasure_image_le _ _
     _ = Manifold.pathELength I γ p q := eVariationOn_eq_pathELength (hγ.mono hpq)
-    _ = _ := by
-      simp only [Manifold.pathELength_eq_lintegral_mfderiv_Ioo, curveVelocity_apply]
-      rfl
+    _ = _ := pathELength_eq_setLIntegral_enorm_curveVelocity_Ioo
 
 /-- The upper bound of the area formula on the part of a measurable set lying in a compact
 interval inside the parameter set. -/
@@ -116,7 +114,8 @@ private theorem hausdorffMeasure_image_inter_Icc_le (hO : IsOpen O)
       exact ((lintegral_mono_set inter_subset_right).trans_lt
         (hγ.setLIntegral_enorm_curveVelocity_lt_top hO isCompact_Icc huv)).ne)
     (fun a b ↦ ?_) hB
-  · simpa [hν hB] using key
+  · rwa [OuterMeasure.restrict_apply, OuterMeasure.comap_apply, Measure.coe_toOuterMeasure,
+      hν hB] at key
   · rw [OuterMeasure.restrict_apply, OuterMeasure.comap_apply, Measure.coe_toOuterMeasure,
       hν measurableSet_Ioc]
     calc μH[1] (γ '' (Ioc a b ∩ Icc u v)) ≤ μH[1] (γ '' Icc (max a u) (min b v)) :=
@@ -161,9 +160,7 @@ private theorem setLIntegral_le_hausdorffMeasure_image (hO : IsOpen O)
   have hJ : μH[1] (γ '' Icc u v) = ∫⁻ s in Icc u v, ‖curveVelocity I γ s‖ₑ := by
     rw [← (hγ.continuousOn.mono huv).eVariationOn_eq_hausdorffMeasure_image
       (hinj.mono Ioo_subset_Icc_self), eVariationOn_eq_pathELength (hγ.mono huv),
-      Manifold.pathELength_eq_lintegral_mfderiv_Icc]
-    simp only [curveVelocity_apply]
-    rfl
+      pathELength_eq_setLIntegral_enorm_curveVelocity_Icc]
   have hfin : ∫⁻ s in Icc u v \ B, ‖curveVelocity I γ s‖ₑ ≠ ∞ :=
     ((lintegral_mono_set sdiff_subset).trans_lt
       (hγ.setLIntegral_enorm_curveVelocity_lt_top hO isCompact_Icc huv)).ne
@@ -283,6 +280,6 @@ theorem lintegral_image_eq_lintegral_enorm_curveVelocity_mul (hO : IsOpen O)
     map_comap_subtype_coe hA,
     setLIntegral_withDensity_eq_setLIntegral_mul_non_measurable₀ _ hspeed _ hA
       (.of_forall fun _ ↦ enorm_lt_top)]
-  rfl
+  simp only [Pi.mul_apply]
 
 end TauCeti.Manifold
