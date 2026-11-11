@@ -182,8 +182,6 @@ theorem IsLetterPair.swap {q : Fin (E.flatMap Prod.snd).length × Fin (E.flatMap
   dsimp only [Prod.swap_prod_mk] at h₂ h₃ ⊢
   rwa [← h₃]
 
-variable [DecidableEq X] [DecidableEq Z] [DecidableEq A]
-
 /-- The generalised equation `Ω_T` of a list of entries `(r, V_r)`: an occurrence `r` of a letter
 of `X^{±1} ∪ A^{±1}` together with a word `V_r` over `Z^{±1} ∪ A^{±1}`. Its items are the letters
 of the concatenation `V` of the words `V_r`. Any two distinct entries of the same variable with
@@ -265,9 +263,8 @@ theorem mem_equations_ofEntries_of_itemLetter {c c' : Fin (ofEntries E).numItems
     ([(Sum.inl c, s)], [(Sum.inl c', s')]) ∈ (ofEntries E).equations := by
   simp only [itemLetter] at hc hc'
   have hq : IsLetterPair E (c, c') := ⟨h, by simp [hc], by simp [hc, hc']⟩
-  have := (ofEntries E).basicEquation_mem_equations (Fintype.equivFin _
-    (Sum.inr ⟨(c, c'), hq⟩ : {p // IsVarPair E p} ⊕ {q // IsLetterPair E q}))
-  rw [basicEquation_ofBases] at this
+  have : _ ∈ (ofEntries E).equations :=
+    (mem_equations_ofBases_iff ..).2 (Or.inl ⟨Sum.inr ⟨(c, c'), hq⟩, rfl⟩)
   simp only [Sum.elim_inr, Sum.map_inr, Fin.val_castSucc, Fin.val_succ, Prod.fst_swap,
     Fin.getElem_fin, hc, hc'] at this
   rwa [segment_succ, segment_succ] at this
@@ -302,6 +299,7 @@ theorem forall_mem_equations_ofEntries {P : List ((Fin (ofEntries E).numItems �
   · convert h₃ c a s ((mem_constBases_ofEntries E).1 hc) using 1
     exact Prod.ext (coeffEquation_fst _ _) (coeffEquation_snd _ _)
 
+open Classical in
 /-- The word map `P_x`: the word `h[α, β] ^ ε` of the items spanned by the word of the first
 entry carrying the variable `x`, with the sign `ε` of that occurrence; the empty word if `x` does
 not occur. -/
@@ -314,6 +312,7 @@ noncomputable def wordMap (x : X) : List ((Fin (ofEntries E).numItems ⊕ A) × 
 theorem wordMap_eq {x : X} (k : Fin E.length) (hk : E[k].1.1 = Sum.inl x)
     (hlt : ∀ k' : Fin E.length, k' < k → E[k'].1.1 ≠ Sum.inl x) :
     wordMap E x = (ofEntries E).segment (entryStart E k) (entryStart E ((k : ℕ) + 1)) E[k].1.2 := by
+  classical
   have h : ((List.finRange E.length).find? fun k => E[k].1.1 = Sum.inl x) = some k := by
     rw [List.find?_eq_some_iff_getElem]
     refine ⟨by simpa using hk, k, by simp, by simp, fun j hj => ?_⟩
@@ -326,6 +325,7 @@ theorem wordMap_eq {x : X} (k : Fin E.length) (hk : E[k].1.1 = Sum.inl x)
 theorem exists_wordMap_eq {x : X} (k : Fin E.length) (hk : E[k].1.1 = Sum.inl x) :
     ∃ k₀ : Fin E.length, E[k₀].1.1 = Sum.inl x ∧ wordMap E x =
       (ofEntries E).segment (entryStart E k₀) (entryStart E ((k₀ : ℕ) + 1)) E[k₀].1.2 := by
+  classical
   unfold wordMap
   cases h : (List.finRange E.length).find? fun k => E[k].1.1 = Sum.inl x with
   | none =>
@@ -372,8 +372,7 @@ private theorem lift_mk_segment (Ω : GenEq A) (f : Fin Ω.numItems ⊕ A → H)
     rfl
   · rfl
 
-variable [DecidableEq X] [DecidableEq Z] [DecidableEq A]
-  {E : List (((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool))} {ι : FreeGroup A →* H}
+variable {E : List (((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool))} {ι : FreeGroup A →* H}
   {v : Fin (ofEntries E).numItems → H}
 
 /-- A point of `Ω_T*` determines values of the letters of `Z` under which every letter of the
@@ -382,6 +381,7 @@ the letters of `A^{±1}` by the coefficient equations. -/
 private theorem exists_lift_mk_itemLetter (hv : v ∈ V ι (ofEntries E).toSystem) :
     ∃ ζ : Z → H, ∀ c, FreeGroup.lift (Sum.elim ζ (ι ∘ FreeGroup.of))
       (FreeGroup.mk [itemLetter E c]) = v c := by
+  classical
   have hv' := (mem_V_toSystem_iff _).1 hv
   refine ⟨fun z => if h : ∃ c, (itemLetter E c).1 = Sum.inl z then
     cond (itemLetter E h.choose).2 (v h.choose) (v h.choose)⁻¹ else 1, fun c => ?_⟩
@@ -601,8 +601,6 @@ theorem card_cancellationFamily_le [Fintype A] :
   refine Finset.prod_congr rfl fun o _ => ?_
   simp [mul_comm]
 
-variable [DecidableEq X] [DecidableEq Z] [DecidableEq A]
-
 /-- The generalised equation of a partition table has at most `|S|` items. -/
 theorem IsPartitionTable.numItems_ofEntries_le (hT : IsPartitionTable r T) :
     (ofEntries (tableEntries r T)).numItems ≤ systemSize r := by
@@ -669,8 +667,7 @@ private theorem isReduced_substituteVars_cond (w : Z → List (A × Bool)) (s : 
     FreeGroup.IsReduced (substituteVars w (cond s V (FreeGroup.invRev V))) := by
   cases s <;> simp [FreeGroup.substituteVars_invRev, FreeGroup.isReduced_invRev, h]
 
-variable [DecidableEq X] [DecidableEq Z] [DecidableEq A]
-  (E : List (((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool))) (w : Z → List (A × Bool))
+variable (E : List (((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool))) (w : Z → List (A × Bool))
 
 /-- The word of an item of `ofEntries E` when each letter `z` of `Z` is given the word `w z`: an
 item carrying `z ^ ±1` gets `(w z) ^ ±1`, and an item carrying a letter of `A^{±1}` gets that
@@ -705,10 +702,13 @@ private theorem substituteVars_itemWord_singleton {c : Fin (ofEntries E).numItem
     substituteVars (itemWord E w) [(Sum.inl c, s)] = w z := by
   cases s <;> simp [itemWord, hc, FreeGroup.invRev_invRev]
 
-/-- The solution of `ofEntries E` given by nonempty reduced words `w z` for the letters of `Z`,
-provided that the substituted words of the entries of each variable with nonempty words are
-reduced and agree, raised to the signs of the occurrences. -/
-def Solution.ofLetterWords (hw : ∀ z, FreeGroup.IsReduced (w z)) (hw₀ : ∀ z, w z ≠ [])
+/-- The solution of `ofEntries E` given by words `w z` for the letters of `Z` that are nonempty
+and reduced for every letter `z` occurring in the concatenated word, provided that the substituted
+words of the entries of each variable with nonempty words are reduced and agree, raised to the
+signs of the occurrences. -/
+def Solution.ofLetterWords
+    (hw : ∀ c z s, itemLetter E c = (Sum.inl z, s) → FreeGroup.IsReduced (w z))
+    (hw₀ : ∀ c z s, itemLetter E c = (Sum.inl z, s) → w z ≠ [])
     (hred : ∀ p, IsVarPair E p → FreeGroup.IsReduced (substituteVars w E[p.1].2))
     (heq : ∀ p, IsVarPair E p →
       substituteVars w (cond E[p.1].1.2 E[p.1].2 (FreeGroup.invRev E[p.1].2)) =
@@ -716,11 +716,13 @@ def Solution.ofLetterWords (hw : ∀ z, FreeGroup.IsReduced (w z)) (hw₀ : ∀ 
     (ofEntries E).Solution where
   word := itemWord E w
   isReduced_word c := by
-    obtain ⟨⟨_ | _, _ | _⟩, hy⟩ : ∃ y, itemLetter E c = y := ⟨_, rfl⟩ <;>
-      simp [itemWord, hy, hw, FreeGroup.isReduced_invRev, FreeGroup.IsReduced.singleton]
+    obtain ⟨⟨z | a, s⟩, hy⟩ : ∃ y, itemLetter E c = y := ⟨_, rfl⟩
+    · cases s <;> simp [itemWord, hy, hw c z _ hy, FreeGroup.isReduced_invRev]
+    · simp [itemWord, hy, FreeGroup.IsReduced.singleton]
   word_ne_nil c := by
-    obtain ⟨⟨_ | _, _ | _⟩, hy⟩ : ∃ y, itemLetter E c = y := ⟨_, rfl⟩ <;>
-      simp [itemWord, hy, hw₀, FreeGroup.invRev]
+    obtain ⟨⟨z | a, s⟩, hy⟩ : ∃ y, itemLetter E c = y := ⟨_, rfl⟩
+    · cases s <;> simp [itemWord, hy, hw₀ c z _ hy, FreeGroup.invRev]
+    · simp [itemWord, hy]
   isReduced_subst := (forall_mem_equations_ofEntries E).2
     ⟨fun p hp => by
       rw [substituteVars_itemWord_entry E w p.1.isLt, substituteVars_itemWord_entry E w p.2.isLt]
@@ -728,7 +730,7 @@ def Solution.ofLetterWords (hw : ∀ z, FreeGroup.IsReduced (w z)) (hw₀ : ∀ 
         isReduced_substituteVars_cond w _ _ (hred _ hp.swap)⟩,
     fun c c' _ z s s' hc hc' => by
       rw [substituteVars_itemWord_singleton E w hc, substituteVars_itemWord_singleton E w hc']
-      exact ⟨hw z, hw z⟩,
+      exact ⟨hw c z s hc, hw c z s hc⟩,
     fun c a s hc => by simp [itemWord, hc, FreeGroup.IsReduced.singleton]⟩
   subst_eq := (forall_mem_equations_ofEntries E).2
     ⟨fun p hp => by
@@ -762,7 +764,7 @@ theorem cancellationFamily_nil {X A : Type*} [Finite A] :
 
 /-- The generalised equation of the table of the empty system is the empty generalised
 equation. -/
-theorem ofEntries_tableEntries_nil {X Z A : Type*} [DecidableEq X] [DecidableEq Z] [DecidableEq A]
+theorem ofEntries_tableEntries_nil {X Z A : Type*}
     (T : Occurrence ([] : List (List ((X ⊕ A) × Bool))) → List ((Z ⊕ A) × Bool)) :
     ofEntries (tableEntries [] T) = empty :=
   eq_empty_of_numItems_eq_zero rfl
@@ -788,7 +790,7 @@ example : ∃ T ∈ cancellationFamily xEqA, ∃ k,
 
 /-- The equation `x² = a`, with `a` a letter of the basis, has no solution in `F(A)`, so no member
 of its cancellation family has a solution. -/
-example {X A : Type*} [DecidableEq X] [DecidableEq A] [Finite A] (x : X) (a : A)
+example {X A : Type*} [Finite A] (x : X) (a : A)
     {T : Occurrence [[(Sum.inl x, true), (Sum.inl x, true), (Sum.inr a, false)]] →
       List ((Fin (systemSize [[(Sum.inl x, true), (Sum.inl x, true), (Sum.inr a, false)]]) ⊕
         A) × Bool)}
@@ -826,7 +828,7 @@ example : xyTable ∈ cancellationFamily xyEqAB ∧
   have hp : ∀ p, ¬ IsVarPair (tableEntries xyEqAB xyTable) p := by decide
   refine ⟨mem_cancellationFamily.2 ⟨by unfold FreeGroup.IsReduced; decide, by decide, by decide,
     by decide, by decide⟩, Solution.ofLetterWords _ (fun _ => [(0, true)])
-      (fun _ => .singleton) (by simp) (fun p h => (hp p h).elim) (fun p h => (hp p h).elim),
+      (fun _ _ _ _ => .singleton) (by simp) (fun p h => (hp p h).elim) (fun p h => (hp p h).elim),
     ?_, ?_⟩
   · rw [Solution.word_ofLetterWords, wordMap_eq _ ⟨0, by decide⟩ (by decide) (by decide),
       substituteVars_itemWord_entry _ _ (Fin.isLt _)]
@@ -849,8 +851,8 @@ example (c : List (Fin 2 × Bool)) (hc : FreeGroup.IsReduced c) (hc₀ : c ≠ [
   have h₁ : (tableEntries xyEqAB xyCancelTable)[1] =
       ((Sum.inl 1, true), [(Sum.inl ⟨0, by decide⟩, false), (Sum.inr 1, true)]) := by decide
   refine ⟨mem_cancellationFamily.2 ⟨by unfold FreeGroup.IsReduced; decide, by decide, by decide,
-    by decide, by decide⟩, Solution.ofLetterWords _ (fun _ => c) (fun _ => hc) (fun _ => hc₀)
-      (fun p h => (hp p h).elim) (fun p h => (hp p h).elim), ?_, ?_⟩
+    by decide, by decide⟩, Solution.ofLetterWords _ (fun _ => c) (fun _ _ _ _ => hc)
+      (fun _ _ _ _ => hc₀) (fun p h => (hp p h).elim) (fun p h => (hp p h).elim), ?_, ?_⟩
   · rw [Solution.word_ofLetterWords, wordMap_eq _ ⟨0, by decide⟩ (by decide) (by decide),
       substituteVars_itemWord_entry _ _ (Fin.isLt _)]
     simp [h₀, FreeGroup.substituteVars]

@@ -670,41 +670,32 @@ end Solution
 
 section OfBases
 
-variable {β : Type*} [Fintype β] (ρ : ℕ) (left right : β → Fin (ρ + 1))
+variable {β : Type*} [Finite β] (ρ : ℕ) (left right : β → Fin (ρ + 1))
   (left_lt_right : ∀ b, left b < right b) (sign : β → Bool) (dual : β → β)
   (dual_involutive : Function.Involutive dual) (constBases : Finset (Fin ρ × (A × Bool)))
 
 /-- The generalised equation with `ρ` items whose variable bases are indexed by a finite type `β`:
 the base `b` spans the items between the boundaries `left b < right b`, has sign `sign b` and
 dual `dual b`, for an involution `dual` of `β`. Its constant bases are `constBases`, and it has
-no boundary connections. -/
-noncomputable abbrev ofBases : GenEq A where
-  numItems := ρ
-  numBases := Fintype.card β
-  left μ := left ((Fintype.equivFin β).symm μ)
-  right μ := right ((Fintype.equivFin β).symm μ)
-  left_lt_right _ := left_lt_right _
-  sign μ := sign ((Fintype.equivFin β).symm μ)
-  dual μ := Fintype.equivFin β (dual ((Fintype.equivFin β).symm μ))
-  dual_involutive μ := by simp [dual_involutive _]
-  constBases := constBases
-  connections := ∅
-  bounds_of_mem_connections := by simp
-  dual_mem_connections := by simp
+no boundary connections. The bases are numbered by an arbitrary enumeration of `β`. -/
+noncomputable abbrev ofBases : GenEq A :=
+  letI := Fintype.ofFinite β
+  { numItems := ρ
+    numBases := Fintype.card β
+    left μ := left ((Fintype.equivFin β).symm μ)
+    right μ := right ((Fintype.equivFin β).symm μ)
+    left_lt_right _ := left_lt_right _
+    sign μ := sign ((Fintype.equivFin β).symm μ)
+    dual μ := Fintype.equivFin β (dual ((Fintype.equivFin β).symm μ))
+    dual_involutive μ := by simp [dual_involutive _]
+    constBases := constBases
+    connections := ∅
+    bounds_of_mem_connections := by simp
+    dual_mem_connections := by simp }
 
-/-- The basic equation of the base indexed by `b` is
-`h[left b, right b] ^ sign b = h[left (dual b), right (dual b)] ^ sign (dual b)`. -/
-theorem basicEquation_ofBases (b : β) :
-    (ofBases ρ left right left_lt_right sign dual dual_involutive constBases).basicEquation
-        (Fintype.equivFin β b) =
-      ((ofBases ρ left right left_lt_right sign dual dual_involutive constBases).segment
-          (left b) (right b) (sign b),
-        (ofBases ρ left right left_lt_right sign dual dual_involutive constBases).segment
-          (left (dual b)) (right (dual b)) (sign (dual b))) := by
-  simp [basicEquation, ofBases]
-
-/-- The equations of `ofBases` are the basic equations of the bases indexed by `β` and the
-coefficient equations of the constant bases. -/
+/-- The equations of `ofBases` are the basic equations
+`h[left b, right b] ^ sign b = h[left (dual b), right (dual b)] ^ sign (dual b)` of the bases
+indexed by `β` and the coefficient equations of the constant bases. -/
 theorem mem_equations_ofBases_iff {e : List ((Fin ρ ⊕ A) × Bool) × List ((Fin ρ ⊕ A) × Bool)} :
     e ∈ (ofBases ρ left right left_lt_right sign dual dual_involutive constBases).equations ↔
       (∃ b, ((ofBases ρ left right left_lt_right sign dual dual_involutive constBases).segment
@@ -714,15 +705,14 @@ theorem mem_equations_ofBases_iff {e : List ((Fin ρ ⊕ A) × Bool) × List ((F
       ∃ c ∈ constBases,
         (ofBases ρ left right left_lt_right sign dual dual_involutive constBases).coeffEquation
           c = e := by
+  let := Fintype.ofFinite β
   rw [mem_equations_iff]
   simp only [Finset.notMem_empty, false_and, exists_false, or_false]
   refine or_congr_left ⟨?_, ?_⟩
   · rintro ⟨μ, rfl⟩
-    refine ⟨(Fintype.equivFin β).symm μ, ?_⟩
-    rw [← basicEquation_ofBases]
-    exact congrArg _ ((Fintype.equivFin β).apply_symm_apply μ)
+    exact ⟨(Fintype.equivFin β).symm μ, by simp [basicEquation]⟩
   · rintro ⟨b, rfl⟩
-    exact ⟨_, basicEquation_ofBases _ _ _ _ _ _ _ _ b⟩
+    exact ⟨Fintype.equivFin β b, by simp [basicEquation]⟩
 
 end OfBases
 
