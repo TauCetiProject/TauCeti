@@ -492,11 +492,6 @@ theorem isCycle_iff_of_heq {K L : Graph α β} {s₁ : G.EarStart K} {s₂ : G.E
   cases eq_of_heq hs
   rfl
 
-private theorem heq_transport {K L : Graph α β} (h : K = L) (start : G.EarStart K) :
-    HEq (h ▸ start) start := by
-  subst h
-  rfl
-
 /-- Every allowed initial graph is a subgraph of its ambient graph. -/
 theorem le : ∀ _start : G.EarStart H, H ≤ G
   | .vertex v => Graph.noEdge_le_iff.mpr (singleton_subset_iff.mpr v.property)
@@ -848,7 +843,7 @@ theorem earAt_snoc_last (d : G.EarDecomposition H) (ear : G.Ear H) :
 /-- Adjoining an ear preserves the initial stage data. -/
 theorem heq_start_snoc (d : G.EarDecomposition H) (ear : G.Ear H) :
     HEq (d.snoc ear).start d.start :=
-  EarStart.heq_transport (snoc_graphAfter_zero d ear).symm d.start
+  eqRec_heq (snoc_graphAfter_zero d ear).symm d.start
 
 /-- Adjoining an ear preserves whether the decomposition starts from a cycle. -/
 @[simp]
@@ -1041,7 +1036,7 @@ def «prefix» (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
 /-- Prefixing preserves the initial stage data. -/
 theorem heq_start_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
     HEq (d.prefix i).start d.start :=
-  EarStart.heq_transport
+  eqRec_heq
     (congrArg d.graphAfter (Fin.castLE_zero (Nat.succ_le_iff.mpr i.isLt))).symm d.start
 
 /-- Prefixing preserves whether the decomposition starts from a cycle. -/
