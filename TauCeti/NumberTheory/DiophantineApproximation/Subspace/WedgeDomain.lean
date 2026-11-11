@@ -9,7 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import TauCeti.Analysis.ExteriorPower.WedgeForms
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
 
-import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.BigOperators.Finset.Powerset
 import TauCeti.LinearAlgebra.Span.Basic
@@ -69,7 +68,7 @@ the domain by (7.42) instead; absorbing the constant into the exponent makes tha
 ## References
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press (2006),
-  7.5.30, (7.44)–(7.45), and Lemma 7.5.31.
+  7.5.30 and (7.44)–(7.45).
 -/
 
 public section
@@ -173,17 +172,8 @@ private theorem exists_evertse_approxModule :
     rw [hy, add_sub_cancel_left]
     exact Submodule.sum_mem _ fun l hl ↦ Submodule.smul_mem _ _
       (Submodule.subset_span ⟨l, (mem_filter.1 hl).2, rfl⟩)
-  have hxy (j) : x j ∈ Submodule.span K (Set.range y) := by
-    have h := Submodule.span_mono (Set.image_subset_range _ _)
-      ((Submodule.span_image_Iio_eq_span_image_Iio hyx j).ge (hyx j))
-    simpa using sub_mem (Submodule.subset_span (Set.mem_range_self j)) h
-  have hylin : LinearIndependent K y := by
-    refine linearIndependent_of_top_le_span_of_card_eq_finrank ?_ hcard
-    rw [← hx.span_eq_top_of_card_eq_finrank' hcard, Submodule.span_le]
-    rintro _ ⟨j, rfl⟩
-    exact hxy j
-  refine ⟨y, fun v ↦ (π v).trans e, hylin, hyx, fun v hv j t ↦ ?_, fun w i j ↦ ?_,
-    fun v hv i j ↦ ?_⟩
+  refine ⟨y, fun v ↦ (π v).trans e, hx.of_sub_mem_span_image_Iio hyx, hyx, fun v hv j t ↦ ?_,
+    fun w i j ↦ ?_, fun v hv i j ↦ ?_⟩
   · -- Away from `S₀` the corrected vectors stay integral.
     have hsum : v (∑ l ∈ univ.filter (· < j), ξ j l * x l t) ≤ 1 :=
       Finset.sum_induction _ (fun a ↦ v a ≤ 1)
@@ -246,7 +236,10 @@ theorem exists_plucker_mem_approxDomain_wedgeForms [LinearOrder ι] :
     refine hmain.trans_eq ?_
     rw [wedgeExponent_infinitePlace, Real.rpow_add hQ, Real.rpow_sum_of_pos hQ,
       Real.rpow_logb hQ hQ1]
-    · ring_nf
+    · -- The two sides differ only in the order of the factors and in the `Decidable` instance of
+      -- the top-block condition.
+      rw [mul_left_comm]
+      congr
     · refine mul_pos (by positivity) (mul_pos ?_ (prod_pos fun t _ ↦ hμp _ (Fin.is_lt _)))
       split_ifs
       · exact div_pos (hμp _ (by omega)) (hμp _ (by omega))
@@ -259,26 +252,6 @@ theorem exists_plucker_mem_approxDomain_wedgeForms [LinearOrder ι] :
     rw [plucker_apply]
     exact (Matrix.abv_det_le_prod_of_le _ v.add_le (b := fun _ ↦ 1)
       fun i j ↦ hyint v hv _ _).trans_eq prod_const_one
-
-/-- Exactly one `p`-subset `T` has `k ≤ σ⁻¹ t` for all `t ∈ T`, for `k + p = #ι`: the image of the
-top block. -/
-private theorem prod_ite_topBlock (σ : Fin (Fintype.card ι) ≃ ι) {k p : ℕ}
-    (h : k + p = Fintype.card ι) (a : ℝ) :
-    ∏ T : Set.powersetCard ι p,
-      (if ∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ) then a else 1) = a := by
-  classical
-  have hT (T : Set.powersetCard ι p) : (∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ)) ↔
-      T = Set.powersetCard.map p σ.toEmbedding (topBlock h) := by
-    refine ⟨fun hT ↦ ?_, ?_⟩
-    · refine Set.powersetCard.eq_iff_subset.2 fun t ht ↦ ?_
-      rw [Set.powersetCard.mem_coe_iff, Set.powersetCard.mem_map_iff_mem_range]
-      exact ⟨σ.symm t, (mem_topBlock h).2 (hT t ht), by simp⟩
-    · rintro rfl t ht
-      rw [Set.powersetCard.mem_coe_iff, Set.powersetCard.mem_map_iff_mem_range] at ht
-      obtain ⟨j, hj, rfl⟩ := ht
-      simpa using (mem_topBlock h).1 hj
-  simp_rw [hT]
-  rw [prod_ite_eq' univ, ite_eq_left_iff.2 fun h ↦ absurd (mem_univ _) h]
 
 /-- **The weight of the wedge domain** (Bombieri–Gubler 7.5.30). For `k + p = #ι` with `p ≠ 0`,
 `C > 0` and `μ` positive below `#ι`, the weight of `wedgeExponent c σ μ C k p Q` is
@@ -314,10 +287,13 @@ theorem approxWeight_wedgeExponent (S₀ : Finset (FinitePlace K)) (c : Absolute
     rw [← Nat.card_eq_fintype_card, Set.powersetCard.card, Nat.card_eq_fintype_card]
   have hinf (w : InfinitePlace K) :
       ∑ T, wedgeExponent c σ μ C k p Q w.1 T = e * ∑ i, c w.1 i + Real.logb Q A := by
+    classical
     simp_rw [wedgeExponent_infinitePlace]
     rw [sum_add_distrib, hsum, ← Real.logb_prod _ _ fun T _ ↦ ?_]
     · congr 2
-      rw [prod_mul_distrib, prod_mul_distrib, prod_const, card_univ, hM, prod_ite_topBlock _ h,
+      -- Exactly one `p`-subset, the image of the top block, carries the gain.
+      simp_rw [forall_le_symm_iff_eq_map_topBlock _ h]
+      rw [prod_mul_distrib, prod_mul_distrib, prod_const, card_univ, hM, Fintype.prod_ite_eq',
         hprod, Equiv.prod_comp (σ w.1).symm (fun l ↦ μ l)]
       ring
     · refine mul_ne_zero hC.ne'
@@ -330,12 +306,9 @@ theorem approxWeight_wedgeExponent (S₀ : Finset (FinitePlace K)) (c : Absolute
     exact hsum _
   have hd : ∑ v : InfinitePlace K, (v.mult : ℝ) = finrank ℚ K := by
     exact_mod_cast InfinitePlace.sum_mult_eq
-  rw [approxWeight_def, approxWeight_def, sum_congr rfl fun v _ ↦ by rw [hinf v],
-    sum_congr rfl fun v _ ↦ hfin v, ← hd, mul_add, mul_sum, mul_sum, sum_mul, ← mul_sum]
-  simp only [mul_add, sum_add_distrib]
-  rw [add_right_comm]
-  congr 2
-  exact sum_congr rfl fun v _ ↦ by ring
+  simp only [approxWeight_def, hinf, hfin, ← hd, mul_add, sum_add_distrib,
+    mul_left_comm _ (e : ℝ), ← mul_sum, ← sum_mul]
+  ring
 
 /-- **The weight of the wedge domain**, multiplicatively: for `0 < Q ≠ 1`,
 `Q ^ weight (S(Q)) = Q ^ (e * weight c) * (C ^ M * (∏ l, μ l) ^ e * (μ (k - 1) / μ k)) ^ [K : ℚ]`,
