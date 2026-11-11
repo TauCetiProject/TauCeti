@@ -87,11 +87,16 @@ namespace SerreChart
 def chartBall (b : B) (r : ℝ) : Set B :=
   φ.source ∩ φ ⁻¹' ball (φ b) r
 
+@[simp]
+lemma mem_chartBall {b x : B} {r : ℝ} :
+    x ∈ chartBall φ b r ↔ x ∈ φ.source ∧ φ x ∈ ball (φ b) r :=
+  Iff.rfl
+
 lemma isOpen_chartBall (b : B) (r : ℝ) : IsOpen (chartBall φ b r) :=
   φ.isOpen_inter_preimage isOpen_ball
 
 include hb in
-lemma mem_chartBall (hr₀ : 0 < r) : b ∈ chartBall φ b r :=
+lemma mem_chartBall_self (hr₀ : 0 < r) : b ∈ chartBall φ b r :=
   ⟨hb, mem_ball_self hr₀⟩
 
 /-- The chart `φ` followed by the translation `v ↦ v - φ b`, which sends `b` to `0`. -/
@@ -128,6 +133,13 @@ lemma coe_chartFibration_apply (z : _root_.TopCat.of (p ⁻¹' chartBall φ b r)
     (chartFibration φ hr p z : V) = φ (p z) - φ b :=
   translatedChart_apply φ b (p z)
 
+include hb in
+/-- A point over `chartBall φ b r` lies over `0` in the ball exactly when it lies over `b`. -/
+lemma coe_chartFibration_eq_zero_iff (z : _root_.TopCat.of (p ⁻¹' chartBall φ b r)) :
+    (chartFibration φ hr p z : V) = 0 ↔ p z = b := by
+  rw [coe_chartFibration_apply, sub_eq_zero]
+  exact φ.injOn.eq_iff z.2.1 hb
+
 lemma mem_serreFibrations_chartFibration (hp : serreFibrations p) :
     serreFibrations (chartFibration φ hr p) :=
   serreFibrations.comp_mem _ _ (mem_serreFibrations_restrictPreimage hp _)
@@ -139,10 +151,23 @@ def interPairIso :
     TopPair.interPair (X := E) (p ⁻¹' chartBall φ b r) (p ⁻¹' {b})ᶜ ≅
       TopPair.ofSubset (chartFibration φ hr p ⁻¹' {x | (x : V) ≠ 0}) :=
   TopPair.ofSubsetIso (Homeomorph.refl _) fun z ↦ by
-    simp only [mem_compl_iff, mem_preimage, mem_singleton_iff, mem_ofPred_eq,
-      Homeomorph.refl_apply, id]
-    rw [coe_chartFibration_apply, sub_ne_zero]
-    exact (φ.injOn.eq_iff z.2.1 hb).not.symm
+    exact (coe_chartFibration_eq_zero_iff φ hb hr z).not.symm
+
+/-- The forward map of `interPairIso` is induced by the identity of `p⁻¹(chartBall φ b r)`. -/
+lemma interPairIso_hom :
+    (interPairIso (p := p) φ hb hr).hom =
+      TopPair.ofSubsetMap (_root_.TopCat.ofHom (Homeomorph.refl (p ⁻¹' chartBall φ b r)))
+        fun z hz ↦ by exact (coe_chartFibration_eq_zero_iff φ hb hr z).not.2 hz := by
+  unfold interPairIso
+  exact TopPair.ofSubsetIso_hom _ _
+
+/-- The inverse map of `interPairIso` is induced by the identity of `p⁻¹(chartBall φ b r)`. -/
+lemma interPairIso_inv :
+    (interPairIso (p := p) φ hb hr).inv =
+      TopPair.ofSubsetMap (_root_.TopCat.ofHom (Homeomorph.refl (p ⁻¹' chartBall φ b r)))
+        fun z hz ↦ by exact (coe_chartFibration_eq_zero_iff φ hb hr z).not.1 hz := by
+  unfold interPairIso
+  exact TopPair.ofSubsetIso_inv _ _
 
 /-- The fibre over `0` of `chartFibration φ hr p` is the fibre of `p` over `b`. -/
 def fiberHomeomorph (hr₀ : 0 < r) :
@@ -155,13 +180,21 @@ def fiberHomeomorph (hr₀ : 0 < r) :
     have hy : p y.1 = b := y.2
     ⟨⟨y.1, by
       rw [mem_preimage, hy]
-      exact mem_chartBall φ hb hr₀⟩, by
+      exact mem_chartBall_self φ hb hr₀⟩, by
       rw [mem_preimage, mem_ofPred_eq, coe_chartFibration_apply]
       exact sub_eq_zero.2 (congrArg φ hy)⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
   continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
+
+lemma coe_fiberHomeomorph_apply (hr₀ : 0 < r) (z : chartFibration φ hr p ⁻¹' {x | (x : V) = 0}) :
+    (fiberHomeomorph φ hb hr hr₀ z : E) = z.1.1 :=
+  (rfl)
+
+lemma coe_fiberHomeomorph_symm_apply (hr₀ : 0 < r) (y : p ⁻¹' {b}) :
+    ((fiberHomeomorph φ hb hr hr₀).symm y).1.1 = y.1 :=
+  (rfl)
 
 variable [T1Space B]
 
@@ -173,7 +206,7 @@ private def excisionIso (hr₀ : 0 < r) (m : ℕ) :
   haveI := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
     (X := E) ((isOpen_chartBall φ b r).preimage p.hom.continuous)
     (isClosed_singleton.preimage p.hom.continuous)
-    (preimage_mono (singleton_subset_iff.2 (mem_chartBall φ hb hr₀))) m
+    (preimage_mono (singleton_subset_iff.2 (mem_chartBall_self φ hb hr₀))) m
   (asIso (TopPair.singularHomologyMap
       (TopPair.excisionMap (X := E) (p ⁻¹' chartBall φ b r) (p ⁻¹' {b})ᶜ) _ m)).symm ≪≫
     asIso (TopPair.singularHomologyMap (interPairIso φ hb hr).hom _ m)
