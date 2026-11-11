@@ -37,7 +37,7 @@ public section
 
 namespace MeasureTheory.IntegrableOn
 
-variable {G E : Type*} [SeminormedAddCommGroup G] {h : G} {r s : ℝ} [MeasurableSpace G]
+variable {G E : Type*} [SeminormedAddGroup G] {h : G} {r s : ℝ} [MeasurableSpace G]
   [MeasurableAdd G] [NormedAddCommGroup E] {μ : Measure G} [μ.IsAddRightInvariant] {f : G → E}
 
 /-- If `r + ‖h‖ ≤ s`, translating by `h` maps `{‖x‖ > s}` into `{‖x‖ > r}`, so the integral of
@@ -47,7 +47,7 @@ theorem setIntegral_norm_comp_sub_le (hf : IntegrableOn f {x | r < ‖x‖} μ) 
   rw [← (measurePreserving_sub_right μ h).setIntegral_image_emb
     (MeasurableEquiv.subRight h).measurableEmbedding (‖f ·‖)]
   exact setIntegral_mono_set hf.norm (.of_forall fun _ ↦ norm_nonneg _)
-    (.of_forall (image_sub_const_setOf_lt_norm_subset hrs))
+    (.of_forall (TauCeti.image_sub_const_setOf_lt_norm_subset hrs))
 
 /-- **Hörmander's condition from the tail of the kernel.** If `r + ‖h‖ ≤ s`, then on `{‖x‖ > s}`
 the difference `f (x - h) - f x` is controlled by twice the tail of `f` on `{‖x‖ > r}`. The
@@ -60,7 +60,7 @@ theorem setIntegral_norm_comp_sub_sub_le (hf : IntegrableOn f {x | r < ‖x‖} 
   have hf₁ : IntegrableOn (fun x ↦ f (x - h)) {x | s < ‖x‖} μ :=
     ((measurePreserving_sub_right μ h).integrableOn_image
       (MeasurableEquiv.subRight h).measurableEmbedding).1
-        (hf.mono_set (image_sub_const_setOf_lt_norm_subset hrs))
+        (hf.mono_set (TauCeti.image_sub_const_setOf_lt_norm_subset hrs))
   have hf₂ : IntegrableOn f {x | s < ‖x‖} μ := hf.mono_set hsr
   calc ∫ x in {x | s < ‖x‖}, ‖f (x - h) - f x‖ ∂μ
       ≤ ∫ x in {x | s < ‖x‖}, (‖f (x - h)‖ + ‖f x‖) ∂μ :=
