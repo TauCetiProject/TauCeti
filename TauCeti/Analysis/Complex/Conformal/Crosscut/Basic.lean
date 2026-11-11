@@ -266,8 +266,8 @@ in the plane. -/
 theorem connectedComponentIn_ball_diff_sphere_eq_ball_diff_closedBall
     (hζ : dist ζ c = r) (hz : z ∈ ball c r \ closedBall ζ ρ) :
     connectedComponentIn (ball c r \ sphere ζ ρ) z = ball c r \ closedBall ζ ρ := by
-  -- the crosscut radius is positive, since `z` is off `closedBall ζ ρ` and in the disc, and below
-  -- `2 * r`, since otherwise the disc lies inside `closedBall ζ ρ`
+  -- the crosscut radius is below `2 * r`, since otherwise the disc lies inside `closedBall ζ ρ`;
+  -- positivity is not implied, and is handled by the case split below
   have hρ' : ρ < 2 * r := by
     have h1 := dist_triangle z c ζ
     rw [Set.mem_sdiff, mem_ball, mem_closedBall, not_le] at hz
