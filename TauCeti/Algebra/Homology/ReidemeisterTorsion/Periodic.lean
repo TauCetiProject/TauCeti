@@ -211,10 +211,6 @@ end BasisChange
 
 section TwoTerm
 
-private theorem eq_or_eq_add_one (i m : ZMod 2) : m = i ∨ m = i + 1 := by
-  revert i m
-  decide
-
 include c in
 private theorem eq_zero_of_dim_eq_zero {i : ZMod 2} (hi : n i = 0) (x : C.X i) : x = 0 := by
   have : IsEmpty (Fin (n i)) := by rw [hi]; infer_instance
@@ -260,14 +256,6 @@ private theorem parityTorsion_of_d_eq_zero_of_injective {i i' : ZMod 2} (hii' : 
   · rw [torsionBracket_eq_det_left _ _ _ _ _ _ _ _ hn]
     simp
 
-/-- In a two-periodic complex with `d₀ = 0`, the differential `d₁ : C₁ → C₀` is injective when the
-complex is exact in the odd degree. -/
-private theorem injective_of_d_eq_zero {i i' : ZMod 2} (hii' : i + 1 = i') (hd : C.d i i' = 0)
-    (h : C.ExactAt i') : Function.Injective (C.d i' i).hom := by
-  rw [← LinearMap.ker_eq_bot, ← (C.exactAt_iff_range_eq_ker_zmod_two
-    (hii' ▸ CharTwo.add_cancel_right i 1)).1 h, hd, ModuleCat.hom_zero,
-    LinearMap.range_zero]
-
 variable {c} in
 /-- If the family of images of the basis `c i'` under `C.d i' i` has nonzero determinant with
 respect to `c i`, and `C.d i i' = 0`, the complex is acyclic. -/
@@ -286,13 +274,7 @@ private theorem acyclic_of_det_ne_zero {i i' : ZMod 2} (hii' : i + 1 = i') (hd :
     exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by
       rw [finrank_eq_card_basis (c i), finrank_eq_card_basis (c i'), Fintype.card_fin,
         Fintype.card_fin, hn])).2 hsurj
-  have hi'i : i' + 1 = i := hii' ▸ CharTwo.add_cancel_right i 1
-  intro m
-  obtain rfl | rfl : m = i ∨ m = i' := hii' ▸ eq_or_eq_add_one i m
-  · rw [C.exactAt_iff_range_eq_ker_zmod_two hii', hd, ModuleCat.hom_zero, LinearMap.ker_zero,
-      LinearMap.range_eq_top.2 hsurj]
-  · rw [C.exactAt_iff_range_eq_ker_zmod_two hi'i, hd, ModuleCat.hom_zero, LinearMap.range_zero,
-      LinearMap.ker_eq_bot.2 hinj]
+  exact (C.acyclic_iff_bijective_of_d_eq_zero hii' hd).2 ⟨hinj, hsurj⟩
 
 variable {c} in
 /-- The torsion of a two-periodic complex whose even-to-odd differential `d₀` vanishes and whose two
@@ -303,7 +285,7 @@ invertible. For instance multiplication by `a` on `F` from the odd to the even d
 theorem parityTorsion_of_d_zero_one (hd : C.d 0 1 = 0) (hn : n 0 = n 1) :
     C.parityTorsion c = ((c 0).det fun l ↦ (C.d 1 0).hom (c 1 (Fin.cast hn l)))⁻¹ := by
   by_cases h : C.Acyclic
-  · have hinj := injective_of_d_eq_zero (zero_add 1) hd (h 1)
+  · have hinj := ((C.acyclic_iff_bijective_of_d_eq_zero (zero_add 1) hd).1 h).1
     obtain ⟨h₁, h₀⟩ := parityTorsion_of_d_eq_zero_of_injective (c := c) (zero_add 1) h hd hinj hn
     rw [parityTorsion_eq h (rangeBasisOfInjective c hinj) (rangeBasisOfEqZero hd) Fin.elim0
       (fun l ↦ l.elim0) (c 1) (fun l ↦ by simp), h₁, h₀, one_mul]
@@ -318,7 +300,7 @@ bases `c`. Both sides vanish when `C` is not acyclic, that is when `d₀` is not
 theorem parityTorsion_of_d_one_zero (hd : C.d 1 0 = 0) (hn : n 1 = n 0) :
     C.parityTorsion c = (c 1).det fun l ↦ (C.d 0 1).hom (c 0 (Fin.cast hn l)) := by
   by_cases h : C.Acyclic
-  · have hinj := injective_of_d_eq_zero (by decide) hd (h 0)
+  · have hinj := ((C.acyclic_iff_bijective_of_d_eq_zero (by decide) hd).1 h).1
     obtain ⟨h₀, h₁⟩ := parityTorsion_of_d_eq_zero_of_injective (c := c) (by decide) h hd hinj hn
     rw [parityTorsion_eq h (rangeBasisOfEqZero hd) (rangeBasisOfInjective c hinj) (c 0)
       (fun l ↦ by simp) Fin.elim0 (fun l ↦ l.elim0), h₀, h₁, inv_one, mul_one]

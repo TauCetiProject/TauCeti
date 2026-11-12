@@ -51,4 +51,20 @@ theorem acyclic_iff_range_eq_ker_zmod_two :
   fin_cases i
   exacts [h.1, h.2]
 
+/-- A two-periodic complex of modules whose differential `C.d i i'` vanishes is acyclic exactly
+when the other differential `C.d i' i` is bijective. -/
+theorem acyclic_iff_bijective_of_d_eq_zero {i i' : ZMod 2} (hii' : i + 1 = i')
+    (hd : C.d i i' = 0) : C.Acyclic ↔ Function.Bijective (C.d i' i).hom := by
+  have hi : C.ExactAt i ↔ Function.Surjective (C.d i' i).hom := by
+    rw [C.exactAt_iff_range_eq_ker_zmod_two hii', hd, ModuleCat.hom_zero, LinearMap.ker_zero,
+      LinearMap.range_eq_top]
+  have hi' : C.ExactAt i' ↔ Function.Injective (C.d i' i).hom := by
+    rw [C.exactAt_iff_range_eq_ker_zmod_two (hii' ▸ CharTwo.add_cancel_right i 1), hd,
+      ModuleCat.hom_zero, LinearMap.range_zero, eq_comm, LinearMap.ker_eq_bot]
+  rw [Function.Bijective, ← hi, ← hi']
+  refine ⟨fun h ↦ ⟨h i', h i⟩, fun h m ↦ ?_⟩
+  have hm : ∀ a b : ZMod 2, b = a ∨ b = a + 1 := by decide
+  obtain rfl | rfl : m = i ∨ m = i' := hii' ▸ hm i m
+  exacts [h.2, h.1]
+
 end HomologicalComplex
