@@ -42,7 +42,7 @@ and then `f • g` need not be in any `Lᵖ`.
 ## Main declarations
 
 * `MeasureTheory.convolution_smul_sub_smul_convolution`: the commutator as a single integral.
-* `MeasureTheory.enorm_integral_sub_smul_smul_le`: the pointwise bound by the convolution of `‖g‖`
+* `MeasureTheory.eNorm_integral_sub_smul_smul_le`: the pointwise bound by the convolution of `‖g‖`
   with the first moment of the kernel.
 * `MeasureTheory.eLpNorm_integral_sub_smul_smul_le`: the `Lᵖ` bound.
 
@@ -79,16 +79,16 @@ theorem convolution_smul_sub_smul_convolution [SMulCommClass ℝ 𝕜 F] {x : G}
 /-- **Pointwise bound for the commutator with a Lipschitz function.** If `f` is `K`-Lipschitz,
 then `‖∫ (f (x - t) - f x) • κ t • g (x - t) dt‖` is at most `K` times the convolution of `‖g‖`
 with the first moment `‖t‖ ‖κ t‖` of the kernel, at `x`. -/
-theorem enorm_integral_sub_smul_smul_le (hf : LipschitzWith K f) (x : G) :
+theorem eNorm_integral_sub_smul_smul_le (hf : LipschitzWith K f) (x : G) :
     ‖∫ t, (f (x - t) - f x) • κ t • g (x - t) ∂μ‖ₑ ≤
       K * ((fun t ↦ ‖t‖ₑ * ‖κ t‖ₑ) ⋆ₗ[μ] fun y ↦ ‖g y‖ₑ) x := by
-  refine (enorm_integral_le_lintegral_enorm _).trans ?_
+  refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
   rw [lconvolution_def, ← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
   refine lintegral_mono fun t ↦ ?_
   have hft : ‖f (x - t) - f x‖ₑ ≤ K * ‖t‖ₑ := by
-    simpa [edist_eq_enorm_sub] using hf.edist_le_mul (x - t) x
+    simpa [eDist_eq_eNorm_sub] using hf.edist_le_mul (x - t) x
   calc ‖(f (x - t) - f x) • κ t • g (x - t)‖ₑ
-      = ‖f (x - t) - f x‖ₑ * (‖κ t‖ₑ * ‖g (x - t)‖ₑ) := by rw [enorm_smul, enorm_smul]
+      = ‖f (x - t) - f x‖ₑ * (‖κ t‖ₑ * ‖g (x - t)‖ₑ) := by rw [eNorm_smul, eNorm_smul]
     _ ≤ K * ‖t‖ₑ * (‖κ t‖ₑ * ‖g (x - t)‖ₑ) := by gcongr
     _ = K * (‖t‖ₑ * ‖κ t‖ₑ * ‖g (-t + x)‖ₑ) := by rw [neg_add_eq_sub]; ring
 
@@ -105,7 +105,7 @@ theorem eLpNorm_integral_sub_smul_smul_le (hf : LipschitzWith K f)
     eLpNorm (fun x ↦ ∫ t, (f (x - t) - f x) • κ t • g (x - t) ∂μ) p μ ≤
       K * (∫⁻ t, ‖t‖ₑ * ‖κ t‖ₑ ∂μ) * eLpNorm g p μ := by
   set w : G → ℝ≥0∞ := fun t ↦ ‖t‖ₑ * ‖κ t‖ₑ
-  have hw : AEMeasurable w μ := (measurable_enorm.aemeasurable).mul hκ.enorm
+  have hw : AEMeasurable w μ := (measurable_eNorm.aemeasurable).mul hκ.eNorm
   -- The commutator is measurable as a parametric integral of a jointly measurable integrand.
   have hmeas : AEStronglyMeasurable
       (fun x ↦ ∫ t, (f (x - t) - f x) • κ t • g (x - t) ∂μ) μ := by
@@ -116,15 +116,15 @@ theorem eLpNorm_integral_sub_smul_smul_le (hf : LipschitzWith K f)
     · exact hg.comp_quasiMeasurePreserving (quasiMeasurePreserving_sub μ μ)
   calc eLpNorm (fun x ↦ ∫ t, (f (x - t) - f x) • κ t • g (x - t) ∂μ) p μ
       ≤ eLpNorm (fun x ↦ (K : ℝ≥0∞) * (w ⋆ₗ[μ] fun y ↦ ‖g y‖ₑ) x) p μ :=
-        eLpNorm_mono_enorm hmeas fun x ↦ by
-          simpa only [enorm_eq_self] using enorm_integral_sub_smul_smul_le hf x
+        eLpNorm_mono_eNorm hmeas fun x ↦ by
+          simpa only [eNorm_eq_self] using eNorm_integral_sub_smul_smul_le hf x
     _ = K * eLpNorm (w ⋆ₗ[μ] fun y ↦ ‖g y‖ₑ) p μ :=
-        eLpNorm_const_mul_ennreal (aemeasurable_lconvolution hw hg.enorm).aestronglyMeasurable
+        eLpNorm_const_mul_ennreal (aemeasurable_lconvolution hw hg.eNorm).aestronglyMeasurable
     _ ≤ K * (eLpNorm w 1 μ * eLpNorm (fun y ↦ ‖g y‖ₑ) p μ) := by
         gcongr
-        exact eLpNorm_lconvolution_le le_rfl hp (by rw [inv_one]) hw hg.enorm
+        exact eLpNorm_lconvolution_le le_rfl hp (by rw [inv_one]) hw hg.eNorm
     _ = K * (∫⁻ t, ‖t‖ₑ * ‖κ t‖ₑ ∂μ) * eLpNorm g p μ := by
-        rw [eLpNorm_one_eq_lintegral_enorm hw.aestronglyMeasurable, eLpNorm_enorm g hg, mul_assoc]
-        simp only [w, enorm_eq_self]
+        rw [eLpNorm_one_eq_lintegral_eNorm hw.aestronglyMeasurable, eLpNorm_eNorm g hg, mul_assoc]
+        simp only [w, eNorm_eq_self]
 
 end MeasureTheory
