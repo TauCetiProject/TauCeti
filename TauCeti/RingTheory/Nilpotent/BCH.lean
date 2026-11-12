@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Algebra.Operations
+public import TauCeti.RingTheory.Nilpotent.Exp.Submodule
 public import TauCeti.RingTheory.Nilpotent.Log
 import Mathlib.Tactic.NoncommRing
 import Mathlib.Tactic.Module
@@ -43,24 +43,12 @@ namespace Submodule
 
 variable {A : Type*} [Ring A] [Algebra ℚ A]
 
--- The last multiplication in the fourth power only contains words of length at least four.
-private theorem algebra_bch3_fourth (x y : A)
-    (h4 : ∀ a b c d : A, (a = x ∨ a = y) → (b = x ∨ b = y) →
-      (c = x ∨ c = y) → (d = x ∨ d = y) → a * (b * (c * d)) = 0) :
-    (x + y) ^ 3 * (x + y + ((1 / 2 : ℚ) • x ^ 2 + x * y + (1 / 2 : ℚ) • y ^ 2) +
-      ((1 / 6 : ℚ) • x ^ 3 + (1 / 2 : ℚ) • (x ^ 2 * y) +
-        (1 / 2 : ℚ) • (x * y ^ 2) + (1 / 6 : ℚ) • y ^ 3)) = 0 := by
-  noncomm_ring (discharger := simp) [h4, smul_add, smul_sub,
-    smul_smul, smul_neg, add_smul, sub_smul]
-  module
-
 -- Separate the homogeneous terms before expanding the powers of the logarithm.
 private theorem algebra_bch3 (x y : A)
     (h4 : ∀ a b c d : A, (a = x ∨ a = y) → (b = x ∨ b = y) →
       (c = x ∨ c = y) → (d = x ∨ d = y) → a * (b * (c * d)) = 0) :
     let e := (1 + x + (1 / 2 : ℚ) • x ^ 2 + (1 / 6 : ℚ) • x ^ 3) *
       (1 + y + (1 / 2 : ℚ) • y ^ 2 + (1 / 6 : ℚ) • y ^ 3) - 1
-    e ^ 4 = 0 ∧
     e - (1 / 2 : ℚ) • e ^ 2 + (1 / 3 : ℚ) • e ^ 3 =
       x + y + (1 / 2 : ℚ) • (x * y - y * x) +
         (1 / 12 : ℚ) • ((x * (x * y - y * x) - (x * y - y * x) * x) +
@@ -89,9 +77,6 @@ private theorem algebra_bch3 (x y : A)
     module
   dsimp only
   rw [he]
-  constructor
-  · rw [pow_succ, he3]
-    exact algebra_bch3_fourth x y h4
   rw [he2, he3]
   dsimp [l, q, c]
   noncomm_ring [smul_add, smul_sub, smul_smul, smul_neg, add_smul, sub_smul]
@@ -99,10 +84,10 @@ private theorem algebra_bch3 (x y : A)
 
 variable {R : Type*} [Semiring R] [Module R A] [IsScalarTower R A A]
 
--- Retain the unipotence witness from the same truncated calculation as the logarithm.
-private theorem bch3_data (M : Submodule R A) (hM : M ^ 4 = ⊥) {x y : A}
+/-- **The Baker–Campbell–Hausdorff formula is exact through degree three** for elements of a
+submodule whose fourth power vanishes. -/
+theorem log_exp_mul_exp_of_pow_four_eq_bot (M : Submodule R A) (hM : M ^ 4 = ⊥) {x y : A}
     (hx : x ∈ M) (hy : y ∈ M) :
-    (IsNilpotent.exp x * IsNilpotent.exp y - 1) ^ 4 = 0 ∧
     IsNilpotent.log (IsNilpotent.exp x * IsNilpotent.exp y) =
       x + y + (1 / 2 : ℚ) • ⁅x, y⁆ +
         (1 / 12 : ℚ) • (⁅x, ⁅x, y⁆⁆ + ⁅y, ⁅y, x⁆⁆) := by
@@ -128,19 +113,9 @@ private theorem bch3_data (M : Submodule R A) (hM : M ^ 4 = ⊥) {x y : A}
     simpa only [List.prod_cons, List.prod_nil, mul_one, List.length_cons, List.length_nil,
       mul_assoc, hM, Submodule.mem_bot] using
       (Submodule.list_prod_mem_pow (M := M) (l := [a, b, c, d]) (by simp [ha', hb', hc', hd'])))
-  rw [IsNilpotent.exp_eq_sum hx4, IsNilpotent.exp_eq_sum hy4, he, he]
-  refine ⟨hcalc.1, ?_⟩
-  rw [IsNilpotent.log_eq_sum hcalc.1, hl]
-  simpa only [Ring.lie_def] using hcalc.2
-
-/-- **The Baker–Campbell–Hausdorff formula is exact through degree three** for elements of a
-submodule whose fourth power vanishes. -/
-theorem log_exp_mul_exp_of_pow_four_eq_bot (M : Submodule R A) (hM : M ^ 4 = ⊥) {x y : A}
-    (hx : x ∈ M) (hy : y ∈ M) :
-    IsNilpotent.log (IsNilpotent.exp x * IsNilpotent.exp y) =
-      x + y + (1 / 2 : ℚ) • ⁅x, y⁆ +
-        (1 / 12 : ℚ) • (⁅x, ⁅x, y⁆⁆ + ⁅y, ⁅y, x⁆⁆) :=
-  (bch3_data M hM hx hy).2
+  rw [IsNilpotent.log_eq_sum (M.exp_mul_exp_sub_one_pow_eq_zero hM hx hy), hl,
+    IsNilpotent.exp_eq_sum hx4, IsNilpotent.exp_eq_sum hy4, he, he]
+  simpa only [Ring.lie_def] using hcalc
 
 /-- Exponentiating the degree-three Baker–Campbell–Hausdorff polynomial of elements of a
 submodule with vanishing fourth power gives the product of their exponentials. -/
@@ -150,7 +125,7 @@ theorem exp_bch_of_pow_four_eq_bot (M : Submodule R A) (hM : M ^ 4 = ⊥) {x y :
         (1 / 12 : ℚ) • (⁅x, ⁅x, y⁆⁆ + ⁅y, ⁅y, x⁆⁆)) =
       IsNilpotent.exp x * IsNilpotent.exp y := by
   rw [← log_exp_mul_exp_of_pow_four_eq_bot M hM hx hy]
-  exact IsNilpotent.exp_log ⟨4, (bch3_data M hM hx hy).1⟩
+  exact IsNilpotent.exp_log ⟨4, M.exp_mul_exp_sub_one_pow_eq_zero hM hx hy⟩
 
 /-- **The Baker–Campbell–Hausdorff formula through degree two**: for elements of a submodule
 with vanishing cube, `log (exp x * exp y) = x + y + ½ ⁅x, y⁆`. -/
@@ -182,8 +157,7 @@ theorem exp_bch_of_pow_three_eq_bot (M : Submodule R A) (hM : M ^ 3 = ⊥) {x y 
     (hx : x ∈ M) (hy : y ∈ M) :
     IsNilpotent.exp (x + y + (1 / 2 : ℚ) • ⁅x, y⁆) =
       IsNilpotent.exp x * IsNilpotent.exp y := by
-  have hM4 : M ^ 4 = ⊥ := by rw [Submodule.pow_succ, hM, Submodule.bot_mul]
   rw [← log_exp_mul_exp_of_pow_three_eq_bot M hM hx hy]
-  exact IsNilpotent.exp_log ⟨4, (bch3_data M hM4 hx hy).1⟩
+  exact IsNilpotent.exp_log ⟨3, M.exp_mul_exp_sub_one_pow_eq_zero hM hx hy⟩
 
 end Submodule
