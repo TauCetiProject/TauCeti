@@ -35,7 +35,8 @@ This is the classical homological definition of the degree of a proper map, whic
 compactness of `M` or `N` nor any smoothness of `f`. The degree is `1` for the identity, changes
 sign when either orientation is reversed, is multiplicative under composition, vanishes for maps
 that are not surjective and is invariant under proper homotopies, that is homotopies
-`F : [0, 1] × M → N` which are proper as maps on `[0, 1] × M`.
+`F : [0, 1] × M → N` which are proper as maps on `[0, 1] × M`. The local degree at `y` is already
+invariant under homotopies whose fibre over `y` is compact.
 
 ## Main definitions
 
@@ -58,8 +59,9 @@ that are not surjective and is invariant under proper homotopies, that is homoto
   normalization, orientation reversal and multiplicativity.
 * `TauCeti.HomologicalOrientation.surjective_of_degree_ne_zero`: a proper map of nonzero degree
   onto a preconnected manifold is surjective.
-* `TauCeti.HomologicalOrientation.degree_eq_of_homotopy`: the degree is invariant under proper
-  homotopies.
+* `TauCeti.HomologicalOrientation.localDegree_eq_of_homotopy`,
+  `TauCeti.HomologicalOrientation.degree_eq_of_homotopy`: the local degree at `y` is invariant
+  under homotopies with compact fibre over `y`, and the degree under proper homotopies.
 * `TauCeti.HomologicalOrientation.mapFundamentalClass_eq_degree_smul`: for compact `M` and `N`,
   `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`, and more generally
   `TauCeti.HomologicalOrientation.mapFundamentalClass_comp_eq_degree_smul`:
@@ -330,14 +332,15 @@ theorem degree_comp [PreconnectedSpace N] {g : C(N, P)} {f : C(M, N)}
       localDegree_comp o o' o'' hE hF hG hg hf, mul_comm]
 
 include hF in
-/-- **Invariance of the local degree under proper homotopies**: if `H` is a homotopy from `f₀`
-to `f₁` which is proper as a map `[0, 1] × M → N`, then `f₀` and `f₁` have the same local degree at
-every point. -/
-theorem localDegree_eq_of_homotopy {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁) (hH : IsProperMap H)
-    (y : N) : o.localDegree o' hE f₀ y = o.localDegree o' hE f₁ y := by
+/-- **Invariance of the local degree under homotopies with compact fibre**: if `H` is a homotopy
+from `f₀` to `f₁` whose fibre `H⁻¹(y) ⊆ [0, 1] × M` over `y` is compact, then `f₀` and `f₁` have
+the same local degree at `y`. This holds in particular for a homotopy which is proper as a map
+`[0, 1] × M → N`, at every point. -/
+theorem localDegree_eq_of_homotopy {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁) {y : N}
+    (hH : IsCompact (H ⁻¹' {y})) : o.localDegree o' hE f₀ y = o.localDegree o' hE f₁ y := by
   -- Both fibres over `y` lie in the compact projection `A` of `H⁻¹(y)` to `M`.
   set A : Set M := Prod.snd '' (H ⁻¹' {y})
-  have hA : IsCompact A := (hH.isCompact_preimage isCompact_singleton).image continuous_snd
+  have hA : IsCompact A := hH.image continuous_snd
   have h₀ : f₀ ⁻¹' {y} ⊆ A := fun x hx ↦ ⟨(0, x), by simpa using hx, rfl⟩
   have h₁ : f₁ ⁻¹' {y} ⊆ A := fun x hx ↦ ⟨(1, x), by simpa using hx, rfl⟩
   -- A map whose fibre over `y` lies in `A` carries `[M]_A` to its local degree times `o' y`.
@@ -368,7 +371,7 @@ theorem degree_eq_of_homotopy {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁) (hH
   rcases isEmpty_or_nonempty N with h | h
   · rw [degree_of_isEmpty, degree_of_isEmpty]
   · rw [degree_eq_localDegree_some o o' hE f₀ h, degree_eq_localDegree_some o o' hE f₁ h,
-      o.localDegree_eq_of_homotopy o' hE hF H hH]
+      o.localDegree_eq_of_homotopy o' hE hF H (hH.isCompact_preimage isCompact_singleton)]
 
 section CompactSpace
 
