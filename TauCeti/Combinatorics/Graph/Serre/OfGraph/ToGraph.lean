@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Isomorphism
 public import TauCeti.Combinatorics.Graph.Serre.Multigraph
-public import TauCeti.Combinatorics.Graph.Serre.OfGraph
+public import TauCeti.Combinatorics.Graph.Serre.OfGraph.Basic
 
 /-!
 # Forgetting the darts of a multigraph recovers the multigraph
