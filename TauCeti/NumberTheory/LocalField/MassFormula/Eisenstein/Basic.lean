@@ -18,7 +18,6 @@ import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.Basic
 import TauCeti.NumberTheory.LocalField.Henselian
-import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
 /-!
 # Eisenstein generators of the counted extensions
@@ -221,7 +220,7 @@ theorem adjoin_mem_totallyRamifiedOfDegree_two_of_sq_add_mul_add_eq_zero {b c : 
 `X ^ 2 + b X + c` generates an extension of discriminant exponent
 `min (2 v_K(b)) (2 v_K(2) + 1)`. For `b ∈ 𝓂[K]` the polynomial is Eisenstein and the formula is the
 Eisenstein different formula; for a unit `b` of `𝒪[K]` it is not Eisenstein, `x ∈ K` by Hensel's
-lemma (`HenselianRing.mem_range_algebraMap_of_sq_add_mul_add_eq_zero_of_isUnit`), and both
+lemma (`TauCeti.HenselianRing.mem_range_algebraMap_of_sq_add_mul_add_eq_zero_of_isUnit`), and both
 sides are `0`. -/
 theorem natCast_discriminantExponent_adjoin_eq_min_of_sq_add_mul_add_eq_zero {b c : 𝒪[K]}
     (hc : Irreducible c) {x : SeparableClosure K}
@@ -246,7 +245,7 @@ theorem natCast_discriminantExponent_adjoin_eq_min_of_sq_add_mul_add_eq_zero {b 
     have e (y : 𝒪[K]) :
         algebraMap 𝒪[K] (SeparableClosure K) y = algebraMap K (SeparableClosure K) y :=
       IsScalarTower.algebraMap_apply 𝒪[K] K (SeparableClosure K) y
-    obtain ⟨s, hs⟩ := HenselianRing.mem_range_algebraMap_of_sq_add_mul_add_eq_zero_of_isUnit
+    obtain ⟨s, hs⟩ := TauCeti.HenselianRing.mem_range_algebraMap_of_sq_add_mul_add_eq_zero_of_isUnit
       (hbu.map (Ideal.Quotient.mk 𝓂[K])) hcm (by rw [e, e]; exact hx)
     rw [IntermediateField.adjoin_simple_eq_bot_iff.mpr
       (by rw [IntermediateField.mem_bot, ← hs, e]; exact ⟨_, rfl⟩)]
