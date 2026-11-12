@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
+public import TauCeti.Algebra.Lie.SpecialUnitary
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Subgroup.SpecialLinear
 public import TauCeti.Geometry.Lie.Subgroup.Unitary
@@ -34,8 +35,11 @@ makes the decomposition an equality rather than only an inclusion.
 Unlike the orthogonal, symplectic and special linear cases, the answer is **not** the membership
 condition of a Mathlib Lie subalgebra: Mathlib has `LieAlgebra.Orthogonal.so`,
 `LieAlgebra.Symplectic.sp` and `LieAlgebra.SpecialLinear.sl`, but no special unitary counterpart —
-`𝔰𝔲` is only a *real* subalgebra of `Matrix n n ℂ`, not a complex one — so the statement is the
+`𝔰𝔲` is only a *real* subalgebra of `Matrix n n ℂ`, not a complex one — so membership is the
 explicit conjunction.
+The imported `TauCeti.Lie.specialUnitaryMatrixLieAlgebra` from
+`TauCeti.Algebra.Lie.SpecialUnitary` packages that real matrix Lie subalgebra. That module also
+provides its membership criterion and `TauCeti.Lie.specialUnitaryMatrixLieAlgebra_self_eq_so`.
 
 The trace condition is not redundant over `ℂ`: a skew-Hermitian matrix has purely imaginary
 trace, and for a nonempty index type `i • 1` is skew-Hermitian without being trace-free.  Over
@@ -45,6 +49,8 @@ recorded below.
 
 ## Main results
 
+* `TauCeti.Lie.unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_GLSpecialUnitary`:
+  the matrix-coordinate image of the subgroup Lie algebra.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_GLSpecialUnitary`: the Lie algebra of the special unitary
   group is the intersection of the Lie algebras of the unitary and special linear groups.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff`: **the Lie
@@ -53,6 +59,10 @@ recorded below.
   `ℝ` it is Mathlib's orthogonal Lie algebra, the trace condition being automatic there.
 * `TauCeti.Lie.isEmbeddedLieSubgroup_GLSpecialUnitary`: **the special unitary group is an embedded
   Lie subgroup** of the general linear group, hence a Lie group in its own right.
+## References
+
+* B. C. Hall, *Lie Groups, Lie Algebras, and Representations*, 2nd ed., Springer GTM 222
+  (2015), Proposition 3.24 (the special unitary and orthogonal Lie algebras).
 -/
 
 public section
@@ -140,5 +150,17 @@ theorem isEmbeddedLieSubgroup_GLSpecialUnitary :
     IsEmbeddedLieSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
       (GLSpecialUnitary n 𝕜 : Subgroup (Matrix n n 𝕜)ˣ) :=
   isEmbeddedLieSubgroup_of_isClosed (isClosed_GLSpecialUnitary n 𝕜)
+
+/-- The units Lie equivalence sends the special unitary subgroup Lie algebra to its
+algebraically defined trace-free skew-Hermitian Lie subalgebra. -/
+@[simp]
+theorem unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_GLSpecialUnitary :
+    (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) (GLSpecialUnitary n 𝕜)).map
+        (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).toLieHom =
+      specialUnitaryMatrixLieAlgebra ℝ n 𝕜 := by
+  ext A
+  rw [LieSubalgebra.mem_map_submodule, Submodule.mem_map_equiv,
+    mem_specialUnitaryMatrixLieAlgebra_iff]
+  exact unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff A
 
 end TauCeti.Lie

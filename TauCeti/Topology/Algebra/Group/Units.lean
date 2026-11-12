@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.Group.Units
 
 /-!
-# Separation, neighbourhoods, σ-compactness and preconnected sets in a group of units
+# Topology and continuous isomorphisms of groups of units
 
 The units `Mˣ` of a topological monoid `M` carry the topology induced by `u ↦ (u, u⁻¹)`.  This
 file records consequences of that definition.
@@ -33,6 +34,13 @@ file records consequences of that definition.
 * `Units.instSigmaCompactSpace`: the units of a σ-compact monoid are σ-compact.
 * `IsPreconnected.preimage_units_val`: preconnected sets of nonzero elements pull back to
   preconnected sets of units.
+* `MulEquiv.toContinuousMulEquivOfUnits`: upgrade an algebraic equivalence whose map to the
+  monoid is a topological embedding, retaining the supplied equivalence and topologies.
+
+## References
+
+* Mathlib, `Topology/Algebra/Group/Units.lean`, for the topology on units.
+* Mathlib, `Topology/Algebra/ContinuousMonoidHom.lean`, for continuous multiplicative equivalences.
 -/
 
 public section
@@ -93,3 +101,55 @@ theorem IsPreconnected.preimage_units_val {G₀ : Type*} [GroupWithZero G₀] [T
     IsPreconnected ((Units.val : G₀ˣ → G₀) ⁻¹' s) := by
   rwa [← Units.isEmbedding_val₀.isInducing.isPreconnected_image, Set.image_preimage_eq_of_subset
     fun x hx ↦ ⟨Units.mk0 x (ne_of_mem_of_not_mem hx h0), rfl⟩]
+
+namespace MulEquiv
+
+variable {G M : Type*} [Group G] [Monoid M]
+  [TopologicalSpace G] [TopologicalSpace M] [ContinuousInv G] {K : Subgroup Mˣ}
+
+/-- An isomorphism from a group with continuous inversion to a subgroup of monoid units is a
+homeomorphism if its underlying map to the monoid is a topological embedding. -/
+@[to_additive /-- An isomorphism from an additive group with continuous negation to an additive
+subgroup of additive units is a homeomorphism if its map to the monoid is an embedding. -/]
+def toContinuousMulEquivOfUnits (e : G ≃* K)
+    (he : IsEmbedding (fun x ↦ ((e x : Mˣ) : M))) : G ≃ₜ* K where
+  __ := e
+  continuous_toFun := by
+    let f : G →* Mˣ := K.subtype.comp e.toMonoidHom
+    have hc : Continuous f := Units.continuous_iff.2
+      ⟨he.continuous, (he.continuous.comp continuous_inv).congr fun x ↦
+        congrArg Units.val (map_inv f x)⟩
+    exact hc.subtype_mk _
+  continuous_invFun := by
+    apply he.continuous_iff.2
+    exact (Units.continuous_val.comp continuous_subtype_val).congr fun x ↦
+      (congrArg (fun y : K ↦ ((y : Mˣ) : M)) (e.apply_symm_apply x)).symm
+
+/-- The continuous upgrade preserves the supplied algebraic equivalence. -/
+@[to_additive (attr := simp) /-- The continuous upgrade preserves the supplied additive
+algebraic equivalence. -/]
+theorem toMulEquiv_toContinuousMulEquivOfUnits (e : G ≃* K)
+    (he : IsEmbedding (fun x ↦ ((e x : Mˣ) : M))) :
+    (e.toContinuousMulEquivOfUnits he : G ≃* K) = e := by
+  unfold toContinuousMulEquivOfUnits
+  rfl
+
+/-- The continuous upgrade has the same values as the supplied algebraic equivalence. -/
+@[to_additive (attr := simp) /-- The continuous upgrade has the same values as the supplied
+additive algebraic equivalence. -/]
+theorem toContinuousMulEquivOfUnits_apply (e : G ≃* K)
+    (he : IsEmbedding (fun x ↦ ((e x : Mˣ) : M))) (x : G) :
+    e.toContinuousMulEquivOfUnits he x = e x := by
+  unfold toContinuousMulEquivOfUnits
+  rfl
+
+/-- The inverse continuous upgrade has the same values as the original inverse equivalence. -/
+@[to_additive (attr := simp) /-- The inverse continuous upgrade has the same values as the
+original inverse additive equivalence. -/]
+theorem toContinuousMulEquivOfUnits_symm_apply (e : G ≃* K)
+    (he : IsEmbedding (fun x ↦ ((e x : Mˣ) : M))) (x : K) :
+    (e.toContinuousMulEquivOfUnits he).symm x = e.symm x := by
+  unfold toContinuousMulEquivOfUnits
+  rfl
+
+end MulEquiv
