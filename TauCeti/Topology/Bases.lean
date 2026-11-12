@@ -74,7 +74,7 @@ theorem secondCountableTopology_of_isOpen_cover [PreconnectedSpace E] {ι : Type
     induction k with
     | zero => exact countable_singleton a₀
     | succ k ih => rw [hreach_succ]; exact ih.biUnion fun a _ ↦ hadj a
-  set R := ⋃ k, reach k with hR
+  set R := ⋃ k, reach k
   have hRc : R.Countable := countable_iUnion hcount
   have hstep {a b : ι} (ha : a ∈ R) (hab : (V a ∩ V b).Nonempty) : b ∈ R := by
     obtain ⟨k, hk⟩ := mem_iUnion.mp ha
