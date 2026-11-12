@@ -182,10 +182,10 @@ section
 
 open Filter Set
 
-/-- At a positive norm `t`, the theta series of a discrete lattice is continuous along the
-norm-one surface. -/
+/-- At a positive norm `t`, the theta series of a lattice is continuous along the norm-one
+surface. -/
 theorem continuous_latticeTheta_surfaceScale (L : Submodule ℤ (mixedSpace K))
-    [DiscreteTopology L] {t : ℝ} (ht : 0 < t) :
+    {t : ℝ} (ht : 0 < t) :
     Continuous fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t) :=
   continuous_iff_continuousAt.mpr fun x ↦ ContinuousAt.comp (g := latticeTheta L)
     (continuousAt_latticeTheta L (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht))
