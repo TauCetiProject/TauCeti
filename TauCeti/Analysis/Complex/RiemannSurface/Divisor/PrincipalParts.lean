@@ -64,7 +64,7 @@ abbrev PrincipalParts (D : WeilDivisor X) : Type _ :=
 
 namespace LocalPrincipalPart
 
-variable {D E F : WeilDivisor X}
+variable {D E : WeilDivisor X}
 
 /-- For `D ≤ E`, the projection of local principal parts relative to `D` onto those relative
 to `E`: the germs of order at least `-D x` have order at least `-E x`. -/
@@ -107,6 +107,7 @@ theorem mapOfLE_refl : mapOfLE (le_refl D) = LinearMap.id := by
   induction μ x using Submodule.Quotient.induction_on with
   | _ φ => rfl
 
+@[simp]
 theorem mapOfLE_comp (hDE : D ≤ E) (hEF : E ≤ F) :
     (mapOfLE hEF).comp (mapOfLE hDE) = mapOfLE (hDE.trans hEF) := by
   ext μ x : 2
@@ -128,8 +129,9 @@ theorem mk_toChartGerm_eq_zero_iff {D : WeilDivisor X} {x : X} {f : MeromorphicF
   rw [Submodule.Quotient.mk_eq_zero, meromorphicGerms.mem_orderGE, order_toChartGerm]
 
 /-- Away from the poles of `f` and the support of `D`, the order bound of `𝒪_D` holds. -/
-theorem neg_le_order_of_notMem {D : WeilDivisor X} {x : X} {f : MeromorphicFunction X}
-    (hf : f x ≠ ∞) (hD : D x = 0) : ((-D x : ℤ) : WithTop ℤ) ≤ order x f := by
+private theorem neg_le_order_of_ne_infty_of_eq_zero {D : WeilDivisor X} {x : X}
+    {f : MeromorphicFunction X} (hf : f x ≠ ∞) (hD : D x = 0) :
+    ((-D x : ℤ) : WithTop ℤ) ≤ order x f := by
   rw [hD, neg_zero, WithTop.coe_zero]
   exact order_nonneg_iff.2 hf
 
@@ -143,7 +145,7 @@ theorem finite_setOf_not_neg_le_order (D : WeilDivisor X) (f : MeromorphicFuncti
   by_contra hmem
   simp only [mem_union, mem_ofPred_eq, Finset.mem_coe, Finsupp.mem_support_iff, not_or,
     not_not] at hmem
-  exact hx (neg_le_order_of_notMem hmem.1 hmem.2)
+  exact hx (neg_le_order_of_ne_infty_of_eq_zero hmem.1 hmem.2)
 
 /-- The **principal parts** of a meromorphic function on a compact connected Riemann surface,
 relative to a divisor `D`: at each point, the coordinate germ modulo the stalk of `𝒪_D`. Only
@@ -174,7 +176,7 @@ theorem principalParts_apply_eq_zero_iff {D : WeilDivisor X} {f : MeromorphicFun
 /-- Principal parts vanish away from the poles and the support of the divisor. -/
 theorem principalParts_apply_eq_zero {D : WeilDivisor X} {f : MeromorphicFunction X} {x : X}
     (hf : f x ≠ ∞) (hD : D x = 0) : principalParts D f x = 0 :=
-  principalParts_apply_eq_zero_iff.2 (neg_le_order_of_notMem hf hD)
+  principalParts_apply_eq_zero_iff.2 (neg_le_order_of_ne_infty_of_eq_zero hf hD)
 
 /-- Taking principal parts commutes with the projection to a larger divisor. -/
 @[simp]

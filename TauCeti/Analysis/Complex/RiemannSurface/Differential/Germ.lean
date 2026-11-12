@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Sheaf
 public import TauCeti.Analysis.Meromorphic.OrderFiltration
-import TauCeti.Geometry.Manifold.ChartedSpace
 
 /-!
 # Coordinate germs of sections of `Ω_D`
