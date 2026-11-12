@@ -15,23 +15,22 @@ import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 The class `TauCeti.MemWkpLocMapOn I p k u s` of local Sobolev maps from a Riemann surface `X`
 into a manifold `M` has the sheaf property in the set `s ⊆ X`: it holds on `s` exactly when every
 point of `s` has a relative neighbourhood in `s` on which it holds, and on a union of open sets
-exactly when it holds on each of them.
+exactly when it holds on each of them. This is what allows membership to be checked near each
+point, for instance in a single pair of charts around it, and local solutions of equations on
+Sobolev maps, such as the weak pseudoholomorphic equation, to be glued along open covers.
 
 ## Main results
 
-* `TauCeti.memWkpLocMapOn_iff_locally`: the class is local on the surface.
+* `TauCeti.memWkpLocMapOn_iff_locally`, `TauCeti.memWkpLocMap_iff_locally`: the class is local on
+  the surface.
 * `TauCeti.memWkpLocMapOn_iSup_iff`: the sheaf property for open covers.
 
 ## Implementation notes
 
-Continuity glues by `continuousOn_of_locally_continuousOn`. For a holomorphic chart `φ` and a
-chart `ψ` of `M`, the coordinate domain over `s` is covered by the coordinate domains over the
-relative neighbourhoods, which are relative neighbourhoods of its points
-(`OpenPartialHomeomorph.target_inter_preimage_symm_mem_nhdsWithin`); the planar class glues
-by `TauCeti.memWkpLoc_iff_locally`. The target space `F` of the charts of `M` is assumed complete,
-as for the planar locality theorem.
+The model vector space `F` of `I : ModelWithCorners ℝ F H`, in which the coordinate expressions
+`ψ.extend I ∘ u ∘ φ⁻¹` take values, is assumed complete, as for the planar locality theorem
+`TauCeti.memWkpLoc_iff_locally`.
 -/
-
 public section
 
 open Set Filter TopologicalSpace
@@ -51,13 +50,18 @@ theorem memWkpLocMapOn_iff_locally :
     MemWkpLocMapOn I p k u s ↔ ∀ x ∈ s, ∃ t ∈ 𝓝[s] x, MemWkpLocMapOn I p k u t := by
   refine ⟨fun h _ _ ↦ ⟨s, self_mem_nhdsWithin, h⟩,
     fun h ↦ memWkpLocMapOn_iff.2 ⟨?_, fun φ hφ ψ hψ ↦ ?_⟩⟩
-  · refine continuousOn_of_locally_continuousOn fun x hx ↦ ?_
+  · intro x hx
     obtain ⟨t, ht, hut⟩ := h x hx
-    obtain ⟨O, hO, hxO, hOt⟩ := mem_nhdsWithin.1 ht
-    exact ⟨O, hO, hxO, hut.continuousOn.mono fun y hy ↦ hOt ⟨hy.2, hy.1⟩⟩
+    exact (hut.continuousOn x (mem_of_mem_nhdsWithin hx ht)).mono_of_mem_nhdsWithin ht
   · refine memWkpLoc_iff_locally.2 fun z hz ↦ ?_
     obtain ⟨t, ht, hut⟩ := h _ hz.2.1
-    exact ⟨_, φ.target_inter_preimage_symm_mem_nhdsWithin hz ht, hut.memWkpLoc_chart hφ hψ⟩
+    exact ⟨_, φ.target_inter_preimage_symm_mem_nhdsWithin hz.1 ht, hut.memWkpLoc_chart hφ hψ⟩
+
+/-- **Locality on the whole surface.** A map is a local Sobolev map exactly when every point
+has a neighbourhood on which it is one. -/
+theorem memWkpLocMap_iff_locally :
+    MemWkpLocMap I p k u ↔ ∀ x, ∃ t ∈ 𝓝 x, MemWkpLocMapOn I p k u t := by
+  simp [← memWkpLocMapOn_univ, memWkpLocMapOn_iff_locally (s := univ)]
 
 /-- **The sheaf property.** A map is a local Sobolev map on a union of open sets exactly when it
 is one on each of them. -/

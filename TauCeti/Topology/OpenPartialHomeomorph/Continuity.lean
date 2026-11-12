@@ -105,13 +105,13 @@ theorem not_eventuallyConst_comp_symm {Z W : Type*} [TopologicalSpace Z] [Topolo
   simp only [Function.comp_apply, e.left_inv hy, e'.left_inv hy']
 
 /-- **Chart domains of relative neighbourhoods.** Along the inverse of an open partial
-homeomorphism `φ`, a neighbourhood `t` of `φ.symm z` within `s` pulls back to a neighbourhood of
-`z` within the part of the target of `φ` lying over `s ∩ A`. -/
+homeomorphism `φ`, a neighbourhood `t` of `φ.symm z` within `s`, for `z` in the target of `φ`,
+pulls back to a neighbourhood of `z` within the part of the target of `φ` lying over `s ∩ A`. -/
 theorem target_inter_preimage_symm_mem_nhdsWithin (φ : OpenPartialHomeomorph X Y)
-    {s t A : Set X} {z : Y} (hz : z ∈ φ.target ∩ φ.symm ⁻¹' (s ∩ A)) (ht : t ∈ 𝓝[s] φ.symm z) :
+    {s t A : Set X} {z : Y} (hz : z ∈ φ.target) (ht : t ∈ 𝓝[s] φ.symm z) :
     φ.target ∩ φ.symm ⁻¹' (t ∩ A) ∈ 𝓝[φ.target ∩ φ.symm ⁻¹' (s ∩ A)] z := by
   have hcont : ContinuousWithinAt φ.symm (φ.target ∩ φ.symm ⁻¹' (s ∩ A)) z :=
-    (φ.continuousOn_symm z hz.1).mono inter_subset_left
+    (φ.continuousOn_symm z hz).mono inter_subset_left
   have hpre : φ.symm ⁻¹' t ∈ 𝓝[φ.target ∩ φ.symm ⁻¹' (s ∩ A)] z :=
     hcont.tendsto_nhdsWithin (fun w hw ↦ hw.2.1) ht
   filter_upwards [self_mem_nhdsWithin, hpre] with w hw hwt

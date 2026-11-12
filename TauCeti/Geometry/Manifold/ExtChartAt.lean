@@ -845,6 +845,15 @@ theorem extendTrans_symm_apply (v : F) :
     (c.extendTrans I Ψ).symm v = c.symm (I.symm (Ψ.symm v)) := by
   simp [extendTrans, mfld_simps, ModelWithCorners.toHomeomorph_symm_apply]
 
+/-- A chart with values in a normed space, read in its own self model and moved by the identity,
+is the chart itself. -/
+@[simp]
+theorem extendTrans_modelWithCornersSelf_refl (e : OpenPartialHomeomorph M E) :
+    e.extendTrans 𝓘(𝕜, E) (Homeomorph.refl E) = e := by
+  refine OpenPartialHomeomorph.ext _ _ (fun w ↦ ?_) (fun v ↦ ?_) (extendTrans_source _ _ _)
+  · simp
+  · simp
+
 /-- The transition map between two charts `c.extendTrans I Ψ` is `C^m` when `c` runs over the
 maximal atlas of `M` and `Ψ` over homeomorphisms that are `C^m` with `C^m` inverses. -/
 theorem contDiffOn_extendTrans_comp_symm [NormedSpace 𝕜 F] [ChartedSpace H M] {m : ℕ∞ω}

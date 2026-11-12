@@ -135,6 +135,18 @@ def tangentHom (A : DomainDependentHomSection I M IP P n) (q : P × M) :
 theorem tangentHom_apply (A : DomainDependentHomSection I M IP P n) (q : P × M)
     (v : TangentSpace IP q.1) : A.tangentHom q v = A q v := (rfl)
 
+@[simp]
+theorem tangentHom_zero (q : P × M) :
+    (0 : DomainDependentHomSection I M IP P n).tangentHom q = 0 := (rfl)
+
+@[simp]
+theorem tangentHom_add (A B : DomainDependentHomSection I M IP P n) (q : P × M) :
+    (A + B).tangentHom q = A.tangentHom q + B.tangentHom q := (rfl)
+
+@[simp]
+theorem tangentHom_smul (c : ℝ) (A : DomainDependentHomSection I M IP P n) (q : P × M) :
+    (c • A).tangentHom q = c • A.tangentHom q := (rfl)
+
 /-- Reading the original tangent fibres preserves native Hom-section regularity. -/
 theorem contMDiff_tangentHom (A : DomainDependentHomSection I M IP P n) :
     ContMDiff (IP.prod I) ((IP.prod I).prod 𝓘(ℝ, EP →L[ℝ] E)) n
