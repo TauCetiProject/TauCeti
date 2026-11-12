@@ -51,8 +51,9 @@ serve as partial diffeomorphisms in constructions of local submanifolds.
   for a boundaryless model to a partial diffeomorphism onto the model vector space.
 * `TauCeti.extChartPartialDiffeomorph`: an extended chart restricted to the interior of its target,
   as a partial diffeomorphism onto an open subset of the model space.
-* `TauCeti.exists_partialDiffeomorph_comp_extChartAt`: a diffeomorphism of the model space composed
-  with an extended chart restricted to an open set, as a partial diffeomorphism with its derivative.
+* `TauCeti.exists_partialDiffeomorph_comp_extChartAt`: a diffeomorphism from the model space onto
+  a normed space composed with an extended chart restricted to an open set, as a partial
+  diffeomorphism with its derivative.
 * `TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph`: an open partial homeomorphism between
   model spaces which is `C^n` in both directions, as a partial diffeomorphism.
 * `TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq`: the inverse function theorem for manifolds.
@@ -298,14 +299,14 @@ theorem extChartPartialDiffeomorph_symm_apply (x : M) (y : E) :
   rw [extChartPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.IsImage.restr_symm_apply]
 
-/-- A diffeomorphism of the model space, composed with the extended chart at `x₀` restricted to the
-preimage of an open set `V₀` inside the interior of the chart target, is a `C^n` partial
-diffeomorphism with source the restricted chart source, and its differential at a point of the
-source is the differential of the diffeomorphism after that of the extended chart. -/
+/-- A diffeomorphism from the model space onto a normed space `F`, composed with the extended chart
+at `x₀` restricted to the preimage of an open set `V₀` inside the interior of the chart target, is a
+`C^n` partial diffeomorphism with source the restricted chart source, and its differential at a
+point of the source is the differential of the diffeomorphism after that of the extended chart. -/
 theorem exists_partialDiffeomorph_comp_extChartAt (x₀ : M) {V₀ : Set E} (hV₀ : IsOpen V₀)
     (hV₀W : V₀ ⊆ interior (extChartAt I x₀).target) (hn : 1 ≤ n)
-    (Φ : E ≃ₘ^n⟮𝓘(𝕂, E), 𝓘(𝕂, E)⟯ E) :
-    ∃ chart : PartialDiffeomorph I 𝓘(𝕂, E) M E n,
+    (Φ : E ≃ₘ^n⟮𝓘(𝕂, E), 𝓘(𝕂, F)⟯ F) :
+    ∃ chart : PartialDiffeomorph I 𝓘(𝕂, F) M F n,
       chart.source = (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' V₀ ∧
         (∀ y, chart y = Φ (extChartAt I x₀ y)) ∧
         ∀ x ∈ chart.source, ∀ u : TangentSpace I x, mvfderiv I chart x u =
@@ -316,7 +317,7 @@ theorem exists_partialDiffeomorph_comp_extChartAt (x₀ : M) {V₀ : Set E} (hV�
   have hS_sub : S ⊆ e₀.source := by
     rw [extChartPartialDiffeomorph_source]
     exact inter_subset_inter_right _ (preimage_mono hV₀W)
-  let chart : PartialDiffeomorph I 𝓘(𝕂, E) M E n :=
+  let chart : PartialDiffeomorph I 𝓘(𝕂, F) M F n :=
     (e₀.restrOpen S hS_open).trans Φ.toPartialDiffeomorph
   have hchart_src : chart.source = S := by
     simp [chart, inter_eq_right.2 hS_sub]
