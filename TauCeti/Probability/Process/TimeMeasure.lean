@@ -45,6 +45,12 @@ theorem timeMeasure_Ioc (T s t : ℝ≥0) :
   simp [timeMeasure_apply T measurableSet_Ioc, Ioc_inter_Ioc,
     NNReal.image_coe_Ioc, Real.volume_Ioc]
 
+/-- An initial closed interval has its length clipped at the horizon; time zero is null. -/
+@[simp]
+theorem timeMeasure_Iic (T t : ℝ≥0) : timeMeasure T (Iic t) = (min t T : ℝ≥0) := by
+  rw [timeMeasure_apply T measurableSet_Iic, inter_comm, Ioc_inter_Iic]
+  simp [NNReal.image_coe_Ioc, Real.volume_Ioc, min_comm]
+
 /-- The total time mass is the length of the horizon. -/
 @[simp]
 theorem timeMeasure_univ (T : ℝ≥0) : timeMeasure T univ = T := by
