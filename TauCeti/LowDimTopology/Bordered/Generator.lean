@@ -116,7 +116,7 @@ structure Generator where
   /-- The point of the generator on the `β`-circle `j`. -/
   point : Fin g → Point
   beta_point (j : Fin g) : H.beta (point j) = j
-  injective_alpha_comp_point : Function.Injective (H.alpha ∘ point)
+  alpha_comp_point_injective : Function.Injective (H.alpha ∘ point)
   exists_alpha_point_eq_inr (c : AlphaCircle) : ∃ j, H.alpha (point j) = .inr c
 
 attribute [simp] Generator.beta_point
@@ -132,7 +132,7 @@ instance [Finite Point] : Finite H.Generator :=
 
 /-- The occupancy `o(x)` of a generator: the set of `α`-arcs containing one of its points. -/
 def occupied (x : H.Generator) : Finset Arc :=
-  (univ.map ⟨H.alpha ∘ x.point, x.injective_alpha_comp_point⟩).toLeft
+  (univ.map ⟨H.alpha ∘ x.point, x.alpha_comp_point_injective⟩).toLeft
 
 variable {H} in
 @[simp]
@@ -145,11 +145,11 @@ elements: the `g` points of a generator lie on distinct `α`-curves, one on each
 the others on the occupied arcs. -/
 theorem card_occupied_add_card [Fintype AlphaCircle] (x : H.Generator) :
     #(H.occupied x) + Fintype.card AlphaCircle = g := by
-  have hright : (univ.map ⟨H.alpha ∘ x.point, x.injective_alpha_comp_point⟩).toRight = univ := by
+  have hright : (univ.map ⟨H.alpha ∘ x.point, x.alpha_comp_point_injective⟩).toRight = univ := by
     ext c
     simpa using x.exists_alpha_point_eq_inr c
   have h := card_toLeft_add_card_toRight
-    (u := univ.map ⟨H.alpha ∘ x.point, x.injective_alpha_comp_point⟩)
+    (u := univ.map ⟨H.alpha ∘ x.point, x.alpha_comp_point_injective⟩)
   rwa [hright, card_univ, card_map, card_univ, Fintype.card_fin] at h
 
 /-! ### The idempotents of a generator -/
@@ -371,7 +371,7 @@ private theorem glue_alpha_comp_gluePoint (x₁ : H₁.Generator) (x₂ : H₂.G
 /-- The points of a pair of generators lie on distinct `α`-curves of the glued diagram exactly
 when the occupancies of the two generators are disjoint: the `α`-circles of the two diagrams stay
 apart, and an arc of the glued diagram meets both points only if both generators occupy it. -/
-theorem injective_glue_alpha_comp_gluePoint_iff (x₁ : H₁.Generator) (x₂ : H₂.Generator) :
+theorem glue_alpha_comp_gluePoint_injective_iff (x₁ : H₁.Generator) (x₂ : H₂.Generator) :
     Function.Injective ((glue H₁ H₂ e).alpha ∘ gluePoint x₁ x₂) ↔
       Disjoint (H₁.occupied x₁) (H₂.occupied x₂) := by
   rw [glue_alpha_comp_gluePoint, e.comp_injective, Equiv.injective_comp, Sum.elim_injective,
@@ -381,8 +381,8 @@ theorem injective_glue_alpha_comp_gluePoint_iff (x₁ : H₁.Generator) (x₂ : 
     obtain ⟨i, hi⟩ := mem_occupied.1 ha₁
     obtain ⟨j, hj⟩ := mem_occupied.1 ha₂
     exact h i j (by simp [hi, hj])
-  · exact glueCurveLeft_injective.comp x₁.injective_alpha_comp_point
-  · exact glueCurveRight_injective.comp x₂.injective_alpha_comp_point
+  · exact glueCurveLeft_injective.comp x₁.alpha_comp_point_injective
+  · exact glueCurveRight_injective.comp x₂.alpha_comp_point_injective
   · intro i j hij
     rcases hi : H₁.alpha (x₁.point i) with a | c <;>
       rcases hj : H₂.alpha (x₂.point j) with b | d <;>
@@ -394,7 +394,7 @@ theorem injective_glue_alpha_comp_gluePoint_iff (x₁ : H₁.Generator) (x₂ : 
 /-- The points of a pair of generators meet every `α`-curve of the glued diagram exactly when
 every arc is occupied by one of the two generators: each generator already meets every `α`-circle
 of its own diagram. -/
-theorem surjective_glue_alpha_comp_gluePoint_iff [Fintype Arc] [DecidableEq Arc]
+theorem glue_alpha_comp_gluePoint_surjective_iff [Fintype Arc] [DecidableEq Arc]
     (x₁ : H₁.Generator) (x₂ : H₂.Generator) :
     Function.Surjective ((glue H₁ H₂ e).alpha ∘ gluePoint x₁ x₂) ↔
       H₁.occupied x₁ ∪ H₂.occupied x₂ = univ := by
@@ -423,12 +423,12 @@ theorem surjective_glue_alpha_comp_gluePoint_iff [Fintype Arc] [DecidableEq Arc]
 
 /-- The points of a pair of generators lie on distinct `α`-curves of the glued diagram exhausting
 all of them exactly when the occupancies of the two generators are complementary. -/
-theorem bijective_glue_alpha_comp_gluePoint_iff [Fintype Arc] [DecidableEq Arc]
+theorem glue_alpha_comp_gluePoint_bijective_iff [Fintype Arc] [DecidableEq Arc]
     (x₁ : H₁.Generator) (x₂ : H₂.Generator) :
     Function.Bijective ((glue H₁ H₂ e).alpha ∘ gluePoint x₁ x₂) ↔
       H₁.occupied x₁ = (H₂.occupied x₂)ᶜ := by
-  simp [Function.Bijective, injective_glue_alpha_comp_gluePoint_iff,
-    surjective_glue_alpha_comp_gluePoint_iff, eq_compl_iff_isCompl, isCompl_iff, codisjoint_iff]
+  simp [Function.Bijective, glue_alpha_comp_gluePoint_injective_iff,
+    glue_alpha_comp_gluePoint_surjective_iff, eq_compl_iff_isCompl, isCompl_iff, codisjoint_iff]
 
 /-! ### The generators of the glued diagram -/
 
@@ -475,14 +475,14 @@ the `β`-circles of the first diagram. -/
 noncomputable def glueLeft (x : (glue H₁ H₂ e).Generator) : H₁.Generator where
   point := glueLeftPoint e x
   beta_point := beta_glueLeftPoint e x
-  injective_alpha_comp_point i j hij := by
+  alpha_comp_point_injective i j hij := by
     have h : (glue H₁ H₂ e).alpha ((glue H₁ H₂ e).betaPoint x (Fin.castAdd g₂ i)) =
         (glue H₁ H₂ e).alpha ((glue H₁ H₂ e).betaPoint x (Fin.castAdd g₂ j)) := by
       rw [← inl_glueLeftPoint, ← inl_glueLeftPoint, glue_alpha_inl, glue_alpha_inl]
       exact congrArg (e ∘ glueCurveLeft) hij
-    exact Fin.castAdd_injective _ _ (((glue H₁ H₂ e).bijective_alpha_comp_betaPoint x).1 h)
+    exact Fin.castAdd_injective _ _ (((glue H₁ H₂ e).alpha_comp_betaPoint_bijective x).1 h)
   exists_alpha_point_eq_inr c := by
-    obtain ⟨j, hj⟩ := ((glue H₁ H₂ e).bijective_alpha_comp_betaPoint x).2 (e (.inl (.inl c)))
+    obtain ⟨j, hj⟩ := ((glue H₁ H₂ e).alpha_comp_betaPoint_bijective x).2 (e (.inl (.inl c)))
     have hβ := (glue H₁ H₂ e).beta_betaPoint x j
     rcases hq : (glue H₁ H₂ e).betaPoint x j with p | p <;>
       simp only [Function.comp_apply, hq, glue_alpha_inl, glue_alpha_inr, glue_beta_inl,
@@ -500,14 +500,14 @@ the `β`-circles of the second diagram. -/
 noncomputable def glueRight (x : (glue H₁ H₂ e).Generator) : H₂.Generator where
   point := glueRightPoint e x
   beta_point := beta_glueRightPoint e x
-  injective_alpha_comp_point i j hij := by
+  alpha_comp_point_injective i j hij := by
     have h : (glue H₁ H₂ e).alpha ((glue H₁ H₂ e).betaPoint x (Fin.natAdd g₁ i)) =
         (glue H₁ H₂ e).alpha ((glue H₁ H₂ e).betaPoint x (Fin.natAdd g₁ j)) := by
       rw [← inr_glueRightPoint, ← inr_glueRightPoint, glue_alpha_inr, glue_alpha_inr]
       exact congrArg (e ∘ glueCurveRight) hij
-    exact Fin.natAdd_injective _ _ (((glue H₁ H₂ e).bijective_alpha_comp_betaPoint x).1 h)
+    exact Fin.natAdd_injective _ _ (((glue H₁ H₂ e).alpha_comp_betaPoint_bijective x).1 h)
   exists_alpha_point_eq_inr c := by
-    obtain ⟨j, hj⟩ := ((glue H₁ H₂ e).bijective_alpha_comp_betaPoint x).2 (e (.inl (.inr c)))
+    obtain ⟨j, hj⟩ := ((glue H₁ H₂ e).alpha_comp_betaPoint_bijective x).2 (e (.inl (.inr c)))
     have hβ := (glue H₁ H₂ e).beta_betaPoint x j
     rcases hq : (glue H₁ H₂ e).betaPoint x j with p | p <;>
       simp only [Function.comp_apply, hq, glue_alpha_inl, glue_alpha_inr, glue_beta_inl,
@@ -562,11 +562,11 @@ noncomputable def glueGeneratorEquiv :
     (glue H₁ H₂ e).Generator ≃
       {x : H₁.Generator × H₂.Generator // H₁.occupied x.1 = (H₂.occupied x.2)ᶜ} where
   toFun x := ⟨(glueLeft e x, glueRight e x),
-    (bijective_glue_alpha_comp_gluePoint_iff e _ _).1 (by
+    (glue_alpha_comp_gluePoint_bijective_iff e _ _).1 (by
       rw [gluePoint_glueLeft_glueRight]
-      exact (glue H₁ H₂ e).bijective_alpha_comp_betaPoint x)⟩
+      exact (glue H₁ H₂ e).alpha_comp_betaPoint_bijective x)⟩
   invFun x := (glue H₁ H₂ e).generatorOfBetaPoint (gluePoint x.1.1 x.1.2)
-    (glue_beta_gluePoint e _ _) ((bijective_glue_alpha_comp_gluePoint_iff e _ _).2 x.2)
+    (glue_beta_gluePoint e _ _) ((glue_alpha_comp_gluePoint_bijective_iff e _ _).2 x.2)
   left_inv x := (glue H₁ H₂ e).betaPoint_injective (by simp [gluePoint_glueLeft_glueRight])
   right_inv x := Subtype.ext (Prod.ext (glueLeft_generatorOfBetaPoint e _ _ _)
     (glueRight_generatorOfBetaPoint e _ _ _))

@@ -268,7 +268,7 @@ theorem alpha_betaPoint (g : D.Generator) (j : Fin n) : D.alpha (D.betaPoint g j
 
 /-- The `α`-curves of the points of a generator on the `β`-curves are all different and exhaust
 the `α`-curves. -/
-theorem bijective_alpha_comp_betaPoint (g : D.Generator) :
+theorem alpha_comp_betaPoint_bijective (g : D.Generator) :
     Function.Bijective (D.alpha ∘ D.betaPoint g) := by
   convert g.1.symm.bijective
   ext
@@ -306,7 +306,7 @@ are all different and exhaust the `α`-curves. -/
 noncomputable def generatorEquivBetaPoint :
     D.Generator ≃ {q : Fin n → Point // (∀ j, D.beta (q j) = j) ∧
       Function.Bijective (D.alpha ∘ q)} where
-  toFun g := ⟨D.betaPoint g, D.beta_betaPoint g, D.bijective_alpha_comp_betaPoint g⟩
+  toFun g := ⟨D.betaPoint g, D.beta_betaPoint g, D.alpha_comp_betaPoint_bijective g⟩
   invFun q := D.generatorOfBetaPoint q.1 q.2.1 q.2.2
   left_inv g := D.betaPoint_injective (by simp)
   right_inv q := Subtype.ext (by simp)
