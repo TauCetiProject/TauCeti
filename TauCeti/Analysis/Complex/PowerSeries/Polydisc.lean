@@ -286,9 +286,6 @@ theorem _root_.DifferentiableOn.exists_differentiable_norm_sub_lt_of_pi {ι : Ty
     {h : (ι → ℂ) → E} {c : ι → ℂ} {r s ε : ℝ} (hh : DifferentiableOn ℂ h (ball c s))
     (hrs : r < s) (hε : 0 < ε) :
     ∃ P : (ι → ℂ) → E, Differentiable ℂ P ∧ ∀ z ∈ closedBall c r, ‖h z - P z‖ < ε := by
-  rcases lt_or_ge r 0 with hr | hr
-  · exact ⟨0, differentiable_const 0, by simp [closedBall_eq_empty.2 hr]⟩
-  have hs : 0 < s := hr.trans_lt hrs
   -- Transport to `Fin n → ℂ` along an enumeration `e` of `ι`; reindexing preserves sup norms.
   let e := Fintype.equivFin ι
   have hdist (x y : ι → ℂ) : dist (x ∘ e.symm) (y ∘ e.symm) = dist x y := by
