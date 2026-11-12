@@ -47,7 +47,8 @@ of `SU(2)` is computed from in `TauCeti/RepresentationTheory/SU2/Weyl/Basic.lean
 
 It also records the structural identity `TauCeti.SU2.coe_add_star`: an element of `SU(2)` and its
 conjugate transpose add up to `(tr g) • 1`, so the Hermitian part of an element of `SU(2)` is a
-scalar matrix; tracing it shows the trace is real (`TauCeti.SU2.isSelfAdjoint_trace`). Conjugate
+scalar matrix; tracing it shows the trace is real (`TauCeti.SU2.isSelfAdjoint_trace`), so it is the
+real number given by its real part (`TauCeti.SU2.trace_eq_ofReal_re`). Conjugate
 elements have the same trace (`TauCeti.SU2.trace_eq_of_isConj`). On the torus the trace is
 `TauCeti.SU2.trace_torusMatrix`: `tr (diag (z, z⁻¹)) = z + z⁻¹`, in the angle parametrisation
 `TauCeti.SU2.trace_torusExp`: `tr (diag (e^{iθ}, e^{-iθ})) = 2 cos θ`, and
@@ -95,6 +96,12 @@ theorem isSelfAdjoint_trace (g : SU2) :
     Matrix.trace_smul, Matrix.trace_one, Fintype.card_fin, smul_eq_mul, Nat.cast_ofNat] at h
   rw [isSelfAdjoint_iff]
   linear_combination h
+
+/-- The trace of an element of `SU(2)` is the real number given by its real part. -/
+theorem trace_eq_ofReal_re (g : SU2) :
+    Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ) =
+      ((Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re : ℂ) :=
+  (Complex.conj_eq_iff_re.mp (isSelfAdjoint_iff.mp (isSelfAdjoint_trace g))).symm
 
 /-- Conjugate elements of `SU(2)` have the same trace. -/
 theorem trace_eq_of_isConj {g h : SU2} (hgh : IsConj g h) :

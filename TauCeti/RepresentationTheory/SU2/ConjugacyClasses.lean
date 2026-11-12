@@ -39,10 +39,10 @@ is drawn in `TauCeti/RepresentationTheory/SU2/Character.lean`.
 * `TauCeti.SU2.isConj_iff_trace_eq`: two elements of `SU(2)` are conjugate if and only if they
   have the same trace.
 * `TauCeti.SU2.trace_eq_two_iff`: the identity is the only element of trace `2`.
-* `TauCeti.SU2.trace_eq_ofReal_re`, `TauCeti.SU2.re_trace_le_two`,
-  `TauCeti.SU2.re_trace_lt_two` and `TauCeti.SU2.isConj_of_re_trace_eq`: the trace equals its real
-  part, which is at most `2`, is less than `2` away from the identity, and determines the
-  conjugacy class.
+* `TauCeti.SU2.re_trace_le_two`, `TauCeti.SU2.re_trace_lt_two` and
+  `TauCeti.SU2.isConj_of_re_trace_eq`: the real part of the trace, which equals the trace
+  (`TauCeti.SU2.trace_eq_ofReal_re`), is at most `2`, is less than `2` away from the identity,
+  and determines the conjugacy class.
 * `TauCeti.SU2.isConj_torusExp_iff_cos_eq`: on the maximal torus that criterion reads as the
   equality of the cosines of the angles, the cosine being the invariant of the Weyl action on
   angles read modulo `2π`.
@@ -100,12 +100,6 @@ theorem exists_trace_torusExp_eq_ofReal {t : ℝ} (ht : |t| ≤ 2) :
   rw [trace_torusExp, Real.cos_arccos (by linarith) (by linarith)]
   push_cast
   ring
-
-/-- The trace of an element of `SU(2)` is the real number given by its real part. -/
-theorem trace_eq_ofReal_re (g : SU2) :
-    Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ) =
-      ((Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re : ℂ) :=
-  (Complex.conj_eq_iff_re.mp (isSelfAdjoint_iff.mp (isSelfAdjoint_trace g))).symm
 
 /-- The real part of the trace of an element of `SU(2)` is at most `2`. -/
 theorem re_trace_le_two (g : SU2) :
