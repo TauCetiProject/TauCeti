@@ -189,7 +189,7 @@ private theorem smulLeftCLM_toDistr_eq_of_forall {μ : ℝ} {c : Symbol n W V μ
     have hi₂ : Integrable fun x ↦ φ x • quantizeSchwartzValue r.coefficient u₀ x :=
       (hr.integrable_quantizeSchwartzValue u₀).smul_of_top_right (φ.memLp ⊤)
     simp only [sub_apply, ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_sub,
-      BesselPotentialSpace.toDistr_inclusion, toDistr_quantizeSobolev_eq hc hc rfl hw,
+      BesselPotentialSpace.toDistr_inclusion, toDistr_quantizeSobolev_congr rfl hc hc hw,
       toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
       BesselPotentialSpace.toDistr_smulLeftCLM, hψ', smulLeftCLM_apply_apply,
       SchwartzMap.toDistr_toBesselPotentialSpaceCLM, SchwartzMap.coe_apply]
@@ -232,8 +232,8 @@ theorem memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev
     · rwa [max_eq_left hst]
   obtain ⟨r', hr'⟩ := isSmoothing_iff.1 hrs (t - max s (t - m) - m)
   have hrc' := hrc.of_coefficient_eq hr'
-  rw [hv, toDistr_quantizeSobolev_eq hc hc rfl (hv₀.toBesselPotentialSpace_toDistr).symm,
-    toDistr_quantizeSobolev_eq hrc hrc' hr'.symm rfl]
+  rw [hv, toDistr_quantizeSobolev_congr rfl hc hc (hv₀.toBesselPotentialSpace_toDistr).symm,
+    toDistr_quantizeSobolev_congr hr'.symm hrc hrc' rfl]
   refine (MemSobolev.sub ?_ ?_).mono (by linarith [le_max_left s (t - m)] :
     s + m ≤ max s (t - m) + m)
   · exact (BesselPotentialSpace.memSobolev_toDistr _).mono (by linarith)

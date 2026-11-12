@@ -27,9 +27,7 @@ step for the local-triviality formulation of invertible sheaves.
 
 The common refinement of two atlases can therefore carry both sets of trivializations on the
 same cover. Together with compatibility of tensor products with restriction, this is the final
-local-triviality input for closure of invertible sheaves under tensor product. That closure is
-needed for the Picard group in `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item
-"Invertible sheaves on a scheme; the Picard group `Pic X` under `⊗`".
+local-triviality input for closure of invertible sheaves under tensor product.
 
 No formalization is vendored. The construction reuses Mathlib's `SheafOfModules.overMap`,
 `SheafOfModules.overFunctorMap`, and `SheafOfModules.overMapUnitIso`, and the standard

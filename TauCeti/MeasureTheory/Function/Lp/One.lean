@@ -51,7 +51,7 @@ theorem coeFn_one : ((1 : Lp E ∞ μ) : α → E) =ᵐ[μ] 1 :=
 /-- On a nonzero measure, the norm of `1 : L∞(μ)` is that of `1`. -/
 theorem norm_one_of_ne_zero (hμ : μ ≠ 0) : ‖(1 : Lp E ∞ μ)‖ = ‖(1 : E)‖ := by
   rw [norm_def, eLpNorm_congr_ae coeFn_one, Pi.one_def,
-    eLpNorm_exponent_top aestronglyMeasurable_const, eLpNormEssSup_const _ hμ, toReal_enorm]
+    eLpNorm_exponent_top aestronglyMeasurable_const, eLpNormEssSup_const _ hμ, toReal_eNorm]
 
 /-- The integral of the constant one of real `L∞` is the total mass. -/
 @[simp]
