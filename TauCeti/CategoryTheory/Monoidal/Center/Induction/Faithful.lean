@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Center.Induction
+public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Basic
 public import TauCeti.CategoryTheory.Simple.Rigid
 
 /-!
