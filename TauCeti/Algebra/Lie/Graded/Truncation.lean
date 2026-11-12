@@ -51,7 +51,7 @@ public section
 
 namespace TauCeti.PositiveDegrees
 
-variable {N : Type} [AddCommMonoid N] {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+variable {N R L : Type*} [AddCommMonoid N] [CommRing R] [LieRing L] [LieAlgebra R L]
   (d : PositiveDegrees N) (ℒ : N → Submodule R L)
 
 /-- Bracketing terms above cutoffs `k` and `l` gives terms above `k + l + 1`. -/
@@ -165,20 +165,16 @@ theorem mem_truncatedGrading_iff {k : ℕ} {n : N} {y : d.truncatedLie ℒ k} :
 
 /-- The truncated pieces form a Lie grading of the truncation. -/
 noncomputable instance instGradedLieAlgebraTruncatedGrading (k : ℕ) :
-    GradedLieAlgebra (d.truncatedGrading ℒ k) := by
-  have : SetLike.GradedBracket (InternalGrading.ofDecomposition ℒ).piece
-      (InternalGrading.ofDecomposition ℒ).piece := by
-    rw [InternalGrading.ofDecomposition_piece]
-    infer_instance
-  have hpieces : d.truncatedGrading ℒ k =
-      ((InternalGrading.ofDecomposition ℒ).quotient (d.degreeIdeal ℒ k).toSubmodule
-        ((InternalGrading.isHomogeneous_ofDecomposition_piece_iff ℒ _).mpr
-          (d.degreeIdeal_isGraded ℒ k))).piece :=
-    funext fun n => by
-      simp only [InternalGrading.quotient_piece, InternalGrading.ofDecomposition_piece,
-        truncatedGrading_eq, LinearMap.restrictScalars_self]
-  rw [hpieces]
-  exact LieIdeal.instGradedLieAlgebraQuotient (d.degreeIdeal ℒ k) _ _
+    GradedLieAlgebra (d.truncatedGrading ℒ k) where
+  toDecomposition := by
+    rw [funext (d.truncatedGrading_eq ℒ k)]
+    apply DirectSum.IsInternal.chooseDecomposition
+    simpa only [LinearMap.restrictScalars_self] using
+      DirectSum.IsInternal.map_mkQ _ (d.degreeIdeal_isGraded ℒ k)
+  toGradedBracket := by
+    rw [funext (d.truncatedGrading_eq ℒ k)]
+    simpa only [LieIdeal.coe_mkQ] using
+      (d.degreeIdeal ℒ k).mkQ.gradedBracket_map ℒ
 
 /-- Truncating a positive grading preserves positivity. -/
 instance truncatedGrading_isPositiveGrading (k : ℕ) :

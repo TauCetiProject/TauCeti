@@ -58,6 +58,25 @@ public section
 
 open DirectSum
 
+/-- The images of the homogeneous pieces under quotienting by a homogeneous submodule form an
+internal direct sum. The submodule can be over a larger ring than the grading. -/
+theorem DirectSum.IsInternal.map_mkQ {R S M ι : Type*} [Ring R] [Ring S] [SMul R S]
+    [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M] [DecidableEq ι]
+    {ℳ : ι → Submodule R M} [DirectSum.Decomposition ℳ]
+    (U : Submodule S M) (hU : SetLike.IsHomogeneous ℳ U) :
+    DirectSum.IsInternal (fun i => (ℳ i).map (U.mkQ.restrictScalars R)) := by
+  have hℳ := DirectSum.Decomposition.isInternal ℳ
+  refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
+    (hℳ.submodule_iSupIndep.map_of_ker_inf_iSup_le (U.mkQ.restrictScalars R) ?_) ?_
+  · rw [LinearMap.ker_restrictScalars, Submodule.ker_mkQ]
+    intro x hx
+    classical
+    rw [← DirectSum.sum_support_decompose ℳ x]
+    exact Submodule.sum_mem _ fun i _ => Submodule.mem_iSup_of_mem i
+      ⟨hU i hx.1, (DirectSum.decompose ℳ x i).property⟩
+  · rw [← Submodule.map_iSup, hℳ.submodule_iSup_eq_top, Submodule.map_top,
+      LinearMap.range_restrictScalars, Submodule.range_mkQ, Submodule.restrictScalars_top]
+
 namespace TauCeti.InternalGrading
 
 variable {R M : Type*} {ι : Type} [DecidableEq ι]
@@ -181,18 +200,7 @@ include hU in
 the image of the degree-`p` piece of `M`. -/
 noncomputable def quotient : InternalGrading R (M ⧸ U) ι where
   piece p := (G.piece p).map (U.mkQ.restrictScalars R)
-  isInternal := by
-    refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-      (G.isInternal.submodule_iSupIndep.map_of_ker_inf_iSup_le (U.mkQ.restrictScalars R) ?_) ?_
-    · -- Map the internal decomposition of `U` into the ambient module.
-      have hspan := congrArg (Submodule.map (U.subtype.restrictScalars R))
-        (G.submodule U hU).isInternal.submodule_iSup_eq_top
-      simp only [Submodule.map_iSup, submodule_piece, Submodule.map_comap_eq,
-        Submodule.map_top, LinearMap.range_restrictScalars, Submodule.range_subtype] at hspan
-      simpa only [LinearMap.ker_restrictScalars, Submodule.ker_mkQ, inf_comm] using
-        inf_le_left.trans_eq hspan.symm
-    · rw [← Submodule.map_iSup, G.isInternal.submodule_iSup_eq_top, Submodule.map_top,
-        LinearMap.range_restrictScalars, Submodule.range_mkQ, Submodule.restrictScalars_top]
+  isInternal := DirectSum.IsInternal.map_mkQ U hU
 
 @[simp]
 theorem quotient_piece (p : ι) :
