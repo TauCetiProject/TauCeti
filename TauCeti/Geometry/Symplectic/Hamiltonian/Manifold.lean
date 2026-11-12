@@ -102,7 +102,9 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
 * `TauCeti.SmoothTwoForm.poissonBracket`: the Poisson bracket `{f, g} = σ(X_f, X_g)`, with
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`, and
   `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_poissonBracket`: the Poisson bracket of
-  `C^(n+1)` functions is `C^n`.
+  `C^(n+1)` functions is `C^n`, and
+  `TauCeti.SmoothTwoForm.IsNondegenerate.continuous_poissonBracket_uncurry`: the Poisson bracket
+  of two jointly `C¹` families of functions is jointly continuous.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`: a surjective
   linear map `D` with `σ₂(D u, D v) = σ(u, v)` and `dg ∘ D = df` carries `X_f(x)` to `X_g(y)`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`,
@@ -575,6 +577,24 @@ theorem contMDiff_poissonBracket {n : WithTop ℕ∞} (hn : n ≤ ∞) {f g : M 
     ContMDiff I 𝓘(ℝ) n (σ.poissonBracket f g) := by
   rw [funext (h.poissonBracket_eq_mvfderiv f g)]
   exact (hf.contMDiff_mvfderiv_apply le_rfl).comp (h.contMDiff_hamiltonianVectorField hn hg)
+
+/-- **Joint continuity of the Poisson bracket of a family.** For a nondegenerate two-form on a
+finite-dimensional manifold and two families of functions `f g : N → M → ℝ` which are jointly
+`C¹` on `N × M`, the Poisson bracket `(p, x) ↦ {f p, g p}(x)` is jointly continuous. -/
+theorem continuous_poissonBracket_uncurry {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] [IsManifold J 1 N] {f g : N → M → ℝ}
+    (hf : ContMDiff (J.prod I) 𝓘(ℝ) 1 (Function.uncurry f))
+    (hg : ContMDiff (J.prod I) 𝓘(ℝ) 1 (Function.uncurry g)) :
+    Continuous (fun q : N × M ↦ σ.poissonBracket (f q.1) (g q.1) q.2) := by
+  -- Pair the jointly continuous differential of `f` with the jointly continuous `X_g`.
+  have hdf := (ContMDiff.contMDiff_totalSpaceMk_mvfderiv_uncurry (n := 0)
+    (by simpa using hf)).continuous
+  have hX := (h.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp)
+    (by simpa using hg)).continuous
+  have hc := Continuous.clm_bundle_apply (E₂ := Bundle.Trivial M ℝ) hdf hX
+  exact (continuous_snd.comp ((Bundle.Trivial.homeomorphProd M ℝ).continuous.comp hc)).congr
+    fun q ↦ (h.poissonBracket_eq_mvfderiv _ _ _).symm
 
 end IsNondegenerate
 
