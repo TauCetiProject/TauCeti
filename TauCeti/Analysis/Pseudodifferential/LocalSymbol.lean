@@ -49,6 +49,10 @@ global one. It does extend after multiplication by a cutoff:
 
 The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
 
+Conversely, `TauCeti.LocalSymbol.ofEventuallyEq` builds a local symbol from a function that agrees,
+near every compact set of positions in `U`, with a symbol on `ℝⁿ`: the estimates of a local symbol
+only involve the coefficient near compact subsets of `U`.
+
 ## References
 
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, September 2008,
@@ -211,7 +215,48 @@ instance : Module ℂ (LocalSymbol U V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → LocalSymbol U V W m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum (AddMonoidHom.mk' coefficient coefficient_add) a s
+
 end Module
+
+section OfEventuallyEq
+
+/-- A function on `ℝⁿ × ℝⁿ` that vanishes at positions outside `U` is a symbol of order `m` on
+`U` as soon as, near every compact set `K ⊆ U` of positions, it agrees with a symbol of order `m`
+on `ℝⁿ`. This is how local symbols are built from global ones, for instance after multiplication
+by a cutoff that equals `1` near `K`. -/
+def ofEventuallyEq (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ∀ x ∉ U, ∀ ξ, f (x, ξ) = 0)
+    (h : ∀ K : Set (CoordinateSpace n), K ⊆ U → IsCompact K → ∃ s : Symbol n V W m,
+      ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = f (y, η)) :
+    LocalSymbol U V W m where
+  coefficient := f
+  contDiffOn_coefficient := by
+    rintro ⟨x, ξ⟩ ⟨hx, -⟩
+    obtain ⟨s, hs⟩ := h {x} (singleton_subset_iff.2 hx) isCompact_singleton
+    have hsf : s.coefficient =ᶠ[𝓝 (x, ξ)] f :=
+      (continuous_fst.tendsto (x, ξ)).eventually (hs x rfl) |>.mono fun p hp => hp p.2
+    exact (s.contDiff_coefficient.contDiffAt.congr_of_eventuallyEq hsf.symm).contDiffWithinAt
+  coefficient_of_notMem := hf
+  exists_bound K hKU hK α β := by
+    obtain ⟨s, hs⟩ := h K hKU hK
+    obtain ⟨C, hC, hsC⟩ := s.exists_bound K hK α β
+    refine ⟨C, hC, fun x hx ξ => ?_⟩
+    rw [← mixedDeriv_congr_of_eventually (hs x hx)]
+    exact hsC x hx ξ
+
+@[simp]
+theorem coefficient_ofEventuallyEq (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ∀ x ∉ U, ∀ ξ, f (x, ξ) = 0)
+    (h : ∀ K : Set (CoordinateSpace n), K ⊆ U → IsCompact K → ∃ s : Symbol n V W m,
+      ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = f (y, η)) :
+    (ofEventuallyEq f hf h).coefficient = f :=
+  (rfl)
+
+end OfEventuallyEq
 
 section Restrict
 
