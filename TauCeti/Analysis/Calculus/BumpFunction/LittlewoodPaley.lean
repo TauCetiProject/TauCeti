@@ -53,7 +53,8 @@ derivative bounds; it localizes operators to the frequencies of a single block.
   fixed number of pieces are nonzero.
 * `ContDiffBump.exists_sum_sq_inhomogeneousLittlewoodPaley_le`: `∑ⱼ ψⱼ ξ ²` is bounded uniformly
   in `ξ` and in the set of indices, so that it is summable
-  (`ContDiffBump.summable_inhomogeneousLittlewoodPaley_sq`), and
+  (`ContDiffBump.summable_inhomogeneousLittlewoodPaley_sq`) with uniformly bounded sum
+  (`ContDiffBump.exists_tsum_inhomogeneousLittlewoodPaley_sq_le`), and
   `ContDiffBump.exists_one_le_mul_sum_sq_inhomogeneousLittlewoodPaley`: it is bounded below by a
   positive constant.
 * `ContDiffBump.exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley`: on
@@ -569,6 +570,13 @@ theorem summable_inhomogeneousLittlewoodPaley_sq (ξ : E) :
     Summable fun j ↦ φ.inhomogeneousLittlewoodPaley j ξ ^ 2 := by
   obtain ⟨L, hL⟩ := φ.exists_sum_sq_inhomogeneousLittlewoodPaley_le
   exact summable_of_sum_le (fun _ ↦ sq_nonneg _) fun s ↦ hL s ξ
+
+/-- **Bounded sum of squares**, `tsum` form. There is `L`, depending only on `φ`, with
+`∑' j, ψⱼ ξ ² ≤ L` for every `ξ`. -/
+theorem exists_tsum_inhomogeneousLittlewoodPaley_sq_le :
+    ∃ L : ℕ, ∀ ξ : E, ∑' j, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 ≤ L := by
+  obtain ⟨L, hL⟩ := φ.exists_sum_sq_inhomogeneousLittlewoodPaley_le
+  exact ⟨L, fun ξ ↦ Real.tsum_le_of_sum_le (fun _ ↦ sq_nonneg _) fun s ↦ hL s ξ⟩
 
 /-- **Sum of squares bounded below.** There is `L > 0`, depending only on `φ`, with
 `1 ≤ L ∑_{j ≤ N} ψⱼ ξ ²` whenever `‖ξ‖ ≤ 2^N φ.rIn`, that is, whenever the pieces of index at most

@@ -35,14 +35,15 @@ The blocks have the following properties.
   low-pass symbols `n ↦ φ(2^{-N} n)`, and `∑ⱼ Δⱼ f = f` in `L²(𝕋ᵈ)`
   (`TauCeti.UnitAddTorus.tendsto_sum_littlewoodPaleyBlock`).
 * **Almost orthogonality.** There is `L`, depending only on `φ`, with `Δⱼ Δₖ = 0` whenever
-  `|j - k| ≥ L` (`TauCeti.UnitAddTorus.exists_littlewoodPaleyBlock_comp_eq_zero`).
+  `|j - k| ≥ L`; more generally the blocks `Δⱼ` of `φ` and `Δ'ₖ` of a second bump function `φ'`
+  satisfy `Δⱼ Δ'ₖ = Δ'ₖ Δⱼ = 0` whenever `j + L ≤ k`, for some `L` depending on `φ` and `φ'`
+  (`TauCeti.UnitAddTorus.exists_littlewoodPaleyBlock_comp_eq_zero`).
 * **The `L²` square function.** By Parseval's identity,
   `∑ⱼ ‖Δⱼ f‖² = ∑ₙ (∑ⱼ ψⱼ(n)²) ‖f̂(n)‖²`
   (`TauCeti.UnitAddTorus.hasSum_norm_sq_littlewoodPaleyBlock`), and the weight `∑ⱼ ψⱼ(n)²` is
   bounded above and below by positive constants depending only on `φ`. Hence the square function
-  `(∑ⱼ ‖Δⱼ f‖²)^{1/2}` is equivalent to `‖f‖` on `L²(𝕋ᵈ)`. The weight is not identically `1`, since
-  the `ψⱼ` form a partition of unity rather than a partition of unity of squares, so the square
-  function is not an isometry.
+  `(∑ⱼ ‖Δⱼ f‖²)^{1/2}` is equivalent to `‖f‖` on `L²(𝕋ᵈ)`. The weight need not be identically `1`,
+  since the `ψⱼ` form a partition of unity rather than a partition of unity of squares.
 
 As in Mathlib's `UnitAddTorus.mFourierBasis`, `L²(𝕋ᵈ)` is taken for the product of the Haar
 probability measures on the circle factors.
@@ -59,6 +60,7 @@ probability measures on the circle factors.
   `∑ⱼ Δⱼ f = f`.
 * `TauCeti.UnitAddTorus.exists_littlewoodPaleyBlock_comp_eq_zero`: almost orthogonality.
 * `TauCeti.UnitAddTorus.hasSum_norm_sq_littlewoodPaleyBlock`,
+  `TauCeti.UnitAddTorus.summable_tsum_inhomogeneousLittlewoodPaley_sq_mul_norm_sq_mFourierCoeff`,
   `TauCeti.UnitAddTorus.exists_tsum_norm_sq_littlewoodPaleyBlock_le` and
   `TauCeti.UnitAddTorus.exists_norm_sq_le_mul_tsum_norm_sq_littlewoodPaleyBlock`: the `L²` square
   function.
@@ -214,19 +216,20 @@ theorem tendsto_sum_littlewoodPaleyBlock (f : L²(UnitAddTorus d)) :
 
 /-! ### Almost orthogonality -/
 
-/-- **Almost orthogonality.** There is `L`, depending only on `φ`, with `Δⱼ Δₖ = Δₖ Δⱼ = 0`
-whenever `j + L ≤ k`. -/
-theorem exists_littlewoodPaleyBlock_comp_eq_zero :
+/-- **Almost orthogonality.** For two bump functions `φ` and `φ'` there is `L` with
+`Δⱼ Δ'ₖ = Δ'ₖ Δⱼ = 0` whenever `j + L ≤ k`, where `Δⱼ` are the blocks of `φ` and `Δ'ₖ` those of
+`φ'`. For `φ' = φ` this is the almost orthogonality of a single family of blocks. -/
+theorem exists_littlewoodPaleyBlock_comp_eq_zero (φ' : ContDiffBump (0 : EuclideanSpace ℝ d)) :
     ∃ L : ℕ, ∀ j k : ℕ, j + L ≤ k →
-      littlewoodPaleyBlock φ j ∘L littlewoodPaleyBlock φ k = 0 ∧
-        littlewoodPaleyBlock φ k ∘L littlewoodPaleyBlock φ j = 0 := by
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
+      littlewoodPaleyBlock φ j ∘L littlewoodPaleyBlock φ' k = 0 ∧
+        littlewoodPaleyBlock φ' k ∘L littlewoodPaleyBlock φ j = 0 := by
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ'
   refine ⟨L, fun j k hjk ↦ ?_⟩
-  have h : littlewoodPaleySymbol φ j * littlewoodPaleySymbol φ k = 0 := by
+  have h : littlewoodPaleySymbol φ j * littlewoodPaleySymbol φ' k = 0 := by
     ext n
     simp [← Complex.ofReal_mul, hL j k hjk]
   simp only [littlewoodPaleyBlock_eq_fourierMultiplier, ← ContinuousLinearMap.mul_def, ← map_mul,
-    h, mul_comm (littlewoodPaleySymbol φ k), map_zero, and_self]
+    h, mul_comm (littlewoodPaleySymbol φ' k), map_zero, and_self]
 
 /-! ### The `L²` square function -/
 
@@ -265,22 +268,29 @@ theorem hasSum_norm_sq_littlewoodPaleyBlock (f : L²(UnitAddTorus d)) :
   simp_rw [← tsum_mul_right]
   exact hswap.trans (tsum_congr fun j ↦ (hrow j).tsum_eq)
 
+/-- The frequency series `∑ₙ (∑ⱼ ψⱼ(n)²) ‖f̂(n)‖²` of the `L²` square function converges: its
+weight is bounded uniformly in `n`. -/
+theorem summable_tsum_inhomogeneousLittlewoodPaley_sq_mul_norm_sq_mFourierCoeff
+    (f : L²(UnitAddTorus d)) :
+    Summable fun n ↦ (∑' j, φ.inhomogeneousLittlewoodPaley j (latticePoint n) ^ 2) *
+      ‖mFourierCoeff f n‖ ^ 2 := by
+  obtain ⟨L, hL⟩ := φ.exists_tsum_inhomogeneousLittlewoodPaley_sq_le
+  exact ((hasSum_norm_sq_mFourierCoeff f).summable.mul_left (L : ℝ)).of_nonneg_of_le
+    (fun n ↦ mul_nonneg (tsum_nonneg fun _ ↦ sq_nonneg _) (sq_nonneg _))
+    fun n ↦ mul_le_mul_of_nonneg_right (hL _) (sq_nonneg _)
+
 /-- **The `L²` square function is bounded.** There is `C`, depending only on `φ`, with
 `∑ⱼ ‖Δⱼ f‖² ≤ C ‖f‖²` for every `f ∈ L²(𝕋ᵈ)`. -/
 theorem exists_tsum_norm_sq_littlewoodPaleyBlock_le :
     ∃ C : ℝ, ∀ f : L²(UnitAddTorus d),
       ∑' j, ‖littlewoodPaleyBlock φ j f‖ ^ 2 ≤ C * ‖f‖ ^ 2 := by
-  obtain ⟨L, hL⟩ := φ.exists_sum_sq_inhomogeneousLittlewoodPaley_le
+  obtain ⟨L, hL⟩ := φ.exists_tsum_inhomogeneousLittlewoodPaley_sq_le
   refine ⟨L, fun f ↦ ?_⟩
   have hparseval := hasSum_norm_sq_mFourierCoeff f
   rw [(hasSum_norm_sq_littlewoodPaleyBlock φ f).tsum_eq, ← hparseval.tsum_eq, ← tsum_mul_left]
-  have hw : ∀ n, ∑' j, φ.inhomogeneousLittlewoodPaley j (latticePoint n) ^ 2 ≤ L := fun n ↦
-    Real.tsum_le_of_sum_le (fun _ ↦ sq_nonneg _) fun s ↦ hL s _
-  refine Summable.tsum_le_tsum (fun n ↦ mul_le_mul_of_nonneg_right (hw n) (sq_nonneg _)) ?_
+  exact Summable.tsum_le_tsum (fun n ↦ mul_le_mul_of_nonneg_right (hL _) (sq_nonneg _))
+    (summable_tsum_inhomogeneousLittlewoodPaley_sq_mul_norm_sq_mFourierCoeff φ f)
     (hparseval.summable.mul_left _)
-  exact (hparseval.summable.mul_left (L : ℝ)).of_nonneg_of_le
-    (fun n ↦ mul_nonneg (tsum_nonneg fun _ ↦ sq_nonneg _) (sq_nonneg _))
-    fun n ↦ mul_le_mul_of_nonneg_right (hw n) (sq_nonneg _)
 
 /-- **The `L²` square function is bounded below.** There is `C`, depending only on `φ`, with
 `‖f‖² ≤ C ∑ⱼ ‖Δⱼ f‖²` for every `f ∈ L²(𝕋ᵈ)`. -/
@@ -288,7 +298,6 @@ theorem exists_norm_sq_le_mul_tsum_norm_sq_littlewoodPaleyBlock :
     ∃ C : ℝ, ∀ f : L²(UnitAddTorus d),
       ‖f‖ ^ 2 ≤ C * ∑' j, ‖littlewoodPaleyBlock φ j f‖ ^ 2 := by
   obtain ⟨L, -, hL⟩ := φ.exists_one_le_mul_sum_sq_inhomogeneousLittlewoodPaley
-  obtain ⟨M, hM⟩ := φ.exists_sum_sq_inhomogeneousLittlewoodPaley_le
   refine ⟨L, fun f ↦ ?_⟩
   have hparseval := hasSum_norm_sq_mFourierCoeff f
   rw [(hasSum_norm_sq_littlewoodPaleyBlock φ f).tsum_eq, ← hparseval.tsum_eq, ← tsum_mul_left]
@@ -299,16 +308,12 @@ theorem exists_norm_sq_le_mul_tsum_norm_sq_littlewoodPaleyBlock :
     exact mul_le_mul_of_nonneg_left
       ((φ.summable_inhomogeneousLittlewoodPaley_sq _).sum_le_tsum _ fun _ _ ↦ sq_nonneg _)
       (Nat.cast_nonneg L)
-  have hw' : ∀ n, ∑' j, φ.inhomogeneousLittlewoodPaley j (latticePoint n) ^ 2 ≤ M := fun n ↦
-    Real.tsum_le_of_sum_le (fun _ ↦ sq_nonneg _) fun s ↦ hM s _
   refine Summable.tsum_le_tsum (fun n ↦ ?_) hparseval.summable ?_
   · calc ‖mFourierCoeff f n‖ ^ 2 ≤ (L * ∑' j, φ.inhomogeneousLittlewoodPaley j
           (latticePoint n) ^ 2) * ‖mFourierCoeff f n‖ ^ 2 :=
           le_mul_of_one_le_left (sq_nonneg _) (hw n)
       _ = L * ((∑' j, φ.inhomogeneousLittlewoodPaley j (latticePoint n) ^ 2) *
           ‖mFourierCoeff f n‖ ^ 2) := mul_assoc _ _ _
-  · refine Summable.mul_left _ ((hparseval.summable.mul_left (M : ℝ)).of_nonneg_of_le
-      (fun n ↦ mul_nonneg (tsum_nonneg fun _ ↦ sq_nonneg _) (sq_nonneg _))
-      fun n ↦ mul_le_mul_of_nonneg_right (hw' n) (sq_nonneg _))
+  · exact (summable_tsum_inhomogeneousLittlewoodPaley_sq_mul_norm_sq_mFourierCoeff φ f).mul_left _
 
 end TauCeti.UnitAddTorus
