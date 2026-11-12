@@ -346,23 +346,30 @@ theorem IsIntegral.card_discriminantGroup_sqrt_smul (h : IsIntegral L) {m : ℕ}
   rw [← (h.sqrt_smul m).det_eq_card_discriminantGroup, det_sqrt_smul L,
     h.det_eq_card_discriminantGroup, Nat.cast_mul, Nat.cast_pow]
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- In positive dimension, scaling a full integral lattice by `c` with `1 < |c|` never gives a
-unimodular lattice: the determinant becomes `c²ⁿ det L > 1`. -/
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, scaling an integral lattice by `c` with `1 < |c|` never gives a
+unimodular lattice: if `c • L` is unimodular then `L` is full, and the determinant becomes
+`c²ⁿ det L > 1`. -/
 theorem IsIntegral.not_isUnimodular_smul [Nontrivial E] (h : IsIntegral L) {c : ℝ}
     (hc : 1 < |c|) : ¬ IsUnimodular (c • L) := by
   borelize E
+  have := h.discreteTopology
   have hc0 : c ≠ 0 := abs_pos.mp (one_pos.trans hc)
   have : NeZero c := ⟨hc0⟩
   intro hu
+  -- A unimodular lattice spans the space, and `c • L` spans no more than `L` does.
+  have : IsZLattice ℝ L := ⟨top_unique <| by
+    rw [← hu.span_eq_top, Submodule.span_le, coe_pointwise_smul]
+    rintro _ ⟨z, hz, rfl⟩
+    exact Submodule.smul_mem _ c (Submodule.subset_span hz)⟩
   have hdet := hu.det_eq_one
   rw [det_smul L, pow_mul, ← sq_abs, ← pow_mul] at hdet
   have hlt : 1 < |c| ^ (2 * finrank ℝ E) :=
     one_lt_pow₀ hc (mul_ne_zero two_ne_zero finrank_pos.ne')
   nlinarith [h.one_le_det]
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- In positive dimension, scaling a full integral lattice by `√m` for a natural number `m > 1`
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, scaling an integral lattice by `√m` for a natural number `m > 1`
 never gives a unimodular lattice. For instance `√2 • E₈` is even and integral but not
 unimodular. -/
 theorem IsIntegral.not_isUnimodular_sqrt_smul [Nontrivial E] (h : IsIntegral L) {m : ℕ}
