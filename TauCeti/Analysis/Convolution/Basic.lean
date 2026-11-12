@@ -493,8 +493,8 @@ theorem enorm_sub_convolution_lsmul_le [CompleteSpace F] (hψ : Continuous ψ)
     simp only [convolution_eq_swap, lsmul_apply, smul_sub]
     rw [integral_sub (hψint.smul_const (f x)) hint, integral_smul_const, h1, one_smul]
   rw [heq]
-  refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq (lintegral_congr fun w ↦ ?_))
-  rw [enorm_smul]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (le_of_eq (lintegral_congr fun w ↦ ?_))
+  rw [eNorm_smul]
 
 /-- **Increments of a mollification.** For a continuous compactly supported kernel `ψ` and a
 locally integrable `f`, the increments of `ψ ⋆ f` are bounded by the `‖ψ‖ₑ`-weighted integral of
@@ -506,8 +506,8 @@ theorem enorm_convolution_lsmul_sub_convolution_lsmul_le (hψ : Continuous ψ)
   rw [convolution_def, convolution_def,
     ← integral_sub (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ hf x)
       (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ hf y)]
-  refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq (lintegral_congr fun z ↦ ?_))
-  simp only [lsmul_apply, ← smul_sub, enorm_smul]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (le_of_eq (lintegral_congr fun z ↦ ?_))
+  simp only [lsmul_apply, ← smul_sub, eNorm_smul]
 
 /-- **Mollification by a bounded kernel of small support.** If `ψ` is a continuous kernel of
 integral `1` with `‖ψ‖ ≤ M`, vanishing off `closedBall 0 t`, and `f` is locally integrable, then

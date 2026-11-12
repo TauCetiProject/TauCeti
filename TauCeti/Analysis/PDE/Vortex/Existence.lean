@@ -204,7 +204,7 @@ theorem exists_contDiff_equation_eq_zero_isZeroMultiplicity {m : ℕ} (D : Sym �
   · -- The vacuum: amplitude zero and section `1`.
     have hf1 : f = 1 := by
       rw [hf, Sym.eq_nil_of_card_zero D]
-      funext w
+      funext _
       simp
     refine ⟨amplitudeField 0 f, contDiff_amplitudeField (n := ⊤) contDiff_const hfc,
       fun z ↦ ?_, ?_, isZeroMultiplicity_sectionValue_amplitudeField_prod_sub continuous_const _⟩

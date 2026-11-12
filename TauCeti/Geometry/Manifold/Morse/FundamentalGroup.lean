@@ -84,7 +84,7 @@ theorem IsMorse.subsingleton_fundamentalGroup_sublevel_of_subsingleton (hf : IsM
       (∀ x : {x | f x ≤ s}, Subsingleton (FundamentalGroup ({x | f x ≤ s} : Set M) x)) →
         ∀ x : {x | f x ≤ t}, Subsingleton (FundamentalGroup ({x | f x ≤ t} : Set M) x))
     hab hcompact ha hb
-    (fun s t hst hcompact hcrit hs y ↦ ?_) (fun p hp hap hpb δ hδ hcompact ↦ ?_)
+    (fun s t hst hcompact hcrit hs y ↦ ?_) (fun p _ hap hpb δ hδ hcompact ↦ ?_)
     (fun _ _ _ _ _ _ h₁ h₂ hs ↦ h₂ (h₁ hs)) hsub x
   · -- Across a band without critical points the sublevels are homotopy equivalent.
     obtain ⟨e, -⟩ := exists_sublevelHomotopyEquiv hf.contMDiff hst hcompact

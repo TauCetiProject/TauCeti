@@ -158,7 +158,7 @@ theorem IsPwC1ImmersionOn.cauchyPVExistsAt_inv_sub {γ : ℝ → ℂ} {a b : ℝ
   -- window hypothesis below is a `∀` over `T`
   obtain ⟨ρ, hρ_pos, h_endpts, h_pair, hρ_le_R⟩ :=
     exists_common_window_radius_le h_Ioo R hR_pos
-  exact cauchyPVExistsAt_of_perWindow_tendsto_of_interiorDisjoint hab.le T (fun _ => hρ_pos.le)
+  exact cauchyPVExistsAt_of_perWindow_tendsto_of_interiorDisjoint hab.le T
     (fun t ht => by linarith [(h_endpts t ht).1])
     (fun t ht => by linarith [(h_endpts t ht).2])
     (fun t ht t' ht' hne => (h_pair t ht t' ht' hne).le)

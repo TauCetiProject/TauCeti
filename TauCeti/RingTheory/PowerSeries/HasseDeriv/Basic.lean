@@ -149,7 +149,7 @@ theorem hasseDeriv_mul (f g : R⟦X⟧) :
   ext n
   -- Up to degree `n`, both sides only see the coefficients of `f` and `g` below `N`, so we may
   -- replace them by their truncations and apply the polynomial Leibniz rule.
-  set N := n + k + 1 with hN
+  set N := n + k + 1
   -- the `m`th coefficient of `D⁽ⁱ⁾ f * D⁽ʲ⁾ g` only involves `coeff a f` and `coeff b g` with
   -- `a ≤ m + i` and `b ≤ m + j`, which truncation at `N > m + i + j` leaves unchanged
   have htrunc (i j m : ℕ) (h : m + i + j < N) :

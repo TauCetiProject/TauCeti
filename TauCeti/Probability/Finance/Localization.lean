@@ -98,7 +98,7 @@ theorem uniformIntegrable_linearGrowth_geometricBrownianMotion {ι : Type*} [Cou
         (ENNReal.add_lt_top.2 ⟨by simp,
           hW.lintegral_iSup_geometricBrownianMotion_lt_top hcont s μ σ⟩)
   apply uniformIntegrable_of_lintegral_iSup_enorm_rpow_lt_top le_rfl ENNReal.one_ne_top hV
-  simpa only [ENNReal.toReal_one, ENNReal.rpow_one, Real.enorm_eq_ofReal_abs] using hGi
+  simpa only [ENNReal.toReal_one, ENNReal.rpow_one, Real.eNorm_eq_ofReal_abs] using hGi
 
 /-- A common polynomial-growth bound along positive geometric Brownian motion gives uniform
 `L²` integrability at any countable family of bounded random times. Negative growth exponents
@@ -132,7 +132,7 @@ theorem uniformIntegrable_polynomialGrowth_geometricBrownianMotion {ι : Type*} 
       (le_iSup₂ (f := fun t _ ↦ ENNReal.ofReal
         ((|A| * (1 + geometricBrownianMotion s μ σ W t ω ^ q)) ^ 2)) (τ i ω) (ht i))
   apply uniformIntegrable_of_lintegral_iSup_enorm_rpow_lt_top (by norm_num) (by norm_num) hV
-  simpa only [ENNReal.toReal_ofNat, ENNReal.rpow_two, Real.enorm_eq_ofReal_abs,
+  simpa only [ENNReal.toReal_ofNat, ENNReal.rpow_two, Real.eNorm_eq_ofReal_abs,
     ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs] using hGi
 
 /-- A polynomial-growth price with a continuous terminal extension converges in mean square
