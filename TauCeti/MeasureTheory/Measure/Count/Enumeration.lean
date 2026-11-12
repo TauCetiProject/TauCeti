@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Count
-import Mathlib.Basic.Denumerable
+public import TauCeti.SetTheory.Cardinal.Finite
 import Mathlib.Logic.Equiv.Basic
 
 /-!
@@ -26,6 +26,18 @@ open scoped ENNReal
 
 namespace TauCeti
 
+/-- The mass of a sum of Dirac measures at a singleton is the extended cardinality of
+its fiber. The index type need not be countable. -/
+theorem sum_dirac_apply_singleton {ι X : Type*}
+    [MeasurableSpace X] [MeasurableSingletonClass X] (x : ι → X) (a : X) :
+    (Measure.sum fun i => Measure.dirac (x i)) {a} = ENat.card {i // x i = a} := by
+  classical
+  rw [← Set.coe_ofPred (fun i => x i = a), ← ENNReal.tsum_one,
+    tsum_subtype {i | x i = a} (fun _ => (1 : ℝ≥0∞))]
+  simp only [Measure.sum_apply _ (measurableSet_singleton a),
+    Measure.dirac_apply' _ (measurableSet_singleton a), Set.indicator_apply,
+    Set.mem_singleton_iff, Pi.one_apply, mem_ofPred_eq]
+
 /-- Two countable occurrence enumerations give the same counting measure exactly when their
 indices can be matched bijectively without changing locations. Infinite multiplicities are
 allowed; no sigma-finiteness assumption is needed. -/
@@ -40,29 +52,8 @@ theorem sum_dirac_eq_sum_dirac_iff_exists_equiv
   · intro h
     have hfiber (a : X) : Nonempty ({i // x i = a} ≃ {j // y j = a}) := by
       have hmass := congrArg (fun μ : Measure X => μ {a}) h
-      have hcard : ENat.card {i // x i = a} = ENat.card {j // y j = a} := by
-        apply ENat.toENNReal_inj.mp
-        -- Express predicate fibers as set subtypes to use the indicator-sum formula.
-        rw [← Set.coe_ofPred (fun i => x i = a),
-          ← Set.coe_ofPred (fun j => y j = a),
-          ← ENNReal.tsum_one, ← ENNReal.tsum_one,
-          tsum_subtype {i | x i = a} (fun _ => (1 : ℝ≥0∞)),
-          tsum_subtype {j | y j = a} (fun _ => (1 : ℝ≥0∞))]
-        simpa only [Measure.sum_apply _ (measurableSet_singleton a),
-          Measure.dirac_apply' _ (measurableSet_singleton a), Set.indicator_apply,
-          Set.mem_singleton_iff, Pi.one_apply, mem_ofPred_eq] using hmass
-      cases finite_or_infinite {i // x i = a} with
-      | inl hfin =>
-        have := hfin
-        have : Finite {j // y j = a} :=
-          ENat.card_lt_top.1 (by rw [← hcard]; exact ENat.card_lt_top.2 hfin)
-        let := Fintype.ofFinite {i // x i = a}
-        let := Fintype.ofFinite {j // y j = a}
-        exact Fintype.card_eq.1 (by simpa [ENat.card_eq_coe_fintype_card] using hcard)
-      | inr hinf =>
-        have := hinf
-        have : Infinite {j // y j = a} := ENat.card_eq_top.1 (by rw [← hcard]; simp)
-        exact nonempty_equiv_of_countable
+      rw [sum_dirac_apply_singleton, sum_dirac_apply_singleton] at hmass
+      exact nonempty_equiv_of_enatCard_eq (ENat.toENNReal_inj.mp hmass)
     exact ⟨Equiv.ofFiberEquiv (fun a => (hfiber a).some), Equiv.ofFiberEquiv_map _⟩
   · rintro ⟨e, he⟩
     simpa only [Function.comp_def, he] using
