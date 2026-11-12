@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
-public import TauCeti.LinearAlgebra.SesquilinearForm.Balance
+public import TauCeti.LinearAlgebra.SesquilinearForm.Complex
 public import TauCeti.RepresentationTheory.InvariantForm
 
 /-!
