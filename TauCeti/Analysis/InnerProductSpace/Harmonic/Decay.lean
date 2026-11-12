@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Calculus.FDeriv.Basic
+import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
@@ -54,10 +55,11 @@ same radius leaves only the integrals of `u` over the two differences, each cont
 spherical shell of width `‖y - z‖` (the comparison behind Nelson's proof of Liouville's theorem).
 If `‖u‖ ≤ M` on both balls this gives the Lipschitz bound
 `‖u y - u z‖ ≤ 2ⁿ n M ‖y - z‖ / s` for `‖y - z‖ ≤ s`, the difference form of the interior gradient
-estimate. Applied to `u - c`, with `M` from the pointwise bound, it controls the oscillation of
-`u` on `B_ρ` by `(ρ / R)` times the `L²` norm of `u - c` on `B_R`, for `ρ ≤ R / 8`. For larger `ρ`
-the estimate follows from replacing the average `u_ρ` by `c`
-(`TauCeti.setIntegral_norm_sub_setAverage_sq_le`).
+estimate. Letting `s → ∞` gives Liouville's theorem; values in an incomplete normed space are
+first embedded isometrically in its completion. Applied to `u - c`, with `M` from the pointwise
+bound, the Lipschitz bound controls the oscillation of `u` on `B_ρ` by `(ρ / R)` times the `L²`
+norm of `u - c` on `B_R`, for `ρ ≤ R / 8`. For larger `ρ` the estimate follows from replacing the
+average `u_ρ` by `c` (`TauCeti.setIntegral_norm_sub_setAverage_sq_le`).
 
 ## Linear changes of variables
 
@@ -78,6 +80,15 @@ Laplacian after such a change of variables, so this is the decay estimate for it
   exponent `n`.
 * `InnerProductSpace.HarmonicOnNhd.norm_sub_le_of_norm_le`: the Lipschitz bound for a bounded
   harmonic function.
+* `InnerProductSpace.HarmonicOnNhd.norm_fderiv_le_of_norm_le` and
+  `InnerProductSpace.HarmonicOnNhd.norm_fderiv_le_of_norm_le_of_mem_ball`: the interior gradient
+  estimate `‖Du(y)‖ ≤ 2ⁿ n M / ρ`, at the centre of `ball y (2 ρ)` and at the points of
+  `ball x (R - 2 ρ)` for `u` bounded by `M` on `ball x R`.
+* `InnerProductSpace.HarmonicOnNhd.apply_eq_apply_of_bounded` and
+  `InnerProductSpace.HarmonicOnNhd.exists_const_forall_eq_of_bounded`: **Liouville's theorem** in
+  every dimension, a bounded harmonic function on `E` with values in any real normed space is
+  constant. Mathlib proves the planar case `E = ℂ`
+  (`InnerProductSpace.bounded_harmonic_on_complex_plane_is_constant`).
 * `InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sub_setAverage_sq_le`: decay of the `L²`
   mean oscillation with exponent `n + 2`.
 * `TauCeti.setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp` and
@@ -96,7 +107,7 @@ Laplacian after such a change of variables, so this is the decay estimate for it
   Systems*, Chapter III.
 * E. Nelson, *A proof of Liouville's theorem*, Proc. Amer. Math. Soc. 12 (1961), 995.
 * L. C. Evans, *Partial Differential Equations*, Section 2.2.3, Theorem 7 (estimates on
-  derivatives).
+  derivatives) and Theorem 8 (Liouville's theorem).
 -/
 
 public section
@@ -122,7 +133,6 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.measureReal_ball_mul_norm_sq_le_s
     {y : E} {s : ℝ} (hu : HarmonicOnNhd u (closedBall y s)) :
     μ.real (ball y s) * ‖u y‖ ^ 2 ≤ ∫ x in ball y s, ‖u x‖ ^ 2 ∂μ := by
   have hc : ContinuousOn u (closedBall y s) := hu.continuousOn
-  have hint : IntegrableOn u (ball y s) μ := hu.integrableOn_ball
   have hint2 : IntegrableOn (fun x ↦ ‖u x‖ ^ 2) (ball y s) μ :=
     ((hc.norm.pow 2).integrableOn_compact (isCompact_closedBall y s)).mono_set
       ball_subset_closedBall
@@ -164,7 +174,6 @@ private lemma norm_sq_le_of_mem_ball_half {x₀ x : E} {R : ℝ} (hR : 0 < R)
       (ball_subset_closedBall.trans hsub).eventuallyLE
   rw [μ.addHaar_real_ball_of_pos x (half_pos hR), div_pow] at h
   rw [le_div_iff₀ (by positivity)]
-  have h2 : (0 : ℝ) < 2 ^ finrank ℝ E := by positivity
   calc ‖u x‖ ^ 2 * (R ^ finrank ℝ E * μ.real (ball (0 : E) 1))
       = 2 ^ finrank ℝ E *
           (R ^ finrank ℝ E / 2 ^ finrank ℝ E * μ.real (ball (0 : E) 1) * ‖u x‖ ^ 2) := by
@@ -348,6 +357,44 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_fderiv_le_of_norm_le {x : E}
   simpa only [Real.coe_toNNReal _ hA] using h
 
 omit [MeasurableSpace E] [BorelSpace E] in
+/-- The gradient bound away from the centre: a harmonic function bounded by `M` on `ball x R` has
+`‖Du(y)‖ ≤ 2ⁿ n M / ρ` at every `y ∈ ball x (R - 2 ρ)`. -/
+theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_fderiv_le_of_norm_le_of_mem_ball
+    {x y : E} {R M ρ : ℝ} (hu : HarmonicOnNhd u (ball x R))
+    (hM : ∀ z ∈ ball x R, ‖u z‖ ≤ M) (hρ : 0 < ρ) (hy : y ∈ ball x (R - 2 * ρ)) :
+    ‖fderiv ℝ u y‖ ≤ 2 ^ finrank ℝ E * finrank ℝ E / ρ * M := by
+  have hsub : ball y (2 * ρ) ⊆ ball x R :=
+    ball_subset_ball' (by linarith [mem_ball.mp hy])
+  exact (hu.mono hsub).norm_fderiv_le_of_norm_le (fun z hz ↦ hM z (hsub hz)) hρ
+
+omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
+open Filter in
+/-- **Liouville's theorem.** A bounded harmonic function on a finite-dimensional real inner
+product space, with values in a real normed space, is constant. -/
+theorem _root_.InnerProductSpace.HarmonicOnNhd.apply_eq_apply_of_bounded
+    (hu : HarmonicOnNhd u univ) (hb : Bornology.IsBounded (range u)) (y z : E) : u y = u z := by
+  -- Pass to the completion of `F`, where the Lipschitz bound is available.
+  set L : F →L[ℝ] UniformSpace.Completion F := UniformSpace.Completion.toComplL
+  have hL (w : F) : ‖L w‖ = ‖w‖ := UniformSpace.Completion.norm_coe w
+  have hLu : HarmonicOnNhd (L ∘ u) univ := hu.comp_CLM L
+  obtain ⟨M, hM⟩ := hb.exists_norm_le
+  set A : ℝ := 2 ^ finrank ℝ E * finrank ℝ E * M * dist y z
+  have hbound : ∀ᶠ s in atTop, ‖u y - u z‖ ≤ A / s := by
+    filter_upwards [eventually_gt_atTop 0] with s hs
+    rw [← hL, map_sub]
+    exact (hLu.mono (subset_univ _)).norm_sub_le_of_norm_le (hLu.mono (subset_univ _))
+      (fun w _ ↦ (hL (u w)).trans_le (hM _ (mem_range_self w))) hs
+  have h0 : ‖u y - u z‖ ≤ 0 := ge_of_tendsto (tendsto_id.const_div_atTop A) hbound
+  exact sub_eq_zero.mp (norm_le_zero_iff.mp h0)
+
+omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
+/-- **Liouville's theorem.** A bounded harmonic function on a finite-dimensional real inner
+product space, with values in a real normed space, is equal to a constant. -/
+theorem _root_.InnerProductSpace.HarmonicOnNhd.exists_const_forall_eq_of_bounded
+    (hu : HarmonicOnNhd u univ) (hb : Bornology.IsBounded (range u)) : ∃ c, ∀ x, u x = c :=
+  ⟨u 0, fun x ↦ hu.apply_eq_apply_of_bounded hb x 0⟩
+
+omit [MeasurableSpace E] [BorelSpace E] in
 /-- On `ball x₀ ρ` with `8 ρ ≤ R`, a function harmonic on `ball x₀ R` with `‖u - c‖ ≤ M` on
 `ball x₀ (R / 2)` oscillates by at most `2ⁿ⁺³ n M ρ / R`. -/
 private lemma norm_sub_le_of_mem_ball_of_eight_mul_le {x₀ y z : E} {ρ R M : ℝ} {c : F}
@@ -433,7 +480,6 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sub_setAver
         ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ := by
   set n := finrank ℝ E with hn
   set I := ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ
-  have hI : 0 ≤ I := setIntegral_nonneg measurableSet_ball fun _ _ ↦ by positivity
   rcases hρ.eq_or_lt with rfl | hρ
   · simp only [ball_zero, Measure.restrict_empty, integral_zero_measure]
     positivity
@@ -579,7 +625,6 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E'
         (ρ / R) ^ (finrank ℝ E + 2) * ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ := by
   set n := finrank ℝ E with hn
   set I := ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ
-  have hI : 0 ≤ I := setIntegral_nonneg measurableSet_ball fun _ _ ↦ by positivity
   -- `u` is continuous on `ball x₀ R`, so `u - c'` is square integrable there for every `c'`.
   have hcont : ContinuousOn u (ball x₀ R) := by
     refine (hu.continuousOn.comp e.symm.continuous.continuousOn fun x hx ↦ ?_).congr

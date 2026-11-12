@@ -84,7 +84,7 @@ theorem simple_mul_eq_mul_simple_of_bruhatCell_mul_ne {s s' w : T.WeylGroup} (hs
           rw [hunion]
           exact Set.subset_union_right
       _ ⊆ T.bruhatCell s * (T.bruhatCell w * T.bruhatCell s') :=
-          Set.mul_subset_mul_left (T.subset_bruhatCell_mul_of_mem_simple_right w hs')
+          Set.mul_subset_mul_left (T.subset_bruhatCell_mul_right w s')
       _ = T.bruhatCell (s * w) * T.bruhatCell s' := by rw [← mul_assoc, hw]
       _ ⊆ T.bruhatCell (s * w * s') ∪ T.bruhatCell (s * w) :=
           T.bruhatCell_mul_subset_union_of_mem_simple_right (s * w) hs'

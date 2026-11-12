@@ -410,7 +410,6 @@ theorem UniformlyEllipticOn.exists_frozen_setIntegral_norm_gradient_sub_sq_le {n
             (KG : ℝ) ^ 2 * r ^ ((n : ℝ) + 1)) / lam ^ 2) := by
   set ω := volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
   have hω : 0 ≤ ω := measureReal_nonneg
-  have hlam : 0 < lam := h.pos
   have hB : (⟨ball x₀ r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) ≤ Omega := hball
   obtain ⟨w, -, hw0, hest⟩ := h.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le hx₀ hα
     haK hGK hB subset_rfl hu
