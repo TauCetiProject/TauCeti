@@ -75,11 +75,16 @@ group homomorphisms `φ : G →* H` and compatible morphisms `ξ : Rep.res φ D 
 * `IsQuotientCoveringMap.cohomologyδ_comp_cohomologyIsoGroupCohomology_hom`,
   `IsQuotientCoveringMap.groupCohomology_δ_comp_cohomologyIsoGroupCohomology_inv`: compatibility
   with the coefficient connecting maps, with no projectivity hypothesis.
+* `IsQuotientCoveringMap.cochainComplexEval_associatedCochainComplexMap_f`,
+  `IsQuotientCoveringMap.associatedLocalSystemFiberIso_hom_eval_associatedCochainComplexMap_f`:
+  simplex and sheet-coordinate evaluation of `associatedCochainComplexMap`.
 * `IsQuotientCoveringMap.associatedCochainComplexMap_comp_cochainComplexIsoLinearYonedaObj_hom`,
+  `IsQuotientCoveringMap.linearYonedaObjMap_comp_cochainComplexIsoLinearYonedaObj_inv`,
   `IsQuotientCoveringMap.cohomologyIsoGroupCohomology_hom_naturality_over`: naturality with respect
   to equivariant maps of quotient covers along arbitrary group homomorphisms.
-* `IsQuotientCoveringMap.cohomologyδ_comp_associatedCohomologyMap`: naturality of the geometric
-  connecting map with respect to change of groups on quotient covers.
+* `IsQuotientCoveringMap.associatedCohomologyMap_naturality`,
+  `IsQuotientCoveringMap.cohomologyδ_comp_associatedCohomologyMap`: coefficient naturality and
+  connecting-map compatibility for change of groups on quotient covers.
 
 ## References
 
@@ -117,9 +122,12 @@ private def pullbackTrivializeAt (n : ℕ) (τ : (_root_.TopCat.toSSet.obj E) _�
     ((pullbackTrivialize hG k A).f n c)
   map_add' c d := by
     rw [map_add, map_add]
+    -- Addition on the constant-functor fibre `ModuleCat.of k A` is addition on `A` by definition.
     rfl
   map_smul' r c := by
     rw [map_smul, map_smul]
+    -- Scalar multiplication on the constant-functor fibre `ModuleCat.of k A` is scalar
+    -- multiplication on `A` by definition.
     rfl
 
 /-- Evaluating a pulled-back and trivialized cochain on a simplex `τ` of `E` reads the coordinate
@@ -131,11 +139,11 @@ private lemma pullbackTrivializeAt_apply (n : ℕ)
       (hG.associatedLocalSystemFiberIso k A (initialSheet τ)).hom
         (cochainComplexEval (hG.associatedLocalSystem k A) n
           ((_root_.TopCat.toSSet.map p).app _ τ) c) := by
-  change cochainComplexEval ((constantFunctor E).obj (ModuleCat.of k A)) n τ
-      ((pullbackTrivialize hG k A).f n c) = _
-  simp only [pullbackTrivialize, HomologicalComplex.comp_f, ModuleCat.comp_apply,
-    cochainComplexCoefficientMap_eval.{u, u, u}, associatedLocalSystemPullbackIso_hom_app,
-    cochainComplexPullback_eval.{u, u, u}]
+  simp only [pullbackTrivializeAt, LinearMap.coe_mk, pullbackTrivialize,
+    HomologicalComplex.comp_f, ModuleCat.comp_apply, cochainComplexCoefficientMap_eval.{u, u, u},
+    associatedLocalSystemPullbackIso_hom_app, cochainComplexPullback_eval.{u, u, u}]
+  -- The fibre of `constantFunctor` is `A` and `⟨(initialVertex τ).as, rfl⟩` is `initialSheet τ` by
+  -- definition.
   rfl
 
 /-- Sheet coordinates on equal base simplices transform by `A.ρ g` when the sheet is translated
@@ -182,8 +190,6 @@ private lemma pullbackTrivializeAt_smul_simplex (n : ℕ)
   rw [pullbackTrivializeAt_apply, pullbackTrivializeAt_apply]
   refine fiberIso_hom_eval_smul hG k A ((hG.toSSet_map_app_eq_iff (g • τ) τ).2 ⟨g, rfl⟩)
     (initialSheet (g • τ)) (initialSheet τ) g ?_ c
-  change simplexMap (g • τ) (toTopInitialVertex ⦋n⦌) =
-    g • simplexMap τ (toTopInitialVertex ⦋n⦌)
   simp [toSSetObj_smul_def, simplexMap_app]
 
 /-- The `G`-equivariant cochain `Cₙ(E; k) ⟶ A` associated to a direct cochain `c` of `B`. -/
@@ -228,8 +234,9 @@ private lemma cochainToRepLinearMap_simplexChain (n : ℕ)
         (cochainComplexEval (hG.associatedLocalSystem k A) n
           ((_root_.TopCat.toSSet.map p).app _ τ) c) := by
   have := hG.toContinuousConstSMul
-  change chainsDesc (fun τ ↦ pullbackTrivializeAt hG k A n τ c) (simplexChain τ r) = _
-  rw [chainsDesc_simplexChain, pullbackTrivializeAt_apply]
+  simp only [cochainToRepLinearMap, LinearMap.coe_mk, AddHom.coe_mk, cochainToRepHom,
+    Rep.hom_ofHom, Representation.IntertwiningMap.coe_mk, chainsDesc_simplexChain,
+    pullbackTrivializeAt_apply]
 
 /-- The initial sheet of the chosen lift of a base simplex `σ` lies in the fibre over the initial
 vertex of `σ`. -/
@@ -284,10 +291,8 @@ private lemma repHomToCochain_eval_map_p (n : ℕ)
   let := hG.mulActionFiber (initialVertex σ).as
   have he : chosenLiftSheet hG n σ = g • initialSheet τ := by
     apply Subtype.ext
-    change simplexMap τ₀ (toTopInitialVertex ⦋n⦌) =
-      g • simplexMap τ (toTopInitialVertex ⦋n⦌)
-    rw [← hg, toSSetObj_smul_def, simplexMap_app]
-    rfl
+    rw [hG.coe_mulActionFiber_smul (initialVertex σ).as g (initialSheet τ)]
+    simp [chosenLiftSheet, τ₀, ← hg, toSSetObj_smul_def, simplexMap_app]
   have hu : u.hom (simplexChain τ₀ 1) = A.ρ g (u.hom (simplexChain τ 1)) := by
     rw [← hg, ← singularChainsRepresentation_simplexChain]
     exact LinearMap.congr_fun (u.hom.isIntertwining' g) (simplexChain τ 1)
@@ -332,19 +337,43 @@ def cochainComplexIsoLinearYonedaObj :
     (hG.associatedLocalSystem k A).cochainComplex ≅
       (singularChainsRep k E G).linearYonedaObj k A :=
   haveI := hG.toContinuousConstSMul
+  -- `((singularChainsRep k E G).linearYonedaObj k A).X n` unfolds to
+  -- `(singularChainsRep k E G).X n ⟶ A` (`ChainComplex.linearYonedaObj_X`), and
+  -- `(singularChainsRep k E G).X n` unfolds to `Rep.of (singularChainsRepresentation k E G n)`.
   HomologicalComplex.Hom.isoOfComponents
     (fun n ↦ (cochainLinearEquiv hG k A n).toModuleIso)
     fun i j (h : i + 1 = j) ↦ by
       subst h
       refine ModuleCat.hom_ext <| LinearMap.ext fun c ↦ Rep.hom_ext <|
         Representation.IntertwiningMap.ext <| singularChains_linearMap_ext fun τ ↦ ?_
-      rw [ModuleCat.comp_apply, ModuleCat.comp_apply,
-        TauCeti.ChainComplex.linearYonedaObj_d_apply, singularChainsRep_d]
-      change (cochainToRepLinearMap hG k A i c).hom
-          ((singularChainsRepDifferential k E G i).hom (simplexChain τ 1)) =
-        (cochainToRepLinearMap hG k A (i + 1)
-          (((hG.associatedLocalSystem k A).cochainComplex).d i (i + 1) c)).hom
-          (simplexChain τ 1)
+      let u : (singularChainsRep k E G).X i ⟶ A := cochainLinearEquiv hG k A i c
+      have hleft :
+          ((((cochainLinearEquiv hG k A i).toModuleIso.hom ≫
+              ((singularChainsRep k E G).linearYonedaObj k A).d i (i + 1)) c :
+            (singularChainsRep k E G).X (i + 1) ⟶ A)).hom (simplexChain τ 1) =
+          (cochainToRepLinearMap hG k A i c).hom
+            ((singularChainsRepDifferential k E G i).hom (simplexChain τ 1)) :=
+        (congrArg (fun g : (singularChainsRep k E G).X (i + 1) ⟶ A ↦ g.hom (simplexChain τ 1))
+            ((ModuleCat.comp_apply _ _ c).trans
+              (TauCeti.ChainComplex.linearYonedaObj_d_apply (X := singularChainsRep k E G)
+                i (i + 1) u))).trans <|
+          (DFunLike.congr_fun
+              (Rep.hom_comp _ _ _ ((singularChainsRep k E G).d (i + 1) i) u)
+            (simplexChain τ 1)).trans
+            (congrArg u.hom (DFunLike.congr_fun
+              (congrArg (fun g : (singularChainsRep k E G).X (i + 1) ⟶
+                  (singularChainsRep k E G).X i ↦ g.hom)
+                (singularChainsRep_d k E G i)) (simplexChain τ 1)))
+      have hright :
+          (((((hG.associatedLocalSystem k A).cochainComplex).d i (i + 1) ≫
+              (cochainLinearEquiv hG k A (i + 1)).toModuleIso.hom) c :
+            (singularChainsRep k E G).X (i + 1) ⟶ A)).hom (simplexChain τ 1) =
+          (cochainToRepLinearMap hG k A (i + 1)
+            (((hG.associatedLocalSystem k A).cochainComplex).d i (i + 1) c)).hom
+            (simplexChain τ 1) :=
+        congrArg (fun g : (singularChainsRep k E G).X (i + 1) ⟶ A ↦ g.hom (simplexChain τ 1))
+          (ModuleCat.comp_apply _ _ c)
+      refine hleft.trans (Eq.trans ?_ hright.symm)
       have hd_right :
           pullbackTrivializeAt hG k A (i + 1) τ
               (((hG.associatedLocalSystem k A).cochainComplex).d i (i + 1) c) =
@@ -359,16 +388,19 @@ def cochainComplexIsoLinearYonedaObj :
         cochainToRepLinearMap_simplexChain, one_smul, ← pullbackTrivializeAt_apply, hd_right]
       refine Finset.sum_congr rfl fun m _ ↦ ?_
       rw [map_zsmul, cochainToRepLinearMap_simplexChain, one_smul, ← pullbackTrivializeAt_apply]
+      -- `(-1 : ℤ) ^ m • ·` on `A` and on the constant fibre `ModuleCat.of k A` agree by definition.
       rfl
 
 /-- The forward cochain comparison evaluates on `simplexChain τ r` by reading the coordinate of
 `c (p ∘ τ)` in the initial sheet of `τ` and scaling by `r`. -/
+-- Match before `singularChainsRep_X` rewrites the representation carrier in the morphism type.
+@[simp↓]
 theorem cochainComplexIsoLinearYonedaObj_hom_f_simplexChain (n : ℕ)
     (c : (hG.associatedLocalSystem k A).cochainComplex.X n)
     (τ : (_root_.TopCat.toSSet.obj E) _⦋n⦌) (r : k) :
     haveI := hG.toContinuousConstSMul
     (((hG.cochainComplexIsoLinearYonedaObj k A).hom.f n c) :
-        Rep.of (singularChainsRepresentation k E G n) ⟶ A).hom (simplexChain τ r) =
+        (singularChainsRep k E G).X n ⟶ A).hom (simplexChain τ r) =
       r • (hG.associatedLocalSystemFiberIso k A (initialSheet τ)).hom
         (cochainComplexEval (hG.associatedLocalSystem k A) n
           ((_root_.TopCat.toSSet.map p).app _ τ) c) :=
@@ -376,8 +408,10 @@ theorem cochainComplexIsoLinearYonedaObj_hom_f_simplexChain (n : ℕ)
 
 /-- Evaluating the inverse cochain comparison on the image `p ∘ τ` of a simplex `τ` of `E` inserts
 the value of the equivariant cochain on `τ` into the initial sheet of `τ`. -/
+-- Match before `singularChainsRep_X` rewrites the representation carrier in the morphism type.
+@[simp↓]
 theorem cochainComplexEval_cochainComplexIsoLinearYonedaObj_inv_f (n : ℕ)
-    (u : haveI := hG.toContinuousConstSMul; Rep.of (singularChainsRepresentation k E G n) ⟶ A)
+    (u : haveI := hG.toContinuousConstSMul; (singularChainsRep k E G).X n ⟶ A)
     (τ : (_root_.TopCat.toSSet.obj E) _⦋n⦌) :
     haveI := hG.toContinuousConstSMul
     cochainComplexEval (hG.associatedLocalSystem k A) n ((_root_.TopCat.toSSet.map p).app _ τ)
@@ -409,7 +443,7 @@ theorem cochainComplexIsoLinearYonedaObj_hom_naturality (f : A ⟶ A') :
   have hleft :
       (((cochainComplexCoefficientMap (hG.associatedLocalSystemMap k f) ≫
           (hG.cochainComplexIsoLinearYonedaObj k A').hom).f n c) :
-        Rep.of (singularChainsRepresentation k E G n) ⟶ A').hom (simplexChain τ 1) =
+        (singularChainsRep k E G).X n ⟶ A').hom (simplexChain τ 1) =
       (hG.associatedLocalSystemFiberIso k A' (initialSheet τ)).hom
         (((hG.associatedLocalSystemMap k f).app _)
           (cochainComplexEval (hG.associatedLocalSystem k A) n
@@ -417,21 +451,24 @@ theorem cochainComplexIsoLinearYonedaObj_hom_naturality (f : A ⟶ A') :
     rw [HomologicalComplex.comp_f, ModuleCat.comp_apply,
       cochainComplexIsoLinearYonedaObj_hom_f_simplexChain, one_smul,
       cochainComplexCoefficientMap_eval.{u, u, u}]
+  -- `(singularChainsRep k E G).linearYonedaObjMap k f` acts by postcomposition with `f` on
+  -- `((singularChainsRep k E G).linearYonedaObj k A).X n`, which unfolds to morphisms into `A`.
+  let u : (singularChainsRep k E G).X n ⟶ A :=
+    (hG.cochainComplexIsoLinearYonedaObj k A).hom.f n c
   have hright :
       ((((hG.cochainComplexIsoLinearYonedaObj k A).hom ≫
           (singularChainsRep k E G).linearYonedaObjMap k f).f n c) :
-        Rep.of (singularChainsRepresentation k E G n) ⟶ A').hom (simplexChain τ 1) =
+        (singularChainsRep k E G).X n ⟶ A').hom (simplexChain τ 1) =
       f.hom ((hG.associatedLocalSystemFiberIso k A (initialSheet τ)).hom
         (cochainComplexEval (hG.associatedLocalSystem k A) n
-          ((_root_.TopCat.toSSet.map p).app _ τ) c)) := by
-    -- `(singularChainsRep k E G).linearYonedaObjMap k f` acts by postcomposition with `f` on
-    -- `((singularChainsRep k E G).linearYonedaObj k A).X n`, which unfolds to morphisms into `A`.
-    refine (congrArg (fun u : (singularChainsRep k E G).X n ⟶ A' ↦ u.hom (simplexChain τ 1))
-      (((singularChainsRep k E G).linearYonedaObjMap_f_hom_apply k f n)
-        ((hG.cochainComplexIsoLinearYonedaObj k A).hom.f n c))).trans ?_
-    change f.hom ((((hG.cochainComplexIsoLinearYonedaObj k A).hom.f n c) :
-      Rep.of (singularChainsRepresentation k E G n) ⟶ A).hom (simplexChain τ 1)) = _
-    rw [cochainComplexIsoLinearYonedaObj_hom_f_simplexChain, one_smul]
+          ((_root_.TopCat.toSSet.map p).app _ τ) c)) :=
+    (congrArg (fun g : (singularChainsRep k E G).X n ⟶ A' ↦ g.hom (simplexChain τ 1))
+        ((ModuleCat.comp_apply _ _ c).trans
+          (((singularChainsRep k E G).linearYonedaObjMap_f_hom_apply k f n) u))).trans <|
+      (DFunLike.congr_fun (Rep.hom_comp _ _ _ u f) (simplexChain τ 1)).trans
+        (congrArg f.hom
+          ((hG.cochainComplexIsoLinearYonedaObj_hom_f_simplexChain k A n c τ 1).trans
+            (one_smul k _)))
   exact hleft.trans (hnat.trans hright.symm)
 
 /-- The inverse cochain comparison is natural in the representation. -/
@@ -575,34 +612,6 @@ variable {F C : _root_.TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulActi
   (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
   (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
 
-/-- In sheet coordinates at `e` over `x` and `e'` over `b x` with `f e = e'`, the morphism
-`(associatedLocalSystemBaseChangeIso D).inv ≫ associatedLocalSystemMap ξ` acts as the underlying
-linear map of `ξ : Rep.res φ D ⟶ A`. -/
-private lemma baseChangeIso_inv_comp_map_fiberIso_hom
-    {D : Rep.{u} k H} {A : Rep.{u} k G} (ξ : Rep.res φ D ⟶ A)
-    {x : FundamentalGroupoid B} (e : p ⁻¹' {x.as})
-    (e' : q ⁻¹' {((FundamentalGroupoid.map b.hom).obj x).as}) (he : f e = e') :
-    ((hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D).inv.app x ≫
-        (hG.associatedLocalSystemMap k ξ).app x) ≫
-        (hG.associatedLocalSystemFiberIso k A e).hom =
-      (hH.associatedLocalSystemFiberIso k D e').hom ≫
-        ModuleCat.ofHom ξ.hom.toLinearMap := by
-  have hbase :
-      (hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D).inv.app x ≫
-          (hG.associatedLocalSystemFiberIso k (Rep.res φ D) e).hom =
-        (hH.associatedLocalSystemFiberIso k D e').hom := by
-    apply (cancel_epi ((hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D).hom.app x)).1
-    have h1 := (hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D).hom_inv_id_app x
-    have h2 := (congrArg (fun t ↦ t.app x ≫ (hH.associatedLocalSystemFiberIso k D e').hom)
-        (hG.associatedLocalSystemBaseChangeIso_hom k hH f hf b hb D)).trans <|
-      (hG.associatedLocalSystemMapOver_app_comp_fiberIso_hom k hH f hf b hb
-        (𝟙 (Rep.res φ D)) e e' he).trans (Category.comp_id _)
-    exact (Category.assoc _ _ _).symm.trans
-      ((congrArg (· ≫ _) h1).trans ((Category.id_comp _).trans h2.symm))
-  rw [Category.assoc, hG.associatedLocalSystemFiberIso_hom_naturality k ξ e, ← Category.assoc,
-    hbase]
-  rfl
-
 /-- The contravariant cochain map `C•(C; L_D) ⟶ C•(B; L_A)` induced by an equivariant map of
 quotient covers along `φ : G →* H` over `b : B ⟶ C` and a compatible coefficient morphism
 `ξ : Rep.res φ D ⟶ A`: pull cochains back along `b`, identify `b^* L_D` with `L_{Res(φ)(D)}`, and
@@ -626,6 +635,97 @@ theorem associatedCochainComplexMap_def {D : Rep.{u} k H} {A : Rep.{u} k G}
             hG.associatedLocalSystemMap k ξ) :=
   (rfl)
 
+/-- Evaluating `associatedCochainComplexMap` on a simplex `σ` of `B` pulls `c` back along `b`,
+applies `(associatedLocalSystemBaseChangeIso D).inv`, and applies `associatedLocalSystemMap ξ`
+at the initial vertex of `σ`. -/
+@[simp]
+theorem cochainComplexEval_associatedCochainComplexMap_f
+    {D : Rep.{u} k H} {A : Rep.{u} k G} (ξ : Rep.res φ D ⟶ A) (n : ℕ)
+    (c : (hH.associatedLocalSystem k D).cochainComplex.X n)
+    (σ : (_root_.TopCat.toSSet.obj B) _⦋n⦌) :
+    cochainComplexEval (hG.associatedLocalSystem k A) n σ
+        ((hG.associatedCochainComplexMap k hH f hf b hb ξ).f n c) =
+      ((hG.associatedLocalSystemMap k ξ).app (initialVertex σ))
+        (((hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D).inv.app (initialVertex σ))
+          (cochainComplexEval (hH.associatedLocalSystem k D) n
+            ((_root_.TopCat.toSSet.map b).app _ σ) c)) := by
+  rw [associatedCochainComplexMap_def, cochainComplexCoefficientMap_comp, ← Category.assoc,
+    HomologicalComplex.comp_f, ModuleCat.comp_apply, cochainComplexCoefficientMap_eval.{u, u, u},
+    HomologicalComplex.comp_f, ModuleCat.comp_apply, cochainComplexCoefficientMap_eval.{u, u, u},
+    cochainComplexPullback_eval.{u, u, u}]
+
+/-- In sheet coordinates at `e` over the initial vertex of `σ` and `e'` over the initial vertex of
+`b ∘ σ` with `f e = e'`, `associatedCochainComplexMap` evaluates `c` on `b ∘ σ` in sheet `e'` and
+applies `ξ`. -/
+theorem associatedLocalSystemFiberIso_hom_eval_associatedCochainComplexMap_f
+    {D : Rep.{u} k H} {A : Rep.{u} k G} (ξ : Rep.res φ D ⟶ A) (n : ℕ)
+    (c : (hH.associatedLocalSystem k D).cochainComplex.X n)
+    (σ : (_root_.TopCat.toSSet.obj B) _⦋n⦌)
+    (e : p ⁻¹' {(initialVertex σ).as})
+    (e' : q ⁻¹' {(initialVertex ((_root_.TopCat.toSSet.map b).app _ σ)).as})
+    (he : f e = e') :
+    (hG.associatedLocalSystemFiberIso k A e).hom
+        (cochainComplexEval (hG.associatedLocalSystem k A) n σ
+          ((hG.associatedCochainComplexMap k hH f hf b hb ξ).f n c)) =
+      ξ.hom ((hH.associatedLocalSystemFiberIso k D e').hom
+        (cochainComplexEval (hH.associatedLocalSystem k D) n
+          ((_root_.TopCat.toSSet.map b).app _ σ) c)) := by
+  -- The pulled-back fibre over `initialVertex σ` and the fibre over `initialVertex (b ∘ σ)` agree
+  -- by definition of `pullback`, so the sheet-coordinate identity is instantiated on `e''` and `v`.
+  let e'' : q ⁻¹' {((FundamentalGroupoid.map b.hom).obj (initialVertex σ)).as} := e'
+  let v : ((LocalCoefficientSystem.pullback b.hom).obj (hH.associatedLocalSystem k D)).obj
+      (initialVertex σ) :=
+    cochainComplexEval (hH.associatedLocalSystem k D) n
+      ((_root_.TopCat.toSSet.map b).app _ σ) c
+  have hcoord := ConcreteCategory.congr_hom
+    (hG.associatedLocalSystemBaseChangeIso_inv_comp_map_app_comp_fiberIso_hom k hH f hf b hb ξ
+      e e'' he) v
+  rw [NatTrans.comp_app, ModuleCat.comp_apply, ModuleCat.comp_apply] at hcoord
+  rw [cochainComplexEval_associatedCochainComplexMap_f]
+  exact hcoord.trans
+    ((ModuleCat.comp_apply (hH.associatedLocalSystemFiberIso k D e').hom
+        (ModuleCat.ofHom ξ.hom.toLinearMap) _).trans
+      (ModuleCat.ofHom_apply ξ.hom.toLinearMap _))
+
+/-- Evaluating `associatedCochainComplexMap` on the projection `p ∘ τ` of a simplex `τ` of `E` in
+`initialSheet τ` reads the coordinate of `c` on `q ∘ f ∘ τ` in `initialSheet (f ∘ τ)` and applies
+`ξ`. -/
+private lemma fiberIso_hom_eval_associatedCochainComplexMap_map_p
+    {D : Rep.{u} k H} {A : Rep.{u} k G} (ξ : Rep.res φ D ⟶ A) (n : ℕ)
+    (c : (hH.associatedLocalSystem k D).cochainComplex.X n)
+    (τ : (_root_.TopCat.toSSet.obj E) _⦋n⦌) :
+    (hG.associatedLocalSystemFiberIso k A (initialSheet τ)).hom
+        (cochainComplexEval (hG.associatedLocalSystem k A) n
+          ((_root_.TopCat.toSSet.map p).app _ τ)
+          ((hG.associatedCochainComplexMap k hH f hf b hb ξ).f n c)) =
+      ξ.hom ((hH.associatedLocalSystemFiberIso k D
+          (initialSheet ((_root_.TopCat.toSSet.map f).app _ τ))).hom
+        (cochainComplexEval (hH.associatedLocalSystem k D) n
+          ((_root_.TopCat.toSSet.map q).app _
+            ((_root_.TopCat.toSSet.map f).app _ τ)) c)) := by
+  let σB := (_root_.TopCat.toSSet.map p).app (Opposite.op ⦋n⦌) τ
+  let τF := (_root_.TopCat.toSSet.map f).app (Opposite.op ⦋n⦌) τ
+  have hσC : (_root_.TopCat.toSSet.map b).app (Opposite.op ⦋n⦌) σB =
+      (_root_.TopCat.toSSet.map q).app (Opposite.op ⦋n⦌) τF := by
+    simpa only [σB, τF, Functor.map_comp, NatTrans.comp_app, types_comp_apply] using
+      congrArg (fun m : E ⟶ C ↦ (_root_.TopCat.toSSet.map m).app (Opposite.op ⦋n⦌) τ) hb
+  let e' : q ⁻¹' {(initialVertex ((_root_.TopCat.toSSet.map b).app _ σB)).as} :=
+    (CommSq.mk hb.symm).fiberMap (initialVertex σB).as (initialSheet τ)
+  have hcongr :
+      (hH.associatedLocalSystemFiberIso k D e').hom
+          (cochainComplexEval (hH.associatedLocalSystem k D) n
+            ((_root_.TopCat.toSSet.map b).app _ σB) c) =
+        (hH.associatedLocalSystemFiberIso k D (initialSheet τF)).hom
+          (cochainComplexEval (hH.associatedLocalSystem k D) n
+            ((_root_.TopCat.toSSet.map q).app _ τF) c) :=
+    fiberIso_hom_eval_congr hH k D hσC e' (initialSheet τF)
+      ((CommSq.fiberMap_apply_coe (CommSq.mk hb.symm) (initialVertex σB).as (initialSheet τ)).trans
+        (by simp [τF, simplexMap_app])) c
+  exact (hG.associatedLocalSystemFiberIso_hom_eval_associatedCochainComplexMap_f k hH f hf b hb ξ
+    n c σB (initialSheet τ) e'
+    (CommSq.fiberMap_apply_coe (CommSq.mk hb.symm) (initialVertex σB).as (initialSheet τ)).symm
+    ).trans (congrArg ξ.hom hcongr)
+
 /-- `associatedCochainComplexMap` is natural with respect to compatible morphisms of coefficient
 representations: if `ξ₁ ≫ α = (Rep.resFunctor φ).map β ≫ ξ₂`, then the induced cochain maps form a
 commutative square. -/
@@ -639,21 +739,14 @@ theorem associatedCochainComplexMap_naturality
         hG.associatedCochainComplexMap k hH f hf b hb ξ₂ =
       hG.associatedCochainComplexMap k hH f hf b hb ξ₁ ≫
         cochainComplexCoefficientMap (hG.associatedLocalSystemMap k α) := by
-  have hbase :
-      (LocalCoefficientSystem.pullback b.hom).map (hH.associatedLocalSystemMap k β) ≫
-          (hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D₂).inv =
-        (hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D₁).inv ≫
-          hG.associatedLocalSystemMap k ((Rep.resFunctor φ).map β) := by
-    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
-    exact (hG.associatedLocalSystemBaseChangeIso_hom_naturality k hH f hf b hb β).symm
   rw [associatedCochainComplexMap_def, associatedCochainComplexMap_def,
     cochainComplexPullback_coefficient_naturality_assoc]
   simp only [Category.assoc]
   congr 1
   rw [← cochainComplexCoefficientMap_comp, ← cochainComplexCoefficientMap_comp]
   congr 1
-  rw [reassoc_of% hbase, ← associatedLocalSystemMap_comp, ← hcomm, associatedLocalSystemMap_comp,
-    Category.assoc]
+  rw [hG.associatedLocalSystemBaseChangeIso_inv_naturality_assoc k hH f hf b hb β,
+    ← associatedLocalSystemMap_comp, ← hcomm, associatedLocalSystemMap_comp, Category.assoc]
 
 /-- **The direct cochain comparison is natural for equivariant maps of quotient covers.**
 Pulling direct cochains back along `b : B ⟶ C` and changing local coefficients by
@@ -674,65 +767,61 @@ theorem associatedCochainComplexMap_comp_cochainComplexIsoLinearYonedaObj_hom
   refine HomologicalComplex.hom_ext _ _ fun n ↦ ModuleCat.hom_ext <| LinearMap.ext fun c ↦ ?_
   refine Rep.hom_ext <| Representation.IntertwiningMap.ext <|
     singularChains_linearMap_ext fun τ ↦ ?_
-  let σB := (_root_.TopCat.toSSet.map p).app (Opposite.op ⦋n⦌) τ
   let τF := (_root_.TopCat.toSSet.map f).app (Opposite.op ⦋n⦌) τ
-  have hσC : (_root_.TopCat.toSSet.map b).app (Opposite.op ⦋n⦌) σB =
-      (_root_.TopCat.toSSet.map q).app (Opposite.op ⦋n⦌) τF := by
-    simpa only [σB, τF, Functor.map_comp, NatTrans.comp_app, types_comp_apply] using
-      congrArg (fun m : E ⟶ C ↦ (_root_.TopCat.toSSet.map m).app (Opposite.op ⦋n⦌) τ) hb
-  let e' : q ⁻¹' {((FundamentalGroupoid.map b.hom).obj (initialVertex σB)).as} :=
-    ⟨f (initialSheet (p := p) τ).1, by
-      change q (f (simplexMap τ (toTopInitialVertex ⦋n⦌))) =
-        b (p (simplexMap τ (toTopInitialVertex ⦋n⦌)))
-      exact (ConcreteCategory.congr_hom hb.symm (simplexMap τ (toTopInitialVertex ⦋n⦌)))⟩
-  have hcoord := LinearMap.congr_fun
-    (congrArg ModuleCat.Hom.hom
-      (hG.baseChangeIso_inv_comp_map_fiberIso_hom k hH f hf b hb ξ
-        (initialSheet (p := p) τ) e' rfl))
-    (cochainComplexEval (hH.associatedLocalSystem k D) n
-      ((_root_.TopCat.toSSet.map b).app _ σB) c)
-  have hcongr :
-      (hH.associatedLocalSystemFiberIso k D e').hom
-          (cochainComplexEval (hH.associatedLocalSystem k D) n
-            ((_root_.TopCat.toSSet.map b).app _ σB) c) =
-        (hH.associatedLocalSystemFiberIso k D (initialSheet τF)).hom
-          (cochainComplexEval (hH.associatedLocalSystem k D) n
-            ((_root_.TopCat.toSSet.map q).app _ τF) c) :=
-    fiberIso_hom_eval_congr hH k D hσC e' (initialSheet τF)
-      (by
-        change f (simplexMap τ (toTopInitialVertex ⦋n⦌)) =
-          simplexMap ((_root_.TopCat.toSSet.map f).app (Opposite.op ⦋n⦌) τ)
-            (toTopInitialVertex ⦋n⦌)
-        rw [simplexMap_app]
-        rfl) c
+  -- Both routes evaluate `c` on `q ∘ f ∘ τ` in `initialSheet (f ∘ τ)` and apply `ξ`.
   have hleft :
       (((hG.associatedCochainComplexMap k hH f hf b hb ξ ≫
           (hG.cochainComplexIsoLinearYonedaObj k A).hom).f n c) :
-        Rep.of (singularChainsRepresentation k E G n) ⟶ A).hom (simplexChain τ 1) =
+        (singularChainsRep k E G).X n ⟶ A).hom (simplexChain τ 1) =
       ξ.hom ((hH.associatedLocalSystemFiberIso k D (initialSheet τF)).hom
         (cochainComplexEval (hH.associatedLocalSystem k D) n
           ((_root_.TopCat.toSSet.map q).app _ τF) c)) := by
     rw [HomologicalComplex.comp_f, ModuleCat.comp_apply,
       cochainComplexIsoLinearYonedaObj_hom_f_simplexChain, one_smul,
-      associatedCochainComplexMap_def, HomologicalComplex.comp_f, ModuleCat.comp_apply,
-      cochainComplexCoefficientMap_eval.{u, u, u}, cochainComplexPullback_eval.{u, u, u}]
-    exact hcoord.trans (congrArg ξ.hom hcongr)
+      hG.fiberIso_hom_eval_associatedCochainComplexMap_map_p k hH f hf b hb ξ n c τ]
+  -- `φ.linearYonedaObjMap` acts on `((singularChainsRep k F H).linearYonedaObj k D).X n` by
+  -- precomposing with `singularChainsRepResMap`, restricting along `φ`, and postcomposing with `ξ`.
+  let w : (singularChainsRep k F H).X n ⟶ D :=
+    (hH.cochainComplexIsoLinearYonedaObj k D).hom.f n c
+  have hpush := (singularChainsRepResMap_f_hom_apply k f hf n (simplexChain τ 1)).trans
+    (singularChains_map_f_simplexChain f τ 1)
   have hright :
       ((((hH.cochainComplexIsoLinearYonedaObj k D).hom ≫
           φ.linearYonedaObjMap ξ (singularChainsRepResMap k f hf)).f n c) :
-        Rep.of (singularChainsRepresentation k E G n) ⟶ A).hom (simplexChain τ 1) =
+        (singularChainsRep k E G).X n ⟶ A).hom (simplexChain τ 1) =
       ξ.hom ((hH.associatedLocalSystemFiberIso k D (initialSheet τF)).hom
         (cochainComplexEval (hH.associatedLocalSystem k D) n
-          ((_root_.TopCat.toSSet.map q).app _ τF) c)) := by
-    refine (congrArg (fun u : (singularChainsRep k E G).X n ⟶ A ↦ u.hom (simplexChain τ 1))
-      (φ.linearYonedaObjMap_f_apply ξ (singularChainsRepResMap k f hf) n
-        ((hH.cochainComplexIsoLinearYonedaObj k D).hom.f n c))).trans ?_
-    change ξ.hom ((((hH.cochainComplexIsoLinearYonedaObj k D).hom.f n c) :
-      Rep.of (singularChainsRepresentation k F H n) ⟶ D).hom
-        (((singularChainsRepResMap k f hf).f n).hom (simplexChain τ 1))) = _
-    rw [singularChainsRepResMap_f_hom_apply, singularChains_map_f_simplexChain,
-      cochainComplexIsoLinearYonedaObj_hom_f_simplexChain, one_smul]
+          ((_root_.TopCat.toSSet.map q).app _ τF) c)) :=
+    (congrArg (fun g : (singularChainsRep k E G).X n ⟶ A ↦ g.hom (simplexChain τ 1))
+        ((ModuleCat.comp_apply _ _ c).trans
+          (φ.linearYonedaObjMap_f_apply ξ (singularChainsRepResMap k f hf) n w))).trans <|
+      (DFunLike.congr_fun
+          (Rep.hom_comp _ _ _ ((singularChainsRepResMap k f hf).f n) (Rep.resMap φ w ≫ ξ))
+        (simplexChain τ 1)).trans <|
+      (DFunLike.congr_fun (Rep.hom_comp _ _ _ (Rep.resMap φ w) ξ)
+        (((singularChainsRepResMap k f hf).f n).hom (simplexChain τ 1))).trans <|
+      (congrArg ξ.hom (Rep.resMap_hom_apply φ w _)).trans <|
+      (congrArg (fun z ↦ ξ.hom (w.hom z)) hpush).trans
+        (congrArg ξ.hom
+          ((hH.cochainComplexIsoLinearYonedaObj_hom_f_simplexChain k D n c τF 1).trans
+            (one_smul k _)))
   exact hleft.trans hright.symm
+
+/-- Inverse form of `associatedCochainComplexMap_comp_cochainComplexIsoLinearYonedaObj_hom`. -/
+@[reassoc]
+theorem linearYonedaObjMap_comp_cochainComplexIsoLinearYonedaObj_inv
+    {D : Rep.{u} k H} {A : Rep.{u} k G} (ξ : Rep.res φ D ⟶ A) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hH.toContinuousConstSMul
+    φ.linearYonedaObjMap ξ (singularChainsRepResMap k f hf) ≫
+        (hG.cochainComplexIsoLinearYonedaObj k A).inv =
+      (hH.cochainComplexIsoLinearYonedaObj k D).inv ≫
+        hG.associatedCochainComplexMap k hH f hf b hb ξ := by
+  have := hG.toContinuousConstSMul
+  have := hH.toContinuousConstSMul
+  rw [Iso.comp_inv_eq, Category.assoc,
+    hG.associatedCochainComplexMap_comp_cochainComplexIsoLinearYonedaObj_hom k hH f hf b hb ξ,
+    Iso.inv_hom_id_assoc]
 
 /-- The contravariant map `Hⁿ(C; L_D) ⟶ Hⁿ(B; L_A)` on direct local-coefficient cohomology induced
 by an equivariant map of quotient covers along `φ : G →* H` over `b : B ⟶ C` and a compatible
@@ -763,6 +852,24 @@ theorem associatedCohomologyMap_eq_homologyMap {D : Rep.{u} k H} {A : Rep.{u} k 
       HomologicalComplex.homologyMap (hG.associatedCochainComplexMap k hH f hf b hb ξ) n := by
   rw [associatedCohomologyMap_def, cohomologyPullback_eq, cohomologyCoefficientMap_eq,
     ← HomologicalComplex.homologyMap_comp, associatedCochainComplexMap_def]
+
+/-- `associatedCohomologyMap` is natural with respect to compatible morphisms of coefficient
+representations: if `ξ₁ ≫ α = (Rep.resFunctor φ).map β ≫ ξ₂`, then the induced cohomology maps form
+a commutative square. -/
+@[reassoc]
+theorem associatedCohomologyMap_naturality
+    {D₁ D₂ : Rep.{u} k H} {A₁ A₂ : Rep.{u} k G}
+    (β : D₁ ⟶ D₂) (α : A₁ ⟶ A₂)
+    (ξ₁ : Rep.res φ D₁ ⟶ A₁) (ξ₂ : Rep.res φ D₂ ⟶ A₂)
+    (hcomm : ξ₁ ≫ α = (Rep.resFunctor φ).map β ≫ ξ₂) (n : ℕ) :
+    cohomologyCoefficientMap (hH.associatedLocalSystemMap k β) n ≫
+        hG.associatedCohomologyMap k hH f hf b hb ξ₂ n =
+      hG.associatedCohomologyMap k hH f hf b hb ξ₁ n ≫
+        cohomologyCoefficientMap (hG.associatedLocalSystemMap k α) n := by
+  rw [cohomologyCoefficientMap_eq, cohomologyCoefficientMap_eq,
+    associatedCohomologyMap_eq_homologyMap, associatedCohomologyMap_eq_homologyMap,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
+    hG.associatedCochainComplexMap_naturality k hH f hf b hb β α ξ₁ ξ₂ hcomm]
 
 /-- **The geometric connecting map of local-coefficient cohomology commutes with change of groups
 on quotient covers**, without assuming contractibility of the total spaces. -/
@@ -853,8 +960,9 @@ theorem cohomologyIsoGroupCohomology_hom_pullback
     Category.assoc] at h
   exact h
 
-/-- Inverse pullback compatibility: `cohomologyPullback b` on the inverse comparison carries
-`groupCohomology.map φ (𝟙 (Rep.res φ D)) n` to `associatedLocalSystemBaseChangeIso`. -/
+/-- Inverse form of `cohomologyIsoGroupCohomology_hom_pullback`: the inverse comparisons carry
+`groupCohomology.map φ (𝟙 (Rep.res φ D)) n` to `cohomologyPullback b`, up to
+`associatedLocalSystemBaseChangeIso`. -/
 @[reassoc]
 theorem cohomologyIsoGroupCohomology_inv_pullback
     [ContractibleSpace E] [ContractibleSpace F] (D : Rep.{u} k H) (n : ℕ) :

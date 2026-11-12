@@ -149,9 +149,11 @@ long exact sequences.
   `TauCeti.groupHomology_δ_comp_classifyingSpaceTwistedHomologyIsoGroupHomology_inv`: the
   isomorphism carries the coefficient connecting map of homology with local coefficients to the
   connecting map of group homology.
-* `TauCeti.classifyingSpaceCohomologyIsoGroupCohomology_hom_naturality`,
+* `TauCeti.classifyingSpaceCohomologyIsoGroupCohomology_def`,
+  `TauCeti.classifyingSpaceCohomologyIsoGroupCohomology_hom_naturality`,
   `TauCeti.classifyingSpaceCohomologyIsoGroupCohomology_inv_naturality`: the direct cohomology
-  isomorphism is covariantly natural in the representation.
+  isomorphism specializes `IsQuotientCoveringMap.cohomologyIsoGroupCohomology` and is covariantly
+  natural in the representation.
 * `TauCeti.cohomologyδ_comp_classifyingSpaceCohomologyIsoGroupCohomology_hom`,
   `TauCeti.groupCohomology_δ_comp_classifyingSpaceCohomologyIsoGroupCohomology_inv`: for any short
   exact sequence of representations, the direct cohomology isomorphism carries `cohomologyδ` to
@@ -161,11 +163,12 @@ long exact sequences.
   `MonoidHom.classifyingSpaceCohomologyIsoGroupCohomology_hom_pullback`,
   `MonoidHom.classifyingSpaceCohomologyIsoGroupCohomology_inv_pullback`: naturality of the direct
   cohomology isomorphism in the group and compatible coefficients.
-* `MonoidHom.cohomologyδ_comp_classifyingSpaceCohomologyMap`,
+* `MonoidHom.classifyingSpaceCohomologyMap_naturality`,
+  `MonoidHom.cohomologyδ_comp_classifyingSpaceCohomologyMap`,
   `MonoidHom.classifyingSpaceCohomologyMap_id`,
   `MonoidHom.classifyingSpaceCohomologyMap_comp`,
-  `MonoidHom.classifyingSpaceCohomologyMap_id_hom`: connecting-map compatibility and functoriality
-  of `MonoidHom.classifyingSpaceCohomologyMap`.
+  `MonoidHom.classifyingSpaceCohomologyMap_id_hom`: coefficient naturality, connecting-map
+  compatibility, and functoriality of `MonoidHom.classifyingSpaceCohomologyMap`.
 * `TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_left`,
   `TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_right`: the
   dual-coefficient cohomological isomorphism is natural in the representation and in the module of
@@ -231,6 +234,16 @@ def classifyingSpaceCohomologyIsoGroupCohomology (n : ℕ) :
   IsQuotientCoveringMap.cohomologyIsoGroupCohomology (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k A n
+
+/-- `classifyingSpaceCohomologyIsoGroupCohomology` specializes
+`IsQuotientCoveringMap.cohomologyIsoGroupCohomology` to
+`isQuotientCoveringMap_classifyingSpaceProj`. -/
+theorem classifyingSpaceCohomologyIsoGroupCohomology_def (n : ℕ) :
+    classifyingSpaceCohomologyIsoGroupCohomology k A n =
+      IsQuotientCoveringMap.cohomologyIsoGroupCohomology (E := TopCat.of (universalGSpace G))
+        (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+        (isQuotientCoveringMap_classifyingSpaceProj G) k A n :=
+  (rfl)
 
 variable (N : Type u) [AddCommGroup N] [Module k N]
 
@@ -810,6 +823,33 @@ theorem classifyingSpaceCohomologyIsoGroupCohomology_inv_pullback (D : Rep.{u} k
     (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
     (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
     (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) D n
+
+/-- `classifyingSpaceCohomologyMap` is natural with respect to compatible morphisms of
+coefficient representations: if `ξ₁ ≫ α = (Rep.resFunctor φ).map β ≫ ξ₂`, then the induced maps on
+direct local-coefficient cohomology commute with `cohomologyCoefficientMap`. -/
+@[reassoc]
+theorem classifyingSpaceCohomologyMap_naturality
+    {D₁ D₂ : Rep.{u} k H} {A₁ A₂ : Rep.{u} k G}
+    (β : D₁ ⟶ D₂) (α : A₁ ⟶ A₂)
+    (ξ₁ : Rep.res φ D₁ ⟶ A₁) (ξ₂ : Rep.res φ D₂ ⟶ A₂)
+    (hcomm : ξ₁ ≫ α = (Rep.resFunctor φ).map β ≫ ξ₂) (n : ℕ) :
+    cohomologyCoefficientMap (classifyingSpaceLocalSystemMap β) n ≫
+        φ.classifyingSpaceCohomologyMap k ξ₂ n =
+      φ.classifyingSpaceCohomologyMap k ξ₁ n ≫
+        cohomologyCoefficientMap (classifyingSpaceLocalSystemMap α) n := by
+  have hnat := IsQuotientCoveringMap.associatedCohomologyMap_naturality
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k
+    (F := TopCat.of (universalGSpace H))
+    (q := TopCat.ofHom ⟨classifyingSpaceProj H, continuous_classifyingSpaceProj H⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
+    (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
+    (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) β α ξ₁ ξ₂ hcomm n
+  rw [IsQuotientCoveringMap.associatedCohomologyMap_def,
+    IsQuotientCoveringMap.associatedCohomologyMap_def] at hnat
+  rw [classifyingSpaceCohomologyMap_def, classifyingSpaceCohomologyMap_def]
+  exact hnat
 
 /-- **The geometric connecting map of direct local-coefficient cohomology on classifying spaces
 commutes with change of groups.** -/
