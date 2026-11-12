@@ -56,10 +56,6 @@ theorem sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut (S : Fi
     ∑ D ∈ S.filter (fun D => ¬(f D).HasDisjointSides), w D =
       ∑ D ∈ S.filter (fun D => ¬(f D).HasDisjointSides ∧ ∀ E ∈ S, ¬(f D).IsRecut (f E)),
         w D := by
-  by_cases hzx : z = x
-  · -- On the diagonal no recut relation holds, so both filters agree.
-    refine Finset.sum_congr (Finset.filter_congr fun D _ => ?_) fun _ _ => rfl
-    exact ⟨fun h => ⟨h, fun E _ hE => hE.target_ne_source hzx⟩, fun h => h.1⟩
   set T := S.filter (fun D => ¬(f D).HasDisjointSides)
   set p := fun D => ∃ E ∈ S, (f D).IsRecut (f E)
   -- A recut partner of a member of `T` lies in `T`, has the member as its own partner, carries the
@@ -77,8 +73,8 @@ theorem sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut (S : Fi
   have unique : ∀ D ∈ T, ∀ E ∈ S, ∀ E' ∈ S, (f D).IsRecut (f E) → (f D).IsRecut (f E') →
       E = E' := by
     intro D hD E hE E' hE' h h'
-    obtain ⟨hDS, hdisj⟩ := Finset.mem_filter.mp hD
-    have hone := ((f D).hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left hdisj
+    obtain ⟨hDS, -⟩ := Finset.mem_filter.mp hD
+    have hone := hasOneCommonSide_of_isRecut h
     obtain ⟨hfirst, hsecond⟩ := hempty D hDS
     exact hinj hE hE' (((f D).existsUnique_isRecut hone hfirst hsecond).unique h h')
   have hpartner : ∀ D ∈ T.filter p, ∃ E ∈ S, (f D).IsRecut (f E) :=
