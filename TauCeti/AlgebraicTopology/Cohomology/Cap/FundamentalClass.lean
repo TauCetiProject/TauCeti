@@ -64,13 +64,6 @@ variable {M E : Type} [TopologicalSpace M] [T2Space M]
   {n : ℕ} (o : HomologicalOrientation M E n) (hn : finrank ℝ E = n)
   [CompactSpace M] [ConnectedSpace M]
 
-include o hn in
-/-- On a compact connected oriented manifold, top rational homology is one-dimensional. -/
-private theorem finrank_singularHomology_top :
-    finrank ℚ (((singularHomologyFunctor (ModuleCat.{0} ℚ) n).obj
-      (𝟙_ (ModuleCat.{0} ℚ))).obj (TopCat.of M)) = 1 :=
-  (o.rationalFundamentalClassEquiv hn).finrank_eq.symm.trans (finrank_self ℚ)
-
 /-- **Closed rational Poincaré duality in degree zero**: on a compact connected oriented
 `n`-manifold, capping with the rational fundamental class, `α ↦ [M] ⌢ α`, is bijective from
 `H⁰(M; ℚ)` to `Hₙ(M; ℚ)`. The unit class caps `[M]` to `[M]`. -/

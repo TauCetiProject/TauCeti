@@ -64,6 +64,8 @@ homology isomorphism directly, without requiring Poincaré duality.
 
 * `TauCeti.HomologicalOrientation.rationalFundamentalClassEquiv`: the normalized equivalence
   `ℚ ≃ₗ[ℚ] Hₙ(M; ℚ)` on a compact connected oriented manifold.
+* `TauCeti.HomologicalOrientation.finrank_singularHomology_top`: on a compact connected oriented
+  manifold, `Hₙ(M; ℚ)` is one-dimensional.
 * `TauCeti.HomologicalOrientation.fundamentalClassOn_eq_sum_localOrientationAlong`: the
   fundamental class along a finite set is the sum of the local orientations at its points.
 * `TauCeti.HomologicalOrientation.eq_fundamentalClass`: the fundamental class is the only class
@@ -519,6 +521,13 @@ def rationalFundamentalClassEquiv : ℚ ≃ₗ[ℚ]
     (TensorProduct.AlgebraTensorModule.rid ℤ ℚ ℚ).toModuleIso
   let eH := (TopCat.toSSet.obj (TopCat.of M)).homologyExtendScalarsIso (Int.castRingHom ℚ) n
   exact (eUnit.symm ≪≫ F.mapIso (o.fundamentalClassEquiv hn).toModuleIso ≪≫ eH).toLinearEquiv
+
+include o hn in
+/-- On a compact connected oriented manifold, top rational homology is one-dimensional. -/
+theorem finrank_singularHomology_top :
+    finrank ℚ (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℚ) n).obj
+      (ModuleCat.of ℚ ℚ)).obj (TopCat.of M)) = 1 :=
+  (o.rationalFundamentalClassEquiv hn).finrank_eq.symm.trans (finrank_self ℚ)
 
 /-- Reversing orientation negates every value of the normalized rational equivalence. -/
 theorem rationalFundamentalClassEquiv_neg_apply (c : ℚ) :
