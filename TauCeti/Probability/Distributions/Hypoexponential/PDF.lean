@@ -324,7 +324,7 @@ private theorem hypoexponentialPDFReal_ae_eq_erlangExpansion (hr : ∀ i, 0 < r 
 
 /-- A nonempty hypoexponential law has density `hypoexponentialPDF r`. For invalid rates both
 sides vanish. -/
-theorem hypoexponentialMeasure_eq_withDensity [Nonempty ι] :
+theorem hypoexponentialMeasure_eq_withDensity [Nonempty ι] (r : ι → ℝ) :
     hypoexponentialMeasure r = volume.withDensity (hypoexponentialPDF r) := by
   by_cases hr : ∀ i, 0 < r i
   swap
@@ -398,7 +398,7 @@ theorem hasPDF_of_hasLaw_hypoexponentialMeasure [Nonempty ι]
 /-- The Radon--Nikodym derivative of a hypoexponential law is `hypoexponentialPDF r`. For the empty
 family the law is a point mass, singular to Lebesgue measure, and the density vanishes. For
 invalid rates both sides vanish. -/
-theorem rnDeriv_hypoexponentialMeasure :
+theorem rnDeriv_hypoexponentialMeasure (r : ι → ℝ) :
     (hypoexponentialMeasure r).rnDeriv volume =ᵐ[volume] hypoexponentialPDF r := by
   rcases isEmpty_or_nonempty ι with hι | hι
   · have hz : hypoexponentialPDF r = 0 := by
@@ -410,12 +410,14 @@ theorem rnDeriv_hypoexponentialMeasure :
   · rw [hypoexponentialMeasure_eq_withDensity]
     exact Measure.rnDeriv_withDensity volume (measurable_hypoexponentialPDF r)
 
-/-- The density of a variable with a hypoexponential law is `hypoexponentialPDF r`. -/
+/-- The canonical pdf of a variable with a hypoexponential law is the named density
+`hypoexponentialPDF r`. For the empty family the law is a Dirac point mass and both sides vanish;
+this does not assert absolute continuity of that law. -/
 theorem pdf_eq_hypoexponentialPDF_of_hasLaw_hypoexponentialMeasure
     (hX : HasLaw X (hypoexponentialMeasure r) P) :
     pdf X P =ᵐ[volume] hypoexponentialPDF r := by
   rw [pdf_def, hX.map_eq]
-  exact rnDeriv_hypoexponentialMeasure
+  exact rnDeriv_hypoexponentialMeasure r
 
 end Law
 
