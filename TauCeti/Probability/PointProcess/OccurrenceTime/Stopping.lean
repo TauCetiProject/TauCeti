@@ -80,7 +80,7 @@ variable {Ω : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
 /-- For locally finite counting measures, adaptation of the cumulative counts is
 equivalent to the stopping-time property of every ordered occurrence. No probability
 measure, topology on the sample space, or augmentation of the filtration is required. -/
-theorem adapted_cumulative_iff_isStoppingTime_occurrenceTime
+theorem adapted_apply_Iic_iff_isStoppingTime_occurrenceTime
     (hloc : ∀ ω, IsLocallyFiniteMeasure (N ω))
     (hint : ∀ ω, (N ω).IsIntegerValued) :
     Adapted ℱ (fun t ω => N ω (Iic t)) ↔
