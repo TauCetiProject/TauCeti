@@ -31,8 +31,6 @@ coefficients is shown to be weakly differentiable.
 
 ## Main results
 
-* `TauCeti.HasWeakConjWirtingerDerivOn.integral_laplacian_mul_re_eq`: the real part of a
-  distributional solution of `bar∂u = k` solves `Δ (Re u) = 2 (∂ₛ (Re k) + ∂ₜ (Im k))` weakly.
 * `TauCeti.memWkpLoc_one_of_forall_integral_laplacian_smul_eq`: a locally integrable weak solution
   of `Δξ = ∂ₛf + ∂ₜg` with `f, g ∈ Lʳ_loc` lies in `W^{1,r}_loc`.
 
@@ -45,8 +43,9 @@ distributionally for compactly supported `Lʳ` data `h`, and `T h` is locally `L
 regularity of `bar∂` puts `T h`, hence `ξ₀`, in `W^{1,r}_loc`. Since `Δ = 4 ∂ bar∂`, the
 distributional Laplacian of `T h` is `4 ∂ h`
 (`TauCeti.HasWeakConjWirtingerDerivOn.integral_laplacian_smul_eq`), and for real `f, g` one has
-`2 Re ∂(f + I g) = ∂ₛf + ∂ₜg`, so `Δξ₀ = ∂ₛf + ∂ₜg` weakly on `W`. Hence `ξ - ξ₀` is weakly
-harmonic on `W`, so it agrees almost everywhere with a harmonic, in particular smooth, function
+`2 Re ∂(f + I g) = ∂ₛf + ∂ₜg` (`TauCeti.HasWeakConjWirtingerDerivOn.integral_laplacian_mul_re_eq`),
+so `Δξ₀ = ∂ₛf + ∂ₜg` weakly on `W`. Hence `ξ - ξ₀` is weakly harmonic on `W`, so it agrees almost
+everywhere with a harmonic, in particular smooth, function
 (`TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq`). Thus `ξ ∈ W^{1,r}` near every point of
 `Ω`, and local Sobolev membership glues (`TauCeti.memWkpLoc_iff_locally`).
 
@@ -66,56 +65,6 @@ namespace TauCeti
 
 variable {r : ℝ≥0∞} {Ω : Opens ℂ}
 
-/-- The `fderiv` form of `TauCeti.integrable_lineDeriv_smul_of_locallyIntegrableOn`: a first
-derivative of a test function times a locally integrable function is integrable. -/
-private theorem integrable_fderiv_smul {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    {μ : Measure ℂ} (φ : 𝓓(Ω, ℝ)) (v : ℂ) {f : ℂ → V} (hf : LocallyIntegrableOn f Ω μ) :
-    Integrable (fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z v • f z) μ := by
-  simpa only [← TestFunction.lineDerivOp_apply, TestFunction.lineDerivOp_apply_eq_fderiv] using
-    integrable_lineDeriv_smul_of_locallyIntegrableOn hf φ v
-
-/-- Multiplying a first derivative of a test function on `W` by a function equal to `1` on `W`
-does not change it. -/
-private theorem fderiv_mul_eq_of_eqOn_one {W : Opens ℂ} (φ : 𝓓(W, ℝ)) {χ : ℂ → ℝ}
-    (hχ : ∀ z ∈ W, χ z = 1) (z v : ℂ) :
-    fderiv ℝ (φ : ℂ → ℝ) z v * χ z = fderiv ℝ (φ : ℂ → ℝ) z v := by
-  by_cases hz : z ∈ W
-  · rw [hχ z hz, mul_one]
-  · rw [fderiv_of_notMem_tsupport ℝ fun h ↦ hz (φ.tsupport_subset h)]
-    simp
-
-/-- **The real part of a solution of `bar∂u = k` solves a divergence-form Laplace equation.**
-Since `Δ = 4 ∂ bar∂` and `2 Re ∂k = ∂ₛ (Re k) + ∂ₜ (Im k)`, the distributional Laplacian of `Re u`
-is `2 (∂ₛ (Re k) + ∂ₜ (Im k))`:
-`∫ Δφ * Re u = -2 ∫ (∂ₛφ * Re k + ∂ₜφ * Im k)` for every real test function `φ`. -/
-theorem HasWeakConjWirtingerDerivOn.integral_laplacian_mul_re_eq {μ : Measure ℂ} {u k : ℂ → ℂ}
-    (h : HasWeakConjWirtingerDerivOn μ Ω u k) (φ : 𝓓(Ω, ℝ)) :
-    ∫ z, Δ (φ : ℂ → ℝ) z * (u z).re ∂μ =
-      -2 * ∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 * (k z).re +
-        fderiv ℝ (φ : ℂ → ℝ) z I * (k z).im) ∂μ := by
-  have hk := h.locallyIntegrableOn_deriv
-  have hderiv (z v : ℂ) : lineDeriv ℝ (φ : ℂ → ℝ) z v = fderiv ℝ (φ : ℂ → ℝ) z v := by
-    rw [← TestFunction.lineDerivOp_apply, TestFunction.lineDerivOp_apply_eq_fderiv]
-  have e := congrArg re (h.integral_laplacian_smul_eq φ)
-  simp only [hderiv] at e
-  have hre (v : ℂ) : (∫ z, fderiv ℝ (φ : ℂ → ℝ) z v • k z ∂μ).re =
-      ∫ z, fderiv ℝ (φ : ℂ → ℝ) z v * (k z).re ∂μ := by
-    rw [← reCLM_apply, ← reCLM.integral_comp_comm (integrable_fderiv_smul φ v hk)]
-    simp
-  have him (v : ℂ) : (∫ z, fderiv ℝ (φ : ℂ → ℝ) z v • k z ∂μ).im =
-      ∫ z, fderiv ℝ (φ : ℂ → ℝ) z v * (k z).im ∂μ := by
-    rw [← imCLM_apply, ← imCLM.integral_comp_comm (integrable_fderiv_smul φ v hk)]
-    simp
-  rw [← reCLM_apply, ← reCLM.integral_comp_comm (by
-    simpa only [TestFunction.laplacianCLM_apply] using
-      (laplacianCLM ℝ ℂ 𝓓(Ω, ℝ) φ).integrable_smul h.locallyIntegrableOn)] at e
-  rw [integral_add (by simpa using (integrable_fderiv_smul φ 1 hk).re)
-    (by simpa using (integrable_fderiv_smul φ I hk).im)]
-  simp only [reCLM_apply, smul_re, smul_eq_mul, sub_re, mul_re, re_ofNat, im_ofNat, I_re, I_im,
-    neg_re, neg_im] at e
-  rw [e, ← hre, ← him]
-  ring
-
 section Scalar
 
 variable {ξ f g : ℂ → ℝ}
@@ -133,12 +82,14 @@ private theorem exists_mem_nhdsWithin_memWkpLoc_one (hr : 1 < r) (hr_top : r ≠
   -- A cutoff equal to `1` on the disc `W` of radius `ρ`, supported in the disc of radius `2ρ`.
   let χ : ContDiffBump z₀ := ⟨ρ, 2 * ρ, hρ, by linarith⟩
   have h2ρ : ((2 * ρ : ℝ≥0) : ℝ) = 2 * ρ := by push_cast; rfl
+  have h2ρε : 2 * (ρ : ℝ) < ε := by rw [hρε]; linarith
+  have hρε_le : (ρ : ℝ) ≤ ε := by rw [hρε]; linarith
   have hχΩ : tsupport χ ⊆ Ω := by
     rw [χ.tsupport_eq]
-    exact (closedBall_subset_ball (show 2 * (ρ : ℝ) < ε by rw [hρε]; linarith)).trans hεΩ
+    exact (closedBall_subset_ball h2ρε).trans hεΩ
   let W : Opens ℂ := ⟨ball z₀ ρ, isOpen_ball⟩
-  have hWΩ : W ≤ Ω := (ball_subset_ball (show (ρ : ℝ) ≤ ε by rw [hρε]; linarith)).trans hεΩ
-  have hχW : ∀ z ∈ W, χ z = 1 := fun z hz ↦ χ.one_of_mem_closedBall (ball_subset_closedBall hz)
+  have hWΩ : W ≤ Ω := (ball_subset_ball hρε_le).trans hεΩ
+  have hχW : EqOn χ 1 W := fun z hz ↦ χ.one_of_mem_closedBall (ball_subset_closedBall hz)
   -- The complex datum `k = χ (f + I g)` and its Cauchy transform `u`.
   let k : ℂ → ℂ := fun z ↦ χ z • ((f z : ℂ) + I * g z)
   have hk : MemLpLoc r univ k := by
@@ -180,8 +131,9 @@ private theorem exists_mem_nhdsWithin_memWkpLoc_one (hr : 1 < r) (hr_top : r ≠
           refine congrArg Neg.neg (integral_congr_ae (Filter.Eventually.of_forall fun z ↦ ?_))
           simp only [k, smul_eq_mul, real_smul, mul_re, mul_im, ofReal_re, ofReal_im, add_re,
             add_im, I_re, I_im]
-          linear_combination f z * fderiv_mul_eq_of_eqOn_one φ hχW z 1 +
-            g z * fderiv_mul_eq_of_eqOn_one φ hχW z I
+          have hφχ (v : ℂ) : fderiv ℝ (φ : ℂ → ℝ) z v * χ z = fderiv ℝ (φ : ℂ → ℝ) z v := by
+            rw [mul_comm, ← smul_eq_mul, φ.smul_fderiv_apply_eq_of_eqOn_one hχW]
+          linear_combination f z * hφχ 1 + g z * hφχ I
   -- The remainder `ξ - ξ₀` is weakly harmonic on `W`, hence smooth after modification.
   have hharm : WeaklyHarmonicOn volume W (ξ - ξ₀) := by
     refine weaklyHarmonicOn_iff.2 ⟨(hξ.mono_set hWΩ).sub hξ₀_int, fun φ ↦ ?_⟩
@@ -222,7 +174,8 @@ theorem memWkpLoc_one_of_forall_integral_laplacian_smul_eq {V : Type*} [NormedAd
   have hfloc := hf.locallyIntegrableOn hr.le Ω.isOpen.isLocallyClosed
   have hgloc := hg.locallyIntegrableOn hr.le Ω.isOpen.isLocallyClosed
   have hint : Integrable fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z :=
-    (integrable_fderiv_smul φ 1 hfloc).add (integrable_fderiv_smul φ I hgloc)
+    (integrable_fderiv_smul_of_locallyIntegrableOn hfloc φ 1).add
+      (integrable_fderiv_smul_of_locallyIntegrableOn hgloc φ I)
   have e := congrArg L (h φ)
   rw [map_neg, ← L.integral_comp_comm (by
       simpa only [TestFunction.laplacianCLM_apply] using
