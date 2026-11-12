@@ -35,7 +35,7 @@ public section
 
 open CategoryTheory MonoidalCategory Opposite AlgebraicGeometry
 
-namespace TauCeti
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
@@ -50,19 +50,19 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 /-- The algebra of regular functions of `X` over `Y`, carried by the actual pushforward
 `f_* 𝒪_X`. The algebra structure is induced by lax symmetric monoidal pushforward. -/
 @[expose]
-def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra : CommMon Y.Modules :=
+def pushforwardStructureAlgebra : CommMon Y.Modules :=
   (Scheme.Modules.pushforward f).mapCommMon.obj (CommMon.trivial X.Modules)
 
 /-- The underlying module of the function algebra is the pushforward of the structure sheaf. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra_X :
+lemma pushforwardStructureAlgebra_X :
     f.pushforwardStructureAlgebra.X =
       (Scheme.Modules.pushforward f).obj (𝟙_ X.Modules) :=
   (rfl)
 
 /-- The unit of the function algebra is the map on regular functions induced by `f`. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra_one :
+lemma pushforwardStructureAlgebra_one :
     MonObj.one (X := f.pushforwardStructureAlgebra.X) =
       _root_.SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom :=
   (congrArg (Functor.LaxMonoidal.ε (Scheme.Modules.pushforward f) ≫ ·)
@@ -71,13 +71,13 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra_one :
 
 /-- On each open of the base, the function algebra is the ordinary ring of regular functions
 on the inverse image. -/
-def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv (U : Y.Opens) :
+def pushforwardStructureAlgebraSectionsRingEquiv (U : Y.Opens) :
     Γ(f.pushforwardStructureAlgebra.X, U) ≃+* Γ(X, f ⁻¹ᵁ U) :=
   f.pushforwardSectionsRingEquiv (CommMon.trivial X.Modules) U |>.trans
     (X.structureAlgebraSectionsRingEquiv (f ⁻¹ᵁ U))
 
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_apply
+lemma pushforwardStructureAlgebraSectionsRingEquiv_apply
     (U : Y.Opens) (x : Γ(f.pushforwardStructureAlgebra.X, U)) :
     f.pushforwardStructureAlgebraSectionsRingEquiv U x = x := by
   exact (X.structureAlgebraSectionsRingEquiv_apply (f ⁻¹ᵁ U)
@@ -85,7 +85,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSectionsRin
       (f.pushforwardSectionsRingEquiv_apply (CommMon.trivial X.Modules) U x)
 
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_symm_apply
+lemma pushforwardStructureAlgebraSectionsRingEquiv_symm_apply
     (U : Y.Opens) (x : Γ(X, f ⁻¹ᵁ U)) :
     (f.pushforwardStructureAlgebraSectionsRingEquiv U).symm x = x := by
   exact (f.pushforwardSectionsRingEquiv_symm_apply (CommMon.trivial X.Modules) U
@@ -94,7 +94,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSectionsRin
 
 /-- The global functions on `X` are the sections over `Y` of the function algebra: restriction
 to `f ⁻¹ᵁ ⊤ = ⊤`, followed by the inverse section-ring equivalence over `⊤`. -/
-def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv :
+def pushforwardStructureAlgebraΓRingEquiv :
     Γ(X, ⊤) ≃+* Γ(f.pushforwardStructureAlgebra.X, ⊤) :=
   (X.presheaf.mapIso (⟨homOfLE le_top, homOfLE (by simp), Subsingleton.elim _ _,
     Subsingleton.elim _ _⟩ : f ⁻¹ᵁ ⊤ ≅ ⊤).op).commRingCatIsoToRingEquiv.trans
@@ -103,7 +103,7 @@ def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv :
 /-- The identification of global functions with global sections of the function algebra is
 restriction to `f ⁻¹ᵁ ⊤`. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_apply
+lemma pushforwardStructureAlgebraΓRingEquiv_apply
     (b : Γ(X, ⊤)) :
     f.pushforwardStructureAlgebraΓRingEquiv b =
       (f.pushforwardStructureAlgebraSectionsRingEquiv ⊤).symm
@@ -113,7 +113,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv
 /-- The inverse identification of global sections of the function algebra with global functions
 is restriction from `f ⁻¹ᵁ ⊤` to `⊤`. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply
+lemma pushforwardStructureAlgebraΓRingEquiv_symm_apply
     (x : Γ(f.pushforwardStructureAlgebra.X, ⊤)) :
     f.pushforwardStructureAlgebraΓRingEquiv.symm x =
       X.presheaf.map (homOfLE (by simp : ⊤ ≤ f ⁻¹ᵁ ⊤)).op
@@ -123,7 +123,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv
 /-- Module maps from the free sheaf on `I` to the function algebra `f_* 𝒪_X` of a morphism
 `f : X ⟶ Y` are `I`-indexed families of global functions on `X`: a module map goes to the global
 functions on `X` that are its values on the basis sections. -/
-def _root_.AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv (I : Type u) :
+def freeHomPushforwardEquiv (I : Type u) :
     (SheafOfModules.free (R := Y.ringCatSheaf) I ⟶
         (Scheme.Modules.pushforward f).obj (𝟙_ X.Modules)) ≃ (I → Γ(X, ⊤)) :=
   (SheafOfModules.freeHomEquiv _).trans <| Equiv.piCongrRight fun _ ↦
@@ -142,7 +142,7 @@ def _root_.AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv (I : Type u) :
 
 /-- The family of global functions of a module map `𝒪_Y^I ⟶ f_* 𝒪_X` consists of its values on
 the basis sections, viewed as global functions on `X`. -/
-lemma _root_.AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv_apply (I : Type u)
+lemma freeHomPushforwardEquiv_apply (I : Type u)
     (φ : SheafOfModules.free (R := Y.ringCatSheaf) I ⟶
       (Scheme.Modules.pushforward f).obj (𝟙_ X.Modules)) (i : I) :
     f.freeHomPushforwardEquiv I φ i =
@@ -153,7 +153,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv_apply (I : Typ
 /-- The structure map on sections of the function algebra is pullback of regular functions
 along the scheme morphism. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra_algebraMap
+lemma pushforwardStructureAlgebra_algebraMap
     (U : Y.Opens) (r : Γ(Y, U)) :
     algebraMap Γ(Y, U) Γ(f.pushforwardStructureAlgebra.X, U) r = f.app U r := by
   rw [CommMon.sections_algebraMap_def,
@@ -162,7 +162,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra_algebraMap
 
 /-- The presheaf of rings underlying the function algebra is naturally the direct image of
 the structure presheaf. -/
-def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraPresheafIso :
+def pushforwardStructureAlgebraPresheafIso :
     f.pushforwardStructureAlgebra.sectionsPresheaf ≅
       (TopologicalSpace.Opens.map f.base).op ⋙ X.presheaf :=
   f.pushforwardSectionsPresheafIso (CommMon.trivial X.Modules) ≪≫
@@ -172,7 +172,7 @@ def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraPresheafIso :
 /-- The comparison with regular functions is given on each open by the section-ring
 equivalence of the function algebra. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraPresheafIso_hom_app
+lemma pushforwardStructureAlgebraPresheafIso_hom_app
     (U : Y.Opensᵒᵖ) :
     f.pushforwardStructureAlgebraPresheafIso.hom.app U =
       (f.pushforwardStructureAlgebraSectionsRingEquiv U.unop).toCommRingCatIso.hom := by
@@ -186,7 +186,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraPresheafIso
 /-- The inverse comparison with regular functions is given on each open by the inverse
 section-ring equivalence of the function algebra. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraPresheafIso_inv_app
+lemma pushforwardStructureAlgebraPresheafIso_inv_app
     (U : Y.Opensᵒᵖ) :
     f.pushforwardStructureAlgebraPresheafIso.inv.app U =
       (f.pushforwardStructureAlgebraSectionsRingEquiv U.unop).toCommRingCatIso.inv := by
@@ -200,7 +200,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraPresheafIso
 /-- The presheaf comparison identifies the algebra's structure map with the actual
 structure-presheaf morphism of the scheme map. -/
 @[reassoc (attr := simp)]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra_toSectionsPresheaf_comp :
+lemma pushforwardStructureAlgebra_toSectionsPresheaf_comp :
     f.pushforwardStructureAlgebra.toSectionsPresheaf ≫
       f.pushforwardStructureAlgebraPresheafIso.hom = f.c := by
   ext U r
@@ -219,7 +219,7 @@ variable {X Y T : Scheme.{u}}
 `f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T` as `𝒪_X`-algebras, for `q : T ⟶ Y` and `f : Y ⟶ X`. It is
 the identification `f_* q_* ≅ (q ≫ f)_*` of lax monoidal functors, applied to the tensor-unit
 algebra of `T`. -/
-def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso (q : T ⟶ Y)
+def pushforwardStructureAlgebraCompIso (q : T ⟶ Y)
     (f : Y ⟶ X) :
     (Scheme.Modules.pushforward f).mapCommMon.obj q.pushforwardStructureAlgebra ≅
       (q ≫ f).pushforwardStructureAlgebra :=
@@ -229,7 +229,7 @@ def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso (q : 
 /-- As a morphism of modules, the comparison `f_* (q_* 𝒪_T) ⟶ (q ≫ f)_* 𝒪_T` is the
 identification `f_* q_* ≅ (q ≫ f)_*` of pushforwards. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_hom_hom_hom
+lemma pushforwardStructureAlgebraCompIso_hom_hom_hom
     (q : T ⟶ Y) (f : Y ⟶ X) :
     (q.pushforwardStructureAlgebraCompIso f).hom.hom.hom =
       (Scheme.Modules.pushforwardComp q f).hom.app _ :=
@@ -238,7 +238,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_hom
 /-- As a morphism of modules, the comparison `(q ≫ f)_* 𝒪_T ⟶ f_* (q_* 𝒪_T)` is the inverse
 identification of pushforwards. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_inv_hom_hom
+lemma pushforwardStructureAlgebraCompIso_inv_hom_hom
     (q : T ⟶ Y) (f : Y ⟶ X) :
     (q.pushforwardStructureAlgebraCompIso f).inv.hom.hom =
       (Scheme.Modules.pushforwardComp q f).inv.app _ :=
@@ -246,4 +246,4 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_inv
 
 end
 
-end TauCeti
+end AlgebraicGeometry.Scheme.Hom

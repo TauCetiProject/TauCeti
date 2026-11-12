@@ -31,6 +31,8 @@ real-linear operators into a complex space.
 
 * `ContinuousLinearMap.finite_spectrum`: a bounded operator on a finite-dimensional normed space
   has finite spectrum, also over subfields of the scalars such as `ℝ ⊆ ℂ`.
+* `ContinuousLinearMap.isUnit_smul_one_sub`: on a finite-dimensional space, `c • 1 - T` is
+  invertible when `T` has no eigenvector of eigenvalue `c`.
 * `ContinuousLinearMap.denseRange_comp`: on operators out of a finite-dimensional space,
   postcomposition with an operator of dense range has dense range.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
@@ -55,6 +57,16 @@ theorem finite_spectrum (S : Type*) [Field S] [Algebra S 𝕜] [Algebra S (V →
   have := FiniteDimensional.complete 𝕜 V
   rw [← spectrum.preimage_algebraMap 𝕜, spectrum_eq]
   exact (Module.End.finite_spectrum _).preimage (algebraMap S 𝕜).injective.injOn
+
+/-- On a finite-dimensional normed space, `c • 1 - T` is invertible as soon as `T` has no
+eigenvector of eigenvalue `c`. -/
+theorem isUnit_smul_one_sub {T : V →L[𝕜] V} {c : 𝕜} (h : ∀ v, T v = c • v → v = 0) :
+    IsUnit (c • 1 - T) := by
+  have := FiniteDimensional.complete 𝕜 V
+  refine isUnit_iff_isUnit_toLinearMap.2
+    ((LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun v hv ↦ h v ?_))
+  have hv' : c • v - T v = 0 := by simpa using hv
+  exact (sub_eq_zero.1 hv').symm
 
 /-- On continuous linear maps out of a finite-dimensional space, postcomposition with a
 continuous linear map of dense range has dense range: each `T : V →L[𝕜] E` is approximated in

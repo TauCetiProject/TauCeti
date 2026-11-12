@@ -70,6 +70,8 @@ estimate with `C = 2 ^ (s + 1) ‖⟨·⟩ ^ (-s)‖₂`.
   `H^s`.
 * `TemperedDistribution.exists_norm_toBesselPotentialSpace_mul_le`: the algebra estimate
   `‖u v‖_{H^s} ≤ C ‖u‖_{H^s} ‖v‖_{H^s}`.
+* `TemperedDistribution.exists_norm_toBesselPotentialSpace_pow_le`: the powers of `u ∈ H^s` lie in
+  `H^s`, with `‖u ^ (n + 1)‖_{H^s} ≤ C ^ n ‖u‖_{H^s} ^ (n + 1)`.
 * `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul`: the real form of
   `TemperedDistribution.MemSobolev.mul`.
 * `TemperedDistribution.mul_mem_realSobolevFunctions`: the same for pointwise representatives.
@@ -202,6 +204,29 @@ theorem exists_norm_toBesselPotentialSpace_mul_le {s : ℝ} (hs : finrank ℝ E 
           ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity),
           ENNReal.ofReal_toReal hK, ofReal_norm, ofReal_norm, ENNReal.ofReal_ofNat]
         ring
+
+/-- **Powers in `H^s(E)`, `s > dim E / 2`.** There is a constant `C`, depending only on `s` and
+`E`, such that for every `L²` function `u ∈ H^s` and every `n`, the power `u ^ (n + 1)` is an
+`L²` function in `H^s` with `‖u ^ (n + 1)‖_{H^s} ≤ C ^ n ‖u‖_{H^s} ^ (n + 1)`. The constant is that
+of the algebra estimate `exists_norm_toBesselPotentialSpace_mul_le`. -/
+theorem exists_norm_toBesselPotentialSpace_pow_le {s : ℝ} (hs : finrank ℝ E < 2 * s) :
+    ∃ C, 0 ≤ C ∧ ∀ {u : Lp ℂ 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, ℂ)))
+      (n : ℕ), ∃ v : Lp ℂ 2 (volume : Measure E), v =ᵐ[volume] (fun x => u x ^ (n + 1)) ∧
+        ∃ hv : MemSobolev s 2 (v : 𝓢'(E, ℂ)),
+          ‖hv.toBesselPotentialSpace‖ ≤ C ^ n * ‖hu.toBesselPotentialSpace‖ ^ (n + 1) := by
+  obtain ⟨C, hC, hmul⟩ := exists_norm_toBesselPotentialSpace_mul_le (E := E) hs
+  refine ⟨C, hC, fun {u} hu n => ?_⟩
+  induction n with
+  | zero => exact ⟨u, .of_forall fun x => (pow_one _).symm, hu, by simp⟩
+  | succ n ih =>
+    obtain ⟨v, hvu, hv, hvn⟩ := ih
+    refine ⟨(hv.memLp_mul hs u).toLp _, ?_, hv.mul hs hu, (hmul hv hu).trans ?_⟩
+    · filter_upwards [(hv.memLp_mul hs u).coeFn_toLp, hvu] with x h h'
+      rw [h, h', ← pow_succ]
+    · calc C * ‖hv.toBesselPotentialSpace‖ * ‖hu.toBesselPotentialSpace‖
+          ≤ C * (C ^ n * ‖hu.toBesselPotentialSpace‖ ^ (n + 1)) *
+              ‖hu.toBesselPotentialSpace‖ := by gcongr
+        _ = C ^ (n + 1) * ‖hu.toBesselPotentialSpace‖ ^ (n + 1 + 1) := by ring
 
 /-- **Products of real `H^s` functions, `s > n / 2`.** The real `L²` functions whose
 complexification lies in `H^s`, `s > dim E / 2`, are closed under pointwise multiplication. -/
