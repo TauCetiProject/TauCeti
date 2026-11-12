@@ -276,7 +276,6 @@ theorem exists_norm_toBesselPotentialSpace_pow_sub_pow_le {s : ℝ} (hs : finran
     · have hC₁C : C₁ ≤ C := le_max_left _ _
       have hpn' : ‖hp.toBesselPotentialSpace‖ ≤ C ^ n * R ^ (n + 1) :=
         hpn.trans (by gcongr; exact le_max_right _ _)
-      have hδ : 0 ≤ δ := norm_nonneg _
       rw [h₁.toBesselPotentialSpace_toTemperedDistribution_add h₂ h₁₂]
       calc ‖h₁.toBesselPotentialSpace + h₂.toBesselPotentialSpace‖
           ≤ ‖h₁.toBesselPotentialSpace‖ + ‖h₂.toBesselPotentialSpace‖ := norm_add_le _ _
