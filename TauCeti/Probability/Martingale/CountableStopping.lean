@@ -20,9 +20,9 @@ times of continuous-time processes, as used in localization.
 
 We first prove bounded optional sampling with conditioning at another countable-range time.
 The stopped-process theorem follows by capping the stopping time at a deterministic horizon.
-The final theorem gives the indicator-stopped form appearing in `MeasureTheory.IsStable` and
-`MeasureTheory.Locally`, so countable-range stopping times can be used for localization: paths
-stopped at the bottom time contribute zero, rather than their possibly nonzero initial value.
+The martingale indicator-stopping theorem gives the form appearing in `ProbabilityTheory.IsStable`
+and `ProbabilityTheory.Locally`, so countable-range stopping times can be used for localization:
+paths stopped at the bottom time contribute zero, rather than their possibly nonzero initial value.
 Countable-range stopping also preserves native local martingales, without assuming path
 regularity. The proof commutes the two stops and their positive-time indicators, as in
 Mathlib's `ProbabilityTheory.IsStable.locally`, using stability only at the given
@@ -151,9 +151,9 @@ theorem Martingale.stoppedProcess_of_countable_range (hX : Martingale X ℱ μ)
       ((isStoppingTime_const ℱ t).min hτ) (isStoppingTime_const ℱ s) hct hcs
       (fun _ ↦ min_le_left _ _)).symm
 
-/-- The indicator-stopped form appearing in `MeasureTheory.IsStable` and `MeasureTheory.Locally`
-for a countable-range stopping time. On paths stopped at the bottom time the whole process is
-zero. -/
+/-- The indicator-stopped form appearing in `ProbabilityTheory.IsStable` and
+`ProbabilityTheory.Locally` for a countable-range stopping time. On paths stopped at the bottom
+time the whole process is zero. -/
 theorem Martingale.stoppedProcess_indicator_of_countable_range [OrderBot ι]
     (hX : Martingale X ℱ μ) (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable) :
     Martingale (stoppedProcess (fun t ↦ {ω | ⊥ < τ ω}.indicator (X t)) τ) ℱ μ := by

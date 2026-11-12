@@ -14,9 +14,10 @@ public import TauCeti.Probability.Process.CountableLevelLocalizer
 /-!
 # Descent of continuous local martingales to smaller filtrations
 
-An almost surely continuous process adapted to a smaller filtration remains a native local
-martingale there if it is a native local martingale in a larger filtration on the same measure
-space. Neither filtration needs completeness or right continuity. The conclusion supplies
+On a finite measure space, an `ℝ≥0`-indexed process strongly adapted to a smaller filtration
+with almost surely continuous paths remains a native local martingale there if it is a native
+local martingale in a larger filtration on the same measure space. Neither filtration needs
+completeness or right continuity. The conclusion supplies
 actual stopping times of the smaller filtration, not just martingale versions of stopped paths.
 This allows constructions made with extra information to be used on the original filtration.
 
@@ -46,9 +47,10 @@ variable {Ω E : Type*} {m : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasu
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {ℱ 𝒢 : Filtration ℝ≥0 m} {X : ℝ≥0 → Ω → E}
 
-/-- An almost surely continuous process adapted to a smaller filtration is a native local
-martingale there whenever it is one in a larger filtration on the same finite measure space.
-No usual conditions or integrability of the initial value are assumed. -/
+/-- On a finite measure space, an `ℝ≥0`-indexed process strongly adapted to a smaller
+filtration with almost surely continuous paths is a native local martingale there whenever
+it is one in a larger filtration on the same measure space. No usual conditions or
+integrability of the initial value are assumed. -/
 theorem StronglyAdapted.locally_martingale_of_le (hX : StronglyAdapted ℱ X)
     (hc : ∀ᵐ ω ∂P, Continuous (X · ω)) (hFG : ∀ t, ℱ t ≤ 𝒢 t)
     (hlocal : Locally (fun Y ↦ Martingale Y 𝒢 P) 𝒢 X P) :
@@ -88,9 +90,10 @@ theorem StronglyAdapted.locally_martingale_of_le (hX : StronglyAdapted ℱ X)
   exact ((hZF n).martingale_iff_setIntegral_eq (fun t ↦ hm.integrable t)).2
     (fun s t hst B hB ↦ hm.setIntegral_eq hst (hFG s _ hB))
 
-/-- Descent from a larger filtration on the completed ambient space to the original raw
-filtration and measure. The resulting localizing times are raw stopping times; neither
-adaptation nor localizers are inferred merely from equality modulo completion. -/
+/-- On a finite measure space, an `ℝ≥0`-indexed process strongly adapted to `ℱ` with
+`P`-almost surely continuous paths is a native local martingale for `(ℱ, P)` if it is a
+native local martingale for a larger filtration `𝒢` on `(NullMeasurableSpace Ω P, P.completion)`.
+The resulting localizing times are stopping times of the original raw filtration `ℱ`. -/
 theorem StronglyAdapted.locally_martingale_of_le_completion (hX : StronglyAdapted ℱ X)
     (hc : ∀ᵐ ω ∂P, Continuous (X · ω))
     {𝒢 : Filtration ℝ≥0 (inferInstance : MeasurableSpace (NullMeasurableSpace Ω P))}
