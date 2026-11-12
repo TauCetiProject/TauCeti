@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Index
 public import Mathlib.RingTheory.SimpleModule.Isotypic
 public import TauCeti.RepresentationTheory.Induction.Clifford.Basic
 
@@ -35,12 +36,13 @@ proof there needs it too.
 No invertibility of `Nat.card N` is used: irreducibility of the ambient representation replaces
 Maschke's theorem throughout, exactly as in
 `TauCeti/RepresentationTheory/Induction/Clifford/Basic.lean`.  The single-orbit statements need no
-finiteness either; finiteness of `G` is assumed only by
-`TauCeti.Representation.finite_isotypicComponents`, where it makes the irreducible
-representation finite-dimensional.  Finite-dimensionality of `V` is needed only to know that a
-minimal `N`-stable subspace exists at all: each of the orbit and isotypic-component statements
-below takes such a subspace as a hypothesis, except
-`TauCeti.Representation.finite_isotypicComponents`, which needs none, and
+finiteness either; finiteness is assumed only by
+`TauCeti.Representation.finite_isotypicComponents`, and there only of the index of `N` in `G`,
+because a translate depends only on the coset of `N` it is taken by.  Finite-dimensionality of `V`
+is needed only to know that a minimal `N`-stable subspace exists at all: each of the orbit and
+isotypic-component statements below takes such a subspace as a hypothesis, except
+`TauCeti.Representation.finite_isotypicComponents`, which needs none (without one there is no
+isotypic component to count), and
 `TauCeti.Representation.exists_isAtom_forall_nonempty_linearEquiv_conjSubrep`, the packaged form of
 the theorem, which assumes finite-dimensionality and produces one.
 
@@ -61,8 +63,8 @@ of one constituent, indexed by the cosets of its inertia group, is not proved he
 * `TauCeti.Representation.isotypicComponents_eq_range`: the isotypic components of the restriction
   are exactly the components of the translates of a given minimal `N`-stable subspace, so `G` acts
   transitively on them; `Representation.conjSubrepIsotypicComponent` packages each such
-  component, and `TauCeti.Representation.finite_isotypicComponents` shows that
-  there are finitely many of them when `G` is finite.
+  component, and `TauCeti.Representation.finite_isotypicComponents` shows that there are
+  finitely many of them when `N` has finite index in `G`.
 * `TauCeti.Representation.isIsotypicOfType_asSubmodule_iff`: the restriction is isotypic exactly
   when every translate of one constituent is isomorphic to it — the case in which the inertia group
   of the constituent is all of `G`.
@@ -161,17 +163,29 @@ theorem isotypicComponents_eq_range [ρ.IsIrreducible]
     exact ⟨_, Subrepresentation.isSimpleModule_asSubmodule_iff.mpr
       (isAtom_conjSubrep_iff.mpr hσ), rfl⟩
 
-omit [N.Normal] in
-/-- **The restriction of an irreducible representation along a normal subgroup of a finite group
-has finitely many isotypic components.**  Since `G` is finite, the irreducible representation is
-finite-dimensional, so the restriction is a Noetherian `k[N]`-module and Mathlib's finiteness of
-its isotypic components applies; normality of `N` is not needed. -/
-theorem finite_isotypicComponents [ρ.IsIrreducible] [Finite G] :
+/-- **The restriction of an irreducible representation to a normal subgroup of finite index has
+finitely many isotypic components.**  If the restriction has a simple submodule, its isotypic
+components are those of the translates of the corresponding minimal `N`-stable subspace
+(`isotypicComponents_eq_range`), and a translate depends only on the coset of `N` it is taken by,
+so there is at most one component for each coset.  Neither finiteness of `G` nor
+finite-dimensionality of `V` is assumed. -/
+theorem finite_isotypicComponents [ρ.IsIrreducible] [N.FiniteIndex] :
     (isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype))).Finite := by
-  have : FiniteDimensional k V := ρ.asModuleEquiv.finiteDimensional
-  have : IsNoetherian k[N] (_root_.Representation.asModule (ρ.comp N.subtype)) :=
-    isNoetherian_of_tower k inferInstance
-  exact Set.toFinite _
+  obtain h | ⟨_, S, hS, -⟩ := Set.eq_empty_or_nonempty
+    (isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype)))
+  · exact h ▸ Set.finite_empty
+  obtain ⟨σ, hσ⟩ : ∃ σ : Subrepresentation (ρ.comp N.subtype), IsAtom σ :=
+    ⟨_, (Subrepresentation.subrepresentationSubmoduleOrderIso.symm.isAtom_iff S).mpr
+      (isSimpleModule_iff_isAtom.mp hS)⟩
+  rw [isotypicComponents_eq_range ρ hσ]
+  refine (Set.finite_range fun q : G ⧸ N =>
+    isotypicComponent k[N] (_root_.Representation.asModule (ρ.comp N.subtype))
+      (conjSubrep ρ q.out σ).asSubmodule).subset ?_
+  rintro _ ⟨g, rfl⟩
+  obtain ⟨n, hn⟩ := QuotientGroup.mk_out_eq_mul N g
+  refine ⟨g, ?_⟩
+  dsimp only
+  rw [hn, ← conjSubrep_conjSubrep, conjSubrep_eq_self_of_mem n.2]
 
 /-- **The restriction is isotypic exactly when one constituent is fixed by all of `G`.**  The
 right-hand side says that the inertia group of `σ` is all of `G`; Clifford's theorem then leaves the
