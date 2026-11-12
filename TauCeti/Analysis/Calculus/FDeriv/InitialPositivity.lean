@@ -109,13 +109,13 @@ theorem eventually_nonneg_on_initial_interval_of_partial_deriv_pos (hab : a < b)
 in the second variable is positive there, and if `φ (s₀, ·)` is positive on `(a, b]` with `φ`
 continuous at every `(s₀, t)` for `t ∈ (a, b]`, then `φ (s, ·)` is positive on `(a, b]` for all
 `s` near `s₀`. -/
-theorem eventually_pos_on_Ioc_of_partial_deriv_pos (hab : a < b)
+theorem eventually_pos_on_Ioc_of_partial_deriv_pos
     (hφ : ContDiffAt ℝ 1 φ (s₀, a)) (hpos : 0 < fderiv ℝ φ (s₀, a) (0, 1))
     (hzero : ∀ᶠ s in 𝓝 s₀, φ (s, a) = 0) (hcont : ∀ t ∈ Ioc a b, ContinuousAt φ (s₀, t))
     (hφpos : ∀ t ∈ Ioc a b, 0 < φ (s₀, t)) :
     ∀ᶠ s in 𝓝 s₀, ∀ t ∈ Ioc a b, 0 < φ (s, t) := by
   obtain ⟨τ, hτ, -, hinit⟩ :=
-    eventually_pos_on_initial_interval_of_partial_deriv_pos hab hφ hpos hzero
+    eventually_pos_on_initial_interval_of_partial_deriv_pos (lt_add_one a) hφ hpos hzero
   have hfar : ∀ᶠ s in 𝓝 s₀, ∀ t ∈ Icc (a + τ) b, 0 < φ (s, t) :=
     isCompact_Icc.eventually_forall_of_forall_eventually fun t ht ↦
       (hcont t ⟨by linarith [ht.1], ht.2⟩).eventually
@@ -129,12 +129,12 @@ theorem eventually_pos_on_Ioc_of_partial_deriv_pos (hab : a < b)
 in the second variable is positive there, and if `φ (s₀, ·)` is positive on `(a, b]` with `φ`
 continuous at every `(s₀, t)` for `t ∈ (a, b]`, then `φ (s, ·)` is nonnegative on `[a, b]` for
 all `s` near `s₀`. -/
-theorem eventually_nonneg_on_Icc_of_partial_deriv_pos (hab : a < b)
+theorem eventually_nonneg_on_Icc_of_partial_deriv_pos
     (hφ : ContDiffAt ℝ 1 φ (s₀, a)) (hpos : 0 < fderiv ℝ φ (s₀, a) (0, 1))
     (hzero : ∀ᶠ s in 𝓝 s₀, φ (s, a) = 0) (hcont : ∀ t ∈ Ioc a b, ContinuousAt φ (s₀, t))
     (hφpos : ∀ t ∈ Ioc a b, 0 < φ (s₀, t)) :
     ∀ᶠ s in 𝓝 s₀, ∀ t ∈ Icc a b, 0 ≤ φ (s, t) := by
-  filter_upwards [eventually_pos_on_Ioc_of_partial_deriv_pos hab hφ hpos hzero hcont hφpos,
+  filter_upwards [eventually_pos_on_Ioc_of_partial_deriv_pos hφ hpos hzero hcont hφpos,
     hzero] with s hs hs0 t ht
   rcases ht.1.eq_or_lt with rfl | hat
   · exact hs0.ge
