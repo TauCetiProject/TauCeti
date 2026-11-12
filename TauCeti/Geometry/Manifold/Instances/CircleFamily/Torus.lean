@@ -170,12 +170,6 @@ theorem coord_injective [Nonempty ι] :
   simp only [coord_mk, CircleFamily.Pullback.mk.injEq, heq_eq_eq, true_and] at hi
   exact hi
 
-/-- The normalized angle of the `i`-th coordinate is the `i`-th normalized angle. -/
-private theorem normalizationEquiv_coord (i : ι) (z : TorusFamily p) :
-    CircleFamily.Pullback.normalizationEquiv (p i) (coord p i z) =
-      ((normalizationEquiv p z).1, (normalizationEquiv p z).2 i) := by
-  simp [coord]
-
 /-! ### Base change -/
 
 variable {B' : Type*} (f : B' → B)

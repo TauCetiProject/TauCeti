@@ -65,30 +65,6 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-section CommSquare
-
-variable {E₁ H₁ M₁ E₂ H₂ M₂ E₃ H₃ M₃ E₄ H₄ M₄ : Type*}
-  [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [TopologicalSpace H₁] [TopologicalSpace M₁]
-  [ChartedSpace H₁ M₁] {I₁ : ModelWithCorners ℝ E₁ H₁} [IsManifold I₁ 1 M₁]
-  [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂] [TopologicalSpace M₂]
-  [ChartedSpace H₂ M₂] {I₂ : ModelWithCorners ℝ E₂ H₂} [IsManifold I₂ 1 M₂]
-  [NormedAddCommGroup E₃] [NormedSpace ℝ E₃] [TopologicalSpace H₃] [TopologicalSpace M₃]
-  [ChartedSpace H₃ M₃] {I₃ : ModelWithCorners ℝ E₃ H₃} [IsManifold I₃ 1 M₃]
-  [NormedAddCommGroup E₄] [NormedSpace ℝ E₄] [TopologicalSpace H₄] [TopologicalSpace M₄]
-  [ChartedSpace H₄ M₄] {I₄ : ModelWithCorners ℝ E₄ H₄} [IsManifold I₄ 1 M₄]
-
-/-- Pulling a form back along the two sides of a commuting square of smooth maps gives the same
-form. -/
-private theorem mpullback_mpullback_of_comp_eq {f : M₁ → M₂} {g : M₂ → M₄} {h : M₁ → M₃}
-    {k : M₃ → M₄} (hf : ContMDiff I₁ I₂ ∞ f) (hg : ContMDiff I₂ I₄ ∞ g)
-    (hh : ContMDiff I₁ I₃ ∞ h) (hk : ContMDiff I₃ I₄ ∞ k) (hcomp : g ∘ f = k ∘ h)
-    (φ : SmoothForm I₄ M₄ ℝ 1) :
-    SmoothForm.mpullback f hf (SmoothForm.mpullback g hg φ) =
-      SmoothForm.mpullback h hh (SmoothForm.mpullback k hk φ) := by
-  simp only [SmoothForm.mpullback_mpullback, hcomp]
-
-end CommSquare
-
 namespace TorusFamily
 
 variable {B ι : Type*} [Fintype ι] (p : ι → B → PositivePeriod) {EB HB : Type*}
@@ -106,7 +82,7 @@ private theorem mpullback_mk_mpullback_coord (i : ι) (b : B)
           (CircleFamily.Pullback.contMDiff_mk (p i) IB ∞ b) φ) :=
   -- On the torus over `b`, the `i`-th coordinate is the `i`-th factor followed by the inclusion
   -- of the circle over `b`.
-  mpullback_mpullback_of_comp_eq _ _ _ _ (funext (coord_mk p i b)) φ
+  SmoothForm.mpullback_mpullback_of_comp_eq _ _ _ _ (funext (coord_mk p i b)) φ
 
 /-! ### The angle forms -/
 
@@ -207,7 +183,7 @@ private theorem mpullback_comap_mpullback_coord (hf : ContMDiff IB' IB ∞ f) (i
       SmoothForm.mpullback (coord (fun i ↦ p i ∘ f) i) (contMDiff_coord _ IB' ∞ i)
         (SmoothForm.mpullback (CircleFamily.Pullback.comap (p i) f)
           (CircleFamily.Pullback.contMDiff_comap (p i) f IB hf) φ) :=
-  mpullback_mpullback_of_comp_eq _ _ _ _ (funext (coord_comap p f i)) φ
+  SmoothForm.mpullback_mpullback_of_comp_eq _ _ _ _ (funext (coord_comap p f i)) φ
 
 /-- Base change along a smooth map `f` pulls the angle form `β_i` of the family of `p` back to the
 angle form `β_i` of the family of the periods `p i ∘ f`. -/
@@ -240,7 +216,7 @@ it pulls the angle form `β_i` of `q` back to the angle form `β_i` of `p`. -/
 theorem mpullback_rescale_angleForm (i : ι) :
     SmoothForm.mpullback (rescale p IB q ∞) (rescale p IB q ∞).contMDiff (angleForm q IB i) =
       angleForm p IB i := by
-  rw [angleForm, angleForm, mpullback_mpullback_of_comp_eq (rescale p IB q ∞).contMDiff
+  rw [angleForm, angleForm, SmoothForm.mpullback_mpullback_of_comp_eq (rescale p IB q ∞).contMDiff
     (contMDiff_coord q IB ∞ i) (contMDiff_coord p IB ∞ i)
     (CircleFamily.Pullback.rescale (p i) IB (q i) ∞).contMDiff
     (funext (coord_rescale p IB q ∞ i)), CircleFamily.Pullback.mpullback_rescale_angleForm]
