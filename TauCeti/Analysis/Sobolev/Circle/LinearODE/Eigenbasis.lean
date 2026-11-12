@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Circle.LinearODE
+public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 import TauCeti.Analysis.InnerProductSpace.Spectrum
 
 /-!
@@ -93,8 +93,7 @@ theorem real_inner_I_smul_loopOperator_comm
   simp only [loopOperator_apply, smul_sub, inner_sub_left, inner_sub_right]
   congr 1
   · -- The derivative term, by integration by parts.
-    rw [real_inner_eq_re_inner, real_inner_eq_re_inner, inner_smul_left, inner_smul_right,
-      inner_derivative_inclusion, conj_I, neg_mul, mul_neg, neg_neg]
+    simp [real_inner_eq_re_inner, inner_smul_left, inner_smul_right, inner_derivative_inclusion]
   · -- The zero-order term, by Parseval's identity and the pointwise symmetry of `J₀ S_t`.
     rw [hmul, hmul, hinc, hinc, real_inner_ofContinuousMap, real_inner_ofContinuousMap]
     refine MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
@@ -151,8 +150,7 @@ theorem exists_hilbertBasis_I_smul_loopOperator_eq_smul
       rw [← hb]
       exact b.orthonormal.1 i
     have hle : |nu i| ≤ ‖K‖ := by
-      have := K.le_opNorm i
-      rwa [h, norm_smul, hn, mul_one, Real.norm_eq_abs, mul_one] at this
+      simpa [h, norm_smul, hn] using K.le_opNorm i
     rw [abs_inv]
     exact inv_anti₀ (abs_pos.2 (hnu0 i)) (by linarith)
   · rw [map_smul, smul_comm, hLR, hb]
@@ -172,15 +170,14 @@ theorem I_smul_loopOperator_eq_smul_iff (a : CircleSobolev 1 F) (lam : ℝ) :
     S - lam • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ F) with hS'
   have hL : loopOperator T S' a =
       loopOperator T S a + ((lam : ℂ) * I) • inclusion zero_le_one a := by
-    rw [loopOperator_apply, loopOperator_apply, mulLoop_apply, mulLoop_apply,
-      ← ofContinuousMap_toContinuousMap T (show (1 / 2 : ℝ) < 1 by norm_num) a]
-    have : ContinuousMap.applyContinuousLinearMap S' (toContinuousMap T (by norm_num) a) =
-        ContinuousMap.applyContinuousLinearMap S (toContinuousMap T (by norm_num) a) -
-          ((lam : ℂ) * I) • toContinuousMap T (by norm_num) a := by
-      ext x
-      simp [hS', mul_smul, Complex.coe_smul]
-    rw [this, map_sub, map_smul]
-    abel
+    -- `L_S` is linear in the loop, and multiplication by the constant loop `J₀` is `J₀`.
+    rw [hS', loopOperator_sub, add_apply, mulLoop_smul, smul_apply, mulLoop_apply,
+      ← ofContinuousMap_toContinuousMap T (show (1 / 2 : ℝ) < 1 by norm_num) a,
+      ← Complex.coe_smul, mul_smul]
+    simp only [← map_smul]
+    congr 3
+    ext x
+    simp
   -- Multiplying by `-J₀` turns `J₀ y = λ z` into `y + λ J₀ z = 0`.
   have hiff (y z : CircleSobolev 0 F) (c : ℂ) : I • y = c • z ↔ y + (c * I) • z = 0 := by
     constructor
