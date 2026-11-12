@@ -37,8 +37,9 @@ would `z₁⁻¹ c₁ z₁ z₂⁻¹ c₂ z₂ z₃⁻¹ c₃ z₃ d = 1` with `
   embed in `H`, the condition on the coefficients is automatic.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.IsRegular.map`: regularity passes along an injective
   `G`-homomorphism, for instance from `G` to a group containing it.
-* `TauCeti.GroupAlgGeom.Quadratic.Standard.isRegular_of_isGeneralPosition`: an equation with
-  `κ(S) ≥ 4` and a solution in general position is regular.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.isRegular_of_isGeneralPosition`: an equation whose
+  coefficients stay nontrivial in `H`, with `κ(S) ≥ 4` and a solution in general position in `H`,
+  is regular.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isRegular_orientableCoeff_one_zero_iff`: `[x, y] d = 1`
   is regular exactly when `d` stays nontrivial in `H` and the equation has a solution.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isRegular_genusTwo`: `[x₁, y₁][x₂, y₂] = 1` is regular.
