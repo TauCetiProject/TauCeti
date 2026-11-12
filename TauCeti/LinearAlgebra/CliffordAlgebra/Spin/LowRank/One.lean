@@ -116,7 +116,6 @@ elements `1` and `-1`; in characteristic two these coincide. -/
 theorem mem_spinGroup_iff_of_finrank_eq_one (hQ : Q ≠ 0)
     (hV : Module.finrank K V = 1) {x : CliffordAlgebra Q} :
     x ∈ spinGroup Q ↔ x = 1 ∨ x = -1 := by
-  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := K) (by rw [hV]; exact one_pos)
   constructor
   · intro hx
     rcases spinGroup.eq_one_or_eq_negOne_of_finrank_eq_one Q hQ hV ⟨x, hx⟩ with h | h
