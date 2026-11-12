@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
-import Mathlib.MeasureTheory.Integral.ExpDecay
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The complex upper incomplete Gamma function
@@ -51,16 +50,7 @@ theorem integrableOn_upperIncompleteGamma_integrand (a : ℂ) {z : ℂ}
     IntegrableOn (fun t : ℝ => (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ)))
       (Ioi 0) := by
   have hc : ContinuousOn (fun t : ℝ => (z + t) ^ (a - 1)) (Ici 0) := by
-    intro t ht
-    have hzt : z + t ∈ _root_.Complex.slitPlane := by
-      simp only [_root_.Complex.mem_slitPlane_iff, _root_.Complex.add_re,
-        _root_.Complex.ofReal_re, _root_.Complex.add_im, _root_.Complex.ofReal_im,
-        add_zero] at hz ⊢
-      rcases hz with h | h
-      · exact Or.inl (add_pos_of_pos_of_nonneg h ht)
-      · exact Or.inr h
-    exact (continuousAt_cpow_const hzt).comp_continuousWithinAt
-      (f := fun t : ℝ => z + (t : ℂ)) (by fun_prop)
+    simpa only [add_comm] using TauCeti.continuousOn_ofReal_add_cpow_Ici hz (a - 1)
   have he : (fun t : ℝ => z + (t : ℂ)) ~[atTop] (fun t : ℝ => (t : ℂ)) :=
     (IsEquivalent.refl).const_add_of_norm_tendsto_atTop (by
       simpa [Function.comp_def] using tendsto_abs_atTop_atTop)
