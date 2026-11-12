@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.Algebra.Order.Round
-import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Fourier.AbsolutelyContinuous
+import TauCeti.Analysis.Fourier.Wirtinger
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -186,17 +186,12 @@ theorem mul_integral_norm_sq_le_integral_norm_sq_of_eq_neg (hab : a < b)
     simp only [hL, hround] at h
     convert h using 2
     ring
-  set e := stdOrthonormalBasis ℝ V
-  have hgc : ContinuousOn g [[a, b]] := hg.continuousOn
-  have hint₁ (i) : IntervalIntegrable (fun t => ⟪e i, g t⟫ ^ 2) volume a b :=
-    ((continuousOn_const.inner hgc).pow 2).intervalIntegrable
-  have hint₂ (i) : IntervalIntegrable (fun t => ⟪e i, g' t⟫ ^ 2) volume a b :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2
-      ((innerSL ℝ (e i)).comp_memLp' hg').integrable_sq
-  simp_rw [← e.sum_sq_inner_right]
-  rw [intervalIntegral.integral_finsetSum fun i _ => hint₁ i,
-    intervalIntegral.integral_finsetSum fun i _ => hint₂ i, Finset.mul_sum]
-  exact Finset.sum_le_sum fun i _ => hcoord (e i)
+  have hgc : ContinuousOn g (Icc a b) := by simpa only [uIcc_of_le hab.le] using hg.continuousOn
+  rw [integral_norm_sq_eq_sum_integral_inner_sq hab.le
+      (hgc.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioc
+        Ioc_subset_Icc_self 2),
+    integral_norm_sq_eq_sum_integral_inner_sq hab.le hg', Finset.mul_sum]
+  exact Finset.sum_le_sum fun i _ => hcoord _
 
 end Antiperiodic
 

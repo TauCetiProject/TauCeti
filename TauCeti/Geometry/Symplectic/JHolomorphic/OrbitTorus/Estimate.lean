@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.NormalOperator
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Fourier.TwistedWirtinger
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # A uniform `L²` bound for the orbit-torus operator twisted along the circle
@@ -28,8 +28,8 @@ quantitative form of that statement: over the fundamental rectangle,
 By the energy identity `∫ ‖D u‖ ^ 2 = ∫ (‖∂s u‖ ^ 2 + ‖A u‖ ^ 2)`
 (`TauCeti.setIntegral_norm_sq_orbitTorusOperator`) it suffices to bound `∫ ‖∂s u‖ ^ 2` below,
 which is the Poincaré inequality for antiperiodic functions of `s`
-(`TauCeti.mul_integral_norm_sq_le_integral_norm_sq_of_eq_neg`) integrated over `t`. The constant
-is sharp: equality holds for `u (s, t) = cos (π s / ℓ) • v` with `S = 0`.
+(`TauCeti.mul_integral_norm_sq_le_integral_norm_sq_of_eq_neg`) integrated over `t`. For `ε₂ = 1`
+the constant is sharp: equality holds for `u (s, t) = cos (π s / ℓ) • v` with `S = 0`.
 
 The constant depends only on the length `ℓ` of the circle factor, not on `J₀` or on the path `S`.
 So the bound holds uniformly along every path of such operators, for instance along
@@ -37,9 +37,9 @@ So the bound holds uniformly along every path of such operators, for instance al
 `∂s + J₀ ∂t` when `J₀` is a complex structure. It also applies to the formal adjoint
 `-∂s + A = -(∂s + (-J₀) ∂t + (-S(t)))`, since `-J₀` is skew-adjoint and `-S(t)` is symmetric.
 
-On the cover of the torus `(ℝ / ℓℤ) × (ℝ / dℤ)` with deck group spanned by `(k ℓ, 0)` and
-`(a ℓ, n d)`, a map twisted by `-1` along `(k ℓ, 0)` and by `ε₂` along `(a ℓ, n d)` is
-twisted by a sign along `(0, k n d)`, and the bound holds on the rectangle
+For `n ≥ 1` and `d > 0`, on the cover of the torus `(ℝ / ℓℤ) × (ℝ / dℤ)` with deck group
+spanned by `(k ℓ, 0)` and `(a ℓ, n d)`, a map twisted by `-1` along `(k ℓ, 0)` and by `ε₂`
+along `(a ℓ, n d)` is twisted by a sign along `(0, k n d)`, and the bound holds on the rectangle
 `[0, k ℓ] × [0, k n d]` with constant `(π / (k ℓ)) ^ 2`
 (`TauCeti.mul_setIntegral_norm_sq_le_setIntegral_norm_sq_orbitTorusOperator_of_cover`).
 
@@ -82,17 +82,13 @@ private theorem mul_setIntegral_norm_sq_le_setIntegral_norm_sq_fderiv (hℓ : 0 
       ∫ z in Icc (0 : ℝ) ℓ ×ˢ Icc 0 d, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 := by
   have hu0 := hu.continuous
   have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
-  have hG : Continuous fun z : ℝ × ℝ => ‖u z‖ ^ 2 := by fun_prop
-  have hH : Continuous fun z : ℝ × ℝ => ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 := by fun_prop
-  -- Fubini, integrating first in `s` and then in `t`.
-  have hint {F : ℝ × ℝ → ℝ} (hF : Continuous F) :
-      Integrable F ((volume.restrict (Icc (0 : ℝ) ℓ)).prod (volume.restrict (Icc 0 d))) := by
-    rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
-    exact hF.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
-  rw [Measure.volume_eq_prod, ← Measure.prod_restrict, integral_prod_symm _ (hint hG),
-    integral_prod_symm _ (hint hH), ← integral_const_mul]
-  refine integral_mono ((hint hG).integral_prod_right.const_mul _) (hint hH).integral_prod_right
-    fun t => ?_
+  have hR : IsCompact (Icc (0 : ℝ) ℓ ×ˢ Icc 0 d) := isCompact_Icc.prod isCompact_Icc
+  -- Integrate over `t` the inequality on each horizontal segment `[0, ℓ] × {t}`.
+  rw [← integral_const_mul, ← one_mul (∫ z in _, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2)]
+  refine setIntegral_rect_le_mul_of_forall_setIntegral_le_symm
+    ((Continuous.continuousOn (by fun_prop)).integrableOn_compact hR)
+    ((Continuous.continuousOn (by fun_prop)).integrableOn_compact hR) fun t _ => ?_
+  rw [integral_const_mul, one_mul]
   -- For each `t`, the Poincaré inequality for the antiperiodic map `s ↦ u (s, t)`.
   have hg : ContDiff ℝ 1 fun s => u (s, t) := hu.comp (contDiff_id.prodMk contDiff_const)
   have hgg' (s : ℝ) :
@@ -137,7 +133,9 @@ theorem mul_setIntegral_norm_sq_le_setIntegral_norm_sq_orbitTorusOperator_of_ant
 hypotheses of
 `mul_setIntegral_norm_sq_le_setIntegral_norm_sq_orbitTorusOperator_of_antiperiodic`, a `C²` map
 twisted by `-1` along `(k ℓ, 0)` and by the sign `ε₂` along `(a ℓ, n d)` satisfies
-`(π / (k ℓ)) ^ 2 ∫ ‖u‖ ^ 2 ≤ ∫ ‖D u‖ ^ 2` over the rectangle `[0, k ℓ] × [0, k n d]`. -/
+`(π / (k ℓ)) ^ 2 ∫ ‖u‖ ^ 2 ≤ ∫ ‖D u‖ ^ 2` over the rectangle `[0, k ℓ] × [0, k n d]`. These
+translations generate the deck group of a finite cover of the torus `(ℝ / ℓℤ) × (ℝ / dℤ)` when
+`n ≥ 1` and `d > 0`; otherwise the rectangle is degenerate and the bound reads `0 ≤ 0`. -/
 theorem mul_setIntegral_norm_sq_le_setIntegral_norm_sq_orbitTorusOperator_of_cover
     (hℓ : 0 < ℓ) (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫) (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫)
     (hScont : Continuous S) (hu : ContDiff ℝ 2 u) (hε₂ : ε₂ ^ 2 = 1) {k n : ℕ} (hk : 0 < k)
@@ -158,8 +156,7 @@ theorem mul_setIntegral_norm_sq_le_setIntegral_norm_sq_orbitTorusOperator_of_cov
       rw [succ_nsmul, ← add_assoc, pow_succ', ← smul_smul, ← ih]
       exact ht (z + j • p₂).1 (z + j • p₂).2
   have hε : (ε₂ ^ k * ((a.negOnePow : ℤ) : ℝ)) ^ 2 = 1 := by
-    rw [mul_pow, ← pow_mul, mul_comm k, pow_mul, hε₂, one_pow, one_mul]
-    rw [← Int.cast_pow, ← Units.val_pow_eq_pow_val, Int.units_sq, Units.val_one, Int.cast_one]
+    simp [mul_pow, hε₂, pow_right_comm _ _ 2]
   have ht' (s t : ℝ) :
       u (s, t + k * n * d) = (ε₂ ^ k * ((a.negOnePow : ℤ) : ℝ)) • u (s, t) := by
     have hz : (s, t + k * n * d) = ((s, t) - a • p₁) + k • p₂ := by
