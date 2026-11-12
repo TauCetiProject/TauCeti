@@ -9,12 +9,15 @@ public import TauCeti.Analysis.Complex.Wirtinger.Weyl
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
 public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.Topology.Algebra.Module.Star
+import TauCeti.Analysis.Complex.Wirtinger.HalfPlaneAdjoint
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Star
-import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -47,10 +50,15 @@ below the axis; for `F = ℂ` it is `TauCeti.schwarzReflection`.
   Schwarz reflection**. With finite-dimensional coefficients and `η = 0`, `ξ` agrees almost
   everywhere on `Ω ∩ {0 ≤ im}` with a map holomorphic on all of `Ω`, real on `Ω ∩ ℝ` and
   satisfying `v (conj z) = star (v z)`. It is a weak analogue of
-  `TauCeti.differentiableOn_schwarzReflection_of_symmetric`; recovering that lemma from it would
-  also need the half-plane boundary-term computation for smooth data, which is not proved here.
+  `TauCeti.differentiableOn_schwarzReflection_of_symmetric`.
 * `HasWeakConjWirtingerDerivRealBoundaryOn.add`, `.sub`, `.const_smul`, `.mono`: the solutions
   form a real vector space, local in `Ω`.
+* `HasWeakConjWirtingerDerivRealBoundaryOn.of_tendsto`: closure under `L¹` convergence on
+  compact subsets of `Ω ∩ {0 ≤ im}`.
+* `TauCeti.hasWeakConjWirtingerDerivRealBoundaryOn_of_differentiableOn`: a scalar function
+  holomorphic on `Ω` and real on `Ω ∩ ℝ` solves the weak real-boundary equation with `η = 0`,
+  and `TauCeti.not_hasWeakConjWirtingerDerivRealBoundaryOn_of_im_pos`: one with positive
+  imaginary part at a point of `Ω ∩ ℝ` does not.
 * Check: the even reflection `s + i|t|`, which omits the conjugation, is not a weak solution
   below the axis. The companion check that the reflection of `z` is `z` is
   `TauCeti.starSchwarzReflection_id`.
@@ -69,7 +77,7 @@ moved to the upper one by the measure-preserving substitution `z ↦ conj z`.
 public noncomputable section
 
 open Complex MeasureTheory TopologicalSpace Set Filter Topology LineDeriv
-open scoped ContDiff Distributions ComplexConjugate ComplexStarModule
+open scoped ContDiff Distributions ComplexConjugate ComplexStarModule InnerProductSpace
 
 namespace TauCeti
 
@@ -223,18 +231,6 @@ theorem add {ξ₁ ξ₂ η₁ η₂ : ℂ → F} (h₁ : HasWeakConjWirtingerDe
       (integrable_smul_of_locallyIntegrableOn h₂.2.2.1 χ), map_add, map_add,
     h₁.2.2.2 χ hχ, h₂.2.2.2 χ hχ, smul_add]
 
-/-- Solutions of the weak real-boundary equation subtract. -/
-theorem sub {ξ₁ ξ₂ η₁ η₂ : ℂ → F} (h₁ : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ₁ η₁)
-    (h₂ : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ₂ η₂) :
-    HasWeakConjWirtingerDerivRealBoundaryOn Ω (ξ₁ - ξ₂) (η₁ - η₂) := by
-  refine ⟨h₁.1, h₁.2.1.sub h₂.2.1, h₁.2.2.1.sub h₂.2.2.1, fun χ hχ ↦ ?_⟩
-  simp only [Pi.sub_apply, smul_sub]
-  rw [integral_sub (integrable_cauchyRiemann_smul h₁.2.1 χ)
-      (integrable_cauchyRiemann_smul h₂.2.1 χ),
-    integral_sub (integrable_smul_of_locallyIntegrableOn h₁.2.2.1 χ)
-      (integrable_smul_of_locallyIntegrableOn h₂.2.2.1 χ), map_sub, map_sub,
-    h₁.2.2.2 χ hχ, h₂.2.2.2 χ hχ, smul_sub]
-
 /-- Real multiples of solutions of the weak real-boundary equation are solutions. Complex
 multiples are not: `i` times a solution real on `ℝ` is imaginary there. -/
 theorem const_smul (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) (c : ℝ) :
@@ -242,6 +238,12 @@ theorem const_smul (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) (c : �
   refine ⟨h.1, h.2.1.smul c, h.2.2.1.smul c, fun χ hχ ↦ ?_⟩
   simp only [Pi.smul_apply, smul_comm _ c]
   rw [integral_smul, integral_smul, map_smul, map_smul, h.2.2.2 χ hχ, smul_comm]
+
+/-- Solutions of the weak real-boundary equation subtract. -/
+theorem sub {ξ₁ ξ₂ η₁ η₂ : ℂ → F} (h₁ : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ₁ η₁)
+    (h₂ : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ₂ η₂) :
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω (ξ₁ - ξ₂) (η₁ - η₂) := by
+  simpa [sub_eq_add_neg] using h₁.add (h₂.const_smul (-1 : ℝ))
 
 /-- The weak real-boundary equation restricts to smaller open sets. -/
 theorem mono {Ω' : Opens ℂ} (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) (hΩ : Ω' ≤ Ω) :
@@ -251,6 +253,168 @@ theorem mono {Ω' : Opens ℂ} (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω �
     fun χ hχ ↦ h.2.2.2 ⟨χ, χ.contDiff, χ.hasCompactSupport, χ.tsupport_subset.trans hΩ⟩ hχ⟩
 
 end HasWeakConjWirtingerDerivRealBoundaryOn
+
+/-! ### Limits -/
+
+omit [StarAddMonoid F] [StarModule ℂ F] in
+/-- `L¹` convergence on compact subsets of `Ω ∩ {0 ≤ im}` passes to the half-plane pairings with
+a complex test function. -/
+private theorem tendsto_setIntegral_smul {ι : Type*} {l : Filter ι} {ws : ι → ℂ → F}
+    {w : ℂ → F} (hws : ∀ i, LocallyIntegrableOn (ws i) ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hw : LocallyIntegrableOn w ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (ht : ∀ K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, IsCompact K →
+      Tendsto (fun i ↦ ∫ z in K, ‖ws i z - w z‖) l (𝓝 0))
+    (ψ : 𝓓(Ω, ℂ)) :
+    Tendsto (fun i ↦ ∫ z in {z : ℂ | 0 ≤ z.im}, ψ z • ws i z) l
+      (𝓝 (∫ z in {z : ℂ | 0 ≤ z.im}, ψ z • w z)) := by
+  have hK : IsCompact (tsupport (ψ : ℂ → ℂ) ∩ {z : ℂ | 0 ≤ z.im}) :=
+    ψ.hasCompactSupport.isCompact.inter_right isClosed_im_nonneg
+  have hKΩ : tsupport (ψ : ℂ → ℂ) ∩ {z : ℂ | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
+    inter_subset_inter_left _ ψ.tsupport_subset
+  obtain ⟨C, hC⟩ := ψ.continuous.bounded_above_of_compact_support ψ.hasCompactSupport
+  refine MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub
+    (s := tsupport (ψ : ℂ → ℂ)) (ae_of_all _ hC)
+    (ae_of_all _ fun _ hz ↦ image_eq_zero_of_notMem_tsupport hz)
+    (Eventually.of_forall fun i ↦ integrable_smul_of_locallyIntegrableOn (hws i) ψ)
+    (integrable_smul_of_locallyIntegrableOn hw ψ).aestronglyMeasurable ?_
+  rw [Measure.restrict_restrict (isClosed_tsupport _).measurableSet]
+  exact MeasureTheory.tendsto_lintegral_enorm_of_tendsto_integral_norm
+    (Eventually.of_forall fun i ↦ ((hws i).integrableOn_compact_subset hKΩ hK).sub
+      (hw.integrableOn_compact_subset hKΩ hK)) (ht _ hKΩ hK)
+
+/-- **Closure under `L¹` limits up to the boundary.** If solutions `ξᵢ`, `ηᵢ` converge to locally
+integrable `ξ`, `η` in `L¹` on every compact subset of `Ω ∩ {0 ≤ im}`, then `ξ`, `η` is a
+solution. -/
+theorem HasWeakConjWirtingerDerivRealBoundaryOn.of_tendsto [ContinuousStar F] {ι : Type*}
+    {l : Filter ι} [l.NeBot] {ξs ηs : ι → ℂ → F}
+    (h : ∀ i, HasWeakConjWirtingerDerivRealBoundaryOn Ω (ξs i) (ηs i))
+    (hξ : LocallyIntegrableOn ξ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hη : LocallyIntegrableOn η ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hξt : ∀ K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, IsCompact K →
+      Tendsto (fun i ↦ ∫ z in K, ‖ξs i z - ξ z‖) l (𝓝 0))
+    (hηt : ∀ K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, IsCompact K →
+      Tendsto (fun i ↦ ∫ z in K, ‖ηs i z - η z‖) l (𝓝 0)) :
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η := by
+  obtain ⟨i₀⟩ := l.nonempty_of_neBot
+  refine ⟨(h i₀).1, hξ, hη, fun χ hχ ↦ ?_⟩
+  have hL := (continuous_selfAdjointPart ℝ F).continuousAt.tendsto.comp
+    (tendsto_setIntegral_smul (fun i ↦ (h i).2.1) hξ hξt (∂_{(1 : ℂ)} χ + I • ∂_{I} χ))
+  have hR := ((continuous_selfAdjointPart ℝ F).continuousAt.tendsto.comp
+    (tendsto_setIntegral_smul (fun i ↦ (h i).2.2.1) hη hηt χ)).const_smul (-(2 : ℝ))
+  simp only [add_apply, TestFunction.lineDerivOp_apply, smul_apply,
+    smul_eq_mul] at hL
+  exact tendsto_nhds_unique hL (hR.congr fun i ↦ ((h i).2.2.2 χ hχ).symm)
+
+/-! ### Holomorphic functions -/
+
+/-- For a scalar function `u` holomorphic on `Ω` and any complex test function `χ` on `Ω`, the real
+part of the half-plane pairing in the weak formulation is the boundary integral
+`∫_ℝ Im (χ u) ds`. This is the half-plane integration by parts of
+`TauCeti.setIntegral_im_pos_re_inner_cauchyRiemann` with the antiholomorphic weight `conj u`. -/
+private theorem re_setIntegral_cauchyRiemann_smul (χ : 𝓓(Ω, ℂ)) {u : ℂ → ℂ}
+    (hu : DifferentiableOn ℂ u Ω) :
+    (∫ z in {z : ℂ | 0 ≤ z.im},
+        (lineDeriv ℝ (χ : ℂ → ℂ) z 1 + I * lineDeriv ℝ (χ : ℂ → ℂ) z I) • u z).re =
+      ∫ s : ℝ, (χ s * u s).im := by
+  have hint := integrable_cauchyRiemann_smul
+    ((hu.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet).mono_set inter_subset_left) χ
+  have hd {z : ℂ} (hz : z ∈ (Ω : Set ℂ)) (v : ℂ) :
+      fderiv ℝ (fun w ↦ conj (u w)) z v = conj (deriv u z * v) := by
+    have h1 : HasFDerivAt (fun w ↦ conj (u w)) ((conjCLE : ℂ ≃L[ℝ] ℂ).toContinuousLinearMap.comp
+        ((ContinuousLinearMap.toSpanSingleton ℂ (deriv u z)).restrictScalars ℝ)) z :=
+      (conjCLE.toContinuousLinearMap.hasFDerivAt (x := u z)).comp z
+        ((hu.differentiableAt (Ω.isOpen.mem_nhds hz)).hasDerivAt.hasFDerivAt.restrictScalars ℝ)
+    rw [h1.fderiv]
+    simp [mul_comm]
+  have hcr (z : ℂ) : re ⟪-fderiv ℝ (fun w ↦ conj (u w)) z 1 +
+      I • fderiv ℝ (fun w ↦ conj (u w)) z I, χ z⟫_ℂ = 0 := by
+    by_cases hz : z ∈ (Ω : Set ℂ)
+    · have h0 : -fderiv ℝ (fun w ↦ conj (u w)) z 1 +
+          I • fderiv ℝ (fun w ↦ conj (u w)) z I = 0 := by
+        rw [hd hz, hd hz, smul_eq_mul]
+        simp only [map_mul, conj_I, mul_one]
+        linear_combination (-(conj (deriv u z))) * I_sq
+      rw [h0, inner_zero_left, Complex.zero_re]
+    · rw [image_eq_zero_of_notMem_tsupport fun h' ↦ hz (χ.tsupport_subset h'), inner_zero_right,
+        Complex.zero_re]
+  have hη : ContDiffOn ℝ 1 (fun w ↦ conj (u w)) Ω :=
+    conjCLE.contDiff.comp_contDiffOn ((hu.contDiffOn (n := 1) Ω.isOpen).restrict_scalars ℝ)
+  have key := setIntegral_im_pos_re_inner_cauchyRiemann (ξ := (χ : ℂ → ℂ))
+    (η := fun w ↦ conj (u w)) (χ.contDiff.of_le (by simp)) χ.hasCompactSupport
+    Ω.isOpen hη χ.tsupport_subset
+  simp only [hcr, integral_zero, zero_sub] at key
+  have hl (z : ℂ) : re ⟪conj (u z), fderiv ℝ (χ : ℂ → ℂ) z 1 +
+      I • fderiv ℝ (χ : ℂ → ℂ) z I⟫_ℂ =
+        ((lineDeriv ℝ (χ : ℂ → ℂ) z 1 + I * lineDeriv ℝ (χ : ℂ → ℂ) z I) • u z).re := by
+    rw [(χ.contDiff.differentiable (by simp) z).lineDeriv_eq_fderiv,
+      (χ.contDiff.differentiable (by simp) z).lineDeriv_eq_fderiv, RCLike.inner_apply',
+      conj_conj, smul_eq_mul, smul_eq_mul, mul_comm]
+  have hb (s : ℝ) : re ⟪I • χ s, conj (u s)⟫_ℂ = -(χ s * u s).im := by
+    simp [Complex.mul_re, Complex.mul_im]
+    ring
+  simp only [hl, hb, integral_neg, neg_neg] at key
+  rw [← key, setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0).symm]
+  exact (integral_re hint).symm
+
+/-- A scalar function holomorphic on `Ω` and real on `Ω ∩ ℝ` solves the weak real-boundary
+equation with `η = 0`. -/
+theorem hasWeakConjWirtingerDerivRealBoundaryOn_of_differentiableOn {u : ℂ → ℂ}
+    (hu : DifferentiableOn ℂ u Ω) (hreal : ∀ x : ℝ, (x : ℂ) ∈ Ω → (u x).im = 0) :
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω u 0 := by
+  refine ⟨inferInstance,
+    (hu.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet).mono_set inter_subset_left,
+    locallyIntegrableOn_zero, fun χ hχ ↦ ?_⟩
+  simp only [Pi.zero_apply, smul_zero, integral_zero, map_zero]
+  ext
+  rw [Complex.coe_realPart, re_setIntegral_cauchyRiemann_smul χ hu]
+  have h0 (s : ℝ) : (χ s * u s).im = 0 := by
+    by_cases hs : (s : ℂ) ∈ Ω
+    · simp [Complex.mul_im, hχ, hreal s hs]
+    · simp [image_eq_zero_of_notMem_tsupport fun h' ↦ hs (χ.tsupport_subset h')]
+  simp [h0]
+
+/-- A scalar function holomorphic on `Ω` with positive imaginary part at a point of `Ω ∩ ℝ` does
+not solve the weak real-boundary equation with `η = 0`. -/
+theorem not_hasWeakConjWirtingerDerivRealBoundaryOn_of_im_pos {u : ℂ → ℂ}
+    (hu : DifferentiableOn ℂ u Ω) {x : ℝ} (hx : (x : ℂ) ∈ Ω) (hux : 0 < (u x).im) :
+    ¬ HasWeakConjWirtingerDerivRealBoundaryOn Ω u 0 := by
+  intro h
+  have hU : IsOpen ((Ω : Set ℂ) ∩ u ⁻¹' {w | 0 < w.im}) :=
+    hu.continuousOn.isOpen_inter_preimage Ω.isOpen
+      (isOpen_lt continuous_const Complex.continuous_im)
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hU x ⟨hx, hux⟩
+  let b : ContDiffBump (x : ℂ) := ⟨ε / 4, ε / 2, by positivity, by linarith⟩
+  have hbs : tsupport b ⊆ Metric.ball (x : ℂ) ε := by
+    rw [b.tsupport_eq]
+    exact Metric.closedBall_subset_ball (by simp only [b]; linarith)
+  let χ : 𝓓(Ω, ℂ) := ⟨fun z ↦ (b z : ℂ), ofRealCLM.contDiff.comp b.contDiff,
+    b.hasCompactSupport.comp_left ofReal_zero,
+    (tsupport_comp_subset ofReal_zero _).trans (hbs.trans fun z hz ↦ (hball hz).1)⟩
+  have key := h.2.2.2 χ fun s ↦ ofReal_im _
+  simp only [Pi.zero_apply, smul_zero, integral_zero, map_zero] at key
+  have hre := congrArg (fun w : selfAdjoint ℂ ↦ (w : ℂ).re) key
+  simp only [Complex.coe_realPart, ofReal_re, re_setIntegral_cauchyRiemann_smul χ hu,
+    ZeroMemClass.coe_zero, Complex.zero_re] at hre
+  have hχv (z : ℂ) : χ z = (b z : ℂ) := rfl
+  have hfun : (fun s : ℝ ↦ (χ s * u s).im) = fun s : ℝ ↦ b (s : ℂ) * (u s).im := funext fun s ↦ by
+    simp [hχv, Complex.mul_im]
+  have hcont : Continuous fun z : ℂ ↦ b z * (u z).im :=
+    (b.continuous.continuousOn.mul (Complex.continuous_im.comp_continuousOn hu.continuousOn))
+      |>.continuous_of_tsupport_subset Ω.isOpen
+        ((tsupport_mul_subset_left).trans (hbs.trans fun z hz ↦ (hball hz).1))
+  have hpos : 0 < ∫ s : ℝ, b (s : ℂ) * (u s).im := by
+    refine Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero (x := x)
+      (hcont.comp continuous_ofReal)
+      (HasCompactSupport.mul_right
+        (b.hasCompactSupport.comp_isClosedEmbedding Complex.isometry_ofReal.isClosedEmbedding))
+      (fun s ↦ ?_) ?_
+    · by_cases hs : b s = 0
+      · simp [hs]
+      · exact mul_nonneg b.nonneg (hball (hbs (subset_tsupport _ hs))).2.le
+    · rw [b.one_of_mem_closedBall (Metric.mem_closedBall_self (by positivity)), one_mul]
+      exact hux.ne'
+  rw [hfun] at hre
+  linarith
 
 /-! ### Test functions -/
 
@@ -365,7 +529,7 @@ private theorem realPart_smul_halfPairing (h : HasWeakConjWirtingerDerivRealBoun
       (2 : ℝ) • c • ∫ z in {z : ℂ | 0 ≤ z.im}, (ψ : ℂ → ℝ) z • η z := by
     simp only [halfPairing]
     module
-  rw [hsplit, map_add, key, LinearMap.map_smul realPart (2 : ℝ), neg_smul, neg_add_cancel]
+  rw [hsplit, map_add, key, LinearMap.map_smul _root_.realPart (2 : ℝ), neg_smul, neg_add_cancel]
 
 private theorem add_star_halfPairing (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η)
     (ψ : 𝓓(Ω, ℝ)) : halfPairing ξ η ψ + star (halfPairing ξ η ψ) = 0 := by
@@ -401,9 +565,8 @@ private theorem integral_smul_starSchwarzReflection {f : ℂ → F} (a : ℂ →
       ext z
       simp
     -- The open and closed upper half-planes agree up to the null real axis.
-    have hae : {z : ℂ | 0 < z.im} =ᵐ[volume] {z : ℂ | 0 ≤ z.im} := by
-      simpa [Complex.inner, neg_nonpos, neg_neg_iff_pos] using
-        (setOf_inner_le_ae_eq_setOf_inner_lt (μ := volume) (neg_ne_zero.2 I_ne_zero) 0).symm
+    have hae : {z : ℂ | 0 < z.im} =ᵐ[volume] {z : ℂ | 0 ≤ z.im} :=
+      (Complex.setOf_le_im_ae_eq 0).symm
     rw [← conjLIE.measurePreserving.setIntegral_preimage_emb
       conjLIE.toHomeomorph.measurableEmbedding, hpre, ← integral_star,
       ← setIntegral_congr_set hae]

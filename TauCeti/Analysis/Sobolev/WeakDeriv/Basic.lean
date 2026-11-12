@@ -130,8 +130,7 @@ weaken them for no gain.
   `TauCeti.HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul`: the components of the
   definition.
 * `TauCeti.HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul_complex`: for a
-  complex vector space `F`, the defining identity holds for complex test functions too, by
-  splitting them into real and imaginary parts.
+  complex vector space `F`, the defining identity holds for complex test functions too.
 * `TauCeti.HasWeakFDerivOn.locallyIntegrableOn_deriv`: in finite dimension, a weak Fréchet
   derivative is locally integrable as an operator-valued function.
 * `TauCeti.hasWeakLineDerivOn_iff`: the unbundled restatement of the defining identity.
@@ -946,9 +945,8 @@ section ComplexTest
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [MeasurableSpace E]
   [OpensMeasurableSpace E] {μ : Measure E} {u u' : E → F}
 
-/-- The defining identity of a weak line derivative with values in a complex vector space, tested
-against a complex test function: split `ψ` into its real and imaginary parts, and test `u` and
-`I • u` against them. -/
+/-- For a weak line derivative with values in a complex vector space `F`, the integration by parts
+identity of `HasWeakLineDerivOn` also holds for complex test functions `ψ : 𝓓(Ω, ℂ)`. -/
 theorem HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul_complex
     (h : HasWeakLineDerivOn μ Ω u u' v) (ψ : 𝓓(Ω, ℂ)) :
     ∫ x, lineDeriv ℝ (ψ : E → ℂ) x v • u x ∂μ = -∫ x, ψ x • u' x ∂μ := by
@@ -966,9 +964,10 @@ theorem HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul_complex
     rw [add_smul, mul_smul, Complex.coe_smul, Complex.coe_smul]
   have h1 (x : E) : lineDeriv ℝ (ψ : E → ℂ) x v • u x =
       lineDeriv ℝ (a : E → ℝ) x v • u x + lineDeriv ℝ (b : E → ℝ) x v • (Complex.I • u x) := by
-    rw [hd, hd, hsplit]
-    rfl
-  have h2 (x : E) : ψ x • u' x = a x • u' x + b x • (Complex.I • u' x) := hsplit _ _
+    rw [hd, hd, Complex.reCLM_apply, Complex.imCLM_apply, ← hsplit]
+  have h2 (x : E) : ψ x • u' x = a x • u' x + b x • (Complex.I • u' x) := by
+    simp only [a, b, TestFunction.postcompCLM_apply, Function.comp_apply, Complex.reCLM_apply,
+      Complex.imCLM_apply, ← hsplit]
   have hib : Integrable (fun x ↦ lineDeriv ℝ (b : E → ℝ) x v • (Complex.I • u x)) μ := by
     simpa using integrable_lineDeriv_smul_of_locallyIntegrableOn hI.locallyIntegrableOn b v
   have hib' : Integrable (fun x ↦ b x • (Complex.I • u' x)) μ := by
