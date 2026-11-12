@@ -588,50 +588,6 @@ variable {M N : Type w} [TopologicalSpace M] [T1Space M] [TopologicalSpace N] [T
   {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
 
-/-- `OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart` when `j` maps the
-whole source of `φ` into that of `ψ` and `ψ ∘ j = φ` there. -/
-private theorem localHomologyMap_localOrientationOfOrientedChart_of_eqOn (j : C(M, N))
-    (φ : OpenPartialHomeomorph M E) (ψ : OpenPartialHomeomorph N E) {a : M}
-    (ha : a ∈ φ.source) (hmaps : MapsTo j φ.source ψ.source) (hφψ : EqOn (ψ ∘ j) φ φ.source)
-    (h : j ⁻¹' {j a} ⊆ {a}) :
-    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) j h (n + 1)
-        (φ.localOrientationOfOrientedChart ha ω hE).val =
-      (ψ.localOrientationOfOrientedChart (hmaps ha) ω hE).val := by
-  set Z := ModuleCat.of ℤ (ULift.{w} ℤ)
-  -- A class on the source of `φ` carried by `φ` to the model generator at `φ a`.
-  have hS : sourceRestrict φ ⁻¹' {φ a} = ContinuousMap.subtypeVal φ.source ⁻¹' {a} := by
-    ext z
-    simp only [mem_preimage, mem_singleton_iff, sourceRestrict_apply]
-    exact ⟨fun hz ↦ φ.injOn z.2 ha hz, fun hz ↦ by rw [← hz]; rfl⟩
-  have : IsIso (localHomologyMap Z (sourceRestrict φ) hS.subset (n + 1)) :=
-    isIso_localHomologyMap Z _ φ.isOpenEmbedding_restrict hS isClosed_singleton
-      (singleton_subset_iff.2 ⟨⟨a, ha⟩, rfl⟩) (n + 1)
-  obtain ⟨w, hw⟩ := (ConcreteCategory.bijective_of_isIso
-    (localHomologyMap Z (sourceRestrict φ) hS.subset (n + 1))).2
-    ((OpenPartialHomeomorph.refl E).localOrientationOfOrientedChart (mem_refl_source (φ a)) ω
-      hE).val
-  have hφ := localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart ω hE φ ha w hw
-  -- The restriction of `j` to the sources carries `w` to a class on the source of `ψ` which `ψ`
-  -- carries to the same model generator.
-  let jr : C(φ.source, ψ.source) :=
-    ⟨fun z ↦ ⟨j z, hmaps z.2⟩, (j.continuous.comp continuous_subtype_val).subtype_mk _⟩
-  have hjr : jr ⁻¹' (ContinuousMap.subtypeVal ψ.source ⁻¹' {j a}) ⊆
-      ContinuousMap.subtypeVal φ.source ⁻¹' {a} := fun z hz ↦
-    φ.injOn z.2 ha ((hφψ z.2).symm.trans ((congrArg ψ hz).trans (hφψ ha)))
-  have hψr : (sourceRestrict ψ).comp jr = sourceRestrict φ := by
-    ext z
-    exact hφψ z.2
-  have hSψ : sourceRestrict ψ ⁻¹' {φ a} ⊆ ContinuousMap.subtypeVal ψ.source ⁻¹' {j a} := by
-    rw [← hφψ ha]
-    exact sourceRestrict_preimage ψ (hmaps ha)
-  have hψ := localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart_of_eq ω hE ψ
-    (hmaps ha) (hφψ ha) (localHomologyMap Z jr hjr (n + 1) w) hSψ (by
-      rw [← ConcreteCategory.comp_apply, localHomologyMap_comp, localHomologyMap_congr Z hψr]
-      exact hw)
-  rw [← hφ, ← hψ, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-    localHomologyMap_comp, localHomologyMap_comp]
-  rfl
-
 /-- **Naturality of oriented-chart local orientations.** Let `j : M → N` be continuous with
 `j ⁻¹' {j a} ⊆ {a}`, so that `a` is the only point of `M` sent to `j a`, and let `φ` and `ψ` be
 charts of `M` at `a` and of `N` at `j a` with `ψ ∘ j = φ` near `a`. Then the map of local
@@ -644,22 +600,23 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_localOrientationOfOriented
     localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) j h (n + 1)
         (φ.localOrientationOfOrientedChart ha ω hE).val =
       (ψ.localOrientationOfOrientedChart hja ω hE).val := by
-  -- Restrict `φ` to an open neighbourhood `W` of `a` on which `j` maps into the source of `ψ` and
-  -- `ψ ∘ j = φ`; the restricted chart selects the same local orientation at `a` as `φ`.
-  obtain ⟨W, hWsub, hWo, haW⟩ := mem_nhds_iff.1
-    (hφψ.and (j.continuous.continuousAt.preimage_mem_nhds (ψ.open_source.mem_nhds hja)))
-  have haW' : a ∈ (φ.restrOpen W hWo).source := ⟨ha, haW⟩
-  have hφW : ((φ.restrOpen W hWo).localOrientationOfOrientedChart haW' ω hE).val =
-      (φ.localOrientationOfOrientedChart ha ω hE).val := by
-    refine Eq.trans ?_ (localHomologyMap_localOrientationOfOrientedChart_of_eqOn ω hE
-      (ContinuousMap.id M) (φ.restrOpen W hWo) φ haW' (fun _ hy ↦ hy.1) (fun _ _ ↦ rfl) subset_rfl)
-    -- The identity of `M` induces the identity of local homology at `a`.
-    exact ((ConcreteCategory.congr_hom
-      ((localHomologyMap_id _ (S := {a}) (T := {a}) subset_rfl _).trans
-        (localHomologyRestriction_refl _ {a} _)) _).trans (ConcreteCategory.id_apply _)).symm
-  rw [← hφW]
-  exact localHomologyMap_localOrientationOfOrientedChart_of_eqOn ω hE j (φ.restrOpen W hWo) ψ
-    haW' (fun _ hy ↦ (hWsub hy.2).2) (fun _ hy ↦ (hWsub hy.2).1) h
+  -- `j` read in the charts is the identity near `φ a`, so this is the sign-one case of
+  -- `OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationOfOrientedChart` on `univ`.
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
+  have hf : HasFDerivAt (ψ ∘ j ∘ φ.symm) (ContinuousLinearMap.id ℝ E) (φ a) := by
+    refine (hasFDerivAt_id (φ a)).congr_of_eventuallyEq ?_
+    filter_upwards [(φ.tendsto_symm ha).eventually hφψ, φ.eventually_right_inverse' ha]
+      with y hy hy'
+    exact hy.trans hy'
+  have hdet : (ContinuousLinearMap.id ℝ E).det = 1 := LinearMap.det_id
+  have key := φ.localHomologyMap_restrict_localOrientationOfOrientedChart ω hE ψ j ha hja
+    isOpen_univ (mem_univ a) (fun _ _ hz ↦ h hz) hf (hdet ▸ one_ne_zero)
+  rw [hdet, sign_one, SignType.coe_one, one_smul] at key
+  -- The restriction of `j` to `univ` is `j` after the inclusion of `univ`.
+  have h' := isOpen_univ.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm
+    ⟨a, mem_univ a⟩ (φ.localOrientationOfOrientedChart ha ω hE) fun _ hz ↦ Subtype.ext hz
+  rw [← h', ← ConcreteCategory.comp_apply]
+  exact (ConcreteCategory.congr_hom (localHomologyMap_comp _ _ j _ h (n + 1)) _).trans key
 
 end ChartNaturality
 
