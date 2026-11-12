@@ -77,16 +77,22 @@ Declarations here are stated in the root `WeierstrassCurve` namespace, not under
 because they extend Mathlib's own division-polynomial API and mention nothing of this
 repository's, so that dot notation such as `W.Φ_two_eq_X_mul_Ψ₂Sq_sub_Ψ₃` elaborates.
 
-The `Φ 2` identity is the step that turns the doubling formula for the `x`-coordinate
-(`DivisionPolynomial/Descent.lean`) into the factorisation `Ψ₃(x) = (x - x')·Ψ₂Sq(x)` that the
-discriminant form `κ² ∣ 4Δ` of the Nagell–Lutz theorem runs on
-(`DivisionPolynomial/Torsion/Discriminant.lean`), and `evalEval_ψ₂_of_isCharNeTwoNF` is what turns
-`ψ₂` into `2y` once the model is short (`DivisionPolynomial/ShortNagellLutz.lean`).
+## Use in Nagell–Lutz
+
+The discriminant half of the Nagell–Lutz theorem is its `κ² ∣ 4Δ` form,
+`evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ` in `DivisionPolynomial/Torsion/Discriminant.lean`. The
+`Φ 2` identity is the step that turns the doubling formula for the `x`-coordinate into the
+factorisation `Ψ₃(x) = (x - x')·Ψ₂Sq(x)` that argument runs on, and
+`evalEval_ψ₂_of_isCharNeTwoNF` is what turns `ψ₂` into `2y` once the model is short
+(`DivisionPolynomial/ShortNagellLutz.lean`). The rest of that route is the point-level doubling
+formula in `DivisionPolynomial/Descent.lean` and the integrality theorem
+`isInteger_or_order_two_of_torsion`. Nothing in this file assumes them: every declaration here is
+an identity among polynomials, their evaluations, or Mathlib's projective formulas.
 
 ## Provenance
 
 Ported from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at `dev/modular-curves @
-9fec8eba7652`.
+9fec8eba7652`, from its `projects/NagellLutz`.
 
 The `Φ 2` identity is **unnamed** in the source. It appears only as the inner `show` of the
 `eval`-level wrapper `Phi2_eval_eq`, in two files and with byte-identical proofs:

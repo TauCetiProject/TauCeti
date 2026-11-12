@@ -43,8 +43,25 @@ the next, whose homotopy equivalences to the sublevels commute with the inclusio
 `M`, starting below the minimum of `f`, where the sublevel is empty, and ending above its maximum,
 where the sublevel is `M`, gives the CW model of `M`.
 
+The same construction works for relative CW complexes: a CW model `h : W ≃ₕ M_a` relative to a
+base `D ⊆ W` extends to a CW model of `M_b` relative to the image of `D`
+(`TauCeti.IsMorse.exists_relCWComplex_extension_homotopyEquiv_sublevel`), since cellular
+approximation moves the attaching maps into the relative skeleta of `W`. Starting from `M_a`
+itself, a CW complex relative to itself with no cells, this gives the relative CW model of a
+regular band: `M_b` is homotopy equivalent, by a homotopy equivalence which is the inclusion on
+`M_a`, to `M_a` with one `λ`-cell attached for each critical point of index `λ` with value in
+`(a, b]`, arranged as a CW complex relative to `M_a`
+(`TauCeti.IsMorse.exists_relCWComplex_homotopyEquiv_sublevel`). No CW structure on `M_a` and no
+compactness of `M` is needed.
+
 ## Main results
 
+* `TauCeti.IsMorse.exists_relCWComplex_extension_homotopyEquiv_sublevel`: a relative CW model of
+  `M_a` extends to a relative CW model of `M_b`, with one new `λ`-cell for each critical point of
+  index `λ` with value in `(a, b]`.
+* `TauCeti.IsMorse.exists_relCWComplex_homotopyEquiv_sublevel`: **the relative CW model of a
+  regular band.** `M_b` is homotopy equivalent to a CW complex relative to a copy of `M_a`, with
+  one `λ`-cell for each critical point of index `λ` with value in `(a, b]`.
 * `TauCeti.IsMorse.exists_cwComplex_extension_homotopyEquiv_sublevel`: a CW model of `M_a`
   extends to a CW model of `M_b` containing it as a subcomplex, with one new `λ`-cell for each
   critical point of index `λ` with value in `(a, b]`.
@@ -61,6 +78,8 @@ where the sublevel is `M`, gives the CW model of `M`.
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
   Theorem 3.5 and its proof (Lemmas 3.6 and 3.7).
+* R. L. Cohen, K. Iga and P. Norbury, *Topics in Morse Theory*, lecture notes, 2006,
+  Theorem 5.7, for the relative CW model of a regular band.
 -/
 
 public section
@@ -132,16 +151,17 @@ private theorem IsMorse.exists_homotopyEquiv_sigmaDiskAdjunction (hf : IsMorse I
   exact coe_morseCellComparison_morseCellAttachmentIncl _ _ _ _ hψ hε.le z
 
 variable (I f) in
-/-- Every CW model `h : W ≃ₕ M_s` of the sublevel `M_s = {f ≤ s}` extends to a CW model
-`h' : W' ≃ₕ M_t`: `W` is a subcomplex of `W'` along a closed embedding `ι`, `h'` restricts to `h`
-on `W`, and in each dimension `m` the cells of `W'` are those of `W` together with one cell for each
-critical point of index `m` with value in `(s, t]`. -/
+/-- Every relative CW model `h : W ≃ₕ M_s` of the sublevel `M_s = {f ≤ s}`, a CW complex `W`
+relative to a base `D`, extends to a relative CW model `h' : W' ≃ₕ M_t` relative to the image of
+`D`: `W` is embedded in `W'` along a closed embedding `ι`, `h'` restricts to `h` on `W`, and in each
+dimension `m` the cells of `W'` are those of `W` together with one cell for each critical point of
+index `m` with value in `(s, t]`. -/
 private def CWModelExtends (s t : ℝ) (_ : s ≤ t) : Prop :=
-  ∀ (W : Type u) [TopologicalSpace W] [T2Space W] [CWComplex (univ : Set W)]
+  ∀ (W : Type u) [TopologicalSpace W] [T2Space W] (D : Set W) [RelCWComplex (univ : Set W) D]
     (h : W ≃ₕ {x | f x ≤ s}),
-      ∃ (W' : Type u) (_ : TopologicalSpace W') (_ : T2Space W') (_ : CWComplex (univ : Set W'))
-        (ι : C(W, W')) (h' : W' ≃ₕ {x | f x ≤ t}),
-        IsClosedEmbedding ι ∧ (∀ w, (h' (ι w) : M) = h w) ∧
+      ∃ (W' : Type u) (_ : TopologicalSpace W') (_ : T2Space W') (ι : C(W, W')) (D' : Set W')
+        (_ : RelCWComplex (univ : Set W') D') (h' : W' ≃ₕ {x | f x ≤ t}),
+        D' = ι '' D ∧ IsClosedEmbedding ι ∧ (∀ w, (h' (ι w) : M) = h w) ∧
         ∃ e : ∀ m, cell (univ : Set W') m ≃ cell (univ : Set W) m ⊕
             ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc s t | manifoldMorseIndex I f x = m},
           ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x)
@@ -150,13 +170,13 @@ private def CWModelExtends (s t : ℝ) (_ : s ≤ t) : Prop :=
 private theorem cwModelExtends_of_forall_notMem (hf : IsMorse I f) {s t : ℝ} (hst : s ≤ t)
     (hcompact : IsCompact (f ⁻¹' Icc s t)) (hcrit : ∀ x ∈ criticalPoints I f, f x ∉ Icc s t) :
     CWModelExtends I f s t hst := by
-  intro W _ _ _ h
+  intro W _ _ D _ h
   obtain ⟨e', he'⟩ := exists_sublevelHomotopyEquiv hf.contMDiff hst hcompact
     fun x hsx hxt hx ↦ hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hsx, hxt⟩
   have (m : ℕ) : IsEmpty
       ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc s t | manifoldMorseIndex I f x = m} :=
     ⟨fun x ↦ hcrit x x.2.1.1 (Ioc_subset_Icc_self x.2.1.2)⟩
-  exact ⟨W, _, ‹_›, ‹_›, .id W, h.trans e', .id, fun w ↦ he' (h w),
+  exact ⟨W, _, ‹_›, .id W, D, ‹_›, h.trans e', (image_id D).symm, .id, fun w ↦ he' (h w),
     fun m ↦ (Equiv.sumEmpty _ _).symm, fun m j x ↦ rfl⟩
 
 /-- Across one critical level, the CW model gains one `λ`-cell for each critical point of index
@@ -165,12 +185,12 @@ private theorem IsMorse.exists_cwModelExtends_level (hf : IsMorse I f) {c δ : �
     (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) :
     ∃ ε, ∃ hε : 0 < ε, ε ≤ δ ∧ CWModelExtends I f (c - ε) (c + ε) (by linarith) := by
   obtain ⟨ε, hε, hεδ, hsub, a, e, he⟩ := hf.exists_homotopyEquiv_sigmaDiskAdjunction hδ hcompact
-  refine ⟨ε, hε, hεδ, fun W _ _ _ h ↦ ?_⟩
+  refine ⟨ε, hε, hεδ, fun W _ _ D _ h ↦ ?_⟩
   let := sigmaDiskRelCWComplex fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦
     manifoldMorseIndex I f p
   -- Attach the discs to `W` along attaching maps moved into its skeleta.
   obtain ⟨b, hb, -, Ψ, hΨ⟩ := h.exists_homotopyEquiv_sigmaDiskAdjunction a
-  let := sigmaDiskAdjunctionCWComplex _ b hb
+  let := sigmaDiskAdjunctionRelCWComplex _ b hb
   -- The new `m`-cells are the critical points of index `m` on the level `c`, which are those with
   -- values in `(c - ε, c + ε]`.
   let T (m : ℕ) : {p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) // manifoldMorseIndex I f p = m} ≃
@@ -183,10 +203,10 @@ private theorem IsMorse.exists_cwModelExtends_level (hf : IsMorse I f) {c δ : �
           exact ⟨⟨hx, by linarith, by linarith⟩, hi⟩
         · rintro ⟨⟨hx, h₁, h₂⟩, hi⟩
           exact ⟨⟨hx, hsub ⟨hx, h₁.le, h₂⟩⟩, hi⟩
-  refine ⟨_, _, inferInstance, sigmaDiskAdjunctionCWComplex _ b hb,
-    (pushout.inr _ (TopCat.ofHom (sigmaDiskAttachingMap b))).hom, Ψ.trans e,
+  refine ⟨_, _, inferInstance, (pushout.inr _ (TopCat.ofHom (sigmaDiskAttachingMap b))).hom, _,
+    sigmaDiskAdjunctionRelCWComplex _ b hb, Ψ.trans e, rfl,
     isClosedEmbedding_pushout_inr_relCWBaseInclusion _, fun w ↦ ?_,
-    fun m ↦ (sigmaDiskAdjunctionCWComplexCellEquiv _ b hb m).trans
+    fun m ↦ (sigmaDiskAdjunctionRelCWComplexCellEquiv _ b hb m).trans
       (Equiv.sumCongr (.refl _) (T m)), fun m j x ↦ ?_⟩
   · rw [ContinuousMap.HomotopyEquiv.trans_apply, hΨ, he]
   · simp
@@ -197,9 +217,9 @@ private theorem CWModelExtends.trans {s m t : ℝ} {hsm : s ≤ m} {hmt : m ≤ 
     (h₁ : CWModelExtends I f s m hsm) (h₂ : CWModelExtends I f m t hmt) :
     CWModelExtends I f s t (hsm.trans hmt) := by
   classical
-  intro W _ _ _ h
-  obtain ⟨W₁, _, _, _, ι₁, h₁', hι₁, hh₁, e₁, he₁⟩ := h₁ W h
-  obtain ⟨W₂, _, _, _, ι₂, h₂', hι₂, hh₂, e₂, he₂⟩ := h₂ W₁ h₁'
+  intro W _ _ D _ h
+  obtain ⟨W₁, _, _, ι₁, D₁, _, h₁', rfl, hι₁, hh₁, e₁, he₁⟩ := h₁ W D h
+  obtain ⟨W₂, _, _, ι₂, D₂, _, h₂', rfl, hι₂, hh₂, e₂, he₂⟩ := h₂ W₁ (ι₁ '' D) h₁'
   -- The critical points with values in `(s, t]` are those with values in `(s, m]` or `(m, t]`.
   let U (i : ℕ) :
       ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc s m | manifoldMorseIndex I f x = i} ⊕
@@ -213,10 +233,34 @@ private theorem CWModelExtends.trans {s m t : ℝ} {hsm : s ≤ m} {hmt : m ≤ 
         simp only [mem_union, mem_ofPred_eq, mem_inter_iff, mem_preimage,
           ← Ioc_union_Ioc_eq_Ioc hsm hmt]
         tauto)
-  refine ⟨W₂, _, ‹_›, ‹_›, ι₂.comp ι₁, h₂', hι₂.comp hι₁, fun w ↦ (hh₂ _).trans (hh₁ w),
+  refine ⟨W₂, _, ‹_›, ι₂.comp ι₁, _, ‹_›, h₂', image_image ι₂ ι₁ D, hι₂.comp hι₁,
+    fun w ↦ (hh₂ _).trans (hh₁ w),
     fun i ↦ (e₂ i).trans ((Equiv.sumCongr (e₁ i) (.refl _)).trans
       ((Equiv.sumAssoc _ _ _).trans (Equiv.sumCongr (.refl _) (U i)))), fun i j x ↦ ?_⟩
   simp [he₁, he₂]
+
+/-- **Extending relative CW models of sublevels.** Let `f` be a Morse function and `a ≤ b` regular
+values of `f` with compact band `f⁻¹[a, b]`, and let `h : W ≃ₕ M_a` be a homotopy equivalence from a
+CW complex `W` relative to a base `D` to the sublevel `M_a = {f ≤ a}`. Then there are a space `W'`
+which is a CW complex relative to the image `D'` of `D` under a closed embedding `ι : W → W'`, and a
+homotopy equivalence `h' : W' ≃ₕ M_b` extending `h`: `h' ∘ ι` is `h` followed by the inclusion
+`M_a ⊆ M_b`. The cells of `W` are cells of `W'` along `ι`, with the same characteristic maps
+followed by `ι`, and in each dimension `m` the other `m`-cells of `W'` correspond to the critical
+points of index `m` with value in `(a, b]`. -/
+theorem IsMorse.exists_relCWComplex_extension_homotopyEquiv_sublevel (hf : IsMorse I f) {a b : ℝ}
+    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (hb : IsRegularValue I 𝓘(ℝ) f b) (W : Type u) [TopologicalSpace W] [T2Space W] (D : Set W)
+    [RelCWComplex (univ : Set W) D] (h : W ≃ₕ {x | f x ≤ a}) :
+    ∃ (W' : Type u) (_ : TopologicalSpace W') (_ : T2Space W') (ι : C(W, W')) (D' : Set W')
+      (_ : RelCWComplex (univ : Set W') D') (h' : W' ≃ₕ {x | f x ≤ b}),
+      D' = ι '' D ∧ IsClosedEmbedding ι ∧ (∀ w, (h' (ι w) : M) = h w) ∧
+      ∃ e : ∀ m, cell (univ : Set W') m ≃ cell (univ : Set W) m ⊕
+          ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m},
+        ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) :=
+  hf.band_induction (P := CWModelExtends I f) hab hcompact ha hb
+    (fun _ _ hst hcompact hcrit ↦ cwModelExtends_of_forall_notMem hf hst hcompact hcrit)
+    (fun _ _ _ _ _ hδ hcompact ↦ hf.exists_cwModelExtends_level hδ hcompact)
+    (fun _ _ _ _ _ _ h₁ h₂ ↦ h₁.trans h₂) W D h
 
 /-- **Extending CW models of sublevels.** Let `f` be a Morse function and `a ≤ b` regular values of
 `f` with compact band `f⁻¹[a, b]`, and let `h : W ≃ₕ M_a` be a homotopy equivalence from a CW
@@ -234,11 +278,37 @@ theorem IsMorse.exists_cwComplex_extension_homotopyEquiv_sublevel (hf : IsMorse 
       IsClosedEmbedding ι ∧ (∀ w, (h' (ι w) : M) = h w) ∧
       ∃ e : ∀ m, cell (univ : Set W') m ≃ cell (univ : Set W) m ⊕
           ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m},
-        ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) :=
-  hf.band_induction (P := CWModelExtends I f) hab hcompact ha hb
-    (fun _ _ hst hcompact hcrit ↦ cwModelExtends_of_forall_notMem hf hst hcompact hcrit)
-    (fun _ _ _ _ _ hδ hcompact ↦ hf.exists_cwModelExtends_level hδ hcompact)
-    (fun _ _ _ _ _ _ h₁ h₂ ↦ h₁.trans h₂) W h
+        ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
+  obtain ⟨W', _, _, ι, D', _, h', hD', hι, hh, e, he⟩ :=
+    hf.exists_relCWComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb W ∅ h
+  -- The base of `W'` is the image of the empty base of `W`.
+  rw [image_empty] at hD'
+  subst hD'
+  exact ⟨W', _, ‹_›, RelCWComplex.toCWComplex _, ι, h', hι, hh, e, he⟩
+
+/-- **The relative CW model of a regular band.** Let `f` be a Morse function and `a ≤ b` regular
+values of `f` with compact band `f⁻¹[a, b]`. Then the sublevel `M_b = {f ≤ b}` is homotopy
+equivalent to a CW complex `X` relative to a copy of `M_a = {f ≤ a}`, with one `m`-cell for each
+critical point of index `m` with value in `(a, b]`: there are a closed embedding `j : M_a → X`, a
+relative CW structure on `X` with base the image of `j`, and a homotopy equivalence
+`h : X ≃ₕ M_b` such that `h ∘ j` is the inclusion `M_a ⊆ M_b`. No CW structure on `M_a` is
+needed. -/
+theorem IsMorse.exists_relCWComplex_homotopyEquiv_sublevel (hf : IsMorse I f) {a b : ℝ}
+    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (hb : IsRegularValue I 𝓘(ℝ) f b) :
+    ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (j : C({x | f x ≤ a}, X))
+      (_ : RelCWComplex (univ : Set X) (range j)) (h : X ≃ₕ {x | f x ≤ b}),
+      IsClosedEmbedding j ∧ (∀ x, (h (j x) : M) = x) ∧
+      Nonempty (∀ m, cell (univ : Set X) m ≃
+        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m}) := by
+  -- Start from `M_a`, a CW complex relative to itself with no cells.
+  let := relCWComplexSelf (univ : Set {x | f x ≤ a}) isClosed_univ
+  obtain ⟨X, _, _, j, D', _, h, hD', hj, hh, e, -⟩ :=
+    hf.exists_relCWComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb {x | f x ≤ a}
+      univ (.refl _)
+  rw [image_univ] at hD'
+  subst hD'
+  exact ⟨X, _, ‹_›, j, ‹_›, h, hj, hh, ⟨fun m ↦ (e m).trans (Equiv.emptySum _ _)⟩⟩
 
 /-- **CW models of sublevels.** Let `f` be a Morse function and `a ≤ b` regular values of `f`
 with compact band `f⁻¹[a, b]`. If `W` is a finite CW complex homotopy equivalent to the sublevel
