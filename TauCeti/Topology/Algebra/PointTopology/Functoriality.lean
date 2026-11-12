@@ -126,8 +126,9 @@ end Ring
 section Nilradical
 
 variable {k A R : Type*} [CommSemiring k] [CommRing A] [Algebra k A]
-  [CommRing R] [Algebra k R] [IsReduced R] [TopologicalSpace R]
+  [Semiring R] [Algebra k R] [IsReduced R] [TopologicalSpace R]
 
+variable (k A R) in
 /-- Over a reduced ring, every point of `A` factors uniquely through `A ⧸ nilradical A`:
 precomposition with the quotient map is a homeomorphism of point spaces. No separation or
 finiteness hypothesis is needed. -/
@@ -136,29 +137,29 @@ noncomputable def quotientNilradicalHomeomorph :
   toFun x := x.comp (Ideal.Quotient.mkₐ k (nilradical A))
   invFun x := Ideal.Quotient.liftₐ (nilradical A) x fun a ha ↦
     IsReduced.eq_zero _ ((mem_nilradical.mp ha).map x)
-  left_inv x := Ideal.Quotient.algHom_ext k (by ext a; rfl)
-  right_inv x := by ext a; rfl
+  left_inv x := Ideal.Quotient.algHom_ext k (Ideal.Quotient.liftₐ_comp _ _ _)
+  right_inv x := Ideal.Quotient.liftₐ_comp _ _ _
   continuous_toFun := continuous_comap _
   continuous_invFun := by
     refine (isEmbedding_comap_of_surjective (R := R) _
       (Ideal.Quotient.mkₐ_surjective k (nilradical A))).continuous_iff.2 ?_
-    convert continuous_id with x
-    ext a
-    rfl
+    convert continuous_id
+    funext x
+    exact Ideal.Quotient.liftₐ_comp _ _ _
 
 /-- The homeomorphism `quotientNilradicalHomeomorph` is precomposition with the quotient map. -/
 @[simp]
 theorem quotientNilradicalHomeomorph_apply (x : A ⧸ nilradical A →ₐ[k] R) :
-    quotientNilradicalHomeomorph x = x.comp (Ideal.Quotient.mkₐ k (nilradical A)) :=
+    quotientNilradicalHomeomorph k A R x = x.comp (Ideal.Quotient.mkₐ k (nilradical A)) :=
   (rfl)
 
 /-- The inverse of `quotientNilradicalHomeomorph` sends a point to the map it induces on
 the quotient by the nilradical. -/
 @[simp]
 theorem quotientNilradicalHomeomorph_symm_apply_mk (x : A →ₐ[k] R) (a : A) :
-    quotientNilradicalHomeomorph.symm x (Ideal.Quotient.mk (nilradical A) a) = x a :=
-  (rfl)
-
+    (quotientNilradicalHomeomorph k A R).symm x (Ideal.Quotient.mk (nilradical A) a) = x a := by
+  conv_rhs => rw [← (quotientNilradicalHomeomorph k A R).apply_symm_apply x,
+    quotientNilradicalHomeomorph_apply, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
 end Nilradical
 
 /-- For a family of algebra maps out of a tensor product, continuity of evaluation on pure
