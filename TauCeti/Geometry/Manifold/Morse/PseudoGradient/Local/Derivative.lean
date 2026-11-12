@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local
+public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
@@ -50,14 +50,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 namespace MorseChart
 
 variable (φ : MorseChart E f x)
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- The linear flow of a Morse chart is jointly continuous in the coordinates and the time. -/
-theorem continuous_linearFlow_uncurry :
-    Continuous fun p : (Fin (Module.finrank ℝ E) → ℝ) × ℝ ↦ φ.linearFlow p.2 p.1 := by
-  refine continuous_pi fun i ↦ ?_
-  simp only [linearFlow_apply]
-  fun_prop
 
 /-- The linear flow of a Morse chart at a fixed time, as a continuous linear map of the model,
 read in the coordinates of the chart. -/

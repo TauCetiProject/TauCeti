@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local
+public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Basic
 public import TauCeti.Geometry.Manifold.LinearSlice
+public import TauCeti.LinearAlgebra.ExtendByZero
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Normed.Module.Complemented
@@ -33,6 +34,9 @@ reversed flow.
 
 * `TauCeti.MorseChart.stableSubspace`: the coordinate subspace of the positive weights of a Morse
   chart, of dimension `n - k`.
+* `TauCeti.MorseChart.negativeCoord` and `TauCeti.MorseChart.negativeExtend`: the coordinates of
+  negative weight of a vector, and the vector with given coordinates of negative weight and zero
+  coordinates of positive weight.
 * `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet_flow`: the slice charts of `W^s(x)`
   given by a Morse chart composed with the time-`T` maps of the flow.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableSet_chart`: slice charts for `W^s(x)`.
@@ -87,6 +91,65 @@ theorem mem_stableSubspace {v : E} :
   rw [stableSubspace, LinearMap.mem_ker, negativeCoord, funext_iff]
   simp [LinearMap.funLeft_apply]
 
+/-- A vector lies in the stable subspace exactly when its coordinates of negative weight vanish. -/
+theorem mem_stableSubspace_iff_negativeCoord_eq_zero {v : E} :
+    v ∈ φ.stableSubspace ↔ φ.negativeCoord v = 0 := by
+  simp [funext_iff]
+
+/-- The space of coordinates of negative weight of a Morse chart has the dimension of the Morse
+index. -/
+theorem finrank_negativeWeight_fun :
+    Module.finrank ℝ ({i // φ.weight i < 0} → ℝ) = manifoldMorseIndex 𝓘(ℝ, E) f x := by
+  rw [Module.finrank_fintype_fun_eq_card, ← φ.ncard_weight_neg, Set.ncard_eq_toFinset_card',
+    Fintype.card_subtype, Set.toFinset_ofPred]
+
+/-- The vector of the model whose coordinates in the Morse chart `φ` are `c` in the directions of
+negative weight and `0` in the directions of positive weight. -/
+noncomputable def negativeExtend : ({i // φ.weight i < 0} → ℝ) →ₗ[ℝ] E :=
+  (φ.coord.symm : (Fin (Module.finrank ℝ E) → ℝ) →ₗ[ℝ] E) ∘ₗ
+    Function.ExtendByZero.linearMap ℝ ℝ Subtype.val
+
+/-- The coordinates of negative weight of `φ.negativeExtend c` are `c`. -/
+theorem coord_negativeExtend_of_weight_neg (c : {i // φ.weight i < 0} → ℝ)
+    (i : {i // φ.weight i < 0}) : φ.coord (φ.negativeExtend c) i = c i := by
+  simp [negativeExtend, Function.ExtendByZero.linearMap_apply_of_injective ℝ
+    Subtype.val_injective]
+
+/-- The coordinates of positive weight of `φ.negativeExtend c` vanish. -/
+theorem coord_negativeExtend_of_not_weight_neg (c : {i // φ.weight i < 0} → ℝ)
+    {i : Fin (Module.finrank ℝ E)} (hi : ¬φ.weight i < 0) : φ.coord (φ.negativeExtend c) i = 0 := by
+  simp only [negativeExtend, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
+    LinearEquiv.apply_symm_apply]
+  exact Function.ExtendByZero.linearMap_apply_of_notMem_range ℝ c fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2)
+
+/-- `negativeExtend` is a right inverse of the coordinates of negative weight. -/
+@[simp]
+theorem negativeCoord_negativeExtend (c : {i // φ.weight i < 0} → ℝ) :
+    φ.negativeCoord (φ.negativeExtend c) = c := by
+  funext i
+  rw [negativeCoord_apply, coord_negativeExtend_of_weight_neg]
+
+/-- `negativeExtend` is injective. -/
+theorem injective_negativeExtend : Injective φ.negativeExtend :=
+  LeftInverse.injective φ.negativeCoord_negativeExtend
+
+/-- A vector whose coordinates of positive weight vanish is recovered from its coordinates of
+negative weight. -/
+theorem negativeExtend_negativeCoord {v : E}
+    (hv : ∀ i, ¬φ.weight i < 0 → φ.coord v i = 0) : φ.negativeExtend (φ.negativeCoord v) = v := by
+  refine φ.coord.injective (funext fun i ↦ ?_)
+  by_cases hi : φ.weight i < 0
+  · exact (φ.coord_negativeExtend_of_weight_neg _ ⟨i, hi⟩).trans (negativeCoord_apply _ _ _)
+  · rw [φ.coord_negativeExtend_of_not_weight_neg _ hi, hv i hi]
+
+/-- The stable subspace of the negated Morse chart consists of the vectors whose coordinates of
+positive weight vanish, the vectors `φ.negativeExtend c`. -/
+theorem mem_neg_stableSubspace_iff (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) {v : E} :
+    v ∈ (φ.neg h).stableSubspace ↔ ∀ i, ¬φ.weight i < 0 → φ.coord v i = 0 := by
+  rw [mem_stableSubspace, neg_coord, neg_weight]
+  refine forall_congr' fun i ↦ ?_
+  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> simp [hi]
+
 /-- The diagonal form `Σᵢ wᵢ (L u)ᵢ²` of a Morse chart is positive on the nonzero vectors of the
 stable subspace, where the coordinates of negative weight vanish. -/
 theorem sum_weight_mul_coord_sq_pos {u : E} (hu : u ∈ φ.stableSubspace) (hu0 : u ≠ 0) :
@@ -114,9 +177,7 @@ theorem finrank_stableSubspace_add_manifoldMorseIndex :
   have h := LinearMap.finrank_range_add_finrank_ker φ.negativeCoord
   have hr : Module.finrank ℝ (LinearMap.range φ.negativeCoord) =
       manifoldMorseIndex 𝓘(ℝ, E) f x := by
-    rw [LinearMap.range_eq_top.2 hsurj, finrank_top, Module.finrank_fintype_fun_eq_card,
-      ← φ.ncard_weight_neg, Set.ncard_eq_toFinset_card', Fintype.card_subtype,
-      Set.toFinset_ofPred]
+    rw [LinearMap.range_eq_top.2 hsurj, finrank_top, φ.finrank_negativeWeight_fun]
   rw [stableSubspace]
   omega
 

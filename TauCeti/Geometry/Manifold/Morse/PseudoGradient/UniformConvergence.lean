@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local
+public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Basic
 
 /-!
 # Uniform exponential convergence on compact parts of stable sets

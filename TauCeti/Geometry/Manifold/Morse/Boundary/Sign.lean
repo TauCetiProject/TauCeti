@@ -46,6 +46,11 @@ identifies its space of coordinates of negative weight with the tangent space of
 manifold at the critical point; comparing the signs obtained from two Morse charts inducing the
 same orientation there is not done in this file.
 
+The sign does not change when the point moves along the flow
+(`TauCeti.IsAdaptedPseudoGradient.trajectorySign_flow`), so it is the sign of the unparametrized
+trajectory: along the flow, the unstable frame and the normal coordinates are rescaled by positive
+factors, and the velocity is carried to the velocity.
+
 Reversing either orientation reverses every sign
 (`TauCeti.IsAdaptedPseudoGradient.trajectorySign_neg_left`,
 `TauCeti.IsAdaptedPseudoGradient.trajectorySign_neg_right`). The **signed count**
@@ -69,6 +74,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `bijective_trajectoryComparison`: the comparison map is an isomorphism at the points of
   trajectories between critical points of consecutive index.
 * `trajectorySign_eq_one_or_eq_neg_one`: so the sign of such a trajectory is `±1`.
+* `trajectorySign_flow`: the sign is constant along each trajectory.
 * `trajectorySign_neg_left`, `trajectorySign_neg_right`: reversing an orientation reverses the
   signs.
 * `intCast_signedTrajectoryCount`,
@@ -98,13 +104,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 namespace MorseChart
 
 variable {x : M} (φ : MorseChart E f x)
-
-/-- The space of coordinates of negative weight of a Morse chart has the dimension of the Morse
-index. -/
-theorem finrank_negativeWeight_fun :
-    Module.finrank ℝ ({i // φ.weight i < 0} → ℝ) = manifoldMorseIndex 𝓘(ℝ, E) f x := by
-  rw [Module.finrank_fintype_fun_eq_card, ← φ.ncard_weight_neg, Set.ncard_eq_toFinset_card',
-    Fintype.card_subtype, Set.toFinset_ofPred]
 
 /-- The orientation of `ℝ × V`, for `V` the space of coordinates of negative weight of a Morse
 chart at `q`, against which the signs of the trajectories from a critical point `p` of index
@@ -263,6 +262,44 @@ variable (hφp : ∀ y ∈ φp.toChart.source,
       fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
 include hφp hφq
 
+/-- On a trajectory between critical points of consecutive index, a vector of the unstable frame
+whose normal coordinates vanish is a multiple of the velocity: the tangent spaces of `W^u(p)` and
+`W^s(q)` meet in the line spanned by `X y`. -/
+private theorem exists_unstableFrame_eq_smul (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) {y : M}
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) {v : {i // φp.weight i < 0} → ℝ}
+    (hv : hX.stableNormal φq y (hX.unstableFrame φp y v) = 0) :
+    ∃ c : ℝ, hX.unstableFrame φp y v = c • X y := by
+  have hne : p ≠ q := by rintro rfl; omega
+  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
+  have htr := hMS.span_mtangentConeAt_sup_eq_top hy
+  have hXne : X y ≠ 0 := hX.ne_zero_of_mfderiv_ne_zero
+    (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hne hy)
+  have hline := hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex
+    hf hy htr
+  have hline1 : Module.finrank ℝ (Submodule.span ℝ
+      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y)) = 1 := by omega
+  -- `u = Fp v` is tangent to `W^u(p)` and to `W^s(q)`, hence to their intersection, the line
+  -- spanned by `w = X y`. Both are read as vectors of the model space `E`.
+  obtain ⟨u, hu⟩ : ∃ u : E, hX.unstableFrame φp y v = u := ⟨_, rfl⟩
+  obtain ⟨w, hw⟩ : ∃ w : E, X y = w := ⟨_, rfl⟩
+  have hu₁ : u ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p) y) :=
+    (Set.ext_iff.1 (hX.range_unstableFrame hφp hf hy.1) u).1 ⟨v, hu⟩
+  have hu₂ : u ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet q) y) :=
+    (hX.stableNormal_eq_zero_iff hφq hdf hy.2 u).1 (hu ▸ hv)
+  have hu₃ : u ∈ Submodule.span ℝ
+      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y) := by
+    rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr]
+    exact ⟨hu₁, hu₂⟩
+  have hline' : Submodule.span ℝ {w} = Submodule.span ℝ
+      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y) :=
+    Submodule.eq_of_le_of_finrank_eq ((Submodule.span_singleton_le_iff_mem _ _).2
+      (hw ▸ hX.mem_span_mtangentConeAt_unstableSet_inter_stableSet hy))
+      (by rw [finrank_span_singleton (hw ▸ hXne), hline1])
+  rw [← hline', Submodule.mem_span_singleton] at hu₃
+  obtain ⟨c, hc⟩ := hu₃
+  exact ⟨c, hu.trans (hc.symm.trans (congrArg (c • ·) hw.symm))⟩
+
 /-- **The comparison map is an isomorphism along a trajectory.** Let `X` be a Morse–Smale
 pseudo-gradient adapted to a Morse function, and `p`, `q` critical points with
 `ind p = ind q + 1`. At every point `y` of a trajectory from `p` to `q`, the comparison map
@@ -273,49 +310,20 @@ theorem bijective_trajectoryComparison (hMS : hX.IsMorseSmale) (hf : IsMorse �
     (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
     Bijective (hX.trajectoryComparison φp φq y) := by
   have hne : p ≠ q := by rintro rfl; omega
-  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφp hf hy.1).exists
-  -- The tangent spaces of `W^u(p)` and `W^s(q)` meet in a line, spanned by the velocity `X y`.
-  have htr := hMS.span_mtangentConeAt_sup_eq_top hy
   have hcrit := hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hne hy
-  have hXne : X y ≠ 0 := hX.ne_zero_of_mfderiv_ne_zero hcrit
-  have hline := hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex
-    hf hy htr
-  have hline1 : Module.finrank ℝ (Submodule.span ℝ
-      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y)) = 1 := by omega
   have hinj : Injective (hX.trajectoryComparison φp φq y) := by
     refine (injective_iff_map_eq_zero (hX.trajectoryComparison φp φq y)).2 fun v hv ↦ ?_
     rw [trajectoryComparison_apply, Prod.mk_eq_zero] at hv
-    -- `u = Fp v` is tangent to `W^u(p)` and to `W^s(q)`, hence to their intersection, the line
-    -- spanned by `w = X y`. Both are read as vectors of the model space `E`.
-    obtain ⟨u, hu⟩ : ∃ u : E, hX.unstableFrame φp y v = u := ⟨_, rfl⟩
-    obtain ⟨w, hw⟩ : ∃ w : E, X y = w := ⟨_, rfl⟩
-    have hu₁ : u ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p) y) :=
-      (Set.ext_iff.1 (hX.range_unstableFrame hφp hf hy.1) u).1 ⟨v, hu⟩
-    have hu₂ : u ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet q) y) :=
-      (hX.stableNormal_eq_zero_iff hφq hdf hy.2 u).1 (hu ▸ hv.2)
-    have hu₃ : u ∈ Submodule.span ℝ
-        (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y) := by
-      rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr]
-      exact ⟨hu₁, hu₂⟩
-    have hline' : Submodule.span ℝ {w} = Submodule.span ℝ
-        (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y) :=
-      Submodule.eq_of_le_of_finrank_eq ((Submodule.span_singleton_le_iff_mem _ _).2
-        (hw ▸ hX.mem_span_mtangentConeAt_unstableSet_inter_stableSet hy))
-        (by rw [finrank_span_singleton (hw ▸ hXne), hline1])
-    rw [← hline', Submodule.mem_span_singleton] at hu₃
-    obtain ⟨c, hc⟩ := hu₃
-    -- Along `X y` the differential of `f` is nonzero, so `u = 0`.
+    -- `Fp v` is a multiple `c • X y` of the velocity, and along `X y` the differential of `f` is
+    -- nonzero, so `c = 0`.
+    obtain ⟨c, hc⟩ := exists_unstableFrame_eq_smul hφp hφq hMS hf hpq hy hv.2
     have hc0 : c = 0 := by
       have h := hv.1
-      rw [hu, ← hc, ← hw] at h
-      have h' : c * mvfderiv 𝓘(ℝ, E) f y (X y) = 0 := by
-        rw [← smul_eq_mul, ← (mvfderiv 𝓘(ℝ, E) f y).map_smul]
-        exact h
-      exact (mul_eq_zero.1 h').resolve_right (hX.mvfderiv_apply_lt_zero y hcrit).ne
+      rw [hc, map_smul, smul_eq_mul] at h
+      exact (mul_eq_zero.1 h).resolve_right (hX.mvfderiv_apply_lt_zero y hcrit).ne
     rw [hc0, zero_smul] at hc
-    rw [← hc] at hu
-    exact hX.injective_unstableFrame hφp hT (hu.trans (map_zero _).symm)
+    exact hX.injective_unstableFrame hφp hT (hc.trans (map_zero _).symm)
   refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
   rw [Module.finrank_prod, Module.finrank_self, φp.finrank_negativeWeight_fun,
     φq.finrank_negativeWeight_fun]
@@ -328,6 +336,102 @@ theorem trajectorySign_eq_one_or_eq_neg_one (hMS : hX.IsMorseSmale) (hf : IsMors
     hX.trajectorySign φp φq op oq hpq y = 1 ∨ hX.trajectorySign φp φq op oq hpq y = -1 :=
   trajectorySign_eq_one_or_eq_neg_one_of_bijective
     (bijective_trajectoryComparison hφp hφq hMS hf hpq hy)
+
+omit hφp hφq in
+/-- An endomorphism of `ℝ × V` that fixes the second component of every vector and sends `(1, 0)`
+to a vector with positive first component has positive determinant: it is triangular, with
+diagonal blocks this first component and the identity of `V`. -/
+private theorem det_pos_of_snd_eq {V : Type*} [AddCommGroup V] [Module ℝ V]
+    [FiniteDimensional ℝ V] (B : ℝ × V →ₗ[ℝ] ℝ × V) (hB : ∀ v, (B v).2 = v.2)
+    (h1 : 0 < (B (1, 0)).1) : 0 < LinearMap.det B := by
+  set W := LinearMap.ker (LinearMap.snd ℝ ℝ V)
+  have hW : W ≤ W.comap B := fun v hv ↦ by
+    simp only [W, Submodule.mem_comap, LinearMap.mem_ker, LinearMap.snd_apply, hB] at hv ⊢
+    exact hv
+  -- On the axis `W = ℝ × 0`, `B` is multiplication by `(B (1, 0)).1`.
+  have hR : B.restrict (p := W) (q := W) hW = (B (1, 0)).1 • LinearMap.id := by
+    refine LinearMap.ext fun ⟨w, hw⟩ ↦ Subtype.ext ?_
+    have hw2 : w.2 = 0 := hw
+    have hw' : w = w.1 • ((1 : ℝ), (0 : V)) := Prod.ext (by simp) (by simp [hw2])
+    have hB1 : B (1, 0) = ((B (1, 0)).1, 0) := Prod.ext rfl (hB _)
+    change B w = (B (1, 0)).1 • w
+    conv_lhs => rw [hw']
+    rw [map_smul, hB1]
+    exact Prod.ext (by simp [mul_comm]) (by simp [hw2])
+  -- On the quotient by `W`, `B` is the identity.
+  have hQ : W.mapQ W B hW = LinearMap.id := by
+    refine Submodule.linearMap_qext _ (LinearMap.ext fun v ↦ ?_)
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.mapQ_apply,
+      LinearMap.id_apply, Submodule.Quotient.eq]
+    simp [W, hB]
+  rw [LinearMap.det_eq_det_mul_det (W := W) B hW, hR, hQ, LinearMap.det_id, mul_one,
+    LinearMap.det_smul, LinearMap.det_id, mul_one]
+  exact pow_pos h1 _
+
+/-- **The sign is constant along a trajectory.** Moving a point of a trajectory between critical
+points of consecutive index by the flow does not change its sign, so the sign is an invariant of
+the unparametrized trajectory. Along the flow, the unstable frame and the normal coordinates are
+rescaled by positive factors, and the comparison maps at the two points differ by an
+orientation-preserving map of `ℝ × Vq` fixing the second component. -/
+theorem trajectorySign_flow (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) (t : ℝ) :
+    hX.trajectorySign φp φq op oq hpq (hX.flow t y) = hX.trajectorySign φp φq op oq hpq y := by
+  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
+  have hne : p ≠ q := by rintro rfl; omega
+  have hy' : hX.flow t y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
+    ⟨(Flow.apply_mem_unstableSet_iff _ t).2 hy.1, (Flow.apply_mem_stableSet_iff _ t).2 hy.2⟩
+  have hC := bijective_trajectoryComparison hφp hφq hMS hf hpq hy
+  have hC' := bijective_trajectoryComparison hφp hφq hMS hf hpq hy'
+  rw [trajectorySign_of_bijective hC, trajectorySign_of_bijective hC']
+  set e := LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap hC
+  set e' := LinearEquiv.ofBijective (hX.trajectoryComparison φp φq (hX.flow t y)).toLinearMap hC'
+  obtain ⟨Tp, hTp⟩ := (hX.eventually_mem_linearBackwardTimes hφp hf hy.1).exists
+  obtain ⟨Tq, hTq⟩ := (hX.eventually_mem_linearForwardTimes hφq hdf hy.2).exists
+  -- The unstable frame is rescaled by `e^{-t}` and the normal coordinates by `e^{t}`, so the
+  -- comparison maps at `y` and at `Φ_t y` have the same second component.
+  have hcomp (v : {i // φp.weight i < 0} → ℝ) :
+      hX.trajectoryComparison φp φq (hX.flow t y) v =
+        (Real.exp (-t) * mvfderiv 𝓘(ℝ, E) f (hX.flow t y)
+          (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y (hX.unstableFrame φp y v)),
+          hX.stableNormal φq y (hX.unstableFrame φp y v)) := by
+    rw [trajectoryComparison_apply, unstableFrame_flow hφp hTp, map_smul, map_smul,
+      stableNormal_mfderiv_flow hφq hTq, smul_smul, ← Real.exp_add, neg_add_cancel,
+      Real.exp_zero, one_smul, smul_eq_mul]
+  -- So `e' = B ∘ e` for an endomorphism `B` of `ℝ × Vq` fixing the second component.
+  set B := e.symm.trans e'
+  have hB (w : ℝ × ({i // φq.weight i < 0} → ℝ)) : (B w).2 = w.2 := by
+    obtain ⟨v, rfl⟩ := e.surjective w
+    rw [show B (e v) = e' v from congrArg e' (e.symm_apply_apply v)]
+    change (hX.trajectoryComparison φp φq (hX.flow t y) v).2 =
+      (hX.trajectoryComparison φp φq y v).2
+    rw [hcomp, trajectoryComparison_apply]
+  -- `B` scales the axis `ℝ × 0`, the image of the velocity, by a positive factor, since `f`
+  -- decreases along the flow at both points.
+  have h1 : 0 < (B (1, 0)).1 := by
+    have hv : hX.trajectoryComparison φp φq y (e.symm (1, 0)) = (1, 0) := e.apply_symm_apply _
+    rw [trajectoryComparison_apply, Prod.mk.injEq] at hv
+    obtain ⟨c, hc⟩ := exists_unstableFrame_eq_smul hφp hφq hMS hf hpq hy hv.2
+    have h0 := hX.mvfderiv_apply_lt_zero y
+      (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hne hy)
+    have h0' := hX.mvfderiv_apply_lt_zero (hX.flow t y)
+      (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hne hy')
+    have hv1 := hv.1
+    rw [hc, map_smul, smul_eq_mul] at hv1
+    have hcneg : c < 0 := by nlinarith
+    change 0 < (hX.trajectoryComparison φp φq (hX.flow t y) (e.symm (1, 0))).1
+    rw [hcomp, hc, map_smul, hX.mfderiv_flow_apply_self, map_smul, smul_eq_mul]
+    exact mul_pos (Real.exp_pos _) (mul_pos_of_neg_of_neg hcneg h0')
+  have hmap : Orientation.map _ e' op = Orientation.map _ B (Orientation.map _ e op) := by
+    have he : e' = e.trans B := LinearEquiv.ext fun v ↦ by
+      simp only [B, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]
+    rw [he]
+    induction op using Module.Ray.ind with | h a ha => rfl
+  have hcard : Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) =
+      Module.finrank ℝ (ℝ × ({i // φq.weight i < 0} → ℝ)) := by
+    rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
+    omega
+  rw [hmap, ((Orientation.map _ e op).map_eq_iff_det_pos B hcard).2
+    (det_pos_of_snd_eq _ hB h1)]
 
 /-- **The signed count reduces to the trajectory count modulo two.** -/
 theorem intCast_signedTrajectoryCount (hMS : hX.IsMorseSmale)

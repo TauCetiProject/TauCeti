@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.LocalDerivative
+public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Derivative
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 public import TauCeti.Geometry.Manifold.TangentCone
-public import TauCeti.LinearAlgebra.ExtendByZero
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 
 /-!
@@ -67,6 +66,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   the tangent space of the stable manifold, and are onto.
 * `range_unstableFrame`, `injective_unstableFrame`: the frame is an isomorphism onto the tangent
   space of the unstable manifold.
+* `stableNormal_mfderiv_flow`, `unstableFrame_flow`: along the flow, the derivative of the time-`t`
+  map carries the normal coordinates and the frame to positive multiples of themselves.
 
 ## References
 
@@ -91,36 +92,6 @@ namespace MorseChart
 
 variable (φ : MorseChart E f x)
 
-/-- The vector of the model whose coordinates in the Morse chart `φ` are `c` in the directions of
-negative weight and `0` in the directions of positive weight. -/
-noncomputable def negativeExtend : ({i // φ.weight i < 0} → ℝ) →ₗ[ℝ] E :=
-  (φ.coord.symm : (Fin (Module.finrank ℝ E) → ℝ) →ₗ[ℝ] E) ∘ₗ
-    Function.ExtendByZero.linearMap ℝ ℝ Subtype.val
-
-/-- The coordinates of negative weight of `φ.negativeExtend c` are `c`. -/
-theorem coord_negativeExtend_of_weight_neg (c : {i // φ.weight i < 0} → ℝ)
-    (i : {i // φ.weight i < 0}) : φ.coord (φ.negativeExtend c) i = c i := by
-  simp [negativeExtend, Function.ExtendByZero.linearMap_apply_of_injective ℝ
-    Subtype.val_injective]
-
-/-- The coordinates of positive weight of `φ.negativeExtend c` vanish. -/
-theorem coord_negativeExtend_of_not_weight_neg (c : {i // φ.weight i < 0} → ℝ)
-    {i : Fin (Module.finrank ℝ E)} (hi : ¬φ.weight i < 0) : φ.coord (φ.negativeExtend c) i = 0 := by
-  simp only [negativeExtend, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
-    LinearEquiv.apply_symm_apply]
-  exact Function.ExtendByZero.linearMap_apply_of_notMem_range ℝ c fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2)
-
-/-- `negativeExtend` is a right inverse of the coordinates of negative weight. -/
-@[simp]
-theorem negativeCoord_negativeExtend (c : {i // φ.weight i < 0} → ℝ) :
-    φ.negativeCoord (φ.negativeExtend c) = c := by
-  funext i
-  rw [negativeCoord_apply, coord_negativeExtend_of_weight_neg]
-
-/-- `negativeExtend` is injective. -/
-theorem injective_negativeExtend : Injective φ.negativeExtend :=
-  LeftInverse.injective φ.negativeCoord_negativeExtend
-
 /-- The linear flow multiplies `φ.negativeExtend c` by `e^{-s}` at time `-s`. -/
 theorem linearFlow_neg_coord_negativeExtend (s : ℝ) (c : {i // φ.weight i < 0} → ℝ) :
     φ.linearFlow (-s) (φ.coord (φ.negativeExtend c)) =
@@ -142,42 +113,6 @@ theorem negativeCoord_eq_exp_smul_of_coord_eq {s : ℝ} {a b : E}
     (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.2)
   rw [Pi.smul_apply, negativeCoord_apply, negativeCoord_apply, h, smul_eq_mul,
     φ.linearFlow_of_weight_eq_neg_one hi]
-
-/-- A vector lies in the stable subspace exactly when its coordinates of negative weight vanish. -/
-theorem mem_stableSubspace_iff_negativeCoord_eq_zero {v : E} :
-    v ∈ φ.stableSubspace ↔ φ.negativeCoord v = 0 := by
-  simp [funext_iff]
-
-/-- The linear flow is linear in the coordinates. -/
-theorem linearFlow_smul (t a : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) :
-    φ.linearFlow t (a • z) = a • φ.linearFlow t z := by
-  funext i
-  simp only [linearFlow_apply, Pi.smul_apply, smul_eq_mul]
-  ring
-
-/-- The linear flow of the negated Morse chart runs the linear flow backwards. -/
-theorem linearFlow_neg (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) (t : ℝ)
-    (z : Fin (Module.finrank ℝ E) → ℝ) : (φ.neg h).linearFlow t z = φ.linearFlow (-t) z := by
-  funext i
-  simp only [linearFlow_apply, neg_weight, Pi.neg_apply]
-  ring_nf
-
-/-- A vector whose coordinates of positive weight vanish is recovered from its coordinates of
-negative weight. -/
-theorem negativeExtend_negativeCoord {v : E}
-    (hv : ∀ i, ¬φ.weight i < 0 → φ.coord v i = 0) : φ.negativeExtend (φ.negativeCoord v) = v := by
-  refine φ.coord.injective (funext fun i ↦ ?_)
-  by_cases hi : φ.weight i < 0
-  · exact (φ.coord_negativeExtend_of_weight_neg _ ⟨i, hi⟩).trans (negativeCoord_apply _ _ _)
-  · rw [φ.coord_negativeExtend_of_not_weight_neg _ hi, hv i hi]
-
-/-- The stable subspace of the negated Morse chart consists of the vectors whose coordinates of
-positive weight vanish, the vectors `φ.negativeExtend c`. -/
-theorem mem_neg_stableSubspace_iff (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) {v : E} :
-    v ∈ (φ.neg h).stableSubspace ↔ ∀ i, ¬φ.weight i < 0 → φ.coord v i = 0 := by
-  rw [mem_stableSubspace, neg_coord, neg_weight]
-  refine forall_congr' fun i ↦ ?_
-  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> simp [hi]
 
 end MorseChart
 
@@ -252,6 +187,31 @@ theorem isInvertible_mfderiv_toChart_comp_flow {y : M} {T : ℝ}
   rw [← hcoe]
   exact isInvertible_mfderiv_chart (IsManifold.maximalAtlas_subset_of_le (by simp) hq)
     (by simpa using hT)
+
+/-- The times of linear forward flow of `Φ_t y` are those of `y`, shifted by `-t`. -/
+theorem mem_linearForwardTimes_flow {y : M} {t T : ℝ} :
+    T ∈ hX.linearForwardTimes φ (hX.flow t y) ↔ T + t ∈ hX.linearForwardTimes φ y := by
+  simp only [mem_linearForwardTimes, ← Flow.map_add]
+
+/-- The times of linear backward flow of `Φ_t y` are those of `y`, shifted by `t`. -/
+theorem mem_linearBackwardTimes_flow {y : M} {t T : ℝ} :
+    T ∈ hX.linearBackwardTimes φ (hX.flow t y) ↔ T - t ∈ hX.linearBackwardTimes φ y := by
+  simp only [mem_linearBackwardTimes, ← Flow.map_add, show -(T - t) = -T + t by ring]
+
+/-- The chain rule for the chart `φ` composed with the time-`s` map of the flow, after the
+time-`t` map. -/
+private theorem mfderiv_toChart_comp_flow_mfderiv_flow {y : M} {s t : ℝ}
+    (hs : hX.flow (s + t) y ∈ φ.toChart.source) (w : TangentSpace 𝓘(ℝ, E) y) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow s) (hX.flow t y)
+        (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y w) =
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow (s + t)) y w := by
+  have hd (t : ℝ) (z : M) : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) z :=
+    (hX.contMDiff_flow_apply t).mdifferentiable (by simp) z
+  have hcomp : φ.toChart ∘ hX.flow (s + t) = (φ.toChart ∘ hX.flow s) ∘ hX.flow t := by
+    funext z
+    simp [Flow.map_add]
+  rw [Flow.map_add] at hs
+  rw [hcomp, mfderiv_comp_apply y ((φ.mdifferentiableAt_toChart hs).comp _ (hd s _)) (hd t y)]
 
 variable (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
   fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
@@ -408,6 +368,25 @@ theorem surjective_stableNormal {y : M} {T : ℝ} (hT : T ∈ hX.linearForwardTi
   rw [stableNormal_apply hφ hT, hD, φ.negativeCoord_negativeExtend, smul_smul, ← Real.exp_add,
     neg_add_cancel, Real.exp_zero, one_smul]
 
+/-- **The normal coordinates along the flow.** Moving a point of `W^s(x)` by the time-`t` map of
+the flow multiplies its normal coordinates by `e^{t}`: the normal coordinates at `Φ_t y` of the
+image of `w` under the derivative of `Φ_t` are `e^{t}` times the normal coordinates of `w` at
+`y`. -/
+theorem stableNormal_mfderiv_flow {y : M} {T : ℝ} (hT : T ∈ hX.linearForwardTimes φ y) (t : ℝ)
+    (w : TangentSpace 𝓘(ℝ, E) y) :
+    hX.stableNormal φ (hX.flow t y) (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y w) =
+      Real.exp t • hX.stableNormal φ y w := by
+  have hT' : T - t ∈ hX.linearForwardTimes φ (hX.flow t y) := by
+    rw [mem_linearForwardTimes_flow, sub_add_cancel]
+    exact hT
+  have hsrc : hX.flow (T - t + t) y ∈ φ.toChart.source := by
+    rw [sub_add_cancel]
+    exact hT.1
+  rw [stableNormal_apply hφ hT', mfderiv_toChart_comp_flow_mfderiv_flow hsrc, sub_add_cancel,
+    stableNormal_apply hφ hT, smul_smul, ← Real.exp_add]
+  congr 2
+  ring
+
 /-! ### The frame of the unstable manifold -/
 
 omit hφ in
@@ -488,6 +467,27 @@ theorem injective_unstableFrame {y : M} {T : ℝ} (hT : T ∈ hX.linearBackwardT
   have h := congrArg (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow (-T)) y) hcc'
   rw [mfderiv_unstableFrame hφ hT, mfderiv_unstableFrame hφ hT] at h
   exact φ.injective_negativeExtend (smul_right_injective E (Real.exp_ne_zero _) h)
+
+/-- **The unstable frame along the flow.** Moving a point of `W^u(x)` by the time-`t` map of the
+flow carries the unstable frame to `e^{t}` times the unstable frame: the unstable frame at `Φ_t y`
+is `e^{-t}` times the derivative of `Φ_t` applied to the unstable frame at `y`. -/
+theorem unstableFrame_flow {y : M} {T : ℝ} (hT : T ∈ hX.linearBackwardTimes φ y) (t : ℝ)
+    (c : {i // φ.weight i < 0} → ℝ) :
+    hX.unstableFrame φ (hX.flow t y) c =
+      Real.exp (-t) • mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y (hX.unstableFrame φ y c) := by
+  have hT' : T + t ∈ hX.linearBackwardTimes φ (hX.flow t y) := by
+    rw [mem_linearBackwardTimes_flow, add_sub_cancel_right]
+    exact hT
+  have hsrc : hX.flow (-(T + t) + t) y ∈ φ.toChart.source := by
+    rw [show -(T + t) + t = -T by ring]
+    exact hT.1
+  refine (isInvertible_mfderiv_toChart_comp_flow hT'.1).injective ?_
+  rw [mfderiv_unstableFrame hφ hT', map_smul, mfderiv_toChart_comp_flow_mfderiv_flow hsrc,
+    show -(T + t) + t = -T by ring, mfderiv_unstableFrame hφ hT]
+  -- Both sides are vectors of the model space `E`.
+  change Real.exp (-(T + t)) • φ.negativeExtend c =
+    Real.exp (-t) • Real.exp (-T) • φ.negativeExtend c
+  rw [smul_smul, ← Real.exp_add, show -t + -T = -(T + t) by ring]
 
 /-- **The unstable frame spans the tangent space of the unstable manifold.** At a point `y` of
 `W^u(x)`, the range of the unstable frame is the span of the tangent cone of `W^u(x)` at `y`. -/
