@@ -79,10 +79,10 @@ theorem fdBoundary_sub_rho_of_mem_Icc_three_four (H : ℝ) (ht : t ∈ Icc (3 : 
 
 /-- On the right vertical the contour keeps distance at least `1` from `ρ`: the real parts differ
 by exactly `1`. -/
-theorem norm_fdBoundary_sub_rho_segment1 (H : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
+theorem norm_fdBoundary_sub_rho_segment1 (H : ℝ) (ht : t ≤ 1) :
     1 ≤ ‖fdBoundary H t - (UpperHalfPlane.ρ : ℂ)‖ := by
   have hre : (fdBoundary H t - (UpperHalfPlane.ρ : ℂ)).re = 1 := by
-    rw [Complex.sub_re, re_fdBoundarySegment1 H ht]
+    rw [Complex.sub_re, re_fdBoundary_of_le_one ht]
     norm_num [UpperHalfPlane.ρ]
   have h1 : |(fdBoundary H t - (UpperHalfPlane.ρ : ℂ)).re| ≤
       ‖fdBoundary H t - (UpperHalfPlane.ρ : ℂ)‖ := Complex.abs_re_le_norm _
@@ -101,17 +101,10 @@ theorem norm_fdBoundary_sub_rho_segment5 (ht : t ∈ Icc (4 : ℝ) 5) :
       ‖fdBoundary H t - (UpperHalfPlane.ρ : ℂ)‖ := Complex.abs_im_le_norm _
   exact him ▸ h1
 
-/-- Right of the corner column the shifted contour has real part `1`: slit plane. -/
-theorem fdBoundary_sub_rho_mem_slitPlane_of_le_one (H : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
-    fdBoundary H t - (UpperHalfPlane.ρ : ℂ) ∈ Complex.slitPlane := by
-  refine Complex.mem_slitPlane_iff.mpr (Or.inl ?_)
-  rw [Complex.sub_re, re_fdBoundarySegment1 H ht]
-  norm_num [UpperHalfPlane.ρ]
-
 /-- Before the corner the contour stays right of the corner column: on the arc the real part of
 the shifted contour is `cos((t+1)·π/6) + 1/2 > 0`, and on the right vertical it is `1`, so it lies
 in the slit plane. -/
-theorem fdBoundary_sub_rho_arc_mem_slitPlane_of_lt_three (H : ℝ) (ht3 : t < 3) :
+theorem fdBoundary_sub_rho_mem_slitPlane_of_lt_three (H : ℝ) (ht3 : t < 3) :
     fdBoundary H t - (UpperHalfPlane.ρ : ℂ) ∈ Complex.slitPlane := by
   refine Complex.mem_slitPlane_iff.mpr (Or.inl ?_)
   rcases le_or_gt t 1 with ht1 | ht1
@@ -146,14 +139,6 @@ theorem fdBoundary_sub_rho_mem_slitPlane_of_three_lt (hH : Real.sqrt 3 / 2 < H)
       (t - 3) * (H - Real.sqrt 3 / 2) := by
     simp
   rw [him]
-  positivity
-
-/-- On the ceiling the shifted contour has height `H - √3/2 > 0`: slit plane. -/
-theorem fdBoundary_sub_rho_mem_slitPlane_of_mem_Icc_four_five (hH : Real.sqrt 3 / 2 < H)
-    (ht : t ∈ Icc (4 : ℝ) 5) :
-    fdBoundary H t - (UpperHalfPlane.ρ : ℂ) ∈ Complex.slitPlane := by
-  refine Complex.mem_slitPlane_iff.mpr (Or.inr ?_)
-  rw [Complex.sub_im, im_fdBoundarySegment5 H ht, rho_im]
   positivity
 
 /-- The polar form of the shifted contour just before the corner. -/
@@ -218,9 +203,8 @@ theorem eq_three_of_fdBoundary_eq_rho (hH : H ≠ Real.sqrt 3 / 2)
     rw [heq]
     simp
   rcases le_or_gt t 1 with h1 | h1
-  · have hre := congrArg Complex.re (norm_eq_zero.mp h0)
-    rw [Complex.sub_re, re_fdBoundary_of_le_one h1] at hre
-    norm_num [UpperHalfPlane.ρ] at hre
+  · exact absurd (sub_eq_zero.mpr heq)
+      (Complex.slitPlane_ne_zero (fdBoundary_sub_rho_mem_slitPlane_of_lt_three H (by linarith)))
   · rcases le_or_gt t 3 with h3 | h3
     · rw [norm_fdBoundary_sub_rho_arc H ⟨h1.le, h3⟩] at h0
       have hsin : Real.sin ((t - 3) * (Real.pi / 12)) = 0 :=
