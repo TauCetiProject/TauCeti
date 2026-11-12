@@ -75,8 +75,8 @@ bounded derivatives `Δu(t, ·)` is the Cauchy potential of `Δg`. If `g` is mor
   derivative is the Cauchy potential of the derivative.
 * `TauCeti.laplacian_heatCauchyPotential`: the Laplacian is the Cauchy potential of the Laplacian.
 * `TauCeti.hasDerivAt_heatCauchyPotential`: **the heat equation** `∂ₜu = Δu` for `t > 0`, and
-  `TauCeti.hasDerivAt_heatCauchyPotential_of_ae_norm_le`, its form for merely measurable
-  and essentially bounded data.
+  `TauCeti.hasDerivAt_heatCauchyPotential_of_ae_norm_le`, its form for essentially
+  bounded data.
 * `TauCeti.hasDerivWithinAt_heatCauchyPotential`: the time derivative within `[0, ∞)`, including
   the one-sided derivative at the initial time, which is `Δg` when `F` is complete.
 * `TauCeti.exists_norm_laplacian_heatCauchyPotential_le`: for Hölder data, the Laplacian at
@@ -120,8 +120,9 @@ theorem heatCauchyPotential_def (g : E → F) (t : ℝ) (x : E) :
 
 /-- If `F` is not complete, the Cauchy heat potential vanishes, by the junk value of the Bochner
 integral. -/
-theorem heatCauchyPotential_of_not_completeSpace (hF : ¬CompleteSpace F) (g : E → F) (t : ℝ) :
-    heatCauchyPotential g t = fun _ => 0 :=
+theorem heatCauchyPotential_eq_zero_of_not_completeSpace (hF : ¬CompleteSpace F) (g : E → F)
+    (t : ℝ) :
+    heatCauchyPotential g t = 0 :=
   funext fun x => by rw [heatCauchyPotential_def]; exact integral_of_not_completeSpace hF
 
 /-- **The initial datum.** For `t ≤ 0` the Cauchy heat potential of `g` is `g`. -/
@@ -394,7 +395,8 @@ theorem laplacian_heatCauchyPotential (hg : ContDiff ℝ 2 g)
     Δ (heatCauchyPotential g t) = heatCauchyPotential (Δ g) t := by
   by_cases hF : CompleteSpace F
   swap
-  · rw [heatCauchyPotential_of_not_completeSpace hF, heatCauchyPotential_of_not_completeSpace hF]
+  · rw [heatCauchyPotential_eq_zero_of_not_completeSpace hF,
+      heatCauchyPotential_eq_zero_of_not_completeSpace hF]
     exact laplacian_const
   have hg' : ContDiff ℝ 1 (fderiv ℝ g) := hg.fderiv_right (by norm_num)
   funext x
@@ -505,8 +507,8 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
   refine ⟨2 * C₂ + 4 * Mα, fun {g M H} hg hgc hM {a} ha b x => ?_⟩
   by_cases hF : CompleteSpace F
   swap
-  · rw [heatCauchyPotential_of_not_completeSpace hF, heatCauchyPotential_of_not_completeSpace hF,
-      sub_self, norm_zero]
+  · rw [heatCauchyPotential_eq_zero_of_not_completeSpace hF,
+      heatCauchyPotential_eq_zero_of_not_completeSpace hF, sub_self, norm_zero]
     positivity
   set β : ℝ := (α : ℝ) / 2 with hβ
   have hβ₀ : 0 ≤ β := by positivity

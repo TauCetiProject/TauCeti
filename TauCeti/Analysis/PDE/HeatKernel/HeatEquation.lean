@@ -19,12 +19,13 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 Let `g` be a measurable, essentially bounded function on a finite-dimensional real inner product
 space `E`, with values in a real normed space `F` that need not be complete: when `F` is not
-complete the Bochner integral, hence every convolution `K_t ⋆ g`, is zero, and the statements
-below hold trivially. The candidate solution of the Cauchy problem `∂ₜu = Δu`, `u(0, ·) = g`, is
-`u(t, x) = (K_t ⋆ g)(x)`, where `K_t` is the heat kernel. The initial condition holds pointwise
-at every point `x₀` where `g` is continuous (for `F` a Banach space): `u(t, x) → g(x₀)` as
-`(t, x) → (0⁺, x₀)`, which is `TauCeti.tendsto_heatKernel_convolution`. At points where `g` is
-discontinuous no such limit is asserted. This file proves the equation:
+complete the Bochner integral, hence every convolution `K_t ⋆ g`, is zero, and the smoothing,
+derivative and heat-equation statements below hold trivially. Duhamel's formula and the initial
+condition need `F` complete. The candidate solution of the Cauchy problem `∂ₜu = Δu`,
+`u(0, ·) = g`, is `u(t, x) = (K_t ⋆ g)(x)`, where `K_t` is the heat kernel. The initial condition
+holds pointwise at every point `x₀` where `g` is continuous (for `F` a Banach space):
+`u(t, x) → g(x₀)` as `(t, x) → (0⁺, x₀)`, which is `TauCeti.tendsto_heatKernel_convolution`.
+At points where `g` is discontinuous no such limit is asserted. This file proves the equation:
 
 * `u(t, ·)` is smooth for every `t > 0`, however rough `g` is, and its derivatives are
   `D^m u(t, ·) = D^m K_t ⋆ g`, bounded by `‖D^m K_t‖_{L¹}` times the bound of `g`; for `m ≥ 1`,
@@ -60,7 +61,7 @@ smoothness theorem `MeasureTheory.contDiff_convolution_left_of_dominated`. In ti
 * `TauCeti.hasDerivAt_heatKernel_convolution_of_hasCompactSupport`: the heat equation in the form
   `∂ₜ (K_t ⋆ φ) = K_t ⋆ Δ φ` for `C²` data `φ` with compact support.
 * `TauCeti.heatKernel_convolution_sub_eq_integral`: Duhamel's formula
-  `(K_t ⋆ φ)(x) - φ(x) = ∫₀ᵗ (K_s ⋆ Δ φ)(x) ds` for such `φ`.
+  `(K_t ⋆ φ)(x) - φ(x) = ∫₀ᵗ (K_s ⋆ Δ φ)(x) ds` for such `φ`, when `F` is complete.
 * `TauCeti.stronglyMeasurable_heatKernel_convolution`: `(t, x) ↦ (K_t ⋆ g)(x)` is strongly
   measurable for continuous `g`.
 
