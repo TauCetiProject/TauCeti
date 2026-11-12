@@ -79,6 +79,10 @@ theorem hermiteJet_apply (a : ι → R) (m : ι → ℕ) (f : degreeLT R (∑ i,
 def hermiteModulus (a : ι → R) (m : ι → ℕ) : R[X] :=
   ∏ i, (X - C (a i)) ^ m i
 
+theorem hermiteModulus_def (a : ι → R) (m : ι → ℕ) :
+    hermiteModulus a m = ∏ i, (X - C (a i)) ^ m i := by
+  rw [hermiteModulus]
+
 /-- The Hermite modulus is monic. -/
 theorem monic_hermiteModulus (a : ι → R) (m : ι → ℕ) : (hermiteModulus a m).Monic :=
   monic_prod_of_monic _ _ fun i _ => (monic_X_sub_C (a i)).pow (m i)
@@ -86,7 +90,7 @@ theorem monic_hermiteModulus (a : ι → R) (m : ι → ℕ) : (hermiteModulus a
 /-- The Hermite modulus has degree `∑ i, m i`. -/
 theorem natDegree_hermiteModulus [Nontrivial R] (a : ι → R) (m : ι → ℕ) :
     (hermiteModulus a m).natDegree = ∑ i, m i := by
-  rw [hermiteModulus, natDegree_prod_of_monic _ _ fun i _ => (monic_X_sub_C (a i)).pow (m i)]
+  rw [hermiteModulus_def, natDegree_prod_of_monic _ _ fun i _ => (monic_X_sub_C (a i)).pow (m i)]
   simp [(monic_X_sub_C _).natDegree_pow]
 
 /-- The Hermite jet map commutes with a change of coefficients. -/
