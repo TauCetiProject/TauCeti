@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.LinearIsometry
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.Analysis.Holder.JetBounds
 import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
 
