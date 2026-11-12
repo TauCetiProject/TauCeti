@@ -117,17 +117,14 @@ lemma normalizerQuotientLift_comp_mk (H : Subgroup G)
     (H.normalizerQuotientLift φ hφ).comp H.normalizerQuotientMk = φ :=
   rfl
 
-/-- A lift from `N(H) / H` is surjective when the original homomorphism from the normalizer is
-surjective. -/
-lemma normalizerQuotientLift_surjective_of_surjective (H : Subgroup G)
+/-- A lift from `N(H) / H` is surjective exactly when the original homomorphism from the
+normalizer is surjective. -/
+lemma normalizerQuotientLift_surjective_iff (H : Subgroup G)
     (φ : normalizer (H : Set G) →* M)
-    (hφ : ∀ g : normalizer (H : Set G), (g : G) ∈ H → φ g = 1)
-    (hφsurj : Function.Surjective φ) :
-    Function.Surjective (H.normalizerQuotientLift φ hφ) :=
-  QuotientGroup.lift_surjective_of_surjective
-    (H.subgroupOf (normalizer (H : Set G))) φ hφsurj (by
-      intro g hg
-      exact hφ g hg)
+    (hφ : ∀ g : normalizer (H : Set G), (g : G) ∈ H → φ g = 1) :
+    Function.Surjective (H.normalizerQuotientLift φ hφ) ↔ Function.Surjective φ := by
+  rw [← H.normalizerQuotientMk_surjective.of_comp_iff, ← MonoidHom.coe_comp,
+    normalizerQuotientLift_comp_mk]
 
 /-- A lift from `N(H) / H` is injective exactly when the only normalizer elements killed by
 the original homomorphism are the elements of `H`. -/
