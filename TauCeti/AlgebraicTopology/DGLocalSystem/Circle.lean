@@ -286,8 +286,6 @@ private theorem exists_loopSubOneDifferential_eq_of_mem
   have hc0 : c ∈ cubicalChainGrading (MooreLoopSpace B b) R 0 := loopPointChain_sub_one_mem ℓ
   have hφc : φ c = MonoidAlgebra.single g 1 - 1 := by
     rw [hc, map_sub, map_one, loopChainToGroupAlgebra_loopPointChain]
-  have hr : f 0 ∈ cubicalChainGrading (MooreLoopSpace B b) R n := by
-    simpa using (mem_rowFiniteTotalGrading_iff _ _).mp hfn 0
   have hs : f 1 ∈ cubicalChainGrading (MooreLoopSpace B b) R (n + 1) := by
     simpa using (mem_rowFiniteTotalGrading_iff _ _).mp hfn 1
   have hfeq : f = single 0 (f 0) + single 1 (f 1) := by
