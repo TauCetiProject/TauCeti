@@ -12,19 +12,20 @@ import TauCeti.LinearAlgebra.Eigenspace.Involution
 /-!
 # Separating eigenspace summands
 
-Suppose `p` is a sum `⨆ j ∈ s, W j` of subspaces on which an endomorphism `A` already
-acts by scalars, one scalar `g j` per summand, and suppose the scalar `g k` of one distinguished
-summand is attained by no other. Then that summand is *exactly* the `g k`-eigenspace of `A` inside
-`p`: no eigenvector of eigenvalue `g k` hides in the other summands, because eigenspaces for
-distinct eigenvalues are independent. This is how a weight space is recovered from an eigenspace of
-a single operator once a decomposition separating the weights is available. The same holds, with
-the same proof, for the generalized eigenspaces `A.genEigenspace (g j) n` of any fixed order `n`
-(the eigenspaces are the case `n = 1`, the maximal generalized eigenspaces the case `n = ⊤`).
+Fix an endomorphism `A` and an exponent `n : ℕ∞`. Suppose `p` is a sum `⨆ j ∈ s, W j` of
+subspaces with each `W j` contained in the generalized eigenspace `A.genEigenspace (g j) n`, and
+suppose the scalar `g k` of one distinguished summand is attained by no other. Then that summand is
+*exactly* the part of `p` lying in `A.genEigenspace (g k) n`: over a domain, and for a torsion-free
+module, generalized eigenspaces of a fixed exponent for distinct scalars are independent. For
+`n = 1` the summands are subspaces on which `A` acts by the scalars `g j`, and the summand is cut
+out by the `g k`-eigenspace; for `n = ⊤` the summands lie in maximal generalized eigenspaces. This
+is how a weight space is recovered from an eigenspace of a single operator once a decomposition
+separating the weights is available.
 
-When the other summands are *generalized* eigenspaces rather than eigenspaces, separating an
-eigenvector of eigenvalue `ν` from a generalized eigenvector of eigenvalue `μ ≠ ν` inside an
-`f`-invariant submodule instead applies a power of the shifted operator `f - μ • 1`, which preserves
-every `f`-invariant submodule while scaling the `ν`-eigenvector by `(ν - μ) ^ k`.
+The two `pow_sub_smul_one` lemmas serve the situation where the ambient subspace is an arbitrary
+`f`-invariant submodule `N` rather than a sum of the summands. If `u + w ∈ N`, where `f u = ν • u`
+and `(f - μ • 1) ^ k` kills `w`, then applying `(f - μ • 1) ^ k` stays inside `N` and leaves
+`(ν - μ) ^ k • u`; so `u ∈ N` as soon as `ν - μ` is a unit.
 
 ## Main results
 
@@ -32,8 +33,8 @@ every `f`-invariant submodule while scaling the `ν`-eigenvector by `(ν - μ) ^
   `f - μ • 1`.
 * `Module.End.pow_sub_smul_one_apply_of_apply_eq_smul`: an eigenvector of `f` of eigenvalue `ν` is
   scaled by `(ν - μ) ^ k` under `(f - μ • 1) ^ k`.
-* `Module.End.biSup_inf_genEigenspace_eq_self`: a summand whose scalar is attained only by itself
-  is cut out by the corresponding generalized eigenspace.
+* `Module.End.biSup_inf_genEigenspace_eq_of_mem`: a summand whose scalar is attained only by
+  itself is cut out of the sum by the corresponding generalized eigenspace.
 * `Module.End.genEigenspace_eq_of_iSup_eq_top`: if the summands span the whole space and the
   scalars are pairwise distinct, every summand is a generalized eigenspace.
 * `TauCeti.isCompl_eigenspace_one_neg_one`: the `1`- and `-1`-eigenspaces of an involution are
@@ -98,16 +99,14 @@ namespace Module.End
 
 variable [IsDomain K] [Module.IsTorsionFree K V]
 
-/-- **Separated summands are cut out by their generalized eigenspaces.** Fix an order `n : ℕ∞`. If
-every `W j`, for `j` in a set `s`, lies in the generalized eigenspace `A.genEigenspace (g j) n`, and
-if the scalar `g k` of a distinguished index `k ∈ s` is attained by no other index of `s`, then
-meeting the sum `⨆ j ∈ s, W j` with `A.genEigenspace (g k) n` returns `W k` exactly. For `n = 1`
-the hypotheses say that `W j` consists of eigenvectors of eigenvalue `g j`, and the conclusion is
-about the `g k`-eigenspace.
-
-In particular no generalized eigenvector of eigenvalue `g k` and order `n` in the sum lies outside
-`W k`. -/
-theorem biSup_inf_genEigenspace_eq_self {ι : Type w} (A : Module.End K V)
+/-- **Separated summands are cut out by their generalized eigenspaces.** Fix an exponent
+`n : ℕ∞`. If every `W j`, for `j` in a set `s`, lies in the generalized eigenspace
+`A.genEigenspace (g j) n`, and if the scalar `g k` of a distinguished index `k ∈ s` is attained by
+no other index of `s`, then meeting the sum `⨆ j ∈ s, W j` with `A.genEigenspace (g k) n` returns
+`W k` exactly: an element of the sum that lies in `A.genEigenspace (g k) n` already lies in `W k`.
+For `n = 1` the hypotheses say that `A` acts on each `W j` as multiplication by `g j`, and the
+conclusion is about the `g k`-eigenspace. -/
+theorem biSup_inf_genEigenspace_eq_of_mem {ι : Type w} (A : Module.End K V)
     (W : ι → Submodule K V) (g : ι → K) {n : ℕ∞} {s : Set ι}
     (hW : ∀ j, j ∈ s → W j ≤ A.genEigenspace (g j) n) {k : ι} (hk : k ∈ s)
     (hg : ∀ j ∈ s, j ≠ k → g j ≠ g k) :
@@ -123,7 +122,7 @@ theorem biSup_inf_genEigenspace_eq_self {ι : Type w} (A : Module.End K V)
   rw [hsplit, sup_inf_assoc_of_le _ (hW k hk), disjoint_iff.mp hdisj, sup_bot_eq]
 
 /-- **Summands of a spanning family with distinct scalars are generalized eigenspaces.** Fix an
-order `n : ℕ∞`. If the `W j` span `V`, every `W j` lies in the generalized eigenspace
+exponent `n : ℕ∞`. If the `W j` span `V`, every `W j` lies in the generalized eigenspace
 `A.genEigenspace (g j) n`, and `g` is injective, then `A.genEigenspace (g k) n` is exactly `W k`.
 For `n = 1` this says that the `g k`-eigenspace of `A` is `W k`. -/
 theorem genEigenspace_eq_of_iSup_eq_top {ι : Type w} (A : Module.End K V)
