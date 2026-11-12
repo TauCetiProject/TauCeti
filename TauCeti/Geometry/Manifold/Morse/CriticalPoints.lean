@@ -88,6 +88,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.eventually_mem_criticalPoints_imp_isManifoldNondegenerateCriticalPoint`: near a
   regular point or a nondegenerate critical point of a `C¹` function, every critical point is
   nondegenerate.
+* `TauCeti.IsMorseOn.exists_isOpen_superset`: a smooth function which is Morse on a set is Morse
+  on an open neighbourhood of it.
 * `TauCeti.IsMorse.eventually_eq_of_mem_criticalPoints`: the critical points of a Morse function
   are isolated.
 * `TauCeti.finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint`: a `C¹`
@@ -578,36 +580,50 @@ theorem IsMorse.finite_criticalPoints_inter (hf : IsMorse I f) {K : Set M} (hK :
     (hf.contMDiff.of_le (by simp)) hK
     fun _ hx ↦ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx.1
 
+/-- **Isolation of a nondegenerate critical point.** If `x` is either a regular point or a
+nondegenerate critical point of a `C¹` function `f`, then no critical point of `f` other than `x`
+lies near `x`: a regular point has a neighbourhood free of critical points, and a nondegenerate
+critical point is isolated among the critical points. -/
+theorem eventually_mem_criticalPoints_imp_eq (hf : ContMDiff I 𝓘(ℝ) 1 f)
+    (hx : x ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f x) :
+    ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → y = x := by
+  by_cases hxc : x ∈ criticalPoints I f
+  · filter_upwards [eventually_nhdsWithin_iff.1 (hx hxc).eventually_notMem_criticalPoints]
+      with y hy hyc
+    by_contra hyx
+    exact hy hyx hyc
+  · filter_upwards [(isClosed_criticalPoints hf).isOpen_compl.mem_nhds hxc] with y hy hyc
+    exact absurd hyc hy
+
 /-- **Nondegeneracy of critical points spreads to a neighbourhood.** If a point `x` is either a
 regular point or a nondegenerate critical point of a `C¹` function `f`, then every critical point
-of `f` near `x` is nondegenerate: a regular point has a neighbourhood free of critical points, and
-a nondegenerate critical point is isolated among the critical points. -/
+of `f` near `x` is nondegenerate. -/
 theorem eventually_mem_criticalPoints_imp_isManifoldNondegenerateCriticalPoint
     (hf : ContMDiff I 𝓘(ℝ) 1 f)
     (hx : x ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f x) :
     ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f y := by
-  by_cases hxc : x ∈ criticalPoints I f
-  · filter_upwards [eventually_nhdsWithin_iff.1 (hx hxc).eventually_notMem_criticalPoints]
-      with y hy hyc
-    by_cases hyx : y = x
-    · exact hyx ▸ hx hxc
-    · exact absurd hyc (hy hyx)
-  · filter_upwards [(isClosed_criticalPoints hf).isOpen_compl.mem_nhds hxc] with y hy hyc
-    exact absurd hyc hy
+  filter_upwards [eventually_mem_criticalPoints_imp_eq hf hx] with y hy hyc
+  obtain rfl := hy hyc
+  exact hx hyc
+
+/-- **A function which is Morse on a set is Morse on an open neighbourhood of it.** A smooth
+function which is Morse on `s` is Morse on an open set containing `s`, since near a regular point
+or a nondegenerate critical point every critical point is nondegenerate. -/
+theorem IsMorseOn.exists_isOpen_superset [I.Boundaryless] (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (h : IsMorseOn I f s) :
+    ∃ V, IsOpen V ∧ s ⊆ V ∧ IsMorseOn I f V :=
+  ⟨{x | ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f y},
+    isOpen_setOfPred_eventually_nhds, fun x hx ↦
+      eventually_mem_criticalPoints_imp_isManifoldNondegenerateCriticalPoint (hf.of_le (by simp))
+        (h.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx),
+    isMorseOn_iff_criticalPoints.2 ⟨hf.contMDiffOn, fun _ hx hc ↦ hx.self_of_nhds hc⟩⟩
 
 /-- **The critical points of a Morse function are isolated.** Near any point `x` there is no
 critical point of a Morse function other than `x` itself. -/
 theorem IsMorse.eventually_eq_of_mem_criticalPoints (hf : IsMorse I f) (x : M) :
-    ∀ᶠ z in 𝓝 x, z ∈ criticalPoints I f → z = x := by
-  by_cases hx : x ∈ criticalPoints I f
-  · have hiso := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      hx).eventually_notMem_criticalPoints
-    filter_upwards [eventually_nhdsWithin_iff.1 hiso] with z hz hzc
-    by_contra hzx
-    exact hz hzx hzc
-  · filter_upwards [(isClosed_criticalPoints (hf.contMDiff.of_le (by simp))).isOpen_compl.mem_nhds
-      hx] with z hz hzc
-    exact absurd hzc hz
+    ∀ᶠ z in 𝓝 x, z ∈ criticalPoints I f → z = x :=
+  eventually_mem_criticalPoints_imp_eq (hf.contMDiff.of_le (by simp))
+    hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
 
 /-- A Morse function on a compact manifold has finitely many critical points. -/
 theorem IsMorse.finite_criticalPoints [CompactSpace M] (hf : IsMorse I f) :

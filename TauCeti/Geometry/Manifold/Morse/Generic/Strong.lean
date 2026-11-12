@@ -25,11 +25,11 @@ neighbourhood `c.ball f` of `f` and every continuous positive tolerance `ε`, th
 function `g ∈ c.ball f` with `|g - f| < ε` everywhere; if `f` is already Morse on a closed set
 `C`, then `g` can be chosen equal to `f` near `C`
 (`ContMDiffMap.exists_isMorse_mem_ball_sub_compl`). Being Morse on `C` already makes `f` Morse on
-an open neighbourhood of `C`, since near a regular point or a nondegenerate critical point every
-critical point is nondegenerate. With `ε = 1` the approximation keeps a proper function proper,
-with no separate sigma-compactness hypothesis needed because a proper map into `ℝ` already makes
-`M` sigma-compact (`ContMDiffMap.exists_isMorse_isProperMap_mem_ball`), and so every boundaryless
-finite-dimensional Hausdorff sigma-compact manifold carries a proper Morse function bounded below
+an open neighbourhood of `C` (`TauCeti.IsMorseOn.exists_isOpen_superset`). With `ε = 1` the
+approximation keeps a proper function proper, with no separate sigma-compactness hypothesis needed
+because a proper map into `ℝ` already makes `M` sigma-compact
+(`ContMDiffMap.exists_isMorse_isProperMap_mem_ball`), and so every boundaryless finite-dimensional
+Hausdorff sigma-compact manifold carries a proper Morse function bounded below
 (`TauCeti.exists_isMorse_isProperMap_bddBelow`).
 
 The proof runs the relative compact approximation
@@ -78,15 +78,17 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
 
 /-- One stage of the strong Morse approximation. A function `φ` which is Morse on `K₀` and agrees
-with `f` near `C`, where `f` is Morse on a neighbourhood `V` of `C`, is made Morse on a compact
+with `f` near `C`, where `f` is Morse on `C`, is made Morse on a compact
 set `K₁` by a perturbation in a prescribed neighbourhood of `φ`. The perturbation is supported
 away from `C`, in an open set `W` containing the part of `K₁` outside `interior K₀`. -/
 private theorem exists_isMorseOn_tsupport_sub_inter_compl (f φ : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯)
-    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V) (hfV : IsMorseOn I f V)
+    {C : Set M} (hC : IsClosed C) (hfC : IsMorseOn I f C)
     (hφC : tsupport (fun x ↦ φ x - f x) ⊆ Cᶜ) {K₀ K₁ W : Set M} (hφ : IsMorseOn I φ K₀)
     (hK₁ : IsCompact K₁) (hW : IsOpen W) (hK : K₁ \ W ⊆ interior K₀)
     {𝒰 : Set C^∞⟮I, M; 𝓘(ℝ), ℝ⟯} (h𝒰 : 𝒰 ∈ 𝓝 φ) :
     ∃ ψ ∈ 𝒰, IsMorseOn I ψ K₁ ∧ tsupport (fun x ↦ ψ x - φ x) ⊆ W ∩ Cᶜ := by
+  -- `f` is Morse on an open neighbourhood `V` of `C`.
+  obtain ⟨V, hV, hCV, hfV⟩ := hfC.exists_isOpen_superset f.contMDiff
   have hO : IsOpen (tsupport fun x ↦ φ x - f x)ᶜ := (isClosed_tsupport _).isOpen_compl
   -- Near `C` the function `φ` is still `f`, hence Morse.
   have hφV : IsMorseOn I φ (V ∩ (tsupport fun x ↦ φ x - f x)ᶜ) :=
@@ -101,7 +103,7 @@ private theorem exists_isMorseOn_tsupport_sub_inter_compl (f φ : C^∞⟮I, M; 
     · exact Or.inl ⟨hCV hxC, fun hx ↦ hφC hx hxC⟩
     · exact Or.inr (hK ⟨hxK, hxW⟩)
   obtain ⟨ψ, hψ𝒰, hψ, -, hψs⟩ := φ.exists_isMorseOn_hasCompactSupport_sub_compl hK₁
-    (hC.union hW.isClosed_compl) ((hV.inter hO).union isOpen_interior) hsub hφV' h𝒰
+    (hC.union hW.isClosed_compl) (hφV'.mono hsub) h𝒰
   refine ⟨ψ, hψ𝒰, hψ, hψs.trans ?_⟩
   rw [compl_union, compl_compl, inter_comm]
 
@@ -111,8 +113,8 @@ Morse on `L r` and equal to `f` near `C`, is made Morse on `L (r + 1)` by a pert
 in `interior (L (r + 2)) \ L (r - 1)` away from `C`, small in the seminorms `p i` for the finitely
 many `i` with `A i` meeting `L (r + 2)` (the bound is `t i * w r`), and small on `L (r + 2)` (the
 bound is `ε x * w r`). -/
-private theorem exists_isMorseOn_stage (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {C V : Set M} (hC : IsClosed C)
-    (hV : IsOpen V) (hCV : C ⊆ V) (hfV : IsMorseOn I f V) {ι : Type*} (A : ι → Set M)
+private theorem exists_isMorseOn_stage (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {C : Set M} (hC : IsClosed C)
+    (hfC : IsMorseOn I f C) {ι : Type*} (A : ι → Set M)
     (p : ι → Seminorm ℝ C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {t : ι → ℝ} (ht : ∀ i, 0 < t i)
     (hfin : ∀ K, IsCompact K → {i | (A i ∩ K).Nonempty}.Finite)
     (hp : ∀ i (φ : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {δ : ℝ}, 0 < δ → ∀ᶠ ψ in 𝓝 φ, p i (ψ - φ) < δ)
@@ -135,7 +137,7 @@ private theorem exists_isMorseOn_stage (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {C 
   -- Off `interior (L (r + 2)) \ L (r - 1)`, the part of `L (r + 1)` lies in `interior (L r)`.
   have hK : L (r + 1) \ (interior (L (r + 2)) \ L (r - 1)) ⊆ interior (L r) := fun x hx ↦
     hLpred r (not_not.mp fun h ↦ hx.2 ⟨L.subset_interior_succ _ hx.1, h⟩)
-  obtain ⟨ψ, hψ𝒰, hψ, hψs⟩ := exists_isMorseOn_tsupport_sub_inter_compl f φ hC hV hCV hfV hφC hφ
+  obtain ⟨ψ, hψ𝒰, hψ, hψs⟩ := exists_isMorseOn_tsupport_sub_inter_compl f φ hC hfC hφC hφ
     (L.isCompact (r + 1)) (isOpen_interior.sdiff (L.isCompact _).isClosed) hK h𝒰
   exact ⟨ψ, hψ𝒰, hψ, hψs⟩
 
@@ -207,8 +209,8 @@ variable [SigmaCompactSpace M]
 supports `A i`, locally finite in the sense that only finitely many meet each compact set. The
 function `g` is within `t i` of `f` for `p i`, within `ε` of `f` pointwise, Morse, and equal to
 `f` near `C`. -/
-private theorem exists_isMorse_of_seminorms (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {C V : Set M}
-    (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V) (hfV : IsMorseOn I f V) {ι : Type*}
+private theorem exists_isMorse_of_seminorms (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {C : Set M}
+    (hC : IsClosed C) (hfC : IsMorseOn I f C) {ι : Type*}
     (A : ι → Set M) (p : ι → Seminorm ℝ C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {t : ι → ℝ} (ht : ∀ i, 0 < t i)
     (hfin : ∀ K, IsCompact K → {i | (A i ∩ K).Nonempty}.Finite)
     (hp : ∀ i (φ : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {δ : ℝ}, 0 < δ → ∀ᶠ ψ in 𝓝 φ, p i (ψ - φ) < δ)
@@ -230,7 +232,7 @@ private theorem exists_isMorse_of_seminorms (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯
   let w : ℕ → ℝ := fun r ↦ (1 / 2) ^ (r + 1)
   have hw : ∀ r, 0 < w r := fun r ↦ by positivity
   obtain ⟨F, hF0, hFQ, hFinv, hFsupp⟩ := exists_stages_of_step f L hL0 _
-    (exists_isMorseOn_stage f hC hV hCV hfV A p ht hfin hp L hLpred hε hε₀ hw)
+    (exists_isMorseOn_stage f hC hfC A p ht hfin hp L hLpred hε hε₀ hw)
   have hsupp : ∀ r, tsupport (fun x ↦ F (r + 1) x - F r x) ⊆ L (r + 2) := fun r ↦
     (hFsupp r).trans (inter_subset_left.trans (sdiff_subset.trans interior_subset))
   -- The stages stabilize: stage `r + 1` changes nothing on `L r`, so they have a smooth limit.
@@ -254,17 +256,6 @@ theorem _root_.ContMDiffMap.exists_isMorse_mem_ball_sub_compl (f : C^∞⟮I, M;
     {C : Set M} (hC : IsClosed C) (hfC : IsMorseOn I f C) :
     ∃ g ∈ c.ball f, IsMorse I g ∧ (∀ x, |g x - f x| < ε x) ∧
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ := by
-  -- `f` is Morse on the open set `V` of points near which every critical point is nondegenerate,
-  -- and `V` contains `C`.
-  let V : Set M :=
-    {x | ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f y}
-  have hV : IsOpen V := isOpen_setOfPred_eventually_nhds
-  have hCV : C ⊆ V := fun x hx ↦
-    eventually_mem_criticalPoints_imp_isManifoldNondegenerateCriticalPoint
-      (f.contMDiff.of_le (by simp))
-      (hfC.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx)
-  have hfV : IsMorseOn I f V :=
-    isMorseOn_iff_criticalPoints.2 ⟨f.contMDiff.contMDiffOn, fun _ hx hc ↦ hx.self_of_nhds hc⟩
   -- The points of `M` represented by the members of the strong control, and its seminorms.
   let A : c.ι → Set M := fun i ↦ (extChartAt I (c.center i)).symm ''
     (Subtype.val '' (c.compact i : Set (extChartAt I (c.center i)).target))
@@ -273,7 +264,7 @@ theorem _root_.ContMDiffMap.exists_isMorse_mem_ball_sub_compl (f : C^∞⟮I, M;
       ((continuousOn_extChartAt_symm (c.center i)).mono (by rintro _ ⟨z, -, rfl⟩; exact z.2))
   let p : c.ι → Seminorm ℝ C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ := fun i ↦
     chartCkSeminorm (c.center i) (c.compact i) c.order c.order_le
-  obtain ⟨g, hgp, hgm, hgε, hgs⟩ := exists_isMorse_of_seminorms f hC hV hCV hfV A p
+  obtain ⟨g, hgp, hgm, hgε, hgs⟩ := exists_isMorse_of_seminorms f hC hfC A p
     c.tolerance_pos (fun K hK ↦ c.locallyFinite.finite_nonempty_inter_compact hK)
     (fun i φ δ hδ ↦ eventually_of_mem (ball_chartCkSeminorm_mem_nhds _ _ _ _ φ hδ) fun ψ hψ ↦
       (Seminorm.mem_ball _).mp hψ) hA
