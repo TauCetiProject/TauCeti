@@ -236,7 +236,7 @@ theorem isNotG2_rationalRootSystem (h : t ≠ .G2) :
   exact h ((t.hasCartanType_rationalRootSystem ht).eq_of_valid
     (hasCartanType_G2_of_isG2 hG2 (t.rationalBase ht)) ht (by simp))
 
-variable {t ht} in
+variable {t} in
 /-- Outside type `G₂`, the pinned datum has Cartan integers bounded by two, as required
 by the general double-chain lemmas. -/
 theorem pairingIn_mem_zero_one_two_of_ne_G2

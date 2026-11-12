@@ -49,8 +49,6 @@ to the Chevalley commutator formula for the root subgroups `x_α(u) = Σₙ uⁿ
   `N_{α,β} = ±2` for orthogonal roots whose sum is a root.
 * `TauCeti.DynkinType.structureConstant_eq_two_or_neg_two_of_double_chain_of_chainBotCoeff_eq_zero`:
   `N_{α,α+β} = ±2` when `α + β` and `2α + β` are roots and the `α`-string starts at `β`.
-* `TauCeti.DynkinType.two_mul_structureConstant_ediv_two_of_double_chain_of_chainBotCoeff_eq_zero`:
-  division of `N_{α,α+β}` by two is exact when the `α`-string starts at `β`.
 * `TauCeti.DynkinType.structureConstant_ne_zero` and `TauCeti.DynkinType.structureConstant_eq_zero`:
   the constant vanishes exactly when `α + β` is not a root.
 * `TauCeti.DynkinType.structureConstant_skew`: `N_{β,α} = -N_{α,β}`.
@@ -177,20 +175,6 @@ theorem structureConstant_eq_two_or_neg_two_of_double_chain_of_chainBotCoeff_eq_
   have hnext := (t.simplyConnectedRootDatum ht).chainBotCoeff_of_add hli
     (hγ.trans (add_comm _ _))
   simpa [hnext, hbot] using structureConstant_eq_natCast_or_eq_neg_natCast ⟨δ, hδ⟩
-
-/-- Along a root string starting at `β`, the bracket at its next step has even structure
-constant. Division by two here is in `ℤ`, not in a value ring. -/
-theorem two_mul_structureConstant_ediv_two_of_double_chain_of_chainBotCoeff_eq_zero
-    {α β γ δ : Fin t.numRoots}
-    (hγ : (t.simplyConnectedRootDatum ht).root γ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
-    (hδ : (t.simplyConnectedRootDatum ht).root δ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
-    (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0) :
-    2 * (t.structureConstant ht α γ / 2) = t.structureConstant ht α γ := by
-  rcases structureConstant_eq_two_or_neg_two_of_double_chain_of_chainBotCoeff_eq_zero
-    hγ hδ hbot with h | h <;>
-    norm_num [h]
 
 /-- The structure constant vanishes when `α + β` is not a root. -/
 theorem structureConstant_eq_zero {α β : Fin t.numRoots}

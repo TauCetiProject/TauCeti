@@ -218,12 +218,12 @@ theorem kostantRootSubgroupParam_chevalleySystem
 /-- The Chevalley root subgroup at a parameter agrees with the points of the all-root
 Kostant subgroup on the same lattice. -/
 theorem chevalleyRootSubgroup_eq_kostantRootSubgroupPoints
-    (i : Fin t.numRoots) (A : CommAlgCat ℤ) (u : A) :
-    chevalleyRootSubgroup ρ M hM hnil i A (.ofAdd u) =
+    (i : Fin t.numRoots) (A : CommAlgCat ℤ) (u : Multiplicative A) :
+    chevalleyRootSubgroup ρ M hM hnil i A u =
       kostantRootSubgroupPoints (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
         (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) i
         (isNilpotent_apply_ι_chevalleySystem ρ hnil i)
-        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (.ofAdd u)) := by
+        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u) := by
   rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil,
     kostantRootSubgroupParam_apply]
 
