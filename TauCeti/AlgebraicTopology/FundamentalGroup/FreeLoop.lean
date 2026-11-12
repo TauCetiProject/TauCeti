@@ -28,8 +28,8 @@ conjugate in `π₁(X, x)` (`Path.joined_toCircle_iff_isConj`). In one direction
 (`Path.joined_toCircle_iff_homotopicWith`), and its track `δ` at the base point is a loop with
 `γ₀ · δ ≃ δ · γ₁`. In the other direction, a conjugate `χ · ℓ · χ⁻¹` of a loop `ℓ` is homotopic to
 `ℓ` through closed paths (`Path.homotopicWith_trans_trans_symm`). The same conjugation moves the
-loop `t ↦ f(e^{2πit})` of any free loop `f` (`ContinuousMap.toLoop`) to a loop at `x` freely
-homotopic to `f` (`ContinuousMap.joined_toCircle_trans_trans_symm_toLoop`), which gives
+loop `t ↦ f(e^{2πit})` of any free loop `f` (`ContinuousMap.circleToLoop`) to a loop at `x` freely
+homotopic to `f` (`ContinuousMap.joined_toCircle_trans_trans_symm_circleToLoop`), which gives
 surjectivity onto `π₀(𝓛X)` for path-connected `X`.
 
 For a space that is not path connected, choose a basepoint in each path component
@@ -171,8 +171,8 @@ theorem range_freeLoopComponentOfConjClass :
     rw [Set.mem_preimage, freeLoopComponentBase_mk, Set.mem_singleton_iff] at hc
     have h : Joined x (f 1) := Quotient.exact hc.symm
     exact ⟨ConjClasses.mk (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk
-        ((h.somePath.trans f.toLoop).trans h.somePath.symm))),
-      Quotient.sound (f.joined_toCircle_trans_trans_symm_toLoop h.somePath)⟩
+        ((h.somePath.trans f.circleToLoop).trans h.somePath.symm))),
+      Quotient.sound (f.joined_toCircle_trans_trans_symm_circleToLoop h.somePath)⟩
 
 variable (x) in
 /-- **The path components of the free loop space of a path-connected space are the conjugacy

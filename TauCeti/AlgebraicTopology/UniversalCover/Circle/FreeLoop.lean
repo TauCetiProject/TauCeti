@@ -12,9 +12,9 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 # Path components of the free loop space of the circle
 
 The path components of the free loop space `C(S¹, S¹)` are indexed by the winding number: a free
-loop `f` has the degree `Circle.degree f.toLoop` of its loop `t ↦ f(e^{2πit})`, and two free loops
-are joined by a path in `C(S¹, S¹)` exactly when they have the same degree
-(`Circle.joined_iff_degree_toLoop_eq`). Every integer is a degree, so
+loop `f` has the degree `Circle.degree f.circleToLoop` of its loop `t ↦ f(e^{2πit})`, and two free
+loops are joined by a path in `C(S¹, S¹)` exactly when they have the same degree
+(`Circle.joined_iff_degree_circleToLoop_eq`). Every integer is a degree, so
 
 `π₀(C(S¹, S¹)) ≃ ℤ` (`Circle.freeLoopComponentsEquivInt`),
 
@@ -22,13 +22,13 @@ and the same holds for the Moore free loop space (`Circle.mooreFreeLoopComponent
 
 The degree is invariant under homotopies through loops (`Circle.degree_eq_of_homotopy`), which is
 one direction. For the other, each free loop is joined to a loop at `1`
-(`ContinuousMap.joined_toCircle_trans_trans_symm_toLoop`), and loops at `1` of equal degree have
-the same class in `π₁(S¹, 1) ≅ ℤ` (`Circle.fundamentalGroupMulEquiv_fromPath`), hence are joined
-(`Path.joined_toCircle_iff_isConj`).
+(`ContinuousMap.joined_toCircle_trans_trans_symm_circleToLoop`), and loops at `1` of equal degree
+have the same class in `π₁(S¹, 1) ≅ ℤ` (`Circle.fundamentalGroupMulEquiv_fromPath`), hence are
+joined (`Path.joined_toCircle_iff_isConj`).
 
 ## Main declarations
 
-* `Circle.joined_iff_degree_toLoop_eq`: free loops of the circle are joined exactly when they
+* `Circle.joined_iff_degree_circleToLoop_eq`: free loops of the circle are joined exactly when they
   have the same degree.
 * `Circle.freeLoopComponentsEquivInt`: `π₀(C(S¹, S¹)) ≃ ℤ`, by the degree.
 * `Circle.mooreFreeLoopComponentsEquivInt`: the same for the Moore free loop space.
@@ -51,31 +51,33 @@ open TauCeti
 /-- The loop at the base point of a loop read as a map from the circle has the degree of the
 loop. -/
 @[simp]
-theorem degree_toLoop_toCircle {x : Circle} (γ : Path x x) : degree γ.toCircle.toLoop = degree γ :=
+theorem degree_circleToLoop_toCircle {x : Circle} (γ : Path x x) :
+    degree γ.toCircle.circleToLoop = degree γ :=
   degree_congr _ _ fun t ↦ by simp
 
 /-- **The degree is constant on path components of the free loop space.** -/
-theorem degree_toLoop_eq_of_joined {f g : C(Circle, Circle)} (h : Joined f g) :
-    degree f.toLoop = degree g.toLoop := by
-  rw [← f.toLoop_toCircle, ← g.toLoop_toCircle, Path.joined_toCircle_iff_homotopicWith] at h
+theorem degree_circleToLoop_eq_of_joined {f g : C(Circle, Circle)} (h : Joined f g) :
+    degree f.circleToLoop = degree g.circleToLoop := by
+  rw [← f.circleToLoop_toCircle, ← g.circleToLoop_toCircle,
+    Path.joined_toCircle_iff_homotopicWith] at h
   obtain ⟨H⟩ := h
   exact degree_eq_of_homotopy _ _ H.toContinuousMap (fun t ↦ H.apply_zero t)
     (fun t ↦ H.apply_one t) H.prop
 
 /-- **Free loops of the circle are classified by their degree.** Two maps `S¹ → S¹` are joined by
 a path in `C(S¹, S¹)` exactly when they have the same degree. -/
-theorem joined_iff_degree_toLoop_eq {f g : C(Circle, Circle)} :
-    Joined f g ↔ degree f.toLoop = degree g.toLoop := by
-  refine ⟨degree_toLoop_eq_of_joined, fun hfg ↦ ?_⟩
+theorem joined_iff_degree_circleToLoop_eq {f g : C(Circle, Circle)} :
+    Joined f g ↔ degree f.circleToLoop = degree g.circleToLoop := by
+  refine ⟨degree_circleToLoop_eq_of_joined, fun hfg ↦ ?_⟩
   -- Move both free loops to loops at `1`, where the degree detects the class in `π₁(S¹, 1)`.
   let χf := PathConnectedSpace.somePath (1 : Circle) (f 1)
   let χg := PathConnectedSpace.somePath (1 : Circle) (g 1)
-  have hf := f.joined_toCircle_trans_trans_symm_toLoop χf
-  have hg := g.joined_toCircle_trans_trans_symm_toLoop χg
-  have hdeg : degree ((χf.trans f.toLoop).trans χf.symm) =
-      degree ((χg.trans g.toLoop).trans χg.symm) := by
-    rw [← degree_toLoop_toCircle, degree_toLoop_eq_of_joined hf, hfg,
-      ← degree_toLoop_eq_of_joined hg, degree_toLoop_toCircle]
+  have hf := f.joined_toCircle_trans_trans_symm_circleToLoop χf
+  have hg := g.joined_toCircle_trans_trans_symm_circleToLoop χg
+  have hdeg : degree ((χf.trans f.circleToLoop).trans χf.symm) =
+      degree ((χg.trans g.circleToLoop).trans χg.symm) := by
+    rw [← degree_circleToLoop_toCircle, degree_circleToLoop_eq_of_joined hf, hfg,
+      ← degree_circleToLoop_eq_of_joined hg, degree_circleToLoop_toCircle]
   have hπ := congrArg Multiplicative.ofAdd hdeg
   rw [← fundamentalGroupMulEquiv_fromPath, ← fundamentalGroupMulEquiv_fromPath] at hπ
   exact (hf.symm.trans (Path.joined_toCircle_iff_isConj.2
@@ -85,26 +87,26 @@ theorem joined_iff_degree_toLoop_eq {f g : C(Circle, Circle)} :
 of the free loops: `π₀(C(S¹, S¹)) ≃ ℤ`. -/
 def freeLoopComponentsEquivInt : ZerothHomotopy C(Circle, Circle) ≃ ℤ :=
   Equiv.ofBijective
-    (Quotient.lift (fun f : C(Circle, Circle) ↦ degree f.toLoop)
-      fun _ _ h ↦ degree_toLoop_eq_of_joined h)
+    (Quotient.lift (fun f : C(Circle, Circle) ↦ degree f.circleToLoop)
+      fun _ _ h ↦ degree_circleToLoop_eq_of_joined h)
     ⟨fun c d h ↦ by
       obtain ⟨f, rfl⟩ := ZerothHomotopy.mk_surjective c
       obtain ⟨g, rfl⟩ := ZerothHomotopy.mk_surjective d
-      exact Quotient.sound (joined_iff_degree_toLoop_eq.2 h),
+      exact Quotient.sound (joined_iff_degree_circleToLoop_eq.2 h),
     fun n ↦ by
       obtain ⟨⟨γ⟩, hγ⟩ := (fundamentalGroupMulEquiv (1 : Circle)).surjective (.ofAdd n)
       induction γ using Path.Homotopic.Quotient.ind with | mk γ => ?_
       refine ⟨ZerothHomotopy.mk γ.toCircle, ?_⟩
       -- `ZerothHomotopy.mk` is the quotient map, on which `Quotient.lift` computes; the
       -- characterizing lemma `freeLoopComponentsEquivInt_mk` is stated only after this definition.
-      change degree γ.toCircle.toLoop = n
-      rw [degree_toLoop_toCircle, ← Multiplicative.ofAdd.injective.eq_iff,
+      change degree γ.toCircle.circleToLoop = n
+      rw [degree_circleToLoop_toCircle, ← Multiplicative.ofAdd.injective.eq_iff,
         ← fundamentalGroupMulEquiv_fromPath]
       exact hγ⟩
 
 @[simp]
 theorem freeLoopComponentsEquivInt_mk (f : C(Circle, Circle)) :
-    freeLoopComponentsEquivInt (.mk f) = degree f.toLoop :=
+    freeLoopComponentsEquivInt (.mk f) = degree f.circleToLoop :=
   (rfl)
 
 theorem freeLoopComponentsEquivInt_mk_toCircle {x : Circle} (γ : Path x x) :
@@ -120,7 +122,7 @@ def mooreFreeLoopComponentsEquivInt : ZerothHomotopy (MooreFreeLoopSpace Circle)
 @[simp]
 theorem mooreFreeLoopComponentsEquivInt_mk (γ : MooreFreeLoopSpace Circle) :
     mooreFreeLoopComponentsEquivInt (.mk γ) =
-      degree (MooreFreeLoopSpace.toCircleMap γ).toLoop := by
+      degree (MooreFreeLoopSpace.toCircleMap γ).circleToLoop := by
   simp [mooreFreeLoopComponentsEquivInt]
 
 end Circle

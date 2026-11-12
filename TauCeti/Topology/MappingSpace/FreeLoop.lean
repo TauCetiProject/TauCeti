@@ -45,8 +45,8 @@ such paths in `𝓛₀Q` (`TauCeti.constLoopPathHomeomorph`).
   they are homotopic through closed paths `I → Q`.
 * `Path.joined_toCircle_trans_trans_symm`: a conjugate `χ · ℓ · χ⁻¹` of a loop `ℓ` is joined to
   `ℓ` in `C(Circle, Q)`.
-* `ContinuousMap.joined_toCircle_trans_trans_symm_toLoop`: every free loop is joined to a loop at
-  any point of the path component of its base point.
+* `ContinuousMap.joined_toCircle_trans_trans_symm_circleToLoop`: every free loop is joined to a
+  loop at any point of the path component of its base point.
 * `TauCeti.freeLoopComponentBase`: evaluation at `1 ∈ Circle` on path components,
   `π₀(C(Circle, Q)) → π₀(Q)`.
 * `TauCeti.contractibleLoops`, `TauCeti.basepointContractibleLoop`: the contractible free loops
@@ -363,9 +363,9 @@ variable {x : X}
 /-- **Every free loop is freely homotopic to a loop at a given point.** If `χ` is a path from `x`
 to the base point `f 1` of a free loop `f`, then the loop `χ · f · χ⁻¹` at `x` is joined to `f` in
 the free loop space. -/
-theorem joined_toCircle_trans_trans_symm_toLoop (f : C(Circle, X)) (χ : Path x (f 1)) :
-    Joined ((χ.trans f.toLoop).trans χ.symm).toCircle f := by
-  simpa using Path.joined_toCircle_trans_trans_symm χ f.toLoop
+theorem joined_toCircle_trans_trans_symm_circleToLoop (f : C(Circle, X)) (χ : Path x (f 1)) :
+    Joined ((χ.trans f.circleToLoop).trans χ.symm).toCircle f := by
+  simpa using Path.joined_toCircle_trans_trans_symm χ f.circleToLoop
 
 end ContinuousMap
 
