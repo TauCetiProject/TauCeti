@@ -80,7 +80,52 @@ theorem compatibleMap_naturality_apply (η : I.multispan ⟶ I'.multispan)
       D.compatibleMap I' (MultispanIndex.compatibleFamiliesMap η x) :=
   LinearMap.congr_fun (D.compatibleMap_naturality η) x
 
+/-- Coefficient transport preserves agreement between copies of each chamber. -/
+theorem sectionsMap_chambers_eq (η : I.multispan ⟶ I'.multispan)
+    (s : SemimoduleCat.sectionsSubmodule (D.index I).multispan)
+    (hs : ∀ j (c d : D.chambers j),
+      s.val (.right ⟨j, c⟩) = s.val (.right ⟨j, d⟩)) :
+    ∀ j (c d : D.chambers j),
+      (SemimoduleCat.sectionsMap (D.mapNatTrans η) s).val (.right ⟨j, c⟩) =
+        (SemimoduleCat.sectionsMap (D.mapNatTrans η) s).val (.right ⟨j, d⟩) := by
+  intro j c d
+  simp only [SemimoduleCat.sectionsMap_apply, mapNatTrans_app_right]
+  exact congrArg (η.app (.right j)).hom (hs j c d)
+
 variable [∀ j, Nonempty (D.chambers j)] [∀ b, Nonempty (D.faces b)]
+
+/-- Linear descent commutes with coefficient maps, without requiring connected
+identity-face graphs or injectivity of the coefficient maps. -/
+theorem sectionsDescend_naturality
+    (hinj : ∀ b, Function.Injective ((I.fst b).hom.prod (I.snd b).hom))
+    (hinj' : ∀ b, Function.Injective ((I'.fst b).hom.prod (I'.snd b).hom))
+    (η : I.multispan ⟶ I'.multispan)
+    {E : Type*} [AddCommMonoid E] [Module R E]
+    (ℓ : E →ₗ[R] SemimoduleCat.sectionsSubmodule (D.index I).multispan)
+    (hℓ : ∀ x j (c d : D.chambers j),
+      (ℓ x).val (.right ⟨j, c⟩) = (ℓ x).val (.right ⟨j, d⟩)) :
+    D.sectionsDescend I' hinj' ((SemimoduleCat.sectionsMap (D.mapNatTrans η)).comp ℓ)
+        (fun x => D.sectionsMap_chambers_eq η (ℓ x) (hℓ x)) =
+      (SemimoduleCat.sectionsMap η).comp (D.sectionsDescend I hinj ℓ hℓ) := by
+  apply LinearMap.ext
+  intro x
+  apply D.sectionsPullback_injective_of_nonempty_faces I'
+  simpa only [LinearMap.comp_apply, sectionsPullback_sectionsDescend] using
+    D.sectionsPullback_naturality_apply η (D.sectionsDescend I hinj ℓ hℓ x)
+
+/-- Pointwise coefficient naturality of linear-family descent. -/
+theorem sectionsDescend_naturality_apply
+    (hinj : ∀ b, Function.Injective ((I.fst b).hom.prod (I.snd b).hom))
+    (hinj' : ∀ b, Function.Injective ((I'.fst b).hom.prod (I'.snd b).hom))
+    (η : I.multispan ⟶ I'.multispan)
+    {E : Type*} [AddCommMonoid E] [Module R E]
+    (ℓ : E →ₗ[R] SemimoduleCat.sectionsSubmodule (D.index I).multispan)
+    (hℓ : ∀ x j (c d : D.chambers j),
+      (ℓ x).val (.right ⟨j, c⟩) = (ℓ x).val (.right ⟨j, d⟩)) (x : E) :
+    D.sectionsDescend I' hinj' ((SemimoduleCat.sectionsMap (D.mapNatTrans η)).comp ℓ)
+        (fun x => D.sectionsMap_chambers_eq η (ℓ x) (hℓ x)) x =
+      SemimoduleCat.sectionsMap η (D.sectionsDescend I hinj ℓ hℓ x) :=
+  LinearMap.congr_fun (D.sectionsDescend_naturality hinj hinj' η ℓ hℓ) x
 
 /-- Compatible-family descent commutes with coefficient changes under chamber
 and face coverage and connected identity-face graphs. No span injectivity is needed. -/

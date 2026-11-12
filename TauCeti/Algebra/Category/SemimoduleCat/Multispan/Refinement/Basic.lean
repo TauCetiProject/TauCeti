@@ -18,9 +18,10 @@ faces connect each chamber's copies, compatible chamber families descend uniquel
 If the original face spans are jointly injective, this gives an equivalence of
 matching sections. Individual incidence maps need not be injective and the index
 sets may be infinite. Disconnected identity graphs also permit descent of a supplied
-section, or a linear family of sections, when its chamber copies already agree,
-every face has a copy and the original spans are jointly injective. Linear descent
-is unique when every chamber also has a copy.
+section when its chamber copies already agree, every face has a copy and the
+original spans are jointly injective (`exists_sectionsPullback_eq_of_chambers_eq`).
+Chamber coverage also yields uniqueness and linear-family descent (`sectionsDescend`
+and `existsUnique_sectionsPullback_comp_eq_of_chambers_eq`).
 
 Surjectivity assumes face coverage but permits chambers with no copies. Injectivity
 of section pullback assumes chamber coverage and requires joint injectivity only
@@ -86,6 +87,11 @@ def sectionsPullback : SemimoduleCat.sectionsSubmodule I.multispan →ₗ[R]
     SemimoduleCat.sectionsSubmodule (D.index I).multispan :=
   (SemimoduleCat.sectionsMap (D.multispanIso I).inv).comp
     (SemimoduleCat.sectionsPrecomp D.projection I.multispan)
+
+/-- Pullback factors as restriction along the projection followed by coefficient comparison. -/
+theorem sectionsPullback_def :
+    D.sectionsPullback I = (SemimoduleCat.sectionsMap (D.multispanIso I).inv).comp
+      (SemimoduleCat.sectionsPrecomp D.projection I.multispan) := (rfl)
 
 /-- Pullback is section precomposition followed by the canonical coefficient comparison. -/
 theorem sectionsPullback_apply (s : SemimoduleCat.sectionsSubmodule I.multispan)
@@ -212,6 +218,12 @@ noncomputable def compatibleEquiv [∀ b, Nonempty (D.faces b)]
     I.compatibleFamilies ≃ₗ[R] (D.index I).compatibleFamilies :=
   LinearEquiv.ofBijective (D.compatibleMap I)
     ⟨D.compatibleMap_injective I, D.compatibleMap_surjective I hc⟩
+
+/-- The underlying linear map of the chamber comparison is pullback. -/
+@[simp]
+theorem compatibleEquiv_toLinearMap [∀ b, Nonempty (D.faces b)]
+    (hc : ∀ j a b, Relation.EqvGen (D.edgeRel j) a b) :
+    (D.compatibleEquiv I hc).toLinearMap = D.compatibleMap I := (rfl)
 
 /-- The comparison equivalence is the canonical chamber pullback. -/
 @[simp]
@@ -369,6 +381,24 @@ theorem sectionsDescend_apply_left (x : E) (b : J.L) (a : D.faces b) :
     congrArg (fun s : SemimoduleCat.sectionsSubmodule (D.index I).multispan =>
       s.val (.left (.inl ⟨b, a⟩))) (D.sectionsPullback_sectionsDescend I hinj ℓ hℓ x)
 
+/-- A linear map is the descent exactly when its pullback is the supplied family. -/
+theorem eq_sectionsDescend_iff
+    (a : E →ₗ[R] SemimoduleCat.sectionsSubmodule I.multispan) :
+    a = D.sectionsDescend I hinj ℓ hℓ ↔ (D.sectionsPullback I).comp a = ℓ := by
+  rw [← LinearMap.cancel_left (D.sectionsPullback_injective_of_nonempty_faces I),
+    D.sectionsPullback_comp_sectionsDescend I hinj ℓ hℓ]
+
+omit ℓ hℓ in
+/-- Descending the pullback of a linear family recovers that family. -/
+@[simp]
+theorem sectionsDescend_sectionsPullback_comp
+    (a : E →ₗ[R] SemimoduleCat.sectionsSubmodule I.multispan)
+    (ha : ∀ x j (c d : D.chambers j),
+      ((D.sectionsPullback I).comp a x).val (.right ⟨j, c⟩) =
+        ((D.sectionsPullback I).comp a x).val (.right ⟨j, d⟩)) :
+    D.sectionsDescend I hinj ((D.sectionsPullback I).comp a) ha = a :=
+  ((D.eq_sectionsDescend_iff I hinj _ ha a).mpr rfl).symm
+
 end Descent
 
 /-- A linear refined family whose chamber copies agree has a unique linear descent
@@ -433,6 +463,13 @@ noncomputable def sectionsEquiv [∀ b, Nonempty (D.faces b)]
   LinearEquiv.ofBijective (D.sectionsPullback I)
     ⟨D.sectionsPullback_injective_of_nonempty_faces I, D.sectionsPullback_surjective I hc hinj⟩
 
+/-- The underlying linear map of the section comparison is pullback. -/
+@[simp]
+theorem sectionsEquiv_toLinearMap [∀ b, Nonempty (D.faces b)]
+    (hc : ∀ j a b, Relation.EqvGen (D.edgeRel j) a b)
+    (hinj : ∀ b, Function.Injective ((I.fst b).hom.prod (I.snd b).hom)) :
+    (D.sectionsEquiv I hc hinj).toLinearMap = D.sectionsPullback I := (rfl)
+
 /-- The section comparison is the actual pullback along the incidence projection. -/
 @[simp]
 theorem sectionsEquiv_apply [∀ b, Nonempty (D.faces b)]
@@ -473,7 +510,6 @@ theorem restrictSections_sectionsEquiv_symm [∀ b, Nonempty (D.faces b)]
 
 omit [∀ j, Nonempty (D.chambers j)] in
 /-- Reconstructing a matching section commutes with subdivision pullback. -/
-@[simp]
 theorem sectionsPullback_matchingFamilyEquiv_symm
     (hinj : ∀ b, Function.Injective ((I.fst b).hom.prod (I.snd b).hom))
     (x : I.compatibleFamilies) :

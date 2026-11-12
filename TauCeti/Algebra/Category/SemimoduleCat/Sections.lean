@@ -73,6 +73,7 @@ theorem sectionsPrecomp_id (F : J ⥤ SemimoduleCat R) :
   rfl
 
 /-- Successive restrictions agree with restriction along the composite index functor. -/
+@[simp]
 theorem sectionsPrecomp_comp {K L : Type*} [Category* K] [Category* L]
     (p : K ⥤ J) (q : L ⥤ K) (F : J ⥤ SemimoduleCat R) :
     sectionsPrecomp (q ⋙ p) F = (sectionsPrecomp q (p ⋙ F)).comp (sectionsPrecomp p F) := by
@@ -123,7 +124,8 @@ theorem sectionsPrecomp_naturality_apply {K : Type*} [Category* K]
   LinearMap.congr_fun (sectionsPrecomp_naturality p α) s
 
 /-- An index transformation transports restricted sections to the new restriction. -/
-theorem sectionsPrecomp_whiskerRight {K : Type*} [Category* K]
+@[simp]
+theorem sectionsMap_whiskerRight_comp_sectionsPrecomp {K : Type*} [Category* K]
     {p q : K ⥤ J} (β : p ⟶ q) (F : J ⥤ SemimoduleCat R) :
     (sectionsMap (Functor.whiskerRight β F)).comp (sectionsPrecomp p F) =
       sectionsPrecomp q F := by
@@ -131,12 +133,13 @@ theorem sectionsPrecomp_whiskerRight {K : Type*} [Category* K]
   exact (mem_sectionsSubmodule.mp s.property) (β.app k)
 
 /-- Pointwise transport along an index transformation agrees with restriction. -/
-theorem sectionsPrecomp_whiskerRight_apply {K : Type*} [Category* K]
+@[simp]
+theorem sectionsMap_whiskerRight_sectionsPrecomp {K : Type*} [Category* K]
     {p q : K ⥤ J} (β : p ⟶ q) (F : J ⥤ SemimoduleCat R)
     (s : sectionsSubmodule F) :
     sectionsMap (Functor.whiskerRight β F) (sectionsPrecomp p F s) =
       sectionsPrecomp q F s :=
-  LinearMap.congr_fun (sectionsPrecomp_whiskerRight β F) s
+  LinearMap.congr_fun (sectionsMap_whiskerRight_comp_sectionsPrecomp β F) s
 
 end Maps
 

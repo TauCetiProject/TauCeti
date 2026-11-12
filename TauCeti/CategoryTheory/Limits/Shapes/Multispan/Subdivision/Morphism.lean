@@ -39,6 +39,15 @@ def mapNatTrans (η : I.multispan ⟶ I'.multispan) :
     (D.index I).multispan ⟶ (D.index I').multispan :=
   (D.multispanIso I).hom ≫ Functor.whiskerLeft D.projection η ≫ (D.multispanIso I').inv
 
+/-- The refined coefficient map factors through the projection and diagram comparisons. -/
+theorem mapNatTrans_def (η : I.multispan ⟶ I'.multispan) :
+    D.mapNatTrans η = (D.multispanIso I).hom ≫
+      Functor.whiskerLeft D.projection η ≫ (D.multispanIso I').inv := (rfl)
+
+instance (η : I.multispan ⟶ I'.multispan) [IsIso η] : IsIso (D.mapNatTrans η) := by
+  rw [mapNatTrans_def]
+  infer_instance
+
 /-- Subdivision preserves the identity coefficient transformation. -/
 @[simp]
 theorem mapNatTrans_id (I : MultispanIndex J C) :
