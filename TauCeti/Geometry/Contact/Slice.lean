@@ -29,6 +29,8 @@ On this domain:
   (`TauCeti.mpullback_flowOf_comp_mextDeriv_apply_eq_mextDeriv_contactization`). Indeed the flow
   of `Z` preserves `α`, by Cartan's formula `L_Z α = ι_Z dα + d(α(Z)) = 0`
   (`TauCeti.mpullback_flowOf_apply_of_interior_mextDeriv_eq_zero`), and `Φ` carries `∂_t` to `Z`.
+  The statement for `dα` needs only `ι_Z dα = 0`: the flow preserves the closed form `dα`, and `Z`
+  lies in its kernel.
 * At a point `(s, t)` of `D` where `d(ι^* α)` is nondegenerate on `T_s S`, the differential of
   `Φ` is injective (`TauCeti.injective_mfderiv_flowOf_comp_of_nondegenerate`). When `S` has one
   dimension less than `M`, `Φ` is then a local diffeomorphism at `(s, t)`
@@ -59,6 +61,15 @@ standard primitive by an exact form on a ball, which is absorbed into `t`.
 * `TauCeti.SmoothForm.IsContactForm.isLocalDiffeomorphAt_flowOf_reebVectorField_comp`: the local
   Reeb flow map out of a transverse hypersurface is a local diffeomorphism.
 
+## Acknowledgements
+
+The flow-map arguments adapt those for the local Liouville flow out of a hypersurface in
+`TauCeti/Geometry/Symplectic/Liouville/Collar.lean`
+(`TauCeti.mpullback_flowOf_comp_apply_eq_symplectization`,
+`TauCeti.mpullback_flowOf_comp_mextDeriv_apply`, `TauCeti.injective_mfderiv_flowOf_comp`,
+`TauCeti.isLocalDiffeomorphAt_flowOf_comp`), with the time coordinate placed last as in the
+contactization.
+
 ## References
 
 * H. Geiges, *An Introduction to Contact Topology*, Cambridge University Press, 2008,
@@ -80,37 +91,23 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (hZ : ContMDiff I I.tangent ∞ (T% Z)) {ι : S → M} (hι : ContMDiff J I ∞ ι)
 include hZ hι
 
-/-- The domain `{(s, t) | φₜ(ι s) is defined}` of the local Reeb flow map is open. -/
-private theorem isOpen_setOf_mem_flowDomain_comp_fst :
-    IsOpen {p : S × ℝ | (p.2, ι p.1) ∈ flowDomain Z} :=
-  (isOpen_flowDomain (hZ.of_le (by simp))).preimage
-    (continuous_snd.prodMk (hι.continuous.comp continuous_fst))
-
-/-- The local flow map `(s, t) ↦ φₜ(ι s)` is smooth near every point of its domain. -/
-private theorem contMDiffAt_flowOf_comp_fst {p : S × ℝ} (hp : (p.2, ι p.1) ∈ flowDomain Z) :
-    ContMDiffAt (J.prod 𝓘(ℝ)) I ∞ (fun q : S × ℝ ↦ flowOf Z q.2 (ι q.1)) p :=
-  contMDiffAt_flowOf_comp le_top hZ contMDiffAt_snd (hι.contMDiffAt.comp p contMDiffAt_fst) hp
-
 /-- The differential of the local flow map `(s, t) ↦ φₜ(ι s)` sends a tangent vector `(w, r)` to
-`dφₜ(dι w) + r Z`. This is `TauCeti.mfderiv_flowOf_comp_apply` with the factors of the product
-exchanged, so that the real coordinate comes last as in the contactization. -/
+`r Z + dφₜ(dι w)`. This is `TauCeti.mfderiv_flowOf_comp_prodMk_apply` in the coordinates of
+`S × ℝ`. -/
 private theorem mfderiv_flowOf_comp_fst_apply {p : S × ℝ} (hp : (p.2, ι p.1) ∈ flowDomain Z)
     (v : TangentSpace (J.prod 𝓘(ℝ)) p) :
     mfderiv (J.prod 𝓘(ℝ)) I (fun q : S × ℝ ↦ flowOf Z q.2 (ι q.1)) p v =
-      mfderiv I I (flowOf Z p.2) (ι p.1) (mfderiv J I ι p.1 v.1) +
-        v.2 • Z (flowOf Z p.2 (ι p.1)) := by
-  have hZ1 : ContMDiff I I.tangent 1 (T% Z) := hZ.of_le (by simp)
-  have hflow : MDifferentiableAt I I (flowOf Z p.2) (ι p.1) :=
-    (contMDiffAt_flowOf_comp le_rfl hZ1 contMDiffAt_const contMDiffAt_id hp).mdifferentiableAt
-      one_ne_zero
-  have hcomp : mfderiv J I (flowOf Z p.2 ∘ ι) p.1 =
-      (mfderiv I I (flowOf Z p.2) (ι p.1)).comp (mfderiv J I ι p.1) :=
-    mfderiv_comp p.1 hflow ((hι p.1).mdifferentiableAt (by simp))
-  refine (mfderiv_prod_eq_add_apply
-    ((contMDiffAt_flowOf_comp_fst hZ hι hp).mdifferentiableAt (by simp))).trans ?_
-  -- The trajectory through `ι s` has velocity `Z` at time `t`.
-  rw [mfderiv_flowOf_trajectory_apply hZ1 hp]
-  exact congrArg₂ (· + ·) (DFunLike.congr_fun hcomp v.1) rfl
+      v.2 • Z (flowOf Z p.2 (ι p.1)) +
+        mfderiv I I (flowOf Z p.2) (ι p.1) (mfderiv J I ι p.1 v.1) := by
+  rw [mfderiv_flowOf_comp_prodMk_apply (τ := Prod.snd) (f := fun q : S × ℝ ↦ ι q.1)
+    (hZ.of_le (by simp)) mdifferentiableAt_snd
+    (((hι p.1).mdifferentiableAt (by simp)).comp p mdifferentiableAt_fst) hp,
+    show (fun q : S × ℝ ↦ ι q.1) = ι ∘ Prod.fst from rfl,
+    mfderiv_comp_apply (g := ι) (f := (Prod.fst : S × ℝ → S)) (x := p)
+      ((hι p.1).mdifferentiableAt (by simp)) mdifferentiableAt_fst, mfderiv_fst]
+  simp only [mvfderiv, mfderiv_snd]
+  -- The remaining projections of `v` agree definitionally.
+  rfl
 
 variable [IsManifold J ∞ S] {α : SmoothForm I M ℝ 1}
 
@@ -138,21 +135,49 @@ theorem mpullback_flowOf_comp_apply_eq_contactization (hαZ : ∀ x, α.1 x ![Z 
   ring
 
 /-- **The local Reeb flow map pulls `dα` back to the derivative of the contactization form.** Let
-the smooth vector field `Z` satisfy `α(Z) = 1` and `ι_Z dα = 0`, and let `ι : S → M` be smooth. At
-every point of its domain, the local flow map `(s, t) ↦ φₜ(ι s)` pulls `dα` back to the exterior
-derivative of `dt + ι^* α`, which is `d(ι^* α)` on the components in `S`
-(`TauCeti.SmoothForm.mextDeriv_contactization_apply`). -/
+the smooth vector field `Z` satisfy `ι_Z dα = 0`, and let `ι : S → M` be smooth. At every point of
+its domain, the local flow map `(s, t) ↦ φₜ(ι s)` pulls `dα` back to the exterior derivative of
+`dt + ι^* α`, which is `d(ι^* α)` on the components in `S`
+(`TauCeti.SmoothForm.mextDeriv_contactization_apply`). No normalization of `α(Z)` is needed: the
+flow preserves `dα`, and `Z` lies in its kernel. -/
 theorem mpullback_flowOf_comp_mextDeriv_apply_eq_mextDeriv_contactization
-    (hαZ : ∀ x, α.1 x ![Z x] = 1) (hZα : (mextDeriv α.1).interior Z = 0) {p : S × ℝ}
-    (hp : (p.2, ι p.1) ∈ flowDomain Z) :
+    (hZα : (mextDeriv α.1).interior Z = 0) {p : S × ℝ} (hp : (p.2, ι p.1) ∈ flowDomain Z) :
     mpullback (J.prod 𝓘(ℝ)) I (fun q : S × ℝ ↦ flowOf Z q.2 (ι q.1)) (mextDeriv α.1) p =
       mextDeriv (-SmoothForm.mpullback ι hι α).contactization.1 p := by
-  rw [mpullback_mextDeriv_at ((contMDiffAt_flowOf_comp_fst hZ hι hp).of_le (by simp))
-    ((α.contMDiff _).of_le (by simp))]
-  -- The two one-forms agree on the open domain of the flow map, a neighbourhood of `p`.
-  refine mextDeriv_congr_of_eventuallyEq ?_
-  filter_upwards [(isOpen_setOf_mem_flowDomain_comp_fst hZ hι).mem_nhds hp] with q hq
-  exact mpullback_flowOf_comp_apply_eq_contactization hZ hι hαZ hZα hq
+  -- `Z` lies in the kernel of `dα`, on either side.
+  have hZl (x : M) (w : TangentSpace I x) : (mextDerivₗ I 1 α).bilinFormAt x (Z x) w = 0 := by
+    have h := congrArg (fun β : RoughForm I M ℝ 1 ↦ β x ![w]) hZα
+    simp only [RoughForm.interior_apply, Pi.zero_apply, ContinuousAlternatingMap.coe_zero] at h
+    rwa [← SmoothForm.mextDeriv_eq_bilinFormAt]
+  have hZr (x : M) (w : TangentSpace I x) : (mextDerivₗ I 1 α).bilinFormAt x w (Z x) = 0 := by
+    rw [← (SmoothForm.isAlt_bilinFormAt _ x).neg_eq, hZl, neg_zero]
+  -- The local flow preserves the closed form `dα`, whose contraction `ι_Z dα` vanishes.
+  have hinv := mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero (hZ.of_le (by simp))
+    (SmoothForm.isClosed_mextDerivₗ α) (by rw [mextDerivₗ_apply, hZα, mextDeriv_zero]) hp
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  obtain ⟨a, b, rfl⟩ : ∃ a b, v = ![a, b] :=
+    ⟨v 0, v 1, funext fun i ↦ by fin_cases i <;> rfl⟩
+  set X := mfderiv J I ι p.1 a.1
+  set Y := mfderiv J I ι p.1 b.1
+  have hs : (mextDerivₗ I 1 α).bilinFormAt (flowOf Z p.2 (ι p.1))
+      (mfderiv I I (flowOf Z p.2) (ι p.1) X) (mfderiv I I (flowOf Z p.2) (ι p.1) Y) =
+      (mextDerivₗ I 1 α).bilinFormAt (ι p.1) X Y := by
+    rw [mextDerivₗ_apply] at hinv
+    rw [← SmoothForm.mextDeriv_eq_bilinFormAt, ← SmoothForm.mextDeriv_eq_bilinFormAt]
+    exact (mpullback_apply_pair _ _ _ _ _).symm.trans (congrArg (· ![X, Y]) hinv)
+  -- `d(ι^* α)` is `dα` on the images under `dι`.
+  have hpull (u w : TangentSpace J p.1) :
+      (mextDerivₗ J 1 (SmoothForm.mpullback ι hι α)).eval₂ p.1 u w =
+        (mextDerivₗ I 1 α).bilinFormAt (ι p.1) (mfderiv J I ι p.1 u) (mfderiv J I ι p.1 w) := by
+    rw [SmoothForm.mextDerivₗ_mpullback, SmoothForm.eval₂_mpullback,
+      ← SmoothForm.bilinFormAt_apply]
+  -- Differentiate the flow map; the components along `Z` drop out.
+  rw [mpullback_apply_pair, SmoothForm.mextDeriv_contactization_apply, map_neg, neg_neg,
+    SmoothForm.mextDeriv_eq_bilinFormAt, mfderiv_flowOf_comp_fst_apply hZ hι hp,
+    mfderiv_flowOf_comp_fst_apply hZ hι hp]
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hZl, hZr, smul_zero,
+    add_zero, zero_add, Manifold.tangentSpaceProdEquiv_apply]
+  exact hs.trans (hpull _ _).symm
 
 /-- **The local Reeb flow map is an immersion over a symplectic slice.** Let the smooth vector
 field `Z` satisfy `α(Z) = 1` and `ι_Z dα = 0`, and let `ι : S → M` be smooth. At a point `(s, t)` of
@@ -172,7 +197,7 @@ theorem injective_mfderiv_flowOf_comp_of_nondegenerate (hαZ : ∀ x, α.1 x ![Z
     simpa [hv] using (α.1 _).map_coord_zero 0 rfl
   have hd0 (u : TangentSpace (J.prod 𝓘(ℝ)) p) :
       mextDeriv (-β).contactization.1 p ![v, u] = 0 := by
-    rw [← mpullback_flowOf_comp_mextDeriv_apply_eq_mextDeriv_contactization hZ hι hαZ hZα hp,
+    rw [← mpullback_flowOf_comp_mextDeriv_apply_eq_mextDeriv_contactization hZ hι hZα hp,
       mpullback_apply_pair, hv]
     exact (mextDeriv α.1 _).map_coord_zero 0 rfl
   -- The `S`-component is in the kernel of `dβ`, tested against the vectors `(w, 0)`.
@@ -204,8 +229,10 @@ theorem isLocalDiffeomorphAt_flowOf_comp_of_nondegenerate [FiniteDimensional ℝ
     rw [← hdim, Module.finrank_prod, Module.finrank_self]
   have hinj := injective_mfderiv_flowOf_comp_of_nondegenerate hZ hι hαZ hZα hβ hp
   exact isLocalDiffeomorphAt_of_mfderiv_eq
-    (fun q hq ↦ (contMDiffAt_flowOf_comp_fst hZ hι hq).contMDiffWithinAt)
-    (isOpen_setOf_mem_flowDomain_comp_fst hZ hι) hp BoundarylessManifold.isInteriorPoint (by simp)
+    (fun q hq ↦ (contMDiffAt_flowOf_comp le_top hZ contMDiffAt_snd
+      (hι.contMDiffAt.comp q contMDiffAt_fst) hq).contMDiffWithinAt)
+    (isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_snd
+      (hι.continuous.comp continuous_fst)) hp BoundarylessManifold.isInteriorPoint (by simp)
     (e := (LinearMap.linearEquivOfInjective _ hinj hdim').toContinuousLinearEquiv)
     (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hdim' w)
 
@@ -225,47 +252,31 @@ theorem IsContactForm.nondegenerate_bilinFormAt_mextDerivₗ_mpullback (hα : α
     (hR : α.reebVectorField (ι s) ∉ (mfderiv J I ι s).range) :
     ((mextDerivₗ J 1 (mpullback ι hι α)).bilinFormAt s).Nondegenerate := by
   set L : TangentSpace J s →ₗ[ℝ] TangentSpace I (ι s) := (mfderiv J I ι s).toLinearMap
-  set R := α.reebVectorField (ι s)
   set B := (mextDerivₗ I 1 α).bilinFormAt (ι s)
   have : FiniteDimensional ℝ (TangentSpace J s) := Module.Finite.of_injective L hιs
-  -- The tangent space at `ι s` is the image of `dι` plus the Reeb line.
-  have hLR : LinearMap.range L ⊔ ℝ ∙ R = ⊤ := by
+  -- The image of `dι` is a complement of the kernel of `dα`, which is the Reeb line.
+  have hc := isContactForm_def.1 hα (ι s)
+  have hRv := hα.eq_reebVectorField_iff.2 ⟨by simpa using hc.apply_reebVector, fun y ↦ by
+    rw [mextDeriv_eq_bilinFormAt]
+    exact hc.apply_reebVector_left (isAlt_bilinFormAt _ _) y⟩
+  have hcompl : IsCompl (LinearMap.range L) (LinearMap.ker B) := by
+    rw [hc.ker_eq_span_reebVector (isAlt_bilinFormAt _ _), hRv]
+    refine ⟨Submodule.disjoint_span_singleton.2 fun h ↦ absurd h hR, codisjoint_iff.2 ?_⟩
     refine Submodule.eq_top_of_finrank_eq ?_
     rw [Submodule.finrank_sup_span_singleton hR, LinearMap.finrank_range_of_inj hιs]
     exact hdim
-  -- `d(ι^* α)` is `dα` on the images under `dι`.
-  have hpull (u w : TangentSpace J s) :
-      (mextDerivₗ J 1 (mpullback ι hι α)).bilinFormAt s u w = B (L u) (L w) := by
-    rw [bilinFormAt_apply, mextDerivₗ_mpullback, eval₂_mpullback, ← bilinFormAt_apply]
-    -- `L` is the differential of `ι` viewed as a linear map.
-    rfl
+  -- So `dα` is nondegenerate on the image of `dι`, and `d(ι^* α)` is its pullback along `dι`.
+  have hnd := (isAlt_bilinFormAt _ _).isRefl.nondegenerate_restrict_of_isCompl_ker hcompl
   rw [LinearMap.BilinForm.Nondegenerate,
     (isAlt_bilinFormAt _ s).isRefl.nondegenerate_iff_separatingLeft]
   intro w hw
-  -- The vector `dι w` is `dα`-orthogonal to the image of `dι` and to the Reeb line, hence to all
-  -- tangent vectors.
-  have hker (y : TangentSpace I (ι s)) : B (L w) y = 0 := by
-    have hy : y ∈ LinearMap.range L ⊔ ℝ ∙ R := hLR ▸ Submodule.mem_top
-    obtain ⟨a, ⟨w', rfl⟩, b, hb, rfl⟩ := Submodule.mem_sup.1 hy
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hb
-    have hRB : B (L w) R = 0 := by
-      rw [← mextDeriv_eq_bilinFormAt]
-      exact hα.mextDeriv_reebVectorField_right _ _
-    rw [map_add, map_smul, hRB, smul_zero, add_zero, ← hpull]
-    exact hw w'
-  -- A vector in the kernel of `dα` is a multiple of the Reeb vector, which is not in the image of
-  -- `dι`; so `dι w = 0`.
-  have hu : L w = 0 := by
-    by_cases ha : α.1 (ι s) ![L w] = 0
-    · refine (isContactForm_iff.1 hα (ι s)).2 _ ha fun y _ ↦ ?_
-      rw [mextDeriv_eq_bilinFormAt]
-      exact hker y
-    · refine absurd ⟨(α.1 (ι s) ![L w])⁻¹ • w, ?_⟩ hR
-      rw [map_smul]
-      refine hα.eq_reebVectorField_iff.2 ⟨?_, fun y ↦ ?_⟩
-      · rw [ContinuousAlternatingMap.vecCons_smul, smul_eq_mul, inv_mul_cancel₀ ha]
-      · rw [mextDeriv_eq_bilinFormAt, map_smul, LinearMap.smul_apply, hker y, smul_zero]
-  exact hιs (by rw [map_zero]; exact hu)
+  have hLw : (⟨L w, w, rfl⟩ : LinearMap.range L) = 0 := hnd.1 _ fun ⟨_, u, hu⟩ ↦ by
+    subst hu
+    rw [LinearMap.BilinForm.restrict_apply, ← hw u, bilinFormAt_apply, mextDerivₗ_mpullback,
+      eval₂_mpullback, ← bilinFormAt_apply]
+    -- `L` is the differential of `ι` viewed as a linear map.
+    rfl
+  exact hιs (by rw [map_zero]; exact congrArg Subtype.val hLw)
 
 /-- **The local Reeb flow out of a transverse hypersurface is a local diffeomorphism.** Let `α`
 be a contact form and let `ι : S → M` be smooth from a boundaryless manifold of one dimension less.
