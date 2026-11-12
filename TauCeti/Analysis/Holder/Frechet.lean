@@ -128,35 +128,13 @@ section Derivatives
 
 variable {f g : E → F}
 
-private theorem iteratedFDeriv_add_apply_of_mem (hf : ContDiffOn ℝ k f Ω)
-    (hg : ContDiffOn ℝ k g Ω) {i : ℕ} (hi : i ≤ k) {x : E} (hx : x ∈ Ω) :
-    iteratedFDeriv ℝ i (f + g) x = iteratedFDeriv ℝ i f x + iteratedFDeriv ℝ i g x := by
-  have hΩ := Ω.isOpen
-  rw [← iteratedFDerivWithin_of_isOpen i hΩ hx, ← iteratedFDerivWithin_of_isOpen i hΩ hx,
-    ← iteratedFDerivWithin_of_isOpen i hΩ hx]
-  exact iteratedFDerivWithin_add_apply ((hf x hx).of_le (Nat.cast_le.mpr hi))
-    ((hg x hx).of_le (Nat.cast_le.mpr hi)) hΩ.uniqueDiffOn hx
-
-private theorem iteratedFDeriv_const_smul_apply_of_mem (hf : ContDiffOn ℝ k f Ω) (c : ℝ)
-    {i : ℕ} (hi : i ≤ k) {x : E} (hx : x ∈ Ω) :
-    iteratedFDeriv ℝ i (c • f) x = c • iteratedFDeriv ℝ i f x := by
-  have hΩ := Ω.isOpen
-  rw [← iteratedFDerivWithin_of_isOpen i hΩ hx, ← iteratedFDerivWithin_of_isOpen i hΩ hx]
-  exact iteratedFDerivWithin_const_smul_apply ((hf x hx).of_le (Nat.cast_le.mpr hi))
-    hΩ.uniqueDiffOn hx
-
-private theorem iteratedFDeriv_neg_apply_of_mem {i : ℕ} {x : E} (hx : x ∈ Ω) :
-    iteratedFDeriv ℝ i (-f) x = -iteratedFDeriv ℝ i f x := by
-  have hΩ := Ω.isOpen
-  rw [← iteratedFDerivWithin_of_isOpen i hΩ hx, ← iteratedFDerivWithin_of_isOpen i hΩ hx]
-  exact iteratedFDerivWithin_neg_apply hΩ.uniqueDiffOn hx
-
 private theorem holderOnWith_add (hf : ContDiffOn ℝ k f Ω) (hg : ContDiffOn ℝ k g Ω)
     {K : Set E} (hKΩ : K ⊆ Ω) {C C' : ℝ≥0} (hfK : HolderOnWith C α (iteratedFDeriv ℝ k f) K)
     (hgK : HolderOnWith C' α (iteratedFDeriv ℝ k g) K) :
     HolderOnWith (C + C') α (iteratedFDeriv ℝ k (f + g)) K :=
   (hfK.add hgK).congr fun _ hx =>
-    (iteratedFDeriv_add_apply_of_mem hf hg le_rfl (hKΩ hx)).symm
+    (_root_.iteratedFDeriv_add_apply (hf.contDiffAt (Ω.isOpen.mem_nhds (hKΩ hx)))
+      (hg.contDiffAt (Ω.isOpen.mem_nhds (hKΩ hx)))).symm
 
 end Derivatives
 
@@ -180,15 +158,15 @@ instance instSMul : SMul ℝ (CkHolderLocSpace k α Ω F) where
     obtain ⟨C, hC⟩ := f.exists_holderOnWith hKΩ hK
     exact ⟨C * ‖c‖₊, (HolderWith.restrict_iff.mp
       ((HolderWith.restrict_iff.mpr hC).smul c)).congr fun _ hx =>
-        (iteratedFDeriv_const_smul_apply_of_mem f.contDiffOn c le_rfl (hKΩ hx)).symm⟩,
+        (iteratedFDeriv_const_smul_apply
+          (f.contDiffOn.contDiffAt (Ω.isOpen.mem_nhds (hKΩ hx)))).symm⟩,
     fun x hx => by simp [f.apply_of_notMem hx]⟩
 
 instance instNeg : Neg (CkHolderLocSpace k α Ω F) where
   neg f := ⟨-⇑f, f.contDiffOn.neg, fun K hKΩ hK => by
     obtain ⟨C, hC⟩ := f.exists_holderOnWith hKΩ hK
     refine ⟨C, fun x hx y hy => ?_⟩
-    rw [iteratedFDeriv_neg_apply_of_mem (hKΩ hx), iteratedFDeriv_neg_apply_of_mem (hKΩ hy),
-      edist_neg_neg]
+    rw [iteratedFDeriv_neg_apply, iteratedFDeriv_neg_apply, edist_neg_neg]
     exact hC x hx y hy,
     fun x hx => by simp [f.apply_of_notMem hx]⟩
 
@@ -258,11 +236,14 @@ theorem continuousOn_iteratedFDeriv (f : CkHolderLocSpace k α Ω F) {i : ℕ} (
 theorem iteratedFDeriv_add_apply (f g : CkHolderLocSpace k α Ω F) {i : ℕ} (hi : i ≤ k) {x : E}
     (hx : x ∈ Ω) :
     iteratedFDeriv ℝ i ⇑(f + g) x = iteratedFDeriv ℝ i f x + iteratedFDeriv ℝ i g x :=
-  iteratedFDeriv_add_apply_of_mem f.contDiffOn g.contDiffOn hi hx
+  _root_.iteratedFDeriv_add_apply
+    ((f.contDiffOn.contDiffAt (Ω.isOpen.mem_nhds hx)).of_le (Nat.cast_le.mpr hi))
+    ((g.contDiffOn.contDiffAt (Ω.isOpen.mem_nhds hx)).of_le (Nat.cast_le.mpr hi))
 
 theorem iteratedFDeriv_smul_apply (c : ℝ) (f : CkHolderLocSpace k α Ω F) {i : ℕ} (hi : i ≤ k)
     {x : E} (hx : x ∈ Ω) : iteratedFDeriv ℝ i ⇑(c • f) x = c • iteratedFDeriv ℝ i f x :=
-  iteratedFDeriv_const_smul_apply_of_mem f.contDiffOn c hi hx
+  iteratedFDeriv_const_smul_apply
+    ((f.contDiffOn.contDiffAt (Ω.isOpen.mem_nhds hx)).of_le (Nat.cast_le.mpr hi))
 
 theorem iteratedFDeriv_sub_apply (f g : CkHolderLocSpace k α Ω F) {i : ℕ} (hi : i ≤ k) {x : E}
     (hx : x ∈ Ω) :
