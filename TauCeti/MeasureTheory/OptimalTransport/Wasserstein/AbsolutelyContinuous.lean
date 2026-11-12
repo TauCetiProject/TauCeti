@@ -113,7 +113,7 @@ private lemma lintegral_eLpNorm_metricDerivative_ne_top (hab : a ≤ b)
     simpa using ENNReal.toReal_mono hp hp1
   -- Hölder's inequality on `[a, b]` bounds the integral by the expected action.
   have h := rpow_lintegral_le_measure_univ_rpow_mul (μ := volume.restrict (Ι a b))
-    (measurable_eLpNorm_metricDerivative hab η hp0 hp).aemeasurable hr
+    (u := fun r ↦ eLpNorm (fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) r) p η) hr
   rw [lintegral_eLpNorm_metricDerivative_rpow hab η hp0 hp, Measure.restrict_apply_univ,
     Real.volume_uIoc] at h
   refine ((ENNReal.rpow_lt_top_iff_of_pos (by linarith)).1 (h.trans_lt ?_)).ne
