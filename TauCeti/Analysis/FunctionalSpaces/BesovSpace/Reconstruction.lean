@@ -34,7 +34,8 @@ frequencies, and their sum need not even converge.
 Let `C₀` bound the blocks `Δₖ` on `Lᵖ` uniformly in `k` and `p`
 (`TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`), and choose `L`, depending
 on `R`, with `Δₖ uⱼ = 0` whenever `j + L ≤ k`: the symbol of `Δₖ` vanishes on a ball containing
-the spectrum of `uⱼ` (`TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn`).
+the spectrum of `uⱼ`
+(`TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall`).
 Since `s > 0`, the norms `‖uⱼ‖_p ≤ 2^{-js} ‖w‖` are summable, so the series converges in `Lᵖ`.
 Writing the series as `∑ᵢ Tuᵢ` with the shifted sequence `Tuᵢ = u_{i-L}` (and `Tuᵢ = 0` for
 `i < L`), only the tail `∑_{m ≥ 0} Tu_{k+m}` contributes to `Δₖ u`, so
@@ -80,7 +81,8 @@ theorem exists_hasSum_toDistr_eq_and_norm_le (φ : ContDiffBump (0 : E)) (R : �
       ∃ (v : BesovSpace F φ s p q) (f : Lp F p (volume : Measure E)),
         HasSum u f ∧ v.toDistr = f ∧ ‖v‖ ≤ C * ‖w‖ := by
   obtain ⟨C₀, hC₀⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn (F := F) φ R
+  obtain ⟨L, hL⟩ :=
+    exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall (F := F) φ R
   set ρ : ℝ := 2 ^ s
   have hρ1 : 1 < ρ := Real.one_lt_rpow one_lt_two hs
   have hρ0 : 0 < ρ := zero_lt_one.trans hρ1
