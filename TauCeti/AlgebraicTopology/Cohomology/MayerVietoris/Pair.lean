@@ -70,9 +70,7 @@ cochains (`SSetPair.quasiIso_cochainComplexMap`).
   `TopCat.isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion`: for `U` and `V`
   open in `U ∪ V`, the cochains of `X` relative to its singular simplices lying in `U` or in `V`
   compute the cohomology of `(X, U ∪ V)`.
-* `SSetPair.cochainComplexπ_naturality`: the maps from relative to ambient cochains of a pair of
-  simplicial sets are natural.
-* `SSetPair.mayerVietorisCochainδ_comp_homologyMap_chainComplexπ`: the quotient maps from ambient
+* `SSetPair.mayerVietorisCochainδ_comp_homologyMap_cochainComplexπ`: the quotient maps from ambient
   to relative chains carry the relative cochain Mayer–Vietoris connecting morphism of a square of
   pairs of simplicial sets to the absolute one of its square of ambient simplicial sets.
 * `TopCat.singularCohomologyPairMayerVietorisδ_comp_singularCohomologyπ`: for an open cover of `X`
@@ -309,29 +307,13 @@ lemma mayerVietorisCochainδ_naturality (sqL' : IsPushout t'.left l'.left r'.lef
 
 /-! ### Relative and absolute connecting morphisms -/
 
-/-- The map `Hom(C(P), M) ⟶ Hom(C(P.right), M)` from relative to ambient cochains of a pair of
-simplicial sets: precomposition with the quotient map from ambient to relative chains. -/
-abbrev cochainComplexπ (P : SSetPair.{w}) :
-    (P.chainComplex R).linearYonedaObj k M ⟶ (P.right.chainComplex R).linearYonedaObj k M :=
-  (linearYonedaFunctor k M).map (P.chainComplexπ R).op
-
-/-- The maps `cochainComplexπ` from relative to ambient cochains are natural in maps of pairs of
-simplicial sets. -/
-@[reassoc]
-lemma cochainComplexπ_naturality {P Q : SSetPair.{w}} (f : P ⟶ Q) :
-    cochainComplexπ R k M Q ≫ SSet.cochainComplexMap f.right =
-      cochainComplexMap f ≫ cochainComplexπ R k M P := by
-  have h := congrArg (fun φ ↦ (linearYonedaFunctor k M).map φ.op) (chainComplexπ_naturality R f)
-  simp only [op_comp, Functor.map_comp] at h
-  exact h
-
 /-- **The relative and absolute cochain Mayer–Vietoris connecting morphisms.** For a square of
 pairs of simplicial sets whose squares of subobjects and of ambient simplicial sets are pushouts
 with monomorphic top maps, the maps from relative to absolute cohomology induced by the quotient
 maps from ambient to relative chains carry the relative connecting morphism `Hⁿ(P₁) ⟶ Hᵐ(P₄)` to
 the absolute one of the square of ambient simplicial sets. -/
 @[reassoc]
-lemma mayerVietorisCochainδ_comp_homologyMap_chainComplexπ (n m : ℕ) (h : n + 1 = m := by lia) :
+lemma mayerVietorisCochainδ_comp_homologyMap_cochainComplexπ (n m : ℕ) (h : n + 1 = m := by lia) :
     mayerVietorisCochainδ R k M sqL sqR n m h ≫
         HomologicalComplex.homologyMap (cochainComplexπ R k M P₄) m =
       HomologicalComplex.homologyMap (cochainComplexπ R k M P₁) n ≫
@@ -789,7 +771,7 @@ lemma singularCohomologyPairMayerVietorisδ_comp_singularCohomologyπ (hAX : IsO
   -- sides are connected by explicit `Eq.trans` steps.
   have h₁ := singularCohomologyPairMayerVietorisδ_comp_homologyMap R k M hCA hDB
     (hAX.preimage continuous_subtype_val) (hBX.preimage continuous_subtype_val) hC hD n m h
-  have h₂ := SSetPair.mayerVietorisCochainδ_comp_homologyMap_chainComplexπ R k M
+  have h₂ := SSetPair.mayerVietorisCochainδ_comp_homologyMap_cochainComplexπ R k M
     (isPushout_toSmallSingularPair_left hCA hDB) (isPushout_toSmallSingularPair_right hCA hDB) n m h
   have h₃ : SSet.mayerVietorisCochainδ R k M (isPushout_toSmallSingularPair_right hCA hDB) n m h =
       SSet.mayerVietorisCochainδ R k M (isPushout_toSSet_inter_smallSingularSubcomplex A B) n m h :=

@@ -32,7 +32,7 @@ such as the five lemma (`LinearMap.bijective_of_surjective_of_bijective_of_bijec
   `TopCat.exact_singularCohomologyMayerVietorisFromProd_δ`,
   `TopCat.exact_singularCohomologyMayerVietorisδ_toProd`: exactness of the Mayer–Vietoris sequence
   at its three kinds of terms.
-* `TopCat.injective_singularCohomologyMayerVietorisToProd_zero`: injectivity of its first map in
+* `TopCat.singularCohomologyMayerVietorisToProd_zero_injective`: injectivity of its first map in
   degree `0`.
 
 ## References
@@ -85,11 +85,11 @@ def singularCohomologyMayerVietorisFromProd (n : ℕ) :
 
 @[simp]
 lemma singularCohomologyMayerVietorisFromProd_apply (n : ℕ)
-    (y : (of U).singularCohomology R k M n) (z : (of V).singularCohomology R k M n) :
-    singularCohomologyMayerVietorisFromProd R k M U V n (y, z) =
-      TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion Set.inter_subset_left)) n y -
+    (x : (of U).singularCohomology R k M n × (of V).singularCohomology R k M n) :
+    singularCohomologyMayerVietorisFromProd R k M U V n x =
+      TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion Set.inter_subset_left)) n x.1 -
         TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion Set.inter_subset_right))
-          n z := by
+          n x.2 := by
   simp [singularCohomologyMayerVietorisFromProd, sub_eq_add_neg]
 
 /-- Under the identification of the biproduct with the product module, the first map of the
@@ -161,7 +161,7 @@ lemma exact_singularCohomologyMayerVietorisδ_toProd (n m : ℕ) (h : n + 1 = m 
 
 include hU hV hUV in
 /-- The map `H⁰(X) ⟶ H⁰(U) × H⁰(V)` at the start of the Mayer–Vietoris sequence is injective. -/
-lemma injective_singularCohomologyMayerVietorisToProd_zero :
+lemma singularCohomologyMayerVietorisToProd_zero_injective :
     Function.Injective (singularCohomologyMayerVietorisToProd R k M U V 0) := by
   have := mono_singularCohomologyMayerVietorisToBiprod_zero R k M hU hV hUV
   intro x y hxy

@@ -9,8 +9,9 @@ public import Mathlib.Algebra.FiveLemma
 public import TauCeti.Algebra.DirectSum.Exact
 public import TauCeti.Algebra.DirectSum.Prod
 public import TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.Defs
-public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.AbsoluteCup
+public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Cup
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Module
+public import TauCeti.AlgebraicTopology.Cohomology.Point
 
 /-!
 # The Leray–Hirsch map and its Mayer–Vietoris gluing step
@@ -19,15 +20,20 @@ Let `k` be a commutative ring, `p : E ⟶ B` a continuous map, and for every deg
 `e d : ι d → Hᵈ(E; k)` be a family of global classes on `E`. The Leray–Hirsch map
 `⨁_{d + q = n} ⨁_{i : ι d} H^q(B; k) ⟶ Hⁿ(E; k)`, `(a_{d,i}) ↦ ∑ p^* a_{d,i} ⌣ e_{d,i}`
 (`TopCat.lerayHirsch`) is natural in maps of spaces over a map of bases
-(`TopCat.lerayHirsch_lof_naturality`), so its bijectivity is invariant under homeomorphisms over
-homeomorphisms (`TopCat.bijective_lerayHirsch_iff_of_isIso`).
+(`TopCat.lerayHirsch_lof_naturality`, `TopCat.lerayHirsch_comp_lmap`), so its bijectivity is
+invariant under maps inducing bijections on cohomology over such maps of bases
+(`TopCat.lerayHirsch_bijective_iff_of_bijective`), in particular under homeomorphisms over
+homeomorphisms (`TopCat.lerayHirsch_bijective_iff_of_isIso`).
 
-The main result is the **Mayer–Vietoris gluing step** (`TopCat.bijective_lerayHirsch_union`): for
-open subsets `U` and `V` of `B`, if the Leray–Hirsch maps of the restrictions of `p` over `U`, `V`
-and `U ∩ V`, with the restricted classes (`TopCat.lerayHirschRestrict`), are bijective in degrees
-`m ≤ n`, then so is the Leray–Hirsch map of the restriction of `p` over `U ∪ V`. By induction over
-a finite cover of `B` by open sets over which `p` is trivial, this step is meant to reduce the
-bijectivity of the Leray–Hirsch map to the product case `TopCat.lerayHirschProd_bijective` (in
+The main result is the **Mayer–Vietoris gluing step**
+(`TopCat.lerayHirschRestrict_union_bijective`): for open subsets `U` and `V` of `B`, if the
+Leray–Hirsch maps of the restrictions of `p` over `U`, `V` and `U ∩ V`, with the restricted classes
+(`TopCat.lerayHirschRestrict`), are bijective in degrees `m ≤ n`, then so is the Leray–Hirsch map
+of the restriction of `p` over `U ∪ V`. By induction over a finite cover of `B` by open sets over
+which `p` is trivial, starting from the empty set
+(`TopCat.lerayHirschRestrict_empty_bijective`) and ending with `B`
+(`TopCat.lerayHirschRestrict_univ_bijective_iff`), this step is meant to reduce the bijectivity of
+the Leray–Hirsch map to the product case `TopCat.lerayHirsch_fst_bijective` (in
 `TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.Product`).
 
 The proof of the gluing step is the five lemma. The Mayer–Vietoris sequences of the cover
@@ -36,16 +42,23 @@ The proof of the gluing step is the five lemma. The Mayer–Vietoris sequences o
 restriction maps by naturality, and on the connecting morphisms because
 `δ (p^* a ⌣ e|) = δ (p^* a) ⌣ e = p^* (δ a) ⌣ e`
 (`TopCat.singularCohomologyMayerVietorisδ_singularCup` and the naturality of `δ`). We first prove
-it when `U ∪ V = B` (`TopCat.bijective_lerayHirsch_of_union_eq_univ`), and deduce the general case
+it when `U ∪ V = B` (`TopCat.lerayHirsch_bijective_of_union_eq_univ`), and deduce the general case
 by applying this to the restriction of `p` over `U ∪ V`.
 
 ## Main definitions and results
 
-* `TopCat.lerayHirsch_lof_naturality`: naturality in maps over a map of bases.
+* `TopCat.lerayHirsch_lof_naturality`, `TopCat.lerayHirsch_comp_lmap`, `TopCat.lerayHirsch_lmap`:
+  naturality in maps over a map of bases.
+* `TopCat.lerayHirsch_bijective_iff_of_bijective`, `TopCat.lerayHirsch_bijective_iff_of_isIso`:
+  invariance of bijectivity.
 * `TopCat.lerayHirschRestrict`: the Leray–Hirsch map of the restriction of `p` over a subset of
-  `B`, with the restricted classes.
-* `TopCat.bijective_lerayHirsch_of_union_eq_univ` and `TopCat.bijective_lerayHirsch_union`: the
-  Mayer–Vietoris gluing step.
+  `B`, with the restricted classes, natural in the subset
+  (`TopCat.lerayHirschRestrict_lof_inclusion`, `TopCat.lerayHirschRestrict_lof_subtypeVal`,
+  `TopCat.lerayHirschRestrict_restrictPreimage_bijective_iff`).
+* `TopCat.lerayHirschRestrict_empty_bijective`, `TopCat.lerayHirschRestrict_univ_bijective_iff`:
+  the Leray–Hirsch map over the empty set and over all of `B`.
+* `TopCat.lerayHirsch_bijective_of_union_eq_univ` and
+  `TopCat.lerayHirschRestrict_union_bijective`: the Mayer–Vietoris gluing step.
 
 ## References
 
@@ -60,7 +73,7 @@ noncomputable section
 open CategoryTheory Limits MonoidalCategory
 open scoped DirectSum
 
-universe w
+universe w u
 
 namespace TopCat
 
@@ -68,7 +81,7 @@ variable {k : Type w} [CommRing k]
 
 section Naturality
 
-variable {E B E' B' : TopCat.{w}} {p : E ⟶ B} {p' : E' ⟶ B'} {n : ℕ} {ι : ℕ → Type w}
+variable {E B E' B' : TopCat.{w}} {p : E ⟶ B} {p' : E' ⟶ B'} {n : ℕ} {ι : ℕ → Type u}
   [∀ d, DecidableEq (ι d)]
   {e : ∀ d, ι d → E.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) d}
   {e' : ∀ d, ι d → E'.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) d}
@@ -93,54 +106,72 @@ lemma lerayHirsch_lof_naturality (f : E' ⟶ E) (g : B' ⟶ B) (hfg : f ≫ p = 
     ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
     ← TopCat.singularCohomologyMap_comp, ← TopCat.singularCohomologyMap_comp, hfg]
 
-/-- The map `⨁_{d + q = n} ⨁_{i : ι d} H^q(B; k) ⟶ ⨁_{d + q = n} ⨁_{i : ι d} H^q(B'; k)` induced by
-`g : B' ⟶ B` on the sources of Leray–Hirsch maps. -/
-private abbrev sourceMap (g : B' ⟶ B) (n : ℕ) (ι : ℕ → Type w) :
-    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        B.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) →ₗ[k]
-      ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        B'.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2 :=
-  DirectSum.lmap fun j ↦ (TopCat.singularCohomologyMap g j.1.1.2).hom
-
-private lemma lerayHirsch_comp_sourceMap (f : E' ⟶ E) (g : B' ⟶ B) (hfg : f ≫ p = p' ≫ g)
+/-- **Naturality of the Leray–Hirsch map**, as linear maps. For maps `f : E' ⟶ E` and `g : B' ⟶ B`
+with `f ≫ p = p' ≫ g`, carrying the classes `e` to the classes `e'`, the Leray–Hirsch map of `p'`
+precomposed with the pullback along `g` on every summand is the Leray–Hirsch map of `p` followed by
+the pullback along `f`. -/
+lemma lerayHirsch_comp_lmap (f : E' ⟶ E) (g : B' ⟶ B) (hfg : f ≫ p = p' ≫ g)
     (he : ∀ d i, TopCat.singularCohomologyMap f d (e d i) = e' d i) :
-    lerayHirsch p' n e' ∘ₗ sourceMap g n ι =
+    lerayHirsch p' n e' ∘ₗ
+        DirectSum.lmap (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
+          (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+            (M := 𝟙_ (ModuleCat.{w} k)) g j.1.1.2).hom) =
       (TopCat.singularCohomologyMap f n).hom ∘ₗ lerayHirsch p n e := by
   refine DirectSum.linearMap_ext k fun ⟨⟨⟨d, q⟩, h⟩, i⟩ ↦ LinearMap.ext fun a ↦ ?_
   simp only [LinearMap.comp_apply, DirectSum.lmap_lof]
   exact lerayHirsch_lof_naturality f g hfg he d q h i a
 
+/-- **Naturality of the Leray–Hirsch map**, applied to an element: under the hypotheses of
+`TopCat.lerayHirsch_comp_lmap`, the Leray–Hirsch map of `p'` sends the pullback along `g` of `x`
+on every summand to the pullback along `f` of the image of `x` under the Leray–Hirsch map of
+`p`. -/
+lemma lerayHirsch_lmap (f : E' ⟶ E) (g : B' ⟶ B) (hfg : f ≫ p = p' ≫ g)
+    (he : ∀ d i, TopCat.singularCohomologyMap f d (e d i) = e' d i)
+    (x : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
+      B.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
+    lerayHirsch p' n e'
+        (DirectSum.lmap (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
+          (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+            (M := 𝟙_ (ModuleCat.{w} k)) g j.1.1.2).hom) x) =
+      TopCat.singularCohomologyMap f n (lerayHirsch p n e x) :=
+  DFunLike.congr_fun (lerayHirsch_comp_lmap f g hfg he) x
+
+/-- Bijectivity of the Leray–Hirsch map is invariant under maps `f : E' ⟶ E` and `g : B' ⟶ B`
+with `f ≫ p = p' ≫ g` carrying the classes `e` to the classes `e'`, provided `f` induces a
+bijection on cohomology in degree `n` and `g` in all degrees `q ≤ n`. -/
+lemma lerayHirsch_bijective_iff_of_bijective (f : E' ⟶ E) (g : B' ⟶ B) (hfg : f ≫ p = p' ≫ g)
+    (he : ∀ d i, TopCat.singularCohomologyMap f d (e d i) = e' d i)
+    (hf : Function.Bijective (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+      (M := 𝟙_ (ModuleCat.{w} k)) f n))
+    (hg : ∀ q ≤ n, Function.Bijective (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k))
+      (k := k) (M := 𝟙_ (ModuleCat.{w} k)) g q)) :
+    Function.Bijective (lerayHirsch p' n e') ↔ Function.Bijective (lerayHirsch p n e) := by
+  have hsrc : Function.Bijective
+      (DirectSum.lmap (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
+        (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+          (M := 𝟙_ (ModuleCat.{w} k)) g j.1.1.2).hom)) :=
+    ⟨(DirectSum.lmap_injective _).2 fun j ↦ (hg _ (by have := j.1.2; omega)).1,
+      (DirectSum.lmap_surjective _).2 fun j ↦ (hg _ (by have := j.1.2; omega)).2⟩
+  rw [← Function.Bijective.of_comp_iff _ hsrc, ← LinearMap.coe_comp,
+    lerayHirsch_comp_lmap f g hfg he, LinearMap.coe_comp]
+  exact Function.Bijective.of_comp_iff' hf _
+
 /-- Bijectivity of the Leray–Hirsch map is invariant under isomorphisms `f : E' ⟶ E` and
 `g : B' ⟶ B` with `f ≫ p = p' ≫ g` carrying the classes `e` to the classes `e'`. -/
-lemma bijective_lerayHirsch_iff_of_isIso (f : E' ⟶ E) (g : B' ⟶ B) [IsIso f] [IsIso g]
+lemma lerayHirsch_bijective_iff_of_isIso (f : E' ⟶ E) (g : B' ⟶ B) [IsIso f] [IsIso g]
     (hfg : f ≫ p = p' ≫ g)
     (he : ∀ d i, TopCat.singularCohomologyMap f d (e d i) = e' d i) :
-    Function.Bijective (lerayHirsch p' n e') ↔ Function.Bijective (lerayHirsch p n e) := by
-  have hbij {X Y : TopCat.{w}} (φ : X ⟶ Y) [IsIso φ] (m : ℕ) :
-      Function.Bijective (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
-        (M := 𝟙_ (ModuleCat.{w} k)) φ m) :=
-    ((TauCeti.singularCohomologyFunctor _ k _ m).mapIso (asIso φ).op).toLinearEquiv.bijective
-  have hsrc : Function.Bijective (sourceMap g n ι) :=
-    ⟨(DirectSum.lmap_injective _).2 fun j ↦ (hbij g _).1,
-      (DirectSum.lmap_surjective _).2 fun j ↦ (hbij g _).2⟩
-  have h := lerayHirsch_comp_sourceMap (n := n) f g hfg he
-  constructor
-  · intro h'
-    have : Function.Bijective ((TopCat.singularCohomologyMap f n).hom ∘ₗ lerayHirsch p n e) := by
-      rw [← h]
-      exact h'.comp hsrc
-    exact (Function.Bijective.of_comp_iff' (hbij f n) _).1 this
-  · intro h'
-    have : Function.Bijective (lerayHirsch p' n e' ∘ₗ sourceMap g n ι) := by
-      rw [h]
-      exact (hbij f n).comp h'
-    exact (Function.Bijective.of_comp_iff _ hsrc).1 this
+    Function.Bijective (lerayHirsch p' n e') ↔ Function.Bijective (lerayHirsch p n e) :=
+  lerayHirsch_bijective_iff_of_bijective f g hfg he
+    ((TauCeti.singularCohomologyFunctor _ k _ n).mapIso (asIso f).op).toLinearEquiv.bijective
+    fun q _ ↦
+      ((TauCeti.singularCohomologyFunctor _ k _ q).mapIso (asIso g).op).toLinearEquiv.bijective
 
 end Naturality
 
 section Restrict
 
-variable {E B : TopCat.{w}} (p : E ⟶ B) {ι : ℕ → Type w} [∀ d, DecidableEq (ι d)]
+variable {E B : TopCat.{w}} (p : E ⟶ B) {ι : ℕ → Type u} [∀ d, DecidableEq (ι d)]
   (e : ∀ d, ι d → E.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) d)
 
 /-- The Leray–Hirsch map in degree `n` of the restriction `p⁻¹ S ⟶ S` of `p` over a subset `S` of
@@ -149,18 +180,115 @@ abbrev lerayHirschRestrict (S : Set B) (n : ℕ) :=
   lerayHirsch (ofHom (p.hom.restrictPreimage S)) n
     (fun d i ↦ TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (p ⁻¹' S))) d (e d i))
 
+/-- The Leray–Hirsch map over a smaller subset `S ⊆ T` of `B` sends the restriction of a class to
+the restriction of its image under the Leray–Hirsch map over `T`. -/
+lemma lerayHirschRestrict_lof_inclusion {S T : Set B} (hST : S ⊆ T) (m d q : ℕ) (h : d + q = m)
+    (i : ι d) (a : (of T).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
+    lerayHirschRestrict p e S m (DirectSum.lof k _
+        (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = m}, ι pq.1.1 ↦
+          (of S).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
+        ⟨⟨(d, q), h⟩, i⟩
+        (TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion hST)) q a)) =
+      TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion (Set.preimage_mono hST))) m
+        (lerayHirschRestrict p e T m (DirectSum.lof k _
+          (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = m}, ι pq.1.1 ↦
+            (of T).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
+          ⟨⟨(d, q), h⟩, i⟩ a)) :=
+  lerayHirsch_lof_naturality _ _ (by ext; rfl) (fun d i ↦ by
+    rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp]
+    -- The inclusion `p⁻¹ S ⟶ p⁻¹ T` followed by `p⁻¹ T ⟶ E` is `p⁻¹ S ⟶ E`, pointwise by `rfl`.
+    congr 2) d q h i a
+
+/-- The Leray–Hirsch map over a subset `S` of `B` sends the restriction of a class of `B` to the
+restriction of its image under the Leray–Hirsch map of `p`. -/
+lemma lerayHirschRestrict_lof_subtypeVal (S : Set B) (m d q : ℕ) (h : d + q = m) (i : ι d)
+    (a : B.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
+    lerayHirschRestrict p e S m (DirectSum.lof k _
+        (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = m}, ι pq.1.1 ↦
+          (of S).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
+        ⟨⟨(d, q), h⟩, i⟩
+        (TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal S)) q a)) =
+      TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (p ⁻¹' S))) m
+        (lerayHirsch p m e (DirectSum.lof k _
+          (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = m}, ι pq.1.1 ↦
+            B.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
+          ⟨⟨(d, q), h⟩, i⟩ a)) :=
+  lerayHirsch_lof_naturality _ _ (by ext; rfl) (fun _ _ ↦ rfl) d q h i a
+
+/-- Restricting first over `W` and then over the preimage of `S ⊆ W` in `W` is restricting over
+`S`, up to homeomorphisms over homeomorphisms; so the two Leray–Hirsch maps are bijective
+together. -/
+lemma lerayHirschRestrict_restrictPreimage_bijective_iff {W S : Set B} (hSW : S ⊆ W) (m : ℕ) :
+    Function.Bijective (lerayHirschRestrict (ofHom (p.hom.restrictPreimage W))
+      (fun d i ↦ TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (p ⁻¹' W))) d
+        (e d i)) ((↑) ⁻¹' S : Set ↥W) m) ↔
+      Function.Bijective (lerayHirschRestrict p e S m) := by
+  have hS : S ⊆ Set.range ((↑) : W → B) := by rwa [Subtype.range_coe]
+  have hpS : p ⁻¹' S ⊆ Set.range ((↑) : p ⁻¹' W → E) := by
+    rw [Subtype.range_coe]
+    exact Set.preimage_mono hSW
+  exact lerayHirsch_bijective_iff_of_isIso
+    (isoOfHomeo (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange hpS)).hom
+    (isoOfHomeo (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange hS)).hom
+    (by ext; rfl) fun d i ↦ by
+    rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+      ← TopCat.singularCohomologyMap_comp, ← TopCat.singularCohomologyMap_comp]
+    -- Both composites are the inclusion `p⁻¹ S ⟶ E`, pointwise by `rfl`.
+    congr 2
+
+/-- The Leray–Hirsch map over all of `B` is bijective if and only if the Leray–Hirsch map of `p`
+is. -/
+lemma lerayHirschRestrict_univ_bijective_iff (m : ℕ) :
+    Function.Bijective (lerayHirschRestrict p e Set.univ m) ↔
+      Function.Bijective (lerayHirsch p m e) := by
+  -- The inclusions of `p⁻¹ B` into `E` and of `B` into itself are homeomorphisms.
+  let hE : ↥(p ⁻¹' (Set.univ : Set B)) ≃ₜ E :=
+    { toFun := Subtype.val
+      invFun x := ⟨x, Set.mem_univ _⟩
+      left_inv _ := rfl
+      right_inv _ := rfl
+      continuous_toFun := continuous_subtype_val
+      continuous_invFun := by fun_prop }
+  let hB : ↥(Set.univ : Set B) ≃ₜ B :=
+    { toFun := Subtype.val
+      invFun x := ⟨x, Set.mem_univ _⟩
+      left_inv _ := rfl
+      right_inv _ := rfl
+      continuous_toFun := continuous_subtype_val
+      continuous_invFun := by fun_prop }
+  have : IsIso (ofHom (ContinuousMap.subtypeVal (p ⁻¹' Set.univ))) :=
+    (isIso_iff_isHomeomorph _).2 hE.isHomeomorph
+  have : IsIso (ofHom (ContinuousMap.subtypeVal (Set.univ : Set B))) :=
+    (isIso_iff_isHomeomorph _).2 hB.isHomeomorph
+  exact lerayHirsch_bijective_iff_of_isIso (ofHom (ContinuousMap.subtypeVal _))
+    (ofHom (ContinuousMap.subtypeVal _)) (by ext; rfl) fun _ _ ↦ rfl
+
+/-- The Leray–Hirsch map over the empty subset of `B` is bijective: its source and target vanish.
+This is the base case of an induction over finite open covers of `B`. -/
+lemma lerayHirschRestrict_empty_bijective (m : ℕ) :
+    Function.Bijective (lerayHirschRestrict p e ∅ m) := by
+  have : IsEmpty ↥(p ⁻¹' (∅ : Set B)) := ⟨fun x ↦ x.2⟩
+  have := ModuleCat.subsingleton_of_isZero
+    (TauCeti.isZero_singularCohomology_of_isEmpty (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (of ↥(p ⁻¹' (∅ : Set B))) m)
+  have (j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = m}, ι pq.1.1) :=
+    ModuleCat.subsingleton_of_isZero
+      (TauCeti.isZero_singularCohomology_of_isEmpty (𝟙_ (ModuleCat.{w} k)) k
+        (𝟙_ (ModuleCat.{w} k)) (of ↥(∅ : Set B)) j.1.1.2)
+  exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+
 end Restrict
 
 /-! ### The gluing step -/
 
 section Gluing
 
-variable {E B : TopCat.{w}} (p : E ⟶ B) {ι : ℕ → Type w} [∀ d, DecidableEq (ι d)]
+variable {E B : TopCat.{w}} (p : E ⟶ B) {ι : ℕ → Type u} [∀ d, DecidableEq (ι d)]
   (e : ∀ d, ι d → E.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) d)
 
 /-- The indices `(d, q)` with `d + q = n` and `i : ι d` of the summands of the source of a
 Leray–Hirsch map in degree `n`. -/
-private abbrev Idx (ι : ℕ → Type w) (n : ℕ) : Type w :=
+private abbrev Idx (ι : ℕ → Type u) (n : ℕ) : Type u :=
   Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1
 
 /-- The index `(d, q + 1)` in degree `l + 1` of the index `(d, q)` in degree `l`. -/
@@ -179,7 +307,7 @@ private lemma Idx.succ_injective (l : ℕ) : Function.Injective (Idx.succ (ι :=
 variable (B) in
 /-- The reindexing `⨁_{(d, q)} H^{q+1}(B) ⟶ ⨁_{(d, q')} H^{q'}(B)` from degree `l` to degree
 `l + 1` along `Idx.succ`, which misses exactly the summands with `q' = 0`. -/
-private abbrev reindex (ι : ℕ → Type w) [∀ d, DecidableEq (ι d)] (l : ℕ) :
+private abbrev reindex (ι : ℕ → Type u) [∀ d, DecidableEq (ι d)] (l : ℕ) :
     (⨁ j : Idx ι l,
         B.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) (j.1.1.2 + 1)) →ₗ[k]
       ⨁ j : Idx ι (l + 1),
@@ -232,38 +360,6 @@ private lemma reindex_comapDomain (l : ℕ) (x : ⨁ j : Idx ι (l + 1),
     exact (reindex_apply_succ l _ ⟨⟨(d, q), by omega⟩, i⟩).trans
       (DFinsupp.comapDomain_apply _ _ _ _)
 
-/-- The Leray–Hirsch map over a smaller subset `S ⊆ T` of `B` sends the restriction of a class to
-the restriction of its image under the Leray–Hirsch map over `T`. -/
-private lemma lerayHirschRestrict_lof_inclusion {S T : Set B} (hST : S ⊆ T) (m d q : ℕ)
-    (h : d + q = m) (i : ι d)
-    (a : (of T).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    lerayHirschRestrict p e S m (DirectSum.lof k (Idx ι m)
-        (fun j ↦ (of S).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))
-          j.1.1.2) ⟨⟨(d, q), h⟩, i⟩
-        (TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion hST)) q a)) =
-      TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion (Set.preimage_mono hST))) m
-        (lerayHirschRestrict p e T m (DirectSum.lof k (Idx ι m)
-          (fun j ↦ (of T).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))
-            j.1.1.2) ⟨⟨(d, q), h⟩, i⟩ a)) :=
-  lerayHirsch_lof_naturality _ _ (by ext; rfl) (fun d i ↦ by
-    rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp]
-    -- The inclusion `p⁻¹ S ⟶ p⁻¹ T` followed by `p⁻¹ T ⟶ E` is `p⁻¹ S ⟶ E`, pointwise by `rfl`.
-    congr 2) d q h i a
-
-/-- The Leray–Hirsch map over a subset `S` of `B` sends the restriction of a class of `B` to the
-restriction of its image under the Leray–Hirsch map of `p`. -/
-private lemma lerayHirschRestrict_lof_subtypeVal (S : Set B) (m d q : ℕ) (h : d + q = m)
-    (i : ι d) (a : B.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    lerayHirschRestrict p e S m (DirectSum.lof k (Idx ι m)
-        (fun j ↦ (of S).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))
-          j.1.1.2) ⟨⟨(d, q), h⟩, i⟩
-        (TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal S)) q a)) =
-      TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (p ⁻¹' S))) m
-        (lerayHirsch p m e (DirectSum.lof k (Idx ι m)
-          (fun j ↦ B.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))
-            j.1.1.2) ⟨⟨(d, q), h⟩, i⟩ a)) :=
-  lerayHirsch_lof_naturality _ _ (by ext; rfl) (fun _ _ ↦ rfl) d q h i a
-
 variable {U V : Set B}
 
 /-- The difference of the restrictions `Hᵐ(p⁻¹ U) × Hᵐ(p⁻¹ V) ⟶ Hᵐ(p⁻¹ (U ∩ V))`. -/
@@ -280,7 +376,7 @@ variable (U V) in
 `⨁_{d + q = m} ⨁_{i : ι d} (H^q(U) × H^q(V))`. -/
 private def lerayHirschPair (m : ℕ) :=
   (lerayHirschRestrict p e U m).prodMap (lerayHirschRestrict p e V m) ∘ₗ
-    (DirectSum.lequivProd k _ _).toLinearMap
+    (DirectSum.prodLinearEquiv k _ _).toLinearMap
 
 variable (U V) in
 private lemma lerayHirschPair_lof (m d q : ℕ) (h : d + q = m) (i : ι d)
@@ -289,20 +385,21 @@ private lemma lerayHirschPair_lof (m d q : ℕ) (h : d + q = m) (i : ι d)
     lerayHirschPair p e U V m (DirectSum.lof k (Idx ι m) _ ⟨⟨(d, q), h⟩, i⟩ (y, z)) =
       (lerayHirschRestrict p e U m (DirectSum.lof k (Idx ι m) _ ⟨⟨(d, q), h⟩, i⟩ y),
         lerayHirschRestrict p e V m (DirectSum.lof k (Idx ι m) _ ⟨⟨(d, q), h⟩, i⟩ z)) := by
-  simp only [lerayHirschPair, LinearMap.comp_apply, LinearEquiv.coe_coe, DirectSum.lequivProd_lof,
+  simp only [lerayHirschPair, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    DirectSum.prodLinearEquiv_lof,
     LinearMap.prodMap_apply]
 
-private lemma bijective_lerayHirschPair {m : ℕ}
+private lemma lerayHirschPair_bijective {m : ℕ}
     (hU' : Function.Bijective (lerayHirschRestrict p e U m))
     (hV' : Function.Bijective (lerayHirschRestrict p e V m)) :
     Function.Bijective (lerayHirschPair p e U V m) :=
-  (hU'.prodMap hV').comp (DirectSum.lequivProd k _ _).bijective
+  (hU'.prodMap hV').comp (DirectSum.prodLinearEquiv k _ _).bijective
 
-private lemma surjective_lerayHirschPair {m : ℕ}
+private lemma lerayHirschPair_surjective {m : ℕ}
     (hU' : Function.Surjective (lerayHirschRestrict p e U m))
     (hV' : Function.Surjective (lerayHirschRestrict p e V m)) :
     Function.Surjective (lerayHirschPair p e U V m) :=
-  (hU'.prodMap hV').comp (DirectSum.lequivProd k _ _).surjective
+  (hU'.prodMap hV').comp (DirectSum.prodLinearEquiv k _ _).surjective
 
 /-- The Leray–Hirsch maps commute with the differences of restrictions to `U ∩ V`. -/
 private lemma mvDiffPre_comp_lerayHirschPair (m : ℕ) :
@@ -318,7 +415,7 @@ private lemma mvDiffPre_comp_lerayHirschPair (m : ℕ) :
   rw [lerayHirschRestrict_lof_inclusion, lerayHirschRestrict_lof_inclusion]
   -- `p⁻¹' (U ∩ V)` is `p⁻¹' U ∩ p⁻¹' V` by definition, so `mvDiffPre` is the difference of the
   -- restrictions of the cover `{p⁻¹' U, p⁻¹' V}`.
-  exact singularCohomologyMayerVietorisFromProd_apply _ k _ _ _ m _ _
+  exact singularCohomologyMayerVietorisFromProd_apply _ k _ _ _ m _
 
 /-- The Leray–Hirsch maps commute with the restrictions to `U` and `V`. -/
 private lemma toProd_comp_lerayHirsch (m : ℕ) :
@@ -399,7 +496,7 @@ private lemma exact_reindex_lmap_toProd (l : ℕ) :
     have hzero (j : Idx ι (l + 1)) (hj : j.1.1.2 = 0) : x j = 0 := by
       obtain ⟨⟨⟨d, q⟩, h⟩, i⟩ := j
       obtain rfl : q = 0 := hj
-      exact injective_singularCohomologyMayerVietorisToProd_zero _ k _ hU hV hUV
+      exact singularCohomologyMayerVietorisToProd_zero_injective _ k _ hU hV hUV
         ((hx' ⟨⟨(d, 0), h⟩, i⟩).trans (map_zero _).symm)
     have hy : DFinsupp.comapDomain Idx.succ (Idx.succ_injective l) x ∈
         LinearMap.range (DirectSum.lmap fun j : Idx ι l ↦
@@ -416,7 +513,7 @@ private lemma exact_reindex_lmap_toProd (l : ℕ) :
 
 include hU hV hUV in
 /-- The gluing step in a positive degree `l + 1`, by the five lemma. -/
-private lemma bijective_lerayHirsch_succ (l : ℕ)
+private lemma lerayHirsch_succ_bijective (l : ℕ)
     (hU₁ : Function.Surjective (lerayHirschRestrict p e U l))
     (hV₁ : Function.Surjective (lerayHirschRestrict p e V l))
     (hUV₁ : Function.Bijective (lerayHirschRestrict p e (U ∩ V) l))
@@ -439,11 +536,11 @@ private lemma bijective_lerayHirsch_succ (l : ℕ)
     (exact_singularCohomologyMayerVietorisFromProd_δ _ k _ hU' hV' hUV' l (l + 1))
     (exact_singularCohomologyMayerVietorisδ_toProd _ k _ hU' hV' hUV' l (l + 1))
     (exact_singularCohomologyMayerVietorisToProd_fromProd _ k _ hU' hV' hUV' (l + 1))
-    (surjective_lerayHirschPair p e hU₁ hV₁) hUV₁ (bijective_lerayHirschPair p e hU₂ hV₂) hUV₂
+    (lerayHirschPair_surjective p e hU₁ hV₁) hUV₁ (lerayHirschPair_bijective p e hU₂ hV₂) hUV₂
 
 include hU hV hUV in
-/-- The gluing step in degree `0`, by the four lemmas. -/
-private lemma bijective_lerayHirsch_zero
+/-- The gluing step in degree `0`, by the five lemma for rows starting with an injection. -/
+private lemma lerayHirsch_zero_bijective
     (hU₀ : Function.Bijective (lerayHirschRestrict p e U 0))
     (hV₀ : Function.Bijective (lerayHirschRestrict p e V 0))
     (hUV₀ : Function.Injective (lerayHirschRestrict p e (U ∩ V) 0)) :
@@ -456,21 +553,14 @@ private lemma bijective_lerayHirsch_zero
         U V j.1.1.2) :=
     (DirectSum.lmap_injective _).2 fun ⟨⟨⟨d, q⟩, h⟩, i⟩ ↦ by
       obtain rfl : q = 0 := by omega
-      exact injective_singularCohomologyMayerVietorisToProd_zero _ k _ hU hV hUV
-  have hc := toProd_comp_lerayHirsch (ι := ι) p e (U := U) (V := V) 0
-  refine ⟨fun x y hxy ↦ hres ((bijective_lerayHirschPair p e hU₀ hV₀).1 ?_), ?_⟩
-  · rw [← LinearMap.comp_apply, ← LinearMap.comp_apply, ← hc, LinearMap.comp_apply,
-      LinearMap.comp_apply, hxy]
-  · exact LinearMap.surjective_of_surjective_of_surjective_of_injective
-      (0 : PUnit.{w + 1} →ₗ[k] _) _ _ (0 : PUnit.{w + 1} →ₗ[k] _) _ _ 0 _ _ _ (by ext; simp) hc
-      (mvDiffPre_comp_lerayHirschPair p e 0)
-      (DirectSum.exact_lmap_iff.2 fun j ↦
-        exact_singularCohomologyMayerVietorisToProd_fromProd _ k _ hU hV hUV _)
-      ((LinearMap.exact_zero_iff_injective _ _).2
-        (injective_singularCohomologyMayerVietorisToProd_zero _ k _ hU' hV' hUV'))
-      (exact_singularCohomologyMayerVietorisToProd_fromProd _ k _ hU' hV' hUV' 0)
-      (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩)
-      (bijective_lerayHirschPair p e hU₀ hV₀).2 hUV₀
+      exact singularCohomologyMayerVietorisToProd_zero_injective _ k _ hU hV hUV
+  exact LinearMap.bijective_of_bijective_of_injective_of_left_exact _ _ _ _ _ _ _
+    (toProd_comp_lerayHirsch p e 0) (mvDiffPre_comp_lerayHirschPair p e 0)
+    (DirectSum.exact_lmap_iff.2 fun j ↦
+      exact_singularCohomologyMayerVietorisToProd_fromProd _ k _ hU hV hUV _)
+    (exact_singularCohomologyMayerVietorisToProd_fromProd _ k _ hU' hV' hUV' 0)
+    (lerayHirschPair_bijective p e hU₀ hV₀) hUV₀ hres
+    (singularCohomologyMayerVietorisToProd_zero_injective _ k _ hU' hV' hUV')
 
 end Gluing
 
@@ -478,64 +568,43 @@ end Gluing
 
 section Union
 
-variable {E B : TopCat.{w}} (p : E ⟶ B) {ι : ℕ → Type w} [∀ d, DecidableEq (ι d)]
+variable {E B : TopCat.{w}} (p : E ⟶ B) {ι : ℕ → Type u} [∀ d, DecidableEq (ι d)]
   (e : ∀ d, ι d → E.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) d)
 
 /-- **The Mayer–Vietoris gluing step for the Leray–Hirsch map, for an open cover of the base.**
 Let `U` and `V` be open subsets of `B` with `U ∪ V = B`. If the Leray–Hirsch maps of the
 restrictions of `p` over `U`, `V` and `U ∩ V`, with the restricted classes, are bijective in
 degrees `m ≤ n`, then so is the Leray–Hirsch map of `p`. -/
-theorem bijective_lerayHirsch_of_union_eq_univ {U V : Set B} (hU : IsOpen U) (hV : IsOpen V)
+theorem lerayHirsch_bijective_of_union_eq_univ {U V : Set B} (hU : IsOpen U) (hV : IsOpen V)
     (hUV : U ∪ V = Set.univ) (n : ℕ)
     (hU' : ∀ m ≤ n, Function.Bijective (lerayHirschRestrict p e U m))
     (hV' : ∀ m ≤ n, Function.Bijective (lerayHirschRestrict p e V m))
     (hUV' : ∀ m ≤ n, Function.Bijective (lerayHirschRestrict p e (U ∩ V) m)) :
     ∀ m ≤ n, Function.Bijective (lerayHirsch p m e) := by
   rintro (_ | l) hm
-  · exact bijective_lerayHirsch_zero p e hU hV hUV (hU' 0 hm) (hV' 0 hm) (hUV' 0 hm).1
-  · exact bijective_lerayHirsch_succ p e hU hV hUV l (hU' l (by omega)).2 (hV' l (by omega)).2
+  · exact lerayHirsch_zero_bijective p e hU hV hUV (hU' 0 hm) (hV' 0 hm) (hUV' 0 hm).1
+  · exact lerayHirsch_succ_bijective p e hU hV hUV l (hU' l (by omega)).2 (hV' l (by omega)).2
       (hUV' l (by omega)) (hU' _ hm) (hV' _ hm) (hUV' _ hm).1
-
-/-- Restricting first over `W` and then over the preimage of `S ⊆ W` in `W` is restricting over
-`S`, up to homeomorphisms over homeomorphisms; so the two Leray–Hirsch maps are bijective
-together. -/
-private lemma bijective_lerayHirschRestrict_restrict_iff {W S : Set B} (hSW : S ⊆ W) (m : ℕ) :
-    Function.Bijective (lerayHirschRestrict (ofHom (p.hom.restrictPreimage W))
-      (fun d i ↦ TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (p ⁻¹' W))) d
-        (e d i)) ((↑) ⁻¹' S : Set ↥W) m) ↔
-      Function.Bijective (lerayHirschRestrict p e S m) := by
-  have hS : S ⊆ Set.range ((↑) : W → B) := by rwa [Subtype.range_coe]
-  have hpS : p ⁻¹' S ⊆ Set.range ((↑) : p ⁻¹' W → E) := by
-    rw [Subtype.range_coe]
-    exact Set.preimage_mono hSW
-  exact bijective_lerayHirsch_iff_of_isIso
-    (isoOfHomeo (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange hpS)).hom
-    (isoOfHomeo (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange hS)).hom
-    (by ext; rfl) fun d i ↦ by
-    rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-      ← TopCat.singularCohomologyMap_comp, ← TopCat.singularCohomologyMap_comp]
-    -- Both composites are the inclusion `p⁻¹ S ⟶ E`, pointwise by `rfl`.
-    congr 2
 
 /-- **The Mayer–Vietoris gluing step for the Leray–Hirsch map.** Let `U` and `V` be open subsets of
 `B`. If the Leray–Hirsch maps of the restrictions of `p` over `U`, `V` and `U ∩ V`, with the
 restricted classes, are bijective in degrees `m ≤ n`, then so is the Leray–Hirsch map of the
 restriction of `p` over `U ∪ V`. -/
-theorem bijective_lerayHirsch_union {U V : Set B} (hU : IsOpen U) (hV : IsOpen V) (n : ℕ)
+theorem lerayHirschRestrict_union_bijective {U V : Set B} (hU : IsOpen U) (hV : IsOpen V) (n : ℕ)
     (hU' : ∀ m ≤ n, Function.Bijective (lerayHirschRestrict p e U m))
     (hV' : ∀ m ≤ n, Function.Bijective (lerayHirschRestrict p e V m))
     (hUV' : ∀ m ≤ n, Function.Bijective (lerayHirschRestrict p e (U ∩ V) m)) :
     ∀ m ≤ n, Function.Bijective (lerayHirschRestrict p e (U ∪ V) m) :=
-  bijective_lerayHirsch_of_union_eq_univ (ofHom (p.hom.restrictPreimage (U ∪ V)))
+  lerayHirsch_bijective_of_union_eq_univ (ofHom (p.hom.restrictPreimage (U ∪ V)))
     (fun d i ↦ TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (p ⁻¹' (U ∪ V)))) d
       (e d i))
     (hU.preimage continuous_subtype_val) (hV.preimage continuous_subtype_val)
     (by rw [← Set.preimage_union, Subtype.coe_preimage_self]) n
-    (fun m hm ↦ (bijective_lerayHirschRestrict_restrict_iff p e Set.subset_union_left m).2
+    (fun m hm ↦ (lerayHirschRestrict_restrictPreimage_bijective_iff p e Set.subset_union_left m).2
       (hU' m hm))
-    (fun m hm ↦ (bijective_lerayHirschRestrict_restrict_iff p e Set.subset_union_right m).2
+    (fun m hm ↦ (lerayHirschRestrict_restrictPreimage_bijective_iff p e Set.subset_union_right m).2
       (hV' m hm))
-    (fun m hm ↦ (bijective_lerayHirschRestrict_restrict_iff p e
+    (fun m hm ↦ (lerayHirschRestrict_restrictPreimage_bijective_iff p e
       (Set.inter_subset_left.trans Set.subset_union_left) m).2 (hUV' m hm))
 
 end Union

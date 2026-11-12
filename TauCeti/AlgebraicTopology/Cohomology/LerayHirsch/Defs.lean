@@ -39,11 +39,11 @@ noncomputable section
 open CategoryTheory MonoidalCategory
 open scoped DirectSum
 
-universe w
+universe w u
 
 namespace TopCat
 
-variable {k : Type w} [CommRing k] {E B : TopCat.{w}} (p : E ⟶ B) (n : ℕ) {ι : ℕ → Type w}
+variable {k : Type w} [CommRing k] {E B : TopCat.{w}} (p : E ⟶ B) (n : ℕ) {ι : ℕ → Type u}
   [∀ d, DecidableEq (ι d)]
   (e : ∀ d, ι d → E.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) d)
 
