@@ -153,8 +153,7 @@ theorem exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le [Nonempty ι] {lam Lam :
   set ω := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
   refine ⟨max (√2 * D₀) (√2 * D₀ * √ω + 1), lt_max_of_lt_left (by positivity), ?_⟩
   intro Omega a u x₀ R W g h ha hg hug hR hball
-  have : (ae (mu.restrict (ball x₀ R))).NeBot := ae_restrict_neBot.2 (measure_ball_pos mu x₀ hR).ne'
-  have hW : 0 ≤ W := nonneg_of_ae_abs_le hug
+  have hW : 0 ≤ W := nonneg_of_ae_restrict_abs_le (measure_ball_pos mu x₀ hR).ne' hug
   -- De Giorgi's bound for the homogeneous solution `g` on `B(x₀, R/2)`.
   have hgbound := hbound (Omega := ⟨ball x₀ R, isOpen_ball⟩) (h.mono_set hball)
     (ha.mono_measure (Measure.restrict_mono hball le_rfl)) hg hR (subset_refl _)
@@ -220,10 +219,7 @@ theorem exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_ae_abs_sub_le [Nonempty 
   refine ⟨α₀, C₀, 2 * C₀ + 2, hα₀, hα₀1, hC₀, by positivity, ?_⟩
   intro Omega a u x₀ ρ s M W g h ha hg hug hs hsρ hball hM
   have hρ : 0 < ρ := hs.trans_le hsρ
-  have hW0 : 0 ≤ W :=
-    have : (ae (mu.restrict (ball x₀ ρ))).NeBot :=
-      ae_restrict_neBot.2 (measure_ball_pos mu x₀ hρ).ne'
-    nonneg_of_ae_abs_le hug
+  have hW0 : 0 ≤ W := nonneg_of_ae_restrict_abs_le (measure_ball_pos mu x₀ hρ).ne' hug
   have : (ae (mu.restrict (ball x₀ s))).NeBot :=
     ae_restrict_neBot.2 (measure_ball_pos mu x₀ hs).ne'
   set m := essInf (W1p.value u : EuclideanSpace ℝ ι → ℝ) (mu.restrict (ball x₀ ρ))
@@ -290,9 +286,8 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_forall_ae_abs_sub_le [No
   intro Omega a u x₀ R s A h ha happrox hs hsR hball
   have hR : 0 < R := by linarith only [hs, hsR]
   obtain ⟨g₀, hg₀, hug₀⟩ := happrox R hR le_rfl
-  have : (ae (mu.restrict (ball x₀ R))).NeBot := ae_restrict_neBot.2 (measure_ball_pos mu x₀ hR).ne'
-  have hA : 0 ≤ A :=
-    (mul_nonneg_iff_of_pos_left (Real.rpow_pos_of_pos hR γ)).1 (nonneg_of_ae_abs_le hug₀)
+  have hA : 0 ≤ A := (mul_nonneg_iff_of_pos_left (Real.rpow_pos_of_pos hR γ)).1
+    (nonneg_of_ae_restrict_abs_le (measure_ball_pos mu x₀ hR).ne' hug₀)
   obtain ⟨Q, hQdef⟩ : ∃ Q : ℝ,
       Q = R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) :=
     ⟨_, rfl⟩
@@ -372,9 +367,8 @@ theorem exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le [Nonem
     (ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK)
   have hA : 0 ≤ A := by
     obtain ⟨g, -, hug⟩ := happrox x₁ hx₁ R hR le_rfl
-    have : (ae (mu.restrict (ball x₁ R))).NeBot :=
-      ae_restrict_neBot.2 (measure_ball_pos mu x₁ hR).ne'
-    exact (mul_nonneg_iff_of_pos_left (Real.rpow_pos_of_pos hR γ)).1 (nonneg_of_ae_abs_le hug)
+    exact (mul_nonneg_iff_of_pos_left (Real.rpow_pos_of_pos hR γ)).1
+      (nonneg_of_ae_restrict_abs_le (measure_ball_pos mu x₁ hR).ne' hug)
   -- The scaled norms of `u` and of the datum on such a ball are at most `N`, their values on `Ω`.
   obtain ⟨N, hNdef⟩ : ∃ N : ℝ, N =
       R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu) + R ^ γ * A :=
