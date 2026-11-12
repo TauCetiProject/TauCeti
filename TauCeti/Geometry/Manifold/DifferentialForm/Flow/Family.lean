@@ -49,10 +49,12 @@ defined up to time `t`
 (`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul_of_mem`), and
 for all `s`, `t` and `x` when the suspension is complete
 (`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul`). The case
-`g = 0` is the invariance `φ_{s,t}^* α_t = α_s` of Moser's argument for symplectic forms
-(`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_eq`). A nonzero `g` is the shape of the
-rate in Gray's argument for a family of contact forms, where the time-dependent field is chosen
-to make the rate a multiple of the contact form.
+`g = 0` is the invariance `φ_{s,t}^* α_t = α_s` of Moser's argument for symplectic forms, again
+along the domain of the flow
+(`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_mem`) and everywhere for a
+complete suspension (`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_eq`). A nonzero
+`g` is the shape of the rate in Gray's argument for a family of contact forms, where the
+time-dependent field is chosen to make the rate a multiple of the contact form.
 
 ## Main results
 
@@ -69,6 +71,8 @@ to make the rate a multiple of the contact form.
   it is defined.
 * `TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul`: the same
   everywhere, for a complete suspension.
+* `TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_mem`: if the rate vanishes,
+  then `(φ_{s,t}^* α_t)ₓ = (α_s)ₓ` where the flow is defined.
 * `TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_eq`: for a complete suspension, if the
   rate vanishes, then `φ_{s,t}^* α_t = α_s`.
 
@@ -429,6 +433,23 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
     (ordConnected_setOf_mem_timeDependentFlowDomain s x) hcont
     (fun u hu ↦ (hP u hu).hasDerivWithinAt) (mem_timeDependentFlowDomain_self hX₁ s x) h
 
+/-- **Moser's principle for families of forms**, invariance case along the domain of the flow.
+Let `X` be a jointly `C²` time-dependent vector field with time-dependent flow `φ`, defined at `x`
+from time `s` to time `t`, and let `α` be a `C¹` form on `ℝ × M` with slices `α_t = ι_t^* α`. If
+`ι_t^* L_{∂_t} α + L_{X_t} α_t = 0` for every time `t`, then `(φ_{s,t}^* α_t)ₓ = (α_s)ₓ`. -/
+theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_mem
+    (hα : ContMDiff (𝓘(ℝ, ℝ).prod I) ((𝓘(ℝ, ℝ).prod I).prod 𝓘(ℝ, (ℝ × E) [⋀^Fin k]→L[ℝ] F)) 1
+      (fun p ↦ TotalSpace.mk' ((ℝ × E) [⋀^Fin k]→L[ℝ] F) p (α p)))
+    (hL : ∀ t, mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
+          (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α) +
+        mlieDerivForm (X t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) = 0)
+    {s t : ℝ} {x : M} (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    mpullback I I (timeDependentFlowOf X s t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) x =
+      mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
+  have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul_of_mem hX
+    (g := 0) continuous_const hα (fun t ↦ by rw [hL t]; funext y; simp) h
+  simpa using h
+
 variable (hc : IsCompleteVectorField (timeDependentSuspensionField X))
 include hc
 
@@ -466,8 +487,7 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_eq
     mpullback I I (timeDependentFlowOf X s t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) =
       mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α := by
   funext x
-  have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul hX hc
-    (g := 0) continuous_const hα (fun t ↦ by rw [hL t]; funext y; simp) s t x
-  simpa using h
+  exact mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_mem hX hα hL
+    ((timeDependentFlowDomain_eq_univ hc).symm ▸ mem_univ _)
 
 end TauCeti

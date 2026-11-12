@@ -217,6 +217,14 @@ on time and point. -/
 theorem contMDiff_grayRate : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.grayRate :=
   contMDiff_apply_reebVectorField_mpullback_prodMk α α.timeDeriv hc
 
+/-- The Gray vector field of a smooth family of contact forms vanishes at every time at a point
+where the contact hyperplane `ker α_u` is the same for all times `u`. -/
+theorem grayVectorField_eq_zero_of_kerDistribution_eq [I.Boundaryless] {x : M} {t₀ : ℝ}
+    (hx : ∀ u, (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x =
+      (mpullback (Prod.mk t₀) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x)
+    (u : ℝ) : α.grayVectorField u x = 0 :=
+  grayVectorField_eq_zero (hc u) fun v ↦ (hx v).trans (hx u).symm
+
 /-- **Gray's equation** as an identity of forms on `M` at time `t`: the rate
 `ι_t^* L_{∂_t} α + L_{Y_t} α_t` of the family `α_t` along the Gray vector field is `μ_t α_t`. This
 is the hypothesis of Moser's principle for families of forms, which turns it into the rescaling of
@@ -319,7 +327,7 @@ theorem mem_grayPartialDiffeomorph_source {x : M}
     (s t : ℝ) : x ∈ (grayPartialDiffeomorph hc s t).source :=
   (mem_grayPartialDiffeomorph_source_iff hc).2
     (mem_timeDependentFlowDomain_of_forall_eq_zero
-      (fun u ↦ grayVectorField_eq_zero (hc u) fun v ↦ (hx v).trans (hx u).symm) s t)
+      (grayVectorField_eq_zero_of_kerDistribution_eq hc hx) s t)
 
 /-- A point at which the contact hyperplane `ker α_t` is the same for all times lies in the target
 of Gray's partial isotopy between any two times. -/
@@ -329,7 +337,7 @@ theorem mem_grayPartialDiffeomorph_target {x : M}
     (s t : ℝ) : x ∈ (grayPartialDiffeomorph hc s t).target :=
   (mem_grayPartialDiffeomorph_target_iff hc).2
     (mem_timeDependentFlowDomain_of_forall_eq_zero
-      (fun u ↦ grayVectorField_eq_zero (hc u) fun v ↦ (hx v).trans (hx u).symm) t s)
+      (grayVectorField_eq_zero_of_kerDistribution_eq hc hx) t s)
 
 /-- Gray's partial isotopy fixes every point at which the contact hyperplane `ker α_t` is the same
 for all times. -/
@@ -340,7 +348,7 @@ theorem grayPartialDiffeomorph_apply_eq_self {x : M}
   rw [grayPartialDiffeomorph_apply]
   exact timeDependentFlowOf_eq_self_of_forall_eq_zero
     ((contMDiff_grayVectorField hc).of_le (by simp))
-    (fun u ↦ grayVectorField_eq_zero (hc u) fun v ↦ (hx v).trans (hx u).symm) s t
+    (grayVectorField_eq_zero_of_kerDistribution_eq hc hx) s t
 
 /-- **Relative Gray stability.** Let `α_t` be a smooth family of contact forms on a boundaryless
 manifold, and let `K` be a set of points at each of which the contact hyperplane `ker α_t` is the
@@ -464,6 +472,6 @@ theorem grayDiffeomorph_apply_eq_self {x : M}
   rw [grayDiffeomorph_apply]
   exact timeDependentFlowOf_eq_self_of_forall_eq_zero
     ((contMDiff_grayVectorField hc).of_le (by simp))
-    (fun u ↦ grayVectorField_eq_zero (hc u) fun v ↦ (hx v).trans (hx u).symm) s t
+    (grayVectorField_eq_zero_of_kerDistribution_eq hc hx) s t
 
 end TauCeti.SmoothForm
