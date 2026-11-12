@@ -30,7 +30,8 @@ The pushforward is a continuous linear map for the LF topologies
 (`PartialDiffeomorph.pushforwardTestFunction`). It is the composite of three continuous linear
 maps: composition with `Φ⁻¹`, which is the pullback `TestFunction.pullbackCLM` of test forms of
 degree zero along `Φ⁻¹`, multiplication by the Jacobian `|det D(Φ⁻¹)|`, which is smooth on the
-target of `Φ` only (`TestFunction.smulLeftCLMOfContDiffOn`), and extension from `Φ '' V` to `Ω`.
+target of `Φ` only (`TestFunction.smulLeftCLMOfContDiffOn`), and extension from `Ω ∩ target` to
+`Ω`.
 
 ## Main declarations
 
@@ -95,13 +96,10 @@ private def targetOpens (Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E �
 private theorem targetOpens_inter_preimage_symm (hV : (V : Set E) ⊆ Φ.source)
     (hVΩ : MapsTo Φ V Ω) {K : Set E} (hKV : K ⊆ V) :
     (targetOpens Φ Ω : Set E) ∩ Φ.symm ⁻¹' K = Φ '' K := by
-  ext y
-  constructor
-  · rintro ⟨⟨-, hy⟩, hyK⟩
-    exact ⟨Φ.symm y, hyK, Φ.apply_symm_apply hy⟩
-  · rintro ⟨x, hx, rfl⟩
-    exact ⟨⟨hVΩ (hKV hx), Φ.map_source (hV (hKV hx))⟩,
-      by rwa [mem_preimage, Φ.symm_apply_apply (hV (hKV hx))]⟩
+  have himage : Φ '' K = Φ.target ∩ Φ.symm ⁻¹' K :=
+    Φ.toPartialEquiv.image_eq_target_inter_inv_preimage (hKV.trans hV)
+  rw [himage, targetOpens, Opens.coe_inf, inter_assoc]
+  exact inter_eq_self_of_subset_right (himage ▸ (hVΩ.mono_left hKV).image_subset)
 
 /-- Composition `φ ↦ φ ∘ Φ⁻¹` of test functions on `V` with the inverse, as test functions on
 `Ω ∩ target`. It is the pullback along `Φ⁻¹` of test forms of degree zero; since `Φ '' V ⊆ Ω`,
@@ -130,7 +128,7 @@ private theorem compSymmCLM_apply_of_mem_target (hV : (V : Set E) ⊆ Φ.source)
     simp only [compSymmCLM, ContinuousLinearMap.comp_apply, postcompCLM_apply, Function.comp_apply,
       pullbackCLM_apply_of_notMem _ hyt, _root_.map_zero]
     refine (image_eq_zero_of_notMem_tsupport fun h ↦ hyΩ ?_).symm
-    rw [← Φ.apply_symm_apply hy]
+    rw [← Φ.right_inv hy]
     exact hVΩ (φ.tsupport_subset h)
 
 /-- Off the target, composition with the inverse vanishes. -/
@@ -177,7 +175,7 @@ theorem pushforwardTestFunction_apply_of_notMem_target (φ : 𝓓(V, G)) {y : E}
 @[simp]
 theorem pushforwardTestFunction_apply_apply (φ : 𝓓(V, G)) {x : E} (hx : x ∈ Φ.source) :
     Φ.pushforwardTestFunction hV hVΩ φ (Φ x) = |(fderiv ℝ Φ x).det|⁻¹ • φ x := by
-  rw [pushforwardTestFunction_apply_of_mem_target φ (Φ.map_source hx), Φ.symm_apply_apply hx,
+  rw [pushforwardTestFunction_apply_of_mem_target φ (Φ.map_source hx), Φ.left_inv hx,
     abs_det_fderiv_symm_apply hx]
 
 /-- **Support of a pushforward.** The pushforward of `φ` is supported in `Φ '' supp φ`. -/
@@ -188,7 +186,7 @@ theorem tsupport_pushforwardTestFunction_subset (φ : 𝓓(V, G)) :
   refine closure_minimal (fun y hy ↦ ?_) hc.isClosed
   by_cases hyt : y ∈ Φ.target
   · rw [Function.mem_support, pushforwardTestFunction_apply_of_mem_target φ hyt] at hy
-    exact ⟨Φ.symm y, subset_tsupport _ (right_ne_zero_of_smul hy), Φ.apply_symm_apply hyt⟩
+    exact ⟨Φ.symm y, subset_tsupport _ (right_ne_zero_of_smul hy), Φ.right_inv hyt⟩
   · exact absurd (pushforwardTestFunction_apply_of_notMem_target φ hyt) hy
 
 /-- The pushforward commutes with postcomposition by a continuous linear map. -/
@@ -242,7 +240,7 @@ theorem pushforwardTestFunction_pushforwardTestFunction_symm (hΩ : (Ω : Set E)
     -- The two Jacobians are reciprocal: `|det DΦ(Φ⁻¹ y)| |det D(Φ⁻¹)(y)| = 1`.
     -- `Φ.symm.symm` has the underlying partial equivalence of `Φ`, by `PartialEquiv.symm_symm`.
     have hΦ : ⇑Φ.symm.symm = ⇑Φ := rfl
-    rw [hΦ, Φ.apply_symm_apply hy, ← abs_mul, mul_comm,
+    rw [hΦ, Φ.right_inv hy, ← abs_mul, mul_comm,
       Φ.det_fderiv_mul_det_fderiv_symm (by simp) hy, abs_one, one_smul]
   · rw [pushforwardTestFunction_apply_of_notMem_target _ hy, eq_comm]
     exact image_eq_zero_of_notMem_tsupport fun h ↦ hy (hΩ (φ.tsupport_subset h))

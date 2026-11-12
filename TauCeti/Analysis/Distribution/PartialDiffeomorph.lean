@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.Distribution.LinearEquiv
 public import TauCeti.Analysis.Distribution.TestFunction.PartialDiffeomorph
-import Mathlib.MeasureTheory.Function.Jacobian
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.MeasureTheory.Function.Jacobian
 
 /-!
 # Pullback of distributions along partial diffeomorphisms
@@ -26,9 +27,10 @@ locally integrable function `f` the function `f ∘ Φ`
 extends the pullback of functions to all distributions; this is how a distribution on a manifold is
 read in a chart, and how its readings in two charts are compared. On the point mass at `Φ x` the
 pullback is `|det DΦ(x)|⁻¹` times the point mass at `x`. Pullback is contravariantly functorial,
-`(Ψ ∘ Φ)^* = Φ^* ∘ Ψ^*`, undone by the pullback along `Φ⁻¹`, and does not enlarge supports. For a
-linear automorphism it is the linear change of variables
-`Distribution.compCLMOfContinuousLinearEquiv`.
+`(Ψ ∘ Φ)^* = Φ^* ∘ Ψ^*`, and is undone by the pullback along `Φ⁻¹` when `Ω` is contained in the
+target of `Φ` and `Φ⁻¹` maps `Ω` into `V`. On `V`, the support of `Φ^* T` lies in the preimage
+under `Φ` of the support of `T`. For a linear automorphism the pullback is the linear change of
+variables `Distribution.compCLMOfContinuousLinearEquiv`.
 
 ## Main declarations
 
@@ -36,8 +38,6 @@ linear automorphism it is the linear change of variables
   linear map `𝓓'(Ω, F) →L[ℝ] 𝓓'(V, F)`.
 * `Distribution.compCLMOfPartialDiffeomorph_ofFun`: `Φ^*` sends the distribution of a locally
   integrable function `f` to that of `f ∘ Φ`, for any additive Haar measure.
-* `MeasureTheory.LocallyIntegrableOn.comp_partialDiffeomorph_of_mapsTo`: local integrability is
-  preserved by such a change of variables.
 * `Distribution.compCLMOfPartialDiffeomorph_delta`: `Φ^* δ_{Φ x} = |det DΦ(x)|⁻¹ δ_x`.
 * `Distribution.compCLMOfPartialDiffeomorph_trans`,
   `Distribution.compCLMOfPartialDiffeomorph_symm_compCLMOfPartialDiffeomorph`: functoriality.
@@ -63,35 +63,6 @@ open scoped Distributions Manifold ContDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E ∞}
-
-/-- **Local integrability is preserved by a smooth change of variables**: if `f` is locally
-integrable on `t` for an additive Haar measure, and `Φ` maps an open subset `s` of its source into
-`t`, then `f ∘ Φ` is locally integrable on `s`. -/
-theorem MeasureTheory.LocallyIntegrableOn.comp_partialDiffeomorph_of_mapsTo [MeasurableSpace E]
-    [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure E}
-    [μ.IsAddHaarMeasure] {f : E → F} {s t : Set E} (hf : LocallyIntegrableOn f t μ)
-    (hs : IsOpen s) (hsΦ : s ⊆ Φ.source) (hst : MapsTo Φ s t) :
-    LocallyIntegrableOn (fun x ↦ f (Φ x)) s μ := by
-  rw [locallyIntegrableOn_iff hs.isLocallyClosed]
-  intro K hKs hK
-  have hΦK : IsCompact (Φ '' K) :=
-    hK.image_of_continuousOn (Φ.contMDiffOn.continuousOn.mono (hKs.trans hsΦ))
-  have hK' : Φ '' K ⊆ Φ.target := image_subset_iff.2 fun x hx ↦ Φ.map_source (hsΦ (hKs hx))
-  -- On `Φ '' K`, the function `|det D(Φ⁻¹)| f` is integrable: `f` is, and the Jacobian is
-  -- continuous on this compact set.
-  have hJ : ContinuousOn (fun y ↦ |(fderiv ℝ Φ.symm y).det|) (Φ '' K) :=
-    Φ.contDiffOn_abs_det_fderiv_symm.continuousOn.mono hK'
-  have hint : IntegrableOn (fun y ↦ |(fderiv ℝ Φ.symm y).det| • f y) (Φ '' K) μ :=
-    (hf.integrableOn_compact_subset (image_subset_iff.2 (hst.mono_left hKs)) hΦK).continuousOn_smul
-      hJ hΦK
-  -- Change variables `y = Φ x` on `K`; the two Jacobians cancel.
-  rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul μ hK.measurableSet
-    (fun x hx ↦ (Φ.differentiableAt (by simp) (hsΦ (hKs hx))).hasFDerivAt.hasFDerivWithinAt)
-    (Φ.toPartialEquiv.injOn.mono (hKs.trans hsΦ))] at hint
-  refine hint.congr_fun (fun x hx ↦ ?_) hK.measurableSet
-  beta_reduce
-  rw [smul_smul, ← abs_mul, mul_comm, Φ.det_fderiv_symm_mul_det_fderiv (by simp) (hsΦ (hKs hx)),
-    abs_one, one_smul]
 
 namespace Distribution
 
@@ -168,11 +139,11 @@ end General
 
 /-- The pullback of the point mass at `Φ x` is `|det DΦ(x)|⁻¹` times the point mass at `x`. -/
 theorem compCLMOfPartialDiffeomorph_delta {hV : (V : Set E) ⊆ Φ.source} {hVΩ : MapsTo Φ V Ω}
-    {x : E} (hx : x ∈ V) :
+    {x : E} (hx : x ∈ Φ.source) :
     compCLMOfPartialDiffeomorph Φ hV hVΩ (delta (Φ x) : 𝓓'(Ω, ℝ)) =
       |(fderiv ℝ Φ x).det|⁻¹ • (delta x : 𝓓'(V, ℝ)) := by
   ext φ
-  simp [PartialDiffeomorph.pushforwardTestFunction_apply_apply φ (hV hx)]
+  simp [PartialDiffeomorph.pushforwardTestFunction_apply_apply φ hx]
 
 /-- **Change of variables.** On the distribution of a function `f` locally integrable on `Ω`, the
 pullback along `Φ` is the distribution of `f ∘ Φ`, for any additive Haar measure. -/
@@ -182,7 +153,11 @@ theorem compCLMOfPartialDiffeomorph_ofFun [MeasurableSpace E] [BorelSpace E] {F 
     compCLMOfPartialDiffeomorph Φ hV hVΩ (ofFun Ω f μ ⊤) = ofFun V (fun x ↦ f (Φ x)) μ ⊤ := by
   ext φ
   rw [compCLMOfPartialDiffeomorph_apply, ofFun_apply hf,
-    ofFun_apply (hf.comp_partialDiffeomorph_of_mapsTo V.isOpen hV hVΩ)]
+    ofFun_apply (hf.comp_contDiffOn_diffeo V.isOpen
+      (((contMDiffOn_iff_contDiffOn.1 Φ.contMDiffOn).of_le (by simp)).mono hV)
+      (Φ.toPartialEquiv.injOn.mono hV)
+      (fun x hx ↦ right_ne_zero_of_mul_eq_one (Φ.det_fderiv_symm_mul_det_fderiv (by simp) (hV hx)))
+      hVΩ)]
   -- Both integrands vanish off the open sets `Φ '' V` and `V`, which correspond under `Φ`.
   have hpush : ∀ y ∉ Φ '' V, Φ.pushforwardTestFunction hV hVΩ φ y • f y = 0 := fun y hy ↦ by
     rw [image_eq_zero_of_notMem_tsupport fun h ↦ hy

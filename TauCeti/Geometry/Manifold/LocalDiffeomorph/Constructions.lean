@@ -28,8 +28,8 @@ It also records the source, target, forward map and inverse map of Mathlib's com
 * `PartialDiffeomorph.ofLE`: a `C^n` partial diffeomorphism as a `C^m` one, for `m ≤ n`.
 * `ContinuousLinearEquiv.toPartialDiffeomorph`: a continuous linear equivalence as a `C^n` partial
   diffeomorphism defined everywhere, for any `n`.
-* `PartialDiffeomorph.symm_apply_apply`, `PartialDiffeomorph.apply_symm_apply`: a partial
-  diffeomorphism and its inverse undo each other on the source and on the target.
+* `PartialDiffeomorph.left_inv`, `PartialDiffeomorph.right_inv`: a partial diffeomorphism and its
+  inverse undo each other on the source and on the target.
 * `PartialDiffeomorph.trans_source`, `PartialDiffeomorph.trans_target`,
   `PartialDiffeomorph.coe_trans`, `PartialDiffeomorph.coe_trans_symm`: the composition of partial
   diffeomorphisms, computed componentwise.
@@ -75,15 +75,19 @@ theorem ofLE_toPartialEquiv (Φ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) 
     (Φ.ofLE hmn).toPartialEquiv = Φ.toPartialEquiv :=
   (rfl)
 
-/-- The inverse of a partial diffeomorphism undoes it on its source. -/
-theorem symm_apply_apply (Φ : PartialDiffeomorph I J M N n) {x : M} (hx : x ∈ Φ.source) :
+/-- The inverse of a partial diffeomorphism undoes it on its source. This restates the inherited
+`PartialEquiv.left_inv` in terms of the coercions of `Φ` and `Φ.symm`, as
+`OpenPartialHomeomorph.left_inv` does. -/
+theorem left_inv (Φ : PartialDiffeomorph I J M N n) {x : M} (hx : x ∈ Φ.source) :
     Φ.symm (Φ x) = x :=
-  Φ.left_inv hx
+  Φ.toPartialEquiv.left_inv hx
 
-/-- A partial diffeomorphism undoes its inverse on its target. -/
-theorem apply_symm_apply (Φ : PartialDiffeomorph I J M N n) {y : N} (hy : y ∈ Φ.target) :
+/-- A partial diffeomorphism undoes its inverse on its target. This restates the inherited
+`PartialEquiv.right_inv` in terms of the coercions of `Φ` and `Φ.symm`, as
+`OpenPartialHomeomorph.right_inv` does. -/
+theorem right_inv (Φ : PartialDiffeomorph I J M N n) {y : N} (hy : y ∈ Φ.target) :
     Φ (Φ.symm y) = y :=
-  Φ.right_inv hy
+  Φ.toPartialEquiv.right_inv hy
 
 section Trans
 

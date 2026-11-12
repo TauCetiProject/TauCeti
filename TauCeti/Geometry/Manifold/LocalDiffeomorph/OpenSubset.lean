@@ -292,7 +292,7 @@ theorem exists_ambient_of_opens {U : TopologicalSpace.Opens M}
   · -- On the target of `Ψ`, the inverse of `Ψ` is the inclusion.
     have hz' := ((Ψ.trans_target Φ).subset hz).2
     have h := hi.localInverse_right_inv (Ψ.map_target hz')
-    rw [Ψ.right_inv hz'] at h
+    rw [Ψ.toPartialEquiv.right_inv hz'] at h
     rw [coe_trans_symm, Function.comp_apply]
     exact h.symm
 
