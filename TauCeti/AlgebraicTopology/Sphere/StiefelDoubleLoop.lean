@@ -87,7 +87,7 @@ def sphereMeridian (w : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) : Path p (-p) where
     fun_prop
   source' := by
     apply Subtype.ext
-    simp [coe_sphereRotationFamily, Circle.coe_homeomorphSphere_apply]
+    simp [coe_sphereRotationFamily]
   target' := by
     apply Subtype.ext
     simp [coe_sphereRotationFamily, Circle.coe_homeomorphSphere_apply]
@@ -172,10 +172,10 @@ def rotatingMeridianLoop (x : stiefel (ℝ ∙ (p : E))ᗮ 2) :
   continuous_toFun := by fun_prop
   source' := by
     rw [stiefelRotationFamily_of_coe_eq_one]
-    simp [Circle.coe_homeomorphSphere_apply]
+    simp
   target' := by
     rw [stiefelRotationFamily_of_coe_eq_one]
-    simp [Circle.coe_homeomorphSphere_apply]
+    simp
 
 @[simp]
 theorem rotatingMeridianLoop_apply (x : stiefel (ℝ ∙ (p : E))ᗮ 2) (s : I) :

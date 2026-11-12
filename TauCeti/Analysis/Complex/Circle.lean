@@ -73,6 +73,7 @@ theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
   (rfl)
 
 /-- The homeomorphism `Circle ≃ₜ sphere (0 : ℂ) 1` sends `1` to the unit `1` of the sphere. -/
+@[simp]
 theorem homeomorphSphere_one : homeomorphSphere 1 = (1 : sphere (0 : ℂ) 1) :=
   Subtype.ext (by simp)
 

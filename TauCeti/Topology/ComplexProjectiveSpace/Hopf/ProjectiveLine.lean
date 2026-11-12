@@ -11,6 +11,7 @@ public import TauCeti.Topology.Circle.Loop
 public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Exact
 public import TauCeti.Topology.Homotopy.GenLoop.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!
 # The projective-line generator of `π₂(CPⁿ)`
@@ -45,7 +46,7 @@ generator `1` of `ℤ`
 (`TauCeti.ComplexProjectiveSpace.hopfBoundary_congrEquiv_fromDoubleLoop_projectiveLineDoubleLoop`).
 This fixes the sign of the generator. As the boundary is an isomorphism `π₂(CPⁿ) ≅ π₁(S¹)`,
 the class of the projective line generates `π₂(CPⁿ, [v])`
-(`TauCeti.ComplexProjectiveSpace.zpowers_fromDoubleLoop_projectiveLineDoubleLoop`).
+(`TauCeti.ComplexProjectiveSpace.zpowers_fromDoubleLoop_projectiveLineDoubleLoop_eq_top`).
 
 The map `j : S¹ → Ω CPⁿ` adjoint to the projective line
 (`TauCeti.ComplexProjectiveSpace.projectiveLineLoopMap`) is the double loop read as a map from the
@@ -71,7 +72,7 @@ compared by `finSuccEquiv 1`, which sends `0` to `none`.
 
 * `TauCeti.ComplexProjectiveSpace.hopfBoundary_congrEquiv_fromDoubleLoop_projectiveLineDoubleLoop`:
   the Hopf boundary of the projective-line class is the class of the counterclockwise loop.
-* `TauCeti.ComplexProjectiveSpace.zpowers_fromDoubleLoop_projectiveLineDoubleLoop`: the
+* `TauCeti.ComplexProjectiveSpace.zpowers_fromDoubleLoop_projectiveLineDoubleLoop_eq_top`: the
   projective-line class generates `π₂(CPⁿ, [v])`.
 * `TauCeti.ComplexProjectiveSpace.bijective_mapOfEq_projectiveLineLoopMap`: `j` induces a
   bijection `π₁(S¹, 1) → π₁(Ω CPⁿ, refl)`.
@@ -134,18 +135,6 @@ private theorem norm_chord_le (s t : I) : ‖chord s t‖ ≤ 1 := by
     _ = 1 := by ring
 
 /-! ### The Hopf lift of the projective line -/
-
-/-- Two orthogonal unit vectors exist only in `ℂⁿ⁺¹` with `n ≥ 1`: in `ℂ¹` the inner product
-`⟪v, w⟫ = conj (v 0) * w 0` of two unit vectors has norm `1`. -/
-private theorem pos_of_inner_eq_zero (hvw : ⟪(v : EuclideanSpace ℂ (Fin (n + 1))), w⟫ = 0) :
-    0 < n := by
-  obtain _ | n := n
-  · have hv := norm_eq_of_mem_sphere v
-    have hw := norm_eq_of_mem_sphere w
-    rw [EuclideanSpace.norm_eq] at hv hw
-    have := congrArg norm hvw
-    simp_all [PiLp.inner_apply]
-  · exact n.succ_pos
 
 /-- The vector `κ v + √(1 - |κ|²) w` of the Hopf lift, for the chord point `κ = κ(s, t)`. -/
 private def liftVector (v w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) (s t : I) :
@@ -341,8 +330,12 @@ theorem bijective_mapOfEq_projectiveLineLoopMap :
   -- Two orthogonal unit vectors exist only in `ℂⁿ⁺¹` with `n ≥ 1`, where the Hopf boundary
   -- `π₂(CPⁿ) → π₁(S¹)` is an isomorphism.
   have hN : Nat.card (Fin 1) < 2 * n := by
-    have := pos_of_inner_eq_zero hvw
-    simp only [Nat.card_eq_fintype_card, Fintype.card_fin]
+    have h := (linearIndependent_of_ne_zero_of_inner_eq_zero (𝕜 := ℂ)
+      (v := ![(v : EuclideanSpace ℂ (Fin (n + 1))), w])
+      (by simp [Fin.forall_fin_two, ne_zero_of_mem_unit_sphere])
+      (fun i j hij ↦ by
+        fin_cases i <;> fin_cases j <;> simp_all [inner_eq_zero_symm])).fintype_card_le_finrank
+    simp only [Nat.card_eq_fintype_card, Fintype.card_fin, finrank_euclideanSpace_fin] at h ⊢
     omega
   -- The loop-space shift followed by the Hopf boundary, `π₁(Ω CPⁿ) ≃* π₁(S¹)`.
   let Φ := HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.trans
@@ -387,23 +380,14 @@ theorem bijective_mapOfEq_projectiveLineLoopMap :
 
 /-- **The projective line generates `π₂(CPⁿ)`.** The class of the projective-line double loop,
 read as a square, generates `π₂(CPⁿ, [v]) ≅ ℤ`. -/
-theorem zpowers_fromDoubleLoop_projectiveLineDoubleLoop :
+theorem zpowers_fromDoubleLoop_projectiveLineDoubleLoop_eq_top :
     Subgroup.zpowers (G := π_ 2 (ComplexProjectiveSpace n) (mk n v))
       ⟦GenLoop.fromDoubleLoop (projectiveLineDoubleLoop v w hvw)⟧ = ⊤ := by
-  let f : Multiplicative ℤ →* π_ 2 (ComplexProjectiveSpace n) (mk n v) :=
-    HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.toMonoidHom.comp
-      ((FundamentalGroup.mapOfEq _ (projectiveLineLoopMap_one hvw)).comp
-        (Circle.fundamentalGroupMulEquiv 1).symm.toMonoidHom)
-  have hf : Function.Surjective f :=
-    HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.surjective.comp
-      ((bijective_mapOfEq_projectiveLineLoopMap hvw).2.comp
-        (Circle.fundamentalGroupMulEquiv 1).symm.surjective)
-  have h1 : f (Multiplicative.ofAdd 1) =
-      ⟦GenLoop.fromDoubleLoop (projectiveLineDoubleLoop v w hvw)⟧ :=
-    fundamentalGroupLoopSpaceMulEquiv_mapOfEq_projectiveLineLoopMap_ofAdd_one hvw
-  have htop : Subgroup.zpowers (Multiplicative.ofAdd (1 : ℤ)) = ⊤ :=
-    Subgroup.eq_top_iff' _ |>.2 fun x ↦ Subgroup.mem_zpowers_iff.2
-      ⟨x.toAdd, by simp [← ofAdd_zsmul]⟩
-  rw [← h1, ← MonoidHom.map_zpowers, htop, Subgroup.map_top_of_surjective f hf]
+  let e : Multiplicative ℤ ≃* π_ 2 (ComplexProjectiveSpace n) (mk n v) :=
+    (Circle.fundamentalGroupMulEquiv 1).symm.trans
+      ((MulEquiv.ofBijective _ (bijective_mapOfEq_projectiveLineLoopMap hvw)).trans
+        HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv)
+  exact e.symm.zpowers_eq_top_of_apply_eq_ofAdd_one (e.symm_apply_eq.2
+    (fundamentalGroupLoopSpaceMulEquiv_mapOfEq_projectiveLineLoopMap_ofAdd_one hvw).symm)
 
 end TauCeti.ComplexProjectiveSpace
