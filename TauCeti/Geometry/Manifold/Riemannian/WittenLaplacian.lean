@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Witten
 public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
-import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 
 /-!
 # The Witten codifferential and the Witten Laplacian
@@ -46,9 +45,10 @@ Laplacian, from the adjointness of `d_t^*` and `d_t` and from the preservation o
 support. By Green's formulas
 `∫_M ⟨d_t^* d_t α, β⟩ vol = ∫_M ⟨d_t α, d_t β⟩ vol` and
 `∫_M ⟨d_t d_t^* α, β⟩ vol = ∫_M ⟨d_t^* α, d_t^* β⟩ vol`, the Witten Laplacian is formally
-self-adjoint and nonnegative, and a compactly supported form lies in its kernel exactly when it is
-annihilated by both `d_t` and `d_t^*`. In degree `0` this kernel consists of the functions `g` with
-`e^{t f} g` locally constant; in particular `Δ_t e^{-t f} = 0`, and on a compact connected
+self-adjoint and nonnegative, and a compactly supported form of positive degree lies in its kernel
+exactly when it is annihilated by both `d_t` and `d_t^*`. A compactly supported function `g` lies
+in it exactly when `d_t g = 0`, that is, when `e^{t f} g` is locally constant. Every function
+annihilated by `d_t` is Witten-harmonic, so `Δ_t e^{-t f} = 0`, and on a compact preconnected
 boundaryless manifold the Witten-harmonic functions are exactly the multiples of `e^{-t f}`. For
 `f = x²` on the line and `t > 0` this ground state is the Gaussian `e^{-t x²}` of the harmonic
 oscillator.
@@ -66,8 +66,12 @@ The Hilbert-space realization of `Δ_t` as a self-adjoint operator and its spect
 * `TauCeti.integralTopForm_inner_wittenExtDerivₗ_eq_inner_wittenCodifferential`: `d_t^*` is the
   formal adjoint of `d_t`.
 * `TauCeti.wittenCodifferential_comp_wittenCodifferential`: `d_t^* ∘ d_t^* = 0`.
+* `TauCeti.wittenCodifferential_eq_smul_hodgeStar`: `d_t^* = (-1) ^ (m (k + 2) + 1) ⋆ d_{-t} ⋆`.
 * `TauCeti.wittenCodifferential_eq_add_smul`: `d_t^* β = d^* β + t (-1) ^ (m (k + 2)) ⋆(df ∧ ⋆β)`.
 * `TauCeti.wittenLaplacian_zero`: at `t = 0` the Witten Laplacian is the Hodge Laplacian.
+* `TauCeti.integralTopForm_inner_wittenCodifferential_wittenExtDerivₗ`,
+  `TauCeti.integralTopForm_inner_wittenExtDerivₗ_wittenCodifferential`: Green's formulas for
+  `d_t^* d_t` and `d_t d_t^*`.
 * `TauCeti.integralTopForm_inner_wittenLaplacian_eq_inner_wittenLaplacian`: `Δ_t` is formally
   self-adjoint.
 * `TauCeti.integralTopForm_inner_wittenLaplacian_self_nonneg`: `0 ≤ ∫_M ⟨Δ_t α, α⟩ vol`.
@@ -76,7 +80,7 @@ The Hilbert-space realization of `Δ_t` as a self-adjoint operator and its spect
 * `TauCeti.wittenLaplacian_eq_zero_iff_wittenExtDerivₗ_eq_zero`: a compactly supported function is
   Witten-harmonic exactly when `d_t g = 0`.
 * `TauCeti.wittenLaplacian_expSMulEquiv_neg_ofFunction_one`: `Δ_t e^{-t f} = 0`.
-* `TauCeti.wittenLaplacian_eq_zero_iff_exists_eq_smul`: on a compact connected boundaryless
+* `TauCeti.wittenLaplacian_eq_zero_iff_exists_eq_smul`: on a compact preconnected boundaryless
   manifold, `Δ_t g = 0` exactly when `g` is a constant multiple of `e^{-t f}`.
 
 ## References
@@ -182,6 +186,19 @@ theorem wittenCodifferential_comp_wittenCodifferential {l' : ℕ}
     wittenCodifferential o f t hkl ∘ₗ wittenCodifferential o f t hkl' = 0 :=
   LinearMap.ext (wittenCodifferential_wittenCodifferential o f t hkl hkl')
 
+/-- The Witten codifferential is `d_t^* = (-1) ^ (m (k + 2) + 1) ⋆ d_{-t} ⋆`, the formula
+`d^* = (-1) ^ (m (k + 2) + 1) ⋆ d ⋆` of the codifferential with `d` replaced by `d_{-t}`. -/
+theorem wittenCodifferential_eq_smul_hodgeStar (o : Manifold.Orientation I M (Fin m))
+    (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hkl : k + 1 + l = m) (hlk : l + 1 + k = m)
+    (β : SmoothForm I M ℝ (k + 1)) :
+    wittenCodifferential o f t hkl β =
+      (-1 : ℝ) ^ (m * (k + 2) + 1) •
+        SmoothForm.hodgeStar o hlk (wittenExtDerivₗ f (-t) l (SmoothForm.hodgeStar o hkl β)) := by
+  -- `e^{t f} (±⋆ d (e^{-t f} ⋆β)) = e^{t f} (±⋆ e^{-t f} d_{-t} ⋆β) = ±⋆ d_{-t} ⋆β`.
+  rw [wittenCodifferential_def, SmoothForm.codifferential_apply o hkl hlk, hodgeStar_expSMulEquiv,
+    ← expSMulEquiv_wittenExtDerivₗ, hodgeStar_expSMulEquiv, map_smul, ← expSMulEquiv_symm,
+    LinearEquiv.apply_symm_apply]
+
 /-- **The Witten codifferential is the local operator
 `d_t^* β = d^* β + t (-1) ^ (m (k + 2)) ⋆(df ∧ ⋆β)`** on `(k + 1)`-forms, where `df` is the
 exterior derivative of the smooth `0`-form of `f` and the degree `0 + 1 + l` of the wedge is
@@ -197,13 +214,18 @@ theorem wittenCodifferential_eq_add_smul (o : Manifold.Orientation I M (Fin m))
           (M := fun q : ℕ ↦ SmoothForm I M ℝ q) (show 0 + 1 + l = l + 1 by omega)
             (SmoothForm.wedge (mextDerivₗ I 0 (SmoothForm.ofFunction f))
               (SmoothForm.hodgeStar o hkl β))) := by
-  -- `d_t^* β = e^{t f} (±⋆ d (e^{-t f} ⋆β)) = e^{t f} (±⋆ e^{-t f} d_{-t} ⋆β) = ±⋆ d_{-t} ⋆β`.
-  rw [wittenCodifferential_def, SmoothForm.codifferential_apply o hkl hlk, hodgeStar_expSMulEquiv,
-    ← expSMulEquiv_wittenExtDerivₗ, hodgeStar_expSMulEquiv, map_smul, ← expSMulEquiv_symm,
-    LinearEquiv.apply_symm_apply, wittenExtDerivₗ_eq_add_smul, map_add, map_smul, smul_add,
-    ← SmoothForm.codifferential_apply o hkl hlk, smul_smul, pow_succ]
+  rw [wittenCodifferential_eq_smul_hodgeStar o f t hkl hlk, wittenExtDerivₗ_eq_add_smul, map_add,
+    map_smul, smul_add, ← SmoothForm.codifferential_apply o hkl hlk, smul_smul, pow_succ]
   congr 2
   ring
+
+/-- The Witten codifferential does not enlarge supports. -/
+theorem tsupport_wittenCodifferential_subset (o : Manifold.Orientation I M (Fin m))
+    (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hkl : k + 1 + l = m) (β : SmoothForm I M ℝ (k + 1)) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (wittenCodifferential o f t hkl β).1 ⊆
+      _root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] ℝ) β.1 := by
+  rw [wittenCodifferential_def, tsupport_expSMulEquiv, ← tsupport_expSMulEquiv f (-t) β]
+  exact SmoothForm.tsupport_codifferential_subset o hkl _
 
 /-- The Witten codifferential of a compactly supported form is compactly supported. -/
 theorem wittenCodifferential_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
@@ -235,6 +257,34 @@ theorem wittenLaplacian_def (o : Manifold.Orientation I M (Fin m)) (f : C^∞⟮
       SmoothForm.laplacian (wittenExtDerivₗ f t) (fun hkl ↦ wittenCodifferential o f t hkl) hkl :=
   (rfl)
 
+/-- On a zero-dimensional manifold the Witten Laplacian of functions is zero. -/
+@[simp]
+theorem wittenLaplacian_zero_zero (o : Manifold.Orientation I M (Fin m)) (f : C^∞⟮I, M; ℝ⟯)
+    (t : ℝ) (hkl : 0 + 0 = m) (g : SmoothForm I M ℝ 0) : wittenLaplacian o f t hkl g = 0 :=
+  SmoothForm.laplacian_zero_zero _ _ hkl g
+
+/-- In positive dimension the Witten Laplacian of functions is `Δ_t g = d_t^* d_t g`. -/
+theorem wittenLaplacian_zero_add_one (o : Manifold.Orientation I M (Fin m)) (f : C^∞⟮I, M; ℝ⟯)
+    (t : ℝ) (hkl : 0 + (l + 1) = m) (hkl' : 0 + 1 + l = m) (g : SmoothForm I M ℝ 0) :
+    wittenLaplacian o f t hkl g = wittenCodifferential o f t hkl' (wittenExtDerivₗ f t 0 g) :=
+  SmoothForm.laplacian_zero_add_one _ _ hkl hkl' g
+
+/-- In the top degree the Witten Laplacian is `Δ_t α = d_t d_t^* α`. -/
+theorem wittenLaplacian_add_one_zero (o : Manifold.Orientation I M (Fin m)) (f : C^∞⟮I, M; ℝ⟯)
+    (t : ℝ) (hkl : k + 1 + 0 = m) (α : SmoothForm I M ℝ (k + 1)) :
+    wittenLaplacian o f t hkl α = wittenExtDerivₗ f t k (wittenCodifferential o f t hkl α) :=
+  SmoothForm.laplacian_add_one_zero _ _ hkl α
+
+/-- Strictly between degree `0` and the top degree the Witten Laplacian is
+`Δ_t α = d_t^* d_t α + d_t d_t^* α`. -/
+theorem wittenLaplacian_add_one_add_one (o : Manifold.Orientation I M (Fin m))
+    (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hkl : k + 1 + (l + 1) = m) (hkl' : k + 1 + 1 + l = m)
+    (α : SmoothForm I M ℝ (k + 1)) :
+    wittenLaplacian o f t hkl α =
+      wittenCodifferential o f t hkl' (wittenExtDerivₗ f t (k + 1) α) +
+        wittenExtDerivₗ f t k (wittenCodifferential o f t hkl α) :=
+  SmoothForm.laplacian_add_one_add_one _ _ hkl hkl' α
+
 /-- **At `t = 0` the Witten Laplacian is the Hodge Laplacian.** -/
 @[simp]
 theorem wittenLaplacian_zero (o : Manifold.Orientation I M (Fin m)) (f : C^∞⟮I, M; ℝ⟯)
@@ -248,6 +298,14 @@ theorem wittenLaplacian_neg_orientation (o : Manifold.Orientation I M (Fin m))
     (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hkl : k + l = m) :
     wittenLaplacian (-o) f t hkl = wittenLaplacian o f t hkl := by
   simp only [wittenLaplacian_def, wittenCodifferential_neg_orientation]
+
+/-- The Witten Laplacian does not enlarge supports. -/
+theorem tsupport_wittenLaplacian_subset (o : Manifold.Orientation I M (Fin m))
+    (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hkl : k + l = m) (α : SmoothForm I M ℝ k) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (wittenLaplacian o f t hkl α).1 ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α.1 :=
+  SmoothForm.tsupport_laplacian_subset (tsupport_wittenExtDerivₗ_subset f t)
+    (tsupport_wittenCodifferential_subset o f t) hkl α
 
 /-- The Witten Laplacian of a compactly supported form is compactly supported. -/
 theorem wittenLaplacian_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
@@ -265,8 +323,8 @@ theorem wittenLaplacian_expSMulEquiv_neg_ofFunction_one (o : Manifold.Orientatio
     wittenLaplacian o f t hl
       (expSMulEquiv 0 f (-t) (SmoothForm.ofFunction (ContMDiffMap.const 1))) = 0 := by
   rcases l with _ | l
-  · simp [wittenLaplacian_def]
-  · rw [wittenLaplacian_def, SmoothForm.laplacian_zero_add_one _ _ hl (by omega),
+  · simp
+  · rw [wittenLaplacian_zero_add_one o f t hl (by omega),
       wittenExtDerivₗ_expSMulEquiv_neg_ofFunction_one, map_zero]
 
 /-! ### Green's formulas -/
@@ -292,6 +350,39 @@ theorem integralTopForm_inner_wittenExtDerivₗ_eq_inner_wittenCodifferential
   exact SmoothForm.integralTopForm_inner_mextDeriv_eq_inner_codifferential o hkl _ _
     (h.imp (expSMulEquiv_mem_compactlySupportedForms_iff f t).2
       (expSMulEquiv_mem_compactlySupportedForms_iff f (-t)).2)
+
+/-- **Green's formula for `d_t^* d_t`**: on an oriented boundaryless Riemannian manifold,
+`∫_M ⟨d_t^* d_t α, β⟩ vol = ∫_M ⟨d_t α, d_t β⟩ vol` for smooth `k`-forms `α` and `β`, one of them
+compactly supported. -/
+theorem integralTopForm_inner_wittenCodifferential_wittenExtDerivₗ
+    (o : Manifold.Orientation I M (Fin m)) (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hkl : k + 1 + l = m)
+    (α β : SmoothForm I M ℝ k)
+    (h : α ∈ compactlySupportedForms I M k ∨ β ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((wittenCodifferential o f t hkl (wittenExtDerivₗ f t k α)).1 x) (β.1 x) •
+          riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
+        ((wittenExtDerivₗ f t k α).1 x) ((wittenExtDerivₗ f t k β).1 x) •
+          riemannianVolumeForm o x) :=
+  SmoothForm.integralTopForm_inner_codiff_diff o (wittenExtDerivₗ_mem_compactlySupportedForms f t)
+    (integralTopForm_inner_wittenExtDerivₗ_eq_inner_wittenCodifferential o f t) hkl α β h
+
+/-- **Green's formula for `d_t d_t^*`**: on an oriented boundaryless Riemannian manifold,
+`∫_M ⟨d_t d_t^* α, β⟩ vol = ∫_M ⟨d_t^* α, d_t^* β⟩ vol` for smooth `(k + 1)`-forms `α` and `β`,
+one of them compactly supported. -/
+theorem integralTopForm_inner_wittenExtDerivₗ_wittenCodifferential
+    (o : Manifold.Orientation I M (Fin m)) (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hkl : k + 1 + l = m)
+    (α β : SmoothForm I M ℝ (k + 1))
+    (h : α ∈ compactlySupportedForms I M (k + 1) ∨ β ∈ compactlySupportedForms I M (k + 1)) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
+        ((wittenExtDerivₗ f t k (wittenCodifferential o f t hkl α)).1 x) (β.1 x) •
+          riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((wittenCodifferential o f t hkl α).1 x) ((wittenCodifferential o f t hkl β).1 x) •
+          riemannianVolumeForm o x) :=
+  SmoothForm.integralTopForm_inner_diff_codiff o
+    (wittenCodifferential_mem_compactlySupportedForms o f t)
+    (integralTopForm_inner_wittenExtDerivₗ_eq_inner_wittenCodifferential o f t) hkl α β h
 
 /-- **The Dirichlet pairing of the Witten Laplacian**: on an oriented boundaryless Riemannian
 manifold, strictly between degree `0` and the top degree,
@@ -338,8 +429,6 @@ theorem integralTopForm_inner_wittenLaplacian_self_nonneg (o : Manifold.Orientat
     0 ≤ integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
       ((wittenLaplacian o f t hkl α).1 x) (α.1 x) • riemannianVolumeForm o x) :=
   SmoothForm.integralTopForm_inner_laplacian_self_nonneg o
-    (wittenExtDerivₗ_mem_compactlySupportedForms f t)
-    (wittenCodifferential_mem_compactlySupportedForms o f t)
     (integralTopForm_inner_wittenExtDerivₗ_eq_inner_wittenCodifferential o f t) hkl hα
 
 /-! ### Witten-harmonic forms -/
@@ -368,28 +457,15 @@ theorem wittenLaplacian_eq_zero_iff (o : Manifold.Orientation I M (Fin m)) (f : 
     (integralTopForm_inner_wittenExtDerivₗ_eq_inner_wittenCodifferential o f t) hkl hα
 
 omit [SigmaCompactSpace M] in
-/-- **Witten-harmonic functions on a closed connected manifold**: on a compact connected oriented
-boundaryless Riemannian manifold, a smooth function `g` satisfies `Δ_t g = 0` exactly when it is a
-constant multiple of `e^{-t f}`. -/
-theorem wittenLaplacian_eq_zero_iff_exists_eq_smul [CompactSpace M] [ConnectedSpace M]
+/-- **Witten-harmonic functions on a closed preconnected manifold**: on a compact preconnected
+oriented boundaryless Riemannian manifold, a smooth function `g` satisfies `Δ_t g = 0` exactly when
+it is a constant multiple of `e^{-t f}`. -/
+theorem wittenLaplacian_eq_zero_iff_exists_eq_smul [CompactSpace M] [PreconnectedSpace M]
     (o : Manifold.Orientation I M (Fin m)) (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hl : 0 + l = m)
     (g : SmoothForm I M ℝ 0) :
     wittenLaplacian o f t hl g = 0 ↔
-      ∃ c : ℝ, g = c • expSMulEquiv 0 f (-t) (SmoothForm.ofFunction (ContMDiffMap.const 1)) := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · -- `d_t g = 0`, so `e^{t f} g` is locally constant, hence constant on the connected `M`.
-    have hc := (wittenExtDerivₗ_apply_eq_zero_iff_isLocallyConstant (f := f) (t := t) g).1
-      ((wittenLaplacian_eq_zero_iff_wittenExtDerivₗ_eq_zero o f t hl (by simp)).1 h)
-    obtain ⟨x₀⟩ := (inferInstance : Nonempty M)
-    refine ⟨Real.exp (t * f x₀) * g.1 x₀ 0, Subtype.ext <| funext fun x ↦ ?_⟩
-    ext v
-    rw [Subsingleton.elim v 0, ← hc.apply_eq_of_preconnectedSpace x]
-    simp only [Submodule.coe_smul, Pi.smul_apply, coe_expSMulEquiv,
-      ContinuousAlternatingMap.smul_apply, SmoothForm.coe_ofFunction, RoughForm.ofFunction_apply,
-      ContMDiffMap.const_apply, smul_eq_mul, mul_one]
-    rw [mul_right_comm, ← Real.exp_add]
-    simp
-  · rintro ⟨c, rfl⟩
-    rw [map_smul, wittenLaplacian_expSMulEquiv_neg_ofFunction_one, smul_zero]
+      ∃ c : ℝ, g = c • expSMulEquiv 0 f (-t) (SmoothForm.ofFunction (ContMDiffMap.const 1)) :=
+  (wittenLaplacian_eq_zero_iff_wittenExtDerivₗ_eq_zero o f t hl (by simp)).trans
+    (wittenExtDerivₗ_apply_eq_zero_iff_exists_eq_smul g)
 
 end TauCeti
