@@ -43,7 +43,6 @@ theorem floor_pow_mul_eq_div (x : K) {b : ℕ} (hb : b ≠ 0) (m d : ℕ) :
     ⌊(b : K) ^ m * x⌋₊ = ⌊(b : K) ^ (m + d) * x⌋₊ / b ^ d := by
   rw [← Nat.floor_div_natCast]
   congr 1
-  have hb' : (b : K) ≠ 0 := Nat.cast_ne_zero.2 hb
   push_cast
   rw [pow_add]
   field_simp
