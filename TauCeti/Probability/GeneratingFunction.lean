@@ -367,7 +367,7 @@ theorem integrable_descFactorial_of_integrable_pow_natCast {ν : Measure ℕ} {n
 theorem integrable_descFactorial_of_integrable_exp_mul_natCast {ν : Measure ℕ} {t : ℝ}
     (ht : 0 < t) (hExp : Integrable (fun k : ℕ => Real.exp (t * (k : ℝ))) ν) (n : ℕ) :
     Integrable (fun k : ℕ => (k.descFactorial n : ℝ)) ν := by
-  let _ : IsFiniteMeasure ν := isFiniteMeasure_of_integrable_of_one_le hExp <|
+  let _ : IsFiniteMeasure ν := hExp.isFiniteMeasure_of_one_le_norm <|
     Filter.Eventually.of_forall fun k => by
       rw [Real.norm_eq_abs, Real.abs_exp]
       exact Real.one_le_exp (mul_nonneg ht.le (Nat.cast_nonneg k))

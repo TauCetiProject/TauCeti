@@ -183,7 +183,7 @@ private lemma cupLift_union_component {W D : Set X} (hDW : D ⊆ W) {i : Fin 2}
     _ u μ p q n h _ _).trans (congrArg
       (fun a ↦ cupCochain k ((TopPair.ofInclusion hDW).rightAlexanderWhitneyDiagonal u)
         μ p q n h a _) ?_)
-  refine chainComplexMap_f_comp_subtypeVal _ ?_ _ z
+  refine chainComplexMap_f_comp_subtypeVal_assoc _ ?_ _ z
   exact fun x ↦ congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)
 
 omit [MonoidalCategory C] [MonoidalPreadditive C] [MonoidalLinear k C] in
