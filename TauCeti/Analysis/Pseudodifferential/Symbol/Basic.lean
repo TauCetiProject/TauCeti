@@ -56,8 +56,9 @@ symbols are closed under the operations above, and they form a two-sided ideal u
 (`TauCeti.Symbol.IsSmoothing.comp_right`, `TauCeti.Symbol.IsSmoothing.comp_left`). A smooth
 coefficient vanishing at all large frequencies is smoothing
 (`TauCeti.Symbol.isSmoothing_ofBoundedFrequencySupport`,
-`TauCeti.Symbol.isSmoothing_of_coefficient_eq_zero`), while in positive dimension a nonzero
-constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
+`TauCeti.Symbol.isSmoothing_of_coefficient_eq_zero`), also when the frequency radius depends on a
+compact set of positions (`TauCeti.Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero`),
+while in positive dimension a nonzero constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
 
 The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
 by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`), and commutes with
@@ -1320,6 +1321,45 @@ theorem isSmoothing_ofBoundedFrequencySupport
 theorem isSmoothing_of_coefficient_eq_zero {a : Symbol n V W m} (R : ℝ)
     (ha : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing :=
   fun _ => ⟨ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R ha, rfl⟩
+
+/-- A symbol is smoothing if, for positions in each compact set, it vanishes at all large enough
+frequencies. Unlike `TauCeti.Symbol.isSmoothing_of_coefficient_eq_zero`, the frequency radius may
+grow with the compact set, as for the difference `(χ(M(x) ξ) - χ(ξ)) a(x, ξ)` of two cutoffs
+related by a position-dependent linear change of frequency. -/
+theorem isSmoothing_of_forall_isCompact_coefficient_eq_zero {a : Symbol n V W m}
+    (ha : ∀ K : Set (CoordinateSpace n), IsCompact K →
+      ∃ R, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) :
+    a.IsSmoothing := by
+  intro m'
+  refine ⟨⟨a.coefficient, a.contDiff_coefficient, fun K hK α β => ?_⟩, rfl⟩
+  -- The radius for the unit neighbourhood of `K` makes every mixed derivative vanish at larger
+  -- frequencies over `K`; on `K ×ˢ closedBall 0 R` the derivative divided by the weight is
+  -- continuous, hence bounded.
+  obtain ⟨R, hR⟩ := ha _ (hK.cthickening (r := 1))
+  have hw : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
+      (1 + ‖p.2‖ ^ 2) ^ ((m' - β.length) / 2) :=
+    (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun p =>
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2‖ ^ 2).ne'
+  have hKR := hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R)
+  obtain ⟨C, hC⟩ := hKR.exists_bound_of_continuousOn
+    ((a.contDiff_coefficient.mixedDeriv α β).continuous.norm.div hw
+      fun p => (rpow_weight_pos p.2 _).ne').continuousOn
+  refine ⟨max C 0, le_max_right _ _, fun x hx ξ => ?_⟩
+  rcases le_or_gt ‖ξ‖ R with hξ | hξ
+  · have h := (le_abs_self _).trans ((hC (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩).trans
+      (le_max_left C 0))
+    rwa [Pi.div_apply, div_le_iff₀ (rpow_weight_pos ξ _)] at h
+  · have hzero : (fun y => coordinateDeriv β (fun η => a.coefficient (y, η)) ξ) =ᶠ[nhds x] 0 := by
+      filter_upwards [Metric.ball_mem_nhds x one_pos] with y hy
+      have hy' : (fun η => a.coefficient (y, η)) =ᶠ[nhds ξ] 0 :=
+        Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
+          fun η hη => hR y (Metric.mem_cthickening_of_dist_le y x 1 K hx
+            (Metric.mem_ball.1 hy).le) η (le_of_lt hη)
+      rw [(hy'.coordinateDeriv β).eq_of_nhds, coordinateDeriv_zero]
+      rfl
+    rw [mixedDeriv_def, (hzero.coordinateDeriv α).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply,
+      norm_zero]
+    exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
 
 /-- A smooth coefficient that agrees with a symbol `b` of order `m` at all frequencies of norm at
 least `R` is itself a symbol of order `m`: the difference vanishes at large frequencies. -/
