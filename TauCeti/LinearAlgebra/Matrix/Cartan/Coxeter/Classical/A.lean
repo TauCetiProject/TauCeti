@@ -96,8 +96,7 @@ theorem eq_one_of_permMatrixHom_mul_epsMatrix (hn : 1 ≤ n) {τ : Equiv.Perm (F
       simp only [epsMatrix, Matrix.of_apply] at this
       ext
       split_ifs at this <;> omega
-    · have hb' : b.val = n := by omega
-      have := hcol b ⟨n - 1, by omega⟩
+    · have := hcol b ⟨n - 1, by omega⟩
       simp only [epsMatrix, Matrix.of_apply] at this
       ext
       split_ifs at this <;> omega
