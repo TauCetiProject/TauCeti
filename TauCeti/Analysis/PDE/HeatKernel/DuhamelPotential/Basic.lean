@@ -252,7 +252,7 @@ private theorem exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le_one :
       ∀ᵐ s ∂volume.restrict (Ι 0 t), ∀ x,
         ‖iteratedFDeriv ℝ 1 (heatKernel (t - s) ⋆ f s) x‖ ≤ C * M * (t - s) ^ (-1 / 2 : ℝ) := by
   obtain ⟨C, hC⟩ := exists_integral_norm_iteratedFDeriv_heatKernel_le (E := E) 1
-  refine ⟨C, fun {f M t} hf hfM ht => ?_⟩
+  refine ⟨C, fun {f M t} _ hfM ht => ?_⟩
   filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM] with s hs x
   have hts : 0 < t - s := sub_pos.2 hs.1.2
   refine (norm_iteratedFDeriv_heatKernel_convolution_le hts hs.2 1 x).trans ?_
@@ -338,7 +338,7 @@ private theorem exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le {α : �
           C * H * (t - s) ^ (((α : ℝ) - m) / 2) := by
   obtain ⟨C, hC₀, hC⟩ :=
     exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le (E := E) m α.coe_nonneg
-  refine ⟨C, hC₀.le, fun {f M t H} hf hfM hH ht => ?_⟩
+  refine ⟨C, hC₀.le, fun {f M t H} _ hfM hH ht => ?_⟩
   have hH' : ∀ᵐ s ∂volume.restrict (Ι 0 t), HolderWith H α (f s) := by
     rwa [uIoc_of_le ht.le, ← restrict_Ioo_eq_restrict_Ioc]
   filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM, hH'] with s hs hsH x
@@ -609,7 +609,7 @@ private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_tim
           C * H * (t - t') * (t' - s) ^ (((α : ℝ) - 4) / 2) := by
   obtain ⟨K, hK₀, hK⟩ :=
     exists_integral_norm_iteratedFDeriv_heatKernel_sub_mul_rpow_le (E := E) 2 α.coe_nonneg
-  refine ⟨K, hK₀.le, fun {f M t t' H} hf hfM hH htt' => ?_⟩
+  refine ⟨K, hK₀.le, fun {f M t t' H} _ hfM hH htt' => ?_⟩
   have hae : ∀ᵐ s ∂volume.restrict (Ioo 0 t), (∀ᵐ y, ‖f s y‖ ≤ M) ∧ HolderWith H α (f s) := by
     filter_upwards [hfM, hH] with s hsM hsH using ⟨hsM, hsH⟩
   rw [ae_restrict_iff' measurableSet_Ioo] at hae
