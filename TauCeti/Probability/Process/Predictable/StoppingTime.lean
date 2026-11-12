@@ -163,17 +163,17 @@ theorem _root_.NNReal.isAnnouncingSequence_const (t : ℝ≥0) :
     IsAnnouncingSequence ℱ (fun n _ ↦ (t - 1 / (n + 1 : ℝ≥0) : ℝ≥0))
       (fun _ ↦ (t : WithTop ℝ≥0)) := by
   refine ⟨fun n ↦ isStoppingTime_const ℱ (t - 1 / (n + 1)), ?_, ?_, ?_⟩
-  · intro ω n k hnk
+  · intro _ n k hnk
     apply WithTop.coe_le_coe.mpr
     exact tsub_le_tsub_left (one_div_le_one_div_of_le (by positivity)
       (by exact_mod_cast Nat.add_le_add_right hnk 1)) t
-  · intro ω
+  · intro _
     have hi : Tendsto (fun n : ℕ ↦ (1 : ℝ≥0) / (n + 1)) atTop (𝓝 0) :=
       tendsto_one_div_add_atTop_nhds_zero_nat
     have hl : Tendsto (fun n : ℕ ↦ t - 1 / (n + 1 : ℝ≥0)) atTop (𝓝 t) := by
       simpa using tendsto_const_nhds.sub hi
     exact WithTop.continuous_coe.continuousAt.tendsto.comp hl
-  · intro n ω ht
+  · intro n _ ht
     exact WithTop.coe_lt_coe.mpr (tsub_lt_self (WithTop.coe_lt_coe.mp ht) (by positivity))
 
 /-- The constant zero sequence announces time zero. -/
@@ -183,9 +183,9 @@ theorem zero : IsAnnouncingSequence ℱ (fun _ _ ↦ 0) (fun _ ↦ 0) := by
 /-- The deterministic integer times announce infinity. -/
 theorem top : IsAnnouncingSequence ℱ (fun n _ ↦ (n : ℝ≥0)) (fun _ ↦ ⊤) := by
   refine ⟨fun n ↦ isStoppingTime_const ℱ n, ?_, ?_, by simp⟩
-  · intro ω n k hnk
+  · intro _ n k hnk
     exact WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hnk)
-  · intro ω
+  · intro _
     exact WithTop.tendsto_coe_atTop.comp tendsto_natCast_atTop_atTop
 
 /-- Pasting announcing sequences along an event known at time zero announces the pasted time. -/
@@ -267,7 +267,7 @@ theorem finsetInf {ι : Type*} {s : Finset ι} {θ : ι → Ω → WithTop ℝ�
   classical
   induction s using Finset.induction_on with
   | empty => simp
-  | @insert i s hi ih =>
+  | @insert i s _ ih =>
     simpa only [Finset.inf_insert] using
       (hθ i (Finset.mem_insert_self i s)).min
         (ih fun j hj ↦ hθ j (Finset.mem_insert_of_mem hj))
@@ -279,7 +279,7 @@ theorem finsetSup {ι : Type*} {s : Finset ι} {θ : ι → Ω → WithTop ℝ�
   classical
   induction s using Finset.induction_on with
   | empty => simp
-  | @insert i s hi ih =>
+  | @insert i s _ ih =>
     simpa only [Finset.sup_insert] using
       (hθ i (Finset.mem_insert_self i s)).max
         (ih fun j hj ↦ hθ j (Finset.mem_insert_of_mem hj))
