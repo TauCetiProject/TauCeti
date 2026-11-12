@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
-public import TauCeti.Geometry.Manifold.Instances.AddCircle
+public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
@@ -39,7 +39,6 @@ These are the inputs for computing the flux of the translations of a torus.
 
 ## Main results
 
-* `AddCircle.mfderiv_pi_add_right`: translations of the torus have derivative the identity.
 * `TauCeti.final_torusTranslationDiffeotopy_eq_refl_iff`: the translation diffeotopy is a loop
   exactly when `v` lies in the period lattice.
 * `TauCeti.mfderiv_cylinderMap_torusTranslationDiffeotopy_apply`: the derivative of its motion;
@@ -58,36 +57,6 @@ public section
 noncomputable section
 
 open scoped Manifold ContDiff
-
-namespace AddCircle
-
-variable {ι : Type*} [Fintype ι] {p : ι → ℝ} [∀ i, Fact (0 < p i)]
-
-/-- Every translation `x ↦ x + a` of the torus `∀ i, AddCircle (p i)` has derivative the identity
-of `ι → ℝ`, the tangent spaces of the torus being read in its product charts. -/
-theorem hasMFDerivAt_pi_add_right (a x : ∀ i, AddCircle (p i)) :
-    HasMFDerivAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (· + a) x (ContinuousLinearMap.id ℝ (ι → ℝ)) := by
-  -- Each component is the projection followed by a translation of a circle, whose derivative is
-  -- the identity of `ℝ`.
-  have h (i : ι) : HasMFDerivAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) 𝓘(ℝ)
-      (fun z : ∀ i, AddCircle (p i) ↦ (z + a) i) x (ContinuousLinearMap.proj i) := by
-    have h₁ := ((contMDiff_add_right (I := 𝓘(ℝ)) (n := 1) (a := a i)).mdifferentiableAt
-      one_ne_zero (x := x i)).hasMFDerivAt
-    refine (h₁.comp x (TauCeti.hasMFDerivAt_apply i x)).congr_mfderiv ?_
-    rw [mfderiv_add_right]
-    rfl
-  exact (TauCeti.hasMFDerivAt_pi h).congr_mfderiv (by ext w i; rfl)
-
-/-- Every translation `x ↦ x + a` of the torus `∀ i, AddCircle (p i)` has derivative the identity
-of `ι → ℝ`. -/
-@[simp]
-theorem mfderiv_pi_add_right (a x : ∀ i, AddCircle (p i)) :
-    mfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (· + a) x = ContinuousLinearMap.id ℝ (ι → ℝ) :=
-  (hasMFDerivAt_pi_add_right a x).mfderiv
-
-end AddCircle
 
 namespace TauCeti
 
@@ -201,7 +170,11 @@ theorem mfderiv_cylinderMap_torusTranslationDiffeotopy_apply (x : ∀ i, AddCirc
   -- The spatial slice is a translation and the time slice has velocity `v`.
   dsimp only
   rw [AddCircle.mfderiv_pi_add_right, (hasMFDerivAt_add_shift_time p v x t).mfderiv]
-  rfl
+  -- The tangent spaces are type synonyms of `ι → ℝ`, so `id_apply` and `comp_apply` match the goal
+  -- only up to unfolding them, which `exact` does and `rw` does not.
+  exact congrArg₂ (· + ·) (ContinuousLinearMap.id_apply (R₁ := ℝ) w)
+    (ContinuousLinearMap.comp_apply (ContinuousLinearMap.toSpanSingleton ℝ v)
+      (mfderiv (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : unitInterval → ℝ) t) τ)
 
 /-- **The velocity of a translation diffeotopy.** On the unit time vector of `[0, 1]`, the
 derivative of the motion `(x, t) ↦ x + [t v]` is `v`: at every time, including the two ends, the
@@ -214,8 +187,8 @@ theorem mfderiv_cylinderMap_torusTranslationDiffeotopy_apply_one (x : ∀ i, Add
         (torusTranslationDiffeotopy (n := n) p v).cylinderMap (x, t)
         ((0 : ι → ℝ), (1 : TangentSpace (𝓡∂ 1) t)) = v := by
   rw [mfderiv_cylinderMap_torusTranslationDiffeotopy_apply, mfderiv_subtypeVal_Icc_one]
-  -- The unit tangent vector of `ℝ` is the real number `1`, and `toSpanSingleton ℝ v 1 = 1 • v`.
-  exact (zero_add _).trans (one_smul ℝ v)
+  -- The unit tangent vector of `ℝ` is the real number `1`.
+  exact (zero_add _).trans (ContinuousLinearMap.toSpanSingleton_apply_one ℝ v)
 
 /-- **The spatial derivative of a translation diffeotopy.** Restricted to spatial tangent
 vectors, the derivative of the motion `(x, t) ↦ x + [t v]` is the identity: every slice of the
@@ -231,7 +204,7 @@ theorem mfderiv_cylinderMap_torusTranslationDiffeotopy_comp_inl (x : ∀ i, AddC
   ext w : 1
   refine (mfderiv_cylinderMap_torusTranslationDiffeotopy_apply p v x t w 0).trans ?_
   rw [map_zero]
-  -- The tangent vector `0` of `ℝ` is the real number `0`, and `toSpanSingleton ℝ v 0 = 0 • v`.
-  exact (congrArg (w + ·) (zero_smul ℝ v)).trans (add_zero w)
+  -- The tangent vector `0` of `ℝ` is the real number `0`.
+  exact (congrArg (w + ·) (map_zero (ContinuousLinearMap.toSpanSingleton ℝ v))).trans (add_zero w)
 
 end TauCeti

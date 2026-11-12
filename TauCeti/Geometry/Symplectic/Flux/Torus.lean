@@ -86,7 +86,8 @@ theorem fluxForm_torusTranslationDiffeotopy_apply
     ((β.curryLeft v).compContinuousLinearMap (ContinuousLinearMap.id ℝ (ι → ℝ)))).trans ?_
   rw [sub_zero, one_smul]
   -- Composing with the identity map changes nothing.
-  rfl
+  ext w
+  simp [ContinuousAlternatingMap.compContinuousLinearMap_apply]
 
 /-- The final diffeomorphism of a translation diffeotopy, a translation of the torus, preserves
 every two-form with constant coefficients. -/
@@ -111,10 +112,8 @@ variable (p : Fin 2 → ℝ) [∀ i, Fact (0 < p i)] (v : Fin 2 → ℝ) (A : �
 /-- The area form `A dt_0 ∧ dt_1` of the two-torus has constant coefficients. -/
 private theorem smul_torusVolumeForm_apply_eq (x : ∀ i, AddCircle (p i)) :
     ((A • torusVolumeForm p).1 x : (Fin 2 → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) =
-      (A • torusVolumeForm p).1 0 := by
-  ext w
-  -- Both sides are `A` times the determinant of `w`, read at the points `x` and `0`.
-  exact congrArg (A • ·) ((torusVolumeForm_apply p x w).trans (torusVolumeForm_apply p 0 w).symm)
+      (A • torusVolumeForm p).1 0 :=
+  congrArg (A • ·) (torusVolumeForm_apply_eq_apply_zero p x)
 
 /-- **The flux form of a translation of the two-torus.** For the area form `A dt_0 ∧ dt_1`, the
 translation diffeotopy along `v` has the constant flux form `A (v 0 dt_1 - v 1 dt_0)`. -/
@@ -126,15 +125,14 @@ theorem fluxForm_torusTranslationDiffeotopy_smul_torusVolumeForm :
   ext w
   refine (ContinuousAlternatingMap.curryLeft_apply_apply _ v w).trans ?_
   -- Both sides are `A` times a `2 × 2` determinant, read through the formulas for the volume form
-  -- and for the coordinate time forms.
+  -- and for the coordinate time forms. These are instantiated at `w` explicitly, since the forms
+  -- take values in tangent-space fibres where `simp` cannot apply them.
   have hL := congrArg (A • ·) (torusVolumeForm_apply p 0 (Matrix.vecCons v w))
   have hR := congrArg (A • ·) (congrArg₂ (fun a b : ℝ ↦ v 0 • a - v 1 • b)
     (torusTimeForm_apply p 1 x w) (torusTimeForm_apply p 0 x w))
   refine hL.trans (Eq.trans ?_ hR.symm)
-  rw [Matrix.det_fin_two]
-  congr 1
-  -- The columns of the matrix are `v` and `w 0`.
-  exact (by ring : v 0 * w 0 1 - w 0 0 * v 1 = v 0 * w 0 1 - v 1 * w 0 0)
+  simp only [Matrix.det_fin_two, Matrix.of_apply, Matrix.cons_val, smul_eq_mul]
+  ring
 
 /-- The flux form `A (v 0 dt_1 - v 1 dt_0)` as a constant-coefficient combination of the coordinate
 time forms. -/
