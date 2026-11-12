@@ -6,7 +6,7 @@ Authors: Bastiaan J Braams
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Analysis.Asymptotics.Lemmas
+public import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
 # Asymptotic scales and asymptotic expansions
@@ -26,6 +26,10 @@ remainder estimate `HasAsymptoticExpansion.isLittleO` and for uniqueness of the 
 * `Asymptotics.HasAsymptoticExpansion l φ a f`: for every `N`,
   `f - ∑ n < N, φ n • a n =O[l] φ N`.
 
+Both definitions are characterized by `isAsymptoticScale_iff` and `hasAsymptoticExpansion_iff`,
+with introduction lemmas `IsAsymptoticScale.of_isLittleO`, `HasAsymptoticExpansion.of_isBigO` and
+elimination lemmas `IsAsymptoticScale.isLittleO`, `HasAsymptoticExpansion.isBigO`.
+
 ## Main results
 
 * `Asymptotics.HasAsymptoticExpansion.congr'`, `congr_coeff`, `congr_scale`: congruence.
@@ -43,7 +47,7 @@ The definitions and proofs are adapted from the lean-DLMF project
 `DLMFMathlib/Analysis/Asymptotics/AsymptoticExpansion.lean`.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -64,9 +68,32 @@ after the first `N` terms is `O(φ N)` along `l`. -/
 def HasAsymptoticExpansion (l : Filter α) (φ : ℕ → α → 𝕜) (a : ℕ → E) (f : α → E) : Prop :=
   ∀ N, (fun x => f x - ∑ n ∈ range N, φ n x • a n) =O[l] φ N
 
+/-- The defining property of an asymptotic scale. -/
+theorem isAsymptoticScale_iff : IsAsymptoticScale l φ ↔ ∀ n, φ (n + 1) =o[l] φ n := Iff.rfl
+
+/-- Introduction rule for asymptotic scales. -/
+theorem IsAsymptoticScale.of_isLittleO (h : ∀ n, φ (n + 1) =o[l] φ n) : IsAsymptoticScale l φ := h
+
+/-- Each function of an asymptotic scale is little-o of its predecessor. -/
+theorem IsAsymptoticScale.isLittleO (hφ : IsAsymptoticScale l φ) (n : ℕ) :
+    φ (n + 1) =o[l] φ n := hφ n
+
+/-- The defining property of an asymptotic expansion. -/
+theorem hasAsymptoticExpansion_iff {a : ℕ → E} {f : α → E} :
+    HasAsymptoticExpansion l φ a f ↔
+      ∀ N, (fun x => f x - ∑ n ∈ range N, φ n x • a n) =O[l] φ N := Iff.rfl
+
 namespace HasAsymptoticExpansion
 
 variable {a b : ℕ → E} {f g : α → E}
+
+/-- Introduction rule for asymptotic expansions. -/
+theorem of_isBigO (h : ∀ N, (fun x => f x - ∑ n ∈ range N, φ n x • a n) =O[l] φ N) :
+    HasAsymptoticExpansion l φ a f := h
+
+/-- The remainder after the first `N` terms of an asymptotic expansion is `O(φ N)`. -/
+theorem isBigO (hf : HasAsymptoticExpansion l φ a f) (N : ℕ) :
+    (fun x => f x - ∑ n ∈ range N, φ n x • a n) =O[l] φ N := hf N
 
 /-- An expansion passes to a function that agrees eventually along `l`. -/
 theorem congr' (hf : HasAsymptoticExpansion l φ a f) (hfg : f =ᶠ[l] g) :
@@ -114,20 +141,24 @@ theorem comp_tendsto {β : Type*} {l' : Filter β} {g : β → α}
     HasAsymptoticExpansion l' (fun n x => φ n (g x)) a (f ∘ g) :=
   fun N => (hf N).comp_tendsto hg
 
+/-- Expansions in a common scale add coefficientwise: `f + g` has coefficients `a + b`. -/
 theorem add (hf : HasAsymptoticExpansion l φ a f) (hg : HasAsymptoticExpansion l φ b g) :
     HasAsymptoticExpansion l φ (a + b) (f + g) := fun N =>
   ((hf N).add (hg N)).congr_left fun x => by
     simp only [Pi.add_apply, smul_add, sum_add_distrib]; abel
 
+/-- A constant multiple `c • f` has the coefficients `c • a`. -/
 theorem const_smul (hf : HasAsymptoticExpansion l φ a f) (c : 𝕜) :
     HasAsymptoticExpansion l φ (c • a) (c • f) := fun N =>
   ((hf N).const_smul_left c).congr_left fun x => by
     simp only [Pi.smul_apply, smul_sub, smul_sum, smul_comm c (φ _ x)]
 
+/-- `-f` has the coefficients `-a`. -/
 theorem neg (hf : HasAsymptoticExpansion l φ a f) :
     HasAsymptoticExpansion l φ (-a) (-f) := by
   simpa using hf.const_smul (-1 : 𝕜)
 
+/-- Expansions in a common scale subtract coefficientwise: `f - g` has coefficients `a - b`. -/
 theorem sub (hf : HasAsymptoticExpansion l φ a f) (hg : HasAsymptoticExpansion l φ b g) :
     HasAsymptoticExpansion l φ (a - b) (f - g) := by
   simpa [sub_eq_add_neg] using hf.add hg.neg
@@ -143,16 +174,6 @@ theorem sub_smul_isLittleO (hφ : IsAsymptoticScale l φ) (hf : HasAsymptoticExp
   (hf.isLittleO hφ N).congr_left fun x => by rw [sum_range_succ]; abel
 
 end HasAsymptoticExpansion
-
-/-- If `ψ` is frequently nonzero along `l` and `ψ • c = o(ψ)`, then `c = 0`. -/
-theorem eq_zero_of_smul_isLittleO {ψ : α → 𝕜} {c : E} (hψ : ∃ᶠ x in l, ψ x ≠ 0)
-    (h : (fun x => ψ x • c) =o[l] ψ) : c = 0 := by
-  by_contra hc
-  have hcpos : 0 < ‖c‖ := norm_pos_iff.mpr hc
-  obtain ⟨x, hx, hψx⟩ := (hψ.and_eventually (h.def (half_pos hcpos))).exists
-  rw [norm_smul] at hψx
-  have hψpos : 0 < ‖ψ x‖ := norm_pos_iff.mpr hx
-  nlinarith
 
 /-- The coefficients of an expansion in an asymptotic scale whose functions are each frequently
 nonzero along `l` are unique. -/
