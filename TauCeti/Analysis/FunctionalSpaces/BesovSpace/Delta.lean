@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
+import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
 
@@ -56,21 +57,13 @@ namespace TemperedDistribution
 
 variable (φ : ContDiffBump (0 : E))
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The piece `ψⱼ` of the partition, smooth and compactly supported, is a Schwartz function. -/
-private theorem exists_schwartzMap_coe_eq (j : ℕ) :
-    ∃ σ : 𝓢(E, ℂ), (σ : E → ℂ) = fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
-  have hσ := (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_left Complex.ofReal_zero
-  exact ⟨hσ.toSchwartzMap (Complex.ofRealCLM.contDiff.comp
-    (φ.contDiff_inhomogeneousLittlewoodPaley j)),
-    funext (HasCompactSupport.toSchwartzMap_toFun _ _)⟩
-
 /-- **The blocks of the Dirac mass are the Littlewood–Paley kernels.** For every `1 ≤ p ≤ ∞`, the
 block `Δⱼ δ₀` is the `Lᵖ` function `𝓕⁻ ψⱼ`, since the Fourier transform of `δ₀` is `1`. -/
 theorem exists_littlewoodPaleyBlock_delta_eq (j : ℕ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     ∃ f : Lp ℂ p (volume : Measure E), littlewoodPaleyBlock ℂ φ j (delta 0) = f ∧
       f =ᵐ[volume] 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
-  obtain ⟨σ, hσ⟩ := exists_schwartzMap_coe_eq φ j
+  set σ := φ.inhomogeneousLittlewoodPaleySchwartz j
+  have hσ : (σ : E → ℂ) = _ := φ.coe_inhomogeneousLittlewoodPaleySchwartz j
   refine ⟨(𝓕⁻ σ).toLp p, ?_, ?_⟩
   · rw [Lp.toTemperedDistribution_toLp_eq, ← fourierInv_toTemperedDistributionCLM_eq,
       littlewoodPaleyBlock_apply, fourierMultiplierCLM_apply, fourier_delta_zero]
@@ -87,7 +80,8 @@ point `ξ` with `‖ξ‖ = φ.rOut`, `ψ₁ ξ = φ (ξ / 2) - φ ξ = φ (ξ /
 private theorem norm_pos_of_ae_eq_fourierInv_inhomogeneousLittlewoodPaley_one [Nontrivial E]
     {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : Lp ℂ p (volume : Measure E)}
     (hf : f =ᵐ[volume] 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) : 0 < ‖f‖ := by
-  obtain ⟨σ, hσ⟩ := exists_schwartzMap_coe_eq φ 1
+  set σ := φ.inhomogeneousLittlewoodPaleySchwartz 1
+  have hσ : (σ : E → ℂ) = _ := φ.coe_inhomogeneousLittlewoodPaleySchwartz 1
   refine norm_pos_iff.2 fun hf0 ↦ ?_
   -- `𝓕⁻ σ` is continuous and vanishes almost everywhere, hence it is `0`, and so is `σ`.
   subst hf0

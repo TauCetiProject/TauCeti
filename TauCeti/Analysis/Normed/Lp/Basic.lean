@@ -21,9 +21,9 @@ the `ℓ^q` norm of a sequence is at most its `ℓᵖ` norm (`lp.norm_le_norm_of
 form of Mathlib's inclusion `Memℓp.of_exponent_ge`. A sequence indexed by `ℕ` whose terms are
 bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓᵖ` with `p ≠ 0`
 (`Memℓp.of_norm_le_geometric`), and for `1 ≤ p` its `ℓᵖ` norm is at most `C (1 - r)⁻¹`
-(`lp.norm_le_of_norm_le_geometric`). Conversely, a nonzero geometric sequence `C rⁱ` lies in
-`ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞` (`memℓp_const_mul_pow_iff`). The scalar
-coordinate vectors are linearly independent, and vectors in their span vanish outside the
+(`lp.norm_le_of_norm_le_geometric`). Conversely, for `p ≠ 0` a nonzero geometric sequence `C rⁱ`
+lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞` (`memℓp_const_mul_pow_iff`). The
+scalar coordinate vectors are linearly independent, and vectors in their span vanish outside the
 corresponding indices. These algebraic facts hold over
 normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
 vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
