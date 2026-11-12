@@ -55,6 +55,8 @@ the unit tangent vector at every time.
 * `TauCeti.homotopyOperator`: the homotopy operator `h`.
 * `TauCeti.IsSmoothForm.homotopyOperator`: `h` preserves `C^r` regularity.
 * `TauCeti.homotopyOperator_add`: `h` is additive on continuous forms.
+* `TauCeti.homotopyOperator_mpullback_apply_eq_zero`: `h (H^* σ)` vanishes over every point at
+  which `H` is stationary in time.
 * `TauCeti.homotopyOperator_mpullback_fst`: `h` vanishes on forms pulled back from `M` along the
   projection `M × [0, 1] → M`.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id`: `h` commutes with pullback along `g × id` for
@@ -137,15 +139,34 @@ theorem homotopyOperator_apply_eq_zero
       fun i ↦ ((w i : E), (0 : EuclideanSpace ℝ (Fin 1)))) = 0
   exact h _ _
 
+/-- The homotopy operator of a pullback `H^* σ` vanishes at every point `x` over which the map
+`H : M × [0, 1] → N` is stationary in time: when `H (x, t)` does not depend on `t`, the derivative
+of `H` kills the unit time vector `∂ₜ` at every `(x, t)`. -/
+theorem homotopyOperator_mpullback_apply_eq_zero {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] {H : M × Icc (0 : ℝ) 1 → N} {x : M} (hx : ∀ t, H (x, t) = H (x, 0))
+    (σ : RoughForm I' N F (k + 1)) :
+    homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I' H σ) x = 0 := by
+  refine homotopyOperator_apply_eq_zero fun t v ↦ ?_
+  rw [mpullback_apply]
+  refine (σ (H (x, t))).map_coord_zero 0 ?_
+  -- Where `H` is differentiable, its derivative on `∂ₜ` is the derivative of the constant map
+  -- `s ↦ H (x, s)`; elsewhere the derivative is zero.
+  by_cases hH : MDifferentiableAt (I.prod (𝓡∂ 1)) I' H (x, t)
+  · have hconst : (fun s : Icc (0 : ℝ) 1 ↦ H (x, s)) = fun _ ↦ H (x, 0) := funext hx
+    have h : mfderiv (I.prod (𝓡∂ 1)) I' H (x, t) ((0 : E), (1 : TangentSpace (𝓡∂ 1) t)) = 0 := by
+      refine (mfderiv_prod_eq_add_apply hH).trans ?_
+      rw [hconst, mfderiv_const]
+      exact (congrArg (· + _) (map_zero _)).trans (zero_add _)
+    exact h
+  · exact DFunLike.congr_fun (mfderiv_zero_of_not_mdifferentiableAt hH) _
+
 /-- The homotopy operator vanishes on every form pulled back from `M` along the projection
 `M × [0, 1] → M`: the derivative of the projection kills the unit time vector `∂ₜ`. -/
 @[simp]
 theorem homotopyOperator_mpullback_fst (α : RoughForm I M F (k + 1)) :
-    homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I (Prod.fst : M × Icc (0 : ℝ) 1 → M) α) = 0 := by
-  funext x
-  refine homotopyOperator_apply_eq_zero fun t v ↦ ?_
-  rw [mpullback_apply, mfderiv_fst]
-  exact (α x).map_coord_zero 0 rfl
+    homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I (Prod.fst : M × Icc (0 : ℝ) 1 → M) α) = 0 :=
+  funext fun _ ↦ homotopyOperator_mpullback_apply_eq_zero (fun _ ↦ rfl) α
 
 /-- The homotopy operator of the zero form is zero. -/
 @[simp]

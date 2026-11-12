@@ -81,7 +81,9 @@ theorem fluxForm_sub_fluxForm_mem_exactForms {σ : SmoothForm J M ℝ 2} (hσ : 
   have : IsManifold (J.prod (𝓡∂ 1)) ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) (M × unitInterval) :=
     IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold J ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
-  have key := mextDeriv_homotopyOperator_homotopyOperator_mpullback hσ hG
+  have : IsManifold J 2 M := IsManifold.of_le (n := ∞) (by simp)
+  have key := mextDeriv_homotopyOperator_homotopyOperator_mpullback
+    (σ.isSmoothForm.of_le (by simp)) ((SmoothForm.isClosed_def _).mp hσ) (hG.of_le (by simp))
     (fun x s ↦ (hG₀ x s).trans (hG₀ x 0).symm) (fun x s ↦ (hG₁ x s).trans (hG₁ x 0).symm)
   rw [show (fun p ↦ G (p, 0)) = Φ.cylinderMap from funext hGΦ,
     show (fun p ↦ G (p, 1)) = Ψ.cylinderMap from funext hGΨ, ← SmoothForm.coe_mpullback G hG,
