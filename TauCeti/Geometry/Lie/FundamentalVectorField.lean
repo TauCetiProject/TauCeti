@@ -495,21 +495,6 @@ theorem adjointContinuousLinearMap_mem_isotropy_smul_iff {g : G} {ξ : GroupLieA
   rwa [inv_smul_smul, ← ContinuousLinearMap.comp_apply, ← Lie.adjointContinuousLinearMap_mul,
     inv_mul_cancel, Lie.adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply] at this
 
-/-- The isotropy algebras along an orbit vanish together: `𝔤_{g • x} = 0` exactly when
-`𝔤_x = 0`, as the isotropy algebras are conjugate under `Ad_g`. So the action is locally free at
-`x` exactly when it is locally free along the orbit of `x`. -/
-theorem isotropy_smul_eq_bot_iff {g : G} {x : M} :
-    (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) = ⊥ ↔
-      (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
-  -- Pull an element of one isotropy algebra back along `Ad_g` or forward along `Ad_g⁻¹`.
-  have hAd := Lie.adjointContinuousLinearMap_adjointContinuousLinearMap_inv (I := I) (G := G)
-  simp only [LieSubalgebra.eq_bot_iff]
-  refine ⟨fun h ξ hξ ↦ ?_, fun h ξ hξ ↦ ?_⟩
-  · have := h _ (adjointContinuousLinearMap_mem_isotropy_smul_iff.2 hξ)
-    rw [← hAd g⁻¹ ξ, inv_inv, this, map_zero]
-  · have := h _ (adjointContinuousLinearMap_mem_isotropy_smul_iff.1 ((hAd g ξ).symm ▸ hξ))
-    rw [← hAd g ξ, this, map_zero]
-
 /-- **The isotropy algebras along an orbit are conjugate**: `𝔤_{g • x} = Ad_g 𝔤_x`. -/
 theorem isotropy_fundamental_smul (g : G) (x : M) :
     (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) =
@@ -526,6 +511,16 @@ theorem isotropy_fundamental_smul (g : G) (x : M) :
     rwa [← adjointContinuousLinearMap_mem_isotropy_smul_iff (g := g), hAd]
   · rintro ⟨η, hη, rfl⟩
     exact adjointContinuousLinearMap_mem_isotropy_smul_iff.mpr hη
+
+/-- The isotropy algebras along an orbit vanish together: `𝔤_{g • x} = 0` exactly when
+`𝔤_x = 0`, as the isotropy algebras are conjugate under `Ad_g`. So the action is locally free at
+`x` exactly when it is locally free along the orbit of `x`. -/
+theorem isotropy_smul_eq_bot_iff {g : G} {x : M} :
+    (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) = ⊥ ↔
+      (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
+  rw [isotropy_fundamental_smul]
+  simp only [LieSubalgebra.eq_bot_iff, LieSubalgebra.mem_map, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂, LieEquiv.coe_toLieHom, EmbeddingLike.map_eq_zero_iff]
 
 /-- The isotropy algebras along an orbit have the same dimension. -/
 @[simp]

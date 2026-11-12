@@ -95,8 +95,7 @@ theorem mfderiv_smul_const_apply (g : G) (x : M) (v : TangentSpace I g) :
     funext fun h ↦ by simp [mul_smul]
   rw [hfun]
   exact mfderiv_comp_apply_of_eq g (ContMDiffSMul.mdifferentiableAt_smul_const (g • x) 1)
-    ((contMDiff_mul_right (a := g⁻¹) (n := 1)).contMDiffAt.mdifferentiableAt one_ne_zero)
-    (mul_inv_cancel g) v
+    (mdifferentiableAt_mul_right (a := g⁻¹)) (mul_inv_cancel g) v
 
 /-- **The image of the differential of the orbit map** at `g` is the orbit tangent space at
 `g • x`, spanned by the values of the fundamental vector fields. -/
