@@ -125,23 +125,16 @@ pairs. Its two directions are the maps of Thom pairs of `φ` and of its fibrewis
 def thomPairIsoOfFiberwise
     (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.2))
     (hφ' : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj ((φ v.proj).symm v.2)) :
-    thomPair F' E' ≅ thomPair F E where
-  hom := thomPairMapOfFiberwise (g := ContinuousMap.id B) hφ
-  inv := thomPairMapOfFiberwise (g := ContinuousMap.id B) (φ := fun b ↦ (φ b).symm) hφ'
-  hom_inv_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ by
-    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_id, ConcreteCategory.comp_apply,
-      ConcreteCategory.id_apply]
-    refine (congrArg (fun w ↦ TopPair.Hom.fst (thomPairMapOfFiberwise (g := ContinuousMap.id B)
-      (φ := fun b ↦ (φ b).symm) hφ') w) (thomPairMapOfFiberwise_fst_apply hφ v)).trans ?_
-    exact (thomPairMapOfFiberwise_fst_apply hφ' _).trans
-      (congrArg (TotalSpace.mk' F' v.proj) ((φ v.proj).symm_apply_apply v.2)))
-  inv_hom_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ by
-    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_id, ConcreteCategory.comp_apply,
-      ConcreteCategory.id_apply]
-    refine (congrArg (fun w ↦ TopPair.Hom.fst (thomPairMapOfFiberwise (g := ContinuousMap.id B)
-      hφ) w) (thomPairMapOfFiberwise_fst_apply hφ' v)).trans ?_
-    exact (thomPairMapOfFiberwise_fst_apply hφ _).trans
-      (congrArg (TotalSpace.mk' F v.proj) ((φ v.proj).apply_symm_apply v.2)))
+    thomPair F' E' ≅ thomPair F E :=
+  TopPair.ofSubsetIso
+    { toFun v := TotalSpace.mk' F v.proj (φ v.proj v.2)
+      invFun v := TotalSpace.mk' F' v.proj ((φ v.proj).symm v.2)
+      left_inv v := congrArg (TotalSpace.mk' F' v.proj) ((φ v.proj).symm_apply_apply v.2)
+      right_inv v := congrArg (TotalSpace.mk' F v.proj) ((φ v.proj).apply_symm_apply v.2)
+      continuous_toFun := hφ
+      continuous_invFun := hφ' }
+    fun v ↦ mem_zeroSectionCompl.trans ((φ v.proj).map_ne_zero_iff.symm.trans
+      (mem_zeroSectionCompl (v := TotalSpace.mk' F v.proj (φ v.proj v.2))).symm)
 
 variable (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.2))
   (hφ' : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj ((φ v.proj).symm v.2))
@@ -149,13 +142,15 @@ variable (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj 
 @[simp]
 theorem thomPairIsoOfFiberwise_hom :
     (thomPairIsoOfFiberwise hφ hφ').hom = thomPairMapOfFiberwise (g := ContinuousMap.id B) hφ := by
-  rw [thomPairIsoOfFiberwise]
+  rw [thomPairIsoOfFiberwise, TopPair.ofSubsetIso_hom]
+  rfl
 
 @[simp]
 theorem thomPairIsoOfFiberwise_inv :
     (thomPairIsoOfFiberwise hφ hφ').inv =
       thomPairMapOfFiberwise (g := ContinuousMap.id B) (φ := fun b ↦ (φ b).symm) hφ' := by
-  rw [thomPairIsoOfFiberwise]
+  rw [thomPairIsoOfFiberwise, TopPair.ofSubsetIso_inv]
+  rfl
 
 end Iso
 

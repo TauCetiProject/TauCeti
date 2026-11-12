@@ -64,6 +64,33 @@ variable {B : Type*} [TopologicalSpace B]
 
 namespace VectorBundleOrientation
 
+/-- Near `x₀`, a linear equivalence `f : F' ≃ F` transports an orientation `c` of `F'` as `f₀` does
+whenever `f₀⁻¹ ∘ f` is the value at `x` of a family `L` of endomorphisms of `F'` that is continuous
+at `x₀` with value the identity there: the determinant of `L x` stays positive near `x₀`. -/
+private theorem eventually_map_eq_map_of_continuousAt {X : Type*} [TopologicalSpace X] {x₀ : X}
+    (hι : Fintype.card ι = finrank ℝ F') (c : Orientation ℝ F' ι) (f₀ : F' ≃L[ℝ] F)
+    {L : X → F' →L[ℝ] F'} (hL : FiniteDimensional ℝ F' → ContinuousAt L x₀)
+    (hL₀ : L x₀ = ContinuousLinearMap.id ℝ F') :
+    ∀ᶠ x in 𝓝 x₀, ∀ f : F' ≃L[ℝ] F, (f.trans f₀.symm : F' →L[ℝ] F') = L x →
+      Orientation.map ι f.toLinearEquiv c = Orientation.map ι f₀.toLinearEquiv c := by
+  rcases isEmpty_or_nonempty ι with hι₀ | hι₀
+  · -- With `ι` empty, transport along any self-equivalence of `F'` fixes every orientation.
+    refine Eventually.of_forall fun x f _ ↦ ?_
+    have h := Orientation.map_of_isEmpty (x := c)
+      (f := f.toLinearEquiv.trans f₀.toLinearEquiv.symm)
+    rw [Orientation.map_trans, ← Orientation.map_symm, Equiv.symm_apply_eq] at h
+    exact h
+  -- Otherwise `F'` is finite-dimensional, and the determinant of `L x` is positive near `x₀`.
+  have : FiniteDimensional ℝ F' := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
+  have hLb : (L x₀).det = 1 := by
+    rw [hL₀]
+    exact LinearMap.det_id
+  filter_upwards [(ContinuousLinearMap.continuous_det.continuousAt.comp (hL this)).eventually
+    (lt_mem_nhds (hLb ▸ one_pos))] with x hx f hf
+  refine Orientation.map_eq_map_of_det_pos c _ _ hι ?_
+  rw [Function.comp_apply, ← hf] at hx
+  exact hx
+
 /-- Near a point `b'`, the fibre orientations obtained by pulling back `o` along `φ` are locally
 constant when read in the preferred trivialization of `E'` at `b'`. -/
 private theorem eventually_mapOrientation_comap (hι : Fintype.card ι = finrank ℝ F')
@@ -91,7 +118,9 @@ private theorem eventually_mapOrientation_comap (hι : Fintype.card ι = finrank
         e.mapOrientation ι hx (o (g x)) := by
     have hTl : (T x hx' hx).toLinearEquiv = (e'.linearEquivAt ℝ x hx').symm.trans
         ((φ x).toLinearEquiv.trans (e.linearEquivAt ℝ (g x) hx)) :=
-      rfl
+      LinearEquiv.ext fun v ↦ by
+        simp [T, e.coe_continuousLinearEquivAt_eq hx, e'.symm_continuousLinearEquivAt_eq hx',
+          e.coe_linearMapAt_of_mem hx, e'.symmL_apply hx']
     rw [Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply,
       hTl]
     simp only [Orientation.map_trans, ContinuousLinearEquiv.toLinearEquiv_symm,
@@ -100,37 +129,17 @@ private theorem eventually_mapOrientation_comap (hι : Fintype.card ι = finrank
   -- It remains to see that near `b'` the readings `T x` transport `c` as `T b'` does.
   have hU : e'.baseSet ∩ g ⁻¹' e.baseSet ∈ 𝓝 b' :=
     (e'.open_baseSet.inter (e.open_baseSet.preimage g.continuous)).mem_nhds ⟨hb', hb⟩
-  have hS : ∀ᶠ x in 𝓝 b', ∀ (hx' : x ∈ e'.baseSet) (hx : g x ∈ e.baseSet),
-      Orientation.map ι (T x hx' hx).toLinearEquiv c =
-        Orientation.map ι (T b' hb' hb).toLinearEquiv c := by
-    rcases isEmpty_or_nonempty ι with hι₀ | hι₀
-    · -- With `ι` empty, transport along any self-equivalence of `F'` fixes every orientation.
-      refine Eventually.of_forall fun x hx' hx ↦ ?_
-      have h := Orientation.map_of_isEmpty (x := c)
-        (f := (T x hx' hx).toLinearEquiv.trans (T b' hb' hb).toLinearEquiv.symm)
-      rw [Orientation.map_trans, ← Orientation.map_symm, Equiv.symm_apply_eq] at h
-      exact h
-    -- Otherwise `F'` is finite-dimensional, and `(T b')⁻¹ ∘ T x` is a continuous family of
-    -- endomorphisms of `F'`, the identity at `b'`, so its determinant stays positive near `b'`.
-    have : FiniteDimensional ℝ F' := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
-    let L (x : B') : F' →L[ℝ] F' := ((T b' hb' hb).symm : F →L[ℝ] F').comp
-      ((e.continuousLinearMapAt ℝ (g x)).comp ((φ x : E' x →L[ℝ] E (g x)).comp (e'.symmL ℝ x)))
-    have hL (x : B') (hx' : x ∈ e'.baseSet) (hx : g x ∈ e.baseSet) :
-        L x = ((T x hx' hx).trans (T b' hb' hb).symm : F' →L[ℝ] F') := by
-      ext v
-      simp [L, T, e.coe_continuousLinearEquivAt_eq hx, e'.symm_continuousLinearEquivAt_eq hx']
-    have hLc : ContinuousAt (fun x ↦ (L x).det) b' :=
-      ContinuousLinearMap.continuous_det.continuousAt.comp
-        ((continuousOn_const.clm_comp
-          (continuousOn_fiberwise_inCoordinates (φ := fun b' ↦ (φ b' : E' b' →L[ℝ] E (g b')))
-            hφ e e')).continuousAt hU)
-    have hLb : (L b').det = 1 := by
-      rw [hL b' hb' hb, ContinuousLinearEquiv.self_trans_symm]
-      exact LinearMap.det_id
-    filter_upwards [hLc.eventually (lt_mem_nhds (hLb ▸ one_pos))] with x hx hx' hxe
-    refine Orientation.map_eq_map_of_det_pos c _ _ hι ?_
-    have := hL x hx' hxe ▸ hx
-    exact this
+  -- Read without membership hypotheses, `(T b')⁻¹ ∘ T x` is continuous at `b'`.
+  let L (x : B') : F' →L[ℝ] F' := ((T b' hb' hb).symm : F →L[ℝ] F').comp
+    ((e.continuousLinearMapAt ℝ (g x)).comp ((φ x : E' x →L[ℝ] E (g x)).comp (e'.symmL ℝ x)))
+  have hL (x : B') (hx' : x ∈ e'.baseSet) (hx : g x ∈ e.baseSet) :
+      ((T x hx' hx).trans (T b' hb' hb).symm : F' →L[ℝ] F') = L x := by
+    ext v
+    simp [L, T, e.coe_continuousLinearEquivAt_eq hx, e'.symm_continuousLinearEquivAt_eq hx']
+  have hS := eventually_map_eq_map_of_continuousAt hι c (T b' hb' hb) (L := L)
+    (fun _ ↦ (continuousOn_const.clm_comp (continuousOn_fiberwise_inCoordinates
+      (φ := fun b' ↦ (φ b' : E' b' →L[ℝ] E (g b'))) hφ e e')).continuousAt hU)
+    (by rw [← hL b' hb' hb, ContinuousLinearEquiv.self_trans_symm]; rfl)
   filter_upwards [hU, g.continuous.continuousAt.eventually (o.eventually_mapOrientation_eq' (g b')),
     hS] with x hxU hxo hxS hx'
   refine (Orientation.map ι (T x hx' hxU.2).toLinearEquiv).injective ?_
@@ -138,7 +147,7 @@ private theorem eventually_mapOrientation_comap (hι : Fintype.card ι = finrank
     _ = e.mapOrientation ι hxU.2 (o (g x)) := hT x hx' hxU.2
     _ = e.mapOrientation ι hb (o (g b')) := hxo hxU.2
     _ = Orientation.map ι (T b' hb' hb).toLinearEquiv c := (hT b' hb' hb).symm
-    _ = _ := (hxS hx' hxU.2).symm
+    _ = _ := (hxS _ (hL x hx' hxU.2)).symm
 
 /-- **The transport of an orientation along a fibrewise isomorphism.** For a fibrewise isomorphism
 `φ b' : E'_{b'} ≃ E_{g b'}` over a continuous map `g : B' → B`, with continuous total-space map,
