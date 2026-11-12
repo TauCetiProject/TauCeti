@@ -29,9 +29,9 @@ norm and shows, on an explicit example, that it is not bounded on `L¹`:
   `∑ⱼ ‖Rⱼ f‖² = ‖f‖²` survives.
 * The Hilbert transform of the indicator of an interval `[a, b]` is
   `H 1_{[a, b]} (x) = π⁻¹ log |(x - a) / (x - b)|` off `[a, b]`
-  (`TauCeti.ae_rieszTransform_indicatorConstLp_eq_log_smul`). This decays like
+  (`TauCeti.ae_rieszTransform_indicatorConstLp_Icc_eq_log_smul`). This decays like
   `(b - a) / (π |x|)` at infinity, so it is not integrable
-  (`TauCeti.not_integrable_rieszTransform_indicatorConstLp`).
+  (`TauCeti.not_integrable_rieszTransform_indicatorConstLp_Icc`).
 * Hence `R_v` is not bounded on `L¹` for `v ≠ 0`: no estimate `‖R_v f‖₁ ≤ C ‖f‖₁` holds on
   `L² ∩ L¹` (`TauCeti.not_exists_eLpNorm_one_rieszTransform_real_le`). At `p = 1` the weak type
   `(1, 1)` bound `TauCeti.exists_mul_volume_lt_enorm_rieszTransform_le` cannot be upgraded to a
@@ -105,6 +105,7 @@ theorem norm_rieszTransform_real_apply (v : ℝ) (f : Lp F 2 (volume : Measure �
 
 /-- On the real line the Riesz transform in the direction `v` has operator norm `|v|` on
 `L²(ℝ, F)` for nonzero `F`. In particular the Hilbert transform has norm `1`. -/
+@[simp]
 theorem norm_rieszTransform_real [Nontrivial F] (v : ℝ) :
     ‖rieszTransform (E := ℝ) F v‖ = |v| := by
   refine le_antisymm (by simpa using norm_rieszTransform_le (F := F) v) ?_
@@ -125,7 +126,7 @@ direction `v` of `c` times the indicator of `[a, b]` is
 `R_v (c 1_{[a, b]}) (x) = (v / π) log |(x - a) / (x - b)| · c`
 
 for almost every `x ∉ [a, b]`. (`Real.log` takes the logarithm of the absolute value.) -/
-theorem ae_rieszTransform_indicatorConstLp_eq_log_smul (v : ℝ) {a b : ℝ} (hab : a ≤ b)
+theorem ae_rieszTransform_indicatorConstLp_Icc_eq_log_smul (v : ℝ) {a b : ℝ} (hab : a ≤ b)
     (c : F) :
     ∀ᵐ x, x ∉ Icc a b →
       rieszTransform F v
@@ -134,10 +135,8 @@ theorem ae_rieszTransform_indicatorConstLp_eq_log_smul (v : ℝ) {a b : ℝ} (ha
   set f : Lp F 2 (volume : Measure ℝ) :=
     indicatorConstLp (s := Icc a b) 2 measurableSet_Icc measure_Icc_lt_top.ne c
   have hf : (f : ℝ → F) =ᵐ[volume] (Icc a b).indicator fun _ ↦ c := indicatorConstLp_coeFn
-  have hf0 : ∀ᵐ x, x ∉ Icc a b → f x = 0 := by
-    filter_upwards [hf] with x hx hxs
-    rw [hx, indicator_of_notMem hxs]
-  filter_upwards [ae_rieszTransform_eq_integral v f isCompact_Icc hf0] with x hx hxs
+  filter_upwards [ae_rieszTransform_eq_integral v f isCompact_Icc indicatorConstLp_coeFn_notMem]
+    with x hx hxs
   rw [hx hxs, integral_congr_ae (hf.mono fun y hy ↦ by rw [hy])]
   rw [← indicator_smul (Icc a b) (fun y ↦ rieszKernel v (x - y)) fun _ ↦ c,
     integral_indicator measurableSet_Icc, integral_smul_const, integral_Icc_eq_integral_Ioc,
@@ -153,7 +152,7 @@ theorem ae_rieszTransform_indicatorConstLp_eq_log_smul (v : ℝ) {a b : ℝ} (ha
 /-- **The Hilbert transform of an interval is not integrable.** On the real line, for `v ≠ 0`,
 `a < b` and `c ≠ 0`, the Riesz transform `R_v (c 1_{[a, b]})` is not integrable: for large `x` its
 norm is at least `|v| (b - a) ‖c‖ / (2 π x)`. -/
-theorem not_integrable_rieszTransform_indicatorConstLp {v : ℝ} (hv : v ≠ 0) {a b : ℝ}
+theorem not_integrable_rieszTransform_indicatorConstLp_Icc {v : ℝ} (hv : v ≠ 0) {a b : ℝ}
     (hab : a < b) {c : F} (hc : c ≠ 0) :
     ¬ Integrable (rieszTransform F v
       (indicatorConstLp (s := Icc a b) 2 measurableSet_Icc measure_Icc_lt_top.ne c)) := by
@@ -170,7 +169,7 @@ theorem not_integrable_rieszTransform_indicatorConstLp {v : ℝ} (hv : v ≠ 0) 
   refine not_integrableOn_Ioi_inv (a := m) ((hint.norm.const_mul C⁻¹).integrableOn.mono'
     measurable_inv.aestronglyMeasurable ?_)
   filter_upwards [ae_restrict_of_ae
-      (ae_rieszTransform_indicatorConstLp_eq_log_smul (F := F) v hab.le c),
+      (ae_rieszTransform_indicatorConstLp_Icc_eq_log_smul (F := F) v hab.le c),
     ae_restrict_mem measurableSet_Ioi] with x hx hxm
   have hxm : m < x := hxm
   have hxb : b < x := (le_max_left _ _).trans_lt hxm
@@ -203,10 +202,11 @@ theorem not_exists_eLpNorm_one_rieszTransform_real_le [Nontrivial F] {v : ℝ} (
   set f : Lp F 2 (volume : Measure ℝ) :=
     indicatorConstLp (s := Icc 0 1) 2 measurableSet_Icc measure_Icc_lt_top.ne c
   have hf : eLpNorm f 1 volume < ∞ := by
-    rw [eLpNorm_congr_ae indicatorConstLp_coeFn]
+    rw [eLpNorm_congr_ae indicatorConstLp_coeFn, ← memLp_iff]
     exact memLp_indicator_const 1 measurableSet_Icc.nullMeasurableSet c
       (Or.inr measure_Icc_lt_top.ne)
-  exact not_integrable_rieszTransform_indicatorConstLp hv zero_lt_one hc
-    (memLp_one_iff_integrable.1 ((hC f).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hf)))
+  exact not_integrable_rieszTransform_indicatorConstLp_Icc hv zero_lt_one hc
+    (memLp_one_iff_integrable.1 (memLp_iff.2
+      ((hC f).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hf))))
 
 end TauCeti
