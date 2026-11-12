@@ -41,12 +41,15 @@ On points it carries the homomorphisms pinned in Milne's conventions for Hodge s
 * `TauCeti.DeligneTorus.realPointsMulEquiv_apply`: the complex number attached to a real point is
   its value on the coordinate `T` of `𝔾ₘ`, read in `ℂ ⊗[ℝ] ℝ ≃ ℂ`.
 * `TauCeti.DeligneTorus.isHomeomorph_realPointsMulEquiv`: `S(ℝ) ≃ ℂˣ` is a homeomorphism.
+* `TauCeti.DeligneTorus.pointsMulEquiv_mapValue`, `TauCeti.DeligneTorus.mapValue_diagonal`,
+  `TauCeti.DeligneTorus.mapValue_weight`, `TauCeti.DeligneTorus.norm_mapValue`: the identification
+  of points, the diagonal, the weight and the norm are natural in `R`.
 * `TauCeti.DeligneTorus.norm_diagonal`, `TauCeti.DeligneTorus.norm_weight`: `Nm ∘ d` is `r ↦ r²`
   and `Nm ∘ w` is `r ↦ r⁻²`.
 * `TauCeti.DeligneTorus.weight_eq_inv_diagonal`, `TauCeti.DeligneTorus.weight_two`: the weight is
   `r ↦ d(r)⁻¹`; for instance `w(2) = 1/2` in `ℂˣ`.
-* `TauCeti.DeligneTorus.coe_norm_real`, `TauCeti.DeligneTorus.norm_eq_one_iff`: on real points the
-  norm is `Complex.normSq`, and its kernel is the unit circle.
+* `TauCeti.DeligneTorus.coe_norm_real`, `TauCeti.DeligneTorus.norm_real_eq_one_iff`: on real
+  points the norm is `Complex.normSq`, and its kernel is the unit circle.
 
 ## References
 
@@ -83,6 +86,24 @@ theorem coe_pointsMulEquiv (f : WithConv (S →ₐ[ℝ] R)) :
       WeilRestriction.homEquiv ℝ ℂ ℂ[T;T⁻¹] R f.ofConv (LaurentPolynomial.T 1) :=
   WeilRestriction.multiplicativeGroupPoints_apply f
 
+/-- The point of `S` attached to a unit `u` of `ℂ ⊗[ℝ] R` classifies evaluation of Laurent
+polynomials at `u`. -/
+@[simp]
+theorem pointsMulEquiv_symm_apply (u : (ℂ ⊗[ℝ] R)ˣ) :
+    ((pointsMulEquiv R).symm u).ofConv =
+      (WeilRestriction.homEquiv ℝ ℂ ℂ[T;T⁻¹] R).symm (laurentEval u) :=
+  WeilRestriction.multiplicativeGroupPoints_symm_apply u
+
+/-- **Naturality of `pointsMulEquiv` in `R`**: post-composing a point with `h : R →ₐ[ℝ] R'`
+corresponds to applying `ℂ ⊗ h` to units. -/
+theorem pointsMulEquiv_mapValue {R' : Type*} [CommRing R'] [Algebra ℝ R'] (h : R →ₐ[ℝ] R')
+    (f : WithConv (S →ₐ[ℝ] R)) :
+    pointsMulEquiv R' (AlgHom.mapValue h f) =
+      Units.map (Algebra.TensorProduct.lTensor (S := ℂ) ℂ h : ℂ ⊗[ℝ] R →* ℂ ⊗[ℝ] R')
+        (pointsMulEquiv R f) := by
+  rw [AlgHom.mapValue_apply]
+  exact WeilRestriction.multiplicativeGroupPoints_naturality h f
+
 /-- **The real points of the Deligne torus** are `ℂˣ`, through `ℂ ⊗[ℝ] ℝ ≃ ℂ`. -/
 noncomputable def realPointsMulEquiv : WithConv (S →ₐ[ℝ] ℝ) ≃* ℂˣ :=
   (pointsMulEquiv ℝ).trans (Units.mapEquiv (Algebra.TensorProduct.rid ℝ ℝ ℂ).toMulEquiv)
@@ -91,6 +112,14 @@ noncomputable def realPointsMulEquiv : WithConv (S →ₐ[ℝ] ℝ) ≃* ℂˣ :
 `ℂ ⊗[ℝ] ℝ ≃ ℂ`. -/
 theorem coe_realPointsMulEquiv (f : WithConv (S →ₐ[ℝ] ℝ)) :
     (realPointsMulEquiv f : ℂ) = Algebra.TensorProduct.rid ℝ ℝ ℂ (pointsMulEquiv ℝ f) := by
+  simp [realPointsMulEquiv]
+
+/-- The real point of `S` attached to `z : ℂˣ` is the unit `z ⊗ 1` of `ℂ ⊗[ℝ] ℝ`. -/
+@[simp]
+theorem pointsMulEquiv_realPointsMulEquiv_symm (z : ℂˣ) :
+    pointsMulEquiv ℝ (realPointsMulEquiv.symm z) =
+      Units.map ((Algebra.TensorProduct.rid ℝ ℝ ℂ).symm : ℂ →* ℂ ⊗[ℝ] ℝ) z := by
+  ext
   simp [realPointsMulEquiv]
 
 /-- The complex number attached to a real point of `S` is its value on the coordinate `T` of `𝔾ₘ`,
@@ -155,6 +184,31 @@ theorem norm_apply (f : WithConv (S →ₐ[ℝ] R)) :
     norm R f = NormTorus.norm ℝ ℂ R (pointsMulEquiv R f) :=
   (rfl)
 
+/-- **Naturality of the diagonal in `R`**: post-composing `d(r)` with `h : R →ₐ[ℝ] R'` is
+`d(h r)`. -/
+theorem mapValue_diagonal {R' : Type*} [CommRing R'] [Algebra ℝ R'] (h : R →ₐ[ℝ] R')
+    (r : Rˣ) : AlgHom.mapValue h (diagonal R r) = diagonal R' (Units.map (h : R →* R') r) := by
+  apply (pointsMulEquiv R').injective
+  rw [pointsMulEquiv_mapValue, pointsMulEquiv_diagonal, pointsMulEquiv_diagonal]
+  ext
+  simp
+
+/-- **Naturality of the weight in `R`**: post-composing `w(r)` with `h : R →ₐ[ℝ] R'` is
+`w(h r)`. -/
+theorem mapValue_weight {R' : Type*} [CommRing R'] [Algebra ℝ R'] (h : R →ₐ[ℝ] R')
+    (r : Rˣ) : AlgHom.mapValue h (weight R r) = weight R' (Units.map (h : R →* R') r) := by
+  apply (pointsMulEquiv R').injective
+  rw [pointsMulEquiv_mapValue, pointsMulEquiv_weight, pointsMulEquiv_weight]
+  ext
+  simp
+
+/-- **Naturality of the norm in `R`**: the norm of a point post-composed with `h : R →ₐ[ℝ] R'`
+is `h` applied to its norm. -/
+theorem norm_mapValue {R' : Type*} [CommRing R'] [Algebra ℝ R'] (h : R →ₐ[ℝ] R')
+    (f : WithConv (S →ₐ[ℝ] R)) :
+    norm R' (AlgHom.mapValue h f) = Units.map (h : R →* R') (norm R f) := by
+  rw [norm_apply, pointsMulEquiv_mapValue, NormTorus.norm_unitsMap_lTensor, norm_apply]
+
 /-- **`Nm ∘ d` is the squaring map**: `Nm(d(r)) = r²`. -/
 @[simp]
 theorem norm_diagonal (r : Rˣ) : norm R (diagonal R r) = r ^ 2 := by
@@ -190,7 +244,7 @@ theorem coe_norm_real (f : WithConv (S →ₐ[ℝ] ℝ)) :
   rw [norm_apply, NormTorus.coe_norm_complex, coe_realPointsMulEquiv]
 
 /-- **The real points of the kernel of the norm are the unit circle `U(1)`.** -/
-theorem norm_eq_one_iff (f : WithConv (S →ₐ[ℝ] ℝ)) :
+theorem norm_real_eq_one_iff (f : WithConv (S →ₐ[ℝ] ℝ)) :
     norm ℝ f = 1 ↔ ‖(realPointsMulEquiv f : ℂ)‖ = 1 := by
   rw [norm_apply, ← NormTorus.mem_normOne, coe_realPointsMulEquiv]
   exact NormTorus.mem_normOne_complex_iff
