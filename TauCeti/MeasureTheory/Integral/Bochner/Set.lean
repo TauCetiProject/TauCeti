@@ -126,7 +126,7 @@ theorem mul_integral_image_eq_sum_pieces {E M ι : Type*} [MeasurableSpace E] [F
   have hsub : ∀ i, (g ∘ Q i) '' (D ∩ Q i ⁻¹' s) ⊆ g '' s := fun i ↦ by
     rw [image_comp, image_inter_preimage]
     exact image_mono inter_subset_right
-  rw [setIntegral_congr_set (hZ.image_sdiff_ae_eq g s μ), ← hcover,
+  rw [setIntegral_congr_set (hZ.image_sdiff_ae_eq g s μ).symm, ← hcover,
     integral_iUnion_fintype hT hpair (fun i ↦ hC.mono_set (hsub i)), Finset.mul_sum]
   exact Finset.sum_congr rfl fun i _ ↦ hpiece i
 

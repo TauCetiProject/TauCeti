@@ -22,10 +22,10 @@ open MeasureTheory Set
 measure with null singletons. -/
 theorem Set.Countable.image_sdiff_ae_eq {α β : Type*} [MeasurableSpace β]
     {Z : Set α} (hZ : Z.Countable) (f : α → β) (s : Set α)
-    (μ : Measure β) [NullSingletonClass μ] : f '' s =ᵐ[μ] f '' (s \ Z) := by
+    (μ : Measure β) [NullSingletonClass μ] : f '' (s \ Z) =ᵐ[μ] f '' s := by
   apply ae_eq_set.mpr
   constructor
+  · rw [sdiff_eq_empty.mpr (image_mono sdiff_subset), measure_empty]
   · apply measure_mono_null ?_ ((hZ.image f).measure_zero μ)
     rintro y ⟨⟨x, hx, rfl⟩, hn⟩
     exact ⟨x, by by_contra hne; exact hn ⟨x, ⟨hx, hne⟩, rfl⟩, rfl⟩
-  · rw [sdiff_eq_empty.mpr (image_mono sdiff_subset), measure_empty]
