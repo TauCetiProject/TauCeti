@@ -63,7 +63,7 @@ theorem eventually_forall_mem_of_strictLocalMin (ω : SymplecticForm V) {H : V �
       (∀ t ∈ T, HasDerivAt γ (ω.hamiltonianVectorField H (γ t)) t) →
       (∀ t ∈ T, DifferentiableAt ℝ H (γ t)) → ∀ t₀ ∈ T, γ t₀ = y → ∀ t ∈ T, γ t ∈ U := by
   filter_upwards [eventually_forall_isPreconnected_subset_of_strictLocalMin hs hH hmin hU]
-    with y hy γ T hT hT' hγ hHγ t₀ ht₀ hγt₀ t ht
+    with y hy γ T _ hT' hγ hHγ t₀ ht₀ hγt₀ t ht
   -- The trajectory is a connected set on which the energy is constant, equal to `H y`.
   refine hy (γ '' T) (hT'.image γ fun t ht ↦ (hγ t ht).continuousAt.continuousWithinAt)
     ⟨t₀, ht₀, hγt₀⟩ ?_ (mem_image_of_mem γ ht)

@@ -220,7 +220,6 @@ theorem rpow_mul_le_rpow_mul_add_of_le_mul_deriv_add {f : ℝ → ℝ} {s t C δ
     (mul_nonneg hp0 hA) hf hfs h'
   -- The constant `B = p A / (4 - p)` lies in `[0, A]` because `p ≤ 2`.
   set B := p * A / (((4 : ℕ) : ℝ) - p)
-  have hB0 : 0 ≤ B := div_nonneg (mul_nonneg hp0 hA) (by linarith)
   have hBA : B ≤ A := by
     rw [div_le_iff₀ (by linarith)]
     push_cast
@@ -302,7 +301,7 @@ theorem le_mul_sq_of_le_mul_deriv_add {f : ℝ → ℝ} {σ σ₀ C δ A c h K M
     (hfσ : 0 ≤ f σ) (hM : f σ₀ ≤ M)
     (hf' : ∀ᵐ τ, τ ∈ Ioo σ σ₀ → f τ ≤ τ / 2 * (1 + C * τ) * (1 + δ) * deriv f τ + A * τ ^ 4) :
     f σ ≤ Real.exp (2 * K * (1 + |Real.log c|)) * ((1 + C * σ₀) / σ₀) ^ 2 * (M + A) * σ ^ 2 := by
-  set p := 2 / (1 + δ) with hp_def
+  set p := 2 / (1 + δ)
   set Λ := Real.exp (2 * K * (1 + |Real.log c|))
   have hσ0 : 0 < σ := (mul_pos hc hh).trans_le hσ
   have hσ₀0 : 0 < σ₀ := hσ0.trans_le hσσ₀
@@ -349,7 +348,7 @@ theorem mul_sq_le_add_of_le_mul_deriv_add {f : ℝ → ℝ} {σ C δ A c h K m :
       f τ ≤ τ / 2 * (1 + C * τ) * (1 + δ) * deriv f τ + A * τ ^ 4) :
     m / (c ^ 2 * (1 + C) ^ 2 * Real.exp (2 * K * (1 + |Real.log c|))) * σ ^ 2 ≤
       f σ + A * σ ^ 4 := by
-  set p := 2 / (1 + δ) with hp_def
+  set p := 2 / (1 + δ)
   set Λ := Real.exp (2 * K * (1 + |Real.log c|))
   have hch : 0 < c * h := mul_pos hc hh
   have hσ0 : 0 < σ := hch.trans_le hσ
@@ -378,7 +377,6 @@ theorem mul_sq_le_add_of_le_mul_deriv_add {f : ℝ → ℝ} {σ C δ A c h K m :
           gcongr
       _ ≤ (c * h / (1 + C * (c * h))) ^ p * (f σ + A * σ ^ 4) := key
       _ ≤ Λ * (c * h) ^ 2 * (f σ + A * σ ^ 4) := by gcongr
-  have h1C : 0 < 1 + C := by positivity
   -- Multiply `hineq` by `(1 + C) ^ 2` and cancel `h ^ 2`.
   rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
   refine le_of_mul_le_mul_right ?_ (pow_pos hh 2)
