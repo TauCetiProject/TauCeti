@@ -35,27 +35,6 @@ namespace TauCeti.Examples.MultigraphEars
 
 open Graph
 
-/-- A closed ear over one vertex that adds up to the whole graph gives an ear decomposition with
-one closed ear, starting from that vertex. -/
-private theorem exists_closed_earDecomposition_of_add_eq {α β : Type*} {G : Graph α β}
-    (v : V(G)) (ear : G.Ear (noEdge {v.1} β)) (hkind : ear.kind = .closed) (hadd : ear.add = G) :
-    ∃ d : G.EarDecomposition G,
-      d.IsVertexStart ∧ d.length = 1 ∧ ∀ i, d.kindAt i = .closed := by
-  suffices h : ∀ K (_ : K = G) (d : G.EarDecomposition K),
-      d.IsVertexStart ∧ d.length = 1 ∧ (∀ i, d.kindAt i = .closed) →
-        ∃ d : G.EarDecomposition G, d.IsVertexStart ∧ d.length = 1 ∧ ∀ i, d.kindAt i = .closed by
-    refine h _ hadd ((EarDecomposition.vertex v).snoc ear) ⟨by simp, by simp, fun i ↦ ?_⟩
-    obtain rfl : i = Fin.cast (EarDecomposition.length_snoc _ _).symm
-        (Fin.last (EarDecomposition.vertex v).length) := by
-      have hi := i.isLt
-      simp only [EarDecomposition.length_snoc, EarDecomposition.length_vertex] at hi
-      exact Fin.ext <| by
-        simp only [Fin.val_cast, Fin.val_last, EarDecomposition.length_vertex]
-        omega
-    rw [EarDecomposition.kindAt_eq, EarDecomposition.earAt_snoc_last, hkind]
-  rintro _ rfl d hd
-  exact ⟨d, hd⟩
-
 /-! ### Two parallel edges -/
 
 /-- Two vertices `0` and `1` joined by the two parallel edges `0` and `1`. -/
@@ -122,8 +101,8 @@ theorem add_parallelEar : parallelEar.add = parallel :=
 theorem exists_closed_earDecomposition_parallel :
     ∃ d : parallel.EarDecomposition parallel,
       d.IsVertexStart ∧ d.length = 1 ∧ ∀ i, d.kindAt i = .closed :=
-  exists_closed_earDecomposition_of_add_eq ⟨0, by simp⟩ parallelEar kind_parallelEar
-    add_parallelEar
+  EarDecomposition.exists_closed_earDecomposition_of_add_eq ⟨0, by simp⟩ parallelEar
+    kind_parallelEar add_parallelEar
 
 /-- The orientation sending the edge `0` from `0` to `1` and the edge `1` back from `1` to `0`. -/
 def parallelOrientation : parallel.Orientation where
@@ -225,7 +204,8 @@ theorem add_loopEar : loopEar.add = loop :=
 theorem exists_closed_earDecomposition_loop :
     ∃ d : loop.EarDecomposition loop,
       d.IsVertexStart ∧ d.length = 1 ∧ ∀ i, d.kindAt i = .closed :=
-  exists_closed_earDecomposition_of_add_eq ⟨(), by simp⟩ loopEar kind_loopEar add_loopEar
+  EarDecomposition.exists_closed_earDecomposition_of_add_eq ⟨(), by simp⟩ loopEar kind_loopEar
+    add_loopEar
 
 /-- A loop is not a bridge. -/
 theorem loop_not_isBridge : ¬ loop.IsBridge () :=

@@ -570,15 +570,38 @@ private theorem start_isCycle_snoc (d : G.EarDecomposition H) (ear : G.Ear H) :
     (d.snoc ear).start.IsCycle ↔ d.start.IsCycle := by
   exact EarStart.isCycle_transport (snoc_graphAfter_zero d ear).symm d.start
 
-private theorem kindAt_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
+/-- The kind of an existing ear is unchanged after adjoining one more ear. -/
+@[simp]
+theorem kindAt_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
     (i : Fin d.length) :
     (d.snoc ear).kindAt (Fin.cast (length_snoc d ear).symm i.castSucc) = d.kindAt i := by
   rw [kindAt_eq, earAt_snoc_castSucc, ← kindAt_eq]
 
-private theorem kindAt_snoc_last (d : G.EarDecomposition H) (ear : G.Ear H) :
+/-- The last kind after adjoining an ear is the kind of that ear. -/
+@[simp]
+theorem kindAt_snoc_last (d : G.EarDecomposition H) (ear : G.Ear H) :
     (d.snoc ear).kindAt (Fin.cast (length_snoc d ear).symm (Fin.last d.length)) =
       ear.kind := by
   rw [kindAt_eq, earAt_snoc_last]
+
+/-- A closed ear over one vertex that adds up to the whole graph gives an ear decomposition with
+one closed ear, starting from that vertex. -/
+theorem exists_closed_earDecomposition_of_add_eq {G : Graph α β}
+    (v : V(G)) (ear : G.Ear (Graph.noEdge {v.1} β)) (hkind : ear.kind = .closed)
+    (hadd : ear.add = G) :
+    ∃ d : G.EarDecomposition G,
+      d.IsVertexStart ∧ d.length = 1 ∧ ∀ i, d.kindAt i = .closed := by
+  suffices h : ∀ K (_ : K = G) (d : G.EarDecomposition K),
+      d.IsVertexStart ∧ d.length = 1 ∧ (∀ i, d.kindAt i = .closed) →
+        ∃ d : G.EarDecomposition G, d.IsVertexStart ∧ d.length = 1 ∧ ∀ i, d.kindAt i = .closed by
+    refine h _ hadd ((vertex v).snoc ear) ⟨by simp, by simp, fun i ↦ ?_⟩
+    obtain rfl : i = Fin.cast (length_snoc _ _).symm (Fin.last (vertex v).length) := by
+      have hi := i.isLt
+      simp only [length_snoc, length_vertex] at hi
+      exact Fin.ext <| by simp only [Fin.val_cast, Fin.val_last, length_vertex]; omega
+    exact (kindAt_snoc_last (vertex v) ear).trans hkind
+  rintro _ rfl d hd
+  exact ⟨d, hd⟩
 
 /-- Adjoining an open ear preserves and reflects openness of a decomposition. -/
 @[simp]
