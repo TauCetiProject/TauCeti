@@ -88,6 +88,7 @@ def dynkinBlockSum (K : Type*) [Field K] {V : Type*} [AddCommGroup V] [Module K 
             f (List.replicate q.1 false ++ List.replicate q.2 true ++ w))
 
 /-- Zero exponent blocks contribute just the empty word in total degree zero. -/
+@[simp]
 theorem dynkinBlockSum_zero {V : Type*} [AddCommGroup V] [Module K V]
     (n : ℕ) (f : List Bool → V) :
     dynkinBlockSum K 0 n f = if n = 0 then f [] else 0 := by
@@ -111,18 +112,25 @@ The concatenated word is right-nested, with its final letter innermost and a
 singleton interpreted as its letter. This is Müger's formula (1.4). -/
 def dynkinTerm (n : ℕ) (x y : L) : L :=
   ∑ k ∈ range (n + 1),
-    ((-1 : K) ^ (k - 1) / (k * n : ℕ)) • dynkinBlockSum K k n (dynkinWordBracket x y)
+    ((((-1 : ℤ) ^ (k - 1) * (k * n : ℕ) : ℤ) : K))⁻¹ •
+      dynkinBlockSum K k n (dynkinWordBracket x y)
 
 /-- The finite exponent-block formula characterizing the degree-`n` Dynkin term. -/
 theorem dynkinTerm_def (n : ℕ) (x y : L) :
     dynkinTerm K n x y = ∑ k ∈ range (n + 1),
       ((-1 : K) ^ (k - 1) / (k * n : ℕ)) •
         dynkinBlockSum K k n (dynkinWordBracket x y) := by
-  rw [dynkinTerm]
+  simp [dynkinTerm, div_eq_mul_inv, ← inv_pow, mul_comm]
 
 /-- The universal homogeneous Dynkin polynomial in the free Lie algebra on two generators. -/
 def dynkinPolynomial (n : ℕ) : FreeLieAlgebra K Bool :=
   dynkinTerm K n (FreeLieAlgebra.of K false) (FreeLieAlgebra.of K true)
+
+/-- The universal Dynkin polynomial is the Dynkin term on the two free generators. -/
+theorem dynkinPolynomial_def (n : ℕ) :
+    dynkinPolynomial K n =
+      dynkinTerm K n (FreeLieAlgebra.of K false) (FreeLieAlgebra.of K true) := by
+  rw [dynkinPolynomial]
 
 omit [LieAlgebra K L] [LieAlgebra K M] in
 /-- Lie homomorphisms commute with the word bracket. -/
@@ -138,34 +146,55 @@ theorem _root_.LieHom.map_dynkinWordBracket {R : Type*} [CommRing R]
     | cons c w => cases b <;> simp [dynkinWordBracket_cons_cons, f.map_lie, ih]
 
 variable {K} in
-/-- Linear maps commute with the weighted exponent-block sum. -/
+/-- Additive maps commute with the weighted exponent-block sum. -/
 @[simp]
-theorem _root_.LinearMap.map_dynkinBlockSum {V W : Type*} [AddCommGroup V] [Module K V]
-    [AddCommGroup W] [Module K W] (g : V →ₗ[K] W) (k n : ℕ) (f : List Bool → V) :
+theorem _root_.map_dynkinBlockSum {V W F : Type*} [AddCommGroup V] [Module K V]
+    [AddCommGroup W] [Module K W] [FunLike F V W] [AddMonoidHomClass F V W]
+    (g : F) (k n : ℕ) (f : List Bool → V) :
     g (dynkinBlockSum K k n f) = dynkinBlockSum K k n (fun w => g (f w)) := by
   induction k generalizing n f with
-  | zero => by_cases hn : n = 0 <;> simp [dynkinBlockSum, hn]
-  | succ k ih => simp only [dynkinBlockSum, map_sum, map_smul, apply_ite, map_zero, ih]
+  | zero => by_cases hn : n = 0 <;> simp [dynkinBlockSum_zero, hn]
+  | succ k ih =>
+    simp only [dynkinBlockSum_succ, map_sum, map_inv_natCast_smul g K K,
+      apply_ite, map_zero, ih]
+
+/-- The weighted exponent-block sum does not depend on the coefficient field. -/
+theorem dynkinBlockSum_eq_dynkinBlockSum (K' : Type*) [Field K'] {V : Type*}
+    [AddCommGroup V] [Module K V] [Module K' V] (k n : ℕ) (f : List Bool → V) :
+    dynkinBlockSum K k n f = dynkinBlockSum K' k n f := by
+  induction k generalizing n f with
+  | zero => simp only [dynkinBlockSum_zero]
+  | succ k ih =>
+    simp only [dynkinBlockSum_succ, ih, inv_natCast_smul_eq K K']
 
 variable {K} in
-/-- Lie algebra homomorphisms commute with each degreewise Dynkin term. -/
+/-- Lie homomorphisms over any scalar ring commute with each degreewise Dynkin term. -/
 @[simp]
-theorem _root_.LieHom.map_dynkinTerm (f : L →ₗ⁅K⁆ M) (n : ℕ) (x y : L) :
+theorem _root_.LieHom.map_dynkinTerm {R : Type*} [CommRing R]
+    [LieAlgebra R L] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (n : ℕ) (x y : L) :
     f (dynkinTerm K n x y) = dynkinTerm K n (f x) (f y) := by
-  simp only [dynkinTerm, map_sum, map_smul]
-  congr 1
-  ext k
-  have h := LinearMap.map_dynkinBlockSum f.toLinearMap k n (dynkinWordBracket x y)
-  simp only [LieHom.coe_toLinearMap] at h
-  rw [h]
-  simp only [LieHom.map_dynkinWordBracket]
+  simp only [dynkinTerm, map_sum,
+    map_inv_intCast_smul f K K, map_dynkinBlockSum, LieHom.map_dynkinWordBracket]
+
+/-- The homogeneous Dynkin terms do not depend on the coefficient field. -/
+theorem dynkinTerm_eq_dynkinTerm (K' : Type*) [Field K'] [LieAlgebra K' L]
+    (n : ℕ) (x y : L) : dynkinTerm K n x y = dynkinTerm K' n x y := by
+  simp only [dynkinTerm,
+    dynkinBlockSum_eq_dynkinBlockSum K K', inv_intCast_smul_eq K K']
+
+variable {K} in
+/-- Any Lie homomorphism evaluates the universal polynomial at the images of its generators. -/
+@[simp]
+theorem _root_.LieHom.map_dynkinPolynomial (f : FreeLieAlgebra K Bool →ₗ⁅K⁆ L) (n : ℕ) :
+    f (dynkinPolynomial K n) =
+      dynkinTerm K n (f (FreeLieAlgebra.of K false)) (f (FreeLieAlgebra.of K true)) := by
+  rw [dynkinPolynomial_def, LieHom.map_dynkinTerm]
 
 /-- Evaluating the universal Dynkin polynomial gives the corresponding Dynkin term. -/
-@[simp]
 theorem lift_dynkinPolynomial (n : ℕ) (g : Bool → L) :
     FreeLieAlgebra.lift K g (dynkinPolynomial K n) =
       dynkinTerm K n (g false) (g true) := by
-  simp [dynkinPolynomial]
+  simp
 
 /-- The Dynkin series has zero constant term. -/
 @[simp]
@@ -178,6 +207,17 @@ theorem dynkinTerm_one (x y : L) : dynkinTerm K 1 x y = x + y := by
   norm_num [dynkinTerm, dynkinBlockSum, Finset.Nat.antidiagonal_succ, dynkinWordBracket,
     List.replicate_succ, Finset.sum_range_succ]
   module
+
+/-- The universal Dynkin polynomial has zero constant term. -/
+@[simp]
+theorem dynkinPolynomial_zero : dynkinPolynomial K 0 = 0 := by
+  simp [dynkinPolynomial_def]
+
+/-- The linear universal Dynkin polynomial is the sum of the free generators. -/
+@[simp]
+theorem dynkinPolynomial_one :
+    dynkinPolynomial K 1 = FreeLieAlgebra.of K false + FreeLieAlgebra.of K true := by
+  simp [dynkinPolynomial_def]
 
 /-- The degree-two term of the Dynkin series is one half of the bracket. -/
 theorem dynkinTerm_two (x y : L) :
@@ -199,9 +239,9 @@ theorem dynkinTerm_three (x y : L) :
   -- Total inversion includes characteristics two and three, where small denominators vanish.
   all_goals
     by_cases h2 : (2 : K) = 0
-    · simp [h2, h6, h12]
+    · simp [h2, h12]
     · by_cases h3 : (3 : K) = 0
-      · simp [h3, h6, h12]
+      · simp [h3, h12]
       · have hn6 : (6 : K) ≠ 0 := by rw [h6]; exact mul_ne_zero h3 h2
         have hn12 : (12 : K) ≠ 0 := by
           rw [h12]
@@ -243,6 +283,12 @@ theorem dynkinBlockSum_eq_zero_of_forall {V : Type*} [AddCommGroup V] [Module K 
     intro w hw
     simpa only [Submodule.mem_bot] using hf w hw)
 
+/-- The block sum of the zero word function vanishes in every degree. -/
+@[simp]
+theorem dynkinBlockSum_const_zero {V : Type*} [AddCommGroup V] [Module K V] (k n : ℕ) :
+    dynkinBlockSum K k n (fun _ => (0 : V)) = 0 :=
+  dynkinBlockSum_eq_zero_of_forall K k n _ (fun _ _ => rfl)
+
 /-- The weighted block sum respects subtraction of word functions. -/
 theorem dynkinBlockSum_sub {V : Type*} [AddCommGroup V] [Module K V]
     (k n : ℕ) (f g : List Bool → V) :
@@ -256,6 +302,23 @@ theorem dynkinBlockSum_sub {V : Type*} [AddCommGroup V] [Module K V]
     apply Finset.sum_congr rfl
     intro p _
     split_ifs <;> simp only [sub_self, Finset.sum_sub_distrib]
+
+/-- The weighted block sum respects negation of word functions. -/
+@[simp]
+theorem dynkinBlockSum_neg {V : Type*} [AddCommGroup V] [Module K V]
+    (k n : ℕ) (f : List Bool → V) :
+    dynkinBlockSum K k n (fun w => -f w) = -dynkinBlockSum K k n f := by
+  simpa only [zero_sub, dynkinBlockSum_const_zero] using
+    dynkinBlockSum_sub K k n (fun _ => 0) f
+
+/-- The weighted block sum respects addition of word functions. -/
+@[simp]
+theorem dynkinBlockSum_add {V : Type*} [AddCommGroup V] [Module K V]
+    (k n : ℕ) (f g : List Bool → V) :
+    dynkinBlockSum K k n (fun w => f w + g w) =
+      dynkinBlockSum K k n f + dynkinBlockSum K k n g := by
+  simpa only [sub_neg_eq_add, dynkinBlockSum_neg] using
+    dynkinBlockSum_sub K k n f (fun w => -g w)
 
 /-- The block sum depends only on word values at its prescribed length. -/
 theorem dynkinBlockSum_congr {V : Type*} [AddCommGroup V] [Module K V]
@@ -287,14 +350,14 @@ theorem dynkinWordBracket_smul {R : Type*} [CommRing R] [LieAlgebra R L]
       ring
 
 /-- The weighted block sum respects scalar multiplication of word functions. -/
-theorem dynkinBlockSum_smul {V : Type*} [AddCommGroup V] [Module K V]
-    (t : K) (k n : ℕ) (f : List Bool → V) :
+theorem dynkinBlockSum_smul {V R : Type*} [AddCommGroup V] [Module K V]
+    [DistribSMul R V] (t : R) (k n : ℕ) (f : List Bool → V) :
     dynkinBlockSum K k n (fun w => t • f w) = t • dynkinBlockSum K k n f := by
-  simpa only [LinearMap.lsmul_apply] using
-    (LinearMap.map_dynkinBlockSum (LinearMap.lsmul K V t) k n f).symm
+  exact (map_dynkinBlockSum (K := K) (DistribSMul.toAddMonoidHom V t) k n f).symm
 
 /-- Simultaneously scaling the inputs scales the degree-`n` Dynkin term by the `n`th power. -/
-theorem dynkinTerm_smul (n : ℕ) (t : K) (x y : L) :
+theorem dynkinTerm_smul {R : Type*} [CommRing R] [LieAlgebra R L]
+    (n : ℕ) (t : R) (x y : L) :
     dynkinTerm K n (t • x) (t • y) = t ^ n • dynkinTerm K n x y := by
   unfold dynkinTerm
   rw [Finset.smul_sum]
@@ -305,7 +368,7 @@ theorem dynkinTerm_smul (n : ℕ) (t : K) (x y : L) :
       intro w hw
       rw [dynkinWordBracket_smul, hw])
   rw [h, dynkinBlockSum_smul]
-  exact smul_comm _ _ _
+  exact inv_intCast_smul_comm K _ _ _
 
 omit [LieAlgebra K L] in
 /-- A word bracket of length other than one vanishes when the two letters bracket to zero. -/
@@ -394,5 +457,11 @@ def dynkinSeries : (n : ℕ) → FreeLieAlgebra.homogeneousSubmodule K Bool n :=
 @[simp]
 theorem coe_dynkinSeries (n : ℕ) : (dynkinSeries K n : FreeLieAlgebra K Bool) =
     dynkinPolynomial K n := by simp [dynkinSeries]
+
+/-- The homogeneous free-Lie series has zero constant coefficient. -/
+@[simp]
+theorem dynkinSeries_zero : dynkinSeries K 0 = 0 := by
+  ext
+  simp
 
 end TauCeti.BCH

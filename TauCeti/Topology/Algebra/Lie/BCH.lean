@@ -62,9 +62,7 @@ theorem hasSum_dynkinTerm_of_lie_eq_zero (x y : L) (hxy : ⁅x, y⁆ = 0) :
   simp only [dynkinTerm_of_lie_eq_zero K _ x y hxy]
   exact hasSum_ite_eq 1 (x + y)
 
-variable [T2Space L]
-
-variable {K} in
+variable {K} [T2Space L] in
 /-- The value of a convergent Dynkin series is its total numerical sum. -/
 theorem _root_.HasSum.bchSum_eq {x y a : L}
     (h : HasSum (fun n => dynkinTerm K n x y) a) : bchSum K x y = a := by
@@ -73,7 +71,7 @@ theorem _root_.HasSum.bchSum_eq {x y a : L}
 
 /-- For commuting inputs, the total Dynkin sum is their sum without a size restriction. -/
 theorem bchSum_of_lie_eq_zero (x y : L) (hxy : ⁅x, y⁆ = 0) : bchSum K x y = x + y := by
-  simpa only [bchSum] using (hasSum_dynkinTerm_of_lie_eq_zero K x y hxy).tsum_eq
+  simp only [bchSum, dynkinTerm_of_lie_eq_zero K _ x y hxy, tsum_ite_eq]
 
 /-- The left endpoint identity for the total numerical Dynkin sum holds globally. -/
 @[simp]
@@ -85,10 +83,15 @@ theorem bchSum_zero_left (y : L) : bchSum K 0 y = y := by
 theorem bchSum_zero_right (x : L) : bchSum K x 0 = x := by
   simpa using bchSum_of_lie_eq_zero K x 0 (lie_zero x)
 
+/-- The total numerical Dynkin sum is independent of the coefficient field. -/
+theorem bchSum_eq_bchSum (K' : Type*) [Field K'] [LieAlgebra K' L] (x y : L) :
+    bchSum K x y = bchSum K' x y := by
+  simp only [bchSum, dynkinTerm_eq_dynkinTerm K K']
+
 variable {K}
-omit [T2Space L] in
 /-- Continuous Lie homomorphisms preserve the numerical Dynkin sum of a summable series. -/
-theorem _root_.LieHom.map_bchSum [T2Space M] (f : L →ₗ⁅K⁆ M) (hf : Continuous f) (x y : L)
+theorem _root_.LieHom.map_bchSum {R : Type*} [CommRing R]
+    [LieAlgebra R L] [LieAlgebra R M] [T2Space M] (f : L →ₗ⁅R⁆ M) (hf : Continuous f) (x y : L)
     (hxy : Summable (fun n => dynkinTerm K n x y)) :
     f (bchSum K x y) = bchSum K (f x) (f y) := by
   have h := hxy.hasSum.map f.toLinearMap.toAddMonoidHom hf
