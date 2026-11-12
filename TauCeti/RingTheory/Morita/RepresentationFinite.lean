@@ -41,7 +41,7 @@ one class and for `k × k` two, so `k` and `k × k` are not Morita equivalent.
 
 public section
 
-universe v u₁ u₂
+universe v v' u₁ u₂
 
 open CategoryTheory
 
@@ -50,36 +50,37 @@ namespace TauCeti
 section Morita
 
 variable {R : Type*} [CommSemiring R] {A : Type u₁} [Ring A] [Algebra R A] {B : Type u₂} [Ring B]
-  [Algebra R B] [Small.{v} A] [Small.{v} B]
+  [Algebra R B] [Small.{v} A] [Small.{v'} B]
 
 /-- **Morita equivalent algebras have corresponding finitely generated indecomposable modules**:
-their isomorphism classes, with modules in any universe in which both algebras are small, are in
-bijection. -/
+their isomorphism classes are in bijection, with the modules over each algebra taken in any universe
+in which that algebra is small. -/
 theorem _root_.IsMoritaEquivalent.nonempty_skeletonFiniteIndecomposableModulesEquiv
     (h : IsMoritaEquivalent R A B) :
     Nonempty (Skeleton (ObjectProperty.FullSubcategory
         fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M) ≃
       Skeleton (ObjectProperty.FullSubcategory
-        fun N : ModuleCat.{v} B ↦ Module.Finite B N ∧ Indecomposable N)) := by
+        fun N : ModuleCat.{v'} B ↦ Module.Finite B N ∧ Indecomposable N)) := by
   obtain ⟨e⟩ := h.cond
   exact ⟨(skeletonFiniteIndecomposableEquivSkeletonFiniteIndecomposable.{v, max u₁ u₂, u₁} A).trans
     (e.eqv.skeletonFiniteIndecomposableModulesEquiv.trans
-      (skeletonFiniteIndecomposableEquivSkeletonFiniteIndecomposable.{max u₁ u₂, v, u₂} B))⟩
+      (skeletonFiniteIndecomposableEquivSkeletonFiniteIndecomposable.{max u₁ u₂, v', u₂} B))⟩
 
 /-- **Morita equivalent algebras have equally many finitely generated indecomposable modules** up
-to isomorphism, counted with modules in any universe in which both algebras are small. -/
+to isomorphism, counted with the modules over each algebra in any universe in which that algebra is
+small. -/
 theorem _root_.IsMoritaEquivalent.card_skeleton_finite_indecomposable_modules_eq
     (h : IsMoritaEquivalent R A B) :
     Nat.card (Skeleton (ObjectProperty.FullSubcategory
         fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M)) =
       Nat.card (Skeleton (ObjectProperty.FullSubcategory
-        fun N : ModuleCat.{v} B ↦ Module.Finite B N ∧ Indecomposable N)) :=
+        fun N : ModuleCat.{v'} B ↦ Module.Finite B N ∧ Indecomposable N)) :=
   Nat.card_congr h.nonempty_skeletonFiniteIndecomposableModulesEquiv.some
 
-/-- **Representation-finiteness is a Morita invariant**, with modules in any universe in which both
-algebras are small. -/
+/-- **Representation-finiteness is a Morita invariant**, with the modules over each algebra taken in
+any universe in which that algebra is small. -/
 theorem _root_.IsMoritaEquivalent.isRepresentationFinite_iff (h : IsMoritaEquivalent R A B) :
-    IsRepresentationFinite.{v} A ↔ IsRepresentationFinite.{v} B := by
+    IsRepresentationFinite.{v} A ↔ IsRepresentationFinite.{v'} B := by
   rw [TauCeti.isRepresentationFinite_iff, TauCeti.isRepresentationFinite_iff,
     h.nonempty_skeletonFiniteIndecomposableModulesEquiv.some.finite_iff]
 

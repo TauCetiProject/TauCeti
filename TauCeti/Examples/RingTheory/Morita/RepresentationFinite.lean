@@ -29,28 +29,25 @@ universe u
 
 variable (k : Type u) [Field k]
 
-/-- *card_skeleton_indecomposable_field*: over a field, every finitely generated indecomposable
-module is isomorphic to the field itself. -/
+/-- *not_isMoritaEquivalent_field_prod*: over a field `k` every finitely generated indecomposable
+module is isomorphic to `k`, while over `k × k` there are two of them up to isomorphism, one for
+each factor. Hence `k` and `k × k` are not Morita equivalent. -/
 example : Nat.card (Skeleton (ObjectProperty.FullSubcategory
-    fun M : ModuleCat.{u} k ↦ Module.Finite k M ∧ Indecomposable M)) = 1 := by
-  rw [card_skeleton_finite_indecomposable_eq_card_maximalSpectrum, Nat.card_unique]
-
-/-- *card_skeleton_indecomposable_prod*: over `k × k` there are exactly two finitely generated
-indecomposable modules up to isomorphism, one for each factor. -/
-example : Nat.card (Skeleton (ObjectProperty.FullSubcategory
-    fun M : ModuleCat.{u} (k × k) ↦ Module.Finite (k × k) M ∧ Indecomposable M)) = 2 := by
-  rw [card_skeleton_finite_indecomposable_eq_card_maximalSpectrum,
-    ← Nat.card_congr (IsArtinianRing.primeSpectrumEquivMaximalSpectrum (R := k × k)),
-    Nat.card_congr (PrimeSpectrum.primeSpectrumProd k k), Nat.card_sum, Nat.card_unique]
-
-/-- *not_isMoritaEquivalent_field_prod*: `k` and `k × k` are not Morita equivalent, since they have
-different numbers of finitely generated indecomposable modules. -/
-example : ¬ IsMoritaEquivalent k k (k × k) := fun h ↦ by
-  have := h.card_skeleton_finite_indecomposable_modules_eq.{u}
-  rw [card_skeleton_finite_indecomposable_eq_card_maximalSpectrum,
-    card_skeleton_finite_indecomposable_eq_card_maximalSpectrum, Nat.card_unique,
-    ← Nat.card_congr (IsArtinianRing.primeSpectrumEquivMaximalSpectrum (R := k × k)),
-    Nat.card_congr (PrimeSpectrum.primeSpectrumProd k k), Nat.card_sum, Nat.card_unique] at this
+      fun M : ModuleCat.{u} k ↦ Module.Finite k M ∧ Indecomposable M)) = 1 ∧
+    Nat.card (Skeleton (ObjectProperty.FullSubcategory
+      fun M : ModuleCat.{u} (k × k) ↦ Module.Finite (k × k) M ∧ Indecomposable M)) = 2 ∧
+    ¬ IsMoritaEquivalent k k (k × k) := by
+  have hk : Nat.card (Skeleton (ObjectProperty.FullSubcategory
+      fun M : ModuleCat.{u} k ↦ Module.Finite k M ∧ Indecomposable M)) = 1 := by
+    rw [card_skeleton_finite_indecomposable_eq_card_maximalSpectrum, Nat.card_unique]
+  have hkk : Nat.card (Skeleton (ObjectProperty.FullSubcategory
+      fun M : ModuleCat.{u} (k × k) ↦ Module.Finite (k × k) M ∧ Indecomposable M)) = 2 := by
+    rw [card_skeleton_finite_indecomposable_eq_card_maximalSpectrum,
+      ← Nat.card_congr (IsArtinianRing.primeSpectrumEquivMaximalSpectrum (R := k × k)),
+      Nat.card_congr (PrimeSpectrum.primeSpectrumProd k k), Nat.card_sum, Nat.card_unique]
+  refine ⟨hk, hkk, fun h ↦ ?_⟩
+  have := h.card_skeleton_finite_indecomposable_modules_eq.{u, u}
+  rw [hk, hkk] at this
   omega
 
 end TauCeti

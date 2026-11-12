@@ -176,7 +176,7 @@ private noncomputable def skeletonFiniteIndecomposableEquivMax [Small.{v} A] :
         fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M) ≃
       Skeleton (ObjectProperty.FullSubcategory
         fun N : ModuleCat.{max v v'} A ↦ Module.Finite A N ∧ Indecomposable N) :=
-  Equiv.ofBijective _ (Functor.bijective_obj (uliftFiniteIndecomposable.{v, v'} A).mapSkeleton)
+  (uliftFiniteIndecomposable.{v, v'} A).mapSkeleton.objEquiv
 
 /-- The class of `M` is sent to the class of its lift `ULift M`. -/
 private theorem skeletonFiniteIndecomposableEquivMax_toSkeleton [Small.{v} A]
@@ -185,7 +185,7 @@ private theorem skeletonFiniteIndecomposableEquivMax_toSkeleton [Small.{v} A]
     skeletonFiniteIndecomposableEquivMax.{v, v', u} A (toSkeleton M) =
       toSkeleton ⟨ModuleCat.of A (ULift.{v'} M.obj),
         finite_and_indecomposable_of_linearEquiv ULift.moduleEquiv.symm M.property⟩ := by
-  rw [skeletonFiniteIndecomposableEquivMax, Equiv.ofBijective_apply,
+  rw [skeletonFiniteIndecomposableEquivMax, Functor.objEquiv, Equiv.ofBijective_apply,
     Functor.mapSkeleton_obj_toSkeleton]
   -- `ObjectProperty.lift` and `ModuleCat.uliftFunctor` act on objects by definition.
   rfl
@@ -272,14 +272,6 @@ private def congrFiniteIndecomposable (e : ModuleCat.{v} A ≌ ModuleCat.{v'} B)
   e.congrFullSubcategory (funext fun M ↦ propext (and_congr
     (e.finite_functor_obj_iff M) (e.indecomposable_functor_obj_iff M)))
 
-/-- The restricted equivalence sends `M` to `e.functor.obj M`. -/
-private theorem congrFiniteIndecomposable_functor_obj_obj
-    (e : ModuleCat.{v} A ≌ ModuleCat.{v'} B)
-    (M : ObjectProperty.FullSubcategory
-      fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M) :
-    ((congrFiniteIndecomposable e).functor.obj M).obj = e.functor.obj M.obj := by
-  rw [congrFiniteIndecomposable, congrFullSubcategory_functor_obj_obj]
-
 /-- An equivalence of module categories identifies the isomorphism classes of finitely generated
 indecomposable modules over the two rings, the class of `M` going to the class of `e.functor.obj M`
 (`skeletonFiniteIndecomposableModulesEquiv_toSkeleton_eq_toSkeleton_iff`). No linearity of the
@@ -290,7 +282,7 @@ noncomputable def skeletonFiniteIndecomposableModulesEquiv
         fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M) ≃
       Skeleton (ObjectProperty.FullSubcategory
         fun N : ModuleCat.{v'} B ↦ Module.Finite B N ∧ Indecomposable N) :=
-  Equiv.ofBijective _ (Functor.bijective_obj (congrFiniteIndecomposable e).functor.mapSkeleton)
+  (congrFiniteIndecomposable e).functor.mapSkeleton.objEquiv
 
 /-- The correspondence induced by an equivalence of module categories sends the class of `M` to the
 class of `N` exactly when `e.functor.obj M` is isomorphic to `N`. -/
@@ -303,9 +295,9 @@ theorem skeletonFiniteIndecomposableModulesEquiv_toSkeleton_eq_toSkeleton_iff
       fun N : ModuleCat.{v'} B ↦ Module.Finite B N ∧ Indecomposable N} :
     e.skeletonFiniteIndecomposableModulesEquiv (toSkeleton M) = toSkeleton N ↔
       Nonempty (e.functor.obj M.obj ≅ N.obj) := by
-  rw [skeletonFiniteIndecomposableModulesEquiv, Equiv.ofBijective_apply,
+  rw [skeletonFiniteIndecomposableModulesEquiv, Functor.objEquiv, Equiv.ofBijective_apply,
     Functor.mapSkeleton_obj_toSkeleton, ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso,
-    congrFiniteIndecomposable_functor_obj_obj]
+    congrFiniteIndecomposable, congrFullSubcategory_functor_obj_obj]
 
 /-- **Rings with equivalent module categories have equally many finitely generated indecomposable
 modules** up to isomorphism. No linearity of the equivalence is needed, and the two module
