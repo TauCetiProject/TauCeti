@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient
-public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 import Mathlib.CategoryTheory.HomCongr
 
 /-!
