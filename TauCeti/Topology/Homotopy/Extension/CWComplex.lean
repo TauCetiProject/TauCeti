@@ -158,8 +158,8 @@ theorem _root_.Topology.RelCWComplex.Subcomplex.hasHomotopyExtensionProperty
     (E : Subcomplex C) : HasHomotopyExtensionProperty (Subtype.val ⁻¹' (E : Set X) : Set C) :=
   @hasHomotopyExtensionProperty_base X _ _ C E E.relCWComplex
 
-/-- **The range of a cellular embedding has the homotopy extension property.** Let `X` and `Y`
-carry CW structures on `univ`, and let `g : X → Y` carry every `n`-cell `i` of `X` onto an
+/-- **The range of a map carrying cells onto cells has the homotopy extension property.** Let `W`
+and `Y` carry CW structures on `univ`, and let `g : W → Y` carry every `n`-cell `i` of `W` onto an
 `n`-cell `ι n i` of `Y`, in the sense that `map n (ι n i) = g ∘ map n i`. Then the range of `g`
 is the subcomplex of `Y` made of these cells, so it has the homotopy extension property. -/
 theorem hasHomotopyExtensionProperty_range_of_coe_map_eq {W Y : Type*} [TopologicalSpace W]
