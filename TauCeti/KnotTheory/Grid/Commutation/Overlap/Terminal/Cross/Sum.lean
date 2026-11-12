@@ -128,8 +128,6 @@ private theorem terminalCrossOverlapPartner_injective :
   have hD := G.terminalCrossOverlapPartner_isRecut C D
   have hE := G.terminalCrossOverlapPartner_isRecut C E
   rw [← h] at hE
-  have honeD := (G.terminalCrossOverlapSource_data C D.val D.property).2.1
-  have honeE := (G.terminalCrossOverlapSource_data C E.val E.property).2.1
   obtain ⟨hfD, hsD⟩ := G.terminalCrossOverlapSource_underlying_isEmpty C D.val D.property
   obtain ⟨hfE, hsE⟩ := G.terminalCrossOverlapSource_underlying_isEmpty C E.val E.property
   have hbackD := hD.symm hfD hsD

@@ -33,9 +33,17 @@ Probability preservation is therefore stated with an embedding into the populati
 sampling without replacement, and with a nonempty selection space `ι → κ` for sampling with
 replacement, including when both index types are empty.
 
+Measurable observations of population values commute with both sampling laws. For deterministic
+populations, this expresses sampling a population that factors through another as a pushforward
+of the latter's sampling law, without separation assumptions on the value space.
+
 ## Main declarations
 
 * `sampleWithoutReplacement`, `sampleWithReplacement`: the two finite sampling laws;
+* `sampleWithoutReplacement_map`, `sampleWithReplacement_map`: measurable observations commute
+  with sampling;
+* `sampleWithoutReplacement_dirac_comp`, `sampleWithReplacement_dirac_comp`: their
+  deterministic-population composition forms;
 * `pi_empiricalMeasureOfFintype_eq_map_uniformOn`: independent empirical draws as uniform
   selections;
 * `sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype`: the empirical-product mixture;
@@ -62,7 +70,7 @@ namespace TauCeti
 
 namespace Probability
 
-variable {α : Type*} [MeasurableSpace α]
+variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
 
 /-- The law obtained by sampling a random finite population without replacement.
 
@@ -91,6 +99,23 @@ theorem sampleWithoutReplacement_dirac {ι κ : Type*} [Finite κ] [MeasurableSp
     sampleWithoutReplacement (ι := ι) (Measure.dirac x) =
       (uniformOn {k : ι → κ | Function.Injective k}).map (fun k i => x (k i)) := by
   rw [sampleWithoutReplacement_def, samplePopulation_dirac]
+
+/-- Observing population values commutes with sampling without replacement. -/
+theorem sampleWithoutReplacement_map {ι κ : Type*} [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] [Countable κ] (ρ : Measure (κ → α)) [SFinite ρ]
+    {g : α → β} (hg : Measurable g) :
+    sampleWithoutReplacement (ι := ι) (ρ.map (fun x i => g (x i))) =
+      (sampleWithoutReplacement (ι := ι) ρ).map (fun y i => g (y i)) := by
+  simp only [sampleWithoutReplacement_def, samplePopulation_map _ _ hg]
+
+/-- Sampling an observed deterministic population without replacement is the observation's
+pushforward of the original sampling law. -/
+theorem sampleWithoutReplacement_dirac_comp {ι κ : Type*} [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] [Countable κ] (x : κ → α)
+    {g : α → β} (hg : Measurable g) :
+    sampleWithoutReplacement (ι := ι) (Measure.dirac (g ∘ x)) =
+      (sampleWithoutReplacement (ι := ι) (Measure.dirac x)).map (fun y i => g (y i)) := by
+  simp only [sampleWithoutReplacement_def, samplePopulation_dirac_comp _ _ hg]
 
 /-- Sampling without replacement preserves probability mass whenever an injective selection
 exists. -/
@@ -173,6 +198,21 @@ theorem sampleWithReplacement_dirac [Fintype ι] [Finite κ] (x : κ → α) :
     sampleWithReplacement (ι := ι) (Measure.dirac x) =
       (uniformOn (Set.univ : Set (ι → κ))).map (fun k i => x (k i)) := by
   rw [sampleWithReplacement_eq_samplePopulation_uniformOn, samplePopulation_dirac]
+
+/-- Observing population values commutes with sampling with replacement. -/
+theorem sampleWithReplacement_map [Fintype ι] [Countable κ]
+    (ρ : Measure (κ → α)) [SFinite ρ] {g : α → β} (hg : Measurable g) :
+    sampleWithReplacement (ι := ι) (ρ.map (fun x i => g (x i))) =
+      (sampleWithReplacement (ι := ι) ρ).map (fun y i => g (y i)) := by
+  simp only [sampleWithReplacement_def, samplePopulation_map _ _ hg]
+
+/-- Sampling an observed deterministic population with replacement is the observation's
+pushforward of the original sampling law. -/
+theorem sampleWithReplacement_dirac_comp [Fintype ι] [Countable κ] (x : κ → α)
+    {g : α → β} (hg : Measurable g) :
+    sampleWithReplacement (ι := ι) (Measure.dirac (g ∘ x)) =
+      (sampleWithReplacement (ι := ι) (Measure.dirac x)).map (fun y i => g (y i)) := by
+  simp only [sampleWithReplacement_def, samplePopulation_dirac_comp _ _ hg]
 
 /-- Sampling with replacement from a random population preserves probability mass whenever a
 selection exists. -/

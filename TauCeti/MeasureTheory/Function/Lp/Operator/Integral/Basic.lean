@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -75,8 +76,8 @@ private theorem eLpNorm_lintegral_enorm_mul_le
     (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
     eLpNorm (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) p μ ≤
       A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ * eLpNorm u p ν :=
-  (eLpNorm_lintegral_mul_le (k := fun x y ↦ ‖K x y‖ₑ) hK.enorm hu.enorm hp hA hB).trans_eq
-    (by rw [eLpNorm_enorm _ hu])
+  (eLpNorm_lintegral_mul_le (k := fun x y ↦ ‖K x y‖ₑ) hK.eNorm hu.eNorm hp hA hB).trans_eq
+    (by rw [eLpNorm_eNorm _ hu])
 
 /-- For `u ∈ Lᵖ(ν)` the dominating function `x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν` is finite almost
 everywhere. -/
@@ -86,8 +87,8 @@ private theorem ae_lintegral_enorm_mul_lt_top
     (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
     ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν < ∞ := by
   have hfin : MemLp (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) p μ :=
-    memLp_lintegral_mul (k := fun x y ↦ ‖K x y‖ₑ) hK.enorm hu.enorm hp hA hB
-  simpa only [enorm_eq_self] using hfin.ae_enorm_lt_top (zero_lt_one.trans_le hp).ne'
+    memLp_lintegral_mul (k := fun x y ↦ ‖K x y‖ₑ) hK.eNorm hu.eNorm hp hA hB
+  simpa only [eNorm_eq_self] using hfin.ae_enorm_lt_top (zero_lt_one.trans_le hp).ne'
 
 /-- For `u ∈ Lᵖ(ν)`, `1 ≤ p ≤ ∞`, and a kernel whose operator-norm row and column integrals are
 bounded, the integrand `y ↦ K x y (u y)` is integrable for almost every `x`. -/
@@ -140,9 +141,9 @@ theorem eLpNorm_integral_apply_le (hK : AEStronglyMeasurable (uncurry K) (μ.pro
     (hA : ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ ∂ν ≤ A) (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
     eLpNorm (fun x ↦ ∫ y, K x y (u y) ∂ν) p μ ≤
       A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ * eLpNorm u p ν :=
-  (eLpNorm_mono_enorm (aestronglyMeasurable_integral_apply hK hu) fun x ↦
-      (enorm_integral_le_lintegral_enorm _).trans <|
-        (lintegral_mono fun y ↦ (K x y).le_opENorm (u y)).trans_eq (enorm_eq_self _).symm).trans
+  (eLpNorm_mono_eNorm (aestronglyMeasurable_integral_apply hK hu) fun x ↦
+      (eNorm_integral_le_lintegral_eNorm _).trans <|
+        (lintegral_mono fun y ↦ (K x y).le_opENorm (u y)).trans_eq (eNorm_eq_self _).symm).trans
     (eLpNorm_lintegral_enorm_mul_le hK hu hp hA hB)
 
 /-- The integral operator with kernel `K` maps `Lᵖ(ν)` to `Lᵖ(μ)` when the operator-norm row
@@ -188,7 +189,7 @@ def integralOperatorLp (K : α → β → F →L[𝕜] G) (p : ℝ≥0∞) [Fact
       refine (Lp.norm_toLp _ (memLp_integral_apply hK (Lp.memLp u) Fact.out hA hB)).trans_le
         (ENNReal.toReal_le_of_le_ofReal (by positivity) ?_)
       rw [ENNReal.ofReal_mul NNReal.zero_le_coe, ENNReal.ofReal_coe_nnreal,
-        ofReal_norm, Lp.enorm_def, coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv Fact.out]
+        ofReal_norm, Lp.eNorm_def, coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv Fact.out]
       exact eLpNorm_integral_apply_le hK (Lp.memLp u).aestronglyMeasurable Fact.out hA hB
 
 section integralOperatorLp
@@ -219,8 +220,8 @@ theorem norm_integralOperatorLp_le :
 integrals of `‖K‖`. In particular, a common bound `A` on both gives norm at most `A`. -/
 theorem norm_integralOperatorLp_le_max : ‖integralOperatorLp K p hK hA hB‖ ≤ max A B := by
   refine norm_integralOperatorLp_le.trans ?_
-  have h₀ := one_sub_toReal_inv_nonneg (Fact.out : 1 ≤ p)
-  have h₁ : 0 ≤ p.toReal⁻¹ := by positivity
+  have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
+    simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg (Fact.out : 1 ≤ p)
   rw [NNReal.coe_le_coe]
   calc A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹
       ≤ max A B ^ (1 - p.toReal⁻¹) * max A B ^ p.toReal⁻¹ := by

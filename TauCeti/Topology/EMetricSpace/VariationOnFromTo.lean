@@ -104,11 +104,11 @@ theorem continuousWithinAt_variationOnFromTo_iff
     simp only [ContinuousWithinAt, tendsto_iff_edist_tendsto_0] at h ⊢
     apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h (by simp)
     filter_upwards [self_mem_nhdsWithin] with y hy
-    rw [edist_eq_enorm_sub, variationOnFromTo.sub_right hf ha hy hx]
+    rw [eDist_eq_eNorm_sub, variationOnFromTo.sub_right hf ha hy hx]
     rcases le_total x y with hxy | hyx
-    · simpa [variationOnFromTo.eq_of_le _ _ hxy, Real.enorm_toReal (hf x y hx hy)] using
+    · simpa [variationOnFromTo.eq_of_le _ _ hxy, Real.eNorm_toReal (hf x y hx hy)] using
         eVariationOn.edist_le f (s := s ∩ Icc x y) ⟨hy, hxy, le_rfl⟩ ⟨hx, le_rfl, hxy⟩
-    · simpa [variationOnFromTo.eq_of_ge _ _ hyx, Real.enorm_toReal (hf y x hy hx)] using
+    · simpa [variationOnFromTo.eq_of_ge _ _ hyx, Real.eNorm_toReal (hf y x hy hx)] using
         eVariationOn.edist_le f (s := s ∩ Icc y x) ⟨hy, le_rfl, hyx⟩ ⟨hx, hyx, le_rfl⟩
   · intro h
     apply continuousWithinAt_iff_continuous_left'_right'.mpr
