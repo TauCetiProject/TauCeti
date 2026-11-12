@@ -58,6 +58,7 @@ at `0` while releasing the first.
   connected.
 * `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
   and `I^(Fin (n + 1))`.
+* `Cube.comp_mem_boundary_iff`: permuting the coordinates preserves the boundary.
 * `Cube.boundary_eq_empty`: the boundary of the cube over an empty index type is empty.
 * `Cube.update_mem_boundary`: changing an endpoint coordinate of a boundary point to an endpoint
   value stays on the boundary.
@@ -119,6 +120,14 @@ theorem Cube.isClosed_boundary {N : Type*} [Finite N] : IsClosed (Cube.boundary 
   exact isClosed_iUnion_of_finite fun i ↦
     (isClosed_eq (continuous_apply i) continuous_const).union
       (isClosed_eq (continuous_apply i) continuous_const)
+
+open scoped Topology unitInterval in
+/-- Permuting the coordinates of a point of the cube along an equivalence of index types keeps it
+on the boundary, and off it. -/
+@[simp]
+theorem Cube.comp_mem_boundary_iff {M N : Type*} (e : M ≃ N) {y : I^N} :
+    y ∘ e ∈ Cube.boundary M ↔ y ∈ Cube.boundary N :=
+  ⟨fun ⟨i, hi⟩ ↦ ⟨e i, hi⟩, fun ⟨i, hi⟩ ↦ ⟨e.symm i, by simpa using hi⟩⟩
 
 open scoped Topology unitInterval in
 /-- A point of the cube `I^(Fin (n + 1))` lies on its boundary exactly when its first coordinate

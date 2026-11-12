@@ -703,6 +703,14 @@ lemma hurewiczIntHom_apply (X : Type) [TopologicalSpace X] (x : X) (n : ℕ)
     hurewiczIntHom X x n a = (hurewicz (ModuleCat.of ℤ ℤ) n a.toMul).hom 1 :=
   congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewiczHom_apply _ n a)
 
+/-- The integral Hurewicz homomorphism sends the class of a generalized loop `p` to the Hurewicz
+class of `p`, evaluated at `1 : ℤ`. -/
+lemma hurewiczIntHom_ofMul_mk {X : Type} [TopologicalSpace X] {x : X} {n : ℕ}
+    (p : Ω^ (Fin (n + 1)) X x) :
+    hurewiczIntHom X x n (Additive.ofMul ⟦p⟧) = (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 :=
+  (hurewiczIntHom_apply X x n _).trans
+    (congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewicz_mk _ _ p))
+
 /-- **Naturality of the integral Hurewicz homomorphism**: for a based map `f : (X, x) → (Y, y)`,
 the Hurewicz class of `f_* a` is the image of the Hurewicz class of `a` under
 `f_* : Hₙ₊₁(X; ℤ) → Hₙ₊₁(Y; ℤ)`. -/

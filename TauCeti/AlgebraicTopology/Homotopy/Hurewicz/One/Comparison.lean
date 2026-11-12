@@ -37,6 +37,8 @@ homology of the singular chain complex.
 * `HomotopyGroup.hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv`: the same, for a
   path-connected space, against the Hurewicz isomorphism
   `TauCeti.HurewiczOne.hurewiczHomologyAddEquiv`.
+* `HomotopyGroup.bijective_hurewiczIntHom_zero`: when the fundamental group is commutative, the
+  integral Hurewicz homomorphism is bijective in degree one.
 -/
 
 public section
@@ -182,5 +184,33 @@ theorem hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv [PathConnectedSpace 
   refine (hurewiczHom_hom_one_eq_neg_hurewicz₁ a).trans (congrArg Neg.neg ?_)
   exact (congrArg (H₁AddEquivHomology (TopCat.of X)) (hurewiczAb_ofMul_of x _).symm).trans
     (hurewiczHomologyAddEquiv_apply _).symm
+
+/-- **The Hurewicz theorem in degree one for a commutative fundamental group**: on a
+path-connected space whose fundamental group is commutative, here witnessed by an isomorphism with
+a commutative group, the integral Hurewicz homomorphism `π₁(X, x) → H₁(X; ℤ)` is bijective. This
+applies to loop spaces, whose fundamental group is `π₂` of the space. -/
+theorem bijective_hurewiczIntHom_zero [PathConnectedSpace X] {H : Type*} [CommGroup H]
+    (e : FundamentalGroup X x ≃* H) : Function.Bijective (hurewiczIntHom X x 0) := by
+  -- The abelianization of the commutative group `π₁(X, x)` is `π₁(X, x)` itself.
+  have hab : Function.Bijective (Abelianization.of : FundamentalGroup X x →* _) := by
+    have h : ⇑(Abelianization.of : FundamentalGroup X x →* _) =
+        (MulEquiv.abelianizationCongr e).symm ∘ Abelianization.equivOfComm ∘ e := by
+      funext g
+      simp [Abelianization.equivOfComm]
+    rw [h]
+    exact (MulEquiv.abelianizationCongr e).symm.bijective.comp
+      (Abelianization.equivOfComm.bijective.comp e.bijective)
+  have h : ⇑(hurewiczIntHom X x 0) = Neg.neg ∘ hurewiczHomologyAddEquiv (X := TopCat.of X) x ∘
+      Additive.ofMul ∘ Abelianization.of ∘ homotopyGroupEquivFundamentalGroupOfUnique (Fin 1) ∘
+        Additive.toMul := by
+    funext a
+    rw [hurewiczIntHom_apply, ← hurewiczHom_apply,
+      hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv]
+    rfl
+  rw [h]
+  exact neg_involutive.bijective.comp ((hurewiczHomologyAddEquiv _).bijective.comp
+    (Additive.ofMul.bijective.comp (hab.comp
+      ((homotopyGroupEquivFundamentalGroupOfUnique (Fin 1)).bijective.comp
+        Additive.toMul.bijective))))
 
 end HomotopyGroup
