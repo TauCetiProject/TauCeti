@@ -77,34 +77,6 @@ theorem hasDerivAt_integral_of_isCompact_support (hU : IsOpen U) (hK : IsCompact
     · rw [indicator_of_notMem hx, hasDerivAt_eq_zero_of_forall_notMem hU hderiv hsupp
         (hεU (ball_subset_closedBall ht)) hx, norm_zero]
 
-/-- The integral of a jointly continuous function with a fixed compact support is continuous in the
-parameter. -/
-theorem continuousOn_integral_of_isCompact_support (hU : IsOpen U) (hK : IsCompact K)
-    (hKc : IsClosed K) (hD : ContinuousOn (uncurry D) (U ×ˢ univ))
-    (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) :
-    ContinuousOn (fun t ↦ ∫ x, D t x ∂μ) U := by
-  intro t₀ ht₀
-  obtain ⟨ε, hε, hεU⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds ht₀)
-  obtain ⟨C, hC⟩ := ((isCompact_closedBall t₀ ε).prod hK).exists_bound_of_continuousOn
-    (hD.mono (prod_mono hεU (subset_univ K)))
-  have hDt : ∀ t ∈ U, Continuous (D t) := fun t ht ↦
-    continuous_iff_continuousAt.2 fun x ↦ (hD.continuousAt
-      ((hU.prod isOpen_univ).mem_nhds ⟨ht, mem_univ x⟩)).comp
-        (continuous_const.prodMk continuous_id).continuousAt
-  refine (continuousAt_of_dominated (bound := K.indicator fun _ ↦ C) ?_ ?_
-    ((integrableOn_const hK.measure_lt_top.ne).integrable_indicator hKc.measurableSet)
-    (ae_of_all _ fun x ↦ ?_)).continuousWithinAt
-  · filter_upwards [hU.mem_nhds ht₀] with t ht
-    exact (hDt t ht).aestronglyMeasurable
-  · filter_upwards [closedBall_mem_nhds t₀ hε] with t ht
-    refine ae_of_all _ fun x ↦ ?_
-    by_cases hx : x ∈ K
-    · rw [indicator_of_mem hx]
-      exact hC (t, x) ⟨ht, hx⟩
-    · rw [indicator_of_notMem hx, hsupp t (hεU ht) x hx, norm_zero]
-  · exact (hD.continuousAt ((hU.prod isOpen_univ).mem_nhds ⟨ht₀, mem_univ x⟩)).comp
-      (continuous_id.prodMk continuous_const).continuousAt
-
 /-- **`C²` parametric integrals with a fixed compact support.** Let `D t x` vanish for `x` outside
 a compact closed set `K` and `t` in an open set `U`, with `D t` continuous, and let `D₁` and `D₂`
 be jointly continuous first and second partial derivatives of `D` in `t` on `U × X`. Then
@@ -134,6 +106,7 @@ theorem contDiffOn_two_integral_of_isCompact_support (hU : IsOpen U) (hK : IsCom
   rw [show (1 : ℕ∞ω) = 0 + 1 from rfl, contDiffOn_succ_iff_deriv_of_isOpen hU]
   refine ⟨fun t ht ↦ (h₂ t ht).differentiableAt.differentiableWithinAt, by simp, ?_⟩
   refine ContDiffOn.congr ?_ fun t ht ↦ (h₂ t ht).deriv
-  exact contDiffOn_zero.2 (continuousOn_integral_of_isCompact_support hU hK hKc hD₂ hsupp₂)
+  exact contDiffOn_zero.2 (continuousOn_integral_of_compact_support hK hD₂
+    (fun t x ht hx ↦ hsupp₂ t ht x hx))
 
 end TauCeti
