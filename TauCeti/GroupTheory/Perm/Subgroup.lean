@@ -8,8 +8,7 @@ module
 public import Mathlib.GroupTheory.Complement
 public import Mathlib.GroupTheory.Perm.Subgroup
 public import Mathlib.Order.Sum.Order
-import Mathlib.Data.Finset.Sort
-import Mathlib.Order.WellFounded
+import TauCeti.Data.Fintype.Sort
 
 /-!
 # Subgroups of permutation groups
@@ -25,7 +24,7 @@ for the order induced by an injective map `f : κ₁ ⊕ κ₂ → L` to a linea
 (`Equiv.Perm.isComplement_setOf_strictMono_sumCongrHom_range`), for instance for the lexicographic
 order (`Equiv.Perm.isComplement_setOf_strictMono_toLex_sumCongrHom_range`). The underlying fact is
 that exactly one permutation of a finite linear order sorts the values of an injective map
-(`Equiv.Perm.existsUnique_strictMono_comp`).
+(`Equiv.Perm.existsUnique_strictMono_comp`, from `TauCeti.Data.Fintype.Sort`).
 -/
 
 public section
@@ -78,24 +77,6 @@ theorem isComplement_range_swap_inl_sumCongrHom_range (ι κ : Type*) [Unique ι
   have h : swap (.inl default) a (g (.inl default)) = .inl default := by
     simpa [Unique.eq_default (p default)] using congr($hpq (Sum.inl default)).symm
   simp [(swap_apply_eq_iff.mp h).trans (swap_apply_left _ _)]
-
-/-- Exactly one permutation of a finite linear order `α` sorts the values of an injective map
-`f : α → β` to a linear order, that is, makes `f ∘ p` strictly increasing. -/
-theorem existsUnique_strictMono_comp {α β : Type*} [LinearOrder α] [Finite α] [LinearOrder β]
-    {f : α → β} (hf : Function.Injective f) : ∃! p : Perm α, StrictMono (f ∘ p) := by
-  have := Fintype.ofFinite α
-  classical
-  -- The order isomorphism of `α` with the range of `f` gives the sorting permutation.
-  let o : α ≃o Set.range f := (Fintype.orderIsoFinOfCardEq α rfl).symm.trans
-    (Fintype.orderIsoFinOfCardEq (Set.range f) (Set.card_range_of_injective hf))
-  let p : Perm α := o.toEquiv.trans (Equiv.ofInjective f hf).symm
-  have hp : StrictMono (f ∘ p) := fun a b hab => by
-    simpa [p, Equiv.apply_ofInjective_symm hf] using o.strictMono hab
-  refine ⟨p, hp, fun q hq => Equiv.ext fun a => hf ?_⟩
-  -- Two sorting permutations give strictly increasing maps with the same range.
-  have hrange : Set.range (f ∘ q) = Set.range (f ∘ p) := by
-    rw [Set.range_comp, Set.range_comp, q.range_eq_univ, p.range_eq_univ]
-  exact congrFun ((StrictMono.range_inj_of_wellFoundedLT hq hp).1 hrange) a
 
 /-- The shuffles, the permutations of `κ₁ ⊕ κ₂` that are increasing on each summand for the order
 induced by an injective map `f` to a linear order, form a left transversal of

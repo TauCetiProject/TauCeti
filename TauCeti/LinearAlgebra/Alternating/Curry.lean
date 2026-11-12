@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Alternating.Uncurry.Fin
 
 /-!
-# Uncurrying alternating maps in the first argument
+# Currying and uncurrying alternating maps
 
 Mathlib's `AlternatingMap.curryLeft` turns an alternating map `f` in `n + 2` arguments into a
 linear family `x ↦ f.curryLeft x` of alternating maps in `n + 1` arguments, and every member of
