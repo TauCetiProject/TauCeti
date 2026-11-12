@@ -68,9 +68,6 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 * `MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow`: for
   `1 < p < ∞`, real symbols of order `0`, whose `k`-th derivatives are bounded by
   `C_k (1 + ‖x‖ ^ 2) ^ (-k / 2)`, map `H^{s,p}` to `H^{s,p}`.
-* `TemperedDistribution.memSobolev_of_fourierMultiplierCLM_eq`: an `L²` function whose Fourier
-  transform is carried by the region where a smooth compactly supported symbol is `1` lies in
-  every `H^s`.
 * `TemperedDistribution.MemSobolev.mono_of_one_lt`: `H^{s,p} ⊆ H^{s',p}` for `s' ≤ s`.
 * `TemperedDistribution.MemSobolev.lineDerivOp_of_one_lt`: `∂_m` maps `H^{s,p}` to `H^{s-1,p}`.
 * `TemperedDistribution.memSobolev_add_one_of_lineDerivOp`: if `f` and its derivatives along an
@@ -395,28 +392,6 @@ theorem memSobolev_natCast_add_one_iff (hp : 1 < p) (hp_top : p ≠ ∞) {k : �
       rw [Nat.cast_succ, memSobolev_add_one_iff hp hp_top, ih]
       exact ⟨fun h => ⟨h.1.1, h.2⟩,
         fun h => ⟨⟨h.1, fun m => (h.2 m).mono_of_one_lt hp hp_top (by linarith)⟩, h.2⟩⟩
-
-open scoped ContDiff in
-/-- An `L²` function `v` with `χ(D) v = v` for a smooth compactly supported symbol `χ`, that is,
-with Fourier transform carried by the region where `χ = 1`, lies in every `H^s`. -/
-theorem memSobolev_of_fourierMultiplierCLM_eq {v : Lp F 2 (volume : Measure E)} {χ : E → ℝ}
-    (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
-    (hv : fourierMultiplierCLM F (fun ξ ↦ (χ ξ : ℂ)) (v : 𝓢'(E, F)) = v) (s : ℝ) :
-    (v : 𝓢'(E, F)).MemSobolev s 2 := by
-  set m : E → ℂ := fun ξ ↦ ((χ ξ * (1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)
-  have hmd : ContDiff ℝ ∞ m := Complex.ofRealCLM.contDiff.comp
-    (hχ.mul ((contDiff_const.add (contDiff_norm_sq ℝ)).rpow_const_of_ne fun ξ ↦ by positivity))
-  have hmc : HasCompactSupport m := hχc.mul_right.comp_left Complex.ofReal_zero
-  have hmL : MemLp m ∞ volume := hmd.continuous.memLp_top_of_hasCompactSupport hmc volume
-  have hχt : (fun ξ ↦ (χ ξ : ℂ)).HasTemperateGrowth :=
-    (hχc.comp_left Complex.ofReal_zero).hasTemperateGrowth (Complex.ofRealCLM.contDiff.comp hχ)
-  refine ⟨Lp.fourierMultiplierCLM F (hmL.toLp m) v, ?_⟩
-  rw [← Lp.fourierMultiplierCLM_toTemperedDistribution_eq v (hmc.hasTemperateGrowth hmd) hmL]
-  conv_lhs => rw [← hv]
-  rw [besselPotential, fourierMultiplierCLM_fourierMultiplierCLM_apply hχt (by fun_prop)]
-  congr 2
-  funext ξ
-  simp [m]
 
 end inner
 

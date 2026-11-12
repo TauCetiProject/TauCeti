@@ -24,8 +24,8 @@ bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓ�
 (`lp.norm_le_of_norm_le_geometric`). The scalar coordinate vectors are linearly independent, and
 vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
 normed rings at every exponent. A family lies in `ℓ²` exactly when the squares of the norms of its
-terms are summable (`memℓp_two_iff_summable_sq`). In `ℓ²`, the squared norm of a finite sum of
-single-coordinate vectors is the sum of the squared norms of its coordinates
+terms are summable (`TauCeti.memℓp_two_iff_summable_sq_norm`). In `ℓ²`, the squared norm of a
+finite sum of single-coordinate vectors is the sum of the squared norms of its coordinates
 (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
 operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely
 many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`,
@@ -248,11 +248,16 @@ end Density
 
 end lp
 
+namespace TauCeti
+
 /-- A family lies in `ℓ²` exactly when the squares of the norms of its terms are summable. -/
-theorem memℓp_two_iff_summable_sq {ι : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
-    {f : ∀ i, E i} : Memℓp f 2 ↔ Summable fun i ↦ ‖f i‖ ^ 2 := by
+theorem memℓp_two_iff_summable_sq_norm {ι : Type*} {E : ι → Type*}
+    [∀ i, NormedAddCommGroup (E i)] {f : ∀ i, E i} :
+    Memℓp f 2 ↔ Summable fun i ↦ ‖f i‖ ^ 2 := by
   rw [memℓp_gen_iff (by norm_num)]
   simp only [ENNReal.toReal_ofNat, Real.rpow_two]
+
+end TauCeti
 
 section Geometric
 

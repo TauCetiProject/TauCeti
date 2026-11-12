@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Fourier.LpSpace
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Fourier multipliers on `L²`
@@ -38,6 +39,8 @@ defined, it agrees with Mathlib's multipliers.
 * `MeasureTheory.Lp.fourier_fourierMultiplierCLM`: `𝓕 (T_m f) = m • 𝓕 f`, and
   `MeasureTheory.Lp.eq_fourierMultiplierCLM_iff`, which characterizes `T_m` by it.
 * `MeasureTheory.Lp.norm_fourierMultiplierCLM_le`: the bound `‖T_m‖ ≤ ‖m‖_∞`.
+* `MeasureTheory.Lp.enorm_fourierMultiplierCLM_apply_sq`: Plancherel's identity
+  `‖T_m f‖² = ∫ ‖m ξ‖² ‖𝓕 f ξ‖² dξ`.
 * `MeasureTheory.Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM`: `T_{m₁} ∘ T_{m₂} =
   T_{m₁ m₂}`, with linearity in the symbol and `T_c = c • id` for a constant symbol.
 * `MeasureTheory.Lp.adjoint_fourierMultiplierCLM`: the adjoint of `T_m` is `T_{star m}`.
@@ -125,6 +128,17 @@ theorem norm_fourierMultiplierCLM_apply_le : ‖fourierMultiplierCLM F m f‖ �
 /-- **Plancherel bound** for Fourier multipliers: `‖T_m‖ ≤ ‖m‖_∞`. -/
 theorem norm_fourierMultiplierCLM_le : ‖fourierMultiplierCLM (E := E) F m‖ ≤ ‖m‖ :=
   opNorm_le_bound _ (norm_nonneg m) (norm_fourierMultiplierCLM_apply_le m)
+
+/-- **Plancherel's identity** for Fourier multipliers: `‖T_m f‖² = ∫ ‖m ξ‖² ‖𝓕 f ξ‖² dξ`, in
+`ℝ≥0∞`. -/
+theorem enorm_fourierMultiplierCLM_apply_sq :
+    ‖fourierMultiplierCLM F m f‖ₑ ^ 2 =
+      ∫⁻ ξ, ‖m ξ‖ₑ ^ 2 * ‖(𝓕 f : Lp F 2 (volume : Measure E)) ξ‖ₑ ^ 2 := by
+  rw [← ofReal_norm, ← norm_fourier_eq, fourier_fourierMultiplierCLM, ofReal_norm,
+    Lp.enorm_sq_eq_lintegral]
+  refine lintegral_congr_ae ?_
+  filter_upwards [coeFn_lpSMul (r := 2) m (𝓕 f)] with ξ h
+  rw [h, Pi.smul_apply', enorm_smul, mul_pow]
 
 /-! ### Dependence on the symbol -/
 

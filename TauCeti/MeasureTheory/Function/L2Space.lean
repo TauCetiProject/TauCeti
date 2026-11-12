@@ -25,9 +25,7 @@ continuous linear maps out of L². On a compact space with a finite measure, the
 L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
 More generally, the L² pairing of an L² function with the class of any square-integrable
-function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`), and the
-square of the extended `L²` norm is the Lebesgue integral of `‖f x‖ₑ ^ 2`
-(`MeasureTheory.L2.enorm_sq_eq_lintegral`).
+function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
 `integral_inner` with the integrand in the left slot, and the integral of the Hilbert space
 adjoints `(f x)†` of an operator-valued function is `(∫ f)†`
@@ -189,16 +187,6 @@ theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
   refine integral_congr_ae ?_
   filter_upwards [hg.coeFn_toLp] with x hx
   rw [hx]
-
-/-- The square of the extended `L²` norm is the Lebesgue integral of the squared extended
-pointwise norm. -/
-theorem L2.enorm_sq_eq_lintegral {F : Type*} [NormedAddCommGroup F] (f : Lp F 2 μ) :
-    ‖f‖ₑ ^ 2 = ∫⁻ x, ‖f x‖ₑ ^ 2 ∂μ := by
-  have h := eLpNorm_nnreal_pow_eq_lintegral (μ := μ) (p := 2) two_ne_zero
-    (Lp.aestronglyMeasurable f)
-  simp only [NNReal.coe_ofNat, ENNReal.rpow_two] at h
-  rw [Lp.enorm_def]
-  exact_mod_cast h
 
 end MeasureTheory
 
