@@ -1,10 +1,11 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
+public import Mathlib.Geometry.Convex.Cone.Pointed
 public import TauCeti.Analysis.Convex.Exposed
 public import TauCeti.Analysis.Convex.Polyhedron.Rational.Basic
 
@@ -194,6 +195,14 @@ theorem IsSubdivision.exists_mem_cells_subset {C D : FinitePolyhedralComplex h}
     (D.inter_face R hR P hP ⟨x, hQR hxQ, hx⟩).inter_of_subset hQR
   exact ⟨(R ∩ P) ∩ Q, C.face_closed Q hQ _ ⟨⟨x, ⟨hQR hxQ, hx⟩, hxQ⟩, hF⟩,
     fun _ hy => hy.1.2, ⟨hQR hxQ, hx⟩, hxQ⟩
+
+/-- Every cell is the carrier of a pointed cone with apex zero. -/
+def IsConical (C : FinitePolyhedralComplex h) : Prop :=
+  ∀ P ∈ C.cells, ∃ σ : PointedCone ℝ V, (σ : Set V) = P
+
+/-- Conicality means that each actual cell carrier is a cone. -/
+theorem isConical_iff (C : FinitePolyhedralComplex h) :
+    C.IsConical ↔ ∀ P ∈ C.cells, ∃ σ : PointedCone ℝ V, (σ : Set V) = P := Iff.rfl
 
 /-- `C` is a subcomplex of `D` when every cell of `C` is a cell of `D`. -/
 def IsSubcomplex (C D : FinitePolyhedralComplex h) : Prop := C.cells ⊆ D.cells
