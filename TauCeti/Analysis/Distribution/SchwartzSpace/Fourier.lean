@@ -92,7 +92,6 @@ changes a symbol only by a smoothing remainder.
   `SchwartzMap.norm_integral_fourier_smul_sub_smul_sub_le`: if `χ = 1` near `0`, averaging against
   `𝓕 χ` reproduces Taylor polynomials, so averaging the translates `η ↦ h (ξ - c • η)` changes
   `h ξ` only by a Taylor remainder of order `N + 1`.
-* `SchwartzMap.integral_fourierChar_mul_fourier`: Fourier inversion with the Fourier character.
 
 ## References
 
@@ -557,24 +556,6 @@ theorem norm_integral_fourier_smul_sub_smul_sub_le (χ : 𝓢(E, ℂ))
     ring
 
 end Moment
-
-section Cutoff
-
-/-! ### Cutting off by a translate -/
-
-variable [NormedSpace ℂ F] [CompleteSpace F]
-
-/-- **Fourier inversion** for a Schwartz function, written with the Fourier character:
-`∫ exp(2πi ⟪η, w⟫) 𝓕 χ(η) dη = χ w`. -/
-@[simp]
-theorem integral_fourierChar_mul_fourier (χ : 𝓢(E, ℂ)) (w : E) :
-    ∫ η, (𝐞 ⟪η, w⟫ : ℂ) * 𝓕 χ η = χ w := by
-  have h : (𝓕⁻ (𝓕 χ : 𝓢(E, ℂ)) : 𝓢(E, ℂ)) w = χ w := by
-    rw [FourierTransform.fourierInv_fourier_eq]
-  rw [← h, fourierInv_coe, Real.fourierInv_eq]
-  simp only [Circle.smul_def, smul_eq_mul]
-
-end Cutoff
 
 variable [InnerProductSpace ℂ F] [CompleteSpace F]
 

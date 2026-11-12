@@ -56,6 +56,8 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
 * `TauCeti.CoordinateSpace n`: the Euclidean space `ℝⁿ = EuclideanSpace ℝ (Fin n)`.
 * `TauCeti.coordinateDeriv`: the iterated coordinate derivative along a word of indices.
 * `TauCeti.coordinateDeriv_eq_iteratedFDeriv`: its comparison with `iteratedFDeriv`.
+* `ContinuousMultilinearMap.norm_le_sum_basis`: a multilinear map is bounded by its values on
+  tuples of basis vectors, for a basis whose coordinates are bounded by the norm.
 * `TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`,
   `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`: the converse estimates, bounding a
   Fréchet derivative by coordinate derivatives, or by Fréchet derivatives of the first partial
@@ -182,25 +184,32 @@ theorem coordinateDeriv_ofFn_eq_iteratedFDeriv {k : ℕ} (r : Fin k → Fin n)
   congr 1 with i
   rw [hl, Fin.cast_eq_self]
 
+/-- A continuous multilinear map on a real normed space with a basis whose coordinates are bounded
+by the norm has norm at most the sum of the norms of its values on tuples of basis vectors. -/
+theorem _root_.ContinuousMultilinearMap.norm_le_sum_basis {E ι : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Fintype ι] {k : ℕ} (b : Module.Basis ι ℝ E)
+    (hb : ∀ v i, ‖b.repr v i‖ ≤ ‖v‖) (M : ContinuousMultilinearMap ℝ (fun _ : Fin k => E) A) :
+    ‖M‖ ≤ ∑ r : Fin k → ι, ‖M fun i => b (r i)‖ := by
+  classical
+  refine M.opNorm_le_bound (Finset.sum_nonneg fun _ _ => norm_nonneg _) fun v => ?_
+  calc ‖M v‖ = ‖M fun i => ∑ l, b.repr (v i) l • b l‖ := by simp only [b.sum_repr]
+    _ = ‖∑ r : Fin k → ι, M fun i => b.repr (v i) (r i) • b (r i)‖ := by rw [M.map_sum]
+    _ ≤ ∑ r : Fin k → ι, ‖M fun i => b.repr (v i) (r i) • b (r i)‖ := norm_sum_le _ _
+    _ ≤ ∑ r : Fin k → ι, ‖M fun i => b (r i)‖ * ∏ i, ‖v i‖ := by
+        refine Finset.sum_le_sum fun r _ => ?_
+        rw [M.map_smul_univ, norm_smul, norm_prod, mul_comm]
+        gcongr with i
+        exact hb _ _
+    _ = _ := by rw [Finset.sum_mul]
+
 /-- A continuous multilinear map on `ℝⁿ` has norm at most the sum of the norms of its values on
 tuples of standard basis vectors. -/
 theorem _root_.ContinuousMultilinearMap.norm_le_sum_single {k : ℕ}
     (M : ContinuousMultilinearMap ℝ (fun _ : Fin k => CoordinateSpace n) A) :
     ‖M‖ ≤ ∑ r : Fin k → Fin n, ‖M fun i => EuclideanSpace.single (r i) 1‖ := by
   classical
-  refine M.opNorm_le_bound (Finset.sum_nonneg fun _ _ => norm_nonneg _) fun v => ?_
-  have hv : v = fun i => ∑ j, v i j • EuclideanSpace.single j (1 : ℝ) := by
-    funext i
-    simpa [EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply] using
-      ((EuclideanSpace.basisFun (Fin n) ℝ).sum_repr (v i)).symm
-  rw [hv, M.map_sum, Finset.sum_mul]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun r _ => ?_)
-  rw [M.map_smul_univ, norm_smul, mul_comm]
-  refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
-  rw [norm_prod]
-  gcongr with i
-  calc ‖v i (r i)‖ ≤ ‖v i‖ := PiLp.norm_apply_le (v i) (r i)
-    _ = ‖∑ j, v i j • EuclideanSpace.single j (1 : ℝ)‖ := by rw [← congrFun hv i]
+  simpa using M.norm_le_sum_basis (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
+    fun v j => by simpa using PiLp.norm_apply_le v j
 
 /-- Conversely to `TauCeti.norm_coordinateDeriv_le`, the `k`-th Fréchet derivative of a `C^k`
 function is bounded by the sum of the norms of its coordinate derivatives along the words of
@@ -714,34 +723,16 @@ theorem _root_.ContinuousMultilinearMap.norm_le_sum_mixedDirection {k : ℕ}
     (M : ContinuousMultilinearMap ℝ (fun _ : Fin k => CoordinateSpace n × CoordinateSpace n) A) :
     ‖M‖ ≤ ∑ r : Fin k → Fin n ⊕ Fin n, ‖M fun i => mixedDirection (r i)‖ := by
   classical
-  -- The coordinates of a vector of `ℝⁿ × ℝⁿ` in the directions `mixedDirection`.
-  set c : CoordinateSpace n × CoordinateSpace n → Fin n ⊕ Fin n → ℝ :=
-    fun v => Sum.elim (fun j => v.1 j) fun j => v.2 j with hc_def
-  have hv (v : CoordinateSpace n × CoordinateSpace n) : v = ∑ l, c v l • mixedDirection l := by
-    have h₁ := (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr v.1
-    have h₂ := (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr v.2
-    simp only [EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply] at h₁ h₂
-    rw [Fintype.sum_sum_type]
-    ext1
-    · simp [hc_def, Prod.fst_sum, h₁]
-    · simp [hc_def, Prod.snd_sum, h₂]
-  have hc (v : CoordinateSpace n × CoordinateSpace n) (l : Fin n ⊕ Fin n) : ‖c v l‖ ≤ ‖v‖ := by
-    cases l with
-    | inl j => exact (PiLp.norm_apply_le v.1 j).trans (norm_fst_le v)
-    | inr j => exact (PiLp.norm_apply_le v.2 j).trans (norm_snd_le v)
-  refine M.opNorm_le_bound (Finset.sum_nonneg fun _ _ => norm_nonneg _) fun v => ?_
-  calc ‖M v‖ = ‖M fun i => ∑ l, c (v i) l • mixedDirection l‖ := by
-        rw [← funext fun i => hv (v i)]
-    _ = ‖∑ r : Fin k → Fin n ⊕ Fin n, M fun i => c (v i) (r i) • mixedDirection (r i)‖ := by
-        rw [M.map_sum]
-    _ ≤ ∑ r : Fin k → Fin n ⊕ Fin n, ‖M fun i => c (v i) (r i) • mixedDirection (r i)‖ :=
-        norm_sum_le _ _
-    _ ≤ ∑ r : Fin k → Fin n ⊕ Fin n, ‖M fun i => mixedDirection (r i)‖ * ∏ i, ‖v i‖ := by
-        refine Finset.sum_le_sum fun r _ => ?_
-        rw [M.map_smul_univ, norm_smul, norm_prod, mul_comm]
-        gcongr with i
-        exact hc _ _
-    _ = _ := by rw [Finset.sum_mul]
+  -- `mixedDirection` is the product of the standard bases of the two factors.
+  set b := (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
+  have hb : ⇑(b.prod b) = mixedDirection := by
+    ext1 l
+    cases l <;> simp [b, Module.Basis.prod_apply]
+  rw [← hb]
+  refine M.norm_le_sum_basis (b.prod b) fun v l => ?_
+  cases l with
+  | inl j => simpa [b] using (PiLp.norm_apply_le v.1 j).trans (norm_fst_le v)
+  | inr j => simpa [b] using (PiLp.norm_apply_le v.2 j).trans (norm_snd_le v)
 
 /-- The `k`-th Fréchet derivative of a `C^k` function of a position and a frequency is bounded by
 the sum of the norms of its mixed derivatives along the words of `k` position and frequency

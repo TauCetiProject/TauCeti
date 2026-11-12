@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
-import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
@@ -54,10 +52,10 @@ The quantization identity is a change of the order of integration. Writing `χ(x
 inversion turns the Fourier transform of `χ(x - ·) u` into a convolution of `𝓕 χ` with `𝓕 u`, and
 translating the frequency variable gives the defining integral of `a_χ`.
 
-Every iterated directional derivative of `a_χ` is the average of the corresponding derivative of
-`a`, by differentiation under the integral sign. Peetre's inequality
-`⟨ξ - 2πη⟩ ^ s ≤ 2 ^ (|s| / 2) ⟨2πη⟩ ^ |s| ⟨ξ⟩ ^ s` and the rapid decay of `𝓕 χ` give the integrable
-majorants, and the estimate `‖∂_x^α ∂_ξ^β a_χ(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - |β|)`.
+Every Fréchet derivative of `a_χ` is the average of the corresponding derivative of `a`, by
+differentiation under the integral sign (Mathlib's `hasFTaylorSeriesUpToOn_integral_of_le_bound`).
+Peetre's inequality `⟨ξ - 2πη⟩ ^ s ≤ 2 ^ (|s| / 2) ⟨2πη⟩ ^ |s| ⟨ξ⟩ ^ s` and the rapid decay of
+`𝓕 χ` give the integrable majorants, and the estimate `‖∂_x^α ∂_ξ^β a_χ(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - |β|)`.
 
 For the smoothing estimate, expand `η ↦ ∂_x^α ∂_ξ^β a(x, ξ - 2πη)` by Taylor's formula to order
 `N`. If `χ = 1` near `0`, then `∫ 𝓕 χ = χ(0) = 1` and the moments of positive order of `𝓕 χ`
@@ -108,155 +106,73 @@ private lemma mem_closedBall_and_norm_sub_le {p p₀ : CoordinateSpace n × Coor
   exact ⟨Metric.mem_closedBall.2 ((le_max_left _ _).trans hp.le),
     (dist_eq_norm p.2 p₀.2).symm.le.trans ((le_max_right _ _).trans hp.le)⟩
 
-/-- The average of the frequency translates of a continuous function of locally uniform
-polynomial growth is continuous. -/
-private lemma continuous_shiftIntegral (g : 𝓢(CoordinateSpace n, ℂ))
-    {f : CoordinateSpace n × CoordinateSpace n → G} (hf : Continuous f)
-    (hb : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C s : ℝ, ∀ x ∈ K, ∀ ξ,
-      ‖f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2)) :
-    Continuous (shiftIntegral g f) := by
-  refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
-  obtain ⟨C, s, hC⟩ := hb _ (isCompact_closedBall p₀.1 1)
-  refine continuousAt_of_dominated
-    (F := fun (p : CoordinateSpace n × CoordinateSpace n) η ↦ g η • f (p.1, p.2 - (2 * π) • η))
-    (bound := fun η ↦ C * (2 ^ (|s| / 2) * 2 ^ |s| * (1 + ‖p₀.2‖ ^ 2) ^ (s / 2)) *
-      ((1 + ‖(2 * π) • η‖ ^ 2) ^ (|s| / 2) * ‖g η‖))
-    (.of_forall fun p ↦ (g.continuous.smul (hf.comp (by fun_prop))).aestronglyMeasurable)
-    ?_ ((g.integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) |s|).const_mul _)
-    (.of_forall fun η ↦ (continuous_const.smul (hf.comp (by fun_prop))).continuousAt)
-  filter_upwards [Metric.ball_mem_nhds p₀ one_pos] with p hp
-  obtain ⟨h₁, h₂⟩ := mem_closedBall_and_norm_sub_le hp
-  exact .of_forall (g.norm_smul_apply_sub_smul_le (f := fun ζ ↦ f (p.1, ζ)) (hC p.1 h₁) (2 * π) h₂)
-
-/-- The translated function `p ↦ f(p.1, p.2 - 2πη)` has the translated derivative. -/
-private lemma hasFDerivAt_comp_shift {f : CoordinateSpace n × CoordinateSpace n → G}
-    (hf : Differentiable ℝ f) (η : CoordinateSpace n) (p : CoordinateSpace n × CoordinateSpace n) :
-    HasFDerivAt (fun p : CoordinateSpace n × CoordinateSpace n ↦ f (p.1, p.2 - (2 * π) • η))
-      (fderiv ℝ f (p.1, p.2 - (2 * π) • η)) p := by
-  have h := (hf (p - (0, (2 * π) • η))).hasFDerivAt.comp p
-    ((hasFDerivAt_id p).sub_const (0, (2 * π) • η))
+/-- The derivatives of a frequency translate of `f`, scaled by `c`, are the scaled translates of
+the derivatives of `f`. -/
+private lemma iteratedFDeriv_smul_comp_shift {f : CoordinateSpace n × CoordinateSpace n → G}
+    (hf : ContDiff ℝ ∞ f) (c : ℂ) (η : CoordinateSpace n) (k : ℕ)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    iteratedFDeriv ℝ k (fun q : CoordinateSpace n × CoordinateSpace n ↦
+        c • f (q.1, q.2 - (2 * π) • η)) p =
+      c • iteratedFDeriv ℝ k f (p.1, p.2 - (2 * π) • η) := by
   have hq (q : CoordinateSpace n × CoordinateSpace n) :
-      q - (0, (2 * π) • η) = (q.1, q.2 - (2 * π) • η) := by
+      (q.1, q.2 - (2 * π) • η) = q - (0, (2 * π) • η) := by
     ext <;> simp
-  simpa only [Function.comp_def, id, hq, ContinuousLinearMap.comp_id] using h
+  have hd : ContDiff ℝ ∞ fun q ↦ f (q - (0, (2 * π) • η)) :=
+    hf.comp (contDiff_id.sub contDiff_const)
+  simp only [hq]
+  rw [iteratedFDeriv_const_smul_apply' (hd.contDiffAt.of_le (mod_cast le_top)),
+    iteratedFDeriv_comp_sub]
 
-/-- **Differentiation under the integral sign** for an average of frequency translates. -/
-private lemma hasFDerivAt_shiftIntegral (g : 𝓢(CoordinateSpace n, ℂ))
-    {f : CoordinateSpace n × CoordinateSpace n → G} (hf : ContDiff ℝ 1 f)
-    (hb₀ : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C s : ℝ, ∀ x ∈ K, ∀ ξ,
-      ‖f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2))
-    (hb₁ : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C s : ℝ, ∀ x ∈ K, ∀ ξ,
-      ‖fderiv ℝ f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2))
-    (p₀ : CoordinateSpace n × CoordinateSpace n) :
-    HasFDerivAt (shiftIntegral g f)
-      (∫ η, g η • fderiv ℝ f (p₀.1, p₀.2 - (2 * π) • η)) p₀ := by
-  obtain ⟨C₀, s₀, hC₀⟩ := hb₀ _ (isCompact_closedBall p₀.1 1)
-  obtain ⟨C, s, hC⟩ := hb₁ _ (isCompact_closedBall p₀.1 1)
-  have hd : Differentiable ℝ f := hf.differentiable one_ne_zero
-  have hfc : Continuous (fderiv ℝ f) := hf.continuous_fderiv one_ne_zero
-  refine hasFDerivAt_integral_of_dominated_of_fderiv_le
+/-- **Differentiation under the integral sign** for an average of frequency translates. On the
+unit ball around `p₀`, the Taylor series of `shiftIntegral g f` is the average of the translated
+Taylor series of `f`, by Mathlib's `hasFTaylorSeriesUpToOn_integral_of_le_bound`. Peetre's
+inequality and the decay of `g` give the integrable majorants. -/
+private lemma hasFTaylorSeriesUpToOn_shiftIntegral (g : 𝓢(CoordinateSpace n, ℂ))
+    {f : CoordinateSpace n × CoordinateSpace n → G} (hf : ContDiff ℝ ∞ f)
+    (hb : HasLocalGrowth f) (p₀ : CoordinateSpace n × CoordinateSpace n) :
+    HasFTaylorSeriesUpToOn ∞ (shiftIntegral g f)
+      (fun p k ↦ ∫ η, g η • iteratedFDeriv ℝ k f (p.1, p.2 - (2 * π) • η))
+      (Metric.ball p₀ 1) := by
+  choose C s hC using fun k ↦ hb k _ (isCompact_closedBall p₀.1 1)
+  refine hasFTaylorSeriesUpToOn_integral_of_le_bound
     (F := fun (p : CoordinateSpace n × CoordinateSpace n) η ↦ g η • f (p.1, p.2 - (2 * π) • η))
-    (F' := fun (p : CoordinateSpace n × CoordinateSpace n) η ↦
-      g η • fderiv ℝ f (p.1, p.2 - (2 * π) • η))
-    (bound := fun η ↦ C * (2 ^ (|s| / 2) * 2 ^ |s| * (1 + ‖p₀.2‖ ^ 2) ^ (s / 2)) *
-      ((1 + ‖(2 * π) • η‖ ^ 2) ^ (|s| / 2) * ‖g η‖))
-    (Metric.ball_mem_nhds p₀ one_pos)
-    (.of_forall fun p ↦ (g.continuous.smul (hf.continuous.comp (by fun_prop))).aestronglyMeasurable)
-    (g.integrable_smul_apply_sub_smul (f := fun ζ ↦ f (p₀.1, ζ)) (hf.continuous.comp (by fun_prop))
-      (hC₀ p₀.1 (Metric.mem_closedBall_self zero_le_one)) (2 * π) p₀.2)
-    (g.continuous.smul (hfc.comp (by fun_prop))).aestronglyMeasurable ?_
-    ((g.integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) |s|).const_mul _) ?_
-  · refine .of_forall fun η p hp ↦ ?_
-    obtain ⟨h₁, h₂⟩ := mem_closedBall_and_norm_sub_le hp
-    exact g.norm_smul_apply_sub_smul_le (f := fun ζ ↦ fderiv ℝ f (p.1, ζ)) (hC p.1 h₁) (2 * π) h₂ η
-  · exact .of_forall fun η p _ ↦ (hasFDerivAt_comp_shift hd η p).const_smul (g η)
-
-/-- The derivative of an average of frequency translates in a direction `y` is the average of
-the translates of the derivative of `f` in the direction `y`. -/
-private lemma fderiv_shiftIntegral_apply (g : 𝓢(CoordinateSpace n, ℂ))
-    {f : CoordinateSpace n × CoordinateSpace n → G} (hf : ContDiff ℝ 1 f)
-    (hb₀ : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C s : ℝ, ∀ x ∈ K, ∀ ξ,
-      ‖f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2))
-    (hb₁ : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C s : ℝ, ∀ x ∈ K, ∀ ξ,
-      ‖fderiv ℝ f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2))
-    (p y : CoordinateSpace n × CoordinateSpace n) :
-    fderiv ℝ (shiftIntegral g f) p y = shiftIntegral g (fun q ↦ fderiv ℝ f q y) p := by
-  obtain ⟨C, s, hC⟩ := hb₁ _ (isCompact_singleton (x := p.1))
-  rw [(hasFDerivAt_shiftIntegral g hf hb₀ hb₁ p).fderiv, ContinuousLinearMap.integral_apply
-    (g.integrable_smul_apply_sub_smul (f := fun ζ ↦ fderiv ℝ f (p.1, ζ))
-      ((hf.continuous_fderiv one_ne_zero).comp (by fun_prop)) (hC p.1 (Set.mem_singleton _))
-      (2 * π) p.2)]
-  simp only [shiftIntegral, smul_apply]
-
-/-- A function of locally uniform polynomial growth has bounds of this kind on its values. -/
-private lemma HasLocalGrowth.bound_zero {f : CoordinateSpace n × CoordinateSpace n → G}
-    (hb : HasLocalGrowth f) (K : Set (CoordinateSpace n)) (hK : IsCompact K) :
-    ∃ C s : ℝ, ∀ x ∈ K, ∀ ξ, ‖f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
-  obtain ⟨C, s, hC⟩ := hb 0 K hK
-  exact ⟨C, s, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
-
-/-- A function of locally uniform polynomial growth has bounds of this kind on its derivative. -/
-private lemma HasLocalGrowth.bound_one {f : CoordinateSpace n × CoordinateSpace n → G}
-    (hb : HasLocalGrowth f) (K : Set (CoordinateSpace n)) (hK : IsCompact K) :
-    ∃ C s : ℝ, ∀ x ∈ K, ∀ ξ, ‖fderiv ℝ f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
-  obtain ⟨C, s, hC⟩ := hb 1 K hK
-  exact ⟨C, s, fun x hx ξ ↦ by simpa [norm_iteratedFDeriv_one] using hC x hx ξ⟩
-
-/-- A directional derivative of a smooth function of locally uniform polynomial growth has locally
-uniform polynomial growth. -/
-private lemma HasLocalGrowth.fderiv_apply {f : CoordinateSpace n × CoordinateSpace n → G}
-    (hf : ContDiff ℝ ∞ f) (hb : HasLocalGrowth f) (y : CoordinateSpace n × CoordinateSpace n) :
-    HasLocalGrowth fun q ↦ fderiv ℝ f q y := by
-  intro k K hK
-  obtain ⟨C, s, hC⟩ := hb (k + 1) K hK
-  refine ⟨C * ‖y‖, s, fun x hx ξ ↦ ?_⟩
-  refine (hf.norm_iteratedFDeriv_fderiv_apply_le (i := k) (by simp) y (x, ξ)).trans ?_
-  calc ‖iteratedFDeriv ℝ (k + 1) f (x, ξ)‖ * ‖y‖
-      ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2) * ‖y‖ := by gcongr; exact hC x hx ξ
-    _ = C * ‖y‖ * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by ring
+    (p := fun p η k ↦ g η • iteratedFDeriv ℝ k f (p.1, p.2 - (2 * π) • η))
+    (bound := fun k η ↦ C k * (2 ^ (|s k| / 2) * 2 ^ |s k| * (1 + ‖p₀.2‖ ^ 2) ^ (s k / 2)) *
+      ((1 + ‖(2 * π) • η‖ ^ 2) ^ (|s k| / 2) * ‖g η‖))
+    Metric.isOpen_ball (fun p _ k _ ↦ ?_) (.of_forall fun η p hp k _ ↦ ?_)
+    (fun k _ ↦ (g.integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) |s k|).const_mul _)
+    (.of_forall fun η ↦ ?_)
+  · exact (g.continuous.smul ((hf.continuous_iteratedFDeriv (mod_cast le_top)).comp
+      (by fun_prop))).aestronglyMeasurable
+  · obtain ⟨h₁, h₂⟩ := mem_closedBall_and_norm_sub_le hp
+    exact g.norm_smul_apply_sub_smul_le (f := fun ζ ↦ iteratedFDeriv ℝ k f (p.1, ζ))
+      (hC k p.1 h₁) (2 * π) h₂ η
+  · have hc : ContDiff ℝ ∞ fun q : CoordinateSpace n × CoordinateSpace n ↦
+        g η • f (q.1, q.2 - (2 * π) • η) :=
+      (hf.comp (by fun_prop)).const_smul (g η)
+    exact ((contDiff_iff_ftaylorSeries.1 hc).hasFTaylorSeriesUpToOn _).congr_series
+      fun k _ q _ ↦ iteratedFDeriv_smul_comp_shift hf (g η) η k q
 
 /-- The average of the frequency translates of a smooth function of locally uniform polynomial
 growth is smooth. -/
 private lemma contDiff_shiftIntegral (g : 𝓢(CoordinateSpace n, ℂ))
     {f : CoordinateSpace n × CoordinateSpace n → G} (hf : ContDiff ℝ ∞ f)
-    (hb : HasLocalGrowth f) : ContDiff ℝ ∞ (shiftIntegral g f) := by
-  suffices h : ∀ k : ℕ, ∀ f : CoordinateSpace n × CoordinateSpace n → G, ContDiff ℝ ∞ f →
-      HasLocalGrowth f → ContDiff ℝ k (shiftIntegral g f) from
-    contDiff_infty.2 fun k ↦ h k f hf hb
-  intro k
-  induction k with
-  | zero =>
-    intro f hf hb
-    exact contDiff_zero.2 (continuous_shiftIntegral g hf.continuous hb.bound_zero)
-  | succ k ih =>
-    intro f hf hb
-    have hf₁ : ContDiff ℝ 1 f := hf.of_le (by simp)
-    rw [Nat.cast_succ, contDiff_succ_iff_fderiv_apply]
-    refine ⟨fun p ↦ (hasFDerivAt_shiftIntegral g hf₁ hb.bound_zero hb.bound_one p).differentiableAt,
-      by simp, fun y ↦ ?_⟩
-    rw [funext fun p ↦ fderiv_shiftIntegral_apply g hf₁ hb.bound_zero hb.bound_one p y]
-    exact ih _ ((hf.fderiv_right le_rfl).clm_apply contDiff_const) (hb.fderiv_apply hf y)
+    (hb : HasLocalGrowth f) : ContDiff ℝ ∞ (shiftIntegral g f) :=
+  contDiff_iff_contDiffAt.2 fun p₀ ↦ (hasFTaylorSeriesUpToOn_shiftIntegral g hf hb p₀).contDiffOn
+    |>.contDiffAt (Metric.ball_mem_nhds p₀ one_pos)
 
-/-- **Iterated directional derivatives of an average of frequency translates.** They are the
-averages of the translates of the iterated directional derivatives. -/
-private lemma iteratedFDerivAlong_shiftIntegral (g : 𝓢(CoordinateSpace n, ℂ))
+/-- The derivatives of an average of frequency translates are the averages of the translates of
+the derivatives. -/
+private lemma iteratedFDeriv_shiftIntegral (g : 𝓢(CoordinateSpace n, ℂ))
     {f : CoordinateSpace n × CoordinateSpace n → G} (hf : ContDiff ℝ ∞ f)
-    (hb : HasLocalGrowth f) (L : List (CoordinateSpace n × CoordinateSpace n)) :
-    iteratedFDerivAlong ℝ L (shiftIntegral g f) = shiftIntegral g (iteratedFDerivAlong ℝ L f) ∧
-      ContDiff ℝ ∞ (iteratedFDerivAlong ℝ L f) ∧ HasLocalGrowth (iteratedFDerivAlong ℝ L f) := by
-  induction L with
-  | nil => simpa using ⟨hf, hb⟩
-  | cons v L ih =>
-    obtain ⟨h₁, h₂, h₃⟩ := ih
-    have h₂' : ContDiff ℝ 1 (iteratedFDerivAlong ℝ L f) := h₂.of_le (by simp)
-    have hcons : iteratedFDerivAlong ℝ (v :: L) f =
-        fun q ↦ fderiv ℝ (iteratedFDerivAlong ℝ L f) q v :=
-      funext fun q ↦ iteratedFDerivAlong_cons_apply _ _ _ _
-    rw [hcons]
-    refine ⟨funext fun p ↦ ?_, (h₂.fderiv_right le_rfl).clm_apply contDiff_const,
-      h₃.fderiv_apply h₂ v⟩
-    rw [iteratedFDerivAlong_cons_apply, h₁,
-      fderiv_shiftIntegral_apply g h₂' h₃.bound_zero h₃.bound_one]
+    (hb : HasLocalGrowth f) (k : ℕ) (p : CoordinateSpace n × CoordinateSpace n) :
+    iteratedFDeriv ℝ k (shiftIntegral g f) p =
+      ∫ η, g η • iteratedFDeriv ℝ k f (p.1, p.2 - (2 * π) • η) := by
+  have hp : p ∈ Metric.ball p 1 := Metric.mem_ball_self one_pos
+  have h := (hasFTaylorSeriesUpToOn_shiftIntegral g hf hb p).eq_iteratedFDerivWithin_of_uniqueDiffOn
+    (m := k) (mod_cast le_top) Metric.isOpen_ball.uniqueDiffOn hp
+  rw [iteratedFDerivWithin_of_isOpen k Metric.isOpen_ball hp] at h
+  exact h.symm
 
 end ShiftIntegral
 
@@ -284,11 +200,18 @@ private lemma mixedDeriv_shiftIntegral (g : 𝓢(CoordinateSpace n, ℂ)) (a : S
     mixedDeriv α β (shiftIntegral g a.coefficient) x ξ =
       ∫ η, g η • mixedDeriv α β a.coefficient x (ξ - (2 * π) • η) := by
   have hs := contDiff_shiftIntegral g a.contDiff_coefficient a.hasLocalGrowth_coefficient
-  rw [mixedDeriv_eq_iteratedFDerivAlong α β (hs.of_le (by simp)),
-    (iteratedFDerivAlong_shiftIntegral g a.contDiff_coefficient a.hasLocalGrowth_coefficient _).1]
+  obtain ⟨C, -, hC⟩ :=
+    a.exists_norm_iteratedFDeriv_coefficient_le isCompact_singleton (mixedDirections α β).length
+  rw [mixedDeriv_eq_iteratedFDeriv α β (hs.of_le (mod_cast le_top)),
+    iteratedFDeriv_shiftIntegral g a.contDiff_coefficient a.hasLocalGrowth_coefficient,
+    ContinuousMultilinearMap.integral_apply (g.integrable_smul_apply_sub_smul
+      (f := fun ζ ↦ iteratedFDeriv ℝ _ a.coefficient (x, ζ))
+      ((a.contDiff_coefficient.continuous_iteratedFDeriv (mod_cast le_top)).comp (by fun_prop))
+      (hC x (Set.mem_singleton x)) (2 * π) ξ)]
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
   dsimp only
-  rw [mixedDeriv_eq_iteratedFDerivAlong α β (a.contDiff_coefficient.of_le (by simp))]
+  rw [mixedDeriv_eq_iteratedFDeriv α β (a.contDiff_coefficient.of_le (mod_cast le_top)),
+    smul_apply]
 
 /-- The **kernel cutoff** `a_χ` of a symbol `a` by a Schwartz function `χ`: the symbol
 `a_χ(x, ξ) = ∫ 𝓕 χ(η) a(x, ξ - 2πη) dη` of the same order, obtained by averaging the frequency
