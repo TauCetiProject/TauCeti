@@ -123,6 +123,9 @@ theorem stableTranslateFunctorIso_def (P Q : ∀ M : FinitelyPresentedStableModu
   ext
   simp only [stableTranslateFunctorIso, Iso.trans_hom, eqToIso.hom, NatTrans.comp_app,
     Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, eqToHom_app]
+  -- The two `eqToHom`s come from `stableTranslateFunctor_def`, whose sides agree by unfolding
+  -- `stableTranslateFunctor` in this file; `erw` matches them with `eqToHom_refl` up to that
+  -- unfolding.
   erw [eqToHom_refl, eqToHom_refl, Category.id_comp, Category.comp_id]
 
 variable (R E) in
