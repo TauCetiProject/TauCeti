@@ -58,9 +58,8 @@ group enters: the raising is by a single simple reflection at a time.
 
 ## References
 
-This supplies the order-free replacement, named as missing in
-`TauCeti/Algebra/Lie/HighestWeight/Character.lean`, for the chamber step of the Weyl character
-formula of Layer 6 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
+This supplies the order-free replacement for the chamber step of the Weyl character formula, which
+`TauCeti/Algebra/Lie/HighestWeight/Character.lean` uses.
 
 The raising induction is the one of `TauCeti/LinearAlgebra/RootSystem/DominantCone.lean`, run for
 the dot action instead of the linear one.

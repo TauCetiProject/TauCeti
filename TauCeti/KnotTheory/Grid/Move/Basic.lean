@@ -20,7 +20,7 @@ This file combines cyclic permutations, commutations, and stabilizations into
 `GridDiagram.IsMove`, takes its equivalence closure as `GridDiagram.MovesTo`, and defines
 `GridLink` to be the quotient by that relation. Thus a grid link is, by definition, a grid
 diagram modulo cyclic permutations, commutations, and stabilizations. This is the combinatorial
-input notion of link; its later reconciliation with embedded links is a separate target.
+notion of link that grid homology takes as input; it is not compared with embedded links here.
 
 The quotient does not identify the chain maps attached to different move sequences. Later
 naturality results should attach maps to `GridDiagram.IsMove` and prove their composition laws,
@@ -42,10 +42,8 @@ rather than extracting an untracked identification from equality in `GridLink`.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, under "Standing
-conventions", specifically "A link *is* (at first) a grid diagram modulo grid moves", using the
-commutation and stabilization moves of Lane G.5. The presentation follows
-Ozsvath--Stipsicz--Szabo, *Grid Homology for Knots and Links*, Chapter 3.
+The presentation follows Ozsvath--Stipsicz--Szabo, *Grid Homology for Knots and Links*,
+Chapter 3.
 -/
 
 public section
@@ -179,8 +177,8 @@ end GridDiagram
 /-- A grid link is a grid diagram, of arbitrary size, modulo cyclic permutations, commutations,
 and stabilizations.
 
-This is the combinatorial notion of link used by grid homology. Identifying it with an ambient
-isotopy class of embedded links is the separate Cromwell-reconciliation target. -/
+This is the combinatorial notion of link used by grid homology. Its identification with ambient
+isotopy classes of embedded links, Cromwell's theorem, is not proved here. -/
 def GridLink : Type _ := Quot GridDiagram.IsMove
 
 namespace GridDiagram

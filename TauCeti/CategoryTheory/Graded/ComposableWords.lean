@@ -352,7 +352,7 @@ theorem prepend_mem_nonComposableWords_of_ne {X Y Y' Z : C} {u : TotalHom R C}
     prepend R _ u w ∈ nonComposableWords R C := by
   induction hw using Submodule.span_induction with
   | mem w hw =>
-    obtain ⟨n, hn, a, b, z, hz, hab, rfl, rfl, rfl⟩ := hw
+    obtain ⟨n, hn, a, b, z, hz, _, rfl, rfl, rfl⟩ := hw
     rw [prepend_of_tprod_cons]
     exact of_tprod_mem_nonComposableWords _ (cons_mem hz hu)
       fun h ↦ hne (h.eq 0 (by omega))

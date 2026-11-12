@@ -9,15 +9,15 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Constructions.Pi
 
 /-!
-# Topological support on discrete spaces and under restriction, products, scalar multiplication
-and maps
+# Topological support on discrete spaces and under sums, restriction, products, scalars and maps
 
 This file characterizes support by singleton masses on discrete spaces, and identifies the support
 of restriction to an open set for a measure positive on nonempty open sets, the support of a
 nonzero scalar multiple of a measure, and the support of a pushforward by a continuous map. It also
 shows that pushing a measure forward along a homeomorphism transports its topological support onto
 the image of the original support.
-Finite products have the product of the supports of their factors. A measurable map that is
+Finite sums have the union of their summands' supports, and finite products have the product
+of the supports of their factors. A measurable map that is
 continuous at a source support point sends that point into the support of the pushforward;
 global continuity is unnecessary for this inclusion.
 
@@ -45,6 +45,15 @@ open Set
 open scoped ENNReal Topology
 
 namespace MeasureTheory.Measure
+
+/-- The support of a finite sum of measures is the union of their supports. -/
+theorem support_finset_sum {X I : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    (s : Finset I) (μ : I → Measure X) :
+    (∑ i ∈ s, μ i).support = ⋃ i ∈ s, (μ i).support := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih => simp [Finset.sum_insert hi, support_add, ih]
 
 /-- On a discrete space, a point belongs to the support exactly when its singleton has
 positive mass. No compatibility between the measurable structure and topology is needed. -/

@@ -63,11 +63,8 @@ tensor square with the flip of a form.
 
 ## References
 
-This is the linear-algebra half of the invariant-form dictionary that Layer 6b of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md)
-needs for its `frobeniusSchurIndicator_eq_one_iff` and `frobeniusSchurIndicator_eq_neg_one_iff`
-targets. The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2,
-and T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
+The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and
+T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
 Chapter II.
 -/
 
