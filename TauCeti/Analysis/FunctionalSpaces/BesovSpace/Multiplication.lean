@@ -109,7 +109,7 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_eq_and_norm_le :
   refine ⟨C, hC, fun {p} _ k ↦ ?_⟩
   induction k with
   | zero =>
-    intro g G hg hgG R hR f hf m
+    intro g G hg hgG R _ f _ m
     obtain ⟨v, hv, hvn⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le hg
       (fun x ↦ by simpa using hgG 0 le_rfl x) f
     exact ⟨v, by simpa [LineDeriv.iteratedLineDerivOp_zero] using hv, by simpa using hvn⟩
@@ -173,7 +173,7 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le_of_lt
   obtain ⟨Cr, hCr, hrev⟩ :=
     b.exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq (F := F)
       (2 * φ.rOut / φ.rIn)
-  obtain ⟨CL, hCL, hleib⟩ :=
+  obtain ⟨CL, -, hleib⟩ :=
     exists_iteratedLineDerivOp_smulLeftCLM_eq_and_norm_le (E := E) (F := F)
   obtain ⟨CΔ, hΔ⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
   set A := 2 * 2 * Cr * Module.finrank ℝ E * max 1 (CL * φ.rOut) / φ.rIn
@@ -248,7 +248,7 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le_of_annulu
   obtain ⟨CΔ, hΔ⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
   induction M with
   | zero =>
-    refine ⟨max CΔ 0, le_max_right _ _, fun {p} _ {g G} hg hgG j R hR f hf ↦ ?_⟩
+    refine ⟨max CΔ 0, le_max_right _ _, fun {p} _ {g G} hg hgG j R _ f _ ↦ ?_⟩
     obtain ⟨h, hh, hhn⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le hg
       (fun x ↦ by simpa using hgG 0 le_rfl x) f
     obtain ⟨w, hw, hwn⟩ := hΔ j h
