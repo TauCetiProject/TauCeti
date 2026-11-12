@@ -32,11 +32,10 @@ Hatcher's neighborhood `N_ε(A)` with every `ε` equal to `2⁻¹`.
   concatenation continuous.
 * Since the same radius is used for every cell, radial neighborhoods are compatible with
   intersections and unions of subcomplexes
-  (`Topology.RelCWComplex.Subcomplex.radialNeighborhood_eq_inter`,
-  `Topology.RelCWComplex.Subcomplex.radialNeighborhood_eq_union`). So the open sets `N(A)`,
+  (`Topology.RelCWComplex.Subcomplex.radialNeighborhood_inf`,
+  `Topology.RelCWComplex.Subcomplex.radialNeighborhood_sup`). So the open sets `N(A)`,
   `N(B)`, `N(A ⊓ B) = N(A) ∩ N(B)` and `N(A ⊔ B) = N(A) ∪ N(B)` deformation retract onto `A`,
-  `B`, `A ⊓ B` and `A ⊔ B` (`Topology.RelCWComplex.Subcomplex.radialNeighborhood_inf`,
-  `Topology.RelCWComplex.Subcomplex.radialNeighborhood_sup`).
+  `B`, `A ⊓ B` and `A ⊔ B`.
   This is the input for excision along the preimages of two subcomplexes under a Serre
   fibration, where open sets are needed.
 
@@ -61,9 +60,7 @@ Hatcher's neighborhood `N_ε(A)` with every `ε` equal to `2⁻¹`.
   deformation of the frontier.
 * `Topology.RelCWComplex.Subcomplex.exists_strong_deformation_retraction_radialNeighborhood`: the
   subcomplex is a strong deformation retract of its radial neighborhood.
-* `Topology.RelCWComplex.Subcomplex.radialNeighborhood_eq_inter`,
-  `Topology.RelCWComplex.Subcomplex.radialNeighborhood_eq_union`,
-  `Topology.RelCWComplex.Subcomplex.radialNeighborhood_inf`,
+* `Topology.RelCWComplex.Subcomplex.radialNeighborhood_inf`,
   `Topology.RelCWComplex.Subcomplex.radialNeighborhood_sup`: compatibility with intersections
   and unions.
 
@@ -95,11 +92,10 @@ private def radialNeighborhoodLT (A : Subcomplex C) : ℕ → Set X
       {y | ‖y‖ < 1 ∧ (j ∈ A.I n ∨
         (2⁻¹ < ‖y‖ ∧ map n j (‖y‖⁻¹ • y) ∈ radialNeighborhoodLT A n))}
 
-/-- The **radial neighborhood** of a subcomplex `A`: the points `x` of the complex whose radial
-descent reaches `A`. A point of an open cell of `A`, or of the base, belongs to it; a point
-`map n j y` of an open cell not in `A` belongs to it exactly when `2⁻¹ < ‖y‖` and its radial
-projection `map n j (‖y‖⁻¹ • y)` to the frontier of the cell belongs to it
-(`Topology.RelCWComplex.Subcomplex.map_mem_radialNeighborhood_iff`). It is open in the complex
+/-- The **radial neighborhood** of a subcomplex `A`. A point of an open cell of `A`, or of the
+base, belongs to it; a point `map n j y` of an open cell not in `A` belongs to it exactly when
+`2⁻¹ < ‖y‖` and its radial projection `map n j (‖y‖⁻¹ • y)` to the frontier of the cell belongs
+to it (`Topology.RelCWComplex.Subcomplex.map_mem_radialNeighborhood_iff`). It is open in the complex
 (`Topology.RelCWComplex.Subcomplex.isOpen_preimage_val_radialNeighborhood`) and deformation
 retracts onto `A`
 (`Topology.RelCWComplex.Subcomplex.exists_strong_deformation_retraction_radialNeighborhood`). -/
@@ -259,21 +255,20 @@ private lemma map_inv_norm_smul_mem_of_mem_I {n : ℕ} {j : cell C n} (hj : j �
     ⟨_, mem_sphere_zero_iff_norm.2
       (norm_inv_norm_smul_of_half_le hy.le), rfl⟩
 
-/-- **Radial neighborhoods of an intersection.** If the subcomplex `E` is the intersection of
-`A` and `B`, its radial neighborhood is the intersection of theirs. -/
-lemma radialNeighborhood_eq_inter {A B E : Subcomplex C} (h : (E : Set X) = (A : Set X) ∩ B) :
-    E.radialNeighborhood = A.radialNeighborhood ∩ B.radialNeighborhood := by
-  have hI {n : ℕ} (j : cell C n) : j ∈ E.I n ↔ j ∈ A.I n ∧ j ∈ B.I n := by
-    simp only [mem_I_iff_map_zero_mem, ← SetLike.mem_coe, h, mem_inter_iff]
+/-- **Radial neighborhoods of an intersection.** The radial neighborhood of the intersection of
+two subcomplexes is the intersection of their radial neighborhoods. -/
+@[simp]
+lemma radialNeighborhood_inf (A B : Subcomplex C) :
+    (A ⊓ B).radialNeighborhood = A.radialNeighborhood ∩ B.radialNeighborhood := by
   refine subset_antisymm (fun x hx ↦ ?_) fun x ⟨hxA, hxB⟩ ↦ ?_
-  · have hxC := radialNeighborhood_subset_complex E hx
+  · have hxC := radialNeighborhood_subset_complex (A ⊓ B) hx
     revert hx
-    refine forall_mem_complex_of_map (P := fun x ↦ x ∈ E.radialNeighborhood →
+    refine forall_mem_complex_of_map (P := fun x ↦ x ∈ (A ⊓ B).radialNeighborhood →
       x ∈ A.radialNeighborhood ∩ B.radialNeighborhood) (fun x hx _ ↦
         ⟨base_subset_radialNeighborhood A hx, base_subset_radialNeighborhood B hx⟩)
       (fun n j y hy ih ↦ ?_) x hxC
-    rw [mem_inter_iff, map_mem_radialNeighborhood_iff E j hy.le,
-      map_mem_radialNeighborhood_iff A j hy.le, map_mem_radialNeighborhood_iff B j hy.le, hI]
+    rw [mem_inter_iff, map_mem_radialNeighborhood_iff (A ⊓ B) j hy.le,
+      map_mem_radialNeighborhood_iff A j hy.le, map_mem_radialNeighborhood_iff B j hy.le, inf_I]
     rintro (⟨hA, hB⟩ | ⟨h2, hp⟩)
     · exact ⟨.inl hA, .inl hB⟩
     · have := ih _ (map_inv_norm_smul_mem_skeletonLT j h2.le) hp
@@ -281,10 +276,10 @@ lemma radialNeighborhood_eq_inter {A B E : Subcomplex C} (h : (E : Set X) = (A :
   · have hxC := radialNeighborhood_subset_complex A hxA
     revert hxA hxB
     refine forall_mem_complex_of_map (P := fun x ↦ x ∈ A.radialNeighborhood →
-      x ∈ B.radialNeighborhood → x ∈ E.radialNeighborhood)
-      (fun x hx _ _ ↦ base_subset_radialNeighborhood E hx) (fun n j y hy ih ↦ ?_) x hxC
-    rw [map_mem_radialNeighborhood_iff E j hy.le, map_mem_radialNeighborhood_iff A j hy.le,
-      map_mem_radialNeighborhood_iff B j hy.le, hI]
+      x ∈ B.radialNeighborhood → x ∈ (A ⊓ B).radialNeighborhood)
+      (fun x hx _ _ ↦ base_subset_radialNeighborhood (A ⊓ B) hx) (fun n j y hy ih ↦ ?_) x hxC
+    rw [map_mem_radialNeighborhood_iff (A ⊓ B) j hy.le, map_mem_radialNeighborhood_iff A j hy.le,
+      map_mem_radialNeighborhood_iff B j hy.le, inf_I]
     have hp (h2 : 2⁻¹ < ‖y‖) := map_inv_norm_smul_mem_skeletonLT (C := C) j h2.le
     rintro (hA | ⟨h2, hpA⟩) (hB | ⟨h2', hpB⟩)
     · exact .inl ⟨hA, hB⟩
@@ -292,26 +287,25 @@ lemma radialNeighborhood_eq_inter {A B E : Subcomplex C} (h : (E : Set X) = (A :
     · exact .inr ⟨h2, ih _ (hp h2) hpA (map_inv_norm_smul_mem_of_mem_I B hB h2)⟩
     · exact .inr ⟨h2, ih _ (hp h2) hpA hpB⟩
 
-/-- **Radial neighborhoods of a union.** If the subcomplex `E` is the union of `A` and `B`, its
-radial neighborhood is the union of theirs. -/
-lemma radialNeighborhood_eq_union {A B E : Subcomplex C} (h : (E : Set X) = (A : Set X) ∪ B) :
-    E.radialNeighborhood = A.radialNeighborhood ∪ B.radialNeighborhood := by
-  have hI {n : ℕ} (j : cell C n) : j ∈ E.I n ↔ j ∈ A.I n ∨ j ∈ B.I n := by
-    simp only [mem_I_iff_map_zero_mem, ← SetLike.mem_coe, h, mem_union]
+/-- **Radial neighborhoods of a union.** The radial neighborhood of the union of two subcomplexes
+is the union of their radial neighborhoods. -/
+@[simp]
+lemma radialNeighborhood_sup (A B : Subcomplex C) :
+    (A ⊔ B).radialNeighborhood = A.radialNeighborhood ∪ B.radialNeighborhood := by
   ext x
   by_cases hxC : x ∈ C
   swap
-  · exact iff_of_false (fun hx ↦ hxC (radialNeighborhood_subset_complex E hx))
+  · exact iff_of_false (fun hx ↦ hxC (radialNeighborhood_subset_complex (A ⊔ B) hx))
       fun hx ↦ hxC (hx.elim (radialNeighborhood_subset_complex A ·)
         (radialNeighborhood_subset_complex B ·))
-  refine forall_mem_complex_of_map (P := fun x ↦ x ∈ E.radialNeighborhood ↔
+  refine forall_mem_complex_of_map (P := fun x ↦ x ∈ (A ⊔ B).radialNeighborhood ↔
       x ∈ A.radialNeighborhood ∪ B.radialNeighborhood)
-    (fun x hx ↦ iff_of_true (base_subset_radialNeighborhood E hx)
+    (fun x hx ↦ iff_of_true (base_subset_radialNeighborhood (A ⊔ B) hx)
       (.inl (base_subset_radialNeighborhood A hx)))
     (fun n j y hy ih ↦ ?_) x hxC
   have hp (h2 : 2⁻¹ < ‖y‖) := ih _ (map_inv_norm_smul_mem_skeletonLT j h2.le)
-  rw [mem_union, map_mem_radialNeighborhood_iff E j hy.le, map_mem_radialNeighborhood_iff A j hy.le,
-    map_mem_radialNeighborhood_iff B j hy.le, hI]
+  rw [mem_union, map_mem_radialNeighborhood_iff (A ⊔ B) j hy.le,
+    map_mem_radialNeighborhood_iff A j hy.le, map_mem_radialNeighborhood_iff B j hy.le, sup_I]
   constructor
   · rintro ((hA | hB) | ⟨h2, hpE⟩)
     · exact .inl (.inl hA)
@@ -322,20 +316,6 @@ lemma radialNeighborhood_eq_union {A B E : Subcomplex C} (h : (E : Set X) = (A :
     · exact .inr ⟨h2, (hp h2).2 (.inl hpA)⟩
     · exact .inl (.inr hB)
     · exact .inr ⟨h2, (hp h2).2 (.inr hpB)⟩
-
-/-- The radial neighborhood of the intersection of two subcomplexes is the intersection of their
-radial neighborhoods. -/
-@[simp]
-lemma radialNeighborhood_inf (A B : Subcomplex C) :
-    (A ⊓ B).radialNeighborhood = A.radialNeighborhood ∩ B.radialNeighborhood :=
-  radialNeighborhood_eq_inter (coe_inf A B)
-
-/-- The radial neighborhood of the union of two subcomplexes is the union of their radial
-neighborhoods. -/
-@[simp]
-lemma radialNeighborhood_sup (A B : Subcomplex C) :
-    (A ⊔ B).radialNeighborhood = A.radialNeighborhood ∪ B.radialNeighborhood :=
-  radialNeighborhood_eq_union (coe_sup A B)
 
 /-- Radial neighborhoods are monotone in the subcomplex. -/
 @[gcongr]
@@ -405,8 +385,7 @@ private lemma stage_of_forall_notMem {m : ℕ} {s : I} {x : X}
 omit [T2Space X] in
 /-- A stage fixes the points of `A`. -/
 private lemma stage_of_mem {m : ℕ} {s : I} {x : X} (hx : x ∈ A) : stage A m s x = x :=
-  stage_of_forall_notMem A fun _ hj hxj ↦
-    (A.disjoint_openCell_subcomplex_of_notMem hj).notMem_of_mem_left hxj hx
+  stage_of_forall_notMem A fun _ hj hxj ↦ hj ((A.mem_I_iff_of_mem_openCell hxj).2 hx)
 
 /-- A stage fixes the lower skeleton. -/
 private lemma stage_of_mem_skeletonLT {m : ℕ} {s : I} {x : X}
@@ -672,13 +651,14 @@ private lemma continuousOn_radialDeformation_skeletonLT {n : ℕ}
     exact radialDeformation_of_mem A _ (A.base_subset p.2.2)
 
 /-- **Continuity of the radial deformation along the closed cells**, at the points of the radial
-neighborhood. The proof is by induction on the dimension: on a cell outside `A` the deformation is
-the radial push until the point reaches the frontier, and from then on it is the deformation of
-the frontier point, in the lower skeleton. -/
+neighborhood. -/
 private lemma continuousOn_radialDeformation_map (n : ℕ) (j : cell C n) :
     ContinuousOn
       (fun p : I × closedBall (0 : Fin n → ℝ) 1 ↦ radialDeformation A p.1 (map n j p.2))
       {p | map n j p.2 ∈ A.radialNeighborhood} := by
+  -- By induction on the dimension: on a cell outside `A` the deformation is the radial push until
+  -- the point reaches the frontier, and from then on it is the deformation of the frontier point,
+  -- in the lower skeleton.
   induction n using Nat.strong_induction_on with
   | _ n ih =>
   by_cases hj : j ∈ A.I n
@@ -743,8 +723,8 @@ lemma continuousOn_radialDeformation :
       radialDeformation_of_mem A _ (A.base_subset p.2.2))
 
 /-- **A subcomplex is a strong deformation retract of its radial neighborhood** (Hatcher,
-Proposition A.5). The deformation pushes the points of each open cell outside `A` radially to the
-frontier, the cells of higher dimension first. -/
+Proposition A.5). An explicit deformation is
+`Topology.RelCWComplex.Subcomplex.radialDeformation`. -/
 theorem exists_strong_deformation_retraction_radialNeighborhood :
     ∃ r : C(A.radialNeighborhood, A),
       (∀ a, r (ContinuousMap.inclusion (subset_radialNeighborhood A) a) = a) ∧

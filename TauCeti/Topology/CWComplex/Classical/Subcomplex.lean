@@ -34,9 +34,12 @@ subcomplexes.
 * `Topology.RelCWComplex.Subcomplex.relCWComplexCellEquiv`: its `n`-cells are the `n`-cells of `C`
   not in `E`.
 * `Topology.RelCWComplex.Subcomplex.finite_relCWComplex`: it is finite when `C` is.
-* `Topology.RelCWComplex.Subcomplex.mem_I_iff_map_zero_mem`: a cell belongs to a subcomplex
-  exactly when the centre of the cell does.
-* `Topology.RelCWComplex.Subcomplex.coe_inf`, `Topology.RelCWComplex.Subcomplex.coe_sup`:
+* `Topology.RelCWComplex.Subcomplex.mem_I_iff_of_mem_openCell`: a cell belongs to a subcomplex
+  exactly when any point of its open cell does.
+* `Topology.RelCWComplex.Subcomplex.mem_iff_mem_base_or_exists_mem_openCell`: a point lies in a
+  subcomplex exactly when it lies in the base or in an open cell of the subcomplex.
+* `Topology.RelCWComplex.Subcomplex.coe_inf`, `Topology.RelCWComplex.Subcomplex.coe_sup`,
+  `Topology.RelCWComplex.Subcomplex.mem_inf`, `Topology.RelCWComplex.Subcomplex.mem_sup`:
   subcomplexes form a distributive lattice, whose meet and join are intersection and union.
 * `Topology.RelCWComplex.Subcomplex.le_iff_I_subset`: one subcomplex lies in another exactly when
   its cells do.
@@ -166,25 +169,19 @@ private lemma openCell_subset_of_mem_I (E : Subcomplex C) {n : ℕ} {j : cell C 
   exact .inr (mem_iUnion₂.2 ⟨n, ⟨j, hj⟩, hx⟩)
 
 omit [T2Space X] in
-private lemma mem_I_of_mem_openCell (E : Subcomplex C) {n : ℕ} {j : cell C n} {x : X}
-    (hxj : x ∈ openCell n j) (hx : x ∈ E) : j ∈ E.I n :=
-  by_contra fun hj ↦ (E.disjoint_openCell_subcomplex_of_notMem hj).notMem_of_mem_left hxj hx
+/-- A cell belongs to a subcomplex exactly when any point of its open cell does. -/
+lemma mem_I_iff_of_mem_openCell (E : Subcomplex C) {n : ℕ} {j : cell C n} {x : X}
+    (hxj : x ∈ openCell n j) : j ∈ E.I n ↔ x ∈ E :=
+  ⟨fun h ↦ E.openCell_subset_of_mem_I h hxj, fun hx ↦
+    by_contra fun hj ↦ (E.disjoint_openCell_subcomplex_of_notMem hj).notMem_of_mem_left hxj hx⟩
 
 omit [T2Space X] in
-/-- A point of a subcomplex lies in the base or in an open cell of the subcomplex. -/
-private lemma mem_base_or_exists_mem_openCell (E : Subcomplex C) {x : X} (hx : x ∈ E) :
-    x ∈ D ∨ ∃ (n : ℕ) (j : cell C n), j ∈ E.I n ∧ x ∈ openCell n j := by
-  rw [← SetLike.mem_coe, ← E.union] at hx
-  refine hx.imp_right fun hx ↦ ?_
-  obtain ⟨n, j, hx⟩ := mem_iUnion₂.1 hx
-  exact ⟨n, j, j.2, hx⟩
-
-omit [T2Space X] in
-/-- A cell belongs to a subcomplex exactly when the image of the centre of its disk does. -/
-lemma mem_I_iff_map_zero_mem (E : Subcomplex C) {n : ℕ} (j : cell C n) :
-    j ∈ E.I n ↔ map n j 0 ∈ E :=
-  ⟨fun h ↦ E.openCell_subset_of_mem_I h (map_zero_mem_openCell n j),
-    E.mem_I_of_mem_openCell (map_zero_mem_openCell n j)⟩
+/-- A point lies in a subcomplex exactly when it lies in the base or in an open cell of the
+subcomplex. -/
+lemma mem_iff_mem_base_or_exists_mem_openCell (E : Subcomplex C) {x : X} :
+    x ∈ E ↔ x ∈ D ∨ ∃ (n : ℕ) (j : cell C n), j ∈ E.I n ∧ x ∈ openCell n j := by
+  rw [← SetLike.mem_coe, ← E.union, mem_union, mem_iUnion₂]
+  exact or_congr_right ⟨fun ⟨n, j, hx⟩ ↦ ⟨n, j, j.2, hx⟩, fun ⟨n, j, hj, hx⟩ ↦ ⟨n, ⟨j, hj⟩, hx⟩⟩
 
 /-! ### The lattice of subcomplexes -/
 
@@ -199,9 +196,9 @@ instance instMin : Min (Subcomplex C) where
         refine subset_antisymm (union_subset (subset_inter A.base_subset B.base_subset)
           (iUnion₂_subset fun n j ↦ subset_inter (A.openCell_subset_of_mem_I j.2.1)
             (B.openCell_subset_of_mem_I j.2.2))) fun x ⟨hxA, hxB⟩ ↦ ?_
-        obtain hD | ⟨n, j, hj, hxj⟩ := A.mem_base_or_exists_mem_openCell hxA
+        obtain hD | ⟨n, j, hj, hxj⟩ := A.mem_iff_mem_base_or_exists_mem_openCell.1 hxA
         · exact .inl hD
-        · exact .inr (mem_iUnion₂.2 ⟨n, ⟨j, hj, B.mem_I_of_mem_openCell hxj hxB⟩, hxj⟩) }
+        · exact .inr (mem_iUnion₂.2 ⟨n, ⟨j, hj, (B.mem_I_iff_of_mem_openCell hxj).2 hxB⟩, hxj⟩) }
 
 omit [T2Space X] in
 /-- The union of two subcomplexes, whose cells are the cells of either. -/
@@ -216,32 +213,42 @@ instance instMax : Max (Subcomplex C) where
         · exact j.2.elim (fun h ↦ (A.openCell_subset_of_mem_I h).trans subset_union_left)
             fun h ↦ (B.openCell_subset_of_mem_I h).trans subset_union_right
         · obtain hx | hx := hx
-          · obtain hD | ⟨n, j, hj, hxj⟩ := A.mem_base_or_exists_mem_openCell hx
+          · obtain hD | ⟨n, j, hj, hxj⟩ := A.mem_iff_mem_base_or_exists_mem_openCell.1 hx
             · exact .inl hD
             · exact .inr (mem_iUnion₂.2 ⟨n, ⟨j, .inl hj⟩, hxj⟩)
-          · obtain hD | ⟨n, j, hj, hxj⟩ := B.mem_base_or_exists_mem_openCell hx
+          · obtain hD | ⟨n, j, hj, hxj⟩ := B.mem_iff_mem_base_or_exists_mem_openCell.1 hx
             · exact .inl hD
             · exact .inr (mem_iUnion₂.2 ⟨n, ⟨j, .inr hj⟩, hxj⟩) }
 
 omit [T2Space X] in
-@[simp]
+@[simp, norm_cast]
 lemma coe_inf (A B : Subcomplex C) : ((A ⊓ B : Subcomplex C) : Set X) = (A : Set X) ∩ B :=
-  rfl
+  (rfl)
+
+omit [T2Space X] in
+@[simp, norm_cast]
+lemma coe_sup (A B : Subcomplex C) : ((A ⊔ B : Subcomplex C) : Set X) = (A : Set X) ∪ B :=
+  (rfl)
 
 omit [T2Space X] in
 @[simp]
-lemma coe_sup (A B : Subcomplex C) : ((A ⊔ B : Subcomplex C) : Set X) = (A : Set X) ∪ B :=
-  rfl
+lemma mem_inf {A B : Subcomplex C} {x : X} : x ∈ A ⊓ B ↔ x ∈ A ∧ x ∈ B :=
+  .rfl
+
+omit [T2Space X] in
+@[simp]
+lemma mem_sup {A B : Subcomplex C} {x : X} : x ∈ A ⊔ B ↔ x ∈ A ∨ x ∈ B :=
+  .rfl
 
 omit [T2Space X] in
 @[simp]
 lemma inf_I (A B : Subcomplex C) (n : ℕ) : (A ⊓ B).I n = A.I n ∩ B.I n :=
-  rfl
+  (rfl)
 
 omit [T2Space X] in
 @[simp]
 lemma sup_I (A B : Subcomplex C) (n : ℕ) : (A ⊔ B).I n = A.I n ∪ B.I n :=
-  rfl
+  (rfl)
 
 omit [T2Space X] in
 /-- Subcomplexes form a distributive lattice under intersection and union. -/
