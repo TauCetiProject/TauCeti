@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Peetre.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.VanishingIdeal
-import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalFrameCoeff
 
 /-!
 # Peetre's theorem for operators between sections of vector bundles
@@ -82,68 +82,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
   [FiberBundle F' W] [VectorBundle ℝ F' W]
 
-section CutoffCoeff
-
-variable {ι : Type*} (e : Trivialization F (π F V)) [MemTrivializationAtlas e] (b : Basis ι ℝ F)
-  {x₀ : M} (ρ : SmoothBumpFunction I x₀) (hρ : tsupport ρ ⊆ e.baseSet)
-
-include hρ in
-/-- The coefficient functions of a smooth section in the local frame of `e`, cut off by `ρ`, are
-globally smooth. -/
-private theorem contMDiff_mul_localFrameCoeff (s : Cₛ^∞⟮I; F, V⟯) (i : ι) :
-    CMDiff ∞ (fun y ↦ ρ y * e.localFrameCoeff I b i y (s y)) := by
-  refine contMDiff_of_tsupport fun y hy ↦ ?_
-  have hy' : y ∈ e.baseSet := hρ (tsupport_mul_subset_left hy)
-  exact (ρ.contMDiff y).mul ((contMDiffOn_baseSet_localFrameCoeff (e := e) b
-    s.contMDiff.contMDiffOn i).contMDiffAt (e.open_baseSet.mem_nhds hy'))
-
-/-- The coefficient of a smooth section in the local frame of `e`, cut off by `ρ`, as a smooth
-function. -/
-private def cutoffCoeff (i : ι) (s : Cₛ^∞⟮I; F, V⟯) : C^∞⟮I, M; ℝ⟯ :=
-  ⟨fun y ↦ ρ y * e.localFrameCoeff I b i y (s y), contMDiff_mul_localFrameCoeff e b ρ hρ s i⟩
-
-private theorem cutoffCoeff_apply (i : ι) (s : Cₛ^∞⟮I; F, V⟯) (y : M) :
-    cutoffCoeff e b ρ hρ i s y = ρ y * e.localFrameCoeff I b i y (s y) :=
-  (rfl)
-
-private theorem cutoffCoeff_add (i : ι) (s t : Cₛ^∞⟮I; F, V⟯) :
-    cutoffCoeff e b ρ hρ i (s + t) = cutoffCoeff e b ρ hρ i s + cutoffCoeff e b ρ hρ i t := by
-  ext y
-  simp only [cutoffCoeff_apply, ContMDiffSection.coe_add, Pi.add_apply, map_add,
-    ContMDiffMap.coe_add, mul_add]
-
-private theorem cutoffCoeff_smul (i : ι) (f : C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯) :
-    cutoffCoeff e b ρ hρ i (f • s) = f * cutoffCoeff e b ρ hρ i s := by
-  ext y
-  simp only [cutoffCoeff_apply, ContMDiffSection.smul_apply, map_smul, smul_eq_mul,
-    ContMDiffMap.coe_mul, Pi.mul_apply]
-  ring
-
-/-- The cut-off frame coefficients send `J Γ(V)` into `J`, for every ideal `J`. -/
-private theorem cutoffCoeff_mem_of_mem_smul_top (i : ι) {J : Ideal C^∞⟮I, M; ℝ⟯}
-    {s : Cₛ^∞⟮I; F, V⟯} (hs : s ∈ J • (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯)) :
-    cutoffCoeff e b ρ hρ i s ∈ J := by
-  refine Submodule.smul_induction_on hs (fun f hf t _ ↦ ?_) fun s t hs ht ↦ ?_
-  · rw [cutoffCoeff_smul]
-    exact J.mul_mem_right _ hf
-  · rw [cutoffCoeff_add]
-    exact J.add_mem hs ht
-
-/-- At a point where `ρ = 1` and the sections `fr i` agree with the local frame of `e`, a smooth
-section is the sum of its cut-off frame coefficients times the `fr i`. -/
-private theorem apply_eq_sum_cutoffCoeff_smul [Fintype ι] (fr : ι → Cₛ^∞⟮I; F, V⟯)
-    (s : Cₛ^∞⟮I; F, V⟯) {y : M} (hy : ρ y = 1) (hfr : ∀ i, fr i y = e.localFrame b i y) :
-    s y = (∑ i, cutoffCoeff e b ρ hρ i s • fr i : Cₛ^∞⟮I; F, V⟯) y := by
-  have hyb : y ∈ e.baseSet := hρ (subset_tsupport _ (by simp [hy]))
-  have h := congrFun (map_sum (ContMDiffSection.coeAddHom I F ∞ V)
-    (fun i ↦ cutoffCoeff e b ρ hρ i s • fr i) Finset.univ) y
-  simp only [ContMDiffSection.coeAddHom_apply, Finset.sum_apply, ContMDiffSection.smul_apply,
-    cutoffCoeff_apply, hfr, hy, one_mul] at h
-  rw [h]
-  exact e.eq_sum_localFrameCoeff_smul hyb
-
-end CutoffCoeff
-
 variable [I.Boundaryless]
 
 /-- **Peetre's theorem** for sections, local form: near each point `x₀` of `U` there is a common
@@ -161,7 +99,7 @@ private theorem exists_mem_nhds_forall_apply_eq_zero_section
   let b := Module.finBasis ℝ F
   have he : e.baseSet ∈ 𝓝 x₀ := e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V x₀)
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) he).mem_iff.mp he
-  let c := cutoffCoeff e b ρ hρ
+  let c := e.cutoffLocalFrameCoeff b ρ hρ
   obtain ⟨fr', hfr', hfreq⟩ :=
     e.exists_contMDiff_eventuallyEq_localFrame (I := I) b (mem_baseSet_trivializationAt F V x₀)
   let fr (i : Fin (finrank ℝ F)) : Cₛ^∞⟮I; F, V⟯ := ⟨fr' i, hfr' i⟩
@@ -206,14 +144,14 @@ private theorem exists_mem_nhds_forall_apply_eq_zero_section
     have h := hloc (s - ∑ i, c i s • fr i) y (hKsub hy).1.1 <| by
       filter_upwards [isOpen_interior.mem_nhds (hKsub hy).2] with z hz
       rw [ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero]
-      exact apply_eq_sum_cutoffCoeff_smul e b ρ hρ fr s (interior_subset hz).1
+      exact e.apply_eq_sum_cutoffLocalFrameCoeff_smul b ρ hρ fr s (interior_subset hz).1
         (interior_subset hz).2
     rwa [map_sub, map_sum, Pi.sub_apply, Finset.sum_apply, sub_eq_zero] at h
   rw [hsum]
   refine Finset.sum_eq_zero fun i _ ↦ ?_
   have hci : c i s ∈ TauCeti.smoothVanishingIdeal I y ^ (r i + 1) :=
     Ideal.pow_le_pow_right (Nat.succ_le_succ (Finset.le_sup (Finset.mem_univ i)))
-      (cutoffCoeff_mem_of_mem_smul_top e b ρ hρ i hs)
+      (e.cutoffLocalFrameCoeff_mem_of_mem_smul_top b ρ hρ i hs)
   have h := hr i y hy _ hci
   rw [hQ] at h
   rw [← e'.symmL_continuousLinearMapAt (R := ℝ) (hKsub hy).1.2 (P _ y), h, map_zero]

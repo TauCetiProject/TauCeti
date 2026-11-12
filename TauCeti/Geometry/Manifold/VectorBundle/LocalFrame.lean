@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.BumpFunction
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Trace
-import Mathlib.Geometry.Manifold.BumpFunction
+import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
@@ -55,6 +56,8 @@ a time.
   bundle are.
 * `Bundle.Trivialization.exists_contMDiff_eventuallyEq_localFrame`: near a point of its base set,
   the local frame of a trivialization agrees with a family of globally smooth sections.
+* `Bundle.Trivialization.contMDiff_mul_localFrameCoeff`: the local-frame coefficients of a smooth
+  section, cut off by a bump function supported in the base set, are globally smooth.
 -/
 
 public section
@@ -246,5 +249,23 @@ theorem exists_contMDiff_eventuallyEq_localFrame
       (e.contMDiffOn_localFrame_baseSet _ b i)
   · filter_upwards [ρ.eventuallyEq_one] with y hy
     simp [hy]
+
+/-- The coefficients of a smooth section in the local frame of a trivialization `e`, cut off by a
+smooth bump function supported in `e.baseSet`, are globally smooth. -/
+theorem contMDiff_mul_localFrameCoeff
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
+    [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+    [FiberBundle G W] [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
+    {ι : Type*} (e : Trivialization G (π G W)) [MemTrivializationAtlas e] (b : Basis ι ℝ G)
+    {x : M} (ρ : SmoothBumpFunction I x) (hρ : tsupport ρ ⊆ e.baseSet) {s : Π y : M, W y}
+    (hs : CMDiff ∞ (T% s)) (i : ι) :
+    CMDiff ∞ (fun y ↦ ρ y * e.localFrameCoeff I b i y (s y)) := by
+  refine contMDiff_of_tsupport fun y hy ↦ ?_
+  exact ρ.contMDiffAt.mul
+    (contMDiffAt_localFrameCoeff b (hρ (tsupport_mul_subset_left hy)) (hs y) i)
 
 end Bundle.Trivialization

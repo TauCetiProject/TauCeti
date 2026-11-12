@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
 import Mathlib.Geometry.Manifold.Algebra.Structures
-import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Tensoriality of globally smooth operations
@@ -149,12 +148,8 @@ theorem eq_of_contMDiff_tensorial
     exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport t.open_baseSet hρt
       (t.contMDiffOn_localFrame_baseSet ∞ b i)
   have hcoeff' (u : Π x : M, W x) (hu : CMDiff ∞ (T% u)) (i) :
-      ContMDiff I 𝓘(ℝ) ∞ (coeff' u i) := by
-    apply contMDiff_of_tsupport
-    intro y hy
-    have hyρ : y ∈ tsupport (ρ : M → ℝ) :=
-      (tsupport_mul_subset_left : tsupport (coeff' u i) ⊆ tsupport (ρ : M → ℝ)) hy
-    exact ρ.contMDiffAt.mul (contMDiffAt_localFrameCoeff b (hρt hyρ) (hu y) i)
+      ContMDiff I 𝓘(ℝ) ∞ (coeff' u i) :=
+    t.contMDiff_mul_localFrameCoeff b ρ hρt hu i
   have hexpansion (u : Π x : M, W x) (hu : CMDiff ∞ (T% u)) :
       CMDiff ∞ (T% (expansion u)) := by
     simpa only [expansion, Finset.sum_apply] using
