@@ -153,6 +153,7 @@ variable {ιL}
 
 /-- The branch composites of a vertex with outgoing edges: a modular automorphism of the vertex,
 followed by the homomorphism of an edge and by a branch composite of the subdiagram at its end. -/
+@[simp]
 theorem mem_branchHoms_node {M : Subgroup (MulAut H)}
     {hM : M ≤ fixingSubgroup (MulAut H) (Set.range ι)} {n : ℕ} {K : Fin n → Type u}
     [∀ i, Group (K i)] {κ : ∀ i, A →* K i} {π : ∀ i, GHom ι (κ i)}
@@ -198,6 +199,7 @@ theorem isComplete_iff_branchHoms_eq_univ {D : MRDiagram ι} :
   Set.eq_univ_iff_forall.symm
 
 /-- A leaf is complete. -/
+@[simp]
 theorem isComplete_leaf (free : IsFreeGGroup ι) : (leaf free).IsComplete ιL :=
   fun _ => Set.mem_univ _
 
@@ -236,6 +238,7 @@ theorem modular_edge : (edge M hM π D).modular = M := (rfl)
 
 /-- The branch composites of a diagram with one edge at the root: a modular automorphism of the
 root, followed by the edge homomorphism and by a branch composite of the subdiagram. -/
+@[simp]
 theorem mem_branchHoms_edge {φ : GHom ι ιL} :
     φ ∈ (edge M hM π D).branchHoms ιL ↔
       ∃ σ ∈ M, ∃ ψ ∈ D.branchHoms ιL, ∀ x, φ x = ψ (π (σ x)) :=
@@ -257,6 +260,7 @@ theorem branchHoms_empty : (MRDiagram.empty ι).branchHoms ιL = ∅ :=
 
 /-- The diagram without branches is complete exactly when there is no `A`-homomorphism from its
 root group to the target. -/
+@[simp]
 theorem isComplete_empty_iff : (MRDiagram.empty ι).IsComplete ιL ↔ IsEmpty (GHom ι ιL) := by
   simp [isComplete_iff, isEmpty_iff]
 
@@ -273,6 +277,7 @@ theorem branchHoms_freeRoot (free : IsFreeGGroup ι) :
     mem_branchHoms_edge.2 ⟨1, Subgroup.mem_bot.2 rfl, φ, Set.mem_univ _, fun _ => by simp⟩
 
 /-- The one-edge diagram of a free `A`-group is complete. -/
+@[simp]
 theorem isComplete_freeRoot (free : IsFreeGGroup ι) : (freeRoot free).IsComplete ιL :=
   isComplete_iff_branchHoms_eq_univ.2 (branchHoms_freeRoot free)
 
@@ -295,6 +300,7 @@ def HasProperEdges : ∀ {H : Type u} [Group H] {ι : A →* H}, MRDiagram ι �
 theorem hasProperEdges_leaf (free : IsFreeGGroup ι) : (leaf free).HasProperEdges :=
   trivial
 
+@[simp]
 theorem hasProperEdges_node {M : Subgroup (MulAut H)}
     {hM : M ≤ fixingSubgroup (MulAut H) (Set.range ι)} {n : ℕ} {K : Fin n → Type u}
     [∀ i, Group (K i)] {κ : ∀ i, A →* K i} {π : ∀ i, GHom ι (κ i)}
@@ -313,6 +319,7 @@ def HasProperQuotients : MRDiagram ι → Prop
 theorem hasProperQuotients_leaf (free : IsFreeGGroup ι) : (leaf free).HasProperQuotients :=
   trivial
 
+@[simp]
 theorem hasProperQuotients_node {M : Subgroup (MulAut H)}
     {hM : M ≤ fixingSubgroup (MulAut H) (Set.range ι)} {n : ℕ} {K : Fin n → Type u}
     [∀ i, Group (K i)] {κ : ∀ i, A →* K i} {π : ∀ i, GHom ι (κ i)}
@@ -332,11 +339,13 @@ section edge
 variable {K : Type u} [Group K] {κ : A →* K} {M : Subgroup (MulAut H)}
   {hM : M ≤ fixingSubgroup (MulAut H) (Set.range ι)} {π : GHom ι κ} {D : MRDiagram κ}
 
+@[simp]
 theorem hasProperEdges_edge :
     (edge M hM π D).HasProperEdges ↔
       Function.Surjective π ∧ ¬Function.Injective π ∧ D.HasProperEdges :=
   hasProperEdges_node.trans ⟨fun h => h 0, fun h _ => h⟩
 
+@[simp]
 theorem hasProperQuotients_edge : (edge M hM π D).HasProperQuotients ↔ D.HasProperEdges :=
   hasProperQuotients_node.trans ⟨fun h => h 0, fun h _ => h⟩
 
@@ -350,11 +359,13 @@ theorem not_hasProperEdges_edge_of_injective {K : Type u} [Group K] {κ : A →*
   fun h => (hasProperEdges_edge.1 h).2.1 hπ
 
 /-- The diagram without branches has proper quotients. -/
+@[simp]
 theorem hasProperQuotients_empty : (MRDiagram.empty ι).HasProperQuotients :=
   hasProperQuotients_node.2 fun i => i.elim0
 
 /-- The one-edge diagram of a free `A`-group has proper quotients: it has no edge below the
 root. -/
+@[simp]
 theorem hasProperQuotients_freeRoot (free : IsFreeGGroup ι) :
     (freeRoot free).HasProperQuotients :=
   hasProperQuotients_edge.2 (hasProperEdges_leaf free)

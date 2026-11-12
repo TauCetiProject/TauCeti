@@ -21,9 +21,10 @@ proper quotient `t ↦ 1` from it to the leaf `G`. The branch composites are the
 `t ↦ u ^ k`, one for each integer `k`.
 
 When `u` generates the centralizer of its own centralizer, as a non-proper-power does in a free
-group, these are all the `G`-homomorphisms and the diagram is complete: the solutions of
-`[x, u] = 1` are exactly `x = u ^ k`. With the trivial group in place of the modular group only
-`x = 1` is left, and completeness fails as soon as `u ≠ 1`.
+group, these are all the `G`-homomorphisms and the diagram is complete. When the centralizer of
+`u` itself consists of the powers of `u`, as again for a non-proper-power of a free group, the
+solutions of `[x, u] = 1` are exactly `x = u ^ k`. With the trivial group in place of the modular
+group only `x = 1` is left, and completeness fails as soon as `u ≠ 1`.
 
 ## Main definitions
 
@@ -40,8 +41,9 @@ group, these are all the `G`-homomorphisms and the diagram is complete: the solu
   when every element commuting with the centralizer of `u` is a power of `u`.
 * `TauCeti.LimitGroup.MRDiagram.isComplete_centralizer_of_not_isProperPower`: it is complete for a
   non-proper-power `u` of a free group, in particular for a basis element.
-* `TauCeti.LimitGroup.MRDiagram.exists_mem_branchHoms_centralizer_iff`: then the values at `t` of
-  its branch composites are exactly the solutions of `[x, u] = 1`.
+* `TauCeti.LimitGroup.MRDiagram.exists_mem_branchHoms_centralizer_iff`: when the centralizer of
+  `u` consists of the powers of `u`, the values at `t` of the branch composites of `centralizer u`
+  are exactly the solutions of `[x, u] = 1`.
 * `TauCeti.LimitGroup.MRDiagram.hasProperQuotients_centralizerOfModular`: the edge below the
   root is a proper epimorphism.
 * `TauCeti.LimitGroup.MRDiagram.not_isComplete_centralizerOfModular_bot`: without the modular
@@ -98,6 +100,7 @@ theorem mem_branchHoms_centralizerOfModular {M : Subgroup (MulAut (CentralizerEx
 
 /-- The edge below the root of the three-vertex diagram of `G(u, ℤ)`, the quotient `t ↦ 1`, is a
 proper epimorphism. -/
+@[simp]
 theorem hasProperQuotients_centralizerOfModular (M : Subgroup (MulAut (CentralizerExt u 1)))
     (hM : M ≤ fixingSubgroup (MulAut (CentralizerExt u 1))
       (Set.range (of : G →* CentralizerExt u 1))) :
