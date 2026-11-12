@@ -18,8 +18,7 @@ bracket with the commutator of its directional derivatives. It also records that
 fields on a model space have zero manifold Lie bracket.
 
 The chart argument follows the pullback idiom used for the manifold bracket in
-`Mathlib/Geometry/Manifold/VectorField/LieBracket.lean`. The resulting lemma is a general manifold
-prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
+`Mathlib/Geometry/Manifold/VectorField/LieBracket.lean`.
 
 ## Main results
 
@@ -48,8 +47,6 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
 
 * `Mathlib/Analysis/Calculus/VectorField.lean`, theorem `fderivWithin_apply_lieBracket`.
 * `Mathlib/Geometry/Manifold/VectorField/LieBracket.lean`, for the chart-transport construction.
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1.
 -/
 
 public section

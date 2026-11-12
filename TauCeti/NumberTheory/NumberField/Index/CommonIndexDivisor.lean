@@ -122,12 +122,12 @@ omit [NumberField K] in
 /-- The degree-`d` monic irreducible factors of `minpoly ℤ θ` modulo `p` are among the degree-`d`
 monic irreducibles over `𝔽_p`, so they are no more numerous. -/
 theorem card_filter_monicFactorsMod_le {θ : 𝓞 K} (d : ℕ) :
-    ((monicFactorsMod θ p).filter fun Q => Q.natDegree = d).card ≤
+    ((NumberField.RingOfIntegers.monicFactorsMod θ p).filter fun Q => Q.natDegree = d).card ≤
       (monicIrreduciblesOfDegree (ZMod p) d).ncard := by
   classical
   have h₀ : Polynomial.map (Int.castRingHom (ZMod p)) (minpoly ℤ θ) ≠ 0 :=
     Polynomial.map_monic_ne_zero (minpoly.monic θ.isIntegral)
-  have hsub : ↑((monicFactorsMod θ p).filter fun Q => Q.natDegree = d) ⊆
+  have hsub : ↑((NumberField.RingOfIntegers.monicFactorsMod θ p).filter fun Q => Q.natDegree = d) ⊆
       monicIrreduciblesOfDegree (ZMod p) d := by
     intro g hg
     rw [Finset.mem_coe, Finset.mem_filter] at hg
@@ -143,11 +143,11 @@ theorem card_filter_monicFactorsMod_le {θ : 𝓞 K} (d : ℕ) :
 /-- A prime above `p` of residue degree `d` is sent to a degree-`d` factor. Plumbing for the
 counting bound. -/
 private theorem mem_filter_monicFactorsMod_of_mem_primesOverOfInertiaDeg {θ : 𝓞 K}
-    (hp : ¬ p ∣ exponent θ) {d : ℕ}
+    (hp : ¬ p ∣ NumberField.RingOfIntegers.exponent θ) {d : ℕ}
     (Q : (span {(p : ℤ)}).primesOver (𝓞 K))
     (hQ : Q ∈ primesOverOfInertiaDeg K p d) :
     ((primesOverSpanEquivMonicFactorsMod hp Q : (ZMod p)[X])) ∈
-      (monicFactorsMod θ p).filter fun R => R.natDegree = d := by
+      (NumberField.RingOfIntegers.monicFactorsMod θ p).filter fun R => R.natDegree = d := by
   classical
   refine Finset.mem_filter.mpr ⟨(primesOverSpanEquivMonicFactorsMod hp Q).2, ?_⟩
   exact (inertiaDeg_primesOverSpanEquivMonicFactorsMod_apply hp Q) ▸ hQ
@@ -155,15 +155,17 @@ private theorem mem_filter_monicFactorsMod_of_mem_primesOverOfInertiaDeg {θ : �
 /-- **The Kummer–Dedekind counting bound.** For a `θ` whose conductor exponent is prime to `p`,
 the primes of `𝓞 K` above `p` with residue degree `d` are no more numerous than the degree-`d`
 monic irreducible factors of `minpoly ℤ θ` modulo `p`. -/
-theorem ncard_primesOverOfInertiaDeg_le {θ : 𝓞 K} (hp : ¬ p ∣ exponent θ) (d : ℕ) :
+theorem ncard_primesOverOfInertiaDeg_le {θ : 𝓞 K} (hp : ¬ p ∣ NumberField.RingOfIntegers.exponent
+    θ) (d : ℕ) :
     (primesOverOfInertiaDeg K p d).ncard ≤
-      ((monicFactorsMod θ p).filter fun Q => Q.natDegree = d).card := by
+      ((NumberField.RingOfIntegers.monicFactorsMod θ p).filter fun Q => Q.natDegree = d).card := by
   classical
   have hinj : Set.InjOn
       (fun Q => (primesOverSpanEquivMonicFactorsMod hp Q : (ZMod p)[X]))
       (primesOverOfInertiaDeg K p d) := fun _ _ _ _ h =>
     (primesOverSpanEquivMonicFactorsMod hp).injective (Subtype.ext h)
-  rw [← Set.ncard_coe_finset ((monicFactorsMod θ p).filter fun Q => Q.natDegree = d)]
+  rw [← Set.ncard_coe_finset ((NumberField.RingOfIntegers.monicFactorsMod θ p).filter fun Q =>
+      Q.natDegree = d)]
   exact Set.ncard_le_ncard_of_injOn _
     (mem_filter_monicFactorsMod_of_mem_primesOverOfInertiaDeg p hp) hinj
     (Finset.finite_toSet _)
@@ -181,7 +183,7 @@ theorem isCommonIndexDivisor_of_ncard_lt_ncard {d : ℕ}
   intro θ
   by_contra hdvd
   -- A `θ` escaping `p` in the index also escapes it in the conductor exponent.
-  have hexp : ¬ p ∣ exponent (θ : 𝓞 K) := fun h =>
+  have hexp : ¬ p ∣ NumberField.RingOfIntegers.exponent (θ : 𝓞 K) := fun h =>
     hdvd ((IntegralPrimitiveElement.dvd_index_iff_dvd_exponent θ).mpr h)
   have hle : (primesOverOfInertiaDeg K p d).ncard ≤
       (monicIrreduciblesOfDegree (ZMod p) d).ncard :=

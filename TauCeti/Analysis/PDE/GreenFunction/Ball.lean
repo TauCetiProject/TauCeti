@@ -411,7 +411,6 @@ theorem ballPoissonKernel_le_mul_ballPoissonKernel_zero {x y : EuclideanSpace �
   have hy0 : y ≠ 0 := fun h ↦ by simp [h] at hy
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (pos_of_ne_euclideanSpace hy0).ne'
   have hN := mul_pos (Nat.cast_pos.mpr k.succ_pos) (volume_real_unitBall_pos (k + 1))
-  have ha : 0 < 1 - ‖x‖ := by linarith
   -- The distance from the pole to the boundary point is at least `1 - ‖x‖`.
   have hm : 1 - ‖x‖ ≤ ‖x - y‖ := by
     simpa [hy, norm_sub_rev] using norm_sub_norm_le y x
