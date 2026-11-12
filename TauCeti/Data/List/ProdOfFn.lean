@@ -26,7 +26,7 @@ homomorphisms.
 The product of a word whose letters all equal `c` except for a single letter `a` in position `p`
 is `c ^ p * a * c ^ (n - p)` (`List.prod_ofFn_ite`).
 
-A multiplicative self-map fixing every letter of a word, or fixing the product of two adjacent
+A monoid endomorphism fixing every letter of a word, or fixing the product of two adjacent
 letters and every other letter, fixes the product of the word (`List.map_prod_ofFn_of_forall`,
 `List.map_prod_ofFn_of_adjacent`). In a division monoid the inverse of a product is the product
 of the inverses in the reverse order (`List.inv_prod_ofFn`).
@@ -91,13 +91,13 @@ theorem prod_ofFn_ite {M : Type*} [Monoid M] (a c : M) :
       rw [h, pow_succ']
       simp [mul_assoc, Nat.add_sub_add_right]
 
-/-- A multiplicative map fixing every letter of a word fixes the product of the word. -/
+/-- A monoid endomorphism fixing every letter of a word fixes the product of the word. -/
 theorem map_prod_ofFn_of_forall {F M : Type*} [Monoid M] [FunLike F M M] [MonoidHomClass F M M]
     (f : F) {k : ℕ} (g : Fin k → M) (h : ∀ i, f (g i) = g i) :
     f (List.ofFn g).prod = (List.ofFn g).prod := by
   simp [map_list_prod, List.map_ofFn, Function.comp_def, h]
 
-/-- A multiplicative map fixing the product of two adjacent letters of a word, and every other
+/-- A monoid endomorphism fixing the product of two adjacent letters of a word, and every other
 letter, fixes the product of the word. -/
 theorem map_prod_ofFn_of_adjacent {F M : Type*} [Monoid M] [FunLike F M M] [MonoidHomClass F M M]
     (f : F) {k : ℕ} (g : Fin k → M) {i i' : Fin k} (hi : (i : ℕ) + 1 = i')

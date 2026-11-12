@@ -7,8 +7,8 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Lift.BasicAut
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
+public import TauCeti.Data.Sum.Basic
 import TauCeti.Data.List.ProdOfFn
-import TauCeti.Data.Sum.Basic
 import Mathlib.GroupTheory.Commutator.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.List.GetD
@@ -119,6 +119,7 @@ theorem basicWordSeq_def :
 
 /-- The basic sequence has `K(m, n)` terms: `m + 4n - 1` when `m, n ≠ 0`, `4n - 1` when `m = 0`
 and `m - 1` when `n = 0`. -/
+@[simp]
 theorem length_basicWordSeq :
     (basicWordSeq inj c).length = (m - 1) + (if 0 < m ∧ 0 < n then 1 else 0) + (4 * n - 1) := by
   have h : ∀ k : ℕ, ∑ i : Fin k, (3 + if (i : ℕ) + 1 < k then 1 else 0) = 4 * k - 1 := by
@@ -212,12 +213,16 @@ def phi (Γ : List M) (p : List ℕ) : M :=
 
 variable (Γ : List M)
 
+theorem phi_def (p : List ℕ) :
+    phi Γ p = (p.zipIdx.map fun ei => Γ.getD (ei.2 % Γ.length) 1 ^ ei.1).prod := (rfl)
+
 @[simp]
 theorem phi_nil : phi Γ [] = 1 := by
   simp [phi]
 
 /-- `φ_{j+1,p} = φ_{j,p} * γ_{j+1} ^ p_{j+1}`, the indices of `Γ` being read modulo its
 length. -/
+@[simp]
 theorem phi_concat (p : List ℕ) (e : ℕ) :
     phi Γ (p ++ [e]) = phi Γ p * Γ.getD (p.length % Γ.length) 1 ^ e := by
   simp [phi, List.zipIdx_append]
@@ -228,6 +233,13 @@ theorem phi_replicate_zero (j : ℕ) : phi Γ (List.replicate j 0) = 1 := by
   induction j with
   | zero => simp
   | succ j ih => rw [List.replicate_succ', phi_concat, ih, pow_zero, mul_one]
+
+/-- A monoid homomorphism carries `φ_{j,p}` of a sequence to `φ_{j,p}` of the image of the
+sequence. -/
+theorem map_phi {N F : Type*} [Monoid N] [FunLike F M N] [MonoidHomClass F M N] (f : F)
+    (p : List ℕ) : f (phi Γ p) = phi (Γ.map f) p := by
+  have hget (o : Option M) : f (o.getD 1) = (o.map f).getD 1 := by cases o <;> simp
+  simp [phi, map_list_prod, Function.comp_def, hget]
 
 end Phi
 
@@ -247,6 +259,24 @@ theorem phi_apply_of_forall_mem {H : Type*} [Mul H] {Γ : List (MulAut H)} {w : 
     · rw [List.getD_eq_getElem _ _ hlt]
       exact h _ (List.getElem_mem hlt)
     · rw [List.getD_eq_default _ _ hle, MulAut.one_apply]
+
+section SeqPhi
+
+variable {x y : Fin n → X} {z : Fin m → X} (inj : (Sum.elim (Sum.elim x y) z).Injective)
+  (c : Fin m → G)
+
+/-- The automorphisms `φ_{j,p}` of the basic sequence fix the word `S₀`. -/
+@[simp]
+theorem phi_basicWordSeq_basicWord (p : List ℕ) :
+    phi (basicWordSeq inj c) p (basicWord x y z c) = basicWord x y z c :=
+  phi_apply_of_forall_mem (fun _ hγ => apply_basicWord_of_mem_basicWordSeq inj c hγ) p
+
+/-- The automorphisms `φ_{j,p}` of the basic sequence fix the coefficients. -/
+@[simp]
+theorem phi_basicWordSeq_inl (p : List ℕ) (g : G) : phi (basicWordSeq inj c) p (inl g) = inl g :=
+  phi_apply_of_forall_mem (fun _ hγ => apply_inl_of_mem_basicWordSeq inj c hγ g) p
+
+end SeqPhi
 
 /-! ### Standard orientable quadratic equations -/
 
@@ -290,32 +320,30 @@ theorem basicWord_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
 coefficient atoms it is `basicWordSeq` for the variables of the equation. An equation
 `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` with coefficient atoms is read backwards: the inverse of the
 product of its atoms is `∏ⱼ zⱼ'⁻¹ cⱼ' zⱼ' ∏ᵢ [xᵢ', yᵢ']` for the mirrored variables and
-coefficients `xᵢ' = y_{n+1-i}`, `yᵢ' = x_{n+1-i}`, `zⱼ' = z_{m+1-j}`, `cⱼ' = c_{m+1-j}⁻¹`, and
-the sequence is `basicWordSeq` for these. -/
+coefficients `xᵢ' = y_{n+1-i}`, `yᵢ' = x_{n+1-i}`, `zⱼ' = z_{m+1-j}`, `cⱼ' = c_{m+1-j}⁻¹`
+(indices from `1`; in Lean, `y ∘ Fin.rev`, `x ∘ Fin.rev`, `z ∘ Fin.rev` and
+`fun j => (c j.rev)⁻¹`), and the sequence is `basicWordSeq` for these. -/
 noncomputable def basicSeq : (S : Standard G X) → S.IsOrientable → List (MulAut (GX G X))
   | .orientable _ _ _ _ inj, _ => basicWordSeq (inj.sumElim_of_isEmpty Fin.elim0) Fin.elim0
-  | .orientableCoeff _ m _ x y z inj c _ _ _, _ =>
+  | .orientableCoeff _ m _ _ _ _ inj c _ _ _, _ =>
     if m = 0 then basicWordSeq inj c else
-      basicWordSeq (x := y ∘ Fin.rev) (y := x ∘ Fin.rev) (z := z ∘ Fin.rev)
-        (by simpa only [← Function.comp_assoc, Sum.elim_swap, Sum.elim_comp_map] using
-          inj.sumElim_comp (Sum.swap_leftInverse.injective.comp
-            (Fin.rev_injective.sumMap Fin.rev_injective)) Fin.rev_injective)
-        fun j => (c j.rev)⁻¹
+      basicWordSeq (inj.sumElim_sumElim_swap_comp Fin.rev_injective Fin.rev_injective
+        Fin.rev_injective) fun j => (c j.rev)⁻¹
   | .nonorientable _ hn _ inj, h => (not_isOrientable_nonorientable hn inj h).elim
   | .nonorientableCoeff _ _ hn _ _ inj _ hc _ hd, h =>
     (not_isOrientable_nonorientableCoeff hn inj hc hd h).elim
 
-theorem basicSeq_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective)
-    (inj' : (Sum.elim (Sum.elim x y) (Fin.elim0 : Fin 0 → X)).Injective) :
+theorem basicSeq_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
     basicSeq (G := G) (orientable n hn x y inj) (isOrientable_orientable hn inj) =
-      basicWordSeq inj' Fin.elim0 := (rfl)
+      basicWordSeq (inj.sumElim_of_isEmpty Fin.elim0) Fin.elim0 := (rfl)
 
 theorem basicSeq_orientableCoeff (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
-    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1)
-    (inj' : (Sum.elim (Sum.elim (y ∘ Fin.rev) (x ∘ Fin.rev)) (z ∘ Fin.rev)).Injective) :
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
     basicSeq (orientableCoeff n m hnm x y z inj c hc d hd)
         (isOrientable_orientableCoeff hnm inj hc hd) =
-      if m = 0 then basicWordSeq inj c else basicWordSeq inj' fun j => (c j.rev)⁻¹ := (rfl)
+      if m = 0 then basicWordSeq inj c else
+        basicWordSeq (inj.sumElim_sumElim_swap_comp Fin.rev_injective Fin.rev_injective
+          Fin.rev_injective) fun j => (c j.rev)⁻¹ := (rfl)
 
 /-- Without coefficient atoms, the basic sequence of `∏ᵢ [xᵢ, yᵢ] d = 1` is the basic sequence of
 the word `S₀` of its variables. -/
@@ -328,11 +356,11 @@ theorem basicSeq_orientableCoeff_of_eq_zero (hnm : 0 < n + m)
 /-- With coefficient atoms, the basic sequence of `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` is the basic
 sequence of the word `S₀` of the mirrored variables and coefficients. -/
 theorem basicSeq_orientableCoeff_of_ne_zero (hnm : 0 < n + m)
-    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) (hm : m ≠ 0)
-    (inj' : (Sum.elim (Sum.elim (y ∘ Fin.rev) (x ∘ Fin.rev)) (z ∘ Fin.rev)).Injective) :
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) (hm : m ≠ 0) :
     basicSeq (orientableCoeff n m hnm x y z inj c hc d hd)
         (isOrientable_orientableCoeff hnm inj hc hd) =
-      basicWordSeq inj' fun j => (c j.rev)⁻¹ := by
+      basicWordSeq (inj.sumElim_sumElim_swap_comp Fin.rev_injective Fin.rev_injective
+        Fin.rev_injective) fun j => (c j.rev)⁻¹ := by
   rw [basicSeq, ite_eq_right hm]
 
 variable {S : Standard G X} (hS : S.IsOrientable) {γ : MulAut (GX G X)}
@@ -375,23 +403,27 @@ theorem apply_toWord_of_mem_basicSeq (hγ : γ ∈ basicSeq S hS) : γ S.toWord 
 
 /-- The automorphisms `φ_{j,p}` of a standard orientable quadratic equation `S = 1` fix the left
 side of `S`. -/
+@[simp]
 theorem phi_basicSeq_toWord (p : List ℕ) : phi (basicSeq S hS) p S.toWord = S.toWord :=
   phi_apply_of_forall_mem (fun _ hγ => apply_toWord_of_mem_basicSeq hS hγ) p
 
 /-- The automorphisms `φ_{j,p}` of a standard orientable quadratic equation fix the
 coefficients. -/
+@[simp]
 theorem phi_basicSeq_inl (p : List ℕ) (g : G) : phi (basicSeq S hS) p (inl g) = inl g :=
   phi_apply_of_forall_mem (fun _ hγ => apply_inl_of_mem_basicSeq hS hγ g) p
 
 /-- The basic sequence of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` has `4n - 1` terms. -/
+@[simp]
 theorem length_basicSeq_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
     (basicSeq (G := G) (orientable n hn x y inj) (isOrientable_orientable hn inj)).length =
       4 * n - 1 := by
-  rw [basicSeq_orientable hn inj (inj.sumElim_of_isEmpty _), length_basicWordSeq]
+  rw [basicSeq_orientable hn inj, length_basicWordSeq]
   simp
 
 /-- The basic sequence of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] ∏ⱼ₌₁ᵐ zⱼ⁻¹ cⱼ zⱼ d = 1` has `K(m, n)` terms:
 `m + 4n - 1` when `m, n ≠ 0`, `4n - 1` when `m = 0` and `m - 1` when `n = 0`. -/
+@[simp]
 theorem length_basicSeq_orientableCoeff (hnm : 0 < n + m)
     (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
     (basicSeq (orientableCoeff n m hnm x y z inj c hc d hd)

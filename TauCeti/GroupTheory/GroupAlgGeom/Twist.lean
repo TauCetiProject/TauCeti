@@ -16,7 +16,8 @@ pair of integers `(l, r)`. The substitution `v ↦ A ^ l * v * A ^ r` is a `G`-e
 `twistHom A e` of `G[X]`. When the substitutions for `A` and for `A⁻¹` fix `A`, so do the
 substitutions for all the powers `A ^ k` (`twistHom_zpow_self`), and these form a one-parameter
 group of `G`-automorphisms of `G[X]`: the automorphism `twist A e h₁ h₂` for `A` itself has `k`-th
-power the substitution for `A ^ k` (`twist_zpow_apply`).
+power the substitution for `A ^ k` (`twist_pow_apply`, `twist_zpow_apply`), and its inverse is the
+substitution for `A⁻¹` (`twist_symm_apply`).
 
 The Nielsen-type automorphisms used to parametrise the solutions of quadratic equations are of
 this form: a block of variables is multiplied on the left or on the right, or conjugated, by a
@@ -47,6 +48,13 @@ variable {G X : Type*} [Group G] {A B C : GX G X} {e : X → ℤ × ℤ}
 `(l, r) = e v`. -/
 def twistHom (A : GX G X) (e : X → ℤ × ℤ) : GX G X →* GX G X :=
   eval inl fun v => A ^ (e v).1 * inr (FreeGroup.of v) * A ^ (e v).2
+
+theorem twistHom_def (A : GX G X) (e : X → ℤ × ℤ) :
+    twistHom A e = eval inl fun v => A ^ (e v).1 * inr (FreeGroup.of v) * A ^ (e v).2 := (rfl)
+
+@[simp]
+theorem twistHom_comp_inl (A : GX G X) (e : X → ℤ × ℤ) : (twistHom A e).comp inl = inl :=
+  eval_comp_inl ..
 
 @[simp]
 theorem twistHom_inl (A : GX G X) (e : X → ℤ × ℤ) (g : G) : twistHom A e (inl g) = inl g := by
@@ -103,6 +111,10 @@ include h₁ h₂
 @[simp]
 theorem twist_apply (w : GX G X) : twist A e h₁ h₂ w = twistHom A e w := (rfl)
 
+/-- The inverse of the twist by `A` is the substitution for `A⁻¹`. -/
+@[simp]
+theorem twist_symm_apply (w : GX G X) : (twist A e h₁ h₂).symm w = twistHom A⁻¹ e w := (rfl)
+
 /-- The twist fixes the element it twists by. -/
 theorem twist_self : twist A e h₁ h₂ A = A := h₁
 
@@ -113,20 +125,26 @@ theorem twistHom_zpow_comp (j k : ℤ) :
   exact twistHom_comp (by rw [map_zpow, twistHom_zpow_self h₁ h₂ j])
     ((Commute.refl A).zpow_zpow j k)
 
+/-- The `n`-th power of the twist by `A` is the substitution `v ↦ (A ^ n) ^ l * v * (A ^ n) ^ r`,
+for every natural number `n`. -/
+@[simp]
+theorem twist_pow_apply (n : ℕ) (w : GX G X) :
+    (twist A e h₁ h₂ ^ n) w = twistHom (A ^ n) e w := by
+  induction n generalizing w with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ', MulAut.mul_apply, ih, twist_apply, pow_succ',
+      ← twistHom_comp (by rw [map_pow, h₁]) ((Commute.refl A).pow_right n), MonoidHom.comp_apply]
+
 /-- The `k`-th power of the twist by `A` is the substitution `v ↦ (A ^ k) ^ l * v * (A ^ k) ^ r`,
 for every integer `k`. -/
+@[simp]
 theorem twist_zpow_apply (k : ℤ) (w : GX G X) :
     (twist A e h₁ h₂ ^ k) w = twistHom (A ^ k) e w := by
-  have hnat (n : ℕ) (w : GX G X) : (twist A e h₁ h₂ ^ n) w = twistHom (A ^ (n : ℤ)) e w := by
-    induction n generalizing w with
-    | zero => simp
-    | succ n ih =>
-      rw [pow_succ', MulAut.mul_apply, ih, twist_apply, Int.natCast_succ, add_comm,
-        ← twistHom_zpow_comp h₁ h₂ 1 n, zpow_one, MonoidHom.comp_apply]
   obtain ⟨n, rfl | rfl⟩ := k.eq_nat_or_neg
-  · exact_mod_cast hnat n w
-  · rw [zpow_neg, zpow_natCast, MulAut.inv_apply, eq_comm, MulEquiv.eq_symm_apply, hnat,
-      ← MonoidHom.comp_apply, twistHom_zpow_comp h₁ h₂, add_neg_cancel, zpow_zero, twistHom_one,
-      MonoidHom.id_apply]
+  · simp
+  · rw [zpow_neg, zpow_natCast, MulAut.inv_apply, eq_comm, MulEquiv.eq_symm_apply,
+      twist_pow_apply, ← zpow_natCast, ← MonoidHom.comp_apply, twistHom_zpow_comp h₁ h₂,
+      add_neg_cancel, zpow_zero, twistHom_one, MonoidHom.id_apply]
 
 end TauCeti.GroupAlgGeom

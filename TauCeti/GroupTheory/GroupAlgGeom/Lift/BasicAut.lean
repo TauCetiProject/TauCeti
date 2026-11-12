@@ -49,8 +49,9 @@ formulas with `A ^ k` in place of `A`, for every integer `k` ([IFT], Lemma 41).
 
 * `TauCeti.GroupAlgGeom.Lift.basicCoeff_basicWord`, `basicLink_basicWord`, `basicY_basicWord`,
   `basicX_basicWord`, `basicComm_basicWord`: the basic automorphisms fix `S₀`.
-* `TauCeti.GroupAlgGeom.Lift.basicCoeff_zpow_inr_of_left` and the lemmas after it: the powers of
-  the basic automorphisms on the variables.
+* `TauCeti.GroupAlgGeom.Lift.basicCoeff_inl`, `basicCoeff_inr_of_left` and the lemmas after them:
+  the basic automorphisms, their inverses and their natural and integer powers on the
+  coefficients and on the variables.
 
 ## References
 
@@ -194,7 +195,8 @@ private theorem twistHom_coeffTerm {B : GX G X}
 
 /-- The basic automorphism `z_j ↦ z_j A`, `z_j' ↦ z_j' A` of `G[X]`, where
 `A = z_j⁻¹ c_j z_j * z_j'⁻¹ c_j' z_j'`; the other variables are fixed. For `j' = j + 1` it is the
-automorphism `γ_j` of [IFT], §7.1, with `j ≤ m - 1`. -/
+automorphism `γ_{j+1}` of [IFT], §7.1 (the automorphisms of [IFT] are numbered from `1`, the
+indices `j : Fin m` from `0`). -/
 noncomputable def basicCoeff : MulAut (GX G X) :=
   twist (coeffAtom z c j * coeffAtom z c j')
     (blockExp x y z 0 0 fun k => if k = j ∨ k = j' then (0, 1) else 0)
@@ -205,21 +207,83 @@ noncomputable def basicCoeff : MulAut (GX G X) :=
 theorem basicCoeff_inl (g : G) : basicCoeff inj c j j' (inl g) = inl g := by
   simp [basicCoeff]
 
+@[simp]
+theorem basicCoeff_symm_inl (g : G) : (basicCoeff inj c j j').symm (inl g) = inl g := by
+  simp [basicCoeff]
+
+@[simp]
+theorem basicCoeff_pow_inl (k : ℕ) (g : G) : (basicCoeff inj c j j' ^ k) (inl g) = inl g := by
+  simp [basicCoeff]
+
+@[simp]
+theorem basicCoeff_zpow_inl (k : ℤ) (g : G) : (basicCoeff inj c j j' ^ k) (inl g) = inl g := by
+  simp [basicCoeff]
+
+@[simp]
+theorem basicCoeff_inr_of_left :
+    basicCoeff inj c j j' (inr (.of (z j))) =
+      inr (.of (z j)) * (coeffAtom z c j * coeffAtom z c j') := by
+  simp [basicCoeff, blockExp_z inj]
+
+@[simp]
+theorem basicCoeff_symm_inr_of_left :
+    (basicCoeff inj c j j').symm (inr (.of (z j))) =
+      inr (.of (z j)) * (coeffAtom z c j * coeffAtom z c j')⁻¹ := by
+  simp [basicCoeff, blockExp_z inj]
+
+@[simp]
+theorem basicCoeff_pow_inr_of_left (k : ℕ) :
+    (basicCoeff inj c j j' ^ k) (inr (.of (z j))) =
+      inr (.of (z j)) * (coeffAtom z c j * coeffAtom z c j') ^ k := by
+  simp [basicCoeff, blockExp_z inj]
+
+@[simp]
 theorem basicCoeff_zpow_inr_of_left (k : ℤ) :
     (basicCoeff inj c j j' ^ k) (inr (.of (z j))) =
       inr (.of (z j)) * (coeffAtom z c j * coeffAtom z c j') ^ k := by
-  simp [basicCoeff, twist_zpow_apply, twistHom_inr_of, blockExp_z inj]
+  simp [basicCoeff, blockExp_z inj]
 
+@[simp]
+theorem basicCoeff_inr_of_right :
+    basicCoeff inj c j j' (inr (.of (z j'))) =
+      inr (.of (z j')) * (coeffAtom z c j * coeffAtom z c j') := by
+  simp [basicCoeff, blockExp_z inj]
+
+@[simp]
+theorem basicCoeff_symm_inr_of_right :
+    (basicCoeff inj c j j').symm (inr (.of (z j'))) =
+      inr (.of (z j')) * (coeffAtom z c j * coeffAtom z c j')⁻¹ := by
+  simp [basicCoeff, blockExp_z inj]
+
+@[simp]
+theorem basicCoeff_pow_inr_of_right (k : ℕ) :
+    (basicCoeff inj c j j' ^ k) (inr (.of (z j'))) =
+      inr (.of (z j')) * (coeffAtom z c j * coeffAtom z c j') ^ k := by
+  simp [basicCoeff, blockExp_z inj]
+
+@[simp]
 theorem basicCoeff_zpow_inr_of_right (k : ℤ) :
     (basicCoeff inj c j j' ^ k) (inr (.of (z j'))) =
       inr (.of (z j')) * (coeffAtom z c j * coeffAtom z c j') ^ k := by
-  simp [basicCoeff, twist_zpow_apply, twistHom_inr_of, blockExp_z inj]
+  simp [basicCoeff, blockExp_z inj]
 
 theorem basicCoeff_zpow_inr_of_of_ne {v : X} (hj : v ≠ z j) (hj' : v ≠ z j') (k : ℤ) :
     (basicCoeff inj c j j' ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
   rw [basicCoeff, twist_zpow_apply, twistHom_inr_of,
     blockExp_eq_zero inj (by simp) (by simp) (by rintro l rfl; aesop)]
   simp
+
+theorem basicCoeff_inr_of_of_ne {v : X} (hj : v ≠ z j) (hj' : v ≠ z j') :
+    basicCoeff inj c j j' (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicCoeff_zpow_inr_of_of_ne inj c j j' hj hj' 1
+
+theorem basicCoeff_symm_inr_of_of_ne {v : X} (hj : v ≠ z j) (hj' : v ≠ z j') :
+    (basicCoeff inj c j j').symm (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicCoeff_zpow_inr_of_of_ne inj c j j' hj hj' (-1)
+
+theorem basicCoeff_pow_inr_of_of_ne {v : X} (hj : v ≠ z j) (hj' : v ≠ z j') (k : ℕ) :
+    (basicCoeff inj c j j' ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicCoeff_zpow_inr_of_of_ne inj c j j' hj hj' k
 
 /-- The basic automorphism of two adjacent coefficient atoms fixes the word `S₀`. -/
 theorem basicCoeff_basicWord (hj : (j : ℕ) + 1 = j') :
@@ -259,21 +323,93 @@ noncomputable def basicLink : MulAut (GX G X) :=
 theorem basicLink_inl (g : G) : basicLink inj c j i (inl g) = inl g := by
   simp [basicLink]
 
+@[simp]
+theorem basicLink_symm_inl (g : G) : (basicLink inj c j i).symm (inl g) = inl g := by
+  simp [basicLink]
+
+@[simp]
+theorem basicLink_pow_inl (k : ℕ) (g : G) : (basicLink inj c j i ^ k) (inl g) = inl g := by
+  simp [basicLink]
+
+@[simp]
+theorem basicLink_zpow_inl (k : ℤ) (g : G) : (basicLink inj c j i ^ k) (inl g) = inl g := by
+  simp [basicLink]
+
+@[simp]
+theorem basicLink_inr_of_z :
+    basicLink inj c j i (inr (.of (z j))) =
+      inr (.of (z j)) * (coeffAtom z c j * (inr (.of (x i)))⁻¹) := by
+  simp [basicLink, blockExp_z inj]
+
+@[simp]
+theorem basicLink_symm_inr_of_z :
+    (basicLink inj c j i).symm (inr (.of (z j))) =
+      inr (.of (z j)) * (coeffAtom z c j * (inr (.of (x i)))⁻¹)⁻¹ := by
+  simp [basicLink, blockExp_z inj]
+
+@[simp]
+theorem basicLink_pow_inr_of_z (k : ℕ) :
+    (basicLink inj c j i ^ k) (inr (.of (z j))) =
+      inr (.of (z j)) * (coeffAtom z c j * (inr (.of (x i)))⁻¹) ^ k := by
+  simp [basicLink, blockExp_z inj]
+
+@[simp]
 theorem basicLink_zpow_inr_of_z (k : ℤ) :
     (basicLink inj c j i ^ k) (inr (.of (z j))) =
       inr (.of (z j)) * (coeffAtom z c j * (inr (.of (x i)))⁻¹) ^ k := by
-  simp [basicLink, twist_zpow_apply, twistHom_inr_of, blockExp_z inj]
+  simp [basicLink, blockExp_z inj]
 
+@[simp]
+theorem basicLink_inr_of_x :
+    basicLink inj c j i (inr (.of (x i))) =
+      (coeffAtom z c j * (inr (.of (x i)))⁻¹)⁻¹ * inr (.of (x i)) *
+        (coeffAtom z c j * (inr (.of (x i)))⁻¹) := by
+  simp [basicLink, blockExp_x inj]
+
+@[simp]
+theorem basicLink_symm_inr_of_x :
+    (basicLink inj c j i).symm (inr (.of (x i))) =
+      (coeffAtom z c j * (inr (.of (x i)))⁻¹) * inr (.of (x i)) *
+        (coeffAtom z c j * (inr (.of (x i)))⁻¹)⁻¹ := by
+  simp [basicLink, blockExp_x inj]
+
+@[simp]
+theorem basicLink_pow_inr_of_x (k : ℕ) :
+    (basicLink inj c j i ^ k) (inr (.of (x i))) =
+      ((coeffAtom z c j * (inr (.of (x i)))⁻¹) ^ k)⁻¹ * inr (.of (x i)) *
+        (coeffAtom z c j * (inr (.of (x i)))⁻¹) ^ k := by
+  simp [basicLink, blockExp_x inj]
+
+@[simp]
 theorem basicLink_zpow_inr_of_x (k : ℤ) :
     (basicLink inj c j i ^ k) (inr (.of (x i))) =
       ((coeffAtom z c j * (inr (.of (x i)))⁻¹) ^ k)⁻¹ * inr (.of (x i)) *
         (coeffAtom z c j * (inr (.of (x i)))⁻¹) ^ k := by
-  simp [basicLink, twist_zpow_apply, twistHom_inr_of, blockExp_x inj]
+  simp [basicLink, blockExp_x inj]
 
+@[simp]
+theorem basicLink_inr_of_y :
+    basicLink inj c j i (inr (.of (y i))) =
+      (coeffAtom z c j * (inr (.of (x i)))⁻¹)⁻¹ * inr (.of (y i)) := by
+  simp [basicLink, blockExp_y inj]
+
+@[simp]
+theorem basicLink_symm_inr_of_y :
+    (basicLink inj c j i).symm (inr (.of (y i))) =
+      (coeffAtom z c j * (inr (.of (x i)))⁻¹) * inr (.of (y i)) := by
+  simp [basicLink, blockExp_y inj]
+
+@[simp]
+theorem basicLink_pow_inr_of_y (k : ℕ) :
+    (basicLink inj c j i ^ k) (inr (.of (y i))) =
+      ((coeffAtom z c j * (inr (.of (x i)))⁻¹) ^ k)⁻¹ * inr (.of (y i)) := by
+  simp [basicLink, blockExp_y inj]
+
+@[simp]
 theorem basicLink_zpow_inr_of_y (k : ℤ) :
     (basicLink inj c j i ^ k) (inr (.of (y i))) =
       ((coeffAtom z c j * (inr (.of (x i)))⁻¹) ^ k)⁻¹ * inr (.of (y i)) := by
-  simp [basicLink, twist_zpow_apply, twistHom_inr_of, blockExp_y inj]
+  simp [basicLink, blockExp_y inj]
 
 theorem basicLink_zpow_inr_of_of_ne {v : X} (hz : v ≠ z j) (hx : v ≠ x i) (hy : v ≠ y i)
     (k : ℤ) : (basicLink inj c j i ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
@@ -282,6 +418,18 @@ theorem basicLink_zpow_inr_of_of_ne {v : X} (hz : v ≠ z j) (hx : v ≠ x i) (h
     (by rintro l rfl; exact Pi.single_eq_of_ne (fun h => hy (congrArg y h)) _)
     (by rintro l rfl; exact Pi.single_eq_of_ne (fun h => hz (congrArg z h)) _)]
   simp
+
+theorem basicLink_inr_of_of_ne {v : X} (hz : v ≠ z j) (hx : v ≠ x i) (hy : v ≠ y i) :
+    basicLink inj c j i (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicLink_zpow_inr_of_of_ne inj c j i hz hx hy 1
+
+theorem basicLink_symm_inr_of_of_ne {v : X} (hz : v ≠ z j) (hx : v ≠ x i) (hy : v ≠ y i) :
+    (basicLink inj c j i).symm (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicLink_zpow_inr_of_of_ne inj c j i hz hx hy (-1)
+
+theorem basicLink_pow_inr_of_of_ne {v : X} (hz : v ≠ z j) (hx : v ≠ x i) (hy : v ≠ y i)
+    (k : ℕ) : (basicLink inj c j i ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicLink_zpow_inr_of_of_ne inj c j i hz hx hy k
 
 /-- The basic automorphism of the last coefficient atom and the first commutator fixes the word
 `S₀`. -/
@@ -310,7 +458,8 @@ section Y
 variable (i : Fin n)
 
 /-- The basic automorphism `y_i ↦ x_i y_i` of `G[X]`; the other variables are fixed. These are
-the automorphisms `γ_{m+4i-3}` and `γ_{m+4i-1}` of [IFT], §7.1. -/
+the automorphisms `γ_{m+4i+1}` and `γ_{m+4i+3}` of [IFT], §7.1 (the automorphisms of [IFT] are
+numbered from `1`, the indices `i : Fin n` from `0`). -/
 noncomputable def basicY : MulAut (GX G X) :=
   twist (inr (.of (x i))) (blockExp x y z 0 (Pi.single i (1, 0)) 0)
     (by simp [blockExp_x inj]) (by simp [blockExp_x inj])
@@ -319,16 +468,56 @@ noncomputable def basicY : MulAut (GX G X) :=
 theorem basicY_inl (g : G) : basicY inj i (inl g) = inl g := by
   simp [basicY]
 
+@[simp]
+theorem basicY_symm_inl (g : G) : (basicY inj i).symm (inl g) = inl g := by
+  simp [basicY]
+
+@[simp]
+theorem basicY_pow_inl (k : ℕ) (g : G) : (basicY inj i ^ k) (inl g) = inl g := by
+  simp [basicY]
+
+@[simp]
+theorem basicY_zpow_inl (k : ℤ) (g : G) : (basicY inj i ^ k) (inl g) = inl g := by
+  simp [basicY]
+
+@[simp]
+theorem basicY_inr_of :
+    basicY inj i (inr (.of (y i))) = (inr (.of (x i)) : GX G X) * inr (.of (y i)) := by
+  simp [basicY, blockExp_y inj]
+
+@[simp]
+theorem basicY_symm_inr_of :
+    (basicY inj i).symm (inr (.of (y i))) = (inr (.of (x i)) : GX G X)⁻¹ * inr (.of (y i)) := by
+  simp [basicY, blockExp_y inj]
+
+@[simp]
+theorem basicY_pow_inr_of (k : ℕ) :
+    (basicY inj i ^ k) (inr (.of (y i))) = (inr (.of (x i)) : GX G X) ^ k * inr (.of (y i)) := by
+  simp [basicY, blockExp_y inj]
+
+@[simp]
 theorem basicY_zpow_inr_of (k : ℤ) :
     (basicY inj i ^ k) (inr (.of (y i))) =
       (inr (.of (x i)) : GX G X) ^ k * inr (.of (y i)) := by
-  simp [basicY, twist_zpow_apply, twistHom_inr_of, blockExp_y inj]
+  simp [basicY, blockExp_y inj]
 
 theorem basicY_zpow_inr_of_of_ne {v : X} (hy : v ≠ y i) (k : ℤ) :
     (basicY inj i ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
   rw [basicY, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero inj (by simp)
     (by rintro l rfl; exact Pi.single_eq_of_ne (fun h => hy (congrArg y h)) _) (by simp)]
   simp
+
+theorem basicY_inr_of_of_ne {v : X} (hy : v ≠ y i) :
+    basicY inj i (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicY_zpow_inr_of_of_ne inj i hy 1
+
+theorem basicY_symm_inr_of_of_ne {v : X} (hy : v ≠ y i) :
+    (basicY inj i).symm (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicY_zpow_inr_of_of_ne inj i hy (-1)
+
+theorem basicY_pow_inr_of_of_ne {v : X} (hy : v ≠ y i) (k : ℕ) :
+    (basicY inj i ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicY_zpow_inr_of_of_ne inj i hy k
 
 /-- The basic automorphism `y_i ↦ x_i y_i` fixes the word `S₀`. -/
 theorem basicY_basicWord : basicY inj i (basicWord x y z c) = basicWord x y z c := by
@@ -350,7 +539,8 @@ section X
 variable (i : Fin n)
 
 /-- The basic automorphism `x_i ↦ y_i x_i` of `G[X]`; the other variables are fixed. This is
-the automorphism `γ_{m+4i-2}` of [IFT], §7.1. -/
+the automorphism `γ_{m+4i+2}` of [IFT], §7.1 (the automorphisms of [IFT] are numbered from `1`,
+the indices `i : Fin n` from `0`). -/
 noncomputable def basicX : MulAut (GX G X) :=
   twist (inr (.of (y i))) (blockExp x y z (Pi.single i (1, 0)) 0 0)
     (by simp [blockExp_y inj]) (by simp [blockExp_y inj])
@@ -359,16 +549,56 @@ noncomputable def basicX : MulAut (GX G X) :=
 theorem basicX_inl (g : G) : basicX inj i (inl g) = inl g := by
   simp [basicX]
 
+@[simp]
+theorem basicX_symm_inl (g : G) : (basicX inj i).symm (inl g) = inl g := by
+  simp [basicX]
+
+@[simp]
+theorem basicX_pow_inl (k : ℕ) (g : G) : (basicX inj i ^ k) (inl g) = inl g := by
+  simp [basicX]
+
+@[simp]
+theorem basicX_zpow_inl (k : ℤ) (g : G) : (basicX inj i ^ k) (inl g) = inl g := by
+  simp [basicX]
+
+@[simp]
+theorem basicX_inr_of :
+    basicX inj i (inr (.of (x i))) = (inr (.of (y i)) : GX G X) * inr (.of (x i)) := by
+  simp [basicX, blockExp_x inj]
+
+@[simp]
+theorem basicX_symm_inr_of :
+    (basicX inj i).symm (inr (.of (x i))) = (inr (.of (y i)) : GX G X)⁻¹ * inr (.of (x i)) := by
+  simp [basicX, blockExp_x inj]
+
+@[simp]
+theorem basicX_pow_inr_of (k : ℕ) :
+    (basicX inj i ^ k) (inr (.of (x i))) = (inr (.of (y i)) : GX G X) ^ k * inr (.of (x i)) := by
+  simp [basicX, blockExp_x inj]
+
+@[simp]
 theorem basicX_zpow_inr_of (k : ℤ) :
     (basicX inj i ^ k) (inr (.of (x i))) =
       (inr (.of (y i)) : GX G X) ^ k * inr (.of (x i)) := by
-  simp [basicX, twist_zpow_apply, twistHom_inr_of, blockExp_x inj]
+  simp [basicX, blockExp_x inj]
 
 theorem basicX_zpow_inr_of_of_ne {v : X} (hx : v ≠ x i) (k : ℤ) :
     (basicX inj i ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
   rw [basicX, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero inj
     (by rintro l rfl; exact Pi.single_eq_of_ne (fun h => hx (congrArg x h)) _) (by simp) (by simp)]
   simp
+
+theorem basicX_inr_of_of_ne {v : X} (hx : v ≠ x i) :
+    basicX inj i (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicX_zpow_inr_of_of_ne inj i hx 1
+
+theorem basicX_symm_inr_of_of_ne {v : X} (hx : v ≠ x i) :
+    (basicX inj i).symm (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicX_zpow_inr_of_of_ne inj i hx (-1)
+
+theorem basicX_pow_inr_of_of_ne {v : X} (hx : v ≠ x i) (k : ℕ) :
+    (basicX inj i ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicX_zpow_inr_of_of_ne inj i hx k
 
 /-- The basic automorphism `x_i ↦ y_i x_i` fixes the word `S₀`. -/
 theorem basicX_basicWord : basicX inj i (basicWord x y z c) = basicWord x y z c := by
@@ -402,7 +632,8 @@ private theorem twistHom_commTerm {B : GX G X}
 /-- The basic automorphism of `G[X]` given, for `i ≠ i'`, by `x_i ↦ A⁻¹ x_i`, `y_i ↦ A⁻¹ y_i A`,
 `x_i' ↦ A⁻¹ x_i' A`, `y_i' ↦ A⁻¹ y_i'`, where `A = y_i x_i'⁻¹`; the other variables are fixed.
 For `i = i'` it is `x_i ↦ A⁻¹ x_i A`, `y_i ↦ A⁻¹ y_i A`. For `i' = i + 1` it is the automorphism
-`γ_{m+4i}` of [IFT], §7.1. -/
+`γ_{m+4i+4}` of [IFT], §7.1 (the automorphisms of [IFT] are numbered from `1`, the indices
+`i : Fin n` from `0`). -/
 noncomputable def basicComm : MulAut (GX G X) :=
   twist (inr (.of (y i)) * (inr (.of (x i')))⁻¹)
     (blockExp x y z (fun l => if l = i' then (-1, 1) else if l = i then (-1, 0) else 0)
@@ -414,27 +645,113 @@ noncomputable def basicComm : MulAut (GX G X) :=
 theorem basicComm_inl (g : G) : basicComm inj i i' (inl g) = inl g := by
   simp [basicComm]
 
+@[simp]
+theorem basicComm_symm_inl (g : G) : (basicComm inj i i').symm (inl g) = inl g := by
+  simp [basicComm]
+
+@[simp]
+theorem basicComm_pow_inl (k : ℕ) (g : G) : (basicComm inj i i' ^ k) (inl g) = inl g := by
+  simp [basicComm]
+
+@[simp]
+theorem basicComm_zpow_inl (k : ℤ) (g : G) : (basicComm inj i i' ^ k) (inl g) = inl g := by
+  simp [basicComm]
+
+theorem basicComm_inr_of_x_left (h : i ≠ i') :
+    basicComm inj i i' (inr (.of (x i))) =
+      ((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹)⁻¹ * inr (.of (x i)) := by
+  simp [basicComm, blockExp_x inj, h]
+
+theorem basicComm_symm_inr_of_x_left (h : i ≠ i') :
+    (basicComm inj i i').symm (inr (.of (x i))) =
+      ((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹) * inr (.of (x i)) := by
+  simp [basicComm, blockExp_x inj, h]
+
+theorem basicComm_pow_inr_of_x_left (h : i ≠ i') (k : ℕ) :
+    (basicComm inj i i' ^ k) (inr (.of (x i))) =
+      (((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹) ^ k)⁻¹ * inr (.of (x i)) := by
+  simp [basicComm, blockExp_x inj, h]
+
 theorem basicComm_zpow_inr_of_x_left (h : i ≠ i') (k : ℤ) :
     (basicComm inj i i' ^ k) (inr (.of (x i))) =
       (((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹) ^ k)⁻¹ * inr (.of (x i)) := by
-  simp [basicComm, twist_zpow_apply, twistHom_inr_of, blockExp_x inj, h]
+  simp [basicComm, blockExp_x inj, h]
 
+@[simp]
+theorem basicComm_inr_of_y_left :
+    basicComm inj i i' (inr (.of (y i))) =
+      ((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹)⁻¹ * inr (.of (y i)) *
+        (inr (.of (y i)) * (inr (.of (x i')))⁻¹) := by
+  simp [basicComm, blockExp_y inj]
+
+@[simp]
+theorem basicComm_symm_inr_of_y_left :
+    (basicComm inj i i').symm (inr (.of (y i))) =
+      ((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹) * inr (.of (y i)) *
+        (inr (.of (y i)) * (inr (.of (x i')))⁻¹)⁻¹ := by
+  simp [basicComm, blockExp_y inj]
+
+@[simp]
+theorem basicComm_pow_inr_of_y_left (k : ℕ) :
+    (basicComm inj i i' ^ k) (inr (.of (y i))) =
+      (((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹) ^ k)⁻¹ * inr (.of (y i)) *
+        (inr (.of (y i)) * (inr (.of (x i')))⁻¹) ^ k := by
+  simp [basicComm, blockExp_y inj]
+
+@[simp]
 theorem basicComm_zpow_inr_of_y_left (k : ℤ) :
     (basicComm inj i i' ^ k) (inr (.of (y i))) =
       (((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹) ^ k)⁻¹ * inr (.of (y i)) *
         (inr (.of (y i)) * (inr (.of (x i')))⁻¹) ^ k := by
-  simp [basicComm, twist_zpow_apply, twistHom_inr_of, blockExp_y inj]
+  simp [basicComm, blockExp_y inj]
 
+@[simp]
+theorem basicComm_inr_of_x_right :
+    basicComm inj i i' (inr (.of (x i'))) =
+      ((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹)⁻¹ * inr (.of (x i')) *
+        (inr (.of (y i)) * (inr (.of (x i')))⁻¹) := by
+  simp [basicComm, blockExp_x inj]
+
+@[simp]
+theorem basicComm_symm_inr_of_x_right :
+    (basicComm inj i i').symm (inr (.of (x i'))) =
+      ((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹) * inr (.of (x i')) *
+        (inr (.of (y i)) * (inr (.of (x i')))⁻¹)⁻¹ := by
+  simp [basicComm, blockExp_x inj]
+
+@[simp]
+theorem basicComm_pow_inr_of_x_right (k : ℕ) :
+    (basicComm inj i i' ^ k) (inr (.of (x i'))) =
+      (((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹) ^ k)⁻¹ * inr (.of (x i')) *
+        (inr (.of (y i)) * (inr (.of (x i')))⁻¹) ^ k := by
+  simp [basicComm, blockExp_x inj]
+
+@[simp]
 theorem basicComm_zpow_inr_of_x_right (k : ℤ) :
     (basicComm inj i i' ^ k) (inr (.of (x i'))) =
       (((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹) ^ k)⁻¹ * inr (.of (x i')) *
         (inr (.of (y i)) * (inr (.of (x i')))⁻¹) ^ k := by
-  simp [basicComm, twist_zpow_apply, twistHom_inr_of, blockExp_x inj]
+  simp [basicComm, blockExp_x inj]
+
+theorem basicComm_inr_of_y_right (h : i ≠ i') :
+    basicComm inj i i' (inr (.of (y i'))) =
+      ((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹)⁻¹ * inr (.of (y i')) := by
+  simp [basicComm, blockExp_y inj, h.symm]
+
+theorem basicComm_symm_inr_of_y_right (h : i ≠ i') :
+    (basicComm inj i i').symm (inr (.of (y i'))) =
+      ((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹) * inr (.of (y i')) := by
+  simp [basicComm, blockExp_y inj, h.symm]
+
+theorem basicComm_pow_inr_of_y_right (h : i ≠ i') (k : ℕ) :
+    (basicComm inj i i' ^ k) (inr (.of (y i'))) =
+      (((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹) ^ k)⁻¹ * inr (.of (y i')) := by
+  simp [basicComm, blockExp_y inj, h.symm]
 
 theorem basicComm_zpow_inr_of_y_right (h : i ≠ i') (k : ℤ) :
     (basicComm inj i i' ^ k) (inr (.of (y i'))) =
       (((inr (.of (y i)) : GX G X) * (inr (.of (x i')))⁻¹) ^ k)⁻¹ * inr (.of (y i')) := by
-  simp [basicComm, twist_zpow_apply, twistHom_inr_of, blockExp_y inj, h.symm]
+  simp [basicComm, blockExp_y inj, h.symm]
 
 theorem basicComm_zpow_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hx' : v ≠ x i')
     (hy' : v ≠ y i') (k : ℤ) :
@@ -446,6 +763,19 @@ theorem basicComm_zpow_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (h
       show l ≠ i' from fun h => hy' (congrArg y h)])
     (by simp)]
   simp
+
+theorem basicComm_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hx' : v ≠ x i')
+    (hy' : v ≠ y i') : basicComm inj i i' (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicComm_zpow_inr_of_of_ne inj i i' hx hy hx' hy' 1
+
+theorem basicComm_symm_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hx' : v ≠ x i')
+    (hy' : v ≠ y i') : (basicComm inj i i').symm (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicComm_zpow_inr_of_of_ne inj i i' hx hy hx' hy' (-1)
+
+theorem basicComm_pow_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hx' : v ≠ x i')
+    (hy' : v ≠ y i') (k : ℕ) :
+    (basicComm inj i i' ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
+  simpa using basicComm_zpow_inr_of_of_ne inj i i' hx hy hx' hy' k
 
 /-- The basic automorphism of two adjacent commutators fixes the word `S₀`. -/
 theorem basicComm_basicWord (hi : (i : ℕ) + 1 = i') :

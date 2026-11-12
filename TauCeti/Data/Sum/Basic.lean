@@ -17,7 +17,9 @@ labels that are neither equal nor partners have distinct underlying elements, so
 two elements.
 
 A map `Sum.elim f g` out of a sum stays injective when its two parts are reindexed by injective
-maps, and it is injective as soon as `f` is when the second summand is empty.
+maps, and it is injective as soon as `f` is when the second summand is empty. A map
+`Sum.elim (Sum.elim f g) h` out of a nested sum stays injective when its two inner parts are
+exchanged and all three parts are reindexed by injective maps.
 
 ## Main results
 
@@ -27,6 +29,8 @@ maps, and it is injective as soon as `f` is when the second summand is empty.
   `Sum.elim (f ∘ e₁) (g ∘ e₂)` for injective `e₁`, `e₂`.
 * `Function.Injective.sumElim_of_isEmpty`: if `f` is injective and `β` is empty, then
   `Sum.elim f g` is injective for every `g : β → γ`.
+* `Function.Injective.sumElim_sumElim_swap_comp`: if `Sum.elim (Sum.elim f g) h` is injective, so
+  is `Sum.elim (Sum.elim (g ∘ e₂) (f ∘ e₁)) (h ∘ e₃)` for injective `e₁`, `e₂`, `e₃`.
 -/
 
 public section
@@ -59,5 +63,17 @@ theorem sumElim_comp (h : Injective (Sum.elim f g)) {e₁ : α' → α} {e₂ : 
 theorem sumElim_of_isEmpty [IsEmpty β] (hf : Injective f) (g : β → γ) :
     Injective (Sum.elim f g) :=
   hf.sumElim (injective_of_subsingleton g) fun _ b => isEmptyElim b
+
+/-- Exchanging the two inner parts of an injective map out of a nested sum, and reindexing the
+three parts by injective maps, gives an injective map. -/
+theorem sumElim_sumElim_swap_comp {δ δ' : Type*} {h : δ → γ}
+    (H : Injective (Sum.elim (Sum.elim f g) h)) {e₁ : α' → α} {e₂ : β' → β} {e₃ : δ' → δ}
+    (he₁ : Injective e₁) (he₂ : Injective e₂) (he₃ : Injective e₃) :
+    Injective (Sum.elim (Sum.elim (g ∘ e₂) (f ∘ e₁)) (h ∘ e₃)) := by
+  have hcomp : Sum.elim (Sum.elim (g ∘ e₂) (f ∘ e₁)) (h ∘ e₃) =
+      Sum.elim (Sum.elim f g) h ∘ Sum.map (Sum.swap ∘ Sum.map e₂ e₁) e₃ := by
+    ext ((_ | _) | _) <;> rfl
+  rw [hcomp]
+  exact H.comp ((Sum.swap_leftInverse.injective.comp (he₂.sumMap he₁)).sumMap he₃)
 
 end Function.Injective
