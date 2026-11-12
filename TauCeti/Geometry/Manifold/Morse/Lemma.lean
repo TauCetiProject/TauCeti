@@ -49,6 +49,7 @@ stable and unstable manifolds are then studied.
   `TauCeti.MorseChart.finrank_fst_splitCoord_add_manifoldMorseIndex`: the expanding factor of the
   split coordinates has dimension the Morse index, and the contracting factor the complementary
   dimension.
+* `TauCeti.MorseChart.contMDiffAt`: a function is smooth at the centre of a Morse chart.
 * `TauCeti.MorseChart.neg`: a Morse chart for `f` is a Morse chart for `-f`, with the opposite
   weights.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.nonempty_morseChart`: the Morse lemma on a
@@ -164,6 +165,21 @@ include φ in
 /-- A space with a Morse chart is finite-dimensional. -/
 theorem finiteDimensional : FiniteDimensional ℝ E :=
   Module.Finite.equiv φ.coord.symm
+
+include φ in
+/-- A function is smooth at the centre of a Morse chart: near it, the function is a quadratic
+polynomial in the coordinates of a chart of the maximal atlas. -/
+theorem contMDiffAt : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ f x := by
+  have := φ.finiteDimensional
+  have hL : ContDiff ℝ ∞ (φ.coord : E → Fin (Module.finrank ℝ E) → ℝ) :=
+    (LinearMap.toContinuousLinearMap (φ.coord : E →ₗ[ℝ] Fin (Module.finrank ℝ E) → ℝ)).contDiff
+  have hi (i : Fin (Module.finrank ℝ E)) : ContDiff ℝ ∞ fun z ↦ φ.coord z i := contDiff_pi.1 hL i
+  have hq : ContDiff ℝ ∞ fun z : E ↦ f x + (2 : ℝ)⁻¹ * ∑ i, φ.weight i * (φ.coord z i) ^ 2 :=
+    contDiff_const.add (contDiff_const.mul (ContDiff.sum fun i _ ↦
+      contDiff_const.mul ((hi i).pow 2)))
+  refine (hq.contMDiff.contMDiffAt.comp x
+    (contMDiffAt_of_mem_maximalAtlas φ.mem_maximalAtlas φ.mem_source)).congr_of_eventuallyEq ?_
+  filter_upwards [φ.toChart.open_source.mem_nhds φ.mem_source] with y hy using φ.eq_quadratic y hy
 
 /-- A coordinate of a Morse chart has weight different from `1` exactly when it has negative
 weight. -/

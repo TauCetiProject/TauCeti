@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Prod
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
+import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Existence
 import TauCeti.Geometry.Manifold.TangentCone.Prod
 
 /-!
@@ -16,11 +17,12 @@ import TauCeti.Geometry.Manifold.TangentCone.Prod
 
 Let `X` be a pseudo-gradient field adapted to a Morse function `f` on `M`, and `Y` one adapted to
 a Morse function `g` on `N`. Then the product field `(X, Y)` is a pseudo-gradient field adapted to
-the separated sum `f ∘ Prod.fst + g ∘ Prod.snd` on `M × N`. Its flow is the product of the two
-flows, so its stable and unstable manifolds are the products of those of `X` and `Y`, and it
-satisfies the Morse–Smale condition when `X` and `Y` do. On compact manifolds these are the product
-Morse data with which the Morse complex of `M × N` is compared to the tensor product of the Morse
-complexes of `M` and `N` (Hutchings, §3, Exercise 2).
+the separated sum `f ∘ Prod.fst + g ∘ Prod.snd` on `M × N`. When `M` and `N` are compact Hausdorff,
+so that these fields have global flows, the flow of `(X, Y)` is the product of the two flows, its
+stable and unstable manifolds are the products of those of `X` and `Y`, and it satisfies the
+Morse–Smale condition when `X` and `Y` do. These are the product Morse data with which the Morse
+complex of `M × N` is compared to the tensor product of the Morse complexes of `M` and `N`
+(Hutchings, §3, Exercise 2).
 
 Near a critical point `(x, y)` the product field is linear in the product of Morse charts at `x`
 and at `y`, whose coordinates and weights are those of the two factors placed side by side
@@ -41,12 +43,13 @@ along `modelWithCornersSelf_prod`.
   in the product Morse chart.
 * `TauCeti.IsAdaptedPseudoGradient.prod`: the product field is a pseudo-gradient adapted to the
   separated sum.
-* `TauCeti.IsAdaptedPseudoGradient.flow_prod_apply`: its flow is the product of the flows.
+* `TauCeti.IsAdaptedPseudoGradient.flow_prod` and `TauCeti.IsAdaptedPseudoGradient.flow_prod_apply`:
+  on compact Hausdorff manifolds, its flow is the product of the flows (`Flow.prod`).
 * `TauCeti.IsAdaptedPseudoGradient.stableSet_prod` and
   `TauCeti.IsAdaptedPseudoGradient.unstableSet_prod`: its stable and unstable manifolds are the
   products of the stable and unstable manifolds of the factors.
-* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.prod`: the product of Morse–Smale pseudo-gradients
-  is Morse–Smale.
+* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.prod`: on compact Hausdorff manifolds, the product
+  of Morse–Smale pseudo-gradients is Morse–Smale.
 
 ## References
 
@@ -75,27 +78,26 @@ attribute [local instance] isManifold_chartedSpaceProd
 
 namespace MorseChart
 
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold 𝓘(ℝ, E) ∞ M]
-  [IsManifold 𝓘(ℝ, E') ∞ N] {f : M → ℝ} {g : N → ℝ} {x : M} {y : N}
+variable [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E') ∞ N] {f : M → ℝ} {g : N → ℝ} {x : M}
+  {y : N}
 
 variable (φ : MorseChart E f x) (ψ : MorseChart E' g y)
-  (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
-  (hy : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E') g y)
 
-/-- **The product of linear fields is linear in the product of Morse charts.** If `X` is the
-linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ` and `Y` is the linear field in the Morse chart
-`ψ`, then the product field `(X, Y)` is the linear field in the product chart. -/
+/-- **The product of linear fields is linear in the product of Morse charts.** If, at `p.1`, `X`
+is the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`, and `Y` is the linear field in the
+Morse chart `ψ` at `p.2`, then the product field `(X, Y)` is the linear field in the product chart
+at `p`. -/
 theorem coord_mfderiv_prod {X : (z : M) → TangentSpace 𝓘(ℝ, E) z}
-    {Y : (z : N) → TangentSpace 𝓘(ℝ, E') z}
-    (hφ : ∀ z ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart z (X z)) =
-      fun i ↦ -(φ.weight i * φ.coord (φ.toChart z) i))
-    (hψ : ∀ z ∈ ψ.toChart.source, ψ.coord (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') ψ.toChart z (Y z)) =
-      fun i ↦ -(ψ.weight i * ψ.coord (ψ.toChart z) i))
-    {p : M × N} (hp : p ∈ (φ.prod ψ hx hy).toChart.source) :
-    (φ.prod ψ hx hy).coord (mfderiv 𝓘(ℝ, E × E') 𝓘(ℝ, E × E') (φ.prod ψ hx hy).toChart p
+    {Y : (z : N) → TangentSpace 𝓘(ℝ, E') z} {p : M × N} (hp : p ∈ (φ.prod ψ).toChart.source)
+    (hφ : φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart p.1 (X p.1)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart p.1) i))
+    (hψ : ψ.coord (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') ψ.toChart p.2 (Y p.2)) =
+      fun i ↦ -(ψ.weight i * ψ.coord (ψ.toChart p.2) i)) :
+    (φ.prod ψ).coord (mfderiv 𝓘(ℝ, E × E') 𝓘(ℝ, E × E') (φ.prod ψ).toChart p
       (Manifold.prodVectorField X Y p)) =
-      fun i ↦
-        -((φ.prod ψ hx hy).weight i * (φ.prod ψ hx hy).coord ((φ.prod ψ hx hy).toChart p) i) := by
+      fun i ↦ -((φ.prod ψ).weight i * (φ.prod ψ).coord ((φ.prod ψ).toChart p) i) := by
+  have := φ.finiteDimensional
+  have := ψ.finiteDimensional
   rw [prod_toChart] at hp ⊢
   obtain ⟨hp₁, hp₂⟩ := hp
   have hD : mfderiv 𝓘(ℝ, E × E') 𝓘(ℝ, E × E') (φ.toChart.prod ψ.toChart) p
@@ -111,8 +113,8 @@ theorem coord_mfderiv_prod {X : (z : M) → TangentSpace 𝓘(ℝ, E) z}
   ext i
   rw [hD, prod_coord_apply, prod_weight_apply, prod_coord_apply]
   rcases prodIndexEquiv E E' i with j | j
-  · exact congrFun (hφ p.1 hp₁) j
-  · exact congrFun (hψ p.2 hp₂) j
+  · exact congrFun hφ j
+  · exact congrFun hψ j
 
 end MorseChart
 
@@ -120,102 +122,96 @@ end MorseChart
 
 namespace IsAdaptedPseudoGradient
 
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold 𝓘(ℝ, E) ∞ M]
-  [IsManifold 𝓘(ℝ, E') ∞ N] {f : M → ℝ} {g : N → ℝ} {X : (z : M) → TangentSpace 𝓘(ℝ, E) z}
-  {Y : (z : N) → TangentSpace 𝓘(ℝ, E') z}
+variable [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E') ∞ N] {f : M → ℝ} {g : N → ℝ}
+  {X : (z : M) → TangentSpace 𝓘(ℝ, E) z} {Y : (z : N) → TangentSpace 𝓘(ℝ, E') z}
 
-/-- **The product of adapted pseudo-gradients.** If `X` is a pseudo-gradient adapted to the Morse
-function `f` on `M` and `Y` one adapted to the Morse function `g` on `N`, then the product field
-`(X, Y)` is a pseudo-gradient adapted to the separated sum `f ∘ Prod.fst + g ∘ Prod.snd` on
-`M × N`. -/
-theorem prod (hX : IsAdaptedPseudoGradient f X) (hY : IsAdaptedPseudoGradient g Y)
-    (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMorse 𝓘(ℝ, E') g) :
+/-- **The product of adapted pseudo-gradients.** If `X` is a pseudo-gradient adapted to `f` on `M`
+and `Y` one adapted to `g` on `N`, then the product field `(X, Y)` is a pseudo-gradient adapted to
+the separated sum `f ∘ Prod.fst + g ∘ Prod.snd` on `M × N`. -/
+theorem prod (hX : IsAdaptedPseudoGradient f X) (hY : IsAdaptedPseudoGradient g Y) :
     IsAdaptedPseudoGradient (f ∘ Prod.fst + g ∘ Prod.snd) (Manifold.prodVectorField X Y) where
   contMDiff := Manifold.contMDiff_prodVectorField_chartedSpaceProd hX.contMDiff hY.contMDiff
   mvfderiv_apply_lt_zero p hp := by
-    have hfp : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f p.1 := hf.contMDiff.mdifferentiable (by simp) _
-    have hgp : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ) g p.2 := hg.contMDiff.mdifferentiable (by simp) _
-    rw [Ne, mfderiv_comp_fst_add_comp_snd_eq_zero_iff hfp hgp, not_and_or] at hp
-    rw [modelWithCornersSelf_prod, mvfderiv_add ((hfp.comp p mdifferentiableAt_fst))
-      (hgp.comp p mdifferentiableAt_snd), add_apply, mvfderiv_comp_fst_apply,
-      mvfderiv_comp_snd_apply, Manifold.prodVectorField_fst, Manifold.prodVectorField_snd]
+    have hfp := hX.mdifferentiable p.1
+    have hgp := hY.mdifferentiable p.2
+    rw [Ne, mfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd hfp hgp, not_and_or] at hp
+    rw [modelWithCornersSelf_prod, mvfderiv_comp_fst_add_comp_snd_apply hfp hgp,
+      Manifold.prodVectorField_fst, Manifold.prodVectorField_snd]
     rcases hp with hp | hp
     · exact add_neg_of_neg_of_nonpos (hX.mvfderiv_apply_lt_zero _ hp) (hY.mvfderiv_apply_nonpos _)
     · exact add_neg_of_nonpos_of_neg (hX.mvfderiv_apply_nonpos _) (hY.mvfderiv_apply_lt_zero _ hp)
   exists_morseChart p hp := by
     obtain ⟨p₁, p₂⟩ := p
-    obtain ⟨h₁, h₂⟩ := (mfderiv_comp_fst_add_comp_snd_eq_zero_iff
-      (hf.contMDiff.mdifferentiable (by simp) p₁) (hg.contMDiff.mdifferentiable (by simp) p₂)).1 hp
+    obtain ⟨h₁, h₂⟩ := (mfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd
+      (hX.mdifferentiable p₁) (hY.mdifferentiable p₂)).1 hp
     obtain ⟨φ, hφ⟩ := hX.exists_morseChart p₁ h₁
     obtain ⟨ψ, hψ⟩ := hY.exists_morseChart p₂ h₂
-    refine ⟨φ.prod ψ (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero h₁)
-      (hg.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero h₂),
-      fun q hq ↦ ?_⟩
-    exact MorseChart.coord_mfderiv_prod _ _ _ _ hφ hψ hq
+    refine ⟨φ.prod ψ, fun q hq ↦ φ.coord_mfderiv_prod ψ hq ?_ ?_⟩
+    · rw [MorseChart.prod_toChart] at hq
+      exact hφ q.1 hq.1
+    · rw [MorseChart.prod_toChart] at hq
+      exact hψ q.2 hq.2
 
 /-! ### The flow, stable and unstable manifolds of a product -/
 
 section Flow
 
-variable [CompactSpace M] [T2Space M] [CompactSpace N] [T2Space N]
-  (hX : IsAdaptedPseudoGradient f X) (hY : IsAdaptedPseudoGradient g Y) (hf : IsMorse 𝓘(ℝ, E) f)
-  (hg : IsMorse 𝓘(ℝ, E') g)
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [CompactSpace M] [T2Space M]
+  [CompactSpace N] [T2Space N] (hX : IsAdaptedPseudoGradient f X)
+  (hY : IsAdaptedPseudoGradient g Y)
 
-/-- **The flow of a product of pseudo-gradients is the product of the flows.** -/
-@[simp]
-theorem flow_prod_apply (t : ℝ) (p : M × N) :
-    (hX.prod hY hf hg).flow t p = (hX.flow t p.1, hY.flow t p.2) := by
+/-- **The flow of a product of pseudo-gradients is the product of the flows.** This is not a `simp`
+lemma: `TauCeti.IsAdaptedPseudoGradient.flow_prod_apply`, `stableSet_prod` and `unstableSet_prod`
+are the `simp` forms of its consequences. -/
+theorem flow_prod : (hX.prod hY).flow = hX.flow.prod hY.flow := by
+  refine Flow.ext fun t p ↦ ?_
   have hγ : IsMIntegralCurve (fun s ↦ (hX.flow s p.1, hY.flow s p.2))
       (Manifold.prodVectorField X Y) := by
-    intro s
-    have h := (hX.isMIntegralCurve_flow p.1 s).prodMk (hY.isMIntegralCurve_flow p.2 s)
-    rw [← modelWithCornersSelf_prod] at h
-    refine h.congr_mfderiv ?_
-    -- `Manifold.prodVectorField` is not exposed, so its value is read off componentwise.
-    exact ContinuousLinearMap.ext fun c ↦ Prod.ext
-      (congrArg ((show ℝ from c) • ·)
-        (Manifold.prodVectorField_fst X Y (hX.flow s p.1, hY.flow s p.2)).symm)
-      (congrArg ((show ℝ from c) • ·)
-        (Manifold.prodVectorField_snd X Y (hX.flow s p.1, hY.flow s p.2)).symm)
-  have h := globalFlow_eq_of_isMIntegralCurve ((hX.prod hY hf hg).contMDiff.of_le (by simp))
-    (hX.prod hY hf hg).isCompleteVectorField hγ t
+    have h := (hX.isMIntegralCurve_flow p.1).prodMk (hY.isMIntegralCurve_flow p.2)
+    rwa [← modelWithCornersSelf_prod] at h
+  have h := globalFlow_eq_of_isMIntegralCurve ((hX.prod hY).contMDiff.of_le (by simp))
+    (hX.prod hY).isCompleteVectorField hγ t
   simp only [Flow.map_zero_apply] at h
-  rw [← h, (hX.prod hY hf hg).flow_apply]
+  rw [Flow.prod_apply, ← h, (hX.prod hY).flow_apply]
   exact (globalFlow_apply ..).symm
+
+/-- The flow of a product of pseudo-gradients acts on each component by the flow of the
+corresponding factor. -/
+@[simp]
+theorem flow_prod_apply (t : ℝ) (p : M × N) :
+    (hX.prod hY).flow t p = (hX.flow t p.1, hY.flow t p.2) := by
+  rw [hX.flow_prod hY, Flow.prod_apply]
 
 /-- **The stable manifolds of a product of pseudo-gradients are the products of the stable
 manifolds.** -/
 @[simp]
 theorem stableSet_prod (a : M × N) :
-    (hX.prod hY hf hg).flow.stableSet a = hX.flow.stableSet a.1 ×ˢ hY.flow.stableSet a.2 := by
-  obtain ⟨a₁, a₂⟩ := a
-  ext p
-  simp only [Flow.mem_stableSet, mem_prod, hX.flow_prod_apply hY hf hg, nhds_prod_eq]
-  exact tendsto_prod_iff'
+    (hX.prod hY).flow.stableSet a = hX.flow.stableSet a.1 ×ˢ hY.flow.stableSet a.2 := by
+  rw [hX.flow_prod hY, Flow.stableSet_prod]
 
 /-- **The unstable manifolds of a product of pseudo-gradients are the products of the unstable
 manifolds.** -/
 @[simp]
 theorem unstableSet_prod (a : M × N) :
-    (hX.prod hY hf hg).flow.unstableSet a = hX.flow.unstableSet a.1 ×ˢ hY.flow.unstableSet a.2 := by
-  obtain ⟨a₁, a₂⟩ := a
-  ext p
-  simp only [Flow.mem_unstableSet, mem_prod, hX.flow_prod_apply hY hf hg, nhds_prod_eq]
-  exact tendsto_prod_iff'
+    (hX.prod hY).flow.unstableSet a = hX.flow.unstableSet a.1 ×ˢ hY.flow.unstableSet a.2 := by
+  rw [hX.flow_prod hY, Flow.unstableSet_prod]
 
-/-- **The product of Morse–Smale pseudo-gradients is Morse–Smale.** If the unstable and stable
-manifolds of `X` meet transversally, and so do those of `Y`, then so do those of the product field
-`(X, Y)`, since its unstable and stable manifolds are the products of those of `X` and `Y`. -/
-theorem IsMorseSmale.prod (hXs : hX.IsMorseSmale) (hYs : hY.IsMorseSmale) :
-    (hX.prod hY hf hg).IsMorseSmale := by
+omit hX hY in
+/-- **The product of Morse–Smale pseudo-gradients is Morse–Smale.** On compact Hausdorff
+manifolds, if the unstable and stable manifolds of `X` meet transversally, and so do those of `Y`,
+then so do those of the product field `(X, Y)`, since its unstable and stable manifolds are the
+products of those of `X` and `Y`. -/
+theorem IsMorseSmale.prod {hX : IsAdaptedPseudoGradient f X} {hY : IsAdaptedPseudoGradient g Y}
+    (hXs : hX.IsMorseSmale) (hYs : hY.IsMorseSmale) : (hX.prod hY).IsMorseSmale := by
   refine IsMorseSmale.of_forall ?_
   rintro a b ⟨p₁, p₂⟩ - - hp
-  rw [hX.unstableSet_prod hY hf hg, hX.stableSet_prod hY hf hg] at hp ⊢
+  rw [hX.unstableSet_prod hY, hX.stableSet_prod hY] at hp ⊢
   obtain ⟨⟨hu₁, hu₂⟩, hs₁, hs₂⟩ := hp
   rw [eq_top_iff, ← Submodule.prod_top, ← hXs.span_mtangentConeAt_sup_eq_top ⟨hu₁, hs₁⟩,
     ← hYs.span_mtangentConeAt_sup_eq_top ⟨hu₂, hs₂⟩, ← Submodule.prod_sup_prod,
     modelWithCornersSelf_prod]
-  exact sup_le_sup (prod_span_mtangentConeAt_le hu₁ hu₂) (prod_span_mtangentConeAt_le hs₁ hs₂)
+  exact sup_le_sup (prod_span_mtangentConeAt_le (subset_closure hu₁) (subset_closure hu₂))
+    (prod_span_mtangentConeAt_le (subset_closure hs₁) (subset_closure hs₂))
 
 end Flow
 

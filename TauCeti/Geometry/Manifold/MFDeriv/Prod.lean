@@ -31,10 +31,16 @@ fields on a product manifold.
   of a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
-* `TauCeti.mvfderiv_comp_fst_add_comp_snd_eq_zero_iff`: the critical points of a separated sum
-  `f ∘ Prod.fst + g ∘ Prod.snd` are the pairs of critical points.
-* `TauCeti.mfderiv_comp_fst_add_comp_snd_eq_zero_iff`: the same for `mfderiv`, read in the product
-  charts with values in `E × E'` (`TauCeti.chartedSpaceProd`) for the model `𝓘(𝕜, E × E')`.
+* `TauCeti.mvfderiv_comp_fst_add_comp_snd_apply`: the derivative of a separated sum
+  `f ∘ Prod.fst + g ∘ Prod.snd` sends `(u, w)` to `df(u) + dg(w)`.
+* `TauCeti.mvfderiv_comp_fst_add_comp_snd_eq_zero_iff` and
+  `TauCeti.mfderiv_comp_fst_add_comp_snd_eq_zero_iff`: the differential of a separated sum vanishes
+  at `(x, y)` exactly when the differentials of `f` at `x` and of `g` at `y` both vanish. For
+  real-valued `f` and `g`: the critical points of the separated sum are the pairs of critical
+  points.
+* `TauCeti.mfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd`: the same for
+  `mfderiv`, read in the product charts with values in `E × E'` (`TauCeti.chartedSpaceProd`) for
+  the model `𝓘(𝕜, E × E')`.
 * `ContinuousLinearMap.mvfderiv_comp_fst_apply` and `ContinuousLinearMap.mvfderiv_comp_snd_apply`:
   the derivative of a continuous linear map applied to a vector-valued function of one factor.
 * `TauCeti.mvfderiv_comp_fst_mul_comp_snd_apply`: the product rule for a function of the first
@@ -159,30 +165,52 @@ theorem mvfderiv_comp_snd_apply (g : N → F) (p : M × N) (v : TangentSpace (I.
   -- as these points are equal by definition.
   rfl
 
-/-- **The critical points of a separated sum are the pairs of critical points.** When `f` is
-differentiable at `x` and `g` at `y`, the differential of `f ∘ Prod.fst + g ∘ Prod.snd` vanishes
-at `(x, y)` exactly when the differentials of `f` at `x` and of `g` at `y` both vanish. -/
+/-- **The derivative of a separated sum.** When `f` is differentiable at `p.1` and `g` at `p.2`,
+the derivative of `f ∘ Prod.fst + g ∘ Prod.snd` sends a tangent vector `v` at `p` to
+`df(v.1) + dg(v.2)`. -/
+theorem mvfderiv_comp_fst_add_comp_snd_apply {f : M → F} {g : N → F} {p : M × N}
+    (hf : MDifferentiableAt I 𝓘(𝕜, F) f p.1) (hg : MDifferentiableAt J 𝓘(𝕜, F) g p.2)
+    (v : TangentSpace (I.prod J) p) :
+    mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) p v =
+      mvfderiv I f p.1 v.1 + mvfderiv J g p.2 v.2 := by
+  rw [mvfderiv_add (hf.comp p mdifferentiableAt_fst) (hg.comp p mdifferentiableAt_snd), add_apply,
+    mvfderiv_comp_fst_apply, mvfderiv_comp_snd_apply]
+
+/-- **The differential of a separated sum vanishes exactly where both differentials vanish.** When
+`f` is differentiable at `x` and `g` at `y`, the differential of `f ∘ Prod.fst + g ∘ Prod.snd`
+vanishes at `(x, y)` exactly when the differentials of `f` at `x` and of `g` at `y` both vanish. -/
 @[simp]
 theorem mvfderiv_comp_fst_add_comp_snd_eq_zero_iff {f : M → F} {g : N → F} {x : M} {y : N}
     (hf : MDifferentiableAt I 𝓘(𝕜, F) f x) (hg : MDifferentiableAt J 𝓘(𝕜, F) g y) :
     mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) = 0 ↔
       mvfderiv I f x = 0 ∧ mvfderiv J g y = 0 := by
-  have h (v : TangentSpace (I.prod J) (x, y)) :
-      mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) v =
-        mvfderiv I f x v.1 + mvfderiv J g y v.2 := by
-    rw [mvfderiv_add (hf.comp (x, y) mdifferentiableAt_fst)
-      (hg.comp (x, y) mdifferentiableAt_snd), add_apply, mvfderiv_comp_fst_apply,
-      mvfderiv_comp_snd_apply]
   refine ⟨fun h0 ↦ ⟨ContinuousLinearMap.ext fun u ↦ ?_, ContinuousLinearMap.ext fun w ↦ ?_⟩,
     fun ⟨h₁, h₂⟩ ↦ ContinuousLinearMap.ext fun v ↦ ?_⟩
+  -- Below, the zero maps are applied to vectors read in the model spaces `E × E'`, `E` and `E'`,
+  -- the tangent spaces at `(x, y)`, `x` and `y` by definition, where `zero_apply` does not match
+  -- syntactically; such applications are `0` by definition.
   · calc mvfderiv I f x u = mvfderiv I f x u + mvfderiv J g y 0 := by rw [map_zero, add_zero]
-      _ = mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) (u, 0) := (h (u, 0)).symm
+      _ = mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) (u, 0) :=
+        (mvfderiv_comp_fst_add_comp_snd_apply (p := (x, y)) hf hg (u, 0)).symm
       _ = 0 := by rw [h0]; rfl
   · calc mvfderiv J g y w = mvfderiv I f x 0 + mvfderiv J g y w := by rw [map_zero, zero_add]
-      _ = mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) (0, w) := (h (0, w)).symm
+      _ = mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) (0, w) :=
+        (mvfderiv_comp_fst_add_comp_snd_apply (p := (x, y)) hf hg (0, w)).symm
       _ = 0 := by rw [h0]; rfl
-  · rw [h, h₁, h₂]
+  · rw [mvfderiv_comp_fst_add_comp_snd_apply (p := (x, y)) hf hg, h₁, h₂]
     exact add_zero (0 : F)
+
+/-- **The differential of a separated sum vanishes exactly where both differentials vanish**, for
+`mfderiv`. When `f` is differentiable at `p.1` and `g` at `p.2`, the differential of
+`f ∘ Prod.fst + g ∘ Prod.snd` vanishes at `p` exactly when the differentials of `f` at `p.1` and of
+`g` at `p.2` both vanish. -/
+@[simp]
+theorem mfderiv_comp_fst_add_comp_snd_eq_zero_iff {f : M → F} {g : N → F} {p : M × N}
+    (hf : MDifferentiableAt I 𝓘(𝕜, F) f p.1) (hg : MDifferentiableAt J 𝓘(𝕜, F) g p.2) :
+    mfderiv (I.prod J) 𝓘(𝕜, F) (f ∘ Prod.fst + g ∘ Prod.snd) p = 0 ↔
+      mfderiv I 𝓘(𝕜, F) f p.1 = 0 ∧ mfderiv J 𝓘(𝕜, F) g p.2 = 0 := by
+  rw [← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff]
+  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg
 
 /-- The derivative of a continuous linear map applied to a vector-valued function of the first
 factor, read on a product: the derivative of `y ↦ L (g y.1)` is `L` applied to the derivative of
@@ -461,11 +489,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E E' F : Type*} [NormedA
 
 attribute [local instance low] chartedSpaceProd
 
-/-- **The critical points of a separated sum, in the product charts with values in `E × E'`.** When
-`f` is differentiable at `p.1` and `g` at `p.2`, the differential of `f ∘ Prod.fst + g ∘ Prod.snd`
-for the model `𝓘(𝕜, E × E')` vanishes at `p` exactly when the differentials of `f` at `p.1` and of
-`g` at `p.2` both vanish. -/
-theorem mfderiv_comp_fst_add_comp_snd_eq_zero_iff {p : M × N}
+/-- **The differential of a separated sum vanishes exactly where both differentials vanish**, in
+the product charts with values in `E × E'`. When `f` is differentiable at `p.1` and `g` at `p.2`,
+the differential of `f ∘ Prod.fst + g ∘ Prod.snd` for the model `𝓘(𝕜, E × E')` vanishes at `p`
+exactly when the differentials of `f` at `p.1` and of `g` at `p.2` both vanish. -/
+@[simp]
+theorem mfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd {p : M × N}
     (hf : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) f p.1)
     (hg : MDifferentiableAt 𝓘(𝕜, E') 𝓘(𝕜, F) g p.2) :
     mfderiv 𝓘(𝕜, E × E') 𝓘(𝕜, F) (f ∘ Prod.fst + g ∘ Prod.snd) p = 0 ↔

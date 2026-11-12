@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
-public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Analysis.Calculus.Morse.Prod
 public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -47,7 +46,8 @@ for `g` at `y` combine to a Morse chart for the separated sum at `(x, y)`.
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_comp_snd`: the
   Morse index of the separated sum is the sum of the indices.
 * `TauCeti.MorseChart.prod`: the product of Morse charts for `f` at `x` and `g` at `y` is a Morse
-  chart for the separated sum at `(x, y)`.
+  chart for the separated sum at `(x, y)`, with the coordinates of the two charts side by side
+  (`TauCeti.MorseChart.prodIndexEquiv`).
 
 ## References
 
@@ -191,71 +191,117 @@ noncomputable def MorseChart.prodIndexEquiv [FiniteDimensional ℝ E] [FiniteDim
 
 namespace MorseChart
 
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold 𝓘(ℝ, E) ∞ M]
-  [IsManifold 𝓘(ℝ, E') ∞ N] {x : M} {y : N}
+section prodIndexEquiv
 
-/-- **The product of two Morse charts.** If `φ` is a Morse chart for `f` at a nondegenerate
-critical point `x` and `ψ` one for `g` at a nondegenerate critical point `y`, then the product chart
-`φ × ψ`, with the coordinates and weights of `φ` followed by those of `ψ`, is a Morse chart for the
-separated sum `f ∘ Prod.fst + g ∘ Prod.snd` at `(x, y)`. -/
-noncomputable def prod (φ : MorseChart E f x) (ψ : MorseChart E' g y)
-    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
-    (hy : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E') g y) :
-    MorseChart (E × E') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) where
-  toChart := φ.toChart.prod ψ.toChart
-  mem_maximalAtlas := by
-    have h := IsManifold.mem_maximalAtlas_prod φ.mem_maximalAtlas ψ.mem_maximalAtlas
-    rwa [← modelWithCornersSelf_prod] at h
-  mem_source := ⟨φ.mem_source, ψ.mem_source⟩
-  apply_self := by simp
-  coord := (φ.coord.prodCongr ψ.coord).trans
-    ((LinearEquiv.sumArrowLequivProdArrow _ _ ℝ ℝ).symm.trans
-      (LinearEquiv.funCongrLeft ℝ ℝ (prodIndexEquiv E E')))
-  weight i := Sum.elim φ.weight ψ.weight (prodIndexEquiv E E' i)
-  weight_eq_neg_one_or_eq_one i := by
-    rcases prodIndexEquiv E E' i with j | j
-    · exact φ.weight_eq_neg_one_or_eq_one j
-    · exact ψ.weight_eq_neg_one_or_eq_one j
-  ncard_weight_neg := by
-    classical
-    rw [modelWithCornersSelf_prod, hx.manifoldMorseIndex_comp_fst_add_comp_snd hy,
-      ← φ.ncard_weight_neg, ← ψ.ncard_weight_neg]
-    simp only [Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter]
-    rw [← Equiv.sum_comp (prodIndexEquiv E E').symm, Fintype.sum_sum_type]
-    simp
-  eq_quadratic p hp := by
-    obtain ⟨hp₁, hp₂⟩ := hp
-    simp only [Pi.add_apply, comp_apply, φ.eq_quadratic p.1 hp₁, ψ.eq_quadratic p.2 hp₂]
-    rw [← Equiv.sum_comp (prodIndexEquiv E E').symm, Fintype.sum_sum_type]
-    simp only [LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply, Equiv.apply_symm_apply,
-      LinearEquiv.prodCongr_apply, OpenPartialHomeomorph.prod_apply]
-    simp [LinearEquiv.sumArrowLequivProdArrow]
-    ring
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+
+/-- The coordinates of `E` come first among those of `E × E'`. -/
+@[simp]
+theorem prodIndexEquiv_symm_inl (j : Fin (Module.finrank ℝ E)) :
+    (prodIndexEquiv E E').symm (Sum.inl j) =
+      Fin.cast Module.finrank_prod.symm (Fin.castAdd _ j) := by
+  simp [prodIndexEquiv]
+
+/-- The coordinates of `E'` come last among those of `E × E'`. -/
+@[simp]
+theorem prodIndexEquiv_symm_inr (j : Fin (Module.finrank ℝ E')) :
+    (prodIndexEquiv E E').symm (Sum.inr j) =
+      Fin.cast Module.finrank_prod.symm (Fin.natAdd _ j) := by
+  simp [prodIndexEquiv]
+
+/-- The first coordinates of `E × E'` are those of `E`. -/
+@[simp]
+theorem prodIndexEquiv_cast_castAdd (j : Fin (Module.finrank ℝ E)) :
+    prodIndexEquiv E E' (Fin.cast Module.finrank_prod.symm (Fin.castAdd _ j)) = Sum.inl j := by
+  rw [← prodIndexEquiv_symm_inl, Equiv.apply_symm_apply]
+
+/-- The last coordinates of `E × E'` are those of `E'`. -/
+@[simp]
+theorem prodIndexEquiv_cast_natAdd (j : Fin (Module.finrank ℝ E')) :
+    prodIndexEquiv E E' (Fin.cast Module.finrank_prod.symm (Fin.natAdd _ j)) = Sum.inr j := by
+  rw [← prodIndexEquiv_symm_inr, Equiv.apply_symm_apply]
+
+end prodIndexEquiv
+
+variable [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E') ∞ N] {x : M} {y : N}
+
+/-- **The product of two Morse charts.** If `φ` is a Morse chart for `f` at `x` and `ψ` one for `g`
+at `y`, then the product chart `φ × ψ`, with the coordinates and weights of `φ` followed by those of
+`ψ`, is a Morse chart for the separated sum `f ∘ Prod.fst + g ∘ Prod.snd` at `(x, y)`. -/
+noncomputable def prod (φ : MorseChart E f x) (ψ : MorseChart E' g y) :
+    MorseChart (E × E') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) :=
+  haveI := φ.finiteDimensional
+  haveI := ψ.finiteDimensional
+  { toChart := φ.toChart.prod ψ.toChart
+    mem_maximalAtlas := by
+      have h := IsManifold.mem_maximalAtlas_prod φ.mem_maximalAtlas ψ.mem_maximalAtlas
+      rwa [← modelWithCornersSelf_prod] at h
+    mem_source := ⟨φ.mem_source, ψ.mem_source⟩
+    apply_self := by simp
+    coord := (φ.coord.prodCongr ψ.coord).trans
+      ((LinearEquiv.sumArrowLequivProdArrow _ _ ℝ ℝ).symm.trans
+        (LinearEquiv.funCongrLeft ℝ ℝ (prodIndexEquiv E E')))
+    weight i := Sum.elim φ.weight ψ.weight (prodIndexEquiv E E' i)
+    weight_eq_neg_one_or_eq_one i := by
+      rcases prodIndexEquiv E E' i with j | j
+      · exact φ.weight_eq_neg_one_or_eq_one j
+      · exact ψ.weight_eq_neg_one_or_eq_one j
+    ncard_weight_neg := by
+      classical
+      -- The index is additive because `f` and `g` are smooth at the centres of their Morse charts.
+      rw [modelWithCornersSelf_prod, manifoldMorseIndex_comp_fst_add_comp_snd
+        (φ.contMDiffAt.contDiffAt_comp_extChartAt_symm.of_le (by simp))
+        (ψ.contMDiffAt.contDiffAt_comp_extChartAt_symm.of_le (by simp)),
+        ← φ.ncard_weight_neg, ← ψ.ncard_weight_neg]
+      simp only [Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter]
+      rw [← Equiv.sum_comp (prodIndexEquiv E E').symm, Fintype.sum_sum_type]
+      simp
+    eq_quadratic p hp := by
+      obtain ⟨hp₁, hp₂⟩ := hp
+      simp only [Pi.add_apply, comp_apply, φ.eq_quadratic p.1 hp₁, ψ.eq_quadratic p.2 hp₂]
+      rw [← Equiv.sum_comp (prodIndexEquiv E E').symm, Fintype.sum_sum_type]
+      simp only [LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply, Equiv.apply_symm_apply,
+        LinearEquiv.prodCongr_apply, OpenPartialHomeomorph.prod_apply]
+      simp [LinearEquiv.sumArrowLequivProdArrow]
+      ring }
 
 variable (φ : MorseChart E f x) (ψ : MorseChart E' g y)
-  (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
-  (hy : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E') g y)
 
 /-- The chart of a product of Morse charts is the product chart. -/
 @[simp]
-theorem prod_toChart : (φ.prod ψ hx hy).toChart = φ.toChart.prod ψ.toChart := by
+theorem prod_toChart : (φ.prod ψ).toChart = φ.toChart.prod ψ.toChart := by
   rw [prod]
+
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
 
 /-- The coordinates of a product of Morse charts are those of the first chart followed by those of
 the second. -/
 @[simp]
 theorem prod_coord_apply (v : E × E') (i : Fin (Module.finrank ℝ (E × E'))) :
-    (φ.prod ψ hx hy).coord v i = Sum.elim (φ.coord v.1) (ψ.coord v.2) (prodIndexEquiv E E' i) := by
+    (φ.prod ψ).coord v i = Sum.elim (φ.coord v.1) (ψ.coord v.2) (prodIndexEquiv E E' i) := by
   simp only [prod, LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply,
     LinearMap.funLeft_apply, LinearEquiv.prodCongr_apply]
   generalize prodIndexEquiv E E' i = j
   rcases j with j | j <;> rfl
 
+/-- A vector of `E × E'` with given coordinates in a product of Morse charts: its components have
+the coordinates of `E` and of `E'` respectively. -/
+@[simp]
+theorem prod_coord_symm_apply (c : Fin (Module.finrank ℝ (E × E')) → ℝ) :
+    (φ.prod ψ).coord.symm c =
+      (φ.coord.symm fun j ↦ c ((prodIndexEquiv E E').symm (Sum.inl j)),
+        ψ.coord.symm fun j ↦ c ((prodIndexEquiv E E').symm (Sum.inr j))) := by
+  rw [LinearEquiv.symm_apply_eq]
+  ext i
+  obtain ⟨k, rfl⟩ := (prodIndexEquiv E E').symm.surjective i
+  rw [prod_coord_apply, Equiv.apply_symm_apply]
+  rcases k with j | j <;> simp
+
 /-- The weights of a product of Morse charts are those of the first chart followed by those of the
 second. -/
 @[simp]
 theorem prod_weight_apply (i : Fin (Module.finrank ℝ (E × E'))) :
-    (φ.prod ψ hx hy).weight i = Sum.elim φ.weight ψ.weight (prodIndexEquiv E E' i) := by
+    (φ.prod ψ).weight i = Sum.elim φ.weight ψ.weight (prodIndexEquiv E E' i) := by
   rw [prod]
 
 end MorseChart
