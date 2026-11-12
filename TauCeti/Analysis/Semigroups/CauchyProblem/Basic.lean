@@ -154,7 +154,7 @@ theorem isMildSolution_realOperator (S : StronglyContinuousSemigroup X) (x : X) 
   rw [isMildSolution_iff]
   refine ⟨inferInstance, S.realOperator_continuousOn_Ici x,
     S.realOperator_zero_apply x, fun t ht => ?_⟩
-  rcases ht.eq_or_lt with rfl | ht
+  rcases ht.eq_or_lt with rfl | _
   · refine ⟨?_, ?_⟩
     · simp
     · have harg : (⟨∫ s in Set.Ioc 0 0, S.realOperator s x, by simp⟩ :

@@ -37,7 +37,8 @@ cell is a point, and a generator with nonzero coefficient is a nonzero cochain.
 Adapted from `Mei/Geometry/Convex/PolyhedralCochain/Basic.lean` in
 [Mei](https://github.com/yuma-mizuno-lean/Mei) at commit
 `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0). Original copyright and author credit are
-retained.
+retained. The affine-span and relation-containment lemmas follow the same basic module at
+commit `a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
 -/
 
 public section
@@ -195,6 +196,13 @@ theorem direction_eq (hQ : IsOrientedSubdivision σ Q) (hτ : τ ∈ Q) :
     (affineSpan ℝ τ.carrier).direction = (affineSpan ℝ σ.carrier).direction :=
   τ.direction_eq_of_subset σ (hQ.carrier_subset hτ)
 
+/-- Every piece has the affine span of the subdivided cell. -/
+theorem affineSpan_eq (hQ : IsOrientedSubdivision σ Q) (hτ : τ ∈ Q) :
+    affineSpan ℝ τ.carrier = affineSpan ℝ σ.carrier := by
+  obtain ⟨x, hx⟩ := τ.nonempty
+  exact AffineSubspace.ext_of_direction_eq (hQ.direction_eq hτ)
+    ⟨x, subset_affineSpan ℝ _ hx, subset_affineSpan ℝ _ (hQ.carrier_subset hτ hx)⟩
+
 /-- A subdivision has at least one piece. -/
 theorem nonempty (hQ : IsOrientedSubdivision σ Q) : Q.Nonempty := by
   obtain ⟨x, hx⟩ := σ.nonempty
@@ -258,6 +266,21 @@ def cochainRelations : Submodule R (OrientedCell h k →₀ E) :=
 /-- The relations are the span of the relators. -/
 theorem cochainRelations_def :
     cochainRelations R h E k = Submodule.span R (cochainRelators h E k) := (rfl)
+
+variable {R h E k} in
+/-- A submodule contains all cochain relations exactly when it contains the reversal relations
+and the subdivision relations. -/
+theorem cochainRelations_le_iff {p : Submodule R (OrientedCell h k →₀ E)} :
+    cochainRelations R h E k ≤ p ↔
+      (∀ (σ : OrientedCell h k) (c : E), Finsupp.single σ.reverse c + Finsupp.single σ c ∈ p) ∧
+        ∀ (σ : OrientedCell h k) (Q : Finset (OrientedCell h k)) (c : E),
+          IsOrientedSubdivision σ Q → Finsupp.single σ c - ∑ τ ∈ Q, Finsupp.single τ c ∈ p := by
+  rw [cochainRelations, Submodule.span_le]
+  constructor
+  · intro hp
+    exact ⟨fun σ c => hp (Or.inl ⟨σ, c, rfl⟩), fun σ Q c hQ => hp (Or.inr ⟨σ, Q, c, hQ, rfl⟩)⟩
+  · rintro ⟨hrev, hsub⟩ x (⟨σ, c, rfl⟩ | ⟨σ, Q, c, hQ, rfl⟩)
+    exacts [hrev σ c, hsub σ Q c hQ]
 
 /-- Polyhedral cochains of codimension `k` with coefficients in the `R`-module `E`: finite sums
 of oriented cells with coefficients in `E`, modulo reversal and subdivision. -/

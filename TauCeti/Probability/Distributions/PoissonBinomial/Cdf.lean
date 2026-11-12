@@ -37,7 +37,7 @@ theorem poissonBinomialMeasure_real_Iic (p : ι → unitInterval) (k : ℕ) :
       ∑ s : Finset ι with s.card ≤ k, (poissonBinomialWeight p s : ℝ) := by
   rw [measureReal_def, poissonBinomialMeasure_apply, ENNReal.toReal_sum]
   · simp
-  · intro s hs
+  · intro s _
     simp
 
 open Classical in

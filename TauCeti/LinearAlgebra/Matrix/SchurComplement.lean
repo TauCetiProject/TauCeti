@@ -29,6 +29,10 @@ when the perturbed matrix is invertible. These results specialize Mathlib's
 `Matrix.det_add_replicateCol_mul_replicateRow` and `Matrix.add_mul_mul_inv_eq_sub` to a single
 column and row, over any commutative ring; the scalar inverse is `Ring.inverse`.
 
+Mathlib's `Matrix.det_one_sub_mul_comm` says that `A * B` and `B * A` have the same
+`det (1 - ·)`. The same holds for every positive power, because
+`(A * B) ^ (k + 1) = A * ((B * A) ^ k * B)` while `(B * A) ^ k * B * A = (B * A) ^ (k + 1)`.
+
 ## Main results
 
 * `Matrix.PosSemidef.schur_complement₂₂` and `Matrix.PosSemidef.schur_complement₁₁`:
@@ -40,6 +44,7 @@ column and row, over any commutative ring; the scalar inverse is `Ring.inverse`.
 * `Matrix.isUnit_add_vecMulVec_iff`: a rank-one update is invertible exactly when its
   Sherman–Morrison denominator is a unit.
 * `Matrix.inv_add_vecMulVec`: the Sherman–Morrison inverse formula over a commutative ring.
+* `Matrix.det_one_sub_mul_pow_comm`: `det (1 - (A * B) ^ k) = det (1 - (B * A) ^ k)` for `k ≠ 0`.
 
 ## References
 
@@ -74,9 +79,9 @@ theorem PosSemidef.schur_complement₂₂ [Fintype n]
     ext (i | i) (j | j) <;> simp [conjTranspose_apply]
   have hsub : (A - B * P * Bᴴ).submatrix e e =
       A.submatrix e e - B.submatrix e id * P * (B.submatrix e id)ᴴ := by
-    rw [Matrix.submatrix_sub, Pi.sub_apply, Pi.sub_apply,
-      Matrix.submatrix_mul _ _ _ id _ Function.bijective_id,
-      Matrix.submatrix_mul _ _ _ id _ Function.bijective_id, Matrix.conjTranspose_submatrix]
+    rw [submatrix_sub, Pi.sub_apply, Pi.sub_apply,
+      submatrix_mul _ _ _ id _ Function.bijective_id,
+      submatrix_mul _ _ _ id _ Function.bijective_id, conjTranspose_submatrix]
     simp
   have hcancel : B.submatrix e id * P * D * P = B.submatrix e id * P := by
     simpa only [Matrix.mul_assoc] using congrArg (B.submatrix e id * ·) hPDP
@@ -154,10 +159,19 @@ theorem inv_add_vecMulVec (A : Matrix n n R) (hA : IsUnit A) (u v : n → R)
   rw [hUV, hinv] at h
   rw [h]
   congr 1
-  simp only [Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, Matrix.mul_assoc,
+  simp only [Matrix.mul_smul, Matrix.mul_one, smul_mul, Matrix.mul_assoc,
     hUV, mul_vecMulVec, vecMulVec_mul]
 
 end RankOne
+
+/-- The products `A * B` and `B * A` of rectangular matrices have the same `det (1 - · ^ k)` for
+every positive power `k`, generalizing `Matrix.det_one_sub_mul_comm` (the case `k = 1`). -/
+theorem det_one_sub_mul_pow_comm {m n R : Type*} [Fintype m] [Fintype n] [DecidableEq m]
+    [DecidableEq n] [CommRing R] (A : Matrix m n R) (B : Matrix n m R) {k : ℕ} (hk : k ≠ 0) :
+    det (1 - (A * B) ^ k) = det (1 - (B * A) ^ k) := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
+  rw [pow_succ, ← Matrix.mul_assoc, Matrix.mul_pow_mul, Matrix.mul_assoc, det_one_sub_mul_comm,
+    Matrix.mul_assoc, ← pow_succ]
 
 variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K]
 

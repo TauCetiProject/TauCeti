@@ -13,6 +13,7 @@ import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.Data.Set.Lattice
 import TauCeti.Topology.Homeomorph.CompactQuotient
+import TauCeti.Topology.Homeomorph.Extend
 import TauCeti.Topology.Homeomorph.Shrink
 import TauCeti.Topology.MetricSpace.NestedCollapse
 
@@ -73,6 +74,8 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
   identifies `K` homeomorphically with its image.
 * `TauCeti.IsCellularSet.nonempty_homeomorph`: collapsing a cellular set in a compact manifold to a
   point gives a space homeomorphic to the manifold.
+* `TauCeti.IsCellularSet.nonempty_homeomorph_of_isOpenEmbedding`: the same for a cellular set
+  inside an open copy of `E` in any compact Hausdorff space.
 * `TauCeti.isCellularSet_closedBall`: closed balls are cellular.
 
 ## References
@@ -366,6 +369,61 @@ theorem IsCellularSet.nonempty_homeomorph [ChartedSpace E M] [CompactSpace M] {X
     (subset_univ X) subset_rfl fun x _ y _ ↦ hfX x y
   exact ⟨((Homeomorph.Set.univ M).symm.trans h).trans
     ((Homeomorph.setCongr (image_univ_of_surjective hfs)).trans (Homeomorph.Set.univ Y))⟩
+
+/-- **Collapsing a cellular set inside a Euclidean open set.** Let `X` be a compact Hausdorff
+space, `κ : E → X` an open embedding of a finite-dimensional real normed space, and `A ⊆ E` a
+cellular set. If a continuous surjection `f : X → Y` onto a Hausdorff space collapses `κ '' A` to a
+point and is injective elsewhere, then `Y` is homeomorphic to `X`. Unlike
+`TauCeti.IsCellularSet.nonempty_homeomorph`, `X` need not be a manifold or a metric space: the
+collapse of `A` in `E` is transported to `X` along `κ`. -/
+theorem IsCellularSet.nonempty_homeomorph_of_isOpenEmbedding {X Y : Type*} [TopologicalSpace X]
+    [CompactSpace X] [T2Space X] [TopologicalSpace Y] [T2Space Y] {A : Set E}
+    (hA : IsCellularSet E A) {κ : E → X} (hκ : IsOpenEmbedding κ) {f : X → Y} (hf : Continuous f)
+    (hfs : Surjective f) (hfA : ∀ x y, f x = f y ↔ x = y ∨ x ∈ κ '' A ∧ y ∈ κ '' A) :
+    Nonempty (X ≃ₜ Y) := by
+  -- A collapse `g` of `A` in `E` which is the identity outside a ball, transported to `X`.
+  obtain ⟨r, hr⟩ := hA.isCompact.isBounded.subset_ball 0
+  obtain ⟨g, hgc, hgs, hgf, hgU⟩ := hA.exists_collapse (M := E) isOpen_ball hr
+  have hK : IsClosed (κ '' closedBall 0 r) :=
+    ((isCompact_closedBall 0 r).image hκ.continuous).isClosed
+  obtain ⟨Φ, hΦκ, hΦK⟩ := hκ.exists_continuousMap_extend_id hK.isOpen_compl
+    (fun _ hx h ↦ hx (image_subset_range _ _ h)) ⟨fun p : Unit × E ↦ g p.2, hgc.comp continuous_snd⟩
+    fun _ a ha ↦ hgU a fun hb ↦ ha ⟨a, ball_subset_closedBall hb, rfl⟩
+  set G : X → X := fun x ↦ Φ ((), x)
+  have hGκ (a : E) : G (κ a) = κ (g a) := hΦκ () a
+  have hGo {x : X} (hx : x ∉ range κ) : G x = x :=
+    hΦK () x fun h ↦ hx (image_subset_range _ _ h)
+  have hG : Continuous G := Φ.continuous.comp (.prodMk continuous_const continuous_id)
+  have hGs : Surjective G := fun y ↦ by
+    by_cases hyκ : y ∈ range κ
+    · obtain ⟨b, rfl⟩ := hyκ
+      obtain ⟨a, rfl⟩ := hgs b
+      exact ⟨κ a, hGκ a⟩
+    · exact ⟨y, hGo hyκ⟩
+  -- `G` and `f` have the same fibres.
+  have hκA {a : E} : κ a ∈ κ '' A ↔ a ∈ A := hκ.injective.mem_set_image
+  have hGf (x y : X) : G x = G y ↔ f x = f y := by
+    rw [hfA]
+    by_cases hx : x ∈ range κ <;> by_cases hy : y ∈ range κ
+    · obtain ⟨a, rfl⟩ := hx
+      obtain ⟨b, rfl⟩ := hy
+      rw [hGκ, hGκ, hκ.injective.eq_iff, hgf, hκ.injective.eq_iff, hκA, hκA]
+    · obtain ⟨a, rfl⟩ := hx
+      rw [hGκ, hGo hy]
+      exact iff_of_false (fun h ↦ hy ⟨g a, h⟩) fun h ↦ h.elim (fun h ↦ hy ⟨a, h⟩)
+        fun h ↦ hy (image_subset_range _ _ h.2)
+    · obtain ⟨b, rfl⟩ := hy
+      rw [hGκ, hGo hx]
+      exact iff_of_false (fun h ↦ hx ⟨g b, h.symm⟩) fun h ↦ h.elim (fun h ↦ hx ⟨b, h.symm⟩)
+        fun h ↦ hx (image_subset_range _ _ h.1)
+    · rw [hGo hx, hGo hy]
+      exact ⟨.inl, fun h ↦ h.resolve_right fun h ↦ hx (image_subset_range _ _ h.1)⟩
+  -- So `f` identifies the image of `G`, which is `X`, with `Y`.
+  obtain ⟨h, -⟩ := exists_homeomorph_image_of_forall_eq_iff hG.continuousOn isCompact_univ
+    (fun x : (univ : Set X) ↦ f x) (hf.comp continuous_subtype_val)
+    (fun y ↦ let ⟨x, hx⟩ := hfs y; ⟨⟨x, mem_univ x⟩, hx⟩) fun x y ↦ (hGf x y).symm
+  exact ⟨((Homeomorph.setCongr (image_univ_of_surjective hGs)).trans
+    (Homeomorph.Set.univ X)).symm.trans h⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- A closed ball `closedBall x r` with `r ≥ 0` is cellular in `E`: it is the intersection of the

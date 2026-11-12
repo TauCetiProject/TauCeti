@@ -105,8 +105,13 @@ private theorem finrank_mod_eight_ne_four (hL : IsEven L) (hU : IsUnimodular L) 
   exact thetaSeries_ne_zero_of_re_eq_zero L UpperHalfPlane.I_re
     (by linear_combination (-1 / 2 : ℂ) * hi)
 
+omit [FiniteDimensional ℝ E] in
 /-- **The rank of an even unimodular lattice is divisible by `8`.** -/
 theorem eight_dvd_finrank (hL : IsEven L) (hU : IsUnimodular L) : 8 ∣ finrank ℝ E := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · rw [Module.finrank_of_not_finite hE]
+    exact dvd_zero 8
   have hL₂ : IsEven (orthSum L L) := isEven_orthSum_iff.2 ⟨hL, hL⟩
   have hU₂ : IsUnimodular (orthSum L L) := isUnimodular_orthSum_iff.2 ⟨hU, hU⟩
   have h₁ := hL.finrank_mod_eight_ne_four hU
