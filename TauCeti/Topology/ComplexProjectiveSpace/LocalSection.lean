@@ -104,7 +104,6 @@ private theorem star_reflectionAxis_dotProduct_self (k : Fin (n + 1)) (z : Fin n
 
 private theorem sectionMatrix_mem_unitaryGroup (k : Fin (n + 1)) (z : Fin n → ℂ) :
     sectionMatrix k z ∈ unitaryGroup (Fin (n + 1)) ℂ := by
-  have hr : 0 ≤ ‖affineVector k z‖⁻¹ := inv_nonneg.2 (norm_nonneg _)
   have hc : (1 + ‖affineVector k z‖⁻¹)⁻¹ * (1 + ‖affineVector k z‖⁻¹)⁻¹ *
       (2 + 2 * ‖affineVector k z‖⁻¹) = 2 * (1 + ‖affineVector k z‖⁻¹)⁻¹ := by
     field_simp
@@ -114,7 +113,7 @@ private theorem sectionMatrix_mem_unitaryGroup (k : Fin (n + 1)) (z : Fin n → 
   exact mul_mem (mul_mem
     (one_sub_smul_vecMulVec_mem_unitary (star_reflectionAxis_dotProduct_self k z) hc)
     (one_sub_smul_vecMulVec_mem_unitary he (by norm_num)))
-    (permMatrix_mem_unitaryGroup _)
+    (permMatrix_mem_unitary _)
 
 /-- The first column of `sectionMatrix k z` is the unit representative `affineUnitVector k z`. -/
 private theorem sectionMatrix_mulVec_single_zero (k : Fin (n + 1)) (z : Fin n → ℂ) :
