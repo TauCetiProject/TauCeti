@@ -80,6 +80,11 @@ corner pair with `(A ∪ B, C ∪ D)`.
   the square of singular pairs underlying the sequence of two pairs and its comparison with
   `(A ∪ B, C ∪ D)`, through `TopCat.smallSingularSubcomplexToUnion`; they are shared with the
   sequence in cohomology.
+* `TopCat.smallSingularPairMap`: the map of these squares induced by a map `f : X ⟶ Y` carrying
+  `A`, `B`, `C` and `D` into `A'`, `B'`, `C'` and `D'`, functorial in `f`
+  (`TopCat.smallSingularPairMap_id`, `TopCat.smallSingularPairMap_comp`), and compatible with
+  `TopCat.toSmallSingularPair` (`TopCat.toSmallSingularPair_comp_smallSingularPairMap`) and with
+  the comparison maps (`TopCat.smallSingularPairToUnion_comp_ofInclusionMap`).
 * `TopCat.epi_pairMayerVietorisFromBiprod_zero` and `TopCat.mono_pairMayerVietorisToBiprod`:
   surjectivity at the degree-zero endpoint, and injectivity of the first map when
   `Hₖ₊₁(A ∪ B, C ∪ D)` vanishes.
@@ -246,6 +251,21 @@ lemma smallSingularSubcomplexToUnion_comp :
     rw [IsIso.inv_comp_eq, SSet.Subcomplex.toRange_ι]
   rw [smallSingularSubcomplexToUnion, Category.assoc, h, SSet.Subcomplex.homOfLE_ι]
 
+/-- The comparison maps `TopCat.smallSingularSubcomplexToUnion` are natural in maps carrying `U`
+into `U'` and `V` into `V'`. -/
+@[reassoc]
+lemma smallSingularSubcomplexToUnion_comp_restrict {Y : TopCat.{w}} (f : X ⟶ Y) {U' V' : Set Y}
+    (hfU : Set.MapsTo f U U') (hfV : Set.MapsTo f V V') :
+    smallSingularSubcomplexToUnion U V ≫
+        toSSet.map (ofHom ⟨(hfU.union_union hfV).restrict,
+          f.hom.continuous.restrict (hfU.union_union hfV)⟩) =
+      X.smallSingularSubcomplexMap ![U, V] ![U', V'] f id (Fin.forall_fin_two.2 ⟨hfU, hfV⟩) ≫
+        smallSingularSubcomplexToUnion U' V' := by
+  rw [← cancel_mono (unionι U' V')]
+  simp only [Category.assoc, smallSingularSubcomplexToUnion_comp, smallSingularSubcomplexMap_ι,
+    ← Functor.map_comp, ← ofHom_subtypeVal_comp]
+  rw [Functor.map_comp, smallSingularSubcomplexToUnion_comp_assoc]
+
 /-- Up to an isomorphism of simplicial sets, `TopCat.smallSingularSubcomplexToUnion U V` is the
 inclusion of the singular simplices of `U ∪ V` lying in the trace of `U` or in the trace of `V`:
 the singular simplices of `X` lying in `U` or in `V` are exactly the images of those. -/
@@ -340,7 +360,7 @@ lemma quasiIso_chainComplexMap_smallSingularSubcomplexToUnion
     (fun i ↦ ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i)
     (fun i ↦ by fin_cases i; exacts [hU, hV])
     (by
-      rw [← Set.preimage_iUnion, TauCeti.iUnion_vecCons]
+      rw [← Set.preimage_iUnion, Set.iUnion_vecCons_pair]
       exact Set.eq_univ_of_forall fun x ↦ x.2)
   have hcomp : SSet.chainComplexMap (e.hom ≫ smallSingularSubcomplexToUnion U V) R =
       SSet.chainComplexMap e.hom R ≫ SSet.chainComplexMap (smallSingularSubcomplexToUnion U V) R :=
@@ -472,14 +492,20 @@ lemma relativeMayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
   · simp [mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnion]
   · simp [homologyMap_smallPairToUnion_comp_relativeMayerVietorisδ R hU hV n m h]
 
-include hU hV in
 /-- The map `H₀(X, U) ⊞ H₀(X, V) ⟶ H₀(X, U ∪ V)` at the end of the relative Mayer–Vietoris
-sequence is an epimorphism. -/
+sequence is an epimorphism, for any subspaces `U` and `V`: already `H₀(X, U) ⟶ H₀(X, U ∪ V)` is,
+as the maps `H₀(X) ⟶ H₀(X, A)` are. -/
 lemma epi_relativeMayerVietorisFromBiprod_zero : Epi (relativeMayerVietorisFromBiprod R U V 0) := by
-  have := isIso_homologyMap_smallPairToUnion R U V hU hV 0
-  have := SSetPair.epi_mayerVietorisFromBiprod_zero R (isPushout_left U V) (isPushout_right U V)
-  rw [← mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnion]
-  exact epi_comp _ _
+  have hj : Epi (TopPair.singularHomologyMap
+      (TopPair.ofSubsetMap (𝟙 X) (Set.subset_union_left (s := U) (t := V))) R 0) := by
+    have : Epi ((TopPair.ofSubset U).singularHomologyπ R 0 ≫ TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap (𝟙 X) (Set.subset_union_left (s := U) (t := V))) R 0) := by
+      have : Epi ((TopPair.ofSubset (U ∪ V)).singularHomologyπ R 0) := inferInstance
+      rwa [← TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id (R := R)
+        (Set.subset_union_left (s := U) (t := V)) 0] at this
+    exact epi_of_epi ((TopPair.ofSubset U).singularHomologyπ R 0) _
+  unfold relativeMayerVietorisFromBiprod
+  infer_instance
 
 /-! ### Naturality -/
 
@@ -581,17 +607,7 @@ lemma smallSingularSubcomplexPairToUnion_comp_ofSubsetMap :
   refine MorphismProperty.Arrow.Hom.ext ?_ ?_
   · rw [MorphismProperty.Comma.comp_left, MorphismProperty.Comma.comp_left,
       toSSetPair_map_ofSubsetMap_left_restrict]
-    -- After the rewrite, the composite's middle object is `toSSet.obj ↧(U ∪ V)` on one side but
-    -- `(TopPair.toSSetPair.obj (TopPair.ofSubset (U ∪ V))).left` on the other, which agree only
-    -- after unfolding `TopPair.toSSetPair`. The goal is thus not type-correct at the transparency
-    -- `rw` uses, so `dsimp`-unfolding the `SSetPair.homMk` components still leaves `rw` stuck;
-    -- `change` re-elaborates the goal with the `left` components of
-    -- `smallSingularSubcomplexPairToUnion` and `smallSingularSubcomplexPairMap` written out.
-    change smallSingularSubcomplexToUnion U V ≫ _ =
-      X.smallSingularSubcomplexMap ![U, V] ![U', V'] f id _ ≫ smallSingularSubcomplexToUnion U' V'
-    rw [← cancel_mono (unionι U' V'), Category.assoc, Category.assoc,
-      smallSingularSubcomplexToUnion_comp, ← Functor.map_comp, ← ofHom_subtypeVal_comp,
-      Functor.map_comp, smallSingularSubcomplexToUnion_comp_assoc, smallSingularSubcomplexMap_ι]
+    exact smallSingularSubcomplexToUnion_comp_restrict U V f hfU hfV
   · rw [MorphismProperty.Comma.comp_right, MorphismProperty.Comma.comp_right,
       TopPair.toSSetPair_map_right, TopPair.ofSubsetMap_fst]
     exact (Category.id_comp _).trans (Category.comp_id _).symm
@@ -956,6 +972,102 @@ lemma isZero_singularHomology_ofInclusion_union {n : ℕ}
   | succ m =>
     exact (pairMayerVietoris_exact₃ R hCA hDB hA hB hC hD (m + 1) m).isZero_of_both_isZero hbiprod
       (hABCD m rfl)
+
+/-! #### Naturality of the square of singular pairs -/
+
+variable {Y : TopCat.{w}} {A' B' C' D' : Set Y} (hCA' : C' ⊆ A') (hDB' : D' ⊆ B') (f : X ⟶ Y)
+  (hfA : Set.MapsTo f A A') (hfB : Set.MapsTo f B B') (hfC : Set.MapsTo f C C')
+  (hfD : Set.MapsTo f D D')
+
+/-- The map of pairs `TopCat.smallSingularPair hCA hDB ⟶ TopCat.smallSingularPair hCA' hDB'`
+induced by a map `f` carrying `A`, `B`, `C` and `D` into `A'`, `B'`, `C'` and `D'`: the
+restrictions of `f` to the singular simplices lying in `C` or in `D` and to those lying in `A`
+or in `B`. -/
+def smallSingularPairMap : smallSingularPair hCA hDB ⟶ smallSingularPair hCA' hDB' :=
+  SSetPair.homMk
+    (X.smallSingularSubcomplexMap ![C, D] ![C', D'] f id (Fin.forall_fin_two.2 ⟨hfC, hfD⟩))
+    (X.smallSingularSubcomplexMap ![A, B] ![A', B'] f id (Fin.forall_fin_two.2 ⟨hfA, hfB⟩)) (by
+      -- Stated with the components written out, so that it typechecks without unfolding the pairs.
+      have h : X.smallSingularSubcomplexMap ![C, D] ![C', D'] f id
+            (Fin.forall_fin_two.2 ⟨hfC, hfD⟩) ≫
+          SSet.Subcomplex.homOfLE (smallSingularSubcomplex_mono Y
+            (U := ![C', D']) (U' := ![A', B']) (Fin.forall_fin_two.2 ⟨hCA', hDB'⟩)) =
+            SSet.Subcomplex.homOfLE (smallSingularSubcomplex_mono X
+              (U := ![C, D]) (U' := ![A, B]) (Fin.forall_fin_two.2 ⟨hCA, hDB⟩)) ≫
+              X.smallSingularSubcomplexMap ![A, B] ![A', B'] f id
+                (Fin.forall_fin_two.2 ⟨hfA, hfB⟩) := by
+        rw [← cancel_mono (Y.smallSingularSubcomplex ![A', B']).ι]
+        simp
+      exact h)
+
+@[simp]
+lemma smallSingularPairMap_left :
+    (smallSingularPairMap hCA hDB hCA' hDB' f hfA hfB hfC hfD).left =
+      X.smallSingularSubcomplexMap ![C, D] ![C', D'] f id (Fin.forall_fin_two.2 ⟨hfC, hfD⟩) :=
+  (rfl)
+
+@[simp]
+lemma smallSingularPairMap_right :
+    (smallSingularPairMap hCA hDB hCA' hDB' f hfA hfB hfC hfD).right =
+      X.smallSingularSubcomplexMap ![A, B] ![A', B'] f id (Fin.forall_fin_two.2 ⟨hfA, hfB⟩) :=
+  (rfl)
+
+@[simp]
+lemma smallSingularPairMap_id :
+    smallSingularPairMap hCA hDB hCA hDB (𝟙 X) (Set.mapsTo_id A) (Set.mapsTo_id B)
+      (Set.mapsTo_id C) (Set.mapsTo_id D) = 𝟙 _ :=
+  MorphismProperty.Arrow.Hom.ext (smallSingularSubcomplexMap_id _) (smallSingularSubcomplexMap_id _)
+
+/-- The maps `TopCat.smallSingularPairMap` respect composition. -/
+@[reassoc]
+lemma smallSingularPairMap_comp {Z : TopCat.{w}} {A'' B'' C'' D'' : Set Z} (hCA'' : C'' ⊆ A'')
+    (hDB'' : D'' ⊆ B'') (g : Y ⟶ Z) (hgA : Set.MapsTo g A' A'') (hgB : Set.MapsTo g B' B'')
+    (hgC : Set.MapsTo g C' C'') (hgD : Set.MapsTo g D' D'') :
+    smallSingularPairMap hCA hDB hCA'' hDB'' (f ≫ g) (hgA.comp hfA) (hgB.comp hfB)
+        (hgC.comp hfC) (hgD.comp hfD) =
+      smallSingularPairMap hCA hDB hCA' hDB' f hfA hfB hfC hfD ≫
+        smallSingularPairMap hCA' hDB' hCA'' hDB'' g hgA hgB hgC hgD :=
+  MorphismProperty.Arrow.Hom.ext (smallSingularSubcomplexMap_comp _ _ _ f g id id _ _)
+    (smallSingularSubcomplexMap_comp _ _ _ f g id id _ _)
+
+/-- The maps `TopCat.toSmallSingularPair` are natural along the maps
+`TopCat.smallSingularPairMap`. -/
+@[reassoc]
+lemma toSmallSingularPair_comp_smallSingularPairMap {A₁ C₁ : Set X} (h₁ : C₁ ⊆ A₁)
+    {A₂ C₂ : Set Y} (h₂ : C₂ ⊆ A₂) {i : Fin 2} (hA₁ : A₁ ⊆ ![A, B] i) (hC₁ : C₁ ⊆ ![C, D] i)
+    (hA₂ : A₂ ⊆ ![A', B'] i) (hC₂ : C₂ ⊆ ![C', D'] i) (hfA₁ : Set.MapsTo f A₁ A₂)
+    (hfC₁ : Set.MapsTo f C₁ C₂) :
+    toSmallSingularPair hCA hDB h₁ hA₁ hC₁ ≫
+        smallSingularPairMap hCA hDB hCA' hDB' f hfA hfB hfC hfD =
+      TopPair.toSSetPair.map (TopPair.ofInclusionMap h₁ h₂ ⟨hfA₁.restrict,
+          f.hom.continuous.restrict hfA₁⟩ fun _ hx ↦ hfC₁ hx) ≫
+        toSmallSingularPair hCA' hDB' h₂ hA₂ hC₂ := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · rw [MorphismProperty.Comma.comp_left, MorphismProperty.Comma.comp_left,
+      TopPair.toSSetPair_map_ofInclusionMap_restrict_left f h₁ h₂ hfA₁ hfC₁]
+    exact toSmallSingularSubcomplex_comp_smallSingularSubcomplexMap _ _ f id _ hC₁ hC₂ hfC₁
+  · rw [MorphismProperty.Comma.comp_right, MorphismProperty.Comma.comp_right,
+      TopPair.toSSetPair_map_ofInclusionMap_restrict_right f h₁ h₂ hfA₁ hfC₁]
+    exact toSmallSingularSubcomplex_comp_smallSingularSubcomplexMap _ _ f id _ hA₁ hA₂ hfA₁
+
+/-- The comparison maps `TopCat.smallSingularPairToUnion` are natural along the maps
+`TopCat.smallSingularPairMap`. -/
+@[reassoc]
+lemma smallSingularPairToUnion_comp_ofInclusionMap :
+    smallSingularPairToUnion hCA hDB ≫
+        TopPair.toSSetPair.map (TopPair.ofInclusionMap (Set.union_subset_union hCA hDB)
+          (Set.union_subset_union hCA' hDB') ⟨(hfA.union_union hfB).restrict,
+            f.hom.continuous.restrict (hfA.union_union hfB)⟩
+          fun _ hx ↦ hfC.union_union hfD hx) =
+      smallSingularPairMap hCA hDB hCA' hDB' f hfA hfB hfC hfD ≫
+        smallSingularPairToUnion hCA' hDB' := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · rw [MorphismProperty.Comma.comp_left, MorphismProperty.Comma.comp_left,
+      TopPair.toSSetPair_map_ofInclusionMap_restrict_left f _ _ _ (hfC.union_union hfD)]
+    exact smallSingularSubcomplexToUnion_comp_restrict C D f hfC hfD
+  · rw [MorphismProperty.Comma.comp_right, MorphismProperty.Comma.comp_right,
+      TopPair.toSSetPair_map_ofInclusionMap_restrict_right f _ _ _ (hfC.union_union hfD)]
+    exact smallSingularSubcomplexToUnion_comp_restrict A B f hfA hfB
 
 end Pair
 

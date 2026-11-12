@@ -75,7 +75,7 @@ theorem hurwitz_genus_formula (hF : IsFunctionField k F)
     (Module.finrank k k' : ℤ) * (2 * genus k' F' - 2) =
       Module.finrank F F' * (2 * genus k F - 2) +
         Module.finrank k k' * Divisor.degree (Divisor.different k' F' hF) := by
-  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)
   have hω : (⟨ω, hωmem⟩ : ↥(weilDifferentialSpace k F)) ≠ 0 := by simpa using hω0
   have h := congrArg Divisor.degree
     (weilDifferentialDivisor_weilDifferentialCotrace hF hF' hex hex' _ hω)

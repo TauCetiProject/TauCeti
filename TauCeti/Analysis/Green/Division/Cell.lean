@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Green.BoundaryChain.Cell
-public import TauCeti.Analysis.Calculus.ContDiff.FiniteExceptions
+public import TauCeti.Analysis.Calculus.FDeriv.FiniteExceptions
 
 /-!
 # Graph cells for finite directional divisions
@@ -80,14 +80,14 @@ theorem exists_countable_differentiableAt_lowerFun (K : GraphCell) :
     ∃ s : Set ℝ, s.Countable ∧
       ∀ t ∈ Ioo K.a K.b \ s, DifferentiableAt ℝ K.lowerFun t := by
   obtain ⟨s, hs, h⟩ := K.lower_regular
-  exact h.exists_countable_differentiableAt_of_finite hs
+  exact (h.differentiableOn one_ne_zero).exists_countable_differentiableAt_of_finite hs
 
 /-- Finite-exception `C¹` regularity supplies the graph-arc hypothesis for the upper edge. -/
 theorem exists_countable_differentiableAt_upperFun (K : GraphCell) :
     ∃ s : Set ℝ, s.Countable ∧
       ∀ t ∈ Ioo K.a K.b \ s, DifferentiableAt ℝ K.upperFun t := by
   obtain ⟨s, hs, h⟩ := K.upper_regular
-  exact h.exists_countable_differentiableAt_of_finite hs
+  exact (h.differentiableOn one_ne_zero).exists_countable_differentiableAt_of_finite hs
 
 /-- The planar cell, in either base-coordinate direction. -/
 def region (K : GraphCell) (d : Coordinate) : Set ℂ :=
@@ -208,11 +208,11 @@ def rectangle (a b c e : ℝ) (hab : a < b) (hce : c ≤ e) : GraphCell where
   ordered _ := hce
   lower_regular := ⟨∅, finite_empty, by
     refine (contDiffOn_const (c := c)).congr ?_
-    intro x hx
+    intro x _
     simp only [IccExtend_apply, ContinuousMap.coe_const, Function.const_apply]⟩
   upper_regular := ⟨∅, finite_empty, by
     refine (contDiffOn_const (c := e)).congr ?_
-    intro x hx
+    intro x _
     simp only [IccExtend_apply, ContinuousMap.coe_const, Function.const_apply]⟩
 
 @[simp]

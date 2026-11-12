@@ -65,15 +65,6 @@ namespace TauCeti
 
 open IsLocalRing
 
--- Source: the chosen-place convention (choose a maximal ideal of the integral closure above the
--- closed point and localize there, never treating the integral closure itself as a discrete
--- valuation ring) is the standing convention "DVR extensions are local data" of the Tau Ceti
--- `StableReduction` roadmap's `README.md`,
--- https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/README.md
--- and this structure adapts the `FiniteDVRExtension` signature (same carriers, algebra maps,
--- scalar towers and chosen prime) of that roadmap's `Suggested.lean`,
--- https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/Suggested.lean
-
 /-- A finite separable extension of the fraction field `K` of a discrete valuation ring `R`,
 together with a chosen place of that extension above the closed point of `R`.
 
@@ -286,12 +277,15 @@ theorem exists_algEquiv_comap_prime_eq (P : Ideal (_root_.integralClosure R L)) 
   -- the restriction of the identity to the integral closure is the identity, by structure eta
   exact ⟨AlgEquiv.refl, Ideal.comap_id P⟩
 
+omit [Algebra R L] [IsScalarTower R K L] in
 /-- Every finite separable extension `L` of `K` underlies a `FiniteDVRExtension R K`: the integral
 closure of `R` in `L` is integral over `R`, so going up produces a maximal ideal above the maximal
 ideal of `R`, and any such ideal cuts out a package whose extension field is `L` as a
 `K`-algebra. -/
 theorem exists_algEquiv_extensionField :
     ∃ E : FiniteDVRExtension R K, Nonempty (E.extensionField ≃ₐ[K] L) := by
+  let : Algebra R L := ((algebraMap K L).comp (algebraMap R K)).toAlgebra
+  have : IsScalarTower R K L := .of_algebraMap_eq' rfl
   have : FaithfulSMul R L := FaithfulSMul.trans R K L
   have : FaithfulSMul R (_root_.integralClosure R L) :=
     FaithfulSMul.tower_bot R (_root_.integralClosure R L) L

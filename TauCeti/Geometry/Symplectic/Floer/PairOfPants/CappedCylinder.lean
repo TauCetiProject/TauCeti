@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
+public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
@@ -57,6 +58,29 @@ same holds for the limiting actions at the two ends
 (`TauCeti.SymplecticForm.le_add_add_sum_of_tendsto_hamiltonianAction_cappedCylinderComponent`).
 This is the action filtration shift of the capping family, the same at every neck length.
 
+For a manifold target `M` with a nondegenerate two-form `ω`, such as a closed symplectic
+manifold, the curvature bound, the energy identity and the action bound between loops at finite
+ends hold, with actions depending on discs bounding the loops; the bound on limiting actions at
+the two ends is not proved for a manifold target here. The curvature bound
+holds along every map into `M`
+(`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le`; the
+vector space bound is its case `TauCeti.SymplecticForm.constSmooth`). For a `C¹` map `u` with
+`u(s, 1) = u(s, 0)`, the energy over `[a, b] × [0, 1]` is
+`∫ u^*ω + ∫₀¹ H_0(t, u(b, t)) dt - ∫₀¹ H_∞(t, u(a, t)) dt - ∫ R_K(u)`
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent`). For a `C²`
+map, `1`-periodic in `t`, and a disc `D` bounding the output loop `γ_a = u(a, ·)`, the disc `D ⋆ u`
+transported along the cylinder bounds the input loop `γ_b = u(b, ·)`, and
+
+`∫ E = A_{H_0}(γ_b, D ⋆ u) - A_{H_∞}(γ_a, D) - ∫ R_K(u)`
+
+for the capped action `A_H(γ, D) = ∫ D^*ω + ∫₀¹ H(t, γ(t)) dt` (`TauCeti.cappedLoopAction`)
+(`IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent_eq_cappedLoopAction_sub`).
+Hence for a Floer solution with tamed almost complex structures,
+`A_{H_∞}(γ_a, D) ≤ A_{H_0}(γ_b, D ⋆ u) + B_1 + (B_0 + B_1 + B_∞)`
+(`IsNondegenerate.cappedLoopAction_le_add_add_sum_of_cappedCylinderComponent`). These
+identities assume that the energy density and the curvature along `u` are integrable over the
+rectangle.
+
 Capping the input at `0` instead leaves the cylinder `ℂ ∖ {1}`, whose remaining end at `1` is
 centred at `1` while the output end is centred at `0`; the two end coordinates then differ by more
 than a translation, and that family is not treated here.
@@ -70,6 +94,9 @@ than a translation, and that family is not treated here.
   ETH Zürich (1995), on capping inputs of the pair of pants.
 * D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, Section 8.1, on the
   energy identity of Hamiltonian perturbations.
+* H. Hofer and D. A. Salamon, *Floer homology and Novikov rings*, in *The Floer memorial
+  volume*, Progr. Math. 133 (1995), 483–524, on the energy of Floer cylinders between capped
+  orbits.
 -/
 
 public noncomputable section
@@ -238,6 +265,262 @@ end VectorSpace
 
 end TauCeti.Floer
 
+namespace TauCeti.SmoothTwoForm
+
+open Floer
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+  [IsManifold I ⊤ M] {Hb : Puncture → ℝ → M → ℝ} {L : ℝ} {Bb : Puncture → ℝ}
+  {ω : SmoothTwoForm I M} {u : ℝ × ℝ → M} {a b : ℝ}
+
+/-- **The integrated curvature of the capped cylinder is bounded uniformly in the neck length**,
+for a manifold target. For period-one `C¹` Hamiltonians on a manifold `M` with a two-form `ω`,
+with `|Hb r| ≤ Bb r`, and neck length `L > 4`, along every map `u` into `M` the integral of
+`|R_K(z, u(z))|` over one period `ℝ × [t₀, t₀ + 1)` of the cylinder is at most
+`Bb 1 + ∑ r, Bb r`. -/
+theorem lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le (ω : SmoothTwoForm I M)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
+    (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) (t₀ : ℝ) (u : ℝ × ℝ → M) :
+    ∫⁻ z in univ ×ˢ Ico t₀ (t₀ + 1), ‖ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+        (cappedCylinderComponent Hb L Complex.I) z (u z)‖ₑ ≤
+      ENNReal.ofReal (Bb one) + ∑ r, ENNReal.ofReal (Bb r) := by
+  set s : Set (ℝ × ℝ) := univ ×ˢ Ico t₀ (t₀ + 1)
+  have hinj := injOn_endChart_univ_prod_Ico zero t₀
+  -- A map on the capped domain which restricts to `u` along the end chart.
+  set u' : ℝ × ℝ → M := u ∘ invFunOn (endChart zero) s
+  have hu' {w : ℝ × ℝ} (hw : w ∈ s) : u' (endChart zero w) = u w := by
+    simp only [u', comp_apply]
+    rw [hinj.leftInvOn_invFunOn hw]
+  -- The end chart lands in `ℂ ∖ {0}`, where the capped datum is `C¹`.
+  have hK (w : ℝ × ℝ) (x : M) := contMDiffAt_plumbedPerturbation_single_inf (n := 1)
+    (q := one) (w := Complex.equivRealProdCLM.symm (endChart zero w)) (by simp) hHb hHbs hL
+    (by rw [equivRealProdCLM_symm_endChart]; exact cylindricalEndLift_zero_eq_endCenter_one_or _)
+    x
+  -- Differentiability in the domain point.
+  have hdom (v : ℂ) (w : ℝ × ℝ) (x : M) : DifferentiableAt ℝ
+      (fun z ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
+        (Complex.equivRealProdCLM.symm z) x v) (endChart zero w) := by
+    have hg : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ, ℂ).prod I) 1
+        (fun z : ℝ × ℝ ↦ (Complex.equivRealProdCLM.symm z, x)) (endChart zero w) :=
+      (Complex.equivRealProdCLM.symm.contDiff.contMDiff.prodMk contMDiff_const).contMDiffAt
+    exact (contMDiffAt_iff_contDiffAt.1 (((hK w x).comp (endChart zero w) hg).clm_apply
+      contMDiffAt_const)).differentiableAt one_ne_zero
+  -- Differentiability in the target point.
+  have htgt (v : ℂ) (w : ℝ × ℝ) (x : M) : MDifferentiableAt I 𝓘(ℝ)
+      (fun x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
+        (Complex.equivRealProdCLM.symm (endChart zero w)) x v) x := by
+    have hg : ContMDiffAt I (𝓘(ℝ, ℂ).prod I) 1
+        (fun x : M ↦ (Complex.equivRealProdCLM.symm (endChart zero w), x)) x :=
+      contMDiffAt_const.prodMk contMDiffAt_id
+    exact (((hK w x).comp x hg).clm_apply contMDiffAt_const).mdifferentiableAt one_ne_zero
+  have h := ω.lintegral_enorm_hamiltonianCurvature_image (u := u')
+    (Ks := fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
+      (Complex.equivRealProdCLM.symm z) x 1)
+    (Kt := fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
+      (Complex.equivRealProdCLM.symm z) x Complex.I)
+    (MeasurableSet.univ.prod measurableSet_Ico) hinj
+    (fun w _ ↦ (contDiff_endChart zero 2).contDiffAt) (fun w _ ↦ hdom 1 w _)
+    (fun w _ ↦ hdom Complex.I w _) (fun w _ ↦ htgt 1 w _) (fun w _ ↦ htgt Complex.I w _)
+  rw [perturbationPullback_endChart_zero_plumbedPerturbation,
+    perturbationPullback_endChart_zero_plumbedPerturbation] at h
+  have h₁ : Complex.equivRealProdCLM.symm stdComplexLineReal = 1 := by
+    simp [stdComplexLineReal_eq, Complex.equivRealProdCLM_symm_apply]
+  have hI : Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
+    simp [stdComplexLineImag_eq, Complex.equivRealProdCLM_symm_apply]
+  rw [h₁, hI] at h
+  calc ∫⁻ z in s, ‖ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+          (cappedCylinderComponent Hb L Complex.I) z (u z)‖ₑ
+      = ∫⁻ z in s, ‖ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+          (cappedCylinderComponent Hb L Complex.I) z (u' (endChart zero z))‖ₑ :=
+        setLIntegral_congr_fun (MeasurableSet.univ.prod measurableSet_Ico) fun w hw ↦ by
+          rw [hu' hw]
+    _ = _ := h.symm
+    _ ≤ _ := setLIntegral_le_lintegral _ _
+    _ ≤ _ := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
+        (q := one) (by simp) hHb hHbs hL hBb u'
+
+/-- The integrated curvature of the capped cylinder over the rectangle `[a, b] × [0, 1]` is at
+most `Bb 1 + ∑ r, Bb r`, whatever `a`, `b` and the neck length `L > 4`. -/
+theorem abs_setIntegral_hamiltonianCurvature_cappedCylinderComponent_le (ω : SmoothTwoForm I M)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
+    (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) (u : ℝ × ℝ → M) (a b : ℝ) :
+    |∫ z in Icc a b ×ˢ Icc 0 1, ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+        (cappedCylinderComponent Hb L Complex.I) z (u z)| ≤ Bb one + ∑ r, Bb r := by
+  have hB0 (r : Puncture) : 0 ≤ Bb r := (abs_nonneg _).trans (hBb r 0 (u 0))
+  have hsum : 0 ≤ ∑ r, Bb r := Finset.sum_nonneg fun r _ ↦ hB0 r
+  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg (hB0 one) hsum), ← Real.eNorm_eq_ofReal_abs,
+    ENNReal.ofReal_add (hB0 one) hsum, ENNReal.ofReal_sum_of_nonneg fun r _ ↦ hB0 r]
+  have hcurv := ω.lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le hHb hHbs hL hBb
+    0 u
+  -- The rectangle lies in `ℝ × [0, 1]`, which is `ℝ × [0, 1)` up to a null set.
+  have hsets : ((univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] univ ×ˢ Icc 0 1 := by
+    rw [Measure.volume_eq_prod]
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc
+  rw [zero_add, setLIntegral_congr hsets] at hcurv
+  exact (eNorm_integral_le_lintegral_eNorm _).trans
+    ((lintegral_mono_set (prod_mono (subset_univ _) le_rfl)).trans hcurv)
+
+variable [FiniteDimensional ℝ E]
+
+/-- **The energy identity of the capped cylinder**, for a manifold target. Let `ω` be a
+nondegenerate two-form on a finite-dimensional manifold `M`, `Hb` period-one `C¹` Hamiltonians
+on `M` and `L > 4`, and let `u` be `C¹` with `u(s, 1) = u(s, 0)` for `s ∈ [a, b]`. If `a ≤ -3`
+and `2 ≤ b`, and the energy density and the curvature along `u` are integrable over the rectangle,
+then the Floer energy of `u` over `[a, b] × [0, 1]` for the capped datum on the cylinder is the
+symplectic area of `u` over the rectangle, plus the Hamiltonian term of the input loop at `s = b`
+for `Hb 0`, minus that of the output loop at `s = a` for `Hb ∞`, minus the integrated curvature:
+
+`∫ E = ∫ u^*ω + ∫₀¹ Hb 0 (t, u(b, t)) dt - ∫₀¹ Hb ∞ (t, u(a, t)) dt - ∫ R_K(u)`. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent
+    (hω : ω.IsNondegenerate) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (ha : a ≤ -3) (hb : 2 ≤ b)
+    (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0))
+    (hE : IntegrableOn (ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) u) (Icc a b ×ˢ Icc 0 1))
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) z (u z)) (Icc a b ×ˢ Icc 0 1)) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
+        (cappedCylinderComponent Hb L Complex.I) u z =
+      rectangleIntegral ω.1 u (a, 0) (b, 1) + (∫ t in 0..1, Hb zero t (u (b, t))) -
+        (∫ t in 0..1, Hb inf t (u (a, t))) -
+        ∫ z in Icc a b ×ˢ Icc 0 1, ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+          (cappedCylinderComponent Hb L Complex.I) z (u z) := by
+  have hab : a ≤ b := by linarith
+  have hL₂ : 2 ≤ L := by linarith
+  have hR' : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := Icc_prod_Icc _ _ _ _
+  have hab' : ((a, 0) : ℝ × ℝ) ≤ (b, 1) := Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩
+  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  rw [hR'] at hE hR ⊢
+  rw [hω.integral_floerEnergyDensity isOpen_univ hu.contMDiffOn
+    (contMDiff_cappedCylinderComponent hHb hHbs hL 1).contMDiffOn
+    (contMDiff_cappedCylinderComponent hHb hHbs hL Complex.I).contMDiffOn hab' (subset_univ _)
+    hE hR, ← hω₀.setIntegral_eq_rectangleIntegral hu hab']
+  -- The `ds` terms along the circles `t = 0` and `t = 1` cancel by periodicity.
+  have hs : ∫ s in a..b, cappedCylinderComponent Hb L 1 (s, 1) (u (s, 1)) =
+      ∫ s in a..b, cappedCylinderComponent Hb L 1 (s, 0) (u (s, 0)) := by
+    refine intervalIntegral.integral_congr fun s hs ↦ ?_
+    rw [uIcc_of_le hab] at hs
+    rw [hper s hs]
+    simpa using congrFun (periodic_cappedCylinderComponent Hb L 1 s 0) (u (s, 0))
+  -- The `dt` terms along the circles `s = b` and `s = a` are those of `Hb 0` and `Hb ∞`.
+  have hb' : ∫ t in (0 : ℝ)..1, cappedCylinderComponent Hb L Complex.I (b, t) (u (b, t)) =
+      ∫ t in (0 : ℝ)..1, Hb zero t (u (b, t)) :=
+    intervalIntegral.integral_congr fun t _ ↦ by
+      simp [cappedCylinderComponent_of_two_le (hHb zero) hL₂ (z := (b, t)) hb]
+  have ha' : ∫ t in (0 : ℝ)..1, cappedCylinderComponent Hb L Complex.I (a, t) (u (a, t)) =
+      ∫ t in (0 : ℝ)..1, Hb inf t (u (a, t)) :=
+    intervalIntegral.integral_congr fun t _ ↦ by
+      simp [cappedCylinderComponent_of_le_neg_three (hHb inf) hL₂ (z := (a, t)) ha]
+  rw [hs, hb', ha']
+  simp only [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+  ring
+
+/-- **The energy of the capped cylinder in terms of capped actions**, for a manifold target.
+Under the hypotheses of
+`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent`, let
+`u` be `C²` and `1`-periodic in `t`, and let `D` be a disc bounding the output loop
+`γ_a = u(a, ·)`. Gluing to `D` the cylinder swept by `u` from `γ_a` to the input loop
+`γ_b = u(b, ·)` gives a disc `D ⋆ u` bounding `γ_b`, and the Floer energy of `u` over
+`[a, b] × [0, 1]` is the capped action of the input for `Hb 0` minus that of the output for `Hb ∞`,
+minus the integrated curvature:
+
+`∫ E = A_{Hb 0}(γ_b, D ⋆ u) - A_{Hb ∞}(γ_a, D) - ∫ R_K(u)`,
+
+for the capped action `A_H(γ, D) = ∫ D^*ω + ∫₀¹ H(t, γ(t)) dt` (`TauCeti.cappedLoopAction`). -/
+theorem IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent_eq_cappedLoopAction_sub
+    (hω : ω.IsNondegenerate) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
+    (ha : a ≤ -3) (hb : 2 ≤ b) {D : ℝ × ℝ → M} {x : M}
+    (hD : IsLoopCylinder I D (fun _ ↦ x) fun t ↦ u (a, t))
+    (hE : IntegrableOn (ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) u) (Icc a b ×ˢ Icc 0 1))
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) z (u z)) (Icc a b ×ˢ Icc 0 1)) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
+        (cappedCylinderComponent Hb L Complex.I) u z =
+      cappedLoopAction ω.1 (Hb zero) (fun t ↦ u (b, t))
+          (rectangleTrans D (u ∘ Prod.map (fun σ ↦ a + (b - a) * σ) id)) -
+        cappedLoopAction ω.1 (Hb inf) (fun t ↦ u (a, t)) D -
+        ∫ z in Icc a b ×ˢ Icc 0 1, ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+          (cappedCylinderComponent Hb L Complex.I) z (u z) := by
+  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have h := cappedLoopAction_rectangleTrans_sub_cappedLoopAction hω₀ (Hb zero) hD
+    (isLoopCylinder_comp_prodMap hu hper a b)
+  rw [hω.integral_floerEnergyDensity_cappedCylinderComponent hHb hHbs hL (hu.of_le one_le_two) ha
+    hb (fun s _ ↦ by simpa using hper (s, 0)) hE hR,
+    ← rectangleIntegral_comp_prodMap_affine hω₀ (hu.of_le one_le_two) a b 0 1]
+  rw [cappedLoopAction_def, cappedLoopAction_def] at h ⊢
+  linarith
+
+/-- **The energy bound of the capped cylinder**, for a manifold target. Under the hypotheses of
+`IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent_eq_cappedLoopAction_sub`, if
+`|Hb r| ≤ Bb r`, then the Floer energy over `[a, b] × [0, 1]` differs from the change of capped
+action `A_{Hb 0}(γ_b, D ⋆ u) - A_{Hb ∞}(γ_a, D)` by at most `Bb 1 + ∑ r, Bb r`, uniformly in the
+neck length and in `a` and `b`. -/
+theorem IsNondegenerate.abs_integral_floerEnergyDensity_cappedCylinderComponent_sub_le
+    (hω : ω.IsNondegenerate) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
+    (hBb : ∀ r t x, |Hb r t x| ≤ Bb r)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
+    (ha : a ≤ -3) (hb : 2 ≤ b) {D : ℝ × ℝ → M} {x : M}
+    (hD : IsLoopCylinder I D (fun _ ↦ x) fun t ↦ u (a, t))
+    (hE : IntegrableOn (ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) u) (Icc a b ×ˢ Icc 0 1))
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) z (u z)) (Icc a b ×ˢ Icc 0 1)) :
+    |(∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
+        (cappedCylinderComponent Hb L Complex.I) u z) -
+      (cappedLoopAction ω.1 (Hb zero) (fun t ↦ u (b, t))
+          (rectangleTrans D (u ∘ Prod.map (fun σ ↦ a + (b - a) * σ) id)) -
+        cappedLoopAction ω.1 (Hb inf) (fun t ↦ u (a, t)) D)| ≤ Bb one + ∑ r, Bb r := by
+  have hsub (x y z : ℝ) : x - y - z - (x - y) = -z := by ring
+  rw [hω.integral_floerEnergyDensity_cappedCylinderComponent_eq_cappedLoopAction_sub hHb hHbs hL
+    hu hper ha hb hD hE hR, hsub, abs_neg]
+  exact ω.abs_setIntegral_hamiltonianCurvature_cappedCylinderComponent_le hHb hHbs hL hBb u a b
+
+/-- **The action bound of the capped cylinder**, for a manifold target. Under the hypotheses of
+`IsNondegenerate.abs_integral_floerEnergyDensity_cappedCylinderComponent_sub_le`, if `u` solves
+the Floer equation on the rectangle for almost complex structures `J z` on `T_{u z} M` tamed by
+`ω`, then the capped action of the output loop `γ_a = u(a, ·)` with its disc `D` is at most that
+of the input loop `γ_b = u(b, ·)` with the transported disc `D ⋆ u`, plus `Bb 1 + ∑ r, Bb r`:
+
+`A_{Hb ∞}(γ_a, D) ≤ A_{Hb 0}(γ_b, D ⋆ u) + Bb 1 + ∑ r, Bb r`.
+
+This is the action filtration shift of the capping family on a manifold target, the same at
+every neck length. -/
+theorem IsNondegenerate.cappedLoopAction_le_add_add_sum_of_cappedCylinderComponent
+    (hω : ω.IsNondegenerate) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
+    (hBb : ∀ r t x, |Hb r t x| ≤ Bb r)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
+    (ha : a ≤ -3) (hb : 2 ≤ b) {D : ℝ × ℝ → M} {x : M}
+    (hD : IsLoopCylinder I D (fun _ ↦ x) fun t ↦ u (a, t))
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z) (ω.perturbedMFDeriv (cappedCylinderComponent Hb L 1)
+        (cappedCylinderComponent Hb L Complex.I) u z).toLinearMap)
+    (hE : IntegrableOn (ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) u) (Icc a b ×ˢ Icc 0 1))
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) z (u z)) (Icc a b ×ˢ Icc 0 1)) :
+    cappedLoopAction ω.1 (Hb inf) (fun t ↦ u (a, t)) D ≤
+      cappedLoopAction ω.1 (Hb zero) (fun t ↦ u (b, t))
+          (rectangleTrans D (u ∘ Prod.map (fun σ ↦ a + (b - a) * σ) id)) +
+        Bb one + ∑ r, Bb r := by
+  have hE₀ := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
+    fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  have h := (abs_le.1 (hω.abs_integral_floerEnergyDensity_cappedCylinderComponent_sub_le hHb hHbs
+    hL hBb hu hper ha hb hD hE hR)).2
+  linarith
+
+end TauCeti.SmoothTwoForm
+
 namespace TauCeti.SymplecticForm
 
 open Floer
@@ -255,57 +538,8 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le (ω : Sy
     ∫⁻ z in univ ×ˢ Ico t₀ (t₀ + 1), ‖ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
         (cappedCylinderComponent Hb L Complex.I) z (u z)‖ₑ ≤
       ENNReal.ofReal (Bb one) + ∑ r, ENNReal.ofReal (Bb r) := by
-  set s : Set (ℝ × ℝ) := univ ×ˢ Ico t₀ (t₀ + 1)
-  have hinj := injOn_endChart_univ_prod_Ico zero t₀
-  -- A map on the capped domain which restricts to `u` along the end chart.
-  set u' : ℝ × ℝ → V := u ∘ invFunOn (endChart zero) s
-  have hu' {w : ℝ × ℝ} (hw : w ∈ s) : u' (endChart zero w) = u w := by
-    simp only [u', comp_apply]
-    rw [hinj.leftInvOn_invFunOn hw]
-  -- The end chart lands in `ℂ ∖ {0}`, where the capped datum is `C¹`.
-  have hdiff (v : ℂ) (w : ℝ × ℝ) := (contDiffAt_uncurry_plumbedPerturbation_single_inf
-    (q := one) (y := endChart zero w) (by simp) hHb hHbs hL
-    (by rw [equivRealProdCLM_symm_endChart]; exact cylindricalEndLift_zero_eq_endCenter_one_or _)
-    (u' (endChart zero w)) v).differentiableAt one_ne_zero
-  -- Differentiability in the domain point and in the target point separately.
-  have hdom (v : ℂ) (w : ℝ × ℝ) : DifferentiableAt ℝ
-      (fun z ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-        (Complex.equivRealProdCLM.symm z) (u' (endChart zero w)) v) (endChart zero w) := by
-    have hg : DifferentiableAt ℝ (fun z : ℝ × ℝ ↦ (z, u' (endChart zero w))) (endChart zero w) := by
-      fun_prop
-    exact (hdiff v w).comp (endChart zero w) hg
-  have htgt (v : ℂ) (w : ℝ × ℝ) : DifferentiableAt ℝ
-      (fun x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-        (Complex.equivRealProdCLM.symm (endChart zero w)) x v) (u' (endChart zero w)) := by
-    have hg : DifferentiableAt ℝ (fun x : V ↦ (endChart zero w, x)) (u' (endChart zero w)) := by
-      fun_prop
-    exact (hdiff v w).comp (u' (endChart zero w)) hg
-  have h := ω.lintegral_enorm_hamiltonianCurvature_image (u := u')
-    (Ks := fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-      (Complex.equivRealProdCLM.symm z) x 1)
-    (Kt := fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-      (Complex.equivRealProdCLM.symm z) x Complex.I)
-    (MeasurableSet.univ.prod measurableSet_Ico) hinj
-    (fun w _ ↦ (contDiff_endChart zero 2).contDiffAt) (fun w _ ↦ hdom 1 w)
-    (fun w _ ↦ hdom Complex.I w) (fun w _ ↦ htgt 1 w) (fun w _ ↦ htgt Complex.I w)
-  rw [perturbationPullback_endChart_zero_plumbedPerturbation,
-    perturbationPullback_endChart_zero_plumbedPerturbation] at h
-  have h₁ : Complex.equivRealProdCLM.symm stdComplexLineReal = 1 := by
-    simp [stdComplexLineReal_eq, Complex.equivRealProdCLM_symm_apply]
-  have hI : Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
-    simp [stdComplexLineImag_eq, Complex.equivRealProdCLM_symm_apply]
-  rw [h₁, hI] at h
-  calc ∫⁻ z in s, ‖ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
-          (cappedCylinderComponent Hb L Complex.I) z (u z)‖ₑ
-      = ∫⁻ z in s, ‖ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
-          (cappedCylinderComponent Hb L Complex.I) z (u' (endChart zero z))‖ₑ :=
-        setLIntegral_congr_fun (MeasurableSet.univ.prod measurableSet_Ico) fun w hw ↦ by
-          rw [hu' hw]
-    _ = _ := h.symm
-    _ ≤ _ := setLIntegral_le_lintegral _ _
-    _ ≤ _ := lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le ω
-        (q := one) (by simp)
-        hHb hHbs hL hBb u'
+  simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le hHb
+    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hL hBb t₀ u
 
 /-- **The energy identity of the capped cylinder.** Let `Hb` be period-one `C¹` Hamiltonians and
 `L > 4`, and let `u` be `C²` on an open neighbourhood `U` of `[a, b] × [0, 1]`, with
@@ -354,19 +588,8 @@ theorem abs_integral_floerEnergyDensity_cappedCylinderComponent_sub_le (ω : Sym
   have hsub (x y : ℝ) : x - y - x = -y := by ring
   rw [integral_floerEnergyDensity_cappedCylinderComponent ω hHb hHbs hL hU hu ha hb hRU hper,
     hsub, abs_neg]
-  have hB0 (r : Puncture) : 0 ≤ Bb r := (abs_nonneg _).trans (hBb r 0 0)
-  have hsum : 0 ≤ ∑ r, Bb r := Finset.sum_nonneg fun r _ ↦ hB0 r
-  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg (hB0 one) hsum), ← Real.enorm_eq_ofReal_abs,
-    ENNReal.ofReal_add (hB0 one) hsum, ENNReal.ofReal_sum_of_nonneg fun r _ ↦ hB0 r]
-  have hcurv := lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le ω hHb hHbs hL hBb
-    0 u
-  -- The rectangle lies in `ℝ × [0, 1]`, which is `ℝ × [0, 1)` up to a null set.
-  have hsets : ((univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] univ ×ˢ Icc 0 1 := by
-    rw [Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq EventuallyEq.rfl Ico_ae_eq_Icc
-  rw [zero_add, setLIntegral_congr hsets] at hcurv
-  exact (enorm_integral_le_lintegral_enorm _).trans
-    ((lintegral_mono_set (prod_mono (subset_univ _) le_rfl)).trans hcurv)
+  simpa using ω.constSmooth.abs_setIntegral_hamiltonianCurvature_cappedCylinderComponent_le hHb
+    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hL hBb u a b
 
 /-- **The action bound of the capped cylinder.** Under the hypotheses of
 `TauCeti.SymplecticForm.abs_integral_floerEnergyDensity_cappedCylinderComponent_sub_le`, if `u`

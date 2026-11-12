@@ -75,10 +75,11 @@ theorem _root_.AbsolutelyContinuousOnInterval.tendsto_integral_windingWeight_mul
       (nhds (∫ z : ℂ, windingWeight γ a b z * curl P Q z)) := by
   obtain ⟨C, hC⟩ := (HasCompactSupport.curl hcP hcQ).exists_bound_of_continuous
     (ContDiff.continuous_curl hP hQ)
-  exact tendsto_integral_mul_of_integral_abs_sub
-    (fun n ↦ AbsolutelyContinuousOnInterval.integrable_windingWeight (hγn n) (hclosedn n))
+  exact tendsto_integral_mul_of_integral_norm_sub
+    (.of_forall fun n ↦
+      AbsolutelyContinuousOnInterval.integrable_windingWeight (hγn n) (hclosedn n))
     (hγ.integrable_windingWeight hclosed) (ContDiff.continuous_curl hP hQ).aestronglyMeasurable
-    (by simpa only [Real.norm_eq_abs] using Eventually.of_forall hC) hwconv
+    (.of_forall hC) hwconv
 
 /-- The weighted curl integrals over an index-vanishing domain converge when the winding
 weights converge in `L¹`. The approximating indices need vanish outside the domain only

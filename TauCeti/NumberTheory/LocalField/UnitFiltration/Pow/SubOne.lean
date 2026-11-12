@@ -28,13 +28,17 @@ power map carries `U(K,j)` onto `U(K, j + v_K(n))` for every `j ≥ i` and is in
 This plays the role of the isometry of the `p`-adic logarithm on deep units, without any
 logarithm in the statement.
 
-In characteristic zero, with residue characteristic `p` and `e = v_K(p)`, every unit `α` has a
-power `γ = α ^ M` in `U(K, e + 1)`, where the formula applies at every exponent. If `γ ≠ 1` this
-gives `v_K(α ^ b - 1) ≤ v_K(γ - 1) + e v_p(b)`. Separating nonunits (where
-`v_K(α ^ b - 1) ≤ 0`) and roots of unity (where `α ^ b` takes only finitely many values) gives,
-for every fixed `α`, a constant `C` with
+In characteristic zero, with residue characteristic `p`, `e = v_K(p)` and `q = #𝓀[K]`, every unit
+`α` has its residue-field power `γ = α ^ M`, `M = (q - 1) q ^ e`, in `U(K, e + 1)`, where the
+formula applies at every exponent. If `γ ≠ 1` this gives `v_K(α ^ b - 1) ≤ v_K(γ - 1) + e v_p(b)`.
+If `γ = 1`, then `α ^ b` is a root of unity, and a root of unity `ζ ≠ 1` has `v_K(ζ - 1) ≤ e`
+because `U(K, e + 1)` has no torsion. A nonunit has `v_K(α ^ b - 1) ≤ 0`. Together, for every
+`α ∈ K` and every integer `b` with `α ^ b ≠ 1`,
 
-`v_K(α ^ b - 1) ≤ C (1 + log max(1, |b|))` whenever `α ^ b ≠ 1`.
+`v_K(α ^ b - 1) ≤ max(e, v_K(α ^ M - 1)) + (e / log p) log max(1, |b|)`,
+
+so `v_K(α ^ b - 1) ≤ C (1 + log max(1, |b|))` with an explicit constant `C` depending only on `α`
+and `K`.
 
 ## Main results
 
@@ -42,8 +46,10 @@ for every fixed `α`, a constant `C` with
   `v_K(x ^ n - 1) = v_K(x - 1) + v_K(n)` for a deep unit `x ≠ 1`.
 * `TauCeti.log_normalizedValuationWithZero_zpow_sub_one_le`: if `x ^ M ≠ 1` lies in a deep
   step, then `v_K(x ^ b - 1) ≤ v_K(x ^ M - 1) + v_K(|b|)`.
-* `TauCeti.exists_log_normalizedValuationWithZero_zpow_sub_one_le`: in characteristic zero, the
-  one-factor estimate `v_K(α ^ b - 1) ≤ C (1 + log max(1, |b|))` for every fixed `α ∈ K`.
+* `TauCeti.log_normalizedValuationWithZero_zpow_sub_one_le_max_add_mul_log`: in characteristic
+  zero, the one-factor estimate with the explicit constant above.
+* `TauCeti.exists_log_normalizedValuationWithZero_zpow_sub_one_le`: its form
+  `v_K(α ^ b - 1) ≤ C (1 + log max(1, |b|))` for every fixed `α ∈ K`.
 
 ## References
 
@@ -89,7 +95,6 @@ theorem log_normalizedValuationWithZero_pow_sub_one {n : ℕ} (hn : (n : K) ≠ 
   -- Write `d = m` with `m ≥ i`: then `x ∈ U(K,m) \ U(K,m+1)`, and the power map moves this
   -- exact depth by `v_K(n)`.
   obtain ⟨m, hm⟩ : ∃ m : ℕ, d = m := ⟨d.toNat, by omega⟩
-  have him : i ≤ m := by omega
   have hm0 : m ≠ 0 := by omega
   have hxm : x ∈ unitFiltration K m :=
     (mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one hm0 hx1).mpr hm.ge
@@ -97,9 +102,8 @@ theorem log_normalizedValuationWithZero_pow_sub_one {n : ℕ} (hn : (n : K) ≠ 
     have := (mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one
       m.succ_ne_zero hx1).mp h
     omega
-  have h1 := (pow_mem_unitFiltration_add_natCastValuation_iff hn hi him hx).mpr hxm
-  have h2 := (pow_mem_unitFiltration_add_natCastValuation_iff hn hi (him.trans m.le_succ)
-    hx).not.mpr hxm1
+  have h1 := (pow_mem_unitFiltration_add_natCastValuation_iff hn hi hx).mpr hxm
+  have h2 := (pow_mem_unitFiltration_add_natCastValuation_iff hn hi hx).not.mpr hxm1
   rw [mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one (by omega) hxn1,
     Units.val_pow_eq_pow_val] at h1 h2
   push_cast at h1 h2
@@ -164,101 +168,107 @@ theorem log_normalizedValuationWithZero_zpow_sub_one_nonpos {x : Kˣ}
   exact hx <| (mem_unitFiltration_zero x).mpr <|
     (normalizedValuation_eq_one_iff x).mp (by simpa [hb] using hval)
 
-/-- The values `v_K(α ^ b - 1)` of a root of unity `α` are bounded above: `α ^ b` takes only the
-finitely many values `α ^ r` with `0 ≤ r < M`. -/
-private theorem bddAbove_range_log_normalizedValuationWithZero_zpow_sub_one {α : K} {M : ℕ}
-    (hM0 : M ≠ 0) (hαM : α ^ M = 1) :
-    BddAbove (Set.range fun b : ℤ ↦ WithZero.log (normalizedValuationWithZero K (α ^ b - 1))) := by
-  have hα : α ≠ 0 := by
-    rintro rfl
-    simp [zero_pow hM0] at hαM
-  have hu : IsOfFinOrder (Units.mk0 α hα) :=
-    isOfFinOrder_iff_pow_eq_one.mpr ⟨M, Nat.pos_of_ne_zero hM0, Units.ext (by simpa using hαM)⟩
-  refine ((hu.powers_eq_zpowers ▸ hu.finite_powers).image fun u : Kˣ ↦
-    WithZero.log (normalizedValuationWithZero K (u - 1))).bddAbove.mono ?_
-  rintro _ ⟨b, rfl⟩
-  exact ⟨_, Subgroup.zpow_mem_zpowers _ b, by simp⟩
+/-- **The one-factor estimate with an explicit constant.** Let `K` be a nonarchimedean local field
+of characteristic zero, that is, a finite extension of `ℚ_[p]`, with residue field of `q` elements
+and `e = v_K(p)`, and put `M = (q - 1) q ^ e`. For every `α ∈ K` and every integer `b` with
+`α ^ b ≠ 1`,
 
-/-- **The one-factor estimate for a non-torsion unit.** If a power `a ^ M ≠ 1` of a unit `a` lies in
-`U(K, e + 1)`, where `e = v_K(p)`, then `v_K(a ^ b - 1)` is bounded as in the one-factor estimate,
-with the explicit constant `v_K(a ^ M - 1) + e / log p`. -/
-private theorem exists_log_normalizedValuationWithZero_zpow_sub_one_le_of_pow_mem [CharZero K]
-    {a : Kˣ} {α : K} (ha : (a : K) = α) (hpK : (ringChar 𝓀[K] : K) ≠ 0) {M : ℕ}
-    (hM : a ^ M ∈ unitFiltration K (natCastValuation K (ringChar 𝓀[K]) hpK + 1))
-    (hM1 : a ^ M ≠ 1) :
-    ∃ C : ℝ, ∀ b : ℤ, α ^ b ≠ 1 →
-      ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ) ≤
-        C * (1 + Real.log (max 1 |(b : ℝ)|)) := by
+`v_K(α ^ b - 1) ≤ max(e, v_K(α ^ M - 1)) + (e / log p) log max(1, |b|)`.
+
+For a unit `α`, the residue-field power `α ^ M` lies in `U(K, e + 1)`; if it is not `1`, the
+constant `v_K(α ^ M - 1)` is its exact depth there, and if it is `1`, then `α` is a root of unity.
+For a nonunit `α` the left-hand side is at most `0`. -/
+theorem log_normalizedValuationWithZero_zpow_sub_one_le_max_add_mul_log [CharZero K] (α : K)
+    {b : ℤ} (hb : α ^ b ≠ 1) :
+    ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ) ≤
+      ((max (natCastValuation K (ringChar 𝓀[K]) (natCast_ringChar_residueField_ne_zero K) : ℤ)
+          (WithZero.log (normalizedValuationWithZero K (α ^ ((Nat.card 𝓀[K] - 1) *
+            Nat.card 𝓀[K] ^ natCastValuation K (ringChar 𝓀[K])
+              (natCast_ringChar_residueField_ne_zero K)) - 1))) : ℤ) : ℝ) +
+        natCastValuation K (ringChar 𝓀[K]) (natCast_ringChar_residueField_ne_zero K) /
+          Real.log (ringChar 𝓀[K]) * Real.log (max 1 |(b : ℝ)|) := by
+  have hpK := natCast_ringChar_residueField_ne_zero K
   set e := natCastValuation K (ringChar 𝓀[K]) hpK
-  have hd : ((e + 1 : ℕ) : ℤ) ≤ WithZero.log (normalizedValuationWithZero K (α ^ M - 1)) := by
-    rw [← ha, ← Units.val_pow_eq_pow_val]
-    exact (mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one
-      (Nat.succ_ne_zero e) hM1).mp hM
+  set M := (Nat.card 𝓀[K] - 1) * Nat.card 𝓀[K] ^ e
   set d := WithZero.log (normalizedValuationWithZero K (α ^ M - 1))
-  refine ⟨d + e / Real.log (ringChar 𝓀[K]), fun b hb ↦ ?_⟩
   have hb0 : b ≠ 0 := by
     rintro rfl
     exact hb (zpow_zero α)
-  have hbK : (b.natAbs : K) ≠ 0 := Nat.cast_ne_zero.mpr (Int.natAbs_ne_zero.mpr hb0)
-  have h := log_normalizedValuationWithZero_zpow_sub_one_le (Nat.succ_ne_zero e) hM hM1 hbK
-    fun ℓ hℓ hℓK _ ↦ natCastValuation_lt_sub_one_mul_natCastValuation_ringChar_add_one hpK hℓ hℓK
-  have hv := natCastValuation_le_div_log_mul_log hbK hpK
-  have hb1 : (1 : ℝ) ≤ |(b : ℝ)| := by
-    rw [← Int.cast_abs]
-    exact_mod_cast Int.one_le_abs hb0
-  rw [Nat.cast_natAbs, Int.cast_abs, ← max_eq_right hb1] at hv
-  have hd0 : (0 : ℝ) ≤ d := by exact_mod_cast (Int.natCast_nonneg _).trans hd
-  have he0 : (0 : ℝ) ≤ e / Real.log (ringChar 𝓀[K]) := by positivity
-  have h' : ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ) ≤
-      d + natCastValuation K b.natAbs hbK := by
-    rw [ha] at h
-    exact_mod_cast h
-  nlinarith [Real.log_max_one_nonneg |(b : ℝ)|]
-
-/-- **The one-factor estimate.** Let `K` be a nonarchimedean local field of characteristic zero,
-that is, a finite extension of `ℚ_[p]`. For every fixed `α ∈ K` there is a constant `C`,
-depending on `α` and `K`, such that
-
-`v_K(α ^ b - 1) ≤ C (1 + log max(1, |b|))` for every integer `b` with `α ^ b ≠ 1`. -/
-theorem exists_log_normalizedValuationWithZero_zpow_sub_one_le [CharZero K] (α : K) :
-    ∃ C : ℝ, ∀ b : ℤ, α ^ b ≠ 1 →
+  have hL : 0 ≤ (e : ℝ) / Real.log (ringChar 𝓀[K]) * Real.log (max 1 |(b : ℝ)|) := by
+    have := Real.log_max_one_nonneg |(b : ℝ)|
+    have := Real.log_natCast_nonneg (ringChar 𝓀[K])
+    positivity
+  -- It suffices to bound `v_K(α ^ b - 1)` by `e`, or by `d + (e / log p) log max(1, |b|)`.
+  suffices h : WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) ≤ (e : ℤ) ∨
       ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ) ≤
-        C * (1 + Real.log (max 1 |(b : ℝ)|)) := by
-  -- The case `α = 0`: `α ^ b - 1 = -1` for `b ≠ 0`.
+        d + (e : ℝ) / Real.log (ringChar 𝓀[K]) * Real.log (max 1 |(b : ℝ)|) by
+    rcases h with h | h
+    · have : ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ) ≤
+          ((max (e : ℤ) d : ℤ) : ℝ) := by exact_mod_cast h.trans (le_max_left _ _)
+      linarith
+    · have : (d : ℝ) ≤ ((max (e : ℤ) d : ℤ) : ℝ) := by exact_mod_cast le_max_right _ _
+      linarith
+  -- The case `α = 0`: `α ^ b - 1 = -1`.
   rcases eq_or_ne α 0 with rfl | hα
-  · refine ⟨0, fun b hb ↦ ?_⟩
-    have hb0 : b ≠ 0 := by
-      rintro rfl
-      simp at hb
+  · left
     rw [zero_zpow b hb0, zero_sub, ← Units.val_one, ← Units.val_neg,
       normalizedValuationWithZero_coe, normalizedValuation_neg, map_one]
     simp
   set a := Units.mk0 α hα
   have ha : (a : K) = α := Units.val_mk0 hα
+  -- Nonunits: `v_K(α ^ b - 1) ≤ 0`.
   by_cases ha0 : a ∈ unitFiltration K 0
   swap
-  · refine ⟨0, fun b hb ↦ ?_⟩
-    have hb0 : b ≠ 0 := by
-      rintro rfl
-      exact hb (zpow_zero α)
-    rw [zero_mul, Int.cast_nonpos, ← ha]
-    exact log_normalizedValuationWithZero_zpow_sub_one_nonpos ha0 hb0
-  -- A unit: some power `a ^ M` with `M > 0` lies in `U(K, e + 1)`, where `e = v_K(p)`.
-  have hpK : (ringChar 𝓀[K] : K) ≠ 0 :=
-    Nat.cast_ne_zero.mpr (CharP.char_is_prime 𝓀[K] _).ne_zero
-  set e := natCastValuation K (ringChar 𝓀[K]) hpK
-  obtain ⟨M, hM0, -, hM, -⟩ := Subgroup.exists_pow_mem_of_relIndex_ne_zero
-    (Subgroup.relIndex_ne_zero (H := unitFiltration K (e + 1))) ha0
+  · left
+    rw [← ha]
+    exact (log_normalizedValuationWithZero_zpow_sub_one_nonpos ha0 hb0).trans (Int.natCast_nonneg _)
+  have hM := pow_natCard_sub_one_mul_pow_mem_unitFiltration_succ ha0 e
+  have hq : 1 < Nat.card 𝓀[K] := Finite.one_lt_card
+  have hM0 : M ≠ 0 := Nat.mul_ne_zero (by omega) (pow_ne_zero _ (by omega))
   by_cases hM1 : a ^ M = 1
-  · -- A root of unity.
-    obtain ⟨C₀, hC₀⟩ := bddAbove_range_log_normalizedValuationWithZero_zpow_sub_one
-      (α := α) hM0.ne' (by rw [← ha, ← Units.val_pow_eq_pow_val, hM1, Units.val_one])
-    refine ⟨((max C₀ 0 : ℤ) : ℝ), fun b _ ↦ ?_⟩
-    calc ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ)
-        ≤ ((max C₀ 0 : ℤ) : ℝ) := by exact_mod_cast (hC₀ ⟨b, rfl⟩).trans (le_max_left _ _)
-      _ ≤ ((max C₀ 0 : ℤ) : ℝ) * (1 + Real.log (max 1 |(b : ℝ)|)) :=
-        le_mul_of_one_le_right (by exact_mod_cast le_max_right _ _)
-          (by linarith [Real.log_max_one_nonneg |(b : ℝ)|])
-  exact exists_log_normalizedValuationWithZero_zpow_sub_one_le_of_pow_mem ha hpK hM hM1
+  · -- A root of unity: `α ^ b ≠ 1` is again one, so it is shallow.
+    left
+    rw [← ha, ← Units.val_zpow_eq_zpow_val]
+    refine log_normalizedValuationWithZero_sub_one_le_of_pow_eq_one hM0 ?_ fun h ↦ hb ?_
+    · rw [← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, hM1, one_zpow]
+    · rw [← ha, ← Units.val_zpow_eq_zpow_val, h, Units.val_one]
+  -- A non-torsion unit: its power `α ^ M` has exact depth `d ≥ e + 1`.
+  right
+  have hbK : (b.natAbs : K) ≠ 0 := Nat.cast_ne_zero.mpr (Int.natAbs_ne_zero.mpr hb0)
+  have h := log_normalizedValuationWithZero_zpow_sub_one_le (Nat.succ_ne_zero e) hM hM1 hbK
+    fun ℓ hℓ hℓK _ ↦ natCastValuation_lt_sub_one_mul_natCastValuation_ringChar_add_one hpK hℓ hℓK
+  rw [ha] at h
+  have hv := natCastValuation_le_div_log_mul_log hbK hpK
+  have hb1 : (1 : ℝ) ≤ |(b : ℝ)| := by
+    rw [← Int.cast_abs]
+    exact_mod_cast Int.one_le_abs hb0
+  rw [Nat.cast_natAbs, Int.cast_abs, ← max_eq_right hb1] at hv
+  have h' : ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ) ≤
+      d + natCastValuation K b.natAbs hbK := by
+    exact_mod_cast h
+  linarith
+
+/-- **The one-factor estimate.** Let `K` be a nonarchimedean local field of characteristic zero,
+that is, a finite extension of `ℚ_[p]`. For every fixed `α ∈ K` there is a constant `C`,
+depending on `α` and `K`, such that
+
+`v_K(α ^ b - 1) ≤ C (1 + log max(1, |b|))` for every integer `b` with `α ^ b ≠ 1`.
+
+An explicit admissible constant is given by
+`log_normalizedValuationWithZero_zpow_sub_one_le_max_add_mul_log`. -/
+theorem exists_log_normalizedValuationWithZero_zpow_sub_one_le [CharZero K] (α : K) :
+    ∃ C : ℝ, ∀ b : ℤ, α ^ b ≠ 1 →
+      ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ) ≤
+        C * (1 + Real.log (max 1 |(b : ℝ)|)) := by
+  set e := natCastValuation K (ringChar 𝓀[K]) (natCast_ringChar_residueField_ne_zero K)
+  set D := max (e : ℤ) (WithZero.log (normalizedValuationWithZero K
+    (α ^ ((Nat.card 𝓀[K] - 1) * Nat.card 𝓀[K] ^ e) - 1)))
+  refine ⟨D + e / Real.log (ringChar 𝓀[K]), fun b hb ↦ ?_⟩
+  have h := log_normalizedValuationWithZero_zpow_sub_one_le_max_add_mul_log α hb
+  have hD : (0 : ℝ) ≤ D := by exact_mod_cast (Int.natCast_nonneg e).trans (le_max_left _ _)
+  have he : (0 : ℝ) ≤ e / Real.log (ringChar 𝓀[K]) := by
+    have := Real.log_natCast_nonneg (ringChar 𝓀[K])
+    positivity
+  nlinarith [Real.log_max_one_nonneg |(b : ℝ)|]
 
 end TauCeti

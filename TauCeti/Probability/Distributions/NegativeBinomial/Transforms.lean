@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Moments.MGFAnalytic
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
 
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Probability.Distributions.Dirac
 
 /-!
@@ -48,12 +49,18 @@ namespace TauCeti
 namespace Probability
 
 /-- The exponential integrand for the real cast of a positive-shape negative-binomial law is
-integrable exactly when `(1 - p) exp t < 1`. -/
+integrable exactly when `(1 - p) exp t < 1`. For `1 < p` the law is the zero measure and both
+sides hold. -/
 theorem integrable_exp_mul_id_map_cast_negativeBinomialMeasure_iff
-    {r p : ℝ} (hr : 0 < r) (hp : 0 < p) (hp1 : p ≤ 1) (t : ℝ) :
+    {r p : ℝ} (hr : 0 < r) (hp : 0 < p) (t : ℝ) :
     Integrable (fun x : ℝ ↦ exp (t * x))
         ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) ↔
       (1 - p) * exp t < 1 := by
+  by_cases hp1 : p ≤ 1
+  swap
+  · rw [negativeBinomialMeasure_eq_zero_of_invalid fun h ↦ hp1 h.2.2, Measure.map_zero]
+    exact iff_of_true integrable_zero_measure
+      ((mul_neg_of_neg_of_pos (by linarith [not_le.mp hp1] : 1 - p < 0) (exp_pos t)).trans one_pos)
   have hcomp : ((fun x : ℝ ↦ exp (t * x)) ∘ (Nat.cast : ℕ → ℝ)) =
       fun n : ℕ ↦ exp t ^ n := by
     funext n
@@ -65,12 +72,12 @@ theorem integrable_exp_mul_id_map_cast_negativeBinomialMeasure_iff
 /-- The exact moment-generating domain of the real cast of a positive-shape negative-binomial
 law. -/
 theorem integrableExpSet_id_map_cast_negativeBinomialMeasure
-    {r p : ℝ} (hr : 0 < r) (hp : 0 < p) (hp1 : p ≤ 1) :
+    {r p : ℝ} (hr : 0 < r) (hp : 0 < p) :
     integrableExpSet id
         ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
       {t | (1 - p) * exp t < 1} := by
   ext t
-  exact integrable_exp_mul_id_map_cast_negativeBinomialMeasure_iff hr hp hp1 t
+  exact integrable_exp_mul_id_map_cast_negativeBinomialMeasure_iff hr hp t
 
 /-- The moment-generating function of the real cast of a valid negative-binomial law. -/
 theorem mgf_id_map_cast_negativeBinomialMeasure
@@ -94,26 +101,36 @@ theorem cgf_id_map_cast_negativeBinomialMeasure
   rw [cgf, mgf_id_map_cast_negativeBinomialMeasure hr hp hp1 ht]
 
 /-- Zero lies in the interior of the exponential-integrability domain of the real cast of a
-positive-shape negative-binomial law, so all its natural moments are finite. -/
-theorem zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure {r p : ℝ}
-    (hr : 0 < r) (hp : 0 < p) (hp1 : p ≤ 1) :
+negative-binomial law, so all its natural moments are finite. This holds for every pair of
+parameters: for invalid parameters the law is zero, and at shape zero it is a Dirac mass. -/
+theorem zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure {r p : ℝ} :
     0 ∈ interior (integrableExpSet id
       ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ))) := by
-  rw [integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1,
-    (isOpen_lt (by fun_prop : Continuous fun t : ℝ ↦ (1 - p) * exp t)
-      continuous_const).interior_eq]
-  simpa using hp
+  by_cases hrp : 0 < r ∧ 0 < p
+  · rw [integrableExpSet_id_map_cast_negativeBinomialMeasure hrp.1 hrp.2,
+      (isOpen_lt (by fun_prop : Continuous fun t : ℝ ↦ (1 - p) * exp t)
+        continuous_const).interior_eq]
+    simpa using hrp.2
+  · have huniv : integrableExpSet id
+        ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) = Set.univ := by
+      refine Set.eq_univ_of_forall fun t ↦ ?_
+      by_cases hv : 0 ≤ r ∧ 0 < p ∧ p ≤ 1
+      · obtain rfl : r = 0 := by
+          by_contra h
+          exact hrp ⟨lt_of_le_of_ne hv.1 (Ne.symm h), hv.2.1⟩
+        rw [negativeBinomialMeasure_zero hv.2.1 hv.2.2, Measure.map_dirac' (by fun_prop)]
+        exact integrable_dirac eNorm_lt_top
+      · rw [negativeBinomialMeasure_eq_zero_of_invalid hv, Measure.map_zero]
+        exact integrable_zero_measure
+    rw [huniv, interior_univ]
+    trivial
 
-/-- The real cast of a valid negative-binomial law has finite moments of every order. This
-includes the shape-zero boundary. -/
-theorem memLp_id_map_cast_negativeBinomialMeasure {r p : ℝ} (hr : 0 ≤ r) (hp : 0 < p)
-    (hp1 : p ≤ 1) (q : ℝ≥0) :
-    MemLp id q ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) := by
-  rcases hr.eq_or_lt with rfl | hr
-  · rw [negativeBinomialMeasure_zero hp hp1, Measure.map_dirac' (by fun_prop)]
-    exact memLp_dirac enorm_lt_top
-  · exact memLp_of_mem_interior_integrableExpSet
-      (zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1) q
+/-- The real cast of a negative-binomial law has finite moments of every order, for every pair of
+parameters. -/
+theorem memLp_id_map_cast_negativeBinomialMeasure {r p : ℝ} (q : ℝ≥0) :
+    MemLp id q ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) :=
+  memLp_of_mem_interior_integrableExpSet
+    zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure q
 
 private lemma cgf_eventuallyEq {r p : ℝ} (hr : 0 < r) (hp : 0 < p) (hp1 : p ≤ 1) :
     cgf id ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =ᶠ[𝓝 0]
@@ -158,7 +175,8 @@ private theorem integral_id_map_cast_negativeBinomialMeasure_of_pos
     ∫ x, x ∂((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
       r * (1 - p) / p := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
-  have hzero := zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1
+  have hzero := zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure
+    (r := r) (p := p)
   calc
     ∫ x, x ∂((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
         deriv (cgf id ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ))) 0 := by
@@ -187,7 +205,8 @@ private theorem variance_id_map_cast_negativeBinomialMeasure_of_pos
     variance id ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
       r * (1 - p) / p ^ 2 := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
-  have hzero := zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1
+  have hzero := zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure
+    (r := r) (p := p)
   calc
     variance id ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
         iteratedDeriv 2
@@ -235,7 +254,7 @@ theorem integral_sq_map_cast_negativeBinomialMeasure
     norm_num
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
   have hvar := variance_id_map_cast_negativeBinomialMeasure hr.le hp hp1
-  rw [variance_eq_sub (memLp_id_map_cast_negativeBinomialMeasure hr.le hp hp1 2)] at hvar
+  rw [variance_eq_sub (memLp_id_map_cast_negativeBinomialMeasure 2)] at hvar
   simp only [Pi.pow_apply, id_eq,
     integral_id_map_cast_negativeBinomialMeasure hr.le hp hp1] at hvar
   rw [sub_eq_iff_eq_add.1 hvar]
@@ -254,11 +273,7 @@ theorem charFun_map_cast_negativeBinomialMeasure
   -- The binomial-series argument lies in the open unit disk, including at `p = 1`.
   let q : ℂ := (1 - (p : ℂ)) * Complex.exp (Complex.I * t)
   have hq_norm : ‖q‖ < 1 := by
-    -- Unfold the local series argument so norm multiplicativity applies to its two factors.
-    change ‖(1 - (p : ℂ)) * Complex.exp (Complex.I * t)‖ < 1
-    rw [norm_mul, Complex.norm_exp]
-    have him : (Complex.I * (t : ℂ)).re = 0 := by simp
-    rw [him, Real.exp_zero, mul_one]
+    rw [norm_mul, Complex.norm_exp_I_mul_ofReal, mul_one]
     simpa only [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
       Real.norm_eq_abs, abs_of_nonneg (by linarith : 0 ≤ 1 - p)] using sub_lt_self 1 hp
   have hsum :=
@@ -274,29 +289,10 @@ theorem charFun_map_cast_negativeBinomialMeasure
     -- Normalize the real part of the denominator to the scalar inequality implied by `‖q‖ < 1`.
     change 0 < 1 - q.re
     linarith
-  have hw_ne : 1 - q ≠ 0 := by
-    intro h
-    rw [h] at hw_re
-    norm_num at hw_re
-  have hw_arg : (1 - q).arg ≠ Real.pi := by
-    intro h
-    exact (not_lt_of_ge hw_re.le) (Complex.arg_eq_pi_iff.mp h).1
-  have hratio_ne : (p : ℂ) / (1 - q) ≠ 0 :=
-    div_ne_zero (by exact_mod_cast hp.ne') hw_ne
-  -- The branch information above justifies combining the two principal complex powers.
-  have hvalue :
-      (1 / (1 - q) ^ (r : ℂ)) * (Real.rpow p r : ℂ) =
-        ((p : ℂ) / (1 - q)) ^ (r : ℂ) := by
-    have hp_ne : (p : ℂ) ≠ 0 := by exact_mod_cast hp.ne'
-    have hratio : (p : ℂ) / (1 - q) = (1 - q)⁻¹ * (p : ℂ) := by ring
-    rw [Complex.cpow_def_of_ne_zero hratio_ne, hratio,
-      Complex.log_mul_ofReal p hp _ (inv_ne_zero hw_ne), Complex.log_inv _ hw_arg,
-      Complex.ofReal_log hp.le, add_mul, Complex.exp_add, neg_mul, Complex.exp_neg,
-      ← Complex.cpow_def_of_ne_zero hp_ne, ← Complex.cpow_def_of_ne_zero hw_ne,
-      ← Complex.ofReal_cpow hp.le]
-    -- Align the real-power notation with the coercion lemma used in the preceding rewrite.
-    simp only [show Real.rpow p r = p ^ r from rfl]
-    ring_nf
+  -- The branch information justifies combining the two principal complex powers.
+  have hvalue : (1 / (1 - q) ^ (r : ℂ)) * (Real.rpow p r : ℂ) = ((p : ℂ) / (1 - q)) ^ (r : ℂ) :=
+    TauCeti.one_div_cpow_mul_ofReal_rpow
+      (fun h ↦ (not_lt_of_ge hw_re.le) (Complex.arg_eq_pi_iff.mp h).1) hp.le r
   have hweight_ne_top (k : ℕ) : negativeBinomialWeight r p k ≠ ⊤ := by
     rw [← negativeBinomialMeasure_singleton hr.le hp hp1]
     exact measure_ne_top _ _

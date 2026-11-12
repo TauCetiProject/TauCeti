@@ -406,9 +406,6 @@ noncomputable def ofIsConvexSeq {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) {
   length := k
   slope i := unitSlope h (l + i)
   monotone i j hij := by
-    have hi := i.2
-    have hj := j.2
-    have hij' : (i : ℕ) ≤ j := hij
     exact hh.monotoneOn
       (mem_finiteEdges.2 ⟨(hdom _).2 ⟨by omega, by omega⟩, (hdom _).2 ⟨by omega, by omega⟩⟩)
       (mem_finiteEdges.2 ⟨(hdom _).2 ⟨by omega, by omega⟩, (hdom _).2 ⟨by omega, by omega⟩⟩)

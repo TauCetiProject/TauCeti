@@ -8,8 +8,17 @@ name: pick-runner
 # Picker/control jobs do not count towards the build-job cap.
 # Preserve the repository API reserve for status and merge automation.
 on:
+  workflow_dispatch:
+    inputs:
+      control_smoke:
+        description: Verify both reserved queue-control guests
+        type: boolean
+        default: true
   workflow_call:
     inputs:
+      control_smoke:
+        type: boolean
+        default: false
       fleet-staging:
         description: Use staging preferences and eligible dedicated machines; takes precedence over fleet-pr
         type: boolean
@@ -19,7 +28,7 @@ on:
         type: boolean
         default: false
       pr-head:
-        description: Immutable 40-character PR head; empty disables dedicated PR placement and recovery
+        description: Immutable PR head carried by the caller; PR fleet placement uses the shared pool
         type: string
         default: ""
       pr-number:
@@ -42,7 +51,7 @@ on:
         description: JSON runs-on target; callers must match attempt to their current github.run_attempt before using runner or pool
         value: ${{ jobs.pick.outputs.runner }}
       pool:
-        description: "Destination key: github, namespace, or a machine name from services.fleet; valid only for the matching attempt"
+        description: "Destination key: github, fleet, namespace, or a named machine preference; valid only for the matching attempt"
         value: ${{ jobs.pick.outputs.pool }}
       attempt:
         description: Picker's github.run_attempt; callers must compare it with their current attempt before using runner or pool
@@ -62,10 +71,11 @@ on:
 
 jobs:
   pick:
+    if: ${{ !inputs.control_smoke }}
     # Every picker must reach the fleet without first waiting for a GitHub build slot.
     # Keep control work small, high priority, and isolated to this workflow run.
     # An operator can recover selection during a Namespace outage without a PR.
-    runs-on: ${{ vars.PICKER_GITHUB_FALLBACK == 'true' && 'ubuntu-24.04' || fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ${{ inputs.fleet-staging && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || (vars.PICKER_GITHUB_FALLBACK == 'true' && 'ubuntu-24.04' || fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id))) }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
@@ -99,10 +109,10 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@1a2fd2de61b53e1721517aa4ff6adffdefa09520
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
+          tools-ref: 1a2fd2de61b53e1721517aa4ff6adffdefa09520
           project-directory: .
       - name: Read the allowlist using the existing organization App
         id: team-token
@@ -139,3 +149,24 @@ jobs:
           FLEET_RUNNER_GROUP_ID: ${{ vars.FLEET_RUNNER_GROUP_ID }}
           FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
         run: python3 scripts/fleet_runner.py --route
+
+  queue-control-smoke:
+    if: ${{ inputs.control_smoke && github.event_name == 'workflow_dispatch' }}
+    strategy:
+      matrix:
+        slot: [1, 2]
+    runs-on:
+      - self-hosted
+      - linux
+      - x64
+      - tauceti-fleet-queue-control
+      - fleet-74773fc7f54d4877add11d80113fe340
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Check fresh reserved control capacity
+        run: |
+          printf 'Queue control runner=%s slot=%s\n' "$RUNNER_NAME" '${{ matrix.slot }}'
+          test ! -e .lake
+          ! mountpoint -q /cache
