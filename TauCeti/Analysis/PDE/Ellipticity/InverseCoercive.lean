@@ -182,6 +182,22 @@ theorem congr_ae (h : IsUniformlyEllipticAE mu Ω a lam Lam)
   filter_upwards [h.ae_bounds, hab] with x hx habx
   simpa only [← habx] using hx
 
+/-- Multiplying the coefficient field by `c > 0` multiplies both constants of inverse-coercive
+ellipticity by `c`, so the ratio `Λ / λ` is unchanged. -/
+theorem const_smul (h : IsUniformlyEllipticAE mu Ω a lam Lam) {c : ℝ} (hc : 0 < c) :
+    IsUniformlyEllipticAE mu Ω (c • a) (c * lam) (c * Lam) := by
+  refine ⟨mul_pos hc h.pos, mul_le_mul_of_nonneg_left h.le hc.le, ?_⟩
+  filter_upwards [h.ae_bounds, h.ae_isUnit] with x hx hu
+  let _ : Invertible c := invertibleOfNonzero hc.ne'
+  refine ⟨fun ξ => ?_, fun ξ => ?_⟩
+  · simp only [Pi.smul_apply, smul_mulVec, dotProduct_smul, smul_eq_mul, mul_assoc]
+    gcongr
+    exact hx.1 ξ
+  · simp only [Pi.smul_apply, Matrix.inv_smul (a x) c ((isUnit_iff_isUnit_det _).mp hu),
+      invOf_eq_inv, smul_mulVec, dotProduct_smul, smul_eq_mul, mul_inv, mul_assoc]
+    gcongr
+    exact hx.2 ξ
+
 /-- The principal bilinear form is essentially bounded by the inverse-coercive upper
 constant, as required for boundedness of the energy form. -/
 theorem ae_opNorm_matrixBilinearForm_le (h : IsUniformlyEllipticAE mu Ω a lam Lam) :

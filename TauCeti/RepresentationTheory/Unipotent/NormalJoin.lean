@@ -38,9 +38,6 @@ of the multiplication image with products of points of the two source subgroups.
 
 * A. Borel, *Linear Algebraic Groups*, Theorem 4.8 and Proposition 14.4.
 * T. A. Springer, *Linear Algebraic Groups*, Proposition 2.4.12.
-
-This supplies the representation-theoretic product step in Layer 5, "The unipotent radical", of
-the ReductiveGroups roadmap.
 -/
 
 public section

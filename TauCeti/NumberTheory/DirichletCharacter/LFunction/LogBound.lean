@@ -37,7 +37,6 @@ private lemma norm_block_le (hχ : χ ≠ 1) {k : ℕ} (hk : 0 < k) :
     ‖∑ n ∈ range N, χ (k * N + n : ℕ) / ((k * N + n : ℕ) : ℂ)‖ ≤
       (k : ℝ)⁻¹ - (k + 1 : ℝ)⁻¹ := by
   have hN : (0 : ℝ) < N := Nat.cast_pos.mpr (NeZero.pos N)
-  have hkR : (0 : ℝ) < k := Nat.cast_pos.mpr hk
   -- Subtract the reciprocal of the right endpoint using cancellation over a full period.
   have hcancel : ∑ n ∈ range N, χ n * (((k + 1) * N : ℕ) : ℂ)⁻¹ = 0 := by
     rw [← sum_mul]
@@ -47,7 +46,7 @@ private lemma norm_block_le (hχ : χ ≠ 1) {k : ℕ} (hk : 0 < k) :
         (((k * N + n : ℕ) : ℂ)⁻¹ - (((k + 1) * N : ℕ) : ℂ)⁻¹) := by
     simp only [mul_sub, sum_sub_distrib, hcancel, sub_zero, div_eq_mul_inv]
     apply sum_congr rfl
-    intro n hn
+    intro n _
     -- Character values are periodic modulo the level N.
     simp [Nat.cast_add, Nat.cast_mul]
   rw [hrewrite]
@@ -89,7 +88,7 @@ private lemma norm_first_block_le :
     _ ≤ ∑ n ∈ range N, ‖χ n / (n : ℂ)‖ := norm_sum_le _ _
     _ ≤ ∑ n ∈ range N, (n : ℝ)⁻¹ := by
       apply sum_le_sum
-      intro n hn
+      intro n _
       simpa [norm_div, Complex.norm_natCast, div_eq_mul_inv] using
         mul_le_of_le_one_left (inv_nonneg.mpr (Nat.cast_nonneg n)) (χ.norm_le_one n)
     _ ≤ (harmonic N : ℝ) := by

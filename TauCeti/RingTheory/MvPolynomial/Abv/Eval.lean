@@ -109,7 +109,7 @@ theorem apply_aeval_le (v : AbsoluteValue R ℝ) {P : MvPolynomial ι ℤ} {L : 
     (hL : ∀ i, P.degreeOf i ≤ L i) (x : ι → R) :
     v (aeval x P) ≤ (∑ s ∈ P.support, |(P.coeff s : ℝ)|) * ∏ i, max (v (x i)) 1 ^ L i := by
   rw [aeval_def, eval₂_eq', sum_mul]
-  refine (v.sum_le _ _).trans <| sum_le_sum fun s hs ↦ ?_
+  refine (v.sum_le _ _).trans <| sum_le_sum fun s _ ↦ ?_
   have hc : v (P.coeff s : R) ≤ |(P.coeff s : ℝ)| := by
     rw [← v.apply_natAbs_eq]
     exact (v.apply_nat_le_self _).trans_eq (by rw [Nat.cast_natAbs, Int.cast_abs])
