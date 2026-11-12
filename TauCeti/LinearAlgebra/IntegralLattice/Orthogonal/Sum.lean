@@ -41,7 +41,6 @@ radicals, and the signature is componentwise additive.
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1.
 * The isometry constructions follow Mathlib's `QuadraticMap.IsometryEquiv.prod` and `prodComm` in
   `Mathlib/LinearAlgebra/QuadraticForm/Prod.lean`.
 -/
