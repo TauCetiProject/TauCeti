@@ -153,7 +153,6 @@ theorem isZero_realProjectiveMomentSpectralSequence_page_two_X (pq : ℤ × ℤ)
     have : (pq.2 : ℝ) < ((k : ℕ) : ℤ) + 1 := by push_cast; linarith
     exact_mod_cast this
   have h₂' : ((k : ℕ) : ℤ) < pq.2 + 1 := by exact_mod_cast h₂
-  have hkN := k.is_lt
   apply h
   lia
 
