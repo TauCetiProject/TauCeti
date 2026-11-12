@@ -150,6 +150,7 @@ instance truncatedLie_one_isLieAbelian : IsLieAbelian (d.truncatedLie ℒ 1) :=
     (d.lowerCentralSeries_truncatedLie_eq_bot ℒ 1)
 
 /-- The degree-`n` piece of the truncation is the image of the degree-`n` piece of `L`. -/
+@[expose]
 def truncatedGrading (k : ℕ) (n : N) : Submodule R (d.truncatedLie ℒ k) :=
   (ℒ n).map (d.degreeIdeal ℒ k).toSubmodule.mkQ
 
@@ -164,13 +165,9 @@ theorem mem_truncatedGrading_iff {k : ℕ} {n : N} {y : d.truncatedLie ℒ k} :
   Submodule.mem_map
 
 /-- The truncated pieces form a Lie grading of the truncation. -/
-noncomputable instance instGradedLieAlgebraTruncatedGrading (k : ℕ) :
+instance instGradedLieAlgebraTruncatedGrading (k : ℕ) :
     GradedLieAlgebra (d.truncatedGrading ℒ k) where
-  toDecomposition := by
-    rw [funext (d.truncatedGrading_eq ℒ k)]
-    apply DirectSum.IsInternal.chooseDecomposition
-    simpa only [LinearMap.restrictScalars_self] using
-      DirectSum.IsInternal.map_mkQ _ (d.degreeIdeal_isGraded ℒ k)
+  toDecomposition := DirectSum.Decomposition.map_mkQ _ (d.degreeIdeal_isGraded ℒ k)
   toGradedBracket := by
     rw [funext (d.truncatedGrading_eq ℒ k)]
     simpa only [LieIdeal.coe_mkQ] using
@@ -187,9 +184,7 @@ instance truncatedGrading_isPositiveGrading (k : ℕ) :
 theorem decompose_truncatedGrading_mk (k : ℕ) (n : N) (x : L) :
     (DirectSum.decompose (d.truncatedGrading ℒ k) (Submodule.Quotient.mk x) n :
       d.truncatedLie ℒ k) = Submodule.Quotient.mk (DirectSum.decompose ℒ x n : L) :=
-  (DirectSum.map_decompose_shift ℒ (d.truncatedGrading ℒ k)
-    (d.degreeIdeal ℒ k).mkQ.toLinearMap.toAddMonoidHom id Function.injective_id
-    (fun _ x hx => (d.mem_truncatedGrading_iff ℒ).mpr ⟨x, hx, rfl⟩) n x).symm
+  DirectSum.Decomposition.map_mkQ_decompose'_mk _ (d.degreeIdeal_isGraded ℒ k) x n
 
 /-- Pieces above the cutoff vanish in the truncation. -/
 @[simp]

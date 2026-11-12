@@ -77,6 +77,73 @@ theorem DirectSum.IsInternal.map_mkQ {R S M ι : Type*} [Ring R] [Ring S] [SMul 
   · rw [← Submodule.map_iSup, hℳ.submodule_iSup_eq_top, Submodule.map_top,
       LinearMap.range_restrictScalars, Submodule.range_mkQ, Submodule.restrictScalars_top]
 
+namespace DirectSum.Decomposition
+
+variable {R M ι : Type*} [Ring R] [AddCommGroup M] [Module R M]
+  {ℳ : ι → Submodule R M} (U : Submodule R M)
+
+private def mkQComponents : (⨁ i, ℳ i) →ₗ[R] (⨁ i, (ℳ i).map U.mkQ) :=
+  DirectSum.lmap fun i =>
+    (U.mkQ.domRestrict (ℳ i)).codRestrict ((ℳ i).map U.mkQ) fun x => ⟨x, x.property, rfl⟩
+
+variable [DecidableEq ι] [DirectSum.Decomposition ℳ]
+
+private def decomposeAndMap : M →ₗ[R] (⨁ i, (ℳ i).map U.mkQ) :=
+  (mkQComponents U).comp (DirectSum.decomposeLinearEquiv ℳ).toLinearMap
+
+private theorem le_ker_decomposeAndMap (hU : SetLike.IsHomogeneous ℳ U) :
+    U ≤ LinearMap.ker (decomposeAndMap (ℳ := ℳ) U) := by
+  intro x hx
+  rw [LinearMap.mem_ker]
+  apply DFinsupp.ext
+  intro i
+  apply Subtype.ext
+  change U.mkQ (DirectSum.decompose ℳ x i : M) = 0
+  exact (Submodule.Quotient.mk_eq_zero U).mpr (hU i hx)
+
+private def quotientDecompose (hU : SetLike.IsHomogeneous ℳ U) :
+    M ⧸ U → (⨁ i, (ℳ i).map U.mkQ) :=
+  QuotientAddGroup.lift U.toAddSubgroup (decomposeAndMap (ℳ := ℳ) U).toAddMonoidHom
+    (fun _ hx => le_ker_decomposeAndMap U hU hx)
+
+private theorem sum_quotientDecompose (hU : SetLike.IsHomogeneous ℳ U) :
+    Function.LeftInverse (DirectSum.coeAddMonoidHom fun i => (ℳ i).map U.mkQ)
+      (quotientDecompose U hU) := by
+  have hsum : (DirectSum.coeLinearMap fun i => (ℳ i).map U.mkQ).comp (mkQComponents (ℳ := ℳ) U) =
+      U.mkQ.comp (DirectSum.coeLinearMap ℳ) := by
+    apply DirectSum.linearMap_ext R
+    intro i
+    apply LinearMap.ext
+    intro x
+    simp only [LinearMap.comp_apply, mkQComponents, DirectSum.lmap_lof, DirectSum.coeLinearMap_lof]
+    rfl
+  intro x
+  obtain ⟨x, rfl⟩ := U.mkQ_surjective x
+  change ((DirectSum.coeLinearMap _).comp (mkQComponents (ℳ := ℳ) U))
+    (DirectSum.decomposeLinearEquiv ℳ x) = U.mkQ x
+  rw [hsum]
+  exact congrArg U.mkQ (DirectSum.Decomposition.left_inv x)
+
+/-- Decompose a class modulo a homogeneous submodule by decomposing a representative and
+mapping each component to its class. Homogeneity makes this independent of the representative. -/
+@[instance_reducible]
+def map_mkQ (hU : SetLike.IsHomogeneous ℳ U) :
+    DirectSum.Decomposition (fun i => (ℳ i).map U.mkQ) where
+  decompose' := quotientDecompose U hU
+  left_inv := sum_quotientDecompose U hU
+  right_inv := by
+    have hinternal : DirectSum.IsInternal (fun i => (ℳ i).map U.mkQ) := by
+      simpa only [LinearMap.restrictScalars_self] using DirectSum.IsInternal.map_mkQ U hU
+    intro x
+    exact hinternal.injective (sum_quotientDecompose U hU (DirectSum.coeAddMonoidHom _ x))
+
+/-- On a representative, the quotient decomposition projects each homogeneous component. -/
+theorem map_mkQ_decompose'_mk (hU : SetLike.IsHomogeneous ℳ U) (x : M) (i : ι) :
+    ((map_mkQ U hU).decompose' (Submodule.Quotient.mk x) i : M ⧸ U) =
+      Submodule.Quotient.mk (DirectSum.decompose ℳ x i : M) := (rfl)
+
+end DirectSum.Decomposition
+
 namespace TauCeti.InternalGrading
 
 variable {R M : Type*} {ι : Type} [DecidableEq ι]
