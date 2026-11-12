@@ -155,6 +155,8 @@ def higherDirectImageSectionsAddEquiv (g : Γ(Y, ⊤)) :
 /-- The equivalence `higherDirectImageSectionsAddEquiv` sends the class in `Hⁿ(f⁻¹ D(g), M)` of a
 section `x` of the presheaf `V ↦ Hⁿ(f⁻¹ V, M)` to the section of its sheafification `Rⁿ f_* M`
 defined by `x`. -/
+-- Apply before simp normalizes the cohomology presheaf section type.
+@[simp↓]
 lemma higherDirectImageSectionsAddEquiv_hom_app (g : Γ(Y, ⊤))
     (x : ((f.higherDirectImagePresheaf n).obj M).obj (.op (Y.basicOpen g))) :
     f.higherDirectImageSectionsAddEquiv M n g

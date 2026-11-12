@@ -86,6 +86,8 @@ lemma higherDirectImagePresheaf_map_globalSectionsSmul_app (M : X.Modules) (n : 
 multiplication by its pullback `f^* r`, acting on cohomology through `M`. -/
 -- The cohomology presheaf evaluated at `U` is the cohomology of `f⁻¹ U`; typeclass search does not
 -- unfold this identification to find the module structure over global functions.
+-- Apply before simp normalizes the source and target presheaf section types.
+@[simp↓]
 lemma higherDirectImagePresheafToPresheafIso_hom_app_smul (M : X.Modules) (n : ℕ)
     (r : Γ(Y, ⊤)) (U : Y.Opens) (x : ((f.higherDirectImagePresheaf n).obj M).obj (.op U)) :
     (f.higherDirectImagePresheafToPresheafIso M n).hom.app (.op U)
