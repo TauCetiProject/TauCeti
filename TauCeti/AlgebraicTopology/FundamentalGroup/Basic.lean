@@ -12,12 +12,12 @@ import TauCeti.CategoryTheory.Groupoid.SingleObj
 import TauCeti.Topology.Homotopy.Path
 
 /-!
-# Basic results on fundamental groupoids and fundamental groups
+# Basic results on fundamental groups
 
-This file records a basic connectedness result for fundamental groupoids, the general
-transport facts about the basepoint-adjusted induced map `FundamentalGroup.mapOfEq`, and when a
-map induced on fundamental groups is trivial: a characterization of trivial range loop by loop,
-and the basic consequences of triviality of the *source* fundamental group.
+This file records the general transport facts about the basepoint-adjusted induced map
+`FundamentalGroup.mapOfEq`, and when a map induced on fundamental groups is trivial: a
+characterization of trivial range loop by loop, and the basic consequences of triviality of the
+*source* fundamental group.
 
 `TauCeti.FundamentalGroup.map_range_eq_bot_iff` was extracted from the proof of
 `semilocallySimplyConnectedAt_iff_range_eq_bot` in
@@ -41,8 +41,6 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   exactly when the image of the loop is nullhomotopic.
 * `FundamentalGroup.mapOfEq_mapOfEq_of_comp_eq_id`: the induced map of a map whose composite
   with `f` is the identity undoes the induced map of `f`.
-* `FundamentalGroupoid.nonempty_hom`: the fundamental groupoid of a path-connected
-  space is connected.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_iff`: the induced map has trivial range exactly
   when every loop at the basepoint becomes nullhomotopic in the target.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_of_subsingleton`: if the source fundamental group
@@ -66,16 +64,6 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
 public section
 
 open CategoryTheory
-
-namespace FundamentalGroupoid
-
-/-- In the fundamental groupoid of a path-connected space every object receives a morphism from
-every other one, so the groupoid is connected. -/
-theorem nonempty_hom {Y : Type*} [TopologicalSpace Y]
-    [PathConnectedSpace Y] (x y : FundamentalGroupoid Y) : Nonempty (x ⟶ y) :=
-  ⟨Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as)⟩
-
-end FundamentalGroupoid
 
 namespace FundamentalGroup
 
