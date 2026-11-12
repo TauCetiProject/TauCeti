@@ -25,14 +25,16 @@ one and two follow it in cyclic order. Thus `ClosedWeb.ends` records precisely i
 cyclic order and orientation, without choosing an additional basepoint of the cyclic order.
 The direction `false` denotes a source end and `true` a target end. A vertex is a merge when
 its odd end is a source, and a split when its odd end is a target.
+These abstract cyclic orders define a ribbon-graph structure; planarity is not imposed,
+so higher-genus ribbon structures are allowed. Planarity is a separate condition on this data.
 
 This file supplies incidence fibres, isomorphisms, orientation reversal, mirror reversal,
 and disjoint union. Nilvalent webs have no vertices and consist solely of circles; in
 particular the empty web and one circle are distinct.
 
-The finite-record model follows Goertz–Marino–Wedrich, *Monoidal 2-categories from foam
-evaluation*, arXiv:2602.11120v1, Definition 3.4, distinguishing edge-end occurrences from
-vertex-free circles.
+The finite-record model adapts the incidence data of Goertz–Marino–Wedrich, *Monoidal
+2-categories from foam evaluation*, arXiv:2602.11120v1, Definition 3.4, distinguishing
+edge-end occurrences from vertex-free circles and leaving planarity as a separate condition.
 -/
 
 public section
@@ -42,7 +44,8 @@ namespace TauCeti
 universe u v
 
 /-- A finite oriented trivalent graph with cyclic orders and separate vertex-free circles.
-The local numbering begins at the unique end of odd orientation. -/
+The local numbering begins at the unique end of odd orientation. The cyclic orders define
+an abstract ribbon-graph structure; planarity is a separate condition, not part of this record. -/
 structure ClosedWeb where
   /-- Trivalent vertices. -/
   Vertex : Type u
@@ -244,7 +247,7 @@ def trans {U : ClosedWeb} (f : W.Iso V) (g : V.Iso U) : W.Iso U where
     (f.trans g).circle = f.circle.trans g.circle := (rfl)
 
 /-- Inversion reverses the order of composition. -/
-theorem trans_symm_eq {U : ClosedWeb} (f : W.Iso V) (g : V.Iso U) :
+theorem symm_trans {U : ClosedWeb} (f : W.Iso V) (g : V.Iso U) :
     (f.trans g).symm = g.symm.trans f.symm := by
   ext <;> rfl
 
@@ -287,10 +290,10 @@ theorem trans_symm_eq {U : ClosedWeb} (f : W.Iso V) (g : V.Iso U) :
   cases f
   rfl
 
-@[simp] theorem symm_trans (f : W.Iso V) : f.symm.trans f = refl V := by
+@[simp] theorem symm_trans_self (f : W.Iso V) : f.symm.trans f = refl V := by
   ext <;> simp [symm, trans, refl]
 
-@[simp] theorem trans_symm (f : W.Iso V) : f.trans f.symm = refl W := by
+@[simp] theorem self_trans_symm (f : W.Iso V) : f.trans f.symm = refl W := by
   ext <;> simp [symm, trans, refl]
 
 /-- Composition of web isomorphisms is associative. -/
