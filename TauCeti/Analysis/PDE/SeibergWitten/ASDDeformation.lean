@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 public import TauCeti.LinearAlgebra.Determinant.Line
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
-import TauCeti.Geometry.Manifold.Riemannian.AlmostComplex
+import TauCeti.Geometry.Manifold.Riemannian.DegreeOne
 
 /-!
 # The Atiyah–Hitchin–Singer deformation operator and symbol commutator

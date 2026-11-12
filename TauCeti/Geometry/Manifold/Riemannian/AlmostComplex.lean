@@ -20,9 +20,8 @@ fibrewise orthogonal (`⟪J_x u, J_x w⟫ = ⟪u, w⟫`). This file bridges the 
 algebra of `TauCeti.AlmostComplexStructure` (`kahlerForm`, `lieMap`, and Riesz duality) with global
 smooth differential forms:
 
-1. Under `TauCeti.alternatingFormEquiv` and `Riemannian.Tensor.rieszDual`, a smooth one-form `a`
-   corresponds fibrewise to its Riesz-dual tangent vector, and `J.covectorComplexStructure`
-   intertwines with `J_x`
+1. Under `Riemannian.Tensor.rieszDual` and `SmoothForm.degreeOneEquiv`, the covector complex
+   structure `J.covectorComplexStructure` on smooth one-forms intertwines fibrewise with `J_x`
    (`TauCeti.SmoothAlmostComplexStructure.rieszDual_covectorComplexStructure`).
 2. The fibrewise Kähler two-vectors `(J.almostComplexStructureAt x).kahlerForm` assemble into a
    smooth two-form `J.kahlerTwoForm hJ : SmoothForm I M ℝ 2` representing `ω_x(u, w) = ⟪J_x u, w⟫`.
@@ -40,8 +39,6 @@ smooth differential forms:
 
 ## Main results
 
-* `TauCeti.SmoothForm.alternatingFormEquiv_rieszDual_degreeOneEquiv`: fibrewise identification of a
-  smooth one-form with its Riesz-dual tangent vector under `alternatingFormEquiv`.
 * `TauCeti.SmoothAlmostComplexStructure.rieszDual_covectorComplexStructure`: Riesz duality
   intertwines `J.covectorComplexStructure` with `J`.
 * `TauCeti.SmoothAlmostComplexStructure.isSmoothForm_kahlerForm`: smoothness of the Kähler
@@ -69,34 +66,12 @@ noncomputable section
 open Bundle Module Set exteriorPower
 open scoped Manifold ContDiff RealInnerProductSpace Topology
 
-namespace TauCeti
+namespace TauCeti.SmoothAlmostComplexStructure
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-
-namespace SmoothForm
-
-/-- Under `alternatingFormEquiv`, a smooth one-form at `x` corresponds to the tangent vector given
-by the Riesz dual of `SmoothForm.degreeOneEquiv`. -/
-theorem alternatingFormEquiv_rieszDual_degreeOneEquiv (a : SmoothForm I M ℝ 1) (x : M) :
-    (letI : FiniteDimensional ℝ (TangentSpace I x) :=
-      VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-     alternatingFormEquiv (TangentSpace I x) 1
-      (ιMulti ℝ 1 ![Riemannian.Tensor.rieszDual (I := I) x (degreeOneEquiv a x)])) =
-      a.1 x := by
-  let _ : FiniteDimensional ℝ (TangentSpace I x) :=
-    VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-  ext w
-  have hw : ![w 0] = w := funext fun i ↦ by fin_cases i; rfl
-  rw [alternatingFormEquiv_ιMulti_apply, Matrix.det_fin_one]
-  simp only [Matrix.of_apply, Matrix.cons_val_fin_one, Riemannian.Tensor.inner_rieszDual,
-    degreeOneEquiv_apply_apply_vec, hw]
-
-end SmoothForm
-
-namespace SmoothAlmostComplexStructure
 
 /-- When `J` is fibrewise orthogonal, `J.covectorComplexStructure` corresponds under the Riesz
 isomorphism on `T_x M` to `J_x`. -/
@@ -303,6 +278,4 @@ theorem IsCompatibleOrientation.inner_apply_apply {J : SmoothAlmostComplexStruct
 
 end FourManifolds
 
-end SmoothAlmostComplexStructure
-
-end TauCeti
+end TauCeti.SmoothAlmostComplexStructure

@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 -- Private: orthonormal coordinates and the `4 × 4` determinant are used only in proofs.
 import TauCeti.Analysis.InnerProductSpace.Orientation
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 
@@ -366,44 +366,23 @@ positively oriented orthonormal basis `e'` with `e'₀ = ξ`, `J e'₀ = e'₁` 
 theorem exists_orthonormalBasis_apply_zero_eq {ξ : V} (hξ : ‖ξ‖ = 1) :
     ∃ e' : OrthonormalBasis (Fin 4) ℝ V, e'.toBasis.orientation = o ∧ e' 0 = ξ ∧
       J (e' 0) = e' 1 ∧ J (e' 2) = e' 3 := by
-  classical
   have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  have hself (v : V) : ⟪v, J v⟫ = 0 := by rw [real_inner_comm, inner_apply_self hJ]
-  -- The frame is `(ξ, J ξ, η, J η)` for a unit vector `η` orthogonal to `ξ` and `J ξ`.
-  obtain ⟨η, hη, hηK⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
-    ({ξ, J ξ} : Finset V) (by
-      rw [Fact.out (p := finrank ℝ V = 4)]
-      exact Finset.card_le_two.trans_lt (by norm_num))
-  have hξη : ⟪ξ, η⟫ = 0 := hηK ξ (by simp)
-  have hJξη : ⟪J ξ, η⟫ = 0 := hηK (J ξ) (by simp)
-  have hξJη : ⟪ξ, J η⟫ = 0 := by rw [← neg_eq_zero, ← inner_apply_left hJ, hJξη]
-  have hηη : ⟪η, η⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hη, one_pow]
-  set v : Fin 4 → V := ![ξ, J ξ, η, J η]
-  have hon : Orthonormal ℝ v := by
-    rw [orthonormal_iff_ite]
-    intro i j
-    fin_cases i <;> fin_cases j <;>
-      simp [v, hJ, hself, hξ, hη, hξη, hJξη, hξJη, real_inner_comm ξ, real_inner_comm (J ξ),
-        real_inner_comm η]
-  have hcard : Fintype.card (Fin 4) = finrank ℝ V := by simp [Fact.out (p := finrank ℝ V = 4)]
-  let e' := (basisOfOrthonormalOfCardEqFinrank hon hcard).toOrthonormalBasis
-    (by rwa [coe_basisOfOrthonormalOfCardEqFinrank])
-  have he' : ⇑e' = v := by
-    simp [e', coe_basisOfOrthonormalOfCardEqFinrank]
-  refine ⟨e', ?_, by simp [he', v], by simp [he', v], by simp [he', v]⟩
-  -- `vol(ξ, J ξ, η, J η) = ⟪⋆ω, η ∧ J η⟫ = ⟪ω, η ∧ J η⟫ = 1`, expanding `ω` in the new frame and
-  -- using `⋆ω = ω` from the old one.
-  have hω := kahlerForm_eq_ιMulti_add_ιMulti (e := e') (J := J) (by simp [he', v])
-    (by simp [he', v])
-  have h1 : ⟪o.hodgeStar hkl J.kahlerForm, ιMulti ℝ 2 ![η, J η]⟫ = 1 := by
-    rw [hodgeStar_kahlerForm h₀ h₂ hkl he, inner_kahlerForm_ιMulti hJ, hJ, hηη]
-  have h0 : o.volumeForm ![η, J η, η, J η] = 0 :=
+  obtain ⟨e', he'₀, h₀', h₂'⟩ := exists_unitary_orthonormalBasis_of_norm_eq_one hJ hξ
+  refine ⟨e', ?_, he'₀, h₀', h₂'⟩
+  -- `vol(e'₀, e'₁, e'₂, e'₃) = ⟪⋆ω, e'₂ ∧ e'₃⟫ = ⟪ω, e'₂ ∧ J e'₂⟫ = 1`, expanding `ω` in `e'`
+  -- and using `⋆ω = ω` from `e`.
+  have hω := kahlerForm_eq_ιMulti_add_ιMulti h₀' h₂'
+  have h1 : ⟪o.hodgeStar hkl J.kahlerForm, ιMulti ℝ 2 ![e' 2, e' 3]⟫ = 1 := by
+    rw [hodgeStar_kahlerForm h₀ h₂ hkl he, inner_kahlerForm_ιMulti hJ, h₂',
+      real_inner_self_eq_norm_sq, e'.orthonormal.1 3, one_pow]
+  have h0 : o.volumeForm ![e' 2, e' 3, e' 2, e' 3] = 0 :=
     o.volumeForm.map_eq_zero_of_eq _ (i := 0) (j := 2) rfl (by decide)
   rw [hω, map_add, inner_add_left, o.inner_hodgeStar_ιMulti_two hkl,
-    o.inner_hodgeStar_ιMulti_two hkl] at h1
-  simp only [he', v, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons, h0, add_zero] at h1
-  exact Orientation.volumeForm_apply_pos_iff.mp (by simp [he', v, h1])
+    o.inner_hodgeStar_ιMulti_two hkl, h0, add_zero] at h1
+  have he'v : (e' : Fin 4 → V) = ![e' 0, e' 1, e' 2, e' 3] :=
+    funext fun i ↦ by fin_cases i <;> rfl
+  exact Orientation.volumeForm_apply_pos_iff.mp
+    (by rw [OrthonormalBasis.coe_toBasis, he'v, h1]; exact zero_lt_one)
 
 include he h₀ h₂ in
 /-- **The Hodge star preserves the `ω`-component** of a two-form, `⟪ω, ⋆F⟫ = ⟪ω, F⟫`, since `ω`
