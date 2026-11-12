@@ -21,9 +21,10 @@ clusters `D₁` and `D₂`.
 **The product field.** The tensor product of two fields `x` and `y` is the field
 `TauCeti.Vortex.mulField x y` with connection `a_x + a_y` and section `α_x α_y`. It satisfies the
 holomorphicity rows `∂bar_a α = 0` whenever `x` and `y` do, and its zero divisor is the sum of
-theirs. So if `x`, `y₁`, `y₂` are vortices with divisors `D₁ + D₂`, `D₁`, `D₂`, the sections are
-related by `α_x = h α_{y₁} α_{y₂}` for a nowhere-vanishing `C²` factor `h`
-(`TauCeti.Vortex.exists_contDiff_sectionValue_eq_mul_mul_of_add`).
+theirs (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_mulField`). So if `x`, `y₁`, `y₂` are
+vortices with divisors `D₁ + D₂`, `D₁`, `D₂`, the sections are related by `α_x = h α_{y₁} α_{y₂}`
+for a nowhere-vanishing factor `h`, as regular as the fields
+(`TauCeti.Vortex.exists_contDiff_sectionValue_eq_mul_mul_of_add`); for `C²` fields `h` is `C²`.
 
 **The pointwise comparison.** Write `s = |α|²`. Off the zeros, the scalar equations
 `Δ log s = (s - 1) / 4` of the three vortices give, for `w = log |h|²`,
@@ -50,9 +51,9 @@ the `L¹` distance between `s_x` and the product `s₁ s₂`:
 (`TauCeti.Vortex.integral_abs_sq_norm_sectionValue_sub_mul_eq`). The right side is the overlap of
 the two defects `1 - s₁` and `1 - s₂`, each concentrated near its own cluster and decaying
 exponentially away from it (`TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp`). When the
-clusters are far apart the overlap is small, and the vortex of `D₁ + D₂` is close in `L¹` to the
-product of the vortices of the two clusters: if the second cluster is translated by `-a`, the
-`L¹` distance tends to zero as `a → ∞`
+clusters are far apart the overlap is small, and `|α_x|²` is close in `L¹` to the product
+`|α_{y₁}|² |α_{y₂}|²`: if the second cluster is translated by `-a`, the `L¹` distance tends to
+zero as `a → ∞`
 (`TauCeti.Vortex.tendsto_integral_abs_sq_norm_sectionValue_sub_mul`).
 
 ## Main definitions
@@ -63,18 +64,21 @@ product of the vortices of the two clusters: if the second cluster is translated
 ## Main results
 
 * `TauCeti.Vortex.sectionValue_mulField`: the section of the product field is `α_x α_y`.
-* `TauCeti.Vortex.equation_mulField_eq_zero`: the product field satisfies the holomorphicity rows
-  when both factors do.
+* `TauCeti.Vortex.equation_mulField_apply_one_eq_zero_and_apply_two_eq_zero`: the product field
+  satisfies the holomorphicity rows when both factors do.
+* `TauCeti.Vortex.isZeroMultiplicity_sectionValue_mulField`: the zero multiplicities of the
+  product field are the sums of those of the factors.
 * `TauCeti.Vortex.exists_contDiff_sectionValue_eq_mul_mul_of_add`: `α_x = h α_{y₁} α_{y₂}` with
-  `h` smooth and nowhere zero, for vortices with divisors `D₁ + D₂`, `D₁` and `D₂`.
+  `h` of class `C^k` and nowhere zero, for `C^k` solutions of the holomorphicity rows with
+  divisors `D₁ + D₂`, `D₁` and `D₂`.
 * `TauCeti.Vortex.norm_sectionValue_le_mul_of_add`: `|α_x| ≤ |α_{y₁}| |α_{y₂}|` for vortices with
   divisors `D₁ + D₂`, `D₁` and `D₂`.
 * `TauCeti.Vortex.norm_sectionValue_le_of_add`: `|α_x| ≤ |α_{y₁}|` for vortices with divisors
   `D₁ + D₂` and `D₁`.
 * `TauCeti.Vortex.integral_abs_sq_norm_sectionValue_sub_mul_eq`:
   `∫ |s_x - s₁ s₂| = ∫ (1 - s₁) (1 - s₂)`.
-* `TauCeti.Vortex.tendsto_integral_abs_sq_norm_sectionValue_sub_mul`: the `L¹` distance tends to
-  zero as the two clusters separate.
+* `TauCeti.Vortex.tendsto_integral_abs_sq_norm_sectionValue_sub_mul`: the `L¹` distance between
+  `|α_x|²` and `|α_{y₁}|² |α_{y₂}|²` tends to zero as the two clusters separate.
 
 ## References
 
@@ -157,7 +161,7 @@ theorem differentiableAt_mulField_apply_three {z : ℂ}
 /-- **The product of two holomorphic fields is holomorphic.** If `x` and `y` satisfy the
 holomorphicity rows `∂bar_a α = 0` of the vortex equation at `z`, so does their tensor product
 `mulField x y`, by the Leibniz rule for `∂bar`. -/
-theorem equation_mulField_eq_zero {z : ℂ}
+theorem equation_mulField_apply_one_eq_zero_and_apply_two_eq_zero {z : ℂ}
     (hxp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hxq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
     (hyp : DifferentiableAt ℝ (fun w ↦ y w 2) z) (hyq : DifferentiableAt ℝ (fun w ↦ y w 3) z)
     (hx : equation x z 1 = 0 ∧ equation x z 2 = 0)
@@ -177,6 +181,15 @@ theorem equation_mulField_eq_zero {z : ℂ}
   push_cast
   ring
 
+/-- **The zero divisor of the product field.** The zero multiplicities of the section of
+`mulField x y` are the sums of those of `x` and `y`. -/
+theorem isZeroMultiplicity_sectionValue_mulField {m₁ m₂ : ℂ → ℕ}
+    (h₁ : IsZeroMultiplicity (sectionValue x) m₁) (h₂ : IsZeroMultiplicity (sectionValue y) m₂) :
+    IsZeroMultiplicity (sectionValue (mulField x y)) (m₁ + m₂) := by
+  rw [show sectionValue (mulField x y) = fun w ↦ sectionValue x w * sectionValue y w from
+    funext (sectionValue_mulField x y)]
+  exact h₁.mul h₂
+
 end MulField
 
 /-! ### The pointwise comparison -/
@@ -185,17 +198,31 @@ section Comparison
 
 variable {x y₁ y₂ : ℂ → EuclideanSpace ℝ (Fin 4)}
 
+/-- A component of a `C²` field is `C²`. -/
+private theorem contDiff_apply {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : ContDiff ℝ 2 u)
+    (i : Fin 4) : ContDiff ℝ 2 fun w ↦ u w i :=
+  (contDiff_piLp 2).1 hu i
+
+/-- A component of a `C²` field is differentiable. -/
+private theorem differentiable_apply {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : ContDiff ℝ 2 u)
+    (i : Fin 4) : Differentiable ℝ fun w ↦ u w i :=
+  (contDiff_apply hu i).differentiable two_ne_zero
+
+/-- The section `α` of a `C²` field is continuous. -/
+private theorem continuous_sectionValue {u : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hu : ContDiff ℝ 2 u) : Continuous (sectionValue u) :=
+  (contDiff_sectionValue (contDiff_apply hu 2) (contDiff_apply hu 3)).continuous
+
 /-- The squared modulus `|α|²` of a `C²` field is continuous. -/
 private theorem continuous_sq_norm_sectionValue {u : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hu : ContDiff ℝ 2 u) : Continuous fun z ↦ ‖sectionValue u z‖ ^ 2 :=
-  (contDiff_sectionValue ((contDiff_piLp 2).1 hu 2)
-    ((contDiff_piLp 2).1 hu 3)).continuous.norm.pow 2
+  (continuous_sectionValue hu).norm.pow 2
 
 /-- The logarithm of `|α|² = 4 (p² + q²)` is `C²` where the section does not vanish. -/
 private theorem contDiffAt_log_normSq {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : ContDiff ℝ 2 u)
     {z : ℂ} (hz : sectionValue u z ≠ 0) :
     ContDiffAt ℝ 2 (fun w ↦ Real.log (4 * (u w 2 ^ 2 + u w 3 ^ 2))) z :=
-  (contDiff_normSq ((contDiff_piLp 2).1 hu 2) ((contDiff_piLp 2).1 hu 3)).contDiffAt.log <| by
+  (contDiff_normSq (contDiff_apply hu 2) (contDiff_apply hu 3)).contDiffAt.log <| by
     rw [← sq_norm_sectionValue]
     exact pow_ne_zero 2 (norm_ne_zero_iff.2 hz)
 
@@ -204,10 +231,9 @@ where the section does not vanish. -/
 private theorem laplacian_log_normSq_eq {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : ContDiff ℝ 2 u)
     (hsol : ∀ z, equation u z = 0) {z : ℂ} (hz : sectionValue u z ≠ 0) :
     Δ (fun w ↦ Real.log (4 * (u w 2 ^ 2 + u w 3 ^ 2))) z = (‖sectionValue u z‖ ^ 2 - 1) / 4 := by
-  rw [laplacian_log_normSq_of_equation_eq_zero
-    (((contDiff_piLp 2).1 hu 0).differentiable two_ne_zero z)
-    (((contDiff_piLp 2).1 hu 1).differentiable two_ne_zero z) ((contDiff_piLp 2).1 hu 2).contDiffAt
-    ((contDiff_piLp 2).1 hu 3).contDiffAt (by rwa [Ne, ← sectionValue_eq_zero_iff])
+  rw [laplacian_log_normSq_of_equation_eq_zero (differentiable_apply hu 0 z)
+    (differentiable_apply hu 1 z) (contDiff_apply hu 2).contDiffAt (contDiff_apply hu 3).contDiffAt
+    (by rwa [Ne, ← sectionValue_eq_zero_iff])
     (.of_forall hsol), sq_norm_sectionValue]
 
 /-- **The scalar equation of the ratio.** If `α_x = h α_{y₁} α_{y₂}` for vortices `x`, `y₁`, `y₂`
@@ -221,9 +247,6 @@ private theorem laplacian_log_norm_sq_eq_of_mul {h : ℂ → ℂ} {z : ℂ}
     (hz : sectionValue y₁ z * sectionValue y₂ z ≠ 0) :
     Δ (fun w ↦ Real.log (‖h w‖ ^ 2)) z =
       (‖sectionValue x z‖ ^ 2 - ‖sectionValue y₁ z‖ ^ 2 - ‖sectionValue y₂ z‖ ^ 2 + 1) / 4 := by
-  have hc (u : ℂ → EuclideanSpace ℝ (Fin 4)) (hu : ContDiff ℝ 2 u) :
-      Continuous (sectionValue u) :=
-    (contDiff_sectionValue ((contDiff_piLp 2).1 hu 2) ((contDiff_piLp 2).1 hu 3)).continuous
   have hz₁ : sectionValue y₁ z ≠ 0 := left_ne_zero_of_mul hz
   have hz₂ : sectionValue y₂ z ≠ 0 := right_ne_zero_of_mul hz
   have hzx : sectionValue x z ≠ 0 := by rw [hα z]; exact mul_ne_zero (hh₀ z) hz
@@ -233,8 +256,8 @@ private theorem laplacian_log_norm_sq_eq_of_mul {h : ℂ → ℂ} {z : ℂ}
   have hev : (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =ᶠ[𝓝 z]
       ((fun w ↦ Real.log (‖h w‖ ^ 2)) + fun w ↦ Real.log (4 * (y₁ w 2 ^ 2 + y₁ w 3 ^ 2))) +
         fun w ↦ Real.log (4 * (y₂ w 2 ^ 2 + y₂ w 3 ^ 2)) := by
-    filter_upwards [(hc y₁ hy₁).continuousAt.eventually_ne hz₁,
-      (hc y₂ hy₂).continuousAt.eventually_ne hz₂] with w hw₁ hw₂
+    filter_upwards [(continuous_sectionValue hy₁).continuousAt.eventually_ne hz₁,
+      (continuous_sectionValue hy₂).continuousAt.eventually_ne hz₂] with w hw₁ hw₂
     have hn (c : ℂ) (hc : c ≠ 0) : ‖c‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hc)
     simp only [Pi.add_apply, ← sq_norm_sectionValue, hα w, norm_mul, mul_pow]
     rw [Real.log_mul (hn _ (hh₀ w)) (mul_ne_zero (hn _ hw₁) (hn _ hw₂)),
@@ -254,9 +277,8 @@ private theorem norm_sectionValue_sq_le_one {u : ℂ → EuclideanSpace ℝ (Fin
     (hlim : Tendsto (fun z ↦ 4 * (u z 2 ^ 2 + u z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (z : ℂ) :
     ‖sectionValue u z‖ ^ 2 ≤ 1 := by
   rw [sq_norm_sectionValue]
-  exact normSq_le_one_of_tendsto (((contDiff_piLp 2).1 hu 0).differentiable two_ne_zero)
-    (((contDiff_piLp 2).1 hu 1).differentiable two_ne_zero) ((contDiff_piLp 2).1 hu 2)
-    ((contDiff_piLp 2).1 hu 3) hsol hlim z
+  exact normSq_le_one_of_tendsto (differentiable_apply hu 0) (differentiable_apply hu 1)
+    (contDiff_apply hu 2) (contDiff_apply hu 3) hsol hlim z
 
 /-- **The maximum principle for the ratio.** If `α_x = h α_{y₁} α_{y₂}` for vortices `x`, `y₁`, `y₂`
 with `|α| → 1` at infinity and a nowhere-vanishing `C²` factor `h`, and the zeros of
@@ -311,39 +333,35 @@ private theorem norm_le_one_of_sectionValue_eq_mul {h : ℂ → ℂ}
   exact (pow_le_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 hw₀
 
 /-- **The zeros of a vortex with divisor `D₁ + D₂` against the two clusters.** Let `x`, `y₁`, `y₂`
-be `C²` vortices on the plane with `|α| → 1` at infinity and zero divisors `D₁ + D₂`, `D₁` and
-`D₂`. Then `α_x = h α_{y₁} α_{y₂}` for a nowhere-vanishing `C²` function `h`. -/
-theorem exists_contDiff_sectionValue_eq_mul_mul_of_add {D₁ D₂ : Multiset ℂ}
-    (hx : ContDiff ℝ 2 x) (hy₁ : ContDiff ℝ 2 y₁) (hy₂ : ContDiff ℝ 2 y₂)
-    (hxsol : ∀ z, equation x z = 0) (hy₁sol : ∀ z, equation y₁ z = 0)
-    (hy₂sol : ∀ z, equation y₂ z = 0)
+be fields on the plane with `C^k` connection and differentiable section components (`1 ≤ k`),
+solving the holomorphicity rows, with zero divisors `D₁ + D₂`, `D₁` and `D₂`. Then
+`α_x = h α_{y₁} α_{y₂}` for a nowhere-vanishing `C^k` function `h`. -/
+theorem exists_contDiff_sectionValue_eq_mul_mul_of_add {k : ℕ∞} (hk : 1 ≤ k) {D₁ D₂ : Multiset ℂ}
+    (hxb₁ : ContDiff ℝ k (fun w ↦ x w 0)) (hxb₂ : ContDiff ℝ k (fun w ↦ x w 1))
+    (hxp : Differentiable ℝ (fun w ↦ x w 2)) (hxq : Differentiable ℝ (fun w ↦ x w 3))
+    (hxhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hy₁b₁ : ContDiff ℝ k (fun w ↦ y₁ w 0)) (hy₁b₂ : ContDiff ℝ k (fun w ↦ y₁ w 1))
+    (hy₁p : Differentiable ℝ (fun w ↦ y₁ w 2)) (hy₁q : Differentiable ℝ (fun w ↦ y₁ w 3))
+    (hy₁hol : ∀ w, equation y₁ w 1 = 0 ∧ equation y₁ w 2 = 0)
+    (hy₂b₁ : ContDiff ℝ k (fun w ↦ y₂ w 0)) (hy₂b₂ : ContDiff ℝ k (fun w ↦ y₂ w 1))
+    (hy₂p : Differentiable ℝ (fun w ↦ y₂ w 2)) (hy₂q : Differentiable ℝ (fun w ↦ y₂ w 3))
+    (hy₂hol : ∀ w, equation y₂ w 1 = 0 ∧ equation y₂ w 2 = 0)
     (hD : IsZeroMultiplicity (sectionValue x) (Multiset.count · (D₁ + D₂)))
     (hD₁ : IsZeroMultiplicity (sectionValue y₁) (Multiset.count · D₁))
     (hD₂ : IsZeroMultiplicity (sectionValue y₂) (Multiset.count · D₂)) :
-    ∃ h : ℂ → ℂ, ContDiff ℝ 2 h ∧ (∀ z, h z ≠ 0) ∧
+    ∃ h : ℂ → ℂ, ContDiff ℝ k h ∧ (∀ z, h z ≠ 0) ∧
       ∀ z, sectionValue x z = h z * (sectionValue y₁ z * sectionValue y₂ z) := by
-  have hd (u : ℂ → EuclideanSpace ℝ (Fin 4)) (hu : ContDiff ℝ 2 u) (i : Fin 4) :
-      Differentiable ℝ fun w ↦ u w i :=
-    ((contDiff_piLp 2).1 hu i).differentiable two_ne_zero
-  have hhol (u : ℂ → EuclideanSpace ℝ (Fin 4)) (hsol : ∀ z, equation u z = 0) (w : ℂ) :
-      equation u w 1 = 0 ∧ equation u w 2 = 0 := by
-    simp [hsol w]
   -- The product field has the section `α_{y₁} α_{y₂}`, whose zero multiplicities are those of
   -- `D₁ + D₂`.
   have hmul : IsZeroMultiplicity (sectionValue (mulField y₁ y₂)) (Multiset.count · (D₁ + D₂)) := by
-    convert hD₁.mul hD₂ using 1
-    · exact funext (sectionValue_mulField y₁ y₂)
-    · exact funext fun z ↦ Multiset.count_add z D₁ D₂
-  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul (k := 2) (by norm_num)
-    ((contDiff_piLp 2).1 hx 0) ((contDiff_piLp 2).1 hx 1) (hd x hx 2) (hd x hx 3) (hhol x hxsol)
-    (((contDiff_piLp 2).1 hy₁ 0).add ((contDiff_piLp 2).1 hy₂ 0))
-    (((contDiff_piLp 2).1 hy₁ 1).add ((contDiff_piLp 2).1 hy₂ 1))
-    (fun w ↦ differentiableAt_mulField_apply_two (hd y₁ hy₁ 2 w) (hd y₁ hy₁ 3 w)
-      (hd y₂ hy₂ 2 w) (hd y₂ hy₂ 3 w))
-    (fun w ↦ differentiableAt_mulField_apply_three (hd y₁ hy₁ 2 w) (hd y₁ hy₁ 3 w)
-      (hd y₂ hy₂ 2 w) (hd y₂ hy₂ 3 w))
-    (fun w ↦ equation_mulField_eq_zero (hd y₁ hy₁ 2 w) (hd y₁ hy₁ 3 w) (hd y₂ hy₂ 2 w)
-      (hd y₂ hy₂ 3 w) (hhol y₁ hy₁sol w) (hhol y₂ hy₂sol w))
+    convert isZeroMultiplicity_sectionValue_mulField hD₁ hD₂ using 1
+    exact funext fun z ↦ Multiset.count_add z D₁ D₂
+  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul hk hxb₁ hxb₂ hxp hxq hxhol
+    (hy₁b₁.add hy₂b₁) (hy₁b₂.add hy₂b₂)
+    (fun w ↦ differentiableAt_mulField_apply_two (hy₁p w) (hy₁q w) (hy₂p w) (hy₂q w))
+    (fun w ↦ differentiableAt_mulField_apply_three (hy₁p w) (hy₁q w) (hy₂p w) (hy₂q w))
+    (fun w ↦ equation_mulField_apply_one_eq_zero_and_apply_two_eq_zero (hy₁p w) (hy₁q w)
+      (hy₂p w) (hy₂q w) (hy₁hol w) (hy₂hol w))
     (isZeroMultiplicity_iff.1 hD) (isZeroMultiplicity_iff.1 hmul)
   exact ⟨h, hh, hh₀, fun z ↦ by rw [hα z, sectionValue_mulField]⟩
 
@@ -361,8 +379,15 @@ theorem norm_sectionValue_le_mul_of_add {D₁ D₂ : Multiset ℂ}
     (hD₁ : IsZeroMultiplicity (sectionValue y₁) (Multiset.count · D₁))
     (hD₂ : IsZeroMultiplicity (sectionValue y₂) (Multiset.count · D₂)) (z : ℂ) :
     ‖sectionValue x z‖ ≤ ‖sectionValue y₁ z‖ * ‖sectionValue y₂ z‖ := by
-  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul_mul_of_add hx hy₁ hy₂ hxsol
-    hy₁sol hy₂sol hD hD₁ hD₂
+  have hhol (u : ℂ → EuclideanSpace ℝ (Fin 4)) (hsol : ∀ z, equation u z = 0) (w : ℂ) :
+      equation u w 1 = 0 ∧ equation u w 2 = 0 := by
+    simp [hsol w]
+  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul_mul_of_add (k := 2) (by norm_num)
+    (contDiff_apply hx 0) (contDiff_apply hx 1) (differentiable_apply hx 2)
+    (differentiable_apply hx 3) (hhol x hxsol) (contDiff_apply hy₁ 0) (contDiff_apply hy₁ 1)
+    (differentiable_apply hy₁ 2) (differentiable_apply hy₁ 3) (hhol y₁ hy₁sol)
+    (contDiff_apply hy₂ 0) (contDiff_apply hy₂ 1) (differentiable_apply hy₂ 2)
+    (differentiable_apply hy₂ 3) (hhol y₂ hy₂sol) hD hD₁ hD₂
   -- The zeros of `α_{y₁} α_{y₂}` lie in the finite set `D₁ + D₂`, so they have empty interior.
   have hsub : {z | sectionValue y₁ z * sectionValue y₂ z = 0} ⊆ ↑(D₁ + D₂).toFinset := by
     intro z hz
@@ -414,8 +439,8 @@ private theorem integral_one_sub_norm_sectionValue_sq {u : ℂ → EuclideanSpac
     (hD : IsZeroMultiplicity (sectionValue u) (Multiset.count · D)) :
     ∫ z, (1 - ‖sectionValue u z‖ ^ 2) = 16 * Real.pi * Multiset.card D := by
   simpa only [sq_norm_sectionValue] using integral_one_sub_normSq_eq_mul_card
-    ((contDiff_piLp 2).1 hu 0) ((contDiff_piLp 2).1 hu 1) ((contDiff_piLp 2).1 hu 2)
-    ((contDiff_piLp 2).1 hu 3) hsol hlim hD
+    (contDiff_apply hu 0) (contDiff_apply hu 1) (contDiff_apply hu 2) (contDiff_apply hu 3) hsol
+    hlim hD
 
 /-- The defect `1 - |α|²` of a vortex with `|α| → 1` at infinity is integrable. -/
 private theorem integrable_one_sub_norm_sectionValue_sq {u : ℂ → EuclideanSpace ℝ (Fin 4)}
@@ -423,9 +448,8 @@ private theorem integrable_one_sub_norm_sectionValue_sq {u : ℂ → EuclideanSp
     (hlim : Tendsto (fun z ↦ 4 * (u z 2 ^ 2 + u z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     Integrable fun z ↦ 1 - ‖sectionValue u z‖ ^ 2 := by
   simpa only [sq_norm_sectionValue] using integrable_one_sub_normSq (μ := volume)
-    (((contDiff_piLp 2).1 hu 0).differentiable two_ne_zero)
-    (((contDiff_piLp 2).1 hu 1).differentiable two_ne_zero) ((contDiff_piLp 2).1 hu 2)
-    ((contDiff_piLp 2).1 hu 3) hsol hlim
+    (differentiable_apply hu 0) (differentiable_apply hu 1) (contDiff_apply hu 2)
+    (contDiff_apply hu 3) hsol hlim
 
 /-- The overlap `(1 - |α_{y₁}|²) (1 - |α_{y₂}|²)` of two vortex defects is integrable. -/
 private theorem integrable_one_sub_mul_one_sub (hy₁ : ContDiff ℝ 2 y₁) (hy₂ : ContDiff ℝ 2 y₂)
@@ -487,48 +511,15 @@ theorem integral_abs_sq_norm_sectionValue_sub_mul_eq {D₁ D₂ : Multiset ℂ}
   push_cast
   ring
 
-/-- **Separated clusters.** Let `y₁` and `y₂` be `C²` vortices on the plane with `|α| → 1` at
-infinity and zero divisors `D₁` and `D₂`, and for each `a ∈ ℂ` let `x a` be a `C²` vortex with
-`|α| → 1` at infinity whose zero divisor is `D₁` together with the translate `D₂ - a`. As the
-second cluster moves off to infinity, `x a` approaches the product of `y₁` and the translate
-`z ↦ y₂ (z + a)` of `y₂` in `L¹`:
-
-`∫ | |α_{x a}(z)|² - |α_{y₁}(z)|² |α_{y₂}(z + a)|² | → 0`  as `a → ∞`. -/
-theorem tendsto_integral_abs_sq_norm_sectionValue_sub_mul {D₁ D₂ : Multiset ℂ}
-    {x : ℂ → ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hx : ∀ a, ContDiff ℝ 2 (x a)) (hy₁ : ContDiff ℝ 2 y₁) (hy₂ : ContDiff ℝ 2 y₂)
-    (hxsol : ∀ a z, equation (x a) z = 0) (hy₁sol : ∀ z, equation y₁ z = 0)
-    (hy₂sol : ∀ z, equation y₂ z = 0)
-    (hxlim : ∀ a, Tendsto (fun z ↦ 4 * (x a z 2 ^ 2 + x a z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+/-- The overlap of the defect of `y₁` with the defect of the translate `z ↦ y₂ (z + a)` tends to
+zero as `a → ∞`, by dominated convergence: it is bounded by the integrable defect of `y₁`, and
+tends to zero pointwise because `|α_{y₂}| → 1` at infinity. -/
+private theorem tendsto_integral_one_sub_mul_one_sub_comp_add (hy₁ : ContDiff ℝ 2 y₁)
+    (hy₂ : ContDiff ℝ 2 y₂) (hy₁sol : ∀ z, equation y₁ z = 0) (hy₂sol : ∀ z, equation y₂ z = 0)
     (hy₁lim : Tendsto (fun z ↦ 4 * (y₁ z 2 ^ 2 + y₁ z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hy₂lim : Tendsto (fun z ↦ 4 * (y₂ z 2 ^ 2 + y₂ z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hD : ∀ a, IsZeroMultiplicity (sectionValue (x a))
-      (Multiset.count · (D₁ + D₂.map (· - a))))
-    (hD₁ : IsZeroMultiplicity (sectionValue y₁) (Multiset.count · D₁))
-    (hD₂ : IsZeroMultiplicity (sectionValue y₂) (Multiset.count · D₂)) :
-    Tendsto (fun a ↦ ∫ z, |‖sectionValue (x a) z‖ ^ 2 -
-      ‖sectionValue y₁ z‖ ^ 2 * ‖sectionValue y₂ (z + a)‖ ^ 2|) (cocompact ℂ) (𝓝 0) := by
-  have hadd (a : ℂ) : Tendsto (· + a) (cocompact ℂ) (cocompact ℂ) :=
-    (Homeomorph.addRight a).isClosedEmbedding.tendsto_cocompact
-  -- The translate `z ↦ y₂ (z + a)` is a vortex with divisor `D₂ - a`, so the overlap identity
-  -- applies to it.
-  have hover (a : ℂ) : ∫ z, |‖sectionValue (x a) z‖ ^ 2 -
-      ‖sectionValue y₁ z‖ ^ 2 * ‖sectionValue y₂ (z + a)‖ ^ 2| =
-        ∫ z, (1 - ‖sectionValue y₁ z‖ ^ 2) * (1 - ‖sectionValue y₂ (z + a)‖ ^ 2) := by
-    have htr : translateField a y₂ = fun z ↦ y₂ (z + a) := funext (translateField_apply a y₂)
-    have hc : ContDiff ℝ 2 (translateField a y₂) := by
-      rw [htr]
-      exact hy₂.comp (contDiff_id.add contDiff_const)
-    have hl : Tendsto (fun z ↦ 4 * (translateField a y₂ z 2 ^ 2 + translateField a y₂ z 3 ^ 2))
-        (cocompact ℂ) (𝓝 1) := by
-      simpa only [translateField_apply, Function.comp_def] using hy₂lim.comp (hadd a)
-    simpa only [sectionValue_translateField] using
-      integral_abs_sq_norm_sectionValue_sub_mul_eq (hx a) hy₁ hc (hxsol a) hy₁sol
-        (fun z ↦ by rw [equation_translateField]; exact hy₂sol _) (hxlim a) hy₁lim hl (hD a) hD₁
-        (isZeroMultiplicity_sectionValue_translateField hD₂ a)
-  simp_rw [hover]
-  -- Dominated convergence: the overlap is bounded by the integrable defect of `y₁`, and tends to
-  -- zero pointwise because `|α_{y₂}| → 1` at infinity.
+    (hy₂lim : Tendsto (fun z ↦ 4 * (y₂ z 2 ^ 2 + y₂ z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    Tendsto (fun a ↦ ∫ z, (1 - ‖sectionValue y₁ z‖ ^ 2) * (1 - ‖sectionValue y₂ (z + a)‖ ^ 2))
+      (cocompact ℂ) (𝓝 0) := by
   have : (cocompact ℂ).IsCountablyGenerated := by
     rw [← Metric.cobounded_eq_cocompact, ← comap_norm_atTop]
     infer_instance
@@ -556,6 +547,40 @@ theorem tendsto_integral_abs_sq_norm_sectionValue_sub_mul {D₁ D₂ : Multiset 
       (continuous_const.sub (hc₂.comp (continuous_id.add continuous_const)))).aestronglyMeasurable)
     (.of_forall fun a ↦ .of_forall (hbound a))
     (integrable_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim) (.of_forall hpt)
+
+/-- **Separated clusters.** Let `y₁` and `y₂` be `C²` vortices on the plane with `|α| → 1` at
+infinity and zero divisors `D₁` and `D₂`, and for each `a ∈ ℂ` let `x a` be a `C²` vortex with
+`|α| → 1` at infinity whose zero divisor is `D₁` together with the translate `D₂ - a`. As the
+second cluster moves off to infinity, `|α_{x a}|²` approaches `|α_{y₁}|² |α_{y₂}(· + a)|²` in
+`L¹`:
+
+`∫ | |α_{x a}(z)|² - |α_{y₁}(z)|² |α_{y₂}(z + a)|² | → 0`  as `a → ∞`. -/
+theorem tendsto_integral_abs_sq_norm_sectionValue_sub_mul {D₁ D₂ : Multiset ℂ}
+    {x : ℂ → ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ∀ a, ContDiff ℝ 2 (x a)) (hy₁ : ContDiff ℝ 2 y₁) (hy₂ : ContDiff ℝ 2 y₂)
+    (hxsol : ∀ a z, equation (x a) z = 0) (hy₁sol : ∀ z, equation y₁ z = 0)
+    (hy₂sol : ∀ z, equation y₂ z = 0)
+    (hxlim : ∀ a, Tendsto (fun z ↦ 4 * (x a z 2 ^ 2 + x a z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hy₁lim : Tendsto (fun z ↦ 4 * (y₁ z 2 ^ 2 + y₁ z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hy₂lim : Tendsto (fun z ↦ 4 * (y₂ z 2 ^ 2 + y₂ z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hD : ∀ a, IsZeroMultiplicity (sectionValue (x a))
+      (Multiset.count · (D₁ + D₂.map (· - a))))
+    (hD₁ : IsZeroMultiplicity (sectionValue y₁) (Multiset.count · D₁))
+    (hD₂ : IsZeroMultiplicity (sectionValue y₂) (Multiset.count · D₂)) :
+    Tendsto (fun a ↦ ∫ z, |‖sectionValue (x a) z‖ ^ 2 -
+      ‖sectionValue y₁ z‖ ^ 2 * ‖sectionValue y₂ (z + a)‖ ^ 2|) (cocompact ℂ) (𝓝 0) := by
+  -- The translate `z ↦ y₂ (z + a)` is a vortex with divisor `D₂ - a`, so the overlap identity
+  -- applies to it.
+  have hover (a : ℂ) : ∫ z, |‖sectionValue (x a) z‖ ^ 2 -
+      ‖sectionValue y₁ z‖ ^ 2 * ‖sectionValue y₂ (z + a)‖ ^ 2| =
+        ∫ z, (1 - ‖sectionValue y₁ z‖ ^ 2) * (1 - ‖sectionValue y₂ (z + a)‖ ^ 2) := by
+    simpa only [sectionValue_translateField] using
+      integral_abs_sq_norm_sectionValue_sub_mul_eq (hx a) hy₁ (contDiff_translateField hy₂ a)
+        (hxsol a) hy₁sol (fun z ↦ by rw [equation_translateField]; exact hy₂sol _) (hxlim a)
+        hy₁lim (tendsto_comp_translateField (f := fun v ↦ 4 * (v 2 ^ 2 + v 3 ^ 2)) hy₂lim a)
+        (hD a) hD₁ (isZeroMultiplicity_sectionValue_translateField hD₂ a)
+  simp_rw [hover]
+  exact tendsto_integral_one_sub_mul_one_sub_comp_add hy₁ hy₂ hy₁sol hy₂sol hy₁lim hy₂lim
 
 end Overlap
 
