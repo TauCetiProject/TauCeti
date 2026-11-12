@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.ModelTransport.Interior
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # The interior of a manifold with corners as a manifold without boundary
@@ -199,15 +200,6 @@ private theorem chartAt_eq (x : ManifoldInterior I M) :
       (chart_mem_atlas H _) :=
   BoundarylessModel.interiorChartAt_eq I x
 
-/-- A point lies in the target of the chart of an open subset exactly when it lies in the target
-of the ambient chart and its preimage lies in the subset. -/
-private theorem mem_chartAt_target_opens (p : I.interiorOpens M) {w : H} :
-    w ∈ (chartAt H p).target ↔
-      w ∈ (chartAt H p.val).target ∧ (chartAt H p.val).symm w ∈ I.interiorOpens M := by
-  simp only [Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def,
-    OpenPartialHomeomorph.trans_target, Opens.openPartialHomeomorphSubtypeCoe_target,
-    mem_inter_iff, mem_preimage, SetLike.mem_coe]
-
 /-- The chart of the interior at `x` is the extended chart of `M` at `x`. -/
 @[simp]
 theorem chartAt_apply (x y : ManifoldInterior I M) :
@@ -237,7 +229,7 @@ private theorem mem_extChartAt_target_iff (x : ManifoldInterior I M) {v : E} :
       I.IsInteriorPoint ((chartAt H x.val).symm (I.symm v)) := by
   rw [_root_.extChartAt_target, chartAt_eq, BoundarylessModel.interiorChart_target]
   simp only [modelWithCornersSelf_coe_symm, preimage_id, modelWithCornersSelf_coe, range_id,
-    inter_univ, mem_inter_iff, mem_preimage, mem_chartAt_target_opens,
+    inter_univ, mem_inter_iff, mem_preimage, Opens.mem_chartAt_target_iff,
     ModelWithCorners.mem_interiorOpens]
   tauto
 
@@ -270,7 +262,8 @@ theorem val_extChartAt_symm (x : ManifoldInterior I M) {v : E}
   refine h.trans ?_
   rw [extChartAt_coe_symm, comp_apply]
   exact (chartAt H x.val).subtypeRestr_symm_apply _
-    ((mem_chartAt_target_opens (homeomorph x)).2 ⟨hc, ((mem_extChartAt_target_iff x).1 hv).2.2⟩)
+    (((I.interiorOpens M).mem_chartAt_target_iff (homeomorph x)).2
+      ⟨hc, ((mem_extChartAt_target_iff x).1 hv).2.2⟩)
 
 /-! ### Smoothness of the inclusion -/
 
