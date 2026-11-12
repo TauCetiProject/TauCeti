@@ -43,6 +43,8 @@ to order one. The pieces are glued over the charts of `A` by the locality of the
 
 * `TauCeti.MemWkpLoc.trivialization_comp_chart_symm`: changes of chart and trivialization
   preserve the local classes of order at most one of the expressions of a section.
+* `TauCeti.memWkpLoc_trivialization_comp_chart_symm_of_cover`: the expression of a section in a
+  chart and trivialization is in the local class if its expressions in a covering family are.
 * `TauCeti.SobolevSection.memWkpLoc_trivialization_comp_chart_symm`: the expressions of an element
   of `W^{k,p}(V)` in arbitrary charts and trivializations are in the local classes.
 * `TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm`: a
@@ -108,10 +110,38 @@ theorem MemWkpLoc.trivialization_comp_chart_symm (hk : k ≤ 1)
   have h₂ := h₁.contDiffOn_clm_apply (Ω := ⟨_, φ.isOpen_inter_preimage_symm
     (e'.open_baseSet.inter e.open_baseSet)⟩) hT (by exact_mod_cast hk)
     fun y hy ↦ ⟨hy.1, hy.2.1.2, hy.2.1.1⟩
+  -- Pointwise, the coordinate change maps the expression in `e'` to the expression in `e`.
   refine h₂.congr_ae (ae_restrict_of_forall_mem hW.measurableSet fun y hy ↦ ?_)
+  -- `rw`, not `simp`: the base point also occurs in the type of the section value.
   beta_reduce
-  rw [ψ.left_inv hy.2.2.1, ContinuousLinearEquiv.coe_coe,
-    Trivialization.coordChangeL_apply _ _ ⟨hy.2.1.2, hy.2.1.1⟩, e'.symm_apply_apply_mk hy.2.1.2]
+  rw [ψ.left_inv hy.2.2.1]
+  simp [Trivialization.coordChangeL_apply, hy.2.1.1, hy.2.1.2]
+
+/-- **Gluing localizations over a cover.** Let `φ` be a chart of the maximal `C¹` atlas of `M` and
+`e` a trivialization of the bundle's trivialization atlas. Let `(ψ j, e' j)` be a family of such
+charts and trivializations and `U j` open sets such that every point `x` of `φ.source ∩ e.baseSet`
+lies in the source of some `ψ j` and the base set of `e' j` with `ψ j x ∈ U j`. If the expression of
+a section `s` in `(ψ j, e' j)` lies in `MemWkpLoc p (U j) k` for every `j`, with `k ≤ 1`, then its
+expression in `(φ, e)` lies in `MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' e.baseSet) k`. -/
+theorem memWkpLoc_trivialization_comp_chart_symm_of_cover (hk : k ≤ 1)
+    {φ : OpenPartialHomeomorph M ℂ} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 M)
+    (e : Trivialization F (π F V)) [MemTrivializationAtlas e] {ι : Type*}
+    (ψ : ι → OpenPartialHomeomorph M ℂ) (hψ : ∀ j, ψ j ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 M)
+    (e' : ι → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e' j)] (U : ι → Set ℂ)
+    (hU : ∀ j, IsOpen (U j))
+    (hcover : ∀ x ∈ φ.source ∩ e.baseSet,
+      ∃ j, x ∈ (ψ j).source ∧ x ∈ (e' j).baseSet ∧ ψ j x ∈ U j) {s : ∀ x, V x}
+    (hs : ∀ j, MemWkpLoc p (U j) k fun z ↦ (e' j ⟨(ψ j).symm z, s ((ψ j).symm z)⟩).2) :
+    MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' e.baseSet) k fun y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2 := by
+  -- The part of the chart `φ` lying over the domain of `(ψ j, e' j)`.
+  let O (j : ι) : Opens ℂ := ⟨φ.target ∩ φ.symm ⁻¹' (e.baseSet ∩ (e' j).baseSet ∩
+      ((ψ j).source ∩ ψ j ⁻¹' U j)),
+    φ.isOpen_inter_preimage_symm ((e.open_baseSet.inter (e' j).open_baseSet).inter
+      ((ψ j).continuousOn.isOpen_inter_preimage (ψ j).open_source (hU j)))⟩
+  refine (memWkpLoc_iff_forall_inter O fun y hy ↦ ?_).2 fun j ↦
+    ((hs j).trivialization_comp_chart_symm hk hφ (hψ j) e (e' j) (hU j)).mono inter_subset_right
+  obtain ⟨j, hj⟩ := hcover (φ.symm y) ⟨φ.map_target hy.1, hy.2⟩
+  exact mem_iUnion.2 ⟨j, hy.1, ⟨hy.2, hj.2.1⟩, hj.1, hj.2.2⟩
 
 namespace SobolevSection
 
@@ -129,22 +159,13 @@ theorem memWkpLoc_trivialization_comp_chart_symm (hk : k ≤ 1) (w : SobolevSect
       =ᵐ[volume.restrict (A.image i)] A.coord i s)
     {φ : OpenPartialHomeomorph M ℂ} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 M)
     (e : Trivialization F (π F V)) [MemTrivializationAtlas e] :
-    MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' e.baseSet) k fun y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2 := by
-  -- The part of the chart lying over the domain of chart `i` of `A`.
-  let O (i : Fin A.n) : Opens ℂ := ⟨φ.target ∩ φ.symm ⁻¹' (e.baseSet ∩ (A.triv i).baseSet ∩
-      ((A.chart i).source ∩ A.chart i ⁻¹' A.image i)),
-    φ.isOpen_inter_preimage_symm ((e.open_baseSet.inter (A.triv i).open_baseSet).inter
-      ((A.chart i).continuousOn.isOpen_inter_preimage (A.chart i).open_source
-        (A.image i).isOpen))⟩
-  refine (memWkpLoc_iff_forall_inter O fun y hy ↦ ?_).2 fun i ↦ ?_
-  · obtain ⟨i, hi⟩ := A.exists_mem_dom (φ.symm y)
-    exact mem_iUnion.2 ⟨i, hy.1, ⟨hy.2, A.dom_subset_baseSet i hi⟩,
-      A.dom_subset_chart_source i hi, A.mem_image.2 ⟨_, hi, rfl⟩⟩
-  · have h := memWkpLoc_coord w hs i
-    rw [funext (A.coord_def i s)] at h
-    exact (h.trivialization_comp_chart_symm hk hφ
-      (IsManifold.chart_mem_maximalAtlas _) e (A.triv i) (A.image i).isOpen).mono
-      inter_subset_right
+    MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' e.baseSet) k fun y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2 :=
+  memWkpLoc_trivialization_comp_chart_symm_of_cover hk hφ e A.chart
+    (fun _ ↦ IsManifold.chart_mem_maximalAtlas _) A.triv (fun i ↦ A.image i)
+    (fun i ↦ (A.image i).isOpen)
+    (fun x _ ↦ let ⟨i, hi⟩ := A.exists_mem_dom x
+      ⟨i, A.dom_subset_chart_source i hi, A.dom_subset_baseSet i hi, A.mem_image.2 ⟨_, hi, rfl⟩⟩)
+    fun i ↦ by simpa only [funext (A.coord_def i s)] using memWkpLoc_coord w hs i
 
 /-- **Sobolev sections from localizations in arbitrary charts.** Let `(φ j, e j)` be a family of
 charts of the maximal `C¹` atlas of `M` and trivializations of the bundle's trivialization atlas,
@@ -165,17 +186,9 @@ theorem exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm (hk : k �
   refine exists_ae_eq_coord_of_memWkpLoc fun i ↦ ⟨_, (A.chart i).isOpen_inter_preimage_symm
     (A.triv i).open_baseSet, (A.closure_image_subset_chart_image_closure_dom i).trans
       (A.chart_image_closure_dom_subset i), ?_⟩
-  -- The part of chart `i` of `A` lying over the domain of `(φ j, e j)`.
-  let O (j : ι) : Opens ℂ := ⟨(A.chart i).target ∩ (A.chart i).symm ⁻¹' ((A.triv i).baseSet ∩
-      (e j).baseSet ∩ ((φ j).source ∩ φ j ⁻¹' U j)),
-    (A.chart i).isOpen_inter_preimage_symm (((A.triv i).open_baseSet.inter (e j).open_baseSet).inter
-      ((φ j).continuousOn.isOpen_inter_preimage (φ j).open_source (hU j)))⟩
-  refine (memWkpLoc_iff_forall_inter O fun y hy ↦ ?_).2 fun j ↦ ?_
-  · obtain ⟨j, hj⟩ := hcover ((A.chart i).symm y)
-    exact mem_iUnion.2 ⟨j, hy.1, ⟨hy.2, hj.2.1⟩, hj.1, hj.2.2⟩
-  · rw [funext (A.coord_def i s)]
-    exact ((hs j).trivialization_comp_chart_symm hk (IsManifold.chart_mem_maximalAtlas _) (hφ j)
-      (A.triv i) (e j) (hU j)).mono inter_subset_right
+  rw [funext (A.coord_def i s)]
+  exact memWkpLoc_trivialization_comp_chart_symm_of_cover hk (IsManifold.chart_mem_maximalAtlas _)
+    (A.triv i) φ hφ e U hU (fun x _ ↦ hcover x) hs
 
 /-- **Not the half-plane indicator.** Let `w` be an element of `W^{1,p}(V)` whose chart data are the
 coordinates of the section `s`. In no chart `φ` of the maximal `C¹` atlas of `M` and trivialization
