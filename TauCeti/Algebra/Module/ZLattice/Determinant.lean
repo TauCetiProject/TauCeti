@@ -310,16 +310,6 @@ theorem IsIntegral.one_le_det (h : IsIntegral L) : 1 ≤ det L := by
   exact_mod_cast Nat.card_pos
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A full lattice with a finite `ℤ`-basis spans `E` over `ℝ` by finitely many vectors, so `E` is
-finite dimensional. -/
-theorem finiteDimensional_of_basis {ι : Type*} [Finite ι] (b : Basis ι ℤ L) :
-    FiniteDimensional ℝ E := by
-  have : Module.Finite ℤ L := Module.Finite.of_basis b
-  have hfg := Submodule.FG.span (A := ℝ) (Module.Finite.iff_fg.mp this)
-  rw [IsZLattice.span_top] at hfg
-  exact ⟨hfg⟩
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- For an integral full lattice `L`, the Gram matrix of a `ℤ`-basis `b` in the integer-valued
 inner product `IsIntegral.integralForm` has determinant `|L^∨ / L| = det L`. -/
 theorem IsIntegral.det_toMatrix_integralForm (h : IsIntegral L) {ι : Type*} [Fintype ι]
@@ -327,7 +317,8 @@ theorem IsIntegral.det_toMatrix_integralForm (h : IsIntegral L) {ι : Type*} [Fi
     (LinearMap.BilinForm.toMatrix b h.integralForm).det = Nat.card (DiscriminantGroup L) := by
   -- The statement involves no measure; the comparison with `det L` uses the Borel volume.
   borelize E
-  have := finiteDimensional_of_basis b
+  have : Module.Finite ℤ L := Module.Finite.of_basis b
+  have := finiteDimensional_of_isZLattice (K := ℝ) L
   refine Int.cast_injective (α := ℝ) ?_
   rw [Int.cast_natCast, ← h.det_eq_card_discriminantGroup, det_eq_det_gram L b, Int.cast_det]
   congr 1

@@ -227,7 +227,8 @@ theorem IsIntegral.signedDiscr_eq_neg_one_pow_mul_det_toMatrix (h : IsIntegral L
     {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℤ L) :
     signedDiscr L =
       (-1) ^ (finrank ℝ E / 2) * (LinearMap.BilinForm.toMatrix b h.integralForm).det := by
-  have := finiteDimensional_of_basis b
+  have : Module.Finite ℤ L := Module.Finite.of_basis b
+  have := finiteDimensional_of_isZLattice (K := ℝ) L
   rw [signedDiscr_def, h.det_toMatrix_integralForm b]
 
 /-- **An even unimodular full lattice has signed discriminant `1`**, since its rank is divisible
