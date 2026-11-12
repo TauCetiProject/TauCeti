@@ -24,8 +24,7 @@ transferred to the *coordinate* process under `pathLaw μ X`, so an argument may
 and its conclusion carried back. It needs no finiteness hypothesis: contractability is a family of
 finite-dimensional map equalities.
 
-The bridges realize the Layer 0 roadmap item asking for process-level ↔ path-law bridges in both
-directions. They reuse the existing `FullyExchangeable` path-law bridge from
+The bridges reuse the existing `FullyExchangeable` path-law bridge from
 `FullyExchangeable.lean` and the contractability bridge from `Contractability.lean`; no
 measure-theoretic infrastructure is vendored.
 -/

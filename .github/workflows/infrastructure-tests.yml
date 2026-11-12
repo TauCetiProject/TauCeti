@@ -58,6 +58,25 @@ jobs:
       - name: Infrastructure policy unit tests
         run: bash scripts/run-infrastructure-tests.sh
 
+      - name: Prepare isolated staging contract fixture
+        run: |
+          mkdir staging-contracts
+          cp -a .github staging-contracts/.github
+          cp -a scripts staging-contracts/scripts
+          cp tauceti.toml staging-contracts/tauceti.toml
+
+      - name: Prepare the deployed staging tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
+          project-directory: staging-contracts
+
+      - name: Check staging lint scope with the deployed implementation
+        run: |
+          git show HEAD:scripts/test_lint_scope.py > staging-contracts/scripts/test_lint_scope.py
+          python3 staging-contracts/scripts/test_lint_scope.py
+
       # The no-stack bot intentionally uses a different Tools release.
       # Test that exact implementation after the general suite, without another runner.
       - name: Prepare stack-policy tools at the production pin
@@ -130,6 +149,23 @@ jobs:
           python3 scripts/test_check_imports.py
           python3 scripts/test_ci_checkout.py --integration
           python3 scripts/test_lake_cache_publish.py --integration
+
+      - name: Checkout the deployed cache extraction fixture
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiTools
+          ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
+          path: staging-cache-tools
+          sparse-checkout: |
+            tauceti_tools/assets/scripts/bulk-unpack-cache.py
+            tauceti_tools/assets/scripts/test_bulk_unpack_cache.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Check cache extraction and native publication with stock Lake
+        run: |
+          export ELAN_TOOLCHAIN="$(cat lean-toolchain)"
+          python3 staging-cache-tools/tauceti_tools/assets/scripts/test_bulk_unpack_cache.py --integration
 
   header-fixtures:
     runs-on:

@@ -144,6 +144,13 @@ theorem negativePlanePerturbation_def (H : ℝ → M → ℝ) (w : ℂ) (x : M) 
         inf.endAngularForm w :=
   (rfl)
 
+/-- The negative plane datum of the zero Hamiltonian vanishes. -/
+@[simp]
+theorem negativePlanePerturbation_zero (w : ℂ) (x : M) :
+    negativePlanePerturbation (0 : ℝ → M → ℝ) w x = 0 := by
+  ext v
+  simp [negativePlanePerturbation_def]
+
 /-- **The plane is a pair of pants with zero inputs.** The pair-of-pants perturbation whose input
 Hamiltonians vanish and whose output Hamiltonian is `H` is the negative plane perturbation of
 `H`. -/
@@ -175,15 +182,8 @@ theorem negativePlanePerturbation_neg (hH : Periodic H 1) (w : ℂ) (x : M) :
   · -- At the pole both sides vanish.
     have h : (inf.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter inf
     simp [negativePlanePerturbation_def, h, smoothTransition.zero_of_nonpos]
-  · obtain ⟨k, hk⟩ := exists_endCoord_inf_neg hw
-    have hcast : (1 / 2 + k : ℂ) = ((1 / 2 + k : ℝ) : ℂ) := by push_cast; ring
-    have him : (inf.endCoord (-w)).im + 1 / 2 = (inf.endCoord w).im + (k + 1) := by
-      rw [hk, Complex.add_im, Complex.mul_I_im, hcast, Complex.ofReal_re]
-      ring
-    have hp : H ((inf.endCoord w).im + (k + 1)) = H (inf.endCoord w).im := by
-      simpa using hH.int_mul (k + 1) (inf.endCoord w).im
-    simp only [negativePlanePerturbation_def, re_endCoord_inf_neg, endAngularForm_inf_neg, him, hp,
-      smul_neg]
+  · simp only [negativePlanePerturbation_def, re_endCoord_inf_neg, endAngularForm_inf_neg,
+      apply_im_endCoord_inf_neg_add_half hH hw, smul_neg]
 
 /-- Families indexed by the ends that are `H` at the end `p` and zero at the other two ends
 inherit any property shared by `H` and `0`. -/
@@ -437,16 +437,11 @@ theorem contMDiffAt_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
     filter_upwards [h] with p hp
     exact plumbedPerturbation_single_inf_eq_zero hq (by linarith) hp.le p.2
   · -- Off it, the point lies in the plumbed four-punctured sphere.
-    have hρ : 0 < ρ := by positivity
-    have hc : w ≠ q.endCenter := fun h => by
-      rw [h, sub_self, norm_zero] at hge
-      linarith
-    have h₁ : w ≠ q.plumbingMap L 1 := fun h =>
-      (h ▸ norm_plumbingMap_one_sub_endCenter_lt hq L).not_ge hge
     exact contMDiffAt_plumbedPerturbation hq
       (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
       (forall_single inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
-        contMDiff_const (hHbs q)) hHbs (by simp) hL ⟨hw.resolve_left hc, h₁⟩ x
+        contMDiff_const (hHbs q)) hHbs (by simp) hL
+      (mem_plumbedSphere_of_le_norm_sub_endCenter hq hw hge) x
 
 section VectorSpace
 

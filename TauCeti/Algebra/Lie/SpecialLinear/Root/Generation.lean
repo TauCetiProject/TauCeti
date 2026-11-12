@@ -126,12 +126,10 @@ private theorem roots_mem_of_lt (S : LieSubalgebra A (sl (Fin (r + 1)) A))
     apply Fin.ext
     simp only [Fin.val_succ]
     dsimp only [b]
-    have hij' : i.val < j.val := hij
     omega
   have hab : a ≤ b := by
     simp only [Fin.le_def]
     dsimp only [a, b]
-    have hij' : i.val < j.val := hij
     omega
   simpa only [ha, hb] using interval_mem r A S he hf a b hab
 

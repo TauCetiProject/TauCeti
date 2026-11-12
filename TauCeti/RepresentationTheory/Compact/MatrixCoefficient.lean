@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Group.Conjugation
 public import TauCeti.RepresentationTheory.Compact.Haar
+public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
 public import TauCeti.RepresentationTheory.Continuous.MatrixCoefficient
 public import Mathlib.MeasureTheory.Function.L2Space
 
@@ -42,6 +43,8 @@ the Haar integral the orthogonality argument evaluates.
   since Haar measure is positive on nonempty open sets.
 * `ContRepresentation.matrixCoeffLp_map_map`: moving both defining vectors by `π h`
   reparametrizes the matrix coefficient by a conjugation.
+* `ContRepresentation.leftRegularLp_matrixCoeffLp`: left translation of a matrix coefficient acts
+  on its second vector.
 
 The uniform-norm algebra is developed in
 `TauCeti/RepresentationTheory/Continuous/MatrixCoefficient.lean`. The mathematical development
@@ -256,6 +259,14 @@ theorem matrixCoeffLp_map_map (hunitary : IsUnitary π) (h : G) (v w : V) :
         ⟨fun g ↦ h⁻¹ * g * (h⁻¹)⁻¹,
           (continuous_const.mul continuous_id).mul continuous_const⟩
         (measurePreserving_conj (haarProb G) h⁻¹)).symm
+
+/-- Left translation of a matrix coefficient acts on its second vector. -/
+theorem leftRegularLp_matrixCoeffLp (hunitary : IsUnitary π) (g : G) (v w : V) :
+    leftRegularLp 𝕜 G g (matrixCoeffLp π hπ v w) = matrixCoeffLp π hπ v (π g w) := by
+  rw [matrixCoeffLp_def, matrixCoeffLp_def, leftRegularLp_toLp]
+  congr 1
+  ext x
+  simp [matrixCoeff_apply_mul_left π hπ hunitary, hunitary.inner_map_left]
 
 end CompactGroup
 

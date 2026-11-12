@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
+public import Mathlib.Analysis.SpecialFunctions.Exponential
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
 # The quotient `(1 - exp (-a)) / a`
@@ -23,6 +26,9 @@ map.
 * `mul_oneSubExpNegDivSelf`: multiplying the series by `a` gives `1 - exp (-a)`.
 * `oneSubExpNegDivSelf_mul`: the corresponding right-multiplication identity.
 * `map_oneSubExpNegDivSelf`: continuous ring homomorphisms preserve the series.
+* `norm_oneSubExpNegDivSelf_sub_one_le`: over `ℝ` or `ℂ`, the series differs from `1` by at most
+  `exp ‖a‖ - 1`.
+* `isUnit_oneSubExpNegDivSelf`: consequently it is a unit when `‖a‖ < log 2`.
 
 ## References
 
@@ -127,3 +133,38 @@ theorem map_oneSubExpNegDivSelf {F : Type*} [FunLike F A B] [RingHomClass F A B]
   simp only [map_inv_natCast_smul f 𝕂 𝕂, map_pow, map_neg]
 
 end Map
+
+section Bound
+
+variable {𝕂 A : Type*} [RCLike 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A] [CompleteSpace A]
+
+/-- The filled-in quotient differs from `1` by at most `exp ‖a‖ - 1`: its series is `1` plus terms
+dominated by those of `exp ‖a‖ - 1`. -/
+theorem norm_oneSubExpNegDivSelf_sub_one_le (a : A) :
+    ‖oneSubExpNegDivSelf 𝕂 a - 1‖ ≤ Real.exp ‖a‖ - 1 := by
+  rw [oneSubExpNegDivSelf_eq_tsum, (summable_oneSubExpNegDivSelf a).tsum_eq_zero_add]
+  simp only [zero_add, Nat.factorial_one, Nat.cast_one, inv_one, pow_zero, one_smul,
+    add_sub_cancel_left]
+  -- The real exponential series without its constant term sums to `exp ‖a‖ - 1`.
+  have hexp : HasSum (fun n : ℕ ↦ ‖a‖ ^ (n + 1) / (n + 1).factorial) (Real.exp ‖a‖ - 1) := by
+    have h := (hasSum_nat_add_iff' 1).2 (expSeries_div_hasSum_exp (𝔸 := ℝ) ‖a‖)
+    simpa [Real.exp_eq_exp_ℝ] using h
+  refine tsum_of_norm_bounded hexp fun n ↦ ?_
+  rw [norm_smul, norm_inv, RCLike.norm_natCast, div_eq_inv_mul]
+  refine mul_le_mul ?_ ((norm_pow_le' _ n.succ_pos).trans_eq (by rw [norm_neg]))
+    (norm_nonneg _) (by positivity)
+  exact inv_anti₀ (by positivity) (by exact_mod_cast Nat.factorial_le (Nat.le_succ _))
+
+/-- For `‖a‖ < log 2` the filled-in quotient is a unit, since it then lies within distance `1`
+of `1`. -/
+theorem isUnit_oneSubExpNegDivSelf {a : A} (ha : ‖a‖ < Real.log 2) :
+    IsUnit (oneSubExpNegDivSelf 𝕂 a) := by
+  have h : ‖1 - oneSubExpNegDivSelf 𝕂 a‖ < 1 := by
+    rw [norm_sub_rev]
+    refine (norm_oneSubExpNegDivSelf_sub_one_le a).trans_lt ?_
+    have := Real.exp_lt_exp.2 ha
+    rw [Real.exp_log two_pos] at this
+    linarith
+  exact sub_sub_self 1 (oneSubExpNegDivSelf 𝕂 a) ▸ (Units.oneSub _ h).isUnit
+
+end Bound

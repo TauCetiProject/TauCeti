@@ -229,7 +229,6 @@ theorem integrable_rpow_gammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (q : ℝ) :
   constructor
   · intro hint
     by_contra hq
-    have haq : a + q ≤ 0 := by linarith
     have hsmall := hint.mono_set (Ioo_subset_Ioi_self : Ioo (0 : ℝ) 1 ⊆ Ioi 0)
     have hscaled : IntegrableOn
         (fun x : ℝ ↦ (r ^ a / Real.Gamma a * exp (-r)) * x ^ (a + q - 1))
@@ -284,7 +283,6 @@ theorem integral_rpow_gammaMeasure (ha : 0 < a) (hr : 0 < r) (hq : -a < q) :
 theorem integral_pow_gammaMeasure (ha : 0 < a) (hr : 0 < r) (n : ℕ) :
     ∫ x, x ^ n ∂gammaMeasure a r = Real.Gamma (a + n) / (Real.Gamma a * r ^ n) := by
   have h := integral_rpow_gammaMeasure ha hr (q := (n : ℝ)) (by
-    have hn : (0 : ℝ) ≤ n := Nat.cast_nonneg n
     linarith)
   simp only [Real.rpow_natCast] at h
   rw [h, Real.rpow_neg hr.le, Real.rpow_natCast]

@@ -75,18 +75,17 @@ theorem _root_.Ideal.comap_mem_minimalPrimes_and_ringKrullDim_eq_of_isIntegral
   algebraize [f.toRingHom]
   have : IsScalarTower E (E ⊗[K] A) (L ⊗[K] A) := .of_algebraMap_eq fun x ↦ by
     simp [RingHom.algebraMap_toAlgebra, f]
-  -- `L ⊗[K] A` is the base change of `L / E` along `E → E ⊗[K] A`.
+  -- `L ⊗[K] A` is the base change of `L / E` along `E → E ⊗[K] A`, hence integral over it.
   have hpush : Algebra.IsPushout E L (E ⊗[K] A) (L ⊗[K] A) :=
     Algebra.IsPushout.tensorProduct_tensorProduct K A E L
       (by ext; simp [RingHom.algebraMap_toAlgebra, f])
-  have : Module.Flat (E ⊗[K] A) (L ⊗[K] A) :=
-    Module.Flat.isBaseChange E (E ⊗[K] A) L _ hpush.symm.out
   have : Algebra.IsIntegral (E ⊗[K] A) (L ⊗[K] A) :=
     Algebra.IsPushout.isIntegral (R := E) (S := L) (A := E ⊗[K] A) (SA := L ⊗[K] A)
   have : Q.IsPrime := hQ.isPrime
   -- The algebra structure has `algebraMap = f`, so `Q` lies over its contraction along `f`.
   have : Q.LiesOver (Q.comap f) := ⟨rfl⟩
-  exact ⟨Ideal.under_mem_minimalPrimes hQ, ringKrullDim_eq_of_isIntegral_of_faithfulSMul⟩
+  exact ⟨Q.comap_tensorProduct_map_mem_minimalPrimes hQ,
+    ringKrullDim_eq_of_isIntegral_of_faithfulSMul⟩
 
 variable {K : Type*} [Field K] {A : Type*} [CommRing A] [Algebra K A]
 
