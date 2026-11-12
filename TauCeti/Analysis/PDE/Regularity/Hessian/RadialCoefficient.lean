@@ -151,7 +151,7 @@ theorem not_memVMO_radialCoefficient_apply [Nontrivial ι] (hb : b ≠ 0) (i : �
       simp only [radialCoefficient_apply, ↓reduceIte]
       rw [mul_sub, mul_div_cancel₀ _ hb]
       ring
-    rw [Real.enorm_eq_ofReal_abs, heq, abs_mul]
+    rw [Real.eNorm_eq_ofReal_abs, heq, abs_mul]
     exact ENNReal.ofReal_le_ofReal (by nlinarith [hz y hy, abs_nonneg b])
   have hlow := ofReal_mul_div_pow_le_setLAverage_enorm_sub (μ := volume)
     (by positivity : (0 : ℝ) < r / 8) hsub hfar
