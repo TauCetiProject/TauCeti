@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.Chebyshev
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.SpecialFunctions.Log.Sum
 import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
-import TauCeti.NumberTheory.Chebyshev.Factorial
+import TauCeti.NumberTheory.Chebyshev.LogFactorial
 
 /-!
 # Mertens's first theorem over `ℚ`
@@ -24,7 +24,7 @@ and its standard consequence for the prime divisors of an integer,
 
 * `∑_{p ∣ N} log p / p ≤ log log N + O(1)` for every natural number `N ≥ 3`.
 
-The proof is Chebyshev's. By `Chebyshev.log_factorial_floor_eq_sum_vonMangoldt_mul_floor`,
+The proof is Chebyshev's. By `Chebyshev.log_floor_factorial_eq_sum_vonMangoldt`,
 `log ⌊x⌋! = ∑_{n ≤ x} Λ(n) ⌊x / n⌋`, which lies between `x ∑_{n ≤ x} Λ(n) / n - ψ(x)` and
 `x ∑_{n ≤ x} Λ(n) / n`. Mathlib's `Real.sum_log_le` and `Real.le_sum_log` give
 `log ⌊x⌋! = x log x - x + O(log x)`, and its `Chebyshev.psi_le_const_mul_self` gives
@@ -67,14 +67,14 @@ theorem abs_sum_vonMangoldt_div_sub_log_le {x : ℝ} (hx : 1 ≤ x) :
   have hx0 : 0 < x := by linarith
   -- Chebyshev's identity sandwiches `log ⌊x⌋!` between `x S - ψ(x)` and `x S`.
   have hupper : log ⌊x⌋₊ ! ≤ x * S := by
-    rw [Chebyshev.log_factorial_floor_eq_sum_vonMangoldt_mul_floor, mul_sum]
+    rw [Chebyshev.log_floor_factorial_eq_sum_vonMangoldt, mul_sum]
     refine sum_le_sum fun n hn ↦ ?_
     have hn : (0 : ℝ) < n := by exact_mod_cast (mem_Ioc.mp hn).1
     calc Λ n * ⌊x / n⌋₊ ≤ Λ n * (x / n) :=
           mul_le_mul_of_nonneg_left (Nat.floor_le (by positivity)) vonMangoldt_nonneg
       _ = x * (Λ n / n) := by ring
   have hlower : x * S - Chebyshev.psi x ≤ log ⌊x⌋₊ ! := by
-    rw [Chebyshev.log_factorial_floor_eq_sum_vonMangoldt_mul_floor, mul_sum, Chebyshev.psi,
+    rw [Chebyshev.log_floor_factorial_eq_sum_vonMangoldt, mul_sum, Chebyshev.psi,
       ← sum_sub_distrib]
     refine sum_le_sum fun n hn ↦ ?_
     have hn : (0 : ℝ) < n := by exact_mod_cast (mem_Ioc.mp hn).1
@@ -85,7 +85,6 @@ theorem abs_sum_vonMangoldt_div_sub_log_le {x : ℝ} (hx : 1 ≤ x) :
   have hle_fac := sum_log_eq_log_factorial ⌊x⌋₊ ▸ le_sum_log hx
   have hpsi := Chebyshev.psi_le_const_mul_self hx0.le
   have hlog : log x ≤ x - 1 := log_le_sub_one_of_pos hx0
-  have hlog0 : 0 ≤ log x := log_nonneg hx
   have hlog4 : 0 ≤ log 4 := log_nonneg (by norm_num)
   -- Multiply through by `x > 0`.
   rw [abs_le, ← mul_le_mul_iff_of_pos_left hx0, ← mul_le_mul_iff_of_pos_left hx0 (b := S - log x)]
