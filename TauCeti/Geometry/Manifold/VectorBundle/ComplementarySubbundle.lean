@@ -77,11 +77,11 @@ theorem contMDiff_totalSpace_add (hV : HasLocalContMDiffSubbundleFrames IB n F �
   let := VectorBundle.restrictScalars 𝕜 𝕜' (ι' → 𝕜') fun x ↦ W x
   intro v₀
   -- The two summands, read in `E`, are `C^n`.
-  have h₁ := Bundle.contMDiffAt_totalSpace.mp
+  have h₁ := Bundle.contMDiffAt_totalSpace_iff.mp
     ((hV.contMDiff_totalSpace_inclusion.comp Bundle.Prod.contMDiff_fst) v₀)
-  have h₂ := Bundle.contMDiffAt_totalSpace.mp
+  have h₂ := Bundle.contMDiffAt_totalSpace_iff.mp
     ((hW.contMDiff_totalSpace_inclusion.comp Bundle.Prod.contMDiff_snd) v₀)
-  rw [Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨h₁.1, (h₁.2.add h₂.2).congr_of_eventuallyEq ?_⟩
   have he := (trivializationAt F E v₀.proj).open_baseSet.mem_nhds
     (FiberBundle.mem_baseSet_trivializationAt' v₀.proj)
