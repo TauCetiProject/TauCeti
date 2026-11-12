@@ -204,11 +204,11 @@ one of the sublevels `{f ≤ a i}` of a continuous function `f`, namely one with
 carries the topology coherent with these sublevels: a set is open as soon as it meets each of them
 in a relatively open set. -/
 theorem isCoherentWith_range_sublevel {X β ι : Type*} [TopologicalSpace X] [LinearOrder β]
-    [TopologicalSpace β] [OrderClosedTopology β] {f : X → β} (hf : Continuous f) {a : ι → β}
+    [TopologicalSpace β] [ClosedIciTopology β] {f : X → β} (hf : Continuous f) {a : ι → β}
     (ha : ¬BddAbove (range a)) : Topology.IsCoherentWith (range fun i ↦ {x | f x ≤ a i}) := by
   refine .of_nhds fun x ↦ ?_
   obtain ⟨_, ⟨i, rfl⟩, hi⟩ := not_bddAbove_iff.1 ha (f x)
-  exact ⟨_, mem_range_self i, Filter.mem_of_superset ((isOpen_lt hf continuous_const).mem_nhds hi)
+  exact ⟨_, mem_range_self i, Filter.mem_of_superset ((isOpen_Iio.preimage hf).mem_nhds hi)
     fun _ hy ↦ le_of_lt hy⟩
 
 /-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels of `f`, for `a ≤ b`. -/
