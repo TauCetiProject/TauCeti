@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Topology.Order.ProjIcc
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Topology.Order.Interval
@@ -34,8 +35,6 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
   integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
   continuous on the closed interval `[a, b]`.
-* `TauCeti.intervalIntegral.intervalIntegrable_of_integrableOn_Ioo`: a function integrable on
-  `(a, b)` is interval integrable between any two points of `[a, b]`.
 * `TauCeti.intervalIntegral.norm_intervalIntegral_le_setIntegral_norm` and
   `TauCeti.intervalIntegral.norm_intervalIntegral_le_abs_intervalIntegral`: the integral between
   two points of `[a, b]` is bounded by the `L¹(a, b)` norm, and by the integral of a function
@@ -93,14 +92,6 @@ theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
   simpa [uIcc_of_le hab] using _root_.intervalIntegral.continuousOn_primitive_interval'
     ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
 
-omit [NormedSpace ℝ E] in
-/-- A function integrable on the open interval `(a, b)` is interval integrable between any two
-points of `[a, b]`. -/
-theorem intervalIntegrable_of_integrableOn_Ioo (hf : IntegrableOn f (Ioo a b)) {s t : ℝ}
-    (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) : IntervalIntegrable f volume s t :=
-  ((intervalIntegrable_iff_integrableOn_Ioo_of_le (hs.1.trans hs.2)).2 hf).mono_set
-    (uIcc_subset_uIcc (Icc_subset_uIcc hs) (Icc_subset_uIcc ht))
-
 /-- The integral of `f` between two points of `[a, b]` is bounded by the `L¹(a, b)` norm of `f`. -/
 theorem norm_intervalIntegral_le_setIntegral_norm (hf : IntegrableOn f (Ioo a b)) {s t : ℝ}
     (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
@@ -122,7 +113,7 @@ theorem norm_intervalIntegral_le_abs_intervalIntegral {g : ℝ → ℝ}
   rw [restrict_Ioo_eq_restrict_Icc] at hfg
   exact _root_.intervalIntegral.norm_integral_le_abs_of_norm_le
     (ae_restrict_of_ae_restrict_of_subset (uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)) hfg)
-    (intervalIntegrable_of_integrableOn_Ioo hg hs ht)
+    (hg.intervalIntegrable_of_mem_Icc hs ht)
 
 /-- The `Lᵖ(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s` of a function integrable on
 `(a, b)`, based at a point `t₀` of `[a, b]`, is at most `(b - a) ^ (1 / p)` times the `L¹(a, b)`

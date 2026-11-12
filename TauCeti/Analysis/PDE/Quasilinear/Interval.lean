@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 import TauCeti.Analysis.Convex.SchauderFixedPoint
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 import TauCeti.Topology.ContinuousMap.Ascoli
 
@@ -307,8 +308,8 @@ private theorem exists_eq_add_intervalIntegral_solDeriv (hx : x₀ < x₁) (hlam
     refine squeeze_zero (fun _ => dist_nonneg) (fun v => ?_) (by simpa using hD.tendsto v₀)
     refine (ContinuousMap.dist_le (integral_nonneg fun _ => abs_nonneg _)).2 fun t => ?_
     rw [hT, hT, Real.dist_eq, add_sub_add_left_eq_sub, ← intervalIntegral.integral_sub
-      (TauCeti.intervalIntegral.intervalIntegrable_of_integrableOn_Ioo (hdi v) hx₀ t.2)
-      (TauCeti.intervalIntegral.intervalIntegrable_of_integrableOn_Ioo (hdi v₀) hx₀ t.2)]
+      ((hdi v).intervalIntegrable_of_mem_Icc hx₀ t.2)
+      ((hdi v₀).intervalIntegrable_of_mem_Icc hx₀ t.2)]
     simpa only [Real.norm_eq_abs, Pi.sub_apply] using
       TauCeti.intervalIntegral.norm_intervalIntegral_le_setIntegral_norm ((hdi v).sub (hdi v₀))
         hx₀ t.2
@@ -326,8 +327,8 @@ private theorem exists_eq_add_intervalIntegral_solDeriv (hx : x₀ < x₁) (hlam
     fun v y z => by
       rw [hT, hT, Real.dist_eq, add_sub_add_left_eq_sub, abs_sub_comm,
         intervalIntegral.integral_interval_sub_left
-          (TauCeti.intervalIntegral.intervalIntegrable_of_integrableOn_Ioo (hdi v) hx₀ z.2)
-          (TauCeti.intervalIntegral.intervalIntegrable_of_integrableOn_Ioo (hdi v) hx₀ y.2)]
+          ((hdi v).intervalIntegrable_of_mem_Icc hx₀ z.2)
+          ((hdi v).intervalIntegrable_of_mem_Icc hx₀ y.2)]
       simpa only [Real.norm_eq_abs] using
         TauCeti.intervalIntegral.norm_intervalIntegral_le_abs_intervalIntegral hbi
           ((hdb v).mono fun t ht => (Real.norm_eq_abs _).trans_le ht) y.2 z.2
