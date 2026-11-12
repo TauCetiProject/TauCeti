@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Localization
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The projection of the Sobolev wave front set and the local Sobolev order
@@ -38,9 +38,9 @@ This file proves the `H^s` counterparts of two basic facts about the wave front 
   `s` such that `T` is `H^s` near every point of `K`. Indeed, for a cutoff `φ` equal to one near
   `K`, the localized Fourier transform `η ↦ T (φ e_η)` grows at most polynomially
   (`Distribution.exists_norm_localFourier_le`), so a sufficiently negative weight makes it square
-  integrable. This is the local finite negative order on which the distributional form of
-  elliptic regularity rests: an estimate on the Sobolev scale applies to every distribution near
-  every compact set.
+  integrable (`TauCeti.memLp_two_one_add_norm_sq_rpow_smul_of_norm_le`). This is the local finite
+  negative order on which the distributional form of elliptic regularity rests: an estimate on the
+  Sobolev scale applies to every distribution near every compact set.
 
 The point mass in dimension `d > 0` has `H^s` singular support `{x₀}` for `s ≥ -d / 2` and is
 `H^s` everywhere for `s < -d / 2` (`Distribution.sobolevSingularSupport_delta`,
@@ -60,8 +60,9 @@ The point mass in dimension `d > 0` has `H^s` singular support `{x₀}` for `s �
 * `Distribution.isOpen_diff_sobolevSingularSupport`, `Distribution.sobolevSingularSupport_mono`,
   `Distribution.sobolevSingularSupport_subset_singularSupport`: the `H^s` singular support is
   closed in `Ω`, grows with `s`, and lies in the singular support.
-* `Distribution.sobolevSingularSupport_add_subset`,
-  `Distribution.sobolevSingularSupport_smulLeftCLM_subset`: sums and smooth multiples.
+* `Distribution.sobolevSingularSupport_restrictCLM`,
+  `Distribution.sobolevSingularSupport_add_subset`,
+  `Distribution.sobolevSingularSupport_smulLeftCLM_subset`: restriction, sums and smooth multiples.
 * `Distribution.exists_forall_isLocallySobolevAt`,
   `Distribution.exists_disjoint_sobolevSingularSupport`: the local finite Sobolev order.
 
@@ -133,20 +134,16 @@ theorem exists_nhds_forall_memLp_of_forall_isMicrolocallySobolevAt {s : ℝ} {T 
   -- For each unit direction, a neighbourhood of `x` and an open cone with square integrability.
   choose U hU Γ hΓ hξΓ hcone hL using fun ξ : sphere (0 : E) 1 ↦
     (h ξ (ne_zero_of_mem_unit_sphere ξ)).exists_nhds_cone
-  -- Finitely many of the cones cover the unit sphere.
-  obtain ⟨t, ht⟩ := (isCompact_sphere (0 : E) 1).elim_finite_subcover Γ hΓ
-    fun ζ hζ ↦ mem_iUnion.2 ⟨⟨ζ, hζ⟩, hξΓ _⟩
+  -- Finitely many of the cones cover the nonzero vectors.
+  obtain ⟨t, ht⟩ := TauCeti.exists_finset_compl_singleton_subset_biUnion hΓ hξΓ hcone
   refine ⟨⋂ ξ ∈ t, U ξ, (biInter_finset_mem t).2 fun ξ _ ↦ hU ξ, fun ψ hψ ↦ ?_⟩
   -- Together with the origin, the finitely many cones cover `E`.
   have hcover : univ ⊆ ⋃ i : Option t, i.elim {0} fun ξ ↦ Γ ξ := by
     intro η _
     rcases eq_or_ne η 0 with rfl | hη
     · exact mem_iUnion.2 ⟨none, rfl⟩
-    have hη' : 0 < ‖η‖ := norm_pos_iff.2 hη
-    obtain ⟨ξ, hξt, hηξ⟩ := mem_iUnion₂.1 (ht (show ‖η‖⁻¹ • η ∈ sphere (0 : E) 1 by
-      simp [norm_smul, inv_mul_cancel₀ hη'.ne']))
-    refine mem_iUnion.2 ⟨some ⟨ξ, hξt⟩, ?_⟩
-    simpa [smul_smul, mul_inv_cancel₀ hη'.ne'] using hcone ξ ‖η‖ hη' _ hηξ
+    obtain ⟨ξ, hξt, hηξ⟩ := mem_iUnion₂.1 (ht hη)
+    exact mem_iUnion.2 ⟨some ⟨ξ, hξt⟩, hηξ⟩
   rw [← Measure.restrict_univ (μ := volume)]
   refine MemLp.restrict_of_subset_iUnion hcover fun i ↦ ?_
   rcases i with _ | ⟨ξ, hξ⟩
@@ -228,7 +225,7 @@ theorem fst_image_sobolevWaveFrontSet (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
 
 /-- A complex distribution has empty `H^s` singular support exactly when it has empty `H^s` wave
 front set. -/
-theorem sobolevSingularSupport_eq_empty_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} :
+theorem sobolevSingularSupport_eq_empty_iff_sobolevWaveFrontSet_eq_empty {s : ℝ} {T : 𝓓'(Ω, ℂ)} :
     T.sobolevSingularSupport s = ∅ ↔ T.sobolevWaveFrontSet s = ∅ := by
   rw [← fst_image_sobolevWaveFrontSet, image_eq_empty]
 
@@ -260,6 +257,33 @@ theorem sobolevSingularSupport_smulLeftCLM_subset (s : ℝ) (T : 𝓓'(Ω, ℂ))
   obtain ⟨hT, hx, -⟩ := sobolevWaveFrontSet_smulLeftCLM_subset s T hg hp
   exact ⟨⟨(x, ξ), hT, rfl⟩, hx⟩
 
+section Restriction
+
+variable {Ω' : Opens E}
+
+/-- **Restriction** to an open subset `Ω' ≤ Ω` cuts the `H^s` singular support down to the points
+of `Ω'`. -/
+theorem sobolevSingularSupport_restrictCLM (h : Ω' ≤ Ω) (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
+    (restrictCLM T : 𝓓'(Ω', ℂ)).sobolevSingularSupport s =
+      T.sobolevSingularSupport s ∩ Ω' := by
+  rw [← fst_image_sobolevWaveFrontSet, ← fst_image_sobolevWaveFrontSet,
+    sobolevWaveFrontSet_restrictCLM h]
+  ext x
+  constructor
+  · rintro ⟨p, ⟨hp, hx, -⟩, rfl⟩
+    exact ⟨⟨p, hp, rfl⟩, hx⟩
+  · rintro ⟨⟨p, hp, rfl⟩, hx⟩
+    exact ⟨p, ⟨hp, hx, mem_univ _⟩, rfl⟩
+
+/-- The `H^s` singular support is local: two distributions with the same restriction to an open
+set `U ≤ Ω` have the same `H^s` singular support in `U`. -/
+theorem sobolevSingularSupport_inter_eq_of_restrictCLM_eq {s : ℝ} {S T : 𝓓'(Ω, ℂ)}
+    {U : Opens E} (hU : U ≤ Ω) (h : (restrictCLM S : 𝓓'(U, ℂ)) = restrictCLM T) :
+    S.sobolevSingularSupport s ∩ U = T.sobolevSingularSupport s ∩ U := by
+  rw [← sobolevSingularSupport_restrictCLM hU, h, sobolevSingularSupport_restrictCLM hU]
+
+end Restriction
+
 /-! ### The local Sobolev order -/
 
 /-- **Distributions have finite Sobolev order locally.** For every compact set `K ⊆ Ω` there is an
@@ -272,41 +296,10 @@ theorem exists_forall_isLocallySobolevAt (T : 𝓓'(Ω, ℂ)) {K : Set E} (hK : 
   have hφ (y : E) : φ y = χ y := by simp [φ]
   -- The localized Fourier transform with cutoff `φ` grows at most like `(1 + ‖η‖) ^ k`.
   obtain ⟨C, k, hC⟩ := exists_norm_localFourier_le T φ
-  set d : ℝ := (finrank ℝ E : ℝ)
-  refine ⟨-((k : ℝ) + d + 1), fun x hx ↦ ⟨φ, by simp [hφ, hχ1.self_of_nhdsSet x hx], ?_⟩⟩
-  have hmeas : AEStronglyMeasurable
-      (fun η ↦ (1 + ‖η‖ ^ 2) ^ (-((k : ℝ) + d + 1) / 2) • T.localFourier φ η) volume :=
-    ((Function.hasTemperateGrowth_one_add_norm_sq_rpow E _).1.continuous.smul
-      (T.continuous_localFourier φ)).aestronglyMeasurable
-  refine (memLp_two_iff_integrable_sq_norm hmeas).2 ?_
-  refine ((integrable_rpow_neg_one_add_norm_sq (μ := volume) (r := 2 * d + 2)
-    (by linarith [(finrank ℝ E).cast_nonneg (α := ℝ)])).const_mul ((C * 2 ^ k) ^ 2)).mono'
-    (hmeas.norm.pow 2) (.of_forall fun η ↦ ?_)
-  rw [Real.norm_of_nonneg (sq_nonneg _)]
-  -- `⟨η⟩ ^ s (1 + ‖η‖) ^ k ≤ 2 ^ k ⟨η⟩ ^ (s + k)`, with `s + k = -(d + 1)`.
-  have hw : 0 < 1 + ‖η‖ ^ 2 := by positivity
-  have hk : (1 + ‖η‖) ^ k ≤ 2 ^ k * (1 + ‖η‖ ^ 2) ^ ((k : ℝ) / 2) := by
-    simpa [one_add_one_eq_two] using TauCeti.one_add_mul_norm_pow_le zero_le_one η k
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans ((hC 0).trans_eq (by simp))
-  have hbound : ‖(1 + ‖η‖ ^ 2) ^ (-((k : ℝ) + d + 1) / 2) • T.localFourier φ η‖ ≤
-      C * 2 ^ k * (1 + ‖η‖ ^ 2) ^ (-(2 * d + 2) / 2 / 2) := by
-    rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-    calc (1 + ‖η‖ ^ 2) ^ (-((k : ℝ) + d + 1) / 2) * ‖T.localFourier φ η‖
-        ≤ (1 + ‖η‖ ^ 2) ^ (-((k : ℝ) + d + 1) / 2) *
-            (C * (2 ^ k * (1 + ‖η‖ ^ 2) ^ ((k : ℝ) / 2))) := by
-          gcongr
-          exact (hC η).trans (by gcongr)
-      _ = C * 2 ^ k * ((1 + ‖η‖ ^ 2) ^ (-((k : ℝ) + d + 1) / 2) *
-            (1 + ‖η‖ ^ 2) ^ ((k : ℝ) / 2)) := by ring
-      _ = C * 2 ^ k * (1 + ‖η‖ ^ 2) ^ (-(2 * d + 2) / 2 / 2) := by
-          rw [← Real.rpow_add hw]
-          congr 2
-          ring
-  calc ‖(1 + ‖η‖ ^ 2) ^ (-((k : ℝ) + d + 1) / 2) • T.localFourier φ η‖ ^ 2
-      ≤ (C * 2 ^ k * (1 + ‖η‖ ^ 2) ^ (-(2 * d + 2) / 2 / 2)) ^ 2 := by
-        gcongr
-    _ = (C * 2 ^ k) ^ 2 * (1 + ‖η‖ ^ 2) ^ (-(2 * d + 2) / 2) := by
-        rw [mul_pow, Real.rpow_div_two_sq hw.le]
+  refine ⟨-((k : ℝ) + finrank ℝ E + 1), fun x hx ↦ ⟨φ, by simp [hφ, hχ1.self_of_nhdsSet x hx],
+    TauCeti.memLp_two_one_add_norm_sq_rpow_smul_of_norm_le volume
+      (T.continuous_localFourier φ).aestronglyMeasurable hC ?_⟩⟩
+  linarith [(finrank ℝ E).cast_nonneg (α := ℝ)]
 
 /-- **Distributions have finite Sobolev order locally**, in terms of the `H^s` singular support:
 every compact set `K ⊆ Ω` is disjoint from the `H^s` singular support for some order `s`. -/
@@ -321,7 +314,8 @@ theorem exists_disjoint_sobolevSingularSupport (T : 𝓓'(Ω, ℂ)) {K : Set E} 
 has empty `H^s` singular support for `s < -d / 2`. -/
 theorem sobolevSingularSupport_delta_eq_empty {s : ℝ} (hs : (finrank ℝ E : ℝ) < -2 * s)
     (x₀ : E) : (mapCLM ofRealCLM (delta x₀ : 𝓓'(Ω, ℝ))).sobolevSingularSupport s = ∅ :=
-  sobolevSingularSupport_eq_empty_iff.2 (sobolevWaveFrontSet_delta_eq_empty hs x₀)
+  sobolevSingularSupport_eq_empty_iff_sobolevWaveFrontSet_eq_empty.2
+    (sobolevWaveFrontSet_delta_eq_empty hs x₀)
 
 /-- **The `H^s` singular support of a point mass.** In dimension `d > 0`, the point mass at
 `x₀ ∈ Ω` has `H^s` singular support `{x₀}` for `s ≥ -d / 2`. -/

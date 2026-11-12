@@ -58,6 +58,9 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is not integrable over any open cone containing a nonzero vector.
 * `TauCeti.memLp_two_one_add_norm_rpow_neg`: the power `x ↦ (1 + ‖x‖) ^ (-r)` is square
   integrable for `d < 2 r`, for every additive Haar measure.
+* `TauCeti.memLp_two_one_add_norm_sq_rpow_smul_of_norm_le`: a function of polynomial growth
+  `C (1 + ‖x‖) ^ k` is square integrable after multiplication by `(1 + ‖x‖ ^ 2) ^ (s / 2)` once
+  `d < -2 (s + k)`.
 * `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-(n + 1) / 2)` is integrable.
 * `TauCeti.integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq`: the weight
@@ -224,6 +227,43 @@ theorem memLp_two_one_add_norm_rpow_neg (μ : Measure V) [μ.IsAddHaarMeasure] {
   congr 1
   push_cast
   ring
+
+/-- **A negative Japanese bracket weight makes polynomial growth square integrable.** If
+`‖f x‖ ≤ C (1 + ‖x‖) ^ k`, then `x ↦ (1 + ‖x‖ ^ 2) ^ (s / 2) • f x` is square integrable for every
+additive Haar measure on a finite-dimensional real normed space of dimension `d < -2 (s + k)`. -/
+theorem memLp_two_one_add_norm_sq_rpow_smul_of_norm_le (μ : Measure V) [μ.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : V → F}
+    (hf : AEStronglyMeasurable f μ) {C : ℝ} {k : ℕ} (hfC : ∀ x, ‖f x‖ ≤ C * (1 + ‖x‖) ^ k)
+    {s : ℝ} (hs : (finrank ℝ V : ℝ) < -2 * (s + k)) :
+    MemLp (fun x ↦ (1 + ‖x‖ ^ 2) ^ (s / 2) • f x) 2 μ := by
+  have hmeas : AEStronglyMeasurable (fun x ↦ (1 + ‖x‖ ^ 2) ^ (s / 2) • f x) μ :=
+    (((continuous_const.add (continuous_norm.pow 2)).rpow_const fun x ↦
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖x‖ ^ 2).ne').aestronglyMeasurable).smul hf
+  refine (memLp_two_iff_integrable_sq_norm hmeas).2 ?_
+  refine ((integrable_rpow_neg_one_add_norm_sq (μ := μ) hs).const_mul ((C * 2 ^ k) ^ 2)).mono'
+    (hmeas.norm.pow 2) (.of_forall fun x ↦ ?_)
+  rw [Real.norm_of_nonneg (sq_nonneg _)]
+  -- `⟨x⟩ ^ s (1 + ‖x‖) ^ k ≤ 2 ^ k ⟨x⟩ ^ (s + k)`.
+  have hw : 0 < 1 + ‖x‖ ^ 2 := by positivity
+  have hk : (1 + ‖x‖) ^ k ≤ 2 ^ k * (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
+    simpa [one_add_one_eq_two] using one_add_mul_norm_pow_le zero_le_one x k
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans ((hfC 0).trans_eq (by simp))
+  have hbound : ‖(1 + ‖x‖ ^ 2) ^ (s / 2) • f x‖ ≤
+      C * 2 ^ k * (1 + ‖x‖ ^ 2) ^ ((s + k) / 2) := by
+    rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+    calc (1 + ‖x‖ ^ 2) ^ (s / 2) * ‖f x‖
+        ≤ (1 + ‖x‖ ^ 2) ^ (s / 2) * (C * (2 ^ k * (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2))) := by
+          gcongr
+          exact (hfC x).trans (by gcongr)
+      _ = C * 2 ^ k * (1 + ‖x‖ ^ 2) ^ ((s + k) / 2) := by
+          rw [add_div, Real.rpow_add hw]
+          ring
+  calc ‖(1 + ‖x‖ ^ 2) ^ (s / 2) • f x‖ ^ 2
+      ≤ (C * 2 ^ k * (1 + ‖x‖ ^ 2) ^ ((s + k) / 2)) ^ 2 := by gcongr
+    _ = (C * 2 ^ k) ^ 2 * (1 + ‖x‖ ^ 2) ^ (-(-2 * (s + k)) / 2) := by
+        rw [mul_pow, Real.rpow_div_two_sq hw.le]
+        congr 2
+        ring
 
 /-- The radial moment `x ↦ ‖x‖ ^ p (1 + ‖x‖ ^ 2) ^ (-r / 2)` of order `p ≥ 0` of the Japanese
 bracket is integrable for every additive Haar measure when its decay exponent exceeds
