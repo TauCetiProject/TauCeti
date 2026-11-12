@@ -157,6 +157,7 @@ private theorem Occurs.exists_right {U X Y : C} (h : Occurs U (X ⊗ Y)) :
 
 variable [RigidCategory C]
 
+omit [MonoidalPreadditive C] in
 /-- Frobenius reciprocity for constituents: if `U` is a constituent of `X ⊗ Y` with `U` simple,
 then `X` maps nontrivially to `U ⊗ Yᘁ`. -/
 private theorem Occurs.tensorRightHom {U X Y : C} [Simple U] (h : Occurs U (X ⊗ Y)) :

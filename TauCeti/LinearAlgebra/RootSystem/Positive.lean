@@ -35,6 +35,8 @@ positive root is a nonnegative integer combination of the simple coroots.
 ## Main results
 
 * `TauCeti.image_reflectionPerm_self_posRoots` says root negation exchanges the two sets.
+* `TauCeti.posRoots_map` and `TauCeti.negRoots_map` say an equivalence of root pairings carries
+  the positive and negative roots of a base to those of the transported base.
 * `TauCeti.ncard_posRoots_eq_natCard_div_two` says that, for a finite root index type, exactly
   half of the roots are positive, and `TauCeti.posRootsFinset_eq_filter`,
   `TauCeti.card_posRootsFinset` read `TauCeti.posRootsFinset` as the filter of the positivity
@@ -165,6 +167,26 @@ lemma compl_posRoots : (posRoots P b)ᶜ = negRoots P b := by
 
 /-- The negative roots are the complement of the positive roots. -/
 lemma negRoots_eq_compl : negRoots P b = (posRoots P b)ᶜ := compl_posRoots P b |>.symm
+
+section Map
+
+variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+  {P₂ : RootPairing ι₂ R M₂ N₂}
+
+/-- **An equivalence of root pairings carries positive roots to positive roots**: the positive
+roots of the transported base `b.map e` are the images of the positive roots of `b`. -/
+@[simp]
+theorem posRoots_map (e : P.Equiv P₂) : posRoots P₂ (b.map e) = e.indexEquiv '' posRoots P b := by
+  ext j
+  rw [Equiv.image_eq_preimage_symm, mem_preimage, mem_posRoots, mem_posRoots,
+    ← b.isPos_map_iff e, Equiv.apply_symm_apply]
+
+/-- An equivalence of root pairings carries negative roots to negative roots. -/
+@[simp]
+theorem negRoots_map (e : P.Equiv P₂) : negRoots P₂ (b.map e) = e.indexEquiv '' negRoots P b := by
+  rw [negRoots_eq_compl, negRoots_eq_compl, posRoots_map, Equiv.image_compl]
+
+end Map
 
 /-- No root is both positive and negative. -/
 lemma disjoint_posRoots_negRoots : Disjoint (posRoots P b) (negRoots P b) := by

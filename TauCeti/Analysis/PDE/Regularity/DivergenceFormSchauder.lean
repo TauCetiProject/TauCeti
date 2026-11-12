@@ -802,7 +802,7 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matri
     intro Omega u a G Ka KG S R h
     exact absurd h.pos hlam
   have hα' : (0 : ℝ) < α := hα
-  obtain ⟨θ, C₀, hθ, hθ1, hC₀, hdec⟩ :=
+  obtain ⟨θ, C₀, hθ, hθ1, _, hdec⟩ :=
     exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderOnWith (n := n) hα hα1
       (Lam := Lam) (M := M) hlam
   obtain ⟨ω, hωdef⟩ : ∃ ω, ω = volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
