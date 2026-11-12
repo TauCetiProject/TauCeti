@@ -47,10 +47,8 @@ For a Hodge structure carried on a lattice, `dim_ℂ V_ℂ` is in turn the rank 
 * `TauCeti.Hodge.HodgeStructureOn.hodgeType`: the Hodge type of a Hodge structure, effective
   exactly when the structure is (`TauCeti.Hodge.HodgeStructureOn.hodgeType_isEffective_iff`).
 
-Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §6, and Peters–Steenbrink, *Mixed Hodge
-Structures*, §2. This is the numerical layer of Layer L3 of
-`TauCetiRoadmap/HodgeStructures/README.md`. The signature of `HodgeType` is adapted from the
-roadmap's formal companion `HodgeStructures/Suggested.lean`.
+See Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §6, and Peters–Steenbrink, *Mixed
+Hodge Structures*, §2.
 -/
 
 public section

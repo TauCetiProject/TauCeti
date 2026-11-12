@@ -54,21 +54,12 @@ specialisation below carries no arithmetic hypothesis at all.
 * `WeierstrassCurve.isInteger_four_mul_x_and_eight_mul_y_of_order_two`: the order-two bound on its
   own, from a Jacobian two-torsion hypothesis and needing no squarefreeness at all.
 
-## Roadmap
-
-New mathematics: `TauCetiRoadmap/EllipticCurves/README.md:821` — "**The torsion subgroup and
-Nagell–Lutz**", route "division polynomials" (`:830`–`:831`). Lines `:823`–`:827` state this
-theorem for an integral **long** Weierstrass model: over `ℚ`, "a nonzero torsion point has
-`x, y ∈ ℤ` unless it has order exactly `2`, where the honest bound is `4x, 8y ∈ ℤ`". The
-discriminant companion and the short-model form (`:828`–`:830`) are separate targets.
-
 ## Provenance
 
 Ported from J. Xu and D. K. Angdinata's AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0,
 `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`), from **two** files of
-`projects/NagellLutz/LutzNagell/LutzNagellTheorem/`, both byte-identical at `9fec8eba7652` — the
-revision the roadmap pins for this project (`README:1072`) — verified by blob hash, so the
-citations hold at either.
+`projects/NagellLutz/LutzNagell/LutzNagellTheorem/`, both byte-identical at
+`dev/modular-curves @ 9fec8eba7652`, verified by blob hash, so the citations hold at either.
 
 `PIDMain.lean` supplies the statement shape: `nsmul_eq_zero_affine_to_jac` (`:48`),
 `exists_some_of_ne_zero` (`:60`), `integrality_of_odd_prime_factor` (`:83`),
@@ -76,7 +67,7 @@ citations hold at either.
 already stated over a general base in `IsLocalization.IsInteger` terms.
 
 `GeneralMain.lean` supplies the order-two conclusion. Its `lutz_nagell_integrality_general`
-(`:112`) ends in `4x, 8y` integral, which is the form the roadmap asks for, where the `PID`
+(`:112`) ends in `4x, 8y` integral, which is the form proved here, where the `PID`
 theorem ends in the weaker denominator bound `den(x) ∣ 4`. That file states the theorem over `ℚ`
 only, so `isInteger_or_order_two_of_torsion_rat` is *its* statement and
 `isInteger_or_order_two_of_torsion` generalises it.
@@ -260,7 +251,7 @@ theorem isInteger_or_order_two_of_torsion_of_squarefree {x y : K}
     Nat.four_dvd_or_exists_odd_prime_and_dvd_of_squarefree
       (two_lt_addOrderOf W hns htor hord2) (hsf hord2)
 
-/-- **Nagell–Lutz over `ℚ`**, the form the roadmap asks for: for an integral long Weierstrass
+/-- **Nagell–Lutz over `ℚ`**: for an integral long Weierstrass
 model, a nonzero torsion point has integral coordinates unless it has order exactly `2`, where the
 honest bound is `4x, 8y ∈ ℤ`.
 

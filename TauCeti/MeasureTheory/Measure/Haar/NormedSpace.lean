@@ -8,8 +8,11 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.MeasureTheory.Measure.Haar.Unique
+import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -91,6 +94,8 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
   of a ball of radius `R > 0` written through that of the unit ball (for `R ≤ 0` the ball is
   empty).
+* `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
+  linear part has `|det| = 1` preserves an additive Haar measure.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -519,5 +524,57 @@ theorem norm_det_le_opNorm_pow {𝕜 E : Type*} [RCLike 𝕜]
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) finrank_pos.ne').1 h
 
 end ContinuousLinearMap
+
+namespace ContinuousAffineMap
+
+/-- A continuous affine self-map of a finite-dimensional real space whose linear part has
+determinant of absolute value `1` preserves an additive Haar measure. -/
+theorem measurePreserving_of_abs_det_eq_one
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    (T : E →ᴬ[ℝ] E) (habs : |T.contLinear.det| = 1) : MeasurePreserving T μ μ := by
+  have hdet : T.contLinear.det ≠ 0 := fun h ↦ by simp [h] at habs
+  have hT0 : (T : E → E) = (fun y ↦ y + T 0) ∘ T.contLinear := T.decomp
+  have hL : μ.map T.contLinear = μ := by
+    have h := Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
+    rw [ContinuousLinearMap.coe_coe] at h
+    have h1 : |(LinearMap.det (T.contLinear : E →ₗ[ℝ] E))⁻¹| = 1 := by
+      rw [abs_inv]; exact inv_eq_one.2 habs
+    rw [h, h1]
+    simp
+  refine ⟨T.continuous.measurable, ?_⟩
+  rw [hT0, ← Measure.map_map (measurable_add_const _) T.contLinear.continuous.measurable, hL,
+    map_add_right_eq_self]
+
+end ContinuousAffineMap
+
+namespace MeasureTheory.Measure
+
+section Fubini
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [MeasurableSpace F] [BorelSpace F] (ν : Measure F) [IsAddHaarMeasure ν]
+  {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H] [FiniteDimensional ℝ H]
+  [MeasurableSpace H] [BorelSpace H]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+  [MeasurableSpace G] [BorelSpace G]
+
+/-- Fubini for a measurable set in a split space: if `F ≃L[ℝ] H × G` and almost every slice
+`{y | (t, y) ∈ e S}` of the image of a measurable set `S` is null for an additive Haar measure
+`μG` of `G` (for almost every `t` for an additive Haar measure `μH` of `H`), then `S` is null
+for any additive Haar measure of `F`. -/
+theorem addHaar_eq_zero_of_prod_mk_preimage_image_eq_zero (μH : Measure H) [IsAddHaarMeasure μH]
+    (μG : Measure G) [IsAddHaarMeasure μG] (e : F ≃L[ℝ] H × G) {S : Set F}
+    (hS : MeasurableSet S) (h : ∀ᵐ t ∂μH, μG (Prod.mk t ⁻¹' (e '' S)) = 0) :
+    ν S = 0 := by
+  have hprod : (μH.prod μG) (e '' S) = 0 :=
+    measure_prod_null_of_ae_null (e.toHomeomorph.measurableEmbedding.measurableSet_image.2 hS) h
+  have := (e.toContinuousAddEquiv.quasiMeasurePreserving_addHaar ν (μH.prod μG)).preimage_null hprod
+  rwa [ContinuousLinearEquiv.toContinuousAddEquiv_coe,
+    Set.preimage_image_eq _ e.injective] at this
+
+end Fubini
+
+end MeasureTheory.Measure
 
 end

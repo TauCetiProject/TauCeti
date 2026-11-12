@@ -24,8 +24,8 @@ oriented presentations, an exact equality criterion for quotient classes, and th
 unoriented presentation in the ambient manifold.  The image is well defined because reversing a
 circle parametrization does not change its range.
 
-This is the orientation-forgetting step in Layer 4 of the geometric-topology roadmap.  Framing,
-multi-component links, and the comparison with diagram presentations are separate constructions.
+Framing, multi-component links, and the comparison with diagram presentations are separate
+constructions.
 
 ## Main definitions
 
