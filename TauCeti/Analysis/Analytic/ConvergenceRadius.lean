@@ -11,7 +11,8 @@ public import Mathlib.Analysis.Analytic.ConvergenceRadius
 
 Taking partial sums of a formal multilinear series commutes with continuous linear maps.
 This allows coefficientwise linear operations to pass through finite approximations.
-Each partial sum extends the previous one by a single term.
+Each partial sum extends the previous one by a single term, and the terms are homogeneous: the
+`n`-th term at `c • x` is `c ^ n` times its value at `x`.
 A geometric bound on coefficient norms also gives a comparison of convergence radii, even when
 the two series are defined over different normed fields.
 -/
@@ -39,6 +40,21 @@ theorem FormalMultilinearSeries.partialSum_succ (p : FormalMultilinearSeries �
   Finset.sum_range_succ _ _
 
 end PartialSum
+
+section Homogeneous
+
+variable {𝕜 E F : Type*} [CommSemiring 𝕜]
+  [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousAdd E]
+  [ContinuousConstSMul 𝕜 E] [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+  [ContinuousAdd F] [ContinuousConstSMul 𝕜 F]
+
+/-- The `n`-th term of a formal multilinear series, evaluated on the diagonal, is homogeneous of
+degree `n`. -/
+theorem FormalMultilinearSeries.apply_smul (p : FormalMultilinearSeries 𝕜 E F) (n : ℕ) (c : 𝕜)
+    (x : E) : (p n fun _ ↦ c • x) = c ^ n • p n fun _ ↦ x := by
+  simpa using (p n).map_smul_univ (fun _ ↦ c) fun _ ↦ x
+
+end Homogeneous
 
 namespace FormalMultilinearSeries
 
