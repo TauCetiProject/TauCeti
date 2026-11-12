@@ -40,10 +40,10 @@ open TensorProduct TauCeti.UniversalEnvelopingAlgebra
 -- The two double-string alternatives retain their orientation: interchanging the inputs
 -- inverts the commutator. No root-parameter coefficient is inverted.
 private theorem f4_simple_pair_cases (ht : F4.Valid) (i : Fin F4.rank) (β : Fin F4.numRoots) :
-    SimplePairStringCases (F4.simplyConnectedRootDatum ht).root (F4.simpleIndex ht i) β := by
+    RootPairStringCases (F4.simplyConnectedRootDatum ht).root (F4.simpleIndex ht i) β := by
   have table : ∀ (i : Fin 4) (β : Fin 48),
-      SimplePairStringCases f4Root (Fin.castAdd 44 i) β := by
-    unfold SimplePairStringCases
+      RootPairStringCases f4Root (Fin.castAdd 44 i) β := by
+    unfold RootPairStringCases
     -- Decide equality pointwise and range membership by finite search, rather than the
     -- noncomputable set-membership instances, so the root-table check reduces in the kernel.
     let eqDec : DecidableEq (Fin 4 → ℤ) := Fintype.decidablePiFintype
