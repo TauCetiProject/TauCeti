@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Additivity
 public import TauCeti.AlgebraicTopology.Singular.Fibration.CellFiber
 
@@ -77,8 +78,9 @@ pullback of `p` to the disks of the `n`-cells, relative to its part over their b
 induces a quasi-isomorphism of relative normalized cubical chain complexes. -/
 theorem quasiIso_cubicalChainComplexMap_cellPullbackPairMap (n : ℕ) :
     QuasiIso (TopPair.cubicalChainComplexMap k (cellPullbackPairMap p C n)) :=
-  (TopPair.quasiIso_cubicalChainComplexMap_iff k _).2
-    (isIso_singularHomologyMap_cellPullbackPairMap C hp k n)
+  (quasiIso_iff _).2 fun q ↦ (quasiIsoAt_iff_isIso_homologyMap _ _).2
+    (have := isIso_singularHomologyMap_cellPullbackPairMap C hp k n q
+    TopPair.isIso_homologyMap_cubicalChainComplexMap_of_isIso _ q)
 
 variable (C) in
 /-- **The relative cubical chains of a skeletal pair of a Serre fibration are the sum of those over

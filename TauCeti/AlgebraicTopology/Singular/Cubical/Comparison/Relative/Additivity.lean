@@ -70,9 +70,7 @@ noncomputable def isColimitCofanCubicalHomologyOfIsColimit (hc : IsColimit (Cofa
             (Sigma.desc fun i ↦ (P i).singularHomologyMap (f i) (ModuleCat.of k k) n) ≫
               (singularCubicalHomologyIso k X n).hom by
       refine Sigma.hom_ext _ _ fun i ↦ ?_
-      rw [Sigma.ι_comp_desc, ← Iso.inv_hom_id_assoc (singularCubicalHomologyIso k (P i) n)
-        (HomologicalComplex.homologyMap _ n), singularCubicalHomologyIso_hom_naturality]
-      simp]
+      simp [homologyMap_cubicalChainComplexMap_eq]]
     infer_instance
   Cofan.isColimitOfIsIsoSigmaDesc (hc := this) _
 
