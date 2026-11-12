@@ -23,7 +23,8 @@ Krull-Schmidt theorem among them — can be read as results about biproducts in 
 
 For a binary biproduct, Mathlib's `ModuleCat.biprodIsoProd` identifies `M ⊞ N` with the product
 module `M × N`; this file also records that it reads off the two biproduct projections and
-carries the biproduct inclusions to `LinearMap.inl` and `LinearMap.inr`.
+carries the biproduct inclusions to `LinearMap.inl` and `LinearMap.inr`, and that the biproduct
+`biprod.map f g` of two bijective maps is bijective.
 
 ## Main definitions
 
@@ -45,6 +46,7 @@ carries the biproduct inclusions to `LinearMap.inl` and `LinearMap.inr`.
   `ModuleCat.biprod_inl_snd_apply`, `ModuleCat.biprod_inr_snd_apply` and
   `ModuleCat.biprod_inl_fst_add_inr_snd_apply`: the binary biproduct projections and inclusions on
   elements.
+* `ModuleCat.bijective_biprod_map`: `biprod.map f g` is bijective when `f` and `g` are.
 -/
 
 public section
@@ -133,6 +135,15 @@ theorem inr_comp_biprodIsoProd_hom :
     biprod.inr ≫ (biprodIsoProd M N).hom = ofHom (LinearMap.inr R M N) := by
   rw [← Iso.eq_comp_inv]
   apply biprod.hom_ext <;> ext x <;> simp
+
+variable {M N} in
+/-- The biproduct `biprod.map f g` of two bijective linear maps is bijective. -/
+theorem bijective_biprod_map {M' N' : ModuleCat.{v} R} (f : M ⟶ M') (g : N ⟶ N')
+    (hf : Function.Bijective f) (hg : Function.Bijective g) :
+    Function.Bijective (biprod.map f g) := by
+  have := (ConcreteCategory.isIso_iff_bijective f).2 hf
+  have := (ConcreteCategory.isIso_iff_bijective g).2 hg
+  exact (ConcreteCategory.isIso_iff_bijective _).1 (biprod.mapIso (asIso f) (asIso g)).isIso_hom
 
 variable {M N}
 
