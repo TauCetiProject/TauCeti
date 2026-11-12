@@ -39,7 +39,10 @@ trace. This is the whole-space comparison principle applied to the Hölder class
 * `TauCeti.ParabolicC2HolderSpace.euclideanSecondOrderCoeff`,
   `TauCeti.ParabolicC2HolderSpace.euclideanFirstOrderCoeff` and
   `TauCeti.ParabolicC2HolderSpace.euclideanZerothOrderCoeff`: the coefficient fields assembled
-  from scalar Hölder coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`.
+  from scalar Hölder coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`, with the norm bounds
+  `TauCeti.ParabolicC2HolderSpace.norm_euclideanSecondOrderCoeff_le`,
+  `TauCeti.ParabolicC2HolderSpace.norm_euclideanFirstOrderCoeff_le` and
+  `TauCeti.ParabolicC2HolderSpace.norm_euclideanZerothOrderCoeff_le` by the scalar coefficients.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL`: the operator with Hölder
   coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`.
 * `TauCeti.ParabolicC2HolderSpace.le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le`,
@@ -247,6 +250,43 @@ theorem euclideanZerothOrderCoeff_apply
     (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) (y : ℝ) :
     euclideanZerothOrderCoeff c p y = c p * y := by
   simp [euclideanZerothOrderCoeff]
+
+/-- The second-order coefficient field is bounded by the sum of the norms of its scalar
+coefficients: `‖H ↦ aⁱʲ H(eᵢ, eⱼ)‖ ≤ ∑ᵢⱼ ‖aⁱʲ‖`. -/
+theorem norm_euclideanSecondOrderCoeff_le
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanSecondOrderCoeff a‖ ≤ ∑ i, ∑ j, ‖a i j‖ := by
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (norm_sum_le _ _).trans
+    (Finset.sum_le_sum fun j _ ↦ ?_))
+  -- Evaluation of a Hessian at a pair of basis vectors has norm at most one.
+  have he : ‖(ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j (1 : ℝ))).comp
+      (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ)
+        (EuclideanSpace.single i (1 : ℝ)))‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun H ↦ by
+      simpa using H.le_opNorm₂ (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single j 1)
+  exact (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) he)
+
+/-- The first-order coefficient field is bounded by the sum of the norms of its scalar
+coefficients: `‖v ↦ bⁱ v(eᵢ)‖ ≤ ∑ᵢ ‖bⁱ‖`. -/
+theorem norm_euclideanFirstOrderCoeff_le
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanFirstOrderCoeff b‖ ≤ ∑ i, ‖b i‖ := by
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  -- Evaluation of a covector at a basis vector has norm at most one.
+  have he : ‖ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i (1 : ℝ))‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by
+      simpa using v.le_opNorm (EuclideanSpace.single i (1 : ℝ))
+  exact (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) he)
+
+omit [DecidableEq ι] in
+/-- The zeroth-order coefficient field `y ↦ c y` is bounded by the norm of `c`. -/
+theorem norm_euclideanZerothOrderCoeff_le
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanZerothOrderCoeff c‖ ≤ ‖c‖ :=
+  (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le)
 
 /-- The parabolic operator `P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` on `ℝⁿ = EuclideanSpace ℝ ι`
 with scalar coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}`, as a continuous linear map from

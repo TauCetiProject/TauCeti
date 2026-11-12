@@ -155,7 +155,7 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finit
   have hU (w : ℂ) (hw : w ∈ frontier U) : IsPreconnectedApproachAt U w := by
     by_cases hv : ∃ i, w = v i
     · obtain ⟨i, rfl⟩ := hv
-      obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
+      obtain ⟨ρ, hρ, b, _, hU⟩ := hcorner i
       exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hU
     · obtain ⟨ρ, hρ, p, b, -, hU⟩ := hside w hw fun i hi => hv ⟨i, hi⟩
       exact isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos hρ hU

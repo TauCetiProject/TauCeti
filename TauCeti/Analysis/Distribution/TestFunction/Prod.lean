@@ -201,7 +201,7 @@ theorem sliceRight_smul (c : ℝ) (φ : 𝓓(V, F)) (x : E) :
 `‖Dⁱ (y ↦ φ (x, y)) y‖ ≤ ‖Dⁱ φ (x, y)‖`. -/
 theorem norm_iteratedFDeriv_sliceRight_le (φ : 𝓓(V, F)) (i : ℕ) (x : E) (y : D) :
     ‖iteratedFDeriv ℝ i (sliceRight hO φ x) y‖ ≤ ‖iteratedFDeriv ℝ i φ (x, y)‖ :=
-  _root_.ContDiff.norm_iteratedFDeriv_prod_right_le φ.contDiff i (mod_cast le_top) x y
+  φ.contDiff.contDiffAt.norm_iteratedFDeriv_prod_right_le i (mod_cast le_top)
 
 /-- Differentiating in the second variable commutes with taking slices:
 `∂_{(0, w)} φ (x, ·) = ∂_{w} (φ (x, ·))`. -/
@@ -242,7 +242,7 @@ theorem exists_prod_cutoff_of_tsupport_subset {z : WithLp p (E × D)} (hz : z �
   obtain ⟨B₁, hB₁, B₂, hB₂, hB⟩ := mem_nhds_prod_iff.1 hUW
   refine ⟨B₁, hB₁, B₂, hB₂, fun φ ψ hφ hψ ↦ ?_⟩
   -- The product cutoff is supported in the compact set `ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ)`.
-  set K : Set (WithLp p (E × D)) := ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ) with hK_def
+  set K : Set (WithLp p (E × D)) := ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ)
   have hK : IsCompact K :=
     (prodContinuousLinearEquiv p ℝ E D).toHomeomorph.isCompact_preimage.2
       (φ.hasCompactSupport.isCompact.prod ψ.hasCompactSupport.isCompact)
