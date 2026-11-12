@@ -37,8 +37,6 @@ differentiable.
   its complex antilinear part (`TauCeti.SmoothAlmostComplexStructure.toLinearMap_zeroOnePart`), a
   projection onto the `(0,1)`-forms
   (`TauCeti.SmoothAlmostComplexStructure.zeroOnePart_eq_self_iff`).
-* `TauCeti.IsRealCauchyRiemannOperator.apply_eq_of_eventuallyEq`: locality of real Cauchy–Riemann
-  operators: for sections differentiable at `x`, `D σ x` depends only on the germ of `σ` at `x`.
 * `TauCeti.IsRealCauchyRiemannOperator.difference`: two real Cauchy–Riemann operators differ by a
   zeroth-order term, a `(0,1)`-form with values in the real endomorphisms of `V`
   (`TauCeti.IsRealCauchyRiemannOperator.isZeroOneForm_difference`).
@@ -65,7 +63,7 @@ differentiable.
 public section
 
 open Bundle FiberBundle
-open scoped ContDiff Manifold Topology
+open scoped ContDiff Manifold
 
 noncomputable section
 
@@ -332,66 +330,6 @@ theorem smul_const (hD : IsRealCauchyRiemannOperator F j D) (a : ℝ) {σ : Π x
 theorem neg (hD : IsRealCauchyRiemannOperator F j D) {σ : Π x : M, V x} {x : M}
     (hσ : MDiffAt (T% σ) x) : D (-σ) x = -D σ x := by
   simpa using hD.smul_const (-1) hσ
-
-/-- A real Cauchy–Riemann operator vanishes on the zero section. -/
-theorem apply_zero [VectorBundle ℝ F V] (hD : IsRealCauchyRiemannOperator F j D) (x : M) :
-    D 0 x = 0 := by
-  simpa using hD.smul_const 0 (σ := 0) (x := x) (mdifferentiableAt_zeroSection ℝ V)
-
-/-- A real Cauchy–Riemann operator commutes with finite sums of sections differentiable at a
-point. -/
-theorem apply_sum [VectorBundle ℝ F V] (hD : IsRealCauchyRiemannOperator F j D) {κ : Type*}
-    {s : Finset κ} {τ : κ → Π x : M, V x} {x : M} (hτ : ∀ i ∈ s, MDiffAt (T% (τ i)) x) :
-    D (∑ i ∈ s, τ i) x = ∑ i ∈ s, D (τ i) x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using hD.apply_zero x
-  | insert i s hi ih =>
-    simp only [Finset.mem_insert, forall_eq_or_imp] at hτ
-    have hsum : MDiffAt (T% (∑ k ∈ s, τ k)) x := by
-      simpa [Finset.sum_apply] using
-        MDifferentiableAt.sum_section (t := fun k (y : M) ↦ τ k y) (s := s) hτ.2
-    rw [Finset.sum_insert hi, hD.add hτ.1 hsum, ih hτ.2, Finset.sum_insert hi]
-
-/-! ### Locality -/
-
-/-- **Locality.** If two sections differentiable at `x` agree on a neighbourhood of `x`, then a
-real Cauchy–Riemann operator takes the same value on them at `x`. -/
-theorem apply_eq_of_eqOn (hD : IsRealCauchyRiemannOperator F j D) {σ σ' : Π x : M, V x} {x : M}
-    {s : Set M} (hσ : MDiffAt (T% σ) x) (hσ' : MDiffAt (T% σ') x) (hs : s ∈ 𝓝 x)
-    (h : ∀ y ∈ s, σ y = σ' y) :
-    D σ x = D σ' x := by
-  -- The proof follows Mathlib's `IsCovariantDerivativeOn.congr_of_eqOn`.
-  classical
-  -- Multiply by the indicator `ψ` of `s`: it is locally constant at `x`, so `D (ψ • σ) x = D σ x`.
-  let ψ : M → ℝ := s.indicator 1
-  have hψ : ψ =ᶠ[𝓝 x] fun _ ↦ 1 :=
-    Filter.eventually_of_mem hs fun y hy ↦ by simp [ψ, Set.indicator_of_mem hy]
-  have hψx : ψ x = 1 := hψ.eq_of_nhds
-  have hψ' : HasMFDerivAt I 𝓘(ℝ) ψ x 0 := (hasMFDerivAt_const (1 : ℝ) x).congr_of_eventuallyEq hψ
-  have hψd : MDiffAt ψ x := hψ'.mdifferentiableAt
-  have hdψ : d% ψ x = 0 := by simp [mvfderiv, hψ'.mfderiv]
-  have hdbar (τ : Π x : M, V x) : j.dbarSMulRight ψ τ x = 0 := by
-    ext v
-    simp [dbarSMulRight_apply, hdψ]
-  have hsmul : ψ • σ = ψ • σ' := by
-    ext y
-    by_cases hy : y ∈ s
-    · simp [h y hy]
-    · simp [ψ, Set.indicator_of_notMem hy]
-  calc D σ x = D (ψ • σ) x := by rw [hD.leibniz hσ hψd, hψx, one_smul, hdbar, add_zero]
-    _ = D (ψ • σ') x := by rw [hsmul]
-    _ = D σ' x := by rw [hD.leibniz hσ' hψd, hψx, one_smul, hdbar, add_zero]
-
-/-- **Locality.** A real Cauchy–Riemann operator at `x` only depends on the germ at `x` of a section
-differentiable at `x`. -/
-theorem apply_eq_of_eventuallyEq (hD : IsRealCauchyRiemannOperator F j D)
-    {σ σ' : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) (h : ∀ᶠ y in 𝓝 x, σ y = σ' y) :
-    D σ x = D σ' x := by
-  have hσ' : MDiffAt (T% σ') x :=
-    hσ.congr_of_eventuallyEq (h.mono fun y hy ↦ congrArg (TotalSpace.mk' F y) hy.symm)
-  obtain ⟨s, hs, hss⟩ := h.exists_mem
-  exact hD.apply_eq_of_eqOn hσ hσ' hs hss
 
 /-- A real Cauchy–Riemann operator which commutes with multiplication by `i` is complex linear. -/
 theorem isComplexLinearOperator [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]

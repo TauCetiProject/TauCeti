@@ -17,8 +17,6 @@ structure `j`, let `e` be a trivialization of `V` and `b` a basis of the model f
 that `e.localFrame b` is a smooth real frame of `V` over `e.baseSet`. This file reads a real
 Cauchy–Riemann operator `D` on `V` in that frame.
 
-A real Cauchy–Riemann operator is local: for sections differentiable at `x`, `D σ x` depends only
-on the germ of `σ` at `x` (`TauCeti.IsRealCauchyRiemannOperator.apply_eq_of_eventuallyEq`).
 Writing `σ = ∑ i, σⁱ • eᵢ` over `e.baseSet`, with real coefficients `σⁱ`, the Leibniz rule gives
 
 `D σ = ∑ i, (∂bar σⁱ) ⊗ eᵢ + ∑ i, σⁱ • D eᵢ`
@@ -26,7 +24,8 @@ Writing `σ = ∑ i, σⁱ • eᵢ` over `e.baseSet`, with real coefficients `�
 at points of `e.baseSet` where `σ` is differentiable. The first summand is the `(0,1)`-part of
 the flat covariant derivative of the frame; it is `frameCauchyRiemannOperator`, which satisfies the
 axioms of a real Cauchy–Riemann operator over `e.baseSet` and kills the frame sections. The second
-summand is a zeroth-order term.
+summand is a zeroth-order term: the difference of `D` and the flat operator is tensorial at each
+point of `e.baseSet` (`TauCeti.IsRealCauchyRiemannOperator.tensorialAt_sub_zeroOnePart`).
 
 ## Main results
 
@@ -145,7 +144,7 @@ end Manifold
 
 namespace IsRealCauchyRiemannOperator
 
-variable [VectorBundle ℝ F V] [ContMDiffVectorBundle 1 F V I] [FiniteDimensional ℝ F]
+variable [VectorBundle ℝ F V] [ContMDiffVectorBundle 1 F V I]
   {ι : Type*} [Fintype ι] (b : Basis ι ℝ F)
   {e : Trivialization F (TotalSpace.proj : TotalSpace F V → M)} [MemTrivializationAtlas e]
 
@@ -156,20 +155,26 @@ theorem eq_frameCauchyRiemannOperator_add_sum (hD : IsRealCauchyRiemannOperator 
     (hx : x ∈ e.baseSet) (hσ : MDiffAt (T% σ) x) :
     D σ x = Manifold.frameCauchyRiemannOperator j b e σ x +
       ∑ i, e.localFrameCoeff I b i x (σ x) • D (e.localFrame b i) x := by
+  have : FiniteDimensional ℝ F := Module.Finite.of_basis b
   set c : ι → M → ℝ := fun i ↦ (LinearMap.piApply (e.localFrameCoeff I b i)) σ
   have hcd (i : ι) : MDiffAt (c i) x := mdifferentiableAt_localFrameCoeff b hx hσ i
   have hframe (i : ι) : MDiffAt (T% (e.localFrame b i)) x :=
     ((e.contMDiffOn_localFrame_baseSet 1 b i).mdifferentiableOn one_ne_zero).mdifferentiableAt
       (e.open_baseSet.mem_nhds hx)
   have hterm (i : ι) : MDiffAt (T% (c i • e.localFrame b i)) x := (hcd i).smul_section (hframe i)
-  have heq : ∀ᶠ y in 𝓝 x, σ y = (∑ i, c i • e.localFrame b i) y :=
+  have heq : ∀ᶠ y in 𝓝 x, σ y = ∑ i, (c i • e.localFrame b i) y :=
     eventually_of_mem (e.open_baseSet.mem_nhds hx) fun y hy ↦ by
-      simpa [Finset.sum_apply, c] using e.eq_sum_localFrameCoeff_smul (I := I) (b := b) (s := σ) hy
-  rw [hD.apply_eq_of_eventuallyEq hσ heq, hD.apply_sum fun i _ ↦ hterm i,
-    Manifold.frameCauchyRiemannOperator_eq_sum, ← Finset.sum_add_distrib]
+      simpa [c] using e.eq_sum_localFrameCoeff_smul (I := I) (b := b) (s := σ) hy
+  -- `D` differs from the flat operator of the frame by a term tensorial at `x`, and the flat
+  -- operator kills the frame sections.
+  have Φ := hD.tensorialAt_sub_zeroOnePart
+    (Manifold.isCovariantDerivativeOn_frameCovariantDerivative (I := I) b) hx
+  rw [← sub_eq_iff_eq_add', Manifold.frameCauchyRiemannOperator_apply,
+    Φ.local hσ (.sum_section fun i _ ↦ hterm i) heq, Φ.sum _ fun i _ ↦ hterm i]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [hD.leibniz (hframe i) (hcd i), add_comm]
-  simp only [c, LinearMap.piApply_apply_apply]
+  rw [Φ.smul (hcd i) (hframe i), ← Manifold.frameCauchyRiemannOperator_apply,
+    Manifold.frameCauchyRiemannOperator_localFrame b hx, sub_zero]
+  rfl
 
 end IsRealCauchyRiemannOperator
 
