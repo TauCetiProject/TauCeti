@@ -23,11 +23,11 @@ import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 For a prime `p`, the power series `ω_n = (1 + X) ^ pⁿ - 1` over a commutative ring `O` cut out the
 finite levels of the Iwasawa algebra `O⟦X⟧`. This file collects facts about them that do not
 depend on the level maps. In characteristic `p` the Frobenius identity gives `ω_n = X ^ pⁿ`. For
-an ideal `I` of `O` containing `p`, `ω_n` lies in the `(n + 1)`-st power of the ideal `I⟦X⟧` of
-series with constant coefficient in `I` (over a local ring in which `p` is not a unit, the maximal
-ideal of `O⟦X⟧`), so when `O` is `I`-adically Hausdorff, for instance when `O` is a complete local
-ring or, by Krull's intersection theorem, a noetherian local ring and `I` its maximal ideal, the
-principal ideals `(ω_n)` meet in zero. Over a local domain with a prime `ϖ`, every
+an ideal `I` of `O` containing `p`, `ω_n` lies in the `(n + 1)`-st power of the ideal
+`I.comap constantCoeff` of series with constant coefficient in `I` (over a local ring in which `p`
+is not a unit, the maximal ideal of `O⟦X⟧`), so when `O` is `I`-adically Hausdorff, for instance
+when `O` is a complete local ring or, by Krull's intersection theorem, a noetherian local ring and
+`I` its maximal ideal, the principal ideals `(ω_n)` meet in zero. Over a local domain with a prime `ϖ`, every
 `(1 + X) ^ N - 1` with `N ≠ 0` acts injectively on `O⟦X⟧ ⧸ (ϖ ^ m)`.
 
 The polynomial counterparts, in particular that `(1 + X) ^ pⁿ - 1` is distinguished at every ideal
@@ -39,7 +39,8 @@ containing `p`, are in `TauCeti.RingTheory.Polynomial.Distinguished`.
 * `PowerSeries.torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot`: for a prime `ϖ` of a
   local domain `O` and `N ≠ 0`, `(1 + X) ^ N - 1` has no nonzero torsion on `O⟦X⟧ ⧸ (ϖ ^ m)`.
 * `PowerSeries.one_add_X_pow_sub_one_mem_comap_constantCoeff_pow`: `ω_n` lies in the
-  `(n + 1)`-st power of `I⟦X⟧` for an ideal `I` containing `p`.
+  `(n + 1)`-st power of `I.comap constantCoeff`, the ideal of series with constant coefficient in
+  `I`, for an ideal `I` containing `p`.
 * `PowerSeries.one_add_X_pow_sub_one_mem_maximalIdeal_pow`: `ω_n` lies in the `(n + 1)`-st power
   of the maximal ideal of `O⟦X⟧` when `p` is not a unit of the local ring `O`.
 * `PowerSeries.iInf_span_one_add_X_pow_sub_one_eq_bot`: if `O` is `I`-adically Hausdorff for an
@@ -75,8 +76,9 @@ theorem torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot [IsDomain O] 
   simpa using h
 
 /-- For an ideal `I` of `O` containing `p`, the series `ω_n = (1 + X) ^ pⁿ - 1` lies in the
-`(n + 1)`-st power of the ideal `I⟦X⟧` of series with constant coefficient in `I`: `ω_0 = X`, and
-`ω_{n+1} = ω_n · ∑_{i < p} (1 + X) ^ (i pⁿ)`, whose second factor has constant coefficient `p`. -/
+`(n + 1)`-st power of the ideal `I.comap constantCoeff` of series with constant coefficient in `I`:
+`ω_0 = X`, and `ω_{n+1} = ω_n · ∑_{i < p} (1 + X) ^ (i pⁿ)`, whose second factor has constant
+coefficient `p`. -/
 theorem one_add_X_pow_sub_one_mem_comap_constantCoeff_pow {I : Ideal O} (hI : (p : O) ∈ I)
     (n : ℕ) : (1 + X : O⟦X⟧) ^ p ^ n - 1 ∈ I.comap constantCoeff ^ (n + 1) := by
   induction n with
@@ -98,8 +100,8 @@ theorem one_add_X_pow_sub_one_mem_maximalIdeal_pow [IsLocalRing O]
 
 /-- **The ideals `(ω_n)` meet in zero.** If `O` is Hausdorff for an ideal `I` containing `p`, no
 nonzero element of `O⟦X⟧` is divisible by every `ω_n = (1 + X) ^ pⁿ - 1`: `ω_n` lies in the
-`(n + 1)`-st power of the ideal `I⟦X⟧` of series with constant coefficient in `I`, for which
-`O⟦X⟧` is Hausdorff too. -/
+`(n + 1)`-st power of the ideal `I.comap constantCoeff` of series with constant coefficient in `I`,
+for which `O⟦X⟧` is Hausdorff too. -/
 theorem iInf_span_one_add_X_pow_sub_one_eq_bot {I : Ideal O} (hI : (p : O) ∈ I)
     [IsHausdorff I O] : ⨅ n : ℕ, Ideal.span {(1 + X : O⟦X⟧) ^ p ^ n - 1} = ⊥ := by
   refine eq_bot_iff.mpr <| (le_iInf fun n ↦ ?_).trans (by
