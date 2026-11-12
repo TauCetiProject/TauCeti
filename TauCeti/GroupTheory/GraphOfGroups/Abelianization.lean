@@ -42,7 +42,7 @@ variable {Γ : SerreGraph} (T : Γ.SpanningTree) (v : Γ.V) {O : Set Γ.E}
 /-- The abelianization of the reduced path group is free abelian on the positive darts outside
 a spanning tree. -/
 noncomputable def abelianizationEquivFreeAbelianGroup (hO : Γ.IsOrientation O) :
-    Additive (Abelianization (PathGroup Γ v)) ≃+ FreeAbelianGroup ↥(O \ T.darts) :=
+    Additive (Group.Abelianization (PathGroup Γ v)) ≃+ FreeAbelianGroup ↥(O \ T.darts) :=
   (T.pathGroupEquivFreeGroup v hO).abelianizationCongr.toAdditive
 
 /-- The class of the tree loop through a positive dart outside the tree is the free generator
@@ -50,23 +50,24 @@ of that dart. -/
 @[simp] theorem abelianizationEquivFreeAbelianGroup_loop (hO : Γ.IsOrientation O)
     (e : ↥(O \ T.darts)) :
     T.abelianizationEquivFreeAbelianGroup v hO
-      (Additive.ofMul (Abelianization.of (T.loop v e.1))) = FreeAbelianGroup.of e := by
+      (Additive.ofMul (Group.Abelianization.of (T.loop v e.1))) = FreeAbelianGroup.of e := by
   -- `FreeAbelianGroup.of e` is by definition the additive class of `FreeGroup.of e`.
   change Additive.ofMul ((T.pathGroupEquivFreeGroup v hO).abelianizationCongr
-    (Abelianization.of (T.loop v e.1))) = Additive.ofMul (Abelianization.of (FreeGroup.of e))
-  rw [abelianizationCongr_of, pathGroupEquivFreeGroup_loop]
+    (Group.Abelianization.of (T.loop v e.1))) =
+      Additive.ofMul (Group.Abelianization.of (FreeGroup.of e))
+  rw [Group.abelianizationCongr_of, pathGroupEquivFreeGroup_loop]
 
 /-- A free generator corresponds to the class of its tree loop. -/
 @[simp] theorem abelianizationEquivFreeAbelianGroup_symm_of (hO : Γ.IsOrientation O)
     (e : ↥(O \ T.darts)) :
     (T.abelianizationEquivFreeAbelianGroup v hO).symm (FreeAbelianGroup.of e) =
-      Additive.ofMul (Abelianization.of (T.loop v e.1)) := by
+      Additive.ofMul (Group.Abelianization.of (T.loop v e.1)) := by
   rw [← T.abelianizationEquivFreeAbelianGroup_loop v hO, AddEquiv.symm_apply_apply]
 
 /-- The free coordinates of a class in the abelianized path group are the coordinates of its
 cycle class at the positive darts outside the tree. -/
 theorem equivFinsupp_abelianizationEquivFreeAbelianGroup (hO : Γ.IsOrientation O)
-    (x : Additive (Abelianization (PathGroup Γ v))) :
+    (x : Additive (Group.Abelianization (PathGroup Γ v))) :
     FreeAbelianGroup.equivFinsupp _ (T.abelianizationEquivFreeAbelianGroup v hO x) =
       Γ.cycleChordCoordinates O T.darts ℤ (T.abelianizationEquivCycle v hO x) := by
   obtain ⟨y, rfl⟩ := (T.abelianizationEquivFreeAbelianGroup v hO).symm.surjective x

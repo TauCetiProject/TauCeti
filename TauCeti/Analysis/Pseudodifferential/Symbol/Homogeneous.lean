@@ -118,7 +118,7 @@ theorem spatialDeriv_cutoffSymbol (j : Fin n)
   · simp [χ.apply_zero]
   · have hd : DifferentiableAt ℝ (fun y => a.coefficient (y, ξ)) x :=
       (a.differentiableAt_coefficient (p := (x, ξ)) hξ).comp x (by fun_prop)
-    rw [fderiv_fun_const_smul hd, smul_apply, coefficient_spatialDeriv _ _ hξ]
+    rw [fderiv_fun_const_smul hd, smul_apply, coefficient_spatialDeriv _ _]
 
 /-- A frequency derivative of the cut-off term is the cut-off term of the frequency derivative, up
 to a smoothing symbol: the two agree at all frequencies of norm greater than `2`, where the cutoff

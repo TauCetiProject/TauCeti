@@ -37,6 +37,9 @@ Fatou's lemma passes a bound on the weighted integrals `∫⁻ V_n² u` for the 
   in a set over which `f` has finite integral.
 * `TauCeti.lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le`: Fatou's lemma
   for the truncated weights `W / (1 + W / (n + 1))`.
+* `TauCeti.tendsto_lintegral_filter_limsup_of_dominated_convergence`: dominated convergence of
+  `∫⁻ x, F j x ∂μ` to `∫⁻ x, limsup (fun j ↦ F j x) l ∂μ` under almost-everywhere convergence to
+  some limit, without requiring a globally named limit function.
 -/
 
 public section
@@ -71,8 +74,8 @@ theorem tendsto_setLIntegral_enorm_add_sub {H ι : Type*} [NormedAddCommGroup H]
     Tendsto (fun n => ∫⁻ x in W, ‖a n x + b n x - (a₀ x + b₀ x)‖ₑ ∂μ) l (𝓝 0) :=
   tendsto_lintegral_zero_of_le_add (μ := μ.restrict W)
     (.of_forall fun n ↦ .of_forall fun x ↦ by
-      simpa only [Pi.add_apply, add_sub_add_comm] using enorm_add_le _ _)
-    (.of_forall fun n ↦ (ha n).enorm) h₁ h₂
+      simpa only [Pi.add_apply, add_sub_add_comm] using eNorm_add_le _ _)
+    (.of_forall fun n ↦ (ha n).eNorm) h₁ h₂
 
 /-- If bounded coefficients `c i` converge almost everywhere to `c₀` and `g i → g₀` in `L¹`,
 then `c i • g i → c₀ • g₀` in `L¹`. The coefficients lie in any seminormed ring `𝕜` and the
@@ -91,19 +94,19 @@ theorem tendsto_lintegral_enorm_smul_sub {𝕜 E : Type*} [SeminormedRing 𝕜]
   have hc₀ : AEStronglyMeasurable c₀ ν := aestronglyMeasurable_of_tendsto_ae atTop hc hlim
   -- the bound passes to the almost everywhere limit
   have hc₀M : ∀ᵐ x ∂ν, ‖c₀ x‖₊ ≤ M := (ae_all_iff.2 hcM).and hlim |>.mono fun x ⟨hx, hx'⟩ =>
-    le_of_tendsto' ((continuous_nnnorm.tendsto _).comp hx') hx
+    le_of_tendsto' ((continuous_nnNorm.tendsto _).comp hx') hx
   have hmeas (i : ℕ) : AEMeasurable (fun x => ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ) ν :=
-    ((hc i).sub hc₀).enorm.mul hg₀.enorm
+    ((hc i).sub hc₀).eNorm.mul hg₀.eNorm
   have hC : Tendsto (fun i => ∫⁻ x, ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ ∂ν) atTop (𝓝 0) := by
     simpa using tendsto_lintegral_of_dominated_convergence' (fun x => (M + M) * ‖g₀ x‖ₑ)
       (F := fun i x => ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ) (f := 0) hmeas
       (fun i => (hcM i).and hc₀M |>.mono fun x ⟨hx, hx'⟩ => by
         dsimp only
         gcongr
-        exact enorm_sub_le.trans (add_le_add (enorm_le_coe.2 hx) (enorm_le_coe.2 hx')))
+        exact eNorm_sub_le.trans (add_le_add (eNorm_le_coe.2 hx) (eNorm_le_coe.2 hx')))
       (by rw [lintegral_const_mul' _ _ (by simp)]; exact ENNReal.mul_ne_top (by simp) hg₀int)
       (hlim.mono fun x hx => by
-        simpa using ENNReal.Tendsto.mul_const (hx.sub_const (c₀ x)).enorm (Or.inr enorm_ne_top))
+        simpa using ENNReal.Tendsto.mul_const (hx.sub_const (c₀ x)).eNorm (Or.inr eNorm_ne_top))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa using (ENNReal.Tendsto.const_mul (a := M) hgg (Or.inr ENNReal.coe_ne_top)).add hC)
     (fun _ => zero_le) fun i => ?_
@@ -116,10 +119,10 @@ theorem tendsto_lintegral_enorm_smul_sub {𝕜 E : Type*} [SeminormedRing 𝕜]
           rw [smul_sub, sub_smul]
           abel
     _ ≤ M * ‖g i x - g₀ x‖ₑ + ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ := ?_
-  refine (enorm_add_le _ _).trans (add_le_add ?_ (enorm_smul _ _).le)
-  rw [enorm_smul]
+  refine (eNorm_add_le _ _).trans (add_le_add ?_ (eNorm_smul _ _).le)
+  rw [eNorm_smul]
   gcongr
-  exact enorm_le_coe.2 hx
+  exact eNorm_le_coe.2 hx
 
 /-- **The reverse Fatou lemma for integrals over sets.** Let the sets `s n` be measurable and
 contained in a set `t` over which `f` is almost everywhere measurable with finite integral. Then
@@ -178,5 +181,19 @@ theorem lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
         lintegral_liminf_le' fun n ↦ (((hW.div (aemeasurable_const.add
           (aemeasurable_const.mul hW))).pow_const 2).mul hu).ennreal_ofReal
     _ ≤ C := liminf_le_of_frequently_le' (Frequently.of_forall h)
+
+/-- **Dominated convergence to the pointwise `limsup`**, requiring only almost-everywhere
+convergence to *some* limit rather than a globally named limit function. -/
+theorem tendsto_lintegral_filter_limsup_of_dominated_convergence {ι : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] {F : ι → α → ℝ≥0∞} (bound : α → ℝ≥0∞)
+    (hF_meas : ∀ᶠ j in l, AEMeasurable (F j) μ)
+    (h_bound : ∀ᶠ j in l, ∀ᵐ x ∂μ, F j x ≤ bound x)
+    (h_fin : ∫⁻ x, bound x ∂μ ≠ ∞)
+    (h_lim : ∀ᵐ x ∂μ, ∃ c, Tendsto (fun j ↦ F j x) l (𝓝 c)) :
+    Tendsto (fun j ↦ ∫⁻ x, F j x ∂μ) l (𝓝 (∫⁻ x, limsup (fun j ↦ F j x) l ∂μ)) := by
+  rcases eq_or_neBot l with rfl | _
+  · exact tendsto_bot
+  · refine tendsto_lintegral_filter_of_dominated_convergence' bound hF_meas h_bound h_fin ?_
+    exact h_lim.mono fun _ ⟨_, hc⟩ ↦ hc.limsup_eq ▸ hc
 
 end TauCeti
