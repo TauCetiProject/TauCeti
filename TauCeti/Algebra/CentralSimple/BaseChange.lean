@@ -57,9 +57,10 @@ a central simple `L`-algebra with no glue at all.
 
 Together with the centrality of `TauCeti/Algebra/Central/BaseChange.lean` and the two compatibility
 equivalences of `TauCeti/Algebra/TensorProduct/BaseChange.lean`, both re-exported here, this is what
-will let base change descend to a homomorphism of Brauer groups: the centrality and the simplicity
-say the class of `L ⊗[K] A` is defined, and the two equivalences say the assignment respects the
-multiplication and the inversion of classes.
+lets base change descend to the homomorphism of Brauer groups `TauCeti.BrauerGroup.baseChange` in
+`TauCeti/Algebra/BrauerGroup/BaseChange.lean`: the centrality and the simplicity say the class of
+`L ⊗[K] A` is defined, and the two equivalences say the assignment respects the multiplication and
+the inversion of classes.
 
 ## Implementation notes
 
@@ -76,12 +77,8 @@ and it is the reason the centrality hypothesis on `A` cannot be dropped from the
 
 ## References
 
-This completes, apart from the homomorphism itself, the **Base change preserves central simplicity,
-then is a homomorphism** bullet of Layer 6 of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
-The induced homomorphism of Brauer groups waits on the group structure of `BrauerGroup K`, a
-separate bullet of the same layer. See P. Gille, T. Szamuely, *Central Simple Algebras and Galois
-Cohomology*, Section 2.2, and R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12.
+See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.2, and
+R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12.
 -/
 
 public section
