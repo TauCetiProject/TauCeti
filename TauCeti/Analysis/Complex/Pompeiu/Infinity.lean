@@ -102,6 +102,28 @@ theorem norm_cauchyTransform_sub_inv_smul_le_of_two_mul_lt (hf : Integrable f)
       ≤ π⁻¹ * (2 * r / ‖w - c‖ ^ 2 * ∫ z, ‖f z‖) := by gcongr
     _ = 2 * π⁻¹ * r * (∫ z, ‖f z‖) / ‖w - c‖ ^ 2 := by ring
 
+/-- **A lower bound for the Cauchy transform at infinity.** Far enough from the disc, the
+reciprocal tail dominates the remainder: `‖M‖ / (2 ‖w - c‖) ≤ ‖T f w‖`. -/
+theorem div_le_norm_cauchyTransform_of_two_mul_lt (hf : Integrable f)
+    (hsupp : support f ⊆ closedBall c r) (hw : 2 * (r : ℝ) < ‖w - c‖)
+    (hwM : 4 * π⁻¹ * r * (∫ z, ‖f z‖) / ‖(Real.pi : ℂ)⁻¹ • ∫ z, f z‖ < ‖w - c‖) :
+    ‖(Real.pi : ℂ)⁻¹ • ∫ z, f z‖ / 2 / ‖w - c‖ ≤ ‖cauchyTransform f w‖ := by
+  set M : F := (Real.pi : ℂ)⁻¹ • ∫ z, f z
+  have hρ0 : 0 < ‖w - c‖ := by linarith [r.coe_nonneg]
+  rcases (norm_nonneg M).eq_or_lt with hM0 | hM0
+  · rw [← hM0, zero_div, zero_div]
+    exact norm_nonneg _
+  have hrem := norm_cauchyTransform_sub_inv_smul_le_of_two_mul_lt hf hsupp hw
+  have htri := norm_sub_norm_le ((w - c)⁻¹ • M) (cauchyTransform f w)
+  rw [norm_sub_rev, norm_smul, norm_inv] at htri
+  have hB : 2 * π⁻¹ * r * (∫ z, ‖f z‖) / ‖w - c‖ ^ 2 ≤ ‖M‖ / 2 / ‖w - c‖ := by
+    rw [div_lt_iff₀ hM0] at hwM
+    rw [div_le_div_iff₀ (by positivity) hρ0]
+    nlinarith
+  have hsplit : ‖w - c‖⁻¹ * ‖M‖ = ‖M‖ / 2 / ‖w - c‖ + ‖M‖ / 2 / ‖w - c‖ := by
+    field_simp; ring
+  linarith
+
 /-- **The Cauchy transform at infinity.** For integrable data supported in `closedBall c r`,
 `T f w = (w - c)⁻¹ • π⁻¹ ∫ f + O(‖w‖⁻²)` along `cobounded ℂ`. -/
 theorem cauchyTransform_sub_inv_smul_isBigO (hf : Integrable f)
@@ -194,8 +216,7 @@ theorem not_memLp_cauchyTransform_compl_closedBall (hf : Integrable f)
   set M : F := (Real.pi : ℂ)⁻¹ • ∫ z, f z
   have hM0 : 0 < ‖M‖ := norm_pos_iff.mpr
     (smul_ne_zero (inv_ne_zero (ofReal_ne_zero.mpr Real.pi_ne_zero)) hf0)
-  set B : ℝ := 2 * π⁻¹ * r * ∫ z, ‖f z‖
-  set R₁ : ℝ := max (max R 1) (max (2 * r) (2 * B / ‖M‖))
+  set R₁ : ℝ := max (max R 1) (max (2 * r) (4 * π⁻¹ * r * (∫ z, ‖f z‖) / ‖M‖))
   have hR₁ : 0 < R₁ := lt_of_lt_of_le one_pos ((le_max_right R 1).trans (le_max_left _ _))
   intro hmem
   have hsub : (closedBall c R₁)ᶜ ⊆ (closedBall c R)ᶜ :=
@@ -209,22 +230,10 @@ theorem not_memLp_cauchyTransform_compl_closedBall (hf : Integrable f)
       ?_
     filter_upwards [ae_restrict_mem measurableSet_closedBall.compl] with w hw
     have hρ : R₁ < ‖w - c‖ := by simpa [mem_closedBall, dist_eq_norm] using hw
-    have h2r : 2 * (r : ℝ) < ‖w - c‖ :=
-      ((le_max_left _ _).trans (le_max_right _ _)).trans_lt hρ
-    have hBM : 2 * B / ‖M‖ < ‖w - c‖ :=
-      ((le_max_right _ _).trans (le_max_right _ _)).trans_lt hρ
-    have hρ0 : 0 < ‖w - c‖ := hR₁.trans hρ
-    have hrem := norm_cauchyTransform_sub_inv_smul_le_of_two_mul_lt hf hsupp h2r
-    have htri := norm_sub_norm_le ((w - c)⁻¹ • M) (cauchyTransform f w)
-    rw [norm_sub_rev, norm_smul, norm_inv] at htri
     rw [pow_one, norm_div, norm_real, Real.norm_of_nonneg (by positivity)]
-    have hB : B / ‖w - c‖ ^ 2 ≤ ‖M‖ / 2 / ‖w - c‖ := by
-      rw [div_lt_iff₀ hM0] at hBM
-      rw [div_le_div_iff₀ (by positivity) hρ0]
-      nlinarith
-    have hsplit : ‖w - c‖⁻¹ * ‖M‖ = ‖M‖ / 2 / ‖w - c‖ + ‖M‖ / 2 / ‖w - c‖ := by
-      field_simp; ring
-    linarith
+    exact div_le_norm_cauchyTransform_of_two_mul_lt hf hsupp
+      (((le_max_left _ _).trans (le_max_right _ _)).trans_lt hρ)
+      (((le_max_right _ _).trans (le_max_right _ _)).trans_lt hρ)
   rw [memLp_div_sub_pow_compl_closedBall_iff (ofReal_ne_zero.mpr (by positivity)) c hR₁ 1
     hp0 hp_top] at hlow
   push_cast at hlow
