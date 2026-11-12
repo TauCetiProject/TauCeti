@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
@@ -31,6 +32,8 @@ pure tensors over a finite spanning family of the right factor.
 * `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
   of `M`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
+* `LinearMap.tensorComponentEquiv`: tensors as linear maps from the dual of a finite projective
+  right factor.
 * `LinearMap.sum_tensorComponent_tmul`: reconstruct a tensor from a dual family.
 * `LinearMap.tensorComponent_eq_liftBaseChange`: contraction as scalar-linear extension.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
@@ -45,6 +48,7 @@ pure tensors over a finite spanning family of the right factor.
   multiplication.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
+* `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
 * `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
   of `tensorTensorTensorComm` exchanges the factors of its value.
 
@@ -138,6 +142,24 @@ theorem tensorComponent_tmul (phi : N →ₗ[R] R) (m : M) (n : N) :
     tensorComponent (R := R) (M := M) phi (m ⊗ₜ[R] n) = phi n • m := by
   simp [tensorComponent]
 
+/-- For a finite projective right factor, contraction identifies tensors with linear maps
+from its dual. This is `dualTensorHomEquiv` transported through `Module.evalEquiv` and
+`TensorProduct.comm`. -/
+noncomputable def tensorComponentEquiv [Module.Projective R N] [Module.Finite R N] :
+    M ⊗[R] N ≃ₗ[R] (Module.Dual R N →ₗ[R] M) :=
+  TensorProduct.comm R M N ≪≫ₗ
+    TensorProduct.congr (Module.evalEquiv R N) (.refl R M) ≪≫ₗ
+    dualTensorHomEquiv R (Module.Dual R N) M
+
+/-- Evaluating the tensor–dual-Hom equivalence is contraction against the given functional. -/
+@[simp]
+theorem tensorComponentEquiv_apply [Module.Projective R N] [Module.Finite R N]
+    (x : M ⊗[R] N) (φ : Module.Dual R N) :
+    tensorComponentEquiv x φ = tensorComponent φ x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul m n => simp [tensorComponentEquiv]
+  | add x y hx hy => simp [hx, hy]
+
 /-- A family of vectors and functionals that reconstructs each vector also reconstructs
 any tensor, by contracting its second factor. The family need not be linearly independent. -/
 theorem sum_tensorComponent_tmul {ι : Type*} [Fintype ι]
@@ -169,6 +191,13 @@ theorem tensorComponent_map {M' : Type x} {N' : Type y}
   induction t using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul m n => simp
+
+/-- Taking a right tensor component commutes with a map on the left factor. -/
+@[simp]
+theorem tensorComponent_rTensor {M' : Type x} [AddCommMonoid M'] [Module R M']
+    (phi : N →ₗ[R] R) (f : M →ₗ[R] M') (t : M ⊗[R] N) :
+    tensorComponent phi (f.rTensor N t) = f (tensorComponent phi t) := by
+  simp [rTensor_def]
 
 section
 
@@ -307,6 +336,23 @@ theorem sum_mul_tmul_eq_sum_tmul_mul {ι : Type*} [Fintype ι] (φ : A →ₗ[k]
 
 end Casimir
 
+/-- If `c : M →ₗ[R] N` has a left inverse `l` and `c.lTensor κ = 0`, then `κ ⊗[R] M` is
+trivial. -/
+theorem subsingleton_tensor_of_lTensor_eq_zero {R M N κ : Type*} [CommSemiring R]
+    [AddCommMonoid κ] [Module R κ] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (c : M →ₗ[R] N) (l : N →ₗ[R] M) (hl : l ∘ₗ c = LinearMap.id) (h : c.lTensor κ = 0) :
+    Subsingleton (κ ⊗[R] M) := by
+  have hinjective : Function.Injective (c.lTensor κ) := by
+    intro x y hxy
+    have h := congrArg (l.lTensor κ) hxy
+    simpa only [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hl,
+      LinearMap.lTensor_id, LinearMap.id_apply] using h
+  constructor
+  intro x y
+  apply hinjective
+  rw [h]
+  rfl
+
 end LinearMap
 
 namespace TensorProduct
@@ -368,5 +414,11 @@ theorem tensorTensorTensorComm_comm_tmul_comm (x : M ⊗[R] N) (y : P ⊗[R] Q) 
     induction y using TensorProduct.inductionOn with
     | add y y' h h' => simp only [map_add, tmul_add, h, h']
     | tmul p q => simp
+
+/-- If `M ⊗[R] N` is nontrivial then so is `N`: were `N` trivial, the tensor product would be
+trivial too (`TensorProduct.uniqueRight`). -/
+theorem nontrivial_right [Nontrivial (M ⊗[R] N)] : Nontrivial N :=
+  not_subsingleton_iff_nontrivial.1 fun _ =>
+    not_subsingleton (M ⊗[R] N) TensorProduct.uniqueRight.instSubsingleton
 
 end TensorProduct

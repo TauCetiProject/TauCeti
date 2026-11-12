@@ -20,15 +20,20 @@ convention `Rm(x, y, z, w) = ⟨R(x, y)z, w⟩`, the curvature tensor of a space
 sectional curvature `κ` is `(κ / 2) (g ⊙ g)`, and the Weyl tensor of a Riemannian metric is the
 part of `Rm` left after removing the Kulkarni–Nomizu product of the Schouten tensor with `g`.
 
-The product is bilinear and commutative, and is always antisymmetric in its first and in its last
-pair of arguments. For symmetric `h` and `k` it is moreover symmetric under interchanging the two
-pairs and satisfies the first Bianchi identity, so it has all the algebraic symmetries of a
-Riemann curvature tensor.
+The product is bilinear and commutative, and is always alternating in its first and in its last
+pair of arguments: it vanishes when the two arguments of either pair coincide. In particular it is
+antisymmetric in each pair; alternation is the stronger property when `2` is a zero divisor in the
+scalar ring. For symmetric `h` and `k` it is moreover symmetric under interchanging the two pairs
+and satisfies the first Bianchi identity, so it has all the algebraic symmetries of a Riemann
+curvature tensor.
 
 ## Main declarations
 
 * `LinearMap.BilinForm.kulkarniNomizu`: the Kulkarni–Nomizu product, as a bilinear map.
 * `LinearMap.BilinForm.kulkarniNomizu_comm`: the product is commutative.
+* `LinearMap.BilinForm.kulkarniNomizu_self_first` and
+  `LinearMap.BilinForm.kulkarniNomizu_self_last`: the product is alternating in its first and in
+  its last pair of arguments.
 * `LinearMap.BilinForm.IsSymm.kulkarniNomizu_swap_pairs` and
   `LinearMap.BilinForm.IsSymm.kulkarniNomizu_cyclic_eq_zero`: pair interchange and the first
   Bianchi identity for symmetric factors.
@@ -84,6 +89,20 @@ theorem kulkarniNomizu_apply (h k : BilinForm R M) (x y z w : M) :
 theorem kulkarniNomizu_comm (h k : BilinForm R M) :
     kulkarniNomizu h k = kulkarniNomizu k h := by
   ext x y z w
+  simp only [kulkarniNomizu_apply]
+  ring
+
+/-- The Kulkarni–Nomizu product is alternating in its first pair of arguments: it vanishes when
+they are equal. -/
+theorem kulkarniNomizu_self_first (h k : BilinForm R M) (x z w : M) :
+    kulkarniNomizu h k x x z w = 0 := by
+  simp only [kulkarniNomizu_apply]
+  ring
+
+/-- The Kulkarni–Nomizu product is alternating in its last pair of arguments: it vanishes when
+they are equal. -/
+theorem kulkarniNomizu_self_last (h k : BilinForm R M) (x y z : M) :
+    kulkarniNomizu h k x y z z = 0 := by
   simp only [kulkarniNomizu_apply]
   ring
 

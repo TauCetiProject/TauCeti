@@ -216,7 +216,6 @@ theorem mem_leftRightOverlapPartners_iff_sides
       (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle, D.toRectangleDecomposition_second_toGridRectangle]
         using hp)
-    have hEone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
     have hdata := hback.isRecutOfLeftEqLeft (by simpa using hEcommon)
     rcases hdata.recut_branch with ⟨hcol, -⟩ | ⟨-, -, hleft, -⟩
     · simpa only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_left,

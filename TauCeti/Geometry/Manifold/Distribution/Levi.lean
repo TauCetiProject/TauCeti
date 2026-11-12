@@ -302,21 +302,45 @@ theorem distributionLeviForm_eq_zero_iff (hD : IsContMDiffDistribution I n k D) 
       (eventually_of_mem (hU.mem_nhds hxU) hVD)
       (eventually_of_mem (hU'.mem_nhds hxU') hWD)).mpr hmem
 
+/-- **The Levi form of an involutive distribution vanishes.** No regularity of `D` is needed: the
+form is zero by definition at points without a `C¹` local frame, and is computed by brackets of
+tangent fields elsewhere. -/
+theorem IsInvolutiveDistribution.distributionLeviForm_eq_zero
+    (hinv : IsInvolutiveDistribution I D) (x : M) : distributionLeviForm D x = 0 := by
+  by_cases hframe : ∃ (m : ℕ) (X : Fin m → Π y : M, TangentSpace I y) (U : Set M),
+      U ∈ 𝓝 x ∧ IsDistributionFrameOn I 1 D X U
+  · obtain ⟨m, X, U, hU, hX⟩ := hframe
+    have hx := mem_of_mem_nhds hU
+    have hxU := mem_interior_iff_mem_nhds.2 hU
+    have hd (w : D x) : MDiff[interior U] (T% (hX.extend hx w)) :=
+      ((hX.contMDiffOn_extend hx w).mono interior_subset).mdifferentiableOn (by simp)
+    have hda (w : D x) : MDiffAt (T% (hX.extend hx w)) x :=
+      ((hX.contMDiffOn_extend hx w).contMDiffAt hU).mdifferentiableAt (by simp)
+    have hev (w : D x) : ∀ᶠ y in 𝓝 x, hX.extend hx w y ∈ D y :=
+      eventually_of_mem hU fun _ hy ↦ hX.extend_mem hx w hy
+    ext u v
+    have hmem := hinv.mlieBracket_mem isOpen_interior (hd u) (hd v)
+      (fun y hy ↦ hX.extend_mem hx u (interior_subset hy))
+      (fun y hy ↦ hX.extend_mem hx v (interior_subset hy)) hxU
+    have key := (hX.distributionLeviForm_apply_eq_zero_iff le_rfl hU (hda u) (hda v) (hev u)
+      (hev v)).2 hmem
+    have e (w : D x) : (⟨hX.extend hx w x, (hev w).self_of_nhds⟩ : D x) = w :=
+      Subtype.ext (hX.extend_apply_self hx w)
+    rw [e u, e v] at key
+    simpa using key
+  · unfold distributionLeviForm
+    rw [dite_eq_right hframe]
+
 /-- **A `C¹` distribution is involutive exactly when its Levi form vanishes.** -/
 theorem isInvolutiveDistribution_iff_distributionLeviForm_eq_zero
     (hD : IsContMDiffDistribution I n k D) (hn : 1 ≤ n) :
     IsInvolutiveDistribution I D ↔ ∀ x, distributionLeviForm D x = 0 := by
-  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
-  refine ⟨fun hinv x ↦ ?_, fun h ↦ isInvolutiveDistribution_iff.mpr
-    fun U hU V W hV hW hVD hWD x hx ↦ ?_⟩
-  · apply (distributionLeviForm_eq_zero_iff hD hn).mpr
-    intro U hU hxU V W hV hW hVD hWD
-    exact hinv.mlieBracket_mem hU (hV.mdifferentiableOn hn0) (hW.mdifferentiableOn hn0)
-      hVD hWD hxU
-  · have hUx := hU.mem_nhds hx
-    refine (distributionLeviForm_apply_eq_zero_iff hD hn (hV.mdifferentiableAt hUx)
-      (hW.mdifferentiableAt hUx) (eventually_of_mem hUx hVD) (eventually_of_mem hUx hWD)).mp ?_
-    rw [h x, LinearMap.zero_apply, LinearMap.zero_apply]
+  refine ⟨fun hinv x ↦ hinv.distributionLeviForm_eq_zero x, fun h ↦
+    isInvolutiveDistribution_iff.mpr fun U hU V W hV hW hVD hWD x hx ↦ ?_⟩
+  have hUx := hU.mem_nhds hx
+  refine (distributionLeviForm_apply_eq_zero_iff hD hn (hV.mdifferentiableAt hUx)
+    (hW.mdifferentiableAt hUx) (eventually_of_mem hUx hVD) (eventually_of_mem hUx hWD)).mp ?_
+  rw [h x, LinearMap.zero_apply, LinearMap.zero_apply]
 
 /-- The Levi form of the standard contact distribution `ker (dz - x dy)` on `ℝ³` is nonzero at
 every point: it sends the values of the tangent fields `(1, 0, 0)` and `(0, 1, x)` to the class of

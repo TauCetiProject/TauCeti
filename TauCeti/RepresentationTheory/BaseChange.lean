@@ -930,7 +930,7 @@ noncomputable def baseChangeFDRepUnitIso :
       FDRep.tensorUnit_ρ]
     induction z using TensorProduct.inductionOn with
     | tmul a x => simp
-    | add x y hx hy => simp_all
+    | add x y _ _ => simp_all
 
 /-- **Tensor products are preserved**: extending the scalars of a tensor product of
 representations gives the tensor product over `k'` of the extensions. -/

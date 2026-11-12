@@ -118,7 +118,6 @@ theorem kMethodConst_eq {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {q : ℝ≥0∞} (hq0 
   obtain ⟨hθ0, hθ1⟩ := hθ
   set r := q.toReal with hr_def
   have hr : 0 < r := ENNReal.toReal_pos hq0 hq
-  have hθ1' : 0 < 1 - θ := sub_pos.2 hθ1
   -- in the variable `t = e^s`, `c_{θ,q} ^ q` is
   -- `∫_{s ≤ 0} e^{(1 - θ) q s} ds + ∫_{s > 0} e^{-θ q s} ds`
   have hg : AEStronglyMeasurable (fun t : ℝ => t ^ (-θ) * min 1 t) (volume.map Real.exp) :=

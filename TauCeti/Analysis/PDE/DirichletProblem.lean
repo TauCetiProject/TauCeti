@@ -12,8 +12,7 @@ public import TauCeti.Analysis.Sobolev.FiniteMeasure
 /-!
 # The Dirichlet problem: existence and uniqueness of a weak solution
 
-Lane D, item 17 of `TauCetiRoadmap/PDE/README.md` asks for the first end-to-end existence
-theorem of the roadmap: for a divergence-form operator
+For a divergence-form operator
 
 `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`
 
@@ -54,7 +53,8 @@ A mass floor `δ` satisfying `β² < 4λδ` gives another route. Choose `0 < ε 
 including all of Euclidean space. The theorem
 `TauCeti.PDE.UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound`
 therefore needs no geometric or Poincaré hypothesis. These are sufficient conditions; when
-coercivity is unavailable the Fredholm alternative (Lane D, item 18) replaces Lax--Milgram.
+coercivity is unavailable the Fredholm alternative
+(`TauCeti/Analysis/PDE/FredholmAlternative.lean`) replaces Lax--Milgram.
 
 ## The `-Δ` payoff
 
@@ -62,9 +62,7 @@ Specialising to `a = 1`, `b = 0`, `c = 0` on a ball gives
 `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball`: the Poisson problem
 `-Δu = f` in `Ω`, `u = 0` on `∂Ω`, has a unique weak solution whenever `Ω` is contained in a
 ball. Unfolded through `TauCeti.PDE.isWeakSolutionDirichlet_one_zero_zero_iff` the variational
-equation reads `∫_Ω ∇v · ∇u = ∫_Ω f v`, the classical weak form of Poisson's equation. This is
-the existence half of the roadmap's "end-to-end existence" acceptance criterion; the smoothness
-half is Lane E and the identification with the Newtonian potential is Lane C.
+equation reads `∫_Ω ∇v · ∇u = ∫_Ω f v`, the classical weak form of Poisson's equation.
 
 ## Prescribed boundary values
 
@@ -127,9 +125,9 @@ the constructed one, so it is available before, and independently of, uniqueness
 
 ## References
 
-Lane D, item 17 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans, *Partial Differential
-Equations*, Section 6.2.2 (existence of weak solutions); D. Gilbarg and N. Trudinger, *Elliptic
-Partial Differential Equations of Second Order*, Chapter 8, Theorem 8.3.
+L. C. Evans, *Partial Differential Equations*, Section 6.2.2 (existence of weak solutions);
+D. Gilbarg and N. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
+Chapter 8, Theorem 8.3.
 -/
 
 public section
@@ -215,6 +213,16 @@ def IsWeakSolutionDirichlet (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
         energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2)
           = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
   simp only [IsWeakSolutionDirichlet, dirichletForcing_apply_eq_setIntegral]
+
+/-- Being a weak solution, written with the `L²(Ω)` inner product: `a(u, v) = ⟪f, v⟫_{L²(Ω)}`
+for every `v ∈ H¹₀(Ω)`. -/
+theorem isWeakSolutionDirichlet_iff_inner (f : Lp ℝ 2 (mu.restrict Omega))
+    (u : W1p0 mu Omega 2) :
+    IsWeakSolutionDirichlet a b c f u ↔
+      ∀ v : W1p0 mu Omega 2,
+        energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+          ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
+  simp only [IsWeakSolutionDirichlet, dirichletForcing_apply]
 
 /-- A weak solution satisfies its weak equation against every `v ∈ H¹₀(Ω)`, with the right-hand
 side read as the forcing functional. -/
@@ -351,8 +359,8 @@ divergence-form operator whose energy form is bounded and coercive on `H¹₀(Ω
 
 `a(u, v) = ∫_Ω f v` for all `v ∈ H¹₀(Ω)`.
 
-This is Lane D, item 17 of the PDE roadmap: the energy method's existence theorem, obtained by
-consuming Mathlib's Lax--Milgram theorem through the variational interface. -/
+This is the energy method's existence theorem, obtained by consuming Mathlib's Lax--Milgram
+theorem through the variational interface. -/
 theorem existsUnique_isWeakSolutionDirichlet
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) (f : Lp ℝ 2 (mu.restrict Omega)) :
@@ -756,8 +764,7 @@ weakly. This is the constant-coefficient case `a = 1`, `b = 0`, `c = 0` of
 `TauCeti.PDE.UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_subset_ball`, where the
 drift smallness condition is vacuous; unfolded through
 `TauCeti.PDE.isWeakSolutionDirichlet_one_zero_zero_iff` the equation reads
-`∫_Ω ∇v · ∇u = ∫_Ω f v`. It is the existence half of the roadmap's end-to-end acceptance
-criterion for the Dirichlet problem on a ball. -/
+`∫_Ω ∇v · ∇u = ∫_Ω f v`. -/
 theorem existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball
     {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
     (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R)
