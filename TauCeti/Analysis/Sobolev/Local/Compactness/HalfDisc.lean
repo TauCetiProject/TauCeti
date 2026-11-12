@@ -264,7 +264,7 @@ private theorem exists_wkp_planarReflection_norm_le {Ω : Opens ℂ} {u : ℕ �
     (eLpNorm_mono_measure _ hWS).trans ((hbd i (Nat.zero_le i)
       (by simpa using Finset.mem_range_succ_iff.1 hi)).trans
         (by gcongr; exact hGT i (Finset.mem_range_succ_iff.1 hi)))
-  calc _ ≤ C * ENNReal.ofReal R + ∑ i ∈ Finset.range (k + 1), C * ENNReal.ofReal R :=
+  calc _ ≤ C * ENNReal.ofReal R + ∑ _ ∈ Finset.range (k + 1), C * ENNReal.ofReal R :=
         add_le_add h1 (Finset.sum_le_sum h2)
     _ = ((k : ℝ≥0∞) + 2) * (C * ENNReal.ofReal R) := by
         rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
