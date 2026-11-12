@@ -15,10 +15,11 @@ import TauCeti.LinearAlgebra.AffineSpace.AffineEquiv
 /-!
 # Amenability of the affine group of a line
 
-The affine self-equivalences of a commutative ring form an amenable discrete group.
+The affine self-equivalences of a commutative ring are amenable for every group topology.
 Their linear parts commute, and the kernel of `AffineEquiv.linearHom` consists of
 translations, supplied by `AffineEquiv.constVAddHom`. The extension theorem therefore
-applies to these two native homomorphisms. In particular, this gives the amenability
+applies to these two native homomorphisms with the discrete topology, and amenability
+passes to every group topology. In particular, this gives the amenability
 of the point stabilizers in the projective linear group of a field.
 
 The closure of amenability under extensions is Proposition G.2.2 of Bekka,
@@ -29,10 +30,13 @@ public section
 
 namespace TauCeti
 
-/-- The affine group of a commutative ring is amenable when given the discrete topology. -/
-theorem Amenable.affineEquiv {R : Type*} [CommRing R]
-    [TopologicalSpace (R ≃ᵃ[R] R)] [DiscreteTopology (R ≃ᵃ[R] R)] :
+/-- The affine group of a commutative ring is amenable for every group topology. -/
+instance Amenable.affineEquiv {R : Type*} [CommRing R]
+    [TopologicalSpace (R ≃ᵃ[R] R)] [IsTopologicalGroup (R ≃ᵃ[R] R)] :
     Amenable (R ≃ᵃ[R] R) := by
+  apply Amenable.of_discrete
+  let : TopologicalSpace (R ≃ᵃ[R] R) := ⊥
+  let : DiscreteTopology (R ≃ᵃ[R] R) := ⟨rfl⟩
   let : TopologicalSpace (Multiplicative R) := ⊥
   let : DiscreteTopology (Multiplicative R) := ⟨rfl⟩
   let : TopologicalSpace (R ≃ₗ[R] R) := ⊥

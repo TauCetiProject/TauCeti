@@ -16,8 +16,8 @@ import TauCeti.Topology.Compactification.OnePoint.Stabilizer
 /-!
 # Amenable stabilizers on the projective line
 
-Point stabilizers for the action of `PGL(2, K)` on `OnePoint K` are amenable as
-discrete groups: transitivity identifies each with the stabilizer of infinity,
+Point stabilizers for the action of `PGL(2, K)` on `OnePoint K` are amenable for
+every group topology: transitivity identifies each with the stabilizer of infinity,
 and `OnePoint.pglStabilizerInftyEquiv` identifies the latter with the affine group.
 The stabilizers in `GL(2, K)` are amenable too, since the kernel of the projection
 to `PGL(2, K)` is central. Thus every subgroup of `GL(2, K)` has amenable point
@@ -43,7 +43,6 @@ theorem amenable_pgl_stabilizer [TopologicalSpace PGL(2, K)] [IsTopologicalGroup
     (x : OnePoint K) : TauCeti.Amenable (stabilizer PGL(2, K) x) := by
   let : TopologicalSpace (K ≃ᵃ[K] K) := ⊥
   let : DiscreteTopology (K ≃ᵃ[K] K) := ⟨rfl⟩
-  have := TauCeti.Amenable.affineEquiv (R := K)
   have : IsPretransitive (GL (Fin 2) K) (OnePoint K) :=
     isPretransitive_of_is_two_pretransitive
   obtain ⟨g, hg⟩ := exists_smul_eq (GL (Fin 2) K) (∞ : OnePoint K) x
@@ -52,26 +51,35 @@ theorem amenable_pgl_stabilizer [TopologicalSpace PGL(2, K)] [IsTopologicalGroup
     (pglStabilizerInftyEquiv (K := K))
   exact TauCeti.Amenable.of_injective e.toMonoidHom e.injective
 
-/-- Every general-linear point stabilizer is amenable as a discrete group, including the
-central kernel of its map to the projective-linear stabilizer. -/
+/-- Every general-linear point stabilizer is amenable for every group topology. -/
 theorem amenable_gl_stabilizer [TopologicalSpace (GL (Fin 2) K)]
-    [DiscreteTopology (GL (Fin 2) K)] (x : OnePoint K) :
+    [IsTopologicalGroup (GL (Fin 2) K)] (x : OnePoint K) :
     TauCeti.Amenable (stabilizer (GL (Fin 2) K) x) := by
+  apply TauCeti.Amenable.of_discrete
+  let : TopologicalSpace (stabilizer (GL (Fin 2) K) x) := ⊥
+  let : DiscreteTopology (stabilizer (GL (Fin 2) K) x) := ⟨rfl⟩
+  let : TopologicalSpace (GL (Fin 2) K) := ⊥
+  let : DiscreteTopology (GL (Fin 2) K) := ⟨rfl⟩
   let : TopologicalSpace PGL(2, K) := ⊥
   let : DiscreteTopology PGL(2, K) := ⟨rfl⟩
   have := amenable_pgl_stabilizer x
   let φ : stabilizer (GL (Fin 2) K) x →* stabilizer PGL(2, K) x :=
     (ProjGenLinGroup.mk.comp (stabilizer (GL (Fin 2) K) x).subtype).codRestrict
       (stabilizer PGL(2, K) x) fun g => by
-        exact (pglMk_smul _ x).trans g.property
+        rw [MonoidHom.comp_apply, Subgroup.subtype_apply, mem_stabilizer_iff, pglMk_smul]
+        exact mem_stabilizer_iff.mp g.property
   let ψ : φ.ker →* Subgroup.center (GL (Fin 2) K) :=
     ((stabilizer (GL (Fin 2) K) x).subtype.comp φ.ker.subtype).codRestrict
       (Subgroup.center (GL (Fin 2) K)) fun g => by
+        simp only [MonoidHom.comp_apply, Subgroup.subtype_apply]
         apply ProjGenLinGroup.mk_eq_one.mp
-        exact congrArg Subtype.val (MonoidHom.mem_ker.mp g.property)
-  have hψ : Function.Injective ψ := fun g h heq =>
-    Subtype.ext (Subtype.ext (congrArg (fun z : Subgroup.center (GL (Fin 2) K) =>
-      (z : GL (Fin 2) K)) heq))
+        have hg := congrArg Subtype.val (MonoidHom.mem_ker.mp g.property)
+        dsimp only [φ] at hg
+        simpa only [MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
+          Subgroup.subtype_apply, OneMemClass.coe_one] using hg
+  have hψ : Function.Injective ψ := by
+    apply (MonoidHom.injective_codRestrict _ _ _).2
+    exact (stabilizer (GL (Fin 2) K) x).subtype_injective.comp φ.ker.subtype_injective
   have : TauCeti.Amenable φ.ker := TauCeti.Amenable.of_injective ψ hψ
   exact TauCeti.Amenable.of_ker_le_range φ.ker.subtype φ (by simp)
 
