@@ -29,9 +29,9 @@ with the native degree spaces.
 * `MvPolynomial.mapRestrictSupport`: changing coefficients along `f : R →+* S`, as an
   `f`-semilinear map `restrictSupport R s → restrictSupport S s` carrying the monomial basis to the
   monomial basis.
-* `MvPolynomial.mem_restrictSupport_le_iff`, `MvPolynomial.restrictDegree_eq_restrictSupport`: the
-  degree box `{μ | ∀ i, μ i ≤ d i}` supports exactly the polynomials with `degreeOf i ≤ d i`;
-  Mathlib's `restrictDegree` is the box of a constant bound. The total-degree ball is
+* `MvPolynomial.mem_restrictSupport_iff_degreeOf_le`: the degree box `{μ | ∀ i, μ i ≤ d i}`
+  supports exactly the polynomials with `degreeOf i ≤ d i`. Mathlib's `restrictDegree σ R m` is by
+  definition the box of the constant bound `m`. The total-degree ball is
   `MvPolynomial.restrictTotalDegree_eq_restrictSupport`
   (`TauCeti/RingTheory/MvPolynomial/RestrictTotalDegree.lean`).
 * `MvPolynomial.degreeOf_lt_of_mem_restrictSupport`: a support restriction bounding the exponent
@@ -124,17 +124,11 @@ theorem mapRestrictSupport_basisRestrictSupport {S : Type*} [CommSemiring S] (f 
 
 /-- The degree box `{μ | ∀ i, μ i ≤ d i}` supports exactly the polynomials of partial degrees
 `degreeOf i ≤ d i`. -/
-theorem mem_restrictSupport_le_iff {d : σ → ℕ} {p : MvPolynomial σ R} :
+theorem mem_restrictSupport_iff_degreeOf_le {d : σ → ℕ} {p : MvPolynomial σ R} :
     p ∈ restrictSupport R {μ | ∀ i, μ i ≤ d i} ↔ ∀ i, p.degreeOf i ≤ d i := by
   simp only [mem_restrictSupport_iff, Set.subset_def, Finset.mem_coe, Set.mem_ofPred_eq,
     degreeOf_le_iff]
   exact ⟨fun h i μ hμ ↦ h μ hμ i, fun h μ hμ i ↦ h i μ hμ⟩
-
-variable (σ R) in
-/-- Mathlib's `restrictDegree σ R m` is the degree box of the constant bound `m`. -/
-theorem restrictDegree_eq_restrictSupport (m : ℕ) :
-    restrictDegree σ R m = restrictSupport R {μ : σ →₀ ℕ | ∀ i, μ i ≤ m} :=
-  (rfl)
 
 /-- If every exponent in `s` has `i`-th entry below `B > 0`, then so does the `i`-th partial degree
 of every polynomial supported on `s`. -/
@@ -173,5 +167,12 @@ theorem mem_restrictSupport_of_degreeOf_lt {n : σ} {d : ℕ} {F : MvPolynomial 
     (hF : F.degreeOf n < d) : F ∈ restrictSupport R {μ : σ →₀ ℕ | μ n < d} :=
   (mem_restrictSupport_iff (R := R)).mpr fun μ hμ ↦
     (degreeOf_lt_iff ((Nat.zero_le _).trans_lt hF)).mp hF μ hμ
+
+/-! ### Examples -/
+
+/-- Mathlib's `restrictDegree σ R m` is by definition the degree box of the constant bound `m`, so
+it consists of the polynomials all of whose partial degrees are at most `m`. -/
+example {m : ℕ} {p : MvPolynomial σ R} : p ∈ restrictDegree σ R m ↔ ∀ i, p.degreeOf i ≤ m :=
+  mem_restrictSupport_iff_degreeOf_le
 
 end MvPolynomial

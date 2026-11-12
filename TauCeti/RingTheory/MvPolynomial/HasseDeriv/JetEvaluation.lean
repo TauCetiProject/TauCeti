@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
+public import TauCeti.RingTheory.MvPolynomial.Box
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 
 /-!
@@ -29,7 +30,11 @@ interpolation matrix whose minors the arithmetic determinant method estimates.
 
 ## Main results
 
-* `MvPolynomial.jetMatrix_apply`: the entries are products of binomial coefficients and powers.
+* `MvPolynomial.jetMatrix_apply_eq_eval`, `MvPolynomial.jetMatrix_apply`: the entry in row `i` and
+  column `μ` is the jet `(∂^[d i] X^μ)(a i)`, a product of binomial coefficients and powers.
+* `MvPolynomial.hasseDerivRow_eq_jetMatrix`: the row `MvPolynomial.hasseDerivRow` of the degree
+  box (`TauCeti/RingTheory/MvPolynomial/Box.lean`) is a row of the jet matrix of the box, so
+  `MvPolynomial.aeval_hasseDeriv_eq_sum` is the box case of `MvPolynomial.jetEval_eq_mulVec`.
 * `MvPolynomial.toMatrix_jetEval`, `MvPolynomial.jetEval_eq_mulVec`: `jetMatrix` is the matrix of
   `jetEval` in the monomial basis.
 * `MvPolynomial.mem_ker_jetEval`: the kernel consists of the polynomials all of whose prescribed
@@ -77,12 +82,17 @@ theorem jetEval_apply (f : restrictSupport R s) (i : ι) :
 noncomputable def jetMatrix : Matrix ι s R :=
   Matrix.of fun i μ ↦ eval (a i) (hasseDeriv (d i) (monomial (μ : σ →₀ ℕ) 1))
 
+/-- The entry of the jet matrix in row `i` and column `μ` is the jet `(∂^[d i] X^μ)(a i)`. -/
+theorem jetMatrix_apply_eq_eval (i : ι) (μ : s) :
+    jetMatrix s a d i μ = eval (a i) (hasseDeriv (d i) (monomial (μ : σ →₀ ℕ) 1)) :=
+  (rfl)
+
 /-- The entries of the jet matrix: `(∏ⱼ choose (μ j) (d i j)) · (a i) ^ (μ - d i)`. -/
 theorem jetMatrix_apply (i : ι) (μ : s) :
     jetMatrix s a d i μ =
       (((d i).prod fun j k ↦ ((μ : σ →₀ ℕ) j).choose k : ℕ) : R) *
         ((μ : σ →₀ ℕ) - d i).prod fun j e ↦ a i j ^ e := by
-  simp [jetMatrix, eval_monomial]
+  simp [jetMatrix_apply_eq_eval, eval_monomial]
 
 /-- `jetMatrix` is the matrix of `jetEval` in the monomial basis of `restrictSupport R s` and the
 standard basis of `ι → R`. -/
@@ -90,7 +100,7 @@ theorem toMatrix_jetEval [Fintype s] [Finite ι] [DecidableEq s] :
     LinearMap.toMatrix (basisRestrictSupport R s) (Pi.basisFun R ι) (jetEval s a d) =
       jetMatrix s a d := by
   ext i μ
-  simp [jetMatrix, LinearMap.toMatrix_apply]
+  simp [jetMatrix_apply_eq_eval, LinearMap.toMatrix_apply]
 
 /-- The jet vector of a polynomial supported on a finite `s` is the jet matrix applied to its
 coefficients on `s`. -/
@@ -98,7 +108,8 @@ theorem jetEval_eq_mulVec [Fintype s] (f : restrictSupport R s) :
     jetEval s a d f = jetMatrix s a d *ᵥ fun μ ↦ (f : MvPolynomial σ R).coeff μ := by
   ext i
   conv_lhs => rw [← (basisRestrictSupport R s).sum_repr f]
-  simp [mulVec, dotProduct, jetMatrix, map_sum, basisRestrictSupport_repr_apply, mul_comm]
+  simp [mulVec, dotProduct, jetMatrix_apply_eq_eval, map_sum, basisRestrictSupport_repr_apply,
+    mul_comm]
 
 /-- The kernel of the jet evaluation map consists of the polynomials supported on `s` all of
 whose prescribed jets vanish. -/
@@ -106,11 +117,6 @@ theorem mem_ker_jetEval {f : restrictSupport R s} :
     f ∈ LinearMap.ker (jetEval s a d) ↔
       ∀ i, eval (a i) (hasseDeriv (d i) (f : MvPolynomial σ R)) = 0 := by
   simp [funext_iff]
-
-/-- A zero multi-index gives plain evaluation. -/
-theorem jetEval_apply_of_eq_zero {i : ι} (hi : d i = 0) (f : restrictSupport R s) :
-    jetEval s a d f i = eval (a i) (f : MvPolynomial σ R) := by
-  simp [hi]
 
 /-- The empty support gives the zero map. -/
 @[simp]
@@ -132,7 +138,7 @@ theorem jetEval_mapRestrictSupport (f : R →+* S) (p : restrictSupport R s) :
 theorem jetMatrix_map (f : R →+* S) :
     jetMatrix s (fun i ↦ f ∘ a i) d = (jetMatrix s a d).map f := by
   ext i μ
-  simp only [jetMatrix, Matrix.map_apply, of_apply]
+  simp only [jetMatrix_apply_eq_eval, Matrix.map_apply]
   rw [eval₂_comp, ← eval_map, ← hasseDeriv_map, map_monomial, RingHom.map_one]
 
 end Hasse
@@ -168,33 +174,58 @@ theorem toMatrix_ordinaryJetEval [Fintype s] [Finite ι] [DecidableEq s] :
   ext i μ
   rw [LinearMap.toMatrix_apply, Pi.basisFun_repr, ordinaryJetEval_apply_eq_factorial_mul,
     jetEval_apply]
-  simp [jetMatrix]
+  simp [jetMatrix_apply_eq_eval]
 
 end Ordinary
 
+section Box
+
+variable [Fintype σ]
+
+/-- The row `hasseDerivRow d α μ` of the degree box `{ν | ∀ j, ν j ≤ d j}` is the jet matrix of the
+box for the single point `α` and the single multi-index `μ`, read at the exponent
+`boxMonomial d I`. -/
+theorem hasseDerivRow_eq_jetMatrix (d : σ → ℕ) (α : σ → R) (μ : σ →₀ ℕ)
+    (I : ∀ j, Fin (d j + 1)) :
+    hasseDerivRow d α μ I =
+      jetMatrix {ν | ∀ j, ν j ≤ d j} (fun _ : Unit ↦ α) (fun _ ↦ μ) ()
+        ⟨boxMonomial d I, boxMonomial_le d I⟩ := by
+  rw [hasseDerivRow_def, Finset.prod_mul_distrib, jetMatrix_apply]
+  simp only [Finsupp.prod_fintype _ _ (fun j ↦ Nat.choose_zero_right _),
+    Finsupp.prod_fintype _ _ (fun j ↦ pow_zero (α j)), Finsupp.tsub_apply, boxMonomial_apply,
+    Nat.cast_prod]
+
+end Box
+
 /-! ### Examples -/
 
-/-- The second row of the README check `[[1, 0, 0], [0, 1, 2]]`: the first Hasse jet of `X²` at `1`
-is `2`; forgetting the binomial coefficient would give `1`. -/
+/-- In one variable, the entry of the jet matrix for the monomial `X²`, the multi-index `d = 1` and
+the point `1` is the first Hasse jet `(D^[1] X²)(1) = choose 2 1 = 2`. Dropping the binomial
+coefficient from the entry formula would give `1`. -/
 example : jetMatrix {single (0 : Fin 1) 2} (fun _ : Unit ↦ fun _ ↦ (1 : ℤ))
     (fun _ ↦ single 0 1) () ⟨_, rfl⟩ = 2 := by
-  simp [jetMatrix, eval_monomial]
+  simp [jetMatrix_apply_eq_eval, eval_monomial]
 
 /-- `∂_Z^[1] (Z W) = W` evaluated at `(2, 3)` is `3`. -/
 example : jetMatrix {single (0 : Fin 2) 1 + single 1 1} (fun _ : Unit ↦ ![(2 : ℤ), 3])
     (fun _ ↦ single 0 1) () ⟨_, rfl⟩ = 3 := by
-  simp [jetMatrix, eval_monomial]
+  simp [jetMatrix_apply_eq_eval, eval_monomial]
 
 /-- `∂_Z^[2] (Z W) = 0`. -/
 example : jetMatrix {single (0 : Fin 2) 1 + single 1 1} (fun _ : Unit ↦ ![(2 : ℤ), 3])
     (fun _ ↦ single 0 2) () ⟨_, rfl⟩ = 0 := by
-  simp [jetMatrix]
+  simp [jetMatrix_apply_eq_eval]
 
 /-- In characteristic `2` the Hasse jet `D^[2] X²` at `0` is `1` while the ordinary jet `D² X²` is
 `2 = 0`: the ordinary jet map is not the Hasse jet map. -/
 example : jetMatrix {single (0 : Fin 1) 2} (fun _ : Unit ↦ fun _ ↦ (0 : ZMod 2))
     (fun _ ↦ single 0 2) () ⟨_, rfl⟩ = 1 := by
-  simp [jetMatrix]
+  simp [jetMatrix_apply_eq_eval]
+
+/-- A zero multi-index gives plain evaluation. -/
+example (s : Set (σ →₀ ℕ)) (a : ι → σ → R) (d : ι → σ →₀ ℕ) {i : ι} (hi : d i = 0)
+    (f : restrictSupport R s) : jetEval s a d f i = eval (a i) (f : MvPolynomial σ R) := by
+  simp [hi]
 
 example : ordinaryJetEval {single (0 : Fin 1) 2} (fun _ : Unit ↦ fun _ ↦ (0 : ZMod 2))
     (fun _ ↦ 0) (fun _ ↦ 2) ⟨X 0 ^ 2, by simp [X_pow_eq_monomial]⟩ () = 0 := by

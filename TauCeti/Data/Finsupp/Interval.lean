@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Data.Finsupp.Interval
 public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Tactic.FinCases
 
 /-!
 # Sets of multi-indices bounded coordinatewise
@@ -19,13 +20,18 @@ A finite set of multi-indices `m : σ →₀ ℕ` with `mᵢ ≤ rᵢ` for every
 `C ≥ 0` is therefore at most `∏ᵢ (rᵢ + 1) C`. This is how the monomials of a polynomial with
 partial degrees `degreeOf i P ≤ r i` are counted.
 
-Since the boxes `Iic m` are finite, subtracting a fixed multi-index has finite fibres.
+Since the boxes `Iic m` are finite, subtracting a fixed multi-index has finite fibres, and the
+weighted strip `{μ : Fin 2 →₀ ℕ | μ 0 < B ∧ μ 0 + B * μ 1 < N}` of two-variable exponents, which
+lies in the box `Iic (N, N)`, is finite. Polynomials in `Z = X 0` and `W = X 1` supported on that
+strip have `Z`-degree below `B`, which is the condition under which the power substitution
+`Z ↦ X, W ↦ X ^ B` is injective.
 
 ## Main results
 
 * `Finsupp.card_le_prod_of_forall_le`: `#s ≤ ∏ᵢ (rᵢ + 1)`.
 * `Finsupp.sum_le_prod_mul_of_forall_le`: `∑ m ∈ s, f m ≤ ∏ᵢ (rᵢ + 1) C` when `f ≤ C` on `s`.
 * `Finsupp.tendsto_sub_cofinite`: `n ↦ n - d` maps the cofinite filter into itself.
+* `Finsupp.finite_weightedStrip`: the weighted strip is finite.
 -/
 
 public section
@@ -73,5 +79,21 @@ theorem tendsto_sub_cofinite {σ : Type*} (d : σ →₀ ℕ) :
   exact Tendsto.cofinite_of_finite_preimage_singleton fun m ↦
     ((Set.finite_Iic (m + d)).subset fun _ hn ↦
       tsub_le_iff_right.1 (le_of_eq hn)).to_subtype
+
+end Finsupp
+
+namespace Finsupp
+
+/-- The weighted strip `{μ | μ 0 < B ∧ μ 0 + B * μ 1 < N}` of two-variable exponents is
+finite. -/
+theorem finite_weightedStrip (B N : ℕ) :
+    {μ : Fin 2 →₀ ℕ | μ 0 < B ∧ μ 0 + B * μ 1 < N}.Finite := by
+  refine (Set.finite_Iic (equivFunOnFinite.symm fun _ : Fin 2 ↦ N)).subset
+    fun μ ⟨h0, h1⟩ ↦ ?_
+  -- Both entries are at most `N`: `μ 1 ≤ B * μ 1` because `B > μ 0 ≥ 0`.
+  have hB : 0 < B := by omega
+  have := Nat.le_mul_of_pos_left (μ 1) hB
+  intro i
+  fin_cases i <;> simp <;> omega
 
 end Finsupp
