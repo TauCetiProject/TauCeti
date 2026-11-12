@@ -138,13 +138,6 @@ theorem norm_siegelFunction_zero_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im) :
   rw [siegelFunction_zero_half_pow_twelve hτ, norm_mul, norm_mul, norm_pow]
   norm_num
 
-/-- The nome `q = e^{2π i τ}` has norm less than `1` only on the upper half-plane. -/
-private theorem im_pos_of_norm_exp_lt_one {τ : ℂ} (hq : ‖cexp (2 * π * I * τ)‖ < 1) :
-    0 < τ.im := by
-  rw [UpperHalfPlane.norm_exp_two_pi_I_mul, Real.exp_lt_one_iff] at hq
-  by_contra! h
-  nlinarith [Real.pi_pos, mul_nonpos_of_nonneg_of_nonpos Real.pi_pos.le h]
-
 /-- With `A = |q| < 1/2`, `|g_{(0, 1/2)}(τ)¹²| ≤ 4096 A (1 + A / (1 - 2A))²⁴` on the upper
 half-plane. -/
 theorem norm_siegelFunction_zero_half_pow_twelve_le {τ : ℂ}
@@ -154,8 +147,8 @@ theorem norm_siegelFunction_zero_half_pow_twelve_le {τ : ℂ}
   have h := norm_tprod_one_add_pow_sub_one_le hq
   have := norm_le_norm_add_norm_sub' (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))) 1
   rw [norm_one] at this
-  have hA := norm_nonneg (cexp (2 * π * I * τ))
-  rw [norm_siegelFunction_zero_half_pow_twelve (im_pos_of_norm_exp_lt_one (by linarith))]
+  have hτ : 0 < τ.im := UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff.mp (by linarith)
+  rw [norm_siegelFunction_zero_half_pow_twelve hτ]
   gcongr
   linarith
 
@@ -172,7 +165,8 @@ theorem le_norm_siegelFunction_zero_half_pow_twelve {τ : ℂ}
     linarith
   have := norm_sub_norm_le (1 : ℂ) (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1)))
   rw [norm_one, norm_sub_rev] at this
-  rw [norm_siegelFunction_zero_half_pow_twelve (im_pos_of_norm_exp_lt_one (by linarith))]
+  have hτ : 0 < τ.im := UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff.mp (by linarith)
+  rw [norm_siegelFunction_zero_half_pow_twelve hτ]
   gcongr
   linarith
 
