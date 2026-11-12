@@ -264,7 +264,7 @@ private theorem laplacian_normed_convolution_eq_zero
     Δ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] f) y = 0 := by
   set ρ : E → ℝ := φ.normed μ with hρ_def
   -- The test function `ψ t = ρ (y - t)`, supported in `closedBall y φ.rOut ⊆ Ω`.
-  set g : E → ℝ := fun t ↦ ρ (y - t) with hg_def
+  set g : E → ℝ := fun t ↦ ρ (y - t)
   have hg_supp : tsupport g ⊆ closedBall y φ.rOut := by
     refine closure_minimal (fun t ht ↦ ?_) isClosed_closedBall
     have : y - t ∈ Function.support ρ := ht

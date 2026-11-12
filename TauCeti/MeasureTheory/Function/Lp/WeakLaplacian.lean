@@ -187,7 +187,7 @@ private theorem integral_smul_eq_zero_of_laplacian_eq_smul {c : ℝ} (hc : 0 < c
   -- `Δu(y)` is the pairing of `v` with the Laplacian of the test function `t ↦ ρ(y - t)`.
   have hΔu : ∀ y, Δ u y = c * u y := by
     intro y
-    set g : E → ℝ := fun t ↦ ρ (y - t) with hg_def
+    set g : E → ℝ := fun t ↦ ρ (y - t)
     have hgd : ContDiff ℝ (⊤ : ℕ∞) g := hρ.comp (contDiff_const.sub contDiff_id)
     have hgc : HasCompactSupport g := by
       simpa [Function.comp_def, g, ← sub_eq_add_neg] using

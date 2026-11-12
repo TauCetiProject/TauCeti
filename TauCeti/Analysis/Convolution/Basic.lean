@@ -151,15 +151,15 @@ theorem convolutionExists_of_integrable_of_ae_norm_le (hf : Integrable f μ)
 
 omit [MeasurableAdd G] in
 /-- If `p` and `q` are Hölder conjugate, the convolution of `f ∈ Lᵖ` with `g ∈ L^q` is bounded,
-by `‖L‖ ‖f‖_p ‖g‖_q` at every point (`MeasureTheory.enorm_convolution_le`). -/
+by `‖L‖ ‖f‖_p ‖g‖_q` at every point (`MeasureTheory.eNorm_convolution_le`). -/
 theorem isBounded_range_convolution_of_memLp [NormedSpace ℝ F] [MeasurableAdd₂ G]
     {p q : ENNReal} [p.HolderConjugate q] (hf : MemLp f p μ) (hg : MemLp g q μ) :
     Bornology.IsBounded (Set.range (f ⋆[L, μ] g)) := by
   refine isBounded_iff_forall_norm_le.2 ⟨(‖L‖ₑ * eLpNorm f p μ * eLpNorm g q μ).toReal, ?_⟩
   rintro _ ⟨x, rfl⟩
-  rw [← toReal_enorm]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.mul_ne_top enorm_ne_top
-    hf.eLpNorm_ne_top) hg.eLpNorm_ne_top) (enorm_convolution_le L hf.aestronglyMeasurable
+  rw [← toReal_eNorm]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.mul_ne_top eNorm_ne_top
+    hf.eLpNorm_ne_top) hg.eLpNorm_ne_top) (eNorm_convolution_le L hf.aestronglyMeasurable
       hg.aestronglyMeasurable x)
 
 section Assoc
