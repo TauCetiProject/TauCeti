@@ -267,7 +267,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_le_inv_measureReal_mul_integ
       _ ≤ ∫ z in ball x ρ, ‖L (u z)‖ ∂μ := norm_integral_le_integral_norm _
       _ = ∫ z in ball x ρ, ‖u z‖ ∂μ := by simp only [hL]
       _ ≤ ∫ z in s, ‖u z‖ ∂μ := setIntegral_mono_set hi.norm
-        (ae_of_all _ fun _ ↦ norm_nonneg _) (ball_subset_closedBall.trans hx).eventuallyLE
+        (ae_of_all _ fun _ ↦ norm_nonneg _) (ball_subset_closedBall.trans hx).eventuallySubset
   rw [inv_mul_eq_div, le_div_iff₀ hV, mul_comm]
   exact hbound
 

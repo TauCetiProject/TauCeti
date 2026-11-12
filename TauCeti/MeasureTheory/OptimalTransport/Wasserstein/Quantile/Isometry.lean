@@ -80,8 +80,8 @@ theorem hasFiniteMoment_iff_memLp_quantile (μ : Measure ℝ) [IsProbabilityMeas
   have hQ := Measure.measurable_quantile μ
   conv_lhs => rw [← Measure.map_quantile_volume_Ioo μ]
   rw [hasFiniteMoment_map_iff_memLp_edist hQ.aemeasurable 0]
-  exact memLp_congr_enorm (hQ.edist measurable_const).aestronglyMeasurable hQ.aestronglyMeasurable
-    (.of_forall fun t ↦ by simp [edist_eq_enorm_sub])
+  exact memLp_congr_eNorm (hQ.edist measurable_const).aestronglyMeasurable hQ.aestronglyMeasurable
+    (.of_forall fun t ↦ by simp [eDist_eq_eNorm_sub])
 
 namespace WassersteinSpace
 
