@@ -65,7 +65,7 @@ Lemma 0AYX. Writing `L` as a difference of effective Cartier divisors reduces th
   divisor `D`;
 * `FixedRank.vectorBundleDegree_biprod` and `FixedRank.vectorBundleDegree_biprod_of_isCurveOver`:
   `deg (E ⊞ F) = deg E + deg F`, given finite-dimensional cohomology in degrees `0` and `1`, and
-  on a proper integral curve;
+  on a proper integral curve whose codimension-one local rings are discrete valuation rings;
 * `FixedRank.vectorBundleDegree_add_of_shortExact`: additivity in a short exact sequence, given
   finite-dimensionality of the cohomology it reads and vanishing of `H²` of the subbundle, and
   `FixedRank.vectorBundleDegree_add_of_shortExact_of_isCurveOver`, where these hypotheses are
@@ -187,6 +187,14 @@ theorem vectorBundleDegree_eq_relativeDegree [IsIntegral X] [IsLocallyNoetherian
   exact InvertibleSheaf.eulerDegree_eq_relativeDegree k hX (eqToIso (toInvertible_obj_obj X E) ≪≫ e)
 
 section Biprod
+
+/-- The cohomology of the direct sum `E ⊞ F` is finite-dimensional in every degree where the
+cohomology of `E` and `F` is. -/
+instance finiteDimensional_cohomology_biprod {s : ℕ} (E : FixedRank X r) (F : FixedRank X s)
+    (i : ℕ) [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj i)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology F.obj.obj i)] :
+    FiniteDimensional k (Scheme.Modules.Cohomology (E.biprod F).obj.obj i) :=
+  (finiteDimensional_cohomology_congr k (biprodObjIso E F) i).mpr inferInstance
 
 /-- **The degree of a direct sum.** For vector bundles `E` and `F` of constant ranks `r` and `s`
 whose cohomology in degrees `0` and `1` is finite-dimensional, `deg (E ⊞ F) = deg E + deg F`. No

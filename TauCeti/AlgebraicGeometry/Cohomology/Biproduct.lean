@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.RingTheory.Finiteness.Prod
 public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
@@ -145,40 +146,42 @@ variable (k : Type u) [Field k] [X.Over (Spec (.of k))] (M N : X.Modules)
 /-- **Cohomology commutes with binary direct sums.** The maps induced by the projections of
 `M ⊞ N` give an `R`-linear equivalence `Hⁱ(X, M ⊞ N) ≃ₗ[R] Hⁱ(X, M) × Hⁱ(X, N)`. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBiprodLinearEquiv (i : ℕ) :
-    Cohomology (M ⊞ N) i ≃ₗ[R] Cohomology M i × Cohomology N i := by
-  -- The four composites of the induced maps of `biprod.inl`, `biprod.inr` with `biprod.fst`,
-  -- `biprod.snd`, and the induced map of `biprod.total`.
-  have h₁₁ := cohomologyMapBaseLinear_comp R X (biprod.inl : M ⟶ M ⊞ N) biprod.fst i
-  have h₁₂ := cohomologyMapBaseLinear_comp R X (biprod.inl : M ⟶ M ⊞ N) biprod.snd i
-  have h₂₁ := cohomologyMapBaseLinear_comp R X (biprod.inr : N ⟶ M ⊞ N) biprod.fst i
-  have h₂₂ := cohomologyMapBaseLinear_comp R X (biprod.inr : N ⟶ M ⊞ N) biprod.snd i
-  rw [biprod.inl_fst, cohomologyMapBaseLinear_id] at h₁₁
-  rw [biprod.inl_snd, cohomologyMapBaseLinear_zero] at h₁₂
-  rw [biprod.inr_fst, cohomologyMapBaseLinear_zero] at h₂₁
-  rw [biprod.inr_snd, cohomologyMapBaseLinear_id] at h₂₂
-  have htotal : (cohomologyMapBaseLinear R X biprod.inl i).comp
-      (cohomologyMapBaseLinear R X (biprod.fst : M ⊞ N ⟶ M) i) +
-      (cohomologyMapBaseLinear R X biprod.inr i).comp
-        (cohomologyMapBaseLinear R X (biprod.snd : M ⊞ N ⟶ N) i) = LinearMap.id := by
-    rw [← cohomologyMapBaseLinear_comp, ← cohomologyMapBaseLinear_comp,
-      ← cohomologyMapBaseLinear_add, biprod.total, cohomologyMapBaseLinear_id]
-  exact LinearEquiv.ofLinearMap
+    Cohomology (M ⊞ N) i ≃ₗ[R] Cohomology M i × Cohomology N i :=
+  LinearEquiv.ofLinearMap
     ((cohomologyMapBaseLinear R X biprod.fst i).prod (cohomologyMapBaseLinear R X biprod.snd i))
     ((cohomologyMapBaseLinear R X biprod.inl i).coprod (cohomologyMapBaseLinear R X biprod.inr i))
-    (LinearMap.ext fun v ↦ Prod.ext
-      (by
-        change cohomologyMapBaseLinear R X biprod.fst i
-          (cohomologyMapBaseLinear R X biprod.inl i v.1 +
-            cohomologyMapBaseLinear R X biprod.inr i v.2) = v.1
-        rw [map_add, ← LinearMap.comp_apply, ← LinearMap.comp_apply, ← h₁₁, ← h₂₁,
-          LinearMap.id_apply, LinearMap.zero_apply, add_zero])
-      (by
-        change cohomologyMapBaseLinear R X biprod.snd i
-          (cohomologyMapBaseLinear R X biprod.inl i v.1 +
-            cohomologyMapBaseLinear R X biprod.inr i v.2) = v.2
-        rw [map_add, ← LinearMap.comp_apply, ← LinearMap.comp_apply, ← h₁₂, ← h₂₂,
-          LinearMap.id_apply, LinearMap.zero_apply, zero_add]))
-    (LinearMap.ext fun x ↦ by simpa using LinearMap.congr_fun htotal x)
+    (by
+      simp only [LinearMap.prod_comp, LinearMap.comp_coprod, ← cohomologyMapBaseLinear_comp,
+        biprod.inl_fst, biprod.inr_fst, biprod.inl_snd, biprod.inr_snd, cohomologyMapBaseLinear_id,
+        cohomologyMapBaseLinear_zero, LinearMap.coprod_zero_left, LinearMap.coprod_zero_right,
+        LinearMap.id_comp, LinearMap.pair_fst_snd])
+    (by
+      simp only [LinearMap.coprod_comp_prod, ← cohomologyMapBaseLinear_comp,
+        ← cohomologyMapBaseLinear_add, biprod.total, cohomologyMapBaseLinear_id])
+
+/-- The components of `cohomologyBiprodLinearEquiv` are the maps on cohomology induced by the
+projections of `M ⊞ N`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBiprodLinearEquiv_apply (i : ℕ)
+    (x : Cohomology (M ⊞ N) i) :
+    cohomologyBiprodLinearEquiv R M N i x =
+      (cohomologyMapBaseLinear R X biprod.fst i x, cohomologyMapBaseLinear R X biprod.snd i x) :=
+  (rfl)
+
+/-- The inverse of `cohomologyBiprodLinearEquiv` adds the maps on cohomology induced by the
+inclusions of the summands. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBiprodLinearEquiv_symm_apply (i : ℕ)
+    (v : Cohomology M i × Cohomology N i) :
+    (cohomologyBiprodLinearEquiv R M N i).symm v =
+      cohomologyMapBaseLinear R X biprod.inl i v.1 + cohomologyMapBaseLinear R X biprod.inr i v.2 :=
+  (rfl)
+
+/-- `Hⁱ(X, M ⊞ N)` is a finitely generated `R`-module when `Hⁱ(X, M)` and `Hⁱ(X, N)` are. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.finite_cohomology_biprod (i : ℕ)
+    [Module.Finite R (Cohomology M i)] [Module.Finite R (Cohomology N i)] :
+    Module.Finite R (Cohomology (M ⊞ N) i) :=
+  Module.Finite.equiv (cohomologyBiprodLinearEquiv R M N i).symm
 
 /-- **Dimension of the cohomology of a binary direct sum.** Over a field `k`, if `Hⁱ(X, M)` and
 `Hⁱ(X, N)` are finite-dimensional then `dim Hⁱ(X, M ⊞ N) = dim Hⁱ(X, M) + dim Hⁱ(X, N)`. -/
