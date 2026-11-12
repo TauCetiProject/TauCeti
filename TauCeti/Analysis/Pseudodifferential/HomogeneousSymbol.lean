@@ -38,7 +38,8 @@ The file develops:
   composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
   `HomogeneousSymbol.id` of degree `0` as its unit;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
-  the degree and in particular restricts a symbol to a set of positions;
+  the degree and in particular restricts a symbol to a set of positions, and the pullback
+  `HomogeneousSymbol.compFrequency` of the frequency along an injective linear map;
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
   degree, and `HomogeneousSymbol.frequencyDeriv` in a frequency direction, which lowers it by
   one; iterating them gives every mixed partial derivative `∂ₓ^α ∂_ξ^β a`, homogeneous of degree
@@ -481,6 +482,65 @@ theorem compPosition_compPosition (a : HomogeneousSymbol X E V W m) (g' : Z → 
   (rfl)
 
 end CompPosition
+
+/-! ### Pullback in the frequency -/
+
+section CompFrequency
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+
+/-- Pullback in the frequency along an injective continuous linear map `A`: the coefficient
+`a (x, A ξ)` is again homogeneous of degree `m`, since `A (t • ξ) = t • A ξ`, and it is smooth
+away from `ξ = 0` since `A ξ ≠ 0` there. For a linear change of coordinates `e` of the positions,
+covectors transform by `A = (e⁻¹)ᵀ`. -/
+def compFrequency (a : HomogeneousSymbol X E V W m) (A : E' →L[ℝ] E)
+    (hA : Function.Injective A) : HomogeneousSymbol X E' V W m where
+  coefficient p := a.coefficient (p.1, A p.2)
+  zero_covector x := by simp
+  contDiffOn_coefficient :=
+    a.contDiffOn_coefficient.comp (contDiff_fst.prodMk (A.contDiff.comp contDiff_snd)).contDiffOn
+      fun p hp ↦ (map_ne_zero_iff A hA).2 hp
+  homogeneous x ξ t ht := by simpa only [map_smul] using a.homogeneous x (A ξ) t ht
+
+@[simp]
+theorem coefficient_compFrequency (a : HomogeneousSymbol X E V W m) (A : E' →L[ℝ] E)
+    (hA : Function.Injective A) (p : X × E') :
+    (a.compFrequency A hA).coefficient p = a.coefficient (p.1, A p.2) :=
+  (rfl)
+
+variable (A : E' →L[ℝ] E) (hA : Function.Injective A)
+
+@[simp]
+theorem zero_compFrequency : (0 : HomogeneousSymbol X E V W m).compFrequency A hA = 0 :=
+  (rfl)
+
+@[simp]
+theorem add_compFrequency (a b : HomogeneousSymbol X E V W m) :
+    (a + b).compFrequency A hA = a.compFrequency A hA + b.compFrequency A hA :=
+  (rfl)
+
+@[simp]
+theorem neg_compFrequency (a : HomogeneousSymbol X E V W m) :
+    (-a).compFrequency A hA = -a.compFrequency A hA :=
+  (rfl)
+
+@[simp]
+theorem sub_compFrequency (a b : HomogeneousSymbol X E V W m) :
+    (a - b).compFrequency A hA = a.compFrequency A hA - b.compFrequency A hA :=
+  (rfl)
+
+@[simp]
+theorem smul_compFrequency {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
+    [SMulCommClass ℝ R (V →L[ℂ] W)] [ContinuousConstSMul R (V →L[ℂ] W)] (c : R)
+    (a : HomogeneousSymbol X E V W m) : (c • a).compFrequency A hA = c • a.compFrequency A hA :=
+  (rfl)
+
+@[simp]
+theorem comp_compFrequency (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    (b.comp a).compFrequency A hA = (b.compFrequency A hA).comp (a.compFrequency A hA) :=
+  (rfl)
+
+end CompFrequency
 
 /-! ### Spatial and frequency derivatives -/
 

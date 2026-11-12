@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Derivatives of powers of the Japanese bracket
@@ -45,7 +46,9 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   `(1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p`.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
   `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the bracket power of a
-  rescaled argument `c x` and its derivative bounds.
+  rescaled argument `c x` and its derivative bounds, and
+  `ContinuousLinearEquiv.exists_one_add_norm_apply_sq_rpow_le`: the bracket power of `A x` for a
+  continuous linear equivalence `A`.
 * `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow`: composing
   on the left with a continuous linear map preserves bracket bounds on derivatives.
 
@@ -193,6 +196,22 @@ theorem exists_one_add_norm_smul_sq_rpow_le {c : ℝ} (hc : c ≠ 0) (r : ℝ) :
       _ = min 1 (c ^ 2) ^ r * (1 + ‖x‖ ^ 2) ^ r :=
           Real.mul_rpow (lt_min one_pos hc2).le hx.le
       _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
+
+/-- Applying a continuous linear equivalence `A` to the argument changes `(1 + ‖x‖ ^ 2) ^ r` by at
+most a constant factor, since `‖A x‖` and `‖x‖` are comparable. -/
+theorem _root_.ContinuousLinearEquiv.exists_one_add_norm_apply_sq_rpow_le {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (A : E ≃L[ℝ] F) (r : ℝ) :
+    ∃ C, ∀ x : E, (1 + ‖A x‖ ^ 2) ^ r ≤ C * (1 + ‖x‖ ^ 2) ^ r := by
+  set c := max 1 (max ‖(A : E →L[ℝ] F)‖ ‖(A.symm : F →L[ℝ] E)‖)
+  have hc : 1 ≤ c := le_max_left _ _
+  refine ⟨c ^ |2 * r|, fun x ↦ ?_⟩
+  have h := TauCeti.one_add_norm_sq_rpow_le_of_norm_le_mul hc (2 * r) (x := A x) (y := x) ?_ ?_
+  · simpa only [mul_div_cancel_left₀ r two_ne_zero] using h
+  · calc ‖A x‖ ≤ ‖(A : E →L[ℝ] F)‖ * ‖x‖ := (A : E →L[ℝ] F).le_opNorm x
+      _ ≤ c * ‖x‖ := by gcongr; exact (le_max_left _ _).trans (le_max_right _ _)
+  · calc ‖x‖ = ‖A.symm (A x)‖ := by rw [A.symm_apply_apply]
+      _ ≤ ‖(A.symm : F →L[ℝ] E)‖ * ‖A x‖ := (A.symm : F →L[ℝ] E).le_opNorm _
+      _ ≤ c * ‖A x‖ := by gcongr; exact (le_max_right _ _).trans (le_max_right _ _)
 
 end NormedSpace
 
