@@ -12,9 +12,9 @@ public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Laurent
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Tactic.ComputeDegree
-import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Reverse
+import TauCeti.LinearAlgebra.End.Aeval
 
 /-!
 # Coefficients and determinants of polynomial matrices
@@ -95,7 +95,7 @@ theorem aeval_mul_eq_mul_aeval {m : Type*} [Fintype m] [DecidableEq m] [CommSemi
   rw [toLin'_mul, toLin'_mul, hA, hB] at hAV
   apply toLin'.injective
   rw [toLin'_mul, toLin'_mul, hA, hB, ← aeval_algHom_apply, ← aeval_algHom_apply]
-  exact aeval_comp_eq_comp_aeval hAV q
+  exact Module.End.aeval_comp_of_comp_eq hAV q
 
 omit [DecidableEq n] in
 /-- Taking an entrywise polynomial coefficient commutes with multiplication on the left by a

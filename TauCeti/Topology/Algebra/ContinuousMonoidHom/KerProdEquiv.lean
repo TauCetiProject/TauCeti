@@ -37,7 +37,7 @@ public section
 theorem MonoidHom.mul_inv_apply_mem_of_rightInverse {G H : Type*} [Group G] [Group H]
     (f : G →* H) (s : H →* G) (hs : Function.RightInverse s f) {N : Subgroup G}
     (hN : ∀ x, x ∈ N ↔ f x = 1) (x : G) : x * (s (f x))⁻¹ ∈ N := by
-  rw [hN, map_mul, map_inv, hs, mul_inv_cancel]
+  simp [hN, hs (f x)]
 
 namespace ContinuousMulEquiv
 
@@ -58,20 +58,10 @@ def kerProdOfRightInverse : G ≃ₜ* N × H where
     f.toMonoidHom.mul_inv_apply_mem_of_rightInverse s.toMonoidHom hs hN x⟩, f x)
   invFun p := p.1 * s p.2
   left_inv x := by simp
-  right_inv p := by
-    have hp := (hN p.1).mp p.1.2
-    ext
-    · simp [hp, hs p.2]
-    · simp [hp, hs p.2]
-  map_mul' x y := by
-    ext
-    · simp only [Prod.fst_mul, Subgroup.coe_mul, map_mul, mul_inv]
-      exact mul_mul_mul_comm x y _ _
-    · exact map_mul f x y
-  continuous_toFun :=
-    ((continuous_id.mul (s.continuous.comp f.continuous).inv).subtype_mk _).prodMk f.continuous
-  continuous_invFun :=
-    (continuous_subtype_val.comp continuous_fst).mul (s.continuous.comp continuous_snd)
+  right_inv p := by ext <;> simp [(hN p.1).mp p.1.2, hs p.2]
+  map_mul' x y := by ext <;> simp [mul_mul_mul_comm, mul_comm]
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
 
 /-- The kernel component of the splitting is `x · s(f x)⁻¹`. -/
 @[to_additive (attr := simp) coe_kerProdOfRightInverse_apply_fst /-- The kernel component of the

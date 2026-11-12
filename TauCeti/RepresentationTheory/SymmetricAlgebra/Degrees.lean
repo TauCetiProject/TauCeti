@@ -189,19 +189,27 @@ end Subgroup
 
 section Field
 
-variable [Field k] [Group G] [Finite G] [AddCommGroup M] [Module k M] [FiniteDimensional k M]
+variable [Field k] [Group G] [Finite G] [AddCommGroup M] [Module k M]
 variable (ρ : Representation k G M)
 
-/-- **The number of basic invariants.** For a finite group acting on a finite-dimensional vector
-space `M`, if the invariant subalgebra is a polynomial algebra on a finite family of invariants,
-then this family has `finrank M` members. -/
-theorem card_eq_finrank_of_bijective_aeval_symmetricAlgebraInvariants [Finite ι]
+/-- **The number of basic invariants.** For a finite group acting on a vector space `M`, if the
+invariant subalgebra is a polynomial algebra on a family of invariants, then this family has
+`finrank M` members. (For infinite-dimensional `M` both sides are `0`.) -/
+theorem card_eq_finrank_of_bijective_aeval_symmetricAlgebraInvariants
     {f : ι → ρ.symmetricAlgebraInvariants} (hbij : Function.Bijective (aeval (R := k) f)) :
     Nat.card ι = Module.finrank k M := by
   have h := ringKrullDim_eq_of_ringEquiv (AlgEquiv.ofBijective (aeval f) hbij).toRingEquiv
-  rw [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
-    zero_add, ρ.ringKrullDim_symmetricAlgebraInvariants, ringKrullDim_eq_finrank] at h
-  exact_mod_cast h
+  -- Both sides are polynomial rings over `k`, whose Krull dimension is the cardinality of the
+  -- variables.
+  let b := Module.Free.chooseBasis k M
+  rw [MvPolynomial.ringKrullDim_of_isNoetherianRing, ringKrullDim_eq_zero_of_field, zero_add,
+    ρ.ringKrullDim_symmetricAlgebraInvariants,
+    ringKrullDim_eq_of_ringEquiv (SymmetricAlgebra.equivMvPolynomial b).toRingEquiv,
+    MvPolynomial.ringKrullDim_of_isNoetherianRing, ringKrullDim_eq_zero_of_field,
+    zero_add] at h
+  have h2 : ENat.card ι = ENat.card (Module.Free.ChooseBasisIndex k M) := by exact_mod_cast h
+  rw [Module.finrank_eq_nat_card_basis b]
+  simpa using congrArg ENat.toNat h2
 
 end Field
 

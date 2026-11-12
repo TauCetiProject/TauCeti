@@ -8,21 +8,23 @@ module
 public import TauCeti.Analysis.Contour.Cycle.HomologyCauchy
 public import TauCeti.Analysis.Contour.Cycle.PrincipalValue
 public import TauCeti.Analysis.Contour.HungerbuhlerWasem
+import TauCeti.Algebra.BigOperators.Ring.Finset
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The Hungerbühler–Wasem generalized residue theorem for contour cycles
 
 This file lifts HW Thm 3.3 from one parametrized closed curve to a finite formal integer cycle
-`C` of them. For `f` holomorphic on `U ∖ S` and meromorphic at each point of the finite `S ⊆ U`,
-and a cycle `C` in `U` that is **null-homologous** there, whose curves are piecewise-`C¹`
+`C` of them. For `f` holomorphic on `U ∖ S` and meromorphic at each point of the finite `S` lying
+in `U`, and a cycle `C` in `U` that is **null-homologous** there, whose curves are piecewise-`C¹`
 immersions rooted off `S` and satisfy the regularity conditions (A′) and (B),
 
 `PV ∮_C f = 2πi · ∑_{s ∈ S} n_s(C) · Res_s f`,
 
 each singularity weighted by the **generalized, non-integer** winding number of the cycle about
-it — so the singularities may lie **on** `C`. This removes the first of the narrowings the
-roadmap records for the pinned single-curve form
-(`TauCeti.Contour.hungerbuhlerWasem_residueTheorem`), which the paper states for a cycle.
+it — so the singularities may lie **on** `C`. This extends the single-curve form
+(`TauCeti.Contour.hungerbuhlerWasem_residueTheorem`) to a cycle, the setting in which the paper
+states it.
 
 Just as for the classical residue theorem for cycles
 (`TauCeti.Contour.Cycle.classicalResidueTheorem_nullHomologous`), this is not the single-curve
@@ -42,7 +44,7 @@ a cycle by construction (`TauCeti.Contour.Cycle.cauchyPV`). Only then is the ana
 generators.
 
 The remaining narrowings of the single-curve form are inherited unchanged: `S` is finite, `f` is
-`MeromorphicAt` at each of its points, and each generator is rooted off `S`.
+`MeromorphicAt` at each of its points in `U`, and each generator is rooted off `S`.
 
 ## Main results
 
@@ -85,7 +87,7 @@ summed from its single-curve form
 over the generators of the cycle, each of which may wind arbitrarily around the holes of `U`. -/
 theorem hasCauchyPV_analyticRemainder_add_residue_sum (decomp : PolarPartDecomposition f S U)
     (hU : IsOpen U) (h_ord : ∀ s : S, decomp.order s = meromorphicPolarOrderAt f ↑s)
-    (hSU : (S : Set ℂ) ⊆ U) (hmero : ∀ s ∈ S, MeromorphicAt f s) (hCU : IsIn C U)
+    (hSU : (S : Set ℂ) ⊆ U) (hCU : IsIn C U)
     (h_imm : ∀ γ ∈ FreeAbelianGroup.support C, IsPwC1ImmersionOn (⇑γ) γ.a γ.b)
     (hbase : ∀ γ ∈ FreeAbelianGroup.support C, γ γ.a ∉ (S : Set ℂ))
     (hA : ∀ γ ∈ FreeAbelianGroup.support C, ConditionAprime (⇑γ) γ.a γ.b f S)
@@ -100,7 +102,7 @@ theorem hasCauchyPV_analyticRemainder_add_residue_sum (decomp : PolarPartDecompo
             ∑ s ∈ S, TauCeti.Contour.windingNumber (⇑γ) γ.a γ.b s * residue f s) := fun γ hγ ↦
     decomp.hasCauchyPV_analyticRemainder_add_residue_sum_of_conditions hU h_ord hSU (h_imm γ hγ)
       γ.source_eq_target (hbase γ hγ)
-      (fun t ht ↦ isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)) hmero (hA γ hγ)
+      (fun t ht ↦ isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)) (hA γ hγ)
       (hB γ hγ)
   have hval : (∑ γ ∈ FreeAbelianGroup.support C, FreeAbelianGroup.coeff γ C •
         ((∫ t in γ.a..γ.b, deriv (⇑γ) t • decomp.analyticRemainder (γ t))
@@ -113,9 +115,9 @@ theorem hasCauchyPV_analyticRemainder_add_residue_sum (decomp : PolarPartDecompo
   exact HasCauchyPV.of_generators hgen
 
 /-- **The Hungerbühler–Wasem generalized residue theorem for a contour cycle** (HW Thm 3.3).
-Let `U` be open, `S ⊆ U` finite, `f` holomorphic on `U ∖ S` and meromorphic at each point of
-`S`, and let `C` be a contour cycle in `U`, **null-homologous** in `U`, whose curves are
-piecewise-`C¹` immersions rooted off `S` and satisfy conditions (A′) and (B). Then the Cauchy
+Let `U` be open, `S` finite, `f` holomorphic on `U ∖ S` and meromorphic at each point of
+`S` lying in `U`, and let `C` be a contour cycle in `U`, **null-homologous** in `U`, whose curves
+are piecewise-`C¹` immersions rooted off `S` and satisfy conditions (A′) and (B). Then the Cauchy
 principal value of `f` along `C` exists and
 
 `PV ∮_C f = 2πi · ∑_{s ∈ S} n_s(C) · Res_s f`,
@@ -134,8 +136,8 @@ the principal value is an ordinary integral and the statement is the classical r
 for cycles (`TauCeti.Contour.Cycle.classicalResidueTheorem_nullHomologous`), which needs neither
 immersions nor the conditions. -/
 theorem hungerbuhlerWasem_residueTheorem (hU : IsOpen U) (S : Finset ℂ)
-    (hSU : (S : Set ℂ) ⊆ U) (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
-    (hmero : ∀ s ∈ S, MeromorphicAt f s) (hCU : IsIn C U)
+    (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
+    (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s) (hCU : IsIn C U)
     (h_imm : ∀ γ ∈ FreeAbelianGroup.support C, IsPwC1ImmersionOn (⇑γ) γ.a γ.b)
     (hbase : ∀ γ ∈ FreeAbelianGroup.support C, γ γ.a ∉ (S : Set ℂ))
     (hnull : IsNullHomologous C U)
@@ -143,16 +145,28 @@ theorem hungerbuhlerWasem_residueTheorem (hU : IsOpen U) (S : Finset ℂ)
     (hB : ∀ γ ∈ FreeAbelianGroup.support C, ConditionB (⇑γ) γ.a γ.b f) :
     HasCauchyPV C f
       (2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s) := by
+  classical
+  -- Restrict to the singularities inside `U`; the others have winding number `0`.
+  have hsub : S.filter (· ∈ U) ⊆ S := Finset.filter_subset _ _
+  have hf' : DifferentiableOn ℂ f (U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ)) := by
+    rwa [Finset.sdiff_coe_filter_mem_eq]
+  have hmero' : ∀ s ∈ S.filter (· ∈ U), MeromorphicAt f s := fun s hs ↦
+    hmero s (hsub hs) (Finset.mem_filter.mp hs).2
   have h := hasCauchyPV_analyticRemainder_add_residue_sum
-    (PolarPartDecomposition.ofMeromorphic hU hf hmero) hU
-    (fun s ↦ PolarPartDecomposition.ofMeromorphic_order s) hSU hmero hCU h_imm hbase hA hB
+    (PolarPartDecomposition.ofMeromorphic hU hf' hmero') hU
+    (fun s ↦ PolarPartDecomposition.ofMeromorphic_order s)
+    (fun s hs ↦ (Finset.mem_filter.mp hs).2) hCU h_imm (fun γ hγ h ↦ hbase γ hγ (hsub h))
+    (fun γ hγ ↦ (hA γ hγ).mono hsub) hB
+  have hsum : ∑ s ∈ S.filter (· ∈ U), windingNumber s C * residue f s =
+      ∑ s ∈ S, windingNumber s C * residue f s :=
+    Finset.sum_filter_mem_mul_eq S U fun s hsU ↦ isNullHomologous_iff.mp hnull s hsU
   rwa [homologyCauchyTheorem hU hCU
-    (PolarPartDecomposition.ofMeromorphic hU hf hmero).analyticRemainder_differentiableOn hnull,
-    zero_add] at h
+    (PolarPartDecomposition.ofMeromorphic hU hf' hmero').analyticRemainder_differentiableOn hnull,
+    zero_add, hsum] at h
 
 /-- **The generalized residue theorem for a contour cycle with simple poles** — HW Thm 3.3's
-unconditional regime for cycles. When every prescribed singularity is at worst a simple pole,
-conditions (A′) and (B) hold automatically along each curve of the cycle
+unconditional regime for cycles. When every prescribed singularity in `U` is at worst a simple
+pole, conditions (A′) and (B) hold automatically along each curve of the cycle
 (`TauCeti.Contour.conditionAprime_of_simple_poles`,
 `TauCeti.Contour.conditionB_of_simple_poles`), leaving no regularity hypotheses beyond the
 immersions. This is the form the argument principle consumes, a logarithmic derivative having
@@ -167,31 +181,14 @@ theorem hungerbuhlerWasem_residueTheorem_of_simple_poles (hU : IsOpen U) (S : Fi
     (h_simple : ∀ s ∈ S, s ∈ U → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     HasCauchyPV C f
       (2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s) := by
-  classical
   have hγU : ∀ γ ∈ FreeAbelianGroup.support C, ∀ t ∈ uIcc γ.a γ.b, γ t ∈ U := fun γ hγ t ht ↦
     isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)
-  have hdiff : U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ) = U \ (S : Set ℂ) := by
-    ext z; simp only [Finset.coe_filter]; grind
-  have hsub : S.filter (· ∈ U) ⊆ S := Finset.filter_subset _ _
-  have hf' := hdiff ▸ hf
-  have hbase' : ∀ γ ∈ FreeAbelianGroup.support C, γ γ.a ∉ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ) :=
-    fun γ hγ h ↦ hbase γ hγ (hsub h)
-  have hsimple' : ∀ s ∈ S.filter (· ∈ U), ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s :=
-    fun s hs ↦ h_simple s (hsub hs) (Finset.mem_filter.mp hs).2
-  have key := hungerbuhlerWasem_residueTheorem hU (S.filter (· ∈ U))
-    (fun s hs ↦ (Finset.mem_filter.mp hs).2) hf'
-    (fun s hs ↦ hmero s (hsub hs) (Finset.mem_filter.mp hs).2) hCU h_imm hbase' hnull
-    (fun γ hγ ↦ conditionAprime_of_simple_poles hU (h_imm γ hγ) (by
+  exact hungerbuhlerWasem_residueTheorem hU S hf hmero hCU h_imm hbase hnull
+    (fun γ hγ ↦ conditionAprime_of_simple_poles (h_imm γ hγ) (hγU γ hγ) (by
       rcases le_total γ.a γ.b with h | h
-      · rw [min_eq_left h]; exact hbase' γ hγ
-      · rw [min_eq_right h, ← γ.source_eq_target]; exact hbase' γ hγ) (hγU γ hγ) hf' hsimple')
-    (fun γ hγ ↦ conditionB_of_simple_poles hU (hγU γ hγ) hf' hsimple')
-  have hsum : ∑ s ∈ S.filter (· ∈ U), windingNumber s C * residue f s =
-      ∑ s ∈ S, windingNumber s C * residue f s :=
-    Finset.sum_subset hsub fun s hs hs' ↦ by
-      have : s ∉ U := fun h ↦ hs' (Finset.mem_filter.mpr ⟨hs, h⟩)
-      rw [isNullHomologous_iff.mp hnull s this, zero_mul]
-  rwa [hsum] at key
+      · rw [min_eq_left h]; exact hbase γ hγ
+      · rw [min_eq_right h, ← γ.source_eq_target]; exact hbase γ hγ) h_simple)
+    (fun γ hγ ↦ conditionB_of_simple_poles hU (hγU γ hγ) hf h_simple)
 
 end TauCeti.Contour.Cycle
 

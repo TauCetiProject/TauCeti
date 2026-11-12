@@ -20,14 +20,17 @@ sum of the norms of its two components.  For `p = 1` the bound is an identity fo
 It also records that the `ℓ^p` norm is monotone and positively homogeneous in the component norms.
 
 It also records that taking a component of `WithLp p (α × β)` commutes with `Set.indicator`, as
-Mathlib's `norm_indicator_eq_indicator_norm` does for the norm.
+Mathlib's `norm_indicator_eq_indicator_norm` does for the norm, and that a graph map
+`x ↦ (f x, u x)` into `WithLp p (E × V)` is the sum of `f` and `u` followed by the inclusions of
+the two factors.
 
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
 Mathlib's `LinearIsometry.withLpProdMap`. For `p = 2` and inner product spaces this is the
 orthogonal block sum `f ⊕ g`. It is additive in the pair `(f, g)`, its rank is the sum of the
 ranks of `f` and `g`, and its operator norm is the larger of the two operator norms. The
-projections onto the factors and the inclusions of the factors are contractions.
+projections onto the factors and the inclusions of the factors are contractions, and fixing one
+coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
 
 ## Main statements
 
@@ -40,6 +43,7 @@ projections onto the factors and the inclusions of the factors are contractions.
   strictly less than `1`.
 * `WithLp.fst_indicator`, `WithLp.snd_indicator` — a component of an indicator is the indicator
   of the component.
+* `TauCeti.toLp_prodMk_eq_add` — `x ↦ (f x, u x)` is `x ↦ ι₁ (f x) + ι₂ (u x)`.
 * `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
@@ -48,6 +52,8 @@ projections onto the factors and the inclusions of the factors are contractions.
   `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one`,
   `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inr_le_one` — the projections onto and the
   inclusions of the factors are contractions.
+* `WithLp.isometry_toLp_prodMk_left`, `WithLp.isometry_toLp_prodMk_right` — fixing one coordinate
+  embeds the other factor isometrically into `WithLp p (α × β)`.
 -/
 
 public section
@@ -163,6 +169,24 @@ theorem _root_.WithLp.snd_indicator (f : ι → WithLp p (α × β)) (x : ι) :
   (congr_fun (Set.indicator_comp_of_zero (g := WithLp.snd) WithLp.zero_snd) x).symm
 
 end Indicator
+
+section Graph
+
+variable {p : ℝ≥0∞} {𝕜 : Type*} [NormedField 𝕜]
+
+/-- The map `x ↦ (f x, u x)` into the `Lᵖ` product is `x ↦ ι₁ (f x) + ι₂ (u x)`, read through the
+identification `WithLp p (E × V) ≃L E × V`; for `f = id` this is the graph of `u`. -/
+theorem toLp_prodMk_eq_add {α E V : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup V] [NormedSpace 𝕜 V] (f : α → E) (u : α → V) :
+    (fun x ↦ WithLp.toLp p (f x, u x)) = fun x ↦
+      (WithLp.prodContinuousLinearEquiv p 𝕜 E V).symm.toContinuousLinearMap
+          (ContinuousLinearMap.inl 𝕜 E V (f x)) +
+        (WithLp.prodContinuousLinearEquiv p 𝕜 E V).symm.toContinuousLinearMap
+          (ContinuousLinearMap.inr 𝕜 E V (u x)) := by
+  funext x
+  simp [WithLp.ext_iff]
+
+end Graph
 
 end TauCeti
 
@@ -325,5 +349,24 @@ theorem norm_prodContinuousLinearEquiv_symm_comp_inr_le_one :
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simp
 
 end Contraction
+
+/-- Fixing the first coordinate, `y ↦ WithLp.toLp p (x, y)` is an isometry into
+`WithLp p (α × β)`. -/
+theorem isometry_toLp_prodMk_left (p : ℝ≥0∞) [Fact (1 ≤ p)] {α β : Type*}
+    [PseudoEMetricSpace α] [PseudoEMetricSpace β] (x : α) :
+    Isometry fun y : β ↦ toLp p (x, y) := by
+  intro y₁ y₂
+  rcases p.dichotomy with rfl | hp
+  · simp [prod_edist_eq_sup]
+  · have hp₀ : 0 < p.toReal := zero_lt_one.trans_le hp
+    simp [prod_edist_eq_add hp₀, ENNReal.zero_rpow_of_pos hp₀, ENNReal.rpow_rpow_inv hp₀.ne']
+
+/-- Fixing the second coordinate, `x ↦ WithLp.toLp p (x, y)` is an isometry into
+`WithLp p (α × β)`. -/
+theorem isometry_toLp_prodMk_right (p : ℝ≥0∞) [Fact (1 ≤ p)] {α β : Type*}
+    [PseudoEMetricSpace α] [PseudoEMetricSpace β] (y : β) :
+    Isometry fun x : α ↦ toLp p (x, y) := by
+  simpa [Function.comp_def] using
+    (IsometryEquiv.withLpProdComm p β α).isometry.comp (isometry_toLp_prodMk_left p y)
 
 end WithLp

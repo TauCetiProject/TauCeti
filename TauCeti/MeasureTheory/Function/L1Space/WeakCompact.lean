@@ -12,8 +12,10 @@ import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.Approximation
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
+import TauCeti.MeasureTheory.Function.L1Space.HasFiniteIntegral
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.UniformConvex
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.DisjointSequence
 import TauCeti.MeasureTheory.Integral.Lebesgue.DisjointSequence
 import TauCeti.Topology.Algebra.Module.WeakSpace
@@ -47,7 +49,7 @@ ones and applying the gliding hump lemma
 * `MeasureTheory.Lp.isCompact_closure_toWeakSpace_of_uniformIntegrable`: uniformly integrable
   bounded subsets of `L¹(μ)` are relatively weakly compact.
 * `MeasureTheory.Lp.uniformIntegrable_of_isCompact_closure_toWeakSpace`: relatively weakly compact
-  subsets of `L¹(μ)` are bounded and uniformly integrable.
+  subsets of `L¹(μ)` are bounded and uniformly integrable, for any measure `μ`.
 * `MeasureTheory.Lp.isCompact_closure_toWeakSpace_iff_uniformIntegrable` and
   `MeasureTheory.Lp.isCompact_closure_toWeakSpace_iff_isBounded_and_unifIntegrable`: the
   **Dunford–Pettis theorem**, with and without the bound bundled into uniform integrability.
@@ -68,7 +70,25 @@ open scoped ENNReal NNReal
 
 namespace MeasureTheory.Lp
 
-variable {α 𝕜 : Type*} [RCLike 𝕜] {m : MeasurableSpace α} {μ : Measure α} [IsFiniteMeasure μ]
+variable {α 𝕜 : Type*} [RCLike 𝕜] {m : MeasurableSpace α} {μ : Measure α}
+
+/-- If `u n` tends weakly to `f` in `L¹`, the integrals of `u n` over every set tend to the
+integral of `f` over that set. -/
+theorem tendsto_setIntegral_of_tendsto_toWeakSpace {ι : Type*} {l : Filter ι}
+    {u : ι → Lp 𝕜 1 μ} {f : Lp 𝕜 1 μ}
+    (hlim : Tendsto (fun n ↦ toWeakSpace 𝕜 (Lp 𝕜 1 μ) (u n)) l
+      (𝓝 (toWeakSpace 𝕜 (Lp 𝕜 1 μ) f)))
+    (S : Set α) :
+    Tendsto (fun k ↦ ∫ x in S, (u k : α → 𝕜) x ∂μ) l (𝓝 (∫ x in S, (f : α → 𝕜) x ∂μ)) := by
+  have hS' := TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hlim
+    ((L1.integralCLM' 𝕜).comp (LpToLpRestrictCLM α 𝕜 𝕜 μ 1 S))
+  have heval (g : Lp 𝕜 1 μ) :
+      (L1.integralCLM' 𝕜).comp (LpToLpRestrictCLM α 𝕜 𝕜 μ 1 S) g = ∫ x in S, g x ∂μ := by
+    rw [ContinuousLinearMap.comp_apply, ← L1.integral_eq', L1.integral_eq_integral]
+    exact integral_congr_ae (LpToLpRestrictCLM_coeFn 𝕜 S g)
+  simpa only [heval] using hS'
+
+variable [IsFiniteMeasure μ]
 
 /-- **Dunford–Pettis theorem**, sufficiency: for a finite measure, a bounded uniformly integrable
 subset of scalar `L¹` has weakly compact closure. -/
@@ -111,8 +131,9 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
       rw [Lp.norm_def, eLpNorm_congr_ae hae]
       exact ENNReal.toReal_le_of_le_ofReal hε.le (hC ⟨f, hf⟩)
 
-/-- **Dunford–Pettis theorem**, necessity: for a finite measure, a subset of scalar `L¹` with
-weakly compact closure is bounded and uniformly integrable. -/
+omit [IsFiniteMeasure μ] in
+/-- **Dunford–Pettis theorem**, necessity: a subset of scalar `L¹` with weakly compact closure is
+bounded and uniformly integrable. No finiteness of the measure is needed. -/
 theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 μ)}
     (hA : IsCompact (closure (toWeakSpace 𝕜 (Lp 𝕜 1 μ) '' A))) :
     UniformIntegrable (fun f : A ↦ (f : α → 𝕜)) 1 μ := by
@@ -148,12 +169,10 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
     (u := fun n ↦ (i n : Lp 𝕜 1 μ)) fun n ↦ (i n).2
   set h : ℕ → α → 𝕜 := fun k x ↦ (i (τ k) : α → 𝕜) x - (f : α → 𝕜) x
   have hh (k : ℕ) : Integrable (h k) μ := (L1.integrable_coeFn _).sub (L1.integrable_coeFn f)
-  have hset (S : Set α) (hS : MeasurableSet S) :
+  have hset (S : Set α) (_ : MeasurableSet S) :
       Tendsto (fun k ↦ ∫ x in S, h k x ∂μ) atTop (𝓝 0) := by
-    have hS' := TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hlim
-      (Set.setIntegralLp (𝕜 := 𝕜) S (measure_lt_top μ S))
-    simp only [Set.setIntegralLp_apply] at hS'
-    refine (tendsto_sub_nhds_zero_iff.2 hS').congr fun k ↦ ?_
+    refine (tendsto_sub_nhds_zero_iff.2 (tendsto_setIntegral_of_tendsto_toWeakSpace
+      (u := fun k ↦ (i (τ k) : Lp 𝕜 1 μ)) hlim S)).congr fun k ↦ ?_
     exact (integral_sub (L1.integrable_coeFn _).integrableOn
       (L1.integrable_coeFn f).integrableOn).symm
   -- Along the subsequence, the integrals of `‖h k‖` over the small sets stay above `ε / 2`.
@@ -163,13 +182,8 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
       (ENNReal.half_pos hε.ne'))
   have hbig' (k : ℕ) (hk : K ≤ k) : ε / 2 < ∫⁻ x in s (τ k), ‖h k x‖ₑ ∂μ := by
     by_contra! hle
-    have hsplit : ∫⁻ x in s (τ k), ‖(i (τ k) : α → 𝕜) x‖ₑ ∂μ ≤
-        ∫⁻ x in s (τ k), ‖h k x‖ₑ ∂μ + ∫⁻ x in s (τ k), ‖(f : α → 𝕜) x‖ₑ ∂μ := by
-      rw [← lintegral_add_right' _ (L1.integrable_coeFn f).1.enorm.restrict]
-      refine lintegral_mono fun x ↦ ?_
-      calc ‖(i (τ k) : α → 𝕜) x‖ₑ = ‖h k x + (f : α → 𝕜) x‖ₑ := by simp [h]
-        _ ≤ ‖h k x‖ₑ + ‖(f : α → 𝕜) x‖ₑ := enorm_add_le _ _
-    have := (hbig (τ k)).trans_le (hsplit.trans (add_le_add hle (hK k hk)))
+    have := (hbig (τ k)).trans_le ((TauCeti.MeasureTheory.lintegral_enorm_le_lintegral_enorm_sub_add
+      (L1.integrable_coeFn f).1.restrict _).trans (add_le_add hle (hK k hk)))
     rw [ENNReal.add_halves] at this
     exact lt_irrefl _ this
   -- Shrink the small sets to disjoint ones and apply the gliding hump lemma.
@@ -184,10 +198,8 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
     exact lt_irrefl _ this
   have hzero := tendsto_setIntegral_norm_of_pairwise_disjoint (fun j ↦ hh (σ j + K))
     (fun S hS ↦ (hset S hS).comp ((tendsto_add_atTop_nat K).comp hσ.tendsto_atTop)) hBm hB
-  have hzero' : Tendsto (fun j ↦ ∫⁻ x in B j, ‖h (σ j + K) x‖ₑ ∂μ) atTop (𝓝 0) := by
-    refine (ENNReal.tendsto_ofReal hzero).congr' (.of_forall fun j ↦ ?_) |>.trans ?_
-    · exact ofReal_integral_norm_eq_lintegral_enorm (hh _).integrableOn
-    · rw [ENNReal.ofReal_zero]
+  have hzero' := TauCeti.MeasureTheory.tendsto_lintegral_enorm_of_tendsto_integral_norm
+    (.of_forall fun j ↦ (hh (σ j + K)).integrableOn) hzero
   obtain ⟨j, hj⟩ := (ENNReal.tendsto_nhds_zero.1 hzero' (ε / 2 / 2)
     (ENNReal.half_pos (ENNReal.half_pos hε.ne').ne')).exists
   exact (hlow j).not_ge hj
