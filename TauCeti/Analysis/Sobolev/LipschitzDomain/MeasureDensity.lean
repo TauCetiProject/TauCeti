@@ -210,7 +210,7 @@ theorem exists_ball_subset_compl_closure_inter_ball (hΩ : Ω.IsLipschitzDomain 
     (by rwa [frontier_compl, hΩ.frontier_closure]) hR
   exact ⟨δ, hδ, fun x hx ↦ hball x (hΩ.closure_compl_closure ▸ mem_compl hx)⟩
 
-variable [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] {μ : Measure F}
+variable [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] (μ : Measure F)
   [μ.IsAddHaarMeasure]
 
 /-- **The measure density property of a Lipschitz domain.** For a Lipschitz domain `Ω` with
@@ -239,7 +239,7 @@ theorem exists_pos_mul_measure_closedBall_le_measure_closedBall_inter
     (hΩ : Ω.IsLipschitzDomain E) (hK : IsCompact (frontier Ω)) {R : ℝ} (hR : 0 < R) :
     ∃ c : ℝ≥0, 0 < c ∧ ∀ x ∈ closure Ω, ∀ r : ℝ, 0 < r → r ≤ R →
       (c : ℝ≥0∞) * μ (closedBall x r) ≤ μ (closedBall x r ∩ Ω) := by
-  obtain ⟨c, hc, hdens⟩ := hΩ.exists_pos_mul_measure_ball_le_measure_ball_inter (μ := μ) hK hR
+  obtain ⟨c, hc, hdens⟩ := hΩ.exists_pos_mul_measure_ball_le_measure_ball_inter μ hK hR
   refine ⟨c, hc, fun x hx r hr hrR ↦ ?_⟩
   rw [Measure.addHaar_closedBall μ x hr.le, ← Measure.addHaar_ball_of_pos μ x hr]
   exact (hdens x hx r hr hrR).trans
@@ -254,7 +254,7 @@ theorem exists_pos_mul_measure_ball_le_measure_ball_sdiff_closure
     ∃ c : ℝ≥0, 0 < c ∧ ∀ x ∉ Ω, ∀ r : ℝ, 0 < r → r ≤ R →
       (c : ℝ≥0∞) * μ (ball x r) ≤ μ (ball x r \ closure Ω) := by
   obtain ⟨c, hc, hdens⟩ := hΩ.compl_closure.exists_pos_mul_measure_ball_le_measure_ball_inter
-    (μ := μ) (by rwa [frontier_compl, hΩ.frontier_closure]) hR
+    μ (by rwa [frontier_compl, hΩ.frontier_closure]) hR
   refine ⟨c, hc, fun x hx r hr hrR ↦ ?_⟩
   rw [sdiff_eq]
   exact hdens x (hΩ.closure_compl_closure ▸ mem_compl hx) r hr hrR
@@ -269,12 +269,12 @@ theorem exists_pos_mul_measure_closedBall_le_measure_closedBall_sdiff_closure
       (c : ℝ≥0∞) * μ (closedBall x r) ≤ μ (closedBall x r \ closure Ω) := by
   obtain ⟨c, hc, hdens⟩ :=
     hΩ.compl_closure.exists_pos_mul_measure_closedBall_le_measure_closedBall_inter
-      (μ := μ) (by rwa [frontier_compl, hΩ.frontier_closure]) hR
+      μ (by rwa [frontier_compl, hΩ.frontier_closure]) hR
   refine ⟨c, hc, fun x hx r hr hrR ↦ ?_⟩
   rw [sdiff_eq]
   exact hdens x (hΩ.closure_compl_closure ▸ mem_compl hx) r hr hrR
 
-variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {f : F → G}
+variable {μ} {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {f : F → G}
 
 /-- **Campanato's characterization on a bounded Lipschitz domain.** Let `Ω` be a bounded Lipschitz
 domain in a space of dimension `n`, let `α > 0` and `p ≥ 1`. A function `f` locally integrable
@@ -288,7 +288,7 @@ theorem exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top (hΩ : Ω.IsLi
   have hdiam : 2 * ediam Ω ≠ ⊤ := ENNReal.mul_ne_top ENNReal.ofNat_ne_top
     (isBounded_iff_ediam_ne_top.1 hb)
   obtain ⟨c, hc, hdens⟩ := hΩ.exists_pos_mul_measure_closedBall_le_measure_closedBall_inter
-    (μ := μ) (hb.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure)
+    μ (hb.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure)
     (R := (2 * ediam Ω).toReal + 1) (by positivity)
   refine TauCeti.MeasureTheory.exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top hα hp hc
     hΩ.isOpen.nullMeasurableSet hf fun x hx r hr hr' ↦ hdens x (subset_closure hx) r hr ?_

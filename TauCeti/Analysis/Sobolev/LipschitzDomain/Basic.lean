@@ -762,6 +762,37 @@ theorem IsLipschitzDomainWith.smul {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ�
 
 end Dilation
 
+section Exterior
+
+/-- **The exterior chart.** If `e` is a Lipschitz boundary chart of `Omega` with graph `φ`, then
+`e` followed by the reflection `(t, y) ↦ (-t, y)` of the normal coordinate is a chart of the
+exterior `(closure Omega)ᶜ` with graph `-φ`, the same Lipschitz constant and the same radii. -/
+theorem IsLipschitzChartWith.compl_closure {Omega : Set F} {L : ℝ≥0}
+    {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
+    (h : Omega.IsLipschitzChartWith L e φ a b) :
+    (closure Omega)ᶜ.IsLipschitzChartWith L
+      (e.trans (LinearIsometryEquiv.withLpProdCongr 2 (LinearIsometryEquiv.neg ℝ (E := ℝ))
+        (LinearIsometryEquiv.refl ℝ E)).toAffineIsometryEquiv) (fun y ↦ -φ y) a b :=
+  ⟨by simp [h.apply_zero], h.toIsLipschitzChart.compl_closure⟩
+
+/-- If `Omega` is a Lipschitz domain at `x` with constant `L`, then so is its exterior
+`(closure Omega)ᶜ`. See `Set.IsLipschitzChartWith.compl_closure` for the explicit chart. -/
+theorem IsLipschitzDomainAtWith.compl_closure {Omega : Set F} {L : ℝ≥0}
+    {x : F} (h : Omega.IsLipschitzDomainAtWith (E := E) L x) :
+    (closure Omega)ᶜ.IsLipschitzDomainAtWith (E := E) L x := by
+  obtain ⟨e, φ, a, b, hex, hchart⟩ := h
+  exact ⟨_, _, a, b, by simp [hex], hchart.compl_closure⟩
+
+/-- **The exterior of a Lipschitz domain with constant `L`** is a Lipschitz domain with the same
+constant. -/
+theorem IsLipschitzDomainWith.compl_closure {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
+    (h : Omega.IsLipschitzDomainWith L) : (closure Omega)ᶜ.IsLipschitzDomainWith L := by
+  refine ⟨isClosed_closure.isOpen_compl, fun x hx ↦ ?_⟩
+  rw [frontier_compl] at hx
+  exact (h.2 x (frontier_closure_subset hx)).compl_closure
+
+end Exterior
+
 section Cover
 
 variable {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
