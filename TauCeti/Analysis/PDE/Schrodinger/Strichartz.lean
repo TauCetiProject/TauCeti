@@ -162,11 +162,6 @@ private theorem eLpNorm_schrodingerPropagator_adjoint_le_of_admissible (hq : 2 <
   have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
   -- Admissibility with `2 < q` forces `n > 0`, hence `1 / r < 1 / 2`, so `2 ≤ r`.
   have hr : 2 ≤ r := by
-    have hn : (0 : ℝ) < Module.finrank ℝ E := by
-      rcases (Nat.cast_nonneg (α := ℝ) (Module.finrank ℝ E)).eq_or_lt with h | h
-      · rw [← h] at hqr
-        linarith
-      · exact h
     have hlt : (r⁻¹).toReal < 2⁻¹ := by nlinarith
     rw [← ENNReal.inv_le_inv,
       ← ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 (ENNReal.HolderConjugate.ne_zero r r')),
