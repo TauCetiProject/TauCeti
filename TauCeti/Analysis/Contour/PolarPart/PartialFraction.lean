@@ -194,7 +194,7 @@ theorem eqOn_sum_div_sub_of_tendsto {f : ℂ → ℂ} {S : Finset ℂ} {c : ℂ 
     exact hf.differentiableAt (hopen.mem_nhds hz)
   intro z hz
   rw [eqOn_sum_residue_div_sub hf hmero
-    (fun s hs => neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul (hmero s hs) (hpole s hs))
+    (fun s hs => neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul (hpole s hs))
     hlim hz]
   refine Finset.sum_congr rfl fun s hs => ?_
   rw [residue_eq_of_tendsto_sub_mul (hmero s hs) (hpole s hs)]

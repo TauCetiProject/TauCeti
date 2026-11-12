@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 public import TauCeti.Algebra.Homology.Monoidal.Cap.Kronecker
-public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Relative
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Zero
 
 /-!
 # The Kronecker pairing of singular cap and cup products
@@ -49,6 +50,12 @@ a pair `(X, A)` the same identities hold for the relative cap product of a relat
 (`TopPair.singularCap_comp_singularKronecker_of_homologyMap_eq` and
 `TopPair.singularCap_comp_singularKronecker_of_isIso`).
 
+Capping into degree zero is the Kronecker pairing up to the augmentation: for a topological pair
+`(X, A)`, a relative class `α ∈ Hⁿ(X, A; R, M)` and a relative class `x ∈ Hₙ(X, A; R)`, the cap
+product `x ⌢ α ∈ H₀(X; M)` taken along the right unitors `R ⟶ R ⊗ 𝟙` and `M ⊗ 𝟙 ⟶ M` has
+augmentation `ε (x ⌢ α) = ⟨α, x⟩` (`TopPair.singularCap_comp_singularHomology₀ε`).  On chains,
+the back `0`-face of each singular `n`-simplex is a vertex, whose augmentation is the identity.
+
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
@@ -60,6 +67,8 @@ public section
 noncomputable section
 
 open CategoryTheory Limits MonoidalCategory AlgebraicTopology HomologicalComplex
+
+open Simplicial
 
 universe w v u
 
@@ -129,6 +138,24 @@ theorem singularCap_comp_singularKronecker_of_isIso (X : TopCat.{w}) (k : Type*)
   rw [singularCap_def, singularKronecker_def, singularKronecker_def, TauCeti.singularCup_def]
   exact TauCeti.ChainComplex.cap_comp_kronecker_of_isIso _ _ ν p q n h α β
 
+/-- On chains, capping a chain of degree `n` with a cochain of degree `n` along the right unitors
+and taking the augmentation of the resulting degree-zero chain is evaluating the cochain. -/
+lemma capChain_comp_homology₀ε (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    [MonoidalLinear k C] (n : ℕ) (h : n + 0 = n)
+    (φ : ((toSSet.obj X).chainComplex R).X n ⟶ M) :
+    TauCeti.ChainComplex.capChain k (X.alexanderWhitneyDiagonal (ρ_ R).inv)
+        ((toSSet.obj X).chainComplexPairing (ρ_ M).hom) n 0 n h φ ≫
+      ((toSSet.obj X).chainComplex M).cycles₀Iso.inv ≫
+        ((toSSet.obj X).chainComplex M).homologyπ 0 ≫ (toSSet.obj X).homology₀ε M =
+      φ := by
+  refine SSet.chainComplex_hom_ext fun σ ↦ ?_
+  -- The front `n`-face of an `n`-simplex is the simplex itself, and its back `0`-face is a vertex,
+  -- whose augmentation is the identity.
+  rw [reassoc_of% (ιChainComplex_capChain_alexanderWhitneyDiagonal X (k := k) (ρ_ R).inv
+      (ρ_ M).hom n 0 n h φ σ), SSet.ιChainComplex_cycles₀Iso_inv_homologyπ_assoc,
+    SSet.ιHomology₀_homology₀ε]
+  simp [TauCeti.SimplexCategory.subinterval_zero_eq_id]
+
 end TopCat
 
 namespace TopPair
@@ -179,5 +206,40 @@ theorem singularCap_comp_singularKronecker_of_isIso (P : TopPair.{w}) (k : Type*
         (TauCeti.ChainComplex.cup k (P.alexanderWhitneyDiagonal u) ν p q n h α β) := by
   rw [singularCap_def, singularKronecker_def, TopCat.singularKronecker_def]
   exact TauCeti.ChainComplex.cap_comp_kronecker_of_isIso _ _ ν p q n h α β
+
+/-- On chains, capping a relative chain of degree `n` with a relative cochain of degree `n` along
+the right unitors and taking the augmentation of the resulting degree-zero chain is evaluating the
+cochain. -/
+lemma capChain_comp_homology₀ε (P : TopPair.{w}) (k : Type*) [Ring k]
+    [Linear k C] [MonoidalLinear k C] (n : ℕ) (h : n + 0 = n)
+    (φ : (P.singularChainComplex R).X n ⟶ M) :
+    TauCeti.ChainComplex.capChain k (P.alexanderWhitneyDiagonal (ρ_ R).inv)
+        ((TopCat.toSSet.obj P.fst).chainComplexPairing (ρ_ M).hom) n 0 n h φ ≫
+      ((TopCat.toSSet.obj P.fst).chainComplex M).cycles₀Iso.inv ≫
+        ((TopCat.toSSet.obj P.fst).chainComplex M).homologyπ 0 ≫
+          (TopCat.toSSet.obj P.fst).homology₀ε M =
+      φ := by
+  have : Epi ((P.singularChainComplexπ R).f n) :=
+    inferInstanceAs (Epi (((TopPair.toSSetPair.obj P).chainComplexπ R).f n))
+  refine (cancel_epi ((P.singularChainComplexπ R).f n)).1 ?_
+  rw [singularChainComplexπ_capChain_alexanderWhitneyDiagonal_assoc]
+  exact TopCat.capChain_comp_homology₀ε P.fst k n h _
+
+/-- **The augmentation of a relative cap product into degree zero**, `ε (x ⌢ α) = ⟨α, x⟩`: capping
+a relative class `x ∈ Hₙ(X, A; R)` with a relative class `α ∈ Hⁿ(X, A; R, M)`, along the right
+unitors `R ⟶ R ⊗ 𝟙` and `M ⊗ 𝟙 ⟶ M`, and then applying the augmentation `H₀(X; M) ⟶ M` is the
+Kronecker pairing of `α` with `x`. -/
+theorem singularCap_comp_singularHomology₀ε (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C]
+    [MonoidalLinear k C] (n : ℕ) (h : n + 0 = n) (α : P.singularCohomology R k M n) :
+    P.singularCap k (ρ_ R).inv (ρ_ M).hom n 0 n h α ≫ P.fst.singularHomology₀ε M =
+      P.singularKronecker k n α := by
+  obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ n α
+  refine (cancel_epi ((P.singularChainComplex R).homologyπ n)).1 ?_
+  rw [singularCap_homologyπ_assoc, singularKronecker_homologyπ,
+    ← capChain_comp_homology₀ε P k n h ((P.singularCochainComplex R k M).iCycles n φ),
+    ← TauCeti.ChainComplex.capCycles_i_assoc]
+  -- In degree zero every chain is a cycle.
+  simp only [HomologicalComplex.iCyclesIso_hom_inv_id_assoc]
+  exact Category.assoc _ _ _
 
 end TopPair

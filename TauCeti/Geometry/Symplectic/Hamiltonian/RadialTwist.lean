@@ -39,7 +39,8 @@ A smooth `G₁` vanishing on `[R, ∞)` and equal to the identity near `0` is pr
 The profiles `θ • G₁` then give, for every angle `θ`, a compactly supported Hamiltonian
 perturbation of the identity, localized in a prescribed disc about `p`, whose linearization at
 `p` is the rotation by `θ`. Since `G₁'` is bounded, the displacement bound shows that these
-perturbations tend uniformly to the identity as `θ → 0`.
+perturbations tend uniformly to the identity as `θ → 0`: if `|G'| ≤ D` and `G` vanishes on
+`[R, ∞)`, no point moves by more than `|t| D √R`.
 
 This is the local mechanism for perturbing an area-preserving map of a surface so as to change
 the linearized return map of a periodic orbit by a rotation. If `p` is a periodic point of `φ`
@@ -62,7 +63,8 @@ orbit, the linearized return map of `φ ∘ ψ` at `p` is that of `φ` composed 
 * `TauCeti.hamiltonianFlow_radialHamiltonian_eq_self_of_lt`: if `G` vanishes on `[R, ∞)`, the
   time maps are the identity outside the disc of radius `√R` about `p`.
 * `TauCeti.norm_hamiltonianFlow_radialHamiltonian_sub_le`: the displacement bound
-  `‖φ_t(w) - w‖ ≤ |t G'(‖w - p‖²)| ‖w - p‖`.
+  `‖φ_t(w) - w‖ ≤ |t G'(‖w - p‖²)| ‖w - p‖`, and its uniform form
+  `TauCeti.norm_hamiltonianFlow_radialHamiltonian_sub_le_mul_sqrt`, `‖φ_t(w) - w‖ ≤ |t| D √R`.
 * `TauCeti.exists_lipschitzWith_hamiltonianVectorField_radialHamiltonian`: a `C²` profile vanishing
   for large arguments gives a compactly supported Hamiltonian with a globally Lipschitz field.
 
@@ -233,6 +235,28 @@ theorem norm_hamiltonianFlow_radialHamiltonian_sub_le {G : ℝ → ℝ} {p : ℂ
   rw [h, norm_mul]
   gcongr
   exact Real.norm_exp_I_mul_ofReal_sub_one_le
+
+/-- **Uniform displacement bound.** If `|G'| ≤ D` everywhere and `G` vanishes on `[R, ∞)`, the
+time-`t` map moves no point by more than `|t| D √R`: points outside the disc of radius `√R` about
+`p` are fixed, and points inside it turn through an angle at most `|t| D`. -/
+theorem norm_hamiltonianFlow_radialHamiltonian_sub_le_mul_sqrt {G : ℝ → ℝ} {p : ℂ} {K : NNReal}
+    (hX : LipschitzWith K
+      (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian G p)))
+    (hG : Differentiable ℝ G) {D R : ℝ} (hD : ∀ s, |deriv G s| ≤ D)
+    (hR : ∀ s, R ≤ s → G s = 0) (w : ℂ) (t : ℝ) :
+    ‖stdComplexSymplecticForm.hamiltonianFlow (radialHamiltonian G p) hX t w - w‖ ≤
+      |t| * D * Real.sqrt R := by
+  have hD0 : 0 ≤ D := (abs_nonneg _).trans (hD 0)
+  rcases le_or_gt (‖w - p‖ ^ 2) R with hw | hw
+  · have hwR : ‖w - p‖ ≤ Real.sqrt R := Real.le_sqrt_of_sq_le hw
+    calc _ ≤ |t * deriv G (‖w - p‖ ^ 2)| * ‖w - p‖ :=
+          norm_hamiltonianFlow_radialHamiltonian_sub_le hX (hG _) t
+      _ ≤ |t| * D * Real.sqrt R := by
+        rw [abs_mul]
+        gcongr
+        exact hD _
+  · rw [hamiltonianFlow_radialHamiltonian_eq_self_of_lt hX hR hw t, sub_self, norm_zero]
+    positivity
 
 /-- **Compactly supported radial Hamiltonians have Lipschitz fields.** For a `C²` profile vanishing
 on `[R, ∞)`, the radial Hamiltonian is a compactly supported `C²` function, so its Hamiltonian

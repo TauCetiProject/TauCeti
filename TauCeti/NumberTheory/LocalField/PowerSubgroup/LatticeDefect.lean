@@ -305,7 +305,6 @@ private noncomputable def deepUnitLogHom {n : ℕ}
   map_zero' := by simp
   map_add' u v := by simp
   map_smul' σ u := Subtype.ext <| by
-    have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr fun h ↦ by simp [h] at hn
     rw [AlgEquiv.coe_smul_integerRing, coe_deepUnitExpLogEquiv_apply,
       coe_deepUnitExpLogEquiv_apply, Additive.toMul_smul, AlgEquiv.val_coe_smul_unitFiltration]
     exact (AlgEquiv.map_log σ (u.toMul : Lˣ)).symm
@@ -342,8 +341,7 @@ theorem latticeDefect_unitFiltration_eq_finrank_smul [CommRing k] [CharP k p] (i
     latticeDefect k (L ≃ₐ[K] L) p (Additive (unitFiltration L i)) =
       Module.finrank ℚ_[p] K • permK0 k (L ≃ₐ[K] L) (L ≃ₐ[K] L) := by
   have hn : absoluteRamificationIndex L p < (p - 1) * (absoluteRamificationIndex L p + 1) :=
-    lt_of_lt_of_le (Nat.lt_succ_self _) (Nat.le_mul_of_pos_left _
-      (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt))
+    absoluteRamificationIndex_lt_sub_one_mul_of_lt (Nat.lt_succ_self _)
   rw [latticeDefect_unitFiltration_eq K L k p i _, latticeDefect_unitFiltration_eq_integerRing K L
     k p hn, latticeDefect_integerRing_eq_finrank_smul]
 

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Splits
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Splitting from the degrees of irreducible factors, and evaluating split polynomials
@@ -24,8 +23,11 @@ a function field.
   factors all have degree at most one splits.
 * `Polynomial.Splits.eval₂_eq_prod_roots`: evaluated along any ring homomorphism, a split
   polynomial is its leading coefficient times the product of the linear factors over its roots.
-* `Polynomial.Splits.eq_prod_roots_of_coeff_zero_eq_one`: a split polynomial with constant
-  coefficient `1` is the product of the factors `1 - α⁻¹ X` over its roots `α`.
+* `Polynomial.Splits.eq_C_mul_prod_roots_of_coeff_zero_ne_zero`: a split polynomial with nonzero
+  constant coefficient is that coefficient times the product of the factors `1 - α⁻¹ X` over its
+  roots `α`.
+* `Polynomial.Splits.eq_prod_roots_of_coeff_zero_eq_one`: the case of constant coefficient `1`,
+  where the polynomial is the product of the factors `1 - α⁻¹ X` alone.
 -/
 
 public section
@@ -38,10 +40,8 @@ variable {K : Type*} [Field K]
 theorem Splits.of_forall_irreducible_dvd_natDegree_le_one {f : K[X]}
     (h : ∀ g : K[X], Irreducible g → g ∣ f → g.natDegree ≤ 1) : f.Splits := by
   induction f using WfDvdMonoid.induction_on_irreducible with
-  | zero => exact Splits.zero
-  | unit u hu =>
-    obtain ⟨c, -, rfl⟩ := Polynomial.isUnit_iff.mp hu
-    exact Splits.C c
+  | zero => exact .zero
+  | unit u hu => exact hu.splits
   | mul a i _ hi ih =>
     exact (Splits.of_natDegree_le_one (h i hi (dvd_mul_right i a))).mul
       (ih fun g hg hga ↦ h g hg (hga.mul_left i))
@@ -55,32 +55,30 @@ theorem Splits.eval₂_eq_prod_roots {R S : Type*} [CommRing R] [IsDomain R] [Co
   conv_lhs => rw [hf.eq_prod_roots]
   simp [eval₂_multiset_prod]
 
-/-- **A split polynomial with constant coefficient `1`** is the product of the factors
-`1 - α⁻¹ X` over its roots `α`, counted with multiplicity. This is the normalisation of
-`Polynomial.Splits.eq_prod_roots` at `0` rather than at the leading coefficient. -/
-theorem Splits.eq_prod_roots_of_coeff_zero_eq_one {f : K[X]} (hf : f.Splits)
-    (h0 : f.coeff 0 = 1) : f = (f.roots.map fun α ↦ 1 - C α⁻¹ * X).prod := by
+/-- **A split polynomial with nonzero constant coefficient** is that coefficient times the product
+of the factors `1 - α⁻¹ X` over its roots `α`, counted with multiplicity. This is the
+normalisation of `Polynomial.Splits.eq_prod_roots` at `0` rather than at the leading
+coefficient. -/
+theorem Splits.eq_C_mul_prod_roots_of_coeff_zero_ne_zero {f : K[X]} (hf : f.Splits)
+    (h0 : f.coeff 0 ≠ 0) : f = C (f.coeff 0) * (f.roots.map fun α ↦ 1 - C α⁻¹ * X).prod := by
   have hne : ∀ α ∈ f.roots, α ≠ 0 := by
     rintro α hα rfl
-    have h := (mem_roots'.mp hα).2
-    rw [IsRoot.def, ← coeff_zero_eq_eval_zero, h0] at h
-    exact one_ne_zero h
-  -- `1 - α⁻¹ X = (-α⁻¹) (X - α)`, and evaluating `f` at `0` determines the leading coefficient.
+    simp_all [coeff_zero_eq_eval_zero]
+  have hlc : f.coeff 0 = f.leadingCoeff * (f.roots.map (-·)).prod := by
+    simpa [coeff_zero_eq_eval_zero] using hf.eval_eq_prod_roots 0
+  -- `1 - α⁻¹ X = (-α)⁻¹ (X - α)`, and the value of `f` at `0` absorbs the factors `(-α)⁻¹`.
   have hfac : (f.roots.map fun α ↦ 1 - C α⁻¹ * X) =
       f.roots.map fun α ↦ C (-α)⁻¹ * (X - C α) :=
     Multiset.map_congr rfl fun α hα ↦ by
-      have h : C α⁻¹ * C α = 1 := by
-        rw [← C_mul]
-        simp [hne α hα]
-      rw [inv_neg, C_neg]
-      linear_combination -h
-  have hlc : f.leadingCoeff = (f.roots.map fun α ↦ (-α)⁻¹).prod := by
-    have h := hf.eval_eq_prod_roots 0
-    rw [← coeff_zero_eq_eval_zero, h0] at h
-    simp only [zero_sub] at h
-    rw [Multiset.prod_map_inv]
-    exact eq_inv_of_mul_eq_one_left h.symm
-  rw [hfac, Multiset.prod_map_mul, Multiset.prod_hom' _ C, ← hlc]
+      simp [mul_sub, ← C_mul, hne α hα, inv_neg, neg_add_eq_sub]
+  rw [hfac, Multiset.prod_map_mul, Multiset.prod_hom' _ C, Multiset.prod_map_inv, ← mul_assoc,
+    ← C_mul, hlc, mul_inv_cancel_right₀ (right_ne_zero_of_mul (hlc ▸ h0))]
   exact hf.eq_prod_roots
+
+/-- **A split polynomial with constant coefficient `1`** is the product of the factors
+`1 - α⁻¹ X` over its roots `α`, counted with multiplicity. -/
+theorem Splits.eq_prod_roots_of_coeff_zero_eq_one {f : K[X]} (hf : f.Splits)
+    (h0 : f.coeff 0 = 1) : f = (f.roots.map fun α ↦ 1 - C α⁻¹ * X).prod := by
+  simpa [h0] using hf.eq_C_mul_prod_roots_of_coeff_zero_ne_zero (by simp [h0])
 
 end Polynomial

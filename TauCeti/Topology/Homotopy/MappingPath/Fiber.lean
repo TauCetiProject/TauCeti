@@ -29,8 +29,10 @@ makes it homotopy equivalent to the loop space `Ω K k`
 no identification independent of a reference path is asserted.
 
 The full based path space is contractible by the shrinking homotopy, whereas its
-endpoint fibres generally are not. No fibration or homotopy exact-sequence theorem
-is asserted here.
+endpoint fibres generally are not. Reversing paths identifies it with the space of paths
+ending at a fixed point (`TauCeti.mappingPathFiberIdHomeomorph`), the fibre of the
+mapping-path replacement of the identity, which is therefore contractible as well. No
+fibration or homotopy exact-sequence theorem is asserted here.
 
 ## References
 
@@ -213,5 +215,34 @@ theorem mappingPathFiberConstHomeomorphLoopSpace_refl (k : K) :
 /-- The based path space (without a fixed final endpoint) is contractible. -/
 instance (k : K) : ContractibleSpace (MappingPathSpace (ContinuousMap.const Unit k)) :=
   (MappingPathSpace.homotopyEquiv (ContinuousMap.const Unit k)).symm.contractibleSpace
+
+/-- Reversing paths identifies the fibre over `k` of the mapping-path replacement of the identity,
+the paths ending at `k`, with the based path space of the paths starting at `k`. -/
+def mappingPathFiberIdHomeomorph (k : K) :
+    MappingPathFiber (ContinuousMap.id K) k ≃ₜ MappingPathSpace (ContinuousMap.const Unit k) where
+  toFun p := ⟨((), p.val.2.comp ⟨σ, continuous_symm⟩),
+    (congrArg p.val.2 symm_zero).trans p.property.2⟩
+  invFun q := ⟨(q.val.2 1, q.val.2.comp ⟨σ, continuous_symm⟩), congrArg q.val.2 symm_zero,
+    (congrArg q.val.2 symm_one).trans q.property⟩
+  left_inv p := by
+    refine Subtype.ext (Prod.ext ?_ (ContinuousMap.ext fun t => by simp))
+    simpa using p.property.1
+  right_inv q := Subtype.ext (Prod.ext rfl (ContinuousMap.ext fun t => by simp))
+  continuous_toFun :=
+    (continuous_const.prodMk ((ContinuousMap.continuous_precomp _).comp
+      continuous_subtype_val.snd)).subtype_mk _
+  continuous_invFun :=
+    ((continuous_subtype_val.snd.eval continuous_const).prodMk
+      ((ContinuousMap.continuous_precomp _).comp continuous_subtype_val.snd)).subtype_mk _
+
+@[simp]
+theorem mappingPathFiberIdHomeomorph_apply_val (k : K) (p : MappingPathFiber (ContinuousMap.id K) k)
+    (t : I) : (mappingPathFiberIdHomeomorph k p).val.2 t = p.val.2 (σ t) := (rfl)
+
+/-- The paths ending at a fixed point form a contractible space: this is the total space of the
+fixed-end path fibration of `K`, the source projection of
+`MappingPathFiber (ContinuousMap.id K) k`. -/
+instance (k : K) : ContractibleSpace (MappingPathFiber (ContinuousMap.id K) k) :=
+  (mappingPathFiberIdHomeomorph k).contractibleSpace
 
 end TauCeti

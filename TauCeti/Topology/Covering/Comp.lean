@@ -38,16 +38,16 @@ public section
 
 open Function Set Topology
 
-namespace TauCeti
-
 variable {E Y X : Type*} [TopologicalSpace E] [TopologicalSpace Y] [TopologicalSpace X]
+
+namespace IsEvenlyCovered
 
 /-- An evenly covered neighbourhood is the disjoint union of its **sheets**: if `x` is evenly
 covered by `f` with fibre `I`, then some open `U ∋ x` has preimage the union of pairwise disjoint
 open sets `S i`, one for each `i : I`, each of which `f` maps homeomorphically onto `U`: `f` is
 injective on `S i` with image `U`, and a subset `W ⊆ U` is open exactly when its preimage in
 `S i` is. -/
-theorem _root_.IsEvenlyCovered.exists_sheets {f : E → X} {x : X} {I : Type*}
+theorem exists_sheets {f : E → X} {x : X} {I : Type*}
     [TopologicalSpace I] (h : IsEvenlyCovered f x I) :
     ∃ U : Set X, x ∈ U ∧ IsOpen U ∧ ∃ S : I → Set E, (∀ i, IsOpen (S i)) ∧
       (∀ i, (S i).InjOn f) ∧ (∀ i, f '' S i = U) ∧
@@ -88,7 +88,7 @@ theorem _root_.IsEvenlyCovered.exists_sheets {f : E → X} {x : X} {I : Type*}
 /-- **Evenly covered points compose along finite fibres.** If `x` is evenly covered by `q` with
 finite fibre `I`, and every point of `Y` over `x` is evenly covered by `p`, then `x` is evenly
 covered by `q ∘ p`. -/
-theorem _root_.IsEvenlyCovered.comp {q : Y → X} {p : E → Y} {x : X} {I : Type*}
+theorem comp {q : Y → X} {p : E → Y} {x : X} {I : Type*}
     [TopologicalSpace I] [Finite I] (hq : IsEvenlyCovered q x I)
     (hp : ∀ y, q y = x → IsEvenlyCovered p y (p ⁻¹' {y})) :
     IsEvenlyCovered (q ∘ p) x ((q ∘ p) ⁻¹' {x}) := by
@@ -99,10 +99,10 @@ theorem _root_.IsEvenlyCovered.comp {q : Y → X} {p : E → Y} {x : X} {I : Typ
     exact hxU
   choose y hyS hyx using hy
   -- The sheets `T i j` of `p` over `V i ∋ y i`.
-  choose V hyV hV T hTo hTi hTim hTiff hTd hTV using fun i ↦ (hp (y i) (hyx i)).exists_sheets
+  choose V hyV hV T _ hTi hTim hTiff hTd hTV using fun i ↦ (hp (y i) (hyx i)).exists_sheets
   -- Shrink `U` to `W`, over which the lift of `W` to each `S i` lies in `V i`.
   obtain ⟨W, hWo, hxW, hWU, hWsurj, key⟩ :=
-    exists_isOpen_lift_mem_of_finite_sheets hxU hU hSo hSi hSim hSiff hV hyS hyV hyx
+    TauCeti.exists_isOpen_lift_mem_of_finite_sheets hxU hU hSo hSi hSim hSiff hV hyS hyV hyx
   -- The sheets of `q ∘ p` over `W` are indexed by the pairs `(i, j)`.
   let R : (Σ i, p ⁻¹' {y i}) → Set E := fun k ↦ T k.1 k.2 ∩ p ⁻¹' S k.1
   have hexh : (q ∘ p) ⁻¹' W ⊆ ⋃ k, R k := by
@@ -146,10 +146,14 @@ theorem _root_.IsEvenlyCovered.comp {q : Y → X} {p : E → Y} {x : X} {I : Typ
       exact (hTd i hjj').mono inter_subset_left inter_subset_left
     · exact ((hSd hii').preimage p).mono inter_subset_right inter_subset_right
 
+end IsEvenlyCovered
+
+namespace IsCoveringMap
+
 /-- **A covering map followed by a covering map with finite fibres is a covering map.** -/
-theorem _root_.IsCoveringMap.comp {q : Y → X} {p : E → Y} (hq : IsCoveringMap q)
+theorem comp {q : Y → X} {p : E → Y} (hq : IsCoveringMap q)
     (hp : IsCoveringMap p) (hfin : ∀ x, (q ⁻¹' {x}).Finite) : IsCoveringMap (q ∘ p) := fun x ↦
   have := (hfin x).to_subtype
   (hq x).comp fun y _ ↦ hp y
 
-end TauCeti
+end IsCoveringMap

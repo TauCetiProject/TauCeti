@@ -13,7 +13,9 @@ public import TauCeti.Geometry.Manifold.VectorField.Related
 
 The vertical vector fields of a map `f` are the fields annihilated by `df`. Their Lie bracket
 is again vertical: both fields are related to the zero field on the target, so naturality of
-the bracket applies. The pointwise statement only requires verticality near the point.
+the bracket applies. More generally, the bracket of a vertical field with a field related to a
+field on the target is vertical. The pointwise statements only require these relations near the
+point.
 
 Consequently `x ↦ ker (mfderiv f x)` is an involutive distribution, also locally on any set
 where `f` is sufficiently smooth. No submersion or constant-rank hypothesis is needed for
@@ -45,6 +47,27 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
   [IsManifold J (minSmoothness 𝕜 2) N]
   {f : M → N} {V W : Π x : M, TangentSpace I x} {x : M}
 
+/-- The bracket of a vector field `V` which is `f`-related near `x` to a vector field `V'` on the
+target, differentiable at `f x`, with a differentiable vector field annihilated by `df` near `x` is
+annihilated by `df` at `x`. Over `ℝ` or `ℂ`, `C²` regularity of `f` suffices. -/
+theorem ContMDiffAt.mlieBracket_mem_ker_mfderiv_of_eventually_related
+    {V' : Π y : N, TangentSpace J y}
+    (hf : ContMDiffAt I J n f x) (hn : minSmoothness 𝕜 2 ≤ n)
+    (hV : MDifferentiableAt I I.tangent (T% V) x)
+    (hW : MDifferentiableAt I I.tangent (T% W) x)
+    (hV' : MDifferentiableAt J J.tangent (T% V') (f x))
+    (hVV' : ∀ᶠ y in 𝓝 x, mfderiv I J f y (V y) = V' (f y))
+    (hWker : ∀ᶠ y in 𝓝 x, W y ∈ (mfderiv I J f y).ker) :
+    mlieBracket I V W x ∈ (mfderiv I J f x).ker := by
+  have : IsManifold J 2 N := .of_le (le_minSmoothness (𝕜 := 𝕜))
+  have hzero : MDifferentiableAt J J.tangent (T% (0 : Π y : N, TangentSpace J y)) (f x) :=
+    (Bundle.contMDiff_zeroSection 𝕜 (TangentSpace J) (n := 2)).mdifferentiableAt two_ne_zero
+  have h := TauCeti.mfderiv_mlieBracket_of_eventually_related hf hn hV hW hV' hzero hVV'
+    (hWker.mono fun y hy ↦ by
+      simpa only [Pi.zero_apply, ContinuousLinearMap.coe_coe] using LinearMap.mem_ker.mp hy)
+  simpa only [mlieBracket_zero_right, Pi.zero_apply, LinearMap.mem_ker,
+    ContinuousLinearMap.coe_coe] using h
+
 /-- The bracket of differentiable vector fields annihilated by `df` near `x` is annihilated
 by `df` at `x`. Over `ℝ` or `ℂ`, `C²` regularity of `f` suffices. -/
 theorem ContMDiffAt.mlieBracket_mem_ker_mfderiv
@@ -55,15 +78,11 @@ theorem ContMDiffAt.mlieBracket_mem_ker_mfderiv
     (hWker : ∀ᶠ y in 𝓝 x, W y ∈ (mfderiv I J f y).ker) :
     mlieBracket I V W x ∈ (mfderiv I J f x).ker := by
   have : IsManifold J 2 N := .of_le (le_minSmoothness (𝕜 := 𝕜))
-  have hzero : MDifferentiableAt J J.tangent (T% (0 : Π y : N, TangentSpace J y)) (f x) :=
-    (Bundle.contMDiff_zeroSection 𝕜 (TangentSpace J) (n := 2)).mdifferentiableAt two_ne_zero
-  have h := TauCeti.mfderiv_mlieBracket_of_eventually_related hf hn hV hW hzero hzero
+  exact hf.mlieBracket_mem_ker_mfderiv_of_eventually_related hn hV hW
+    ((Bundle.contMDiff_zeroSection 𝕜 (TangentSpace J) (n := 2)).mdifferentiableAt two_ne_zero)
     (hVker.mono fun y hy ↦ by
       simpa only [Pi.zero_apply, ContinuousLinearMap.coe_coe] using LinearMap.mem_ker.mp hy)
-    (hWker.mono fun y hy ↦ by
-      simpa only [Pi.zero_apply, ContinuousLinearMap.coe_coe] using LinearMap.mem_ker.mp hy)
-  simpa only [mlieBracket_self, Pi.zero_apply, LinearMap.mem_ker,
-    ContinuousLinearMap.coe_coe] using h
+    hWker
 
 /-- On any set where `f` is sufficiently smooth, its differential kernels are involutive.
 The bracket test is on open subsets of that set, so `s` itself need not be open. -/

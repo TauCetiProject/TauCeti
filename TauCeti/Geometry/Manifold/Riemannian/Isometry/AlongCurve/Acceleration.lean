@@ -64,7 +64,7 @@ theorem mfderiv_accelerationWithin (hf : IsLocalRiemannianIsometry I J f)
   have hcoord := differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs hγ ht
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   rw [accelerationWithin_def, accelerationWithin_def,
-    hf.mfderiv_alongCurveWithin (hs t ht) ((hγ.mdifferentiableOn (by norm_num)) t ht) hcoord,
+    hf.mfderiv_alongCurveWithin ((hγ.mdifferentiableOn (by norm_num)) t ht) hcoord,
     alongCurveWithin_congr _ _ _ (eventually_mem_nhdsWithin.mono hvelocity) (hvelocity t ht)]
 
 /-- The acceleration of a `C²` curve vanishes exactly when that of its image under a local
@@ -112,12 +112,12 @@ theorem mfderiv_alongCurveWithin_alongCurveWithin (hf : IsLocalRiemannianIsometr
   have hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s :=
     (Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x) (IB := I)
       (n := 2)).comp_contMDiffOn hV
-  have hfirst (r : ℝ) (hr : r ∈ s) := hf.mfderiv_alongCurveWithin (hs r hr)
+  have hfirst (r : ℝ) (hr : r ∈ s) := hf.mfderiv_alongCurveWithin
     ((hγ.mdifferentiableOn (by norm_num)) r hr)
     (differentiableWithinAt_sectionCoord γ V
       ((hV r hr).mdifferentiableWithinAt (by norm_num))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ r)))
-  rw [hf.mfderiv_alongCurveWithin (hs t ht)
+  rw [hf.mfderiv_alongCurveWithin
     ((hγ.mdifferentiableOn (by norm_num)) t ht)
     (differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection hs hV ht)]
   exact alongCurveWithin_congr _ _ _ (eventually_mem_nhdsWithin.mono hfirst) (hfirst t ht)

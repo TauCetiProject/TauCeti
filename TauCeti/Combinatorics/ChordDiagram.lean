@@ -57,6 +57,11 @@ noncrossing consequence of planarity in that one-vertex case. For perfect matchi
   exactly when its orbit partition is a noncrossing partition.
 * `Equiv.Perm.IsNoncrossingMatching.apply_mem_Ioo`: the chords of a noncrossing involution are
   nested.
+* `Equiv.Perm.IsNoncrossingMatching.apply_mem_uIoo_iff`,
+  `Equiv.Perm.isNoncrossingMatching_of_forall_apply_mem_uIoo`: an involution is a noncrossing
+  matching exactly when no chord separates a point from its partner.
+* `Equiv.Perm.IsNoncrossingMatching.of_semiconj`: restricting a noncrossing matching along an
+  order embedding gives a noncrossing matching.
 * `Equiv.Perm.IsNoncrossingMatching.card_filter_lt_apply_modEq`: for a noncrossing perfect
   matching and a union `s` of its chords, the two ends of a chord outside `s` are preceded by the
   same number of points of `s`, modulo `2`.
@@ -145,6 +150,42 @@ theorem IsNoncrossingMatching.apply_mem_Ioo (hσ : σ.IsNoncrossingMatching)
   · -- The chord `{σ b, b}` would interleave `{a, σ a}` from the left.
     exact hσ h (by rwa [hinv]) (by rwa [hinv])
   · exact hb.ne (by rw [← h, hinv])
+
+/-- **A chord separates no chord.** For a noncrossing involution `σ`, a point lies strictly
+between the two ends of the chord `{a, σ a}` exactly when its partner does. -/
+theorem IsNoncrossingMatching.apply_mem_uIoo_iff (hσ : σ.IsNoncrossingMatching)
+    (hinv : Function.Involutive σ) (a b : α) :
+    σ b ∈ Set.uIoo a (σ a) ↔ b ∈ Set.uIoo a (σ a) := by
+  -- It suffices that the partner of a point inside a chord is inside it, since `σ (σ b) = b`.
+  suffices h : ∀ a b, b ∈ Set.uIoo a (σ a) → σ b ∈ Set.uIoo a (σ a) from
+    ⟨fun hb => hinv b ▸ h a (σ b) hb, h a b⟩
+  intro a b hb
+  rcases lt_trichotomy a (σ a) with ha | ha | ha
+  · rw [Set.uIoo_of_lt ha] at hb ⊢
+    exact hσ.apply_mem_Ioo hinv hb.1 hb.2
+  · simp [← ha] at hb
+  · -- The chord read from its other end `σ a`, whose partner is `a`.
+    rw [Set.uIoo_of_gt ha] at hb ⊢
+    have h := hσ.apply_mem_Ioo hinv (a := σ a) (b := b) hb.1 (by rw [hinv]; exact hb.2)
+    rwa [hinv] at h
+
+/-- A permutation is a noncrossing matching when the partner of every point strictly between the
+two ends of a chord `{a, σ a}` lies strictly between them too. -/
+theorem isNoncrossingMatching_of_forall_apply_mem_uIoo
+    (h : ∀ a b, b ∈ Set.uIoo a (σ a) → σ b ∈ Set.uIoo a (σ a)) : σ.IsNoncrossingMatching := by
+  intro a b hab hb hlt
+  have hmem := h a b (Set.mem_uIoo_of_lt hab hb)
+  rw [Set.uIoo_of_lt (hab.trans hb)] at hmem
+  exact lt_asymm hmem.2 hlt
+
+/-- **Restriction along an order embedding.** If a strictly monotone map `e` intertwines `τ` with
+a noncrossing matching `σ`, then `τ` is a noncrossing matching: its chords are chords of `σ`,
+relabelled in an order-preserving way. -/
+theorem IsNoncrossingMatching.of_semiconj {β : Type*} [LinearOrder β] {τ : Perm β} {e : β → α}
+    (hσ : σ.IsNoncrossingMatching) (he : StrictMono e) (h : Function.Semiconj e τ σ) :
+    τ.IsNoncrossingMatching := by
+  intro a b hab hb hlt
+  exact hσ (he hab) (h a ▸ he hb) (h a ▸ h b ▸ he hlt)
 
 /-- **Parity across a chord.** Let `σ` be a noncrossing perfect matching and `s` a finite set
 closed under `σ`, that is, a union of chords. A point `a` outside `s` and its partner `σ a` are
@@ -262,7 +303,6 @@ chord diagram with the two bands `{a, c}` and `{b, d}` has a single boundary cyc
 theorem orbitCount_finRotate_mul_swap_mul_swap {a b c d : Fin n} (hab : a < b) (hbc : b < c)
     (hcd : c < d) : orbitCount (finRotate n * swap a c * swap b d) = 1 := by
   rw [Fin.lt_def] at hab hbc hcd
-  have hd := d.isLt
   have hn : n ≠ 0 := by omega
   -- The band `{a, c}` cuts the boundary circle in two cycles.
   have hac : (finRotate n).SameCycle a c := by
@@ -388,7 +428,7 @@ theorem IsNoncrossingMatching.orbitCount_finRotate_mul_add_orbitCount [NeZero n]
     simp [orbitCount_finRotate, NeZero.ne n, add_comm]
   -- Delete an innermost chord `{a, σ a}`; it joins two points of one boundary cycle.
   obtain ⟨a, ha, hin⟩ := hσ.exists_forall_apply_eq_self hinv h1
-  set τ := swap a (σ a) * σ with hτ
+  set τ := swap a (σ a) * σ
   have hτσ : ∀ x, τ x = x ∨ τ x = σ x := fun x => by
     rcases hinv.swap_mul_apply_eq_self_or a x with ⟨-, hx⟩ | ⟨-, -, hx⟩
     exacts [Or.inl hx, Or.inr hx]

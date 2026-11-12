@@ -18,7 +18,8 @@ import Mathlib.Data.Fintype.BigOperators
 
 A generator with a unit coefficient in a linear combination can be replaced by that combination
 without changing the span. Over a division semiring, a nonzero vector in a singleton span can be
-used to recover the generator's membership in any submodule. Acting on a line gives the line
+used to recover the generator's membership in any submodule. A vector outside an integer line is
+not cancelled by adding an integer multiple of the generator. Acting on a line gives the line
 through the image of its generator, so a group element stabilizes the line through a vector
 exactly when it sends that vector to a multiple of itself. Finally, a submodule over a
 subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
@@ -57,6 +58,11 @@ theorem span_insert_erase_eq_span_of_isUnit [DecidableEq M] {s : Finset M} {i x 
 end TauCeti.Submodule
 
 namespace Submodule
+
+/-- A vector outside the line `ℤ v` is not cancelled by adding any integer multiple of `v`. -/
+theorem ne_zero_add_zsmul_of_notMem_span {M : Type*} [AddCommGroup M] {v y : M}
+    (hy : y ∉ ℤ ∙ v) (k : ℤ) : y + k • v ≠ 0 := fun h ↦ hy (Submodule.mem_span_singleton.mpr
+  ⟨-k, by rw [neg_smul]; exact (eq_neg_of_add_eq_zero_left h).symm⟩)
 
 variable {K V : Type*} [DivisionSemiring K] [AddCommMonoid V] [Module K V]
 

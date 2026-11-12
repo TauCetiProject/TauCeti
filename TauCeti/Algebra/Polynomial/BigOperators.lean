@@ -26,7 +26,7 @@ of geometric sums of mixed powers of equal-degree monic polynomials.
 
 It also records that the image of a finite product of polynomials under a ring homomorphism into a
 ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
-nonzero, and is itself nonzero when the target ring is moreover nontrivial.
+nonzero.
 
 Finally, `TauCeti.sum_range_monomial_add_monomial_eq_of_eq_add` turns coefficient relations
 `cᵢ = bᵢ + qᵢ + qᵢ₋₁` into the polynomial identity
@@ -57,17 +57,8 @@ end Semiring
 
 section MapProd
 
-variable {ι R S : Type*} [CommSemiring R] [CommSemiring S] [NoZeroDivisors S]
-  [Nontrivial S] (f : R →+* S)
+variable {ι R S : Type*} [CommSemiring R] [CommSemiring S] [NoZeroDivisors S] (f : R →+* S)
 
-/-- Over a nontrivial ring without zero divisors, the image of a finite product of polynomials is
-nonzero when the image of each factor is nonzero. -/
-theorem map_prod_ne_zero (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (P k).map f ≠ 0) :
-    (∏ k ∈ s, P k).map f ≠ 0 := by
-  rw [Polynomial.map_prod]
-  exact Finset.prod_ne_zero_iff.mpr h
-
-omit [Nontrivial S] in
 /-- Over a ring without zero divisors, the degree of the image of a finite product of polynomials
 is the sum of the degrees of the images of the factors, when each image is nonzero. -/
 theorem natDegree_map_prod (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (P k).map f ≠ 0) :
@@ -93,31 +84,28 @@ theorem coeff_prod_sum_eq_of_natDegree_le (s : Finset ι) (f : ι → R[X]) (n :
       coeff_mul_add_eq_of_natDegree_le (h a (mem_insert_self a s))
         ((natDegree_prod_le (s := s) (f := f)).trans (sum_le_sum hs)), ih hs]
 
-noncomputable section ProductGrouping
+section ProductGrouping
 
-variable [Fintype ι]
+variable [DecidableEq R] (s : Finset ι)
 
-/-- A local classical equality decision used to group the constant terms. -/
-local instance instDecidableEqProductGrouping : DecidableEq R := Classical.decEq R
-
-/-- The product of the linear factors whose constant term equals `a` is the corresponding power
-of `X + C a`. -/
+/-- The product of the linear factors over `s` whose constant term equals `a` is the
+corresponding power of `X + C a`. -/
 theorem pow_card_filter_eq_prod_X_add_C (f : ι → R) (a : R) :
-    (X + C a) ^ #{i | f i = a} = ∏ i with f i = a, (X + C (f i)) := by
-  rw [← prod_const]
-  exact prod_congr rfl fun i hi ↦ by rw [(mem_filter.1 hi).2]
+    (X + C a) ^ #{i ∈ s | f i = a} = ∏ i ∈ s with f i = a, (X + C (f i)) :=
+  (prod_eq_pow_card fun i hi ↦ by rw [(mem_filter.1 hi).2]).symm
 
-/-- Group a product of linear factors according to whether their constant term equals `a`. -/
+/-- Group a product of linear factors over `s` according to whether their constant term equals
+`a`. -/
 theorem prod_X_add_C_eq_pow_card_filter_mul_prod_filter_ne (f : ι → R) (a : R) :
-    ∏ i, (X + C (f i)) =
-      (X + C a) ^ #{i | f i = a} * ∏ i with f i ≠ a, (X + C (f i)) := by
+    ∏ i ∈ s, (X + C (f i)) =
+      (X + C a) ^ #{i ∈ s | f i = a} * ∏ i ∈ s with f i ≠ a, (X + C (f i)) := by
   rw [pow_card_filter_eq_prod_X_add_C, prod_filter_mul_prod_filter_not]
 
 end ProductGrouping
 
 /-- The geometric sum of mixed powers of two monic polynomials of equal degree has the
 expected degree in characteristic zero. -/
-theorem natDegree_geom_sum₂ {S : Type*} [CommSemiring S] [CharZero S]
+theorem natDegree_geom_sum₂ {S : Type*} [Semiring S] [CharZero S]
     {p q : S[X]} (hp : p.Monic) (hq : q.Monic)
     (hdeg : p.natDegree = q.natDegree) (n : ℕ) :
     (∑ i ∈ range n, p ^ i * q ^ (n - 1 - i)).natDegree = (n - 1) * p.natDegree := by
@@ -135,7 +123,7 @@ theorem natDegree_geom_sum₂ {S : Type*} [CommSemiring S] [CharZero S]
   · have hc : (∑ i ∈ range n, p ^ i * q ^ (n - 1 - i)).coeff
         ((n - 1) * p.natDegree) = (n : S) := by
       rw [finsetSum_coeff]
-      trans ∑ i ∈ range n, (1 : S)
+      trans ∑ _ ∈ range n, (1 : S)
       · apply sum_congr rfl
         intro i hi
         rw [← hd i hi]
