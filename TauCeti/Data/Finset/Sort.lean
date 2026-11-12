@@ -344,11 +344,12 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
 /-- Removing the position of `i` from the increasing enumeration of `s` gives the increasing
 enumeration of `s.erase i`. -/
 theorem removeNth_orderEmbOfFin_symm_eq {I : Type*} [LinearOrder I]
-    (i : I) (s : Finset I) (hi : i ∈ s) (hsCard : s.card = (s.erase i).card + 1) :
+    (i : I) (s : Finset I) (hi : i ∈ s) {n : ℕ} (hsCard : s.card = n + 1)
+    (hn : (s.erase i).card = n) :
     ((s.orderIsoOfFin hsCard).symm ⟨i, hi⟩).removeNth (fun j ↦ s.orderEmbOfFin hsCard j) =
-      (s.erase i).orderEmbOfFin rfl := by
-  let e : Fin ((s.erase i).card + 1) ↪o I := s.orderEmbOfFin hsCard
-  let k : Fin ((s.erase i).card + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
+      (s.erase i).orderEmbOfFin hn := by
+  let e : Fin (n + 1) ↪o I := s.orderEmbOfFin hsCard
+  let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
   have hek : e k = i :=
     congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
   apply orderEmbOfFin_unique

@@ -151,7 +151,7 @@ theorem mem_signSubalgebra_iff {s : SignType} {x : L} :
     rw [← DirectSum.sum_support_decompose ℒ x, ← LieSubalgebra.mem_toSubmodule,
       signSubalgebra_toSubmodule]
     apply Submodule.sum_mem
-    intro n hn
+    intro n _
     by_cases hs : SignType.sign (θ n) = s
     · exact Submodule.mem_iSup_of_mem ⟨n, hs⟩ (DirectSum.decompose ℒ x n).property
     · rw [hx n hs]
@@ -202,7 +202,7 @@ theorem signDecomposition_mem (K : Submodule R L)
   classical
   rw [signDecomposition_apply]
   apply K.sum_mem
-  intro n hn
+  intro n _
   split
   · exact hK n hx
   · exact K.zero_mem
