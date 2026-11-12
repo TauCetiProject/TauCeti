@@ -35,7 +35,11 @@ output end.
 Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and lie in the disc
 `‖w‖ ≤ 2 exp (2π)` on which the output datum vanishes. Then:
 
-* near each input end the datum is that end's datum alone, and far out on the end it is
+* near each input end the datum is that end's datum alone, off the closed supports of the input
+  end data it is the output datum, and between the ends it vanishes, all as germs
+  (`TauCeti.Floer.puncturedSpherePerturbation_eventuallyEq_inputEndPerturbation`,
+  `TauCeti.Floer.puncturedSpherePerturbation_eventuallyEq_negativePlanePerturbation`,
+  `TauCeti.Floer.puncturedSpherePerturbation_eventuallyEq_zero`); far out on an input end it is
   `H i(t) dt` (`TauCeti.Floer.puncturedSpherePerturbation_cylindricalEndLift`); far out on the
   output end it is `Hout(t) dt`
   (`TauCeti.Floer.puncturedSpherePerturbation_cylindricalEndLift_inf`);
@@ -101,6 +105,18 @@ theorem inputEndPerturbation_add_mul (ha : a ≠ 0) (w : ℂ) (x : M) (v : ℂ) 
     inputEndPerturbation c a H (c + a * w) x (a * v) = positivePlanePerturbation H w x v := by
   rw [inputEndPerturbation_apply, add_sub_cancel_left, mul_div_cancel_left₀ _ ha,
     inv_mul_cancel_left₀ ha]
+
+/-- In real coordinates, the pullback of the input end datum along the affine chart `w ↦ c + a w`
+is the positive plane datum of `H`. -/
+theorem perturbationPullback_realChart_inputEndPerturbation (ha : a ≠ 0) (v : ℝ × ℝ) :
+    perturbationPullback (Complex.realChart (c + a * ·))
+      (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
+      fun w x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm w) x
+        (Complex.equivRealProdCLM.symm v) := by
+  funext w x
+  rw [perturbationPullback_realChart _
+    (by simpa using ((hasDerivAt_id _).const_mul a).const_add c), inputEndPerturbation_add_mul ha]
 
 /-- **The support of an input end datum.** It vanishes off the disc
 `‖w - c‖ < ‖a‖ exp (-2π) / 2`. -/
@@ -272,6 +288,43 @@ theorem puncturedSpherePerturbation_eq_inputEndPerturbation
   puncturedSpherePerturbation_eq_inputEndPerturbation_of_norm_sub_lt
     (fun j => by nlinarith [norm_nonneg (a j), exp_neg_two_pi_lt_one]) hsep hout hw x
 
+/-- **Near an input end the datum is that end's datum, as germs.** If the discs
+`‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, then near
+every point of the disc of the input `i` the datum is the input end datum of `i`. -/
+theorem puncturedSpherePerturbation_eventuallyEq_inputEndPerturbation
+    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {i : ι} {w : ℂ}
+    (hw : ‖w - c i‖ < ‖a i‖ / 2) :
+    puncturedSpherePerturbation c a H Hout =ᶠ[𝓝 w] inputEndPerturbation (c i) (a i) (H i) := by
+  filter_upwards [(isOpen_lt (f := fun w' ↦ ‖w' - c i‖) (by fun_prop) continuous_const).mem_nhds hw]
+    with w' hw'
+  funext x
+  exact puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout hw' x
+
+/-- **Off the input ends the datum is the output datum, as germs.** Near a point outside the
+closed supports `‖w - c i‖ ≤ ‖a i‖ exp (-2π) / 2` of all the input end data, the datum is the
+negative plane datum of the output Hamiltonian. -/
+theorem puncturedSpherePerturbation_eventuallyEq_negativePlanePerturbation {w : ℂ}
+    (hw : ∀ i, ‖a i‖ * Real.exp (-(2 * π)) / 2 < ‖w - c i‖) :
+    puncturedSpherePerturbation c a H Hout =ᶠ[𝓝 w] negativePlanePerturbation Hout := by
+  filter_upwards [Filter.eventually_all.2 fun i ↦
+    (isOpen_lt (g := fun w' ↦ ‖w' - c i‖) continuous_const (by fun_prop)).mem_nhds (hw i)]
+    with w' hw'
+  funext x
+  exact puncturedSpherePerturbation_eq_negativePlanePerturbation (fun i ↦ (hw' i).le) x
+
+/-- **Between the ends the datum vanishes, as germs.** Near a point of the open disc
+`‖w‖ < 2 exp (2π)` outside the closed supports `‖w - c i‖ ≤ ‖a i‖ exp (-2π) / 2` of all the input
+end data, the datum vanishes. -/
+theorem puncturedSpherePerturbation_eventuallyEq_zero {w : ℂ}
+    (hw : ∀ i, ‖a i‖ * Real.exp (-(2 * π)) / 2 < ‖w - c i‖) (hw' : ‖w‖ < 2 * Real.exp (2 * π)) :
+    puncturedSpherePerturbation c a H Hout =ᶠ[𝓝 w] 0 := by
+  filter_upwards [puncturedSpherePerturbation_eventuallyEq_negativePlanePerturbation hw,
+    (isOpen_lt continuous_norm continuous_const).mem_nhds hw'] with w' hw₁ hw₂
+  funext x
+  rw [hw₁]
+  exact negativePlanePerturbation_eq_zero_of_norm_le hw₂.le x
+
 /-- **The datum on an input end.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint and
 lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the part `s > 0` of the input end `i`, the pullback of
 the datum along the end lift `z ↦ c i + a i φ₀(z)` is the continuation datum
@@ -375,6 +428,42 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
     (div_ne_zero (sub_ne_zero.2 hw) ha) x).comp ((c, a), (w, x))
     (hcoordM.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).clm_comp hmul
 
+/-- Off its center, the components of the input end datum of a `C¹` Hamiltonian on a manifold are
+differentiable in the domain point. -/
+theorem differentiableAt_inputEndPerturbation_domain {H : ℝ → M → ℝ} (hH : Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {c a : ℂ} (ha : a ≠ 0) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ c) (x : M) (v : ℂ) :
+    DifferentiableAt ℝ
+      (fun z' ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z') x v) z := by
+  have hK : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun w ↦ inputEndPerturbation c a H w x)
+      (Complex.equivRealProdCLM.symm z) :=
+    (contMDiffAt_inputEndPerturbation (n := 1) hH hHs ha hz x).comp
+      (f := fun w : ℂ ↦ ((c, a), (w, x))) _
+      (contMDiffAt_const.prodMk (contMDiffAt_id.prodMk contMDiffAt_const))
+  exact ((hK.contDiffAt.differentiableAt one_ne_zero).comp z
+    Complex.equivRealProdCLM.symm.differentiableAt).clm_apply (differentiableAt_const v)
+
+/-- Off its center, the components of the input end datum of a `C¹` Hamiltonian on a manifold are
+differentiable in the target point. -/
+theorem mdifferentiableAt_inputEndPerturbation_target {H : ℝ → M → ℝ} (hH : Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {c a : ℂ} (ha : a ≠ 0) {w : ℂ}
+    (hw : w ≠ c) (x : M) (v : ℂ) :
+    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ inputEndPerturbation c a H w y v) x :=
+  (((contMDiffAt_inputEndPerturbation (n := 1) hH hHs ha hw x).comp
+    (f := fun y : M ↦ ((c, a), (w, y))) x
+    (contMDiffAt_const.prodMk (contMDiffAt_const.prodMk contMDiffAt_id))).clm_apply
+    contMDiffAt_const).mdifferentiableAt one_ne_zero
+
+/-- A family of Hamiltonians which is a `C^n` Hamiltonian `H` at the index `i` and zero at the
+other indices is `C^n` at every index. -/
+theorem contMDiff_uncurry_pi_single {ι : Type*} [DecidableEq ι] {n : ℕ∞} {H : ℝ → M → ℝ}
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry H)) (i j : ι) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry ((Pi.single i H : ι → ℝ → M → ℝ) j)) := by
+  rcases eq_or_ne j i with rfl | h
+  · simpa using hHs
+  · rw [Pi.single_eq_of_ne h]
+    exact contMDiff_const
+
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
 /-- **The datum is smooth in the configuration.** For period-one Hamiltonians of class `C^n` on
@@ -444,32 +533,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 variable {H : ℝ → M → ℝ} {c a : ℂ}
 
-/-- Off its center, the components of the input end datum of a `C¹` Hamiltonian on a manifold are
-differentiable in the domain point. -/
-theorem differentiableAt_inputEndPerturbation_domain (hH : Periodic H 1)
-    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (ha : a ≠ 0) {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ c) (x : M) (v : ℂ) :
-    DifferentiableAt ℝ
-      (fun z' ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z') x v) z := by
-  have hK : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun w ↦ inputEndPerturbation c a H w x)
-      (Complex.equivRealProdCLM.symm z) :=
-    (contMDiffAt_inputEndPerturbation (n := 1) hH hHs ha hz x).comp
-      (f := fun w : ℂ ↦ ((c, a), (w, x))) _
-      (contMDiffAt_const.prodMk (contMDiffAt_id.prodMk contMDiffAt_const))
-  exact ((hK.contDiffAt.differentiableAt one_ne_zero).comp z
-    Complex.equivRealProdCLM.symm.differentiableAt).clm_apply (differentiableAt_const v)
-
-/-- Off its center, the components of the input end datum of a `C¹` Hamiltonian on a manifold are
-differentiable in the target point. -/
-theorem mdifferentiableAt_inputEndPerturbation_target (hH : Periodic H 1)
-    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (ha : a ≠ 0) {w : ℂ} (hw : w ≠ c)
-    (x : M) (v : ℂ) :
-    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ inputEndPerturbation c a H w y v) x :=
-  (((contMDiffAt_inputEndPerturbation (n := 1) hH hHs ha hw x).comp
-    (f := fun y : M ↦ ((c, a), (w, y))) x
-    (contMDiffAt_const.prodMk (contMDiffAt_const.prodMk contMDiffAt_id))).clm_apply
-    contMDiffAt_const).mdifferentiableAt one_ne_zero
-
 variable [IsManifold I ⊤ M]
 
 /-- On the image under the affine chart of the plane without its origin, the integrated curvature
@@ -495,15 +558,6 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
       Complex.equivRealProdCLM.symm (realChart (c + a * ·) w) ≠ c := by
     rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
     exact fun h => hw (by simpa [ha] using h)
-  -- The pullback of the datum along the affine chart is the positive plane datum.
-  have hpull (v : ℝ × ℝ) : perturbationPullback (realChart (c + a * ·))
-      (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
-      fun w x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm w) x
-        (Complex.equivRealProdCLM.symm v) := by
-    funext w x
-    rw [perturbationPullback_realChart _
-      (by simpa using ((hasDerivAt_id _).const_mul a).const_add c), inputEndPerturbation_add_mul ha]
   rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm
     (realChart_injective fun _ _ h => mul_left_cancel₀ ha (add_left_cancel h)).injOn
     (fun w _ ↦ (contDiff_realChart (by fun_prop)).contDiffAt)
@@ -511,8 +565,9 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
     (fun w hw ↦ differentiableAt_inputEndPerturbation_domain hH hHs ha (hc hw) _ Complex.I)
     (fun w hw ↦ mdifferentiableAt_inputEndPerturbation_target hH hHs ha (hc hw) _ 1)
     (fun w hw ↦ mdifferentiableAt_inputEndPerturbation_target hH hHs ha (hc hw) _ Complex.I),
-    hpull, hpull, equivRealProdCLM_symm_stdComplexLineReal,
-    equivRealProdCLM_symm_stdComplexLineImag]
+    perturbationPullback_realChart_inputEndPerturbation ha,
+    perturbationPullback_realChart_inputEndPerturbation ha,
+    equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
   rfl
 
 /-- **The integrated curvature of an input end datum, for a manifold target.** Let `K` be the

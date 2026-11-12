@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 import TauCeti.Geometry.Symplectic.Area.PuncturedDisc
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
+import TauCeti.Algebra.Ring.Periodic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -141,19 +142,14 @@ private theorem hamiltonianCurvature_negativePlanePerturbation_eq_zero (ω : Sym
     have : Real.exp (2 * (2 * π)) ≤ Real.exp (2 * π * R) :=
       Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
     linarith
-  have hH' (q : Puncture) : Periodic ((Pi.single inf H : Puncture → ℝ → V → ℝ) q) 1 := by
-    rcases eq_or_ne q inf with rfl | hq
-    · simpa using hH
-    · rw [Pi.single_eq_of_ne hq]
-      exact fun _ ↦ rfl
   have hHs' (q : Puncture) :
       ContDiff ℝ 1 (uncurry ((Pi.single inf H : Puncture → ℝ → V → ℝ) q)) := by
     rcases eq_or_ne q inf with rfl | hq
     · simpa using hHs
     · rw [Pi.single_eq_of_ne hq]
       exact contDiff_const
-  have h := ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH' hHs'
-    ⟨hw₀, hw₁⟩ hs x
+  have h := ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (hH.pi_single inf)
+    hHs' ⟨hw₀, hw₁⟩ hs x
   rwa [pairOfPantsPerturbation_single_inf] at h
 
 /-- For `R ≥ 2`, the curvature integral over the disc `‖w‖ ≤ 2 exp (2πR)` is the curvature
