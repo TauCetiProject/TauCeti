@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.MetricSpace.Lipschitz
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
@@ -27,14 +29,16 @@ one-sided approximations and as test functions.
 * `TauCeti.lipschitzWith_ramp`: for `δ > 0` the ramp is `δ⁻¹`-Lipschitz.
 * `TauCeti.hasDerivAt_ramp`: for `δ > 0`, away from its two corners the ramp has derivative `δ⁻¹`
   on `(s, s + δ)` and `0` elsewhere.
-* `TauCeti.ramp_sub_ramp_mem_Icc`, `TauCeti.ramp_sub_ramp_eq_zero_of_notMem`: for `δ > 0` and
-  `s ≤ t`, the difference `ramp s δ - ramp t δ` takes values in `[0, 1]` and vanishes off
+* `TauCeti.deriv_ramp_ae_eq`, `TauCeti.memLp_deriv_ramp`: for `δ > 0` the derivative of the ramp
+  is almost everywhere `δ⁻¹` times the indicator of `(s, s + δ)`, so it lies in every `Lᵖ`.
+* `TauCeti.ramp_sub_ramp_mem_Icc`, `TauCeti.ramp_sub_ramp_eq_zero_of_notMem`: for `s ≤ t`, the
+  difference `ramp s δ - ramp t δ` takes values in `[0, 1]`, and for `δ > 0` it vanishes off
   `(s, t + δ)`.
 -/
 
 public section
 
-open Set
+open MeasureTheory Set
 
 namespace TauCeti
 
@@ -57,8 +61,8 @@ theorem ramp_nonneg (s δ x : ℝ) : 0 ≤ ramp s δ x := le_max_left _ _
 theorem ramp_le_one (s δ x : ℝ) : ramp s δ x ≤ 1 :=
   max_le zero_le_one (min_le_left _ _)
 
-theorem ramp_eq_zero {s δ x : ℝ} (hδ : 0 < δ) (hx : x ≤ s) : ramp s δ x = 0 :=
-  max_eq_left (min_le_of_right_le (div_nonpos_of_nonpos_of_nonneg (by linarith) hδ.le))
+theorem ramp_eq_zero {s δ x : ℝ} (hδ : 0 ≤ δ) (hx : x ≤ s) : ramp s δ x = 0 :=
+  max_eq_left (min_le_of_right_le (div_nonpos_of_nonpos_of_nonneg (by linarith) hδ))
 
 theorem ramp_eq_one {s δ x : ℝ} (hδ : 0 < δ) (hx : s + δ ≤ x) : ramp s δ x = 1 := by
   rw [ramp_def, min_eq_left ((le_div_iff₀ hδ).2 (by linarith)), max_eq_right zero_le_one]
@@ -73,11 +77,11 @@ theorem ramp_eq_div {s δ x : ℝ} (hδ : 0 < δ) (hx : x ∈ Icc s (s + δ)) :
 theorem ramp_left_antitone {δ : ℝ} (hδ : 0 ≤ δ) (x : ℝ) : Antitone fun s ↦ ramp s δ x :=
   fun _ _ h ↦ max_le_max le_rfl (min_le_min le_rfl (div_le_div_of_nonneg_right (by linarith) hδ))
 
-/-- For `δ > 0` and `s ≤ t`, the difference of the ramps starting at `s` and at `t` takes values
+/-- For `δ ≥ 0` and `s ≤ t`, the difference of the ramps starting at `s` and at `t` takes values
 in `[0, 1]`. -/
-theorem ramp_sub_ramp_mem_Icc {s t δ : ℝ} (hδ : 0 < δ) (h : s ≤ t) (x : ℝ) :
+theorem ramp_sub_ramp_mem_Icc {s t δ : ℝ} (hδ : 0 ≤ δ) (h : s ≤ t) (x : ℝ) :
     ramp s δ x - ramp t δ x ∈ Icc 0 1 :=
-  ⟨sub_nonneg.2 (ramp_left_antitone hδ.le x h),
+  ⟨sub_nonneg.2 (ramp_left_antitone hδ x h),
     by linarith [ramp_le_one s δ x, ramp_nonneg t δ x]⟩
 
 /-- For `δ > 0` and `s ≤ t`, the difference of the ramps starting at `s` and at `t` vanishes
@@ -86,7 +90,7 @@ theorem ramp_sub_ramp_eq_zero_of_notMem {s t δ x : ℝ} (hδ : 0 < δ) (h : s �
     (hx : x ∉ Ioo s (t + δ)) : ramp s δ x - ramp t δ x = 0 := by
   rw [sub_eq_zero]
   rcases le_or_gt x s with hxs | hxs
-  · rw [ramp_eq_zero hδ hxs, ramp_eq_zero hδ (hxs.trans h)]
+  · rw [ramp_eq_zero hδ.le hxs, ramp_eq_zero hδ.le (hxs.trans h)]
   · have htx : t + δ ≤ x := not_lt.1 fun h' ↦ hx ⟨hxs, h'⟩
     rw [ramp_eq_one hδ (by linarith), ramp_eq_one hδ htx]
 
@@ -108,7 +112,7 @@ theorem hasDerivAt_ramp {s δ x : ℝ} (hδ : 0 < δ) (hs : x ≠ s) (hsδ : x �
   · have hx : x ∉ Ioo s (s + δ) := fun h ↦ (lt_asymm hxs h.1).elim
     rw [indicator_of_notMem hx]
     refine (hasDerivAt_const x (0 : ℝ)).congr_of_eventuallyEq ?_
-    filter_upwards [Iio_mem_nhds hxs] with y hy using ramp_eq_zero hδ (le_of_lt hy)
+    filter_upwards [Iio_mem_nhds hxs] with y hy using ramp_eq_zero hδ.le (le_of_lt hy)
   rcases lt_or_gt_of_ne hsδ with hxsδ | hxsδ
   · have hx : x ∈ Ioo s (s + δ) := ⟨hxs, hxsδ⟩
     rw [indicator_of_mem hx]
@@ -121,5 +125,24 @@ theorem hasDerivAt_ramp {s δ x : ℝ} (hδ : 0 < δ) (hs : x ≠ s) (hsδ : x �
     rw [indicator_of_notMem hx]
     refine (hasDerivAt_const x (1 : ℝ)).congr_of_eventuallyEq ?_
     filter_upwards [Ioi_mem_nhds hxsδ] with y hy using ramp_eq_one hδ (le_of_lt hy)
+
+/-- For `δ > 0` the ramp has derivative `δ⁻¹` on `(s, s + δ)` and `0` elsewhere, at almost every
+point. -/
+theorem ae_hasDerivAt_ramp {s δ : ℝ} (hδ : 0 < δ) :
+    ∀ᵐ x, HasDerivAt (ramp s δ) ((Ioo s (s + δ)).indicator (fun _ ↦ δ⁻¹) x) x := by
+  filter_upwards [Measure.ae_ne volume s, Measure.ae_ne volume (s + δ)] with x h₁ h₂
+  exact hasDerivAt_ramp hδ h₁ h₂
+
+/-- For `δ > 0` the derivative of the ramp is almost everywhere `δ⁻¹` times the indicator of
+`(s, s + δ)`. -/
+theorem deriv_ramp_ae_eq {s δ : ℝ} (hδ : 0 < δ) :
+    deriv (ramp s δ) =ᵐ[volume] (Ioo s (s + δ)).indicator (fun _ ↦ δ⁻¹) :=
+  (ae_hasDerivAt_ramp hδ).mono fun _ hx ↦ hx.deriv
+
+/-- For `δ > 0` the derivative of the ramp lies in every `Lᵖ`. -/
+theorem memLp_deriv_ramp {s δ : ℝ} (hδ : 0 < δ) (p : ENNReal) :
+    MemLp (deriv (ramp s δ)) p :=
+  (memLp_indicator_const p measurableSet_Ioo.nullMeasurableSet δ⁻¹
+    (Or.inr measure_Ioo_lt_top.ne)).ae_eq (deriv_ramp_ae_eq hδ).symm
 
 end TauCeti

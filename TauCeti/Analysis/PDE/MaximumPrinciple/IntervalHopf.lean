@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.Analysis.SpecialFunctions.Ramp
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
@@ -29,14 +30,14 @@ supersolution*, `L u ≤ 0`, when
 
 The coefficients are only assumed to satisfy `λ ≤ a ≤ Λ` with `λ > 0` and `|b| ≤ β` almost
 everywhere, `a` and `b` measurable, `c ∈ L²` and `d ∈ L¹`. **Hopf's lemma**
-(`TauCeti.PDE.exists_pos_mul_le_intervalRepresentativeL_of_integral_nonneg`) says that if the
-continuous representative of such a `u` vanishes at `x₀` and is positive on `(x₀, x₁)`, then it
-leaves `x₀` at a positive linear rate: `ε h ≤ u (x₀ + h)` for some `ε > 0` and all small `h > 0`.
-In particular a right derivative of `u` at `x₀`, if it exists, is positive
-(`TauCeti.PDE.pos_of_hasDerivWithinAt_intervalRepresentativeL_of_integral_nonneg`). No sign
-condition is imposed on `b`, `c` or `d`. In contrast with the divergence-form Hopf lemma in higher
-dimensions, which needs Hölder continuous `a` and `b`, no continuity of the coefficients is
-needed: in one dimension the weighted flux is monotone up to an integrable error.
+(`TauCeti.PDE.IsIntervalWeakSupersolution.exists_pos_mul_le_intervalRepresentativeL`) says that
+if the continuous representative of such a `u` vanishes at `x₀` and is positive on `(x₀, x₁)`,
+then it leaves `x₀` at a positive linear rate: `ε h ≤ u (x₀ + h)` for some `ε > 0` and all small
+`h > 0`. In particular a right derivative of `u` at `x₀`, if it exists, is positive
+(`TauCeti.PDE.IsIntervalWeakSupersolution.pos_of_hasDerivWithinAt_intervalRepresentativeL`).
+No sign condition is imposed on `b`, `c` or `d`. In contrast with the divergence-form Hopf lemma
+in higher dimensions, which needs Hölder continuous `a` and `b`, no continuity of the
+coefficients is needed: in one dimension the weighted flux is monotone up to an integrable error.
 
 ## The argument
 
@@ -58,10 +59,10 @@ a positive constant near `x₀`; or `Φ y ≤ ∫ z in x₀..y, |k z|` almost ev
 
 * `TauCeti.PDE.IsIntervalWeakSupersolution`: `u ∈ W^{1,2}(x₀, x₁)` is a weak supersolution of
   `(a u' + b u)' + c u' + d u ≤ 0`.
-* `TauCeti.PDE.exists_pos_mul_le_intervalRepresentativeL_of_integral_nonneg`: **Hopf's lemma** for
-  weak supersolutions on an interval, in difference-quotient form.
-* `TauCeti.PDE.pos_of_hasDerivWithinAt_intervalRepresentativeL_of_integral_nonneg`: the derivative
-  form.
+* `TauCeti.PDE.IsIntervalWeakSupersolution.exists_pos_mul_le_intervalRepresentativeL`:
+  **Hopf's lemma** for weak supersolutions on an interval, in difference-quotient form.
+* `TauCeti.PDE.IsIntervalWeakSupersolution.pos_of_hasDerivWithinAt_intervalRepresentativeL`: the
+  derivative form.
 
 ## References
 
@@ -140,15 +141,9 @@ private theorem ae_hasDerivAt_integratingFactor (hq : Integrable q) :
   exact (ht x₀).exp
 
 private theorem absolutelyContinuousOnInterval_integratingFactor (hq : Integrable q)
-    (x₁ : ℝ) : AbsolutelyContinuousOnInterval (integratingFactor x₀ q) x₀ x₁ := by
-  set L := ∫ s, |q s|
-  have hlip : LipschitzOnWith (Real.toNNReal (Real.exp L)) Real.exp (Icc (-L) L) := by
-    refine (convex_Icc _ _).lipschitzOnWith_of_nnnorm_deriv_le
-      (fun x _ ↦ Real.differentiableAt_exp) fun x hx ↦ ?_
-    simpa [← NNReal.coe_le_coe, (Real.exp_pos L).le] using hx.2
-  exact hlip.comp_absolutelyContinuousOnInterval
-    (fun t _ ↦ abs_le.1 (hq.norm_intervalIntegral_le_integral_norm x₀ t))
-    (hq.intervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc)
+    (x₁ : ℝ) : AbsolutelyContinuousOnInterval (integratingFactor x₀ q) x₀ x₁ :=
+  (hq.intervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral
+    left_mem_uIcc).comp_of_contDiffAt fun _ _ ↦ Real.contDiff_exp.contDiffAt
 
 /-- Multiplying by the bounded integrating factor preserves `Lᵖ`. -/
 private theorem memLp_integratingFactor_mul (hq : Integrable q) {μ : Measure ℝ}
@@ -189,17 +184,16 @@ away from the four corners. -/
 private theorem deriv_ramp_sub_ae (hδ : 0 < δ) :
     deriv (ramp s δ - ramp t δ) =ᵐ[volume] fun y ↦
       (Ioo s (s + δ)).indicator (fun _ ↦ δ⁻¹) y - (Ioo t (t + δ)).indicator (fun _ ↦ δ⁻¹) y := by
-  have hne : ∀ z : ℝ, ∀ᵐ y : ℝ, y ≠ z := fun z ↦ by simp [ae_iff, measure_singleton]
-  filter_upwards [hne s, hne (s + δ), hne t, hne (t + δ)] with y h1 h2 h3 h4
-  exact ((hasDerivAt_ramp hδ h1 h2).sub (hasDerivAt_ramp hδ h3 h4)).deriv
+  filter_upwards [ae_hasDerivAt_ramp (s := s) hδ, ae_hasDerivAt_ramp (s := t) hδ] with y h₁ h₂
+  exact (h₁.sub h₂).deriv
 
 private theorem memLp_deriv_ramp_sub (hδ : 0 < δ) :
     MemLp (deriv (ramp s δ - ramp t δ)) 2 (volume.restrict (Ioo x₀ x₁)) := by
-  refine MemLp.ae_eq (EventuallyEq.symm (ae_restrict_of_ae (deriv_ramp_sub_ae hδ)))
-    (MemLp.of_bound (((measurable_const.indicator measurableSet_Ioo).sub
-      (measurable_const.indicator measurableSet_Ioo)).aestronglyMeasurable) (δ⁻¹ + δ⁻¹)
-      (.of_forall fun y ↦ (norm_sub_le _ _).trans (add_le_add ?_ ?_))) <;>
-  exact (norm_indicator_le_norm_self _ _).trans (by simp [abs_of_pos hδ])
+  refine (((memLp_deriv_ramp (s := s) hδ 2).sub (memLp_deriv_ramp (s := t) hδ 2)).restrict
+    _).ae_eq (ae_restrict_of_ae ?_)
+  filter_upwards [deriv_ramp_sub_ae (s := s) (t := t) hδ, deriv_ramp_ae_eq (s := s) hδ,
+    deriv_ramp_ae_eq (s := t) hδ] with y h h₁ h₂
+  rw [h, Pi.sub_apply, h₁, h₂]
 
 /-- Testing `Φ` against the derivative of a difference of two ramps gives the difference of its
 averages over `(s, s + δ)` and `(t, t + δ)`. -/
@@ -246,9 +240,9 @@ private theorem neg_setIntegral_abs_le_integral_mul_ramp_sub (hk : IntegrableOn 
       (lipschitzWith_ramp hδ).continuous).aestronglyMeasurable) (c := 1)
       (.of_forall fun y ↦ by
         rw [Real.norm_eq_abs, abs_le, Pi.sub_apply]
-        exact ⟨by linarith [(ramp_sub_ramp_mem_Icc hδ hst y).1],
-          (ramp_sub_ramp_mem_Icc hδ hst y).2⟩)) fun y ↦ ?_
-  have h01 := ramp_sub_ramp_mem_Icc hδ hst y
+        exact ⟨by linarith [(ramp_sub_ramp_mem_Icc hδ.le hst y).1],
+          (ramp_sub_ramp_mem_Icc hδ.le hst y).2⟩)) fun y ↦ ?_
+  have h01 := ramp_sub_ramp_mem_Icc hδ.le hst y
   rw [Pi.sub_apply]
   by_cases hy : y ∈ Ioo s (t + δ)
   · rw [indicator_of_mem hy]
@@ -270,7 +264,7 @@ private theorem ramp_average_le
       ((lipschitzWith_ramp hδ).lipschitzOnWith.absolutelyContinuousOnInterval))
     (memLp_deriv_ramp_sub hδ) (ramp_sub_ramp_eq_zero_of_notMem hδ hst' fun h ↦ (not_lt.2 hs) h.1)
     (ramp_sub_ramp_eq_zero_of_notMem hδ hst' fun h ↦ (not_lt.2 ht) h.2)
-    fun y _ ↦ (ramp_sub_ramp_mem_Icc hδ hst' y).1
+    fun y _ ↦ (ramp_sub_ramp_mem_Icc hδ.le hst' y).1
   rw [integral_mul_deriv_ramp_sub hΦ hs hδ hst ht] at h
   linarith [neg_setIntegral_abs_le_integral_mul_ramp_sub hk hs hδ hst' ht]
 
@@ -440,6 +434,47 @@ private theorem integral_mul_le_integral_mul_deriv (hx : x₀ < x₁)
   rw [integral_congr_ae hcongr, integral_sub i1 i2] at h
   linarith
 
+/-- If `u` vanishes at `x₀`, then its continuous representative at `y ∈ [x₀, x₁]` is the integral
+of its weak gradient from `x₀` to `y`. -/
+private theorem intervalRepresentativeL_eq_integral_gradient (hx : x₀ < x₁)
+    (u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2)
+    (hu₀ : W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le x₀) = 0) {y : ℝ}
+    (hy : y ∈ Icc x₀ x₁) :
+    W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le y) =
+      ∫ r in x₀..y, W1p.gradient u r := by
+  rw [W1p.integral_gradient_eq_intervalRepresentativeL_sub hx u ⟨x₀, left_mem_Icc.2 hx.le⟩
+    ⟨y, hy⟩, ← projIcc_of_mem hx.le hy, ← projIcc_of_mem hx.le (left_mem_Icc.2 hx.le), hu₀,
+    sub_zero]
+
+/-- If `u` vanishes at `x₀` and its weak gradient is at least `σ` on `(x₀, y)`, then
+`(y - x₀) σ ≤ u y`. -/
+private theorem mul_le_intervalRepresentativeL_of_le_gradient (hx : x₀ < x₁)
+    (u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2)
+    (hu₀ : W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le x₀) = 0) {y σ : ℝ}
+    (hy : y ∈ Icc x₀ x₁) (hσ : ∀ᵐ r, r ∈ Ioo x₀ y → σ ≤ W1p.gradient u r) :
+    (y - x₀) * σ ≤ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le y) := by
+  have h := intervalIntegral.integral_mono_ae_restrict hy.1 intervalIntegrable_const
+    (W1p.intervalIntegrable_gradient u (left_mem_Icc.2 hx.le) hy) (f := fun _ ↦ σ) (by
+      rw [← Measure.restrict_congr_set Ioo_ae_eq_Icc]
+      exact (ae_restrict_iff' measurableSet_Ioo).2 hσ)
+  rwa [intervalIntegral.integral_const, smul_eq_mul,
+    ← intervalRepresentativeL_eq_integral_gradient hx u hu₀ hy] at h
+
+/-- If `u` vanishes at `x₀` and its weak gradient is at most `σ` on `(x₀, y)`, then
+`u y ≤ (y - x₀) σ`. -/
+private theorem intervalRepresentativeL_le_mul_of_gradient_le (hx : x₀ < x₁)
+    (u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2)
+    (hu₀ : W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le x₀) = 0) {y σ : ℝ}
+    (hy : y ∈ Icc x₀ x₁) (hσ : ∀ᵐ r, r ∈ Ioo x₀ y → W1p.gradient u r ≤ σ) :
+    W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le y) ≤ (y - x₀) * σ := by
+  have h := intervalIntegral.integral_mono_ae_restrict hy.1
+    (W1p.intervalIntegrable_gradient u (left_mem_Icc.2 hx.le) hy) intervalIntegrable_const
+    (g := fun _ ↦ σ) (by
+      rw [← Measure.restrict_congr_set Ioo_ae_eq_Icc]
+      exact (ae_restrict_iff' measurableSet_Ioo).2 hσ)
+  rwa [intervalIntegral.integral_const, smul_eq_mul,
+    ← intervalRepresentativeL_eq_integral_gradient hx u hu₀ hy] at h
+
 /-- **Positive flux gives linear growth.** If the flux `a u' + b u` is bounded below by `σ > 0`
 near `x₀`, where `u` vanishes and `a ≤ Λ`, then `u` grows at least linearly from `x₀`. -/
 private theorem exists_pos_mul_le_of_le_flux (hx : x₀ < x₁)
@@ -483,19 +518,8 @@ private theorem exists_pos_mul_le_of_le_flux (hx : x₀ < x₁)
     rw [div_le_iff₀ (by positivity)]
     nlinarith [haΛ y hyI', ha y hyI']
   have hmem : x₀ + h ∈ Icc x₀ x₁ := ⟨by linarith [hh.1], by linarith [hs.2]⟩
-  have hFTC : ∫ r in x₀..x₀ + h, W1p.gradient u r =
-      W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le (x₀ + h)) := by
-    rw [W1p.integral_gradient_eq_intervalRepresentativeL_sub hx u ⟨x₀, left_mem_Icc.2 hx.le⟩
-      ⟨x₀ + h, hmem⟩, ← projIcc_of_mem hx.le hmem, ← projIcc_of_mem hx.le (left_mem_Icc.2 hx.le),
-      hu₀, sub_zero]
-  rw [← hFTC]
-  have hle := intervalIntegral.integral_mono_ae_restrict (le_add_of_nonneg_right hh.1.le)
-    intervalIntegrable_const
-    (W1p.intervalIntegrable_gradient u (left_mem_Icc.2 hx.le) hmem)
-    (f := fun _ ↦ σ / (2 * Λ)) (by
-      rw [← Measure.restrict_congr_set Ioo_ae_eq_Icc]
-      exact (ae_restrict_iff' measurableSet_Ioo).2 hgrad)
-  rw [intervalIntegral.integral_const, smul_eq_mul, add_sub_cancel_left] at hle
+  have hle := mul_le_intervalRepresentativeL_of_le_gradient hx u hu₀ hmem hgrad
+  rw [add_sub_cancel_left] at hle
   linarith
 
 /-- **A flux controlled by the solution forces it to vanish.** Suppose that `u` vanishes at `x₀`,
@@ -545,17 +569,9 @@ private theorem not_forall_pos_of_flux_le (hx : x₀ < x₁)
     · nlinarith
     · nlinarith [mul_le_mul_of_nonneg_left (ha y hyI') hg.le]
   have hmem : τ ∈ Icc x₀ x₁ := ⟨hτ.1, hτ.2.trans (by linarith)⟩
-  have hU : ∫ r in x₀..τ, W1p.gradient u r = U := by
-    rw [W1p.integral_gradient_eq_intervalRepresentativeL_sub hx u ⟨x₀, left_mem_Icc.2 hx.le⟩
-      ⟨τ, hmem⟩, ← projIcc_of_mem hx.le hmem, ← projIcc_of_mem hx.le (left_mem_Icc.2 hx.le), hu₀,
-      sub_zero]
-  have hle := intervalIntegral.integral_mono_ae_restrict hτ.1
-    (W1p.intervalIntegrable_gradient u (left_mem_Icc.2 hx.le) hmem) intervalIntegrable_const
-    (g := fun _ ↦ (C + β) * U / lam) (by
-      rw [← Measure.restrict_congr_set Ioo_ae_eq_Icc]
-      exact (ae_restrict_iff' measurableSet_Ioo).2
-        (hgrad.mono fun y hy hyI ↦ hy ⟨hyI.1, hyI.2.trans_le hτ.2⟩))
-  rw [intervalIntegral.integral_const, smul_eq_mul, hU] at hle
+  have hle : U ≤ (τ - x₀) * ((C + β) * U / lam) :=
+    intervalRepresentativeL_le_mul_of_gradient_le hx u hu₀ hmem
+      (hgrad.mono fun y hy hyI ↦ hy ⟨hyI.1, hyI.2.trans_le hτ.2⟩)
   have : (τ - x₀) * ((C + β) * U / lam) ≤ U / 2 := by
     calc (τ - x₀) * ((C + β) * U / lam) ≤ h * ((C + β) * U / lam) := by
           gcongr
@@ -734,8 +750,8 @@ supersolution, `L u ≤ 0`: `∫ ((a u' + b u) w' - (c u' + d u) w) ≥ 0` for e
 is positive on `(x₀, x₁)`, then it leaves `x₀` at a positive linear rate: `ε h ≤ u (x₀ + h)` for
 some `ε > 0` and all small `h > 0`. No sign condition is imposed on `b`, `c` or `d`, and no
 continuity on `a` or `b`. -/
-theorem exists_pos_mul_le_intervalRepresentativeL_of_integral_nonneg (hx : x₀ < x₁)
-    (u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2) {lam Λ β : ℝ} (hlam : 0 < lam)
+theorem IsIntervalWeakSupersolution.exists_pos_mul_le_intervalRepresentativeL
+    (hx : x₀ < x₁) (u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2) {lam Λ β : ℝ} (hlam : 0 < lam)
     (ha : ∀ᵐ y ∂volume.restrict (Ioo x₀ x₁), lam ≤ a y)
     (haΛ : ∀ᵐ y ∂volume.restrict (Ioo x₀ x₁), a y ≤ Λ)
     (ham : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
@@ -766,10 +782,10 @@ theorem exists_pos_mul_le_intervalRepresentativeL_of_integral_nonneg (hx : x₀ 
   rw [h₁, h₂]
 
 /-- **Hopf's boundary-point lemma for weak supersolutions on an interval**, derivative form: under
-the hypotheses of `exists_pos_mul_le_intervalRepresentativeL_of_integral_nonneg`, a right
+the hypotheses of `IsIntervalWeakSupersolution.exists_pos_mul_le_intervalRepresentativeL`, a right
 derivative of the continuous representative at `x₀`, if it exists, is positive. -/
-theorem pos_of_hasDerivWithinAt_intervalRepresentativeL_of_integral_nonneg (hx : x₀ < x₁)
-    (u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2) {lam Λ β : ℝ} (hlam : 0 < lam)
+theorem IsIntervalWeakSupersolution.pos_of_hasDerivWithinAt_intervalRepresentativeL
+    (hx : x₀ < x₁) (u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2) {lam Λ β : ℝ} (hlam : 0 < lam)
     (ha : ∀ᵐ y ∂volume.restrict (Ioo x₀ x₁), lam ≤ a y)
     (haΛ : ∀ᵐ y ∂volume.restrict (Ioo x₀ x₁), a y ≤ Λ)
     (ham : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
@@ -783,8 +799,8 @@ theorem pos_of_hasDerivWithinAt_intervalRepresentativeL_of_integral_nonneg (hx :
     (hd' : HasDerivWithinAt (fun t ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t))
       u' (Ici x₀) x₀) :
     0 < u' := by
-  obtain ⟨ε, hε, δ, hδ, h⟩ := exists_pos_mul_le_intervalRepresentativeL_of_integral_nonneg hx u
-    hlam ha haΛ ham hb hbm hc hd hsuper hu₀ hpos
+  obtain ⟨ε, hε, δ, hδ, h⟩ := hsuper.exists_pos_mul_le_intervalRepresentativeL hx u hlam ha haΛ
+    ham hb hbm hc hd hu₀ hpos
   have hslope := (hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl x₀)).mp
     (hasDerivWithinAt_Ioi_iff_Ici.mpr hd')
   refine hε.trans_le (ge_of_tendsto hslope ?_)

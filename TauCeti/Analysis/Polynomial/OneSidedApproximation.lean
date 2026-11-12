@@ -69,7 +69,7 @@ private lemma integral_ramp_le {b w : ℝ} (hw : 0 < w) (hb0 : 0 ≤ b) (hb1 : b
     (hc.intervalIntegrable b 1)]
   have h1 : ∫ u in (0 : ℝ)..b, ramp b w u ≤ ∫ u in (0 : ℝ)..b, (0 : ℝ) :=
     intervalIntegral.integral_mono_on hb0 (hc.intervalIntegrable _ _) intervalIntegrable_const
-      fun u hu ↦ (ramp_eq_zero hw hu.2).le
+      fun u hu ↦ (ramp_eq_zero hw.le hu.2).le
   have h2 : ∫ u in b..1, ramp b w u ≤ ∫ u in b..1, (1 : ℝ) :=
     intervalIntegral.integral_mono_on hb1 (hc.intervalIntegrable _ _) intervalIntegrable_const
       fun u _ ↦ ramp_le_one b w u
@@ -135,7 +135,7 @@ theorem exists_polynomial_le_indicator {a η : ℝ} (ha0 : 0 ≤ a) (ha1 : a < 1
   refine ⟨Q, fun u hu ↦ (hQ u hu).2.trans ?_, ?_⟩
   · split_ifs with h
     · exact ramp_le_one _ _ _
-    · exact (ramp_eq_zero hw (not_le.1 h).le).le
+    · exact (ramp_eq_zero hw.le (not_le.1 h).le).le
   · have hint : ∫ u in (0 : ℝ)..1, (ramp a w u - w) ≤ ∫ u in (0 : ℝ)..1, Q.eval u :=
       intervalIntegral.integral_mono_on zero_le_one
         (((continuous_ramp _ _).sub continuous_const).intervalIntegrable _ _)
