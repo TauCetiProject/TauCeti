@@ -79,8 +79,11 @@ output when `aₙ₊₁ * e = aₙ₊₁` (`TauCeti.UngradedAInfinityRightModule
 the twisted differential of an element `β` with `e * β = β = β * e` commutes with `m₂(·, e)`
 (`TauCeti.UngradedAInfinityRightModule.act_one_twistedDifferential`). The higher operations of the
 matrix module vanish on the matrices whose entries are such elements or zero
-(`TauCeti.UngradedAInfinityRightModule.HigherActVanishesOn.matrix`), and those of a differential
-module vanish on every set.
+(`TauCeti.UngradedAInfinityRightModule.HigherActVanishesOn.matrix`), so when a diagonal matrix of
+such elements is a right unit for `C`, it fixes each component of the twisted differential along
+`C` of a row vector vanishing at that component
+(`TauCeti.UngradedAInfinityRightModule.act_one_twistedDifferential_apply_of_mul_diagonal`). The
+higher operations of a differential module vanish on every set.
 
 Twisting the matrix module by the coefficient matrix of a type `D` structure gives the box tensor
 product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA`.
@@ -743,6 +746,41 @@ theorem HigherActVanishesOn.matrix {U : Set A} (hU : Mm.HigherActVanishesOn U) :
     · exact (Mm.act (n + 2)).map_coord_zero i h
     · exact hU n _ i h
   rw [h0, LinearMap.zero_apply, ite_self]
+
+variable {Mm X} in
+/-- The `z`-component of the twisted differential of the matrix module along `C`, on a row vector
+vanishing at `z`, is fixed by `m₂(·, w z)` when the diagonal matrix of `w` is a right unit for `C`
+and the `w y` are cycles on which the higher operations of `M` vanish: the term of length zero is
+`m₁(0) = 0`, and the others are fixed by
+`TauCeti.UngradedAInfinityRightModule.act_one_act_of_mul_eq`. -/
+theorem act_one_twistedDifferential_apply_of_mul_diagonal [CharP R 2] {U : Set A}
+    (hU : Mm.HigherActVanishesOn U) {w : X → A} (hw : ∀ y, w y ∈ U) (hdw : ∀ y, d (w y) = 0)
+    {C : Matrix X X A} (hC : C * Matrix.diagonal w = C) {ψ : X → M} {z : X} (hψ : ψ z = 0) :
+    Mm.act 1 (fun _ => w z) ((Mm.matrix X).twistedDifferential C ψ z) =
+      (Mm.matrix X).twistedDifferential C ψ z := by
+  have hE : Matrix.diagonal w ∈ {P : Matrix X X A | ∀ x y, P x y ∈ insert 0 U} :=
+    Set.mem_matrix.mp <| (Matrix.diagonal_mem_matrix_iff (Set.mem_insert 0 U)).mpr fun y =>
+      Set.mem_insert_of_mem 0 (hw y)
+  have hdE : (Matrix.diagonal w).map d = 0 := by
+    rw [Matrix.diagonal_map (map_zero d)]
+    simp [hdw]
+  rw [twistedDifferential_def]
+  by_cases hfin : (Function.support fun n => (Mm.matrix X).act n fun _ => C).Finite
+  · rw [finsum_eq_sum _ hfin, LinearMap.sum_apply, Finset.sum_apply, map_sum]
+    refine sum_congr rfl fun n _ => ?_
+    rcases n with _ | n
+    · -- The term of length zero is `m₁(ψ z) = 0`.
+      have h0 : (Mm.matrix X).act 0 (fun _ => C) ψ z = 0 := by
+        rw [matrix_act, matrixAct_apply]
+        refine sum_eq_zero fun x _ => ?_
+        split_ifs with hx
+        · rw [Fin.last_zero] at hx
+          rw [hx, hψ, map_zero]
+        · rfl
+      rw [h0, map_zero]
+    · simpa only [matrix_act, matrixAct_one_diagonal_apply] using
+        congrFun (act_one_act_of_mul_eq (hU.matrix X) hE hdE (fun _ => C) hC ψ) z
+  · rw [finsum_of_infinite_support hfin, LinearMap.zero_apply, Pi.zero_apply, map_zero]
 
 end Matrix
 

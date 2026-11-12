@@ -1048,44 +1048,6 @@ theorem typeABoxTensorDifferential_typeABoxTensorDifferential_of_isBounded [Char
     N.typeABoxTensorDifferential hι hU (N.typeABoxTensorDifferential hι hU φ) = 0 :=
   Subtype.ext (N.typeABoxDifferential_typeABoxDifferential_of_isBounded Mm hN φ)
 
-/-- The `z`-component of the twisted differential of the matrix module along `C`, on a row vector
-vanishing at `z`, is fixed by `m₂(·, w z)` when the diagonal matrix of `w` is a right unit for `C`
-and the `w y` are cycles on which the higher operations of `M` vanish: the term of length zero is
-`m₁(0) = 0`, and the others are fixed by
-`TauCeti.UngradedAInfinityRightModule.act_one_act_of_mul_eq`. -/
-private theorem act_one_twistedDifferential_apply_of_mul_diagonal [CharP R 2] {Y : Type*}
-    [Fintype Y] [DecidableEq Y] {U : Set A} (hU : Mm.HigherActVanishesOn U) {w : Y → A}
-    (hw : ∀ y, w y ∈ U) (hdw : ∀ y, d (w y) = 0) {C : Matrix Y Y A}
-    (hC : C * Matrix.diagonal w = C) {ψ : Y → M} {z : Y} (hψ : ψ z = 0) :
-    Mm.act 1 (fun _ => w z) ((Mm.matrix Y).twistedDifferential C ψ z) =
-      (Mm.matrix Y).twistedDifferential C ψ z := by
-  have hE : Matrix.diagonal w ∈ {P : Matrix Y Y A | ∀ x y, P x y ∈ insert 0 U} := fun x y => by
-    by_cases h : x = y
-    · subst h
-      exact Or.inr (by simpa using hw x)
-    · exact Or.inl (Matrix.diagonal_apply_ne _ h)
-  have hdE : (Matrix.diagonal w).map d = 0 := by
-    rw [Matrix.diagonal_map (map_zero d)]
-    simp [hdw]
-  rw [UngradedAInfinityRightModule.twistedDifferential_def]
-  by_cases hfin : (Function.support fun n => (Mm.matrix Y).act n fun _ => C).Finite
-  · rw [finsum_eq_sum _ hfin, LinearMap.sum_apply, Finset.sum_apply, map_sum]
-    refine sum_congr rfl fun n _ => ?_
-    rcases n with _ | n
-    · -- The term of length zero is `m₁(ψ z) = 0`.
-      have h0 : (Mm.matrix Y).act 0 (fun _ => C) ψ z = 0 := by
-        rw [UngradedAInfinityRightModule.matrix_act, UngradedAInfinityRightModule.matrixAct_apply]
-        refine sum_eq_zero fun x _ => ?_
-        split_ifs with hx
-        · rw [show x 0 = z from hx, hψ, map_zero]
-        · rfl
-      rw [h0, map_zero]
-    · simpa only [UngradedAInfinityRightModule.matrix_act,
-        UngradedAInfinityRightModule.matrixAct_one_diagonal_apply] using
-        congrFun (UngradedAInfinityRightModule.act_one_act_of_mul_eq (hU.matrix Y) hE hdE
-          (fun _ => C) hC ψ) z
-  · rw [finsum_of_infinite_support hfin, LinearMap.zero_apply, Pi.zero_apply, map_zero]
-
 /-- **Maps induced by morphisms land in the box tensor products.** Over a ring of characteristic
 two, if the `ι s` are cycles and the higher operations of `M` vanish on them, then the map `T_F`
 induced by a morphism `F` from `N` to `N'` takes values in `M ⊗ N'`: the diagonal matrix of the
@@ -1102,7 +1064,8 @@ theorem typeABoxMap_mem_typeABoxTensor [CharP R 2] (hι : ∀ s, d (ι s) = 0)
       mul_idMorphism hF]
   intro z
   rw [typeABoxMap_apply]
-  exact act_one_twistedDifferential_apply_of_mul_diagonal (ψ := Sum.elim φ 0) (z := Sum.inr z) hU
+  exact UngradedAInfinityRightModule.act_one_twistedDifferential_apply_of_mul_diagonal
+    (ψ := Sum.elim φ 0) (z := Sum.inr z) hU
     (by rintro (x | x) <;> exact ⟨_, rfl⟩) (by rintro (x | x) <;> exact hι _) hC rfl
 
 /-- **The composition homotopy lands in the box tensor products.** Over a ring of characteristic
@@ -1128,8 +1091,8 @@ theorem typeABoxCompHomotopy_mem_typeABoxTensor [CharP R 2] {X'' : Type*} [Finty
       mul_idMorphism (coeff_mem_morphisms N''), mul_idMorphism hF, mul_idMorphism hG]
   intro z
   rw [typeABoxCompHomotopy_apply]
-  exact act_one_twistedDifferential_apply_of_mul_diagonal (ψ := Sum.elim φ 0)
-    (z := Sum.inr (Sum.inr z)) hU (by rintro (x | x | x) <;> exact ⟨_, rfl⟩)
+  exact UngradedAInfinityRightModule.act_one_twistedDifferential_apply_of_mul_diagonal
+    (ψ := Sum.elim φ 0) (z := Sum.inr (Sum.inr z)) hU (by rintro (x | x | x) <;> exact ⟨_, rfl⟩)
     (by rintro (x | x | x) <;> exact hι _) hC rfl
 
 /-- The entries of the off-diagonal block `fromBlocks 0 I 0 0` are idempotents or zero. -/
