@@ -39,7 +39,7 @@ defined, it agrees with Mathlib's multipliers.
 * `MeasureTheory.Lp.fourier_fourierMultiplierCLM`: `𝓕 (T_m f) = m • 𝓕 f`, and
   `MeasureTheory.Lp.eq_fourierMultiplierCLM_iff`, which characterizes `T_m` by it.
 * `MeasureTheory.Lp.norm_fourierMultiplierCLM_le`: the bound `‖T_m‖ ≤ ‖m‖_∞`.
-* `MeasureTheory.Lp.enorm_fourierMultiplierCLM_apply_sq`: Plancherel's identity
+* `MeasureTheory.Lp.eNorm_fourierMultiplierCLM_apply_sq`: Plancherel's identity
   `‖T_m f‖² = ∫ ‖m ξ‖² ‖𝓕 f ξ‖² dξ`.
 * `MeasureTheory.Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM`: `T_{m₁} ∘ T_{m₂} =
   T_{m₁ m₂}`, with linearity in the symbol and `T_c = c • id` for a constant symbol.
@@ -131,14 +131,14 @@ theorem norm_fourierMultiplierCLM_le : ‖fourierMultiplierCLM (E := E) F m‖ �
 
 /-- **Plancherel's identity** for Fourier multipliers: `‖T_m f‖² = ∫ ‖m ξ‖² ‖𝓕 f ξ‖² dξ`, in
 `ℝ≥0∞`. -/
-theorem enorm_fourierMultiplierCLM_apply_sq :
+theorem eNorm_fourierMultiplierCLM_apply_sq :
     ‖fourierMultiplierCLM F m f‖ₑ ^ 2 =
       ∫⁻ ξ, ‖m ξ‖ₑ ^ 2 * ‖(𝓕 f : Lp F 2 (volume : Measure E)) ξ‖ₑ ^ 2 := by
   rw [← ofReal_norm, ← norm_fourier_eq, fourier_fourierMultiplierCLM, ofReal_norm,
-    Lp.enorm_sq_eq_lintegral]
+    Lp.eNorm_sq_eq_lintegral]
   refine lintegral_congr_ae ?_
   filter_upwards [coeFn_lpSMul (r := 2) m (𝓕 f)] with ξ h
-  rw [h, Pi.smul_apply', enorm_smul, mul_pow]
+  rw [h, Pi.smul_apply', eNorm_smul, mul_pow]
 
 /-! ### Dependence on the symbol -/
 

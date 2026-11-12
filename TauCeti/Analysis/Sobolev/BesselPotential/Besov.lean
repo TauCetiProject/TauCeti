@@ -321,11 +321,11 @@ private lemma littlewoodPaleyBlock_eq_of_besselPotential_eq {u : 𝓢'(E, F)}
   simp [blockSymbol, mul_comm]
 
 /-- Plancherel's theorem for the block multipliers. -/
-private lemma enorm_fourierMultiplierCLM_blockSymbol_sq (s : ℝ) (k : ℕ)
+private lemma eNorm_fourierMultiplierCLM_blockSymbol_sq (s : ℝ) (k : ℕ)
     (f : Lp F 2 (volume : Measure E)) :
     ‖Lp.fourierMultiplierCLM F ((memLp_blockSymbol φ s k).toLp _) f‖ₑ ^ 2 =
       ∫⁻ ξ, ‖blockSymbol φ s k ξ‖ₑ ^ 2 * ‖𝓕 f ξ‖ₑ ^ 2 := by
-  rw [Lp.enorm_fourierMultiplierCLM_apply_sq]
+  rw [Lp.eNorm_fourierMultiplierCLM_apply_sq]
   refine lintegral_congr_ae ?_
   filter_upwards [(memLp_blockSymbol φ s k).coeFn_toLp] with ξ h
   rw [h]
@@ -413,7 +413,7 @@ private lemma exists_tsum_weight_bounds (s : ℝ) : ∃ a b : ℝ, 0 < a ∧ 0 �
 
 /-- **The `L²` Littlewood–Paley inequalities**, in `ℝ≥0∞`: if `J^s u = f ∈ L²`, then the blocks
 `Δₖ u` are `L²` functions `gₖ` with `a ‖f‖² ≤ ∑ₖ (2^{ks} ‖gₖ‖)² ≤ b ‖f‖²`. -/
-private lemma exists_enorm_bounds (s : ℝ) : ∃ a b : ℝ, 0 < a ∧ 0 ≤ b ∧ ∀ {u : 𝓢'(E, F)}
+private lemma exists_eNorm_bounds (s : ℝ) : ∃ a b : ℝ, 0 < a ∧ 0 ≤ b ∧ ∀ {u : 𝓢'(E, F)}
     {f : Lp F 2 (volume : Measure E)}, besselPotential E F s u = f →
       ∃ g : ℕ → Lp F 2 (volume : Measure E), (∀ k, littlewoodPaleyBlock F φ k u = g k) ∧
         ENNReal.ofReal a * ‖f‖ₑ ^ 2 ≤ ∑' k : ℕ, ENNReal.ofReal ((2 ^ (s * k) * ‖g k‖) ^ 2) ∧
@@ -426,7 +426,7 @@ private lemma exists_enorm_bounds (s : ℝ) : ∃ a b : ℝ, 0 < a ∧ 0 ≤ b �
       ∫⁻ ξ, ENNReal.ofReal ((2 ^ (s * k) * ‖blockSymbol φ s k ξ‖) ^ 2) * ‖𝓕 f ξ‖ₑ ^ 2 := by
     intro k
     rw [mul_pow, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (norm_nonneg _),
-      ofReal_norm, enorm_fourierMultiplierCLM_blockSymbol_sq,
+      ofReal_norm, eNorm_fourierMultiplierCLM_blockSymbol_sq,
       ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
     refine lintegral_congr fun ξ ↦ ?_
     rw [mul_pow, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (norm_nonneg _),
@@ -435,7 +435,7 @@ private lemma exists_enorm_bounds (s : ℝ) : ∃ a b : ℝ, 0 < a ∧ 0 ≤ b �
       ENNReal.ofReal ((2 ^ (s * k) * ‖blockSymbol φ s k ξ‖) ^ 2) * ‖𝓕 f ξ‖ₑ ^ 2) volume :=
     fun k ↦ (((continuous_const.mul (hasTemperateGrowth_blockSymbol φ s k).1.continuous.norm).pow
       2).measurable.ennreal_ofReal.aemeasurable).mul
-      ((Lp.aestronglyMeasurable (𝓕 f)).enorm.pow_const 2)
+      ((Lp.aestronglyMeasurable (𝓕 f)).eNorm.pow_const 2)
   have hsum : ∑' k : ℕ, ENNReal.ofReal ((2 ^ (s * k) *
       ‖Lp.fourierMultiplierCLM F ((memLp_blockSymbol φ s k).toLp _) f‖) ^ 2) =
       ∫⁻ ξ, (∑' k : ℕ, ENNReal.ofReal ((2 ^ (s * k) * ‖blockSymbol φ s k ξ‖) ^ 2)) *
@@ -443,7 +443,7 @@ private lemma exists_enorm_bounds (s : ℝ) : ∃ a b : ℝ, 0 < a ∧ 0 ≤ b �
     simp_rw [hterm, ← ENNReal.tsum_mul_right]
     exact (lintegral_tsum hmeas).symm
   have hf : ‖f‖ₑ ^ 2 = ∫⁻ ξ, ‖𝓕 f ξ‖ₑ ^ 2 := by
-    rw [← Lp.enorm_sq_eq_lintegral, ← ofReal_norm, ← ofReal_norm (𝓕 f), Lp.norm_fourier_eq]
+    rw [← Lp.eNorm_sq_eq_lintegral, ← ofReal_norm, ← ofReal_norm (𝓕 f), Lp.norm_fourier_eq]
   rw [hsum, hf, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
     ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   exact ⟨lintegral_mono fun ξ ↦ mul_le_mul_left (hW ξ).1 _,
@@ -458,7 +458,7 @@ private lemma exists_bounds (s : ℝ) : ∃ a b : ℝ, 0 < a ∧ 0 ≤ b ∧ ∀
         Summable (fun k : ℕ ↦ (2 ^ (s * k) * ‖g k‖) ^ 2) ∧
         a * ‖f‖ ^ 2 ≤ ∑' k : ℕ, (2 ^ (s * k) * ‖g k‖) ^ 2 ∧
         ∑' k : ℕ, (2 ^ (s * k) * ‖g k‖) ^ 2 ≤ b * ‖f‖ ^ 2 := by
-  obtain ⟨a, b, ha, hb, h⟩ := exists_enorm_bounds (F := F) φ s
+  obtain ⟨a, b, ha, hb, h⟩ := exists_eNorm_bounds (F := F) φ s
   refine ⟨a, b, ha, hb, fun {u f} hu g hg ↦ ?_⟩
   obtain ⟨g', hg', h₁, h₂⟩ := h hu
   obtain rfl : g' = g := funext fun k ↦

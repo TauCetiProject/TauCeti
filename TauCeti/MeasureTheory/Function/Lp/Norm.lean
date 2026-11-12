@@ -34,7 +34,7 @@ bounds.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
 * `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
-* `MeasureTheory.Lp.enorm_rpow_eq_lintegral` and `MeasureTheory.Lp.enorm_sq_eq_lintegral`: the
+* `MeasureTheory.Lp.eNorm_rpow_eq_lintegral` and `MeasureTheory.Lp.eNorm_sq_eq_lintegral`: the
   same identities for the extended norm, with Lebesgue integrals and no integrability side
   conditions.
 * `MeasureTheory.tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub`: L² convergence implies
@@ -253,20 +253,20 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
 
 /-- For `0 < p < ∞`, the `p`-th power of the extended norm of an `Lᵖ` function is the Lebesgue
 integral of the `p`-th power of its extended pointwise norm. -/
-theorem Lp.enorm_rpow_eq_lintegral {alpha F : Type*} [MeasurableSpace alpha]
+theorem Lp.eNorm_rpow_eq_lintegral {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [NormedAddCommGroup F] {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞)
     (f : Lp F p m) :
     ‖f‖ₑ ^ p.toReal = ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂m := by
-  rw [Lp.enorm_def, eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp (Lp.aestronglyMeasurable f),
+  rw [Lp.eNorm_def, eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp (Lp.aestronglyMeasurable f),
     one_div, ENNReal.rpow_inv_rpow (ENNReal.toReal_pos hp0 hp).ne']
 
 /-- The square of the extended norm of an `L²` function is the Lebesgue integral of the square of
 its extended pointwise norm. -/
-theorem Lp.enorm_sq_eq_lintegral {alpha F : Type*} [MeasurableSpace alpha]
+theorem Lp.eNorm_sq_eq_lintegral {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [NormedAddCommGroup F] (f : Lp F 2 m) :
     ‖f‖ₑ ^ 2 = ∫⁻ x, ‖f x‖ₑ ^ 2 ∂m := by
   simpa only [ENNReal.toReal_ofNat, ENNReal.rpow_two] using
-    Lp.enorm_rpow_eq_lintegral (by norm_num) (by norm_num) f
+    Lp.eNorm_rpow_eq_lintegral (by norm_num) (by norm_num) f
 
 /-- The squared `L²` norm of the class of a square-integrable function is the integral of its
 squared pointwise norm. -/
