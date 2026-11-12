@@ -18,26 +18,25 @@ import TauCeti.Analysis.Contour.Dixon.Liouville
 
 Dixon's argument in `DixonLiouville` proves that the glued Dixon function vanishes for a closed
 null-homologous curve. `CauchyIntegralFormula` then extracts two algebraic consequences from
-pointwise vanishing. This file packages the direct null-homologous forms and assembles the summit:
+pointwise vanishing. This file packages the direct null-homologous forms and assembles the theorem:
 
 * `dixonH2_eq_windingNumber_mul_f_of_nullHomologous` — Cauchy's integral formula at an off-curve
   point.
 * `homologyCauchyTheorem_of_point_off_curve` — the contour integral of a holomorphic function
   around such a closed null-homologous curve is zero, assuming a point off the curve is
   supplied.
-* `homologyCauchyTheorem` — **the homology form of Cauchy's theorem** (roadmap
-  `homologyCauchyTheorem`, `TauCetiRoadmap/ContourIntegration/Suggested.lean`, Layer 3): for a
-  closed piecewise-`C¹` curve `γ`, null-homologous in an open `Ω`, and `f` holomorphic on `Ω`,
-  the contour integral `∫ t in a..b, deriv γ t • f (γ t)` vanishes. The piecewise-`C¹` regularity
-  discharges the integrand-level hypotheses via the `IsPiecewiseC1On` API, and the base point off
-  the curve comes from `exists_mem_off_curve`.
+* `homologyCauchyTheorem` — **the homology form of Cauchy's theorem**: for a closed piecewise-`C¹`
+  curve `γ`, null-homologous in an open `Ω`, and `f` holomorphic on `Ω`, the contour integral
+  `∫ t in a..b, deriv γ t • f (γ t)` vanishes. The piecewise-`C¹` regularity discharges the
+  integrand-level hypotheses via the `IsPiecewiseC1On` API, and the base point off the curve comes
+  from `exists_mem_off_curve`.
 
 ## Provenance
 
 These are the final assembly steps of Dixon's proof, migrated from the AINTLIB
 `LeanModularForms` development (`DixonTheorem.lean`) and restated for the raw curve
-`γ : ℝ → ℂ` used by the contour-integration roadmap. See J. D. Dixon, *A brief proof of Cauchy's
-integral theorem*, Proc. Amer. Math. Soc. 29 (1971).
+`γ : ℝ → ℂ`. See J. D. Dixon, *A brief proof of Cauchy's integral theorem*, Proc. Amer. Math. Soc.
+29 (1971).
 -/
 
 public section
@@ -104,10 +103,9 @@ theorem homologyCauchyTheorem_of_point_off_curve {f : ℂ → ℂ} {U : Set ℂ}
     exact intervalIntegral.integral_congr fun t ht ↦ by
       rw [mul_div_cancel_left₀ _ (sub_ne_zero.mpr (hw₀off t ht)), smul_eq_mul, mul_comm]
 
-/-- **The homology Cauchy theorem** (roadmap `homologyCauchyTheorem`, Layer 3). Let `γ` be a
-closed piecewise-`C¹` curve on `[[a, b]]`, null-homologous in an open set `Ω` containing it, and
-let `f` be holomorphic on `Ω`. Then the contour integral of `f` along `γ` vanishes:
-`∫ t in a..b, deriv γ t • f (γ t) = 0`.
+/-- **The homology Cauchy theorem.** Let `γ` be a closed piecewise-`C¹` curve on `[[a, b]]`,
+null-homologous in an open set `Ω` containing it, and let `f` be holomorphic on `Ω`. Then the
+contour integral of `f` along `γ` vanishes: `∫ t in a..b, deriv γ t • f (γ t) = 0`.
 
 Dixon's argument: the piecewise-`C¹` regularity supplies continuity, differentiability off the
 finitely many breakpoints, and interval-integrability of `deriv γ` (the `IsPiecewiseC1On` API);
