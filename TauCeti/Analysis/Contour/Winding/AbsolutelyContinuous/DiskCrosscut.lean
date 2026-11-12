@@ -324,7 +324,7 @@ theorem windingNumber_arcLoop_eq_add_one (hab : a ≤ b) (hc : AbsolutelyContinu
   rw [hturn] at hsplit
   rw [key β, key (β - 2 * π), hfirst, ← hsplit]
   have hpi : (2 * (π : ℂ) * I) ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
-  field_simp
+  field_simp [hpi]
   ring
 
 section Orientation
