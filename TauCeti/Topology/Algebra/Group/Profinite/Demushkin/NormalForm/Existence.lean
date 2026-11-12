@@ -346,7 +346,6 @@ theorem exists_isDemushkin_range_eq_bot_of_even (hn : Even n) (hn0 : n ≠ 0) :
       (∃! χ : presentedProP p (Fin n) {r} →ₜ* ℤ_[p]ˣ, HasPrescriptionProperty χ) ∧
       ∀ χ : presentedProP p (Fin n) {r} →ₜ* ℤ_[p]ˣ, HasPrescriptionProperty χ →
         χ.toMonoidHom.range = ⊥ :=
-  have hn₁ : 1 < n := by obtain ⟨k, hk⟩ := hn; omega
   ⟨demushkinWordNeTwo 0 n (freeProPGen p n),
     isDemushkin_presentedProP_demushkinWordNeTwo hn hn0 (dvd_zero p),
     demushkinRank_presentedProP_demushkinWordNeTwo (dvd_zero p) _,
