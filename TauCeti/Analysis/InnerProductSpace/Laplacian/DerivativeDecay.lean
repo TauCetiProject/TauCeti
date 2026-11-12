@@ -20,7 +20,7 @@ of `L` decays at the same rate: for each `n` there is `K'` with
 
 `‖Dⁱ L(z)‖ ≤ K' exp(-c ‖z‖)`  for `i ≤ n` and `‖z‖ > R + n`
 
-(`TauCeti.exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_comp`). No lower bound on `G'(0)`
+(`ContDiff.exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_comp`). No lower bound on `G'(0)`
 and no maximum principle at infinity is used: the decay rate is inherited from `L` itself.
 
 The proof gains one derivative at a time. Suppose the derivatives of `L` of order at most `n` are
@@ -29,7 +29,7 @@ bound gives the same decay for `Dⁿ (G ∘ L)` (`ContDiff.exists_norm_iteratedF
 and `Dⁿ (G ∘ L) = Dⁿ (Δ L)` there. So `Dⁿ L` and `Dⁿ (Δ L)` are bounded by a multiple of
 `exp(-c ‖z‖)` on the unit ball around `z`, and the interior gradient estimate, applied to the
 components `y ↦ Dⁿ L(y) m` whose Laplacians are `Dⁿ (Δ L)(y) m`
-(`TauCeti.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le`), bounds `Dⁿ⁺¹ L(z)` by
+(`ContDiff.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le`), bounds `Dⁿ⁺¹ L(z)` by
 the same multiple.
 
 This is the bootstrap that turns the exponential decay of a solution of a vortex-type equation into
@@ -37,7 +37,7 @@ exponential decay of all its derivatives.
 
 ## Main results
 
-* `TauCeti.exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_comp`: exponential decay of all
+* `ContDiff.exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_comp`: exponential decay of all
   derivatives of an exterior solution of `Δ L = G(L)` that decays exponentially.
 
 ## References
@@ -61,8 +61,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 smooth function which, outside the ball of radius `R`, solves `Δ L = G(L)` for a smooth `G` with
 `G(0) = 0` and satisfies `|L(z)| ≤ K exp(-c ‖z‖)` with `c ≥ 0`. Then for every `n` there is
 `K' ≥ 0` with `‖Dⁱ L(z)‖ ≤ K' exp(-c ‖z‖)` for all `i ≤ n` whenever `‖z‖ > R + n`. -/
-theorem exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_comp {L : E → ℝ} {G : ℝ → ℝ}
-    (hL : ContDiff ℝ ∞ L) (hG : ContDiff ℝ ∞ G) (hG₀ : G 0 = 0) {R c K : ℝ} (hc : 0 ≤ c)
+theorem _root_.ContDiff.exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_comp
+    {L : E → ℝ} {G : ℝ → ℝ} (hL : ContDiff ℝ ∞ L) (hG : ContDiff ℝ ∞ G) (hG₀ : G 0 = 0)
+    {R c K : ℝ} (hc : 0 ≤ c)
     (heq : ∀ z, R < ‖z‖ → Δ L z = G (L z))
     (hdecay : ∀ z, R < ‖z‖ → |L z| ≤ K * Real.exp (-(c * ‖z‖))) (n : ℕ) :
     ∃ K', 0 ≤ K' ∧ ∀ z, R + n < ‖z‖ → ∀ i ≤ n,
@@ -120,7 +121,7 @@ theorem exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_comp {L : E → �
       (hΔ y (hfar y (ball_subset_closedBall hy))).trans (by
         rw [mul_assoc]
         exact mul_le_mul_of_nonneg_left (hw y (ball_subset_closedBall hy)) (le_max_right _ _))
-    refine (norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le hL (by simp)
+    refine (hL.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le (by simp)
       one_pos hM hF).trans (le_of_eq ?_)
     ring
 

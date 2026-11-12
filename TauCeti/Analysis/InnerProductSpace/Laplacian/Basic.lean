@@ -69,6 +69,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_comp_toEuclideanCLE_apply`: for an invertible matrix `T`, the Laplacian of
   `u ∘ T` is the constant-coefficient operator with matrix `T Tᵀ` applied to `u`.
 * `TauCeti.laplacian_comp_add_right`: translation invariance of `Δ`.
+* `TauCeti.laplacian_comp_linearIsometryEquiv_sub_add`: `Δ` commutes with the isometry
+  `y ↦ R (y - x₀) + x₀` fixing `x₀`.
 * `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
   `AffineMap.homothety a c`.
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
@@ -280,6 +282,18 @@ theorem laplacian_comp_add_right (f : E → F) (a : E) :
   simp only [laplacian_eq_iteratedFDeriv_orthonormalBasis _ (stdOrthonormalBasis ℝ E)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [iteratedFDeriv_comp_add_right']
+
+/-- The Laplacian commutes with the affine isometry `y ↦ R (y - x₀) + x₀` fixing `x₀`:
+`Δ (fun y ↦ f (R (y - x₀) + x₀)) = fun y ↦ (Δ f) (R (y - x₀) + x₀)`. No differentiability
+hypothesis is needed. -/
+theorem laplacian_comp_linearIsometryEquiv_sub_add (f : E → F) (R : E ≃ₗᵢ[ℝ] E) (x₀ : E) :
+    Δ (fun y ↦ f (R (y - x₀) + x₀)) = fun y ↦ (Δ f) (R (y - x₀) + x₀) := by
+  have h : (fun y ↦ f (R (y - x₀) + x₀)) = fun y ↦ ((fun w ↦ f (w + x₀)) ∘ R) (y + -x₀) := by
+    funext y
+    simp [sub_eq_add_neg]
+  rw [h, laplacian_comp_add_right, laplacian_comp_linearIsometryEquiv_right,
+    laplacian_comp_add_right]
+  simp [sub_eq_add_neg]
 
 /-- **Geometric invariance of the Laplacian under affine isometries.** For an affine isometry
 equivalence `e`, the Laplacian commutes with right composition by `e`:

@@ -30,7 +30,7 @@ derivatives decay as well.
 Outside a large disc `ℓ` solves the scalar equation `Δ ℓ = (exp ℓ - 1) / 4`
 (`TauCeti.Vortex.laplacian_log_normSq_of_equation_eq_zero`), and `|ℓ| ≤ 2 (1 - |α|²)` there
 because `|α|² ≥ 1 / 2`. Modifying `ℓ` inside the disc to a smooth function on the whole plane, the
-exterior bootstrap `TauCeti.exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_comp` gains one
+exterior bootstrap `ContDiff.exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_comp` gains one
 derivative at a time from the interior gradient estimate for Poisson's equation, keeping the
 exponential rate. The decay of `|α|² - 1 = exp ℓ - 1` then follows from the Faà di Bruno bound
 `ContDiff.exists_norm_iteratedFDeriv_comp_le_mul`.
@@ -132,7 +132,7 @@ private theorem exists_log_normSq_decay (hx : ContDiff ℝ ∞ x) (hsol : ∀ z,
     rw [hLz, abs_of_nonpos hlog₁]
     have := hK₀ z
     nlinarith [mul_le_mul_of_nonneg_left hinv h1s]
-  obtain ⟨K, hK, hbound⟩ := exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_comp hLcd
+  obtain ⟨K, hK, hbound⟩ := hLcd.exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_comp
     (G := fun t ↦ (Real.exp t - 1) / 4) (by fun_prop) (by simp) hc₀ heq hdecay n
   exact ⟨L, R, K, hLcd, hK, hLeq, hexp, hbound⟩
 

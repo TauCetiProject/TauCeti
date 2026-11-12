@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Comparison
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Commute
 import TauCeti.Analysis.Calculus.Deriv.Slope
-import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+import TauCeti.Analysis.InnerProductSpace.Reflection
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # The interior gradient estimate for Poisson's equation
@@ -41,7 +42,7 @@ while `ψ(x₀ + s e) = s ∂ₑu(x₀) + o(s)`, hence `|∂ₑu(x₀)| ≤ A`.
 * `TauCeti.abs_fderiv_apply_le_of_abs_laplacian_le`: the directional estimate
   `|∂ₑu(x₀)| ≤ n M / d + d F / 2` for a unit vector `e`.
 * `TauCeti.norm_fderiv_le_of_abs_laplacian_le`: the same bound for `‖fderiv ℝ u x₀‖`.
-* `TauCeti.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le`: the componentwise
+* `ContDiff.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le`: the componentwise
   estimate `‖D^(k+1) L(z)‖ ≤ n M / d + d F / 2` from bounds `M` on `Dᵏ L` and `F` on `Dᵏ (Δ L)`.
 
 ## References
@@ -89,50 +90,6 @@ private theorem laplacian_barrier {e : E} (he : ‖e‖ = 1) (x₀ : E) (a A B :
     hg.laplacian_comp_inner_sub, hg'', he, smul_eq_mul]
   ring
 
-omit [FiniteDimensional ℝ E] in
-/-- The reflection in the hyperplane orthogonal to a unit vector `e` is `y ↦ y - 2 ⟪e, y⟫ e`. -/
-private theorem reflection_orthogonal_singleton_apply_of_norm_eq_one {e : E} (he : ‖e‖ = 1)
-    (y : E) : (ℝ ∙ e)ᗮ.reflection y = y - (2 * ⟪e, y⟫) • e := by
-  rw [Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply, he]
-  simp only [neg_sub]
-  norm_num
-  module
-
-omit [FiniteDimensional ℝ E] in
-/-- The affine isometry `y ↦ R (y - x₀) + x₀` fixes the distance to `x₀`. -/
-private theorem dist_linearIsometryEquiv_sub_add (R : E ≃ₗᵢ[ℝ] E) (x₀ x : E) :
-    dist (R (x - x₀) + x₀) x₀ = dist x x₀ := by
-  simp only [dist_eq_norm, add_sub_cancel_right, R.norm_map]
-
-/-- The Laplacian commutes with the affine isometry `y ↦ R (y - x₀) + x₀`. -/
-private theorem laplacian_comp_linearIsometryEquiv_sub_add (R : E ≃ₗᵢ[ℝ] E) (x₀ : E)
-    (u : E → ℝ) (x : E) :
-    Δ (fun y ↦ u (R (y - x₀) + x₀)) x = Δ u (R (x - x₀) + x₀) := by
-  have h : (fun y ↦ u (R (y - x₀) + x₀)) = fun y ↦ ((fun w ↦ u (w + x₀)) ∘ R) (y + -x₀) := by
-    funext y
-    simp [sub_eq_add_neg]
-  rw [h, laplacian_comp_add_right, laplacian_comp_linearIsometryEquiv_right,
-    laplacian_comp_add_right]
-  simp [sub_eq_add_neg]
-
-/-- A frontier point of the half-ball `closedBall x₀ d ∩ {x | 0 ≤ t x}`, for a continuous `t`,
-lies in the half-ball and either on the hyperplane `t x = 0` or on the sphere. -/
-private theorem mem_and_eq_zero_or_dist_eq_of_mem_frontier_closedBall_inter {X : Type*}
-    [PseudoMetricSpace X] {t : X → ℝ} (ht : Continuous t) {x₀ x : X} {d : ℝ}
-    (hx : x ∈ frontier (closedBall x₀ d ∩ {x | 0 ≤ t x})) :
-    x ∈ closedBall x₀ d ∩ {x | 0 ≤ t x} ∧ (t x = 0 ∨ dist x x₀ = d) := by
-  have hxK : x ∈ closedBall x₀ d ∩ {x | 0 ≤ t x} :=
-    (isClosed_closedBall.inter (isClosed_le continuous_const ht)).frontier_subset hx
-  refine ⟨hxK, ?_⟩
-  by_contra! h
-  have hU : IsOpen (ball x₀ d ∩ {y | 0 < t y}) :=
-    isOpen_ball.inter (isOpen_lt continuous_const ht)
-  have hxU : x ∈ ball x₀ d ∩ {y | 0 < t y} :=
-    ⟨lt_of_le_of_ne hxK.1 h.2, lt_of_le_of_ne hxK.2 (Ne.symm h.1)⟩
-  have hsub : ball x₀ d ∩ {y | 0 < t y} ⊆ closedBall x₀ d ∩ {x | 0 ≤ t x} := fun y hy ↦
-    ⟨ball_subset_closedBall hy.1, mem_ofPred_eq.mpr (mem_ofPred_eq.mp hy.2).le⟩
-  exact hx.2 (interior_maximal hsub hU hxU)
-
 /-- **The interior gradient estimate for Poisson's equation**, along a unit vector. Let `u` be
 continuous on the closed ball `closedBall x₀ d` and `C²` on the open ball, with `|u| ≤ M` on the
 closed ball and `|Δu| ≤ F` on the open ball. Then for every unit vector `e`,
@@ -155,11 +112,11 @@ theorem abs_fderiv_apply_le_of_abs_laplacian_le {u : E → ℝ} {x₀ e : E} {d 
   have hB₀ : 0 ≤ B := by positivity
   -- The reflection `σ` in the hyperplane through `x₀` orthogonal to `e`.
   set R := (ℝ ∙ e)ᗮ.reflection
-  have hR : ∀ y, R y = y - (2 * ⟪e, y⟫) • e :=
-    reflection_orthogonal_singleton_apply_of_norm_eq_one he
+  have hR : ∀ y, R y = y - (2 * ⟪e, y⟫) • e := reflection_orthogonal_singleton_apply he
   set σ : E → E := fun x ↦ R (x - x₀) + x₀ with hσ
   set t : E → ℝ := fun x ↦ ⟪e, x - x₀⟫ with ht
-  have hσdist : ∀ x, dist (σ x) x₀ = dist x x₀ := dist_linearIsometryEquiv_sub_add R x₀
+  have hσdist : ∀ x, dist (σ x) x₀ = dist x x₀ := fun x ↦ by
+    simp only [hσ, dist_eq_norm, add_sub_cancel_right, R.norm_map]
   have hσcont : Continuous σ := (R.continuous.comp (continuous_id.sub continuous_const)).add
     continuous_const
   have hσsmooth : ContDiff ℝ 2 σ :=
@@ -175,7 +132,7 @@ theorem abs_fderiv_apply_le_of_abs_laplacian_le {u : E → ℝ} {x₀ e : E} {d 
     module
   -- The Laplacian of `u ∘ σ` is `(Δ u) ∘ σ`.
   have hΔσ : ∀ x, Δ (fun y ↦ u (σ y)) x = Δ u (σ x) :=
-    laplacian_comp_linearIsometryEquiv_sub_add R x₀ u
+    congrFun (laplacian_comp_linearIsometryEquiv_sub_add u R x₀)
   -- The odd part `ψ` and the barrier `φ`.
   set ψ : E → ℝ := fun x ↦ (1 / 2 : ℝ) * (u x - u (σ x)) with hψ
   set g : ℝ → ℝ := fun s ↦ A * s - B * s ^ 2 with hg
@@ -199,7 +156,8 @@ theorem abs_fderiv_apply_le_of_abs_laplacian_le {u : E → ℝ} {x₀ e : E} {d 
     have := interior_mono inter_subset_left hx
     rwa [interior_closedBall x₀ hd.ne'] at this
   have hfront : ∀ x ∈ frontier K, x ∈ K ∧ (t x = 0 ∨ dist x x₀ = d) := fun x hx ↦
-    mem_and_eq_zero_or_dist_eq_of_mem_frontier_closedBall_inter htcont hx
+    ⟨hKc.isClosed.frontier_subset hx,
+      (htcont.frontier_closedBall_inter_setOf_nonneg_subset x₀ d hx).symm.imp_right mem_sphere.1⟩
   -- Regularity of `ψ` on the half-ball.
   have hψcont : ContinuousOn ψ K := by
     refine continuousOn_const.mul ((hcont.mono inter_subset_left).sub ?_)
@@ -329,8 +287,9 @@ derivative of `Δ L` is bounded by `F` on the open ball, then
 `‖D^(k+1) L(z)‖ ≤ n M / d + d F / 2`, where `n` is the dimension. Each component
 `y ↦ Dᵏ L(y) m` has Laplacian `Dᵏ (Δ L)(y) m`, so this is the interior gradient estimate applied
 componentwise. -/
-theorem norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le {L : E → ℝ} {N : ℕ∞ω}
-    (hL : ContDiff ℝ N L) {k : ℕ} (hk : (k : ℕ∞ω) + 2 ≤ N) {z : E} {d M F : ℝ} (hd : 0 < d)
+theorem _root_.ContDiff.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le
+    {L : E → ℝ} {N : ℕ∞ω} (hL : ContDiff ℝ N L) {k : ℕ} (hk : (k : ℕ∞ω) + 2 ≤ N) {z : E}
+    {d M F : ℝ} (hd : 0 < d)
     (hM : ∀ y ∈ closedBall z d, ‖iteratedFDeriv ℝ k L y‖ ≤ M)
     (hF : ∀ y ∈ ball z d, ‖iteratedFDeriv ℝ k (Δ L) y‖ ≤ F) :
     ‖iteratedFDeriv ℝ (k + 1) L z‖ ≤ Module.finrank ℝ E * M / d + d * F / 2 := by
@@ -349,7 +308,7 @@ theorem norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le {L : E �
       (mul_le_mul_of_nonneg_right (hM y hy) hP₀)
   have huF : ∀ y ∈ ball z d, |Δ u y| ≤ F * P := fun y hy ↦ by
     rw [show Δ u y = iteratedFDeriv ℝ k (Δ L) y (Fin.tail m) from
-      congrFun (laplacian_iteratedFDeriv_apply hL hk (Fin.tail m)) y]
+      congrFun (hL.laplacian_iteratedFDeriv_apply hk (Fin.tail m)) y]
     exact ((iteratedFDeriv ℝ k (Δ L) y).le_opNorm (Fin.tail m)).trans
       (mul_le_mul_of_nonneg_right (hF y hy) hP₀)
   have hgrad := norm_fderiv_le_of_abs_laplacian_le hd hu.continuous.continuousOn

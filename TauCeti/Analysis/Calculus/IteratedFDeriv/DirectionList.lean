@@ -196,7 +196,7 @@ theorem iteratedFDerivAlong_sub {f g : E → F} (hf : ContDiff 𝕜 n f) (hg : C
     rfl
 
 /-- Iterated directional derivatives commute with finite sums of `C^n` maps. -/
-theorem iteratedFDerivAlong_sum {ι : Type*} (s : Finset ι) {g : ι → E → F}
+theorem iteratedFDerivAlong_sum {ι : Type*} {s : Finset ι} {g : ι → E → F}
     (hg : ∀ i ∈ s, ContDiff 𝕜 n (g i)) (vs : List E) (hvs : vs.length ≤ n) :
     iteratedFDerivAlong 𝕜 vs (fun y ↦ ∑ i ∈ s, g i y) =
       fun y ↦ ∑ i ∈ s, iteratedFDerivAlong 𝕜 vs (g i) y := by
