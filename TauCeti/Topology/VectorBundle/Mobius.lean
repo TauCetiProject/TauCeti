@@ -10,10 +10,8 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.AlgebraicTopology.Singular.AddCircle
 public import TauCeti.Topology.VectorBundle.IdempotentRange
 public import TauCeti.Topology.VectorBundle.SphereBundle
-import Mathlib.Data.ZMod.QuotientGroup
 import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.Analysis.Complex.Circle
-import TauCeti.Topology.VectorBundle.Smul
 
 /-!
 # The Möbius line bundle and the relative homology of its Thom pair
@@ -79,6 +77,7 @@ theorem mobiusProjection_apply (θ : AddCircle p) (w : ℂ) :
   ring
 
 /-- The projections `mobiusProjection θ` depend continuously on `θ`. -/
+@[fun_prop]
 theorem continuous_mobiusProjection : Continuous (mobiusProjection (p := p)) := by
   unfold mobiusProjection
   fun_prop
@@ -150,11 +149,6 @@ variable (p) in
 `ℝ u ⊆ ℂ` for `u² = toCircle θ`. As `θ` goes once around the circle, `u` turns through half a
 turn, so the line returns to itself with its orientation reversed. -/
 abbrev MobiusLine (θ : AddCircle p) : Type := (mobiusProjection θ).range
-
-/-- The total space of the Möbius line bundle carries the topology of a subspace of
-`AddCircle p × ℂ`. -/
-noncomputable instance : TopologicalSpace (TotalSpace ℝ (MobiusLine p)) :=
-  instTopologicalSpaceTotalSpaceRange ℝ mobiusProjection
 
 /-- The Möbius line bundle is a fibre bundle with model fibre `ℝ`, trivialized by the intertwining
 operators of the projections `mobiusProjection θ`. -/
@@ -242,28 +236,16 @@ private noncomputable def mobiusCircleHom :
     ((ContinuousMap.inclusion (sphereBundle_subset_zeroSectionCompl ℝ (MobiusLine p))).comp
       ⟨mobiusSphereHomeomorph (p := p), mobiusSphereHomeomorph.continuous⟩)
 
-/-- The bundle projection of the Möbius line. -/
-private noncomputable def mobiusProjHom :
-    (thomPair ℝ (MobiusLine p)).fst ⟶ TopCat.of (AddCircle p) :=
-  TopCat.ofHom ⟨TotalSpace.proj, FiberBundle.continuous_proj ℝ (MobiusLine p)⟩
-
 /-- The doubling map `θ ↦ 2 • θ` of the circle. -/
 private noncomputable def doublingHom : TopCat.of (AddCircle p) ⟶ TopCat.of (AddCircle p) :=
   TopCat.ofHom ⟨fun θ : AddCircle p ↦ (2 : ℤ) • θ, continuous_zsmul 2⟩
 
 /-- The circle of unit vectors projects to the base as the doubling map. -/
-private theorem mobiusCircleHom_comp_map_comp_mobiusProjHom :
-    mobiusCircleHom ≫ (thomPair ℝ (MobiusLine p)).map ≫ mobiusProjHom = doublingHom (p := p) :=
-  rfl
-
-private instance (n : ℕ) : IsIso (SSet.homologyMap (TopCat.toSSet.map (mobiusProjHom (p := p)))
-    (ModuleCat.of ℤ ℤ) n) := by
-  have h : mobiusProjHom (p := p) =
-      TopCat.ofHom (VectorBundle.totalSpaceHomotopyEquiv ℝ (MobiusLine p)).toFun := by
-    ext v
-    exact (VectorBundle.totalSpaceHomotopyEquiv_apply v).symm
-  rw [h]
-  exact (VectorBundle.totalSpaceHomotopyEquiv ℝ (MobiusLine p)).isIso_homologyMap _ n
+private theorem mobiusCircleHom_comp_map_comp_thomPairProj :
+    mobiusCircleHom ≫ (thomPair ℝ (MobiusLine p)).map ≫ thomPairProj ℝ (MobiusLine p) =
+      doublingHom (p := p) := by
+  ext θ
+  exact (thomPairProj_apply ℝ (MobiusLine p) _).trans (proj_mobiusSphereHomeomorph θ)
 
 private instance (n : ℕ) : IsIso (SSet.homologyMap (TopCat.toSSet.map (mobiusCircleHom (p := p)))
     (ModuleCat.of ℤ ℤ) n) := by
@@ -288,9 +270,10 @@ private theorem mono_homologyMap_map_thomPair_mobiusLine_zero :
       (ModuleCat.of ℤ ℤ) 0) := by
   have h : SSet.homologyMap (TopCat.toSSet.map (mobiusCircleHom (p := p))) (ModuleCat.of ℤ ℤ) 0 ≫
       SSet.homologyMap (TopCat.toSSet.map (thomPair ℝ (MobiusLine p)).map) (ModuleCat.of ℤ ℤ) 0 ≫
-      SSet.homologyMap (TopCat.toSSet.map mobiusProjHom) (ModuleCat.of ℤ ℤ) 0 = 𝟙 _ := by
+      SSet.homologyMap (TopCat.toSSet.map (thomPairProj ℝ (MobiusLine p))) (ModuleCat.of ℤ ℤ) 0 =
+        𝟙 _ := by
     rw [← SSet.homologyMap_comp, ← SSet.homologyMap_comp, ← Functor.map_comp, ← Functor.map_comp,
-      mobiusCircleHom_comp_map_comp_mobiusProjHom, ← singularHomologyFunctor_obj_map]
+      mobiusCircleHom_comp_map_comp_thomPairProj, ← singularHomologyFunctor_obj_map]
     exact singularHomology₀_map_eq_id_of_pathConnectedSpace _ _
   -- With `s` and `q` invertible, `i = s⁻¹ ≫ q⁻¹`.
   rw [← IsIso.eq_inv_comp, Category.comp_id, ← IsIso.eq_comp_inv] at h
@@ -299,17 +282,20 @@ private theorem mono_homologyMap_map_thomPair_mobiusLine_zero :
 
 /-- The inclusion of the nonzero vectors acts on first homology as the doubling map of the
 circle. -/
-private theorem firstHomologyEquiv_homologyMap_mobiusProjHom_map_mobiusCircleHom
+private theorem firstHomologyEquiv_homologyMap_thomPairProj_map_mobiusCircleHom
     (x : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 1) :
     AddCircle.firstHomologyEquiv
-      ((SSet.homologyMap (TopCat.toSSet.map mobiusProjHom) (ModuleCat.of ℤ ℤ) 1).hom
+      ((SSet.homologyMap (TopCat.toSSet.map (thomPairProj ℝ (MobiusLine p)))
+        (ModuleCat.of ℤ ℤ) 1).hom
         ((SSet.homologyMap (TopCat.toSSet.map (thomPair ℝ (MobiusLine p)).map)
           (ModuleCat.of ℤ ℤ) 1).hom
           ((SSet.homologyMap (TopCat.toSSet.map mobiusCircleHom) (ModuleCat.of ℤ ℤ) 1).hom x))) =
       2 * AddCircle.firstHomologyEquiv x := by
   have h := congrArg (fun f ↦ (SSet.homologyMap (TopCat.toSSet.map f) (ModuleCat.of ℤ ℤ) 1).hom x)
-    (mobiusCircleHom_comp_map_comp_mobiusProjHom (p := p))
+    (mobiusCircleHom_comp_map_comp_thomPairProj (p := p))
   simp only [Functor.map_comp, SSet.homologyMap_comp, ModuleCat.hom_comp] at h
+  -- `SSet.homologyMap (TopCat.toSSet.map doublingHom)` is, by definition of `doublingHom` and of
+  -- the singular chain functor, the map `ContinuousMap.singularHomologyMap ℤ 1` of `θ ↦ 2 • θ`.
   exact (congrArg AddCircle.firstHomologyEquiv h).trans
     (AddCircle.firstHomologyEquiv_singularHomologyMap_zsmul 2 x)
 
@@ -321,9 +307,10 @@ private theorem mem_range_homologyMap_map_thomPair_mobiusLine_one_iff
     y ∈ LinearMap.range (SSet.homologyMap (TopCat.toSSet.map (thomPair ℝ (MobiusLine p)).map)
       (ModuleCat.of ℤ ℤ) 1).hom ↔
       2 ∣ AddCircle.firstHomologyEquiv
-        ((SSet.homologyMap (TopCat.toSSet.map mobiusProjHom) (ModuleCat.of ℤ ℤ) 1).hom y) := by
-  have hq : Function.Injective
-      (SSet.homologyMap (TopCat.toSSet.map (mobiusProjHom (p := p))) (ModuleCat.of ℤ ℤ) 1).hom :=
+        ((SSet.homologyMap (TopCat.toSSet.map (thomPairProj ℝ (MobiusLine p)))
+          (ModuleCat.of ℤ ℤ) 1).hom y) := by
+  have hq : Function.Injective (SSet.homologyMap (TopCat.toSSet.map (thomPairProj ℝ (MobiusLine p)))
+      (ModuleCat.of ℤ ℤ) 1).hom :=
     (ConcreteCategory.bijective_of_isIso _).1
   have hs : Function.Surjective (SSet.homologyMap (TopCat.toSSet.map (mobiusCircleHom (p := p)))
       (ModuleCat.of ℤ ℤ) 1).hom :=
@@ -331,11 +318,11 @@ private theorem mem_range_homologyMap_map_thomPair_mobiusLine_one_iff
   constructor
   · rintro ⟨z, rfl⟩
     obtain ⟨x, rfl⟩ := hs z
-    exact ⟨_, firstHomologyEquiv_homologyMap_mobiusProjHom_map_mobiusCircleHom x⟩
+    exact ⟨_, firstHomologyEquiv_homologyMap_thomPairProj_map_mobiusCircleHom x⟩
   · rintro ⟨n, hn⟩
     refine ⟨(SSet.homologyMap (TopCat.toSSet.map mobiusCircleHom) (ModuleCat.of ℤ ℤ) 1).hom
       (AddCircle.firstHomologyEquiv.symm n), hq (AddCircle.firstHomologyEquiv.injective ?_)⟩
-    refine (firstHomologyEquiv_homologyMap_mobiusProjHom_map_mobiusCircleHom _).trans ?_
+    refine (firstHomologyEquiv_homologyMap_thomPairProj_map_mobiusCircleHom _).trans ?_
     rw [LinearEquiv.apply_symm_apply, hn]
 
 /-- **The first relative integral homology of the Thom pair of the Möbius line is `ℤ/2`.** The
@@ -354,12 +341,16 @@ theorem nonempty_linearEquiv_singularHomology_thomPair_mobiusLine_one :
     exact ((thomPair ℝ (MobiusLine p)).singularHomology_exact_relative (ModuleCat.of ℤ ℤ) 1 0).epi_f
       hδ
   -- Reduce `H₁(E)` modulo `2` through the projection to the circle and `H₁(S¹) ≃ ℤ`.
+  -- The homology of the singular simplicial set `TopCat.toSSet.obj X` with coefficients
+  -- `ModuleCat.of ℤ ℤ` is the homology of `(singularChains ℤ).obj X` by definition; the type
+  -- ascription states `q` with the source of the relative sequence and the domain of
+  -- `AddCircle.firstHomologyEquiv`.
   let q : (TopPair.toSSetPair.obj (thomPair ℝ (MobiusLine p))).right.homology
       (ModuleCat.of ℤ ℤ) 1 ⟶ ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 1 :=
-    SSet.homologyMap (TopCat.toSSet.map (mobiusProjHom (p := p))) (ModuleCat.of ℤ ℤ) 1
+    SSet.homologyMap (TopCat.toSSet.map (thomPairProj ℝ (MobiusLine p))) (ModuleCat.of ℤ ℤ) 1
   have hq : Function.Bijective q.hom :=
     (ConcreteCategory.isIso_iff_bijective q).1 (inferInstanceAs (IsIso (SSet.homologyMap
-      (TopCat.toSSet.map (mobiusProjHom (p := p))) (ModuleCat.of ℤ ℤ) 1)))
+      (TopCat.toSSet.map (thomPairProj ℝ (MobiusLine p))) (ModuleCat.of ℤ ℤ) 1)))
   let g := (Int.castAddHom (ZMod 2)).comp
     (AddCircle.firstHomologyEquiv.toLinearMap ∘ₗ q.hom).toAddMonoidHom
   have hg : Function.Surjective g := by

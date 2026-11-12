@@ -201,6 +201,21 @@ def firstHomologyEquiv :
       ((windingNumberIso ((0 : ℝ) : AddCircle p)).abelianizationCongr.trans
         Group.Abelianization.equivOfComm.symm))).toIntLinearEquiv
 
+/-- On the Hurewicz class of a loop based at `0`, `H₁(S¹; ℤ) ≃ ℤ` is its winding number. -/
+@[simp]
+theorem firstHomologyEquiv_hurewiczHomologyAddEquiv
+    (γ : FundamentalGroup (AddCircle p) 0) :
+    firstHomologyEquiv (hurewiczHomologyAddEquiv (X := TopCat.of (AddCircle p)) _
+      (Additive.ofMul (Group.Abelianization.of γ))) = windingNumber γ := by
+  -- `firstHomologyEquiv` is based at `((0 : ℝ) : AddCircle p)`, which is `0` by definition.
+  have h (γ' : FundamentalGroup (AddCircle p) ((0 : ℝ) : AddCircle p)) :
+      firstHomologyEquiv (hurewiczHomologyAddEquiv (X := TopCat.of (AddCircle p)) _
+        (Additive.ofMul (Group.Abelianization.of γ'))) = windingNumber γ' := by
+    rw [firstHomologyEquiv, AddEquiv.coe_toIntLinearEquiv, AddEquiv.trans_apply,
+      AddEquiv.symm_apply_apply]
+    simp [windingNumber]
+  exact h γ
+
 /-- The circuit class corresponds to `1` under `H₁(S¹; ℤ) ≃ ℤ`. -/
 @[simp]
 theorem firstHomologyEquiv_fundamentalClass : firstHomologyEquiv (fundamentalClass p) = 1 := by
