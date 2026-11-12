@@ -218,7 +218,7 @@ theorem coe_restrictedSubst (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1
 /-- Substitution of unit-ball polynomials does not increase the Gauss norm. -/
 theorem norm_restrictedSubst_le (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
     ‖restrictedSubst a ha₀ ha₁ f‖ ≤ ‖f‖ := by
-  rw [norm_le_iff (norm_nonneg _)]
+  rw [norm_le_iff]
   intro e
   simp only [one_pow, Finsupp.prod_fun_one, mul_one, coe_restrictedSubst]
   refine norm_coeff_subst_coe_le ha₀ ha₁ _ e (norm_nonneg _) fun d _ ↦ ?_

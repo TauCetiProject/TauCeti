@@ -26,6 +26,10 @@ Dirichlet boundary data, as needed in weak comparison arguments.
   condition.
 * `TauCeti.W1p.posPartAbove_mem_w1p0Submodule_of_le`: a boundary bound `u ≤ k` on `∂Ω`, expressed
   by `(u - k)⁺ ∈ W^{1,p}_0(Ω)`, persists at every higher level.
+* `TauCeti.W1p.norm_posPartAbove_le`: truncation does not increase the Sobolev norm.
+* `TauCeti.W1p0.posPart`: the positive part as a map of `W^{1,p}_0(Ω)` to itself, with its value
+  `TauCeti.W1p0.valueL_posPart`, continuity `TauCeti.W1p0.continuous_posPart` and norm bound
+  `TauCeti.W1p0.norm_posPart_le`.
 
 The corresponding positive-part results are the special case `k = 0`.
 -/
@@ -174,6 +178,17 @@ theorem W1p.continuous_posPart (hp : p ≠ ∞) :
   exact (W1p.continuous_posPartAbove (mu := mu) (Omega := Omega) hp (le_refl 0)).congr
     (W1p.posPartAbove_zero hp)
 
+/-- Truncation above a nonnegative level does not increase the Sobolev norm. -/
+theorem W1p.norm_posPartAbove_le (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega p) :
+    ‖W1p.posPartAbove hp hk u‖ ≤ ‖u‖ :=
+  Lp.norm_le_norm_of_ae_le ((posPartAbove_coe_ae hp hk u).mono fun _ hx ↦
+    hx ▸ norm_posPartAboveJet_le hk _)
+
+/-- Taking the positive part does not increase the Sobolev norm. -/
+theorem W1p.norm_posPart_le (hp : p ≠ ∞) (u : W1p mu Omega p) :
+    ‖W1p.posPart hp u‖ ≤ ‖u‖ := by
+  simpa only [W1p.posPartAbove_zero] using W1p.norm_posPartAbove_le hp (le_refl 0) u
+
 /-- Truncation above a nonnegative level preserves the homogeneous Dirichlet boundary
 condition. -/
 theorem W1p.posPartAbove_mem_w1p0Submodule (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
@@ -205,5 +220,33 @@ theorem W1p.posPartAbove_mem_w1p0Submodule_of_le (hp : p ≠ ∞) {k l : ℝ} (h
   have h := W1p.posPartAbove_mem_w1p0Submodule hp (sub_nonneg.2 hkl) hu
   rw [W1p.posPartAbove_posPartAbove] at h
   simpa only [add_sub_cancel] using h
+
+/-! ### The positive part on `W^{1,p}_0(Ω)` -/
+
+/-- **The positive part on `W^{1,p}_0(Ω)`**: for `1 ≤ p < ∞`, the positive part `u⁺` of a
+zero-boundary Sobolev function again has zero boundary values
+(`TauCeti.W1p.posPart_mem_w1p0Submodule`). -/
+def W1p0.posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) : W1p0 mu Omega p :=
+  ⟨W1p.posPart hp u, W1p.posPart_mem_w1p0Submodule hp u.2⟩
+
+@[simp]
+theorem W1p0.coe_posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) :
+    (W1p0.posPart hp u : W1p mu Omega p) = W1p.posPart hp u :=
+  (rfl)
+
+/-- The value of `u⁺` is the `Lᵖ` positive part of the value of `u`. -/
+theorem W1p0.valueL_posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) :
+    W1p0.valueL (W1p0.posPart hp u) = Lp.posPart (W1p0.valueL u) := by
+  simp only [W1p0.valueL_apply, W1p0.coe_posPart, W1p.value_posPart]
+
+/-- Taking the positive part is continuous on `W^{1,p}_0(Ω)` for finite exponents. -/
+theorem W1p0.continuous_posPart (hp : p ≠ ∞) :
+    Continuous (W1p0.posPart (mu := mu) (Omega := Omega) hp) :=
+  ((W1p.continuous_posPart hp).comp continuous_subtype_val).subtype_mk _
+
+/-- Taking the positive part does not increase the norm of `W^{1,p}_0(Ω)`. -/
+theorem W1p0.norm_posPart_le (hp : p ≠ ∞) (u : W1p0 mu Omega p) :
+    ‖W1p0.posPart hp u‖ ≤ ‖u‖ :=
+  W1p.norm_posPart_le hp (u : W1p mu Omega p)
 
 end TauCeti

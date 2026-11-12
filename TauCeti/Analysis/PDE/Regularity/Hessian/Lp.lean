@@ -119,9 +119,8 @@ private theorem stronglyMeasurable_hessianKernel (v w : EuclideanSpace ℝ (Fin 
   exact ((hm.comp (measurable_fst.sub measurable_snd)).neg.stronglyMeasurable).smul_const _
 
 /-- **The size estimate for the kernel of the Hessian multiplier**:
-`‖k(x, y)‖ ≤ C ‖x - y‖⁻ⁿ` for `x ≠ y`. -/
-private theorem norm_hessianKernel_le (v w : EuclideanSpace ℝ (Fin n))
-    {x y : EuclideanSpace ℝ (Fin n)} (hxy : x ≠ y) :
+`‖k(x, y)‖ ≤ C ‖x - y‖⁻ⁿ`. -/
+private theorem norm_hessianKernel_le (v w x y : EuclideanSpace ℝ (Fin n)) :
     ‖hessianKernel (F := F) v w x y‖ ≤
       ((n : ℝ) + 1) * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
         (‖v‖ * ‖w‖) * dist x y ^ (-(n : ℝ)) := by
@@ -131,8 +130,8 @@ private theorem norm_hessianKernel_le (v w : EuclideanSpace ℝ (Fin n))
     simpa [Fin.prod_univ_two] using
       (iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y)).le_opNorm ![v, w]
   refine ((mul_le_of_le_one_right (abs_nonneg _) norm_id_le).trans hM).trans ?_
-  exact (mul_le_mul_of_nonneg_right (norm_iteratedFDeriv_two_newtonianKernel_le
-    (sub_ne_zero.2 hxy)) (by positivity)).trans_eq (by ring)
+  exact (mul_le_mul_of_nonneg_right (norm_iteratedFDeriv_two_newtonianKernel_le _)
+    (by positivity)).trans_eq (by ring)
 
 /-- **The smoothness estimate for the kernel of the Hessian multiplier**:
 `‖k(x, y) - k(x, y')‖ ≤ C ‖y - y'‖ ‖x - y'‖⁻ⁿ⁻¹` when `2 ‖y - y'‖ < ‖x - y'‖`. -/
@@ -259,11 +258,11 @@ private theorem eLpNorm_lineDerivOp_lineDerivOp_le_of_succ (v w : EuclideanSpace
     have h0 := congrFun ((ψ.continuous.ae_eq_iff_eq volume continuous_zero).1 h) 0
     simp [ψ, φ.one_of_mem_closedBall (Metric.mem_closedBall_self zero_le_one)] at h0
   have hψtop : eLpNorm (⇑ψ) p volume ≠ ∞ := (ψ.eLpNorm_lt_top p).ne
-  set A := eLpNorm (⇑ψ) p volume with hA
-  set B := eLpNorm (⇑(∂_{(1 : ℝ)} (∂_{(1 : ℝ)} ψ) : 𝓢(ℝ, ℝ))) p volume with hB
-  set a := eLpNorm (⇑(∂_{v} (∂_{w} u) : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume with ha
-  set b := eLpNorm (⇑(Δ u : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume with hb
-  set c := eLpNorm (⇑u) p volume with hc
+  set A := eLpNorm (⇑ψ) p volume
+  set B := eLpNorm (⇑(∂_{(1 : ℝ)} (∂_{(1 : ℝ)} ψ) : 𝓢(ℝ, ℝ))) p volume
+  set a := eLpNorm (⇑(∂_{v} (∂_{w} u) : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume
+  set b := eLpNorm (⇑(Δ u : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume
+  set c := eLpNorm (⇑u) p volume
   have hBc : B * c ≠ ∞ :=
     ENNReal.mul_ne_top ((∂_{(1 : ℝ)} (∂_{(1 : ℝ)} ψ)).eLpNorm_lt_top p).ne (u.eLpNorm_lt_top p).ne
   have hR (R : ℝ) (hR : 0 < R) : A * a ≤ C * (A * b) + C * (‖R⁻¹ * R⁻¹‖ₑ * (B * c)) := by
@@ -295,7 +294,7 @@ private theorem eLpNorm_lineDerivOp_lineDerivOp_le_of_succ (v w : EuclideanSpace
   have hlim : Tendsto (fun R : ℝ => C * (A * b) + C * (‖R⁻¹ * R⁻¹‖ₑ * (B * c))) atTop
       (𝓝 (C * (A * b))) := by
     have h0 : Tendsto (fun R : ℝ => ‖R⁻¹ * R⁻¹‖ₑ) atTop (𝓝 0) := by
-      simpa using ((tendsto_inv_atTop_zero (𝕜 := ℝ)).mul tendsto_inv_atTop_zero).enorm
+      simpa using ((tendsto_inv_atTop_zero (𝕜 := ℝ)).mul tendsto_inv_atTop_zero).eNorm
     simpa using (ENNReal.Tendsto.const_mul (ENNReal.Tendsto.mul_const h0 (Or.inr hBc))
       (Or.inr ENNReal.coe_ne_top)).const_add (C * (A * b))
   have hAa : A * a ≤ A * (C * b) := by
@@ -342,9 +341,9 @@ theorem exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le (hn : 3 ≤ n)
   set C : ℝ≥0 := (2 ^ (n + 1) * ((n : ℝ) + 5) *
     (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ * (‖v‖ * ‖w‖)).toNNReal
   have hsize : ∀ x y : EuclideanSpace ℝ (Fin n), x ≠ y → ‖hessianKernel (F := F) v w x y‖ ≤
-      C₀ * dist x y ^ (-(Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ)) := fun x y hxy => by
+      C₀ * dist x y ^ (-(Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ)) := fun x y _ => by
     rw [hfin, Real.coe_toNNReal _ (by positivity)]
-    exact norm_hessianKernel_le v w hxy
+    exact norm_hessianKernel_le v w x y
   have hk : ∀ x y y' : EuclideanSpace ℝ (Fin n), 2 * dist y y' < dist x y' →
       ‖hessianKernel (F := F) v w x y - hessianKernel v w x y'‖ ≤
         C * (dist y y' ^ (1 : ℝ) *

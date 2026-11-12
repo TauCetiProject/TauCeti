@@ -193,7 +193,7 @@ theorem complexMap_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
 
 /-- The identity compatible pair induces the identity of Tate complexes. -/
 @[simp] theorem complexMap_id :
-    complexMap (e := MulEquiv.refl G) (φ := LinearMap.id) (Rep.isIntertwiningMap_id M) =
+    complexMap (e := MulEquiv.refl G) (φ := LinearMap.id) M.ρ.isIntertwiningMap_id =
       𝟙 (tateComplex M) := by
   rw [complexMap_refl]
   exact (tateComplexFunctor R G).map_id M
@@ -443,7 +443,7 @@ theorem map_refl {M N : Rep R G} {φ : M.V →ₗ[R] N.V}
 
 /-- The identity compatible pair induces the identity in every degree. -/
 @[simp] theorem map_id (n : ℤ) :
-    map (e := MulEquiv.refl G) (φ := LinearMap.id) (Rep.isIntertwiningMap_id M) n =
+    map (e := MulEquiv.refl G) (φ := LinearMap.id) M.ρ.isIntertwiningMap_id n =
       𝟙 (tateCohomology M n) := by
   rw [map_def, complexMap_id]
   exact HomologicalComplex.homologyMap_id _ _

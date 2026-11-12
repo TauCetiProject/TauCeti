@@ -39,9 +39,9 @@ variable {R A N₁ N₂ N₃ : Type*} [CommSemiring R] [AddCommMonoid A] [Module
 
 /-- For `i + j = n`, the multilinear map `a ↦ g (aᵢ, …, aₙ₋₁) ∘ₗ f (a₀, …, aᵢ₋₁)`, composing the
 values of `f` on the first `i` entries of `a` with those of `g` on the last `j`. -/
-def compSplit (h : i + j = n) (g : MultilinearMap R (fun _ : Fin j => A) (N₂ →ₗ[R] N₃))
-    (f : MultilinearMap R (fun _ : Fin i => A) (N₁ →ₗ[R] N₂)) :
-    MultilinearMap R (fun _ : Fin n => A) (N₁ →ₗ[R] N₃) :=
+def compSplit (h : i + j = n) (g : MultilinearMap (RingHom.id R) (fun _ : Fin j => A) (N₂ →ₗ[R] N₃))
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin i => A) (N₁ →ₗ[R] N₂)) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (N₁ →ₗ[R] N₃) :=
   MultilinearMap.mk'
     (fun a => g (fun l => a (Fin.cast h (Fin.natAdd i l))) ∘ₗ
       f (fun l => a (Fin.cast h (Fin.castAdd j l))))
@@ -55,8 +55,9 @@ def compSplit (h : i + j = n) (g : MultilinearMap R (fun _ : Fin j => A) (N₂ �
       induction p using Fin.addCases <;> simp [LinearMap.comp_smul, LinearMap.smul_comp])
 
 @[simp]
-theorem compSplit_apply (h : i + j = n) (g : MultilinearMap R (fun _ : Fin j => A) (N₂ →ₗ[R] N₃))
-    (f : MultilinearMap R (fun _ : Fin i => A) (N₁ →ₗ[R] N₂)) (a : Fin n → A) :
+theorem compSplit_apply (h : i + j = n)
+    (g : MultilinearMap (RingHom.id R) (fun _ : Fin j => A) (N₂ →ₗ[R] N₃))
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin i => A) (N₁ →ₗ[R] N₂)) (a : Fin n → A) :
     compSplit h g f a = g (fun l => a ⟨i + l, by omega⟩) ∘ₗ f (fun l => a ⟨l, by omega⟩) :=
   (rfl)
 
@@ -69,8 +70,8 @@ variable {R A N : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
 
 /-- The multilinear map `a ↦ f (a₀, …, aⱼ₋₁, aⱼ * aⱼ₊₁, aⱼ₊₂, …, aₙ)` of `n + 1` arguments,
 contracting the entries `j` and `j + 1` of `a` by multiplication before applying `f`. -/
-def compContractNthMul (f : MultilinearMap R (fun _ : Fin n => A) N) (j : Fin n) :
-    MultilinearMap R (fun _ : Fin (n + 1) => A) N :=
+def compContractNthMul (f : MultilinearMap (RingHom.id R) (fun _ : Fin n => A) N) (j : Fin n) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => A) N :=
   MultilinearMap.mk' (fun a => f (Fin.contractNth j.castSucc (· * ·) a))
     (fun a p x y => by
       rcases eq_or_ne p j.succ with rfl | hp
@@ -88,8 +89,8 @@ def compContractNthMul (f : MultilinearMap R (fun _ : Fin n => A) N) (j : Fin n)
       · simp [Fin.contractNth_castSucc_update_succAbove _ hq, f.map_update_smul])
 
 @[simp]
-theorem compContractNthMul_apply (f : MultilinearMap R (fun _ : Fin n => A) N) (j : Fin n)
-    (a : Fin (n + 1) → A) :
+theorem compContractNthMul_apply (f : MultilinearMap (RingHom.id R) (fun _ : Fin n => A) N)
+    (j : Fin n) (a : Fin (n + 1) → A) :
     compContractNthMul f j a = f (Fin.contractNth j.castSucc (· * ·) a) :=
   (rfl)
 

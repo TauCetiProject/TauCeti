@@ -18,8 +18,8 @@ under `A`. Then every domain vector splits as `P x + (x - P x)` with both summan
 and `A` acts diagonally with respect to `E = U ⊕ Uᗮ`. For an everywhere-defined map this is
 reduction in the sense of `Submodule.IsReducing`.
 
-The reduced part `A.restrict hR.isInvariant : U →ₗ.[𝕜] U` inherits the properties of `A` that
-matter for spectral theory: it is densely defined when `A` is, closed when `A` is
+The reduced part `A.restrict hR.isInvariant.apply_mem : U →ₗ.[𝕜] U` inherits the properties of
+`A` that matter for spectral theory: it is densely defined when `A` is, closed when `A` is
 (`LinearPMap.IsClosed.restrict`), symmetric when `A` is, and self-adjoint when `A` is. The last
 statement is what lets the spectral theory of a self-adjoint operator be split along an
 orthogonal decomposition into reducing subspaces.
@@ -68,9 +68,9 @@ structure IsReducing (A : E →ₗ.[𝕜] E) (U : Submodule 𝕜 E) [U.HasOrthog
 /-- The restriction of a symmetric partial linear map to an invariant subspace is symmetric. -/
 theorem IsFormalAdjoint.restrict {A : E →ₗ.[𝕜] E} {U : Submodule 𝕜 E}
     (hA : A.IsFormalAdjoint A) (hU : A.IsInvariant U) :
-    (A.restrict hU).IsFormalAdjoint (A.restrict hU) := fun x y ↦ by
+    (A.restrict hU.apply_mem).IsFormalAdjoint (A.restrict hU.apply_mem) := fun x y ↦ by
   simp only [Submodule.coe_inner, coe_restrict_apply]
-  exact hA ⟨x, (mem_restrict_domain hU).1 x.2⟩ ⟨y, (mem_restrict_domain hU).1 y.2⟩
+  exact hA ⟨x, (mem_restrict_domain _).1 x.2⟩ ⟨y, (mem_restrict_domain _).1 y.2⟩
 
 variable {A : E →ₗ.[𝕜] E} {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
 
@@ -106,7 +106,7 @@ theorem isReducing_toPMap_top_iff (f : Module.End 𝕜 E) :
 
 /-- The reduced part of a densely defined partial linear map is densely defined. -/
 theorem IsReducing.dense_restrict_domain (hR : A.IsReducing U) (hA : Dense (A.domain : Set E)) :
-    Dense ((A.restrict hR.isInvariant).domain : Set U) := by
+    Dense ((A.restrict hR.isInvariant.apply_mem).domain : Set U) := by
   have hP : DenseRange U.orthogonalProjectionOnto :=
     Function.Surjective.denseRange fun v ↦ ⟨v, U.orthogonalProjectionOnto_mem_subspace_eq_self v⟩
   refine (hP.dense_image U.orthogonalProjectionOnto.continuous hA).mono ?_
@@ -119,8 +119,8 @@ domain of the adjoint: for `x ∈ dom A`, the component `x - P x ∈ Uᗮ` is se
 orthogonal to `y`, so only the component `P x` in the domain of the reduced part contributes. -/
 private theorem IsReducing.coe_mem_adjoint_domain [CompleteSpace E] {U : Submodule 𝕜 E}
     [CompleteSpace U] (hR : A.IsReducing U) (hA : Dense (A.domain : Set E)) {y : U}
-    (hy : y ∈ (A.restrict hR.isInvariant)†.domain) : (y : E) ∈ A†.domain := by
-  set z : U := (A.restrict hR.isInvariant)† ⟨y, hy⟩
+    (hy : y ∈ (A.restrict hR.isInvariant.apply_mem)†.domain) : (y : E) ∈ A†.domain := by
+  set z : U := (A.restrict hR.isInvariant.apply_mem)† ⟨y, hy⟩
   refine mem_adjoint_domain_of_exists _ ⟨z, fun x ↦ ?_⟩
   have hp := hR.starProjection_mem_domain x.2
   have hq := hR.sub_starProjection_mem_domain x.2
@@ -143,7 +143,7 @@ private theorem IsReducing.coe_mem_adjoint_domain [CompleteSpace E] {U : Submodu
 map along a reducing closed subspace is self-adjoint. -/
 theorem IsReducing.isSelfAdjoint_restrict [CompleteSpace E] {U : Submodule 𝕜 E}
     [CompleteSpace U] (hR : A.IsReducing U) (hA : IsSelfAdjoint A) :
-    IsSelfAdjoint (A.restrict hR.isInvariant) := by
+    IsSelfAdjoint (A.restrict hR.isInvariant.apply_mem) := by
   have hB := (hA.isFormalAdjoint.restrict hR.isInvariant).le_adjoint
     (hR.dense_restrict_domain hA.dense_domain)
   rw [isSelfAdjoint_def]

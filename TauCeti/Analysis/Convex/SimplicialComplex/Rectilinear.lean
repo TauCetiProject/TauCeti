@@ -339,8 +339,6 @@ private theorem exists_mem_intrinsicInterior (hS : ∀ p ∈ S, p.1 ∈ K.faces)
     SimplicialComplex.exists_mem_faces_subset_mem_intrinsicInterior (hS _ ha) hx
   have htne := K.nonempty_of_mem_faces ht
   have hxt' : x ∈ convexHull ℝ (t : Set E) := intrinsicInterior_subset hxt
-  have hts' : convexHull ℝ (t : Set E) ⊆ convexHull ℝ (s : Set E) :=
-    convexHull_mono (Finset.coe_subset.2 hts)
   have habt : ∀ v ∈ t, a v ≤ b v := fun v hv ↦ hab v (hts hv)
   -- the sections over `t` between `a` and `b`
   set T := {c : E →ᴬ[ℝ] ℝ | (t, c) ∈ S ∧ (∀ v ∈ t, a v ≤ c v) ∧ ∀ v ∈ t, c v ≤ b v}

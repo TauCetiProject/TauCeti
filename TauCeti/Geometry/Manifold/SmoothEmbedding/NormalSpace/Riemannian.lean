@@ -161,7 +161,6 @@ theorem inner_normalRepresentative_mfderiv
 The inverse of the induced metric recovers that component from the ambient metric covector.
 This pointwise identity needs no regularity assumption on the ambient metric. -/
 theorem normalRepresentative_normalClass_eq_sub_mfderiv_inverse
-    [FiniteDimensional ℝ E]
     (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
     (v : TangentSpace J (f x)) :
     let d := mfderiv I J f x
@@ -170,10 +169,14 @@ theorem normalRepresentative_normalClass_eq_sub_mfderiv_inverse
       ((RiemannianBundle.g.inner (f x)).comp d)
     f.normalRepresentative x hn (f.normalClass x hn v) = v - d (a.inverse φ) := by
   dsimp only
+  -- the differential of an immersion embeds `E` in the finite-dimensional space `V`
+  have : FiniteDimensional ℝ E :=
+    Module.Finite.of_injective (mfderiv I J f x : E →L[ℝ] V).toLinearMap
+      (f.isImmersion.mfderiv_injective hn x)
   let d := mfderiv I J f x
   let a := (ContinuousLinearMap.precomp ℝ d).comp
     ((RiemannianBundle.g.inner (f x)).comp d)
-  let : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have ha : a.IsInvertible := ContinuousLinearMap.isInvertible_of_pos (E := E) fun w hw0 ↦
     RiemannianBundle.g.pos (f x) (d w)
       ((map_ne_zero_iff d (f.isImmersion.mfderiv_injective hn x)).mpr hw0)

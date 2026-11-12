@@ -73,6 +73,8 @@ spaces.
   `‖v‖₁ ≤ ‖(1 + ‖ξ‖ ^ 2) ^ (-s / 2)‖₂ ‖f‖_{H^s}` for that `v`.
 * `TemperedDistribution.exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace`: the bound
   `|u(x)| ≤ C ‖u‖_{H^s}`, `2s > n`, almost everywhere.
+* `TemperedDistribution.ae_tendsto_of_tendsto_toBesselPotentialSpace`: convergence in `H^s`,
+  `2s > n`, implies convergence almost everywhere.
 * `TemperedDistribution.tendsto_cocompact_of_mem_realSobolevFunctions`: a continuous real
   function in `H^s`, `2s > n`, tends to zero at infinity.
 * `TemperedDistribution.MemSobolev.exists_contDiff_ae_eq`: an `L²` function in `H^s`,
@@ -154,7 +156,7 @@ theorem MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialS
         fourier_besselPotential_eq_smulLeftCLM_fourier_apply, hv,
         Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
       simp only [Complex.coe_smul]
-  rw [eLpNorm_congr_ae hae.symm, ← Lp.enorm_def, ← ofReal_norm, ← ofReal_norm,
+  rw [eLpNorm_congr_ae hae.symm, ← Lp.eNorm_def, ← ofReal_norm, ← ofReal_norm,
     BesselPotentialSpace.norm_fourier_toLp_eq]
 
 /-- If the Fourier transform of `f ∈ H^s` is an `L¹` function `v`, then
@@ -163,7 +165,7 @@ theorem MemSobolev.memLp_one_add_norm_sq_rpow_smul {s : ℝ} {f : 𝓢'(E, F)}
     (hf : MemSobolev s 2 f) {v : Lp F 1 (volume : Measure E)} (hv : 𝓕 f = v) :
     MemLp (fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ) 2 :=
   memLp_iff.2
-    (hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv ▸ enorm_lt_top)
+    (hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv ▸ eNorm_lt_top)
 
 /-- **The `L¹` norm on the Fourier side.** If the Fourier transform of `f ∈ H^s` is an `L¹`
 function `v`, then `‖v‖₁ ≤ ‖(1 + ‖ξ‖ ^ 2) ^ (-s / 2)‖₂ ‖f‖_{H^s}`, by Cauchy–Schwarz. The first
@@ -193,16 +195,39 @@ theorem exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace {s : ℝ}
   have hL1 : ∫ ξ, ‖v ξ‖ ≤ K.toReal * ‖hu.toBesselPotentialSpace‖ := by
     have h : eLpNorm v 1 volume ≤ K * ‖hu.toBesselPotentialSpace‖ₑ :=
       hu.eLpNorm_one_le_mul_enorm_toBesselPotentialSpace hv
-    rw [eLpNorm_one_eq_lintegral_enorm hi.aestronglyMeasurable,
+    rw [eLpNorm_one_eq_lintegral_eNorm hi.aestronglyMeasurable,
       ← ofReal_norm, ← ENNReal.ofReal_toReal hK,
       ← ENNReal.ofReal_mul ENNReal.toReal_nonneg] at h
-    rw [integral_norm_eq_lintegral_enorm hi.aestronglyMeasurable]
+    rw [integral_norm_eq_lintegral_eNorm hi.aestronglyMeasurable]
     exact ENNReal.toReal_le_of_le_ofReal (by positivity) h
   filter_upwards [Lp.ae_eq_fourierInv_of_fourier_eq hv] with x hx
   rw [hx, Real.fourierInv_eq_fourier_comp_neg]
   refine (Real.norm_fourier_le_integral_norm _ x).trans ?_
   rw [integral_neg_eq_self (fun ξ => ‖(v : E → F) ξ‖)]
   exact hL1
+
+/-- **Convergence in `H^s` implies convergence almost everywhere, `s > n / 2`.** If `L²`
+functions `u n ∈ H^s` converge in `H^s` to an `L²` function `v ∈ H^s`, then `u n x → v x` for
+almost every `x`. -/
+theorem ae_tendsto_of_tendsto_toBesselPotentialSpace {s : ℝ} (hs : finrank ℝ E < 2 * s)
+    {u : ℕ → Lp F 2 (volume : Measure E)} {v : Lp F 2 (volume : Measure E)}
+    (hu : ∀ n, MemSobolev s 2 (u n : 𝓢'(E, F))) (hv : MemSobolev s 2 (v : 𝓢'(E, F)))
+    (h : Tendsto (fun n => (hu n).toBesselPotentialSpace) atTop (𝓝 hv.toBesselPotentialSpace)) :
+    ∀ᵐ x ∂volume, Tendsto (fun n => u n x) atTop (𝓝 (v x)) := by
+  obtain ⟨C, -, hC⟩ := exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace (F := F) hs
+  have hD (n : ℕ) : MemSobolev s 2 ((u n - v : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
+    rw [Lp.toTemperedDistribution_sub]
+    exact (hu n).sub hv
+  have hlim : Tendsto (fun n => C * ‖(hD n).toBesselPotentialSpace‖) atTop (𝓝 0) := by
+    have h' := (tendsto_iff_norm_sub_tendsto_zero.1 h).const_mul C
+    rw [mul_zero] at h'
+    refine h'.congr fun n => ?_
+    simp only [Lp.toTemperedDistribution_sub, (hu n).toBesselPotentialSpace_sub hv]
+  filter_upwards [ae_all_iff.2 fun n => hC (hD n), ae_all_iff.2 fun n => Lp.coeFn_sub (u n) v]
+    with x hx hsub
+  refine tendsto_iff_norm_sub_tendsto_zero.2 <|
+    squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_) hlim
+  simpa only [hsub n, Pi.sub_apply] using hx n
 
 /-- **Continuous Sobolev functions vanish at infinity.** A continuous real function in `H^s`,
 `s > dim E / 2`, tends to zero at infinity: it agrees almost everywhere, hence everywhere, with
