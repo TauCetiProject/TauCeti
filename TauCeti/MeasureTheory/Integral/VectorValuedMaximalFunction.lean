@@ -233,7 +233,7 @@ private theorem lintegral_tsum_cubeAverage_rpow_rpow_le (hg : ∀ i, Measurable 
       _ = ∫⁻ y in dyadicCube q.1.1 q.1.2, G y := by
           rw [setLIntegral_const, mul_comm,
             measure_mul_setLAverage _ (volume_dyadicCube_ne_top _ _)]
-  · simp only [cubeAverage_of_forall_notMem fun q hq hyq => hy (mem_biUnion hq hyq), G]
+  · simp only [cubeAverage_of_forall_notMem fun _ hq hyq => hy (mem_biUnion hq hyq), G]
 
 omit [Countable κ] in
 /-- Away from the doubled Calderón–Zygmund cubes of `G`, the `ℓʳ` norm of the maximal functions
