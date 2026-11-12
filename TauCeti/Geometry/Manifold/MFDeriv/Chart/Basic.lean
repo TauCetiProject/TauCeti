@@ -114,9 +114,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
   composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
   smooth at `x` with the identity as its derivative there.
-* `MDifferentiableAt.differentiableWithinAt_fderivWithin_extChart_comp_eq_zero`: where the manifold
-  differential vanishes at a point of differentiability, the coordinate expression in extended
-  charts is differentiable within the model range with zero derivative.
+* `MDifferentiableAt.differentiableWithinAt_and_fderivWithin_extChartAt_comp_eq_zero`: where the
+  manifold differential vanishes at a point of differentiability, the coordinate expression in
+  extended charts is differentiable within the model range with zero derivative.
 * `TauCeti.fderiv_comp_extChartAt_symm_apply_zero_one`: the preferred chart of `M × 𝕜` is the
   identity on `𝕜`, so the derivative of a coordinate expression in the direction `(0, 1)` is the
   derivative along `𝕜`, read without any chart.
@@ -505,7 +505,7 @@ theorem TauCeti.ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm :
 /-- On a manifold modelled on its model space, a map into a normed space whose coordinate
 expression in a chart of the `C¹` maximal atlas is differentiable at a coordinate is manifold
 differentiable at the corresponding point. -/
-theorem TauCeti.mdifferentiableAt_symm_of_differentiableAt_comp {e : OpenPartialHomeomorph N E}
+theorem TauCeti.mdifferentiableAt_of_differentiableAt_comp_symm {e : OpenPartialHomeomorph N E}
     (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 N) {w : E} (hw : w ∈ e.target)
     (hg : DifferentiableAt 𝕜 (g ∘ e.symm) w) :
     MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) g (e.symm w) := by
@@ -859,7 +859,7 @@ variable {f : M → M'}
 of the chart target whose image `(extChartAt I x).symm u` is a point of differentiability of `f`
 with zero differential, mapped into the source of the target chart, the expression is
 differentiable within the range with zero derivative. -/
-theorem differentiableWithinAt_fderivWithin_extChart_comp_eq_zero {x : M} {u : E}
+theorem differentiableWithinAt_and_fderivWithin_extChartAt_comp_eq_zero {x : M} {u : E}
     (hu1 : u ∈ (extChartAt I x).target) (hfu : MDifferentiableAt I I' f ((extChartAt I x).symm u))
     (hzero : mfderiv I I' f ((extChartAt I x).symm u) = 0)
     (hu3 : f ((extChartAt I x).symm u) ∈ (extChartAt I' (f x)).source) :
