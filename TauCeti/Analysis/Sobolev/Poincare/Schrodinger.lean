@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.Analysis.Sobolev.W1p.Zero
-import TauCeti.MeasureTheory.Function.Lp.BilinearForm
+import TauCeti.MeasureTheory.Function.Lp.BilinearMap
 
 /-!
 # A Poincaré inequality for Schrödinger forms with a potential positive at infinity
@@ -165,7 +165,7 @@ private theorem memLp_smul_mul {X : Type*} [MeasurableSpace X] {μ : Measure X} 
 
 /-- The **Schrödinger form** `(u, v) ↦ ∫ ⟪∇u, ∇v⟫ + ∫ P u v` of an essentially bounded potential
 `P`, as a continuous bilinear form on `H¹(E) = W^{1,2}(E)`. It is the `L²` inner product of the
-gradients plus the `L∞`-coefficient form `TauCeti.lpBilinearForm` of `P` on the values, pulled
+gradients plus the `L∞`-coefficient form `TauCeti.lpBilinearMap` of `P` on the values, pulled
 back along `u ↦ (∇u, u)`. -/
 noncomputable def schrodingerForm (hP : MemLp P ⊤ (volume : Measure E)) :
     W1p (volume : Measure E) ⊤ 2 →L[ℝ] W1p (volume : Measure E) ⊤ 2 →L[ℝ] ℝ :=
@@ -173,7 +173,7 @@ noncomputable def schrodingerForm (hP : MemLp P ⊤ (volume : Measure E)) :
   let fst := ContinuousLinearMap.fst ℝ (Lp E 2 μ) (Lp ℝ 2 μ)
   let snd := ContinuousLinearMap.snd ℝ (Lp E 2 μ) (Lp ℝ 2 μ)
   let J := W1p.gradientL.prod W1p.valueL
-  let V := lpBilinearForm μ ((memLp_smul_mul (hP.restrict _)).toLp _)
+  let V := lpBilinearMap (p := 2) (q := 2) μ ((memLp_smul_mul (hP.restrict _)).toLp _)
   ((innerSL ℝ).bilinearComp (σ₁₃ := RingHom.id ℝ) fst fst + V.bilinearComp snd snd).bilinearComp J J
 
 /-- The Schrödinger form is the integral of `⟪∇u, ∇v⟫ + P u v`. -/
@@ -183,7 +183,7 @@ theorem schrodingerForm_apply (hP : MemLp P ⊤ (volume : Measure E))
       ∫ z, P z * (W1p.value u z * W1p.value v z) := by
   simp only [schrodingerForm, ContinuousLinearMap.bilinearComp_apply, add_apply,
     ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
-    lpBilinearForm_apply, W1p.gradientL_apply, W1p.valueL_apply]
+    lpBilinearMap_apply, W1p.gradientL_apply, W1p.valueL_apply]
   rw [innerSL_apply_apply, L2.inner_def]
   have hB := MemLp.coeFn_toLp (E := ℝ →L[ℝ] ℝ →L[ℝ] ℝ)
     (memLp_smul_mul (hP.restrict ((⊤ : Opens E) : Set E)))
