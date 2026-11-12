@@ -246,6 +246,31 @@ theorem character_ind [Fintype G] (hS : IsUnit (Nat.card S : k)) (A : FDRep k S)
   exact Subgroup.indClassFun_eq_natCard_inv_mul_sum S hS
     (ClassFunction.mem_iff.mpr fun s t => A.char_conj s t) g
 
+/-- **Induced characters are natural under group isomorphisms.** If `φ : G ≃* G'` carries `S`
+onto `S'` and the characters of `A` and `A'` agree along `φ`, then so do the characters of the
+induced representations. The subgroup order must be invertible in the coefficient field, as in
+`TauCeti.character_ind`. -/
+theorem character_indFDRep_mulEquiv [Finite G] {G' : Type*} [Group G'] [Finite G']
+    {S' : Subgroup G'} (φ : G ≃* G') (hφ : ∀ g, φ g ∈ S' ↔ g ∈ S) (hS : IsUnit (Nat.card S : k))
+    (A : FDRep k S) (A' : FDRep k S')
+    (hA : ∀ s : S, A'.character ⟨φ s, (hφ s).2 s.2⟩ = A.character s) (g : G) :
+    (indFDRep (k := k) (G := G') A').character (φ g) =
+      (indFDRep (k := k) (G := G) A).character g := by
+  classical
+  let _ : Fintype G := Fintype.ofFinite G
+  let _ : Fintype G' := Fintype.ofFinite G'
+  have hcard : Nat.card S' = Nat.card S :=
+    (Nat.card_congr (φ.toEquiv.subtypeEquiv fun y => (hφ y).symm)).symm
+  -- Both sides are averages over the group; reindex the sum over `G'` along `φ`.
+  rw [character_ind (hcard ▸ hS) A', character_ind hS A, hcard, ← φ.toEquiv.sum_comp]
+  congr 1
+  refine Finset.sum_congr rfl fun x _ => ?_
+  have hconj : (φ x)⁻¹ * φ g * φ x = φ (x⁻¹ * g * x) := by simp
+  simp only [MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, hconj, hφ]
+  split_ifs with h
+  · exact hA ⟨_, h⟩
+  · rfl
+
 end ClassFun
 
 end TauCeti
