@@ -158,9 +158,9 @@ private theorem isBigO_norm_iteratedFDeriv_succ {ℓ : ℂ → ℝ} (hℓ : Cont
   -- The proof has four steps: explicit decay bounds for `D ρ`, `D E` and `F = Dⁿ ℓ`; a radius `R`
   -- beyond which they hold and `exp ℓ / 4 ≥ c² + δ`; the forced comparison principle for the
   -- translation differences `F - F (· + k)`; and division by `|k|`.
-  set E : ℂ → ℝ := fun w ↦ Real.exp (ℓ w) with hEdef
-  set F := iteratedFDeriv ℝ n ℓ with hFdef
-  set ρ := fun w ↦ iteratedFDeriv ℝ n E w - E w • F w with hρdef
+  set E : ℂ → ℝ := fun w ↦ Real.exp (ℓ w)
+  set F := iteratedFDeriv ℝ n ℓ
+  set ρ := fun w ↦ iteratedFDeriv ℝ n E w - E w • F w
   have hE : ContDiff ℝ ∞ E := Real.contDiff_exp.comp hℓ
   have hF : ContDiff ℝ ∞ F := hℓ.iteratedFDeriv_right (by exact_mod_cast le_top)
   have hρ : ContDiff ℝ ∞ ρ :=
