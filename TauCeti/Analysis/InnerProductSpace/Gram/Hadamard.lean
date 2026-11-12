@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Matrix.PosSemidef.Basic
 # Hadamard's inequality for Gram determinants
 
 Hadamard's inequality bounds the volume spanned by a finite family of vectors by the product of
-their lengths. This file proves it in two forms over an `RCLike` field `𝕜`.
+their lengths. This file proves it in the following forms over an `RCLike` field `𝕜`.
 
 * In coordinates: for an orthonormal basis `b` of `E` indexed by a finite type `ι` and any family
   `v : ι → E`, `‖b.toBasis.det v‖ ≤ ∏ i, ‖v i‖`. The Gram–Schmidt orthonormal basis `e` of `v`
@@ -27,6 +27,10 @@ their lengths. This file proves it in two forms over an `RCLike` field `𝕜`.
   to `Matrix.posSemidef_gram`. A dependent family has Gram determinant zero, and an independent
   family is a basis of its span, where the Gram determinant is the squared norm of a coordinate
   determinant.
+* For square matrices: the rows of `A : Matrix ι ι 𝕜`, read in `EuclideanSpace 𝕜 ι`, have Gram
+  determinant `‖det A‖ ^ 2`, and `‖det A‖ ≤ ∏ i, ‖A i‖`, the classical Hadamard inequality.
+* In logarithmic form: the real part of the Gram determinant is positive exactly for an
+  independent family, and then its logarithm is at most `∑ i, 2 log ‖v i‖`.
 
 These bounds control the covolume of a lattice by the lengths of its generators, as in the
 Gram/covolume calculation of J.-M. Couveignes, *Enumerating number fields*, Ann. of Math. 192
@@ -45,6 +49,19 @@ Gram/covolume calculation of J.-M. Couveignes, *Enumerating number fields*, Ann.
   for Gram determinants, in `ComplexOrder` and for the real part.
 * `Matrix.re_det_gram_le_pow`: the uniform form, `re (det (gram 𝕜 v)) ≤ D ^ card ι` when every
   `‖v i‖ ^ 2 ≤ D`.
+* `Matrix.re_det_gram_pos_iff`, `Matrix.det_gram_pos_iff`: the Gram determinant is positive
+  exactly for a linearly independent family.
+* `Matrix.log_re_det_gram_le`, `Matrix.log_det_gram_le`: Hadamard's inequality on the logarithmic
+  scale, `log (det (gram 𝕜 v)) ≤ ∑ i, 2 log ‖v i‖` for an independent family.
+* `Matrix.det_gram_toLp_eq_norm_det_sq`, `Matrix.det_gram_toLp_eq_det_sq`: the Gram determinant of
+  the rows of a square matrix is the squared norm of its determinant.
+* `Matrix.norm_det_le_prod_norm_toLp`, `Matrix.abs_det_le_prod_norm_toLp`: Hadamard's inequality
+  for a square matrix, bounding its determinant by the product of the Euclidean norms of its rows.
+
+## References
+
+* M. Waldschmidt, *Diophantine approximation on linear algebraic groups*, Grundlehren der
+  mathematischen Wissenschaften 326, Springer, 2000, proof of Lemma 3.25, p. 101.
 -/
 
 public section
@@ -148,5 +165,71 @@ theorem re_det_gram_le_pow {v : ι → E} {D : ℝ} (hD : ∀ i, ‖v i‖ ^ 2 �
   calc RCLike.re (gram 𝕜 v).det ≤ ∏ i, ‖v i‖ ^ 2 := re_det_gram_le_prod_norm_sq v
     _ ≤ ∏ _i : ι, D := by gcongr with i; exact hD i
     _ = D ^ Fintype.card ι := by simp
+
+/-- The real part of the Gram determinant of a finite family is positive if and only if the family
+is linearly independent. -/
+theorem re_det_gram_pos_iff {v : ι → E} :
+    0 < RCLike.re (gram 𝕜 v).det ↔ LinearIndependent 𝕜 v := by
+  rw [← det_gram_ne_zero_iff_linearIndependent, (re_det_gram_nonneg v).lt_iff_ne', ne_eq, ne_eq,
+    ← RCLike.ofReal_eq_zero (K := 𝕜), ofReal_re_det_gram]
+
+/-- The Gram determinant of a finite family in a real inner product space is positive if and only
+if the family is linearly independent. -/
+theorem det_gram_pos_iff {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {v : ι → F} :
+    0 < (gram ℝ v).det ↔ LinearIndependent ℝ v := by
+  simpa using re_det_gram_pos_iff (𝕜 := ℝ) (v := v)
+
+/-- **Hadamard's inequality for Gram determinants, logarithmic form.** For a linearly independent
+finite family, the logarithm of the real part of its Gram determinant, which is positive, is at
+most `∑ i, 2 log ‖v i‖`. -/
+theorem log_re_det_gram_le {v : ι → E} (hv : LinearIndependent 𝕜 v) :
+    Real.log (RCLike.re (gram 𝕜 v).det) ≤ ∑ i, 2 * Real.log ‖v i‖ := by
+  have h2 : ∀ i, 2 * Real.log ‖v i‖ = Real.log (‖v i‖ ^ 2) := fun i ↦ by simp [Real.log_pow]
+  simp_rw [h2]
+  rw [← Real.log_prod fun i _ ↦ pow_ne_zero 2 (norm_ne_zero_iff.mpr (hv.ne_zero i))]
+  exact Real.log_le_log (re_det_gram_pos_iff.mpr hv) (re_det_gram_le_prod_norm_sq v)
+
+/-- **Hadamard's inequality for Gram determinants, real logarithmic form.** For a linearly
+independent finite family in a real inner product space, the logarithm of its Gram determinant,
+which is positive, is at most `∑ i, 2 log ‖v i‖`. -/
+theorem log_det_gram_le {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {v : ι → F}
+    (hv : LinearIndependent ℝ v) : Real.log (gram ℝ v).det ≤ ∑ i, 2 * Real.log ‖v i‖ := by
+  simpa using log_re_det_gram_le hv
+
+/-- The determinant, in the standard orthonormal basis of `EuclideanSpace 𝕜 ι`, of the rows of a
+square matrix `A` is `A.det`. -/
+theorem basisFun_toBasis_det_toLp (A : Matrix ι ι 𝕜) :
+    (EuclideanSpace.basisFun ι 𝕜).toBasis.det (fun i ↦ WithLp.toLp 2 (A i)) = A.det := by
+  rw [Module.Basis.det_apply, ← Matrix.det_transpose]
+  -- The transposed coordinate matrix has entries `(basisFun ι 𝕜).repr (toLp 2 (A i)) j = A i j`.
+  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
+  simp only [Matrix.transpose_apply, Module.Basis.toMatrix_apply,
+    OrthonormalBasis.coe_toBasis_repr_apply, EuclideanSpace.basisFun_repr]
+
+/-- The Gram determinant of the rows of a square matrix `A`, read in `EuclideanSpace 𝕜 ι`, is
+`‖A.det‖ ^ 2`. -/
+theorem det_gram_toLp_eq_norm_det_sq (A : Matrix ι ι 𝕜) :
+    (gram 𝕜 fun i ↦ WithLp.toLp 2 (A i)).det = (‖A.det‖ : 𝕜) ^ 2 := by
+  rw [(EuclideanSpace.basisFun ι 𝕜).det_gram_eq_norm_det_sq,
+    basisFun_toBasis_det_toLp]
+
+/-- The Gram determinant of the rows of a real square matrix `A`, read in `EuclideanSpace ℝ ι`,
+is `A.det ^ 2`. -/
+theorem det_gram_toLp_eq_det_sq (A : Matrix ι ι ℝ) :
+    (gram ℝ fun i ↦ WithLp.toLp 2 (A i)).det = A.det ^ 2 := by
+  simp [det_gram_toLp_eq_norm_det_sq]
+
+/-- **Hadamard's inequality for a square matrix.** The determinant of `A` has norm at most the
+product of the Euclidean norms of its rows. -/
+theorem norm_det_le_prod_norm_toLp (A : Matrix ι ι 𝕜) :
+    ‖A.det‖ ≤ ∏ i, ‖WithLp.toLp 2 (A i)‖ := by
+  simpa only [basisFun_toBasis_det_toLp] using
+    (EuclideanSpace.basisFun ι 𝕜).norm_det_le_prod_norm fun i ↦ WithLp.toLp 2 (A i)
+
+/-- **Hadamard's inequality for a real square matrix.** The absolute value of the determinant of
+`A` is at most the product of the Euclidean norms of its rows. -/
+theorem abs_det_le_prod_norm_toLp (A : Matrix ι ι ℝ) :
+    |A.det| ≤ ∏ i, ‖WithLp.toLp 2 (A i)‖ :=
+  norm_det_le_prod_norm_toLp A
 
 end Matrix

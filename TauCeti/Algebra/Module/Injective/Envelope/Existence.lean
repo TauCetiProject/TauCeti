@@ -70,7 +70,7 @@ theorem _root_.LinearMap.exists_isInjectiveEnvelope_submodule [Module.Injective 
     N ⟨le_rfl, by rw [Submodule.comap_subtype_self]; exact isEssential_top⟩
   -- Zorn's lemma again gives `K` maximal among the submodules disjoint from `E`.
   obtain ⟨K, -, hK⟩ := zorn_le_nonempty₀ {K : Submodule R Q | Disjoint E K}
-    (fun c hcS hc y hy =>
+    (fun c hcS hc y _ =>
       ⟨sSup c, hc.directedOn.disjoint_sSup_right.mpr fun _ hL => hcS hL, fun z hz => le_sSup hz⟩)
     ⊥ disjoint_bot_right
   -- `E` embeds into `Q ⧸ K`, with essential image by the maximality of `K`.

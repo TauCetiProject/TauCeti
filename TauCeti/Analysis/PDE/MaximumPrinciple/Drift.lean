@@ -127,8 +127,8 @@ private theorem ofReal_mul_enorm_sq_le_ofReal_mul_lintegral
       ∫⁻ x in Γ, ‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ ∂mu.restrict Omega := by
   -- Hölder's inequality on `Γ`, then the Sobolev inequality.
   set μ := mu.restrict Omega
-  set f := W1p.value v with hf_def
-  set g := W1p.gradient v with hg_def
+  set f := W1p.value v
+  set g := W1p.gradient v
   have hpt := ae_sub_le_energyIntegrand_jetField h hb_bound hc_nonneg v
   have hint₁ : Integrable (fun x ↦ ‖g x‖ ^ 2) μ := W1p.integrable_norm_gradient_sq v
   have hint₂ : Integrable (fun x ↦ ‖g x‖ * ‖f x‖) μ :=
@@ -166,8 +166,8 @@ private theorem lintegral_enorm_gradient_mul_enorm_value_le
     ∫⁻ x in Γ, ‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ ∂mu.restrict Omega ≤
       ‖W1p.gradient v‖ₑ * (S * ‖W1p.gradient v‖ₑ * mu.restrict Omega Γ ^ (2⁻¹ - q.toReal⁻¹)) := by
   set μ := mu.restrict Omega
-  set f := W1p.value v with hf_def
-  set g := W1p.gradient v with hg_def
+  set f := W1p.value v
+  set g := W1p.gradient v
   have hsmul := eLpNorm_smul_le_mul_eLpNorm (p := 2) (q := 2) (r := 1)
     (Lp.aestronglyMeasurable g).norm.restrict (Lp.aestronglyMeasurable f).restrict
     (μ := μ.restrict Γ)
@@ -205,8 +205,8 @@ private theorem ofReal_mul_enorm_sq_le_of_energyFormH1_self_nonpos
       ENNReal.ofReal beta * S * mu.restrict Omega Γ ^ (2⁻¹ - q.toReal⁻¹) *
         ‖W1p.gradient v‖ₑ ^ 2 := by
   set μ := mu.restrict Omega
-  set f := W1p.value v with hf_def
-  set g := W1p.gradient v with hg_def
+  set f := W1p.value v
+  set g := W1p.gradient v
   have hdrift := ofReal_mul_enorm_sq_le_ofReal_mul_lintegral h hcoeff hb_bound hc_nonneg henergy
     hΓ hgrad
   have hholder := lintegral_enorm_gradient_mul_enorm_value_le hq hsob Γ

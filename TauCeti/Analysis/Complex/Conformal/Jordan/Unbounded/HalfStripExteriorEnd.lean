@@ -187,7 +187,7 @@ private theorem false_of_inverted_coordinate_eq_zero_of_rays
     {u v : ℝ} (huv : u < v) (hu : (u : ℂ) ∈ ball (x : ℂ) r) (hv : (v : ℂ) ∈ ball (x : ℂ) r)
     (hgu : g u = 0) (hgv : g v = 0) : False := by
   have hgR : Continuous fun s : ℝ => g s :=
-    hgc.comp_continuous continuous_ofReal fun s => by simp
+    hgc.comp_continuous continuous_ofReal fun _ => by simp
   have hZ : IsClosed {s : ℝ | g s = 0} := isClosed_eq hgR continuous_const
   obtain ⟨t, ht, hgt⟩ : ∃ t ∈ Ioo u v, g t ≠ 0 := by
     have h := exists_mem_Ioo_ne_zero_of_ne_zero (f := g) (x := (u + v) / 2) (r := (v - u) / 2)

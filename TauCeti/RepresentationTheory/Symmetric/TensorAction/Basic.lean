@@ -16,11 +16,7 @@ This file defines the symmetric-group action on a power of a module by permuting
 factors. Mathlib's `Representation.asAlgebraHom` then extends the action linearly to the group
 algebra, which is the action used by Young symmetrizers.
 
-The construction is the first target in Layer 2 of the
-[classical-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md)
-and the first construction in Layer 8 of the
-[Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md).
-It reuses `PiTensorProduct.reindex`; the convention is
+The construction reuses `PiTensorProduct.reindex`; the convention is
 `σ • (⨂ₜ i, m i) = ⨂ₜ i, m (σ⁻¹ i)`.
 
 ## Main definitions
