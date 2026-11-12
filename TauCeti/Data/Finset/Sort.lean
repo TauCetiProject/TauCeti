@@ -10,6 +10,7 @@ public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Order.Fin.Tuple
+public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Data.List.Chain
 import Mathlib.Order.Interval.Finset.Fin
 
@@ -49,6 +50,8 @@ Every nonempty finset can be listed by a monotone sequence strictly increasing t
 
 If every element of `I` is at most `s ≤ t`, the sequence `⊥`, the elements of `I` in increasing
 order, `s`, then constantly `t`, is monotone in `ℕ`, `Finset.monotone_bot_orderEmbOfFin_snoc`.
+
+Sorting the interval `[a, b)` of natural numbers lists `a, a + 1, …, b - 1`, `Nat.sort_Ico`.
 
 The support-enlargement and adjacent-swap ordered-product lemmas are adapted from
 `Mei/Algebra/BigOperators/Group/Finset/Ordered.lean` in
@@ -344,11 +347,12 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
 /-- Removing the position of `i` from the increasing enumeration of `s` gives the increasing
 enumeration of `s.erase i`. -/
 theorem removeNth_orderEmbOfFin_symm_eq {I : Type*} [LinearOrder I]
-    (i : I) (s : Finset I) (hi : i ∈ s) (hsCard : s.card = (s.erase i).card + 1) :
+    (i : I) (s : Finset I) (hi : i ∈ s) {n : ℕ} (hsCard : s.card = n + 1)
+    (hn : (s.erase i).card = n) :
     ((s.orderIsoOfFin hsCard).symm ⟨i, hi⟩).removeNth (fun j ↦ s.orderEmbOfFin hsCard j) =
-      (s.erase i).orderEmbOfFin rfl := by
-  let e : Fin ((s.erase i).card + 1) ↪o I := s.orderEmbOfFin hsCard
-  let k : Fin ((s.erase i).card + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
+      (s.erase i).orderEmbOfFin hn := by
+  let e : Fin (n + 1) ↪o I := s.orderEmbOfFin hsCard
+  let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
   have hek : e k = i :=
     congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
   apply orderEmbOfFin_unique
@@ -391,3 +395,13 @@ theorem monotone_bot_orderEmbOfFin_snoc {T : Type*} [LinearOrder T] [OrderBot T]
       simp [hn, hnI, hncard, hne, h1]
 
 end Finset
+
+namespace Nat
+
+/-- Sorting the interval `[a, b)` of natural numbers gives the list `a, a + 1, …, b - 1`. -/
+@[simp]
+theorem sort_Ico (a b : ℕ) : (Finset.Ico a b).sort = List.range' a (b - a) := by
+  rw [Nat.Ico_eq_range']
+  exact List.mergeSort_eq_self _ List.pairwise_le_range'
+
+end Nat

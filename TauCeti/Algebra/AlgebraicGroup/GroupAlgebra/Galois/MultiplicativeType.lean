@@ -79,8 +79,10 @@ theorem finrank_groupAlgebraInvariants :
         ← Nat.card_eq_fintype_card]
       exact Nat.card_congr Multiplicative.toAdd
 
-/-- A finite descended group is étale exactly when its character-group order is invertible
-in the base field. This criterion permits arbitrary Galois action on the character group. -/
+omit [Finite M] in
+/-- A descended group is étale exactly when its character-group order is invertible in the base
+field (this forces the character group to be finite). This criterion permits arbitrary Galois
+action on the character group. -/
 theorem etale_groupAlgebraInvariants_iff_isUnit_card :
     Algebra.Etale k (groupAlgebraInvariants ρ) ↔ IsUnit (Nat.card M : k) := by
   have hcard : Nat.card (Multiplicative M) = Nat.card M := Nat.card_congr Multiplicative.toAdd

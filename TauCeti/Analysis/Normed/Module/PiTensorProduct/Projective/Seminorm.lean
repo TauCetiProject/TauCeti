@@ -77,7 +77,7 @@ theorem seminorm_le_mul_projectiveSeminormOf (p : ∀ i, Seminorm 𝕜 (E i))
   rw [← List.sum_map_mul_left]
   refine List.Forall₂.sum_le_sum ?_
   simp only [List.forall₂_map_left_iff, List.forall₂_map_right_iff, List.forall₂_same]
-  intro a ha
+  intro a _
   simpa [map_smul_eq_mul, mul_assoc, mul_left_comm] using
     mul_le_mul_of_nonneg_left (h a.2) (norm_nonneg a.1)
 
@@ -99,7 +99,7 @@ variable {F : Type*} [AddCommGroup F] [Module 𝕜 F]
 /-- A product-seminorm bound for a multilinear map extends to its canonical tensor lift
 without enlarging the constant or requiring continuity hypotheses. -/
 theorem seminorm_lift_le (p : ∀ i, Seminorm 𝕜 (E i)) (q : Seminorm 𝕜 F)
-    (f : MultilinearMap 𝕜 E F) {C : ℝ} (hC : 0 ≤ C)
+    (f : MultilinearMap (RingHom.id 𝕜) E F) {C : ℝ} (hC : 0 ≤ C)
     (h : ∀ m, q (f m) ≤ C * ∏ i, p i (m i)) (x : ⨂[𝕜] i, E i) :
     q (lift f x) ≤ C * projectiveSeminormOf p x :=
   seminorm_le_mul_projectiveSeminormOf p (q.comp (lift f)) hC (by simpa using h) x

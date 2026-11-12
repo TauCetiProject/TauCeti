@@ -13,9 +13,8 @@ import Mathlib.Analysis.Complex.RemovableSingularity
 
 For `f : ℂ → ℂ` with a **simple pole** at `z₀` (`meromorphicOrderAt f z₀ = −1`), the residue
 `TauCeti.Contour.residue f z₀` is the elementary limit `lim_{z→z₀} (z − z₀) · f z` — the textbook
-recipe for computing residues at simple poles, which the roadmap names as the defining property of
-the simple-pole residue. This file records that limit and its converse: the residue *equals* the
-limit whenever `f` is meromorphic at `z₀` and the limit exists.
+recipe for computing residues at simple poles. This file records that limit and its converse: the
+residue *equals* the limit whenever `f` is meromorphic at `z₀` and the limit exists.
 
 The order-`(−1)` Laurent coefficient of `f` at a simple pole is the trailing coefficient
 `meromorphicTrailingCoeffAt f z₀` (via
