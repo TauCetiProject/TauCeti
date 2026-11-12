@@ -52,9 +52,7 @@ theorem blockUnitriangular_rootSubgroupPoints {γ : Fin t.numRoots}
         (orderedWeightBlock (t.weightDegree ht) D.weight) := by
   rw [D.coe_rootSubgroupPoints,
     ← kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
-      (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
-        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator),
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator,
     basisMatrix_kostantRootSubgroupParam]
   exact blockUnitriangular_kostantRootSubgroupMatrix
     (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice _ D.basis D.weight
