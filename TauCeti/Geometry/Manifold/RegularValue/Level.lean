@@ -244,7 +244,7 @@ theorem mem_regularLevelChartAt_source (x : {x : M // f x = c}) :
     x ∈ (regularLevelChartAt hf hreg hn x).source := by
   rw [regularLevelChartAt, Homeomorph.transOpenPartialHomeomorph_source]
   exact mem_sectionZeroChartAt_source _ _ _ _ (fun _ ↦ continuousAt_const)
-    (fun z ↦ mem_baseSet_trivializationAt F (Bundle.Trivial 𝕜 F) _) _
+    (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial 𝕜 F) _) _
 
 /-- The atlas of a regular level `f⁻¹(c)`: the section-zero atlas of `f - c`, with preferred
 charts `TauCeti.regularLevelChartAt`. It is modelled on `Fin n → 𝕜` for `n = dim E - dim F`. -/

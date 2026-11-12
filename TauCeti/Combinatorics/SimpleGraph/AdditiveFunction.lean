@@ -329,7 +329,7 @@ theorem Preconnected.eq_zero_of_graphCartanMatrix_mulVec_nonneg {G : SimpleGraph
   obtain ⟨p⟩ := hG i j
   induction p with
   | nil => exact hi
-  | cons hij p ih =>
+  | cons hij _ ih =>
     exact ih (G.eq_zero_of_adj_of_graphCartanMatrix_mulVec_nonneg ha hCa hij hi)
 
 /-- Every nonzero nonnegative vector with nonnegative Cartan image on a preconnected graph is
@@ -368,7 +368,7 @@ theorem Connected.exists_pos_smul_le_sum (hG : G.Connected) {c : C} {δ : V → 
   have hwalk {u w : V} (p : G.Walk u w) : (∃ x, P x ∧ 0 < x u) → ∃ x, P x ∧ 0 < x w := by
     induction p with
     | nil => exact id
-    | @cons a b c h p ih =>
+    | @cons a b c h _ ih =>
       rintro ⟨x, hx, hxa⟩
       refine ih ⟨_, hstep x hx, ?_⟩
       calc 0 < x a := hxa

@@ -26,8 +26,8 @@ of the continuous functional calculus is an isometry from `(E, ⟪·, ·⟫)` to
 carries orthonormal frames for the original inner product to orthonormal frames for `h`, and its
 inverse, the square root `CFC.sqrt H`, carries `h`-orthonormal frames back.
 
-Unlike the eigenbasis construction of `TauCeti.exists_continuousLinearEquiv_inner_map_map`, this
-transport involves no choice. It is characterized as the unique positive operator `S` with
+Unlike `TauCeti.exists_continuousLinearEquiv_inner_map_map`, which only asserts existence, this
+transport is a specific operator. It is characterized as the unique positive operator `S` with
 `S * H * S = 1`, and it is natural: pulling `h` back along a linear isometry equivalence `e`
 conjugates the transport by `e`, and likewise its inverse. The transport and its inverse depend
 continuously on `h`, because the real continuous functional calculus is isometric. When `E` is

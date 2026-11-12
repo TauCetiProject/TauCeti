@@ -65,6 +65,14 @@ unit vector `u` of `V` the number `(gauge (-c +ᵥ C) u)⁻¹` is the length of 
 direction `u` inside `C`. No finite-dimensionality is needed. This identifies every nonempty
 compact convex set of a finite-dimensional space with a disk, which is how Brouwer's fixed-point
 theorem passes from the disk to compact convex sets.
+
+`Convex.inter_affineSpan_subset` says that a convex set meeting a set and avoiding its
+intrinsic frontier meets its affine span only inside the set. Its statement and line-segment
+argument, and the relative-frontier nowhere-density and local-membership lemmas, are adapted from
+`Mei/Analysis/Convex/Intrinsic.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
+Original copyright (c) 2026 Mei contributors; original author: Codex.
 -/
 
 public section
@@ -188,6 +196,37 @@ theorem intrinsicFrontier_subset_iUnion_of_exists_mem_intrinsicInterior {ι : Ty
     rw [← intrinsicClosure_sdiff_intrinsicInterior] at hx
     exact hx.2
   exact mem_iUnion₂.2 ⟨j, ⟨fun hji' => hxi (hji' ▸ hxj), hji⟩, intrinsicInterior_subset hxj⟩
+
+/-- The relative boundary of a closed set is nowhere dense in its affine span. -/
+theorem _root_.IsClosed.isNowhereDense_preimage_intrinsicFrontier {s : Set P} (hs : IsClosed s)
+    {A : AffineSubspace 𝕜 P} (hA : affineSpan 𝕜 s = A) :
+    IsNowhereDense ((↑) ⁻¹' intrinsicFrontier 𝕜 s : Set A) := by
+  subst hA
+  rw [intrinsicFrontier, preimage_image_eq _ Subtype.val_injective,
+    isClosed_frontier.isNowhereDense_iff]
+  exact interior_frontier (hs.preimage continuous_subtype_val)
+
+/-- Off the relative boundary of a set, membership in the set is locally constant within
+its affine span. -/
+theorem eventually_mem_iff_of_notMem_intrinsicFrontier {s : Set P}
+    {A : AffineSubspace 𝕜 P} (hA : affineSpan 𝕜 s = A) {x : A}
+    (hx : (x : P) ∉ intrinsicFrontier 𝕜 s) :
+    ∀ᶠ y : A in nhds x, ((y : P) ∈ s ↔ (x : P) ∈ s) := by
+  subst hA
+  have hxfr : x ∉ frontier ((↑) ⁻¹' s : Set (affineSpan 𝕜 s)) :=
+    fun hfr => hx ⟨x, hfr, rfl⟩
+  by_cases hxP : (x : P) ∈ s
+  · have hint : x ∈ interior ((↑) ⁻¹' s : Set (affineSpan 𝕜 s)) :=
+      (mem_interior_iff_notMem_frontier
+        (s := ((↑) ⁻¹' s : Set (affineSpan 𝕜 s))) hxP).mpr hxfr
+    filter_upwards [mem_interior_iff_mem_nhds.mp hint] with y hy
+    exact iff_of_true hy hxP
+  · have hint : x ∈ interior (((↑) ⁻¹' s : Set (affineSpan 𝕜 s))ᶜ) :=
+      (mem_interior_iff_notMem_frontier
+        (s := ((↑) ⁻¹' s : Set (affineSpan 𝕜 s))ᶜ) hxP).mpr
+        (by rwa [frontier_compl])
+    filter_upwards [mem_interior_iff_mem_nhds.mp hint] with y hy
+    exact iff_of_false hy hxP
 
 end AffineSpan
 
@@ -561,3 +600,32 @@ theorem coe_convexClosedBallHomeomorph_mem_intrinsicFrontier_iff (hconv : Convex
       (isVonNBounded_setOf_add_mem hb), gauge_closedBall zero_le_one, div_one]
 
 end TauCeti
+
+namespace Convex
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [ContinuousSMul ℝ V]
+
+/-- A convex set meeting a set and avoiding its intrinsic frontier meets its affine span
+only inside that set. Neither set needs to be closed. -/
+theorem inter_affineSpan_subset {S U : Set V} (hU : Convex ℝ U) (hUS : (U ∩ S).Nonempty)
+    (hfr : Disjoint U (intrinsicFrontier ℝ S)) : U ∩ affineSpan ℝ S ⊆ S := by
+  rintro z ⟨hzU, hzA⟩
+  obtain ⟨w, hwU, hwP⟩ := hUS
+  let g : unitInterval → affineSpan ℝ S := fun r =>
+    ⟨AffineMap.lineMap w z (r : ℝ),
+      AffineMap.lineMap_mem _ (subset_affineSpan ℝ S hwP) hzA⟩
+  have hg : Continuous g :=
+    (AffineMap.lineMap_continuous.comp continuous_subtype_val).subtype_mk _
+  let B : Set (affineSpan ℝ S) := (↑) ⁻¹' S
+  have havoid : Set.range g ⊆ (frontier B)ᶜ := by
+    rintro _ ⟨r, rfl⟩ hr
+    exact hfr.notMem_of_mem_left (hU.lineMap_mem hwU hzU r.property) ⟨g r, hr, rfl⟩
+  rw [compl_frontier_eq_union_interior] at havoid
+  rcases (isPreconnected_range hg).subset_or_subset isOpen_interior isOpen_interior
+      (disjoint_compl_right.mono interior_subset interior_subset) havoid with hin | hout
+  · simpa [B, g] using interior_subset (hin (Set.mem_range_self 1))
+  · have := interior_subset (hout (Set.mem_range_self 0))
+    exact (this (by simpa [B, g] using hwP)).elim
+
+end Convex

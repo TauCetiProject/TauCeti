@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.Convex
 
 /-!
 # Geometry of the complex slit plane
@@ -36,6 +36,7 @@ is a principal logarithm.
 
 ## Main declarations
 
+* `Complex.one_sub_mul_ofReal_mem_slitPlane`
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.re_pos_of_norm_sub_one_lt_one`
@@ -249,5 +250,17 @@ theorem exists_norm_inv_ofReal_add_le {p : ℂ} (hp : p ∈ slitPlane) :
   exact inv_anti₀ (by positivity) (h t ht)
 
 end TauCeti
+
+namespace Complex
+
+/-- Scaling `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
+theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
+    {t : ℝ} (ht : t ∈ Set.Icc 0 1) : 1 - z * t ∈ slitPlane := by
+  have h := starConvex_one_slitPlane.add_smul_sub_mem hz ht.1 ht.2
+  convert h using 1
+  simp only [real_smul]
+  ring
+
+end Complex
 
 end

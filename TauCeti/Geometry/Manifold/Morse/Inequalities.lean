@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.BigOperators.Ring.Finset
+public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Sublevel
 public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
@@ -993,6 +994,22 @@ theorem IsMorse.finrank_singularHomology_le (hf : IsMorse I f) (n : ℕ) :
   obtain ⟨a, b, hab, h, he, hc, -⟩ := hf.exists_morseInequalities_univ V
   rw [(he n).some.toLinearEquiv.finrank_eq, ← hc]
   exact (h n).2.1
+
+/-- The singular homology of a compact boundaryless manifold carrying a Morse function has
+zero finrank in degrees above the dimension of the manifold. -/
+theorem IsMorse.finrank_singularHomology_eq_zero_of_finrank_lt (hf : IsMorse I f)
+    {j : ℕ} (hj : finrank ℝ E < j) :
+    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj V).obj
+      (TopCat.of M)) = 0 := by
+  have h := hf.finrank_singularHomology_le V j
+  simpa [criticalCount_eq_zero_of_finrank_lt hj] using h
+
+/-- The singular Betti numbers of a compact boundaryless manifold carrying a Morse function
+vanish above its dimension. -/
+theorem IsMorse.bettiNumber_eq_zero_of_finrank_lt (hf : IsMorse I f)
+    {j : ℕ} (hj : finrank ℝ E < j) : bettiNumber k M j = 0 := by
+  rw [bettiNumber_def]
+  exact hf.finrank_singularHomology_eq_zero_of_finrank_lt (ModuleCat.of k k) hj
 
 /-- **The strong Morse inequalities.** For a Morse function `f` on a compact boundaryless manifold
 `M`, write `bᵢ` for the dimension of `Hᵢ(M; V)` and `cᵢ` for the number of critical points of

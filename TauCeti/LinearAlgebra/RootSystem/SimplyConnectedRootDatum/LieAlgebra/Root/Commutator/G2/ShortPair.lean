@@ -96,8 +96,8 @@ private theorem g2_short_pair_coefficients
   have hm := g2_short_pair_last_long hi hj hk
     ((g2_root_add_iff i j k).1 hij) ((g2_root_add_iff k j m).1 hkj)
   have h₁ := structureConstant_G2_eq_two_or_eq_neg_two hi hj hk hij
-  have h₂ := structureConstant_G2_eq_three_or_eq_neg_three hi hk hl hik
-  have h₃ := structureConstant_G2_eq_three_or_eq_neg_three hk hj hm hkj
+  have h₂ := structureConstant_G2_eq_three_or_eq_neg_three hk hl hik
+  have h₃ := structureConstant_G2_eq_three_or_eq_neg_three hj hm hkj
   rcases h₁ with h₁ | h₁ <;> rcases h₂ with h₂ | h₂ <;>
     rcases h₃ with h₃ | h₃ <;> simp_all
 
@@ -190,9 +190,6 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_pair
         chevalleyRootSubgroup ρ M hM hnil l A (Multiplicative.ofAdd ((d : A) * (3 * u ^ 2 * v))) *
         chevalleyRootSubgroup ρ M hM hnil m A (Multiplicative.ofAdd ((a : A) * (3 * u * v ^ 2))) *
         chevalleyRootSubgroup ρ M hM hnil i A (Multiplicative.ofAdd u) := by
-  let c := G2.structureConstant ht i j / 2
-  let d := c * (G2.structureConstant ht i k / 3)
-  let a := c * (G2.structureConstant ht k j / 3)
   obtain ⟨hbrij, hbrik, hbrkj⟩ := g2_short_pair_scaled_brackets hi hj hk hij hik hkj
   obtain ⟨hil, him, _, hjm, hkl, hkm, hlm⟩ :=
     g2_short_pair_vanishing_brackets hi hj hk hij hik hkj
