@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Complex.RealDeriv
 import TauCeti.MeasureTheory.Function.Jacobian
 
@@ -86,16 +87,6 @@ theorem add_apply_eq_iff_sub_apply_eq_neg_apply {A : V →L[ℝ] V} (hA : A * A 
     rw [← h']
     abel
 
-/-- A real-linear map `D` on `ℂ`, precomposed with multiplication by `c = a + b i`, tested in the
-Cauchy–Riemann combination: `D (c·1) + A D (c·i) = a (D 1 + A D i) + b (D i - A D 1)`. -/
-private theorem apply_mul_one_add_apply_mul_I (D : ℂ →L[ℝ] V) (A : V →L[ℝ] V) (c : ℂ) :
-    D (c * 1) + A (D (c * I)) = c.re • (D 1 + A (D I)) + c.im • (D I - A (D 1)) := by
-  have h1 : c * 1 = c.re • (1 : ℂ) + c.im • I := by apply Complex.ext <;> simp
-  have h2 : c * I = c.re • I - c.im • (1 : ℂ) := by apply Complex.ext <;> simp
-  rw [h1, h2]
-  simp only [map_add, map_sub, map_smul, smul_add, smul_sub]
-  abel
-
 /-! ### Changes of the domain variable -/
 
 /-- The data of a weak solution pulled back along a `C¹` change of variables, with the equation
@@ -148,7 +139,7 @@ theorem IsWeakCauchyRiemannOn.comp_differentiableOn (h : IsWeakCauchyRiemannOn p
   have hd := hφ.differentiableAt (hO.mem_nhds (hUO (interior_subset hzU)))
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     hd.complexToReal_fderiv_apply, hd.complexToReal_fderiv_apply,
-    apply_mul_one_add_apply_mul_I, hz,
+    ContinuousLinearMap.apply_mul_one_add_apply_mul_I, hz,
     ((add_apply_eq_iff_sub_apply_eq_neg_apply (hJ z hzU)).1 hz), smul_neg, ← sub_eq_add_neg]
 
 /-- **Invariance under biholomorphisms of open sets.** The form of
@@ -194,7 +185,7 @@ theorem IsWeakCauchyRiemannOn.comp_real_mul_add (h : IsWeakCauchyRiemannOn p U' 
   filter_upwards [hae] with z hz
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     (hφ z).complexToReal_fderiv_apply, (hφ z).complexToReal_fderiv_apply,
-    apply_mul_one_add_apply_mul_I, hz, hderiv]
+    ContinuousLinearMap.apply_mul_one_add_apply_mul_I, hz, hderiv]
   simp
 
 /-! ### Changes of the target -/
