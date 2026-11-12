@@ -259,8 +259,8 @@ theorem exists_contMDiff_homotopicRel [CompactSpace M] (n : ℕ∞) (f : C(N, M)
 Hausdorff manifold, possibly with corners, into a compact boundaryless manifold which is `C^n` off
 a closed set `K` is homotopic, relative to the complement of an open set `O ⊇ K`, to a `C^n` map
 `g`; in particular `g = f` off `O`. -/
-theorem exists_contMDiff_homotopicRel_compl (n : ℕ∞) (f : C(N, M)) {K O : Set N}
-    (hK : IsClosed K) (hO : IsOpen O) (hKO : K ⊆ O) (hf : ContMDiffOn I J n f Kᶜ) :
+theorem exists_contMDiff_homotopicRel_compl [CompactSpace M] (n : ℕ∞) (f : C(N, M))
+    {K O : Set N} (hK : IsClosed K) (hO : IsOpen O) (hKO : K ⊆ O) (hf : ContMDiffOn I J n f Kᶜ) :
     ∃ g : C(N, M), ContMDiff I J n g ∧ (∀ y ∉ O, g y = f y) ∧ f.HomotopicRel g Oᶜ := by
   obtain ⟨g, hg, ⟨R⟩⟩ := f.exists_contMDiff_homotopicRel n hO.isClosed_compl
     (hK.isOpen_compl.mem_nhdsSet.2 (compl_subset_compl.2 hKO)) hf
