@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
-public import Mathlib.Probability.IdentDistrib
+public import TauCeti.Probability.IdentDistrib
 import Mathlib.Probability.Independence.Process.Basic
 import Mathlib.Probability.IdentDistribIndep
 import Mathlib.Probability.Process.FiniteDimensionalLaws
@@ -332,29 +332,9 @@ end ProbabilityTheory
 
 namespace ProbabilityTheory
 
-/-- Equal laws of differences of natural-valued random variables remain equal after casting
-to the integers, provided the subtrahends are a.e. at most the minuends.
-The sample spaces may differ. -/
-theorem IdentDistrib.natCast_sub_of_le {Ω Ω' : Type*}
-    [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
-    {a b : Ω → ℕ} {a' b' : Ω' → ℕ}
-    (h : IdentDistrib (fun ω ↦ b ω - a ω) (fun ω ↦ b' ω - a' ω) P Q)
-    (hab : ∀ᵐ ω ∂P, a ω ≤ b ω) (hab' : ∀ᵐ ω ∂Q, a' ω ≤ b' ω) :
-    IdentDistrib (fun ω ↦ (b ω : ℤ) - a ω)
-      (fun ω ↦ (b' ω : ℤ) - a' ω) P Q := by
-  have hcast := h.comp (measurable_of_countable (fun n : ℕ ↦ (n : ℤ)))
-  have hx : (fun ω ↦ ((b ω - a ω : ℕ) : ℤ)) =ᵐ[P]
-      (fun ω ↦ (b ω : ℤ) - a ω) := by
-    filter_upwards [hab] with ω hω using Int.ofNat_sub hω
-  have hy : (fun ω ↦ ((b' ω - a' ω : ℕ) : ℤ)) =ᵐ[Q]
-      (fun ω ↦ (b' ω : ℤ) - a' ω) := by
-    filter_upwards [hab'] with ω hω using Int.ofNat_sub hω
-  exact (IdentDistrib.of_ae_eq hcast.aemeasurable_fst hx).symm.trans
-    (hcast.trans (IdentDistrib.of_ae_eq hcast.aemeasurable_snd hy))
-
 /-- Nondecreasing count processes starting at zero have the same full path law if they have
 independent increments and corresponding increment laws agree. The sample spaces may differ.
-Monotonicity makes natural-number subtraction agree with subtraction after casting to integers. -/
+Monotonicity rules out decreases, which truncated natural-number subtraction cannot record. -/
 theorem HasIndepIncrements.identDistrib_nat {T Ω Ω' : Type*} [LinearOrder T] [OrderBot T]
     [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
     {X : T → Ω → ℕ} {Y : T → Ω' → ℕ}

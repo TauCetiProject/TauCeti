@@ -13,8 +13,8 @@ import TauCeti.Probability.Independence.Filtration
 /-!
 # The Poisson count-process law of exponential renewals
 
-The count process of independent exponential waiting times has independent increments in
-Mathlib's process-level sense. Consequently its full path law agrees with that of any
+The count process of independent exponential waiting times with a common rate has independent
+increments in Mathlib's process-level sense. Consequently its full path law agrees with that of any
 nondecreasing count process starting at zero with independent Poisson increments of the same
 rate, even on a different sample space. Equality is on the product sigma-algebra of all
 nonnegative time coordinates; no path continuity assumption is needed for this equality.
@@ -37,8 +37,8 @@ namespace TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {T : ℕ → Ω → ℝ≥0} {r : ℝ≥0}
 
-/-- Counts of independent exponential waiting times have independent increments, including
-increments with equal endpoints. -/
+/-- Counts of independent rate-`r` exponential waiting times have independent increments,
+including increments with equal endpoints. -/
 theorem hasIndepIncrements_renewalCountNat_of_expMeasure
     (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
@@ -53,7 +53,7 @@ theorem hasIndepIncrements_renewalCountNat_of_expMeasure
   simpa only [Function.comp_def, id_eq, add_tsub_cancel_of_le hst, Pi.sub_def] using
     ((IndepFun_iff_Indep _ _ _).mp hi)
 
-/-- The entire exponential-renewal count path has the law of any nondecreasing process
+/-- The entire rate-`r` exponential-renewal count path has the law of any nondecreasing process
 starting at zero with independent rate-`r` Poisson increments. This compares realizations
 on arbitrary, possibly different, sample spaces. -/
 theorem identDistrib_renewalCountNat_of_hasLaw_poissonMeasure
