@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Integral
+import TauCeti.Geometry.Symplectic.Hamiltonian.LoopVariation
 
 /-!
 # The first variation of the action of paths between exact Lagrangians
@@ -56,8 +57,9 @@ fixed, gives a variation along which the action has a nonzero derivative. Hence,
 without boundary modelled on a finite-dimensional space, the critical paths are exactly the
 Hamiltonian chords (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianPathActionCritical_iff`).
 These are the generators of the Floer complex of the pair `(L₀, L₁)`. The converse follows the
-argument for loops, `TauCeti.SmoothTwoForm.IsNondegenerate.isContractibleLoopActionCritical_iff`,
-with the chart variations `TauCeti.Manifold.sinChartVariation`.
+argument for loops,
+`TauCeti.SmoothTwoForm.IsNondegenerate.mem_periodicSolutions_of_forall_integral_eq_zero`, with the
+chart variations `TauCeti.Manifold.sinChartVariation`.
 
 ## Main definitions
 
@@ -163,18 +165,12 @@ private theorem hasDerivAt_lagrangianPathAction_of_pathIntegral (hω : ω.IsNond
     rw [hstokes, lagrangianPathAction_def, lagrangianPathAction_def]
     ring
   rw [hfun]
-  convert ((hg.integral_hasStrictDerivAt s₀ s₀).hasDerivAt.const_sub _).sub
-    (Manifold.hasDerivAt_intervalIntegral_apply_comp hH hw₁ s₀ 0 1) using 1
-  rw [hg_def, ← intervalIntegral.integral_neg]
-  refine (intervalIntegral.integral_congr fun t _ ↦ ?_).trans (intervalIntegral.integral_sub
-    (f := fun t ↦ -TauCeti.mpullback 𝓘(ℝ, ℝ × ℝ) I w ω.1 (s₀, t) ![(1, 0), (0, 1)])
-    (g := fun t ↦ mvfderiv I (H t) (w (s₀, t)) (mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0)))
-    (((hω₀.continuous_mpullback_apply hw₁ ![(1, 0), (0, 1)]).comp
-      (continuous_const.prodMk continuous_id)).neg.intervalIntegrable _ _)
-    ((Manifold.continuous_mvfderiv_apply_mfderiv hH hw₁ s₀).intervalIntegrable _ _))
-  rw [hω.apply_sub_hamiltonianVectorField]
-  congr 2
-  exact (mpullback_apply_pair w ω.1 (s₀, t) (1, 0) (0, 1)).symm
+  -- the primitives part of the action has the derivative of the swept area
+  have hg₀ : g s₀ = ∫ t in 0..1, ω.1 (w (s₀, t))
+      ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1)] :=
+    intervalIntegral.integral_congr fun t _ ↦ mpullback_apply_pair w ω.1 (s₀, t) (1, 0) (0, 1)
+  exact hω.hasDerivAt_sub_intervalIntegral hH hw₁
+    (hg₀ ▸ (hg.integral_hasStrictDerivAt s₀ s₀).hasDerivAt.const_sub _)
 
 /-- **The first variation of the action of paths between exact Lagrangians.** Let `ω = dα` be a
 nondegenerate exact two-form on a finite-dimensional manifold, `H` a jointly `C¹` time-dependent
@@ -289,7 +285,7 @@ private theorem _root_.TauCeti.IsLagrangianPathActionCritical.integral_mul_apply
     (fun s ↦ by rw [hend s 0 h0J, hc.apply_zero]) (fun s ↦ by rw [hend s 1 h1J, hc.apply_one])
     (Manifold.sinChartVariation_zero hJ) rfl rfl
   exact (intervalIntegral.integral_congr fun t _ ↦ (SmoothTwoForm.apply_mfderiv_sinChartVariation
-    (σ := ω) hJo hJ hT hφ hφJ hc.contMDiff t).symm).trans (hd.unique hd')
+    (σ := ω) (n := 2) (by norm_num) hJo hJ hT hφ hφJ hc.contMDiff t).symm).trans (hd.unique hd')
 
 /-- **Critical points of the action are Hamiltonian chords.** Let `ω = dα` be a nondegenerate
 exact two-form on a manifold without boundary modelled on a finite-dimensional space, and `H` a
@@ -332,7 +328,8 @@ theorem _root_.TauCeti.IsLagrangianPathActionCritical.hasMFDerivAt
   -- `g` is continuous at `t₀`, where it agrees with `φ g` for a bump `φ` equal to `1` near `t₀`
   have hgcont : ContinuousAt g t₀ := by
     obtain ⟨b, hbJ⟩ := exists_contDiffBump_tsupport_subset_ball t₀ hδ
-    refine (hω.continuous_mul_apply_curveVelocity_sub hH isOpen_ball (hJ subset_rfl)
+    refine (hω.continuous_mul_apply_curveVelocity_sub hH (n := 2) (by norm_num) isOpen_ball
+      (hJ subset_rfl)
       (hT subset_rfl (hbump b)) b.contDiff hbJ hc.contMDiff).continuousAt.congr ?_
     filter_upwards [closedBall_mem_nhds t₀ b.rIn_pos] with t ht
     rw [b.one_of_mem_closedBall ht, one_mul]
@@ -348,8 +345,8 @@ theorem _root_.TauCeti.IsLagrangianPathActionCritical.hasMFDerivAt
   obtain ⟨b, hbJ⟩ := exists_contDiffBump_tsupport_subset_ball t₁ hr
   have hint := hc.integral_mul_apply_eq_zero hω hα hH isOpen_ball (fun t ht ↦ (hrsub ht).1)
     (hJ hrδ) (hT hrδ (hbump b)) b.contDiff hbJ
-  have hcont := hω.continuous_mul_apply_curveVelocity_sub hH isOpen_ball (hJ hrδ)
-    (hT hrδ (hbump b)) b.contDiff hbJ hc.contMDiff
+  have hcont := hω.continuous_mul_apply_curveVelocity_sub hH (n := 2) (by norm_num) isOpen_ball
+    (hJ hrδ) (hT hrδ (hbump b)) b.contDiff hbJ hc.contMDiff
   -- `b g` is nonnegative, as `g > 0` on the support of `b`, and `b g = g > 0` at `t₁`
   refine (intervalIntegral.integral_pos zero_lt_one hcont.continuousOn (fun t _ ↦ ?_)
     ⟨t₁, Ioo_subset_Icc_self ht₁, ?_⟩).ne' hint

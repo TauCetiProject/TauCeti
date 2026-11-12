@@ -33,7 +33,10 @@ has `#𝓀[K]` elements.
   `TauCeti.relIndex_unitFiltration_succ_succ`: the positive graded pieces and relative indices
   have cardinality `#𝓀[K]`.
 * `TauCeti.unitFiltration_isFiniteRelIndex_zero`: every step of the unit filtration has finite
-  index in `U(K,0) = 𝒪[K]ˣ`.
+  index in `U(K,0) = 𝒪[K]ˣ`; precisely, `TauCeti.relIndex_unitFiltration_succ_zero`:
+  `[U(K,0) : U(K,n+1)] = (#𝓀[K] - 1) * #𝓀[K] ^ n`, so that
+  `TauCeti.pow_natCard_sub_one_mul_pow_mem_unitFiltration_succ`: every unit `x` has
+  `x ^ ((#𝓀[K] - 1) * #𝓀[K] ^ n) ∈ U(K,n+1)`.
 * `TauCeti.relIndex_unitFiltration_add_succ_succ` and
   `TauCeti.natCard_unitFiltration_succ_quotient_add_succ`: more generally,
   `U(K,m+1) / U(K,m+n+1)` has `#𝓀[K] ^ n` elements.
@@ -328,6 +331,25 @@ noncomputable instance unitFiltration_isFiniteRelIndex_zero (m : ℕ) :
     (unitFiltration_antitone (Nat.zero_le 1)), relIndex_unitFiltration_one_zero]
   have : 1 < Nat.card 𝓀[K] := Finite.one_lt_card
   exact mul_ne_zero Subgroup.relIndex_ne_zero (by omega)
+
+/-- The index of `U(K,n+1)` in the unit group `U(K,0) = 𝒪[K]ˣ` is `(q - 1) * q ^ n`, where
+`q = #𝓀[K]`. -/
+theorem relIndex_unitFiltration_succ_zero (n : ℕ) :
+    (unitFiltration K (n + 1)).relIndex (unitFiltration K 0) =
+      (Nat.card 𝓀[K] - 1) * Nat.card 𝓀[K] ^ n := by
+  have h := relIndex_unitFiltration_add_succ_succ (K := K) 0 n
+  rw [zero_add, zero_add] at h
+  rw [← Subgroup.relIndex_mul_relIndex _ _ _ (unitFiltration_antitone (by omega : 1 ≤ n + 1))
+    (unitFiltration_antitone (Nat.zero_le 1)), h, relIndex_unitFiltration_one_zero, mul_comm]
+
+/-- **Powering a unit into a deep step.** For every unit `x ∈ U(K,0)` and every `n`, the power
+`x ^ ((q - 1) * q ^ n)` lies in `U(K,n+1)`, where `q = #𝓀[K]`: the exponent is the index of
+`U(K,n+1)` in `U(K,0)`. -/
+theorem pow_natCard_sub_one_mul_pow_mem_unitFiltration_succ {x : Kˣ}
+    (hx : x ∈ unitFiltration K 0) (n : ℕ) :
+    x ^ ((Nat.card 𝓀[K] - 1) * Nat.card 𝓀[K] ^ n) ∈ unitFiltration K (n + 1) := by
+  rw [← relIndex_unitFiltration_succ_zero]
+  exact Subgroup.pow_relIndex_mem _ hx
 
 /-- The positive-depth finite-level quotient `U(K,m+1) / U(K,m+n+1)` has `q ^ n` elements,
 where `q = #𝓀[K]`. -/

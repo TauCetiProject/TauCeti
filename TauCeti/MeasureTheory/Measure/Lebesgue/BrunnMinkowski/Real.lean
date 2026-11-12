@@ -6,22 +6,28 @@ Authors: Weiyi Wang, Jonathan Ho, The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.Algebra.Group.Pointwise
 
 /-!
 # One-dimensional Brunn–Minkowski inequality
 
-For two nonempty Lebesgue-measurable subsets of the real line, the outer volume of their
-Minkowski sum is at least the sum of their volumes. No measurability of the Minkowski sum
-is required, and the inequality includes zero and infinite volumes. Nonemptiness is essential:
-adding the empty set to a positive-volume set gives the empty set.
+For two nonempty subsets of the real line, one of them Lebesgue-measurable, the outer volume
+of their Minkowski sum is at least the sum of their (outer) volumes. No measurability of the
+other set or of the Minkowski sum is required, and the inequality includes zero and infinite
+volumes. Nonemptiness is essential: adding the empty set to a positive-volume set gives the empty
+set.
 
 The compact-set and Borel-set arguments are adapted from Weiyi Wang and Jonathan Ho's
 [Mathlib PR #44802](https://github.com/leanprover-community/mathlib4/pull/44802), originating
 in [Jonathan Ho's isoperimetric formalization](https://github.com/hojonathanho/isoperimetric).
 The proof translates the compact sets so that their extreme points meet at zero; the two
 translates have null intersection and their union lies in their Minkowski sum. Inner
-regularity then gives the Borel-set inequality. Measurable subsets with the same volume
-extend it to Lebesgue-measurable sets. The weighted form uses Mathlib's `Measure.addHaar_smul`.
+regularity then gives the Borel-set inequality. For an arbitrary set `A` and a compact set `K`,
+outer regularity gives an open set `U ⊇ A + K` of almost minimal volume; the open set of
+translations carrying `K` into `U` contains `A`, so the Borel-set inequality bounds the volume
+of `A` plus that of `K` by that of `U`. Inner regularity of a measurable subset with the same
+volume then extends this to a Lebesgue-measurable second set. The weighted form uses Mathlib's
+`Measure.addHaar_smul`.
 
 This is the one-dimensional set inequality used in the Prékopa–Leindler argument.
 Adding an open interval shows that the open `ρ`-neighbourhood of any nonempty set of reals is
@@ -97,58 +103,66 @@ theorem volume_add_volume_le {A B : Set ℝ} (hAn : A.Nonempty) (hAm : Measurabl
         (by simp) (hL.union isCompact_singleton), Set.union_subset hKA (by simpa using ha),
         Set.union_subset hLB (by simpa using hb)]
 
-/-- One-dimensional **Brunn–Minkowski theorem** for Lebesgue-measurable sets, with outer
-volume on the right. No finiteness or measurability of the sum is assumed. -/
+/-- One-dimensional **Brunn–Minkowski theorem** for a Lebesgue-measurable set `B` and an
+arbitrary set `A`, with outer volume for `A` and for the sum. No finiteness or measurability of
+the sum is assumed. -/
 theorem volume_add_volume_le_of_nullMeasurableSet {A B : Set ℝ} (hAn : A.Nonempty)
-    (hAm : NullMeasurableSet A volume) (hBn : B.Nonempty)
-    (hBm : NullMeasurableSet B volume) : volume A + volume B ≤ volume (A + B) := by
-  obtain ⟨a, ha⟩ := hAn
+    (hBn : B.Nonempty) (hBm : NullMeasurableSet B volume) :
+    volume A + volume B ≤ volume (A + B) := by
   obtain ⟨b, hb⟩ := hBn
-  obtain ⟨K, hKA, hKm, hK⟩ := hAm.exists_measurable_subset_ae_eq
+  -- For compact `K`, an open set `U ⊇ A + K` of almost minimal volume contains `V + K` for an
+  -- open set `V ⊇ A`.
+  have hcpt {K : Set ℝ} (hKn : K.Nonempty) (hK : IsCompact K) :
+      volume A + volume K ≤ volume (A + K) := by
+    refine le_of_forall_gt_imp_ge_of_dense fun r hr ↦ ?_
+    obtain ⟨U, hAKU, hU, hUr⟩ := (A + K).exists_isOpen_lt_of_lt r hr
+    obtain ⟨V, hV, hAV, hVKU⟩ := hK.exists_isOpen_superset_add_subset hU hAKU
+    calc volume A + volume K ≤ volume V + volume K := by gcongr
+      _ ≤ volume (V + K) := volume_add_volume_le (hAn.mono hAV) hV.measurableSet hKn
+          hK.measurableSet
+      _ ≤ r := (measure_mono hVKU).trans hUr.le
+  -- Inner regularity of a measurable representative of `B` reduces to the compact case.
   obtain ⟨L, hLB, hLm, hL⟩ := hBm.exists_measurable_subset_ae_eq
-  -- Adjoin points to retain nonemptiness even when a measurable representative is empty.
-  have hKvol : volume (K ∪ {a}) = volume A := by
-    simpa using measure_congr (hK.union (ae_eq_empty.2 (measure_singleton a)))
-  have hLvol : volume (L ∪ {b}) = volume B := by
-    simpa using measure_congr (hL.union (ae_eq_empty.2 (measure_singleton b)))
-  rw [← hKvol, ← hLvol]
-  exact (volume_add_volume_le (by simp) (hKm.union (measurableSet_singleton a))
-    (by simp) (hLm.union (measurableSet_singleton b))).trans
-    (measure_mono (add_subset_add (union_subset hKA (by simpa using ha))
-      (union_subset hLB (by simpa using hb))))
+  rw [← measure_congr hL, hLm.measure_eq_iSup_isCompact]
+  simp_rw [iSup_and']
+  rw [ENNReal.add_biSup' ⟨∅, by simp⟩]
+  -- Adjoin a point of `B`, retaining nonemptiness of the compact set.
+  refine iSup₂_le fun K ⟨hKL, hKc⟩ ↦ calc
+    volume A + volume K ≤ volume A + volume (K ∪ {b}) := by gcongr; exact subset_union_left
+    _ ≤ volume (A + (K ∪ {b})) := hcpt (by simp) (hKc.union isCompact_singleton)
+    _ ≤ volume (A + B) := by grw [union_subset (hKL.trans hLB) (singleton_subset_iff.2 hb)]
 
-/-- Weighted one-dimensional **Brunn–Minkowski theorem** for Lebesgue-measurable sets.
-The coefficients may vanish; extended multiplication uses `0 * ∞ = 0`. Taking
-`c = 1 - θ` and `d = θ` gives the convex-combination form for every `θ ∈ [0,1]`. -/
-theorem mul_volume_add_mul_volume_le {A B : Set ℝ} (hAn : A.Nonempty)
-    (hAm : NullMeasurableSet A volume) (hBn : B.Nonempty)
+/-- Weighted one-dimensional **Brunn–Minkowski theorem** for a Lebesgue-measurable set `B` and
+an arbitrary set `A`, with outer volumes. The coefficients may vanish; extended multiplication
+uses `0 * ∞ = 0`. Taking `c = 1 - θ` and `d = θ` gives the convex-combination form for every
+`θ ∈ [0,1]`. -/
+theorem mul_volume_add_mul_volume_le {A B : Set ℝ} (hAn : A.Nonempty) (hBn : B.Nonempty)
     (hBm : NullMeasurableSet B volume) {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d) :
     ENNReal.ofReal c * volume A + ENNReal.ofReal d * volume B ≤
       volume (c • A + d • B) := by
-  have h := volume_add_volume_le_of_nullMeasurableSet hAn.smul_set
-    (Measure.NullMeasurableSet.const_smul hAm c) hBn.smul_set
+  have h := volume_add_volume_le_of_nullMeasurableSet (hAn.smul_set (a := c)) hBn.smul_set
     (Measure.NullMeasurableSet.const_smul hBm d)
   simpa [Measure.addHaar_smul, abs_of_nonneg hc, abs_of_nonneg hd] using h
 
-/-- Real-valued one-dimensional Brunn–Minkowski inequality. Finiteness of the outer
-volume of the sum implies finiteness of both input volumes. -/
-theorem volume_real_add_volume_real_le {A B : Set ℝ} (hAn : A.Nonempty)
-    (hAm : NullMeasurableSet A volume) (hBn : B.Nonempty)
+/-- Real-valued one-dimensional Brunn–Minkowski inequality for a Lebesgue-measurable set `B`
+and an arbitrary set `A`. Finiteness of the outer volume of the sum implies finiteness of both
+input volumes. -/
+theorem volume_real_add_volume_real_le {A B : Set ℝ} (hAn : A.Nonempty) (hBn : B.Nonempty)
     (hBm : NullMeasurableSet B volume) (hfin : volume (A + B) ≠ ∞) :
     volume.real A + volume.real B ≤ volume.real (A + B) := by
-  have h := volume_add_volume_le_of_nullMeasurableSet hAn hAm hBn hBm
+  have h := volume_add_volume_le_of_nullMeasurableSet hAn hBn hBm
   have hA : volume A ≠ ∞ := ne_top_of_le_ne_top hfin ((le_self_add).trans h)
   have hB : volume B ≠ ∞ := ne_top_of_le_ne_top hfin ((le_add_self).trans h)
   simpa [measureReal_def, ENNReal.toReal_add hA hB] using ENNReal.toReal_mono hfin h
 
-/-- Real-valued weighted one-dimensional Brunn–Minkowski inequality. The outer volume
-of the weighted sum must be finite; a zero coefficient still permits an infinite input volume. -/
+/-- Real-valued weighted one-dimensional Brunn–Minkowski inequality for a Lebesgue-measurable
+set `B` and an arbitrary set `A`. The outer volume of the weighted sum must be finite; a zero
+coefficient still permits an infinite input volume. -/
 theorem mul_volume_real_add_mul_volume_real_le {A B : Set ℝ} (hAn : A.Nonempty)
-    (hAm : NullMeasurableSet A volume) (hBn : B.Nonempty)
-    (hBm : NullMeasurableSet B volume) {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d)
+    (hBn : B.Nonempty) (hBm : NullMeasurableSet B volume) {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d)
     (hfin : volume (c • A + d • B) ≠ ∞) :
     c * volume.real A + d * volume.real B ≤ volume.real (c • A + d • B) := by
-  have h := mul_volume_add_mul_volume_le hAn hAm hBn hBm hc hd
+  have h := mul_volume_add_mul_volume_le hAn hBn hBm hc hd
   have hA : ENNReal.ofReal c * volume A ≠ ∞ :=
     ne_top_of_le_ne_top hfin (le_self_add.trans h)
   have hB : ENNReal.ofReal d * volume B ≠ ∞ :=
@@ -160,15 +174,9 @@ theorem mul_volume_real_add_mul_volume_real_le {A B : Set ℝ} (hAn : A.Nonempty
 of the set plus `2 ρ`. No measurability of the set is required: the volume on the left is its
 outer volume. -/
 theorem volume_add_le_volume_thickening {A : Set ℝ} (hA : A.Nonempty) {ρ : ℝ} (hρ : 0 < ρ) :
-    volume A + ENNReal.ofReal (2 * ρ) ≤ volume (Metric.thickening ρ A) :=
-  calc volume A + ENNReal.ofReal (2 * ρ)
-      ≤ volume (closure A) + volume (Metric.ball (0 : ℝ) ρ) := by
-        rw [Real.volume_ball]
-        gcongr
-        exact subset_closure
-    _ ≤ volume (closure A + Metric.ball (0 : ℝ) ρ) :=
-        volume_add_volume_le hA.closure isClosed_closure.measurableSet
-          ⟨0, Metric.mem_ball_self hρ⟩ measurableSet_ball
-    _ = volume (Metric.thickening ρ A) := by rw [add_ball_zero, Metric.thickening_closure]
+    volume A + ENNReal.ofReal (2 * ρ) ≤ volume (Metric.thickening ρ A) := by
+  have h := volume_add_volume_le_of_nullMeasurableSet hA ⟨0, Metric.mem_ball_self hρ⟩
+    measurableSet_ball.nullMeasurableSet
+  rwa [Real.volume_ball, add_ball_zero] at h
 
 end TauCeti.Real

@@ -298,6 +298,7 @@ theorem IsDualCertificate.ae_exists_condKernel_eq_dirac (hc₀ : ∀ z, 0 ≤ c 
 
 variable [IsFiniteMeasure μ]
 
+omit [Nonempty Y] in
 /-- **Uniqueness of the optimal plan for a twisted cost.** Let `c` be a nonnegative real cost,
 differentiable at contact partners, with `y ↦ Dₓ c (x, y)` injective on differentiable sections
 at almost every `x`. If `π` is

@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.Primrec.List
+public import Mathlib.Data.List.ProdSigma
+public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.GroupTheory.FreeGroup.Reduce
+public import TauCeti.Computability.Primrec.List
+public import TauCeti.Data.List.Sections
 
 /-!
 # Primitive-recursive operations on free-group words
@@ -34,6 +38,10 @@ Mathlib's `FreeGroup.lift_mk` and `Primrec.list_foldr`.
 `primrecPred_exists_encode_toWord` recognizes exactly the natural numbers encoding
 reduced representatives. It uses `Encodable.decode₂`, which rejects noncanonical
 codes even if the alphabet's decoder accepts redundant codes.
+
+For a finite alphabet, `wordsOfLengthLE` lists the finitely many words of length at most a
+given bound, primitive recursively in the bound; it is the search space of exhaustive searches
+over bounded tuples of words.
 -/
 
 public section
@@ -167,5 +175,29 @@ theorem primrec₂_lift_mk_fin (hmul : Primrec₂ ((· * ·) : G → G → G))
     (hinv : Primrec (Inv.inv : G → G)) (n : ℕ) :
     Primrec₂ fun (f : Fin n → G) (w : List (Fin n × Bool)) => lift f (mk w) :=
   primrec₂_lift_mk hmul hinv Primrec.fin_app
+
+section Words
+
+variable {A : Type*} [Finite A]
+
+variable (A) in
+/-- The words of length at most `N` in the letters of a finite alphabet and their inverses. -/
+noncomputable def wordsOfLengthLE (N : ℕ) : List (List (A × Bool)) :=
+  (List.range (N + 1)).flatMap fun k =>
+    (List.replicate k ((Set.finite_univ (α := A)).toFinset.toList ×ˢ [true, false])).sections
+
+/-- A word is listed among the words of length at most `N` exactly when its length is at
+most `N`. -/
+@[simp] theorem mem_wordsOfLengthLE {N : ℕ} {w : List (A × Bool)} :
+    w ∈ wordsOfLengthLE A N ↔ w.length ≤ N := by
+  simp [wordsOfLengthLE, List.mem_sections_replicate, Nat.lt_succ_iff]
+
+/-- The list of words of length at most `N` is primitive recursive in `N`. -/
+theorem primrec_wordsOfLengthLE [Primcodable A] : Primrec (wordsOfLengthLE A) :=
+  Primrec.list_flatMap (Primrec.list_range.comp Primrec.succ)
+    (Primrec.list_sections.comp
+      (Primrec.list_replicate.comp Primrec.snd (Primrec.const _))).to₂
+
+end Words
 
 end FreeGroup

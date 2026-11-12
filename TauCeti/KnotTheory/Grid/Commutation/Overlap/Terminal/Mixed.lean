@@ -281,7 +281,6 @@ theorem mem_terminalSelfPairs_of_right_eq_left
   obtain ⟨hr, hP⟩ := (G.mem_rectanglePentagonDecompositions C D).1 hD
   have hrectangle := ((G.mem_unblockedRectangles _).1 hr).1
   have hpentagon := ((G.mem_pentagons _).1 hP).1
-  have hone := D.hasOneCommonSide_of_right_eq_left hcommon hother
   obtain ⟨hfirstRight, hsecondRight, hbottom, -⟩ :=
     D.rightLeftSelfRecut_geometry hcommon hother hrectangle hpentagon hturn
   set E := D.rightLeftSelfRecut hcommon hother hrectangle hpentagon hturn
@@ -353,7 +352,6 @@ theorem mem_terminalSelfPairs_iff_sides
     obtain ⟨hcounted₀, hcommon₀, hcol₀⟩ := (G.mem_terminalSelfPairSources C D₀).1 hD₀
     obtain ⟨hr₀, hP₀⟩ := (G.mem_rectanglePentagonDecompositions C D₀).1 hcounted₀
     have hpentagon₀ := ((G.mem_pentagons _).1 hP₀).1
-    have hone₀ := D₀.hasOneCommonSide_of_right_eq_right hcommon₀ (Grid.ne_left_of_mem_cIoo hcol₀)
     have hsymm := hrecut.symm
       (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D₀.toRectangleDecomposition_first_toGridRectangle] using
