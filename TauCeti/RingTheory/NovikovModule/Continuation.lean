@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.NovikovModule.Tensor
 public import TauCeti.RingTheory.NovikovModule.Leibniz
 public import TauCeti.Algebra.Homology.SquareZero.Graded
-import TauCeti.Algebra.BigOperators.Ring.Bilinear
 
 /-!
 # Continuation homotopies of supported kernel products
@@ -357,19 +356,16 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_sub_novikovProductOfMatrix_nov
   refine (coordinates hG₀ s₀).injective (funext fun l => ?_)
   rw [map_sub, map_add, map_add, map_smul, Pi.sub_apply, Pi.add_apply, Pi.add_apply,
     Pi.smul_apply]
-  simp only [coordinates_novikovMapOfMatrix, coordinates_novikovProductOfMatrix]
+  rw [coordinates_novikovMapOfMatrix_novikovProductOfMatrix,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix,
+    coordinates_novikovMapOfMatrix_novikovProductOfMatrix,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right]
   have hs := negOnePowCast_smul_coordinates_of_mem_gradeBy hF₁ r₁ hd₁ ha
-  set x := coordinates hF₁ r₁ a
-  set y := coordinates hF₂ r₂ b
-  -- Each of the five sums is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, with `c(i, j)` one of the five
-  -- sums of the homotopy identity. Termwise, this is the homotopy identity, with the sign of the
-  -- orbit of `i` replaced by the sign of the degree of `a` on its nonzero coordinates.
-  rw [Finset.sum_mul_sum_sum_mul_mul _ _ x y _ Q (Φ₀ · l),
-    Finset.sum_sum_sum_mul_sum_mul_mul _ _ x y _ _ Φ₁ Φ₂,
-    Finset.sum_mul_sum_sum_mul_mul _ _ x y _ K (E₀ · l),
-    Finset.sum_sum_sum_mul_mul_mul_left _ _ x y _ D₁,
-    Finset.sum_sum_mul_sum_mul_mul_right _ _ x y _ D₂, ← Finset.sum_sub_distrib, Finset.smul_sum,
-    ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
+  -- Termwise, this is the homotopy identity, with the sign of the orbit of `i` replaced by the
+  -- sign of the degree of `a` on its nonzero coordinates.
+  rw [← Finset.sum_sub_distrib, Finset.smul_sum, ← Finset.sum_add_distrib,
+    ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [← Finset.sum_sub_distrib, Finset.smul_sum, ← Finset.sum_add_distrib,
     ← Finset.sum_add_distrib]

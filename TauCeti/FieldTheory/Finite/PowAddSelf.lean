@@ -54,14 +54,18 @@ namespace FiniteField
 
 variable {K : Type*} [Field K] {p n : ℕ} [ExpChar K p]
 
+/-- A field with `q²` elements, `q = p ^ n` a power of the exponential characteristic, is finite,
+since `Nat.card` of an infinite type is `0`. -/
+private theorem finite_of_natCard_eq_pow_sq (hK : Nat.card K = (p ^ n) ^ 2) : Finite K :=
+  Nat.finite_of_card_ne_zero
+    (by rw [hK]; exact pow_ne_zero 2 (pow_ne_zero n (expChar_pos K p).ne'))
+
 /-- In a field with `q²` elements, `q = p ^ n` a power of the exponential characteristic, every
 `c` with `c ^ q = c` is of the form `b ^ q + b` for exactly `q` elements `b`. -/
 theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     (hc : c ^ p ^ n = c) : Nat.card {b : K // b ^ p ^ n + b = c} = p ^ n := by
   classical
-  have : Finite K :=
-    Nat.finite_of_card_ne_zero
-      (by rw [hK]; exact pow_ne_zero 2 (pow_ne_zero n (expChar_pos K p).ne'))
+  have := finite_of_natCard_eq_pow_sq hK
   have := Fintype.ofFinite K
   rw [Nat.card_eq_fintype_card] at hK
   set q := p ^ n with hqdef
@@ -118,8 +122,9 @@ theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
   exact (AddMonoidHom.card_fiber_eq_of_mem_range T hcmem ⟨0, map_zero T⟩).trans hkerq
 
 /-- In a field with `q²` elements, every `c` with `c ^ q = c` is of the form `b ^ q + b`. -/
-theorem exists_pow_add_self_eq [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
+theorem exists_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     (hc : c ^ p ^ n = c) : ∃ b : K, b ^ p ^ n + b = c := by
+  have := finite_of_natCard_eq_pow_sq hK
   have : Finite {b : K // b ^ p ^ n + b = c} := Subtype.finite
   have hpos : 0 < Nat.card {b : K // b ^ p ^ n + b = c} := by
     rw [natCard_pow_add_self_eq hK hc]
@@ -130,7 +135,7 @@ theorem exists_pow_add_self_eq [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) {c : K
 /-- **The twisted trace is onto.** In a field with `q²` elements, `q = p ^ n` a power of the
 exponential characteristic, and for `ε = (-1) ^ k`, every `c` with `c ^ q = ε c` is of the form
 `b + ε b ^ q`. -/
-theorem exists_add_neg_one_pow_mul_pow_eq [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) (k : ℕ)
+theorem exists_add_neg_one_pow_mul_pow_eq (hK : Nat.card K = (p ^ n) ^ 2) (k : ℕ)
     {c : K} (hc : c ^ p ^ n = (-1) ^ k * c) : ∃ b : K, b + (-1) ^ k * b ^ p ^ n = c := by
   rcases neg_one_pow_eq_or K k with h | h <;> rw [h] at hc ⊢
   · obtain ⟨b, hb⟩ := exists_pow_add_self_eq hK (one_mul c ▸ hc)
@@ -144,8 +149,9 @@ theorem exists_add_neg_one_pow_mul_pow_eq [Finite K] (hK : Nat.card K = (p ^ n) 
 /-- **The twisted trace has a nonzero kernel element.** In a field with `q²` elements, `q = p ^ n`
 a power of the exponential characteristic, and for `ε = (-1) ^ k`, some nonzero `b` satisfies
 `b + ε b ^ q = 0`. -/
-theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero [Finite K]
+theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero
     (hK : Nat.card K = (p ^ n) ^ 2) (k : ℕ) : ∃ b ≠ (0 : K), b + (-1) ^ k * b ^ p ^ n = 0 := by
+  have := finite_of_natCard_eq_pow_sq hK
   rcases neg_one_pow_eq_or K k with h | h <;> rw [h]
   · -- The `q` roots of `b ^ q + b = 0` are not all zero.
     have : Finite {b : K // b ^ p ^ n + b = 0} := Subtype.finite

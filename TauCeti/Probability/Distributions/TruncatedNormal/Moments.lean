@@ -178,7 +178,6 @@ theorem variance_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
           (r.toReal - m) * gaussianPDFRealEReal m v r) / (gaussianReal m v).real s -
         v * ((gaussianPDFRealEReal m v l - gaussianPDFRealEReal m v r) /
           (gaussianReal m v).real s) ^ 2) := by
-  have hv' : (v : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hv
   have hZ := (measureReal_gaussianReal_pos m hv hlr hs₁).ne'
   have := isProbabilityMeasure_truncatedNormalMeasure_of_lt (m := m) hv hlr hs₁
   -- The second moment is the second derivative of the mgf at `0`.
