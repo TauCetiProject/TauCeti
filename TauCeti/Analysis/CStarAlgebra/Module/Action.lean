@@ -69,7 +69,7 @@ abbrev semigroupAction : SemigroupAction A E where
 variable {A E}
 
 /-- The action is additive in the coefficient, without requiring a unit. -/
-theorem add_smul (a b : A) (x : E) : (a + b) • x = a • x + b • x := by
+protected theorem add_smul (a b : A) (x : E) : (a + b) • x = a • x + b • x := by
   apply ext_inner_left (A := A)
   intro y
   simp [add_mul]
