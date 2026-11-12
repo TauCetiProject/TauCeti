@@ -195,14 +195,11 @@ its length is at most `N` and all its letters lie in `l`. -/
 /-- The list of words of length at most `N` in the letters of `l` is primitive recursive in `l`
 and `N`. -/
 theorem primrec₂_wordsOverOfLengthLE [Primcodable A] :
-    Primrec₂ (wordsOverOfLengthLE : List A → ℕ → List (List (A × Bool))) := by
-  have hl : Primrec fun l : List A => l ×ˢ [true, false] :=
-    (Primrec.list_flatMap Primrec.id (Primrec.list_map (Primrec.const [true, false])
-      (Primrec.pair (Primrec.snd.comp Primrec.fst) Primrec.snd).to₂).to₂).of_eq fun l => by
-      induction l <;> simp_all
-  exact (Primrec.list_flatMap (Primrec.list_range.comp (Primrec.succ.comp Primrec.snd))
+    Primrec₂ (wordsOverOfLengthLE : List A → ℕ → List (List (A × Bool))) :=
+  (Primrec.list_flatMap (Primrec.list_range.comp (Primrec.succ.comp Primrec.snd))
     (Primrec.list_sections.comp (Primrec.list_replicate.comp Primrec.snd
-      (hl.comp (Primrec.fst.comp Primrec.fst)))).to₂).to₂
+      (Primrec.list_product.comp (Primrec.fst.comp Primrec.fst)
+        (Primrec.const [true, false])))).to₂).to₂
 
 variable [Finite A]
 
