@@ -214,7 +214,7 @@ box is the row `hasseDerivRow d α μ` applied to `x`. -/
 theorem aeval_hasseDeriv_ofBox (x : (∀ j, Fin (d j + 1)) → R) (α : σ → S) (μ : σ →₀ ℕ) :
     aeval α (hasseDeriv μ (ofBox d x)) = ∑ I, hasseDerivRow d α μ I * algebraMap R S (x I) := by
   simp only [ofBox_apply, map_sum, hasseDeriv_monomial, aeval_monomial, hasseDerivRow, map_mul,
-    map_prod, map_natCast, Finsupp.prod_fintype _ _ (fun j ↦ Nat.choose_zero_right _),
+    map_prod, map_natCast, Finsupp.prod_fintype _ _ (fun _ ↦ Nat.choose_zero_right _),
     Finsupp.prod_fintype _ _ (fun j ↦ pow_zero (α j)), Finsupp.tsub_apply, boxMonomial_apply,
     Nat.cast_prod, prod_mul_distrib]
   exact sum_congr rfl fun I _ ↦ by ring

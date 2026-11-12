@@ -8,7 +8,7 @@ module
 import TauCeti.AlgebraicGeometry.Modules.PseudoCoherent.Pullback
 import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.Data.ZMod.Basic
-import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 
 /-!
 # Tests for pseudo-coherent modules on schemes
