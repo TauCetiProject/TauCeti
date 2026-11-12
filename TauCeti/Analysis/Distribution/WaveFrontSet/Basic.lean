@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.LinearEquiv
 public import TauCeti.Analysis.Distribution.Restriction
+public import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
@@ -17,7 +18,6 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Inversion
 import TauCeti.Analysis.InnerProductSpace.Adjoint
-import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.Topology.Algebra.Module.Cone
 
@@ -107,6 +107,13 @@ def localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) : ℂ :=
   T.complexPairing
     (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ)
 
+/-- The defining equation of `Distribution.localFourier`: `T` paired with the product of `φ` and
+the Fourier atom `e_η`. -/
+theorem localFourier_def (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    T.localFourier φ η = T.complexPairing
+      (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ) := by
+  rw [localFourier]
+
 /-- The localized Fourier transform at `η` pairs `T` with any test function equal to
 `x ↦ φ x * 𝐞 (-⟪x, η⟫)`. -/
 theorem localFourier_eq (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {η : E} {ψ : 𝓓(Ω, ℂ)}
@@ -153,6 +160,12 @@ theorem localFourier_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, �
 @[simp]
 theorem localFourier_zero_cutoff (T : 𝓓'(Ω, ℂ)) (η : E) : T.localFourier 0 η = 0 := by
   simpa using localFourier_smul_cutoff T 0 0 η
+
+/-- At the zero frequency the localized Fourier transform is the pairing `T φ` with the cutoff. -/
+@[simp]
+theorem localFourier_at_zero (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    T.localFourier φ 0 = T.complexPairing φ :=
+  localFourier_eq T φ fun x ↦ by simp
 
 /-- The localized Fourier transform `η ↦ T (φ e_η)` is continuous in the frequency. -/
 theorem continuous_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
@@ -380,6 +393,18 @@ theorem waveFrontSet_subset_dsupport (T : 𝓓'(Ω, ℂ)) :
     T.waveFrontSet ⊆ dsupport T ×ˢ univ := by
   rintro ⟨x, ξ⟩ ⟨hx, -, hT⟩
   exact ⟨by_contra fun hxT => hT (isMicrolocallySmoothAt_of_notMem_dsupport hx hxT ξ), trivial⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- Near a point of the support of `T` there are complex cutoffs `φ` with `T φ ≠ 0`, that is, with
+localized Fourier transform nonzero at the zero frequency. -/
+theorem exists_tsupport_subset_localFourier_at_zero_ne_zero {T : 𝓓'(Ω, ℂ)} {x : E}
+    (hx : x ∈ dsupport T) {U : Set E} (hU : U ∈ 𝓝 x) :
+    ∃ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ U ∧ T.localFourier φ 0 ≠ 0 := by
+  obtain ⟨θ, hθ, hTθ⟩ := (mem_dsupport_iff_forall_exists_ne x).1 hx (interior U)
+    (mem_interior_iff_mem_nhds.2 hU) isOpen_interior
+  refine ⟨postcompCLM (𝕜 := ℝ) ofRealCLM θ, ?_, by simpa using hTθ⟩
+  rw [postcompCLM_apply]
+  exact (tsupport_comp_subset (map_zero ofRealCLM) θ).trans (hθ.trans interior_subset)
 
 /-- The zero distribution has empty wave front set. -/
 @[simp]
