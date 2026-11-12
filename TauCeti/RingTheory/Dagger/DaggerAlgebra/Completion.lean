@@ -75,9 +75,16 @@ abbrev completion : Type _ :=
 of the Monsky–Washnitzer algebra into the Tate algebra. -/
 noncomputable def toCompletion : A →ₐ[K] completion K A :=
   (Ideal.quotientMapₐ _ (washnitzerAlgebra.toTate _ K) Ideal.le_comap_map).comp
-    (Ideal.quotientKerAlgEquivOfSurjective (presentation_surjective K A)).symm.toAlgHom
+    (residueAlgEquiv K A).toAlgHom
 
 variable {K A}
+
+/-- The quotient map induced by the inclusion into the Tate algebra agrees with the
+completion map under the residue isomorphism. -/
+@[simp] theorem quotientMapₐ_residueAlgEquiv (a : A) :
+    Ideal.quotientMapₐ _ (washnitzerAlgebra.toTate _ K) Ideal.le_comap_map
+      (residueAlgEquiv K A a) = toCompletion K A a := by
+  simp only [toCompletion, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
 
 /-- The completion map sends the image of a series `f ∈ W_n` under the chosen presentation to the
 class of `f` in `Â = T_n ⧸ I T_n`. -/

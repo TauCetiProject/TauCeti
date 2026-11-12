@@ -27,6 +27,8 @@ field this rules out the polynomial ring `K[X]`, whose element `1 + c • X` is 
 * `TauCeti.Dagger.IsDaggerAlgebra K A`: `A` is a quotient of some `W_n`.
 * `TauCeti.Dagger.presentationDim K A`: the least number of variables of a presentation
   `W_n ↠ A`, and `TauCeti.Dagger.presentation K A`: a chosen presentation in that many variables.
+* `TauCeti.Dagger.residueAlgEquiv K A`: the isomorphism of `A` with the quotient of its
+  chosen presentation by its kernel.
 
 ## Main results
 
@@ -137,7 +139,27 @@ theorem presentation_surjective : Function.Surjective (presentation K A) := by
   classical
   exact (Nat.find_spec (IsDaggerAlgebra.exists_surjective (K := K) (A := A))).choose_spec
 
+/-- The isomorphism of a dagger algebra `A` with the residue algebra
+`W_n ⧸ ker (presentation K A)` of the chosen minimal presentation.
+Adapted from `TauCeti.IsAffinoidAlgebra.residueAlgEquiv`, using the dagger presentation. -/
+noncomputable def residueAlgEquiv :
+    A ≃ₐ[K] washnitzerAlgebra (Fin (presentationDim K A)) K ⧸ RingHom.ker (presentation K A) :=
+  (Ideal.quotientKerAlgEquivOfSurjective (presentation_surjective K A)).symm
+
 variable {K A}
+
+/-- The residue isomorphism sends the image of a series to its quotient class. -/
+@[simp] theorem residueAlgEquiv_presentation
+    (f : washnitzerAlgebra (Fin (presentationDim K A)) K) :
+    residueAlgEquiv K A (presentation K A f) = Ideal.Quotient.mk _ f :=
+  Ideal.quotientKerAlgEquivOfSurjective_symm_apply (presentation_surjective K A) f
+
+/-- The inverse residue isomorphism sends a quotient class to the image of its representative
+under the chosen presentation. -/
+@[simp] theorem residueAlgEquiv_symm_mk
+    (f : washnitzerAlgebra (Fin (presentationDim K A)) K) :
+    (residueAlgEquiv K A).symm (Ideal.Quotient.mk _ f) = presentation K A f :=
+  Ideal.quotientKerAlgEquivOfSurjective_mk (presentation_surjective K A) f
 
 /-- Any presentation `W_n ↠ A` has at least `presentationDim K A` variables. -/
 theorem presentationDim_le {n : ℕ} (φ : washnitzerAlgebra (Fin n) K →ₐ[K] A)

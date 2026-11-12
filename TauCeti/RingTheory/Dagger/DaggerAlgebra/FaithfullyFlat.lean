@@ -124,7 +124,7 @@ theorem faithfullyFlat_toCompletion : (toCompletion K A).toRingHom.FaithfullyFla
   have h := RingHom.FaithfullyFlat.isStableUnderBaseChange.quotientMap
     (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K).toRingHom
     (RingHom.ker (presentation K A)) washnitzerAlgebra.faithfullyFlat_toTate
-  let e := (Ideal.quotientKerAlgEquivOfSurjective (presentation_surjective K A)).symm
+  let e := residueAlgEquiv K A
   let q := Ideal.quotientMap
     ((RingHom.ker (presentation K A)).map
       (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K))
