@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
+import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
+import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Comparison
 import TauCeti.Analysis.Complex.HolomorphicFunctions.CompactnessExamples
+import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Topology.Closure
-import Mathlib.Analysis.Calculus.FDeriv.Analytic
-import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Topology.Compactness.Normed
 
 /-!
 # The hypotheses of compactness for the weak Cauchy–Riemann equation
@@ -17,10 +19,13 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 The planar compactness theorem for the weak equation `TauCeti.IsWeakCauchyRiemannOn` with the
 standard structure `J = i` and `η = 0` (McDuff–Salamon, Theorem B.4.2 and Theorem 4.1.1) asks for
 a uniform bound on `du_m` and for the images of compact sets to stay in a fixed compact set; at a
-boundary with values in a totally real `L`, it asks for `L` to be closed. This file restates the
-examples of `TauCeti.Analysis.Complex.HolomorphicFunctions.CompactnessExamples` in the language
-of that theorem: each sequence solves the weak equation, its derivatives are the real Fréchet
-derivatives `fderiv ℝ`, and the failing hypothesis is stated in the form the theorem uses.
+boundary with values in a totally real `L`, it asks for `L` to be closed. Without boundary, this
+theorem is `TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn_I_smul_id`,
+which needs only the image bound, since for `J = i` Cauchy's estimates give the gradient bound.
+This file restates the examples of
+`TauCeti.Analysis.Complex.HolomorphicFunctions.CompactnessExamples` in the language of that
+theorem: each sequence solves the weak equation, its derivatives are the real Fréchet derivatives
+`fderiv ℝ`, and the failing hypothesis is stated in the form the theorem uses.
 
 * Closedness of `L`. On every `U ⊆ ℂ`, in particular on the half-disc, the constant maps
   `1 / (m + 2)` solve the weak equation with boundary values in `L = (0, 1) ⊆ ℝ ⊆ ℂ`, and
@@ -28,24 +33,23 @@ derivatives `fderiv ℝ`, and the failing hypothesis is stated in the form the t
   the real axis. For the closed `L = ℝ` the boundary values of the limit stay in `L`.
 * The gradient bound. The maps `z ↦ m z` solve the weak equation on every open set, with
   `‖fderiv ℝ (m z)‖ = m`, so no constant bounds their derivatives on `D_{1/2}`; they send
-  `D_{1/2}` into `D_{m/2}`, and their images of `D_1` lie in no fixed compact set. The maps
+  `D_{1/2}` into `D_{m/2}`, and their images of any set containing a nonzero point, such as
+  `D_{1/2}` or a compact subset of `D_1`, lie in no fixed compact set. The maps
   `z ↦ z / m` solve the weak equation with `‖fderiv ℝ (z / m)‖ ≤ 1` and converge to the solution
   `0` with every real iterated derivative, locally uniformly on `ℂ`.
 * The image bound. The constant maps `m` solve the weak equation on every `U`, with derivative
   zero, and their images of any nonempty set lie in no fixed compact set.
 
-The non-convergence of the first and last sequences is
+The non-convergence of `z ↦ m z` and of the constants `m` is
 `TauCeti.HolomorphicCompactness.not_tendstoLocallyUniformlyOn_natCast_mul` and
 `TauCeti.HolomorphicCompactness.not_tendstoLocallyUniformlyOn_natCast`.
 
 ## Main results
 
-* `TauCeti.isWeakCauchyRiemannOn_of_differentiableOn`: a holomorphic map on an open set solves
-  the homogeneous weak equation for `J = i`, for every exponent.
-* `TauCeti.not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop`: a sequence whose values at
-  one point of `S` have norms tending to infinity violates every image bound on `S`.
 * `TauCeti.HolomorphicCompactness.not_mapsTo_zero_ofReal_image_Ioo`: the closedness witness.
 * `TauCeti.HolomorphicCompactness.not_exists_norm_fderiv_natCast_mul_le`: the gradient witness.
+* `TauCeti.HolomorphicCompactness.not_exists_isCompact_forall_mapsTo_natCast_mul`: the maps `m z`
+  also violate the image bound.
 * `TauCeti.HolomorphicCompactness.tendstoLocallyUniformly_iteratedFDeriv_div_natCast`: the maps
   `z / m` converge to `0` with every real derivative.
 * `TauCeti.HolomorphicCompactness.not_exists_isCompact_forall_mapsTo_natCast`: the image-bound
@@ -66,32 +70,6 @@ open Complex Filter Metric MeasureTheory Set Topology TopologicalSpace
 namespace TauCeti
 
 variable {p : ENNReal} {Ω : Opens ℂ} {U : Set ℂ}
-
-/-- **Holomorphic maps are weak solutions.** A holomorphic map on an open set `Ω`, with values
-in a complete complex normed space, solves the homogeneous weak equation for the structure
-`J = i` with every exponent: its real derivative is complex-linear, so `D(i) = i D(1)` and
-`D(1) + i D(i) = 0`. -/
-theorem isWeakCauchyRiemannOn_of_differentiableOn {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℂ F] [CompleteSpace F] {w : ℂ → F} (hw : DifferentiableOn ℂ w Ω) :
-    IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ F) (fun _ _ => 0) w := by
-  refine isWeakCauchyRiemannOn_of_contDiffOn
-    ((hw.contDiffOn (n := 1) Ω.isOpen).restrict_scalars ℝ) fun z hz => ?_
-  have hd := hw.differentiableAt (Ω.isOpen.mem_nhds hz)
-  rw [hd.fderiv_restrictScalars ℝ]
-  have hI : fderiv ℂ w z I = I • fderiv ℂ w z 1 := by
-    rw [← (fderiv ℂ w z).map_smul, smul_eq_mul, mul_one]
-  simp [hI, smul_smul]
-
-/-- **Unbounded values violate every image bound.** If the values of `F m` at a point of `S`
-have norms tending to infinity, then no compact set contains `F m '' S` for every `m`. -/
-theorem not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop {α E : Type*}
-    [SeminormedAddCommGroup E] {F : ℕ → α → E} {S : Set α} {z : α} (hz : z ∈ S)
-    (hF : Tendsto (fun m ↦ ‖F m z‖) atTop atTop) :
-    ¬ ∃ K : Set E, IsCompact K ∧ ∀ m, MapsTo (F m) S K := by
-  rintro ⟨K, hK, hFK⟩
-  obtain ⟨C, hC⟩ := hK.isBounded.exists_norm_le
-  obtain ⟨m, hm⟩ := (hF.eventually_gt_atTop C).exists
-  exact hm.not_ge (hC _ (hFK m hz))
 
 namespace HolomorphicCompactness
 
@@ -130,24 +108,18 @@ theorem mapsTo_zero_range_ofReal (S : Set ℂ) : MapsTo (fun _ => (0 : ℂ)) S (
 /-- The maps `z ↦ c z` solve the homogeneous weak equation for `J = i` on every open set. -/
 theorem isWeakCauchyRiemannOn_const_mul (c : ℂ) :
     IsWeakCauchyRiemannOn p Ω Jᵢ (fun _ _ => 0) (fun z => c * z) :=
-  isWeakCauchyRiemannOn_of_differentiableOn (differentiable_id.const_mul c).differentiableOn
+  (differentiable_id.const_mul c).differentiableOn.isWeakCauchyRiemannOn
 
-/-- The real derivative of `z ↦ c z` has norm `‖c‖` everywhere. -/
-theorem norm_fderiv_const_mul (c z : ℂ) : ‖fderiv ℝ (fun z : ℂ => c * z) z‖ = ‖c‖ := by
-  have h : HasFDerivAt (fun z : ℂ => c * z) (c • ContinuousLinearMap.id ℝ ℂ) z := by
-    convert (hasFDerivAt_id (𝕜 := ℝ) z).const_smul c using 1
-    ext w
-    simp
-  rw [h.fderiv, norm_smul, ContinuousLinearMap.norm_id, mul_one]
-
-/-- The real derivatives of `z ↦ m z` admit no uniform bound on `D_{1/2}`, so this sequence of
-weak solutions violates the gradient bound of the planar compactness theorem. -/
-theorem not_exists_norm_fderiv_natCast_mul_le :
-    ¬ ∃ C : ℝ, ∀ m : ℕ, ∀ z ∈ ball (0 : ℂ) (1 / 2), ‖fderiv ℝ (fun z : ℂ => m * z) z‖ ≤ C := by
+/-- The real derivatives of `z ↦ m z` admit no uniform bound on any nonempty set, such as
+`D_{1/2}`, so this sequence of weak solutions violates the gradient bound of the planar
+compactness theorem. -/
+theorem not_exists_norm_fderiv_natCast_mul_le {S : Set ℂ} (hS : S.Nonempty) :
+    ¬ ∃ C : ℝ, ∀ m : ℕ, ∀ z ∈ S, ‖fderiv ℝ (fun z : ℂ => m * z) z‖ ≤ C := by
   rintro ⟨C, hC⟩
   obtain ⟨m, hm⟩ := exists_nat_gt C
-  have := hC m 0 (mem_ball_self (by norm_num))
-  rw [norm_fderiv_const_mul, Complex.norm_natCast] at this
+  have := hC m hS.some hS.some_mem
+  rw [(differentiableAt_id.const_mul _).norm_fderiv_restrictScalars_eq_norm_deriv ℝ,
+    norm_deriv_natCast_mul] at this
   exact hm.not_ge this
 
 /-- The maps `z ↦ m z` send `D_{1/2}` into `D_{m/2}`. -/
@@ -159,46 +131,39 @@ theorem mapsTo_natCast_mul_ball {m : ℕ} (hm : 0 < m) :
   calc (m : ℝ) * ‖z‖ < m * (1 / 2) := by gcongr
     _ = m / 2 := by ring
 
-/-- The images of `D_1` under the maps `z ↦ m z` lie in no fixed compact set. -/
-theorem not_exists_isCompact_forall_mapsTo_natCast_mul :
-    ¬ ∃ K : Set ℂ, IsCompact K ∧ ∀ m : ℕ, MapsTo (fun z : ℂ => m * z) (ball 0 1) K := by
-  refine not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop (F := fun m (z : ℂ) => m * z)
-    (z := 1 / 2) (by simp; norm_num) ?_
+/-- The images under the maps `z ↦ m z` of a set containing a nonzero point, such as `D_{1/2}` or
+a compact subset of `D_1`, lie in no fixed compact set, so this sequence also violates the image
+bound. -/
+theorem not_exists_isCompact_forall_mapsTo_natCast_mul {S : Set ℂ} {z : ℂ} (hz : z ∈ S)
+    (hz0 : z ≠ 0) :
+    ¬ ∃ K : Set ℂ, IsCompact K ∧ ∀ m : ℕ, MapsTo (fun z : ℂ => m * z) S K := by
+  refine not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop (l := atTop)
+    (u := fun (m : ℕ) (z : ℂ) => m * z) hz ?_
   simp only [norm_mul, Complex.norm_natCast]
-  exact tendsto_natCast_atTop_atTop.atTop_mul_const (by norm_num)
+  exact tendsto_natCast_atTop_atTop.atTop_mul_const (norm_pos_iff.2 hz0)
 
 /-- The maps `z ↦ z / m` solve the homogeneous weak equation for `J = i` on every open set. -/
 theorem isWeakCauchyRiemannOn_div_natCast (m : ℕ) :
     IsWeakCauchyRiemannOn p Ω Jᵢ (fun _ _ => 0) (fun z => z / m) :=
-  isWeakCauchyRiemannOn_of_differentiableOn (differentiable_id.div_const _).differentiableOn
+  (differentiable_id.div_const _).differentiableOn.isWeakCauchyRiemannOn
 
 /-- The real derivatives of `z ↦ z / m` have norm at most `1`, so this sequence satisfies the
 gradient bound of the planar compactness theorem. -/
 theorem norm_fderiv_div_natCast_le_one (m : ℕ) (z : ℂ) :
     ‖fderiv ℝ (fun z : ℂ => z / m) z‖ ≤ 1 := by
-  simp_rw [div_eq_inv_mul]
-  rw [norm_fderiv_const_mul, norm_inv, Complex.norm_natCast]
-  rcases m.eq_zero_or_pos with rfl | hm
-  · simp
-  · exact inv_le_one_of_one_le₀ (Nat.one_le_cast.2 hm)
+  rw [(differentiableAt_id.div_const _).norm_fderiv_restrictScalars_eq_norm_deriv ℝ]
+  exact norm_deriv_div_natCast_le_one m z
 
 /-- The maps `z ↦ z / m` converge to the solution `0` in `C^∞` on compact sets: every real
 iterated derivative tends to `0` locally uniformly on `ℂ`. -/
 theorem tendstoLocallyUniformly_iteratedFDeriv_div_natCast (k : ℕ) :
     TendstoLocallyUniformly (fun (m : ℕ) ↦ iteratedFDeriv ℝ k (fun z : ℂ ↦ z / m))
       (fun _ ↦ 0) atTop := by
-  have hid : Continuous (iteratedFDeriv ℝ k (id : ℂ → ℂ)) :=
-    contDiff_id.continuous_iteratedFDeriv (by exact_mod_cast le_top)
-  have h := tendstoLocallyUniformly_of_forall_continuousAt
-    (Φ := fun z (s : ℝ) => s • iteratedFDeriv ℝ k (id : ℂ → ℂ) z) (q := 0)
-    (fun _ => (continuous_snd.smul (hid.comp continuous_fst)).continuousAt)
-    (tendsto_inv_atTop_zero.comp tendsto_natCast_atTop_atTop)
-  simp only [zero_smul] at h
-  refine h.congr fun m z => ?_
-  have hfun : (fun z : ℂ => z / m) = ((m : ℝ)⁻¹ • id : ℂ → ℂ) := by
-    ext w
-    simp [div_eq_inv_mul, Complex.real_smul]
-  rw [hfun, iteratedFDeriv_const_smul_apply contDiff_id.contDiffAt, Function.comp_apply]
+  have h := tendstoLocallyUniformly_iteratedDeriv_div_natCast 0
+  simp only [iteratedDeriv_zero] at h
+  rw [← tendstoLocallyUniformlyOn_univ] at h ⊢
+  simpa [Pi.zero_def] using
+    h.iteratedFDeriv ℝ (fun m => (differentiable_id.div_const _).differentiableOn) isOpen_univ k
 
 /-! ### The image bound -/
 
@@ -212,7 +177,7 @@ theorem isWeakCauchyRiemannOn_natCast (m : ℕ) :
 this sequence of weak solutions violates the image bound. -/
 theorem not_exists_isCompact_forall_mapsTo_natCast {S : Set ℂ} (hS : S.Nonempty) :
     ¬ ∃ K : Set ℂ, IsCompact K ∧ ∀ m : ℕ, MapsTo (fun _ => (m : ℂ)) S K :=
-  not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop (F := fun m (_ : ℂ) => (m : ℂ))
+  not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop (u := fun (m : ℕ) (_ : ℂ) => (m : ℂ))
     hS.some_mem (by simpa using tendsto_natCast_atTop_atTop)
 
 end HolomorphicCompactness
