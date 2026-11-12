@@ -37,6 +37,7 @@ differentiation commutes with this extension.
   `C^n` section within a set is a `C^n` function within that set.
 * `TauCeti.RoughForm.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt`: on a `C^(n+1)`
   manifold, `C^n` regularity of chart expressions transfers between overlapping charts;
+  `TauCeti.RoughForm.contDiffOn_inChartAt_of_contMDiffOn` (for forms `C^n` on an open set),
   `TauCeti.IsSmoothForm.contDiffOn_inChartAt_interior_target` and
   `TauCeti.IsSmoothForm.inChartAt_mextDeriv_eq_extDeriv` deduce `ContDiffOn` and ordinary flat
   `extDeriv` on the interior of any preferred chart target.
@@ -330,20 +331,32 @@ theorem IsSmoothForm.inChartAt_mextDeriv_eq [IsManifold I 2 M]
   φ.inChartAt_mextDeriv hz
     ((hφ.contDiffWithinAt_inChartAt_self _).differentiableWithinAt one_ne_zero)
 
+/-- On a `C^(n+1)` manifold, a form which is `C^n` on an open set `U` has `C^n` coordinate
+expression in any preferred chart on the interior points of the chart target lying over `U`. -/
+theorem RoughForm.contDiffOn_inChartAt_of_contMDiffOn {n : WithTop ℕ∞} [IsManifold I 1 M]
+    [IsManifold I (n + 1) M] (φ : RoughForm I M F k) {U : Set M} (hU : IsOpen U)
+    (hφ : ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) U) (α : M) :
+    ContDiffOn ℝ n (φ.inChartAt α)
+      (interior (extChartAt I α).target ∩ (extChartAt I α).symm ⁻¹' U) := by
+  intro z hz
+  have hrange : ContDiffWithinAt ℝ n (φ.inChartAt α) (range I) z :=
+    φ.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt (interior_subset hz.1)
+      (mem_extChartAt_source _) (φ.contDiffWithinAt_range_inChartAt_of_contMDiffAt
+        ((hφ _ hz.2).contMDiffAt (hU.mem_nhds hz.2)))
+  have hnhds : range I ∈ 𝓝 z :=
+    mem_of_superset (isOpen_interior.mem_nhds hz.1)
+      (interior_subset.trans (extChartAt_target_subset_range α))
+  exact (hrange.contDiffAt hnhds).contDiffWithinAt
+
 /-- On a `C^(n+1)` manifold, a `C^n` form has `C^n` coordinate expression in any preferred chart on
 the interior of the chart target. -/
 theorem IsSmoothForm.contDiffOn_inChartAt_interior_target {n : WithTop ℕ∞} [IsManifold I 1 M]
     [IsManifold I (n + 1) M] {φ : RoughForm I M F k}
     (hφ : IsSmoothForm I n φ) (α : M) :
     ContDiffOn ℝ n (φ.inChartAt α) (interior (extChartAt I α).target) := by
-  intro z hz
-  have hrange : ContDiffWithinAt ℝ n (φ.inChartAt α) (range I) z :=
-    φ.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt (interior_subset hz)
-      (mem_extChartAt_source _) (hφ.contDiffWithinAt_inChartAt_self _)
-  have hnhds : range I ∈ 𝓝 z :=
-    mem_of_superset (isOpen_interior.mem_nhds hz)
-      (interior_subset.trans (extChartAt_target_subset_range α))
-  exact (hrange.contDiffAt hnhds).contDiffWithinAt
+  simpa only [preimage_univ, inter_univ] using
+    φ.contDiffOn_inChartAt_of_contMDiffOn isOpen_univ hφ.contMDiff.contMDiffOn α
 
 /-- On the interior of a preferred chart target on a `C²` manifold, the manifold exterior derivative
 of a `C¹` form read in that chart is the ordinary flat exterior derivative `extDeriv`. -/
