@@ -66,6 +66,8 @@ so its normal form theory (`Monoid.PushoutI.NormalWord`) applies directly.
 * `TauCeti.LimitGroup.CentralizerExt.zeroEquiv`: `G(u, ℤ⁰) ≃* G`.
 * `TauCeti.LimitGroup.CentralizerExt.equivProdOfMemCenter`: for central `u`,
   `G(u, ℤⁿ) ≃* G × ℤⁿ`.
+* `TauCeti.LimitGroup.CentralizerExt.map_t_eq_one_of_center_eq_bot`: if `G` has trivial centre,
+  every retraction of `G(1, ℤⁿ)` onto `G` kills the new letters.
 * `TauCeti.LimitGroup.CentralizerExt.equivHNNExtension`: `G(u, ℤ)` is the HNN extension of `G`
   along the identity of `C_G(u)`.
 
@@ -333,31 +335,36 @@ instance [Group.FG G] : Group.FG (CentralizerExt u n) := by
   rw [MonoidHom.map_closure] at hg
   exact closure_mono Set.subset_union_left hg
 
-/-- The homomorphism `G(u, ℤⁿ) →* ℤⁿ` killing `G` and sending `tᵢ` to the `i`-th standard
-generator. -/
-private def toPi : CentralizerExt u n →* (Fin n → Multiplicative ℤ) :=
-  lift 1 (fun j => Pi.mulSingle j (.ofAdd 1)) (fun _ _ => .all _ _) fun _ _ _ => .all _ _
+/-- The homomorphism `G(u, ℤⁿ) →* G × ℤⁿ` sending `g` to `(g, 1)` and `tᵢ` to the `i`-th
+standard generator. -/
+private def toProd : CentralizerExt u n →* G × (Fin n → Multiplicative ℤ) :=
+  lift (.inl _ _) (fun i => (1, Pi.mulSingle i (.ofAdd 1)))
+    (fun _ _ => (Commute.one_right 1).prod (.all _ _)) fun _ _ _ => MonoidHom.commute_inl_inr _ _
 
-private theorem toPi_of (g : G) : toPi (of g : CentralizerExt u n) = 1 :=
+private theorem toProd_of (g : G) : toProd (of g : CentralizerExt u n) = (g, 1) :=
   lift_of _ _ _ _ g
 
-private theorem toPi_t (i : Fin n) :
-    toPi (t i : CentralizerExt u n) = Pi.mulSingle i (.ofAdd 1) :=
+private theorem toProd_t (i : Fin n) :
+    toProd (t i : CentralizerExt u n) = (1, Pi.mulSingle i (.ofAdd 1)) :=
   lift_t _ _ _ _ i
 
-/-- The new letters do not lie in `G`: they survive in the homomorphism to `ℤⁿ` killing `G`. -/
+/-- The new letters do not lie in `G`: they survive in the homomorphism `G(u, ℤⁿ) →* ℤⁿ` killing
+`G`. -/
 theorem t_notMem_range_of (i : Fin n) : t i ∉ (of : G →* CentralizerExt u n).range := by
   rintro ⟨g, hg⟩
-  have h := congrArg toPi hg
-  rw [toPi_of, toPi_t] at h
+  have h := congrArg (fun x => (toProd x).2) hg
+  simp only [toProd_of, toProd_t] at h
   exact absurd h.symm (by simp)
 
 /-- The new letters of `G(u, ℤⁿ)` are pairwise distinct: they map to distinct standard generators
 of `ℤⁿ`. -/
 theorem t_injective : Function.Injective (t : Fin n → CentralizerExt u n) := fun i j h => by
-  have h := congrArg toPi h
-  rw [toPi_t, toPi_t] at h
+  have h := congrArg (fun x => (toProd x).2) h
+  simp only [toProd_t] at h
   exact Pi.mulSingle_left_injective (by simp) h
+
+@[simp] theorem t_inj {i j : Fin n} : (t i : CentralizerExt u n) = t j ↔ i = j :=
+  t_injective.eq_iff
 
 /-- In positive rank, `G` is a proper subgroup of `G(u, ℤⁿ)`. -/
 theorem range_of_ne_top (hn : 0 < n) : (of : G →* CentralizerExt u n).range ≠ ⊤ :=
@@ -427,19 +434,6 @@ private theorem commute_of_ofPi (hu : u ∈ center G) (g : G) (v : Fin n → Mul
   rw [← h]
   exact (MonoidHom.commute_inl_inr _ _).map _
 
-/-- The homomorphism `G(u, ℤⁿ) →* G × ℤⁿ` sending `g` to `(g, 1)` and `tᵢ` to the `i`-th
-standard generator. -/
-private def toProd : CentralizerExt u n →* G × (Fin n → Multiplicative ℤ) :=
-  lift (.inl _ _) (fun i => (1, Pi.mulSingle i (.ofAdd 1)))
-    (fun _ _ => (Commute.one_right 1).prod (.all _ _)) fun _ _ _ => MonoidHom.commute_inl_inr _ _
-
-private theorem toProd_of (g : G) : toProd (of g : CentralizerExt u n) = (g, 1) :=
-  lift_of _ _ _ _ g
-
-private theorem toProd_t (i : Fin n) :
-    toProd (t i : CentralizerExt u n) = (1, Pi.mulSingle i (.ofAdd 1)) :=
-  lift_t _ _ _ _ i
-
 /-- If `u` is central, its centralizer is all of `G`, and extending it by `ℤⁿ` is the direct
 product: `G(u, ℤⁿ) ≃* G × ℤⁿ`. -/
 def equivProdOfMemCenter (hu : u ∈ center G) :
@@ -459,6 +453,17 @@ def equivProdOfMemCenter (hu : u ∈ center G) :
 @[simp] theorem equivProdOfMemCenter_t (hu : u ∈ center G) (i : Fin n) :
     equivProdOfMemCenter hu (t i) = (1, Pi.mulSingle i (.ofAdd 1)) :=
   toProd_t i
+
+/-- If `G` has trivial centre, for instance a nonabelian free group, then every retraction of
+`G(1, ℤⁿ) ≃* G × ℤⁿ` onto `G` kills the new letters: they commute with `G`, so their images are
+central in `G`. -/
+theorem map_t_eq_one_of_center_eq_bot (hG : center G = ⊥) {φ : CentralizerExt (1 : G) n →* G}
+    (hφ : φ.comp of = .id G) (i : Fin n) : φ (t i) = 1 := by
+  have h : φ (t i) ∈ center G := mem_center_iff.2 fun g => by
+    have hg : φ (of g) = g := DFunLike.congr_fun hφ g
+    simpa [hg] using
+      ((commute_of_t (c := g) (mem_centralizer_singleton_iff.2 (by simp)) i).map φ).eq
+  rwa [hG, mem_bot] at h
 
 /-- Extending the centralizer of an element `u` of `ℤ` by `ℤ` gives `ℤ²`. Since `ℤ` is
 commutative, the centralizer of `u` is all of `ℤ`, so the new letter commutes with `ℤ` and the

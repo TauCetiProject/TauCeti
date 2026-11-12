@@ -28,6 +28,8 @@ free basis.
   of `of a`.
 * `FreeGroup.center_eq_bot_of_nontrivial`: the centre of a free group on at least two generators
   is trivial.
+* `FreeGroup.of_zpow_mul_of_zpow_eq_one_iff`: for distinct generators, `a ^ p * b ^ q = 1` only
+  for `p = q = 0`.
 * `FreeGroup.commute_of_zpow_of_zpow_iff`: nonzero powers of distinct generators do not commute.
 * `IsFreeGroup.commute_of_commute`: in a free group, two elements commuting with a common
   nontrivial element commute with each other.
@@ -140,6 +142,14 @@ end IsFreeGroup
 namespace FreeGroup
 
 variable {α : Type*}
+
+/-- For distinct generators `a ≠ b` of a free group, `a ^ p * b ^ q = 1` only for `p = q = 0`.
+In particular `a ^ p * b ^ q ≠ 1` for all `p, q ≥ 1`: the noncommuting pair `(a, b)` satisfies the
+big powers condition with bound `1`. -/
+theorem of_zpow_mul_of_zpow_eq_one_iff {a b : α} (hab : a ≠ b) {p q : ℤ} :
+    of a ^ p * of b ^ q = 1 ↔ p = 0 ∧ q = 0 := by
+  refine ⟨fun h => ?_, fun ⟨hp, hq⟩ => by simp [hp, hq]⟩
+  simpa using eq_of_of_zpow_eq_of_zpow hab ((mul_eq_one_iff_eq_inv.1 h).trans (zpow_neg _ q).symm)
 
 /-- Nonzero powers of distinct generators of a free group do not commute: `of a ^ m` and
 `of b ^ n` commute only when `m = 0` or `n = 0`. -/

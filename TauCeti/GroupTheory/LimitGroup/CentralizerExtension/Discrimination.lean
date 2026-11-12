@@ -27,9 +27,9 @@ exponents equal kill `t₀ * t₁⁻¹ ≠ 1`.
 
 The hypothesis `u ≠ 1` cannot be dropped. For central `u`, for instance `u = 1`, the new letters
 commute with all of `G`. So a retraction onto a group `G` with trivial centre, such as a nonabelian
-free group, kills them, and a homomorphism to a free group that keeps a new letter nontrivial kills
-every commutator of `G`. For nonabelian `G`, such an extension is therefore not fully residually
-free.
+free group, kills them (`CentralizerExt.map_t_eq_one_of_center_eq_bot`), and a homomorphism to a
+free group that keeps a new letter nontrivial kills every commutator of `G`. For nonabelian `G`,
+such an extension is therefore not fully residually free.
 
 ## Main results
 
@@ -47,8 +47,6 @@ free.
 * `TauCeti.LimitGroup.CentralizerExt.commute_map_of_of_map_t_ne_one`: a homomorphism to a
   commutative transitive group keeping a new letter nontrivial makes the image of `C_G(u)`
   commutative.
-* `TauCeti.LimitGroup.CentralizerExt.map_t_eq_one_of_center_eq_bot`: if `G` has trivial centre,
-  every retraction of `G(1, ℤⁿ)` onto `G` kills the new letters.
 * `TauCeti.LimitGroup.not_isFullyResiduallyFree_centralizerExt_of_mem_center`: for central `u`
   and nonabelian `G`, the extension `G(u, ℤⁿ)` of positive rank is not fully residually free.
 
@@ -301,9 +299,8 @@ theorem isDiscriminatedBy (hBP : IsBP G) (hG : IsCSA G) (hu : u ≠ 1) :
 separate `G(u, ℤⁿ)`: all of them kill `t₀ * t₁⁻¹ ≠ 1`. So discriminating finite families requires
 retractions along directions avoiding finitely many hyperplanes, as in `isDiscriminatedBy`. -/
 theorem exists_ne_one_forall_retraction_const_eq_one (hn : 1 < n) :
-    ∃ x : CentralizerExt u n, x ≠ 1 ∧ ∀ k : ℤ, retraction (fun _ => k) x = 1 := by
-  refine ⟨t ⟨0, by lia⟩ * (t ⟨1, hn⟩)⁻¹, fun h => ?_, fun k => by simp⟩
-  exact absurd (t_injective (mul_inv_eq_one.1 h)) (by simp [Fin.ext_iff])
+    ∃ x : CentralizerExt u n, x ≠ 1 ∧ ∀ k : ℤ, retraction (fun _ => k) x = 1 :=
+  ⟨t ⟨0, by lia⟩ * (t ⟨1, hn⟩)⁻¹, by simp [mul_inv_eq_one], fun k => by simp⟩
 
 /-- The new letters of `G(u, ℤⁿ)` commute with `C_G(u)`. So a homomorphism to a commutative
 transitive group, such as a free group, that keeps a new letter nontrivial makes the images of any
@@ -314,17 +311,6 @@ theorem commute_map_of_of_map_t_ne_one {K : Type*} [Group K] (hK : IsCommTransit
     (hg : g ∈ centralizer {u}) (hh : h ∈ centralizer {u}) : Commute (φ (of g)) (φ (of h)) :=
   (isCommTransitive_iff K).1 hK _ _ _ hi ((commute_of_t hg i).map φ)
     ((commute_of_t hh i).map φ).symm
-
-/-- If `G` has trivial centre, for instance a nonabelian free group, then every retraction of
-`G(1, ℤⁿ) ≃* G × ℤⁿ` onto `G` kills the new letters: they commute with `G`, so their images are
-central in `G`. -/
-theorem map_t_eq_one_of_center_eq_bot (hG : center G = ⊥) {φ : CentralizerExt (1 : G) n →* G}
-    (hφ : φ.comp of = .id G) (i : Fin n) : φ (t i) = 1 := by
-  have h : φ (t i) ∈ center G := mem_center_iff.2 fun g => by
-    have hg : φ (of g) = g := DFunLike.congr_fun hφ g
-    simpa [hg] using
-      ((commute_of_t (c := g) (mem_centralizer_singleton_iff.2 (by simp)) i).map φ).eq
-  rwa [hG, mem_bot] at h
 
 end CentralizerExt
 

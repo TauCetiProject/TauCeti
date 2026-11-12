@@ -15,9 +15,11 @@ public import Mathlib.GroupTheory.PresentedGroup
 Let `F` be the free group on a set `X` and `a ∈ X`. The centralizer of `a` in `F` is the cyclic
 group `⟨a⟩`, so the extension of the centralizer of `a` by `ℤ` is
 `F(a, ℤ) = F ∗_{⟨a⟩} (⟨a⟩ × ⟨t⟩)`, the group with generators `X` and a new letter `t` and the single
-relator `[a, t]`. This is the basic example of an extension of a centralizer, and its
-discrimination by `F` through the retractions `t ↦ a ^ k` can be seen by hand: for a basis element
-`b ≠ a`, the element `[b, t]` is sent to `[b, a ^ k] ≠ 1` for every `k ≠ 0`.
+relator `[a, t]`. This is the basic example of an extension of a centralizer. As an illustration
+of the retractions `t ↦ a ^ k` onto `F`: for a basis element `b ≠ a`, they send `[b, t]` to
+`[b, a ^ k]`, which is nontrivial for every `k ≠ 0`. That every finite family of nonidentity
+elements survives under a single such retraction is the general discrimination theorem
+`TauCeti.LimitGroup.CentralizerExt.isDiscriminatedBy`.
 
 ## Main definitions
 
