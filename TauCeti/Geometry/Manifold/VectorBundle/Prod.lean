@@ -51,6 +51,24 @@ theorem Bundle.contMDiffAt_totalSpace_prod_iff {f : M → TotalSpace (F₁ × F�
   · rintro ⟨⟨hb, h₁⟩, -, h₂⟩
     exact ⟨hb, h₁, h₂⟩
 
+/-- A map into a direct-sum bundle is differentiable within a set exactly when both component
+bundle maps are. -/
+theorem Bundle.mdifferentiableWithinAt_totalSpace_prod_iff
+    {f : M → TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)} {s : Set M} {x : M} :
+    MDifferentiableWithinAt J (I.prod 𝓘(𝕜, F₁ × F₂)) f s x ↔
+      MDifferentiableWithinAt J (I.prod 𝓘(𝕜, F₁))
+        (fun y ↦ (⟨(f y).proj, (f y).2.1⟩ : TotalSpace F₁ E₁)) s x ∧
+      MDifferentiableWithinAt J (I.prod 𝓘(𝕜, F₂))
+        (fun y ↦ (⟨(f y).proj, (f y).2.2⟩ : TotalSpace F₂ E₂)) s x := by
+  rw [mdifferentiableWithinAt_totalSpace, mdifferentiableWithinAt_totalSpace,
+    mdifferentiableWithinAt_totalSpace]
+  simp only [FiberBundle.prod_trivializationAt', mdifferentiableWithinAt_prod_module_iff]
+  constructor
+  · rintro ⟨hb, h₁, h₂⟩
+    exact ⟨⟨hb, h₁⟩, hb, h₂⟩
+  · rintro ⟨⟨hb, h₁⟩, -, h₂⟩
+    exact ⟨hb, h₁, h₂⟩
+
 /-- A map into a direct-sum bundle is differentiable exactly when both component bundle maps are
 differentiable. -/
 theorem Bundle.mdifferentiableAt_totalSpace_prod_iff
@@ -60,13 +78,18 @@ theorem Bundle.mdifferentiableAt_totalSpace_prod_iff
         (fun y ↦ (⟨(f y).proj, (f y).2.1⟩ : TotalSpace F₁ E₁)) x ∧
       MDifferentiableAt J (I.prod 𝓘(𝕜, F₂))
         (fun y ↦ (⟨(f y).proj, (f y).2.2⟩ : TotalSpace F₂ E₂)) x := by
-  rw [mdifferentiableAt_totalSpace, mdifferentiableAt_totalSpace, mdifferentiableAt_totalSpace]
-  simp only [FiberBundle.prod_trivializationAt', mdifferentiableAt_prod_module_iff]
-  constructor
-  · rintro ⟨hb, h₁, h₂⟩
-    exact ⟨⟨hb, h₁⟩, hb, h₂⟩
-  · rintro ⟨⟨hb, h₁⟩, -, h₂⟩
-    exact ⟨hb, h₁, h₂⟩
+  simp only [← mdifferentiableWithinAt_univ]
+  exact Bundle.mdifferentiableWithinAt_totalSpace_prod_iff
+
+/-- A section of a direct-sum bundle is differentiable within a set at a point exactly when both
+of its components are. -/
+theorem Bundle.mdifferentiableWithinAt_section_prod_iff {σ : Π x, E₁ x × E₂ x} {s : Set B}
+    {x : B} :
+    MDifferentiableWithinAt I (I.prod 𝓘(𝕜, F₁ × F₂))
+        (fun y ↦ TotalSpace.mk' (F₁ × F₂) (E := E₁ ×ᵇ E₂) y (σ y)) s x ↔
+      MDifferentiableWithinAt I (I.prod 𝓘(𝕜, F₁)) (fun y ↦ TotalSpace.mk' F₁ y (σ y).1) s x ∧
+      MDifferentiableWithinAt I (I.prod 𝓘(𝕜, F₂)) (fun y ↦ TotalSpace.mk' F₂ y (σ y).2) s x :=
+  Bundle.mdifferentiableWithinAt_totalSpace_prod_iff
 
 /-- A section of a direct-sum bundle is differentiable at a point exactly when both of its
 components are. -/
