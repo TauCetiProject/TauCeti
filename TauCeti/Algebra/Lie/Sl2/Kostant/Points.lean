@@ -36,9 +36,8 @@ transvections `TauCeti.transvectionUnit`, so the elementary group always lies in
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 8.2.
 * J. E. Humphreys, *Linear Algebraic Groups*, §26.
 
-This verifies the elementary-group side of the rank-one point-generation case of Layer 9,
-"pinned Chevalley--Demazure group schemes over `ℤ`", of
-`TauCetiRoadmap/ReductiveGroups/README.md`.  Together with
+This verifies the elementary-group side of the rank-one case of point generation for the pinned
+Chevalley--Demazure group schemes over `ℤ`. Together with
 `TauCeti.UniversalEnvelopingAlgebra.map_kostantElementarySubgroup_le_generatedPoints`, it places
 every `SL₂` point inside the points of the constructed group scheme; identifying that scheme with
 the standard special-linear scheme is a separate scheme-theoretic step.

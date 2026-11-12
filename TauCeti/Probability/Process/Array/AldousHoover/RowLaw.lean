@@ -194,7 +194,7 @@ private theorem map_splitNoise_noiseMeasure :
       ((volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).prod
         (Measure.infinitePi fun _ : ℕ =>
           (volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))) := by
-  set ρ : Measure (Option ℕ → I) := Measure.infinitePi fun _ => volume with hρ
+  set ρ : Measure (Option ℕ → I) := Measure.infinitePi fun _ => volume
   -- Split an optional-indexed family into its value at `none` and the rest.
   set s : (Option ℕ → I) → I × (ℕ → I) := fun c => (c none, fun j => c (some j))
   have hs : Measurable s :=

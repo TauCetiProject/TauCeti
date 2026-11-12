@@ -86,7 +86,8 @@ theorem ae_eq_preimage_Ioc (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s)
   have hopen {t : Set ℝ} (h₁ : Real.toEReal ⁻¹' Ioo l r ⊆ t)
       (h₂ : t ⊆ Real.toEReal ⁻¹' Icc l r) :
       t =ᵐ[μ] Real.toEReal ⁻¹' Ioo l r :=
-    (ae_le_set.2 (measure_mono_null (sdiff_subset_sdiff_left h₂) hnull)).antisymm h₁.eventuallyLE
+    (ae_subset.2 (measure_mono_null (sdiff_subset_sdiff_left h₂) hnull)).antisymm
+        h₁.eventuallySubset
   exact (hopen hs₁ hs₂).trans (hopen (preimage_mono Ioo_subset_Ioc_self)
     (preimage_mono Ioc_subset_Icc_self)).symm
 
