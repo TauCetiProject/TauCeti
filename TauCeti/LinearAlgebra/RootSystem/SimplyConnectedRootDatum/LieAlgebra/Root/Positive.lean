@@ -111,18 +111,15 @@ theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_le_norma
     Subgroup.normalizer
       (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
         (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) := by
-  let U := ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \
+  set U : Subgroup _ := ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \
       {t.simpleIndex ht i}, (chevalleyRootSubgroup ρ M hM hnil γ A).range
   let w := kostantWeylGL (t.lieBasis ht).rootGenerator (t.lieBasis ht).h ρ M hM
     (hnil (.inl i)) (hnil (.inr i)) A
   have hw : U.map (MulAut.conj w) = U :=
     Subgroup.mem_normalizer_iff_map_conj_eq.mp
       (kostantWeylGL_mem_normalizer_posRoots_diff_singleton ρ M hM hnil i A)
-  apply (Subgroup.closure_le _).mpr
-  apply Set.union_subset hpos
-  change (chevalleyRootSubgroup ρ M hM hnil
-    ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
-      (t.simpleIndex ht i)) A).range ≤ Subgroup.normalizer (U : Set _)
+  rw [← MonoidHom.coe_range, ← MonoidHom.coe_range, ← Subgroup.sup_eq_closure]
+  refine sup_le hpos ?_
   rw [← map_range_chevalleyRootSubgroup_conj_kostantWeylGL ρ M hM hnil i]
   exact (Subgroup.map_mono hpos).trans (by
     have H := Subgroup.le_normalizer_map (H := U) (MulAut.conj w).toMonoidHom
