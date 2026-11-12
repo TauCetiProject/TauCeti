@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.RingTheory.QuotSMulTop
+public import Mathlib.RingTheory.AdicCompletion.Functoriality
 public import Mathlib.RingTheory.Regular.IsSMulRegular
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.LinearAlgebra.TensorProduct.Pi
@@ -74,6 +75,12 @@ noncomputable def mapQSMulTop (I : Ideal R) (f : M →ₗ[R] N) :
     M ⧸ I • (⊤ : Submodule R M) →ₗ[R ⧸ I] N ⧸ I • (⊤ : Submodule R N) :=
   LinearMap.extendScalarsOfSurjective Ideal.Quotient.mk_surjective
     (Submodule.mapQ _ _ f (Submodule.smul_top_le_comap_smul_top I f))
+
+/-- Ideal-linear reduction is Mathlib's `reduceModIdeal`.
+This bridge is not a simp lemma: both APIs have their own normal-form lemmas. -/
+theorem mapQSMulTop_eq_reduceModIdeal (I : Ideal R) (f : M →ₗ[R] N) :
+    I.mapQSMulTop f = f.reduceModIdeal I :=
+  (rfl)
 
 @[simp]
 theorem mapQSMulTop_mk (I : Ideal R) (f : M →ₗ[R] N) (m : M) :
