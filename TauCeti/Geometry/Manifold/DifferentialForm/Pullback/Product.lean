@@ -42,6 +42,8 @@ is pulled back from `Y`. The energy identity itself is not proved here.
 
 * `TauCeti.eq_mpullback_snd_of_interior_eq_zero`: on `G × M` with `G` modelled on `ℝ`, a form with
   `ι_{∂ₛ} α = 0` whose restrictions to the slices are all equal to `β` is `pr₂^* β`.
+* `TauCeti.interior_mpullback_snd_eq_zero`: conversely, every pullback `pr₂^* β` to `G × M` has
+  `ι_{∂ₛ} (pr₂^* β) = 0`.
 * `TauCeti.mpullback_prodMk_eq_of_mlieDerivForm_eq_zero`: on `ℝ × M`, a differentiable form with
   `L_{∂ₛ} α = 0` has the same restriction to every slice.
 * `TauCeti.mpullback_prodMk_eq_of_interior_eq_zero`: on `ℝ × M`, a differentiable closed form with
@@ -51,6 +53,8 @@ is pulled back from `Y`. The energy identity itself is not proved here.
   any slice.
 * `TauCeti.mpullback_snd_mpullback_prodMk_of_interior_eq_zero`: on `ℝ × M`, a differentiable
   closed form with `ι_{∂ₛ} α = 0` is the pullback along `pr₂` of its restriction to any slice.
+* `TauCeti.SmoothForm.isClosed_mpullback_snd_iff`: a smooth form on `M` is closed exactly when its
+  pullback along `pr₂` is closed.
 * `TauCeti.SmoothForm.mpullback_snd_mpullback_prodMk_of_interior_eq_zero`: the same for smooth
   forms on `AddCircle p × M`.
 * `TauCeti.SmoothForm.exists_mpullback_snd_eq_iff_interior_eq_zero`: a smooth closed form on
@@ -105,6 +109,19 @@ theorem eq_mpullback_snd_of_interior_eq_zero {G : Type*} [TopologicalSpace G]
   rw [mpullback_apply, ← hβ q.1, mpullback_apply, mfderiv_snd, mfderiv_prod_right]
   -- The derivative of `y ↦ (q.1, y)` sends the second component `w` of `v i` to `(0, w)`.
   exact h
+
+/-- Let `G` be a manifold modelled on `ℝ`. The pullback of a form on `M` along the second
+projection `G × M → M` has vanishing contraction with `∂ₛ = (1, 0)`, since the projection kills
+`∂ₛ`. -/
+theorem interior_mpullback_snd_eq_zero {G : Type*} [TopologicalSpace G] [ChartedSpace ℝ G]
+    (β : RoughForm I M F (k + 1)) :
+    (mpullback (𝓘(ℝ, ℝ).prod I) I (Prod.snd : G × M → M) β).interior
+      (fun _ ↦ ((1 : ℝ), (0 : E))) = 0 := by
+  refine (mpullback_interior (F := F) Prod.snd _ 0 β fun _ ↦ ?_).symm.trans ?_
+  · rw [mfderiv_snd]
+    -- The second projection of `(1, 0)` is `0`.
+    rfl
+  · rw [RoughForm.interior_zero_field, mpullback_zero]
 
 variable [I.Boundaryless] [IsManifold I 2 M]
 
@@ -170,6 +187,18 @@ theorem mpullback_snd_mpullback_prodMk_of_interior_eq_zero
 
 namespace SmoothForm
 
+omit [I.Boundaryless] in
+/-- Let `G` be a nonempty manifold. A smooth form `β` on `M` is closed exactly when its pullback
+along the second projection `G × M → M` is closed. -/
+theorem isClosed_mpullback_snd_iff {E' H' G : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace G]
+    [ChartedSpace H' G] [IsManifold J ∞ G] [Nonempty G] {β : SmoothForm I M F k} :
+    (mpullback (I := J.prod I) (Prod.snd : G × M → M) contMDiff_snd β).IsClosed ↔
+      β.IsClosed :=
+  isClosed_mpullback_iff_of_surjective contMDiff_snd Prod.snd_surjective fun _ v ↦ by
+    rw [mfderiv_snd]
+    exact ⟨(0, v), rfl⟩
+
 variable {p : ℝ} [Fact (0 < p)]
 
 /-- On `AddCircle p × M`, a smooth closed form `α` whose contraction with `∂ₛ = (1, 0)` vanishes is
@@ -229,14 +258,8 @@ theorem exists_mpullback_snd_eq_iff_interior_eq_zero
         (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 = 0 := by
   refine ⟨?_, fun hι ↦ ⟨_, mpullback_snd_mpullback_prodMk_of_interior_eq_zero hα hι 0⟩⟩
   rintro ⟨β, rfl⟩
-  -- The second projection kills `∂ₛ`.
-  let W : (q : AddCircle p × M) → TangentSpace (𝓘(ℝ).prod I) q := fun _ ↦ ((1 : ℝ), (0 : E))
   rw [coe_mpullback]
-  refine (mpullback_interior (F := F) Prod.snd W 0 β.1 fun _ ↦ ?_).symm.trans ?_
-  · simp only [mfderiv_snd, W]
-    -- The second projection of `(1, 0)` is `0`.
-    rfl
-  · rw [RoughForm.interior_zero_field, mpullback_zero]
+  exact interior_mpullback_snd_eq_zero β.1
 
 end SmoothForm
 
