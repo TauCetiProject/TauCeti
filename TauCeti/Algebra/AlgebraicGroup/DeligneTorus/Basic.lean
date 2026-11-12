@@ -100,13 +100,6 @@ theorem realPointsMulEquiv_apply (f : WithConv (S →ₐ[ℝ] ℝ)) :
       (WeilRestriction.homEquiv ℝ ℂ ℂ[T;T⁻¹] ℝ f.ofConv (LaurentPolynomial.T 1)) := by
   rw [coe_realPointsMulEquiv, coe_pointsMulEquiv]
 
-/-- The right unitors `ℂ ⊗[ℝ] ℝ ≃ ℂ` over `ℝ` and over `ℂ` agree: both send `z ⊗ r` to `r • z`. -/
-private theorem rid_real_eq_rid_complex (x : ℂ ⊗[ℝ] ℝ) :
-    Algebra.TensorProduct.rid ℝ ℝ ℂ x = Algebra.TensorProduct.rid ℝ ℂ ℂ x := by
-  induction x using TensorProduct.inductionOn with
-  | tmul z r => simp
-  | add x y hx hy => simp [hx, hy]
-
 /-- **`S(ℝ) ≃ ℂˣ` is a homeomorphism** for the point topology on `S(ℝ)` and the units topology on
 `ℂˣ`. It is the Weil restriction comparison of point topologies followed by the identification of
 the points of `𝔾ₘ` over `ℂ` with `ℂˣ`. -/
@@ -117,7 +110,7 @@ theorem isHomeomorph_realPointsMulEquiv : IsHomeomorph realPointsMulEquiv := by
       ((PointTopology.isHomeomorph_ofConv.homeomorph _).symm.trans
         (MultiplicativeGroup.pointsContinuousMulEquiv ℂ ℂ).toHomeomorph))
   have heq : ⇑realPointsMulEquiv = ⇑h := funext fun f => Units.ext <| by
-    simp [h, realPointsMulEquiv_apply, Function.surjInv_eq, rid_real_eq_rid_complex]
+    simp [h, realPointsMulEquiv_apply, Function.surjInv_eq, Algebra.TensorProduct.coe_rid]
   rw [heq]
   exact h.isHomeomorph
 
@@ -126,7 +119,7 @@ theorem isHomeomorph_realPointsMulEquiv : IsHomeomorph realPointsMulEquiv := by
 variable (R)
 
 /-- **The diagonal** `d : 𝔾ₘ → S` on points, `r ↦ 1 ⊗ r`. On real points it is the inclusion
-`ℝˣ → ℂˣ` (`TauCeti.DeligneTorus.realPointsMulEquiv_diagonal`). -/
+`ℝˣ → ℂˣ` (`TauCeti.DeligneTorus.coe_realPointsMulEquiv_diagonal`). -/
 noncomputable def diagonal : Rˣ →* WithConv (S →ₐ[ℝ] R) :=
   (pointsMulEquiv R).symm.toMonoidHom.comp
     (Units.map (Algebra.TensorProduct.includeRight : R →ₐ[ℝ] ℂ ⊗[ℝ] R).toMonoidHom)
@@ -151,6 +144,13 @@ theorem pointsMulEquiv_diagonal (r : Rˣ) :
 theorem weight_eq_inv_diagonal (r : Rˣ) : weight R r = (diagonal R r)⁻¹ := by
   simp [weight]
 
+/-- The weight on points is `r ↦ (1 ⊗ r)⁻¹`. -/
+@[simp]
+theorem pointsMulEquiv_weight (r : Rˣ) :
+    pointsMulEquiv R (weight R r) =
+      (Units.map (Algebra.TensorProduct.includeRight : R →ₐ[ℝ] ℂ ⊗[ℝ] R).toMonoidHom r)⁻¹ := by
+  rw [weight_eq_inv_diagonal, map_inv (pointsMulEquiv R), pointsMulEquiv_diagonal]
+
 theorem norm_apply (f : WithConv (S →ₐ[ℝ] R)) :
     norm R f = NormTorus.norm ℝ ℂ R (pointsMulEquiv R f) :=
   (rfl)
@@ -168,20 +168,20 @@ theorem norm_weight (r : Rˣ) : norm R (weight R r) = (r ^ 2)⁻¹ := by
 
 /-- On real points the diagonal is the inclusion `ℝˣ → ℂˣ`. -/
 @[simp]
-theorem realPointsMulEquiv_diagonal (r : ℝˣ) :
+theorem coe_realPointsMulEquiv_diagonal (r : ℝˣ) :
     (realPointsMulEquiv (diagonal ℝ r) : ℂ) = (r : ℝ) := by
   simp [realPointsMulEquiv]
 
 /-- On real points the weight is `r ↦ r⁻¹`. -/
 @[simp]
-theorem realPointsMulEquiv_weight (r : ℝˣ) :
+theorem coe_realPointsMulEquiv_weight (r : ℝˣ) :
     (realPointsMulEquiv (weight ℝ r) : ℂ) = ((r : ℝ) : ℂ)⁻¹ := by
   rw [weight_eq_inv_diagonal, map_inv realPointsMulEquiv, Units.val_inv_eq_inv_val,
-    realPointsMulEquiv_diagonal]
+    coe_realPointsMulEquiv_diagonal]
 
 /-- `w(2) = 1/2` in `S(ℝ) = ℂˣ`: the weight is `r ↦ r⁻¹`, not `r ↦ r`. -/
 theorem weight_two : (realPointsMulEquiv (weight ℝ (Units.mk0 2 two_ne_zero)) : ℂ) = 1 / 2 := by
-  rw [realPointsMulEquiv_weight]
+  rw [coe_realPointsMulEquiv_weight]
   norm_num
 
 /-- On real points, read in `ℂ`, the norm is the squared modulus `z ↦ z * conj z`. -/
