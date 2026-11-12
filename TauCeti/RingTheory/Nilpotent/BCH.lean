@@ -41,7 +41,7 @@ public section
 
 namespace Submodule
 
-variable {A : Type*} [Ring A] [Algebra ℚ A]
+variable {A : Type*} [Ring A] [Module ℚ A]
 
 -- Separate the homogeneous terms before expanding the powers of the logarithm.
 private theorem algebra_bch3 (x y : A)
@@ -124,6 +124,7 @@ theorem exp_bch_of_pow_four_eq_bot (M : Submodule R A) (hM : M ^ 4 = ⊥) {x y :
     IsNilpotent.exp (x + y + (1 / 2 : ℚ) • ⁅x, y⁆ +
         (1 / 12 : ℚ) • (⁅x, ⁅x, y⁆⁆ + ⁅y, ⁅y, x⁆⁆)) =
       IsNilpotent.exp x * IsNilpotent.exp y := by
+  let _ : Algebra ℚ A := Algebra.ofModule smul_mul_assoc mul_smul_comm
   rw [← log_exp_mul_exp_of_pow_four_eq_bot M hM hx hy]
   exact IsNilpotent.exp_log ⟨4, M.exp_mul_exp_sub_one_pow_eq_zero hM hx hy⟩
 
@@ -157,6 +158,7 @@ theorem exp_bch_of_pow_three_eq_bot (M : Submodule R A) (hM : M ^ 3 = ⊥) {x y 
     (hx : x ∈ M) (hy : y ∈ M) :
     IsNilpotent.exp (x + y + (1 / 2 : ℚ) • ⁅x, y⁆) =
       IsNilpotent.exp x * IsNilpotent.exp y := by
+  let _ : Algebra ℚ A := Algebra.ofModule smul_mul_assoc mul_smul_comm
   rw [← log_exp_mul_exp_of_pow_three_eq_bot M hM hx hy]
   exact IsNilpotent.exp_log ⟨3, M.exp_mul_exp_sub_one_pow_eq_zero hM hx hy⟩
 

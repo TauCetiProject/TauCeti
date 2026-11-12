@@ -21,7 +21,7 @@ public section
 
 namespace Submodule
 
-variable {R A : Type*} [Ring A] [Algebra ℚ A] [Semiring R] [Module R A]
+variable {R A : Type*} [Ring A] [Module ℚ A] [Semiring R] [Module R A]
   [IsScalarTower R A A]
 
 /-- The difference from one of a product of finite exponentials of elements of a submodule
@@ -30,6 +30,7 @@ or multiplication is required. -/
 theorem exp_mul_exp_sub_one_pow_eq_zero (M : Submodule R A) {n : ℕ} (hM : M ^ n = ⊥)
     {x y : A} (hx : x ∈ M) (hy : y ∈ M) :
     (IsNilpotent.exp x * IsNilpotent.exp y - 1) ^ n = 0 := by
+  let _ : Algebra ℚ A := Algebra.ofModule smul_mul_assoc mul_smul_comm
   cases n with
   | zero =>
     simpa only [hM, mem_bot, pow_zero] using M.pow_mem_pow hx 0
