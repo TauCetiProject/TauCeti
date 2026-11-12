@@ -25,6 +25,9 @@ the boundary hyperplane of the half-space model `𝓡∂ (n + 1)`.
   `z i = 0` it inverts `TauCeti.euclideanQuadrantFaceParam i`.
 * `TauCeti.euclideanQuadrantFaceInclusion i`: the inclusion of the quadrant of dimension `m` onto
   the face `z i = 0` of the quadrant of dimension `m + 1`.
+* `TauCeti.euclideanQuadrantFaceRetract i`: the retraction of the quadrant of dimension `m + 1`
+  onto its face `z i = 0`, read in the quadrant of dimension `m`; it inverts
+  `TauCeti.euclideanQuadrantFaceInclusion i` on that face.
 -/
 
 public section
@@ -106,6 +109,38 @@ theorem coe_euclideanQuadrantFaceInclusion (i : Fin (m + 1)) (q : EuclideanQuadr
 theorem continuous_euclideanQuadrantFaceInclusion (i : Fin (m + 1)) :
     Continuous (euclideanQuadrantFaceInclusion (m := m) i) :=
   ((euclideanQuadrantFaceParam i).continuous.comp continuous_subtype_val).subtype_mk _
+
+/-- The retraction of the quadrant of dimension `m + 1` onto its face `z i = 0`, read in the
+quadrant of dimension `m`: delete the coordinate `i`. On the face it inverts
+`TauCeti.euclideanQuadrantFaceInclusion i`. -/
+def euclideanQuadrantFaceRetract (i : Fin (m + 1)) (z : EuclideanQuadrant (m + 1)) :
+    EuclideanQuadrant m :=
+  ⟨euclideanQuadrantFaceProj i z.1, fun k ↦ by simpa using z.2 (i.succAbove k)⟩
+
+@[simp]
+theorem coe_euclideanQuadrantFaceRetract (i : Fin (m + 1)) (z : EuclideanQuadrant (m + 1)) :
+    (euclideanQuadrantFaceRetract i z).1 = euclideanQuadrantFaceProj i z.1 :=
+  (rfl)
+
+theorem continuous_euclideanQuadrantFaceRetract (i : Fin (m + 1)) :
+    Continuous (euclideanQuadrantFaceRetract (m := m) i) :=
+  ((euclideanQuadrantFaceProj i).continuous.comp continuous_subtype_val).subtype_mk _
+
+@[simp]
+theorem euclideanQuadrantFaceRetract_faceInclusion (i : Fin (m + 1)) (q : EuclideanQuadrant m) :
+    euclideanQuadrantFaceRetract i (euclideanQuadrantFaceInclusion i q) = q :=
+  Subtype.ext <| by simp
+
+theorem euclideanQuadrantFaceInclusion_faceRetract {i : Fin (m + 1)}
+    {z : EuclideanQuadrant (m + 1)} (hz : z.1 i = 0) :
+    euclideanQuadrantFaceInclusion i (euclideanQuadrantFaceRetract i z) = z :=
+  Subtype.ext <| by simp [hz]
+
+/-- Deleting the coordinate `i` commutes with the model embeddings. -/
+theorem modelWithCornersEuclideanQuadrant_euclideanQuadrantFaceRetract (i : Fin (m + 1))
+    (z : EuclideanQuadrant (m + 1)) :
+    (𝓡c m) (euclideanQuadrantFaceRetract i z) = euclideanQuadrantFaceProj i ((𝓡c (m + 1)) z) := by
+  simp
 
 /-- Reinserting the zero coordinate commutes with the model embeddings. -/
 theorem modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam (i : Fin (m + 1))
