@@ -16,6 +16,7 @@ import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.NonstationaryPhase
 import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # The dispersive estimate for frequency-localized half-wave propagators
@@ -28,8 +29,8 @@ smooth, compactly supported and vanishing near the origin,
 
 `|𝓕⁻ (exp(2πit‖·‖) ψ) (x)| ≤ C (1 + |t|)^(-(n - 1)/2)`
 
-(`TauCeti.exists_norm_fourierInv_phaseSymbol_mul_le`). Rescaling to the Littlewood–Paley
-cutoffs `ψⱼ`, supported where `‖ξ‖ ≈ 2^j`, gives the kernel bound
+(`TauCeti.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_le`). Rescaling to the
+Littlewood–Paley cutoffs `ψⱼ`, supported where `‖ξ‖ ≈ 2^j`, gives the kernel bound
 `C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2)` uniformly in `j ∈ ℤ`, and with it the dispersive estimate
 
 `‖W₊(t) Pⱼ f‖_∞ ≤ C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2) ‖f‖₁`
@@ -59,10 +60,10 @@ is non-stationary on the support of `a`, so `𝓕 G_t (s) = O(|t|^(-N))`
 
 ## Main declarations
 
-* `TauCeti.exists_norm_fourierInv_phaseSymbol_mul_le`: the dispersive kernel bound for one
-  frequency cutoff vanishing near the origin.
-* `ContDiffBump.exists_norm_fourierInv_phaseSymbol_mul_littlewoodPaley_le`: the kernel bound for
-  the dyadic cutoffs, `C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2)`.
+* `TauCeti.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_le`: the dispersive
+  kernel bound for one frequency cutoff vanishing near the origin.
+* `ContDiffBump.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_littlewoodPaley_le`:
+  the kernel bound for the dyadic cutoffs, `C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2)`.
 * `ContDiffBump.exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_le`: the
   `L¹ → L^∞` dispersive estimate for `W₊(t) Pⱼ`.
 
@@ -253,7 +254,8 @@ private theorem norm_fourier_subordinator_le (hα : 0 < α) (hρ : ContDiff ℝ 
         hr (tsupport_subordinatorAmplitude_subset hρs h)).toSchwartzMap
     (contDiff_subordinatorAmplitude hα hρ hρs)
   have ha : ⇑a = subordinatorAmplitude ρ := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  have h := norm_integral_cexp_quadratic_le a (neg_ne_zero.2 hs) t
+  have h := a.norm_integral_cexp_quadratic_smul_le (neg_ne_zero.2 hs) t
+  simp only [smul_eq_mul] at h
   rw [ha, abs_neg, Module.finrank_self, Nat.cast_one] at h
   rw [fourier_subordinator_eq hα hρs]
   refine le_of_eq_of_le ?_ (h.trans_eq (by rw [neg_div]))
@@ -277,9 +279,9 @@ private theorem norm_fourierInv_phaseSymbol_mul_le_integral_norm (ψ : E → ℂ
 
 /-- The large-time decay `|t|^(-(n - 1)/2)` of the localized half-wave kernel, `n ≥ 2`. The
 kernel is the superposition `∫ 𝓕 G_t (s) S_s(x) ds` of
-`fourierInv_phaseSymbol_mul_eq_integral`; `norm_integral_mul_le_rpow_one_sub` integrates the
-three bounds on its factors: `|S_s| ≤ ‖ψ‖₁`, non-stationary phase for `𝓕 G_t (s)` when
-`4R|s| ≤ |t|`, and the two dispersive bounds otherwise. -/
+`fourierInv_phaseSymbol_mul_eq_integral`; `norm_integral_le_max_mul_rpow_sub_mul_integral`
+integrates the bounds on its integrand: `|S_s| ≤ ‖ψ‖₁` times non-stationary phase for `𝓕 G_t (s)`
+when `4R|s| ≤ |t|`, and the product of the two dispersive bounds otherwise. -/
 private theorem exists_norm_fourierInv_phaseSymbol_mul_le_rpow {ψ : E → ℂ}
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ)
     (hE : 2 ≤ Module.finrank ℝ E) :
@@ -309,11 +311,9 @@ private theorem exists_norm_fourierInv_phaseSymbol_mul_le_rpow {ψ : E → ℂ}
   set q : ℝ := (n + 1) / 2
   have hq : 1 < q := by simp only [q]; linarith
   have hqN : q ≤ (Module.finrank ℝ E : ℕ) := by simp only [q, n]; linarith
-  obtain ⟨C₃, hC₃⟩ := exists_norm_integral_cexp_mul_le_of_mul_abs_le
-    (contDiff_subordinatorAmplitude hα hρ hρs) hR (tsupport_subordinatorAmplitude_subset hρs)
-    (Module.finrank ℝ E)
-  have hC₃0 : 0 ≤ C₃ := nonneg_of_mul_nonneg_left
-    ((norm_nonneg _).trans (hC₃ 1 0 one_ne_zero (by simp))) (by simp)
+  obtain ⟨C₃, hC₃0, hC₃⟩ := exists_norm_integral_cexp_mul_le_of_mul_abs_le
+    (contDiff_infty.1 (contDiff_subordinatorAmplitude hα hρ hρs) (Module.finrank ℝ E)) hR
+    (tsupport_subordinatorAmplitude_subset hρs)
   set A : ℝ := ∫ ξ, ‖ψ ξ‖
   set D : ℝ := (∫ y, ‖𝓕⁻ (subordinatorAmplitude ρ) y‖) * ∫ y, ‖𝓕⁻ ψ y‖
   refine ⟨max (C₃ * A * (1 + 1 / (4 * R)) ^ q) (D * (4 * R + 1) ^ q) *
@@ -322,27 +322,34 @@ private theorem exists_norm_fourierInv_phaseSymbol_mul_le_rpow {ψ : E → ℂ}
   have ht0 : t ≠ 0 := fun h ↦ by rw [h, abs_zero] at ht; linarith
   rw [fourierInv_phaseSymbol_mul_eq_integral hα hρ hρs hψρ hψ.continuous
     (hψ.continuous.integrable_of_hasCompactSupport hψc)]
-  refine (norm_integral_mul_le_rpow_one_sub (T := |t|) (A := A) (C := C₃) (D := D)
-    (h := 𝓕 (subordinator ρ t))
-    (S := fun s ↦ ∫ ξ, cexp (((2 * π * (⟪ξ, x⟫ + s * ‖ξ‖ ^ 2) : ℝ) : ℂ) * I) * ψ ξ)
-    (abs_pos.2 ht0) (by positivity : (0 : ℝ) < 4 * R) hq (fun s ↦ ?_) (fun s hs ↦ ?_)
+  refine (norm_integral_le_max_mul_rpow_sub_mul_integral volume (T := |t|) (C := C₃ * A) (D := D)
+    (f := fun s ↦ 𝓕 (subordinator ρ t) s *
+      ∫ ξ, cexp (((2 * π * (⟪ξ, x⟫ + s * ‖ξ‖ ^ 2) : ℝ) : ℂ) * I) * ψ ξ)
+    (abs_pos.2 ht0) (by positivity : (0 : ℝ) < 4 * R) (by simpa using hq) (fun s hs ↦ ?_)
     (fun s hs ↦ ?_)).trans_eq ?_
-  · -- `|S_s| ≤ ‖ψ‖₁`.
-    refine (norm_integral_le_integral_norm _).trans_eq ?_
-    simp only [norm_mul, norm_exp_ofReal_mul_I, one_mul, A]
-  · -- Non-stationary phase for the weights near `s = 0`.
+  · -- Non-stationary phase for the weights near `s = 0`, times `|S_s| ≤ ‖ψ‖₁`.
+    rw [Real.norm_eq_abs] at hs
     have hTN : (|t| ^ Module.finrank ℝ E)⁻¹ ≤ |t| ^ (-q) := by
       rw [← rpow_natCast, ← rpow_neg (abs_nonneg t)]
       exact rpow_le_rpow_of_exponent_le ht (by linarith)
-    rw [fourier_subordinator_eq hα hρs]
-    exact (hC₃ t s ht0 hs).trans (by gcongr)
+    have hh : ‖𝓕 (subordinator ρ t) s‖ ≤ C₃ * |t| ^ (-q) := by
+      rw [fourier_subordinator_eq hα hρs]
+      exact (hC₃ t s ht0 hs).trans (by gcongr)
+    have hS : ‖∫ ξ, cexp (((2 * π * (⟪ξ, x⟫ + s * ‖ξ‖ ^ 2) : ℝ) : ℂ) * I) * ψ ξ‖ ≤ A := by
+      refine (norm_integral_le_integral_norm _).trans_eq ?_
+      simp only [norm_mul, norm_exp_ofReal_mul_I, one_mul, A]
+    rw [norm_mul]
+    calc _ ≤ C₃ * |t| ^ (-q) * A := mul_le_mul hh hS (norm_nonneg _) (by positivity)
+      _ = C₃ * A * |t| ^ (-q) := by ring
   · -- The product of the two dispersive bounds away from `s = 0`.
+    simp only [Real.norm_eq_abs] at hs ⊢
     have hs0 : s ≠ 0 := by
       rintro rfl
       rw [abs_zero, mul_zero] at hs
       linarith
     have h₁ := norm_fourier_subordinator_le hα hρ hρs t hs0
-    have h₂ := norm_integral_cexp_quadratic_le ψs hs0 x
+    have h₂ := ψs.norm_integral_cexp_quadratic_smul_le hs0 x
+    simp only [smul_eq_mul] at h₂
     rw [hψs] at h₂
     have h2s : 0 < 2 * |s| := by positivity
     rw [norm_mul]
@@ -357,7 +364,8 @@ private theorem exists_norm_fourierInv_phaseSymbol_mul_le_rpow {ψ : E → ℂ}
         ring
       _ ≤ D * |s| ^ (-q) := mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos (abs_pos.2 hs0)
           (by linarith [abs_nonneg s]) (by linarith)) (by positivity)
-  · rw [show 1 - q = -(n - 1) / 2 by simp only [q]; ring]
+  · simp only [Module.finrank_self, Nat.cast_one, Real.norm_eq_abs]
+    rw [show 1 - q = -(n - 1) / 2 by simp only [q]; ring]
     ring
 
 /-- **The dispersive bound for a frequency-localized half-wave kernel.** Let `E` have dimension
@@ -366,12 +374,14 @@ private theorem exists_norm_fourierInv_phaseSymbol_mul_le_rpow {ψ : E → ℂ}
 
 `|𝓕⁻ (exp(2πit‖·‖) ψ) (x)| ≤ C (1 + |t|)^(-(n - 1)/2)`
 
-for every time `t` and every point `x`, with `C` depending only on `ψ`. For `n ≤ 1` the
-exponent is nonnegative and the bound only records that the kernel is bounded. -/
-theorem exists_norm_fourierInv_phaseSymbol_mul_le {ψ : E → ℂ} (hψ : ContDiff ℝ ∞ ψ)
-    (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) :
-    ∃ C, ∀ (t : ℝ) (x : E), ‖𝓕⁻ (fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * ψ ξ) x‖ ≤
-      C * (1 + |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2) := by
+for every time `t` and every point `x`, with `C ≥ 0` depending only on `ψ`. For `n = 1` the
+exponent is `0` and the bound only records that the kernel is bounded; for `n = 0` the space is a
+point, so `ψ`, which vanishes near the origin, is zero and so is the kernel. -/
+theorem exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_le {ψ : E → ℂ}
+    (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) :
+    ∃ C, 0 ≤ C ∧ ∀ (t : ℝ) (x : E),
+      ‖𝓕⁻ (fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * ψ ξ) x‖ ≤
+        C * (1 + |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2) := by
   set n : ℝ := ((Module.finrank ℝ E : ℕ) : ℝ)
   obtain ⟨K, hK0, hK⟩ : ∃ K, 0 ≤ K ∧ (2 ≤ Module.finrank ℝ E → ∀ t : ℝ, 1 ≤ |t| → ∀ x : E,
       ‖𝓕⁻ (fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * ψ ξ) x‖ ≤
@@ -382,7 +392,8 @@ theorem exists_norm_fourierInv_phaseSymbol_mul_le {ψ : E → ℂ} (hψ : ContDi
     · exact ⟨0, le_rfl, fun h ↦ absurd h hE⟩
   set A : ℝ := ∫ ξ, ‖ψ ξ‖
   have hA : 0 ≤ A := integral_nonneg fun _ ↦ norm_nonneg _
-  refine ⟨max A K * max 1 (2 ^ ((n - 1) / 2)), fun t x ↦ ?_⟩
+  refine ⟨max A K * max 1 (2 ^ ((n - 1) / 2)),
+    mul_nonneg (le_max_of_le_left hA) (le_max_of_le_left zero_le_one), fun t x ↦ ?_⟩
   by_cases h : |t| < 1 ∨ n ≤ 1
   · -- Small times and low dimensions: the trivial bound `‖ψ‖₁`.
     calc _ ≤ A := norm_fourierInv_phaseSymbol_mul_le_integral_norm ψ t x
@@ -392,11 +403,12 @@ theorem exists_norm_fourierInv_phaseSymbol_mul_le {ψ : E → ℂ} (hψ : ContDi
           · exact one_le_mul_of_one_le_of_one_le (le_max_left _ _)
               (one_le_rpow (by linarith [abs_nonneg t]) (by linarith))
           · have ht : |t| < 1 := h.resolve_right (not_le.2 hn)
-            calc (1 : ℝ) = 2 ^ ((n - 1) / 2) * 2 ^ (-(n - 1) / 2) := by
-                  rw [neg_div, rpow_neg (by norm_num), mul_inv_cancel₀ (by positivity)]
-              _ ≤ max 1 (2 ^ ((n - 1) / 2)) * (1 + |t|) ^ (-(n - 1) / 2) :=
-                  mul_le_mul (le_max_right _ _) (rpow_le_rpow_of_nonpos (by positivity)
-                    (by linarith) (by linarith)) (by positivity) (by positivity)
+            calc (1 : ℝ) = 1 ^ (-((n - 1) / 2)) := (one_rpow _).symm
+              _ ≤ 2 ^ ((n - 1) / 2) * (1 + |t|) ^ (-((n - 1) / 2)) :=
+                  rpow_neg_le_mul_rpow_neg (by positivity) (by norm_num) (by linarith)
+                    (by linarith)
+              _ ≤ max 1 (2 ^ ((n - 1) / 2)) * (1 + |t|) ^ (-(n - 1) / 2) := by
+                  rw [neg_div]; gcongr; exact le_max_right _ _
       _ ≤ max A K * max 1 (2 ^ ((n - 1) / 2)) * (1 + |t|) ^ (-(n - 1) / 2) := by
           rw [← mul_assoc]; gcongr; exact le_max_left _ _
   · -- Large times in dimension `n ≥ 2`: the decay `|t|^(-(n-1)/2)`.
@@ -404,13 +416,9 @@ theorem exists_norm_fourierInv_phaseSymbol_mul_le {ψ : E → ℂ} (hψ : ContDi
     have hE : 2 ≤ Module.finrank ℝ E := by
       have : (1 : ℝ) < Module.finrank ℝ E := h.2
       exact_mod_cast this
-    have h2 : |t| ^ (-(n - 1) / 2) ≤ 2 ^ ((n - 1) / 2) * (1 + |t|) ^ (-(n - 1) / 2) :=
-      calc |t| ^ (-(n - 1) / 2) = 2 ^ ((n - 1) / 2) * (2 * |t|) ^ (-(n - 1) / 2) := by
-            rw [mul_rpow (by norm_num) (abs_nonneg t), ← mul_assoc, neg_div,
-              rpow_neg (by norm_num : (0 : ℝ) ≤ 2), mul_inv_cancel₀ (by positivity), one_mul]
-        _ ≤ 2 ^ ((n - 1) / 2) * (1 + |t|) ^ (-(n - 1) / 2) :=
-            mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos (by positivity)
-              (by linarith : 1 + |t| ≤ 2 * |t|) (by linarith)) (by positivity)
+    have h2 : |t| ^ (-(n - 1) / 2) ≤ 2 ^ ((n - 1) / 2) * (1 + |t|) ^ (-(n - 1) / 2) := by
+      rw [neg_div]
+      exact rpow_neg_le_mul_rpow_neg (by positivity) (by norm_num) (by linarith) (by linarith)
     calc _ ≤ K * |t| ^ (-(n - 1) / 2) := hK hE t h.1 x
       _ ≤ K * (max 1 (2 ^ ((n - 1) / 2)) * (1 + |t|) ^ (-(n - 1) / 2)) := by
           gcongr
@@ -433,17 +441,17 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 `n` and let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, supported in the annuli
 `‖ξ‖ ≈ 2^j`. There is `C` such that for every `j ∈ ℤ`, every time `t` and every point `x`,
 
-`|𝓕⁻ (exp(2πit‖·‖) ψⱼ) (x)| ≤ C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2)`. -/
-theorem exists_norm_fourierInv_phaseSymbol_mul_littlewoodPaley_le :
-    ∃ C, ∀ (j : ℤ) (t : ℝ) (x : E),
+`|𝓕⁻ (exp(2πit‖·‖) ψⱼ) (x)| ≤ C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2)`, and `C ≥ 0`. -/
+theorem exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_littlewoodPaley_le :
+    ∃ C, 0 ≤ C ∧ ∀ (j : ℤ) (t : ℝ) (x : E),
       ‖𝓕⁻ (fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * φ.littlewoodPaley j ξ) x‖ ≤
         C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
           (1 + 2 ^ j * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2) := by
-  obtain ⟨C, hC⟩ := exists_norm_fourierInv_phaseSymbol_mul_le
+  obtain ⟨C, hC0, hC⟩ := exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_le
     (ofRealCLM.contDiff.comp (φ.contDiff_littlewoodPaley 0))
     ((φ.hasCompactSupport_littlewoodPaley 0).comp_left ofReal_zero)
     (fun h ↦ φ.zero_notMem_tsupport_littlewoodPaley 0 (tsupport_comp_subset ofReal_zero _ h))
-  refine ⟨C, fun j t x ↦ ?_⟩
+  refine ⟨C, hC0, fun j t x ↦ ?_⟩
   have h2 : (0 : ℝ) < 2 ^ j := zpow_pos two_pos j
   have heq : (fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * φ.littlewoodPaley j ξ) =
       fun ξ ↦ (fun η ↦ phaseSymbol sqrtNegLaplacianSymbol (2 ^ j * t) η *
@@ -470,7 +478,7 @@ theorem exists_norm_fourierInv_phaseSymbol_mul_littlewoodPaley_le :
 
 /-- **The dispersive estimate for the frequency-localized half-wave propagator.** Let `E` have
 dimension `n`, let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, and let `Pⱼ` be the
-`L²` Fourier multiplier with symbol `ψⱼ`. There is `C` such that for every `j ∈ ℤ`, every time
+`L²` Fourier multiplier with symbol `ψⱼ`. There is `C ≥ 0` such that for every `j ∈ ℤ`, every time
 `t` and every integrable `f ∈ L²`,
 
 `‖W₊(t) Pⱼ f‖_∞ ≤ C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2) ‖f‖₁`.
@@ -478,14 +486,15 @@ dimension `n`, let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, an
 Since `W₋(t) = W₊(-t)`, the same bound holds for `W₋`. -/
 theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_le
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] :
-    ∃ C, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+    ∃ C, 0 ≤ C ∧ ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
       m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ (t : ℝ)
       (f : Lp F 2 (volume : Measure E)), Integrable f →
       eLpNorm (halfWavePropagator F t (Lp.fourierMultiplierCLM F m f)) ∞ volume ≤
         ENNReal.ofReal (C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
           (1 + 2 ^ j * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) * eLpNorm f 1 volume := by
-  obtain ⟨C, hC⟩ := φ.exists_norm_fourierInv_phaseSymbol_mul_littlewoodPaley_le
-  refine ⟨C, fun j m hm t f hf ↦ ?_⟩
+  obtain ⟨C, hC0, hC⟩ :=
+    φ.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_littlewoodPaley_le
+  refine ⟨C, hC0, fun j m hm t f hf ↦ ?_⟩
   set B := C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
     (1 + 2 ^ j * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)
   -- The localized symbol `ψⱼ exp(2πit‖·‖)` as a Schwartz function.

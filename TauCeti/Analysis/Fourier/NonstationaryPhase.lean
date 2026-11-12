@@ -29,7 +29,8 @@ than every power of `|t|`, uniformly in `s`:
 
 `‖∫ exp(2πi (t r - s r²)) g(r) dr‖ ≤ C_N |t|^(-N)` for `t ≠ 0` and `4 R |s| ≤ |t|`.
 
-(`TauCeti.exists_norm_integral_cexp_mul_le_of_mul_abs_le`). The proof integrates by parts `N`
+(`TauCeti.exists_norm_integral_cexp_mul_le_of_mul_abs_le`, which only needs `g` to be `C^N` for
+the rate `|t|^(-N)`). The proof integrates by parts `N`
 times against `exp(2πi (t r - s r²))`, each time dividing by the phase derivative. Since that
 derivative is affine in `r`, every amplitude produced on the way is a sum of terms
 `h(r) s^j / (t - 2 s r)^k` with `h` a derivative of `g` and `j ≤ k`, and such a term is
@@ -41,8 +42,9 @@ propagator to the Schrödinger propagator negligible.
 
 ## Main declarations
 
-* `TauCeti.exists_norm_integral_cexp_mul_le_of_mul_abs_le`: rapid decay of the oscillatory
-  integral with phase `t r - s r²` in the non-stationary regime `t ≠ 0`, `4 R |s| ≤ |t|`.
+* `TauCeti.exists_norm_integral_cexp_mul_le_of_mul_abs_le`: decay at the rate `|t|^(-N)` of the
+  oscillatory integral with phase `t r - s r²` and a `C^N` amplitude, in the non-stationary regime
+  `t ≠ 0`, `4 R |s| ≤ |t|`.
 
 ## References
 
@@ -242,7 +244,7 @@ private theorem integral_mul_coeff_eq {g : ℝ → ℂ} (hg : ContDiff ℝ 1 g)
 /-- The induction behind non-stationary phase: the integral against `s^j / (t - 2 s r)^k`, `j ≤ k`,
 is `O(|t|^(-(N + k - j)))` for every `N`. -/
 private theorem exists_norm_integral_mul_coeff_le (hR : 0 < R) (N : ℕ) :
-    ∀ (g : ℝ → ℂ), ContDiff ℝ ∞ g → tsupport g ⊆ Icc (-R) R → ∀ j k : ℕ, j ≤ k →
+    ∀ (g : ℝ → ℂ), ContDiff ℝ N g → tsupport g ⊆ Icc (-R) R → ∀ j k : ℕ, j ≤ k →
       ∃ C, ∀ t s : ℝ, t ≠ 0 → 4 * R * |s| ≤ |t| →
         ‖∫ r, phase t s r * (g r * coeff t s j k r)‖ ≤ C * (|t| ^ (N + (k - j)))⁻¹ := by
   induction N with
@@ -253,9 +255,11 @@ private theorem exists_norm_integral_mul_coeff_le (hR : 0 < R) (N : ℕ) :
     exact (norm_integral_mul_coeff_le hg.continuous hR hgR ht hts hjk).trans_eq (by ring)
   | succ N ih =>
     intro g hg hgR j k hjk
-    obtain ⟨C₁, hC₁⟩ := ih (deriv g) (contDiff_infty_iff_deriv.1 hg).2
+    have hg' : ContDiff ℝ (N + 1) g := by exact_mod_cast hg
+    obtain ⟨C₁, hC₁⟩ := ih (deriv g) (contDiff_succ_iff_deriv.1 hg').2.2
       ((tsupport_deriv_subset).trans hgR) j (k + 1) (by omega)
-    obtain ⟨C₂, hC₂⟩ := ih g hg hgR (j + 1) (k + 2) (by omega)
+    obtain ⟨C₂, hC₂⟩ := ih g (hg.of_le (by exact_mod_cast N.le_succ)) hgR (j + 1) (k + 2)
+      (by omega)
     refine ⟨(2 * π)⁻¹ * (C₁ + 2 * ((k : ℝ) + 1) * C₂), fun t s ht hts ↦ ?_⟩
     have he₁ : N + (k + 1 - j) = N + 1 + (k - j) := by omega
     have he₂ : N + (k + 2 - (j + 1)) = N + 1 + (k - j) := by omega
@@ -265,7 +269,8 @@ private theorem exists_norm_integral_mul_coeff_le (hR : 0 < R) (N : ℕ) :
     rw [he₂] at h₂
     have key : ‖-((2 * π : ℂ) * I)⁻¹‖ = (2 * π)⁻¹ := by
       simp [abs_of_pos pi_pos]
-    rw [integral_mul_coeff_eq (hg.of_le (by simp)) hgR ht hts j k, norm_mul, key, mul_assoc]
+    rw [integral_mul_coeff_eq (hg.of_le (by exact_mod_cast Nat.le_add_left 1 N)) hgR ht hts j k,
+      norm_mul, key, mul_assoc]
     gcongr
     calc _ ≤ ‖∫ r, phase t s r * (deriv g r * coeff t s j (k + 1) r)‖ +
           ‖((2 * ((k : ℝ) + 1) : ℝ) : ℂ)‖ *
@@ -280,18 +285,21 @@ private theorem exists_norm_integral_mul_coeff_le (hR : 0 < R) (N : ℕ) :
 end NonstationaryPhase
 
 open NonstationaryPhase in
-/-- **Non-stationary phase for quadratic phases.** Let `g` be smooth and supported in `[-R, R]`,
-`R > 0`. For every `N` there is `C` such that, whenever `t ≠ 0` and `4 R |s| ≤ |t|`,
+/-- **Non-stationary phase for quadratic phases.** Let `g` be `N` times continuously
+differentiable and supported in `[-R, R]`, `R > 0`. There is `C ≥ 0` such that, whenever `t ≠ 0`
+and `4 R |s| ≤ |t|`,
 
 `‖∫ exp(2πi (t r - s r²)) g(r) dr‖ ≤ C |t|^(-N)`.
 
 On the support of `g` the phase derivative `2π (t - 2 s r)` has size at least `π |t|`. -/
-theorem exists_norm_integral_cexp_mul_le_of_mul_abs_le {g : ℝ → ℂ} (hg : ContDiff ℝ ∞ g)
-    {R : ℝ} (hR : 0 < R) (hgR : tsupport g ⊆ Icc (-R) R) (N : ℕ) :
-    ∃ C, ∀ t s : ℝ, t ≠ 0 → 4 * R * |s| ≤ |t| →
+theorem exists_norm_integral_cexp_mul_le_of_mul_abs_le {g : ℝ → ℂ} {N : ℕ} (hg : ContDiff ℝ N g)
+    {R : ℝ} (hR : 0 < R) (hgR : tsupport g ⊆ Icc (-R) R) :
+    ∃ C, 0 ≤ C ∧ ∀ t s : ℝ, t ≠ 0 → 4 * R * |s| ≤ |t| →
       ‖∫ r, cexp (((2 * π * (t * r - s * r ^ 2) : ℝ) : ℂ) * I) * g r‖ ≤ C * (|t| ^ N)⁻¹ := by
   obtain ⟨C, hC⟩ := exists_norm_integral_mul_coeff_le hR N g hg hgR 0 0 le_rfl
-  refine ⟨C, fun t s ht hts ↦ ?_⟩
-  simpa [coeff, phase] using hC t s ht hts
+  have hC' : ∀ t s : ℝ, t ≠ 0 → 4 * R * |s| ≤ |t| →
+      ‖∫ r, cexp (((2 * π * (t * r - s * r ^ 2) : ℝ) : ℂ) * I) * g r‖ ≤ C * (|t| ^ N)⁻¹ :=
+    fun t s ht hts ↦ by simpa [coeff, phase] using hC t s ht hts
+  exact ⟨C, by simpa using (norm_nonneg _).trans (hC' 1 0 one_ne_zero (by simp)), hC'⟩
 
 end TauCeti

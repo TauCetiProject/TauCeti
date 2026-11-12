@@ -57,8 +57,9 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integrable_add_norm_rpow_neg`, `TauCeti.integral_add_norm_rpow_neg`: integrability
   and rescaling of the shifted power `x ↦ (T + ‖x‖) ^ (-q)`, for every additive Haar measure.
-* `TauCeti.norm_integral_mul_le_rpow_one_sub`: an integral over `ℝ` whose integrand is bounded
-  by `T ^ (-q)` where `c |s| ≤ T` and by `|s| ^ (-q)` elsewhere is `O(T ^ (1 - q))` for `q > 1`.
+* `TauCeti.norm_integral_le_max_mul_rpow_sub_mul_integral`: on a space of dimension `d < q`, an
+  integral whose integrand is bounded by `T ^ (-q)` where `c ‖x‖ ≤ T` and by `‖x‖ ^ (-q)`
+  elsewhere is `O(T ^ (d - q))`.
 * `TauCeti.not_integrableOn_rpow_neg_one_add_norm_sq`: for `r ≤ d` the bracket
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is not integrable over any open cone containing a nonzero vector.
 * `TauCeti.memLp_two_one_add_norm_rpow_neg`: the power `x ↦ (1 + ‖x‖) ^ (-r)` is square
@@ -157,52 +158,48 @@ theorem integral_add_norm_rpow_neg (μ : Measure V) [μ.IsAddHaarMeasure] (q : �
     Measure.integral_comp_inv_smul_of_nonneg μ (fun x ↦ (1 + ‖x‖) ^ (-q)) hT.le, smul_eq_mul,
     ← mul_assoc, ← Real.rpow_natCast, ← Real.rpow_add hT, neg_add_eq_sub]
 
-/-- **Splitting an integral at `c |s| = T`.** Let `q > 1`, `T > 0` and `c > 0`. If `‖S s‖ ≤ A`
-everywhere, `‖h s‖ ≤ C T ^ (-q)` where `c |s| ≤ T`, and `‖h s S s‖ ≤ D |s| ^ (-q)` where
-`T ≤ c |s|`, then `‖∫ h S‖ ≤ K T ^ (1 - q)`, with `K` depending only on `c`, `q`, `A`, `C` and
-`D`: both bounds are dominated by a multiple of `(T + |s|) ^ (-q)`, whose integral is
-`T ^ (1 - q) ∫ (1 + |σ|) ^ (-q) dσ`. -/
-theorem norm_integral_mul_le_rpow_one_sub {𝕜 : Type*} [NormedRing 𝕜] [NormedSpace ℝ 𝕜]
-    {h S : ℝ → 𝕜} {T c q A C D : ℝ} (hT : 0 < T) (hc : 0 < c) (hq : 1 < q)
-    (hS : ∀ s, ‖S s‖ ≤ A) (hnear : ∀ s, c * |s| ≤ T → ‖h s‖ ≤ C * T ^ (-q))
-    (hfar : ∀ s, T ≤ c * |s| → ‖h s * S s‖ ≤ D * |s| ^ (-q)) :
-    ‖∫ s, h s * S s‖ ≤ max (C * A * (1 + 1 / c) ^ q) (D * (c + 1) ^ q) *
-      (T ^ (1 - q) * ∫ σ : ℝ, (1 + |σ|) ^ (-q)) := by
-  have hA : 0 ≤ A := (norm_nonneg _).trans (hS 0)
+/-- **Splitting an integral at `c ‖x‖ = T`.** Let `V` have dimension `d < q`, and let `T > 0`
+and `c > 0`. If `‖f x‖ ≤ C T ^ (-q)` where `c ‖x‖ ≤ T` and `‖f x‖ ≤ D ‖x‖ ^ (-q)` where
+`T ≤ c ‖x‖`, then `‖∫ f dμ‖ ≤ K T ^ (d - q) ∫ (1 + ‖x‖) ^ (-q) dμ`, with `K` depending only on
+`c`, `q`, `C` and `D`: both bounds are dominated by a multiple of `(T + ‖x‖) ^ (-q)`, whose
+integral is `T ^ (d - q) ∫ (1 + ‖x‖) ^ (-q) dμ`. -/
+theorem norm_integral_le_max_mul_rpow_sub_mul_integral (μ : Measure V) [μ.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : V → F} {T c q C D : ℝ}
+    (hT : 0 < T) (hc : 0 < c) (hq : (finrank ℝ V : ℝ) < q)
+    (hnear : ∀ x, c * ‖x‖ ≤ T → ‖f x‖ ≤ C * T ^ (-q))
+    (hfar : ∀ x, T ≤ c * ‖x‖ → ‖f x‖ ≤ D * ‖x‖ ^ (-q)) :
+    ‖∫ x, f x ∂μ‖ ≤ max (C * (1 + 1 / c) ^ q) (D * (c + 1) ^ q) *
+      (T ^ ((finrank ℝ V : ℝ) - q) * ∫ x : V, (1 + ‖x‖) ^ (-q) ∂μ) := by
+  have hq0 : 0 ≤ q := (Nat.cast_nonneg _).trans hq.le
   have hC : 0 ≤ C := nonneg_of_mul_nonneg_left
     ((norm_nonneg _).trans (hnear 0 (by simpa using hT.le))) (rpow_pos_of_pos hT _)
-  have hint : Integrable (fun s : ℝ ↦ (T + |s|) ^ (-q)) := by
-    simpa [Real.norm_eq_abs] using
-      integrable_add_norm_rpow_neg (volume : Measure ℝ) (by simpa using hq) hT
-  have heq : ∫ s : ℝ, (T + |s|) ^ (-q) = T ^ (1 - q) * ∫ σ : ℝ, (1 + |σ|) ^ (-q) := by
-    simpa [Real.norm_eq_abs] using integral_add_norm_rpow_neg (volume : Measure ℝ) q hT
-  set K := max (C * A * (1 + 1 / c) ^ q) (D * (c + 1) ^ q)
-  rw [← heq, ← integral_const_mul]
-  refine norm_integral_le_of_norm_le (hint.const_mul K) (Eventually.of_forall fun s ↦ ?_)
-  have hTs : 0 < T + |s| := by positivity
-  rcases le_total (c * |s|) T with hs | hs
-  · have hcmp : T ^ (-q) ≤ (1 + 1 / c) ^ q * (T + |s|) ^ (-q) := by
-      refine rpow_neg_le_mul_rpow_neg hTs hT (by positivity) (by linarith) ?_
-      have : |s| ≤ T / c := by rw [le_div_iff₀ hc]; linarith
-      calc T + |s| ≤ T + T / c := by linarith
+  set K := max (C * (1 + 1 / c) ^ q) (D * (c + 1) ^ q)
+  rw [← integral_add_norm_rpow_neg μ q hT, ← integral_const_mul]
+  refine norm_integral_le_of_norm_le ((integrable_add_norm_rpow_neg μ hq hT).const_mul K)
+    (Eventually.of_forall fun x ↦ ?_)
+  have hTx : 0 < T + ‖x‖ := by positivity
+  rcases le_total (c * ‖x‖) T with hx | hx
+  · have hcmp : T ^ (-q) ≤ (1 + 1 / c) ^ q * (T + ‖x‖) ^ (-q) := by
+      refine rpow_neg_le_mul_rpow_neg hTx (by positivity) hq0 ?_
+      have : ‖x‖ ≤ T / c := by rw [le_div_iff₀ hc]; linarith
+      calc T + ‖x‖ ≤ T + T / c := by linarith
         _ = (1 + 1 / c) * T := by ring
-    calc ‖h s * S s‖ ≤ ‖h s‖ * ‖S s‖ := norm_mul_le _ _
-      _ ≤ C * T ^ (-q) * A := mul_le_mul (hnear s hs) (hS s) (norm_nonneg _) (by positivity)
-      _ ≤ C * ((1 + 1 / c) ^ q * (T + |s|) ^ (-q)) * A := by gcongr
-      _ = C * A * (1 + 1 / c) ^ q * (T + |s|) ^ (-q) := by ring
-      _ ≤ K * (T + |s|) ^ (-q) := by gcongr; exact le_max_left _ _
-  · have hs0 : 0 < |s| := by
-      refine (abs_nonneg s).lt_of_ne fun h0 ↦ ?_
-      rw [← h0, mul_zero] at hs
+    calc ‖f x‖ ≤ C * T ^ (-q) := hnear x hx
+      _ ≤ C * ((1 + 1 / c) ^ q * (T + ‖x‖) ^ (-q)) := by gcongr
+      _ = C * (1 + 1 / c) ^ q * (T + ‖x‖) ^ (-q) := by ring
+      _ ≤ K * (T + ‖x‖) ^ (-q) := by gcongr; exact le_max_left _ _
+  · have hx0 : 0 < ‖x‖ := by
+      refine (norm_nonneg x).lt_of_ne fun h0 ↦ ?_
+      rw [← h0, mul_zero] at hx
       linarith
-    have hcmp : |s| ^ (-q) ≤ (c + 1) ^ q * (T + |s|) ^ (-q) :=
-      rpow_neg_le_mul_rpow_neg hTs hs0 (by positivity) (by linarith) (by linarith)
-    have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hfar s hs))
-      (rpow_pos_of_pos hs0 _)
-    calc ‖h s * S s‖ ≤ D * |s| ^ (-q) := hfar s hs
-      _ ≤ D * ((c + 1) ^ q * (T + |s|) ^ (-q)) := by gcongr
-      _ = D * (c + 1) ^ q * (T + |s|) ^ (-q) := by ring
-      _ ≤ K * (T + |s|) ^ (-q) := by gcongr; exact le_max_right _ _
+    have hcmp : ‖x‖ ^ (-q) ≤ (c + 1) ^ q * (T + ‖x‖) ^ (-q) :=
+      rpow_neg_le_mul_rpow_neg hTx (by positivity) hq0 (by linarith)
+    have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hfar x hx))
+      (rpow_pos_of_pos hx0 _)
+    calc ‖f x‖ ≤ D * ‖x‖ ^ (-q) := hfar x hx
+      _ ≤ D * ((c + 1) ^ q * (T + ‖x‖) ^ (-q)) := by gcongr
+      _ = D * (c + 1) ^ q * (T + ‖x‖) ^ (-q) := by ring
+      _ ≤ K * (T + ‖x‖) ^ (-q) := by gcongr; exact le_max_right _ _
 
 section Cone
 

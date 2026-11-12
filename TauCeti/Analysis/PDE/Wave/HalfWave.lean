@@ -81,8 +81,8 @@ theorem coeFn_fourier_halfWavePropagator (t : ℝ) (f : Lp F 2 (volume : Measure
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The half-wave symbol `exp(2πi t ‖ξ‖)` is smooth away from the origin, where the norm is. -/
-theorem contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol (t : ℝ) :
-    ContDiffOn ℝ ∞ (phaseSymbol (sqrtNegLaplacianSymbol (E := E)) t) {0}ᶜ := fun ξ hξ ↦ by
+theorem contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol {n : WithTop ℕ∞} (t : ℝ) :
+    ContDiffOn ℝ n (phaseSymbol (sqrtNegLaplacianSymbol (E := E)) t) {0}ᶜ := fun ξ hξ ↦ by
   have h : phaseSymbol (sqrtNegLaplacianSymbol (E := E)) t =
       fun η ↦ cexp (((t * (2 * π * ‖η‖) : ℝ) : ℂ) * I) :=
     funext fun η ↦ by rw [phaseSymbol_apply, sqrtNegLaplacianSymbol_apply]
