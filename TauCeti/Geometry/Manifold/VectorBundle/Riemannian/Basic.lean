@@ -14,8 +14,7 @@ A `C^n` Riemannian metric on a vector bundle is in particular a `C^m` Riemannian
 `m ≤ n`. This lets a metric built with more regularity than needed, such as an analytic model
 metric, be used by results stated for smooth metrics.
 
-The diagonal values of a metric are nonnegative, and the pointwise inner product of two continuous
-sections is continuous.
+The diagonal values of a metric are nonnegative.
 
 ## Main definitions
 
@@ -24,8 +23,6 @@ sections is continuous.
 ## Main results
 
 * `Bundle.ContMDiffRiemannianMetric.inner_self_nonneg`: `0 ≤ g(v, v)`.
-* `Bundle.ContMDiffRiemannianMetric.continuous_inner_of_continuous`: the pointwise inner product of
-  continuous sections is continuous.
 -/
 
 public section
@@ -84,15 +81,5 @@ theorem inner_self_nonneg (g : ContMDiffRiemannianMetric IB n F E) (x : B) (v : 
   rcases eq_or_ne v 0 with rfl | hv
   · simp
   · exact (g.pos x v hv).le
-
-/-- The pointwise inner product of two continuous sections is continuous. -/
-theorem continuous_inner_of_continuous [∀ x, IsTopologicalAddGroup (E x)]
-    [∀ x, ContinuousConstSMul ℝ (E x)] (g : ContMDiffRiemannianMetric IB n F E)
-    {ξ η : ∀ x, E x} (hξ : Continuous fun x ↦ TotalSpace.mk' F x (ξ x))
-    (hη : Continuous fun x ↦ TotalSpace.mk' F x (η x)) :
-    Continuous fun x ↦ g.inner x (ξ x) (η x) := by
-  let : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
-  have : IsContinuousRiemannianBundle F E := ⟨g.inner, g.contMDiff.continuous, fun _ _ _ ↦ rfl⟩
-  exact hξ.inner_bundle hη
 
 end Bundle.ContMDiffRiemannianMetric
