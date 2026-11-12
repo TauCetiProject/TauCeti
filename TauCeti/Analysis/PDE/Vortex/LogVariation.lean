@@ -8,7 +8,10 @@ module
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
+public import TauCeti.Analysis.Distribution.Sobolev
+import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 import Mathlib.Topology.Algebra.Module.Cardinality
+import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Liouville
 import TauCeti.Analysis.PDE.Vortex.Zeros
 
@@ -27,6 +30,12 @@ equation `Δη = P η`.
 
 * `logVariation_add`, `logVariation_smul`, `logVariation_sub`: the logarithmic variation is
   real-linear in differentiable `η` (pointwise: `logVariation_add_apply`).
+* `logVariation_congr_nhds`: the logarithmic variation at a point only depends on the germ of
+  `η`; `contDiff_logVariation`: it is `Cⁿ` for a `Cⁿ` field and a `Cⁿ⁺¹` function `η`.
+* `memLp_logVariation`: it is square integrable for a `C¹` function `η ∈ H²(ℂ; ℂ)` along a field
+  with bounded section.
+* `logVariation_eq_of_differentiableAt`: where `η` is holomorphic, the logarithmic variation has
+  no connection part.
 * `gaugeFixedOperator_logVariation`: at every field, writing `E = ∂bar_a α` for the complex
   holomorphicity defect (the rows `1` and `2` of `equation x`),
   `L_x (logVariation x η) = (Im (P η - Δη), Re (P η - Δη), Re (η E), Im (η E))`.
@@ -56,8 +65,9 @@ with `|α|² → 1` at infinity) it suffices that `y ∈ L²`, which gives `η �
 of `δα / α` at the zeros of `α`. This is the vanishing step behind the injectivity half of the
 identification of the kernel of `L_x` with the tangent space of the divisor space `Sym^m ℂ`
 through the principal parts of `δα / α`. The principal-part map itself, which needs the local
-structure of `δα / α` at a zero of `α`, and the construction of a kernel element with prescribed
-principal parts are not treated here.
+structure of `δα / α` at a zero of `α`, is in `TauCeti.Analysis.PDE.Vortex.PrincipalPart`, and
+kernel elements with prescribed principal parts are constructed in
+`TauCeti.Analysis.PDE.Vortex.ZeroMode`.
 
 ## References
 
@@ -72,7 +82,7 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex Filter MeasureTheory Set
+open Complex Filter MeasureTheory Set TemperedDistribution
 open scoped Laplacian Topology
 
 /-- The **logarithmic variation** of a field `x` along a complex function `η`: the variation
@@ -129,6 +139,80 @@ theorem logVariation_zero_add_one_mul_I (x : ℂ → EuclideanSpace ℝ (Fin 4))
     congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) (imCLM.hasFDerivAt.comp z hη.hasFDerivAt).fderiv
   rw [conjWirtingerDeriv_apply]
   apply Complex.ext <;> simp [hre, him] <;> ring
+
+/-- The logarithmic variation at `z` only depends on the germ of `η` at `z`. -/
+theorem logVariation_congr_nhds (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η ζ : ℂ → ℂ} {z : ℂ}
+    (h : η =ᶠ[𝓝 z] ζ) : logVariation x η z = logVariation x ζ z := by
+  have hre : fderiv ℝ (fun w ↦ (η w).re) z = fderiv ℝ (fun w ↦ (ζ w).re) z :=
+    (h.fun_comp re).fderiv_eq
+  have him : fderiv ℝ (fun w ↦ (η w).im) z = fderiv ℝ (fun w ↦ (ζ w).im) z :=
+    (h.fun_comp im).fderiv_eq
+  ext i
+  fin_cases i <;> simp [hre, him, h.self_of_nhds]
+
+/-- Where `η` is holomorphic, its logarithmic variation is the pure section variation
+`δα = α η`, with no connection part. -/
+theorem logVariation_eq_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η : ℂ → ℂ}
+    {z : ℂ} (hη : DifferentiableAt ℂ η z) :
+    logVariation x η z =
+      !₂[0, 0, (sectionValue x z * η z / 2).re, (sectionValue x z * η z / 2).im] := by
+  have h := logVariation_zero_add_one_mul_I x (hη.restrictScalars ℝ)
+  rw [hη.conjWirtingerDeriv_eq_zero] at h
+  ext i
+  fin_cases i
+  · simpa using congrArg re h
+  · simpa using congrArg im h
+  · simp [sectionValue_apply]
+    ring
+  · simp [sectionValue_apply]
+    ring
+
+/-- The logarithmic variation is `Cⁿ` when the field is `Cⁿ` and `η` is `Cⁿ⁺¹`. -/
+theorem contDiff_logVariation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {η : ℂ → ℂ} {n : WithTop ℕ∞}
+    (hx : ContDiff ℝ n x) (hη : ContDiff ℝ (n + 1) η) : ContDiff ℝ n (logVariation x η) := by
+  have hxi (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) := contDiff_euclidean.mp hx i
+  have hu : ContDiff ℝ (n + 1) (fun w ↦ (η w).re) := reCLM.contDiff.comp hη
+  have hv : ContDiff ℝ (n + 1) (fun w ↦ (η w).im) := imCLM.contDiff.comp hη
+  have hd (f : ℂ → ℝ) (hf : ContDiff ℝ (n + 1) f) (v : ℂ) :
+      ContDiff ℝ n (fun z ↦ fderiv ℝ f z v) :=
+    (hf.fderiv_right le_rfl).clm_apply contDiff_const
+  have hu' := hu.of_le le_self_add
+  have hv' := hv.of_le le_self_add
+  refine contDiff_euclidean.mpr fun i ↦ ?_
+  fin_cases i
+  · simpa using ((hd _ hv 1).neg).sub (hd _ hu I)
+  · simpa using (hd _ hu 1).sub (hd _ hv I)
+  · simpa using ((hxi 2).mul hu').sub ((hxi 3).mul hv')
+  · simpa using ((hxi 2).mul hv').add ((hxi 3).mul hu')
+
+/-- The logarithmic variation of a `C¹` function `η ∈ H²(ℂ; ℂ)` along a field with bounded section
+is square integrable: its connection part consists of first derivatives of `η`, and its section
+part `α η` has a bounded factor `α`. -/
+theorem memLp_logVariation {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx₂ : MemLp (fun z ↦ x z 2) ⊤ volume) (hx₃ : MemLp (fun z ↦ x z 3) ⊤ volume) {η : ℂ → ℂ}
+    (hη : ContDiff ℝ 1 η) (hre : (fun z ↦ (η z).re) ∈ realSobolevFunctions ℂ 2 2)
+    (him : (fun z ↦ (η z).im) ∈ realSobolevFunctions ℂ 2 2) :
+    MemLp (logVariation x η) 2 volume := by
+  have hd (f : ℂ → ℝ) (hf : ContDiff ℝ 1 f) (hf2 : f ∈ realSobolevFunctions ℂ 2 2) (v : ℂ) :
+      MemLp (fun z ↦ fderiv ℝ f z v) 2 volume := by
+    refine memLp_of_mem_realSobolevFunctions (s := 1)
+      (fderiv_apply_mem_realSobolevFunctions (by norm_num) (by simp) zero_le_one hf ?_ v)
+    norm_num
+    exact hf2
+  have hu : ContDiff ℝ 1 (fun z ↦ (η z).re) := reCLM.contDiff.comp hη
+  have hv : ContDiff ℝ 1 (fun z ↦ (η z).im) := imCLM.contDiff.comp hη
+  have hu2 := memLp_of_mem_realSobolevFunctions hre
+  have hv2 := memLp_of_mem_realSobolevFunctions him
+  refine MemLp.of_eval_piLp fun i ↦ ?_
+  fin_cases i
+  · exact ((hd _ hv him 1).neg.sub (hd _ hu hre I)).ae_eq (ae_of_all _ fun z ↦ by simp)
+  · exact ((hd _ hu hre 1).sub (hd _ hv him I)).ae_eq (ae_of_all _ fun z ↦ by simp)
+  · exact ((hx₂.mul hu2 : MemLp (fun z ↦ x z 2 * (η z).re) 2 volume).sub
+      (hx₃.mul hv2 : MemLp (fun z ↦ x z 3 * (η z).im) 2 volume)).ae_eq
+      (ae_of_all _ fun z ↦ by simp)
+  · exact ((hx₂.mul hv2 : MemLp (fun z ↦ x z 2 * (η z).im) 2 volume).add
+      (hx₃.mul hu2 : MemLp (fun z ↦ x z 3 * (η z).re) 2 volume)).ae_eq
+      (ae_of_all _ fun z ↦ by simp)
 
 /-- The two `∂bar` rows of `L_x` on a logarithmic variation: they are the real and imaginary
 parts of `η E`, where `E` is the complex holomorphicity defect of `x` (rows `1` and `2` of
