@@ -134,7 +134,7 @@ theorem exists_edist_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm {p : ℝ≥0} (hp
       ← mul_assoc, ENNReal.ofReal_mul' (Real.rpow_nonneg hr.le α), edist_dist,
       ENNReal.ofReal_rpow_of_nonneg hr.le (NNReal.coe_nonneg _)]
     rfl
-  rw [edist_eq_enorm_sub]
+  rw [eDist_eq_eNorm_sub]
   calc ‖u x - u y‖ₑ
       ≤ ENNReal.ofReal (M * (2 * r) ^ (1 - (Module.finrank ℝ ℂ : ℝ) / p)) *
           eLpNorm (fderiv ℝ u) p (volume.restrict (ball z r)) := hmorrey
