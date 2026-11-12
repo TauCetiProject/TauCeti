@@ -76,33 +76,13 @@ private theorem dualTensorHom_map_dualAct (t : Module.Dual R H ⊗[R] H) (h x : 
 private theorem mul'_rTensor_antipode_matrixCoefficient (ψ : Module.Dual R H) (h : H) :
     LinearMap.mul' R H ((antipode R ∘ₗ
       Comodule.matrixCoefficientLinear (C := H) (M := H) ψ).rTensor H (comul h)) = ψ h • 1 := by
-  let r := ℛ R h
-  -- `T (a ⊗ (b ⊗ d)) = ψ(a) S(b) d`; coassociativity moves the double coproduct from the left
-  -- leg of `Δ h` to its right leg, where the antipode axiom applies.
-  let T : H ⊗[R] (H ⊗[R] H) →ₗ[R] H :=
-    (TensorProduct.lid R H).toLinearMap ∘ₗ
-      TensorProduct.map ψ (LinearMap.mul' R H ∘ₗ (antipode R).rTensor H)
-  have h1 : LinearMap.mul' R H ((antipode R ∘ₗ
-      Comodule.matrixCoefficientLinear (C := H) (M := H) ψ).rTensor H (comul h)) =
-      ∑ i ∈ r.index, ∑ j ∈ (ℛ R (r.left i)).index,
-        T ((ℛ R (r.left i)).left j ⊗ₜ ((ℛ R (r.left i)).right j ⊗ₜ r.right i)) := by
-    rw [← r.eq]
-    simp only [map_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    simp [T, Comodule.matrixCoefficient_def, Comodule.instSelf_coact, ← (ℛ R (r.left i)).eq,
-      TensorProduct.sum_tmul, map_sum]
-  have h2 := congrArg T
-    (Coalgebra.sum_tmul_tmul_eq r (fun i => ℛ R (r.left i)) (fun i => ℛ R (r.right i)))
-  simp only [map_sum] at h2
-  rw [h1, h2]
-  simp only [T, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-    TensorProduct.map_tmul, LinearMap.rTensor_tmul, LinearMap.mul'_apply, TensorProduct.lid_tmul]
-  have h3 := congrArg (TensorProduct.lid R R)
-    (Coalgebra.sum_map_tmul_counit_eq (R := R) ψ h (repr := r))
-  rw [map_sum] at h3
-  simp only [TensorProduct.lid_tmul, smul_eq_mul, mul_one] at h3
-  simp_rw [← Finset.smul_sum, HopfAlgebra.sum_antipode_mul_eq_smul, smul_smul,
-    ← Finset.sum_smul, h3]
+  -- `Δ(c(ψ, h)) = Σ c(ψ, h₁) ⊗ h₂`, so this is the antipode axiom for `c(ψ, h)`.
+  have h1 := HopfAlgebra.mul_antipode_rTensor_comul_apply (R := R)
+    (Comodule.matrixCoefficient (C := H) ψ h)
+  rw [Comodule.comul_matrixCoefficient, Comodule.instSelf_coact,
+    Comodule.counit_matrixCoefficient] at h1
+  rw [Algebra.smul_def, mul_one, ← h1, LinearMap.rTensor_comp_apply]
+  rfl
 
 /-- The identity `Σ S(c(φ, h₁ x)) h₂ = S(c(φ ↼ h, x))` behind the Hopf-module compatibility of
 the dual. -/
