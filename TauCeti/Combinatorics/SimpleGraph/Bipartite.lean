@@ -26,13 +26,15 @@ independent of the colouring up to exchanging the two classes.
 
 ## Main results
 
+* `SimpleGraph.card_edgeFinset_between_compl`: the edges across the cut of a finite set `s`
+  are counted by the degrees from `s` into its complement.
 * `SimpleGraph.Coloring.eq_or_eq_recolorOfEquiv_boolNot`: on a preconnected graph, two
   `Bool`-colourings agree or differ by exchanging the colours.
 -/
 
 public section
 
-open scoped symmDiff
+open scoped symmDiff Finset
 
 namespace SimpleGraph
 
@@ -54,6 +56,28 @@ theorem top_between_symmDiff (S T : Set V) :
   simp only [between_adj, top_adj, Set.mem_compl_iff, symmDiff_def, Set.mem_union,
     Set.mem_sdiff, sup_adj, sdiff_adj]
   tauto
+
+/-- The edges of `G` across the cut of a finite set `s` are counted by the degrees from `s` into
+its complement. -/
+theorem card_edgeFinset_between_compl [Fintype V] [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] (s : Finset V) [DecidablePred (· ∈ (s : Set V))] :
+    #(G.between ↑s (↑s)ᶜ).edgeFinset = ∑ v ∈ s, #{w ∈ sᶜ | G.Adj v w} := by
+  have h : (G.between ↑s (↑s)ᶜ).IsBipartiteWith ↑s ↑(sᶜ) := by
+    rw [Finset.coe_compl]
+    exact between_isBipartiteWith disjoint_compl_right
+  rw [← isBipartiteWith_sum_degrees_eq_card_edges h]
+  refine Finset.sum_congr rfl fun v hv ↦ ?_
+  rw [← card_neighborFinset_eq_degree]
+  congr 1
+  ext w
+  simp only [mem_neighborFinset, between_adj, Set.mem_compl_iff, Finset.mem_coe,
+    Finset.mem_filter, Finset.mem_compl]
+  constructor
+  · rintro ⟨hvw, ⟨-, hw⟩ | ⟨hv', -⟩⟩
+    · exact ⟨hw, hvw⟩
+    · exact absurd hv hv'
+  · rintro ⟨hw, hvw⟩
+    exact ⟨hvw, Or.inl ⟨hv, hw⟩⟩
 
 end SimpleGraph
 
