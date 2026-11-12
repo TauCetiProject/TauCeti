@@ -33,7 +33,7 @@ It carries the area form `ρ dx ∧ dy` to `a` times the standard area form: at 
 strip, `a · det dΦ_p = ρ(p)`, the derivative being taken within the strip
 (`TauCeti.stripMass_mul_det_fderivWithin_stripNormalization`). It is a bijection of the strip onto
 itself (`TauCeti.bijOn_stripNormalization`) which commutes with the deck translation
-`(x, y) ↦ (x + 1, y)` (`TauCeti.stripNormalization_add_one`), fixes each boundary line
+`(x, y) ↦ (x + 1, y)` (`TauCeti.stripNormalization_add_one`), maps each boundary line to itself
 (`TauCeti.stripNormalization_mk_zero`, `TauCeti.stripNormalization_mk_one`), and is as smooth on
 the strip as `ρ` (`TauCeti.contDiffOn_stripNormalization`). Its first coordinate depends only on
 `x` and is strictly increasing (`TauCeti.stripNormalizedAngle_strictMono`), so for a boundary
@@ -124,7 +124,7 @@ def stripNormalizedAngle (ρ : ℝ × ℝ → ℝ) (x : ℝ) : ℝ :=
 
 /-- The **normalization** `Φ(x, y) = (a⁻¹ ∫₀ˣ s(t) dt, s(x)⁻¹ ∫₀ʸ ρ(x, r) dr)` of a density `ρ` on
 the strip. For a positive periodic density it is a bijection of the strip that commutes with the
-deck translation and fixes each boundary line; if the density is also `C^1`, then
+deck translation and maps each boundary line to itself; if the density is also `C^1`, then
 `a · det dΦ = ρ`. -/
 def stripNormalization (ρ : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ × ℝ :=
   (stripNormalizedAngle ρ p.1, (∫ r in (0 : ℝ)..p.2, ρ (p.1, r)) / stripColumnMass ρ p.1)
