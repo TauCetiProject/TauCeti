@@ -369,8 +369,9 @@ private theorem sq_setLAverage_enorm_iteratedGradient_sub_le
       ENNReal.mul_div_mul_left _ _ hk0 ENNReal.ofReal_ne_top]
   -- Jensen's inequality on `B_ρ`.
   have hjensen : (⨍⁻ y in ball c ρ, ‖H y - Hρ‖ₑ) ^ 2 ≤ ⨍⁻ y in ball c ρ, ‖H y - Hρ‖ₑ ^ 2 := by
-    have h := rpow_laverage_le_laverage_rpow (μ := volume.restrict (ball c ρ))
-      (u := fun y => ‖H y - Hρ‖ₑ) (hHm.sub aestronglyMeasurable_const).enorm.restrict one_le_two
+    have hu : AEMeasurable (fun y => ‖H y - Hρ‖ₑ) (volume.restrict (ball c ρ)) :=
+      (hHm.sub aestronglyMeasurable_const).enorm.restrict
+    have h := rpow_laverage_le_laverage_rpow hu one_le_two
     simpa only [ENNReal.rpow_two] using h
   -- The maximal function bounds on `B_r`.
   have hmax : ∀ g : EuclideanSpace ℝ (Fin (n + 1)) → ℝ≥0∞,
