@@ -16,7 +16,7 @@ import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
-import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
