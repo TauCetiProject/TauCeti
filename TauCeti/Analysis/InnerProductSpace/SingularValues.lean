@@ -186,6 +186,7 @@ theorem ncard_ofPred_singularValues_eq (T : E →ₗ[𝕜] F) {s : ℝ} (hs : 0 
 
 /-- A value `s ≤ 0` occurs among the singular values of `T` either never (`s < 0`) or infinitely
 often (`s = 0`, from the dimension of the source on), so its `ncard` is `0`. -/
+@[simp]
 theorem ncard_ofPred_singularValues_of_nonpos (T : E →ₗ[𝕜] F) {s : ℝ} (hs : s ≤ 0) :
     {i | T.singularValues i = s}.ncard = 0 := by
   rcases hs.lt_or_eq with hs | rfl
