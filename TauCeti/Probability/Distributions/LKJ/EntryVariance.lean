@@ -93,7 +93,7 @@ private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
   · by_cases he : ij.1.2 = k
     · simpa [hr, he, a] using hsq
     · by_cases hl : ij.1.2 < k
-      · simp_rw [partialCorrelationCholeskyEntryFactor_of_residual i k ij _ ⟨hr, hl⟩]
+      · simp_rw [partialCorrelationCholeskyEntryFactor_of_eq_of_lt i k ij _ ⟨hr, hl⟩]
         simp only [hr, true_and, he, ↓reduceIte, hl, one_mul]
         rw [integral_congr_ae ((coordinate_ae_abs_le_one (η := η) ij).mono
           fun x hx ↦ Real.sq_sqrt (sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).mpr hx))),
@@ -237,8 +237,8 @@ private theorem integral_cholesky_sq_mul_sq (hη : 0 < η) {i j : Fin p} (hij : 
             ∂coordinateLaw η ij) := by
     by_cases hi : ij.1.1 = i
     · have hj : ij.1.1 ≠ j := hi ▸ hij
-      simp [partialCorrelationCholeskyEntryFactor_of_other_row j k ij hj]
-    · simp [partialCorrelationCholeskyEntryFactor_of_other_row i k ij hi]
+      simp [partialCorrelationCholeskyEntryFactor_of_row_ne j k ij hj]
+    · simp [partialCorrelationCholeskyEntryFactor_of_row_ne i k ij hi]
   simp_rw [hf]
   rw [Finset.prod_mul_distrib, ← integral_fintype_prod_eq_prod,
     ← integral_fintype_prod_eq_prod]
