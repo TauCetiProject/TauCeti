@@ -242,9 +242,9 @@ theorem polynomialEval_eq_zero_iff (y : K → P) (p : MvPolynomial K ℕ) :
     induction a using WithZero.recZeroCoe <;> induction b using WithZero.recZeroCoe
     all_goals simp [← WithZero.coe_add]
   have hn (n : ℕ) : (n : WithZero P) = 0 ↔ n = 0 := by
-    induction n with
+    cases n with
     | zero => simp
-    | succ n ih => simp [Nat.cast_succ, hadd]
+    | succ n => simp [Nat.cast_succ, hadd]
   refine ⟨?_, fun h => by simp [h]⟩
   induction p using MvPolynomial.induction_on with
   | C n =>
