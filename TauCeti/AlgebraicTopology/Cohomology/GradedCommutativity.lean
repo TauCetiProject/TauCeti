@@ -99,10 +99,8 @@ theorem singularCup_left_comm_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing 
     X.singularCup k (λ_ _).inv μ q m' n hn' b (X.singularCup k (λ_ _).inv μ p r m' hm' a c) =
       ((-1 : ℤ) ^ (p * q)) •
         X.singularCup k (λ_ _).inv μ p m n hn a (X.singularCup k (λ_ _).inv μ q r m hm b c) := by
-  have hu : (λ_ (𝟙_ C)).inv ≫ (λ_ (𝟙_ C)).inv ▷ _ ≫ (α_ _ _ _).hom =
-      (λ_ _).inv ≫ _ ◁ (λ_ _).inv := by monoidal
-  rw [← singularCup_assoc X k hu hμ' rfl (by omega) hm' hn',
+  rw [← singularCup_assoc_tensorUnit X k hμ' rfl (by omega) hm' hn',
     singularCup_gradedComm_tensorUnit X k hμ (add_comm p q), map_zsmul, LinearMap.smul_apply,
-    singularCup_assoc X k hu hμ' (add_comm p q) (by omega) hm hn]
+    singularCup_assoc_tensorUnit X k hμ' (add_comm p q) (by omega) hm hn]
 
 end TopCat

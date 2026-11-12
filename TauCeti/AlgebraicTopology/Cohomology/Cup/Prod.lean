@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Mon
 public import TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity
 
 /-!
@@ -73,19 +74,14 @@ theorem singularCup_fst_snd_singularCup_fst_snd {p q p' q' m m' r s n : ℕ} (hm
           (X.singularCup k (λ_ _).inv (λ_ _).hom p p' r hr a a'))
         (TopCat.singularCohomologyMap (snd X Y) s
           (Y.singularCup k (λ_ _).inv (λ_ _).hom q q' s hs c c')) := by
-  -- the coefficient identities making the cup product with coefficients in `k` associative and
-  -- graded commutative
-  have hu : (λ_ (𝟙_ (ModuleCat.{w} k))).inv ≫ (λ_ (𝟙_ (ModuleCat.{w} k))).inv ▷ _ ≫
-      (α_ _ _ _).hom = (λ_ _).inv ≫ _ ◁ (λ_ _).inv := by monoidal
-  have hμ : (λ_ (𝟙_ (ModuleCat.{w} k))).hom ▷ 𝟙_ (ModuleCat.{w} k) ≫ (λ_ _).hom =
-      (α_ _ _ _).hom ≫ _ ◁ (λ_ _).hom ≫ (λ_ _).hom := by monoidal
-  have hβ : (β_ (𝟙_ (ModuleCat.{w} k)) _).hom ≫ (λ_ _).hom = (λ_ _).hom := by
-    simp [unitors_inv_equal]
-  -- reassociate, move `pr₂^* c` past `pr₁^* a'` by left commutativity, and reassociate back
+  -- reassociate, move `pr₂^* c` past `pr₁^* a'` by left commutativity, and reassociate back; the
+  -- pairing `λ_ (𝟙_ _)` is associative and commutative, as the multiplication of the monoid `𝟙_ _`
   rw [← singularCup_naturality, ← singularCup_naturality,
-    singularCup_assoc _ k hu hμ hm hn rfl (by omega),
-    singularCup_left_comm_tensorUnit _ k hβ hμ hs (by omega) hm' rfl, map_zsmul,
-    ← singularCup_assoc _ k hu hμ hr hrs (by omega) (by omega), mul_comm]
+    singularCup_assoc_tensorUnit _ k (μ := (λ_ _).hom) (MonObj.mul_assoc _) hm hn rfl (by omega),
+    singularCup_left_comm_tensorUnit _ k (μ := (λ_ _).hom) (IsCommMonObj.mul_comm _)
+      (MonObj.mul_assoc _) hs (by omega) hm' rfl, map_zsmul,
+    ← singularCup_assoc_tensorUnit _ k (μ := (λ_ _).hom) (MonObj.mul_assoc _) hr hrs (by omega)
+      (by omega), mul_comm]
 
 variable {X Y}
 
@@ -121,25 +117,19 @@ theorem singularCup_singularCohomologyMap_snd_add_singularCup {p q q' m m' n s :
             (Y.singularCup k (λ_ _).inv (λ_ _).hom q m' s (by omega) c b' +
               ((-1 : ℤ) ^ (p * m)) • Y.singularCup k (λ_ _).inv (λ_ _).hom m q' s (by omega)
                 b c')) := by
-  -- the coefficient identities making the cup product with coefficients in `k` associative and
-  -- graded commutative
-  have hu : (λ_ (𝟙_ (ModuleCat.{w} k))).inv ≫ (λ_ (𝟙_ (ModuleCat.{w} k))).inv ▷ _ ≫
-      (α_ _ _ _).hom = (λ_ _).inv ≫ _ ◁ (λ_ _).inv := by monoidal
-  have hμ : (λ_ (𝟙_ (ModuleCat.{w} k))).hom ▷ 𝟙_ (ModuleCat.{w} k) ≫ (λ_ _).hom =
-      (α_ _ _ _).hom ≫ _ ◁ (λ_ _).hom ≫ (λ_ _).hom := by monoidal
-  have hβ : (β_ (𝟙_ (ModuleCat.{w} k)) _).hom ≫ (λ_ _).hom = (λ_ _).hom := by
-    simp [unitors_inv_equal]
   -- `(pr₁^* a ⌣ pr₂^* c) ⌣ (pr₁^* a ⌣ pr₂^* c')` contains the factor `a ⌣ a = 0`
   have h₁ := singularCup_fst_snd_singularCup_fst_snd X Y hm hm' hn rfl
     (rfl : q + q' = q + q') (by omega) a c a c'
   rw [ha, map_zero, LinearMap.map_zero₂, smul_zero] at h₁
   -- `(pr₁^* a ⌣ pr₂^* c) ⌣ pr₂^* b' = pr₁^* a ⌣ pr₂^* (c ⌣ b')`
-  have h₂ := (X ⊗ Y).singularCup_assoc k hu hμ hm hn (by omega : q + m' = s) hs
+  have h₂ := (X ⊗ Y).singularCup_assoc_tensorUnit k (μ := (λ_ _).hom) (MonObj.mul_assoc _) hm hn
+    (by omega : q + m' = s) hs
     (TopCat.singularCohomologyMap (fst X Y) p a) (TopCat.singularCohomologyMap (snd X Y) q c)
     (TopCat.singularCohomologyMap (snd X Y) m' b')
   rw [singularCup_naturality] at h₂
   -- `pr₂^* b ⌣ (pr₁^* a ⌣ pr₂^* c') = (-1)^(p m) pr₁^* a ⌣ pr₂^* (b ⌣ c')`
-  have h₃ := (X ⊗ Y).singularCup_left_comm_tensorUnit k hβ hμ (by omega : m + q' = s) hs hm' hn
+  have h₃ := (X ⊗ Y).singularCup_left_comm_tensorUnit k (μ := (λ_ _).hom) (IsCommMonObj.mul_comm _)
+    (MonObj.mul_assoc _) (by omega : m + q' = s) hs hm' hn
     (TopCat.singularCohomologyMap (fst X Y) p a) (TopCat.singularCohomologyMap (snd X Y) m b)
     (TopCat.singularCohomologyMap (snd X Y) q' c')
   rw [singularCup_naturality] at h₃
