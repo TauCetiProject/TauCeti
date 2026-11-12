@@ -23,8 +23,9 @@ projection, Mathlib's `Bundle.contMDiff_proj`, is recovered from this by
 `Manifold.IsSubmersion.contMDiff`.
 
 The preferred charts are computed explicitly over the base set of the trivialization at their
-base point (`Bundle.mem_extChartAt_source_iff`, `Bundle.extChartAt_apply_of_mem_baseSet` and
-`Bundle.extChartAt_symm_apply_of_mem_baseSet`).
+base point (`Bundle.mem_extChartAt_source_iff`, `Bundle.extChartAt_apply_of_mem_baseSet`,
+`Bundle.extChartAt_symm_apply_of_mem_baseSet` and
+`Bundle.extChartAt_symm_apply_extChartAt_of_mem_baseSet`).
 
 The same chart computation identifies the derivative of the projection: composed with the
 derivative of the inverse of a preferred chart of the total space, it is the derivative of the
@@ -109,6 +110,17 @@ theorem extChartAt_symm_apply_of_mem_baseSet [∀ x, Zero (V x)] (p : TotalSpace
     PartialEquiv.prod_symm, PartialEquiv.refl_symm, Function.comp_apply, PartialEquiv.prod_coe,
     PartialEquiv.refl_coe, id_eq]
   rw [OpenPartialHomeomorph.coe_toPartialEquiv_symm, Trivialization.mk_symm _ hy w]
+
+/-- The inverse of the preferred chart at `p` sends `(y, w)`, with `y` the coordinate of a base
+point `b` in the base set of the trivialization at `p.proj` and in the source of the chart of the
+base at `p.proj`, to the vector over `b` with fibre coordinate `w` in that trivialization. -/
+theorem extChartAt_symm_apply_extChartAt_of_mem_baseSet [∀ x, Zero (V x)] (p : TotalSpace F V)
+    {b : B} (hb : b ∈ (trivializationAt F V p.proj).baseSet)
+    (hb' : b ∈ (extChartAt IB p.proj).source) (w : F) :
+    (extChartAt (IB.prod 𝓘(𝕜, F)) p).symm (extChartAt IB p.proj b, w) =
+      ⟨b, (trivializationAt F V p.proj).symm b w⟩ := by
+  have h := (extChartAt IB p.proj).left_inv hb'
+  rw [extChartAt_symm_apply_of_mem_baseSet p (h.symm ▸ hb), h]
 
 /-- The projection of a fibre bundle is a submersion, with the model fibre as complement: in the
 preferred charts of the total space and of the base, it is the first projection. -/

@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 import Mathlib.Geometry.Manifold.Metrizable
-import Mathlib.Topology.ShrinkingLemma
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.Morse.ZeroSectionChart
@@ -19,6 +18,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.Section
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Topology.FiberBundle.Countable
 import TauCeti.Topology.FiberBundle.Separation
+import TauCeti.Topology.LocallyFinite.Basic
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -212,21 +212,9 @@ private theorem exists_partialDiffeomorph_localCoord (a : B) (hW : IsOpen W)
       ∀ x ∈ D.source, g x = g (zeroSection F E x.proj) + 2⁻¹ *
         fderiv ℝ (fderiv ℝ fun v : E x.proj ↦ g ⟨x.proj, v⟩) 0
           (localCoord IB g a x) (localCoord IB g a x) := by
-  set τ := extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a) with hτ
+  set τ := extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a)
   set e := trivializationAt F E a
   have hτa := extChartAt_zeroSection_self (IB := IB) (F := F) (E := E) a
-  -- The chart `τ` in terms of the chart of the base at `a` and the trivialization `e`.
-  have hτx {x : TotalSpace F E} (hx : x.proj ∈ e.baseSet) :
-      τ x = (extChartAt IB a x.proj, (e x).2) :=
-    Bundle.extChartAt_apply_of_mem_baseSet _ hx
-  have hτsymm {x : TotalSpace F E} (hxe : x.proj ∈ e.baseSet)
-      (hxc : x.proj ∈ (extChartAt IB a).source) (w : F) :
-      τ.symm (extChartAt IB a x.proj, w) = ⟨x.proj, e.symm x.proj w⟩ := by
-    have h : τ.symm (extChartAt IB a x.proj, w) = ⟨(extChartAt IB a).symm (extChartAt IB a x.proj),
-        e.symm ((extChartAt IB a).symm (extChartAt IB a x.proj)) w⟩ :=
-      Bundle.extChartAt_symm_apply_of_mem_baseSet (zeroSection F E a)
-        (((extChartAt IB a).left_inv hxc).symm ▸ hxe) w
-    rw [h, (extChartAt IB a).left_inv hxc]
   have : IsManifold (IB.prod 𝓘(ℝ, F)) n (TotalSpace F E) := .of_le (n := n + 2) le_self_add
   -- The parametric Morse chart `Θ` of the chart family, on a product `U₀ ×ˢ ball 0 r`.
   obtain ⟨U₀, r, Θ, -, haU₀, hr, hΘsource, hΘW, hΘeq, hnf⟩ :=
@@ -236,36 +224,27 @@ private theorem exists_partialDiffeomorph_localCoord (a : B) (hW : IsOpen W)
         (mem_baseSet_trivializationAt F E a) (hH a)) hn
   -- Conjugate `Θ` by the chart at `0_a`.
   let e₀ := extChartPartialDiffeomorph (IB.prod 𝓘(ℝ, F)) n (zeroSection F E a)
-  have hsrc {x : TotalSpace F E} (hx : x ∈ ((e₀.trans Θ).trans e₀.symm).source) :
-      x ∈ τ.source ∧ x.proj ∈ e.baseSet ∧ x.proj ∈ (extChartAt IB a).source ∧
-        τ x ∈ U₀ ×ˢ Metric.ball 0 r := by
-    rw [PartialDiffeomorph.trans_source, PartialDiffeomorph.trans_source] at hx
-    obtain ⟨⟨h1, h2⟩, -⟩ := hx
-    rw [extChartPartialDiffeomorph_source] at h1
-    rw [mem_preimage, coe_extChartPartialDiffeomorph, hΘsource] at h2
-    exact ⟨h1.1, (Bundle.mem_extChartAt_source_iff _ _).1 h1.1 |>.1,
-      (Bundle.mem_extChartAt_source_iff _ _).1 h1.1 |>.2, h2⟩
-  have happly {x : TotalSpace F E} (hx : x ∈ ((e₀.trans Θ).trans e₀.symm).source) :
-      ((e₀.trans Θ).trans e₀.symm) x = ⟨x.proj, localCoord IB g a x⟩ := by
+  let D := (e₀.trans Θ).trans e₀.symm
+  have hsrc {x : TotalSpace F E} (hx : x ∈ D.source) : x ∈ τ.source ∧ x.proj ∈ e.baseSet ∧
+      x.proj ∈ (extChartAt IB a).source ∧ τ x ∈ U₀ ×ˢ Metric.ball 0 r := by
+    obtain ⟨h1, h2, -⟩ := (mem_extChartPartialDiffeomorph_trans_trans_symm_source _ _ Θ).1 hx
+    have h1 : x ∈ τ.source := ((extChartPartialDiffeomorph_source _ _ _).subset h1).1
+    have h3 := (Bundle.mem_extChartAt_source_iff _ _).1 h1
+    exact ⟨h1, h3.1, h3.2, hΘsource ▸ h2⟩
+  have happly {x : TotalSpace F E} (hx : x ∈ D.source) : D x = ⟨x.proj, localCoord IB g a x⟩ := by
     obtain ⟨-, hxe, hxc, hxΘ⟩ := hsrc hx
-    rw [PartialDiffeomorph.coe_trans, PartialDiffeomorph.coe_trans, comp_apply, comp_apply,
-      PartialDiffeomorph.symm_toPartialEquiv, extChartPartialDiffeomorph_symm_apply,
-      coe_extChartPartialDiffeomorph, hΘeq _ hxΘ, hτx hxe]
-    dsimp only
-    rw [hτsymm hxe hxc, localCoord, hτx hxe]
-  refine ⟨(e₀.trans Θ).trans e₀.symm, ?_, fun x hx ↦ ?_, fun x hx ↦ happly hx, fun x hx ↦ ?_⟩
-  · have hτa' : τ (zeroSection F E a) ∈ τ.target := mem_extChartAt_target _
-    have hint : interior τ.target = τ.target := (isOpen_extChartAt_target _).interior_eq
-    rw [PartialDiffeomorph.trans_source, PartialDiffeomorph.trans_source]
-    refine ⟨⟨(mem_extChartPartialDiffeomorph_source _ _ _).2
-      BoundarylessManifold.isInteriorPoint, ?_⟩, ?_⟩
-    · rw [mem_preimage, coe_extChartPartialDiffeomorph, hΘsource, ← hτ, hτa]
-      exact ⟨haU₀, Metric.mem_ball_self hr⟩
-    · rw [mem_preimage, PartialDiffeomorph.coe_trans, comp_apply, coe_extChartPartialDiffeomorph,
-        ← hτ, PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source,
-        extChartPartialDiffeomorph_target, ← hτ, hint,
-        hτa, hΘeq _ ⟨haU₀, Metric.mem_ball_self hr⟩, parametricMorseCoord_mk_zero, ← hτa]
-      exact hτa'
+    rw [extChartPartialDiffeomorph_trans_trans_symm_apply, hΘeq _ hxΘ, localCoord,
+      Bundle.extChartAt_apply_of_mem_baseSet _ hxe]
+    exact Bundle.extChartAt_symm_apply_extChartAt_of_mem_baseSet _ hxe hxc _
+  refine ⟨D, ?_, fun x hx ↦ ?_, fun x hx ↦ happly hx, fun x hx ↦ ?_⟩
+  · have h0 : τ (zeroSection F E a) ∈ U₀ ×ˢ Metric.ball 0 r := hτa ▸ ⟨haU₀, Metric.mem_ball_self hr⟩
+    have hΘa : Θ (τ (zeroSection F E a)) = τ (zeroSection F E a) := by
+      rw [hΘeq _ h0, hτa, parametricMorseCoord_mk_zero]
+    refine (mem_extChartPartialDiffeomorph_trans_trans_symm_source _ _ Θ).2
+      ⟨(mem_extChartPartialDiffeomorph_source _ _ _).2 BoundarylessManifold.isInteriorPoint,
+        hΘsource ▸ h0, ?_⟩
+    rw [hΘa, (isOpen_extChartAt_target _).interior_eq]
+    exact mem_extChartAt_target _
   · obtain ⟨hxτ, -, -, hxΘ⟩ := hsrc hx
     have h := (hΘW hxΘ).2
     rwa [mem_preimage, τ.left_inv hxτ] at h
@@ -273,14 +252,15 @@ private theorem exists_partialDiffeomorph_localCoord (a : B) (hW : IsOpen W)
     obtain ⟨hxτ, hxe, hxc, hxΘ⟩ := hsrc hx
     have hyb := (extChartAt IB a).left_inv hxc
     have h := hnf _ hxΘ
-    have hzero' : e.symm x.proj 0 = 0 := by
-      rw [← Trivialization.symmL_apply (R := ℝ) e hxe 0, map_zero]
+    have hzero' : e.symm x.proj 0 = 0 := (e.symmL_apply (R := ℝ) hxe 0).symm.trans (map_zero _)
+    have hτx : τ x = (extChartAt IB a x.proj, (e x).2) :=
+      Bundle.extChartAt_apply_of_mem_baseSet _ hxe
     rw [show chartFamily IB g a (τ x) = g x by rw [chartFamily, comp_apply, τ.left_inv hxτ],
-      hτx hxe] at h
+      hτx] at h
     dsimp only at h
     rw [chartFamily_apply a hyb hxe, hzero', fderiv_fderiv_chartFamily_slice a hyb hxe,
       ContinuousLinearMap.bilinearComp_apply] at h
-    rw [h, localCoord, hτx hxe]
+    rw [h, localCoord, hτx]
     simp only [ContinuousLinearEquiv.coe_coe, Trivialization.symm_continuousLinearEquivAt_eq,
       Trivialization.symmL_apply (trivializationAt F E a) hxe]
     -- `zeroSection F E x.proj` is `⟨x.proj, 0⟩` by definition.
@@ -406,27 +386,6 @@ section Global
 
 variable [FiniteDimensional ℝ EB] [T2Space B] [SecondCountableTopology B]
 
-omit [NormedSpace ℝ F] in
-/-- A locally finite cover of the base by closed sets, each inside the base set of the
-trivialization and the source of the chart at its index. -/
-private theorem exists_locallyFinite_closed_cover :
-    ∃ K : B → Set B, (∀ i, IsClosed (K i)) ∧ LocallyFinite K ∧
-      (∀ i, K i ⊆ (trivializationAt F E i).baseSet ∩ (extChartAt IB i).source) ∧
-      ∀ b, ∃ i, b ∈ K i := by
-  have : LocallyCompactSpace HB := IB.locallyCompactSpace
-  have : LocallyCompactSpace B := ChartedSpace.locallyCompactSpace HB B
-  obtain ⟨v, hvo, hvcov, hvlf, hvsub⟩ := precise_refinement
-    (fun i : B ↦ (trivializationAt F E i).baseSet ∩ (extChartAt IB i).source)
-    (fun i ↦ (trivializationAt F E i).open_baseSet.inter (isOpen_extChartAt_source i))
-    (iUnion_eq_univ_iff.2 fun b ↦
-      ⟨b, mem_baseSet_trivializationAt F E b, mem_extChartAt_source b⟩)
-  obtain ⟨w, hwcov, -, hwv⟩ := exists_subset_iUnion_closure_subset isClosed_univ hvo
-    (fun x _ ↦ hvlf.point_finite x) hvcov.ge
-  refine ⟨fun i ↦ closure (w i), fun i ↦ isClosed_closure, hvlf.subset hwv,
-    fun i ↦ (hwv i).trans (hvsub i), fun b ↦ ?_⟩
-  obtain ⟨i, hi⟩ := mem_iUnion.1 (hwcov (mem_univ b))
-  exact ⟨i, subset_closure hi⟩
-
 variable [IB.Boundaryless] [∀ b, NormedSpace ℝ (E b)] [VectorBundle ℝ F E] [FiniteDimensional ℝ F]
   {n : ℕ∞} [IsManifold IB (n + 2) B] [ContMDiffVectorBundle (n + 2) F E IB]
 
@@ -462,9 +421,13 @@ theorem exists_parametric_morse_partialDiffeomorph (hW : IsOpen W)
   have : Nonempty (TotalSpace F E) := hB.map (zeroSection F E)
   -- Over each base point `b`, use the coordinate of the chart at a member `j b` of a locally
   -- finite closed cover containing `b`.
-  obtain ⟨K, hKc, hKlf, hKsub, hKcov⟩ :=
-    exists_locallyFinite_closed_cover (IB := IB) (F := F) (E := E)
-  choose j hj using hKcov
+  have : LocallyCompactSpace HB := IB.locallyCompactSpace
+  have : LocallyCompactSpace B := ChartedSpace.locallyCompactSpace HB B
+  obtain ⟨K, hKc, hKcov, hKlf, hKsub⟩ := precise_closed_refinement
+    (fun i : B ↦ (trivializationAt F E i).baseSet ∩ (extChartAt IB i).source)
+    (fun i ↦ (trivializationAt F E i).open_baseSet.inter (isOpen_extChartAt_source i))
+    (iUnion_eq_univ_iff.2 fun b ↦ ⟨b, mem_baseSet_trivializationAt F E b, mem_extChartAt_source b⟩)
+  choose j hj using iUnion_eq_univ_iff.1 hKcov
   let ψ : (x : TotalSpace F E) → E x.proj := fun x ↦ localCoord IB g (j x.proj) x
   let Φ₀ : TotalSpace F E → TotalSpace F E := fun x ↦ ⟨x.proj, ψ x⟩
   let NF : TotalSpace F E → Prop := fun x ↦ g x = g (zeroSection F E x.proj) + 2⁻¹ *
