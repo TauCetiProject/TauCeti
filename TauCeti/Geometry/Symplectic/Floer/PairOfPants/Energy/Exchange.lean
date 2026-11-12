@@ -1107,6 +1107,34 @@ theorem abs_integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation_
   rw [hS, integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁]
   exact abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB _ _
 
+/-- **The curvature lower bound along the input-exchange family.** If `u` is continuous on
+`S = ℂ ∖ {0, 1}` and `h_q` are functions of time, integrable over one period, with `h_q ≤ H_q` on
+the input ends and `H_∞ ≤ h_∞` on the output end, then for every `c ∈ [0, 1]` the integrated
+curvature of `K_c` along `u` over `S` is at least `∫₀¹ h_0 + ∫₀¹ h_1 - ∫₀¹ h_∞`. -/
+theorem sum_mul_integral_le_setIntegral_hamiltonianCurvature_exchangePerturbation
+    (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {h : Puncture → ℝ → ℝ} (hh : ∀ q, IntervalIntegrable (h q) volume 0 1)
+    (hhH : ∀ q t x, q.endSign * h q t ≤ q.endSign * H q t x) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {u : ℝ × ℝ → V}
+    (hu : ContinuousOn u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}) :
+    ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, h q t ≤
+      ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+          Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z) := by
+  -- The curvature along `u` is the curvature of the pair-of-pants datum along `u ∘ Φ_c`.
+  have hv : ContinuousOn (u ∘ exchangeMap c) thricePuncturedSphereReal :=
+    hu.comp (contDiff_exchangeMap c).continuous.continuousOn
+      fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
+  have hS : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1} = thricePuncturedSphereReal :=
+    Set.ext fun _ ↦ mem_thricePuncturedSphereReal_iff.symm
+  have hcurv := sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation
+    ω hH hHs hh hhH (u := u ∘ exchangeMap c) (by rwa [hS])
+  rwa [hS, ← integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁] at hcurv
+
 /-- **The one-sided action bound along the input-exchange family.** Let `u` be a map which is
 `C²` on `S = ℂ ∖ {0, 1}` and solves the Floer equation `(du - X_K)^{0,1} = 0` for the member
 `c ∈ [0, 1]` of the input-exchange family, with almost complex structures `J(z)` tamed by `ω`, on
@@ -1143,17 +1171,10 @@ theorem hamiltonianAction_le_add_add_sub_sum_of_exchangePerturbation (ω : Sympl
   have hE := setIntegral_nonneg (μ := volume) ((isClosed_exchangeTruncation c R).preimage
     Complex.equivRealProdCLM.symm.continuous).measurableSet fun z hz ↦
       ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
-  -- The curvature along `u` is the curvature of the pair-of-pants datum along `u ∘ Φ_c`.
-  have hv : ContDiffOn ℝ 2 (u ∘ exchangeMap c) thricePuncturedSphereReal :=
-    hu.comp (contDiff_exchangeMap c).contDiffOn fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
-  have hcurv := sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation
-    ω hH hHs hh hhH hv.continuousOn
-  have hS : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1} = thricePuncturedSphereReal :=
-    Set.ext fun _ ↦ mem_thricePuncturedSphereReal_iff.symm
-  rw [hS, ← integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁] at hcurv
-  rw [integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR,
-    hS] at hE
+  have hcurv := sum_mul_integral_le_setIntegral_hamiltonianCurvature_exchangePerturbation
+    ω hH hHs hh hhH hc₀ hc₁ hu.continuousOn
+  rw [integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR]
+    at hE
   linarith
 
 /-- **The action bound along the input-exchange family.** Let `K_c` be the member `c ∈ [0, 1]`
@@ -1388,17 +1409,9 @@ theorem lintegral_floerEnergyDensity_exchangePerturbation_le_sub_sum (ω : Sympl
       ENNReal.ofReal (a zero + a one - a inf - ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, h q t) := by
   rw [lintegral_floerEnergyDensity_exchangePerturbation_eq ω hH hHs hc₀ hc₁ hu hJ hfloer ha₀ ha₁
     ha]
-  refine ENNReal.ofReal_le_ofReal (sub_le_sub_left ?_ _)
-  -- The curvature along `u` is the curvature of the pair-of-pants datum along `u ∘ Φ_c`.
-  have hv : ContDiffOn ℝ 2 (u ∘ exchangeMap c) thricePuncturedSphereReal :=
-    hu.comp (contDiff_exchangeMap c).contDiffOn fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
-  have hcurv := sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation
-    ω hH hHs hh hhH hv.continuousOn
-  have hS : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1} = thricePuncturedSphereReal :=
-    Set.ext fun _ ↦ mem_thricePuncturedSphereReal_iff.symm
-  rw [hS, ← integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁] at hcurv
-  rwa [hS]
+  exact ENNReal.ofReal_le_ofReal (sub_le_sub_left
+    (sum_mul_integral_le_setIntegral_hamiltonianCurvature_exchangePerturbation
+      ω hH hHs hh hhH hc₀ hc₁ hu.continuousOn) _)
 
 /-- **The energy bound along the input-exchange family.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_exchangePerturbation_eq`, if moreover `|H_q| ≤ B_q`,
