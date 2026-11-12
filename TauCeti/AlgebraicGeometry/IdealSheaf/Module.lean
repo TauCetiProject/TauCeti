@@ -26,7 +26,8 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
 ## Main declarations
 
 * `Scheme.IdealSheafData.sections I U`: the ideal of sections of `I` over an open `U`, with
-  `mem_sections_iff` and `sections_eq_ideal` describing it on arbitrary and on affine opens;
+  `mem_sections_iff` and `sections_eq_ideal` describing it on arbitrary and on affine opens, and
+  monotone in `I` (`sections_mono`);
 * `Scheme.IdealSheafData.submodule I`: the submodule `I ⊆ 𝒪_X` of the sheaf of modules `𝒪_X`;
 * `Scheme.IdealSheafData.sheaf I`: the ideal sheaf as an `𝒪_X`-module, with its inclusion
   `Scheme.IdealSheafData.sheafι I : I ⟶ 𝒪_X`, which is injective on sections
@@ -37,8 +38,6 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
   through `I`;
 * `Scheme.IdealSheafData.isIso_sheafι_top`: the unit ideal sheaf, which cuts out the empty closed
   subscheme, is the whole structure sheaf.
-* `Scheme.IdealSheafData.isZero_sheaf_bot`: the zero ideal sheaf, which cuts out all of `X`, is
-  the zero module.
 
 ## References
 
@@ -96,6 +95,15 @@ lemma mem_sections_of_forall_exists {U : X.Opens} {s : Γ(X, U)}
   -- Both sides restrict along the inclusion `I.subschemeι ⁻¹ᵁ V ≤ I.subschemeι ⁻¹ᵁ U`; the two
   -- morphisms of opens agree since morphisms in a preorder are unique.
   rfl
+
+/-- A smaller ideal sheaf has fewer sections. -/
+lemma sections_mono {I J : X.IdealSheafData} (h : I ≤ J) (U : X.Opens) :
+    I.sections U ≤ J.sections U := fun s hs ↦
+  J.mem_sections_of_forall_exists fun x hx ↦ by
+    obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open hx U.2
+    -- Over an affine open the sections are the recorded ideals, which are ordered by `h`.
+    exact ⟨V, homOfLE hVU, hxV, ((I.sections_eq_ideal ⟨V, hV⟩).trans_le
+      ((h ⟨V, hV⟩).trans_eq (J.sections_eq_ideal ⟨V, hV⟩).symm)) (I.map_mem_sections _ hs)⟩
 
 /-- The ideal sheaf `I ⊆ 𝒪_X` as a submodule of the sheaf of modules `𝒪_X`. -/
 def submodule : (SheafOfModules.unit X.ringCatSheaf).Submodule where
@@ -188,21 +196,6 @@ instance isIso_sheafι_top : IsIso (⊤ : X.IdealSheafData).sheafι := by
   refine ⟨sheafι_app_injective _ U, fun s ↦ ⟨sectionMk _ s ?_, rfl⟩⟩
   rw [sections_top]
   exact Submodule.mem_top
-
-/-- The zero ideal sheaf has no nonzero sections: it cuts out all of `X`. -/
-@[simp]
-lemma sections_bot (U : X.Opens) : (⊥ : X.IdealSheafData).sections U = ⊥ :=
-  -- The closed subscheme cut out by `⊥` is `X` itself, so restriction to it is injective.
-  (RingHom.injective_iff_ker_eq_bot _).mp
-    (ConcreteCategory.bijective_of_isIso ((⊥ : X.IdealSheafData).subschemeι.app U)).1
-
-/-- The zero ideal sheaf is the zero module. -/
-theorem isZero_sheaf_bot : Limits.IsZero (⊥ : X.IdealSheafData).sheaf := by
-  refine Limits.IsZero.of_mono_eq_zero (⊥ : X.IdealSheafData).sheafι ?_
-  refine Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun t ↦ ?_
-  have ht := (⊥ : X.IdealSheafData).sheafι_app_mem U t
-  rw [sections_bot] at ht
-  exact (Ideal.mem_bot (R := Γ(X, U))).mp ht
 
 end
 
