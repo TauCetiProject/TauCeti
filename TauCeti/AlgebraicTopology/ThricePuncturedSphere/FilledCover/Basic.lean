@@ -307,7 +307,8 @@ private theorem disjoint_range_chart {i j : FilledPoint p} (hij : i ≠ j) :
 theorem t2Space : T2Space (FilledCover p) := by
   have : T2Space E := hp.t2Space
   have : LocallyCompactSpace ThricePuncturedSphere := isOpenEmbedding_coe.locallyCompactSpace
-  refine PunctureFilling.t2Space (isOpenEmbedding_chart hp hfin) (fun i x ↦ ?_) fun i j hij ↦ ?_
+  refine PunctureFilling.t2Space (fun i ↦ (isOpenEmbedding_chart hp hfin i).continuous)
+    (fun i ↦ (isOpenEmbedding_chart hp hfin i).isOpenMap) (fun i x ↦ ?_) fun i j hij ↦ ?_
   · -- A point of `E` lies over a point of `ℂ ∖ {0, 1}`, while the ends of the charts go to
     -- infinity there.
     refine disjoint_of_map (f := p) ?_

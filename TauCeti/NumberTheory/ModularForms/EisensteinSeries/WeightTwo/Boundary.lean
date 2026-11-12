@@ -67,13 +67,14 @@ theorem linearIndependent_constantTerms_correctedE2AtLevel :
     fun d c ↦ (Nat.gcd c.val d.val : ℂ) ^ 2 / d.val
   have hv : LinearIndependent ℂ v := by
     have hG := Matrix.linearIndependent_cols_of_isUnit
-      (Matrix.posDef_gcd_pow_divisors (𝕜 := ℂ) N (by omega : 0 < 2)).isUnit
+      (Matrix.posDef_gcd_pow (𝕜 := ℂ) (f := fun d : N.divisors ↦ d.val) Subtype.val_injective
+        (fun d ↦ (Nat.pos_of_mem_divisors d.property).ne') two_ne_zero).isUnit
     let u : N.divisors → ℂˣ := fun d ↦
       (Units.mk0 (d.val : ℂ) (Nat.cast_ne_zero.mpr
         (Nat.pos_of_mem_divisors d.property).ne'))⁻¹
     convert! hG.units_smul u using 1
     funext d c
-    simp [v, u, Matrix.col_apply, Pi.smul_apply', Units.smul_def, div_eq_mul_inv, mul_comm]
+    simp [v, u, Pi.smul_apply', Units.smul_def, div_eq_mul_inv, mul_comm]
   -- Differences from the divisor-one column are the negatives of the boundary vectors.
   let one : N.divisors := ⟨1, Nat.one_mem_divisors.mpr (NeZero.ne N)⟩
   have hd := (affineIndependent_iff_linearIndependent_vsub ℂ v one).mp

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.ReducedFunctional
+public import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.Topology.Semicontinuity.Defs
 import Mathlib.Analysis.InnerProductSpace.Convex
@@ -37,7 +37,8 @@ This file carries out the direct method of the calculus of variations:
   Hilbert space `H¹(ℂ)` are weakly compact.
 
 Since `I(0) = 0`, the minimum is at most `0`; in particular the potential of a minimizer is
-integrable. The Euler–Lagrange equation of the minimizer and its regularity are not treated here.
+integrable. The weak Euler–Lagrange equation of the minimizer is in
+`TauCeti.Analysis.PDE.Vortex.EulerLagrange`; its regularity is not treated here.
 
 ## References
 
@@ -55,19 +56,6 @@ namespace TauCeti.Vortex
 
 open MeasureTheory Set TopologicalSpace
 open scoped ENNReal
-
-/-- The vortex potential `∫⁻ h (exp (2v) - 1 - 2v)` is weakly lower semicontinuous on `L²(ν)` for
-every measure `ν` equal to Lebesgue measure. This transports
-`TauCeti.Vortex.lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub` to Lebesgue measure
-restricted to the whole plane, the measure of the `L²` spaces of `W^{1,2}(ℂ)`. -/
-private theorem lowerSemicontinuous_lintegral_potential (P : Polynomial ℂ) {ν : Measure ℂ}
-    (hν : ν = volume) :
-    LowerSemicontinuous fun v : WeakSpace ℝ (Lp ℝ 2 ν) ↦
-      ∫⁻ z, ENNReal.ofReal (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-        (Real.exp (2 * ((toWeakSpace ℝ (Lp ℝ 2 ν)).symm v z)) - 1 -
-          2 * ((toWeakSpace ℝ (Lp ℝ 2 ν)).symm v z))) := by
-  subst hν
-  exact lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub P
 
 /-- Taubes's functional as the sum of an extended nonnegative energy, the Dirichlet energy and the
 potential, and the linear term. -/
@@ -108,11 +96,12 @@ theorem lowerSemicontinuous_sobolevReducedFunctional {P : Polynomial ℂ} (hm : 
     rw [← W1p.gradientL_apply]
     rfl
   -- The energy is a sum of two weakly lower semicontinuous convex integrals.
-  have hpot := (lowerSemicontinuous_lintegral_potential P (by simp)).comp
+  have hpot := (lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub P _).comp
     (WeakSpace.map (W1p.valueL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2))).continuous
   have hdir := lowerSemicontinuous_lintegral_norm_sq_comp_toWeakSpace_symm.comp
     (WeakSpace.map (W1p.gradientL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2))).continuous
   simp only [Function.comp_def, hval, hgrad] at hpot hdir
+  simp only [Opens.coe_top, Measure.restrict_univ] at hpot
   have hdiv (c : ℝ≥0∞) (hc : c ≠ 0) : Continuous fun x : ℝ≥0∞ ↦ x / c :=
     ENNReal.continuous_div_const c hc
   have hdiv_mono (c : ℝ≥0∞) : Monotone fun x : ℝ≥0∞ ↦ x / c :=

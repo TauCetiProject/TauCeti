@@ -118,7 +118,7 @@ theorem _root_.ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap
     have hm : Module.IsUnimodular k m := Module.isUnimodular_of_apply_eq_one (f := (v φ)⁻¹ • φ)
       (by rw [LinearMap.smul_apply, hφm, smul_eq_mul, inv_mul_cancel₀ hφ])
     refine ⟨m, hm, ProjectiveSpectrum.ext_of_mem_pos fun n hn s hs ↦ ?_⟩
-    have h := mem_projectiveOrbitMap_kernelPoint_iff (H := H) m hm 1 hn hs
+    have h := mem_projectiveOrbitMap_kernelPoint_iff (H := H) m hm 1 hs
     simp only [map_one, one_apply_eq_self] at h
     simp only [AlgHom.convOne_def, Algebra.ofId_self, AlgHom.id_comp] at h
     rw [h, hv n hn s hs, hmv]

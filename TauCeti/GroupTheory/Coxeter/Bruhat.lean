@@ -73,8 +73,9 @@ comparisons change when both endpoints are multiplied by the same simple reflect
 * `CoxeterSystem.IsMinimalCosetRep.bruhatLE_mul` and
   `CoxeterSystem.isMinimalCosetRep_iff_forall_bruhatLE_mul`: a minimal representative of a left
   coset of a standard parabolic subgroup is the Bruhat-least element of that coset.
-* `CoxeterSystem.IsMinimalCosetRep.bruhatLE_of_bruhatLE_mul`: the projection to minimal coset
-  representatives is monotone.
+* `CoxeterSystem.IsMinimalCosetRep.bruhatLE_of_bruhatLE_mul` and
+  `CoxeterSystem.BruhatLE.minimalCosetRep`: the projection to minimal coset representatives is
+  monotone; `CoxeterSystem.minimalCosetRep_bruhatLE` says that it moves down.
 * `CoxeterSystem.MinimalCosetRepChain.bruhatLE_of_le`: a saturated chain of `W / W_J` descends in
   the Bruhat order.
 * `CoxeterSystem.MinimalCosetRepCovBy.exists_isReflection`: a cover of a parabolic quotient is the
@@ -587,6 +588,19 @@ theorem IsMinimalCosetRep.bruhatLE_of_bruhatLE_mul {J : Set B} {y v p : W}
     have hlen := cs.isRightDescent_iff.mp hdesc
     rw [mul_assoc] at hlen
     exact ih _ (by omega) (mul_mem hp (cs.simple_mem_parabolic hi)) h' rfl
+
+/-- The minimal coset representative of `w` lies below `w` in the Bruhat order. -/
+theorem minimalCosetRep_bruhatLE (J : Set B) (w : W) : cs.BruhatLE (cs.minimalCosetRep J w) w := by
+  simpa using (cs.isMinimalCosetRep_minimalCosetRep J w).bruhatLE_mul cs
+    (inv_mem (cs.inv_mul_minimalCosetRep_mem J w))
+
+variable {cs} in
+/-- **Projection to minimal coset representatives is monotone** for the Bruhat order. -/
+theorem BruhatLE.minimalCosetRep (J : Set B) (h : cs.BruhatLE v w) :
+    cs.BruhatLE (cs.minimalCosetRep J v) (cs.minimalCosetRep J w) :=
+  (cs.isMinimalCosetRep_minimalCosetRep J v).bruhatLE_of_bruhatLE_mul cs
+    (inv_mem (cs.inv_mul_minimalCosetRep_mem J w))
+    (by simpa using (cs.minimalCosetRep_bruhatLE J v).trans h)
 
 /-- `y` is **covered by** `x` in the Bruhat order of the parabolic quotient `W / W_J`, modelled on
 the minimal coset representatives: both are minimal coset representatives, `y < x`, and no minimal

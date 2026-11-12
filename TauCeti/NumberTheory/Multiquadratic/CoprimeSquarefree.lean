@@ -17,7 +17,7 @@ public import Mathlib.RingTheory.Int.Basic
 
 The field-generic degree theorem `TauCeti.Multiquadratic.finrank_adjoin_range` gives a
 multiquadratic field degree `2ⁿ` once its radicands are **square-class independent**: no nonempty
-subset product of them is a square. The genus theory the roadmap targets works with the rational
+subset product of them is a square. Genus theory works with the rational
 field `ℚ(√d₁, …, √dₙ)` for **squarefree integers** `dᵢ`, where the radicands range over composite
 and negative values (`ℚ(√-3, √-7)`, `ℚ(√6, √35)`), not just the distinct primes already handled in
 `TauCeti.NumberTheory.Multiquadratic.Prime.Radicands`.
