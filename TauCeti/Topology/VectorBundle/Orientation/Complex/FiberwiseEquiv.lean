@@ -16,13 +16,13 @@ Let `E → B` and `E' → B'` be complex vector bundles with model fibre `F` of 
 `g : B' → B`, continuous on total spaces.
 
 * If every `φ b'` is complex linear, it carries the canonical orientation of `E'_{b'}` to that of
-  `E_{g b'}` (`LinearEquiv.map_complexOrientation`), so the Euler class of `E'` is the pull-back of
-  that of `E` (`TauCeti.complexEulerClass_eq_singularCohomologyMap_of_fiberwise`). Over the identity
-  of the base, **isomorphic complex vector bundles have the same Euler class**
+  `E_{g b'}` (`TauCeti.VectorBundleOrientation.map_complex`), so the Euler class of `E'` is the
+  pull-back of that of `E` (`TauCeti.complexEulerClass_eq_singularCohomologyMap_of_fiberwise`).
+  Over the identity of the base, **isomorphic complex vector bundles have the same Euler class**
   (`TauCeti.complexEulerClass_eq_of_fiberwise`).
 * If every `φ b'` is conjugate linear, it multiplies the canonical orientation by `(-1) ^ (r + 1)`
-  (`LinearEquiv.map_toRealLinearEquiv_complexOrientation`: it reverses one real direction in each
-  complex line), so the Euler class acquires the sign `(-1) ^ (r + 1)`
+  (`TauCeti.VectorBundleOrientation.map_toRealLinearEquiv_complex`: it reverses one real direction
+  in each complex line), so the Euler class acquires the sign `(-1) ^ (r + 1)`
   (`TauCeti.complexEulerClass_eq_neg_one_pow_smul_singularCohomologyMap_of_conjugateFiberwise`,
   `TauCeti.complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise`). In rank one this is
   `e(conj L) = -e(L)` for the conjugate `conj L` of a complex line bundle `L`
@@ -35,10 +35,6 @@ isomorphism.
 
 ## Main results
 
-* `TauCeti.VectorBundleOrientation.map_complex`: a complex-linear isomorphism of fibres carries the
-  canonical orientation to the canonical orientation.
-* `TauCeti.VectorBundleOrientation.map_toRealLinearEquiv_complex`: a conjugate-linear isomorphism
-  of fibres multiplies the canonical orientation by `(-1) ^ n`, `n` the complex rank.
 * `TauCeti.complexEulerClass_eq_of_fiberwise`: isomorphic complex vector bundles have the same Euler
   class.
 * `TauCeti.complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise`: a conjugate-linear
@@ -60,52 +56,6 @@ open Bundle Module
 universe w
 
 namespace TauCeti
-
-/-! ### The canonical orientation under fibrewise isomorphisms -/
-
-namespace VectorBundleOrientation
-
-variable {B : Type*} [TopologicalSpace B] {B' : Type*} [TopologicalSpace B']
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
-  [FiniteDimensional ℂ F]
-  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommGroup (E b)]
-  [∀ b, Module ℝ (E b)] [∀ b, Module ℂ (E b)] [∀ b, IsScalarTower ℝ ℂ (E b)]
-  [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℂ F E]
-  {E' : B' → Type*} [TopologicalSpace (TotalSpace F E')] [∀ b, AddCommGroup (E' b)]
-  [∀ b, Module ℝ (E' b)] [∀ b, Module ℂ (E' b)] [∀ b, IsScalarTower ℝ ℂ (E' b)]
-  [∀ b, TopologicalSpace (E' b)] [FiberBundle F E'] [VectorBundle ℂ F E']
-
-local instance instVectorBundleRealComplexFiberwiseSource : VectorBundle ℝ F E :=
-  VectorBundle.restrictScalars ℝ ℂ F E
-local instance instVectorBundleRealComplexFiberwiseTarget : VectorBundle ℝ F E' :=
-  VectorBundle.restrictScalars ℝ ℂ F E'
-
-/-- A complex-linear isomorphism `E'_{b'} ≃ E_b` of fibres of complex vector bundles with the same
-model fibre carries the canonical orientation of `E'_{b'}` to that of `E_b`. -/
-theorem map_complex {b' : B'} {b : B} (f : E' b' ≃ₗ[ℂ] E b) :
-    Orientation.map _ (f.restrictScalars ℝ) (complex F E' b') = complex F E b := by
-  have := VectorBundle.finiteDimensional ℂ F E b
-  have := VectorBundle.finiteDimensional ℂ F E' b'
-  rw [complex_apply, complex_apply, Orientation.map_reindex, f.map_complexOrientation,
-    ← Orientation.reindex_trans]
-  exact congrArg (Orientation.reindex ℝ (E b) · _) (Equiv.ext fun _ ↦ by simp)
-
-/-- A conjugate-linear isomorphism `E'_{b'} ≃ E_b` of fibres of complex vector bundles with the same
-model fibre `F` carries the canonical orientation of `E'_{b'}` to `(-1) ^ n` times that of `E_b`,
-where `n` is the complex dimension of `F`. -/
-theorem map_toRealLinearEquiv_complex {b' : B'} {b : B} (f : E' b' ≃ₛₗ[starRingEnd ℂ] E b) :
-    Orientation.map _ f.toRealLinearEquiv (complex F E' b') =
-      (-1 : ℝˣ) ^ finrank ℂ F • complex F E b := by
-  have := VectorBundle.finiteDimensional ℂ F E b
-  have := VectorBundle.finiteDimensional ℂ F E' b'
-  have hn : (-1 : ℝˣ) ^ finrank ℂ (E' b') = (-1) ^ finrank ℂ F := by
-    rw [VectorBundle.finrank_eq ℂ F E' b']
-  rw [complex_apply, complex_apply, Orientation.map_reindex,
-    f.map_toRealLinearEquiv_complexOrientation, hn, Orientation.reindex_units_smul,
-    ← Orientation.reindex_trans]
-  exact congrArg (fun e ↦ _ • Orientation.reindex ℝ (E b) e _) (Equiv.ext fun _ ↦ by simp)
-
-end VectorBundleOrientation
 
 /-! ### The Euler class under fibrewise isomorphisms -/
 
@@ -174,14 +124,8 @@ theorem complexEulerClass_eq_neg_one_pow_smul_singularCohomologyMap_of_conjugate
   -- The real-linear continuous isomorphisms underlying the `φ b'`.
   let ψ : ∀ b', E' b' ≃L[ℝ] E (g b') := fun b' ↦
     { (φ b').toLinearEquiv.toRealLinearEquiv with
-      continuous_toFun := by
-        change Continuous ⇑(φ b').toLinearEquiv.toRealLinearEquiv
-        rw [LinearEquiv.coe_toRealLinearEquiv]
-        exact (φ b').continuous
-      continuous_invFun := by
-        change Continuous ⇑(φ b').toLinearEquiv.toRealLinearEquiv.symm
-        rw [LinearEquiv.toRealLinearEquiv_symm, LinearEquiv.coe_toRealLinearEquiv]
-        exact (φ b').symm.continuous }
+      continuous_toFun := by simpa using (φ b').continuous
+      continuous_invFun := by simpa using (φ b').symm.continuous }
   have hψ : Continuous fun v : TotalSpace F E' ↦ TotalSpace.mk' F (g v.proj) (ψ v.proj v.2) := by
     have h : ∀ b' v, ψ b' v = φ b' v := fun b' v ↦
       congrFun (LinearEquiv.coe_toRealLinearEquiv (φ b').toLinearEquiv) v
