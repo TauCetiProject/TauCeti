@@ -106,7 +106,7 @@ def abelianArtinMap (hV : V.IsAbelianClassFieldLayer) :
 layer. -/
 @[simp]
 theorem ofMul_of_abelianArtinMap (hV : V.IsAbelianClassFieldLayer) (a : F.level ⊤) :
-    Additive.ofMul (Abelianization.of (cf.abelianArtinMap hV a).toMul) =
+    Additive.ofMul (Group.Abelianization.of (cf.abelianArtinMap hV a).toMul) =
       cf.artinMap (ofOpenNormal V) (groundEquivOfOpenNormal F V a) := by
   rw [← abelianizationGalEquiv_symm_apply hV]
   simp [abelianArtinMap]

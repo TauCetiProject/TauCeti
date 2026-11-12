@@ -148,7 +148,7 @@ theorem norm_prev_le_mul_norm_trajectoryOperator_of_dichotomy (hp : p ≠ ∞) (
   refine hclosed.closure_subset_iff.mpr ?_ (dense_setOf_exists_contDiff_hasCompactSupport hp u)
   rintro u ⟨φ, hφ, hφc, huφ⟩
   have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by exact_mod_cast le_top)
-  set g : ℝ → E := fun s ↦ deriv φ s - A (φ s) with g_def
+  set g : ℝ → E := fun s ↦ deriv φ s - A (φ s)
   have hgc : Continuous g := (hφ1.continuous_deriv le_rfl).sub (A.continuous.comp hφ1.continuous)
   have hgs : HasCompactSupport g := hφc.deriv.sub (hφc.comp_left (map_zero A))
   have hgp : MemLp g p volume := hgc.memLp_of_hasCompactSupport hgs
@@ -183,7 +183,6 @@ theorem norm_le_mul_norm_trajectoryOperator_of_dichotomy (hp : p ≠ ∞) (hAP :
     refine (pow_le_pow_iff_left₀ (norm_nonneg u) (by positivity) two_ne_zero).mp ?_
     rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq]
     nlinarith [norm_nonneg (prev _ u), norm_nonneg (weakFDeriv _ u)]
-  have hAL0 := norm_nonneg AL
   calc ‖u‖ ≤ ‖trajectoryOperator AL u‖ + (1 + ‖AL‖) * ‖prev _ u‖ := by linarith
     _ ≤ ‖trajectoryOperator AL u‖ + (1 + ‖AL‖) * (2 * K / α * ‖trajectoryOperator AL u‖) := by
       gcongr

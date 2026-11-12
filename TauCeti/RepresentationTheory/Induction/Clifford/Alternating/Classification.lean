@@ -79,7 +79,7 @@ private theorem alternatingFourFamily_pairwise :
 
 private theorem exists_iso_alternatingFourFamily (W : FDRep k (alternatingGroup (Fin 4)))
     [Simple W] : ∃ i, Nonempty (W ≅ alternatingFourFamily i) := by
-  have : NeZero ((Monoid.exponent (Abelianization (alternatingGroup (Fin 4))) : ℕ) : k) :=
+  have : NeZero ((Monoid.exponent (Group.Abelianization (alternatingGroup (Fin 4))) : ℕ) : k) :=
     ⟨Nat.cast_ne_zero.mpr Monoid.exponent_ne_zero_of_finite⟩
   have hlinear := card_monoidHom_alternatingGroup k (α := Fin 4) (by simp)
   have : Finite (alternatingGroup (Fin 4) →* kˣ) :=
