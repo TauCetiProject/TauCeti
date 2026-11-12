@@ -11,7 +11,10 @@ public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Compactness.Paracompact
+public import Mathlib.Topology.MetricSpace.Polish
 public import Mathlib.Topology.Sets.Compacts
+import Mathlib.MeasureTheory.Constructions.Polish.Basic
+import TauCeti.Geometry.Manifold.ChartedSpace
 
 /-!
 # Coordinate overlaps, measurability, precompact chart neighborhoods and transported charts
@@ -19,7 +22,10 @@ public import Mathlib.Topology.Sets.Compacts
 Mathlib's extended chart at a point is a `PartialEquiv` between a manifold and its model vector
 space. Its restrictions to the chart source and target are mutually continuous, hence the chart
 restricted to its source is a measurable embedding for Borel measurable spaces. This is the
-form used to transport measures between a manifold and coordinates.
+form used to transport measures between a manifold and coordinates. Read in charts, Mathlib's
+Lusin–Souslin theorem shows that a map out of a manifold modelled on a Polish space which is
+continuous and injective on a measurable set has measurable image, within one chart and, on a
+Lindelöf manifold, globally.
 
 Before choosing a measurable structure on the manifold, chart measurability expresses
 measurability in each preferred chart. When the chart space `H` is locally compact, compact sets
@@ -69,6 +75,11 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   a measurable embedding.
 * `MeasurableSet.image_extChartAt`: the image of a measurable subset of a chart source is
   measurable in the model space; `TauCeti.measurableSet_image_extChartAt_iff` gives the converse.
+* `MeasurableSet.image_of_continuousOn_injOn_extChartAt`: the Lusin–Souslin theorem in charts, for
+  a manifold modelled on a Polish space: a map continuous and injective on a measurable subset of a
+  chart source, with image in a chart source, has measurable image.
+* `MeasurableSet.image_of_continuousOn_injOn_chartedSpace`: the Lusin–Souslin theorem on a
+  Lindelöf manifold modelled on a Polish space.
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
   manifold.
 * `TauCeti.IsChartMeasurable.measurableSet_inter_preimage`: measurable parameter pieces for maps
@@ -651,6 +662,79 @@ space. -/
 theorem _root_.MeasurableSet.image_extChartAt {s : Set M} (hs : MeasurableSet s) (x : M)
     (hsource : s ⊆ (extChartAt I x).source) : MeasurableSet ((extChartAt I x) '' s) :=
   (measurableSet_image_extChartAt_iff x hsource).mpr hs
+
+section LusinSouslin
+
+variable [PolishSpace E] {𝕜' : Type*} [NontriviallyNormedField 𝕜']
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜' F]
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜' F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [MeasurableSpace N] [OpensMeasurableSpace N]
+
+/-- **Lusin–Souslin theorem in charts.** Let `M` be a charted space modelled on a Polish normed
+space, with its Borel measurable space, and let `N` be a charted space modelled on a normed space,
+in which open sets are measurable. A map `M → N` which is continuous and injective on a measurable
+subset `s` of the extended chart source at `α`, and maps `s` into the extended chart source at
+`β`, sends `s` to a measurable set. -/
+theorem _root_.MeasurableSet.image_of_continuousOn_injOn_extChartAt {Φ : M → N} {α : M} {β : N}
+    {s : Set M} (hs : MeasurableSet s) (hcont : ContinuousOn Φ s) (hinj : Set.InjOn Φ s)
+    (hsα : s ⊆ (extChartAt I α).source) (hsβ : Set.MapsTo Φ s (extChartAt I' β).source) :
+    MeasurableSet (Φ '' s) := by
+  -- Read `Φ` in the two charts: `g` is continuous and injective on the measurable coordinate
+  -- image of `s`, so its image is measurable, and that image is the coordinate image of `Φ '' s`,
+  -- which is then measurable for the Borel measurable space of `N`.
+  let g := extChartAt I' β ∘ Φ ∘ (extChartAt I α).symm
+  have hmaps : Set.MapsTo (extChartAt I α).symm (extChartAt I α '' s) s := by
+    rintro _ ⟨x, hx, rfl⟩
+    rwa [(extChartAt I α).left_inv (hsα hx)]
+  have htarget : extChartAt I α '' s ⊆ (extChartAt I α).target :=
+    (Set.image_mono hsα).trans (extChartAt I α).image_source_eq_target.subset
+  have himage : g '' (extChartAt I α '' s) = extChartAt I' β '' (Φ '' s) := by
+    simp only [g, Set.image_image]
+    exact Set.image_congr fun x hx ↦ by
+      simp only [Function.comp_apply, (extChartAt I α).left_inv (hsα hx)]
+  refine OpensMeasurableSpace.borel_le _ ?_
+  let : MeasurableSpace N := borel N
+  have : BorelSpace N := ⟨rfl⟩
+  refine (measurableSet_image_extChartAt_iff β hsβ.image_subset).1 (himage ▸ ?_)
+  exact (hs.image_extChartAt α hsα).image_of_continuousOn_injOn
+    ((continuousOn_extChartAt β).comp
+      (hcont.comp ((continuousOn_extChartAt_symm α).mono htarget) hmaps) (hsβ.comp hmaps))
+    (((extChartAt I' β).injOn.comp hinj hsβ).comp
+      ((extChartAt I α).symm.injOn.mono htarget) hmaps)
+
+variable (I I') in
+include I I' in
+/-- **Lusin–Souslin theorem on manifolds.** Let `M` be a Lindelöf charted space modelled on a
+Polish normed space, with its Borel measurable space, and let `N` be a charted space modelled on a
+normed space, in which open sets are measurable. A map `M → N` which is continuous and injective on
+a measurable set `s` sends `s` to a measurable set. The models only serve to read the map in charts,
+so they are explicit arguments. -/
+theorem _root_.MeasurableSet.image_of_continuousOn_injOn_chartedSpace [LindelofSpace M]
+    {Φ : M → N} {s : Set M} (hs : MeasurableSet s) (hcont : ContinuousOn Φ s)
+    (hinj : Set.InjOn Φ s) : MeasurableSet (Φ '' s) := by
+  -- `M` is second countable, so countably many open sets `U x`, each in the chart source at
+  -- `x ∈ s` and mapped by `Φ` (on `s`) into the chart source at `Φ x`, cover `s`; apply the
+  -- theorem in charts on each piece.
+  have : SecondCountableTopology H := I.secondCountableTopology
+  have := ChartedSpace.secondCountable_of_lindelof H M
+  have h (x : M) (hx : x ∈ s) :
+      ∃ u, IsOpen u ∧ x ∈ u ∧ u ∩ s ⊆ Φ ⁻¹' (chartAt H' (Φ x)).source :=
+    mem_nhdsWithin.1 ((hcont x hx).preimage_mem_nhdsWithin (chart_source_mem_nhds H' (Φ x)))
+  choose! u hu hxu hus using h
+  let U (x : M) : Set M := (chartAt H x).source ∩ u x
+  obtain ⟨T, hTc, hTs, hcover⟩ := (HereditarilyLindelofSpace.isLindelof s).elim_nhds_subcover U
+    fun x hx ↦ ((chartAt H x).open_source.inter (hu x hx)).mem_nhds ⟨mem_chart_source H x, hxu x hx⟩
+  rw [← Set.inter_eq_left.2 hcover, Set.inter_iUnion₂, Set.image_iUnion₂]
+  refine .biUnion hTc fun x hx ↦ (hs.inter ((chartAt H x).open_source.inter
+    (hu x (hTs x hx))).measurableSet).image_of_continuousOn_injOn_extChartAt (I := I) (I' := I')
+    (α := x) (β := Φ x) (hcont.mono Set.inter_subset_left) (hinj.mono Set.inter_subset_left) ?_
+    fun y hy ↦ ?_
+  · rw [extChartAt_source]
+    exact Set.inter_subset_right.trans Set.inter_subset_left
+  · rw [extChartAt_source]
+    exact hus x (hTs x hx) ⟨hy.2.2, hy.1⟩
+
+end LusinSouslin
 
 end BorelModel
 

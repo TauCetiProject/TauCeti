@@ -197,7 +197,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
 
 /-- A map whose tangent map at `x` preserves the Riemannian inner products is differentiable at
-`x`: the tangent map is injective, since it preserves norms. -/
+`x`. -/
 theorem mdifferentiableAt_of_inner_mfderiv {Φ : M → N} {x : M}
     (hinner : ∀ v : TangentSpace I x, ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x v⟫_ℝ = ⟪v, v⟫_ℝ) :
     MDifferentiableAt I I' Φ x := by

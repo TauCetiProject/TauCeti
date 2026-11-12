@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
+import TauCeti.Geometry.Manifold.ChartedSpace
 
 /-!
 # Isometry invariance of the Riemannian volume
@@ -29,11 +30,6 @@ J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (20
 
 ## Main results
 
-* `MeasurableSet.image_of_continuousOn_injOn_extChartAt`: the Lusin–Souslin theorem in charts, a
-  map continuous and injective on a measurable subset of a chart source, with image in a chart
-  source, has measurable image.
-* `MeasurableSet.image_of_continuousOn_injOn_chartedSpace`: the Lusin–Souslin theorem on a
-  hereditarily Lindelöf manifold.
 * `TauCeti.chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv`: the chart volume densities of
   two Riemannian manifolds differ by the absolute Jacobian determinant of a map whose tangent map
   preserves the inner products.
@@ -56,73 +52,8 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-section LusinSouslin
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ F H'}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-  [MeasurableSpace M] [BorelSpace M] [MeasurableSpace N] [BorelSpace N]
-
-attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
-
-/-- **Lusin–Souslin theorem in charts.** A map which is continuous and injective on a measurable
-subset `s` of the extended chart source at `α`, and maps `s` into the extended chart source at
-`β`, sends `s` to a measurable set. -/
-theorem _root_.MeasurableSet.image_of_continuousOn_injOn_extChartAt {Φ : M → N} {α : M} {β : N}
-    {s : Set M} (hs : MeasurableSet s) (hcont : ContinuousOn Φ s) (hinj : InjOn Φ s)
-    (hsα : s ⊆ (extChartAt I α).source) (hsβ : MapsTo Φ s (extChartAt I' β).source) :
-    MeasurableSet (Φ '' s) := by
-  -- Read `Φ` in the two charts: `g` is continuous and injective on the measurable coordinate
-  -- image of `s`, so its image is measurable, and that image is the coordinate image of `Φ '' s`.
-  let g := extChartAt I' β ∘ Φ ∘ (extChartAt I α).symm
-  have hmaps : MapsTo (extChartAt I α).symm (extChartAt I α '' s) s := by
-    rintro _ ⟨x, hx, rfl⟩
-    rwa [(extChartAt I α).left_inv (hsα hx)]
-  have htarget : extChartAt I α '' s ⊆ (extChartAt I α).target :=
-    (image_mono hsα).trans (extChartAt I α).image_source_eq_target.subset
-  have himage : g '' (extChartAt I α '' s) = extChartAt I' β '' (Φ '' s) := by
-    simp only [g, image_image]
-    exact image_congr fun x hx ↦ by
-      simp only [Function.comp_apply, (extChartAt I α).left_inv (hsα hx)]
-  refine (measurableSet_image_extChartAt_iff β hsβ.image_subset).1 (himage ▸ ?_)
-  exact (hs.image_extChartAt α hsα).image_of_continuousOn_injOn
-    ((continuousOn_extChartAt β).comp
-      (hcont.comp ((continuousOn_extChartAt_symm α).mono htarget) hmaps) (hsβ.comp hmaps))
-    (((extChartAt I' β).injOn.comp hinj hsβ).comp
-      ((extChartAt I α).symm.injOn.mono htarget) hmaps)
-
-variable (I I') in
-include I I' in
-/-- **Lusin–Souslin theorem on manifolds.** On a hereditarily Lindelöf manifold modelled on a
-finite-dimensional space, for instance a Lindelöf one (which is second countable), a map which is
-continuous and injective on a measurable set `s` sends `s` to a measurable set. The models only
-serve to read the map in charts, so they are explicit arguments. -/
-theorem _root_.MeasurableSet.image_of_continuousOn_injOn_chartedSpace
-    [HereditarilyLindelofSpace M] {Φ : M → N} {s : Set M} (hs : MeasurableSet s)
-    (hcont : ContinuousOn Φ s) (hinj : InjOn Φ s) : MeasurableSet (Φ '' s) := by
-  -- Countably many open sets `U x`, each in the chart source at `x ∈ s` and mapped by `Φ` (on
-  -- `s`) into the chart source at `Φ x`, cover `s`; apply the theorem in charts on each piece.
-  have h (x : M) (hx : x ∈ s) : ∃ u, IsOpen u ∧ x ∈ u ∧ u ∩ s ⊆ Φ ⁻¹' (chartAt H' (Φ x)).source :=
-    mem_nhdsWithin.1 ((hcont x hx).preimage_mem_nhdsWithin (chart_source_mem_nhds H' (Φ x)))
-  choose! u hu hxu hus using h
-  let U (x : M) : Set M := (chartAt H x).source ∩ u x
-  obtain ⟨T, hTc, hTs, hcover⟩ := (HereditarilyLindelofSpace.isLindelof s).elim_nhds_subcover U
-    fun x hx ↦ ((chartAt H x).open_source.inter (hu x hx)).mem_nhds ⟨mem_chart_source H x, hxu x hx⟩
-  rw [← inter_eq_left.2 hcover, inter_iUnion₂, image_iUnion₂]
-  refine .biUnion hTc fun x hx ↦ (hs.inter ((chartAt H x).open_source.inter
-    (hu x (hTs x hx))).measurableSet).image_of_continuousOn_injOn_extChartAt (I := I) (I' := I')
-    (α := x) (β := Φ x) (hcont.mono inter_subset_left) (hinj.mono inter_subset_left) ?_
-    fun y hy ↦ ?_
-  · rw [extChartAt_source]
-    exact inter_subset_right.trans inter_subset_left
-  · rw [extChartAt_source]
-    exact hus x (hTs x hx) ⟨hy.2.2, hy.1⟩
-
-end LusinSouslin
-
-variable [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' 1 N]
   [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
@@ -189,8 +120,7 @@ attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 /-- A map which is injective on a measurable subset `s` of the chart source at
 `α`, maps `s` into the chart source at `β`, and whose tangent maps at points of `s` preserve the
 Riemannian inner products, carries the chart volume of `s` at `α` to the chart volume of its image
-at `β`. Differentiability on `s` follows from the inner-product condition
-(`TauCeti.mdifferentiableAt_of_inner_mfderiv`). -/
+at `β`. -/
 theorem chartRiemannianVolume_image_of_inner_mfderiv {Φ : M → N} {α : M} {β : N} {s : Set M}
     (hs : MeasurableSet s) (hinj : InjOn Φ s)
     (hsα : s ⊆ (chartAt H α).source) (hsβ : MapsTo Φ s (chartAt H' β).source)
@@ -249,11 +179,7 @@ theorem chartRiemannianVolume_image_of_inner_mfderiv {Φ : M → N} {α : M} {β
 /-- **Volume of an injective isometric image.** If `Φ` is injective on a measurable set `s` and
 its tangent maps at points of `s` preserve the Riemannian inner products, then `Φ '' s` has the
 Riemannian volume of `s`. The map is only required to be a local isometry along `s`; for instance,
-a Riemannian covering map preserves the volume of every measurable set on which it is injective.
-Differentiability of `Φ` along `s` follows from the inner-product condition
-(`TauCeti.mdifferentiableAt_of_inner_mfderiv`), and measurability of the images of measurable
-subsets of `s` from the Lusin–Souslin theorem
-(`MeasurableSet.image_of_continuousOn_injOn_chartedSpace`). -/
+a Riemannian covering map preserves the volume of every measurable set on which it is injective. -/
 theorem riemannianVolume_image_of_inner_mfderiv [LindelofSpace M] [LindelofSpace N]
     {Φ : M → N} {s : Set M} (hs : MeasurableSet s) (hinj : InjOn Φ s)
     (hinner : ∀ x ∈ s, ∀ v w : TangentSpace I x,
@@ -262,9 +188,7 @@ theorem riemannianVolume_image_of_inner_mfderiv [LindelofSpace M] [LindelofSpace
   -- A Lindelöf manifold modelled on a finite-dimensional space is second countable, hence
   -- hereditarily Lindelöf.
   have : SecondCountableTopology H := I.secondCountableTopology
-  obtain ⟨c, hc, hcU⟩ := LindelofSpace.elim_nhds_subcover (fun x : M ↦ (chartAt H x).source)
-    fun x ↦ chart_source_mem_nhds H x
-  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_countable_cover H hcU hc
+  have := ChartedSpace.secondCountable_of_lindelof H M
   have hΦ (x : M) (hx : x ∈ s) : MDifferentiableAt I I' Φ x :=
     mdifferentiableAt_of_inner_mfderiv fun v ↦ hinner x hx v v
   -- Compare the measures `t ↦ vol (Φ '' t)` and `t ↦ vol t` on the subtype `s`. They agree near
@@ -310,8 +234,7 @@ theorem riemannianVolume_image_of_inner_mfderiv [LindelofSpace M] [LindelofSpace
 
 /-- **Isometry invariance of the Riemannian volume.** A homeomorphism whose tangent maps preserve
 the Riemannian inner products carries the Riemannian volume of `M` to the Riemannian volume of
-`N`. Differentiability of the homeomorphism follows from the inner-product condition
-(`TauCeti.mdifferentiableAt_of_inner_mfderiv`). -/
+`N`. -/
 theorem _root_.Homeomorph.measurePreserving_riemannianVolume [LindelofSpace M] [LindelofSpace N]
     (Φ : M ≃ₜ N)
     (hinner : ∀ x (v w : TangentSpace I x),
