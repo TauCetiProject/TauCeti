@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
 public import TauCeti.Analysis.Holder.Iterated
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
-import Mathlib.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
+import TauCeti.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
@@ -234,32 +234,6 @@ private theorem ae_eq_smoothBlock {n₀ : ℕ} (hn₀ : φ.rOut ≤ 2 ^ n₀ * �
 
 end Kernel
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- **A geometric series of smooth functions.** If the derivatives of order `m ≤ k` of `Gⱼ` are
-bounded by `B m * q ^ j` with `0 ≤ q < 1`, then `∑ⱼ Gⱼ` is `C^k`, its derivatives through order `k`
-are the sums of the derivatives, and they are bounded by `(∑_{i ≤ k} B i) / (1 - q)`. -/
-private theorem contDiff_tsum_and_norm_iteratedFDeriv_tsum_le {k : ℕ} {G : ℕ → E → F}
-    {B : ℕ → ℝ} {q : ℝ} (hG : ∀ j, ContDiff ℝ k (G j)) (hB : ∀ m, 0 ≤ B m) (hq0 : 0 ≤ q)
-    (hq1 : q < 1) (hbd : ∀ m ≤ k, ∀ j x, ‖iteratedFDeriv ℝ m (G j) x‖ ≤ B m * q ^ j) :
-    ContDiff ℝ k (fun x ↦ ∑' j, G j x) ∧
-      (∀ i ≤ k, iteratedFDeriv ℝ i (fun x ↦ ∑' j, G j x) =
-        fun x ↦ ∑' j, iteratedFDeriv ℝ i (G j) x) ∧
-      ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i (fun x ↦ ∑' j, G j x) x‖ ≤
-        (∑ m ∈ Finset.range (k + 1), B m) * (1 - q)⁻¹ := by
-  have hsummable : ∀ m, Summable fun j ↦ B m * q ^ j := fun m ↦
-    (summable_geometric_of_lt_one hq0 hq1).mul_left _
-  have hbd' : ∀ (m j : ℕ) (x : E), (m : ℕ∞) ≤ k → ‖iteratedFDeriv ℝ m (G j) x‖ ≤ B m * q ^ j :=
-    fun m j x hm ↦ hbd m (by exact_mod_cast hm) j x
-  have hD : ∀ i ≤ k, iteratedFDeriv ℝ i (fun x ↦ ∑' j, G j x) =
-      fun x ↦ ∑' j, iteratedFDeriv ℝ i (G j) x :=
-    fun i hi ↦ iteratedFDeriv_tsum hG (fun m _ ↦ hsummable m) hbd' (by exact_mod_cast hi)
-  refine ⟨contDiff_tsum hG (fun m _ ↦ hsummable m) hbd', hD, fun i hi x ↦ ?_⟩
-  rw [hD i hi]
-  refine (tsum_of_norm_bounded ((hasSum_geometric_of_lt_one hq0 hq1).mul_left (B i))
-    fun j ↦ hbd i hi j x).trans ?_
-  gcongr
-  exact Finset.single_le_sum (fun i _ ↦ hB i) (Finset.mem_range.2 (Nat.lt_succ_of_le hi))
-
 namespace BesovSpace
 
 open BoundedContinuousFunction
@@ -389,11 +363,17 @@ theorem exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith
     exact h.trans_eq (mul_comm _ _)
   -- The sum `f = ∑ⱼ Gⱼ` is `C^k`, and its derivatives are the sums of the derivatives.
   set f₀ : E → F := fun x ↦ ∑' j, G j x
-  obtain ⟨hf₀, hDf₀, hDf₀_le'⟩ := contDiff_tsum_and_norm_iteratedFDeriv_tsum_le
-    (fun j ↦ (hG j).of_le (by exact_mod_cast le_top)) (fun m ↦ mul_nonneg (hB m) (norm_nonneg u))
-    hq0 hq1 hgeom
-  have hDf₀_le : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i f₀ x‖ ≤ D * ‖u‖ := fun i hi x ↦
-    (hDf₀_le' i hi x).trans_eq (by rw [← Finset.sum_mul]; ring)
+  have hGk : ∀ j, ContDiff ℝ k (G j) := fun j ↦ (hG j).of_le (by exact_mod_cast le_top)
+  have hf₀ : ContDiff ℝ k f₀ :=
+    contDiff_tsum_of_norm_iteratedFDeriv_le_geometric hGk hq0 hq1 hgeom
+  have hDf₀ : ∀ i ≤ k, iteratedFDeriv ℝ i f₀ = fun x ↦ ∑' j, iteratedFDeriv ℝ i (G j) x :=
+    fun i hi ↦ iteratedFDeriv_tsum_of_norm_iteratedFDeriv_le_geometric hGk hq0 hq1 hgeom hi
+  have hDf₀_le : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i f₀ x‖ ≤ D * ‖u‖ := fun i hi x ↦ by
+    refine (norm_iteratedFDeriv_tsum_le_of_geometric hGk hq0 hq1 hgeom hi x).trans ?_
+    rw [mul_right_comm]
+    gcongr
+    exact mul_le_mul_of_nonneg_right (Finset.single_le_sum (fun i _ ↦ hB i)
+      (Finset.mem_range.2 (Nat.lt_succ_of_le hi))) (inv_nonneg.2 hq1'.le)
   -- The `k`-th derivative is `α`-Hölder: the sup bounds of order `k` and the Lipschitz bounds
   -- coming from order `k + 1`.
   have ha : ∀ (j : ℕ) x, 2 ^ ((α : ℝ) * j) * ‖iteratedFDeriv ℝ k (G j) x‖ ≤
