@@ -37,6 +37,10 @@ with the inclusions `TopPair.sigmaι P i` of the summands, is the coproduct of t
 A continuous map into the ambient space of a pair with values in the subspace corestricts to a
 continuous map into the subspace, `TopPair.liftSnd`, because the subspace is embedded.
 
+The product `TopPair.prodRight P Y = (X × Y, A × Y)` of a pair `P = (X, A)` with a space `Y` has
+the embedding `P.map ▷ Y`. For the pair of a subset `A ⊆ X` it is the pair of the preimage of `A`
+under the first projection (`TopPair.ofSubsetProdRightIso`).
+
 For subsets `A ⊆ X` and `B ⊆ Y`, the preimages `A × Y` and `X × B` of `A` and `B` under the
 projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product of pairs. Each is open
 in the union when `A`, respectively `B`, is open
@@ -271,25 +275,15 @@ lemma isIso_of_isIso_fst_of_surjective_snd [IsIso (Hom.fst f)]
     (hf : Function.Surjective (Hom.snd f)) : IsIso f := by
   let e := TopCat.homeoOfIso (asIso (Hom.fst f))
   let g : Q.snd → P.snd := Function.surjInv hf
-  have hg (b : Q.snd) : Hom.snd f (g b) = b := Function.surjInv_eq hf b
   have hmap (b : Q.snd) : P.map (g b) = e.symm (Q.map b) :=
-    (e.symm_apply_eq.2 ((congrArg Q.map (hg b)).symm.trans (Hom.w_apply f (g b)))).symm
+    (e.symm_apply_eq.2 ((congrArg Q.map (Function.surjInv_eq hf b)).symm.trans
+      (Hom.w_apply f (g b)))).symm
   have hgc : Continuous g := by
     rw [P.isEmbedding_map.isInducing.continuous_iff, show P.map ∘ g = e.symm ∘ Q.map from
       funext hmap]
     fun_prop
-  refine ⟨TopPair.ofHom (inv (Hom.fst f)) (TopCat.ofHom ⟨g, hgc⟩)
-    (by ext b; exact hmap b), ?_, ?_⟩
-  · ext a : 2
-    · refine P.isEmbedding_map.injective ?_
-      -- The subspace component of the composite sends `a` to `g (Hom.snd f a)`.
-      change P.map (g (Hom.snd f a)) = P.map a
-      rw [hmap, Hom.w_apply]
-      exact e.symm_apply_apply _
-    · exact e.symm_apply_apply a
-  · ext b : 2
-    · exact hg b
-    · exact e.apply_symm_apply b
+  exact ⟨TopPair.ofHom (inv (Hom.fst f)) (TopCat.ofHom ⟨g, hgc⟩) (by ext b; exact hmap b),
+    hom_ext_of_fst _ (IsIso.hom_inv_id _), hom_ext_of_fst _ (IsIso.inv_hom_id _)⟩
 
 end isIso
 
@@ -390,6 +384,34 @@ theorem liftSnd_apply_eq_iff (g : C(Z, X.fst)) (hg : ∀ z, g z ∈ Set.range X.
   rw [← X.isEmbedding_map.injective.eq_iff, map_liftSnd]
 
 end liftSnd
+
+section prodRight
+
+open MonoidalCategory
+
+/-- The product `(X × Y, A × Y)` of a topological pair `P = (X, A)` with a space `Y`: its
+embedding is `P.map ▷ Y`, the product of the embedding of `P` with the identity of `Y`. -/
+abbrev prodRight (P : TopPair.{u}) (Y : TopCat.{u}) : TopPair.{u} :=
+  TopPair.of (P.map ▷ Y) (P.isEmbedding_map.prodMap Topology.IsEmbedding.id)
+
+/-- For the pair of a subset `A ⊆ X`, the product pair `(X × Y, A × Y)` is the pair of the
+preimage of `A` under the first projection of `X × Y`. -/
+def ofSubsetProdRightIso {X : TopCat.{u}} (A : Set X) (Y : TopCat.{u}) :
+    (ofSubset A).prodRight Y ≅ ofSubset (X := TopCat.of (X × Y)) (Prod.fst ⁻¹' A) where
+  hom := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨(x.1.1, x.2), x.1.2⟩, by fun_prop⟩)
+  inv := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ (⟨x.1.1, x.2⟩, x.1.2), by fun_prop⟩)
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
+
+@[simp]
+lemma ofSubsetProdRightIso_hom_fst_apply {X : TopCat.{u}} (A : Set X) (Y : TopCat.{u})
+    (x : X × Y) : Hom.fst (ofSubsetProdRightIso A Y).hom x = x := (rfl)
+
+@[simp]
+lemma ofSubsetProdRightIso_inv_fst_apply {X : TopCat.{u}} (A : Set X) (Y : TopCat.{u})
+    (x : X × Y) : Hom.fst (ofSubsetProdRightIso A Y).inv x = x := (rfl)
+
+end prodRight
 
 end TopPair
 

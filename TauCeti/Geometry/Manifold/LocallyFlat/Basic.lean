@@ -67,13 +67,15 @@ locally flat embedded discs are the objects used to define topological sliceness
 
 * `TauCeti.isSliceChart_iff`: a chart is a slice chart iff, on its source, membership in the set is
   read off as membership of the coordinates in the slice.
+* `TauCeti.IsSliceChart.exists_mem_nhds_disjoint`: a point of the source of a slice chart for a
+  closed slice, outside the flattened set, has a neighbourhood missing the set.
 * `TauCeti.IsSliceChart.exists_target_eq`: a slice chart can be shrunk to have any prescribed open
   subset of its target as its target.
 * `TauCeti.isLocallyFlat_iff_isSliceEmbedding`, `TauCeti.isLocallyFlat_iff` and
   `TauCeti.IsLocallyFlat.exists_isSliceChart`: the defining flattening charts, as the slice
   embedding for the standard slice, in pointwise form, and as an eliminator.
-* `TauCeti.IsLocallyFlat.restrict` and `TauCeti.IsLocallyFlat.of_forall_exists_isOpen`: local
-  flatness is a local property of the domain.
+* `TauCeti.IsLocallyFlat.restrict` and `TauCeti.IsLocallyFlat.of_forall_exists_isOpen`: for a
+  topological embedding, local flatness is a local property of the domain.
 * `TauCeti.IsLocallyFlat.isOpenEmbedding_comp`, `TauCeti.IsLocallyFlat.of_isOpenEmbedding_comp`,
   `TauCeti.IsLocallyFlat.codRestrict`, `TauCeti.IsLocallyFlat.homeomorph_comp`,
   `TauCeti.IsLocallyFlat.comp_isOpenEmbedding`, `TauCeti.IsLocallyFlat.comp_homeomorph`: invariance
@@ -208,6 +210,15 @@ coordinates in the model slice. This is the pointwise form of `TauCeti.isSliceCh
 shape proofs use it, as an elimination rule at a single point. -/
 theorem mem_iff (h : IsSliceChart φ S A) {y : M} (hy : y ∈ φ.source) : y ∈ A ↔ φ y ∈ S :=
   isSliceChart_iff.1 h y hy
+
+/-- A point of the source of a slice chart that lies outside the flattened set has a neighbourhood
+missing the set: the neighbourhood is where the chart misses the closed model slice. -/
+theorem exists_mem_nhds_disjoint (h : IsSliceChart φ S A) (hS : IsClosed S) {y : M}
+    (hy : y ∈ φ.source) (hyA : y ∉ A) : ∃ U ∈ 𝓝 y, Disjoint U A := by
+  have hU : IsOpen (φ.source ∩ φ ⁻¹' Sᶜ) :=
+    φ.continuousOn.isOpen_inter_preimage φ.open_source hS.isOpen_compl
+  have hyU : y ∈ φ.source ∩ φ ⁻¹' Sᶜ := ⟨hy, fun hyS => hyA ((h.mem_iff hy).2 hyS)⟩
+  exact ⟨_, hU.mem_nhds hyU, Set.disjoint_left.2 fun z hz hzA => hz.2 ((h.mem_iff hz.1).1 hzA)⟩
 
 section ZeroSlice
 
@@ -349,6 +360,44 @@ theorem prod {ψ : OpenPartialHomeomorph N F'} {S' : Set F'} {B : Set N}
   refine isSliceChart_iff.2 fun p hp => ?_
   rw [OpenPartialHomeomorph.prod_source] at hp
   rw [OpenPartialHomeomorph.prod_apply, mem_prod, mem_prod, h.mem_iff hp.1, h'.mem_iff hp.2]
+
+section Parametrization
+
+open Filter
+
+variable {𝕜 : Type*} [Ring 𝕜] [AddCommGroup F] [Module 𝕜 F] [IsTopologicalAddGroup F]
+  {L : Submodule 𝕜 F}
+
+/-- The parametrization `z ↦ φ.symm (φ x + z)` of a set `A` flattened by the chart `φ` onto a
+linear subspace `L` takes values in `A` for small parameters, for `x ∈ A`. -/
+theorem eventually_symm_add_mem {φ : OpenPartialHomeomorph M F} {A : Set M} {x : M}
+    (hφ : IsSliceChart φ (L : Set F) A) (hxφ : x ∈ φ.source) (hxA : x ∈ A) :
+    ∀ᶠ z : L in 𝓝 0, φ.symm (φ x + (z : F)) ∈ A := by
+  have hxL : φ x ∈ L := (isSliceChart_iff.1 hφ x hxφ).1 hxA
+  have hcont : Continuous fun z : L ↦ φ x + (z : F) := continuous_const.add continuous_subtype_val
+  have hxt : φ.target ∈ 𝓝 (φ x + ((0 : L) : F)) := by
+    simpa using φ.open_target.mem_nhds (φ.map_source hxφ)
+  filter_upwards [hcont.continuousAt.preimage_mem_nhds hxt] with z hz
+  exact (isSliceChart_iff.1 hφ _ (φ.map_target hz)).2
+    (by rw [φ.right_inv hz]; exact L.add_mem hxL z.2)
+
+/-- The parametrization `z ↦ φ.symm (φ x + z)` of a set `A` flattened by the chart `φ` onto a
+linear subspace `L` reaches every point of `A` near `x` from arbitrarily small parameters. -/
+theorem eventually_exists_symm_add_eq {φ : OpenPartialHomeomorph M F} {A : Set M} {x : M}
+    (hφ : IsSliceChart φ (L : Set F) A) (hxφ : x ∈ φ.source) (hxA : x ∈ A) :
+    ∀ V ∈ 𝓝 (0 : L), ∀ᶠ w in 𝓝 x, w ∈ A → ∃ z ∈ V, φ.symm (φ x + (z : F)) = w := by
+  have hxL : φ x ∈ L := (isSliceChart_iff.1 hφ x hxφ).1 hxA
+  intro V hV
+  obtain ⟨V', hV', hV'V⟩ := (mem_nhds_subtype _ _ _).1 hV
+  have hlim : Tendsto (fun w ↦ φ w - φ x) (𝓝 x) (𝓝 0) := by
+    have h := ((φ.continuousAt hxφ).tendsto).sub_const (φ x)
+    rwa [sub_self] at h
+  filter_upwards [hlim (by simpa using hV'), φ.open_source.mem_nhds hxφ] with w hwV hwφ hwA
+  have hwL : φ w ∈ L := (isSliceChart_iff.1 hφ w hwφ).1 hwA
+  refine ⟨⟨φ w - φ x, L.sub_mem hwL hxL⟩, hV'V hwV, ?_⟩
+  simp [φ.left_inv hwφ]
+
+end Parametrization
 
 end IsSliceChart
 
@@ -492,8 +541,10 @@ theorem restrict (h : IsSliceEmbedding S f) {U : Set N} (hU : IsOpen U) :
   · rw [hrange]
     exact hφ.restrOpen hV
 
-/-- Being a slice embedding is a local property of the domain: if every point of `N` has an open
-neighbourhood on which the restriction of `f` is a slice embedding, then `f` is one. -/
+/-- For a topological embedding `f`, being a slice embedding is a local property of the domain: if
+every point of `N` has an open neighbourhood on which the restriction of `f` is a slice embedding,
+then `f` is one. The embedding hypothesis does not follow from the local ones, since a map can be
+injective near every point without being injective. -/
 theorem of_forall_exists_isOpen (hf : IsEmbedding f)
     (h : ∀ x : N, ∃ U : Set N, IsOpen U ∧ x ∈ U ∧ IsSliceEmbedding S (f ∘ ((↑) : U → N))) :
     IsSliceEmbedding S f := by
@@ -670,8 +721,10 @@ theorem restrict (h : IsLocallyFlat F F' f) {U : Set N} (hU : IsOpen U) :
     IsLocallyFlat F F' (f ∘ ((↑) : U → N)) :=
   IsSliceEmbedding.restrict h hU
 
-/-- Local flatness is a local property of the domain: if every point of `N` has an open
-neighbourhood on which the restriction of `f` is locally flat, then `f` is locally flat. -/
+/-- For a topological embedding `f`, local flatness is a local property of the domain: if every
+point of `N` has an open neighbourhood on which the restriction of `f` is locally flat, then `f` is
+locally flat. The embedding hypothesis does not follow from the local ones, since a map can be
+injective near every point without being injective. -/
 theorem of_forall_exists_isOpen (hf : IsEmbedding f)
     (h : ∀ x : N, ∃ U : Set N, IsOpen U ∧ x ∈ U ∧ IsLocallyFlat F F' (f ∘ ((↑) : U → N))) :
     IsLocallyFlat F F' f :=
@@ -1038,9 +1091,10 @@ private theorem range_symm_zero_eq_inter {ψ : OpenPartialHomeomorph M (F × G)}
     refine ⟨⟨(ψ m).1, h1⟩, ?_⟩
     simpa only [hψ.mk_fst_zero_eq hms hmr] using ψ.left_inv hms
 
-/-- A slice chart whose target is a box `u ×ˢ ball 0 r` exhibits its source as a product of the
-part of the domain lying under it with the complementary model, the map being the zero slice.
-This is the geometric content of the local product statement; the general case reduces to it by
+/-- For a topological embedding `f` and a slice chart `ψ` for `range f` whose target is a box
+`u ×ˢ ball 0 r`, the product of the part of the domain lying under the chart with the complementary
+model embeds openly into the ambient space, by a map that restricts to `f` on the zero slice. This
+is the geometric content of the local product statement; the general case reduces to it by
 shrinking the chart. -/
 private theorem exists_isOpenEmbedding_prod_of_target_eq_prod {ψ : OpenPartialHomeomorph M (F × G)}
     {u : Set F} {r : ℝ} (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r)

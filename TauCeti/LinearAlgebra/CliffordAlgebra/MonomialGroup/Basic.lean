@@ -102,7 +102,8 @@ of `G` trivial on `ε`, each for exactly one `t`.
 * `CliffordAlgebra.mem_monomialGroup_iff`: **the normal form**: a unit lies in the group exactly
   when its value is `e_s` or `-e_s` for some finite index set `s`.
 * `CliffordAlgebra.mem_center_monomialGroup_iff`: a signed basis monomial is central exactly when
-  its support is empty or is the full odd-cardinality index set.
+  it can be written as `±e_s` with `s` empty or `s` the full odd-cardinality index set (over a
+  trivial ring the support is not unique, and every element is central).
 * `CliffordAlgebra.monomialGroup_commuteOrNeg`: signed monomials commute or anticommute.
 * `CliffordAlgebra.monomialGroup_val_eq_or_neg_of_isConj`: conjugation changes a signed monomial by
   at most its central sign.
@@ -740,19 +741,23 @@ theorem coe_monomialGroupEquiv_apply [Nontrivial R]
       (p.2 : ℤ) • basis Q b p.1 :=
   (exists_monomialGroup_val_eq_zsmul_basis hb hQ p).choose_spec
 
+omit [LinearOrder I] in
 /-- **The order of the group of signed monomials**: for an orthogonal basis over a nontrivial ring
 in which `2` is invertible, indexed by a type with `n` elements and whose generators square to `±1`,
 the group has `2 ^ (n + 1)` elements, the `±e_s` for the `2 ^ n` index sets `s`. -/
 theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
     Nat.card (monomialGroup Q b) = 2 ^ (Fintype.card I + 1) := by
+  let : LinearOrder I := WellOrderingRel.isWellOrder.linearOrder
   rw [← Nat.card_congr (monomialGroupEquiv hb hQ)]
   simp [Nat.card_eq_fintype_card, Fintype.card_finset, pow_succ]
 
-/-- A signed basis monomial is central in the finite monomial subgroup exactly when its support is
-empty, or when it is the full index set of odd cardinality, for an orthogonal basis whose vectors
-square to `±1` over a nontrivial commutative ring in which `2` is invertible. -/
-theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
+/-- A signed basis monomial is central in the finite monomial subgroup exactly when it can be
+written as `±e_s` with `s` empty, or with `s` the full index set of odd cardinality, for an
+orthogonal basis whose vectors square to `±1` over a commutative ring in which `2` is invertible.
+Over a nontrivial ring the support `s` of a signed monomial is unique; over a trivial ring it is
+not, and every element is central. -/
+theorem mem_center_monomialGroup_iff [Fintype I]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
     {u : monomialGroup Q b} :
@@ -761,6 +766,11 @@ theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
         ((↑(u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = basis Q b s ∨
           (↑(u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = -basis Q b s) ∧
         (s = ∅ ∨ (s = Finset.univ ∧ Odd s.card)) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have : Subsingleton (CliffordAlgebra Q) := RingHom.codomain_trivial (algebraMap R _)
+    have : Subsingleton (CliffordAlgebra Q)ˣ := inferInstance
+    exact ⟨fun _ ↦ ⟨∅, Or.inl (Subsingleton.elim _ _), Or.inl rfl⟩,
+      fun _ ↦ Subgroup.mem_center_iff.mpr fun _ ↦ Subsingleton.elim _ _⟩
   have central_comm_of_value (hu : u ∈ Subgroup.center (monomialGroup Q b))
       (s : Finset I) (hs : (↑(u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = basis Q b s ∨
         (↑(u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = -basis Q b s) :
@@ -800,6 +810,7 @@ theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
     · simpa only [Subgroup.coe_mul, Units.val_mul, hs, mul_neg, neg_mul] using
         congrArg Neg.neg (hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))
 
+omit [LinearOrder I] in
 /-- **The group of signed monomials of a finite orthogonal basis is finite.** -/
 theorem finite_monomialGroup [Finite I]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
@@ -816,6 +827,7 @@ theorem finite_monomialGroup [Finite I]
 
 /-! ### The quotient by the sign subgroup of an orthogonal basis -/
 
+omit [LinearOrder I] in
 /-- **The quotient by the sign subgroup has `2 ^ n` elements**, one for each of the `2 ^ n` index
 sets: the group of signed monomials has `2 ^ (n + 1)` elements and the sign subgroup has two. -/
 theorem natCard_quotient_monomialGroupSign [Fintype I] [Nontrivial R]
@@ -835,7 +847,7 @@ theorem ker_monomialGroupAlgHom (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     RingHom.ker (monomialGroupAlgHom Q b) =
       Ideal.span
         {MonoidAlgebra.of R (monomialGroup Q b) (monomialGroupEpsilon Q b) + 1} := by
-  set x := MonoidAlgebra.of R (monomialGroup Q b) (monomialGroupEpsilon Q b) + 1 with hx
+  set x := MonoidAlgebra.of R (monomialGroup Q b) (monomialGroupEpsilon Q b) + 1
   refine le_antisymm (fun y hy ↦ ?_) (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr
     (monomialGroupAlgHom_of_monomialGroupEpsilon_add_one_eq_zero b)))
   -- Every basis vector `e_s` is the value of a group element `u s`.
@@ -1031,12 +1043,15 @@ theorem monomialGroupEquiv_mem_center_iff
     refine ⟨p.1, ?_, hc⟩
     rcases Int.units_eq_one_or p.2 with h | h <;> simp [h]
 
+omit [LinearOrder I] in
 /-- The centre of the group of signed monomials has two elements for each of its supports: the
 empty set and, in odd dimension, the full index set. -/
 private theorem natCard_center_monomialGroup
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
     Nat.card (Subgroup.center (monomialGroup Q b)) =
       Nat.card {s : Finset I // s = ∅ ∨ (s = Finset.univ ∧ Odd s.card)} * 2 := by
+  classical
+  let : LinearOrder I := WellOrderingRel.isWellOrder.linearOrder
   have e : Subgroup.center (monomialGroup Q b) ≃
       {s : Finset I // s = ∅ ∨ (s = Finset.univ ∧ Odd s.card)} × ℤˣ :=
     ((monomialGroupEquiv hb hQ).subtypeEquiv
@@ -1048,6 +1063,7 @@ private theorem natCard_center_monomialGroup
   rw [Nat.card_congr e, Nat.card_prod]
   simp [Nat.card_eq_fintype_card]
 
+omit [LinearOrder I] in
 /-- **The centre of the group of signed monomials in even dimension** has two elements, `1` and
 `ε = -1`, for an orthogonal basis whose generators square to `±1`, indexed by a type of even
 cardinality. -/
@@ -1062,6 +1078,7 @@ theorem natCard_center_monomialGroup_of_even
   rw [natCard_center_monomialGroup hb hQ, Nat.card_congr (Equiv.subtypeEquivRight hsupp)]
   simp
 
+omit [LinearOrder I] in
 /-- **The centre of the group of signed monomials in odd dimension** has four elements, `±1` and
 `±ω` for `ω = e_univ` the volume element, for an orthogonal basis whose generators square to `±1`,
 indexed by a type of odd cardinality. -/
@@ -1069,6 +1086,7 @@ theorem natCard_center_monomialGroup_of_odd
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
     (hn : Odd (Fintype.card I)) :
     Nat.card (Subgroup.center (monomialGroup Q b)) = 4 := by
+  classical
   have hsupp (s : Finset I) : (s = ∅ ∨ (s = Finset.univ ∧ Odd s.card)) ↔
       s ∈ ({∅, Finset.univ} : Finset (Finset I)) := by
     rw [Finset.mem_insert, Finset.mem_singleton]
@@ -1079,12 +1097,14 @@ theorem natCard_center_monomialGroup_of_odd
   rw [natCard_center_monomialGroup hb hQ, Nat.card_congr (Equiv.subtypeEquivRight hsupp),
     Nat.card_eq_fintype_card, Fintype.card_coe, Finset.card_pair hne]
 
+omit [LinearOrder I] in
 /-- Twice the number of conjugacy classes of the group of signed monomials is the order of the
 group plus the order of its centre, since every noncentral class has two elements. -/
 private theorem two_mul_natCard_conjClasses_monomialGroup
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
     2 * Nat.card (ConjClasses (monomialGroup Q b)) =
       2 ^ (Fintype.card I + 1) + Nat.card (Subgroup.center (monomialGroup Q b)) := by
+  let : LinearOrder I := WellOrderingRel.isWellOrder.linearOrder
   have := Finite.of_equiv _ (monomialGroupEquiv hb hQ)
   rw [← natCard_monomialGroup hb hQ]
   refine ConjClasses.two_mul_natCard_eq_of_forall_noncenter fun C hC ↦ ?_
@@ -1093,6 +1113,7 @@ private theorem two_mul_natCard_conjClasses_monomialGroup
     (fun _ _ hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij))
     fun hu ↦ (ConjClasses.mk_bijOn _).mapsTo hu hC
 
+omit [LinearOrder I] in
 /-- **The number of conjugacy classes of the group of signed monomials in even dimension**: for an
 orthogonal basis of `n` vectors, `n` even, whose generators square to `±1`, the group has
 `2 ^ n + 1` conjugacy classes, its two central elements and the `2 ^ n - 1` pairs `{u, -u}`. -/
@@ -1104,6 +1125,7 @@ theorem natCard_conjClasses_monomialGroup_of_even
   rw [natCard_center_monomialGroup_of_even hb hQ hn, pow_succ] at h
   omega
 
+omit [LinearOrder I] in
 /-- **The number of conjugacy classes of the group of signed monomials in odd dimension**: for an
 orthogonal basis of `n` vectors, `n` odd, whose generators square to `±1`, the group has
 `2 ^ n + 2` conjugacy classes, its four central elements and the `2 ^ n - 2` pairs `{u, -u}`. -/

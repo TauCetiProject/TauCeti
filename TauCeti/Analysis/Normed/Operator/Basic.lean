@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.LinearAlgebra.Pi
 
 /-!
@@ -30,7 +31,10 @@ In particular, it supplies the common continuity step for
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
-(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`).
+(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). The difference of two
+compositions obeys the three-term estimate
+`‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`
+(`ContinuousLinearMap.enorm_comp_sub_comp_le`).
 
 Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`), its lower and upper bounds satisfy
@@ -168,6 +172,22 @@ theorem norm_le_opNorm_mul_norm_add_norm_comp_sub_one (T : X →L[𝕜] Y) (S : 
   calc ‖x‖ = ‖S (T x) - (S.comp T - 1 : X →L[𝕜] X) x‖ := congrArg _ hx
     _ ≤ ‖S (T x)‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := norm_sub_le _ _
     _ ≤ ‖S‖ * ‖T x‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := by gcongr; exact S.le_opNorm _
+
+/-- The three-term estimate for the difference of two compositions:
+`‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`, in extended norms. -/
+theorem enorm_comp_sub_comp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (A' A : Y →L[𝕜] Z) (B' B : X →L[𝕜] Y) :
+    ‖A'.comp B' - A.comp B‖ₑ ≤
+      ‖A' - A‖ₑ * ‖B' - B‖ₑ + ‖A' - A‖ₑ * ‖B‖ₑ + ‖A‖ₑ * ‖B' - B‖ₑ := by
+  have hsplit : A'.comp B' - A.comp B =
+      (A' - A).comp (B' - B) + (A' - A).comp B + A.comp (B' - B) := by
+    ext v
+    simp only [add_apply, sub_apply, coe_comp, Function.comp_apply, map_sub]
+    abel
+  rw [hsplit]
+  calc _ ≤ ‖(A' - A).comp (B' - B)‖ₑ + ‖(A' - A).comp B‖ₑ + ‖A.comp (B' - B)‖ₑ :=
+        (enorm_add_le _ _).trans (add_le_add_left (enorm_add_le _ _) _)
+    _ ≤ _ := by gcongr <;> exact opENorm_comp_le _ _
 
 section Inverse
 

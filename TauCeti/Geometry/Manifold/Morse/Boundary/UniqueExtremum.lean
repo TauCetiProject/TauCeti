@@ -29,9 +29,11 @@ Morse–Smale pair on a compact surface vanishes as soon as `f` has at most one 
 index `2` and at most one of index `0`. The standard Morse function on the torus is such a function
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_sphereHeight_comp_fst_add_comp_snd`),
 with two trajectories from the maximum to each saddle and from each saddle to the minimum.
-Classically, so are the standard Morse functions on the closed orientable surfaces of higher genus
-and on the real projective plane; in each case the homology of the complex with zero differential
-is the mod-two homology of the surface.
+So is the moment function on the real projective plane
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_projectiveMomentFunction_real`), and
+classically so are the standard Morse functions on the closed orientable surfaces of higher genus;
+in each case the homology of the complex with zero differential is the mod-two homology of the
+surface.
 
 The two trajectories in `W^s(q) - {q}` are read off the parametrization `ι` of `W^s(q)` by its
 one-dimensional tangent space `L` at `q` (`TauCeti.IsAdaptedPseudoGradient.exists_stableParam`),
@@ -164,7 +166,7 @@ theorem ncard_morseTrajectorySlice_eq_two_of_unique_index_finrank {p q : M}
     have hp'q : p' ≠ q := by
       rintro rfl
       exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet hfd ⟨hyp', hys⟩)
-    have hlt := h.manifoldMorseIndex_lt hf hp' hq hp'q ⟨y, hyp', hys⟩
+    have hlt := h.manifoldMorseIndex_lt hf hp'q ⟨y, hyp', hys⟩
     have hle : manifoldMorseIndex 𝓘(ℝ, E) f p' ≤ Module.finrank ℝ E :=
       manifoldMorseIndex_le_finrank
     rwa [← huniq p' hp' (by omega)]
@@ -213,7 +215,7 @@ theorem ncard_morseTrajectorySlice_eq_two_of_unique_index_zero {q m : M}
     have hqm' : q ≠ m' := by
       rintro rfl
       exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet hfd ⟨hyu, hym'⟩)
-    have hlt := h.manifoldMorseIndex_lt hf hq hm' hqm' ⟨y, hyu, hym'⟩
+    have hlt := h.manifoldMorseIndex_lt hf hqm' ⟨y, hyu, hym'⟩
     rwa [← huniq m' hm' (by omega)]
   -- Some trajectory runs from `q` to `m`, so the middle level lies strictly between their values.
   obtain ⟨y, hys, hyq⟩ := hXn.exists_mem_stableSet_ne hfn hqn (by omega)

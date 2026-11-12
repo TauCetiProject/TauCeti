@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Exponential.Basic
 public import TauCeti.Probability.Renewal.Measure
-public import TauCeti.Probability.PointProcess.OccurrenceTime
+public import TauCeti.Probability.PointProcess.OccurrenceTime.Reconstruction
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
@@ -58,6 +58,19 @@ theorem renewalArrivalMeasure_def (ω : Ω) :
     renewalArrivalMeasure T ω = Measure.sum fun n => Measure.dirac (arrival T (n + 1) ω) :=
   (rfl)
 
+/-- Renewal arrivals are the finite-time specialization of the occurrence-sequence measure. -/
+theorem renewalArrivalMeasure_eq_occurrenceTimeMeasure (ω : Ω) :
+    renewalArrivalMeasure T ω =
+      occurrenceTimeMeasure (fun n => (arrival T (n + 1) ω : ℝ≥0∞)) := by
+  simp [renewalArrivalMeasure_def, occurrenceTimeMeasure_def]
+
+/-- Renewal arrival measures are integer-valued, including when arrivals accumulate. -/
+@[simp]
+theorem isIntegerValued_renewalArrivalMeasure (ω : Ω) :
+    (renewalArrivalMeasure T ω).IsIntegerValued := by
+  rw [renewalArrivalMeasure_eq_occurrenceTimeMeasure]
+  exact isIntegerValued_occurrenceTimeMeasure _
+
 /-- Evaluation counts occurrences, rather than distinct arrival locations. -/
 theorem renewalArrivalMeasure_apply (ω : Ω) (s : Set ℝ≥0) :
     renewalArrivalMeasure T ω s = ∑' n, s.indicator (fun _ => (1 : ℝ≥0∞))
@@ -78,16 +91,9 @@ is not inserted by occurrence extraction. -/
 @[simp]
 theorem occurrenceTime_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
     (renewalArrivalMeasure T ω).occurrenceTime n = (arrival T (n + 1) ω : ℝ≥0∞) := by
-  apply le_antisymm
-  · apply Measure.occurrenceTime_le_of_le
-    rw [renewalArrivalMeasure_Iic]
-    simpa using (natCast_le_renewalCount_iff (T := T) (n := n + 1)).2 le_rfl
-  · rw [Measure.occurrenceTime_def]
-    refine le_iInf fun t => le_iInf fun ht => ?_
-    rw [renewalArrivalMeasure_Iic] at ht
-    have h : arrival T (n + 1) ω ≤ t :=
-      natCast_le_renewalCount_iff.1 (by simpa using ht)
-    exact_mod_cast h
+  rw [renewalArrivalMeasure_eq_occurrenceTimeMeasure,
+    occurrenceTime_occurrenceTimeMeasure (fun _ _ h => by
+      exact_mod_cast monotone_arrival T ω (Nat.succ_le_succ h))]
 
 /-- Integration against the arrival measure sums the test function over all arrivals. -/
 @[simp]
@@ -105,13 +111,9 @@ theorem renewalArrivalMeasure_comp {Ω' : Type*} (g : Ω' → Ω) (ω : Ω') :
 theorem isLocallyFiniteMeasure_renewalArrivalMeasure_iff (ω : Ω) :
     IsLocallyFiniteMeasure (renewalArrivalMeasure T ω) ↔
       Tendsto (fun n => arrival T n ω) atTop atTop := by
-  refine ⟨fun h => tendsto_arrival_atTop_iff.2 fun t => ?_, fun h => ?_⟩
-  · let := h
-    rw [← renewalArrivalMeasure_Iic]
-    exact measure_Iic_lt_top
-  · refine ⟨fun t => ⟨Iio (t + 1), Iio_mem_nhds (lt_add_one t), ?_⟩⟩
-    exact (measure_mono Iio_subset_Iic_self).trans_lt
-      (by simpa using tendsto_arrival_atTop_iff.1 h (t + 1))
+  rw [renewalArrivalMeasure_eq_occurrenceTimeMeasure,
+    isLocallyFiniteMeasure_occurrenceTimeMeasure_iff, ENNReal.tendsto_coe_nhds_top]
+  exact Filter.tendsto_add_atTop_iff_nat (f := fun n => arrival T n ω) 1
 
 /-- A positive first increment rules out any arrival at zero; later increments may vanish. -/
 theorem renewalArrivalMeasure_singleton_zero {ω : Ω} (hT : 0 < T 0 ω) :

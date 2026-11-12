@@ -228,7 +228,7 @@ theorem exists_integralNorm_eq_two_of_isUnimodular (h2 : 2 ≤ finrank ℤ L)
     rw [hrank]
     interval_cases finrank ℤ L <;> norm_num [Nat.choose_two_right]
   have hge := hE.two_le_minimum L.isEven_evenSublattice
-  obtain ⟨x, hx0, hx⟩ := hE.isPosSemidef.exists_ne_zero_integralNorm_eq_minimum
+  obtain ⟨x, _, hx⟩ := hE.isPosSemidef.exists_ne_zero_integralNorm_eq_minimum
   obtain ⟨z, hz⟩ := (L.evenSublattice.even_integralNorm_iff x).2
     (L.isEven_evenSublattice.exists_norm_eq_two_mul x)
   refine ⟨Submodule.inclusion L.evenSublattice_carrier_le x, ?_⟩
