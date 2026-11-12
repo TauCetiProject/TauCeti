@@ -13,10 +13,13 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 The principal square root has nonnegative real part, and its real part is strictly positive
 exactly on the slit plane. These facts control the branches in algebraic transformations
-involving sums of principal roots.
+involving sums of principal roots. The file also records the values `√i = e^{π i / 4}` and
+`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane.
 -/
 
 public section
+
+open scoped Real
 
 namespace Complex
 
@@ -24,6 +27,32 @@ namespace Complex
 @[simp]
 theorem sq_sqrt (z : ℂ) : sqrt z ^ 2 = z :=
   cpow_ofNat_inv_pow z 2
+
+/-- The principal square root vanishes only at zero. -/
+@[simp]
+theorem sqrt_eq_zero_iff {z : ℂ} : sqrt z = 0 ↔ z = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ sqrt_zero⟩
+  rw [← sq_sqrt z, h, zero_pow two_ne_zero]
+
+/-- The principal square root of `i` is `e^{π i / 4}`. -/
+theorem sqrt_I_eq_exp : sqrt I = exp (π * I / 4) := by
+  rw [sqrt_eq_exp I_ne_zero, log_I]
+  congr 1
+  ring
+
+/-- In the open upper half-plane, the principal root of `-i τ` is `(√i)⁻¹ √τ`: both have
+argument `(arg τ - π / 2) / 2`. -/
+theorem sqrt_neg_I_mul {τ : ℂ} (hτ : 0 < τ.im) : sqrt (-I * τ) = (sqrt I)⁻¹ * sqrt τ := by
+  have hτ₀ : τ ≠ 0 := fun h ↦ by simp [h] at hτ
+  have hlog : log (-I * τ) = log (-I) + log τ := by
+    refine (log_mul_eq_add_log_iff (neg_ne_zero.2 I_ne_zero) hτ₀).2 ?_
+    rw [arg_neg_I]
+    have h₀ : 0 ≤ arg τ := arg_nonneg_iff.2 hτ.le
+    constructor <;> linarith [arg_le_pi τ, Real.pi_pos]
+  rw [sqrt_eq_exp (mul_ne_zero (neg_ne_zero.2 I_ne_zero) hτ₀), sqrt_eq_exp I_ne_zero,
+    sqrt_eq_exp hτ₀, hlog, log_neg_I, log_I, ← exp_neg, ← exp_add]
+  congr 1
+  ring
 
 /-- The principal square root has nonnegative real part. -/
 @[simp]

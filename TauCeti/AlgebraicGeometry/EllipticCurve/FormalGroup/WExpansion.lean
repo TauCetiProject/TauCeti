@@ -83,15 +83,13 @@ The directory anticipates that later work.
 
 ## Provenance
 
-Adapted from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned
-by `TauCetiRoadmap/EllipticCurves/README.md` at `dev/hasse-weil @ 513e83879e2f`),
-`HasseWeil/FormalGroup.lean`, declarations `formalW_step`, `formalW_coeff`, `formalW`,
-`formalU_coeff`, the `formalW_coeff_*` lemmas and `formalW_recurrence`.
+Adapted from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, at
+`dev/hasse-weil @ 513e83879e2f`), `HasseWeil/FormalGroup.lean`, declarations `formalW_step`,
+`formalW_coeff`, `formalW`, `formalU_coeff`, the `formalW_coeff_*` lemmas and `formalW_recurrence`.
 
 The statement of uniqueness at an arbitrary parameter is adapted from Michael Stoll's
-`EllipticCurves` project (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
-`EllipticCurves/WeierstrassFormalGroup/Chord.lean`, declarations `wStepAt` and
+`EllipticCurves` project (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at
+`66889eada51a`), `EllipticCurves/WeierstrassFormalGroup/Chord.lean`, declarations `wStepAt` and
 `eq_of_wStepAt_fixed`. There the equation is a `def` used only internally; here it is the public
 `wEquationRHS`, so the existing statements in this file are phrased through it too. The univariate
 proof is not Stoll's: that argues by contraction for the `z`-adic filtration, which needs
@@ -281,6 +279,14 @@ theorem wEquationRHS_def {A : Type*} [CommSemiring A] [Algebra R A] (W : Weierst
         algebraMap R A W.a₆ * v ^ 3 :=
   (rfl)
 
+/-- An algebra homomorphism carries the right-hand side of the `w`-equation to the same
+expression at the images of its parameter and unknown. -/
+@[simp]
+theorem _root_.AlgHom.map_wEquationRHS {A B : Type*} [CommSemiring A] [CommSemiring B]
+    [Algebra R A] [Algebra R B] (f : A →ₐ[R] B) (W : WeierstrassCurve R) (q v : A) :
+    f (wEquationRHS W q v) = wEquationRHS W (f q) (f v) := by
+  simp only [wEquationRHS_def, map_add, map_mul, map_pow, AlgHom.commutes]
+
 /-- The right-hand side of the `w`-equation commutes with an algebra map, both the parameter and
 the unknown being carried along. This is the element-level companion of `map_wEquationRHS`, which
 transports series along a ring homomorphism; here the coefficients stay put and only the two
@@ -289,8 +295,8 @@ arguments move up the tower. -/
 theorem algebraMap_wEquationRHS {A B : Type*} [CommSemiring A] [CommSemiring B] [Algebra R A]
     [Algebra R B] [Algebra A B] [IsScalarTower R A B] (q v : A) :
     algebraMap A B (wEquationRHS W q v) =
-      wEquationRHS W (algebraMap A B q) (algebraMap A B v) := by
-  simp only [wEquationRHS_def, map_add, map_mul, map_pow, ← IsScalarTower.algebraMap_apply]
+      wEquationRHS W (algebraMap A B q) (algebraMap A B v) :=
+  AlgHom.map_wEquationRHS (IsScalarTower.toAlgHom R A B) W q v
 
 section Equation
 
@@ -299,12 +305,15 @@ variable {O : Type*} [CommRing O] {K : Type*} [Field K] [Algebra O K]
 /-- **The `w`-equation is the Weierstrass equation read in the coordinates `z = -x / y`,
 `w = -1 / y`.** Clearing the denominators of `y ^ 2 + a₁ x y + a₃ y = x ^ 3 + a₂ x ^ 2 + a₄ x + a₆`
 at `x = z / w`, `y = -1 / w` is what produces that equation in the first place; this is the
-converse reading, from a point of the curve to a solution of the equation.
+converse reading, from a point of the curve to a solution of the equation. For `y = 0` both sides
+are `0`, by the convention `y⁻¹ = 0`.
 
 The hypothesis is `Equation`, not `Nonsingular`: nothing here needs the point to be smooth. -/
 theorem wEquation_of_equation (W : WeierstrassCurve O) {x y : K}
-    (hxy : (W.baseChange K).toAffine.Equation x y) (hy : y ≠ 0) :
+    (hxy : (W.baseChange K).toAffine.Equation x y) :
     -y⁻¹ = wEquationRHS W (-(x / y)) (-y⁻¹) := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp [wEquationRHS_def]
   rw [WeierstrassCurve.Affine.equation_iff] at hxy
   simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at hxy
   rw [wEquationRHS_def]
@@ -536,8 +545,9 @@ variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
 `[q : -1 : v]` is equivalent to the `w`-equation
 `v = q ^ 3 + a₁ q v + a₂ q ^ 2 v + a₃ v ^ 2 + a₄ q v ^ 2 + a₆ v ^ 3` (`wEquationRHS`).
 `wEquation_of_equation` is the implication from left to right for a solution `(x, y)` of the
-affine Weierstrass equation over a field with `y ≠ 0`, where
-`[x : y : 1] = [-x / y : -1 : -1 / y]`. -/
+affine Weierstrass equation over a field, where for `y ≠ 0` we have
+`[x : y : 1] = [-x / y : -1 : -1 / y]`; for `y = 0` the implication holds only because
+`q = v = 0` under `y⁻¹ = 0`. -/
 theorem Projective.equation_neg_one_iff_wEquation (W' : Projective R) {S : Type*} [CommRing S]
     [Algebra R S] (q v : S) :
     (W'.map (algebraMap R S)).Equation ![q, -1, v] ↔ v = wEquationRHS W' q v := by

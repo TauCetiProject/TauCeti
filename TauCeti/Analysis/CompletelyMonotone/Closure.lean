@@ -12,8 +12,7 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 # Closure of completely monotone functions under products and differentiation
 
 This file extends the basic API of `TauCeti.IsCompletelyMonotone` (sums and nonnegative scalar
-multiples, in `TauCeti.Analysis.CompletelyMonotone.Basic`) with two further closure properties
-called for by the `OneParameterSemigroups` roadmap:
+multiples, in `TauCeti.Analysis.CompletelyMonotone.Basic`) with two further closure properties:
 
 * the **product** of two completely monotone functions is completely monotone, hence so is any
   finite product and any natural power;

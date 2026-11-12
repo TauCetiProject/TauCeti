@@ -81,10 +81,10 @@ theorem geodesicInterval_mfderiv (Φ : RiemannianIsometry I J M N) (p : M)
 data, at every time `t`: the identity holds on the common maximal interval, and off it both sides
 take the junk value `Φ p`. -/
 @[simp]
-theorem maximalGeodesic_mfderiv [I.Boundaryless] [J.Boundaryless]
-    [T2Space M] [T2Space N]
+theorem maximalGeodesic_mfderiv [I.Boundaryless] [J.Boundaryless] [T2Space M]
     (Φ : RiemannianIsometry I J M N) (p : M) (v : TangentSpace I p) (t : ℝ) :
     maximalGeodesic J N (Φ p) (mfderiv I J Φ p v) t = Φ (maximalGeodesic I M p v t) := by
+  have : T2Space N := Φ.toDiffeomorph.toHomeomorph.t2Space
   by_cases ht : t ∈ geodesicInterval I M p v
   · obtain ⟨γ, a, b, hγ, ht'⟩ := (mem_geodesicInterval_iff (I := I) (M := M)).1 ht
     rw [hγ.eqOn_maximalGeodesic ht',
@@ -114,8 +114,7 @@ theorem mfderiv_image_expDomain (Φ : RiemannianIsometry I J M N) (p : M) :
 on every tangent vector: the identity holds on the natural domain, and off it both sides take the
 junk value `Φ p`. -/
 @[simp]
-theorem riemannianExp_mfderiv [I.Boundaryless] [J.Boundaryless]
-    [T2Space M] [T2Space N]
+theorem riemannianExp_mfderiv [I.Boundaryless] [J.Boundaryless] [T2Space M]
     (Φ : RiemannianIsometry I J M N) (p : M) (v : TangentSpace I p) :
     riemannianExp J N (Φ p) (mfderiv I J Φ p v) = Φ (riemannianExp I M p v) := by
   simp only [riemannianExp_def, Φ.maximalGeodesic_mfderiv]

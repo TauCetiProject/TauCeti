@@ -18,8 +18,11 @@ is determined by its values on integral tests, and integration of a rational tes
 recovered from integration of its integral scaling. These facts are useful for uniqueness
 of extensions of coefficients from integral to rational measures.
 
-The integral tests are included using `ContinuousMap.subtypeVal`; measures remain on
-Mathlib's `AbstractMeasure` carrier. No topology or norm is installed on that carrier.
+The integral tests are included using `ContinuousMap.subtypeVal`. The statements about measures
+only use that a measure commutes with scalar multiplication, so they are stated for every
+`ℚ_[p]`-equivariant map out of `C(X, ℚ_[p])`. This covers Mathlib's `AbstractMeasure` carrier, on
+which no topology or norm is installed, as well as linear and continuous linear maps, for instance
+elements of the operator-norm dual.
 
 ## References
 
@@ -40,22 +43,14 @@ compact space. The power is uniform in the point of the domain. -/
 theorem exists_prime_pow_smul_eq_padicInt_test [CompactSpace X] (f : C(X, ℚ_[p])) :
     ∃ n : ℕ, ∃ g : C(X, ℤ_[p]),
       (ContinuousMap.subtypeVal (PadicInt.subring p)).comp g = (p : ℚ_[p]) ^ n • f := by
-  have hpos : 0 < ‖f‖ + 1 := by positivity
-  obtain ⟨n, hn⟩ := PadicInt.exists_pow_neg_lt p (one_div_pos.mpr hpos)
-  have hbound : ‖(p : ℚ_[p]) ^ n‖ * ‖f‖ ≤ 1 := by
-    rw [Padic.norm_p_pow]
-    have h := (lt_div_iff₀ hpos).mp hn
-    have hnonneg := zpow_nonneg (Nat.cast_nonneg p : (0 : ℝ) ≤ p) (-(n : ℤ))
-    nlinarith
-  have hpoint (x : X) : ‖(p : ℚ_[p]) ^ n * f x‖ ≤ 1 := by
-    rw [norm_mul]
-    exact (mul_le_mul_of_nonneg_left (f.norm_coe_le_norm x) (norm_nonneg _)).trans hbound
-  have hmem (x : X) : (p : ℚ_[p]) ^ n * f x ∈ PadicInt.subring p :=
-    (PadicInt.mem_subring_iff p).mpr (hpoint x)
-  refine ⟨n, ⟨fun x ↦ ⟨(p : ℚ_[p]) ^ n * f x, hmem x⟩,
-    (continuous_const.mul f.continuous).subtype_mk hmem⟩, ?_⟩
-  ext x
-  rfl
+  have hp : p.Prime := Fact.out
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt ‖f‖ (Nat.one_lt_cast.mpr hp.one_lt)
+  have hmem (x : X) : (p : ℚ_[p]) ^ n * f x ∈ PadicInt.subring p := by
+    rw [PadicInt.mem_subring_iff, norm_mul, Padic.norm_p_pow, zpow_neg, zpow_natCast,
+      inv_mul_le_one₀ (pow_pos (Nat.cast_pos.mpr hp.pos) n)]
+    exact (f.norm_coe_le_norm x).trans hn.le
+  -- The underlying function of `subtypeVal.comp g` is `p ^ n * f` by construction.
+  exact ⟨n, ⟨fun x ↦ ⟨_, hmem x⟩, (continuous_const.mul f.continuous).subtype_mk hmem⟩, rfl⟩
 
 /-- Every continuous rational p-adic test on a compact space is an inverse prime power
 times an integral test. -/
@@ -69,28 +64,40 @@ theorem exists_eq_inv_prime_pow_smul_padicInt_test [CompactSpace X] (f : C(X, �
 
 section Measures
 
-variable {E : Type*} [AddCommGroup E] [TopologicalSpace E] [Module ℚ_[p] E]
+variable {E F : Type*} [MulAction ℚ_[p] E] [FunLike F C(X, ℚ_[p]) E]
+  [MulActionHomClass F ℚ_[p] C(X, ℚ_[p]) E]
 
 /-- Integration of a rational p-adic test is recovered from integration of any integral
-prime-power scaling. This also holds for module-valued measures. -/
+prime-power scaling. This holds for every `ℚ_[p]`-equivariant map `μ`, in particular for
+module-valued measures. -/
 theorem measure_apply_eq_inv_prime_pow_smul
-    (μ : AbstractMeasure X ℚ_[p] E) (f : C(X, ℚ_[p])) (n : ℕ) (g : C(X, ℤ_[p]))
+    (μ : F) (f : C(X, ℚ_[p])) (n : ℕ) (g : C(X, ℤ_[p]))
     (hg : (ContinuousMap.subtypeVal (PadicInt.subring p)).comp g = (p : ℚ_[p]) ^ n • f) :
     μ f = ((p : ℚ_[p]) ^ n)⁻¹ • μ ((ContinuousMap.subtypeVal (PadicInt.subring p)).comp g) := by
   rw [hg, map_smul, inv_smul_smul₀]
   exact pow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
 
 /-- On a compact space, rational p-adic measures agreeing on all integral tests agree
-on every continuous test. No disconnectedness or separation hypothesis is needed. -/
-theorem measure_ext_of_padicInt_tests [CompactSpace X]
-    {μ ν : AbstractMeasure X ℚ_[p] E}
+on every continuous test. More generally this holds for any two `ℚ_[p]`-equivariant maps out
+of `C(X, ℚ_[p])`, for instance linear maps that are not continuous. No disconnectedness or
+separation hypothesis is needed. -/
+theorem measure_ext_of_padicInt_tests [CompactSpace X] {μ ν : F}
     (h : ∀ g : C(X, ℤ_[p]),
       μ ((ContinuousMap.subtypeVal (PadicInt.subring p)).comp g) =
         ν ((ContinuousMap.subtypeVal (PadicInt.subring p)).comp g)) : μ = ν := by
-  ext f
+  refine DFunLike.ext _ _ fun f ↦ ?_
   obtain ⟨n, g, hg⟩ := exists_prime_pow_smul_eq_padicInt_test p f
   rw [measure_apply_eq_inv_prime_pow_smul p μ f n g hg,
     measure_apply_eq_inv_prime_pow_smul p ν f n g hg, h g]
+
+-- `measure_ext_of_padicInt_tests` applies to `AbstractMeasure` without any topological-group
+-- hypothesis on the coefficient module.
+example [CompactSpace X] {M : Type*} [AddCommGroup M] [TopologicalSpace M] [Module ℚ_[p] M]
+    {μ ν : AbstractMeasure X ℚ_[p] M}
+    (h : ∀ g : C(X, ℤ_[p]),
+      μ ((ContinuousMap.subtypeVal (PadicInt.subring p)).comp g) =
+        ν ((ContinuousMap.subtypeVal (PadicInt.subring p)).comp g)) : μ = ν :=
+  measure_ext_of_padicInt_tests p h
 
 end Measures
 

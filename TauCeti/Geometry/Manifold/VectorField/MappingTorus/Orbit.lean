@@ -283,7 +283,7 @@ theorem exists_mfderiv_eq_zero_of_minimalPeriod_eq_zero [I'.Boundaryless] [Compa
   refine ⟨c₁, ?_⟩
   rw [hv', (hq.hasMFDerivAt.comp c₁ hpair).mfderiv]
   -- The derivative of `(τ, x)` at `c₁` is `(0, 0)`, which the derivative of `q` sends to `0`.
-  ext w
+  ext _
   exact map_zero (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (τ c₁, x))
 
 /-- **Compact immersed curves tangent to `T` lie on closed orbits.** Let `v` be a differentiable

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
+import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
 # Local finiteness from the intensity of a random measure

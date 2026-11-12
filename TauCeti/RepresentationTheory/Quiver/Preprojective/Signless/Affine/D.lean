@@ -252,7 +252,7 @@ theorem exists_mem_signlessPreprojectiveGrade_four_notMem_commutatorSubmodule [N
     (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))
   refine exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero f
     (fun i j => affineDMatrix k n i j) (sum_affineDMatrix_mul_affineDMatrix k hn)
-    [⟨_, h₂⟩, ⟨_, h₁⟩] (by simp) ?_
+    [⟨_, h₂⟩, ⟨_, h₁⟩] ?_
   simp [c, trace_affineDMatrix_backtracks k hn]
 
 end TauCeti

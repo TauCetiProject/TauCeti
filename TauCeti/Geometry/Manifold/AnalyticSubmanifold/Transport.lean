@@ -409,8 +409,9 @@ theorem IsMAnalyticSubmanifold.image_of_isSmoothEmbedding
     simp only [ι, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
       ContinuousLinearMap.inl_apply, ContinuousLinearEquiv.symm_apply_apply, hwr]
   refine ⟨ψ, h.codChart_mem_maximalAtlas, hfxψ, U, hU, (hUiff x hfxψ).2 hxφ, ?_⟩
-  rwa [image_image_inter_eq_inter_image (g := e ∘ φ.extend I) (g' := e' ∘ ψ.extend J) hform
-    (fun z hz ↦ h.source_subset_preimage_source hz) hUiff] at himg_S₀
+  rwa [image_image_inter_eq_inter_image (g := e ∘ φ.extend I) (g' := e' ∘ ψ.extend J)
+    (fun z hz ↦ hform z hz.2) (fun z hz ↦ h.source_subset_preimage_source hz.2)
+    fun z _ ↦ hUiff z] at himg_S₀
 
 /-- Over a complete field `𝕜`, the range of a `C^ω` smooth embedding of a nonempty boundaryless
 `C^ω` manifold with `d`-dimensional model into a boundaryless `C^ω` manifold is a `d`-dimensional
