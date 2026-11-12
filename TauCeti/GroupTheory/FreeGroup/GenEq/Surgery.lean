@@ -39,7 +39,8 @@ Consequently:
 * `TauCeti.GenEq.removeBases`: remove a set of variable bases closed under duality, with the
   boundary connections through them.
 * `TauCeti.GenEq.removePair`: remove a pair of dual bases `μ, Δ(μ)`.
-* `TauCeti.GenEq.Solution.removeBases`: a solution of `Ω` as a solution of the result.
+* `TauCeti.GenEq.Solution.removeBases`, `TauCeti.GenEq.Solution.removePair`: a solution of `Ω` as
+  a solution of the result.
 
 ## References
 
@@ -111,6 +112,11 @@ abbrev removeBases (S : Finset (Fin Ω.numBases)) (hS : ∀ μ ∈ S, Ω.dual μ
 /-- Removing the bases of `S` leaves `numBases - #S` bases. -/
 theorem numBases_removeBases : (Ω.removeBases S hS).numBases = Ω.numBases - S.card := by
   simp [Finset.card_compl]
+
+/-- Removing a nonempty set of bases decreases the number of bases. -/
+theorem numBases_removeBases_lt (hne : S.Nonempty) :
+    (Ω.removeBases S hS).numBases < Ω.numBases := by
+  simpa using (Finset.card_compl_lt_iff_nonempty S).2 hne
 
 /-- The boundary connections of the result are those of `Ω` through the remaining bases. -/
 theorem mem_connections_removeBases
@@ -247,6 +253,12 @@ theorem removeBases_point : (U.removeBases hS).point = U.point := by
   ext k
   simp
 
+/-- Removing bases keeps the positions of the boundaries in the words of a solution. -/
+@[simp]
+theorem removeBases_prefixLength : (U.removeBases hS).prefixLength = U.prefixLength := by
+  ext
+  simp [prefixLength_def]
+
 end Solution
 
 /-! ### Removing a pair of dual bases -/
@@ -262,6 +274,16 @@ variable (Ω) in
 through them. -/
 abbrev removePair (μ : Fin Ω.numBases) : GenEq A :=
   Ω.removeBases {μ, Ω.dual μ} (Ω.dual_mem_pair μ)
+
+/-- Removing a pair of distinct dual bases leaves `numBases - 2` bases. -/
+theorem numBases_removePair {μ : Fin Ω.numBases} (h : μ ≠ Ω.dual μ) :
+    (Ω.removePair μ).numBases = Ω.numBases - 2 := by
+  rw [numBases_removeBases, Finset.card_pair h]
+
+/-- A solution of `Ω` as a solution of `Ω` with a pair of dual bases `μ, Δ(μ)` removed, with the
+same words. -/
+abbrev Solution.removePair (U : Ω.Solution) (μ : Fin Ω.numBases) : (Ω.removePair μ).Solution :=
+  U.removeBases (Ω.dual_mem_pair μ)
 
 end GenEq
 

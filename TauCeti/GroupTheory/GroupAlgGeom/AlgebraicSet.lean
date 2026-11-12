@@ -801,6 +801,20 @@ theorem homOfVSubset_refl : homOfVSubset (subset_refl (V ι S)) = GHom.id (coeff
   ext
   simp
 
+/-- The homomorphisms induced by the identity on the variables compose, in the opposite order. -/
+@[simp]
+theorem homOfVSubset_comp {U : Set (GX G X)} (h : V ι S ⊆ V ι T) (h' : V ι T ⊆ V ι U) :
+    (homOfVSubset h).comp (homOfVSubset h') = homOfVSubset (h.trans h') := by
+  ext
+  simp
+
+/-- A solution of `S` given by a `G`-homomorphism `G_{R(S)} → H` is the same solution of `T`. -/
+@[simp]
+theorem homEquiv_comp_homOfVSubset (h : V ι S ⊆ V ι T) (φ : GHom (coeff ι S) ι) :
+    (homEquiv ι T (φ.comp (homOfVSubset h)) : X → H) = homEquiv ι S φ := by
+  ext
+  simp
+
 /-- Evaluation at a solution of `S` factors through the homomorphism `G_{R(T)} → G_{R(S)}`
 induced by the identity on the variables. -/
 @[simp]

@@ -114,7 +114,8 @@ theorem V_toSystem_removePair {H : Type*} [Group H] (ι : FreeGroup A →* H) :
       (V_toSystem_subset_removeBases _ ι)
 
 /-- **ET3 on coordinate groups.** The `F(A)`-homomorphism `F_{R(Ω)} → F_{R(Ω′)}` induced by the
-identity on the items, where `Ω′` is `Ω` with a matched pair `μ, Δ(μ)` removed. -/
+identity on the items, where `Ω` is formally consistent and `Ω′` is `Ω` with a matched pair
+`μ, Δ(μ)` with `β(μ) = β(Δμ)` removed. -/
 def removePairHom : GHom (CoordGroup.coeff (.id (FreeGroup A)) Ω.toSystem)
     (CoordGroup.coeff (.id (FreeGroup A)) (Ω.removePair μ).toSystem) :=
   CoordGroup.homOfVSubset (V_toSystem_removePair hΩ hl hr _).le
@@ -126,15 +127,17 @@ theorem removePairHom_mk (w : GX (FreeGroup A) (Fin Ω.numItems)) :
     removePairHom hΩ hl hr (w : Ω.coordGroup) = (w : (Ω.removePair μ).coordGroup) :=
   CoordGroup.homOfVSubset_mk _ w
 
-/-- **ET3 on coordinate groups.** The identity on the items induces an `F(A)`-isomorphism of the
-coordinate groups of `Ω` and of `Ω` with a matched pair removed. -/
+/-- **ET3 on coordinate groups.** If `Ω` is formally consistent, the identity on the items induces
+an `F(A)`-isomorphism of the coordinate groups of `Ω` and of `Ω` with a matched pair `μ, Δ(μ)` with
+`β(μ) = β(Δμ)` removed. -/
 theorem removePairHom_bijective : Function.Bijective (removePairHom hΩ hl hr) :=
   ⟨CoordGroup.homOfVSubset_injective _ (V_toSystem_removePair hΩ hl hr _).ge,
     CoordGroup.homOfVSubset_surjective _⟩
 
-/-- A solution of `Ω` composed with `F_{R(Ω)} → F_{R(Ω′)}` is the same solution of `Ω′`. -/
+/-- The homomorphism `F_{R(Ω′)} → F(A)` of a solution `U` of `Ω`, viewed as a solution of `Ω′`,
+composed with `F_{R(Ω)} → F_{R(Ω′)}` is the homomorphism of `U`. -/
 theorem toHom_comp_removePairHom (U : Ω.Solution) :
-    (U.removeBases (Ω.dual_mem_pair μ)).toHom.comp (removePairHom hΩ hl hr) = U.toHom := by
+    (U.removePair μ).toHom.comp (removePairHom hΩ hl hr) = U.toHom := by
   ext k
   rw [GHom.coe_comp, Function.comp_apply, removePairHom_mk]
   simp
@@ -142,7 +145,7 @@ theorem toHom_comp_removePairHom (U : Ω.Solution) :
 /-- **ET3 transfers solutions uniquely.** The solution of `Ω` with a matched pair removed that
 corresponds to a solution `U` of `Ω` through `F_{R(Ω)} → F_{R(Ω′)}` is `U` itself. -/
 theorem toHom_comp_removePairHom_eq_iff (U : Ω.Solution) (U' : (Ω.removePair μ).Solution) :
-    U'.toHom.comp (removePairHom hΩ hl hr) = U.toHom ↔ U' = U.removeBases (Ω.dual_mem_pair μ) := by
+    U'.toHom.comp (removePairHom hΩ hl hr) = U.toHom ↔ U' = U.removePair μ := by
   refine ⟨fun h => Solution.point_injective (funext fun k => ?_), ?_⟩
   · have h' := DFunLike.congr_fun h ((inr (FreeGroup.of k) : GX (FreeGroup A) _) : Ω.coordGroup)
     rw [GHom.coe_comp, Function.comp_apply, removePairHom_mk, Solution.toHom_inr_of,
@@ -185,12 +188,12 @@ private theorem subst_eq_of_removePair (U : (Ω.removePair μ).Solution) :
   · rw [boundaryEquation_fst_eq_snd hΩ hl hc hν]
 
 include hΩ hl hr in
-/-- **ET3 on solutions.** The solutions of `Ω` are the solutions of `Ω` with a matched pair
-`μ, Δ(μ)` removed for which the word `U[α(μ), β(μ)]` is reduced as written. The words of the items
-are unchanged. -/
+/-- **ET3 on solutions.** If `Ω` is formally consistent and `μ, Δ(μ)` is a matched pair with
+`β(μ) = β(Δμ)`, the solutions of `Ω` are the solutions of `Ω` with that pair removed for which the
+word `U[α(μ), β(μ)]` is reduced as written. The words of the items are unchanged. -/
 def solutionEquivRemovePair : Ω.Solution ≃ {U : (Ω.removePair μ).Solution //
     FreeGroup.IsReduced (substituteVars U.word (Ω.segment (Ω.left μ) (Ω.right μ) true))} where
-  toFun U := ⟨U.removeBases _, by
+  toFun U := ⟨U.removePair μ, by
     rw [Solution.removeBases_word]
     exact U.isReduced_substituteVars_segment μ⟩
   invFun U :=
@@ -202,16 +205,42 @@ def solutionEquivRemovePair : Ω.Solution ≃ {U : (Ω.removePair μ).Solution /
   left_inv U := Solution.ext (U.removeBases_word _)
   right_inv U := Subtype.ext (Solution.ext (Solution.removeBases_word _ _))
 
+/-- ET3 sends a solution `U` of `Ω` to `U` viewed as a solution of `Ω` with the pair removed. -/
 @[simp]
-theorem solutionEquivRemovePair_apply_word (U : Ω.Solution) :
-    (solutionEquivRemovePair hΩ hl hr U).1.word = U.word :=
-  U.removeBases_word _
+theorem solutionEquivRemovePair_apply_coe (U : Ω.Solution) :
+    (solutionEquivRemovePair hΩ hl hr U : (Ω.removePair μ).Solution) = U.removePair μ :=
+  (rfl)
 
+variable (U : {U : (Ω.removePair μ).Solution //
+  FreeGroup.IsReduced (substituteVars U.word (Ω.segment (Ω.left μ) (Ω.right μ) true))})
+
+/-- The inverse of ET3 on solutions keeps the words of the items. -/
 @[simp]
-theorem solutionEquivRemovePair_symm_apply_word (U : {U : (Ω.removePair μ).Solution //
-    FreeGroup.IsReduced (substituteVars U.word (Ω.segment (Ω.left μ) (Ω.right μ) true))}) :
+theorem solutionEquivRemovePair_symm_apply_word :
     ((solutionEquivRemovePair hΩ hl hr).symm U).word = U.1.word :=
   (rfl)
+
+/-- The inverse of ET3 on solutions keeps the point of a solution. -/
+@[simp]
+theorem solutionEquivRemovePair_symm_apply_point :
+    ((solutionEquivRemovePair hΩ hl hr).symm U).point = U.1.point := by
+  ext
+  simp
+
+/-- The inverse of ET3 on solutions keeps the positions of the boundaries. -/
+@[simp]
+theorem solutionEquivRemovePair_symm_apply_prefixLength :
+    ((solutionEquivRemovePair hΩ hl hr).symm U).prefixLength = U.1.prefixLength := by
+  ext
+  simp [Solution.prefixLength_def]
+
+/-- The homomorphism `F_{R(Ω)} → F(A)` of the solution of `Ω` corresponding to a solution `U` of `Ω`
+with a matched pair removed is that of `U` composed with `F_{R(Ω)} → F_{R(Ω′)}`. -/
+theorem solutionEquivRemovePair_symm_apply_toHom :
+    ((solutionEquivRemovePair hΩ hl hr).symm U).toHom =
+      U.1.toHom.comp (removePairHom hΩ hl hr) := by
+  conv_rhs => rw [← (solutionEquivRemovePair hΩ hl hr).apply_symm_apply U]
+  exact (toHom_comp_removePairHom hΩ hl hr _).symm
 
 end Matched
 
@@ -233,58 +262,37 @@ private abbrev matched (n : ℕ) (hn : 0 < n) : GenEq (Fin 2) where
   bounds_of_mem_connections := fun _ hc => absurd hc (Finset.notMem_empty _)
   dual_mem_connections := fun _ hc => absurd hc (Finset.notMem_empty _)
 
-/-- A generalised equation with no constant bases, no boundary connections and bases of a single
-sign is formally consistent. -/
-private theorem isFormallyConsistent_of_sign (Ω : GenEq A) (hs : ∀ μ, Ω.sign μ = true)
-    (hb : Ω.constBases = ∅) (hc : Ω.connections = ∅) : Ω.IsFormallyConsistent where
-  disjoint_of_sign_ne μ h := absurd ((hs μ).trans (hs _).symm) h
-  connections_monotone_or_antitone _ h := absurd h (hc ▸ Finset.notMem_empty _)
-  eq_of_left_eq _ h := absurd h (hc ▸ Finset.notMem_empty _)
-  label_eq _ h := absurd h (hb ▸ Finset.notMem_empty _)
-  connections_adjacent _ h := absurd h (hb ▸ Finset.notMem_empty _)
-
-/-- A generalised equation without variable bases, constant bases or boundary connections imposes
-no condition: every tuple of nonempty reduced words is a solution. -/
-private def solutionOfIsEmpty (Ω : GenEq A) [IsEmpty (Fin Ω.numBases)] (hb : Ω.constBases = ∅)
-    (U : Fin Ω.numItems → List (A × Bool)) (hU : ∀ k, FreeGroup.IsReduced (U k))
-    (hU' : ∀ k, U k ≠ []) : Ω.Solution where
-  word := U
-  isReduced_word := hU
-  word_ne_nil := hU'
-  isReduced_subst := (forall_mem_equations _).2 ⟨isEmptyElim,
-    fun _ h => absurd h (hb ▸ Finset.notMem_empty _), fun c _ => isEmptyElim c.2.1⟩
-  subst_eq := (forall_mem_equations _).2 ⟨isEmptyElim,
-    fun _ h => absurd h (hb ▸ Finset.notMem_empty _), fun c _ => isEmptyElim c.2.1⟩
-
-private instance (n : ℕ) (hn : 0 < n) : IsEmpty (Fin ((matched n hn).removePair 0).numBases) :=
-  ⟨fun ν => Fin.elim0 (ν.cast rfl)⟩
+/-- Removing the matched pair of `matched n` leaves no variable bases. -/
+private theorem numBases_matched_removePair (n : ℕ) (hn : 0 < n) :
+    ((matched n hn).removePair 0).numBases = 0 :=
+  numBases_removePair (μ := 0) (by simp)
 
 /-- Removing the matched pair covering a single item imposes no new condition on that item and
 loses no solution: every nonempty reduced word `w` is the word of `h₁` in a solution of
 `matched 1`, as it is in a solution of the result. -/
 example (w : List (Fin 2 × Bool)) (hw : FreeGroup.IsReduced w) (hw' : w ≠ []) :
     ∃ U : (matched 1 one_pos).Solution, U.word 0 = w := by
-  let U' := solutionOfIsEmpty ((matched 1 one_pos).removePair 0) rfl (fun _ => w) (fun _ => hw)
-    fun _ => hw'
+  let U' := Solution.ofNumBasesEqZero (numBases_matched_removePair 1 one_pos) rfl (fun _ => w)
+    (fun _ => hw) fun _ => hw'
   have hseg : (matched 1 one_pos).segment ((matched 1 one_pos).left 0)
       ((matched 1 one_pos).right 0) true = [(Sum.inl 0, true)] := by
     rw [segment_true]
     decide
   refine ⟨(solutionEquivRemovePair (μ := 0)
-    (isFormallyConsistent_of_sign _ (fun _ => rfl) rfl rfl) rfl rfl).symm ⟨U', ?_⟩, rfl⟩
+    (isFormallyConsistent_of_sign_eq (fun _ => rfl) rfl rfl) rfl rfl).symm ⟨U', ?_⟩, by simp [U']⟩
   rw [hseg]
-  simpa [U', solutionOfIsEmpty] using hw
+  simpa [U'] using hw
 
 /-- Removing a matched pair can lose the condition that the word of its segment is reduced as
 written: `h₁ = a`, `h₂ = a⁻¹` (with `a = 0`) is a solution of `matched 2` with the matched pair
 removed, but not of `matched 2`, as `a a⁻¹` is not reduced. -/
 example : ∃ U' : ((matched 2 two_pos).removePair 0).Solution,
     ∀ U : (matched 2 two_pos).Solution, U.word ≠ U'.word := by
-  refine ⟨solutionOfIsEmpty _ rfl ![[(0, true)], [(0, false)]]
-    (by unfold FreeGroup.IsReduced; decide) (by decide), ?_⟩
+  refine ⟨Solution.ofNumBasesEqZero (numBases_matched_removePair 2 two_pos) rfl
+    ![[(0, true)], [(0, false)]] (by unfold FreeGroup.IsReduced; decide) (by decide), ?_⟩
   intro U hU
   have h := U.isReduced_substituteVars_segment 0
-  rw [segment_true, hU] at h
+  rw [segment_true, hU, Solution.ofNumBasesEqZero_word] at h
   revert h
   unfold FreeGroup.IsReduced
   decide

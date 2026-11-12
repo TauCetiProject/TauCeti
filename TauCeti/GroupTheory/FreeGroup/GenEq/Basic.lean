@@ -65,6 +65,8 @@ elementary transformations of the process act on generalised equations.
 * `TauCeti.GenEq.Solution.toHom`: the `F(A)`-homomorphism `F_{R(Ω)} → F(A)` of a solution.
 * `TauCeti.GenEq.Solution.ofMemV`: the solution given by a tuple of nonempty reduced words which
   is a point of `Ω*` and makes every side reduced as written.
+* `TauCeti.GenEq.Solution.ofNumBasesEqZero`: without variable or constant bases, every tuple of
+  nonempty reduced words is a solution.
 * `TauCeti.GenEq.Solution.prefixLength`: the position of a boundary in the words of a solution.
 * `TauCeti.GenEq.ofBases`: the generalised equation without boundary connections whose variable
   bases are indexed by a finite type with an involution.
@@ -421,6 +423,26 @@ theorem ofMemV_word (w : Fin Ω.numItems → List (A × Bool)) (hw : ∀ k, Free
     (ofMemV w hw hw' hred hV).word = w :=
   (rfl)
 
+/-- A generalised equation without variable or constant bases imposes no condition: every tuple of
+nonempty reduced words is a solution. -/
+def ofNumBasesEqZero (h : Ω.numBases = 0) (hb : Ω.constBases = ∅)
+    (w : Fin Ω.numItems → List (A × Bool)) (hw : ∀ k, FreeGroup.IsReduced (w k))
+    (hw' : ∀ k, w k ≠ []) : Ω.Solution where
+  word := w
+  isReduced_word := hw
+  word_ne_nil := hw'
+  isReduced_subst := (forall_mem_equations _).2 ⟨fun μ => (Fin.cast h μ).elim0,
+    fun _ h' => absurd h' (hb ▸ Finset.notMem_empty _), fun c _ => (Fin.cast h c.2.1).elim0⟩
+  subst_eq := (forall_mem_equations _).2 ⟨fun μ => (Fin.cast h μ).elim0,
+    fun _ h' => absurd h' (hb ▸ Finset.notMem_empty _), fun c _ => (Fin.cast h c.2.1).elim0⟩
+
+/-- The words of the solution of a generalised equation without bases are the given words. -/
+@[simp]
+theorem ofNumBasesEqZero_word (h : Ω.numBases = 0) (hb : Ω.constBases = ∅)
+    (w : Fin Ω.numItems → List (A × Bool)) (hw : ∀ k, FreeGroup.IsReduced (w k))
+    (hw' : ∀ k, w k ≠ []) : (ofNumBasesEqZero h hb w hw hw').word = w :=
+  (rfl)
+
 /-- The `F(A)`-homomorphism `F_{R(Ω)} → F(A)` of a solution, sending each item to its word. -/
 def toHom : GHom (CoordGroup.coeff (MonoidHom.id (FreeGroup A)) Ω.toSystem)
     (MonoidHom.id (FreeGroup A)) :=
@@ -491,6 +513,17 @@ theorem IsFormallyConsistent.sign_eq_of_left_eq (hΩ : Ω.IsFormallyConsistent) 
   · exact absurd (h.trans_lt (hl ▸ Ω.left_lt_right μ)) (lt_irrefl _)
   · exact absurd (h.trans_lt (hl ▸ Ω.left_lt_right (Ω.dual μ))) (lt_irrefl _)
 
+variable {Ω} in
+/-- A generalised equation without constant bases or boundary connections whose dual bases have
+equal signs is formally consistent. -/
+theorem isFormallyConsistent_of_sign_eq (hs : ∀ μ, Ω.sign μ = Ω.sign (Ω.dual μ))
+    (hb : Ω.constBases = ∅) (hc : Ω.connections = ∅) : Ω.IsFormallyConsistent where
+  disjoint_of_sign_ne μ h := absurd (hs μ) h
+  connections_monotone_or_antitone _ h := absurd h (hc ▸ Finset.notMem_empty _)
+  eq_of_left_eq _ h := absurd h (hc ▸ Finset.notMem_empty _)
+  label_eq _ h := absurd h (hb ▸ Finset.notMem_empty _)
+  connections_adjacent _ h := absurd h (hb ▸ Finset.notMem_empty _)
+
 /-! ### Solutions force formal consistency -/
 
 namespace Solution
@@ -501,6 +534,15 @@ variable {Ω} (U : Ω.Solution)
 in the words of a solution. -/
 def prefixLength (i : ℕ) : ℕ :=
   (((List.finRange Ω.numItems).take i).map fun k => (U.word k).length).sum
+
+theorem prefixLength_def (i : ℕ) :
+    U.prefixLength i = (((List.finRange Ω.numItems).take i).map fun k => (U.word k).length).sum :=
+  (rfl)
+
+/-- Boundary `0` sits at the start of the words of a solution. -/
+@[simp]
+theorem prefixLength_zero : U.prefixLength 0 = 0 := by
+  simp [prefixLength]
 
 /-- The length of the substituted word `h[i, j] ^ ±1` is the total length of the words of the
 items between the boundaries `i` and `j`. -/
@@ -836,16 +878,7 @@ theorem eq_empty_of_numItems_eq_zero {Ω : GenEq A} (h : Ω.numItems = 0) : Ω =
 /-- The generalised equation with no items and no bases has exactly one solution, the empty
 tuple. -/
 instance : Unique (empty : GenEq A).Solution where
-  default :=
-    { word := Fin.elim0
-      isReduced_word := fun k => k.elim0
-      word_ne_nil := fun k => k.elim0
-      isReduced_subst := (forall_mem_equations _).2 ⟨fun μ => μ.elim0,
-        fun _ hb => absurd hb (Finset.notMem_empty _),
-        fun _ hc => absurd hc (Finset.notMem_empty _)⟩
-      subst_eq := (forall_mem_equations _).2 ⟨fun μ => μ.elim0,
-        fun _ hb => absurd hb (Finset.notMem_empty _),
-        fun _ hc => absurd hc (Finset.notMem_empty _)⟩ }
+  default := Solution.ofNumBasesEqZero rfl rfl Fin.elim0 (fun k => k.elim0) fun k => k.elim0
   uniq _ := Solution.ext (funext fun k => k.elim0)
 
 /-- The generalised equation of Kharlampovich–Myasnikov, Fig. 2, read off a cancellation tree of
