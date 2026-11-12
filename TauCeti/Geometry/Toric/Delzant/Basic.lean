@@ -113,10 +113,19 @@ def facetPairing (j : ι) : Module.Dual ℝ (StrongDual ℝ V) :=
 theorem facetPairing_apply (j : ι) (x : StrongDual ℝ V) : facetPairing i u j x = x (i (u j)) :=
   (rfl)
 
+/-- Evaluation on a facet normal is continuous on the dual space. -/
+theorem continuous_facetPairing (j : ι) : Continuous (facetPairing i u j) :=
+  (ContinuousLinearMap.apply ℝ ℝ (i (u j))).continuous
+
 /-- The polyhedron `{x ∈ V* | ∀ j, c j ≤ ⟨x, u j⟩}` cut out by the half-spaces with inward
 normals `u j` and support constants `c j`. -/
 def facetPolyhedron : Set (StrongDual ℝ V) :=
   polyhedron (facetPairing i u) c
+
+/-- A facet polyhedron is the polyhedron of its facet pairings and support constants. -/
+theorem facetPolyhedron_eq_polyhedron :
+    facetPolyhedron i u c = polyhedron (facetPairing i u) c :=
+  (rfl)
 
 /-- A point `x` of `V*` is a *smooth vertex* of the facet presentation when the normals of the
 constraints active at `x` form a basis of the lattice `N`. -/
