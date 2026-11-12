@@ -46,8 +46,9 @@ geodesics, `TauCeti.Manifold.IsEnergyCritical.isGeodesicCurveOn`, and reuses its
 `TauCeti.Manifold.chartVariation` with amplitude `sin s`, `TauCeti.Manifold.sinChartVariation`, so
 that the displaced loops stay in a chart for every `s`, and the smooth `1`-periodic bump profile
 `TauCeti.periodicBump` so that the variations are again loops. The chart direction is supplied by
-`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_apply_and_eventually_add_smul_mem_target`. These results are the common part of the variational
-characterizations of the critical points of the contractible action
+`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_apply_and_eventually_add_smul_mem_target`.
+These results are the common part of the variational characterizations of the critical points of
+the contractible action
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isContractibleLoopActionCritical_iff`) and of the action
 relative to a reference loop
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isReferenceActionCritical_iff`).

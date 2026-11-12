@@ -306,9 +306,9 @@ theorem hamiltonianVectorField_comp {φ : ℝ → ℝ} {x : M} (hφ : Differenti
     map_smul]
 
 /-- Along the chart variation `TauCeti.Manifold.sinChartVariation` of a `C^n` curve `γ`, `n ≥ 1`,
-for `C^n` data, the integrand `σ(∂_t w - X_{H_t}(w), ∂_s w)` of the first variation of an action functional at `s = 0`
-is `φ t` times the pairing of `γ' - X_{H_t}` with the tangent vector of chart coordinates `e` at
-`γ t`. -/
+for `C^n` data, the integrand `σ(∂_t w - X_{H_t}(w), ∂_s w)` of the first variation of an action
+functional at `s = 0` is `φ t` times the pairing of `γ' - X_{H_t}` with the tangent vector of chart
+coordinates `e` at `γ t`. -/
 theorem apply_mfderiv_sinChartVariation [I.Boundaryless] {H : ℝ → M → ℝ}
     {γ : ℝ → M} {x₀ : M} {J : Set ℝ} {φ : ℝ → ℝ} {e : E} {n : ℕ∞} (hn : 1 ≤ n) (hJo : IsOpen J)
     (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source)
@@ -399,8 +399,8 @@ theorem continuous_apply_sub_hamiltonianVectorField {H : ℝ → M → ℝ}
     (h.apply_sub_hamiltonianVectorField (H t) (w (s₀, t)) _ _).symm
 
 /-- Along the chart variation `TauCeti.Manifold.sinChartVariation` of a `C^n` curve `γ`, `n ≥ 1`,
-for `C^n` data, the pairing of `γ' - X_{H_t}` with the tangent vectors of chart coordinates `e`, weighted by the profile `φ`,
-is continuous. -/
+for `C^n` data, the pairing of `γ' - X_{H_t}` with the tangent vectors of chart coordinates `e`,
+weighted by the profile `φ`, is continuous. -/
 theorem continuous_mul_apply_curveVelocity_sub [I.Boundaryless] {H : ℝ → M → ℝ}
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (Function.uncurry H)) {γ : ℝ → M} {x₀ : M}
     {J : Set ℝ} {φ : ℝ → ℝ} {e : E} {n : ℕ∞} (hn : 1 ≤ n) (hJo : IsOpen J)

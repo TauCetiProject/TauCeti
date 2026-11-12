@@ -11,7 +11,6 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
-import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Integral
 import TauCeti.Geometry.Symplectic.Hamiltonian.LoopVariation
 
 /-!
@@ -150,7 +149,7 @@ private theorem hasDerivAt_lagrangianPathAction_of_pathIntegral (hω : ω.IsNond
   have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
   have hw₁ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w := hw.of_le one_le_two
   set g : ℝ → ℝ := fun s ↦ ∫ t in (0 : ℝ)..1,
-    TauCeti.mpullback 𝓘(ℝ, ℝ × ℝ) I w ω.1 (s, t) ![(1, 0), (0, 1)] with hg_def
+    TauCeti.mpullback 𝓘(ℝ, ℝ × ℝ) I w ω.1 (s, t) ![(1, 0), (0, 1)]
   have hg : Continuous g := continuous_integral_mpullback hω₀ hw₁ 0 1
   -- Stokes' formula on `[s₀, s] × [0, 1]`, with the sides in the Lagrangians
   have hstokes (s : ℝ) : ∫ x in s₀..s, g x =
