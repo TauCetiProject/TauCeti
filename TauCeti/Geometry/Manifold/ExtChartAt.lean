@@ -77,8 +77,8 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 * `TauCeti.exists_locallyFinite_compact_extChartAt_cover`: a locally finite compact coordinate
   cover of a locally compact, sigma-compact Hausdorff manifold.
 * `TauCeti.exists_isOpen_mem_iff_extChartAt`: an open subset of the manifold is the trace of an
-  open set of the model, read through an extended chart composed with a continuous linear
-  equivalence.
+  open set of a space homeomorphic to the model vector space, read through an extended chart
+  composed with the homeomorphism, on the chart source.
 * `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
   chart point within the model range, inside the chart target, with unique derivatives and
   interior accumulating at the chart point.
@@ -258,8 +258,8 @@ theorem mapsTo_extChartAt_comp_extChartAt_symm (j k : M) (s : Set E) :
 
 /-- A subset of `M` that is open is read, through `e ∘ extChartAt I x`, as the trace of an open
 subset of `F` on the image of the source of `extChartAt I x`. -/
-theorem exists_isOpen_mem_iff_extChartAt {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {e : E ≃L[𝕜] F} (x : M) {u : Set M} (hu : IsOpen u) : ∃ V : Set F, IsOpen V ∧
+theorem exists_isOpen_mem_iff_extChartAt {F : Type*} [TopologicalSpace F] {e : E ≃ₜ F}
+    (x : M) {u : Set M} (hu : IsOpen u) : ∃ V : Set F, IsOpen V ∧
       ∀ z ∈ (extChartAt I x).source, e (extChartAt I x z) ∈ V ↔ z ∈ u := by
   have hg : ContinuousOn (fun w ↦ (extChartAt I x).symm (e.symm w))
       (e.symm ⁻¹' (extChartAt I x).target) :=
@@ -270,7 +270,7 @@ theorem exists_isOpen_mem_iff_extChartAt {F : Type*} [NormedAddCommGroup F] [Nor
     simpa using (extChartAt I x).map_source hz
   have := Set.ext_iff.1 hVeq (e (extChartAt I x z))
   simp only [Set.mem_inter_iff, Set.mem_preimage, hzt, and_true,
-    ContinuousLinearEquiv.symm_apply_apply, (extChartAt I x).left_inv hz] at this
+    Homeomorph.symm_apply_apply, (extChartAt I x).left_inv hz] at this
   exact this.symm
 
 omit [ChartedSpace H M] in

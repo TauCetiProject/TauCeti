@@ -230,7 +230,7 @@ theorem _root_.IsDiscrete.isMAnalyticSubmanifold_zero {e : E ≃L[𝕜] Fin n �
   rw [isDiscrete_iff_forall_mem_exists_isOpen]
   rintro _ ⟨y, ⟨hys, hyext⟩, rfl⟩
   obtain ⟨W, hW, hWs⟩ := isDiscrete_iff_forall_mem_exists_isOpen.1 hs y hys
-  obtain ⟨V, hV, hVW⟩ := exists_isOpen_mem_iff_extChartAt (I := I) (e := e) x hW
+  obtain ⟨V, hV, hVW⟩ := exists_isOpen_mem_iff_extChartAt (I := I) (e := e.toHomeomorph) x hW
   refine ⟨V, hV, ?_⟩
   ext w
   constructor
@@ -257,7 +257,7 @@ theorem IsMAnalyticSubmanifold.inter {e : E ≃L[𝕜] Fin n → 𝕜}
     (hs : IsMAnalyticSubmanifold I e d s) (hu : IsOpen u) (hne : (s ∩ u).Nonempty) :
     IsMAnalyticSubmanifold I e d (s ∩ u) := by
   refine ⟨hne, fun x ⟨hxs, hxu⟩ ↦ ?_⟩
-  obtain ⟨V, hV, hVu⟩ := exists_isOpen_mem_iff_extChartAt (I := I) (e := e) x hu
+  obtain ⟨V, hV, hVu⟩ := exists_isOpen_mem_iff_extChartAt (I := I) (e := e.toHomeomorph) x hu
   have heq : (e ∘ extChartAt I x) '' ((s ∩ u) ∩ (extChartAt I x).source) =
       ((e ∘ extChartAt I x) '' (s ∩ (extChartAt I x).source)) ∩ V := by
     ext w
