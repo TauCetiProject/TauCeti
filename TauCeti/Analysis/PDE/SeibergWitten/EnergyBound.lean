@@ -43,15 +43,15 @@ fixed by topology: the `ω`-component of the curvature equation is
 `⟪ω, F⟫ / 2 = (r / 8) (1 - s + t) - ⟪ω, η⟫ / 4`
 (`TauCeti.SeibergWitten.inner_div_two_eq_of_add_hodgeStar_eq`), so integrating it expresses
 `r ∫ (1 - s + t)` through the pairing of `[F] = 2π c₁(E)` with `[ω]` and the forcing `η`. For any
-bound `r ∫ (1 - s + t) ≤ L`,
+bound `r ∫ (1 - s + t) ≤ L`, the energy density is integrable and
 
 `∫ (|∇_a α|² + |∇β|² + (r / 4) (1 - |χ|²)² + 2 r |β|²) ≤ L / 2 + K (1 + K / r) Vol`
 
-(`TauCeti.SeibergWitten.integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le`). In
-particular `‖∇_a α‖₂`, `‖∇β‖₂`, `√r ‖1 - |χ|²‖₂` and `√r ‖β‖₂` are bounded independently of
+(`TauCeti.SeibergWitten.integrable_and_integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le`).
+In particular `‖∇_a α‖₂`, `‖∇β‖₂`, `√r ‖1 - |χ|²‖₂` and `√r ‖β‖₂` are bounded independently of
 `r ≥ 1`. The pointwise bound `|χ|² ≤ 1 + C / r` is not needed. On a compact Riemannian manifold
 without boundary the Laplacian is the Laplace–Beltrami operator
-(`integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le_of_laplaceBeltrami`).
+(`integrable_and_integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le_of_laplaceBeltrami`).
 
 For the curvature, the large-parameter curvature equation
 `F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` for `F = i F_a` and `φ = α u₀` gives the pointwise
@@ -59,13 +59,13 @@ bound `‖F + ⋆F + η‖² ≤ (r² / 8) ((1 - s + t)² + 4 s t)`
 (`TauCeti.SeibergWitten.norm_add_hodgeStar_add_sq_le`), and
 `(1 - s + t)² + 4 s t = (1 - u)² + 4 t`. So `r⁻¹ ‖F + ⋆F + η‖² ≤ (r / 8) (1 - u)² + (r / 2) t`,
 which is at most half the right side of the pointwise energy inequality. Integrating, the
-self-dual part of the curvature satisfies
+self-dual part of the curvature is square integrable with
 
 `r⁻¹ ∫ ‖F + ⋆F + η‖² ≤ L / 4 + K (1 + K / r) Vol / 2`
 
-(`TauCeti.SeibergWitten.integral_norm_add_hodgeStar_add_sq_div_le`). Since `F + ⋆F = 2 F⁺`, this
-bounds `r⁻¹ ‖F_a⁺‖₂²` up to the forcing. The anti-self-dual part `r⁻¹ ‖F_a⁻‖₂²` is not treated
-here.
+(`TauCeti.SeibergWitten.integrable_and_integral_norm_add_hodgeStar_add_sq_div_le`). Since
+`F + ⋆F = 2 F⁺`, this bounds `r⁻¹ ‖F_a⁺‖₂²` up to the forcing. The anti-self-dual part
+`r⁻¹ ‖F_a⁻‖₂²` is not treated here.
 
 The fields are functions on a measure space with values in arbitrary normed groups, and the
 Laplacians are integrable functions of integral zero, as in
@@ -168,13 +168,16 @@ then
 
 `∫ (|∇_a α|² + |∇β|² + (r / 4) (1 - |α|² - |β|²)² + 2 r |β|²) ≤ L / 2 + K (1 + K / r) Vol`
 
-with `K = c² + 4 c`. Here `∇_a α` and `∇β` are any functions `Dα` and `Dβ` satisfying these
+with `K = c² + 4 c`, and the integrand is integrable. Here `∇_a α` and `∇β` are any functions
+`Dα` and `Dβ` with `|Dα|²`, `|Dβ|²` almost everywhere strongly measurable satisfying these
 hypotheses. -/
-theorem integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le [IsFiniteMeasure μ]
-    {α : X → A} {β : X → B} {Dα : X → F₁} {Dβ : X → F₂} {gα gβ : X → ℝ} (hr : 0 < r)
-    (hc : 0 ≤ c) (hgα : Integrable gα μ) (hgα0 : ∫ x, gα x ∂μ = 0) (hgβ : Integrable gβ μ)
-    (hgβ0 : ∫ x, gβ x ∂μ = 0) (hα : Integrable (fun x ↦ ‖α x‖ ^ 2) μ)
+theorem integrable_and_integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le
+    [IsFiniteMeasure μ] {α : X → A} {β : X → B} {Dα : X → F₁} {Dβ : X → F₂} {gα gβ : X → ℝ}
+    (hr : 0 < r) (hc : 0 ≤ c) (hgα : Integrable gα μ) (hgα0 : ∫ x, gα x ∂μ = 0)
+    (hgβ : Integrable gβ μ) (hgβ0 : ∫ x, gβ x ∂μ = 0) (hα : Integrable (fun x ↦ ‖α x‖ ^ 2) μ)
     (hβ : Integrable (fun x ↦ ‖β x‖ ^ 2) μ)
+    (hDα : AEStronglyMeasurable (fun x ↦ ‖Dα x‖ ^ 2) μ)
+    (hDβ : AEStronglyMeasurable (fun x ↦ ‖Dβ x‖ ^ 2) μ)
     (hL : r * ∫ x, (1 - ‖α x‖ ^ 2 + ‖β x‖ ^ 2) ∂μ ≤ L)
     (hWα : ∀ᵐ x ∂μ, -gα x / 2 + ‖Dα x‖ ^ 2 +
         r / 4 * (‖α x‖ ^ 2 + ‖β x‖ ^ 2 - 1) * ‖α x‖ ^ 2 ≤
@@ -182,14 +185,26 @@ theorem integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le [IsFiniteMeas
     (hWβ : ∀ᵐ x ∂μ, -gβ x / 2 + ‖Dβ x‖ ^ 2 +
         r / 4 * (‖α x‖ ^ 2 + ‖β x‖ ^ 2 + 1) * ‖β x‖ ^ 2 ≤
       c * ‖β x‖ * (‖Dα x‖ + ‖α x‖ + ‖β x‖)) :
+    Integrable (fun x ↦ ‖Dα x‖ ^ 2 + ‖Dβ x‖ ^ 2 + r / 4 * (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 +
+        2 * r * ‖β x‖ ^ 2) μ ∧
     ∫ x, (‖Dα x‖ ^ 2 + ‖Dβ x‖ ^ 2 + r / 4 * (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 +
         2 * r * ‖β x‖ ^ 2) ∂μ ≤
       L / 2 + (c ^ 2 + 4 * c) * (1 + (c ^ 2 + 4 * c) / r) * μ.real Set.univ := by
-  refine (integral_mono_of_nonneg (.of_forall fun x ↦ by positivity)
-    (integrable_weitzenbockBound hgα hgβ hα hβ) ?_).trans
-    (integral_weitzenbockBound_le hgα hgα0 hgβ hgβ0 hα hβ hL)
-  filter_upwards [hWα, hWβ] with x hxα hxβ
-  exact sq_add_sq_add_mul_sq_add_mul_sq_le hr hc hxα hxβ
+  have hg := integrable_weitzenbockBound (c := c) (r := r) hgα hgβ hα hβ
+  have hle : ∀ᵐ x ∂μ, ‖Dα x‖ ^ 2 + ‖Dβ x‖ ^ 2 + r / 4 * (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 +
+      2 * r * ‖β x‖ ^ 2 ≤ r / 2 * (1 - ‖α x‖ ^ 2 + ‖β x‖ ^ 2) + gα x + gβ x +
+        (c ^ 2 + 4 * c) * (1 + (c ^ 2 + 4 * c) / r) := by
+    filter_upwards [hWα, hWβ] with x hxα hxβ
+    exact sq_add_sq_add_mul_sq_add_mul_sq_le hr hc hxα hxβ
+  have hf : Integrable (fun x ↦ ‖Dα x‖ ^ 2 + ‖Dβ x‖ ^ 2 +
+      r / 4 * (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 + 2 * r * ‖β x‖ ^ 2) μ := by
+    have hαm := hα.1
+    have hβm := hβ.1
+    refine hg.mono' (by fun_prop) ?_
+    filter_upwards [hle] with x hx
+    rwa [Real.norm_of_nonneg (by positivity)]
+  exact ⟨hf, (integral_mono_ae hf hg hle).trans
+    (integral_weitzenbockBound_le hgα hgα0 hgβ hgβ0 hα hβ hL)⟩
 
 section Manifold
 
@@ -210,16 +225,20 @@ local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)
 
 /-- **Taubes's scaled `L²` energy bound on a closed manifold.** On a compact Riemannian manifold
 without boundary, let `α`, `β` be fields with `|α|²` and `|β|²` of class `C²`, and let `∇_a α`,
-`∇β` be fields satisfying the projected Weitzenböck inequalities
+`∇β` be fields with almost everywhere strongly measurable squared norms satisfying the projected
+Weitzenböck inequalities
 `-Δ|α|² / 2 + |∇_a α|² + (r / 4) (|α|² + |β|² - 1) |α|² ≤ c |α| (|∇β| + |α| + |β|)` and
 `-Δ|β|² / 2 + |∇β|² + (r / 4) (|α|² + |β|² + 1) |β|² ≤ c |β| (|∇_a α| + |α| + |β|)` with the
 Laplace–Beltrami operator `Δ = div ∘ grad`, where `c ≥ 0` and `r > 0`. If
-`r ∫ (1 - |α|² + |β|²) ≤ L`, then, for the Riemannian volume and `K = c² + 4 c`,
+`r ∫ (1 - |α|² + |β|²) ≤ L`, then, for the Riemannian volume and `K = c² + 4 c`, the integrand
+below is integrable and
 
 `∫ (|∇_a α|² + |∇β|² + (r / 4) (1 - |α|² - |β|²)² + 2 r |β|²) ≤ L / 2 + K (1 + K / r) Vol`. -/
-theorem integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le_of_laplaceBeltrami
+theorem integrable_and_integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le_of_laplaceBeltrami
     {α : M → A} {β : M → B} {Dα : M → F₁} {Dβ : M → F₂} (hr : 0 < r) (hc : 0 ≤ c)
     (hα : ContMDiff I 𝓘(ℝ) 2 (fun x ↦ ‖α x‖ ^ 2)) (hβ : ContMDiff I 𝓘(ℝ) 2 (fun x ↦ ‖β x‖ ^ 2))
+    (hDα : AEStronglyMeasurable (fun x ↦ ‖Dα x‖ ^ 2) (riemannianVolume I M))
+    (hDβ : AEStronglyMeasurable (fun x ↦ ‖Dβ x‖ ^ 2) (riemannianVolume I M))
     (hL : r * ∫ x, (1 - ‖α x‖ ^ 2 + ‖β x‖ ^ 2) ∂riemannianVolume I M ≤ L)
     (hWα : ∀ x, -laplaceBeltrami I (fun y ↦ ‖α y‖ ^ 2) x / 2 + ‖Dα x‖ ^ 2 +
         r / 4 * (‖α x‖ ^ 2 + ‖β x‖ ^ 2 - 1) * ‖α x‖ ^ 2 ≤
@@ -227,18 +246,20 @@ theorem integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le_of_laplaceBel
     (hWβ : ∀ x, -laplaceBeltrami I (fun y ↦ ‖β y‖ ^ 2) x / 2 + ‖Dβ x‖ ^ 2 +
         r / 4 * (‖α x‖ ^ 2 + ‖β x‖ ^ 2 + 1) * ‖β x‖ ^ 2 ≤
       c * ‖β x‖ * (‖Dα x‖ + ‖α x‖ + ‖β x‖)) :
+    Integrable (fun x ↦ ‖Dα x‖ ^ 2 + ‖Dβ x‖ ^ 2 + r / 4 * (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 +
+        2 * r * ‖β x‖ ^ 2) (riemannianVolume I M) ∧
     ∫ x, (‖Dα x‖ ^ 2 + ‖Dβ x‖ ^ 2 + r / 4 * (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 +
         2 * r * ‖β x‖ ^ 2) ∂riemannianVolume I M ≤
       L / 2 + (c ^ 2 + 4 * c) * (1 + (c ^ 2 + 4 * c) / r) *
         (riemannianVolume I M).real Set.univ := by
   have hcpt (f : M → ℝ) (hf : Continuous f) : Integrable f (riemannianVolume I M) :=
     hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
-  exact integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le hr hc
+  exact integrable_and_integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le hr hc
     (hcpt _ (continuous_laplaceBeltrami hα))
     (integral_laplaceBeltrami_eq_zero hα (HasCompactSupport.of_compactSpace _))
     (hcpt _ (continuous_laplaceBeltrami hβ))
     (integral_laplaceBeltrami_eq_zero hβ (HasCompactSupport.of_compactSpace _))
-    (hcpt _ hα.continuous) (hcpt _ hβ.continuous) hL (.of_forall hWα) (.of_forall hWβ)
+    (hcpt _ hα.continuous) (hcpt _ hβ.continuous) hDα hDβ hL (.of_forall hWα) (.of_forall hWβ)
 
 end Manifold
 
@@ -256,15 +277,17 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
 /-- **Taubes's scaled `L²` bound on the self-dual curvature.** Suppose that at almost every point
 the large-parameter curvature equation `F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` holds for the real
 two-form `F = i F_a`, where `φ` and `β` lie in the `-2i`- and `2i`-eigenspaces of `ω`, `|ω|² = 2`
-and `W⁺` has complex dimension two. Suppose moreover the hypotheses of
-`TauCeti.SeibergWitten.integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le` for `φ`, `β`:
-the projected Weitzenböck inequalities with Laplacians `gα`, `gβ` of integral zero, and
-`r ∫ (1 - |φ|² + |β|²) ≤ L`. Then, with `K = c² + 4 c`,
+and `W⁺` has complex dimension two, with `F` and `η` almost everywhere strongly measurable.
+Suppose moreover the hypotheses of
+`TauCeti.SeibergWitten.integrable_and_integral_norm_sq_add_norm_sq_add_mul_sq_add_mul_norm_sq_le`
+for `φ`, `β`: the projected Weitzenböck inequalities with Laplacians `gα`, `gβ` of integral zero,
+and `r ∫ (1 - |φ|² + |β|²) ≤ L`. Then `‖F + ⋆F + η‖²` is integrable and, with `K = c² + 4 c`,
 
 `r⁻¹ ∫ ‖F + ⋆F + η‖² ≤ L / 4 + K (1 + K / r) Vol / 2`.
 
 Since `F + ⋆F = 2 F⁺`, this bounds `r⁻¹ ‖F_a⁺‖₂²` up to the forcing `η`. -/
-theorem integral_norm_add_hodgeStar_add_sq_div_le [IsFiniteMeasure μ] {ω : ⋀[ℝ]^2 V}
+theorem integrable_and_integral_norm_add_hodgeStar_add_sq_div_le [IsFiniteMeasure μ]
+    {ω : ⋀[ℝ]^2 V}
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V) (hω : o.hodgeStar hkl ω = ω)
     (hω₂ : ‖ω‖ ^ 2 = 2)
     (hρ : ∀ v, LinearMap.adjoint (ρ (CliffordAlgebra.ι Q v)) = -ρ (CliffordAlgebra.ι Q v))
@@ -275,6 +298,7 @@ theorem integral_norm_add_hodgeStar_add_sq_div_le [IsFiniteMeasure μ] {ω : ⋀
     (hβ : ∀ᵐ x ∂μ, cliffordProjection o ρ ω (β x) = 0)
     (hF : ∀ᵐ x ∂μ, F x + o.hodgeStar hkl (F x) = (r / 4) • ω -
       (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ x + β x)) : ⋀[ℝ]^2 V) - η x)
+    (hFm : AEStronglyMeasurable F μ) (hηm : AEStronglyMeasurable η μ)
     (hgα : Integrable gα μ) (hgα0 : ∫ x, gα x ∂μ = 0) (hgβ : Integrable gβ μ)
     (hgβ0 : ∫ x, gβ x ∂μ = 0) (hφi : Integrable (fun x ↦ ‖φ x‖ ^ 2) μ)
     (hβi : Integrable (fun x ↦ ‖β x‖ ^ 2) μ)
@@ -285,14 +309,15 @@ theorem integral_norm_add_hodgeStar_add_sq_div_le [IsFiniteMeasure μ] {ω : ⋀
     (hWβ : ∀ᵐ x ∂μ, -gβ x / 2 + ‖Dβ x‖ ^ 2 +
         r / 4 * (‖φ x‖ ^ 2 + ‖β x‖ ^ 2 + 1) * ‖β x‖ ^ 2 ≤
       c * ‖β x‖ * (‖Dα x‖ + ‖φ x‖ + ‖β x‖)) :
+    Integrable (fun x ↦ ‖F x + o.hodgeStar hkl (F x) + η x‖ ^ 2) μ ∧
     (∫ x, ‖F x + o.hodgeStar hkl (F x) + η x‖ ^ 2 ∂μ) / r ≤
       L / 4 + (c ^ 2 + 4 * c) * (1 + (c ^ 2 + 4 * c) / r) * μ.real Set.univ / 2 := by
   set K := (c ^ 2 + 4 * c) * (1 + (c ^ 2 + 4 * c) / r)
-  have hint := integral_mono_of_nonneg
-    (f := fun x ↦ ‖F x + o.hodgeStar hkl (F x) + η x‖ ^ 2)
-    (g := fun x ↦ r / 2 * (r / 2 * (1 - ‖φ x‖ ^ 2 + ‖β x‖ ^ 2) + gα x + gβ x + K))
-    (.of_forall fun x ↦ by positivity)
-    ((integrable_weitzenbockBound hgα hgβ hφi hβi).const_mul (r / 2)) <| by
+  have hg : Integrable
+      (fun x ↦ r / 2 * (r / 2 * (1 - ‖φ x‖ ^ 2 + ‖β x‖ ^ 2) + gα x + gβ x + K)) μ :=
+    (integrable_weitzenbockBound hgα hgβ hφi hβi).const_mul (r / 2)
+  have hle : ∀ᵐ x ∂μ, ‖F x + o.hodgeStar hkl (F x) + η x‖ ^ 2 ≤
+      r / 2 * (r / 2 * (1 - ‖φ x‖ ^ 2 + ‖β x‖ ^ 2) + gα x + gβ x + K) := by
     filter_upwards [hφ, hβ, hF, hWα, hWβ] with x hφx hβx hFx hxα hxβ
     have h := norm_add_hodgeStar_add_sq_le hQ hkl hω hω₂ hφx hβx hρ h₂ hr.le hFx
     -- The pointwise energy inequality, multiplied by `r / 2`.
@@ -305,10 +330,20 @@ theorem integral_norm_add_hodgeStar_add_sq_div_le [IsFiniteMeasure μ] {ω : ⋀
     have hD : 0 ≤ r / 2 * (‖Dα x‖ ^ 2 + ‖Dβ x‖ ^ 2) := by positivity
     have hβr : 0 ≤ r ^ 2 * ‖β x‖ ^ 2 := by positivity
     nlinarith [h, hE, hD, hβr]
+  have hf : Integrable (fun x ↦ ‖F x + o.hodgeStar hkl (F x) + η x‖ ^ 2) μ := by
+    -- The Hodge star is an isometry, hence continuous.
+    have hstar : AEStronglyMeasurable (fun x ↦ o.hodgeStar hkl (F x)) μ := by
+      simpa only [o.hodgeStarIsometry_apply] using
+        (o.hodgeStarIsometry hkl).continuous.comp_aestronglyMeasurable hFm
+    refine hg.mono' (((hFm.add hstar).add hηm).norm.pow 2) ?_
+    filter_upwards [hle] with x hx
+    rwa [Real.norm_of_nonneg (by positivity)]
+  have hint := integral_mono_ae hf hg hle
   have hb := mul_le_mul_of_nonneg_left
     (integral_weitzenbockBound_le (c := c) hgα hgα0 hgβ hgβ0 hφi hβi hL)
     (by positivity : (0 : ℝ) ≤ r / 2)
   rw [integral_const_mul] at hint
+  refine ⟨hf, ?_⟩
   rw [div_le_iff₀ hr]
   nlinarith [hint, hb]
 
