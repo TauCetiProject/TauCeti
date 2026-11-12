@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.CWComplex.Classical.Basic
+public import Mathlib.Topology.CWComplex.Classical.Finite
 public import Mathlib.Topology.DiscreteSubset
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
@@ -17,6 +17,10 @@ base. Consequently it lies in a skeleton of finite dimension, even when the comp
 infinite-dimensional. The base itself need not be compact or finite-dimensional. So the preimages
 of the skeleta under a continuous map into the complex absorb every compact set
 (`TauCeti.exists_subset_preimageSkeleton_of_isCompact`).
+
+Conversely, a finite relative CW complex with compact base is compact
+(`Topology.RelCWComplex.isCompact_of_finite`), being the union of its base and finitely many
+closed cells.
 
 These are the compact-support statements used to pass from skeletal homology to homology
 of the whole pair. They do not require local finiteness of the CW structure. The key weak-topology
@@ -119,3 +123,11 @@ lemma exists_subset_preimageSkeleton_of_isCompact {E : Type*} [TopologicalSpace 
   exact skeletonLT_mono le_self_add (hn (mem_image_of_mem f hx))
 
 end TauCeti
+
+/-- A finite relative CW complex with compact base is compact: it is the union of its base and of
+finitely many closed cells. -/
+theorem Topology.RelCWComplex.isCompact_of_finite {X : Type*} [TopologicalSpace X] {C D : Set X}
+    [RelCWComplex C D] [RelCWComplex.Finite C] (hD : IsCompact D) : IsCompact C := by
+  have := finite_cells_of_finite (C := C)
+  rw [← union (C := C), ← iUnion_sigma fun c : Σ n, cell C n ↦ closedCell c.1 c.2]
+  exact hD.union (isCompact_iUnion fun _ ↦ isCompact_closedCell)
