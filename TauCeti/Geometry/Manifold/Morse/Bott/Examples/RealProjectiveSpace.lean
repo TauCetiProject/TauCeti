@@ -257,6 +257,19 @@ def singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction (hc₀ : 0
       (TopCat.isoOfHomeo (homeomorphTopSublevel hd)) ≪≫
     @asIso _ _ _ _ _ (TopPair.isIso_singularHomologyπ_of_contractibleSpace _ R k)
 
+/-- The forward map of `singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction` is
+induced by the inclusion `ℝℙᴺ → {f ≤ d}`, followed by the quotient map to relative homology. -/
+@[reassoc]
+theorem singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction_hom (hc₀ : 0 ≤ c)
+    (hc₁ : c < 1) (hd : 1 ≤ d) (k : ℕ) :
+    (singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction R hc₀ hc₁ hd k).hom =
+      ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).map
+          (TopCat.ofHom ⟨fun x ↦ ⟨x, (projectiveHyperplaneMomentFunction_le_one x).trans hd⟩,
+            by fun_prop⟩) ≫
+        (sublevelPair (projectiveHyperplaneMomentFunction N) (hc₁.le.trans hd)).singularHomologyπ
+          R (k + 1) :=
+  (rfl)
+
 /-- **A band crossing the top level in degree zero.** For `0 ≤ c ≤ d` with `1 ≤ d`, the zeroth
 relative homology of the band `({f ≤ d}, {f ≤ c})` vanishes, since `ℝℙᴺ` is path-connected and
 `{f ≤ c}` contains the minimum `[e_N]`. -/
