@@ -30,8 +30,8 @@ The proof expands the multiplier in a Fourier series. If `ψ = φ g` with `g` sm
 set `K` around the support of `φ` and a full lattice `L` none of whose nonzero translates of `K`
 meet `K`. On `K`, the function `g` (times a cutoff) is the sum, in the topology of smooth functions
 supported in `K`, of its Fourier series along the dual lattice `L^∨`, with rapidly decreasing
-coefficients `a_m` (`ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`). Pairing with `T`
-turns this into the discrete convolution formula
+coefficients `a_m` (`TestFunction.exists_hasSum_fourier_smul_modulate_mul_cutoff`). Pairing with
+`T` turns this into the discrete convolution formula
 
 `T (ψ e_η) = ∑ m : L^∨, a_m T (φ e_(η - m))`
 
@@ -42,9 +42,6 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 
 ## Main results
 
-* `TestFunction.exists_hasSum_fourier_smul_modulate_mul_cutoff`: near the support of a cutoff
-  `φ`, every smooth function times a fixed cutoff is the sum of its Fourier series along a lattice,
-  in the topology of smooth functions supported in a compact set.
 * `Distribution.localFourier_eq_complexPairing_modulate`,
   `Distribution.localFourier_eq_complexPairing_mul_modulate`: the localized Fourier transform as
   the pairing with a modulated test function.
@@ -85,66 +82,6 @@ noncomputable section
 
 open Complex Filter Function Metric Set TopologicalSpace TestFunction
 open scoped Distributions Topology FourierTransform RealInnerProductSpace ContDiff SchwartzMap
-
-namespace TestFunction
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {Ω : Opens E}
-
-/-- **Fourier expansion near a cutoff.** For a cutoff `φ` there are a compact set `K ⊆ Ω`, a full
-lattice `L`, a smooth function `χ₁` and a smooth function `χ` supported in `K`, both equal to one
-where `φ ≠ 0`, such that for every `g` smooth on `Ω` the product `χ₁ g` is a smooth function `f`
-supported in `K`, and `f` is the sum of its Fourier series along the dual lattice,
-
-`f = ∑ m : L^∨, ((covolume L)⁻¹ 𝓕 f (m)) • χ.modulate m`,
-
-in `𝓓_{K}(E, ℂ)`. -/
-theorem exists_hasSum_fourier_smul_modulate_mul_cutoff (φ : 𝓓(Ω, ℂ)) :
-    ∃ (K : Compacts E) (_ : (K : Set E) ⊆ Ω) (L : Submodule ℤ E) (_ : DiscreteTopology L)
-      (_ : IsZLattice ℝ L) (χ₁ : E → ℝ) (χ : 𝓓_{K}(E, ℂ)), ContDiff ℝ ∞ χ₁ ∧
-      (∀ x, φ x ≠ 0 → χ₁ x = 1) ∧ (∀ x, φ x ≠ 0 → χ x = 1) ∧
-      ∀ g : E → ℂ, ContDiffOn ℝ ∞ g Ω → ∃ f : 𝓓_{K}(E, ℂ), (∀ x, f x = χ₁ x * g x) ∧
-        HasSum (fun m : ZLattice.dual L ↦
-          ((ZLattice.covolume L : ℂ)⁻¹ * 𝓕 (f : E → ℂ) m) • χ.modulate m) f := by
-  -- Nested compact sets `tsupport φ ⊆ K₁ ⊆ K₂ ⊆ Ω` and cutoffs `χ₁, χ₂` adapted to them.
-  obtain ⟨K₁, hK₁, hφK₁, hK₁Ω⟩ :=
-    exists_compact_between φ.hasCompactSupport Ω.isOpen φ.tsupport_subset
-  obtain ⟨K₂, hK₂, hK₁K₂, hK₂Ω⟩ := exists_compact_between hK₁ Ω.isOpen hK₁Ω
-  obtain ⟨χ₁, hχ₁, -, hχ₁1, -, hχ₁s⟩ :=
-    φ.hasCompactSupport.exists_contDiff_cutoff isOpen_interior hφK₁
-  obtain ⟨χ₂, hχ₂, -, hχ₂1, -, hχ₂s⟩ := hK₁.exists_contDiff_cutoff isOpen_interior hK₁K₂
-  let K : Compacts E := ⟨K₂, hK₂⟩
-  have hχ₂K₁ {x : E} (hx : x ∈ K₁) : χ₂ x = 1 := interior_subset (hχ₂1 hx)
-  have hχ₁K₁ : tsupport χ₁ ⊆ K₁ := hχ₁s.trans interior_subset
-  have hχK : support (fun x ↦ (χ₂ x : ℂ)) ⊆ K₂ := fun x hx ↦
-    interior_subset (hχ₂s (subset_tsupport _ (by simpa using hx)))
-  let χ : 𝓓_{K}(E, ℂ) :=
-    ContDiffMapSupportedIn.of_support_subset (ofRealCLM.contDiff.comp hχ₂) hχK
-  have hχv (x : E) : χ x = χ₂ x :=
-    ContDiffMapSupportedIn.coe_of_support_subset (K := K) (ofRealCLM.contDiff.comp hχ₂) hχK x
-  -- A lattice none of whose nonzero translates of `K` meet `K`.
-  obtain ⟨L, _, _, hL⟩ := ZLattice.exists_forall_add_mem_eq_zero_of_isBounded hK₂.isBounded
-  refine ⟨K, hK₂Ω, L, inferInstance, inferInstance, χ₁, χ, hχ₁,
-    fun x hx ↦ interior_subset (hχ₁1 (subset_tsupport _ hx)),
-    fun x hx ↦ by simp [hχv, hχ₂K₁ (hφK₁.trans interior_subset (subset_tsupport _ hx))],
-    fun g hg ↦ ?_⟩
-  -- The function `χ₁ g`, supported in `K`, expanded in the modulations of the cutoff `χ`.
-  have hχ₁g : ContDiff ℝ ∞ fun x ↦ (χ₁ x : ℂ) * g x := by
-    simpa [Complex.real_smul] using
-      hg.contDiff_smul_of_tsupport_subset Ω.isOpen hχ₁.contDiffOn (hχ₁K₁.trans hK₁Ω)
-  have hfK : support (fun x ↦ (χ₁ x : ℂ) * g x) ⊆ K₂ := fun x hx ↦
-    interior_subset (hK₁K₂ (hχ₁K₁ (subset_tsupport _ (by simpa using left_ne_zero_of_mul hx))))
-  let f : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset hχ₁g hfK
-  have hf (x : E) : f x = χ₁ x * g x :=
-    ContDiffMapSupportedIn.coe_of_support_subset (K := K) hχ₁g hfK x
-  have hχ : EqOn χ 1 (support f) := fun x hx ↦ by
-    rw [mem_support, hf] at hx
-    have hx' : χ₁ x ≠ 0 := by exact_mod_cast left_ne_zero_of_mul hx
-    simp [hχv, hχ₂K₁ (hχ₁K₁ (subset_tsupport _ hx'))]
-  exact ⟨f, hf, ContDiffMapSupportedIn.hasSum_fourier_smul_modulate L f χ
-    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.2 h)) hχ⟩
-
-end TestFunction
 
 namespace Distribution
 
