@@ -57,8 +57,11 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_notMem_fi
     windingNumber γ a b z = 0 :=
   hγ.windingNumber_eq_zero_of_unbounded_component hclosed (mt mem_filledHull_iff.mpr hz)
 
-/-- **Outside the filled hull of a rectifiable closed curve, the winding number of its arclength
-parametrization vanishes.** -/
+/-- **Outside the filled hull of a continuous closed curve, the winding number of its natural
+parametrization vanishes.** Here `naturalParameterization γ (Icc a b) a` runs over
+`[0, (eVariationOn γ (Icc a b)).toReal]`. If `γ` has bounded variation and `a ≤ b`, this is the
+arclength parametrization; otherwise the parameter interval is `[0, 0]` and the winding number is
+`0`. -/
 theorem _root_.ContinuousOn.windingNumber_naturalParameterization_eq_zero_of_notMem_filledHull
     {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
     (hcont : ContinuousOn γ (Icc a b)) (hclosed : γ a = γ b)

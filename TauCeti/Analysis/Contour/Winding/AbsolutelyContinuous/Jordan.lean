@@ -592,9 +592,12 @@ end BoundedVariationOn
 
 namespace ContinuousOn
 
-/-- **The Jordan index theorem for the arclength parametrization of a rectifiable simple closed
+/-- **The Jordan index theorem for the natural parametrization of a continuous simple closed
 curve:** on `filledHull (γ '' Icc a b) \ (γ '' Icc a b)`, the winding number of
-`naturalParameterization γ (Icc a b) a` equals its orientation sign `σ ∈ {1, -1}`. -/
+`naturalParameterization γ (Icc a b) a` on `[0, (eVariationOn γ (Icc a b)).toReal]` equals its
+orientation sign. If `γ` has bounded variation this is the arclength parametrization and the sign
+lies in `{1, -1}` (`BoundedVariationOn.jordanSign_naturalParameterization_eq_one_or_neg_one`); if
+the variation is infinite, the parameter interval is `[0, 0]` and both sides are `0`. -/
 theorem windingNumber_naturalParameterization_eq_jordanSign
     {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
     (hcont : ContinuousOn γ (Icc a b)) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
@@ -628,8 +631,11 @@ theorem windingNumber_naturalParameterization_eq_jordanSign
     (hγ.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn hab.le hclosed)
     (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le) hz'
 
-/-- **Increasing continuous reparametrizations preserve the arclength orientation sign of a
-rectifiable curve.** The reparametrization `φ` need not be absolutely continuous. -/
+/-- **Increasing continuous reparametrizations preserve the orientation sign of the natural
+parametrization** `naturalParameterization γ (Icc a b) a` of a continuous curve `γ` on
+`[0, (eVariationOn γ (Icc a b)).toReal]`. If `γ` has bounded variation this is its arclength
+orientation sign; if the variation is infinite, both sides are `0`. The reparametrization `φ` need
+not be absolutely continuous. -/
 theorem jordanSign_naturalParameterization_comp_of_monotoneOn
     {γ : ℝ → ℂ} {φ : ℝ → ℝ} {a b c d : ℝ}
     (hcont : ContinuousOn γ (Icc a b)) (hcd : c ≤ d) (hφ : ContinuousOn φ (Icc c d))
@@ -650,8 +656,11 @@ theorem jordanSign_naturalParameterization_comp_of_monotoneOn
       exact hγ h
     rw [htop, ENNReal.toReal_top, jordanSign_same, jordanSign_same]
 
-/-- **Decreasing continuous reparametrizations negate the arclength orientation sign of a
-rectifiable curve.** The reparametrization `φ` need not be absolutely continuous. -/
+/-- **Decreasing continuous reparametrizations negate the orientation sign of the natural
+parametrization** `naturalParameterization γ (Icc a b) a` of a continuous curve `γ` on
+`[0, (eVariationOn γ (Icc a b)).toReal]`. If `γ` has bounded variation this is its arclength
+orientation sign; if the variation is infinite, both sides are `0`. The reparametrization `φ` need
+not be absolutely continuous. -/
 theorem jordanSign_naturalParameterization_comp_of_antitoneOn
     {γ : ℝ → ℂ} {φ : ℝ → ℝ} {a b c d : ℝ}
     (hcont : ContinuousOn γ (Icc a b)) (hcd : c ≤ d) (hφ : ContinuousOn φ (Icc c d))
