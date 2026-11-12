@@ -24,15 +24,18 @@ moving `∂_t` across the coefficient `J`, and the boundary term from the `t`-in
 McDuff–Salamon's weak equation (B.4.3), with the zeroth-order term added, for a classical
 solution `D ξ = η`.
 
-The boundary integrand `⟪φ(s), J(s) ξ(s)⟫` vanishes when `φ(s)` and `ξ(s)` lie in a real
-subspace `F` with `⟪v, J(s) w⟫ = 0` for all `v, w ∈ F`. For `J(s) = i` and `F = ℝⁿ ⊆ ℂⁿ` this is
-the totally real boundary condition `φ(s), ξ(s) ∈ ℝⁿ` of the roadmap. In that case the left side
+The boundary integrand `⟪φ(s), J(s) ξ(s)⟫` vanishes when `φ(s)` and `ξ(s)` lie in a set `F`
+that is orthogonal to `J(s) F`, that is, `⟪v, J(s) w⟫ = 0` for all `v, w ∈ F`. For `J(s) = i` and
+`F = ℝⁿ ⊆ ℂⁿ` this is the boundary condition `φ(s), ξ(s) ∈ ℝⁿ`, the local model of a totally real
+boundary condition after trivialization (McDuff–Salamon, Appendix B.4). In that case the left side
 is the weak formulation tested against test functions that are real on `ℝ` but need not vanish
 there, so a classical solution with real boundary values is a weak solution in the sense of
-(B.4.3). For `V = ℂ` the condition on `F = ℝ` is `Real.inner_ofReal_I_mul_ofReal`. The
-constant-coefficient formula `TauCeti.setIntegral_im_pos_re_inner_cauchyRiemann`, with its
-analysis of the dual boundary condition, is the case `J = i`, `S = 0` on a complex inner product
-space.
+(B.4.3). For `V = ℂ` the orthogonality of `F = ℝ` and `i F` is `Real.inner_ofReal_I_mul_ofReal`.
+
+The constant-coefficient formula `TauCeti.setIntegral_im_pos_re_inner_cauchyRiemann`, with its
+analysis of the dual boundary condition, covers `J = i`, `S = 0` on a complex inner product
+space. It places the compact support on the other factor, the map `ξ` to which `∂_s + i ∂_t` is
+applied, and needs no completeness since no Hilbert adjoint appears.
 
 ## Main results
 
@@ -41,10 +44,12 @@ space.
 * `TauCeti.setIntegral_halfDisc_inner_cauchyRiemann_adjoint`: the same formula on the half-disc
   `D⁺_r = {|z| < r, 0 < t}` for `φ` supported in the open disc of radius `r`, with boundary term
   over `(-r, r)`.
+* `TauCeti.setIntegral_im_pos_inner_cauchyRiemann_adjoint_of_inner_eq_zero` and
+  `TauCeti.setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_inner_eq_zero`: if the boundary
+  integrand `⟪φ(s), J(s) ξ(s)⟫` vanishes, the weak equation (B.4.3) holds.
 * `TauCeti.setIntegral_im_pos_inner_cauchyRiemann_adjoint_of_mem` and
-  `TauCeti.setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_mem`: if `φ` and `ξ` take values
-  on `ℝ` in a subspace `F` with `⟪F, J(s) F⟫ = 0`, the boundary term vanishes and the weak
-  equation (B.4.3) holds.
+  `TauCeti.setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_mem`: the same when `φ` and `ξ`
+  take values on `ℝ` in a set `F` with `⟪F, J(s) F⟫ = 0`.
 
 ## References
 
@@ -142,7 +147,7 @@ disc of radius `r`, and `ξ`, `J` of class `C¹` and `S` continuous there, the f
 `setIntegral_im_pos_inner_cauchyRiemann_adjoint` holds on the half-disc
 `D⁺_r = {|z| < r, 0 < t}`, with boundary term over `(-r, r)`. -/
 theorem setIntegral_halfDisc_inner_cauchyRiemann_adjoint {r : ℝ} (hφ : ContDiff ℝ 1 φ)
-    (hφc : HasCompactSupport φ) (hξ : ContDiffOn ℝ 1 ξ (ball 0 r))
+    (hξ : ContDiffOn ℝ 1 ξ (ball 0 r))
     (hJ : ContDiffOn ℝ 1 J (ball 0 r)) (hS : ContinuousOn S (ball 0 r))
     (hφr : tsupport φ ⊆ ball 0 r) :
     ∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im}, ⟪fderiv ℝ φ z 1 + ContinuousLinearMap.adjoint (J z)
@@ -172,50 +177,73 @@ theorem setIntegral_halfDisc_inner_cauchyRiemann_adjoint {r : ℝ} (hφ : ContDi
     have hs' : (s : ℂ) ∉ ball 0 r := fun h ↦ hs (by
       rwa [mem_ball_zero_iff, Complex.norm_real, Real.norm_eq_abs, abs_lt] at h)
     simp [image_eq_zero_of_notMem_tsupport (hout hs')]
+  have hφc : HasCompactSupport φ := (isCompact_closedBall (0 : ℂ) r).of_isClosed_subset
+    (isClosed_tsupport φ) (hφr.trans ball_subset_closedBall)
   rw [h₁, h₂, h₃]
   exact setIntegral_im_pos_inner_cauchyRiemann_adjoint hφ hφc isOpen_ball hξ hJ hS hφr
 
-omit [CompleteSpace V] in
-/-- On `ℝ`, the boundary integrand `⟪φ(s), J(s) ξ(s)⟫` vanishes when `φ(s)` and `ξ(s)` lie in a
-subspace `F` with `⟪F, J(s) F⟫ = 0`, at every `s` in `U` and outside the support of `φ`. -/
-private theorem inner_apply_eq_zero_of_mem (F : Submodule ℝ V) (hφU : tsupport φ ⊆ U)
-    (hJF : ∀ s : ℝ, (s : ℂ) ∈ U → ∀ v ∈ F, ∀ w ∈ F, ⟪v, J s w⟫_ℝ = 0)
-    (hφF : ∀ s : ℝ, φ s ∈ F) (hξF : ∀ s : ℝ, (s : ℂ) ∈ U → ξ s ∈ F) (s : ℝ) :
-    ⟪φ s, J s (ξ s)⟫_ℝ = 0 := by
-  by_cases hs : (s : ℂ) ∈ U
-  · exact hJF s hs _ (hφF s) _ (hξF s hs)
-  · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hs (hφU h)]
-
-/-- **The weak equation (B.4.3) on the half-plane.** If on `ℝ` the maps `φ` and `ξ` take values
-in a subspace `F` with `⟪F, J(s) F⟫ = 0`, for instance `F = ℝⁿ ⊆ ℂⁿ` and `J(s) = i`, the boundary
-term of `setIntegral_im_pos_inner_cauchyRiemann_adjoint` vanishes:
+/-- **The weak equation (B.4.3) on the half-plane.** If the boundary integrand
+`⟪φ(s), J(s) ξ(s)⟫` vanishes at every real `s` in `U`, the boundary term of
+`setIntegral_im_pos_inner_cauchyRiemann_adjoint` vanishes:
 `∫_{0 < t} ⟪∂_s φ + Jᵀ ∂_t φ - Sᵀ φ, ξ⟫ = -∫_{0 < t} ⟪φ, D ξ + (∂_t J) ξ⟫`. -/
-theorem setIntegral_im_pos_inner_cauchyRiemann_adjoint_of_mem {F : Submodule ℝ V}
-    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContDiffOn ℝ 1 ξ U)
+theorem setIntegral_im_pos_inner_cauchyRiemann_adjoint_of_inner_eq_zero (hφ : ContDiff ℝ 1 φ)
+    (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContDiffOn ℝ 1 ξ U)
     (hJ : ContDiffOn ℝ 1 J U) (hS : ContinuousOn S U) (hφU : tsupport φ ⊆ U)
-    (hJF : ∀ s : ℝ, (s : ℂ) ∈ U → ∀ v ∈ F, ∀ w ∈ F, ⟪v, J s w⟫_ℝ = 0)
-    (hφF : ∀ s : ℝ, φ s ∈ F) (hξF : ∀ s : ℝ, (s : ℂ) ∈ U → ξ s ∈ F) :
+    (h : ∀ s : ℝ, (s : ℂ) ∈ U → ⟪φ s, J s (ξ s)⟫_ℝ = 0) :
     ∫ z in {z : ℂ | 0 < z.im}, ⟪fderiv ℝ φ z 1 + ContinuousLinearMap.adjoint (J z)
         (fderiv ℝ φ z I) - ContinuousLinearMap.adjoint (S z) (φ z), ξ z⟫_ℝ =
       -∫ z in {z : ℂ | 0 < z.im}, ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z) +
         fderiv ℝ J z I (ξ z)⟫_ℝ := by
+  have h' (s : ℝ) : ⟪φ s, J s (ξ s)⟫_ℝ = 0 := by
+    by_cases hs : (s : ℂ) ∈ U
+    · exact h s hs
+    · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hs (hφU h)]
   rw [setIntegral_im_pos_inner_cauchyRiemann_adjoint hφ hφc hU hξ hJ hS hφU]
-  simp [inner_apply_eq_zero_of_mem F hφU hJF hφF hξF]
+  simp [h']
 
-/-- **The weak equation (B.4.3) on the half-disc.** If on `(-r, r)` the maps `φ` and `ξ` take
-values in a subspace `F` with `⟪F, J(s) F⟫ = 0`, the boundary term of
+/-- **The weak equation (B.4.3) on the half-disc.** If the boundary integrand
+`⟪φ(s), J(s) ξ(s)⟫` vanishes on `(-r, r)`, the boundary term of
 `setIntegral_halfDisc_inner_cauchyRiemann_adjoint` vanishes. -/
-theorem setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_mem {F : Submodule ℝ V} {r : ℝ}
-    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hξ : ContDiffOn ℝ 1 ξ (ball 0 r))
+theorem setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_inner_eq_zero {r : ℝ}
+    (hφ : ContDiff ℝ 1 φ) (hξ : ContDiffOn ℝ 1 ξ (ball 0 r))
     (hJ : ContDiffOn ℝ 1 J (ball 0 r)) (hS : ContinuousOn S (ball 0 r))
-    (hφr : tsupport φ ⊆ ball 0 r)
-    (hJF : ∀ s : ℝ, (s : ℂ) ∈ ball 0 r → ∀ v ∈ F, ∀ w ∈ F, ⟪v, J s w⟫_ℝ = 0)
-    (hφF : ∀ s : ℝ, φ s ∈ F) (hξF : ∀ s : ℝ, (s : ℂ) ∈ ball 0 r → ξ s ∈ F) :
+    (hφr : tsupport φ ⊆ ball 0 r) (h : ∀ s ∈ Ioo (-r) r, ⟪φ s, J s (ξ s)⟫_ℝ = 0) :
     ∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im}, ⟪fderiv ℝ φ z 1 + ContinuousLinearMap.adjoint (J z)
         (fderiv ℝ φ z I) - ContinuousLinearMap.adjoint (S z) (φ z), ξ z⟫_ℝ =
       -∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im}, ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) +
         S z (ξ z) + fderiv ℝ J z I (ξ z)⟫_ℝ := by
-  rw [setIntegral_halfDisc_inner_cauchyRiemann_adjoint hφ hφc hξ hJ hS hφr]
-  simp [inner_apply_eq_zero_of_mem F hφr hJF hφF hξF]
+  rw [setIntegral_halfDisc_inner_cauchyRiemann_adjoint hφ hξ hJ hS hφr,
+    setIntegral_eq_zero_of_forall_eq_zero h, sub_zero]
+
+/-- **The weak equation (B.4.3) on the half-plane, for a boundary set.** If on `ℝ ∩ U` the maps
+`φ` and `ξ` take values in a set `F` with `⟪F, J(s) F⟫ = 0`, for instance `F = ℝⁿ ⊆ ℂⁿ` and
+`J(s) = i`, the boundary term of `setIntegral_im_pos_inner_cauchyRiemann_adjoint` vanishes. -/
+theorem setIntegral_im_pos_inner_cauchyRiemann_adjoint_of_mem {F : Set V}
+    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContDiffOn ℝ 1 ξ U)
+    (hJ : ContDiffOn ℝ 1 J U) (hS : ContinuousOn S U) (hφU : tsupport φ ⊆ U)
+    (hJF : ∀ s : ℝ, (s : ℂ) ∈ U → ∀ v ∈ F, ∀ w ∈ F, ⟪v, J s w⟫_ℝ = 0)
+    (hφF : ∀ s : ℝ, (s : ℂ) ∈ U → φ s ∈ F) (hξF : ∀ s : ℝ, (s : ℂ) ∈ U → ξ s ∈ F) :
+    ∫ z in {z : ℂ | 0 < z.im}, ⟪fderiv ℝ φ z 1 + ContinuousLinearMap.adjoint (J z)
+        (fderiv ℝ φ z I) - ContinuousLinearMap.adjoint (S z) (φ z), ξ z⟫_ℝ =
+      -∫ z in {z : ℂ | 0 < z.im}, ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z) +
+        fderiv ℝ J z I (ξ z)⟫_ℝ :=
+  setIntegral_im_pos_inner_cauchyRiemann_adjoint_of_inner_eq_zero hφ hφc hU hξ hJ hS hφU
+    fun s hs ↦ hJF s hs _ (hφF s hs) _ (hξF s hs)
+
+/-- **The weak equation (B.4.3) on the half-disc, for a boundary set.** If on `(-r, r)` the maps
+`φ` and `ξ` take values in a set `F` with `⟪F, J(s) F⟫ = 0`, the boundary term of
+`setIntegral_halfDisc_inner_cauchyRiemann_adjoint` vanishes. -/
+theorem setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_mem {F : Set V} {r : ℝ}
+    (hφ : ContDiff ℝ 1 φ) (hξ : ContDiffOn ℝ 1 ξ (ball 0 r))
+    (hJ : ContDiffOn ℝ 1 J (ball 0 r)) (hS : ContinuousOn S (ball 0 r))
+    (hφr : tsupport φ ⊆ ball 0 r)
+    (hJF : ∀ s ∈ Ioo (-r) r, ∀ v ∈ F, ∀ w ∈ F, ⟪v, J s w⟫_ℝ = 0)
+    (hφF : ∀ s ∈ Ioo (-r) r, φ s ∈ F) (hξF : ∀ s ∈ Ioo (-r) r, ξ s ∈ F) :
+    ∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im}, ⟪fderiv ℝ φ z 1 + ContinuousLinearMap.adjoint (J z)
+        (fderiv ℝ φ z I) - ContinuousLinearMap.adjoint (S z) (φ z), ξ z⟫_ℝ =
+      -∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im}, ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) +
+        S z (ξ z) + fderiv ℝ J z I (ξ z)⟫_ℝ :=
+  setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_inner_eq_zero hφ hξ hJ hS hφr
+    fun s hs ↦ hJF s hs _ (hφF s hs) _ (hξF s hs)
 
 end TauCeti

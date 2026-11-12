@@ -156,7 +156,7 @@ theorem setIntegral_im_pos_re_inner_conjWirtingerDeriv (hξ : ContDiff ℝ 1 ξ)
 `r` and `η` only `C¹` there, the formula of `setIntegral_im_pos_re_inner_cauchyRiemann` holds on
 the half-disc `D⁺_r = {|z| < r, 0 < t}`, with boundary term over `(-r, r)`. -/
 theorem setIntegral_halfDisc_re_inner_cauchyRiemann {r : ℝ} (hξ : ContDiff ℝ 1 ξ)
-    (hξc : HasCompactSupport ξ) (hη : ContDiffOn ℝ 1 η (ball 0 r))
+    (hη : ContDiffOn ℝ 1 η (ball 0 r))
     (hξr : tsupport ξ ⊆ ball 0 r) :
     ∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im}, re ⟪η z, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I⟫_ℂ =
       (∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im},
@@ -180,6 +180,8 @@ theorem setIntegral_halfDisc_re_inner_cauchyRiemann {r : ℝ} (hξ : ContDiff �
     have hs' : (s : ℂ) ∉ ball 0 r := fun h ↦ hs (by
       rwa [mem_ball_zero_iff, Complex.norm_real, Real.norm_eq_abs, abs_lt] at h)
     simp [image_eq_zero_of_notMem_tsupport (hout hs')]
+  have hξc : HasCompactSupport ξ := (isCompact_closedBall (0 : ℂ) r).of_isClosed_subset
+    (isClosed_tsupport ξ) (hξr.trans ball_subset_closedBall)
   rw [h₁, h₂, h₃]
   exact setIntegral_im_pos_re_inner_cauchyRiemann hξ hξc isOpen_ball hη hξr
 

@@ -57,7 +57,7 @@ theorem LinearIsometry.norm_map_I {E : Type*} [SeminormedAddCommGroup E] [Normed
     (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 :=
   (ι.norm_map _).trans Complex.norm_I
 
-/-- The real line is orthogonal to its rotation by `i`: `⟪x, i y⟫_ℝ = 0` for real `x`, `y`. This
-is the totally real boundary condition `⟪F, J F⟫ = 0` for `F = ℝ ⊆ ℂ` and `J = i`. -/
+/-- The real line is orthogonal to its rotation by `i`: `⟪x, i y⟫_ℝ = 0` for real `x`, `y`. That
+is, `F = ℝ ⊆ ℂ` satisfies the orthogonality `⟪F, J F⟫ = 0` for `J = i`. -/
 theorem Real.inner_ofReal_I_mul_ofReal (x y : ℝ) : inner ℝ (x : ℂ) (Complex.I * y) = 0 := by
   simp [Complex.inner]
