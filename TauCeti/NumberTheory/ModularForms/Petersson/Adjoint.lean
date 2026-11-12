@@ -331,13 +331,16 @@ theorem peterssonInner_sum_slash_right_adjugate_biUnion (k : ℤ) {ι : Type*} (
     (hint : ∀ i ∈ s,
       IntegrableOn (fun τ ↦ petersson k f (h ∣[k] α i) τ) S (volume : Measure ℍ))
     (hd : Set.Pairwise (↑s) (AEDisjoint (volume : Measure ℍ) on fun i ↦ α i • S))
-    (hm : ∀ i ∈ s, NullMeasurableSet (α i • S) (volume : Measure ℍ))
-    (hfi : IntegrableOn (fun τ ↦ petersson k f' h τ) (⋃ i ∈ s, α i • S) (volume : Measure ℍ)) :
+    (hm : ∀ i ∈ s, NullMeasurableSet (α i • S) (volume : Measure ℍ)) :
     peterssonInner k S f (∑ i ∈ s, h ∣[k] α i) =
       peterssonInner k (⋃ i ∈ s, α i • S) f' h := by
-  rw [peterssonInner_sum_slash_right_adjugate k s α hα S f h hint, peterssonInner_def,
-    TauCeti.MeasureTheory.integral_biUnion_finset₀ s hd hm hfi]
-  exact Finset.sum_congr rfl fun i hi ↦ by rw [peterssonInner_def, hadj i hi]
+  have hint' : ∀ i ∈ s,
+      IntegrableOn (fun τ ↦ petersson k (h ∣[k] α i) f τ) S (volume : Measure ℍ) := fun i hi ↦ by
+    have h : IntegrableOn (fun τ ↦ (starRingEnd ℂ) (petersson k f (h ∣[k] α i) τ)) S
+        (volume : Measure ℍ) := (Complex.conjCLE : ℂ →L[ℝ] ℂ).integrable_comp (hint i hi)
+    simpa only [← petersson_symm] using h
+  rw [← peterssonInner_conj_symm k S f, ← peterssonInner_conj_symm k _ f' h,
+    peterssonInner_sum_slash_left_adjugate_biUnion k s α hα S h f f' hadj hint' hd hm]
 
 /-! ### Slashing by an element of `SL(2, ℤ)` -/
 
