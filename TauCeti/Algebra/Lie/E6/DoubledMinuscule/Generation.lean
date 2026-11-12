@@ -207,9 +207,8 @@ theorem baseChangeDefiningIdeal_eq_kostantGeneratedGeneralLinearBaseChangeIdeal
     _ _ _ _ _ _ _ matrixWeight universalWeightTorus_mem_elementarySubgroup A
 
 /-- **Two morphisms out of the doubled type-`E₆` minuscule carrier agree as soon as they agree on
-its twelve numbered root subgroups.** This drops the weight-torus hypothesis of
-`TauCeti.E6DoubledMinuscule.groupScheme_hom_ext`, which root generation of the carrier makes
-redundant. -/
+its twelve numbered root subgroups.** No condition on the represented weight torus is needed:
+root generation of the carrier makes it redundant. -/
 @[ext high]
 theorem groupScheme_hom_ext_of_rootSubgroup {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (f g : groupScheme ⟶

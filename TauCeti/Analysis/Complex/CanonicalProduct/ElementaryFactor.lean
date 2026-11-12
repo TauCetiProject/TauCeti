@@ -16,6 +16,10 @@ public import Mathlib.Analysis.Analytic.Order
 `1 - z`. Its deviation from one is quadratic near zero, which supplies the
 summable majorant for genus-one canonical products. The global logarithmic
 bound supplies the elementary growth estimate used in Hadamard factorization.
+The logarithmic derivative of `E₁(a z)` is the rational term `-a² z / (1 - a z)`, which is
+quadratic in the slope `a` for small `a z` and, at an inverse slope `a = ρ⁻¹`, equals the paired
+fraction `1 / (z - ρ) + 1 / ρ`.
+
 Both bounds are also recorded in exponential form, for estimating finite products of
 elementary factors.
 
@@ -129,6 +133,63 @@ theorem log_norm_weierstrassFactorOne_le (z : ℂ) :
   have hl := Real.log_le_sub_one_of_pos h
   have hr := re_le_norm z
   linarith
+
+/-- Composing the elementary factor with a nonzero slope preserves its simple root. -/
+theorem analyticOrderAt_weierstrassFactorOne_mul {c z : ℂ} (h : c * z = 1) :
+    analyticOrderAt (fun w ↦ weierstrassFactorOne (c * w)) z = 1 := by
+  have hc : c ≠ 0 := by intro hc; simp [hc] at h
+  have hd : HasDerivAt (fun w ↦ c * w) c z := by
+    simpa using (hasDerivAt_id z).const_mul c
+  have hg : AnalyticAt ℂ (fun w ↦ c * w) z := by fun_prop
+  have heq : (fun w ↦ weierstrassFactorOne (c * w)) =
+      weierstrassFactorOne ∘ (fun w ↦ c * w) := rfl
+  rw [heq, analyticOrderAt_comp_of_deriv_ne_zero hg (by rwa [hd.deriv]), h]
+  exact analyticOrderAt_weierstrassFactorOne_one
+
+/-- The rational logarithmic derivative of the genus-one factor with slope `a`,
+using total division at its pole. -/
+noncomputable def logDerivWeierstrassFactorOneMul (a z : ℂ) : ℂ :=
+  -a ^ 2 * z / (1 - a * z)
+
+/-- The defining rational expression for the slope-dependent logarithmic derivative. -/
+theorem logDerivWeierstrassFactorOneMul_def (a z : ℂ) :
+    logDerivWeierstrassFactorOneMul a z = -a ^ 2 * z / (1 - a * z) := (rfl)
+
+/-- The slope-dependent logarithmic derivative is quadratic in the slope while `‖a * z‖ ≤ 1 / 2`
+keeps its denominator away from zero. -/
+theorem norm_logDerivWeierstrassFactorOneMul_le {a z : ℂ} (h : ‖a * z‖ ≤ 1 / 2) :
+    ‖logDerivWeierstrassFactorOneMul a z‖ ≤ (2 * ‖z‖) * ‖a‖ ^ 2 := by
+  have hden : (1 / 2 : ℝ) ≤ ‖1 - a * z‖ := by
+    have ht := norm_sub_norm_le (1 : ℂ) (a * z)
+    rw [norm_one] at ht
+    linarith
+  calc
+    _ = (‖a‖ ^ 2 * ‖z‖) / ‖1 - a * z‖ := by
+      rw [logDerivWeierstrassFactorOneMul_def, norm_div, norm_mul, norm_neg, norm_pow]
+    _ ≤ (‖a‖ ^ 2 * ‖z‖) / (1 / 2) :=
+      div_le_div_of_nonneg_left (by positivity) (by norm_num) hden
+    _ = (2 * ‖z‖) * ‖a‖ ^ 2 := by ring
+
+/-- At an inverse slope `ρ⁻¹`, the logarithmic derivative is the paired fraction
+`1 / (z - ρ) + 1 / ρ` away from the zero `ρ` of the factor. -/
+theorem logDerivWeierstrassFactorOneMul_inv {ρ z : ℂ} (hρ : ρ ≠ 0) (hz : z ≠ ρ) :
+    logDerivWeierstrassFactorOneMul ρ⁻¹ z = 1 / (z - ρ) + 1 / ρ := by
+  have hd : 1 - ρ⁻¹ * z ≠ 0 := sub_ne_zero.mpr fun h ↦
+    hz ((inv_mul_eq_one₀ hρ).mp h.symm).symm
+  rw [logDerivWeierstrassFactorOneMul_def]
+  field_simp [hρ, hd, sub_ne_zero.mpr hz]
+  ring
+
+/-- The paired rational logarithmic derivative of an elementary factor with a complex slope. -/
+@[simp]
+theorem logDeriv_weierstrassFactorOne_mul (a z : ℂ) :
+    logDeriv (fun w ↦ weierstrassFactorOne (a * w)) z = logDerivWeierstrassFactorOneMul a z := by
+  rw [logDerivWeierstrassFactorOneMul_def]
+  have hd : HasDerivAt (fun w : ℂ ↦ a * w) a z := by
+    simpa using (hasDerivAt_id z).const_mul a
+  rw [logDeriv_fun_comp (differentiable_weierstrassFactorOne _) hd.differentiableAt,
+    logDeriv_weierstrassFactorOne, hd.deriv]
+  ring
 
 /-- The global logarithmic bound in exponential form, which also covers the zero at one. -/
 theorem norm_weierstrassFactorOne_le_exp (z : ℂ) :

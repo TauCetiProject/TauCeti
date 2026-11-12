@@ -68,11 +68,11 @@ are separate later steps.
   polynomial to every point acts by multivariate polynomials in the chart coordinates, including
   at tuples where points collide.
 
-Lane F4.1 of the analytic Heegaard Floer roadmap opens with "`Sym^g(Σ)` geometry: smooth complex
-structure (elementary symmetric functions), the totally real tori `T_α`, `T_β`, …", after
-Ozsváth--Szabó ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1). This file supplies
-the algebra the first clause rests on, the correspondence between an unordered tuple and its monic
-polynomial, and stops there; the linear algebra behind the second clause is
+The geometry of `Sym^g(Σ)` that analytic Heegaard Floer theory starts from is its smooth complex
+structure, through elementary symmetric functions, together with the totally real tori `T_α`,
+`T_β`, after Ozsváth--Szabó ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1).
+This file supplies the algebra the first of these rests on, the correspondence between an unordered
+tuple and its monic polynomial, and stops there; the linear algebra behind the second is
 `TauCeti.IsMaximalTotallyReal.finrank_eq_half` in
 `TauCeti/LinearAlgebra/TotallyReal/Finrank.lean`. Vieta's formulas,
 the root multiset of a split monic polynomial, the multiset-to-polynomial map itself, and the
