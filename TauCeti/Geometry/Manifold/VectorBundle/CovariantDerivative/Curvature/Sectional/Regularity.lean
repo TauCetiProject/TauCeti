@@ -60,7 +60,7 @@ theorem contMDiffWithinAt_sectionalCurvature
   let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
   let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E →L[ℝ] E) := inferInstance
   let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E →L[ℝ] E) := inferInstance
-  have hf : ContMDiffWithinAt J I n f s p := (contMDiffWithinAt_totalSpace.mp hu).1
+  have hf : ContMDiffWithinAt J I n f s p := (contMDiffWithinAt_totalSpace_iff.mp hu).1
   have hR := ((cov.contMDiff_curvatureTensorCLM (V := fun x : M ↦ TangentSpace I x)
     (fiberNorm := fun x ↦ inferInstance)).of_le (by simp : (n : ℕ∞ω) ≤ ∞)).contMDiffAt
       |>.comp_contMDiffWithinAt p hf
