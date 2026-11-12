@@ -18,8 +18,7 @@ when `ω` is closed, `ω` is compatible with `J` (invariant under `J` and positi
 `TauCeti.SmoothTwoForm.Compatible`), and the Nijenhuis tensor of `J` vanishes. By the
 Newlander–Nirenberg theorem the last condition says that `J` comes from a complex atlas; the
 first two say that the Hermitian metric `g(u, v) = ω(u, J v)` of that complex structure has a
-closed fundamental form `ω`. This is the predicate `IsKahler form J` of the ComplexKahlerGeometry
-roadmap, stated on the real carrier `SmoothTwoForm I M` with the pinned
+closed fundamental form `ω`. The predicate is stated on the real carrier `SmoothTwoForm I M` with
 `TauCeti.SmoothForm.IsClosed`, `TauCeti.SmoothTwoForm.Compatible` and
 `TauCeti.SmoothAlmostComplexStructure.nijenhuis`.
 
@@ -103,19 +102,6 @@ theorem isKahler_ofComplexManifold_iff :
 end SmoothTwoForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- A constant almost complex structure on a vector space is integrable. -/
-@[simp]
-theorem AlmostComplexStructure.nijenhuis_constSmooth (J : AlmostComplexStructure V) :
-    J.constSmooth.nijenhuis = 0 := by
-  have h : J.constSmooth = SmoothAlmostComplexStructure.const
-      (LinearMap.toContinuousLinearMap J.toLinearMap) J.apply_apply := by
-    ext x v
-    exact (J.constSmooth_apply x v).trans
-      (SmoothAlmostComplexStructure.const_apply (LinearMap.toContinuousLinearMap J.toLinearMap)
-        J.apply_apply x v).symm
-  rw [h]
-  exact funext <| SmoothAlmostComplexStructure.nijenhuis_const _ _
 
 namespace SymplecticForm
 
