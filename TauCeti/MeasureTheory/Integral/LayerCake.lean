@@ -207,7 +207,7 @@ private theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff_of_measurable
       · rw [Set.indicator_of_notMem hs,
           Set.indicator_of_notMem (fun hq ↦ hs ((hmem_Ico a s).mp hq))]
     rw [hfun, lintegral_indicator_one measurableSet_Ico, Real.volume_Ico, max_sub_min_eq_abs,
-      abs_sub_comm, Real.enorm_eq_ofReal_abs]
+      abs_sub_comm, Real.eNorm_eq_ofReal_abs]
   have hsection : ∀ s : ℝ,
       (∫⁻ a, F.indicator 1 (a, s) ∂m) = m ({a | f a ≤ s} ∆ {a | g a ≤ s}) := by
     intro s
@@ -321,11 +321,11 @@ theorem measure_symmDiff_setOf_lt_indicator_le (m : Measure α) {u : α → ℝ}
     m ({x | t < u x} ∆ s) ≤ (∫⁻ x, ‖u x - s.indicator 1 x‖ₑ ∂m) / ENNReal.ofReal δ := by
   refine (measure_mono ?_).trans
     (meas_ge_le_lintegral_div
-      (hu.sub ((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hs)).enorm
+      (hu.sub ((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hs)).eNorm
       (ne_of_gt (ENNReal.ofReal_pos.mpr hδ)) ENNReal.ofReal_ne_top)
   intro x hx
   rw [mem_symmDiff] at hx
-  rw [mem_ofPred_eq, Pi.sub_apply, Real.enorm_eq_ofReal_abs]
+  rw [mem_ofPred_eq, Pi.sub_apply, Real.eNorm_eq_ofReal_abs]
   apply ENNReal.ofReal_le_ofReal
   rcases hx with ⟨hx, hxs⟩ | ⟨hxs, hx⟩
   · rw [indicator_of_notMem hxs, sub_zero]

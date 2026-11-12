@@ -88,7 +88,7 @@ theorem distinguishedGenerator_verticalPrime {O : Type*} [CommRing O] [IsDomain 
     [IsDiscreteValuationRing O] : (verticalPrime O).distinguishedGenerator = 1 := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
   exact PrimeSpectrum.distinguishedGenerator_eq_one_of_asIdeal_eq_span_C
-    ((mem_maximalIdeal _).mpr hϖ.not_isUnit) (verticalPrime_asIdeal_eq_span hϖ)
+    (verticalPrime_asIdeal_eq_span hϖ)
 
 section CharPoly
 
