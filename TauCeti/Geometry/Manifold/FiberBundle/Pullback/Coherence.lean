@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Manifold.FiberBundle.Pullback.Basic
 For bundles with manifold fibres, the pullback along the identity is diffeomorphic to the
 original bundle, and pullback along a composite is diffeomorphic to successive pullback.
 These comparisons preserve base points and fibre elements. They intertwine the canonical
-lifts and every fibrewise monoid action, so in particular they are equivariant comparisons
+lifts and every fibrewise scalar operation, so in particular they are equivariant comparisons
 for principal bundles. All total spaces retain their native pullback topologies and the
 charts through their model fibre.
 
@@ -176,9 +176,9 @@ theorem compDiffeomorph_id (g : C(B', B)) :
 
 section Actions
 
-variable {A : Type*} [Monoid A] [∀ b, MulAction A (E b)]
+variable {A : Type*} [∀ b, SMul A (E b)]
 
-/-- The identity comparison intertwines fibrewise monoid actions. In particular it is an
+/-- The identity comparison intertwines fibrewise scalar multiplication. In particular it is an
 equivariant isomorphism for the right action of a principal bundle. -/
 theorem idDiffeomorph_smul (a : A)
     (x : ManifoldTotalSpace F ((ContinuousMap.id B : B → B) *ᵖ E)) :
@@ -189,7 +189,7 @@ theorem idDiffeomorph_smul (a : A)
     smul_homeomorph]
   rfl
 
-/-- The composition comparison intertwines fibrewise monoid actions. In particular it is an
+/-- The composition comparison intertwines fibrewise scalar multiplication. In particular it is an
 equivariant isomorphism between the composite and iterated pullbacks of a principal bundle. -/
 theorem compDiffeomorph_smul (g : C(B', B)) (f : C(B'', B')) (a : A)
     (x : ManifoldTotalSpace F ((g.comp f : B'' → B) *ᵖ E)) :
