@@ -10,18 +10,16 @@ public import TauCeti.AlgebraicTopology.LocalCoefficient
 /-!
 # Local coefficient systems on contractible spaces are constant
 
-A constant map sends every path to a constant path, so pulling a local coefficient system back
-along the constant map at `y` gives the constant system at the fibre over `y`
-(`TauCeti.LocalCoefficientSystem.pullbackConstIso`). Combined with the comparison of pullbacks
-along homotopic maps, a homotopy from the identity of `X` to the constant map at `x` identifies
-every local coefficient system on `X` with the constant system at its fibre over `x`
-(`TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy`). This reduces homology with local
+Pulling a local coefficient system back along the constant map at `y` gives the constant system
+at the fibre over `y` (`TauCeti.LocalCoefficientSystem.pullbackConstIso`). Combined with the
+comparison of pullbacks along homotopic maps, a homotopy from the identity of `X` to the constant
+map at `x` identifies every local coefficient system on `X` with the constant system at its fibre
+over `x` (`TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy`). This reduces homology with local
 coefficients of a contractible space, such as a disk, and of pairs with contractible ambient space,
 to homology with constant coefficients.
 
 ## Main definitions
 
-* `TauCeti.LocalCoefficientSystem.pullbackConstIso`: the pullback along a constant map is constant.
 * `TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy`: a null-homotopy of the identity makes a
   local coefficient system constant, by transport along the paths traced by the homotopy
   (`TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy_hom_app`).
@@ -37,37 +35,11 @@ noncomputable section
 
 open CategoryTheory
 
-universe u v w v₁ v₂
+universe u v w
 
 namespace TauCeti.LocalCoefficientSystem
 
 variable {R : Type u} [Ring R]
-
-/-- Pulling back along a constant map gives the constant system at the value: a constant map
-sends every path to a constant path. -/
-def pullbackConstIso (X : TopCat.{v₁}) {Y : TopCat.{v₂}} (y : Y)
-    (L : LocalCoefficientSystem.{u, v₂, w} R Y) :
-    (pullback (R := R) (ContinuousMap.const X y)).obj L ≅
-      (constantFunctor (R := R) X).obj (L.obj (FundamentalGroupoid.mk y)) :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {x x'} p ↦ by
-    have h : (FundamentalGroupoid.map (ContinuousMap.const X y)).map p = 𝟙 _ := by
-      induction p using Quotient.ind
-      exact congrArg (Quotient.mk _) (Path.ext rfl)
-    simp only [pullback_obj_map, constantFunctor_obj_map, Iso.refl_hom]
-    rw [h]
-    exact L.map_id _
-
-@[simp]
-theorem pullbackConstIso_hom_app (X : TopCat.{v₁}) {Y : TopCat.{v₂}} (y : Y)
-    (L : LocalCoefficientSystem.{u, v₂, w} R Y) (x : FundamentalGroupoid X) :
-    (pullbackConstIso (R := R) X y L).hom.app x = 𝟙 _ :=
-  (rfl)
-
-@[simp]
-theorem pullbackConstIso_inv_app (X : TopCat.{v₁}) {Y : TopCat.{v₂}} (y : Y)
-    (L : LocalCoefficientSystem.{u, v₂, w} R Y) (x : FundamentalGroupoid X) :
-    (pullbackConstIso (R := R) X y L).inv.app x = 𝟙 _ :=
-  (rfl)
 
 variable {X : TopCat.{v}} {x : X}
 
@@ -84,6 +56,7 @@ def isoConstantOfHomotopy (H : (ContinuousMap.id X).Homotopy (ContinuousMap.cons
 
 /-- At a point `x'`, the comparison `TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy` is
 transport along the path traced by the homotopy from `x'`. -/
+@[simp]
 theorem isoConstantOfHomotopy_hom_app
     (H : (ContinuousMap.id X).Homotopy (ContinuousMap.const X x))
     (L : LocalCoefficientSystem.{u, v, w} R X) (x' : FundamentalGroupoid X) :

@@ -442,10 +442,11 @@ lemma twistedHomologyCoefficientMap_comp
 /-- An isomorphism of local coefficient systems induces isomorphisms on relative twisted
 homology. -/
 instance isIso_twistedHomologyCoefficientMap {K : LocalCoefficientSystem.{u, v, max v w} R P.fst}
-    (e : L ≅ K) (k : ℕ) : IsIso (P.twistedHomologyCoefficientMap e.hom k) :=
-  ⟨P.twistedHomologyCoefficientMap e.inv k, by
-    rw [← twistedHomologyCoefficientMap_comp, e.hom_inv_id, twistedHomologyCoefficientMap_id],
-    by rw [← twistedHomologyCoefficientMap_comp, e.inv_hom_id, twistedHomologyCoefficientMap_id]⟩
+    (f : L ⟶ K) [IsIso f] (k : ℕ) : IsIso (P.twistedHomologyCoefficientMap f k) :=
+  ⟨P.twistedHomologyCoefficientMap (inv f) k, by
+    rw [← twistedHomologyCoefficientMap_comp, IsIso.hom_inv_id, twistedHomologyCoefficientMap_id],
+    by rw [← twistedHomologyCoefficientMap_comp, IsIso.inv_hom_id,
+      twistedHomologyCoefficientMap_id]⟩
 
 @[reassoc (attr := simp)]
 lemma twistedHomologyMap_comp_twistedHomologyπ (k : ℕ) :

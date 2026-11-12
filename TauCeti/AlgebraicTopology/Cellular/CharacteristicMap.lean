@@ -249,7 +249,10 @@ private lemma excisive_sigmaOpenShellPairToShellPair :
         sigmaShellCover ι n b ⊆
           Set.range (TopPair.Hom.fst (sigmaOpenShellPairToShellPair ι n)) := by
   refine ⟨?_, ?_, fun b ↦ ?_, ?_, fun b ↦ ?_⟩
-  · change IsEmbedding (@Sigma.map ι ι (fun _ ↦ ball (0 : Fin n → ℝ) 1)
+  · -- `sigmaOpenShellPairToShellPair` is built by `TopPair.ofHom` from the bundled map
+    -- `Sigma.map id (inclusion _)`, so its first component is that map by definition; restating
+    -- the goal exposes the `Sigma.map` form that `isEmbedding_sigmaMap` matches.
+    change IsEmbedding (@Sigma.map ι ι (fun _ ↦ ball (0 : Fin n → ℝ) 1)
       (fun _ ↦ closedBall (0 : Fin n → ℝ) 1) id fun _ ↦ inclusion ball_subset_closedBall)
     rw [isEmbedding_sigmaMap Function.injective_id]
     exact fun _ ↦ IsEmbedding.inclusion _
