@@ -174,6 +174,12 @@ theorem signature_diagonal [DecidableEq ι] (d : ι → 𝕜) :
   · simp [h]
   · simp [h, h.not_gt]
 
+/-- The identity matrix has signature the size of the matrix. -/
+@[simp]
+theorem signature_one [DecidableEq ι] : signature (1 : Matrix ι ι 𝕜) = Fintype.card ι := by
+  rw [← diagonal_one, signature_diagonal]
+  simp
+
 /-- **The signature from an explicit diagonalising congruence.** -/
 theorem signature_eq_of_congr_diagonal [DecidableEq ι] {P A : Matrix ι ι 𝕜} (hP : IsUnit P.det)
     {d : ι → 𝕜} (h : P * A * Pᵀ = diagonal d) :
