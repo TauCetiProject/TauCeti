@@ -157,7 +157,9 @@ theorem map_koszulTwist_apply_of_mem (G : InternalGrading R M) {D : ℤ}
         (((q * ∑ i, degree i).negOnePow : ℤ) : R) =
           ∏ i, (((q * degree i).negOnePow : ℤ) : R) := by
       simp only [← negOnePowCast_eq_intCast, Finset.mul_sum, negOnePowCast_sum]
-    rw [htuple, (PiTensorProduct.tprod R).map_smul_univ, map_smul, ← hD, ← hsign]
+    rw [htuple, (PiTensorProduct.tprod R).map_smul_univ]
+    simp only [RingHom.id_apply]
+    rw [map_smul, ← hD, ← hsign]
   · intro u v _ _ hu hv
     simp only [map_add, hu, hv, smul_add]
   · intro c u _ hu
