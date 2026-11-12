@@ -29,7 +29,8 @@ this file adds to the general construction: with it and the defining equation
 order relation of the resulting automorphism is the image of
 `TauCeti.GraphTwistedIndex.diagramPerm_pow_twistOrder`, so `γ ^ 2 = 1` on `²Aₙ`, `²Dₙ` and `²E₆`
 and `γ ^ 3 = 1` on `³D₄` hold of the root datum before any group scheme is built. On an untwisted
-family the permutation is the identity and so is the automorphism.
+family the permutation is the identity and so is the automorphism. Nothing about a group scheme,
+its points, or a finite group is asserted.
 
 ## Main declarations
 
@@ -40,15 +41,6 @@ family the permutation is the identity and so is the automorphism.
 * `TauCeti.GraphTwistedIndex.datumGraphAut_def`: its defining equation, which is how a
   consumer reaches the general lemmas below.
 * `TauCeti.GraphTwistedIndex.datumGraphAut_pow_twistOrder`: its order relation.
-
-## Roadmap
-
-The construction consumed here is Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, "Pinnings
-... This is what makes 'the' graph automorphism well defined", whose isomorphism theorem for pinned
-groups takes an isomorphism of root data as its input. This file is the instance of that input
-required by milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md`, which forms the graph-twisted
-Steinberg maps `γ ∘ Frob_q` and requires the order relations of `γ`. Nothing about a group scheme,
-its points, or a finite group is asserted.
 -/
 
 public section

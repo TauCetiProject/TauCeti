@@ -180,8 +180,8 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
     (hs : Surjective (mfderiv I J f x)) :
     IsSubmersionAtOfComplement (Fin (Module.finrank 𝕜 E - Module.finrank 𝕜 F) → 𝕜)
       I J n f x := by
-  have := FiniteDimensional.complete 𝕜 E
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 F
   have hf := hfU.contMDiffAt (hU.mem_nhds hxU)
   -- Split the derivative into target and kernel coordinates.
   let D : E →L[𝕜] F := mfderiv I J f x
