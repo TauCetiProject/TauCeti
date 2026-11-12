@@ -127,18 +127,16 @@ theorem symplecticSum_mem_unitaryGroup [Fintype n] [Fintype m] [DecidableEq n] [
     ← star_eq_conjTranspose, ← star_eq_conjTranspose, hA, hB, symplecticSum_one]
 
 /-- The direct sum of two positive semidefinite matrices is positive semidefinite. -/
-theorem PosSemidef.symplecticSum [CommRing R] [PartialOrder R]
-    [StarRing R] [StarOrderedRing R] {A : Matrix (n ⊕ n) (n ⊕ n) R}
+theorem PosSemidef.symplecticSum [Ring R] [PartialOrder R]
+    [StarRing R] [AddLeftMono R] {A : Matrix (n ⊕ n) (n ⊕ n) R}
     {B : Matrix (m ⊕ m) (m ⊕ m) R} (hA : A.PosSemidef) (hB : B.PosSemidef) :
     (Matrix.symplecticSum A B).PosSemidef := by
   rw [Matrix.symplecticSum, posSemidef_submatrix_equiv]
   refine ⟨hA.1.fromBlocks (by simp) hB.1, fun x ↦ ?_⟩
   obtain ⟨a, b, rfl⟩ : ∃ (a : (n ⊕ n) →₀ R) (b : (m ⊕ m) →₀ R), x = Finsupp.sumElim a b :=
-    ⟨_, _, (Finsupp.sumFinsuppEquivProdFinsupp.symm_apply_apply x).symm⟩
-  have hs : (Finsupp.sumElim a b).support = a.support.disjSum b.support := by
-    ext (_ | _) <;> simp
-  have := add_nonneg (hA.2 a) (hB.2 b)
-  simpa [Finsupp.sum, hs, Finset.sum_disjSum, Finset.sum_add_distrib] using this
+    ⟨_, _, (Finsupp.comapDomain_sumElim_comapDomain x).symm⟩
+  simpa [Finsupp.sum_sumElim, fromBlocks_apply₁₁, fromBlocks_apply₁₂, fromBlocks_apply₂₁,
+    fromBlocks_apply₂₂, Function.comp_def] using add_nonneg (hA.2 a) (hB.2 b)
 
 /-- Realification turns a block-diagonal complex matrix into the symplectic direct sum of the
 realifications of its blocks. -/
