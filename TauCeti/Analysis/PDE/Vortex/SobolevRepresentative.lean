@@ -153,7 +153,6 @@ private theorem sub_referenceField_eq (f : ContDiffBump (0 : ℝ)) {z : ℂ}
     have h : (fun w ↦ y w 3) =ᶠ[𝓝 z] fun _ ↦ (0 : ℝ) := hsec.mono fun w hw ↦ hw.2
     rw [h.fderiv_eq]
     exact fderiv_const_apply 0
-  have he := Real.exp_pos (logModulus x z)
   have hr1 := equation_apply_one y z
   have hr2 := equation_apply_two y z
   rw [hysol] at hr1 hr2
@@ -283,7 +282,6 @@ private theorem hasCompactSupport_cutoffLogModulus_remainder (b : ContDiffBump (
     simp only [t, h, mul_zero, lt_self_iff_false] at ht
   have heq := cutoffLogModulus_eventuallyEq (x := x) b hz
   have hs : ContDiff ℝ ∞ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) := by
-    have h2 := hxd 2
     have h3 := hxd 3
     fun_prop
   -- `Δ log |α| = (|α|² - 1) / 8` off the zeros of `α`.
@@ -326,7 +324,7 @@ private theorem cutoffLogModulus_mem_realSobolevFunctions (b : ContDiffBump (0 :
     refine (memLp_two_iff_integrable_sq hg.continuous.aestronglyMeasurable).2 <|
       (integrable_one_sub_normSq (μ := volume) hb₁ hb₂ hp hq hsol hlim).mono'
         (hg.continuous.pow 2).aestronglyMeasurable (.of_forall fun z ↦ ?_)
-    obtain ⟨h₁, h₂⟩ := hbd z
+    obtain ⟨h₁, -⟩ := hbd z
     rw [Real.norm_eq_abs, abs_pow, sq_abs]
     nlinarith [abs_nonneg (g z), sq_abs (g z)]
   set G : ℂ → ℝ := fun z ↦ Real.exp (2 * g z) - 1 - 2 * g z
