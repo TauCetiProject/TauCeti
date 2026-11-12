@@ -122,15 +122,9 @@ theorem framedVortexTranslate_smul (a : ℂ) (g : framedGaugeGroup)
 @[simp]
 theorem framedVortexDivisor_framedVortexTranslate (a : ℂ) (x : framedVortexSubMulAction m) :
     framedVortexDivisor (framedVortexTranslate a x) = (framedVortexDivisor x).map (· - a) := by
-  rw [framedVortexDivisor_eq_iff]
-  have h := (isZeroMultiplicity_sectionValue_framedVortexDivisor x).comp_mul_add one_ne_zero a
-  simp only [one_mul] at h
-  convert h using 1
-  · exact funext fun w ↦ sectionValue_translateField a x w
-  · funext z
-    have hc := Multiset.count_map_eq_count' (· - a) (framedVortexDivisor x : Multiset ℂ)
-      (sub_left_injective (b := a)) (z + a)
-    rwa [add_sub_cancel_right, ← Sym.coe_map] at hc
+  rw [framedVortexDivisor_eq_iff, Sym.coe_map]
+  exact isZeroMultiplicity_sectionValue_translateField
+    (isZeroMultiplicity_sectionValue_framedVortexDivisor x) a
 
 /-- Two framed vortices are related by a translation by `a`, up to framed gauge, exactly when
 their divisors differ by `-a`. -/
@@ -239,19 +233,10 @@ rotated by `u⁻¹`; the line-frame gauge does not move them. -/
 theorem framedVortexDivisor_framedVortexRotate (u : Circle) (x : framedVortexSubMulAction m) :
     framedVortexDivisor (framedVortexRotate u x) =
       (framedVortexDivisor x).map ((u : ℂ)⁻¹ * ·) := by
-  rw [framedVortexDivisor_eq_iff]
-  have hu : (u : ℂ) ≠ 0 := Circle.coe_ne_zero u
-  have h := ((isZeroMultiplicity_sectionValue_framedVortexDivisor x).comp_mul_add hu 0
-    ).mul_left_of_continuous (g := fun _ ↦ ((u⁻¹ ^ m : Circle) : ℂ)) continuous_const
-      fun _ ↦ Circle.coe_ne_zero _
-  simp only [add_zero] at h
-  convert h using 1
-  · funext w
-    rw [coe_framedVortexRotate, sectionValue_gaugeTransform, sectionValue_rotateField]
-  · funext z
-    have hc := Multiset.count_map_eq_count' ((u : ℂ)⁻¹ * ·) (framedVortexDivisor x : Multiset ℂ)
-      (mul_right_injective₀ (inv_ne_zero hu)) ((u : ℂ) * z)
-    rwa [inv_mul_cancel_left₀ hu, ← Sym.coe_map] at hc
+  rw [framedVortexDivisor_eq_iff, Sym.coe_map, coe_framedVortexRotate]
+  exact isZeroMultiplicity_sectionValue_gaugeTransform continuous_const
+    (isZeroMultiplicity_sectionValue_rotateField
+      (isZeroMultiplicity_sectionValue_framedVortexDivisor x) u)
 
 /-- Two framed vortices are related by a rotation by `u`, followed by the line-frame gauge, up to
 framed gauge, exactly when their divisors differ by the rotation `u⁻¹`. -/
@@ -275,14 +260,21 @@ theorem exists_framedGaugeGroup_smul_framedVortexRotate_eq (u : Circle)
 
 /-! ### The moduli space -/
 
+/-- A map of framed vortices that carries the action of each framed gauge `g` to the action of
+`φ g` sends framed gauge orbits into framed gauge orbits. -/
+private theorem orbitRel_of_smul_eq {F : framedVortexSubMulAction m → framedVortexSubMulAction m}
+    (φ : framedGaugeGroup →* framedGaugeGroup) (hF : ∀ g x, F (g • x) = φ g • F x)
+    {x y : framedVortexSubMulAction m} (h : MulAction.orbitRel framedGaugeGroup _ x y) :
+    MulAction.orbitRel framedGaugeGroup _ (F x) (F y) := by
+  obtain ⟨g, rfl⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 h)
+  exact MulAction.orbitRel_apply.2 <| MulAction.mem_orbit_iff.2 ⟨φ g, (hF g y).symm⟩
+
 /-- Translation by `a` of the moduli space of framed degree-`m` vortices. -/
 def framedVortexModuliTranslate (a : ℂ) :
     MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m) →
       MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m) :=
-  Quotient.map (framedVortexTranslate a) fun x y h ↦ by
-    obtain ⟨g, rfl⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 h)
-    exact MulAction.orbitRel_apply.2 <| MulAction.mem_orbit_iff.2
-      ⟨framedGaugeTranslate a g, (framedVortexTranslate_smul a g y).symm⟩
+  Quotient.map (framedVortexTranslate a) fun _ _ ↦
+    orbitRel_of_smul_eq (framedGaugeTranslate a) (framedVortexTranslate_smul a)
 
 @[simp]
 theorem framedVortexModuliTranslate_mk (a : ℂ) (x : framedVortexSubMulAction m) :
@@ -293,10 +285,8 @@ theorem framedVortexModuliTranslate_mk (a : ℂ) (x : framedVortexSubMulAction m
 def framedVortexModuliRotate (u : Circle) :
     MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m) →
       MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m) :=
-  Quotient.map (framedVortexRotate u) fun x y h ↦ by
-    obtain ⟨g, rfl⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 h)
-    exact MulAction.orbitRel_apply.2 <| MulAction.mem_orbit_iff.2
-      ⟨framedGaugeRotate u g, (framedVortexRotate_smul u g y).symm⟩
+  Quotient.map (framedVortexRotate u) fun _ _ ↦
+    orbitRel_of_smul_eq (framedGaugeRotate u) (framedVortexRotate_smul u)
 
 @[simp]
 theorem framedVortexModuliRotate_mk (u : Circle) (x : framedVortexSubMulAction m) :
