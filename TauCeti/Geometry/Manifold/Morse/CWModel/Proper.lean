@@ -177,13 +177,10 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
   let c := colimit.cocone F
   have hc : IsColimit c := colimit.isColimit F
   let := cwComplexOfIsColimit hF hιc hc
-  -- `X` is normal, as a sequential colimit of compact Hausdorff spaces along closed embeddings.
+  -- `X` is `T4`, as a sequential colimit of compact Hausdorff spaces along closed embeddings.
   have : ∀ k, CompactSpace (F.obj k) := fun k ↦
     isCompact_univ_iff.1 (CWComplex.isCompact_of_finite (C := (univ : Set (S k).W)))
-  have hmap {i j : ℕ} (hij : i ≤ j) : IsClosedEmbedding (F.map (homOfLE hij)) :=
-    TopCat.isClosedEmbedding_map_of_isWellOrderContinuous F (fun n _ ↦ hF n) hij
-  have := TopCat.t1Space_of_isColimit (fun _ _ hij ↦ (hmap hij).injective) hc
-  have := TopCat.normalSpace_of_isColimit hF hc
+  have := TopCat.t4Space_of_isColimit hF hc
   refine ⟨c.pt, _, inferInstance, ‹_›, ?_, fun m ↦ ⟨?_⟩⟩
   swap
   · -- The cells of `X` are the cells of the first, empty, stage, and the new cells of the later
@@ -203,8 +200,7 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
   let g : C(c.pt, M) := (hc.desc φ).hom
   have hg (k : ℕ) (w : F.obj k) : g (c.ι.app k w) = (S k).h w :=
     ConcreteCategory.congr_hom (hc.fac φ k) w
-  have hemb (k : ℕ) : IsClosedEmbedding (c.ι.app k) :=
-    TopCat.isClosedEmbedding_ι_of_isColimit (fun _ _ ↦ hmap) hc k
+  have hemb := isClosedEmbedding_ι_app_of_isColimit hF hc
   let eA (k : ℕ) : (range (c.ι.app k) : Set c.pt) ≃ₕ {x | f x ≤ a k} :=
     (hemb k).isEmbedding.toHomeomorph.symm.toHomotopyEquiv.trans (S k).h
   have heA (k : ℕ) (x : (range (c.ι.app k) : Set c.pt)) : (eA k x : M) = g x := by
@@ -214,25 +210,16 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
       ((hemb k).isEmbedding.toHomeomorph_symm_apply w)).trans (hg k w).symm
   -- The stages of `X` and the sublevels of `M` are towers of closed cofibrations, exhausting
   -- `X` and `M` with the coherent topology.
-  have hA : Monotone fun k ↦ (range (c.ι.app k) : Set c.pt) := by
-    refine monotone_nat_of_le_succ fun k ↦ ?_
-    rintro _ ⟨w, rfl⟩
-    exact ⟨F.map (homOfLE k.le_succ) w, by rw [← ConcreteCategory.comp_apply, c.w]⟩
-  have hB : Monotone fun k ↦ {x | f x ≤ a k} := (sublevel_mono f).comp hmono.monotone
-  have hBM : ⋃ k, {x | f x ≤ a k} = univ := eq_univ_of_forall fun x ↦
-    mem_iUnion.2 (htop.eventually_ge_atTop (f x)).exists
-  have hBc : IsCoherentWith (range fun k ↦ {x | f x ≤ a k}) := .of_nhds fun x ↦ by
-    obtain ⟨k, hk⟩ := (htop.eventually_gt_atTop (f x)).exists
-    exact ⟨_, ⟨k, rfl⟩, mem_of_superset
-      ((isOpen_lt hf.contMDiff.continuous continuous_const).mem_nhds hk) fun y hy ↦ le_of_lt hy⟩
   have hBH (k : ℕ) : HasHomotopyExtensionProperty
       ((↑) ⁻¹' {x | f x ≤ a k} : Set {x | f x ≤ a (k + 1)}) := by
     rw [← range_sublevelInclusion f (hmono k.lt_succ_self).le]
     exact hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue
       hf.contMDiff (hmono k.lt_succ_self) (hcompact k) (hreg k) (hmono k.lt_succ_self).le
-  obtain ⟨h, -, -⟩ := exists_homotopyEquiv_of_isCoherentWith hA hB
-    (TopCat.iUnion_range_ι_of_isColimit hc) hBM (TopCat.isCoherentWith_range_ι_of_isColimit hc)
-    hBc (hasHomotopyExtensionProperty_preimage_range_ι hF hιc hc) hBH g eA heA
+  obtain ⟨h, -, -⟩ := exists_homotopyEquiv_of_isCoherentWith (TopCat.monotone_range_ι c)
+    ((sublevel_mono f).comp hmono.monotone) (TopCat.iUnion_range_ι_of_isColimit hc)
+    (iUnion_sublevel_eq_univ_of_tendsto f htop) (TopCat.isCoherentWith_range_ι_of_isColimit hc)
+    (isCoherentWith_range_sublevel_of_tendsto hf.contMDiff.continuous htop)
+    (hasHomotopyExtensionProperty_preimage_range_ι hF hιc hc) hBH g eA heA
   exact ⟨h.symm⟩
 
 end TauCeti

@@ -20,7 +20,8 @@ sense, `TopCat.CWComplex X`, which is a relative CW complex over the map out of 
 A directed colimit in `TopCat` along injective transition maps has injective colimit maps
 (`TauCeti.TopCat.injective_ι_of_isColimit`), since the forgetful functor to types preserves it.
 
-The colimit maps of any colimit in `TopCat` jointly cover it
+The ranges of the maps to the vertex of a cocone over a preorder increase
+(`TauCeti.TopCat.monotone_range_ι`). The colimit maps of any colimit in `TopCat` jointly cover it
 (`TauCeti.TopCat.iUnion_range_ι_of_isColimit`), and its topology is coherent with their ranges
 (`TauCeti.TopCat.isCoherentWith_range_ι_of_isColimit`): a set is closed as soon as it meets each
 range in a relatively closed set. These are the hypotheses under which the colimit of a sequence is
@@ -52,6 +53,13 @@ theorem injective_ι_of_isColimit {J : Type w} [Preorder J] [IsDirectedOrder J]
   obtain ⟨k, g, hk⟩ :=
     (Types.FilteredColimit.isColimit_eq_iff' (isColimitOfPreserves (forget TopCat) hc) x y).1 h
   exact hF (leOfHom g) hk
+
+/-- The ranges of the maps of a diagram in `TopCat` indexed by a preorder to the vertex of a cocone
+increase along the order. -/
+theorem monotone_range_ι {J : Type w} [Preorder J] {F : J ⥤ TopCat.{u}} (c : Cocone F) :
+    Monotone fun j ↦ (Set.range (c.ι.app j) : Set c.pt) := fun i j hij ↦ by
+  rintro _ ⟨w, rfl⟩
+  exact ⟨F.map (homOfLE hij) w, by rw [← ConcreteCategory.comp_apply, c.w]⟩
 
 /-- The maps to a colimit in `TopCat` are jointly surjective. -/
 theorem iUnion_range_ι_of_isColimit {J : Type w} [Category J] {F : J ⥤ TopCat.{u}}
