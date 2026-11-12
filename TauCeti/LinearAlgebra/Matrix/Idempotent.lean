@@ -346,6 +346,7 @@ theorem Matrix.coe_rangeMulVecBilinEnd_apply (t : Matrix ι ι A) {e : Matrix ι
   (rfl)
 
 /-- The matrix of left multiplication by `t` on `e Aⁱ` is `t e`. -/
+@[simp]
 theorem IsIdempotentElem.endToMatrix_rangeMulVecBilinEnd (he : IsIdempotentElem e)
     {t : Matrix ι ι A} (ht : e * t = t) : he.endToMatrix (t.rangeMulVecBilinEnd ht) = t * e := by
   ext i j
