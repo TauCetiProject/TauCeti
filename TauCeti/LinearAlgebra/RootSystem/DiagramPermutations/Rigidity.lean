@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
+public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.NonSimplyLaced
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
@@ -18,7 +18,8 @@ no nontrivial based automorphism. The classification reduces this to rigidity of
 oriented numbered Cartan matrices of `Bₙ`, `Cₙ`, `F₄`, and `G₂`. A length exchange is
 not a counterexample: it transposes rather than preserves the Cartan matrix.
 
-`RootPairing.Base.eq_one_of_not_isSimplyLaced` identifies the automorphism itself;
+`RootPairing.Base.eq_one_of_forall_mem_support_of_not_isSimplyLaced` identifies the
+automorphism itself;
 `RootPairing.Base.indexEquiv_eq_self_of_not_isSimplyLaced` fixes every root index,
 not just the simple indices. They apply over any characteristic-zero domain with
 the native root-system hypotheses; no choice of real coordinates is involved.
@@ -44,7 +45,7 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 /-- A based automorphism of a finite irreducible reduced crystallographic root pairing over a
 characteristic-zero domain with a non-simply-laced Cartan matrix is the identity.
 The based condition requires only that simple indices map to simple indices. -/
-theorem eq_one_of_not_isSimplyLaced (b : P.Base) {σ : P.Aut}
+theorem eq_one_of_forall_mem_support_of_not_isSimplyLaced (b : P.Base) {σ : P.Aut}
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
     (hsl : ¬ b.cartanMatrix.IsSimplyLaced) : σ = 1 := by
   classical
@@ -66,6 +67,6 @@ characteristic-zero domain with a non-simply-laced Cartan matrix fixes every roo
 theorem indexEquiv_eq_self_of_not_isSimplyLaced (b : P.Base) (σ : P.Aut)
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
     (hsl : ¬ b.cartanMatrix.IsSimplyLaced) (i : ι) : σ.indexEquiv i = i := by
-  simp [b.eq_one_of_not_isSimplyLaced hσ hsl]
+  simp [b.eq_one_of_forall_mem_support_of_not_isSimplyLaced hσ hsl]
 
 end RootPairing.Base

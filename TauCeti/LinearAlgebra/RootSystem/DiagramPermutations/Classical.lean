@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 import TauCeti.GroupTheory.Perm.Fin
-import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
+import TauCeti.LinearAlgebra.Matrix.Cartan.Basic
 
 /-!
 # Rigidity of the numbered B and C diagrams
