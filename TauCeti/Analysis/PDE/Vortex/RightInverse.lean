@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Distribution.TestFunction.Lp
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.PDE.Vortex.WeightedEstimate
+import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -458,38 +459,11 @@ private theorem integral_sq_mul_norm_sq_le_of_forall_exists_lt
   have h := step (ε / (M + 1)) (by positivity)
   have : (8 + 16 * c ^ 2 / δ) * (ε / (M + 1)) * (2 * B ^ 4 + 8 * c ^ 2 * B ^ 4 / c₀) *
       ∫ z, ‖y z‖ ^ 2 ∂μ ≤ ε := by
-    rw [show (8 + 16 * c ^ 2 / δ) * (ε / (M + 1)) * (2 * B ^ 4 + 8 * c ^ 2 * B ^ 4 / c₀) *
-      ∫ z, ‖y z‖ ^ 2 ∂μ = ε * (M / (M + 1)) by ring]
+    have hM : (8 + 16 * c ^ 2 / δ) * (ε / (M + 1)) * (2 * B ^ 4 + 8 * c ^ 2 * B ^ 4 / c₀) *
+        ∫ z, ‖y z‖ ^ 2 ∂μ = ε * (M / (M + 1)) := by ring
+    rw [hM]
     exact mul_le_of_le_one_right hε.le ((div_le_one (by positivity)).2 (by linarith))
   linarith
-
-omit [μ.IsAddHaarMeasure] in
-/-- **Fatou's lemma for truncated weights.** A bound on `∫ V_n² u` for all the truncations
-`V_n = W / (1 + W / (n + 1))` of a weight `W` holds for `W` itself, since `V_n → W` pointwise. -/
-private theorem lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
-    {W u : ℂ → ℝ} (hW : AEMeasurable W μ) (hu : AEMeasurable u μ) {C : ℝ≥0∞}
-    (h : ∀ n : ℕ,
-      ∫⁻ z, ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z) ∂μ ≤ C) :
-    ∫⁻ z, ENNReal.ofReal (W z ^ 2 * u z) ∂μ ≤ C := by
-  have hlim (z : ℂ) : Tendsto (fun n : ℕ ↦
-      ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z)) atTop
-      (𝓝 (ENNReal.ofReal (W z ^ 2 * u z))) := by
-    have hc : ContinuousAt (fun ε : ℝ ↦ ENNReal.ofReal ((W z / (1 + ε * W z)) ^ 2 * u z)) 0 :=
-      ENNReal.continuous_ofReal.continuousAt.comp
-        (((continuousAt_const.div (continuousAt_const.add
-          (continuousAt_id.mul continuousAt_const)) (by simp)).pow 2).mul continuousAt_const)
-    have h := hc.tendsto
-    simp only [zero_mul, add_zero, div_one] at h
-    exact h.comp (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
-  calc ∫⁻ z, ENNReal.ofReal (W z ^ 2 * u z) ∂μ
-      = ∫⁻ z, liminf (fun n : ℕ ↦
-          ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z)) atTop ∂μ :=
-        lintegral_congr fun z ↦ (hlim z).liminf_eq.symm
-    _ ≤ liminf (fun n : ℕ ↦
-          ∫⁻ z, ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z) ∂μ) atTop :=
-        lintegral_liminf_le' fun n ↦ (((hW.div (aemeasurable_const.add
-          (aemeasurable_const.mul hW))).pow_const 2).mul hu).ennreal_ofReal
-    _ ≤ C := liminf_le_of_frequently_le' (Frequently.of_forall h)
 
 /-- **The exponentially weighted estimate for the weak right inverse.** Let `x` be a `C¹`
 solution of the plane vortex equation with `|α| → 1` at infinity, let `ρ(z) = √(1 + |z|²)` and

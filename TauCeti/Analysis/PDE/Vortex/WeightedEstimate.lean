@@ -468,7 +468,7 @@ theorem exists_pos_mul_integral_sq_mul_norm_sq_le_integral_sq_mul_inner_gaugeFix
         mul_le_mul_of_nonneg_right (min_le_right _ _) (sq_nonneg _)
       have := pow_le_pow_left₀ (norm_nonneg _) h₂ 2
       rw [h₁, hv₁z, hv₂z]
-      linarith [hWd z, show (a - c ^ 2) * V z ^ 2 = a * V z ^ 2 - c ^ 2 * V z ^ 2 by ring]
+      linarith [hWd z, sub_mul a (c ^ 2) (V z ^ 2)]
   refine mul_integral_sq_mul_norm_sq_le_of_forall_le hx hsol hgap ha.le hv₁ hv₂ hV.continuous
     hsq (fun z hz ↦ ?_) hkey hη hηc
   have hθz : θ z ≠ 0 := fun h ↦ hz (by simp [v₂, h])

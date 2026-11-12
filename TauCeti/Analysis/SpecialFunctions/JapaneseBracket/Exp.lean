@@ -71,10 +71,11 @@ theorem norm_fderiv_exp_mul_sqrt_add_norm_sq_le (c : ℝ) (hb : 0 < b) (z : E) :
   rw [norm_fderiv_exp_mul_sqrt_add_norm_sq c hb]
   exact mul_le_of_le_one_right (by positivity) (norm_div_sqrt_add_norm_sq_le_one hb.le z)
 
+omit [InnerProductSpace ℝ E] in
 /-- A nonnegative weight whose logarithmic gradient is at most that of the radial exponential
 weight, `|c| ‖z‖ / √(b + ‖z‖²)`, satisfies `‖dV‖² ≤ c² V²`. -/
-theorem norm_fderiv_sq_le_of_norm_fderiv_le {V : E → ℝ} (c : ℝ) (hb : 0 ≤ b) {z : E}
-    (hV : 0 ≤ V z) (hdV : ‖fderiv ℝ V z‖ ≤ |c| * (‖z‖ / √(b + ‖z‖ ^ 2)) * V z) :
+theorem norm_fderiv_sq_le_of_norm_fderiv_le [NormedSpace ℝ E] {V : E → ℝ} (c : ℝ) (hb : 0 ≤ b)
+    {z : E} (hV : 0 ≤ V z) (hdV : ‖fderiv ℝ V z‖ ≤ |c| * (‖z‖ / √(b + ‖z‖ ^ 2)) * V z) :
     ‖fderiv ℝ V z‖ ^ 2 ≤ c ^ 2 * V z ^ 2 := by
   have h := hdV.trans (mul_le_mul_of_nonneg_right
     (mul_le_of_le_one_right (abs_nonneg c) (norm_div_sqrt_add_norm_sq_le_one hb z)) hV)
@@ -134,8 +135,9 @@ theorem norm_fderiv_exp_div_one_add_mul_exp_le (c : ℝ) (hb : 0 < b) {ε : ℝ}
   rw [hVd.fderiv, norm_smul, Real.norm_of_nonneg (by positivity),
     norm_fderiv_exp_mul_sqrt_add_norm_sq c hb]
   set d := 1 + ε * W z
-  rw [show 1 / d ^ 2 * (|c| * W z * (‖z‖ / √(b + ‖z‖ ^ 2))) =
-    |c| * (‖z‖ / √(b + ‖z‖ ^ 2)) * (W z / d) * (1 / d) by field_simp]
+  have hfac : 1 / d ^ 2 * (|c| * W z * (‖z‖ / √(b + ‖z‖ ^ 2))) =
+      |c| * (‖z‖ / √(b + ‖z‖ ^ 2)) * (W z / d) * (1 / d) := by field_simp
+  rw [hfac]
   refine mul_le_of_le_one_right (by positivity) ?_
   rw [div_le_one hd]
   nlinarith [mul_nonneg hε hW.le]

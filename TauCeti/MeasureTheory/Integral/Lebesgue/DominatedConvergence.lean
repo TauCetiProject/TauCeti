@@ -23,6 +23,9 @@ Bounded scalar coefficients converging almost everywhere preserve `L¹` converge
 vector-valued sequences. This lets products pass to the limit when the coefficient convergence
 is pointwise and the vector-valued factor converges only in `L¹`.
 
+Fatou's lemma passes a bound on the weighted integrals `∫⁻ V_n² u` for the bounded truncations
+`V_n = W / (1 + W / (n + 1))` of a weight `W` to the weight `W` itself.
+
 ## Main statements
 
 * `TauCeti.tendsto_lintegral_zero_of_le_add`: the integral of a function bounded by the sum of
@@ -32,6 +35,8 @@ is pointwise and the vector-valued factor converges only in `L¹`.
   coefficients preserve `L¹` convergence in any seminormed module.
 * `TauCeti.limsup_setLIntegral_le`: `limsup ∫⁻_{s n} f ≤ ∫⁻_{limsup s n} f` when the `s n` lie
   in a set over which `f` has finite integral.
+* `TauCeti.lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le`: Fatou's lemma
+  for the truncated weights `W / (1 + W / (n + 1))`.
 -/
 
 public section
@@ -144,5 +149,34 @@ theorem limsup_setLIntegral_le {f : α → ℝ≥0∞} {s : ℕ → Set α} {t :
   · rw [not_frequently] at hx
     rw [limsup_congr (hx.mono fun n hn ↦ Set.indicator_of_notMem hn _)]
     simp
+
+/-- **Fatou's lemma for truncated weights.** A bound on `∫⁻ V_n² u` for all the truncations
+`V_n = W / (1 + W / (n + 1))` of a real weight `W` holds for `W` itself, since `V_n → W`
+pointwise. The truncations are bounded when `W ≥ 0`, which makes the hypotheses easier to
+verify than the conclusion. -/
+theorem lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
+    {W u : α → ℝ} (hW : AEMeasurable W μ) (hu : AEMeasurable u μ) {C : ℝ≥0∞}
+    (h : ∀ n : ℕ,
+      ∫⁻ x, ENNReal.ofReal ((W x / (1 + 1 / ((n : ℝ) + 1) * W x)) ^ 2 * u x) ∂μ ≤ C) :
+    ∫⁻ x, ENNReal.ofReal (W x ^ 2 * u x) ∂μ ≤ C := by
+  have hlim (x : α) : Tendsto (fun n : ℕ ↦
+      ENNReal.ofReal ((W x / (1 + 1 / ((n : ℝ) + 1) * W x)) ^ 2 * u x)) atTop
+      (𝓝 (ENNReal.ofReal (W x ^ 2 * u x))) := by
+    have hc : ContinuousAt (fun ε : ℝ ↦ ENNReal.ofReal ((W x / (1 + ε * W x)) ^ 2 * u x)) 0 :=
+      ENNReal.continuous_ofReal.continuousAt.comp
+        (((continuousAt_const.div (continuousAt_const.add
+          (continuousAt_id.mul continuousAt_const)) (by simp)).pow 2).mul continuousAt_const)
+    have h := hc.tendsto
+    simp only [zero_mul, add_zero, div_one] at h
+    exact h.comp (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
+  calc ∫⁻ x, ENNReal.ofReal (W x ^ 2 * u x) ∂μ
+      = ∫⁻ x, liminf (fun n : ℕ ↦
+          ENNReal.ofReal ((W x / (1 + 1 / ((n : ℝ) + 1) * W x)) ^ 2 * u x)) atTop ∂μ :=
+        lintegral_congr fun x ↦ (hlim x).liminf_eq.symm
+    _ ≤ liminf (fun n : ℕ ↦
+          ∫⁻ x, ENNReal.ofReal ((W x / (1 + 1 / ((n : ℝ) + 1) * W x)) ^ 2 * u x) ∂μ) atTop :=
+        lintegral_liminf_le' fun n ↦ (((hW.div (aemeasurable_const.add
+          (aemeasurable_const.mul hW))).pow_const 2).mul hu).ennreal_ofReal
+    _ ≤ C := liminf_le_of_frequently_le' (Frequently.of_forall h)
 
 end TauCeti
