@@ -44,6 +44,18 @@ variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
   [IsFiniteMeasure μ] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {ℱ : Filtration ℝ≥0 mΩ} {M : ℝ≥0 → Ω → E} {τ : Ω → WithTop ℝ≥0}
 
+/-- A dyadic stopping time capped at the observation time samples its terminal value. -/
+private theorem Martingale.stoppedProcess_dyadicCeilTime_ae_eq_condExp
+    (hM : Martingale M ℱ μ) (hτ : IsStoppingTime ℱ τ) (T : ℝ≥0) (n : ℕ) :
+    stoppedProcess M (fun ω ↦ TauCeti.dyadicCeilTime n (τ ω)) T =ᵐ[μ]
+      μ[M T | ((isStoppingTime_const ℱ T).min (hτ.dyadicCeilTime n)).measurableSpace] := by
+  have hc : (range (fun ω ↦ min (T : WithTop ℝ≥0)
+      (TauCeti.dyadicCeilTime n (τ ω)))).Countable :=
+    ((countable_singleton (T : WithTop ℝ≥0)).mono range_const_subset).range_min
+      (TauCeti.countable_range_dyadicCeilTime τ n)
+  exact hM.stoppedValue_ae_eq_condExp_of_le_const_of_countable_range
+    ((isStoppingTime_const ℱ T).min (hτ.dyadicCeilTime n)) (fun _ ↦ min_le_left _ _) hc
+
 /-- Upward dyadic approximations of a stopped martingale converge in Lᵖ at each observation
 time, for finite p ≥ 1. The moment assumption is only on the value at that observation time.
 No progressivity assumption is needed for this convergence statement. -/
@@ -55,18 +67,11 @@ theorem Martingale.tendsto_eLpNorm_stoppedProcess_dyadicCeilTime
     Tendsto (fun n ↦ eLpNorm
       (stoppedProcess M (fun ω ↦ TauCeti.dyadicCeilTime n (τ ω)) T -
         stoppedProcess M τ T) p μ) atTop (𝓝 0) := by
-  let ρ (n : ℕ) (ω : Ω) := min (T : WithTop ℝ≥0) (TauCeti.dyadicCeilTime n (τ ω))
-  have hρ (n : ℕ) : IsStoppingTime ℱ (ρ n) :=
-    (isStoppingTime_const ℱ T).min (hτ.dyadicCeilTime n)
-  have hc (n : ℕ) : (range (ρ n)).Countable :=
-    ((countable_singleton (T : WithTop ℝ≥0)).mono range_const_subset).range_min
-      (TauCeti.countable_range_dyadicCeilTime τ n)
   have hui : UniformIntegrable
       (fun n ↦ stoppedProcess M (fun ω ↦ TauCeti.dyadicCeilTime n (τ ω)) T) p μ := by
-    refine (hT.uniformIntegrable_condExp hp hp_top
-      (fun n ↦ (hρ n).measurableSpace_le)).ae_eq fun n ↦ ?_
-    exact (hM.stoppedValue_ae_eq_condExp_of_le_const_of_countable_range
-      (hρ n) (fun _ ↦ min_le_left _ _) (hc n)).symm
+    exact (hT.uniformIntegrable_condExp hp hp_top (fun n ↦
+      ((isStoppingTime_const ℱ T).min (hτ.dyadicCeilTime n)).measurableSpace_le)).ae_eq
+        fun n ↦ (hM.stoppedProcess_dyadicCeilTime_ae_eq_condExp hτ T n).symm
   have hlim : ∀ᵐ ω ∂μ, Tendsto
       (fun n ↦ stoppedProcess M (fun ω ↦ TauCeti.dyadicCeilTime n (τ ω)) T ω)
         atTop (𝓝 (stoppedProcess M τ T ω)) :=
@@ -129,13 +134,8 @@ theorem Martingale.stoppedValue_ae_eq_condExp_of_le_const_of_ae_isRightContinuou
   have hsamp (n : ℕ) :
       ∫ ω in A, stoppedProcess M (fun ω ↦ TauCeti.dyadicCeilTime n (τ ω)) T ω ∂μ =
         ∫ ω in A, M T ω ∂μ := by
-    let ρ (ω : Ω) := min (T : WithTop ℝ≥0) (TauCeti.dyadicCeilTime n (τ ω))
-    have hρ : IsStoppingTime ℱ ρ := (isStoppingTime_const ℱ T).min (hτ.dyadicCeilTime n)
-    have hc : (range ρ).Countable :=
-      ((countable_singleton (T : WithTop ℝ≥0)).mono range_const_subset).range_min
-        (TauCeti.countable_range_dyadicCeilTime τ n)
-    have heq := hM.stoppedValue_ae_eq_condExp_of_le_const_of_countable_range hρ
-      (fun _ ↦ min_le_left _ _) hc
+    have hρ := (isStoppingTime_const ℱ T).min (hτ.dyadicCeilTime n)
+    have heq := hM.stoppedProcess_dyadicCeilTime_ae_eq_condExp hτ T n
     have hAρ := hτ.measurableSpace_mono hρ
       (fun ω ↦ le_min (hb ω) (TauCeti.le_dyadicCeilTime n (τ ω))) A hA
     exact (setIntegral_congr_ae (hτ.measurableSpace_le A hA)
