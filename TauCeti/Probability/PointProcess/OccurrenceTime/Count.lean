@@ -88,13 +88,20 @@ theorem IsIntegerValued.occurrenceTime_lt_succ (hμ : μ.IsIntegerValued)
 
 /-- An observation window after a simple finite occurrence is empty exactly when
 its right endpoint is strictly before the next occurrence. The right endpoint is
-included, so an occurrence exactly there makes the window nonempty. -/
+included, so an occurrence exactly there makes the window nonempty. Endpoints
+before the current occurrence are allowed and give an empty window. -/
 theorem IsIntegerValued.apply_Ioc_toNNReal_occurrenceTime_eq_zero_iff
     (hμ : μ.IsIntegerValued) (hn : μ.occurrenceTime n ≠ ∞)
-    (hs : μ {(μ.occurrenceTime n).toNNReal} ≤ 1) {b : ℝ≥0}
-    (hb : (μ.occurrenceTime n).toNNReal ≤ b) :
+    (hs : μ {(μ.occurrenceTime n).toNNReal} ≤ 1) {b : ℝ≥0} :
     μ (Ioc (μ.occurrenceTime n).toNNReal b) = 0 ↔
       (b : ℝ≥0∞) < μ.occurrenceTime (n + 1) := by
+  by_cases hb : b < (μ.occurrenceTime n).toNNReal
+  · rw [Ioc_eq_empty (not_lt_of_ge hb.le), measure_empty]
+    have hlt : (b : ℝ≥0∞) < μ.occurrenceTime n := by
+      rw [← ENNReal.coe_toNNReal hn, ENNReal.coe_lt_coe]
+      exact hb
+    exact iff_of_true rfl (hlt.trans_le (μ.monotone_occurrenceTime (Nat.le_succ n)))
+  have hb := le_of_not_gt hb
   have hsplit : μ (Iic b) = n + 1 + μ (Ioc (μ.occurrenceTime n).toNNReal b) := by
     rw [← Iic_union_Ioc_eq_Iic hb, measure_union (Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
       hμ.apply_Iic_toNNReal_occurrenceTime hn hs]
@@ -124,7 +131,7 @@ theorem IsIntegerValued.lt_toNNReal_occurrenceTime_sub_iff (hμ : μ.IsIntegerVa
     (hs : μ {(μ.occurrenceTime n).toNNReal} ≤ 1) (s : ℝ≥0) :
     s < (μ.occurrenceTime (n + 1)).toNNReal - (μ.occurrenceTime n).toNNReal ↔
       μ (Ioc (μ.occurrenceTime n).toNNReal ((μ.occurrenceTime n).toNNReal + s)) = 0 := by
-  rw [hμ.apply_Ioc_toNNReal_occurrenceTime_eq_zero_iff hn hs (le_add_of_nonneg_right s.2)]
+  rw [hμ.apply_Ioc_toNNReal_occurrenceTime_eq_zero_iff hn hs]
   rw [← ENNReal.coe_toNNReal hnext, ENNReal.coe_lt_coe]
   exact lt_tsub_iff_left
 
