@@ -120,22 +120,26 @@ variable (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) [NeZero (2 
   [Algebra.IsSeparable k⟮x⟯ F]
 include hF hex hx hdeg
 
-omit [NeZero (2 : k)] in
+omit hF [NeZero (2 : k)] in
 /-- **The different of `F / k(x)` has degree `2g + 2`**: the Hurwitz genus formula over `k(x)`,
 of genus zero, reads `2g - 2 = 2 · (-2) + deg Diff`. -/
 theorem degree_different_adjoin :
     Divisor.degree (Divisor.different k F hx.isFunctionField_adjoin) = 2 * genus k F + 2 := by
+  have hF : IsFunctionField k F := hx.isFunctionField_adjoin.finite_extension
   have h := hurwitz_genus_formula hx.isFunctionField_adjoin hF
     ((k⟮x⟯).val.isIntegrallyClosedIn (k⟮x⟯).val.injective hex) hex
   rw [Module.finrank_self, genus_adjoin_simple_eq_zero hx, hdeg] at h
   push_cast at h
   linarith
 
+omit hF hex in
 /-- **Exactly `2g + 2` places of `F` ramify over `k(x)`** when `k` is algebraically closed: every
 ramified place has different exponent `1` and degree `1`, so the degree `2g + 2` of the different
 counts them. -/
 theorem card_support_different_adjoin [IsAlgClosed k] :
     (Divisor.different k F hx.isFunctionField_adjoin).support.card = 2 * genus k F + 2 := by
+  have hF : IsFunctionField k F := hx.isFunctionField_adjoin.finite_extension
+  have hex : IsIntegrallyClosedIn k F := isIntegrallyClosedIn_of_isAlgClosed
   -- each ramified place contributes its different exponent `1` times its degree `1`
   have hsummand : ∀ Q ∈ (Divisor.different k F hx.isFunctionField_adjoin).support,
       (Divisor.different k F hx.isFunctionField_adjoin) Q * (Q.degree : ℤ) = 1 := by
@@ -148,7 +152,7 @@ theorem card_support_different_adjoin [IsAlgClosed k] :
       omega
     rw [hcoeff, hd, Q.degree_eq_one_of_isAlgClosed_of_isFunctionField hF]
     simp
-  have h := degree_different_adjoin hF hex hx hdeg
+  have h := degree_different_adjoin hex hx hdeg
   rw [Divisor.degree_apply, Finsupp.sum, Finset.sum_congr rfl hsummand, Finset.sum_const,
     nsmul_eq_mul, mul_one] at h
   exact_mod_cast h
@@ -197,13 +201,13 @@ theorem eq_of_restrict_eq_of_mem_support_different {Q Q' : Place k F}
   have := Place.one_le_relativeDegree k k⟮x⟯ Q'
   nlinarith
 
-include hF hex hdeg in
+include hdeg in
 /-- **There are `2g + 2` branch places** when `k` is algebraically closed. -/
 theorem card_branchPlaces [IsAlgClosed k] : (branchPlaces hx).card = 2 * genus k F + 2 := by
   classical
   rw [branchPlaces, Finset.card_image_of_injOn
     (fun Q hQ Q' _ h ↦ eq_of_restrict_eq_of_mem_support_different hx hdeg hQ h),
-    card_support_different_adjoin hF hex hx hdeg]
+    card_support_different_adjoin hx hdeg]
 
 include hF hex hdeg in
 /-- **The automorphisms of `F / k` permute the branch places** through their restriction to
