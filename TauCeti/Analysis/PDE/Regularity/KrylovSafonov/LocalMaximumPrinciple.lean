@@ -306,7 +306,8 @@ private theorem abs_det_hessianOperator_cutoff_mul_le {lam Lam R M : ℝ}
       (EuclideanSpace.single j 1) ≤ G := by
     refine (neg_sum_mul_fderiv_fderiv_cutoff_mul_le m ha hyB
       (hu.contDiffAt (isOpen_ball.mem_nhds hyB)) (hsub y hyB) hu0 hgrad).trans ?_
-    have hpow := Real.pow_mul_le_rpow_mul_rpow m hs0.le hu0 (hmax y hyB)
+    have hpow := Real.pow_mul_le_rpow_mul_rpow (b := 2) two_pos hs0.le hu0 (hmax y hyB)
+    push_cast at hpow
     calc (f y)⁻ + 2 * (m + 2) * (4 * m + 12 + (N : ℝ)) * Lam / R ^ 2 *
           (1 - ‖y - c‖ ^ 2 / R ^ 2) ^ m * u y
         = (f y)⁻ + 2 * (m + 2) * (4 * m + 12 + (N : ℝ)) * Lam / R ^ 2 *
