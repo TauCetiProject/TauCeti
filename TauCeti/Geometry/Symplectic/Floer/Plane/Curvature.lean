@@ -794,32 +794,14 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation_closedB
       (norm_lt_of_mem_sdiff_image_endPiece hz)
   have hRD := integrableOn_hamiltonianCurvature_pssPlanePerturbation_closedBall (p := p) ω hH hHs
     hu.continuous R
-  -- The area density is continuous, hence integrable over the compact disc.
-  have harea : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) D := by
-    have h := (ω.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hu stdComplexLineReal
-      stdComplexLineImag
-    simp only [← SmoothBundleForm.eval₂_apply] at h
-    exact h.continuousOn.integrableOn_compact hDc
-  -- By the pointwise identity `E = u^* ω + d(K(u)) - R_K(u)`, the energy density is integrable.
-  have hED : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u) D := by
-    have hd (v : ℂ) (e : ℝ × ℝ) : IntegrableOn (fun z ↦ fderiv ℝ
-        (fun w ↦ p.perturbation H (Complex.equivRealProdCLM.symm w) (u w) v) z e) D := by
-      have hK : ContDiff ℝ 1
-          (fun w ↦ p.perturbation H (Complex.equivRealProdCLM.symm w) (u w) v) :=
-        contMDiff_iff_contDiff.mp ((contMDiff_uncurry_perturbation hH hHs v).comp
-          (contMDiff_id.prodMk hu))
-      exact ((hK.continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousOn
-        |>.integrableOn_compact hDc
-    refine ((harea.add ((hd Complex.I stdComplexLineReal).sub (hd 1 stdComplexLineImag))).sub
-      hRD).congr_fun (fun z _ ↦ ?_) hDc.isClosed.measurableSet
-    rw [hω.floerEnergyDensity_eq ((hu z).mdifferentiableAt one_ne_zero)
-      ((contMDiff_uncurry_perturbation hH hHs 1 _).mdifferentiableAt one_ne_zero)
-      ((contMDiff_uncurry_perturbation hH hHs Complex.I _).mdifferentiableAt one_ne_zero)]
-    rfl
+  -- The area density is continuous, hence integrable over the compact disc, and by the pointwise
+  -- identity `E = u^* ω + d(K(u)) - R_K(u)` so is the energy density.
+  have harea := ω.integrableOn_eval₂_mfderiv isOpen_univ hu.contMDiffOn hDc (subset_univ D)
+    stdComplexLineReal stdComplexLineImag
+  have hED := hω.integrableOn_floerEnergyDensity isOpen_univ hu.contMDiffOn
+    (fun x _ ↦ (contMDiff_uncurry_perturbation hH hHs 1 x).contMDiffWithinAt)
+    (fun x _ ↦ (contMDiff_uncurry_perturbation hH hHs Complex.I x).contMDiffWithinAt) hDc
+    (subset_univ D) hRD
   have hsplit (f : ℝ × ℝ → ℝ) (hf : IntegrableOn f D) :
       ∫ z in D, f z = (∫ z in A, f z) + ∫ z in D \ A, f z := by
     conv_lhs => rw [← union_sdiff_cancel hAD]

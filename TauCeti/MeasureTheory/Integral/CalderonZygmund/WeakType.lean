@@ -236,6 +236,26 @@ theorem mul_volume_lt_enorm_le_of_isEmpty [IsEmpty ι]
     _ = ‖T‖ₑ * ∫⁻ x, ‖f x‖ₑ := by rw [hint, hnormE]
 
 omit [CompleteSpace E] in
+/-- On the one-point space `(ι → ℝ)` for empty `ι`, the sharp bound `t |{‖T f‖ > t}| ≤ ‖T‖ ‖f‖₁`
+(`ContinuousLinearMap.mul_volume_lt_enorm_le_of_isEmpty`) is below the weak-type constant of the
+Calderón–Zygmund theorem, whatever the coefficient `c` of the kernel term. -/
+private theorem mul_volume_lt_enorm_le_of_isEmpty_add [IsEmpty ι]
+    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
+    (f : Lp E 2 (volume : Measure (ι → ℝ))) (t c : ℝ≥0∞) :
+    t * volume {x | t < ‖T f x‖ₑ} ≤
+      (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + c) * ∫⁻ x, ‖f x‖ₑ := by
+  have h : ‖T‖ₑ ≤ 2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + c := by
+    rw [Fintype.card_eq_zero, pow_zero, one_mul]
+    refine le_trans ?_ le_self_add
+    rcases le_total ‖T‖ₑ 1 with h | h
+    · exact h.trans le_add_self
+    · calc ‖T‖ₑ ≤ ‖T‖ₑ * ‖T‖ₑ := le_mul_of_one_le_right zero_le h
+        _ = ‖T‖ₑ ^ 2 := (sq _).symm
+        _ ≤ 4 * ‖T‖ₑ ^ 2 := le_mul_of_one_le_left zero_le (by norm_num)
+        _ ≤ _ := le_self_add
+  exact (mul_volume_lt_enorm_le_of_isEmpty T f t).trans (by gcongr)
+
+omit [CompleteSpace E] in
 /-- Chebyshev's inequality for the image of the good part under an operator bounded on `L²`. -/
 private theorem mul_volume_lt_enorm_calderonZygmundGood_le [Nonempty ι]
     (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
@@ -273,9 +293,10 @@ private theorem mul_volume_lt_enorm_calderonZygmundGood_le [Nonempty ι]
         nth_rewrite 1 [ht2]
         ring
 
+omit [CompleteSpace E] in
 /-- Off the balls `c B_Q` around the Calderón–Zygmund cubes `Q`, the cancellation condition with
 dilation factor `c` bounds the image of the sum of the bad parts in `L¹` by `2 B ‖f‖₁`. -/
-private theorem setLIntegral_compl_enorm_calderonZygmundBad_le [Nonempty ι]
+private theorem setLIntegral_compl_enorm_calderonZygmundBad_le
     (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
     {B : ℝ≥0∞} {c : ℝ}
     (hT : ∀ (b : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
@@ -321,10 +342,11 @@ private theorem setLIntegral_compl_enorm_calderonZygmundBad_le [Nonempty ι]
         exact tsum_congr fun q => by ring
     _ ≤ 2 * B * ∫⁻ x, ‖f x‖ₑ := mul_le_mul_right (setLIntegral_le_lintegral _ _) _
 
+omit [CompleteSpace E] in
 /-- Chebyshev's inequality for the image of the sum of the bad parts, off the balls `c B_Q` around
 the Calderón–Zygmund cubes `Q`: the set where it exceeds `t / 2` has measure at most
 `4 B ‖f‖₁ / t` there. -/
-private theorem mul_volume_lt_enorm_inter_compl_calderonZygmundBad_le [Nonempty ι]
+private theorem mul_volume_lt_enorm_inter_compl_calderonZygmundBad_le
     (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
     {B : ℝ≥0∞} {c : ℝ}
     (hT : ∀ (b : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
@@ -354,6 +376,7 @@ private theorem mul_volume_lt_enorm_inter_compl_calderonZygmundBad_le [Nonempty 
         (setLIntegral_compl_enorm_calderonZygmundBad_le T hT f hf ht ht') _
     _ = 4 * B * ∫⁻ x, ‖f x‖ₑ := by ring
 
+omit [CompleteSpace E] in
 /-- **The Calderón–Zygmund theorem**, weak type `(1, 1)`. Let `T` be a bounded linear operator on
 `L²(ℝⁿ)` satisfying the cancellation condition with dilation factor `c`: for every `b ∈ L²`
 vanishing off a closed ball `closedBall y r` with integral zero,
@@ -361,11 +384,12 @@ vanishing off a closed ball `closedBall y r` with integral zero,
 
 `t · |{‖T f‖ > t}| ≤ (4 · 2ⁿ ‖T‖² + cⁿ + 4 B) ‖f‖₁`,
 
-where `cⁿ` is read as `0` when `c < 0` (it is `ENNReal.ofReal c ^ n`). The classical factor is
+where `cⁿ` is `ENNReal.ofReal c ^ n`, which is `0` for `c < 0` when `n > 0` and is always `1` when
+`n = 0`. The classical factor is
 `c = 2`, for which the constant is `2ⁿ (4 ‖T‖² + 1) + 4 B`. A larger factor makes the cancellation
 condition weaker; it is needed when the condition comes from a kernel estimate in a distance other
 than the sup distance. The bound is vacuous unless `f` is also integrable. -/
-theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le [Nonempty ι]
+theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le
     (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
     {B : ℝ≥0∞} {c : ℝ}
     (hT : ∀ (b : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
@@ -375,6 +399,9 @@ theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le [Nonempty ι]
     t * volume {x | t < ‖T f x‖ₑ} ≤
       (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2) + ENNReal.ofReal c ^ Fintype.card ι + 4 * B) *
         ∫⁻ x, ‖f x‖ₑ := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · have h := mul_volume_lt_enorm_le_of_isEmpty_add T f t (4 * B)
+    simpa [Fintype.card_eq_zero, add_assoc] using h
   rcases eq_or_ne T 0 with rfl | hT0
   · simp
   rcases eq_or_ne (∫⁻ x, ‖f x‖ₑ) ∞ with hI | hI
@@ -452,7 +479,7 @@ outside which `b` vanishes, where the kernel `K` satisfies Hörmander's conditio
 every `t`,
 
 `t · |{‖T f‖ > t}| ≤ (2ⁿ (4 ‖T‖² + 1) + 4 B) ‖f‖₁`. -/
-theorem mul_volume_lt_enorm_le_of_hormander [Nonempty ι] [CompleteSpace F]
+theorem mul_volume_lt_enorm_le_of_hormander [CompleteSpace F]
     (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
     {K : (ι → ℝ) → (ι → ℝ) → E →L[ℝ] F} (hK : StronglyMeasurable (Function.uncurry K))
     {B : ℝ≥0∞} (hB : ∀ y y', ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖K x y - K x y'‖ₑ ≤ B)

@@ -76,9 +76,10 @@ namespace ContinuousLinearMap
 open MeasureTheory Metric Set TauCeti
 open scoped ENNReal NNReal
 
-variable {ι : Type*} [Fintype ι] [Nonempty ι] {E F : Type*} [NormedAddCommGroup E]
+variable {ι : Type*} [Fintype ι] {E F : Type*} [NormedAddCommGroup E]
   [NormedSpace ℝ E] [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞}
 
+omit [CompleteSpace E] in
 /-- **The Calderón–Zygmund theorem**, strong type `(p, p)` for `1 < p < 2`. Let `T` be a bounded
 linear operator on `L²(ℝⁿ)` satisfying the cancellation condition with dilation factor `c`: for
 every `b ∈ L²` vanishing off a closed ball `closedBall y r` with integral zero,
@@ -218,7 +219,7 @@ open MeasureTheory Metric Set
 open ContinuousLinearMap (adjoint)
 open scoped ENNReal NNReal
 
-variable {ι : Type*} [Fintype ι] [Nonempty ι] {H K : Type*} [NormedAddCommGroup H]
+variable {ι : Type*} [Fintype ι] {H K : Type*} [NormedAddCommGroup H]
   [InnerProductSpace ℝ H] [CompleteSpace H] [NormedAddCommGroup K] [InnerProductSpace ℝ K]
   [CompleteSpace K] {p : ℝ≥0∞}
 
