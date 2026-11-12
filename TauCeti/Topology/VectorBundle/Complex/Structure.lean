@@ -8,25 +8,26 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.VectorBundle.Hom
+public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 public import TauCeti.Geometry.Symplectic.Finrank
 public import TauCeti.LinearAlgebra.Complex.Module
-public import TauCeti.Topology.Algebra.Module.ComplexSmulI
 public import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Complex vector bundles from fibrewise complex structures
 
 Let `V` be a real vector bundle over `B` with model fibre `F`. A *continuous complex structure* on
-`V` (`Bundle.ContinuousComplexStructure F V`) is a continuous section `J` of the endomorphism bundle
-`fun b ↦ V b →L[ℝ] V b` with `J b ∘ J b = -1` on every fibre. Each fibre is then a complex vector
-space, `(a + b i) • v = a • v + b • J v` (`TauCeti.AlmostComplexStructure.complexModule`). This file
-shows that these complex vector spaces form a complex vector bundle `J.Fiber`, whose fibre over `b`
-is `V b` with this complex structure. When `F` is finite-dimensional, the model fibre is any
-finite-dimensional complex normed space `G` with `finrank ℝ F = 2 * finrank ℂ G`, supplied as an
-instance `Fact (finrank ℝ F = 2 * finrank ℂ G)`. The total space of `J.Fiber` is homeomorphic to
-that of `V` by the identity of the fibres
-(`Bundle.ContinuousComplexStructure.totalSpaceHomeomorph`): the complex vector bundle is the real
-bundle `V`, with `J` as multiplication by `i`.
+`V` (`TauCeti.Bundle.ContinuousComplexStructure F V`) is a continuous section `J` of the
+endomorphism bundle `fun b ↦ V b →L[ℝ] V b` with `J b ∘ J b = -1` on every fibre. Each fibre is
+then a complex vector space, `(a + b i) • v = a • v + b • J v`
+(`TauCeti.AlmostComplexStructure.complexModule`). This file shows that these complex vector spaces
+form a complex vector bundle `J.Fiber`, whose fibre over `b` is `V b` with this complex structure.
+When `F` is finite-dimensional, the model fibre is any finite-dimensional complex normed space `G`
+with `finrank ℝ F = 2 * finrank ℂ G`, supplied as an instance
+`Fact (finrank ℝ F = 2 * finrank ℂ G)`. The total space of `J.Fiber` is homeomorphic to that of
+`V` by the identity of the fibres
+(`TauCeti.Bundle.ContinuousComplexStructure.totalSpaceHomeomorph`): the complex vector bundle is
+the real bundle `V`, with `J` as multiplication by `i`.
 
 The main example is the tangent bundle of a manifold with an almost complex structure, for instance
 a symplectic manifold with a compatible almost complex structure. Its first Chern class is that of
@@ -35,30 +36,32 @@ the resulting complex vector bundle.
 ## Construction
 
 Near a point `b₀`, read `J` in the trivialization of `V` at `b₀`: this gives a continuous family
-`J' b` of complex structures on `F`, defined on the base set of that trivialization. Its complex
-linear part
+`J' b` of complex structures on `F`, defined on the base set of that trivialization. The complex
+linear part of the identity of `F`, from `J' b₀` to `J' b`,
 
 `A b = (1 - J' b ∘ J' b₀) / 2`
 
-satisfies `J' b ∘ A b = A b ∘ J' b₀` (`Bundle.ContinuousComplexStructure.coord_comp_linearPart`),
-so it is complex linear from `(F, J' b₀)` to `(F, J' b)`. It is the identity at `b₀`, so it is
-invertible on a neighbourhood of `b₀`. Composing the trivialization of `V` with `(A b)⁻¹` and with
-a fixed complex linear isomorphism `(F, J' b₀) ≃ G` gives a trivialization of `J.Fiber` that is
-complex linear on every fibre (`Bundle.ContinuousComplexStructure.pretrivializationAt`). The
-coordinate changes between two of them are continuous, since inversion is continuous on the
-invertible operators, so these local trivializations form a `VectorPrebundle` over `ℂ`.
+(`TauCeti.Bundle.ContinuousComplexStructure.complexLinearPart`, the operator
+`TauCeti.complexLinearPart (J' b₀) (J' b) id`), satisfies `J' b ∘ A b = A b ∘ J' b₀`
+(`TauCeti.Bundle.ContinuousComplexStructure.coord_complexLinearPart_apply`). It is the identity at
+`b₀`, so it is invertible on a neighbourhood of `b₀`. Composing the trivialization of `V` with
+`(A b)⁻¹` and with a fixed complex linear isomorphism `(F, J' b₀) ≃ G` gives a trivialization of
+`J.Fiber` that is complex linear on every fibre
+(`TauCeti.Bundle.ContinuousComplexStructure.pretrivializationAt`). The coordinate changes between
+two of them are continuous, since inversion is continuous on the invertible operators, so these
+local trivializations form a `VectorPrebundle` over `ℂ`.
 
 ## Main definitions
 
-* `Bundle.ContinuousComplexStructure F V`: a continuous section of the endomorphism bundle of `V`
-  squaring to `-1`.
-* `Bundle.ContinuousComplexStructure.Fiber`: the fibres of `V` with the complex structures given by
-  `J`.
-* `Bundle.ContinuousComplexStructure.vectorPrebundle`: the complex vector prebundle structure on
-  `J.Fiber` with model fibre `G`, which gives the instances
+* `TauCeti.Bundle.ContinuousComplexStructure F V`: a continuous section of the endomorphism bundle
+  of `V` squaring to `-1`.
+* `TauCeti.Bundle.ContinuousComplexStructure.Fiber`: the fibres of `V` with the complex structures
+  given by `J`.
+* `TauCeti.Bundle.ContinuousComplexStructure.vectorPrebundle`: the complex vector prebundle
+  structure on `J.Fiber` with model fibre `G`, which gives the instances
   `FiberBundle G J.Fiber` and `VectorBundle ℂ G J.Fiber`.
-* `Bundle.ContinuousComplexStructure.totalSpaceHomeomorph`: the total space of `J.Fiber` is
-  homeomorphic to that of `V`, by the identity on fibres.
+* `TauCeti.Bundle.ContinuousComplexStructure.totalSpaceHomeomorph`: the total space of `J.Fiber`
+  is homeomorphic to that of `V`, by the identity on fibres.
 
 ## References
 
@@ -75,7 +78,7 @@ noncomputable section
 
 open Bundle FiberBundle Set Topology Module
 
-namespace Bundle
+namespace TauCeti.Bundle
 
 variable {B : Type*} [TopologicalSpace B]
   (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -145,19 +148,19 @@ instance (b : B) : Module ℂ (J.Fiber b) := (J.almostComplexStructureAt b).comp
 /-- The identification of the fibre `J.Fiber b` with `V b`, as an additive equivalence. -/
 def fiberEquiv (b : B) : J.Fiber b ≃+ V b := AddEquiv.refl _
 
-theorem smul_def (b : B) (z : ℂ) (v : J.Fiber b) :
+theorem fiberEquiv_smul (b : B) (z : ℂ) (v : J.Fiber b) :
     J.fiberEquiv b (z • v) = z.re • J.fiberEquiv b v + z.im • J b (J.fiberEquiv b v) :=
   (J.almostComplexStructureAt b).complexModule_smul_def z v
 
 @[simp]
-theorem I_smul (b : B) (v : J.Fiber b) :
+theorem fiberEquiv_I_smul (b : B) (v : J.Fiber b) :
     J.fiberEquiv b (Complex.I • v) = J b (J.fiberEquiv b v) := by
-  simp [smul_def]
+  simp [fiberEquiv_smul]
 
 @[simp]
-theorem real_smul (b : B) (r : ℝ) (v : J.Fiber b) :
+theorem fiberEquiv_real_smul (b : B) (r : ℝ) (v : J.Fiber b) :
     J.fiberEquiv b (r • v) = r • J.fiberEquiv b v := by
-  rw [← Complex.coe_smul, smul_def]
+  rw [← Complex.coe_smul, fiberEquiv_smul]
   simp
 
 instance (b : B) : ContinuousSMul ℂ (J.Fiber b) where
@@ -166,7 +169,7 @@ instance (b : B) : ContinuousSMul ℂ (J.Fiber b) where
     have hf : Continuous fun p : ℂ × V b ↦ p.1.re • p.2 + p.1.im • J b p.2 :=
       ((Complex.continuous_re.comp continuous_fst).smul continuous_snd).add
         ((Complex.continuous_im.comp continuous_fst).smul ((J b).continuous.comp continuous_snd))
-    exact hf.congr fun p ↦ (J.smul_def b p.1 p.2).symm
+    exact hf.congr fun p ↦ (J.fiberEquiv_smul b p.1 p.2).symm
 
 /-! ### `J` in the trivializations of `V` -/
 
@@ -187,53 +190,54 @@ theorem coord_apply {b₀ b : B} (hb : b ∈ (trivializationAt F V b₀).baseSet
   simp only [coord, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
     Trivialization.symmL_continuousLinearMapAt _ hb]
 
-theorem coord_comp_coord {b₀ b : B} (hb : b ∈ (trivializationAt F V b₀).baseSet) :
-    (J.coord b₀ b).comp (J.coord b₀ b) = -ContinuousLinearMap.id ℝ F := by
-  ext w
+@[simp]
+theorem coord_coord_apply {b₀ b : B} (hb : b ∈ (trivializationAt F V b₀).baseSet) (w : F) :
+    J.coord b₀ b (J.coord b₀ b w) = -w := by
   obtain ⟨v, rfl⟩ : ∃ v, (trivializationAt F V b₀).continuousLinearMapAt ℝ b v = w :=
     ⟨(trivializationAt F V b₀).symmL ℝ b w,
       Trivialization.continuousLinearMapAt_symmL _ hb w⟩
-  simp only [ContinuousLinearMap.comp_apply, neg_apply,
-    ContinuousLinearMap.id_apply]
   rw [coord_apply J hb, coord_apply J hb, apply_apply, map_neg]
 
 /-- The complex linear part `(1 - J' b ∘ J' b₀) / 2` of the identity of `F`, from the complex
-structure `J' b₀ = J.coord b₀ b₀` to the complex structure `J' b = J.coord b₀ b`. -/
-def linearPart (b₀ b : B) : F →L[ℝ] F :=
+structure `J' b₀ = J.coord b₀ b₀` to the complex structure `J' b = J.coord b₀ b`: as a linear
+map, it is `TauCeti.complexLinearPart (J' b₀) (J' b) LinearMap.id`. -/
+def complexLinearPart (b₀ b : B) : F →L[ℝ] F :=
   (2⁻¹ : ℝ) • (ContinuousLinearMap.id ℝ F - (J.coord b₀ b).comp (J.coord b₀ b₀))
 
-theorem continuousOn_linearPart (b₀ : B) :
-    ContinuousOn (J.linearPart b₀) (trivializationAt F V b₀).baseSet :=
+theorem continuousOn_complexLinearPart (b₀ : B) :
+    ContinuousOn (J.complexLinearPart b₀) (trivializationAt F V b₀).baseSet :=
   (continuousOn_const.sub ((J.continuousOn_coord b₀).clm_comp continuousOn_const)).const_smul
     (2⁻¹ : ℝ)
 
 @[simp]
-theorem linearPart_self (b₀ : B) : J.linearPart b₀ b₀ = 1 := by
-  rw [linearPart, coord_comp_coord J (mem_baseSet_trivializationAt F V b₀), sub_neg_eq_add,
-    ← two_smul ℝ, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul, ContinuousLinearMap.one_def]
-
-/-- `J.linearPart b₀ b` intertwines the complex structures `J' b₀` and `J' b`. -/
-theorem coord_comp_linearPart {b₀ b : B} (hb : b ∈ (trivializationAt F V b₀).baseSet) :
-    (J.coord b₀ b).comp (J.linearPart b₀ b) = (J.linearPart b₀ b).comp (J.coord b₀ b₀) := by
+theorem complexLinearPart_self (b₀ : B) : J.complexLinearPart b₀ b₀ = 1 := by
   ext w
-  have hw := congrArg (fun T : F →L[ℝ] F ↦ T (J.coord b₀ b₀ w)) (coord_comp_coord J hb)
-  have hw₀ := congrArg (fun T : F →L[ℝ] F ↦ T w)
-    (coord_comp_coord J (mem_baseSet_trivializationAt F V b₀))
-  simp only [ContinuousLinearMap.comp_apply, neg_apply,
-    ContinuousLinearMap.id_apply] at hw hw₀
-  simp only [linearPart, ContinuousLinearMap.comp_apply, smul_apply,
-    sub_apply, ContinuousLinearMap.id_apply, map_smul, map_sub, map_neg, hw,
-    hw₀]
-  rw [sub_neg_eq_add, sub_neg_eq_add, add_comm]
+  simp only [complexLinearPart, smul_apply, sub_apply,
+    ContinuousLinearMap.id_apply, ContinuousLinearMap.comp_apply,
+    J.coord_coord_apply (mem_baseSet_trivializationAt F V b₀), one_apply_eq_self]
+  module
 
-/-- The neighbourhood of `b₀` on which `J.linearPart b₀` is invertible: the base set of the
+/-- `J.complexLinearPart b₀ b` intertwines the complex structures `J' b₀` and `J' b`. -/
+theorem coord_complexLinearPart_apply {b₀ b : B} (hb : b ∈ (trivializationAt F V b₀).baseSet)
+    (w : F) :
+    J.coord b₀ b (J.complexLinearPart b₀ b w) = J.complexLinearPart b₀ b (J.coord b₀ b₀ w) := by
+  have hJ {b' : B} (hb' : b' ∈ (trivializationAt F V b₀).baseSet) :
+      (J.coord b₀ b' : F →ₗ[ℝ] F) ∘ₗ (J.coord b₀ b' : F →ₗ[ℝ] F) = -LinearMap.id :=
+    LinearMap.ext fun w ↦ by simp [J.coord_coord_apply hb']
+  have hA (u : F) : TauCeti.complexLinearPart (J.coord b₀ b₀ : F →ₗ[ℝ] F)
+      (J.coord b₀ b : F →ₗ[ℝ] F) LinearMap.id u = J.complexLinearPart b₀ b u := by
+    simp [complexLinearPart]
+  simpa only [hA, ContinuousLinearMap.coe_coe] using ((TauCeti.complexLinearPart_isComplexLinear
+    (hJ (mem_baseSet_trivializationAt F V b₀)) (hJ hb) LinearMap.id).apply w).symm
+
+/-- The neighbourhood of `b₀` on which `J.complexLinearPart b₀` is invertible: the base set of the
 complex trivialization at `b₀`. -/
 def unitSet (b₀ : B) : Set B :=
-  (trivializationAt F V b₀).baseSet ∩ J.linearPart b₀ ⁻¹' {T | IsUnit T}
+  (trivializationAt F V b₀).baseSet ∩ J.complexLinearPart b₀ ⁻¹' {T | IsUnit T}
 
 theorem isOpen_unitSet [CompleteSpace F] (b₀ : B) : IsOpen (J.unitSet b₀) :=
-  (J.continuousOn_linearPart b₀).isOpen_inter_preimage (trivializationAt F V b₀).open_baseSet
-    Units.isOpen
+  (J.continuousOn_complexLinearPart b₀).isOpen_inter_preimage
+    (trivializationAt F V b₀).open_baseSet Units.isOpen
 
 theorem mem_unitSet_self (b₀ : B) : b₀ ∈ J.unitSet b₀ :=
   ⟨mem_baseSet_trivializationAt F V b₀, by simp [isUnit_one]⟩
@@ -241,45 +245,48 @@ theorem mem_unitSet_self (b₀ : B) : b₀ ∈ J.unitSet b₀ :=
 theorem unitSet_subset (b₀ : B) : J.unitSet b₀ ⊆ (trivializationAt F V b₀).baseSet :=
   inter_subset_left
 
-theorem continuousOn_inverse_linearPart [CompleteSpace F] (b₀ : B) :
-    ContinuousOn (fun b ↦ Ring.inverse (J.linearPart b₀ b)) (J.unitSet b₀) := by
+theorem continuousOn_inverse_complexLinearPart [CompleteSpace F] (b₀ : B) :
+    ContinuousOn (fun b ↦ Ring.inverse (J.complexLinearPart b₀ b)) (J.unitSet b₀) := by
   intro b hb
-  have hunit : IsUnit (J.linearPart b₀ b) := hb.2
+  have hunit : IsUnit (J.complexLinearPart b₀ b) := hb.2
   obtain ⟨u, hu⟩ := hunit
-  have hc : ContinuousAt Ring.inverse (J.linearPart b₀ b) :=
+  have hc : ContinuousAt Ring.inverse (J.complexLinearPart b₀ b) :=
     hu ▸ NormedRing.inverse_continuousAt u
   exact hc.comp_continuousWithinAt
-    ((J.continuousOn_linearPart b₀).mono (J.unitSet_subset b₀) b hb)
+    ((J.continuousOn_complexLinearPart b₀).mono (J.unitSet_subset b₀) b hb)
 
-theorem inverse_linearPart_mul {b₀ b : B} (hb : b ∈ J.unitSet b₀) :
-    Ring.inverse (J.linearPart b₀ b) * J.linearPart b₀ b = 1 :=
+theorem inverse_complexLinearPart_mul {b₀ b : B} (hb : b ∈ J.unitSet b₀) :
+    Ring.inverse (J.complexLinearPart b₀ b) * J.complexLinearPart b₀ b = 1 :=
   Ring.inverse_mul_cancel _ hb.2
 
-theorem linearPart_mul_inverse {b₀ b : B} (hb : b ∈ J.unitSet b₀) :
-    J.linearPart b₀ b * Ring.inverse (J.linearPart b₀ b) = 1 :=
+theorem complexLinearPart_mul_inverse {b₀ b : B} (hb : b ∈ J.unitSet b₀) :
+    J.complexLinearPart b₀ b * Ring.inverse (J.complexLinearPart b₀ b) = 1 :=
   Ring.mul_inverse_cancel _ hb.2
 
-/-- The inverse of `J.linearPart b₀ b` intertwines `J' b` and `J' b₀`. -/
-theorem inverse_linearPart_coord {b₀ b : B} (hb : b ∈ J.unitSet b₀) (w : F) :
-    Ring.inverse (J.linearPart b₀ b) (J.coord b₀ b w) =
-      J.coord b₀ b₀ (Ring.inverse (J.linearPart b₀ b) w) := by
-  set A := J.linearPart b₀ b
-  set A' := Ring.inverse A
-  have h := congrArg (fun T : F →L[ℝ] F ↦ A' (T (A' w))) (J.coord_comp_linearPart hb.1)
-  have h₁ := congrArg (fun T : F →L[ℝ] F ↦ T w) (J.linearPart_mul_inverse hb)
-  have h₂ := congrArg (fun T : F →L[ℝ] F ↦ T (J.coord b₀ b₀ (A' w)))
-    (J.inverse_linearPart_mul hb)
-  simp only [ContinuousLinearMap.comp_apply, mul_apply_eq_comp,
-    one_apply_eq_self] at h h₁ h₂
-  rw [h₁] at h
-  rw [h, h₂]
+@[simp]
+theorem inverse_complexLinearPart_complexLinearPart_apply {b₀ b : B} (hb : b ∈ J.unitSet b₀)
+    (w : F) : Ring.inverse (J.complexLinearPart b₀ b) (J.complexLinearPart b₀ b w) = w := by
+  rw [← mul_apply_eq_comp, J.inverse_complexLinearPart_mul hb,
+    one_apply_eq_self]
+
+@[simp]
+theorem complexLinearPart_inverse_complexLinearPart_apply {b₀ b : B} (hb : b ∈ J.unitSet b₀)
+    (w : F) : J.complexLinearPart b₀ b (Ring.inverse (J.complexLinearPart b₀ b) w) = w := by
+  rw [← mul_apply_eq_comp, J.complexLinearPart_mul_inverse hb,
+    one_apply_eq_self]
+
+/-- The inverse of `J.complexLinearPart b₀ b` intertwines `J' b` and `J' b₀`. -/
+theorem inverse_complexLinearPart_coord {b₀ b : B} (hb : b ∈ J.unitSet b₀) (w : F) :
+    Ring.inverse (J.complexLinearPart b₀ b) (J.coord b₀ b w) =
+      J.coord b₀ b₀ (Ring.inverse (J.complexLinearPart b₀ b) w) := by
+  conv_lhs => rw [← J.complexLinearPart_inverse_complexLinearPart_apply hb w,
+    J.coord_complexLinearPart_apply hb.1, J.inverse_complexLinearPart_complexLinearPart_apply hb]
 
 /-- `J' b₀ = J.coord b₀ b₀`, as an almost complex structure on the model fibre `F`. -/
 private def coordAt (b₀ : B) : TauCeti.AlmostComplexStructure F where
   toLinearMap := (J.coord b₀ b₀).toLinearMap
   square_neg := LinearMap.ext fun w ↦ by
-    simpa using congrArg (fun T : F →L[ℝ] F ↦ T w)
-      (J.coord_comp_coord (mem_baseSet_trivializationAt F V b₀))
+    simp [J.coord_coord_apply (mem_baseSet_trivializationAt F V b₀)]
 
 /-! ### The model fibre -/
 
@@ -306,47 +313,42 @@ theorem modelEquiv_symm_coord (b₀ : B) (w : F) :
 /-! ### The local trivializations -/
 
 /-- The fibre map of the complex trivialization at `b₀`: the trivialization of `V` at `b₀`,
-followed by the inverse of `J.linearPart b₀ b` and the identification of `F` with `G`. -/
+followed by the inverse of `J.complexLinearPart b₀ b` and the identification of `F` with `G`. -/
 def fiberMap (b₀ b : B) : V b →L[ℝ] G :=
   ((J.modelEquiv G b₀).symm : F →L[ℝ] G).comp
-    ((Ring.inverse (J.linearPart b₀ b)).comp
+    ((Ring.inverse (J.complexLinearPart b₀ b)).comp
       ((trivializationAt F V b₀).continuousLinearMapAt ℝ b))
 
 /-- The fibre maps of the complex trivialization at `b₀` carry `J` to multiplication by `i`. -/
-theorem fiberMap_apply_apply {b₀ b : B} (hb : b ∈ J.unitSet b₀) (v : V b) :
+theorem fiberMap_J_apply_eq_I_smul {b₀ b : B} (hb : b ∈ J.unitSet b₀) (v : V b) :
     J.fiberMap G b₀ b (J b v) = Complex.I • J.fiberMap G b₀ b v := by
   simp only [fiberMap, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ← J.coord_apply (J.unitSet_subset b₀ hb), J.inverse_linearPart_coord hb,
+    ← J.coord_apply (J.unitSet_subset b₀ hb), J.inverse_complexLinearPart_coord hb,
     modelEquiv_symm_coord]
 
 /-- The pretrivialization of `J.Fiber` at `b₀`, with base set `J.unitSet b₀`. -/
 def pretrivializationAt (b₀ : B) : Pretrivialization G (π G J.Fiber) where
   toFun p := (p.1, J.fiberMap G b₀ p.1 (J.fiberEquiv p.1 p.2))
   invFun p := ⟨p.1, (J.fiberEquiv p.1).symm ((trivializationAt F V b₀).symm p.1
-    (J.linearPart b₀ p.1 (J.modelEquiv G b₀ p.2)))⟩
+    (J.complexLinearPart b₀ p.1 (J.modelEquiv G b₀ p.2)))⟩
   source := TotalSpace.proj ⁻¹' J.unitSet b₀
   target := J.unitSet b₀ ×ˢ univ
   map_source' _ h := ⟨h, mem_univ _⟩
   map_target' _ h := h.1
   left_inv' := fun ⟨b, v⟩ hb ↦ by
     have hb' : b ∈ (trivializationAt F V b₀).baseSet := J.unitSet_subset b₀ hb
-    have h := congrArg (fun T : F →L[ℝ] F ↦
-      T ((trivializationAt F V b₀).continuousLinearMapAt ℝ b (J.fiberEquiv b v)))
-      (J.linearPart_mul_inverse hb)
-    simp only [mul_apply_eq_comp, one_apply_eq_self] at h
     simp only [fiberMap, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.apply_symm_apply, h]
+      ContinuousLinearEquiv.apply_symm_apply,
+      J.complexLinearPart_inverse_complexLinearPart_apply hb]
     rw [← Trivialization.symmL_apply (R := ℝ) _ hb',
       Trivialization.symmL_continuousLinearMapAt _ hb', AddEquiv.symm_apply_apply]
   right_inv' := fun ⟨b, z⟩ hb ↦ by
     have hb' : b ∈ (trivializationAt F V b₀).baseSet := J.unitSet_subset b₀ hb.1
-    have h := congrArg (fun T : F →L[ℝ] F ↦ T (J.modelEquiv G b₀ z))
-      (J.inverse_linearPart_mul hb.1)
-    simp only [mul_apply_eq_comp, one_apply_eq_self] at h
     simp only [fiberMap, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
       AddEquiv.apply_symm_apply]
     rw [← Trivialization.symmL_apply (R := ℝ) _ hb',
-      Trivialization.continuousLinearMapAt_symmL _ hb', h,
+      Trivialization.continuousLinearMapAt_symmL _ hb',
+      J.inverse_complexLinearPart_complexLinearPart_apply hb.1,
       ContinuousLinearEquiv.symm_apply_apply]
   open_target :=
     have := FiniteDimensional.complete ℝ F
@@ -369,8 +371,10 @@ theorem baseSet_pretrivializationAt (b₀ : B) :
 
 theorem pretrivializationAt_symm_apply {b₀ b : B} (hb : b ∈ J.unitSet b₀) (z : G) :
     J.fiberEquiv b ((J.pretrivializationAt G b₀).symm b z) =
-      (trivializationAt F V b₀).symm b (J.linearPart b₀ b (J.modelEquiv G b₀ z)) := by
+      (trivializationAt F V b₀).symm b (J.complexLinearPart b₀ b (J.modelEquiv G b₀ z)) := by
   rw [Pretrivialization.symm_apply _ hb]
+  -- The `cast` in `Pretrivialization.symm_apply` is along `((b, z).1 = b)`, which holds by `rfl`,
+  -- and `fiberEquiv` is the identity, so both sides unfold to the same term.
   rfl
 
 instance isLinear_pretrivializationAt (b₀ : B) : (J.pretrivializationAt G b₀).IsLinear ℂ where
@@ -379,14 +383,14 @@ instance isLinear_pretrivializationAt (b₀ : B) : (J.pretrivializationAt G b₀
       map_smul c v := by
         simp only [pretrivializationAt_apply]
         rw [← Complex.re_smul_add_im_smul c v]
-        simp [smul_def, J.fiberMap_apply_apply G hb] }
+        simp [fiberEquiv_smul, J.fiberMap_J_apply_eq_I_smul G hb] }
 
 /-- The coordinate change from the complex trivialization at `b₀` to the one at `b₁`, as a real
 linear operator on `G`. -/
 private def realCoordChange (b₀ b₁ b : B) : G →L[ℝ] G :=
-  ((J.modelEquiv G b₁).symm : F →L[ℝ] G).comp ((Ring.inverse (J.linearPart b₁ b)).comp
+  ((J.modelEquiv G b₁).symm : F →L[ℝ] G).comp ((Ring.inverse (J.complexLinearPart b₁ b)).comp
     (((trivializationAt F V b₀).coordChangeL ℝ (trivializationAt F V b₁) b : F →L[ℝ] F).comp
-      ((J.linearPart b₀ b).comp (J.modelEquiv G b₀ : G →L[ℝ] F))))
+      ((J.complexLinearPart b₀ b).comp (J.modelEquiv G b₀ : G →L[ℝ] F))))
 
 private theorem realCoordChange_apply {b₀ b₁ b : B} (hb : b ∈ J.unitSet b₀ ∩ J.unitSet b₁)
     (z : G) :
@@ -405,9 +409,9 @@ private theorem continuousOn_realCoordChange (b₀ b₁ : B) :
   have hsub : J.unitSet b₀ ∩ J.unitSet b₁ ⊆
       (trivializationAt F V b₀).baseSet ∩ (trivializationAt F V b₁).baseSet :=
     inter_subset_inter (J.unitSet_subset b₀) (J.unitSet_subset b₁)
-  exact continuousOn_const.clm_comp (((J.continuousOn_inverse_linearPart b₁).mono
+  exact continuousOn_const.clm_comp (((J.continuousOn_inverse_complexLinearPart b₁).mono
     inter_subset_right).clm_comp (((continuousOn_coordChange ℝ _ _).mono hsub).clm_comp
-      ((((J.continuousOn_linearPart b₀).mono (J.unitSet_subset b₀)).mono
+      ((((J.continuousOn_complexLinearPart b₀).mono (J.unitSet_subset b₀)).mono
         inter_subset_left).clm_comp continuousOn_const)))
 
 private theorem realCoordChange_I_smul {b₀ b₁ b : B} (hb : b ∈ J.unitSet b₀ ∩ J.unitSet b₁)
@@ -421,21 +425,14 @@ private theorem exists_coordChange (b₀ b₁ : B) :
     ∃ f : B → G →L[ℂ] G, ContinuousOn f (J.unitSet b₀ ∩ J.unitSet b₁) ∧
       ∀ b ∈ J.unitSet b₀ ∩ J.unitSet b₁, ∀ z : G,
         f b z = (J.pretrivializationAt G b₁ ⟨b, (J.pretrivializationAt G b₀).symm b z⟩).2 := by
-  classical
-  let f : B → G →L[ℂ] G := fun b ↦
-    if h : ∀ z, J.realCoordChange G b₀ b₁ b (Complex.I • z) =
-        Complex.I • J.realCoordChange G b₀ b₁ b z then
-      (J.realCoordChange G b₀ b₁ b).complexOfMapISmul h
-    else 0
-  have hf : ∀ b ∈ J.unitSet b₀ ∩ J.unitSet b₁,
-      (f b).restrictScalars ℝ = J.realCoordChange G b₀ b₁ b := fun b hb ↦ by
-    simp only [f, J.realCoordChange_I_smul G hb, implies_true, dite_true,
-      ContinuousLinearMap.restrictScalars_complexOfMapISmul]
-  refine ⟨f, ?_, fun b hb z ↦ ?_⟩
-  · rw [(ContinuousLinearMap.restrictScalarsIsometry ℂ G G ℝ ℝ).isometry.isUniformInducing
-      |>.isInducing.continuousOn_iff]
-    exact (J.continuousOn_realCoordChange G b₀ b₁).congr fun b hb ↦ hf b hb
-  · rw [← J.realCoordChange_apply G hb, ← hf b hb, ContinuousLinearMap.coe_restrictScalars']
+  refine ⟨fun b ↦ (J.realCoordChange G b₀ b₁ b).complexLinearPart,
+    ContinuousLinearMap.continuous_complexLinearPart.comp_continuousOn
+      (J.continuousOn_realCoordChange G b₀ b₁), fun b hb z ↦ ?_⟩
+  -- On the overlap the real coordinate change commutes with `i`, so it is its own complex linear
+  -- part: `½ (Ψ z - i Ψ (i z)) = ½ (Ψ z + Ψ z)`.
+  rw [← J.realCoordChange_apply G hb, ContinuousLinearMap.complexLinearPart_apply,
+    J.realCoordChange_I_smul G hb, smul_smul, Complex.I_mul_I]
+  module
 
 /-- On its own centre, the fibre map of the complex trivialization at `b` is a real linear
 homeomorphism. -/
@@ -466,8 +463,8 @@ def vectorPrebundle : VectorPrebundle ℂ G J.Fiber where
     isInducing_const_prod.mpr (J.isInducing_fiberMap_self G b)
 
 /-- The topology on the total space of `J.Fiber` given by its complex trivializations; by
-`Bundle.ContinuousComplexStructure.totalSpaceHomeomorph` it is the topology of the total space of
-`V`. -/
+`TauCeti.Bundle.ContinuousComplexStructure.totalSpaceHomeomorph` it is the topology of the total
+space of `V`. -/
 instance : TopologicalSpace (TotalSpace G J.Fiber) := (J.vectorPrebundle G).totalSpaceTopology
 
 /-- `J.Fiber` is a fibre bundle with model fibre `G`. -/
@@ -484,13 +481,17 @@ theorem trivializationAt_apply (b₀ : B) (p : TotalSpace G J.Fiber) :
 theorem baseSet_trivializationAt (b₀ : B) :
     (trivializationAt G J.Fiber b₀).baseSet = J.unitSet b₀ := (rfl)
 
-private theorem linearPart_modelEquiv_fiberMap {b₀ b : B} (hb : b ∈ J.unitSet b₀) (v : V b) :
-    J.linearPart b₀ b (J.modelEquiv G b₀ (J.fiberMap G b₀ b v)) =
+theorem trivializationAt_symm_apply {b₀ b : B} (hb : b ∈ J.unitSet b₀) (z : G) :
+    J.fiberEquiv b ((trivializationAt G J.Fiber b₀).symm b z) =
+      (trivializationAt F V b₀).symm b (J.complexLinearPart b₀ b (J.modelEquiv G b₀ z)) :=
+  J.pretrivializationAt_symm_apply G hb z
+
+private theorem complexLinearPart_modelEquiv_fiberMap {b₀ b : B} (hb : b ∈ J.unitSet b₀)
+    (v : V b) :
+    J.complexLinearPart b₀ b (J.modelEquiv G b₀ (J.fiberMap G b₀ b v)) =
       (trivializationAt F V b₀).continuousLinearMapAt ℝ b v := by
-  have h := congrArg (fun T : F →L[ℝ] F ↦
-    T ((trivializationAt F V b₀).continuousLinearMapAt ℝ b v)) (J.linearPart_mul_inverse hb)
-  simpa only [fiberMap, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.apply_symm_apply, mul_apply_eq_comp, one_apply_eq_self] using h
+  simp only [fiberMap, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply, J.complexLinearPart_inverse_complexLinearPart_apply hb]
 
 /-- The identity of the fibres, from the total space of `J.Fiber` to that of `V`, is continuous.
 -/
@@ -504,8 +505,8 @@ private theorem continuous_toTotalSpace :
   have hsrc : (trivializationAt G J.Fiber p₀.1).source ∈ 𝓝 p₀ :=
     (trivializationAt G J.Fiber p₀.1).open_source.mem_nhds
       (FiberBundle.mem_trivializationAt_proj_source)
-  have hA : ContinuousAt (fun p : TotalSpace G J.Fiber ↦ J.linearPart p₀.1 p.1) p₀ :=
-    ((J.continuousOn_linearPart p₀.1).continuousAt
+  have hA : ContinuousAt (fun p : TotalSpace G J.Fiber ↦ J.complexLinearPart p₀.1 p.1) p₀ :=
+    ((J.continuousOn_complexLinearPart p₀.1).continuousAt
       ((trivializationAt F V p₀.1).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt F V p₀.1))).comp
       (FiberBundle.continuous_proj G J.Fiber).continuousAt
@@ -517,7 +518,7 @@ private theorem continuous_toTotalSpace :
   filter_upwards [hsrc] with p hp
   have hp' : p.1 ∈ (trivializationAt F V p₀.1).baseSet := J.unitSet_subset _ hp
   simp only [Function.comp_apply, trivializationAt_apply,
-    J.linearPart_modelEquiv_fiberMap G hp,
+    J.complexLinearPart_modelEquiv_fiberMap G hp,
     Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hp']
 
 /-- The identity of the fibres, from the total space of `V` to that of `J.Fiber`, is continuous.
@@ -532,8 +533,9 @@ private theorem continuous_ofTotalSpace :
   -- Near `q₀`, the complex coordinate of `q` is `φ⁻¹ (A⁻¹ w)`, where `w` is its coordinate in
   -- the trivialization of `V` at `q₀.1`.
   have hU : J.unitSet q₀.1 ∈ 𝓝 q₀.1 := (J.isOpen_unitSet q₀.1).mem_nhds (J.mem_unitSet_self q₀.1)
-  have hA : ContinuousAt (fun q : TotalSpace F V ↦ Ring.inverse (J.linearPart q₀.1 q.1)) q₀ :=
-    ((J.continuousOn_inverse_linearPart q₀.1).continuousAt hU).comp
+  have hA :
+      ContinuousAt (fun q : TotalSpace F V ↦ Ring.inverse (J.complexLinearPart q₀.1 q.1)) q₀ :=
+    ((J.continuousOn_inverse_complexLinearPart q₀.1).continuousAt hU).comp
       (FiberBundle.continuous_proj F V).continuousAt
   have he : ContinuousAt (fun q ↦ (trivializationAt F V q₀.1 q).2) q₀ :=
     ((trivializationAt F V q₀.1).continuousAt FiberBundle.mem_trivializationAt_proj_source).snd
@@ -567,4 +569,4 @@ end Model
 
 end ContinuousComplexStructure
 
-end Bundle
+end TauCeti.Bundle
