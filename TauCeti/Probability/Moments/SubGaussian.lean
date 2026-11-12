@@ -142,7 +142,7 @@ theorem mgf_sq_sub_integral_le [IsZeroOrProbabilityMeasure μ] (h : HasSubgaussi
       refine ⟨(integrable_const 1).congr hexp1.symm, ?_⟩
       rw [mgf, integral_congr_ae hexp1, integral_const, probReal_univ, one_smul]
       exact Real.one_le_exp (by positivity)
-    · have hc_pos : 0 < (c : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hc)
+    · have : 0 < (c : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hc)
       let B : ℝ := 4 * (c : ℝ); have hB : 0 < B := by positivity
       have hs_lt : 2 * (c : ℝ) * B⁻¹ < 1 := by dsimp [B]; field_simp; norm_num
       have hexp_int : Integrable (fun ω ↦ exp (X ω ^ 2 / B)) μ := by

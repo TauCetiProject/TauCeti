@@ -64,7 +64,7 @@ private theorem measurePreserving_swapCoords [Fintype ι] (μ : ι → Measure E
       ((Measure.pi μ).prod (Measure.pi μ)) ((Measure.pi μ).prod (Measure.pi μ)) := by
   let e := MeasurableEquiv.arrowProdEquivProdArrow E E ι
   have he := measurePreserving_arrowProdEquivProdArrow E E ι μ μ
-  let step : ∀ k : ι, E × E → E × E := fun k p ↦ if δ k then p else p.swap
+  let step : ι → E × E → E × E := fun k p ↦ if δ k then p else p.swap
   have hstep_meas (k : ι) : Measurable (step k) := by
     cases h : δ k <;> simpa [step, h] using (by first | exact measurable_swap | exact measurable_id)
   have hstep_map (k : ι) : ((μ k).prod (μ k)).map (step k) = (μ k).prod (μ k) := by

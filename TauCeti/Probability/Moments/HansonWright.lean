@@ -65,10 +65,10 @@ private def hwClipped {ι : Type*} [Fintype ι] [DecidableEq ι] (K : ℝ≥0) (
 
 private lemma measurable_hwClipped {ι : Type*} [Fintype ι] [DecidableEq ι] (K : ℝ≥0) (t : ℝ) :
     Measurable (hwClipped (ι := ι) K t) := by
-  have h1 : Measurable (fun M : Matrix ι ι ℝ ↦ ∑ i, ∑ j, M i j ^ 2) :=
+  have : Measurable (fun M : Matrix ι ι ℝ ↦ ∑ i, ∑ j, M i j ^ 2) :=
     Finset.measurable_sum _ fun i _ ↦ Finset.measurable_sum _ fun j _ ↦
       (Matrix.measurable_apply (i := i) (j := j)).pow_const 2
-  have h2 : Measurable (fun M : Matrix ι ι ℝ ↦ ‖M‖) := continuous_norm.measurable
+  have : Measurable (fun M : Matrix ι ι ℝ ↦ ‖M‖) := continuous_norm.measurable
   unfold hwClipped; fun_prop
 
 section RealHansonWright
@@ -285,7 +285,7 @@ theorem measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_bound
       ((Finset.single_le_sum (fun j _ ↦ sq_nonneg (A ω i₀ j)) (Finset.mem_univ j₀)).trans
         (Finset.single_le_sum (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
           (Finset.mem_univ i₀)))
-    have hMop_pos : 0 < ‖A ω‖ := norm_pos_iff.2 hM0
+    have : 0 < ‖A ω‖ := norm_pos_iff.2 hM0
     refine (min_le_right _ _).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) zero_le_two)
     have hmin := min_le_min
       (div_le_div_of_nonneg_left (sq_nonneg t) (by positivity)
