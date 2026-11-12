@@ -74,17 +74,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
-/-- On a manifold of positive dimension every cotangent space contains a covector of positive
-norm. -/
-private theorem exists_covector_norm_pos [Nontrivial E] (x : M) :
-    ∃ ξ : TangentSpace I x →L[ℝ] ℝ, 0 < ‖ξ‖ := by
-  obtain ⟨v, hv⟩ := exists_ne (0 : E)
-  obtain ⟨f, hf⟩ := SeparatingDual.exists_ne_zero (R := ℝ) hv
-  refine ⟨f, (ContinuousLinearMap.opNorm_nonneg _).lt_of_ne fun h ↦ hf ?_⟩
-  exact (DFunLike.congr_fun ((ContinuousLinearMap.opNorm_zero_iff _).1 h.symm) v).trans
-    (zero_apply _)
-
 /-! ### Laplace-type operators -/
 
 section IsLaplaceType
@@ -141,7 +130,10 @@ theorem IsLaplaceType.add_of_mem_differentialOperators_one (hD : IsLaplaceType D
 as soon as there is an interior point. -/
 theorem IsLaplaceType.unique [Nontrivial E] {x : M} (hx : I.IsInteriorPoint x)
     (hD : IsLaplaceType D c) (hD' : IsLaplaceType D c') : c = c' := by
-  obtain ⟨ξ, hξ⟩ := exists_covector_norm_pos (I := I) x
+  -- `TangentSpace I x` is `E`, so it is nontrivial and carries a nonzero covector.
+  have : Nontrivial (TangentSpace I x) := inferInstanceAs (Nontrivial E)
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace I x →L[ℝ] ℝ)
+  have hξ := (norm_pos_iff (E := TangentSpace I x →L[ℝ] ℝ)).2 hξ
   have h := (hD.smoothPrincipalSymbol_eq hx ξ).symm.trans (hD'.smoothPrincipalSymbol_eq hx ξ)
   exact mul_right_cancel₀ (pow_pos hξ 2).ne' (neg_inj.1 h)
 
@@ -203,9 +195,8 @@ theorem smulCommutator_smoothLaplaceBeltrami_apply (f h : C^∞⟮I, M; ℝ⟯) 
       h x * laplaceBeltrami I f x + 2 * inner ℝ (mgradient I f x) (mgradient I h x) := by
   have hf : ContMDiff I 𝓘(ℝ) 2 f := f.contMDiff.of_le (by simp)
   have hh : ContMDiff I 𝓘(ℝ) 2 h := h.contMDiff.of_le (by simp)
-  rw [smulCommutator_apply_apply, smul_eq_mul, smul_eq_mul, ContMDiffMap.coe_sub, Pi.sub_apply,
-    smoothLaplaceBeltrami_apply, ContMDiffMap.coe_mul, laplaceBeltrami_mul I hf hh,
-    ContMDiffMap.coe_mul, Pi.mul_apply, smoothLaplaceBeltrami_apply]
+  simp only [smulCommutator_apply_apply, smul_eq_mul, ContMDiffMap.coe_sub, ContMDiffMap.coe_mul,
+    Pi.sub_apply, Pi.mul_apply, smoothLaplaceBeltrami_apply, laplaceBeltrami_mul I hf hh]
   ring
 
 /-- The double commutator of the Laplace–Beltrami operator is multiplication by twice the inner
@@ -227,13 +218,13 @@ theorem smoothLaplaceBeltrami_mem_differentialOperators_two :
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 2 := by
   refine mem_differentialOperators_succ_iff.2 fun f ↦ mem_differentialOperators_succ_iff.2
     fun g ↦ mem_differentialOperators_zero_iff.2 fun a h ↦ ContMDiffMap.ext fun x ↦ ?_
-  rw [smulCommutator_smulCommutator_smoothLaplaceBeltrami_apply, smul_eq_mul, smul_eq_mul,
-    ContMDiffMap.coe_mul, ContMDiffMap.coe_mul, Pi.mul_apply, Pi.mul_apply,
-    smulCommutator_smulCommutator_smoothLaplaceBeltrami_apply]
+  simp only [smulCommutator_smulCommutator_smoothLaplaceBeltrami_apply, smul_eq_mul,
+    ContMDiffMap.coe_mul, Pi.mul_apply]
   ring
 
 /-- The principal symbol of the Laplace–Beltrami operator `Δ = div ∘ grad` is the squared norm
 `ξ ↦ ‖ξ‖²` of covectors. -/
+@[simp]
 theorem smoothPrincipalSymbol_smoothLaplaceBeltrami [T2Space M] {x : M}
     (hx : I.IsInteriorPoint x) (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx
@@ -261,7 +252,10 @@ theorem not_isLaplaceType_smoothLaplaceBeltrami [T2Space M] [Nontrivial E] {x : 
     ¬IsLaplaceType ⟨smoothLaplaceBeltrami I M, smoothLaplaceBeltrami_mem_differentialOperators_two⟩
       c := by
   intro hD
-  obtain ⟨ξ, hξ⟩ := exists_covector_norm_pos (I := I) x
+  -- `TangentSpace I x` is `E`, so it is nontrivial and carries a nonzero covector.
+  have : Nontrivial (TangentSpace I x) := inferInstanceAs (Nontrivial E)
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace I x →L[ℝ] ℝ)
+  have hξ := (norm_pos_iff (E := TangentSpace I x →L[ℝ] ℝ)).2 hξ
   have h := hD.smoothPrincipalSymbol_eq hx ξ
   rw [smoothPrincipalSymbol_smoothLaplaceBeltrami] at h
   nlinarith [hD.pos, pow_pos hξ 2]
