@@ -202,7 +202,6 @@ theorem exists_integrable_norm_iteratedFDeriv_add_le (f : 𝓢(E, F)) (n : ℕ) 
   refine ⟨fun z ↦ 2 ^ p * (2 ^ p * S) * (1 + ‖z‖) ^ (-(p : ℝ)),
     (Measure.integrable_pow_neg_integrablePower μ).const_mul _, fun z h hh ↦ ?_⟩
   have hz : 0 < 1 + ‖z‖ := by positivity
-  have hzh : 0 < 1 + ‖z + h‖ := by positivity
   -- Decay at `z + h`, and `1 + ‖z‖ ≤ 2 (1 + ‖z + h‖)` since `‖h‖ ≤ 1`.
   have hdecay := f.one_add_le_sup_seminorm_apply (𝕜 := ℝ) (m := (p, n)) le_rfl le_rfl (z + h)
   have hcomp : 1 + ‖z‖ ≤ 2 * (1 + ‖z + h‖) := by
