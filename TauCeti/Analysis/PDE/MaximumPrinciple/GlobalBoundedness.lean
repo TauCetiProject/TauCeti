@@ -406,7 +406,6 @@ private theorem exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow [No
           (Real.toNNReal (K * mu.real Omega ^ ((Fintype.card ι : ℝ)⁻¹ - δ)) : ℝ≥0∞) *
             ‖W1p.gradient v‖ₑ := by
   set n : ℕ := Fintype.card ι
-  have hn0 : (0 : ℝ) < n := by exact_mod_cast Fintype.card_pos
   set s : ℝ≥0 := Real.toNNReal (2⁻¹ - δ)⁻¹
   have hs : (s : ℝ) = (2⁻¹ - δ)⁻¹ := Real.coe_toNNReal _ (inv_nonneg.2 (by linarith))
   have hs2 : (2 : ℝ≥0∞) ≤ s := by
@@ -681,8 +680,6 @@ private theorem toReal_eLpNorm_posPartAbove_le_divergence
   set m := ν.real A ^ (2⁻¹ - (q : ℝ)⁻¹)
   have hlam := h.pos
   have hG : lam * ‖W1p.gradient w‖ ≤ Fq * m := by
-    have hkey : lam * ‖W1p.gradient w‖ ^ 2 ≤ Fq * ‖W1p.gradient w‖ * m :=
-      henergy.trans (hinner.trans hholder)
     rcases (norm_nonneg (W1p.gradient w)).eq_or_lt with hG0 | hGpos
     · rw [← hG0, mul_zero]
       positivity

@@ -208,7 +208,6 @@ theorem HasStrictFDerivAt.eventually_apply_eq_zero_iff_snd_eq_zero {𝕜 : Type*
   have hnorm : ‖ContinuousLinearMap.inr 𝕜 E F z.2‖ = ‖z.2‖ := by simp
   rw [hz, hz0, sub_zero, zero_sub, norm_neg, hsub, hnorm] at happ
   have hbound := ContinuousLinearMap.bound_of_antilipschitz _ hKD z.2
-  have hK' : (0 : ℝ) < K := NNReal.coe_pos.2 hK
   have hhalf : (K : ℝ) * ((2 * K : ℝ≥0)⁻¹ * ‖z.2‖) = ‖z.2‖ / 2 := by
     push_cast
     field_simp

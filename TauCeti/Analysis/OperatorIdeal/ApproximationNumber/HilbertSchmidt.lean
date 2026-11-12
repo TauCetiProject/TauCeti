@@ -132,10 +132,10 @@ private theorem hilbertSchmidtEnergy_compression_le (T : E →L[𝕜] F) (V : Su
     _ ≤ 1 ^ 2 * T.hilbertSchmidtEnergy b * 1 ^ 2 := by gcongr
     _ = T.hilbertSchmidtEnergy b := by rw [one_pow, one_mul, mul_one]
 
-/-- The partial sums of `n ↦ aₙ(T)²` exceed the energy by at most a multiple of any `δ ∈ (0, 1]`:
+/-- The partial sums of `n ↦ aₙ(T)²` exceed the energy by at most a multiple of any `δ > 0`:
 `∑_{n < k} aₙ(T)² ≤ E_b(T) + δ ∑_{n < k} (2 aₙ(T) + 1)`. -/
 private theorem sum_range_singularValue_sq_le (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) (k : ℕ)
-    {δ : ℝ≥0} (hδ : 0 < δ) (hδ1 : δ ≤ 1) :
+    {δ : ℝ≥0} (hδ : 0 < δ) :
     ∑ n ∈ Finset.range k, (T.singularValue n : ℝ≥0∞) ^ 2 ≤ T.hilbertSchmidtEnergy b +
       ((δ * ∑ n ∈ Finset.range k, (2 * T.singularValue n + 1) : ℝ≥0) : ℝ≥0∞) := by
   -- A compression `C` with `aₙ(T) ≤ aₙ(C) + δ` for `n < k` gives
@@ -155,7 +155,6 @@ private theorem sum_range_singularValue_sq_le (T : E →L[𝕜] F) (b : HilbertB
     have h₁ := hV n (Finset.mem_range.mp hn)
     have h₂ : (C.singularValue n : ℝ) ≤ T.singularValue n :=
       T.singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le _ V n
-    have hδ1' : (δ : ℝ) ≤ 1 := hδ1
     rw [← ENNReal.coe_pow, ← ENNReal.coe_pow, ← ENNReal.coe_add, ENNReal.coe_le_coe,
       ← NNReal.coe_le_coe]
     push_cast
@@ -183,7 +182,7 @@ theorem tsum_singularValue_sq_le_hilbertSchmidtEnergy (T : E →L[𝕜] F) (b : 
     simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
   refine ge_of_tendsto hlim ?_
   filter_upwards [Ioc_mem_nhdsGT zero_lt_one] with δ hδ
-  using T.sum_range_singularValue_sq_le b k hδ.1 hδ.2
+  using T.sum_range_singularValue_sq_le b k hδ.1
 
 /-- **Hilbert–Schmidt reconciliation.** For a bounded operator from a Hilbert space to an inner
 product space and any Hilbert basis `(bᵢ)` of the source, the sum of the squared approximation

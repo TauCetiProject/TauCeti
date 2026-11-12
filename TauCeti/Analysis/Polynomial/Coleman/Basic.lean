@@ -337,7 +337,7 @@ theorem dist_coeff_colemanDBounded_mul_le {B₁ B₂ P₁ P₂ : R[X]} {n m : �
   have hcoeff (Q₁ Q₂ : R[X]) (j : ℕ) :
       (seg Q₁ Q₂).coeff j = C (Q₁.coeff j) + X * C ((Q₂ - Q₁).coeff j) := by
     simp [hseg, coeff_C_mul]
-  set f : R[X] := (colemanDBounded (seg B₁ B₂) (seg P₁ P₂) n m).coeff k with hf
+  set f : R[X] := (colemanDBounded (seg B₁ B₂) (seg P₁ P₂) n m).coeff k
   have heval (a : R) : f.eval a =
       (colemanDBounded (B₁ + C a * (B₂ - B₁)) (P₁ + C a * (P₂ - P₁)) n m).coeff k := by
     have hmap (Q₁ Q₂ : R[X]) : (seg Q₁ Q₂).map (evalRingHom a) = Q₁ + C a * (Q₂ - Q₁) := by

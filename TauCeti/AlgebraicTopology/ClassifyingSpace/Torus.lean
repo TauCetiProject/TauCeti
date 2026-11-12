@@ -272,7 +272,7 @@ instance free_groupHomology_pi_multiplicative_int (n : ℕ) :
 finitely generated `k`-module, since it is the homology of a torus. -/
 instance finite_groupHomology_pi_multiplicative_int (n : ℕ) :
     Module.Finite k (groupHomology (Rep.trivial k (ι → Multiplicative ℤ) k) n) := by
-  rcases subsingleton_or_nontrivial k with hk | hk
+  rcases subsingleton_or_nontrivial k with hk | _
   · have := Module.subsingleton k (groupHomology (Rep.trivial k (ι → Multiplicative ℤ) k) n)
     infer_instance
   · exact .equiv (piCircleSingularHomologyIsoGroupHomology k ι n).toLinearEquiv

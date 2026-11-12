@@ -255,7 +255,7 @@ private theorem clebschGordanCoeff_eq_zero_of_le {j : ℕ} (hj : n < j) {i : ℕ
 theorem clebschGordanVector_eq_zero_of_lt {j : ℕ} (hj : n < j) :
     clebschGordanVector q m ε n δ j = 0 := by
   rw [clebschGordanVector_def]
-  refine Finset.sum_eq_zero fun i hi => ?_
+  refine Finset.sum_eq_zero fun i _ => ?_
   by_cases h : j - n ≤ i
   · rw [clebschGordanCoeff_eq_zero_of_le hj h, zero_smul]
   · rw [vec_eq_zero_of_lt (by omega : (n : ℤ) < j - i)]

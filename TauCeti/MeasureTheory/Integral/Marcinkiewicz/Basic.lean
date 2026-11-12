@@ -278,7 +278,7 @@ theorem mul_meas_ofReal_lt_le_setLIntegral
   have hdt : 0 ≤ d * t := (mul_pos hd ht).le
   have hbct : 0 ≤ b * (c * t) := mul_nonneg hb hct
   have hdinv : 0 ≤ d⁻¹ := inv_nonneg.2 hd.le
-  set g : α → G := hv.mk v with _
+  set g : α → G := hv.mk v
   have hvg : v =ᵐ[μ] g := hv.ae_eq_mk
   have hgmeas : Measurable g := hv.measurable_mk
   set S : Set α := {x | ENNReal.ofReal (c * t) < ‖g x‖ₑ} with hSdef

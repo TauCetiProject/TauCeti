@@ -178,8 +178,6 @@ theorem exists_setLAverage_enorm_gradient_sq_le_divergence [Nonempty ι] {s : �
       exact mul_le_mul_of_nonneg_left ((div_le_iff₀ hlam).2 hK) zero_le_two
     have hratio0 : 0 ≤ 2 * Lam / lam :=
       div_nonneg (mul_nonneg zero_le_two (hlam.le.trans h.le)) hlam.le
-    have hP0 := setIntegral_nonneg (μ := mu) (measurableSet_ball (x := y) (ε := 2 * ρ))
-      fun x _ => sq_nonneg (W1p.value u x - m)
     have hA : 2 * ((2 * Lam / lam) ^ 2 + 1) ≤ A := by
       simp only [A]
       gcongr

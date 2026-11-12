@@ -157,7 +157,7 @@ theorem orderOf_cycleMap_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.vertex 
     rintro rfl
     exact hN.not_gt hS1
   -- the direction just past `2π` lies inside the sectors of tile `M` and of the first tile
-  set ε := min (S (M + 1) - 2 * π) (S 1) / 2 with hε
+  set ε := min (S (M + 1) - 2 * π) (S 1) / 2
   have hε₀ : 0 < ε := half_pos (lt_min (by linarith) (hmono (by omega : 0 < 1)))
   have hεN : ε < S (M + 1) - 2 * π :=
     (half_lt_self (lt_min (by linarith) (hmono (by omega : 0 < 1)))).trans_le (min_le_left _ _)

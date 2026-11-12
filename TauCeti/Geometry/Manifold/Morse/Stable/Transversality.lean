@@ -134,7 +134,7 @@ theorem span_mtangentConeAt_unstableSet_sup_span_mtangentConeAt_stableSet_self
   obtain ⟨εs, hεs, hs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hfd
   obtain ⟨εu, hεu, hu⟩ := (hX.neg hf).exists_forall_mem_stableSet_iff (φ.neg hnd)
     (φ.coord_mfderiv_neg hφ hnd) (hf.neg.contMDiff.mdifferentiable (by simp))
-  set D := φ.toChart.source ∩ φ.toChart ⁻¹' {v : E | ‖φ.coord v‖ < min εs εu} with hDdef
+  set D := φ.toChart.source ∩ φ.toChart ⁻¹' {v : E | ‖φ.coord v‖ < min εs εu}
   have hD : IsOpen D := φ.toChart.continuousOn.isOpen_inter_preimage φ.toChart.open_source
     (isOpen_lt (continuous_norm.comp φ.continuous_coord) continuous_const)
   have hxD : x ∈ D := ⟨φ.mem_source, by simpa using lt_min hεs hεu⟩

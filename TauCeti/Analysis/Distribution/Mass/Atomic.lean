@@ -43,7 +43,7 @@ theorem mass_sum_mul_apply (a : E → ℝ) (hs : (s : Set E) ⊆ Ω) :
     mass (fun φ : 𝓓^{n}(Ω, ℝ) => ∑ x ∈ s, a x * φ x) = ∑ x ∈ s, ‖a x‖ₑ := by
   classical
   refine le_antisymm (mass_le_iff.2 fun φ hφ => ?_) ?_
-  · exact (eNorm_sum_le _ _).trans <| Finset.sum_le_sum fun x hx => by
+  · exact (eNorm_sum_le _ _).trans <| Finset.sum_le_sum fun x _ => by
       rw [eNorm_mul]
       have hb : ‖φ x‖ₑ ≤ 1 := by
         simpa only [← ofReal_norm, ← ENNReal.ofReal_one] using ENNReal.ofReal_le_ofReal (hφ x)
@@ -77,7 +77,7 @@ theorem localMass_sum_mul_apply (a : E → ℝ) (hs : (s : Set E) ⊆ Ω)
     simp only [TestFunction.monoCLM_apply, hΩ', le_refl, and_self, ↓reduceIte]
     symm
     apply Finset.sum_filter_of_ne
-    intro x hx hax
+    intro x _ hax
     exact (φ.tsupport_subset (subset_tsupport _ (by aesop))).2
   have hlocal : localMass (fun φ : 𝓓^{n}(Ω, ℝ) => ∑ x ∈ s, a x * φ x) Ω' =
       localMass (fun φ : 𝓓^{n}(Ω, ℝ) => ∑ x ∈ s, a x * φ x) U := by

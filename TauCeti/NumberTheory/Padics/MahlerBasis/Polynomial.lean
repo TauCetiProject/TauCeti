@@ -57,7 +57,7 @@ theorem pow_smul_eq_sum_mahlerTerm (k : ℕ) (a : E) :
       ∑ n ∈ Finset.range (k + 1), mahlerTerm ((n.factorial * k.stirlingSecond n) • a) n := by
   rw [TauCeti.id_pow_eq_sum_stirlingSecond_smul_mahler, Finset.sum_smul]
   apply Finset.sum_congr rfl
-  intro n hn
+  intro n _
   apply ContinuousMap.ext
   intro x
   simp only [ContinuousMap.smul_apply', ContinuousMap.smul_apply, ContinuousMap.const_apply,

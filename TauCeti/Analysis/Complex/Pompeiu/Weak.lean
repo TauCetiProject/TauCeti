@@ -135,7 +135,6 @@ theorem integral_conjWirtingerDeriv_smul_cauchyTransform [CompleteSpace F] {f : 
   have hπ : (π : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
   have hg : Continuous g := by
     simp only [hg_def, conjWirtingerDeriv_apply, smul_eq_mul, mul_one]
-    have hd := hψ.continuous_fderiv one_ne_zero
     fun_prop
   have hgK (w : ℂ) (hw : w ∉ tsupport ψ) : g w = 0 := by
     simp [hg_def, conjWirtingerDeriv_apply, fderiv_of_notMem_tsupport ℝ hw]

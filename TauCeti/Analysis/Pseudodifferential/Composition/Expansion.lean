@@ -418,7 +418,7 @@ private theorem hasDerivAt_scaledSharp (hb : b.HasCompactSpatialSupport) {t₀ :
     (x ξ : CoordinateSpace n) :
     HasDerivAt (fun t ↦ scaledSharp a b t x ξ)
       (∑ j, (-Complex.I) • scaledSharp (frequencyDeriv j a) (spatialDeriv j b) t₀ x ξ) t₀ := by
-  choose C hC0 hC using fun j ↦ (hb.spatialDeriv j).exists_norm_sharpIntegrand_le
+  choose C _ hC using fun j ↦ (hb.spatialDeriv j).exists_norm_sharpIntegrand_le
     (frequencyDeriv j a) (isCompact_singleton (x := x)) ((n : ℝ) + 1) (R := 4 * π)
     (by linarith [Real.two_le_pi])
   have hball : ∀ t ∈ Metric.ball t₀ 1, |t * (2 * π)| ≤ 4 * π := fun t ht ↦ by

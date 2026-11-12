@@ -101,7 +101,7 @@ theorem pathELength_le_liminf_open
         ((contMDiff_subtype_val.mdifferentiable one_ne_zero).comp_mdifferentiableOn hγ)
         hconv'
     _ = liminf (fun i ↦ Manifold.pathELength 𝓘(ℝ, F) (γi i) a b) l :=
-      liminf_congr (hγi.mono fun i hi ↦
+      liminf_congr (hγi.mono fun i _ ↦
         Manifold.pathELength_subtypeVal_comp.symm)
 
 /-- **Lower semicontinuity under uniform convergence on an open submanifold.** Let `γᵢ` be

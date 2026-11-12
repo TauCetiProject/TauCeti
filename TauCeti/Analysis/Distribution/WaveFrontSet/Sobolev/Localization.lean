@@ -106,7 +106,7 @@ private theorem norm_one_add_norm_sq_rpow_smul_le {F : E → ℂ} {C₀ : ℝ} {
   have hA : 0 ≤ A := norm_nonneg _
   have hR : 0 < ((1 + ‖η‖) ^ r)⁻¹ := by positivity
   have hv1 : 1 ≤ 1 + ‖v‖ := le_add_of_nonneg_right (norm_nonneg v)
-  have hD : 0 ≤ D := le_max_of_le_left (by positivity)
+  have _ : 0 ≤ D := le_max_of_le_left (by positivity)
   have hw : 0 ≤ (1 + ‖η‖ ^ 2) ^ (s / 2) := by positivity
   rw [norm_smul, Real.norm_of_nonneg hw]
   -- The weight `⟨y⟩ ^ s` is at most `⟨y⟩ ^ N ≤ (1 + ‖y‖) ^ N`.
@@ -146,7 +146,7 @@ private theorem norm_one_add_norm_sq_rpow_smul_le {F : E → ℂ} {C₀ : ℝ} {
       nlinarith [norm_nonneg v, inv_pos.2 hc]
     have hηv : 1 + ‖η - v‖ ≤ (1 + c⁻¹) * (1 + ‖v‖) := by
       nlinarith [norm_sub_le η v, norm_nonneg v, inv_pos.2 hc]
-    have hone : (1 + ‖η‖) ^ r * ((1 + ‖η‖) ^ r)⁻¹ = 1 :=
+    have _ : (1 + ‖η‖) ^ r * ((1 + ‖η‖) ^ r)⁻¹ = 1 :=
       mul_inv_cancel₀ (by positivity)
     calc (1 + ‖η‖ ^ 2) ^ (s / 2) * ‖F (η - v)‖
         ≤ (1 + ‖η‖) ^ N * (C₀ * (1 + ‖η - v‖) ^ k) := by
@@ -188,7 +188,7 @@ private theorem memLp_one_add_norm_sq_rpow_smul_of_hasSum_of_countable {ι : Typ
   have hN : |s| ≤ N := Nat.le_ceil _
   set r := finrank ℝ E + 1
   set D := max (2 ^ (|s| / 2)) (C₀ * (1 + c⁻¹) ^ (k + N + r))
-  have hD : 0 ≤ D := le_max_of_le_left (by positivity)
+  have _ : 0 ≤ D := le_max_of_le_left (by positivity)
   -- The two fixed square integrable functions of the pointwise bound.
   set H : E → ℂ := Γ.indicator fun ζ ↦ w ζ • F ζ
   have hH : MemLp H 2 volume := (memLp_indicator_iff_restrict hΓ.nullMeasurableSet).2 hL

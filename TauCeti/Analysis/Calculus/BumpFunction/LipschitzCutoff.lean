@@ -68,13 +68,13 @@ theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ} (
   -- The bump lives on `(a, R)`, where `r < a`, and equals one on an interval of length `1 / K`.
   set a := r + (R - r - (K : ℝ)⁻¹) / 2 with ha_def
   have hra : r < a := by rw [ha_def]; linarith
-  have hKa : (K : ℝ)⁻¹ < R - a := by rw [ha_def]; linarith
+  have _ : (K : ℝ)⁻¹ < R - a := by rw [ha_def]; linarith
   let f : ContDiffBump ((a + R) / 2) :=
     { rIn := (2 * K)⁻¹
       rOut := (R - a) / 2
       rIn_pos := by positivity
       rIn_lt_rOut := by rw [mul_inv]; linarith }
-  set ρ := f.normed MeasureTheory.volume with hρ_def
+  set ρ := f.normed MeasureTheory.volume
   have hρs : ContDiff ℝ ∞ ρ := f.contDiff_normed (n := ⊤)
   have hρc : Continuous ρ := hρs.continuous
   have hρ_supp : support ρ ⊆ Ioo a R := by

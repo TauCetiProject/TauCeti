@@ -256,7 +256,7 @@ private theorem contMDiff_exteriorTwoAlternating [ContMDiffCovariantDerivative c
   have hc := (contMDiffAt_totalSpace_iff.1 (hS.contMDiffAt (e.open_baseSet.mem_nhds hx))).2
   refine hc.congr_of_eventuallyEq ?_
   have hxV : x ∈ eV.baseSet := mem_baseSet_trivializationAt F V x
-  filter_upwards [e.open_baseSet.mem_nhds hx, eV.open_baseSet.mem_nhds hxV] with y hy hyV
+  filter_upwards [e.open_baseSet.mem_nhds hx, eV.open_baseSet.mem_nhds hxV] with y _ hyV
   simp only [ContinuousAlternatingMap.inCoordinates,
     ContinuousLinearMap.compContinuousAlternatingMap_coe,
     ContinuousAlternatingMap.compContinuousLinearMap_apply, exteriorTwoAlternating_apply,

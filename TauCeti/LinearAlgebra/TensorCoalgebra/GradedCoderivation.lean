@@ -128,7 +128,7 @@ private theorem ReducedTensorWords.gradedCoderivSummand_tprod (G : InternalGradi
   · rw [gradedCoderivSummand, coderivSummand_eq_zero R F h, LinearMap.zero_comp,
       LinearMap.zero_apply]
     exact (splice_eq_zero R (twistedTuple G q x 0 p) _ (by tauto)).symm
-  obtain ⟨hd, hpd⟩ := h
+  obtain ⟨_, hpd⟩ := h
   have hsub : subword R
       (fun i => (if i.val < p then koszulTwist G q else LinearMap.id) (x i)) p d =
       subword R x p d :=

@@ -138,7 +138,7 @@ theorem cup_characterConnectingClass_eq_H2π
   -- Cup product with the class of `a` is induced by `φ : ℤ → A`, `1 ↦ a`, which commutes with the
   -- comparison of Tate and ordinary cohomology and sends the carry class of `1` to that of `a`.
   set φ : Rep.trivial ℤ G ℤ ⟶ A :=
-    (Rep.trivial ℤ G ℤ).tensorInvariant a ≫ (β_ (Rep.trivial ℤ G ℤ) A).hom ≫ (ρ_ A).hom with hφ
+    (Rep.trivial ℤ G ℤ).tensorInvariant a ≫ (β_ (Rep.trivial ℤ G ℤ) A).hom ≫ (ρ_ A).hom
   have h := ConcreteCategory.congr_hom
     ((_root_.TateCohomology.isoGroupCohomology 2).inv.naturality φ) (H2π _ c₁)
   have hmap : groupCohomology.map (MonoidHom.id G) φ 2 (H2π _ c₁) =

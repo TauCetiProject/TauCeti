@@ -214,7 +214,7 @@ theorem continuous_integral_exp_mul (hE : Module.finrank ℝ E = 2) (t : ℝ) :
       (Filter.Eventually.of_forall fun x ↦ (Real.exp_pos _).le)] at h
     have h' := ENNReal.toReal_mono (by finiteness) h
     simp only [ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.toReal_ofReal,
-      (Real.exp_pos _).le, integral_nonneg (fun x ↦ (Real.exp_pos _).le)] at h'
+      (Real.exp_pos _).le, integral_nonneg (fun _ ↦ (Real.exp_pos _).le)] at h'
     refine h'.trans ?_
     gcongr
   have hc := (convexOn_integral_exp_mul (I := I) (M := M) hE t).continuousOn_tfae
