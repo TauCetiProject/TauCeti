@@ -54,7 +54,8 @@ The isomorphism is built from a choice of such a step for each proper subspace o
 * `TauCeti.isZero_singularHomology_prodThomPair`: `Hₙ(B × F, B × (F ∖ {0})) = 0` for
   `n < dim F`.
 * `TauCeti.prodThomPairSingularHomologyIso`: `Hₙ₊ᵣ(B × F, B × (F ∖ {0})) ≅ Hₙ(B)`, `r = dim F`.
-* `TauCeti.prodThomPairSingularHomologyIso_hom_naturality`: its naturality in the base.
+* `TauCeti.prodThomPairSingularHomologyIso_hom_naturality`,
+  `TauCeti.prodThomPairSingularHomologyIso_inv_naturality`: its naturality in the base.
 
 ## References
 
@@ -325,5 +326,17 @@ theorem prodThomPairSingularHomologyIso_hom_naturality (g : C(B, B')) (n m : ℕ
       (TopCat.ofHom (g.prodMap (ContinuousMap.id F))) (fun _ ↦ rfl),
     ← TopPair.singularHomologyMap_comp_assoc (botIso B F).hom, botIso_hom_naturality,
     TopPair.singularHomologyMap_comp_assoc]
+
+/-- The inverse isomorphism `Hₙ(B) ≅ Hₙ₊ᵣ(B × F, B × (F ∖ {0}))` is natural in continuous maps of
+the base. -/
+@[reassoc]
+theorem prodThomPairSingularHomologyIso_inv_naturality (g : C(B, B')) (n m : ℕ)
+    (h : n + finrank ℝ F = m := by lia) :
+    (prodThomPairSingularHomologyIso R B F n m h).inv ≫
+        TopPair.singularHomologyMap (prodThomPairMap F g) R m =
+      ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map (TopCat.ofHom g) ≫
+        (prodThomPairSingularHomologyIso R B' F n m h).inv := by
+  rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
+  exact prodThomPairSingularHomologyIso_hom_naturality R B F g n m h
 
 end TauCeti
