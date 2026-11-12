@@ -47,16 +47,17 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDim
 
 /-- **Scalar curvature of a radial conformal metric.** Let `φ` be a smooth function on a real inner
 product space of dimension `N` which, near a point `y ≠ 0`, is `w(log ‖z‖) - log ‖z‖` for a
-function `w` that is `C²` at `s = log ‖y‖`. Then the Euclidean metric multiplied by `e^(2 φ)` has
+function `w`. Then the Euclidean metric multiplied by `e^(2 φ)` has
 scalar curvature `(N - 1) e^(-2 w(s)) ((N - 2) (1 - w'(s)²) - 2 w''(s))` at `y`. In polar
 coordinates `y = e^s u` this metric is `e^(2 w(s)) (ds² + g_(S^(N - 1)))`. -/
 theorem scalarCurvature_rescale_exp_radial {φ : F → ℝ} (hφ : ContDiff ℝ ∞ φ) {w : ℝ → ℝ} {y : F}
-    (hy : y ≠ 0) (hw : ContDiffAt ℝ 2 w (log ‖y‖))
-    (heq : φ =ᶠ[𝓝 y] fun z ↦ w (log ‖z‖) - log ‖z‖) :
+    (hy : y ≠ 0) (heq : φ =ᶠ[𝓝 y] fun z ↦ w (log ‖z‖) - log ‖z‖) :
     (((riemannianMetricVectorSpace F).ofLE le_top).rescale (fun z ↦ exp (2 * φ z))
         (contDiff_const.mul hφ).exp.contMDiff fun _ ↦ exp_pos _).scalarCurvature y =
       (finrank ℝ F - 1) * exp (-2 * w (log ‖y‖)) *
         ((finrank ℝ F - 2) * (1 - deriv w (log ‖y‖) ^ 2) - 2 * deriv (deriv w) (log ‖y‖)) := by
+  have hw := contDiffAt_of_eventuallyEq_comp_log_norm_sub_log_norm (n := 2)
+    (hφ.contDiffAt.of_le (by simp)) hy heq
   have hgrad : DifferentiableAt ℝ (∇ φ) y :=
     ((hφ.gradient_right (m := 1) (by simp)).differentiable (by simp)) y
   -- The conformal change formula, applied to the flat Euclidean metric `g`, involves only the

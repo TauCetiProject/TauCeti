@@ -278,6 +278,19 @@ theorem integrable_smul_continuousMultilinearMap_apply_smul (g : 𝓢(E, ℂ)) {
 
 end Translate
 
+section Smul
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+
+/-- Multiplication by a function which is not of temperate growth is the zero map: Mathlib's
+`smulLeftCLM` is defined to be `0` there. -/
+theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemperateGrowth) :
+    smulLeftCLM F g = 0 := by
+  simp [smulLeftCLM, hg]
+
+end Smul
+
 end SchwartzMap
 
 namespace TauCeti

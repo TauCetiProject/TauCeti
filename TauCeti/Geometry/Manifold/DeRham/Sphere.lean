@@ -153,7 +153,7 @@ theorem nonempty_linearEquiv_deRhamCohomology_sphere_succ [Fact (finrank ℝ E =
 /-- One suspension step: if `H^{k+1}(Sⁿ)` vanishes for the unit sphere of `ℝⁿ⁺¹`, then
 `H^{k+2}(Sⁿ⁺¹)` vanishes for the unit sphere of an `(n + 2)`-dimensional space. -/
 private theorem subsingleton_deRhamCohomology_sphere_succ_succ [Fact (finrank ℝ E = n + 1 + 1)]
-    {k : ℕ} (h : Subsingleton
+    {k : ℕ} (_ : Subsingleton
       (deRhamCohomology (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (k + 1))) :
     Subsingleton (deRhamCohomology (𝓡 (n + 1)) (sphere (0 : E) 1) (k + 2)) :=
   (nonempty_linearEquiv_deRhamCohomology_sphere_succ (E := E) k).some.toEquiv.symm.subsingleton
@@ -196,7 +196,6 @@ theorem finrank_deRhamCohomology_zero_sphere_of_finrank_eq_one [Fact (finrank �
     finrank ℝ (deRhamCohomology (𝓡 0) (sphere (0 : E) 1) 0) = 2 := by
   obtain ⟨e⟩ := nonempty_sphere (E := E) (m := 0) Fact.out
   have hS := sphere_eq_pair_of_finrank_eq_one Fact.out e.2
-  have := finite_sphere_of_finrank_eq_one (E := E) Fact.out 0 1
   have := discreteTopology_sphere_of_finrank_eq_one (E := E) Fact.out 0 1
   rw [finrank_deRhamCohomology_zero_of_discreteTopology, Nat.card_coe_set_eq, hS,
     Set.ncard_pair (fun h ↦ ne_neg_of_mem_unit_sphere ℝ e (Subtype.ext h) : (e : E) ≠ -e)]

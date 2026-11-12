@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.Algebra.Module.ZLattice.Family.Action
+public import TauCeti.Algebra.Module.ZLattice.Family.AffineQuotient
 public import TauCeti.Analysis.Complex.RootsOfUnity.Manifold
 
 /-!
@@ -47,6 +48,8 @@ and translation sections and `n = ω`, `Q` is a complex manifold and `t : Q → 
 
 * `TauCeti.torusFamilyCyclicQuotientProjection_mk`: the value on the orbit of a point over `z`
   is `z ^ m`.
+* `TauCeti.torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift`: it is the map of
+  orbit spaces induced by the invariant map `z ↦ z ^ m` of the disc.
 * `TauCeti.torusFamilyCyclicQuotientProjection_mk_eq_mk_iff`: its fibres are the preimages of the
   orbits of the rotations on the base.
 * `TauCeti.torusFamilyCyclicQuotientProjection_eq_zero_iff`: its fibre over `0` lies over the
@@ -83,7 +86,6 @@ variable {m : ℕ} [NeZero m] {r : ℝ}
     letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))
   (hb : ∀ (g : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
     torusFamilyProjection P (b g z) = g • z)
-  (hbone : ∀ z : rootsOfUnityBall m r, b 1 z = Quotient.mk _ (z, 0))
   (hbmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
     b (g * h) z = torusFamilyAffineMap R P ρ hequiv b hb g (b h z))
 
@@ -95,11 +97,11 @@ of a point over `z` to `z ^ m`. For `0 ≤ r`, its image is the disc of radius `
 of `D` by the rotations. -/
 noncomputable def torusFamilyCyclicQuotientProjection :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     orbitRel.Quotient (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))
       → ℂ :=
   letI := periodAddAction P
-  letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   MulAction.orbitRelQuotientLift
     (fun x ↦ ((torusFamilyProjection P x : rootsOfUnityBall m r) : ℂ) ^ m) fun g x ↦ by
     rw [torusFamilyAffineMulAction_smul, torusFamilyProjection_affineMap, SubMulAction.val_smul,
@@ -109,22 +111,37 @@ noncomputable def torusFamilyCyclicQuotientProjection :
 @[simp] theorem torusFamilyCyclicQuotientProjection_mk
     (x : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul
       (Quotient.mk _ x) = ((torusFamilyProjection P x : rootsOfUnityBall m r) : ℂ) ^ m := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   exact MulAction.orbitRelQuotientLift_mk x
+
+/-- The coordinate `t = z ^ m` on the cyclic quotient
+(`TauCeti.torusFamilyCyclicQuotientProjection`) is the map of orbit spaces induced by the
+invariant map `z ↦ z ^ m` of the disc (`TauCeti.torusFamilyAffineQuotientLift`). -/
+theorem torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul =
+      torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
+        (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
+        (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) := by
+  let _ := periodAddAction P
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  exact funext <| Quotient.ind fun x ↦ by
+    rw [torusFamilyCyclicQuotientProjection_mk, torusFamilyAffineQuotientLift_mk]
 
 /-- **The fibres of `t`.** Two points of the cyclic quotient have the same coordinate `t` exactly
 when they lie over points of the disc in one orbit of the rotations. -/
 theorem torusFamilyCyclicQuotientProjection_mk_eq_mk_iff
     (x y : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul
         (Quotient.mk _ x) =
-      torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul
+      torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul
         (Quotient.mk _ y) ↔
       ∃ g : rootsOfUnity m ℂ, g • torusFamilyProjection P x = torusFamilyProjection P y := by
   simp only [torusFamilyCyclicQuotientProjection_mk]
@@ -137,18 +154,18 @@ torus. -/
 theorem torusFamilyCyclicQuotientProjection_eq_zero_iff
     (x : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul
         (Quotient.mk _ x) = 0 ↔ ((torusFamilyProjection P x : rootsOfUnityBall m r) : ℂ) = 0 := by
   rw [torusFamilyCyclicQuotientProjection_mk, pow_eq_zero_iff (NeZero.ne m)]
 
 /-- **The image of `t`.** For `0 ≤ r`, the coordinate `t` maps the cyclic quotient onto the disc
 of radius `r ^ m`, the quotient of the disc of radius `r` by the rotations. -/
 theorem range_torusFamilyCyclicQuotientProjection (hr : 0 ≤ r) :
-    range (torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul) =
+    range (torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul) =
       Metric.ball 0 (r ^ m) := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   rw [← image_pow_ball (m := m) hr]
   ext t
   constructor
@@ -184,7 +201,6 @@ variable [Module.Free ℤ Λ] [Module.Finite ℤ Λ] {E : Type*} [NormedAddCommG
     letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))
   (hb : ∀ (g : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
     torusFamilyProjection P (b g z) = g • z)
-  (hbone : ∀ z : rootsOfUnityBall m r, b 1 z = Quotient.mk _ (z, 0))
   (hbmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
     b (g * h) z = torusFamilyAffineMap R P ρ hequiv b hb g (b h z))
   (hR : ∀ g : rootsOfUnity m ℂ,
@@ -193,9 +209,10 @@ variable [Module.Free ℤ Λ] [Module.Finite ℤ Λ] {E : Type*} [NormedAddCommG
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
     ∀ g, ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, E)) n (b g))
   (hfree : letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The coordinate `t` is holomorphic.** If the cyclic affine action on the `C^n` family of tori
 `X` over the rotated disc is free, the map `X / C_m → ℂ` descended from `[z, v] ↦ z ^ m` is `C^n`
 for the quotient manifold structure (`TauCeti.isManifold_torusFamilyAffineQuotient`); with
@@ -203,20 +220,20 @@ holomorphic data and `n = ω`, it is a holomorphic function on the complex manif
 theorem contMDiff_torusFamilyCyclicQuotientProjection :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul hbone
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul
       hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
       hfree
     ContMDiff (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ) n
-      (torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul) := by
+      (torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  let _ := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul hbone
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  let _ := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul
     hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
     hfree
   refine ((isLocalDiffeomorph_torusFamilyAffineQuotient_mk P hinj hP R ρ hequiv b hb hone hmul
-    hbone hbmul hR hbc hfree).contMDiff_comp_iff Quotient.mk_surjective le_rfl).1 ?_
+    hbmul hR hbc hfree).contMDiff_comp_iff Quotient.mk_surjective le_rfl).1 ?_
   simp only [Function.comp_def, torusFamilyCyclicQuotientProjection_mk]
   exact (contDiff_id.pow m).contMDiff.comp
     (rootsOfUnityBall.contMDiff_val.comp (contMDiff_torusFamilyProjection P hinj hP))

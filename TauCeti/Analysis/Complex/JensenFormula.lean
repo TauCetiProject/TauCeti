@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.JensenFormula
+import TauCeti.Analysis.Complex.AbsMax
 import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
-# Jensen's inequality at a zero of the centre
+# Jensen's inequality at a zero of the centre, and relative zero counts
 
 Mathlib's `AnalyticOnNhd.sum_divisor_le` bounds the number of zeros of `f` in `closedBall c r` by
 `log (M / ‖f c‖) / log (R / r)` when `f` is analytic on `closedBall c R`, bounded by `M ≥ 1` on
@@ -17,6 +18,11 @@ Mathlib's `AnalyticOnNhd.sum_divisor_le` bounds the number of zeros of `f` in `c
 finite order `m` at `c`, with trailing coefficient `a = meromorphicTrailingCoeffAt f c`, then the
 number of zeros in `closedBall c r` is at most `m + (log (M / ‖a‖) - m log R) / log (R / r)`.
 For `m = 0` the trailing coefficient is `f c` and this is Mathlib's bound.
+
+At a centre where `f` does not vanish, the file also counts zeros under a bound
+`‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R` relative to the value at the centre. The hypothesis `1 ≤ M`
+of Mathlib's bound is then automatic, by the maximum modulus principle
+(`DiffContOnCl.one_le_of_forall_mem_sphere_norm_le_mul`).
 
 The value `‖a‖` cannot simply replace `‖f c‖` in Mathlib's bound: for `f z = z`, `c = 0`,
 `r = 1/4`, `R = 1/2` and `M = 1` there is one zero in `closedBall 0 (1/4)` while
@@ -26,6 +32,11 @@ The value `‖a‖` cannot simply replace `‖f c‖` in Mathlib's bound: for `f
 
 * `AnalyticOnNhd.sum_divisor_le_analyticOrderNatAt_add` — Jensen's bound for the number of zeros
   of `f` in a disc about a point where `f` has finite order.
+* `AnalyticOnNhd.sum_divisor_le_log_div_log`: at most `log M / log (R / r)` zeros in
+  `closedBall z₀ r` under a relative bound `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`, with
+  `f z₀ ≠ 0`.
+* `AnalyticOnNhd.sum_divisor_half_le`: at most `log M / log 2` zeros in `closedBall z₀ (R / 2)`
+  under the same bound.
 
 ## Implementation notes
 
@@ -140,3 +151,60 @@ theorem AnalyticOnNhd.sum_divisor_le_analyticOrderNatAt_add {M : ℝ}
   rw [log_div (by linarith) ha.ne', ← sub_le_iff_le_add', le_div_iff₀ (log_pos
     ((one_lt_div hr).2 hrR)), sub_mul]
   linarith
+
+namespace AnalyticOnNhd
+
+open Set
+
+variable {z₀ : ℂ}
+
+/-- **Jensen's count with a relative bound.** Let `f` be analytic on `closedBall z₀ R` with
+`0 < r < R`, `f z₀ ≠ 0` and `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`. Then the number of zeros of `f`
+in `closedBall z₀ r`, counted with multiplicity, is at most `log M / log (R / r)`. -/
+theorem sum_divisor_le_log_div_log (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
+    (hr : 0 < r) (hrR : r < R) (hz₀ : f z₀ ≠ 0) {M : ℝ}
+    (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) :
+    ((∑ᶠ ρ, divisor f (closedBall z₀ r) ρ : ℤ) : ℝ) ≤ Real.log M / Real.log (R / r) := by
+  have hR : 0 < R := hr.trans hrR
+  have hc : (f z₀)⁻¹ ≠ 0 := inv_ne_zero hz₀
+  have := AnalyticOnNhd.sum_divisor_le (f := (f z₀)⁻¹ • f) (c := z₀) (r := r) (R := R) (M := M)
+    (by rwa [abs_of_pos hr]) (by rwa [abs_of_pos hr, abs_of_pos hR])
+    ((hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
+      hR hz₀ hM)
+    (by rw [abs_of_pos hR]; exact fun x hx ↦ analyticAt_const.smul (hf x hx))
+    (by simp [hz₀]) fun w hw ↦ by
+      rw [abs_of_pos hR] at hw
+      rw [Pi.smul_apply, norm_smul, norm_inv, inv_mul_le_iff₀ (norm_pos_iff.2 hz₀), mul_comm]
+      exact hM w hw
+  rwa [abs_of_pos hr, divisor_const_smul hc, Pi.smul_apply, smul_eq_mul,
+    inv_mul_cancel₀ hz₀, norm_one, div_one] at this
+
+/-- **Jensen's count in the classical normalization.** Let `f` be analytic on `closedBall z₀ R`
+with `0 < R`, `f z₀ ≠ 0` and `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`. Then `f` has at most
+`log M / log 2` zeros in `closedBall z₀ (R / 2)`, counted with multiplicity. -/
+theorem sum_divisor_half_le (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
+    (hR : 0 < R) (hz₀ : f z₀ ≠ 0) {M : ℝ} (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) :
+    ((∑ᶠ ρ, divisor f (closedBall z₀ (R / 2)) ρ : ℤ) : ℝ) ≤ Real.log M / Real.log 2 := by
+  have := hf.sum_divisor_le_log_div_log (r := R / 2) (by linarith) (by linarith) hz₀ hM
+  rwa [div_div_cancel₀ hR.ne'] at this
+
+end AnalyticOnNhd
+
+/-! ### Example
+
+For the polynomial `f z = z - 1` on `closedBall 0 4` one may take `M = 5`, since
+`‖w - 1‖ ≤ 5 = 5 ‖f 0‖` on `sphere 0 4`, so `f` has at most `log 5 / log 2` zeros in
+`closedBall 0 2`. -/
+
+example :
+    ((∑ᶠ ρ, MeromorphicOn.divisor (· - 1 : ℂ → ℂ) (closedBall 0 2) ρ : ℤ) : ℝ) ≤
+      Real.log 5 / Real.log 2 := by
+  have hf : AnalyticOnNhd ℂ (· - 1 : ℂ → ℂ) (closedBall 0 4) := fun _ _ ↦ by fun_prop
+  have hM (w : ℂ) (hw : w ∈ sphere (0 : ℂ) 4) : ‖w - 1‖ ≤ 5 * ‖(0 : ℂ) - 1‖ := by
+    rw [mem_sphere_zero_iff_norm] at hw
+    have := norm_sub_le w 1
+    norm_num [hw] at this ⊢
+    linarith
+  have h₂ := hf.sum_divisor_half_le (by norm_num) (by norm_num) hM
+  have h42 : (4 : ℝ) / 2 = 2 := by norm_num
+  rwa [h42] at h₂

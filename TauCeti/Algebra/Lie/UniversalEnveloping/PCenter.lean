@@ -22,10 +22,11 @@ by `u`.
 
 The theorem of this file is that, as soon as `Module.End R L` is a Noetherian `R`-module — over a
 field, as soon as `L` is finite-dimensional — every `x : L` admits such a polynomial in `ι x` that
-is central in `U(L)`, and that it automatically lies in the augmentation ideal `U⁺(L)`.  These
-elements are Hochschild's central `p`-polynomials: the commutative subalgebra they generate makes
-`U(L)` a finite module over a Noetherian commutative ring, and the two-sided ideal they generate
-is what the Krull intersection theorem is eventually applied to.
+is central in `U(L)`, and that, for positive characteristic, it automatically lies in the
+augmentation ideal `U⁺(L)`.  These elements are Hochschild's central `p`-polynomials: the
+commutative subalgebra they generate makes `U(L)` a finite module over a Noetherian commutative
+ring, and the two-sided ideal they generate is what the Krull intersection theorem is eventually
+applied to.
 
 Two ingredients drive the proof, and neither needs the Poincaré-Birkhoff-Witt theorem.
 
@@ -56,7 +57,9 @@ that is `TauCeti.UniversalEnvelopingAlgebra.pPolynomial_map_mem_center_of_surjec
   commutative ring, every element has such a polynomial as soon as `Module.End R L` is
   Noetherian.
 * `TauCeti.UniversalEnvelopingAlgebra.exists_pCentralPolynomial`: the specialization to a
-  finite-dimensional Lie algebra over a field of characteristic `p`.
+  finite-dimensional Lie algebra over a field of positive characteristic `p`. For `p = 0` the
+  statement is also accepted, but only as the trivial fallback `1`, which is central and carries no
+  zero-constant-term or augmentation-ideal guarantee.
 * `TauCeti.UniversalEnvelopingAlgebra.pPolynomial_ι_mem_augmentation_toIdeal`: having zero
   constant term, it lies in the augmentation ideal.
 * `TauCeti.UniversalEnvelopingAlgebra.exists_pow_ι_mem_center_of_isNilpotent_ad`: if
@@ -229,15 +232,20 @@ variable (K : Type u) (L : Type v) [Field K] [LieRing L] [LieAlgebra K L]
 
 /-- **Every element of a finite-dimensional Lie algebra over a field has a central
 `p`-polynomial.**  This is the finite-dimensional specialization of
-`TauCeti.UniversalEnvelopingAlgebra.exists_pCentralPolynomial_of_isNoetherian`: over a field,
-finite-dimensionality of `L` makes `Module.End K L` Noetherian. -/
-theorem exists_pCentralPolynomial (p : ℕ) [Fact p.Prime] [CharP K p] [FiniteDimensional K L]
+`TauCeti.UniversalEnvelopingAlgebra.exists_pCentralPolynomial_of_isNoetherian`: over a field of
+positive characteristic `p`, finite-dimensionality of `L` makes `Module.End K L` Noetherian. For
+`p = 0` the statement is read with the fallback `e = 1`, `a = 0`, whose polynomial is the central
+element `1`; that case carries no zero-constant-term or augmentation-ideal guarantee. -/
+theorem exists_pCentralPolynomial (p : ℕ) [CharP K p] [FiniteDimensional K L]
     (x : L) :
     ∃ (e : ℕ) (a : Fin e → K),
       _root_.UniversalEnvelopingAlgebra.ι K x ^ p ^ e +
           ∑ i : Fin e, a i • _root_.UniversalEnvelopingAlgebra.ι K x ^ p ^ (i : ℕ) ∈
-        Subalgebra.center K (_root_.UniversalEnvelopingAlgebra K L) :=
-  exists_pCentralPolynomial_of_isNoetherian K L p x
+        Subalgebra.center K (_root_.UniversalEnvelopingAlgebra K L) := by
+  rcases CharP.char_is_prime_or_zero K p with hp | rfl
+  · have := Fact.mk hp
+    exact exists_pCentralPolynomial_of_isNoetherian K L p x
+  · exact ⟨1, 0, by simp⟩
 
 end Field
 
