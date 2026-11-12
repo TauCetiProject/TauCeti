@@ -28,8 +28,10 @@ eventually constant from `m`. -/
 theorem isEventuallyConstantFrom_of_isIso_map_succ {F : J ⥤ C} {m : J}
     (h : ∀ j, m ≤ j → IsIso (F.map (homOfLE (Order.le_succ j)))) :
     F.IsEventuallyConstantFrom m := by
-  intro j ⟨⟨hmj⟩⟩
-  change IsIso (F.map (homOfLE hmj))
+  intro j f
+  rw [Subsingleton.elim f (homOfLE (leOfHom f))]
+  generalize leOfHom f = hmj
+  clear f
   induction hmj using Succ.rec with
   | rfl => rw [Subsingleton.elim (homOfLE _) (𝟙 m), F.map_id]; infer_instance
   | succ j hj ih =>

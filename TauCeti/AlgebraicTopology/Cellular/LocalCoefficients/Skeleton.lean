@@ -99,6 +99,10 @@ theorem isIso_homologyMap_subsetTwistedChainComplexMap_skeletonLT_succ {n k : ‚Ñ
   let e := (pullbackCompIso
     (TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_subset_skeletonLT_succ C n))).hom
     (TopCat.ofHom (ContinuousMap.subtypeVal _)).hom).app L
+  -- The map of the subspace of the pair of consecutive skeleta is the inclusion.
+  have hmap : TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_subset_skeletonLT_succ C n)) =
+      (skeletonPair C n).map := rfl
+  rw [‚Üê hmap] at hP
   -- The two factors meet only up to unfolding the pulled-back coefficient systems, so their
   -- quasi-isomorphism instances are supplied by name.
   rw [subsetTwistedChainComplexMap_def]
