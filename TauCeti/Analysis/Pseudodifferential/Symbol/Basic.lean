@@ -218,7 +218,8 @@ theorem exists_norm_mixedDeriv_comp_prodMap_le_mul_rpow_weight {A : Type*}
     B (List.ofFn fun i => t (Fin.castAdd β.length i)) (List.ofFn fun i => t (Fin.natAdd α.length i))
   have hD : 0 ≤ D := Finset.sum_nonneg fun _ _ => hB0 _ _
   have hM : 0 ≤ M := le_max_of_le_left (norm_nonneg _)
-  refine ⟨M ^ (α.length + β.length) * (D * c), by positivity, fun x hx ξ => ?_⟩
+  refine ⟨M ^ (α.length + β.length) * (D * c), mul_nonneg (pow_nonneg hM _) (mul_nonneg hD hc0),
+    fun x hx ξ => ?_⟩
   refine (norm_mixedDeriv_comp_prodMap_le α β (hf.of_le (by exact_mod_cast le_top)) P Q x
     ξ).trans ?_
   rw [mul_assoc]
