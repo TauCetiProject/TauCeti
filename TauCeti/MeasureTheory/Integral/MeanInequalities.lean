@@ -47,8 +47,8 @@ expected products without any independence assumption.
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
-* `MeasureTheory.norm_integral_prod_le_average_integral_norm_pow`: the absolute-moment bound
-  for an integral of a finite product.
+* `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
+  the absolute-moment bound for an integral of a finite product.
 
 ## References
 
@@ -188,21 +188,23 @@ end TauCeti
 
 namespace MeasureTheory
 
-/-- The norm of the integral of a product of `k` functions is bounded by the average of their
-`k`th absolute moments. No independence or finiteness of the underlying measure is needed. -/
-theorem norm_integral_prod_le_average_integral_norm_pow {Ω ι 𝕜 : Type*} [MeasurableSpace Ω]
-    {μ : Measure Ω} [Fintype ι] [Nonempty ι] [NormedCommRing 𝕜] [NormedSpace ℝ 𝕜]
-    (f : ι → Ω → 𝕜) (hf : ∀ i, Integrable (fun x ↦ ‖f i x‖ ^ Fintype.card ι) μ) :
-    ‖∫ x, ∏ i, f i x ∂μ‖ ≤
-      (Fintype.card ι : ℝ)⁻¹ * ∑ i, ∫ x, ‖f i x‖ ^ Fintype.card ι ∂μ := by
+/-- For a nonempty finite set `s` of cardinality `k`, the norm of the integral of the product
+over `s` is bounded by the average of the `k`th absolute moments. No independence or finiteness
+of the underlying measure is needed. -/
+theorem norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow {Ω ι 𝕜 : Type*}
+    [MeasurableSpace Ω] {μ : Measure Ω} [NormedCommRing 𝕜] [NormedSpace ℝ 𝕜]
+    (f : ι → Ω → 𝕜) {s : Finset ι} (hs : s.Nonempty)
+    (hf : ∀ i ∈ s, Integrable (fun x ↦ ‖f i x‖ ^ s.card) μ) :
+    ‖∫ x, ∏ i ∈ s, f i x ∂μ‖ ≤
+      (s.card : ℝ)⁻¹ * ∑ i ∈ s, ∫ x, ‖f i x‖ ^ s.card ∂μ := by
   classical
-  have hk : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  have hpoint (x : Ω) : ‖∏ i, f i x‖ ≤
-      ∑ i, (Fintype.card ι : ℝ)⁻¹ * ‖f i x‖ ^ Fintype.card ι := by
-    refine (Finset.norm_prod_le' Finset.univ Finset.univ_nonempty (fun i ↦ f i x)).trans ?_
-    have h := Real.geom_mean_le_arith_mean_weighted Finset.univ
-      (fun _ : ι ↦ (Fintype.card ι : ℝ)⁻¹)
-      (fun i ↦ ‖f i x‖ ^ Fintype.card ι)
+  have hk : (s.card : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hs.card_ne_zero
+  have hpoint (x : Ω) : ‖∏ i ∈ s, f i x‖ ≤
+      ∑ i ∈ s, (s.card : ℝ)⁻¹ * ‖f i x‖ ^ s.card := by
+    refine (Finset.norm_prod_le' s hs (fun i ↦ f i x)).trans ?_
+    have h := Real.geom_mean_le_arith_mean_weighted s
+      (fun _ : ι ↦ (s.card : ℝ)⁻¹)
+      (fun i ↦ ‖f i x‖ ^ s.card)
       (fun _ _ ↦ inv_nonneg.mpr (Nat.cast_nonneg _))
       (by simp [hk]) (fun _ _ ↦ by positivity)
     convert h using 1
@@ -211,9 +213,9 @@ theorem norm_integral_prod_le_average_integral_norm_pow {Ω ι 𝕜 : Type*} [Me
     rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), mul_inv_cancel₀ hk,
       Real.rpow_one]
   have hbound := norm_integral_le_of_norm_le
-    (integrable_finsetSum _ fun i _ ↦ (hf i).const_mul (Fintype.card ι : ℝ)⁻¹)
+    (integrable_finsetSum _ fun i hi ↦ (hf i hi).const_mul (s.card : ℝ)⁻¹)
     (Filter.Eventually.of_forall hpoint)
-  simpa only [integral_finsetSum _ fun i _ ↦ (hf i).const_mul _, integral_const_mul,
+  simpa only [integral_finsetSum _ fun i hi ↦ (hf i hi).const_mul _, integral_const_mul,
     Finset.mul_sum] using hbound
 
 end MeasureTheory

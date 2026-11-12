@@ -11,9 +11,10 @@ public import Mathlib.Data.Fintype.EquivFin
 /-!
 # Counting functions with small range
 
-A function visiting at most `r` values factors through `Fin r`. Counting the two maps in this
-factorization bounds the number of such functions by `|β|^r * r^|α|`. This deliberately coarse
-bound controls sums over matrix trace words with fewer than the leading number of vertices.
+A function into a nonempty finite type `β` visiting at most `r` values factors through `Fin r`.
+Counting the two maps in this factorization bounds the number of such functions by
+`|β|^r * r^|α|`. This deliberately coarse bound controls sums over matrix trace words with fewer
+than the leading number of vertices.
 -/
 
 public section
