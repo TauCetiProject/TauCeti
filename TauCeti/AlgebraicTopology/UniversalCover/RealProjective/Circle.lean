@@ -157,7 +157,6 @@ theorem coe_lineHomeomorphCircle_mk (w : Fin 2 → ℝ) (hw : w ≠ 0) :
       (w 0 + w 1 * Complex.I) ^ 2 / (w 0 ^ 2 + w 1 ^ 2 : ℝ) := by
   have hn : ‖WithLp.toLp 2 w‖ ^ 2 = w 0 ^ 2 + w 1 ^ 2 := by
     rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
-  have hn0 : ‖WithLp.toLp 2 w‖ ≠ 0 := by simpa using hw
   simp only [lineHomeomorphCircle, Homeomorph.trans_apply,
     RealProjectiveSpace.homeomorphProjectivization_symm_mk_eq_normalize,
     RealProjectiveSpace.Line.homeomorphCircle_apply, RealProjectiveSpace.Line.toCircle_apply_mk,

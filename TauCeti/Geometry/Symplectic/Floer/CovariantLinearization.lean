@@ -234,7 +234,7 @@ theorem alongCurve_floerOperator (ω : SmoothTwoForm I M)
   rw [alongCurve_add cov γ _ _
     (differentiableAt_sectionCoord _ _ hΔs hbase)
     (differentiableAt_sectionCoord _ _ hJΔt hbase),
-    alongCurve_clm_apply cov γ _ (J z) hγ hJ hΔt,
+    alongCurve_clm_apply cov γ _ (J z) hJ hΔt,
     alongCurve_sub cov γ Vs _ hVs (differentiableAt_sectionCoord _ _ hXs hbase),
     alongCurve_sub cov γ Vt _ hVt (differentiableAt_sectionCoord _ _ hXt hbase),
     alongCurve_pullback cov γ _ (hasMFDerivAt_curveVelocity hγ) hKs,
