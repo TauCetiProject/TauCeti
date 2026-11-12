@@ -281,7 +281,8 @@ private theorem seedField_apply_three (z : ℂ) :
 private theorem sectionValue_seedField (z : ℂ) :
     sectionValue (seedField x ρ ν H) z = ρ z * exp (ν z) * H z := by
   rw [sectionValue_apply, seedField_apply_two, seedField_apply_three]
-  apply Complex.ext <;> simp <;> ring
+  push_cast
+  linear_combination re_add_im ((ρ z : ℂ) * exp (ν z) * H z)
 
 /-- Off the zeros of `α`, the seed field is the complexified gauge direction of `ρ w`,
 `w = seedQuotient x ν H = H / (e^(-ν) α)`. -/
@@ -308,9 +309,17 @@ private theorem seedField_eventuallyEq (hρ : Differentiable ℝ ρ) (hH : Diffe
     field_simp
   ext i
   fin_cases i
-  · simp [seedField_apply_zero, complexGaugeDirection_apply_zero, hD.fderiv]
+  · simp only [Fin.zero_eta, Fin.isValue, seedField_apply_zero, complexGaugeDirection_apply_zero,
+      hD.fderiv, add_apply, smul_apply, ContinuousLinearMap.coe_restrictScalars',
+      ContinuousLinearMap.smulRight_apply, one_apply_eq_self, smul_eq_mul, one_mul,
+      ContinuousLinearMap.comp_apply, ofRealCLM_apply, add_re, add_im, mul_re, mul_im, ofReal_re,
+      ofReal_im, I_re, I_im]
     ring
-  · simp [seedField_apply_one, complexGaugeDirection_apply_one, hD.fderiv]
+  · simp only [Fin.mk_one, Fin.isValue, seedField_apply_one, complexGaugeDirection_apply_one,
+      hD.fderiv, add_apply, smul_apply, ContinuousLinearMap.coe_restrictScalars',
+      ContinuousLinearMap.smulRight_apply, one_apply_eq_self, smul_eq_mul, one_mul,
+      ContinuousLinearMap.comp_apply, ofRealCLM_apply, add_re, add_im, mul_re, mul_im, ofReal_re,
+      ofReal_im, I_re, I_im]
     ring
   · simp only [Fin.reduceFinMk, Fin.isValue, seedField_apply_two, key,
       complexGaugeDirection_apply_two]
@@ -414,6 +423,39 @@ private theorem gaugeFixedOperator_seedField_eq_zero {ρ : ℂ → ℝ} {ν H : 
     hf hα.continuous hw)] at hw'
   rcases hi with rfl | rfl <;> simp [hw', hsol w]
 
+section OfRealAddMulI
+
+variable {h₁ h₂ : ℂ → ℝ}
+
+/-- The complex function `h₁ + i h₂` is `Cⁿ` when the real functions `h₁` and `h₂` are. -/
+private theorem contDiff_ofReal_add_mul_I {n : WithTop ℕ∞} (hh₁ : ContDiff ℝ n h₁)
+    (hh₂ : ContDiff ℝ n h₂) : ContDiff ℝ n fun z ↦ (h₁ z : ℂ) + h₂ z * I :=
+  (ofRealCLM.contDiff.comp hh₁).add ((ofRealCLM.contDiff.comp hh₂).mul contDiff_const)
+
+/-- The derivative of `h₁ + i h₂` is `h₁' + i h₂'`. -/
+private theorem fderiv_ofReal_add_mul_I_apply {z : ℂ} (hh₁ : DifferentiableAt ℝ h₁ z)
+    (hh₂ : DifferentiableAt ℝ h₂ z) (v : ℂ) :
+    fderiv ℝ (fun z ↦ (h₁ z : ℂ) + h₂ z * I) z v =
+      (fderiv ℝ h₁ z v : ℂ) + fderiv ℝ h₂ z v * I := by
+  have hd := (ofRealCLM.hasFDerivAt.comp z hh₁.hasFDerivAt).add
+    ((ofRealCLM.hasFDerivAt.comp z hh₂.hasFDerivAt).mul_const I)
+  rw [show fderiv ℝ (fun z ↦ (h₁ z : ℂ) + h₂ z * I) z = _ from hd.fderiv]
+  simp [mul_comm I]
+
+/-- The Laplacian of `h₁ + i h₂` is `Δ h₁ + i Δ h₂`. -/
+private theorem laplacian_ofReal_add_mul_I {z : ℂ} (hh₁ : ContDiffAt ℝ 2 h₁ z)
+    (hh₂ : ContDiffAt ℝ 2 h₂ z) :
+    Δ (fun z ↦ (h₁ z : ℂ) + h₂ z * I) z = (Δ h₁ z : ℂ) + Δ h₂ z * I := by
+  have hsplit : (fun z ↦ (h₁ z : ℂ) + h₂ z * I) =
+      (ofRealCLM ∘ h₁) + ((1 : ℝ →L[ℝ] ℝ).smulRight I ∘ h₂) := by
+    funext w
+    simp [Complex.real_smul]
+  rw [hsplit, (hh₁.continuousLinearMap_comp ofRealCLM).laplacian_add
+    (hh₂.continuousLinearMap_comp _), hh₁.laplacian_CLM_comp_left, hh₂.laplacian_CLM_comp_left]
+  simp [Complex.real_smul]
+
+end OfRealAddMulI
+
 /-- The complexified gauge direction of `h₁ + i h₂`, for smooth `h₁`, `h₂ ∈ H²(ℂ)`, at a field with
 continuous section coordinates bounded by one, is square integrable. -/
 private theorem memLp_complexGaugeDirection {h₁ h₂ : ℂ → ℝ} (hx₂ : Continuous fun z ↦ x z 2)
@@ -421,12 +463,8 @@ private theorem memLp_complexGaugeDirection {h₁ h₂ : ℂ → ℝ} (hx₂ : C
     (hh₁ : ContDiff ℝ ∞ h₁) (hS₁ : h₁ ∈ realSobolevFunctions ℂ 2 2) (hh₂ : ContDiff ℝ ∞ h₂)
     (hS₂ : h₂ ∈ realSobolevFunctions ℂ 2 2) :
     MemLp (complexGaugeDirection x fun z ↦ (h₁ z : ℂ) + h₂ z * I) 2 volume := by
-  have hfd (z v : ℂ) : fderiv ℝ (fun z ↦ (h₁ z : ℂ) + h₂ z * I) z v =
-      (fderiv ℝ h₁ z v : ℂ) + fderiv ℝ h₂ z v * I := by
-    have hd := (ofRealCLM.hasFDerivAt.comp z ((hh₁.differentiable (by simp)) z).hasFDerivAt).add
-      ((ofRealCLM.hasFDerivAt.comp z ((hh₂.differentiable (by simp)) z).hasFDerivAt).mul_const I)
-    rw [show fderiv ℝ (fun z ↦ (h₁ z : ℂ) + h₂ z * I) z = _ from hd.fderiv]
-    simp [mul_comm I]
+  have hfd (z v : ℂ) := fderiv_ofReal_add_mul_I_apply ((hh₁.differentiable (by simp)) z)
+    ((hh₂.differentiable (by simp)) z) v
   -- Classical derivatives of smooth `H²` functions are in `H¹ ⊆ L²`.
   have hd (f : ℂ → ℝ) (hf : ContDiff ℝ ∞ f) (hS : f ∈ realSobolevFunctions ℂ 2 2) (v : ℂ) :
       MemLp (fun z ↦ fderiv ℝ f z v) 2 volume := by
@@ -469,32 +507,25 @@ private theorem gaugeFixedOperator_add_complexGaugeDirection_eq_zero
     (hE₂ : -Δ h₂ z + (x z 2 ^ 2 + x z 3 ^ 2) * h₂ z = -gaugeFixedOperator x y₀ z 0) :
     gaugeFixedOperator x (y₀ + complexGaugeDirection x fun z ↦ (h₁ z : ℂ) + h₂ z * I) z = 0 := by
   have hxi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i := contDiff_euclidean.mp hx i
-  have hh : ContDiff ℝ 3 fun z ↦ (h₁ z : ℂ) + h₂ z * I :=
-    (ofRealCLM.contDiff.comp hh₁).add ((ofRealCLM.contDiff.comp hh₂).mul contDiff_const)
-  -- The Laplacian of `h₁ + i h₂` is `Δ h₁ + i Δ h₂`.
-  have hΔ : Δ (fun z ↦ (h₁ z : ℂ) + h₂ z * I) z = (Δ h₁ z : ℂ) + Δ h₂ z * I := by
-    have hsplit : (fun z ↦ (h₁ z : ℂ) + h₂ z * I) =
-        (ofRealCLM ∘ h₁) + ((1 : ℝ →L[ℝ] ℝ).smulRight I ∘ h₂) := by
-      funext w
-      simp [Complex.real_smul]
-    have c₁ : ContDiffAt ℝ 2 h₁ z := (hh₁.of_le (by norm_num)).contDiffAt
-    have c₂ : ContDiffAt ℝ 2 h₂ z := (hh₂.of_le (by norm_num)).contDiffAt
-    rw [hsplit, (c₁.continuousLinearMap_comp ofRealCLM).laplacian_add
-      (c₂.continuousLinearMap_comp _), c₁.laplacian_CLM_comp_left, c₂.laplacian_CLM_comp_left]
-    simp [Complex.real_smul]
+  have hh := contDiff_ofReal_add_mul_I hh₁ hh₂
   have hcg : ContDiff ℝ 1 (complexGaugeDirection x fun z ↦ (h₁ z : ℂ) + h₂ z * I) :=
     contDiff_complexGaugeDirection (hxi 2) (hxi 3) (hh.of_le (by norm_num))
   rw [gaugeFixedOperator_add x ((hy₀.differentiable (by simp)) z)
     ((hcg.differentiable (by simp)) z), gaugeFixedOperator_complexGaugeDirection
       (((hxi 2).differentiable (by simp)) z) (((hxi 3).differentiable (by simp)) z)
-      (hh.of_le (by norm_num)).contDiffAt, hΔ]
+      (hh.of_le (by norm_num)).contDiffAt, laplacian_ofReal_add_mul_I
+        (hh₁.of_le (by norm_num)).contDiffAt (hh₂.of_le (by norm_num)).contDiffAt]
   obtain ⟨r₂, r₃⟩ := hrow
   generalize gaugeFixedOperator x y₀ z = L at hE₁ hE₂ r₂ r₃ ⊢
   ext i
   fin_cases i
-  · simp [-ofReal_pow, -ofReal_add]
+  · simp only [Fin.zero_eta, Fin.isValue, PiLp.add_apply, PiLp.zero_apply, Matrix.cons_val_zero,
+      equation_apply_one, equation_apply_two, smul_add, real_smul, neg_add_rev, add_re, add_im,
+      neg_re, neg_im, mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im]
     linarith
-  · simp [-ofReal_pow, -ofReal_add]
+  · simp only [Fin.mk_one, Fin.isValue, PiLp.add_apply, PiLp.zero_apply, Matrix.cons_val_one,
+      Matrix.cons_val_zero, equation_apply_one, equation_apply_two, smul_add, real_smul,
+      neg_add_rev, add_re, add_im, neg_re, neg_im, mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im]
     linarith
   · simp [r₂, hhol.1, hhol.2]
   · simp [r₃, hhol.1, hhol.2]
@@ -591,8 +622,7 @@ theorem exists_mem_gaugeFixedKernel_sectionValue_eq_mul_add_exp_mul (hx : ContDi
   obtain ⟨h₂, hh₂, hS₂, hE₂⟩ := exists_contDiff_mem_realSobolevFunctions_neg_laplacian_add_mul_eq
     (((hxi 2).pow 2).add ((hxi 3).pow 2)) hPb hP₀ (by norm_num : (0 : ℝ) < 1 / 8)
     (fun z hz ↦ (hR z hz).le) (hLi 0).neg (hg 0)
-  have hh : ContDiff ℝ ∞ fun z ↦ (h₁ z : ℂ) + h₂ z * I :=
-    (ofRealCLM.contDiff.comp hh₁).add ((ofRealCLM.contDiff.comp hh₂).mul contDiff_const)
+  have hh := contDiff_ofReal_add_mul_I hh₁ hh₂
   obtain ⟨hG, hdec⟩ := sectionValue_add_eq_mul_add_exp_mul hb.continuous hν hH hα hρ₁
     hh.continuous
   refine ⟨_, ⟨(hy₀.of_le (by simp)).add (contDiff_complexGaugeDirection
@@ -623,7 +653,8 @@ theorem finrank_gaugeFixedKernel {m : ℕ} (hx : ContDiff ℝ ∞ x) (hsol : ∀
   have hhol (w : ℂ) : equation x w 1 = 0 ∧ equation x w 2 = 0 := by simp [hsol w]
   have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe
   have hker (y) (hy : y ∈ gaugeFixedKernel x) :
-      ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ w, gaugeFixedOperator x y w = 0 := hy
+      ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ w, gaugeFixedOperator x y w = 0 :=
+    mem_gaugeFixedKernel.1 hy
   -- The zero divisor `D ∈ Sym^m ℂ` of `α` and an integrating factor `ν`, `α = e^ν f`.
   obtain ⟨D, hD⟩ :=
     exists_sym_sectionValue_eq_pow_count_mul (k := ⊤) le_top (hxi 0) (hxi 1) hp hq hhol hframe
