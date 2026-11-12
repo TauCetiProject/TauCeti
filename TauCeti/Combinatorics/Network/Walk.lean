@@ -130,8 +130,8 @@ abbrev vertices {s t : V} (p : ArrowWalk Q s t) : List V :=
 /-- The arrows traversed by a walk, in order and with repetitions, each recorded with its
 endpoints. -/
 def arrows {s : V} : ∀ {t : V}, ArrowWalk Q s t → List (Σ x y, Q x y)
-  | _, @Quiver.Path.nil _ .(_) _ => []
-  | _, @Quiver.Path.cons _ .(_) _ _ _ p e => arrows p ++ [⟨_, _, e⟩]
+  | _, @Quiver.Path.nil _ .(_) .(s) => []
+  | _, @Quiver.Path.cons _ .(_) .(s) _ _ p e => arrows p ++ [⟨_, _, e⟩]
 
 @[simp]
 theorem arrows_nil (s : V) : (nil s : ArrowWalk Q s s).arrows = [] :=

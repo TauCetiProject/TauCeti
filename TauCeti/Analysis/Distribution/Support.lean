@@ -46,6 +46,8 @@ the exterior derivative of a cutoff equal to one vanishes near the support.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_comp_extDerivCLM`: the augmentation of a boundary is zero.
+* `Distribution.subset_dsupport_ofFun_const`: a nonzero constant function is supported on all
+  of `Ω`.
 
 ## References
 
@@ -378,5 +380,29 @@ theorem augmentation_comp_extDerivCLM (hT : IsCompact (dsupport T)) (hTΩ : dsup
   simp
 
 end Boundary
+
+section OfFun
+
+open MeasureTheory Measure
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
+  [IsOpenPosMeasure μ] [IsFiniteMeasureOnCompacts μ] [CompleteSpace F]
+
+/-- A nonzero constant function is a distribution supported everywhere on `Ω`: near every point
+of `Ω` some nonnegative bump has nonzero pairing with it. -/
+theorem subset_dsupport_ofFun_const {c : F} (hc : c ≠ 0) :
+    (Ω : Set E) ⊆ dsupport (ofFun Ω (fun _ ↦ c) μ n) := by
+  intro x hx
+  refine (mem_dsupport_iff_forall_exists_ne x).2 fun s hxs hs ↦ ?_
+  obtain ⟨u, hus, hu, hud, hu01, hux⟩ := exists_contDiff_tsupport_subset (n := n)
+    ((hs.inter Ω.isOpen).mem_nhds ⟨hxs, hx⟩)
+  refine ⟨⟨u, hud, hu, hus.trans inter_subset_right⟩, hus.trans inter_subset_left, ?_⟩
+  have hpos : 0 < ∫ y, u y ∂μ :=
+    hud.continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero hu
+      (x := x) (fun y ↦ (hu01 (mem_range_self y)).1) (by simp [hux])
+  rw [ofFun_apply ((locallyIntegrable_const c).locallyIntegrableOn _), integral_smul_const]
+  exact smul_ne_zero hpos.ne' hc
+
+end OfFun
 
 end Distribution

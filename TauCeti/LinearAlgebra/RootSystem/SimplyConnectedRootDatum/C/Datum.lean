@@ -560,7 +560,8 @@ private lemma linearIndependent_typeCSimpleRoot (n : ℕ) :
   rw [h]
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · exact linearIndependent_empty_type
-  · exact Matrix.linearIndependent_rows_of_det_ne_zero (by rw [CartanMatrix.C_det hn]; norm_num)
+  · exact Matrix.linearIndependent_rows_of_det_ne_zero (A := CartanMatrix.C n)
+      (by rw [CartanMatrix.C_det hn]; norm_num)
 
 private lemma linearIndependent_typeCSimpleCoroot (n : ℕ) :
     LinearIndependent ℤ (typeCSimpleCoroot (n := n)) := by
