@@ -31,6 +31,8 @@ is a symplectic submanifold.
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_tangentRepresentation`: the stabilizer
   of `x` acts on `T_x M` by linear symplectic maps of `σ_x`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectomorphism_tangentAut`: the same statement for
+  the stabilizer's tangent automorphisms `TauCeti.tangentAut`, as linear symplectomorphisms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectic_invariants_tangentRepresentation`: the
   tangent vectors at `x` fixed by the stabilizer of `x` form a symplectic subspace.
 
@@ -69,6 +71,19 @@ theorem IsNondegenerate.symplecticFormAt_tangentRepresentation (hσ : σ.IsNonde
   have hgx : (g : G) • x = x := g.2
   rw [IsNondegenerate.symplecticFormAt_apply, IsNondegenerate.symplecticFormAt_apply, h,
     tangentRepresentation_apply, hgx]
+
+/-- If the stabilizer of `x` acts by maps preserving a nondegenerate two-form `σ`, each of its
+elements acts on `T_x M` by a linear symplectomorphism of `σ_x`. -/
+theorem IsNondegenerate.isSymplectomorphism_tangentAut (hσ : σ.IsNondegenerate)
+    (hσG : ∀ g ∈ stabilizer G x, SmoothForm.mpullback (fun y : M ↦ g • y)
+      (ContMDiffSMul.contMDiff_const_smul (I := IG) g) σ = σ)
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (g : stabilizer G x) :
+    SymplecticForm.IsSymplectomorphism (hσ.symplecticFormAt x) (hσ.symplecticFormAt x)
+      (tangentAut hd g) :=
+  SymplecticForm.isSymplectomorphism_iff.2 fun u v ↦ by
+    simpa only [tangentAut_apply] using
+      hσ.symplecticFormAt_tangentRepresentation (IG := IG) hσG hd g u v
 
 variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold IG 1 G] [IsTopologicalGroup G]
   [CompactSpace G]

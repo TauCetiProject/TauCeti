@@ -217,14 +217,6 @@ variable (hσ : σ.IsNondegenerate)
 
 include hσG
 
-omit [CompleteSpace E] [LieGroup I (minSmoothness ℝ 3) G] [CompleteSpace E'] in
-private theorem isSymplectomorphism_tangentAut (g : stabilizer G x) :
-    SymplecticForm.IsSymplectomorphism (hσ.symplecticFormAt x) (hσ.symplecticFormAt x)
-      (tangentAut (mdifferentiableAt_smul_of_mem_stabilizer I (n := ∞) (by simp) x) g) :=
-  SymplecticForm.isSymplectomorphism_iff.2 fun u v ↦ by
-    rw [tangentAut_apply, tangentAut_apply]
-    exact hσ.symplecticFormAt_tangentRepresentation (IG := I) hσG _ g u v
-
 /-- **The stabilizer preserves the symplectic complement of the orbit.** If the stabilizer of `x`
 preserves a nondegenerate two-form `σ`, its tangent representation `g ↦ dg_x` maps the
 `σ_x`-orthogonal `W^σ` of the orbit tangent space `W` into itself. -/
@@ -254,7 +246,8 @@ def symplecticSliceRepresentation :
         hσ.SymplecticSlice (InfinitesimalAction.fundamental I G I' M) x :=
   (hσ.symplecticFormAt x).reducedSpaceRepresentation
     (tangentAut (mdifferentiableAt_smul_of_mem_stabilizer I (n := ∞) (by simp) x))
-    (isSymplectomorphism_tangentAut (I := I) hσ hσG) _ fun g u hu ↦ by
+    (hσ.isSymplectomorphism_tangentAut (IG := I) hσG
+      (mdifferentiableAt_smul_of_mem_stabilizer I (n := ∞) (by simp) x)) _ fun g u hu ↦ by
       rw [tangentAut_apply]
       exact hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG _ g hu
 
