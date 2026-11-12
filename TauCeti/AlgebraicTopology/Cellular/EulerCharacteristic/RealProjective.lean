@@ -61,6 +61,7 @@ end RealProjectiveSpace
 open RealProjectiveSpace in
 /-- **The Euler characteristic of real projective space.** `χ(RPⁿ)` is `1` for even `n` and `0`
 for odd `n`. -/
+@[simp]
 theorem eulerChar_realProjectiveSpace (n : ℕ) :
     eulerChar (RealProjectiveSpace n) = if Even n then 1 else 0 := by
   let := cwComplex n
