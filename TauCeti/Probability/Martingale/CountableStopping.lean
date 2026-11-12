@@ -6,6 +6,7 @@ Authors: Rémy Degenne, The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Martingale.OptionalSampling
+public import Mathlib.Probability.Process.LocalProperty
 public import TauCeti.Probability.Martingale.Basic
 public import TauCeti.Probability.Process.StoppedValue
 
@@ -22,6 +23,10 @@ The stopped-process theorem follows by capping the stopping time at a determinis
 The final theorem gives the indicator-stopped form appearing in `MeasureTheory.IsStable` and
 `MeasureTheory.Locally`, so countable-range stopping times can be used for localization: paths
 stopped at the bottom time contribute zero, rather than their possibly nonzero initial value.
+Countable-range stopping also preserves native local martingales, without assuming path
+regularity. The proof commutes the two stops and their positive-time indicators, as in
+Mathlib's `ProbabilityTheory.IsStable.locally`, using stability only at the given
+countable-range stopping time.
 All stopped values in the bounded sampling statements are at finite times; no terminal value
 at infinity is asserted.
 
@@ -157,3 +162,26 @@ theorem Martingale.stoppedProcess_indicator_of_countable_range [OrderBot ι]
   simpa only [Set.compl_ofPred, not_le, WithTop.coe_bot] using (hτ ⊥).compl
 
 end MeasureTheory
+
+namespace ProbabilityTheory.Locally
+
+open MeasureTheory
+
+variable {Ω ι E : Type*} {m : MeasurableSpace Ω} {P : Measure Ω}
+  [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι]
+  [SecondCountableTopology ι] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [IsFiniteMeasure P] {ℱ : Filtration ι m} {X : ι → Ω → E}
+
+/-- Countable-range stopping preserves native local martingales on a raw filtration.
+The native positive-time indicator is retained, and no path regularity is required. -/
+theorem martingale_stoppedProcess_indicator_of_countable_range
+    (hX : Locally (fun Y ↦ MeasureTheory.Martingale Y ℱ P) ℱ X P)
+    {τ : Ω → WithTop ι} (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable) :
+    Locally (fun Y ↦ MeasureTheory.Martingale Y ℱ P) ℱ
+      (MeasureTheory.stoppedProcess (fun t ↦ {ω | ⊥ < τ ω}.indicator (X t)) τ) P := by
+  refine ⟨hX.localSeq, hX.isLocalizingSequence_localSeq, fun n ↦ ?_⟩
+  have hm := (hX.stoppedProcess_localSeq n).stoppedProcess_indicator_of_countable_range hτ hc
+  simpa only [MeasureTheory.stoppedProcess_indicator_comm', Set.indicator_indicator,
+    MeasureTheory.stoppedProcess_stoppedProcess, Set.inter_comm, inf_comm] using hm
+
+end ProbabilityTheory.Locally
