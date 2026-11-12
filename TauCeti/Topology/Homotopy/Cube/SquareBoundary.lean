@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.HomotopyGroup
+public import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -23,6 +24,9 @@ of the four edges of the square (`TauCeti.squareBoundaryLoop_def`).
 * `TauCeti.squareBoundaryLoop`: the counterclockwise boundary loop of the square.
 * `TauCeti.squareBoundaryLoop_def`: it is the concatenation of the four edges.
 * `TauCeti.squareBoundaryLoop_mem_boundary`: it runs along the boundary of the square.
+* `TauCeti.firstHalf_squareEdge₀`, `TauCeti.secondHalf_squareEdge₃` and their analogues: the maps
+  `TauCeti.Cube.firstHalf 0` and `TauCeti.Cube.secondHalf 0` of the square onto its halves send
+  the edges of the square to halves of edges, edges, or the seam `y 0 = 1 / 2`.
 -/
 
 public section
@@ -106,5 +110,47 @@ theorem squareBoundaryLoop_mem_boundary (t : I) :
   rcases h with ⟨r, hr⟩ | ⟨r, hr⟩ | ⟨r, hr⟩ | ⟨r, hr⟩ <;> rw [squareBoundaryLoop_def, ← hr]
   exacts [squareEdge₀_mem_boundary r, squareEdge₁_mem_boundary r, squareEdge₂_mem_boundary r,
     squareEdge₃_mem_boundary r]
+
+/-! ### The halves of the square -/
+
+/-- The first half of the square meets the bottom edge in its first half. -/
+theorem firstHalf_squareEdge₀ (t : I) :
+    Cube.firstHalf 0 (squareEdge₀ t) =
+      squareEdge₀ (Set.projIcc 0 1 zero_le_one ((t : ℝ) / 2)) := by
+  ext j; fin_cases j <;> simp [Cube.firstHalf_apply]
+
+/-- The second half of the square meets the bottom edge in its second half. -/
+theorem secondHalf_squareEdge₀ (t : I) :
+    Cube.secondHalf 0 (squareEdge₀ t) =
+      squareEdge₀ (Set.projIcc 0 1 zero_le_one (((t : ℝ) + 1) / 2)) := by
+  ext j; fin_cases j <;> simp [Cube.secondHalf_apply]
+
+/-- The first half of the square meets the top edge in its second half. -/
+theorem firstHalf_squareEdge₂ (t : I) :
+    Cube.firstHalf 0 (squareEdge₂ t) =
+      squareEdge₂ (σ (Set.projIcc 0 1 zero_le_one ((σ t : ℝ) / 2))) := by
+  ext j; fin_cases j <;> simp [Cube.firstHalf_apply]
+
+/-- The second half of the square meets the top edge in its first half. -/
+theorem secondHalf_squareEdge₂ (t : I) :
+    Cube.secondHalf 0 (squareEdge₂ t) =
+      squareEdge₂ (σ (Set.projIcc 0 1 zero_le_one (((σ t : ℝ) + 1) / 2))) := by
+  ext j; fin_cases j <;> simp [Cube.secondHalf_apply]
+
+/-- The left edge of the first half of the square is the left edge of the square. -/
+theorem firstHalf_squareEdge₃ (t : I) :
+    Cube.firstHalf 0 (squareEdge₃ t) = squareEdge₃ t := by
+  ext j; fin_cases j <;> simp
+
+/-- The right edge of the second half of the square is the right edge of the square. -/
+theorem secondHalf_squareEdge₁ (t : I) :
+    Cube.secondHalf 0 (squareEdge₁ t) = squareEdge₁ t := by
+  ext j; fin_cases j <;> simp
+
+/-- The left edge of the second half of the square is the seam, the right edge of the first half,
+traversed backwards. -/
+theorem secondHalf_squareEdge₃ (t : I) :
+    Cube.secondHalf 0 (squareEdge₃ t) = Cube.firstHalf 0 (squareEdge₁ (σ t)) := by
+  ext j; fin_cases j <;> simp
 
 end TauCeti

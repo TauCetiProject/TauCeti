@@ -26,7 +26,8 @@ the reversal `GenLoop.symmAt i f`, and reads Mathlib's `HomotopyGroup.mul_spec`,
 * `GenLoop.transAt_apply_of_le`: on the first half, `transAt i f g` runs `f` at double speed.
 * `GenLoop.transAt_apply_of_lt`: on the second half, `transAt i f g` runs `g` at double speed.
 * `TauCeti.Cube.firstHalf`, `TauCeti.Cube.secondHalf`: the maps of the cube onto its two halves
-  in the `i`-th direction.
+  in the `i`-th direction, with their coordinates `TauCeti.Cube.coe_firstHalf_apply_self`,
+  `TauCeti.Cube.firstHalf_apply_of_ne` and their analogues for `secondHalf`.
 * `GenLoop.transAt_firstHalf`, `GenLoop.transAt_secondHalf`: `transAt i f g` restricts to `f` and
   to `g` on the two halves.
 * `GenLoop.symmAt_apply`: `symmAt i f` runs `f` backwards in the `i`-th direction.
@@ -62,15 +63,27 @@ theorem secondHalf_apply (i : N) (y : I^N) :
   (rfl)
 
 /-- The `i`-th coordinate of `firstHalf i y` is half the `i`-th coordinate of `y`. -/
+@[simp]
 theorem coe_firstHalf_apply_self (i : N) (y : I^N) : (firstHalf i y i : ℝ) = y i / 2 := by
   rw [firstHalf_apply, Function.update_self,
     Set.projIcc_of_mem _ ⟨by linarith [(y i).2.1], by linarith [(y i).2.2]⟩]
 
 /-- The `i`-th coordinate of `secondHalf i y` is `(y i + 1) / 2`. -/
+@[simp]
 theorem coe_secondHalf_apply_self (i : N) (y : I^N) :
     (secondHalf i y i : ℝ) = (y i + 1) / 2 := by
   rw [secondHalf_apply, Function.update_self,
     Set.projIcc_of_mem _ ⟨by linarith [(y i).2.1], by linarith [(y i).2.2]⟩]
+
+/-- The coordinates of `firstHalf i y` other than the `i`-th are those of `y`. -/
+@[simp]
+theorem firstHalf_apply_of_ne {i j : N} (h : j ≠ i) (y : I^N) : firstHalf i y j = y j :=
+  Function.update_of_ne h _ _
+
+/-- The coordinates of `secondHalf i y` other than the `i`-th are those of `y`. -/
+@[simp]
+theorem secondHalf_apply_of_ne {i j : N} (h : j ≠ i) (y : I^N) : secondHalf i y j = y j :=
+  Function.update_of_ne h _ _
 
 @[fun_prop]
 theorem continuous_firstHalf (i : N) : Continuous (firstHalf i) :=
