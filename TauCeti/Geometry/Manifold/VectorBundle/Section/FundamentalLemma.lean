@@ -56,19 +56,29 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] {n : ℕ∞ω}
 
+/-- Fibrewise covector evaluation does not enlarge the support of a `C^n` section. -/
+theorem tsupport_clm_apply_subset (s : Cₛ^n⟮I; F, V⟯) (η : ∀ x, V x →L[ℝ] ℝ) :
+    _root_.tsupport (fun x ↦ η x (s x)) ⊆ s.tsupport := by
+  apply closure_minimal _ s.isClosed_tsupport
+  exact Function.support_subset_iff'.2 fun x hx ↦ by
+    simp [s.eq_zero_of_notMem_tsupport hx]
+
+/-- A continuous covector field pairs continuously with a `C^n` section on its
+continuity domain. -/
+theorem continuousOn_clm_apply (s : Cₛ^n⟮I; F, V⟯)
+    {η : ∀ x, V x →L[ℝ] ℝ} {U : Set M}
+    (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U)) :
+    ContinuousOn (fun x ↦ η x (s x)) U :=
+  hη.comp s.contMDiff.continuous.continuousOn (fun _ hx ↦ hx)
+
 /-- Pairing a continuous covector field with a `C^n` section supported in an open
 continuity domain gives a continuous scalar function on the whole base. -/
 theorem continuous_clm_apply_of_tsupport_subset (s : Cₛ^n⟮I; F, V⟯)
     {η : ∀ x, V x →L[ℝ] ℝ} {U : Set M} (hU : IsOpen U)
     (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U))
     (hsU : s.tsupport ⊆ U) : Continuous (fun x ↦ η x (s x)) := by
-  have hc : ContinuousOn (fun x ↦ η x (s x)) U :=
-    hη.comp s.contMDiff.continuous.continuousOn (fun _ hx ↦ hx)
-  have ht : _root_.tsupport (fun x ↦ η x (s x)) ⊆ s.tsupport := by
-    apply closure_minimal _ s.isClosed_tsupport
-    exact Function.support_subset_iff'.2 fun x hx ↦ by
-      simp [s.eq_zero_of_notMem_tsupport hx]
-  exact hc.continuous_of_tsupport_subset hU (ht.trans hsU)
+  exact (s.continuousOn_clm_apply hη).continuous_of_tsupport_subset hU
+    ((s.tsupport_clm_apply_subset η).trans hsU)
 
 /-- A continuous covector field pairs integrably with every `C^n` section compactly
 supported inside an open continuity domain, for any measure finite on compact sets
@@ -80,8 +90,7 @@ theorem integrable_clm_apply_of_tsupport_subset [MeasurableSpace M] [OpensMeasur
     (hsc : IsCompact s.tsupport) (hsU : s.tsupport ⊆ U) :
     Integrable (fun x ↦ η x (s x)) μ := by
   apply (s.continuous_clm_apply_of_tsupport_subset hU hη hsU).integrable_of_hasCompactSupport
-  exact HasCompactSupport.intro' hsc s.isClosed_tsupport fun x hx ↦ by
-    simp [s.eq_zero_of_notMem_tsupport hx]
+  exact hsc.of_isClosed_subset (_root_.isClosed_tsupport _) (s.tsupport_clm_apply_subset η)
 
 end ContMDiffSection
 
@@ -109,8 +118,7 @@ theorem eq_zero_of_integral_clm_apply_contMDiffSection_eq_zero {η : ∀ x, V x 
       ∫ x, η x (s x) ∂μ = 0) : ∀ x ∈ U, η x = 0 := by
   have hs (s : Cₛ^n⟮I; F, V⟯) {x : M} (hx : x ∈ U) : η x (s x) ≤ 0 := by
     by_contra! hpos
-    have hc : ContinuousOn (fun x ↦ η x (s x)) U :=
-      hη.comp s.contMDiff.continuous.continuousOn (fun _ hx ↦ hx)
+    have hc := s.continuousOn_clm_apply hη
     obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp
       (inter_mem (hU.mem_nhds hx)
         ((hc.continuousAt (hU.mem_nhds hx)).preimage_mem_nhds (Ioi_mem_nhds hpos)))
@@ -124,8 +132,8 @@ theorem eq_zero_of_integral_clm_apply_contMDiffSection_eq_zero {η : ∀ x, V x 
     have hgs (y : M) : (g • s) y = ρ y • s y := ContMDiffSection.smul_apply g s y
     have hcont := (g • s).continuous_clm_apply_of_tsupport_subset hU hη hsU
     have hp := hcont.integral_pos_of_hasCompactSupport_nonneg_ne_zero (μ := μ)
-        (HasCompactSupport.intro' hsc (g • s).isClosed_tsupport fun y hy ↦ by
-          simp [(g • s).eq_zero_of_notMem_tsupport hy])
+        (hsc.of_isClosed_subset (_root_.isClosed_tsupport _)
+          ((g • s).tsupport_clm_apply_subset η))
         (fun y ↦ ?_) (x := x) (by simpa only [hgs, ρ.eq_one, one_smul] using hpos.ne')
     · exact (h (g • s) hsc hsU ▸ hp).false
     · by_cases hy : y ∈ tsupport ρ
