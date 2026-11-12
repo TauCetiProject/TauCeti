@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Linear
 public import TauCeti.ModelTheory.Algebra.Group.Basic
 public import TauCeti.ModelTheory.Algebra.Group.ExistentialUniversal
 public import Mathlib.ModelTheory.Complexity
+import TauCeti.GroupTheory.FreeGroup.Basis
 
 /-!
 # Discrimination and universal sentences
@@ -36,16 +37,20 @@ universal sentence saying that this system has no solution fails in `K`, hence i
 solution in `H` solves every relation of `K`, so it defines a coefficient-preserving
 homomorphism `K →* H` that keeps every `k_j` nontrivial.
 
-Taking `H = G`, a finitely generated group `K` over an equationally Noetherian group `G` is
-discriminated by `G` over `G` exactly when `K` and `G` satisfy the same universal sentences with
-coefficient names. This applies to free groups of finite or countable rank, with their bases as
-names: a finitely generated group over such a free group `F` is discriminated by `F` over `F` if
-and only if it is universally equivalent to `F` in the language with constants for a basis.
+Taking `H = G`, a group discriminated by `G` over `G` contains `G`, so it satisfies the same
+universal sentences with coefficient names as `G`. Conversely, a finitely generated group `K` over
+an equationally Noetherian group `G` that satisfies the same universal sentences as `G` is
+discriminated by `G` over `G`. This applies to free groups of finite or countable rank, with their
+bases as names: a finitely generated group over such a free group `F` is discriminated by `F`
+over `F` if and only if it is universally equivalent to `F` in the language with constants for a
+basis.
 
 ## Main results
 
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.realize_of_isUniversal`: universal sentences with
   coefficients from `G` pass from `H` to `K`.
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.realize_iff_of_isUniversal`: a group discriminated by
+  `G` over `G` satisfies the same universal sentences with coefficients from `G` as `G`.
 * `TauCeti.GroupAlgGeom.isDiscriminatedBy_of_forall_isUniversal`: conversely, over an
   equationally Noetherian `H`, a group finitely generated over `G` that satisfies every universal
   sentence true in `H` is discriminated by `H`.
@@ -53,8 +58,9 @@ and only if it is universally equivalent to `F` in the language with constants f
 * `TauCeti.GroupAlgGeom.isDiscriminatedBy_id_iff_forall_realize_iff`: over an equationally
   Noetherian `G`, a group finitely generated over `G` is discriminated by `G` if and only if it
   satisfies the same universal sentences as `G`.
-* `TauCeti.GroupAlgGeom.isDiscriminatedBy_freeGroup_iff_forall_realize_iff`: the same for a free
-  group of finite or countable rank, with constants for its basis.
+* `TauCeti.GroupAlgGeom.isDiscriminatedBy_id_iff_forall_realize_iff_of_freeGroupBasis` and
+  `TauCeti.GroupAlgGeom.isDiscriminatedBy_freeGroup_iff_forall_realize_iff`: the same for a group
+  with a countable free basis, with constants for the basis, and for `FreeGroup α`.
 
 ## References
 
@@ -181,50 +187,27 @@ theorem realize_of_isUniversal (h : IsDiscriminatedBy ιK ιH) (c : A → G)
   -- A sentence has no free or bound variables, so every assignment is the default one.
   rwa [Subsingleton.elim (f ∘ default) default, Subsingleton.elim (f ∘ default) default]
 
+/-- If `K` is discriminated by `G` over `G`, then `K` and `G` satisfy the same universal sentences
+of the group language with coefficient names `A`, read through `c : A → G`. -/
+theorem realize_iff_of_isUniversal (h : IsDiscriminatedBy ιK (MonoidHom.id G)) (c : A → G)
+    {σ : Language.group[[A]].Sentence} (hσ : σ.IsUniversal) :
+    letI : Language.group.Structure K := TauCeti.Group.structureOfGroup K
+    letI : (Language.constantsOn A).Structure K := Language.constantsOn.structure (ιK ∘ c)
+    letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    K ⊨ σ ↔ G ⊨ σ :=
+  -- The coefficient map `ιK` is injective, so `G` is discriminated by `K` through `ιK` itself.
+  ⟨((IsDiscriminatedBy.self ιK).of_injective (⟨ιK, fun _ => rfl⟩ : GHom (.id G) ιK)
+    (h.injective_of_injective Function.injective_id)).realize_of_isUniversal c hσ,
+    h.realize_of_isUniversal c hσ⟩
+
 end IsDiscriminatedBy
 
 /-! ### The converse for equationally Noetherian groups -/
 
 open Monoid.Coprod
 
-variable {X Y : Type*}
-
-/-- Words in the letters `Y ⊕ A`, read in `G[X]` through `e : Y → X` on the variables and through
-`c : A → G` on the coefficient names. -/
--- For `G = F(A)`, `c = FreeGroup.of` and `e = id` this is `EqIneqSystem.toGX`.
-private def wordHom (e : Y → X) (c : A → G) : FreeGroup (Y ⊕ A) →* GX G X :=
-  FreeGroup.lift (Sum.elim (fun y => inr (FreeGroup.of (e y))) (fun a => inl (c a)))
-
-/-- Evaluating the value of a word in `G[X]` evaluates the word at the variables and names. -/
-private theorem eval_wordHom {M : Type*} [Group M] (e : Y → X) (c : A → G) (μ : G →* M) (v : X → M)
-    (u : FreeGroup (Y ⊕ A)) : eval μ v (wordHom e c u) = EqIneqSystem.eval (v ∘ e) (μ ∘ c) u := by
-  rw [← MonoidHom.comp_apply, EqIneqSystem.eval_eq_lift]
-  congr 1
-  ext (y | a) <;> simp [wordHom]
-
-/-- If `e` is surjective and the names `c` generate `G`, every element of `G[X]` is the value of
-a word in the letters `Y ⊕ A`. -/
-private theorem wordHom_surjective {e : Y → X} (he : Function.Surjective e) {c : A → G}
-    (hc : Subgroup.closure (Set.range c) = ⊤) : Function.Surjective (wordHom e c) := by
-  rw [← MonoidHom.range_eq_top, eq_top_iff, ← range_inl_sup_range_inr]
-  refine sup_le ?_ ?_
-  · rw [MonoidHom.range_eq_map, ← hc, MonoidHom.map_closure, Subgroup.closure_le]
-    rintro _ ⟨_, ⟨a, rfl⟩, rfl⟩
-    exact ⟨FreeGroup.of (Sum.inr a), by simp [wordHom]⟩
-  · rw [MonoidHom.range_eq_map, ← FreeGroup.closure_range_of, MonoidHom.map_closure,
-      Subgroup.closure_le]
-    rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
-    obtain ⟨y, rfl⟩ := he x
-    exact ⟨FreeGroup.of (Sum.inl y), by simp [wordHom]⟩
-
-/-- Rewriting the equations `E` and the inequations `I` of `G[X]` as words in the letters `Y ⊕ A`
-does not change their solutions. -/
-private theorem isSolution_map_iff {M : Type*} [Group M] {e : Y → X} {c : A → G}
-    {r : GX G X → FreeGroup (Y ⊕ A)} (hr : ∀ w, wordHom e c (r w) = w) (E I : List (GX G X))
-    (μ : G →* M) (v : X → M) :
-    (⟨E.map r, I.map r⟩ : EqIneqSystem Y A).IsSolution (v ∘ e) (μ ∘ c) ↔
-      (∀ w ∈ E, eval μ v w = 1) ∧ ∀ w ∈ I, eval μ v w ≠ 1 := by
-  simp [EqIneqSystem.isSolution_iff, ← eval_wordHom, hr]
+variable {X : Type*}
 
 /-- **Discrimination from universal sentences.** Let `H` be equationally Noetherian over `G`,
 let `K` be generated over `G` by the images of finitely many variables `X` through
@@ -241,32 +224,28 @@ theorem isDiscriminatedBy_of_forall_isUniversal [Finite X] (hH : IsEquationallyN
       ∀ σ : Language.group[[A]].Sentence, σ.IsUniversal → H ⊨ σ → K ⊨ σ) :
     IsDiscriminatedBy ιK ιH := by
   refine (isDiscriminatedBy_def ιK ιH).2 fun s hs => ?_
-  obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin X
   -- A finite part `S₀` of the relations of `K` has the same solutions in `H` as all of them.
   obtain ⟨S₀, hS₀, hfin, hV⟩ := hH.exists_finite ((π : GX G X →* K).ker : Set (GX G X))
-  let r := Function.surjInv (wordHom_surjective e.symm.surjective hc)
-  have hr : ∀ w, wordHom e.symm c (r w) = w := Function.surjInv_eq _
+  let r := Function.surjInv (EqIneqSystem.toGX_surjective (X := X) hc)
+  have hr : ∀ w, EqIneqSystem.toGX X c (r w) = w := Function.surjInv_eq _
   let p := Function.surjInv hπ
-  -- The generators of `K` solve the equations `S₀` and the inequations `k ≠ 1` for `k ∈ s`,
-  -- written as words in `Fin n ⊕ A`; hence so does some tuple of `H`.
-  have hK : ∃ u : Fin n → K, (⟨hfin.toFinset.toList.map r, (s.toList.map p).map r⟩ :
-      EqIneqSystem (Fin n) A).IsSolution u (ιK ∘ c) := by
-    have h₀ (w : GX G X) : eval ιK (homEquiv ιK π) w = π w := by
-      rw [← coe_evalGHom, ← homEquiv_symm_apply, Equiv.symm_apply_apply]
-    refine ⟨homEquiv ιK π ∘ e.symm, (isSolution_map_iff hr _ _ ιK _).2 ⟨fun w hw => ?_, ?_⟩⟩
-    · rw [h₀]
-      exact hS₀ ((Set.Finite.mem_toFinset hfin).1 (Finset.mem_toList.1 hw))
-    · simpa [h₀, p, Function.surjInv_eq hπ] using hs
-  obtain ⟨u, hu⟩ := EqIneqSystem.exists_isSolution_of_forall_isUniversal h hK
-  have hu' := (isSolution_map_iff hr _ _ ιH (u ∘ e)).1
-    (by rwa [Function.comp_assoc, e.self_comp_symm, Function.comp_id])
-  -- The tuple `u ∘ e` solves every relation of `K`, so evaluation at it factors through `π`.
-  obtain ⟨φ, hφ⟩ := GX.exists_gHom_apply_eq_eval hπ (v := u ∘ e) <| by
-    rw [← hV]
-    exact mem_V.2 fun w hw => hu'.1 w (Finset.mem_toList.2 ((Set.Finite.mem_toFinset hfin).2 hw))
+  -- The equations `S₀` and the inequations `k ≠ 1` for `k ∈ s`, as words in `X ⊕ A`.
+  let S : EqIneqSystem X A := ⟨hfin.toFinset.toList.map r, (s.toList.map p).map r⟩
+  -- The generators of `K` solve `S`; hence so does some tuple `u` of `H`.
+  have h₀ (w : GX G X) : eval ιK (homEquiv ιK π) w = π w := by
+    rw [← coe_evalGHom, ← homEquiv_symm_apply, Equiv.symm_apply_apply]
+  have hK : S.IsSolution (homEquiv ιK π) (ιK ∘ c) := by
+    simp only [S, EqIneqSystem.isSolution_iff, ← EqIneqSystem.eval_toGX, List.forall_mem_map,
+      Finset.mem_toList, Set.Finite.mem_toFinset, hr, h₀]
+    exact ⟨fun w hw => hS₀ hw, fun k hk => by simpa [p, Function.surjInv_eq hπ] using hs k hk⟩
+  obtain ⟨u, hu⟩ := EqIneqSystem.exists_isSolution_of_forall_isUniversal h ⟨_, hK⟩
+  simp only [S, EqIneqSystem.isSolution_iff, ← EqIneqSystem.eval_toGX, List.forall_mem_map,
+    Finset.mem_toList, Set.Finite.mem_toFinset, hr] at hu
+  -- The tuple `u` solves every relation of `K`, so evaluation at it factors through `π`.
+  obtain ⟨φ, hφ⟩ := GX.exists_gHom_apply_eq_eval hπ (v := u) (by rw [← hV]; exact mem_V.2 hu.1)
   refine ⟨φ, fun k hk => ?_⟩
   rw [← Function.surjInv_eq hπ k, hφ]
-  exact hu'.2 (p k) (by simpa using ⟨k, hk, rfl⟩)
+  exact hu.2 k hk
 
 /-- Over an equationally Noetherian group `H`, a group `K` generated over `G` by the images of
 finitely many variables is discriminated by `H` if and only if every universal sentence of the
@@ -295,25 +274,31 @@ theorem isDiscriminatedBy_id_iff_forall_realize_iff [Finite X]
       letI : (Language.constantsOn A).Structure K := Language.constantsOn.structure (ιK ∘ c)
       letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
       letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-      ∀ σ : Language.group[[A]].Sentence, σ.IsUniversal → (K ⊨ σ ↔ G ⊨ σ) := by
-  let : Language.group.Structure K := TauCeti.Group.structureOfGroup K
-  let : (Language.constantsOn A).Structure K := Language.constantsOn.structure (ιK ∘ c)
-  let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
-  let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-  refine ⟨fun h σ hσ => ⟨fun hK => ?_, h.realize_of_isUniversal c hσ⟩,
+      ∀ σ : Language.group[[A]].Sentence, σ.IsUniversal → (K ⊨ σ ↔ G ⊨ σ) :=
+  ⟨fun h _ hσ => h.realize_iff_of_isUniversal c hσ,
     fun h => isDiscriminatedBy_of_forall_isUniversal hG π hπ hc fun σ hσ => (h σ hσ).2⟩
-  -- A coefficient-preserving retraction `K → G` makes `ιK` injective, so `G` is discriminated
-  -- by `K` through `ιK` itself.
-  obtain ⟨φ, -⟩ := (isDiscriminatedBy_def _ _).1 h ∅ (by simp)
-  have hι : Function.Injective ιK := Function.LeftInverse.injective (g := φ) φ.map_coeff
-  exact ((IsDiscriminatedBy.self ιK).of_injective (⟨ιK, fun _ => rfl⟩ : GHom (.id G) ιK) hι
-    ).realize_of_isUniversal c hσ hK
 
-/-- **Remeslennikov's theorem.** Let `F` be the free group on a countable set `α`, for instance
-of finite rank, and let `K` be generated over `F` by the images of finitely many variables. Then
-`K` is discriminated by `F` over `F` if and only if `K` and `F` satisfy the same universal
-sentences of the group language with constants for the basis `α`. -/
-theorem isDiscriminatedBy_freeGroup_iff_forall_realize_iff {α : Type*} [Countable α]
+/-- **Remeslennikov's theorem.** Let `F` be a group with a countable free basis `b : α → F`, such
+as a free group of finite rank, and let `K` be generated over `F` by the images of finitely many
+variables. Then `K` is discriminated by `F` over `F` if and only if `K` and `F` satisfy the same
+universal sentences of the group language with constants for the basis `b`. -/
+theorem isDiscriminatedBy_id_iff_forall_realize_iff_of_freeGroupBasis {F : Type*} [Group F]
+    [Countable α] (b : FreeGroupBasis α F) {ιK : F →* K} [Finite X]
+    (π : GHom (inl : F →* GX F X) ιK) (hπ : Function.Surjective π) :
+    IsDiscriminatedBy ιK (MonoidHom.id F) ↔
+      letI : Language.group.Structure K := TauCeti.Group.structureOfGroup K
+      letI : (Language.constantsOn α).Structure K := Language.constantsOn.structure (ιK ∘ b)
+      letI : Language.group.Structure F := TauCeti.Group.structureOfGroup F
+      letI : (Language.constantsOn α).Structure F := Language.constantsOn.structure b
+      ∀ σ : Language.group[[α]].Sentence, σ.IsUniversal → (K ⊨ σ ↔ F ⊨ σ) :=
+  isDiscriminatedBy_id_iff_forall_realize_iff (isEquationallyNoetherian_of_freeGroupBasis _ b) π hπ
+    b.closure_range_eq_top
+
+/-- **Remeslennikov's theorem** for the free group on a countable set `α`, with constants for
+its basis: a group `K` generated over `F(α)` by the images of finitely many variables is
+discriminated by `F(α)` over `F(α)` if and only if `K` and `F(α)` satisfy the same universal
+sentences of the group language with constants for `α`. -/
+theorem isDiscriminatedBy_freeGroup_iff_forall_realize_iff [Countable α]
     {ιK : FreeGroup α →* K} [Finite X] (π : GHom (inl : FreeGroup α →* GX (FreeGroup α) X) ιK)
     (hπ : Function.Surjective π) : IsDiscriminatedBy ιK (MonoidHom.id (FreeGroup α)) ↔
       letI : Language.group.Structure K := TauCeti.Group.structureOfGroup K
@@ -323,7 +308,6 @@ theorem isDiscriminatedBy_freeGroup_iff_forall_realize_iff {α : Type*} [Countab
       letI : (Language.constantsOn α).Structure (FreeGroup α) :=
         Language.constantsOn.structure FreeGroup.of
       ∀ σ : Language.group[[α]].Sentence, σ.IsUniversal → (K ⊨ σ ↔ FreeGroup α ⊨ σ) :=
-  isDiscriminatedBy_id_iff_forall_realize_iff (isEquationallyNoetherian_freeGroup _) π hπ
-    (FreeGroup.closure_range_of α)
+  isDiscriminatedBy_id_iff_forall_realize_iff_of_freeGroupBasis (.ofFreeGroup α) π hπ
 
 end TauCeti.GroupAlgGeom

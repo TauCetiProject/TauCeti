@@ -11,10 +11,11 @@ import Mathlib.GroupTheory.FreeGroup.Reduce
 /-!
 # Basic facts about free bases
 
-Three elementary consequences of the universal property of a free basis `b : FreeGroupBasis ι H`.
+Elementary consequences of the universal property of a free basis `b : FreeGroupBasis ι H`.
 
 ## Main results
 
+* `FreeGroupBasis.closure_range_eq_top`: a free basis generates the group.
 * `FreeGroupBasis.injective_lift_comp`: if `FreeGroup α` surjects onto `H`, a function on the
   basis `ι` is determined by the values of its extension to `H` on the images of the elements
   of `α`.
@@ -29,6 +30,14 @@ public section
 namespace FreeGroupBasis
 
 variable {ι H : Type*} [Group H]
+
+/-- A free basis generates the group. -/
+theorem closure_range_eq_top (b : FreeGroupBasis ι H) : Subgroup.closure (Set.range b) = ⊤ := by
+  -- The basis is the image of the generators of `FreeGroup ι` under `b.repr.symm`.
+  change Subgroup.closure (Set.range (b.repr.symm.toMonoidHom ∘ FreeGroup.of)) = ⊤
+  rw [Set.range_comp, ← MonoidHom.map_closure, FreeGroup.closure_range_of,
+    ← MonoidHom.range_eq_map, MonoidHom.range_eq_top]
+  exact b.repr.symm.surjective
 
 /-- If `f : FreeGroup α →* H` is surjective, a function on the basis `ι`, extended to a
 homomorphism on `H`, is determined by its values on the images of the elements of `α`. -/
