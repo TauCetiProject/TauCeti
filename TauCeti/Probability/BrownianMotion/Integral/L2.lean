@@ -172,6 +172,33 @@ theorem coeFn_l2Integral_indicatorConstLp_Ioc_prod_of_le
   simpa only [min_eq_left ht, max_eq_right hst] using
     hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod T s t hA c
 
+/-- The integral of a constant integrand is that constant times the Brownian value at
+the horizon, almost everywhere. -/
+theorem coeFn_l2Integral_const (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (c : ℝ) :
+    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+    hW.l2Integral T (Lp.const 2 (ℱ.predictableMeasure P T) c) =ᵐ[P]
+      fun ω ↦ c * W T ω := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  have hb := ae_restrict_mem (μ := ℱ.predictableMeasure P T)
+    (measurableSet_predictable_Ioc_prod 0 T (𝓕 := ℱ) MeasurableSet.univ)
+  rw [ℱ.predictableMeasure_restrict, min_self] at hb
+  have heq : indicatorConstLp 2
+      (measurableSet_predictable_Ioc_prod 0 T (𝓕 := ℱ) MeasurableSet.univ)
+      (measure_ne_top (ℱ.predictableMeasure P T) _) c =
+      Lp.const 2 (ℱ.predictableMeasure P T) c := by
+    apply Lp.ext
+    filter_upwards [indicatorConstLp_coeFn (p := 2) (c := c)
+      (hs := measurableSet_predictable_Ioc_prod 0 T (𝓕 := ℱ) MeasurableSet.univ)
+      (hμs := measure_ne_top (ℱ.predictableMeasure P T) _),
+      Lp.coeFn_const 2 (ℱ.predictableMeasure P T) c, hb] with p hp hc hmem
+    simp only [hp, hc, Function.const_apply, indicator_of_mem hmem]
+  rw [← heq]
+  filter_upwards [hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod_of_le
+    (s := 0) (t := T) bot_le le_rfl MeasurableSet.univ c,
+    hW.toIsPreBrownianReal.eval_zero_ae_eq_zero] with ω hω hzero
+  simpa only [indicator_univ, hzero, sub_zero] using hω
+
 /-- The integral is the unique continuous linear map with its values on nonempty predictable
 rectangles within the horizon. No isometry hypothesis on the competing map is needed. -/
 theorem l2Integral_unique (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥0)

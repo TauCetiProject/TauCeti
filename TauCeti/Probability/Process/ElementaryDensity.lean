@@ -136,21 +136,57 @@ variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι] {m : MeasurableSpace �
 provided the measure is finite on rectangles and has no mass at the initial time. -/
 theorem ext_indicatorConstLp_Ioc_prod
     (μ : @Measure (ι × Ω) ℱ.predictable)
-    (hfin : ∀ s t A, MeasurableSet[ℱ s] A → μ (Ioc s t ×ˢ A) ≠ ∞)
-    (hzero : μ ({⊥} ×ˢ (univ : Set Ω)) = 0) :
-    letI : MeasurableSpace (ι × Ω) := ℱ.predictable
-    ∀ {J K : Lp ℝ 2 μ →L[ℝ] E},
-      (∀ s t A (hA : MeasurableSet[ℱ s] A),
-        J (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hA) (hfin s t A hA) 1) =
-        K (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hA) (hfin s t A hA) 1)) →
-      J = K := by
+    (hfin : ∀ ⦃s t : ι⦄, s < t → ∀ ⦃A : Set Ω⦄, MeasurableSet[ℱ s] A →
+      μ (Ioc s t ×ˢ A) ≠ ∞)
+    (hzero : μ ({⊥} ×ˢ (univ : Set Ω)) = 0)
+    {J K : Lp ℝ 2 μ →L[ℝ] E}
+    (h : ∀ ⦃s t : ι⦄ (hst : s < t) ⦃A : Set Ω⦄ (hA : MeasurableSet[ℱ s] A),
+      J (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hA) (hfin hst hA) 1) =
+      K (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hA) (hfin hst hA) 1)) :
+    J = K := by
   let : MeasurableSpace (ι × Ω) := ℱ.predictable
-  intro J K h
+  have hfin' : ∀ s t A, MeasurableSet[ℱ s] A → μ (Ioc s t ×ˢ A) ≠ ∞ := by
+    intro s t A hA
+    by_cases hst : s < t
+    · exact hfin hst hA
+    · simp [Ioc_eq_empty hst]
   apply ContinuousLinearMap.ext_on
     (Submodule.dense_iff_topologicalClosure_eq_top.mpr
-      (ℱ.topologicalClosure_span_indicatorConstLp_Ioc_prod_eq_top μ hfin hzero))
+      (ℱ.topologicalClosure_span_indicatorConstLp_Ioc_prod_eq_top μ hfin' hzero))
   rintro f ⟨s, t, A, hA, rfl⟩
-  exact h s t A hA
+  by_cases hst : s < t
+  · exact h hst hA
+  · simp [Ioc_eq_empty hst]
+
+/-- For a finite predictable measure with no initial mass or mass after `T`, continuous
+linear maps agree if they agree on nonempty rectangle indicators ending at or before `T`. -/
+theorem ext_indicatorConstLp_Ioc_prod_of_measure_Ioi_prod_eq_zero
+    (μ : @Measure (ι × Ω) ℱ.predictable) [IsFiniteMeasure μ] (T : ι)
+    (hzero : μ ({⊥} ×ˢ (univ : Set Ω)) = 0)
+    (horizon : μ (Ioi T ×ˢ (univ : Set Ω)) = 0)
+    {J K : Lp ℝ 2 μ →L[ℝ] E}
+    (h : ∀ ⦃s t : ι⦄, s < t → t ≤ T → ∀ ⦃A : Set Ω⦄ (hA : MeasurableSet[ℱ s] A),
+      J (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hA) (measure_ne_top _ _) 1) =
+      K (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hA) (measure_ne_top _ _) 1)) :
+    J = K := by
+  apply ext_indicatorConstLp_Ioc_prod μ (fun _ _ _ _ _ ↦ measure_ne_top _ _) hzero
+  intro s t _ A hA
+  have hb : ∀ᵐ p ∂μ, p.1 ≤ T := by
+    filter_upwards [measure_eq_zero_iff_ae_notMem.mp horizon] with p hp
+    simpa only [mem_prod, mem_Ioi, mem_univ, and_true, not_lt] using hp
+  have heq : indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hA)
+      (measure_ne_top μ _) (1 : ℝ) =
+      indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s (min t T) hA)
+        (measure_ne_top _ _) 1 := by
+    apply (indicatorConstLp_inj _ _ _ _ one_ne_zero).mpr
+    filter_upwards [hb] with p hp
+    simp only [mem_prod, mem_Ioc, le_min_iff, hp, and_true]
+  rw [heq]
+  by_cases hst : s < min t T
+  · exact h hst (min_le_right _ _) hA
+  · have hempty : Ioc s (min t T) ×ˢ A = ∅ := by
+      simp [Ioc_eq_empty hst]
+    simp [hempty]
 
 /-- On finite-horizon predictable L², it suffices to compare continuous linear maps on
 nonempty rectangle indicators whose right endpoints lie within the horizon. -/
@@ -161,26 +197,14 @@ theorem ext_indicatorConstLp_Ioc_prod_predictableMeasure
       J (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hA) (measure_ne_top _ _) 1) =
       K (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hA) (measure_ne_top _ _) 1)) :
     J = K := by
-  apply ext_indicatorConstLp_Ioc_prod (ℱ.predictableMeasure P T)
-    (fun _ _ _ _ ↦ measure_ne_top _ _)
-    (ℱ.predictableMeasure_singleton_zero_prod P T MeasurableSet.univ)
-  intro s t A hA
-  have hb : ∀ᵐ p ∂ℱ.predictableMeasure P T, p ∈ Ioc 0 T ×ˢ (univ : Set Ω) := by
-    have hb := ae_restrict_mem (μ := ℱ.predictableMeasure P T)
-      (measurableSet_predictable_Ioc_prod 0 T (𝓕 := ℱ) MeasurableSet.univ)
-    rwa [ℱ.predictableMeasure_restrict, min_self] at hb
-  have heq : indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hA)
-      (measure_ne_top (ℱ.predictableMeasure P T) _) (1 : ℝ) =
-      indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s (min t T) hA)
-        (measure_ne_top _ _) 1 := by
-    apply (indicatorConstLp_inj _ _ _ _ one_ne_zero).mpr
-    filter_upwards [hb] with p hp
-    simp only [mem_prod, mem_Ioc, le_min_iff, hp.1.2, and_true]
-  rw [heq]
-  by_cases hst : s < min t T
-  · exact h hst (min_le_right _ _) hA
-  · have hempty : Ioc s (min t T) ×ˢ A = ∅ := by
-      simp [Ioc_eq_empty hst]
-    simp [hempty]
+  apply ext_indicatorConstLp_Ioc_prod_of_measure_Ioi_prod_eq_zero
+    (ℱ.predictableMeasure P T) T
+    (ℱ.predictableMeasure_singleton_zero_prod P T MeasurableSet.univ) _ h
+  apply measure_eq_zero_iff_ae_notMem.mpr
+  have hb := ae_restrict_mem (μ := ℱ.predictableMeasure P T)
+    (measurableSet_predictable_Ioc_prod 0 T (𝓕 := ℱ) MeasurableSet.univ)
+  rw [ℱ.predictableMeasure_restrict, min_self] at hb
+  filter_upwards [hb] with p hp
+  exact fun hmem ↦ (not_lt_of_ge hp.1.2) hmem.1
 
 end ContinuousLinearMap
