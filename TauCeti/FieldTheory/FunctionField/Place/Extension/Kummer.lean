@@ -261,7 +261,7 @@ private theorem mem_integers_of_valuation_integersEval_lt_one (P' : Place k' F')
     P'.mem_integers_iff.mp ((restrict_eq_iff_integers_le k F P' _).mp rfl _ a.2)
   set f := (algebraMap F F').comp (algebraMap (P'.restrict k F).integers F) with hf
   rw [integersEval, coe_eval₂RingHom, eval₂_eq_eval_map, ← hf] at hv
-  rw [P'.valuation.map_eval_eq_of_one_lt (hg.map f) (fun i hi ↦ ?_) hy] at hv
+  rw [P'.valuation.map_eval_eq_of_one_lt (hg.map f) (fun i _ ↦ ?_) hy] at hv
   · exact not_lt.mpr (one_le_pow₀ hy.le) hv
   · rw [coeff_map]
     exact hcoeff _
@@ -503,7 +503,7 @@ theorem splits_map_residue_of_forall_relativeDegree_eq_one (hF : IsFunctionField
   have hlc : γ.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hγ.ne_zero
   have hassoc : Associated γ (γ * C γ.leadingCoeff⁻¹) :=
     associated_mul_unit_right γ _ (isUnit_C.mpr (inv_ne_zero hlc).isUnit)
-  obtain ⟨g, hgm, hgmap⟩ := P.exists_monic_map_residue_eq hmonic
+  obtain ⟨g, -, hgmap⟩ := P.exists_monic_map_residue_eq hmonic
   obtain ⟨P', hP', -, hdeg⟩ := exists_restrict_eq_of_irreducible_map_residue (k' := k') hF P y
     hmin (hgmap ▸ hassoc.irreducible hγ) (hgmap ▸ hassoc.symm.dvd.trans hdvd)
   rw [hgmap, natDegree_mul_leadingCoeff_inv _ hγ.ne_zero, h P' hP'] at hdeg
