@@ -178,7 +178,7 @@ theorem continuous_cumulative_restrict_lt_top (μ : Measure α) [NullSingletonCl
       ext y
       simp only [mem_inter_iff, mem_Iic, mem_ofPred_eq]
       constructor
-      · rintro ⟨hyx, hy⟩
+      · rintro ⟨_, hy⟩
         exact ⟨le_of_not_gt (fun hty ↦ hfinite ⟨y, hty, hy⟩), hy⟩
       · exact fun ⟨hyt, hy⟩ ↦ ⟨hyt.trans hx.le, hy⟩
     exact continuousWithinAt_const.congr (fun x hx ↦ heq x hx) rfl

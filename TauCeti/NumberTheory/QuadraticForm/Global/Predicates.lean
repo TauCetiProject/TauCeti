@@ -29,9 +29,6 @@ If a form locally represents a scalar `a`, adjoining `⟨-a⟩` makes it locally
 
 -/
 
--- Provenance: TauCetiRoadmap/GlobalQuadraticForms/README.md, section "The local predicates", and
--- Suggested.lean.
-
 public section
 noncomputable section
 
