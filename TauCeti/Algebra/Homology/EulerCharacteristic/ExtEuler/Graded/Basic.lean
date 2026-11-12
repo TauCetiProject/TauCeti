@@ -72,8 +72,6 @@ the polynomial.
 * Zsuzsanna Dancso and Anthony Licata, "Koszul algebras and flow lattices", *Journal of
   Combinatorial Theory, Series A* 185 (2022), Section 2.2, for the bigraded Ext-Euler form and
   its q-antilinear/q-linear shift convention.
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layers 5--6, "Graded Ext and graded descent"
-  and "q-Euler form".
 -/
 
 public section
