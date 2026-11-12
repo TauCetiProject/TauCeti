@@ -780,7 +780,7 @@ theorem inner_sub_leftSingularVector_eq_ite
     U X.toLinearMap (i := j)
   have hvv := (LinearMap.rightSingularBasis
     (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)).inner_eq_ite i j
-  set S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) with hS
+  set S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)
   have hyy : ⟪LinearMap.leftSingularVector S i, LinearMap.leftSingularVector S j⟫_𝕜 =
       if i = j then 1 else 0 := by
     simpa using orthonormal_iff_ite.mp (LinearMap.orthonormal_leftSingularVector S)
