@@ -85,7 +85,7 @@ theorem Continuous.matrix_symplecticSum {n m R X : Type*} [TopologicalSpace X] [
 namespace TauCeti.GLSymplectic
 
 variable {n m R : Type*} [Fintype n] [Fintype m] [DecidableEq n] [DecidableEq m] [CommRing R]
-  [TopologicalSpace R] [IsTopologicalRing R]
+  [TopologicalSpace R]
 
 /-- The direct sum of symplectic matrices is continuous. -/
 theorem continuous_sum :
@@ -100,8 +100,16 @@ theorem continuous_sum :
       ((sum p : GL ((n ⊕ m) ⊕ (n ⊕ m)) R) : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) _ R) :=
     (h₁.matrix_symplecticSum h₂).congr fun p ↦ (coe_sum p.1 p.2).symm
   refine continuous_induced_rng.2 (Units.continuous_iff.2 ⟨hval, ?_⟩)
-  exact (hval.comp continuous_inv).congr fun p ↦ by
-    simp only [Function.comp_apply, map_inv, Subgroup.coe_inv]
+  have h₃ : Continuous fun p : GLSymplectic n R × GLSymplectic m R ↦
+      (((p.1 : GL (n ⊕ n) R)⁻¹ : GL (n ⊕ n) R) : Matrix (n ⊕ n) (n ⊕ n) R) :=
+    Units.continuous_coe_inv.comp (continuous_subtype_val.comp continuous_fst)
+  have h₄ : Continuous fun p : GLSymplectic n R × GLSymplectic m R ↦
+      (((p.2 : GL (m ⊕ m) R)⁻¹ : GL (m ⊕ m) R) : Matrix (m ⊕ m) (m ⊕ m) R) :=
+    Units.continuous_coe_inv.comp (continuous_subtype_val.comp continuous_snd)
+  refine (h₃.matrix_symplecticSum h₄).congr fun p ↦ ?_
+  have := coe_sum p.1⁻¹ p.2⁻¹
+  simpa only [Function.comp_apply, ← Prod.inv_mk (p.1) (p.2), map_inv, Subgroup.coe_inv,
+    Prod.mk.eta] using this.symm
 
 end TauCeti.GLSymplectic
 

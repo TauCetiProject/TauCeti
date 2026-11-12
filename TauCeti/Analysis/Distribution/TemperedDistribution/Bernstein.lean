@@ -231,9 +231,9 @@ private theorem toReal_eLpNorm_fourierInv_derivSymbol_le {R : ℝ} (hR : 0 < R) 
         gcongr
         calc (eLpNorm ⇑(∂_{m} K : 𝓢(E, ℂ)) 1 volume).toReal
             ≤ (‖m‖ₑ * eLpNorm (fderiv ℝ K) 1 volume).toReal :=
-              ENNReal.toReal_mono (ENNReal.mul_ne_top enorm_ne_top hfin) hderiv
+              ENNReal.toReal_mono (ENNReal.mul_ne_top eNorm_ne_top hfin) hderiv
           _ = ‖m‖ * (eLpNorm (fderiv ℝ K) 1 volume).toReal := by
-              rw [ENNReal.toReal_mul, toReal_enorm]
+              rw [ENNReal.toReal_mul, toReal_eNorm]
     _ = (eLpNorm (fderiv ℝ K) 1 volume).toReal * R * ‖m‖ := by ring
 
 /-- **Bernstein's inequality for one derivative.** An `Lᵖ` function whose Fourier transform
@@ -402,7 +402,7 @@ private theorem toReal_eLpNorm_fourierInv_annularSymbol (B : ℝ) {R : ℝ}
   have hscale : ⇑(annularSymbolSchwartz B hR m) =
       fun ξ ↦ (((R⁻¹ : ℝ) : ℂ) • S) (R⁻¹ • ξ) := by
     ext ξ
-    rcases eq_or_ne ξ 0 with rfl | hξ
+    rcases eq_or_ne ξ 0 with rfl | _
     · simp [S, coe_annularSymbolSchwartz, annularSymbol]
     simp only [S, smul_apply, coe_annularSymbolSchwartz, annularSymbol, inv_one, one_smul,
       real_inner_smul_left, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, smul_eq_mul]

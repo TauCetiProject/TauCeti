@@ -20,8 +20,8 @@ is even, so the lattice-homology weight
 
 `-(∑ v, k v * x v + P.intersectionForm x x) / 2`
 
-is an integer. This is the local `χ_k(x)` function used in the lattice-homology lane before the
-cube weights and `ℤ[U]` complexes are introduced.
+is an integer. This is the weight function `χ_k(x)` on lattice points from which Némethi builds
+the weights of lattice cubes and the `ℤ[U]`-complexes of lattice homology.
 
 The numerator is defined for arbitrary covectors, while the weight itself is restricted to
 characteristic covectors so that the division by `2` has the expected integer meaning.
@@ -46,9 +46,7 @@ characteristic covectors so that the division by `2` has the expected integer me
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), whose opening data asks for plumbing graphs, their lattices, characteristic
-covectors, and weight functions. The convention `χ_k(x) = -(k(x) + x · x) / 2` follows Némethi,
+The convention `χ_k(x) = -(k(x) + x · x) / 2` follows Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/
