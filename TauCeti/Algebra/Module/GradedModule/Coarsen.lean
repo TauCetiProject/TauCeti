@@ -214,7 +214,7 @@ end Parity
 
 namespace InternalGrading
 
-variable {ι κ : Type} [DecidableEq ι] [DecidableEq κ]
+variable {ι κ : Type*} [DecidableEq ι] [DecidableEq κ]
 
 /-- The coarsening of an internal grading along a map `f : ι → κ` of index types: the degree-`k`
 piece is the sum of the pieces whose degree lies in the fibre over `k`. -/

@@ -43,7 +43,7 @@ universe u v
 namespace InternalGrading
 
 variable {R : Type u} {M : Type v} [Semiring R] [AddCommMonoid M] [Module R M]
-variable {ι : Type} [DecidableEq ι] [AddGroup ι]
+variable {ι : Type*} [DecidableEq ι] [AddGroup ι]
 
 /-- The shift of an internal grading by `c`: its degree-`p` piece is the degree-`(p + c)` piece of
 the original grading. The underlying module is unchanged. -/
@@ -113,7 +113,7 @@ end InternalGrading
 /-- Shifting the source and the target internal grading by the same amount leaves the degree of a
 homogeneous linear map unchanged. -/
 theorem LinearMap.isHomogeneous_shift_piece_iff {R : Type u} {M N : Type*} [Semiring R]
-    {ι : Type} [DecidableEq ι] [AddCommGroup ι]
+    {ι : Type*} [DecidableEq ι] [AddCommGroup ι]
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {G : InternalGrading R M ι}
     {H : InternalGrading R N ι} {f : M →ₗ[R] N} {c q : ι} :
     LinearMap.IsHomogeneous f (G.shift c).piece (H.shift c).piece q ↔

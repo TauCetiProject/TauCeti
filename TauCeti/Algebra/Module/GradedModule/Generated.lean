@@ -71,7 +71,7 @@ namespace InternalGrading
 variable {R : Type u} {A : Type u'} {M : Type v}
 variable [Semiring R] [Semiring A]
 variable [AddCommMonoid M] [Module R M] [Module A M]
-variable {ι : Type} [DecidableEq ι]
+variable {ι : Type*} [DecidableEq ι]
 
 /-- An internally graded module is generated in degree `d` if the `A`-span of its degree-`d`
 homogeneous piece is the whole module.  The grading pieces are `R`-submodules, while `A` is the
@@ -160,7 +160,7 @@ theorem linearMap_eq_zero_of_isGeneratedInDegree [AddMonoid ι] (G : InternalGra
 
 section DirectSum
 
-variable {ι : Type*} {M : ι → Type v} {κ : Type} [DecidableEq κ]
+variable {ι : Type*} {M : ι → Type v} {κ : Type*} [DecidableEq κ]
 variable [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] [∀ i, Module A (M i)]
 
 /-- An external direct sum is generated in degree `d` if every summand is generated in degree
