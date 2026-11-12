@@ -40,6 +40,8 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.integrableOn_norm_rpow_ball`: integrability on a centred ball, and
   `TauCeti.integrableOn_norm_rpow_ball_iff`: its converse on a nontrivial space.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
+* `MeasureTheory.Measure.not_integrable_norm_sub_rpow`: a power of the distance to a point is
+  never integrable over the whole space, for an additive Haar measure on a nontrivial space.
 * `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
@@ -261,7 +263,7 @@ theorem integral_norm_sub_rpow_one_sub_finrank_le {R : ℝ} (x : E) {z : E}
         ∫ y in ball x (2 * R), ‖x - y‖ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu := by
       apply setIntegral_mono_set hintegrable
       · exact ae_of_all _ fun y => Real.rpow_nonneg (norm_nonneg _) _
-      · exact hsub.eventuallyLE
+      · exact hsub.eventuallySubset
     _ = (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * (2 * R) :=
       by rw [integral_norm_sub_rpow_ball (by linarith) htwoR, add_sub_cancel, Real.rpow_one,
         div_one]
@@ -279,7 +281,7 @@ theorem setLIntegral_closedBall_enorm_sub_rpow {s : ℝ} (hs : -(Module.finrank 
   · -- In dimension zero the exponent is positive, so the kernel vanishes identically.
     have hs0 : 0 < s := by simpa [Module.finrank_zero_of_subsingleton] using hs
     have h0 : (fun y : E => ‖x - y‖ₑ ^ s) = 0 := funext fun y => by
-      rw [Subsingleton.elim (x - y) 0, enorm_zero, ENNReal.zero_rpow_of_pos hs0, Pi.zero_apply]
+      rw [Subsingleton.elim (x - y) 0, eNorm_zero, ENNReal.zero_rpow_of_pos hs0, Pi.zero_apply]
     simp [h0, lintegral_zero_fun, Module.finrank_zero_of_subsingleton]
   have hball := mu.addHaar_closedBall_ae_eq_ball x R
   rw [Measure.restrict_congr_set hball, ← integral_norm_sub_rpow_ball hs hR x,
@@ -459,3 +461,26 @@ theorem memLp_div_pow_compl_closedBall_iff {a : ℂ} (ha : a ≠ 0) {R : ℝ} (h
       (s := -((m : ℝ)*p.toReal)) hR)
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+open Metric Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- A power of the distance to a point is not integrable for an additive Haar measure on a
+nontrivial finite-dimensional space, for every real exponent: integrability near the point needs
+`-finrank < p` and integrability away from it needs `p < -finrank`. -/
+theorem not_integrable_norm_sub_rpow [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    (p : ℝ) (b : E) : ¬ Integrable (fun x ↦ ‖x - b‖ ^ p) μ := fun hint ↦ by
+  have h0 : Integrable (fun x : E ↦ ‖x‖ ^ p) μ :=
+    ((measurePreserving_sub_right μ b).integrable_comp_emb
+      (MeasurableEquiv.subRight b).measurableEmbedding).1 hint
+  have h1 := (TauCeti.integrableOn_norm_rpow_ball_iff (E := E) (mu := μ) (s := p)
+    (R := 1) one_pos).1 h0.integrableOn
+  have h2 := (TauCeti.integrableOn_norm_rpow_compl_closedBall_iff (E := E) (mu := μ) (s := p)
+    (R := 1) one_pos).1 h0.integrableOn
+  linarith
+
+end MeasureTheory.Measure

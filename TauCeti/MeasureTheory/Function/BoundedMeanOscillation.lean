@@ -189,7 +189,7 @@ theorem bmoSeminorm_le_two_mul_eLpNorm_top (f : X → F) (μ : Measure X) :
       ((laverage_le_essSup _).trans (essSup_le_of_ae_le _ hae))
   refine (laverage_le_essSup _).trans (essSup_le_of_ae_le _ (hae.mono fun y hy => ?_))
   rw [two_mul]
-  exact enorm_sub_le.trans (add_le_add hy havg)
+  exact eNorm_sub_le.trans (add_le_add hy havg)
 
 /-! ### Functions of bounded mean oscillation -/
 
@@ -222,7 +222,7 @@ theorem memBMO_zero : MemBMO (0 : X → F) μ :=
 
 theorem MemBMO.const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F] [NormSMulClass 𝕜 F]
     [SMulCommClass ℝ 𝕜 F] (hf : MemBMO f μ) (k : 𝕜) : MemBMO (k • f) μ :=
-  ⟨hf.1.smul k, by rw [bmoSeminorm_const_smul]; exact ENNReal.mul_lt_top enorm_lt_top hf.2⟩
+  ⟨hf.1.smul k, by rw [bmoSeminorm_const_smul]; exact ENNReal.mul_lt_top eNorm_lt_top hf.2⟩
 
 theorem MemBMO.neg (hf : MemBMO f μ) : MemBMO (-f) μ :=
   ⟨hf.1.neg, by rw [bmoSeminorm_neg]; exact hf.2⟩
@@ -443,7 +443,7 @@ theorem memVMO_zero : MemVMO (0 : X → F) μ :=
 theorem MemVMO.const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F] [NormSMulClass 𝕜 F]
     [SMulCommClass ℝ 𝕜 F] (hf : MemVMO f μ) (k : 𝕜) : MemVMO (k • f) μ := by
   refine ⟨hf.1.const_smul k, ?_⟩
-  have h := ENNReal.Tendsto.const_mul hf.2 (Or.inr (show ‖k‖ₑ ≠ ∞ from enorm_ne_top))
+  have h := ENNReal.Tendsto.const_mul hf.2 (Or.inr (show ‖k‖ₑ ≠ ∞ from eNorm_ne_top))
   rw [mul_zero] at h
   rwa [show vmoModulus (k • f) μ = fun r => ‖k‖ₑ * vmoModulus f μ r from
     funext (vmoModulus_const_smul k)]
@@ -598,7 +598,7 @@ theorem enorm_setAverage_ball_sub_setAverage_ball_le {b : E → F} (hb : AEStron
       (j + 1) * 2 ^ Module.finrank ℝ E * bmoSeminorm b μ := by
   set n := Module.finrank ℝ E
   have htri (u v w : F) : ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
-    simpa only [edist_eq_enorm_sub] using edist_triangle u v w
+    simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
   have hstep : ∀ ρ : ℝ, 0 < ρ →
       ‖(⨍ y in ball c ρ, b y ∂μ) - ⨍ y in ball c (2 * ρ), b y ∂μ‖ₑ ≤ 2 ^ n * bmoSeminorm b μ :=
     fun ρ hρ => by
@@ -620,7 +620,7 @@ theorem enorm_setAverage_ball_sub_setAverage_ball_le {b : E → F} (hb : AEStron
       calc ‖(⨍ y in ball c (2 ^ (j + 1) * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ
           ≤ ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 ^ (j + 1) * r), b y ∂μ‖ₑ +
               ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ := by
-            rw [enorm_sub_rev (⨍ y in ball c (2 ^ j * r), b y ∂μ), add_comm]
+            rw [eNorm_sub_rev (⨍ y in ball c (2 ^ j * r), b y ∂μ), add_comm]
             exact htri _ _ _
         _ ≤ 2 ^ n * bmoSeminorm b μ + j * 2 ^ n * bmoSeminorm b μ := by
             gcongr
