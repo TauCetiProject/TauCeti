@@ -319,6 +319,15 @@ theorem zmultiples_hurewicz_sphereGenLoop :
   -- image of `1`; it is invertible by `TauCeti.isIso_hurewicz_sphereGenLoop`.
   rw [← map_zsmul, smul_eq_mul, mul_one, IsIso.inv_hom_id_apply]
 
+/-- Every class in `Hₙ₊₁(Sⁿ⁺¹; ℤ)` is an integer multiple of the Hurewicz class of the tautological
+loop. -/
+theorem exists_zsmul_hurewicz_sphereGenLoop
+    (b : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1))) :
+    ∃ k : ℤ, k • (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop (n + 1))).hom 1 = b :=
+  AddSubgroup.mem_zmultiples_iff.1
+    ((AddSubgroup.eq_top_iff' _).1 (zmultiples_hurewicz_sphereGenLoop n) b)
+
 end TauCeti
 
 namespace GenLoop
@@ -403,8 +412,7 @@ theorem singularHomologyMap_toSphere_mem_zmultiples {X : Type} [TopologicalSpace
     (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj
       (ModuleCat.of ℤ ℤ)).map (TopCat.ofHom (toSphere p))).hom b ∈
         AddSubgroup.zmultiples ((hurewicz (ModuleCat.of ℤ ℤ) p).hom 1) := by
-  obtain ⟨k, rfl⟩ := AddSubgroup.mem_zmultiples_iff.1
-    ((AddSubgroup.eq_top_iff' _).1 (zmultiples_hurewicz_sphereGenLoop n) b)
+  obtain ⟨k, rfl⟩ := exists_zsmul_hurewicz_sphereGenLoop n b
   refine ⟨k, ?_⟩
   rw [map_zsmul, hurewicz_eq_hurewicz_sphereGenLoop_comp, ModuleCat.hom_comp,
     LinearMap.comp_apply]

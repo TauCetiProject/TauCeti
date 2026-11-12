@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Cap.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Loop
 public import TauCeti.Geometry.Symplectic.Floer.CoefficientComparison
 public import TauCeti.Geometry.Symplectic.Floer.Laurent
+import TauCeti.Algebra.Group.ZMultiples
 
 /-!
 # Capped Floer coefficients on the two-sphere
@@ -27,7 +28,7 @@ these are `a` and `χ(S²) = 2`, up to the orientation of the generator.
   tautological sphere, with area `ω [S²]` and Chern number `c [S²]`, generates the period group
   `Γ = SphericalPeriodGroup ω c` (`SphericalPeriodGroup.zmultiples_sphereGenerator`). So `Γ` is
   cyclic: it is trivial when both periods of `σ` vanish
-  (`SphericalPeriodGroup.subsingleton_iff_sphereGenerator`), and otherwise `k ↦ k • σ` is injective
+  (`SphericalPeriodGroup.subsingleton_sphere_iff`), and otherwise `k ↦ k • σ` is injective
   (`SphericalPeriodGroup.zsmul_sphereGenerator_injective`), so `Γ ≅ ℤ`.
 * **Action and recapping.** On every loop of `S²` the cap classes form a `Γ`-torsor, since `S²` is
   simply connected, so any two caps differ by recapping with a unique element of `Γ`, which is a
@@ -36,20 +37,26 @@ these are `a` and `χ(S²) = 2`, up to the orientation of the generator.
   trivial and every `k` works. Recapping with `k • σ` raises the action by `k ω [S²]` and the
   grading by `2 k c [S²]`. When `ω [S²] ≠ 0` the area is injective on `Γ`
   (`SphericalPeriodGroup.area_injective_of_area_sphereGenerator_ne_zero`), so a cap class is
-  determined by its action alone (`TauCeti.Floer.eq_iff_action_eq_of_injective_area`); when
-  `c [S²] ≠ 0` it is determined by its grading alone.
+  determined by its action alone (`TauCeti.Floer.eq_iff_action_eq_of_area_injective`); when
+  `c [S²] ≠ 0` it is determined by its grading alone
+  (`TauCeti.Floer.eq_iff_index_eq_of_chern_injective`).
 * **Monotonicity and Laurent coefficients.** When `c [S²] ≠ 0` the sphere is spherically monotone,
   `ω = τ c` on spherical classes with `τ = ω [S²] / c [S²]`
   (`SphericalPeriodGroup.area_eq_mul_chern_sphere`). If `ω [S²]` and `c [S²]` are positive, `σ` is
   the positive Chern generator (`SphericalPeriodGroup.chernEquivInt_sphereGenerator`), and the
   Floer Novikov ring is the ring of formal Laurent series in the variable `X = e^(-σ)`
-  (`TauCeti.Floer.NovikovRing.toLaurentSeries`), of raw degree `-2 c [S²]` and valuation
-  `ω [S²]`.
-* **The coefficient comparison `q^A ↦ e^(-A)`.** With the class group `H₂(S²; ℤ)` of genus-zero
-  Gromov–Witten theory, the comparison to `Γ` is a ring isomorphism of Novikov rings unless both
-  periods of `[S²]` vanish (`SphericalPeriodGroup.periodGroupComparison_sphere_bijective`). In the
-  positive monotone case it sends `q^(k [S²])` to the Laurent monomial `X^k`
-  (`SphericalPeriodGroup.toLaurentSeries_periodGroupComparison_single`).
+  (`TauCeti.Floer.NovikovRing.toLaurentSeries`,
+  `TauCeti.Floer.NovikovRing.toLaurentSeries_single_neg_zsmul_sphereGenerator`), of raw degree
+  `-2 c [S²]` and valuation `ω [S²]`.
+* **The coefficient comparison `q^A ↦ e^(-A)`.** The class group of genus-zero Gromov–Witten
+  theory is `H₂(S²; ℤ)`, which maps onto `Γ` by `SphericalPeriodGroup.ofSingularHomology`. Unless
+  both periods of `[S²]` vanish, the comparison `TauCeti.Floer.coefficientComparison` along this
+  map, from the Novikov ring indexed by `H₂(S²; ℤ)` to the Floer Novikov ring, is bijective
+  (`TauCeti.Floer.coefficientComparison_ofSingularHomology_sphere_bijective`); so is the descent
+  `TauCeti.Floer.periodGroupComparison` from the Novikov ring indexed by the subgroup of spherical
+  classes (`TauCeti.Floer.periodGroupComparison_sphere_bijective`). In the positive monotone case
+  the comparison out of `H₂(S²; ℤ)` sends `q^(k [S²])` to the Laurent monomial `X^k`
+  (`TauCeti.Floer.NovikovRing.toLaurentSeries_coefficientComparison_sphere_single`).
 
 The homomorphisms `ω` and `c` are arbitrary: identifying them with the integrals of an actual
 symplectic form and the first Chern class of an actual almost complex structure on `S²` is not
@@ -106,14 +113,6 @@ theorem chern_sphereGenerator :
       c ((GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop 2)).hom 1) := by
   simp [sphereGenerator]
 
-/-- Every spherical class of the two-sphere is an integer multiple of the Hurewicz class of the
-tautological sphere. -/
-private theorem exists_zsmul_eq
-    (s : sphericalClasses (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) 1) :
-    ∃ k : ℤ, k • (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop 2)).hom 1 = s :=
-  AddSubgroup.mem_zmultiples_iff.1
-    ((AddSubgroup.eq_top_iff' _).1 (zmultiples_hurewicz_sphereGenLoop 1) s)
-
 /-- **Classes of the two-sphere in the period group**: the class of a spherical class
 `s = k [S²]` is `k • σ`. So the comparison `q^A ↦ e^(-[A])` sends `q^(k [S²])` to `e^(-k σ)`. -/
 theorem mk_eq_zsmul_sphereGenerator
@@ -122,13 +121,22 @@ theorem mk_eq_zsmul_sphereGenerator
     (s : SphericalPeriodGroup ω c) = k • sphereGenerator ω c :=
   PeriodGroup.ext (by simp [← hs]) (by simp [← hs])
 
+/-- **Classes of `H₂(S²; ℤ)` in the period group**: the class of `[S²]` is `σ`, so the class of
+`k [S²]` is `k • σ`. -/
+@[simp]
+theorem ofSingularHomology_hurewicz_sphereGenLoop :
+    ofSingularHomology ω c (sphericalClasses_sphere_eq_top 1)
+        ((GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop 2)).hom 1) =
+      sphereGenerator ω c :=
+  PeriodGroup.ext (by simp) (by simp)
+
 /-- **The sphere class generates the period group of the two-sphere.** -/
 theorem zmultiples_sphereGenerator :
     AddSubgroup.zmultiples (sphereGenerator ω c) = ⊤ := by
   refine (AddSubgroup.eq_top_iff' _).2 fun γ => ?_
   induction γ using QuotientAddGroup.induction_on with
   | H s =>
-    obtain ⟨k, hk⟩ := exists_zsmul_eq s
+    obtain ⟨k, hk⟩ := exists_zsmul_hurewicz_sphereGenLoop 1 (s : _)
     exact AddSubgroup.mem_zmultiples_iff.2 ⟨k, (mk_eq_zsmul_sphereGenerator hk).symm⟩
 
 /-- Every class of the period group of the two-sphere is an integer multiple of the sphere
@@ -143,7 +151,7 @@ instance : IsAddCyclic (SphericalPeriodGroup ω c) :=
 
 /-- **The period group of the two-sphere is trivial exactly when both periods of the sphere class
 vanish.** -/
-theorem subsingleton_iff_sphereGenerator :
+theorem subsingleton_sphere_iff :
     Subsingleton (SphericalPeriodGroup ω c) ↔
       PeriodGroup.area _ _ (sphereGenerator ω c) = 0 ∧
         PeriodGroup.chern _ _ (sphereGenerator ω c) = 0 := by
@@ -155,39 +163,21 @@ theorem subsingleton_iff_sphereGenerator :
   exact PeriodGroup.ext (by simp [ha]) (by simp [hc])
 
 /-- **The period group of the two-sphere is infinite cyclic unless both periods of the sphere
-class vanish**: `k ↦ k • σ` is injective. -/
+class vanish**: `k ↦ k • σ` is injective, since the period group is torsion-free. -/
 theorem zsmul_sphereGenerator_injective
     (h : PeriodGroup.area _ _ (sphereGenerator ω c) ≠ 0 ∨
       PeriodGroup.chern _ _ (sphereGenerator ω c) ≠ 0) :
-    Function.Injective fun k : ℤ => k • sphereGenerator ω c := by
-  intro k l hkl
-  have harea := congrArg (PeriodGroup.area _ _) hkl
-  have hchern := congrArg (PeriodGroup.chern _ _) hkl
-  simp only [map_zsmul, zsmul_eq_mul, smul_eq_mul] at harea hchern
-  rcases h with h | h
-  · exact_mod_cast mul_right_cancel₀ h harea
-  · exact mul_right_cancel₀ h hchern
+    Function.Injective fun k : ℤ => k • sphereGenerator ω c :=
+  IsAddTorsionFree.zsmul_left_injective fun h0 => by simp [h0] at h
 
 /-- **On the two-sphere with nonzero area, area is injective on the period group**, so a cap class
-is determined by its action alone (`TauCeti.Floer.eq_iff_action_eq_of_injective_area`). -/
+is determined by its action alone (`TauCeti.Floer.eq_iff_action_eq_of_area_injective`). -/
 theorem area_injective_of_area_sphereGenerator_ne_zero
     (h : PeriodGroup.area _ _ (sphereGenerator ω c) ≠ 0) :
-    Function.Injective (PeriodGroup.area _ _ : SphericalPeriodGroup ω c → ℝ) := by
-  refine (injective_iff_map_eq_zero _).2 fun γ hγ => ?_
-  obtain ⟨k, rfl⟩ := exists_zsmul_sphereGenerator_eq γ
-  rw [map_zsmul, zsmul_eq_mul, mul_eq_zero] at hγ
-  rw [Int.cast_eq_zero.1 (hγ.resolve_right h), zero_zsmul]
-
-/-- **On the two-sphere with nonzero first Chern number, the Chern number is injective on the
-period group**, so a cap class is determined by its grading alone
-(`TauCeti.Floer.eq_iff_index_eq_of_injective_chern`). -/
-theorem chern_injective_of_chern_sphereGenerator_ne_zero
-    (h : PeriodGroup.chern _ _ (sphereGenerator ω c) ≠ 0) :
-    Function.Injective (PeriodGroup.chern _ _ : SphericalPeriodGroup ω c → ℤ) := by
-  refine (injective_iff_map_eq_zero _).2 fun γ hγ => ?_
-  obtain ⟨k, rfl⟩ := exists_zsmul_sphereGenerator_eq γ
-  rw [map_zsmul, smul_eq_mul, mul_eq_zero] at hγ
-  rw [hγ.resolve_right h, zero_zsmul]
+    Function.Injective (PeriodGroup.area _ _ : SphericalPeriodGroup ω c → ℝ) := fun γ γ' hγ =>
+  congrArg Subtype.val <| (PeriodGroup.area _ _).comp_zmultiples_subtype_injective h
+    (a₁ := ⟨γ, zmultiples_sphereGenerator ▸ AddSubgroup.mem_top γ⟩)
+    (a₂ := ⟨γ', zmultiples_sphereGenerator ▸ AddSubgroup.mem_top γ'⟩) hγ
 
 /-- **The two-sphere is spherically monotone** when the Chern number of the sphere class is
 nonzero: on spherical classes `ω = τ c` with `τ = ω [S²] / c [S²]`. This is the hypothesis of the
@@ -197,7 +187,7 @@ theorem area_eq_mul_chern_sphere (h : PeriodGroup.chern _ _ (sphereGenerator ω 
     ω.comp (sphericalClasses _ 1).subtype s =
       PeriodGroup.area _ _ (sphereGenerator ω c) / PeriodGroup.chern _ _ (sphereGenerator ω c) *
         c.comp (sphericalClasses _ 1).subtype s := by
-  obtain ⟨k, hk⟩ := exists_zsmul_eq s
+  obtain ⟨k, hk⟩ := exists_zsmul_hurewicz_sphereGenLoop 1 (s : _)
   have h' : (c ((GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop 2)).hom 1) : ℝ) ≠ 0 := by
     exact_mod_cast (chern_sphereGenerator (ω := ω)) ▸ h
   simp only [AddMonoidHom.coe_comp, AddSubgroup.coe_subtype, Function.comp_apply, ← hk,
@@ -205,33 +195,57 @@ theorem area_eq_mul_chern_sphere (h : PeriodGroup.chern _ _ (sphereGenerator ω 
     Int.cast_mul]
   field_simp
 
+/-- **On the two-sphere with nonzero first Chern number, the Chern number is injective on the
+period group**, so a cap class is determined by its grading alone
+(`TauCeti.Floer.eq_iff_index_eq_of_chern_injective`). -/
+theorem chern_injective_of_chern_sphereGenerator_ne_zero
+    (h : PeriodGroup.chern _ _ (sphereGenerator ω c) ≠ 0) :
+    Function.Injective (PeriodGroup.chern _ _ : SphericalPeriodGroup ω c → ℤ) :=
+  PeriodGroup.chern_injective_of_area_eq_mul_chern (area_eq_mul_chern_sphere h)
+
+section Laurent
+
+variable (hker : (c.comp (sphericalClasses _ 1).subtype).ker ≤
+    (ω.comp (sphericalClasses _ 1).subtype).ker)
+  (hc : c.comp (sphericalClasses _ 1).subtype ≠ 0)
+  (h : 0 < PeriodGroup.chern _ _ (sphereGenerator ω c))
+include h
+
 /-- **On the two-sphere with positive Chern number, the sphere class is the positive Chern
 generator** of the period group: its integer coordinate is `1`. So its minimal Chern number is
 `c [S²]`. -/
-theorem chernEquivInt_sphereGenerator
-    (hker : (c.comp (sphericalClasses _ 1).subtype).ker ≤
-      (ω.comp (sphericalClasses _ 1).subtype).ker)
-    (hc : c.comp (sphericalClasses _ 1).subtype ≠ 0)
-    (h : 0 < PeriodGroup.chern _ _ (sphereGenerator ω c)) :
-    chernEquivInt hker hc (sphereGenerator ω c) = 1 := by
-  set e := chernEquivInt hker hc
-  -- The positive generator `e.symm 1` is a multiple `k • σ`, and `σ = (e σ) • e.symm 1`, so
-  -- `e σ * k = 1`; both Chern numbers are positive, hence `e σ = 1`.
-  obtain ⟨k, hk⟩ := exists_zsmul_sphereGenerator_eq (e.symm 1)
-  have hN := chern_chernEquivInt_symm_pos hker hc
-  have hσ := chern_eq_mul_chernEquivInt hker hc (sphereGenerator ω c)
-  rw [← hk, map_zsmul, smul_eq_mul] at hN hσ
-  have hpos : 0 < e (sphereGenerator ω c) := by nlinarith
-  have hmul : e (sphereGenerator ω c) * k = 1 := by
-    have : PeriodGroup.chern _ _ (sphereGenerator ω c) * (e (sphereGenerator ω c) * k - 1) = 0 :=
-      by linear_combination -hσ
-    exact sub_eq_zero.1 ((mul_eq_zero.1 this).resolve_left h.ne')
-  exact Int.eq_one_of_mul_eq_one_right hpos.le hmul
+theorem chernEquivInt_sphereGenerator : chernEquivInt hker hc (sphereGenerator ω c) = 1 :=
+  chernEquivInt_eq_one_of_zmultiples_eq_top hker hc zmultiples_sphereGenerator h
+
+/-- On the two-sphere with positive Chern number, the class of integer coordinate `k` is `k • σ`;
+in particular the positive Chern generator is `σ`. -/
+theorem chernEquivInt_symm_sphere (k : ℤ) :
+    (chernEquivInt hker hc).symm k = k • sphereGenerator ω c := by
+  rw [AddEquiv.symm_apply_eq, map_zsmul, chernEquivInt_sphereGenerator hker hc h, smul_eq_mul,
+    mul_one]
+
+/-- On the two-sphere with positive Chern number, the Laurent exponent of the sphere class
+is `-1`: the Laurent variable is `e^(-σ)`. -/
+theorem laurentExponent_sphereGenerator : laurentExponent hker hc (sphereGenerator ω c) = -1 := by
+  rw [laurentExponent_apply, chernEquivInt_sphereGenerator hker hc h]
+
+/-- On the two-sphere with positive Chern number, the class of Laurent exponent `k` is `-(k • σ)`.
+-/
+theorem laurentExponent_symm_sphere (k : ℤ) :
+    (laurentExponent hker hc).symm k = -(k • sphereGenerator ω c) := by
+  rw [AddEquiv.symm_apply_eq, map_neg, map_zsmul, laurentExponent_sphereGenerator hker hc h,
+    smul_eq_mul, mul_neg_one, neg_neg]
+
+end Laurent
+
+end SphericalPeriodGroup
+
+open SphericalPeriodGroup
 
 /-- **Recapping by the sphere in the Laurent model.** On the two-sphere with positive area and
 Chern number of the sphere class, the Laurent coordinates of the Floer Novikov ring send the
 monomial `e^(-k σ)` to `X^k`: the Laurent variable `X` is `e^(-σ)`. -/
-theorem toLaurentSeries_single_neg_zsmul_sphereGenerator {R : Type*} [Semiring R]
+theorem NovikovRing.toLaurentSeries_single_neg_zsmul_sphereGenerator {R : Type*} [Semiring R]
     {τ : ℝ} (hτ' : ∀ s, ω.comp (sphericalClasses _ 1).subtype s =
       τ * c.comp (sphericalClasses _ 1).subtype s)
     (hc : c.comp (sphericalClasses _ 1).subtype ≠ 0) (hτ : 0 < τ)
@@ -242,45 +256,57 @@ theorem toLaurentSeries_single_neg_zsmul_sphereGenerator {R : Type*} [Semiring R
     chernEquivInt_sphereGenerator _ _ h]
   simp
 
-/-- **The coefficient comparison on the two-sphere is a ring isomorphism.** Unless both periods
-of the sphere class vanish, the descent `q^A ↦ e^(-[A])` from the class group `H₂(S²; ℤ)`, all of
-whose classes are spherical (`TauCeti.sphericalClasses_sphere_eq_top`), to the period group is
-bijective: the joint kernel of `ω` and `c` on `H₂(S²; ℤ)` is trivial. -/
+/-- **The descent to the period group on the two-sphere is bijective.** Unless both periods of the
+sphere class vanish, `TauCeti.Floer.periodGroupComparison`, from the Novikov ring indexed by the
+spherical classes of `S²` to the Floer Novikov ring, is bijective: the joint kernel of `ω` and `c`
+on spherical classes is trivial. Every class of `H₂(S²; ℤ)` is spherical
+(`TauCeti.sphericalClasses_sphere_eq_top`); for the comparison out of the Novikov ring indexed by
+`H₂(S²; ℤ)` itself see `TauCeti.Floer.coefficientComparison_ofSingularHomology_sphere_bijective`. -/
 theorem periodGroupComparison_sphere_bijective {R : Type*} [Semiring R]
     (h : PeriodGroup.area _ _ (sphereGenerator ω c) ≠ 0 ∨
       PeriodGroup.chern _ _ (sphereGenerator ω c) ≠ 0) :
     Function.Bijective (periodGroupComparison (R := R) (ω.comp (sphericalClasses _ 1).subtype)
       (c.comp (sphericalClasses _ 1).subtype)) := by
-  refine ⟨fun a b hab => coefficientComparison_injective _ (PeriodGroup.area_mk _ _) ?_
-    (by rwa [periodGroupComparison_apply, periodGroupComparison_apply] at hab),
-    periodGroupComparison_surjective _ _⟩
-  intro s t hst
-  obtain ⟨k, hk⟩ := exists_zsmul_eq s
-  obtain ⟨l, hl⟩ := exists_zsmul_eq t
-  have hkl : k = l := zsmul_sphereGenerator_injective h <| by
-    dsimp only
-    rw [← mk_eq_zsmul_sphereGenerator hk, ← mk_eq_zsmul_sphereGenerator hl]
-    exact hst
-  exact Subtype.ext (hk.symm.trans (hkl ▸ hl))
+  refine periodGroupComparison_bijective _ _ (disjoint_iff_inf_le.2 fun s hs => ?_)
+  obtain ⟨k, hk⟩ := exists_zsmul_hurewicz_sphereGenLoop 1 (s : _)
+  have hs0 : (s : SphericalPeriodGroup ω c) = 0 :=
+    PeriodGroup.ext (by simpa using hs.1) (by simpa using hs.2)
+  obtain rfl : k = 0 := zsmul_sphereGenerator_injective h <| by
+    simpa [← mk_eq_zsmul_sphereGenerator hk] using hs0
+  exact AddSubgroup.mem_bot.2 (Subtype.ext (by simpa using hk.symm))
+
+/-- **The coefficient comparison on the two-sphere is bijective.** Unless both periods of the sphere
+class vanish, the comparison `q^A ↦ e^(-[A])` from the Novikov ring indexed by the class group
+`H₂(S²; ℤ)` of genus-zero Gromov–Witten theory to the Floer Novikov ring is bijective, since the
+class map `SphericalPeriodGroup.ofSingularHomology` is an isomorphism `H₂(S²; ℤ) ≅ Γ`. -/
+theorem coefficientComparison_ofSingularHomology_sphere_bijective {R : Type*} [Semiring R]
+    (h : PeriodGroup.area _ _ (sphereGenerator ω c) ≠ 0 ∨
+      PeriodGroup.chern _ _ (sphereGenerator ω c) ≠ 0) :
+    Function.Bijective (coefficientComparison (R := R)
+      (ofSingularHomology ω c (sphericalClasses_sphere_eq_top 1))
+      (area_ofSingularHomology (sphericalClasses_sphere_eq_top 1))) := by
+  refine ⟨coefficientComparison_injective _ _ fun A B hAB => ?_,
+    coefficientComparison_surjective _ _ (ofSingularHomology_surjective _)⟩
+  obtain ⟨k, rfl⟩ := exists_zsmul_hurewicz_sphereGenLoop 1 A
+  obtain ⟨l, rfl⟩ := exists_zsmul_hurewicz_sphereGenLoop 1 B
+  rw [map_zsmul, map_zsmul, ofSingularHomology_hurewicz_sphereGenLoop] at hAB
+  rw [zsmul_sphereGenerator_injective h hAB]
 
 /-- **The comparison `q^A ↦ e^(-A)` in Laurent coordinates on the two-sphere.** With positive
-area and Chern number of the sphere class, the monomial `q^A` of a class `A = k [S²]` goes to the
-Laurent monomial `X^k`. -/
-theorem toLaurentSeries_periodGroupComparison_single {R : Type*} [Semiring R]
+area and Chern number of the sphere class, the comparison out of the Novikov ring indexed by
+`H₂(S²; ℤ)` sends the monomial `q^(k [S²])` to the Laurent monomial `X^k`. -/
+theorem NovikovRing.toLaurentSeries_coefficientComparison_sphere_single {R : Type*} [Semiring R]
     {τ : ℝ} (hτ' : ∀ s, ω.comp (sphericalClasses _ 1).subtype s =
       τ * c.comp (sphericalClasses _ 1).subtype s)
     (hc : c.comp (sphericalClasses _ 1).subtype ≠ 0) (hτ : 0 < τ)
-    (h : 0 < PeriodGroup.chern _ _ (sphereGenerator ω c))
-    {A : sphericalClasses (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) 1} {k : ℤ}
-    (hA : k • (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop 2)).hom 1 = A) (r : R) :
+    (h : 0 < PeriodGroup.chern _ _ (sphereGenerator ω c)) (k : ℤ) (r : R) :
     NovikovRing.toLaurentSeries hτ' hc hτ
-        (periodGroupComparison (ω.comp (sphericalClasses _ 1).subtype)
-          (c.comp (sphericalClasses _ 1).subtype) (single A r)) =
+        (coefficientComparison (ofSingularHomology ω c (sphericalClasses_sphere_eq_top 1))
+          (area_ofSingularHomology (sphericalClasses_sphere_eq_top 1))
+          (single ((k • (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop 2)).hom 1)) r)) =
       HahnSeries.single k r := by
-  rw [periodGroupComparison_single, mk_eq_zsmul_sphereGenerator hA]
-  exact toLaurentSeries_single_neg_zsmul_sphereGenerator hτ' hc hτ h k r
-
-end SphericalPeriodGroup
+  rw [coefficientComparison_single, map_zsmul, ofSingularHomology_hurewicz_sphereGenLoop]
+  exact NovikovRing.toLaurentSeries_single_neg_zsmul_sphereGenerator hτ' hc hτ h k r
 
 namespace SphericalCapClass
 
@@ -290,15 +316,15 @@ variable {x : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1}
 /-- **Recapping at the sphere.** On the two-sphere, unless both periods of the sphere class vanish,
 any two cap classes of a loop differ by recapping with a unique multiple of the sphere class. -/
 theorem existsUnique_zsmul_sphereGenerator_vadd_eq
-    (h : PeriodGroup.area _ _ (SphericalPeriodGroup.sphereGenerator ω c) ≠ 0 ∨
-      PeriodGroup.chern _ _ (SphericalPeriodGroup.sphereGenerator ω c) ≠ 0)
+    (h : PeriodGroup.area _ _ (sphereGenerator ω c) ≠ 0 ∨
+      PeriodGroup.chern _ _ (sphereGenerator ω c) ≠ 0)
     (D D' : SphericalCapClass ω c γ) :
-    ∃! k : ℤ, k • SphericalPeriodGroup.sphereGenerator ω c +ᵥ D = D' := by
-  obtain ⟨k, hk⟩ := SphericalPeriodGroup.exists_zsmul_sphereGenerator_eq (D' -ᵥ D)
+    ∃! k : ℤ, k • sphereGenerator ω c +ᵥ D = D' := by
+  obtain ⟨k, hk⟩ := exists_zsmul_sphereGenerator_eq (D' -ᵥ D)
   refine ⟨k, ?_, fun l hl => ?_⟩
   · dsimp only
     rw [hk, vsub_vadd]
-  refine SphericalPeriodGroup.zsmul_sphereGenerator_injective h ?_
+  refine zsmul_sphereGenerator_injective h ?_
   simp only [hk, ← hl, vadd_vsub]
 
 end SphericalCapClass

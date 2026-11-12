@@ -149,9 +149,11 @@ theorem nonempty_iff : Nonempty (RawCap γ) ↔ γ.Homotopic (Path.refl x) := by
   rw [← Path.joined_iff_homotopic]
   exact ⟨fun ⟨D⟩ => ⟨D.out⟩, fun ⟨D⟩ => ⟨Path.Homotopic.Quotient.mk D⟩⟩
 
-/-- **On a simply connected space every loop has a raw cap.** -/
-instance [SimplyConnectedSpace X] : Nonempty (RawCap γ) :=
-  nonempty_iff.2 (SimplyConnectedSpace.paths_homotopic _ _)
+/-- **If the fundamental group at `x` is trivial, every loop at `x` has a raw cap.** This covers
+every simply connected space. -/
+instance [Subsingleton (FundamentalGroup X x)] : Nonempty (RawCap γ) :=
+  nonempty_iff.2 <| Quotient.exact <| congrArg FundamentalGroup.toPath <|
+    Subsingleton.elim (FundamentalGroup.fromPath ⟦γ⟧) (FundamentalGroup.fromPath ⟦Path.refl x⟧)
 
 /-- Gluing a sphere `a ∈ π₂(X, x)` at the centre of a disc: `a +ᵥ D` is `D` followed by the loop
 of loops at the constant loop corresponding to `a`. -/

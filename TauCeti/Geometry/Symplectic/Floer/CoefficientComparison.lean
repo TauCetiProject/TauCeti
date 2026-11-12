@@ -186,6 +186,20 @@ theorem periodGroupComparison_surjective [Semiring R] :
     Function.Surjective (periodGroupComparison (R := R) ω c) :=
   coefficientComparison_surjective _ _ (QuotientAddGroup.mk'_surjective _)
 
+/-- Descent to the joint-period quotient is injective when area and first Chern number jointly
+separate classes, that is, when only the zero class has vanishing area and Chern number. -/
+theorem periodGroupComparison_injective [Semiring R] (h : Disjoint ω.ker c.ker) :
+    Function.Injective (periodGroupComparison (R := R) ω c) :=
+  coefficientComparison_injective _ _ <| (injective_iff_map_eq_zero _).2 fun s hs => by
+    rw [← AddSubgroup.mem_bot, ← h.eq_bot, ← AddMonoidHom.ker_prod]
+    exact (QuotientAddGroup.eq_zero_iff s).1 hs
+
+/-- Descent to the joint-period quotient is bijective when area and first Chern number jointly
+separate classes. -/
+theorem periodGroupComparison_bijective [Semiring R] (h : Disjoint ω.ker c.ker) :
+    Function.Bijective (periodGroupComparison (R := R) ω c) :=
+  ⟨periodGroupComparison_injective ω c h, periodGroupComparison_surjective ω c⟩
+
 /-- The joint-period comparison is continuous for the energy topologies. -/
 @[fun_prop]
 theorem continuous_periodGroupComparison [Ring R] :
