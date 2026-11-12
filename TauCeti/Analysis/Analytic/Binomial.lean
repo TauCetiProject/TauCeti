@@ -6,14 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Binomial
+import Mathlib.Analysis.Normed.Ring.InfiniteSum
 
 /-!
-# Convergence of multichoose power series
+# Convergence of binomial and multichoose power series
 
 This file determines the exact unconditional summability domain of the power series with
 generalized multichoose coefficients and positive real parameter.  The result applies to both real
 and complex arguments.  These results supply the analytic criterion used to determine the exact
 integrability domain of the negative-binomial probability-generating function.
+
+It also treats the binomial series `binomialSeries 𝔸 a`, the power series of `(1 + y) ^ a`, with
+values in an arbitrary normed algebra `𝔸` rather than a normed division ring. Its radius is still at
+least `1`, since its coefficients are scalars. On the open unit ball the sums of the series for `a`
+and `b` multiply to the sum of the series for `a + b`, by the Chu–Vandermonde identity, and the
+series for a natural number `n` sums to `(1 + y) ^ n`. In particular the binomial series of `1 / 2`
+is a square root of `1 + y`, in any Banach algebra.
 
 ## Main declarations
 
@@ -23,12 +31,18 @@ integrability domain of the negative-binomial probability-generating function.
   multichoose binomial series on the open unit disk.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
+* `TauCeti.binomialSeries_radius_ge_one_of_normedRing` — the binomial series converges on the
+  open unit ball of every normed algebra.
+* `TauCeti.binomialSeries_sum_mul_binomialSeries_sum` — on the open unit ball,
+  `(1 + y) ^ a * (1 + y) ^ b = (1 + y) ^ (a + b)` for the sums of the binomial series.
+* `TauCeti.binomialSeries_sum_natCast` — for a natural number `n` the binomial series sums to
+  `(1 + y) ^ n`.
 -/
 
 public section
 
 open Filter Set Topology
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -82,6 +96,75 @@ theorem summable_multichoose_mul_geometric_iff_norm_lt_one
   refine ⟨fun hs => not_le.1 fun hq => hnot (hs.of_nonneg_of_le (fun n => (hcoeff_pos n).le)
     fun n => le_mul_of_one_le_right (hcoeff_pos n).le (one_le_pow₀ hq)), fun hq => ?_⟩
   exact (hasSum_multichoose_mul_geometric_of_abs_lt_one (by simpa using hq)).summable
+
+section NormedAlgebra
+
+variable {𝕂 : Type*} [RCLike 𝕂] {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra 𝕂 𝔸]
+
+/-- The binomial series converges on the open unit ball of every normed algebra over `ℝ` or `ℂ`,
+not only of a normed division ring (`binomialSeries_radius_ge_one`): its coefficients are scalars,
+so its terms are bounded by those of the scalar binomial series. -/
+theorem binomialSeries_radius_ge_one_of_normedRing (a : 𝕂) :
+    1 ≤ (binomialSeries 𝔸 a).radius := by
+  refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
+  obtain ⟨C, -, hC⟩ := (binomialSeries 𝕂 a).norm_mul_pow_le_of_lt_radius
+    (hr.trans_le binomialSeries_radius_ge_one)
+  refine (binomialSeries 𝔸 a).le_radius_of_bound (max C ‖binomialSeries 𝔸 a 0‖) fun n ↦ ?_
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  · refine le_max_of_le_left ((mul_le_mul_of_nonneg_right ?_ (by positivity)).trans (hC n))
+    calc ‖binomialSeries 𝔸 a n‖ ≤ ‖Ring.choose a n‖ :=
+          FormalMultilinearSeries.ofScalars_norm_le _ _ _ hn
+      _ = ‖binomialSeries 𝕂 a n‖ := (FormalMultilinearSeries.ofScalars_norm 𝕂 _ n).symm
+
+/-- A point of the open unit ball lies in the ball of convergence of every binomial series. -/
+theorem mem_eball_binomialSeries_radius {y : 𝔸} (hy : ‖y‖ < 1) (a : 𝕂) :
+    y ∈ Metric.eball (0 : 𝔸) (binomialSeries 𝔸 a).radius := by
+  refine lt_of_lt_of_le ?_ (binomialSeries_radius_ge_one_of_normedRing a)
+  rwa [edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
+
+/-- The sum of the binomial series is the sum of its terms `(a choose n) • yⁿ`. -/
+theorem binomialSeries_sum_eq_tsum (a : 𝕂) (y : 𝔸) :
+    (binomialSeries 𝔸 a).sum y = ∑' n, Ring.choose a n • y ^ n :=
+  FormalMultilinearSeries.ofScalars_sum_eq _ y
+
+/-- On the open unit ball of a Banach algebra, the binomial series converges to its sum. -/
+theorem hasSum_binomialSeries [CompleteSpace 𝔸] (a : 𝕂) {y : 𝔸} (hy : ‖y‖ < 1) :
+    HasSum (fun n ↦ Ring.choose a n • y ^ n) ((binomialSeries 𝔸 a).sum y) := by
+  simpa [binomialSeries, FormalMultilinearSeries.ofScalars_apply_eq] using
+    (binomialSeries 𝔸 a).hasSum (mem_eball_binomialSeries_radius hy a)
+
+/-- **The binomial series multiply as powers.** On the open unit ball of a Banach algebra the
+sums of the binomial series of `a` and `b`, which are `(1 + y) ^ a` and `(1 + y) ^ b`, multiply to
+the sum of the binomial series of `a + b`. This is the Chu–Vandermonde identity
+`∑_{i + j = n} (a choose i) (b choose j) = (a + b choose n)` for the Cauchy product. -/
+theorem binomialSeries_sum_mul_binomialSeries_sum [CompleteSpace 𝔸] (a b : 𝕂) {y : 𝔸}
+    (hy : ‖y‖ < 1) :
+    (binomialSeries 𝔸 a).sum y * (binomialSeries 𝔸 b).sum y =
+      (binomialSeries 𝔸 (a + b)).sum y := by
+  have hnorm (c : 𝕂) : Summable fun n ↦ ‖Ring.choose c n • y ^ n‖ := by
+    simpa [binomialSeries, FormalMultilinearSeries.ofScalars_apply_eq] using
+      (binomialSeries 𝔸 c).summable_norm_apply (mem_eball_binomialSeries_radius hy c)
+  rw [binomialSeries_sum_eq_tsum, binomialSeries_sum_eq_tsum, binomialSeries_sum_eq_tsum,
+    tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm (hnorm a) (hnorm b)]
+  refine tsum_congr fun n ↦ ?_
+  rw [Ring.add_choose_eq n (Commute.all a b), Finset.sum_smul]
+  refine Finset.sum_congr rfl fun ij hij ↦ ?_
+  rw [smul_mul_smul_comm, ← pow_add, Finset.mem_antidiagonal.mp hij, mul_smul]
+
+/-- For a natural number `n` the binomial series is the binomial expansion of `(1 + y) ^ n`,
+a finite sum, at every point of the algebra. -/
+theorem binomialSeries_sum_natCast (n : ℕ) (y : 𝔸) :
+    (binomialSeries 𝔸 (n : 𝕂)).sum y = (1 + y) ^ n := by
+  rw [binomialSeries_sum_eq_tsum, tsum_eq_sum (s := Finset.range (n + 1)) fun k hk ↦ ?_,
+    add_comm (1 : 𝔸) y, (Commute.one_right y).add_pow]
+  · refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [Ring.choose_natCast, one_pow, mul_one, Nat.cast_smul_eq_nsmul, nsmul_eq_mul,
+      Nat.cast_comm]
+  · rw [Ring.choose_natCast, Nat.choose_eq_zero_of_lt (by simpa using hk), Nat.cast_zero,
+      zero_smul]
+
+end NormedAlgebra
 
 end TauCeti
 
