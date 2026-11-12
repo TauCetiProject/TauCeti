@@ -185,7 +185,7 @@ theorem map_sq_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v :
       ext x
       simp only [Function.comp_apply]
       ring
-    _ = _ := by rw [betaMeasure_map_centered_sq ha]
+    _ = _ := by rw [betaMeasure_map_centered_sq]
 
 /-- In dimension at least two, a nonzero real linear observable of a uniform sphere point
 has the symmetric incomplete Beta cdf in the affine coordinate of its support interval. -/

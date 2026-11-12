@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
+import Mathlib.Geometry.Manifold.Instances.Icc
 import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
 import TauCeti.Geometry.Manifold.VectorField.Related
 
