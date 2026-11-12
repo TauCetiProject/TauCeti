@@ -67,6 +67,8 @@ relative homotopy invariance of cubical homology is transported from the simplic
   (`TopPair.isSplitMono_normalizedCubicalChainComplex_map_f`).
 * `TopPair.quasiIso_singularToCubicalRel`, `TopPair.quasiIso_cubicalToSingularRel`: the relative
   comparison maps are quasi-isomorphisms.
+* `TopPair.quasiIso_cubicalChainComplexMap_iff`: a map of pairs is a quasi-isomorphism of relative
+  cubical chains exactly when it is an isomorphism on relative singular homology in every degree.
 * `TopPair.Homotopy.congr_homologyMap_cubicalChainComplexMap`: homotopic maps of pairs induce the
   same map on relative cubical homology.
 
@@ -646,6 +648,17 @@ theorem singularCubicalHomologyIso_inv_naturality {P P' : TopPair.{u}} (f : P �
       (singularCubicalHomologyIso k P n).inv ≫ P.singularHomologyMap f (ModuleCat.of k k) n := by
   rw [Iso.eq_inv_comp, singularCubicalHomologyIso_hom_naturality_assoc, Iso.hom_inv_id,
     Category.comp_id]
+
+/-- **Relative cubical quasi-isomorphisms are relative singular homology isomorphisms.** A map of
+pairs induces a quasi-isomorphism of relative normalized cubical chains exactly when it induces an
+isomorphism on relative singular homology in every degree. -/
+theorem quasiIso_cubicalChainComplexMap_iff {P P' : TopPair.{u}} (f : P ⟶ P') :
+    QuasiIso (cubicalChainComplexMap k f) ↔
+      ∀ n, IsIso (P.singularHomologyMap f (ModuleCat.of k k) n) := by
+  refine (quasiIso_iff _).trans (forall_congr' fun n ↦ ?_)
+  rw [quasiIsoAt_iff_isIso_homologyMap, ← Iso.inv_hom_id_assoc (singularCubicalHomologyIso k P n)
+    (HomologicalComplex.homologyMap _ n), singularCubicalHomologyIso_hom_naturality,
+    isIso_comp_left_iff, isIso_comp_right_iff]
 
 /-- The inverse comparison isomorphisms of absolute and relative homology commute with the maps
 from absolute to relative homology: an absolute cubical class, read in relative cubical homology
