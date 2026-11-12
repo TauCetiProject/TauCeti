@@ -237,9 +237,17 @@ theorem regularizedIncompleteBeta_le_one (a b x : ℝ) :
       (regularizedIncompleteBeta_eq_one_of_one_le ha.le hb (le_max_right x 1))
 
 /-- The regularized incomplete beta function is continuous on all of `ℝ`, including at the two
-endpoints of the support, where the integrand may blow up. -/
-theorem continuous_regularizedIncompleteBeta (ha : 0 < a) (hb : 0 < b) :
+endpoints of the support, where the integrand may blow up. The hypothesis `a ≠ 0` excludes the
+boundary convention `regularizedIncompleteBeta_zero_left`, under which the function jumps from `0`
+to `1` at `x = 0` when `0 < b`; for `a < 0` or `b ≤ 0` the function is identically `0`. -/
+theorem continuous_regularizedIncompleteBeta (ha : a ≠ 0) (b : ℝ) :
     Continuous (regularizedIncompleteBeta a b) := by
+  rcases ha.lt_or_gt with ha | ha
+  · exact continuous_const.congr fun x =>
+      (regularizedIncompleteBeta_eq_zero_of_neg_left ha b x).symm
+  rcases le_or_gt b 0 with hb | hb
+  · exact continuous_const.congr fun x =>
+      (regularizedIncompleteBeta_eq_zero_of_nonpos_right hb a x).symm
   have hII := intervalIntegrable_rpow_mul_one_sub_rpow ha hb
     (u := 0) (v := 1) (mem_Icc.2 ⟨le_rfl, zero_le_one⟩) (mem_Icc.2 ⟨zero_le_one, le_rfl⟩)
   have hc : Continuous fun x : ℝ =>
@@ -277,7 +285,7 @@ increasing on its support interval. -/
 theorem strictMonoOn_regularizedIncompleteBeta (ha : 0 < a) (hb : 0 < b) :
     StrictMonoOn (regularizedIncompleteBeta a b) (Icc 0 1) := by
   refine strictMonoOn_of_deriv_pos (convex_Icc 0 1)
-    (continuous_regularizedIncompleteBeta ha hb).continuousOn fun x hx => ?_
+    (continuous_regularizedIncompleteBeta ha.ne' b).continuousOn fun x hx => ?_
   rw [interior_Icc] at hx
   rw [(hasDerivAt_regularizedIncompleteBeta ha hb hx.1 hx.2).deriv]
   exact div_pos (mul_pos (Real.rpow_pos_of_pos hx.1 _) (Real.rpow_pos_of_pos (sub_pos.mpr hx.2) _))
@@ -437,7 +445,7 @@ theorem exists_unique_regularizedIncompleteBeta_eq (ha : 0 < a) (hb : 0 < b)
       regularizedIncompleteBeta_eq_one_of_one_le ha.le hb le_rfl]
     exact ⟨hu0, hu1⟩
   rcases intermediate_value_Ioo (zero_le_one : (0 : ℝ) ≤ 1)
-      (continuous_regularizedIncompleteBeta ha hb).continuousOn hu with ⟨x, hx, hxu⟩
+      (continuous_regularizedIncompleteBeta ha.ne' b).continuousOn hu with ⟨x, hx, hxu⟩
   refine ⟨x, ⟨hx, hxu⟩, fun y hy => ?_⟩
   exact ((strictMonoOn_regularizedIncompleteBeta ha hb).injOn
     ⟨hx.1.le, hx.2.le⟩ ⟨hy.1.1.le, hy.1.2.le⟩ (hxu.trans hy.2.symm)).symm
@@ -455,6 +463,13 @@ theorem inverseRegularizedIncompleteBeta_eq_zero
     (h : ¬(0 < a ∧ 0 < b ∧ 0 < u ∧ u < 1)) :
     inverseRegularizedIncompleteBeta a b u = 0 := by
   simp [inverseRegularizedIncompleteBeta, h]
+
+/-- Outside the positive shape parameters, the inverse regularized incomplete beta function is
+identically zero. -/
+@[simp]
+theorem inverseRegularizedIncompleteBeta_eq_zero_of_not_pos (h : ¬(0 < a ∧ 0 < b)) :
+    inverseRegularizedIncompleteBeta a b = 0 :=
+  funext fun _ => inverseRegularizedIncompleteBeta_eq_zero fun h' => h ⟨h'.1, h'.2.1⟩
 
 /-- At valid parameters, the inverse regularized incomplete beta function lies in `(0, 1)`. -/
 theorem inverseRegularizedIncompleteBeta_mem_Ioo (ha : 0 < a) (hb : 0 < b)
@@ -535,10 +550,15 @@ theorem image_inverseRegularizedIncompleteBeta_Ioo (ha : 0 < a) (hb : 0 < b) :
     exact ⟨regularizedIncompleteBeta a b x, ⟨hu0, hu1⟩,
       inverseRegularizedIncompleteBeta_regularizedIncompleteBeta ha hb hx.1 hx.2⟩
 
-/-- At positive shape parameters, the inverse regularized incomplete beta function is continuous
-at every level in `(0, 1)`. -/
-theorem continuousAt_inverseRegularizedIncompleteBeta (ha : 0 < a) (hb : 0 < b)
+/-- The inverse regularized incomplete beta function is continuous at every level in `(0, 1)`
+(outside the positive shape parameters it is identically `0`). -/
+theorem continuousAt_inverseRegularizedIncompleteBeta (a b : ℝ)
     (hu : u ∈ Ioo (0 : ℝ) 1) : ContinuousAt (inverseRegularizedIncompleteBeta a b) u := by
+  by_cases hab : 0 < a ∧ 0 < b
+  swap
+  · rw [inverseRegularizedIncompleteBeta_eq_zero_of_not_pos hab]
+    exact continuousAt_const
+  obtain ⟨ha, hb⟩ := hab
   refine (strictMonoOn_inverseRegularizedIncompleteBeta ha hb).continuousAt_of_image_mem_nhds
     (Ioo_mem_nhds hu.1 hu.2) ?_
   rw [image_inverseRegularizedIncompleteBeta_Ioo ha hb]
@@ -546,36 +566,36 @@ theorem continuousAt_inverseRegularizedIncompleteBeta (ha : 0 < a) (hb : 0 < b)
     (inverseRegularizedIncompleteBeta_mem_Ioo ha hb hu.1 hu.2).1
     (inverseRegularizedIncompleteBeta_mem_Ioo ha hb hu.1 hu.2).2
 
-/-- At positive shape parameters, the inverse regularized incomplete beta function is continuous
-on the open unit interval. -/
-theorem continuousOn_inverseRegularizedIncompleteBeta (ha : 0 < a) (hb : 0 < b) :
+/-- The inverse regularized incomplete beta function is continuous on the open unit interval
+(outside the positive shape parameters it is identically `0`). -/
+theorem continuousOn_inverseRegularizedIncompleteBeta (a b : ℝ) :
     ContinuousOn (inverseRegularizedIncompleteBeta a b) (Ioo 0 1) :=
-  fun _ hu => (continuousAt_inverseRegularizedIncompleteBeta ha hb hu).continuousWithinAt
+  fun _ hu => (continuousAt_inverseRegularizedIncompleteBeta a b hu).continuousWithinAt
 
 /-- For fixed shape parameters, the totalized inverse regularized incomplete beta function is
 measurable. -/
 @[fun_prop]
 theorem measurable_inverseRegularizedIncompleteBeta (a b : ℝ) :
     Measurable (inverseRegularizedIncompleteBeta a b) := by
-  by_cases hab : 0 < a ∧ 0 < b
-  · have hp := (continuousOn_inverseRegularizedIncompleteBeta hab.1 hab.2).measurable_piecewise
-      (g := fun _ : ℝ => 0) continuousOn_const measurableSet_Ioo
-    convert hp using 1
-    funext u
-    by_cases hu : u ∈ Ioo (0 : ℝ) 1
-    · simp [hu]
-    · simp only [Set.piecewise, hu, ↓reduceIte]
-      exact inverseRegularizedIncompleteBeta_eq_zero (fun h => hu ⟨h.2.2.1, h.2.2.2⟩)
-  · have hzero : inverseRegularizedIncompleteBeta a b = fun _ => 0 := by
-      funext u
-      exact inverseRegularizedIncompleteBeta_eq_zero (fun h => hab ⟨h.1, h.2.1⟩)
-    rw [hzero]
-    fun_prop
+  have hp := (continuousOn_inverseRegularizedIncompleteBeta a b).measurable_piecewise
+    (g := fun _ : ℝ => 0) continuousOn_const measurableSet_Ioo
+  convert hp using 1
+  funext u
+  by_cases hu : u ∈ Ioo (0 : ℝ) 1
+  · simp [hu]
+  · simp only [Set.piecewise, hu, ↓reduceIte]
+    exact inverseRegularizedIncompleteBeta_eq_zero (fun h => hu ⟨h.2.2.1, h.2.2.2⟩)
 
-/-- At positive shape parameters, the inverse regularized incomplete beta function tends to the
-lower support endpoint as its level tends to zero from the right. -/
-theorem tendsto_inverseRegularizedIncompleteBeta_zero (ha : 0 < a) (hb : 0 < b) :
+/-- The inverse regularized incomplete beta function tends to the lower support endpoint as its
+level tends to zero from the right (outside the positive shape parameters it is identically
+`0`). -/
+theorem tendsto_inverseRegularizedIncompleteBeta_zero (a b : ℝ) :
     Tendsto (inverseRegularizedIncompleteBeta a b) (𝓝[>] 0) (𝓝 0) := by
+  by_cases hab : 0 < a ∧ 0 < b
+  swap
+  · rw [inverseRegularizedIncompleteBeta_eq_zero_of_not_pos hab]
+    exact tendsto_const_nhds
+  obtain ⟨ha, hb⟩ := hab
   rw [Metric.tendsto_nhds]
   intro ε hε
   let x : ℝ := min (ε / 2) (1 / 2)
