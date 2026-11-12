@@ -58,6 +58,9 @@ once.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
 * `Fin.contractNth_castSucc_const`: contracting two adjacent entries of a constant tuple.
+* `Fin.contractNth_castSucc_update_succ`, `Fin.contractNth_castSucc_update_castSucc` and
+  `Fin.contractNth_castSucc_update_succAbove`: updating an entry and then contracting two adjacent
+  entries updates one entry of the contraction.
 * `Fin.insertNth_apply_zero_of_ne_zero`, `Fin.insertNth_apply_last_of_ne_last`: inserting away
   from the first (last) position keeps the first (last) entry.
 * `Fin.contractNth_castSucc_insertNth_succ_castSucc`: contracting the two steps of a path that
@@ -279,6 +282,46 @@ theorem contractNth_castSucc_const (j : Fin n) (x : α) :
   · rw [Function.update_of_ne hkj.ne, contractNth_apply_of_lt _ _ _ _ hkj]
   · rw [Function.update_self, contractNth_apply_of_eq _ _ _ _ rfl]
   · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj]
+
+/-- Updating entry `j + 1` and then contracting the entries `j` and `j + 1` updates entry `j` of
+the contraction, by the contraction of entry `j` with the new value. -/
+theorem contractNth_castSucc_update_succ (j : Fin n) (a : Fin (n + 1) → α) (x : α) :
+    contractNth j.castSucc op (Function.update a j.succ x) =
+      Function.update (contractNth j.castSucc op a) j (op (a j.castSucc) x) := by
+  funext k
+  rcases lt_trichotomy k j with hkj | rfl | hkj
+  · rw [Function.update_of_ne hkj.ne, contractNth_apply_of_lt _ _ _ _ hkj,
+      contractNth_apply_of_lt _ _ _ _ hkj, Function.update_of_ne (by simp [Fin.ext_iff]; omega)]
+  · rw [Function.update_self, contractNth_apply_of_eq _ _ _ _ rfl, Function.update_self,
+      Function.update_of_ne castSucc_lt_succ.ne]
+  · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj,
+      contractNth_apply_of_gt _ _ _ _ hkj, Function.update_of_ne ((succ_injective _).ne hkj.ne')]
+
+/-- Updating entry `j` and then contracting the entries `j` and `j + 1` updates entry `j` of the
+contraction, by the contraction of the new value with entry `j + 1`. -/
+theorem contractNth_castSucc_update_castSucc (j : Fin n) (a : Fin (n + 1) → α) (x : α) :
+    contractNth j.castSucc op (Function.update a j.castSucc x) =
+      Function.update (contractNth j.castSucc op a) j (op x (a j.succ)) := by
+  funext k
+  rcases lt_trichotomy k j with hkj | rfl | hkj
+  · rw [Function.update_of_ne hkj.ne, contractNth_apply_of_lt _ _ _ _ hkj,
+      contractNth_apply_of_lt _ _ _ _ hkj, Function.update_of_ne ((castSucc_injective _).ne hkj.ne)]
+  · rw [Function.update_self, contractNth_apply_of_eq _ _ _ _ rfl, Function.update_self,
+      Function.update_of_ne castSucc_lt_succ.ne']
+  · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj,
+      contractNth_apply_of_gt _ _ _ _ hkj, Function.update_of_ne (by simp [Fin.ext_iff]; omega)]
+
+/-- Updating an entry other than `j` and `j + 1` and then contracting the entries `j` and `j + 1`
+updates the corresponding entry of the contraction by the same value. -/
+theorem contractNth_castSucc_update_succAbove {j q : Fin n} (hq : q ≠ j) (a : Fin (n + 1) → α)
+    (x : α) :
+    contractNth j.castSucc op (Function.update a (j.succ.succAbove q) x) =
+      Function.update (contractNth j.castSucc op a) q x := by
+  funext k
+  rw [Ne, Fin.ext_iff] at hq
+  simp only [contractNth, Function.update_apply, Fin.ext_iff, succAbove, Fin.lt_def, val_castSucc,
+    val_succ]
+  split_ifs <;> simp only [val_castSucc, val_succ] at * <;> omega
 
 end ContractNth
 

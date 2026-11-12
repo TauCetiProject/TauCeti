@@ -42,8 +42,10 @@ operations `m_{n+1}` vanish for `n ≥ 2`, over a ring of characteristic two
 The constructions below apply to families of operations `f_{n+1} : M ⊗ A^{⊗ n} → M'`, here
 `(n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M →ₗ[R] M')`, such as the operations of a module
 or a morphism of modules. Two families compose (`TauCeti.ungradedFamilyComp`) by
-`(g ∘ f)_{n+1}(m, a₁, …, aₙ) = ∑_{i + j = n} g_{j+1}(f_{i+1}(m, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`, with the
-identity family `TauCeti.ungradedFamilyId` as unit.
+`(g ∘ f)_{n+1}(m, a₁, …, aₙ) = ∑_{i + j = n} g_{j+1}(f_{i+1}(m, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`. This
+composition is associative (`TauCeti.ungradedFamilyComp_assoc`), with the identity family
+`TauCeti.ungradedFamilyId` as unit. It needs no multiplication on `A`, so the families are developed
+over a commutative semiring and additive commutative monoids.
 
 * **Twisting.** For a Maurer–Cartan element `β`, that is `d β + β * β = 0`, the
   **twisted differential** `∂^β = ∑ₙ m_{n+1}(·, β, …, β)`
@@ -112,6 +114,7 @@ induced map of box tensor products; see `TauCeti.LowDimTopology.Bordered.TypeA`.
 
 ## Main results
 
+* `TauCeti.ungradedFamilyComp_assoc`: composition of families is associative.
 * `TauCeti.UngradedAInfinityRightModule.twistedDifferential_twistedDifferential_eq_sum`: the
   square of the twisted differential inserts the curvature once.
 * `TauCeti.UngradedAInfinityRightModule.twistedDifferential_twistedDifferential`: the twisted
@@ -150,13 +153,13 @@ open Finset MulOpposite
 
 namespace TauCeti
 
-variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M]
+/-! ### Composing families of operations -/
 
-/-! ### The relations -/
+section Family
 
-section Stasheff
-
-variable {M' M'' : Type*} [AddCommGroup M'] [Module R M'] [AddCommGroup M''] [Module R M'']
+variable {R A M M' M'' M''' : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M'] [AddCommMonoid M'']
+  [Module R M''] [AddCommMonoid M'''] [Module R M''']
 
 /-- The **composite** of two families of operations: for `f_{i+1} : M ⊗ A^{⊗ i} → M'` and
 `g_{j+1} : M' ⊗ A^{⊗ j} → M''`, the family whose operation with `n` algebra inputs is
@@ -179,53 +182,48 @@ theorem ungradedFamilyComp_apply
         (f k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) := by
   simp [ungradedFamilyComp]
 
-variable (act : (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M →ₗ[R] M))
-
-/-- The **composite terms** of the `A∞` relation of length `n`:
-`∑_{i + j = n} m_{j+1}(m_{i+1}(m, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`, where `act i` is `m_{i+1}`. -/
-noncomputable def ungradedStasheffComp (n : ℕ) (a : Fin n → A) (m : M) : M :=
-  ungradedFamilyComp act act n a m
-
-theorem ungradedStasheffComp_def (n : ℕ) (a : Fin n → A) (m : M) :
-    ungradedStasheffComp act n a m =
-      ∑ k : Fin (n + 1), act (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
-        (act k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) :=
-  ungradedFamilyComp_apply act act n a m
-
-variable (f : (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M →ₗ[R] M'))
-
-/-- The **differential terms** of the `A∞` relation of length `n` for a family of operations
-`f_{n+1}`, such as the operations `m_{n+1}` of a module: `∑_l f_{n+1}(m, a₁, …, d aₗ, …, aₙ)`. -/
-noncomputable def ungradedStasheffDiff (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) : M' :=
-  ∑ l : Fin n, f n (Function.update a l (d (a l))) m
-
-theorem ungradedStasheffDiff_def (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) :
-    ungradedStasheffDiff f d n a m = ∑ l : Fin n, f n (Function.update a l (d (a l))) m :=
-  (rfl)
-
-/-- The **product terms** of the `A∞` relation of length `n` for a family of operations
-`f_{n+1}`, such as the operations `m_{n+1}` of a module: `∑_l f_n(m, a₁, …, aₗ aₗ₊₁, …, aₙ)`, over
-the `n - 1` adjacent pairs. -/
-noncomputable def ungradedStasheffMul : (n : ℕ) → (Fin n → A) → M → M'
-  | 0, _, _ => 0
-  | n + 1, a, m => ∑ l : Fin n, f n (Fin.contractNth l.castSucc (· * ·) a) m
-
-@[simp]
-theorem ungradedStasheffMul_zero (a : Fin 0 → A) (m : M) : ungradedStasheffMul f 0 a m = 0 :=
-  (rfl)
-
-theorem ungradedStasheffMul_succ (n : ℕ) (a : Fin (n + 1) → A) (m : M) :
-    ungradedStasheffMul f (n + 1) a m =
-      ∑ l : Fin n, f n (Fin.contractNth l.castSucc (· * ·) a) m :=
-  (rfl)
-
-end Stasheff
+/-- **Composition of families is associative.** -/
+theorem ungradedFamilyComp_assoc
+    (h : (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M'' →ₗ[R] M'''))
+    (g : (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M' →ₗ[R] M''))
+    (f : (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M →ₗ[R] M')) :
+    ungradedFamilyComp (ungradedFamilyComp h g) f =
+      ungradedFamilyComp h (ungradedFamilyComp g f) := by
+  funext n
+  refine MultilinearMap.ext fun a => LinearMap.ext fun m => ?_
+  -- Read the blocks of `a` off its extension by zero, to sum over natural numbers.
+  set b : ℕ → A := fun p => if hp : p < n then a ⟨p, hp⟩ else 0 with hb
+  set T : ℕ → ℕ → M''' := fun i k => h (n - k) (fun l => b (k + l))
+    (g (k - i) (fun l => b (i + l)) (f i (fun l => b l) m)) with hT
+  have hb' (p : ℕ) (hp : p < n) : a ⟨p, hp⟩ = b p := by simp [hb, hp]
+  simp only [ungradedFamilyComp_apply, map_sum]
+  calc _ = ∑ i : Fin (n + 1), ∑ j : Fin (n - i + 1), T i (i + j) := by
+        refine sum_congr rfl fun i _ => sum_congr rfl fun j _ => ?_
+        rw [hT]
+        dsimp only
+        rw [Nat.add_sub_cancel_left, ← Nat.sub_sub]
+        congr! with l l l <;> rw [hb' _ (by omega)]
+        rw [Nat.add_assoc]
+    _ = ∑ i ∈ range (n + 1), ∑ j ∈ range (n + 1 - i), T i (i + j) := by
+        rw [← Fin.sum_univ_eq_sum_range (fun i => ∑ j ∈ range (n + 1 - i), T i (i + j))]
+        refine sum_congr rfl fun i _ => ?_
+        rw [← Fin.sum_univ_eq_sum_range (fun j => T i (i + j)), show n + 1 - i = n - i + 1 by omega]
+    _ = ∑ k ∈ range (n + 1), ∑ i ∈ range (k + 1), T i k := by
+        rw [← sum_range_diag_flip]
+        refine sum_congr rfl fun k _ => sum_congr rfl fun i hi => ?_
+        rw [Nat.add_sub_cancel' (Nat.lt_succ_iff.mp (mem_range.mp hi))]
+    _ = ∑ k : Fin (n + 1), ∑ i : Fin (k + 1), T i k := by
+        rw [← Fin.sum_univ_eq_sum_range (fun k => ∑ i ∈ range (k + 1), T i k)]
+        exact sum_congr rfl fun k _ => (Fin.sum_univ_eq_sum_range (fun i => T i k) _).symm
+    _ = _ := by
+        refine sum_congr rfl fun k _ => sum_congr rfl fun i _ => ?_
+        rw [hT]
+        dsimp only
+        congr! with l l l <;> rw [hb' _ (by omega)]
 
 /-! ### Twisting a family by an element of the algebra -/
 
 section Twist
-
-variable {M' M'' : Type*} [AddCommGroup M'] [Module R M'] [AddCommGroup M''] [Module R M'']
 
 /-- The **twist** `∑ₙ f_{n+1}(·, β, …, β)` of a family of operations `f_{n+1}` by an element `β` of
 the algebra. For the operations of a module this is its twisted differential
@@ -333,13 +331,6 @@ theorem ungradedFamilyId_apply {n : ℕ} (a : Fin n → A) :
     ungradedFamilyId (R := R) (M := M) n a = if n = 0 then LinearMap.id else 0 := by
   cases n <;> rfl
 
-/-- An operation of a family with `j = n` inputs, read off a tuple of length `n` entry by entry. -/
-private theorem apply_eq_apply_of_eq {N : Type*} [AddCommGroup N] [Module R N]
-    (g : (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) N) {n j : ℕ} (hj : j = n)
-    (a : Fin n → A) (b : Fin j → A) (hb : ∀ l, b l = a ⟨l, by omega⟩) : g j b = g n a := by
-  subst hj
-  exact congrArg (g j) (funext hb)
-
 /-- The identity family is a right unit for composition. -/
 @[simp]
 theorem ungradedFamilyComp_ungradedFamilyId
@@ -350,9 +341,7 @@ theorem ungradedFamilyComp_ungradedFamilyId
   rw [ungradedFamilyComp_apply, Fintype.sum_eq_single 0 fun k hk => by
     simp [ungradedFamilyId_apply, hk], ungradedFamilyId_apply, ite_eq_left (by simp),
     LinearMap.id_apply]
-  refine LinearMap.congr_fun (apply_eq_apply_of_eq g ?_ a _ fun l => ?_) m
-  · simp
-  · exact congrArg a (Fin.ext (by simp))
+  exact LinearMap.congr_fun (congrArg (g n) (funext fun l => congrArg a (Fin.ext (by simp)))) m
 
 /-- The identity family is a left unit for composition. -/
 @[simp]
@@ -362,10 +351,12 @@ theorem ungradedFamilyId_ungradedFamilyComp
   funext n
   refine MultilinearMap.ext fun a => LinearMap.ext fun m => ?_
   rw [ungradedFamilyComp_apply, Fintype.sum_eq_single (Fin.last n) fun k hk => by
-    have : (k : ℕ) < n := Fin.val_lt_last hk
-    simp [ungradedFamilyId_apply, show n - (k : ℕ) ≠ 0 by omega], ungradedFamilyId_apply,
-    ite_eq_left (by simp), LinearMap.id_apply]
-  exact LinearMap.congr_fun (apply_eq_apply_of_eq f rfl a _ fun _ => rfl) m
+    have hn : n - (k : ℕ) ≠ 0 := by
+      have : (k : ℕ) < n := Fin.val_lt_last hk
+      omega
+    simp [ungradedFamilyId_apply, hn], ungradedFamilyId_apply, ite_eq_left (by simp),
+    LinearMap.id_apply]
+  rfl
 
 /-- The twist of the identity family is the identity. -/
 @[simp]
@@ -382,8 +373,7 @@ end Twist
 
 section MatrixFamily
 
-variable {M' M'' : Type*} [AddCommGroup M'] [Module R M'] [AddCommGroup M''] [Module R M'']
-  (X : Type*) [Fintype X] [DecidableEq X]
+variable (X : Type*) [Fintype X] [DecidableEq X]
 
 /-- The **matrix family** of a family of operations `f_{n+1} : M ⊗ A^{⊗ n} → M'`: the operation
 `f_{n+1}(φ, F₁, …, Fₙ)` with matrices `Fᵢ` over `A` sends a row vector `φ : X → M` to the row
@@ -509,6 +499,76 @@ theorem ungradedMatrixFamily_ungradedFamilyComp
     rfl
   · simp
 
+/-- The matrix family of the identity family is the identity family of the row vectors. -/
+@[simp]
+theorem ungradedMatrixFamily_ungradedFamilyId :
+    ungradedMatrixFamily X (ungradedFamilyId (R := R) (A := A) (M := M)) = ungradedFamilyId := by
+  funext n
+  refine MultilinearMap.ext fun F => LinearMap.ext fun φ => funext fun z => ?_
+  cases n with
+  | zero =>
+    rw [ungradedMatrixFamily_apply, ← (Equiv.funUnique (Fin 1) X).symm.sum_comp]
+    simp
+  | succ n => simp [ungradedMatrixFamily_apply]
+
+end MatrixFamily
+
+end Family
+
+variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M]
+
+/-! ### The relations -/
+
+section Stasheff
+
+variable {M' : Type*} [AddCommGroup M'] [Module R M']
+
+variable (act : (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M →ₗ[R] M))
+
+/-- The **composite terms** of the `A∞` relation of length `n`:
+`∑_{i + j = n} m_{j+1}(m_{i+1}(m, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`, where `act i` is `m_{i+1}`. -/
+noncomputable def ungradedStasheffComp (n : ℕ) (a : Fin n → A) (m : M) : M :=
+  ungradedFamilyComp act act n a m
+
+theorem ungradedStasheffComp_def (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffComp act n a m =
+      ∑ k : Fin (n + 1), act (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
+        (act k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) :=
+  ungradedFamilyComp_apply act act n a m
+
+variable (f : (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M →ₗ[R] M'))
+
+/-- The **differential terms** of the `A∞` relation of length `n` for a family of operations
+`f_{n+1}`, such as the operations `m_{n+1}` of a module: `∑_l f_{n+1}(m, a₁, …, d aₗ, …, aₙ)`. -/
+noncomputable def ungradedStasheffDiff (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) : M' :=
+  ∑ l : Fin n, f n (Function.update a l (d (a l))) m
+
+theorem ungradedStasheffDiff_def (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffDiff f d n a m = ∑ l : Fin n, f n (Function.update a l (d (a l))) m :=
+  (rfl)
+
+/-- The **product terms** of the `A∞` relation of length `n` for a family of operations
+`f_{n+1}`, such as the operations `m_{n+1}` of a module: `∑_l f_n(m, a₁, …, aₗ aₗ₊₁, …, aₙ)`, over
+the `n - 1` adjacent pairs. -/
+noncomputable def ungradedStasheffMul : (n : ℕ) → (Fin n → A) → M → M'
+  | 0, _, _ => 0
+  | n + 1, a, m => ∑ l : Fin n, f n (Fin.contractNth l.castSucc (· * ·) a) m
+
+@[simp]
+theorem ungradedStasheffMul_zero (a : Fin 0 → A) (m : M) : ungradedStasheffMul f 0 a m = 0 :=
+  (rfl)
+
+theorem ungradedStasheffMul_succ (n : ℕ) (a : Fin (n + 1) → A) (m : M) :
+    ungradedStasheffMul f (n + 1) a m =
+      ∑ l : Fin n, f n (Fin.contractNth l.castSucc (· * ·) a) m :=
+  (rfl)
+
+end Stasheff
+
+section MatrixFamily
+
+variable {M' : Type*} [AddCommGroup M'] [Module R M'] {X : Type*} [Fintype X] [DecidableEq X]
+
 /-- The differential terms of a matrix family are sums over paths. -/
 private theorem stasheffDiff_ungradedMatrixFamily
     (f : (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M →ₗ[R] M')) (d : A →ₗ[R] A) (n : ℕ)
@@ -576,18 +636,6 @@ private theorem stasheffMul_ungradedMatrixFamily
       conv_lhs => rw [hx]
       rw [MultilinearMap.map_update_sum, LinearMap.sum_apply]
     · simp
-
-/-- The matrix family of the identity family is the identity family of the row vectors. -/
-@[simp]
-theorem ungradedMatrixFamily_ungradedFamilyId :
-    ungradedMatrixFamily X (ungradedFamilyId (R := R) (A := A) (M := M)) = ungradedFamilyId := by
-  funext n
-  refine MultilinearMap.ext fun F => LinearMap.ext fun φ => funext fun z => ?_
-  cases n with
-  | zero =>
-    rw [ungradedMatrixFamily_apply, ← (Equiv.funUnique (Fin 1) X).symm.sum_comp]
-    simp
-  | succ n => simp [ungradedMatrixFamily_apply]
 
 end MatrixFamily
 
