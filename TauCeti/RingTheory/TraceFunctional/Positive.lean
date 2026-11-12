@@ -35,7 +35,7 @@ variable {A : Type*} [Ring A] [Algebra ℂ A] [StarRing A] [StarModule ℂ A]
   (φ : StarPositiveFunctional A) (hφ : ∀ x y, φ (x * y) = φ (y * x))
 
 /-- For a positive trace, radical membership can be tested on a single square. -/
-theorem mem_traceRadical_iff (a : A) :
+theorem mem_traceRadical_iff_apply_star_mul_self_eq_zero (a : A) :
     a ∈ φ.toLinearMap.traceRadical hφ ↔ φ (star a * a) = 0 := by
   rw [φ.toLinearMap.mem_traceRadical_iff_left hφ,
     φ.apply_star_mul_self_eq_zero_iff]
@@ -46,7 +46,7 @@ theorem nullSubmodule_eq_traceRadical :
     φ.nullSubmodule = (φ.toLinearMap.traceRadical hφ).restrictScalars ℂ := by
   ext a
   simp only [φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero,
-    Submodule.restrictScalars_mem, φ.mem_traceRadical_iff hφ]
+    Submodule.restrictScalars_mem, φ.mem_traceRadical_iff_apply_star_mul_self_eq_zero hφ]
 
 /-- A positive trace has a star-stable radical. Install this instance explicitly when the
 underlying linear map does not determine the bundled positive functional during inference. -/
@@ -88,7 +88,7 @@ theorem quotientTrace_star_mul_self_eq_zero_iff (x : A ⧸ φ.toLinearMap.traceR
     φ.quotientTrace hφ (star x * x) = 0 ↔ x = 0 := by
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
   rw [Ideal.Quotient.star_mk, ← map_mul, φ.quotientTrace_mk,
-    Ideal.Quotient.eq_zero_iff_mem, φ.mem_traceRadical_iff]
+    Ideal.Quotient.eq_zero_iff_mem, φ.mem_traceRadical_iff_apply_star_mul_self_eq_zero]
 
 /-- The positive quotient trace has trivial GNS null space. -/
 theorem nullSubmodule_quotientTrace : (φ.quotientTrace hφ).nullSubmodule = ⊥ := by
@@ -103,16 +103,16 @@ namespace LinearMap
 variable {A B : Type*} [Ring A] [Algebra ℂ A] [StarRing A]
   [Ring B] [Algebra ℂ B] [StarRing B] [StarModule ℂ B]
 
-/-- A trace pulled back from a faithful positive functional has radical equal to the
-representation kernel. Neither surjectivity nor traciality on the target is required. -/
-theorem traceRadical_eq_ker_of_faithful (τ : A →ₗ[ℂ] ℂ)
+/-- A trace pulled back from a positive functional with trivial GNS null space has radical
+equal to the representation kernel. Neither surjectivity nor traciality on the target is
+required. -/
+theorem traceRadical_eq_ker_of_nullSubmodule_eq_bot (τ : A →ₗ[ℂ] ℂ)
     (hτ : ∀ x y, τ (x * y) = τ (y * x))
     (ψ : TauCeti.StarPositiveFunctional B) (hψ : ψ.nullSubmodule = ⊥)
     (f : A →⋆ₐ[ℂ] B) (hf : ∀ a, ψ (f a) = τ a) :
-    τ.traceRadical hτ = RingHom.ker f.toRingHom := by
+    τ.traceRadical hτ = RingHom.ker f := by
   ext a
-  simp only [mem_traceRadical, RingHom.mem_ker, AlgHom.toRingHom_eq_coe,
-    AlgHom.coe_toRingHom, StarAlgHom.coe_toAlgHom]
+  simp only [mem_traceRadical, RingHom.mem_ker]
   constructor
   · intro ha
     apply (ψ.apply_star_mul_self_eq_zero_iff_of_nullSubmodule_eq_bot hψ (f a)).mp

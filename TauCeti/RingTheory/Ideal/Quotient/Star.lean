@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Module
-public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
@@ -70,27 +69,11 @@ instance {R : Type*} [CommSemiring R] [StarRing R] [Algebra R A] [StarModule R A
   star_smul r x := by
     obtain ⟨a, rfl⟩ := mk_surjective x
     calc
-      star (r • mk I a) = star (mk I (r • a)) :=
-        congrArg star (map_smul (mkₐ R I) r a).symm
+      star (r • mk I a) = star (mk I (r • a)) := by
+        rw [← mkₐ_eq_mk R, map_smul]
       _ = mk I (star r • star a) := by rw [star_mk, star_smul]
       _ = star r • star (mk I a) := by
-        rw [star_mk]
-        exact map_smul (mkₐ R I) _ _
-
-/-- The canonical quotient map as a star algebra homomorphism. -/
-def mkStarAlgHom (R : Type*) [CommSemiring R] [Algebra R A] :
-    A →⋆ₐ[R] A ⧸ I :=
-  { mkₐ R I with map_star' := fun a ↦ (star_mk I a).symm }
-
-/-- The star quotient map agrees with the usual quotient map. -/
-@[simp]
-theorem mkStarAlgHom_apply (R : Type*) [CommSemiring R] [Algebra R A] (a : A) :
-    mkStarAlgHom I R a = mk I a := (rfl)
-
-/-- Forgetting star gives the usual algebra quotient map. -/
-@[simp]
-theorem toAlgHom_mkStarAlgHom (R : Type*) [CommSemiring R] [Algebra R A] :
-    (mkStarAlgHom I R).toAlgHom = mkₐ R I := (rfl)
+        rw [star_mk, ← mkₐ_eq_mk R, map_smul]
 
 end Quotient
 end Ideal
