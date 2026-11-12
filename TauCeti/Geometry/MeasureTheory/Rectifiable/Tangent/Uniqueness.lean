@@ -279,7 +279,7 @@ theorem CountablyRectifiable.ae_eq_of_tendsto_measure_outside_cone_div {E : Set 
       infer_instance
     exact ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_isLocallyFiniteMeasure k
       (hEm.diff (himm n).nullMeasurableSet)
-  filter_upwards [ae_le_set.mpr hcover, ae_all_iff.mpr hgood, ae_all_iff.mpr hzero,
+  filter_upwards [ae_subset.mpr hcover, ae_all_iff.mpr hgood, ae_all_iff.mpr hzero,
     hE.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div hEm]
     with x hcov hgood hzero hone hxE P Q hP hQ hPc hQc
   obtain ⟨n, hxn⟩ := mem_iUnion.mp (hcov hxE)
