@@ -5,57 +5,71 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.ModuleTopology
-public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Chart
+public import Mathlib.Topology.VectorBundle.Basic
+public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
 import TauCeti.Analysis.Fredholm.Stabilization
 
 /-!
 # The determinant line bundle of Fredholm operators
 
-Let `E` and `F` be Banach spaces over a complete nontrivially normed field `𝕜`. The determinant
-lines `det (ker T) ⊗ (det (F ⧸ range T))^*` of the Fredholm operators `T : E →L[𝕜] F`
-(`TauCeti.FredholmDetLine`) form a line bundle over the space of Fredholm operators, with the
-topology of the operator norm. This file constructs it as a vector bundle with model fibre `𝕜`,
-although kernels and cokernels jump.
+The determinant lines `det (ker T) ⊗ (det (F ⧸ range T))^*` of the Fredholm operators
+`T : E →L[𝕜] F` between Banach spaces form a line bundle over the space of Fredholm operators,
+although kernel and cokernel jump. This file constructs it as a Mathlib vector bundle
+(`VectorBundle 𝕜 𝕜 (TauCeti.FredholmDetLine 𝕜 E F)`), with the kernel charts of
+`TauCeti.Analysis.Fredholm.DeterminantLine.Chart` as its local trivializations.
 
-The trivializations are the kernel charts of `TauCeti.Analysis.Fredholm.DeterminantLine.Chart`.
-Near a Fredholm operator `T₀` there are a finite-dimensional stabilizer `S ≤ F` and a kernel
-coordinate `q` such that `(T.coprod S.subtypeL).prod q` is invertible for all `T` in a
-neighbourhood `U` of `T₀`
-(`ContinuousLinearMap.IsFredholm.exists_stabilization_kernel_coordinates`), and then
-`ContinuousLinearMap.detLineChartEquiv` identifies the determinant line of every `T ∈ U` with one
-fixed line, hence with `𝕜`. Two such charts differ over the intersection of their
-domains by multiplication by a continuous nowhere-vanishing function
-(`ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul`), so Mathlib's
-`VectorPrebundle` gives the total space a topology for which these charts are trivializations.
-Each fibre carries its module topology, for which every linear isomorphism with `𝕜` is a
-homeomorphism.
+The base is the subtype `{T : E →L[𝕜] F // T.IsFredholm}` of Fredholm operators with the
+operator-norm topology, and the fibre `TauCeti.FredholmDetLine 𝕜 E F T` over `T` is a copy of the
+determinant line of `T`, carrying the topology of a finite-dimensional vector space
+(`moduleTopology`). For a continuous family of Fredholm operators `f : C(X, {T // T.IsFredholm})`,
+the determinant line bundle of the family is the pullback `f *ᵖ FredholmDetLine 𝕜 E F`, a vector
+bundle by Mathlib's `VectorBundle.pullback`.
 
-Over `ℝ` the bundle has an orientation double cover, and its projection is a covering map
+A kernel chart is a finite stabilization `D₂ : Λ →L[𝕜] F` together with a kernel coordinate
+`q : E × Λ →L[𝕜] G`, with `Λ` and `G` finite-dimensional. Its base set is the open set of the
+Fredholm operators `T` for which the pair `(T.coprod D₂).prod q` is invertible
+(`TauCeti.FredholmDetLine.pretrivialization`), and over it the chart is the isomorphism
+`ContinuousLinearMap.detLineChartEquiv` with the fixed line `det G ⊗ (det Λ)^*`, read in a fixed
+coordinate of that line (`TauCeti.FredholmDetLine.chartCoord`). The transition between two charts
+is multiplication by a continuous nowhere-vanishing scalar
+(`ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul`), so the charts with
+standard models `Λ = 𝕜ⁿ` and `G = 𝕜ᵐ` form a vector prebundle
+(`TauCeti.FredholmDetLine.vectorPrebundle`). Every Fredholm operator lies in the base set of such a
+chart (`ContinuousLinearMap.IsFredholm.exists_isInvertible_prod_coprod`), by the stabilization
+theorem `ContinuousLinearMap.IsFredholm.exists_stabilization_kernel_coordinates`.
+
+A family of vectors is continuous in the total space exactly when it is continuous when read in a
+kernel chart, for every kernel chart and not only those with standard models
+(`TauCeti.FredholmDetLine.continuous_chartCoord`,
+`TauCeti.FredholmDetLine.continuous_of_continuous_chartCoord`). Over `ℝ` the bundle has an
+orientation double cover, and its projection is a covering map
 (`TauCeti.FredholmDetLine.isCoveringMap_proj`). Orientations of determinant lines are therefore
 transported along continuous paths of Fredholm operators by lifting to this cover
 (`TauCeti.VectorBundleOrientationCover.orientationTransport`), canonically and without any choice
 of connection. This transport is how orientations of moduli spaces in Morse and Floer theory,
 which are orientations of the determinant lines of their linearized operators, are compared along
-paths of operators. A family of vectors is continuous in the total space exactly when it is
-continuous when read in kernel charts, for every kernel chart and not only those chosen to build
-the bundle (`TauCeti.FredholmDetLine.continuous_detLineChartEquiv`,
-`TauCeti.FredholmDetLine.continuous_of_continuous_detLineChartEquiv`).
+paths of operators.
 
 ## Main definitions
 
-* `TauCeti.FredholmDetLine`: the determinant line of a Fredholm operator, the fibre of the bundle.
-* `TauCeti.FredholmDetLine.vectorPrebundle`: the kernel-chart pretrivializations.
-* The instances `TopologicalSpace (TotalSpace 𝕜 (FredholmDetLine 𝕜 E F))`,
-  `FiberBundle 𝕜 (FredholmDetLine 𝕜 E F)` and `VectorBundle 𝕜 𝕜 (FredholmDetLine 𝕜 E F)`.
+* `TauCeti.FredholmDetLine 𝕜 E F`: the determinant lines of the Fredholm operators from `E` to `F`,
+  as a family of topological vector spaces over the space of Fredholm operators.
+* `TauCeti.FredholmDetLine.pretrivialization`: the kernel chart of a stabilization and a kernel
+  coordinate, as a pretrivialization.
+* `TauCeti.FredholmDetLine.trivialization`: a kernel chart with standard models, as a
+  trivialization of the determinant line bundle.
 
 ## Main results
 
-* `TauCeti.FredholmDetLine.continuous_detLineChartEquiv`: every kernel chart is continuous on
-  continuous families in the total space.
-* `TauCeti.FredholmDetLine.continuous_of_continuous_detLineChartEquiv`: conversely, a family is
+* `TauCeti.FredholmDetLine.continuousOn_pretrivialization_coordChange`: the transition between two
+  kernel charts is continuous on the overlap of their base sets.
+* `TauCeti.FredholmDetLine.fiberBundle`, `TauCeti.FredholmDetLine.vectorBundle`: the determinant
+  lines form a vector bundle of rank one (`TauCeti.FredholmDetLine.finrank_eq_one`).
+* `TauCeti.FredholmDetLine.continuous_chartCoord`: every kernel chart is continuous on continuous
+  families in the total space.
+* `TauCeti.FredholmDetLine.continuous_of_continuous_chartCoord`: conversely, a family is
   continuous in the total space if it is continuous when read in a kernel chart.
 * `TauCeti.FredholmDetLine.isCoveringMap_proj`: over `ℝ`, the orientation double cover of the
   determinant line bundle is a covering map.
@@ -72,395 +86,382 @@ public section
 
 noncomputable section
 
-open Bundle Module Set TensorProduct Topology
+open Bundle Set Topology Module TensorProduct ContinuousLinearMap
 
 namespace TauCeti
 
-variable (𝕜 E F : Type*) [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- The determinant line `det (ker T) ⊗ (det (F ⧸ range T))^*` of a Fredholm operator `T`
-(`LinearMap.detLine`), the fibre over `T` of the determinant line bundle on the space of Fredholm
-operators. It is a line (`ContinuousLinearMap.IsFredholm.finrank_detLine`) and carries its module
-topology. The body is exposed so that elements of `LinearMap.detLine` can be used as elements of
-the fibre. -/
-@[expose] def FredholmDetLine (T : {T : E →L[𝕜] F // T.IsFredholm}) : Type _ :=
-  ((T : E →L[𝕜] F) : E →ₗ[𝕜] F).detLine
+variable (𝕜 E F) in
+/-- The **determinant lines of Fredholm operators**: over a Fredholm operator `T : E →L[𝕜] F`, a
+copy of its determinant line `det (ker T) ⊗ (det (F ⧸ range T))^*`. It carries the topology of a
+finite-dimensional vector space, and these lines form a vector bundle over the space of Fredholm
+operators (`TauCeti.FredholmDetLine.vectorBundle`). Use `TauCeti.FredholmDetLine.linearEquiv` to
+pass to the determinant line itself. -/
+def FredholmDetLine (T : {T : E →L[𝕜] F // T.IsFredholm}) : Type _ :=
+  (T.1 : E →ₗ[𝕜] F).detLine
 
 namespace FredholmDetLine
 
-variable {𝕜 E F}
+variable {T : {T : E →L[𝕜] F // T.IsFredholm}}
 
-instance (T : {T : E →L[𝕜] F // T.IsFredholm}) : AddCommGroup (FredholmDetLine 𝕜 E F T) :=
-  inferInstanceAs (AddCommGroup (LinearMap.detLine _))
+instance : AddCommGroup (FredholmDetLine 𝕜 E F T) :=
+  inferInstanceAs (AddCommGroup (T.1 : E →ₗ[𝕜] F).detLine)
 
-instance (T : {T : E →L[𝕜] F // T.IsFredholm}) : Module 𝕜 (FredholmDetLine 𝕜 E F T) :=
-  inferInstanceAs (Module 𝕜 (LinearMap.detLine _))
+instance : Module 𝕜 (FredholmDetLine 𝕜 E F T) :=
+  inferInstanceAs (Module 𝕜 (T.1 : E →ₗ[𝕜] F).detLine)
 
-/-- The fibres of the determinant line bundle carry their module topology. -/
-instance (T : {T : E →L[𝕜] F // T.IsFredholm}) : TopologicalSpace (FredholmDetLine 𝕜 E F T) :=
-  moduleTopology 𝕜 _
+/-- The determinant line of a Fredholm operator carries its topology as a finite-dimensional
+vector space, the finest topology making addition and scalar multiplication continuous. -/
+instance : TopologicalSpace (FredholmDetLine 𝕜 E F T) := moduleTopology 𝕜 _
 
-instance (T : {T : E →L[𝕜] F // T.IsFredholm}) : IsModuleTopology 𝕜 (FredholmDetLine 𝕜 E F T) :=
-  ⟨rfl⟩
+instance : IsModuleTopology 𝕜 (FredholmDetLine 𝕜 E F T) := ⟨rfl⟩
 
-end FredholmDetLine
+instance : ContinuousAdd (FredholmDetLine 𝕜 E F T) := IsModuleTopology.toContinuousAdd 𝕜 _
 
-end TauCeti
+variable (T) in
+/-- The fibre of `TauCeti.FredholmDetLine` over `T` is the determinant line of `T`. -/
+def linearEquiv : FredholmDetLine 𝕜 E F T ≃ₗ[𝕜] (T.1 : E →ₗ[𝕜] F).detLine :=
+  LinearEquiv.refl 𝕜 _
 
-end
+omit [CompleteSpace 𝕜] [CompleteSpace E] in
+/-- The determinant line of a Fredholm operator is a line. -/
+@[simp]
+theorem finrank_eq_one : finrank 𝕜 (FredholmDetLine 𝕜 E F T) = 1 :=
+  (linearEquiv T).finrank_eq.trans T.2.finrank_detLine
 
-end
+variable {Λ G : Type*} [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ] [FiniteDimensional 𝕜 Λ]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
 
-/-! ### Kernel charts over open sets of Fredholm operators
+/-- The coordinate of a kernel chart: the kernel chart `ContinuousLinearMap.detLineChartEquiv`
+identifies the determinant line of `T` with the fixed line `det G ⊗ (det Λ)^*`, which is then
+identified with `𝕜` by a fixed isomorphism depending only on `Λ` and `G`. -/
+def chartCoord (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
+    (h : ((T.1.coprod D₂).prod q).IsInvertible) : FredholmDetLine 𝕜 E F T ≃ₗ[𝕜] 𝕜 :=
+  linearEquiv T ≪≫ₗ detLineChartEquiv T.1 D₂ q h ≪≫ₗ LinearEquiv.ofFinrankEq _ _ (by
+    rw [finrank_tensorProduct, Subspace.dual_finrank_eq, TauCeti.finrank_detLine,
+      TauCeti.finrank_detLine, finrank_self])
 
-The charts below are internal to this file: they are declared outside the public section, so
-they are private to the module.
--/
+omit [CompleteSpace 𝕜] [CompleteSpace E] in
+/-- A chart coordinate is the kernel chart `ContinuousLinearMap.detLineChartEquiv`, followed by an
+identification of the fixed line `det G ⊗ (det Λ)^*` with `𝕜` that does not depend on `T`. -/
+theorem chartCoord_def (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
+    (h : ((T.1.coprod D₂).prod q).IsInvertible) :
+    chartCoord D₂ q h = linearEquiv T ≪≫ₗ detLineChartEquiv T.1 D₂ q h ≪≫ₗ
+      LinearEquiv.ofFinrankEq _ _ (by
+        rw [finrank_tensorProduct, Subspace.dual_finrank_eq, TauCeti.finrank_detLine,
+          TauCeti.finrank_detLine, finrank_self]) :=
+  (rfl)
 
-noncomputable section
+omit [CompleteSpace 𝕜] [CompleteSpace E] in
+/-- A chart coordinate is a homeomorphism onto `𝕜`. -/
+theorem isInducing_chartCoord (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
+    (h : ((T.1.coprod D₂).prod q).IsInvertible) : IsInducing (chartCoord D₂ q h) :=
+  (Homeomorph.mk (chartCoord D₂ q h).toEquiv
+    (IsModuleTopology.continuous_of_linearMap (chartCoord D₂ q h).toLinearMap)
+    (IsModuleTopology.continuous_of_linearMap
+      (chartCoord D₂ q h).symm.toLinearMap)).isInducing
 
-open Bundle Module Set TensorProduct Topology
+/-- The transition between the coordinates of two kernel charts, relative to its value at a base
+point, is multiplication by a continuous nowhere-vanishing scalar along a continuous family of
+Fredholm operators. -/
+private theorem exists_continuous_chartCoord_symm_eq_smul {X : Type*} [TopologicalSpace X]
+    {S : X → {T : E →L[𝕜] F // T.IsFredholm}} (hS : Continuous S)
+    {Λ₃ G₃ : Type*} [NormedAddCommGroup Λ₃] [NormedSpace 𝕜 Λ₃] [FiniteDimensional 𝕜 Λ₃]
+    [NormedAddCommGroup G₃] [NormedSpace 𝕜 G₃] [FiniteDimensional 𝕜 G₃]
+    {D₂ : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G} {D₃ : Λ₃ →L[𝕜] F} {q₃ : E × Λ₃ →L[𝕜] G₃}
+    (h : ∀ x, (((S x).1.coprod D₂).prod q).IsInvertible)
+    (h₃ : ∀ x, (((S x).1.coprod D₃).prod q₃).IsInvertible) (x₀ : X) :
+    ∃ c : X → 𝕜, Continuous c ∧ (∀ x, c x ≠ 0) ∧ ∀ x v,
+      chartCoord D₃ q₃ (h₃ x) ((chartCoord D₂ q (h x)).symm v) =
+        c x • chartCoord D₃ q₃ (h₃ x₀) ((chartCoord D₂ q (h x₀)).symm v) := by
+  obtain ⟨c, hc, hc0, hcv⟩ := exists_continuous_detLineChartEquiv_symm_eq_smul
+    (continuous_subtype_val.comp hS) h₃ h x₀
+  refine ⟨c, hc, hc0, fun x v ↦ ?_⟩
+  simp only [chartCoord, linearEquiv, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply]
+  rw [← map_smul]
+  exact congrArg _ (hcv x _)
 
-namespace TauCeti.FredholmDetLine
+variable (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
 
-universe u𝕜 uE uF
+omit [FiniteDimensional 𝕜 G] in
+/-- The Fredholm operators `T` for which the stabilized pair `(T.coprod D₂).prod q` is invertible
+form an open set. -/
+theorem isOpen_setOf_isInvertible_prod_coprod :
+    IsOpen {T : {T : E →L[𝕜] F // T.IsFredholm} | ((T.1.coprod D₂).prod q).IsInvertible} := by
+  have : CompleteSpace Λ := FiniteDimensional.complete 𝕜 Λ
+  have hc : Continuous fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ (T.1.coprod D₂).prod q :=
+    (prodL (E := E × Λ) (F := F) (G := G) 𝕜).continuous.comp
+      ((continuous_subtype_val.continuousLinearMapCoprod continuous_const).prodMk
+        continuous_const)
+  exact isOpen_setOfPred_isInvertible.preimage hc
 
-variable {𝕜 : Type u𝕜} {E : Type uE} {F : Type uF} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-variable (𝕜 E F) in
-/-- A kernel chart of the determinant lines over an open set `U` of Fredholm operators: a
-finite-dimensional stabilizer `D : Λ →L[𝕜] F` and a coordinate `q` on `E × Λ` with values in a
-finite-dimensional space `G`, such that `(T.coprod D).prod q` is invertible for every `T ∈ U`,
-together with an identification of the model line `det G ⊗ (det Λ)^*` with `𝕜`. The spaces `Λ`
-and `G` are carried with their norms, so that the module structures on them are the ones of the
-transition theorem `ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul`. -/
-structure Chart where
-  /-- The space of stabilizing directions. -/
-  Λ : Type uF
-  [normedAddCommGroup_Λ : NormedAddCommGroup Λ]
-  [normedSpace_Λ : NormedSpace 𝕜 Λ]
-  [finiteDimensional_Λ : FiniteDimensional 𝕜 Λ]
-  /-- The model of the stabilized kernels. -/
-  G : Type (max uE uF)
-  [normedAddCommGroup_G : NormedAddCommGroup G]
-  [normedSpace_G : NormedSpace 𝕜 G]
-  [finiteDimensional_G : FiniteDimensional 𝕜 G]
-  /-- The stabilizer. -/
-  D : Λ →L[𝕜] F
-  /-- The kernel coordinate. -/
-  q : E × Λ →L[𝕜] G
-  /-- The domain of the chart. -/
-  U : Set {T : E →L[𝕜] F // T.IsFredholm}
-  isOpen_U : IsOpen U
-  isInvertible : ∀ T ∈ U, (((T : E →L[𝕜] F).coprod D).prod q).IsInvertible
-  /-- The identification of the model line with `𝕜`. -/
-  line : TauCeti.detLine 𝕜 G ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ) ≃ₗ[𝕜] 𝕜
-
-attribute [instance] Chart.normedAddCommGroup_Λ Chart.normedSpace_Λ Chart.finiteDimensional_Λ
-  Chart.normedAddCommGroup_G Chart.normedSpace_G Chart.finiteDimensional_G
-
-namespace Chart
-
-variable (c : Chart 𝕜 E F)
-
-/-- The chart identification of the determinant line of an operator of `c.U` with `𝕜`. -/
-def equiv {T : {T : E →L[𝕜] F // T.IsFredholm}} (hT : T ∈ c.U) :
-    FredholmDetLine 𝕜 E F T ≃ₗ[𝕜] 𝕜 :=
-  (ContinuousLinearMap.detLineChartEquiv (T : E →L[𝕜] F) c.D c.q (c.isInvertible T hT)).trans
-    c.line
-
-open Classical in
-/-- The chart read on all fibres, zero outside `c.U`. -/
-def coord (T : {T : E →L[𝕜] F // T.IsFredholm}) : FredholmDetLine 𝕜 E F T →ₗ[𝕜] 𝕜 :=
-  if hT : T ∈ c.U then (c.equiv hT).toLinearMap else 0
-
-open Classical in
-/-- The inverse of the chart on all fibres, zero outside `c.U`. -/
-def coordSymm (T : {T : E →L[𝕜] F // T.IsFredholm}) : 𝕜 →ₗ[𝕜] FredholmDetLine 𝕜 E F T :=
-  if hT : T ∈ c.U then (c.equiv hT).symm.toLinearMap else 0
-
-theorem coord_of_mem {T : {T : E →L[𝕜] F // T.IsFredholm}} (hT : T ∈ c.U) :
-    c.coord T = (c.equiv hT).toLinearMap :=
-  dite_eq_left hT
-
-theorem coordSymm_of_mem {T : {T : E →L[𝕜] F // T.IsFredholm}} (hT : T ∈ c.U) :
-    c.coordSymm T = (c.equiv hT).symm.toLinearMap :=
-  dite_eq_left hT
-
-/-- The transition from the chart `c` to the chart `c'` at an operator in both domains. -/
-theorem coord_apply_of_mem {T : {T : E →L[𝕜] F // T.IsFredholm}} (hT : T ∈ c.U)
-    (y : FredholmDetLine 𝕜 E F T) :
-    c.coord T y = c.line (ContinuousLinearMap.detLineChartEquiv (T : E →L[𝕜] F) c.D c.q
-      (c.isInvertible T hT) y) := by
-  rw [c.coord_of_mem hT]
-  rfl
-
-theorem coord_coordSymm_of_mem {c c' : Chart 𝕜 E F} {T : {T : E →L[𝕜] F // T.IsFredholm}}
-    (hT : T ∈ c.U) (hT' : T ∈ c'.U) (v : 𝕜) :
-    c'.coord T (c.coordSymm T v) = c'.line (ContinuousLinearMap.detLineChartEquiv
-      (T : E →L[𝕜] F) c'.D c'.q (c'.isInvertible T hT')
-        ((ContinuousLinearMap.detLineChartEquiv (T : E →L[𝕜] F) c.D c.q
-          (c.isInvertible T hT)).symm (c.line.symm v))) := by
-  rw [c.coordSymm_of_mem hT, c'.coord_of_mem hT']
-  rfl
-
-/-- The pretrivialization of the determinant lines over the domain of a kernel chart. -/
+open scoped Classical in
+/-- **The kernel chart as a pretrivialization.** Over the Fredholm operators `T` for which the pair
+`(T.coprod D₂).prod q` is invertible, the determinant line of `T` is identified with `𝕜` by the
+kernel chart coordinate `TauCeti.FredholmDetLine.chartCoord`. -/
 def pretrivialization : Pretrivialization 𝕜 (π 𝕜 (FredholmDetLine 𝕜 E F)) where
-  toFun p := (p.1, c.coord p.1 p.2)
-  invFun p := ⟨p.1, c.coordSymm p.1 p.2⟩
-  source := π 𝕜 (FredholmDetLine 𝕜 E F) ⁻¹' c.U
-  target := c.U ×ˢ univ
+  toFun p := ⟨p.proj, if h : ((p.proj.1.coprod D₂).prod q).IsInvertible then
+    chartCoord D₂ q h p.2 else 0⟩
+  invFun p := ⟨p.1, if h : ((p.1.1.coprod D₂).prod q).IsInvertible then
+    (chartCoord D₂ q h).symm p.2 else 0⟩
+  source := TotalSpace.proj ⁻¹' {T | ((T.1.coprod D₂).prod q).IsInvertible}
+  target := {T | ((T.1.coprod D₂).prod q).IsInvertible} ×ˢ univ
   map_source' _ h := ⟨h, mem_univ _⟩
   map_target' _ h := h.1
   left_inv' := by
-    rintro ⟨T, y⟩ (hT : T ∈ c.U)
-    simp [c.coord_of_mem hT, c.coordSymm_of_mem hT]
+    rintro ⟨T, v⟩ (h : ((T.1.coprod D₂).prod q).IsInvertible)
+    simp only [dite_eq_left h, LinearEquiv.symm_apply_apply]
   right_inv' := by
-    rintro ⟨T, v⟩ ⟨hT, -⟩
-    simp [c.coord_of_mem hT, c.coordSymm_of_mem hT]
-  open_target := c.isOpen_U.prod isOpen_univ
-  baseSet := c.U
-  open_baseSet := c.isOpen_U
-  source_eq := rfl
-  target_eq := rfl
-  proj_toFun _ _ := rfl
+    rintro ⟨T, c⟩ ⟨h : ((T.1.coprod D₂).prod q).IsInvertible, -⟩
+    simp only [dite_eq_left h, LinearEquiv.apply_symm_apply]
+  open_target := (isOpen_setOf_isInvertible_prod_coprod D₂ q).prod isOpen_univ
+  baseSet := {T | ((T.1.coprod D₂).prod q).IsInvertible}
+  open_baseSet := isOpen_setOf_isInvertible_prod_coprod D₂ q
+  source_eq := (rfl)
+  target_eq := (rfl)
+  proj_toFun _ _ := (rfl)
 
-theorem pretrivialization_apply (p : TotalSpace 𝕜 (FredholmDetLine 𝕜 E F)) :
-    c.pretrivialization p = (p.1, c.coord p.1 p.2) :=
-  (rfl)
+/-- The base set of a kernel chart consists of the Fredholm operators whose stabilized pair is
+invertible. -/
+@[simp]
+theorem mem_pretrivialization_baseSet_iff :
+    T ∈ (pretrivialization D₂ q).baseSet ↔ ((T.1.coprod D₂).prod q).IsInvertible := (Iff.rfl)
 
-theorem baseSet_pretrivialization : c.pretrivialization.baseSet = c.U :=
-  (rfl)
+open scoped Classical in
+private theorem pretrivialization_apply (p : TotalSpace 𝕜 (FredholmDetLine 𝕜 E F)) :
+    pretrivialization D₂ q p = (p.proj, if h : ((p.proj.1.coprod D₂).prod q).IsInvertible then
+      chartCoord D₂ q h p.2 else 0) := (rfl)
 
-instance isLinear_pretrivialization : c.pretrivialization.IsLinear 𝕜 where
-  linear _ _ := (c.coord _).isLinear
+variable {D₂ q}
 
-theorem pretrivialization_symm {T : {T : E →L[𝕜] F // T.IsFredholm}} (hT : T ∈ c.U) (v : 𝕜) :
-    c.pretrivialization.symm T v = c.coordSymm T v := by
-  apply (c.equiv hT).injective
-  have := congrArg Prod.snd (c.pretrivialization.apply_mk_symm hT v)
-  simp only [pretrivialization_apply, c.coord_of_mem hT, LinearEquiv.coe_coe] at this
-  rw [this, c.coordSymm_of_mem hT, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+/-- Over its base set, a kernel chart reads the determinant line in the chart coordinate. -/
+theorem pretrivialization_apply_mk (h : ((T.1.coprod D₂).prod q).IsInvertible)
+    (v : FredholmDetLine 𝕜 E F T) :
+    pretrivialization D₂ q ⟨T, v⟩ = (T, chartCoord D₂ q h v) := by
+  rw [pretrivialization_apply, dite_eq_left h]
 
-/-- The coordinate changes between two kernel charts are continuous. -/
-theorem exists_coordChange [CompleteSpace 𝕜] [CompleteSpace E] (c c' : Chart 𝕜 E F) :
+/-- Over its base set, the inverse of a kernel chart is the inverse chart coordinate. -/
+theorem pretrivialization_symm_apply (h : ((T.1.coprod D₂).prod q).IsInvertible) (c : 𝕜) :
+    (pretrivialization D₂ q).symm T c = (chartCoord D₂ q h).symm c := by
+  have key := (pretrivialization D₂ q).apply_mk_symm h c
+  rw [pretrivialization_apply_mk h, Prod.mk.injEq] at key
+  exact (chartCoord D₂ q h).injective (by simpa using key.2)
+
+instance : (pretrivialization D₂ q).IsLinear 𝕜 where
+  linear T h := by
+    simp only [pretrivialization_apply_mk h]
+    exact (chartCoord D₂ q h).toLinearMap.isLinear
+
+variable {Λ₃ G₃ : Type*} [NormedAddCommGroup Λ₃] [NormedSpace 𝕜 Λ₃] [FiniteDimensional 𝕜 Λ₃]
+  [NormedAddCommGroup G₃] [NormedSpace 𝕜 G₃] [FiniteDimensional 𝕜 G₃]
+  {D₃ : Λ₃ →L[𝕜] F} {q₃ : E × Λ₃ →L[𝕜] G₃}
+
+/-- **Transitions between kernel charts are continuous.** The coordinate in the chart of
+`(D₃, q₃)` of the point with coordinate `1` in the chart of `(D₂, q)` depends continuously on the
+Fredholm operator over the overlap of the two base sets. By linearity it determines the whole
+transition. -/
+theorem continuousOn_pretrivialization_coordChange :
+    ContinuousOn (fun T ↦ (pretrivialization D₃ q₃ ⟨T, (pretrivialization D₂ q).symm T 1⟩).2)
+      ((pretrivialization D₂ q).baseSet ∩ (pretrivialization D₃ q₃).baseSet) := by
+  set U := (pretrivialization D₂ q).baseSet ∩ (pretrivialization D₃ q₃).baseSet
+  rcases U.eq_empty_or_nonempty with hU | ⟨T₀, hT₀⟩
+  · rw [hU]
+    exact continuousOn_empty _
+  rw [continuousOn_iff_continuous_domRestrict]
+  obtain ⟨c, hc, -, hcv⟩ := exists_continuous_chartCoord_symm_eq_smul continuous_subtype_val
+    (fun T : U ↦ T.2.1) (fun T : U ↦ T.2.2) ⟨T₀, hT₀⟩
+  refine (hc.smul (continuous_const (y := chartCoord D₃ q₃ hT₀.2
+    ((chartCoord D₂ q hT₀.1).symm 1)))).congr fun T ↦ ?_
+  rw [domRestrict_apply, pretrivialization_symm_apply T.2.1, pretrivialization_apply_mk T.2.2,
+    hcv, Pi.smul_apply']
+
+/-- The transition between two kernel charts is multiplication by a continuous scalar on the
+overlap of their base sets. -/
+private theorem exists_continuousOn_coordChange :
     ∃ f : {T : E →L[𝕜] F // T.IsFredholm} → 𝕜 →L[𝕜] 𝕜,
-      ContinuousOn f (c.pretrivialization.baseSet ∩ c'.pretrivialization.baseSet) ∧
-        ∀ b ∈ c.pretrivialization.baseSet ∩ c'.pretrivialization.baseSet, ∀ v : 𝕜,
-          f b v = (c'.pretrivialization ⟨b, c.pretrivialization.symm b v⟩).2 := by
-  let g (b : {T : E →L[𝕜] F // T.IsFredholm}) : 𝕜 := c'.coord b (c.coordSymm b 1)
-  refine ⟨fun b ↦ g b • ContinuousLinearMap.id 𝕜 𝕜, ?_, fun b hb v ↦ ?_⟩
-  · refine (show ContinuousOn g _ from ?_).smul continuousOn_const
-    rw [baseSet_pretrivialization, baseSet_pretrivialization,
-      continuousOn_iff_continuous_domRestrict]
-    rcases isEmpty_or_nonempty ↥(c.U ∩ c'.U) with hW | hW
-    · exact continuous_iff_continuousAt.2 fun w ↦ isEmptyElim w
-    obtain ⟨w₀⟩ := hW
-    -- Over the overlap the transition is a continuous multiple of its value at `w₀`.
-    obtain ⟨k, hk, -, hkv⟩ := ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul
-      (T := fun w : ↥(c.U ∩ c'.U) ↦ ((w : {T : E →L[𝕜] F // T.IsFredholm}) : E →L[𝕜] F))
-      (continuous_subtype_val.comp continuous_subtype_val)
-      (fun w ↦ c'.isInvertible w w.2.2) (fun w ↦ c.isInvertible w w.2.1) w₀
-    have hg (w : ↥(c.U ∩ c'.U)) : g w = k w * g w₀ := by
-      simp only [g]
-      rw [coord_coordSymm_of_mem w.2.1 w.2.2, coord_coordSymm_of_mem w₀.2.1 w₀.2.2,
-        hkv w (c.line.symm 1)]
-      exact c'.line.map_smul (k w) _
-    exact (hk.mul continuous_const).congr fun w ↦ (hg w).symm
-  · rw [pretrivialization_apply, c.pretrivialization_symm hb.1]
-    have hv : v = v • (1 : 𝕜) := (mul_one v).symm
-    conv_rhs => rw [hv, map_smul, map_smul]
-    simp [g, mul_comm]
+      ContinuousOn f ((pretrivialization D₂ q).baseSet ∩ (pretrivialization D₃ q₃).baseSet) ∧
+      ∀ T ∈ (pretrivialization D₂ q).baseSet ∩ (pretrivialization D₃ q₃).baseSet, ∀ v : 𝕜,
+        f T v = (pretrivialization D₃ q₃ ⟨T, (pretrivialization D₂ q).symm T v⟩).2 := by
+  refine ⟨fun T ↦ (pretrivialization D₃ q₃ ⟨T, (pretrivialization D₂ q).symm T 1⟩).2 •
+    ContinuousLinearMap.id 𝕜 𝕜, continuousOn_pretrivialization_coordChange.smul continuousOn_const,
+    fun T hT v ↦ ?_⟩
+  simp only [smul_apply, ContinuousLinearMap.id_apply,
+    pretrivialization_symm_apply hT.1, pretrivialization_apply_mk hT.2]
+  conv_rhs => rw [← mul_one v, ← smul_eq_mul, map_smul, map_smul]
+  rw [smul_eq_mul, smul_eq_mul, mul_comm]
 
-/-- A kernel chart is a homeomorphism on each fibre over its domain, the fibre carrying its
-module topology. -/
-theorem isInducing_coord {T : {T : E →L[𝕜] F // T.IsFredholm}} (hT : T ∈ c.U) :
-    IsInducing (c.coord T) := by
-  have := IsModuleTopology.toContinuousAdd 𝕜 (FredholmDetLine 𝕜 E F T)
-  let h : FredholmDetLine 𝕜 E F T ≃ₜ 𝕜 :=
-    { toEquiv := (c.equiv hT).toEquiv
-      continuous_toFun := IsModuleTopology.continuous_of_linearMap (c.equiv hT).toLinearMap
-      continuous_invFun :=
-        IsModuleTopology.continuous_of_linearMap (c.equiv hT).symm.toLinearMap }
-  rw [c.coord_of_mem hT]
-  exact h.isInducing
+variable (𝕜 E F) [CompleteSpace F]
 
-end Chart
+/-- Every Fredholm operator lies in the base set of a kernel chart with standard models. -/
+private theorem exists_pretrivialization (T : {T : E →L[𝕜] F // T.IsFredholm}) :
+    ∃ e : Pretrivialization 𝕜 (π 𝕜 (FredholmDetLine 𝕜 E F)),
+      (∃ (n m : ℕ) (D₂ : (Fin n → 𝕜) →L[𝕜] F) (q : E × (Fin n → 𝕜) →L[𝕜] (Fin m → 𝕜)),
+        e = pretrivialization D₂ q) ∧ T ∈ e.baseSet := by
+  obtain ⟨n, m, D₂, q, h⟩ := T.2.exists_isInvertible_prod_coprod
+  exact ⟨_, ⟨n, m, D₂, q, rfl⟩, h⟩
 
-variable [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F]
-
-/-- Every Fredholm operator lies in the domain of a kernel chart. -/
-theorem exists_chart (T₀ : {T : E →L[𝕜] F // T.IsFredholm}) :
-    ∃ c : Chart 𝕜 E F, T₀ ∈ c.U := by
-  obtain ⟨S, -, -, hS, q, U, hU, hT₀, hinv⟩ :=
-    T₀.2.exists_stabilization_kernel_coordinates
-      (T := fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ (T : E →L[𝕜] F))
-      continuous_subtype_val.continuousAt (D := ⊤) (by simp)
-  have := (T₀.2.coprod_of_finiteDimensional S.subtypeL).finite_ker
-  have hline : finrank 𝕜 (TauCeti.detLine 𝕜 (LinearMap.ker
-      ((T₀ : E →L[𝕜] F).coprod S.subtypeL : E × S →ₗ[𝕜] F)) ⊗[𝕜]
-      Dual 𝕜 (TauCeti.detLine 𝕜 S)) = finrank 𝕜 𝕜 := by
-    rw [← (ContinuousLinearMap.detLineChartEquiv _ _ q (hinv T₀ hT₀)).finrank_eq,
-      T₀.2.finrank_detLine, finrank_self]
-  have := Module.finite_of_finrank_eq_succ (hline.trans (finrank_self 𝕜))
-  exact ⟨⟨S, _, S.subtypeL, q, U, hU, hinv, LinearEquiv.ofFinrankEq _ _ hline⟩, hT₀⟩
-
-/-- The kernel chart chosen at a Fredholm operator. -/
-def chartAt (T₀ : {T : E →L[𝕜] F // T.IsFredholm}) : Chart 𝕜 E F :=
-  (exists_chart T₀).choose
-
-theorem mem_chartAt (T₀ : {T : E →L[𝕜] F // T.IsFredholm}) : T₀ ∈ (chartAt T₀).U :=
-  (exists_chart T₀).choose_spec
-
-end TauCeti.FredholmDetLine
-
-end
-
-public section
-
-noncomputable section
-
-open Bundle Module Set TensorProduct Topology
-
-namespace TauCeti.FredholmDetLine
-
-section VectorBundle
-
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
-
-variable (𝕜 E F) in
-/-- The kernel-chart pretrivializations of the determinant line bundle on the space of Fredholm
-operators, one chosen at each operator. -/
+/-- **The determinant line bundle as a vector prebundle.** Its atlas consists of the kernel charts
+`TauCeti.FredholmDetLine.pretrivialization` with standard models `Λ = 𝕜ⁿ` and `G = 𝕜ᵐ`; their
+transitions are continuous (`TauCeti.FredholmDetLine.continuousOn_pretrivialization_coordChange`)
+and they cover the space of Fredholm operators
+(`ContinuousLinearMap.IsFredholm.exists_isInvertible_prod_coprod`). -/
 def vectorPrebundle : VectorPrebundle 𝕜 𝕜 (FredholmDetLine 𝕜 E F) where
-  pretrivializationAtlas := range fun T₀ ↦ (chartAt T₀).pretrivialization
+  pretrivializationAtlas := {e | ∃ (n m : ℕ) (D₂ : (Fin n → 𝕜) →L[𝕜] F)
+    (q : E × (Fin n → 𝕜) →L[𝕜] (Fin m → 𝕜)), e = pretrivialization D₂ q}
   pretrivialization_linear' := by
-    rintro _ ⟨T₀, rfl⟩
+    rintro _ ⟨n, m, D₂, q, rfl⟩
     infer_instance
-  pretrivializationAt T₀ := (chartAt T₀).pretrivialization
-  mem_base_pretrivializationAt T₀ := mem_chartAt T₀
-  pretrivialization_mem_atlas T₀ := ⟨T₀, rfl⟩
+  pretrivializationAt T := Classical.choose (exists_pretrivialization 𝕜 E F T)
+  mem_base_pretrivializationAt T := (Classical.choose_spec (exists_pretrivialization 𝕜 E F T)).2
+  pretrivialization_mem_atlas T := (Classical.choose_spec (exists_pretrivialization 𝕜 E F T)).1
   exists_coordChange := by
-    rintro _ ⟨T₁, rfl⟩ _ ⟨T₂, rfl⟩
-    exact Chart.exists_coordChange _ _
-  totalSpaceMk_isInducing T₀ := by
-    simp only [Function.comp_def, Chart.pretrivialization_apply]
-    exact isInducing_const_prod.2 ((chartAt T₀).isInducing_coord (mem_chartAt T₀))
+    rintro _ ⟨n, m, D₂, q, rfl⟩ _ ⟨n₃, m₃, D₃, q₃, rfl⟩
+    exact exists_continuousOn_coordChange
+  totalSpaceMk_isInducing T := by
+    obtain ⟨⟨n, m, D₂, q, he⟩, hT⟩ := Classical.choose_spec (exists_pretrivialization 𝕜 E F T)
+    rw [he] at hT ⊢
+    convert (isInducing_const_prod (x := T)).mpr (isInducing_chartCoord D₂ q hT) using 1
+    ext v : 1
+    exact pretrivialization_apply_mk hT v
 
-/-- The topology on the total space of the determinant line bundle. -/
-instance : TopologicalSpace (TotalSpace 𝕜 (FredholmDetLine 𝕜 E F)) :=
+/-- A pretrivialization belongs to the atlas of the determinant line bundle exactly when it is a
+kernel chart with standard models. -/
+theorem mem_pretrivializationAtlas_iff
+    (e : Pretrivialization 𝕜 (π 𝕜 (FredholmDetLine 𝕜 E F))) :
+    e ∈ (vectorPrebundle 𝕜 E F).pretrivializationAtlas ↔
+      ∃ (n m : ℕ) (D₂ : (Fin n → 𝕜) →L[𝕜] F) (q : E × (Fin n → 𝕜) →L[𝕜] (Fin m → 𝕜)),
+        e = pretrivialization D₂ q := (Iff.rfl)
+
+/-- The topology of the determinant line bundle, for which the kernel charts are local
+trivializations. -/
+instance topologicalSpaceTotalSpace : TopologicalSpace (TotalSpace 𝕜 (FredholmDetLine 𝕜 E F)) :=
   (vectorPrebundle 𝕜 E F).totalSpaceTopology
 
-/-- The determinant lines of Fredholm operators form a fibre bundle with fibre `𝕜`. -/
-instance : FiberBundle 𝕜 (FredholmDetLine 𝕜 E F) :=
+/-- The determinant lines of Fredholm operators form a fibre bundle. -/
+instance fiberBundle : FiberBundle 𝕜 (FredholmDetLine 𝕜 E F) :=
   (vectorPrebundle 𝕜 E F).toFiberBundle
 
-/-- The determinant lines of Fredholm operators form a line bundle. -/
-instance : VectorBundle 𝕜 𝕜 (FredholmDetLine 𝕜 E F) :=
+/-- **The determinant line bundle.** The determinant lines of the Fredholm operators from `E` to
+`F` form a vector bundle of rank one over the space of Fredholm operators. -/
+instance vectorBundle : VectorBundle 𝕜 𝕜 (FredholmDetLine 𝕜 E F) :=
   (vectorPrebundle 𝕜 E F).toVectorBundle
+
+variable {𝕜 E F} {n m : ℕ}
+
+/-- A kernel chart with standard models, as a trivialization of the determinant line bundle. -/
+def trivialization (D₂ : (Fin n → 𝕜) →L[𝕜] F) (q : E × (Fin n → 𝕜) →L[𝕜] (Fin m → 𝕜)) :
+    Trivialization 𝕜 (π 𝕜 (FredholmDetLine 𝕜 E F)) :=
+  (vectorPrebundle 𝕜 E F).trivializationOfMemPretrivializationAtlas ⟨n, m, D₂, q, rfl⟩
+
+variable (D₂ : (Fin n → 𝕜) →L[𝕜] F) (q : E × (Fin n → 𝕜) →L[𝕜] (Fin m → 𝕜))
+
+instance : MemTrivializationAtlas (trivialization D₂ q) :=
+  ⟨⟨_, ⟨n, m, D₂, q, rfl⟩, rfl⟩⟩
+
+@[simp]
+theorem trivialization_baseSet :
+    (trivialization D₂ q).baseSet = {T | ((T.1.coprod D₂).prod q).IsInvertible} := (rfl)
+
+/-- The trivialization of a kernel chart is the kernel chart. -/
+@[simp]
+theorem trivialization_toPretrivialization :
+    (trivialization D₂ q).toPretrivialization = pretrivialization D₂ q := (rfl)
+
+/-- Over its base set, the trivialization of a kernel chart reads the determinant line in the chart
+coordinate. -/
+theorem trivialization_apply_mk {T : {T : E →L[𝕜] F // T.IsFredholm}}
+    (h : ((T.1.coprod D₂).prod q).IsInvertible) (v : FredholmDetLine 𝕜 E F T) :
+    trivialization D₂ q ⟨T, v⟩ = (T, chartCoord D₂ q h v) :=
+  pretrivialization_apply_mk h v
+
+/-- Over its base set, the inverse of the trivialization of a kernel chart is the inverse chart
+coordinate. -/
+theorem trivialization_symm_apply {T : {T : E →L[𝕜] F // T.IsFredholm}}
+    (h : ((T.1.coprod D₂).prod q).IsInvertible) (c : 𝕜) :
+    (trivialization D₂ q).symm T c = (chartCoord D₂ q h).symm c :=
+  pretrivialization_symm_apply h c
+
+/-! ### Continuity in kernel charts -/
+
+section Continuity
+
+variable {X : Type*} [TopologicalSpace X] {D : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G}
+  {σ : X → TotalSpace 𝕜 (FredholmDetLine 𝕜 E F)}
 
 /-- **Kernel charts read continuous families continuously.** Let `σ` be a continuous family of
 vectors of the determinant line bundle, and `(D, q)` a kernel chart of every operator `(σ x).proj`.
-Then for every linear functional `ψ` on the model line, `x ↦ ψ (detLineChartEquiv (σ x).proj D q _
-(σ x).2)` is continuous. This holds for every kernel chart, not only for those chosen to build
-the trivializations of the bundle. -/
-theorem continuous_detLineChartEquiv {X : Type*} [TopologicalSpace X] {Λ G : Type*}
-    [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ] [FiniteDimensional 𝕜 Λ]
-    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
-    {D : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G} {σ : X → TotalSpace 𝕜 (FredholmDetLine 𝕜 E F)}
-    (hσ : Continuous σ) (h : ∀ x, ((((σ x).proj : E →L[𝕜] F).coprod D).prod q).IsInvertible)
-    (ψ : TauCeti.detLine 𝕜 G ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ) →ₗ[𝕜] 𝕜) :
-    Continuous fun x ↦
-      ψ (ContinuousLinearMap.detLineChartEquiv ((σ x).proj : E →L[𝕜] F) D q (h x) (σ x).2) := by
+Then `σ` read in the chart coordinate of `(D, q)` is continuous. This holds for every kernel chart,
+not only for those with standard models that form the atlas of the bundle. -/
+theorem continuous_chartCoord (hσ : Continuous σ)
+    (h : ∀ x, ((((σ x).proj).1.coprod D).prod q).IsInvertible) :
+    Continuous fun x ↦ chartCoord D q (h x) (σ x).2 := by
   refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
-  let c := chartAt (σ x₀).proj
-  let W := σ ⁻¹' (π 𝕜 (FredholmDetLine 𝕜 E F) ⁻¹' c.U)
-  have hW : IsOpen W := (c.isOpen_U.preimage (FiberBundle.continuous_proj 𝕜 _)).preimage hσ
-  have hx₀ : x₀ ∈ W := mem_chartAt _
-  -- Along `σ`, the chosen chart at `(σ x₀).proj` is continuous on `W`, being a trivialization.
-  have hcoord : Continuous fun w : W ↦ c.coord (σ w).proj (σ w).2 := by
-    let e := (vectorPrebundle 𝕜 E F).trivializationOfMemPretrivializationAtlas
-      (e := c.pretrivialization) ⟨(σ x₀).proj, rfl⟩
-    exact continuous_snd.comp <| e.continuousOn.comp_continuous (hσ.comp continuous_subtype_val)
-      fun w ↦ w.2
-  -- On `W`, the chart `(D, q)` is a continuous multiple of the chosen one.
-  obtain ⟨k, hk, -, hkv⟩ := ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul
-    (T := fun w : W ↦ ((σ w).proj : E →L[𝕜] F))
-    (continuous_subtype_val.comp <| (FiberBundle.continuous_proj 𝕜 _).comp
-      (hσ.comp continuous_subtype_val))
-    (fun w ↦ h w) (fun w ↦ c.isInvertible _ w.2) ⟨x₀, hx₀⟩
-  let L : 𝕜 →ₗ[𝕜] 𝕜 := ψ ∘ₗ
-    (ContinuousLinearMap.detLineChartEquiv ((σ x₀).proj : E →L[𝕜] F) D q (h x₀)).toLinearMap ∘ₗ
-    (ContinuousLinearMap.detLineChartEquiv ((σ x₀).proj : E →L[𝕜] F) c.D c.q
-      (c.isInvertible _ hx₀)).symm.toLinearMap ∘ₗ c.line.symm.toLinearMap
-  have hval (w : W) : ψ (ContinuousLinearMap.detLineChartEquiv ((σ w).proj : E →L[𝕜] F) D q (h w)
-      (σ w).2) = k w * L (c.coord (σ w).proj (σ w).2) := by
-    rw [c.coord_apply_of_mem w.2]
-    conv_lhs => rw [← (ContinuousLinearMap.detLineChartEquiv ((σ w).proj : E →L[𝕜] F) c.D c.q
-      (c.isInvertible _ w.2)).symm_apply_apply (σ w).2, ← c.line.symm_apply_apply
-        (ContinuousLinearMap.detLineChartEquiv _ c.D c.q _ (σ w).2)]
-    rw [hkv w]
-    exact ψ.map_smul (k w) _
-  have hcont : ContinuousOn (fun x ↦ ψ (ContinuousLinearMap.detLineChartEquiv
-      ((σ x).proj : E →L[𝕜] F) D q (h x) (σ x).2)) W := by
+  obtain ⟨n, m, D₂, q₂, h₀⟩ := (σ x₀).proj.2.exists_isInvertible_prod_coprod
+  let e := trivialization D₂ q₂
+  let W := σ ⁻¹' (π 𝕜 (FredholmDetLine 𝕜 E F) ⁻¹' e.baseSet)
+  have hW : IsOpen W := (e.open_baseSet.preimage (FiberBundle.continuous_proj 𝕜 _)).preimage hσ
+  have hx₀ : x₀ ∈ W := h₀
+  have h₂ (w : W) : ((((σ w).proj).1.coprod D₂).prod q₂).IsInvertible := w.2
+  -- Along `σ`, the kernel chart `(D₂, q₂)` at `(σ x₀).proj` is continuous on `W`, being a
+  -- trivialization.
+  have hcoord : Continuous fun w : W ↦ chartCoord D₂ q₂ (h₂ w) (σ w).2 :=
+    (continuous_snd.comp <| e.continuousOn.comp_continuous (hσ.comp continuous_subtype_val)
+      fun w ↦ e.mem_source.2 w.2).congr fun w ↦
+        congrArg Prod.snd (trivialization_apply_mk D₂ q₂ (h₂ w) (σ w).2)
+  -- On `W`, the chart `(D, q)` is a continuous multiple of the chart `(D₂, q₂)`.
+  obtain ⟨c, hc, -, hcv⟩ := exists_continuous_chartCoord_symm_eq_smul
+    (S := fun w : W ↦ (σ w).proj)
+    ((FiberBundle.continuous_proj 𝕜 _).comp (hσ.comp continuous_subtype_val)) h₂
+    (fun w ↦ h w) ⟨x₀, hx₀⟩
+  let L : 𝕜 →ₗ[𝕜] 𝕜 := (chartCoord D q (h x₀)).toLinearMap ∘ₗ
+    (chartCoord D₂ q₂ h₀).symm.toLinearMap
+  have hval (w : W) : chartCoord D q (h w) (σ w).2 = c w * L (chartCoord D₂ q₂ (h₂ w) (σ w).2) := by
+    simpa [L] using hcv w (chartCoord D₂ q₂ (h₂ w) (σ w).2)
+  have hcont : ContinuousOn (fun x ↦ chartCoord D q (h x) (σ x).2) W := by
     rw [continuousOn_iff_continuous_domRestrict]
-    exact (hk.mul (L.continuous_of_finiteDimensional.comp hcoord)).congr fun w ↦ (hval w).symm
+    exact (hc.mul (L.continuous_of_finiteDimensional.comp hcoord)).congr fun w ↦ (hval w).symm
   exact hcont.continuousAt (hW.mem_nhds hx₀)
 
 /-- **Continuity can be checked in any kernel chart.** Let `σ` be a family of vectors of the
-determinant line bundle over a continuous family of operators `(σ x).proj`, all in the domain of
-one kernel chart `(D, q)`. If `σ` read in this chart and an identification `ψ` of its model line
-with `𝕜` is continuous, then `σ` is continuous in the total space. -/
-theorem continuous_of_continuous_detLineChartEquiv {X : Type*} [TopologicalSpace X] {Λ G : Type*}
-    [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ] [FiniteDimensional 𝕜 Λ]
-    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
-    {D : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G} {σ : X → TotalSpace 𝕜 (FredholmDetLine 𝕜 E F)}
-    (hp : Continuous fun x ↦ (σ x).proj)
-    (h : ∀ x, ((((σ x).proj : E →L[𝕜] F).coprod D).prod q).IsInvertible)
-    (ψ : TauCeti.detLine 𝕜 G ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ) ≃ₗ[𝕜] 𝕜)
-    (hψ : Continuous fun x ↦
-      ψ (ContinuousLinearMap.detLineChartEquiv ((σ x).proj : E →L[𝕜] F) D q (h x) (σ x).2)) :
-    Continuous σ := by
+determinant line bundle over a continuous family of operators `(σ x).proj`, all in the base set of
+one kernel chart `(D, q)`. If `σ` read in the chart coordinate of `(D, q)` is continuous, then `σ`
+is continuous in the total space. -/
+theorem continuous_of_continuous_chartCoord (hp : Continuous fun x ↦ (σ x).proj)
+    (h : ∀ x, ((((σ x).proj).1.coprod D).prod q).IsInvertible)
+    (hσ : Continuous fun x ↦ chartCoord D q (h x) (σ x).2) : Continuous σ := by
   refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
-  let c := chartAt (σ x₀).proj
-  let W := (fun x ↦ (σ x).proj) ⁻¹' c.U
-  have hW : IsOpen W := c.isOpen_U.preimage hp
-  have hx₀ : x₀ ∈ W := mem_chartAt _
-  let e := (vectorPrebundle 𝕜 E F).trivializationOfMemPretrivializationAtlas
-    (e := c.pretrivialization) ⟨(σ x₀).proj, rfl⟩
-  -- On `W`, the chosen chart at `(σ x₀).proj` is a continuous multiple of the chart `(D, q)`.
-  obtain ⟨k, hk, -, hkv⟩ := ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul
-    (T := fun w : W ↦ ((σ w).proj : E →L[𝕜] F)) (continuous_subtype_val.comp
-      (hp.comp continuous_subtype_val)) (fun w ↦ c.isInvertible _ w.2) (fun w ↦ h w) ⟨x₀, hx₀⟩
-  let L : 𝕜 →ₗ[𝕜] 𝕜 := c.line.toLinearMap ∘ₗ
-    (ContinuousLinearMap.detLineChartEquiv ((σ x₀).proj : E →L[𝕜] F) c.D c.q
-      (c.isInvertible _ hx₀)).toLinearMap ∘ₗ
-    (ContinuousLinearMap.detLineChartEquiv ((σ x₀).proj : E →L[𝕜] F) D q (h x₀)).symm.toLinearMap
-      ∘ₗ ψ.symm.toLinearMap
-  have hval (w : W) : c.coord (σ w).proj (σ w).2 =
-      k w * L (ψ (ContinuousLinearMap.detLineChartEquiv ((σ w).proj : E →L[𝕜] F) D q (h w)
-        (σ w).2)) := by
-    rw [c.coord_apply_of_mem w.2]
-    conv_lhs => rw [← (ContinuousLinearMap.detLineChartEquiv ((σ w).proj : E →L[𝕜] F) D q
-      (h w)).symm_apply_apply (σ w).2, ← ψ.symm_apply_apply
-        (ContinuousLinearMap.detLineChartEquiv _ D q _ (σ w).2)]
-    rw [hkv w]
-    exact c.line.map_smul (k w) _
-  have hcoord : Continuous fun w : W ↦ c.coord (σ w).proj (σ w).2 :=
-    (hk.mul (L.continuous_of_finiteDimensional.comp (hψ.comp continuous_subtype_val))).congr
+  obtain ⟨n, m, D₂, q₂, h₀⟩ := (σ x₀).proj.2.exists_isInvertible_prod_coprod
+  let e := trivialization D₂ q₂
+  let W := (fun x ↦ (σ x).proj) ⁻¹' e.baseSet
+  have hW : IsOpen W := e.open_baseSet.preimage hp
+  have hx₀ : x₀ ∈ W := h₀
+  have h₂ (w : W) : ((((σ w).proj).1.coprod D₂).prod q₂).IsInvertible := w.2
+  -- On `W`, the kernel chart `(D₂, q₂)` at `(σ x₀).proj` is a continuous multiple of `(D, q)`.
+  obtain ⟨c, hc, -, hcv⟩ := exists_continuous_chartCoord_symm_eq_smul
+    (S := fun w : W ↦ (σ w).proj) (hp.comp continuous_subtype_val) (fun w ↦ h w) h₂ ⟨x₀, hx₀⟩
+  let L : 𝕜 →ₗ[𝕜] 𝕜 := (chartCoord D₂ q₂ h₀).toLinearMap ∘ₗ
+    (chartCoord D q (h x₀)).symm.toLinearMap
+  have hval (w : W) : chartCoord D₂ q₂ (h₂ w) (σ w).2 = c w * L (chartCoord D q (h w) (σ w).2) := by
+    simpa [L] using hcv w (chartCoord D q (h w) (σ w).2)
+  have hcoord : Continuous fun w : W ↦ chartCoord D₂ q₂ (h₂ w) (σ w).2 :=
+    (hc.mul (L.continuous_of_finiteDimensional.comp (hσ.comp continuous_subtype_val))).congr
       fun w ↦ (hval w).symm
   -- On `W`, `σ` is the inverse of the trivialization applied to its continuous coordinates.
-  have hσ : ContinuousOn σ W := by
+  have hσW : ContinuousOn σ W := by
     rw [continuousOn_iff_continuous_domRestrict]
-    exact (e.continuousOn_symm.comp_continuous
+    refine (e.continuousOn_symm.comp_continuous
       ((hp.comp continuous_subtype_val).prodMk hcoord) fun w ↦ ⟨w.2, mem_univ _⟩).congr
-      fun w ↦ congrArg (TotalSpace.mk' 𝕜 (σ w).proj) (e.symm_apply_apply_mk w.2 (σ w).2)
-  exact hσ.continuousAt (hW.mem_nhds hx₀)
+      fun w ↦ ?_
+    have he : chartCoord D₂ q₂ (h₂ w) (σ w).2 = (e (σ w)).2 :=
+      (congrArg Prod.snd (trivialization_apply_mk D₂ q₂ (h₂ w) (σ w).2)).symm
+    simp only [Function.comp_apply, he]
+    exact (e.mk_symm w.2 _).trans (e.symm_apply_mk_proj (e.mem_source.2 w.2))
+  exact hσW.continuousAt (hW.mem_nhds hx₀)
 
-end VectorBundle
+end Continuity
 
 /-! ### Orientation transport -/
 
@@ -480,8 +481,6 @@ theorem isCoveringMap_proj :
 
 end Orientation
 
-end TauCeti.FredholmDetLine
+end FredholmDetLine
 
-end
-
-end
+end TauCeti

@@ -537,7 +537,7 @@ end Level
 section TransverseChart
 
 variable {𝕜 E M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [TopologicalSpace M] [ChartedSpace E M] {n : ℕ∞ω} [IsManifold 𝓘(𝕜, E) n M]
+  [TopologicalSpace M] [ChartedSpace E M] {n : ℕ∞ω}
   {p : OpenPartialHomeomorph M E} {s₁ s₂ : Set M} {y : M}
 
 /-- **Transversality read in a chart.** If the tangent spaces of `s₁` and `s₂` at `y` span the
@@ -551,7 +551,9 @@ theorem span_tangentConeAt_sup_eq_top_of_span_mtangentConeAt_sup_eq_top (hn : n 
       Submodule.span 𝕜 (tangentConeAt 𝕜 (p.symm ⁻¹' s₂) (p y)) = ⊤ := by
   have hy' : chartAt E y y ∈ ((chartAt E y).symm.trans p).source := by
     simp [hy, mem_chart_source]
-  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn (IsManifold.chart_mem_maximalAtlas y) hp hy'
+  -- The transition map from the preferred chart is a `C^n` change of coordinates of the model
+  -- space, since `p` is in the maximal atlas.
+  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans_of_mem_atlas hn (chart_mem_atlas E y) hp hy'
   have h := congrArg (Submodule.map (A : E →ₗ[𝕜] E)) htr
   rw [Submodule.map_sup, ← Submodule.span_image, ← Submodule.span_image, Submodule.map_top,
     LinearMap.range_eq_top_of_surjective _ A.surjective] at h
@@ -563,7 +565,7 @@ section TransverseDisc
 
 variable {𝕜 E G M : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G] [TopologicalSpace M]
-  [ChartedSpace E M] {n : ℕ∞ω} [IsManifold 𝓘(𝕜, E) n M] {p q : OpenPartialHomeomorph M E}
+  [ChartedSpace E M] {n : ℕ∞ω} {p q : OpenPartialHomeomorph M E}
   {L : Submodule 𝕜 E} {s₁ s₂ : Set M} {y : M}
 
 /-- **A transverse disc in a flattened set.** Let a chart `q` of the maximal atlas flatten `s₁` onto

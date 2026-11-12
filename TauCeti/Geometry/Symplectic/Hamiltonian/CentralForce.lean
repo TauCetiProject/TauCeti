@@ -289,7 +289,7 @@ theorem inner_rungeLenz_fst (m κ : ℝ) (x : V × V) :
       ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 - m * κ * ‖x.1‖ := by
   rcases eq_or_ne x.1 0 with hq | hq
   · simp [rungeLenz, hq]
-  · have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
+  · have _ : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
     simp only [rungeLenz, inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
       real_inner_comm x.2 x.1]
     field_simp
