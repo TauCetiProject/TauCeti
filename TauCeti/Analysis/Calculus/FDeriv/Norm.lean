@@ -15,7 +15,9 @@ import Mathlib.Analysis.Calculus.FDeriv.Norm
 
 A map whose norm is locally constant has derivative orthogonal to its value. In particular, the
 derivative of a map into a sphere is tangent to the sphere. Away from the origin, a vanishing
-derivative of a norm-composition forces the one-dimensional profile derivative to vanish.
+derivative of a norm-composition forces the one-dimensional profile derivative to vanish. The
+norm itself, being `1`-Lipschitz, has derivative of norm at most `1` everywhere
+(`TauCeti.norm_fderiv_norm_le`).
 
 The function `y ↦ √(a - ‖y‖²)`, whose graph over the ball of radius `√a` is a hemisphere, has
 derivative `-(√(a - ‖x‖²))⁻¹ ⟪x, ·⟫` wherever `a - ‖x‖² ≠ 0`; in particular it is flat at the
@@ -47,6 +49,11 @@ theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- The derivative of the norm has norm at most `1` at every point, including the points where the
+norm is not differentiable and its derivative is `0` by definition. -/
+theorem norm_fderiv_norm_le (x : E) : ‖fderiv ℝ (‖·‖ : E → ℝ) x‖ ≤ 1 := by
+  simpa using norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_one_norm (E := E))
 
 /-- A map whose norm is constant near `w` has Fréchet derivative at `w` orthogonal to its
 value. In particular, the derivative of a map into a sphere is tangent to the sphere.

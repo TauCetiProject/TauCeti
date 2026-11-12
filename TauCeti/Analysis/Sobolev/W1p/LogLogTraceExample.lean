@@ -109,7 +109,7 @@ theorem contDiffOn_logLogTraceExample : ContDiffOn ℝ ∞ logLogTraceExample (b
     contDiffAt_const.div hn (by rw [hr]; exact h0.ne')
   have hl : ContDiffAt ℝ ∞ (fun w : ℂ => Real.log (4 / ‖1 - w‖)) z :=
     hd.log (by rw [hr]; positivity)
-  exact (hl.log (by rw [hr]; exact (log_four_div_pos h0 h2).ne')).contDiffWithinAt
+  exact (hl.log (by rw [hr]; exact (log_four_div_pos h0 (by linarith)).ne')).contDiffWithinAt
 
 /-- The classical gradient of `f` has size at most `(r log (4 / r))⁻¹`, `r = ‖z - 1‖`. -/
 private theorem norm_gradient_logLogTraceExample_le {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
@@ -117,7 +117,7 @@ private theorem norm_gradient_logLogTraceExample_le {z : ℂ} (hz : z ∈ ball (
   obtain ⟨h0, h2⟩ := norm_sub_one_mem hz
   have hg : HasFDerivAt (fun w : ℂ => ‖w - 1‖) (fderiv ℝ (fun w : ℂ => ‖w - 1‖) z) z :=
     ((differentiableAt_id.sub_const 1).norm ℝ (norm_pos_iff.1 h0)).hasFDerivAt
-  have hcomp := (hasDerivAt_log_log_four_div h0 h2).comp_hasFDerivAt z hg
+  have hcomp := (hasDerivAt_log_log_four_div h0 (by linarith)).comp_hasFDerivAt z hg
   have hf : logLogTraceExample =
       (fun s : ℝ => Real.log (Real.log (4 / s))) ∘ fun w : ℂ => ‖w - 1‖ :=
     funext logLogTraceExample_eq
@@ -126,7 +126,8 @@ private theorem norm_gradient_logLogTraceExample_le {z : ℂ} (hz : z ∈ ball (
       simpa [Real.dist_eq, dist_eq_norm] using abs_norm_sub_norm_le (x - 1) (y - 1)
   have hD : ‖fderiv ℝ (fun w : ℂ => ‖w - 1‖) z‖ ≤ 1 := by
     simpa using norm_fderiv_le_of_lipschitz ℝ hlip
-  have hpos : 0 < ‖z - 1‖ * Real.log (4 / ‖z - 1‖) := mul_pos h0 (log_four_div_pos h0 h2)
+  have hpos : 0 < ‖z - 1‖ * Real.log (4 / ‖z - 1‖) :=
+    mul_pos h0 (log_four_div_pos h0 (by linarith))
   rw [norm_gradient_eq_norm_fderiv, hf, hcomp.fderiv, norm_smul, norm_neg,
     Real.norm_of_nonneg (inv_nonneg.2 hpos.le)]
   calc (‖z - 1‖ * Real.log (4 / ‖z - 1‖))⁻¹ * ‖fderiv ℝ (fun w : ℂ => ‖w - 1‖) z‖
@@ -172,10 +173,7 @@ theorem tendsto_logLogTraceExample :
     tendsto_nhdsWithin_iff.2 ⟨((continuous_id.sub continuous_const).norm.tendsto' 1 0
       (by simp)).mono_left nhdsWithin_le_nhds,
       eventually_nhdsWithin_of_forall fun z hz => (norm_sub_one_mem hz).1⟩
-  have h4 : Tendsto (fun y : ℝ => 4 / y) (𝓝[>] 0) atTop := by
-    simpa only [div_eq_mul_inv] using tendsto_inv_nhdsGT_zero.const_mul_atTop four_pos
-  refine (Real.tendsto_log_atTop.comp (Real.tendsto_log_atTop.comp (h4.comp hr))).congr
-    fun z => ?_
+  refine (tendsto_log_log_four_div.comp hr).congr fun z => ?_
   rw [logLogTraceExample_eq]
   rfl
 
