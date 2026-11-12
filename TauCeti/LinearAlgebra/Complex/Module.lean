@@ -11,7 +11,6 @@ import Mathlib.Algebra.Module.Torsion.Field
 import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.LinearAlgebra.Basis.Submodule
 import Mathlib.Tactic.FastInstance
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
 /-!
