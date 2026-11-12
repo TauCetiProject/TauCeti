@@ -14,7 +14,8 @@ import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 For a profinite group `G` and a discrete continuous `G`-module `M`, every continuous
 `2`-cocycle on `G` is inflated from a finite quotient. The descent is strict: no coboundary is
-subtracted from the cocycle.
+subtracted from the cocycle. It uses that the cocycle is uniformly locally constant and that an
+open normal subgroup fixes its finitely many values.
 
 Strict descent supplies the representative-level surjectivity needed to describe continuous
 degree-two cohomology as a colimit of cohomology groups over finite quotients.
@@ -31,10 +32,6 @@ degree-two cohomology as a colimit of cohomology groups over finite quotients.
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (1.2.5).
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Cor. 6.5.6(a).
 -/
-
--- Provenance: the statements follow the human-authored roadmap
--- `TauCetiRoadmap/ProfiniteCohomology/README.md`, which specifies strict degree-two descent by
--- uniform local constancy and finite-image stabilization.
 
 public section
 

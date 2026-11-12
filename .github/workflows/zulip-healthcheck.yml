@@ -40,4 +40,6 @@ jobs:
           ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
           ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
           ZULIP_SITE: https://leanprover.zulipchat.com
+          ZULIP_CHANNEL: rss
+          ZULIP_TOPIC: Tau Ceti PRs
         run: python3 scripts/pr_status/zulip.py check

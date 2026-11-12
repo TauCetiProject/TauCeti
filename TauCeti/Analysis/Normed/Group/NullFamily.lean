@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Ultra
+public import TauCeti.Topology.Order.OrderClosed
 
 /-!
 # Norm estimates for null families in ultrametric groups
@@ -47,17 +48,10 @@ norm dominates the norms of all its terms. -/
 to zero along the cofinite filter has a term whose norm dominates the norms of all its terms. -/]
 theorem Filter.Tendsto.exists_forall_norm_le' [Nonempty ι] {f : ι → E}
     (hf : Tendsto f cofinite (𝓝 1)) : ∃ i, ∀ j, ‖f j‖ ≤ ‖f i‖ := by
-  by_cases! hne : ∀ i, ‖f i‖ = 0
-  · obtain ⟨i⟩ := ‹Nonempty ι›
-    exact ⟨i, fun j ↦ by simp [hne]⟩
-  obtain ⟨i₀, hi₀⟩ := hne
-  -- only finitely many terms have norm at least `‖f i₀‖ > 0`; one of them has the largest norm
-  have hfinite : {i | ‖f i₀‖ ≤ ‖f i‖}.Finite := by
-    simpa only [eventually_cofinite, not_lt] using
-      hf.norm'.eventually_lt_const (norm_one'.trans_lt ((norm_nonneg' _).lt_of_ne' hi₀))
-  have hi₀s : i₀ ∈ {i | ‖f i₀‖ ≤ ‖f i‖} := by simp
-  obtain ⟨i, -, hmax⟩ := Set.exists_max_image _ (‖f ·‖) hfinite ⟨i₀, hi₀s⟩
-  exact ⟨i, fun j ↦ (le_total ‖f i₀‖ ‖f j‖).elim (hmax j) fun h ↦ h.trans (hmax i₀ hi₀s)⟩
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  have hnorm : Tendsto (fun i ↦ ‖f i‖) cofinite (𝓝 0) := by
+    simpa only [norm_one'] using hf.norm'
+  exact hnorm.exists_forall_le_of_le (a := i) (norm_nonneg' _)
 
 /-- A family on a nonempty index type tending to one along the cofinite filter attains the
 supremum of the norms of its terms. -/
