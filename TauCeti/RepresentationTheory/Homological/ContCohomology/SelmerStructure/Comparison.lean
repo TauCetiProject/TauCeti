@@ -7,13 +7,14 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Basic
-import TauCeti.GroupTheory.Index.Exact
+import Mathlib.Algebra.Exact.Basic
+import Mathlib.GroupTheory.Index
 
 /-!
 # Changing the local conditions of a Selmer group
 
-Fix the localisation data of a Selmer structure, and two systems of local conditions
-`A i ≤ B i`. If they agree outside a set `S`, localisation gives an exact sequence
+Fix two Selmer structures with the same localisation maps and local conditions
+`A i ≤ B i`. If their conditions agree outside a set `S`, localisation gives an exact sequence
 
 `0 → Sel_A → Sel_B → ∏ i ∈ S, B i / A i`.
 
@@ -44,7 +45,7 @@ cokernel with a dual Selmer obstruction requires arithmetic duality, not just lo
 ## References
 
 * K. Rubin, *Euler Systems*, Annals of Mathematics Studies 147, Princeton University Press,
-  2000, I.1, for Selmer structures and comparison of local conditions.
+  2000, I.5 and I.7, for Selmer structures and comparison of local conditions.
 * J. S. Milne, *Arithmetic Duality Theorems*, second edition, I.4, for the arithmetic duality
   extending this comparison sequence.
 -/
@@ -70,10 +71,24 @@ def withLocalConditions : SelmerStructure G M H N :=
   { 𝓕 with localCondition := A }
 
 omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
+/-- Updating local conditions leaves the group homomorphisms unchanged. -/
+@[simp]
+theorem withLocalConditions_groupHom :
+    (𝓕.withLocalConditions A).groupHom = 𝓕.groupHom :=
+  (rfl)
+
+omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
+/-- Updating local conditions leaves the coefficient homomorphisms unchanged. -/
+@[simp]
+theorem withLocalConditions_coeffHom :
+    (𝓕.withLocalConditions A).coeffHom = 𝓕.coeffHom :=
+  (rfl)
+
+omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
 /-- The updated structure has the prescribed local conditions. -/
 @[simp]
-theorem withLocalConditions_localCondition (i : ι) :
-    (𝓕.withLocalConditions A).localCondition i = A i :=
+theorem withLocalConditions_localCondition :
+    (𝓕.withLocalConditions A).localCondition = A :=
   (rfl)
 
 omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
@@ -91,131 +106,141 @@ theorem withLocalConditions_self : 𝓕.withLocalConditions 𝓕.localCondition 
 
 /-- Updating local conditions leaves the localisation maps unchanged. -/
 @[simp]
-theorem withLocalConditions_localization (i : ι) :
-    (𝓕.withLocalConditions A).localization i = 𝓕.localization i := by
+theorem withLocalConditions_localization :
+    (𝓕.withLocalConditions A).localization = 𝓕.localization := by
+  funext i
+  -- The imported localisation body is opaque; its characterisation exposes the unchanged data.
   rw [localization_eq_explicitMap1, localization_eq_explicitMap1]
   rfl
 
-/-- Enlarging every local condition enlarges the Selmer group. -/
-theorem selmerGroup_withLocalConditions_mono (hAB : ∀ i, A i ≤ B i) :
-    (𝓕.withLocalConditions A).selmerGroup ≤ (𝓕.withLocalConditions B).selmerGroup := by
+variable (𝓖 : SelmerStructure G M H N)
+
+/-- Enlarging every local condition enlarges the Selmer group when localisation agrees. -/
+theorem selmerGroup_le (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
+    (hle : ∀ i, 𝓕.localCondition i ≤ 𝓖.localCondition i) :
+    𝓕.selmerGroup ≤ 𝓖.selmerGroup := by
   intro c hc
-  simp only [mem_selmerGroup_iff, withLocalConditions_localization,
-    withLocalConditions_localCondition] at hc ⊢
-  exact fun i ↦ hAB i (hc i)
+  rw [mem_selmerGroup_iff] at hc ⊢
+  intro i
+  rw [← hloc i]
+  exact hle i (hc i)
 
 /-- Localise a class satisfying `B` at indices in `S`, and reduce modulo `A ∩ B` there.
 For nested conditions this is the map to the product of the quotients `B i / A i`.
 Neither nesting nor agreement outside `S` is required to define the map. -/
 def localConditionComparison (S : Set ι) :
-    (𝓕.withLocalConditions B).selmerGroup →+
-      ∀ i : S, B i.1 ⧸ (A i.1).addSubgroupOf (B i.1) :=
+    𝓖.selmerGroup →+
+      ∀ i : S, 𝓖.localCondition i.1 ⧸
+        (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1) :=
   AddMonoidHom.pi fun i ↦
-    (QuotientAddGroup.mk' ((A i.1).addSubgroupOf (B i.1))).comp
-      (((𝓕.localization i.1).comp (𝓕.withLocalConditions B).selmerGroup.subtype).codRestrict
-        (B i.1) fun c ↦ by
-          simpa only [withLocalConditions_localization, withLocalConditions_localCondition,
-            AddMonoidHom.comp_apply, AddSubgroup.subtype_apply]
-            using (mem_selmerGroup_iff _).mp c.2 i.1)
+    (QuotientAddGroup.mk'
+      ((𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1))).comp
+      (((𝓖.localization i.1).comp 𝓖.selmerGroup.subtype).codRestrict
+        (𝓖.localCondition i.1) fun c ↦ 𝓖.localization_mem c i.1)
 
 /-- The coordinate of the comparison map is the localised class modulo the smaller local
 condition. -/
 @[simp]
-theorem localConditionComparison_apply (S : Set ι)
-    (c : (𝓕.withLocalConditions B).selmerGroup) (i : S) :
-    𝓕.localConditionComparison A B S c i =
-      QuotientAddGroup.mk (⟨𝓕.localization i.1 c,
-        (by simpa only [withLocalConditions_localization, withLocalConditions_localCondition]
-          using (mem_selmerGroup_iff _).mp c.2 i.1)⟩ : B i.1) :=
+theorem localConditionComparison_apply (S : Set ι) (c : 𝓖.selmerGroup) (i : S) :
+    𝓕.localConditionComparison 𝓖 S c i =
+      QuotientAddGroup.mk
+        (⟨𝓖.localization i.1 c, 𝓖.localization_mem c i.1⟩ : 𝓖.localCondition i.1) :=
   (rfl)
 
 /-- A comparison class vanishes precisely when its localisations at `S` satisfy `A`. -/
 @[simp]
-theorem localConditionComparison_eq_zero_iff (S : Set ι)
-    (c : (𝓕.withLocalConditions B).selmerGroup) :
-    𝓕.localConditionComparison A B S c = 0 ↔
-      ∀ i ∈ S, 𝓕.localization i c ∈ A i := by
+theorem localConditionComparison_eq_zero_iff (S : Set ι) (c : 𝓖.selmerGroup) :
+    𝓕.localConditionComparison 𝓖 S c = 0 ↔
+      ∀ i ∈ S, 𝓖.localization i c ∈ 𝓕.localCondition i := by
   simp only [funext_iff, localConditionComparison_apply, Pi.zero_apply,
     QuotientAddGroup.eq_zero_iff, AddSubgroup.mem_addSubgroupOf, Subtype.forall]
 
-variable {A B} (S : Set ι)
+variable (S : Set ι)
 
 /-- If `B ≤ A` outside `S`, the kernel of comparison is `Sel_A ∩ Sel_B`, viewed in `Sel_B`. -/
-theorem ker_localConditionComparison (hout : ∀ i ∉ S, B i ≤ A i) :
-    (𝓕.localConditionComparison A B S).ker =
-      ((𝓕.withLocalConditions A).selmerGroup).addSubgroupOf
-        (𝓕.withLocalConditions B).selmerGroup := by
+theorem ker_localConditionComparison (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
+    (hout : ∀ i ∉ S, 𝓖.localCondition i ≤ 𝓕.localCondition i) :
+    (𝓕.localConditionComparison 𝓖 S).ker =
+      𝓕.selmerGroup.addSubgroupOf 𝓖.selmerGroup := by
   ext c
   simp only [AddMonoidHom.mem_ker, localConditionComparison_eq_zero_iff,
-    AddSubgroup.mem_addSubgroupOf, mem_selmerGroup_iff, withLocalConditions_localization,
-    withLocalConditions_localCondition]
+    AddSubgroup.mem_addSubgroupOf, mem_selmerGroup_iff, hloc]
   refine ⟨fun hc i ↦ ?_, fun hc i _ ↦ hc i⟩
   by_cases hi : i ∈ S
   · exact hc i hi
-  · apply hout i hi
-    simpa only [withLocalConditions_localization, withLocalConditions_localCondition]
-      using (mem_selmerGroup_iff _).mp c.2 i
+  · exact hout i hi (𝓖.localization_mem c i)
 
 /-- The change-of-local-conditions sequence is exact at `Sel_B`. In particular this holds
 when `A ≤ B` everywhere and the conditions agree outside `S`. -/
-theorem exact_inclusion_localConditionComparison (hout : ∀ i ∉ S, B i ≤ A i)
-    (hAB : ∀ i, A i ≤ B i) :
-    Function.Exact
-      (AddSubgroup.inclusion (𝓕.selmerGroup_withLocalConditions_mono A B hAB))
-      (𝓕.localConditionComparison A B S) := by
-  intro c
-  rw [← AddMonoidHom.mem_ker, 𝓕.ker_localConditionComparison S hout,
-    AddSubgroup.mem_addSubgroupOf]
-  constructor
-  · exact fun hc ↦ ⟨⟨c, hc⟩, rfl⟩
-  · rintro ⟨x, rfl⟩
-    exact x.2
+theorem exact_inclusion_localConditionComparison
+    (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
+    (hout : ∀ i ∉ S, 𝓖.localCondition i ≤ 𝓕.localCondition i)
+    (hle : ∀ i, 𝓕.localCondition i ≤ 𝓖.localCondition i) :
+    Function.Exact (AddSubgroup.inclusion (𝓕.selmerGroup_le 𝓖 hloc hle))
+      (𝓕.localConditionComparison 𝓖 S) := by
+  rw [AddMonoidHom.exact_iff (P := ∀ i : S, 𝓖.localCondition i.1 ⧸
+    (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1)),
+    𝓕.ker_localConditionComparison 𝓖 S hloc hout, AddSubgroup.inclusion_range]
 
-/-- Finite smaller Selmer group and finite local quotients imply finite larger Selmer group,
-when only finitely many local conditions are changed. -/
-theorem finite_selmerGroup_of_finite_localQuotients (hout : ∀ i ∉ S, B i ≤ A i)
-    (hAB : ∀ i, A i ≤ B i) [Finite S]
-    [Finite (𝓕.withLocalConditions A).selmerGroup]
-    [∀ i : S, Finite (B i.1 ⧸ (A i.1).addSubgroupOf (B i.1))] :
-    Finite (𝓕.withLocalConditions B).selmerGroup :=
-  Function.Exact.finite
-    (A₀ := (𝓕.withLocalConditions A).selmerGroup)
-    (A₂ := ∀ i : S, B i.1 ⧸ (A i.1).addSubgroupOf (B i.1))
-    (f₀ := AddSubgroup.inclusion (𝓕.selmerGroup_withLocalConditions_mono A B hAB))
-    (f₁ := 𝓕.localConditionComparison A B S)
-    (𝓕.exact_inclusion_localConditionComparison S hout hAB)
+/-- Finiteness of one Selmer group and of the local quotients implies finiteness of the
+other, when localisation agrees and its conditions are contained in the first outside a
+finite set. No global nesting of the conditions is required. -/
+theorem finite_selmerGroup_of_finite_quotient
+    (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
+    (hout : ∀ i ∉ S, 𝓖.localCondition i ≤ 𝓕.localCondition i)
+    [Finite S] [Finite 𝓕.selmerGroup]
+    [∀ i : S, Finite (𝓖.localCondition i.1 ⧸
+      (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1))] :
+    Finite 𝓖.selmerGroup := by
+  apply (AddMonoidHom.finite_iff_finite_ker_range
+    (G' := ∀ i : S, 𝓖.localCondition i.1 ⧸
+      (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1))
+    (𝓕.localConditionComparison 𝓖 S)).mpr
+  refine ⟨?_, inferInstance⟩
+  rw [𝓕.ker_localConditionComparison 𝓖 S hloc hout]
+  exact Finite.of_injective
+    (fun c : 𝓕.selmerGroup.addSubgroupOf 𝓖.selmerGroup ↦
+      (⟨c.1.1, c.2⟩ : 𝓕.selmerGroup))
+    (fun _ _ h ↦ Subtype.ext (Subtype.ext
+      (congrArg (fun c : 𝓕.selmerGroup ↦ (c : H1 G M)) h)))
 
 /-- The relative Selmer index is the order of the image in the local-condition quotients.
 This `Nat.card` identity does not assume finiteness. -/
-theorem relIndex_selmerGroup_eq_card_range (hout : ∀ i ∉ S, B i ≤ A i) :
-    ((𝓕.withLocalConditions A).selmerGroup).relIndex
-        (𝓕.withLocalConditions B).selmerGroup =
-      Nat.card ((𝓕.localConditionComparison A B S).range
-        (N := ∀ i : S, B i.1 ⧸ (A i.1).addSubgroupOf (B i.1))) := by
+theorem relIndex_selmerGroup_eq_card_range
+    (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
+    (hout : ∀ i ∉ S, 𝓖.localCondition i ≤ 𝓕.localCondition i) :
+    𝓕.selmerGroup.relIndex 𝓖.selmerGroup =
+      Nat.card ((𝓕.localConditionComparison 𝓖 S).range
+        (N := ∀ i : S, 𝓖.localCondition i.1 ⧸
+          (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1))) := by
   have h := AddSubgroup.index_ker
-    (G := (𝓕.withLocalConditions B).selmerGroup)
-    (G' := ∀ i : S, B i.1 ⧸ (A i.1).addSubgroupOf (B i.1))
-    (𝓕.localConditionComparison A B S)
-  rw [𝓕.ker_localConditionComparison S hout] at h
+    (G := 𝓖.selmerGroup)
+    (G' := ∀ i : S, 𝓖.localCondition i.1 ⧸
+      (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1))
+    (𝓕.localConditionComparison 𝓖 S)
+  rw [𝓕.ker_localConditionComparison 𝓖 S hloc hout] at h
   simpa only [AddSubgroup.relIndex] using h
 
 /-- For finitely many changed local conditions, the relative Selmer index divides the product
 of the local indices. This also holds with the `Nat.card` convention for infinite groups. -/
 theorem relIndex_selmerGroup_dvd_prod (T : Finset ι)
-    (hT : ∀ i ∉ T, B i ≤ A i) :
-    ((𝓕.withLocalConditions A).selmerGroup).relIndex
-        (𝓕.withLocalConditions B).selmerGroup ∣ ∏ i ∈ T, (A i).relIndex (B i) := by
+    (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
+    (hT : ∀ i ∉ T, 𝓖.localCondition i ≤ 𝓕.localCondition i) :
+    𝓕.selmerGroup.relIndex 𝓖.selmerGroup ∣
+      ∏ i ∈ T, (𝓕.localCondition i).relIndex (𝓖.localCondition i) := by
   classical
-  rw [𝓕.relIndex_selmerGroup_eq_card_range (T : Set ι) hT]
+  rw [𝓕.relIndex_selmerGroup_eq_card_range 𝓖 (T : Set ι) hloc hT]
   have h := AddSubgroup.card_addSubgroup_dvd_card
-    ((𝓕.localConditionComparison A B (T : Set ι)).range
-      (N := ∀ i : (T : Set ι), B i.1 ⧸ (A i.1).addSubgroupOf (B i.1)))
-  have hcard : Nat.card (∀ i : (T : Set ι),
-      B i.1 ⧸ (A i.1).addSubgroupOf (B i.1)) = ∏ i ∈ T, (A i).relIndex (B i) := by
+    ((𝓕.localConditionComparison 𝓖 (T : Set ι)).range
+      (N := ∀ i : (T : Set ι), 𝓖.localCondition i.1 ⧸
+        (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1)))
+  have hcard : Nat.card (∀ i : (T : Set ι), 𝓖.localCondition i.1 ⧸
+      (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1)) =
+        ∏ i ∈ T, (𝓕.localCondition i).relIndex (𝓖.localCondition i) := by
     rw [Nat.card_pi]
     simpa only [AddSubgroup.relIndex, AddSubgroup.index_eq_card] using
       (Finset.prod_subtype T (p := fun i ↦ i ∈ (T : Set ι)) (fun _ ↦ Iff.rfl)
-        (fun i ↦ (A i).relIndex (B i))).symm
+        (fun i ↦ (𝓕.localCondition i).relIndex (𝓖.localCondition i))).symm
   rwa [hcard] at h
 
 end TauCeti.ContCohomology.SelmerStructure
