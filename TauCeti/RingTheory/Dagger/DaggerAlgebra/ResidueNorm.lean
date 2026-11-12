@@ -8,9 +8,6 @@ module
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Completion
 public import TauCeti.RingTheory.Dagger.ClosedIdeal
 
-import TauCeti.Analysis.Normed.Ring.Quotient
-import TauCeti.Topology.Algebra.Ring.MaximalIdeals
-
 /-!
 # The residue norm of a dagger algebra and its completion
 
@@ -134,7 +131,7 @@ theorem norm_presentation_le (f : W) :
     ‖presentation K A f‖ ≤ ‖f‖ :=
   letI := residueNormedCommRing K A
   by
-    have h := Ideal.Quotient.norm_mk_le_norm I f
+    have h := Ideal.Quotient.norm_mk_le I f
     rwa [← residueAlgEquiv_presentation, norm_residueAlgEquiv] at h
 
 /-- The infimum defining the residue norm is attained: every element of a dagger algebra is
@@ -154,76 +151,16 @@ theorem exists_presentation_norm_eq (a : A) :
   rw [← norm_residueAlgEquiv]
   exact hnorm
 
-/-- The completion map is contractive: the quotient norm of `τ a` is at most the residue
-norm of `a`. -/
-theorem norm_toCompletion_le (a : A) :
-    letI := residueNormedCommRing K A
-    ‖toCompletion K A a‖ ≤ ‖a‖ :=
-  letI := residueNormedCommRing K A
-  by
-  obtain ⟨f, rfl, hf⟩ := exists_presentation_norm_eq K A a
-  rw [toCompletion_presentation]
-  calc ‖Ideal.Quotient.mk _ (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f)‖
-      ≤ ‖washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f‖ :=
-        Ideal.Quotient.norm_mk_le_norm _ _
-    _ = ‖f‖ := washnitzerAlgebra.norm_toTate f
-    _ = ‖presentation K A f‖ := hf
-
-/-- The residue norm is bounded by the norm of the completion: `τ : A → Â` is an isometric
-embedding for the residue norm and the quotient Gauss norm of `Â`. -/
-theorem residueNorm_le_norm_toCompletion (a : A) :
-    letI := residueNormedCommRing K A
-    ‖a‖ ≤ ‖toCompletion K A a‖ :=
-  letI := residueNormedCommRing K A
-  by
-  set M := ‖toCompletion K A a‖
-  refine le_of_forall_pos_le_add fun ε hε ↦ ?_
-  -- A `T_n`-lift of `τ a` within `ε` of `M`.
-  obtain ⟨h, hh, hnorm⟩ := Ideal.Quotient.exists_norm_mk_lt (toCompletion K A a) hε
-  -- A series of equal Gauss norm representing `a`.
-  obtain ⟨f, hf, _⟩ := exists_presentation_norm_eq K A a
-  have heq : Ideal.Quotient.mk
-      (Ideal.map (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K) I) h =
-      Ideal.Quotient.mk _
-        (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f) := by
-    rw [← toCompletion_presentation, hf]
-    exact hh
-  have hmem : h - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f ∈
-      Ideal.map (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K) I := by
-    rwa [Ideal.Quotient.eq] at heq
-  -- Approximate the difference by the image of an element of `I`.
-  have hclosure := Ideal.map_subset_closure_image_of_denseRange
-    washnitzerAlgebra.denseRange_toTate I hmem
-  obtain ⟨_, ⟨g, hg, rfl⟩, hdist⟩ := Metric.mem_closure_iff.mp hclosure ε hε
-  let f' := f + g
-  have hf' : presentation K A f' = a := by
-    rw [map_add, hf, RingHom.mem_ker.mp hg, add_zero]
-  have hdefect :
-      ‖h - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f'‖ ≤ ε := by
-    have heq : h - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f' =
-        (h - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f) -
-          washnitzerAlgebra.toTate (Fin (presentationDim K A)) K g := by
-      rw [map_add]
-      abel
-    simpa only [heq, dist_eq_norm, norm_sub_rev] using hdist.le
-  calc ‖a‖ ≤ ‖f'‖ := hf' ▸ norm_presentation_le K A f'
-    _ = ‖washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f'‖ :=
-        (washnitzerAlgebra.norm_toTate f').symm
-    _ = ‖h + (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f' - h)‖ := by
-        congr 1; abel
-    _ ≤ max ‖h‖ ‖washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f' - h‖ :=
-        IsUltrametricDist.norm_add_le_max _ _
-    _ ≤ max (M + ε) ε :=
-        max_le_max hnorm.le (by rwa [norm_sub_rev])
-    _ ≤ M + ε :=
-        max_le le_rfl (by have hM : 0 ≤ M := norm_nonneg (toCompletion K A a); linarith)
-
 /-- The completion map is an isometry for the residue norm on `A` and the quotient Gauss
 norm on `Â`. -/
 @[simp↓] theorem norm_toCompletion (a : A) :
     letI := residueNormedCommRing K A
     ‖toCompletion K A a‖ = ‖a‖ :=
-  le_antisymm (norm_toCompletion_le K A a) (residueNorm_le_norm_toCompletion K A a)
+  letI := residueNormedCommRing K A
+  by
+  obtain ⟨f, rfl⟩ := presentation_surjective K A a
+  rw [toCompletion_presentation, Ideal.norm_mk_map_toTate,
+    ← residueAlgEquiv_presentation, norm_residueAlgEquiv]
 
 /-- The completion map `τ : A → Â` is an isometry. -/
 theorem isometry_toCompletion :
