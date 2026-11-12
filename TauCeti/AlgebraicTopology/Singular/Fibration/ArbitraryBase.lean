@@ -173,8 +173,8 @@ lemma ι_serreSpectralSequencePullbackFirstPageXIsoSigma_inv (g : B' ⟶ B) (k q
             (ModuleCat.of R R)).obj ((_root_.TopCat.pullbackFst g p).fiber (map k j 0))) j ≫
         (serreSpectralSequenceFirstPageXIsoSigma C (mem_serreFibrations_pullbackFst hp g) R k q
           pq hb ha).inv := by
-  rw [serreSpectralSequencePullbackFirstPageXIsoSigma, Iso.trans_inv, Sigma.ι_mapIso_inv_assoc]
-  rfl
+  rw [serreSpectralSequencePullbackFirstPageXIsoSigma, Iso.trans_inv, Sigma.ι_mapIso_inv_assoc,
+    Functor.mapIso_inv]
 
 end Pullback
 
