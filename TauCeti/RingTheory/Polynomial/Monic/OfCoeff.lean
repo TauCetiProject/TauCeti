@@ -44,8 +44,8 @@ in `Mathlib/RingTheory/Polynomial/UniversalFactorizationRing.lean`, is
 form, as the composite of `Polynomial.monicEquivDegreeLT` with `Polynomial.degreeLTEquiv`;
 `monicOfCoeff c` is by definition the image of `c` under the inverse of that composite, with the
 degree-`< n` and monic subtypes unbundled away and without the `Nontrivial R` that
-`monicEquivDegreeLT` carries. `TauCeti.Sym.coeffEquiv` is built from the bundled form, and
-`TauCeti.Sym.toMonic_coeffEquiv_symm` identifies its inverse with `monicOfCoeff`.
+`monicEquivDegreeLT` carries. `Sym.coeffEquiv` is built from the bundled form, and
+`Sym.toMonic_coeffEquiv_symm` identifies its inverse with `monicOfCoeff`.
 -/
 
 public section
@@ -62,8 +62,8 @@ variable {R : Type*} [CommSemiring R] {n : ℕ}
 
 /-- The monic polynomial of degree `n` whose `n` lower coefficients are `c`, that is, the
 specialization of Mathlib's `Polynomial.freeMonic` at the coefficient tuple `c`. It is the inverse
-of the coefficient-reading half of `TauCeti.Sym.coeffEquiv`, and is the natural object to state
-analytic dependence on the coefficients against: `TauCeti.Sym.coeffEquiv_symm_apply` describes the
+of the coefficient-reading half of `Sym.coeffEquiv`, and is the natural object to state
+analytic dependence on the coefficients against: `Sym.coeffEquiv_symm_apply` describes the
 inverse chart as its root multiset. -/
 noncomputable def monicOfCoeff (c : Fin n → R) : R[X] :=
   X ^ n + ∑ i : Fin n, monomial (i : ℕ) (c i)
@@ -85,7 +85,7 @@ theorem monic_monicOfCoeff (c : Fin n → R) : (monicOfCoeff c).Monic :=
 @[simp]
 theorem coeff_monicOfCoeff (c : Fin n → R) (i : Fin n) : (monicOfCoeff c).coeff (i : ℕ) = c i := by
   have hne : (i : ℕ) ≠ n := i.2.ne
-  simp [monicOfCoeff, coeff_X_pow, coeff_monomial, hne, Fin.val_eq_val]
+  simp [monicOfCoeff, coeff_X_pow, Finsupp.single_apply, hne, Fin.val_eq_val]
 
 /-- The coefficient of `X ^ n` in `TauCeti.Polynomial.monicOfCoeff c` is its leading coefficient
 `1`. -/
@@ -145,7 +145,7 @@ coefficients: together with `TauCeti.Polynomial.coeff_monicOfCoeff` this identif
 polynomials of degree `n` with the coefficient tuples. -/
 theorem monicOfCoeff_coeff {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
     monicOfCoeff (fun i : Fin n => p.coeff (i : ℕ)) = p := by
-  refine Polynomial.ext fun k => ?_
+  ext k
   rcases lt_trichotomy k n with hk | hk | hk
   · exact coeff_monicOfCoeff _ ⟨k, hk⟩
   · rw [hk, coeff_monicOfCoeff_self, ← hdeg, hp.coeff_natDegree]

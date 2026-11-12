@@ -74,7 +74,7 @@ theorem IsSymm.equivalent_iff_two_dvd_iff_and_isSquare_det_mul_det_and_eight_dvd
     B.Equivalent C ↔ ((∀ x, (2 : ℤ_[2]) ∣ B x x) ↔ ∀ y, (2 : ℤ_[2]) ∣ C y y) ∧
       IsSquare ((B.toMatrix b).det * (C.toMatrix c).det) ∧ (8 : ℤ_[2]) ∣ C w' w' - B w w := by
   have : Free ℤ_[2] N := .of_basis c
-  have : C.IsPerfPair := c.isPerfPair_of_isUnit_det C hCdet
+  have : C.IsPerfPair := c.isPerfPair_of_isUnit_det c C hCdet
   refine ⟨fun h ↦ ⟨h.forall_two_dvd_apply_self_iff, h.isSquare_det_mul_det b c, ?_⟩,
     fun ⟨hpar, hsq, h8⟩ ↦ ?_⟩
   · -- An isometry carries `w` to a characteristic vector of `C`.

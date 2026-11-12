@@ -13,9 +13,9 @@ public import Mathlib.LinearAlgebra.Projection
 
 This file supplies the linear-algebra notion of a (maximal) totally real subspace with respect to
 a linear endomorphism `J` over an arbitrary scalar semiring.  This is the algebraic pointwise
-model for totally real boundary conditions in the analytic Heegaard Floer roadmap: a boundary
-tangent space `L` is totally real when it is disjoint from its `J`-image, and maximal totally
-real when the two are moreover complementary.  The terminology is borrowed from the usual
+model for totally real boundary conditions in analytic Heegaard Floer theory: a boundary tangent
+space `L` is totally real when it is disjoint from its `J`-image, and maximal totally real when
+the two are moreover complementary.  The terminology is borrowed from the usual
 real-linear situation, but the complement API itself is purely module-theoretic.
 
 No integrability, topology, or symplectic form is bundled here.
@@ -129,6 +129,18 @@ theorem prod (hL : IsMaximalTotallyReal J L) (hM : IsMaximalTotallyReal K M) :
   exact IsCompl.prod hL.isCompl hM.isCompl
 
 end IsMaximalTotallyReal
+
+/-- A linear equivalence intertwining `J` and `K` identifies the maximal totally real submodules
+for `J` with those for `K`. This is how maximal total reality is read in a change of frame. -/
+theorem _root_.LinearEquiv.isMaximalTotallyReal_map_iff {J : E →ₗ[R] E} {K : F →ₗ[R] F}
+    {L : Submodule R E} (e : E ≃ₗ[R] F) (he : K ∘ₗ e.toLinearMap = e.toLinearMap ∘ₗ J) :
+    IsMaximalTotallyReal K (L.map e.toLinearMap) ↔ IsMaximalTotallyReal J L := by
+  rw [isMaximalTotallyReal_iff, isMaximalTotallyReal_iff, ← Submodule.map_comp, he,
+    Submodule.map_comp]
+  refine ⟨fun h => ?_, Submodule.isCompl_map e⟩
+  simpa only [← Submodule.map_comp, ← LinearMap.comp_assoc, LinearEquiv.symm_comp,
+    LinearMap.id_comp, Submodule.map_id] using
+    Submodule.isCompl_map e.symm h
 
 end Basic
 
@@ -258,6 +270,11 @@ theorem existsUnique_add (hL : IsMaximalTotallyReal J L) (x : E) :
     ∃! y : L × L.map J, (y.1 : E) + y.2 = x :=
   Submodule.existsUnique_add_of_isCompl_prod hL.isCompl x
 
+/-- The projection onto `L` along `J L` vanishes on the `J`-image of a vector of `L`. -/
+theorem projection_map_of_mem (hL : IsMaximalTotallyReal J L) {b : E} (hb : b ∈ L) :
+    L.projection (L.map J) hL.isCompl (J b) = 0 :=
+  Submodule.projection_apply_of_mem_right hL.isCompl (Submodule.mem_map_of_mem hb)
+
 variable (hJ : J ∘ₗ J = -LinearMap.id)
 include hJ
 
@@ -274,8 +291,7 @@ theorem sub_map_projection_map (hL : IsMaximalTotallyReal J L) (v : E) :
   have hJv : J v = J (P v) - b := by
     conv_lhs => rw [hv]
     rw [map_add, hJJ, sub_eq_add_neg]
-  rw [hJv, map_sub, Submodule.projection_apply_of_mem_right hL.isCompl
-      ⟨_, L.projection_apply_mem hL.isCompl v, rfl⟩,
+  rw [hJv, map_sub, hL.projection_map_of_mem (L.projection_apply_mem hL.isCompl v),
     Submodule.projection_apply_of_mem_left hL.isCompl hb, zero_sub, map_neg, sub_neg_eq_add, hbv,
     add_sub_cancel]
 

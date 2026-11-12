@@ -238,8 +238,8 @@ private theorem transform_weight (hs : 0 < s) (hξ : ξ ≠ 0) (m y : ℝ) :
       gumbelPDF 0 1 y := by
   have ht := one_add_mul_add_generalizedParetoMap_sub_div (ξ := ξ) hs.ne' m y
   rw [generalizedExtremeValuePDF_of_shape_ne_zero hξ hs (ht ▸ Real.exp_pos _),
-    gumbelPDF_of_pos one_pos, sub_zero, div_one, abs_of_pos (mul_pos hs (Real.exp_pos _)),
-    ← ENNReal.ofReal_mul (by positivity)]
+    gumbelPDF_eq_ofReal_exp_mul_exp_div, sub_zero, div_one,
+    abs_of_pos (mul_pos hs (Real.exp_pos _)), ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   rw [ht, ← Real.exp_mul]
   have hexp : ξ * y * (-ξ⁻¹) = -y := by field_simp

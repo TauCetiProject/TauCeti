@@ -134,10 +134,10 @@ jobs:
       # that the rest of this change exists to keep fresh. Restoring the retained generated set
       # first makes "keep the previous one" true for the generated data too.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@3e4266a9502de05cc7a689459051fbcb961432ce
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e20ce63fce91710739716d84b03da63037ad6e2b
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 3e4266a9502de05cc7a689459051fbcb961432ce
+          tools-ref: e20ce63fce91710739716d84b03da63037ad6e2b
           project-directory: .
       - name: Restore the last published data assets
         id: retained-data
@@ -251,8 +251,13 @@ jobs:
           path: ${{ runner.temp }}/pr-snapshot.json
           # A run-specific key lets a refresh save its snapshot; the prefix restores the newest
           # previous snapshot. This restore and the corresponding save do not run on pushes.
-          key: pr-snapshot-${{ github.run_id }}
-          restore-keys: pr-snapshot-
+          # Snapshots saved on 2026-11-10 lost the bors receipts and scoreboards beyond GitHub's
+          # comment pagination limit, which cannot be refetched. The v3 prefix skips them; until
+          # a v3 snapshot exists, the exact key below restores the last one before that loss.
+          key: pr-snapshot-v3-${{ github.run_id }}
+          restore-keys: |
+            pr-snapshot-v3-
+            pr-snapshot-42716799007
 
       # PR history and current queue state come from GitHub rather than git. The generator
       # paginates both the PR connection and each label timeline, and bounds contributor
@@ -312,7 +317,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ${{ runner.temp }}/pr-snapshot.json
-          key: pr-snapshot-${{ github.run_id }}
+          key: pr-snapshot-v3-${{ github.run_id }}
 
       # Pipeline health reuses the snapshot the charts just fetched rather than
       # walking every PR timeline a second time: that walk is thousands of
@@ -555,10 +560,10 @@ jobs:
       # checkout above already carries the committed fallbacks, so the site still builds and
       # deploys, and report-data-freshness is what makes the run red about it.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@3e4266a9502de05cc7a689459051fbcb961432ce
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e20ce63fce91710739716d84b03da63037ad6e2b
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 3e4266a9502de05cc7a689459051fbcb961432ce
+          tools-ref: e20ce63fce91710739716d84b03da63037ad6e2b
           project-directory: .
       - name: Lay down the generated data
         id: site-data

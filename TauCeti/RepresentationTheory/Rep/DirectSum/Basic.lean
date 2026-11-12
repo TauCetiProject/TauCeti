@@ -47,13 +47,14 @@ namespace Rep
 
 universe v
 
-variable {k G : Type*} [CommSemiring k] [Monoid G] {ι : Type v} [Fintype ι]
+variable {k G : Type*} [CommSemiring k] [Monoid G] {ι : Type v} [Finite ι]
   (A : Rep.{v} k G) (B : ι → Rep.{v} k G)
 
 /-- Morphisms into a finite direct sum are families of morphisms into its summands. -/
 noncomputable def homDirectSumLinearEquiv :
     (A ⟶ Rep.of (directSum fun i ↦ (B i).ρ)) ≃ₗ[k] (∀ i, A ⟶ B i) := by
   classical
+  let := Fintype.ofFinite ι
   let e := DirectSum.linearEquivFunOnFintype k ι (fun i ↦ (B i : Type v))
   have he (g : G) (x : ⨁ i, (B i : Type v)) (i : ι) :
       e (directSum (fun i ↦ (B i).ρ) g x) i = (B i).ρ g (e x i) := by
@@ -115,6 +116,7 @@ theorem homDirectSumLinearEquiv_apply
 theorem homDirectSumLinearEquiv_symm_apply (φ : ∀ i, A ⟶ B i) (x : A) (i : ι) :
     ((homDirectSumLinearEquiv A B).symm φ).hom x i = (φ i).hom x := by
   classical
+  let := Fintype.ofFinite ι
   exact congrFun ((DirectSum.linearEquivFunOnFintype k ι
     (fun i ↦ (B i : Type v))).apply_symm_apply (fun j ↦ (φ j).hom x)) i
 

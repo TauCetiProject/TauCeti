@@ -9,10 +9,13 @@ public import TauCeti.Geometry.Manifold.SmoothTriangulation.Secant
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Edgewise
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
+import TauCeti.Analysis.Calculus.Deriv.Slope
+import TauCeti.Analysis.Convex.StdSimplex
+import Mathlib.Algebra.Order.Group.PosPart
 import TauCeti.Analysis.Calculus.FDeriv.Antilipschitz
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.Analysis.Calculus.TangentCone.Real
-import TauCeti.Geometry.Manifold.SmoothTriangulation.Lipschitz
+import TauCeti.Geometry.Manifold.SmoothTriangulation.Lipschitz.Global
 
 /-!
 # Star immersions of complexes
@@ -49,6 +52,13 @@ this is the separation input for comparing and fitting together smooth triangula
 
 ## Main results
 
+* `TauCeti.IsStarImmersion.exists_pos_mul_norm_sub_le_norm_sub`: a `C¹` star immersion of a
+  complex on a finite vertex type separates nearby points uniformly in barycentric coordinates.
+* `TauCeti.isStarImmersion_of_forall_mul_norm_sub_le`: conversely, a map which is `Cⁿ` on every
+  closed simplex and separates nearby points uniformly is a `Cⁿ` star immersion.
+* `TauCeti.isStarImmersion_iff_exists_pos_mul_norm_sub_le`: for maps of a complex on a finite
+  vertex type, being a `Cⁿ` star immersion is being `Cⁿ` on every closed simplex and separating
+  nearby points uniformly.
 * `TauCeti.IsStarImmersion.exists_antilipschitzWith`: an injective `C¹` star immersion of a
   complex on a finite vertex type is antilipschitz in barycentric coordinates.
 * `TauCeti.IsStarImmersion.exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub`: the secant
@@ -68,9 +78,13 @@ extensions of `f` off its simplices. The proof of the separation bound works in 
 coordinates `ι → ℝ`. Near a pair of nearby points `x` and `y` of two simplices it chooses a common
 point `z` of the two simplices, compares `f` with its differential at `z`, and bounds the
 differential from below by compactness after rescaling the pair from the barycenter of the common
-face. For the secant maps, the Lipschitz bound for the secant error is
-`TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision` in
-`SmoothTriangulation.Lipschitz`.
+face. Conversely, separation gives injectivity of the differential: two segments leaving a common
+point with the same right derivative do not separate linearly
+(`HasDerivWithinAt.nonpos_of_mul_le_norm_sub`), so they have the same endpoint. For the secant
+maps, the antilipschitz bound is combined with
+`TauCeti.exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub_of_antilipschitzWith` and
+`TauCeti.eventually_isClosedEmbedding_secantMap_edgewiseSubdivision_of_antilipschitzWith` in
+`SmoothTriangulation.Lipschitz.Global`.
 
 ## References
 
@@ -406,14 +420,6 @@ private theorem exists_eq_of_mem_coordSimplex (σ : Face K) {w : ι → ℝ}
   rw [← range_standardSimplex_coe] at hw
   exact hw
 
-/-- Distances in the coordinate image of `|K|` are distances of barycentric coordinates. -/
-private theorem dist_eq_norm_realizationHomeomorphRange_symm
-    (p q : range fun x : Realization K => (x.1 : ι → ℝ)) :
-    dist p q = ‖(((K.realizationHomeomorphRange (Set.toFinite K.faces)).symm p).1 : ι → ℝ) -
-      ((K.realizationHomeomorphRange (Set.toFinite K.faces)).symm q).1‖ := by
-  rw [Subtype.dist_eq, dist_eq_norm, coe_realizationHomeomorphRange_symm_apply,
-    coe_realizationHomeomorphRange_symm_apply]
-
 /-- The hypotheses of `exists_pos_mul_norm_sub_le` for coordinate extensions of a star immersion
 on two closed simplices: the extensions agree on the common face, so do their derivatives along
 it, and their differentials at common points are jointly injective. -/
@@ -463,9 +469,12 @@ private theorem pair_conditions (h : IsStarImmersion n f) {G : Face K → (ι �
     rw [hqb, ← hxy] at h₂
     exact congrArg _ (h.2 σ τ pb px qb qy _ (DFunLike.coe_injective hqb.symm) (hseg σ pb px) h₂)
 
-/-- A `C¹` star immersion of a complex on a finite vertex type separates nearby points uniformly,
-in barycentric coordinates. -/
-private theorem exists_pos_mul_norm_sub_le_norm_sub (h : IsStarImmersion n f) (hn : 1 ≤ n) :
+/-- **Star immersions separate nearby points.** A `Cⁿ` star immersion, `1 ≤ n`, of a complex on a
+finite vertex type separates nearby points uniformly in barycentric coordinates: there are `c > 0`
+and `δ > 0` with `c * ‖x - y‖ ≤ ‖f x - f y‖` whenever `‖x - y‖ < δ`. No injectivity is needed.
+The converse, for maps which are `Cⁿ` on every closed simplex, is
+`TauCeti.isStarImmersion_of_forall_mul_norm_sub_le`. -/
+theorem exists_pos_mul_norm_sub_le_norm_sub (h : IsStarImmersion n f) (hn : 1 ≤ n) :
     ∃ c > 0, ∃ δ > 0, ∀ x y : Realization K, ‖(x.1 : ι → ℝ) - y.1‖ < δ →
       c * ‖(x.1 : ι → ℝ) - y.1‖ ≤ ‖f x - f y‖ := by
   classical
@@ -507,7 +516,7 @@ theorem exists_antilipschitzWith (h : IsStarImmersion n f) (hn : 1 ≤ n) (hf : 
   obtain ⟨C, hC, hanti⟩ := isCompact_univ.exists_antilipschitzWith_of_locally
     (h.continuous.comp e.symm.continuous).continuousOn ((hf.comp e.symm.injective).injOn) hc hδ
     fun p _ q _ hpq => by
-      rw [dist_eq_norm_realizationHomeomorphRange_symm] at hpq ⊢
+      rw [dist_eq_norm_realizationHomeomorphRange_symm _ (Set.toFinite _)] at hpq ⊢
       rw [comp_apply, comp_apply, dist_eq_norm]
       exact hlocal _ _ hpq
   exact ⟨C, hC, fun p q => hanti ⟨p, mem_univ p⟩ ⟨q, mem_univ q⟩⟩
@@ -520,6 +529,16 @@ section Secant
 open Filter _root_.PreAbstractSimplicialComplex
 
 variable [LinearOrder ι]
+
+omit [Fintype ι] [LinearOrder ι] in
+/-- On every closed simplex, a star immersion is the restriction of a `C¹` map in barycentric
+coordinates. -/
+private theorem exists_contDiffOn_faceInclusion (h : IsStarImmersion n f) (hn : 1 ≤ n)
+    (σ : Face K) : ∃ F : (σ.1 → ℝ) → E,
+      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights) := by
+  obtain ⟨F, hFg, hF, -⟩ := isSimplexImmersion_iff.mp (h.1 σ)
+  exact ⟨F, hFg, (contMDiffOn_iff_contDiffOn.mp hF).of_le hn⟩
 
 /-- **Secant maps of embeddings are uniformly antilipschitz.** Let `f` be an injective `Cⁿ` star
 immersion, `1 ≤ n`, of a complex on a finite vertex type into a normed space. There is a constant
@@ -534,37 +553,9 @@ theorem exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub (h : IsStarImme
           (edgewiseSubdivisionRealizationMap K k y).1‖ ≤
         C * ‖(K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
           (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) y‖ := by
-  set e := K.realizationHomeomorphRange (Set.toFinite K.faces)
-  obtain ⟨C, hC, hanti⟩ := h.exists_antilipschitzWith hn hf
-  have hlt : (2 * C)⁻¹ < C⁻¹ := inv_strictAnti₀ hC (lt_two_mul_self hC)
-  refine ⟨((C⁻¹ - (2 * C)⁻¹)⁻¹ : NNReal), NNReal.coe_pos.2 (inv_pos.2 (tsub_pos_of_lt hlt)), ?_⟩
-  -- On every closed simplex, `f` is the restriction of a `C¹` map in barycentric coordinates.
-  have hC1 (σ : Face K) : ∃ F : (σ.1 → ℝ) → E,
-      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
-        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights) := by
-    obtain ⟨F, hFg, hF, -⟩ := isSimplexImmersion_iff.mp (h.1 σ)
-    exact ⟨F, hFg, (contMDiffOn_iff_contDiffOn.mp hF).of_le hn⟩
-  filter_upwards [eventually_ne_atTop 0, eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
-    hC1 (ε := ((2 * C)⁻¹ : NNReal)) (NNReal.coe_pos.2 (inv_pos.2 (by positivity)))]
-    with k hk0 hk x y
-  -- Move the secant map to the coordinate image of `|K|` and perturb `f` there.
-  set Ψ := (edgewiseSubdivisionRealizationHomeomorph K hk0).trans e
-  set s := (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)
-  have hΨ (x : Realization (K.edgewiseSubdivision k)) :
-      e.symm (Ψ x) = edgewiseSubdivisionRealizationMap K k x := by
-    rw [Homeomorph.trans_apply, e.symm_apply_apply, edgewiseSubdivisionRealizationHomeomorph_apply]
-  have hdist (x y : Realization (K.edgewiseSubdivision k)) : dist (Ψ x) (Ψ y) =
-      ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
-        (edgewiseSubdivisionRealizationMap K k y).1‖ := by
-    rw [dist_eq_norm_realizationHomeomorphRange_symm, hΨ, hΨ]
-  have hlip : LipschitzWith (2 * C)⁻¹ (s ∘ Ψ.symm - f ∘ e.symm) :=
-    LipschitzWith.of_dist_le_mul fun p q => by
-      obtain ⟨x, rfl⟩ := Ψ.surjective p
-      obtain ⟨y, rfl⟩ := Ψ.surjective q
-      simpa only [hdist, dist_eq_norm, Pi.sub_apply, comp_apply, Homeomorph.symm_apply_apply,
-        hΨ] using hk x y
-  simpa only [hdist, dist_eq_norm, comp_apply, Homeomorph.symm_apply_apply] using
-    (hanti.add_sub_lipschitzWith hlip hlt).le_mul_dist (Ψ x) (Ψ y)
+  obtain ⟨C, -, hanti⟩ := h.exists_antilipschitzWith hn hf
+  exact exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub_of_antilipschitzWith
+    (h.exists_contDiffOn_faceInclusion hn) hanti
 
 omit [Fintype ι] in
 /-- **Secant maps of embeddings are embeddings.** Let `f` be an injective `Cⁿ` star immersion,
@@ -577,23 +568,191 @@ theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision [Finite ι]
     ∀ᶠ k in atTop, Topology.IsClosedEmbedding
       ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)) := by
   have := Fintype.ofFinite ι
-  obtain ⟨C, -, hC⟩ := h.exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub hn hf
-  filter_upwards [hC, eventually_ne_atTop 0] with k hk hk0
-  have : CompactSpace (Realization K) := K.compactSpace_realization_of_finite_faces
-    (Set.toFinite K.faces)
-  have : CompactSpace (Realization (K.edgewiseSubdivision k)) :=
-    (edgewiseSubdivisionRealizationHomeomorph K hk0).symm.compactSpace
-  refine (continuous_secantMap _).isClosedEmbedding fun x y hxy => ?_
-  have hle := hk x y
-  rw [hxy, sub_self, norm_zero, mul_zero] at hle
-  exact edgewiseSubdivisionRealizationMap_injective
-    (Subtype.ext (DFunLike.coe_injective (sub_eq_zero.mp (norm_le_zero_iff.mp hle))))
+  obtain ⟨C, -, hanti⟩ := h.exists_antilipschitzWith hn hf
+  exact eventually_isClosedEmbedding_secantMap_edgewiseSubdivision_of_antilipschitzWith
+    (h.exists_contDiffOn_faceInclusion hn) hanti
 
 end Secant
 
 end Finite
 
 end IsStarImmersion
+
+/-! ### Separation characterizes star immersions -/
+
+section Separation
+
+open Filter Topology
+
+variable {f : Realization K → E}
+
+/-- Along a segment in a closed simplex, a map with a coordinate extension `F` has as right
+derivative the derivative of `F` at the starting point applied to the direction of the
+segment. -/
+private theorem hasDerivWithinAt_lineMap_of_hasFDerivWithinAt {σ : Finset ι}
+    {g : StandardSimplex σ → E} {F : (σ → ℝ) → E} {F' : (σ → ℝ) →L[ℝ] E}
+    (hFg : ∀ x : StandardSimplex σ, F (fun a => x.1 a) = g x) (b x : StandardSimplex σ)
+    (hF : HasFDerivWithinAt F F' (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights)
+      fun a : σ => b.1 a) :
+    HasDerivWithinAt (IccExtend zero_le_one (g ∘ StandardSimplex.lineMap b x))
+      (F' ((fun a : σ => x.1 a) - fun a : σ => b.1 a)) (Icc 0 1) 0 := by
+  have hmem (y : StandardSimplex σ) :
+      (fun a : σ => y.1 a) ∈ range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights := by
+    rw [← Finset.range_standardSimplex_coordinates]
+    exact mem_range_self y
+  have hline := hF.comp_hasDerivWithinAt_of_eq (0 : ℝ) AffineMap.hasDerivWithinAt_lineMap
+    (fun t ht => (Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ σ).lineMap_mem
+      (hmem b) (hmem x) ht) (by simp)
+  refine hline.congr_of_mem (fun t ht => ?_) (left_mem_Icc.2 zero_le_one)
+  rw [IccExtend_of_mem _ _ ht, comp_apply, comp_apply, ← hFg]
+  congr 1
+  funext a
+  simp [AffineMap.lineMap_apply_module]
+
+variable [Fintype ι]
+
+/-- If `f` separates nearby points uniformly in barycentric coordinates, two segments from a
+common point of two closed simplices along which `f` has the same right derivative have the same
+endpoint. This is the star condition of `TauCeti.IsStarImmersion`. -/
+private theorem eq_of_hasDerivWithinAt_of_forall_mul_norm_sub_le {c δ : ℝ} (hc : 0 < c)
+    (hδ : 0 < δ) (hsep : ∀ x y : Realization K, ‖(x.1 : ι → ℝ) - y.1‖ < δ →
+      c * ‖(x.1 : ι → ℝ) - y.1‖ ≤ ‖f x - f y‖)
+    {σ τ : Face K} {b x : StandardSimplex σ.1} {b' y : StandardSimplex τ.1} {u : E}
+    (hb : (b : ι →₀ ℝ) = b')
+    (hx : HasDerivWithinAt
+      (IccExtend zero_le_one (f ∘ faceInclusion K σ ∘ StandardSimplex.lineMap b x)) u (Icc 0 1) 0)
+    (hy : HasDerivWithinAt
+      (IccExtend zero_le_one (f ∘ faceInclusion K τ ∘ StandardSimplex.lineMap b' y)) u
+        (Icc 0 1) 0) :
+    (x : ι →₀ ℝ) = y := by
+  set D := ‖((x : ι →₀ ℝ) : ι → ℝ) - y‖
+  -- The points at parameter `s` of the two segments are at distance `s * D`.
+  have hdist (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) :
+      ‖((faceInclusion K σ (StandardSimplex.lineMap b x ⟨s, hs⟩)).1 : ι → ℝ) -
+        (faceInclusion K τ (StandardSimplex.lineMap b' y ⟨s, hs⟩)).1‖ = s * D := by
+    have h : ((faceInclusion K σ (StandardSimplex.lineMap b x ⟨s, hs⟩)).1 : ι → ℝ) -
+        (faceInclusion K τ (StandardSimplex.lineMap b' y ⟨s, hs⟩)).1 = s • (⇑(x : ι →₀ ℝ) - y) := by
+      simp only [faceInclusion_val, StandardSimplex.coe_lineMap, hb,
+        AffineMap.lineMap_apply_module, Finsupp.coe_add, Finsupp.coe_smul]
+      module
+    rw [h, norm_smul, Real.norm_of_nonneg hs.1]
+  have hb₀ : faceInclusion K σ b = faceInclusion K τ b' :=
+    Subtype.ext (by rw [faceInclusion_val, faceInclusion_val, hb])
+  have h0 : IccExtend zero_le_one (f ∘ faceInclusion K σ ∘ StandardSimplex.lineMap b x) 0 =
+      IccExtend zero_le_one (f ∘ faceInclusion K τ ∘ StandardSimplex.lineMap b' y) 0 := by
+    simp [hb₀]
+  have hcD : c * D ≤ 0 := by
+    have hIcc : Icc (0 : ℝ) 1 ∈ 𝓝[>] 0 :=
+      mem_of_superset (Ioo_mem_nhdsGT one_pos) Ioo_subset_Icc_self
+    refine (hx.mono_of_mem_nhdsWithin hIcc).nonpos_of_mul_le_norm_sub
+      (hy.mono_of_mem_nhdsWithin hIcc) h0 ?_
+    have hD1 : 0 < D + 1 := by positivity
+    filter_upwards [Ioo_mem_nhdsGT (lt_min one_pos (div_pos hδ hD1))] with s hs
+    have hs₁ : s ∈ Icc (0 : ℝ) 1 := ⟨hs.1.le, (hs.2.trans_le (min_le_left _ _)).le⟩
+    have hsD : s * D < δ := by
+      have h := (lt_div_iff₀ hD1).mp (hs.2.trans_le (min_le_right _ _))
+      nlinarith [hs.1]
+    simpa only [IccExtend_of_mem _ _ hs₁, comp_apply, sub_zero, mul_left_comm s, ← hdist s hs₁]
+      using hsep _ _ ((hdist s hs₁).trans_lt hsD)
+  have hD : D = 0 := le_antisymm (nonpos_of_mul_nonpos_right hcD hc) (norm_nonneg _)
+  exact DFunLike.coe_injective (sub_eq_zero.mp (norm_eq_zero.mp hD))
+
+/-- A map which separates nearby points uniformly in barycentric coordinates and is `Cⁿ` on a
+closed simplex, `1 ≤ n`, is a `Cⁿ` immersion of that simplex. -/
+private theorem isSimplexImmersion_of_forall_mul_norm_sub_le {c δ : ℝ} (hc : 0 < c) (hδ : 0 < δ)
+    (hsep : ∀ x y : Realization K, ‖(x.1 : ι → ℝ) - y.1‖ < δ →
+      c * ‖(x.1 : ι → ℝ) - y.1‖ ≤ ‖f x - f y‖)
+    (σ : Face K) {F : (σ.1 → ℝ) → E}
+    (hFg : ∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x))
+    (hF : ContDiffOn ℝ n F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
+    (hn : 1 ≤ n) :
+    IsSimplexImmersion 𝓘(ℝ, E) n (f ∘ faceInclusion K σ) := by
+  set S := range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights with hS
+  -- The points of the closed simplex with prescribed coordinates.
+  have hpt (w : σ.1 → ℝ) (hw : w ∈ S) :
+      ∃ x : StandardSimplex σ.1, (fun a : σ.1 => x.1 a) = w := by
+    rwa [hS, ← Finset.range_standardSimplex_coordinates] at hw
+  refine isSimplexImmersion_iff.mpr ⟨F, hFg, contMDiffOn_iff_contDiffOn.mpr hF, fun t => ?_⟩
+  have hFt : HasFDerivWithinAt F (fderivWithin ℝ F S t.weights) S t.weights :=
+    ((hF.differentiableOn (by positivity)) _ ⟨t, rfl⟩).hasFDerivWithinAt
+  refine ⟨_, hasMFDerivWithinAt_iff_hasFDerivWithinAt.mpr hFt, fun v hv hv0 => ?_⟩
+  set F' := fderivWithin ℝ F S t.weights
+  -- Write `v` as a multiple of the difference of two points `x` and `y` of the simplex, using
+  -- its positive and negative parts, which have the same coordinate sum `s`.
+  have hsum : ∑ a, v⁻ a = ∑ a, v⁺ a := by
+    have h : ∑ a, (v⁺ a - v⁻ a) = ∑ a, v a :=
+      Finset.sum_congr rfl fun a _ => by rw [← Pi.sub_apply, posPart_sub_negPart]
+    rw [Finset.sum_sub_distrib, hv] at h
+    linarith
+  have hpos : ∀ a, 0 ≤ v⁺ a := fun a => (posPart_nonneg v) a
+  have hneg : ∀ a, 0 ≤ v⁻ a := fun a => (negPart_nonneg v) a
+  rcases (Finset.sum_nonneg fun a _ => hpos a).eq_or_lt with hs0 | hs0
+  · -- If the positive part has coordinate sum zero, both parts vanish.
+    have hp : v⁺ = 0 := funext fun a =>
+      (Finset.sum_eq_zero_iff_of_nonneg fun a _ => hpos a).mp hs0.symm a (Finset.mem_univ a)
+    have hn : v⁻ = 0 := funext fun a =>
+      (Finset.sum_eq_zero_iff_of_nonneg fun a _ => hneg a).mp (hsum.trans hs0.symm) a
+        (Finset.mem_univ a)
+    rw [← posPart_sub_negPart v, hp, hn, sub_zero]
+  set s := ∑ a, v⁺ a
+  have hmem (w : σ.1 → ℝ) (hw : ∀ a, 0 ≤ w a) (hws : ∑ a, w a = s) : s⁻¹ • w ∈ S := by
+    refine Convexity.StdSimplex.mem_range_toFun_comp_weights_iff.mpr
+      ⟨fun a => mul_nonneg (inv_nonneg.mpr hs0.le) (hw a), ?_⟩
+    simp only [Pi.smul_apply, smul_eq_mul, ← Finset.mul_sum, hws, inv_mul_cancel₀ hs0.ne']
+  obtain ⟨x, hx⟩ := hpt _ (hmem _ hpos rfl)
+  obtain ⟨y, hy⟩ := hpt _ (hmem _ hneg hsum)
+  obtain ⟨b, hb⟩ := hpt t.weights ⟨t, rfl⟩
+  rw [← hb] at hFt
+  have hdir : (fun a : σ.1 => y.1 a) - (fun a : σ.1 => b.1 a) =
+      ((fun a : σ.1 => x.1 a) - fun a : σ.1 => b.1 a) - s⁻¹ • v := by
+    rw [hx, hy]
+    nth_rw 3 [← posPart_sub_negPart v]
+    module
+  -- `F` has the same derivative along the segments from `b` to `x` and to `y`.
+  have hxy := eq_of_hasDerivWithinAt_of_forall_mul_norm_sub_le hc hδ hsep (σ := σ) (τ := σ)
+    (b := b) (b' := b) (x := x) (y := y) rfl
+    (hasDerivWithinAt_lineMap_of_hasFDerivWithinAt hFg b x hFt)
+    ((hasDerivWithinAt_lineMap_of_hasFDerivWithinAt hFg b y hFt).congr_deriv (by
+      rw [hdir, map_sub, map_smul, hv0, smul_zero, sub_zero]))
+  have hcoord : s⁻¹ • v⁺ = s⁻¹ • v⁻ := by
+    rw [← hx, ← hy, hxy]
+  rw [← posPart_sub_negPart v, smul_right_injective _ (inv_ne_zero hs0.ne') hcoord, sub_self]
+
+/-- **Separation gives star immersions.** Let `f` be a map of the realization of a complex on a
+finite vertex type into a normed space which is `Cⁿ` on every closed simplex, `1 ≤ n`: in
+barycentric coordinates it is the restriction of a map `Cⁿ` within the standard simplex. If `f`
+separates nearby points uniformly in barycentric coordinates, `c * ‖x - y‖ ≤ ‖f x - f y‖`
+whenever `‖x - y‖ < δ`, then `f` is a `Cⁿ` star immersion. -/
+theorem isStarImmersion_of_forall_mul_norm_sub_le
+    (hf : ∀ σ : Face K, ∃ F : (σ.1 → ℝ) → E,
+      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ n F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
+    (hn : 1 ≤ n) {c δ : ℝ} (hc : 0 < c) (hδ : 0 < δ)
+    (hsep : ∀ x y : Realization K, ‖(x.1 : ι → ℝ) - y.1‖ < δ →
+      c * ‖(x.1 : ι → ℝ) - y.1‖ ≤ ‖f x - f y‖) :
+    IsStarImmersion n f := by
+  refine isStarImmersion_iff.mpr ⟨fun σ => ?_, fun σ τ b x b' y u hb hx hy =>
+    eq_of_hasDerivWithinAt_of_forall_mul_norm_sub_le hc hδ hsep hb hx hy⟩
+  obtain ⟨F, hFg, hF⟩ := hf σ
+  exact isSimplexImmersion_of_forall_mul_norm_sub_le hc hδ hsep σ hFg hF hn
+
+/-- **Star immersions are the uniformly separating maps.** A map of the realization of a complex
+on a finite vertex type into a normed space is a `Cⁿ` star immersion, `1 ≤ n`, if and only if it
+is `Cⁿ` on every closed simplex and separates nearby points uniformly in barycentric
+coordinates. -/
+theorem isStarImmersion_iff_exists_pos_mul_norm_sub_le (hn : 1 ≤ n) :
+    IsStarImmersion n f ↔
+      (∀ σ : Face K, ∃ F : (σ.1 → ℝ) → E,
+        (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
+          ContDiffOn ℝ n F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights)) ∧
+      ∃ c > 0, ∃ δ > 0, ∀ x y : Realization K, ‖(x.1 : ι → ℝ) - y.1‖ < δ →
+        c * ‖(x.1 : ι → ℝ) - y.1‖ ≤ ‖f x - f y‖ := by
+  refine ⟨fun h => ⟨fun σ => ?_, h.exists_pos_mul_norm_sub_le_norm_sub hn⟩,
+    fun ⟨hf, c, hc, δ, hδ, hsep⟩ => isStarImmersion_of_forall_mul_norm_sub_le hf hn hc hδ hsep⟩
+  obtain ⟨F, hFg, hF, -⟩ := isSimplexImmersion_iff.mp (h.isSimplexImmersion σ)
+  exact ⟨F, hFg, contMDiffOn_iff_contDiffOn.mp hF⟩
+
+end Separation
 
 end TauCeti
 
