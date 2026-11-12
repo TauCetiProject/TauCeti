@@ -66,7 +66,7 @@ theorem norm_eval_hasseDeriv_monomial_le (d μ : σ →₀ ℕ) (c : R) (a : σ 
     _ ≤ (∏ s, ‖((μ s).choose (d s) : R)‖) * ‖c‖ * ∏ s, ‖a s ^ (μ s - d s)‖ := by
       gcongr <;> exact Finset.norm_prod_le _ _
     _ ≤ (∏ s, ((μ s).choose (d s) : ℝ)) * ‖c‖ * ∏ s, ‖a s‖ ^ (μ s - d s) := by
-      gcongr with s s
+      gcongr with s _
       · rw [← nsmul_one]
         exact norm_nsmul_le.trans (by simp)
       · exact norm_pow_le _ _
