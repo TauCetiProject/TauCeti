@@ -9,6 +9,7 @@ public import TauCeti.Analysis.MvPolynomial.Complexification
 public import TauCeti.Analysis.Polynomial.Puiseux.Monic
 public import TauCeti.Analysis.Polynomial.Puiseux.RealRoots
 import Mathlib.Analysis.Convex.Contractible
+import TauCeti.Analysis.MvPolynomial.Analytic
 import TauCeti.Analysis.Polynomial.RealRoots.Reciprocal
 import TauCeti.RingTheory.Polynomial.Resultant.RootCoordinates
 

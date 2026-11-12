@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.MvPolynomial.Lazard.Complexification
 public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Factorization
-import TauCeti.Analysis.MvPolynomial.Complexification
+import TauCeti.Analysis.MvPolynomial.Analytic
 
 /-!
 # Puiseux Laurent branches along Lazard monomial deformations
