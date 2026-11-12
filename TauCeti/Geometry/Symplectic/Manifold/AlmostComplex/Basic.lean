@@ -194,6 +194,11 @@ theorem tangentEquiv_apply (J : SmoothAlmostComplexStructure I M) (x : M) (v : T
     J.tangentEquiv x v = J x v :=
   (rfl)
 
+@[simp]
+theorem tangentEquiv_symm_apply (J : SmoothAlmostComplexStructure I M) (x : M)
+    (v : TangentSpace I x) : (J.tangentEquiv x).symm v = -J x v :=
+  (rfl)
+
 /-- The tangent automorphisms `J` form a `C^n` section of the endomorphism bundle. -/
 theorem contMDiff_tangentEquiv {n : ℕ∞ω} [ENat.LEInfty n] (J : SmoothAlmostComplexStructure I M) :
     ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) n

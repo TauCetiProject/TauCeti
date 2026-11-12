@@ -35,10 +35,11 @@ the rotation by a right angle of the oriented Euclidean plane `T_x M`
 Any two metrics compatible with `j` on a surface are conformal: on each tangent plane they are
 proportional, because both make every frame `(v, j v)` orthogonal with sides of equal length.
 Hence the area form of a second compatible metric `g'` is the area form of `g` times the conformal
-factor `g'(w, w) / g(w, w)`, for any nonzero `w`
-(`TauCeti.SmoothAlmostComplexStructure.inner_apply_left_eq_mul_riemannianVolumeForm`). So the
-`L²` pairing of bundle sections over a surface, `Bundle.ContMDiffRiemannianMetric.l2Pairing`,
-changes under a change of compatible metric only by this factor.
+factor `c(x) = g'(w, w) / g(w, w)`, for any nonzero `w` at `x`
+(`TauCeti.SmoothAlmostComplexStructure.inner_apply_left_eq_mul_riemannianVolumeForm`). So, with the
+bundle metric `h` fixed, the `L²` pairing of bundle sections over a surface,
+`Bundle.ContMDiffRiemannianMetric.l2Pairing`, becomes `∫ c(x) h(ξ(x), η(x)) dA` under a change of
+compatible metric; it is a scalar multiple of the original pairing only when `c` is constant.
 
 ## Main declarations
 
@@ -161,10 +162,7 @@ private theorem apply_eq_rightAngleRotation
     simpa only [almostComplexStructureAt_apply, real_inner_comm v] using
       AlmostComplexStructure.inner_apply_self hjx v
   have harea : ox.areaForm v (j x v) = ‖v‖ ^ 2 := by
-    have h := ox.inner_sq_add_areaForm_sq v (j x v)
-    rw [hperp, hnorm] at h
-    nlinarith [sq_nonneg (ox.areaForm v (j x v) - ‖v‖ ^ 2),
-      sq_nonneg (ox.areaForm v (j x v) + ‖v‖ ^ 2), sq_nonneg ‖v‖]
+    simpa only [abs_of_pos hpos, hnorm, ← sq] using ox.abs_areaForm_of_orthogonal hperp
   -- Equality in Cauchy–Schwarz for `⟪J v, j v⟫ = ω(v, j v) = |J v| |j v|`.
   have hJ : ‖ox.rightAngleRotation v‖ = ‖v‖ := by simp
   have heq : ⟪ox.rightAngleRotation v, j x v⟫ = ‖ox.rightAngleRotation v‖ * ‖j x v‖ := by
