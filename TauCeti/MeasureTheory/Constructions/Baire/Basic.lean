@@ -8,19 +8,20 @@ module
 public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.Topology.UrysohnsLemma
 import Mathlib.Data.Nat.Pairing
-import Mathlib.Topology.MetricSpace.HausdorffDistance
+import Mathlib.Topology.Separation.PerfectlyNormal
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Prod
 
 /-!
 # Baire sets and hulls
 
 The Baire σ-algebra is the smallest σ-algebra making every continuous real-valued function
-measurable. It is contained in the Borel σ-algebra, and coincides with it on pseudometrizable
-spaces, though the two need not coincide without countability or metrizability assumptions.
-Every Baire set is pulled back from a Borel subset of `ℕ → ℝ` along a countable sequence of
-continuous real-valued functions, and every clopen set is Baire measurable with subtype Baire
-σ-algebra induced from the ambient space. Because continuous real-valued functions on σ-compact
-products are measurable for the product Borel σ-algebra, any continuous map out of a σ-compact
+measurable. It is contained in the Borel σ-algebra, and coincides with it on perfectly normal
+(in particular pseudometrizable) spaces, though the two need not coincide without countability or
+separation assumptions. Every Baire set is pulled back from a Borel subset of `ℕ → ℝ` along a
+countable sequence of continuous real-valued functions, and every clopen set is Baire measurable
+with subtype Baire σ-algebra induced from the ambient space. Because continuous real-valued
+functions on `X × Y` are measurable for the product σ-algebra when `X` and `Y` are σ-compact with
+`Y` Hausdorff (or when `X` is σ-compact and `Y` is compact), any continuous map out of such a
 product is measurable into the Baire σ-algebra of its target. This notion is different from having
 the Baire property (agreement with an open set modulo a meagre set).
 
@@ -78,21 +79,14 @@ theorem _root_.Continuous.measurable_baire {f : X → Y} (hf : Continuous f) :
   intro g
   exact (g.comp ⟨f, hf⟩).measurable_baire
 
-/-- On a pseudometrizable space, the Baire and Borel σ-algebras coincide: every closed set is the
-zero locus of the continuous distance function to it. -/
-theorem baire_eq_borel [PseudoMetrizableSpace X] : baire X = borel X := by
+/-- On a perfectly normal space (for instance, any pseudometrizable space), the Baire and Borel
+σ-algebras coincide. -/
+theorem baire_eq_borel [PerfectlyNormalSpace X] : baire X = borel X := by
   refine le_antisymm baire_le_borel ?_
-  let : PseudoMetricSpace X := pseudoMetrizableSpacePseudoMetric X
   rw [borel_eq_generateFrom_isClosed]
   refine MeasurableSpace.generateFrom_le fun s hs => ?_
-  rcases s.eq_empty_or_nonempty with rfl | hne
-  · exact @MeasurableSet.empty X (baire X)
-  · let d : C(X, ℝ) := ⟨fun x => Metric.infDist x s, Metric.continuous_infDist_pt s⟩
-    have hsd : s = d ⁻¹' {0} := by
-      ext x
-      exact hs.mem_iff_infDist_zero hne
-    rw [hsd]
-    exact d.measurable_baire (measurableSet_singleton 0)
+  obtain ⟨f, rfl, -⟩ := perfectlyNormalSpace_iff_forall_isClosed_preimage_zero.1 ‹_› s hs
+  exact f.measurable_baire (measurableSet_singleton 0)
 
 /-- Every Baire set is the preimage of a measurable subset of `ℕ → ℝ` under a sequence of
 continuous real-valued functions. -/
@@ -123,8 +117,7 @@ theorem measurableSet_baire_iff_exists_continuousMap {s : Set X} :
     let _ : MeasurableSpace X := baire X
     exact (measurable_pi_iff.2 fun k => (f k).measurable_baire) ht
 
-/-- Every clopen set is Baire measurable, as the preimage of `{1}` under its `{0, 1}`-valued
-continuous indicator. -/
+/-- Every clopen set is Baire measurable. -/
 theorem _root_.IsClopen.measurableSet_baire {s : Set X} (hs : IsClopen s) :
     MeasurableSet[TauCeti.baire X] s := by
   let f : C(X, ℝ) :=
@@ -136,8 +129,7 @@ theorem _root_.IsClopen.measurableSet_baire {s : Set X} (hs : IsClopen s) :
   exact f.measurable_baire (measurableSet_singleton 1)
 
 /-- On a clopen subset `s`, the intrinsic Baire σ-algebra `baire s` coincides with the subtype
-pullback of `baire X`, because every continuous real-valued function on `s` extends by zero to a
-continuous function on `X`. -/
+pullback of `baire X`. -/
 theorem _root_.IsClopen.baire_subtype {s : Set X} (hs : IsClopen s) :
     TauCeti.baire s = (TauCeti.baire X).comap ((↑) : s → X) := by
   refine le_antisymm (baire_le_iff.2 fun g u hu => ?_)
