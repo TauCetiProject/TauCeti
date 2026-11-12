@@ -97,8 +97,7 @@ private theorem alexanderGenerator_rightHandedTrefoilPDCode_relations :
   rw [alexanderGenerator_rightHandedTrefoilPDCode (1, 3),
     alexanderGenerator_rightHandedTrefoilPDCode (1, 1),
     alexanderGenerator_rightHandedTrefoilPDCode (1, 2)] at h1
-  exact ⟨by simpa [rightHandedTrefoilOverArc_def] using h0,
-    by simpa [rightHandedTrefoilOverArc_def] using h1⟩
+  exact ⟨by simpa [Fin.reduceSub, Fin.neg_def] using h0, by simpa using h1⟩
 
 /-- The Alexander module of the trefoil maps onto `ℤ[T;T⁻¹] ⧸ (Δ) × ℤ[T;T⁻¹]`, sending the arcs
 `a`, `b`, `c` to `(0, 1)`, `(1, 1)` and `(1 - t, 1)`. -/
@@ -126,7 +125,7 @@ private theorem exists_surjective_alexanderModule_rightHandedTrefoilPDCode :
       v (.inl (rightHandedTrefoilPDCode.edgePair.val h)) = v (.inl h) := by
     obtain ⟨⟨i, slot⟩, rfl⟩ := (PDCode.crossingSlotEquiv 3).surjective h
     rw [rightHandedTrefoilPDCode_edgePair_apply]
-    fin_cases i <;> fin_cases slot <;> simp [v, rightHandedTrefoilOverArc_def]
+    simp [v]
   have hcross (i : Fin 3) (slot : Fin 4) :
       v (.inl (rightHandedTrefoilPDCode.crossing i (slot + 2))) =
         rightHandedTrefoilPDCode.alexanderWeight i slot •
@@ -135,9 +134,11 @@ private theorem exists_surjective_alexanderModule_rightHandedTrefoilPDCode :
           v (.inl (rightHandedTrefoilPDCode.crossing i (slot + 1))) := by
     simp only [crossing_rightHandedTrefoilPDCode, alexanderWeight_rightHandedTrefoilPDCode]
     fin_cases i <;> fin_cases slot <;>
-      simp only [v, arc, rightHandedTrefoilOverArc_def, hsmul, Sum.elim_inl, Equiv.symm_apply_apply,
+      simp only [v, arc, rightHandedTrefoilOverArc_zero, rightHandedTrefoilOverArc_one,
+        rightHandedTrefoilOverArc_two, rightHandedTrefoilOverArc_three, Fin.reduceSub,
+        hsmul, Sum.elim_inl, Equiv.symm_apply_apply,
         Fin.isValue, Fin.mk_one, Fin.reduceAdd, Fin.reduceFinMk, Fin.zero_eta, Matrix.cons_val,
-        Matrix.cons_val', Matrix.cons_val_fin_one, Matrix.cons_val_one, Matrix.cons_val_zero,
+        Matrix.cons_val_one, Matrix.cons_val_zero,
         Prod.ext_iff, Prod.mk_add_mk, Prod.smul_mk, Ideal.Quotient.mk_eq_mk, mkQ_apply, map_one,
         map_sub, smul_eq_mul, one_smul, zero_smul, mul_one, mul_zero, add_zero, zero_add,
         add_sub_cancel, sub_self, and_true, Int.reduceNeg]
@@ -152,7 +153,7 @@ private theorem exists_surjective_alexanderModule_rightHandedTrefoilPDCode :
     ⟨((Ideal.Quotient.mk_surjective x.1).choose, x.2),
       Prod.ext (Ideal.Quotient.mk_surjective x.1).choose_spec rfl⟩
   refine ⟨r • gen (0, 0) + y • (gen (1, 0) - gen (0, 0)), ?_⟩
-  simp [v, arc, rightHandedTrefoilOverArc_def, hsmul]
+  simp [v, arc, hsmul]
 
 /-- `ℤ[T;T⁻¹] ⧸ (Δ) × ℤ[T;T⁻¹]` maps onto the Alexander module of the trefoil, sending `(1, 0)` to
 `b - a` and `(0, 1)` to `a`. -/

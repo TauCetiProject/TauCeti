@@ -33,7 +33,7 @@ The relations do not involve orientations: they are the Alexander relations of a
 evaluated at `t = -1`, where the weight `t ^ (±1)` of every under-slot becomes `-1`. This is how
 `TauCeti.KnotTheory.PDCode.FoxColoring.Invariance` shows that the colouring module is an invariant
 of Reidemeister equivalence. Constant families are always colourings, and a crossing-free diagram
-of `c` circles has the free module `M ^ c` of colourings, one label for each circle.
+of `c` circles has the product module `M ^ c` of colourings, one label for each circle.
 
 ## Main definitions
 
@@ -43,11 +43,11 @@ of `c` circles has the free module `M ^ c` of colourings, one label for each cir
 ## Main results
 
 * `TauCeti.PDCode.mem_foxColorings_iff`: the defining conditions of a Fox colouring.
-* `TauCeti.PDCode.apply_crossing_add_two_of_isOver` and
-  `TauCeti.PDCode.apply_crossing_add_two_of_isOver_eq_false`: the relations of a colouring at the
-  over- and under-strands of a crossing.
+* `TauCeti.PDCode.apply_crossing_add_two_of_mem_foxColorings_of_isOver` and
+  `TauCeti.PDCode.apply_crossing_add_two_of_mem_foxColorings_of_not_isOver`: the colouring relations
+  at the over- and under-strands of a crossing.
 * `TauCeti.PDCode.const_mem_foxColorings`: constant families are colourings.
-* `TauCeti.PDCode.foxColorings_eq_top`: every family is a colouring of a crossing-free code.
+* `TauCeti.PDCode.foxColorings_eq_top_of_zero_crossings`: every family colours a crossing-free code.
 * `TauCeti.PDCode.natCard_foxColorings_of_zero_crossings`: a crossing-free code of `c` circles has
   `|M| ^ c` colourings.
 * `TauCeti.OrientedPDCode.natCard_foxColorings_unknot`: the crossing-free unknot has `|M|`
@@ -114,7 +114,8 @@ theorem apply_edgePair_of_mem_foxColorings (hv : v ∈ D.foxColorings R M) (h : 
   (mem_foxColorings_iff.1 hv).1 h
 
 /-- A Fox colouring gives the two half-edges of the over-strand at a crossing the same label. -/
-theorem apply_crossing_add_two_of_isOver (hv : v ∈ D.foxColorings R M) {i : Fin n}
+theorem apply_crossing_add_two_of_mem_foxColorings_of_isOver
+    (hv : v ∈ D.foxColorings R M) {i : Fin n}
     {slot : Fin 4} (h : D.isOver i slot = true) :
     v (.inl (D.crossing i (slot + 2))) = v (.inl (D.crossing i slot)) := by
   rw [(mem_foxColorings_iff.1 hv).2 i slot]
@@ -122,7 +123,8 @@ theorem apply_crossing_add_two_of_isOver (hv : v ∈ D.foxColorings R M) {i : Fi
 
 /-- Along the under-strand at a crossing, a Fox colouring satisfies
 `v (s + 2) = 2 • v (s + 1) - v s`, where `s + 1` is an over-slot. -/
-theorem apply_crossing_add_two_of_isOver_eq_false (hv : v ∈ D.foxColorings R M) {i : Fin n}
+theorem apply_crossing_add_two_of_mem_foxColorings_of_not_isOver
+    (hv : v ∈ D.foxColorings R M) {i : Fin n}
     {slot : Fin 4} (h : D.isOver i slot = false) :
     v (.inl (D.crossing i (slot + 2))) =
       2 • v (.inl (D.crossing i (slot + 1))) - v (.inl (D.crossing i slot)) := by
@@ -131,6 +133,7 @@ theorem apply_crossing_add_two_of_isOver_eq_false (hv : v ∈ D.foxColorings R M
 
 variable (D R) in
 /-- Every constant family is a Fox colouring. -/
+@[simp]
 theorem const_mem_foxColorings (m : M) :
     Function.const (Fin (4 * n) ⊕ Fin D.crossinglessComponentCount) m ∈ D.foxColorings R M := by
   refine mem_foxColorings_iff.2 ⟨fun _ ↦ rfl, fun i slot ↦ ?_⟩
@@ -142,14 +145,15 @@ variable (R M) in
 /-- Every family is a Fox colouring of a crossing-free code: there are no arcs between crossings
 and no crossings, so each circle carries an arbitrary label. -/
 @[simp]
-theorem foxColorings_eq_top (D : PDCode 0) : D.foxColorings R M = ⊤ :=
+theorem foxColorings_eq_top_of_zero_crossings (D : PDCode 0) : D.foxColorings R M = ⊤ :=
   eq_top_iff.2 fun _ _ ↦ ⟨fun h ↦ h.elim0, fun i ↦ i.elim0⟩
 
 variable (R M) in
 /-- A crossing-free code of `c` circles has `|M| ^ c` Fox colourings. -/
 theorem natCard_foxColorings_of_zero_crossings (D : PDCode 0) :
     Nat.card (D.foxColorings R M) = Nat.card M ^ D.crossinglessComponentCount := by
-  rw [foxColorings_eq_top, Nat.card_congr Submodule.topEquiv.toEquiv, Nat.card_fun, Nat.card_sum,
+  rw [foxColorings_eq_top_of_zero_crossings, Nat.card_congr Submodule.topEquiv.toEquiv,
+    Nat.card_fun, Nat.card_sum,
     Nat.card_eq_fintype_card (α := Fin (4 * 0)), Nat.card_eq_fintype_card (α := Fin _),
     Fintype.card_fin, Fintype.card_fin, Nat.mul_zero, Nat.zero_add]
 

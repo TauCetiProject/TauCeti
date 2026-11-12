@@ -70,7 +70,8 @@ private theorem apply_eq_of_mem_foxColorings_rightHandedTrefoilPDCode
       rw [← rightHandedTrefoilPDCode_edgePair_apply]
       exact apply_edgePair_of_mem_foxColorings hv _)
     (fun i ↦ by
-      simpa using apply_crossing_add_two_of_isOver hv (i := i) (slot := 0) (by simp)) p
+      simpa using
+        apply_crossing_add_two_of_mem_foxColorings_of_isOver hv (i := i) (slot := 0) (by simp)) p
 
 /-- The crossing relations of a Fox colouring of the trefoil diagram at its first two crossings,
 on the labels `a₀, a₁, a₂` of the three Wirtinger arcs. -/
@@ -81,8 +82,8 @@ private theorem relations_of_mem_foxColorings_rightHandedTrefoilPDCode
         2 • v (.inl (crossingSlotEquiv 3 (0, 0))) - v (.inl (crossingSlotEquiv 3 (2, 0))) ∧
       v (.inl (crossingSlotEquiv 3 (2, 0))) =
         2 • v (.inl (crossingSlotEquiv 3 (1, 0))) - v (.inl (crossingSlotEquiv 3 (0, 0))) := by
-  have h (i : Fin 3) := apply_crossing_add_two_of_isOver_eq_false hv (i := i) (slot := 1)
-    (by simp)
+  have h (i : Fin 3) :=
+    apply_crossing_add_two_of_mem_foxColorings_of_not_isOver hv (i := i) (slot := 1) (by simp)
   have h0 := h 0
   have h1 := h 1
   simp only [crossing_apply, rightHandedTrefoilPDCode_halfEdge, Equiv.Perm.one_apply,
@@ -93,8 +94,7 @@ private theorem relations_of_mem_foxColorings_rightHandedTrefoilPDCode
   rw [apply_eq_of_mem_foxColorings_rightHandedTrefoilPDCode hv (1, 3),
     apply_eq_of_mem_foxColorings_rightHandedTrefoilPDCode hv (1, 2),
     apply_eq_of_mem_foxColorings_rightHandedTrefoilPDCode hv (1, 1)] at h1
-  exact ⟨by simpa [rightHandedTrefoilOverArc_def] using h0,
-    by simpa [rightHandedTrefoilOverArc_def] using h1⟩
+  exact ⟨by simpa [Fin.reduceSub, Fin.neg_def] using h0, by simpa using h1⟩
 
 /-- On a Fox colouring of the trefoil diagram, the difference `a₁ - a₀` of the labels of the first
 two Wirtinger arcs is `3`-torsion. -/
@@ -121,16 +121,11 @@ private theorem trefoilLabels_mem_foxColorings {a u : M} (hu : 3 • u = 0) :
   refine mem_foxColorings_iff.2 ⟨fun h ↦ ?_, fun i slot ↦ ?_⟩
   · obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv 3).surjective h
     rw [rightHandedTrefoilPDCode_edgePair_apply]
-    fin_cases i <;> fin_cases slot <;> simp [trefoilLabels, rightHandedTrefoilOverArc_def]
+    simp [trefoilLabels]
   · have hz : (3 : ℤ) • u = 0 := by rw [← hu, ← natCast_zsmul, Nat.cast_ofNat]
     fin_cases i <;> fin_cases slot <;>
-      simp only [trefoilLabels, rightHandedTrefoilOverArc_def, isOver_def, crossing_apply,
-        rightHandedTrefoilPDCode_halfEdge, rightHandedTrefoilPDCode_overPair, Equiv.Perm.coe_one,
-        id_eq, Equiv.symm_apply_apply, Sum.elim_inl, Matrix.cons_val, Matrix.cons_val',
-        Matrix.cons_val_fin_one, Matrix.cons_val_one, Matrix.cons_val_zero, Fin.isValue,
-        Fin.mk_one, Fin.reduceAdd, Fin.reduceEq, Fin.reduceFinMk, Fin.zero_eta,
-        Nat.reduceMul, BEq.rfl, beq_true, decide_false, decide_true, or_false, or_self, or_true,
-        Bool.false_eq_true, zero_ne_one, ↓reduceIte, smul_add, zero_add] <;>
+      norm_num [trefoilLabels, isOver_def, crossing_apply,
+        rightHandedTrefoilPDCode_halfEdge, rightHandedTrefoilPDCode_overPair] <;>
       first
       | abel1
       | (rw [← sub_eq_zero]; abel_nf; simp [hz])
@@ -139,14 +134,14 @@ private theorem trefoilLabels_mem_foxColorings {a u : M} (hu : 3 • u = 0) :
 private theorem trefoilLabels_apply (a u : M) :
     trefoilLabels a u (.inl (crossingSlotEquiv 3 (0, 0))) = a ∧
       trefoilLabels a u (.inl (crossingSlotEquiv 3 (1, 0))) = a + u := by
-  simp [trefoilLabels, rightHandedTrefoilOverArc_def]
+  simp [trefoilLabels]
 
 variable (R M)
 
 /-- **The Fox colourings of the trefoil diagram** with values in `M` are the pairs `(a, u)` of an
 element of `M` and an element of its `3`-torsion: the colouring with these coordinates labels the
 three Wirtinger arcs by `a`, `a + u` and `a - u`. -/
-noncomputable def foxColoringsRightHandedTrefoilPDCodeEquiv :
+def foxColoringsRightHandedTrefoilPDCodeEquiv :
     rightHandedTrefoilPDCode.foxColorings R M ≃ₗ[R]
       M × LinearMap.ker ((3 : ℕ) • LinearMap.id : M →ₗ[R] M) where
   toFun v := (v.1 (.inl (crossingSlotEquiv 3 (0, 0))),
@@ -182,6 +177,31 @@ noncomputable def foxColoringsRightHandedTrefoilPDCodeEquiv :
     obtain ⟨h₀, h₁⟩ := trefoilLabels_apply x.1 x.2.1
     refine Prod.ext h₀ (Subtype.ext ?_)
     simp [h₀, h₁]
+
+/-- The first coordinate is the label of the arc over crossing `0`. -/
+@[simp]
+theorem foxColoringsRightHandedTrefoilPDCodeEquiv_fst
+    (v : rightHandedTrefoilPDCode.foxColorings R M) :
+    (foxColoringsRightHandedTrefoilPDCodeEquiv R M v).1 =
+      v.1 (.inl (crossingSlotEquiv 3 (0, 0))) :=
+  (rfl)
+
+/-- The torsion coordinate is the difference of the labels over crossings `1` and `0`. -/
+@[simp]
+theorem foxColoringsRightHandedTrefoilPDCodeEquiv_snd
+    (v : rightHandedTrefoilPDCode.foxColorings R M) :
+    ((foxColoringsRightHandedTrefoilPDCodeEquiv R M v).2 : M) =
+      v.1 (.inl (crossingSlotEquiv 3 (1, 0))) - v.1 (.inl (crossingSlotEquiv 3 (0, 0))) :=
+  (rfl)
+
+/-- The inverse labels the Wirtinger arcs by `a`, `a + u` and `a - u`. -/
+@[simp]
+theorem foxColoringsRightHandedTrefoilPDCodeEquiv_symm_apply
+    (x : M × LinearMap.ker ((3 : ℕ) • LinearMap.id : M →ₗ[R] M)) (h : Fin 12) :
+    ((foxColoringsRightHandedTrefoilPDCodeEquiv R M).symm x).1 (.inl h) =
+      ![x.1, x.1 + x.2, x.1 - x.2]
+        (rightHandedTrefoilOverArc ((crossingSlotEquiv 3).symm h)) :=
+  (rfl)
 
 /-- The trefoil diagram has `|M| · |M[3]|` Fox colourings with values in `M`, where `M[3]` is the
 `3`-torsion of `M`. -/

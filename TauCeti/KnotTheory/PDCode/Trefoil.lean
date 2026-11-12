@@ -96,6 +96,26 @@ theorem rightHandedTrefoilOverArc_zero (i : Fin 3) : rightHandedTrefoilOverArc (
 theorem rightHandedTrefoilOverArc_two (i : Fin 3) : rightHandedTrefoilOverArc (i, 2) = i := by
   fin_cases i <;> rfl
 
+/-- Slot `1` lies on the arc that passes over the preceding crossing. -/
+@[simp]
+theorem rightHandedTrefoilOverArc_one (i : Fin 3) :
+    rightHandedTrefoilOverArc (i, 1) = i - 1 := by
+  fin_cases i <;> rfl
+
+/-- Slot `3` lies on the arc that passes over the following crossing. -/
+@[simp]
+theorem rightHandedTrefoilOverArc_three (i : Fin 3) :
+    rightHandedTrefoilOverArc (i, 3) = i + 1 := by
+  fin_cases i <;> rfl
+
+/-- The two ends of each arc belong to the same Wirtinger arc. -/
+@[simp]
+theorem rightHandedTrefoilOverArc_arcPair (p : Fin 3 × Fin 4) :
+    rightHandedTrefoilOverArc (rightHandedTrefoilArcPair.val p) =
+      rightHandedTrefoilOverArc p := by
+  rcases p with ⟨i, slot⟩
+  fin_cases i <;> fin_cases slot <;> simp [rightHandedTrefoilOverArc_def]
+
 /-- A family indexed by the crossing slots of the trefoil diagram that is constant along each arc
 and along the over-strand `0`-`2` of each crossing is constant on each Wirtinger arc: its value at
 a slot is its value at slot `0` of the crossing that the arc passes over. -/
