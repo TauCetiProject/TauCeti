@@ -156,6 +156,21 @@ theorem PositiveLinearMap.eq_zero_of_map_one_eq_zero {A B : Type*} [CStarAlgebra
 
 namespace TauCeti
 
+section UnitalDomain
+
+variable [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  {φ : A →ₗ[ℂ] B}
+
+/-- An `n`-positive map with `0 < n` whose value at `1` vanishes is zero. -/
+theorem IsNPositive.eq_zero_of_map_one_eq_zero {n : ℕ} (hφ : IsNPositive n φ) (hn : 0 < n)
+    (h1 : φ 1 = 0) : φ = 0 := by
+  rw [← hφ.toLinearMap_toPositiveLinearMap hn,
+    (hφ.toPositiveLinearMap hn).eq_zero_of_map_one_eq_zero (by simpa using h1),
+    PositiveLinearMap.toLinearMap_zero]
+
+end UnitalDomain
+
 section Unital
 
 variable [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
@@ -191,7 +206,8 @@ theorem IsNPositive.star_map_mul_map_le_of_map_one (hφ : IsNPositive 2 φ) (h1 
   have := hφ.quadratic_nonneg a 1 (-φ a)
   rw [← sub_nonneg]
   convert this using 1
-  simp [h1]
+  simp only [star_one, one_mul, mul_one, mul_neg, star_neg, neg_mul, h1, neg_neg,
+    neg_add_cancel_right]
   abel
 
 /-- The Kadison–Schwarz inequality `φ(a)⋆ φ(a) ≤ ‖φ 1‖ • φ(a⋆a)` for a `2`-positive map with
@@ -200,10 +216,7 @@ private theorem IsNPositive.star_map_mul_map_le_of_unital (hφ : IsNPositive 2 �
     star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a) := by
   set c := ‖φ 1‖
   rcases (norm_nonneg (φ 1)).eq_or_lt with h0 | hpos
-  · have := (hφ.toPositiveLinearMap two_pos).eq_zero_of_map_one_eq_zero
-      (by simpa using norm_eq_zero.mp h0.symm)
-    rw [← hφ.toLinearMap_toPositiveLinearMap two_pos, this]
-    simp
+  · simp [hφ.eq_zero_of_map_one_eq_zero two_pos (norm_eq_zero.mp h0.symm)]
   set b := φ a
   have hq := hφ.quadratic_nonneg a (c • 1) (-b)
   have hconj : star b * φ 1 * b ≤ c • (star b * b) :=
@@ -212,7 +225,8 @@ private theorem IsNPositive.star_map_mul_map_le_of_unital (hφ : IsNPositive 2 �
   have key : 0 ≤ c • (c • φ (star a * a) - star b * b) :=
     calc 0 ≤ _ := hq
       _ = c • c • φ (star a * a) - c • (star b * b) - c • (star b * b) + star b * φ 1 * b := by
-        simp [b, star_smul]
+        simp only [star_smul, star_trivial, star_one, Algebra.smul_mul_assoc, one_mul,
+          Algebra.mul_smul_comm, mul_one, mul_neg, star_neg, neg_mul, smul_neg, neg_neg, b]
         abel
       _ ≤ c • c • φ (star a * a) - c • (star b * b) - c • (star b * b) + c • (star b * b) :=
         add_le_add_right hconj _
@@ -230,13 +244,6 @@ section UnitalDomain
 variable [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   {φ : A →ₗ[ℂ] B}
-
-/-- An `n`-positive map with `0 < n` whose value at `1` vanishes is zero. -/
-theorem IsNPositive.eq_zero_of_map_one_eq_zero {n : ℕ} (hφ : IsNPositive n φ) (hn : 0 < n)
-    (h1 : φ 1 = 0) : φ = 0 := by
-  rw [← hφ.toLinearMap_toPositiveLinearMap hn,
-    (hφ.toPositiveLinearMap hn).eq_zero_of_map_one_eq_zero (by simpa using h1)]
-  rfl
 
 /-- Composing with the inclusion `B → B⁺¹` into the unitization preserves `n`-positivity. -/
 private theorem IsNPositive.inr {n : ℕ} (hφ : IsNPositive n φ) :

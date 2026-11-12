@@ -12,9 +12,10 @@ import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 # The transpose on `M₂(ℂ)` is not `2`-positive
 
 The transpose on `M₂(ℂ) = CStarMatrix (Fin 2) (Fin 2) ℂ` is unital, but it is not `2`-positive:
-it violates the Kadison–Schwarz inequality `φ(a)⋆ φ(a) ≤ φ(a⋆a)` at the matrix unit `E₁₂`. So
-the `2`-positivity hypothesis of `TauCeti.IsNPositive.star_map_mul_map_le_of_map_one` cannot be
-dropped to positivity.
+it violates the Kadison–Schwarz inequality `φ(a)⋆ φ(a) ≤ φ(a⋆a)` at the matrix unit `E₁₂`. The
+transpose is also a positive map (a classical fact that this file does not prove), so this example
+illustrates why `TauCeti.IsNPositive.star_map_mul_map_le_of_map_one` assumes `2`-positivity rather
+than positivity.
 -/
 
 public section
@@ -41,8 +42,7 @@ theorem not_isNPositive_two_transpose :
   let a : CStarMatrix (Fin 2) (Fin 2) ℂ := CStarMatrix.ofMatrix !![0, 1; 0, 0]
   have hle := sub_nonneg.mpr (h.star_map_mul_map_le_of_map_one h1 a)
   have := CStarMatrix.diag_nonneg_of_nonneg hle 0
-  simp [a, hT, CStarMatrix.mul_apply, CStarMatrix.star_apply, CStarMatrix.ofMatrix_apply,
+  norm_num [a, hT, CStarMatrix.mul_apply, CStarMatrix.star_apply, CStarMatrix.ofMatrix_apply,
     Fin.sum_univ_two] at this
-  norm_num at this
 
 end TauCeti.CompletelyPositiveMapExample
