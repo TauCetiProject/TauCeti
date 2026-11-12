@@ -82,7 +82,7 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.hamiltonianCurvature_add_const`: adding target-independent data `a ds + b dt`,
   such as a change of normalization of the Hamiltonians by functions of time, changes neither the
   perturbed derivative nor the energy density, and adds `∂s b - ∂t a` to the curvature, which is
-  the curvature of the added data (`SmoothTwoForm.hamiltonianCurvature_const_target`).
+  the curvature of the added data (`SmoothTwoForm.hamiltonianCurvature_const`).
 * `SmoothTwoForm.hamiltonianCurvature_eq_zero_of_cylindrical`: the curvature vanishes along a line
   near which the perturbation is cylindrical; the vector-space case is
   `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`.
@@ -510,7 +510,7 @@ theorem hamiltonianCurvature_continuation (ω : SmoothTwoForm I M) {β : ℝ →
 /-- The curvature of target-independent data `a ds + b dt` is its exterior derivative
 `∂s b - ∂t a`. -/
 @[simp]
-theorem hamiltonianCurvature_const_target (ω : SmoothTwoForm I M) (a b : ℝ × ℝ → ℝ)
+theorem hamiltonianCurvature_const (ω : SmoothTwoForm I M) (a b : ℝ × ℝ → ℝ)
     (z : ℝ × ℝ) (x : M) :
     ω.hamiltonianCurvature (fun w _ ↦ a w) (fun w _ ↦ b w) z x =
       fderiv ℝ b z stdComplexLineReal - fderiv ℝ a z stdComplexLineImag := by
