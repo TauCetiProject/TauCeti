@@ -157,23 +157,19 @@ theorem oneEquiv_torusFamilyHomologyMarking
       AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) :=
     (torusFamilyFiberHomeomorph P y hcont).symm
   set d := ContinuousMap.singularHomologyMap ℤ 1 e_symm c
-  apply hinj y
-  rw [torusFamilyHomologyMarking_apply, torusFamilyMarking_apply,
-    ← LinearEquiv.coe_toLinearMap ((LinearEquiv.ofInjective (P y) (hinj y)).symm.exteriorPower 1),
-    LinearEquiv.exteriorPower_toLinearMap]
-  have hnat : exteriorPower.oneEquiv ℤ Λ
-      (exteriorPower.map 1 (LinearEquiv.ofInjective (P y) (hinj y)).symm.toLinearMap
-        ((LinearMap.range (P y)).orbitRelQuotientHomologyEquiv 1 d)) =
-      (LinearEquiv.ofInjective (P y) (hinj y)).symm
-        (exteriorPower.oneEquiv ℤ (LinearMap.range (P y))
-          ((LinearMap.range (P y)).orbitRelQuotientHomologyEquiv 1 d)) :=
-    LinearMap.congr_fun
-      (exteriorPower.oneEquiv_naturality (LinearEquiv.ofInjective (P y) (hinj y)).symm.toLinearMap)
-      ((LinearMap.range (P y)).orbitRelQuotientHomologyEquiv 1 d)
-  have hrhs (x : LinearMap.range (P y)) :
-      P y ((LinearEquiv.ofInjective (P y) (hinj y)).symm x) = x.1 :=
-    congrArg Subtype.val ((LinearEquiv.ofInjective (P y) (hinj y)).apply_symm_apply x)
-  rw [hnat, hrhs, hrhs, Submodule.coe_oneEquiv_orbitRelQuotientHomologyEquiv]
+  have hnat :
+      (exteriorPower.oneEquiv ℤ Λ).toLinearMap ∘ₗ
+          ((LinearEquiv.ofInjective (P y) (hinj y)).symm.exteriorPower 1).toLinearMap =
+        (LinearEquiv.ofInjective (P y) (hinj y)).symm.toLinearMap ∘ₗ
+          (exteriorPower.oneEquiv ℤ (LinearMap.range (P y))).toLinearMap := by
+    rw [LinearEquiv.exteriorPower_toLinearMap]
+    exact exteriorPower.oneEquiv_naturality _
+  have happ := LinearMap.congr_fun hnat
+    ((LinearMap.range (P y)).orbitRelQuotientHomologyEquiv 1 d)
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at happ
+  rw [torusFamilyHomologyMarking_apply, torusFamilyMarking_apply, happ]
+  exact congrArg _ (Subtype.ext
+    (Submodule.coe_oneEquiv_orbitRelQuotientHomologyEquiv (LinearMap.range (P y)) d))
 
 /-- `torusFamilyHomologyMarking` typed directly on `(TopCat.ofHom ...).fiber y`, which is
 definitionally `TopCat.of {z | torusFamilyProjection P z = y}` at semireducible transparency. -/
@@ -241,26 +237,32 @@ private theorem torusFamilyHomologyMarking_map {Y₀ Y₁ E : Type}
     ext x
     obtain ⟨w, rfl⟩ := (torusFamilyFiberHomeomorph P₀ y₀ hcont₀).surjective x
     simpa [e₀s, e₁s] using hg w
-  rw [torusFamilyHomologyMarking_apply, torusFamilyHomologyMarking_apply,
-    ← LinearEquiv.coe_toLinearMap
-      ((LinearEquiv.ofInjective (P₁ y₁) (hinj₁ y₁)).symm.exteriorPower n),
-    LinearEquiv.exteriorPower_toLinearMap,
-    ← LinearEquiv.coe_toLinearMap (α.exteriorPower n), LinearEquiv.exteriorPower_toLinearMap,
-    ← LinearEquiv.coe_toLinearMap
-      ((LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).symm.exteriorPower n),
-    LinearEquiv.exteriorPower_toLinearMap,
-    ← ContinuousMap.singularHomologyMap_comp, hcomp, ContinuousMap.singularHomologyMap_comp,
-    Submodule.orbitRelQuotientHomologyEquiv_singularHomologyMap _ _ hφ hφL,
-    ← LinearMap.comp_apply, ← LinearMap.comp_apply,
-    ← exteriorPower.map_comp, ← exteriorPower.map_comp]
-  congr 2
-  refine LinearMap.ext fun ⟨_, ⟨l, rfl⟩⟩ ↦ hinj₁ y₁ ?_
-  have h₁ (x : LinearMap.range (P₁ y₁)) :
-      P₁ y₁ ((LinearEquiv.ofInjective (P₁ y₁) (hinj₁ y₁)).symm x) = x.1 :=
-    congrArg Subtype.val ((LinearEquiv.ofInjective (P₁ y₁) (hinj₁ y₁)).apply_symm_apply x)
-  have h₀ : (LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).symm ⟨P₀ y₀ l, ⟨l, rfl⟩⟩ = l :=
-    (LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).symm_apply_eq.mpr rfl
-  simp [h₁, h₀, hP]
+  have hhom :
+      (LinearMap.range (P₁ y₁)).orbitRelQuotientHomologyEquiv n
+          (ContinuousMap.singularHomologyMap ℤ n e₁s
+            (ContinuousMap.singularHomologyMap ℤ n g c)) =
+        exteriorPower.map n (φ.restrict hφL)
+          ((LinearMap.range (P₀ y₀)).orbitRelQuotientHomologyEquiv n
+            (ContinuousMap.singularHomologyMap ℤ n e₀s c)) := by
+    rw [← ContinuousMap.singularHomologyMap_comp, hcomp, ContinuousMap.singularHomologyMap_comp,
+      Submodule.orbitRelQuotientHomologyEquiv_singularHomologyMap _ _ hφ hφL]
+  have hlin :
+      (LinearEquiv.ofInjective (P₁ y₁) (hinj₁ y₁)).symm.toLinearMap ∘ₗ φ.restrict hφL =
+        α.toLinearMap ∘ₗ (LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).symm.toLinearMap := by
+    refine LinearMap.ext fun x ↦ hinj₁ y₁ ?_
+    obtain ⟨l, rfl⟩ := (LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).surjective x
+    simp [hP]
+  have hexterior :
+      ((LinearEquiv.ofInjective (P₁ y₁) (hinj₁ y₁)).symm.exteriorPower n).toLinearMap ∘ₗ
+          exteriorPower.map n (φ.restrict hφL) =
+        (α.exteriorPower n).toLinearMap ∘ₗ
+          ((LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).symm.exteriorPower n).toLinearMap := by
+    simp only [LinearEquiv.exteriorPower_toLinearMap, ← exteriorPower.map_comp, hlin]
+  have happ := LinearMap.congr_fun hexterior
+    ((LinearMap.range (P₀ y₀)).orbitRelQuotientHomologyEquiv n
+      (ContinuousMap.singularHomologyMap ℤ n e₀s c))
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at happ
+  rw [torusFamilyHomologyMarking_apply, torusFamilyHomologyMarking_apply, hhom, happ]
 
 /-! ### Invariance under Hurewicz transport and trivialization of the fiber local system -/
 
