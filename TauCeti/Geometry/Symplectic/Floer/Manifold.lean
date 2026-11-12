@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.MFDeriv.Translation
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -117,8 +118,12 @@ form they recover the vector-space definitions.
   symplectic area, the integrated curvature and the curvature allowance under changes of domain
   coordinates.
 * `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
-  `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`: translations of the domain
-  translate the curvature and preserve the curvature allowance along a map.
+  `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`,
+  `SmoothTwoForm.perturbedMFDeriv_comp_add_right`,
+  `SmoothTwoForm.floerEnergyDensity_comp_add_right`,
+  `SmoothTwoForm.floerEnergyDensity_cylindrical_comp_add_right`: translations of the domain
+  translate the curvature, the perturbed derivative and the energy density, and preserve the
+  curvature allowance along a map.
 
 ## References
 
@@ -222,6 +227,17 @@ theorem isComplexLinearMap_perturbedMFDeriv_iff (ω : SmoothTwoForm I M)
     rw [add_eq_zero_iff_eq_neg] at h
     rw [h, map_neg, AlmostComplexStructure.apply_apply, neg_neg]
 
+/-- **The perturbed derivative of a translate.** The perturbed derivative of `w ↦ u (w + v)` for
+the translated data `w ↦ K (w + v)` at `z` is the perturbed derivative of `u` for `K` at `z + v`. -/
+theorem perturbedMFDeriv_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (v z : ℝ × ℝ) :
+    ω.perturbedMFDeriv (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
+      ω.perturbedMFDeriv Ks Kt u (z + v) := by
+  refine ContinuousLinearMap.ext fun a ↦ ?_
+  rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, mfderiv_comp_add_right]
+  -- The two sides differ only in how the tangent spaces at `u (z + v)` are written.
+  rfl
+
 /-- The symplectic area density of `du - X_K` for a manifold target. -/
 def floerEnergyDensity (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
     (u : ℝ × ℝ → M) (z : ℝ × ℝ) : ℝ :=
@@ -244,6 +260,22 @@ theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) 
       SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
   simp [floerEnergyDensity_def]
+
+/-- Translating a map and its perturbation data by `v` translates the Floer energy density by
+`v`. -/
+theorem floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (v z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
+      ω.floerEnergyDensity Ks Kt u (z + v) := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedMFDeriv_comp_add_right]
+
+/-- For the cylindrical perturbation `K = H_t dt`, the energy density of the translate
+`(s, t) ↦ u(s + c, t)` at `z` is the energy density of `u` at `z + (c, 0)`. -/
+theorem floerEnergyDensity_cylindrical_comp_add_right (ω : SmoothTwoForm I M) (H : ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (c : ℝ) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) z =
+      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (z + (c, 0)) := by
+  simpa using ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (c, 0) z
 
 section Continuity
 
