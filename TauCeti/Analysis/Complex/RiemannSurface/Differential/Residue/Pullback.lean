@@ -83,12 +83,6 @@ theorem sum_residue_pullback_eq_fiberMultiplicitySum_mul {f : X → Y} {y : Y}
   rw [mem_singleton_iff] at hx'
   rw [residue_pullback (hx' ▸ hω) (hf x (hy.mem_toFinset.1 hx)), hx']
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
-/-- The preimage under a finite holomorphic map of the support of the divisor of `ω` is finite. -/
-theorem finite_preimage_support_divisor [CompactSpace Y] (f : FiniteHolomorphicMap X Y)
-    (ω : OneForm Y) : (f ⁻¹' (ω.divisor.support : Set Y)).Finite :=
-  ω.divisor.support.finite_toSet.preimage' fun y _ ↦ f.finite_fiber y
-
 /-- **Fibre sum of residues for a finite holomorphic map.** For a finite holomorphic map `f` from
 a compact Riemann surface to a connected Riemann surface and a `1`-form `ω` meromorphic at `y`,
 `∑_{x ∈ f⁻¹ y} Res_x (f^* ω) = deg f · Res_y ω`. -/

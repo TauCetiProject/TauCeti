@@ -55,34 +55,6 @@ open AlgebraicGeometry WeilDivisor
 
 variable {ω : OneForm (OnePoint ℂ)}
 
-/-! ### The two charts of the sphere -/
-
-/-- The coefficient of an everywhere meromorphic `1`-form in the inverted chart is meromorphic. -/
-private theorem meromorphicAt_coeff_invChart (hω : ∀ x, ω.MeromorphicAt x) (w : ℂ) :
-    _root_.MeromorphicAt (ω.coeff invChart) w := by
-  rcases eq_or_ne w 0 with rfl | hw
-  · simpa only [meromorphicAt_def, chartAt_infty, invChart_infty] using hω ∞
-  · have hsrc : ((w⁻¹ : ℂ) : OnePoint ℂ) ∈ invChart.source := by
-      simpa using fun h ↦ inv_ne_zero hw (coe_injective h)
-    simpa only [invChart_coe, inv_inv] using
-      (meromorphicAt_iff_of_mem_maximalAtlas invChart_mem_maximalAtlas hsrc).1 (hω _)
-
-/-- Off the support of the divisor, the coefficient in the affine chart has no pole. -/
-private theorem meromorphicOrderAt_coeff_affineChart_nonneg (hω : ∀ x, ω.MeromorphicAt x) {z : ℂ}
-    (hz : (z : OnePoint ℂ) ∉ ω.divisor.support) :
-    0 ≤ _root_.meromorphicOrderAt (ω.coeff affineChart) z := by
-  simpa only [order_def, chartAt_coe, affineChart_coe] using order_nonneg_of_notMem_support hω hz
-
-/-- Off the support of the divisor, the coefficient in the inverted chart has no pole at a nonzero
-point. -/
-private theorem meromorphicOrderAt_coeff_invChart_nonneg (hω : ∀ x, ω.MeromorphicAt x) {w : ℂ}
-    (hw : w ≠ 0) (hwS : ((w⁻¹ : ℂ) : OnePoint ℂ) ∉ ω.divisor.support) :
-    0 ≤ _root_.meromorphicOrderAt (ω.coeff invChart) w := by
-  have hsrc : ((w⁻¹ : ℂ) : OnePoint ℂ) ∈ invChart.source := by
-    simpa using fun h ↦ inv_ne_zero hw (coe_injective h)
-  have := order_nonneg_of_notMem_support hω hwS
-  rwa [order_eq_of_mem_maximalAtlas invChart_mem_maximalAtlas hsrc, invChart_coe, inv_inv] at this
-
 /-- The sum of the residues over the support of the divisor splits into the residue at `∞` and the
 sum over the finite points of the support. -/
 private theorem sum_residue_support_eq_residue_infty_add (hω : ∀ x, ω.MeromorphicAt x) :
@@ -148,8 +120,9 @@ theorem sum_residue_sphere (hω : ∀ x, ω.MeromorphicAt x) :
     (fun w _ ↦ meromorphicAt_coeff_invChart hω w) (by simpa using hRinv) hhsupp
   -- The circle inversion relates the two contour integrals.
   have hinv : (∮ w in C(0, R⁻¹), h w) = -∮ z in C(0, R), g z := by
-    rw [show (∮ z in C(0, R), g z) = ∮ z in C(0, R⁻¹⁻¹), g z by rw [inv_inv],
-      ← Contour.circleIntegral_neg_inv_sq_smul_comp_inv g R⁻¹]
+    have hsub := Contour.circleIntegral_neg_inv_sq_smul_comp_inv g R⁻¹
+    rw [inv_inv] at hsub
+    rw [← hsub]
     refine circleIntegral.integral_congr hRinv.le fun w hw ↦ ?_
     rw [smul_eq_mul]
     exact coeff_invChart_eq_neg_inv_sq_mul ω (ne_of_mem_sphere hw hRinv.ne')
