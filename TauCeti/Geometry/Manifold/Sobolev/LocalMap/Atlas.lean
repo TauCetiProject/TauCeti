@@ -334,8 +334,8 @@ theorem mulLeft_two_chart_mem_maximalAtlas :
     exact (contDiff_const.mul contDiff_id).contDiffOn
 
 omit [ChartedSpace H M] in
-/-- **The charts `z` and `2 z` give the same coordinate tests.** For `u : ℂ → M`, every order `k`
-and every chart `ψ` of `M`, the coordinate expression of `u` in the chart `z ↦ 2 z` is in the
+/-- **The charts `z` and `2 z` give the same coordinate tests.** For `v : ℂ → M`, every order `k`
+and every chart `ψ` of `M`, the coordinate expression of `v` on `S` in the chart `z ↦ 2 z` is in the
 planar class `MemWkpLoc p _ k` exactly when the coordinate expression in the identity chart is. -/
 theorem memWkpLoc_mulLeft_two_chart_iff {v : ℂ → M} {S : Set ℂ} (ψ : OpenPartialHomeomorph M H) :
     MemWkpLoc p ((Homeomorph.mulLeft₀ (2 : ℂ) two_ne_zero).toOpenPartialHomeomorph.target ∩
