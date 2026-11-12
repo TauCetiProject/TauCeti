@@ -47,8 +47,8 @@ or `4`, with `1` exactly for `A = 1` and `4` exactly for `A = V^(f)`.
   (`V^(f) ≤ A ↔ U^(f) ≤ A ∧ -1 ∈ A`), `TauCeti.index_unitsPlusMinus`
   (`[ℤ_2ˣ : V^(f)] = 2 ^ (f - 2)`), `TauCeti.unitsPlusMinus_inf_unitsPrincipal_two`
   (`V^(f) ⊓ U^(2) = U^(f)`) and `TauCeti.unitsPlusMinus_inj`.
-* `TauCeti.unitsPlusMinus_two`, `TauCeti.disjoint_unitsPrincipal_zpowers_neg_one`: the
-  decomposition `ℤ_2ˣ = {±1} × U^(2)`.
+* `TauCeti.unitsPlusMinus_two`, `TauCeti.unitsPlusMinus_max_two`,
+  `TauCeti.disjoint_unitsPrincipal_zpowers_neg_one`: the decomposition `ℤ_2ˣ = {±1} × U^(2)`.
 * `TauCeti.closedSubgroup_units_two_classification`: every nontrivial closed subgroup of `ℤ_2ˣ`
   is a `U^(f)`, a `V^(f)`, `{±1}`, or a twisted subgroup `U^[f]` with its model generator
   `-1 + 2 ^ f`; the lemmas `TauCeti.unitsPrincipal_ne_unitsPlusMinus` and their companions
@@ -154,6 +154,14 @@ theorem unitsPlusMinus_two : unitsPlusMinus 2 = ⊤ :=
   top_unique fun u _ ↦ mem_unitsPlusMinus_iff.mpr <| by
     rw [neg_mem_unitsPrincipal_two_two_iff]
     exact em _
+
+/-- Below level `2` the group `V^(f)` is all of `ℤ_2ˣ`, so `V^(max f 2) = V^(f)`. -/
+@[simp]
+theorem unitsPlusMinus_max_two (f : ℕ) : unitsPlusMinus (max f 2) = unitsPlusMinus f := by
+  rcases le_or_gt 2 f with hf | hf
+  · rw [max_eq_left hf]
+  · rw [max_eq_right hf.le, unitsPlusMinus_two]
+    exact (eq_top_iff.2 (unitsPlusMinus_two.ge.trans (unitsPlusMinus_antitone hf.le))).symm
 
 /-- `{±1} ⊓ U^(f) = 1` for `f ≥ 2`: the two factors of `ℤ_2ˣ = {±1} × U^(2)` meet trivially. -/
 theorem disjoint_unitsPrincipal_zpowers_neg_one {f : ℕ} (hf : 2 ≤ f) :
