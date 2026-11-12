@@ -208,13 +208,13 @@ theorem isLocalFrameOn_complexDoubledFrame (hX : IsSubbundleFrameOn F L σ U)
 variable [Finite ι] [ContMDiffVectorBundle n F V IB]
 
 /-- **Standard form of a totally real subbundle along a frame.** Let `σ` be a `C^n` real local
-frame on an open set `U` of a family `L` of real subspaces of the fibres of a `C^n` complex vector
-bundle, and let the fibre of `L` at `x₀ ∈ U` be maximal totally real. Then within any
+frame on a neighbourhood `U` of `x₀` of a family `L` of real subspaces of the fibres of a `C^n`
+complex vector bundle, and let the fibre of `L` at `x₀` be maximal totally real. Then within any
 neighbourhood `s` of `x₀` there is a trivialization of the maximal atlas of `C^n` trivializations
 around `x₀`, complex-linear on fibres, sending each fibre of `L` onto the real span of a given
 complex basis `b` of the model fibre. -/
-theorem exists_trivialization_totallyReal (hX : IsSubbundleFrameOn F L σ U) (hU : IsOpen U)
-    (hσ : ∀ i, CMDiff[U] n (T% (σ i))) {x₀ : B} (hx₀ : x₀ ∈ U)
+theorem exists_trivialization_totallyReal (hX : IsSubbundleFrameOn F L σ U)
+    (hσ : ∀ i, CMDiff[U] n (T% (σ i))) {x₀ : B} (hU : U ∈ 𝓝 x₀)
     (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x₀) Complex.I).restrictScalars ℝ) (L x₀))
     (b : Basis ι ℂ F) {s : Set B} (hs : s ∈ 𝓝 x₀) :
     ∃ (e : Trivialization F (π F V)) (_ : e.IsLinear ℂ),
@@ -223,9 +223,10 @@ theorem exists_trivialization_totallyReal (hX : IsSubbundleFrameOn F L σ U) (hU
       x₀ ∈ e.baseSet ∧ e.baseSet ⊆ s ∧
       ∀ x ∈ e.baseSet, ∀ v : V x, v ∈ L x ↔ (e ⟨x, v⟩).2 ∈ Submodule.span ℝ (range b) := by
   -- Shrink `U` to an open neighbourhood of `x₀` inside `s` where `L` is maximal totally real.
+  obtain ⟨U', hU'U, hU', hx₀U'⟩ := mem_nhds_iff.mp hU
   obtain ⟨W, hWsub, hW, hx₀W⟩ := mem_nhds_iff.mp <|
-    Filter.inter_mem (Filter.inter_mem (hU.mem_nhds hx₀) hs)
-      (eventually_isMaximalTotallyReal hU hX hx₀ hL)
+    Filter.inter_mem (Filter.inter_mem hU hs)
+      (eventually_isMaximalTotallyReal hU' (hX.mono hU'U) hx₀U' hL)
   have hWU : W ⊆ U := fun y hy ↦ (hWsub hy).1.1
   have hXW := hX.mono hWU
   have hfr : IsLocalFrameOn IB F n (complexDoubledFrame σ) W :=
@@ -258,7 +259,7 @@ theorem exists_trivialization_totallyReal (hLs : HasLocalContMDiffSubbundleFrame
       x₀ ∈ e.baseSet ∧ e.baseSet ⊆ s ∧
       ∀ x ∈ e.baseSet, ∀ v : V x, v ∈ L x ↔ (e ⟨x, v⟩).2 ∈ Submodule.span ℝ (range b) := by
   obtain ⟨U, hU, hx₀U, σ, hX, hσ⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hLs x₀
-  exact hX.exists_trivialization_totallyReal hU hσ hx₀U hL b hs
+  exact hX.exists_trivialization_totallyReal hσ (hU.mem_nhds hx₀U) hL b hs
 
 end HasLocalContMDiffSubbundleFrames
 
@@ -282,15 +283,16 @@ namespace TauCeti
 namespace IsSubbundleFrameOn
 
 /-- **Standard form of a totally real subbundle along a frame, model fibre `ℂ^ι`.** For a `C^n`
-complex vector bundle with model fibre `ι → ℂ`, let `σ` be a `C^n` real local frame on an open
-set `U` of a family `L` of real subspaces of the fibres, maximal totally real at `x₀ ∈ U`. Within
+complex vector bundle with model fibre `ι → ℂ`, let `σ` be a `C^n` real local frame on a
+neighbourhood `U` of `x₀` of a family `L` of real subspaces of the fibres, maximal totally real at
+`x₀`. Within
 any neighbourhood `s` of `x₀`, a complex-linear trivialization `e` of the maximal atlas around `x₀`
 identifies `(V, L)` over its base set `W ⊆ s` with `(W × ℂ^ι, W × ℝ^ι)`: a vector lies in `L`
 exactly when its coordinates are real. -/
 theorem exists_trivialization_totallyReal_pi
-    (hX : IsSubbundleFrameOn (ι → ℂ) L σ U) (hU : IsOpen U)
+    (hX : IsSubbundleFrameOn (ι → ℂ) L σ U)
     (hσ : ∀ i, ContMDiffOn IB (IB.prod 𝓘(ℝ, ι → ℂ)) n (fun x ↦ TotalSpace.mk' (ι → ℂ) x (σ i x)) U)
-    {x₀ : B} (hx₀ : x₀ ∈ U)
+    {x₀ : B} (hU : U ∈ 𝓝 x₀)
     (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x₀) Complex.I).restrictScalars ℝ) (L x₀))
     {s : Set B} (hs : s ∈ 𝓝 x₀) :
     ∃ (e : Trivialization (ι → ℂ) (π (ι → ℂ) V)) (_ : e.IsLinear ℂ),
@@ -299,7 +301,7 @@ theorem exists_trivialization_totallyReal_pi
       x₀ ∈ e.baseSet ∧ e.baseSet ⊆ s ∧
       ∀ x ∈ e.baseSet, ∀ v : V x, v ∈ L x ↔ ∀ i, ((e ⟨x, v⟩).2 i).im = 0 := by
   obtain ⟨e, he, hmem, hx₀e, hes, heL⟩ :=
-    hX.exists_trivialization_totallyReal hU hσ hx₀ hL (Pi.basisFun ℂ ι) hs
+    hX.exists_trivialization_totallyReal hσ hU hL (Pi.basisFun ℂ ι) hs
   exact ⟨e, he, hmem, hx₀e, hes, fun x hx v ↦ (heL x hx v).trans
     (mem_span_real_range_basisFun_iff _)⟩
 
@@ -322,7 +324,7 @@ theorem exists_trivialization_totallyReal_pi
       x₀ ∈ e.baseSet ∧ e.baseSet ⊆ s ∧
       ∀ x ∈ e.baseSet, ∀ v : V x, v ∈ L x ↔ ∀ i, ((e ⟨x, v⟩).2 i).im = 0 := by
   obtain ⟨U, hU, hx₀U, σ, hX, hσ⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hLs x₀
-  exact hX.exists_trivialization_totallyReal_pi hU hσ hx₀U hL hs
+  exact hX.exists_trivialization_totallyReal_pi hσ (hU.mem_nhds hx₀U) hL hs
 
 end HasLocalContMDiffSubbundleFrames
 
