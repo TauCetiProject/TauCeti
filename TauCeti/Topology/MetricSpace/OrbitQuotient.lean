@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
-public import Mathlib.Topology.MetricSpace.IsometricSMul
 
 /-!
 # The orbit-space metric of an isometric group action
@@ -23,7 +21,9 @@ satisfies the triangle inequality. The quotient map is `1`-Lipschitz, and the ba
 about `⟦x⟧` is the image of the ball of radius `ε` about `x`
 (`MulAction.orbitRel.Quotient.ball_mk`). As the quotient map is also open, the pseudometric
 induces exactly the quotient topology; the instance is built so that its topology is the existing
-quotient topology `instTopologicalSpaceQuotient`.
+quotient topology `instTopologicalSpaceQuotient`. Keeping the quotient topology definitionally,
+and proving that the metric induces it rather than letting the metric define a new topology,
+follows Mathlib's quotient seminorm on normed groups, `QuotientGroup.instSeminormedCommGroup`.
 
 If an orbit is closed, the distance of `⟦x⟧` to its class vanishes only when `x` lies in it
 (`MulAction.orbitRel.Quotient.dist_mk_mk_eq_zero_iff`). This applies when `G` is a compact
