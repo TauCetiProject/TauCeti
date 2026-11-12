@@ -32,7 +32,7 @@ namespace ContinuousLinearMap
 open MeasureTheory Metric Set TauCeti
 open scoped ENNReal NNReal
 
-variable {ι : Type*} [Fintype ι] [Nonempty ι] {H K : Type*}
+variable {ι : Type*} [Fintype ι] {H K : Type*}
   [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
   [NormedAddCommGroup K] [InnerProductSpace ℝ K] [CompleteSpace K]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
