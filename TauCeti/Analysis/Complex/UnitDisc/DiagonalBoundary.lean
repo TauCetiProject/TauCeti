@@ -21,8 +21,10 @@ real boundary condition
 
 stated coordinatewise without square roots as `u w i = w ^ k i * conj (u w i)` for `‖w‖ = 1`.
 The boundary loop is the direct sum of the rotating lines of
-`TauCeti.Analysis.Complex.UnitDisc.RotatingLineBoundary`, so its Maslov index is `∑ i, k i` by
-the direct-sum axiom `TauCeti.TotallyRealLoop.maslovIndex_prod`.
+`TauCeti.Analysis.Complex.UnitDisc.RotatingLineBoundary`, so, informally, iterating the direct-sum
+axiom `TauCeti.TotallyRealLoop.maslovIndex_prod` gives its Maslov index as `μ = ∑ i, k i`. This
+file does not define the boundary loop for a general `ι`; the comparison with the Maslov index is
+formalized only in rank two.
 
 The problem decouples: a map solves it exactly when each coordinate solves the rank one problem
 for the index `k i`. So the kernel `TauCeti.unitDiscCauchyRiemannKernelPi k` is the product of the
@@ -32,7 +34,7 @@ dimension counts of the rank one problem then give
 
 `dim ker - dim (adjoint ker) = ∑ i, (k i + 1) = n + ∑ i, k i = n χ(D) + μ`
 
-for `n` the cardinality of `ι`
+for `n` the cardinality of `ι` and `μ = ∑ i, k i`
 (`TauCeti.finrank_unitDiscCauchyRiemannKernelPi_sub_finrank_unitDiscAdjointKernelPi`), the
 Riemann–Roch index formula on the disc once the adjoint kernel is identified with the cokernel.
 
@@ -107,6 +109,7 @@ def unitDiscCauchyRiemannKernelPi (k : ι → ℤ) :
 variable {k : ι → ℤ} {g : closedBall (0 : ℂ) 1 → ι → ℂ}
 
 /-- A map lies in the diagonal kernel exactly when each coordinate lies in the rank one kernel. -/
+@[simp]
 theorem mem_unitDiscCauchyRiemannKernelPi_iff :
     g ∈ unitDiscCauchyRiemannKernelPi k ↔
       ∀ i, (fun z => g z i) ∈ unitDiscCauchyRiemannKernel (k i) :=
@@ -190,6 +193,7 @@ def unitDiscAdjointKernelPi (k : ι → ℤ) : Submodule ℝ (closedBall (0 : �
 
 /-- A map lies in the diagonal adjoint kernel exactly when each coordinate lies in the rank one
 adjoint kernel. -/
+@[simp]
 theorem mem_unitDiscAdjointKernelPi_iff :
     g ∈ unitDiscAdjointKernelPi k ↔ ∀ i, (fun z => g z i) ∈ unitDiscAdjointKernel (k i) :=
   Iff.rfl
@@ -255,10 +259,12 @@ theorem unitDiscAdjointKernelPi_eq_bot (hk : ∀ i, -1 ≤ k i) : unitDiscAdjoin
 /-! ### The index -/
 
 /-- **Kernel minus adjoint kernel for the diagonal boundary condition.** The dimension of the
-kernel minus the dimension of the adjoint kernel is `n + ∑ i, k i = n χ(D) + μ`, for `n` the
-cardinality of `ι` and `μ = ∑ i, k i` the Maslov index of the boundary loop. Under the duality
-identifying the adjoint kernel with the cokernel (not formalized here), this is the Fredholm index
-of the Cauchy–Riemann operator. -/
+kernel minus the dimension of the adjoint kernel is `n + ∑ i, k i`, for `n` the cardinality of
+`ι`. Informally this is `n χ(D) + μ`, with `∑ i, k i` the Maslov index `μ` of the diagonal boundary
+loop; the comparison with the Maslov index is formalized in rank two in
+`TauCeti.finrank_unitDiscCauchyRiemannKernelPi_sub_finrank_unitDiscAdjointKernelPi_pair`. Under
+the duality identifying the adjoint kernel with the cokernel (not formalized here), this is the
+Fredholm index of the Cauchy–Riemann operator. -/
 theorem finrank_unitDiscCauchyRiemannKernelPi_sub_finrank_unitDiscAdjointKernelPi [Fintype ι]
     (k : ι → ℤ) :
     (finrank ℝ (unitDiscCauchyRiemannKernelPi k) : ℤ) - finrank ℝ (unitDiscAdjointKernelPi k) =
