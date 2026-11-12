@@ -271,10 +271,13 @@ theorem eq_lieWeight {χ : G →ₜ* Circle} {α : Module.Dual ℝ (LeftInvarian
       field_simp, Circle.exp_sub, ← hX, div_self']
   exact Circle.exp_pi_ne_one hπ
 
+omit [T2Space G] [BoundarylessManifold I G] in
 /-- The weight of a circle character is invariant under the group adjoint action. -/
 @[simp]
 theorem lieWeight_Ad (χ : G →ₜ* Circle) (g : G) (X : LeftInvariantDerivation I G) :
     lieWeight χ (Lie.Ad (I := I) g X) = lieWeight χ X := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
   have h := eq_lieWeight (I := I) (χ := χ)
     (α := (lieWeight χ).comp (Lie.Ad (I := I) g).toLinearEquiv.toLinearMap) (fun Y ↦ by
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv]
