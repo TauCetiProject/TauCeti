@@ -98,7 +98,6 @@ theorem norm_cauchyTransform_sub_inv_smul_le_of_two_mul_lt (hf : Integrable f)
   have hw' : (r : ℝ) < ‖w - c‖ := by linarith [r.coe_nonneg]
   refine (norm_cauchyTransform_sub_inv_smul_le hf hsupp hw').trans ?_
   have hk := div_sub_mul_le_two_mul_div_sq r.coe_nonneg hw
-  have hI : 0 ≤ ∫ z, ‖f z‖ := integral_nonneg fun _ ↦ norm_nonneg _
   calc π⁻¹ * (r / ((‖w - c‖ - r) * ‖w - c‖) * ∫ z, ‖f z‖)
       ≤ π⁻¹ * (2 * r / ‖w - c‖ ^ 2 * ∫ z, ‖f z‖) := by gcongr
     _ = 2 * π⁻¹ * r * (∫ z, ‖f z‖) / ‖w - c‖ ^ 2 := by ring
@@ -159,7 +158,6 @@ theorem norm_deriv_cauchyTransform_add_inv_sq_smul_le_of_two_mul_lt (hf : Integr
       6 * π⁻¹ * r * (∫ z, ‖f z‖) / ‖w - c‖ ^ 3 := by
   have hr := r.coe_nonneg
   have hρ : 0 < ‖w - c‖ := by linarith
-  have hδ : ‖w - c‖ / 2 ≤ ‖w - c‖ - r := by linarith
   have hδ0 : 0 < ‖w - c‖ - r := by linarith
   refine (norm_deriv_cauchyTransform_add_inv_sq_smul_le hf hsupp (by linarith)).trans ?_
   have hk : (r : ℝ) / ((‖w - c‖ - r) * ‖w - c‖) * ((‖w - c‖ - r)⁻¹ + ‖w - c‖⁻¹) ≤
@@ -174,7 +172,6 @@ theorem norm_deriv_cauchyTransform_add_inv_sq_smul_le_of_two_mul_lt (hf : Integr
     calc (r : ℝ) / ((‖w - c‖ - r) * ‖w - c‖) * ((‖w - c‖ - r)⁻¹ + ‖w - c‖⁻¹)
         ≤ 2 * r / ‖w - c‖ ^ 2 * (3 / ‖w - c‖) := by gcongr
       _ = 6 * r / ‖w - c‖ ^ 3 := by field_simp; ring
-  have hI : 0 ≤ ∫ z, ‖f z‖ := integral_nonneg fun _ ↦ norm_nonneg _
   calc π⁻¹ * ((r : ℝ) / ((‖w - c‖ - r) * ‖w - c‖) * ((‖w - c‖ - r)⁻¹ + ‖w - c‖⁻¹) *
         ∫ z, ‖f z‖)
       ≤ π⁻¹ * (6 * r / ‖w - c‖ ^ 3 * ∫ z, ‖f z‖) := by gcongr
@@ -198,7 +195,7 @@ theorem not_memLp_cauchyTransform_compl_closedBall (hf : Integrable f)
     (hsupp : support f ⊆ closedBall c r) (hf0 : ∫ z, f z ≠ 0) (R : ℝ) {p : ℝ≥0∞}
     (hp0 : p ≠ 0) (hp_top : p ≠ ∞) (hp : p.toReal ≤ 2) :
     ¬ MemLp (cauchyTransform f) p (volume.restrict (closedBall c R)ᶜ) := by
-  set M : F := (Real.pi : ℂ)⁻¹ • ∫ z, f z with hM
+  set M : F := (Real.pi : ℂ)⁻¹ • ∫ z, f z
   have hM0 : 0 < ‖M‖ := norm_pos_iff.mpr
     (smul_ne_zero (inv_ne_zero (ofReal_ne_zero.mpr Real.pi_ne_zero)) hf0)
   set B : ℝ := 2 * π⁻¹ * r * ∫ z, ‖f z‖
@@ -284,7 +281,6 @@ theorem memLp_deriv_cauchyTransform_compl_ball [CompleteSpace F] (hf : Integrabl
     calc ((‖w - c‖ - r) ^ 2)⁻¹ ≤ (((1 - r / R') * ‖w - c‖) ^ 2)⁻¹ :=
           inv_anti₀ (pow_pos hpos 2) (pow_le_pow_left₀ hpos.le hlin 2)
       _ = ((1 - r / R') ^ 2)⁻¹ / ‖w - c‖ ^ 2 := by rw [mul_pow, mul_inv, ← div_eq_mul_inv]
-  have hI : 0 ≤ ∫ z, ‖f z‖ := integral_nonneg fun z ↦ norm_nonneg (f z)
   calc π⁻¹ * (((‖w - c‖ - r) ^ 2)⁻¹ * ∫ z, ‖f z‖)
       ≤ π⁻¹ * (((1 - r / R') ^ 2)⁻¹ / ‖w - c‖ ^ 2 * ∫ z, ‖f z‖) := by gcongr
     _ = (K - 1) / ‖w - c‖ ^ 2 := by simp only [K]; ring
