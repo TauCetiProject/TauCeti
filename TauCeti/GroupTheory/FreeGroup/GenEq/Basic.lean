@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Finset.Image
 import Mathlib.Algebra.BigOperators.Group.List.Basic
 import Mathlib.Data.Fin.VecNotation
-public import TauCeti.GroupTheory.FreeGroup.EqIneqSystem
+public import TauCeti.GroupTheory.FreeGroup.EqIneqSystem.Basic
 public import TauCeti.GroupTheory.FreeGroup.Reduce
 public import TauCeti.GroupTheory.FreeGroup.Substitution
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
