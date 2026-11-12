@@ -137,8 +137,7 @@ theorem isSymmetric_jacobi_logDeriv
     (ht : t ∈ s) (hinv : (J t).IsInvertible) :
     LinearMap.IsSymmetric ((V t).comp (J t).inverse).toLinearMap := by
   intro x y
-  -- Evaluate the underlying linear map and its composition in the symmetry condition.
-  change inner ℝ (V t ((J t).inverse x)) y = inner ℝ x (V t ((J t).inverse y))
+  simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply]
   have hw := jacobi_wronskian_eq hJ hV hK hs ha ht
     ((J t).inverse x) ((J t).inverse y)
   rw [hW] at hw
