@@ -102,7 +102,7 @@ open scoped ContDiff
 /-- The smooth sections of the flat line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`,
 `exp (2πiθ₂)` along `ω₁`, `ω₂`: the smooth functions `u : ℂ → ℂ` with
 `u (z + ω₁) = exp (2πiθ₁) u z` and `u (z + ω₂) = exp (2πiθ₂) u z`. -/
-@[expose] def flatLineSections (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) : Submodule ℂ (ℂ → ℂ) where
+def flatLineSections (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) : Submodule ℂ (ℂ → ℂ) where
   carrier := {u | ContDiff ℝ ∞ u ∧ (∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z) ∧
     ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z}
   add_mem' {u v} hu hv :=
@@ -129,7 +129,7 @@ theorem conjWirtingerDeriv_mem_flatLineSections (hu : u ∈ flatLineSections ω�
 
 /-- The Cauchy–Riemann operator `∂bar` as a complex-linear map on the smooth sections of the flat
 line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`, `exp (2πiθ₂)`. -/
-@[expose] noncomputable def flatLineConjWirtingerDerivₗ (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
+noncomputable def flatLineConjWirtingerDerivₗ (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
     flatLineSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ] flatLineSections ω₁ ω₂ θ₁ θ₂ where
   toFun u := ⟨fun z ↦ conjWirtingerDeriv u z 1, conjWirtingerDeriv_mem_flatLineSections u.2⟩
   map_add' u v := Subtype.ext <| funext fun z ↦ by

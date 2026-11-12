@@ -305,7 +305,7 @@ private theorem ofTorus_latticeEquiv (hω : (conj ω₁ * ω₂).im ≠ 0)
 
 private theorem ofTorus_mem (hω : (conj ω₁ * ω₂).im ≠ 0) {g : UnitAddTorus (Fin 2) → ℂ}
     (hg : g ∈ smoothFunctions (Fin 2)) : ofTorus hω θ₁ θ₂ g ∈ flatLineSections ω₁ ω₂ θ₁ θ₂ := by
-  refine ⟨((contDiff_exp.comp (phaseCLM θ₁ θ₂).contDiff).mul
+  refine mem_flatLineSections.2 ⟨((contDiff_exp.comp (phaseCLM θ₁ θ₂).contDiff).mul
     (mem_smoothFunctions.1 hg)).comp (latticeEquiv hω).symm.contDiff, fun z ↦ ?_, fun z ↦ ?_⟩ <;>
     obtain ⟨p, rfl⟩ := (latticeEquiv hω).surjective z
   · have hz : latticeEquiv hω p + ω₁ = latticeEquiv hω (p + Pi.single 0 1) := by
@@ -356,10 +356,11 @@ private theorem conjWirtingerDeriv_ofTorus (hω : (conj ω₁ * ω₂).im ≠ 0)
 private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hu : u ∈ flatLineSections ω₁ ω₂ θ₁ θ₂) :
     ∃ g ∈ smoothFunctions (Fin 2), ofTorus hω θ₁ θ₂ g = u := by
+  obtain ⟨hu, hu₁, hu₂⟩ := mem_flatLineSections.1 hu
   set L := latticeEquiv hω
   set G : (Fin 2 → ℝ) → ℂ := fun p ↦ exp (-phaseCLM θ₁ θ₂ p) * u (L p)
   have hGc : ContDiff ℝ ∞ G :=
-    (contDiff_exp.comp (phaseCLM θ₁ θ₂).contDiff.neg).mul (hu.1.comp L.contDiff)
+    (contDiff_exp.comp (phaseCLM θ₁ θ₂).contDiff.neg).mul (hu.comp L.contDiff)
   have hper (m : Fin 2 → ℤ) : Function.Periodic G fun i ↦ (m i : ℝ) := fun p ↦ by
     have hL : L (p + fun i ↦ (m i : ℝ)) = L p + (m 0 : ℂ) * ω₁ + (m 1 : ℂ) * ω₂ := by
       rw [map_add, latticeEquiv_apply, latticeEquiv_apply]
@@ -372,8 +373,8 @@ private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
       push_cast
       ring
     simp only [G]
-    rw [hL, Function.apply_add_int_mul_eq_zpow_mul (exp_ne_zero _) hu.2.2,
-      Function.apply_add_int_mul_eq_zpow_mul (exp_ne_zero _) hu.2.1, map_add, neg_add,
+    rw [hL, Function.apply_add_int_mul_eq_zpow_mul (exp_ne_zero _) hu₂,
+      Function.apply_add_int_mul_eq_zpow_mul (exp_ne_zero _) hu₁, map_add, neg_add,
       Complex.exp_add, Complex.exp_neg (phaseCLM θ₁ θ₂ fun i ↦ (m i : ℝ)), hexp]
     field_simp
   obtain ⟨g, -, hgG⟩ := TauCeti.UnitAddTorus.exists_continuous_comp_coe_eq hGc.continuous hper
@@ -410,7 +411,7 @@ theorem bijective_flatLineConjWirtingerDerivₗ (hω : (conj ω₁ * ω₂).im �
     obtain ⟨g, hg, hgu⟩ := exists_ofTorus_eq hω u.2
     have h0 : ofTorus hω θ₁ θ₂ (torusOp ω₁ ω₂ θ₁ θ₂ g) = 0 := funext fun z ↦ by
       rw [← conjWirtingerDeriv_ofTorus hω hg, hgu]
-      exact congrFun (congrArg Subtype.val hu) z
+      simpa using congrFun (congrArg Subtype.val hu) z
     have hg0 := eq_zero_of_torusOp_eq_zero hω hθ hg
       (eq_zero_of_ofTorus_eq_zero hω h0)
     refine Subtype.ext ?_
@@ -462,8 +463,9 @@ theorem mul_setIntegral_norm_sq_flatLineConjWirtingerDerivEquiv_symm_apply_le
           ‖((flatLineConjWirtingerDerivEquiv hω hθ).symm f : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 ≤
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖(f : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 := by
   set u := (flatLineConjWirtingerDerivEquiv hω hθ).symm f
+  obtain ⟨hu, hu₁, hu₂⟩ := mem_flatLineSections.1 u.2
   have h := mul_setIntegral_norm_sq_le_setIntegral_norm_conjWirtingerDeriv_sq
-    (u.2.1.of_le (by simp)) hω u.2.2.1 u.2.2.2
+    (hu.of_le (by simp)) hω hu₁ hu₂
   simpa only [u, conjWirtingerDeriv_flatLineConjWirtingerDerivEquiv_symm_apply] using h
 
 /-- **`∂bar` is invertible on the powers and finite covers of a flat line with infinite
