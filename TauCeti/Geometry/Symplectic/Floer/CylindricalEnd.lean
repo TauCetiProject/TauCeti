@@ -884,9 +884,8 @@ theorem exists_forall_ofReal_norm_fderiv_sq_le_mul_setLIntegral_floerEnergyDensi
   have hdv : ContinuousOn (fderiv ℝ v) S := hv3.continuousOn_fderiv_of_isOpen hS (by norm_num)
   have hbound (w : ℂ) (hw : w ∈ closedBall y r) : ‖fderiv ℝ v w 1‖ ≤ M' := by
     rw [hderiv w (hbS (hball hw))]
-    refine ((fderiv ℝ u (w.re, w.im)).le_opNorm _).trans ?_
-    rw [Prod.norm_mk, norm_one, norm_zero, max_eq_left zero_le_one, mul_one]
-    exact (hM _ (hball hw).le).trans (le_max_left _ _)
+    exact ((fderiv ℝ u (w.re, w.im)).unit_le_opNorm _ (by simp)).trans
+      ((hM _ (hball hw).le).trans (le_max_left _ _))
   have hmv := hmean (u := v) (z₀ := y) (r := r) (m := M') hr.le (by linarith)
     (hv3.mono (ball_subset_closedBall.trans (hball.trans hbS)))
     ((hdv.clm_apply continuousOn_const).mono (hball.trans hbS))

@@ -501,7 +501,7 @@ theorem pi_mul_sq_mul_norm_fderiv_one_sub_sq_le_fifteen_mul_setIntegral_ball {z�
     (by
       rw [Complex.volume_real_ball z₀ hr, Complex.volume_real_ball 0 zero_le_one]
       nlinarith [Real.pi_pos])
-  simpa [measureReal_def, hr, mul_comm, mul_left_comm, mul_assoc] using h
+  rwa [Complex.volume_real_ball z₀ hr] at h
 
 /-- **The mean-value inequality for `∂ₛu - e₀` in a compact set.** Let `J` be `C²` on an open set
 `W` containing a compact set `K`, with `J(x)² = -1` on `K`, and invariant under the translations

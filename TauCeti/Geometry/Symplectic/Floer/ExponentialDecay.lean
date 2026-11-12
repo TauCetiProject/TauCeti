@@ -761,9 +761,8 @@ theorem exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp (hH : ContDiff �
     (fun z hz v ↦ (hcM z.2 _ (huK z.1 (hsub hz).1 z.2) v).1)
     (fun z hz v ↦ (hcM z.2 _ (huK z.1 (hsub hz).1 z.2) v).2)
     (fun z hz ↦ hfloer z (hsub hz)) (ne_top_of_le_ne_top hE (lintegral_mono_set hsub))
-    (fun z hz ↦ ((fderiv ℝ u z).le_opNorm _).trans (by
-      rw [Prod.norm_mk, norm_one, norm_zero, max_eq_left zero_le_one, mul_one]
-      exact hL z (mem_Ioi.1 hz.1).le))
+    (fun z hz ↦ ((fderiv ℝ u z).unit_le_opNorm _ (by simp)).trans
+      (hL z (mem_Ioi.1 hz.1).le))
     hxper hx hnd hux
   -- A Lipschitz constant for every `X_{H_t}` on `K` and the orbit.
   obtain ⟨Lx, hLx⟩ := ω.exists_forall_lipschitzOnWith_hamiltonianVectorField hH2 hHper
@@ -808,9 +807,9 @@ theorem exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp (hH : ContDiff �
   have : (0 : ℝ) ≤ Lx := Lx.coe_nonneg
   calc ‖D‖ ≤ ‖fderiv ℝ u (s, t) (1, 0)‖ +
         (M' * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx * ‖u (s, t) - x t‖) := by
-        rw [← hD₁]
-        exact D.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one.trans
-          (add_le_add le_rfl (hD₁ ▸ hD₂))
+        refine D.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one.trans ?_
+        rw [hD₁]
+        exact add_le_add le_rfl hD₂
     _ = (1 + M') * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx * ‖u (s, t) - x t‖ := by ring
     _ ≤ (1 + M') * (max C₁ 0 * Real.exp (-(min κ₁ κ₂ * s))) +
         Lx * (max C₂ 0 * Real.exp (-(min κ₁ κ₂ * s))) := by gcongr

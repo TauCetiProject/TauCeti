@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Calculus.LogDeriv
 
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 
 /-!
 # Periodicity of the derivative and the logarithmic derivative
@@ -97,18 +98,12 @@ theorem fderiv_add_eq_smul {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [No
 
 /-- A function invariant under all translations along a vector `v`, that is periodic with every
 period `τ • v`, has Fréchet derivative vanishing on `v` at every point. Since `fderiv` is again
-invariant (`Function.Periodic.fderiv`), the same holds for the iterated derivatives. -/
-theorem fderiv_apply_eq_zero_of_forall_periodic_smul {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F}
-    {v : E} (h : ∀ τ : 𝕜, Function.Periodic f (τ • v)) (x : E) : fderiv 𝕜 f x v = 0 := by
-  by_cases hd : DifferentiableAt 𝕜 f x
-  · have hline : HasDerivAt (fun τ : 𝕜 ↦ x + τ • v) v 0 := by
-      simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const v).const_add x
-    have hcomp := hd.hasFDerivAt.comp_hasDerivAt_of_eq (0 : 𝕜) hline (by simp)
-    have hconst : (fun τ : 𝕜 ↦ f (x + τ • v)) = fun _ ↦ f x := funext fun τ ↦ h τ x
-    rw [Function.comp_def, hconst] at hcomp
-    exact hcomp.unique (hasDerivAt_const _ _)
-  · simp [fderiv_zero_of_not_differentiableAt hd]
+invariant (`Function.Periodic.fderiv`), the same holds for the iterated derivatives. Such an `f`
+is even along every line in the direction `v` (`fderiv_apply_eq_zero_of_apply_add_smul_neg`). -/
+theorem fderiv_apply_eq_zero_of_forall_periodic_smul {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} {v : E}
+    (h : ∀ τ : ℝ, Function.Periodic f (τ • v)) (x : E) : fderiv ℝ f x v = 0 :=
+  fderiv_apply_eq_zero_of_apply_add_smul_neg v fun τ ↦ (h τ x).trans (h (-τ) x).symm
 
 end TauCeti
 
