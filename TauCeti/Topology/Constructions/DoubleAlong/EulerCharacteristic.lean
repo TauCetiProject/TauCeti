@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.ClosedAnnulus
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.ClosedBall
 public import TauCeti.Topology.Constructions.DoubleAlong.Annulus
 public import TauCeti.Topology.Constructions.DoubleAlong.Disc
 
@@ -19,9 +20,9 @@ homeomorphisms of `TauCeti.DoubleAlong.discDoubleHomeomorph` and
 
 * the closed unit disc is contractible, so `χ = 1`, and its double is the Riemann sphere
   `OnePoint ℂ`, so `χ = 2 = 2 · 1`;
-* the closed annulus `r₁ ≤ ‖z‖ ≤ r₂` with `0 < r₁ ≤ r₂` is homeomorphic to `Circle × [r₁, r₂]`
-  by polar coordinates (`Complex.closedAnnulusHomeomorph`), so `χ = 0 · 1 = 0`, and for `r₁ < r₂`
-  its double is the torus `Circle × Circle`, so `χ = 0 = 2 · 0`.
+* the closed annulus `r₁ ≤ ‖z‖ ≤ r₂` with `0 < r₁` is homeomorphic to `Circle × [r₁, r₂]`
+  by polar coordinates (`Complex.closedAnnulusHomeomorph`), so `χ = χ(S¹) · χ([r₁, r₂]) = 0`, and
+  for `r₁ < r₂` its double is the torus `Circle × Circle`, so `χ = 0 = 2 · 0`.
 
 In both cases the fixed set of the sheet exchange is the boundary: one circle for the disc
 (`TauCeti.DoubleAlong.discDoubleHomeomorph_image_fixed_eq_sphere`) and two circles for the annulus
@@ -41,8 +42,8 @@ and `TauCeti.eulerChar_closedAnnulus`.
 
 ## References
 
-* O. Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, the double of a
-  bordered Riemann surface.
+* L. V. Ahlfors and L. Sario, *Riemann Surfaces*, Princeton University Press, 1960, Chapter II,
+  the double of a bordered Riemann surface.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 2.2, the Euler characteristic after Theorem 2.44.
 -/
@@ -96,7 +97,7 @@ annulus: `0 = 2 · 0`. -/
 theorem eulerChar_annulusDouble_eq_two_mul [FiniteCWType (DoubleAlong (annulusBoundary r₁ r₂))]
     (h₀ : 0 < r₁) (h : r₁ < r₂) :
     eulerChar (DoubleAlong (annulusBoundary r₁ r₂)) = 2 * eulerChar (closedAnnulus r₁ r₂) := by
-  rw [eulerChar_annulusDouble h₀ h, eulerChar_closedAnnulus h₀ h.le, mul_zero]
+  rw [eulerChar_annulusDouble h₀ h, eulerChar_closedAnnulus h₀, mul_zero]
 
 end DoubleAlong
 

@@ -5,19 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Connected
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
+public import TauCeti.Topology.CWComplex.Classical.ClosedBall
 
 /-!
 # The Euler characteristic of a closed ball
 
-A closed ball of nonnegative radius in a real normed space is contractible, so it has finite CW
-type and Euler characteristic one. A closed ball of negative radius is empty, so closed balls have
-finite CW type for every radius.
+A closed ball of nonnegative radius in a real normed space is contractible, so it has Euler
+characteristic one. Its finite CW type is `TauCeti.finiteCWType_closedBall`.
 
 ## Main declarations
 
-* `TauCeti.finiteCWType_closedBall`: every closed ball of a real normed space has finite CW type.
 * `TauCeti.eulerChar_closedBall`: a closed ball of nonnegative radius has `χ = 1`.
 
 ## References
@@ -33,17 +31,6 @@ open Metric
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A closed ball in a real normed space has finite CW type: it is contractible for a nonnegative
-radius and empty otherwise. -/
-instance finiteCWType_closedBall (x : E) (r : ℝ) : FiniteCWType (closedBall x r) := by
-  rcases le_or_gt 0 r with hr | hr
-  · have := contractibleSpace_closedBall (x := x) hr
-    infer_instance
-  · have : IsEmpty (closedBall x r) := by
-      rw [Set.isEmpty_coe_sort, closedBall_eq_empty]
-      exact hr
-    exact FiniteCWType.of_discreteTopology _
 
 /-- A closed ball of nonnegative radius in a real normed space has Euler characteristic one. -/
 @[simp]
