@@ -123,8 +123,6 @@ theorem setIntegral_inner_orbitTorusOperator_eq_setIntegral_inner_orbitTorusAdjo
   have hR : IsCompact (Icc (0 : ℝ) ℓ ×ˢ Icc 0 d) := isCompact_Icc.prod isCompact_Icc
   have hu1 : Differentiable ℝ u := hu.differentiable one_ne_zero
   have hv1 : Differentiable ℝ v := hv.differentiable one_ne_zero
-  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
-  have hdv : Continuous (fderiv ℝ v) := hv.continuous_fderiv one_ne_zero
   have hu0 := hu.continuous
   have hv0 := hv.continuous
   -- The two potentials and their partial derivatives.
