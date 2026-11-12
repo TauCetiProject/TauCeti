@@ -54,7 +54,7 @@ namespace geometricallyUnipotentPointsCommHopfAlgProperty
 
 open Comodule
 
-variable {k H K : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
+variable {k H : Type u} {K : Type v} [Field k] [CommRing H] [HopfAlgebra k H]
 variable [Ring K] [Bialgebra k K]
 
 /-- **A homomorphism from a diagonalizable group to a reduced unipotent group is trivial.** Over

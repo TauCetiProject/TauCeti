@@ -218,12 +218,12 @@ theorem groupLikeBasis_apply (h : groupLikeSetSpan (R := S) (C := D) Set.univ = 
 
 /-- **A coalgebra spanned by its group-like elements has no nonzero skew-primitive elements at a
 single group-like element.** Over a domain, if the group-like elements span a torsion-free
-coalgebra `D`, `g` is group-like, and `Δ x = x ⊗ g + g ⊗ x`, then `x = 0`. The coordinates in
-`groupLikeBasis` carry `D` onto the diagonal coalgebra, where this is
-`Finsupp.eq_zero_of_comul_eq_tmul_add_tmul`. -/
+coalgebra `D`, `g` is group-like, and `Δ x = x ⊗ g + g ⊗ x`, then `x = 0`. -/
 theorem eq_zero_of_comul_eq_of_groupLikeSetSpan_eq_top
     (h : groupLikeSetSpan (R := S) (C := D) Set.univ = ⊤) (g : GroupLike S D) {x : D}
     (hx : Coalgebra.comul (R := S) x = x ⊗ₜ[S] g.val + g.val ⊗ₜ[S] x) : x = 0 := by
+  -- The coordinates in `groupLikeBasis` carry `D` onto the diagonal coalgebra, where this is
+  -- `Finsupp.eq_zero_of_comul_eq_tmul_add_tmul`.
   let r : D →ₗ[S] (GroupLike S D →₀ S) := (groupLikeBasis h).repr.toLinearMap
   have hr₁ (g' : GroupLike S D) : r g'.val = Finsupp.single g' 1 := by
     rw [← groupLikeBasis_apply h g']
