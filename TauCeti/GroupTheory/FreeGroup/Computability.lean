@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Computability.Primrec.List
 public import Mathlib.Data.List.ProdSigma
-public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 public import TauCeti.Computability.Primrec.List
 public import TauCeti.Data.List.Sections
@@ -40,9 +39,8 @@ reduced representatives. It uses `Encodable.decode₂`, which rejects noncanonic
 codes even if the alphabet's decoder accepts redundant codes.
 
 `wordsOverOfLengthLE` lists the finitely many words of length at most a given bound in the
-letters of a given list, primitive recursively in the list and the bound; for a finite alphabet,
-`wordsOfLengthLE` lists all words of length at most the bound. They are the search spaces of
-exhaustive searches over bounded tuples of words.
+letters of a given list, primitive recursively in the list and the bound; it is the search space
+of exhaustive searches over bounded tuples of words.
 -/
 
 public section
@@ -200,23 +198,6 @@ theorem primrec₂_wordsOverOfLengthLE [Primcodable A] :
     (Primrec.list_sections.comp (Primrec.list_replicate.comp Primrec.snd
       (Primrec.list_product.comp (Primrec.fst.comp Primrec.fst)
         (Primrec.const [true, false])))).to₂).to₂
-
-variable [Finite A]
-
-variable (A) in
-/-- The words of length at most `N` in the letters of a finite alphabet and their inverses. -/
-noncomputable def wordsOfLengthLE (N : ℕ) : List (List (A × Bool)) :=
-  wordsOverOfLengthLE (Set.finite_univ (α := A)).toFinset.toList N
-
-/-- A word is listed among the words of length at most `N` exactly when its length is at
-most `N`. -/
-@[simp] theorem mem_wordsOfLengthLE {N : ℕ} {w : List (A × Bool)} :
-    w ∈ wordsOfLengthLE A N ↔ w.length ≤ N := by
-  simp [wordsOfLengthLE]
-
-/-- The list of words of length at most `N` is primitive recursive in `N`. -/
-theorem primrec_wordsOfLengthLE [Primcodable A] : Primrec (wordsOfLengthLE A) :=
-  primrec₂_wordsOverOfLengthLE.comp (Primrec.const _) Primrec.id
 
 end Words
 
