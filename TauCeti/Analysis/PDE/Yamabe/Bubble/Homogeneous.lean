@@ -97,12 +97,12 @@ private theorem cutoffBubble_eventuallyEq (t : ℝ) (b x : E) :
   simp only [Pi.one_apply] at hy
   rw [cutoffBubble_apply, hy, one_mul]
 
-private theorem cutoffBubble_smooth_compact {t : ℝ} (ht : 0 < t) (b : E) (n : ℕ) :
+private theorem cutoffBubble_smooth_compact (t : ℝ) (b : E) (n : ℕ) :
     ContDiff ℝ ∞ (cutoffBubble t b n) ∧ HasCompactSupport (cutoffBubble t b n) := by
   rw [cutoffBubble_eq]
   let χ : ContDiffBump (0 : E) := bubbleCutoff
   exact ⟨(χ.contDiff.comp ((contDiff_id.sub contDiff_const).const_smul _)).mul
-      (contDiff_bubble ht.ne' b),
+      (contDiff_bubble t b),
     ((χ.hasCompactSupport.comp_smul (by positivity : ((n : ℝ) + 1)⁻¹ ≠ 0)).comp_homeomorph
       (Homeomorph.subRight b)).mul_right⟩
 
@@ -185,7 +185,7 @@ private theorem exists_bound_fderiv_cutoffBubble (hn : 2 < finrank ℝ E) {t : �
         ψ x • fderiv ℝ (bubble t b) x + bubble t b x • fderiv ℝ ψ x := by
       rw [cutoffBubble_eq]
       exact fderiv_mul (hψ.differentiable (by simp) x)
-        ((contDiff_bubble ht.ne' b : ContDiff ℝ ∞ _).differentiable (by simp) x)
+        ((contDiff_bubble t b : ContDiff ℝ ∞ _).differentiable (by simp) x)
     rw [hdprod]
     calc
       _ ≤ ‖ψ x • fderiv ℝ (bubble t b) x + bubble t b x • fderiv ℝ ψ x‖ +
@@ -208,7 +208,7 @@ private theorem tendsto_fderiv_cutoffBubble (hn : 2 < finrank ℝ E) {t : ℝ}
   obtain ⟨B, hB, hbound⟩ := exists_bound_fderiv_cutoffBubble hn ht b
   apply tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
     (Eventually.of_forall fun n ↦
-      ((cutoffBubble_smooth_compact ht b n).1.continuous_fderiv (by simp)).aestronglyMeasurable)
+      ((cutoffBubble_smooth_compact t b n).1.continuous_fderiv (by simp)).aestronglyMeasurable)
     ((memLp_fderiv_bubble μ hn ht b).norm.const_smul B)
   · exact Eventually.of_forall fun n ↦ Eventually.of_forall fun x ↦ by
       simpa only [ENNReal.coe_one, one_mul, Pi.smul_apply, smul_eq_mul, Real.enorm_of_nonneg
@@ -228,7 +228,7 @@ private theorem tendsto_cutoffBubble (hn : 2 < finrank ℝ E) {t : ℝ}
         (ENNReal.ofReal (criticalExponent (finrank ℝ E))) μ := by
     obtain rfl : i = 0 := by omega
     exact (memLp_congr_norm
-      (((contDiff_bubble ht.ne' (0 : E) : ContDiff ℝ ∞ _).continuous_iteratedFDeriv
+      (((contDiff_bubble t (0 : E) : ContDiff ℝ ∞ _).continuous_iteratedFDeriv
         (by simp)).aestronglyMeasurable)
       (memLp_bubble μ hn ht 0).aestronglyMeasurable
       (Eventually.of_forall fun x ↦ norm_iteratedFDeriv_zero)).mpr (memLp_bubble μ hn ht 0)
@@ -237,7 +237,7 @@ private theorem tendsto_cutoffBubble (hn : 2 < finrank ℝ E) {t : ℝ}
     (B := fun _ ↦ 1) (fun i hi x ↦ by
       obtain rfl : i = 0 := by omega
       simpa only [norm_iteratedFDeriv_zero, Real.norm_of_nonneg χ.nonneg] using χ.le_one)
-    ((contDiff_bubble ht.ne' 0 : ContDiff ℝ ∞ _).of_le (by simp)) hmem
+    ((contDiff_bubble t 0 : ContDiff ℝ ∞ _).of_le (by simp)) hmem
   have heq (n : ℕ) : eLpNorm (cutoffBubble t b n - bubble t b)
       (ENNReal.ofReal (criticalExponent (finrank ℝ E))) μ =
       eLpNorm (iteratedFDeriv ℝ 0 (fun x ↦ χ (((n : ℝ) + 1)⁻¹ • x) •
@@ -246,19 +246,19 @@ private theorem tendsto_cutoffBubble (hn : 2 < finrank ℝ E) {t : ℝ}
     trans eLpNorm (cutoffBubble t 0 n - bubble t 0)
       (ENNReal.ofReal (criticalExponent (finrank ℝ E))) μ
     · rw [← eLpNorm_comp_measurePreserving
-        (((cutoffBubble_smooth_compact ht 0 n).1.continuous.sub
-          (contDiff_bubble ht.ne' 0 : ContDiff ℝ ∞ _).continuous).aestronglyMeasurable)
+        (((cutoffBubble_smooth_compact t 0 n).1.continuous.sub
+          (contDiff_bubble t 0 : ContDiff ℝ ∞ _).continuous).aestronglyMeasurable)
         (measurePreserving_sub_right μ b)]
       congr 1
       funext x
       simp only [Pi.sub_apply, Function.comp_apply, cutoffBubble_apply, sub_zero,
         bubble_zero_sub]
     apply eLpNorm_congr_norm_ae
-      (((cutoffBubble_smooth_compact ht 0 n).1.continuous.sub
-        (contDiff_bubble ht.ne' 0 : ContDiff ℝ ∞ _).continuous).aestronglyMeasurable)
+      (((cutoffBubble_smooth_compact t 0 n).1.continuous.sub
+        (contDiff_bubble t 0 : ContDiff ℝ ∞ _).continuous).aestronglyMeasurable)
       ((((χ.contDiff.comp (contDiff_const_smul _)).smul
-        (contDiff_bubble ht.ne' 0 : ContDiff ℝ ∞ _)).continuous_iteratedFDeriv (by simp)
-        |>.sub ((contDiff_bubble ht.ne' 0 : ContDiff ℝ ∞ _).continuous_iteratedFDeriv
+        (contDiff_bubble t 0 : ContDiff ℝ ∞ _)).continuous_iteratedFDeriv (by simp)
+        |>.sub ((contDiff_bubble t 0 : ContDiff ℝ ∞ _).continuous_iteratedFDeriv
           (by simp))).aestronglyMeasurable)
     exact Eventually.of_forall fun x ↦ by
       simp only [χ, Pi.sub_apply, Pi.mul_apply, Function.comp_apply, cutoffBubble_apply,
@@ -277,8 +277,8 @@ theorem exists_testFunction_approximation_bubble (hn : 2 < finrank ℝ E) {t : �
       Tendsto (fun n ↦ eLpNorm (fderiv ℝ (φ n : E → ℝ) -
         fderiv ℝ (bubble t b)) 2 μ) atTop (𝓝 0) := by
   let φ (n : ℕ) : 𝓓((⊤ : Opens E), ℝ) :=
-    ⟨cutoffBubble t b n, (cutoffBubble_smooth_compact ht b n).1,
-      (cutoffBubble_smooth_compact ht b n).2, subset_univ _⟩
+    ⟨cutoffBubble t b n, (cutoffBubble_smooth_compact t b n).1,
+      (cutoffBubble_smooth_compact t b n).2, subset_univ _⟩
   refine ⟨φ, ?_, ?_⟩
   · simpa only [φ, TestFunction.coe_mk] using tendsto_cutoffBubble μ hn ht b
   · simpa only [φ, TestFunction.coe_mk] using tendsto_fderiv_cutoffBubble μ hn ht b
@@ -294,7 +294,7 @@ theorem exists_sobolevEmbeddingL_ae_eq_bubble (hn : 2 < finrank ℝ E) {t : ℝ}
       (u : Lp E 2 (μ.restrict (⊤ : Opens E))) =ᵐ[μ] ∇ (bubble t b) := by
   obtain ⟨φ, hfun, hderiv⟩ := exists_testFunction_approximation_bubble μ hn ht b
   have hcontGrad : Continuous (∇ (bubble t b)) :=
-    ((contDiff_bubble ht.ne' b : ContDiff ℝ ∞ _).gradient_right (m := 0) (by simp)).continuous
+    ((contDiff_bubble t b : ContDiff ℝ ∞ _).gradient_right (m := 0) (by simp)).continuous
   have hgrad : MemLp (∇ (bubble t b)) 2 μ := by
     refine (memLp_fderiv_bubble μ hn ht b).norm.mono'
       hcontGrad.aestronglyMeasurable ?_
@@ -307,7 +307,7 @@ theorem exists_sobolevEmbeddingL_ae_eq_bubble (hn : 2 < finrank ℝ E) {t : ℝ}
     apply eLpNorm_congr_norm_ae
       (((continuous_gradient_testFunction (φ n)).sub hcontGrad).aestronglyMeasurable)
       (((φ n).contDiff.continuous_fderiv (by simp)).sub
-        ((contDiff_bubble ht.ne' b : ContDiff ℝ ∞ _).continuous_fderiv (by simp))
+        ((contDiff_bubble t b : ContDiff ℝ ∞ _).continuous_fderiv (by simp))
           |>.aestronglyMeasurable)
     exact Eventually.of_forall fun x ↦
       norm_gradient_sub_gradient_eq_norm_fderiv_sub (φ n : E → ℝ) (bubble t b) x
