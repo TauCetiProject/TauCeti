@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Matching
 public import TauCeti.Combinatorics.Graph.Matching.Basic
-import TauCeti.Combinatorics.Graph.Incidence.Basic
 
 /-!
 # Matchings under the simple-graph to multigraph conversion
