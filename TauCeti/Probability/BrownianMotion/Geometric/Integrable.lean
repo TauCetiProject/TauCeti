@@ -13,10 +13,10 @@ import Mathlib.MeasureTheory.Function.LocallyIntegrable
 /-!
 # Expected square energy of geometric Brownian motion
 
-Geometric Brownian motion driven by a predictable filtered Brownian version is a predictable
-Brownian integrand with finite expected square energy on every finite horizon. No path
-continuity assumption is needed. The initial value and the drift and volatility are arbitrary
-deterministic real numbers, including zero.
+Geometric Brownian motion driven by a predictable pre-Brownian process is a predictable
+Brownian integrand with finite expected square energy on every finite horizon. Neither path
+continuity nor increment independence from the filtration is needed. The initial value and
+the drift and volatility are arbitrary deterministic real numbers, including zero.
 
 This connects the geometric Brownian moment bounds to the expected-energy integration domain.
 In particular it supplies the stock factor in a delta hedge's Brownian gains coefficient.
@@ -40,7 +40,9 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Real Set Filter
 open scoped NNReal ENNReal
 
-namespace TauCeti.Probability.IsFilteredPreBrownianReal
+namespace ProbabilityTheory.IsPreBrownianReal
+
+open TauCeti TauCeti.Probability
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
@@ -49,7 +51,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 energy on each finite horizon. A predictable driving version gives literal predictability of
 the integrand on the original filtration. No positivity or nonzero-volatility assumption is
 needed. -/
-theorem brownianIntegrable_geometricBrownianMotion (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem brownianIntegrable_geometricBrownianMotion (hW : IsPreBrownianReal W P)
     (hp : IsStronglyPredictable ℱ W)
     (s μ σ : ℝ) : BrownianIntegrable ℱ P (geometricBrownianMotion s μ σ W) := by
   have hpred (a : ℝ) : IsStronglyPredictable ℱ (geometricBrownianMotion a μ σ W) := by
@@ -58,19 +60,19 @@ theorem brownianIntegrable_geometricBrownianMotion (hW : IsFilteredPreBrownianRe
     simpa only [IsStronglyPredictable, Function.uncurry_def, geometricBrownianMotion_def,
       Pi.add_apply] using
       (((ht.const_mul (μ - σ ^ 2 / 2)).add (hw.const_mul σ)).exp.const_mul a).stronglyMeasurable
-  have : IsProbabilityMeasure P := (hW.toIsPreBrownianReal.hasLaw_eval 0).isProbabilityMeasure
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   refine ⟨hpred s, fun T ↦ ?_⟩
   have hm : AEStronglyMeasurable (Function.uncurry (geometricBrownianMotion s μ σ W))
       (((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P) :=
     ((hpred s).mono ℱ.predictable_le_prod).aestronglyMeasurable
   refine (memLp_two_iff_integrable_sq hm).2 ((integrable_prod_iff (hm.pow 2)).2 ⟨?_, ?_⟩)
   · exact Eventually.of_forall fun t ↦
-      (hW.toIsPreBrownianReal.memLp_geometricBrownianMotion s μ σ t (by simp)).integrable_sq
+      (hW.memLp_geometricBrownianMotion s μ σ t (by simp)).integrable_sq
   · have hmoment (t : ℝ≥0) :
         ∫ ω, ‖geometricBrownianMotion s μ σ W t ω ^ 2‖ ∂P =
           s ^ 2 * exp ((2 * μ + σ ^ 2) * t) := by
       simp only [Real.norm_eq_abs, abs_pow, sq_abs]
-      convert hW.toIsPreBrownianReal.integral_rpow_geometricBrownianMotion s μ σ 2 t using 1 <;>
+      convert hW.integral_rpow_geometricBrownianMotion s μ σ 2 t using 1 <;>
         norm_num
     simp only [Pi.pow_apply, Function.uncurry_apply_pair, hmoment]
     rw [NNReal.comap_volume_restrict_Ioc]
@@ -82,4 +84,4 @@ theorem brownianIntegrable_geometricBrownianMotion (hW : IsFilteredPreBrownianRe
       NNReal.comap_volume_restrict_Ioc_univ]
     exact ENNReal.coe_ne_top
 
-end TauCeti.Probability.IsFilteredPreBrownianReal
+end ProbabilityTheory.IsPreBrownianReal

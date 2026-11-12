@@ -17,9 +17,9 @@ after expiry, give predictable coefficients in `TauCeti.BrownianIntegrable`. Thu
 expected square energy is finite on the full horizon, including arbitrarily close to expiry,
 where gamma can diverge. The result holds under any physical drift `μ`, not just `μ = r`.
 
-The driving process must be a predictable version with the filtered Brownian laws; no path
-continuity assumption is needed. A continuous such version exists on the original raw
-filtration by
+The driving process must be predictable with the pre-Brownian laws; neither path continuity
+nor increment independence from the filtration is needed. For filtered Brownian motion,
+a continuous predictable version exists on the original raw filtration by
 `IsFilteredPreBrownianReal.exists_isStronglyPredictable_isBrownianReal_indist`.
 No usual-filtration assumption is required. The maturity slice is assigned zero explicitly;
 no terminal derivative of the payoff is assumed.
@@ -30,7 +30,7 @@ Together with the existing pathwise drift/bond integrability and value-process m
 results, they supply the integrability inputs for verification of the delta hedge.
 
 The proof uses the bounded-delta formulas and
-`IsFilteredPreBrownianReal.brownianIntegrable_geometricBrownianMotion`.
+`ProbabilityTheory.IsPreBrownianReal.brownianIntegrable_geometricBrownianMotion`.
 
 ## References
 
@@ -45,9 +45,9 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Real Set Filter
 open scoped NNReal ENNReal
 
-namespace TauCeti.Probability.IsFilteredPreBrownianReal
+namespace ProbabilityTheory.IsPreBrownianReal
 
-open TauCeti.BlackScholes
+open TauCeti TauCeti.Probability TauCeti.BlackScholes
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ} {s σ K T : ℝ}
@@ -55,7 +55,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 /-- The call hedge's Brownian gains coefficient `σ S C_s`, extended by zero at and after
 maturity, is predictable and has finite expected square energy on every finite horizon.
 The stock may have any physical drift. -/
-theorem brownianIntegrable_call_hedge (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem brownianIntegrable_call_hedge (hW : IsPreBrownianReal W P)
     (hp : IsStronglyPredictable ℱ W)
     (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (μ r : ℝ) :
     BrownianIntegrable ℱ P (fun t ω ↦ σ * geometricBrownianMotion s μ σ W t ω *
@@ -77,7 +77,7 @@ theorem brownianIntegrable_call_hedge (hW : IsFilteredPreBrownianReal ℱ W P)
 /-- The put hedge's Brownian gains coefficient `σ S P_s`, extended by zero at and after
 maturity, is predictable and has finite expected square energy on every finite horizon.
 No bound on gamma at expiry is needed. -/
-theorem brownianIntegrable_put_hedge (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem brownianIntegrable_put_hedge (hW : IsPreBrownianReal W P)
     (hp : IsStronglyPredictable ℱ W)
     (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (μ r : ℝ) :
     BrownianIntegrable ℱ P (fun t ω ↦ σ * geometricBrownianMotion s μ σ W t ω *
@@ -97,4 +97,4 @@ theorem brownianIntegrable_put_hedge (hW : IsFilteredPreBrownianReal ℱ W P)
       linarith [hdelta.1]
     · simp
 
-end TauCeti.Probability.IsFilteredPreBrownianReal
+end ProbabilityTheory.IsPreBrownianReal
