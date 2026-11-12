@@ -32,10 +32,12 @@ through Mathlib's `MulEquiv.cast` along equalities of indices.
 * `TauCeti.GraphOfGroups.α`: the boundary monomorphism `α_e : A_e →* A_{src e}`.
 * `TauCeti.GraphOfGroups.segment`: the graph of groups of an amalgamated product.
 * `TauCeti.GraphOfGroups.loop`: the graph of groups of an HNN extension.
+* `TauCeti.GraphOfGroups.restrict`: the restriction of a graph of groups to the subgraph spanned
+  by a reversal-closed set of darts, with all vertices of the graph.
 
 ## References
 
-* J.-P. Serre, *Trees*, Chapter I, §4.4, Definition 8.
+* J.-P. Serre, *Trees*, Chapter I, §4.4, Definition 8, and §5.1.
 * I. Kapovich, R. Weidmann, A. Myasnikov, *Foldings, graphs of groups and the membership problem*,
   Internat. J. Algebra Comput. 15 (2005), §2, Convention 2.1.
 -/
@@ -170,6 +172,47 @@ variable {G : Type w} {C : Type x} [Group G] [Group C] (f g : C →* G)
   MonoidHom.ext fun c => (loop f g hf hg).α_rev_apply ((), true) c
 
 end loop
+
+section restrict
+
+variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
+
+/-- The restriction of a graph of groups `𝔸` over `Γ` to the subgraph `Γ.restrict S hS`, which has
+all vertices of `Γ` and the darts of a reversal-closed set `S`: the vertex groups are those of `𝔸`,
+and a dart of `S` keeps its edge group and its boundary monomorphism `ω_e`. The body is exposed and
+unfolds at instance transparency, so that an element of a vertex group of `𝔸` is accepted as an
+element of the corresponding vertex group of the restriction by rewriting and simplification. -/
+@[expose, instance_reducible] def restrict : GraphOfGroups.{u, v, w, x} (Γ.restrict S hS) where
+  vertexGroup := 𝔸.vertexGroup
+  edgeGroup y := 𝔸.edgeGroup
+    (SerreGraph.GeomEdge.lift (Γ.restrict S hS) (fun e : S => Γ.toGeomEdge e.1)
+      (fun e => Γ.toGeomEdge_rev e.1) y)
+  ω e := (𝔸.ω e.1).comp
+    (MulEquiv.cast (M := 𝔸.edgeGroup) (SerreGraph.GeomEdge.lift_toGeomEdge _ _ _ e)).toMonoidHom
+  ω_injective e := (𝔸.ω_injective e.1).comp (MulEquiv.injective _)
+
+/-- The boundary monomorphism `ω_e` of a dart of the restriction is `ω_e` of `𝔸`, read through the
+identification of the edge groups. -/
+@[simp] theorem restrict_ω_apply (e : (Γ.restrict S hS).E)
+    (c : (𝔸.restrict S hS).edgeGroup ((Γ.restrict S hS).toGeomEdge e)) :
+    (𝔸.restrict S hS).ω e c =
+      𝔸.ω e.1 (MulEquiv.cast (M := 𝔸.edgeGroup) (SerreGraph.GeomEdge.lift_toGeomEdge _ _ _ e) c) :=
+  (rfl)
+
+/-- The boundary monomorphism `α_e` of a dart of the restriction is `α_e` of `𝔸`, read through the
+identification of the edge groups. -/
+@[simp] theorem restrict_α_apply (e : (Γ.restrict S hS).E)
+    (c : (𝔸.restrict S hS).edgeGroup ((Γ.restrict S hS).toGeomEdge e)) :
+    (𝔸.restrict S hS).α e c =
+      𝔸.α e.1 (MulEquiv.cast (M := 𝔸.edgeGroup)
+        (SerreGraph.GeomEdge.lift_toGeomEdge _ _ _ e) c) := by
+  rw [α_apply, α_apply, restrict_ω_apply]
+  simp only [MulEquiv.cast_apply, cast_cast]
+  -- The cast into the vertex group of the restriction is `cast` by `MulEquiv.cast_apply`, and the
+  -- two transports of `c` agree by proof irrelevance.
+  rfl
+
+end restrict
 
 end GraphOfGroups
 
