@@ -8,26 +8,27 @@ module
 public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import Mathlib.AlgebraicGeometry.Noetherian
 import Mathlib.AlgebraicGeometry.PullbackCarrier
-public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 public import TauCeti.Topology.Constructible.Jacobson
 
 /-!
 # Rational points in images of scheme morphisms
 
-Over an algebraically closed field, a rational point lies in the topological image of a
-morphism between locally finite-type schemes exactly when it lifts to a rational point.
+Over an algebraically closed field `k`, a `k`-point of an arbitrary scheme lies in the topological
+image of a morphism locally of finite type exactly when it lifts to a `k`-point of the source.
 This compares the full scheme image, which can contain nonclosed points, with the image on
 rational points. No reducedness, smoothness or separability hypothesis is needed.
 
 Constructible subsets of a locally finite-type scheme are determined by their rational
-points; in particular a nonempty locally closed subset contains a rational point. For
-morphisms between finite-type schemes, Chevalley's theorem therefore detects
-image inclusions and surjectivity on rational points. These comparisons allow rational orbit
-calculations to control the full constructible image of an algebraic orbit morphism.
+points; in particular a nonempty locally closed subset contains a rational point. Chevalley's
+theorem therefore detects on rational points the inclusion of the image of a morphism from a
+locally finite-type scheme in the image of a morphism from a finite-type scheme, and the
+surjectivity of a morphism from a finite-type scheme, all over a locally finite-type target.
+These comparisons allow rational orbit calculations to control the full constructible image of an
+algebraic orbit morphism.
 
-The proofs use Mathlib's `pointEquivClosedPoint`, `pointOfClosedPoint` and Chevalley theorem.
-Lifting a rational point along a morphism locally of finite type rests on the fact that a nonempty
-fibre locally of finite type over an algebraically closed field has a rational point.
+The proofs use Mathlib's `pointOfClosedPoint` and Chevalley theorem. Lifting a rational point
+along a morphism locally of finite type rests on the fact that a nonempty fibre locally of finite
+type over an algebraically closed field has a rational point.
 
 ## References
 
@@ -56,9 +57,9 @@ theorem _root_.IsLocallyClosed.exists_rationalPoint_mem {s : Set Y} (hs : IsLoca
   exact ⟨pointOfClosedPoint π y hyclosed, pointOfClosedPoint_comp π y hyclosed,
     (pointOfClosedPoint_apply π y hyclosed _).symm ▸ hys⟩
 
-/-- A point `p : Spec k ⟶ Y` of a locally finite-type scheme over an algebraically closed field `k`
-that lies in the image of a morphism `f` locally of finite type lifts to a rational point of the
-source. A fibre that is nonempty and locally of finite type over `k` has a `k`-point. -/
+/-- For an algebraically closed field `k` and a morphism `f : X ⟶ Y` locally of finite type between
+arbitrary schemes, a `k`-point `p : Spec k ⟶ Y` lifts along `f` to a `k`-point of `X` if and only
+if its image point lies in the image of `f`. -/
 theorem exists_comp_eq_iff_mem_range (f : X ⟶ Y) [LocallyOfFiniteType f]
     (p : Spec (.of k) ⟶ Y) :
     (∃ q : Spec (.of k) ⟶ X, q ≫ f = p) ↔ p (IsLocalRing.closedPoint k) ∈ Set.range f := by
@@ -104,10 +105,11 @@ theorem _root_.Topology.IsConstructible.eq_iff_forall_rationalPoint
 section FiniteType
 
 variable (f : X ⟶ Y) (π : Y ⟶ Spec (.of k))
-  [LocallyOfFiniteType π] [LocallyOfFiniteType (f ≫ π)] [CompactSpace X]
+  [LocallyOfFiniteType π] [LocallyOfFiniteType (f ≫ π)]
 
-/-- Inclusions between the full images of morphisms of finite-type schemes over an
-algebraically closed field can be tested by lifting rational points. -/
+/-- Over an algebraically closed field `k`, the image of a morphism `f` from a locally finite-type
+scheme is contained in the image of a morphism `g` from a finite-type scheme, both into a locally
+finite-type scheme, exactly when every rational point that lifts along `f` lifts along `g`. -/
 theorem range_subset_range_iff_forall_rationalPoint (g : Z ⟶ Y)
     [LocallyOfFiniteType (g ≫ π)] [CompactSpace Z] :
     Set.range f ⊆ Set.range g ↔
@@ -115,24 +117,27 @@ theorem range_subset_range_iff_forall_rationalPoint (g : Z ⟶ Y)
         (∃ q : Spec (.of k) ⟶ X, q ≫ f = p) →
           ∃ r : Spec (.of k) ⟶ Z, r ≫ g = p := by
   let : IsLocallyNoetherian Y := LocallyOfFiniteType.isLocallyNoetherian π
-  let : LocallyOfFiniteType f := locallyOfFiniteType_of_comp f π
   let : LocallyOfFiniteType g := locallyOfFiniteType_of_comp g π
-  have hf : IsConstructible (Set.range f) := by
-    simpa using (f.isLocallyConstructible_image (s := Set.univ)
-      IsLocallyConstructible.univ).isConstructible_of_subset_of_isCompact
-        (Set.image_univ ▸ subset_rfl) (Set.image_univ ▸ isCompact_univ.image f.continuous)
   have hg : IsConstructible (Set.range g) := by
     simpa using (g.isLocallyConstructible_image (s := Set.univ)
-      IsLocallyConstructible.univ).isConstructible_of_subset_of_isCompact
-        (Set.image_univ ▸ subset_rfl) (Set.image_univ ▸ isCompact_univ.image g.continuous)
-  rw [hf.subset_iff_forall_rationalPoint π hg]
-  exact forall_congr' fun p ↦ forall_congr' fun _ ↦ by
-    rw [f.exists_comp_eq_iff_mem_range p, g.exists_comp_eq_iff_mem_range p]
+      IsLocallyConstructible.univ).isConstructible_of_subset_of_isCompact subset_rfl
+        (isCompact_univ.image g.continuous)
+  -- The inclusion is tested on the rational points of `X`, through the constructible preimage of
+  -- the image of `g`; no compactness of `X` is needed for that preimage to be constructible.
+  rw [← Set.image_univ, Set.image_subset_iff,
+    IsConstructible.univ.subset_iff_forall_rationalPoint (f ≫ π) (f.isConstructible_preimage hg)]
+  refine ⟨fun h p hp ⟨q, hq⟩ ↦ ?_, fun h q hq _ ↦ ?_⟩
+  · subst hq
+    obtain ⟨z, hz⟩ := h q (by rwa [Category.assoc] at hp) trivial
+    exact (g.exists_comp_eq_iff_mem_range (q ≫ f)).mpr ⟨z, hz.trans (q.comp_apply f _).symm⟩
+  · obtain ⟨r, hr⟩ := h (q ≫ f) (by rwa [Category.assoc]) ⟨q, rfl⟩
+    obtain ⟨z, hz⟩ := (g.exists_comp_eq_iff_mem_range (q ≫ f)).mp ⟨r, hr⟩
+    exact ⟨z, hz.trans (q.comp_apply f _)⟩
 
-variable [CompactSpace Y] in
-/-- A morphism between finite-type schemes over an algebraically closed field is
-surjective on all scheme points exactly when every rational point has a rational lift. -/
-theorem surjective_iff_forall_rationalPoint :
+/-- A morphism from a finite-type scheme to a locally finite-type scheme over an algebraically
+closed field is surjective on all scheme points exactly when every rational point has a rational
+lift. -/
+theorem surjective_iff_forall_rationalPoint [CompactSpace X] :
     Function.Surjective f ↔ ∀ (p : Spec (.of k) ⟶ Y), p ≫ π = 𝟙 _ →
       ∃ q : Spec (.of k) ⟶ X, q ≫ f = p := by
   constructor
