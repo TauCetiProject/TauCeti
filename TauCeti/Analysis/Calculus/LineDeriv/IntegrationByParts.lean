@@ -100,6 +100,12 @@ variable {E V W : Type*}
   [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W]
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → V}
 
+/-- A function vanishing wherever a compactly supported function vanishes has compact support. -/
+private theorem hasCompactSupport_of_eq_zero {α β γ : Type*} [TopologicalSpace α] [Zero β]
+    [Zero γ] {f : α → β} {F : α → γ} (hf : HasCompactSupport f)
+    (hF : ∀ x, f x = 0 → F x = 0) : HasCompactSupport F :=
+  hf.mono <| Function.support_subset_iff'.2 fun x hx ↦ hF x (Function.notMem_support.1 hx)
+
 /-- **Integration by parts for two directional derivatives.** For a compactly supported `C²` map
 `u` and a continuous bilinear map `B`, moving the derivative in the direction `w` off the second
 factor gives `∫ B (∂_v u) (∂_w u) = -∫ B (∂_w ∂_v u) u`. -/
@@ -112,10 +118,7 @@ theorem integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply
   have hcd2u : Continuous (fderiv ℝ (fderiv ℝ u)) := hu'.continuous_fderiv (by norm_num)
   -- a bilinear pairing whose right factor has compact support has compact support
   have hcs : ∀ F G : E → V, HasCompactSupport G → HasCompactSupport fun x ↦ B (F x) (G x) :=
-    fun F G hG ↦ hG.mono fun x hx ↦ by
-      simp only [Function.mem_support] at hx ⊢
-      contrapose hx
-      simp [hx]
+    fun F G hG ↦ hasCompactSupport_of_eq_zero hG fun x hx ↦ by simp [hx]
   -- the derivative in the direction `w` of the derivative of `u` in the direction `v`
   have hsnd : ∀ x : E,
       fderiv ℝ (fun y ↦ fderiv ℝ u y v) x w = fderiv ℝ (fderiv ℝ u) x w v := by
@@ -190,10 +193,7 @@ theorem integrable_mul_sq_of_hasCompactSupport (L : V →L[ℝ] ℝ) {g : E → 
     (hu : Continuous u) (hsupp : HasCompactSupport u) :
     Integrable (fun x ↦ g x * L (u x) ^ 2) μ :=
   (hg.mul ((L.continuous.comp hu).pow 2)).integrable_of_hasCompactSupport <|
-    hsupp.mono fun x hx ↦ by
-      simp only [Function.mem_support] at hx ⊢
-      contrapose hx
-      simp [hx]
+    hasCompactSupport_of_eq_zero hsupp fun x hx ↦ by simp [hx]
 
 omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
 /-- The square of a continuous linear functional of a compactly supported continuous map is
@@ -212,10 +212,7 @@ theorem integrable_neg_fderiv_fderiv_apply_mul_of_hasCompactSupport (L : V →L[
   ((L.continuous.comp ((((hu.fderiv_right (m := 1) (by norm_num)).continuous_fderiv
     one_ne_zero).clm_apply continuous_const).clm_apply continuous_const)).neg.mul
       (L.continuous.comp hu.continuous)).integrable_of_hasCompactSupport <|
-    hsupp.mono fun x hx ↦ by
-      simp only [Function.mem_support] at hx ⊢
-      contrapose hx
-      simp [hx]
+    hasCompactSupport_of_eq_zero hsupp fun x hx ↦ by simp [hx]
 
 /-- For compactly supported `C¹` maps `f` and `g` whose supports lie in a set `D`, the integral
 over `D` of the difference of directional derivatives `x ↦ f'(x) v - g'(x) w` vanishes. -/
@@ -244,6 +241,15 @@ section Uncertainty
 
 variable {B : V →L[ℝ] V →L[ℝ] ℝ} {ℓ : E →L[ℝ] ℝ} {v : E}
 
+omit [FiniteDimensional ℝ E] in
+/-- For a compactly supported `C¹` map `u`, the pairing `ℓ · B(u, ∂_v u)` is integrable. -/
+private theorem integrable_mul_bilinear_fderiv_apply (hu : ContDiff ℝ 1 u)
+    (hsupp : HasCompactSupport u) : Integrable (fun x ↦ ℓ x * B (u x) (fderiv ℝ u x v)) μ :=
+  Continuous.integrable_of_hasCompactSupport (ℓ.continuous.mul
+    ((B.continuous.comp hu.continuous).clm_apply
+      ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const)))
+    (hasCompactSupport_of_eq_zero hsupp fun x hx ↦ by simp [hx])
+
 /-- For a symmetric continuous bilinear form `B`, a continuous linear functional `ℓ` with
 `ℓ v = 1` and a compactly supported `C¹` map `u`, the integral of `ℓ · B(u, ∂_v u)` is
 `-(1/2) ∫ B(u, u)`: the integral of the derivative `∂_v (ℓ · B(u, u)) = B(u, u) + 2 ℓ B(u, ∂_v u)`
@@ -254,30 +260,25 @@ theorem integral_mul_bilinear_fderiv_apply_eq_neg_integral_div_two (hB : ∀ y z
   have hcu : Continuous u := hu.continuous
   have hcdu : Continuous fun x ↦ fderiv ℝ u x v :=
     (hu.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  -- a pairing with `u` in one factor is supported in the support of `u`
-  have hcs : ∀ F : E → ℝ, (∀ x, u x = 0 → F x = 0) → HasCompactSupport F :=
-    fun F hF ↦ hsupp.mono fun x hx ↦ by
-      simp only [Function.mem_support] at hx ⊢
-      exact fun h ↦ hx (hF x h)
   have hderiv : ∀ x, HasFDerivAt (fun y ↦ ℓ y • u y)
       (ℓ x • fderiv ℝ u x + ℓ.smulRight (u x)) x := fun x ↦
     ℓ.hasFDerivAt.smul (hu.differentiable one_ne_zero x).hasFDerivAt
   have hibp := integral_bilinear_hasFDerivAt_right_eq_neg_left_of_integrable (μ := μ) (B := B)
     (f := u) (f' := fderiv ℝ u) (g := fun y ↦ ℓ y • u y)
     (g' := fun x ↦ ℓ x • fderiv ℝ u x + ℓ.smulRight (u x)) (v := v)
-    ((Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hcdu).clm_apply
-      (ℓ.continuous.smul hcu))) (hcs _ fun x hx ↦ by simp [hx]))
-    ((Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hcu).clm_apply
-      ((ℓ.continuous.smul hcdu).add (continuous_const.smul hcu)))) (hcs _ fun x hx ↦ by simp [hx]))
-    ((Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hcu).clm_apply
-      (ℓ.continuous.smul hcu))) (hcs _ fun x hx ↦ by simp [hx]))
+    (Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hcdu).clm_apply
+      (ℓ.continuous.smul hcu)) (hasCompactSupport_of_eq_zero hsupp fun x hx ↦ by simp [hx]))
+    (Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hcu).clm_apply
+      ((ℓ.continuous.smul hcdu).add (continuous_const.smul hcu)))
+      (hasCompactSupport_of_eq_zero hsupp fun x hx ↦ by simp [hx]))
+    (Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hcu).clm_apply
+      (ℓ.continuous.smul hcu)) (hasCompactSupport_of_eq_zero hsupp fun x hx ↦ by simp [hx]))
     (fun x _ ↦ (hu.differentiable one_ne_zero x).hasFDerivAt) (fun x _ ↦ hderiv x)
   have hI₁ : Integrable (fun x ↦ ℓ x * B (u x) (fderiv ℝ u x v)) μ :=
-    (Continuous.integrable_of_hasCompactSupport (ℓ.continuous.mul
-      ((B.continuous.comp hcu).clm_apply hcdu))) (hcs _ fun x hx ↦ by simp [hx])
+    integrable_mul_bilinear_fderiv_apply hu hsupp
   have hI₂ : Integrable (fun x ↦ B (u x) (u x)) μ :=
-    (Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hcu).clm_apply hcu))
-      (hcs _ fun x hx ↦ by simp [hx])
+    Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hcu).clm_apply hcu)
+      (hasCompactSupport_of_eq_zero hsupp fun x hx ↦ by simp [hx])
   simp only [add_apply, smul_apply,
     ContinuousLinearMap.smulRight_apply, hv, one_smul, map_add, map_smul, smul_eq_mul] at hibp
   rw [integral_add hI₁ hI₂] at hibp
@@ -300,21 +301,15 @@ theorem abs_mul_integral_bilinear_le_integral_bilinear_fderiv_apply_add
   have hcu : Continuous u := hu.continuous
   have hcdu : Continuous fun x ↦ fderiv ℝ u x v :=
     (hu.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have hcs : ∀ F : E → ℝ, (∀ x, u x = 0 → F x = 0) → HasCompactSupport F :=
-    fun F hF ↦ hsupp.mono fun x hx ↦ by
-      simp only [Function.mem_support] at hx ⊢
-      exact fun h ↦ hx (hF x h)
   have hP : Integrable (fun x ↦ B (fderiv ℝ u x v) (fderiv ℝ u x v)) μ :=
-    (Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hcdu).clm_apply hcdu))
-      ((hsupp.fderiv_apply (𝕜 := ℝ) v).mono fun x hx ↦ by
-        simp only [Function.mem_support] at hx ⊢
-        exact fun h ↦ hx (by simp [h]))
+    Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hcdu).clm_apply hcdu)
+      (hasCompactSupport_of_eq_zero (hsupp.fderiv_apply (𝕜 := ℝ) v) fun x hx ↦ by simp [hx])
   have hY : Integrable (fun x ↦ ℓ x * B (u x) (fderiv ℝ u x v)) μ :=
-    (Continuous.integrable_of_hasCompactSupport (ℓ.continuous.mul
-      ((B.continuous.comp hcu).clm_apply hcdu))) (hcs _ fun x hx ↦ by simp [hx])
+    integrable_mul_bilinear_fderiv_apply hu hsupp
   have hX : Integrable (fun x ↦ ℓ x ^ 2 * B (u x) (u x)) μ :=
-    (Continuous.integrable_of_hasCompactSupport ((ℓ.continuous.pow 2).mul
-      ((B.continuous.comp hcu).clm_apply hcu))) (hcs _ fun x hx ↦ by simp [hx])
+    Continuous.integrable_of_hasCompactSupport ((ℓ.continuous.pow 2).mul
+      ((B.continuous.comp hcu).clm_apply hcu))
+      (hasCompactSupport_of_eq_zero hsupp fun x hx ↦ by simp [hx])
   have hhalf := integral_mul_bilinear_fderiv_apply_eq_neg_integral_div_two (μ := μ) hB hv hu hsupp
   -- `0 ≤ ∫ B(∂_v u + r ℓ u, ∂_v u + r ℓ u)` for every real `r`
   have key : ∀ r : ℝ, r * ∫ x, B (u x) (u x) ∂μ ≤
