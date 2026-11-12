@@ -96,12 +96,8 @@ private theorem factorial_le_norm_inv_Gamma {n : ℕ} (hn : 1 ≤ n) :
 
 /-- The points `-n - 1/2` tend to infinity. -/
 private theorem tendsto_neg_nat_sub_half :
-    Tendsto (fun n : ℕ ↦ -(n : ℂ) - 1 / 2) atTop (cobounded ℂ) := by
-  refine tendsto_norm_atTop_iff_cobounded.1 ?_
-  refine tendsto_atTop_mono (fun n : ℕ ↦ ?_) (tendsto_natCast_atTop_atTop.atTop_add
-    (tendsto_const_nhds (x := (-1 / 2 : ℝ))))
-  calc (n : ℝ) + -1 / 2 = ‖-(n : ℂ)‖ - ‖(1 / 2 : ℂ)‖ := by norm_num [sub_eq_add_neg]
-    _ ≤ ‖-(n : ℂ) - 1 / 2‖ := norm_sub_norm_le _ _
+    Tendsto (fun n : ℕ ↦ -(n : ℂ) - 1 / 2) atTop (cobounded ℂ) :=
+  (tendsto_sub_const_cobounded _).comp (tendsto_neg_cobounded.comp tendsto_natCast_atTop_cobounded)
 
 /-- `‖-n - 1/2‖ ≤ n + 1/2`. -/
 private theorem norm_neg_nat_sub_half_le (n : ℕ) : ‖-(n : ℂ) - 1 / 2‖ ≤ 1 * n + 1 / 2 := by
