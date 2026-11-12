@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Covering
 # Smooth evenly covered neighborhoods for the compact Spin projection
 
 The compact real Spin projection on the closed units-range Lie-group carriers is a smooth
-covering in positive dimension. Each rotation has a single evenly covered neighborhood on
+covering. Each rotation has a single evenly covered neighborhood on
 which every sheet is a smooth local section. The sheets are labeled by the actual fiber over
 the chosen rotation, and each section passes through its labeling point. These are the local
 lifts used for smooth transitions of spin bundles.
@@ -64,7 +64,7 @@ local notation "SpecialOrthogonalLieModel(" n ")" =>
 
 /-- Every rotation has an evenly covered neighborhood whose sections are all smooth. Labeling
 by the actual fiber makes each section pass through its prescribed Spin lift at the center. -/
-theorem exists_realCliffordSpinSmoothCoveringTrivialization (n : ℕ) [NeZero n]
+theorem exists_realCliffordSpinSmoothCoveringTrivialization (n : ℕ)
     (y : SpecialOrthogonalUnitsRange(n)) :
     ∃ t : Bundle.Trivialization
         ((realCliffordSpinToSpecialOrthogonalSmoothRange n) ⁻¹' {y})
