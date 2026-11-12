@@ -263,7 +263,6 @@ private theorem min_mul_norm_le_norm_sub (hT : IsSelfAdjoint T) {c : ℝ}
   have hw : w ∈ K := K.neg_mem (K.smul_mem _ (K.starProjection_apply_mem x))
   -- Each component is bounded below.
   set m := min (c - |r|) |r|
-  have hm : 0 ≤ m := le_min (sub_nonneg.2 hrc) (abs_nonneg r)
   have hu' : m * ‖x₁‖ ≤ ‖u‖ := by
     have h₁ := hc x₁ hx₁
     have h₂ : ‖T x₁‖ ≤ ‖u‖ + |r| * ‖x₁‖ := by
@@ -581,8 +580,8 @@ theorem det_adjoint (f : E →ₗ[𝕜] E) : (adjoint f).det = star f.det := by
 /-- If `‖C x‖ ≤ c * ‖x‖` for every `x` and `0 ≤ c`, then also `‖C† y‖ ≤ c * ‖y‖` for every `y`. -/
 theorem norm_adjoint_apply_le {C : E →ₗ[𝕜] F} {c : ℝ} (hc : 0 ≤ c)
     (hC : ∀ x, ‖C x‖ ≤ c * ‖x‖) (y : F) : ‖adjoint C y‖ ≤ c * ‖y‖ := by
-  have := FiniteDimensional.complete 𝕜 E
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 F
   -- The continuous adjoint is an isometry for the operator norm.
   calc ‖adjoint C y‖ = ‖ContinuousLinearMap.adjoint C.toContinuousLinearMap y‖ := by
         rw [← adjoint_toContinuousLinearMap, coe_toContinuousLinearMap']

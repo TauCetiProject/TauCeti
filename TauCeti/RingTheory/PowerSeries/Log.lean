@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Log
+public import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Formal logarithms of power series
@@ -37,15 +38,15 @@ finite field with `q` elements whose point counts are `1 + qⁿ - tₙ`.
 ## Main definitions
 
 * `PowerSeries.logDeriv`: the formal derivative of `PowerSeries.logOf`.
+
+## Main results
+
 * `PowerSeries.coeff_logDeriv`: the coefficient formula for the formal logarithmic derivative.
 * `PowerSeries.logDeriv_mul`: the product identity characterizing the logarithmic derivative.
 * `PowerSeries.logDeriv_eq_derivative_mul_inv`: the quotient form over a field.
 * `PowerSeries.coeff_trunc_log_comp_trunc_exp_sub_one`: the identity `log (exp X) = X`, truncated
   to polynomials: the composite of the truncations of the two series agrees with `X` below both
   truncation degrees.
-
-## Main results
-
 * `PowerSeries.subst_exp_logOf` and `PowerSeries.logOf_subst_exp`: `exp (log f) = f` and
   `log (exp g) = g`.
 * `PowerSeries.logOf_mul`: `log (f g) = log f + log g`.
@@ -89,24 +90,10 @@ theorem coeff_logDeriv (f : A⟦X⟧) (n : ℕ) :
 theorem logDeriv_mul (f : A⟦X⟧) (hf : constantCoeff f = 1) :
     logDeriv f * f = d⁄dX f := by
   have hsub : HasSubst (f - 1) := HasSubst.of_constantCoeff_zero' (by simp [hf])
-  rw [logDeriv, logOf_eq, derivative_subst hsub]
-  have hlog := congrArg (substAlgHom hsub)
-    (derivative_log_mul_one_add_X (A := A))
-  simp only [map_mul, map_one, coe_substAlgHom] at hlog
-  have hone : (1 : A⟦X⟧).subst (f - 1) = 1 := by
-    rw [← coe_substAlgHom hsub, map_one]
-  have hadd : (1 + X : A⟦X⟧).subst (f - 1) = f := by
-    rw [subst_add hsub, subst_X hsub]
-    rw [hone]
-    ring
-  rw [hadd] at hlog
-  have hderiv : d⁄dX (f - 1) = d⁄dX f := by
-    rw [map_sub, derivative_one, sub_zero]
-  rw [hderiv]
-  calc
-    subst (f - 1) (d⁄dX (log A)) * d⁄dX f * f =
-        (subst (f - 1) (d⁄dX (log A)) * f) * d⁄dX f := by ring
-    _ = d⁄dX f := by rw [hlog, one_mul]
+  have hlog := congrArg (subst (f - 1)) (derivative_log_mul_one_add_X (A := A))
+  rw [subst_mul hsub, subst_add hsub, subst_X hsub, subst_one, add_sub_cancel] at hlog
+  rw [logDeriv, logOf_eq, derivative_subst hsub, map_sub, derivative_one, sub_zero, mul_right_comm,
+    hlog, one_mul]
 
 /-- Over a field, the formal logarithmic derivative of a power series with constant coefficient
 one is the quotient `f' / f`. -/
@@ -124,37 +111,9 @@ point where the two series converge. -/
 theorem coeff_trunc_log_comp_trunc_exp_sub_one {M N k : ℕ} (hM : k < M) (hN : k < N) :
     ((trunc M (log A)).comp (trunc N (exp A - 1))).coeff k =
       (Polynomial.X : Polynomial A).coeff k := by
-  set E : A⟦X⟧ := exp A - 1
-  -- The coefficient of `X ^ k` in `E ^ n` vanishes for `n > k`, as `X` divides `E`.
-  have hvan : ∀ n, k < n → coeff k (E ^ n) = 0 := fun n hn =>
-    X_pow_dvd_iff.mp (pow_dvd_pow_of_dvd (X_dvd_iff.mpr (by simp [E])) n) k hn
-  -- Below degree `N`, powers of the truncation of `E` agree with powers of `E`.
-  have hpow : ∀ n, ((trunc N E) ^ n).coeff k = coeff k (E ^ n) := by
-    intro n
-    calc ((trunc N E) ^ n).coeff k = coeff k ((trunc N E : A⟦X⟧) ^ n) := by
-          rw [← Polynomial.coe_pow, Polynomial.coeff_coe]
-      _ = (trunc N ((trunc N E : A⟦X⟧) ^ n)).coeff k := by
-          simp only [coeff_trunc, hN, ite_true]
-      _ = coeff k (E ^ n) := by
-          simp only [trunc_trunc_pow, coeff_trunc, hN, ite_true]
-  have hlhs : ((trunc M (log A)).comp (trunc N E)).coeff k =
-      ∑ n ∈ Finset.range M, coeff n (log A) * coeff k (E ^ n) := by
-    rw [Polynomial.comp, eval₂_trunc_eq_sum_range, Polynomial.finsetSum_coeff]
-    simp [Polynomial.coeff_C_mul, hpow]
-  rw [hlhs]
-  have hX : (Polynomial.X : Polynomial A).coeff k = coeff k (X : A⟦X⟧) := by
-    rw [Polynomial.coeff_X, coeff_X]
-    grind
-  rw [hX, ← subst_log_exp_sub_one, coeff_subst' HasSubst.exp_sub_one,
-    finsum_eq_sum_of_support_subset (s := Finset.range M)]
-  · rfl
-  · intro n hn
-    simp only [Function.mem_support] at hn
-    simp only [Finset.coe_range, Set.mem_Iio]
-    by_contra h
-    have h0 := hvan n (by omega)
-    simp only [E] at h0
-    exact hn (by rw [h0, smul_zero])
+  rw [coeff_trunc_comp_trunc _ (by simp) hM hN, subst_log_exp_sub_one, Polynomial.coeff_X,
+    coeff_X]
+  grind
 
 
 /-! ## Logarithm and exponential as inverse operations -/
@@ -194,8 +153,7 @@ theorem subst_exp_logOf {f : A⟦X⟧} (hf : constantCoeff f = 1) :
     (exp A).subst (logOf f) = f := by
   have hsub : HasSubst (f - 1) := HasSubst.of_constantCoeff_zero' (by simp [hf])
   rw [logOf_eq, ← subst_comp_subst_apply HasSubst.log hsub, subst_exp_log, subst_add hsub,
-    subst_X hsub, ← coe_substAlgHom hsub, map_one]
-  ring
+    subst_X hsub, subst_one, add_sub_cancel]
 
 /-- The formal logarithm undoes the formal exponential: `log (exp g) = g` when `g` has no constant
 term. -/
@@ -204,7 +162,7 @@ theorem logOf_subst_exp {g : A⟦X⟧} (hg : constantCoeff g = 0) :
     logOf ((exp A).subst g) = g := by
   have hsub : HasSubst g := HasSubst.of_constantCoeff_zero' hg
   have hsub_one : (exp A).subst g - 1 = (exp A - 1).subst g := by
-    rw [subst_sub hsub, ← coe_substAlgHom hsub, map_one]
+    rw [subst_sub hsub, subst_one]
   rw [logOf_eq, hsub_one, ← subst_comp_subst_apply HasSubst.exp_sub_one hsub,
     subst_log_exp_sub_one, subst_X hsub]
 
@@ -234,6 +192,21 @@ theorem logOf_mul {f g : A⟦X⟧} (hf : constantCoeff f = 1) (hg : constantCoef
 theorem logOf_one : logOf (1 : A⟦X⟧) = 0 := by
   have h := logOf_mul (A := A) (f := 1) (g := 1) (by simp) (by simp)
   rwa [mul_one, left_eq_add] at h
+
+/-- The formal logarithm turns finite products into sums, when every factor has constant
+coefficient one. -/
+theorem logOf_prod {ι : Type*} {s : Finset ι} {f : ι → A⟦X⟧}
+    (hf : ∀ i ∈ s, constantCoeff (f i) = 1) :
+    logOf (∏ i ∈ s, f i) = ∑ i ∈ s, logOf (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    have hs : ∀ i ∈ s, constantCoeff (f i) = 1 := fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)
+    rw [Finset.prod_insert ha, Finset.sum_insert ha,
+      logOf_mul (hf a (Finset.mem_insert_self a s))
+        (by rw [map_prod]; exact Finset.prod_eq_one hs),
+      ih hs]
 
 /-! ## Logarithms of linear and quadratic polynomials -/
 

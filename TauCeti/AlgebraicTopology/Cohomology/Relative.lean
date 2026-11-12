@@ -53,11 +53,16 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   the three exactness statements `TopPair.singularCohomology_exact_relative`,
   `TopPair.singularCohomology_exact_space` and `TopPair.singularCohomology_exact_subspace`, and its
   naturality `TopPair.singularCohomologyδ_naturality`.
+* `TopPair.singularCohomologyπ_singularCohomologyMap_ofSubsetMap`: the map to absolute cohomology
+  is natural under maps of pairs induced by continuous maps.
 * `TopPair.singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ`: for `S' ⊆ S`, the map
   `Hⁿ(X, S) ⟶ Hⁿ(X)` factors through `Hⁿ(X, S')`; and
   `TopPair.singularCohomologyπ_ofSubset_univ`: the map `Hⁿ(X, X) ⟶ Hⁿ(X)` vanishes.
 * `TopPair.isIso_singularCohomologyπ_of_isEmpty`: for an empty subspace, `Hⁿ(X, ∅) ⟶ Hⁿ(X)` is an
   isomorphism.
+* `TopCat.singularCohomologyComplRestrict`: the restriction `Hⁿ(X, X ∖ S) ⟶ Hⁿ(X, X ∖ T)` for
+  `S ⊆ T`, with its composition lemma
+  `TopCat.singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict`.
 
 ## References
 
@@ -419,6 +424,20 @@ lemma singularCohomologyπ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n : �
       (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).comm₁₂).symm.trans
         (HomologicalComplex.homologyMap_comp _ _ n)
 
+/-- The image in absolute cohomology of a class pulled back along the map of pairs induced by a
+continuous map `g : X ⟶ Y` carrying `B` into `A` is the pull-back along `g` of its image. -/
+lemma singularCohomologyπ_singularCohomologyMap_ofSubsetMap {X Y : TopCat.{w}} {A : Set Y}
+    {B : Set X} (g : X ⟶ Y) (hg : Set.MapsTo g B A) (n : ℕ)
+    (x : (ofSubset A).singularCohomology R k M n) :
+    (ofSubset B).singularCohomologyπ R k M n
+        (TopPair.singularCohomologyMap (ofSubsetMap g hg) n x) =
+      TopCat.singularCohomologyMap g n ((ofSubset A).singularCohomologyπ R k M n x) := by
+  have h := ConcreteCategory.congr_hom (singularCohomologyπ_naturality (R := R) (k := k)
+    (M := M) (ofSubsetMap g hg) n) x
+  rw [ofSubsetMap_fst] at h
+  simp only [ConcreteCategory.comp_apply] at h
+  exact h.symm
+
 /-- The connecting morphism of the long exact sequence of a topological pair is natural: for a
 map of pairs `f : (X, A) ⟶ (Y, B)`, following `Hⁿ(B) ⟶ Hᵐ(Y, B)` by the map induced by `f` on
 relative cohomology agrees with following the map induced by `f` on `Hⁿ(B)` by
@@ -463,3 +482,29 @@ lemma singularCohomologyπ_ofSubset_univ (X : TopCat.{w}) (n : ℕ) :
 end LongExactSequence
 
 end TopPair
+
+namespace TopCat
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+  (k : Type*) [Ring k] [Linear k C] (M : C) {X : TopCat.{w}}
+
+/-- The restriction `Hⁿ(X, X ∖ S) ⟶ Hⁿ(X, X ∖ T)` for `S ⊆ T`, induced by the identity of `X`. -/
+abbrev singularCohomologyComplRestrict {S T : Set X} (h : S ⊆ T) (n : ℕ) :
+    (TopPair.ofSubset Sᶜ).singularCohomology R k M n ⟶
+      (TopPair.ofSubset Tᶜ).singularCohomology R k M n :=
+  TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl h)) n
+
+variable {R k M}
+
+/-- Restricting from the complement of `S` to the complement of `T`, then to the complement of
+`Q`, is restricting from the complement of `S` to the complement of `Q`. -/
+@[simp]
+lemma singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict {S T Q : Set X}
+    (h : S ⊆ T) (h' : T ⊆ Q) (n : ℕ) (a : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
+    singularCohomologyComplRestrict R k M h' n (singularCohomologyComplRestrict R k M h n a) =
+      singularCohomologyComplRestrict R k M (h.trans h') n a := by
+  rw [← TopPair.singularCohomologyMap_comp_apply,
+    TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (mapsTo_id_compl (h.trans h'))
+      (Category.id_comp _)]
+
+end TopCat
