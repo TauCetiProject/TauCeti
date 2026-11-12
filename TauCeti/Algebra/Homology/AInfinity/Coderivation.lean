@@ -261,11 +261,11 @@ theorem isHomogeneous_desuspension {G : InternalGrading R A}
     (hF : LinearMap.IsHomogeneous F (ReducedTensorWords.gradedPiece (G.shift 1))
       (G.shift 1).piece 1) {n : ℕ} :
     MultilinearMap.IsHomogeneous (desuspension G F n) (fun _ ↦ G.piece) G.piece (2 - n) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [desuspension_zero]
+    exact MultilinearMap.isHomogeneous_zero _ _ _
   rw [MultilinearMap.isHomogeneous_def]
   intro d x hx
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · rw [desuspension_zero, zero_apply]
-    exact zero_mem _
   rw [desuspension_apply G F hn]
   have hw := ReducedTensorWords.mem_gradedPiece_of_tprod (G.shift 1) hn
     (fun i ↦ G.koszulTwist ((n : ℤ) - 1 - i) (x i)) (fun i ↦ d i - 1) fun i ↦ by
