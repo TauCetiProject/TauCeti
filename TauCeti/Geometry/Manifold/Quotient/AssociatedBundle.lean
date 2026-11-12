@@ -41,10 +41,11 @@ when there is a nowhere-vanishing holomorphic `f : E → ℂ` with `f (g • y) 
 of the trivial character is trivial for every quotient covering
 (`IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_one`).
 
-When `E` is moreover a compact connected complex manifold, every holomorphic function on `E` is
-constant (`MDifferentiable.exists_eq_const_of_compactSpace`, the maximum principle). Hence the
-holomorphic sections of the bundle associated with `ρ` correspond to the `ρ`-invariant vectors of
-`F` (`IsQuotientCoveringMap.mdifferentiable_section_associatedCore_iff_exists_eq_const`),
+When `p` is differentiable and its covering space `E` is a compact connected complex manifold,
+every holomorphic function on `E` is constant (`MDifferentiable.exists_eq_const_of_compactSpace`,
+the maximum principle). Hence the holomorphic sections of the bundle associated with `ρ`
+correspond to the `ρ`-invariant vectors of `F`
+(`IsQuotientCoveringMap.mdifferentiable_section_associatedCore_iff_exists_eq_const`),
 the line bundle of a nontrivial character has no nonzero holomorphic section
 (`IsQuotientCoveringMap.eq_zero_of_contMDiff_section_characterCore`), and the line bundle of `χ` is
 holomorphically trivial exactly when `χ = 1`
@@ -60,14 +61,18 @@ holomorphically trivial exactly when `χ = 1`
   `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff`: an associated
   line bundle is trivial exactly when there is a nowhere-vanishing equivariant function upstairs.
 * `IsQuotientCoveringMap.mdifferentiable_section_associatedCore_iff_exists_eq_const`,
-  `IsQuotientCoveringMap.contMDiff_section_associatedCore_iff_exists_eq_const`: over a compact
-  preconnected complex manifold `E`, holomorphic sections are constant `ρ`-invariant functions
-  upstairs.
+  `IsQuotientCoveringMap.contMDiff_section_associatedCore_iff_exists_eq_const`: if `p` is
+  differentiable with compact preconnected complex covering manifold `E`, holomorphic sections
+  over `X` have constant equivariant functions upstairs with `ρ`-invariant values.
 * `IsQuotientCoveringMap.eq_zero_of_mdifferentiable_section_characterCore`,
   `IsQuotientCoveringMap.eq_zero_of_contMDiff_section_characterCore`,
-  `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`: over a
-  compact connected complex manifold `E`, the line bundle of a nontrivial character has no nonzero
-  holomorphic section and is not holomorphically trivial.
+  `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`: if `p`
+  is differentiable with compact connected complex covering manifold `E`, the line bundle of a
+  nontrivial character over `X` has no nonzero holomorphic section and is not holomorphically
+  trivial. The analogous results for rank-one representations are
+  `IsQuotientCoveringMap.eq_zero_of_mdifferentiable_section_associatedCore`,
+  `IsQuotientCoveringMap.eq_zero_of_contMDiff_section_associatedCore`, and
+  `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_associatedCore_iff_eq_one`.
 
 ## References
 
@@ -116,37 +121,46 @@ theorem contMDiff_section_associatedCore_of_eq_const
   rw [associatedCore_baseSet] at hx'
   rw [localTriv_associatedCore_apply_snd _ _ _ hx', hv, Function.const_apply]
 
+/-- The line bundle associated with the trivial representation has a global trivialization
+in its maximal `C^n` atlas, for every quotient covering. -/
+theorem exists_trivialization_baseSet_eq_univ_associatedCore_one [CompleteSpace 𝕜]
+    (hF : finrank 𝕜 F = 1) :
+    ∃ (e : Trivialization F (π F (hp.associatedCore (1 : G →* (F →L[𝕜] F)ˣ)).Fiber))
+      (_ : e.IsLinear 𝕜),
+      e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear X F IB n).maximalAtlas
+        (TotalSpace F (hp.associatedCore (1 : G →* (F →L[𝕜] F)ˣ)).Fiber) ∧
+        e.baseSet = univ := by
+  have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
+  obtain ⟨v, hv⟩ := exists_ne (0 : F)
+  rw [ContMDiffVectorBundle.exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero hF]
+  refine ⟨(hp.associatedSectionEquiv 1).symm ⟨fun _ ↦ v, fun g y ↦ by simp⟩, ?_, ?_⟩
+  · exact hp.contMDiff_section_associatedCore_of_eq_const 1
+      (by simp only [Equiv.apply_symm_apply]; rfl)
+  · intro x
+    rw [associatedSectionEquiv_symm_apply]
+    exact hv
+
 /-- The line bundle of the trivial character has a global trivialization in its maximal `C^n`
-atlas: the section attached to the constant function `1` reads as `1` in every chart. -/
+atlas, for every quotient covering. -/
 theorem exists_trivialization_baseSet_eq_univ_characterCore_one [CompleteSpace 𝕜] :
     ∃ (e : Trivialization 𝕜 (π 𝕜 (hp.characterCore (1 : G →* 𝕜ˣ)).Fiber)) (_ : e.IsLinear 𝕜),
       e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear X 𝕜 IB n).maximalAtlas
         (TotalSpace 𝕜 (hp.characterCore (1 : G →* 𝕜ˣ)).Fiber) ∧ e.baseSet = univ := by
-  rw [characterCore_def]
-  set ρ₁ := (Units.map (algebraMap 𝕜 (𝕜 →L[𝕜] 𝕜)).toMonoidHom).comp (1 : G →* 𝕜ˣ)
-  rw [ContMDiffVectorBundle.exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero
-    (finrank_self 𝕜)]
-  refine ⟨(hp.associatedSectionEquiv ρ₁).symm ⟨fun _ ↦ 1, fun g y ↦ by simp [ρ₁]⟩, fun x ↦ ?_,
-    fun x ↦ ?_⟩
-  · exact hp.contMDiff_section_associatedCore_of_eq_const ρ₁
-      (by simp only [Equiv.apply_symm_apply]; rfl) x
-  · rw [associatedSectionEquiv_symm_apply]
-    exact one_ne_zero (α := 𝕜)
+  rw [characterCore_def, MonoidHom.comp_one]
+  exact hp.exists_trivialization_baseSet_eq_univ_associatedCore_one (finrank_self 𝕜)
 
-variable (hpd : IsLocalDiffeomorph I IB n p)
-include hpd
-
-/-- If `p` is a `C^n` local diffeomorphism and `m ≤ n`, a section of the associated bundle is
-`C^m` at `p y` exactly when the corresponding equivariant function is `C^m` at `y`. -/
-theorem contMDiffAt_section_associatedCore_iff (hm : m ≤ n)
-    {σ : ∀ x, (hp.associatedCore ρ).Fiber x} {y : E} :
+/-- If `p` is a `C^n` local diffeomorphism at `y` and `m ≤ n`, a section of the associated bundle
+is `C^m` at `p y` exactly when the corresponding equivariant function is `C^m` at `y`. -/
+theorem contMDiffAt_section_associatedCore_iff {y : E}
+    (hpd : IsLocalDiffeomorphAt I IB n p y) (hm : m ≤ n)
+    {σ : ∀ x, (hp.associatedCore ρ).Fiber x} :
     ContMDiffAt IB (IB.prod 𝓘(𝕜, F)) m (fun x ↦ TotalSpace.mk' F x (σ x)) (p y) ↔
       ContMDiffAt I 𝓘(𝕜, F) m (hp.associatedSectionEquiv ρ σ : E → F) y := by
   have : MemTrivializationAtlas ((hp.associatedCore ρ).localTriv y) := ⟨⟨y, rfl⟩⟩
   set s := hp.isLocalHomeomorph.localInverseAt y
   rw [Trivialization.contMDiffAt_section_iff ((hp.associatedCore ρ).localTriv y)
       (hp.mem_associatedCore_baseSet_self ρ y),
-    ← (hpd y).contMDiffAt_comp_iff hm]
+    ← hpd.contMDiffAt_comp_iff hm]
   refine Filter.EventuallyEq.contMDiffAt_iff ?_
   -- Near `y`, the section read in the chart through `y` and pulled back along `p` is the
   -- equivariant function, since the local section through `y` inverts `p` there.
@@ -159,27 +173,49 @@ theorem contMDiffAt_section_associatedCore_iff (hm : m ≤ n)
 
 /-- If `p` is a `C^n` local diffeomorphism and `m ≤ n`, a section of the associated bundle is
 `C^m` exactly when the corresponding equivariant function is `C^m`. -/
-theorem contMDiff_section_associatedCore_iff (hm : m ≤ n)
+theorem contMDiff_section_associatedCore_iff (hpd : IsLocalDiffeomorph I IB n p)
+    (hm : m ≤ n)
     {σ : ∀ x, (hp.associatedCore ρ).Fiber x} :
     ContMDiff IB (IB.prod 𝓘(𝕜, F)) m (fun x ↦ TotalSpace.mk' F x (σ x)) ↔
       ContMDiff I 𝓘(𝕜, F) m (hp.associatedSectionEquiv ρ σ : E → F) := by
-  refine ⟨fun h y ↦ (hp.contMDiffAt_section_associatedCore_iff ρ hpd hm).1 (h (p y)),
+  refine ⟨fun h y ↦ (hp.contMDiffAt_section_associatedCore_iff ρ (hpd y) hm).1 (h (p y)),
     fun h x ↦ ?_⟩
   obtain ⟨y, rfl⟩ := hp.surjective x
-  exact (hp.contMDiffAt_section_associatedCore_iff ρ hpd hm).2 (h y)
+  exact (hp.contMDiffAt_section_associatedCore_iff ρ (hpd y) hm).2 (h y)
 
-/-- If `p` is a `C^n` local diffeomorphism with `n ≠ 0`, a section of the associated bundle is
-differentiable at `p y` exactly when its equivariant function is differentiable at `y`. -/
-theorem mdifferentiableAt_section_associatedCore_iff (hn : n ≠ 0)
-    {σ : ∀ x, (hp.associatedCore ρ).Fiber x} {y : E} :
+/-- If `p` is a `C^n` local diffeomorphism at `y` with `n ≠ 0`, a section of the associated bundle
+is differentiable at `p y` exactly when its equivariant function is differentiable at `y`. -/
+theorem mdifferentiableAt_section_associatedCore_iff {y : E}
+    (hpd : IsLocalDiffeomorphAt I IB n p y) (hn : n ≠ 0)
+    {σ : ∀ x, (hp.associatedCore ρ).Fiber x} :
     MDifferentiableAt IB (IB.prod 𝓘(𝕜, F)) (fun x ↦ TotalSpace.mk' F x (σ x)) (p y) ↔
       MDifferentiableAt I 𝓘(𝕜, F) (hp.associatedSectionEquiv ρ σ : E → F) y := by
   have : MemTrivializationAtlas ((hp.associatedCore ρ).localTriv y) := ⟨⟨y, rfl⟩⟩
   set s := hp.isLocalHomeomorph.localInverseAt y
   rw [Trivialization.mdifferentiableAt_section_iff IB
       ((hp.associatedCore ρ).localTriv y) σ (hp.mem_associatedCore_baseSet_self ρ y),
-    ← (hpd y).mdifferentiableAt_comp_iff hn]
+    ← hpd.mdifferentiableAt_comp_iff hn]
   refine Filter.EventuallyEq.mdifferentiableAt_iff ?_
+  filter_upwards [s.open_target.mem_nhds (hp.isLocalHomeomorph.self_mem_localInverseAt_target)]
+    with z hz
+  have hsource := s.map_target hz
+  have hinv := s.right_inv hz
+  rw [hp.isLocalHomeomorph.localInverseAt_symm] at hsource hinv
+  rw [Function.comp_apply, localTriv_associatedCore_apply_snd _ _ _ hsource, hinv]
+
+/-- If `p` is differentiable at `y`, differentiability of a section at `p y` implies
+differentiability of its equivariant function upstairs at `y`. -/
+theorem mdifferentiableAt_associatedSectionEquiv {y : E}
+    (hpd : MDifferentiableAt I IB p y) {σ : ∀ x, (hp.associatedCore ρ).Fiber x}
+    (hσ : MDifferentiableAt IB (IB.prod 𝓘(𝕜, F))
+      (fun x ↦ TotalSpace.mk' F x (σ x)) (p y)) :
+    MDifferentiableAt I 𝓘(𝕜, F) (hp.associatedSectionEquiv ρ σ : E → F) y := by
+  have : MemTrivializationAtlas ((hp.associatedCore ρ).localTriv y) := ⟨⟨y, rfl⟩⟩
+  have hc := ((Trivialization.mdifferentiableAt_section_iff IB
+    ((hp.associatedCore ρ).localTriv y) σ
+    (hp.mem_associatedCore_baseSet_self ρ y)).1 hσ).comp y hpd
+  apply hc.congr_of_eventuallyEq
+  set s := hp.isLocalHomeomorph.localInverseAt y
   filter_upwards [s.open_target.mem_nhds (hp.isLocalHomeomorph.self_mem_localInverseAt_target)]
     with z hz
   have hsource := s.map_target hz
@@ -189,16 +225,18 @@ theorem mdifferentiableAt_section_associatedCore_iff (hn : n ≠ 0)
 
 /-- If `p` is a `C^n` local diffeomorphism with `n ≠ 0`, a section of the associated bundle is
 differentiable exactly when its equivariant function is differentiable. -/
-theorem mdifferentiable_section_associatedCore_iff (hn : n ≠ 0)
+theorem mdifferentiable_section_associatedCore_iff (hpd : IsLocalDiffeomorph I IB n p)
+    (hn : n ≠ 0)
     {σ : ∀ x, (hp.associatedCore ρ).Fiber x} :
     MDifferentiable IB (IB.prod 𝓘(𝕜, F)) (fun x ↦ TotalSpace.mk' F x (σ x)) ↔
       MDifferentiable I 𝓘(𝕜, F) (hp.associatedSectionEquiv ρ σ : E → F) := by
-  refine ⟨fun h y ↦ (hp.mdifferentiableAt_section_associatedCore_iff ρ hpd hn).1 (h (p y)),
+  refine ⟨fun h y ↦ (hp.mdifferentiableAt_section_associatedCore_iff ρ (hpd y) hn).1 (h (p y)),
     fun h x ↦ ?_⟩
   obtain ⟨y, rfl⟩ := hp.surjective x
-  exact (hp.mdifferentiableAt_section_associatedCore_iff ρ hpd hn).2 (h y)
+  exact (hp.mdifferentiableAt_section_associatedCore_iff ρ (hpd y) hn).2 (h y)
 
-variable [CompleteSpace 𝕜]
+variable [CompleteSpace 𝕜] (hpd : IsLocalDiffeomorph I IB n p)
+include hpd
 
 /-- If `p` is a `C^n` local diffeomorphism, the bundle associated with a representation on a line
 has a global trivialization in its maximal `C^n` atlas exactly when there is a nowhere-vanishing
@@ -255,20 +293,21 @@ variable {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℂ EM] {HM : Type*}
   [TopologicalSpace X] [ChartedSpace HB X] [Group G] [MulAction G E]
   {p : E → X} (hp : IsQuotientCoveringMap p G)
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] (ρ : G →* (F →L[ℂ] F)ˣ) {n m : ℕ∞ω}
-  (hpd : IsLocalDiffeomorph I IB n p)
+  (hpd : MDifferentiable I IB p)
 include hpd
 
-/-- Over a compact preconnected complex manifold `E`, a section of the bundle associated with `ρ` is
-differentiable, for `n ≠ 0`, exactly when its equivariant function upstairs is constant, with a
-`ρ`-invariant value. Thus every holomorphic section is represented by a constant `G`-invariant
-function upstairs. -/
+/-- If `p` is differentiable with compact preconnected complex covering manifold `E`, a section
+of the bundle associated with `ρ` over `X` is differentiable exactly when its equivariant function
+upstairs is constant with a `ρ`-invariant value. -/
 theorem mdifferentiable_section_associatedCore_iff_exists_eq_const [PreconnectedSpace E]
-    (hn : n ≠ 0) {σ : ∀ x, (hp.associatedCore ρ).Fiber x} :
+    {σ : ∀ x, (hp.associatedCore ρ).Fiber x} :
     MDifferentiable IB (IB.prod 𝓘(ℂ, F)) (fun x ↦ TotalSpace.mk' F x (σ x)) ↔
       ∃ v : F, (∀ g : G, (ρ g : F →L[ℂ] F) v = v) ∧
         (hp.associatedSectionEquiv ρ σ : E → F) = Function.const E v := by
-  rw [hp.mdifferentiable_section_associatedCore_iff ρ hpd hn]
-  refine ⟨fun hf ↦ ?_, fun ⟨v, _, hv⟩ ↦ hv ▸ mdifferentiable_const⟩
+  refine ⟨fun hσ ↦ ?_, fun ⟨v, _, hv⟩ ↦
+    (hp.contMDiff_section_associatedCore_of_eq_const (m := 1) ρ hv).mdifferentiable one_ne_zero⟩
+  have hf : MDifferentiable I 𝓘(ℂ, F) (hp.associatedSectionEquiv ρ σ : E → F) :=
+    fun y ↦ hp.mdifferentiableAt_associatedSectionEquiv ρ (hpd y) (hσ (p y))
   cases isEmpty_or_nonempty E with
   | inl hE => exact ⟨0, fun g ↦ map_zero _, funext fun y ↦ isEmptyElim y⟩
   | inr hE =>
@@ -280,64 +319,101 @@ theorem mdifferentiable_section_associatedCore_iff_exists_eq_const [Preconnected
     rw [hv, Function.const_apply, Function.const_apply] at h
     exact h.symm
 
-/-- Over a compact preconnected complex manifold `E`, with `n ≠ 0`, a section of the bundle
-associated with `ρ` is `C^m`, for `m ≠ 0`, exactly when its equivariant function upstairs is
-constant with a `ρ`-invariant value. No bound `m ≤ n` is needed. -/
+/-- If `p` is differentiable with compact preconnected complex covering manifold `E`, a section
+of the bundle associated with `ρ` over `X` is `C^m`, for `m ≠ 0`, exactly when its equivariant
+function upstairs is constant with a `ρ`-invariant value. -/
 theorem contMDiff_section_associatedCore_iff_exists_eq_const [PreconnectedSpace E]
-    (hn : n ≠ 0) (hm₀ : m ≠ 0) {σ : ∀ x, (hp.associatedCore ρ).Fiber x} :
+    (hm₀ : m ≠ 0) {σ : ∀ x, (hp.associatedCore ρ).Fiber x} :
     ContMDiff IB (IB.prod 𝓘(ℂ, F)) m (fun x ↦ TotalSpace.mk' F x (σ x)) ↔
       ∃ v : F, (∀ g : G, (ρ g : F →L[ℂ] F) v = v) ∧
         (hp.associatedSectionEquiv ρ σ : E → F) = Function.const E v := by
   refine ⟨fun hσ ↦
-    (hp.mdifferentiable_section_associatedCore_iff_exists_eq_const ρ hpd hn).1
+    (hp.mdifferentiable_section_associatedCore_iff_exists_eq_const ρ hpd).1
       (hσ.mdifferentiable hm₀), fun ⟨_, _, hv⟩ ↦ ?_⟩
   exact hp.contMDiff_section_associatedCore_of_eq_const ρ hv
 
-/-- Over a compact preconnected complex manifold `E`, the line bundle of a nontrivial character
-`χ` of the deck group has no nonzero differentiable section, for `n ≠ 0`. -/
-theorem eq_zero_of_mdifferentiable_section_characterCore [PreconnectedSpace E] {χ : G →* ℂˣ}
-    (hχ : χ ≠ 1) (hn : n ≠ 0) {σ : ∀ x, (hp.characterCore χ).Fiber x}
-    (hσ : MDifferentiable IB (IB.prod 𝓘(ℂ)) (fun x ↦ TotalSpace.mk' ℂ x (σ x))) : σ = 0 := by
-  obtain ⟨g, hg⟩ := DFunLike.ne_iff.1 hχ
+/-- If `p` is differentiable with compact preconnected complex covering manifold `E`, the
+line bundle over `X` associated with a nontrivial representation has no nonzero differentiable
+section. -/
+theorem eq_zero_of_mdifferentiable_section_associatedCore [PreconnectedSpace E]
+    (hF : finrank ℂ F = 1) (hρ : ρ ≠ 1) {σ : ∀ x, (hp.associatedCore ρ).Fiber x}
+    (hσ : MDifferentiable IB (IB.prod 𝓘(ℂ, F)) (fun x ↦ TotalSpace.mk' F x (σ x))) :
+    σ = 0 := by
+  obtain ⟨v, hvG, hv⟩ :=
+    (hp.mdifferentiable_section_associatedCore_iff_exists_eq_const ρ hpd).1 hσ
+  have hv₀ : v = 0 := by
+    by_contra hv₀
+    apply hρ
+    ext g w
+    obtain ⟨c, rfl⟩ := exists_smul_eq_of_finrank_eq_one hF hv₀ w
+    simp [hvG g]
   funext x
   obtain ⟨y, rfl⟩ := hp.surjective x
+  refine (hp.associatedSectionEquiv_apply_eq_zero_iff ρ σ y).1 ?_
+  rw [hv, Function.const_apply, hv₀]
+
+/-- If `p` is differentiable with compact preconnected complex covering manifold `E`, the
+line bundle over `X` associated with a nontrivial representation has no nonzero `C^m` section
+when `m ≠ 0`. -/
+theorem eq_zero_of_contMDiff_section_associatedCore [PreconnectedSpace E]
+    (hF : finrank ℂ F = 1) (hρ : ρ ≠ 1) (hm₀ : m ≠ 0)
+    {σ : ∀ x, (hp.associatedCore ρ).Fiber x}
+    (hσ : ContMDiff IB (IB.prod 𝓘(ℂ, F)) m (fun x ↦ TotalSpace.mk' F x (σ x))) : σ = 0 :=
+  hp.eq_zero_of_mdifferentiable_section_associatedCore ρ hpd hF hρ (hσ.mdifferentiable hm₀)
+
+/-- If `p` is differentiable with compact preconnected complex covering manifold `E`, the
+line bundle of a nontrivial character `χ` over `X` has no nonzero differentiable section. -/
+theorem eq_zero_of_mdifferentiable_section_characterCore [PreconnectedSpace E] {χ : G →* ℂˣ}
+    (hχ : χ ≠ 1) {σ : ∀ x, (hp.characterCore χ).Fiber x}
+    (hσ : MDifferentiable IB (IB.prod 𝓘(ℂ)) (fun x ↦ TotalSpace.mk' ℂ x (σ x))) : σ = 0 := by
   revert σ
   rw [characterCore_def]
   intro σ hσ
-  obtain ⟨v, hvG, hv⟩ :=
-    (hp.mdifferentiable_section_associatedCore_iff_exists_eq_const _ hpd hn).1 hσ
-  -- The invariant value satisfies `χ g * v = v` with `χ g ≠ 1`, so it vanishes.
-  have hv₀ : v = 0 := by
-    by_contra hv₀
-    exact hg (Units.ext ((mul_eq_right₀ hv₀).1 (by simpa using hvG g)))
-  refine (hp.associatedSectionEquiv_apply_eq_zero_iff _ σ y).1 ?_
-  rw [hv, Function.const_apply, hv₀]
+  refine hp.eq_zero_of_mdifferentiable_section_associatedCore _ hpd (finrank_self ℂ) ?_ hσ
+  intro hρ
+  apply hχ
+  ext g
+  have h := congrArg (fun r : G →* (ℂ →L[ℂ] ℂ)ˣ ↦ (r g : ℂ →L[ℂ] ℂ) 1) hρ
+  simpa using h
 
-/-- Over a compact preconnected complex manifold `E`, the line bundle of a nontrivial character
-has no nonzero `C^m` section when `n ≠ 0` and `m ≠ 0`, without requiring `m ≤ n`. -/
+/-- If `p` is differentiable with compact preconnected complex covering manifold `E`, the
+line bundle of a nontrivial character over `X` has no nonzero `C^m` section when `m ≠ 0`. -/
 theorem eq_zero_of_contMDiff_section_characterCore [PreconnectedSpace E] {χ : G →* ℂˣ}
-    (hχ : χ ≠ 1) (hn : n ≠ 0) (hm₀ : m ≠ 0) {σ : ∀ x, (hp.characterCore χ).Fiber x}
+    (hχ : χ ≠ 1) (hm₀ : m ≠ 0) {σ : ∀ x, (hp.characterCore χ).Fiber x}
     (hσ : ContMDiff IB (IB.prod 𝓘(ℂ)) m (fun x ↦ TotalSpace.mk' ℂ x (σ x))) : σ = 0 :=
-  hp.eq_zero_of_mdifferentiable_section_characterCore hpd hχ hn (hσ.mdifferentiable hm₀)
+  hp.eq_zero_of_mdifferentiable_section_characterCore hpd hχ (hσ.mdifferentiable hm₀)
 
-/-- Over a compact connected complex manifold `E`, the line bundle of a character `χ` of the deck
-group has a global trivialization in its maximal `C^n` atlas, for `n ≠ 0`, exactly when `χ` is
-trivial. In particular, the holomorphic line bundle of a nontrivial character is not
-holomorphically trivial. -/
+/-- If `p` is differentiable with compact connected complex covering manifold `E`, the line
+bundle over `X` associated with `ρ` has a global trivialization in its maximal `C^n` atlas,
+for `n ≠ 0`, exactly when `ρ` is trivial. -/
+theorem exists_trivialization_baseSet_eq_univ_associatedCore_iff_eq_one [ConnectedSpace E]
+    (hF : finrank ℂ F = 1) (hn : n ≠ 0) :
+    (∃ (e : Trivialization F (π F (hp.associatedCore ρ).Fiber)) (_ : e.IsLinear ℂ),
+        e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear X F IB n).maximalAtlas
+          (TotalSpace F (hp.associatedCore ρ).Fiber) ∧ e.baseSet = univ) ↔ ρ = 1 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸
+    hp.exists_trivialization_baseSet_eq_univ_associatedCore_one hF⟩
+  obtain ⟨σ, hσ, hσ₀⟩ :=
+    (ContMDiffVectorBundle.exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero hF).1 h
+  by_contra hρ
+  have hzero := hp.eq_zero_of_contMDiff_section_associatedCore ρ hpd hF hρ hn hσ
+  obtain ⟨y⟩ : Nonempty E := inferInstance
+  exact hσ₀ (p y) (congrFun hzero (p y))
+
+/-- If `p` is differentiable with compact connected complex covering manifold `E`, the line
+bundle of a character `χ` over `X` has a global trivialization in its maximal `C^n` atlas,
+for `n ≠ 0`, exactly when `χ` is trivial. In particular, the holomorphic line bundle of a
+nontrivial character is not holomorphically trivial. -/
 theorem exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one [ConnectedSpace E]
     (hn : n ≠ 0) (χ : G →* ℂˣ) :
     (∃ (e : Trivialization ℂ (π ℂ (hp.characterCore χ).Fiber)) (_ : e.IsLinear ℂ),
         e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear X ℂ IB n).maximalAtlas
           (TotalSpace ℂ (hp.characterCore χ).Fiber) ∧ e.baseSet = univ) ↔ χ = 1 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ hp.exists_trivialization_baseSet_eq_univ_characterCore_one⟩
-  obtain ⟨f, hf, hf₀, hfG⟩ :=
-    (hp.exists_trivialization_baseSet_eq_univ_characterCore_iff hpd χ).1 h
-  -- The nowhere-vanishing equivariant function is a nonzero constant `c` with `c = χ g * c`.
-  obtain ⟨c, rfl⟩ := (hf.mdifferentiable hn).exists_eq_const_of_compactSpace
-  obtain ⟨y⟩ : Nonempty E := inferInstance
-  refine MonoidHom.ext fun g ↦ Units.ext ?_
-  have h := hfG g y
-  simp only [Function.const_apply] at h
-  exact (mul_eq_right₀ (hf₀ y)).1 h.symm
+  rw [characterCore_def,
+    hp.exists_trivialization_baseSet_eq_univ_associatedCore_iff_eq_one _ hpd (finrank_self ℂ) hn]
+  refine ⟨fun hρ ↦ ?_, fun hχ ↦ by simp [hχ]⟩
+  ext g
+  have h := congrArg (fun r : G →* (ℂ →L[ℂ] ℂ)ˣ ↦ (r g : ℂ →L[ℂ] ℂ) 1) hρ
+  simpa using h
 
 end IsQuotientCoveringMap
