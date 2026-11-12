@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+public import TauCeti.Topology.Algebra.Order.Field
 import Mathlib.Tactic.Ring
 
 /-!
@@ -28,6 +29,7 @@ The zero-energy theorem is a separate consequence requiring no sign condition on
 * `TauCeti.mul_exp_neg_integral_le_of_deriv_add_mul_nonneg`: lower endpoint comparison.
 * `TauCeti.le_mul_exp_integral_of_deriv_le_mul`: upper endpoint comparison.
 * `TauCeti.mul_sub_mul_exp_neg_integral_le_of_deriv_add_div_add_mul_nonneg`: time-weighted bound.
+* `TauCeti.mul_exp_neg_integral_le_of_eventually_mul_sub_le`: ancient-origin endpoint bound.
 * `TauCeti.eq_zero_on_interval_of_deriv_le_mul`: uniqueness for a nonnegative scalar energy.
 
 Morgan–Tian, *Ricci Flow and the Poincaré Conjecture* (2007), Theorem 4.40, supplies the
@@ -39,8 +41,8 @@ https://github.com/frenzymath/PoincareConjecture.
 
 public section
 
-open Set MeasureTheory
-open scoped intervalIntegral
+open Set Filter MeasureTheory
+open scoped intervalIntegral Topology
 
 namespace TauCeti
 
@@ -131,5 +133,29 @@ theorem eq_zero_on_interval_of_deriv_le_mul
     (hE.mono (Icc_subset_Icc le_rfl ht.2)) continuousOn_const intervalIntegrable_const
     (fun s hs ↦ (hEd s (hsub hs)).hasDerivAt) (fun s hs ↦ hE' s (hsub hs))
   exact le_antisymm (by simpa only [hE0, zero_mul] using hle) (hEn t ht)
+
+
+/-- A linearly weighted integral comparison at interior points extends to the right endpoint
+when the time origin tends to negative infinity. The coefficient need only be integrable. -/
+theorem mul_exp_neg_integral_le_of_eventually_mul_sub_le
+    {f q : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
+    (hf : ContinuousWithinAt f (Ioo a b) b)
+    (hqInt : IntervalIntegrable q volume a b)
+    (hfinite : ∀ t ∈ Ioo a b, ∀ᶠ T : ℝ in atBot,
+      f a * Real.exp (-(∫ s in a..t, q s)) * (a - T) ≤ f t * (t - T)) :
+    f a * Real.exp (-(∫ s in a..b, q s)) ≤ f b := by
+  rcases hab.eq_or_lt with rfl | hab
+  · simp
+  have hprimitive : ContinuousOn (fun t ↦ ∫ s in a..t, q s) (Icc a b) := by
+    simpa only [uIcc_of_le hab.le] using
+      (intervalIntegral.continuousOn_primitive_interval' hqInt left_mem_uIcc)
+  apply le_of_eventually_mul_sub_le_nhdsLT (a := a)
+    (g := fun t ↦ f a * Real.exp (-(∫ s in a..t, q s)))
+  · have hg := ((continuousWithinAt_const (b := f a)).mul
+      ((hprimitive b ⟨hab.le, le_rfl⟩).neg.rexp)).mono Ioo_subset_Icc_self
+    exact hg.mono_of_mem_nhdsWithin (Ioo_mem_nhdsLT hab)
+  · exact hf.mono_of_mem_nhdsWithin (Ioo_mem_nhdsLT hab)
+  · filter_upwards [Ioo_mem_nhdsLT hab] with t ht
+    exact hfinite t ht
 
 end TauCeti

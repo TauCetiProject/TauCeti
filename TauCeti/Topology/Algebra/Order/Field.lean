@@ -1,13 +1,17 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import Mathlib.Topology.Algebra.Order.Field
+public import TauCeti.Topology.Order.OrderClosed
+public import Mathlib.Topology.Order.DenselyOrdered
 
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # Ratios, reciprocals of vanishing powers, and one-sided bounds in ordered fields
@@ -23,8 +27,16 @@ tends to `a` from the right, and likewise for `a - x` from the left. These are t
 blow-ups of `tendsto_inv_nhdsGT_zero` along a vanishing power. Finally, it records the
 one-sided bound `x ^ 2 < 1` for `x` sufficiently close to `1` from below.
 
+Comparisons whose linear weights share a parameter tending to negative infinity lose those
+weights in the limit. One-sided continuity carries the resulting inequalities to any right
+endpoint. These are ordered-field facts; no differential inequality is assumed.
+
 ## Main results
 
+* `TauCeti.tendsto_add_div_add_atTop`: ratios of translates converge to one.
+* `TauCeti.le_of_eventually_mul_sub_le`: remove common diverging linear weights.
+* `TauCeti.le_of_eventually_mul_sub_le_nhdsLT`,
+  `TauCeti.le_of_eventually_le_add_div_nhdsLT`: one-sided endpoint comparisons.
 * `TauCeti.tendsto_div_nhds_one_of_le_add_const_of_sub_const_le` — if `g` tends to `atTop`
   along `l` and,
   eventually along `l`, `g - C₂ ≤ f ≤ g + C₁` for constants `C₁` and `C₂`, then `f / g` tends
@@ -105,5 +117,65 @@ theorem tendsto_inv_pow_sub_nhdsLT {k : ℕ} (hk : k ≠ 0) :
     exact pow_pos (sub_pos.2 hx) k
 
 end InvPow
+
+/-- In an ordered field, the ratio `(t + x) / (t + y)` of two translates of `t` tends to `1` as
+`t → ∞`. -/
+theorem tendsto_add_div_add_atTop {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    [TopologicalSpace 𝕜] [OrderTopology 𝕜] (x y : 𝕜) :
+    Tendsto (fun t : 𝕜 ↦ (t + x) / (t + y)) atTop (𝓝 1) := by
+  have h := (tendsto_const_nhds (x := x - y)).div_atTop
+    (tendsto_atTop_add_const_right atTop y tendsto_id)
+  refine (add_zero (1 : 𝕜) ▸ h.const_add 1).congr' ?_
+  filter_upwards [eventually_gt_atTop (-y)] with t ht
+  have : t + y ≠ 0 := by linarith
+  simp only [id]
+  field_simp
+  ring
+
+
+section Comparisons
+
+variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [TopologicalSpace 𝕜] [OrderTopology 𝕜]
+
+/-- A constant divided by `t - T` tends to zero as `T` tends to negative infinity. -/
+theorem tendsto_div_sub_atBot (t R : 𝕜) :
+    Tendsto (fun T : 𝕜 ↦ R / (t - T)) atBot (𝓝 0) := by
+  apply Filter.Tendsto.const_div_atTop
+  -- Eta-expand subtraction to expose the denominator as a function of `T`.
+  change Tendsto (fun T : 𝕜 ↦ t - T) atBot atTop
+  simpa only [sub_eq_add_neg] using
+    (tendsto_atTop_add_const_left atBot t tendsto_neg_atBot_atTop)
+
+/-- An eventual comparison with common diverging linear weights compares their coefficients. -/
+theorem le_of_eventually_mul_sub_le {a b A B : 𝕜}
+    (hfinite : ∀ᶠ T : 𝕜 in atBot, A * (a - T) ≤ B * (b - T)) : A ≤ B := by
+  have hr : Tendsto (fun T : 𝕜 ↦ (a - T) / (b - T)) atBot (𝓝 1) := by
+    simpa only [Function.comp_def, sub_eq_add_neg, add_comm] using
+      (tendsto_add_div_add_atTop a b).comp tendsto_neg_atBot_atTop
+  have hnorm : ∀ᶠ T : 𝕜 in atBot, A * ((a - T) / (b - T)) ≤ B := by
+    filter_upwards [hfinite, eventually_lt_atBot b] with T hT hTb
+    rw [← mul_div_assoc, div_le_iff₀ (sub_pos.mpr hTb)]
+    exact hT
+  exact le_of_tendsto (by simpa using hr.const_mul A) hnorm
+
+/-- Continuous functions satisfy the limiting comparison at a right endpoint if their
+linearly weighted comparisons hold eventually at negative infinity and near that endpoint. -/
+theorem le_of_eventually_mul_sub_le_nhdsLT {f g : 𝕜 → 𝕜} {a b : 𝕜}
+    (hg : ContinuousWithinAt g (Set.Iio b) b) (hf : ContinuousWithinAt f (Set.Iio b) b)
+    (hfinite : ∀ᶠ t in 𝓝[<] b, ∀ᶠ T : 𝕜 in atBot,
+      g t * (a - T) ≤ f t * (t - T)) : g b ≤ f b :=
+  le_of_tendsto_of_tendsto hg hf (hfinite.mono fun _ ht ↦ le_of_eventually_mul_sub_le ht)
+
+/-- A reciprocal correction vanishing at negative infinity does not change the comparison
+at a right endpoint where both sides are continuous from the left. -/
+theorem le_of_eventually_le_add_div_nhdsLT {f q r : 𝕜 → 𝕜} {b : 𝕜}
+    (hf : ContinuousWithinAt f (Set.Iio b) b) (hq : ContinuousWithinAt q (Set.Iio b) b)
+    (hfinite : ∀ᶠ t in 𝓝[<] b, ∀ᶠ T : 𝕜 in atBot, f t ≤ q t + r t / (t - T)) :
+    f b ≤ q b :=
+  le_of_tendsto_of_tendsto hf hq (hfinite.mono fun t ht ↦
+    (tendsto_div_sub_atBot t (r t)).le_of_eventually_le_add ht)
+
+end Comparisons
 
 end TauCeti
