@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Variation
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Variation
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Existence
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Regularity
 
 /-!
@@ -67,38 +66,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 variable [IsManifold IP 1 P] {x : M}
 
-/-- Along a parameter curve which is `C²` at `t`, the vector fields `∇ˢ_X Z` of a family of
-Levi-Civita connections are jointly `C²` at `(t, x)`, for `X` which is `C²` and `Z` which is `C³`
-at `x`. -/
-private theorem contMDiffAt_covariantDerivative_apply
-    (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
-    (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s))
-    {X Z : Π y : M, TangentSpace I y} (hX : CMDiffAt 2 (T% X) x) (hZ : CMDiffAt 3 (T% Z) x) :
-    ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) 2
-      (fun q : ℝ × M ↦ TotalSpace.mk' E q.2 (cov q.1 Z q.2 (X q.2))) (t, x) := by
-  -- `Z` is `C³` on an open neighbourhood `u` of `x`.
-  obtain ⟨u', hu', hZu'⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).mp hZ
-  obtain ⟨u, huu', hu, hxu⟩ := mem_nhds_iff.mp hu'
-  have hZu := hZu'.mono huu'
-  -- The canonical Levi-Civita connections are jointly `C²` along `Z` over `P × u`.
-  have hCov := g.contMDiffOn_covariantDerivative_of_isLeviCivitaConnection
-    (cov := fun p ↦ (g.metric p).leviCivitaConnection) (n := 2)
-    (fun p ↦ (g.metric p).isLeviCivitaConnection_leviCivitaConnection) (by simp) hu hZu
-  have hX' : ContMDiffAt (IP.prod I) (I.prod 𝓘(ℝ, E)) 2
-      (fun r : P × M ↦ TotalSpace.mk' E r.2 (X r.2)) (c t, x) :=
-    hX.comp (c t, x) contMDiffAt_snd
-  have hApply := ((hCov (c t, x) ⟨mem_univ _, hxu⟩).clm_bundle_apply hX'.contMDiffWithinAt)
-    |>.contMDiffAt ((isOpen_univ.prod hu).mem_nhds ⟨mem_univ _, hxu⟩)
-  have hcurve : ContMDiffAt (𝓘(ℝ).prod I) (IP.prod I) 2 (fun q : ℝ × M ↦ (c q.1, q.2)) (t, x) :=
-    (hc.comp (t, x) contMDiffAt_fst).prodMk contMDiffAt_snd
-  refine (hApply.comp (t, x) hcurve).congr_of_eventuallyEq ?_
-  -- Near `x`, `Z` is differentiable, so `∇ˢ_X Z` agrees with the canonical connection there.
-  filter_upwards [continuousAt_snd.preimage_mem_nhds (hu.mem_nhds hxu)] with q hq
-  have hZq : MDiffAt (T% Z) q.2 :=
-    ((hZu q.2 hq).contMDiffAt (hu.mem_nhds hq)).mdifferentiableAt (by simp)
-  simp only [Function.comp_apply]
-  rw [(hcov q.1).uniqueness (g.metric (c q.1)).isLeviCivitaConnection_leviCivitaConnection hZq]
-
 /-- **The first variation of the curvature of a family of nondegenerate metrics.** Let `g` be a
 smooth family of nondegenerate metrics parametrized by `P`, let `c` be a parameter curve which is
 `C²` at `t`, and let `∇ˢ` be a Levi-Civita connection of `g_{c s}` for every `s`. Write `Γ'` for the
@@ -133,7 +100,7 @@ theorem hasDerivAt_curvatureOperator_of_isLeviCivitaConnection
   exact hasDerivAt_curvatureOperator_of_hasDerivAt_difference (Eventually.of_forall hC)
     (congrFun (hcov t).torsion x) (hX.mdifferentiableAt (by simp))
     (hY.mdifferentiableAt (by simp)) hZ'
-    (g.contMDiffAt_covariantDerivative_apply hc hcov hX hZ)
-    (g.contMDiffAt_covariantDerivative_apply hc hcov hY hZ)
+    (g.contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection hc hcov hX hZ)
+    (g.contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection hc hcov hY hZ)
 
 end TauCeti.Manifold.ContMDiffNondegenerateMetricFamily
