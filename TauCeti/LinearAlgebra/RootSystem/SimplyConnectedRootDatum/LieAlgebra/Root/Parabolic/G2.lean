@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.G2.ShortLong
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.G2.ShortPair
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Positive
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Rational
 import TauCeti.GroupTheory.Commutator
 
 /-!
@@ -124,17 +124,6 @@ theorem range_chevalleyRootSubgroup_sup_le_normalizer_posRoots_diff_singleton_G2
     Subgroup.normalizer
       (⨆ γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) \ {G2.simpleIndex ht i},
         (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) := by
-  have hpositive (j : Fin G2.numRoots) :
-      j ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) ↔ j.val < 6 := by
-    rw [posRoots_rationalRootSystem]
-    have transport (P Q : RootDatum (Fin G2.numRoots)
-        (Fin G2.rank → ℤ) (Fin G2.rank → ℤ)) (h : P = Q) (b : P.Base) :
-        j ∈ posRoots P b ↔
-          j ∈ posRoots Q (Eq.mp (congrArg (fun P => P.Base) h) b) := by
-      subst Q
-      rfl
-    rw [transport _ _ (simplyConnectedRootDatum_G2 ht), simplyConnectedBase_G2]
-    exact mem_posRoots_g2_iff j
   let U := ⨆ γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) \
       {G2.simpleIndex ht i}, (chevalleyRootSubgroup ρ M hM hnil γ A).range
   have hpos : (chevalleyRootSubgroup ρ M hM hnil (G2.simpleIndex ht i) A).range ≤
@@ -148,9 +137,9 @@ theorem range_chevalleyRootSubgroup_sup_le_normalizer_posRoots_diff_singleton_G2
     rw [iSup_subtype]
     exact g2_simple_commutator_mem ρ M hM hnil A U _ _
       (by simpa only [simpleIndex_val, rank_G2] using i.isLt)
-      ((hpositive γ).mp hγ.1)
+      ((mem_posRoots_rational_g2_iff ht γ).mp hγ.1)
       (Ne.symm hγ.2) (fun k hk hki => le_iSup_of_le k (le_iSup_of_le
-        ⟨(hpositive k).mpr hk, hki⟩ le_rfl)) u.toAdd v.toAdd
+        ⟨(mem_posRoots_rational_g2_iff ht k).mpr hk, hki⟩ le_rfl)) u.toAdd v.toAdd
   exact range_chevalleyRootSubgroup_sup_le_normalizer_posRoots_diff_singleton
     ρ M hM hnil i A hpos
 

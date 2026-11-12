@@ -281,7 +281,7 @@ def supportEquivRootPairingBaseChangeBase :
     b.height_eq_sum hf]
 
 /-- A root is positive after entrywise base change exactly when it was positive before. -/
-theorem isPos_rootPairingBaseChangeBase_iff [CharZero R] [CharZero S] (i : ι) :
+@[simp] theorem isPos_rootPairingBaseChangeBase_iff [CharZero R] [CharZero S] (i : ι) :
     (rootPairingBaseChangeBase S P hP b).IsPos i ↔ b.IsPos i := by
   rw [RootPairing.Base.isPos_iff, RootPairing.Base.isPos_iff,
     height_rootPairingBaseChangeBase]
