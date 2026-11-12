@@ -65,13 +65,9 @@ theorem expand_contract_of_comp_C_mul_X_eq_self (p : R[X])
     expand R e (contract e p) = p := by
   have h := (p.comp_C_mul_X_eq_self_iff hζ).1 hp
   rcases e.eq_zero_or_pos with rfl | he
-  · have hC : p = C (p.coeff 0) := by
-      ext n
-      cases n with
-      | zero => simp
-      | succ n => simp [h (n + 1) (by simp)]
-    rw [hC]
-    simp [contract]
+  · rw [p.eq_C_of_natDegree_le_zero
+      (natDegree_le_iff_coeff_eq_zero.2 fun n hn ↦ h n (mt eq_zero_of_zero_dvd hn.ne')),
+      contract_C, expand_C]
   · ext n
     rw [coeff_expand he]
     split_ifs with hn
