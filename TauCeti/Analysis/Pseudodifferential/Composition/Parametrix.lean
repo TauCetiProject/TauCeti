@@ -55,8 +55,8 @@ of `ℝⁿ`, where no compact localization in the position is available.
   uniform in the position, the same construction stays in the uniform class, with remainders
   `1 - ∑_{k < N} sharpTerm b a k` uniform in the position
   (`TauCeti.Symbol.IsUniformAsymptoticSum`).
-* `TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm`: **a uniformly
-  elliptic uniform symbol has uniform left and right parametrix symbols**.
+* `TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm_left_and_right`:
+  **a uniformly elliptic uniform symbol has uniform left and right parametrix symbols**.
 
 ## Proof outline
 
@@ -394,8 +394,9 @@ order `m` with estimates uniform in the position that is uniformly elliptic abov
 a left parametrix symbol `b` and a right parametrix symbol `b'` of order `-m`, both uniform, for
 which the formal compositions `1 ∼ ∑ₖ sharpTerm b a k` and `1 ∼ ∑ₖ sharpTerm a b' k` hold with
 remainders whose estimates are uniform in the position. -/
-theorem IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm [CompleteSpace V]
-    {a : Symbol n V W m} {R : ℝ} (ha : a.IsUniformlyEllipticAbove R) (hau : a.IsUniform) :
+theorem IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm_left_and_right
+    [CompleteSpace V] {a : Symbol n V W m} {R : ℝ} (ha : a.IsUniformlyEllipticAbove R)
+    (hau : a.IsUniform) :
     (∃ b : Symbol n W V (-m), b.IsUniform ∧
       IsUniformAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) (const (.id ℂ V)))
         (b.sharpTerm a)) ∧

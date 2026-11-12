@@ -60,8 +60,8 @@ radii can be chosen so that the `j`-th term is at most `2^{-j}` at every positio
 (`TauCeti.Symbol.exists_isUniformAsymptoticSum`). This is the asymptotic summation of the calculus
 of symbols with estimates uniform on all of `ℝⁿ`, used to construct the uniform left and right
 parametrix symbols of a uniformly elliptic symbol
-(`TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm`). Such sums are
-unique modulo uniformly smoothing symbols (`TauCeti.Symbol.IsUniformlySmoothing`).
+(`TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm_left_and_right`).
+Such sums are unique modulo uniformly smoothing symbols (`TauCeti.Symbol.IsUniformlySmoothing`).
 
 Applied to the cut-off terms `χ(ξ) a_{m-j}(x, ξ)` of a sequence of homogeneous symbols, asymptotic
 summation constructs a classical symbol with these homogeneous terms. So the homogeneous terms
