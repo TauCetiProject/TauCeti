@@ -82,6 +82,29 @@ universe u
 
 namespace TauCeti
 
+section ColimitMaps
+
+variable {W : ℕ → Type u} [∀ k, TopologicalSpace (W k)] (j : ∀ k, C(W k, W (k + 1)))
+  {c : Cocone (Functor.ofSequence fun k ↦ _root_.TopCat.ofHom (j k))}
+
+/-- The maps to a colimit of a sequence are compatible with the bonding maps. -/
+private theorem ι_app_succ_apply (k : ℕ) (w : W k) : c.ι.app (k + 1) (j k w) = c.ι.app k w := by
+  have := ConcreteCategory.congr_hom (c.w (homOfLE k.le_succ)) w
+  rwa [Functor.ofSequence_map_homOfLE_succ] at this
+
+/-- The maps to a colimit of a sequence along closed embeddings are closed embeddings. -/
+private theorem isClosedEmbedding_ι_app (hj : ∀ k, IsClosedEmbedding (j k)) (hc : IsColimit c)
+    (k : ℕ) : IsClosedEmbedding (c.ι.app k) :=
+  TopCat.isClosedEmbedding_ι_of_isColimit (fun _ _ ↦
+    TopCat.isClosedEmbedding_map_of_isWellOrderContinuous _ fun n _ ↦ by
+      have hF : (Functor.ofSequence fun k ↦ _root_.TopCat.ofHom (j k)).map
+          (homOfLE (Order.le_succ n)) = _root_.TopCat.ofHom (j n) :=
+        Functor.ofSequence_map_homOfLE_succ _ n
+      rw [hF]
+      exact hj n) hc k
+
+end ColimitMaps
+
 variable {W : ℕ → Type u} [∀ k, TopologicalSpace (W k)] [∀ k, CWComplex (univ : Set (W k))]
 
 /-- **The colimit of a tower of CW complexes.** Let `W 0 → W 1 → ⋯` be CW complexes along closed
@@ -100,18 +123,9 @@ theorem exists_cwComplex_of_isColimit (j : ∀ k, C(W k, W (k + 1)))
         (∀ i x, map n (e.symm (.inl i)) x = c.ι.app 0 (map n i x)) ∧
         ∀ k i x, map n (e.symm (.inr ⟨k, i⟩)) x = c.ι.app (k + 1) (map n i.1 x) := by
   classical
-  let F := Functor.ofSequence fun k ↦ _root_.TopCat.ofHom (j k)
-  have hFmap (k : ℕ) : F.map (homOfLE k.le_succ) = _root_.TopCat.ofHom (j k) :=
-    Functor.ofSequence_map_homOfLE_succ _ k
-  have hFmap' (k : ℕ) : F.map (homOfLE (Order.le_succ k)) = _root_.TopCat.ofHom (j k) := hFmap k
   let e (k : ℕ) : C(W k, c.pt) := ConcreteCategory.hom (c.ι.app k)
-  have hej (k : ℕ) (w : W k) : e (k + 1) (j k w) = e k w := by
-    have := ConcreteCategory.congr_hom (c.w (homOfLE k.le_succ)) w
-    rwa [hFmap] at this
-  have he (k : ℕ) : IsClosedEmbedding (e k) :=
-    TopCat.isClosedEmbedding_ι_of_isColimit (fun _ _ ↦
-      TopCat.isClosedEmbedding_map_of_isWellOrderContinuous F fun n _ ↦ by rw [hFmap']; exact hj n)
-      hc k
+  have hej (k : ℕ) (w : W k) : e (k + 1) (j k w) = e k w := ι_app_succ_apply j k w
+  have he (k : ℕ) : IsClosedEmbedding (e k) := isClosedEmbedding_ι_app j hj hc k
   -- The images `V k` of the stages exhaust the colimit, which carries the topology coherent with
   -- them.
   let V (k : ℕ) : Set c.pt := range (e k)
@@ -228,19 +242,13 @@ theorem exists_cwComplex_homotopyEquiv_of_tower (hA : Monotone A) (hAY : ⋃ k, 
   let F : ℕ ⥤ _root_.TopCat.{u} := Functor.ofSequence fun k ↦ _root_.TopCat.ofHom (j k)
   have hFmap (k : ℕ) : F.map (homOfLE k.le_succ) = _root_.TopCat.ofHom (j k) :=
     Functor.ofSequence_map_homOfLE_succ _ k
-  have hFmap' (k : ℕ) : F.map (homOfLE (Order.le_succ k)) = _root_.TopCat.ofHom (j k) := hFmap k
   have : ∀ k, T2Space (F.obj k) := fun k ↦ (inferInstance : T2Space (W k))
   let c := colimit.cocone F
   have hc : IsColimit c := colimit.isColimit F
   obtain ⟨hX, hcell⟩ := exists_cwComplex_of_isColimit j hj ι hι hc
   let e (k : ℕ) : C(W k, c.pt) := (c.ι.app k).hom
-  have hej (k : ℕ) (w : W k) : e (k + 1) (j k w) = e k w := by
-    have := ConcreteCategory.congr_hom (c.w (homOfLE k.le_succ)) w
-    rwa [hFmap] at this
-  have he (k : ℕ) : IsClosedEmbedding (e k) :=
-    TopCat.isClosedEmbedding_ι_of_isColimit (fun _ _ ↦
-      TopCat.isClosedEmbedding_map_of_isWellOrderContinuous F fun n _ ↦ by rw [hFmap']; exact hj n)
-      hc k
+  have hej (k : ℕ) (w : W k) : e (k + 1) (j k w) = e k w := ι_app_succ_apply j k w
+  have he (k : ℕ) : IsClosedEmbedding (e k) := isClosedEmbedding_ι_app j hj hc k
   have hT2 : T2Space c.pt := TopCat.t2Space_of_isColimit_nat (fun k ↦ by
     rw [hFmap]
     exact TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty _ (hj k).isInducing (hjH k))
