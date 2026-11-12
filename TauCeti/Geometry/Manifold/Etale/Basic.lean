@@ -50,8 +50,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace C] [ChartedSpace H C]
   [TopologicalSpace (Quiver.Total C)] [ChartedSpace H' (Quiver.Total C)]
 
-/-- A proper groupoid whose source and target are `C^n` local diffeomorphisms is locally the
-action groupoid of a `C^n` isotropy action fixing the centre. The fully faithful functor is the
+/-- A proper groupoid with Hausdorff arrow space, continuous units and composition, and `C^n`
+source and target local diffeomorphisms is locally the action groupoid of a `C^n` isotropy action
+fixing the centre. The fully faithful functor is the
 inclusion on objects. Each label parametrizes an open set of arrows by a local diffeomorphism,
 its source is the parameter and its target is the action of the label on that parameter.
 Its arrow at the centre is the original isotropy arrow, even for ineffective labels. -/

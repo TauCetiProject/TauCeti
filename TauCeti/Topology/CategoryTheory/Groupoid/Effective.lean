@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Quotient
+public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Topology.CategoryTheory.Etale
 public import TauCeti.Topology.CategoryTheory.Functor.IsomorphismClasses
 public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
@@ -399,8 +400,17 @@ noncomputable def ineffectiveKernelEquivFiber (x : C) :
 
 /-- The fibre equivalence sends an ineffective automorphism to its actual total arrow. -/
 @[simp]
-theorem ineffectiveKernelEquivFiber_apply_val (x : C) (g : ineffectiveKernel hs x) :
+theorem ineffectiveKernelEquivFiber_apply_val_val (x : C) (g : ineffectiveKernel hs x) :
     (ineffectiveKernelEquivFiber hs x g).val.val = ⟨x, x, g.val.asIso.hom⟩ := (rfl)
+
+/-- The inverse fibre equivalence recovers the ineffective automorphism represented by a loop. -/
+@[simp]
+theorem ineffectiveKernelEquivFiber_symm_apply (x : C) (f : x ⟶ x)
+    (hf : (⟨x, x, f⟩ : Quiver.Total C) ∈ ineffectiveArrows C) :
+    (ineffectiveKernelEquivFiber hs x).symm ⟨⟨⟨x, x, f⟩, hf⟩, rfl⟩ =
+      ⟨Aut.of (asIso f), (mem_ineffectiveKernel hs).mpr hf⟩ := by
+  apply (ineffectiveKernelEquivFiber hs x).symm_apply_eq.mpr
+  rfl
 
 /-- The order of the ineffective kernel on the coarse quotient. As usual, `Nat.card` is zero
 for infinite groups; proper étale groupoids have finite ineffective kernels. -/
@@ -413,6 +423,18 @@ noncomputable def coarseCardIneffectiveKernel : _root_.Quotient (isIsomorphicSet
 theorem coarseCardIneffectiveKernel_mk (x : C) :
     coarseCardIneffectiveKernel hs (_root_.Quotient.mk (isIsomorphicSetoid C) x) =
       Nat.card (ineffectiveKernel hs x) := (rfl)
+
+/-- The coarse kernel order is locally constant exactly when the order on objects is. -/
+theorem isLocallyConstant_coarseCardIneffectiveKernel_iff :
+    IsLocallyConstant (coarseCardIneffectiveKernel hs) ↔
+      IsLocallyConstant fun x : C ↦ Nat.card (ineffectiveKernel hs x) := by
+  have hquot : IsQuotientMap (_root_.Quotient.mk (isIsomorphicSetoid C)) :=
+    isQuotientMap_quotient_mk'
+  rw [IsLocallyConstant.iff_isOpen_fiber, IsLocallyConstant.iff_isOpen_fiber]
+  apply forall_congr'
+  intro k
+  rw [← hquot.isOpen_preimage]
+  simp only [Set.preimage_preimage, coarseCardIneffectiveKernel_mk]
 
 include hs in
 /-- In an étale groupoid the germ relation is a congruence. -/
