@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Topology.Frontier
 
 /-!
 # The weak maximum principle for elliptic operators in non-divergence form
@@ -403,13 +404,16 @@ theorem abs_le_of_sum_mul_fderiv_fderiv_add_fderiv_eq_mul_abs_le_frontier
     (ha : ∀ ⦃x⦄, x ∈ interior K → ∀ ξ : EuclideanSpace ℝ ι,
       lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
     (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β) (hc : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ c x)
-    (hM : 0 ≤ M) (hcont : ContinuousOn f K) (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
+    (hcont : ContinuousOn f K) (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hsol : ∀ ⦃x⦄, x ∈ interior K →
       ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
         (EuclideanSpace.single j 1) + fderiv ℝ f x (b x) = c x * f x)
     (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) :
-    ∀ ⦃x⦄, x ∈ K → |f x| ≤ M := fun _ hx ↦ abs_le.mpr
-  ⟨ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier hK hlam ha hb hc
+    ∀ ⦃x⦄, x ∈ K → |f x| ≤ M := by
+  intro x hx
+  have hM : 0 ≤ M := nonneg_of_forall_abs_le_frontier hK ⟨x, hx⟩ hbdry
+  exact abs_le.mpr
+    ⟨ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier hK hlam ha hb hc
       (neg_nonpos.mpr hM) hcont hcd (fun _ hy ↦ (hsol hy).le) (fun _ hy ↦ (abs_le.mp (hbdry hy)).1)
       hx,
     le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier hK hlam ha hb hc hM hcont hcd
@@ -626,7 +630,7 @@ theorem abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_fro
     (ha : ∀ ⦃x⦄, x ∈ interior K → ∀ ξ : EuclideanSpace ℝ ι,
       lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
     (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β) (hc : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ c x)
-    (hβ : 0 ≤ β) (hM : 0 ≤ M) (hF : 0 ≤ F) (hcont : ContinuousOn f K)
+    (hβ : 0 ≤ β) (hF : 0 ≤ F) (hcont : ContinuousOn f K)
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hL : ∀ ⦃x⦄, x ∈ interior K →
       |∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
@@ -634,6 +638,7 @@ theorem abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_fro
     (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) :
     ∀ ⦃x⦄, x ∈ K → |f x| ≤ M + (Real.exp ((β / lam + 1) * Metric.diam K) - 1) * F / lam := by
   intro x hx
+  have hM : 0 ≤ M := nonneg_of_forall_abs_le_frontier hK ⟨x, hx⟩ hbdry
   have hle := le_add_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier hK hlam ha hb hc
     hβ hM hF hcont hcd (fun _ hy ↦ by linarith [(abs_le.mp (hL hy)).1])
     (fun _ hy ↦ (abs_le.mp (hbdry hy)).2) hx
