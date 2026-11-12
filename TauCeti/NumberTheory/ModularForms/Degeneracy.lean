@@ -106,8 +106,7 @@ the lower level. The `q`-expansion results go up only.
   `q`-expansion of `V_d f` is supported on the multiples of `d`. This is the forward half of the
   Atkin–Lehner description of the old subspace.
 
-The old subspace of Layer 3 of the ModularForms roadmap is spanned by the images of the `V_d`,
-and the conductor statement of Layer 4 is phrased with this normalization of `V_d`.
+The old subspace is spanned by the images of the `V_d`.
 
 ## References
 
