@@ -33,8 +33,9 @@ cocycle `1`, has the value `1` everywhere, and on a path-connected space every d
 is its value at any point times the unit
 (`TauCeti.eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne`). Pulling back along the
 constant map at `x` gives the value at `x` times the unit
-(`TauCeti.singularCohomologyMap_const_zero`), which reduces multiplicativity of the values for the
-cup product (`TauCeti.singularCohomologyZeroEval_singularCup`) to the unit law on a point.
+(`TauCeti.singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul`), which reduces
+multiplicativity of the values for the cup product
+(`TauCeti.singularCohomologyZeroEval_singularCup`) to the unit law on a point.
 
 Consequently invertibility in `H⁰(X; k)` can be tested pointwise, one path component at a time: a
 square matrix of degree-zero classes whose matrices of values are invertible at every point is
@@ -229,7 +230,7 @@ lemma eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne [PathConnecte
 /-- Pulling back a degree-zero class along the constant map at `x` gives its value at `x` times
 the unit class. -/
 @[simp]
-lemma singularCohomologyMap_const_zero {Y : TopCat.{w}} (x : X)
+lemma singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul {Y : TopCat.{w}} (x : X)
     (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
     TopCat.singularCohomologyMap (TopCat.const (X := Y) x) 0 u =
       singularCohomologyZeroEval x u • Y.singularCohomologyZeroOne :=
@@ -248,8 +249,9 @@ theorem singularCohomologyZeroEval_singularCup (x : X)
       singularCohomologyZeroEval x w' = singularCohomologyZeroEval PUnit.unit
         (TopCat.singularCohomologyMap (TopCat.const (X := TopCat.of PUnit.{w + 1}) x) 0 w') :=
     by rw [singularCohomologyZeroEval_naturality, TopCat.const_apply]
-  rw [hs, ← TopCat.singularCup_naturality, singularCohomologyMap_const_zero,
-    singularCohomologyMap_const_zero]
+  rw [hs, ← TopCat.singularCup_naturality,
+    singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul,
+    singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul]
   simp only [map_smul, LinearMap.smul_apply, TopCat.singularCup_singularCohomologyZeroOne_left,
     singularCohomologyZeroEval_singularCohomologyZeroOne, smul_eq_mul, mul_one]
   exact mul_comm _ _
