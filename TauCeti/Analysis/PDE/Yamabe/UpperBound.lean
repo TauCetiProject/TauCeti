@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Yamabe.Quotient
 public import TauCeti.Analysis.PDE.Yamabe.SphereConstant
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.Analysis.Normed.Group.CompactSupport
 import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 import TauCeti.Analysis.PDE.Yamabe.Bubble.Cutoff
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
@@ -334,7 +333,6 @@ private lemma le_integral_abs_rpow {R t η : ℝ} (p : M) (hn : 2 < finrank ℝ 
     (1 - η) * t ^ finrank ℝ E * ∫ z, |v z| ^ criticalExponent (finrank ℝ E) ≤
       ∫ x, |u x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M := by
   have hP := criticalExponent_pos hn
-  have hη1' : 0 < 1 - η := by linarith
   have hPz (z : ℝ) (hz : z = 0) : |z| ^ criticalExponent (finrank ℝ E) = 0 := by
     rw [hz, abs_zero, Real.zero_rpow hP.ne']
   have hcontP : Continuous fun r : ℝ ↦ |r| ^ criticalExponent (finrank ℝ E) :=
@@ -440,7 +438,6 @@ private theorem div_rpow_le_distortion_bound {m : ℕ} {q η t S A B D N J : ℝ
     (hden : (1 - η) ^ q * t ^ m * D ^ q ≤ J ^ q) :
     N / J ^ q ≤
       ((1 + η) ^ 3 * A + S * (1 + η) * η ^ 2 * B) / ((1 - η) ^ q * D ^ q) := by
-  have hη1' := sub_pos.2 hη1
   have hη0 : 0 < η := ht0.trans_le htη
   calc N / J ^ q
       ≤ t ^ m * ((1 + η) ^ 3 * A + S * (1 + η) * t ^ 2 * B) /
@@ -584,7 +581,6 @@ theorem exists_contMDiff_hasCompactSupport_yamabeQuotient_lt [I.Boundaryless]
   have hnum := integral_numerator_le p hn (conformalCoefficient_pos hn).le (by positivity) hu huc
     hsup (fun y hy ↦ (hball y hy).2.2.1) hIg hI2
   have hden := rpow_two_div_criticalExponent_le hn hη1 ht0 hD hIP
-  have hη1' := sub_pos.2 hη1
   refine ⟨u, hu, huc, huU, hu0, (by positivity : 0 < (1 - η) * t ^ finrank ℝ E *
     ∫ z, |v z| ^ criticalExponent (finrank ℝ E)).trans_le hIP, ?_⟩
   rw [yamabeQuotient_def]
