@@ -231,35 +231,27 @@ def ofCellSum
 
 @[simp]
 lemma ofSubcomplex_step
-    (step : ∀ k, C(W k, W (k + 1)))
-    (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
+    (step : ∀ k, C(W k, W (k + 1))) (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
     (E : ∀ k, CWComplex.Subcomplex (univ : Set (W (k + 1))))
     (coe_E : ∀ k, (E k : Set (W (k + 1))) = range (step k))
     (oldCellEquiv : ∀ k n, cell (univ : Set (W k)) n ≃ ↥((E k).I n))
-    (map_oldCell : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ},
-      x ∈ closedBall 0 1 →
+    (map_oldCell : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
       step k (map (C := (univ : Set (W k))) n i x) =
-        map (C := (univ : Set (W (k + 1)))) n (oldCellEquiv k n i : cell _ n) x)
-    (k : ℕ) :
+        map (C := (univ : Set (W (k + 1)))) n (oldCellEquiv k n i : cell _ n) x) (k : ℕ) :
     (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv map_oldCell).step k =
-      step k := by
-  rfl
+      step k := (rfl)
 
 @[simp]
 lemma ofCellSum_step
-    (step : ∀ k, C(W k, W (k + 1)))
-    (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
+    (step : ∀ k, C(W k, W (k + 1))) (isClosedEmbedding_step : ∀ k, IsClosedEmbedding (step k))
     (cellZeroEquiv : ∀ n, newCell 0 n ≃ cell (univ : Set (W 0)) n)
     (cellSumEquiv : ∀ k n,
       cell (univ : Set (W k)) n ⊕ newCell (k + 1) n ≃ cell (univ : Set (W (k + 1))) n)
-    (map_inl : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ},
-      x ∈ closedBall 0 1 →
+    (map_inl : ∀ k n (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
       step k (map (C := (univ : Set (W k))) n i x) =
-        map (C := (univ : Set (W (k + 1)))) n (cellSumEquiv k n (Sum.inl i)) x)
-    (k : ℕ) :
+        map (C := (univ : Set (W (k + 1)))) n (cellSumEquiv k n (Sum.inl i)) x) (k : ℕ) :
     (ofCellSum step isClosedEmbedding_step cellZeroEquiv cellSumEquiv map_inl).step k =
-      step k := by
-  rfl
+      step k := (rfl)
 
 end ExtAndConstructors
 
@@ -279,19 +271,16 @@ def birthCell (T : CWSubcomplexTower W newCell) :
 
 @[simp]
 lemma birthCell_zero (T : CWSubcomplexTower W newCell) (n : ℕ) (j : newCell 0 n) :
-    T.birthCell 0 n j = T.cellZeroEquiv n j :=
-  (rfl)
+    T.birthCell 0 n j = T.cellZeroEquiv n j := (rfl)
 
 @[simp]
 lemma birthCell_succ (T : CWSubcomplexTower W newCell) (k n : ℕ) (j : newCell (k + 1) n) :
-    T.birthCell (k + 1) n j = (T.newCellEquiv k n j : cell (univ : Set (W (k + 1))) n) :=
-  (rfl)
+    T.birthCell (k + 1) n j = (T.newCellEquiv k n j : cell (univ : Set (W (k + 1))) n) := (rfl)
 
-lemma birthCell_injective (T : CWSubcomplexTower W newCell) (k n : ℕ) :
-    Function.Injective (T.birthCell k n) := by
-  cases k with
-  | zero => exact (T.cellZeroEquiv n).injective
-  | succ k => exact Subtype.val_injective.comp (T.newCellEquiv k n).injective
+lemma birthCell_injective (T : CWSubcomplexTower W newCell) :
+    ∀ (k n : ℕ), Function.Injective (T.birthCell k n)
+  | 0, n => (T.cellZeroEquiv n).injective
+  | k + 1, n => Subtype.val_injective.comp (T.newCellEquiv k n).injective
 
 /-- Decomposition of the `n`-cells of `W (k + 1)` into old cells from `W k` and new cells from
 `newCell (k + 1) n`. -/
@@ -323,9 +312,7 @@ def stageCellEquiv (T : CWSubcomplexTower W newCell) :
 @[simp]
 lemma stageCellEquiv_birth (T : CWSubcomplexTower W newCell) (k n : ℕ) (j : newCell k n) :
     T.stageCellEquiv k n ⟨⟨k, j⟩, le_rfl⟩ = T.birthCell k n j := by
-  cases k with
-  | zero => simp [stageCellEquiv]
-  | succ k => simp [stageCellEquiv]
+  cases k <;> simp [stageCellEquiv]
 
 lemma stageCellEquiv_succ_of_le (T : CWSubcomplexTower W newCell) (k n : ℕ)
     (p : Σ m : ℕ, newCell m n) (hp : p.1 ≤ k) :
@@ -347,8 +334,7 @@ abbrev diagram (T : CWSubcomplexTower W newCell) : ℕ ⥤ TopCat.{u} where
   map_comp _ _ := Functor.OfSequence.map_comp _ _ _ _ _ _
 
 lemma diagram_obj (T : CWSubcomplexTower W newCell) (k : ℕ) :
-    T.diagram.obj k = TopCat.of (W k) :=
-  (rfl)
+    T.diagram.obj k = TopCat.of (W k) := (rfl)
 
 lemma diagram_map_succ (T : CWSubcomplexTower W newCell) (k : ℕ) :
     T.diagram.map (homOfLE (Nat.le_add_right k 1)) = TopCat.ofHom (T.step k) :=
@@ -365,10 +351,8 @@ theorem diagram_map_birthCell (T : CWSubcomplexTower W newCell) {m k : ℕ} (hmk
     rw [Subsingleton.elim (homOfLE _) (𝟙 _), CategoryTheory.Functor.map_id, T.stageCellEquiv_birth]
     rfl
   | @step k hmk ih =>
-    have hcomp : homOfLE (Nat.le_succ_of_le hmk) =
-        homOfLE hmk ≫ homOfLE (Nat.le_add_right k 1) := rfl
-    rw [hcomp, CategoryTheory.Functor.map_comp, ConcreteCategory.comp_apply,
-      T.diagram_map_succ, ih]
+    rw [← homOfLE_comp hmk (Nat.le_add_right k 1), CategoryTheory.Functor.map_comp,
+      ConcreteCategory.comp_apply, T.diagram_map_succ, ih]
     exact (T.map_oldCell k n _ hx).trans
       (congrArg (fun i ↦ map n i x) (T.stageCellEquiv_succ_of_le k n ⟨m, j⟩ hmk).symm)
 
@@ -378,11 +362,10 @@ theorem isClosedEmbedding_diagram_map (T : CWSubcomplexTower W newCell) {i j : �
   induction hij with
   | refl =>
     rw [Subsingleton.elim (homOfLE _) (𝟙 _), CategoryTheory.Functor.map_id]
-    exact IsClosedEmbedding.id
+    exact .id
   | @step k hik ih =>
-    have hcomp : homOfLE (Nat.le_succ_of_le hik) =
-        homOfLE hik ≫ homOfLE (Nat.le_add_right k 1) := rfl
-    rw [hcomp, CategoryTheory.Functor.map_comp, TopCat.coe_comp, T.diagram_map_succ]
+    rw [← homOfLE_comp hik (Nat.le_add_right k 1), CategoryTheory.Functor.map_comp, TopCat.coe_comp,
+      T.diagram_map_succ]
     exact (T.isClosedEmbedding_step k).comp ih
 
 /-- For any colimit cocone `c` of `T.diagram`, every stage map `c.ι.app k : W k → c.pt` is a
