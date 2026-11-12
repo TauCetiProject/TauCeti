@@ -27,6 +27,10 @@ induces a bijection there and the other factor has a trivial source group
 (`HomotopyGroup.bijective_map_mul_of_bijective_of_subsingleton`). This is how a product of a map
 realizing the low homotopy groups with a map realizing the high ones is recognized as a weak
 homotopy equivalence, as for the splitting of the loop space of a complex projective space.
+More generally, it induces a bijection when the image of `g_*` is the kernel of a homomorphism
+`φ` out of the homotopy group of `M` and `φ ∘ f_*` is bijective
+(`HomotopyGroup.bijective_map_mul_of_bijective_comp`): `f_*` then splits the extension of the
+image of `φ` by the image of `g_*`, as for the loop space of a quaternionic projective space.
 
 For loops, `f = g = id`, the formula is the first half of the Eckmann--Hilton argument, the
 fundamental-group case of which is `FundamentalGroup.cast_map_prod_mul`.
@@ -37,6 +41,9 @@ fundamental-group case of which is `FundamentalGroup.cast_map_prod_mul`.
 * `HomotopyGroup.bijective_map_mul_of_bijective_of_subsingleton`,
   `HomotopyGroup.bijective_map_mul_of_subsingleton_of_bijective`: the pointwise product is
   bijective on a homotopy group if one factor is and the source group of the other is trivial.
+* `HomotopyGroup.bijective_map_mul_of_bijective_comp`: the pointwise product is bijective on a
+  homotopy group if `g_*` is injective with image the kernel of a homomorphism `φ`, and
+  `φ ∘ f_*` is bijective.
 -/
 
 public section
@@ -130,5 +137,37 @@ theorem bijective_map_mul_of_subsingleton_of_bijective [Nonempty N] {f : C(X, M)
     simp
   rw [h]
   exact hgb.comp ((Equiv.uniqueProd _ _).bijective.comp (prodEquiv x y).bijective)
+
+/-- The pointwise product `(p, q) ↦ f p * g q` induces a bijection on a homotopy group of positive
+dimension if `g_*` is injective there, its image is the kernel of a homomorphism `φ` out of the
+homotopy group of `M`, and `φ ∘ f_*` is bijective. -/
+theorem bijective_map_mul_of_bijective_comp [DecidableEq N] [Nonempty N] {G : Type*} [Group G]
+    {f : C(X, M)} {g : C(Y, M)} (hf : f x = 1) (hg : g y = 1) (φ : HomotopyGroup N M 1 →* G)
+    (hφf : Function.Bijective (φ ∘ map (N := N) f hf))
+    (hgi : Function.Injective (map (N := N) g hg))
+    (hφg : ∀ c, φ c = 1 ↔ c ∈ Set.range (map (N := N) g hg)) :
+    Function.Bijective (map (N := N) (f.comp ContinuousMap.fst * g.comp ContinuousMap.snd :
+      C(X × Y, M)) (mul_comp_fst_comp_snd_apply_eq_one hf hg)) := by
+  -- Read on coordinates, the induced map is `(a, b) ↦ f_* a * g_* b`.
+  have h : map (N := N) (f.comp ContinuousMap.fst * g.comp ContinuousMap.snd : C(X × Y, M))
+      (mul_comp_fst_comp_snd_apply_eq_one hf hg) =
+        (fun p ↦ map f hf p.1 * map g hg p.2) ∘ prodEquiv x y := by
+    funext c
+    obtain ⟨⟨a, b⟩, rfl⟩ := (prodEquiv x y).symm.surjective c
+    rw [prodEquiv_symm_apply, map_mul_prod f g hf hg]
+    simp
+  rw [h]
+  refine Function.Bijective.comp ⟨fun ⟨a, b⟩ ⟨a', b'⟩ hab ↦ ?_, fun c ↦ ?_⟩
+    (prodEquiv x y).bijective
+  · -- `φ` kills the `g_*` factor, so the `f_*` factors agree, and then so do the others.
+    have hφ (b : HomotopyGroup N Y y) : φ (map g hg b) = 1 := (hφg _).2 ⟨b, rfl⟩
+    have ha : a = a' := hφf.1 (by simpa [hφ] using congrArg φ hab)
+    subst ha
+    exact Prod.ext rfl (hgi (mul_left_cancel hab))
+  · -- Correct `c` by the `f_*` class with the same image under `φ`; the rest lies in the image
+    -- of `g_*`.
+    obtain ⟨a, ha⟩ := hφf.2 (φ c)
+    obtain ⟨b, hb⟩ := (hφg ((map f hf a)⁻¹ * c)).1 (by simp_all)
+    exact ⟨(a, b), by simp [hb]⟩
 
 end HomotopyGroup

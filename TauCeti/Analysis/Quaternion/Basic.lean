@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import Mathlib.Analysis.Quaternion
 
 /-!
@@ -14,8 +15,9 @@ This file develops basic facts about a real seminormed inner-product space with 
 right action by the quaternions. Right multiplication by quaternions scales inner products. For a
 unit vector in a seminormed module, it gives a linear isometry from the quaternions onto the
 corresponding quaternionic line, without requiring an inner product. The file also records the
-real dimension of a finite quaternionic coordinate space, and packages the standard basis
-`1, i, j, k` of the quaternions as an orthonormal basis.
+real dimension of a finite quaternionic coordinate space, finds unit vectors orthogonal to a
+quaternionic line, and packages the standard basis `1, i, j, k` of the quaternions as an
+orthonormal basis.
 
 ## Main declarations
 
@@ -28,6 +30,8 @@ real dimension of a finite quaternionic coordinate space, and packages the stand
   families of quaternions to orthonormal families.
 * `TauCeti.finrank_piLp_quaternion`: a finite quaternionic coordinate space has real dimension
   four times the number of coordinates.
+* `TauCeti.exists_norm_eq_one_forall_inner_op_smul_eq_zero`: in real dimension greater than four,
+  every quaternionic line has a unit vector orthogonal to it.
 * `Quaternion.orthonormalBasisOneIJK`: the basis `1, i, j, k` of `ℍ` as an orthonormal basis.
 -/
 
@@ -123,5 +127,31 @@ theorem finrank_piLp_quaternion (p : ℝ≥0∞) (ι : Type*) [Fintype ι] :
     finrank ℝ (PiLp p fun _ : ι ↦ ℍ) = 4 * Fintype.card ι := by
   rw [(WithLp.linearEquiv p ℝ _).finrank_eq, Module.finrank_pi_fintype]
   simp [Quaternion.finrank_eq_four, mul_comm]
+
+section Orthogonal
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [Module ℍᵐᵒᵖ F] [IsScalarTower ℝ ℍᵐᵒᵖ F]
+
+/-- In a real inner-product space of dimension greater than four with a right action of the
+quaternions, the quaternionic line `x ℍ` through any vector `x`, a real subspace of dimension at
+most four, has a unit vector orthogonal to it. -/
+theorem exists_norm_eq_one_forall_inner_op_smul_eq_zero (hF : 4 < finrank ℝ F) (x : F) :
+    ∃ w : F, ‖w‖ = 1 ∧ ∀ q : ℍ, ⟪x <• q, w⟫ = 0 := by
+  let L : ℍ →ₗ[ℝ] F := (opLinearEquiv ℝ).toLinearMap.smulRight x
+  have hK : (LinearMap.range L)ᗮ ≠ ⊥ := by
+    rw [Ne, Submodule.orthogonal_eq_bot_iff]
+    intro h
+    have h' := LinearMap.finrank_range_le L
+    rw [h, finrank_top, Quaternion.finrank_eq_four] at h'
+    omega
+  obtain ⟨w, hwK, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hK
+  refine ⟨‖w‖⁻¹ • w, ?_, fun q ↦ ?_⟩
+  · rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.2 hw0)]
+  · rw [real_inner_smul_right]
+    exact mul_eq_zero_of_right _
+      (Submodule.inner_right_of_mem_orthogonal (LinearMap.mem_range_self L q) hwK)
+
+end Orthogonal
 
 end TauCeti
