@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.RootSystem.Base
 public import TauCeti.RepresentationTheory.LSPath.RootOperator
 
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Module
 import TauCeti.RepresentationTheory.LSPath.PartialInverse
 
 /-!
@@ -116,10 +115,7 @@ theorem lower_straight_root
   have hrefl :
       preReflection (f (P.root i)) (F i) ((2 : 𝕜)⁻¹ • f (P.root i)) =
         -(2 : 𝕜)⁻¹ • f (P.root i) := by
-    rw [preReflection_apply, map_smul, hv, smul_eq_mul]
-    have h1 : (2 : 𝕜)⁻¹ * 2 = 1 := inv_mul_cancel₀ two_ne_zero
-    rw [h1, one_smul]
-    module
+    rw [map_smul, preReflection_apply_self hv, smul_neg, neg_smul]
   have hsub : (1 - (2 : 𝕜)⁻¹) = (2 : 𝕜)⁻¹ := by norm_num
   rw [hrefl, hsub, simpleRootBent]
 

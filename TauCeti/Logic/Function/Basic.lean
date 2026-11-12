@@ -10,9 +10,7 @@ public import Mathlib.Logic.Function.Defs
 /-!
 # Basic facts about functions
 
-* `Function.bijective_of_retract`: a function that is a retract of a bijection is bijective.
-* `Function.Injective.of_comp_eq`: if `g ∘ f` agrees pointwise with an injective map `f'`, then
-  `f` is injective.
+A function that is a retract of a bijection is bijective (`Function.bijective_of_retract`).
 -/
 
 public section
@@ -30,12 +28,5 @@ theorem bijective_of_retract {A B A' B' : Type*} {Φ : A → B} {Φ' : A' → B'
     fun g ↦ by
       obtain ⟨z, hz⟩ := hΦ'.2 (b g)
       exact ⟨c z, by rw [hb, hz, hd]⟩⟩
-
-/-- If `g ∘ f` agrees pointwise with an injective map `f'`, then `f` is injective. This is
-`Function.Injective.of_comp` when the factorization is given as a pointwise identity
-`∀ x, g (f x) = f' x` (for instance between bundled homomorphisms). -/
-theorem Injective.of_comp_eq {α β γ : Sort*} {f : α → β} {g : β → γ} {f' : α → γ}
-    (hf' : Injective f') (h : ∀ x, g (f x) = f' x) : Injective f :=
-  fun _ _ hab ↦ hf' (by rw [← h, ← h, hab])
 
 end Function

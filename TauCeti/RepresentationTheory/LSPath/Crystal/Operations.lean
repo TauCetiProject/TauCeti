@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Logic.Function.Basic
 public import TauCeti.RepresentationTheory.Crystal.WeightTwist
 public import TauCeti.RepresentationTheory.LSPath.Crystal.Basic
 public import TauCeti.RepresentationTheory.LSPath.SimpleRootString
@@ -480,7 +479,8 @@ noncomputable def mapHom (hf' : Function.Injective f')
     (hF' : ∀ (i : b.support) (x : X), F' i (f' x) = (P.coroot' i x : 𝕜))
     (g : V →ₗ[𝕜] W) (hgf : ∀ x, g (f x) = f' x) (hFg : ∀ i, (F' i).comp g = F i) :
     NormalCrystal.StrictHom
-      (normalCrystal (f := f) (F := F) (hf'.of_comp_eq hgf)
+      (normalCrystal (f := f) (F := F)
+        (.of_comp (f := g) (by simpa only [Function.comp_def, hgf] using hf'))
         (apply_eq_coroot'_of_comp hF' hgf hFg))
       (normalCrystal hf' hF') where
   toFun π := ⟨π.1.map g, π.2.map hgf hFg⟩
@@ -502,9 +502,12 @@ noncomputable def mapIso (hf' : Function.Injective f')
     (hF' : ∀ (i : b.support) (x : X), F' i (f' x) = (P.coroot' i x : 𝕜))
     (e : V ≃ₗ[𝕜] W) (hef : ∀ x, e (f x) = f' x) (hFe : ∀ i, (F' i).comp e.toLinearMap = F i) :
     NormalCrystal.StrictIso
-      (normalCrystal (f := f) (F := F) (hf'.of_comp_eq hef)
+      (normalCrystal (f := f) (F := F)
+        (.of_comp (f := e) (by simpa only [Function.comp_def, hef] using hf'))
         (apply_eq_coroot'_of_comp hF' hef hFe))
       (normalCrystal hf' hF') := by
+  have hf : Function.Injective f :=
+    .of_comp (f := e) (by simpa only [Function.comp_def, hef] using hf')
   have hef_symm (x : X) : e.symm (f' x) = f x := e.symm_apply_eq.mpr (hef x).symm
   have hFe_symm (i : b.support) : (F i).comp e.symm.toLinearMap = F' i := by
     ext w
@@ -512,7 +515,7 @@ noncomputable def mapIso (hf' : Function.Injective f')
   refine
     { toEquiv :=
         { toFun := mapHom hf' hF' e.toLinearMap hef hFe
-          invFun := mapHom (f := f') (F := F') (hf'.of_comp_eq hef)
+          invFun := mapHom (f := f') (F := F') hf
             (apply_eq_coroot'_of_comp hF' hef hFe) e.symm.toLinearMap hef_symm hFe_symm
           left_inv := fun π ↦ Subtype.ext (by simp)
           right_inv := fun π ↦ Subtype.ext (by simp) }
