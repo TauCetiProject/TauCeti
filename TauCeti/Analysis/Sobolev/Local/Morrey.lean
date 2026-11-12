@@ -237,7 +237,7 @@ theorem MemWkpLoc.exists_holderOnWith_preciseRepresentative_of_isCompact (hp : 2
     (memLpLoc_iff.1 (hu.memLpLoc_of_hasWeakFDerivOn hD) _ hRK hRc).eLpNorm_ne_top
   set N := (eLpNorm D p (volume.restrict (cthickening R K))).toReal
   refine ⟨_, HolderOnWith.of_dist_lt_of_dist_le (K := (C * N).toNNReal) (D := (2 * M).toNNReal)
-    (Real.toNNReal_pos.2 (half_pos hR)) (fun x hx y hy hd => ?_) fun x hx y hy => ?_⟩
+    (Real.toNNReal_pos.2 (half_pos hR)) (fun x hx y _ hd => ?_) fun x hx y hy => ?_⟩
   · -- Nearby points: the local Morrey inequality on `closedBall x (2 |x - y|) ⊆ Ω`.
     rw [Real.coe_toNNReal _ (half_pos hR).le] at hd
     rw [Real.coe_toNNReal _ (mul_nonneg hC.le ENNReal.toReal_nonneg)]

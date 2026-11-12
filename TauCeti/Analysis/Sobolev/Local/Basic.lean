@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -28,11 +29,12 @@ These predicates concern actual functions; almost-everywhere changes do not affe
 They impose no global integrability condition on the possibly unbounded domain.
 
 This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
+pairing of fields of continuous linear maps into product maps,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
-supported in the domain), pairing, decreasing the integrability exponent, and decreasing the
-derivative order. On an open set, local `Lᵖ` membership is detected on the open subsets with
-compact closure inside it. Smoothness on an open neighbourhood gives membership, without requiring
-a global smooth extension.
+supported in the domain), composition of local `Lᵖ` operator families with continuous ones,
+pairing, decreasing the integrability exponent, and decreasing the derivative order. On an open
+set, local `Lᵖ` membership is detected on the open subsets with compact closure inside it.
+Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension.
 On a relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane the interior is
 `Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`), and since the real axis is null, local
 `Lᵖ` membership there is detected on the upper halves `W ∩ {0 < im}`
@@ -203,6 +205,35 @@ theorem MemLpLoc.clm_comp (hf : MemLpLoc p U f) (A : F →L[ℝ] G) :
     MemLpLoc p U (fun z => A (f z)) :=
   fun K hK hc => A.comp_memLp' (hf K hK hc)
 
+/-- Pairing two locally `Lᵖ` fields of continuous linear maps into their product map preserves
+local `Lᵖ` membership. -/
+theorem MemLpLoc.clm_prod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {A : ℂ → E →L[ℝ] F} {B : ℂ → E →L[ℝ] G} (hA : MemLpLoc p U A) (hB : MemLpLoc p U B) :
+    MemLpLoc p U (fun z => (A z).prod (B z)) := by
+  convert (hA.clm_comp (ContinuousLinearMap.compL ℝ E F (F × G)
+    (ContinuousLinearMap.inl ℝ F G))).add
+      (hB.clm_comp (ContinuousLinearMap.compL ℝ E G (F × G) (ContinuousLinearMap.inr ℝ F G)))
+    using 1
+  funext z
+  ext v <;> simp
+
+/-- Composing a locally `Lᵖ` operator family on the left with one continuous on `U` preserves
+local `Lᵖ` membership, since the continuous factor is bounded on every compact subset of `U`. -/
+theorem MemLpLoc.continuousOn_clm_comp {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
+    {A : ℂ → G →L[ℝ] H} {B : ℂ → F →L[ℝ] G} (hB : MemLpLoc p U B) (hA : ContinuousOn A U) :
+    MemLpLoc p U (fun z => A z ∘L B z) :=
+  memLpLoc_iff.2 fun K hKU hK => (memLpLoc_iff.1 hB K hKU hK).clm_comp_of_continuousOn
+    (hA.mono hKU) hK hK.measurableSet subset_rfl
+
+/-- Composing a locally `Lᵖ` operator family on the right with one continuous on `U` preserves
+local `Lᵖ` membership, since the continuous factor is bounded on every compact subset of `U`. -/
+theorem MemLpLoc.clm_comp_continuousOn {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
+    {B : ℂ → G →L[ℝ] H} {E : ℂ → F →L[ℝ] G} (hB : MemLpLoc p U B) (hE : ContinuousOn E U) :
+    MemLpLoc p U (fun z => B z ∘L E z) :=
+  memLpLoc_iff.2 fun K hKU hK => (ContinuousLinearMap.compL ℝ F G H).memLp_of_bilin p
+    (memLpLoc_iff.1 hB K hKU hK)
+    ((hE.mono hKU).memLp_top_restrict_of_subset_isCompact hK hK.measurableSet subset_rfl)
+
 open TauCeti.MeasureTheory in
 /-- A locally `Lᵖ` function on an open set `Ω`, with `1 ≤ p`, agrees almost everywhere on `Ω` with
 its precise representative. -/
@@ -350,7 +381,7 @@ theorem MemWkpLoc.of_succ (hf : MemWkpLoc p U (k + 1) f) : MemWkpLoc p U k f := 
 theorem MemWkpLoc.of_le (hf : MemWkpLoc p U k f) (hlk : l ≤ k) : MemWkpLoc p U l f := by
   induction hlk with
   | refl => exact hf
-  | step h ih => exact ih hf.of_succ
+  | step _ ih => exact ih hf.of_succ
 
 /-- The zero function lies in every local Sobolev class with complete codomain. -/
 @[simp]
