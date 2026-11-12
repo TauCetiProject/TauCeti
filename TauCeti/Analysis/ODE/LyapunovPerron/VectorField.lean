@@ -130,7 +130,7 @@ private theorem exists_vectorField_remainder_data (hn : 1 ≤ n) (hV : ContDiffA
 /-- The remainder `z ↦ w (c + z) - A z` of a `C¹` field `w` at a base point `c` is `ε`-Lipschitz on
 the closed ball of radius `r` when `‖Dw - A‖ ≤ ε` on the closed ball of radius `r` around `c`; its
 derivative `z ↦ Dw (c + z) - A` is uniformly continuous on the open ball, by compactness. -/
-private theorem remainder_data_of_nnnorm_fderiv_sub_le {w : E → E} {c : E} {S : Set E}
+private theorem remainder_data_of_nnNorm_fderiv_sub_le {w : E → E} {c : E} {S : Set E}
     (hS : IsOpen S) (hw : ContDiffOn ℝ 1 w S) {r : ℝ} (hrS : closedBall c r ⊆ S) {ε : ℝ≥0}
     (hwA : ∀ y ∈ closedBall c r, ‖fderiv ℝ w y - A‖₊ ≤ ε) :
     LipschitzOnWith ε (fun z ↦ w (c + z) - A z) (closedBall 0 r) ∧
@@ -146,7 +146,7 @@ private theorem remainder_data_of_nnnorm_fderiv_sub_le {w : E → E} {c : E} {S 
   have huc : UniformContinuousOn (fderiv ℝ w) (closedBall c r) :=
     (isCompact_closedBall c r).uniformContinuousOn_of_continuous
       ((hw.continuousOn_fderiv_of_isOpen hS le_rfl).mono hrS)
-  refine ⟨(convex_closedBall 0 r).lipschitzOnWith_of_nnnorm_hasFDerivWithin_le
+  refine ⟨(convex_closedBall 0 r).lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
     (fun z hz ↦ (hd hz).hasFDerivWithinAt) (fun z hz ↦ hwA _ (hmem hz)), fun z hz ↦ hd hz, ?_⟩
   exact (uniformContinuous_id.sub uniformContinuous_const).comp_uniformContinuousOn
     (huc.comp (uniformContinuous_const.add uniformContinuous_id).uniformContinuousOn
@@ -198,9 +198,9 @@ private theorem exists_vectorField_remainder_tendsto (hU : U ∈ 𝓝 x)
   have hshift {c : E} (hc : dist c x ≤ r) : closedBall c r ⊆ closedBall x (2 * r) :=
     closedBall_subset_closedBall' (by linarith)
   have hxx : dist x x ≤ r := by simpa using hr.le
-  obtain ⟨hN, hNd, hN'⟩ := remainder_data_of_nnnorm_fderiv_sub_le isOpen_ball hVR
+  obtain ⟨hN, hNd, hN'⟩ := remainder_data_of_nnNorm_fderiv_sub_le isOpen_ball hVR
     ((hshift hxx).trans hbig) fun y hy ↦ by
-      rw [← NNReal.coe_le_coe, coe_nnnorm]
+      rw [← NNReal.coe_le_coe, coe_nnNorm]
       linarith [hVA y (hshift hxx hy), ε.coe_nonneg]
   -- Eventually the zero `xs i` is `r`-close to `x` and `D(Vs i)` is `ε / 2`-close to `DV`.
   have hnear : ∀ᶠ i in l, ContDiffOn ℝ 1 (Vs i) U ∧ Vs i (xs i) = 0 ∧ dist (xs i) x ≤ r ∧
@@ -215,9 +215,9 @@ private theorem exists_vectorField_remainder_tendsto (hU : U ∈ 𝓝 x)
       (∀ z ∈ closedBall (0 : E) r,
         HasFDerivAt (fun z ↦ Vs i (xs i + z) - A z) (fderiv ℝ (Vs i) (xs i + z) - A) z) ∧
       UniformContinuousOn (fun z ↦ fderiv ℝ (Vs i) (xs i + z) - A) (ball 0 r) :=
-    hnear.mono fun i hi ↦ ⟨hi.2.1, remainder_data_of_nnnorm_fderiv_sub_le
+    hnear.mono fun i hi ↦ ⟨hi.2.1, remainder_data_of_nnNorm_fderiv_sub_le
     isOpen_ball (hi.1.mono hRU) ((hshift hi.2.2.1).trans hbig) fun y hy ↦ by
-      rw [← NNReal.coe_le_coe, coe_nnnorm]
+      rw [← NNReal.coe_le_coe, coe_nnNorm]
       linarith [hi.2.2.2 y (hRU (hbig (hshift hi.2.2.1 hy))), hVA y (hshift hi.2.2.1 hy),
         norm_sub_le_norm_sub_add_norm_sub (fderiv ℝ (Vs i) y) (fderiv ℝ V y) A]⟩
   -- Reading `D(Vs i)` at the moving base points `xs i` costs only the uniform continuity of `DV`.
