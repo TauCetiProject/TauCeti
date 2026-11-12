@@ -224,18 +224,7 @@ theorem hamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f
 @[simp]
 theorem hamiltonianVectorField_add_const (c : ℝ) (x : M) :
     σ.hamiltonianVectorField (fun y ↦ f y + c) x = σ.hamiltonianVectorField f x := by
-  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
-  · rw [show (fun y ↦ f y + c) = f + fun _ ↦ c from rfl,
-      hamiltonianVectorField_add hf mdifferentiableAt_const, hamiltonianVectorField_const,
-      Pi.zero_apply, add_zero]
-  · -- Neither function is differentiable at `x`, so both derivatives vanish.
-    have hfc : ¬MDifferentiableAt I 𝓘(ℝ) (fun y ↦ f y + c) x := fun h ↦
-      hf (by
-        convert h.add (mdifferentiableAt_const (c := -c)) using 1
-        funext y
-        simp)
-    simp only [hamiltonianVectorField_def, mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
-      mfderiv_zero_of_not_mdifferentiableAt hfc, ContinuousLinearMap.comp_zero]
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_add_const]
 
 /-- The Hamiltonian vector field of `-f` is the opposite of that of `f`. -/
 @[simp]

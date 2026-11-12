@@ -32,7 +32,9 @@ along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results ar
   Hamiltonians.
 * `TauCeti.Floer.pairOfPantsPerturbation_add_const`: adding functions `c_q` of time to the end
   Hamiltonians adds the perturbation of the target-independent Hamiltonians `c_q`, which does
-  not depend on the target point (`TauCeti.Floer.pairOfPantsPerturbation_const_target`).
+  not depend on the target point (`TauCeti.Floer.pairOfPantsPerturbation_const_target`);
+  `TauCeti.Floer.pairOfPantsPerturbation_add_const_fun` and
+  `TauCeti.Floer.pairOfPantsPerturbation_const_target_fun` state this for the components.
 * `TauCeti.Floer.contDiffAt_pairOfPantsPerturbation_prod`: for a vector space target and `Cⁿ`
   Hamiltonians, the perturbation is `Cⁿ` jointly in the domain and target points.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift_of_pos`: on the part `±s > 0` of the
@@ -108,6 +110,27 @@ theorem pairOfPantsPerturbation_const_target (c : Puncture → ℝ → ℝ) (w :
     pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x =
       pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w y := by
   simp only [pairOfPantsPerturbation_def]
+
+/-- The components `K(v)` of the perturbation of the end Hamiltonians `H_q + c_q`, as functions of
+a parameter of the domain point and the target point, are those for `H_q` plus the
+target-independent components for the functions of time `c_q`, evaluated at any point `x₀`. -/
+theorem pairOfPantsPerturbation_add_const_fun {α : Type*} (H : Puncture → ℝ → M → ℝ)
+    (c : Puncture → ℝ → ℝ) (f : α → ℂ) (x₀ : M) (v : ℂ) :
+    (fun z x ↦ pairOfPantsPerturbation (fun q t y ↦ H q t y + c q t) (f z) x v) =
+      fun z x ↦ pairOfPantsPerturbation H (f z) x v +
+        pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) (f z) x₀ v := by
+  funext z x
+  rw [pairOfPantsPerturbation_add_const, add_apply,
+    pairOfPantsPerturbation_const_target c _ x x₀]
+
+/-- The components `K(v)` of the perturbation of functions of time `c_q`, as functions of a
+parameter of the domain point and the target point, do not depend on the target point. -/
+theorem pairOfPantsPerturbation_const_target_fun {α : Type*} (c : Puncture → ℝ → ℝ) (f : α → ℂ)
+    (x₀ : M) (v : ℂ) :
+    (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) (f z) x v) =
+      fun z _ ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) (f z) x₀ v := by
+  funext z x
+  rw [pairOfPantsPerturbation_const_target c _ x x₀]
 
 variable {H : Puncture → ℝ → M → ℝ}
 

@@ -426,6 +426,7 @@ theorem hamiltonianCurvature_continuation (ω : SmoothTwoForm I M) {β : ℝ →
 
 /-- The curvature of target-independent data `a ds + b dt` is its exterior derivative
 `∂s b - ∂t a`. -/
+@[simp]
 theorem hamiltonianCurvature_const_target (ω : SmoothTwoForm I M) (a b : ℝ × ℝ → ℝ)
     (z : ℝ × ℝ) (x : M) :
     ω.hamiltonianCurvature (fun w _ ↦ a w) (fun w _ ↦ b w) z x =

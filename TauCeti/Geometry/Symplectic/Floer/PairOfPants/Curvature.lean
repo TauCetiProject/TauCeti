@@ -121,12 +121,18 @@ energy identity.
   `SymplecticForm.sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation`.
 * `SmoothTwoForm.perturbedMFDeriv_pairOfPantsPerturbation_add_const`,
   `SmoothTwoForm.floerEnergyDensity_pairOfPantsPerturbation_add_const`: a change of normalization
-  `H_q ↦ H_q + c_q(t)` changes neither the perturbed derivative nor the energy density.
+  `H_q ↦ H_q + c_q(t)` changes neither the perturbed derivative nor the energy density; the
+  vector-space cases are `SymplecticForm.perturbedFDeriv_pairOfPantsPerturbation_add_const` and
+  `SymplecticForm.floerEnergyDensity_pairOfPantsPerturbation_add_const` in
+  `PairOfPants/Normalization.lean`.
 * `SmoothTwoForm.hamiltonianCurvature_pairOfPantsPerturbation_add_const`,
+  `SmoothTwoForm.hamiltonianCurvature_pairOfPantsPerturbation_const_target`,
   `SmoothTwoForm.setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const`,
   `SmoothTwoForm.setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_add_const`: it adds the
-  curvature of the perturbation of the functions of time `c_q`, whose integral over `S` is
-  `∫₀¹ c_0 + ∫₀¹ c_1 - ∫₀¹ c_∞`.
+  curvature of the perturbation of the functions of time `c_q`, which does not depend on the
+  target point and whose integral over `S` is `∫₀¹ c_0 + ∫₀¹ c_1 - ∫₀¹ c_∞`; the vector-space
+  cases, with the same names in the namespace `SymplecticForm`, are in
+  `PairOfPants/Normalization.lean`.
 
 ## References
 
@@ -644,30 +650,22 @@ change `∑ q, ±∫₀¹ c_q` of the Hamiltonian terms at the asymptotic orbits
 the energy identity is invariant under the change of normalization. -/
 
 omit [TopologicalSpace M] in
-/-- The components of the perturbation `H + c` are those of `H` plus the target-independent
-components of the perturbation of the functions of time `c`, evaluated at any point `x₀`. -/
-private theorem pairOfPantsPerturbation_add_const_eq (c : Puncture → ℝ → ℝ) (x₀ : M) (v : ℂ) :
-    (fun z x ↦ pairOfPantsPerturbation (fun q t y ↦ H q t y + c q t)
-        (Complex.equivRealProdCLM.symm z) x v) =
-      fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v +
-        pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) (Complex.equivRealProdCLM.symm z) x₀ v
-    := by
-  funext z x
-  rw [pairOfPantsPerturbation_add_const, add_apply, pairOfPantsPerturbation_const_target c _ x x₀]
+/-- Period-one functions of time `c_q` are period-one target-independent Hamiltonians. -/
+private theorem periodic_const_target {c : Puncture → ℝ → ℝ} (hc : ∀ q, Periodic (c q) 1)
+    (q : Puncture) : Periodic (fun t (_ : M) ↦ c q t) 1 :=
+  fun t ↦ funext fun _ ↦ hc q t
 
-omit [TopologicalSpace M] in
-/-- The components of the perturbation of functions of time do not depend on the target point. -/
-private theorem pairOfPantsPerturbation_const_eq (c : Puncture → ℝ → ℝ) (x₀ : M) (v : ℂ) :
-    (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t)
-        (Complex.equivRealProdCLM.symm z) x v) =
-      fun z _ ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t)
-        (Complex.equivRealProdCLM.symm z) x₀ v := by
-  funext z x
-  rw [pairOfPantsPerturbation_const_target c _ x x₀]
+omit [IsManifold I ⊤ M] in
+/-- `C¹` functions of time `c_q` are `C¹` target-independent Hamiltonians. -/
+private theorem contMDiff_uncurry_const_target {c : Puncture → ℝ → ℝ}
+    (hcs : ∀ q, ContDiff ℝ 1 (c q)) (q : Puncture) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ c q t) :=
+  (hcs q).contMDiff.comp contMDiff_fst
 
 /-- **A change of normalization does not change the perturbed derivative.** The perturbed
 derivative `du - X_K` of the pair-of-pants perturbation of the Hamiltonians `H_q + c_q(t)` is that
 of the Hamiltonians `H_q`, so the two data have the same Floer equation. -/
+@[simp]
 theorem perturbedMFDeriv_pairOfPantsPerturbation_add_const (ω : SmoothTwoForm I M)
     (H : Puncture → ℝ → M → ℝ) (c : Puncture → ℝ → ℝ) (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
     ω.perturbedMFDeriv
@@ -679,12 +677,13 @@ theorem perturbedMFDeriv_pairOfPantsPerturbation_add_const (ω : SmoothTwoForm I
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z := by
-  rw [pairOfPantsPerturbation_add_const_eq c (u z), pairOfPantsPerturbation_add_const_eq c (u z),
-    perturbedMFDeriv_add_const]
+  rw [pairOfPantsPerturbation_add_const_fun H c _ (u z),
+    pairOfPantsPerturbation_add_const_fun H c _ (u z), perturbedMFDeriv_add_const]
 
 /-- **A change of normalization does not change the energy density.** The Floer energy density of
 the pair-of-pants perturbation of the Hamiltonians `H_q + c_q(t)` is that of the Hamiltonians
 `H_q`. -/
+@[simp]
 theorem floerEnergyDensity_pairOfPantsPerturbation_add_const (ω : SmoothTwoForm I M)
     (H : Puncture → ℝ → M → ℝ) (c : Puncture → ℝ → ℝ) (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
     ω.floerEnergyDensity
@@ -698,6 +697,24 @@ theorem floerEnergyDensity_pairOfPantsPerturbation_add_const (ω : SmoothTwoForm
         u z := by
   rw [floerEnergyDensity_def, floerEnergyDensity_def,
     ω.perturbedMFDeriv_pairOfPantsPerturbation_add_const H c u z]
+
+/-- The curvature of the perturbation of functions of time `c_q` does not depend on the target
+point. -/
+theorem hamiltonianCurvature_pairOfPantsPerturbation_const_target (ω : SmoothTwoForm I M)
+    (c : Puncture → ℝ → ℝ) (z : ℝ × ℝ) (x y : M) :
+    ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t)
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t)
+          (Complex.equivRealProdCLM.symm z) x Complex.I) z x =
+      ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t)
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t)
+          (Complex.equivRealProdCLM.symm z) x Complex.I) z y := by
+  rw [pairOfPantsPerturbation_const_target_fun c _ x,
+    pairOfPantsPerturbation_const_target_fun c _ x, hamiltonianCurvature_const_target,
+    hamiltonianCurvature_const_target]
 
 /-- **A change of normalization adds a target-independent curvature.** At points of `S`, the
 curvature of the pair-of-pants perturbation of the Hamiltonians `H_q + c_q(t)` is that of the
@@ -721,12 +738,10 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_add_const (ω : SmoothTwoFo
             (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t)
             (Complex.equivRealProdCLM.symm z) x Complex.I) z x := by
-  have hc' : ∀ q, Periodic (fun t (_ : M) ↦ c q t) 1 := fun q t ↦ funext fun _ ↦ hc q t
-  have hcM (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1
-      (uncurry fun t (_ : M) ↦ c q t) :=
-    (hcs q).contMDiff.comp contMDiff_fst
-  rw [pairOfPantsPerturbation_add_const_eq c x, pairOfPantsPerturbation_add_const_eq c x,
-    pairOfPantsPerturbation_const_eq c x, pairOfPantsPerturbation_const_eq c x,
+  have hc' := periodic_const_target (M := M) hc
+  have hcM := contMDiff_uncurry_const_target (I := I) (M := M) hcs
+  rw [pairOfPantsPerturbation_add_const_fun H c _ x, pairOfPantsPerturbation_add_const_fun H c _ x,
+    pairOfPantsPerturbation_const_target_fun c _ x, pairOfPantsPerturbation_const_target_fun c _ x,
     ω.hamiltonianCurvature_add_const
       (differentiableAt_pairOfPantsPerturbation_domain hH hHs hz x 1)
       (differentiableAt_pairOfPantsPerturbation_domain hH hHs hz x Complex.I)
@@ -748,9 +763,10 @@ private theorem hamiltonianCurvature_pairOfPantsPerturbation_neg_const (ω : Smo
           (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t)
           (Complex.equivRealProdCLM.symm z) x Complex.I) z x := by
-  rw [pairOfPantsPerturbation_const_eq (fun q t ↦ -c q t) x,
-    pairOfPantsPerturbation_const_eq (fun q t ↦ -c q t) x, pairOfPantsPerturbation_const_eq c x,
-    pairOfPantsPerturbation_const_eq c x, ω.hamiltonianCurvature_const_target,
+  rw [pairOfPantsPerturbation_const_target_fun (fun q t ↦ -c q t) _ x,
+    pairOfPantsPerturbation_const_target_fun (fun q t ↦ -c q t) _ x,
+    pairOfPantsPerturbation_const_target_fun c _ x, pairOfPantsPerturbation_const_target_fun c _ x,
+    ω.hamiltonianCurvature_const_target,
     ω.hamiltonianCurvature_const_target]
   simp only [pairOfPantsPerturbation_neg (fun q t (_ : M) ↦ c q t), neg_apply, fderiv_fun_neg]
   ring
@@ -777,28 +793,27 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const (ω : Smo
       (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t)
         (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t)
-        (Complex.equivRealProdCLM.symm z) x Complex.I) z (u 0) := by
-    simp only [pairOfPantsPerturbation_const_eq c (u 0), hamiltonianCurvature_const_target]
+        (Complex.equivRealProdCLM.symm z) x Complex.I) z (u 0) :=
+    funext fun z ↦ ω.hamiltonianCurvature_pairOfPantsPerturbation_const_target c z (u z) (u 0)
   rw [hu]
   have hle := ω.sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation
-    (H := fun q t (_ : M) ↦ c q t) (fun q t ↦ funext fun _ ↦ hc q t)
-    (fun q ↦ (hcs q).contMDiff.comp contMDiff_fst)
+    (periodic_const_target hc) (contMDiff_uncurry_const_target hcs)
     (fun q ↦ (hcs q).continuous.intervalIntegrable 0 1) (fun _ _ _ ↦ le_rfl)
     (continuousOn_const (c := u 0))
   have hge := ω.sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation
-    (H := fun q t (_ : M) ↦ -c q t) (h := fun q t ↦ -c q t)
-    (fun q t ↦ funext fun _ ↦ by simp only [hc q t])
-    (fun q ↦ (hcs q).neg.contMDiff.comp contMDiff_fst)
+    (h := fun q t ↦ -c q t)
+    (periodic_const_target (c := fun q t ↦ -c q t) fun q t ↦ by simp only [hc q t])
+    (contMDiff_uncurry_const_target (c := fun q t ↦ -c q t) fun q ↦ (hcs q).neg)
     (fun q ↦ (hcs q).continuous.neg.intervalIntegrable 0 1) (fun _ _ _ ↦ le_rfl)
     (continuousOn_const (c := u 0))
   simp only [hamiltonianCurvature_pairOfPantsPerturbation_neg_const, integral_neg,
     intervalIntegral.integral_neg, mul_neg, Finset.sum_neg_distrib, neg_le_neg_iff] at hge
   exact le_antisymm hge hle
 
-/-- **The integrated curvature under a change of normalization.** Along every map `u` continuous
-on `S`, changing the period-one `C¹` end Hamiltonians `H_q` by period-one `C¹` functions of time
-`c_q` changes the integrated curvature of the pair-of-pants perturbation by
-`∫₀¹ c_0 + ∫₀¹ c_1 - ∫₀¹ c_∞`:
+/-- **The integrated curvature under a change of normalization.** Along every map `u` whose
+curvature for `H_q` is integrable on `S`, changing the period-one `C¹` end Hamiltonians `H_q` by
+period-one `C¹` functions of time `c_q` changes the integrated curvature of the pair-of-pants
+perturbation by `∫₀¹ c_0 + ∫₀¹ c_1 - ∫₀¹ c_∞`:
 
 `∫_S R_{K^{H + c}}(u) = ∫_S R_{K^H}(u) + ∫₀¹ c_0 + ∫₀¹ c_1 - ∫₀¹ c_∞`.
 
@@ -810,7 +825,11 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_add_const
     (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
     {c : Puncture → ℝ → ℝ} (hc : ∀ q, Periodic (c q) 1) (hcs : ∀ q, ContDiff ℝ 1 (c q))
-    {u : ℝ × ℝ → M} (hu : ContinuousOn u thricePuncturedSphereReal) :
+    {u : ℝ × ℝ → M}
+    (hu : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)) thricePuncturedSphereReal) :
     ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
         (fun z x ↦ pairOfPantsPerturbation (fun q t y ↦ H q t y + c q t)
           (Complex.equivRealProdCLM.symm z) x 1)
@@ -821,13 +840,17 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_add_const
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z)) +
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, c q t := by
+  -- The curvature of the functions of time does not depend on the target point, so it is
+  -- integrable along `u` because it is along a constant map.
+  have hk := (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω
+    (periodic_const_target hc) (contMDiff_uncurry_const_target hcs) (u := fun _ ↦ u 0)
+    continuousOn_const).congr_fun
+    (fun z _ ↦ ω.hamiltonianCurvature_pairOfPantsPerturbation_const_target c z (u 0) (u z))
+    isOpen_thricePuncturedSphereReal.measurableSet
   rw [← ω.setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const hc hcs u,
-    ← integral_add (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs hu)
-      (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω
-        (fun q t ↦ funext fun _ ↦ hc q t) (fun q ↦ (hcs q).contMDiff.comp contMDiff_fst) hu)]
+    ← integral_add hu hk]
   exact setIntegral_congr_fun isOpen_thricePuncturedSphereReal.measurableSet fun z hz ↦
     ω.hamiltonianCurvature_pairOfPantsPerturbation_add_const hH hHs hc hcs hz (u z)
-
 
 section Energy
 
