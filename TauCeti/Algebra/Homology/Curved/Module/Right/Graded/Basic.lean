@@ -79,6 +79,25 @@ theorem mem_dgRightModuleCochains_iff_isHomogeneous_shiftObj
     (_root_.LinearMap.isHomogeneous_shiftObj_iff
       (M := toGradedModuleCat M) (N := toGradedModuleCat N) a (-p) 0).symm
 
+/-- The global right Leibniz rule on a curved differential graded right module, expressed on
+arbitrary elements using `koszulTwist 1`. -/
+theorem differential_smul (M : CurvedDGRightModuleCat.{uR, uA, uM} h) (a : Aᵐᵒᵖ) (m : M) :
+    M.differential (a • m) =
+      a • M.differential m +
+        MulOpposite.op (d a.unop) •
+          (InternalGrading.ofDecomposition M.grading).koszulTwist 1 m := by
+  induction m using DirectSum.Decomposition.inductionOn M.grading with
+  | zero => simp
+  | @homogeneous q m =>
+    rcases m with ⟨m, hm⟩
+    have hm' : m ∈ (InternalGrading.ofDecomposition M.grading).piece q := by
+      rwa [InternalGrading.ofDecomposition_piece]
+    conv_lhs => rw [← MulOpposite.op_unop a]
+    rw [(InternalGrading.ofDecomposition M.grading).koszulTwist_one_apply_of_mem hm',
+      M.isCurvedDGRightModule.leibniz hm a.unop, MulOpposite.op_unop]
+    simp only [Int.cast_smul_eq_zsmul, Units.smul_def, smul_comm (MulOpposite.op _)]
+  | add m₁ m₂ hm₁ hm₂ => simp only [smul_add, map_add, hm₁, hm₂]; abel
+
 end Objects
 
 -- The closed category keeps the original module objects.

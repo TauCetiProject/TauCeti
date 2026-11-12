@@ -16,9 +16,11 @@ category. This file constructs the resulting triangle functors
 `D_abs → D_co` and `D_abs → D_ctr`, with natural isomorphisms identifying their composites with
 the absolute localization with the original localization functors.
 
-These are not identifications of the three derived categories. On objects represented by curved
-modules, the kernels of the comparisons are precisely the coacyclic and contraacyclic classes,
-respectively. No comparison between the coderived and contraderived categories is asserted.
+In general these are not identifications of the three derived categories. On objects represented by
+curved modules, the kernels of the comparisons are precisely the coacyclic and contraacyclic
+classes, respectively, and each comparison functor is an equivalence precisely when that class
+coincides with the absolutely acyclic class. No comparison between the coderived and contraderived
+categories is asserted.
 
 The construction instantiates `ObjectProperty.trWLocalizerMorphismOfLE` and Mathlib's
 `LocalizerMorphism.localizedFunctor`; compatibility with localization is a natural isomorphism,
@@ -96,6 +98,20 @@ noncomputable def toContraderivedFactors :
       (ContraderivedCategory.Q R h)) (Q R h) ≪≫
     Functor.isoWhiskerRight (eqToIso (ObjectProperty.trWLocalizerMorphismOfLE_functor _)) _ ≪≫
     Functor.leftUnitor _
+
+/-- The comparison functor to the coderived category is an equivalence if and only if the
+absolutely acyclic and coacyclic classes coincide. -/
+theorem isEquivalence_toCoderived_iff :
+    (toCoderived R h).IsEquivalence ↔ absolutelyAcyclic R h = coacyclic R h :=
+  ObjectProperty.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff
+    (absolutelyAcyclic_le_coacyclic R h) (Q R h) (CoderivedCategory.Q R h)
+
+/-- The comparison functor to the contraderived category is an equivalence if and only if the
+absolutely acyclic and contraacyclic classes coincide. -/
+theorem isEquivalence_toContraderived_iff :
+    (toContraderived R h).IsEquivalence ↔ absolutelyAcyclic R h = contraacyclic R h :=
+  ObjectProperty.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff
+    (absolutelyAcyclic_le_contraacyclic R h) (Q R h) (ContraderivedCategory.Q R h)
 
 variable {R h}
 

@@ -57,6 +57,9 @@ consequences for Verdier quotients:
 * `CategoryTheory.ObjectProperty.TrWLocalization.exists_map_comp_eq_map` and
   `CategoryTheory.ObjectProperty.TrWLocalization.exists_comp_eq_zero_of_map_eq_zero`: morphisms
   out of an object approximated by morphisms `δᵢ` as above, and their kernel.
+* `CategoryTheory.ObjectProperty.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff`:
+  for thick triangulated `P ≤ Q`, the comparison functor between Verdier localizations is an
+  equivalence if and only if `P = Q`.
 
 ## References
 
@@ -191,6 +194,34 @@ instance (h : P ≤ Q) : (trWLocalizerMorphismOfLE h).functor.CommShift ℤ :=
 /-- The identity functor underlying `trWLocalizerMorphismOfLE h` is a triangle functor. -/
 instance (h : P ≤ Q) : (trWLocalizerMorphismOfLE h).functor.IsTriangulated :=
   inferInstanceAs (𝟭 C).IsTriangulated
+
+/-- When `P = Q`, `trWLocalizerMorphismOfLE h` induces an equivalence between localizations at
+`P.trW` and `Q.trW`. -/
+theorem isLocalizedEquivalence_trWLocalizerMorphismOfLE (h : P ≤ Q) (hEq : P = Q) :
+    (trWLocalizerMorphismOfLE h).IsLocalizedEquivalence := by
+  subst hEq
+  exact LocalizerMorphism.IsLocalizedEquivalence.id (W₁ := P.trW)
+
+/-- When `P` is a thick triangulated subcategory of a triangulated category and `P ≤ Q`, the
+comparison functor induced by `trWLocalizerMorphismOfLE h` between Verdier localizations at `P` and
+`Q` is an equivalence if and only if `P = Q`. -/
+theorem isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff
+    [IsTriangulated C] [P.IsTriangulated] [P.IsStableUnderRetracts] (h : P ≤ Q)
+    {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
+    (L₁ : C ⥤ D₁) [L₁.IsLocalization P.trW] [HasZeroMorphisms D₁] [L₁.PreservesZeroMorphisms]
+    (L₂ : C ⥤ D₂) [L₂.IsLocalization Q.trW] [HasZeroMorphisms D₂] [L₂.PreservesZeroMorphisms] :
+    ((trWLocalizerMorphismOfLE h).localizedFunctor L₁ L₂).IsEquivalence ↔ P = Q := by
+  refine ⟨fun hEqv ↦ le_antisymm h fun X hX ↦ ?_, fun hEq ↦ ?_⟩
+  · let F := (trWLocalizerMorphismOfLE h).localizedFunctor L₁ L₂
+    let e : L₁ ⋙ F ≅ L₂ :=
+      Localization.fac _ ((trWLocalizerMorphismOfLE h).inverts L₂) L₁ ≪≫
+        Functor.isoWhiskerRight (eqToIso (trWLocalizerMorphismOfLE_functor h)) _ ≪≫
+        Functor.leftUnitor _
+    exact (TrWLocalization.isZero_obj_iff P L₁ X).1
+      (IsZero.of_full_of_faithful_of_isZero F (L₁.obj X)
+        ((TrWLocalization.isZero_obj Q L₂ hX).of_iso (e.app X)))
+  · have := isLocalizedEquivalence_trWLocalizerMorphismOfLE h hEq
+    infer_instance
 
 end ObjectProperty
 
