@@ -43,7 +43,9 @@ otherwise, and that the Hölder field is `D r m` when `2 r + m = k` and vanishes
 Because a field `D r m` with `r, m ≥ 1` is reached both as a spatial derivative of
 `D r (m - 1)` and as a time derivative of `D (r - 1) m`, every ordering of the spatial and
 temporal derivatives exists and gives the same field. The conditions are closed under uniform
-convergence, which gives completeness. The norm is
+convergence, which gives completeness. This closed-derivative-graph construction follows the
+spatial space `TauCeti.CkHolderSpace` (`TauCeti/Analysis/Holder/Iterated.lean`) and the order-two
+parabolic space `TauCeti.ParabolicC2HolderSpace`. The norm is
 
 `‖u‖ = ∑_{2r+m ≤ k} ‖D_t^r D_x^m u‖_∞ + ∑_{2r+m = k} ‖D_t^r D_x^m u‖_{C^α} +
   ∑_{2r+m = k-1} sup_x ‖t ↦ D_t^r D_x^m u (x, t)‖_{C^{(1+α)/2}}`,
@@ -59,6 +61,8 @@ derivative in `x` of the `r`-th iterated derivative within `[a, b]` in `t`
 
 * `TauCeti.ParabolicCkHolderSpace k α E F hab`: the space `C_{par,b}^{k+α}` on the slab
   `E × [a, b]`, a Banach space when `F` is.
+* `TauCeti.ParabolicCkHolderSpace.mk`: an element from fields satisfying the derivative
+  identities and the Hölder conditions.
 * `TauCeti.ParabolicCkHolderSpace.mixedDerivL`: the bounded continuous field `D_t^r D_x^m u`,
   identified with iterated derivatives by `TauCeti.ParabolicCkHolderSpace.mixedDerivL_slabMk`.
 * `TauCeti.ParabolicCkHolderSpace.hasFDerivAt_mixedDerivL` and
@@ -352,13 +356,6 @@ private def IsJetGraph (hab : a < b) (J : Jet k α E F a b) : Prop :=
   ∀ r m (p : slab (E := E) a b), holderL r m J p =
     if 2 * r + m = k then fieldL r m J p else 0
 
-/-- The left-currying equivalence of `(m + 1)`-multilinear maps is
-`ContinuousMultilinearMap.curryLeft`. -/
-private theorem continuousMultilinearCurryLeftEquiv_eq_curryLeft {m : ℕ} (g : E [×m + 1]→L[ℝ] F) :
-    continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (m + 1) ↦ E) F g = g.curryLeft := by
-  ext x v
-  rfl
-
 instance instNormedAddCommGroup : NormedAddCommGroup (ParabolicCkHolderSpace k α E F hab) := by
   unfold ParabolicCkHolderSpace
   infer_instance
@@ -453,9 +450,9 @@ left, is the spatial Fréchet derivative of `D_t^r D_x^m u` on every time slice.
 theorem hasFDerivAt_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
     (h : 2 * r + m + 1 ≤ k) (t : Icc a b) (x : E) :
     HasFDerivAt (fun y ↦ mixedDerivL r m f (slabMk y t))
-      (mixedDerivL r (m + 1) f (slabMk x t)).curryLeft x := by
-  have hd := (isJetGraph_toJetL f).1 r m h t x
-  rwa [continuousMultilinearCurryLeftEquiv_eq_curryLeft] at hd
+      (mixedDerivL r (m + 1) f (slabMk x t)).curryLeft x :=
+  -- The left-currying equivalence applied to a map is `curryLeft` by definition.
+  (isJetGraph_toJetL f).1 r m h t x
 
 /-- **Time derivatives.** For `2 r + m + 2 ≤ k`, the field `D_t^(r+1) D_x^m u` is the derivative of
 `D_t^r D_x^m u` in time within `[a, b]`, one-sided at the endpoints. -/
@@ -664,6 +661,129 @@ theorem coe_add (f g : ParabolicCkHolderSpace k α E F hab) : ⇑(f + g) = f + g
 theorem coe_smul (c : ℝ) (f : ParabolicCkHolderSpace k α E F hab) : ⇑(c • f) = c • ⇑f := by
   ext p
   simp [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, -mixedDerivL_zero_zero_apply]
+
+/-! ### Construction from the fields -/
+
+section Mk
+
+variable (D : ℕ → ∀ m : ℕ, slab (E := E) a b →ᵇ (E [×m]→L[ℝ] F))
+
+private theorem coe_compContinuous_timeSlice {n : ℕ} (g : slab (E := E) a b →ᵇ (E [×n]→L[ℝ] F))
+    (x : E) : ⇑(g.compContinuous (timeSlice x)) = fun t ↦ g (slabMk x t) :=
+  funext fun t ↦ by rw [BoundedContinuousFunction.compContinuous_apply, timeSlice_apply]
+
+/-- The families of Hölder time slices of the fields of order `k - 1` with uniformly Hölder time
+slices, and zero at the other orders. -/
+private def mkSlices (hs : ∀ r m, 2 * r + m + 1 = k → ∃ C, ∀ x : E,
+      HolderWith C ((1 + α) / 2) fun t : Icc a b ↦ D r m (slabMk x t)) (r m : ℕ) :
+    lp (fun _ : E ↦ HolderSpace ((1 + α) / 2) (Icc a b) (E [×m]→L[ℝ] F)) ∞ :=
+  if h : 2 * r + m + 1 = k then
+    ⟨fun x ↦ HolderSpace.ofBoundedContinuousFunction ((D r m).compContinuous (timeSlice x))
+      (by simpa only [coe_compContinuous_timeSlice] using ((hs r m h).choose_spec x).memHolder),
+      memℓp_infty ⟨‖D r m‖ + (hs r m h).choose, by
+        rintro _ ⟨x, rfl⟩
+        refine HolderSpace.norm_le_of_norm_le_of_holderWith (norm_nonneg _) (fun t ↦ ?_)
+          fun t s ↦ ?_
+        · rw [HolderSpace.ofBoundedContinuousFunction_apply, coe_compContinuous_timeSlice]
+          exact (D r m).norm_coe_le_norm _
+        · simpa only [HolderSpace.ofBoundedContinuousFunction_apply,
+            coe_compContinuous_timeSlice] using (hs r m h).choose_spec x t s⟩⟩
+  else 0
+
+/-- The Hölder fields of the top-order fields, and zero at the other orders. -/
+private def mkHolder
+    (hh : ∀ r m, 2 * r + m = k → MemHolder α (D r m : slab (E := E) a b → E [×m]→L[ℝ] F))
+    (r m : ℕ) : HolderSpace α (slab (E := E) a b) (E [×m]→L[ℝ] F) :=
+  if h : 2 * r + m = k then HolderSpace.ofBoundedContinuousFunction (D r m) (hh r m h) else 0
+
+/-- The jet of a family of fields with Hölder fields and slices at the top two orders. -/
+private def mkJet (hs : ∀ r m, 2 * r + m + 1 = k → ∃ C, ∀ x : E,
+      HolderWith C ((1 + α) / 2) fun t : Icc a b ↦ D r m (slabMk x t))
+    (hh : ∀ r m, 2 * r + m = k → MemHolder α (D r m : slab (E := E) a b → E [×m]→L[ℝ] F)) :
+    Jet k α E F a b :=
+  WithLp.toLp 1 fun i ↦ WithLp.toLp 1
+    (D i.1.1 i.1.2, WithLp.toLp 1 (mkSlices D hs i.1.1 i.1.2, mkHolder D hh i.1.1 i.1.2))
+
+variable {D}
+variable {hs : ∀ r m, 2 * r + m + 1 = k → ∃ C, ∀ x : E,
+      HolderWith C ((1 + α) / 2) fun t : Icc a b ↦ D r m (slabMk x t)}
+  {hh : ∀ r m, 2 * r + m = k → MemHolder α (D r m : slab (E := E) a b → E [×m]→L[ℝ] F)}
+
+private theorem fieldL_mkJet {r m : ℕ} (h : 2 * r + m ≤ k) : fieldL r m (mkJet D hs hh) = D r m :=
+  fieldL_apply (mkJet D hs hh) ⟨(r, m), mem_parabolicDerivPairs.2 h⟩
+
+private theorem slicesL_mkJet {r m : ℕ} (h : 2 * r + m ≤ k) :
+    slicesL r m (mkJet D hs hh) = mkSlices D hs r m :=
+  slicesL_apply (mkJet D hs hh) ⟨(r, m), mem_parabolicDerivPairs.2 h⟩
+
+private theorem holderL_mkJet {r m : ℕ} (h : 2 * r + m ≤ k) :
+    holderL r m (mkJet D hs hh) = mkHolder D hh r m :=
+  holderL_apply (mkJet D hs hh) ⟨(r, m), mem_parabolicDerivPairs.2 h⟩
+
+private theorem isJetGraph_mkJet
+    (hx : ∀ r m, 2 * r + m + 1 ≤ k → ∀ (t : Icc a b) (x : E),
+      HasFDerivAt (fun y ↦ D r m (slabMk y t)) (D r (m + 1) (slabMk x t)).curryLeft x)
+    (ht : ∀ r m, 2 * r + m + 2 ≤ k → ∀ (x : E) (t : Icc a b),
+      HasDerivWithinAt (ParabolicC2HolderSpace.timeExtension hab.le (D r m) x)
+        (D (r + 1) m (slabMk x t)) (Icc a b) t) :
+    IsJetGraph hab (mkJet D hs hh) := by
+  refine ⟨fun r m h t x ↦ ?_, fun r m h x t ↦ ?_, fun r m x t ↦ ?_, fun r m p ↦ ?_⟩
+  · rw [fieldL_mkJet (by omega), fieldL_mkJet (by omega)]
+    -- The left-currying equivalence applied to a map is `curryLeft` by definition.
+    exact hx r m h t x
+  · rw [fieldL_mkJet (by omega), fieldL_mkJet (by omega)]
+    exact ht r m h x t
+  · by_cases hm : 2 * r + m ≤ k
+    · rw [slicesL_mkJet hm, fieldL_mkJet hm, mkSlices]
+      split_ifs
+      · -- Evaluation in `lp` is the application of the underlying family.
+        change HolderSpace.ofBoundedContinuousFunction _ _ t = _
+        rw [HolderSpace.ofBoundedContinuousFunction_apply, coe_compContinuous_timeSlice]
+      · rfl
+    · rw [slicesL_of_notMem (by simpa using hm), ite_eq_right (by omega)]
+      rfl
+  · by_cases hm : 2 * r + m ≤ k
+    · rw [holderL_mkJet hm, fieldL_mkJet hm, mkHolder]
+      split_ifs
+      · exact HolderSpace.ofBoundedContinuousFunction_apply _ _ _
+      · rfl
+    · rw [holderL_of_notMem (by simpa using hm), ite_eq_right (by omega)]
+      rfl
+
+variable (D) in
+/-- Construct an element from bounded continuous fields `D r m`, `2 r + m ≤ k`, such that
+`D r (m + 1)`, curried on the left, is the spatial derivative of `D r m` and `D (r + 1) m` is its
+time derivative within `[a, b]`, the fields of order `k - 1` have uniformly `(1 + α) / 2`-Hölder
+time slices, and the fields of order `k` are parabolically `α`-Hölder. The fields with
+`2 r + m > k` are ignored. -/
+def mk (hx : ∀ r m, 2 * r + m + 1 ≤ k → ∀ (t : Icc a b) (x : E),
+      HasFDerivAt (fun y ↦ D r m (slabMk y t)) (D r (m + 1) (slabMk x t)).curryLeft x)
+    (ht : ∀ r m, 2 * r + m + 2 ≤ k → ∀ (x : E) (t : Icc a b),
+      HasDerivWithinAt (ParabolicC2HolderSpace.timeExtension hab.le (D r m) x)
+        (D (r + 1) m (slabMk x t)) (Icc a b) t)
+    (hs : ∀ r m, 2 * r + m + 1 = k → ∃ C, ∀ x : E,
+      HolderWith C ((1 + α) / 2) fun t : Icc a b ↦ D r m (slabMk x t))
+    (hh : ∀ r m, 2 * r + m = k → MemHolder α (D r m : slab (E := E) a b → E [×m]→L[ℝ] F)) :
+    ParabolicCkHolderSpace k α E F hab :=
+  ofJet (mkJet D hs hh) (isJetGraph_mkJet hx ht)
+
+/-- The fields of `ParabolicCkHolderSpace.mk D _ _ _ _` of order at most `k` are the fields
+`D r m`. -/
+@[simp]
+theorem mixedDerivL_mk (hx ht hs hh) {r m : ℕ} (h : 2 * r + m ≤ k) :
+    mixedDerivL r m (mk (k := k) (α := α) (hab := hab) D hx ht hs hh) = D r m := by
+  rw [mixedDerivL_apply', ← fieldL_mkJet (hs := hs) (hh := hh) h]
+  -- The jet of an element built from a jet is that jet.
+  rfl
+
+/-- The underlying map of `ParabolicCkHolderSpace.mk D _ _ _ _` is the order-zero field, read
+as a `0`-multilinear map. -/
+@[simp]
+theorem mk_apply (hx ht hs hh) (p : slab (E := E) a b) :
+    mk (k := k) (α := α) (hab := hab) D hx ht hs hh p = (D 0 0 p).curry0 := by
+  rw [← toFun_eq_coe, toFun, mixedDerivL_mk _ _ _ _ (by omega)]
+
+end Mk
 
 /-! ### The norm -/
 
