@@ -39,6 +39,7 @@ Lyapunov descent along every orbit.
   `TauCeti.contDiff_negativeGradientFlow_apply`: for a globally `C^(n+1)` function the time maps
   are `C^n` (`TauCeti.differentiable_negativeGradientFlow_apply`: for a globally `C²` function each
   time map is differentiable).
+* `TauCeti.lipschitzWith_negativeGradientFlow`: the time-`t` map is `exp (K |t|)`-Lipschitz.
 * `TauCeti.hasDerivAt_fderiv_negativeGradientFlow`: the variational equation
   `d/dt Dφₜ(x) = -D(∇f)(φₜ x) ∘ Dφₜ(x)`.
 * `TauCeti.fderiv_negativeGradientFlow_apply_gradient`: `Dφₜ(x)(∇f x) = ∇f(φₜ x)`.
@@ -53,6 +54,8 @@ Lyapunov descent along every orbit.
 * `TauCeti.eq_centeredNegativeGradientFlow_of_isIntegralCurveOn`: uniqueness in displacement
   coordinates on a time set containing the interval from zero to the chosen time.
 * `TauCeti.negativeGradientFlow_congr`: it does not depend on the chosen Lipschitz bound.
+* `TauCeti.negativeGradientFlow_neg`: the negative gradient flow of `-f` is that of `f` run
+  backwards in time.
 * `TauCeti.negativeGradientFlow_apply_eq_of_gradient_eq`: negative-gradient flows agree at time `t`
   on `y` when the gradients agree along the orbit segment from `0` to `t`.
 * `TauCeti.forall_negativeGradientFlow_eq_self_iff`: its rest points are the zeros of `∇ f`.
@@ -106,6 +109,12 @@ theorem contDiff_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith 
   | succ m =>
     apply contDiff_flowOfLipschitz_apply m (fun x ↦ -∇ f x) hf.neg
     exact (hfs.gradient_right (m := m + 1) le_rfl).neg
+
+/-- **The time-`t` map of the negative gradient flow is `exp (K |t|)`-Lipschitz** when the
+gradient is `K`-Lipschitz. -/
+theorem lipschitzWith_negativeGradientFlow (f : E → ℝ) (hf : LipschitzWith K (∇ f)) (t : ℝ) :
+    LipschitzWith (Real.exp (K * |t|)).toNNReal (negativeGradientFlow f hf t) :=
+  lipschitzWith_flowOfLipschitz hf.neg t
 
 /-- For a globally `C²` function, each time-`t` map of the negative-gradient flow is
 differentiable. -/
@@ -231,6 +240,23 @@ different constants, produce the same negative gradient flow. -/
 theorem negativeGradientFlow_congr (f : E → ℝ) {K' : ℝ≥0} (hf : LipschitzWith K (∇ f))
     (hf' : LipschitzWith K' (∇ f)) : negativeGradientFlow f hf = negativeGradientFlow f hf' :=
   flowOfLipschitz_congr hf.neg hf'.neg
+
+/-- **Reversing the negative gradient flow.** The negative gradient flow of `-f` is the negative
+gradient flow of `f` run backwards in time: the orbits of `-∇ (-f) = ∇ f` are those of `-∇ f`
+traversed in the opposite direction. So the stable sets for `-f` are the unstable sets for `f`
+(`Flow.stableSet_reverse`). -/
+theorem negativeGradientFlow_neg (f : E → ℝ) {K' : ℝ≥0} (hf : LipschitzWith K (∇ f))
+    (hf' : LipschitzWith K' (∇ (-f))) :
+    negativeGradientFlow (-f) hf' = (negativeGradientFlow f hf).reverse := by
+  ext t x
+  -- The reversed orbit of `x` is a negative gradient trajectory of `-f`.
+  have hγ : IsIntegralCurve (fun τ ↦ negativeGradientFlow f hf (-τ) x)
+      (fun _ y ↦ -∇ (-f) y) := fun τ ↦ by
+    have h := ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x (-τ)).scomp τ
+      (hasDerivAt_neg τ)
+    simpa only [Function.comp_def, gradient_neg, neg_neg, neg_smul, one_smul] using h
+  simpa only [neg_zero, Flow.map_zero_apply, Flow.reverse_apply] using
+    (eq_negativeGradientFlow (-f) hf' hγ t).symm
 
 /-- **The rest points of the negative gradient flow are the zeros of `∇ f`**, that is, the
 critical points of a differentiable `f`. -/

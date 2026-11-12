@@ -47,8 +47,8 @@ the stable set of `q` along `γ`. Its linear form is proved here: `D_γ` is onto
 initial values of the solutions of the linearized equation `v' + Hess f(γ) v = 0` that decay at
 `-∞` and those that decay at `+∞` span `E`. These two spaces have dimensions `morseIndex f p` and
 `dim E - morseIndex f q`, the dimensions of the unstable set of `p` and of the stable set of `q`.
-Identifying them with the tangent spaces of those sets at `γ 0`, which turns this into the
-transversality of the two sets, is not done here.
+They are the tangent spaces of those sets at `γ 0`, which turns this into the transversality of the
+two sets: see `TauCeti.Analysis.Calculus.Morse.MorseSmale.LinearizedOperator`.
 
 At the constant trajectory at a nondegenerate critical point the linearized operator has constant
 invertible coefficient, so it is bijective.

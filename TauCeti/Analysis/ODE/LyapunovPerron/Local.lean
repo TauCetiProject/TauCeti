@@ -71,6 +71,8 @@ the derivative of `N` does, and it is `C^n` near the equilibrium when `N` is uni
   nonlinear remainder is `C¹` on the ball of confinement, with uniformly continuous derivative.
 * `ContinuousLinearMap.tendsto_of_isIntegralCurveOn_mapsTo_closedBall`: a forward solution that
   never leaves the ball of radius `r` tends to the equilibrium.
+* `ContinuousLinearMap.norm_sub_le_of_isIntegralCurveOn_mapsTo_closedBall`: two such solutions
+  approach each other exponentially, at a rate controlled by their initial distance.
 * `ContinuousLinearMap.setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image`: the local
   stable set, cut down to where the `P`-component has norm at most `ρ`, is the graph of that map
   over the closed ball of radius `ρ` in the range of `P`, for every `ρ` small enough.
@@ -388,6 +390,37 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image (hr0 : 
   obtain ⟨ρ, hρ0, hρ⟩ := TauCeti.exists_pos_lyapunovPerronBound_mul_le K α ε hr0
   exact ⟨ρ, hρ0, setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image hs hu hr0.le hN
     hsmall hN0 hP hAP hρ⟩
+
+omit hr hN0 in
+/-- **Confined forward solutions approach each other exponentially.** Two solutions of
+`y' = A y + N y` on `[0, ∞)` that never leave the closed ball of radius `r` are Lyapunov--Perron
+solutions of the cut-off equation, so for every rate `β ≥ 0` left in the spectral gap,
+`2 K (2 ε) < α - β`, their distance at time `t` is at most
+`K / (1 - 2 K (2 ε) / (α - β)) * exp (-β t)` times their initial distance. -/
+theorem norm_sub_le_of_isIntegralCurveOn_mapsTo_closedBall {β : ℝ} (hβ : 0 ≤ β)
+    (hβα : 2 * K * ((ε : ℝ) * 2) < α - β) {y₁ y₂ : ℝ → X}
+    (hy₁ : IsIntegralCurveOn y₁ (fun _ z ↦ A z + N z) (Ici 0))
+    (hmaps₁ : MapsTo y₁ (Ici 0) (closedBall 0 r))
+    (hy₂ : IsIntegralCurveOn y₂ (fun _ z ↦ A z + N z) (Ici 0))
+    (hmaps₂ : MapsTo y₂ (Ici 0) (closedBall 0 r)) {t : ℝ} (ht : 0 ≤ t) :
+    ‖y₁ t - y₂ t‖ ≤
+      K / (1 - 2 * K * ((ε : ℝ) * 2) / (α - β)) * Real.exp (-β * t) * ‖y₁ 0 - y₂ 0‖ := by
+  have hr : 0 ≤ r := (norm_nonneg _).trans (mem_closedBall_zero_iff.1 (hmaps₁ (mem_Ici.2 le_rfl)))
+  have hα : 0 < α := pos_of_two_mul_mul_lt hsmall
+  have hMlip : LipschitzWith (ε * 2) (N ∘ TauCeti.radialRetraction r) :=
+    hN.comp_radialRetraction hr
+  -- Both solutions are Lyapunov--Perron solutions of the cut-off equation.
+  have h₁ := eqOn_lyapunovPerronSolution_of_isIntegralCurveOn hs hu hα hMlip hsmall hP hAP
+    ((isIntegralCurveOn_comp_radialRetraction_iff hmaps₁).1 hy₁)
+    (fun u hu' ↦ mem_closedBall_zero_iff.1 (hmaps₁ hu')) (mem_Ici.2 ht)
+  have h₂ := eqOn_lyapunovPerronSolution_of_isIntegralCurveOn hs hu hα hMlip hsmall hP hAP
+    ((isIntegralCurveOn_comp_radialRetraction_iff hmaps₂).1 hy₂)
+    (fun u hu' ↦ mem_closedBall_zero_iff.1 (hmaps₂ hu')) (mem_Ici.2 ht)
+  have h := norm_lyapunovPerronSolution_sub_le hs hu hα hMlip hsmall hβ
+    (by push_cast; exact hβα) (y₁ 0) (y₂ 0) t.toNNReal
+  rw [h₁, h₂]
+  push_cast at h
+  simpa only [Real.coe_toNNReal t ht] using h
 
 end LocalStable
 
