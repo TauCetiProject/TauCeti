@@ -73,7 +73,7 @@ theorem AEStronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top
     {ε : Type*} [TopologicalSpace ε] [ENorm ε] {f : α → ε}
     (hf : AEStronglyMeasurable f μ) :
     MemLp f 2 μ ↔ ∫⁻ x, ‖f x‖ₑ ^ 2 ∂μ < ∞ := by
-  rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top
+  rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top
     (by norm_num) (by norm_num) hf]
   norm_num only [ENNReal.toReal_ofNat, ENNReal.rpow_two]
 

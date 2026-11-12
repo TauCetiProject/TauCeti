@@ -125,7 +125,7 @@ theorem memLp_energyTruncation {P : Measure Ω} [IsFiniteMeasure P]
   rw [hm.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top]
   calc
     _ = ∫⁻ ω, ∫⁻ t, ‖μ.energyTruncation H C t ω‖ₑ ^ 2 ∂μ ∂P :=
-      lintegral_prod_symm _ (hm.enorm.pow_const 2).aemeasurable
+      lintegral_prod_symm _ (hm.eNorm.pow_const 2).aemeasurable
     _ ≤ ∫⁻ _ : Ω, (C : ℝ≥0∞) ∂P :=
       lintegral_mono (μ.lintegral_enorm_sq_energyTruncation_le H C)
     _ < ∞ := by simp [ENNReal.mul_lt_top, measure_lt_top]
