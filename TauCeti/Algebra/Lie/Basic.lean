@@ -68,6 +68,9 @@ This file supplies general constructions for Lie modules that are missing from M
   preimage of a Lie ideal is injective.
 * `LieSubmodule.lie_iSup`: bracketing with a Lie ideal distributes over suprema of Lie submodules.
 * `TauCeti.ad_pow_succ_apply`: an additional adjoint action can be applied to the argument.
+* `TauCeti.ad_pow_succ_apply'`: the last adjoint action can be taken outside the preceding powers.
+* `Module.End.lie_apply_apply` and `Module.End.apply_apply_eq_apply_apply_add_lie`: the
+  commutator of two endomorphisms, evaluated at a vector.
 * `TauCeti.ad_neg_pow_apply_eq_zero`: negating the acting element preserves adjoint vanishing.
 * `LieSubalgebra.engel_neg`: negating the acting element preserves the Engel subalgebra.
 * `TauCeti.ad_pow_apply_eq_ad_pow_apply`: iterating the adjoint action gives the same element
@@ -161,6 +164,18 @@ theorem LieSubalgebra.apply_mem_of_mem {K V : Type*} [CommRing K] [AddCommGroup 
     (L : LieSubalgebra K (Module.End K V)) {z : Module.End K V} (hz : z ∈ L)
     (W : LieSubmodule K L V) : ∀ w ∈ W, z w ∈ W :=
   fun w hw ↦ by simpa using W.lie_mem (x := ⟨z, hz⟩) hw
+
+/-- The commutator of two endomorphisms, evaluated at a vector. -/
+theorem Module.End.lie_apply_apply {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M]
+    (X Y : Module.End R M) (v : M) : ⁅X, Y⁆ v = X (Y v) - Y (X v) := by
+  rw [LieRing.of_associative_ring_bracket, LinearMap.sub_apply, mul_apply_eq_comp,
+    mul_apply_eq_comp]
+
+/-- Two endomorphisms can be swapped at the cost of their commutator. -/
+theorem Module.End.apply_apply_eq_apply_apply_add_lie {R M : Type*} [Semiring R] [AddCommGroup M]
+    [Module R M] (X Y : Module.End R M) (v : M) : X (Y v) = Y (X v) + ⁅X, Y⁆ v := by
+  rw [Module.End.lie_apply_apply]
+  abel
 
 end EndSubalgebra
 
@@ -412,6 +427,11 @@ variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 theorem ad_pow_succ_apply (x y : L) (n : ℕ) :
     (LieAlgebra.ad R L x ^ (n + 1)) y = (LieAlgebra.ad R L x ^ n) ⁅x, y⁆ := by
   rw [pow_succ, _root_.mul_apply_eq_comp, LieAlgebra.ad_apply]
+
+/-- The last adjoint action in `(ad x) ^ (n + 1) y` can be taken outside the preceding powers. -/
+theorem ad_pow_succ_apply' (x y : L) (n : ℕ) :
+    (LieAlgebra.ad R L x ^ (n + 1)) y = ⁅x, (LieAlgebra.ad R L x ^ n) y⁆ := by
+  rw [pow_succ', _root_.mul_apply_eq_comp, LieAlgebra.ad_apply]
 
 /-- If the `n`-fold adjoint action of `x` annihilates `y`, then so does that of `-x`. -/
 theorem ad_neg_pow_apply_eq_zero {x y : L} {n : ℕ} (h : (LieAlgebra.ad R L x ^ n) y = 0) :

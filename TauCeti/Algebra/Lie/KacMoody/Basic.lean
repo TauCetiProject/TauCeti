@@ -42,6 +42,8 @@ relators, so that `TauCeti.KacMoody.cartanElement` is a linear map.
   `TauCeti.KacMoody.presentationIdeal` they generate.
 * `TauCeti.KacMoody.cartanElement`, `TauCeti.KacMoody.positiveGenerator` and
   `TauCeti.KacMoody.negativeGenerator`: the images of the generators.
+* `TauCeti.KacMoody.SatisfiesChevalleyRelations`: a linear map on `H` and two families of
+  elements of a Lie algebra satisfying the defining relations other than Serre's.
 * `TauCeti.KacMoody.SatisfiesRelations`: a linear map on `H` and two families of elements of a Lie
   algebra satisfying the defining relations.
 * `TauCeti.KacMoody.lift`: the homomorphism out of the presented algebra determined by such data.
@@ -246,9 +248,10 @@ theorem ad_pow_lie_negativeGenerator_negativeGenerator (i j : I) :
 variable {L : Type*} [LieRing L] [LieAlgebra K L]
 
 /-- A linear map `φ : H → L` and families `E`, `F` of elements of a Lie algebra `L` *satisfy the
-relations* of the Kac–Moody algebra of `R` when they satisfy the defining relations, `φ` playing
-the role of the Cartan generators, `E` of the raising and `F` of the lowering generators. -/
-structure SatisfiesRelations (φ : H →ₗ[K] L) (E F : I → L) : Prop where
+Chevalley relations* of the realization `R` when they satisfy every defining relation of the
+Kac–Moody algebra of `R` except Serre's relations. These are the relations of Kac's auxiliary
+Lie algebra $\tilde{\mathfrak g}(A)$. -/
+structure SatisfiesChevalleyRelations (φ : H →ₗ[K] L) (E F : I → L) : Prop where
   /-- The image of `H` is abelian. -/
   lie_cartan_cartan : ∀ x y, ⁅φ x, φ y⁆ = 0
   /-- `E j` has weight `αⱼ`. -/
@@ -259,6 +262,13 @@ structure SatisfiesRelations (φ : H →ₗ[K] L) (E F : I → L) : Prop where
   lie_positive_negative_self : ∀ i, ⁅E i, F i⁆ = φ (R.coroot i)
   /-- `E i` and `F j` commute for `i ≠ j`. -/
   lie_positive_negative_of_ne : ∀ i j, i ≠ j → ⁅E i, F j⁆ = 0
+
+/-- A linear map `φ : H → L` and families `E`, `F` of elements of a Lie algebra `L` *satisfy the
+relations* of the Kac–Moody algebra of `R` when they satisfy the defining relations, `φ` playing
+the role of the Cartan generators, `E` of the raising and `F` of the lowering generators: the
+Chevalley relations together with Serre's relations. -/
+structure SatisfiesRelations (φ : H →ₗ[K] L) (E F : I → L) : Prop
+    extends SatisfiesChevalleyRelations R φ E F where
   /-- Serre's relation on the raising family. -/
   serre_positive : ∀ i j, (ad K L (E i) ^ (-A i j).toNat) ⁅E i, E j⁆ = 0
   /-- Serre's relation on the lowering family. -/
@@ -277,16 +287,23 @@ theorem satisfiesRelations_generators :
 
 variable {R}
 
-/-- Relations are carried along Lie algebra homomorphisms. -/
-theorem SatisfiesRelations.map {φ : H →ₗ[K] L} {E F : I → L} (h : SatisfiesRelations R φ E F)
-    {L' : Type*} [LieRing L'] [LieAlgebra K L'] (g : L →ₗ⁅K⁆ L') :
-    SatisfiesRelations R ((g : L →ₗ[K] L') ∘ₗ φ) (g ∘ E) (g ∘ F) where
+/-- The Chevalley relations are carried along Lie algebra homomorphisms. -/
+theorem SatisfiesChevalleyRelations.map {φ : H →ₗ[K] L} {E F : I → L}
+    (h : SatisfiesChevalleyRelations R φ E F) {L' : Type*} [LieRing L'] [LieAlgebra K L']
+    (g : L →ₗ⁅K⁆ L') :
+    SatisfiesChevalleyRelations R ((g : L →ₗ[K] L') ∘ₗ φ) (g ∘ E) (g ∘ F) where
   lie_cartan_cartan x y := by simp [← LieHom.map_lie, h.lie_cartan_cartan]
   lie_cartan_positive x j := by simp [← LieHom.map_lie, h.lie_cartan_positive]
   lie_cartan_negative x j := by simp [← LieHom.map_lie, h.lie_cartan_negative]
   lie_positive_negative_self i := by simp [← LieHom.map_lie, h.lie_positive_negative_self]
   lie_positive_negative_of_ne i j hij := by
     simp [← LieHom.map_lie, h.lie_positive_negative_of_ne i j hij]
+
+/-- Relations are carried along Lie algebra homomorphisms. -/
+theorem SatisfiesRelations.map {φ : H →ₗ[K] L} {E F : I → L} (h : SatisfiesRelations R φ E F)
+    {L' : Type*} [LieRing L'] [LieAlgebra K L'] (g : L →ₗ⁅K⁆ L') :
+    SatisfiesRelations R ((g : L →ₗ[K] L') ∘ₗ φ) (g ∘ E) (g ∘ F) where
+  toSatisfiesChevalleyRelations := h.toSatisfiesChevalleyRelations.map g
   serre_positive i j := by
     simp only [Function.comp_apply, ← LieHom.map_lie, ← LieHom.map_ad_pow, h.serre_positive,
       map_zero]

@@ -32,14 +32,10 @@ hold, so the universal property gives a representation of the Kac–Moody algebr
 acts on the class of `1`, which is nonzero, by `μ x`. If `x` maps to zero, then `μ x = 0` for
 every `μ`, so `x = 0`.
 
-## Main definitions
-
-* `TauCeti.KacMoody.SatisfiesChevalleyRelations`: a linear map on `H` and two families in a Lie
-  algebra satisfying every defining relation except Serre's, the relations of
-  $\tilde{\mathfrak g}(A)$.
-
 ## Main results
 
+* `TauCeti.KacMoody.SatisfiesChevalleyRelations.swap`: the Chevalley relations, the relations of
+  $\tilde{\mathfrak g}(A)$, are symmetric under exchanging the raising and lowering families.
 * `TauCeti.KacMoody.SatisfiesChevalleyRelations.lie_negative_ad_pow_lie_positive_positive` and
   `TauCeti.KacMoody.SatisfiesChevalleyRelations.lie_positive_ad_pow_lie_negative_negative`: for a
   generalized Cartan matrix, Serre's relators commute with the opposite generators modulo the
@@ -67,52 +63,9 @@ variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I
   (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
 variable {L : Type*} [LieRing L] [LieAlgebra K L]
 
-/-- A linear map `φ : H → L` and families `E`, `F` of elements of a Lie algebra `L` *satisfy the
-Chevalley relations* of the realization `R` when they satisfy every defining relation of the
-Kac–Moody algebra of `R` except Serre's relations. These are the relations of Kac's auxiliary
-Lie algebra $\tilde{\mathfrak g}(A)$. -/
-structure SatisfiesChevalleyRelations (φ : H →ₗ[K] L) (E F : I → L) : Prop where
-  /-- The image of `H` is abelian. -/
-  lie_cartan_cartan : ∀ x y, ⁅φ x, φ y⁆ = 0
-  /-- `E j` has weight `αⱼ`. -/
-  lie_cartan_positive : ∀ x j, ⁅φ x, E j⁆ = R.root j x • E j
-  /-- `F j` has weight `-αⱼ`. -/
-  lie_cartan_negative : ∀ x j, ⁅φ x, F j⁆ = -(R.root j x • F j)
-  /-- `⁅E i, F i⁆` is the image of the simple coroot `hᵢ`. -/
-  lie_positive_negative_self : ∀ i, ⁅E i, F i⁆ = φ (R.coroot i)
-  /-- `E i` and `F j` commute for `i ≠ j`. -/
-  lie_positive_negative_of_ne : ∀ i j, i ≠ j → ⁅E i, F j⁆ = 0
-
 variable {R} {φ : H →ₗ[K] L} {E F : I → L}
 
-/-- Data satisfying all the relations of the Kac–Moody algebra satisfy the Chevalley
-relations. -/
-theorem SatisfiesRelations.satisfiesChevalleyRelations (h : SatisfiesRelations R φ E F) :
-    SatisfiesChevalleyRelations R φ E F :=
-  ⟨h.lie_cartan_cartan, h.lie_cartan_positive, h.lie_cartan_negative,
-    h.lie_positive_negative_self, h.lie_positive_negative_of_ne⟩
-
 namespace SatisfiesChevalleyRelations
-
-/-- Data satisfying the Chevalley relations and Serre's relations satisfy all the relations of the
-Kac–Moody algebra. -/
-theorem satisfiesRelations (h : SatisfiesChevalleyRelations R φ E F)
-    (hE : ∀ i j, (ad K L (E i) ^ (-A i j).toNat) ⁅E i, E j⁆ = 0)
-    (hF : ∀ i j, (ad K L (F i) ^ (-A i j).toNat) ⁅F i, F j⁆ = 0) :
-    SatisfiesRelations R φ E F :=
-  ⟨h.lie_cartan_cartan, h.lie_cartan_positive, h.lie_cartan_negative,
-    h.lie_positive_negative_self, h.lie_positive_negative_of_ne, hE, hF⟩
-
-/-- The Chevalley relations are carried along Lie algebra homomorphisms. -/
-theorem map (h : SatisfiesChevalleyRelations R φ E F) {L' : Type*} [LieRing L'] [LieAlgebra K L']
-    (g : L →ₗ⁅K⁆ L') :
-    SatisfiesChevalleyRelations R ((g : L →ₗ[K] L') ∘ₗ φ) (g ∘ E) (g ∘ F) where
-  lie_cartan_cartan x y := by simp [← LieHom.map_lie, h.lie_cartan_cartan]
-  lie_cartan_positive x j := by simp [← LieHom.map_lie, h.lie_cartan_positive]
-  lie_cartan_negative x j := by simp [← LieHom.map_lie, h.lie_cartan_negative]
-  lie_positive_negative_self i := by simp [← LieHom.map_lie, h.lie_positive_negative_self]
-  lie_positive_negative_of_ne i j hij := by
-    simp [← LieHom.map_lie, h.lie_positive_negative_of_ne i j hij]
 
 /-- The Chevalley relations are symmetric under exchanging the raising and lowering families and
 negating the Cartan map. -/
@@ -135,7 +88,7 @@ theorem lie_cartan_ad_pow_positive (x : H) (i j : I) (n : ℕ) :
   induction n with
   | zero => simp [h.lie_cartan_positive]
   | succ n ih =>
-    rw [pow_succ', _root_.mul_apply_eq_comp, ad_apply, leibniz_lie, h.lie_cartan_positive, ih,
+    rw [ad_pow_succ_apply', leibniz_lie, h.lie_cartan_positive, ih,
       smul_lie, lie_smul, ← add_smul]
     congr 1
     push_cast
@@ -154,9 +107,9 @@ theorem lie_negative_ad_pow_of_ne {i k : I} (hki : k ≠ i) (y : L) (n : ℕ) :
   induction n generalizing y with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ', _root_.mul_apply_eq_comp, ad_apply, leibniz_lie, ← lie_skew (F k),
+    rw [ad_pow_succ_apply', leibniz_lie, ← lie_skew (F k),
       h.lie_positive_negative_of_ne i k hki.symm, neg_zero, zero_lie, zero_add, ih,
-      _root_.mul_apply_eq_comp, ad_apply]
+      ad_pow_succ_apply']
 
 /-- The `sl₂`-computation behind Serre's relations: for `i ≠ j` and `Aᵢᵢ = 2`, the element `Eⱼ` is
 killed by `Fᵢ`, so lowering `(ad Eᵢ) ^ (n + 1) Eⱼ` by `Fᵢ` gives
@@ -174,10 +127,8 @@ theorem lie_negative_ad_pow_succ_self {i j : I} (hij : i ≠ j) (hii : A i i = 2
       h.lie_positive_negative_of_ne j i hij.symm]
     simp [neg_lie, h.lie_cartan_positive]
   | succ n ih =>
-    have hs : ⁅E i, (ad K L (E i) ^ n) (E j)⁆ = (ad K L (E i) ^ (n + 1)) (E j) := by
-      rw [pow_succ', _root_.mul_apply_eq_comp, ad_apply]
-    rw [pow_succ' _ (n + 1), _root_.mul_apply_eq_comp, ad_apply, leibniz_lie, hFE, neg_lie,
-      h.lie_cartan_ad_pow_positive, ih, lie_smul, hs, ← neg_smul, ← add_smul]
+    rw [ad_pow_succ_apply' _ _ (n + 1), leibniz_lie, hFE, neg_lie,
+      h.lie_cartan_ad_pow_positive, ih, lie_smul, ← ad_pow_succ_apply', ← neg_smul, ← add_smul]
     congr 1
     simp only [CartanRealization.root_coroot, Matrix.map_apply, hii]
     push_cast
@@ -196,11 +147,8 @@ theorem lie_negative_ad_pow_lie_positive_positive {i j : I} (hii : A i i = 2)
   rw [← ad_pow_succ_apply]
   rcases eq_or_ne k i with rfl | hki
   · rw [h.lie_negative_ad_pow_succ_self hne hii]
-    have hA : ((A k j : K) + ((-A k j).toNat : ℕ)) = 0 := by
-      have h0 : (((A k j + ((-A k j).toNat : ℤ) : ℤ)) : K) = 0 := by
-        rw [show A k j + ((-A k j).toNat : ℤ) = 0 by omega, Int.cast_zero]
-      push_cast at h0
-      exact h0
+    have hA := congrArg (Int.cast : ℤ → K) (show A k j + ((-A k j).toNat : ℤ) = 0 by omega)
+    push_cast at hA
     rw [hA, mul_zero, neg_zero, zero_smul]
   rw [h.lie_negative_ad_pow_of_ne hki]
   rcases eq_or_ne k j with rfl | hkj
@@ -279,18 +227,6 @@ private noncomputable abbrev vacuum : List I →₀ K := Finsupp.single [] 1
 private theorem cartanOp_vacuum (x : H) : cartanOp R μ x vacuum = μ x • vacuum := by
   simp [cartanOp_single, wordWeight]
 
-/-- The commutator of two endomorphisms, evaluated at a vector. This and the next lemma use the
-local Lie ring structure `LieRing.ofAssociativeRing` on `Module.End K M`. -/
-private theorem lie_apply_eq {M : Type*} [AddCommGroup M] [Module K M] (X Y : Module.End K M)
-    (v : M) : ⁅X, Y⁆ v = X (Y v) - Y (X v) := by
-  rw [LieRing.of_associative_ring_bracket, LinearMap.sub_apply, _root_.mul_apply_eq_comp,
-    _root_.mul_apply_eq_comp]
-
-private theorem apply_apply_eq {M : Type*} [AddCommGroup M] [Module K M] (X Y : Module.End K M)
-    (v : M) : X (Y v) = Y (X v) + ⁅X, Y⁆ v := by
-  rw [lie_apply_eq]
-  abel
-
 /-- Every word in the image of a lowering operator is nonempty. -/
 private theorem lowerOp_apply_nil (k : I) (v : List I →₀ K) : lowerOp K k v [] = 0 :=
   Finsupp.mapDomain_of_notMem_range v [] (by simp)
@@ -309,7 +245,7 @@ private theorem serreOp_apply_nil (i j : I) (v : List I →₀ K) : serreOp K A 
   | zero => simp
   | succ n ih =>
     intro Y hY v
-    rw [pow_succ', _root_.mul_apply_eq_comp, ad_apply, lie_apply_eq, Finsupp.sub_apply,
+    rw [ad_pow_succ_apply', Module.End.lie_apply_apply, Finsupp.sub_apply,
       lowerOp_apply_nil, ih Y hY, sub_zero]
 
 variable (K A) in
@@ -347,7 +283,7 @@ private noncomputable def serreStabilizer : LieSubalgebra K (Module.End K (List 
   zero_mem' _ _ := zero_mem _
   smul_mem' c _ hX v hv := Submodule.smul_mem _ c (hX v hv)
   lie_mem' {X Y} hX hY v hv := by
-    rw [lie_apply_eq]
+    rw [Module.End.lie_apply_apply]
     exact sub_mem (hX _ (hY v hv)) (hY _ (hX v hv))
 
 variable (K A) in
@@ -408,18 +344,18 @@ private theorem cartanOp_raiseVec (x : H) (i : I) (w : List I) :
 private theorem satisfiesChevalleyRelations_tensor :
     SatisfiesChevalleyRelations R (cartanOp R μ) (raiseOp R μ) (lowerOp K) where
   lie_cartan_cartan x y := Finsupp.lhom_ext fun w a => by
-    simp [lie_apply_eq, cartanOp_single, mul_left_comm]
+    simp [Module.End.lie_apply_apply, cartanOp_single, mul_left_comm]
   lie_cartan_positive x j := Finsupp.lhom_ext fun w a => by
-    simp only [lie_apply_eq, raiseOp_single, cartanOp_single, map_smul, cartanOp_raiseVec,
-      LinearMap.smul_apply]
+    simp only [Module.End.lie_apply_apply, raiseOp_single, cartanOp_single, map_smul,
+      cartanOp_raiseVec, LinearMap.smul_apply]
     module
   lie_cartan_negative x j := Finsupp.lhom_ext fun w a => by
-    simp [lie_apply_eq, cartanOp_lowerOp]
+    simp [Module.End.lie_apply_apply, cartanOp_lowerOp]
   lie_positive_negative_self i := Finsupp.lhom_ext fun w a => by
-    simp [lie_apply_eq, lowerOp_single, raiseOp_single, raiseVec, cartanOp_single,
+    simp [Module.End.lie_apply_apply, lowerOp_single, raiseOp_single, raiseVec, cartanOp_single,
       Finsupp.smul_single, mul_comm]
   lie_positive_negative_of_ne i j hij := Finsupp.lhom_ext fun w a => by
-    simp [lie_apply_eq, lowerOp_single, raiseOp_single, raiseVec, hij.symm]
+    simp [Module.End.lie_apply_apply, lowerOp_single, raiseOp_single, raiseVec, hij.symm]
 
 private theorem raiseOp_vacuum (i : I) : raiseOp R μ i vacuum = 0 := by
   simp [raiseOp_single, raiseVec]
@@ -442,7 +378,7 @@ private theorem raiseOp_serre_eq_zero (i j : I) :
     induction n with
     | zero => simp [raiseOp_vacuum]
     | succ n ih =>
-      rw [pow_succ', _root_.mul_apply_eq_comp, ad_apply, lie_apply_eq, ih, raiseOp_vacuum,
+      rw [ad_pow_succ_apply', Module.End.lie_apply_apply, ih, raiseOp_vacuum,
         map_zero, map_zero, sub_zero]
   have hX : X vacuum = 0 := by
     simp only [X]
@@ -453,8 +389,8 @@ private theorem raiseOp_serre_eq_zero (i j : I) :
   induction w with
   | nil => rw [show Finsupp.single [] a = a • vacuum by simp, map_smul, hX, smul_zero]
   | cons k w ih =>
-    rw [← lowerOp_single, apply_apply_eq, ← lie_skew, hc, neg_zero, LinearMap.zero_apply,
-      add_zero, ih, map_zero]
+    rw [← lowerOp_single, Module.End.apply_apply_eq_apply_apply_add_lie, ← lie_skew, hc, neg_zero,
+      LinearMap.zero_apply, add_zero, ih, map_zero]
 
 /-- The Serre submodule is stable under the raising and the Cartan operators. -/
 private theorem raiseOp_mem_and_cartanOp_mem {v : List I →₀ K} (hv : v ∈ serreSubmodule K A) :
@@ -468,18 +404,19 @@ private theorem raiseOp_mem_and_cartanOp_mem {v : List I →₀ K} (hv : v ∈ s
   suffices N ≤ N' from ((hN' v).1 (this hv)).2
   refine serreSubmodule_le (fun i j t => (hN' _).2 ⟨serreOp_mem i j t, fun k => ?_, fun x => ?_⟩)
     fun k t ht => ?_
-  · rw [apply_apply_eq, serreOp,
+  · rw [Module.End.apply_apply_eq_apply_apply_add_lie, serreOp,
       h.lie_positive_ad_pow_lie_negative_negative (hdiag i) (hoff i j) (hzero i j) k,
       LinearMap.zero_apply, add_zero]
     exact serreOp_mem i j _
   · have hw : ⁅cartanOp R μ x, serreOp K A i j⁆ =
         -((R.root j x + ((-A i j).toNat + 1 : ℕ) * R.root i x) • serreOp K A i j) := by
       rw [serreOp, ← ad_pow_succ_apply, h.lie_cartan_ad_pow_negative]
-    rw [apply_apply_eq, hw, LinearMap.neg_apply, LinearMap.smul_apply]
+    rw [Module.End.apply_apply_eq_apply_apply_add_lie, hw, LinearMap.neg_apply,
+      LinearMap.smul_apply]
     exact add_mem (serreOp_mem i j _) (neg_mem (Submodule.smul_mem _ _ (serreOp_mem i j t)))
   · obtain ⟨htN, hraise, hcartan⟩ := (hN' t).1 ht
     refine (hN' _).2 ⟨lowerOp_mem htN k, fun l => ?_, fun x => ?_⟩
-    · rw [apply_apply_eq]
+    · rw [Module.End.apply_apply_eq_apply_apply_add_lie]
       refine add_mem (lowerOp_mem (hraise l) k) ?_
       rcases eq_or_ne l k with rfl | hlk
       · rw [h.lie_positive_negative_self]
@@ -513,12 +450,11 @@ private theorem apply_eq_zero_of_cartanElement_eq_zero {x : H} (hx : cartanEleme
       fun y j => Subtype.ext (hT.lie_cartan_negative y j),
       fun i => Subtype.ext (hT.lie_positive_negative_self i),
       fun i j hij => Subtype.ext (hT.lie_positive_negative_of_ne i j hij)⟩
-  -- The raising Serre relators vanish already in the stabilizer; as for `hneg` below, `h` is
-  -- about the operators `raiseOp R μ i` once the inclusion and `ES i` are unfolded.
-  have hpos : ∀ i j, (ad K _ (ES i) ^ (-A i j).toNat) ⁅ES i, ES j⁆ = 0 := fun i j => by
-    have h := (serreStabilizer K A).incl.map_ad_pow (ES i) (-A i j).toNat ⁅ES i, ES j⁆
-    rw [LieHom.map_lie] at h
-    exact Subtype.ext (h.trans (raiseOp_serre_eq_zero hdiag hoff hzero i j))
+  -- The raising Serre relators vanish already in the stabilizer.
+  have hpos : ∀ i j, (ad K _ (ES i) ^ (-A i j).toNat) ⁅ES i, ES j⁆ = 0 := fun i j =>
+    Subtype.ext <| by
+      simp only [LieSubalgebra.coe_ad_pow, LieSubalgebra.coe_bracket, ES, ZeroMemClass.coe_zero]
+      exact raiseOp_serre_eq_zero hdiag hoff hzero i j
   -- The lowering Serre relators map the tensor algebra into the Serre submodule, so they act by
   -- zero on the quotient.
   have hneg : ∀ i j, quotientAction K A ((ad K _ (FS i) ^ (-A i j).toNat) ⁅FS i, FS j⁆) = 0 :=
@@ -526,25 +462,18 @@ private theorem apply_eq_zero_of_cartanElement_eq_zero {x : H} (hx : cartanEleme
     refine LinearMap.ext fun q => ?_
     obtain ⟨v, rfl⟩ := LieSubmodule.Quotient.surjective_mk' _ q
     rw [quotientAction_mk, LinearMap.zero_apply, LieSubmodule.Quotient.mk_eq_zero]
-    have h := (serreStabilizer K A).incl.map_ad_pow (FS i) (-A i j).toNat ⁅FS i, FS j⁆
-    rw [LieHom.map_lie] at h
-    -- The inclusion of the stabilizer and the generator `FS i` unfold to the coercion and to
-    -- `lowerOp K i`, so `h` is the statement that the relator is `serreOp K A i j`.
-    have h' : (((ad K _ (FS i) ^ (-A i j).toNat) ⁅FS i, FS j⁆ : serreStabilizer K A) :
-        Module.End K (List I →₀ K)) = serreOp K A i j := h
-    rw [h']
+    simp only [LieSubalgebra.coe_ad_pow, LieSubalgebra.coe_bracket, FS]
     exact serreOp_mem i j v
   -- On the quotient every defining relation holds; evaluate the induced representation of the
   -- Kac–Moody algebra at the class of the empty word.
-  have hrel := (hS.map (quotientAction K A)).satisfiesRelations (fun i j => ?_) (fun i j => ?_)
+  have hrel := SatisfiesRelations.mk (hS.map (quotientAction K A)) (fun i j => ?_) (fun i j => ?_)
   · have h0 := congr(lift hrel $hx)
     rw [lift_cartanElement, map_zero] at h0
     have h1 := LinearMap.congr_fun h0 (LieSubmodule.Quotient.mk' _ vacuum)
     rw [LinearMap.comp_apply, LieHom.coe_toLinearMap, quotientAction_mk, LinearMap.zero_apply]
       at h1
-    -- `φS x` is `cartanOp R μ x` packaged with its stability proof.
-    have h2 : ((φS x : serreStabilizer K A) : Module.End K (List I →₀ K)) = cartanOp R μ x := rfl
-    rw [h2, cartanOp_vacuum, map_smul] at h1
+    simp only [φS, LinearMap.coe_mk, AddHom.coe_mk] at h1
+    rw [cartanOp_vacuum, map_smul] at h1
     exact (smul_eq_zero.1 h1).resolve_right mk_vacuum_ne_zero
   · have h := congr_arg (quotientAction K A) (hpos i j)
     rw [LieHom.map_ad_pow, LieHom.map_lie, map_zero] at h
