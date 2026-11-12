@@ -239,10 +239,10 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn
   have hda : ∀ (f : EuclideanSpace ℝ ι → ℝ), ContDiffOn ℝ ∞ f U → ∀ v,
       ContDiffOn ℝ ∞ (fun x => fderiv ℝ f x v) U := fun f hf v =>
     (hf.fderiv_of_isOpen hU (by simp)).clm_apply contDiffOn_const
-  choose M₁ hM₁ using fun i j => Wkp.exists_value_ae_eq_mul_of_contDiffOn hU hΩ hΩU k
-    (hda _ (hda _ (ha i j) e) (b i)) (Wkp.lowerOrder k (D j))
-  choose M₂ hM₂ using fun i j => Wkp.exists_value_ae_eq_mul_of_contDiffOn hU hΩ hΩU k
-    (hda _ (ha i j) e) (E i j)
+  choose M₁ hM₁ using fun i j => Wkp.exists_value_ae_eq_mul_of_contDiffOn hU.uniqueDiffOn hΩ
+    hΩU k (hda _ (hda _ (ha i j) e) (b i)) (Wkp.lowerOrder k (D j))
+  choose M₂ hM₂ using fun i j => Wkp.exists_value_ae_eq_mul_of_contDiffOn hU.uniqueDiffOn hΩ
+    hΩU k (hda _ (ha i j) e) (E i j)
   have hd : HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value (Wkp.firstOrder k De)) e := by
     rw [Wkp.value_firstOrder]; exact hDe
   refine ⟨Wkp.firstOrder k De, Fe + ∑ i, ∑ j, (M₁ i j + M₂ i j), hd, ?_⟩

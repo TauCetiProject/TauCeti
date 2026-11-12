@@ -78,20 +78,6 @@ namespace SobolevSection
 
 variable {A μ p k} [IsManifold 𝓘(ℝ, E) ∞ M] {φ ψ : M → ℝ}
 
-omit [IsManifold 𝓘(ℝ, E) ∞ M] in
-/-- If the chart-`i` components of `w'` are those of `w` multiplied by `φ` read in chart `i`, the
-chart data of `w'` are those of `w` multiplied by `φ` read in chart `i`. -/
-private theorem chartValueL_ae_of_value_ae {w w' : A.sectionChartData.SobolevData μ p k}
-    {i : Fin A.n}
-    (h : ∀ j, (Wkp.value k (w' i j) : E → ℝ) =ᵐ[μ.restrict (A.image i)]
-      fun y ↦ φ ((A.chart i).symm y) * Wkp.value k (w i j) y) :
-    A.sectionChartData.chartValueL μ p k i w' =ᵐ[μ.restrict (A.image i)]
-      fun y ↦ φ ((A.chart i).symm y) • A.sectionChartData.chartValueL μ p k i w y := by
-  filter_upwards [A.sectionChartData.chartValueL_apply_ae μ p k i w',
-    A.sectionChartData.chartValueL_apply_ae μ p k i w, ae_all_iff.2 h] with y hy' hy hj
-  rw [hy', hy, Finset.smul_sum]
-  exact Finset.sum_congr rfl fun j _ ↦ by rw [hj j, mul_smul]
-
 variable (A μ p k) in
 /-- **Smooth multiplication on `W^{k,p}(V)`.** For a smooth function `φ : M → ℝ`, multiplication
 by `φ` is a continuous linear endomorphism of the Sobolev space of sections: in chart `i` each
@@ -100,16 +86,16 @@ component is multiplied by `φ ∘ (chart i).symm`. If `w` consists of the compo
 (`TauCeti.SobolevSection.chartValueL_contMDiffSMulL_ae_coord`). -/
 def contMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ) :
     SobolevSection A μ p k →L[ℝ] SobolevSection A μ p k :=
-  ((SectionChartData.SobolevData.mapL fun i ↦ Wkp.contDiffOnSMulL (A.chart i).open_target
-      (A.isCompact_closure_image i) (A.closure_image_subset_target i) k
-      (A.contDiffOn_comp_chart_symm hφ i)).comp
+  ((SectionChartData.SobolevData.mapL fun i ↦ Wkp.contDiffOnSMulL
+      (A.chart i).open_target.uniqueDiffOn (A.isCompact_closure_image i)
+      (A.closure_image_subset_target i) k (A.contDiffOn_comp_chart_symm hφ i)).comp
         (A.sectionChartData.sobolevSections μ p k).subtypeL).codRestrict
     (A.sectionChartData.sobolevSections μ p k) fun w ↦ by
       obtain ⟨s, hs⟩ := (A.sectionChartData.mem_sobolevSections_iff μ p k).1 w.2
       refine (A.sectionChartData.mem_sobolevSections_iff μ p k).2 ⟨fun x ↦ φ x • s x, fun i ↦ ?_⟩
       rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
-      refine (chartValueL_ae_of_value_ae (φ := φ) (w := (w : A.sectionChartData.SobolevData μ p k))
-        fun j ↦ ?_).trans ?_
+      refine (A.sectionChartData.chartValueL_ae_eq_smul μ p k (ψ := fun y ↦ φ ((A.chart i).symm y))
+        (w := (w : A.sectionChartData.SobolevData μ p k)) fun j ↦ ?_).trans ?_
       · erw [SectionChartData.SobolevData.mapL_apply]
         exact Wkp.value_contDiffOnSMulL_ae _ _ _ k _ _
       · filter_upwards [hs i, ae_restrict_mem (A.image i).isOpen.measurableSet] with y hsy hy
@@ -122,7 +108,7 @@ using `TauCeti.Wkp.contDiffOnSMulL`. -/
 theorem contMDiffSMulL_apply (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ) (w : SobolevSection A μ p k)
     (i : Fin A.n) (j : Fin (finrank ℝ F)) :
     (contMDiffSMulL A μ p k hφ w : A.sectionChartData.SobolevData μ p k) i j =
-      Wkp.contDiffOnSMulL (A.chart i).open_target (A.isCompact_closure_image i)
+      Wkp.contDiffOnSMulL (A.chart i).open_target.uniqueDiffOn (A.isCompact_closure_image i)
         (A.closure_image_subset_target i) k (A.contDiffOn_comp_chart_symm hφ i)
         ((w : A.sectionChartData.SobolevData μ p k) i j) := by
   rw [contMDiffSMulL, ContinuousLinearMap.coe_codRestrict_apply, ContinuousLinearMap.comp_apply,
@@ -161,7 +147,7 @@ theorem chartValueL_contMDiffSMulL_ae (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) �
     (w : SobolevSection A μ p k) (i : Fin A.n) :
     A.sectionChartData.chartValueL μ p k i (contMDiffSMulL A μ p k hφ w) =ᵐ[μ.restrict (A.image i)]
       fun y ↦ φ ((A.chart i).symm y) • A.sectionChartData.chartValueL μ p k i w y :=
-  chartValueL_ae_of_value_ae (value_contMDiffSMulL_ae hφ w i)
+  A.sectionChartData.chartValueL_ae_eq_smul μ p k (value_contMDiffSMulL_ae hφ w i)
 
 /-- **Sections.** If `w` consists of the chartwise components of a section `s`, then `φ • w`
 consists of the chartwise components of the section `x ↦ φ x • s x`. -/
