@@ -139,7 +139,7 @@ theorem isIrreducible_count_iff_forall_reaches :
     exact exists_pos_pow_apply_singleton x y
   · intro h
     refine ⟨?_⟩
-    intro s hs hA x
+    intro s _ hA x
     obtain ⟨y, hy⟩ := Measure.count_ne_zero_iff.mp (Ne.symm (ne_of_lt hA))
     obtain ⟨n, hn⟩ := h x y
     use n
