@@ -236,7 +236,7 @@ private theorem isSinkAdmissible_of_pairwise_aux :
     rw [List.pairwise_cons] at hp
     obtain ⟨hhead, hp⟩ := hp
     have hii : i ∈ i :: t := by simp
-    have hsink : @IsSink V q i := (@IsSink_def V q i).mpr fun b ↦ by
+    have hsink : @IsSink V q i := (@isSink_iff V q i).mpr fun b ↦ by
       by_cases hbi : b = i
       · rw [hbi]
         exact hloop i hii
