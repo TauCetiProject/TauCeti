@@ -735,7 +735,6 @@ private theorem eventually_perimeter_ball_zero_preimage_add_smul_le_integral
   have hR' : 0 < R' := hR.trans_le hRR'
   set ω := μ.real (ball 0 1)
   set A := 4 * n * ω * R' ^ m with hAdef
-  have hA : 0 ≤ A := by positivity
   set η := ε / (A + 1)
   have hη : 0 < η := div_pos hε (by positivity)
   obtain ⟨δ, hδ, hδΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
