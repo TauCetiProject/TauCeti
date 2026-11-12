@@ -230,6 +230,14 @@ theorem _root_.TauCeti.SmoothTwoForm.tames_update_inf (h₀ : σ.Tames J₀)
   (forall_update_iff (fun _ _ => J₀) fun _ f => ∀ t, σ.Tames (f t)).2 ⟨hK, fun _ _ _ => h₀⟩ q t
 
 omit [FiniteDimensional ℝ E] in
+/-- Dually, the end families of the input part of a pair of pants, `K` at the inputs and a tame base
+structure `J₀` at `∞`, are tame when `K` is. -/
+theorem _root_.TauCeti.SmoothTwoForm.tames_update_inf_base (hJ₀ : σ.Tames J₀)
+    {K : Puncture → ℝ → SmoothAlmostComplexStructure I M} (hK : ∀ q t, σ.Tames (K q t))
+    (q : Puncture) (t : ℝ) : σ.Tames (update K inf (fun _ => J₀) q t) :=
+  (forall_update_iff K fun _ f => ∀ t, σ.Tames (f t)).2 ⟨fun _ => hJ₀, fun q _ => hK q⟩ q t
+
+omit [FiniteDimensional ℝ E] in
 /-- The end families of the negative plane, `K` at `∞` and the constant family `J₀` at the inputs,
 have period one when `K` does. -/
 theorem _root_.TauCeti.SmoothAlmostComplexStructure.periodic_update_inf
