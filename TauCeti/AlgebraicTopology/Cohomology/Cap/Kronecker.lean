@@ -40,14 +40,14 @@ extension `(M ◁ β) ≫ ν` of a class `β ∈ H^q(X; S, N)` along a pairing `
 (`ChainComplex.linearYonedaObjWhiskerLeft`).  Then again `⟨ψ, x ⌢ α⟩ = ⟨α ⌣ β, x⟩`, with
 the cup product along `u` and `ν` (`TopCat.singularCap_comp_singularKronecker_of_homologyMap_eq`).
 When `μ` is invertible, every `β` has such an extension, through the isomorphism
-`M ⊗ C(X; S) ≅ C(X; L)` (`TopCat.singularCap_comp_singularKronecker_inv`, an instance of
+`M ⊗ C(X; S) ≅ C(X; L)` (`TopCat.singularCap_comp_singularKronecker_of_isIso`, an instance of
 `TauCeti.ChainComplex.cap_comp_kronecker_of_isIso`); for modules over `k`
 this pairs `α ∈ Hᵖ(X; M)` with `β ∈ H^q(X; k)`, the general coefficient form of the identity.  For
 a pair `(X, A)` the same identities hold for the relative cap product of a relative class
 `α ∈ Hᵖ(X, A; R, M)` with a relative class `x ∈ Hₙ(X, A; T)`, with the relative cup product
 `α ⌣ β ∈ Hⁿ(X, A; T, N')` along the relative Alexander–Whitney diagonal
 (`TopPair.singularCap_comp_singularKronecker_of_homologyMap_eq` and
-`TopPair.singularCap_comp_singularKronecker_inv`).
+`TopPair.singularCap_comp_singularKronecker_of_isIso`).
 
 ## References
 
@@ -114,7 +114,7 @@ isomorphism `M ⊗ C(X; S) ≅ C(X; L)` of `μ`, and evaluating it on the cap pr
 `α ∈ Hᵖ(X; R, M)` is evaluating the cup product of `α` and `β`.  For modules over a commutative
 ring `k`, with `R = S = T = N = k`, `μ = ν` the right unitor of a module `M` and `u` the inverse
 left unitor, this pairs a class `α ∈ Hᵖ(X; M)` and a class `β ∈ H^q(X; k)`. -/
-theorem singularCap_comp_singularKronecker_inv (X : TopCat.{w}) (k : Type*)
+theorem singularCap_comp_singularKronecker_of_isIso (X : TopCat.{w}) (k : Type*)
     [CommRing k] [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ L) [IsIso μ]
     (ν : M ⊗ N ⟶ N') (p q n : ℕ) (h : p + q = n) (α : X.singularCohomology R k M p)
     (β : X.singularCohomology S k N q) :
@@ -162,8 +162,8 @@ theorem singularCap_comp_singularKronecker_of_homologyMap_eq (P : TopPair.{w}) (
   exact TauCeti.ChainComplex.cap_comp_kronecker_of_homologyMap_eq _ _ ν p q n h α ψ β hψ
 
 /-- **The Kronecker pairing of a relative singular cap product along an invertible pairing**:
-the relative form of `TopCat.singularCap_comp_singularKronecker_inv`. -/
-theorem singularCap_comp_singularKronecker_inv (P : TopPair.{w}) (k : Type*)
+the relative form of `TopCat.singularCap_comp_singularKronecker_of_isIso`. -/
+theorem singularCap_comp_singularKronecker_of_isIso (P : TopPair.{w}) (k : Type*)
     [CommRing k] [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ L) [IsIso μ]
     (ν : M ⊗ N ⟶ N') (p q n : ℕ) (h : p + q = n) (α : P.singularCohomology R k M p)
     (β : P.fst.singularCohomology S k N q) :

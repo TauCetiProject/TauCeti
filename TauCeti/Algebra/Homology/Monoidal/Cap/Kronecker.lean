@@ -195,11 +195,8 @@ lemma cap_comp_kronecker_of_homologyMap_eq (p q n : ℕ) (h : p + q = n)
     cap k D a p q n h α ≫ kronecker k B' N' q ψ =
       kronecker k E N' n (cup k D ν p q n h α β) := by
   have hcap := cap_naturality D a D (𝟙 _) (𝟙 E) (𝟙 A) (𝟙 B) a (by simp) (by simp) p q n h α
-  have hα : homologyMap (K := A.linearYonedaObj k M) (L := A.linearYonedaObj k M)
-      ((linearYonedaFunctor k M).map (𝟙 A).op) p α = α := by
-    rw [op_id, CategoryTheory.Functor.map_id]
-    exact ConcreteCategory.congr_hom (homologyMap_id (A.linearYonedaObj k M) p) α
-  rw [hα, homologyMap_id, Category.id_comp] at hcap
+  simp only [op_id, CategoryTheory.Functor.map_id, linearYonedaFunctor_obj, homologyMap_id,
+    ModuleCat.hom_id, LinearMap.id_coe, id_eq, Category.id_comp] at hcap
   rw [← hcap, Category.assoc, ← kronecker_naturality, hψ,
     cap_comp_kronecker_linearYonedaObjWhiskerLeft]
 
@@ -217,13 +214,7 @@ lemma cap_comp_kronecker_of_isIso [IsIso a] (p q n : ℕ) (h : p + q = n)
           (homologyMap (B.linearYonedaObjWhiskerLeft k M ν) q β)) =
       kronecker k E N' n (cup k D ν p q n h α β) := by
   refine cap_comp_kronecker_of_homologyMap_eq D a ν p q n h α _ β ?_
-  have e : (linearYonedaFunctor k N').map (inv a).op ≫ (linearYonedaFunctor k N').map a.op =
-      𝟙 _ := by
-    rw [← CategoryTheory.Functor.map_comp, ← op_comp, IsIso.hom_inv_id, op_id,
-      CategoryTheory.Functor.map_id]
-  rw [← ConcreteCategory.comp_apply]
-  refine (ConcreteCategory.congr_hom (homologyMap_comp _ _ q) _).symm.trans ?_
-  exact ConcreteCategory.congr_hom ((congrArg (homologyMap · q) e).trans (homologyMap_id _ q)) _
+  exact (homologyMapIso ((linearYonedaFunctor k N').mapIso (asIso a).op) q).inv_hom_id_apply _
 
 end Homology
 
