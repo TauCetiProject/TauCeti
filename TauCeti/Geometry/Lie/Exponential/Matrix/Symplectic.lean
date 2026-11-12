@@ -37,8 +37,8 @@ exponential of an element of `sp` lands in the special linear group as well.
 * `Matrix.det_exp_eq_one_of_mem_sp`: that exponential has determinant one.
 * `Matrix.forall_exp_smul_mem_symplecticGroup_iff_mem_sp`: a matrix generates a one-parameter
   subgroup of the symplectic group exactly when it lies in the symplectic Lie algebra.
-* `Matrix.IsHermitian.exp_mem_symplecticGroup_iff`: a symmetric real matrix has symplectic
-  exponential exactly when it lies in the symplectic Lie algebra.
+* `Matrix.IsHermitian.exp_mem_symplecticGroup_iff`: a Hermitian matrix has symplectic exponential
+  exactly when it lies in the symplectic Lie algebra.
 -/
 
 public section
@@ -96,21 +96,21 @@ theorem forall_exp_smul_mem_symplecticGroup_iff_mem_sp (A : Matrix (l ⊕ l) (l 
     exact exp_mem_symplecticGroup_of_mem_sp (t • A)
       (((LieAlgebra.Symplectic.sp l 𝕜).toSubmodule.restrictScalars ℝ).smul_mem t hA)
 
-/-- **A symmetric real matrix has symplectic exponential exactly when it lies in the symplectic
-Lie algebra** `𝔰𝔭(2n, ℝ)`: by injectivity of the exponential on symmetric matrices, the symplectic
-condition `exp X = (exp X)ᵀ = J (exp X)⁻¹ J⁻¹ = exp (J (-X) J⁻¹)` forces `X = J (-X) J⁻¹`. -/
-theorem IsHermitian.exp_mem_symplecticGroup_iff {X : Matrix (l ⊕ l) (l ⊕ l) ℝ}
+/-- **A Hermitian matrix has symplectic exponential exactly when it lies in the symplectic Lie
+algebra**: by injectivity of the exponential on Hermitian matrices, the symplectic condition
+`exp Xᵀ = (exp X)ᵀ = J (exp X)⁻¹ J⁻¹ = exp (J (-X) J⁻¹)` forces `Xᵀ = J (-X) J⁻¹`. Over `ℝ` this
+says a symmetric matrix has exponential in `Sp(2n, ℝ)` exactly when it lies in `𝔰𝔭(2n, ℝ)`. -/
+theorem IsHermitian.exp_mem_symplecticGroup_iff {X : Matrix (l ⊕ l) (l ⊕ l) 𝕜}
     (hX : X.IsHermitian) :
-    NormedSpace.exp X ∈ symplecticGroup l ℝ ↔ X ∈ LieAlgebra.Symplectic.sp l ℝ := by
+    NormedSpace.exp X ∈ symplecticGroup l 𝕜 ↔ X ∈ LieAlgebra.Symplectic.sp l 𝕜 := by
   refine ⟨fun h ↦ ?_, exp_mem_symplecticGroup_of_mem_sp X⟩
-  have hXt : Xᵀ = X := by simpa [conjTranspose_eq_transpose_of_trivial] using hX.eq
-  -- `J (-X) J⁻¹ = J (-X) Jᴴ` is symmetric, as `J` is orthogonal.
-  have hJX : (J l ℝ * (-X) * (J l ℝ)⁻¹).IsHermitian := by
-    have h := isHermitian_mul_mul_conjTranspose (J l ℝ) hX.neg
+  -- `J (-X) J⁻¹ = J (-X) Jᴴ` is Hermitian, as `J` is unitary.
+  have hJX : (J l 𝕜 * (-X) * (J l 𝕜)⁻¹).IsHermitian := by
+    have h := isHermitian_mul_mul_conjTranspose (J l 𝕜) hX.neg
     rwa [← star_eq_conjTranspose, star_J, ← J_inv] at h
-  rw [LieAlgebra.Symplectic.mem_sp_iff_transpose_eq_J_conj_neg, hXt, ← hX.exp_eq_exp_iff hJX]
-  calc NormedSpace.exp X = (NormedSpace.exp X)ᵀ := by rw [← exp_transpose, hXt]
-    _ = J l ℝ * (NormedSpace.exp X)⁻¹ * (J l ℝ)⁻¹ := SymplecticGroup.transpose_eq_J_conj_inv h
-    _ = NormedSpace.exp (J l ℝ * (-X) * (J l ℝ)⁻¹) := by rw [exp_conj _ _ (isUnit_J l ℝ), exp_neg]
+  rw [LieAlgebra.Symplectic.mem_sp_iff_transpose_eq_J_conj_neg, ← hX.transpose.exp_eq_exp_iff hJX]
+  calc NormedSpace.exp Xᵀ = (NormedSpace.exp X)ᵀ := exp_transpose X
+    _ = J l 𝕜 * (NormedSpace.exp X)⁻¹ * (J l 𝕜)⁻¹ := SymplecticGroup.transpose_eq_J_conj_inv h
+    _ = NormedSpace.exp (J l 𝕜 * (-X) * (J l 𝕜)⁻¹) := by rw [exp_conj _ _ (isUnit_J l 𝕜), exp_neg]
 
 end Matrix
