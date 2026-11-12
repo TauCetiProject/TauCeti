@@ -117,16 +117,26 @@ example : (adjoinGenerators definitions {a ^ 5}).symm (of (Sum.inr ())) =
   rw [adjoinGenerators_symm_of_inr]
   simp [definitions, a, of]
 
+-- The two word dictionaries of adjoining generators compose to the identity under `simp`.
+example {α β : Type*} (w : β → FreeGroup α) (R : Set (FreeGroup α)) (r : FreeGroup α) :
+    (adjoinGenerators w R).symm (adjoinGenerators w R (mk R r)) = mk R r := by
+  simp
+
 -- Splitting the projective-plane relator `a²` along a fresh side `d` sends `d` back to `a`.
 example : (splitRelator ∅ a a).symm (of (Sum.inr ())) = of () := by
   rw [splitRelator_symm_of_inr]
   simp [a, of]
 
+-- The two word dictionaries of splitting a relator compose to the identity under `simp`.
+example {α : Type*} (R : Set (FreeGroup α)) (u v r : FreeGroup α) :
+    (splitRelator R u v).symm (splitRelator R u v (mk _ r)) = mk _ r := by
+  simp
+
 /-- Splitting the relator `a²` of `⟨a | a²⟩` along a fresh generator `d` gives
 `⟨a, d | a d, d⁻¹ a⟩`, the target of `PresentedGroup.splitRelator ∅ a a`. This group is not
 isomorphic to `⟨a | a, a²⟩`, the group obtained by imposing the half `a` of the split relator as
 an additional relation instead of introducing a fresh side. -/
-theorem not_nonempty_splitRelator_mulEquiv_insert : ¬Nonempty (PresentedGroup
+theorem not_nonempty_tietzeCyclicTwo_split_mulEquiv_pair : ¬Nonempty (PresentedGroup
     ({FreeGroup.map Sum.inl (FreeGroup.of ()) * FreeGroup.of (Sum.inr ()),
         (FreeGroup.of (Sum.inr ()))⁻¹ * FreeGroup.map Sum.inl (FreeGroup.of ())} ∪
       FreeGroup.map Sum.inl '' ∅ : Set (FreeGroup (Unit ⊕ Unit))) ≃*

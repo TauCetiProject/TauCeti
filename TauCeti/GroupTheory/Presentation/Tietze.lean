@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.FreeGroup.Basic
 public import TauCeti.GroupTheory.PresentedGroup
 
 /-!
@@ -211,14 +212,6 @@ section AdjoinGenerators
 
 variable (w : β → FreeGroup α) (R : Set (FreeGroup α))
 
-private theorem lift_sumElim_image_map_inl :
-    FreeGroup.lift (Sum.elim FreeGroup.of w) '' (FreeGroup.map Sum.inl '' R) = R := by
-  have h : (FreeGroup.lift (Sum.elim FreeGroup.of w)).comp (FreeGroup.map Sum.inl) =
-      MonoidHom.id _ := by
-    ext a
-    simp
-  simp [Set.image_image, ← MonoidHom.comp_apply, h]
-
 /-- **Adjoining generators defined by words.** New generators `b : β`, each with a defining
 relator `b * (w b)⁻¹` for a word `w b` in the old generators `α`, do not change the group
 presented by relators `R` in the old generators.
@@ -231,7 +224,7 @@ with `R`. -/
 def adjoinGenerators : PresentedGroup R ≃* PresentedGroup
     (Set.range (fun b ↦ FreeGroup.of (Sum.inr b) * (FreeGroup.map Sum.inl (w b))⁻¹) ∪
       FreeGroup.map Sum.inl '' R) :=
-  (equivOfNormalClosureEq (congrArg _ (lift_sumElim_image_map_inl w R).symm)).trans
+  (equivOfNormalClosureEq (congrArg _ (FreeGroup.lift_sumElim_image_map_inl w R).symm)).trans
     (eliminateGenerators w (FreeGroup.map Sum.inl '' R)).symm
 
 /-- On a word in the old generators, adjoining generators is induced by inclusion. -/
@@ -340,7 +333,8 @@ theorem splitRelator_symm_of_inl (a : α) : (splitRelator R u v).symm (of (Sum.i
 
 /-- The inverse of splitting a relator sends the new generator to `v`. -/
 @[simp]
-theorem splitRelator_symm_of_inr : (splitRelator R u v).symm (of (Sum.inr ())) = mk _ v := by
+theorem splitRelator_symm_of_inr (x : Unit) :
+    (splitRelator R u v).symm (of (Sum.inr x)) = mk _ v := by
   simp [of]
 
 end SplitRelator
