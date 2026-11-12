@@ -28,9 +28,9 @@ It applies without self-adjointness or normality and controls traces of low-rank
 
 public section
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
-open Module
+open Module TauCeti
 open scoped InnerProductSpace
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
@@ -38,7 +38,7 @@ variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpac
 
 /-- The trace of a continuous endomorphism of a finite-dimensional inner product space is bounded
 by the dimension times the operator norm: `‖tr T‖ ≤ dim V * ‖T‖`. -/
-theorem _root_.ContinuousLinearMap.norm_traceCLM_le (T : V →L[𝕜] V) :
+theorem norm_traceCLM_le (T : V →L[𝕜] V) :
     ‖traceCLM 𝕜 V T‖ ≤ finrank 𝕜 V * ‖T‖ := by
   set b := stdOrthonormalBasis 𝕜 V
   rw [traceCLM_apply, LinearMap.trace_eq_sum_inner _ b]
@@ -52,7 +52,7 @@ theorem _root_.ContinuousLinearMap.norm_traceCLM_le (T : V →L[𝕜] V) :
 
 /-- The trace is bounded by the rank times the operator norm, without any normality hypothesis.
 In particular, low-rank operators have dimension-independent trace bounds. -/
-theorem _root_.ContinuousLinearMap.norm_traceCLM_le_finrank_range_mul (T : V →L[𝕜] V) :
+theorem norm_traceCLM_le_finrank_range_mul (T : V →L[𝕜] V) :
     ‖traceCLM 𝕜 V T‖ ≤ finrank 𝕜 (LinearMap.range T.toLinearMap) * ‖T‖ := by
   let p := LinearMap.range T.toLinearMap
   let S : p →L[𝕜] p := T.restrict (fun x _ => LinearMap.mem_range_self T.toLinearMap x)
@@ -66,4 +66,4 @@ theorem _root_.ContinuousLinearMap.norm_traceCLM_le_finrank_range_mul (T : V →
   rw [← htrace]
   exact S.norm_traceCLM_le.trans (mul_le_mul_of_nonneg_left hnorm (Nat.cast_nonneg _))
 
-end TauCeti
+end ContinuousLinearMap

@@ -119,7 +119,7 @@ theorem mdifferentiable_onePointMap_eval (hp : 0 < p.natDegree) :
   | infty =>
     refine MDifferentiableAt.congr_of_eventuallyEq ?_ (onePointMap_eval_eventuallyEq_infty hp)
     exact (mdifferentiableAt_atlas_symm (Or.inr rfl) (by simp)).comp _
-      ((analyticAt_pow_div_eval_reverse (ne_zero_of_natDegree_gt hp)
+      ((analyticAt_pow_div_eval_reverse p
         _).differentiableAt.mdifferentiableAt.comp_of_eq _
         (mdifferentiableAt_atlas (Or.inr rfl) (by simp)) (by simp))
   | coe z =>
@@ -172,7 +172,7 @@ theorem localMultiplicity_onePointMap_eval_infty (hp : 0 < p.natDegree) :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ p.eval z) (∞ : OnePoint ℂ) = p.natDegree := by
   have h0 := eval_zero_reverse_ne_zero (ne_zero_of_natDegree_gt hp)
   have h : analyticOrderAt (fun w : ℂ ↦ w ^ p.natDegree / p.reverse.eval w) 0 = p.natDegree :=
-    (analyticAt_pow_div_eval_reverse (ne_zero_of_natDegree_gt hp) _).analyticOrderAt_eq_natCast.2
+    (analyticAt_pow_div_eval_reverse p _).analyticOrderAt_eq_natCast.2
       ⟨fun w ↦ (p.reverse.eval w)⁻¹, ((AnalyticOnNhd.eval_polynomial _) 0 (mem_univ _)).inv h0,
         inv_ne_zero h0,
         .of_forall fun w ↦ by simp [div_eq_mul_inv]⟩

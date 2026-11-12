@@ -26,7 +26,9 @@ function is determined on the closed strip by its two boundary traces, and it is
 bounded there in the sum norm by their sup norms. We therefore realise the Banach space of
 admissible functions through their boundary traces:
 
-* `CompatibleCouple.IsStripFunction F g`: `F` is admissible with boundary traces `g = (g₀, g₁)`;
+* `CompatibleCouple.IsStripFunction F g`: `F` is admissible with boundary traces `g = (g₀, g₁)`.
+  It satisfies the three-lines bound `‖F z‖ ≤ ‖g₀‖ ^ (1 - re z) * ‖g₁‖ ^ re z`
+  (`CompatibleCouple.IsStripFunction.norm_le_rpow_mul_rpow`);
 * `CompatibleCouple.stripTraces`: the submodule of `C₀(ℝ, X₀) × C₀(ℝ, X₁)` of the boundary
   traces of admissible functions, normed by `max ‖g₀‖ ‖g₁‖`. It is closed when `X₀` and `X₁` are
   complete (`CompatibleCouple.isClosed_stripTraces`), hence then a Banach space;
@@ -37,7 +39,8 @@ admissible functions through their boundary traces:
   `stripEval θ`, with its quotient (infimum) norm, a Banach space when `X₀` and `X₁` are. The
   map `ComplexMethodSpace.toSum` embeds it injectively into the sum space without increasing
   norms, with image the values `F θ` of admissible functions
-  (`ComplexMethodSpace.exists_toSum_eq_iff`);
+  (`ComplexMethodSpace.exists_toSum_eq_iff`), and each such `F` bounds the norm of `F θ` by the
+  norm of its traces (`ComplexMethodSpace.norm_le_of_toSum_eq`);
 * `ComplexMethodSpace.ofInter`: the intersection embeds with `‖x‖_θ ≤ ‖x‖_{X₀ ∩ X₁}`
   (`ComplexMethodSpace.norm_ofInter_le`), using the admissible functions `exp (δ (z - θ)²) x`
   with `δ → 0`;
@@ -47,7 +50,18 @@ admissible functions through their boundary traces:
   `‖T₀‖ ^ (1 - θ) * ‖T₁‖ ^ θ` (`ComplexMethodSpace.opNorm_map_le_opNorm`). The construction
   preserves identities and composition (`ComplexMethodSpace.map_id`, `ComplexMethodSpace.map_comp`)
   and commutes with the inclusions of the intersections (`ComplexMethodSpace.map_ofInter`). Thus
-  the complex method is an exact interpolation functor of exponent `θ`.
+  the complex method is an exact interpolation functor of exponent `θ`. Endpoint contractions
+  induce a contraction (`ComplexMethodSpace.norm_map_le_of_norm_le`).
+* Retracts: if `P₀ ∘ I₀ = id` and `P₁ ∘ I₁ = id` for maps of couples `(I₀, I₁)` from `(X₀, X₁)`
+  to `(Y₀, Y₁)` and `(P₀, P₁)` back, the induced map of `P` is a left inverse of that of `I`
+  (`ComplexMethodSpace.leftInverse_map`), so the norms of `u` and `I u` are equivalent
+  (`ComplexMethodSpace.norm_le_mul_norm_map_of_leftInverse`). An element `u` of the sum space lies
+  in `[X₀, X₁]_θ` exactly when `I u` lies in `[Y₀, Y₁]_θ`
+  (`ComplexMethodSpace.range_toSum_eq_comap_of_leftInverse`), and `[X₀, X₁]_θ` is the image of
+  `[Y₀, Y₁]_θ` under `P` (`ComplexMethodSpace.range_toSum_eq_map_of_leftInverse`).
+* `ComplexMethodSpace.mapEquiv`: isomorphisms of the endpoints that, as do their inverses, agree on
+  the intersections induce an isomorphism of the complex interpolation spaces, isometric when the
+  endpoint isomorphisms are (`ComplexMethodSpace.norm_mapEquiv`).
 * `ComplexMethodSpace.norm_refl`: for the couple `(X, X)`, the complex method gives back the norm
   of `X`.
 
@@ -56,7 +70,7 @@ admissible functions through their boundary traces:
 * A.-P. Calderón, *Intermediate spaces and interpolation, the complex method*, Studia Math. 24
   (1964), 113–190.
 * J. Bergh and J. Löfström, *Interpolation Spaces. An Introduction*, Grundlehren 223,
-  Springer, 1976, §4.1 (Lemma 4.1.1, Theorem 4.1.2).
+  Springer, 1976, §4.1 (Lemma 4.1.1, Theorem 4.1.2) and, for retracts, §6.4 (Theorem 6.4.2).
 -/
 
 public noncomputable section
@@ -137,25 +151,35 @@ theorem sub (hF : C.IsStripFunction F g) (hG : C.IsStripFunction G h) :
     C.IsStripFunction (F - G) (g - h) := by
   simpa [sub_eq_add_neg] using hF.add (hG.const_smul (-1))
 
-/-- **Maximum principle.** On the closed strip, an admissible function is bounded in the sum norm
-by the norm `max ‖g₀‖ ‖g₁‖` of its boundary traces. This is Hadamard's three-lines theorem with
-equal bounds on the two boundary lines. -/
-theorem norm_le (hF : C.IsStripFunction F g) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
-    ‖F z‖ ≤ ‖g‖ := by
+/-- **Three-lines bound.** On the closed strip, an admissible function with boundary traces
+`(g₀, g₁)` satisfies `‖F z‖ ≤ ‖g₀‖ ^ (1 - re z) * ‖g₁‖ ^ re z`. -/
+theorem norm_le_rpow_mul_rpow (hF : C.IsStripFunction F g) {z : ℂ}
+    (hz : z ∈ verticalClosedStrip 0 1) : ‖F z‖ ≤ ‖g.1‖ ^ (1 - z.re) * ‖g.2‖ ^ z.re := by
   have hB : BddAbove ((norm ∘ F) '' verticalClosedStrip 0 1) := by
     obtain ⟨M, hM⟩ := hF.exists_norm_le
     refine ⟨M, ?_⟩
     rintro _ ⟨w, hw, rfl⟩
     exact hM w hw
-  have h := norm_le_interp_of_mem_verticalClosedStrip₀₁' F hz hF.diffContOnCl hB
-    (a := ‖g‖) (b := ‖g‖) (fun w hw => ?_) (fun w hw => ?_)
-  · rwa [← Real.rpow_add' (norm_nonneg g) (by simp), sub_add_cancel, Real.rpow_one] at h
+  refine norm_le_interp_of_mem_verticalClosedStrip₀₁' F hz hF.diffContOnCl hB
+    (fun w hw => ?_) (fun w hw => ?_)
   · rw [← re_add_im w, hw, ofReal_zero, zero_add, hF.apply_mul_I]
-    exact (C.norm_fstToSum_le _).trans
-      ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ _).trans (norm_fst_le g))
+    exact (C.norm_fstToSum_le _).trans (ZeroAtInftyContinuousMap.norm_coe_le_norm _ _)
   · rw [← re_add_im w, hw, ofReal_one, hF.apply_one_add_mul_I]
-    exact (C.norm_sndToSum_le _).trans
-      ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ _).trans (norm_snd_le g))
+    exact (C.norm_sndToSum_le _).trans (ZeroAtInftyContinuousMap.norm_coe_le_norm _ _)
+
+/-- **Maximum principle.** On the closed strip, an admissible function is bounded in the sum norm
+by the norm `max ‖g₀‖ ‖g₁‖` of its boundary traces. -/
+theorem norm_le (hF : C.IsStripFunction F g) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
+    ‖F z‖ ≤ ‖g‖ := by
+  refine (hF.norm_le_rpow_mul_rpow hz).trans ?_
+  calc ‖g.1‖ ^ (1 - z.re) * ‖g.2‖ ^ z.re ≤ ‖g‖ ^ (1 - z.re) * ‖g‖ ^ z.re := by
+        gcongr
+        · exact sub_nonneg.2 hz.2
+        · exact norm_fst_le g
+        · exact hz.1
+        · exact norm_snd_le g
+    _ = ‖g‖ := by
+        rw [← Real.rpow_add' (norm_nonneg g) (by simp), sub_add_cancel, Real.rpow_one]
 
 /-- An admissible function is determined on the closed strip by its boundary traces. -/
 theorem eqOn (hF : C.IsStripFunction F g) (hG : C.IsStripFunction G g) :
@@ -421,6 +445,10 @@ theorem norm_toSum_le (u : C.ComplexMethodSpace θ) : ‖toSum u‖ ≤ ‖u‖ 
   rw [toSum_mk]
   exact ((C.stripEval θ).le_of_opNorm_le (C.norm_stripEval_le θ) g).trans_lt (by simpa using hg)
 
+/-- The inclusion of `[X₀, X₁]_θ` into the sum space has operator norm at most one. -/
+theorem opNorm_toSum_le : ‖(toSum : C.ComplexMethodSpace θ →L[ℂ] C.SumSpace)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by simpa using norm_toSum_le u
+
 /-- An element of the sum space lies in `[X₀, X₁]_θ` exactly when it is the value at `θ` of an
 admissible function. -/
 theorem exists_toSum_eq_iff (hθ : θ ∈ Icc 0 1) {u : C.SumSpace} :
@@ -433,6 +461,15 @@ theorem exists_toSum_eq_iff (hθ : θ ∈ Icc 0 1) {u : C.SumSpace} :
   · rintro ⟨F, g, hF, rfl⟩
     exact ⟨mk θ ⟨g, F, hF⟩, by
       simpa using stripFunction_eq hF (by simpa using hθ)⟩
+
+/-- For `0 ≤ θ ≤ 1`, an admissible function `F` with boundary traces `g` and `F θ = u` bounds the
+norm of `u` by the norm of `g`. -/
+theorem norm_le_of_toSum_eq (hθ : θ ∈ Icc 0 1) {u : C.ComplexMethodSpace θ}
+    {F : ℂ → C.SumSpace} {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g)
+    (hu : toSum u = F θ) : ‖u‖ ≤ ‖g‖ := by
+  have : u = mk θ ⟨g, F, hF⟩ := ext <| by
+    rw [hu, toSum_mk, stripEval_apply, stripFunction_eq hF (by simpa using hθ)]
+  exact this ▸ norm_mk_le _
 
 end ComplexMethodSpace
 
@@ -575,6 +612,12 @@ theorem norm_ofInter_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) (x : C.inter) : ‖ofI
     have : Continuous fun δ : ℝ => Real.exp (δ * (|θ| + 1) ^ 2) * ‖x‖ := by fun_prop
     simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall key)
+
+/-- For `0 ≤ θ ≤ 1`, the inclusion of the intersection into `[X₀, X₁]_θ` has operator norm at
+most one. -/
+theorem opNorm_ofInter_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) :
+    ‖(ofInter θ : C.inter →L[ℂ] C.ComplexMethodSpace θ)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => by simpa using norm_ofInter_le hθ x
 
 /-- For the couple `(X, X)`, the norm of `[X, X]_θ` is the norm of `X`: the inclusion into the sum
 space, which is `X`, is an isometry. -/
@@ -910,9 +953,155 @@ theorem opNorm_map_le_opNorm (hθ : θ ∈ Icc 0 1) :
     ‖map θ T₀ T₁ h‖ ≤ ‖T₀‖ ^ (1 - θ) * ‖T₁‖ ^ θ :=
   opNorm_map_le T₀ T₁ h hθ (norm_nonneg _) (norm_nonneg _) T₀.le_opNorm T₁.le_opNorm
 
+/-- **Exact interpolation of exponent `θ`** for contractions: if `T₀` and `T₁` do not increase
+norms, neither does the induced map `[X₀, X₁]_θ → [Y₀, Y₁]_θ`. -/
+theorem norm_map_le_of_norm_le (h₀ : ∀ x, ‖T₀ x‖ ≤ ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ ‖x‖)
+    (u : C.ComplexMethodSpace θ) : ‖map θ T₀ T₁ h u‖ ≤ ‖u‖ := by
+  by_cases hθ : θ ∈ Icc 0 1
+  · simpa using norm_map_le T₀ T₁ h hθ zero_le_one zero_le_one (fun x => by simpa using h₀ x)
+      (fun x => by simpa using h₁ x) u
+  · simp [eq_zero_of_notMem hθ u]
+
 end ComplexMethodSpace
 
 end Map
+
+/-! ### Retracts and isomorphisms of couples -/
+
+section Retract
+
+variable {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace ℂ Y₀] [NormedAddCommGroup Y₁]
+  [NormedSpace ℂ Y₁] [AddCommGroup W] [Module ℂ W] [TopologicalSpace W] [ContinuousAdd W]
+  [T1Space W] {C} {D : CompatibleCouple ℂ Y₀ Y₁ W} {θ : ℝ}
+  (I₀ : X₀ →L[ℂ] Y₀) (I₁ : X₁ →L[ℂ] Y₁)
+  (hI : ∀ x : C.inter, D.fstToSum (I₀ (C.interFst x)) = D.sndToSum (I₁ (C.interSnd x)))
+  (P₀ : Y₀ →L[ℂ] X₀) (P₁ : Y₁ →L[ℂ] X₁)
+  (hP : ∀ y : D.inter, C.fstToSum (P₀ (D.interFst y)) = C.sndToSum (P₁ (D.interSnd y)))
+
+namespace ComplexMethodSpace
+
+/-- **Retracts.** If `P₀`, `P₁` are left inverses of `I₀`, `I₁`, the map
+`[Y₀, Y₁]_θ → [X₀, X₁]_θ` induced by `P₀`, `P₁` is a left inverse of the map
+`[X₀, X₁]_θ → [Y₀, Y₁]_θ` induced by `I₀`, `I₁`. -/
+theorem leftInverse_map (hPI₀ : Function.LeftInverse P₀ I₀) (hPI₁ : Function.LeftInverse P₁ I₁) :
+    Function.LeftInverse (map θ P₀ P₁ hP) (map θ I₀ I₁ hI) := fun u => by
+  ext
+  rw [toSum_map, toSum_map]
+  exact leftInverse_sumLift I₀ I₁ hI P₀ P₁ hP hPI₀ hPI₁ _
+
+include hP in
+/-- **Retracts.** If `P₀`, `P₁` are left inverses of `I₀`, `I₁`, and `‖P₀ y‖ ≤ N₀ ‖y‖`,
+`‖P₁ y‖ ≤ N₁ ‖y‖` with `N₀, N₁ ≥ 0`, then `‖u‖_θ ≤ N₀ ^ (1 - θ) * N₁ ^ θ * ‖I u‖_θ`, where `I`
+is the map induced by `I₀`, `I₁`. With `norm_map_le` for `I`, the norm of the retract
+`[X₀, X₁]_θ` is equivalent to the norm of its image in `[Y₀, Y₁]_θ`. -/
+theorem norm_le_mul_norm_map_of_leftInverse (hPI₀ : Function.LeftInverse P₀ I₀)
+    (hPI₁ : Function.LeftInverse P₁ I₁) {N₀ N₁ : ℝ} (hN₀ : 0 ≤ N₀) (hN₁ : 0 ≤ N₁)
+    (h₀ : ∀ y, ‖P₀ y‖ ≤ N₀ * ‖y‖) (h₁ : ∀ y, ‖P₁ y‖ ≤ N₁ * ‖y‖) (u : C.ComplexMethodSpace θ) :
+    ‖u‖ ≤ N₀ ^ (1 - θ) * N₁ ^ θ * ‖map θ I₀ I₁ hI u‖ := by
+  by_cases hθ : θ ∈ Icc 0 1
+  · conv_lhs => rw [← leftInverse_map I₀ I₁ hI P₀ P₁ hP hPI₀ hPI₁ u]
+    exact norm_map_le P₀ P₁ hP hθ hN₀ hN₁ h₀ h₁ _
+  · simp [eq_zero_of_notMem hθ u]
+
+include hP in
+/-- **Retracts.** If `P₀`, `P₁` are left inverses of `I₀`, `I₁`, an element `x₀ + x₁` of the sum
+space `X₀ + X₁` lies in `[X₀, X₁]_θ` exactly when `I₀ x₀ + I₁ x₁` lies in `[Y₀, Y₁]_θ`. -/
+theorem range_toSum_eq_comap_of_leftInverse (hPI₀ : Function.LeftInverse P₀ I₀)
+    (hPI₁ : Function.LeftInverse P₁ I₁) :
+    LinearMap.range (toSum (C := C) (θ := θ) : C.ComplexMethodSpace θ →ₗ[ℂ] C.SumSpace) =
+      (LinearMap.range (toSum (C := D) (θ := θ) : D.ComplexMethodSpace θ →ₗ[ℂ] D.SumSpace)).comap
+        (C.sumLift (D.fstToSum.comp I₀) (D.sndToSum.comp I₁) hI :
+          C.SumSpace →ₗ[ℂ] D.SumSpace) := by
+  ext u
+  simp only [LinearMap.mem_range, Submodule.mem_comap, ContinuousLinearMap.coe_coe]
+  constructor
+  · rintro ⟨v, rfl⟩
+    exact ⟨map θ I₀ I₁ hI v, toSum_map I₀ I₁ hI v⟩
+  · rintro ⟨w, hw⟩
+    refine ⟨map θ P₀ P₁ hP w, ?_⟩
+    rw [toSum_map, hw, leftInverse_sumLift I₀ I₁ hI P₀ P₁ hP hPI₀ hPI₁]
+
+include hI in
+/-- **Retracts.** If `P₀`, `P₁` are left inverses of `I₀`, `I₁`, then `[X₀, X₁]_θ` is the image
+of `[Y₀, Y₁]_θ` under the map `y₀ + y₁ ↦ P₀ y₀ + P₁ y₁` of sum spaces. -/
+theorem range_toSum_eq_map_of_leftInverse (hPI₀ : Function.LeftInverse P₀ I₀)
+    (hPI₁ : Function.LeftInverse P₁ I₁) :
+    LinearMap.range (toSum (C := C) (θ := θ) : C.ComplexMethodSpace θ →ₗ[ℂ] C.SumSpace) =
+      (LinearMap.range (toSum (C := D) (θ := θ) : D.ComplexMethodSpace θ →ₗ[ℂ] D.SumSpace)).map
+        (D.sumLift (C.fstToSum.comp P₀) (C.sndToSum.comp P₁) hP :
+          D.SumSpace →ₗ[ℂ] C.SumSpace) := by
+  ext u
+  simp only [LinearMap.mem_range, Submodule.mem_map, ContinuousLinearMap.coe_coe]
+  constructor
+  · rintro ⟨v, rfl⟩
+    refine ⟨toSum (map θ I₀ I₁ hI v), ⟨_, rfl⟩, ?_⟩
+    rw [toSum_map, leftInverse_sumLift I₀ I₁ hI P₀ P₁ hP hPI₀ hPI₁]
+  · rintro ⟨_, ⟨w, rfl⟩, rfl⟩
+    exact ⟨map θ P₀ P₁ hP w, toSum_map P₀ P₁ hP w⟩
+
+end ComplexMethodSpace
+
+end Retract
+
+section Equiv
+
+variable {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace ℂ Y₀] [NormedAddCommGroup Y₁]
+  [NormedSpace ℂ Y₁] [AddCommGroup W] [Module ℂ W] [TopologicalSpace W] [ContinuousAdd W]
+  [T1Space W] {C} {D : CompatibleCouple ℂ Y₀ Y₁ W} {θ : ℝ}
+  (e₀ : X₀ ≃L[ℂ] Y₀) (e₁ : X₁ ≃L[ℂ] Y₁)
+  (h : ∀ x : C.inter, D.fstToSum (e₀ (C.interFst x)) = D.sndToSum (e₁ (C.interSnd x)))
+  (hsymm : ∀ y : D.inter,
+    C.fstToSum (e₀.symm (D.interFst y)) = C.sndToSum (e₁.symm (D.interSnd y)))
+
+namespace ComplexMethodSpace
+
+variable (θ) in
+/-- **Invariance under endpoint isomorphisms.** Isomorphisms `e₀ : X₀ ≃L[ℂ] Y₀` and
+`e₁ : X₁ ≃L[ℂ] Y₁` that agree on the intersections, as do their inverses, induce an isomorphism
+`[X₀, X₁]_θ ≃L[ℂ] [Y₀, Y₁]_θ`, lying over the map `x₀ + x₁ ↦ e₀ x₀ + e₁ x₁` of sum spaces
+(`toSum_mapEquiv`). The norms of `e₀`, `e₁` and of their inverses bound its norm and the norm of
+its inverse by `norm_map_le`; if `e₀` and `e₁` preserve norms, so does it (`norm_mapEquiv`). -/
+def mapEquiv : C.ComplexMethodSpace θ ≃L[ℂ] D.ComplexMethodSpace θ :=
+  ContinuousLinearEquiv.equivOfInverse (map θ e₀ e₁ h) (map θ e₀.symm e₁.symm hsymm)
+    (leftInverse_map _ _ h _ _ hsymm e₀.symm_apply_apply e₁.symm_apply_apply)
+    (leftInverse_map _ _ hsymm _ _ h e₀.apply_symm_apply e₁.apply_symm_apply)
+
+theorem mapEquiv_apply (u : C.ComplexMethodSpace θ) :
+    mapEquiv θ e₀ e₁ h hsymm u = map θ e₀ e₁ h u :=
+  (rfl)
+
+theorem mapEquiv_symm_apply (v : D.ComplexMethodSpace θ) :
+    (mapEquiv θ e₀ e₁ h hsymm).symm v = map θ e₀.symm e₁.symm hsymm v :=
+  (rfl)
+
+@[simp]
+theorem toSum_mapEquiv (u : C.ComplexMethodSpace θ) :
+    toSum (mapEquiv θ e₀ e₁ h hsymm u) =
+      C.sumLift (D.fstToSum.comp (e₀ : X₀ →L[ℂ] Y₀)) (D.sndToSum.comp (e₁ : X₁ →L[ℂ] Y₁)) h
+        (toSum u) :=
+  toSum_map _ _ h u
+
+@[simp]
+theorem toSum_mapEquiv_symm (v : D.ComplexMethodSpace θ) :
+    toSum ((mapEquiv θ e₀ e₁ h hsymm).symm v) =
+      D.sumLift (C.fstToSum.comp (e₀.symm : Y₀ →L[ℂ] X₀))
+        (C.sndToSum.comp (e₁.symm : Y₁ →L[ℂ] X₁)) hsymm (toSum v) :=
+  toSum_map _ _ hsymm v
+
+/-- If the endpoint isomorphisms `e₀` and `e₁` preserve norms, then so does the induced
+isomorphism of complex interpolation spaces. -/
+theorem norm_mapEquiv (h₀ : ∀ x, ‖e₀ x‖ = ‖x‖) (h₁ : ∀ x, ‖e₁ x‖ = ‖x‖)
+    (u : C.ComplexMethodSpace θ) : ‖mapEquiv θ e₀ e₁ h hsymm u‖ = ‖u‖ := by
+  refine le_antisymm (norm_map_le_of_norm_le _ _ h (fun x => (h₀ x).le) (fun x => (h₁ x).le) u)
+    ?_
+  conv_lhs => rw [← (mapEquiv θ e₀ e₁ h hsymm).symm_apply_apply u, mapEquiv_symm_apply]
+  refine norm_map_le_of_norm_le _ _ hsymm (fun y => ?_) (fun y => ?_) _
+  · rw [ContinuousLinearEquiv.coe_coe, ← h₀ (e₀.symm y), ContinuousLinearEquiv.apply_symm_apply]
+  · rw [ContinuousLinearEquiv.coe_coe, ← h₁ (e₁.symm y), ContinuousLinearEquiv.apply_symm_apply]
+
+end ComplexMethodSpace
+
+end Equiv
 
 end CompatibleCouple
 

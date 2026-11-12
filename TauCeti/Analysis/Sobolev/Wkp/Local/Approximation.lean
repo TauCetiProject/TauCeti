@@ -24,6 +24,9 @@ then multiplies the smooth representative by a fixed test function equal to one 
 smaller domain. Interior derivative identities identify all its derivatives with mollified
 weak derivative fields.
 
+The mollified fields `TauCeti.Wkp.smoothField` converge in `Lᵖ(Ω)` as the bump radii tend to
+zero (`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`).
+
 ## References
 
 L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.3.1. The proof uses the
@@ -110,6 +113,21 @@ private theorem localAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace 
   exact (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans (by
     simpa only [Measure.restrict_univ, smoothField_def] using he')
 
+/-- As the bump radii tend to zero, the mollifications of a zero-extended field
+`f ∈ Lᵖ(Ω; F)`, `p < ∞`, converge to `f` in `Lᵖ(Ω; F)`. -/
+theorem tendsto_eLpNorm_smoothField_sub {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [CompleteSpace F] (hp : p ≠ ∞) {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i => (phi i).rOut) l (𝓝 0)) (f : Lp F p (mu.restrict Omega)) :
+    Tendsto (fun i => eLpNorm (smoothField (phi i) f - (f : E → F)) p (mu.restrict Omega)) l
+      (𝓝 0) := by
+  have h := (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
+    (tendsto_normedBumpLp_extendByZero_restrict hp Omega.isOpen.measurableSet subset_rfl hphi f)
+  refine h.congr fun i => eLpNorm_congr_ae ?_
+  filter_upwards [localAverage_ae (U := Omega) hp (phi i) f,
+    Lp.coeFn_LpToLpOfMeasureLeSMul (μ := mu.restrict (Omega : Set E))
+      (ν := mu.restrict (Omega : Set E)) (c := 1) (by simp) (by simp) f] with x h1 h2
+  simp only [Pi.sub_apply, ← h1, h2, localAverage]
+
 /-- The restriction to `U` of the `W^{k,p}(Ω)` element of a test function is represented on `U`
 by that test function. -/
 theorem value_restrictL_ofTestFunctionₗ_ae (hU : U ≤ Omega) (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
@@ -162,52 +180,24 @@ private theorem tendsto_restrict_localTest (hp : p ≠ ∞) (hU : U ≤ Omega)
       Tendsto (fun i => restrictL hU k
         (ofTestFunctionₗ (mu := mu) (p := p) k (localTest chi (phi i) k u)))
         l (𝓝 (restrictL hU k u)) := by
-  intro k
-  -- Orders zero and one use convergence of the value and gradient in `Lᵖ`; successive
-  -- orders use the two components of the closed weak-derivative graph.
-  induction k using Nat.twoStepInduction with
-  | zero =>
-      intro u
-      have h : Tendsto (fun i => localAverage hp (phi i) (value 0 u)) l
-          (𝓝 (value 0 (restrictL hU 0 u))) :=
-        Wkp.tendsto_mollified_value hp hU hphi 0 u
-      simp only [value_zero] at h
-      convert h using 1
-      funext i
-      simpa only [value_zero] using value_restrict_localTest hp hU chi hchi (phi i) 0 u
-  | one =>
-      intro u
-      refine W1p.tendsto_iff_value_gradient.2 ⟨?_, ?_⟩
-      · have h : Tendsto (fun i => localAverage hp (phi i) (value 1 u)) l
-            (𝓝 (value 1 (restrictL hU 1 u))) :=
-          Wkp.tendsto_mollified_value hp hU hphi 1 u
-        simp only [value_one] at h
-        convert h using 1
-        funext i
-        simpa only [value_one] using value_restrict_localTest hp hU chi hchi (phi i) 1 u
-      · have h : Tendsto (fun i => localAverage hp (phi i) (iteratedGradient 0 u)) l
-            (𝓝 (iteratedGradient 0 (restrictL hU 1 u))) :=
-          Wkp.tendsto_mollified_iteratedGradient hp hU hphi 0 u
-        simp only [iteratedGradient_zero] at h
-        convert h using 1
-        funext i
-        simpa only [iteratedGradient_zero] using
-          iteratedGradient_restrict_localTest hp hU chi hchi (phi i) (hinterior i) 0 u
-  | more k _ ih =>
-      intro u
-      rw [tendsto_iff_lowerOrder_iteratedGradient (k + 1)]
-      constructor
-      · have h := ih (lowerOrder (k + 1) u)
-        simp_rw [localTest_lowerOrder] at h
-        convert h using 1
-        · funext i
-          rw [lowerOrder_restrictL, lowerOrder_ofTestFunctionₗ]
-        · rw [lowerOrder_restrictL]
-      · have h : Tendsto (fun i => localAverage hp (phi i) (iteratedGradient (k + 1) u)) l
-            (𝓝 (iteratedGradient (k + 1) (restrictL hU (k + 2) u))) :=
-          Wkp.tendsto_mollified_iteratedGradient hp hU hphi (k + 1) u
-        simpa only [← iteratedGradient_restrict_localTest hp hU chi hchi _
-          (hinterior _) (k + 1) u] using h
+  intro k u
+  refine tendsto_of_tendsto_iteratedGradient (P := fun _ _ => True) (fun _ _ _ => trivial)
+    (v := fun k u _ i => restrictL hU k
+      (ofTestFunctionₗ (mu := mu) (p := p) k (localTest chi (phi i) k u)))
+    (w := fun k u => restrictL hU k u) (fun k u _ i => ?_)
+    (fun k u => lowerOrder_restrictL hU k u) (fun u _ => ?_) (fun k u _ => ?_) k u trivial
+  · rw [lowerOrder_restrictL, lowerOrder_ofTestFunctionₗ, localTest_lowerOrder]
+  · have h : Tendsto (fun i => localAverage hp (phi i) (value 0 u)) l
+        (𝓝 (value 0 (restrictL hU 0 u))) :=
+      Wkp.tendsto_mollified_value hp hU hphi 0 u
+    simp only [value_zero] at h
+    convert h using 1
+    funext i
+    simpa only [value_zero] using value_restrict_localTest hp hU chi hchi (phi i) 0 u
+  · have h : Tendsto (fun i => localAverage hp (phi i) (iteratedGradient k u)) l
+        (𝓝 (iteratedGradient k (restrictL hU (k + 1) u))) :=
+      Wkp.tendsto_mollified_iteratedGradient hp hU hphi k u
+    simpa only [← iteratedGradient_restrict_localTest hp hU chi hchi _ (hinterior _) k u] using h
 
 /-- On every open subdomain with compact closure inside `Ω`, restrictions of test functions
 on `Ω` approximate the restriction of a `W^{k,p}(Ω)` element in the full Sobolev norm.

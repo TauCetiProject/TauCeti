@@ -64,6 +64,15 @@ theorem isCutVertex_iff_exists_forall_walk_mem_support {G : SimpleGraph V} {v : 
     simpa using hz
   · exact ⟨v, by simpa using h p.toSimpleGraph, rfl⟩
 
+/-- A cut vertex is not isolated. -/
+theorem IsCutVertex.not_isIsolated {G : SimpleGraph V} {v : V} (h : G.IsCutVertex v) :
+    ¬G.IsIsolated v := by
+  classical
+  intro hiso
+  obtain ⟨u, w, huv, -, ⟨p⟩, hp⟩ := isCutVertex_iff_exists_forall_walk_mem_support.1 h
+  exact not_reachable_of_neighborSet_right_eq_empty huv hiso.neighborSet_eq_empty
+    (p.takeUntil v (hp p)).reachable
+
 /-- If `x` is not a cut vertex, then two vertices other than `x` that are reachable from each other
 are joined by a walk avoiding `x`. -/
 theorem Reachable.exists_walk_notMem_support_of_not_isCutVertex {G : SimpleGraph V} {a z x : V}
