@@ -72,6 +72,19 @@ theorem tmulRight_smul {U : X.Opens} (r : Γ(X, U)) (e : Γ(L, U)) (t : Γ(F, U)
   rw [tmulRight, LinearMap.map_smul]
   exact (Functor.LaxMonoidal.μ (sectionsFunctor U) F L).hom.map_smul r _
 
+/-- Tensoring with `e` is additive in `e`. -/
+theorem tmulRight_add {U : X.Opens} (e₁ e₂ : Γ(L, U)) (t : Γ(F, U)) :
+    tmulRight F (e₁ + e₂) t = tmulRight F e₁ t + tmulRight F e₂ t := by
+  rw [tmulRight_apply, tmulRight_apply, tmulRight_apply]
+  exact (congrArg _ (TensorProduct.tmul_add t e₁ e₂)).trans (map_add _ _ _)
+
+/-- Tensoring with the zero section gives zero. -/
+@[simp]
+theorem tmulRight_zero {U : X.Opens} (t : Γ(F, U)) :
+    tmulRight F (0 : Γ(L, U)) t = 0 := by
+  rw [tmulRight_apply]
+  exact (congrArg _ (TensorProduct.tmul_zero _ t)).trans (map_zero _)
+
 /-- Tensoring with `e` commutes with restriction. -/
 theorem map_tmulRight {U W : X.Opens} (i : W ⟶ U) (e : Γ(L, U)) (t : Γ(F, U)) :
     (F ⊗ L).presheaf.map i.op (tmulRight F e t) =

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
 public import TauCeti.AlgebraicGeometry.Modules.Localization
-public import TauCeti.AlgebraicGeometry.Modules.TensorSections
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Sections
 public import TauCeti.Algebra.Group.Action.Pow
 
 /-!
@@ -15,7 +15,7 @@ public import TauCeti.Algebra.Group.Action.Pow
 
 Let `F` be an `𝒪_X`-module and `L` an `𝒪_X`-module with a section `e` over an open `U`. The maps
 `t ↦ t ⊗ eⁿ` from `Γ(F, U)` to `Γ(F ⊗ Lⁿ, U)` (`Scheme.Modules.tmulRight` and
-`Scheme.Modules.tensorPowSection`, in `TauCeti/AlgebraicGeometry/Modules/TensorSections.lean`)
+`Scheme.Modules.tensorPowSection`, in `TauCeti/AlgebraicGeometry/Modules/Tensor/Sections.lean`)
 are bijective when `e` is a basis of `L` over `U`, for instance if `L` is an invertible sheaf and
 `U` lies in the nonvanishing locus of `e`.
 
