@@ -131,7 +131,7 @@ theorem coefficient_term_ofDifferentialSymbol (j : ℕ) {x ξ : CoordinateSpace 
     rw [coefficient_castDegree, coefficient_congr_index (ofContDiffHomogeneous _ _ _).term hl,
       term_ofContDiffHomogeneous_succ, coefficient_zero, Pi.zero_apply]
   · omega
-  · rfl
+  · rw [coefficient_zero, Pi.zero_apply]
 
 /-- The principal symbol of the classical symbol of a differential operator of order `m` is,
 away from `ξ = 0`, the differential symbol of its summands of order exactly `m`. In particular
@@ -176,6 +176,7 @@ private theorem differentialSymbol_negLaplacian (p : CoordinateSpace n × Coordi
   ring
 
 /-- The full symbol of the negative Laplacian is `‖ξ‖²`. -/
+@[simp]
 theorem coefficient_toSymbol_negLaplacian (p : CoordinateSpace n × CoordinateSpace n) :
     (negLaplacian n V).toSymbol.coefficient p = ‖p.2‖ ^ 2 • ContinuousLinearMap.id ℂ V := by
   rw [negLaplacian, coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_negLaplacian]
@@ -185,9 +186,11 @@ theorem quantizeSchwartzValue_negLaplacian [CompleteSpace V] (u : 𝓢(Coordinat
     (x : CoordinateSpace n) :
     quantizeSchwartzValue (negLaplacian n V).toSymbol.coefficient u x =
       -∑ j : Fin n, ∂^{fun _ : Fin 2 ↦ EuclideanSpace.single j (1 : ℝ)} u x := by
-  simp [negLaplacian]
+  rw [negLaplacian, quantizeSchwartzValue_ofDifferentialSymbol]
+  simp
 
 /-- The principal symbol of the negative Laplacian is `‖ξ‖²`. -/
+@[simp]
 theorem principal_negLaplacian :
     (negLaplacian n V).principal = normRpow (CoordinateSpace n) (CoordinateSpace n) V 2 :=
   ext_of_ne_zero fun x ξ hξ ↦ by
