@@ -52,16 +52,16 @@ section Domain
 variable {R : Type*} [CommRing R] [IsDomain R] [CharZero R]
 
 /-- Comparing two skew-symmetrizing equations along a nonzero entry gives cross-proportional
-weights. The second family need not be positive or integral. -/
-theorem mul_eq_mul_of_ne_zero (hs : B.IsSkewSymmetrizer s) {x : I → R}
-    (hx : ∀ i j, x i * (B i j : R) = -(x j * (B j i : R))) {i j : I}
-    (hij : B i j ≠ 0) : x i * (s j : R) = x j * (s i : R) := by
+weights. Only this edge equation is required; the scalars need not be positive or integral. -/
+theorem mul_eq_mul_of_ne_zero (hs : B.IsSkewSymmetrizer s) {i j : I} {a b : R}
+    (hab : a * (B i j : R) = -(b * (B j i : R)))
+    (hij : B i j ≠ 0) : a * (s j : R) = b * (s i : R) := by
   have hji : (B j i : R) ≠ 0 :=
     Int.cast_ne_zero.mpr (hs.apply_eq_zero_iff.not.mp hij)
   have hd : (s i : R) * (B i j : R) = -((s j : R) * (B j i : R)) := by
     exact_mod_cast hs.mul_apply i j
   apply mul_right_cancel₀ hji
-  linear_combination x i * hd - (s i : R) * hx i j
+  linear_combination a * hd - (s i : R) * hab
 
 /-- Skew-symmetrizing families are proportional on every connected component of the
 nonzero-entry graph. This needs no finiteness or connectedness assumption on the whole matrix. -/
@@ -76,42 +76,40 @@ theorem mul_eq_mul_of_reachable (hs : B.IsSkewSymmetrizer s) {x : I → R}
     apply mul_left_cancel₀ (Int.cast_ne_zero.mpr (hs.pos j).ne' : (s j : R) ≠ 0)
     linear_combination (s k : R) * hij + (s i : R) * hjk
   have edge : (SimpleGraph.fromRel (fun i j ↦ B i j ≠ 0)).Adj ≤ r := fun i j h ↦
-    hs.mul_eq_mul_of_ne_zero hx ((hs.fromRel_adj_iff i j).mp h)
+    hs.mul_eq_mul_of_ne_zero (hx i j) ((hs.fromRel_adj_iff i j).mp h)
   exact Relation.reflTransGen_le_of_equivalence_of_le hr edge i j
     ((SimpleGraph.reachable_iff_reflTransGen i j).mp hij)
 
 /-- The products of a row symmetrizer and opposite column weights agree on each connected
 component. In lattice-seed notation these are the products `s i * d i`. -/
-theorem mul_weight_eq_of_reachable (hs : B.IsSkewSymmetrizer s) {d : I → R}
+theorem intCast_mul_eq_intCast_mul_of_reachable (hs : B.IsSkewSymmetrizer s) {d : I → R}
     (hd : ∀ i j, (B i j : R) * d j = -((B j i : R) * d i)) {i j : I}
     (hij : (SimpleGraph.fromRel (fun i j ↦ B i j ≠ 0)).Reachable i j) :
     (s i : R) * d i = (s j : R) * d j := by
   have edge {i j : I} (h : (SimpleGraph.fromRel (fun i j ↦ B i j ≠ 0)).Adj i j) :
       (s i : R) * d i = (s j : R) * d j := by
-    have hji : (B j i : R) ≠ 0 :=
-      Int.cast_ne_zero.mpr (hs.apply_eq_zero_iff.not.mp ((hs.fromRel_adj_iff i j).mp h))
-    have hsym : (s i : R) * (B i j : R) = -((s j : R) * (B j i : R)) := by
-      exact_mod_cast hs.mul_apply i j
-    apply mul_right_cancel₀ hji
-    linear_combination (s i : R) * hd i j - d j * hsym
+    have hab : d j * (B i j : R) = -(d i * (B j i : R)) := by
+      simpa only [mul_comm] using hd i j
+    simpa only [mul_comm] using
+      (hs.mul_eq_mul_of_ne_zero hab ((hs.fromRel_adj_iff i j).mp h)).symm
   have h := Relation.ReflTransGen.lift (p := Eq) (fun i ↦ (s i : R) * d i)
     (fun _ _ h ↦ edge h) i j ((SimpleGraph.reachable_iff_reflTransGen i j).mp hij)
   simpa only [Relation.reflTransGen_eq_self] using h
 
 /-- The weight products descend to a function on the actual connected-component quotient. -/
-theorem exists_component_mul_weights (hs : B.IsSkewSymmetrizer s) {d : I → R}
+theorem exists_forall_connectedComponentMk_eq_intCast_mul (hs : B.IsSkewSymmetrizer s) {d : I → R}
     (hd : ∀ i j, (B i j : R) * d j = -((B j i : R) * d i)) :
     ∃ c : (SimpleGraph.fromRel (fun i j ↦ B i j ≠ 0)).ConnectedComponent → R,
       ∀ i, c ((SimpleGraph.fromRel (fun i j ↦ B i j ≠ 0)).connectedComponentMk i) =
         (s i : R) * d i := by
   exact ⟨SimpleGraph.ConnectedComponent.lift (fun i ↦ (s i : R) * d i)
-    (fun _ _ p _ ↦ hs.mul_weight_eq_of_reachable hd p.reachable), fun _ ↦ by simp⟩
+    (fun _ _ p _ ↦ hs.intCast_mul_eq_intCast_mul_of_reachable hd p.reachable), fun _ ↦ by simp⟩
 
 end Domain
 
 /-- Two positive integral skew-symmetrizers differ by independent positive rational factors
 on the connected components, including isolated vertices and disconnected matrices. -/
-theorem exists_pos_component_factors (hs : B.IsSkewSymmetrizer s)
+theorem exists_pos_and_intCast_eq_connectedComponentMk_mul (hs : B.IsSkewSymmetrizer s)
     (ht : B.IsSkewSymmetrizer t) :
     ∃ c : (SimpleGraph.fromRel (fun i j ↦ B i j ≠ 0)).ConnectedComponent → ℚ,
       (∀ C, 0 < c C) ∧ ∀ i, (t i : ℚ) =
@@ -132,12 +130,13 @@ theorem exists_pos_component_factors (hs : B.IsSkewSymmetrizer s)
 
 /-- Positive rational scaling independently on the support components characterizes all
 integral skew-symmetrizers of a fixed skew-symmetrizable matrix. -/
-theorem isSkewSymmetrizer_iff_exists_component_factors (hs : B.IsSkewSymmetrizer s) :
+theorem isSkewSymmetrizer_iff_exists_pos_and_intCast_eq_connectedComponentMk_mul
+    (hs : B.IsSkewSymmetrizer s) :
     B.IsSkewSymmetrizer t ↔
       ∃ c : (SimpleGraph.fromRel (fun i j ↦ B i j ≠ 0)).ConnectedComponent → ℚ,
         (∀ C, 0 < c C) ∧ ∀ i, (t i : ℚ) =
           c ((SimpleGraph.fromRel (fun i j ↦ B i j ≠ 0)).connectedComponentMk i) * (s i : ℚ) := by
-  refine ⟨hs.exists_pos_component_factors, ?_⟩
+  refine ⟨hs.exists_pos_and_intCast_eq_connectedComponentMk_mul, ?_⟩
   rintro ⟨c, hc, ht⟩
   refine ⟨fun i ↦ ?_, fun i j ↦ ?_⟩
   · have h : (0 : ℚ) < t i := by
