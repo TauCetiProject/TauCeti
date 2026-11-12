@@ -52,6 +52,9 @@ both its tempered distribution and this `Lᵖ` data.
   `TauCeti.BesovSpace.norm_eq_tsum_rpow` (`q < ∞`) and `TauCeti.BesovSpace.norm_eq_ciSup`
   (`q = ∞`) expressing the norm through the blocks, and the single-block bound
   `TauCeti.BesovSpace.rpow_mul_norm_block_le`.
+* `TauCeti.BesovSpace.windowNorms`: the window sums `∑_{j - L ≤ k < j + L} 2^{ks} ‖Δₖ u‖_p` of
+  the weighted block norms, an `ℓ^q` sequence of norm at most `2 L ‖u‖`
+  (`TauCeti.BesovSpace.norm_windowNorms_le`).
 * `TauCeti.BesovSpace.toDistrCLM`: for `1 ≤ q`, the continuous inclusion of `B^s_{p,q}` in the
   tempered distributions, and the instance `CompleteSpace (TauCeti.BesovSpace F φ s p q)`:
   `B^s_{p,q}` is a Banach space.
@@ -442,6 +445,16 @@ def _root_.TemperedDistribution.MemBesov.toBesovSpace {u : 𝓢'(E, F)}
 theorem _root_.TemperedDistribution.MemBesov.toDistr_toBesovSpace {u : 𝓢'(E, F)}
     (hu : u.MemBesov φ s p q) : hu.toBesovSpace.toDistr = u := (rfl)
 
+/-- The window sums `∑_{j - L ≤ k < j + L} 2^{ks} ‖Δₖ u‖_p` of the weighted block norms of `u`, an
+`ℓ^q` sequence of norm at most `2 L ‖u‖` (`TauCeti.BesovSpace.norm_windowNorms_le`). -/
+def windowNorms (L : ℕ) (u : BesovSpace F φ s p q) : lp (fun _ : ℕ ↦ ℝ) q :=
+  ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), ‖u.weightedBlocks k‖,
+    (lp.memℓp u.weightedBlocks).norm.sum_Ico_sub_add L⟩
+
+theorem windowNorms_apply (L : ℕ) (u : BesovSpace F φ s p q) (j : ℕ) :
+    windowNorms L u j = ∑ k ∈ Finset.Ico (j - L) (j + L), ‖u.weightedBlocks k‖ :=
+  (rfl)
+
 section Normed
 
 variable [Fact (1 ≤ q)]
@@ -475,6 +488,12 @@ theorem norm_eq_ciSup (u : BesovSpace F φ s p ∞) :
     ‖u‖ = ⨆ j : ℕ, 2 ^ (s * j) * ‖u.block j‖ := by
   rw [← norm_weightedBlocks, lp.norm_eq_ciSup]
   simp_rw [norm_weightedBlocks_apply]
+
+/-- The window sums of the weighted block norms of `u` have `ℓ^q` norm at most `2 L ‖u‖`. -/
+theorem norm_windowNorms_le (L : ℕ) (u : BesovSpace F φ s p q) :
+    ‖windowNorms L u‖ ≤ 2 * L * ‖u‖ := by
+  simpa [lp.norm_toNorm] using lp.norm_le_of_forall_eq_sum_Ico_sub_add
+    (f := lp.toNorm u.weightedBlocks) L (windowNorms_apply L u)
 
 end Normed
 
@@ -821,29 +840,18 @@ private theorem exists_norm_toBesovSpace_of_bump_le (φ' : ContDiffBump (0 : E))
     LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
       simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, coe_block,
         MemBesov.toDistr_toBesovSpace, hf' j]
-  -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q`.
-  set b : lp (fun _ : ℕ ↦ ℝ) q := ⟨fun k ↦ ‖u.weightedBlocks k‖, (lp.memℓp _).norm⟩
-  set w : lp (fun _ : ℕ ↦ ℝ) q :=
-    ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), b k, (lp.memℓp b).sum_Ico_sub_add L⟩
-  -- The entries of the anonymous `lp` elements `b` and `w` are their defining sequences by
-  -- definition: `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous
-  -- constructor.
-  have hw (j : ℕ) : w j = ∑ k ∈ Finset.Ico (j - L) (j + L), ‖u.weightedBlocks k‖ := rfl
   have hp : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  have hb : ‖b‖ ≤ ‖u‖ := by
-    rw [← norm_weightedBlocks]
-    exact lp.norm_mono hp fun k ↦ (norm_norm _).le
-  calc ‖(u.memBesov_toDistr.of_bump φ').toBesovSpace‖ ≤ ‖K • w‖ := by
+  calc ‖(u.memBesov_toDistr.of_bump φ').toBesovSpace‖ ≤ ‖K • windowNorms L u‖ := by
         rw [← norm_weightedBlocks]
         refine lp.norm_mono hp fun j ↦ ?_
         rw [norm_weightedBlocks_apply, hv, lp.coeFn_smul, Pi.smul_apply, norm_smul,
-          Real.norm_of_nonneg hK, hw, Real.norm_of_nonneg (by positivity)]
+          Real.norm_of_nonneg hK, windowNorms_apply, Real.norm_of_nonneg (by positivity)]
         simpa only [norm_weightedBlocks_apply] using hle j
-    _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
-    _ ≤ K * (2 * L * ‖b‖) := by
+    _ = K * ‖windowNorms L u‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
+    _ ≤ K * (2 * L * ‖u‖) := by
         gcongr
-        exact lp.norm_le_of_forall_eq_sum_Ico_sub_add L fun _ ↦ rfl
-    _ ≤ K * (2 * L) * ‖u‖ := by rw [mul_assoc K]; gcongr
+        exact norm_windowNorms_le L u
+    _ = K * (2 * L) * ‖u‖ := by ring
 
 variable (F) in
 /-- **Independence of the bump function.** The Besov spaces `B^s_{p,q}` built from the
