@@ -47,7 +47,6 @@ private theorem mgf_logarithmicSeries_compoundPoisson {r q : ℝ} (hr : 0 ≤ r)
   have hlog : log (1 - q) < 0 := log_neg (by linarith) (by linarith)
   have hrate : 0 ≤ -(r * log (1 - q)) :=
     neg_nonneg.mpr (mul_nonpos_of_nonneg_of_nonpos hr hlog.le)
-  have hprob := isProbabilityMeasure_logarithmicSeriesMeasure hq0 hq1
   have hjump : Integrable (fun k : ℕ => exp (t * (k : ℝ)))
       (logarithmicSeriesMeasure q) := by
     simpa only [Function.comp_def] using
@@ -79,13 +78,11 @@ theorem compoundPoissonMeasure_logarithmicSeriesMeasure {r q : ℝ} (hr : 0 ≤ 
   rcases hr.eq_or_lt with rfl | hr
   · simp [negativeBinomialMeasure_zero (by linarith : 0 < 1 - q) (by linarith)]
   have hprob := isProbabilityMeasure_logarithmicSeriesMeasure hq0 hq1
-  have hnb := isProbabilityMeasure_negativeBinomialMeasure hr.le
-    (by linarith : 0 < 1 - q) (by linarith)
   apply (MeasurableEmbedding.natCast (α := ℝ)).map_injective
   symm
   apply TauCeti.Measure.ext_of_mgf
   · rw [integrableExpSet_id_map_cast_negativeBinomialMeasure hr
-      (by linarith : 0 < 1 - q) (by linarith)]
+      (by linarith : 0 < 1 - q)]
     have hopen : IsOpen {t : ℝ | (1 - (1 - q)) * exp t < 1} :=
       isOpen_lt (by fun_prop) continuous_const
     rw [hopen.interior_eq]

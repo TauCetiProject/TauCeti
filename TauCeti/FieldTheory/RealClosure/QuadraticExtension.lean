@@ -146,7 +146,7 @@ theorem not_isSquare_neg_one_of_isAlgClosed_of_isQuadraticExtension [IsAlgClosed
     obtain ⟨w, hw⟩ := IsAlgClosed.exists_pow_nat_eq (e.symm q) two_pos
     exact ⟨e w, by rw [← map_mul, ← sq, hw, AlgEquiv.apply_symm_apply]⟩
   by_cases h2 : (2 : R) = 0
-  · refine false_of_forall_isSquare_of_two_eq_zero h2 hfield hsq fun hb => ?_
+  · refine false_of_forall_isSquare_of_two_eq_zero h2 hfield hsq fun _ => ?_
     -- solve the Artin–Schreier equation `z ^ 2 + b z = a / b • ω` in `K`
     have hdeg : (X ^ 2 + C (algebraMap R K b) * X - C (e.symm ⟨0, a / b⟩)).degree = 2 := by
       compute_degree!

@@ -184,7 +184,7 @@ private theorem exists_ne_one_forall_mem_normalClosure {ι : G →* H} (h : IsGD
   induction hs using Finset.Nonempty.cons_induction with
   | singleton k =>
     exact ⟨k, hs1 k (by simp), by simpa using Subgroup.subset_normalClosure rfl⟩
-  | cons k s hk hs ih =>
+  | cons k s hk _ ih =>
     obtain ⟨w, hw1, hw⟩ := ih fun k' hk' => hs1 k' (by simp [hk'])
     obtain ⟨⟨w', hw'⟩, hw'1⟩ := Subgroup.ne_bot_iff_exists_ne_one.mp
       (h.inf_ne_bot (hncl hw1) (hncl (hs1 k (by simp))))

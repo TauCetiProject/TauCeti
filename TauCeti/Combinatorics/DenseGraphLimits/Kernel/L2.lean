@@ -45,10 +45,6 @@ the expansion `l2sq_sub` needs no additional side conditions.
 ## References
 
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §9.2.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1/2 — `l2sq` and the analytic energy
-  stack.  The `l2sq` signature and the `l2sq_nonneg` proof are taken from
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` (Layer 1/2); the pairing `l2inner` and its
-  bilinear API are developed here.
 * The set-integral Cauchy--Schwarz argument follows `Graphon/Regularity.lean` in
   `cameronfreer/graphon` (Apache 2.0) at commit
   `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`.
