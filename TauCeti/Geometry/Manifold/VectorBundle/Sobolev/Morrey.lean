@@ -33,8 +33,8 @@ everywhere there. The coordinates of `s` in two charts are related by the coordi
 bundle at every point of the overlap; since chart transitions preserve null sets, the
 representatives `gᵢ` satisfy the same relation almost everywhere, and hence everywhere, both sides
 being continuous on the open overlap and Lebesgue measure charging every nonempty open set.
-Therefore the section read off at each point from the representative of a chosen chart containing
-it has chart expression `gᵢ` on `A.image i` for every chart `i`, and it is continuous.
+Therefore the representatives `gᵢ` glue to a continuous section with chart expression `gᵢ` on
+`A.image i` for every chart `i` (`TauCeti.FiniteBundleAtlas.exists_continuous_coord_eqOn`).
 Uniqueness holds because two continuous sections whose chart expressions agree almost everywhere
 agree everywhere (`TauCeti.FiniteBundleAtlas.eq_of_continuous_of_coord_ae_eq`).
 
@@ -87,7 +87,6 @@ private theorem exists_continuous_eqOn_preciseRepresentative (hp : 2 < p) {s : �
     (hs : ∀ i, MemWkpLoc p (A.image i) 1 (A.coord i s)) :
     ∃ t : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (t x)) ∧
       ∀ i, EqOn (A.coord i t) (preciseRepresentative volume (A.coord i s)) (A.image i) := by
-  classical
   set g : Fin A.n → ℂ → F := fun i ↦ preciseRepresentative volume (A.coord i s)
   have hg_cont (i : Fin A.n) : ContinuousOn (g i) (A.image i) :=
     (hs i).continuousOn_preciseRepresentative hp
@@ -115,46 +114,11 @@ private theorem exists_continuous_eqOn_preciseRepresentative (hp : 2 < p) {s : �
     · have hbase : MapsTo (A.chart i').symm (A.overlap i i')
           ((A.triv i).baseSet ∩ (A.triv i').baseSet) := fun y hy ↦
         ⟨A.dom_subset_baseSet i (hsymm i i' hy).1, A.dom_subset_baseSet i' (hsymm i i' hy).2⟩
-      have hchart : ContinuousOn (A.chart i').symm (A.overlap i i') :=
-        (A.chart i').continuousOn_symm.mono fun y hy ↦ by
-          obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 hy
-          exact (A.chart i').map_source (A.dom_subset_chart_source i' hx.2)
-      exact ((continuousOn_coordChange ℝ (A.triv i) (A.triv i')).comp hchart hbase).clm_apply
+      exact ((continuousOn_coordChange ℝ (A.triv i) (A.triv i')).comp
+        ((A.continuousOn_chart_symm i').mono (A.overlap_subset_image i i')) hbase).clm_apply
         ((hg_cont i).comp (htrans i i') fun y hy ↦
           A.overlap_subset_image i' i (A.transition_mem_overlap hy))
-  -- The section read off from the representative of a chosen chart at each point.
-  let idx : M → Fin A.n := fun x ↦ (A.exists_mem_dom x).choose
-  have hidx (x : M) : x ∈ A.dom (idx x) := (A.exists_mem_dom x).choose_spec
-  let t : ∀ x, V x := fun x ↦ (A.triv (idx x)).symm x (g (idx x) (A.chart (idx x) x))
-  have hcoord (i : Fin A.n) : EqOn (A.coord i t) (g i) (A.image i) := by
-    intro y hy
-    obtain ⟨x, hx, rfl⟩ := A.mem_image.1 hy
-    have hov : A.chart i x ∈ A.overlap (idx x) i := A.chart_mem_overlap (hidx x) hx
-    rw [hcompat (idx x) i hov, A.coord_chart t hx]
-    beta_reduce
-    rw [A.transition_chart hx,
-      (A.chart i).left_inv (A.dom_subset_chart_source i hx),
-      Trivialization.coordChangeL_apply _ _
-        ⟨A.dom_subset_baseSet _ (hidx x), A.dom_subset_baseSet i hx⟩]
-  refine ⟨t, continuous_iff_continuousAt.2 fun x₀ ↦ ?_, hcoord⟩
-  obtain ⟨i, hx₀⟩ := A.exists_mem_dom x₀
-  -- On `A.dom i` the section is the inverse of the trivialization of chart `i` applied to the
-  -- representative of chart `i`.
-  have heq : EqOn (fun x ↦ TotalSpace.mk' F x (t x))
-      ((fun z : M × F ↦ TotalSpace.mk' F z.1 ((A.triv i).symm z.1 z.2)) ∘
-        fun x ↦ (x, g i (A.chart i x))) (A.dom i) := by
-    intro x hx
-    simp only [Function.comp_apply]
-    rw [← hcoord i (A.mem_image.2 ⟨x, hx, rfl⟩), A.coord_chart t hx,
-      (A.triv i).symm_apply_apply_mk (A.dom_subset_baseSet i hx)]
-  have hcont : ContinuousOn
-      ((fun z : M × F ↦ TotalSpace.mk' F z.1 ((A.triv i).symm z.1 z.2)) ∘
-        fun x ↦ (x, g i (A.chart i x))) (A.dom i) :=
-    (A.triv i).continuousOn_symm.comp (continuousOn_id.prodMk ((hg_cont i).comp
-      ((A.chart i).continuousOn.mono (A.dom_subset_chart_source i))
-        fun x hx ↦ A.mem_image.2 ⟨x, hx, rfl⟩))
-      fun x hx ↦ ⟨A.dom_subset_baseSet i hx, mem_univ _⟩
-  exact (hcont.congr heq).continuousAt ((A.isOpen_dom i).mem_nhds hx₀)
+  exact A.exists_continuous_coord_eqOn hg_cont hcompat
 
 /-- **Morrey's embedding for Sobolev sections: continuous representatives.** For `2 < p ≤ ∞`,
 every element `w` of `W^{1,p}(V)` has exactly one continuous representative: there is a unique
