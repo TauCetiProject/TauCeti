@@ -310,12 +310,15 @@ private lemma circleMap_mem_closure_image_Ioo (ζ : ℂ) (ρ : ℝ) {a b θ₀ :
 the closure of the arc the filter `𝓝[circleMap ζ ρ '' Ioo a b]` is `⊥` and every `v` is a limit, and
 a point of the closure is the image of an angle of `[a, b]`.
 
-When `a < b` this is a genuine limit. The cluster set along the arc is a subsingleton by
+When `a < b` and `circleMap ζ ρ θ₀` lies in the closure of the image of the arc, this is a
+genuine limit. The cluster set along the arc is a subsingleton by
 `TauCeti.subsingleton_clusterSetOn_circleMap_image_Ioo`, and it is nonempty because the image of
-the arc is bounded, `TauCeti.isBounded_image_circleMap_image_Ioo_of_lintegral_ne_top` — so the map
-is confined along the arc to a compact set, which is the hypothesis of
+the arc is bounded,
+`TauCeti.isBounded_image_circleMap_image_Ioo_of_lintegral_ne_top` — so the map is confined along
+the arc to a compact set, which is the hypothesis of
 `TauCeti.exists_tendsto_of_clusterSetOn_subsingleton`. The two endpoints `θ₀ = a` and `θ₀ = b` are
-the case with content: there the arc is a curve with an honest end.
+the case with content: there the arc is a curve with an honest end. When `a < b` but
+`circleMap ζ ρ θ₀` lies outside that closure, the filter is `⊥` and the convergence is vacuous.
 
 When `a = b` the arc is empty, the filter `𝓝[∅] (circleMap ζ ρ θ₀)` is `⊥`, and the convergence
 is vacuous: every `v` is a limit. -/
