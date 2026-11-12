@@ -409,6 +409,7 @@ theorem forall_polar_comp_eq_zero_iff {e : V ≃ₗ[ℝ] V'} (he : IsSymplectomo
 /-- The quadratic form induced on the reduced space of `U'` by `Q`, pulled back along the map of
 reduced spaces induced by a linear symplectomorphism `e` carrying `U` onto `U'`, is the form
 induced on the reduced space of `U` by `Q ∘ e`. -/
+@[simp]
 theorem reducedQuadraticForm_comp_reducedSpaceCongr {e : V ≃ₗ[ℝ] V'}
     (he : IsSymplectomorphism ω ω' e) {U : Submodule ℝ V} {U' : Submodule ℝ V'}
     (hU : U.map (e : V →ₗ[ℝ] V') = U') (Q : QuadraticForm ℝ V')

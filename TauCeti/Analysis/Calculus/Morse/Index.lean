@@ -284,12 +284,11 @@ theorem range_hessianQuadraticForm_comp {G : Type*} [NormedAddCommGroup G] [Norm
   simp only [hℓ]
   refine le_antisymm (by rintro _ ⟨ℓ, rfl⟩; exact ⟨_, rfl⟩) ?_
   rintro _ ⟨ℓ, rfl⟩
-  obtain ⟨h, hh⟩ := (fderiv ℝ g (φ x) : F →ₗ[ℝ] G).exists_leftInverse_of_injective
-    (LinearMap.ker_eq_bot.2 hinj)
-  have hℓ' : (ℓ.comp (LinearMap.toContinuousLinearMap h)).comp (fderiv ℝ g (φ x)) = ℓ := by
-    ext w
-    simpa using congr(ℓ ($hh w))
-  exact ⟨ℓ.comp (LinearMap.toContinuousLinearMap h), by beta_reduce; rw [hℓ']⟩
+  obtain ⟨ψ, hψ⟩ := LinearMap.dualMap_surjective_of_injective
+    (f := (fderiv ℝ g (φ x) : F →ₗ[ℝ] G)) hinj ℓ
+  have hℓ' : (LinearMap.toContinuousLinearMap ψ).comp (fderiv ℝ g (φ x)) = ℓ :=
+    ContinuousLinearMap.coe_injective hψ
+  exact ⟨LinearMap.toContinuousLinearMap ψ, by beta_reduce; rw [hℓ']⟩
 
 /-- The **Morse index** of `f` at `x` is the negative index of inertia of its Hessian quadratic
 form.  In finite dimensions it is equivalently the maximal dimension of a subspace on which the

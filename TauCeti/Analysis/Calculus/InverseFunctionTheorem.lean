@@ -55,6 +55,8 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
   inverse is `C^n` on the whole target.
 * `ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq`: the same local inverse
   carries a differential identity `dg_z u = v (g z)` over to `d(g⁻¹)_y (v y) = u`.
+* `ContDiffAt.contDiffAt_comp_iff`: precomposition with a `C^n` map whose derivative at a point is
+  invertible preserves and reflects `C^n` regularity at that point.
 * `Set.MapsTo.interior_of_contDiffOn`: a `C¹` map with invertible derivative on the interior of
   `s` and mapping `s` into `t` maps `interior s` into `interior t`.
 
@@ -234,6 +236,19 @@ theorem _root_.ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq
     ((hd.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id _))
   simpa only [ContinuousLinearMap.comp_apply, hgu _ (hΘs hz), hgy,
     ContinuousLinearMap.id_apply] using h
+
+/-- **Precomposition with a local diffeomorphism.** If `g` is `C^n` at `a`, with `n ≠ 0`, and its
+derivative at `a` is a continuous linear equivalence, then `h ∘ g` is `C^n` at `a` exactly when `h`
+is `C^n` at `g a`: near `g a`, `h` is `h ∘ g` composed with the `C^n` local inverse of `g`. -/
+theorem _root_.ContDiffAt.contDiffAt_comp_iff {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕂 G] {h : F → G} (hg : ContDiffAt 𝕂 n g a) {e : E ≃L[𝕂] F}
+    (he : HasFDerivAt g (e : E →L[𝕂] F) a) (hn : n ≠ 0) :
+    ContDiffAt 𝕂 n (h ∘ g) a ↔ ContDiffAt 𝕂 n h (g a) := by
+  refine ⟨fun hhg ↦ ?_, fun hh ↦ hh.comp a hg⟩
+  rw [← hg.localInverse_apply_image he hn] at hhg
+  refine (hhg.comp (g a) (hg.to_localInverse he hn)).congr_of_eventuallyEq ?_
+  filter_upwards [(hg.hasStrictFDerivAt he hn).eventually_right_inverse] with z hz
+  exact congrArg h hz.symm
 
 /-- **Invariance of the interior.** A map which is `C^n` on `s`, with `1 ≤ n`, has invertible
 derivative at every interior point of `s` and maps `s` into `t` also maps `interior s` into

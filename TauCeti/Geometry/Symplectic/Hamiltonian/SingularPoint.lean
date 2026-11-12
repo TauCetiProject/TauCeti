@@ -58,8 +58,8 @@ the Hessians of the critical functions back along `dφ_y`, and `dφ_y` induces a
 transversal spaces carrying one family of transversal Hessians to the other
 (`TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_reduction_comp_iff`). So `y` is a
 nondegenerate point of `F ∘ φ` exactly when `φ y` is one of `F`
-(`TauCeti.SymplecticForm.isNondegeneratePoint_comp_iff_of_isSymplectomorphism`), and likewise for
-nondegenerate rank-zero points.
+(`TauCeti.SymplecticForm.isNondegeneratePoint_comp_iff_of_isSymplectomorphism`). The rank-zero
+version is `TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_iff_of_isSymplectomorphism`.
 
 ## Main definitions
 
@@ -82,10 +82,8 @@ nondegenerate rank-zero points.
   maximal rank are nondegenerate.
 * `TauCeti.SymplecticForm.isNondegeneratePoint_comp_iff`: invariance under reparametrization of
   the values.
-* `TauCeti.SymplecticForm.isNondegeneratePoint_comp_iff_of_isSymplectomorphism`,
-  `TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_iff_of_isSymplectomorphism`:
-  invariance under maps whose differential is a linear symplectomorphism, such as canonical
-  transformations.
+* `TauCeti.SymplecticForm.isNondegeneratePoint_comp_iff_of_isSymplectomorphism`: invariance under
+  maps whose differential is a linear symplectomorphism, such as canonical transformations.
 
 ## References
 
@@ -306,6 +304,13 @@ theorem isNondegeneratePoint_iff_isNondegenerateRankZeroPoint (h : fderiv ℝ F 
   exact ⟨fun hx ↦ ⟨hx.contDiffAt, h, key.1 hx.isNondegenerateQuadraticFamily⟩,
     fun hx ↦ ⟨hx.contDiffAt, fun ℓ _ ↦ hpolar ℓ, key.2 hx.isNondegenerateQuadraticFamily⟩⟩
 
+/-- Transfer of the dependent data in `isNondegeneratePoint_iff_of_fderiv_eq`: two existentials
+over equivalent descent conditions agree when their bodies agree for all proofs of the
+conditions. -/
+private theorem exists_congr_of_forall_iff {p p' : Prop} {q : p → Prop} {q' : p' → Prop}
+    (hp : p ↔ p') (hq : ∀ h h', q h ↔ q' h') : Exists q ↔ Exists q' :=
+  ⟨fun ⟨h, hh⟩ ↦ ⟨hp.1 h, (hq h _).1 hh⟩, fun ⟨h', hh'⟩ ↦ ⟨hp.2 h', (hq _ h').2 hh'⟩⟩
+
 /-- **Invariance under reparametrization of the values.** Composing `F` with a `C²` map `g` whose
 differential at `F x` is injective preserves and reflects nondegenerate points: the kernel of the
 differential, and hence the transversal space, does not change, and the transversal Hessians of
@@ -318,10 +323,8 @@ theorem isNondegeneratePoint_comp_iff {G' : Type*} [NormedAddCommGroup G'] [Norm
   set D := fderiv ℝ g (F x)
   have hgF : fderiv ℝ (g ∘ F) x = D.comp T :=
     fderiv_comp x (hg.differentiableAt (by norm_num)) (hF.differentiableAt (by norm_num))
-  have hker : (D.comp T).ker = T.ker := by
-    ext v
-    simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply]
-    exact ⟨fun h ↦ hinj (by rw [h, map_zero]), fun h ↦ by rw [h, map_zero]⟩
+  have hker : (D.comp T).ker = T.ker :=
+    LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot.2 hinj)
   -- On `ker dF_x` the Hessian of `ℓ' ∘ g ∘ F` is the Hessian of `(ℓ' ∘ Dg) ∘ F`.
   have hH : ∀ ℓ' : G' →L[ℝ] ℝ, ∀ u ∈ T.ker,
       hessianQuadraticForm (ℓ' ∘ g ∘ F) x u = hessianQuadraticForm (ℓ'.comp D ∘ F) x u := by
@@ -333,48 +336,30 @@ theorem isNondegeneratePoint_comp_iff {G' : Type*} [NormedAddCommGroup G'] [Norm
       QuadraticMap.polar (hessianQuadraticForm (ℓ' ∘ g ∘ F) x) w u =
         QuadraticMap.polar (hessianQuadraticForm (ℓ'.comp D ∘ F) x) w u := fun ℓ' w hw u hu ↦ by
     simp only [QuadraticMap.polar, hH ℓ' _ (add_mem hw hu), hH ℓ' w hw, hH ℓ' u hu]
-  -- Every functional on `G` factors through `Dg`, so `ℓ' ↦ ℓ' ∘ Dg` maps the critical functionals
-  -- of `g ∘ F` onto those of `F`.
-  obtain ⟨h, hh⟩ := (D : G →ₗ[ℝ] G').exists_leftInverse_of_injective (LinearMap.ker_eq_bot.2 hinj)
-  have hfac : ∀ ℓ : G →L[ℝ] ℝ, (ℓ.comp (LinearMap.toContinuousLinearMap h)).comp D = ℓ := by
-    intro ℓ
-    ext w
-    simpa using congr(ℓ ($hh w))
+  -- Every functional on `G` factors through the injective `Dg`, so `ℓ' ↦ ℓ' ∘ Dg` maps the critical
+  -- functionals of `g ∘ F` onto those of `F`.
+  have hfac : ∀ ℓ : G →L[ℝ] ℝ, ∃ ℓ' : G' →L[ℝ] ℝ, ℓ'.comp D = ℓ := fun ℓ ↦ by
+    obtain ⟨ψ, hψ⟩ := LinearMap.dualMap_surjective_of_injective (f := (D : G →ₗ[ℝ] G')) hinj ℓ
+    exact ⟨LinearMap.toContinuousLinearMap ψ, ContinuousLinearMap.coe_injective hψ⟩
   let f : {ℓ' : G' →L[ℝ] ℝ // ℓ'.comp (D.comp T) = 0} → {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} :=
     fun ℓ' ↦ ⟨ℓ'.1.comp D, by rw [ContinuousLinearMap.comp_assoc]; exact ℓ'.2⟩
-  have hf : Function.Surjective f := fun ℓ ↦ ⟨⟨ℓ.1.comp (LinearMap.toContinuousLinearMap h), by
-    rw [← ContinuousLinearMap.comp_assoc, hfac, ℓ.2]⟩, Subtype.ext (hfac ℓ.1)⟩
+  have hf : Function.Surjective f := fun ℓ ↦ by
+    obtain ⟨ℓ', hℓ'⟩ := hfac ℓ.1
+    exact ⟨⟨ℓ', by rw [← ContinuousLinearMap.comp_assoc, hℓ', ℓ.2]⟩, Subtype.ext hℓ'⟩
+  rw [isNondegeneratePoint_iff_of_fderiv_eq hgF hker fun _ ↦ Iff.rfl,
+    isNondegeneratePoint_iff_of_fderiv_eq rfl rfl fun _ ↦ Iff.rfl]
+  refine and_congr (iff_of_true (hg.comp x hF) hF) (exists_congr_of_forall_iff
+    ⟨fun hQ₁ ℓ hℓ w hw u hu ↦ ?_, fun hQ₂ ℓ' hℓ' w hw u hu ↦ ?_⟩ fun hQ₁ hQ₂ ↦ ?_)
+  · obtain ⟨ℓ', rfl⟩ := hfac ℓ
+    rw [← hpolar ℓ' w hw.1 u hu]
+    exact hQ₁ ℓ' (by rwa [ContinuousLinearMap.comp_assoc] at hℓ) w hw u hu
+  · rw [hpolar ℓ' w hw.1 u hu]
+    exact hQ₂ _ (f ⟨ℓ', hℓ'⟩).2 w hw u hu
   -- The transversal Hessians of `g ∘ F` are those of `F`, reindexed along `f`.
-  have hN : ∀ (hQ₁ : ∀ ℓ' : G' →L[ℝ] ℝ, ℓ'.comp (D.comp T) = 0 →
-        ∀ w ∈ T.ker ⊓ ω.orthogonal T.ker, ∀ u ∈ T.ker,
-          QuadraticMap.polar (hessianQuadraticForm (ℓ' ∘ g ∘ F) x) w u = 0)
-      (hQ₂ : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → ∀ w ∈ T.ker ⊓ ω.orthogonal T.ker, ∀ u ∈ T.ker,
-          QuadraticMap.polar (hessianQuadraticForm (ℓ ∘ F) x) w u = 0),
-      (ω.reduction T.ker).IsNondegenerateQuadraticFamily
-      (fun ℓ' : {ℓ' : G' →L[ℝ] ℝ // ℓ'.comp (D.comp T) = 0} ↦ ω.reducedQuadraticForm T.ker
-        (hessianQuadraticForm (ℓ'.1 ∘ g ∘ F) x) (hQ₁ ℓ'.1 ℓ'.2)) ↔
-      (ω.reduction T.ker).IsNondegenerateQuadraticFamily
-        fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ↦ ω.reducedQuadraticForm T.ker
-          (hessianQuadraticForm (ℓ.1 ∘ F) x) (hQ₂ ℓ.1 ℓ.2) := fun hQ₁ hQ₂ ↦ by
-    refine isNondegenerateQuadraticFamily_iff_of_span_eq (congrArg _ ?_)
+  · refine isNondegenerateQuadraticFamily_iff_of_span_eq (congrArg _ ?_)
     rw [← hf.range_comp]
     exact congrArg Set.range
       (funext fun ℓ' ↦ reducedQuadraticForm_congr _ _ _ _ fun u hu ↦ hH ℓ'.1 u hu)
-  rw [isNondegeneratePoint_iff_of_fderiv_eq hgF hker fun _ ↦ Iff.rfl,
-    isNondegeneratePoint_iff_of_fderiv_eq rfl rfl fun _ ↦ Iff.rfl]
-  refine ⟨fun ⟨_, hQ₁, h⟩ ↦ ?_, fun ⟨_, hQ₂, h⟩ ↦ ?_⟩
-  · have hQ₂ : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → ∀ w ∈ T.ker ⊓ ω.orthogonal T.ker, ∀ u ∈ T.ker,
-        QuadraticMap.polar (hessianQuadraticForm (ℓ ∘ F) x) w u = 0 := by
-      intro ℓ hℓ w hw u hu
-      rw [← hfac ℓ, ← hpolar _ w hw.1 u hu]
-      exact hQ₁ _ (by rw [← ContinuousLinearMap.comp_assoc, hfac, hℓ]) w hw u hu
-    exact ⟨hF, hQ₂, (hN hQ₁ hQ₂).1 h⟩
-  · have hQ₁ : ∀ ℓ' : G' →L[ℝ] ℝ, ℓ'.comp (D.comp T) = 0 → ∀ w ∈ T.ker ⊓ ω.orthogonal T.ker,
-        ∀ u ∈ T.ker, QuadraticMap.polar (hessianQuadraticForm (ℓ' ∘ g ∘ F) x) w u = 0 := by
-      intro ℓ' hℓ' w hw u hu
-      rw [hpolar ℓ' w hw.1 u hu]
-      exact hQ₂ _ (f ⟨ℓ', hℓ'⟩).2 w hw u hu
-    exact ⟨hg.comp x hF, hQ₁, (hN hQ₁ hQ₂).2 h⟩
 
 /-- **Invariance under canonical transformations.** Let `φ : E' → E` be `C²` at `y`, with
 differential at `y` a linear symplectomorphism `e` from `(E', ω')` to `(E, ω)`. Then `y` is a
@@ -386,9 +371,15 @@ transversal spaces. Only the differential of `φ` at `y` enters, so this applies
 theorem isNondegeneratePoint_comp_iff_of_isSymplectomorphism {E' : Type*}
     [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] {ω' : SymplecticForm E'}
     {φ : E' → E} {y : E'} {e : E' ≃ₗ[ℝ] E} (he : IsSymplectomorphism ω' ω e)
-    (hφ : ContDiffAt ℝ 2 φ y) (hφe : ∀ v, fderiv ℝ φ y v = e v)
-    (hF : ContDiffAt ℝ 2 F (φ y)) :
+    (hφ : ContDiffAt ℝ 2 φ y) (hφe : ∀ v, fderiv ℝ φ y v = e v) :
     ω'.IsNondegeneratePoint (F ∘ φ) y ↔ ω.IsNondegeneratePoint F (φ y) := by
+  have hD : fderiv ℝ φ y = (e.toContinuousLinearEquiv : E' →L[ℝ] E) :=
+    ContinuousLinearMap.ext fun v ↦ by simp [hφe]
+  have hcd := hφ.contDiffAt_comp_iff (h := F)
+    (hD ▸ (hφ.differentiableAt two_ne_zero).hasFDerivAt) two_ne_zero
+  by_cases hF : ContDiffAt ℝ 2 F (φ y)
+  swap
+  · exact iff_of_false (fun h ↦ hF (hcd.1 h.contDiffAt)) fun h ↦ hF h.contDiffAt
   obtain ⟨T, hT⟩ : ∃ T, fderiv ℝ F (φ y) = T := ⟨_, rfl⟩
   obtain ⟨U', hU'⟩ : ∃ U', (T.comp (fderiv ℝ φ y)).ker = U' := ⟨_, rfl⟩
   have hFφ : fderiv ℝ (F ∘ φ) y = T.comp (fderiv ℝ φ y) := by
@@ -398,10 +389,9 @@ theorem isNondegeneratePoint_comp_iff_of_isSymplectomorphism {E' : Type*}
     ext v
     simp [← hU', Submodule.mem_map_equiv, hφe]
   -- The critical functionals of `F ∘ φ` are those of `F`.
-  have hcrit : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp (T.comp (fderiv ℝ φ y)) = 0 ↔ ℓ.comp T = 0 := by
-    refine fun ℓ ↦ ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun h ↦ by
-      rw [← ContinuousLinearMap.comp_assoc, h, ContinuousLinearMap.zero_comp]⟩
-    simpa [hφe] using congr($h (e.symm v))
+  have hcrit : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp (T.comp (fderiv ℝ φ y)) = 0 ↔ ℓ.comp T = 0 := fun ℓ ↦ by
+    rw [← ContinuousLinearMap.comp_assoc, hD]
+    simp [ContinuousLinearMap.ext_iff, e.toContinuousLinearEquiv.surjective.forall]
   -- At these functionals, the Hessian of `ℓ ∘ F ∘ φ` is the pullback of that of `ℓ ∘ F` along `e`.
   have hH : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → hessianQuadraticForm (ℓ ∘ F ∘ φ) y =
       (hessianQuadraticForm (ℓ ∘ F) (φ y)).comp (e : E' →ₗ[ℝ] E) := by
@@ -411,54 +401,15 @@ theorem isNondegeneratePoint_comp_iff_of_isSymplectomorphism {E' : Type*}
     rw [← Function.comp_assoc, hessianQuadraticForm_comp (ℓ.contDiff.contDiffAt.comp _ hF) hφ hd]
     ext v
     simp [hφe]
-  have hQ : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → ((∀ w ∈ U' ⊓ ω'.orthogonal U', ∀ u ∈ U',
-      QuadraticMap.polar (hessianQuadraticForm (ℓ ∘ F ∘ φ) y) w u = 0) ↔
-        ∀ w ∈ T.ker ⊓ ω.orthogonal T.ker, ∀ u ∈ T.ker,
-          QuadraticMap.polar (hessianQuadraticForm (ℓ ∘ F) (φ y)) w u = 0) := fun ℓ hℓ ↦ by
-    rw [hH ℓ hℓ]
-    exact forall_polar_comp_eq_zero_iff he hU _
-  -- The transversal Hessians of `F ∘ φ` are those of `F` pulled back along `e`.
-  have hN : ∀ (hQ₁ : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → ∀ w ∈ U' ⊓ ω'.orthogonal U', ∀ u ∈ U',
-          QuadraticMap.polar (hessianQuadraticForm (ℓ ∘ F ∘ φ) y) w u = 0)
-      (hQ₂ : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → ∀ w ∈ T.ker ⊓ ω.orthogonal T.ker, ∀ u ∈ T.ker,
-          QuadraticMap.polar (hessianQuadraticForm (ℓ ∘ F) (φ y)) w u = 0),
-      (ω'.reduction U').IsNondegenerateQuadraticFamily
-      (fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ↦ ω'.reducedQuadraticForm U'
-        (hessianQuadraticForm (ℓ.1 ∘ F ∘ φ) y) (hQ₁ ℓ.1 ℓ.2)) ↔
-      (ω.reduction T.ker).IsNondegenerateQuadraticFamily
-        fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ↦ ω.reducedQuadraticForm T.ker
-          (hessianQuadraticForm (ℓ.1 ∘ F) (φ y)) (hQ₂ ℓ.1 ℓ.2) := fun hQ₁ hQ₂ ↦ by
-    rw [← isNondegenerateQuadraticFamily_reduction_comp_iff he hU]
-    exact Iff.of_eq (congrArg _ (funext fun ℓ ↦
-      reducedQuadraticForm_congr _ _ _ _ fun u _ ↦ by rw [hH ℓ.1 ℓ.2]))
   rw [isNondegeneratePoint_iff_of_fderiv_eq hFφ hU' fun ℓ ↦ (hcrit ℓ).symm,
     isNondegeneratePoint_iff_of_fderiv_eq hT rfl fun _ ↦ Iff.rfl]
-  refine and_congr ⟨fun _ ↦ hF, fun _ ↦ hF.comp y hφ⟩ ⟨fun ⟨hQ₁, h⟩ ↦ ?_, fun ⟨hQ₂, h⟩ ↦ ?_⟩
-  · have hQ₂ := fun ℓ hℓ ↦ (hQ ℓ hℓ).1 (hQ₁ ℓ hℓ)
-    exact ⟨hQ₂, (hN hQ₁ hQ₂).1 h⟩
-  · have hQ₁ := fun ℓ hℓ ↦ (hQ ℓ hℓ).2 (hQ₂ ℓ hℓ)
-    exact ⟨hQ₁, (hN hQ₁ hQ₂).2 h⟩
-
-/-- **Invariance of nondegenerate rank-zero points under canonical transformations.** If
-`φ : E' → E` is `C²` at `y`, with differential at `y` a linear symplectomorphism `e` from
-`(E', ω')` to `(E, ω)`, then `y` is a nondegenerate rank-zero point of `F ∘ φ` for `ω'` exactly when
-`φ y` is a nondegenerate rank-zero point of `F` for `ω`. -/
-theorem isNondegenerateRankZeroPoint_comp_iff_of_isSymplectomorphism {E' : Type*}
-    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] {ω' : SymplecticForm E'}
-    {φ : E' → E} {y : E'} {e : E' ≃ₗ[ℝ] E} (he : IsSymplectomorphism ω' ω e)
-    (hφ : ContDiffAt ℝ 2 φ y) (hφe : ∀ v, fderiv ℝ φ y v = e v)
-    (hF : ContDiffAt ℝ 2 F (φ y)) :
-    ω'.IsNondegenerateRankZeroPoint (F ∘ φ) y ↔ ω.IsNondegenerateRankZeroPoint F (φ y) := by
-  have h0 : fderiv ℝ (F ∘ φ) y = 0 ↔ fderiv ℝ F (φ y) = 0 := by
-    rw [fderiv_comp y (hF.differentiableAt (by norm_num)) (hφ.differentiableAt (by norm_num))]
-    refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun h ↦ by
-      rw [h, ContinuousLinearMap.zero_comp]⟩
-    simpa [hφe] using congr($h (e.symm v))
-  have key := isNondegeneratePoint_comp_iff_of_isSymplectomorphism he hφ hφe hF
-  exact ⟨fun h ↦ (isNondegeneratePoint_iff_isNondegenerateRankZeroPoint (h0.1 h.fderiv_eq_zero)).1
-      (key.1 ((isNondegeneratePoint_iff_isNondegenerateRankZeroPoint h.fderiv_eq_zero).2 h)),
-    fun h ↦ (isNondegeneratePoint_iff_isNondegenerateRankZeroPoint (h0.2 h.fderiv_eq_zero)).1
-      (key.2 ((isNondegeneratePoint_iff_isNondegenerateRankZeroPoint h.fderiv_eq_zero).2 h))⟩
+  refine and_congr (iff_of_true (hF.comp y hφ) hF) (exists_congr_of_forall_iff
+    (forall₂_congr fun ℓ hℓ ↦ by rw [hH ℓ hℓ]; exact forall_polar_comp_eq_zero_iff he hU _)
+    fun hQ₁ hQ₂ ↦ ?_)
+  -- The transversal Hessians of `F ∘ φ` are those of `F` pulled back along `e`.
+  rw [← isNondegenerateQuadraticFamily_reduction_comp_iff he hU]
+  exact Iff.of_eq (congrArg _ (funext fun ℓ ↦
+    reducedQuadraticForm_congr _ _ _ _ fun u _ ↦ by rw [hH ℓ.1 ℓ.2]))
 
 end Nondegenerate
 
