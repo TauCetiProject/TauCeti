@@ -158,7 +158,8 @@ theorem double_coordinates_of_cross_eq_zero (hD : D ≠ 0)
     (hS : S ≠ 0) (hSP : S.cross (coordinates A B P) = 0) :
     double N D S ≠ 0 ∧
       (double N D S).cross (coordinates A B (P + P)) = 0 := by
-  obtain ⟨c, rfl⟩ := (Pair.cross_eq_zero_iff_exists_smul (coordinates_ne_zero_of_field P)).mp hSP
+  obtain ⟨c, rfl⟩ :=
+    (Pair.cross_eq_zero_iff_exists_smul (coordinates_ne_zero_of_isReduced P)).mp hSP
   have hc : c ≠ 0 := by
     intro hc
     apply hS
