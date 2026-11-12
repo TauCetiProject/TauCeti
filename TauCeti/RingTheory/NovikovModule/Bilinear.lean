@@ -79,6 +79,12 @@ output, the reference coordinates are given by the corresponding products of the
 `NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left`,
 `NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right`,
 `NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix`).
+With one input fixed, the product of a matrix is the map of a matrix in the other input: for
+fixed `a` with coordinates `aᵢ`, the map `b ↦ a ⋆ b` is the map of the matrix `∑ᵢ aᵢ Qᵢⱼₖ`
+(`NovikovModule.novikovProductOfMatrix_eq_novikovMapOfMatrix_right`), and likewise in the other
+input (`NovikovModule.novikovProductOfMatrix_eq_novikovMapOfMatrix_left`). These are the matrix
+forms of `NovikovModule.kernelProduct_eq_kernelMap_right` and
+`NovikovModule.kernelProduct_eq_kernelMap_left`.
 
 ## Main definitions
 
@@ -125,6 +131,9 @@ output, the reference coordinates are given by the corresponding products of the
   `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right`,
   `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix`:
   the matrix formulas for a map of a matrix composed with a product of a matrix, on either side.
+* `TauCeti.NovikovModule.novikovProductOfMatrix_eq_novikovMapOfMatrix_right`,
+  `TauCeti.NovikovModule.novikovProductOfMatrix_eq_novikovMapOfMatrix_left`: the product of a
+  matrix with one input fixed is the map of a matrix in the other input.
 
 ## References
 
@@ -1094,6 +1103,48 @@ theorem coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix
     _ = _ := by simp only [Finset.mul_sum]
 
 end MapOfMatrix
+
+section ProductAsMap
+
+variable {R H ι₁ ι₂ ι₀ : Type*} [CommSemiring R] [AddCommGroup H] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
+  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
+  (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
+  [Finite ι₀] (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
+
+/-- **A product of a matrix as a map in its second input.** For fixed `a` with coordinates `aᵢ`,
+the product of `a` and `b` is the image of `b` under the map of the matrix `∑ᵢ aᵢ Qᵢⱼₖ`. This is
+the matrix form of `NovikovModule.kernelProduct_eq_kernelMap_right`. -/
+theorem novikovProductOfMatrix_eq_novikovMapOfMatrix_right [Fintype ι₁] [Finite ι₂]
+    (a : NovikovModule R F₁) (b : NovikovModule R F₂) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a b =
+      novikovMapOfMatrix hF₂ hF₀ r₂ r₀
+        (Matrix.of fun j k => ∑ i, coordinates hF₁ r₁ a i * Q i j k) b := by
+  have := Fintype.ofFinite ι₂
+  refine (coordinates hF₀ r₀).injective (funext fun k => ?_)
+  rw [coordinates_novikovProductOfMatrix, coordinates_novikovMapOfMatrix, Finset.sum_comm]
+  simp only [Matrix.of_apply, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i _ => by ring
+
+/-- **A product of a matrix as a map in its first input.** For fixed `b` with coordinates `bⱼ`,
+the product of `a` and `b` is the image of `a` under the map of the matrix `∑ⱼ bⱼ Qᵢⱼₖ`. This is
+the matrix form of `NovikovModule.kernelProduct_eq_kernelMap_left`. -/
+theorem novikovProductOfMatrix_eq_novikovMapOfMatrix_left [Finite ι₁] [Fintype ι₂]
+    (a : NovikovModule R F₁) (b : NovikovModule R F₂) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a b =
+      novikovMapOfMatrix hF₁ hF₀ r₁ r₀
+        (Matrix.of fun i k => ∑ j, coordinates hF₂ r₂ b j * Q i j k) a := by
+  have := Fintype.ofFinite ι₁
+  refine (coordinates hF₀ r₀).injective (funext fun k => ?_)
+  rw [coordinates_novikovProductOfMatrix, coordinates_novikovMapOfMatrix]
+  simp only [Matrix.of_apply, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+
+end ProductAsMap
 
 end NovikovModule
 

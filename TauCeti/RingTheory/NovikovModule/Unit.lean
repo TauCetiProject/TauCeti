@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.NovikovModule.MapOfMatrix
+public import TauCeti.RingTheory.NovikovModule.Grading
 public import TauCeti.Algebra.Homology.SquareZero.Graded
 
 /-!

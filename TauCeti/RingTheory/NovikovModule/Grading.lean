@@ -31,6 +31,10 @@ If degrees change by even amounts within each orbit of a finite union of torsors
 combination of degree `e` has nonzero coordinates only in orbits whose reference generator has the
 parity of `e`, so on its coordinates the sign of a reference degree is the sign `(-1)^e`.
 
+The map of a finite matrix of Novikov series (`TauCeti.NovikovModule.novikovMapOfMatrix`) whose
+entries are homogeneous of the reference-degree differences shifted by `ε` shifts degrees by `ε`
+(`TauCeti.NovikovModule.novikovMapOfMatrix_mem_gradeBy`).
+
 The coordinate construction follows `TauCeti.NovikovModule.coordinates`, and the coefficient
 pieces are `TauCeti.NovikovSeries.gradeBy`.
 
@@ -317,5 +321,38 @@ theorem kernelMatrix_mem_gradeBy {ε : D}
   exact eq_sub_iff_add_eq.mpr hm
 
 end Matrix
+
+section MapOfMatrix
+
+variable [CommSemiring R] {H ι₁ ι₀ : Type*} [AddCommGroup H] [Finite ι₁] [Finite ι₀]
+  {N : H →+ ℝ} {P₁ : ι₁ → Type*} {P₀ : ι₀ → Type*}
+  [∀ i, AddTorsor H (P₁ i)] [∀ k, AddTorsor H (P₀ k)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₀ : ∀ k, P₀ k)
+
+/-- **Degree of the map of a matrix.** Let the generators be graded by functions `d₁` and `d₀`
+that change by `δ h` under the translation by `h`. If every entry `Mᵢₖ` is homogeneous of the
+degree `d₁ (r₁ i) + ε - d₀ (r₀ k)`, then the map of `M` shifts degrees by `ε`: it sends a
+combination of degree `e` to a combination of degree `e + ε`. -/
+theorem novikovMapOfMatrix_mem_gradeBy [AddCommGroup D] (δ : H →+ D)
+    {d₁ : (Σ i, P₁ i) → D} {d₀ : (Σ k, P₀ k) → D}
+    (hd₁ : ∀ i h (p : P₁ i), d₁ ⟨i, h +ᵥ p⟩ = δ h + d₁ ⟨i, p⟩)
+    (hd₀ : ∀ k h (p : P₀ k), d₀ ⟨k, h +ᵥ p⟩ = δ h + d₀ ⟨k, p⟩)
+    {M : Matrix ι₁ ι₀ (NovikovSeries R H N)} {ε : D}
+    (hM : ∀ i k, M i k ∈ NovikovSeries.gradeBy R N δ (d₁ ⟨i, r₁ i⟩ + ε - d₀ ⟨k, r₀ k⟩))
+    {e : D} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ e) :
+    novikovMapOfMatrix hF₁ hF₀ r₁ r₀ M a ∈ gradeBy R F₀ d₀ (e + ε) := by
+  have := Fintype.ofFinite ι₁
+  rw [mem_gradeBy_iff_coordinates hF₁ δ hd₁ r₁] at ha
+  rw [mem_gradeBy_iff_coordinates hF₀ δ hd₀ r₀]
+  intro k
+  rw [coordinates_novikovMapOfMatrix]
+  refine Submodule.sum_mem _ fun i _ => ?_
+  convert SetLike.mul_mem_graded (ha i) (hM i k) using 2
+  abel
+
+end MapOfMatrix
 
 end TauCeti.NovikovModule
