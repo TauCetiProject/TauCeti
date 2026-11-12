@@ -57,9 +57,7 @@ instead deduced over `ℚ` from connectedness of the pinned Dynkin diagram.
 
 The passage from a root datum over `ℤ` to the root system over `ℚ` it determines is standard; see
 N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §1. This supplies the
-root-system input of the Chevalley basis in Layer 9, "pinned Chevalley--Demazure group schemes over
-`ℤ`", of `TauCetiRoadmap/ReductiveGroups/README.md`, whose consumer is milestone L0 of the
-`CFSGStatement` roadmap.
+root-system input of the Chevalley basis of the pinned Chevalley--Demazure group schemes over `ℤ`.
 -/
 
 public section
@@ -116,6 +114,13 @@ theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n 
     (t.rationalRootSystem ht).coroot i k = ((t.simplyConnectedRootDatum ht).coroot i k : ℚ) := by
   rw [rationalRootSystem, coroot_rootPairingBaseChange, piAlgebraMap_apply]
   simp
+
+/-- The rational simple coroots are the standard coordinate vectors. -/
+@[simp] theorem coroot_rationalRootSystem_simpleIndex (i : Fin t.rank) :
+    (t.rationalRootSystem ht).coroot (t.simpleIndex ht i) = Pi.single i 1 := by
+  ext j
+  simp only [coroot_rationalRootSystem, coroot_simpleIndex]
+  by_cases hij : i = j <;> simp [hij]
 
 @[simp] theorem reflectionPerm_rationalRootSystem :
     (t.rationalRootSystem ht).reflectionPerm = (t.simplyConnectedRootDatum ht).reflectionPerm :=
@@ -210,7 +215,7 @@ instance instIsReducedRationalRootSystem : (t.rationalRootSystem ht).IsReduced :
   let _ := isReduced_simplyConnectedRootDatum t ht
   exact isReduced_rootPairingBaseChange ℚ _ _
 
-/-! ## Acceptance: the rational system realizes its own Dynkin type -/
+/-! ## The rational system realizes its own Dynkin type -/
 
 /-- **The rational system has Cartan type `t`.** The base change leaves both the support of the
 pinned base and every Cartan integer alone, so the relabelling exhibited by the integral datum

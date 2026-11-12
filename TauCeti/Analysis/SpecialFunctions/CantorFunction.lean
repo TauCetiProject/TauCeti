@@ -35,6 +35,7 @@ Lebesgue-null Cantor set, hence mutually singular with Lebesgue measure.
 * `TauCeti.cantorFunction`: the Cantor–Lebesgue function.
 * `TauCeti.cantorStieltjesFunction`: `cantorFunction` as a Stieltjes function, whose measure
   is the Cantor measure `dC`.
+* `TauCeti.cantorReparam`: the increasing homeomorphism `t ↦ (t + C t) / 2` of `ℝ`.
 
 ## Main results
 
@@ -45,7 +46,9 @@ Lebesgue-null Cantor set, hence mutually singular with Lebesgue measure.
 * `TauCeti.ae_hasDerivAt_cantorFunction`: the derivative of `cantorFunction` is `0` almost
   everywhere.
 * `TauCeti.eVariationOn_cantorFunction`: the total variation of `cantorFunction` is `1`.
-* `TauCeti.not_absolutelyContinuousOnInterval_cantorFunction`.
+* `TauCeti.not_absolutelyContinuousOnInterval_cantorFunction`, and likewise
+  `TauCeti.not_absolutelyContinuousOnInterval_cantorReparam`: an increasing homeomorphism of
+  `[0, 1]` need not be absolutely continuous.
 * `TauCeti.mutuallySingular_cantorStieltjesFunction_measure_volume`: `dC ⟂ volume`.
 
 ## References
@@ -256,6 +259,43 @@ theorem not_absolutelyContinuousOnInterval_cantorFunction :
   rw [intervalIntegral.integral_zero_ae (ae_hasDerivAt_cantorFunction.mono
     fun _ hx _ ↦ hx.deriv), cantorFunction_one, cantorFunction_zero] at hftc
   norm_num at hftc
+
+/-- The increasing homeomorphism `t ↦ (t + C t) / 2` of `ℝ`, where `C` is the Cantor function.
+It fixes `0` and `1`, so it restricts to an increasing homeomorphism of `[0, 1]`, and it is not
+absolutely continuous there (`TauCeti.not_absolutelyContinuousOnInterval_cantorReparam`). Being
+an order isomorphism of `ℝ`, it is a homeomorphism (`OrderIso.toHomeomorph`). -/
+noncomputable def cantorReparam : ℝ ≃o ℝ :=
+  StrictMono.orderIsoOfSurjective (fun t ↦ (t + cantorFunction t) / 2)
+    (fun _ _ hst ↦ by
+      have := monotone_cantorFunction hst.le
+      dsimp only
+      linarith)
+    (Continuous.surjective (by fun_prop [continuous_cantorFunction])
+      (tendsto_atTop_mono (fun t ↦ by simp only [id]; linarith [cantorFunction_nonneg t])
+        (tendsto_id.atTop_div_const two_pos))
+      (tendsto_atBot_mono (fun t ↦ by simp only [id]; linarith [cantorFunction_le_one t])
+        ((tendsto_atBot_add_const_right _ 1 tendsto_id).atBot_div_const two_pos)))
+
+/-- Evaluation of `cantorReparam`. -/
+theorem cantorReparam_apply (t : ℝ) : cantorReparam t = (t + cantorFunction t) / 2 := (rfl)
+
+/-- `cantorReparam` fixes `0`. -/
+@[simp]
+theorem cantorReparam_zero : cantorReparam 0 = 0 := by
+  simp [cantorReparam_apply]
+
+/-- `cantorReparam` fixes `1`. -/
+@[simp]
+theorem cantorReparam_one : cantorReparam 1 = 1 := by
+  simp [cantorReparam_apply]
+
+/-- The increasing homeomorphism `cantorReparam` is not absolutely continuous on `[0, 1]`. -/
+theorem not_absolutelyContinuousOnInterval_cantorReparam :
+    ¬ AbsolutelyContinuousOnInterval cantorReparam 0 1 := fun h ↦
+  -- Otherwise the Cantor function `2 * cantorReparam t - t` would be absolutely continuous.
+  not_absolutelyContinuousOnInterval_cantorFunction <|
+    ((h.const_mul 2).sub LipschitzWith.id.lipschitzOnWith.absolutelyContinuousOnInterval).congr
+      fun t _ ↦ by simp only [Pi.sub_apply, cantorReparam_apply, id]; ring
 
 /-- The Cantor function as a Stieltjes function; it is continuous, so no right-limit
 modification as in `Monotone.stieltjesFunction` is needed. Its measure `dC` is the Cantor
