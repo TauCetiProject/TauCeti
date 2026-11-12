@@ -20,8 +20,11 @@ The exponent `q` may be any real number, since positive geometric Brownian motio
 moments of negative orders as well. Mean-square convergence also implies `L¹` convergence on
 the probability space.
 
-The intermediate uniform-integrability result allows a countable family of different sampled
-prices with a common growth bound, at any real initial stock price. The times need not be
+The intermediate uniform-integrability result allows an arbitrarily indexed family of different
+sampled prices with a common bound by `A (1 + S_t ^ q)`, at any real initial stock price.
+For nonpositive initial spot, this uses Mathlib's signed/zero `Real.rpow` conventions, not
+`|S_t| ^ q`; the bound can degenerate (for example, at zero spot and negative `q`).
+The times need not be
 stopping times or even measurable: only the sampled values must be almost everywhere strongly
 measurable. Continuity is required only at the terminal spot/time pair. No stochastic integral
 or martingale property is inferred from these moment and continuity assumptions.
@@ -49,9 +52,11 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ} {s μ σ A q : ℝ} {T : ℝ≥0}
 
 /-- A common polynomial-growth bound along geometric Brownian motion gives uniform `Lᵖ`
-integrability, for `1 ≤ p < ∞`, at any countable family of bounded random times. Any real initial
-spot and growth exponent are allowed; the times need not be stopping times or measurable. -/
-theorem uniformIntegrable_polynomialGrowth_geometricBrownianMotion {ι : Type*} [Countable ι]
+integrability, for `1 ≤ p < ∞`, at any family of bounded random times. Any real initial spot and
+growth exponent are allowed; for nonpositive spot, `hbound` uses Mathlib's signed/zero
+`Real.rpow` conventions, not `|S_t| ^ q`, so it can degenerate rather than express polynomial
+growth in the absolute spot. The times need not be stopping times or measurable. -/
+theorem uniformIntegrable_polynomialGrowth_geometricBrownianMotion {ι : Type*}
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
     {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞) {τ : ι → Ω → ℝ≥0} {V : ι → Ω → ℝ}
@@ -64,17 +69,30 @@ theorem uniformIntegrable_polynomialGrowth_geometricBrownianMotion {ι : Type*} 
   -- The absolute-spot process controls real powers even when the original spot is negative.
   let M : Ω → ℝ≥0∞ := fun ω ↦ ⨆ t ≤ T,
     ENNReal.ofReal (geometricBrownianMotion |s| μ σ W t ω ^ (q * p.toReal))
+  have hM : AEMeasurable M P := by
+    refine aemeasurable_iSup_le_ofReal
+      (fun t ↦ (hW.integrable_rpow_geometricBrownianMotion |s| μ σ
+        (q * p.toReal) t).aestronglyMeasurable.aemeasurable) ?_
+    filter_upwards [hcont] with ω hω t ht
+    simp_rw [rpow_geometricBrownianMotion, exponentialMartingale_def]
+    exact ((NNReal.continuous_coe.const_mul _).rexp.continuousWithinAt.const_mul _).mul
+      (((hω t ht).const_mul _).sub
+        ((NNReal.continuous_coe.const_mul _).div_const _).continuousWithinAt).rexp
   have hmax : ∫⁻ ω, M ω ∂P < ∞ :=
     hW.lintegral_iSup_rpow_geometricBrownianMotion_lt_top hcont |s| μ σ (q * p.toReal)
   let K : ℝ≥0∞ := ENNReal.ofReal |A| ^ p.toReal * 2 ^ p.toReal
   have hK : K < ∞ := ENNReal.mul_lt_top
     (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top)
     (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg (by norm_num))
-  apply uniformIntegrable_of_lintegral_iSup_eNorm_rpow_lt_top hp hp_top hV
-  -- Dominate the countable supremum by the full-horizon maximal moment at order `q * p`.
-  have hdom : ∀ᵐ ω ∂P, (⨆ i, ‖V i ω‖ₑ ^ p.toReal) ≤ K * (1 + M ω) := by
-    filter_upwards [ae_all_iff.2 hτ, ae_all_iff.2 hbound] with ω ht hb
-    refine iSup_le fun i ↦ ?_
+  refine uniformIntegrable_of_eNorm_rpow_le_of_lintegral_lt_top
+    (G := fun ω ↦ K * (1 + M ω)) hp hp_top hV
+    (aemeasurable_const.mul (aemeasurable_const.add hM)) ?_ ?_
+  · -- Only the constant factor and the known maximal moment remain to be integrated.
+    rw [lintegral_const_mul' _ _ hK.ne, lintegral_add_left measurable_const]
+    exact ENNReal.mul_lt_top hK (ENNReal.add_lt_top.2 ⟨by simp, hmax⟩)
+  -- Dominate each sampled value separately; no countability of the family is needed.
+  · intro i
+    filter_upwards [hτ i, hbound i] with ω ht hb
     have hS : 0 ≤ geometricBrownianMotion |s| μ σ W (τ i ω) ω := by
       rw [← abs_geometricBrownianMotion]
       exact abs_nonneg _
@@ -82,7 +100,7 @@ theorem uniformIntegrable_polynomialGrowth_geometricBrownianMotion {ι : Type*} 
         (1 + geometricBrownianMotion |s| μ σ W (τ i ω) ω ^ q) := by
       calc
         _ ≤ |A * (1 + geometricBrownianMotion s μ σ W (τ i ω) ω ^ q)| :=
-          (hb i).trans (le_abs_self _)
+          hb.trans (le_abs_self _)
         _ ≤ _ := by
           rw [abs_mul]
           gcongr
@@ -112,11 +130,7 @@ theorem uniformIntegrable_polynomialGrowth_geometricBrownianMotion {ι : Type*} 
       _ ≤ _ := by
         gcongr
         exact le_iSup₂ (f := fun t _ ↦ ENNReal.ofReal
-          (geometricBrownianMotion |s| μ σ W t ω ^ (q * p.toReal))) (τ i ω) (ht i)
-  -- Only the constant factor and the known maximal moment remain to be integrated.
-  refine (lintegral_mono_ae hdom).trans_lt ?_
-  rw [lintegral_const_mul' _ _ hK.ne, lintegral_add_left measurable_const]
-  exact ENNReal.mul_lt_top hK (ENNReal.add_lt_top.2 ⟨by simp, hmax⟩)
+          (geometricBrownianMotion |s| μ σ W t ω ^ (q * p.toReal))) (τ i ω) ht
 
 /-- A polynomial-growth price with a continuous terminal extension converges in `Lᵖ`, for
 `1 ≤ p < ∞`, along bounded random times tending almost surely to maturity. Continuity is needed
