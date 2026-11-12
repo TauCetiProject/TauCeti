@@ -75,8 +75,8 @@ def unitizationAugmentationPullback (n : ℕ) :
 theorem unitizationAugmentationPullback_apply (n : ℕ) (phi : cyclicCochains R R M n)
     (a : Fin (n + 1) → Unitization R A) :
     (unitizationAugmentationPullback R A M n phi :
-        MultilinearMap R (fun _ : Fin (n + 1) ↦ Unitization R A) M) a =
-      (phi : MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) (fun i ↦ (a i).fst) := by
+        MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ Unitization R A) M) a =
+      (phi : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) (fun i ↦ (a i).fst) := by
   simp only [unitizationAugmentationPullback, coe_cyclicCochainsMap_apply,
     MultilinearMap.compLinearMap_apply]
   -- The linear map underlying `Unitization.fstHom` evaluates as the first projection.

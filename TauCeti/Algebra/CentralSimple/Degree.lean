@@ -81,18 +81,13 @@ need never unfold the definition. The two exceptions do not compute a degree and
 (and from which `TauCeti.Algebra.deg_eq_of_algEquiv` is read off), and
 `TauCeti.Algebra.deg_pos`, which only needs `Module.finrank_pos`.
 
-`IsSimpleRing.isSquare_finrank` covers every base field, so the finite-base-field
-square-dimension statement that used to sit in `TauCeti/Algebra/CentralSimple/Wedderburn.lean` is
-gone, in favour of this one; that file keeps the matrix presentation
-`IsSimpleRing.exists_algEquiv_matrix_of_finite`, which is genuinely special to a finite base
-field and from which the square dimension used to be read off.
+`IsSimpleRing.isSquare_finrank` covers every base field, finite ones included.
+`TauCeti/Algebra/CentralSimple/Wedderburn.lean` has the matrix presentation
+`IsSimpleRing.exists_algEquiv_matrix_of_finite`, which is genuinely special to a finite base field.
 
 ## References
 
-This implements the third bullet of Layer 4 of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md)
-(square dimension by base change to the algebraic closure, and the degree defined as its square
-root). See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and
+See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and
 R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12.
 -/
 

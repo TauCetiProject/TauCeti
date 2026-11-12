@@ -41,6 +41,8 @@ out of a surface group correspond to tuples of elements at which the surface wor
 * `TauCeti.SurfaceGroup.Nonorientable g m`: the nonorientable surface group `S⁻(g, m)`, with
   generators `TauCeti.SurfaceGroup.Nonorientable.c` and peripheral elements
   `TauCeti.SurfaceGroup.Nonorientable.peripheral`.
+* `TauCeti.SurfaceGroup.Orientable.eulerChar` and `TauCeti.SurfaceGroup.Nonorientable.eulerChar`:
+  the Euler characteristics `2 - 2g - m` and `2 - g - m` of the underlying surfaces.
 * `TauCeti.SurfaceGroup.Orientable.lift` and `TauCeti.SurfaceGroup.Nonorientable.lift`: the
   universal properties, and `TauCeti.SurfaceGroup.Orientable.homEquiv` and
   `TauCeti.SurfaceGroup.Nonorientable.homEquiv`, the bijections between homomorphisms out of a
@@ -85,6 +87,13 @@ theorem map_orientableWord (f : G →* H) (α β : Fin g → G) (γ : Fin m → 
       orientableWord (fun i ↦ f (α i)) (fun i ↦ f (β i)) fun j ↦ f (γ j) := by
   simp [orientableWord, map_list_prod, List.map_ofFn, Function.comp_def]
 
+/-- Appending a last boundary element multiplies the orientable surface word by it on the
+right. -/
+theorem orientableWord_snoc (α β : Fin g → G) (γ : Fin m → G) (x : G) :
+    orientableWord α β (Fin.snoc (α := fun _ ↦ G) γ x) = orientableWord α β γ * x := by
+  rw [orientableWord_def, List.ofFn_succ', List.prod_concat]
+  simp [orientableWord_def, mul_assoc]
+
 section Nonorientable
 
 variable {M N : Type*} [Monoid M] [Monoid N]
@@ -101,6 +110,13 @@ theorem nonorientableWord_def (κ : Fin g → M) (γ : Fin m → M) :
 theorem map_nonorientableWord (f : M →* N) (κ : Fin g → M) (γ : Fin m → M) :
     f (nonorientableWord κ γ) = nonorientableWord (fun i ↦ f (κ i)) fun j ↦ f (γ j) := by
   simp [nonorientableWord, map_list_prod, List.map_ofFn, Function.comp_def]
+
+/-- Appending a last boundary element multiplies the nonorientable surface word by it on the
+right. -/
+theorem nonorientableWord_snoc (κ : Fin g → M) (γ : Fin m → M) (x : M) :
+    nonorientableWord κ (Fin.snoc (α := fun _ ↦ M) γ x) = nonorientableWord κ γ * x := by
+  rw [nonorientableWord_def, List.ofFn_succ', List.prod_concat]
+  simp [nonorientableWord_def, mul_assoc]
 
 end Nonorientable
 
@@ -146,6 +162,12 @@ abbrev Nonorientable (g m : ℕ) : Type := PresentedGroup {nonorientableRelator 
 namespace Orientable
 
 variable (g m : ℕ)
+
+/-- The Euler characteristic `χ = 2 - 2g - m` of the compact orientable surface of genus `g` with
+`m` boundary components, whose fundamental group is `S⁺(g, m)`. -/
+def eulerChar : ℤ := 2 - 2 * g - m
+
+theorem eulerChar_def : eulerChar g m = 2 - 2 * g - m := (rfl)
 
 /-- The generator `aᵢ` of `S⁺(g, m)`. -/
 def a (i : Fin g) : Orientable g m := PresentedGroup.of (.a i)
@@ -237,6 +259,12 @@ end Orientable
 namespace Nonorientable
 
 variable (g m : ℕ)
+
+/-- The Euler characteristic `χ = 2 - g - m` of the compact nonorientable surface of genus `g`
+with `m` boundary components, whose fundamental group is `S⁻(g, m)`. -/
+def eulerChar : ℤ := 2 - g - m
+
+theorem eulerChar_def : eulerChar g m = 2 - g - m := (rfl)
 
 /-- The generator `cᵢ` of `S⁻(g, m)`. -/
 def c (i : Fin g) : Nonorientable g m := PresentedGroup.of (.c i)
