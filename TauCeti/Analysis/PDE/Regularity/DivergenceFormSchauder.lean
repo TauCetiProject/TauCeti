@@ -326,7 +326,6 @@ private theorem exists_setIntegral_norm_gradient_sq_le_rpow {α : ℝ≥0} (hα 
       ∀ ρ, 0 < ρ → ρ ≤ θ * R →
         ∫ x in ball z ρ, ‖W1p.gradient u x‖ ^ 2 ≤ C * V * (ρ / R) ^ ((n : ℝ) + 1 - γ) := by
   obtain ⟨A, hA, hcomp⟩ := exists_comparison n lam Lam
-  have hα' : (0 : ℝ) < α := hα
   obtain ⟨β, hβdef⟩ : ∃ β : ℝ, β = (n : ℝ) + 1 - γ := ⟨_, rfl⟩
   have hβ : β < (n : ℝ) + 1 := by linarith
   obtain ⟨ε₀, C₀, hε₀, hC₀, hit⟩ := exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add hA hβ hβ
@@ -902,9 +901,8 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_matrixBilinearForm
     intro Omega u a G f Ka KG S R h
     exact absurd h.pos hlam
   have hβ' : (0 : ℝ) < β := hβ
-  have hq0 : (0 : ℝ) < q := by exact_mod_cast two_pos.trans_le hq
   have hβ1 : (β : ℝ) < 1 := hβq.trans_lt (sub_lt_self 1 (by positivity))
-  obtain ⟨θ, C₀, hθ, hθ1, hC₀, hdec⟩ :=
+  obtain ⟨θ, C₀, hθ, hθ1, _, hdec⟩ :=
     exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderOnWith (n := n) (α := α)
       (hβ.trans_le hβα) hβ' (by exact_mod_cast hβα) hβ1 (Lam := Lam) (M := M) hlam
   obtain ⟨ω, hωdef⟩ : ∃ ω, ω = volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
