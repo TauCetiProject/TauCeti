@@ -39,6 +39,10 @@ is drawn in `TauCeti/RepresentationTheory/SU2/Character.lean`.
 * `TauCeti.SU2.isConj_iff_trace_eq`: two elements of `SU(2)` are conjugate if and only if they
   have the same trace.
 * `TauCeti.SU2.trace_eq_two_iff`: the identity is the only element of trace `2`.
+* `TauCeti.SU2.trace_eq_ofReal_re`, `TauCeti.SU2.re_trace_le_two`,
+  `TauCeti.SU2.re_trace_lt_two` and `TauCeti.SU2.isConj_of_re_trace_eq`: the trace equals its real
+  part, which is at most `2`, is less than `2` away from the identity, and determines the
+  conjugacy class.
 * `TauCeti.SU2.isConj_torusExp_iff_cos_eq`: on the maximal torus that criterion reads as the
   equality of the cosines of the angles, the cosine being the invariant of the Weyl action on
   angles read modulo `2π`.
@@ -97,6 +101,17 @@ theorem exists_trace_torusExp_eq_ofReal {t : ℝ} (ht : |t| ≤ 2) :
   push_cast
   ring
 
+/-- The trace of an element of `SU(2)` is the real number given by its real part. -/
+theorem trace_eq_ofReal_re (g : SU2) :
+    Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ) =
+      ((Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re : ℂ) :=
+  (Complex.conj_eq_iff_re.mp (isSelfAdjoint_iff.mp (isSelfAdjoint_trace g))).symm
+
+/-- The real part of the trace of an element of `SU(2)` is at most `2`. -/
+theorem re_trace_le_two (g : SU2) :
+    (Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re ≤ 2 :=
+  (Complex.re_le_norm _).trans (norm_trace_le_two g)
+
 /-! ### The trace as a complete conjugacy invariant -/
 
 /-- **The conjugacy classes of `SU(2)` are classified by the trace:** two elements of `SU(2)` are
@@ -120,10 +135,24 @@ theorem isConj_iff_trace_eq {g h : SU2} :
 
 /-- **The identity is the only element of `SU(2)` of trace `2`**: an element of trace `2` has the
 trace of the identity, so it is conjugate to the identity. -/
+@[simp]
 theorem trace_eq_two_iff {g : SU2} :
     Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ) = 2 ↔ g = 1 := by
   refine ⟨fun h => isConj_one_left.mp (isConj_iff_trace_eq.mpr ?_), fun h => ?_⟩ <;>
     simp [h, Matrix.trace_one]
+
+/-- An element of `SU(2)` other than `1` has a trace of real part less than `2`. -/
+theorem re_trace_lt_two {g : SU2} (hg : g ≠ 1) :
+    (Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re < 2 := by
+  refine (re_trace_le_two g).lt_of_ne fun h => hg (trace_eq_two_iff.mp ?_)
+  rw [trace_eq_ofReal_re, h, Complex.ofReal_ofNat]
+
+/-- Two elements of `SU(2)` are conjugate when their traces have the same real part. -/
+theorem isConj_of_re_trace_eq {g h : SU2}
+    (hgh : (Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re =
+      (Matrix.trace (h : Matrix (Fin 2) (Fin 2) ℂ)).re) :
+    IsConj g h := by
+  rw [isConj_iff_trace_eq, trace_eq_ofReal_re g, trace_eq_ofReal_re h, hgh]
 
 /-! ### Conjugacy on the maximal torus -/
 

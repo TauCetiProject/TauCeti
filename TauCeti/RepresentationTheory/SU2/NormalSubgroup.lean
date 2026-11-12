@@ -16,16 +16,16 @@ import TauCeti.Topology.Algebra.Quaternion.Unitary
 # The normal subgroups of `SU(2)` and kernels of its homomorphisms
 
 The centre of `SU(2)` is `{1, -1}` (`TauCeti.SU2.ker_toSO3` and `TauCeti.SU2.toSO3_eq_one_iff`).
-This file proves that every other normal subgroup of `SU(2)` is the whole group, so the normal
-subgroups of `SU(2)` are exactly `⊥`, the centre and `⊤`
-(`TauCeti.SU2.eq_bot_or_eq_center_or_eq_top_of_normal`). No closedness is assumed; the statement
-is about abstract normal subgroups.
+This file proves that every noncentral normal subgroup of `SU(2)`, that is, every normal subgroup
+not contained in the centre, is the whole group, so the normal subgroups of `SU(2)` are exactly
+`⊥`, the centre and `⊤` (`TauCeti.SU2.eq_bot_or_eq_center_or_eq_top_of_normal`). No closedness is
+assumed; the statement is about abstract normal subgroups.
 
 The consequence for homomorphisms is the kernel bound for rank-one maps out of `SU(2)`: every
-homomorphism `φ : SU(2) →* G` to any group is either trivial or has kernel contained in `{1, -1}`
-(`TauCeti.SU2.ker_le_center_iff`), so its kernel is `⊥` or the centre
-(`TauCeti.SU2.ker_eq_bot_or_eq_center`). In particular, if `G` is a manifold and the curve
-`t ↦ φ (diag (e^{it}, e^{-it}))` has a nonzero derivative at `0`, then `ker φ ⊆ {1, -1}`
+homomorphism `φ : SU(2) →* G` to any monoid is either trivial or has kernel contained in
+`{1, -1}` (`TauCeti.SU2.ker_le_center_iff`), so the kernel of a nontrivial homomorphism is `⊥` or
+the centre (`TauCeti.SU2.ker_eq_bot_or_eq_center`). In particular, if `G` is a manifold and the
+curve `t ↦ φ (diag (e^{it}, e^{-it}))` has a nonzero derivative at `0`, then `ker φ ⊆ {1, -1}`
 (`TauCeti.SU2.ker_le_center_of_mfderiv_ne_zero`). For a smooth homomorphism this derivative is the
 differential of `φ` at the identity evaluated on `diag (i, -i)`; the statement itself assumes no
 smoothness of `φ` and no Lie group structure on `G`. The bound is attained by the double cover
@@ -71,30 +71,6 @@ namespace TauCeti
 namespace SU2
 
 open scoped Manifold
-
-/-- The trace of an element of `SU(2)` is the real number given by its real part. -/
-private theorem trace_eq_ofReal_re (g : SU2) :
-    Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ) =
-      ((Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re : ℂ) :=
-  (Complex.conj_eq_iff_re.mp (isSelfAdjoint_iff.mp (isSelfAdjoint_trace g))).symm
-
-/-- The real part of the trace of an element of `SU(2)` is at most `2`. -/
-private theorem re_trace_le_two (g : SU2) :
-    (Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re ≤ 2 :=
-  (Complex.re_le_norm _).trans (norm_trace_le_two g)
-
-/-- An element of `SU(2)` other than `1` has a trace of real part less than `2`. -/
-private theorem re_trace_lt_two {g : SU2} (hg : g ≠ 1) :
-    (Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re < 2 := by
-  refine (re_trace_le_two g).lt_of_ne fun h => hg (trace_eq_two_iff.mp ?_)
-  rw [trace_eq_ofReal_re, h, Complex.ofReal_ofNat]
-
-/-- Two elements of `SU(2)` are conjugate when their traces have the same real part. -/
-private theorem isConj_of_re_trace_eq {g h : SU2}
-    (hgh : (Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re =
-      (Matrix.trace (h : Matrix (Fin 2) (Fin 2) ℂ)).re) :
-    IsConj g h := by
-  rw [isConj_iff_trace_eq, trace_eq_ofReal_re g, trace_eq_ofReal_re h, hgh]
 
 /-- **A normal subgroup of `SU(2)` is central or everything.** A normal subgroup containing a
 noncentral element contains every element whose trace is close enough to `2`, hence a
@@ -154,23 +130,9 @@ theorem eq_bot_or_eq_center_or_eq_top_of_normal {N : Subgroup SU2} [N.Normal] :
     (fun h => (eq_bot_or_eq_center_of_le_center h).elim Or.inl (Or.inr ∘ Or.inl))
     (Or.inr ∘ Or.inr)
 
-/-- `SU(2)` is not commutative: its centre is not the whole group. The torus element
-`diag (i, -i)` is not central, since its image in `SO(3)`, the rotation by `π`, is not the
-identity. -/
-theorem center_ne_top : Subgroup.center SU2 ≠ ⊤ := by
-  intro h
-  have hmem : torusExp (Real.pi / 2) ∈ toSO3.ker := ker_toSO3 ▸ h ▸ Subgroup.mem_top _
-  obtain ⟨n, hn⟩ := toSO3_torusExp_eq_one_iff.mp (MonoidHom.mem_ker.mp hmem)
-  -- `π / 2 = n π` forces `2 n = 1`, impossible in `ℤ`.
-  have h2 : ((2 * n : ℤ) : ℝ) = 1 := by
-    push_cast
-    nlinarith [Real.pi_pos]
-  have : 2 * n = 1 := by exact_mod_cast h2
-  omega
-
 /-- **A homomorphism out of `SU(2)` has kernel in the centre `{1, -1}` exactly when it is
 nontrivial.** -/
-theorem ker_le_center_iff {G : Type*} [Group G] {φ : SU2 →* G} :
+theorem ker_le_center_iff {G : Type*} [MulOneClass G] {φ : SU2 →* G} :
     φ.ker ≤ Subgroup.center SU2 ↔ φ ≠ 1 := by
   refine ⟨fun h hφ => center_ne_top (top_le_iff.mp ?_), fun hφ => ?_⟩
   · rwa [hφ, MonoidHom.ker_one] at h
@@ -179,7 +141,7 @@ theorem ker_le_center_iff {G : Type*} [Group G] {φ : SU2 →* G} :
     exact MonoidHom.mem_ker.mp (h ▸ Subgroup.mem_top g)
 
 /-- **The kernel of a nontrivial homomorphism out of `SU(2)` is `⊥` or the centre `{1, -1}`.** -/
-theorem ker_eq_bot_or_eq_center {G : Type*} [Group G] {φ : SU2 →* G} (hφ : φ ≠ 1) :
+theorem ker_eq_bot_or_eq_center {G : Type*} [MulOneClass G] {φ : SU2 →* G} (hφ : φ ≠ 1) :
     φ.ker = ⊥ ∨ φ.ker = Subgroup.center SU2 :=
   eq_bot_or_eq_center_of_le_center (ker_le_center_iff.mpr hφ)
 
@@ -189,7 +151,7 @@ as it does when `φ` is smooth with differential at the identity nonzero on `dia
 the kernel of `φ` is contained in the centre `{1, -1}` of `SU(2)`. -/
 theorem ker_le_center_of_mfderiv_ne_zero {E H G : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace G]
-    [ChartedSpace H G] [Group G] {φ : SU2 →* G}
+    [ChartedSpace H G] [MulOneClass G] {φ : SU2 →* G}
     (h : mfderiv 𝓘(ℝ) I (fun t : ℝ => φ (torusExp t)) 0 ≠ 0) :
     φ.ker ≤ Subgroup.center SU2 := by
   refine ker_le_center_iff.mpr fun hφ => h ?_
