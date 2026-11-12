@@ -39,10 +39,6 @@ unitriangular matrices, the triangular input to the Borel component of a pinning
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Sections 10 and 26.
 * R. W. Carter, *Simple Groups of Lie Type*, Sections 4.4 and 8.2.
-
-This advances the pinning and Chevalley--Demazure construction targets in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Their pinned ambient group is consumed by milestone L0
-of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section
@@ -81,6 +77,13 @@ theorem weightDegree_root_pos {γ : Fin t.numRoots}
   rw [weightDegree_root]
   exact_mod_cast lt_of_lt_of_le Int.zero_lt_one
     (one_le_height_of_mem_posRoots (t.rationalRootSystem ht) (t.rationalBase ht) hγ)
+
+/-- Every negative root has strictly negative weight degree. -/
+theorem weightDegree_root_neg {γ : Fin t.numRoots}
+    (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
+    t.weightDegree ht ((t.simplyConnectedRootDatum ht).root γ) < 0 := by
+  rw [weightDegree_root]
+  exact_mod_cast height_neg_of_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) hγ
 
 /-- The integral weight of a root coordinate in Geck's representation, cast to `ℚ`, is the
 corresponding root of the pinned rational root system. -/

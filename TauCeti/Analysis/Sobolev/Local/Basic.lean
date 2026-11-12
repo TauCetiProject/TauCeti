@@ -8,11 +8,12 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
-import Mathlib.Analysis.Complex.ReImTopology
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Local vector-valued Sobolev classes on planar domains
@@ -27,18 +28,24 @@ These predicates concern actual functions; almost-everywhere changes do not affe
 They impose no global integrability condition on the possibly unbounded domain.
 
 This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
+pairing of fields of continuous linear maps into product maps,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
-supported in the domain), decreasing the integrability exponent, and decreasing the derivative
-order. On an open set, local `Lᵖ` membership is detected on the open subsets with compact closure
-inside it. Smoothness on an open neighbourhood gives membership, without requiring a global smooth
-extension.
+supported in the domain), pairing, decreasing the integrability exponent, and decreasing the
+derivative order. On an open set, local `Lᵖ` membership is detected on the open subsets with
+compact closure inside it. Smoothness on an open neighbourhood gives membership, without requiring
+a global smooth extension.
 On a relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane the interior is
-`Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`). No boundary trace is asserted here;
+`Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`), and since the real axis is null, local
+`Lᵖ` membership there is detected on the upper halves `W ∩ {0 < im}`
+(`TopologicalSpace.Opens.upperHalf`) of the open `W` with compact closure inside `Ω`
+(`TauCeti.memLpLoc_inter_setOf_im_nonneg_iff`). No boundary trace is asserted here;
 extension across the real axis is in `TauCeti.Analysis.Sobolev.Local.Reflection`. On open
 domains, local `L¹` membership is identified with local integrability, supplying the native
 weak-derivative hypotheses.
 There, with `1 ≤ p`, a locally `Lᵖ` function agrees almost everywhere with its precise
 representative, and every weak derivative of a member of `MemWkpLoc p Ω 1` is locally `Lᵖ`.
+`TauCeti.WeakDerivChainLe` compares the `Lᵖ` norms of two maps and, recursively, of every pair of
+their weak derivatives through a given order.
 In positive order, completeness is inherited from the native weak-derivative predicate; the
 definitions admit every real normed codomain without an additional typeclass assumption.
 The continuous-linear composition result requires a complete target, as does the native
@@ -157,6 +164,35 @@ theorem memLpLoc_of_forall_opens {Ω : Opens ℂ}
   obtain ⟨g, hg, hgf⟩ := h ⟨W, hWo⟩ hWc hWΩ
   exact (hg.ae_eq hgf).mono_measure (Measure.restrict_mono hKW le_rfl)
 
+/-- A function that is `Lᵖ` on a set `W` is locally `Lᵖ` on every set `U` contained in `W` up to a
+null set, including on compact subsets of `U` that leave `W`. -/
+theorem _root_.MeasureTheory.MemLp.memLpLoc_of_ae_le {W : Set ℂ}
+    (hf : MemLp f p (volume.restrict W)) (hUW : U ≤ᵐ[volume] W) : MemLpLoc p U f :=
+  memLpLoc_iff.2 fun _ hK _ => hf.mono_measure
+    (Measure.restrict_mono_ae (Filter.EventuallyLE.trans (Filter.Eventually.of_forall hK) hUW))
+
+/-- **Local `Lᵖ` on a half-disc through upper halves.** A function is locally `Lᵖ` on
+`Ω ∩ {0 ≤ im}`, up to the real axis, exactly when it is `Lᵖ` on the upper half `W ∩ {0 < im}` of
+every open `W` whose closure is compact and contained in `Ω`. The real axis is null, so the
+compact sets reaching it see no more than these upper halves. -/
+theorem memLpLoc_inter_setOf_im_nonneg_iff {Ω : Opens ℂ} :
+    MemLpLoc p ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) f ↔
+      ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+        MemLp f p (volume.restrict (W.upperHalf : Set ℂ)) := by
+  refine ⟨fun hf W hWc hWΩ => ?_, fun h => memLpLoc_iff.2 fun K hKU hK => ?_⟩
+  · have hK : IsCompact (closure (W : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) :=
+      hWc.inter_right (isClosed_le continuous_const Complex.continuous_im)
+    refine (memLpLoc_iff.1 hf _ (Set.inter_subset_inter_left _ hWΩ) hK).mono_measure
+      (Measure.restrict_mono ?_ le_rfl)
+    intro z hz
+    obtain ⟨hzW, hz0⟩ := Opens.mem_upperHalf.1 hz
+    exact ⟨subset_closure hzW, hz0.le⟩
+  · obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen
+      (hKU.trans Set.inter_subset_left)
+    refine (h ⟨W, hWo⟩ hWc hWΩ).mono_measure (Measure.restrict_mono_ae ?_)
+    filter_upwards [(Complex.setOf_le_im_ae_eq 0).le] with z hz hzK
+    exact Opens.mem_upperHalf.2 ⟨hKW hzK, hz (hKU hzK).2⟩
+
 variable [NormedSpace ℝ F] [NormedSpace ℝ G]
 
 /-- Real scalar multiplication preserves local `Lᵖ` membership. -/
@@ -167,6 +203,18 @@ theorem MemLpLoc.const_smul (hf : MemLpLoc p U f) (c : ℝ) : MemLpLoc p U (c �
 theorem MemLpLoc.clm_comp (hf : MemLpLoc p U f) (A : F →L[ℝ] G) :
     MemLpLoc p U (fun z => A (f z)) :=
   fun K hK hc => A.comp_memLp' (hf K hK hc)
+
+/-- Pairing two locally `Lᵖ` fields of continuous linear maps into their product map preserves
+local `Lᵖ` membership. -/
+theorem MemLpLoc.clm_prod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {A : ℂ → E →L[ℝ] F} {B : ℂ → E →L[ℝ] G} (hA : MemLpLoc p U A) (hB : MemLpLoc p U B) :
+    MemLpLoc p U (fun z => (A z).prod (B z)) := by
+  convert (hA.clm_comp (ContinuousLinearMap.compL ℝ E F (F × G)
+    (ContinuousLinearMap.inl ℝ F G))).add
+      (hB.clm_comp (ContinuousLinearMap.compL ℝ E G (F × G) (ContinuousLinearMap.inr ℝ F G)))
+    using 1
+  funext z
+  ext v <;> simp
 
 open TauCeti.MeasureTheory in
 /-- A locally `Lᵖ` function on an open set `Ω`, with `1 ≤ p`, agrees almost everywhere on `Ω` with
@@ -230,13 +278,6 @@ theorem MemLpLoc.integrableOn_smul {S T : Set ℂ} {h : ℂ → F} (hh : MemLpLo
   refine (hhK.continuousOn_smul hf.continuousOn hK).of_forall_sdiff_eq_zero hT.measurableSet
     fun z hz => ?_
   simp [image_eq_zero_of_notMem_tsupport fun h => hz.2 ⟨h, hz.1⟩]
-
-/-- A relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane has interior
-`Ω ∩ {0 < im}` in `ℂ`: points on the real axis are not interior, since every neighbourhood meets
-`{z | z.im < 0}`. -/
-theorem interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOpen Ω) :
-    interior (Ω ∩ {z : ℂ | 0 ≤ z.im}) = Ω ∩ {z : ℂ | 0 < z.im} := by
-  rw [interior_inter, hΩ.interior_eq, Complex.interior_setOfPred_le_im]
 
 variable {Ω : Opens ℂ} {k l : ℕ}
 
@@ -322,7 +363,7 @@ theorem MemWkpLoc.of_succ (hf : MemWkpLoc p U (k + 1) f) : MemWkpLoc p U k f := 
 theorem MemWkpLoc.of_le (hf : MemWkpLoc p U k f) (hlk : l ≤ k) : MemWkpLoc p U l f := by
   induction hlk with
   | refl => exact hf
-  | step h ih => exact ih hf.of_succ
+  | step _ ih => exact ih hf.of_succ
 
 /-- The zero function lies in every local Sobolev class with complete codomain. -/
 @[simp]
@@ -372,6 +413,16 @@ theorem MemWkpLoc.clm_comp [CompleteSpace G] (hf : MemWkpLoc p U k f)
     obtain ⟨hp, D, hD, hk⟩ := hf
     exact ⟨hp.clm_comp A, fun z => A.comp (D z), hD.clm_comp A,
       ih hk ((ContinuousLinearMap.compL ℝ ℂ F G) A)⟩
+
+/-- **Pairs of local Sobolev maps.** Two maps in the local Sobolev class of order `k` pair to a map
+in the same class, with values in the product. -/
+theorem MemWkpLoc.prodMk [CompleteSpace F] [CompleteSpace G] {g : ℂ → G}
+    (hf : MemWkpLoc p U k f) (hg : MemWkpLoc p U k g) :
+    MemWkpLoc p U k (fun z => (f z, g z)) := by
+  have h := (hf.clm_comp (ContinuousLinearMap.inl ℝ F G)).add
+    (hg.clm_comp (ContinuousLinearMap.inr ℝ F G))
+  convert h using 1
+  ext z <;> simp
 
 /-- A continuous linear change of codomain preserves and reflects every local weak
 Sobolev order. -/
@@ -435,5 +486,57 @@ theorem _root_.ContDiffOn.memWkpLoc [CompleteSpace F]
       intro z hz
       exact (hf.differentiableOn (by simp)).differentiableAt (Ω.isOpen.mem_nhds hz)
     exact hweak.mono (interior_subset.trans hU)
+
+/-! ### Bounds for chains of weak derivatives -/
+
+section WeakDerivChainLe
+
+/-- `WeakDerivChainLe p S T C m f g` bounds the iterated weak derivatives of `f` through order `m`
+by those of `g`: the `Lᵖ(S)` norm of `f` is at most `C` times the `Lᵖ(T)` norm of `g`, and for
+every weak derivative `Df` of `f` on the interior of `S` and every weak derivative `Dg` of `g` on
+the interior of `T`, the pair `Df`, `Dg` satisfies the same through order `m - 1`. Since the
+quantification is over all weak derivatives, the bound holds for every choice of the iterated
+derivatives `D^i f` and `D^i g`, `i ≤ m`. -/
+def WeakDerivChainLe (p : ENNReal) (S T : Set ℂ) (C : ENNReal) :
+    (m : ℕ) → {F : Type*} → [NormedAddCommGroup F] → [NormedSpace ℝ F] → (ℂ → F) → (ℂ → F) →
+      Prop
+  | 0, _, _, _, f, g => eLpNorm f p (volume.restrict S) ≤ C * eLpNorm g p (volume.restrict T)
+  | m + 1, F, _, _, f, g =>
+      eLpNorm f p (volume.restrict S) ≤ C * eLpNorm g p (volume.restrict T) ∧
+        ∀ Df Dg : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior S) f Df →
+          HasWeakFDerivOn volume (Opens.interior T) g Dg → WeakDerivChainLe p S T C m Df Dg
+
+variable {C : ENNReal} {S T : Set ℂ} {m : ℕ}
+
+/-- At order zero the chain bound is the `Lᵖ` bound. -/
+@[simp]
+theorem weakDerivChainLe_zero_iff :
+    WeakDerivChainLe p S T C 0 f g ↔
+      eLpNorm f p (volume.restrict S) ≤ C * eLpNorm g p (volume.restrict T) :=
+  Iff.rfl
+
+/-- At a successor order the chain bound is the `Lᵖ` bound together with the chain bound for
+every pair of weak derivatives. -/
+theorem weakDerivChainLe_succ_iff :
+    WeakDerivChainLe p S T C (m + 1) f g ↔
+      eLpNorm f p (volume.restrict S) ≤ C * eLpNorm g p (volume.restrict T) ∧
+        ∀ Df Dg : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior S) f Df →
+          HasWeakFDerivOn volume (Opens.interior T) g Dg → WeakDerivChainLe p S T C m Df Dg :=
+  Iff.rfl
+
+/-- A chain bound gives the `Lᵖ` bound at order zero. -/
+theorem WeakDerivChainLe.eLpNorm_le (h : WeakDerivChainLe p S T C m f g) :
+    eLpNorm f p (volume.restrict S) ≤ C * eLpNorm g p (volume.restrict T) := by
+  cases m with
+  | zero => exact h
+  | succ m => exact h.1
+
+/-- A chain bound passes to every pair of weak derivatives, one order lower. -/
+theorem WeakDerivChainLe.weakFDeriv (h : WeakDerivChainLe p S T C (m + 1) f g)
+    {Df Dg : ℂ → ℂ →L[ℝ] F} (hf : HasWeakFDerivOn volume (Opens.interior S) f Df)
+    (hg : HasWeakFDerivOn volume (Opens.interior T) g Dg) : WeakDerivChainLe p S T C m Df Dg :=
+  h.2 Df Dg hf hg
+
+end WeakDerivChainLe
 
 end TauCeti

@@ -32,6 +32,8 @@ surjectivity of `P` (`PeriodPair.weierstrassPoint_surjective`), it gives the gro
 * `PeriodPair.weierstrassPoint_add`: `P(z + w) = P(z) + P(w)`.
 * `PeriodPair.weierstrassPointHom`: the point map as a group homomorphism `ℂ →+ E(ℂ)`, and
   `PeriodPair.ker_weierstrassPointHom`: its kernel is `Λ`.
+* `PeriodPair.weierstrassP_eq_weierstrassP_iff`: away from `Λ`, equal `℘`-values mean that
+  the difference or the sum of the arguments lies in `Λ`.
 * `PeriodPair.weierstrassPointEquiv`: the group isomorphism `ℂ / Λ ≃+ E(ℂ)` induced by the point
   map, which is surjective by `PeriodPair.weierstrassPoint_surjective`, with
   `PeriodPair.weierstrassPointEquiv_mk` and `PeriodPair.weierstrassPointEquiv_symm_weierstrassPoint`
@@ -449,6 +451,25 @@ theorem exact_lattice_weierstrassPoint :
     simpa only [AddMonoidHom.coe_toIntLinearMap, weierstrassPointHom_apply,
       Submodule.subtype_apply] using
       L.weierstrassPoint_coe l
+
+/-- Away from the period lattice, the Weierstrass function identifies exactly the pairs of
+points that differ by a period or whose sum is a period. -/
+theorem weierstrassP_eq_weierstrassP_iff {z w : ℂ} (hz : z ∉ L.lattice)
+    (hw : w ∉ L.lattice) :
+    ℘[L] z = ℘[L] w ↔ z - w ∈ L.lattice ∨ z + w ∈ L.lattice := by
+  have hx : ℘[L] z = ℘[L] w ↔
+      (L.weierstrassPoint z).xRep = (L.weierstrassPoint w).xRep := by
+    rw [L.weierstrassPoint_of_notMem hz, L.weierstrassPoint_of_notMem hw]
+    simp
+  rw [hx, WeierstrassCurve.Affine.Point.xRep_eq_xRep_iff]
+  have hsub : L.weierstrassPoint z = L.weierstrassPoint w ↔ z - w ∈ L.lattice := by
+    rw [← sub_eq_zero, ← L.weierstrassPointHom_apply, ← L.weierstrassPointHom_apply,
+      ← map_sub, L.weierstrassPointHom_apply, L.weierstrassPoint_eq_zero_iff]
+  have hadd : L.weierstrassPoint z = -L.weierstrassPoint w ↔ z + w ∈ L.lattice := by
+    rw [← add_eq_zero_iff_eq_neg, ← L.weierstrassPointHom_apply,
+      ← L.weierstrassPointHom_apply, ← map_add, L.weierstrassPointHom_apply,
+      L.weierstrassPoint_eq_zero_iff]
+  rw [hsub, hadd]
 
 /-- **The complex uniformization** `ℂ / Λ ≃+ E_Λ(ℂ)`, induced by the point map
 `z ↦ (℘(z), ℘'(z) / 2)` (`PeriodPair.weierstrassPoint`), which is a surjective group homomorphism
