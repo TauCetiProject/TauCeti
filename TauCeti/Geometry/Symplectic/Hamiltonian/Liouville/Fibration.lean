@@ -40,17 +40,19 @@ fibres are moreover connected:
 
 * the action is transitive on each fibre (`IsLagrangianTorusFibration.exists_fiberAction_apply_eq`),
   and `Λ_b` is the stabilizer of every point of `π⁻¹(b)`
-  (`IsLagrangianTorusFibration.mem_periodLattice_iff`);
+  (`IsLagrangianTorusFibration.mem_periodLattice_iff_fiberAction_apply_eq`);
 * the orbit map descends to a homeomorphism `T*_b B ⧸ Λ_b ≃ₜ π⁻¹(b)`
   (`IsLagrangianTorusFibration.quotientPeriodLatticeHomeomorph`);
-* `Λ_b` is a full lattice in `T*_b B`, of rank `n`
-  (`IsLagrangianTorusFibration.isZLattice_periodLattice`,
+* `Λ_b` is a discrete, full lattice in `T*_b B`, of rank `n`
+  (`IsLagrangianTorusFibration.discreteTopology_periodLattice`,
+  `IsLagrangianTorusFibration.isZLattice_periodLattice`,
   `IsLagrangianTorusFibration.finrank_periodLattice`);
 * every fibre `π⁻¹(b)` is homeomorphic to the torus `(ℝ / ℤ)ⁿ`
   (`IsLagrangianTorusFibration.nonempty_homeomorph_unitAddTorus`).
 
-The lattices `Λ_b` together form the period lattice `Λ ⊆ T*B` of the fibration, whose quotient
-`T*B / Λ` is the model torus bundle (`TauCeti.CotangentBundle.LatticeQuotient`).
+Assembling the lattices `Λ_b` into a period lattice `Λ ⊆ T*B` is not done here. When a lattice
+`Λ ⊆ T*B` is spanned by a closed coframe `α`, the quotient `T*B / Λ` is the model torus bundle
+`TauCeti.CotangentBundle.LatticeQuotient α hα`.
 
 Covectors at `b` are read in the model space: the cotangent space `T*_b B` is
 `TangentSpace J b →L[ℝ] ℝ`, which is `F →L[ℝ] ℝ` by definition of the tangent space, and the
@@ -123,14 +125,14 @@ private theorem chartFamily_apply (b : B) (y : M) :
     chartFamily (J := J) π b y = fun i ↦ chartCoord (J := J) b i (π y) :=
   rfl
 
-/-- The coordinates of a covector `ξ` at `b` in the basis dual to the standard basis of `F`. -/
+/-- The coordinates of a covector `ξ` at `b` in the basis dual to the standard basis of `F`.
+This is Mathlib's coordinate equivalence `Module.Basis.equivFunL` of that dual basis. -/
 private def covectorCoords : (F →L[ℝ] ℝ) ≃L[ℝ] (Fin (finrank ℝ F) → ℝ) :=
-  (LinearMap.toContinuousLinearMap.symm.trans
-    ((Module.finBasis ℝ F).constr ℝ).symm).toContinuousLinearEquiv
+  ((Module.finBasis ℝ F).dualBasis.map LinearMap.toContinuousLinearMap).equivFunL
 
 private theorem covectorCoords_apply (ξ : F →L[ℝ] ℝ) (i : Fin (finrank ℝ F)) :
     covectorCoords ξ i = ξ (Module.finBasis ℝ F i) := by
-  simp [covectorCoords, Module.Basis.constr_symm_apply]
+  simp [covectorCoords]
 
 /-- A covector at `b` is the combination of the coordinate functions of the chart at `b` with
 coefficients its coordinates: `∑ i, ξ(eᵢ) κᵢ = ξ ∘ κ`. -/
@@ -150,6 +152,9 @@ private theorem mvfderiv_comp_chartMap (b : B) (ξ : F →L[ℝ] ℝ) :
     ((chartMap b).contMDiff.mdifferentiableAt (by simp)), ξ.fderiv,
     mvfderiv_apply_eq_mfderiv_apply, (chartMap_eventuallyEq b).mfderiv_eq,
     mfderiv_extChartAt_self]
+  -- The remaining map is `tangentSpaceCast ∘L id`, the identity by definition of the tangent space.
+  -- Mathlib states no lemma for the values of `tangentSpaceCast`, and `comp_id` does not match
+  -- through the `TangentSpace` synonyms.
   rfl
 
 variable (h : hσ.IsLagrangianFibration J π)
@@ -284,21 +289,9 @@ private theorem chartAction_mem (b : B) (v : Fin (finrank ℝ F) → ℝ) (x : �
   exact x.2
 
 /-- The chart action of `v` restricted to the fibre over `b`. -/
-private def chartHomeomorph (b : B) (v : Fin (finrank ℝ F) → ℝ) : π ⁻¹' {b} ≃ₜ π ⁻¹' {b} where
-  toFun x := ⟨_, h.chartAction_mem hπ hσc b v x⟩
-  invFun x := ⟨_, h.chartAction_mem hπ hσc b (-v) x⟩
-  left_inv x := Subtype.ext <| by
-    dsimp only
-    rw [← Diffeomorph.mul_apply, ← toMul_add, ← map_add, neg_add_cancel, map_zero, toMul_zero,
-      Diffeomorph.coe_one, id_eq]
-  right_inv x := Subtype.ext <| by
-    dsimp only
-    rw [← Diffeomorph.mul_apply, ← toMul_add, ← map_add, add_neg_cancel, map_zero, toMul_zero,
-      Diffeomorph.coe_one, id_eq]
-  continuous_toFun :=
-    ((h.chartAction hπ hσc b v).toMul.continuous.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun :=
-    ((h.chartAction hπ hσc b (-v)).toMul.continuous.comp continuous_subtype_val).subtype_mk _
+private def chartHomeomorph (b : B) (v : Fin (finrank ℝ F) → ℝ) : π ⁻¹' {b} ≃ₜ π ⁻¹' {b} :=
+  (h.chartAction hπ hσc b v).toMul.toHomeomorph.subtype fun x ↦ by
+    rw [mem_preimage, mem_preimage, Diffeomorph.coe_toHomeomorph, h.apply_chartAction]
 
 private theorem coe_chartHomeomorph_apply (b : B) (v : Fin (finrank ℝ F) → ℝ) (x : π ⁻¹' {b}) :
     (h.chartHomeomorph hπ hσc b v x : M) = (h.chartAction hπ hσc b v).toMul x :=
@@ -315,8 +308,8 @@ def fiberAction (b : B) : (F →L[ℝ] ℝ) →+ Additive (π ⁻¹' {b} ≃ₜ 
   toFun ξ := Additive.ofMul (h.chartHomeomorph hπ hσc b (covectorCoords ξ))
   map_zero' := by
     refine Additive.toMul.injective (Homeomorph.ext fun x ↦ Subtype.ext ?_)
-    rw [toMul_ofMul, coe_chartHomeomorph_apply, map_zero, map_zero, toMul_zero, toMul_zero]
-    rfl
+    rw [toMul_ofMul, coe_chartHomeomorph_apply, map_zero, map_zero, toMul_zero, toMul_zero,
+      Diffeomorph.coe_one, Homeomorph.one_apply, id_eq]
   map_add' ξ η := by
     refine Additive.toMul.injective (Homeomorph.ext fun x ↦ Subtype.ext ?_)
     rw [toMul_ofMul, coe_chartHomeomorph_apply, map_add, map_add, toMul_add, toMul_add,
@@ -391,8 +384,8 @@ def periodLattice (b : B) : AddSubgroup (F →L[ℝ] ℝ) :=
 @[simp]
 theorem mem_periodLattice {b : B} {ξ : F →L[ℝ] ℝ} :
     ξ ∈ h.periodLattice hπ hσc b ↔ ∀ x, (h.fiberAction hπ hσc b ξ).toMul x = x := by
-  rw [periodLattice, AddMonoidHom.mem_ker, ← toMul_eq_one, Homeomorph.ext_iff]
-  rfl
+  simp only [periodLattice, AddMonoidHom.mem_ker, ← toMul_eq_one, Homeomorph.ext_iff,
+    Homeomorph.one_apply]
 
 /-- **The period lattice is discrete.** If the fibre over `b` is nonempty, the period lattice at
 `b` is a discrete subgroup of `T*_b B`. -/
@@ -425,6 +418,32 @@ variable [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Bou
   (h : hσ.IsLagrangianTorusFibration J π)
 include h
 
+omit [FiniteDimensional ℝ F] [IsManifold J ∞ B] [T2Space B] [T2Space M]
+  [BoundarylessManifold I M] [I.Boundaryless] in
+/-- The dimension count `2 n = dim M` in the form the Liouville–Arnold lemmas expect. -/
+private theorem two_mul_card_eq_finrank [Nonempty M] :
+    2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E := by
+  rw [Fintype.card_fin, h.two_mul_finrank]
+
+omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
+/-- The connected component through a point of the fibre over `b` of its level of the chart family
+at `b` consists of regular points of the chart family. -/
+private theorem isRegularPoint_chartFamily_of_mem_connectedComponentIn {b : B} {x : M}
+    (hx : π x = b) {y : M}
+    (hy : y ∈ connectedComponentIn (chartFamily (J := J) π b ⁻¹' {chartFamily (J := J) π b x}) x) :
+    IsRegularPoint I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) (chartFamily (J := J) π b) y := by
+  rw [h.connectedComponentIn_chartFamily (h.isConnected_preimage_singleton b) hx] at hy
+  exact h.isRegularPoint_chartFamily hy
+
+omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
+/-- The connected component through a point of the fibre over `b` of its level of the chart family
+at `b` is compact. -/
+private theorem isCompact_connectedComponentIn_chartFamily {b : B} {x : M} (hx : π x = b) :
+    IsCompact
+      (connectedComponentIn (chartFamily (J := J) π b ⁻¹' {chartFamily (J := J) π b x}) x) := by
+  rw [h.connectedComponentIn_chartFamily (h.isConnected_preimage_singleton b) hx]
+  exact h.isCompact_preimage_singleton b
+
 /-- **The fibres of a regular Lagrangian torus fibration are tori.** If `σ` is closed, so
 symplectic, every fibre of a regular Lagrangian torus fibration `π : M → B` over a Hausdorff
 manifold of dimension `n` is homeomorphic to the torus `(ℝ / ℤ)ⁿ`. -/
@@ -438,11 +457,18 @@ theorem nonempty_homeomorph_unitAddTorus (hσc : σ.IsClosed) (b : B) :
   obtain ⟨φ⟩ := IsSymplectic.nonempty_homeomorph_unitAddTorus ⟨hσc, hσ⟩
     (h.contMDiff_chartFamily (J := J) b) (h.poissonBracket_chartFamily b)
     (h.isCompleteVectorField_chartFamily h.isProperMap b)
-    (fun y hy ↦ h.isRegularPoint_chartFamily (hcomp ▸ hy : y ∈ π ⁻¹' {b}))
-    (by rw [Fintype.card_fin, h.two_mul_finrank]) (hcomp ▸ h.isCompact_preimage_singleton b)
+    (fun _ ↦ h.isRegularPoint_chartFamily_of_mem_connectedComponentIn hxb)
+    h.two_mul_card_eq_finrank (h.isCompact_connectedComponentIn_chartFamily hxb)
   exact ⟨(Homeomorph.setCongr hcomp.symm).trans φ⟩
 
 variable (hσc : σ.IsClosed)
+
+/-- **The period lattice is discrete.** For a regular Lagrangian torus fibration, the period
+lattice at `b` is a discrete subgroup of `T*_b B`, the fibres being nonempty. -/
+theorem discreteTopology_periodLattice (b : B) :
+    DiscreteTopology (h.periodLattice h.isProperMap hσc b) :=
+  IsLagrangianFibration.discreteTopology_periodLattice h.toIsLagrangianFibration h.isProperMap hσc
+    (h.isConnected_preimage_singleton b).nonempty
 
 /-- **The fibrewise action is transitive.** For a regular Lagrangian torus fibration, any two
 points of a fibre are related by a covector. -/
@@ -454,9 +480,8 @@ theorem exists_fiberAction_apply_eq {b : B} (x y : π ⁻¹' {b}) :
     hxb
   obtain ⟨v, hv⟩ := IsSymplectic.exists_hamiltonianFlowAction_apply_eq ⟨hσc, hσ⟩
     (h.contMDiff_chartFamily (J := J) b) (h.poissonBracket_chartFamily b)
-    (h.isCompleteVectorField_chartFamily h.isProperMap b)
-    (by rw [Fintype.card_fin, h.two_mul_finrank])
-    (fun z hz ↦ h.isRegularPoint_chartFamily (hcomp ▸ hz : z ∈ π ⁻¹' {b}))
+    (h.isCompleteVectorField_chartFamily h.isProperMap b) h.two_mul_card_eq_finrank
+    (fun _ ↦ h.isRegularPoint_chartFamily_of_mem_connectedComponentIn hxb)
     (by rw [hcomp]; exact y.2)
   refine ⟨covectorCoords.symm v, Subtype.ext ?_⟩
   rw [coe_fiberAction_apply, ContinuousLinearEquiv.apply_symm_apply]
@@ -464,7 +489,7 @@ theorem exists_fiberAction_apply_eq {b : B} (x y : π ⁻¹' {b}) :
 
 /-- For a regular Lagrangian torus fibration, the period lattice at `b` is the stabilizer of every
 point of the fibre over `b`. -/
-theorem mem_periodLattice_iff {b : B} (x : π ⁻¹' {b}) {ξ : F →L[ℝ] ℝ} :
+theorem mem_periodLattice_iff_fiberAction_apply_eq {b : B} (x : π ⁻¹' {b}) {ξ : F →L[ℝ] ℝ} :
     ξ ∈ h.periodLattice h.isProperMap hσc b ↔
       (h.fiberAction h.isProperMap hσc b ξ).toMul x = x := by
   refine ⟨fun hξ ↦ (h.mem_periodLattice h.isProperMap hσc).1 hξ x, fun hξ ↦ ?_⟩
@@ -478,8 +503,8 @@ theorem mem_periodLattice_iff {b : B} (x : π ⁻¹' {b}) {ξ : F →L[ℝ] ℝ}
 theorem fiberAction_apply_eq_iff {b : B} (x : π ⁻¹' {b}) {ξ η : F →L[ℝ] ℝ} :
     (h.fiberAction h.isProperMap hσc b ξ).toMul x = (h.fiberAction h.isProperMap hσc b η).toMul x ↔
       -ξ + η ∈ h.periodLattice h.isProperMap hσc b := by
-  rw [h.mem_periodLattice_iff hσc x, map_add, toMul_add, Homeomorph.mul_apply, map_neg, toMul_neg,
-    Homeomorph.inv_apply, Homeomorph.symm_apply_eq, eq_comm]
+  rw [h.mem_periodLattice_iff_fiberAction_apply_eq hσc x, map_add, toMul_add, Homeomorph.mul_apply,
+    map_neg, toMul_neg, Homeomorph.inv_apply, Homeomorph.symm_apply_eq, eq_comm]
 
 /-- **The period lattice is cocompact.** For a regular Lagrangian torus fibration, the quotient of
 `T*_b B` by the period lattice at `b` is compact. -/
@@ -488,23 +513,20 @@ theorem compactSpace_quotient_periodLattice (b : B) :
   obtain ⟨x, hx⟩ := (h.isConnected_preimage_singleton b).nonempty
   have hxb : π x = b := hx
   have : Nonempty M := ⟨x⟩
-  have hcomp := h.connectedComponentIn_chartFamily (J := J) (h.isConnected_preimage_singleton b)
-    hxb
   set S := IsSymplectic.hamiltonianFlowStabilizer ⟨hσc, hσ⟩
     (h.contMDiff_chartFamily (J := J) b) (h.poissonBracket_chartFamily b)
     (h.isCompleteVectorField_chartFamily h.isProperMap b) x
   have := IsSymplectic.compactSpace_quotient_hamiltonianFlowStabilizer ⟨hσc, hσ⟩
     (h.contMDiff_chartFamily (J := J) b) (h.poissonBracket_chartFamily b)
-    (h.isCompleteVectorField_chartFamily h.isProperMap b)
-    (by rw [Fintype.card_fin, h.two_mul_finrank])
-    (fun z hz ↦ h.isRegularPoint_chartFamily (hcomp ▸ hz : z ∈ π ⁻¹' {b}))
-    (hcomp ▸ h.isCompact_preimage_singleton b)
+    (h.isCompleteVectorField_chartFamily h.isProperMap b) h.two_mul_card_eq_finrank
+    (fun _ ↦ h.isRegularPoint_chartFamily_of_mem_connectedComponentIn hxb)
+    (h.isCompact_connectedComponentIn_chartFamily hxb)
   -- The coordinates of covectors carry the stabilizer of `x` into the period lattice, so they
   -- induce a continuous surjection between the quotients.
   have hle : S ≤ (h.periodLattice h.isProperMap hσc b).comap
       ((covectorCoords (F := F)).symm : (Fin (finrank ℝ F) → ℝ) →+ F →L[ℝ] ℝ) := by
     intro v hv
-    rw [AddSubgroup.mem_comap, h.mem_periodLattice_iff hσc ⟨x, hx⟩]
+    rw [AddSubgroup.mem_comap, h.mem_periodLattice_iff_fiberAction_apply_eq hσc ⟨x, hx⟩]
     refine Subtype.ext ?_
     simp only [coe_fiberAction_apply, AddMonoidHom.coe_ofClass,
       ContinuousLinearEquiv.apply_symm_apply]
@@ -544,7 +566,7 @@ theorem quotientPeriodLatticeHomeomorph_mk {b : B} (x : π ⁻¹' {b}) (ξ : F �
 
 /-- **The period lattice is a full lattice.** For a regular Lagrangian torus fibration, the period
 lattice at `b` spans `T*_b B`. The discreteness instance holds by
-`IsLagrangianFibration.discreteTopology_periodLattice`, the fibres being nonempty. -/
+`IsLagrangianTorusFibration.discreteTopology_periodLattice`. -/
 theorem isZLattice_periodLattice (b : B)
     [DiscreteTopology (h.periodLattice h.isProperMap hσc b)] :
     IsZLattice ℝ (h.periodLattice h.isProperMap hσc b).toIntSubmodule where
@@ -555,8 +577,9 @@ theorem isZLattice_periodLattice (b : B)
 
 /-- **The period lattice has rank `n`.** For a regular Lagrangian torus fibration over a manifold
 of dimension `n`, the period lattice at `b` is a free abelian group of rank `n`. -/
-theorem finrank_periodLattice (b : B) [DiscreteTopology (h.periodLattice h.isProperMap hσc b)] :
+theorem finrank_periodLattice (b : B) :
     finrank ℤ (h.periodLattice h.isProperMap hσc b).toIntSubmodule = finrank ℝ F := by
+  have := h.discreteTopology_periodLattice hσc b
   have := h.isZLattice_periodLattice hσc b
   rw [ZLattice.rank ℝ, covectorCoords.toLinearEquiv.finrank_eq, finrank_fin_fun]
 

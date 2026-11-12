@@ -683,6 +683,9 @@ theorem isMIntegralCurve_hamiltonianFlowAction_smul (v : ι → ℝ) (x : M) :
     hasMFDerivAt_iff_hasFDerivAt.2 (ContinuousLinearMap.toSpanSingleton ℝ v).hasFDerivAt
   refine (ho.comp t hl).congr_mfderiv (ContinuousLinearMap.ext_ring ?_)
   convert hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc x (t • v) v using 1
+  -- The side goals mix tangent spaces of `ℝ`, `ι → ℝ` and `M` with their model spaces, so `simp`
+  -- and `rw` do not match the composition lemmas; `exact` unifies them up to definitional
+  -- unfolding of `TangentSpace`.
   · exact (ContinuousLinearMap.comp_apply _ (ContinuousLinearMap.toSpanSingleton ℝ v) 1).trans <|
       congrArg _ <| (ContinuousLinearMap.toSpanSingleton_apply ℝ v 1).trans (one_smul ℝ v)
   · exact ContinuousLinearMap.smulRight_apply.trans (one_smul ℝ _)
