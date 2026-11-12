@@ -53,6 +53,9 @@ components of `Jᶜ`.
 * `TauCeti.IsJordanCurve.connectedComponentIn_eq_filledHull_sdiff_or_compl` — every complementary
   component of a Jordan curve is its inside or its outside. The outside is connected for any
   bounded set, by `TauCeti.isConnected_compl_filledHull`.
+* `TauCeti.IsJordanCurve.eq_filledHull_sdiff_of_isOpen_of_isBounded` and
+  `TauCeti.IsJordanCurve.isConnected_of_isOpen_of_isBounded` — a bounded open set whose frontier
+  is a Jordan curve is the inside of the curve, hence connected.
 * `TauCeti.IsJordanCurve.natCard_connectedComponents_compl_eq_two` — **the Jordan curve theorem**:
   the complement of a Jordan curve in the plane has exactly two connected components.
 
@@ -183,6 +186,43 @@ theorem IsJordanCurve.connectedComponentIn_eq_filledHull_sdiff_or_compl {C : Set
   by_cases hxH : x ∈ filledHull C
   · exact Or.inl (hC.filledHull_sdiff_eq_connectedComponentIn ⟨hxH, hx⟩).symm
   · exact Or.inr (compl_filledHull_eq_connectedComponentIn hrank hC.isCompact.isBounded hxH).symm
+
+/-- A bounded open set whose frontier is a Jordan curve is the inside of that curve. -/
+theorem IsJordanCurve.eq_filledHull_sdiff_of_isOpen_of_isBounded {U : Set ℂ}
+    (hUJ : IsJordanCurve (frontier U)) (hUo : IsOpen U) (hUb : IsBounded U) :
+    U = filledHull (frontier U) \ frontier U := by
+  -- each point `y` of `U` is off the frontier, and the component of `y` in the complement of the
+  -- frontier is contained in `U`, since otherwise it would meet the frontier of `U`
+  have hy_not (y : ℂ) (hy : y ∈ U) : y ∉ frontier U := fun h => (hUo.frontier_eq ▸ h).2 hy
+  have hsub : ∀ y ∈ U, connectedComponentIn (frontier U)ᶜ y ⊆ U := fun y hy =>
+    (isPreconnected_connectedComponentIn).subset_of_closure_inter_subset hUo
+      ⟨y, mem_connectedComponentIn (hy_not y hy), hy⟩
+      fun z hz => by
+        by_contra hzU
+        exact connectedComponentIn_subset _ _ hz.2 (hUo.frontier_eq ▸ ⟨hz.1, hzU⟩)
+  -- that component is the inside of the curve, as it cannot be the unbounded outside
+  have hin : ∀ y ∈ U, connectedComponentIn (frontier U)ᶜ y = filledHull (frontier U) \ frontier U :=
+    fun y hy => by
+      rcases hUJ.connectedComponentIn_eq_filledHull_sdiff_or_compl (hy_not y hy) with h | h
+      · exact h
+      · have hb := hUb.subset (h ▸ hsub y hy : (filledHull (frontier U))ᶜ ⊆ U)
+        exact (NormedSpace.unbounded_univ ℂ ℂ (((isBounded_filledHull.mpr
+          hUJ.isCompact.isBounded).union hb).subset (by simp))).elim
+  obtain ⟨x, hx⟩ : U.Nonempty := by
+    by_contra h
+    rw [not_nonempty_iff_eq_empty] at h
+    exact hUJ.nonempty.ne_empty (by simp [h])
+  refine Subset.antisymm (fun y hy => ?_) fun y hy => ?_
+  · rw [← hin y hy]
+    exact mem_connectedComponentIn (hy_not y hy)
+  · exact hsub x hx (by rwa [hin x hx])
+
+/-- A bounded open set whose frontier is a Jordan curve is connected. -/
+theorem IsJordanCurve.isConnected_of_isOpen_of_isBounded {U : Set ℂ}
+    (hUJ : IsJordanCurve (frontier U)) (hUo : IsOpen U) (hUb : IsBounded U) :
+    IsConnected U := by
+  rw [hUJ.eq_filledHull_sdiff_of_isOpen_of_isBounded hUo hUb]
+  exact hUJ.isConnected_filledHull_sdiff
 
 /-- **The Jordan curve theorem.** The complement of a Jordan curve in the plane has exactly two
 connected components: by `TauCeti.IsJordanCurve.connectedComponentIn_eq_filledHull_sdiff_or_compl`

@@ -104,28 +104,33 @@ theorem SeparatelyExchangeable.condDistrib_cellContext_eq
   -- `condDistrib` chooses its kernel from the joint law, which the preceding theorem identifies.
   simp only [condDistrib, hρ.map_cellContext_cell_eq e f hi hi' hj hj']
 
-/-- **A single measurable cell coding realizes every visible cell's conditional law.** Given a
-reference visible cell, the canonical conditional kernel of that cell can be randomized by a
-uniform variable. The common-kernel theorem makes the same coding work at every other visible
-position, with its own hidden block and adjacent strips as input. This statement concerns each
-cell's conditional law separately; it does not assert independence of the randomizations. -/
+/-- **A single measurable cell coding realizes every visible cell's conditional law.** The
+canonical conditional kernel of a reference visible cell can be randomized by a uniform
+variable. The common-kernel theorem makes the same coding work at every other visible position,
+with its own hidden block and adjacent strips as input. If every row or every column is hidden,
+there is no visible cell and any coding serves. This statement concerns each cell's conditional
+law separately; it does not assert independence of the randomizations. -/
 theorem SeparatelyExchangeable.exists_common_cell_coding
     [StandardBorelSpace α] [Nonempty α]
     {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ]
     (hρ : SeparatelyExchangeable ρ fun p x => x p)
-    (e f : ℕ → ℕ) {i₀ j₀ : ℕ}
-    (hi₀ : i₀ ∉ Set.range e) (hj₀ : j₀ ∉ Set.range f) :
+    (e f : ℕ → ℕ) :
     ∃ g : (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) → I → α,
       Measurable (Function.uncurry g) ∧
         ∀ (i j : ℕ), i ∉ Set.range e → j ∉ Set.range f →
           ∀ z, (volume : Measure I).map (g z) =
             condDistrib (fun x : ℕ × ℕ → α => x (i, j)) (cellContext e f i j) ρ z := by
-  obtain ⟨g, hg, hmap⟩ := Kernel.exists_measurable_map_eq_unitInterval
-    (condDistrib (fun x : ℕ × ℕ → α => x (i₀, j₀)) (cellContext e f i₀ j₀) ρ)
-  refine ⟨g, hg, ?_⟩
-  intro i j hi hj z
-  rw [hρ.condDistrib_cellContext_eq e f hi₀ hi hj₀ hj]
-  exact hmap z
+  by_cases hex : ∃ i₀ j₀ : ℕ, i₀ ∉ Set.range e ∧ j₀ ∉ Set.range f
+  · obtain ⟨i₀, j₀, hi₀, hj₀⟩ := hex
+    obtain ⟨g, hg, hmap⟩ := Kernel.exists_measurable_map_eq_unitInterval
+      (condDistrib (fun x : ℕ × ℕ → α => x (i₀, j₀)) (cellContext e f i₀ j₀) ρ)
+    refine ⟨g, hg, ?_⟩
+    intro i j hi hj z
+    rw [hρ.condDistrib_cellContext_eq e f hi₀ hi hj₀ hj]
+    exact hmap z
+  · obtain ⟨g, hg, -⟩ := Kernel.exists_measurable_map_eq_unitInterval
+      (condDistrib (fun x : ℕ × ℕ → α => x (0, 0)) (cellContext e f 0 0) ρ)
+    exact ⟨g, hg, fun i j hi hj _ ↦ (hex ⟨i, j, hi, hj⟩).elim⟩
 
 end TauCeti.Probability
 
