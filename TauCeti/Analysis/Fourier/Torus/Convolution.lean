@@ -48,8 +48,8 @@ Poussin type reproduce functions whose spectrum lies where their symbol equals o
   trigonometric polynomial.
 * `TauCeti.UnitAddTorus.ae_eq_sum_mFourier_smul_mFourierCoeff`: an integrable function with
   finitely many nonzero Fourier coefficients is a trigonometric polynomial.
-* `TauCeti.UnitAddTorus.convolution_mFourier_apply`: convolution with a monomial.
-* `TauCeti.UnitAddTorus.convolution_sum_smul_mFourier_apply`: convolution with a trigonometric
+* `UnitAddTorus.convolution_mFourier_apply`: convolution with a monomial.
+* `UnitAddTorus.convolution_sum_smul_mFourier_apply`: convolution with a trigonometric
   polynomial.
 -/
 
@@ -156,6 +156,15 @@ theorem ae_eq_sum_mFourier_smul_mFourierCoeff [CompleteSpace E] (hf : Integrable
   filter_upwards [hzero] with x hx
   simpa [sub_eq_zero] using hx
 
+end TauCeti.UnitAddTorus
+
+namespace UnitAddTorus
+
+open TauCeti.UnitAddTorus
+
+variable {d : Type*} [Fintype d] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {f : UnitAddTorus d → E}
+
 /-- **Convolution with a Fourier monomial** picks out one Fourier coefficient:
 `(mFourier n ⋆ f) x = mFourier n x • mFourierCoeff f n`. -/
 theorem convolution_mFourier_apply (n : d → ℤ) (f : UnitAddTorus d → E) (x : UnitAddTorus d) :
@@ -184,4 +193,4 @@ theorem convolution_sum_smul_mFourier_apply (hf : Integrable f) (s : Finset (d �
   rw [integral_smul, ← convolution_mFourier_apply, convolution_def]
   simp
 
-end TauCeti.UnitAddTorus
+end UnitAddTorus

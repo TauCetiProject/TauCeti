@@ -51,7 +51,7 @@ summation to control the periodic kernel. Let `χ` be a smooth cutoff equal to o
 supported in `(-2, 2)`. The kernel of de la Vallée Poussin type
 `V_R(x) = ∑ n, (∏ i, χ (n i / R)) e_n(x)` is a trigonometric polynomial whose coefficients equal one
 on the ball `‖n‖ ≤ R`, so `V_R ⋆ f = f` almost everywhere
-(`TauCeti.UnitAddTorus.convolution_sum_smul_mFourier_apply` and the uniqueness of Fourier
+(`UnitAddTorus.convolution_sum_smul_mFourier_apply` and the uniqueness of Fourier
 coefficients, `TauCeti.UnitAddTorus.ae_eq_sum_mFourier_smul_mFourierCoeff`). It is the tensor
 product of the one-dimensional kernels `t ↦ ∑ n, χ (n / R) e_n(t)`. By Poisson summation
 (`SchwartzMap.tsum_eq_tsum_fourier`) each of these is the periodization of the kernel
@@ -179,9 +179,14 @@ theorem integral_norm_tsum_mul_fourier_le {η : ℝ → ℂ} (hη : ContDiff ℝ
         rw [hG]
         exact integral_norm_fourierInv_comp_smul η (inv_ne_zero hR.ne')
 
+end TauCeti
+
+/-! The kernels below take a point of the torus as an explicit argument, so they live in the
+root `UnitAddTorus` namespace. -/
+
 namespace UnitAddTorus
 
-open _root_.UnitAddTorus
+open TauCeti TauCeti.UnitAddTorus
 
 /-! ### Tensor-product kernels on the torus -/
 
@@ -480,6 +485,12 @@ private theorem eLpNorm_derivKernel_le [DecidableEq d] (v : d → ℝ) {R : ℝ}
     _ = _ := by
         rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
         ring
+
+end UnitAddTorus
+
+namespace TauCeti.UnitAddTorus
+
+open _root_.UnitAddTorus
 
 /-! ### Bernstein's inequalities -/
 
