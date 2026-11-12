@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.ContinuousMap.Basic
+public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import TauCeti.Topology.PartialHomeomorph.Basic
 
@@ -55,7 +57,7 @@ theorem isClosed_image_of_closure_subset_target {s : Set X} (hs : IsClosed s)
   e.toPartialHomeomorph.isClosed_image_of_closure_subset_target hs hse hclosure
 
 theorem mem_refl_source (x : X) : x ∈ (OpenPartialHomeomorph.refl X).source :=
-  mem_univ x
+  Set.mem_univ x
 
 /-- The restriction of an open partial homeomorphism to its source, as a continuous map. -/
 @[expose] def sourceRestrict : C(e.source, Y) :=
