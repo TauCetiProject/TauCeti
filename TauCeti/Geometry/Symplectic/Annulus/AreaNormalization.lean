@@ -325,6 +325,64 @@ theorem bijOn_stripNormalizeInv (hρ : Continuous ρ)
     BijOn (stripNormalizeInv ρ) (univ ×ˢ Icc 0 1) (univ ×ˢ Icc 0 1) :=
   (bijOn_stripNormalize hρ hper hpos).symm (invOn_stripNormalizeInv hρ hper hpos).symm
 
+theorem stripNormalizeInv_stripNormalize (hρ : Continuous ρ)
+    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) {p : ℝ × ℝ}
+    (hp : p ∈ univ ×ˢ Icc (0 : ℝ) 1) :
+    stripNormalizeInv ρ (stripNormalize ρ p) = p :=
+  (injOn_stripNormalize hρ hpos).leftInvOn_invFunOn hp
+
+theorem stripNormalize_stripNormalizeInv (hρ : Continuous ρ)
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
+    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) {q : ℝ × ℝ}
+    (hq : q ∈ univ ×ˢ Icc (0 : ℝ) 1) :
+    stripNormalize ρ (stripNormalizeInv ρ q) = q :=
+  (invOn_stripNormalizeInv hρ hper hpos).2 hq
+
+/-- The inverse of the area normalization commutes with the deck translation
+`(ξ, η) ↦ (ξ + 1, η)`. -/
+theorem stripNormalizeInv_add_one (hρ : Continuous ρ)
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
+    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) (ξ : ℝ) {η : ℝ}
+    (hη : η ∈ Icc (0 : ℝ) 1) :
+    stripNormalizeInv ρ (ξ + 1, η) = stripNormalizeInv ρ (ξ, η) + (1, 0) := by
+  have hq : (ξ, η) ∈ univ ×ˢ Icc (0 : ℝ) 1 := ⟨mem_univ _, hη⟩
+  set p := stripNormalizeInv ρ (ξ, η)
+  have hp : p ∈ univ ×ˢ Icc (0 : ℝ) 1 := (bijOn_stripNormalizeInv hρ hper hpos).mapsTo hq
+  have hNp : stripNormalize ρ (p.1 + 1, p.2) = (ξ + 1, η) := by
+    rw [stripNormalize_add_one hρ hper hpos p.1 hp.2,
+      stripNormalize_stripNormalizeInv hρ hper hpos hq]
+    simp
+  rw [← hNp, stripNormalizeInv_stripNormalize (p := (p.1 + 1, p.2)) hρ hpos ⟨mem_univ _, hp.2⟩]
+  ext <;> simp
+
+/-- The inverse of the area normalization preserves the lower boundary line. -/
+theorem stripNormalizeInv_stripAngle_mk_zero (hρ : Continuous ρ)
+    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) (x : ℝ) :
+    stripNormalizeInv ρ (stripAngle ρ x, 0) = (x, 0) := by
+  rw [← stripNormalize_mk_zero,
+    stripNormalizeInv_stripNormalize (p := (x, 0)) hρ hpos ⟨mem_univ _, le_rfl, zero_le_one⟩]
+
+/-- The inverse of the area normalization preserves the upper boundary line. -/
+theorem stripNormalizeInv_stripAngle_mk_one (hρ : Continuous ρ)
+    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) (x : ℝ) :
+    stripNormalizeInv ρ (stripAngle ρ x, 1) = (x, 1) := by
+  rw [← stripNormalize_mk_one hρ hpos,
+    stripNormalizeInv_stripNormalize (p := (x, 1)) hρ hpos ⟨mem_univ _, zero_le_one, le_rfl⟩]
+
+theorem snd_stripNormalizeInv_mk_zero (hρ : Continuous ρ)
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
+    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) (ξ : ℝ) :
+    (stripNormalizeInv ρ (ξ, 0)).2 = 0 := by
+  obtain ⟨x, rfl⟩ := surjective_stripAngle hρ hper hpos ξ
+  rw [stripNormalizeInv_stripAngle_mk_zero hρ hpos]
+
+theorem snd_stripNormalizeInv_mk_one (hρ : Continuous ρ)
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
+    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) (ξ : ℝ) :
+    (stripNormalizeInv ρ (ξ, 1)).2 = 1 := by
+  obtain ⟨x, rfl⟩ := surjective_stripAngle hρ hper hpos ξ
+  rw [stripNormalizeInv_stripAngle_mk_one hρ hpos]
+
 /-! ### Smoothness and the Jacobian -/
 
 theorem contDiff_stripColumnMass {n : ℕ∞} (hρ : ContDiff ℝ n ρ) :
