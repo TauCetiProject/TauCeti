@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Conj.Prod
+public import TauCeti.Algebra.Ring.Invertible
 public import TauCeti.RepresentationTheory.Tensor.External
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 import TauCeti.RepresentationTheory.FDRep.Basic
@@ -52,18 +53,6 @@ relabellings the table of `G × H` is the Kronecker product of the two tables.
 public section
 
 open TauCeti
-
-namespace TauCeti
-
-/-- The order of a product group is invertible when both factor orders are. This makes the
-character table of `G × H` available alongside those of `G` and `H`. -/
-noncomputable instance instInvertibleNatCardProd {k G H : Type*} [Semiring k]
-    [Invertible (Nat.card G : k)] [Invertible (Nat.card H : k)] :
-    Invertible (Nat.card (G × H) : k) :=
-  Invertible.copy (invertibleMul (Nat.card G : k) (Nat.card H : k)) _ (by
-    rw [Nat.card_prod, Nat.cast_mul])
-
-end TauCeti
 
 namespace Representation
 
@@ -146,6 +135,20 @@ section Classification
 variable {k G H : Type*} [Field k] [Group G] [Group H] [Finite G] [Finite H]
   [IsAlgClosed k] [Invertible (Nat.card G : k)] [Invertible (Nat.card H : k)]
 
+/-- External products of native irreducible models are equivalent only for equal index pairs. -/
+theorem eq_of_nonempty_equiv_externalTensor
+    {p q : Fin (Nat.card (ConjClasses G)) × Fin (Nat.card (ConjClasses H))}
+    (h : Nonempty (((irreducibleRepresentation k p.1).externalTensor
+      (irreducibleRepresentation k p.2)).Equiv
+        ((irreducibleRepresentation k q.1).externalTensor (irreducibleRepresentation k q.2)))) :
+    p = q := by
+  obtain ⟨hG, hH⟩ := (nonempty_equiv_externalTensor_iff _ _ _ _).mp h
+  exact Prod.ext
+    ((TauCeti.Representation.nonempty_equiv_iff_eq _
+      (pairwise_isEmpty_equiv_irreducibleRepresentation k)).mp hG)
+    ((TauCeti.Representation.nonempty_equiv_iff_eq _
+      (pairwise_isEmpty_equiv_irreducibleRepresentation k)).mp hH)
+
 /-- Every irreducible of a product group is an external product of a unique pair of native
 irreducible models. No restriction is imposed on the universe of its carrier. -/
 theorem existsUnique_nonempty_equiv_externalTensor {U : Type*} [AddCommGroup U] [Module k U]
@@ -157,14 +160,8 @@ theorem existsUnique_nonempty_equiv_externalTensor {U : Type*} [AddCommGroup U] 
     (irreducibleRepresentation k p.1).externalTensor (irreducibleRepresentation k p.2)
   have : ∀ p, (R p).IsIrreducible := fun p =>
     isIrreducible_externalTensor _ _ inferInstance inferInstance
-  have hinj : ∀ p q, Nonempty ((R p).Equiv (R q)) → p = q := by
-    intro p q hpq
-    obtain ⟨hG, hH⟩ := (nonempty_equiv_externalTensor_iff _ _ _ _).mp hpq
-    exact Prod.ext
-      ((TauCeti.Representation.nonempty_equiv_iff_eq _
-        (pairwise_isEmpty_equiv_irreducibleRepresentation k)).mp hG)
-      ((TauCeti.Representation.nonempty_equiv_iff_eq _
-        (pairwise_isEmpty_equiv_irreducibleRepresentation k)).mp hH)
+  have hinj : ∀ p q, Nonempty ((R p).Equiv (R q)) → p = q := fun _ _ =>
+    eq_of_nonempty_equiv_externalTensor
   have hind : Pairwise fun p q => IsEmpty ((R p).Equiv (R q)) :=
     fun p q hpq => not_nonempty_iff.mp (fun h => hpq (hinj p q h))
   have hcard : Nat.card (Fin (Nat.card (ConjClasses G)) ×
@@ -258,13 +255,8 @@ private theorem injective_mul_irreducibleCharacter :
   have := hR q
   have hchar : (R q).character = (R p).character := funext fun x => by
     simpa [R] using (congrFun hpq x).symm
-  obtain ⟨hG, hH⟩ := (Representation.nonempty_equiv_externalTensor_iff _ _ _ _).mp
+  exact Representation.eq_of_nonempty_equiv_externalTensor
     (Representation.nonempty_equiv_of_character_eq_of_isIrreducible (R q) (R p) hchar)
-  exact Prod.ext
-    ((Representation.nonempty_equiv_iff_eq _
-      (pairwise_isEmpty_equiv_irreducibleRepresentation k)).mp hG)
-    ((Representation.nonempty_equiv_iff_eq _
-      (pairwise_isEmpty_equiv_irreducibleRepresentation k)).mp hH)
 
 variable (G H)
 
@@ -292,8 +284,7 @@ theorem irreducibleCharacter_irreducibleIndexProdEquiv_symm (i : Fin (Nat.card (
     (j : Fin (Nat.card (ConjClasses H))) (x : G × H) :
     irreducibleCharacter k ((irreducibleIndexProdEquiv k G H).symm (i, j)) x =
       irreducibleCharacter k i x.1 * irreducibleCharacter k j x.2 := by
-  rw [irreducibleIndexProdEquiv, Equiv.symm_symm, Equiv.ofBijective_apply,
-    ← coe_finEquivIrreducibleCharacters_apply, Equiv.apply_symm_apply]
+  simp [irreducibleIndexProdEquiv, ← coe_finEquivIrreducibleCharacters_apply]
 
 /-- Every irreducible character of `G × H` is the product of the irreducible characters of `G`
 and `H` in the rows of its pair of indices. -/
