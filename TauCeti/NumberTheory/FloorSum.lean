@@ -10,6 +10,8 @@ public import TauCeti.Algebra.BigOperators.ModEq
 import TauCeti.Data.Nat.Cast.Basic
 import TauCeti.Data.Finset.Range
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Data.Rat.BigOperators
+import Mathlib.Data.Rat.Cast.Lemmas
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
@@ -59,8 +61,8 @@ theorem Nat.Coprime.sum_range_div {h c : ℕ} (hhc : h.Coprime c) :
   rw [← hhc.sum_range_div_mul_two, Nat.mul_div_cancel _ (by decide)]
 
 /-- For coprime `h` and `c`, the floor sum is `(h - 1)(c - 1) / 2` in any
-characteristic-zero field. -/
-theorem Nat.Coprime.sum_range_cast_div {K : Type*} [Field K] [CharZero K]
+division ring of characteristic zero. -/
+theorem Nat.Coprime.sum_range_cast_div {K : Type*} [DivisionRing K] [CharZero K]
     {h c : ℕ} (hhc : h.Coprime c) :
     ∑ r ∈ range c, ((h * r / c : ℕ) : K) = (h - 1) * (c - 1) / 2 := by
   rcases h.eq_zero_or_pos with rfl | hh
@@ -75,28 +77,60 @@ theorem Nat.Coprime.sum_range_cast_div {K : Type*} [Field K] [CharZero K]
   push_cast [Nat.cast_sub hh, Nat.cast_sub hc] at heq
   exact (eq_div_iff (by norm_num)).2 heq
 
-/-- For coprime `h` and `c` in a characteristic-zero field,
-`c² ∑_{r < c} ⌊h r / c⌋² = 2hc ∑_{r < c} r⌊h r / c⌋ +
-(1 - h²)c(c - 1)(2c - 1)/6`. -/
-theorem Nat.Coprime.sq_mul_sum_div_sq {K : Type*} [Field K] [CharZero K]
-    {h c : ℕ} (hhc : h.Coprime c) :
-    (c : K) ^ 2 * ∑ r ∈ range c, ((h * r / c : ℕ) : K) ^ 2 =
-      2 * h * c * (∑ r ∈ range c, r * (h * r / c) : ℕ) +
-        (1 - h ^ 2) * (c * (c - 1) * (2 * c - 1) / 6) := by
-  have hperm := Nat.Coprime.sum_range_mul_mod hhc (fun r ↦ (r : K) ^ 2)
-  have hterm (r : ℕ) : (((h * r % c : ℕ) : K)) ^ 2 = h ^ 2 * (r : K) ^ 2 -
-      2 * h * c * ((r * (h * r / c) : ℕ) : K) + c ^ 2 * ((h * r / c : ℕ) : K) ^ 2 := by
+/-- The second-moment identity `Nat.Coprime.mul_sum_range_cast_div_sq` over `ℚ`, from which the
+versions in `ℕ` and in any division ring of characteristic zero follow. -/
+private theorem Nat.Coprime.mul_sum_range_ratCast_div_sq {h c : ℕ} (hhc : h.Coprime c) :
+    (c : ℚ) * ∑ r ∈ range c, ((h * r / c : ℕ) : ℚ) ^ 2 =
+      2 * h * ∑ r ∈ range c, (r : ℚ) * ((h * r / c : ℕ) : ℚ) +
+        (1 - h ^ 2) * ((c - 1) * (2 * c - 1) / 6) := by
+  rcases c.eq_zero_or_pos with rfl | hc
+  · obtain rfl : h = 1 := by simpa using hhc
+    simp
+  have hperm := Nat.Coprime.sum_range_mul_mod hhc (fun r ↦ (r : ℚ) ^ 2)
+  have hterm (r : ℕ) : (((h * r % c : ℕ) : ℚ)) ^ 2 = h ^ 2 * (r : ℚ) ^ 2 -
+      2 * h * c * ((r * (h * r / c) : ℕ) : ℚ) + c ^ 2 * ((h * r / c : ℕ) : ℚ) ^ 2 := by
     rw [Nat.cast_mod_eq_sub_mul_div]
     push_cast
     ring
   simp only [hterm, sum_add_distrib, sum_sub_distrib, ← mul_sum, sum_range_natCast_sq] at hperm
-  push_cast at hperm ⊢
+  push_cast at hperm
+  apply mul_left_cancel₀ (show (c : ℚ) ≠ 0 by positivity)
   linear_combination hperm
+
+/-- For coprime `h` and `c`, the second moment of `⌊h r / c⌋` in `ℕ`:
+`6 c ∑_{r < c} ⌊h r / c⌋² + (h² - 1)(c - 1)(2c - 1) = 12 h ∑_{r < c} r ⌊h r / c⌋`. -/
+theorem Nat.Coprime.mul_sum_range_div_sq_mul_six_add {h c : ℕ} (hhc : h.Coprime c) :
+    c * (∑ r ∈ range c, (h * r / c) ^ 2) * 6 + (h ^ 2 - 1) * (c - 1) * (2 * c - 1) =
+      12 * h * ∑ r ∈ range c, r * (h * r / c) := by
+  rcases h.eq_zero_or_pos with rfl | hh
+  · obtain rfl : c = 1 := by simpa using hhc
+    simp
+  rcases c.eq_zero_or_pos with rfl | hc
+  · simp
+  have hq := hhc.mul_sum_range_ratCast_div_sq
+  have heq : (((c * (∑ r ∈ range c, (h * r / c) ^ 2) * 6 +
+      (h ^ 2 - 1) * (c - 1) * (2 * c - 1) : ℕ)) : ℚ) =
+      ((12 * h * ∑ r ∈ range c, r * (h * r / c) : ℕ) : ℚ) := by
+    push_cast [Nat.cast_sub (Nat.one_le_pow _ _ hh), Nat.cast_sub hc,
+      Nat.cast_sub (by omega : 1 ≤ 2 * c)]
+    linear_combination 6 * hq
+  exact_mod_cast heq
+
+/-- For coprime `h` and `c` in a division ring of characteristic zero,
+`c ∑_{r < c} ⌊h r / c⌋² = 2h ∑_{r < c} r⌊h r / c⌋ + (1 - h²)(c - 1)(2c - 1)/6`. -/
+theorem Nat.Coprime.mul_sum_range_cast_div_sq {K : Type*} [DivisionRing K] [CharZero K]
+    {h c : ℕ} (hhc : h.Coprime c) :
+    (c : K) * ∑ r ∈ range c, ((h * r / c : ℕ) : K) ^ 2 =
+      2 * h * ∑ r ∈ range c, (r : K) * ((h * r / c : ℕ) : K) +
+        (1 - h ^ 2) * ((c - 1) * (2 * c - 1) / 6) := by
+  have hq := congrArg (Rat.cast : ℚ → K) hhc.mul_sum_range_ratCast_div_sq
+  push_cast at hq
+  exact hq
 
 /-- For coprime naturals `h` and `c`,
 `∑_{r < c} r (⌊h r / c⌋ + 1) + ∑_{s < h} ∑_{r ≤ ⌊c s / h⌋} r = h ∑_{r < c} r`.
 This counts the rectangle on either side of `c s = h r`, weighted by `r`. -/
-theorem TauCeti.sum_mul_div_add_sum_sum {h c : ℕ} (hhc : h.Coprime c) :
+theorem Nat.Coprime.sum_mul_div_add_sum_sum {h c : ℕ} (hhc : h.Coprime c) :
     ∑ r ∈ range c, r * (h * r / c + 1) + ∑ s ∈ range h, ∑ r ∈ range (c * s / h + 1), r =
       h * ∑ r ∈ range c, r := by
   rcases h.eq_zero_or_pos with rfl | hh

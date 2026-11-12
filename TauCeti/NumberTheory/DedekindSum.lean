@@ -54,6 +54,7 @@ sum for `(h, c)` to the sums of `⌊c s / h⌋` and `⌊c s / h⌋²`, and the r
 * `TauCeti.dedekindSum_add_mul_self`, `TauCeti.dedekindSum_emod`: `s(d, c)` depends only on
   `d mod c`.
 * `TauCeti.dedekindSum_neg`: `s(-d, c) = -s(d, c)`.
+* `TauCeti.dedekindSum_eq_zero_of_dvd`: `s(d, c) = 0` when `c ∣ d`.
 * `TauCeti.dedekindSum_add_dedekindSum`: the reciprocity law of Dedekind sums.
 * `TauCeti.dedekindSum_one_left`: `s(1, c) = (c - 1)(c - 2) / (12 c)` for `c ≥ 0`.
 
@@ -159,6 +160,31 @@ theorem dedekindSum_congr {d₁ d₂ c : ℤ} (h : d₁ ≡ d₂ [ZMOD c]) :
     dedekindSum d₁ c = dedekindSum d₂ c := by
   rw [← dedekindSum_emod d₁, ← dedekindSum_emod d₂, h.eq]
 
+/-- The Dedekind sum `s(0, c)` vanishes. -/
+@[simp]
+theorem dedekindSum_zero_left (c : ℤ) : dedekindSum 0 c = 0 := by
+  simp [dedekindSum]
+
+/-- The Dedekind sum `s(d, c)` vanishes when `c ∣ d`. -/
+theorem dedekindSum_eq_zero_of_dvd {d c : ℤ} (h : c ∣ d) : dedekindSum d c = 0 := by
+  obtain ⟨k, rfl⟩ := h
+  simpa using dedekindSum_add_self_mul 0 c k
+
+/-- The Dedekind sum `s(c, c)` vanishes. -/
+@[simp]
+theorem dedekindSum_self (c : ℤ) : dedekindSum c c = 0 :=
+  dedekindSum_eq_zero_of_dvd dvd_rfl
+
+/-- The Dedekind sum `s(k c, c)` vanishes. -/
+@[simp]
+theorem dedekindSum_mul_self (k c : ℤ) : dedekindSum (k * c) c = 0 :=
+  dedekindSum_eq_zero_of_dvd (dvd_mul_left c k)
+
+/-- The Dedekind sum `s(c k, c)` vanishes. -/
+@[simp]
+theorem dedekindSum_self_mul (c k : ℤ) : dedekindSum (c * k) c = 0 :=
+  dedekindSum_eq_zero_of_dvd (dvd_mul_right c k)
+
 end TauCeti
 
 /-- For coprime arguments, the Dedekind sum uses `Int.fract - 1/2` at every summand. -/
@@ -196,11 +222,33 @@ theorem dedekindSum_neg (d c : ℤ) : dedekindSum (-d) c = -dedekindSum d c := b
   · rw [ite_eq_right hf, ite_eq_right (Int.fract_neg_eq_zero.not.mpr hf), Int.fract_neg hf]
     ring
 
+/-- The shift `c - d` negates the Dedekind sum: `s(c - d, c) = -s(d, c)`. -/
+@[simp]
+theorem dedekindSum_self_sub (c d : ℤ) : dedekindSum (c - d) c = -dedekindSum d c := by
+  rw [sub_eq_neg_add, dedekindSum_add_self, dedekindSum_neg]
+
+/-- The shift `k c - d` negates the Dedekind sum: `s(k c - d, c) = -s(d, c)`. -/
+@[simp]
+theorem dedekindSum_mul_self_sub (k c d : ℤ) :
+    dedekindSum (k * c - d) c = -dedekindSum d c := by
+  rw [sub_eq_neg_add, dedekindSum_add_mul_self, dedekindSum_neg]
+
+/-- The shift `c k - d` negates the Dedekind sum: `s(c k - d, c) = -s(d, c)`. -/
+@[simp]
+theorem dedekindSum_self_mul_sub (c k d : ℤ) :
+    dedekindSum (c * k - d) c = -dedekindSum d c := by
+  rw [sub_eq_neg_add, dedekindSum_add_self_mul, dedekindSum_neg]
+
 /-- The Dedekind sum `s(d, c)` is the empty sum for `c ≤ 1`. -/
 @[simp]
 theorem dedekindSum_of_le_one (d : ℤ) {c : ℤ} (hc : c ≤ 1) : dedekindSum d c = 0 := by
   exact sum_eq_zero fun r hr ↦ absurd hr (by rw [mem_Ioo]; omega)
 
+/-- The Dedekind sum `s(d, 0)` vanishes. -/
+theorem dedekindSum_zero_right (d : ℤ) : dedekindSum d 0 = 0 :=
+  dedekindSum_of_le_one d zero_le_one
+
+/-- The Dedekind sum `s(d, 1)` vanishes. -/
 theorem dedekindSum_one_right (d : ℤ) : dedekindSum d 1 = 0 :=
   dedekindSum_of_le_one d le_rfl
 
@@ -259,7 +307,7 @@ theorem dedekindSum_add_dedekindSum {h c : ℤ} (hh : 0 < h) (hc : 0 < c) (hhc :
   have hh'' : (h : ℚ) ≠ 0 := by positivity
   have hc'' : (c : ℚ) ≠ 0 := by positivity
   -- The lattice-point count, with `∑_{r ≤ p} r = p (p + 1) / 2` for `p = ⌊c s / h⌋`.
-  have hcount := congrArg (Nat.cast : ℕ → ℚ) (sum_mul_div_add_sum_sum hhc)
+  have hcount := congrArg (Nat.cast : ℕ → ℚ) hhc.sum_mul_div_add_sum_sum
   have hp (x : ℕ) : ((c * x / h + 1 : ℕ) : ℚ) * (((c * x / h + 1 : ℕ) : ℚ) - 1) / 2 =
       (((c * x / h : ℕ) : ℚ) ^ 2 + ((c * x / h : ℕ) : ℚ)) / 2 := by
     push_cast
@@ -268,15 +316,14 @@ theorem dedekindSum_add_dedekindSum {h c : ℤ} (hh : 0 < h) (hc : 0 < c) (hhc :
   simp only [sum_range_natCast, mul_add, mul_one, sum_add_distrib, hp, ← sum_div] at hcount
   -- The two residue-permutation identities for `c` modulo `h`.
   have h₁ := hhc.symm.sum_range_cast_div (K := ℚ)
-  have h₂ := hhc.symm.sq_mul_sum_div_sq (K := ℚ)
-  push_cast at h₂
+  have h₂ := hhc.symm.mul_sum_range_cast_div_sq (K := ℚ)
   -- Eliminating the sums of `⌊c s / h⌋` and `⌊c s / h⌋²` relates the two floor sums.
   have hST : (h : ℚ) * ∑ x ∈ range c, (x : ℚ) * ((h * x / c : ℕ) : ℚ) +
       c * ∑ x ∈ range h, (x : ℚ) * ((c * x / h : ℕ) : ℚ) =
       h * (h - 1) * (c * (c - 1) / 2) -
         ((1 - c ^ 2) * ((h - 1) * (2 * h - 1) / 6) + (c - 1) * (h * (h - 1) / 2)) / 2 := by
     refine mul_left_cancel₀ hh'' ?_
-    linear_combination h ^ 2 * hcount - (1 / 2 : ℚ) * h₂ - (h ^ 2 / 2 : ℚ) * h₁
+    linear_combination h ^ 2 * hcount - (h / 2 : ℚ) * h₂ - (h ^ 2 / 2 : ℚ) * h₁
   rw [dedekindSum_natCast_eq_floorSum hc' hhc, dedekindSum_natCast_eq_floorSum hh' hhc.symm]
   push_cast
   field_simp
