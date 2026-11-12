@@ -35,7 +35,7 @@ pairs fit into a short exact sequence.
   subcomplex.
 * `TauCeti.NormalizedCubicalChain.range_map_eq_supportedIn_range`: the push-forward along an
   inducing map has image the chains supported in its range.
-* `TauCeti.NormalizedCubicalChain.supportedIn_inf`: chains supported in `A` and in `B` are
+* `TauCeti.NormalizedCubicalChain.supportedIn_inter`: chains supported in `A` and in `B` are
   supported in `A ∩ B`.
 * `TauCeti.RelativeCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0` on relative chains.
 * `TauCeti.RelativeCubicalChain.map_boundary`: the relative boundary is natural.
@@ -178,10 +178,10 @@ private theorem restrictTo_restrictTo_mem (A B : Set X) {n : ℕ} (g : Normalize
 /-- **Chains supported in two subspaces are supported in their intersection.** A cube contributes
 to a normalized chain supported in `A` only if its image lies in `A`, so a chain supported both in
 `A` and in `B` is a combination of cubes with image in `A ∩ B`. -/
-theorem supportedIn_inf (A B : Set X) (n : ℕ) :
-    supportedIn R A n ⊓ supportedIn R B n = supportedIn R (A ∩ B) n := by
-  refine le_antisymm (fun g ⟨hA, hB⟩ ↦ ?_) (le_inf (supportedIn_mono R Set.inter_subset_left n)
-    (supportedIn_mono R Set.inter_subset_right n))
+theorem supportedIn_inter (A B : Set X) (n : ℕ) :
+    supportedIn R (A ∩ B) n = supportedIn R A n ⊓ supportedIn R B n := by
+  refine le_antisymm (le_inf (supportedIn_mono R Set.inter_subset_left n)
+    (supportedIn_mono R Set.inter_subset_right n)) (fun g ⟨hA, hB⟩ ↦ ?_)
   rw [← restrictTo_eq_self R hA, ← restrictTo_eq_self R hB]
   exact restrictTo_restrictTo_mem R A B g
 
