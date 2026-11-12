@@ -42,50 +42,6 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {m : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 m}
   {W X : ℝ≥0 → Ω → ℝ} {s A μ σ p : ℝ} {T : ℝ≥0}
 
-/-- A process bounded by a polynomial in a stock stopped at a finite horizon has finite
-expected squared running maxima. The bound holds on one common full event, and the process
-need not itself be measurable or have regular paths for this lower-integral estimate. -/
-theorem lintegral_iSup_sq_lt_top_of_geometricBrownianMotion_bound
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
-    (hs : 0 < s)
-    (hbound : ∀ᵐ ω ∂P, ∀ t,
-      |X t ω| ≤ A * (1 + geometricBrownianMotion s μ σ W (min t T) ω ^ p))
-    (R : ℝ≥0) : ∫⁻ ω, ⨆ t ≤ R, ENNReal.ofReal (X t ω ^ 2) ∂P < ∞ := by
-  have hmax := hW.lintegral_iSup_sq_price_geometricBrownianMotion_lt_top
-    (C := fun x _ ↦ A * (1 + x ^ p)) (A := |A|) hcont hs μ σ p
-    (fun x hx _ _ ↦ by rw [abs_mul, abs_of_nonneg (by positivity : 0 ≤ 1 + x ^ p)])
-  refine lt_of_le_of_lt (lintegral_mono_ae ?_) hmax
-  filter_upwards [hbound] with ω hω
-  refine iSup₂_le fun t _ ↦ ?_
-  have hb := hω t
-  have hnonneg : 0 ≤ A * (1 + geometricBrownianMotion s μ σ W (min t T) ω ^ p) :=
-    (abs_nonneg _).trans hb
-  have hsq := (sq_le_sq₀ (abs_nonneg _) hnonneg).2 hb
-  rw [sq_abs] at hsq
-  exact (ENNReal.ofReal_le_ofReal hsq).trans
-    (le_iSup₂ (f := fun t (_ : t ≤ T) ↦ ENNReal.ofReal
-      ((A * (1 + geometricBrownianMotion s μ σ W t ω ^ p)) ^ 2))
-        (min t T) (min_le_right _ _))
-
-/-- Every measurable value of a process with a uniform polynomial stock bound is square
-integrable, including its terminal value. No local-martingale or path-regularity assumption
-on the candidate is needed for this moment conclusion. -/
-theorem memLp_two_of_geometricBrownianMotion_bound
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
-    (hs : 0 < s)
-    (hbound : ∀ᵐ ω ∂P, ∀ t,
-      |X t ω| ≤ A * (1 + geometricBrownianMotion s μ σ W (min t T) ω ^ p))
-    (t : ℝ≥0) (hm : AEStronglyMeasurable (X t) P) : MemLp (X t) 2 P := by
-  apply (memLp_two_iff_integrable_sq hm).2
-  refine ⟨hm.pow 2, ?_⟩
-  rw [hasFiniteIntegral_iff_norm]
-  simp only [Real.norm_eq_abs, abs_sq]
-  exact lt_of_le_of_lt (lintegral_mono fun ω ↦
-    le_iSup₂ (f := fun u (_ : u ≤ t) ↦ ENNReal.ofReal (X u ω ^ 2)) t le_rfl)
-    (hW.lintegral_iSup_sq_lt_top_of_geometricBrownianMotion_bound hcont hs hbound t)
-
 /-- A strongly adapted, almost surely right-continuous local martingale with a uniform
 polynomial bound in a positive geometric Brownian stock stopped at maturity is a true
 martingale. Together with `memLp_two_of_geometricBrownianMotion_bound`, this verifies the

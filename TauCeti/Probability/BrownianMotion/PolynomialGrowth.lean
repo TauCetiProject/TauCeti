@@ -17,7 +17,9 @@ A uniform bound `|C(s,t)| ≤ A (1 + s^p)` gives a finite square-maximal moment 
 positive geometric Brownian stock on a finite horizon. The exponent `p` may be any real
 number: negative moments are available too. The same estimate gives square integrability
 at arbitrary random times in the horizon, provided the sampled value is measurable, and
-square integrability for the time-product measure.
+square integrability for the time-product measure. These moment bounds also extend to
+arbitrary processes bounded by a polynomial in the stock stopped at the horizon, without
+assuming deterministic Markov dependence.
 
 Apply these results to a candidate price `C` and to `s * ∂C/∂s` to obtain the moment
 and expected-energy bounds used in verifying a delta hedge. Measurability is stated
@@ -141,5 +143,51 @@ theorem memLp_price_geometricBrownianMotion_prod
         ENNReal.ofReal (C (geometricBrownianMotion s μ σ W t ω) t ^ 2) ∂P := by
       rw [lintegral_const, mul_comm]
     _ < ∞ := ENNReal.mul_lt_top (measure_lt_top _ _) hmax
+
+variable {X : ℝ≥0 → Ω → ℝ} {μ σ p : ℝ}
+
+/-- A process bounded by a polynomial in a stock stopped at a finite horizon has finite
+expected squared running maxima. The bound holds on one common full event, and the process
+need not itself be measurable or have regular paths for this lower-integral estimate. -/
+theorem lintegral_iSup_sq_lt_top_of_geometricBrownianMotion_bound
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
+    (hs : 0 < s)
+    (hbound : ∀ᵐ ω ∂P, ∀ t,
+      |X t ω| ≤ A * (1 + geometricBrownianMotion s μ σ W (min t T) ω ^ p))
+    (R : ℝ≥0) : ∫⁻ ω, ⨆ t ≤ R, ENNReal.ofReal (X t ω ^ 2) ∂P < ∞ := by
+  have hmax := hW.lintegral_iSup_sq_price_geometricBrownianMotion_lt_top
+    (C := fun x _ ↦ A * (1 + x ^ p)) (A := |A|) hcont hs μ σ p
+    (fun x hx _ _ ↦ by rw [abs_mul, abs_of_nonneg (by positivity : 0 ≤ 1 + x ^ p)])
+  refine lt_of_le_of_lt (lintegral_mono_ae ?_) hmax
+  filter_upwards [hbound] with ω hω
+  refine iSup₂_le fun t _ ↦ ?_
+  have hb := hω t
+  have hnonneg : 0 ≤ A * (1 + geometricBrownianMotion s μ σ W (min t T) ω ^ p) :=
+    (abs_nonneg _).trans hb
+  have hsq := (sq_le_sq₀ (abs_nonneg _) hnonneg).2 hb
+  rw [sq_abs] at hsq
+  exact (ENNReal.ofReal_le_ofReal hsq).trans
+    (le_iSup₂ (f := fun t (_ : t ≤ T) ↦ ENNReal.ofReal
+      ((A * (1 + geometricBrownianMotion s μ σ W t ω ^ p)) ^ 2))
+        (min t T) (min_le_right _ _))
+
+/-- Every measurable value of a process with a uniform polynomial stock bound is square
+integrable, including its terminal value. No local-martingale or path-regularity assumption
+on the candidate is needed for this moment conclusion. -/
+theorem memLp_two_of_geometricBrownianMotion_bound
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
+    (hs : 0 < s)
+    (hbound : ∀ᵐ ω ∂P, ∀ t,
+      |X t ω| ≤ A * (1 + geometricBrownianMotion s μ σ W (min t T) ω ^ p))
+    (t : ℝ≥0) (hm : AEStronglyMeasurable (X t) P) : MemLp (X t) 2 P := by
+  apply (memLp_two_iff_integrable_sq hm).2
+  refine ⟨hm.pow 2, ?_⟩
+  rw [hasFiniteIntegral_iff_norm]
+  simp only [Real.norm_eq_abs, abs_sq]
+  exact lt_of_le_of_lt (lintegral_mono fun ω ↦
+    le_iSup₂ (f := fun u (_ : u ≤ t) ↦ ENNReal.ofReal (X u ω ^ 2)) t le_rfl)
+    (hW.lintegral_iSup_sq_lt_top_of_geometricBrownianMotion_bound hcont hs hbound t)
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
