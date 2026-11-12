@@ -257,9 +257,9 @@ tuple `c` is the zero scheme of `X^n + ∑ i, c i * X^i`. Over the zero ring bot
 singletons, so no nontriviality assumption is needed. -/
 noncomputable def coeffEquivAffineLineDivisor :
     (Fin n → R) ≃ {D : (Spec (.of R[X])).IdealSheafData //
-      D.IsRelativeEffectiveCartier (Spec.map (CommRingCat.ofHom (algebraMap R R[X]))) ∧
-      IsFinite (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))) ∧
-      (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))).finrank =
+      D.IsRelativeEffectiveCartier (Spec.map (CommRingCat.ofHom Polynomial.C)) ∧
+      IsFinite (D.subschemeι ≫ Spec.map (CommRingCat.ofHom Polynomial.C)) ∧
+      (D.subschemeι ≫ Spec.map (CommRingCat.ofHom Polynomial.C)).finrank =
         fun _ ↦ n} :=
   Equiv.ofBijective
     (fun c ↦ ⟨(monicOfCoeff c).zeroIdealSheaf,
@@ -281,13 +281,17 @@ noncomputable def coeffEquivAffineLineDivisor :
             (Scheme.ΓSpecIso (.of R[X])).commRingCatIsoToRingEquiv.subsingleton
           exact ⟨0, Subtype.ext
             (Scheme.IdealSheafData.equivOfIsAffine.injective (Subsingleton.elim _ _))⟩
-        have := hrel.flat
+        -- The chart is stated with `Polynomial.C`, Mathlib's simp normal form of
+        -- `algebraMap R R[X]`; the two are definitionally equal.
+        have : Flat (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))) := hrel.flat
+        have : IsFinite (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))) := hfin
         obtain ⟨p, ⟨hp, hdeg, hpD⟩, -⟩ := D.existsUnique_monic_zeroIdealSheaf_eq hrank
         exact ⟨fun i ↦ p.coeff i,
           Subtype.ext (by simpa only [monicOfCoeff_coeff hp hdeg] using hpD)⟩⟩
 
 /-- The forward coefficient chart is the zero scheme of the monic polynomial with the given lower
 coefficients. -/
+@[simp]
 lemma coeffEquivAffineLineDivisor_apply (c : Fin n → R) :
     (coeffEquivAffineLineDivisor R n c).1 = (monicOfCoeff c).zeroIdealSheaf :=
   (rfl)
@@ -295,9 +299,9 @@ lemma coeffEquivAffineLineDivisor_apply (c : Fin n → R) :
 /-- The inverse chart recovers the lower coefficients of any monic equation of the divisor. -/
 lemma coeffEquivAffineLineDivisor_symm_apply
     (D : {D : (Spec (.of R[X])).IdealSheafData //
-      D.IsRelativeEffectiveCartier (Spec.map (CommRingCat.ofHom (algebraMap R R[X]))) ∧
-      IsFinite (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))) ∧
-      (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))).finrank =
+      D.IsRelativeEffectiveCartier (Spec.map (CommRingCat.ofHom Polynomial.C)) ∧
+      IsFinite (D.subschemeι ≫ Spec.map (CommRingCat.ofHom Polynomial.C)) ∧
+      (D.subschemeι ≫ Spec.map (CommRingCat.ofHom Polynomial.C)).finrank =
         fun _ ↦ n})
     {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) (hpD : p.zeroIdealSheaf = D.1) :
     (coeffEquivAffineLineDivisor R n).symm D = fun i : Fin n ↦ p.coeff i := by
