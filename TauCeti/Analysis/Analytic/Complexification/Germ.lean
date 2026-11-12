@@ -46,13 +46,13 @@ def realRestriction (a : ι → ℝ) :
   map_zero' := Germ.const_compTendsto 0 _
   map_one' := Germ.const_compTendsto 1 _
   map_add' φ ψ := by
-    obtain ⟨f, hf, hφ⟩ := mem_analyticGerms_iff.1 φ.2
-    obtain ⟨g, hg, hψ⟩ := mem_analyticGerms_iff.1 ψ.2
+    obtain ⟨f, _, hφ⟩ := mem_analyticGerms_iff.1 φ.2
+    obtain ⟨g, _, hψ⟩ := mem_analyticGerms_iff.1 ψ.2
     simp only [← hφ, ← hψ, Subring.coe_add, ← Germ.coe_add, Germ.coe_compTendsto]
     rfl
   map_mul' φ ψ := by
-    obtain ⟨f, hf, hφ⟩ := mem_analyticGerms_iff.1 φ.2
-    obtain ⟨g, hg, hψ⟩ := mem_analyticGerms_iff.1 ψ.2
+    obtain ⟨f, _, hφ⟩ := mem_analyticGerms_iff.1 φ.2
+    obtain ⟨g, _, hψ⟩ := mem_analyticGerms_iff.1 ψ.2
     simp only [← hφ, ← hψ, Subring.coe_mul, ← Germ.coe_mul, Germ.coe_compTendsto]
     rfl
 

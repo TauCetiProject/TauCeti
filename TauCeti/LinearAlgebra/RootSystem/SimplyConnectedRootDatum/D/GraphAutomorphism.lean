@@ -39,9 +39,8 @@ The coordinates and node numbering follow Bourbaki, *Lie Groups and Lie Algebras
 Plate IV. The graph automorphism and its role in the twisted family `²Dₙ` follow R. W. Carter,
 *Simple Groups of Lie Type*, §12.2.
 
-This supplies the type-`D` root-datum input to the pinned-isomorphism target in Layer 9 of the
-ReductiveGroups roadmap. The pinned isomorphism theorem will lift it to the group-scheme
-automorphism used in the graph-twisted Steinberg endomorphism.
+By the isomorphism theorem for pinned reductive groups, this root-datum automorphism lifts to the
+group-scheme automorphism used in the graph-twisted Steinberg endomorphism.
 -/
 
 public section
