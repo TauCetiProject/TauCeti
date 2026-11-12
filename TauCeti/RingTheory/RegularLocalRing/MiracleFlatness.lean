@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.RegularLocalRing.FiniteNormal
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.RegularLocalRing.Defs
 import Mathlib.RingTheory.LocalProperties.Basic
 import TauCeti.RingTheory.CohenMacaulay.RegularSequence
 import TauCeti.RingTheory.Flat.LocalCriterion
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
 import TauCeti.RingTheory.Regular.RegularSequence
 
