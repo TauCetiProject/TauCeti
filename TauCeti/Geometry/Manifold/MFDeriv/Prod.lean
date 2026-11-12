@@ -44,6 +44,8 @@ fields on a product manifold.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
 * `TauCeti.mfderiv_swap`: the derivative of the exchange of factors exchanges the components.
+* `MDifferentiableAt.curry_left` and `MDifferentiableAt.curry_right`: a curried function
+  differentiable jointly is differentiable in each variable separately.
 
 * `MDifferentiableAt.mfderiv_fst_apply` and `MDifferentiableAt.mfderiv_snd_apply`: the
   differential of a coordinate of a map into a product.
@@ -306,6 +308,35 @@ theorem MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff
   exact (congrArg ContinuousLinearMap.HasLeftInverse hslice.symm).to_iff
 
 end ParameterPreserving
+
+section Curry
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H H' G : Type*} [TopologicalSpace H] [TopologicalSpace H'] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {I' : ModelWithCorners 𝕜 E' H'}
+  {J : ModelWithCorners 𝕜 F G}
+  {M M' N : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace M'] [ChartedSpace H' M'] [TopologicalSpace N] [ChartedSpace G N]
+  {f : M → M' → N} {x : M} {y : M'}
+
+/-- A curried function differentiable jointly at `(x, y)` is differentiable in the first variable
+at `x`. -/
+theorem MDifferentiableAt.curry_left
+    (hf : MDifferentiableAt (I.prod I') J (Function.uncurry f) (x, y)) :
+    MDifferentiableAt I J (fun x ↦ f x y) x :=
+  hf.comp (f := fun x' : M ↦ (x', y)) x (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
+
+/-- A curried function differentiable jointly at `(x, y)` is differentiable in the second variable
+at `y`. -/
+theorem MDifferentiableAt.curry_right
+    (hf : MDifferentiableAt (I.prod I') J (Function.uncurry f) (x, y)) :
+    MDifferentiableAt I' J (fun y ↦ f x y) y :=
+  hf.comp (f := fun y' : M' ↦ (x, y')) y (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
+
+end Curry
 
 section Coordinates
 

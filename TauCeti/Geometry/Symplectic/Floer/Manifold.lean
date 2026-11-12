@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -116,6 +117,12 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_image`: invariance of the energy, the
   symplectic area, the integrated curvature and the curvature allowance under changes of domain
   coordinates.
+* `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_image_of_perturbationPullback` and
+  `SmoothTwoForm.integrableOn_hamiltonianCurvature_image_of_perturbationPullback`: for a datum
+  whose pullback along an orientation-preserving change of coordinates `φ` is a continuation
+  datum `P(s) H(t) dt`, as on a cylindrical end, the energy identity and the integrability of the
+  curvature over the image of a rectangle, with the curvature
+  `SmoothTwoForm.hamiltonianCurvature_perturbationPullback_eq_deriv_mul` in the coordinates of `φ`.
 * `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
   `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`: translations of the domain
   translate the curvature and preserve the curvature allowance along a map.
@@ -1082,6 +1089,170 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_
       ω.hamiltonianCurvature Ks' Kt' z (u z)) (hE'.add hR') hdi.integrableOn, hdD, add_zero]
 
 end Integral
+
+/-! ### The energy identity over a rectangle of a change of coordinates -/
+
+section PerturbationPullback
+
+open Floer MeasureTheory Set Filter Topology
+
+variable {φ : ℝ × ℝ → ℝ × ℝ} {P : ℝ → ℝ} {Hφ : ℝ → M → ℝ} {U V : Set (ℝ × ℝ)}
+
+/-- A datum `K` whose pullback along `φ` is `P(s) H(t) dt` on an open set `U` has, in the
+coordinates of `φ`, the curvature `P'(s) H(t)` of a continuation datum on `U`. -/
+theorem hamiltonianCurvature_perturbationPullback_eq_deriv_mul (ω : SmoothTwoForm I M)
+    (hUo : IsOpen U)
+    (hs : ∀ w ∈ U, perturbationPullback φ Ks Kt stdComplexLineReal w = 0)
+    (ht : ∀ w ∈ U, perturbationPullback φ Ks Kt stdComplexLineImag w = fun x ↦ P w.1 * Hφ w.2 x)
+    (hP : Differentiable ℝ P) (hH : ∀ x, Differentiable ℝ fun t ↦ Hφ t x) {w : ℝ × ℝ}
+    (hw : w ∈ U) (x : M) :
+    ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) w x =
+      deriv P w.1 * Hφ w.2 x := by
+  have hev : ∀ᶠ w' in 𝓝 w, w' ∈ U := hUo.mem_nhds hw
+  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0)
+    (Kt' := fun w y ↦ P w.1 * Hφ w.2 y) (hev.mono hs) (hev.mono ht)]
+  exact ω.hamiltonianCurvature_continuation (hP _) (hH x _)
+
+/-- Along a map `u` continuous on a set containing `φ(U)`, the curvature, in the coordinates of
+`φ`, of a datum whose pullback along `φ` is `P(s) H(t) dt` on an open set `U` is continuous
+on `U`. -/
+private theorem continuousOn_hamiltonianCurvature_perturbationPullback (ω : SmoothTwoForm I M)
+    (hUo : IsOpen U) (hφ : Continuous φ) (hUV : MapsTo φ U V) (hu : ContinuousOn u V)
+    (hs : ∀ w ∈ U, perturbationPullback φ Ks Kt stdComplexLineReal w = 0)
+    (ht : ∀ w ∈ U, perturbationPullback φ Ks Kt stdComplexLineImag w = fun x ↦ P w.1 * Hφ w.2 x)
+    (hP : ContDiff ℝ 1 P) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry Hφ)) :
+    ContinuousOn (fun w ↦ ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
+      (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))) U :=
+  (((hP.continuous_deriv le_rfl).comp continuous_fst).continuousOn.mul
+    (hH.continuous.comp_continuousOn (continuousOn_snd.prodMk
+      (hu.comp hφ.continuousOn hUV)))).congr fun _ hw ↦
+    ω.hamiltonianCurvature_perturbationPullback_eq_deriv_mul hUo hs ht
+      (hP.differentiable one_ne_zero)
+      (fun x ↦ (hH.curry_left (y := x)).contDiff.differentiable one_ne_zero) hw _
+
+/-- **The curvature over the image of a rectangle is integrable.** Let `K` be a datum whose
+pullback along a `C²` orientation-preserving change of coordinates `φ` is the continuation datum
+`P(s) H(t) dt` on an open set `U` containing the closed rectangle `[a₁, b₁] × [t₀, t₁]`, and let
+`u` be continuous on a set containing `φ(U)`. Then the curvature `R_K(u)` is integrable over the
+image under `φ` of the rectangle `[a₁, b₁] × [t₀, t₁)`, on which `φ` is injective. -/
+theorem integrableOn_hamiltonianCurvature_image_of_perturbationPullback (ω : SmoothTwoForm I M)
+    (hUo : IsOpen U) (hφ : ContDiff ℝ 2 φ)
+    (hdet : ∀ w ∈ U, 0 ≤ (fderiv ℝ φ w).det) (hUV : MapsTo φ U V) (hu : ContinuousOn u V)
+    (hKs : ∀ w ∈ U, ∀ x, MDifferentiableAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (uncurry Ks) (φ w, x))
+    (hKt : ∀ w ∈ U, ∀ x, MDifferentiableAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (uncurry Kt) (φ w, x))
+    (hs : ∀ w ∈ U, perturbationPullback φ Ks Kt stdComplexLineReal w = 0)
+    (ht : ∀ w ∈ U, perturbationPullback φ Ks Kt stdComplexLineImag w = fun x ↦ P w.1 * Hφ w.2 x)
+    (hP : ContDiff ℝ 1 P) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry Hφ))
+    {a₁ b₁ t₀ t₁ : ℝ} (hrect : Icc a₁ b₁ ×ˢ Icc t₀ t₁ ⊆ U)
+    (hinj : InjOn φ (Icc a₁ b₁ ×ˢ Ico t₀ t₁)) :
+    IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z))
+      (φ '' (Icc a₁ b₁ ×ˢ Ico t₀ t₁)) := by
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  have hmeas : MeasurableSet (Icc a₁ b₁ ×ˢ Ico t₀ t₁) := measurableSet_Icc.prod measurableSet_Ico
+  have hsub : Icc a₁ b₁ ×ˢ Ico t₀ t₁ ⊆ Icc a₁ b₁ ×ˢ Icc t₀ t₁ :=
+    prod_mono subset_rfl Ico_subset_Icc_self
+  rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hmeas
+    (fun w _ ↦ (hφ.differentiable (by norm_num) w).hasFDerivAt.hasFDerivWithinAt) hinj]
+  -- In the coordinates of `φ` the curvature, times the Jacobian, is continuous on `U`.
+  refine ((((ω.continuousOn_hamiltonianCurvature_perturbationPullback hUo hφ.continuous hUV hu hs
+    ht hP hH).mono hrect).integrableOn_compact (isCompact_Icc.prod isCompact_Icc)).mono_set
+    hsub).congr_fun (fun w hw ↦ ?_) hmeas
+  have hwU := hrect (hsub hw)
+  rw [abs_of_nonneg (hdet w hwU), smul_eq_mul, ← ω.hamiltonianCurvature_perturbationPullback
+    hφ.contDiffAt (hKs w hwU _).curry_left.differentiableAt
+    (hKt w hwU _).curry_left.differentiableAt (hKs w hwU _).curry_right
+    (hKt w hwU _).curry_right]
+
+/-- **The energy identity over the image of a rectangle, for a manifold target.** Let `φ` be a
+`C²` orientation-preserving change of coordinates of the plane, and `K` a datum whose pullback
+along `φ` is the continuation datum `P(s) H(t) dt` on an open set `U` containing the closed
+rectangle `[a₁, b₁] × [t₀, t₁]`, as on a cylindrical end of a punctured surface in the end
+coordinates. Let `u` be `C¹` on an open set `V ⊇ φ(U)`, for a nondegenerate two-form on a
+finite-dimensional manifold. Over the image under `φ` of the rectangle `[a₁, b₁] × [t₀, t₁)`, on
+which `φ` is injective, the Floer energy is the symplectic area, plus the boundary term
+`P(b₁) ∫ H(t, u(φ(b₁, t))) dt - P(a₁) ∫ H(t, u(φ(a₁, t))) dt` of the two sides `s = b₁` and
+`s = a₁`, minus the integrated curvature. The densities are integrable automatically. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_image_of_perturbationPullback
+    [FiniteDimensional ℝ E] (hω : ω.IsNondegenerate) (hUo : IsOpen U) (hVo : IsOpen V)
+    (hφ : ContDiff ℝ 2 φ) (hdet : ∀ w ∈ U, 0 ≤ (fderiv ℝ φ w).det) (hUV : MapsTo φ U V)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u V)
+    (hKs : ∀ w ∈ U, ∀ x, MDifferentiableAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (uncurry Ks) (φ w, x))
+    (hKt : ∀ w ∈ U, ∀ x, MDifferentiableAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (uncurry Kt) (φ w, x))
+    (hs : ∀ w ∈ U, perturbationPullback φ Ks Kt stdComplexLineReal w = 0)
+    (ht : ∀ w ∈ U, perturbationPullback φ Ks Kt stdComplexLineImag w = fun x ↦ P w.1 * Hφ w.2 x)
+    (hP : ContDiff ℝ 1 P) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry Hφ))
+    {a₁ b₁ t₀ t₁ : ℝ} (hab : a₁ ≤ b₁) (ht₀₁ : t₀ ≤ t₁) (hrect : Icc a₁ b₁ ×ˢ Icc t₀ t₁ ⊆ U)
+    (hinj : InjOn φ (Icc a₁ b₁ ×ˢ Ico t₀ t₁)) :
+    ∫ z in φ '' (Icc a₁ b₁ ×ˢ Ico t₀ t₁), ω.floerEnergyDensity Ks Kt u z =
+      (∫ z in φ '' (Icc a₁ b₁ ×ˢ Ico t₀ t₁), (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (P b₁ * (∫ t in t₀..t₁, Hφ t (u (φ (b₁, t)))) -
+          P a₁ * ∫ t in t₀..t₁, Hφ t (u (φ (a₁, t)))) -
+        ∫ z in φ '' (Icc a₁ b₁ ×ˢ Ico t₀ t₁), ω.hamiltonianCurvature Ks Kt z (u z) := by
+  set Ks' := perturbationPullback φ Ks Kt stdComplexLineReal
+  set Kt' := perturbationPullback φ Ks Kt stdComplexLineImag
+  have hmeas : MeasurableSet (Icc a₁ b₁ ×ˢ Ico t₀ t₁) := measurableSet_Icc.prod measurableSet_Ico
+  have hφd (w : ℝ × ℝ) : DifferentiableAt ℝ φ w := hφ.differentiable (by norm_num) w
+  have hud {w : ℝ × ℝ} (hw : w ∈ U) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w) :=
+    (hu.contMDiffAt (hVo.mem_nhds (hUV hw))).mdifferentiableAt one_ne_zero
+  have hsU {w : ℝ × ℝ} (hw : w ∈ Icc a₁ b₁ ×ˢ Ico t₀ t₁) : w ∈ U :=
+    hrect ⟨hw.1, Ico_subset_Icc_self hw.2⟩
+  -- Change variables to the coordinates of `φ`, in each of the three integrals.
+  rw [ω.integral_eval₂_mfderiv_stdComplexLine_image hmeas hinj (fun w _ ↦ hφd w)
+      (fun w hw ↦ hdet w (hsU hw)) (fun w hw ↦ hud (hsU hw)),
+    ω.integral_floerEnergyDensity_image hmeas hinj (fun w _ ↦ hφd w)
+      (fun w hw ↦ hdet w (hsU hw)) (fun w hw ↦ hud (hsU hw))
+      (fun w hw ↦ (hKs w (hsU hw) _).curry_right) (fun w hw ↦ (hKt w (hsU hw) _).curry_right),
+    ω.integral_hamiltonianCurvature_image hmeas hinj (fun w _ ↦ hφ.contDiffAt)
+      (fun w hw ↦ hdet w (hsU hw))
+      (fun w hw ↦ (hKs w (hsU hw) _).curry_left.differentiableAt)
+      (fun w hw ↦ (hKt w (hsU hw) _).curry_left.differentiableAt)
+      (fun w hw ↦ (hKs w (hsU hw) _).curry_right) (fun w hw ↦ (hKt w (hsU hw) _).curry_right)]
+  -- The half-open rectangle and the closed one differ by a null set.
+  have hae : Icc a₁ b₁ ×ˢ Ico t₀ t₁ =ᵐ[volume] Icc ((a₁, t₀) : ℝ × ℝ) (b₁, t₁) := by
+    rw [Icc_prod_eq, Measure.volume_eq_prod]
+    exact Measure.set_prod_ae_eq (ae_eq_refl _) Ico_ae_eq_Icc
+  simp only [setIntegral_congr_set hae]
+  have hIccU : Icc ((a₁, t₀) : ℝ × ℝ) (b₁, t₁) ⊆ U := by
+    rw [Icc_prod_eq]
+    exact hrect
+  -- In the coordinates of `φ` the datum is `P(s) H(t) dt`, and its curvature is `P'(s) H(t)`.
+  have hu' : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 (u ∘ φ) U :=
+    hu.comp (hφ.of_le (by norm_num)).contMDiff.contMDiffOn hUV
+  have hKs' : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks') (U ×ˢ univ) :=
+    (contMDiffOn_const (c := (0 : ℝ))).congr fun p hp ↦ congrFun (hs p.1 hp.1) p.2
+  have hPH : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 fun p : (ℝ × ℝ) × M ↦
+      P p.1.1 * Hφ p.1.2 p.2 :=
+    ((hP.comp contDiff_fst).contMDiff.comp contMDiff_fst).smul
+      (hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd))
+  have hKt' : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt') (U ×ˢ univ) :=
+    hPH.contMDiffOn.congr fun p hp ↦ congrFun (ht p.1 hp.1) p.2
+  have hR : IntegrableOn (fun w ↦ ω.hamiltonianCurvature Ks' Kt' w ((u ∘ φ) w))
+      (Icc ((a₁, t₀) : ℝ × ℝ) (b₁, t₁)) :=
+    ((ω.continuousOn_hamiltonianCurvature_perturbationPullback hUo hφ.continuous hUV
+      hu.continuousOn hs ht hP hH).mono hIccU).integrableOn_compact isCompact_Icc
+  have hE := hω.integrableOn_floerEnergyDensity hUo hu' hKs' hKt' isCompact_Icc hIccU hR
+  rw [hω.integral_floerEnergyDensity hUo hu' hKs' hKt' (Prod.mk_le_mk.2 ⟨hab, ht₀₁⟩) hIccU
+    hE hR]
+  -- The `ds` components vanish, and the `dt` components are `P(s) H(t)`.
+  have hs₀ {c : ℝ} (hc : c ∈ Icc t₀ t₁) : ∫ s in a₁..b₁, Ks' (s, c) ((u ∘ φ) (s, c)) = 0 := by
+    rw [intervalIntegral.integral_congr (g := fun _ ↦ 0) fun s hs' ↦ ?_,
+      intervalIntegral.integral_zero]
+    rw [uIcc_of_le hab] at hs'
+    exact congrFun (hs (s, c) (hrect ⟨hs', hc⟩)) _
+  have ht₀ {c : ℝ} (hc : c ∈ Icc a₁ b₁) :
+      ∫ t in t₀..t₁, Kt' (c, t) ((u ∘ φ) (c, t)) = P c * ∫ t in t₀..t₁, Hφ t (u (φ (c, t))) := by
+    rw [← intervalIntegral.integral_const_mul]
+    refine intervalIntegral.integral_congr fun t ht' ↦ ?_
+    rw [uIcc_of_le ht₀₁] at ht'
+    exact congrFun (ht (c, t) (hrect ⟨hc, ht'⟩)) _
+  rw [hs₀ ⟨le_rfl, ht₀₁⟩, hs₀ ⟨ht₀₁, le_rfl⟩, ht₀ ⟨le_rfl, hab⟩, ht₀ ⟨hab, le_rfl⟩]
+  simp only [Function.comp_apply, Ks', Kt']
+  ring
+
+end PerturbationPullback
 
 end TauCeti.SmoothTwoForm
 
