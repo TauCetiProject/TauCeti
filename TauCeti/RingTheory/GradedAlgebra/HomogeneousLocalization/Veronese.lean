@@ -56,6 +56,25 @@ public section
 
 open HomogeneousLocalization
 
+namespace HomogeneousLocalization.NumDenSameDeg
+
+open TauCeti.GradedAlgebra
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  {𝒜 : ℕ → Submodule R A} [GradedAlgebra 𝒜] {d : ℕ}
+  {P : Submonoid (veronese 𝒜 d)} {Q : Submonoid A} {hPQ : P ≤ Q.comap (veronese 𝒜 d).val}
+
+/-- A fraction of degree `k` of the Veronese subalgebra, read as a fraction of degree `d k`
+of `A`. -/
+private def ofVeronese
+    (c : NumDenSameDeg (veroneseGrading 𝒜 d) P) : NumDenSameDeg 𝒜 Q where
+  deg := d * c.deg
+  num := ⟨(c.num : veronese 𝒜 d), c.num.2⟩
+  den := ⟨(c.den : veronese 𝒜 d), c.den.2⟩
+  den_mem := hPQ c.den_mem
+
+end HomogeneousLocalization.NumDenSameDeg
+
 namespace TauCeti.GradedAlgebra
 
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
@@ -77,16 +96,6 @@ theorem veroneseLocalizationMap_mk (a : veronese 𝒜 d) (s : P) :
 theorem veroneseLocalizationMap_algebraMap (a : veronese 𝒜 d) :
     veroneseLocalizationMap 𝒜 d hPQ (algebraMap _ _ a) = algebraMap A _ (a : A) :=
   IsLocalization.map_eq _ a
-
-variable {𝒜 d hPQ} in
-/-- A fraction of degree `k` of the Veronese subalgebra, read as a fraction of degree `d k`
-of `A`. -/
-private def NumDenSameDeg.ofVeronese
-    (c : NumDenSameDeg (veroneseGrading 𝒜 d) P) : NumDenSameDeg 𝒜 Q where
-  deg := d * c.deg
-  num := ⟨(c.num : veronese 𝒜 d), c.num.2⟩
-  den := ⟨(c.den : veronese 𝒜 d), c.den.2⟩
-  den_mem := hPQ c.den_mem
 
 private theorem embedding_ofVeronese (c : NumDenSameDeg (veroneseGrading 𝒜 d) P) :
     (NumDenSameDeg.ofVeronese (hPQ := hPQ) c).embedding =
