@@ -867,6 +867,7 @@ theorem isotypicProjector_add_add_add_eq_one :
 
 /-- A displacement lies in the joint eigenspace of a real character `χ` of `C₂ × C₂` exactly when
 the two reflections multiply it by the values of `χ` at the two generators. -/
+@[grind ←]
 theorem mem_iInf_eigenspace_symmetryRep_iff
     (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) (u : Fin 4 → ℝ) :
     u ∈ ⨅ g, Module.End.eigenspace (symmetryRep g) (χ g) ↔
