@@ -20,7 +20,6 @@ import TauCeti.Analysis.InnerProductSpace.WeakSolution
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 import TauCeti.Analysis.Sobolev.Poincare.Schrodinger
 import TauCeti.Analysis.Sobolev.W1p.Density
-import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -341,34 +340,6 @@ open TopologicalSpace
 open scoped Distributions
 
 variable {P : E → ℝ}
-
-/-- For `u ∈ H¹(E)`, testing `u` against `-Δφ + P φ` is the Schrödinger form of `u` and `φ`. -/
-private theorem integral_value_mul_eq_schrodingerForm (hP : MemLp P ⊤ (volume : Measure E))
-    (u : W1p (volume : Measure E) ⊤ 2) (φ : 𝓓((⊤ : Opens E), ℝ)) :
-    ∫ z, W1p.value u z * (-Δ (φ : E → ℝ) z + P z * φ z) =
-      schrodingerForm hP u (W1p.ofTestFunctionₗ volume ⊤ 2 φ) := by
-  have hu : MemLp (W1p.value u : E → ℝ) 2 volume := W1p.memLp_value u
-  have hφ2 : MemLp (φ : E → ℝ) 2 volume :=
-    φ.contDiff.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport
-  have hΔ2 : MemLp (Δ (φ : E → ℝ)) 2 volume :=
-    (φ.contDiff.of_le (by simp)).continuous_laplacian.memLp_of_hasCompactSupport
-      φ.hasCompactSupport.laplacian
-  have hibp := (W1p.hasWeakFDerivOn u).integral_laplacian_smul_eq_neg_integral_inner φ
-  simp only [smul_eq_mul] at hibp
-  have hv := W1p.value_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ
-  have hg := W1p.gradient_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ
-  rw [schrodingerForm_apply]
-  have e1 : ∫ z, W1p.value u z * (-Δ (φ : E → ℝ) z + P z * φ z) =
-      -(∫ z, Δ (φ : E → ℝ) z * W1p.value u z) + ∫ z, P z * (W1p.value u z * φ z) := by
-    rw [← integral_neg, ← integral_add (f := fun z ↦ -(Δ (φ : E → ℝ) z * W1p.value u z))
-      (hΔ2.integrable_mul hu).neg
-        (memLp_one_iff_integrable.1 (hP.fun_mul (hu.fun_mul hφ2 : MemLp _ 1 volume)))]
-    exact integral_congr_ae (Eventually.of_forall fun z ↦ by ring)
-  rw [e1, hibp, neg_neg]
-  congr 1
-  · refine integral_congr_ae (hg.mono fun z hz ↦ ?_)
-    simp only [hz, real_inner_comm]
-  · exact integral_congr_ae (hv.mono fun z hz ↦ by simp only [hz])
 
 /-- An `H¹` function which is a weak solution of `-Δh + P h = 0` is orthogonal to all of `H¹(E)`
 for the Schrödinger form. -/

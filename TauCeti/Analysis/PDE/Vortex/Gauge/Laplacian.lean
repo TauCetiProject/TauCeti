@@ -29,8 +29,9 @@ solution of `d₀* d₀ u = g`, that is `∫ u · d₀* d₀ φ = ∫ g φ` for 
 The potential `p² + q²` vanishes at the zeros of `α`, but for a continuous field of the affine
 space `A_m^s = x_m + H^s`, `s > 1`, it tends to `1 / 4` at infinity
 (`TauCeti.Vortex.tendsto_normSq_of_mem_framedFieldSpace`). This file proves that, whenever
-`x ∈ A_m^k` with `j ≤ k` and `k ≥ 2`, for every `g ∈ H^j(ℂ)` the equation `d₀* d₀ u = g` has a
-weak solution in `L²(ℂ)` which is unique up to null sets and lies in `H^(j+2)(ℂ)`.
+`x` is a continuous field of `A_m^k` with `j ≤ k` and `k ≥ 2`, for every `g ∈ H^j(ℂ)` the
+equation `d₀* d₀ u = g` has a weak solution in `L²(ℂ)` which is unique up to null sets and lies
+in `H^(j+2)(ℂ)`.
 
 * Uniqueness (`TauCeti.Vortex.ae_eq_of_integral_mul_gaugeAdjoint_gaugeDirection_eq`): two weak
   solutions in `L²(ℂ)` agree almost everywhere, by the coercivity of the gauge Laplacian on
@@ -53,12 +54,11 @@ weak solution in `L²(ℂ)` which is unique up to null sets and lies in `H^(j+2)
   regularity above.
 
 For `j = k - 1` this gives unique weak solvability of `d₀* d₀ u = g` with an `H^(k+1)(ℂ)`
-solution for every `g ∈ H^(k-1)(ℂ)`, at a field `x₀ ∈ A_m^k`. This is the analytic input for the
-invertibility of the linearization at the identity of the Coulomb gauge condition
+solution for every `g ∈ H^(k-1)(ℂ)`, at a continuous field `x₀` of `A_m^k`. This is the analytic
+input for the invertibility of the linearization at the identity of the Coulomb gauge condition
 `d₀* (u · x₀ - x₀) = 0` for the action of the Sobolev framed gauge group `G_(k+1)`
-(`TauCeti.Vortex.sobolevGaugeGroup`). The statements are about functions, not bounded operators
-between completed spaces: packaging the solution as an inverse operator remains to be done, and no
-slice or quotient is constructed here.
+(`TauCeti.Vortex.sobolevGaugeGroup`). The statements concern weak solutions as functions, not
+bounded operators between completed Sobolev spaces.
 
 ## References
 

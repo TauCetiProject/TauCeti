@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+public import TauCeti.Analysis.Sobolev.W1p.Zero
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.W1p.Density
-import TauCeti.Analysis.Sobolev.W1p.Zero
+import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.Lp.BilinearMap
 
 /-!
@@ -45,6 +48,9 @@ Schrödinger form `TauCeti.schrodingerForm`, `(u, v) ↦ ∫ ⟪∇u, ∇v⟫ + 
   the inequality above.
 * `TauCeti.schrodingerForm`: the Schrödinger form of a bounded potential as a continuous
   bilinear form on `H¹(E)`.
+* `TauCeti.integral_value_mul_eq_schrodingerForm`: testing `u ∈ H¹(E)` against `-Δφ + P φ` for
+  a test function `φ` is the Schrödinger form of `u` and `φ`, the link with the weak formulation
+  of `-Δh + P h = g`.
 * `TauCeti.exists_pos_mul_norm_sq_le_norm_gradient_sq_add_integral_mul_value_sq`: the inequality
   on `H¹(E)`, `c ‖u‖²_{H¹} ≤ ‖∇u‖₂² + ∫ P u²`.
 * `TauCeti.isCoercive_schrodingerForm`: the Schrödinger form is coercive on `H¹(E)`.
@@ -144,24 +150,11 @@ end TestFunction
 
 section W1p
 
-open TopologicalSpace
-open scoped InnerProductSpace RealInnerProductSpace
+open Filter TopologicalSpace
+open scoped InnerProductSpace RealInnerProductSpace Laplacian Distributions
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {P : E → ℝ}
-
-/-- A bounded potential `V`, as the essentially bounded field `z ↦ V z • (s, t) ↦ s t` of
-bilinear forms on `ℝ`. -/
-private theorem memLp_smul_mul {X : Type*} [MeasurableSpace X] {μ : Measure X} {V : X → ℝ}
-    (hV : MemLp V ⊤ μ) : MemLp (fun z ↦ V z • ContinuousLinearMap.mul ℝ ℝ) ⊤ μ := by
-  -- The source and target of the composed map are named explicitly: unification does not
-  -- recover them from the expected type.
-  convert ContinuousLinearMap.comp_memLp' (𝕜 := ℝ) (𝕜' := ℝ) (σ := RingHom.id ℝ)
-    (F := ℝ →L[ℝ] ℝ →L[ℝ] ℝ)
-    ((ContinuousLinearMap.id ℝ ℝ).smulRight (ContinuousLinearMap.mul ℝ ℝ) :
-      ℝ →L[ℝ] ℝ →L[ℝ] ℝ →L[ℝ] ℝ) hV using 1
-  ext z
-  simp
 
 /-- The **Schrödinger form** `(u, v) ↦ ∫ ⟪∇u, ∇v⟫ + ∫ P u v` of an essentially bounded potential
 `P`, as a continuous bilinear form on `H¹(E) = W^{1,2}(E)`. It is the `L²` inner product of the
@@ -173,7 +166,7 @@ noncomputable def schrodingerForm (hP : MemLp P ⊤ (volume : Measure E)) :
   let fst := ContinuousLinearMap.fst ℝ (Lp E 2 μ) (Lp ℝ 2 μ)
   let snd := ContinuousLinearMap.snd ℝ (Lp E 2 μ) (Lp ℝ 2 μ)
   let J := W1p.gradientL.prod W1p.valueL
-  let V := lpBilinearMap (p := 2) (q := 2) μ ((memLp_smul_mul (hP.restrict _)).toLp _)
+  let V := lpBilinearMap (p := 2) (q := 2) μ ((hP.restrict _).smul_mul.toLp _)
   ((innerSL ℝ).bilinearComp (σ₁₃ := RingHom.id ℝ) fst fst + V.bilinearComp snd snd).bilinearComp J J
 
 /-- The Schrödinger form is the integral of `⟪∇u, ∇v⟫ + P u v`. -/
@@ -186,7 +179,7 @@ theorem schrodingerForm_apply (hP : MemLp P ⊤ (volume : Measure E))
     lpBilinearMap_apply, W1p.gradientL_apply, W1p.valueL_apply]
   rw [innerSL_apply_apply, L2.inner_def]
   have hB := MemLp.coeFn_toLp (E := ℝ →L[ℝ] ℝ →L[ℝ] ℝ)
-    (memLp_smul_mul (hP.restrict ((⊤ : Opens E) : Set E)))
+    (hP.restrict ((⊤ : Opens E) : Set E)).smul_mul
   simp only [Opens.coe_top, Measure.restrict_univ] at hB ⊢
   congr 1
   refine integral_congr_ae ?_
@@ -199,6 +192,34 @@ theorem schrodingerForm_self (hP : MemLp P ⊤ (volume : Measure E))
     schrodingerForm hP u u = ‖W1p.gradient u‖ ^ 2 + ∫ z, P z * W1p.value u z ^ 2 := by
   rw [schrodingerForm_apply, ← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
   simp only [Opens.coe_top, Measure.restrict_univ, real_inner_self_eq_norm_sq, sq]
+
+/-- For `u ∈ H¹(E)`, testing `u` against `-Δφ + P φ` is the Schrödinger form of `u` and `φ`. -/
+theorem integral_value_mul_eq_schrodingerForm (hP : MemLp P ⊤ (volume : Measure E))
+    (u : W1p (volume : Measure E) ⊤ 2) (φ : 𝓓((⊤ : Opens E), ℝ)) :
+    ∫ z, W1p.value u z * (-Δ (φ : E → ℝ) z + P z * φ z) =
+      schrodingerForm hP u (W1p.ofTestFunctionₗ volume ⊤ 2 φ) := by
+  have hu : MemLp (W1p.value u : E → ℝ) 2 volume := W1p.memLp_value u
+  have hφ2 : MemLp (φ : E → ℝ) 2 volume :=
+    φ.contDiff.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport
+  have hΔ2 : MemLp (Δ (φ : E → ℝ)) 2 volume :=
+    (φ.contDiff.of_le (by simp)).continuous_laplacian.memLp_of_hasCompactSupport
+      φ.hasCompactSupport.laplacian
+  have hibp := (W1p.hasWeakFDerivOn u).integral_laplacian_smul_eq_neg_integral_inner φ
+  simp only [smul_eq_mul] at hibp
+  have hv := W1p.value_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ
+  have hg := W1p.gradient_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ
+  rw [schrodingerForm_apply]
+  have e1 : ∫ z, W1p.value u z * (-Δ (φ : E → ℝ) z + P z * φ z) =
+      -(∫ z, Δ (φ : E → ℝ) z * W1p.value u z) + ∫ z, P z * (W1p.value u z * φ z) := by
+    rw [← integral_neg, ← integral_add (f := fun z ↦ -(Δ (φ : E → ℝ) z * W1p.value u z))
+      (hΔ2.integrable_mul hu).neg
+        (memLp_one_iff_integrable.1 (hP.fun_mul (hu.fun_mul hφ2 : MemLp _ 1 volume)))]
+    exact integral_congr_ae (Eventually.of_forall fun z ↦ by ring)
+  rw [e1, hibp, neg_neg]
+  congr 1
+  · refine integral_congr_ae (hg.mono fun z hz ↦ ?_)
+    simp only [hz, real_inner_comm]
+  · exact integral_congr_ae (hv.mono fun z hz ↦ by simp only [hz])
 
 /-- The Poincaré inequality for the Schrödinger form, extended from test functions to all of
 `H¹(E)` by density. -/
