@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 
--- Non-public: the nonvanishing of the numerals `12`, `48`, `864` and `1728` is used only in the
+-- Non-public: the nonvanishing of the numerals `12`, `48` and `864` is used only in the
 -- proofs below.
 import TauCeti.Algebra.Ring.TwoPowMulThreePow
 
@@ -73,9 +73,8 @@ with `u = 1`, and this is the canonical representative of the pair.
 The classical discriminant `-16(4A³ + 27B²)` is *not* restated: it is Mathlib's `Δ_of_isShortNF`,
 which the instance below makes applicable and the coefficient lemmas reduce.
 
-This is a prerequisite of the Nagell–Lutz milestone of
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6, item "The torsion subgroup and Nagell–Lutz",
-whose classical statement is about this curve and its discriminant.
+This is a prerequisite of the Nagell–Lutz theorem, whose classical statement is about this curve
+and its discriminant.
 
 ## Provenance
 
@@ -267,11 +266,23 @@ is what a statement phrased on the pair `(c₄, c₆)` rather than on a curve in
     field_simp <;>
     ring
 
+omit [Invertible (2 : K)] [Invertible (3 : K)] in
 /-- The discriminant attached to a pair of `c`-invariants, `(c₄³ - c₆²)/1728`. -/
 @[simp] lemma ofCInvariants_Δ : (ofCInvariants c₄ c₆).Δ = (c₄ ^ 3 - c₆ ^ 2) / 1728 := by
-  have h1728 : (1728 : K) ≠ 0 :=
-    TauCeti.ne_zero_of_eq_two_pow_mul_three_pow (m := 6) (n := 3) (by norm_num)
-  rw [eq_div_iff h1728, mul_comm, c_relation, ofCInvariants_c₄, ofCInvariants_c₆]
+  have h1728 : (2 : K) ^ 6 * 3 ^ 3 = 1728 := by norm_num
+  by_cases h : (1728 : K) = 0
+  · -- characteristic `2` or `3`: both `48` and `864` vanish, so the equation is `y² = x³`
+    have h48 : (48 : K) = 0 ∧ (864 : K) = 0 := by
+      rw [← h1728, mul_eq_zero, pow_eq_zero_iff (by norm_num), pow_eq_zero_iff (by norm_num)] at h
+      rcases h with h2 | h3
+      · exact ⟨by linear_combination 24 * h2, by linear_combination 432 * h2⟩
+      · exact ⟨by linear_combination 16 * h3, by linear_combination 288 * h3⟩
+    simp [ofCInvariants_eq_shortCurve, h, h48.1, h48.2, Δ, b₂, b₄, b₆, b₈]
+  · have h2 : (2 : K) ≠ 0 := fun h2 ↦ h (by rw [← h1728, h2]; norm_num)
+    have h3 : (3 : K) ≠ 0 := fun h3 ↦ h (by rw [← h1728, h3]; norm_num)
+    let : Invertible (2 : K) := invertibleOfNonzero h2
+    let : Invertible (3 : K) := invertibleOfNonzero h3
+    rw [eq_div_iff h, mul_comm, c_relation, ofCInvariants_c₄, ofCInvariants_c₆]
 
 end CInvariants
 

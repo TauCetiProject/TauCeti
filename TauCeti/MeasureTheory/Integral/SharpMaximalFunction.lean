@@ -347,7 +347,7 @@ private theorem mul_volume_czUnion_two_mul_inter_le {f : (ι → ℝ) → F} (hf
 `m(2t) ≤ 2²ⁿ⁺¹ γ m(t) + |{f^# > γ t}|`,
 
 where `m(s)` is the measure of the union of the Calderón–Zygmund cubes of `‖f‖` at height `s`. -/
-private theorem volume_czUnion_two_mul_le [Nonempty ι] {f : (ι → ℝ) → F} (hf : Integrable f)
+private theorem volume_czUnion_two_mul_le {f : (ι → ℝ) → F} (hf : Integrable f)
     {t : ℝ≥0∞} (ht : t ≠ 0) (ht' : t ≠ ∞) (γ : ℝ≥0∞) :
     volume (czUnion f (2 * t)) ≤ 2 ^ (2 * Fintype.card ι + 1) * γ * volume (czUnion f t) +
       volume {x | γ * t < sharpMaximalFunction volume f x} := by
@@ -458,7 +458,7 @@ variable [NormedSpace ℝ F] [CompleteSpace F]
 where `m(t)` is the measure of the union of the Calderón–Zygmund cubes of `‖f‖` at height `t`.
 Substituting `t = 2s` and applying the good-`λ` inequality bounds the left side by half of itself
 plus the right side, and the left side is finite, so the first term is absorbed. -/
-private theorem setLIntegral_volume_czUnion_mul_rpow_le [Nonempty ι] {f : (ι → ℝ) → F}
+private theorem setLIntegral_volume_czUnion_mul_rpow_le {f : (ι → ℝ) → F}
     (hf : Integrable f) {p : ℝ} (hp : 1 < p) {N : ℝ} (hN : 0 ≤ N) :
     ∫⁻ t in Ioo 0 N, volume (czUnion f (ENNReal.ofReal t)) * ENNReal.ofReal (t ^ (p - 1)) ≤
       2 * (ENNReal.ofReal (2 ^ p) *
@@ -477,7 +477,6 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_le [Nonempty ι] {f : (ι �
   set γ : ℝ := 2 ^ (-(p + 2 * n + 2))
   have hγ : 0 < γ := by positivity
   set K : ℝ≥0∞ := 2 ^ (2 * n + 1)
-  have hw : Measurable w := ENNReal.measurable_ofReal.comp (measurable_id.pow_const _)
   have hσ : Antitone σ := fun s t hst => measure_mono fun x (hx : ENNReal.ofReal t < f' x) =>
     (ENNReal.ofReal_le_ofReal hst).trans_lt hx
   -- The good-`λ` inequality at height `s`.
@@ -494,38 +493,8 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_le [Nonempty ι] {f : (ι �
   have hconst : ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ) = 2⁻¹ :=
     ofReal_two_rpow_mul_two_pow_mul_ofReal_two_rpow n p
   -- Substituting `t = 2 s` and applying the good-`λ` inequality bounds `I N` by `I N / 2 + …`.
-  have hscale := setLIntegral_comp_mul_left_mul_rpow m two_pos measurableSet_Ioo
-    (S := Ioo 0 N) (T := Ioo 0 (N / 2)) (fun s => by
-      simp only [mem_Ioo]
-      constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith)
-    (fun s hs => le_of_lt hs.1) (p - 1)
-  rw [sub_add_cancel] at hscale
-  have h2p : ENNReal.ofReal (2 ^ p) * ENNReal.ofReal (2 ^ (-p)) = 1 := by
-    rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add two_pos]
-    simp
-  have hσw : Measurable fun s => σ (γ * s) * w s :=
-    ((hσ.comp_monotone fun _ _ h => mul_le_mul_of_nonneg_left h hγ.le).measurable).mul hw
   have hstep : I N ≤ 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) :=
-    calc I N = ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2), m (2 * s) * w s := by
-          rw [hscale, ← mul_assoc, h2p, one_mul]
-      _ ≤ ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2),
-            (K * ENNReal.ofReal γ * (m s * w s) + σ (γ * s) * w s) := by
-          refine mul_le_mul' le_rfl (setLIntegral_mono' measurableSet_Ioo fun s hs => ?_)
-          rw [← mul_assoc, ← add_mul]
-          gcongr
-          exact hlevel s hs.1
-      _ = ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ * I (N / 2) +
-            ∫⁻ s in Ioo 0 (N / 2), σ (γ * s) * w s) := by
-          rw [lintegral_add_right' _ hσw.aemeasurable,
-            lintegral_const_mul' _ _ (ENNReal.mul_ne_top (by simp [K]) ENNReal.ofReal_ne_top)]
-      _ ≤ ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ * I N +
-            ∫⁻ s in Ioi (0 : ℝ), σ (γ * s) * w s) := by
-          gcongr
-          · exact lintegral_mono_set (Ioo_subset_Ioo_right (by linarith))
-          · exact Ioo_subset_Ioi_self
-      _ = 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
-          rw [hJ, mul_add, ← mul_assoc, ← mul_assoc, ← hconst]
-          ring
+    setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add hγ hN hσ.measurable hlevel hJ hconst
   -- Since `I N` is finite, the first term is absorbed.
   have hhalf : 2⁻¹ * I N ≠ ∞ :=
     ENNReal.mul_ne_top (by simp) (setLIntegral_volume_czUnion_mul_rpow_ne_top hf hp hN)

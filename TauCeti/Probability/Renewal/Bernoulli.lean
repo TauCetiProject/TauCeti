@@ -113,7 +113,7 @@ theorem hasLaw_renewalCountNat_negativeBinomialMeasure (hT : ∀ n, Measurable (
     apply (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).mp
     rw [← measureReal_def, ← measureReal_def, negativeBinomialMeasure_real_Iic hk hq q.2.2]
     have htail := binomial_tail_eq_regularizedIncompleteBeta
-      (n := n + 1) (m := k + 1) (by omega) q
+      (n := n + 1) (m := k + 1) q
     have hset : Ioi k = {j : ℕ | k + 1 ≤ j} := by
       ext j
       simp only [mem_Ioi, mem_ofPred_eq]
@@ -155,7 +155,7 @@ theorem integral_renewalCountNat_of_bernoulliMeasure (hT : ∀ n, Measurable (T 
   have hcast : HasLaw (Nat.cast : ℕ → ℝ) (ν.map (Nat.cast : ℕ → ℝ)) ν :=
     ⟨Measurable.of_discrete.aemeasurable, rfl⟩
   have hi : Integrable (fun j : ℕ ↦ (j : ℝ)) ν :=
-    hcast.integrable ((memLp_id_map_cast_negativeBinomialMeasure hk hq q.2.2 1).integrable
+    hcast.integrable ((memLp_id_map_cast_negativeBinomialMeasure 1).integrable
       (by simp))
   have hshift : HasLaw (fun j : ℕ ↦ k + j) (ν.map (fun j ↦ k + j)) ν :=
     ⟨Measurable.of_discrete.aemeasurable, rfl⟩

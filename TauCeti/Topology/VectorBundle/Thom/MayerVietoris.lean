@@ -156,7 +156,7 @@ omit [TopologicalSpace B] [TopologicalSpace F] [∀ b, TopologicalSpace (E b)] [
 private theorem thomPairOverInterIso_inv_comp_thomPairRestrict :
     (thomPairOverInterIso F E U V).inv ≫ thomPairRestrict F E (U ∩ V) =
       interToThomPair F E U V := by
-  rw [Iso.inv_comp_eq, interToThomPair, TopCat.interToUnionMap_eq_comp_left, Category.assoc,
+  rw [Iso.inv_comp_eq, interToThomPair, ← TopCat.interToLeftMap_comp_leftToUnionMap, Category.assoc,
     thomPairOverInterIso_hom_comp_ofInclusionMap_left_assoc, unionToThomPair,
     ofInclusionMap_comp_thomPairOverUnionIso_inv_left_assoc, thomPairRestrict, thomPairRestrict,
     thomPairOverMap_comp_thomPairOverMap_assoc, thomPairOverMap_comp_thomPairOverMap_assoc]

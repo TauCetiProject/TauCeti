@@ -132,7 +132,7 @@ variable {X G : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurabl
   {μ : Measure X} [SeminormedAddGroup G]
 
 /-- **The standard smoothness estimate implies Hörmander's condition.** Let the closed balls
-about `y'` satisfy the growth bound `μ (closedBall y' r) ≤ A rⁿ` with `0 ≤ n`, and let `K` satisfy
+about `y'` satisfy the growth bound `μ (closedBall y' r) ≤ A rⁿ`, and let `K` satisfy
 the standard smoothness estimate with exponent `δ > 0`,
 
 `‖K x y - K x y'‖ ≤ C dist y y' ^ δ dist x y' ^ (-(n + δ))` whenever `dist x y' > 2 dist y y'`.
@@ -140,7 +140,7 @@ the standard smoothness estimate with exponent `δ > 0`,
 Then `∫_{dist x y' > 2 dist y y'} ‖K x y - K x y'‖ dx ≤ C A 2ⁿ / (2^δ - 1)`. -/
 theorem setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow {K : X → X → G} {y y' : X}
     {A : ℝ≥0∞} {n : ℝ} (hμ : ∀ r, 0 < r → μ (closedBall y' r) ≤ A * ENNReal.ofReal (r ^ n))
-    (hn : 0 ≤ n) {C : ℝ≥0} {δ : ℝ} (hδ : 0 < δ)
+    {C : ℝ≥0} {δ : ℝ} (hδ : 0 < δ)
     (hK : ∀ x, 2 * dist y y' < dist x y' →
       ‖K x y - K x y'‖ ≤ C * (dist y y' ^ δ * dist x y' ^ (-(n + δ)))) :
     ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖K x y - K x y'‖ₑ ∂μ ≤
@@ -182,7 +182,7 @@ theorem setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow {K : X → X → G} {y
               have h2t : 0 < 2 * t := by positivity
               exact setLIntegral_ofReal_dist_rpow_neg_le
                 (fun r hr ↦ (measure_mono ball_subset_closedBall).trans (hμ r (h2t.trans hr)))
-                (by positivity) (by linarith) h2t
+                (by linarith) h2t
           _ = A * ENNReal.ofReal (C * (2 ^ n / (2 ^ δ - 1))) := by
               rw [mul_left_comm, ← ENNReal.ofReal_mul (by positivity), hr]
           _ = C * A * ENNReal.ofReal (2 ^ n / (2 ^ δ - 1)) := by
@@ -216,7 +216,7 @@ theorem setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow_pi {K : (ι → ℝ) �
       4 ^ Fintype.card ι / (2 ^ δ - 1) := by
     rw [Real.rpow_natCast, ← mul_div_assoc, ← mul_pow]
     norm_num
-  refine (setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow hμ (Nat.cast_nonneg _) hδ hK).trans
+  refine (setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow hμ hδ hK).trans
     (le_of_eq ?_)
   rw [mul_assoc, ← ENNReal.ofReal_mul (by positivity), h4]
 
@@ -231,26 +231,6 @@ open scoped ENNReal NNReal
 
 variable {ι : Type*} [Fintype ι] {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-
-omit [CompleteSpace E] [CompleteSpace F] in
-/-- On the one-point space `(ι → ℝ)` for empty `ι`, the sharp bound `t |{‖T f‖ > t}| ≤ ‖T‖ ‖f‖₁`
-(`ContinuousLinearMap.mul_volume_lt_enorm_le_of_isEmpty`) is below the weak-type constant of the
-Calderón–Zygmund theorem, whatever the coefficient `c` of the kernel term. -/
-private theorem mul_volume_lt_enorm_le_of_isEmpty_add [IsEmpty ι]
-    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
-    (f : Lp E 2 (volume : Measure (ι → ℝ))) (t c : ℝ≥0∞) :
-    t * volume {x | t < ‖T f x‖ₑ} ≤
-      (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + c) * ∫⁻ x, ‖f x‖ₑ := by
-  have h : ‖T‖ₑ ≤ 2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + c := by
-    rw [Fintype.card_eq_zero, pow_zero, one_mul]
-    refine le_trans ?_ le_self_add
-    rcases le_total ‖T‖ₑ 1 with h | h
-    · exact h.trans le_add_self
-    · calc ‖T‖ₑ ≤ ‖T‖ₑ * ‖T‖ₑ := le_mul_of_one_le_right zero_le h
-        _ = ‖T‖ₑ ^ 2 := (sq _).symm
-        _ ≤ 4 * ‖T‖ₑ ^ 2 := le_mul_of_one_le_left zero_le (by norm_num)
-        _ ≤ _ := le_self_add
-  exact (mul_volume_lt_enorm_le_of_isEmpty T f t).trans (by gcongr)
 
 /-- **The Calderón–Zygmund theorem** for an operator with a standard kernel. Let `T` be a bounded
 linear operator on `L²(ℝⁿ)` such that `T b x = ∫ K x y (b y) dy` for almost every `x` off any
@@ -275,10 +255,8 @@ theorem mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow
     t * volume {x | t < ‖T f x‖ₑ} ≤
       (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) +
         4 * (C * ENNReal.ofReal (4 ^ Fintype.card ι / (2 ^ δ - 1)))) * ∫⁻ x, ‖f x‖ₑ := by
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · exact mul_volume_lt_enorm_le_of_isEmpty_add T f t _
-  · exact mul_volume_lt_enorm_le_of_hormander T hKm
-      (fun _ _ => setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow_pi hδ fun x => hK x _ _)
-      hrep f t
+  exact mul_volume_lt_enorm_le_of_hormander T hKm
+    (fun _ _ => setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow_pi hδ fun x => hK x _ _)
+    hrep f t
 
 end ContinuousLinearMap

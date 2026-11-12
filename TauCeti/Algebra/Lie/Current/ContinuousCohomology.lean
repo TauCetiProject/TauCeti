@@ -82,9 +82,9 @@ finite-dimensionality of `Z` is needed, as no basis of `Z` is used.
   in a module `Z` with trivial action.
 * `TauCeti.CurrentAlgebra.residueClassMap_injective`: it is injective for a nonzero form over a
   domain and torsion-free `Z`.
-* `TauCeti.CurrentAlgebra.exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`: for a nonzero form
-  `Ψ` spanning the invariant forms, every continuous 2-cocycle with values in a vector space `Z` is
-  a residue cocycle `c_Ψ ⊗ z` plus a continuous coboundary.
+* `TauCeti.CurrentAlgebra.exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`: for a form `Ψ`
+  spanning the invariant forms, every continuous 2-cocycle with values in a vector space `Z` is a
+  residue cocycle `c_Ψ ⊗ z` plus a continuous coboundary.
 * `TauCeti.CurrentAlgebra.residueClassEquiv`: for a nonzero form `Ψ` spanning the invariant forms,
   the linear equivalence `z ↦ [c_Ψ ⊗ z]` from any vector space `Z` onto continuous second
   cohomology with coefficients in `Z`.
@@ -237,7 +237,7 @@ theorem residueClass_eq_zero_iff {Φ : LinearMap.BilinForm R L}
     (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) :
     residueClass R L Φ hΦ hΦs = 0 ↔ Φ = 0 := by
   have h0i : (0 : LinearMap.BilinForm R L).lieInvariant L := fun x y z ↦ by simp
-  have h0s : (0 : LinearMap.BilinForm R L).IsSymm := ⟨fun x y ↦ by simp⟩
+  have h0s : (0 : LinearMap.BilinForm R L).IsSymm := ⟨fun _ _ ↦ by simp⟩
   rw [← residueClass_zero h0i h0s, residueClass_inj]
 
 /-- The residue class of a nonzero invariant symmetric form is nonzero over every commutative
@@ -442,20 +442,31 @@ theorem exists_eq_smul_twoCochainOfBilinear_add_d₁₂ {Ψ : LinearMap.BilinFor
 variable {Z : Type*} [AddCommGroup Z] [Module K Z]
 
 /-- **Every continuous 2-cocycle with discrete coefficients is a residue cocycle up to a continuous
-coboundary.** Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, assume
-moreover that `Ψ` is nonzero, and let `Z` be any vector space with trivial action, of arbitrary
-dimension. Every continuous 2-cocycle on formal currents with values in `Z` is `c_Ψ ⊗ z + d₁₂ f`
-for a vector `z` and a continuous one-cochain `f`. -/
+coboundary.** Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, let `Z` be
+any vector space with trivial action, of arbitrary dimension. Every continuous 2-cocycle on formal
+currents with values in `Z` is `c_Ψ ⊗ z + d₁₂ f` for a vector `z` and a continuous one-cochain
+`f`. -/
 theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.BilinForm K L}
     (hΨs : Ψ.IsSymm)
     (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (hΨ0 : Ψ ≠ 0) {c : twoCochain K (currentAlgebra K L)
+    {c : twoCochain K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) Z)}
     (hc : c ∈ continuousTwoCocycle K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) Z)) :
     ∃ z : Z, ∃ f ∈ continuousOneCochain K (currentAlgebra K L)
         (TrivialLieModule K (currentAlgebra K L) Z),
       c = twoCochainOfBilinearSMulRight K L Ψ hΨs z + d₁₂ K _ _ f := by
+  -- For trivial `L` every cochain vanishes; otherwise the Killing form is a nonzero invariant
+  -- form, so `hspan` makes `Ψ` nonzero.
+  rcases subsingleton_or_nontrivial L with hL | hL
+  · have : Subsingleton (currentAlgebra K L) := inferInstance
+    refine ⟨0, 0, zero_mem _, Subtype.ext (LinearMap.ext₂ fun a b ↦ ?_)⟩
+    rw [Subsingleton.elim a 0, Subsingleton.elim b 0]
+    simp
+  have hΨ0 : Ψ ≠ 0 := by
+    rintro rfl
+    obtain ⟨t, ht⟩ := hspan (killingForm K L) (LieModule.traceForm_lieInvariant K L L)
+    exact (IsKilling.killingForm_nondegenerate K L).ne_zero (by simp [ht])
   set eK := TrivialLieModule.equiv K (currentAlgebra K L) K
   -- Each functional `φ` on the coefficients turns `c` into a scalar continuous cocycle, which by
   -- the scalar classification is `t φ • c_Ψ + d₁₂ (f φ)` with `f φ` continuous.
@@ -513,12 +524,11 @@ Under the hypotheses of `exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`, t
 with coefficients in any vector space `Z` with trivial action is surjective. -/
 theorem residueClassMap_surjective {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
     (hΨs : Ψ.IsSymm)
-    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (hΨ0 : Ψ ≠ 0) :
+    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ) :
     Function.Surjective (residueClassMap K L Ψ hΨ hΨs (Z := Z)) := by
   intro a
   obtain ⟨c, rfl⟩ := continuousSecondCohomologyMk_surjective a
-  obtain ⟨z, f, hf, hc⟩ := exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ hΨs hspan hΨ0 c.2
+  obtain ⟨z, f, hf, hc⟩ := exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ hΨs hspan c.2
   refine ⟨z, ?_⟩
   rw [residueClassMap_apply, continuousSecondCohomologyMk_eq_iff]
   exact ⟨-f, neg_mem hf, by
@@ -527,7 +537,8 @@ theorem residueClassMap_surjective {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieI
 
 variable (Z) in
 /-- **Continuous second cohomology of formal currents with discrete coefficients.** Under the
-hypotheses of `exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`, for every vector space `Z` with
+hypotheses of `exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`, and assuming `Ψ` is nonzero (which
+injectivity of the residue class map needs), for every vector space `Z` with
 trivial action, of arbitrary dimension, the residue class map `z ↦ [c_Ψ ⊗ z]` is a linear
 equivalence from `Z` onto the continuous second cohomology of formal currents with coefficients in
 `Z`. For `Z = K` it sends `t` to `t • residueClass` (`residueClassMap_self`). -/
@@ -538,7 +549,7 @@ noncomputable def residueClassEquiv {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lie
     Z ≃ₗ[K] continuousSecondCohomology K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) Z) :=
   LinearEquiv.ofBijective (residueClassMap K L Ψ hΨ hΨs)
-    ⟨residueClassMap_injective hΨ hΨs hΨ0, residueClassMap_surjective hΨ hΨs hspan hΨ0⟩
+    ⟨residueClassMap_injective hΨ hΨs hΨ0, residueClassMap_surjective hΨ hΨs hspan⟩
 
 @[simp]
 theorem residueClassEquiv_apply {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)

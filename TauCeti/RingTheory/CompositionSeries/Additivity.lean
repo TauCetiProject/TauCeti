@@ -65,9 +65,7 @@ in `TauCeti/RingTheory/CompositionSeries/Multiplicity.lean`;
 `TauCeti/RingTheory/CompositionSeries/Basic.lean` supplies the transports themselves.
 
 The additivity of `[Pᵢ : Sⱼ]` is what makes the Cartan matrix of a finite-dimensional algebra
-computable, in Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md` ("The Cartan matrix of an
-algebra"); `TauCeti/RingTheory/CompositionSeries/Multiplicity.lean` supplies the multiplicity
+computable; `TauCeti/RingTheory/CompositionSeries/Multiplicity.lean` supplies the multiplicity
 itself.
 
 * Assem, Simson and Skowroński, *Elements of the Representation Theory of Associative Algebras* I,

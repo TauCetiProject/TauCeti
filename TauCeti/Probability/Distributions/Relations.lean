@@ -101,19 +101,22 @@ theorem measure_setOf_lt_min_indep (hindep : iIndepFun X P)
     (hlaw i).measure_eq (p := fun y => x < y) measurableSet_Ioi
 
 /-- The real-valued lower-tail formula for the maximum of a finite independent family. -/
-theorem measureReal_setOf_max_le_indep [∀ i, IsProbabilityMeasure (μs i)]
+theorem measureReal_setOf_max_le_indep
     (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
     P.real {ω | (Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) ≤ x} =
       ∏ i, cdf (μs i) x := by
+  have := hindep.isProbabilityMeasure
+  have _ i : IsProbabilityMeasure (μs i) := (hlaw i).isProbabilityMeasure_iff.1 this
   rw [measureReal_def, measure_setOf_max_le_indep hindep hlaw x, ENNReal.toReal_prod]
   exact Finset.prod_congr rfl fun i _ => by rw [← measureReal_def, ← cdf_eq_real]
 
 /-- The real-valued upper-tail formula for the minimum of a finite independent family. -/
-theorem measureReal_setOf_lt_min_indep [∀ i, IsProbabilityMeasure (μs i)]
+theorem measureReal_setOf_lt_min_indep
     (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
     P.real {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω} =
       ∏ i, (1 - cdf (μs i) x) := by
-  have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
+  have := hindep.isProbabilityMeasure
+  have _ i : IsProbabilityMeasure (μs i) := (hlaw i).isProbabilityMeasure_iff.1 this
   rw [measureReal_def, measure_setOf_lt_min_indep hindep hlaw x, ENNReal.toReal_prod]
   exact Finset.prod_congr rfl fun i _ => by
     rw [← measureReal_def, ← compl_Iic, measureReal_compl measurableSet_Iic, probReal_univ,
@@ -158,22 +161,20 @@ theorem measure_setOf_lt_min_iid (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw 
 /-- The real-valued form of `TauCeti.Probability.measure_setOf_max_le_iid`: the maximum of `d`
 independent identically distributed variables has cumulative distribution function
 `(cdf μ x) ^ d`. -/
-theorem measureReal_setOf_max_le_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
+theorem measureReal_setOf_max_le_iid (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
     P.real {ω | (Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) ≤ x}
       = cdf μ x ^ Fintype.card ι := by
-  let _ : ∀ _ : ι, IsProbabilityMeasure μ := fun _ => inferInstance
   simpa [Finset.card_univ] using
     measureReal_setOf_max_le_indep (μs := fun _ : ι => μ) hindep hlaw x
 
 /-- The real-valued form of `TauCeti.Probability.measure_setOf_lt_min_iid`: the minimum of `d`
 independent identically distributed variables exceeds `x` with probability
 `(1 - cdf μ x) ^ d`. -/
-theorem measureReal_setOf_lt_min_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
+theorem measureReal_setOf_lt_min_iid (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
     P.real {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω}
       = (1 - cdf μ x) ^ Fintype.card ι := by
-  let _ : ∀ _ : ι, IsProbabilityMeasure μ := fun _ => inferInstance
   simpa [Finset.card_univ] using
     measureReal_setOf_lt_min_indep (μs := fun _ : ι => μ) hindep hlaw x
 

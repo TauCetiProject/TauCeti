@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.TotallyReal.Basic
-public import TauCeti.Geometry.Symplectic.Complex.Line
+public import TauCeti.Geometry.Symplectic.Complex.CoordinateSpace
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
@@ -17,6 +17,11 @@ The real locus in complex coordinate space and the unit circle give totally real
 Complex tangent planes fail the maximal-total-reality test, and a real line in complex dimension
 two fails the half-dimension condition. The statements use the native constant smooth structure
 for multiplication by `I`, interpreted pointwise, and allow every embedding regularity.
+
+The real locus is also Lagrangian for the standard symplectic form `ω₀ = Σ_j ds_j ∧ dt_j`, and the
+Lagrangian comparison recovers its total reality both for `I`, which `ω₀` tames, and for `-I`,
+which `-ω₀` tames. The conclusion does not depend on the sign of the complex structure, in
+agreement with `isTotallyRealEmbedding_neg_iff`.
 
 ## References
 
@@ -37,12 +42,8 @@ theorem isTotallyRealEmbedding_realLocus {ι : Type*} [Fintype ι] (n : ℕ∞ω
       (AlmostComplexStructure.ofComplexModule (ι → ℂ)).constSmooth.almostComplexStructureAt
       (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) := by
   let L : (ι → ℝ) →L[ℝ] (ι → ℂ) := ContinuousLinearMap.piMap fun _ ↦ Complex.ofRealCLM
-  have hinj : Function.Injective L := by
-    intro x y h
-    funext i
-    apply Complex.ofReal_injective
-    simpa [L] using congrFun h i
-  rw [isTotallyRealEmbedding_continuousLinearMap_iff]
+  have hinj : Function.Injective L := Function.Injective.piMap fun _ ↦ Complex.ofReal_injective
+  rw [ContinuousLinearMap.isTotallyRealEmbedding_iff]
   refine ⟨by simp [Module.finrank_pi_fintype, Nat.mul_comm], ?_⟩
   have hJ : (AlmostComplexStructure.ofComplexModule (ι → ℂ)).toLinearMap =
       (LinearMap.lsmul ℂ (ι → ℂ) I).restrictScalars ℝ := by
@@ -67,10 +68,16 @@ theorem isTotallyRealEmbedding_realLocus {ι : Type*} [Fintype ι] (n : ℕ∞ω
 
 attribute [local instance] finrank_real_complex_fact'
 
-private theorem isTotallyRealEmbedding_sphere (n : ℕ∞ω) :
+/-- The unit circle is a totally real embedding, with arbitrary finite or analytic regularity. -/
+theorem isTotallyRealEmbedding_circle (n : ℕ∞ω) :
     IsTotallyRealEmbedding (𝓡 1) 𝓘(ℝ, ℂ) n
       (AlmostComplexStructure.ofComplexModule ℂ).constSmooth.almostComplexStructureAt
-      (fun z : Metric.sphere (0 : ℂ) 1 ↦ (z : ℂ)) := by
+      (fun z : Circle ↦ (z : ℂ)) := by
+  -- Mathlib defines `Circle`, its topology and its charts using the unit sphere. Present
+  -- that definitionally identical formulation to use the native sphere differential API.
+  change IsTotallyRealEmbedding (𝓡 1) 𝓘(ℝ, ℂ) n
+    (AlmostComplexStructure.ofComplexModule ℂ).constSmooth.almostComplexStructureAt
+    (fun z : Metric.sphere (0 : ℂ) 1 ↦ (z : ℂ))
   have hmap : IsMaximalTotallyRealMap (𝓡 1) 𝓘(ℝ, ℂ)
       (AlmostComplexStructure.ofComplexModule ℂ).constSmooth.almostComplexStructureAt
       (fun z : Metric.sphere (0 : ℂ) 1 ↦ (z : ℂ)) := by
@@ -97,16 +104,6 @@ private theorem isTotallyRealEmbedding_sphere (n : ℕ∞ω) :
       Topology.IsEmbedding.subtypeVal (by simp) hmap
   exact he.of_le le_top
 
-/-- The unit circle is a totally real embedding, with arbitrary finite or analytic regularity. -/
-theorem isTotallyRealEmbedding_circle (n : ℕ∞ω) :
-    IsTotallyRealEmbedding (𝓡 1) 𝓘(ℝ, ℂ) n
-      (AlmostComplexStructure.ofComplexModule ℂ).constSmooth.almostComplexStructureAt
-      (fun z : Circle ↦ (z : ℂ)) := by
-  -- Mathlib defines `Circle` and its charted-space instance using the unit sphere.
-  -- The subtype, inclusion, topology and charts agree definitionally with those above,
-  -- so their manifold derivatives agree as well.
-  exact isTotallyRealEmbedding_sphere n
-
 /-- A real line in complex dimension two fails the required half-dimensionality. -/
 theorem not_isTotallyRealEmbedding_realLine (n : ℕ∞ω) :
     ¬ IsTotallyRealEmbedding 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ × ℂ) n
@@ -123,11 +120,57 @@ theorem not_isTotallyRealEmbedding_complexLine (n : ℕ∞ω) :
       (AlmostComplexStructure.ofComplexModule (ℂ × ℂ)).constSmooth.almostComplexStructureAt
       ((ContinuousLinearMap.inl ℂ ℂ ℂ).restrictScalars ℝ) := by
   intro h
-  have ht := (isTotallyRealEmbedding_continuousLinearMap_iff _ _).1 h |>.2 |>.isTotallyReal
+  have ht := (ContinuousLinearMap.isTotallyRealEmbedding_iff _ _).1 h |>.2 |>.isTotallyReal
   rw [isTotallyReal_iff, Submodule.disjoint_def] at ht
   have hz : (1, 0) = (0 : ℂ × ℂ) := ht (1, 0) ⟨1, rfl⟩
     ⟨(-I, 0), ⟨-I, rfl⟩, by
       ext <;> simp [AlmostComplexStructure.ofComplexModule_apply]⟩
   exact one_ne_zero (congrArg Prod.fst hz)
+
+section Lagrangian
+
+variable {ι : Type*} [Fintype ι]
+
+/-- The real locus in complex coordinate space is a Lagrangian embedding for every nonzero
+multiple `c Σ_j ds_j ∧ dt_j` of the standard symplectic form. -/
+theorem isLagrangianEmbedding_realLocus_rescale (c : ℝ) (hc : c ≠ 0) :
+    (SymplecticForm.isNondegenerate_constSmooth
+        ((stdComplexPiSymplecticForm ι).rescale c hc)).IsLagrangianEmbedding
+      𝓘(ℝ, ι → ℝ) (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) :=
+  (SmoothTwoForm.IsNondegenerate.isLagrangianEmbedding_iff_of_isSmoothEmbedding
+    (isTotallyRealEmbedding_realLocus ∞).isSmoothEmbedding).2
+    ((SymplecticForm.isLagrangianMap_continuousLinearMap_iff _ _).2
+      ((SymplecticForm.isLagrangian_rescale_iff _ _).2
+        isLagrangian_stdComplexPiSymplecticForm_range_ofReal))
+
+/-- The real locus in complex coordinate space is a Lagrangian embedding for the standard
+symplectic form `Σ_j ds_j ∧ dt_j`: the case `c = 1` of `isLagrangianEmbedding_realLocus_rescale`. -/
+theorem isLagrangianEmbedding_realLocus :
+    (SymplecticForm.isNondegenerate_constSmooth
+        (stdComplexPiSymplecticForm ι)).IsLagrangianEmbedding
+      𝓘(ℝ, ι → ℝ) (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) := by
+  simpa using isLagrangianEmbedding_realLocus_rescale (ι := ι) 1 one_ne_zero
+
+/-! The Lagrangian comparison recovers the smooth case of `isTotallyRealEmbedding_realLocus`:
+the real locus, Lagrangian for `Σ_j ds_j ∧ dt_j`, is totally real for multiplication by `I`,
+which that form tames, and, Lagrangian for `-Σ_j ds_j ∧ dt_j`, is totally real for
+multiplication by `-I`, which the reversed form tames. -/
+
+example :
+    IsTotallyRealEmbedding 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℂ) ∞
+      (AlmostComplexStructure.ofComplexModule (ι → ℂ)).constSmooth.almostComplexStructureAt
+      (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) :=
+  isLagrangianEmbedding_realLocus.isTotallyRealEmbedding
+    (SymplecticForm.tames_constSmooth_iff.2 stdComplexPiSymplecticForm_tames)
+
+example :
+    IsTotallyRealEmbedding 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℂ) ∞
+      (-AlmostComplexStructure.ofComplexModule (ι → ℂ)).constSmooth.almostComplexStructureAt
+      (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) :=
+  (isLagrangianEmbedding_realLocus_rescale (-1) neg_one_lt_zero.ne).isTotallyRealEmbedding
+    (SymplecticForm.tames_constSmooth_iff.2
+      (stdComplexPiSymplecticForm_tames.rescale_neg_of_neg neg_one_lt_zero))
+
+end Lagrangian
 
 end TauCeti
