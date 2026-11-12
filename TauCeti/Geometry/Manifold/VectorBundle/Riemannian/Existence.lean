@@ -131,17 +131,11 @@ theorem exists_contMDiffRiemannianMetric_inner_eq_of_locallyFinite
   obtain ⟨g₀⟩ := nonempty_contMDiffRiemannianMetric (IB := IB) (n := n) (F := F) (E := E)
   -- The fibrewise conditions: a positive definite symmetric form, equal to `β i b` if `b ∈ A i`.
   -- Each is convex.
-  let t (b : B) : Set (E b →L[ℝ] E b →L[ℝ] ℝ) := {s | (∀ v w, s v w = s w v) ∧
-    (∀ v, v ≠ 0 → 0 < s v v) ∧ ∀ i, b ∈ A i → s = β i b}
-  have ht (b : B) : Convex ℝ (t b) := by
-    rintro s ⟨hs₁, hs₂, hs₃⟩ s' ⟨hs₁', hs₂', hs₃'⟩ a d ha hd had
-    refine ⟨fun v w ↦ by simp [hs₁ v w, hs₁' v w], fun v hv ↦ ?_, fun i hb ↦ ?_⟩
-    · have heval : (a • s + d • s') v v = a * s v v + d * s' v v := by simp
-      rw [heval]
-      rcases ha.eq_or_lt with rfl | ha
-      · simpa [show d = 1 by simpa using had] using hs₂' v hv
-      · exact add_pos_of_pos_of_nonneg (mul_pos ha (hs₂ v hv)) (mul_nonneg hd (hs₂' v hv).le)
-    · rw [hs₃ i hb, hs₃' i hb, ← add_smul, had, one_smul]
+  let t (b : B) : Set (E b →L[ℝ] E b →L[ℝ] ℝ) :=
+    {s | (∀ v w, s v w = s w v) ∧ ∀ v, v ≠ 0 → 0 < s v v} ∩ {s | ∀ i, b ∈ A i → s = β i b}
+  have ht (b : B) : Convex ℝ (t b) :=
+    convex_setOfPred_symm_pos.inter fun s hs s' hs' a d _ _ had i hb ↦ by
+      rw [hs i hb, hs' i hb, ← add_smul, had, one_smul]
   obtain ⟨σ, hσ⟩ := exists_contMDiffSection_forall_mem_convex_of_local (n := n) IB
     (fun b ↦ E b →L[ℝ] E b →L[ℝ] ℝ) t ht fun x₀ ↦ by
       by_cases hx₀ : x₀ ∈ ⋃ i, A i
@@ -155,7 +149,7 @@ theorem exists_contMDiffRiemannianMetric_inner_eq_of_locallyFinite
         refine ⟨U i ∩ (⋃ j : {j // j ≠ i}, A j)ᶜ,
           ((hU i).inter hc.isOpen_compl).mem_nhds ⟨hAU i hi, hx₀c⟩, β i,
           (hβ i).mono inter_subset_left, fun y hy ↦
-            ⟨hsymm i y hy.1, hpos i y hy.1, fun j hj ↦ ?_⟩⟩
+            ⟨⟨hsymm i y hy.1, hpos i y hy.1⟩, fun j hj ↦ ?_⟩⟩
         obtain rfl : i = j := by
           by_contra hne
           exact hy.2 (mem_iUnion.2 ⟨⟨j, Ne.symm hne⟩, hj⟩)
@@ -163,15 +157,14 @@ theorem exists_contMDiffRiemannianMetric_inner_eq_of_locallyFinite
       · -- Away from all the sets `A i`: the metric `g₀`.
         refine ⟨(⋃ i, A i)ᶜ, (hAf.isClosed_iUnion hA).isOpen_compl.mem_nhds hx₀, g₀.inner,
           g₀.contMDiff.contMDiffOn, fun y hy ↦
-            ⟨g₀.symm y, g₀.pos y, fun i hi ↦ (hy (mem_iUnion.2 ⟨i, hi⟩)).elim⟩⟩
+            ⟨⟨g₀.symm y, g₀.pos y⟩, fun i hi ↦ (hy (mem_iUnion.2 ⟨i, hi⟩)).elim⟩⟩
   let G : ContMDiffRiemannianMetric IB n F E :=
-    ContMDiffRiemannianMetric.ofPositiveDefiniteSection ⟨σ, σ.contMDiff⟩
+    ContMDiffRiemannianMetric.ofPositiveDefiniteSection σ
       ((Manifold.mem_positiveDefiniteBilinearSections _).2
-        ⟨(Manifold.mem_symmetricBilinearSections _).2 fun x v w ↦ (hσ x).1 v w,
-          fun x v hv ↦ (hσ x).2.1 v hv⟩)
+        ⟨(Manifold.mem_symmetricBilinearSections _).2 fun x v w ↦ (hσ x).1.1 v w,
+          fun x v hv ↦ (hσ x).1.2 v hv⟩)
   refine ⟨G, fun i b hb ↦ ?_⟩
   ext v w
-  rw [ContMDiffRiemannianMetric.ofPositiveDefiniteSection_inner, ← (hσ b).2.2 i hb]
-  rfl
+  rw [ContMDiffRiemannianMetric.ofPositiveDefiniteSection_inner, ← (hσ b).2 i hb]
 
 end TauCeti

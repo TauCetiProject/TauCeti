@@ -89,6 +89,8 @@ use.
   below on the diagonal by one positive multiple of the squared norm.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le_compRight`: the same for the forms `b(·, B ·)` with
   `B` in a compact set of endomorphisms, which gives uniform tameness constants.
+* `TauCeti.convex_setOfPred_symm_pos`: the symmetric, positive definite continuous bilinear forms
+  on a real topological vector space form a convex set.
 * `TauCeti.convex_setOfPred_symm_pos_isVonNBounded`: the continuous bilinear forms on a real
   topological vector space that are symmetric, positive definite and have a von Neumann bounded
   unit set form a convex set; these are the fibrewise conditions of a Riemannian metric.
@@ -306,6 +308,22 @@ theorem isVonNBounded_setOfPred_lt_one_of_le {g h : V →L[ℝ] V →L[ℝ] ℝ}
     _ ≤ h v v := hle v
     _ < 1 := hv
 
+omit [ContinuousConstSMul ℝ V] in
+/-- The symmetric, positive definite continuous bilinear forms on a real topological vector space
+are closed under convex combinations. -/
+theorem convex_setOfPred_symm_pos :
+    Convex ℝ {g : V →L[ℝ] V →L[ℝ] ℝ | (∀ v w, g v w = g w v) ∧ ∀ v, v ≠ 0 → 0 < g v v} := by
+  rintro g ⟨hgs, hgp⟩ g' ⟨hgs', hgp'⟩ a b ha hb hab
+  refine ⟨fun v w ↦ by simp [hgs v w, hgs' v w], fun v hv ↦ ?_⟩
+  have hab' : (a • g + b • g') v v = a * g v v + b * g' v v := by simp
+  rw [hab']
+  -- One of the two coefficients is positive.
+  rcases ha.eq_or_lt with rfl | ha'
+  · rw [zero_add] at hab
+    subst hab
+    simpa using hgp' v hv
+  · exact add_pos_of_pos_of_nonneg (mul_pos ha' (hgp v hv)) (mul_nonneg hb (hgp' v hv).le)
+
 /-- The fibrewise conditions of a Riemannian metric cut out a convex set: the continuous bilinear
 forms on a real topological vector space that are symmetric, positive definite and have a
 von Neumann bounded unit set are closed under convex combinations. -/
@@ -319,21 +337,14 @@ theorem convex_setOfPred_symm_pos_isVonNBounded :
     · exact (hg v hv).le
   rintro g ⟨hgs, hgp, hgb⟩ g' ⟨hgs', hgp', hgb'⟩ a b ha hb hab
   have hab' (v : V) : (a • g + b • g') v v = a * g v v + b * g' v v := by simp
-  refine ⟨fun v w ↦ by simp [hgs v w, hgs' v w], fun v hv ↦ ?_, ?_⟩
-  · -- One of the two coefficients is positive.
-    rw [hab']
-    rcases ha.eq_or_lt with rfl | ha'
-    · rw [zero_add] at hab
-      subst hab
-      simpa using hgp' v hv
-    · exact add_pos_of_pos_of_nonneg (mul_pos ha' (hgp v hv))
-        (mul_nonneg hb (nonneg hgp' v))
-  · -- One of the two coefficients is at least `1 / 2`, and that term dominates.
-    rcases le_total (1 / 2 : ℝ) a with ha' | hb'
-    · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
-        rw [hab']; nlinarith [nonneg hgp v, mul_nonneg hb (nonneg hgp' v)]) hgb
-    · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
-        rw [hab']; nlinarith [nonneg hgp' v, mul_nonneg ha (nonneg hgp v)]) hgb'
+  obtain ⟨hs, hp⟩ := convex_setOfPred_symm_pos ⟨hgs, hgp⟩ ⟨hgs', hgp'⟩ ha hb hab
+  refine ⟨hs, hp, ?_⟩
+  -- One of the two coefficients is at least `1 / 2`, and that term dominates.
+  rcases le_total (1 / 2 : ℝ) a with ha' | hb'
+  · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
+      rw [hab']; nlinarith [nonneg hgp v, mul_nonneg hb (nonneg hgp' v)]) hgb
+  · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
+      rw [hab']; nlinarith [nonneg hgp' v, mul_nonneg ha (nonneg hgp v)]) hgb'
 
 omit [ContinuousConstSMul ℝ V] in
 /-- A continuous bilinear form that reads as the inner product of a real inner product space

@@ -39,7 +39,8 @@ points, on which the trajectory spaces of Morse homology are built.
 
 * `TauCeti.MorseChart.euclideanForm`: the Euclidean metric of a Morse chart, with
   `TauCeti.MorseChart.contMDiffOn_euclideanForm`, `TauCeti.MorseChart.euclideanForm_comm` and
-  `TauCeti.MorseChart.euclideanForm_self_pos`.
+  `TauCeti.MorseChart.euclideanForm_self_pos`, and its comparison with Euclidean metrics in
+  `TauCeti.MorseChart.isEuclidean_iff_euclideanForm`.
 * `IsCompact.exists_contMDiffRiemannianMetric_inner_eq_euclideanForm`: a metric which is Euclidean
   in Morse charts, with sources of pairwise disjoint closures, at the critical points in a compact
   set.
@@ -154,6 +155,13 @@ theorem contMDiffOn_euclideanForm [IsManifold 𝓘(ℝ, E) ∞ M] :
     with_reducible_and_instances rfl
   exact (contMDiffAt_bilinearForm_pullback hQ hψ).contMDiffWithinAt
 
+/-- A metric is Euclidean in a Morse chart exactly when it equals the Euclidean metric of the chart
+on its source. -/
+theorem isEuclidean_iff_euclideanForm [RiemannianBundle (fun y : M ↦ TangentSpace 𝓘(ℝ, E) y)] :
+    φ.IsEuclidean ↔ ∀ y ∈ φ.toChart.source, ∀ v w : TangentSpace 𝓘(ℝ, E) y,
+      inner ℝ v w = φ.euclideanForm y v w := by
+  simp only [isEuclidean_iff, euclideanForm_apply]
+
 end EuclideanForm
 
 end MorseChart
@@ -218,7 +226,7 @@ theorem IsMorse.exists_contMDiffRiemannianMetric_isAdaptedPseudoGradient_neg_mgr
   refine ⟨g, isAdaptedPseudoGradient_neg_mgradient hf.contMDiff fun x hx ↦ ?_⟩
   let c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ univ) :=
     ⟨x, mem_criticalPoints_iff_mfderiv_eq_zero.2 hx, mem_univ x⟩
-  exact ⟨φ c, (φ c).isEuclidean_iff.2 fun y hy v w ↦ by
-    rw [g.inner_eq, hφ c y hy, MorseChart.euclideanForm_apply]⟩
+  exact ⟨φ c, (φ c).isEuclidean_iff_euclideanForm.2 fun y hy v w ↦ by
+    rw [g.inner_eq, hφ c y hy]⟩
 
 end TauCeti
