@@ -219,7 +219,7 @@ theorem target_mem {L R : Finset V(G)} (hLR : G.IsBipartition L R) {x y : V(G)}
 theorem edge_out_injective {x : V(G)} :
     Function.Injective (fun a : Σ y, G.BipartiteHom L x y ↦ a.2.edge) := by
   rintro ⟨y, a⟩ ⟨z, b⟩ hab
-  change a.edge = b.edge at hab
+  dsimp only at hab
   have hyz : y = z := Subtype.ext (a.isLink.right_unique (hab ▸ b.isLink))
   subst z
   exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
@@ -228,7 +228,7 @@ theorem edge_out_injective {x : V(G)} :
 theorem edge_in_injective {x : V(G)} :
     Function.Injective (fun a : Σ y, G.BipartiteHom L y x ↦ a.2.edge) := by
   rintro ⟨y, a⟩ ⟨z, b⟩ hab
-  change a.edge = b.edge at hab
+  dsimp only at hab
   have hyz : y = z := Subtype.ext (a.isLink.left_unique (hab ▸ b.isLink))
   subst z
   exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
