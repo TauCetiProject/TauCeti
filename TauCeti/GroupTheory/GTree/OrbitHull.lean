@@ -213,7 +213,7 @@ private theorem apply_convexHull_pair_subset {α : Type*} [MulAction G α] {F : 
   | mem s hs =>
     exact hK s (subset_convexHull _ (Set.mem_insert_of_mem x (Set.mem_image_of_mem _ hs)))
   | one => exact hK 1 (by rw [one_smul]; exact subset_convexHull _ (Set.mem_insert x _))
-  | mul g h hg hh ihg ihh =>
+  | mul g h hg _ ihg ihh =>
     refine (hmono (convexHull_pair_mul_smul_subset T g h x)).trans ?_
     rw [hunion _ _ (isConvex_convexHull _) (isConvex_smul_set_iff.mpr (isConvex_convexHull _))
       ⟨g • x, right_mem_convexHull_pair x _,
