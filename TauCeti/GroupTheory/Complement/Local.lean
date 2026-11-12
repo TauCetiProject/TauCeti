@@ -16,7 +16,8 @@ A local complement of `N` in `H` is a subgroup `K` with `N ⊓ K = ⊥` and `N �
 When `N` is normal in `H`, this is equivalently a complement of `N.subgroupOf H` inside `H`.
 In particular every element of `H` has a unique decomposition as a product from `N` and `K`.
 The right component is a homomorphism with kernel `N.subgroupOf H`; the left component
-is a projection, without any assertion that it is a homomorphism.
+is a projection, without any assertion that it is a homomorphism. Restricting a local complement
+to an intermediate subgroup containing `N` restricts its left projection.
 
 These constructions reuse Mathlib's `Subgroup.IsComplement.equiv` for global complements.
 Restriction of a complement to an intermediate subgroup uses Dedekind's modular law.
@@ -128,6 +129,25 @@ theorem IsComplement'.isLocalComplement_inf (h : N.IsComplement' K) (hNH : N ≤
     exact (N ⊔ K ⊓ H).mul_mem (mem_sup_left n.property)
       (mem_sup_right ⟨k.property, hkH⟩)
 
+/-- A complement of the image of a subgroup pulls back along an injective homomorphism. -/
+theorem IsComplement'.of_map {f : G →* G'} {D : Subgroup G'}
+    (h : (N.map f).IsComplement' D) (hf : Function.Injective f) :
+    N.IsComplement' (D.comap f) := by
+  apply isComplement'_of_disjoint_and_mul_eq_univ
+  · rw [disjoint_iff_inf_le]
+    intro x hx
+    apply hf
+    exact (disjoint_iff_inf_le.mp h.disjoint
+      ⟨mem_map.mpr ⟨x, hx.1, rfl⟩, hx.2⟩).trans (map_one f).symm
+  · apply Set.eq_univ_iff_forall.mpr
+    intro x
+    obtain ⟨⟨n, d⟩, hd⟩ := h.surjective (f x)
+    obtain ⟨n, hn, he⟩ := n.property
+    have hfd : f (n⁻¹ * x) = d := by
+      rw [map_mul, map_inv, he, ← hd, inv_mul_cancel_left]
+    refine ⟨n, hn, n⁻¹ * x, ?_, by simp⟩
+    exact mem_comap.mpr (hfd.symm ▸ d.property)
+
 /-- Local complementation is global complementation inside the specified subgroup. -/
 theorem isLocalComplement_iff_isComplement'_subgroupOf [(N.subgroupOf H).Normal]
     (hNH : N ≤ H) (hKH : K ≤ H) :
@@ -147,6 +167,20 @@ theorem isLocalComplement_iff_isComplement'_subgroupOf [(N.subgroupOf H).Normal]
     · have hm := congrArg (Subgroup.map H.subtype) hs
       simpa only [map_sup, map_subgroupOf_eq_of_le hNH, map_subgroupOf_eq_of_le hKH,
         map_top, range_subtype] using hm
+
+/-- A local complement of `N` in `H` exists precisely when `N.subgroupOf H` has a complement in
+the group `H`. -/
+theorem exists_isLocalComplement_iff_exists_isComplement'_subgroupOf [(N.subgroupOf H).Normal]
+    (hNH : N ≤ H) :
+    (∃ K : Subgroup G, N.IsLocalComplement K H) ↔
+      ∃ K : Subgroup H, (N.subgroupOf H).IsComplement' K := by
+  constructor
+  · rintro ⟨K, h⟩
+    exact ⟨_, (isLocalComplement_iff_isComplement'_subgroupOf hNH h.right_le).mp h⟩
+  · rintro ⟨K, hK⟩
+    refine ⟨K.map H.subtype, ?_⟩
+    have h := (isLocalComplement_top_iff.mpr hK).map H.subtype_injective
+    simpa only [map_subgroupOf_eq_of_le hNH, map_top, range_subtype] using h
 
 /-- The whole ambient subgroup complements the trivial subgroup locally. -/
 @[simp]
@@ -320,6 +354,14 @@ theorem leftProjection_eq_one_iff (x : H) : h.leftProjection x = 1 ↔ (x : G) �
     exact heq ▸ (h.rightProjection x).property
   · intro hx
     exact h.leftProjection_right ⟨x, hx⟩
+
+/-- Restricting a local complement to an intermediate subgroup `N ≤ L ≤ H` restricts its left
+projection. -/
+theorem leftProjection_restrict [(N.subgroupOf L).Normal] (hNL : N ≤ L) (hLH : L ≤ H) (x : L) :
+    (h.restrict hNL hLH).leftProjection x = h.leftProjection (inclusion hLH x) := by
+  rw [leftProjection_eq_iff]
+  refine ⟨(h.leftProjection_eq_iff _ _).mp rfl, ?_⟩
+  exact L.mul_mem (L.inv_mem (hNL (h.leftProjection _).property)) x.property
 
 end IsLocalComplement
 
