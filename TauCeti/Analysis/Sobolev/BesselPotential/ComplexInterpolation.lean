@@ -202,7 +202,7 @@ theorem norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm {T : 𝓢(E, V)
     rw [hv, norm_toBesselPotentialSpaceCLM_besselPotentialCLM, Complex.ofReal_re,
       show -tθ + 2 * tθ = tθ by ring]
   -- Boundary bounds on the two lines.
-  set X := ‖toBesselPotentialSpaceCLM sθ 2 u‖ with hX
+  set X := ‖toBesselPotentialSpaceCLM sθ 2 u‖
   have ha : ∀ z ∈ Complex.re ⁻¹' {0}, ‖G z‖ ≤ N * (M₀ * X) := fun z hz ↦ by
     have hz' : z.re = 0 := hz
     have h := norm_integral_inner_besselPotentialCLM_le h₀ u v (sθ - s₀) (s₀ - s₁) (t₀ - tθ)
