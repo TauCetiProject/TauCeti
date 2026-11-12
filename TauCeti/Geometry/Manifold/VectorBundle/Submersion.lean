@@ -141,9 +141,8 @@ theorem mfderiv_proj (p : TotalSpace F V) :
 /-- **The projection of a curve in the total space.** If a curve `γ` in the total space has
 velocity `Y` at time `t`, read in the preferred chart at `γ t` as a pair of a base and a fibre
 coordinate, then its projection to the base has velocity the base coordinate `Y.1` at `t`. -/
-theorem hasMFDerivAt_proj_comp [IsManifold IB 1 B]
-    [IsManifold (IB.prod 𝓘(𝕜, F)) 1 (TotalSpace F V)] {γ : 𝕜 → TotalSpace F V} {t : 𝕜}
-    {Y : EB × F} (hγ : HasMFDerivAt 𝓘(𝕜) (IB.prod 𝓘(𝕜, F)) γ t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight Y)) :
+theorem hasMFDerivAt_proj_comp {γ : 𝕜 → TotalSpace F V} {t : 𝕜} {Y : EB × F}
+    (hγ : HasMFDerivAt 𝓘(𝕜) (IB.prod 𝓘(𝕜, F)) γ t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight Y)) :
     HasMFDerivAt 𝓘(𝕜) IB (fun s ↦ (γ s).proj) t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight Y.1) := by
   have hπ : HasMFDerivAt (IB.prod 𝓘(𝕜, F)) IB (π F V) (γ t) (ContinuousLinearMap.fst 𝕜 EB F) := by
     rw [← mfderiv_proj]
