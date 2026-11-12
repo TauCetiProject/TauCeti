@@ -25,7 +25,8 @@ and on a direction multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ`
 (`floerLinearization_smul_fst`). Its value at a point depends only on the germ of the direction
 there (`floerLinearization_congr_of_eventuallyEq`). For `C¹` coefficients `J` and `C²`
 Hamiltonians it is continuous wherever the map and the direction are `C¹`
-(`continuousAt_floerLinearization`), so its `L²` norms over compact sets are finite.
+(`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
+(`continuous_floerLinearization`), so its `L²` norms over compact sets are finite.
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`).
@@ -281,6 +282,18 @@ theorem continuousAt_floerLinearization (ω : SymplecticForm V)
     funext (ω.floerLinearization_eq_add J Ks Kt u ξ)]
   exact ((hdξ _).add (hJu.clm_apply (hdξ _))).add
     ((ω.continuousAt_floerLinearizationCoeff hJ hKs hKt hu).clm_apply hξ.continuousAt)
+
+/-- **Global continuity of the linearization.** Let `u` and `ξ` be `C¹`, and let the coefficients
+`J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at every point `(z, u z)`. Then the linearized
+Floer operator along `u` in the direction `ξ` is continuous. -/
+theorem continuous_floerLinearization (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V}
+    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+    (hξ : ContDiff ℝ 1 ξ) : Continuous (ω.floerLinearization J Ks Kt u ξ) :=
+  continuous_iff_continuousAt.2 fun z ↦
+    ω.continuousAt_floerLinearization (hJ z) (hKs z) (hKt z) hu.contDiffAt hξ.contDiffAt
 
 section Families
 
