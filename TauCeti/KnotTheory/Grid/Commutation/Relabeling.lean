@@ -36,9 +36,7 @@ permutation formulas to the elementary grid commutations used later.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane
-G.5, "Invariance over 𝔽₂. Grid moves = commutation + (de)stabilization", where commutation maps
-are attached to elementary row and column commutations. The conventions follow
+Commutation maps are attached to elementary row and column commutations. The conventions follow
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
 

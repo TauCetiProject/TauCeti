@@ -27,6 +27,7 @@ is pointwise and the vector-valued factor converges only in `L¹`.
 
 * `TauCeti.tendsto_lintegral_zero_of_le_add`: the integral of a function bounded by the sum of
   two functions with integrals tending to `0` tends to `0`.
+* `TauCeti.tendsto_setLIntegral_enorm_add_sub`: `L¹` convergence on a set is preserved by sums.
 * `TauCeti.tendsto_lintegral_enorm_smul_sub`: bounded, almost everywhere convergent scalar
   coefficients preserve `L¹` convergence in any seminormed module.
 * `TauCeti.limsup_setLIntegral_le`: `limsup ∫⁻_{s n} f ≤ ∫⁻_{limsup s n} f` when the `s n` lie
@@ -54,6 +55,19 @@ theorem tendsto_lintegral_zero_of_le_add {ι : Type*} {l : Filter ι} {f g h : �
   filter_upwards [hfgh, hg] with i hi hgi
   rw [← lintegral_add_left' hgi]
   exact lintegral_mono_ae hi
+
+/-- If two families converge in `L¹` on `W`, so does their sum. Only the errors of the first
+family need to be almost everywhere strongly measurable. -/
+theorem tendsto_setLIntegral_enorm_add_sub {H ι : Type*} [NormedAddCommGroup H] {W : Set α}
+    {l : Filter ι} {a b : ι → α → H} {a₀ b₀ : α → H}
+    (ha : ∀ n, AEStronglyMeasurable (fun x => a n x - a₀ x) (μ.restrict W))
+    (h₁ : Tendsto (fun n => ∫⁻ x in W, ‖a n x - a₀ x‖ₑ ∂μ) l (𝓝 0))
+    (h₂ : Tendsto (fun n => ∫⁻ x in W, ‖b n x - b₀ x‖ₑ ∂μ) l (𝓝 0)) :
+    Tendsto (fun n => ∫⁻ x in W, ‖a n x + b n x - (a₀ x + b₀ x)‖ₑ ∂μ) l (𝓝 0) :=
+  tendsto_lintegral_zero_of_le_add (μ := μ.restrict W)
+    (.of_forall fun n ↦ .of_forall fun x ↦ by
+      simpa only [Pi.add_apply, add_sub_add_comm] using enorm_add_le _ _)
+    (.of_forall fun n ↦ (ha n).enorm) h₁ h₂
 
 /-- If bounded coefficients `c i` converge almost everywhere to `c₀` and `g i → g₀` in `L¹`,
 then `c i • g i → c₀ • g₀` in `L¹`. The coefficients lie in any seminormed ring `𝕜` and the

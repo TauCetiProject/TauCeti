@@ -144,7 +144,6 @@ private theorem inv_one_add_norm_pow_le {n : ℕ} {x y : EuclideanSpace ℝ (Fin
     rw [latticeWeight, ← prod_pow, ← prod_inv_distrib]
     refine prod_congr rfl fun i _ ↦ ?_
     rw [inv_pow, ← pow_mul]
-  have hpos : 0 < ∏ i, (1 + |(d i : ℝ)|) ^ 4 := prod_pos fun _ _ ↦ by positivity
   rw [hw]
   calc ((1 + ‖x - y‖) ^ (4 * n))⁻¹
       = (1 + 2 * √n) ^ (4 * n) * (((1 + 2 * √n) * (1 + ‖x - y‖)) ^ (4 * n))⁻¹ := by

@@ -160,6 +160,7 @@ theorem integral_mul_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i j : ι) :
 
 /-! ### Variances and covariances -/
 
+omit [Nonempty ι] in
 /-- The total of a block of Dirichlet coordinates has the variance of the Beta law of the block
 and complementary concentrations.
 
@@ -169,6 +170,8 @@ vanishes. -/
 theorem variance_sum_dirichletMeasure [DecidableEq ι] (ha : ∀ i, 0 < a i) (s : Finset ι) :
     Var[fun x ↦ ∑ i ∈ s, x i; dirichletMeasure a] =
       (∑ i ∈ s, a i) * (∑ i ∈ sᶜ, a i) / ((∑ i, a i) ^ 2 * ((∑ i, a i) + 1)) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · simp [Finset.eq_empty_of_isEmpty s]
   have _ : IsProbabilityMeasure (dirichletMeasure a) := isProbabilityMeasure_dirichletMeasure ha
   have hconst : ∀ c : ℝ, Var[fun _ : EuclideanSpace ℝ ι ↦ c; dirichletMeasure a] = 0 := by
     intro c
@@ -192,16 +195,19 @@ theorem variance_sum_dirichletMeasure [DecidableEq ι] (ha : ∀ i, 0 < a i) (s 
     rw [← hvar, map_sum_dirichletMeasure ha hs hsc, variance_id_betaMeasure hα hβ,
       Finset.sum_add_sum_compl]
 
+omit [Nonempty ι] in
 /-- The variance of a Dirichlet coordinate. -/
 @[simp]
 theorem variance_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) :
     Var[fun x ↦ x i; dirichletMeasure a] =
       a i * ((∑ j, a j) - a i) / ((∑ j, a j) ^ 2 * ((∑ j, a j) + 1)) := by
   classical
+  let : Nonempty ι := ⟨i⟩
   have hcompl : ∑ j ∈ ({i} : Finset ι)ᶜ, a j = (∑ j, a j) - a i := by
     rw [eq_sub_iff_add_eq, ← Finset.sum_singleton (f := a) (a := i), Finset.sum_compl_add_sum]
   simpa only [Finset.sum_singleton, hcompl] using variance_sum_dirichletMeasure ha {i}
 
+omit [Nonempty ι] in
 /-- The covariance of two distinct Dirichlet coordinates.  It is negative: the coordinates
 compete for a fixed total. -/
 @[simp]
@@ -210,6 +216,7 @@ theorem covariance_eval_dirichletMeasure_of_ne (ha : ∀ i, 0 < a i) {i j : ι}
     cov[fun x ↦ x i, fun x ↦ x j; dirichletMeasure a] =
       -(a i * a j) / ((∑ k, a k) ^ 2 * ((∑ k, a k) + 1)) := by
   classical
+  let : Nonempty ι := ⟨i⟩
   have _ : IsProbabilityMeasure (dirichletMeasure a) := isProbabilityMeasure_dirichletMeasure ha
   have hT : 0 < ∑ k, a k := Finset.sum_pos (fun k _ ↦ ha k) Finset.univ_nonempty
   have hcompl : ∑ k ∈ ({i, j} : Finset ι)ᶜ, a k = (∑ k, a k) - a i - a j := by
@@ -221,6 +228,7 @@ theorem covariance_eval_dirichletMeasure_of_ne (ha : ∀ i, 0 < a i) {i j : ι}
   field_simp at hpair ⊢
   linarith
 
+omit [Nonempty ι] in
 open scoped Classical in
 /-- The covariance matrix of a Dirichlet law: the concentration-weighted diagonal minus the outer
 square of the concentration vector, normalized by `a₀ ^ 2 * (a₀ + 1)`. -/
@@ -229,6 +237,9 @@ theorem covMatrix_dirichletMeasure (ha : ∀ i, 0 < a i) :
     covMatrix (dirichletMeasure a) =
       ((∑ k, a k) ^ 2 * ((∑ k, a k) + 1))⁻¹ •
         ((∑ k, a k) • Matrix.diagonal a - Matrix.vecMulVec a a) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · ext i
+    exact isEmptyElim i
   have hT : 0 < ∑ k, a k := Finset.sum_pos (fun k _ ↦ ha k) Finset.univ_nonempty
   ext i j
   rcases eq_or_ne i j with rfl | hij
@@ -242,6 +253,7 @@ theorem covMatrix_dirichletMeasure (ha : ∀ i, 0 < a i) :
     field_simp
     ring
 
+omit [Nonempty ι] in
 open scoped Classical in
 /-- The covariance bilinear form of a Dirichlet law, read off its covariance matrix. -/
 @[simp]
@@ -250,6 +262,8 @@ theorem covarianceBilin_dirichletMeasure (ha : ∀ i, 0 < a i)
     covarianceBilin (dirichletMeasure a) x y =
       ⟪x, (((∑ k, a k) ^ 2 * ((∑ k, a k) + 1))⁻¹ •
         ((∑ k, a k) • Matrix.diagonal a - Matrix.vecMulVec a a)).toEuclideanLin y⟫ := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · simp [Subsingleton.elim x 0]
   have _ : IsProbabilityMeasure (dirichletMeasure a) := isProbabilityMeasure_dirichletMeasure ha
   rw [← covMatrix_dirichletMeasure ha]
   exact covarianceBilin_eq_covMatrix _ (memLp_id_dirichletMeasure 2) x y
@@ -274,6 +288,7 @@ theorem integrableExpSet_inner_dirichletMeasure (θ : EuclideanSpace ℝ ι) :
   · rw [dirichletMeasure_eq_zero_of_invalid h]
     simp [integrableExpSet]
 
+omit [Nonempty ι] in
 /-- The expected squared norm of a Dirichlet vector with concentration vector `c p`, where `p` is
 a probability vector. As `c` tends to zero this tends to one, forcing the law towards the
 vertices of the simplex. -/
@@ -282,6 +297,7 @@ theorem integral_norm_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ≥0
     ∫ x, ‖x‖ ^ 2 ∂dirichletMeasure (fun i ↦ c * (p.weights i : ℝ)) =
       (c * ∑ i, (p.weights i : ℝ) ^ 2 + 1) / (c + 1) := by
   have ha (i : ι) : 0 < c * (p.weights i : ℝ) := mul_pos hc (by exact_mod_cast hp i)
+  let : Nonempty ι := p.nonempty
   let _ := isProbabilityMeasure_dirichletMeasure ha
   have hcoord (i : ι) :
       ∫ x, (x i) ^ 2 ∂dirichletMeasure (fun j ↦ c * (p.weights j : ℝ)) =
@@ -301,12 +317,14 @@ theorem integral_norm_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ≥0
   simp only [hcoord]
   rw [← Finset.sum_div, Finset.sum_add_distrib, p.sum_coe_weights, ← Finset.mul_sum, add_comm]
 
+omit [Nonempty ι] in
 /-- The expectation of `1 - ‖x‖ ^ 2` under a Dirichlet law with concentration vector `c p`, where
 `p` is a probability vector. It tends to zero with `c`. -/
 theorem integral_one_sub_norm_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ≥0 ι)
     (hp : ∀ i, 0 < p.weights i) {c : ℝ} (hc : 0 < c) :
     ∫ x, 1 - ‖x‖ ^ 2 ∂dirichletMeasure (fun i ↦ c * (p.weights i : ℝ)) =
       c * (1 - ∑ i, (p.weights i : ℝ) ^ 2) / (c + 1) := by
+  let : Nonempty ι := p.nonempty
   let _ := isProbabilityMeasure_dirichletMeasure fun i ↦
     mul_pos hc (by exact_mod_cast hp i : (0 : ℝ) < p.weights i)
   rw [integral_sub (integrable_const _) (memLp_id_dirichletMeasure 2).norm.integrable_sq,

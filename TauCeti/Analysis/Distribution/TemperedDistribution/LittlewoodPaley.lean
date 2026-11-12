@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Sobolev
+public import Mathlib.Analysis.Distribution.Support
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
@@ -53,6 +56,8 @@ blocks `Δⱼ u`.
   truncations by `φ (2^{-N} ·)`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`; in
   particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`).
+* `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`: the Fourier transform of
+  `Δⱼ u` vanishes outside the ball of radius `2^j φ.rOut`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality, also
   between the blocks of two bump functions.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_sum_Ico`: each block of one bump function
@@ -66,6 +71,8 @@ blocks `Δⱼ u`.
   `𝓕⁻ ψⱼ`, `j ≥ 1`, all have the same `L¹` norm.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
   `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`.
+* `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le_of_le`: Bernstein's inequality
+  `‖Δⱼ u‖_r ≤ C 2^{j n (1/p - 1/r)} ‖Δⱼ u‖_p` for `p ≤ r`.
 
 ## References
 
@@ -151,6 +158,17 @@ theorem eq_of_forall_littlewoodPaleyBlock_eq {u v : 𝓢'(E, F)}
     (h : ∀ j, littlewoodPaleyBlock F φ j u = littlewoodPaleyBlock F φ j v) : u = v :=
   tendsto_nhds_unique (tendsto_sum_littlewoodPaleyBlock φ u) <| by
     simpa only [h] using tendsto_sum_littlewoodPaleyBlock φ v
+
+open Distribution in
+/-- **The spectrum of a block.** The Fourier transform of `Δⱼ u` vanishes outside the closed ball
+of radius `2^j φ.rOut`, which carries the piece `ψⱼ`. -/
+theorem isVanishingOn_fourier_littlewoodPaleyBlock (j : ℕ) (u : 𝓢'(E, F)) :
+    IsVanishingOn (𝓕 (littlewoodPaleyBlock F φ j u) : 𝓢'(E, F))
+      (Metric.closedBall 0 (2 ^ j * φ.rOut))ᶜ := by
+  rw [littlewoodPaleyBlock_apply]
+  refine isVanishingOn_fourier_fourierMultiplierCLM (fun ξ hξ ↦ ?_) u
+  rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm
+    (not_le.1 (mt mem_closedBall_zero_iff.2 hξ)).le, Complex.ofReal_zero]
 
 /-- The composition of the Littlewood–Paley blocks of two bump functions is the Fourier
 multiplier by the product of the two pieces. -/
@@ -293,6 +311,32 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] :
   obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
   rw [hσ_coe] at hg hgf
   exact ⟨g, hg, hgf.trans (mul_le_mul_of_nonneg_right hK (norm_nonneg f))⟩
+
+/-- **Bernstein's inequality for the Littlewood–Paley blocks.** For `1 ≤ p ≤ r ≤ ∞` there is `C`,
+depending only on `E`, `F`, `p`, `r` and `φ`, with the following property. If the block `Δⱼ u` of
+a tempered distribution is an `Lᵖ` function `f`, then it is also an `Lʳ` function `g`, with
+
+`‖g‖_r ≤ C 2^{j n (1/p - 1/r)} ‖f‖_p`,
+
+where `n` is the dimension of `E` and `1/∞ = 0`. The Fourier transform of the block is carried by
+the ball of radius `2^j φ.rOut`, so this is Bernstein's inequality at that radius. -/
+theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_le [CompleteSpace F] {p r : ℝ≥0∞}
+    [Fact (1 ≤ p)] [Fact (1 ≤ r)] (hpr : p ≤ r) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (j : ℕ) (u : 𝓢'(E, F)) (f : Lp F p (volume : Measure E)),
+      littlewoodPaleyBlock F φ j u = f → ∃ g : Lp F r (volume : Measure E),
+        littlewoodPaleyBlock F φ j u = g ∧
+          ‖g‖ ≤ C * 2 ^ (Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹) * j) * ‖f‖ := by
+  obtain ⟨C, hC, hB⟩ :=
+    TauCeti.exists_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F) hpr
+  set a : ℝ := Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)
+  refine ⟨C * φ.rOut ^ a, mul_nonneg hC (Real.rpow_nonneg φ.rOut_pos.le a), fun j u f hf ↦ ?_⟩
+  -- Bernstein's inequality without derivatives, at the radius `2^j φ.rOut` carrying `Δⱼ u`.
+  obtain ⟨g, hg, hgf⟩ := hB (mul_pos (pow_pos two_pos j) φ.rOut_pos) f
+    (hf ▸ isVanishingOn_fourier_littlewoodPaleyBlock φ j u)
+  refine ⟨g, hf.trans hg, hgf.trans_eq ?_⟩
+  rw [Real.mul_rpow (by positivity) φ.rOut_pos.le, ← Real.rpow_natCast,
+    ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ) a]
+  ring
 
 end Lp
 

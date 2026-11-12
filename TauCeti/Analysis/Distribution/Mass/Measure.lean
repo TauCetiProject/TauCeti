@@ -43,6 +43,8 @@ them by open sets of almost the same measure.
 * `Distribution.massMeasure`: the mass measure `‖T‖`.
 * `Distribution.massMeasure_preimage_coe`, `Distribution.massMeasure_univ`: its values on open
   sets and its total mass.
+* `Distribution.lintegral_massMeasure_le_mul_mass`: a function bounded by `L` has integral at most
+  `L M(T)`.
 * `Distribution.enorm_apply_le_lintegral_massMeasure`: the domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖`.
 * `Distribution.massMeasure_le_of_enorm_apply_le`: minimality among outer regular measures.
 
@@ -253,6 +255,12 @@ theorem massMeasure_preimage_coe (hT : HasLocallyFiniteMass T) {U : Set E} (hU :
 @[simp]
 theorem massMeasure_univ (hT : HasLocallyFiniteMass T) : massMeasure T univ = mass T := by
   simpa using massMeasure_preimage_coe hT isOpen_univ
+
+/-- A function bounded by `L` on `Ω` has integral at most `L M(T)` against the mass measure. -/
+theorem lintegral_massMeasure_le_mul_mass (hT : HasLocallyFiniteMass T) {f : Ω → ℝ≥0∞}
+    {L : ℝ≥0∞} (hf : ∀ x, f x ≤ L) : ∫⁻ x, f x ∂massMeasure T ≤ L * mass T := by
+  calc ∫⁻ x, f x ∂massMeasure T ≤ ∫⁻ _, L ∂massMeasure T := lintegral_mono hf
+    _ = L * mass T := by rw [lintegral_const, massMeasure_univ hT]
 
 /-- The level-set estimate behind the domination: if `W` is an open neighbourhood of the support
 of `φ` of finite mass `M`, then `‖T φ‖ ≤ ∫ ‖φ‖ d‖T‖ + ε * (3 * M + 1)` for every `ε > 0`. -/

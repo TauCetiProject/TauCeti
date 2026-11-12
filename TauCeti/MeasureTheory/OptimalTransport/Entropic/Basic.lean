@@ -255,7 +255,7 @@ theorem exists_isCoupling_klDiv_eq_schroedingerValue [IsFiniteMeasure μ] [IsFin
   choose π hπ hπS using hseq
   have hfin (n : ℕ) : IsFiniteMeasure (π n) := (hπ n).isFiniteMeasure
   have hac (n : ℕ) : π n ≪ R := (klDiv_ne_top_iff.1 (hπS n).ne_top).1
-  set f : ℕ → X × Y → ℝ := fun n z ↦ ((π n).rnDeriv R z).toReal with hf_def
+  set f : ℕ → X × Y → ℝ := fun n z ↦ ((π n).rnDeriv R z).toReal
   have hmeas (n : ℕ) : AEStronglyMeasurable (f n) R := by fun_prop
   -- Their densities are Cauchy in `L¹(R)`, with the summable modulus `B`.
   set B : ℕ → ℝ≥0∞ := fun N ↦ t N * (2 * μ Set.univ + 3)
@@ -272,7 +272,7 @@ theorem exists_isCoupling_klDiv_eq_schroedingerValue [IsFiniteMeasure μ] [IsFin
     exact (ENNReal.mul_lt_mul_iff_right (by simp [ht_def]) (by simp)).2
       (ENNReal.add_lt_add_left (by finiteness) (by norm_num : (2 : ℝ≥0∞) < 3))
   -- The limit density defines a coupling.
-  obtain ⟨g, hgm, hlim⟩ := exists_stronglyMeasurable_limit_of_tendsto_ae hmeas
+  obtain ⟨g, _, hlim⟩ := exists_stronglyMeasurable_limit_of_tendsto_ae hmeas
     (Lp.ae_tendsto_of_cauchy_eLpNorm hmeas le_rfl hB hcau)
   have hL1 := Lp.cauchy_tendsto_of_tendsto hmeas g hB hcau hlim
   have hgint : Integrable g R := memLp_one_iff_integrable.1 <| Lp.memLp_of_cauchy_tendsto le_rfl

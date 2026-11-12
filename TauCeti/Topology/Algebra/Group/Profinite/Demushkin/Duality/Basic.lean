@@ -80,21 +80,25 @@ namespace IsDemushkin
 
 variable {p : ℕ} [Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] (hG : IsDemushkin p G) [DistribMulAction G (ZMod p)]
-  [ContinuousSMul G (ZMod p)] (htriv : ∀ (g : G) (m : ZMod p), g • m = m)
+  [ContinuousSMul G (ZMod p)]
 
-include hG htriv
+include hG
 
-/-- **Tate's duality map `α₁` of a Demushkin group is bijective at `M = 𝔽_p`**: for any trivial
-action of `G` on `ZMod p`, `H¹(G, 𝔽_p) → Hom(H¹(G, Hom(𝔽_p, 𝔽_p)), H²(G, 𝔽_p))` is a bijection.
+/-- **Tate's duality map `α₁` of a Demushkin group is bijective at `M = 𝔽_p`**: for any continuous
+action of `G` on `ZMod p` (it is trivial, since `G` is pro-`p`),
+`H¹(G, 𝔽_p) → Hom(H¹(G, Hom(𝔽_p, 𝔽_p)), H²(G, 𝔽_p))` is a bijection.
 Under evaluation at `1` it is the cup square, a perfect pairing. -/
 theorem dualityMap1_zmod_bijective : Function.Bijective (dualityMap1 G (ZMod p) (ZMod p)) :=
+  have htriv : ∀ (g : G) (m : ZMod p), g • m = m := hG.isProP.smul_zmod_eq_self
   (dualityMap1_zmod_bijective_iff htriv).2 ((explicitCup11_mul_bijective_iff p G htriv).2
     hG.cupFp_bijective)
 
-/-- **Tate's duality map `α₀` of a Demushkin group is bijective at `M = 𝔽_p`**: for any trivial
-action of `G` on `ZMod p`, `H⁰(G, 𝔽_p) → Hom(H²(G, Hom(𝔽_p, 𝔽_p)), H²(G, 𝔽_p))` is a bijection,
+/-- **Tate's duality map `α₀` of a Demushkin group is bijective at `M = 𝔽_p`**: for any continuous
+action of `G` on `ZMod p` (it is trivial, since `G` is pro-`p`),
+`H⁰(G, 𝔽_p) → Hom(H²(G, Hom(𝔽_p, 𝔽_p)), H²(G, 𝔽_p))` is a bijection,
 since `H²(G, 𝔽_p)` is one-dimensional. -/
 theorem dualityMap0_zmod_bijective : Function.Bijective (dualityMap0 G (ZMod p) (ZMod p)) :=
+  have htriv : ∀ (g : G) (m : ZMod p), g • m = m := hG.isProP.smul_zmod_eq_self
   dualityMap0_zmod_bijective_of_finrank_eq_one htriv
     ((cohomFpLinearEquivH2 p G htriv).finrank_eq.symm.trans hG.finrank_cohomFp_two)
 
@@ -111,14 +115,15 @@ private theorem dualityMap_of_natCard_eq (A : Type u) [AddCommGroup A] [Topologi
       Function.Bijective (dualityMap1 G A (ZMod p)) ∧
         Function.Injective (dualityMap2 G A (ZMod p)) := by
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  have htriv : ∀ (g : G) (m : ZMod p), g • m = m := hG.isProP.smul_zmod_eq_self
   obtain ⟨a, ha⟩ := (isAddCyclic_of_prime_card hA).exists_generator
   let e₀ : A ≃+ ZMod p := (zmodAddEquivOfGenerator ha hA).symm
   let e : A →+[G] ZMod p :=
     { e₀.toAddMonoidHom with
       map_smul' := fun g a ↦ by rw [MonoidHom.id_apply, htrivA g a, htriv g] }
   have he : Function.Bijective e := e₀.bijective
-  exact ⟨(dualityMap0_bijective_of_bijective he (hG.dualityMap0_zmod_bijective htriv)).2,
-    dualityMap1_bijective_of_bijective he (hG.dualityMap1_zmod_bijective htriv),
+  exact ⟨(dualityMap0_bijective_of_bijective he (hG.dualityMap0_zmod_bijective)).2,
+    dualityMap1_bijective_of_bijective he (hG.dualityMap1_zmod_bijective),
     (dualityMap2_bijective_of_bijective he (dualityMap2_zmod_bijective htriv)).1⟩
 
 /-- **The dévissage of Tate's duality argument.** On every finite discrete `G`-module `M` killed
@@ -136,7 +141,7 @@ private theorem dualityMap_devissage (M : Type u) [AddCommGroup M] [TopologicalS
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   hG.isProP.dualityMap0_surjective_dualityMap1_bijective_dualityMap2_injective (ZMod p)
     (Module.Baer.zmod_self p) (Module.Baer.of_isSemisimpleRing (ZMod p) (H2 G (ZMod p)))
-    (fun A _ _ _ _ _ _ hA htrivA _ ↦ hG.dualityMap_of_natCard_eq htriv A hA htrivA) M
+    (fun A _ _ _ _ _ _ hA htrivA _ ↦ hG.dualityMap_of_natCard_eq A hA htrivA) M
     (fun m ↦ ⟨1, by rw [pow_one, hM]⟩) hM
 
 variable (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
@@ -146,17 +151,17 @@ include hM
 /-- **Tate's duality map `α₀` of a Demushkin group is surjective** on every finite discrete
 `G`-module `M` killed by `p`. -/
 theorem dualityMap0_surjective : Function.Surjective (dualityMap0 G M (ZMod p)) :=
-  (hG.dualityMap_devissage htriv M hM).1
+  (hG.dualityMap_devissage M hM).1
 
 /-- **Tate's duality map `α₁` of a Demushkin group is bijective** on every finite discrete
 `G`-module `M` killed by `p`: `H¹(G, M) × H¹(G, M') → H²(G, 𝔽_p)` is a perfect pairing. -/
 theorem dualityMap1_bijective : Function.Bijective (dualityMap1 G M (ZMod p)) :=
-  (hG.dualityMap_devissage htriv M hM).2.1
+  (hG.dualityMap_devissage M hM).2.1
 
 /-- **Tate's duality map `α₂` of a Demushkin group is injective** on every finite discrete
 `G`-module `M` killed by `p`. -/
 theorem dualityMap2_injective : Function.Injective (dualityMap2 G M (ZMod p)) :=
-  (hG.dualityMap_devissage htriv M hM).2.2
+  (hG.dualityMap_devissage M hM).2.2
 
 end IsDemushkin
 
@@ -167,11 +172,10 @@ namespace IsDemushkin
 variable {p : ℕ} [Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G] [Infinite G] (hG : IsDemushkin p G)
   [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
-  (htriv : ∀ (g : G) (m : ZMod p), g • m = m)
   (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : ∀ x : M, p • x = 0)
 
-include hG htriv hM
+include hG hM
 
 /-- **Tate's duality map `α₀` of an infinite Demushkin group is injective** on every finite
 discrete `G`-module `M` killed by `p`: the general `TauCeti.IsProP.dualityMap0_injective`, whose
@@ -182,18 +186,19 @@ theorem dualityMap0_injective : Function.Injective (dualityMap0 G M (ZMod p)) :=
   hG.isProP.dualityMap0_injective (ZMod p) (Module.Baer.zmod_self p)
     (Module.Baer.of_isSemisimpleRing (ZMod p) _)
     (fun A _ _ _ _ _ _ hA htrivA _ ↦
-      have hd := hG.dualityMap_of_natCard_eq htriv A hA htrivA
+      have hd := hG.dualityMap_of_natCard_eq A hA htrivA
       ⟨hd.1, hd.2.1.1⟩) M
     (fun m ↦ ⟨1, by rw [pow_one, hM]⟩) hM
 
 /-- **Tate's duality map `α₀` of an infinite Demushkin group is bijective** on every finite
 discrete `G`-module `M` killed by `p`: `H⁰(G, M) × H²(G, M') → H²(G, 𝔽_p)` is a perfect pairing. -/
 theorem dualityMap0_bijective : Function.Bijective (dualityMap0 G M (ZMod p)) :=
-  ⟨hG.dualityMap0_injective htriv M hM, hG.dualityMap0_surjective htriv M hM⟩
+  ⟨hG.dualityMap0_injective M hM, hG.dualityMap0_surjective M hM⟩
 
 omit [TotallyDisconnectedSpace G] [Infinite G] hM in
 /-- The explicit `H²(G, 𝔽_p)` of a Demushkin group has `p` elements. -/
 private theorem natCard_H2_zmod : Nat.card (H2 G (ZMod p)) = p := by
+  have htriv : ∀ (g : G) (m : ZMod p), g • m = m := hG.isProP.smul_zmod_eq_self
   have : Module.Finite (ZMod p) (cohomFp p G 2) :=
     Module.finite_of_finrank_eq_succ hG.finrank_cohomFp_two
   rw [← Nat.card_congr (cohomFpAddEquivH2 p G htriv).toEquiv,
@@ -202,7 +207,7 @@ private theorem natCard_H2_zmod : Nat.card (H2 G (ZMod p)) = p := by
 omit [TotallyDisconnectedSpace G] [Infinite G] hM in
 /-- The explicit `H²(G, 𝔽_p)` of a Demushkin group is `𝔽_p`, being of order `p`. -/
 private theorem nonempty_addEquiv_H2_zmod : Nonempty (H2 G (ZMod p) ≃+ ZMod p) :=
-  ⟨addEquivOfPrimeCardEq (hG.natCard_H2_zmod htriv) (Nat.card_zmod p)⟩
+  ⟨addEquivOfPrimeCardEq (hG.natCard_H2_zmod) (Nat.card_zmod p)⟩
 
 omit [TotallyDisconnectedSpace G] [Infinite G] hM in
 /-- **Homomorphisms into `H²(G, 𝔽_p)` of a Demushkin group are as many as their source**: for an
@@ -210,7 +215,7 @@ abelian group `V` killed by `p`, `|Hom(V, H²(G, 𝔽_p))| = |V|`, since `H²(G,
 one-dimensional over `𝔽_p`. -/
 theorem natCard_addMonoidHom_H2 (V : Type*) [AddCommGroup V] (hV : ∀ v : V, p • v = 0) :
     Nat.card (V →+ H2 G (ZMod p)) = Nat.card V :=
-  (hG.nonempty_addEquiv_H2_zmod htriv).elim fun e ↦ e.natCard_addMonoidHom_zmod hV
+  (hG.nonempty_addEquiv_H2_zmod).elim fun e ↦ e.natCard_addMonoidHom_zmod hV
 
 /-- **Tate's duality map `α₂` of an infinite Demushkin group is bijective** on every finite
 discrete `G`-module `M` killed by `p`: `H²(G, M) × H⁰(G, M') → H²(G, 𝔽_p)` is a perfect pairing,
@@ -220,9 +225,9 @@ injective on `M'` and `H²(G, 𝔽_p)` is `𝔽_p`. -/
 theorem dualityMap2_bijective : Function.Bijective (dualityMap2 G M (ZMod p)) := by
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   have hM' : ∀ φ : InternalHom G M (ZMod p), p • φ = 0 := InternalHom.nsmul_eq_zero_of_domain hM
-  obtain ⟨e₂⟩ := hG.nonempty_addEquiv_H2_zmod htriv
+  obtain ⟨e₂⟩ := hG.nonempty_addEquiv_H2_zmod
   exact dualityMap2_bijective_of_injective_of_addEquiv_zmod (AddEquiv.refl _) e₂ hM
-    (hG.dualityMap0_injective htriv _ hM') (hG.dualityMap2_injective htriv M hM)
+    (hG.dualityMap0_injective _ hM') (hG.dualityMap2_injective M hM)
 
 end IsDemushkin
 

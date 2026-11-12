@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.Analysis.SpecialFunctions.Exponential
-import Mathlib.Topology.ContinuousMap.Algebra
+public import TauCeti.Topology.ContinuousMap.Bounded.Exponential
 
 /-!
 # Exponential multipliers and positive inverses of real bounded continuous functions
@@ -31,17 +30,6 @@ namespace BoundedContinuousFunction
 
 variable {α : Type*} [TopologicalSpace α]
 
-/-- Evaluation of the Banach-algebra exponential of a bounded continuous real function. -/
-@[simp]
-theorem exp_apply (g : α →ᵇ ℝ) (x : α) : (exp g) x = Real.exp (g x) := by
-  let +nondep : NormedAlgebra ℚ (α →ᵇ ℝ) := .restrictScalars ℚ ℝ _
-  let ev :=
-    (ContinuousMap.evalAlgHom (S := ℝ) (R := ℝ) x).comp
-      (BoundedContinuousFunction.toContinuousMapₐ ℝ)
-  rw [Real.exp_eq_exp_ℝ]
-  -- The algebra homomorphism `ev` and `evalCLM x` have definitionally equal coercions.
-  exact map_exp ev (BoundedContinuousFunction.evalCLM (𝕜 := ℝ) x).continuous g
-
 /-- The exponential multiplier `x ↦ exp (-(t * m x))` as a bounded continuous function. -/
 def expNegMul (m : α →ᵇ ℝ) (t : ℝ) : α →ᵇ ℝ :=
   exp (t • (-m))
@@ -56,7 +44,7 @@ theorem expNegMul_def (m : α →ᵇ ℝ) (t : ℝ) :
 theorem coe_expNegMul (m : α →ᵇ ℝ) (t : ℝ) :
     ⇑(m.expNegMul t) = fun x => Real.exp (-(t * m x)) := by
   ext x
-  simp [expNegMul_def, smul_eq_mul]
+  simp [expNegMul_def, Real.exp_eq_exp_ℝ]
 
 /-- A real bounded continuous function is bounded below by the negative of the norm of
 its negative part. -/
@@ -69,10 +57,8 @@ theorem neg_norm_negPart_le_apply (m : α →ᵇ ℝ) (x : α) :
 theorem norm_expNegMul_le (m : α →ᵇ ℝ) {t : ℝ} (ht : 0 ≤ t) :
     ‖m.expNegMul t‖ ≤ Real.exp (t * ‖m⁻‖) := by
   refine (norm_le (by positivity)).mpr fun x => ?_
-  simp only [coe_expNegMul, Real.norm_eq_abs, abs_of_nonneg (Real.exp_nonneg _)]
-  apply Real.exp_le_exp.mpr
-  have hx := m.neg_norm_negPart_le_apply x
-  nlinarith
+  rw [coe_expNegMul, Real.norm_eq_abs, Real.abs_exp, Real.exp_le_exp]
+  nlinarith [m.neg_norm_negPart_le_apply x]
 
 /-- A positive scalar perturbation of `m` is pointwise positive whenever `‖m⁻‖ < c`. -/
 theorem add_pos_of_norm_negPart_lt (m : α →ᵇ ℝ) {c : ℝ} (hc : ‖m⁻‖ < c) (x : α) :
@@ -80,29 +66,24 @@ theorem add_pos_of_norm_negPart_lt (m : α →ᵇ ℝ) {c : ℝ} (hc : ‖m⁻�
   linarith [m.neg_norm_negPart_le_apply x]
 
 /-- The pointwise inverse `(c + m)⁻¹` of a positive perturbation of a bounded continuous
-multiplier, as bounded continuous function.  The hypothesis `‖m⁻‖ < c` guarantees
+multiplier, as a bounded continuous function.  The hypothesis `‖m⁻‖ < c` guarantees
 `c + m x ≥ c - ‖m⁻‖ > 0` for every `x`. -/
 def addInv (m : α →ᵇ ℝ) (c : ℝ) (hc : ‖m⁻‖ < c) : α →ᵇ ℝ :=
-  BoundedContinuousFunction.ofNormedAddCommGroup (fun x => (c + m x)⁻¹)
-    (by
-      refine Continuous.inv₀ (continuous_const.add m.continuous) fun x => ?_
-      exact ne_of_gt (m.add_pos_of_norm_negPart_lt hc x))
-    (1 / (c - ‖m⁻‖)) fun x => by
-      have hge : c - ‖m⁻‖ ≤ c + m x := by linarith [m.neg_norm_negPart_le_apply x]
-      have hpos : (0 : ℝ) < c - ‖m⁻‖ := by linarith
-      have hxpos : (0 : ℝ) < c + m x := m.add_pos_of_norm_negPart_lt hc x
-      rw [Real.norm_eq_abs, abs_inv, abs_of_pos hxpos, inv_eq_one_div]
-      exact one_div_le_one_div_of_le hpos hge
+  ofNormedAddCommGroup (fun x => (c + m x)⁻¹)
+    ((continuous_const.add m.continuous).inv₀ fun x => (m.add_pos_of_norm_negPart_lt hc x).ne')
+    (c - ‖m⁻‖)⁻¹ fun x => by
+      rw [norm_inv, Real.norm_of_nonneg (m.add_pos_of_norm_negPart_lt hc x).le]
+      exact inv_anti₀ (sub_pos.mpr hc) (by linarith [m.neg_norm_negPart_le_apply x])
 
-/-- The coercion of `addInv m c hc` is the function `x ↦ (c + m x)⁻¹`. -/
+/-- The coercion of `m.addInv c hc` is the function `x ↦ (c + m x)⁻¹`. -/
 @[simp]
 theorem coe_addInv (m : α →ᵇ ℝ) (c : ℝ) (hc : ‖m⁻‖ < c) :
-    ⇑(addInv m c hc) = fun x => (c + m x)⁻¹ :=
-  BoundedContinuousFunction.coe_ofNormedAddCommGroup _ _ _ _
+    ⇑(m.addInv c hc) = fun x => (c + m x)⁻¹ :=
+  coe_ofNormedAddCommGroup _ _ _ _
 
-/-- The pointwise inverse `(c + m)⁻¹` has norm at most `1 / (c - ‖m⁻‖)`. -/
+/-- The pointwise inverse `(c + m)⁻¹` has norm at most `(c - ‖m⁻‖)⁻¹`. -/
 theorem norm_addInv_le (m : α →ᵇ ℝ) (c : ℝ) (hc : ‖m⁻‖ < c) :
-    ‖addInv m c hc‖ ≤ 1 / (c - ‖m⁻‖) :=
-  BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ (by positivity) _
+    ‖m.addInv c hc‖ ≤ (c - ‖m⁻‖)⁻¹ :=
+  norm_ofNormedAddCommGroup_le _ (inv_nonneg.mpr (sub_pos.mpr hc).le) _
 
 end BoundedContinuousFunction

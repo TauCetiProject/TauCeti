@@ -54,6 +54,7 @@ theorem inflH1AbsoluteGaloisProP_apply
       cohomFpMap p (absoluteGaloisGroupProPQuotientMap p K) 1 x :=
   inflH1MaximalProP_apply p (Field.absoluteGaloisGroup K) x
 
+omit [Fact p.Prime] in
 /-- **Degree-two inflation from `G_K(p)` to `G_K` is injective.** The inflation map
 `H²(G_K(p), 𝔽_p) → H²(G_K, 𝔽_p)` is injective. -/
 theorem inflH2AbsoluteGaloisProP_injective :

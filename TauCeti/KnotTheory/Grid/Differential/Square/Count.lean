@@ -60,9 +60,9 @@ two objects assembled from that one finite set. The marking region is fixed upst
 
 ## References
 
-This supplies the counting step for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane
-G.3, "The complexes and `∂² = 0`". The pairing of juxtaposed empty rectangles follows
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.6.
+This is the counting step of the proof that the grid differential squares to zero. The pairing of
+juxtaposed empty rectangles follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
+Chapter 4.6.
 -/
 
 public section

@@ -308,6 +308,16 @@ theorem eval₂_add_right (φ : SmoothBundleForm I F V 2) (x : M)
   simpa only [eval₂, Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero] using
     (φ.1 x).map_update_add ![v, w] (0 : Fin 1).succ w w'
 
+/-- Ordered-pair evaluation vanishes when its first tangent argument is zero. -/
+theorem eval₂_zero_left (φ : SmoothBundleForm I F V 2) (x : M) (w : TangentSpace I x) :
+    φ.eval₂ x 0 w = 0 := by
+  simpa using eval₂_add_left φ x 0 0 w
+
+/-- Ordered-pair evaluation vanishes when its second tangent argument is zero. -/
+theorem eval₂_zero_right (φ : SmoothBundleForm I F V 2) (x : M) (v : TangentSpace I x) :
+    φ.eval₂ x v 0 = 0 := by
+  simpa using eval₂_add_right φ x v 0 0
+
 /-- Real scalar multiplication in the first tangent argument scales the fibre value. -/
 theorem eval₂_smul_left (φ : SmoothBundleForm I F V 2) (x : M)
     (c : ℝ) (v w : TangentSpace I x) :
