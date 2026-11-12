@@ -50,9 +50,9 @@ section Noncompact
 variable {K V : Type*} [NontriviallyNormedField K] [AddCommGroup V] [Module K V]
   (Q : QuadraticForm K V)
 
-/-- The special orthogonal group of an isotropic quadratic form with trivial radical on a
-finite-dimensional space over a nontrivially normed field is not compact. -/
-theorem not_isCompact_specialOrthogonalGroup [FiniteDimensional K V] (hQ : Q.radical = ⊥)
+/-- The special orthogonal group of an isotropic quadratic form with trivial radical over a
+nontrivially normed field is not compact. -/
+theorem not_isCompact_specialOrthogonalGroup (hQ : Q.radical = ⊥)
     (hiso : ¬Q.Anisotropic) :
     ¬IsCompact (specialOrthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
   obtain ⟨u, v, -, hu, hv, huv⟩ :=

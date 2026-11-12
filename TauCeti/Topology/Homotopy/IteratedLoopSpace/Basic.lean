@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Path
 public import TauCeti.Topology.Category.BasedTopologicalSpace
+public import TauCeti.Topology.PathSpace.Loop
 
 /-!
 # Iterated loop spaces
@@ -82,21 +83,17 @@ namespace Hom
 
 variable {X Y Z : BasedTopologicalSpace.{u}}
 
-/-- The map `Ω f : Ω X → Ω Y` induced by a based map `f`: postcomposition of loops with `f`. -/
+/-- The map `Ω f : Ω X → Ω Y` induced by a based map `f`: postcomposition of loops with `f`,
+the based form of `ContinuousMap.loopMap`. -/
 def loopSpace (f : Hom X Y) : Hom X.loopSpace Y.loopSpace where
-  toContinuousMap :=
-    ⟨fun γ => (γ.map (map_continuous f)).cast f.map_basepoint.symm f.map_basepoint.symm,
-      continuous_induced_rng.2 <|
-        (ContinuousMap.continuous_postcomp f.toContinuousMap).comp continuous_induced_dom⟩
-  map_basepoint := by
-    exact DFunLike.ext _ _ fun _ => f.map_basepoint
+  toContinuousMap := f.toContinuousMap.loopMap f.map_basepoint
+  map_basepoint := f.toContinuousMap.loopMap_refl f.map_basepoint
 
 /-- The induced loop map postcomposes loops with `f`, for a loop viewed as an element of the
 carrier of `ΩX`. -/
 theorem loopSpace_apply' (f : Hom X Y) (γ : X.loopSpace.carrier) (t : unitInterval) :
-    f.loopSpace γ t = f (γ t) := by
-  rw [loopSpace]
-  rfl
+    f.loopSpace γ t = f (γ t) :=
+  f.toContinuousMap.loopMap_apply f.map_basepoint γ t
 
 /-- The induced loop map postcomposes loops with `f`. -/
 @[simp]

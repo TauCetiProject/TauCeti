@@ -160,9 +160,8 @@ theorem scalarCurvature_rotationalMetric {w : ℝ → ℝ} (hw : ContDiff ℝ �
   have heq : φ =ᶠ[𝓝 (P p)] fun z ↦ w (log ‖z‖) - log ‖z‖ := by
     filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds (show exp (p.2 - 1) <
       ‖P p‖ by rw [hnorm]; exact exp_lt_exp.2 (by linarith))] with z hz using hφw z hz
-  rw [scalarCurvature_rescale_exp_radial hφ (norm_pos_iff.1 (hnorm p ▸ exp_pos _))
-      (by rw [hnorm, log_exp]; exact (hw.of_le (by simp)).contDiffAt) heq, hnorm, log_exp,
-    (Fact.out : finrank ℝ V = n + 1)]
+  rw [scalarCurvature_rescale_exp_radial hφ (norm_pos_iff.1 (hnorm p ▸ exp_pos _)) heq, hnorm,
+    log_exp, (Fact.out : finrank ℝ V = n + 1)]
   push_cast
   ring
 
