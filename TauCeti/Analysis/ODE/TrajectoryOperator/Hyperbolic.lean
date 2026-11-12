@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Lp.SmoothApprox
 public import TauCeti.Analysis.Fredholm.Criteria
 public import TauCeti.Analysis.ODE.GreenIntegral
-public import TauCeti.Analysis.ODE.TrajectoryOperator
-public import TauCeti.Analysis.Sobolev.GraphStep.Density
+public import TauCeti.Analysis.ODE.TrajectoryOperator.APriori
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 /-!
@@ -134,41 +132,21 @@ theorem norm_prev_le_mul_norm_trajectoryOperator_of_dichotomy (hp : p ≠ ∞) (
     (u : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp E p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     ‖prev _ u‖ ≤ 2 * K / α * ‖trajectoryOperator AL u‖ := by
-  -- Abstract the base map before introducing `u`, so that the closed set below and the density
-  -- statement are stated over the same graph space.
-  revert u
-  set base := ContinuousLinearMap.id ℝ (Lp E p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-  intro u
-  -- The estimate is a closed condition, so it suffices to prove it on smooth compactly supported
-  -- paths, where it is the `Lᵖ` bound for the Green integral.
-  have hclosed : IsClosed {u : WeakDerivStep volume ⊤ p base |
-      ‖prev base u‖ ≤ 2 * K / α * ‖trajectoryOperator AL u‖} :=
-    isClosed_le ((prevL base).continuous.congr fun u ↦ prevL_apply base u).norm
-      (continuous_const.mul (trajectoryOperator AL).continuous.norm)
-  refine hclosed.closure_subset_iff.mpr ?_ (dense_setOf_exists_contDiff_hasCompactSupport hp u)
-  rintro u ⟨φ, hφ, hφc, huφ⟩
+  -- On smooth compactly supported paths this is the `Lᵖ` bound for the Green integral.
+  refine norm_prev_le_mul_norm_trajectoryOperator_of_forall_contDiff hp hAL (by positivity)
+    (fun φ hφ hφc ↦ ?_) u
   have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by exact_mod_cast le_top)
-  set g : ℝ → E := fun s ↦ deriv φ s - A (φ s)
+  set g : ℝ → E := fun s ↦ deriv φ s - A (φ s) with g_def
   have hgc : Continuous g := (hφ1.continuous_deriv le_rfl).sub (A.continuous.comp hφ1.continuous)
   have hgs : HasCompactSupport g := hφc.deriv.sub (hφc.comp_left (map_zero A))
-  have hgp : MemLp g p volume := hgc.memLp_of_hasCompactSupport hgs
-  have hTu : trajectoryOperator AL u =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] g := by
-    filter_upwards [trajectoryOperator_apply_ae_eq_deriv_add AL u huφ
-      ((hφ1.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
-      (fun s _ ↦ hφ1.differentiable one_ne_zero s), hAL] with s hs' hAs
-    rw [hs', hAs, neg_apply, ← sub_eq_add_neg]
   have hG : ContinuousLinearMap.greenIntegral A P g = φ :=
     funext (ContinuousLinearMap.greenIntegral_deriv_sub_eq hAP hφ1 hφc)
   obtain ⟨M, hM⟩ := hgc.bounded_above_of_compact_support hgs
   have key := ContinuousLinearMap.eLpNorm_greenIntegral_le hs hu hα hgc hM (p := p) Fact.out
-  rw [hG] at key
-  rw [Set.mem_ofPred_eq, Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae huφ, eLpNorm_congr_ae hTu]
-  simp only [Opens.coe_top, Measure.restrict_univ]
-  calc (eLpNorm φ p volume).toReal
-      ≤ (ENNReal.ofReal (2 * K / α) * eLpNorm g p volume).toReal :=
-        ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hgp.eLpNorm_ne_top) key
-    _ = 2 * K / α * (eLpNorm g p volume).toReal := by
-      rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
+  have hg : (fun s ↦ deriv φ s + (-A) (φ s)) = g := by
+    funext s
+    rw [g_def, neg_apply, ← sub_eq_add_neg]
+  rwa [hG, ← hg] at key
 
 /-- **The graph-norm estimate for `d/ds - A`.** Under an exponential dichotomy for `exp (t A)`
 with constant `K` and rate `α > 0`, and `1 ≤ p < ∞`, every `u ∈ W^{1,p}(ℝ, E)` satisfies
@@ -176,17 +154,9 @@ with constant `K` and rate `α > 0`, and `1 ≤ p < ∞`, every `u ∈ W^{1,p}(�
 theorem norm_le_mul_norm_trajectoryOperator_of_dichotomy (hp : p ≠ ∞) (hAP : Commute A P)
     (u : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp E p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
-    ‖u‖ ≤ (1 + (1 + ‖AL‖) * (2 * K / α)) * ‖trajectoryOperator AL u‖ := by
-  have hprev := norm_prev_le_mul_norm_trajectoryOperator_of_dichotomy hs hu hα hAL hp hAP u
-  have hweak := norm_weakFDeriv_le_norm_trajectoryOperator_add AL u
-  have hsum : ‖u‖ ≤ ‖prev _ u‖ + ‖weakFDeriv _ u‖ := by
-    refine (pow_le_pow_iff_left₀ (norm_nonneg u) (by positivity) two_ne_zero).mp ?_
-    rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq]
-    nlinarith [norm_nonneg (prev _ u), norm_nonneg (weakFDeriv _ u)]
-  calc ‖u‖ ≤ ‖trajectoryOperator AL u‖ + (1 + ‖AL‖) * ‖prev _ u‖ := by linarith
-    _ ≤ ‖trajectoryOperator AL u‖ + (1 + ‖AL‖) * (2 * K / α * ‖trajectoryOperator AL u‖) := by
-      gcongr
-    _ = (1 + (1 + ‖AL‖) * (2 * K / α)) * ‖trajectoryOperator AL u‖ := by ring
+    ‖u‖ ≤ (1 + (1 + ‖AL‖) * (2 * K / α)) * ‖trajectoryOperator AL u‖ :=
+  norm_le_mul_norm_trajectoryOperator_of_norm_prev_le u
+    (norm_prev_le_mul_norm_trajectoryOperator_of_dichotomy hs hu hα hAL hp hAP u)
 
 /-- **`d/ds - A` is injective.** Under an exponential dichotomy for `exp (t A)` and `1 ≤ p < ∞`,
 `u' = A u` has no nonzero solution in `W^{1,p}(ℝ, E)`. -/
@@ -199,21 +169,11 @@ theorem injective_trajectoryOperator_of_dichotomy (hp : p ≠ ∞) (hAP : Commut
 `1 ≤ p < ∞`, the equation `u' - A u = f` has a solution `u ∈ W^{1,p}(ℝ, E)` for every
 `f ∈ Lᵖ(ℝ, E)`. -/
 theorem surjective_trajectoryOperator_of_dichotomy (hp : p ≠ ∞) (hAP : Commute A P) :
-    Function.Surjective (trajectoryOperator (p := p) AL) := by
-  set C : ℝ≥0 := ⟨1 + (1 + ‖AL‖) * (2 * K / α), by positivity⟩
-  have hanti : AntilipschitzWith C (trajectoryOperator (p := p) AL) :=
-    (trajectoryOperator (p := p) AL).antilipschitz_of_bound
-      (norm_le_mul_norm_trajectoryOperator_of_dichotomy hs hu hα hAL hp hAP)
-  have hclosed : IsClosed (range (trajectoryOperator (p := p) AL)) :=
-    hanti.isClosed_range (trajectoryOperator (p := p) AL).uniformContinuous
-  -- The range contains every smooth compactly supported path, and these are dense in `Lᵖ`.
-  have hdense : Dense (range (trajectoryOperator (p := p) AL)) := by
-    refine (Lp.dense_hasCompactSupport_contDiff hp).mono ?_
-    rintro f ⟨g, hfg, hgc, hg⟩
-    obtain ⟨u, -, hTu⟩ := exists_prev_ae_eq_greenIntegral_and_trajectoryOperator_ae_eq
-      (p := p) (P := P) hs hu hα hAL hg.continuous hgc
-    exact ⟨u, Lp.ext (hTu.trans hfg.symm)⟩
-  exact range_eq_univ.mp (hclosed.closure_eq.symm.trans hdense.closure_eq)
+    Function.Surjective (trajectoryOperator (p := p) AL) :=
+  surjective_trajectoryOperator_of_forall_norm_le hp
+    (norm_le_mul_norm_trajectoryOperator_of_dichotomy hs hu hα hAL hp hAP) fun _ hf hfc ↦
+      (exists_prev_ae_eq_greenIntegral_and_trajectoryOperator_ae_eq (P := P) hs hu hα hAL
+        hf.continuous hfc).imp fun _ h ↦ h.2
 
 /-- **`d/ds - A` is bijective.** Under an exponential dichotomy for `exp (t A)` and
 `1 ≤ p < ∞`, the trajectory operator `u ↦ u' - A u` is a bijection from `W^{1,p}(ℝ, E)` onto

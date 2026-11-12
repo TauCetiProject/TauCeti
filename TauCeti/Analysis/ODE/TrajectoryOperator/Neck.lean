@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov
-public import TauCeti.Analysis.ODE.EnergyEstimate.Sobolev
 public import TauCeti.Analysis.ODE.TrajectoryOperator.FourierMode
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
+public import TauCeti.Analysis.ODE.TrajectoryOperator.ScalarGreen
 public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -28,7 +27,8 @@ positive end of `D₁` to the negative end of `D₂` along a neck of length `2R`
 tends to `1` at both ends. This file shows that `D_R` is invertible, for every `R`: the kernel of
 `D₁` cancels against the cokernel of `D₂`, so the index `0 = 1 + (-1)` is additive under gluing
 while the kernel and the cokernel separately are not. It also shows that the inverse is not
-uniformly bounded as the neck grows: its norm is at least `exp (2 R) / 2`. These are the two
+uniformly bounded as the neck grows: its norm is at least `exp (2 R) / 2` and at most
+`2 exp (4 |R|)`. These are the two
 phenomena that the stabilized linear gluing theorem for Cauchy–Riemann operators accounts for:
 an obstruction map from `ker D₁ ⊕ ker D₂` to stabilizing cokernel representatives, here a
 nonzero map `ℝ → ℝ`, and inverse bounds that are uniform only after stabilization.
@@ -39,11 +39,19 @@ The equation `v' = a_R v` has the explicit positive solution
 
 (`TauCeti.neckSolution`), with `F_R(s) / exp s → exp (∓ 2 R)` as `s → ±∞`, and the adjoint
 equation `v' = -a_R v` has the solution `1 / F_R`. Neither is square integrable, so neither
-equation has a nonzero square-integrable solution. By the kernel description of
-`TauCeti.WeakDerivStep.kerTrajectoryOperatorEquiv`, `D_R` and its formal adjoint are injective;
-since `D_R` has closed range
-(`TauCeti.WeakDerivStep.isClosed_range_trajectoryOperator_of_hasLyapunovForm`) and the orthogonal
-complement of its range is the kernel of the formal adjoint, `D_R` is also surjective.
+equation has a nonzero square-integrable solution; by the kernel description of
+`TauCeti.WeakDerivStep.kerTrajectoryOperatorEquiv`, `D_R` is injective on `W^{1,2}(ℝ, E)` for
+every real Banach space `E`.
+
+The inverse of `D_R` is explicit. Since `F_R(s) = exp s * cosh (s - R) / cosh (s + R)` and the
+second factor lies between `exp (-2 |R|)` and `exp (2 |R|)`, the solution grows at rate `1` up to
+a factor: `F_R(s) ≤ exp (4 |R|) exp (-(t - s)) F_R(t)` for all `s` and `t`. So the Green integral
+of `TauCeti.Analysis.ODE.TrajectoryOperator.ScalarGreen` applies: for a finite-dimensional real
+normed space `E` and `1 ≤ p < ∞`, `D_R` is a bijection from `W^{1,p}(ℝ, E)` onto `Lᵖ(ℝ, E)` with
+`‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖D_R u‖_{Lᵖ}`, and its inverse sends a continuous compactly supported
+`f` to
+
+`u(s) = -F_R(s) ∫_{t > s} f(t) / F_R(t) dt`.
 
 For the lower bound on the inverse, the translated kernel element `ξ_R(s) = sech (s + R)` of `D₁`
 satisfies `D_R ξ_R = -exp (s - R) / (cosh (s - R) cosh (s + R))`, and pointwise
@@ -52,13 +60,13 @@ satisfies `D_R ξ_R = -exp (s - R) / (cosh (s - R) cosh (s + R))`, and pointwise
 
 The operator is written in the convention `D_A u = u' + A u` of
 `TauCeti.WeakDerivStep.trajectoryOperator`, with the coefficient `A(s) = -a_R(s) • id` acting on
-a real Banach (for the kernel and the inverse bound) or finite-dimensional inner product (for the
-cokernel) space `E`. The scalar example is `E = ℝ`; `E = ℂ` is its complexification, the zero
-Fourier mode of the cylinder operator `∂ₛ + i ∂ₜ - a_R(s)`. The other Fourier modes
-`d/ds - (a_R + 2πk)`, `k ≠ 0`, are invertible with inverse of norm at most `1` for every `R ≥ 0`
-(`TauCeti.Analysis.ODE.TrajectoryOperator.FourierMode`, which applies because `|a_R| ≤ 1` and
-`|a_R'| ≤ 1`), so on the cylinder the cancellation and the growth of the inverse are carried by the
-zero mode alone.
+a real Banach (for the kernel and the lower bound on the inverse) or finite-dimensional normed
+(for the inverse itself) space `E`. The scalar example is `E = ℝ`; `E = ℂ` is its
+complexification, the zero Fourier mode of the cylinder operator `∂ₛ + i ∂ₜ - a_R(s)`. The other
+Fourier modes `d/ds - (a_R + 2πk)`, `k ≠ 0`, are invertible with inverse of norm at most `1` for
+every `R ≥ 0` (`TauCeti.Analysis.ODE.TrajectoryOperator.FourierMode`, which applies because
+`|a_R| ≤ 1` and `|a_R'| ≤ 1`), so on the cylinder the cancellation and the growth of the inverse
+are carried by the zero mode alone.
 
 ## Main declarations
 
@@ -66,13 +74,19 @@ zero mode alone.
   form `TauCeti.neckCoeff_eq`, the bounds `-1 < a_R ≤ 1` for `R ≥ 0` and `|a_R'| ≤ 1`, the limits
   `1` at both ends, and the exponential comparisons with `-tanh` and `tanh` after translation by
   `∓R`.
-* `TauCeti.neckSolution`: the positive solution `F_R` of `v' = a_R v`, with its asymptotics.
+* `TauCeti.neckSolution`: the positive solution `F_R` of `v' = a_R v`, with its asymptotics and
+  the growth bound `TauCeti.neckSolution_le_mul_exp_mul_neckSolution`.
 * `TauCeti.squareIntegrableSolutions_neg_neckCoeff_smul_id` and
   `TauCeti.squareIntegrableSolutions_neckCoeff_smul_id`: neither `v' = a_R v` nor `v' = -a_R v`
   has a nonzero square-integrable solution.
-* `TauCeti.WeakDerivStep.ker_trajectoryOperator_neg_neckCoeff_smul_id` and
-  `TauCeti.WeakDerivStep.range_trajectoryOperator_neg_neckCoeff_smul_id`: `D_R` has zero kernel
+* `TauCeti.WeakDerivStep.ker_trajectoryOperator_neg_neckCoeff_smul_id`,
+  `TauCeti.WeakDerivStep.range_trajectoryOperator_neg_neckCoeff_smul_id` and
+  `TauCeti.WeakDerivStep.bijective_trajectoryOperator_neg_neckCoeff_smul_id`: `D_R` has zero kernel
   and is surjective.
+* `TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_neg_neckCoeff_smul_id`: the
+  bound `‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖D_R u‖_{Lᵖ}`.
+* `TauCeti.WeakDerivStep.prev_ae_eq_scalarGreenIntegral_neckSolution_of_trajectoryOperator_ae_eq`:
+  the inverse of `D_R` is the integral `-F_R(s) ∫_{t > s} f(t) / F_R(t) dt`.
 * `TauCeti.WeakDerivStep.exists_norm_trajectoryOperator_neg_neckCoeff_smul_id_le`: the test path
   `sech (s + R)` has `‖D_R u‖ ≤ 2 exp (-2 R) ‖u‖`.
 * `TauCeti.WeakDerivStep.exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff`:
@@ -90,6 +104,8 @@ zero mode alone.
   Cauchy–Riemann operators).
 * M. Schwarz, *Morse Homology*, Birkhäuser, 1993, Chapter 2 (the linearized trajectory operator
   and the additivity of its index under gluing).
+* W. A. Coppel, *Dichotomies in Stability Theory*, Lecture Notes in Mathematics **629**,
+  Springer (1978) (the Green function of `u' = a(t) u + f` under an exponential dichotomy).
 -/
 
 public section
@@ -328,6 +344,39 @@ theorem tendsto_inv_neckSolution_atBot (R : ℝ) :
   rw [Function.comp_apply, exp_neg, inv_div, ← mul_div_assoc, inv_mul_cancel₀ (exp_pos s).ne',
     one_div]
 
+/-- **`F_R` grows at rate `1` up to the factor `exp (4 |R|)`:**
+`F_R(s) ≤ exp (4 |R|) exp (-(t - s)) F_R(t)` for all `s` and `t`. Indeed `F_R(s) = exp s * c(s)`,
+and the factor `c(s) = cosh (s - R) / cosh (s + R)` lies between `exp (-2 |R|)` and
+`exp (2 |R|)`. -/
+theorem neckSolution_le_mul_exp_mul_neckSolution (R s t : ℝ) :
+    neckSolution R s ≤ exp (4 * |R|) * exp (-(t - s)) * neckSolution R t := by
+  have hshift (x y : ℝ) : cosh (x - y) ≤ exp (2 * |y|) * cosh (x + y) := by
+    calc cosh (x - y) ≤ exp |y| * cosh x := by
+          simpa [sub_eq_add_neg] using cosh_add_le_exp_abs_mul_cosh x (-y)
+      _ ≤ exp |y| * (exp |y| * cosh (x + y)) := by
+          gcongr
+          simpa using cosh_add_le_exp_abs_mul_cosh (x + y) (-y)
+      _ = exp (2 * |y|) * cosh (x + y) := by rw [← mul_assoc, ← exp_add, two_mul]
+  have h₂ : cosh (t + R) ≤ exp (2 * |R|) * cosh (t - R) := by
+    simpa [sub_eq_add_neg, add_comm] using hshift t (-R)
+  have key : cosh (s - R) * cosh (t + R) ≤ exp (4 * |R|) * (cosh (s + R) * cosh (t - R)) := by
+    calc cosh (s - R) * cosh (t + R)
+        ≤ (exp (2 * |R|) * cosh (s + R)) * (exp (2 * |R|) * cosh (t - R)) :=
+          mul_le_mul (hshift s R) h₂ (cosh_pos _).le (by positivity)
+      _ = exp (4 * |R|) * (cosh (s + R) * cosh (t - R)) := by
+          rw [show 4 * |R| = 2 * |R| + 2 * |R| by ring, exp_add]
+          ring
+  have hexp : exp (-(t - s)) * exp t = exp s := by rw [← exp_add]; ring_nf
+  have h₁ := cosh_pos (s + R)
+  rw [neckSolution_def, neckSolution_def, div_le_iff₀ h₁]
+  calc exp s * cosh (s - R) = exp s * (cosh (s - R) * cosh (t + R)) / cosh (t + R) := by
+        field_simp
+    _ ≤ exp s * (exp (4 * |R|) * (cosh (s + R) * cosh (t - R))) / cosh (t + R) := by gcongr
+    _ = exp (4 * |R|) * exp (-(t - s)) * (exp t * cosh (t - R) / cosh (t + R)) *
+          cosh (s + R) := by
+        rw [← hexp]
+        field_simp
+
 /-! ### Neither `F_R` nor `1 / F_R` is square integrable -/
 
 section Banach
@@ -513,49 +562,82 @@ theorem exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff
 
 end Banach
 
-section InnerProduct
+section FiniteDimensional
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **The glued operator is surjective.** On a finite-dimensional real inner product space `E`,
-the trajectory operator `D_R u = u' - a_R u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is onto. Together
-with `TauCeti.WeakDerivStep.ker_trajectoryOperator_neg_neckCoeff_smul_id`, `D_R` is invertible:
-the cokernel of `d/ds - tanh` has cancelled against the kernel of `d/ds + tanh`. -/
-theorem range_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ)
+/-- The growth bound of `F_R`, in the form taken by the Green integral of
+`TauCeti.Analysis.ODE.TrajectoryOperator.ScalarGreen`. -/
+private theorem neckSolution_growth (R : ℝ) :
+    ∀ s t, s ≤ t → neckSolution R s ≤ exp (4 * |R|) * exp (-1 * (t - s)) * neckSolution R t :=
+  fun s t _ ↦ by simpa using neckSolution_le_mul_exp_mul_neckSolution R s t
+
+/-- **The inverse of the glued operator has norm at most `2 exp (4 |R|)`.** On a
+finite-dimensional real normed space `E` and for `1 ≤ p < ∞`, every `u ∈ W^{1,p}(ℝ, E)` satisfies
+`‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖u' - a_R u‖_{Lᵖ}`. Together with the lower bound
+`TauCeti.WeakDerivStep.exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff`,
+the inverse of `D_R` grows exponentially in the length of the neck, at a rate between `2 R` and
+`4 R`. -/
+theorem norm_prev_le_mul_norm_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ) (hp : p ≠ ∞)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ E)
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp E p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    ‖prev _ u‖ ≤ 2 * exp (4 * |R|) * ‖trajectoryOperator AL u‖ := by
+  simpa using norm_prev_le_mul_norm_trajectoryOperator_of_scalarGrowth
+    (hasDerivAt_neckSolution R) (neckSolution_pos R) (neckSolution_growth R) one_pos hAL
+    (continuous_neckCoeff R) hp u
+
+/-- **The glued operator is bijective.** On a finite-dimensional real normed space `E` and for
+`1 ≤ p < ∞`, the trajectory operator `D_R u = u' - a_R u` is a bijection from `W^{1,p}(ℝ, E)`
+onto `Lᵖ(ℝ, E)`: the kernel of `d/ds + tanh` has cancelled against the cokernel of
+`d/ds - tanh`. -/
+theorem bijective_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ) (hp : p ≠ ∞)
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ E) :
-    (trajectoryOperator (p := 2) AL).range = ⊤ := by
-  set A : ℝ → E →L[ℝ] E := fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ E
-  have hsym : ∀ s, (A s).toLinearMap.IsSymmetric := fun s x y ↦ by
-    simp [A, inner_smul_left, inner_smul_right]
-  have hA : Continuous A := (continuous_neckCoeff R).neg.smul continuous_const
-  have hlim {l : Filter ℝ} (h : Tendsto (neckCoeff R) l (𝓝 1)) :
-      Tendsto A l (𝓝 (-ContinuousLinearMap.id ℝ E)) := by
-    simpa [A] using h.neg.smul_const (ContinuousLinearMap.id ℝ E)
-  have hgap : ∀ v, 1 * ‖v‖ ≤ ‖(-ContinuousLinearMap.id ℝ E) v‖ := fun v ↦ by simp
-  have hbot := hlim (tendsto_neckCoeff_atBot R)
-  have hclosed := isClosed_range_trajectoryOperator_of_hasLyapunovForm hA
-    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot one_pos hgap)
-    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot one_pos hgap)
-    hbot (hlim (tendsto_neckCoeff_atTop R)) AL hAL
-  -- The coefficients are symmetric, so `AL` is also the class of their adjoints.
-  have hALadj : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
-      AL s = ContinuousLinearMap.adjoint (AL s) := by
-    filter_upwards [hAL] with s hs
-    rw [hs, (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2 (hsym s)).adjoint_eq]
-  have hnegAL : -AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ neckCoeff R s • ContinuousLinearMap.id ℝ E := by
-    filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs
-    rw [hs, Pi.neg_apply, hAs]
-    simp [A]
-  have hker : (trajectoryOperator (p := 2) (-AL)).ker = ⊥ :=
-    (ker_trajectoryOperator_eq_bot_iff ((continuous_neckCoeff R).smul continuous_const) (-AL)
-      hnegAL).2 (squareIntegrableSolutions_neckCoeff_smul_id R)
-  have horth : (trajectoryOperator (p := 2) AL).rangeᗮ = ⊥ := by
-    rw [orthogonal_range_trajectoryOperator_eq_map_ker hALadj, hker, Submodule.map_bot]
-  rw [← hclosed.submodule_topologicalClosure_eq, Submodule.topologicalClosure_eq_top_iff]
-  exact horth
+    Function.Bijective (trajectoryOperator (p := p) AL) :=
+  bijective_trajectoryOperator_of_scalarGrowth (hasDerivAt_neckSolution R) (neckSolution_pos R)
+    (neckSolution_growth R) one_pos hAL (continuous_neckCoeff R) hp
+
+/-- **The glued operator is surjective.** On a finite-dimensional real normed space `E` and for
+`1 ≤ p < ∞`, the trajectory operator `D_R u = u' - a_R u` maps `W^{1,p}(ℝ, E)` onto `Lᵖ(ℝ, E)`:
+the cokernel of `d/ds - tanh` has cancelled against the kernel of `d/ds + tanh`. -/
+theorem range_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ) (hp : p ≠ ∞)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := p) AL).range = ⊤ :=
+  LinearMap.range_eq_top.2 (bijective_trajectoryOperator_neg_neckCoeff_smul_id R hp AL hAL).2
+
+/-- **The inverse of the glued operator, explicitly.** On a finite-dimensional real normed
+space `E` and for `1 ≤ p < ∞`, if `u ∈ W^{1,p}(ℝ, E)` solves `u' - a_R u = f` for a continuous
+compactly supported `f`, then
+
+`u(s) = -F_R(s) ∫_{t > s} f(t) / F_R(t) dt`
+
+for almost every `s`, where `F_R(s) = exp s * cosh (s - R) / cosh (s + R)` is the positive
+solution of `v' = a_R v`. -/
+theorem prev_ae_eq_scalarGreenIntegral_neckSolution_of_trajectoryOperator_ae_eq (R : ℝ)
+    (hp : p ≠ ∞) (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ E)
+    {f : ℝ → E} (hf : Continuous f) (hfc : HasCompactSupport f)
+    {u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp E p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
+    (hu : ⇑(trajectoryOperator AL u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] f) :
+    ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      scalarGreenIntegral (neckSolution R) f :=
+  prev_ae_eq_scalarGreenIntegral_of_trajectoryOperator_ae_eq (hasDerivAt_neckSolution R)
+    (neckSolution_pos R) (neckSolution_growth R) one_pos hAL (continuous_neckCoeff R) hp hf hfc hu
+
+end FiniteDimensional
+
+section InnerProduct
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-! ### The nonzero Fourier modes of the glued cylinder operator -/
 
