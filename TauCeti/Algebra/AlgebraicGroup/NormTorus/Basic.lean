@@ -101,19 +101,6 @@ theorem norm_unitsMap_includeRight [Module.Free k k'] (r : Rˣ) :
     show (r : R) ⊗ₜ[k] (1 : k') = algebraMap R (R ⊗[k] k') r by simp, Algebra.norm_algebraMap,
     Module.finrank_baseChange, Units.val_pow_eq_pow_val]
 
-/-- If `k'` is free but not finitely generated over `k`, the norm is trivial on every coefficient
-algebra: over a nontrivial `R`, the free `R`-module `R ⊗[k] k'` has an infinite basis. -/
-private theorem norm_eq_one_of_not_finite [Module.Free k k'] (hfin : ¬ Module.Finite k k')
-    (u : (k' ⊗[k] R)ˣ) : norm k k' R u = 1 := by
-  nontriviality R
-  have : Nontrivial k := (algebraMap k R).domain_nontrivial
-  ext
-  rw [coe_norm, Units.val_one]
-  refine Algebra.norm_eq_one_of_not_module_finite (fun h ↦ hfin ?_) _
-  let b := Module.Free.chooseBasis k k'
-  have := Module.Finite.finite_basis (Algebra.TensorProduct.basis R b)
-  exact Module.Finite.of_basis b
-
 variable (R) in
 /-- **The norm of a unit of `k'`.** For `k'` free over `k`, the norm of the image
 `a ⊗ 1` of a unit `a` of `k'` is the image in `R` of the norm of `a` over `k`. -/
@@ -121,12 +108,8 @@ variable (R) in
 theorem norm_unitsMap_includeLeft [Module.Free k k'] (a : k'ˣ) :
     norm k k' R (Units.map (Algebra.TensorProduct.includeLeft : k' →ₐ[k] k' ⊗[k] R) a) =
       Units.map (algebraMap k R : k →* R) (Algebra.normUnits k a) := by
-  by_cases hfin : Module.Finite k k'
-  · ext
-    simp
-  · ext
-    rw [norm_eq_one_of_not_finite hfin, Units.val_one, Units.coe_map, MonoidHom.coe_ofClass,
-      Algebra.coe_normUnits, Algebra.norm_eq_one_of_not_module_finite hfin, map_one]
+  ext
+  simp
 
 /-- **The norm on rational points.** Over `R = k`, through `k' ⊗[k] k ≃ k'`, the norm is the norm
 of `k'` over `k`. -/
@@ -146,9 +129,6 @@ theorem norm_unitsMap_lTensor [Module.Free k k'] {R' : Type*} [CommRing R']
     [Algebra k R'] (h : R →ₐ[k] R') (u : (k' ⊗[k] R)ˣ) :
     norm k k' R' (Units.map (Algebra.TensorProduct.lTensor (S := k') k' h : k' ⊗[k] R →* k' ⊗[k] R')
         u) = Units.map (h : R →* R') (norm k k' R u) := by
-  by_cases hfin : Module.Finite k k'
-  swap
-  · rw [norm_eq_one_of_not_finite hfin, norm_eq_one_of_not_finite hfin, map_one]
   ext
   -- after commuting the factors, `k' ⊗ h` becomes `h ⊗ k'`, along which the norm is natural
   rw [coe_norm, Units.coe_map, MonoidHom.coe_ofClass,

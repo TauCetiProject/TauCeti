@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Norm.Basic
 public import Mathlib.RingTheory.Trace.Basic
 public import Mathlib.RingTheory.TensorProduct.Free
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
+import TauCeti.RingTheory.TensorProduct.Finite
 
 /-!
 # Norm and trace under scalar extension
@@ -72,19 +73,26 @@ theorem Algebra.leftMulMatrix_rTensor {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 end LeftMulMatrix
 
-variable [Module.Free K B] [Module.Finite K B]
+variable [Module.Free K B]
 variable {P T : Type*} [CommRing P] [Algebra K P] [CommRing T] [Algebra K T]
 
 /-- The norm of `P ⊗[K] B` over `P` commutes with base change along a `K`-algebra map
-`φ : P →ₐ[K] T`. -/
+`φ : P →ₐ[K] T`. When `B` is not finite over `K` both norms are `1`. -/
 theorem Algebra.norm_rTensor (φ : P →ₐ[K] T) (x : P ⊗[K] B) :
     Algebra.norm T (Algebra.TensorProduct.rTensor B φ x) = φ (Algebra.norm P x) := by
   classical
-  let b := Module.Free.chooseBasis K B
-  rw [Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis T b),
-    Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis P b),
-    Algebra.leftMulMatrix_rTensor]
-  exact (φ.toRingHom.map_det _).symm
+  by_cases hfin : Module.Finite K B
+  · let b := Module.Free.chooseBasis K B
+    rw [Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis T b),
+      Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis P b),
+      Algebra.leftMulMatrix_rTensor]
+    exact (φ.toRingHom.map_det _).symm
+  · nontriviality T
+    have : Nontrivial P := φ.toRingHom.domain_nontrivial
+    rw [Algebra.norm_eq_one_of_not_module_finite fun h ↦ hfin (.of_baseChange K B h),
+      Algebra.norm_eq_one_of_not_module_finite fun h ↦ hfin (.of_baseChange K B h), map_one]
+
+variable [Module.Finite K B]
 
 /-- The characteristic polynomial of multiplication by `x ∈ T ⊗[K] B` over `T` is the norm of
 `X - x` over `T[X]`. -/
@@ -112,13 +120,19 @@ variable {A B : Type*} [CommRing A] [Algebra K A]
 section Norm
 
 variable [Ring B] [Algebra K B]
-variable [Module.Free K B] [Module.Finite K B]
+variable [Module.Free K B]
 
-/-- Norm commutes with scalar extension on a pure tensor. -/
+/-- Norm commutes with scalar extension on a pure tensor. When `B` is not finite over `K` both
+norms are `1`. -/
 @[simp]
 theorem Algebra.norm_baseChange_tmul (x : B) :
     Algebra.norm A ((1 : A) ⊗ₜ[K] x) = algebraMap K A (Algebra.norm K x) := by
-  simp only [Algebra.norm_apply, ← Algebra.baseChange_lmul, LinearMap.det_baseChange]
+  by_cases hfin : Module.Finite K B
+  · simp only [Algebra.norm_apply, ← Algebra.baseChange_lmul, LinearMap.det_baseChange]
+  · nontriviality A
+    have : Nontrivial K := (algebraMap K A).domain_nontrivial
+    rw [Algebra.norm_eq_one_of_not_module_finite fun h ↦ hfin (.of_baseChange K B h),
+      Algebra.norm_eq_one_of_not_module_finite hfin, map_one]
 
 end Norm
 
