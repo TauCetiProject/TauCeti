@@ -147,18 +147,35 @@ namespace MeasureTheory.AEStronglyMeasurable
 
 variable {T : Type*} {mT : MeasurableSpace T} {ν : Measure T}
 
-/-- The running maximum `max_{m < N} (re ⟪F t, gₘ⟫)⁺` of the pairings with a sequence `gₘ` is
-measurable in `t`. -/
-private theorem measurable_finsetSup_re_inner {F : T → Lp E 2 μ} (hF : StronglyMeasurable F)
-    (g : ℕ → Lp E 2 μ) (N : ℕ) :
-    Measurable fun t ↦ (Finset.range N).sup fun m ↦ (RCLike.re ⟪F t, g m⟫_𝕜).toNNReal := by
-  convert Finset.sup_induction (p := Measurable) (s := Finset.range N)
-    (f := fun m t ↦ (RCLike.re ⟪F t, g m⟫_𝕜).toNNReal) measurable_const
-    (fun _ h₁ _ h₂ ↦ h₁.sup h₂) fun m _ ↦ ((RCLike.continuous_re.comp
-      (continuous_id.inner continuous_const)).comp_stronglyMeasurable hF).measurable.real_toNNReal
-    using 1
+/-- The positive part `t ↦ (re ⟪F t, g⟫)⁺` of the pairing with a fixed `g` is measurable. -/
+private theorem measurable_re_inner_toNNReal {F : T → Lp E 2 μ} (hF : StronglyMeasurable F)
+    (g : Lp E 2 μ) : Measurable fun t ↦ (RCLike.re ⟪F t, g⟫_𝕜).toNNReal :=
+  ((RCLike.continuous_re.comp (continuous_id.inner continuous_const)).comp_stronglyMeasurable
+    hF).measurable.real_toNNReal
+
+/-- The running maximum `max_{m < N} fₘ` of measurable functions `fₘ : T → ℝ≥0` is measurable. -/
+private theorem measurable_finsetSup_range {f : ℕ → T → ℝ≥0} (hf : ∀ m, Measurable (f m))
+    (N : ℕ) : Measurable fun t ↦ (Finset.range N).sup (f · t) := by
+  convert Finset.sup_induction (p := Measurable) (s := Finset.range N) (f := f) measurable_const
+    (fun _ h₁ _ h₂ ↦ h₁.sup h₂) fun m _ ↦ hf m using 1
   ext t
   simp
+
+/-- **A measurable argmax.** For measurable `fₘ : T → ℝ≥0`, the last index `m < N` attaining the
+running maximum `max_{m < N} fₘ(t)` depends measurably on `t`. It is chosen by `Nat.findGreatest`,
+so it is at most `N`, and it attains the maximum wherever the maximum is positive. -/
+private theorem exists_measurable_finsetSup_eq {f : ℕ → T → ℝ≥0} (hf : ∀ m, Measurable (f m))
+    (N : ℕ) : ∃ ψ : T → ℕ, Measurable ψ ∧ (∀ t, ψ t ≤ N) ∧
+      ∀ t, (Finset.range N).sup (f · t) ≠ 0 → f (ψ t) t = (Finset.range N).sup (f · t) := by
+  refine ⟨fun t ↦ Nat.findGreatest (fun m ↦ m < N ∧ f m t = (Finset.range N).sup (f · t)) N,
+    measurable_findGreatest fun m _ ↦ (MeasurableSet.const _).inter
+      (measurableSet_eq_fun (hf m) (measurable_finsetSup_range hf N)),
+    fun t ↦ Nat.findGreatest_le N, fun t ht ↦ ?_⟩
+  have hN : (Finset.range N).Nonempty :=
+    Finset.nonempty_range_iff.2 fun hN ↦ ht (by simp [hN])
+  obtain ⟨m, hm, hmφ⟩ := Finset.exists_mem_eq_sup _ hN (f · t)
+  exact (Nat.findGreatest_spec (P := fun m ↦ m < N ∧ f m t = (Finset.range N).sup (f · t))
+    (Finset.mem_range.1 hm).le ⟨Finset.mem_range.1 hm, hmφ.symm⟩).2
 
 /-- **The testing step.** If a nonnegative `u ∈ L^p` and a test function `G` satisfy
 `re ⟪F t, G t⟫ = u(t) ^ p` and `‖G t‖_{q'} ≤ u(t) ^ (p - 1)`, then the duality bound
@@ -199,6 +216,94 @@ private theorem eLpNorm_le_of_re_inner_eq_rpow {p p' q' : ℝ≥0∞} [hpp : p.H
           (hum.pow_const _).aestronglyMeasurable (ae_of_all _ fun t ↦ ?_)
         rw [Real.norm_of_nonneg (Real.rpow_nonneg (hu0 t) _), Real.norm_of_nonneg (hu0 t)]
 
+/-- **Testing against a chosen index.** Let `gₘ` be test functions in the unit ball of `L^{q'}`
+and let `s` be a measurable set of finite measure on which `‖F t‖₂ ≤ R`. Let `φ ≥ 0` and an index
+`ψ` be measurable, with `φ ≤ M` on `s`, `‖g_{ψ(t)}‖₂ ≤ K`, and `re ⟪F t, g_{ψ(t)}⟫ = φ(t)` wherever
+`φ(t) ≠ 0`. Testing against `G t = φ(t) ^ (p - 1) g_{ψ(t)}` on `s ∩ {φ ≠ 0}` bounds `‖1_s φ‖_p`
+by `C`. -/
+private theorem eLpNorm_indicator_le_of_re_inner_eq {p p' q' : ℝ≥0∞}
+    [hpp : p.HolderConjugate p'] (hp : p ≠ ∞) {F : T → Lp E 2 μ} (hF : StronglyMeasurable F)
+    {g : ℕ → Lp E 2 μ} (hg1 : ∀ m, eLpNorm (g m) q' μ ≤ 1) {C : ℝ≥0∞}
+    (hC : ∀ (G : T → Lp E 2 μ) (s : Set T), ν s ≠ ∞ → (∀ t, t ∉ s → G t = 0) →
+      MemLp G ∞ ν → ‖∫ t, ⟪F t, G t⟫_𝕜 ∂ν‖ₑ ≤ C * eLpNorm (fun t ↦ eLpNorm (G t) q' μ) p' ν)
+    {s : Set T} (hs : MeasurableSet s) (hsν : ν s ≠ ∞) {R M K : ℝ≥0} (hR : ∀ t ∈ s, ‖F t‖ ≤ R)
+    {φ : T → ℝ≥0} (hφm : Measurable φ) (hφM : ∀ t ∈ s, φ t ≤ M) {ψ : T → ℕ}
+    (hψm : Measurable ψ) (hgK : ∀ t, ‖g (ψ t)‖ ≤ K)
+    (hψ : ∀ t, φ t ≠ 0 → RCLike.re ⟪F t, g (ψ t)⟫_𝕜 = φ t) :
+    eLpNorm (s.indicator fun t ↦ (φ t : ℝ)) p ν ≤ C := by
+  set r := p.toReal
+  have hr1 : 1 ≤ r := by simpa using ENNReal.toReal_mono hp hpp.one_le
+  have hr0 : r ≠ 0 := by positivity
+  -- Test on the part `D` of `s` where `φ` is positive, so that `ψ` attains `φ` there.
+  set D : Set T := s ∩ {t | φ t ≠ 0}
+  have hDm : MeasurableSet D := hs.inter (hφm (measurableSet_singleton 0)).compl
+  set u : T → ℝ := D.indicator fun t ↦ (φ t : ℝ)
+  have hsu : s.indicator (fun t ↦ (φ t : ℝ)) = u := by
+    ext t
+    by_cases hs : t ∈ s <;> by_cases h0 : φ t = 0 <;> simp [u, D, Set.indicator, hs, h0]
+  rw [hsu]
+  set G : T → Lp E 2 μ := D.indicator fun t ↦ (((φ t : ℝ) ^ (r - 1) : ℝ) : 𝕜) • g (ψ t)
+  have hu_mem : ∀ t ∈ D, u t = φ t := fun t ht ↦ Set.indicator_of_mem ht _
+  have hu_notMem : ∀ t, t ∉ D → u t = 0 := fun t ht ↦ Set.indicator_of_notMem ht _
+  have hu_nonneg : ∀ t, 0 ≤ u t := Set.indicator_nonneg fun t _ ↦ NNReal.coe_nonneg _
+  have hu_le : ∀ t, u t ≤ M := fun t ↦ by
+    by_cases ht : t ∈ D
+    · rw [hu_mem t ht]
+      exact_mod_cast hφM t ht.1
+    · rw [hu_notMem t ht]
+      exact M.coe_nonneg
+  have hum : Measurable u := (NNReal.continuous_coe.measurable.comp hφm).indicator hDm
+  -- The test function `G` and its properties.
+  have hG_eq : ∀ t ∈ D, G t = (((φ t : ℝ) ^ (r - 1) : ℝ) : 𝕜) • g (ψ t) := fun t ht ↦
+    Set.indicator_of_mem ht _
+  have hG_zero : ∀ t, t ∉ D → G t = 0 := fun t ht ↦ Set.indicator_of_notMem ht _
+  have hGm : StronglyMeasurable G := by
+    have h₁ : StronglyMeasurable fun t ↦ (((φ t : ℝ) ^ (r - 1) : ℝ) : 𝕜) :=
+      RCLike.continuous_ofReal.comp_stronglyMeasurable
+        ((NNReal.continuous_coe.measurable.comp hφm).pow_const _).stronglyMeasurable
+    have h₂ : StronglyMeasurable fun t ↦ g (ψ t) :=
+      StronglyMeasurable.of_discrete.comp_measurable hψm
+    exact (h₁.smul h₂).indicator hDm
+  have hG_re : ∀ t, RCLike.re ⟪F t, G t⟫_𝕜 = u t ^ r := fun t ↦ by
+    by_cases ht : t ∈ D
+    · have hpos : 0 < (φ t : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 ht.2)
+      rw [hG_eq t ht, inner_smul_right, RCLike.re_ofReal_mul, hψ t ht.2, hu_mem t ht,
+        Real.rpow_sub_one hpos.ne', div_mul_cancel₀ _ hpos.ne']
+    · rw [hG_zero t ht, inner_zero_right, map_zero, hu_notMem t ht, Real.zero_rpow hr0]
+  have hG_norm : ∀ t, ‖G t‖ ≤ (M : ℝ) ^ (r - 1) * K := fun t ↦ by
+    by_cases ht : t ∈ D
+    · rw [hG_eq t ht, norm_smul, RCLike.norm_ofReal,
+        abs_of_nonneg (Real.rpow_nonneg (NNReal.coe_nonneg _) _)]
+      refine mul_le_mul ?_ (hgK t) (norm_nonneg _) (Real.rpow_nonneg M.coe_nonneg _)
+      exact Real.rpow_le_rpow (NNReal.coe_nonneg _) (hu_mem t ht ▸ hu_le t) (by linarith)
+    · rw [hG_zero t ht, norm_zero]
+      positivity
+  have hG_eLpNorm : ∀ t, eLpNorm (G t) q' μ ≤ ENNReal.ofReal (u t ^ (r - 1)) := fun t ↦ by
+    by_cases ht : t ∈ D
+    · rw [hG_eq t ht, eLpNorm_congr_ae (Lp.coeFn_smul _ _), eLpNorm_const_smul, hu_mem t ht,
+        ← ofReal_norm, RCLike.norm_ofReal,
+        abs_of_nonneg (Real.rpow_nonneg (NNReal.coe_nonneg _) _)]
+      exact mul_le_of_le_one_right' (hg1 _)
+    · rw [hG_zero t ht, Lp.eLpNorm_coeFn_zero]
+      exact zero_le
+  have hGs : ∀ t, t ∉ s → G t = 0 := fun t ht ↦ hG_zero t fun h ↦ ht h.1
+  have hint : Integrable (fun t ↦ ⟪F t, G t⟫_𝕜) ν := by
+    refine memLp_one_iff_integrable.1 ((memLp_top_of_bound (hF.inner hGm).aestronglyMeasurable
+      (R * ((M : ℝ) ^ (r - 1) * K)) (ae_of_all _ fun t ↦ ?_))
+      |>.mono_exponent_of_measure_support_ne_top
+        (fun t ht ↦ by rw [hGs t ht, inner_zero_right]) hsν le_top)
+    by_cases ht : t ∈ s
+    · exact (norm_inner_le_norm _ _).trans
+        (mul_le_mul (hR t ht) (hG_norm t) (norm_nonneg _) R.coe_nonneg)
+    · rw [hGs t ht, inner_zero_right, norm_zero]
+      positivity
+  -- Testing against `G` bounds the `L^p` norm of `u = 1_D φ` by `C`.
+  have huLp : MemLp u p ν := (memLp_top_of_bound hum.aestronglyMeasurable M
+    (ae_of_all _ fun t ↦ by rw [Real.norm_of_nonneg (hu_nonneg t)]; exact hu_le t)
+    ).mono_exponent_of_measure_support_ne_top (fun t ht ↦ hu_notMem t fun h ↦ ht h.1) hsν le_top
+  exact eLpNorm_le_of_re_inner_eq_rpow (p' := p') (q' := q') hp huLp hum hu_nonneg
+    hGm.aestronglyMeasurable hint (ae_of_all _ hG_re) hG_eLpNorm
+    (hC G s hsν hGs (memLp_top_of_bound hGm.aestronglyMeasurable _ (ae_of_all _ hG_norm)))
 
 /-- **The truncated testing step.** Let `gₘ` be test functions in the unit ball of `L^{q'}`, let
 `φ_N(t) = max_{m < N} (re ⟪F t, gₘ⟫)⁺`, and let `s` be a measurable set of finite measure on which
@@ -213,111 +318,25 @@ private theorem eLpNorm_indicator_finsetSup_le {p p' q' : ℝ≥0∞} [hpp : p.H
     (hR : ∀ t ∈ s, ‖F t‖ ≤ R) :
     eLpNorm (s.indicator fun t ↦
       (((Finset.range N).sup fun m ↦ (RCLike.re ⟪F t, g m⟫_𝕜).toNNReal : ℝ≥0) : ℝ)) p ν ≤ C := by
-  set r := p.toReal
-  have hr1 : 1 ≤ r := by simpa using ENNReal.toReal_mono hp hpp.one_le
-  have hr0 : r ≠ 0 := by positivity
-  set a : ℕ → T → ℝ := fun m t ↦ RCLike.re ⟪F t, g m⟫_𝕜
-  set φ : T → ℝ≥0 := fun t ↦ (Finset.range N).sup fun m ↦ (a m t).toNNReal
-  have hφm : Measurable φ := measurable_finsetSup_re_inner hF g N
-  -- The last index `ψ(t) < N` attaining the maximum `φ(t)`, when it is positive.
-  set ψ : T → ℕ := fun t ↦ Nat.findGreatest (fun m ↦ m < N ∧ (a m t).toNNReal = φ t) N
-  have hψm : Measurable ψ := measurable_findGreatest fun m _ ↦ (MeasurableSet.const _).inter
-    (measurableSet_eq_fun ((RCLike.continuous_re.comp (continuous_id.inner
-      continuous_const)).comp_stronglyMeasurable hF).measurable.real_toNNReal hφm)
-  have hψ : ∀ t, φ t ≠ 0 → ψ t < N ∧ (a (ψ t) t).toNNReal = φ t := fun t ht ↦ by
-    have hN : (Finset.range N).Nonempty :=
-      Finset.nonempty_range_iff.2 fun hN ↦ ht (by simp [φ, hN])
-    obtain ⟨m, hm, hmφ⟩ := Finset.exists_mem_eq_sup _ hN fun m ↦ (a m t).toNNReal
-    exact Nat.findGreatest_spec (P := fun m ↦ m < N ∧ (a m t).toNNReal = φ t)
-      (Finset.mem_range.1 hm).le ⟨Finset.mem_range.1 hm, hmφ.symm⟩
-  set K : ℝ := ∑ m ∈ Finset.range N, ‖g m‖
-  have hKnn : 0 ≤ K := Finset.sum_nonneg fun m _ ↦ norm_nonneg (g m)
-  have hgK : ∀ {m}, m < N → ‖g m‖ ≤ K := fun hm ↦
-    Finset.single_le_sum (fun m _ ↦ norm_nonneg (g m)) (Finset.mem_range.2 hm)
-  have hφ_le : ∀ t ∈ s, (φ t : ℝ) ≤ R * K := fun t ht ↦ by
-    have hK : 0 ≤ ‖F t‖ * K := mul_nonneg (norm_nonneg _) hKnn
-    refine le_trans ?_ (mul_le_mul_of_nonneg_right (hR t ht) hKnn)
-    rw [← Real.coe_toNNReal _ hK]
-    refine NNReal.coe_le_coe.2 (Finset.sup_le fun m hm ↦ Real.toNNReal_le_toNNReal ?_)
-    exact (RCLike.re_le_norm _).trans ((norm_inner_le_norm _ _).trans
-      (mul_le_mul_of_nonneg_left (hgK (Finset.mem_range.1 hm)) (norm_nonneg _)))
-  -- Test on the part `D` of `s` where `φ` is positive, so that `ψ` attains the maximum there.
-  set D : Set T := s ∩ {t | φ t ≠ 0}
-  have hDm : MeasurableSet D := hs.inter (hφm (measurableSet_singleton 0)).compl
-  set u : T → ℝ := D.indicator fun t ↦ (φ t : ℝ)
-  have hsu : s.indicator (fun t ↦ (φ t : ℝ)) = u := by
-    ext t
-    by_cases hs : t ∈ s <;> by_cases h0 : φ t = 0 <;> simp [u, D, Set.indicator, hs, h0]
-  rw [hsu]
-  set G : T → Lp E 2 μ := D.indicator fun t ↦ (((φ t : ℝ) ^ (r - 1) : ℝ) : 𝕜) • g (ψ t)
-  have hu_mem : ∀ t ∈ D, u t = φ t := fun t ht ↦ Set.indicator_of_mem ht _
-  have hu_notMem : ∀ t, t ∉ D → u t = 0 := fun t ht ↦ Set.indicator_of_notMem ht _
-  have hu_nonneg : ∀ t, 0 ≤ u t := Set.indicator_nonneg fun t _ ↦ NNReal.coe_nonneg _
-  have hu_le : ∀ t, u t ≤ R * K := fun t ↦ by
-    by_cases ht : t ∈ D
-    · rw [hu_mem t ht]
-      exact hφ_le t ht.1
-    · rw [hu_notMem t ht]
-      exact mul_nonneg R.coe_nonneg hKnn
-  have hum : Measurable u := (NNReal.continuous_coe.measurable.comp hφm).indicator hDm
-  -- The test function `G` and its three properties.
-  have hG_eq : ∀ t ∈ D, G t = (((φ t : ℝ) ^ (r - 1) : ℝ) : 𝕜) • g (ψ t) := fun t ht ↦
-    Set.indicator_of_mem ht _
-  have hG_zero : ∀ t, t ∉ D → G t = 0 := fun t ht ↦ Set.indicator_of_notMem ht _
-  have hGm : StronglyMeasurable G := by
-    have h₁ : StronglyMeasurable fun t ↦ (((φ t : ℝ) ^ (r - 1) : ℝ) : 𝕜) :=
-      RCLike.continuous_ofReal.comp_stronglyMeasurable
-        ((NNReal.continuous_coe.measurable.comp hφm).pow_const _).stronglyMeasurable
-    have h₂ : StronglyMeasurable fun t ↦ g (ψ t) :=
-      StronglyMeasurable.of_discrete.comp_measurable hψm
-    exact (h₁.smul h₂).indicator hDm
-  have hG_re : ∀ t, RCLike.re ⟪F t, G t⟫_𝕜 = u t ^ r := fun t ↦ by
-    by_cases ht : t ∈ D
-    · obtain ⟨-, hmax⟩ := hψ t ht.2
-      have hpos : 0 < (φ t : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 ht.2)
-      have ha_eq : a (ψ t) t = φ t := by
-        have h0 : 0 < (a (ψ t) t).toNNReal := hmax ▸ pos_iff_ne_zero.2 ht.2
-        rw [← hmax, Real.coe_toNNReal _ (Real.toNNReal_pos.1 h0).le]
-      rw [hG_eq t ht, inner_smul_right, RCLike.re_ofReal_mul, hu_mem t ht]
-      -- Fold the pairing back into the local abbreviation `a`, so that `ha_eq` applies.
-      change (φ t : ℝ) ^ (r - 1) * a (ψ t) t = _
-      rw [ha_eq, Real.rpow_sub_one hpos.ne', div_mul_cancel₀ _ hpos.ne']
-    · rw [hG_zero t ht, inner_zero_right, map_zero, hu_notMem t ht, Real.zero_rpow hr0]
-  have hG_norm : ∀ t, ‖G t‖ ≤ (R * K) ^ (r - 1) * K := fun t ↦ by
-    have hRK : 0 ≤ (R : ℝ) * K := mul_nonneg R.coe_nonneg hKnn
-    by_cases ht : t ∈ D
-    · rw [hG_eq t ht, norm_smul, RCLike.norm_ofReal,
-        abs_of_nonneg (Real.rpow_nonneg (NNReal.coe_nonneg _) _)]
-      refine mul_le_mul ?_ (hgK (hψ t ht.2).1) (norm_nonneg _) (Real.rpow_nonneg hRK _)
-      exact Real.rpow_le_rpow (NNReal.coe_nonneg _) (hu_mem t ht ▸ hu_le t) (by linarith)
-    · rw [hG_zero t ht, norm_zero]
-      exact mul_nonneg (Real.rpow_nonneg hRK _) hKnn
-  have hG_eLpNorm : ∀ t, eLpNorm (G t) q' μ ≤ ENNReal.ofReal (u t ^ (r - 1)) := fun t ↦ by
-    by_cases ht : t ∈ D
-    · rw [hG_eq t ht, eLpNorm_congr_ae (Lp.coeFn_smul _ _), eLpNorm_const_smul, hu_mem t ht,
-        ← ofReal_norm, RCLike.norm_ofReal,
-        abs_of_nonneg (Real.rpow_nonneg (NNReal.coe_nonneg _) _)]
-      exact mul_le_of_le_one_right' (hg1 _)
-    · rw [hG_zero t ht, Lp.eLpNorm_coeFn_zero]
-      exact zero_le
-  have hGs : ∀ t, t ∉ s → G t = 0 := fun t ht ↦ hG_zero t fun h ↦ ht h.1
-  have hint : Integrable (fun t ↦ ⟪F t, G t⟫_𝕜) ν := by
-    refine memLp_one_iff_integrable.1 ((memLp_top_of_bound (hF.inner hGm).aestronglyMeasurable
-      (R * ((R * K) ^ (r - 1) * K)) (ae_of_all _ fun t ↦ ?_))
-      |>.mono_exponent_of_measure_support_ne_top
-        (fun t ht ↦ by rw [hGs t ht, inner_zero_right]) hsν le_top)
-    by_cases ht : t ∈ s
-    · exact (norm_inner_le_norm _ _).trans
-        (mul_le_mul (hR t ht) (hG_norm t) (norm_nonneg _) R.coe_nonneg)
-    · rw [hGs t ht, inner_zero_right, norm_zero]
-      exact mul_nonneg R.coe_nonneg ((norm_nonneg _).trans (hG_norm t))
-  -- Testing against `G` bounds the `L^p` norm of `u = 1_D φ` by `C`.
-  have huLp : MemLp u p ν := (memLp_top_of_bound hum.aestronglyMeasurable (R * K)
-    (ae_of_all _ fun t ↦ by rw [Real.norm_of_nonneg (hu_nonneg t)]; exact hu_le t)
-    ).mono_exponent_of_measure_support_ne_top (fun t ht ↦ hu_notMem t fun h ↦ ht h.1) hsν le_top
-  exact eLpNorm_le_of_re_inner_eq_rpow (p' := p') (q' := q') hp huLp hum hu_nonneg
-    hGm.aestronglyMeasurable hint (ae_of_all _ hG_re) hG_eLpNorm
-    (hC G s hsν hGs (memLp_top_of_bound hGm.aestronglyMeasurable _ (ae_of_all _ hG_norm)))
+  have hf : ∀ m, Measurable fun t ↦ (RCLike.re ⟪F t, g m⟫_𝕜).toNNReal := fun m ↦
+    measurable_re_inner_toNNReal hF (g m)
+  obtain ⟨ψ, hψm, hψN, hψ⟩ := exists_measurable_finsetSup_eq hf N
+  set K : ℝ≥0 := ∑ m ∈ Finset.range (N + 1), ‖g m‖₊
+  have hgK : ∀ m ≤ N, ‖g m‖ ≤ K := fun m hm ↦ by
+    rw [← coe_nnnorm]
+    exact NNReal.coe_le_coe.2 (Finset.single_le_sum (f := fun m ↦ ‖g m‖₊) (fun m _ ↦ zero_le)
+      (Finset.mem_range_succ_iff.2 hm))
+  refine eLpNorm_indicator_le_of_re_inner_eq hp hF hg1 hC hs hsν hR
+    (measurable_finsetSup_range hf N) (M := R * K) (fun t ht ↦ ?_) hψm (fun t ↦ hgK _ (hψN t))
+    fun t ht ↦ ?_
+  · refine Finset.sup_le fun m hm ↦ Real.toNNReal_le_iff_le_coe.2 ?_
+    push_cast
+    exact (RCLike.re_le_norm _).trans ((norm_inner_le_norm _ _).trans (mul_le_mul (hR t ht)
+      (hgK m (Finset.mem_range.1 hm).le) (norm_nonneg _) R.coe_nonneg))
+  · have h0 : 0 < (RCLike.re ⟪F t, g (ψ t)⟫_𝕜).toNNReal := by
+      rw [hψ t ht]
+      exact pos_iff_ne_zero.2 ht
+    rw [← hψ t ht, Real.coe_toNNReal _ (Real.toNNReal_pos.1 h0).le]
 
 /-- **Duality for mixed norms.** On σ-finite measure spaces `T` and `X`, let `(p, p')` and
 `(q, q')` be Hölder conjugate pairs with `p < ∞`, and let `F : T → L²(X, E)` be almost everywhere
@@ -360,8 +379,8 @@ theorem eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le [SigmaFinite μ] [S
     (measurableSet_spanningSets ν N).inter (measurableSet_le hF'.norm.measurable measurable_const)
   set u : ℕ → T → ℝ := fun N ↦ (s N).indicator fun t ↦ (φ N t : ℝ)
   have hum : ∀ N, Measurable (u N) := fun N ↦
-    (NNReal.continuous_coe.measurable.comp (measurable_finsetSup_re_inner hF' g N)).indicator
-      (hsm N)
+    (NNReal.continuous_coe.measurable.comp (measurable_finsetSup_range
+      (fun m ↦ measurable_re_inner_toNNReal hF' (g m)) N)).indicator (hsm N)
   have hX : ∀ N, eLpNorm (u N) p ν ≤ C := fun N ↦
     eLpNorm_indicator_finsetSup_le hp hF' hg1 hC' N (hsm N)
       (measure_mono_top Set.inter_subset_left |>.mt (measure_spanningSets_lt_top ν N).ne)

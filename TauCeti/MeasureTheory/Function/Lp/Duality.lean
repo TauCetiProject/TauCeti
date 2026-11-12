@@ -411,6 +411,63 @@ private theorem Lp.enorm_inner_le_of_forall_re_inner_le {E : Type*} [NormedAddCo
     _ ≤ ENNReal.ofReal (c * a.toReal) := ENNReal.ofReal_le_ofReal hle
     _ = ENNReal.ofReal c * a := by rw [ENNReal.ofReal_mul hc, ENNReal.ofReal_toReal hg]
 
+/-- Under the bound of `Lp.enorm_inner_le_of_forall_re_inner_le`, every bounded `g` vanishing off
+a set of finite measure satisfies `‖∫ ⟪h, g⟫‖ ≤ c ‖g‖_{q'}`: such a `g` is square integrable, and
+the integral is its pairing with `h` in `L²`. -/
+private theorem Lp.enorm_integral_inner_le_of_forall_re_inner_le {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {q' : ℝ≥0∞} (hq' : q' ≠ 0) {h : Lp E 2 μ}
+    {c : ℝ} (hc : 0 ≤ c) (H : ∀ g : Lp E 2 μ, eLpNorm g q' μ ≤ 1 → RCLike.re ⟪h, g⟫_𝕜 ≤ c)
+    {g : α → E} {s : Set α} (hs : μ s ≠ ∞) (hgs : ∀ x, x ∉ s → g x = 0) (hg : MemLp g ∞ μ) :
+    ‖∫ x, ⟪h x, g x⟫_𝕜 ∂μ‖ₑ ≤ ENNReal.ofReal c * eLpNorm g q' μ := by
+  have hg2 : MemLp g 2 μ := hg.mono_exponent_of_measure_support_ne_top hgs hs le_top
+  have hinner : ⟪h, hg2.toLp g⟫_𝕜 = ∫ x, ⟪h x, g x⟫_𝕜 ∂μ := by
+    rw [L2.inner_def]
+    exact integral_congr_ae (by filter_upwards [hg2.coeFn_toLp] with x hx; rw [hx])
+  have hnorm : eLpNorm (hg2.toLp g) q' μ = eLpNorm g q' μ := eLpNorm_congr_ae hg2.coeFn_toLp
+  rw [← hinner, ← hnorm]
+  exact Lp.enorm_inner_le_of_forall_re_inner_le hq' hc H _
+    (hnorm ▸ (hg.mono_exponent_of_measure_support_ne_top hgs hs le_top).eLpNorm_ne_top)
+
+/-- The case `q = ∞` of `Lp.exists_eLpNorm_le_one_and_lt_re_inner`: if `re ⟪h, g⟫ ≤ c` for every
+`g ∈ L²` in the unit ball of `L¹`, then `‖h‖_∞ ≤ c`. Test `‖h‖` against simple functions `g ∈ L¹`
+through `g • (h / ‖h‖)`. -/
+private theorem Lp.eLpNorm_top_le_of_forall_re_inner_le [SigmaFinite μ] {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {h : Lp E 2 μ} {c : ℝ} (hc : 0 ≤ c)
+    (H : ∀ g : Lp E 2 μ, eLpNorm g 1 μ ≤ 1 → RCLike.re ⟪h, g⟫_𝕜 ≤ c) :
+    eLpNorm h ∞ μ ≤ ENNReal.ofReal c := by
+  have hn : AEStronglyMeasurable (fun x ↦ ((‖h x‖ : ℝ) : 𝕜)) μ :=
+    (RCLike.continuous_ofReal.comp continuous_norm).comp_aestronglyMeasurable
+      (Lp.aestronglyMeasurable h)
+  rw [← eLpNorm_congr_norm_ae hn (Lp.aestronglyMeasurable h)
+    (ae_of_all _ fun x ↦ by simp)]
+  refine hn.eLpNorm_top_le_of_forall_enorm_integral_mul_le fun g hg ↦ ?_
+  set g₁ : α → E := fun x ↦ g x • ((‖h x‖⁻¹ : ℝ) : 𝕜) • h x
+  have hg₁ : ∀ x, ‖g₁ x‖ ≤ ‖g x‖ := fun x ↦ by
+    rcases eq_or_ne (h x) 0 with hx | hx
+    · simp [g₁, hx]
+    · rw [norm_smul, norm_smul, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 (norm_pos_iff.2 hx)),
+        inv_mul_cancel₀ (norm_ne_zero_iff.2 hx), mul_one]
+  have hinv : AEStronglyMeasurable (fun x ↦ ((‖h x‖⁻¹ : ℝ) : 𝕜)) μ :=
+    (RCLike.continuous_ofReal.measurable.comp_aemeasurable
+      (Lp.aestronglyMeasurable h).norm.aemeasurable.inv).aestronglyMeasurable
+  have hg₁m : AEStronglyMeasurable g₁ μ :=
+    g.aestronglyMeasurable.smul (hinv.smul (Lp.aestronglyMeasurable h))
+  have hint : ∫ x, ⟪h x, g₁ x⟫_𝕜 ∂μ = ∫ x, ((‖h x‖ : ℝ) : 𝕜) * g x ∂μ := by
+    congr 1 with x
+    rcases eq_or_ne (h x) 0 with hx | hx
+    · simp [g₁, hx]
+    · have hx' : ((‖h x‖ : ℝ) : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hx)
+      simp only [g₁, inner_smul_right, inner_self_eq_norm_sq_to_K]
+      push_cast
+      field_simp
+  calc ‖∫ x, ((‖h x‖ : ℝ) : 𝕜) * g x ∂μ‖ₑ = ‖∫ x, ⟪h x, g₁ x⟫_𝕜 ∂μ‖ₑ := by rw [hint]
+    _ ≤ ENNReal.ofReal c * eLpNorm g₁ 1 μ :=
+        Lp.enorm_integral_inner_le_of_forall_re_inner_le one_ne_zero hc H
+          (g.measure_support_lt_top_of_memLp hg one_ne_zero ENNReal.one_ne_top).ne
+          (fun x hx ↦ by simp [g₁, Function.notMem_support.1 hx])
+          ((g.memLp_top μ).of_le hg₁m (ae_of_all _ hg₁))
+    _ ≤ ENNReal.ofReal c * eLpNorm g 1 μ := by gcongr; exact eLpNorm_mono hg₁m hg₁
+
 /-- **Norming `Lᵠ` norms by square-integrable functions.** On a σ-finite measure space, let `q`
 and `q'` be Hölder conjugate, `1 ≤ q ≤ ∞`. For every `h ∈ L²`, the `L^q` norm of `h`, finite or
 not, is the supremum of `re ⟪h, g⟫` over the functions `g ∈ L²` in the unit ball of `L^{q'}`:
@@ -423,58 +480,13 @@ theorem Lp.exists_eLpNorm_le_one_and_lt_re_inner [SigmaFinite μ] {E : Type*}
   rcases lt_or_ge c 0 with hc0 | hc0
   · exact ⟨0, Lp.eLpNorm_coeFn_zero.trans_le zero_le_one, by simpa using hc0⟩
   by_contra! H
-  have key := Lp.enorm_inner_le_of_forall_re_inner_le (𝕜 := 𝕜) hqq.symm.ne_zero hc0 H
-  -- The pairing of `h` with a bounded `g` of finite-measure support is the pairing in `L²`.
-  have hpair : ∀ (g : α → E) (s : Set α), μ s ≠ ∞ → (∀ x, x ∉ s → g x = 0) → MemLp g ∞ μ →
-      ∃ hg2 : MemLp g 2 μ, ⟪h, hg2.toLp g⟫_𝕜 = ∫ x, ⟪h x, g x⟫_𝕜 ∂μ ∧
-        eLpNorm (hg2.toLp g) q' μ = eLpNorm g q' μ ∧ eLpNorm g q' μ ≠ ∞ := by
-    intro g s hs hgs hg
-    have hg2 : MemLp g 2 μ := hg.mono_exponent_of_measure_support_ne_top hgs hs le_top
-    refine ⟨hg2, ?_, eLpNorm_congr_ae hg2.coeFn_toLp, ?_⟩
-    · rw [L2.inner_def]
-      exact integral_congr_ae (by filter_upwards [hg2.coeFn_toLp] with x hx; rw [hx])
-    · exact (hg.mono_exponent_of_measure_support_ne_top hgs hs le_top).eLpNorm_ne_top
   refine hc.not_ge ?_
   rcases eq_or_ne q ∞ with rfl | hq
-  · -- For `q = ∞`, test `‖h‖` against simple functions `g ∈ L¹` through `g • (h / ‖h‖)`.
-    obtain rfl : q' = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ q').1 rfl
-    have hn : AEStronglyMeasurable (fun x ↦ ((‖h x‖ : ℝ) : 𝕜)) μ :=
-      (RCLike.continuous_ofReal.comp continuous_norm).comp_aestronglyMeasurable
-        (Lp.aestronglyMeasurable h)
-    rw [← eLpNorm_congr_norm_ae hn (Lp.aestronglyMeasurable h)
-      (ae_of_all _ fun x ↦ by simp)]
-    refine hn.eLpNorm_top_le_of_forall_enorm_integral_mul_le fun g hg ↦ ?_
-    set g₁ : α → E := fun x ↦ g x • ((‖h x‖⁻¹ : ℝ) : 𝕜) • h x
-    have hg₁ : ∀ x, ‖g₁ x‖ ≤ ‖g x‖ := fun x ↦ by
-      rcases eq_or_ne (h x) 0 with hx | hx
-      · simp [g₁, hx]
-      · rw [norm_smul, norm_smul, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 (norm_pos_iff.2 hx)),
-          inv_mul_cancel₀ (norm_ne_zero_iff.2 hx), mul_one]
-    have hinv : AEStronglyMeasurable (fun x ↦ ((‖h x‖⁻¹ : ℝ) : 𝕜)) μ :=
-      (RCLike.continuous_ofReal.measurable.comp_aemeasurable
-        (Lp.aestronglyMeasurable h).norm.aemeasurable.inv).aestronglyMeasurable
-    have hg₁m : AEStronglyMeasurable g₁ μ :=
-      g.aestronglyMeasurable.smul (hinv.smul (Lp.aestronglyMeasurable h))
-    obtain ⟨hg2, hinner, hnorm, hfin⟩ := hpair g₁ (Function.support g)
-      (g.measure_support_lt_top_of_memLp hg one_ne_zero ENNReal.one_ne_top).ne
-      (fun x hx ↦ by simp [g₁, Function.notMem_support.1 hx])
-      ((g.memLp_top μ).of_le hg₁m (ae_of_all _ hg₁))
-    have hint : ∫ x, ⟪h x, g₁ x⟫_𝕜 ∂μ = ∫ x, ((‖h x‖ : ℝ) : 𝕜) * g x ∂μ := by
-      congr 1 with x
-      rcases eq_or_ne (h x) 0 with hx | hx
-      · simp [g₁, hx]
-      · have hx' : ((‖h x‖ : ℝ) : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hx)
-        simp only [g₁, inner_smul_right, inner_self_eq_norm_sq_to_K]
-        push_cast
-        field_simp
-    calc ‖∫ x, ((‖h x‖ : ℝ) : 𝕜) * g x ∂μ‖ₑ = ‖⟪h, hg2.toLp g₁⟫_𝕜‖ₑ := by rw [hinner, hint]
-      _ ≤ ENNReal.ofReal c * eLpNorm g₁ 1 μ := by rw [← hnorm]; exact key _ (hnorm ▸ hfin)
-      _ ≤ ENNReal.ofReal c * eLpNorm g 1 μ := by gcongr; exact eLpNorm_mono hg₁m hg₁
-  · refine (Lp.aestronglyMeasurable h).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := 𝕜)
-      (q' := q') hq fun g s hs hgs hg ↦ ?_
-    obtain ⟨hg2, hinner, hnorm, hfin⟩ := hpair g s hs hgs hg
-    rw [← hinner, ← hnorm]
-    exact key _ (hnorm ▸ hfin)
+  · obtain rfl : q' = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ q').1 rfl
+    exact Lp.eLpNorm_top_le_of_forall_re_inner_le hc0 H
+  · exact (Lp.aestronglyMeasurable h).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := 𝕜)
+      (q' := q') hq fun g s hs hgs hg ↦
+        Lp.enorm_integral_inner_le_of_forall_re_inner_le hqq.symm.ne_zero hc0 H hs hgs hg
 
 end MeasureTheory
 

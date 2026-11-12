@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
+import TauCeti.Analysis.Semigroups.Group.Flow
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 
 /-!
@@ -149,10 +150,10 @@ theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le (hE : Module.finrank ℝ
   have hGint : Integrable G :=
     memLp_one_iff_integrable.1 (hG.mono_exponent_of_measure_support_ne_top hGs hs le_top)
   have hcont : Continuous fun y : ℝ × Lp V 2 (volume : Measure E) ↦
-      schrodingerPropagator V y.1 y.2 :=
-    continuous_iff_continuousAt.2 fun y ↦ by
-      simpa [ContinuousAt] using
-        (phaseGroup E V laplacianSymbol).tendsto_apply continuousAt_fst continuousAt_snd
+      schrodingerPropagator V y.1 y.2 := by
+    have h := (phaseGroup E V laplacianSymbol).toFlow.continuous continuous_fst continuous_snd
+    simp only [Semigroups.StronglyContinuousGroup.toFlow_apply, phaseGroup_apply] at h
+    simpa only [schrodingerPropagator_def] using h
   have hSG : Integrable fun t ↦ schrodingerPropagator V (-t) (G t) :=
     hGint.norm.mono' (hcont.comp_aestronglyMeasurable
       (continuous_neg.aestronglyMeasurable.prodMk hG.aestronglyMeasurable))
