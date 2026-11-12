@@ -13,7 +13,6 @@ public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 public import TauCeti.Geometry.Manifold.Orientation.Stiefel
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
