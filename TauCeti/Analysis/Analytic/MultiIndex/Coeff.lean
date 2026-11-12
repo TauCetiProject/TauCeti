@@ -33,10 +33,10 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
 * `FormalMultilinearSeries.sum_norm_mvCoeff_le`: the coefficients of total degree `k` have norms
   summing to at most `(card ι) ^ k * ‖p k‖`.
 * `FormalMultilinearSeries.summable_norm_prod_pow_smul_mvCoeff`: the multi-index series converges
-  absolutely wherever the homogeneous terms, weighted by `(card ι) ^ k`, do.
+  absolutely wherever the operator-norm bounds `(card ι) ^ k * ‖p k‖ * ‖z‖ ^ k` are summable.
 * `HasFPowerSeriesOnBall.hasSum_mvCoeff`: a function with a power series is the sum of its
-  multi-index series wherever the homogeneous terms, weighted by `(card ι) ^ k`, converge
-  absolutely.
+  multi-index series wherever the operator-norm bounds `(card ι) ^ k * ‖p k‖ * ‖z‖ ^ k` are
+  summable.
 * `HasFPowerSeriesAt.mvCoeff_eq_zero_of_eventuallyEq_zero`: the identity theorem in coefficient
   form, so that the coefficients only depend on the function
   (`HasFPowerSeriesAt.mvCoeff_eq_of_eventuallyEq`).
@@ -170,9 +170,9 @@ theorem sum_norm_mvCoeff_le [DecidableEq ι] (p : FormalMultilinearSeries 𝕜 (
         rw [sum_fiberwise_of_maps_to (fun a _ ↦ hcount a)]
         simp
 
-/-- **Absolute convergence of the multi-index series**: if the homogeneous terms of `p` at `z`,
-weighted by `(card ι) ^ k`, converge absolutely, then so does the multi-index series
-`∑ α, (∏ i, z i ^ α i) • p.mvCoeff α`. -/
+/-- **Absolute convergence of the multi-index series**: if the operator-norm bounds
+`(card ι) ^ k * ‖p k‖ * ‖z‖ ^ k` are summable, then the multi-index series
+`∑ α, (∏ i, z i ^ α i) • p.mvCoeff α` converges absolutely. -/
 theorem summable_norm_prod_pow_smul_mvCoeff (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F)
     {z : ι → 𝕜} (h : Summable fun k ↦ (Fintype.card ι : ℝ) ^ k * ‖p k‖ * ‖z‖ ^ k) :
     Summable fun α : ι → ℕ ↦ ‖(∏ i, z i ^ α i) • p.mvCoeff α‖ := by
@@ -208,8 +208,8 @@ open FormalMultilinearSeries
 
 /-- **An analytic function is the sum of its multi-index series**: if `f` has the power series
 `p` on a ball about `x`, then `f (x + z)` is the sum of `(∏ i, z i ^ α i) • p.mvCoeff α` over all
-multi-indices `α`, for `z` in the ball at which the homogeneous terms, weighted by `(card ι) ^ k`,
-converge absolutely. The sum is then absolutely convergent
+multi-indices `α`, for `z` in the ball at which the operator-norm bounds
+`(card ι) ^ k * ‖p k‖ * ‖z‖ ^ k` are summable. The sum is then absolutely convergent
 (`FormalMultilinearSeries.summable_norm_prod_pow_smul_mvCoeff`). -/
 theorem hasSum_mvCoeff {f : (ι → 𝕜) → F} {p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F}
     {x : ι → 𝕜} {r : ℝ≥0∞} (hf : HasFPowerSeriesOnBall f p x r) {z : ι → 𝕜}
