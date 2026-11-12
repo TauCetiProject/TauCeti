@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Bergman.Restriction
 public import TauCeti.Analysis.Normed.Operator.Compact.Pi
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Leray
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
+public import TauCeti.Topology.OpenPartialHomeomorph.ChartOpens
 
 /-!
 # Square-integrable holomorphic Čech cochains on a Riemann surface
@@ -56,45 +57,6 @@ public noncomputable section
 
 open CategoryTheory Metric Opposite Set TopologicalSpace
 open scoped ContDiff Manifold
-
-namespace OpenPartialHomeomorph
-
-variable {X : Type} [TopologicalSpace X]
-
-/-! ### Opens read in a chart -/
-
-/-- The plane open `e (V ∩ e.source)`, written as `e.target ∩ e.symm ⁻¹' V`. -/
-def chartRead (e : OpenPartialHomeomorph X ℂ) (V : Opens X) : Opens ℂ :=
-  ⟨e.target ∩ e.symm ⁻¹' V, e.isOpen_inter_preimage_symm V.isOpen⟩
-
-variable {e : OpenPartialHomeomorph X ℂ} {V V' : Opens X}
-
-@[simp]
-theorem mem_chartRead {z : ℂ} : z ∈ e.chartRead V ↔ z ∈ e.target ∧ e.symm z ∈ V := Iff.rfl
-
-theorem chartRead_mono (h : V ≤ V') : e.chartRead V ≤ e.chartRead V' :=
-  fun _ hz ↦ ⟨hz.1, h hz.2⟩
-
-/-- A point of `V ⊆ e.source` is read in the chart as a point of `e.chartRead V`. -/
-theorem map_mem_chartRead (hV : (V : Set X) ⊆ e.source) {x : X} (hx : x ∈ V) :
-    e x ∈ e.chartRead V :=
-  mem_chartRead.2 ⟨e.map_source (hV hx), by rwa [e.left_inv (hV hx)]⟩
-
-/-- If `closure V'` is compact and lies in `V ⊆ e.source`, the plane open read from `V'` has
-compact closure inside the plane open read from `V`. -/
-theorem isCompact_closure_chartRead (hV : (V : Set X) ⊆ e.source)
-    (hK : IsCompact (closure (V' : Set X))) (hKV : closure (V' : Set X) ⊆ V) :
-    IsCompact (closure (e.chartRead V' : Set ℂ)) ∧
-      closure (e.chartRead V' : Set ℂ) ⊆ e.chartRead V := by
-  have hKc : IsCompact (e '' closure (V' : Set X)) :=
-    hK.image_of_continuousOn (e.continuousOn.mono (hKV.trans hV))
-  have hcl : closure (e.chartRead V' : Set ℂ) ⊆ e '' closure (V' : Set X) :=
-    closure_minimal (fun z hz ↦ ⟨e.symm z, subset_closure hz.2, e.right_inv hz.1⟩) hKc.isClosed
-  refine ⟨hKc.of_isClosed_subset isClosed_closure hcl, hcl.trans ?_⟩
-  rintro _ ⟨x, hx, rfl⟩
-  exact map_mem_chartRead hV (hKV hx)
-
-end OpenPartialHomeomorph
 
 namespace TauCeti.RiemannSurface
 
@@ -169,6 +131,27 @@ def restrictCochains₀ (h : ∀ i, W' i ≤ W i) :
       ((i : ι) → bergmanSpace ℂ ((e i).chartRead (W' i))) :=
   ContinuousLinearMap.piMap fun i ↦ BergmanSpace.restrict (chartRead_mono (h i))
 
+omit hW in
+@[simp]
+theorem restrictCochains₀_apply (h : ∀ i, W' i ≤ W i)
+    (η : (i : ι) → bergmanSpace ℂ ((e i).chartRead (W i))) (i : ι) :
+    restrictCochains₀ h η i = BergmanSpace.restrict (chartRead_mono (h i)) (η i) := (rfl)
+
+omit hW in
+/-- Restricting zero-cochains to the same family is the identity. -/
+@[simp]
+theorem restrictCochains₀_refl :
+    restrictCochains₀ (e := e) (W := W) (fun _ ↦ le_rfl) = ContinuousLinearMap.id ℂ _ :=
+  ContinuousLinearMap.ext fun η ↦ funext fun i ↦ by simp
+
+omit hW in
+/-- Successive restrictions of zero-cochains agree with direct restriction. -/
+theorem restrictCochains₀_comp (h' : ∀ i, W' i ≤ W i) (h'' : ∀ i, W'' i ≤ W' i) :
+    (restrictCochains₀ h'').comp (restrictCochains₀ h') =
+      restrictCochains₀ (e := e) fun i ↦ (h'' i).trans (h' i) :=
+  ContinuousLinearMap.ext fun η ↦ funext fun i ↦
+    DFunLike.congr_fun (BergmanSpace.restrict_comp_restrict _ _) (η i)
+
 /-- Componentwise restriction of one-cochains to a smaller family in the same charts. -/
 def restrictCochains₁ (h : ∀ i, W' i ≤ W i) :
     ((i j : ι) → bergmanSpace ℂ ((e i).chartRead (W i ⊓ W j))) →L[ℂ]
@@ -182,6 +165,21 @@ theorem restrictCochains₁_apply (h : ∀ i, W' i ≤ W i)
     (ξ : (i j : ι) → bergmanSpace ℂ ((e i).chartRead (W i ⊓ W j))) (i j : ι) :
     restrictCochains₁ h ξ i j = BergmanSpace.restrict (chartRead_mono (inf_le_inf (h i) (h j)))
       (ξ i j) := (rfl)
+
+omit hW in
+/-- Restricting one-cochains to the same family is the identity. -/
+@[simp]
+theorem restrictCochains₁_refl :
+    restrictCochains₁ (e := e) (W := W) (fun _ ↦ le_rfl) = ContinuousLinearMap.id ℂ _ :=
+  ContinuousLinearMap.ext fun ξ ↦ funext fun i ↦ funext fun j ↦ by simp
+
+omit hW in
+/-- Successive restrictions of one-cochains agree with direct restriction. -/
+theorem restrictCochains₁_comp (h' : ∀ i, W' i ≤ W i) (h'' : ∀ i, W'' i ≤ W' i) :
+    (restrictCochains₁ h'').comp (restrictCochains₁ h') =
+      restrictCochains₁ (e := e) fun i ↦ (h'' i).trans (h' i) :=
+  ContinuousLinearMap.ext fun ξ ↦ funext fun i ↦ funext fun j ↦
+    DFunLike.congr_fun (BergmanSpace.restrict_comp_restrict _ _) (ξ i j)
 
 /-- Restricting a cocycle to a smaller family in the same charts gives a cocycle. -/
 theorem restrictCochains₁_mem_cocycles₁ (h : ∀ i, W' i ≤ W i)
@@ -207,6 +205,20 @@ theorem coe_restrictCocycles₁ (h : ∀ i, W' i ≤ W i) (hW' : ∀ i, (W' i : 
     (ξ : cocycles₁ hW) :
     (restrictCocycles₁ hW h hW' ξ : (i j : ι) → bergmanSpace ℂ ((e i).chartRead (W' i ⊓ W' j))) =
       restrictCochains₁ h ξ.val := (rfl)
+
+/-- Restricting cocycles to the same family is the identity. -/
+@[simp]
+theorem restrictCocycles₁_refl :
+    restrictCocycles₁ hW (fun _ ↦ le_rfl) hW = ContinuousLinearMap.id ℂ _ :=
+  ContinuousLinearMap.ext fun ξ ↦ Subtype.ext <| by simp
+
+/-- Successive restrictions of cocycles agree with direct restriction. -/
+theorem restrictCocycles₁_comp (h' : ∀ i, W' i ≤ W i) (hW' : ∀ i, (W' i : Set X) ⊆ (e i).source)
+    (h'' : ∀ i, W'' i ≤ W' i) (hW'' : ∀ i, (W'' i : Set X) ⊆ (e i).source) :
+    (restrictCocycles₁ hW' h'' hW'').comp (restrictCocycles₁ hW h' hW') =
+      restrictCocycles₁ hW (fun i ↦ (h'' i).trans (h' i)) hW'' :=
+  ContinuousLinearMap.ext fun ξ ↦ Subtype.ext <|
+    DFunLike.congr_fun (restrictCochains₁_comp h' h'') ξ.val
 
 section Compact
 
