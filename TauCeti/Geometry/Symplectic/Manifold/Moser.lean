@@ -66,6 +66,15 @@ cohomologous symplectic forms is a separate step, not taken here.
 * `TauCeti.SmoothTwoForm.moserDiffeomorph_apply_eq_self`: the isotopy fixes the points at which
   every primitive `α_t` vanishes.
 
+## Implementation notes
+
+The formalization is adapted from Tau Ceti's Gray stability theorem for contact structures,
+`TauCeti.Geometry.Contact.Gray`: the representation of families as forms on `ℝ × M`, the
+construction of the isotopy from the complete time-dependent flow on a compact manifold, and its
+identity, inverse, composition and smoothness laws follow `TauCeti.SmoothForm.grayDiffeomorph`
+and its API, and both theorems conclude via the same Moser principle for form families,
+`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_eq`.
+
 ## References
 
 * J. Moser, *On the volume elements on a manifold*, Trans. Amer. Math. Soc. 120 (1965), 286–294.
