@@ -36,13 +36,12 @@ a.e. equal to `g`.
 * `fixedSpace_eq_lpMeas_invariants` — the `Lᵖ` fixed space is exactly Mathlib's `lpMeas` subspace
   for the invariant σ-algebra.
 
-The construction and proof are adapted from
-`cameronfreer/exchangeability`, `Exchangeability/Ergodic/ShiftInvariantRepresentatives.lean` and
+The construction and proof are adapted from `cameronfreer/exchangeability`,
+`Exchangeability/Ergodic/ShiftInvariantRepresentatives.lean` and
 `Exchangeability/Ergodic/InvariantSigma.lean`, at commit
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`.  This version is generalized from the path-space shift
 to an arbitrary nonsingular endomorphism at the function level (and a measure-preserving one on
-`Lᵖ`) and uses
-`MeasurableSpace.invariants` directly, as required by the Exchangeability roadmap.
+`Lᵖ`) and uses `MeasurableSpace.invariants` directly.
 -/
 
 public section
