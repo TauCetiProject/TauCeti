@@ -474,7 +474,13 @@ variable {m : P' → P' →₀ A} {e : P → P'} {he : Function.Injective e}
   {hgr : ∀ x y, m (e x) (e y) ∈ 𝒜 (ind' (e y) - ind' (e x) + 1)}
   {htw : ∀ x, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (m (e x)) = 0}
 
+/-- The coefficients of a restricted row are those of the original row. -/
+@[simp]
+theorem comap_m_apply (x y : P) : (comap m e he hsupp hgr htw).m x y = m (e x) (e y) :=
+  Finsupp.comapDomain_apply _ _ _ _
+
 /-- Relabelling a restricted row along `e` recovers the original row. -/
+@[simp]
 theorem mapDomain_comap_m (x : P) :
     Finsupp.mapDomain e ((comap m e he hsupp hgr htw).m x) = m (e x) :=
   Finsupp.mapDomain_comapDomain _ he _ (hsupp x)

@@ -313,8 +313,9 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
     · rw [hm'P, linearCombination_congr (v' := c)
         fun z hz ↦ hc'P ⟨z, (hs.lt y.1 y.2 z hz).trans y.2⟩, hc'P]
       exact hs.hom y.1 y.2
-    · rw [hm'Q, linearCombination_mapDomain, hc'Q,
-        show c' ∘ Subtype.val = fun x : P ↦ c x.1 from funext hc'P]
+    · -- On the old generators `c'` agrees with `c`, so the attached images are the old ones.
+      have hc'Pfun : c' ∘ Subtype.val = fun x : P ↦ c x.1 := funext hc'P
+      rw [hm'Q, linearCombination_mapDomain, hc'Q, hc'Pfun]
       exact hak y
   -- A relative cycle on the generators of stage `≤ n` is one of the attached module.
   · have hrange : Set.range φ = {x | st x < n + 1} := by
