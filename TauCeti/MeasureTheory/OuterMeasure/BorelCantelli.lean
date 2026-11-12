@@ -59,12 +59,12 @@ theorem ae_eventually_mem_iff_mem_liminf {s : ℕ → Set α}
 summable measure, then almost every pointwise sequence is Cauchy. -/
 theorem ae_cauchySeq_of_summable_measure_dist {E : Type*} [PseudoMetricSpace E]
     {f : ℕ → α → E} {r : ℕ → ℝ} (hr : Summable r)
-    (hμ : ∑' n, μ {x | r n ≤ dist (f n x) (f (n + 1) x)} ≠ ∞) :
+    (hμ : ∑' n, μ {x | r n < dist (f n x) (f (n + 1) x)} ≠ ∞) :
     ∀ᵐ x ∂μ, CauchySeq (fun n ↦ f n x) := by
   filter_upwards [ae_eventually_notMem hμ] with x hx
   apply cauchySeq_of_summable_dist
   refine hr.of_norm_bounded_eventually_nat ?_
   filter_upwards [hx] with n hn
-  simpa only [Real.norm_eq_abs, abs_of_nonneg dist_nonneg] using (not_le.mp hn).le
+  simpa only [Real.norm_eq_abs, abs_of_nonneg dist_nonneg] using not_lt.mp hn
 
 end TauCeti.MeasureTheory

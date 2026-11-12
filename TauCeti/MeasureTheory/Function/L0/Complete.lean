@@ -38,9 +38,9 @@ instance instCompleteSpace : CompleteSpace (L0 μ) := by
       have := ha n
       positivity) fun f hf ↦ ?_
   have hbound (n : ℕ) :
-      μ {x | a n ≤ dist (f n x) (f (n + 1) x)} ≤ ENNReal.ofReal (a n) := by
+      μ {x | a n < dist (f n x) (f (n + 1) x)} ≤ ENNReal.ofReal (a n) := by
     have han := ha n
-    have hmarkov := measureReal_ge_le_dist (f n) (f (n + 1)) (ha n)
+    have hmarkov := measureReal_ge_le_mul_dist (f n) (f (n + 1)) (ha n)
     have hcontrol := (hf n n (n + 1) le_rfl (Nat.le_succ n)).le
     have hcancel : (1 + a n) / a n * (a n / (1 + a n) * a n) = a n := by
       field_simp [ne_of_gt han, ne_of_gt (by positivity : 0 < 1 + a n)]
@@ -48,7 +48,10 @@ instance instCompleteSpace : CompleteSpace (L0 μ) := by
       hmarkov.trans ((mul_le_mul_of_nonneg_left hcontrol (by positivity)).trans_eq hcancel)
     have hcast := ENNReal.ofReal_le_ofReal hr
     rw [ofReal_measureReal (measure_ne_top μ _)] at hcast
-    simpa only [Real.dist_eq] using hcast
+    refine (measure_mono fun x hx ↦ ?_).trans hcast
+    have hx' : a n < |f n x - f (n + 1) x| := by
+      simpa only [Set.mem_ofPred_eq, Real.dist_eq] using hx
+    exact hx'.le
   have hsum' : (∑' n, ENNReal.ofReal (a n)) ≠ ∞ := by
     rw [← ENNReal.ofReal_tsum_of_nonneg (fun n ↦ (ha n).le) hsum]
     exact ENNReal.ofReal_ne_top

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.AEEqFun
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
 # Real random variables with a bounded integral metric
@@ -43,7 +44,22 @@ def equivAEEqFun : L0 μ ≃ (Ω →ₘ[μ] ℝ) where
   right_inv _ := rfl
 
 /-- The equivalence forgets the wrapper. -/
+@[simp]
 theorem equivAEEqFun_apply (f : L0 μ) : equivAEEqFun f = f.toAEEqFun := (rfl)
+
+/-- Wrapping the underlying equivalence class recovers the random variable. -/
+@[simp]
+theorem equivAEEqFun_symm_toAEEqFun (f : L0 μ) :
+    equivAEEqFun.symm f.toAEEqFun = f := (rfl)
+
+/-- The underlying almost-everywhere class determines a random variable. -/
+theorem toAEEqFun_injective : Function.Injective (toAEEqFun : L0 μ → (Ω →ₘ[μ] ℝ)) :=
+  equivAEEqFun.injective
+
+/-- Equality of underlying classes is equality of random variables. -/
+@[simp]
+theorem toAEEqFun_inj {f g : L0 μ} : f.toAEEqFun = g.toAEEqFun ↔ f = g :=
+  toAEEqFun_injective.eq_iff
 
 /-- The inverse equivalence wraps a native almost-everywhere equivalence class. -/
 @[simp]
@@ -53,11 +69,22 @@ theorem toAEEqFun_equivAEEqFun_symm (f : Ω →ₘ[μ] ℝ) :
 instance : CoeFun (L0 μ) (fun _ ↦ Ω → ℝ) := ⟨fun f ↦ f.toAEEqFun⟩
 
 /-- The chosen representative of a real random variable is strongly measurable. -/
+@[fun_prop]
 theorem stronglyMeasurable (f : L0 μ) : StronglyMeasurable f :=
   f.toAEEqFun.stronglyMeasurable
 
 /-- The chosen representative of a real random variable is measurable. -/
+@[fun_prop]
 theorem measurable (f : L0 μ) : Measurable f := f.toAEEqFun.measurable
+
+/-- The chosen representative is almost-everywhere strongly measurable. -/
+@[fun_prop]
+theorem aestronglyMeasurable (f : L0 μ) : AEStronglyMeasurable f μ :=
+  f.stronglyMeasurable.aestronglyMeasurable
+
+/-- The chosen representative is almost-everywhere measurable. -/
+@[fun_prop]
+theorem aemeasurable (f : L0 μ) : AEMeasurable f μ := f.measurable.aemeasurable
 
 /-- Almost-everywhere equality of representatives characterizes equality in `L0`. -/
 @[ext]
@@ -99,7 +126,7 @@ section FiniteMeasure
 variable [IsFiniteMeasure μ]
 
 /-- The bounded distance integrand is integrable on a finite measure space. -/
-theorem integrable_distIntegrand (f g : L0 μ) :
+theorem integrable_abs_sub_div_one_add_abs_sub (f g : L0 μ) :
     Integrable (fun x ↦ |f x - g x| / (1 + |f x - g x|)) μ := by
   apply (integrable_const (1 : ℝ)).mono' ?_ (ae_of_all _ fun x ↦ ?_)
   · exact ((f.stronglyMeasurable.sub g.stronglyMeasurable).norm.div
@@ -108,36 +135,23 @@ theorem integrable_distIntegrand (f g : L0 μ) :
   · rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
     exact (div_le_one (by positivity)).2 (by linarith [abs_nonneg (f x - g x)])
 
-private theorem distIntegrand_triangle (a b c : ℝ) :
-    |a - c| / (1 + |a - c|) ≤
-      |a - b| / (1 + |a - b|) + |b - c| / (1 + |b - c|) := by
-  have hab := abs_nonneg (a - b)
-  have hbc := abs_nonneg (b - c)
-  have ht : |a - c| ≤ |a - b| + |b - c| := abs_sub_le a b c
-  have hm : |a - c| / (1 + |a - c|) ≤
-      (|a - b| + |b - c|) / (1 + (|a - b| + |b - c|)) := by
-    apply (div_le_div_iff₀ (by positivity) (by positivity)).2
-    nlinarith
-  refine hm.trans ?_
-  rw [add_div]
-  exact add_le_add
-    (div_le_div_of_nonneg_left hab (by positivity) (by linarith))
-    (div_le_div_of_nonneg_left hbc (by positivity) (by linarith))
-
 /-- The bounded integral distance on real random variables over a finite measure space. -/
 instance instMetricSpace : MetricSpace (L0 μ) where
   dist f g := ∫ x, |f x - g x| / (1 + |f x - g x|) ∂μ
   dist_self f := by simp
   dist_comm f g := by simp only [abs_sub_comm]
   dist_triangle f g h := by
-    rw [← integral_add (integrable_distIntegrand f g) (integrable_distIntegrand g h)]
-    exact integral_mono (integrable_distIntegrand f h)
-      ((integrable_distIntegrand f g).add (integrable_distIntegrand g h))
-      (fun x ↦ distIntegrand_triangle (f x) (g x) (h x))
+    rw [← integral_add (integrable_abs_sub_div_one_add_abs_sub f g)
+      (integrable_abs_sub_div_one_add_abs_sub g h)]
+    exact integral_mono (integrable_abs_sub_div_one_add_abs_sub f h)
+      ((integrable_abs_sub_div_one_add_abs_sub f g).add
+        (integrable_abs_sub_div_one_add_abs_sub g h))
+      (fun x ↦ by simpa only [Real.dist_eq] using
+        Metric.dist_div_one_add_dist_le (f x) (g x) (h x))
   eq_of_dist_eq_zero {f g} h := by
     apply ext
     have hzero := (integral_eq_zero_iff_of_nonneg
-      (fun x ↦ by positivity) (integrable_distIntegrand f g)).1 h
+      (fun x ↦ by positivity) (integrable_abs_sub_div_one_add_abs_sub f g)).1 h
     filter_upwards [hzero] with x hx
     have := (div_eq_zero_iff).1 hx
     rcases this with h | h
@@ -159,9 +173,9 @@ theorem dist_ofFun (f g : Ω → ℝ) (hf : AEStronglyMeasurable f μ)
   rw [hx, hy]
 
 /-- Every distance is bounded by the total mass of the finite measure. -/
-theorem dist_le_measure_univ (f g : L0 μ) : dist f g ≤ μ.real univ := by
+theorem dist_le_measureReal_univ (f g : L0 μ) : dist f g ≤ μ.real univ := by
   rw [dist_def]
-  simpa using integral_mono (integrable_distIntegrand f g) (integrable_const (1 : ℝ))
+  simpa using integral_mono (integrable_abs_sub_div_one_add_abs_sub f g) (integrable_const (1 : ℝ))
     (fun x ↦ (div_le_one (by positivity)).2 (by linarith [abs_nonneg (f x - g x)]))
 
 end FiniteMeasure

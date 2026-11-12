@@ -7,15 +7,19 @@ module
 
 public import TauCeti.MeasureTheory.Function.L0.Convergence
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+public import Mathlib.Topology.Algebra.IsUniformGroup.Defs
+public import Mathlib.Topology.MetricSpace.IsometricSMul
 import Mathlib.Algebra.Module.TransferInstance
+public import Mathlib.Algebra.Ring.TransferInstance
 import Mathlib.Topology.Sequences
 
 /-!
-# Continuous operations on real random variables
+# The topological real algebra of random variables
 
-Real random variables inherit addition, multiplication and real scalar multiplication from
-their native almost-everywhere classes. These operations are continuous for convergence in
-measure on finite measure spaces, without boundedness or integrability assumptions.
+Real random variables form a commutative real algebra, with operations inherited from their
+native almost-everywhere classes. On finite measure spaces the bounded integral metric is
+translation invariant, subtraction is uniformly continuous, and multiplication and real scalar
+multiplication are continuous without boundedness or integrability assumptions.
 -/
 
 public section
@@ -23,17 +27,33 @@ public section
 noncomputable section
 
 open MeasureTheory Filter
-open scoped Topology
+open scoped Topology ENNReal
 
 namespace TauCeti.L0
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
-/-- The additive group of real almost-everywhere classes, transported to `L0`. -/
-instance instAddCommGroup : AddCommGroup (L0 μ) := equivAEEqFun.addCommGroup
-
-/-- The multiplicative monoid of real almost-everywhere classes, transported to `L0`. -/
-instance instCommMonoid : CommMonoid (L0 μ) := equivAEEqFun.commMonoid
+/-- The commutative ring of real almost-everywhere classes, transported to `L0`. -/
+instance instCommRing : CommRing (L0 μ) := by
+  -- The native quotient has these operations but no ring instance at the pinned revision.
+  -- Its injective germ map assembles them locally, without changing native instances.
+  letI : CommRing (Ω →ₘ[μ] ℝ) := by
+    letI : NatCast (Ω →ₘ[μ] ℝ) := ⟨fun n ↦ n • (1 : Ω →ₘ[μ] ℝ)⟩
+    letI : IntCast (Ω →ₘ[μ] ℝ) := ⟨fun n ↦ n • (1 : Ω →ₘ[μ] ℝ)⟩
+    apply AEEqFun.toGerm_injective.commRing AEEqFun.toGerm
+      AEEqFun.zero_toGerm AEEqFun.one_toGerm AEEqFun.add_toGerm AEEqFun.mul_toGerm
+      AEEqFun.neg_toGerm AEEqFun.sub_toGerm
+      (fun _ _ ↦ AEEqFun.smul_toGerm _ _) (fun _ _ ↦ AEEqFun.smul_toGerm _ _)
+      AEEqFun.pow_toGerm
+    · intro n
+      -- The locally chosen cast is scalar multiplication of the native unit.
+      change (n • (1 : Ω →ₘ[μ] ℝ)).toGerm = n
+      simp [AEEqFun.smul_toGerm]
+    · intro n
+      -- The locally chosen cast is scalar multiplication of the native unit.
+      change (n • (1 : Ω →ₘ[μ] ℝ)).toGerm = n
+      simp [AEEqFun.smul_toGerm]
+  exact equivAEEqFun.commRing
 
 /-- The real module of almost-everywhere classes, transported to `L0`. -/
 instance instModule : Module ℝ (L0 μ) := equivAEEqFun.addEquiv.module ℝ
@@ -74,12 +94,51 @@ theorem toAEEqFun_mul (f g : L0 μ) : (f * g).toAEEqFun = f.toAEEqFun * g.toAEEq
   simpa only [Equiv.mulEquiv_apply, equivAEEqFun_apply] using
     (equivAEEqFun (μ := μ)).mulEquiv.map_mul f g
 
+/-- Natural powers on `L0` are inherited from the native almost-everywhere quotient. -/
+@[simp]
+theorem toAEEqFun_pow (f : L0 μ) (n : ℕ) :
+    (f ^ n).toAEEqFun = f.toAEEqFun ^ n := by
+  simpa only [Equiv.mulEquiv_apply, equivAEEqFun_apply] using
+    map_pow (equivAEEqFun (μ := μ)).mulEquiv f n
+
 /-- Real scalar multiplication on `L0` is inherited from the native almost-everywhere quotient. -/
 @[simp]
 theorem toAEEqFun_smul (c : ℝ) (f : L0 μ) :
     (c • f).toAEEqFun = c • f.toAEEqFun := by
   simpa only [AddEquiv.linearEquiv_apply, Equiv.addEquiv_apply, equivAEEqFun_apply] using
     ((equivAEEqFun (μ := μ)).addEquiv.linearEquiv ℝ).map_smul c f
+
+/-- The real algebra structure agrees with the transported module structure. -/
+instance instAlgebra : Algebra ℝ (L0 μ) :=
+  Algebra.ofModule
+    (fun c f g ↦ equivAEEqFun.injective (by
+      simp only [equivAEEqFun_apply, toAEEqFun_mul, toAEEqFun_smul]
+      exact AEEqFun.induction_on₂ f.toAEEqFun g.toAEEqFun fun f hf g hg ↦ by
+        simp only [AEEqFun.smul_mk, AEEqFun.mk_mul_mk, smul_mul_assoc]))
+    (fun c f g ↦ equivAEEqFun.injective (by
+      simp only [equivAEEqFun_apply, toAEEqFun_mul, toAEEqFun_smul]
+      exact AEEqFun.induction_on₂ f.toAEEqFun g.toAEEqFun fun f hf g hg ↦ by
+        simp only [AEEqFun.smul_mk, AEEqFun.mk_mul_mk, mul_smul_comm]))
+
+/-- The representative of zero vanishes almost everywhere. -/
+theorem coeFn_zero : ((0 : L0 μ) : Ω → ℝ) =ᵐ[μ] 0 := by
+  simpa only [← toAEEqFun_zero] using (AEEqFun.coeFn_zero (α := Ω) (β := ℝ) (μ := μ))
+
+/-- The representative of one equals one almost everywhere. -/
+theorem coeFn_one : ((1 : L0 μ) : Ω → ℝ) =ᵐ[μ] 1 := by
+  simpa only [← toAEEqFun_one] using (AEEqFun.coeFn_one (α := Ω) (β := ℝ) (μ := μ))
+
+/-- Representatives of a negative agree almost everywhere with the pointwise negative. -/
+theorem coeFn_neg (f : L0 μ) : ((-f : L0 μ) : Ω → ℝ) =ᵐ[μ] -f := by
+  simpa only [← toAEEqFun_neg] using (AEEqFun.coeFn_neg f.toAEEqFun)
+
+/-- Representatives of a difference agree almost everywhere with the pointwise difference. -/
+theorem coeFn_sub (f g : L0 μ) : ((f - g : L0 μ) : Ω → ℝ) =ᵐ[μ] f - g := by
+  simpa only [← toAEEqFun_sub] using (AEEqFun.coeFn_sub f.toAEEqFun g.toAEEqFun)
+
+/-- Representatives of a power agree almost everywhere with the pointwise power. -/
+theorem coeFn_pow (f : L0 μ) (n : ℕ) : ((f ^ n : L0 μ) : Ω → ℝ) =ᵐ[μ] f ^ n := by
+  simpa only [← toAEEqFun_pow] using (AEEqFun.coeFn_pow f.toAEEqFun n)
 
 /-- Representatives of a sum agree almost everywhere with the pointwise sum. -/
 theorem coeFn_add (f g : L0 μ) : ((f + g : L0 μ) : Ω → ℝ) =ᵐ[μ] fun x ↦ f x + g x := by
@@ -98,7 +157,7 @@ theorem coeFn_smul (c : ℝ) (f : L0 μ) : ((c • f : L0 μ) : Ω → ℝ) =ᵐ
 
 /-- Constructing a sum agrees with adding the constructed random variables. -/
 @[simp]
-theorem ofFun_add (f g : Ω → ℝ) (hf : AEStronglyMeasurable f μ)
+theorem ofFun_add_ofFun (f g : Ω → ℝ) (hf : AEStronglyMeasurable f μ)
     (hg : AEStronglyMeasurable g μ) :
     ofFun f hf + ofFun g hg = ofFun (f + g) (hf.add hg) := by
   apply equivAEEqFun.injective
@@ -107,7 +166,7 @@ theorem ofFun_add (f g : Ω → ℝ) (hf : AEStronglyMeasurable f μ)
 
 /-- Constructing a product agrees with multiplying the constructed random variables. -/
 @[simp]
-theorem ofFun_mul (f g : Ω → ℝ) (hf : AEStronglyMeasurable f μ)
+theorem ofFun_mul_ofFun (f g : Ω → ℝ) (hf : AEStronglyMeasurable f μ)
     (hg : AEStronglyMeasurable g μ) :
     ofFun f hf * ofFun g hg = ofFun (f * g) (hf.mul hg) := by
   apply equivAEEqFun.injective
@@ -116,15 +175,111 @@ theorem ofFun_mul (f g : Ω → ℝ) (hf : AEStronglyMeasurable f μ)
 
 /-- Constructing a scalar multiple agrees with scalar multiplication of a random variable. -/
 @[simp]
-theorem ofFun_smul (c : ℝ) (f : Ω → ℝ) (hf : AEStronglyMeasurable f μ) :
+theorem smul_ofFun (c : ℝ) (f : Ω → ℝ) (hf : AEStronglyMeasurable f μ) :
     c • ofFun f hf = ofFun (c • f) (hf.const_smul c) := by
   apply equivAEEqFun.injective
   simpa only [equivAEEqFun_apply, toAEEqFun_smul, toAEEqFun_ofFun] using
     AEEqFun.smul_mk c f hf
 
+/-- Constructing the zero function gives the zero random variable. -/
+@[simp]
+theorem ofFun_zero : ofFun (0 : Ω → ℝ) aestronglyMeasurable_const = (0 : L0 μ) := by
+  apply equivAEEqFun.injective
+  rw [equivAEEqFun_apply, equivAEEqFun_apply, toAEEqFun_zero]
+  exact (toAEEqFun_ofFun _ _).trans AEEqFun.zero_def.symm
+
+/-- Constructing the unit function gives the unit random variable. -/
+@[simp]
+theorem ofFun_one : ofFun (1 : Ω → ℝ) aestronglyMeasurable_const = (1 : L0 μ) := by
+  apply equivAEEqFun.injective
+  rw [equivAEEqFun_apply, equivAEEqFun_apply, toAEEqFun_one]
+  exact (toAEEqFun_ofFun _ _).trans AEEqFun.one_def.symm
+
+/-- Negation commutes with constructing a random variable. -/
+@[simp]
+theorem neg_ofFun (f : Ω → ℝ) (hf : AEStronglyMeasurable f μ) :
+    -ofFun f hf = ofFun (-f) hf.neg := by
+  apply equivAEEqFun.injective
+  simpa only [equivAEEqFun_apply, toAEEqFun_neg, toAEEqFun_ofFun] using AEEqFun.neg_mk f hf
+
+/-- Subtraction commutes with constructing random variables. -/
+@[simp]
+theorem ofFun_sub_ofFun (f g : Ω → ℝ) (hf : AEStronglyMeasurable f μ)
+    (hg : AEStronglyMeasurable g μ) :
+    ofFun f hf - ofFun g hg = ofFun (f - g) (hf.sub hg) := by
+  apply equivAEEqFun.injective
+  simpa only [equivAEEqFun_apply, toAEEqFun_sub, toAEEqFun_ofFun] using
+    (AEEqFun.mk_sub f g hf hg).symm
+
+/-- Natural powers commute with constructing a random variable. -/
+@[simp]
+theorem pow_ofFun (f : Ω → ℝ) (hf : AEStronglyMeasurable f μ) (n : ℕ) :
+    ofFun f hf ^ n = ofFun (f ^ n) (hf.pow n) := by
+  apply equivAEEqFun.injective
+  simpa only [equivAEEqFun_apply, toAEEqFun_pow, toAEEqFun_ofFun] using AEEqFun.mk_pow f hf n
+
+/-- The image of the zero `Lp` function is zero. -/
+@[simp]
+theorem ofLp_zero {p : ℝ≥0∞} : ofLp (0 : Lp ℝ p μ) = (0 : L0 μ) := by
+  apply equivAEEqFun.injective
+  simp [equivAEEqFun_apply]
+
+/-- The inclusion of `Lp` preserves addition. -/
+@[simp]
+theorem ofLp_add {p : ℝ≥0∞} (f g : Lp ℝ p μ) : ofLp (f + g) = ofLp f + ofLp g := by
+  apply equivAEEqFun.injective
+  simp [equivAEEqFun_apply]
+
+/-- The inclusion of `Lp` preserves negation. -/
+@[simp]
+theorem ofLp_neg {p : ℝ≥0∞} (f : Lp ℝ p μ) : ofLp (-f) = -ofLp f := by
+  apply equivAEEqFun.injective
+  simp [equivAEEqFun_apply]
+
+/-- The inclusion of `Lp` preserves subtraction. -/
+@[simp]
+theorem ofLp_sub {p : ℝ≥0∞} (f g : Lp ℝ p μ) : ofLp (f - g) = ofLp f - ofLp g := by
+  apply equivAEEqFun.injective
+  simp [equivAEEqFun_apply]
+
+/-- The inclusion of `Lp` preserves real scalar multiplication. -/
+@[simp]
+theorem ofLp_smul {p : ℝ≥0∞} (c : ℝ) (f : Lp ℝ p μ) : ofLp (c • f) = c • ofLp f := by
+  apply ext
+  have h := coeFn_smul c (ofLp f)
+  simp only [coeFn_ofLp] at h ⊢
+  exact (Lp.coeFn_smul c f).trans h.symm
+
 section FiniteMeasure
 
 variable [IsFiniteMeasure μ]
+
+/-- Translation preserves the bounded integral metric. -/
+instance instIsIsometricVAdd : IsIsometricVAdd (L0 μ) (L0 μ) where
+  isometry_vadd f := Isometry.of_dist_eq fun g h ↦ by
+    -- The canonical additive action is addition; this changes only its notation.
+    change dist (f + g) (f + h) = dist g h
+    rw [dist_def, dist_def]
+    apply integral_congr_ae
+    filter_upwards [coeFn_add f g, coeFn_add f h] with x hx hy
+    simp only [hx, hy, add_sub_add_left_eq_sub]
+
+/-- Subtraction is uniformly continuous for the bounded integral metric. -/
+instance instIsUniformAddGroup : IsUniformAddGroup (L0 μ) where
+  uniformContinuous_sub := by
+    apply LipschitzWith.uniformContinuous (K := 2)
+    apply LipschitzWith.of_dist_le_mul
+    intro f g
+    calc
+      dist (f.1 - f.2) (g.1 - g.2) ≤
+          dist (f.1 - f.2) (g.1 - f.2) + dist (g.1 - f.2) (g.1 - g.2) :=
+        dist_triangle _ _ _
+      _ = dist f.1 g.1 + dist f.2 g.2 := by simp
+      _ ≤ 2 * dist f g := by
+        rw [Prod.dist_eq]
+        have h₁ := le_max_left (dist f.1 g.1) (dist f.2 g.2)
+        have h₂ := le_max_right (dist f.1 g.1) (dist f.2 g.2)
+        linarith
 
 private theorem continuous_binary {op : L0 μ → L0 μ → L0 μ} {φ : ℝ → ℝ → ℝ}
     (hφ : Continuous (Function.uncurry φ))
@@ -136,17 +291,16 @@ private theorem continuous_binary {op : L0 μ → L0 μ → L0 μ} {φ : ℝ →
   have h₁ := tendsto_iff_tendstoInMeasure.1 (continuous_fst.tendsto g |>.comp hfg)
   have h₂ := tendsto_iff_tendstoInMeasure.1 (continuous_snd.tendsto g |>.comp hfg)
   have h := h₁.continuous_comp₂ h₂ hφ
-    (fun n ↦ (hφ.comp_stronglyMeasurable
+    (Eventually.of_forall fun n ↦ (hφ.comp_stronglyMeasurable
       ((f n).1.stronglyMeasurable.prodMk (f n).2.stronglyMeasurable)).aestronglyMeasurable)
   exact h.congr (fun n ↦ (hop (f n).1 (f n).2).symm) (hop g.1 g.2).symm
-
-/-- Addition of real random variables is continuous for convergence in measure. -/
-instance instContinuousAdd : ContinuousAdd (L0 μ) where
-  continuous_add := continuous_binary continuous_add coeFn_add
 
 /-- Multiplication of real random variables is continuous for convergence in measure. -/
 instance instContinuousMul : ContinuousMul (L0 μ) where
   continuous_mul := continuous_binary continuous_mul coeFn_mul
+
+/-- The bounded integral topology makes real random variables a topological ring. -/
+instance instIsTopologicalRing : IsTopologicalRing (L0 μ) where
 
 /-- Joint real scalar multiplication is continuous for convergence in measure. -/
 instance instContinuousSMul : ContinuousSMul ℝ (L0 μ) where
@@ -159,7 +313,8 @@ instance instContinuousSMul : ContinuousSMul ℝ (L0 μ) where
         (ae_of_all μ fun _ ↦ continuous_fst.tendsto g |>.comp hfg)
     have h₂ := tendsto_iff_tendstoInMeasure.1 (continuous_snd.tendsto g |>.comp hfg)
     have h := h₁.continuous_comp₂ h₂ continuous_mul
-      (fun n ↦ ((f n).2.stronglyMeasurable.const_mul (f n).1).aestronglyMeasurable)
+      (Eventually.of_forall fun n ↦
+        ((f n).2.stronglyMeasurable.const_mul (f n).1).aestronglyMeasurable)
     exact h.congr (fun n ↦ (coeFn_smul (f n).1 (f n).2).symm)
       (coeFn_smul g.1 g.2).symm
 

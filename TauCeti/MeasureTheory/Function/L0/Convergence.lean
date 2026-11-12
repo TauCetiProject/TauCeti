@@ -14,7 +14,9 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 The metric on `TauCeti.L0 μ` induces exactly native convergence in measure. The two
 quantitative estimates retain the total mass of an arbitrary finite measure; no probability
-normalization is imposed.
+normalization is imposed. The inclusion `TauCeti.L0.ofLp` preserves the native almost-everywhere
+class without requiring measure finiteness. On finite measure spaces, `TauCeti.L0.continuous_ofLp`
+proves its continuity for every `1 ≤ p`, including infinity.
 -/
 
 public section
@@ -40,10 +42,27 @@ theorem toAEEqFun_ofLp {p : ℝ≥0∞} (f : Lp ℝ p μ) :
 /-- The `Lp` inclusion uses the same representative as the native `Lp` carrier. -/
 theorem coeFn_ofLp {p : ℝ≥0∞} (f : Lp ℝ p μ) : (ofLp f : Ω → ℝ) = f := (rfl)
 
+/-- The native `Lp` inclusion is injective. -/
+theorem ofLp_injective {p : ℝ≥0∞} : Function.Injective (ofLp : Lp ℝ p μ → L0 μ) := by
+  intro f g h
+  exact Subtype.ext (congrArg toAEEqFun h)
+
+/-- Equality after the `Lp` inclusion is equality in `Lp`. -/
+@[simp]
+theorem ofLp_inj {p : ℝ≥0∞} {f g : Lp ℝ p μ} : ofLp f = ofLp g ↔ f = g :=
+  ofLp_injective.eq_iff
+
+/-- Including a function constructed in `Lp` gives its almost-everywhere class in `L0`. -/
+@[simp]
+theorem ofLp_toLp {p : ℝ≥0∞} (f : Ω → ℝ) (hf : MemLp f p μ) :
+    ofLp (hf.toLp f) = ofFun f hf.aestronglyMeasurable := by
+  apply toAEEqFun_injective
+  simpa only [toAEEqFun_ofLp, toAEEqFun_ofFun] using hf.toLp_val
+
 variable [IsFiniteMeasure μ]
 
 /-- Markov's inequality for the bounded integral metric, including the threshold itself. -/
-theorem measureReal_ge_le_dist (f g : L0 μ) {ε : ℝ} (hε : 0 < ε) :
+theorem measureReal_ge_le_mul_dist (f g : L0 μ) {ε : ℝ} (hε : 0 < ε) :
     μ.real {x | ε ≤ |f x - g x|} ≤ ((1 + ε) / ε) * dist f g := by
   have hp : 0 < ε / (1 + ε) := by positivity
   have hs : {x | ε ≤ |f x - g x|} ⊆
@@ -53,7 +72,7 @@ theorem measureReal_ge_le_dist (f g : L0 μ) {ε : ℝ} (hε : 0 < ε) :
     apply (div_le_div_iff₀ (by positivity) (by positivity)).2
     nlinarith [abs_nonneg (f x - g x)]
   have hm := mul_meas_ge_le_integral_of_nonneg
-    (ae_of_all μ fun x ↦ by positivity) (integrable_distIntegrand f g) (ε / (1 + ε))
+    (ae_of_all μ fun x ↦ by positivity) (integrable_abs_sub_div_one_add_abs_sub f g) (ε / (1 + ε))
   calc
     μ.real {x | ε ≤ |f x - g x|} ≤
         μ.real {x | ε / (1 + ε) ≤ |f x - g x| / (1 + |f x - g x|)} :=
@@ -62,9 +81,9 @@ theorem measureReal_ge_le_dist (f g : L0 μ) {ε : ℝ} (hε : 0 < ε) :
       simpa only [dist_def, mul_comm] using hm)
     _ = ((1 + ε) / ε) * dist f g := by field_simp
 
-/-- Split the integral into small differences and the exceptional event. The factor
-`μ.real univ` is essential for finite measures of arbitrary total mass. -/
-theorem dist_le_add_measureReal_lt (f g : L0 μ) {ε : ℝ} (hε : 0 ≤ ε) :
+/-- For `0 ≤ ε`, the distance is at most `ε * μ.real univ` plus the real measure of
+`{x | ε < |f x - g x|}`. The total-mass factor allows arbitrary finite measures. -/
+theorem dist_le_mul_measureReal_univ_add_measureReal_gt (f g : L0 μ) {ε : ℝ} (hε : 0 ≤ ε) :
     dist f g ≤ ε * μ.real univ + μ.real {x | ε < |f x - g x|} := by
   classical
   let s : Set Ω := {x | ε < |f x - g x|}
@@ -85,7 +104,7 @@ theorem dist_le_add_measureReal_lt (f g : L0 μ) {ε : ℝ} (hε : 0 ≤ ε) :
       exact (div_le_self (abs_nonneg _) (by linarith [abs_nonneg (f x - g x)])).trans hx'
   calc
     dist f g ≤ ∫ x, ε + s.indicator (fun _ ↦ (1 : ℝ)) x ∂μ :=
-      integral_mono (integrable_distIntegrand f g) ((integrable_const ε).add hi) hb
+      integral_mono (integrable_abs_sub_div_one_add_abs_sub f g) ((integrable_const ε).add hi) hb
     _ = ε * μ.real univ + μ.real {x | ε < |f x - g x|} := by
       rw [integral_add (integrable_const ε) hi, integral_const, integral_indicator hs,
         setIntegral_const]
@@ -100,7 +119,7 @@ theorem tendsto_iff_tendstoInMeasure {ι : Type*} {l : Filter ι} {f : ι → L0
   · intro h ε hε
     have hd := tendsto_iff_dist_tendsto_zero.mp h
     apply squeeze_zero (fun i ↦ measureReal_nonneg)
-      (fun i ↦ measureReal_ge_le_dist (f i) g hε)
+      (fun i ↦ measureReal_ge_le_mul_dist (f i) g hε)
     simpa using hd.const_mul ((1 + ε) / ε)
   · intro h
     apply Metric.tendsto_nhds.mpr
@@ -113,7 +132,7 @@ theorem tendsto_iff_tendstoInMeasure {ι : Type*} {l : Filter ι} {f : ι → L0
       nlinarith
     have hevent := (h ε hε).eventually (gt_mem_nhds (half_pos hδ))
     filter_upwards [hevent] with i hi
-    have hb := dist_le_add_measureReal_lt (f i) g hε.le
+    have hb := dist_le_mul_measureReal_univ_add_measureReal_gt (f i) g hε.le
     have hsub : μ.real {x | ε < |f i x - g x|} ≤ μ.real {x | ε ≤ |f i x - g x|} := by
       exact measureReal_mono (by
         intro x hx
@@ -123,6 +142,7 @@ theorem tendsto_iff_tendstoInMeasure {ι : Type*} {l : Filter ι} {f : ι → L0
     linarith
 
 /-- Convergence in the native `Lp` norm implies convergence in the bounded integral metric. -/
+@[fun_prop]
 theorem continuous_ofLp {p : ℝ≥0∞} [Fact (1 ≤ p)] :
     Continuous (ofLp : Lp ℝ p μ → L0 μ) := by
   apply continuous_iff_continuousAt.mpr
