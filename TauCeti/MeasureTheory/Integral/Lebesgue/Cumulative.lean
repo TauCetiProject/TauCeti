@@ -8,21 +8,15 @@ module
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 public import Mathlib.Topology.Order.Cadlag
-public import TauCeti.MeasureTheory.Measure.Interval
-import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Topology.Order.IsLUB
 
 /-!
-# Cumulative lower integrals: left continuity and budget truncation
+# Left continuity of cumulative lower integrals
 
 Cumulative nonnegative integrals over open initial segments are left-continuous, even when
 infinite. For an atomless measure the same holds for closed initial segments. No integrability
 or measurability of the integrand is needed. In particular, accumulated square energy has
 left-continuous extended-valued paths before any moment or local-integrability assumption.
-
-Turning an integrand off wherever its cumulative mass exceeds a budget bounds its total
-mass by that budget. This bound permits finite-energy truncations even for inputs whose
-original cumulative mass becomes infinite.
 -/
 
 public section
@@ -69,22 +63,5 @@ theorem isLeftContinuous_setLIntegral_Iic (μ : Measure ι) [NullSingletonClass 
     IsLeftContinuous (fun t ↦ ∫⁻ s in Iic t, f s ∂μ) := by
   simpa only [← restrict_Iio_eq_restrict_Iic] using
     isLeftContinuous_setLIntegral_Iio μ f
-
-omit [OrderTopology ι] [DenselyOrdered ι] [FirstCountableTopology ι] in
-/-- Truncating a nonnegative integrand when its accumulated mass exceeds `C` bounds its
-total mass by `C`. The original accumulated mass may become infinite. -/
-theorem lintegral_indicator_setLIntegral_Iic_le [OrderClosedTopology ι] [OpensMeasurableSpace ι]
-    [SecondCountableTopology ι] (μ : Measure ι) (f : ι → ℝ≥0∞) (C : ℝ≥0∞) :
-    ∫⁻ t, {u | ∫⁻ v in Iic u, f v ∂μ ≤ C}.indicator f t ∂μ ≤ C := by
-  let ν := μ.withDensity f
-  have hν (t : ι) : ν (Iic t) = ∫⁻ v in Iic t, f v ∂μ :=
-    withDensity_apply _ measurableSet_Iic
-  have hmono : Monotone (fun t ↦ ν (Iic t)) :=
-    fun _ _ h ↦ measure_mono (Iic_subset_Iic.mpr h)
-  have hD : MeasurableSet {t | ν (Iic t) ≤ C} := hmono.measurable measurableSet_Iic
-  have hbound := ν.measure_le_of_forall_measure_Iic_le
-    (s := {t | ν (Iic t) ≤ C}) (C := C) (fun _ h ↦ h)
-  rw [withDensity_apply f hD, ← lintegral_indicator hD] at hbound
-  simpa only [hν] using hbound
 
 end MeasureTheory.Measure
