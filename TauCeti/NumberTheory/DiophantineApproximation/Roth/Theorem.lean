@@ -99,7 +99,7 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
       n + (4 * log (12 * b * max 1 (house α)) + 2 * log (2 * max 1 |α|) + 4) / L := by
   set σ := (5 * ε / 4) ^ 2 ^ (n - 1) with hσ_def
   set C₁ := log (12 * b * max 1 (house α)) with hC₁_def
-  set h : ℕ → ℝ := fun k ↦ logHeight₁ (β k) with h_def
+  set h : ℕ → ℝ := fun k ↦ logHeight₁ (β k)
   have hσ₀ : 0 < σ := by positivity
   have hσ : σ ≤ 5 * ε / 4 :=
     pow_le_of_le_one (by positivity) (by linarith) (pow_ne_zero _ two_ne_zero)
@@ -133,7 +133,7 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
     (Real.log_exp _)
   -- Roth's lemma bounds the index of `P` at `β`.
   have : NeZero n := ⟨hn.ne'⟩
-  set P' := P.map (Int.castRingHom ℚ) with hP'_def
+  set P' := P.map (Int.castRingHom ℚ)
   have hP'0 : P' ≠ 0 := fun h0 ↦ hP0 (map_injective _ (RingHom.injective_int _) (by simpa))
   have hP'deg (i : Fin n) : P'.degreeOf i ≤ r i := (degreeOf_map_le _ P i).trans (hPdeg i)
   have hP'height : P'.logHeight ≤ C₁ * ∑ k ∈ range n, (⌊D / h k⌋₊ : ℝ) := hsum ▸ hPlog
@@ -207,7 +207,6 @@ theorem _root_.IsAlgebraic.finite_setOfPred_abs_sub_le_mulHeight₁_rpow_neg {α
     linarith
   -- Multiplying `1 + ε < κ (1 - ε) (1 / 2 - 3 ε)` by `n ≥ 1` contradicts `key`, as
   -- `C₂ / L ≤ ε ≤ ε n`.
-  have key' : κ * (1 - ε) * ((1 / 2 - 3 * ε) * n) ≤ n + C₂ / L := key
   have hκεn : (1 + ε) * n < κ * (1 - ε) * ((1 / 2 - 3 * ε) * n) := by
     linarith [mul_lt_mul_of_pos_right hκε (by positivity : (0 : ℝ) < n)]
   linarith [mul_le_mul_of_nonneg_left hn₁ hε₀.le]

@@ -105,12 +105,18 @@ theorem mgf_compoundPoissonMeasure (r : ℝ≥0) (hf : Measurable f) {t : ℝ}
   simpa only [pgf_def, id_eq] using pgf_poissonMeasure r (mgf f μ t)
 
 omit [SFinite μ] in
-/-- Compounding the normalized restriction of a measure to a set of finite positive mass, at
+/-- Compounding the normalized restriction of a measure to a set of finite mass, at
 rate equal to that mass, exponentiates the restricted exponential integral minus the mass. -/
-theorem mgf_compoundPoissonMeasure_cond (hf : Measurable f) {s : Set α} (hs0 : μ s ≠ 0)
+theorem mgf_compoundPoissonMeasure_cond (hf : Measurable f) {s : Set α}
     (hs : μ s ≠ ∞) {t : ℝ} (ht : IntegrableOn (fun x ↦ exp (t * f x)) s μ) :
     mgf f (compoundPoissonMeasure (μ s).toNNReal μ[|s]) t =
       exp (∫ x in s, exp (t * f x) ∂μ - μ.real s) := by
+  rcases eq_or_ne (μ s) 0 with hs0 | hs0
+  · simp only [hs0, Measure.restrict_eq_zero.2 hs0, measureReal_def, ENNReal.toNNReal_zero,
+      compoundPoissonMeasure_zero, mgf, integral_zero_measure, ENNReal.toReal_zero, sub_zero,
+      exp_zero]
+    rw [integral_dirac' _ _ (by fun_prop : Measurable fun x ↦ exp (t * f x)).stronglyMeasurable]
+    simp
   have hcond : Integrable (fun x ↦ exp (t * f x)) μ[|s] := by
     rw [ProbabilityTheory.cond]
     exact ht.smul_measure (ENNReal.inv_ne_top.mpr hs0)

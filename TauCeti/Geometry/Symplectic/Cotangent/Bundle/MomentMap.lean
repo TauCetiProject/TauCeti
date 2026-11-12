@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift
-public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
+public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Torus
 
 import TauCeti.Topology.FiberBundle.Separation
 
@@ -57,6 +57,8 @@ reduced.
   larger group.
 * `TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap`: `μ` is a coadjoint-equivariant
   moment map for the canonical symplectic form.
+* `TauCeti.CotangentBundle.hamiltonianTorusData_momentMap`: the cotangent lift of a smooth action
+  of a commutative Lie group, such as a torus, is a Hamiltonian torus action with moment map `μ`.
 
 ## References
 
@@ -211,5 +213,24 @@ theorem isEquivariantMomentMap_momentMap :
   apply_smul := momentMap_smul
 
 end Equivariant
+
+section Torus
+
+variable {T : Type*} [TopologicalSpace T] [ChartedSpace HG T] [CommGroup T] [MulAction T M]
+  [CompleteSpace EG] [LieGroup IG ∞ T] [T2Space T] [BoundarylessManifold IG T]
+  [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I ∞ M]
+  [ContMDiffSMul IG I ∞ T M] [ContMDiffConstSMul I ∞ T M]
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+/-- **Cotangent lifts of torus actions are Hamiltonian torus actions.** The cotangent lift of a
+smooth action of a commutative Lie group `T` on `M` preserves the canonical symplectic form of
+`T*M`, and `⟨μ(x, p), ξ⟩ = p(ξ_M(x))` is a `T`-invariant moment map of it. -/
+theorem hamiltonianTorusData_momentMap :
+    (symplecticForm I M).HamiltonianTorusData (momentMap IG T) where
+  toIsEquivariantMomentMap := isEquivariantMomentMap_momentMap
+  mpullback_smul := mpullback_smul_symplecticForm
+
+end Torus
 
 end TauCeti.CotangentBundle

@@ -106,7 +106,7 @@ private lemma IsTriangular.mul_diagElem {p : ℕ} (hp : p.Prime) {a f : Fin n �
       diagElem_primePowDiag_mul_apply_diagCoset_add hp.pos ha hf]
     intro D hD hne
     by_contra hDE
-    obtain ⟨g, hg, rfl, hag, h, hh, hE, hgh⟩ :=
+    obtain ⟨g, _, rfl, hag, h, hh, hE, hgh⟩ :=
       key (HeckeCosetModule.mem_support_iff.1 hD) (right_ne_zero_of_mul hDE)
     -- the occurring coset is the leading one, so `g + f` dominates `a + f`; as `a` dominates
     -- `g`, this forces `g = a`

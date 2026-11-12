@@ -177,10 +177,15 @@ private theorem trace_evenHalfSpinAction_ι_bilin_comm (u v : V) :
   exact mul_left_cancel₀ (by exact_mod_cast hQe) h
 
 /-- **The trace of `c(u) c(v)` on an eigenspace of `Γ`** is `-⟪u, v⟫` times its dimension. -/
-theorem trace_evenHalfSpinAction_ι_bilin
-    [FiniteDimensional ℂ (eigenspace (ρ (chirality Q o)) ε)] (u v : V) :
+theorem trace_evenHalfSpinAction_ι_bilin (u v : V) :
     LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε ((even.ι Q).bilin u v)) =
       -⟪u, v⟫ * finrank ℂ (eigenspace (ρ (chirality Q o)) ε) := by
+  -- If the eigenspace is infinite-dimensional, both sides are zero by convention.
+  by_cases hfin : FiniteDimensional ℂ (eigenspace (ρ (chirality Q o)) ε)
+  swap
+  · have hb : ¬∃ s : Finset (eigenspace (ρ (chirality Q o)) ε), Nonempty (Basis s ℂ _) :=
+      fun ⟨_, ⟨b⟩⟩ ↦ hfin (Module.Finite.of_basis b)
+    simp [LinearMap.trace, hb, Module.finrank_of_not_finite hfin]
   -- By symmetry, twice the trace is the trace of `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
   have h := congrArg (fun x ↦ LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε x))
     (even_ι_bilin_add_swap_eq_neg_two_inner hQ u v)
@@ -361,13 +366,26 @@ theorem coe_halfSpinCliffordMulEquiv_symm_apply_of_neg_norm_sq
 end ChiralEquiv
 
 variable (ρ) in
+omit hQ in
 /-- The two eigenspaces of `Γ` have the same dimension: `dim W⁻ = dim W⁺`. -/
 theorem finrank_eigenspace_chirality_neg (ε : ℂ) :
     finrank ℂ (eigenspace (ρ (chirality Q o)) (-ε)) =
       finrank ℂ (eigenspace (ρ (chirality Q o)) ε) := by
-  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
-  obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  exact (halfSpinCliffordMulEquiv o ρ ε (v := v) (by simpa [hQ] using hv)).finrank_eq.symm
+  by_cases hQ₀ : ∀ v, Q v = 0
+  · -- `Γ` squares to zero, so it has no nonzero eigenvalue and both eigenspaces vanish
+    -- unless `ε = 0`.
+    have hbot (δ : ℂ) (hδ : δ ≠ 0) : eigenspace (ρ (chirality Q o)) δ = ⊥ := by
+      refine Submodule.eq_bot_iff _ |>.2 fun ψ hψ ↦ ?_
+      have h := Module.End.mem_eigenspace_iff.1 hψ
+      have h0 : ρ (chirality Q o * chirality Q o) ψ = 0 := by
+        rw [chirality_mul_self_of_forall_eq_zero o hQ₀, map_zero, LinearMap.zero_apply]
+      rw [map_mul, mul_apply_eq_comp, h, map_smul, h, smul_smul] at h0
+      exact (smul_eq_zero.1 h0).resolve_left (mul_ne_zero hδ hδ)
+    by_cases hε : ε = 0
+    · rw [hε, neg_zero]
+    · rw [hbot ε hε, hbot (-ε) (neg_ne_zero.2 hε)]
+  · obtain ⟨v, hv⟩ := not_forall.1 hQ₀
+    exact (halfSpinCliffordMulEquiv o ρ ε hv).finrank_eq.symm
 
 variable [FiniteDimensional ℂ W]
 
@@ -384,7 +402,7 @@ def cliffordMulEquiv {ε : ℂ} {ψ : W} (hψ : ψ ∈ eigenspace (ρ (chirality
       map_smul' r v := by ext; simp }
     (fun v w h ↦ map_ι_apply_left_injective ρ (fun v hv ↦ by simpa [hQ] using hv) hψ₀
       (congrArg Subtype.val h))
-    (by rw [finrank_real_of_complex, finrank_eigenspace_chirality_neg o hQ ρ, h₂,
+    (by rw [finrank_real_of_complex, finrank_eigenspace_chirality_neg o ρ, h₂,
       (Fact.out : finrank ℝ V = 4)])
 
 /-- `cliffordMulEquiv` is Clifford multiplication: it sends `v` to `c(v) ψ`. -/

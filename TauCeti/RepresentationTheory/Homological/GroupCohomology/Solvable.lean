@@ -96,19 +96,23 @@ private theorem natCard_groupCohomology_two_res_dvd [Finite G] [Group.IsSolvable
     exact mul_dvd_mul (hcyc H f hf N hp) (hres ▸ ih _ hlt N _ hfN rfl)
 
 /-- **`H²` of a finite solvable group is bounded by its cyclic subquotients.** Let `A` be a
-representation of a finite solvable group `G`. Suppose that `H¹(H, A) = 0` for every subgroup `H`
+representation of a solvable group `G`. Suppose that `H¹(H, A) = 0` for every subgroup `H`
 of `G` (given as an injective homomorphism `f : H →* G`), and that for every normal subgroup `N`
 of prime index in such an `H`, the order of `H²(H ⧸ N, A^N)` divides `[H : N]`. Then the order of
-`H²(G, A)` divides `#G`; in particular `H²(G, A)` is finite. -/
-theorem natCard_groupCohomology_two_dvd_natCard [Finite G] [Group.IsSolvable G] (A : Rep k G)
+`H²(G, A)` divides `#G`; for finite `G` in particular `H²(G, A)` is finite (for infinite `G` the
+order `#G` is `0` by convention and the statement is trivial). -/
+theorem natCard_groupCohomology_two_dvd_natCard [Group.IsSolvable G] (A : Rep k G)
     (h1 : ∀ (H : Type u) [Group H] (f : H →* G), Function.Injective f →
       IsZero (groupCohomology (res f A) 1))
     (hcyc : ∀ (H : Type u) [Group H] (f : H →* G), Function.Injective f →
       ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         Nat.card (groupCohomology ((res f A).quotientToInvariants N) 2) ∣ N.index) :
     Nat.card (groupCohomology A 2) ∣ Nat.card G := by
-  have h := natCard_groupCohomology_two_res_dvd A h1 hcyc _ G (MonoidHom.id G)
-    Function.injective_id rfl
-  rwa [res_id] at h
+  rcases finite_or_infinite G with hG | hG
+  · have h := natCard_groupCohomology_two_res_dvd A h1 hcyc _ G (MonoidHom.id G)
+      Function.injective_id rfl
+    rwa [res_id] at h
+  · rw [Nat.card_eq_zero_of_infinite (α := G)]
+    exact dvd_zero _
 
 end TauCeti.groupCohomology
