@@ -46,7 +46,9 @@ def underEquiv (n : ℕ) :
     -- The lifted first arrow is the original first arrow, preceded by an identity.
     exact congrArg (fun g ↦ (⟨t.obj 0, t.obj 1, g⟩ : Quiver.Total C)) (Category.id_comp _)
   right_inv s := by
-    -- Lifting the structure arrows of s recovers s.
+    -- Lifting the structure arrows of s recovers s: `Under.lift (s ⋙ Under.forget x) α` is
+    -- definitionally s, by eta for functors and for objects and morphisms of `Under x` (Mathlib
+    -- has no eta lemma for `Under.lift`), which the final `rfl` uses.
     let α : (Functor.const _).obj x ⟶ s ⋙ Under.forget x :=
       { app i := (s.obj i).hom
         naturality i j f := by simp }

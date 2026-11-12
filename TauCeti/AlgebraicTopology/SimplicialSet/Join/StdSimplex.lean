@@ -397,30 +397,23 @@ lemma inr_comp_coneIso_hom :
   apply yonedaEquiv.injective
   refine stdSimplex.ext _ _ fun i ↦ ?_
   rw [coneIso, Iso.trans_hom, Functor.mapIso_hom, ← Category.assoc, yonedaEquiv_comp,
-    stdSimplex.hom_app_apply, yonedaEquiv_inr_comp_stdSimplexIso_hom, CosimplicialObject.δ,
-    yonedaEquiv_map, yonedaEquiv_map, stdSimplex.objEquiv_symm_apply,
-    stdSimplex.objEquiv_symm_apply, eqToIso.hom, SimplexCategory.eqToHom_toOrderHom]
-  apply Fin.ext
-  simp [SimplexCategory.δ]
+    stdSimplex.hom_app_apply, yonedaEquiv_inr_comp_stdSimplexIso_hom]
+  -- Both sides are now vertex maps of morphisms of `SimplexCategory`, evaluated at `i`.
+  rw [CosimplicialObject.δ, yonedaEquiv_map, yonedaEquiv_map, stdSimplex.objEquiv_symm_apply,
+    stdSimplex.objEquiv_symm_apply]
+  ext
+  simp [SimplexCategory.δ, SimplexCategory.eqToHom_toOrderHom]
 
 /-- The vertex `0` of `Δ[n + 1]` is the cone point of `Δ[0] ⋆ Δ[n]`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma const_zero_comp_coneIso_inv :
     stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ 0) ≫ (coneIso.{u} n).inv = inl _ _ := by
   rw [Iso.comp_inv_eq, inl_comp_coneIso_hom]
 
 /-- The face of `Δ[n + 1]` opposite to the vertex `0` is the base of `Δ[0] ⋆ Δ[n]`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma δ_zero_comp_coneIso_inv : stdSimplex.δ 0 ≫ (coneIso.{u} n).inv = inr _ _ := by
   rw [Iso.comp_inv_eq, inr_comp_coneIso_hom]
-
-/-- The vertex `j` of the composite of `Δ[d] ⟶ Δ[a]` and `G : Δ[a] ⟶ Δ[k]` is the vertex of `G`
-at the image of `j`. -/
-private lemma yonedaEquiv_map_comp_apply {d a k : ℕ} (g : ⦋d⦌ ⟶ ⦋a⦌) (G : Δ[a] ⟶ (Δ[k] : SSet.{u}))
-    (j : Fin (d + 1)) :
-    yonedaEquiv (stdSimplex.map g ≫ G) j = yonedaEquiv G (g.toOrderHom j) := by
-  rw [← yonedaEquiv_naturality]
-  rfl
 
 /-- Maps from the cone `Δ[0] ⋆ Δ[n]` to a standard simplex are determined by their restrictions to
 the cone point and to the base: every vertex of `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]` lies in one of them. -/
@@ -432,11 +425,11 @@ theorem hom_ext_stdSimplex {k : ℕ} {σ σ' : join Δ[0] Δ[n] ⟶ (Δ[k] : SSe
   cases i using Fin.cases with
   | zero =>
       rw [← const_zero_comp_coneIso_inv_assoc, ← const_zero_comp_coneIso_inv_assoc] at h₀
-      simpa only [yonedaEquiv_map_comp_apply, SimplexCategory.const_apply] using
+      simpa only [stdSimplex.yonedaEquiv_map_comp_apply, SimplexCategory.const_apply] using
         congr(yonedaEquiv $h₀ 0)
   | succ i =>
       rw [← δ_zero_comp_coneIso_inv_assoc, ← δ_zero_comp_coneIso_inv_assoc] at h
-      simpa [CosimplicialObject.δ, yonedaEquiv_map_comp_apply, SimplexCategory.δ] using
+      simpa [CosimplicialObject.δ, SimplexCategory.δ] using
         congr(yonedaEquiv $h i)
 
 /-- The isomorphism `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]` is natural in `Δ[n]`, where maps of `Δ[n + 1]` fix

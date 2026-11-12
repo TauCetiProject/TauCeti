@@ -37,6 +37,45 @@ namespace CategoryTheory.nerve
 
 variable {C : Type u} [Category.{v} C] (x : C)
 
+/-- Reindexing a string of arrows under x along `f` reindexes its string of arrows starting at x
+along the extension `SimplexCategory.vertexJoin.map f` of `f` fixing the initial vertex. -/
+lemma underEquiv_symm_map_coe {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : ComposableArrows (Under x) n) :
+    ((ComposableArrows.underEquiv x m).symm ((nerve (Under x)).map f.op s)).1 =
+      (nerve C).map (SimplexCategory.vertexJoin.map f).op
+        ((ComposableArrows.underEquiv x n).symm s).1 := by
+  symm
+  -- Both strings drop their first arrow to the reindexing along f of the string s. The nerve acts
+  -- by reindexing strings, and dropping the first arrow is reindexing along δ 0, so the steps
+  -- between these reindexings hold by unfolding `nerve`.
+  have h₁ : ((nerve C).map (SimplexCategory.vertexJoin.map f).op
+      ((ComposableArrows.underEquiv x n).symm s).1).δ₀ =
+      (nerve C).map (SimplexCategory.δ 0 ≫ SimplexCategory.vertexJoin.map f).op
+        ((ComposableArrows.underEquiv x n).symm s).1 := rfl
+  have h₂ : (nerve C).map (f ≫ SimplexCategory.δ 0).op
+      ((ComposableArrows.underEquiv x n).symm s).1 = (nerve C).map f.op (s ⋙ Under.forget x) := rfl
+  have h₃ : (nerve C).map f.op (s ⋙ Under.forget x) =
+      ((nerve (Under x)).map f.op s ⋙ Under.forget x) := rfl
+  refine ComposableArrows.ext_succ_of_totalArrow (h₁.trans ((congrArg (fun g : ⦋m⦌ ⟶ ⦋n + 1⦌ ↦
+      (nerve C).map g.op ((ComposableArrows.underEquiv x n).symm s).1)
+      (SimplexCategory.δ_zero_comp_vertexJoin_map f)).trans (h₂.trans (h₃.trans
+        (ComposableArrows.precomp_δ₀ _ _).symm)))) ?_
+  -- The first arrow of the reindexed string runs from the vertex 0 to the vertex f 0 + 1.
+  have key (i j : Fin (n + 2)) (hij : i ≤ j) (hi : i = 0) (hj : j = (f.toOrderHom 0).succ) :
+      ((ComposableArrows.underEquiv x n).symm s).1.totalArrow i j hij =
+        ((ComposableArrows.underEquiv x n).symm s).1.totalArrow 0 (f.toOrderHom 0).succ
+          (Fin.zero_le _) := by
+    subst hi hj
+    rfl
+  refine (ComposableArrows.totalArrow_whiskerLeft _ _ _ _ _).trans
+    ((key _ _ _ (SimplexCategory.vertexJoin_map_zero f)
+      (SimplexCategory.vertexJoin_map_succ f 0)).trans
+        ((ComposableArrows.totalArrow_precomp_zero_succ _ _ _).trans ?_))
+  -- The first structure arrow followed by the arrow to f 0 is the structure arrow of f 0.
+  exact (congrArg (fun a ↦ (⟨x, _, a⟩ : Quiver.Total C))
+    (Under.w (s.map (homOfLE (Fin.zero_le (f.toOrderHom 0)))))).trans
+      (ComposableArrows.totalArrow_def ((ComposableArrows.underEquiv x m).symm
+        ((nerve (Under x)).map f.op s)).1 0 1 (Fin.zero_le _)).symm
+
 /-- The cone `Δ[0] ⋆ Δ[n] ⟶ nerve C` on a string of arrows under x: the string of n + 1 arrows
 prepending the structure arrow of its first object, read through `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`. -/
 private noncomputable def cone (n : ℕ) (s : ComposableArrows (Under x) n) :
@@ -69,39 +108,8 @@ private lemma cone_naturality {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌)
       cone x m ((nerve (Under x)).map f.op s) := by
   unfold cone
   rw [join.map_comp_coneIso_hom_assoc]
-  refine congrArg ((join.coneIso m).hom ≫ ·)
-    ((SSet.yonedaEquiv_symm_naturality_left _ _).trans (congrArg _ ?_))
-  -- Both strings drop their first arrow to the reindexing along f of the string s. The nerve acts
-  -- by reindexing strings, and dropping the first arrow is reindexing along δ 0, so the steps
-  -- between these reindexings hold by unfolding `nerve`.
-  have h₁ : ((nerve C).map (SimplexCategory.vertexJoin.map f).op
-      ((ComposableArrows.underEquiv x n).symm s).1).δ₀ =
-      (nerve C).map (SimplexCategory.δ 0 ≫ SimplexCategory.vertexJoin.map f).op
-        ((ComposableArrows.underEquiv x n).symm s).1 := rfl
-  have h₂ : (nerve C).map (f ≫ SimplexCategory.δ 0).op
-      ((ComposableArrows.underEquiv x n).symm s).1 = (nerve C).map f.op (s ⋙ Under.forget x) := rfl
-  have h₃ : (nerve C).map f.op (s ⋙ Under.forget x) =
-      ((nerve (Under x)).map f.op s ⋙ Under.forget x) := rfl
-  refine ComposableArrows.ext_succ_of_totalArrow (h₁.trans ((congrArg (fun g : ⦋m⦌ ⟶ ⦋n + 1⦌ ↦
-      (nerve C).map g.op ((ComposableArrows.underEquiv x n).symm s).1)
-      (SimplexCategory.δ_zero_comp_vertexJoin_map f)).trans (h₂.trans (h₃.trans
-        (ComposableArrows.precomp_δ₀ _ _).symm)))) ?_
-  -- The first arrow of the reindexed string runs from the vertex 0 to the vertex f 0 + 1.
-  have key (i j : Fin (n + 2)) (hij : i ≤ j) (hi : i = 0) (hj : j = (f.toOrderHom 0).succ) :
-      ((ComposableArrows.underEquiv x n).symm s).1.totalArrow i j hij =
-        ((ComposableArrows.underEquiv x n).symm s).1.totalArrow 0 (f.toOrderHom 0).succ
-          (Fin.zero_le _) := by
-    subst hi hj
-    rfl
-  refine (ComposableArrows.totalArrow_whiskerLeft _ _ _ _ _).trans
-    ((key _ _ _ (SimplexCategory.vertexJoin_map_zero f)
-      (SimplexCategory.vertexJoin_map_succ f 0)).trans
-        ((ComposableArrows.totalArrow_precomp_zero_succ _ _ _).trans ?_))
-  -- The first structure arrow followed by the arrow to f 0 is the structure arrow of f 0.
-  exact (congrArg (fun a ↦ (⟨x, _, a⟩ : Quiver.Total C))
-    (Under.w (s.map (homOfLE (Fin.zero_le (f.toOrderHom 0)))))).trans
-      (ComposableArrows.totalArrow_def ((ComposableArrows.underEquiv x m).symm
-        ((nerve (Under x)).map f.op s)).1 0 1 (Fin.zero_le _)).symm
+  exact congrArg ((join.coneIso m).hom ≫ ·) ((SSet.yonedaEquiv_symm_naturality_left _ _).trans
+    (congrArg _ (underEquiv_symm_map_coe x f s).symm))
 
 /-- The string of n + 1 arrows starting at x read off from a cone `Δ[0] ⋆ Δ[n] ⟶ nerve C`
 with cone point x, through `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`. -/
