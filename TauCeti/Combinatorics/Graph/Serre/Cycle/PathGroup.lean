@@ -282,22 +282,24 @@ cycle of that dart for the spanning forest of positive tree darts. -/
 
 /-- The class in the abelianized path group of the product of tree loops prescribed by an
 integral chain. -/
-private noncomputable def loopClass : (O →₀ ℤ) →+ Additive (Abelianization (PathGroup Γ v)) :=
+private noncomputable def loopClass : (O →₀ ℤ) →+ Additive (Group.Abelianization (PathGroup Γ v)) :=
   Finsupp.liftAddHom fun e =>
-    zmultiplesHom _ (Additive.ofMul (Abelianization.of (T.loop v e.1)))
+    zmultiplesHom _ (Additive.ofMul (Group.Abelianization.of (T.loop v e.1)))
 
 private theorem loopClass_single (e : O) (n : ℤ) :
-    T.loopClass v (Finsupp.single e n) = n • Additive.ofMul (Abelianization.of (T.loop v e.1)) := by
+    T.loopClass v (Finsupp.single e n) =
+      n • Additive.ofMul (Group.Abelianization.of (T.loop v e.1)) := by
   simp [loopClass]
 
 private theorem loopClass_dartChain (hO : Γ.IsOrientation O) (e : Γ.E) :
-    T.loopClass v (Γ.dartChain O ℤ e) = Additive.ofMul (Abelianization.of (T.loop v e)) := by
+    T.loopClass v (Γ.dartChain O ℤ e) = Additive.ofMul (Group.Abelianization.of (T.loop v e)) := by
   by_cases he : e ∈ O
   · simp [dartChain_of_mem ℤ hO he, loopClass_single]
   · simp [dartChain_of_rev_mem ℤ hO ((hO.mem_rev_iff Γ e).mpr he), loopClass_single]
 
 private theorem loopClass_chain (hO : Γ.IsOrientation O) {a b : Γ.V} (p : Γ.Path a b) :
-    T.loopClass v (Path.chain Γ O ℤ p) = Additive.ofMul (Abelianization.of (T.basedPath v p)) := by
+    T.loopClass v (Path.chain Γ O ℤ p) =
+      Additive.ofMul (Group.Abelianization.of (T.basedPath v p)) := by
   induction p with
   | nil => simp
   | cons p e ih =>
@@ -307,11 +309,11 @@ private theorem loopClass_chain (hO : Γ.IsOrientation O) {a b : Γ.V} (p : Γ.P
 
 /-- The cycle class on the abelianized path group. -/
 private noncomputable def abCycleClass (hO : Γ.IsOrientation O) :
-    Additive (Abelianization (PathGroup Γ v)) →+ (Γ.incidenceBoundary O ℤ).ker :=
-  (Abelianization.lift (PathGroup.cycleClass hO ℤ)).toAdditiveLeft
+    Additive (Group.Abelianization (PathGroup Γ v)) →+ (Γ.incidenceBoundary O ℤ).ker :=
+  (Group.Abelianization.lift (PathGroup.cycleClass hO ℤ)).toAdditiveLeft
 
 private theorem abCycleClass_of (hO : Γ.IsOrientation O) (g : PathGroup Γ v) :
-    abCycleClass v hO (Additive.ofMul (Abelianization.of g)) =
+    abCycleClass v hO (Additive.ofMul (Group.Abelianization.of g)) =
       (PathGroup.cycleClass hO ℤ g).toAdd := by
   simp [abCycleClass]
 
@@ -336,7 +338,7 @@ the cycle class of closed paths induces an isomorphism from the abelianized path
 kernel of the integral incidence boundary of an orientation. The spanning tree enters only
 through the inverse, which sends a cycle to the product of the tree loops through its darts. -/
 noncomputable def abelianizationEquivCycle (hO : Γ.IsOrientation O) :
-    Additive (Abelianization (PathGroup Γ v)) ≃+ (Γ.incidenceBoundary O ℤ).ker :=
+    Additive (Group.Abelianization (PathGroup Γ v)) ≃+ (Γ.incidenceBoundary O ℤ).ker :=
   AddMonoidHom.toAddEquiv (abCycleClass v hO)
     ((T.loopClass v).comp (Γ.incidenceBoundary O ℤ).ker.subtype.toAddMonoidHom)
     (by
@@ -350,7 +352,7 @@ noncomputable def abelianizationEquivCycle (hO : Γ.IsOrientation O) :
 /-- The isomorphism sends the class of a closed path to its cycle class; in particular it does
 not depend on the spanning tree. -/
 @[simp] theorem abelianizationEquivCycle_of (hO : Γ.IsOrientation O) (g : PathGroup Γ v) :
-    T.abelianizationEquivCycle v hO (Additive.ofMul (Abelianization.of g)) =
+    T.abelianizationEquivCycle v hO (Additive.ofMul (Group.Abelianization.of g)) =
       (PathGroup.cycleClass hO ℤ g).toAdd :=
   abCycleClass_of v hO g
 
@@ -358,7 +360,7 @@ not depend on the spanning tree. -/
 @[simp] theorem abelianizationEquivCycle_symm_cycleClass (hO : Γ.IsOrientation O)
     (g : PathGroup Γ v) :
     (T.abelianizationEquivCycle v hO).symm (PathGroup.cycleClass hO ℤ g).toAdd =
-      Additive.ofMul (Abelianization.of g) := by
+      Additive.ofMul (Group.Abelianization.of g) := by
   rw [← T.abelianizationEquivCycle_of v hO, AddEquiv.symm_apply_apply]
 
 /-- The inverse isomorphism sends the integral fundamental cycle of a positive dart outside the
