@@ -152,7 +152,7 @@ theorem integral_pow_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) (m : ℝ
       · intro k hk
         simp only [Finset.mem_filter, Finset.mem_range] at *
         exact ⟨by omega, even_two_mul k⟩
-      · intro a ha b hb hab
+      · intro a _ b _ hab
         omega
       · intro k hk
         simp only [Finset.mem_filter, Finset.mem_range] at hk

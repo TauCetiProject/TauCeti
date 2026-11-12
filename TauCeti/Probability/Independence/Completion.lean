@@ -37,7 +37,7 @@ theorem Indep.eventuallyMeasurableSpace_right (h : Indep m₁ m₂ P) :
     Indep m₁ (eventuallyMeasurableSpace m₂ (ae P)) P := by
   rw [Indep_iff] at h ⊢
   rintro A B hA ⟨B', hB', hBB'⟩
-  rw [measure_congr (EventuallyEqSet.inter EventuallyEq.rfl hBB'),
+  rw [measure_congr (EventuallyEqSet.inter Filter.EventuallyEqSet.rfl hBB'),
     measure_congr hBB']
   exact h A B' hA hB'
 

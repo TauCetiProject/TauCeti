@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Topology.OpenPartialHomeomorph.IsImage
+public import Mathlib.Topology.LocallyClosed
 import Mathlib.Topology.Algebra.Group.Basic
 import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 
@@ -64,6 +65,7 @@ defined without the hypothesis `d ≤ n`, so that charts and analytic functions 
 * `TauCeti.AnalyticOnSubmanifold.analyticOnNhd_of_isOpen`, `IsOpen.analyticOnSubmanifold_iff`: on
   open sets, analyticity in charts is ambient analyticity.
 * `TauCeti.IsAnalyticSubmanifold.of_isOpen_preimage_val`: nonempty relatively open subsets.
+* `TauCeti.IsAnalyticSubmanifold.isLocallyClosed`: analytic submanifolds are locally closed.
 * `TauCeti.isAnalyticSubmanifold_coordSubspace`, `IsOpen.isAnalyticSubmanifold`,
   `TauCeti.isAnalyticSubmanifold_singleton`: coordinate subspaces, open sets and points.
 * `TauCeti.isConnected_coordSubspace`: coordinate subspaces are connected over a connected field.
@@ -301,6 +303,22 @@ theorem IsAnalyticSubmanifold.of_isOpen_preimage_val (hS : IsAnalyticSubmanifold
     · intro hxT
       exact ⟨hTS hxT, (Set.ext_iff.mp hUT ⟨x, hTS hxT⟩).mpr hxT⟩
   simpa only [h] using hS.inter hU (h.symm ▸ hne)
+
+/-- An analytic submanifold is locally closed in its ambient coordinate space. -/
+theorem IsAnalyticSubmanifold.isLocallyClosed (hS : IsAnalyticSubmanifold d S) :
+    IsLocallyClosed S := by
+  rw [isLocallyClosed_iff_isLocallyClosedAt]
+  intro x hx
+  obtain ⟨c, hxc, hc⟩ := hS.exists_isAnalyticChart x hx
+  refine isLocallyClosedAt_iff_exists_isClosed_preimage_val.2
+    ⟨c.source, c.open_source.mem_nhds hxc, ?_⟩
+  have hclosed : IsClosed {y : Fin n → 𝕜 | ∀ i : Fin n, d ≤ i.val → y i = 0} := by
+    simp_rw [ofPred_forall]
+    exact isClosed_iInter fun i ↦ isClosed_iInter fun _ ↦
+      isClosed_eq (continuous_apply i) continuous_const
+  convert hclosed.preimage c.continuousOn.domRestrict using 1
+  ext y
+  exact hc.mem_iff y.property
 
 /-- **Locality.** A nonempty set that is locally a `d`-dimensional analytic submanifold around each
 of its points is a `d`-dimensional analytic submanifold. -/

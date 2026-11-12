@@ -49,11 +49,10 @@ classification of the finite-dimensional real division algebras with centre `ℝ
 
 ## References
 
-This is the Brauer-group half of the Hamilton-quaternion worked example of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md)
-("`ℍ[ℝ] ⊗_ℝ ℍ[ℝ] ≃ M₄(ℝ)`, so `[ℍ]` has order 2"), whose algebra half is
-`TauCeti/Algebra/CentralSimple/Quaternion.lean`. See P. Gille, T. Szamuely, *Central Simple Algebras
-and Galois Cohomology*, CUP (2006), §1.1 and §2.4.
+The algebra-level counterpart, the isomorphism `ℍ[ℝ] ⊗[ℝ] ℍ[ℝ] ≃ₐ[ℝ] M₄(ℝ)`, is
+`TauCeti.Quaternion.tensorSelfAlgEquivMatrix` in `TauCeti/Algebra/CentralSimple/Quaternion.lean`.
+See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, CUP (2006), §1.1 and
+§2.4.
 -/
 
 public section

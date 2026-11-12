@@ -105,7 +105,7 @@ private theorem eq_zero_of_sum_pow_mul_C_add_C_mul_X_pow_eq
   set ε : ℕ → ℕ → k := fun m j ↦ (Q m j).coeff h.natDegree / h.coeff h.natDegree
   -- The coefficient of `X ^ (p deg h)` expresses `e` in the monomials `a ^ m b ^ j`.
   have he : ∑ m ∈ range p, ∑ j ∈ range p, ε m j ^ p * (a ^ m * b ^ j) = e := by
-    have hc := congrArg (coeff · (p * h.natDegree)) H
+    have hc := congrArg (fun q : k[X] ↦ q.coeff (p * h.natDegree)) H
     simp only [finsetSum_coeff, coeff_mul_C, coeff_pow_char_mul, coeff_C_mul] at hc
     rw [eq_comm, ← mul_div_cancel_right₀ e (pow_ne_zero p hη), ← hc, sum_div]
     refine sum_congr rfl fun m _ ↦ ?_
@@ -134,7 +134,7 @@ private theorem eq_zero_of_sum_pow_mul_C_add_C_mul_X_pow_eq
     refine mul_left_cancel₀ hh ?_
     rw [map_mul, map_natCast]
     linear_combination h2
-  have h4 := congrArg (coeff · 1) h3
+  have h4 := congrArg (fun q : k[X] ↦ q.coeff 1) h3
   simp only [coeff_C_mul_X, coeff_C, one_ne_zero, ite_false] at h4
   have hi : (i : k) ≠ 0 := by
     rw [Ne, CharP.cast_eq_zero_iff k p]
