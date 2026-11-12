@@ -15,6 +15,9 @@ This file collects general facts about paths and cycles in a simple graph, compl
 
 ## Main results
 
+* `SimpleGraph.Walk.InternallyDisjoint`: walks sharing only their common endpoints.
+* `SimpleGraph.Walk.exists_mem_support_ne_ne`: a walk between distinct nonadjacent vertices
+  visits an internal vertex.
 * `SimpleGraph.Walk.IsPath.start_notMem_tail_support`: a path does not return to its start.
 * `SimpleGraph.Walk.IsPath.exists_support_eq_cons_append`: the support of a path between distinct
   endpoints splits as `a :: (I ++ [b])` with duplicate-free internal vertices and adjacent
@@ -55,6 +58,72 @@ theorem IsPath.start_notMem_tail_support {u v : V} {p : G.Walk u v} (hp : p.IsPa
   have h := hp.support_nodup
   rw [← cons_tail_support] at h
   exact (List.nodup_cons.1 h).1
+
+section InternallyDisjoint
+
+variable {s t : V} {p q : G.Walk s t}
+
+/-- Two walks from `s` to `t` are *internally disjoint* when they share no vertex other than `s`
+and `t`. -/
+def InternallyDisjoint (p q : G.Walk s t) : Prop :=
+  ∀ v ∈ p.support, v ∈ q.support → v = s ∨ v = t
+
+theorem internallyDisjoint_def :
+    p.InternallyDisjoint q ↔ ∀ v ∈ p.support, v ∈ q.support → v = s ∨ v = t :=
+  Iff.rfl
+
+theorem InternallyDisjoint.symm (h : p.InternallyDisjoint q) : q.InternallyDisjoint p :=
+  fun v hq hp ↦ h v hp hq
+
+theorem internallyDisjoint_comm : p.InternallyDisjoint q ↔ q.InternallyDisjoint p :=
+  ⟨.symm, .symm⟩
+
+/-- Two distinct internally disjoint paths form a cycle when one is traversed in reverse. -/
+theorem InternallyDisjoint.isCycle_append_reverse (h : p.InternallyDisjoint q) (hp : p.IsPath)
+    (hq : q.IsPath) (hpq : p ≠ q) : (p.append q.reverse).IsCycle := by
+  refine hp.isCycle_append (Walk.isPath_reverse_iff q |>.2 hq) ?_ ?_
+  · rw [List.disjoint_left]
+    intro x hxp hxq
+    have hxq' : x ∈ q.support := List.mem_of_mem_dropLast (by simpa using hxq)
+    obtain hxs | hxt := h x (List.mem_of_mem_tail hxp) hxq'
+    · subst x
+      exact hp.start_notMem_tail_support hxp
+    · subst x
+      exact (Walk.isPath_reverse_iff q |>.2 hq).start_notMem_tail_support hxq
+  · by_contra hlength
+    push Not at hlength
+    exact hpq (Walk.eq_of_length_le_one hlength.1 (by simpa using hlength.2))
+
+/-- The two arcs obtained by splitting a cycle at a vertex are internally disjoint walks with the
+same endpoints. -/
+theorem IsCycle.takeUntil_internallyDisjoint_dropUntil_reverse [DecidableEq V]
+    {c : G.Walk s s} (hc : c.IsCycle)
+    (ht : t ∈ c.support) :
+    (c.takeUntil t ht).InternallyDisjoint (c.dropUntil t ht).reverse := by
+  have hdisj : (c.takeUntil t ht).support.tail.Disjoint
+      (c.dropUntil t ht).support.tail := by
+    have hnodup := hc.2
+    rw [← c.take_spec ht, Walk.tail_support_append, List.nodup_append'] at hnodup
+    exact hnodup.2.2
+  intro x hxp hxq
+  have hxq' : x ∈ (c.dropUntil t ht).support := by simpa using hxq
+  by_cases hxs : x = s
+  · exact .inl hxs
+  by_cases hxt : x = t
+  · exact .inr hxt
+  exfalso
+  apply hdisj
+  · exact ((c.takeUntil t ht).mem_support_iff.mp hxp).resolve_left hxs
+  · exact ((c.dropUntil t ht).mem_support_iff.mp hxq').resolve_left hxt
+
+/-- A walk between distinct nonadjacent vertices visits a vertex other than its endpoints. -/
+theorem exists_mem_support_ne_ne (hst : s ≠ t) (hadj : ¬G.Adj s t) (p : G.Walk s t) :
+    ∃ v ∈ p.support, v ≠ s ∧ v ≠ t := by
+  cases p with
+  | nil => exact absurd rfl hst
+  | @cons _ x _ h p => exact ⟨x, by simp, h.ne.symm, fun hxt ↦ hadj (hxt ▸ h)⟩
+
+end InternallyDisjoint
 
 /-- Decompose the support of a path `R : G.Walk a b` between distinct endpoints `a ≠ b` as
 `a :: (I ++ [b])`, where the internal-vertex list `I` is duplicate-free, contains neither endpoint,
