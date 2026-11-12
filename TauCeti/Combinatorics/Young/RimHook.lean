@@ -90,8 +90,6 @@ counts the beads the moving bead jumps over.  Both statements are proved here:
   1, Example 8, for border strips and their description by beta-numbers.
 * [B. E. Sagan, *The Symmetric Group*][sagan2001], Section 4.10, for rim hooks, their heights and
   the Murnaghan--Nakayama rule.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/SchurWeyl/README.md),
-  Layer 6, whose "rim hooks and Murnaghan--Nakayama" item this supplies the combinatorics of.
 -/
 
 public section
