@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Hull
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Topology.MetricSpace.Bounded
 
+import Mathlib.Algebra.Order.Monoid.Canonical.Basic
 import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
 import Mathlib.Analysis.SpecificLimits.Basic
@@ -184,9 +185,7 @@ theorem exists_tendsto_sum_smul_of_isBounded_range {f : ℕ → E}
       Tendsto (fun n ↦ ∑ i ∈ s n, w n i • f (n + i)) atTop (𝓝 v) := by
   obtain ⟨v, y, hy_mem, hy_tendsto⟩ := exists_tendsto_mem_convexHull_image_Ici hbdd
   have himg (n : ℕ) : f '' Ici n = range fun i ↦ f (n + i) := by
-    ext z; simp only [mem_image, mem_Ici, mem_range]
-    exact ⟨fun ⟨k, hnk, hfk⟩ ↦ ⟨k - n, by rw [Nat.add_sub_of_le hnk]; exact hfk⟩,
-      fun ⟨i, hfi⟩ ↦ ⟨n + i, Nat.le_add_right n i, hfi⟩⟩
+    simpa only [Nat.add_comm] using (Set.range_add_eq_image_Ici (f := f) (k := n)).symm
   have hunpack (n : ℕ) :
       ∃ (s : Finset ℕ) (w : ℕ → ℝ),
         (∀ i ∈ s, 0 ≤ w i) ∧ ∑ i ∈ s, w i = 1 ∧ ∑ i ∈ s, w i • f (n + i) = y n := by

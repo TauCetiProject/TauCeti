@@ -379,23 +379,8 @@ private lemma sliceCount_subgraph_bounds {Z : Type*} {N : ℕ} (hN_pos : 0 < N)
     · have hk' : ((k.1 + 1 : ℕ) : ℝ≥0) ≤ (m : ℝ≥0) := by exact_mod_cast hk
       exact ENNReal.coe_le_coe.2 (hk'.trans hm_le_r)
   have hcount : sliceCount N E z = m := by
-    simp only [sliceCount]
-    have hfilter : (∑ k : Fin N, E.indicator (1 : Z × Fin N → ℝ≥0∞) (z, k)) =
-        ((Finset.univ.filter fun k : Fin N ↦ k.1 < m).card : ℝ≥0∞) := by
-      rw [Finset.card_eq_sum_ones, Nat.cast_sum, Nat.cast_one, Finset.sum_filter]
-      refine Finset.sum_congr rfl fun k _ ↦ ?_
-      by_cases hk : k.1 < m
-      · simp [(hmem_iff k).2 hk, hk]
-      · simp [mt (hmem_iff k).1 hk, hk]
-    rw [hfilter]
-    congr 1
-    have hmap : (Finset.univ.filter fun k : Fin N ↦ k.1 < m).map Fin.valEmbedding =
-        Finset.Iio m := by
-      ext j
-      simp only [Finset.mem_map, Finset.mem_filter, Finset.mem_univ, true_and,
-        Fin.valEmbedding_apply, Finset.mem_Iio]
-      exact ⟨fun ⟨k, hk, hkj⟩ ↦ hkj ▸ hk, fun hj ↦ ⟨⟨j, hj.trans_le hm_le_N⟩, hj, rfl⟩⟩
-    rw [← Finset.card_map Fin.valEmbedding, hmap, Nat.card_Iio]
+    simp only [sliceCount, indicator_apply, Pi.one_apply, hmem_iff, Finset.sum_boole,
+      Fin.card_filter_val_lt, min_eq_right hm_le_N]
   rw [hcount, ← hr_coe]
   exact ⟨ENNReal.coe_le_coe.2 hm_le_r, by exact_mod_cast hr_lt_succ.le⟩
 
