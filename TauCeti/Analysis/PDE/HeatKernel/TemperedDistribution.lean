@@ -146,8 +146,8 @@ theorem exists_heatSemigroup_eq_and_ae_eq_convolution {t : ℝ≥0} (ht : t ≠ 
     have h1 : eLpNorm (𝓕⁻ (SchwartzMap.gaussian (V := E) hb : E → ℂ)) 1 volume = 1 := by
       have hKi : Integrable (fun x : E ↦ (heatKernel t x : ℂ)) :=
         (integrable_heatKernel ht').ofReal
-      rw [hK, eLpNorm_one_eq_lintegral_enorm hKi.aestronglyMeasurable,
-        ← ofReal_integral_norm_eq_lintegral_enorm hKi]
+      rw [hK, eLpNorm_one_eq_lintegral_eNorm hKi.aestronglyMeasurable,
+        ← ofReal_integral_norm_eq_lintegral_eNorm hKi]
       simp_rw [Complex.norm_real, Real.norm_of_nonneg (heatKernel_pos ht' _).le,
         integral_heatKernel ht', ENNReal.ofReal_one]
     rwa [h1, ENNReal.toReal_one, one_mul] at hgn
