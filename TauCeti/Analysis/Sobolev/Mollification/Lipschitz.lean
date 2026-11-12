@@ -73,7 +73,6 @@ theorem TendstoUniformly.tendsto_integral_smul_of_integrable {l : Filter ι} {fs
   rw [Metric.tendsto_nhds]
   intro ε hε
   set I : ℝ := ∫ x, ‖w x‖ ∂μ
-  have hI0 : 0 ≤ I := integral_nonneg fun _ => norm_nonneg _
   have hδ0 : 0 < ε / (I + 1) := by positivity
   filter_upwards [tendstoUniformly_iff.1 hu (ε / (I + 1)) hδ0] with i hi
   have hi' : ∀ x, ‖fs i x - f x‖ ≤ ε / (I + 1) := fun x => by
