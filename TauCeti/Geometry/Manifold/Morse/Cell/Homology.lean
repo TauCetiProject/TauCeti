@@ -184,6 +184,25 @@ theorem IsMorse.exists_isZero_singularHomology_sublevelPair_of_manifoldMorseInde
 
 /-! ### Bands with a single critical value -/
 
+/-- Around the only critical value `c` of a compact band `f⁻¹[a, b]`, with `a < c < b`, the band
+`f⁻¹[c - ε, c + ε]` with `0 < ε ≤ min (c - a) (b - c)` lies in `f⁻¹[a, b]`, so
+`({f ≤ b}, {f ≤ a})` has the relative homology of `({f ≤ c + ε}, {f ≤ c - ε})`
+(`TauCeti.singularHomologySublevelPairIsoOfCriticalValue`). -/
+private def singularHomologySublevelPairIsoSymmetricBand (hf : IsMorse I f) {a b ε : ℝ}
+    (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c) (hε : 0 < ε)
+    (hεδ : ε ≤ min (c - a) (b - c)) {A : Type*} [Category A] [Abelian A]
+    [HasCoproducts.{u} A] (R : A) (n : ℕ) :
+    (sublevelPair f (hac.trans hcb).le).singularHomology R n ≅
+      (sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularHomology R n :=
+  have hε' : Icc (c - ε) (c + ε) ⊆ Icc a b :=
+    Icc_subset_Icc (by linarith [hεδ.trans (min_le_left _ _)])
+      (by linarith [hεδ.trans (min_le_right _ _)])
+  singularHomologySublevelPairIsoOfCriticalValue hf.contMDiff hac hcb (by linarith)
+    (by linarith) hcompact (hcompact.of_isClosed_subset
+      (isClosed_Icc.preimage hf.contMDiff.continuous) (preimage_mono hε')) hcrit
+    (fun x hx hxε ↦ hcrit x hx (hε' hxε)) R n
+
 /-- **The relative homology of a band with one critical value is free on its critical points.**
 Let `f` be a Morse function and `a < c < b`, such that the band `f⁻¹[a, b]` is compact and `c` is
 the only critical value of `f` in `[a, b]`. Then `Hₙ({f ≤ b}, {f ≤ a}; R)`, with coefficients in
@@ -200,14 +219,8 @@ theorem IsMorse.nonempty_singularHomology_sublevelPair_iso_sigma (hf : IsMorse I
     (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
       (preimage_mono (Icc_subset_Icc (by linarith [min_le_left (c - a) (b - c)])
         (by linarith [min_le_right (c - a) (b - c)]))))
-  -- The band `f⁻¹[c - ε, c + ε]` lies in `f⁻¹[a, b]`, so `c` is its only critical value.
-  have hε' : Icc (c - ε) (c + ε) ⊆ Icc a b :=
-    Icc_subset_Icc (by linarith [hεδ.trans (min_le_left _ _)])
-      (by linarith [hεδ.trans (min_le_right _ _)])
-  exact ⟨singularHomologySublevelPairIsoOfCriticalValue hf.contMDiff hac hcb (by linarith)
-    (by linarith) hcompact (hcompact.of_isClosed_subset
-      (isClosed_Icc.preimage hf.contMDiff.continuous) (preimage_mono hε')) hcrit
-    (fun x hx hxε ↦ hcrit x hx (hε' hxε)) R n ≪≫ (hiso R n).some⟩
+  exact ⟨singularHomologySublevelPairIsoSymmetricBand hf hac hcb hcompact hcrit hε hεδ R n ≪≫
+    (hiso R n).some⟩
 
 /-- **The Morse numbers of a band with one critical value.** Let `f` be a Morse function and
 `a < c < b`, such that the band `f⁻¹[a, b]` is compact and `c` is the only critical value of `f` in
@@ -225,14 +238,8 @@ theorem IsMorse.finrank_singularHomology_sublevelPair_eq (hf : IsMorse I f) {a b
     (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
       (preimage_mono (Icc_subset_Icc (by linarith [min_le_left (c - a) (b - c)])
         (by linarith [min_le_right (c - a) (b - c)]))))
-  -- The band `f⁻¹[c - ε, c + ε]` lies in `f⁻¹[a, b]`, so `c` is its only critical value.
-  have hε' : Icc (c - ε) (c + ε) ⊆ Icc a b :=
-    Icc_subset_Icc (by linarith [hεδ.trans (min_le_left _ _)])
-      (by linarith [hεδ.trans (min_le_right _ _)])
-  rw [(singularHomologySublevelPairIsoOfCriticalValue hf.contMDiff hac hcb (by linarith)
-    (by linarith) hcompact (hcompact.of_isClosed_subset
-      (isClosed_Icc.preimage hf.contMDiff.continuous) (preimage_mono hε')) hcrit
-    (fun x hx hxε ↦ hcrit x hx (hε' hxε)) V n).toLinearEquiv.finrank_eq]
+  have e := singularHomologySublevelPairIsoSymmetricBand hf hac hcb hcompact hcrit hε hεδ V n
+  rw [e.toLinearEquiv.finrank_eq]
   exact (hrank k V n).2
 
 end TauCeti

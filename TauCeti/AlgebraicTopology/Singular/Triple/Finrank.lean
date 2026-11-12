@@ -65,13 +65,13 @@ For the filtration of a manifold by the sublevels of a function, cut at regular 
 critical values, the steps are the relative homology of the critical levels; the whole space is the
 last sublevel (`TauCeti.AlgebraicTopology.Singular.Sublevel`).
 
-Milnor derives the Morse inequalities from these two subadditivity properties, applied to the
-triples of sublevels of a Morse function. When a compact band is cut at regular values into pieces
-containing at most one critical value each, every piece satisfies the Morse inequalities with
-equality, so each coefficient of the polynomial measuring the failure of the Morse inequalities
-to be equalities is a sum of ranks of connecting maps along the resulting filtration by sublevels.
-A coarser filtration can hide cancellations within a piece, and then these ranks need not recover
-the coefficients.
+Milnor derives the Morse inequalities from the subadditivity of `dim Hₙ` and of `Sₙ` along a triple,
+applied to the triples of sublevels of a Morse function. When a compact band is cut at regular
+values into pieces containing at most one critical value each, every piece satisfies the Morse
+inequalities with equality, so each coefficient of the polynomial measuring the failure of the Morse
+inequalities to be equalities is a sum of ranks of connecting maps along the resulting filtration by
+sublevels. A coarser filtration can hide cancellations within a piece, and then these ranks need not
+recover the coefficients.
 
 ## References
 
