@@ -236,7 +236,7 @@ theorem isPoissonRandomMeasure_smul_dirac (r : ℝ≥0) (x : X) :
   classical
   refine isPoissonRandomMeasure_iff.mpr ⟨Measurable.of_discrete, ?_, ?_⟩
   swap
-  · intro A hA hΛ
+  · intro A _ hΛ
     let : IsFiniteMeasure ((r : ℝ≥0∞) • Measure.dirac x) :=
       (Measure.dirac x).smul_finite ENNReal.coe_ne_top
     exact False.elim (measure_ne_top _ A hΛ)

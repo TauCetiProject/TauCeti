@@ -16,9 +16,8 @@ Mathlib states Parseval's identity in polarized, `𝕜`-valued form:
 the diagonal, real-valued form `‖x‖² = ∑' i, ‖⟪b i, x⟫‖²`. The two differ in the type of their
 summands, so the real-valued form is not a substitution instance of the polarized one.
 
-The real-valued form is the shape consumers state coefficient decay in, and it is the
-`OrthogonalL2Bases` roadmap's Part A3 acceptance criterion `‖f‖² = ∑' n, ‖⟪ψₙ, f⟫‖²`; its instance
-for the Hermite basis is `TauCeti.tsum_norm_sq_inner_hermiteFunctionLp`.
+The real-valued form is the shape consumers state coefficient decay in; its instance for the
+Hermite basis is `TauCeti.tsum_norm_sq_inner_hermiteFunctionLp`.
 
 ## Main declarations
 
