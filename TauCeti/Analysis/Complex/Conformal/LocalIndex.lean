@@ -214,7 +214,7 @@ theorem localIndex_pos_iff_of_analyticAt {f : C(ℂ, ℂ)} {z₀ : ℂ} (hf : An
 theorem localIndex_pow_zero (m : ℕ) : o.localIndex o ⟨(· ^ m), continuous_pow m⟩ 0 = m := by
   rw [o.localIndex_eq_analyticOrderNatAt (analyticAt_id.pow m)]
   rcases eq_or_ne m 0 with rfl | hm
-  · simp [analyticOrderNatAt, analyticOrderAt_eq_top]
+  · simp [analyticOrderNatAt]
   · simp only [ContinuousMap.coe_mk]
     rw [analyticOrderNatAt, analyticOrderAt_pow_sub_zero_pow hm, ENat.toNat_natCast]
 
