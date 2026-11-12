@@ -44,6 +44,8 @@ only the absolute one of `TauCeti.AlgebraicTopology.Singular.Twisted.Basic`, nec
   `TopPair.twistedHomology_exact_space` and `TopPair.twistedHomology_exact_relative`.
 * `TopPair.twistedHomologyConstantIso`: for a constant system, relative twisted homology is
   ordinary relative singular homology.
+* `TopPair.twistedHomologyIsoOfHomotopy`: if the ambient space contracts onto a point `x`, then
+  `Hₖ(X, A; L) ≅ Hₖ(X, A; L x)`.
 
 The cokernel presentation, the short exact sequence and the shape of the three exactness
 statements follow Mathlib's relative simplicial homology
@@ -600,6 +602,28 @@ lemma twistedHomologyπ_comp_twistedHomologyConstantIso_hom (k : ℕ) :
   -- but only after unfolding the relative singular homology abbreviations, so the last step is
   -- an `exact` rather than a further rewrite.
   exact HomologicalComplex.homologyMap_comp _ _ k
+
+/-- **Relative homology with local coefficients of a pair with contractible ambient space**: a
+homotopy `H` from the identity of the ambient space `X` to the constant map at `x` identifies
+`Hₖ(X, A; L)` with the ordinary relative singular homology `Hₖ(X, A; L x)`, through the
+identification of `L` with the constant system at `L x` by transport along the paths traced by
+`H`. -/
+def twistedHomologyIsoOfHomotopy {x : P.fst}
+    (H : (ContinuousMap.id P.fst).Homotopy (ContinuousMap.const P.fst x)) (k : ℕ) :
+    P.twistedHomology L k ≅ P.singularHomology (L.obj (FundamentalGroupoid.mk x)) k :=
+  asIso (P.twistedHomologyCoefficientMap
+      (LocalCoefficientSystem.isoConstantOfHomotopy H L).hom k) ≪≫
+    P.twistedHomologyConstantIso _ k
+
+/-- `TopPair.twistedHomologyIsoOfHomotopy` is the change of coefficients along the identification
+of `L` with a constant system, followed by the comparison of relative twisted homology with
+constant coefficients and ordinary relative singular homology. -/
+lemma twistedHomologyIsoOfHomotopy_hom {x : P.fst}
+    (H : (ContinuousMap.id P.fst).Homotopy (ContinuousMap.const P.fst x)) (k : ℕ) :
+    (P.twistedHomologyIsoOfHomotopy L H k).hom =
+      P.twistedHomologyCoefficientMap (LocalCoefficientSystem.isoConstantOfHomotopy H L).hom k ≫
+        (P.twistedHomologyConstantIso _ k).hom :=
+  (rfl)
 
 end Constant
 

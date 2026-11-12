@@ -314,6 +314,39 @@ lemma twistedHomologyMap_comp (k : ℕ) :
       (twistedChainComplexMap_comp f g K)).trans
     (by rw [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp])
 
+variable {L} in
+/-- Whether a map of pairs induces an isomorphism on relative twisted homology does not depend on
+the coefficient system within its isomorphism class. -/
+lemma isIso_twistedHomologyMap_iff_of_isIso
+    {K : LocalCoefficientSystem.{u, v, max v w} R Q.fst} (η : L ⟶ K) [IsIso η] (k : ℕ) :
+    IsIso (twistedHomologyMap f L k) ↔ IsIso (twistedHomologyMap f K k) := by
+  rw [← isIso_comp_right_iff (twistedHomologyMap f L k) (Q.twistedHomologyCoefficientMap η k),
+    twistedHomologyMap_naturality, isIso_comp_left_iff]
+
+/-- An isomorphism of topological pairs induces isomorphisms on relative twisted homology. -/
+instance isIso_twistedHomologyMap [IsIso f] (k : ℕ) : IsIso (twistedHomologyMap f L k) := by
+  -- Both composites of `f` with its inverse are identities, and the identity of a pair induces
+  -- the coefficient comparison with the pullback along the identity, an isomorphism.
+  have hid {S : TopPair.{v}} (h : S ⟶ S) (K : LocalCoefficientSystem.{u, v, max v w} R S.fst)
+      (hh : h = 𝟙 S) : IsIso (twistedHomologyMap h K k) := by
+    subst hh
+    rw [twistedHomologyMap_id]
+    infer_instance
+  have h₁ := hid (inv f ≫ f) L (IsIso.inv_hom_id f)
+  have h₂ := hid (f ≫ inv f) ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L)
+    (IsIso.hom_inv_id f)
+  rw [twistedHomologyMap_comp, isIso_comp_left_iff] at h₁ h₂
+  -- The map induced by the inverse is a monomorphism by `h₁` and an epimorphism by `h₂`.
+  have : Mono (twistedHomologyMap (inv f)
+      ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L) k) :=
+    mono_of_mono _ (twistedHomologyMap f L k)
+  have : Epi (twistedHomologyMap (inv f)
+      ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L) k) :=
+    epi_of_epi (twistedHomologyMap f _ k) _
+  have := isIso_of_mono_of_epi (twistedHomologyMap (inv f)
+      ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L) k)
+  exact IsIso.of_isIso_comp_left (twistedHomologyMap (inv f) _ k) _
+
 /-- The homology map induced by the map on subspace chains is the coefficient comparison followed
 by the map induced by the subspace component. -/
 lemma homologyMap_twistedSubspaceChainComplexMap (k : ℕ) :

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.Coproduct
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Additivity.Relative
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Contractible
+public import TauCeti.AlgebraicTopology.Singular.Twisted.DiskSphere
 
 /-!
 # Skeletal pairs of a CW complex with local coefficients
@@ -19,7 +19,7 @@ identify it with the relative homology of the disjoint union `∐ⱼ (Dⁿ, Sⁿ
 pulled-back system (`TauCeti.isIso_twistedHomologyMap_characteristicPairMap`). Relative twisted
 homology is additive, so this is the coproduct of the groups `Hₖ(Dⁿ, Sⁿ⁻¹; Lⱼ)` of the single
 disks, and each of these vanishes for `k ≠ n` because a local system on a disk is constant
-(`TopPair.isZero_twistedHomology_diskBoundaryPair_of_ne`).
+(`TauCeti.isZero_twistedHomology_diskBoundaryPair_of_ne`).
 
 As for constant coefficients (`TauCeti.isZero_singularHomology_skeletonPair_of_ne`), this
 vanishing is what makes the groups `Hₙ(Xⁿ, Xⁿ⁻¹; L)`, for `L` restricted from a local system on
@@ -62,10 +62,7 @@ theorem isZero_twistedHomology_sigmaDiskPair_of_ne (ι : Type w) {n k : ℕ} (hk
   have h : IsZero ((TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).twistedHomology
       ((LocalCoefficientSystem.pullback (TopPair.Hom.fst e.hom).hom).obj L) k) :=
     (TopPair.isColimitCofanTwistedHomology _ _ k).isZero_pt
-      (Functor.isZero _ fun _ ↦ TopPair.isZero_twistedHomology_diskBoundaryPair_of_ne hk _)
-  have : IsIso (TopPair.twistedHomologyMap e.hom L k) :=
-    isIso_relativeTwistedHomologyMap_of_homotopyInverse L e.hom e.inv
-      ⟨e.hom_inv_id ▸ TopPair.Homotopy.refl _⟩ ⟨e.inv_hom_id ▸ TopPair.Homotopy.refl _⟩ k
+      (Functor.isZero _ fun _ ↦ isZero_twistedHomology_diskBoundaryPair_of_ne hk _)
   exact h.of_iso (asIso (TopPair.twistedHomologyMap e.hom L k)).symm
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [RelCWComplex C D]

@@ -25,7 +25,10 @@ of the fundamental group. It also proves that these constructions interact in th
 In particular, a morphism of local systems induces an intertwining map on monodromy representations,
 and transport along a path identifies
 the monodromy at its endpoints.  Homotopic maps have canonically isomorphic pullback functors,
-with components given by transport along the pointwise paths of the homotopy.
+with components given by transport along the pointwise paths of the homotopy.  In particular,
+pulling back along a constant map gives a constant system, so a null-homotopy of the identity
+makes every local coefficient system constant
+(`TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy`).
 
 The functorial definition and the monodromy interpretation follow Hatcher, *Algebraic Topology*,
 Section 3.H.
@@ -218,7 +221,9 @@ def pullbackConstIso (X : TopCat.{v₁}) {Y : TopCat.{v₂}} (y : Y)
       exact congrArg (Quotient.mk _) (Path.ext rfl)
     simp only [pullback_obj_map, constantFunctor_obj_map, Iso.refl_hom]
     rw [h]
-    exact L.map_id _
+    -- The fibres of the pullback are those of `L` only by definition (`pullback_obj_obj`), so
+    -- the unit laws and `L.map_id` are combined by `exact`, up to that definitional equality.
+    exact (Category.comp_id _).trans ((L.map_id _).trans (Category.id_comp _).symm)
 
 @[simp]
 theorem pullbackConstIso_hom_app (X : TopCat.{v₁}) {Y : TopCat.{v₂}} (y : Y)
@@ -306,6 +311,31 @@ theorem pullbackHomotopyIso_inv_app_app (H : f.Homotopy g)
     Quotient.sound (Path.Homotopic.trans_symm _)
   rw [Iso.app_hom, Iso.app_hom, pullbackHomotopyIso_hom_app_app]
   exact (L.map_comp _ _).symm.trans ((congrArg L.map h).trans (L.map_id _))
+
+/-- **A local coefficient system on a contractible space is constant**: a homotopy `H` from the
+identity of `X` to the constant map at `x` identifies every local coefficient system `L` on `X`
+with the constant system at its fibre over `x`. At a point `x'` the comparison is transport by
+`L` along the path `t ↦ H (t, x')` from `x'` to `x`
+(`TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy_hom_app`). -/
+def isoConstantOfHomotopy {x : X} (H : (ContinuousMap.id X).Homotopy (ContinuousMap.const X x))
+    (L : LocalCoefficientSystem.{u, v₁, w} R X) :
+    L ≅ (constantFunctor (R := R) X).obj (L.obj (FundamentalGroupoid.mk x)) :=
+  ((pullbackIdIso (R := R) X).app L).symm ≪≫ (pullbackHomotopyIso (R := R) H).app L ≪≫
+    pullbackConstIso X x L
+
+/-- At a point `x'`, the comparison `TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy` is
+transport along the path traced by the homotopy from `x'`. -/
+@[simp]
+theorem isoConstantOfHomotopy_hom_app {x : X}
+    (H : (ContinuousMap.id X).Homotopy (ContinuousMap.const X x))
+    (L : LocalCoefficientSystem.{u, v₁, w} R X) (x' : FundamentalGroupoid X) :
+    (isoConstantOfHomotopy H L).hom.app x' = L.map ⟦H.evalAt x'.as⟧ := by
+  simp only [isoConstantOfHomotopy, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
+    Iso.app_inv, Iso.app_hom, pullbackHomotopyIso_hom_app_app, pullbackConstIso_hom_app]
+  -- The identity comparison of `pullbackIdIso` and of `pullbackConstIso` sit between objects that
+  -- are only definitionally equal, so the unit laws are applied by `exact`.
+  exact (congrArg (· ≫ _) (pullbackIdIso_inv_app_app X L x')).trans
+    ((Category.id_comp _).trans (Category.comp_id _))
 
 end Homotopy
 

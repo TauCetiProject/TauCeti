@@ -537,18 +537,7 @@ instance isIso_twistedHomologyMap_characteristicPairMap (n k : ℕ)
       (TopPair.Hom.fst (skeletonPairToNeighborhood C n)).hom).obj L' ≅ L :=
     eqToIso (congrArg (fun g ↦ (LocalCoefficientSystem.pullback g).obj L') hid) ≪≫
       (pullbackIdIso _).app L
-  have hnat := TopPair.twistedHomologyMap_naturality (characteristicPairMap C n) _ η.hom k
-  have : IsIso ((sigmaDiskPair (cell C n) n).twistedHomologyCoefficientMap
-      ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (characteristicPairMap C n)).hom).map
-        η.hom) k) := by
-    rw [← Functor.mapIso_hom]
-    infer_instance
-  have : IsIso ((sigmaDiskPair (cell C n) n).twistedHomologyCoefficientMap
-      ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (characteristicPairMap C n)).hom).map
-        η.hom) k ≫ TopPair.twistedHomologyMap (characteristicPairMap C n) L k) := by
-    rw [← hnat]
-    infer_instance
-  rwa [isIso_comp_left_iff] at this
+  exact (TopPair.isIso_twistedHomologyMap_iff_of_isIso _ η.hom k).1 hcomp
 
 end LocalCoefficients
 
