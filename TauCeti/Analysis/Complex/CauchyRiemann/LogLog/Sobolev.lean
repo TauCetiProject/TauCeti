@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.CauchyRiemann.LogLogExample
+public import TauCeti.Analysis.Complex.CauchyRiemann.LogLog.Example
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Sobolev.Local.Morrey
 
@@ -20,9 +20,6 @@ and for the weak equation `IsWeakCauchyRiemannOn`, in which the bootstrapping th
 
 ## Main results
 
-* `TauCeti.not_memWkpLoc_two_top_of_not_isBoundedUnder`: a `C¹` map into a finite-dimensional
-  space whose classical second derivative is unbounded near a point `z₀` of an open set `Ω` is
-  not `W^{2,∞}_loc` on `Ω`.
 * `TauCeti.memWkpLoc_one_logLogExample`, `TauCeti.memWkpLoc_one_graph_logLogExample`: `f` and
   its graph `z ↦ (z, f z)` are `W^{1,p}_loc` on the unit disc for every `p`, including `p = ∞`.
 * `TauCeti.isWeakCauchyRiemannOn_graph_logLogExample`: the graph is a weak solution, for every
@@ -34,11 +31,9 @@ and for the weak equation `IsWeakCauchyRiemannOn`, in which the bootstrapping th
 
 ## Implementation notes
 
-The general criterion compares the weak derivative of `u` with the classical one: both are weak
-derivatives on `Ω`, so they agree almost everywhere, and `fderiv u` lies in `W^{1,∞}_loc`. Its
-precise representative is Lipschitz on a closed ball around `z₀` by the Morrey embedding, and
-equals `fderiv u` on the open ball by continuity, so the classical derivative of `fderiv u` is
-bounded there.
+The failure of `W^{2,∞}_loc` follows from the unboundedness of the classical second derivative of
+`f` near the origin through the general criterion
+`TauCeti.not_memWkpLoc_two_top_of_not_isBoundedUnder`, a consequence of the Morrey embedding.
 
 ## References
 
@@ -52,45 +47,6 @@ open Complex Filter Metric Set MeasureTheory TopologicalSpace TauCeti.MeasureThe
 open scoped ENNReal Topology
 
 namespace TauCeti
-
-section General
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {Ω : Opens ℂ} {u : ℂ → F} {z₀ : ℂ}
-
-/-- **Unbounded second derivatives rule out `W^{2,∞}_loc`.** A map that is `C¹` on an open set
-`Ω` and whose classical second derivative is unbounded near a point `z₀ ∈ Ω` is not in
-`W^{2,∞}_loc` on `Ω`. -/
-theorem not_memWkpLoc_two_top_of_not_isBoundedUnder (hu : ContDiffOn ℝ 1 u Ω) (hz₀ : z₀ ∈ Ω)
-    (hunb : ¬ IsBoundedUnder (· ≤ ·) (𝓝[≠] z₀) fun z ↦ ‖fderiv ℝ (fderiv ℝ u) z‖) :
-    ¬ MemWkpLoc ∞ Ω 2 u := by
-  intro h
-  have hloc : LocallyIntegrableOn (fderiv ℝ u) Ω volume :=
-    (hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
-      Ω.isOpen.measurableSet
-  obtain ⟨D, hD, hDk⟩ := h.exists_weakFDeriv_of_isOpen
-  have hdu : MemWkpLoc ∞ Ω 1 (fderiv ℝ u) := hDk.congr_ae (hD.ae_eq_fderiv hloc
-    fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hz))
-  obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen z₀ hz₀
-  have hK : closedBall z₀ (r / 2) ⊆ Ω :=
-    (closedBall_subset_ball (half_lt_self hr)).trans hrΩ
-  obtain ⟨C, hC⟩ := hdu.exists_lipschitzOnWith_preciseRepresentative_of_isCompact
-    (isCompact_closedBall z₀ (r / 2)) hK
-  have heq : EqOn (preciseRepresentative volume (fderiv ℝ u)) (fderiv ℝ u) (ball z₀ (r / 2)) :=
-    eqOn_preciseRepresentative_of_continuousOn isOpen_ball
-      (hloc.mono_set (ball_subset_closedBall.trans hK)) EventuallyEq.rfl
-      ((hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).mono
-        (ball_subset_closedBall.trans hK))
-  have hlip : LipschitzOnWith C (fderiv ℝ u) (ball z₀ (r / 2)) := fun x hx y hy ↦ by
-    rw [← heq hx, ← heq hy]
-    exact hC (ball_subset_closedBall hx) (ball_subset_closedBall hy)
-  refine hunb (isBoundedUnder_of_eventually_le (a := (C : ℝ)) ?_)
-  filter_upwards [nhdsWithin_le_nhds (ball_mem_nhds z₀ (half_pos hr))] with z hz
-  exact norm_fderiv_le_of_lipschitzOn ℝ (isOpen_ball.mem_nhds hz) hlip
-
-end General
-
-section Example
 
 /-- The graph `z ↦ (z, f z)` of the example is `C¹` on the unit disc. -/
 private theorem contDiffOn_graph_logLogExample :
@@ -143,7 +99,5 @@ theorem not_memWkpLoc_two_top_graph_logLogExample {U : Set ℂ} (hU : U ∈ 𝓝
   not_memWkpLoc_two_top_logLogExample hU
     (h.clm_comp ((ContinuousLinearMap.snd ℝ ℂ ℂ).comp
       (WithLp.prodContinuousLinearEquiv 2 ℝ ℂ ℂ : WithLp 2 (ℂ × ℂ) →L[ℝ] ℂ × ℂ)))
-
-end Example
 
 end TauCeti
