@@ -262,26 +262,25 @@ private instance (n : ℕ) : IsIso (SSet.homologyMap (TopCat.toSSet.map (mobiusP
       TopCat.ofHom (VectorBundle.totalSpaceHomotopyEquiv ℝ (MobiusLine p)).toFun := by
     ext v
     exact (VectorBundle.totalSpaceHomotopyEquiv_apply v).symm
-  have := ((VectorBundle.totalSpaceHomotopyEquiv ℝ (MobiusLine p)).singularHomologyIso
-    (ModuleCat.of ℤ ℤ) n).isIso_hom
-  rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom] at this
-  exact (congrArg (fun f ↦ IsIso (SSet.homologyMap (TopCat.toSSet.map f) (ModuleCat.of ℤ ℤ) n))
-    h).mpr this
+  rw [h]
+  exact (VectorBundle.totalSpaceHomotopyEquiv ℝ (MobiusLine p)).isIso_homologyMap _ n
 
 private instance (n : ℕ) : IsIso (SSet.homologyMap (TopCat.toSSet.map (mobiusCircleHom (p := p)))
     (ModuleCat.of ℤ ℤ) n) := by
   set e := sphereBundleHomotopyEquiv ℝ (MobiusLine p) continuous_norm_mobiusLine
   have h : mobiusCircleHom (p := p) =
-      (TopCat.isoOfHomeo mobiusSphereHomeomorph).hom ≫ TopCat.ofHom e.toFun := by
+      ((TopCat.isoOfHomeo mobiusSphereHomeomorph).hom ≫ TopCat.ofHom e.toFun :
+        _ ⟶ (thomPair ℝ (MobiusLine p)).snd) := by
     ext θ
     exact Subtype.ext (coe_sphereBundleHomotopyEquiv ℝ (MobiusLine p) _ _).symm
-  have := IsIso.comp_isIso' (Functor.map_isIso ((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
-    (ModuleCat.of ℤ ℤ)) (TopCat.isoOfHomeo (X := TopCat.of (AddCircle p))
-      (Y := TopCat.of (sphereBundle ℝ (MobiusLine p))) mobiusSphereHomeomorph).hom)
-      (e.singularHomologyIso (ModuleCat.of ℤ ℤ) n).isIso_hom
-  rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom, ← Functor.map_comp] at this
-  exact (congrArg (fun f ↦ IsIso (SSet.homologyMap (TopCat.toSSet.map f) (ModuleCat.of ℤ ℤ) n))
-    h).mpr this
+  have := e.isIso_homologyMap (ModuleCat.of ℤ ℤ) n
+  have : IsIso (SSet.homologyMap (TopCat.toSSet.map
+      ((TopCat.isoOfHomeo (X := TopCat.of (AddCircle p)) mobiusSphereHomeomorph).hom ≫
+        TopCat.ofHom e.toFun)) (ModuleCat.of ℤ ℤ) n) := by
+    rw [Functor.map_comp, SSet.homologyMap_comp]
+    infer_instance
+  rw [h]
+  exact this
 
 /-- The inclusion of the nonzero vectors induces an isomorphism on zeroth homology. -/
 private theorem mono_homologyMap_map_thomPair_mobiusLine_zero :
@@ -313,6 +312,31 @@ private theorem firstHomologyEquiv_homologyMap_mobiusProjHom_map_mobiusCircleHom
   simp only [Functor.map_comp, SSet.homologyMap_comp, ModuleCat.hom_comp] at h
   exact (congrArg AddCircle.firstHomologyEquiv h).trans
     (AddCircle.firstHomologyEquiv_singularHomologyMap_zsmul 2 x)
+
+/-- A first homology class of the total space comes from the nonzero vectors exactly when its
+image in `H₁(S¹; ℤ) ≃ ℤ` is even. -/
+private theorem mem_range_homologyMap_map_thomPair_mobiusLine_one_iff
+    (y : ((TopPair.toSSetPair.obj (thomPair ℝ (MobiusLine p))).right.homology
+      (ModuleCat.of ℤ ℤ) 1 : ModuleCat.{0} ℤ)) :
+    y ∈ LinearMap.range (SSet.homologyMap (TopCat.toSSet.map (thomPair ℝ (MobiusLine p)).map)
+      (ModuleCat.of ℤ ℤ) 1).hom ↔
+      2 ∣ AddCircle.firstHomologyEquiv
+        ((SSet.homologyMap (TopCat.toSSet.map mobiusProjHom) (ModuleCat.of ℤ ℤ) 1).hom y) := by
+  have hq : Function.Injective
+      (SSet.homologyMap (TopCat.toSSet.map (mobiusProjHom (p := p))) (ModuleCat.of ℤ ℤ) 1).hom :=
+    (ConcreteCategory.bijective_of_isIso _).1
+  have hs : Function.Surjective (SSet.homologyMap (TopCat.toSSet.map (mobiusCircleHom (p := p)))
+      (ModuleCat.of ℤ ℤ) 1).hom :=
+    (ConcreteCategory.bijective_of_isIso _).2
+  constructor
+  · rintro ⟨z, rfl⟩
+    obtain ⟨x, rfl⟩ := hs z
+    exact ⟨_, firstHomologyEquiv_homologyMap_mobiusProjHom_map_mobiusCircleHom x⟩
+  · rintro ⟨n, hn⟩
+    refine ⟨(SSet.homologyMap (TopCat.toSSet.map mobiusCircleHom) (ModuleCat.of ℤ ℤ) 1).hom
+      (AddCircle.firstHomologyEquiv.symm n), hq (AddCircle.firstHomologyEquiv.injective ?_)⟩
+    refine (firstHomologyEquiv_homologyMap_mobiusProjHom_map_mobiusCircleHom _).trans ?_
+    rw [LinearEquiv.apply_symm_apply, hn]
 
 /-- **The first relative integral homology of the Thom pair of the Möbius line is `ℤ/2`.** The
 Thom pair is the total space relative to the nonzero vectors. -/
@@ -346,10 +370,6 @@ theorem nonempty_linearEquiv_singularHomology_thomPair_mobiusLine_one :
     simp only [g, AddMonoidHom.coe_comp, Function.comp_apply, LinearMap.toAddMonoidHom_coe,
       LinearMap.coe_comp, LinearEquiv.coe_coe, hy, LinearEquiv.apply_symm_apply,
       Int.coe_castAddHom]
-  have hs : Function.Surjective (SSet.homologyMap (TopCat.toSSet.map (mobiusCircleHom (p := p)))
-      (ModuleCat.of ℤ ℤ) 1).hom := by
-    rw [← ModuleCat.epi_iff_surjective]
-    infer_instance
   -- The kernel of `H₁(E) → H₁(E, E₀)` is the image of `H₁(E₀)`, which is `2ℤ` in `H₁(S¹) ≃ ℤ`.
   have hker :
       ((thomPair ℝ (MobiusLine p)).singularHomologyπ (ModuleCat.of ℤ ℤ) 1).hom.toAddMonoidHom.ker =
@@ -357,22 +377,10 @@ theorem nonempty_linearEquiv_singularHomology_thomPair_mobiusLine_one :
     ext y
     have hexact := SetLike.ext_iff.1 ((ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
       ((thomPair ℝ (MobiusLine p)).singularHomology_exact_space (ModuleCat.of ℤ ℤ) 1)) y
-    have h₁ : ((thomPair ℝ (MobiusLine p)).singularHomologyπ (ModuleCat.of ℤ ℤ) 1).hom y = 0 ↔
-        ∃ z, (SSet.homologyMap (TopCat.toSSet.map (thomPair ℝ (MobiusLine p)).map)
-          (ModuleCat.of ℤ ℤ) 1).hom z = y :=
-      hexact.symm
-    have h₂ : g y = 0 ↔ 2 ∣ AddCircle.firstHomologyEquiv (q.hom y) :=
-      ZMod.intCast_zmod_eq_zero_iff_dvd _ 2
-    rw [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe, h₁, h₂]
-    constructor
-    · rintro ⟨z, rfl⟩
-      obtain ⟨x, rfl⟩ := hs z
-      exact ⟨_, firstHomologyEquiv_homologyMap_mobiusProjHom_map_mobiusCircleHom x⟩
-    · rintro ⟨n, hn⟩
-      refine ⟨(SSet.homologyMap (TopCat.toSSet.map mobiusCircleHom) (ModuleCat.of ℤ ℤ) 1).hom
-        (AddCircle.firstHomologyEquiv.symm n), hq.1 (AddCircle.firstHomologyEquiv.injective ?_)⟩
-      refine (firstHomologyEquiv_homologyMap_mobiusProjHom_map_mobiusCircleHom _).trans ?_
-      rw [LinearEquiv.apply_symm_apply, hn]
+    rw [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe,
+      ← LinearMap.mem_ker]
+    exact hexact.symm.trans ((mem_range_homologyMap_map_thomPair_mobiusLine_one_iff y).trans
+      (ZMod.intCast_zmod_eq_zero_iff_dvd _ 2).symm)
   exact ⟨((QuotientAddGroup.quotientKerEquivOfSurjective
     ((thomPair ℝ (MobiusLine p)).singularHomologyπ (ModuleCat.of ℤ ℤ) 1).hom.toAddMonoidHom
       hπ).symm.trans <|
