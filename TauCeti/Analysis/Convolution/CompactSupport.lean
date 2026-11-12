@@ -114,7 +114,7 @@ theorem _root_.HasCompactSupport.memLp_convolution_right_of_isBounded (hfc : Has
   have hYoung : MemLp (((fun p : G × G ↦ p.1 - p.2) '' (closedBall 0 R ×ˢ tsupport f)).indicator K
       ⋆[L, μ] f) p μ :=
     (eLpNorm_convolution_le L hH.aestronglyMeasurable hf.aestronglyMeasurable hp).trans_lt
-      (ENNReal.mul_lt_top (ENNReal.mul_lt_top enorm_lt_top
+      (ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top
         (memLp_one_iff_integrable.2 hH).eLpNorm_lt_top) hf.eLpNorm_lt_top)
   refine ((hYoung.restrict (closedBall 0 R)).ae_eq ?_).mono_measure
     (Measure.restrict_mono hsR le_rfl)
