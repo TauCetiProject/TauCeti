@@ -128,6 +128,9 @@ theorem isClosedEmbedding_toEndomorphism_frameTopology (hcover : ∀ x, ∃ i, x
   let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
   let _ := frameTopology e U hU
   refine ⟨isEmbedding_toEndomorphism_frameTopology e U hU, ?_⟩
+  -- The fibre `TangentSpace I x →L[ℝ] TangentSpace I x` is by definition `E →L[ℝ] E`, so the
+  -- fibrewise condition `J ∘ J = -1` and evaluation at `x` are stated on `E →L[ℝ] E`, whose
+  -- normed structure gives continuity of composition.
   have hrange : range (toEndomorphism : SmoothAlmostComplexStructure I M → _) =
       ⋂ x : M, {s | (s x : E →L[ℝ] E).comp (s x) = -ContinuousLinearMap.id ℝ E} := by
     ext s
