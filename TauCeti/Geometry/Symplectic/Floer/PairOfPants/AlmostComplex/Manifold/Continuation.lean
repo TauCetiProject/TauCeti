@@ -99,93 +99,25 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (h₀ : σ.Compatible J₀) (J₁ J₂ : Puncture → ℝ → SmoothAlmostComplexStructure I M)
   (hJ₁ : ∀ q t, σ.Tames (J₁ q t)) (hJ₂ : ∀ q t, σ.Tames (J₂ q t))
 
-/-- The linear pair-of-pants structure with continuation necks on the tangent space at `x`. -/
-private def pairOfPantsContinuationAt (L : Puncture → ℝ) (w : ℂ) (x : M) :
-    AlmostComplexStructure (TangentSpace I x) :=
-  Floer.pairOfPantsContinuationAlmostComplex (V := TangentSpace I x) (M := Unit)
-    (h₀.compatibleAt x) (fun q t _ => (J₁ q t).almostComplexStructureAt x)
-    (fun q t _ => (J₂ q t).almostComplexStructureAt x)
-    (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ₁ q t) x)
-    (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ₂ q t) x) L w ()
-
-/-- The Cayley coordinate of the linear structure is the cutoff-weighted sum of the Cayley
-coordinates of the continuation homotopies of the ends, read on the tangent space at `x`. -/
-private theorem cayley_pairOfPantsContinuationAt (L : Puncture → ℝ) (w : ℂ) (x : M) :
-    (J₀.almostComplexStructureAt x).cayley (pairOfPantsContinuationAt h₀ J₁ J₂ hJ₁ hJ₂ L w x) =
-      ∑ q, smoothTransition (q.endSign * (q.endCoord w).re - 1) •
-        (J₀.almostComplexStructureAt x).cayley
-          ((h₀.continuationAlmostComplex (J₁ q) (J₂ q) (hJ₁ q) (hJ₂ q)
-            (q.endSign * (q.endCoord w).re - L q, (q.endCoord w).im)).almostComplexStructureAt
-              x) := by
-  simp only [pairOfPantsContinuationAt, Floer.cayley_pairOfPantsContinuationAlmostComplex,
-    almostComplexStructureAt_continuationAlmostComplex]
-
-/-- The linear structure is smooth on `M` for fixed neck positions and domain point. -/
-private theorem contMDiffAt_pairOfPantsContinuationAt (L : Puncture → ℝ) (w : ℂ) (x : M) :
-    ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E)) (⊤ : ℕ∞)
-      (fun y : M => TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-        y (LinearMap.toContinuousLinearMap
-          (pairOfPantsContinuationAt h₀ J₁ J₂ hJ₁ hJ₂ L w y).toLinearMap)) x :=
-  h₀.contMDiffAt_of_cayley_eq_sum (b := id)
-    (L := fun q _ => h₀.continuationAlmostComplex (J₁ q) (J₂ q) (hJ₁ q) (hJ₂ q)
-      (q.endSign * (q.endCoord w).re - L q, (q.endCoord w).im))
-    (a := fun q _ => smoothTransition (q.endSign * (q.endCoord w).re - 1))
-    (fun y => Floer.tames_pairOfPantsContinuationAlmostComplex (h₀.compatibleAt y) w ())
-    (fun _ _ => h₀.tames_continuationAlmostComplex _ _ _ _ _)
-    (cayley_pairOfPantsContinuationAt h₀ J₁ J₂ hJ₁ hJ₂ L w) contMDiffAt_id
-    (fun _ => contMDiffAt_const) (fun q => (h₀.continuationAlmostComplex (J₁ q) (J₂ q) (hJ₁ q)
-      (hJ₂ q) _).toEndomorphism.contMDiff x)
-
 /-- The almost complex structure on the tangent bundle over the pair of pants with continuation
 necks from the inner families `J₁ q t` to the outer families `J₂ q t` of smooth `σ`-tame
 structures on its ends, at the neck positions `L q`, relative to a `σ`-compatible base structure
-`J₀`. On each tangent space it is the linear structure
-`TauCeti.Floer.pairOfPantsContinuationAlmostComplex`: the inverse Cayley transform relative to `J₀`
-of `∑ q, β(σ_q - 1) • cayley (J^c_q(σ_q - L q, t_q))`, where `J^c_q` is the continuation homotopy
-from `J₁ q` to `J₂ q`. -/
+`J₀`. It is the pair-of-pants structure
+`TauCeti.SmoothTwoForm.Compatible.pairOfPantsAlmostComplex` of the continuation homotopies
+`J^c_q(σ_q - L q, t)` from `J₁ q` to `J₂ q`, so its Cayley coordinate relative to `J₀` is
+`∑ q, β(σ_q - 1) • cayley (J^c_q(σ_q - L q, t_q))`. -/
 def pairOfPantsContinuationAlmostComplex (L : Puncture → ℝ) (w : ThricePuncturedSphere) :
-    SmoothAlmostComplexStructure I M where
-  toEndomorphism :=
-    ⟨fun x => LinearMap.toContinuousLinearMap
-        (pairOfPantsContinuationAt h₀ J₁ J₂ hJ₁ hJ₂ L w x).toLinearMap,
-      contMDiffAt_pairOfPantsContinuationAt h₀ J₁ J₂ hJ₁ hJ₂ L w⟩
-  square_neg x := by
-    ext v
-    -- The endomorphism is the continuous version of the linear fiberwise complex structure.
-    exact AlmostComplexStructure.apply_apply _ v
-
-/-- The endomorphism of the structure at `x` is the linear structure there, read as a continuous
-endomorphism. -/
-private theorem pairOfPantsContinuationAlmostComplex_toEndomorphism (L : Puncture → ℝ)
-    (w : ThricePuncturedSphere) (x : M) :
-    (h₀.pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ L w).toEndomorphism x =
-      LinearMap.toContinuousLinearMap
-        (pairOfPantsContinuationAt h₀ J₁ J₂ hJ₁ hJ₂ L w x).toLinearMap :=
-  (rfl)
-
-/-- On every tangent space, the structure is the linear pair-of-pants structure with continuation
-necks of the end structures there, relative to `J₀`. -/
-theorem almostComplexStructureAt_pairOfPantsContinuationAlmostComplex (L : Puncture → ℝ)
-    (w : ThricePuncturedSphere) (x : M) :
-    (h₀.pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ L w).almostComplexStructureAt x =
-      Floer.pairOfPantsContinuationAlmostComplex (V := TangentSpace I x) (M := Unit)
-        (h₀.compatibleAt x) (fun q t _ => (J₁ q t).almostComplexStructureAt x)
-        (fun q t _ => (J₂ q t).almostComplexStructureAt x)
-        (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ₁ q t) x)
-        (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ₂ q t) x) L w () := by
-  apply AlmostComplexStructure.toLinearMap_injective
-  rw [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
-    pairOfPantsContinuationAlmostComplex_toEndomorphism, LinearMap.coe_toContinuousLinearMap,
-    pairOfPantsContinuationAt]
+    SmoothAlmostComplexStructure I M :=
+  h₀.pairOfPantsAlmostComplex
+    (fun q t => h₀.continuationAlmostComplex (J₁ q) (J₂ q) (hJ₁ q) (hJ₂ q)
+      (q.endSign * (q.endCoord w).re - L q, t))
+    (fun _ _ => h₀.tames_continuationAlmostComplex _ _ _ _ _) w
 
 /-- The pair-of-pants structure with continuation necks is tamed by `σ`. -/
 theorem tames_pairOfPantsContinuationAlmostComplex (L : Puncture → ℝ)
     (w : ThricePuncturedSphere) :
-    σ.Tames (h₀.pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ L w) := by
-  refine h₀.isNondegenerate.tames_iff.mpr fun x => ?_
-  rw [almostComplexStructureAt_pairOfPantsContinuationAlmostComplex]
-  exact Floer.tames_pairOfPantsContinuationAlmostComplex (h₀.compatibleAt x) w ()
+    σ.Tames (h₀.pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ L w) :=
+  tames_pairOfPantsAlmostComplex h₀ _ _ w
 
 /-- On every tangent space, the Cayley coordinate of the pair-of-pants structure with
 continuation necks relative to `J₀` is the cutoff-weighted sum
@@ -201,20 +133,34 @@ theorem cayley_pairOfPantsContinuationAlmostComplex (L : Puncture → ℝ)
         (J₀.almostComplexStructureAt x).cayley
           ((h₀.continuationAlmostComplex (J₁ q) (J₂ q) (hJ₁ q) (hJ₂ q)
             (q.endSign * (q.endCoord w).re - L q, (q.endCoord w).im)).almostComplexStructureAt
-              x) := by
-  rw [almostComplexStructureAt_pairOfPantsContinuationAlmostComplex]
-  exact cayley_pairOfPantsContinuationAt h₀ J₁ J₂ hJ₁ hJ₂ L w x
+              x) :=
+  cayley_pairOfPantsAlmostComplex h₀ _ _ w x
+
+/-- On every tangent space, the structure is the linear pair-of-pants structure with continuation
+necks of the end structures there, relative to `J₀`. -/
+theorem almostComplexStructureAt_pairOfPantsContinuationAlmostComplex (L : Puncture → ℝ)
+    (w : ThricePuncturedSphere) (x : M) :
+    (h₀.pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ L w).almostComplexStructureAt x =
+      Floer.pairOfPantsContinuationAlmostComplex (V := TangentSpace I x) (M := Unit)
+        (h₀.compatibleAt x) (fun q t _ => (J₁ q t).almostComplexStructureAt x)
+        (fun q t _ => (J₂ q t).almostComplexStructureAt x)
+        (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ₁ q t) x)
+        (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ₂ q t) x) L w () := by
+  -- Both structures are tame and have the same Cayley coordinate relative to `J₀`.
+  refine (h₀.compatibleAt x).eq_of_cayley_eq (h₀.isNondegenerate.tames_iff.mp
+    (h₀.tames_pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ L w) x)
+    (Floer.tames_pairOfPantsContinuationAlmostComplex (h₀.compatibleAt x) w ()) ?_
+  simp only [cayley_pairOfPantsContinuationAlmostComplex,
+    Floer.cayley_pairOfPantsContinuationAlmostComplex,
+    almostComplexStructureAt_continuationAlmostComplex]
 
 /-- The pair-of-pants structure with continuation necks is `σ`-compatible when the inner and
 outer families are. -/
 theorem compatible_pairOfPantsContinuationAlmostComplex (hJ₁c : ∀ q t, σ.Compatible (J₁ q t))
     (hJ₂c : ∀ q t, σ.Compatible (J₂ q t)) (L : Puncture → ℝ) (w : ThricePuncturedSphere) :
-    σ.Compatible (h₀.pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ L w) := by
-  refine h₀.isNondegenerate.compatible_iff.mpr fun x => ?_
-  rw [almostComplexStructureAt_pairOfPantsContinuationAlmostComplex]
-  exact Floer.compatible_pairOfPantsContinuationAlmostComplex (h₀.compatibleAt x)
-    (fun q t _ => h₀.isNondegenerate.compatible_iff.mp (hJ₁c q t) x)
-    (fun q t _ => h₀.isNondegenerate.compatible_iff.mp (hJ₂c q t) x) w ()
+    σ.Compatible (h₀.pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ L w) :=
+  compatible_pairOfPantsAlmostComplex h₀ _ _
+    (fun q _ => h₀.compatible_continuationAlmostComplex _ _ _ _ (hJ₁c q) (hJ₂c q) _) w
 
 /-! ### Comparison with the pair-of-pants structures -/
 
@@ -355,15 +301,24 @@ theorem contMDiff_pairOfPantsContinuationAlmostComplex
           ).toEndomorphism (b p))) := by
   intro y₀
   have hq (q : Puncture) : f y₀ ≠ q.endCenter := ne_endCenter (hS y₀) q
-  simp only [pairOfPantsContinuationAlmostComplex_toEndomorphism]
+  have hK (y : N) : LinearMap.toContinuousLinearMap
+      ((h₀.pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ (L y) ⟨f y, hS y⟩
+        ).almostComplexStructureAt (b y)).toLinearMap =
+      (h₀.pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ (L y) ⟨f y, hS y⟩).toEndomorphism
+        (b y) :=
+    ContinuousLinearMap.coe_injective
+      (SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap _ _)
+  simp only [← hK]
   refine h₀.contMDiffAt_of_cayley_eq_sum
-    (K := fun y => pairOfPantsContinuationAt h₀ J₁ J₂ hJ₁ hJ₂ (L y) (f y) (b y))
+    (K := fun y => (h₀.pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ (L y) ⟨f y, hS y⟩
+      ).almostComplexStructureAt (b y))
     (L := fun q y => h₀.continuationAlmostComplex (J₁ q) (J₂ q) (hJ₁ q) (hJ₂ q)
       (q.endSign * (q.endCoord (f y)).re - L y q, (q.endCoord (f y)).im))
     (a := fun q y => smoothTransition (q.endSign * (q.endCoord (f y)).re - 1))
-    (fun y => Floer.tames_pairOfPantsContinuationAlmostComplex (h₀.compatibleAt (b y)) _ ())
+    (fun y => h₀.isNondegenerate.tames_iff.mp
+      (h₀.tames_pairOfPantsContinuationAlmostComplex J₁ J₂ hJ₁ hJ₂ _ _) (b y))
     (fun q _ => h₀.tames_continuationAlmostComplex _ _ _ _ _)
-    (fun y => cayley_pairOfPantsContinuationAt h₀ J₁ J₂ hJ₁ hJ₂ _ _ _) (hb y₀)
+    (fun y => cayley_pairOfPantsContinuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ _ _ _) (hb y₀)
     (fun q => Floer.contMDiffAt_smoothTransition_endCoord_comp q 1 (hf y₀) (hq q)) fun q => ?_
   -- The continuation homotopy of the end `q` is read at `(σ_q - L q, t_q)`: its longitudinal
   -- argument is smooth away from the center of the end, and the end families are smooth at the
