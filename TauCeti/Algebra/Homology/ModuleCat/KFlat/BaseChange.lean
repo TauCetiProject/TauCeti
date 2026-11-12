@@ -131,19 +131,14 @@ theorem isLeftDerivedFunctor_extendScalars_iff_isIso :
     LF.IsLeftDerivedFunctor α (quasiIso (ModuleCat.{u} R) (.up ℤ)) ↔
       ∀ (P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat], IsIso (α.app P) := by
   rw [(derives_complexBaseChange_of_inverts f F hF).isLeftDerivedFunctor_iff_isIso]
-  constructor
-  · intro h P hP
-    exact h ⟨P, hP⟩
-  · rintro h ⟨P, hP⟩
-    exact @h P hP
+  exact ⟨fun h P hP ↦ h ⟨P, hP⟩, fun h ⟨P, hP⟩ ↦ @h P hP⟩
 
 include hF in
 /-- When `F` inverts quasi-isomorphisms of `S`-module complexes, any left derived functor `(LF, α)`
 of `complexBaseChange f ⋙ F` is computed by termwise scalar extension on K-flat complexes. -/
 theorem isIso_app_of_isLeftDerivedFunctor_extendScalars_of_isKFlat
     [LF.IsLeftDerivedFunctor α (quasiIso (ModuleCat.{u} R) (.up ℤ))]
-    (P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
-    IsIso (α.app P) :=
+    (P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] : IsIso (α.app P) :=
   (isLeftDerivedFunctor_extendScalars_iff_isIso f F hF α).1 inferInstance P
 
 include hF in
@@ -153,8 +148,7 @@ flat `R`-modules. -/
 theorem isIso_app_of_isLeftDerivedFunctor_extendScalars_of_boundedAbove_flat
     [LF.IsLeftDerivedFunctor α (quasiIso (ModuleCat.{u} R) (.up ℤ))]
     (P : CochainComplex (ModuleCat.{u} R) ℤ) (b : ℤ) [P.IsStrictlyLE b]
-    (hP : ∀ n, Module.Flat R (P.X n)) :
-    IsIso (α.app P) :=
+    (hP : ∀ n, Module.Flat R (P.X n)) : IsIso (α.app P) :=
   have := CochainComplex.isKFlat_of_boundedAbove_flat_moduleCat P b hP
   isIso_app_of_isLeftDerivedFunctor_extendScalars_of_isKFlat f F hF α P
 
@@ -194,8 +188,7 @@ theorem hasLeftDerivedFunctor_extendScalars {R S : Type u} [CommRing R] [CommRin
     (f : R →+* S) [HasDerivedCategory.{w} (ModuleCat.{u} S)] :
     (complexBaseChange f ⋙ DerivedCategory.Q (C := ModuleCat.{u} S)).HasLeftDerivedFunctor
       (HomologicalComplex.quasiIso (ModuleCat.{u} R) (ComplexShape.up ℤ)) :=
-  hasLeftDerivedFunctor_extendScalars_of_inverts f
-    (DerivedCategory.Q (C := ModuleCat.{u} S))
+  hasLeftDerivedFunctor_extendScalars_of_inverts f (DerivedCategory.Q (C := ModuleCat.{u} S))
     (Localization.inverts DerivedCategory.Q (quasiIso (ModuleCat.{u} S) (.up ℤ)))
 
 attribute [instance] hasLeftDerivedFunctor_extendScalars
@@ -203,34 +196,39 @@ attribute [instance] hasLeftDerivedFunctor_extendScalars
 section Adjunction
 
 variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
-  [HasDerivedCategory.{w} (ModuleCat.{u} R)]
-  [HasDerivedCategory.{w'} (ModuleCat.{u} S)]
+  [HasDerivedCategory.{w} (ModuleCat.{u} R)] [HasDerivedCategory.{w'} (ModuleCat.{u} S)]
   (G : DerivedCategory (ModuleCat.{u} R) ⥤ DerivedCategory (ModuleCat.{u} S))
   (α : DerivedCategory.Q ⋙ G ⟶ complexBaseChange f ⋙ DerivedCategory.Q)
-  [G.IsLeftDerivedFunctor α
-    (HomologicalComplex.quasiIso (ModuleCat.{u} R) (ComplexShape.up ℤ))]
+  [G.IsLeftDerivedFunctor α (HomologicalComplex.quasiIso (ModuleCat.{u} R) (ComplexShape.up ℤ))]
+
+private lemma isLeftDerivedFunctor_comp_mapDerivedCategory :
+    (G ⋙ (ModuleCat.restrictScalars.{u} f).mapDerivedCategory).IsLeftDerivedFunctor
+      ((Functor.associator _ _ _).inv ≫
+        whiskerRight α (ModuleCat.restrictScalars.{u} f).mapDerivedCategory)
+      (quasiIso (ModuleCat.{u} R) (.up ℤ)) :=
+  isLeftDerivedFunctor_comp_of_isLeftDerivedFunctor_extendScalars f DerivedCategory.Q
+    (Localization.inverts DerivedCategory.Q (quasiIso (ModuleCat.{u} S) (.up ℤ))) α _
+
+private lemma isRightDerivedFunctor_mapDerivedCategory_comp :
+    ((ModuleCat.restrictScalars.{u} f).mapDerivedCategory ⋙ G).IsRightDerivedFunctor
+      (whiskerRight (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv G ≫
+        (Functor.associator _ _ _).hom)
+      (quasiIso (ModuleCat.{u} S) (.up ℤ)) :=
+  Functor.isRightDerivedFunctor_of_inverts (quasiIso (ModuleCat.{u} S) (.up ℤ)) _
+    (asIso (whiskerRight (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv G ≫
+      (Functor.associator _ _ _).hom)).symm
 
 /-- Every left derived functor `(G, α)` of `complexBaseChange f ⋙ DerivedCategory.Q` is left
 adjoint to derived restriction of scalars `(ModuleCat.restrictScalars f).mapDerivedCategory`. -/
-def derivedExtendRestrictScalarsAdj :
-    G ⊣ (ModuleCat.restrictScalars.{u} f).mapDerivedCategory :=
-  let Rder := (ModuleCat.restrictScalars.{u} f).mapDerivedCategory
-  let β := (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv
-  have : Rder.IsRightDerivedFunctor β (quasiIso (ModuleCat.{u} S) (.up ℤ)) :=
-    Functor.isRightDerivedFunctor_of_inverts (quasiIso (ModuleCat.{u} S) (.up ℤ)) Rder
-      (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors
-  have : (G ⋙ Rder).IsLeftDerivedFunctor
-      ((Functor.associator _ _ _).inv ≫ whiskerRight α Rder)
-      (quasiIso (ModuleCat.{u} R) (.up ℤ)) :=
-    isLeftDerivedFunctor_comp_of_isLeftDerivedFunctor_extendScalars f DerivedCategory.Q
-      (Localization.inverts DerivedCategory.Q (quasiIso (ModuleCat.{u} S) (.up ℤ))) α Rder
-  have : (Rder ⋙ G).IsRightDerivedFunctor
-      (whiskerRight β G ≫ (Functor.associator _ _ _).hom)
-      (quasiIso (ModuleCat.{u} S) (.up ℤ)) :=
-    Functor.isRightDerivedFunctor_of_inverts (quasiIso (ModuleCat.{u} S) (.up ℤ)) (Rder ⋙ G)
-      (asIso (whiskerRight β G ≫ (Functor.associator _ _ _).hom)).symm
+def derivedExtendRestrictScalarsAdj : G ⊣ (ModuleCat.restrictScalars.{u} f).mapDerivedCategory :=
+  have := Functor.isRightDerivedFunctor_of_inverts (quasiIso (ModuleCat.{u} S) (.up ℤ))
+    (ModuleCat.restrictScalars.{u} f).mapDerivedCategory
+    (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors
+  have := isLeftDerivedFunctor_comp_mapDerivedCategory f G α
+  have := isRightDerivedFunctor_mapDerivedCategory_comp f G
   ((ModuleCat.extendRestrictScalarsAdj.{u, u, u} f).mapHomologicalComplex (.up ℤ)).derived
-    (quasiIso (ModuleCat.{u} R) (.up ℤ)) (quasiIso (ModuleCat.{u} S) (.up ℤ)) α β
+    (quasiIso (ModuleCat.{u} R) (.up ℤ)) (quasiIso (ModuleCat.{u} S) (.up ℤ)) α
+    (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv
 
 /-- The unit of `derivedExtendRestrictScalarsAdj` on a localized complex `Q.obj K` intertwines the
 comparison `α` with the degreewise unit of `ModuleCat.extendRestrictScalarsAdj f`. -/
@@ -243,12 +241,7 @@ lemma derivedExtendRestrictScalarsAdj_unit_app_comp (K : CochainComplex (ModuleC
           (.up ℤ)).unit.app K) ≫
         (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv.app
           ((complexBaseChange f).obj K) := by
-  let Rder := (ModuleCat.restrictScalars.{u} f).mapDerivedCategory
-  have : (G ⋙ Rder).IsLeftDerivedFunctor
-      ((Functor.associator _ _ _).inv ≫ whiskerRight α Rder)
-      (quasiIso (ModuleCat.{u} R) (.up ℤ)) :=
-    isLeftDerivedFunctor_comp_of_isLeftDerivedFunctor_extendScalars f DerivedCategory.Q
-      (Localization.inverts DerivedCategory.Q (quasiIso (ModuleCat.{u} S) (.up ℤ))) α Rder
+  have := isLeftDerivedFunctor_comp_mapDerivedCategory f G α
   dsimp [derivedExtendRestrictScalarsAdj]
   exact Adjunction.derivedη_fac_app
     ((ModuleCat.extendRestrictScalarsAdj.{u, u, u} f).mapHomologicalComplex (.up ℤ))
@@ -266,17 +259,12 @@ lemma map_comp_derivedExtendRestrictScalarsAdj_counit_app
         DerivedCategory.Q.map
           (((ModuleCat.extendRestrictScalarsAdj.{u, u, u} f).mapHomologicalComplex
             (.up ℤ)).counit.app M) := by
-  let Rder := (ModuleCat.restrictScalars.{u} f).mapDerivedCategory
-  let β := (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv
-  have : (Rder ⋙ G).IsRightDerivedFunctor
-      (whiskerRight β G ≫ (Functor.associator _ _ _).hom)
-      (quasiIso (ModuleCat.{u} S) (.up ℤ)) :=
-    Functor.isRightDerivedFunctor_of_inverts (quasiIso (ModuleCat.{u} S) (.up ℤ)) (Rder ⋙ G)
-      (asIso (whiskerRight β G ≫ (Functor.associator _ _ _).hom)).symm
+  have := isRightDerivedFunctor_mapDerivedCategory_comp f G
   dsimp [derivedExtendRestrictScalarsAdj]
   exact Adjunction.derivedε_fac_app
     ((ModuleCat.extendRestrictScalarsAdj.{u, u, u} f).mapHomologicalComplex (.up ℤ))
-    (quasiIso (ModuleCat.{u} S) (.up ℤ)) α β M
+    (quasiIso (ModuleCat.{u} S) (.up ℤ)) α
+    (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv M
 
 end Adjunction
 
@@ -297,13 +285,11 @@ theorem nonempty_derivedExtendRestrictScalarsAdj {R S : Type u} [CommRing R] [Co
 section Canonical
 
 variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
-  [HasDerivedCategory.{w} (ModuleCat.{u} R)]
-  [HasDerivedCategory.{w'} (ModuleCat.{u} S)]
+  [HasDerivedCategory.{w} (ModuleCat.{u} R)] [HasDerivedCategory.{w'} (ModuleCat.{u} S)]
 
 /-- The canonical left derived scalar extension functor `− ⊗^L_R S : D(R) ⥤ D(S)` along
 `f : R →+* S`. -/
-def derivedExtendScalars :
-    DerivedCategory (ModuleCat.{u} R) ⥤ DerivedCategory (ModuleCat.{u} S) :=
+def derivedExtendScalars : DerivedCategory (ModuleCat.{u} R) ⥤ DerivedCategory (ModuleCat.{u} S) :=
   (complexBaseChange f ⋙ DerivedCategory.Q (C := ModuleCat.{u} S)).totalLeftDerived
     DerivedCategory.Q (quasiIso (ModuleCat.{u} R) (.up ℤ))
 
@@ -316,8 +302,7 @@ def derivedExtendScalarsCounit :
 
 instance : (derivedExtendScalars f).IsLeftDerivedFunctor (derivedExtendScalarsCounit f)
     (quasiIso (ModuleCat.{u} R) (.up ℤ)) := by
-  dsimp [derivedExtendScalars, derivedExtendScalarsCounit]
-  infer_instance
+  dsimp [derivedExtendScalars, derivedExtendScalarsCounit]; infer_instance
 
 instance (P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
     IsIso ((derivedExtendScalarsCounit f).app P) :=
@@ -336,15 +321,13 @@ def derivedExtendScalarsKFlatIso (P : CochainComplex (ModuleCat.{u} R) ℤ) [P.I
 /-- The forward morphism of `derivedExtendScalarsKFlatIso` is the counit component. -/
 @[simp]
 lemma derivedExtendScalarsKFlatIso_hom (P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
-    (derivedExtendScalarsKFlatIso f P).hom = (derivedExtendScalarsCounit f).app P :=
-  (rfl)
+    (derivedExtendScalarsKFlatIso f P).hom = (derivedExtendScalarsCounit f).app P := (rfl)
 
 /-- The inverse morphism of `derivedExtendScalarsKFlatIso` is the categorical inverse of the counit
 component. -/
 @[simp]
 lemma derivedExtendScalarsKFlatIso_inv (P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
-    (derivedExtendScalarsKFlatIso f P).inv = inv ((derivedExtendScalarsCounit f).app P) :=
-  (rfl)
+    (derivedExtendScalarsKFlatIso f P).inv = inv ((derivedExtendScalarsCounit f).app P) := (rfl)
 
 /-- The canonical adjunction
 `derivedExtendScalars f ⊣ (ModuleCat.restrictScalars f).mapDerivedCategory` between derived

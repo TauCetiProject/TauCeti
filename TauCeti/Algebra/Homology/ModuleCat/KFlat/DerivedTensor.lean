@@ -175,8 +175,7 @@ def derivedTensorCounit :
 
 instance : (derivedTensor R).IsLeftDerivedFunctor₂ (derivedTensorCounit R)
     (quasiIso (ModuleCat.{u} R) (.up ℤ)) (quasiIso (ModuleCat.{u} R) (.up ℤ)) := by
-  dsimp [derivedTensor, derivedTensorCounit]
-  infer_instance
+  dsimp [derivedTensor, derivedTensorCounit]; infer_instance
 
 variable {R}
 
@@ -184,8 +183,7 @@ instance (K : CochainComplex (ModuleCat.{u} R) ℤ) :
     ((derivedTensor R).obj (DerivedCategory.Q.obj K)).IsLeftDerivedFunctor
       (Functor.bifunctorCounit₁ (derivedTensorCounit R) K)
       (quasiIso (ModuleCat.{u} R) (.up ℤ)) :=
-  isLeftDerivedFunctor_bifunctorCounit₁_of_isLeftDerivedFunctor₂_tensor
-    DerivedCategory.Q
+  isLeftDerivedFunctor_bifunctorCounit₁_of_isLeftDerivedFunctor₂_tensor DerivedCategory.Q
     (Localization.inverts DerivedCategory.Q (quasiIso (ModuleCat.{u} R) (.up ℤ)))
     (derivedTensorCounit R) K
 
@@ -193,24 +191,21 @@ instance (L : CochainComplex (ModuleCat.{u} R) ℤ) :
     ((derivedTensor R).flip.obj (DerivedCategory.Q.obj L)).IsLeftDerivedFunctor
       (Functor.bifunctorCounit₂ (derivedTensorCounit R) L)
       (quasiIso (ModuleCat.{u} R) (.up ℤ)) :=
-  isLeftDerivedFunctor_bifunctorCounit₂_of_isLeftDerivedFunctor₂_tensor
-    DerivedCategory.Q
+  isLeftDerivedFunctor_bifunctorCounit₂_of_isLeftDerivedFunctor₂_tensor DerivedCategory.Q
     (Localization.inverts DerivedCategory.Q (quasiIso (ModuleCat.{u} R) (.up ℤ)))
     (derivedTensorCounit R) L
 
 instance (P L : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
     IsIso (((derivedTensorCounit R).app P).app L) :=
-  isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_left
-    DerivedCategory.Q
+  isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_left DerivedCategory.Q
     (Localization.inverts DerivedCategory.Q (quasiIso (ModuleCat.{u} R) (.up ℤ)))
     (derivedTensorCounit R) P L
 
-instance (K Q : CochainComplex (ModuleCat.{u} R) ℤ) [Q.IsKFlat] :
-    IsIso (((derivedTensorCounit R).app K).app Q) :=
-  isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_right
-    DerivedCategory.Q
+instance (K P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
+    IsIso (((derivedTensorCounit R).app K).app P) :=
+  isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_right DerivedCategory.Q
     (Localization.inverts DerivedCategory.Q (quasiIso (ModuleCat.{u} R) (.up ℤ)))
-    (derivedTensorCounit R) K Q
+    (derivedTensorCounit R) K P
 
 /-- The object isomorphism `((derivedTensor R).obj (DerivedCategory.Q.obj P)).obj
 (DerivedCategory.Q.obj L) ≅ DerivedCategory.Q.obj (P ⊗ L)` induced by `derivedTensorCounit R` when
@@ -223,36 +218,32 @@ def derivedTensorKFlatLeftIso (P L : CochainComplex (ModuleCat.{u} R) ℤ) [P.Is
 /-- The forward morphism of `derivedTensorKFlatLeftIso` is the counit component. -/
 @[simp]
 lemma derivedTensorKFlatLeftIso_hom (P L : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
-    (derivedTensorKFlatLeftIso P L).hom = ((derivedTensorCounit R).app P).app L :=
-  (rfl)
+    (derivedTensorKFlatLeftIso P L).hom = ((derivedTensorCounit R).app P).app L := (rfl)
 
 /-- The inverse morphism of `derivedTensorKFlatLeftIso` is the categorical inverse of the counit
 component. -/
 @[simp]
 lemma derivedTensorKFlatLeftIso_inv (P L : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
-    (derivedTensorKFlatLeftIso P L).inv = inv (((derivedTensorCounit R).app P).app L) :=
-  (rfl)
+    (derivedTensorKFlatLeftIso P L).inv = inv (((derivedTensorCounit R).app P).app L) := (rfl)
 
 /-- The object isomorphism `((derivedTensor R).obj (DerivedCategory.Q.obj K)).obj
-(DerivedCategory.Q.obj Q) ≅ DerivedCategory.Q.obj (K ⊗ Q)` induced by `derivedTensorCounit R` when
-the right complex `Q` is K-flat. -/
-def derivedTensorKFlatRightIso (K Q : CochainComplex (ModuleCat.{u} R) ℤ) [Q.IsKFlat] :
-    ((derivedTensor R).obj (DerivedCategory.Q.obj K)).obj (DerivedCategory.Q.obj Q) ≅
-      DerivedCategory.Q.obj (K ⊗ Q) :=
-  asIso (((derivedTensorCounit R).app K).app Q)
+(DerivedCategory.Q.obj P) ≅ DerivedCategory.Q.obj (K ⊗ P)` induced by `derivedTensorCounit R` when
+the right complex `P` is K-flat. -/
+def derivedTensorKFlatRightIso (K P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
+    ((derivedTensor R).obj (DerivedCategory.Q.obj K)).obj (DerivedCategory.Q.obj P) ≅
+      DerivedCategory.Q.obj (K ⊗ P) :=
+  asIso (((derivedTensorCounit R).app K).app P)
 
 /-- The forward morphism of `derivedTensorKFlatRightIso` is the counit component. -/
 @[simp]
-lemma derivedTensorKFlatRightIso_hom (K Q : CochainComplex (ModuleCat.{u} R) ℤ) [Q.IsKFlat] :
-    (derivedTensorKFlatRightIso K Q).hom = ((derivedTensorCounit R).app K).app Q :=
-  (rfl)
+lemma derivedTensorKFlatRightIso_hom (K P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
+    (derivedTensorKFlatRightIso K P).hom = ((derivedTensorCounit R).app K).app P := (rfl)
 
 /-- The inverse morphism of `derivedTensorKFlatRightIso` is the categorical inverse of the counit
 component. -/
 @[simp]
-lemma derivedTensorKFlatRightIso_inv (K Q : CochainComplex (ModuleCat.{u} R) ℤ) [Q.IsKFlat] :
-    (derivedTensorKFlatRightIso K Q).inv = inv (((derivedTensorCounit R).app K).app Q) :=
-  (rfl)
+lemma derivedTensorKFlatRightIso_inv (K P : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
+    (derivedTensorKFlatRightIso K P).inv = inv (((derivedTensorCounit R).app K).app P) := (rfl)
 
 end DerivedCategory
 

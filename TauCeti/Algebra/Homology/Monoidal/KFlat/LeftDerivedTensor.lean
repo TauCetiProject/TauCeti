@@ -154,14 +154,11 @@ theorem hasLeftDerivedFunctor₂_tensor_of_inverts :
 section Characterization
 
 variable {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
-  {L₁ : CochainComplex C ℤ ⥤ D₁}
-  {L₂ : CochainComplex C ℤ ⥤ D₂}
-  [L₁.IsLocalization (quasiIso C (.up ℤ))]
-  [L₂.IsLocalization (quasiIso C (.up ℤ))]
+  {L₁ : CochainComplex C ℤ ⥤ D₁} {L₂ : CochainComplex C ℤ ⥤ D₂}
+  [L₁.IsLocalization (quasiIso C (.up ℤ))] [L₂.IsLocalization (quasiIso C (.up ℤ))]
   {LF : D₁ ⥤ D₂ ⥤ H}
   (α : (((whiskeringLeft₂ H).obj L₁).obj L₂).obj LF ⟶
-    MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
-      (whiskeringRight _ _ _).obj F)
+    MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F)
 
 include hF in
 /-- When `F` inverts quasi-isomorphisms, a bifunctor `(LF, α)` is a left derived bifunctor of
@@ -173,11 +170,7 @@ theorem isLeftDerivedFunctor₂_tensor_iff_isIso_left :
         IsIso ((α.app P).app L) := by
   rw [Functor.IsLeftDerivedFunctor₂,
     (derives_tensor_left_of_inverts F hF).isLeftDerivedFunctor_iff_isIso]
-  constructor
-  · intro h P hP L
-    exact h (⟨P, hP⟩, L)
-  · rintro h ⟨⟨P, hP⟩, L⟩
-    exact @h P hP L
+  exact ⟨fun h P hP L ↦ h (⟨P, hP⟩, L), fun h ⟨⟨P, hP⟩, L⟩ ↦ @h P hP L⟩
 
 include hF in
 /-- When `F` inverts quasi-isomorphisms, a bifunctor `(LF, α)` is a left derived bifunctor of
@@ -189,11 +182,7 @@ theorem isLeftDerivedFunctor₂_tensor_iff_isIso_right :
         IsIso ((α.app K).app Q) := by
   rw [Functor.IsLeftDerivedFunctor₂,
     (derives_tensor_right_of_inverts F hF).isLeftDerivedFunctor_iff_isIso]
-  constructor
-  · intro h K Q hQ
-    exact h (K, ⟨Q, hQ⟩)
-  · rintro h ⟨K, ⟨Q, hQ⟩⟩
-    exact @h K Q hQ
+  exact ⟨fun h K Q hQ ↦ h (K, ⟨Q, hQ⟩), fun h ⟨K, ⟨Q, hQ⟩⟩ ↦ @h K Q hQ⟩
 
 include hF in
 /-- When `F` inverts quasi-isomorphisms, any left derived bifunctor `(LF, α)` of

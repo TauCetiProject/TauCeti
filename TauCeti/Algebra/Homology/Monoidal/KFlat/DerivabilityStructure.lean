@@ -112,9 +112,7 @@ private def attachStepMap (E : C ⥤ C) (p : E ⟶ 𝟭 C) (huv : u ≫ f₂ = f
 
 private lemma attachStepMap_congr (E : C ⥤ C) (p : E ⟶ 𝟭 C) {u' : P₁ ⟶ P₂} (hu : u = u')
     (huv : u ≫ f₂ = f₁ ≫ v) (huv' : u' ≫ f₂ = f₁ ≫ v) :
-    attachStepMap E p huv = attachStepMap E p huv' := by
-  subst hu
-  rfl
+    attachStepMap E p huv = attachStepMap E p huv' := by subst hu; rfl
 
 private lemma attachStepMap_comp_attachDesc (E : C ⥤ C) (p : E ⟶ 𝟭 C) (huv : u ≫ f₂ = f₁ ≫ v) :
     attachStepMap E p huv ≫ attachDesc f₂ (fun n ↦ p.app (boundaryPairs f₂ n)) =
@@ -146,9 +144,7 @@ private lemma attachStepMap_id (E : C ⥤ C) (p : E ⟶ 𝟭 C) (f : P₁ ⟶ K�
       𝟙 (mappingCone (attachingMap f fun n ↦ p.app (boundaryPairs f n))) := by
   dsimp only [attachStepMap]
   rw [← mappingCone.map_id]
-  congr 1
-  ext n
-  simp [cellComplexMap]
+  congr 1; ext n; simp [cellComplexMap]
 
 private lemma attachStepMap_comp (E : C ⥤ C) (p : E ⟶ 𝟭 C) {u' : P₂ ⟶ P₃} {v' : K₂ ⟶ K₃}
     (huv : u ≫ f₂ = f₁ ≫ v) (huv' : u' ≫ f₃ = f₂ ≫ v') :
@@ -157,9 +153,7 @@ private lemma attachStepMap_comp (E : C ⥤ C) (p : E ⟶ 𝟭 C) {u' : P₂ ⟶
       attachStepMap E p huv ≫ attachStepMap E p huv' := by
   dsimp only [attachStepMap]
   rw [← mappingCone.map_comp]
-  congr 1
-  ext n
-  dsimp [cellComplexMap]
+  congr 1; ext n; dsimp [cellComplexMap]
   rw [boundaryPairsMap_comp huv huv', E.map_comp]
 
 end StepMap
@@ -172,9 +166,7 @@ private def stageMapAux {K L : CochainComplex C ℤ} (g : K ⟶ L) :
     ∀ k : ℕ, { u : (stage E.obj p.app K k).1 ⟶ (stage E.obj p.app L k).1 //
       u ≫ (stage E.obj p.app L k).2 = (stage E.obj p.app K k).2 ≫ g }
   | 0 => ⟨{ f := fun n ↦ E.map (cyclesMap g n), comm' := fun _ _ _ ↦ by dsimp [stage]; simp }, by
-      ext n
-      dsimp [stage]
-      rw [p.naturality_assoc, Functor.id_map, cyclesMap_i, Category.assoc]⟩
+      ext n; dsimp [stage]; rw [p.naturality_assoc, Functor.id_map, cyclesMap_i, Category.assoc]⟩
   | k + 1 => ⟨attachStepMap E p (stageMapAux g k).2,
       attachStepMap_comp_attachDesc E p (stageMapAux g k).2⟩
 
@@ -192,8 +184,7 @@ lemma stageMap_comp_snd {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
 /-- On the initial stage, `stageMap` applies `E` to the induced maps on cycles. -/
 @[simp]
 lemma stageMap_zero_f {K L : CochainComplex C ℤ} (g : K ⟶ L) (n : ℤ) :
-    (stageMap E p g 0).f n = E.map (cyclesMap g n) :=
-  (rfl)
+    (stageMap E p g 0).f n = E.map (cyclesMap g n) := (rfl)
 
 /-- The stage maps commute with the inclusions into the next stages. -/
 @[reassoc]
@@ -210,8 +201,7 @@ lemma inr_stageMap {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
 lemma stageMap_id (K : CochainComplex C ℤ) :
     ∀ k : ℕ, stageMap E p (𝟙 K) k = 𝟙 (stage E.obj p.app K k).1
   | 0 => by ext n; dsimp [stage, stageMap, stageMapAux]; simp
-  | k + 1 =>
-      (attachStepMap_congr E p (stageMap_id K k) _ (by simp)).trans (attachStepMap_id E p _)
+  | k + 1 => (attachStepMap_congr E p (stageMap_id K k) _ (by simp)).trans (attachStepMap_id E p _)
 
 /-- Composition of chain maps induces composition on every stage. -/
 @[simp]
@@ -222,51 +212,26 @@ lemma stageMap_comp {K L M : CochainComplex C ℤ} (g₁ : K ⟶ L) (g₂ : L �
       (attachStepMap_congr E p (stageMap_comp g₁ g₂ k) _ _).trans
         (attachStepMap_comp E p (stageMapAux E p g₁ k).2 (stageMapAux E p g₂ k).2)
 
-/-- The natural transformation of stage sequences induced by a chain map `g : K ⟶ L`. -/
-def sequenceMap {K L : CochainComplex C ℤ} (g : K ⟶ L) :
-    sequence E.obj p.app K ⟶ sequence E.obj p.app L :=
-  NatTrans.ofSequence (stageMap E p g) fun k ↦ by
-    rw [sequence_map_succ, sequence_map_succ]
-    exact inr_stageMap E p g k
-
-/-- At stage `k`, `sequenceMap E p g` is `stageMap E p g k`. -/
-@[simp]
-lemma sequenceMap_app {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
-    (sequenceMap E p g).app k = stageMap E p g k :=
-  (rfl)
-
-/-- Identity chain maps induce identity natural transformations of stage sequences. -/
-@[simp]
-lemma sequenceMap_id (K : CochainComplex C ℤ) :
-    sequenceMap E p (𝟙 K) = 𝟙 (sequence E.obj p.app K) :=
-  NatTrans.ext <| funext fun k ↦ (sequenceMap_app E p (𝟙 K) k).trans (stageMap_id E p K k)
-
-/-- Composition of chain maps induces composition on stage sequences. -/
-@[simp]
-lemma sequenceMap_comp {K L M : CochainComplex C ℤ} (g₁ : K ⟶ L) (g₂ : L ⟶ M) :
-    sequenceMap E p (g₁ ≫ g₂) = sequenceMap E p g₁ ≫ sequenceMap E p g₂ :=
-  NatTrans.ext <| funext fun k ↦
-    (sequenceMap_app E p (g₁ ≫ g₂) k).trans (stageMap_comp E p g₁ g₂ k)
-
 /-- The functor sending a cochain complex `K` to its cell-attachment sequence
 `kFlatResolution.sequence E.obj p.app K`. -/
 -- Expose and mark `implicit_reducible` so `(sequenceFunctor E p).obj K` unifies with `sequence`.
 @[expose, implicit_reducible]
 def sequenceFunctor : CochainComplex C ℤ ⥤ (ℕ ⥤ CochainComplex C ℤ) where
   obj K := sequence E.obj p.app K
-  map g := sequenceMap E p g
+  map g := NatTrans.ofSequence (stageMap E p g) fun k ↦ by
+    rw [sequence_map_succ, sequence_map_succ]; exact inr_stageMap E p g k
+  map_id K := NatTrans.ext <| funext <| stageMap_id E p K
+  map_comp g₁ g₂ := NatTrans.ext <| funext <| stageMap_comp E p g₁ g₂
 
 /-- On objects, `sequenceFunctor E p` is `kFlatResolution.sequence E.obj p.app`. -/
 @[simp]
 lemma sequenceFunctor_obj (K : CochainComplex C ℤ) :
-    (sequenceFunctor E p).obj K = sequence E.obj p.app K :=
-  (rfl)
+    (sequenceFunctor E p).obj K = sequence E.obj p.app K := (rfl)
 
-/-- On morphisms, `sequenceFunctor E p` is `sequenceMap E p`. -/
+/-- At stage `k`, `(sequenceFunctor E p).map g` acts by `stageMap E p g k`. -/
 @[simp]
-lemma sequenceFunctor_map {K L : CochainComplex C ℤ} (g : K ⟶ L) :
-    (sequenceFunctor E p).map g = sequenceMap E p g :=
-  (rfl)
+lemma sequenceFunctor_map_app {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
+    ((sequenceFunctor E p).map g).app k = stageMap E p g k := (rfl)
 
 section Colimit
 
@@ -286,8 +251,7 @@ def functor : CochainComplex C ℤ ⥤ CochainComplex C ℤ :=
 /-- On objects, `kFlatResolution.functor E p` agrees with `kFlatResolution E.obj p.app`. -/
 @[simp]
 lemma functor_obj (K : CochainComplex C ℤ) :
-    (functor E p).obj K = kFlatResolution E.obj p.app K :=
-  (rfl)
+    (functor E p).obj K = kFlatResolution E.obj p.app K := (rfl)
 
 /-- On morphisms, `kFlatResolution.functor E p` intertwines the colimit injections with
 `stageMap`. -/
@@ -295,7 +259,7 @@ lemma functor_obj (K : CochainComplex C ℤ) :
 lemma ι_functor_map {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
     colimit.ι (sequence E.obj p.app K) k ≫ (functor E p).map g =
       stageMap E p g k ≫ colimit.ι (sequence E.obj p.app L) k :=
-  ι_colimMap (sequenceMap E p g) k
+  ι_colimMap ((sequenceFunctor E p).map g) k
 
 /-- The comparison morphisms `kFlatResolution.π` assemble into a natural transformation
 `kFlatResolution.functor E p ⟶ 𝟭 (CochainComplex C ℤ)`. -/
@@ -308,9 +272,7 @@ def πNatTrans : functor E p ⟶ 𝟭 (CochainComplex C ℤ) where
 
 /-- Each component of `πNatTrans E p` is `kFlatResolution.π E.obj p.app`. -/
 @[simp]
-lemma πNatTrans_app (K : CochainComplex C ℤ) :
-    (πNatTrans E p).app K = π E.obj p.app K :=
-  (rfl)
+lemma πNatTrans_app (K : CochainComplex C ℤ) : (πNatTrans E p).app K = π E.obj p.app K := (rfl)
 
 /-- Naturality of `kFlatResolution.π` with respect to `kFlatResolution.functor E p`. -/
 @[reassoc (attr := simp)]
@@ -321,8 +283,7 @@ lemma functor_map_π {K L : CochainComplex C ℤ} (g : K ⟶ L) :
 /-- When sequential colimits in `C` are exact and every `p.app X` is an epimorphism, each component
 of `kFlatResolution.πNatTrans E p` belongs to `quasiIso C (.up ℤ)`. -/
 lemma mem_quasiIso_πNatTrans_app [HasExactColimitsOfShape ℕ C] [∀ X : C, Epi (p.app X)]
-    (K : CochainComplex C ℤ) :
-    quasiIso C (.up ℤ) ((πNatTrans E p).app K) :=
+    (K : CochainComplex C ℤ) : quasiIso C (.up ℤ) ((πNatTrans E p).app K) :=
   (mem_quasiIso_iff _).2 (inferInstanceAs (QuasiIso (π E.obj p.app K)))
 
 end Colimit
@@ -339,17 +300,13 @@ variable (C : Type*) [Category* C] [Abelian C] [MonoidalCategory C] [MonoidalPre
   [∀ K L : CochainComplex C ℤ, HasTensor K L]
 
 /-- The object property on `CochainComplex C ℤ` selecting K-flat cochain complexes. -/
-abbrev isKFlat : ObjectProperty (CochainComplex C ℤ) :=
-  fun K ↦ K.IsKFlat
+abbrev isKFlat : ObjectProperty (CochainComplex C ℤ) := fun K ↦ K.IsKFlat
 
 /-- A cochain complex belongs to `CochainComplex.isKFlat C` if and only if it is K-flat. -/
 @[simp]
-lemma mem_isKFlat_iff (K : CochainComplex C ℤ) :
-    isKFlat C K ↔ K.IsKFlat :=
-  Iff.rfl
+lemma mem_isKFlat_iff (K : CochainComplex C ℤ) : isKFlat C K ↔ K.IsKFlat := Iff.rfl
 
-instance (P : (isKFlat C).FullSubcategory) : P.obj.IsKFlat :=
-  P.property
+instance (P : (isKFlat C).FullSubcategory) : P.obj.IsKFlat := P.property
 
 /-- The localizer morphism given by the inclusion of the full subcategory of K-flat cochain
 complexes into `CochainComplex C ℤ`, with respect to quasi-isomorphisms. -/
@@ -363,18 +320,11 @@ def kFlatLocalizerMorphism :
 /-- The underlying functor of `kFlatLocalizerMorphism C` is the full subcategory inclusion
 `(isKFlat C).ι`. -/
 @[simp]
-lemma kFlatLocalizerMorphism_functor :
-    (kFlatLocalizerMorphism C).functor = (isKFlat C).ι :=
-  (rfl)
+lemma kFlatLocalizerMorphism_functor : (kFlatLocalizerMorphism C).functor = (isKFlat C).ι := (rfl)
 
-instance : (kFlatLocalizerMorphism C).IsInduced where
-  inverseImage_eq := (rfl)
-
-instance : (kFlatLocalizerMorphism C).functor.Full :=
-  inferInstanceAs (isKFlat C).ι.Full
-
-instance : (kFlatLocalizerMorphism C).functor.Faithful :=
-  inferInstanceAs (isKFlat C).ι.Faithful
+instance : (kFlatLocalizerMorphism C).IsInduced where inverseImage_eq := (rfl)
+instance : (kFlatLocalizerMorphism C).functor.Full := inferInstanceAs (isKFlat C).ι.Full
+instance : (kFlatLocalizerMorphism C).functor.Faithful := inferInstanceAs (isKFlat C).ι.Faithful
 
 section WithCover
 
@@ -390,24 +340,20 @@ variable {C}
 /-- Lifting `kFlatResolution.functor E p` to the full subcategory of K-flat cochain complexes. -/
 -- Expose so `((liftFunctor E p).obj K).obj` computes to `kFlatResolution E.obj p.app K`.
 @[expose]
-def kFlatResolution.liftFunctor :
-    CochainComplex C ℤ ⥤ (isKFlat C).FullSubcategory :=
+def kFlatResolution.liftFunctor : CochainComplex C ℤ ⥤ (isKFlat C).FullSubcategory :=
   (isKFlat C).lift (kFlatResolution.functor E p) fun K ↦ by
-    rw [mem_isKFlat_iff, kFlatResolution.functor_obj]
-    infer_instance
+    rw [mem_isKFlat_iff, kFlatResolution.functor_obj]; infer_instance
 
 /-- On objects, `kFlatResolution.liftFunctor E p` has underlying complex
 `kFlatResolution E.obj p.app K`. -/
 @[simp]
 lemma kFlatResolution.liftFunctor_obj_obj (K : CochainComplex C ℤ) :
-    ((kFlatResolution.liftFunctor E p).obj K).obj = kFlatResolution E.obj p.app K :=
-  (rfl)
+    ((kFlatResolution.liftFunctor E p).obj K).obj = kFlatResolution E.obj p.app K := (rfl)
 
 /-- On morphisms, `kFlatResolution.liftFunctor E p` acts by `(kFlatResolution.functor E p).map`. -/
 @[simp]
 lemma kFlatResolution.liftFunctor_map_hom {K L : CochainComplex C ℤ} (g : K ⟶ L) :
-    ((kFlatResolution.liftFunctor E p).map g).hom = (kFlatResolution.functor E p).map g :=
-  (rfl)
+    ((kFlatResolution.liftFunctor E p).map g).hom = (kFlatResolution.functor E p).map g := (rfl)
 
 variable [∀ X : C, Epi (p.app X)]
 
