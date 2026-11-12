@@ -126,12 +126,6 @@ private noncomputable def deviationCoeff (n : ℕ) (lam Lam κ q q' δ : ℝ) : 
   ENNReal.ofReal (forcingConst n lam Lam * κ ^ (n + 1) *
     ((2 * Lam) ^ (2 * q' - 1) * δ) ^ q'⁻¹ * (2 ^ (n + 1)) ^ q⁻¹)
 
-/-- The constant of the strong type `(e, e)` maximal inequality
-`TauCeti.lintegral_rpow_maximalFunction_le` on `ℝ^{n+1}`. -/
-private noncomputable def maximalConst (n : ℕ) (e : ℝ) : ℝ≥0∞ :=
-  ENNReal.ofReal (2 * e * 2 ^ (e - 1) / (e - 1)) *
-    4 ^ Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 1)))
-
 /-- **The mean oscillation estimate on one ball, in averages.** Let `u ∈ H¹(ℝ^{n+1})` solve
 `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly, let `κ ≥ 1`, and freeze the coefficients on `B_{κρ}` at an elliptic
 constant matrix `A` whose mean deviation from `a` there is at most `δ`. Then the square mean
@@ -377,17 +371,18 @@ private theorem lintegral_enorm_gradient_rpow_le
     {p : ℝ≥0∞} (h2p : 2 ≤ p)
     (hgp : MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
       p volume)
-    (hGp : MemLp G p volume) {q q' s : ℝ} (hqq : q.HolderConjugate q') (hq : 1 < q)
+    (hGp : MemLp G p volume) {q q' s : ℝ} (hqq : q.HolderConjugate q')
     (hqs : 2 * q < s) (hqp : ENNReal.ofReal (2 * q) ≤ p) {κ : ℝ} (hκ : 1 ≤ κ) {CFS : ℝ≥0∞}
     (hFS : ∫⁻ x, ‖W1p.gradient u x‖ₑ ^ s ≤
       CFS * ∫⁻ x, sharpMaximalFunction volume
         (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) x ^ s) :
     ∫⁻ x, ‖W1p.gradient u x‖ₑ ^ s ≤ CFS * (2 ^ (s / 2 - 1) * (2 ^ (s / 2 - 1) *
         (decayCoeff n lam Lam κ ^ (s / 2) *
-            (maximalConst n (s / 2) * ∫⁻ x, ‖W1p.gradient u x‖ₑ ^ s) +
-          forcingCoeff n lam Lam κ ^ (s / 2) * (maximalConst n (s / 2) * ∫⁻ x, ‖G x‖ₑ ^ s)) +
+            (maximalFunctionConst (n + 1) (s / 2) * ∫⁻ x, ‖W1p.gradient u x‖ₑ ^ s) +
+          forcingCoeff n lam Lam κ ^ (s / 2) *
+            (maximalFunctionConst (n + 1) (s / 2) * ∫⁻ x, ‖G x‖ₑ ^ s)) +
       deviationCoeff n lam Lam κ q q' δ ^ (s / 2) *
-        (maximalConst n (s / 2 / q) * ∫⁻ x, ‖W1p.gradient u x‖ₑ ^ s))) := by
+        (maximalFunctionConst (n + 1) (s / 2 / q) * ∫⁻ x, ‖W1p.gradient u x‖ₑ ^ s))) := by
   have hpt := sq_sharpMaximalFunction_gradient_le ha hbd hosc hu h2p hgp hGp hqq hqp hκ
   generalize (⇑(W1p.gradient u) : EuclideanSpace ℝ (Fin (n + 1)) →
     EuclideanSpace ℝ (Fin (n + 1))) = g at hgp hpt hFS ⊢
@@ -397,15 +392,15 @@ private theorem lintegral_enorm_gradient_rpow_le
   have hy2 : ∀ y : ℝ≥0∞, (y ^ 2) ^ (s / 2) = y ^ s := fun y => by
     rw [← ENNReal.rpow_natCast, Nat.cast_ofNat]
     exact hsq y 2 (by ring)
-  have hq0 : q ≠ 0 := (zero_lt_one.trans hq).ne'
+  have hq0 : q ≠ 0 := hqq.pos.ne'
   have hy3 : ∀ y : ℝ≥0∞, (y ^ (2 * q)) ^ (s / 2 / q) = y ^ s := fun y => by
     rw [div_div]; exact hsq y (2 * q) (by field_simp)
   have hbound := lintegral_rpow_le_of_sq_le_maximalFunction (g := fun x =>
       sharpMaximalFunction volume g x) volume
     (h₁ := fun y => ‖g y‖ₑ ^ 2) (h₂ := fun y => ‖G y‖ₑ ^ 2) (h₃ := fun y => ‖g y‖ₑ ^ (2 * q))
     (hgm.eNorm.pow_const 2) (hGp.aestronglyMeasurable.eNorm.pow_const 2)
-    (hgm.eNorm.pow_const _) hq hqs hpt
-  simp only [hy2, hy3] at hbound
+    (hgm.eNorm.pow_const _) hqq.lt hqs hpt
+  simp only [hy2, hy3, finrank_euclideanSpace, Fintype.card_fin] at hbound
   exact hFS.trans (mul_le_mul_right hbound _)
 
 /-- The choice of the parameters: for finite `K₁, K₃`, there are `κ ≥ 1` and `δ > 0` making the
@@ -457,23 +452,25 @@ private theorem eLpNorm_gradient_le_of_le_quarter
     {p : ℝ≥0∞} (hp : 2 < p) (hp_top : p ≠ ∞)
     (hgp : MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
       p volume)
-    (hGp : MemLp G p volume) {q q' s : ℝ} (hs_def : s = p.toReal) (hs : 2 < s)
-    (hqq : q.HolderConjugate q') (hq : 1 < q) (hqs : 2 * q < s)
-    (hqp : ENNReal.ofReal (2 * q) ≤ p) {κ : ℝ} (hκ : 1 ≤ κ) {CFS : ℝ≥0∞}
+    (hGp : MemLp G p volume) {q q' s : ℝ} (hs_def : s = p.toReal)
+    (hqq : q.HolderConjugate q') (hqs : 2 * q < s) {κ : ℝ} (hκ : 1 ≤ κ) {CFS : ℝ≥0∞}
     (hFS : ∫⁻ x, ‖W1p.gradient u x‖ₑ ^ s ≤
       CFS * ∫⁻ x, sharpMaximalFunction volume
         (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) x ^ s)
-    (hκ1 : CFS * 2 ^ (s / 2 - 1) * 2 ^ (s / 2 - 1) * maximalConst n (s / 2) *
+    (hκ1 : CFS * 2 ^ (s / 2 - 1) * 2 ^ (s / 2 - 1) * maximalFunctionConst (n + 1) (s / 2) *
         decayCoeff n lam Lam κ ^ (s / 2) ≤ 2⁻¹ / 2)
-    (hδ1 : CFS * 2 ^ (s / 2 - 1) * maximalConst n (s / 2 / q) *
+    (hδ1 : CFS * 2 ^ (s / 2 - 1) * maximalFunctionConst (n + 1) (s / 2 / q) *
         deviationCoeff n lam Lam κ q q' δ ^ (s / 2) ≤ 2⁻¹ / 2) :
     eLpNorm (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
         EuclideanSpace ℝ (Fin (n + 1))) p volume ≤
       (CFS * 2 ^ (s / 2 - 1) * 2 ^ (s / 2 - 1) * forcingCoeff n lam Lam κ ^ (s / 2) *
-        maximalConst n (s / 2) * 2) ^ (1 / s) * eLpNorm G p volume := by
+        maximalFunctionConst (n + 1) (s / 2) * 2) ^ (1 / s) * eLpNorm G p volume := by
   have hp0 : p ≠ 0 := (zero_lt_two.trans hp).ne'
-  have hs1 : 0 ≤ 1 / s := one_div_nonneg.2 (zero_le_two.trans hs.le)
-  have key := lintegral_enorm_gradient_rpow_le ha hbd hosc hu hp.le hgp hGp hqq hq hqs hqp hκ hFS
+  have hs1 : 0 ≤ 1 / s := one_div_nonneg.2 (by linarith [hqq.lt])
+  have hqp : ENNReal.ofReal (2 * q) ≤ p := by
+    rw [← ENNReal.ofReal_toReal hp_top, ← hs_def]
+    exact ENNReal.ofReal_le_ofReal hqs.le
+  have key := lintegral_enorm_gradient_rpow_le ha hbd hosc hu hp.le hgp hGp hqq hqs hqp hκ hFS
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hgp.aestronglyMeasurable,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hGp.aestronglyMeasurable, ← hs_def,
     ← ENNReal.mul_rpow_of_nonneg _ _ hs1]
@@ -485,16 +482,16 @@ private theorem eLpNorm_gradient_le_of_le_quarter
   -- so together they are absorbed.
   set I := ∫⁻ x, ‖W1p.gradient u x‖ₑ ^ s
   set J := ∫⁻ x, ‖G x‖ₑ ^ s
-  calc I ≤ CFS * 2 ^ (s / 2 - 1) * 2 ^ (s / 2 - 1) * maximalConst n (s / 2) *
+  calc I ≤ CFS * 2 ^ (s / 2 - 1) * 2 ^ (s / 2 - 1) * maximalFunctionConst (n + 1) (s / 2) *
           decayCoeff n lam Lam κ ^ (s / 2) * I +
         CFS * 2 ^ (s / 2 - 1) * 2 ^ (s / 2 - 1) * forcingCoeff n lam Lam κ ^ (s / 2) *
-          maximalConst n (s / 2) * J +
-        CFS * 2 ^ (s / 2 - 1) * maximalConst n (s / 2 / q) *
+          maximalFunctionConst (n + 1) (s / 2) * J +
+        CFS * 2 ^ (s / 2 - 1) * maximalFunctionConst (n + 1) (s / 2 / q) *
           deviationCoeff n lam Lam κ q q' δ ^ (s / 2) * I :=
         key.trans_eq (by ring)
     _ ≤ 2⁻¹ / 2 * I +
         CFS * 2 ^ (s / 2 - 1) * 2 ^ (s / 2 - 1) * forcingCoeff n lam Lam κ ^ (s / 2) *
-          maximalConst n (s / 2) * J +
+          maximalFunctionConst (n + 1) (s / 2) * J +
         2⁻¹ / 2 * I := by
         gcongr
     _ = _ := by
@@ -542,24 +539,20 @@ theorem exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le {p
   have hqs : 2 * q < s := by rw [hq_def]; linarith
   obtain ⟨q', hqq⟩ : ∃ q' : ℝ, q.HolderConjugate q' :=
     ⟨_, Real.HolderConjugate.conjExponent hq⟩
-  have hqp : ENNReal.ofReal (2 * q) ≤ p := by
-    rw [← ENNReal.ofReal_toReal hp_top, ← hs_def]
-    exact ENNReal.ofReal_le_ofReal hqs.le
   obtain ⟨CFS, hFS⟩ := exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow
     (ι := Fin (n + 1)) (F := EuclideanSpace ℝ (Fin (n + 1))) (show 1 < s by linarith)
-  have hcM : ∀ e, maximalConst n e ≠ ∞ := fun e =>
-    ENNReal.mul_ne_top ENNReal.ofReal_ne_top (by simp)
+  have hcM := maximalFunctionConst_ne_top (n + 1)
   have h2 : (2 : ℝ≥0∞) ^ (s / 2 - 1) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg (by linarith) ENNReal.ofNat_ne_top
   obtain ⟨κ, hκ, hκ1, δ, hδ, hδ1⟩ := exists_one_le_and_pos_of_ne_top (n := n) lam Lam (q := q)
     hqq.symm.pos (by linarith : 0 < s)
-    (K₁ := (CFS : ℝ≥0∞) * 2 ^ (s / 2 - 1) * 2 ^ (s / 2 - 1) * maximalConst n (s / 2))
-    (K₃ := (CFS : ℝ≥0∞) * 2 ^ (s / 2 - 1) * maximalConst n (s / 2 / q))
+    (K₁ := (CFS : ℝ≥0∞) * 2 ^ (s / 2 - 1) * 2 ^ (s / 2 - 1) * maximalFunctionConst (n + 1) (s / 2))
+    (K₃ := (CFS : ℝ≥0∞) * 2 ^ (s / 2 - 1) * maximalFunctionConst (n + 1) (s / 2 / q))
     (ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top h2) h2)
       (hcM _))
     (ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top h2) (hcM _))
   set C : ℝ≥0∞ := ((CFS : ℝ≥0∞) * 2 ^ (s / 2 - 1) * 2 ^ (s / 2 - 1) *
-    forcingCoeff n lam Lam κ ^ (s / 2) * maximalConst n (s / 2) * 2) ^ (1 / s)
+    forcingCoeff n lam Lam κ ^ (s / 2) * maximalFunctionConst (n + 1) (s / 2) * 2) ^ (1 / s)
   have hK₂ : C ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg (one_div_nonneg.2 (by linarith)) (ENNReal.mul_ne_top
       (ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.mul_ne_top
@@ -568,8 +561,8 @@ theorem exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le {p
       ENNReal.ofNat_ne_top)
   refine ⟨C.toNNReal, δ, hδ, fun {a} ha hbd hosc u G hu hint hgp hGp => ?_⟩
   rw [ENNReal.coe_toNNReal hK₂]
-  exact eLpNorm_gradient_le_of_le_quarter ha hbd hosc hu hp hp_top hgp hGp hs_def hs hqq hq hqs
-    hqp hκ (hFS _ hint) hκ1 hδ1
+  exact eLpNorm_gradient_le_of_le_quarter ha hbd hosc hu hp hp_top hgp hGp hs_def hqq hqs hκ
+    (hFS _ hint) hκ1 hδ1
 
 end PDE
 
