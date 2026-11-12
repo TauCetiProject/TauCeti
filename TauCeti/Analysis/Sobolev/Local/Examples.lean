@@ -393,7 +393,7 @@ theorem memWkpLoc_sqrt_im_ball_inter_im_pos :
 theorem memLpLoc_norm_inv_iff (hU : U ∈ 𝓝 0) :
     MemLpLoc p U (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
   refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK =>
-    memLp_norm_inv_restrict hK (by simpa [Complex.finrank_real_complex] using h)⟩
+    hK.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using h)⟩
   by_contra! hp2
   obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 hU
   exact not_memLp_norm_inv_closedBall hε (by simpa [Complex.finrank_real_complex] using hp2)

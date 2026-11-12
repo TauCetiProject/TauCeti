@@ -29,7 +29,7 @@ sides vanish when `f` is not differentiable at `x`.
   differentiable where `f` is, and its real derivative has norm at most `‖Df(x)‖`.
 * `ContDiffAt.hasFDerivAt_fderiv_ofReal_comp_apply`: at a `C²` point of `f`, the complexified
   directional derivative `y ↦ D(↑f)(y) u` has derivative `w ↦ ↑(D²f(x)(w, u))`.
-* `TauCeti.fderiv_ofReal_add_ofReal_mul_I_apply`, `ContDiff.ofReal_add_ofReal_mul_I`,
+* `DifferentiableAt.fderiv_ofReal_add_ofReal_mul_I_apply`, `ContDiff.ofReal_add_ofReal_mul_I`,
   `HasCompactSupport.ofReal_add_ofReal_mul_I`: the complex function `f + i g` assembled from real
   functions `f, g` has derivative `Df + i Dg`, and inherits the smoothness and compact support of
   `f` and `g`.
@@ -81,7 +81,7 @@ theorem _root_.ContDiffAt.hasFDerivAt_fderiv_ofReal_comp_apply {f : E → ℝ} {
 
 /-- For real functions `f, g` differentiable at `x`, the real derivative of `f + i g` is
 `Df + i Dg`. -/
-theorem fderiv_ofReal_add_ofReal_mul_I_apply {f g : E → ℝ} {x : E}
+theorem _root_.DifferentiableAt.fderiv_ofReal_add_ofReal_mul_I_apply {f g : E → ℝ} {x : E}
     (hf : DifferentiableAt ℝ f x) (hg : DifferentiableAt ℝ g x) (v : E) :
     fderiv ℝ (fun y ↦ (f y : ℂ) + (g y : ℂ) * I) x v =
       (fderiv ℝ f x v : ℂ) + (fderiv ℝ g x v : ℂ) * I := by

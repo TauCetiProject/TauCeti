@@ -26,9 +26,9 @@ For real data `f, g` and `h = f + i g`, taking real parts gives `Δ (Re T h) = 2
 
 * `HasCompactSupport.laplacian_cauchyTransform`: `Δ (T h) = 4 ∂h` for compactly supported `C²`
   data.
-* `TauCeti.laplacian_re_cauchyTransform`: `Δ (Re T h) = 2 (∂ₛf + ∂ₜg)` for real compactly
+* `ContDiff.laplacian_re_cauchyTransform`: `Δ (Re T h) = 2 (∂ₛf + ∂ₜg)` for real compactly
   supported `C²` data `f, g`.
-* `TauCeti.laplacian_half_re_cauchyTransform`, `TauCeti.contDiff_half_re_cauchyTransform`: the
+* `ContDiff.laplacian_half_re_cauchyTransform`, `ContDiff.contDiff_half_re_cauchyTransform`: the
   divergence-form solution formula `Δ (½ Re T h) = ∂ₛf + ∂ₜg`, and the smoothness of `½ Re T h`.
 
 ## References
@@ -88,7 +88,7 @@ variable {f g : ℂ → ℝ}
 
 /-- The real part of the Cauchy transform of `f + i g` has Laplacian `2 (∂ₛf + ∂ₜg)`, twice the
 divergence-form right-hand side. -/
-theorem laplacian_re_cauchyTransform (hf : ContDiff ℝ 2 f) (hg : ContDiff ℝ 2 g)
+theorem _root_.ContDiff.laplacian_re_cauchyTransform (hf : ContDiff ℝ 2 f) (hg : ContDiff ℝ 2 g)
     (hfc : HasCompactSupport f) (hgc : HasCompactSupport g) (w : ℂ) :
     Δ (fun w ↦ (cauchyTransform (fun z ↦ (f z : ℂ) + (g z : ℂ) * I) w).re) w =
       2 * (fderiv ℝ f w 1 + fderiv ℝ g w I) := by
@@ -99,9 +99,9 @@ theorem laplacian_re_cauchyTransform (hf : ContDiff ℝ 2 f) (hg : ContDiff ℝ 
   have hre : (fun w ↦ (cauchyTransform h w).re) = reCLM ∘ cauchyTransform h := rfl
   rw [hre, hu.contDiffAt.laplacian_CLM_comp_left, Function.comp_apply,
     hhc.laplacian_cauchyTransform hh w,
-    fderiv_ofReal_add_ofReal_mul_I_apply ((hf.differentiable two_ne_zero) w)
+    ((hf.differentiable two_ne_zero) w).fderiv_ofReal_add_ofReal_mul_I_apply
       ((hg.differentiable two_ne_zero) w),
-    fderiv_ofReal_add_ofReal_mul_I_apply ((hf.differentiable two_ne_zero) w)
+    ((hf.differentiable two_ne_zero) w).fderiv_ofReal_add_ofReal_mul_I_apply
       ((hg.differentiable two_ne_zero) w)]
   simp only [reCLM_apply, smul_eq_mul, mul_re, sub_re, add_re, ofReal_re, ofReal_im, I_re, I_im,
     mul_im, add_im, sub_im, re_ofNat, im_ofNat]
@@ -109,16 +109,16 @@ theorem laplacian_re_cauchyTransform (hf : ContDiff ℝ 2 f) (hg : ContDiff ℝ 
 
 /-- The smoothness half of the solution formula: for compactly supported real `Cⁿ` data `f, g`
 and `h = f + i g`, the function `½ Re (T h)` is `Cⁿ`. -/
-theorem contDiff_half_re_cauchyTransform {n : ℕ∞} (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g)
-    (hfc : HasCompactSupport f) (hgc : HasCompactSupport g) :
+theorem _root_.ContDiff.contDiff_half_re_cauchyTransform {n : ℕ∞} (hf : ContDiff ℝ n f)
+    (hg : ContDiff ℝ n g) (hfc : HasCompactSupport f) (hgc : HasCompactSupport g) :
     ContDiff ℝ n fun w ↦ (cauchyTransform (fun z ↦ (f z : ℂ) + (g z : ℂ) * I) w).re / 2 :=
   (reCLM.contDiff.comp <| (hfc.ofReal_add_ofReal_mul_I hgc).contDiff_cauchyTransform
     (hf.ofReal_add_ofReal_mul_I hg)).div_const 2
 
 /-- **The divergence-form solution formula.** For real compactly supported `C²` data `f, g` and
 `h = f + i g`, the function `ξ₀ = ½ Re (T h)` solves `Δξ₀ = ∂ₛf + ∂ₜg` at every point. -/
-theorem laplacian_half_re_cauchyTransform (hf : ContDiff ℝ 2 f) (hg : ContDiff ℝ 2 g)
-    (hfc : HasCompactSupport f) (hgc : HasCompactSupport g) (w : ℂ) :
+theorem _root_.ContDiff.laplacian_half_re_cauchyTransform (hf : ContDiff ℝ 2 f)
+    (hg : ContDiff ℝ 2 g) (hfc : HasCompactSupport f) (hgc : HasCompactSupport g) (w : ℂ) :
     Δ (fun w ↦ (cauchyTransform (fun z ↦ (f z : ℂ) + (g z : ℂ) * I) w).re / 2) w =
       fderiv ℝ f w 1 + fderiv ℝ g w I := by
   set u := fun w ↦ (cauchyTransform (fun z ↦ (f z : ℂ) + (g z : ℂ) * I) w).re
@@ -127,7 +127,7 @@ theorem laplacian_half_re_cauchyTransform (hf : ContDiff ℝ 2 f) (hg : ContDiff
   -- `laplacian_smul` is stated for a scalar multiple `c • u`, so write `u / 2` as `2⁻¹ • u`.
   have hhalf : (fun w ↦ u w / 2) = (2⁻¹ : ℝ) • u :=
     funext fun w ↦ by rw [Pi.smul_apply, smul_eq_mul, div_eq_inv_mul]
-  rw [hhalf, laplacian_smul _ hu.contDiffAt, laplacian_re_cauchyTransform hf hg hfc hgc w,
+  rw [hhalf, laplacian_smul _ hu.contDiffAt, hf.laplacian_re_cauchyTransform hg hfc hgc w,
     smul_eq_mul]
   ring
 

@@ -15,9 +15,9 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 Divergence-form Laplace regularity solves `Δξ = ∂ₛf + ∂ₜg` for real data `f, g` through the
 Cauchy transform: with `h = f + i g`, the candidate solution is `ξ₀ = ½ Re (T h)`, and
 `Δ (½ Re T h) = ∂ₛf + ∂ₜg` for compactly supported `C²` data
-(`TauCeti.laplacian_half_re_cauchyTransform`). This file checks that the factor `½` is needed:
+(`ContDiff.laplacian_half_re_cauchyTransform`). This file checks that the factor `½` is needed:
 the plausible variant `Re T h` has Laplacian `2 (∂ₛf + ∂ₜg)`
-(`TauCeti.laplacian_re_cauchyTransform`), which differs from the right-hand side for a bump
+(`ContDiff.laplacian_re_cauchyTransform`), which differs from the right-hand side for a bump
 function.
 
 The exponent bookkeeping on `log ‖z‖` is checked in `TauCeti.Analysis.Sobolev.Local.Examples`.
@@ -55,7 +55,7 @@ theorem exists_laplacian_re_cauchyTransform_ne :
     exact one_ne_zero h0
   obtain ⟨w, hw⟩ := hne
   refine ⟨b, 0, hb, contDiff_const, hbc, HasCompactSupport.zero, w, ?_⟩
-  rw [laplacian_re_cauchyTransform (g := 0) hb contDiff_const hbc HasCompactSupport.zero w]
+  rw [hb.laplacian_re_cauchyTransform (g := 0) contDiff_const hbc HasCompactSupport.zero w]
   simp only [fderiv_zero, Pi.zero_apply, zero_apply, add_zero]
   intro h
   exact hw (by linarith)
