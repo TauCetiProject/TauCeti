@@ -5,24 +5,32 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.SuccPred
+public import Mathlib.Algebra.Order.Group.OrderIso
+public import Mathlib.Order.SuccPred.Basic
 
 /-!
-# Discretely ordered additive structures
+# Successors in ordered additive groups
 
-In an order with `succ x = x + 1` (Mathlib's `SuccAddOrder`), the element `1` is positive as soon
-as some element is. This covers a discretely ordered abelian group without assuming it nontrivial:
-the trivial group has `1 = 0` and no positive element.
+In an ordered additive group the translations `x ↦ a + x` are order isomorphisms, so they commute
+with the successor function: `a + succ b = succ (a + b)`. In particular `succ a = a + succ 0`, so
+the successor function of a discretely ordered abelian group is translation by its least positive
+element `succ 0`. Unlike Mathlib's `SuccAddOrder`, this does not ask the instance `One` to be that
+element: on `Lex (Fin n → ℤ)` the instance `One` is the constant function `1`, which is not the
+least positive element when `n ≥ 2`.
 -/
 
 public section
 
 namespace Order
 
-variable {α : Type*} [AddZeroClass α] [Preorder α] [One α] [SuccAddOrder α] {a : α}
+variable {α : Type*} [AddGroup α] [PartialOrder α] [AddLeftMono α] [SuccOrder α]
 
-/-- If `succ x = x + 1` and some element is positive, then `0 < 1`. -/
-theorem zero_lt_one_of_pos (h : 0 < a) : (0 : α) < 1 := by
-  simpa [succ_eq_add_one] using lt_succ_of_not_isMax (not_isMax_of_lt h)
+/-- Translations commute with the successor function. -/
+theorem add_succ (a b : α) : a + succ b = succ (a + b) :=
+  (OrderIso.addLeft a).map_succ b
+
+/-- The successor of `a` is `a` plus the least positive element `succ 0`. -/
+theorem succ_eq_add_succ_zero (a : α) : succ a = a + succ 0 := by
+  rw [add_succ, add_zero]
 
 end Order

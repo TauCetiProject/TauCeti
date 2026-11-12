@@ -29,6 +29,8 @@ exactly the normal forms `FreeGroup.toWord g` of the elements `g` of the free gr
 
 * `TauCeti.InfWord.ofList_append`, `TauCeti.InfWord.ofList_invRev`: the bijection is compatible
   with concatenation and inversion.
+* `TauCeti.InfWord.ofList_take`, `TauCeti.InfWord.ofList_drop`: it is compatible with initial and
+  final segments.
 * `TauCeti.InfWord.isReduced_ofList`: a list is a reduced `ℤ`-word iff it is reduced in the sense
   of `FreeGroup.IsReduced`.
 * `TauCeti.InfWord.isReduced_iff_mem_range_toWord`: the reduced `ℤ`-words are the words
@@ -69,6 +71,10 @@ theorem letter_ofList_natCast_add_one (L : List (X × Bool)) (i : ℕ) :
     (ofList L).letter (i + 1) = L[i]? := by
   simp [letter_ofList, show (0 : ℤ) < i + 1 by omega]
 
+@[simp]
+theorem letter_ofList_one (L : List (X × Bool)) : (ofList L).letter 1 = L[0]? := by
+  simpa using letter_ofList_natCast_add_one L 0
+
 /-- The list of letters of a `ℤ`-word. -/
 def toList (w : InfWord ℤ X) : List (X × Bool) :=
   List.ofFn fun i : Fin w.length.toNat =>
@@ -81,6 +87,7 @@ theorem length_toList (w : InfWord ℤ X) : w.toList.length = w.length.toNat := 
 theorem natCast_length_toList (w : InfWord ℤ X) : (w.toList.length : ℤ) = w.length := by
   simp [w.length_nonneg]
 
+@[simp]
 theorem getElem?_toList (w : InfWord ℤ X) (i : ℕ) : w.toList[i]? = w.letter (i + 1) := by
   rw [toList, List.getElem?_ofFn]
   split_ifs with h
@@ -131,7 +138,7 @@ theorem ofList_invRev (L : List (X × Bool)) : ofList (FreeGroup.invRev L) = (of
   refine ext (by simp) fun n h0 hn => ?_
   obtain ⟨i, rfl⟩ : ∃ i : ℕ, n = i + 1 := ⟨(n - 1).toNat, by omega⟩
   have hi : i < L.length := by simp at hn; omega
-  rw [letter_ofList_natCast_add_one, letter_inv, length_ofList,
+  rw [letter_ofList_natCast_add_one, letter_inv, length_ofList, Order.succ_eq_add_one,
     show (L.length : ℤ) + 1 - (i + 1) = (L.length - 1 - i : ℕ) + 1 by omega,
     letter_ofList_natCast_add_one, FreeGroup.invRev, List.getElem?_reverse (by simpa using hi)]
   simp [Prod.map_def]
@@ -148,16 +155,38 @@ theorem toList_append (u v : InfWord ℤ X) : (u ++ v).toList = u.toList ++ v.to
 theorem toList_inv (w : InfWord ℤ X) : w⁻¹.toList = FreeGroup.invRev w.toList := by
   rw [← toList_ofList (FreeGroup.invRev w.toList), ofList_invRev, ofList_toList]
 
+@[simp]
+theorem toList_take (w : InfWord ℤ X) (n : ℤ) : (w.take n).toList = w.toList.take n.toNat :=
+  List.ext_getElem? fun i => by
+    rw [getElem?_toList, List.getElem?_take, getElem?_toList, letter_take]
+    split_ifs <;> first | rfl | omega
+
+@[simp]
+theorem toList_drop (w : InfWord ℤ X) (n : ℤ) : (w.drop n).toList = w.toList.drop n.toNat :=
+  List.ext_getElem? fun i => by
+    rw [getElem?_toList, List.getElem?_drop, getElem?_toList, letter_drop_of_pos _ _ (by omega)]
+    congr 1
+    omega
+
+@[simp]
+theorem ofList_take (L : List (X × Bool)) (k : ℕ) : ofList (L.take k) = (ofList L).take k :=
+  equivList.injective (by simp)
+
+@[simp]
+theorem ofList_drop (L : List (X × Bool)) (k : ℕ) : ofList (L.drop k) = (ofList L).drop k :=
+  equivList.injective (by simp)
+
 /-- A list of letters is reduced as a `ℤ`-word exactly when it is a reduced word of the free
 group. -/
 @[simp]
 theorem isReduced_ofList {L : List (X × Bool)} : (ofList L).IsReduced ↔ FreeGroup.IsReduced L := by
   rw [FreeGroup.IsReduced, List.isChain_iff_getElem, isReduced_iff]
   have key (i : ℕ) (hi : i + 1 < L.length) :
-      (ofList L).letter ((i : ℤ) + 1 + 1) ≠ ((ofList L).letter (i + 1)).map (Prod.map id not) ↔
+      (ofList L).letter (Order.succ ((i : ℤ) + 1)) ≠
+          ((ofList L).letter (i + 1)).map (Prod.map id not) ↔
         (L[i].1 = L[i + 1].1 → L[i].2 = L[i + 1].2) := by
-    rw [show (i : ℤ) + 1 + 1 = ((i + 1 : ℕ) : ℤ) + 1 by omega, letter_ofList_natCast_add_one,
-      letter_ofList_natCast_add_one, List.getElem?_eq_getElem hi,
+    rw [Order.succ_eq_add_one, show (i : ℤ) + 1 + 1 = ((i + 1 : ℕ) : ℤ) + 1 by omega,
+      letter_ofList_natCast_add_one, letter_ofList_natCast_add_one, List.getElem?_eq_getElem hi,
       List.getElem?_eq_getElem (by omega), Option.map_some, Ne, Option.some.injEq]
     generalize L[i] = a
     generalize L[i + 1] = b
