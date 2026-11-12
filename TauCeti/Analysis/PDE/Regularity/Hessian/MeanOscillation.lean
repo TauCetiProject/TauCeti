@@ -62,7 +62,7 @@ the columns: `‖T‖² ≤ (n + 1) ∑ₖ ‖T eₖ‖²` and `‖T eₖ‖ ≤
 For a measurable coefficient field `a`, the equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` is compared with the one
 frozen at a constant uniformly elliptic matrix `A`: `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = f + ∑ᵢⱼ (Aᵢⱼ - aᵢⱼ) ∂ᵢ∂ⱼu`.
 The error is at most `θ ‖D²u‖` pointwise, with `θ = ∑ᵢⱼ |aᵢⱼ - Aᵢⱼ|`
-(`Matrix.abs_contraction_le_sum_sum_abs_mul`), so the estimate above holds with `∫_{B_r} f²`
+(`Matrix.abs_sum_sum_mul_apply_single_le`), so the estimate above holds with `∫_{B_r} f²`
 replaced by `2 (∫_{B_r} f² + ∫_{B_r} θ² ‖D²u‖²)`
 (`TauCeti.PDE.setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_sub_le`).
 No continuity of `a` is used. If `|aᵢⱼ - Aᵢⱼ| ≤ M` and `D²u ∈ L^{2q}(B_r)`, Hölder's inequality with
@@ -445,8 +445,13 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_s
     filter_upwards [haM] with x hx
     exact ⟨by positivity, sum_sum_abs_sub_le hx⟩
   have hc : ∀ x, |c x| ≤ θ x * ‖H x‖ := fun x => by
-    refine (Matrix.abs_contraction_le_sum_sum_abs_mul _ _).trans_eq ?_
-    simp only [θ, Matrix.sub_apply, abs_sub_comm (A _ _)]
+    convert Matrix.abs_sum_sum_mul_apply_single_le (A - a x).transpose (H x) using 2
+    · simp only [c, Matrix.contraction_apply, EuclideanSpace.inner_single_right,
+        Matrix.transpose_apply]
+      rw [Finset.sum_comm]
+      simp
+    · simp only [θ, Matrix.transpose_apply, Matrix.sub_apply, abs_sub_comm (A _ _)]
+      exact Finset.sum_comm
   have hθH : MemLp (fun x => θ x * ‖H x‖) 2 μr := by
     refine (hH.norm.const_mul ((n + 1) ^ 2 * M)).of_le (hθm.mul hH.aestronglyMeasurable.norm) ?_
     filter_upwards [hθ] with x hx

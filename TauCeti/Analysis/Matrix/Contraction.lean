@@ -24,8 +24,6 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
 * `Matrix.contraction_one`: contraction with the identity matrix is the trace.
 * `Matrix.abs_contraction_le`: if every entry of `M` is at most `ε` in absolute value,
   then the contraction of `H` with `M` is at most `n² ε ‖H‖` in absolute value.
-* `Matrix.abs_contraction_le_sum_sum_abs_mul`: the contraction of `H` with `M` is at most
-  `(∑ᵢⱼ |Mᵢⱼ|) ‖H‖` in absolute value.
 * `Matrix.abs_sum_sum_mul_apply_single_single_le`: the same bound for the contraction
   `∑ᵢⱼ Mᵢⱼ B eᵢ eⱼ` of a continuous bilinear form `B`, such as a second derivative.
 * `Matrix.abs_sum_sum_mul_apply_single_le`: the contraction `∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ` of an
@@ -107,18 +105,6 @@ theorem abs_contraction_le {M : Matrix (Fin n) (Fin n) ℝ} {ε : ℝ}
     _ = n ^ 2 * ε * ‖H‖ := by
         simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
         ring
-
-/-- The contraction of `H` with `M` is at most `(∑ᵢⱼ |Mᵢⱼ|) ‖H‖` in absolute value. -/
-theorem abs_contraction_le_sum_sum_abs_mul (M : Matrix (Fin n) (Fin n) ℝ)
-    (H : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :
-    |contraction M H| ≤ (∑ i, ∑ j, |M i j|) * ‖H‖ := by
-  rw [contraction_apply, Finset.sum_mul]
-  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => ?_)
-  rw [Finset.sum_mul]
-  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ => ?_)
-  rw [abs_mul]
-  refine mul_le_mul_of_nonneg_left ((abs_real_inner_le_norm _ _).trans ?_) (abs_nonneg _)
-  simpa using H.le_opNorm (EuclideanSpace.single i (1 : ℝ))
 
 /-- If every entry of `M` is at most `ε` in absolute value, then for a continuous bilinear form
 `B` on `EuclideanSpace ℝ ι`, `|∑ᵢⱼ Mᵢⱼ B eᵢ eⱼ| ≤ (card ι)² ε ‖B‖`. Applied to the second
