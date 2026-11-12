@@ -756,7 +756,7 @@ from time-zero entrance). -/
 theorem meanReturnTime_const_dirac [DecidableEq α] (a x : α) :
     (const α (Measure.dirac a)).meanReturnTime x = if x = a then 1 else ∞ := by
   have hconst : const α (Measure.dirac a) = deterministic (fun _ : α => a) measurable_const := by
-    ext1 y
+    ext1 _
     simp [deterministic_apply]
   rw [meanReturnTime_congr hconst, meanReturnTime_deterministic]
   by_cases hxa : x = a
