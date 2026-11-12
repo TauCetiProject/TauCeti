@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Disk
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
-public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap
+public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
 public import TauCeti.Topology.Homotopy.MappingCylinder
 public import TauCeti.Topology.CWComplex.Classical.CWType
 public import TauCeti.Topology.CWComplex.Classical.Cylinder

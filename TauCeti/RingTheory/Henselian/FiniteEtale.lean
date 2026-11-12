@@ -259,7 +259,7 @@ private theorem quotient_mk_comp_val_surjective {I : Ideal R} (hI : I ≤ Ideal.
     ∃ x : A', Ideal.Quotient.mk (Ideal.span {1 - (e : A)}) (x : A) = b := by
   classical
   obtain ⟨c, rfl⟩ := Ideal.Quotient.mk_surjective b
-  obtain ⟨m, hm1, hm⟩ : ∃ m, 1 ≤ m ∧ ∀ r ∈ s, r ^ m * c ∈ A' :=
+  obtain ⟨m, -, hm⟩ : ∃ m, 1 ≤ m ∧ ∀ r ∈ s, r ^ m * c ∈ A' :=
     ((eventually_ge_atTop 1).and ((eventually_all_finset s).mpr fun r hr ↦ hZ r hr c)).exists
   have h1 : (1 : A') ∈ Ideal.span ((· ^ m) '' {x : A' | (x : A) ∈ s}) ⊔ Ideal.span {1 - e} := by
     by_contra hne
