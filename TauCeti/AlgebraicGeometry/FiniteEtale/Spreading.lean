@@ -381,34 +381,19 @@ theorem exists_hom_pullback_of_isLimit [IsCofiltered I]
   obtain ⟨j, β, hβ⟩ := exists_stageHom_of_isLimit D c hc α
   refine ⟨j.left, j.hom, β, hom_ext_of_fstProj ?_⟩
   -- Compare both morphisms in `Over c.pt` after projecting to `Y₂.obj.left`.
-  have hcomp :
-      ∀ (β' : (pullback (D.map j.hom)).obj Y₁ ⟶ (pullback (D.map j.hom)).obj Y₂)
-        (fg : c.pt ⟶ D.obj i₀) (hw : c.π.app j.left ≫ D.map j.hom = fg),
-        fstProj ((pullbackCompIsoOfEq (c.π.app j.left) (D.map j.hom) fg hw).inv.app Y₁ ≫
-          (pullback (c.π.app j.left)).map β' ≫
-          (pullbackCompIsoOfEq (c.π.app j.left) (D.map j.hom) fg hw).hom.app Y₂) =
-          Limits.pullback.map Y₁.obj.hom fg Y₁.obj.hom (D.map j.hom)
-            (𝟙 _) (c.π.app j.left) (𝟙 _) (by simp) (by simp [hw]) ≫ fstProj β' := by
-    rintro β' _ rfl
-    dsimp [pullbackCompIsoOfEq, pullbackCongr, fstProj, homLeft]
-    simp only [pullbackComp_hom_app_hom, pullbackComp_inv_app_hom, pullback_map_hom]
-    dsimp [pullback] at β' ⊢
-    have h₁ :
-        ((Over.pullbackComp (c.π.app j.left) (D.map j.hom)).hom.app Y₁.obj).left ≫
-            Limits.pullback.fst (Limits.pullback.snd Y₁.obj.hom (D.map j.hom)) (c.π.app j.left) =
-          Limits.pullback.map Y₁.obj.hom (c.π.app j.left ≫ D.map j.hom) Y₁.obj.hom (D.map j.hom)
-            (𝟙 _) (c.π.app j.left) (𝟙 _) (by simp) (by simp) := by
-      apply Limits.pullback.hom_ext <;> simp [Over.pullbackComp]
-    have h₂ :
-        ((Over.pullback (c.π.app j.left)).map β'.hom).left ≫
-            ((Over.pullbackComp (c.π.app j.left) (D.map j.hom)).inv.app Y₂.obj).left ≫
-            Limits.pullback.fst Y₂.obj.hom (c.π.app j.left ≫ D.map j.hom) =
-          Limits.pullback.fst (Limits.pullback.snd Y₁.obj.hom (D.map j.hom)) (c.π.app j.left) ≫
-            β'.hom.left ≫ Limits.pullback.fst Y₂.obj.hom (D.map j.hom) := by
-      simp [Over.pullbackComp]
-    simp only [Category.id_comp, Category.comp_id, Category.assoc]
-    rw [h₂, reassoc_of% h₁]
-  exact (hcomp β (c.π.app i₀) (c.w j.hom)).trans hβ
+  have hC := pullbackCompIsoOfEq_hom_app_hom_left_fst (c.w j.hom) Y₂
+  have hA := pullbackCompIsoOfEq_inv_app_hom_left_fst (c.w j.hom) Y₁
+  simp only [fstProj, homLeft, ObjectProperty.FullSubcategory.comp_hom, pullback_map_hom,
+    Over.comp_left] at hβ ⊢
+  dsimp [pullback] at α β hβ hA hC ⊢
+  have hB :
+      ((Over.pullback (c.π.app j.left)).map β.hom).left ≫
+          Limits.pullback.fst (Limits.pullback.snd Y₂.obj.hom (D.map j.hom)) (c.π.app j.left) =
+        Limits.pullback.fst (Limits.pullback.snd Y₁.obj.hom (D.map j.hom)) (c.π.app j.left) ≫
+          β.hom.left := by
+    simp
+  rw [Category.assoc, Category.assoc, hC, reassoc_of% hB, reassoc_of% hA]
+  exact hβ
 
 /-- Along a cofiltered limit of quasi-compact schemes with affine transition morphisms, two
 morphisms between finite étale schemes at stage `i₀` that become equal on the limit already become

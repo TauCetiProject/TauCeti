@@ -141,16 +141,133 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom (x : V ⟶ T) (f : T ⟶ S) (g : 
   ObjectProperty.hom_ext _ (Over.pullbackComp_comp_inv_app_comp_eqToHom x f g X.obj)
 
 /-- Pullback functors along equal base morphisms are naturally isomorphic. -/
-@[expose]
 noncomputable def pullbackCongr {f₁ f₂ : T ⟶ S} (h : f₁ = f₂) : pullback f₁ ≅ pullback f₂ :=
-  eqToIso (by subst h; rfl)
+  eqToIso (congrArg pullback h)
+
+/-- Along `rfl`, `pullbackCongr` is the identity natural isomorphism. -/
+@[simp]
+theorem pullbackCongr_refl (f : T ⟶ S) :
+    pullbackCongr (rfl : f = f) = Iso.refl (pullback f) :=
+  (rfl)
+
+/-- `pullbackCongr` reverses along `Eq.symm`. -/
+@[simp]
+theorem pullbackCongr_symm {f₁ f₂ : T ⟶ S} (h : f₁ = f₂) :
+    (pullbackCongr h).symm = pullbackCongr h.symm := by
+  subst h; rfl
+
+/-- The components of `(pullbackCongr h).hom` are `eqToHom` along `h`. -/
+theorem pullbackCongr_hom_app {f₁ f₂ : T ⟶ S} (h : f₁ = f₂) (X : FiniteEtaleScheme S) :
+    (pullbackCongr h).hom.app X = eqToHom (congrArg (fun f ↦ (pullback f).obj X) h) := by
+  subst h; rfl
+
+/-- The components of `(pullbackCongr h).inv` are `eqToHom` along `h.symm`. -/
+theorem pullbackCongr_inv_app {f₁ f₂ : T ⟶ S} (h : f₁ = f₂) (X : FiniteEtaleScheme S) :
+    (pullbackCongr h).inv.app X = eqToHom (congrArg (fun f ↦ (pullback f).obj X) h.symm) := by
+  subst h; rfl
+
+/-- First projection of `(pullbackCongr h).hom.app X` on underlying schemes. -/
+@[simp]
+theorem pullbackCongr_hom_app_hom_left_fst {f₁ f₂ : T ⟶ S} (h : f₁ = f₂)
+    (X : FiniteEtaleScheme S) :
+    ((pullbackCongr h).hom.app X).hom.left ≫ Limits.pullback.fst X.obj.hom f₂ =
+      Limits.pullback.fst X.obj.hom f₁ := by
+  subst h; exact Category.id_comp _
+
+/-- Second projection of `(pullbackCongr h).hom.app X` on underlying schemes. -/
+@[simp]
+theorem pullbackCongr_hom_app_hom_left_snd {f₁ f₂ : T ⟶ S} (h : f₁ = f₂)
+    (X : FiniteEtaleScheme S) :
+    ((pullbackCongr h).hom.app X).hom.left ≫ Limits.pullback.snd X.obj.hom f₂ =
+      Limits.pullback.snd X.obj.hom f₁ := by
+  subst h; exact Category.id_comp _
+
+/-- First projection of `(pullbackCongr h).inv.app X` on underlying schemes. -/
+@[simp]
+theorem pullbackCongr_inv_app_hom_left_fst {f₁ f₂ : T ⟶ S} (h : f₁ = f₂)
+    (X : FiniteEtaleScheme S) :
+    ((pullbackCongr h).inv.app X).hom.left ≫ Limits.pullback.fst X.obj.hom f₁ =
+      Limits.pullback.fst X.obj.hom f₂ := by
+  subst h; exact Category.id_comp _
+
+/-- Second projection of `(pullbackCongr h).inv.app X` on underlying schemes. -/
+@[simp]
+theorem pullbackCongr_inv_app_hom_left_snd {f₁ f₂ : T ⟶ S} (h : f₁ = f₂)
+    (X : FiniteEtaleScheme S) :
+    ((pullbackCongr h).inv.app X).hom.left ≫ Limits.pullback.snd X.obj.hom f₁ =
+      Limits.pullback.snd X.obj.hom f₂ := by
+  subst h; exact Category.id_comp _
 
 /-- Natural isomorphism `pullback g ⋙ pullback f ≅ pullback fg` attached to an equality
 `f ≫ g = fg`. -/
-@[expose]
 noncomputable def pullbackCompIsoOfEq (f : U ⟶ T) (g : T ⟶ S) (fg : U ⟶ S) (h : f ≫ g = fg) :
     pullback g ⋙ pullback f ≅ pullback fg :=
   (pullbackComp f g).symm ≪≫ pullbackCongr h
+
+/-- The components of `(pullbackCompIsoOfEq f g fg h).hom` are `(pullbackComp f g).inv` followed by
+`(pullbackCongr h).hom`. -/
+@[simp]
+theorem pullbackCompIsoOfEq_hom_app {f : U ⟶ T} {g : T ⟶ S} {fg : U ⟶ S} (h : f ≫ g = fg)
+    (X : FiniteEtaleScheme S) :
+    (pullbackCompIsoOfEq f g fg h).hom.app X =
+      (pullbackComp f g).inv.app X ≫ (pullbackCongr h).hom.app X :=
+  (rfl)
+
+/-- The components of `(pullbackCompIsoOfEq f g fg h).inv` are `(pullbackCongr h).inv` followed by
+`(pullbackComp f g).hom`. -/
+@[simp]
+theorem pullbackCompIsoOfEq_inv_app {f : U ⟶ T} {g : T ⟶ S} {fg : U ⟶ S} (h : f ≫ g = fg)
+    (X : FiniteEtaleScheme S) :
+    (pullbackCompIsoOfEq f g fg h).inv.app X =
+      (pullbackCongr h).inv.app X ≫ (pullbackComp f g).hom.app X :=
+  (rfl)
+
+/-- First projection of `(pullbackCompIsoOfEq f g fg h).hom.app X` on underlying schemes. -/
+theorem pullbackCompIsoOfEq_hom_app_hom_left_fst {f : U ⟶ T} {g : T ⟶ S} {fg : U ⟶ S}
+    (h : f ≫ g = fg) (X : FiniteEtaleScheme S) :
+    ((pullbackCompIsoOfEq f g fg h).hom.app X).hom.left ≫ Limits.pullback.fst X.obj.hom fg =
+      Limits.pullback.fst (Limits.pullback.snd X.obj.hom g) f ≫
+        Limits.pullback.fst X.obj.hom g := by
+  subst h
+  simp only [pullbackCompIsoOfEq_hom_app, pullbackCongr_refl, Iso.refl_hom, NatTrans.id_app,
+    Category.comp_id, pullbackComp_inv_app_hom]
+  dsimp [pullback]
+  simp [Over.pullbackComp]
+
+/-- Second projection of `(pullbackCompIsoOfEq f g fg h).hom.app X` on underlying schemes. -/
+theorem pullbackCompIsoOfEq_hom_app_hom_left_snd {f : U ⟶ T} {g : T ⟶ S} {fg : U ⟶ S}
+    (h : f ≫ g = fg) (X : FiniteEtaleScheme S) :
+    ((pullbackCompIsoOfEq f g fg h).hom.app X).hom.left ≫ Limits.pullback.snd X.obj.hom fg =
+      Limits.pullback.snd (Limits.pullback.snd X.obj.hom g) f := by
+  subst h
+  simp only [pullbackCompIsoOfEq_hom_app, pullbackCongr_refl, Iso.refl_hom, NatTrans.id_app,
+    Category.comp_id, pullbackComp_inv_app_hom]
+  dsimp [pullback]
+  simp [Over.pullbackComp]
+
+/-- First projection of `(pullbackCompIsoOfEq f g fg h).inv.app X` on underlying schemes. -/
+theorem pullbackCompIsoOfEq_inv_app_hom_left_fst {f : U ⟶ T} {g : T ⟶ S} {fg : U ⟶ S}
+    (h : f ≫ g = fg) (X : FiniteEtaleScheme S) :
+    ((pullbackCompIsoOfEq f g fg h).inv.app X).hom.left ≫
+        Limits.pullback.fst (Limits.pullback.snd X.obj.hom g) f =
+      Limits.pullback.map X.obj.hom fg X.obj.hom g (𝟙 _) f (𝟙 _) (by simp) (by simp [h]) := by
+  subst h
+  simp only [pullbackCompIsoOfEq_inv_app, pullbackCongr_refl, Iso.refl_inv, NatTrans.id_app,
+    Category.id_comp, pullbackComp_hom_app_hom]
+  dsimp [pullback]
+  apply Limits.pullback.hom_ext <;> simp [Over.pullbackComp]
+
+/-- Second projection of `(pullbackCompIsoOfEq f g fg h).inv.app X` on underlying schemes. -/
+theorem pullbackCompIsoOfEq_inv_app_hom_left_snd {f : U ⟶ T} {g : T ⟶ S} {fg : U ⟶ S}
+    (h : f ≫ g = fg) (X : FiniteEtaleScheme S) :
+    ((pullbackCompIsoOfEq f g fg h).inv.app X).hom.left ≫
+        Limits.pullback.snd (Limits.pullback.snd X.obj.hom g) f =
+      Limits.pullback.snd X.obj.hom fg := by
+  subst h
+  simp only [pullbackCompIsoOfEq_inv_app, pullbackCongr_refl, Iso.refl_inv, NatTrans.id_app,
+    Category.id_comp, pullbackComp_hom_app_hom]
+  dsimp [pullback]
+  simp [Over.pullbackComp]
 
 /-- Pulling `FiniteEtaleScheme.spec` back along `Spec (algebraMap R S)` agrees up to canonical
 isomorphism with `CommAlgCat.FiniteEtale.baseChange R S`. -/
