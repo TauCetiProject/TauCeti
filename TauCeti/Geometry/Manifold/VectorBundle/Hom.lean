@@ -68,10 +68,12 @@ The same holds for families depending on a parameter in a manifold `P`, as secti
 projection `P × B → B` and maps `P × TotalSpace F₁ E₁ → TotalSpace F₂ E₂`
 (`TauCeti.contMDiff_hom_bundle_prod_iff`, `TauCeti.contMDiffAt_hom_bundle_prod_iff`).
 Combined with fibrewise inversion, a `C^n` family of fibrewise linear equivalences therefore
-induces a `C^n` diffeomorphism of total spaces, `TauCeti.bundleDiffeomorph`, whose inverse is
+induces a `C^n` diffeomorphism of total spaces (`TauCeti.bundleDiffeomorph`, or
+`TauCeti.bundleDiffeomorphOfHom` from a `C^n` Hom-bundle section), whose inverse is
 automatically `C^n`. Over the model `𝓘(ℂ, EB)` with `n = ∞`, these are the holomorphic bundle
 morphisms and equivalences of holomorphic vector bundles. They are the `C^n` counterparts of
-`TauCeti.continuous_hom_bundle_iff` and `TauCeti.bundleHomeomorph`. A family of fibrewise linear
+`TauCeti.continuous_hom_bundle_iff`, `TauCeti.bundleHomeomorph`, and
+`TauCeti.bundleHomeomorphOfHom`. A family of fibrewise linear
 maps is realized by a `C^n` diffeomorphism of total spaces exactly when its total-space map is
 `C^n` and its fibre maps are bijective (`TauCeti.exists_bundleDiffeomorph_iff`).
 -/
@@ -641,6 +643,8 @@ def bundleDiffeomorph (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
   contMDiff_toFun := he
   contMDiff_invFun := contMDiff_bundle_symm e he
 
+section
+
 variable (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
   (he : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
     (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2)))
@@ -660,6 +664,35 @@ theorem bundleDiffeomorph_symm_apply (p : TotalSpace F₂ E₂) :
 theorem toHomeomorph_bundleDiffeomorph :
     (bundleDiffeomorph e he).toHomeomorph = bundleHomeomorph e he.continuous :=
   Homeomorph.ext fun p ↦ by simp
+
+end
+
+section
+
+variable (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
+  (he : ContMDiff IB (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+    (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (e x).toContinuousLinearMap))
+
+/-- The `C^n` diffeomorphism of total spaces induced by a family of fibrewise continuous linear
+equivalences whose underlying continuous linear maps form a `C^n` Hom-bundle section. -/
+def bundleDiffeomorphOfHom :
+    TotalSpace F₁ E₁ ≃ₘ^n⟮IB.prod 𝓘(𝕜, F₁), IB.prod 𝓘(𝕜, F₂)⟯ TotalSpace F₂ E₂ :=
+  bundleDiffeomorph e
+    (((contMDiff_hom_bundle_iff (IB := IB) (fun x ↦ (e x).toContinuousLinearMap)).1 he).congr
+      fun _ ↦ rfl)
+
+@[simp] theorem bundleDiffeomorphOfHom_apply (p : TotalSpace F₁ E₁) :
+    bundleDiffeomorphOfHom e he p = ⟨p.proj, e p.proj p.2⟩ := (rfl)
+
+@[simp] theorem bundleDiffeomorphOfHom_symm_apply (p : TotalSpace F₂ E₂) :
+    (bundleDiffeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ := (rfl)
+
+/-- The underlying homeomorphism of `bundleDiffeomorphOfHom` is `bundleHomeomorphOfHom`. -/
+@[simp] theorem toHomeomorph_bundleDiffeomorphOfHom :
+    (bundleDiffeomorphOfHom e he).toHomeomorph = bundleHomeomorphOfHom e he.continuous :=
+  Homeomorph.ext fun p ↦ by simp
+
+end
 
 /-- For a finite-dimensional model source, a family of fibrewise linear maps is realized by a
 `C^n` diffeomorphism of total spaces exactly when the induced map of total spaces is `C^n` and
