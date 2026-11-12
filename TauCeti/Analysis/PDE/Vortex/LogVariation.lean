@@ -27,6 +27,10 @@ equation `Δη = P η`.
 
 * `logVariation_add`, `logVariation_smul`, `logVariation_sub`: the logarithmic variation is
   real-linear in differentiable `η` (pointwise: `logVariation_add_apply`).
+* `logVariation_apply_zero_of_differentiableAt`, `logVariation_apply_one_of_differentiableAt`:
+  where `η` is complex differentiable, `∂bar η = 0` and the logarithmic variation has no
+  connection part.
+* `contDiff_logVariation`: the logarithmic variation is `Cⁿ` when `x` is `Cⁿ` and `η` is `Cⁿ⁺¹`.
 * `gaugeFixedOperator_logVariation`: at every field, writing `E = ∂bar_a α` for the complex
   holomorphicity defect (the rows `1` and `2` of `equation x`),
   `L_x (logVariation x η) = (Im (P η - Δη), Re (P η - Δη), Re (η E), Im (η E))`.
@@ -129,6 +133,41 @@ theorem logVariation_zero_add_one_mul_I (x : ℂ → EuclideanSpace ℝ (Fin 4))
     congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) (imCLM.hasFDerivAt.comp z hη.hasFDerivAt).fderiv
   rw [conjWirtingerDeriv_apply]
   apply Complex.ext <;> simp [hre, him] <;> ring
+
+/-- The connection variation of the logarithmic variation vanishes where `η` is complex
+differentiable: then `∂bar η = 0`. Its first component is zero. -/
+theorem logVariation_apply_zero_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {η : ℂ → ℂ} {z : ℂ} (hη : DifferentiableAt ℂ η z) : logVariation x η z 0 = 0 := by
+  have h := logVariation_zero_add_one_mul_I x (hη.restrictScalars ℝ)
+  rw [hη.conjWirtingerDeriv_eq_zero] at h
+  simpa using congrArg re h
+
+/-- The connection variation of the logarithmic variation vanishes where `η` is complex
+differentiable: then `∂bar η = 0`. Its second component is zero. -/
+theorem logVariation_apply_one_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {η : ℂ → ℂ} {z : ℂ} (hη : DifferentiableAt ℂ η z) : logVariation x η z 1 = 0 := by
+  have h := logVariation_zero_add_one_mul_I x (hη.restrictScalars ℝ)
+  rw [hη.conjWirtingerDeriv_eq_zero] at h
+  simpa using congrArg im h
+
+/-- The logarithmic variation is as regular as the field and the first derivatives of `η`. -/
+theorem contDiff_logVariation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {η : ℂ → ℂ}
+    {n : WithTop ℕ∞} (hx : ContDiff ℝ n x) (hη : ContDiff ℝ (n + 1) η) :
+    ContDiff ℝ n (logVariation x η) := by
+  have hxi (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) := contDiff_euclidean.mp hx i
+  have hu : ContDiff ℝ (n + 1) (fun z ↦ (η z).re) := reCLM.contDiff.comp hη
+  have hv : ContDiff ℝ (n + 1) (fun z ↦ (η z).im) := imCLM.contDiff.comp hη
+  have hd {f : ℂ → ℝ} (hf : ContDiff ℝ (n + 1) f) (v : ℂ) :
+      ContDiff ℝ n (fun z ↦ fderiv ℝ f z v) :=
+    (hf.fderiv_right le_rfl).clm_apply contDiff_const
+  have hu' : ContDiff ℝ n (fun z ↦ (η z).re) := hu.of_le le_self_add
+  have hv' : ContDiff ℝ n (fun z ↦ (η z).im) := hv.of_le le_self_add
+  refine contDiff_euclidean.mpr fun i ↦ ?_
+  fin_cases i
+  · simpa using ((hd hv 1).neg).sub (hd hu I)
+  · simpa using (hd hu 1).sub (hd hv I)
+  · simpa using ((hxi 2).mul hu').sub ((hxi 3).mul hv')
+  · simpa using ((hxi 2).mul hv').add ((hxi 3).mul hu')
 
 /-- The two `∂bar` rows of `L_x` on a logarithmic variation: they are the real and imaginary
 parts of `η E`, where `E` is the complex holomorphicity defect of `x` (rows `1` and `2` of
