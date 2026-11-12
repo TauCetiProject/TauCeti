@@ -187,6 +187,33 @@ def trans (f : UnbasedIso R S) (g : UnbasedIso S T) : UnbasedIso R T where
 @[simp] theorem trans_dartEquiv (f : UnbasedIso R S) (g : UnbasedIso S T) :
     (f.trans g).dartEquiv = f.dartEquiv.trans g.dartEquiv := (rfl)
 
+@[simp] theorem refl_symm (S : StallingsGraph α) : (refl S).symm = refl S := by
+  ext <;> rfl
+
+@[simp] theorem symm_symm (f : UnbasedIso S T) : f.symm.symm = f := by
+  ext <;> rfl
+
+@[simp] theorem symm_trans (f : UnbasedIso R S) (g : UnbasedIso S T) :
+    (f.trans g).symm = g.symm.trans f.symm := by
+  ext <;> rfl
+
+@[simp] theorem self_trans_symm (f : UnbasedIso S T) : f.trans f.symm = refl S := by
+  ext <;> simp
+
+@[simp] theorem symm_trans_self (f : UnbasedIso S T) : f.symm.trans f = refl T := by
+  ext <;> simp
+
+@[simp] theorem refl_trans (f : UnbasedIso S T) : (refl S).trans f = f := by
+  ext <;> rfl
+
+@[simp] theorem trans_refl (f : UnbasedIso S T) : f.trans (refl T) = f := by
+  ext <;> rfl
+
+/-- Composition of unbased isomorphisms is associative. -/
+theorem trans_assoc {U : StallingsGraph α} (f : UnbasedIso R S) (g : UnbasedIso S T)
+    (h : UnbasedIso T U) : (f.trans g).trans h = f.trans (g.trans h) := by
+  ext <;> rfl
+
 /-- Changing the base vertices of the two graphs does not affect an unbased isomorphism. -/
 def withBase (f : UnbasedIso S T) (v : S.graph.V) (w : T.graph.V) :
     UnbasedIso (S.withBase v) (T.withBase w) where
@@ -202,6 +229,12 @@ def withBase (f : UnbasedIso S T) (v : S.graph.V) (w : T.graph.V) :
 @[simp] theorem withBase_dartEquiv (f : UnbasedIso S T) (v : S.graph.V) (w : T.graph.V) :
     (f.withBase v w).dartEquiv = f.dartEquiv := (rfl)
 
+/-- Forgetting the base vertex of the based isomorphism given by an unbased isomorphism returns
+the unbased isomorphism, with the base vertices moved. -/
+@[simp] theorem toIso_toUnbasedIso (f : UnbasedIso S T) (v : S.graph.V) :
+    (f.toIso v).toUnbasedIso = f.withBase v (f.vertexEquiv v) := by
+  ext <;> rfl
+
 /-- An unbased isomorphism identifies the subgroup accepted at a vertex with the subgroup
 accepted at its image. -/
 theorem subgroup_eq (f : UnbasedIso S T) (v : S.graph.V) :
@@ -209,5 +242,17 @@ theorem subgroup_eq (f : UnbasedIso S T) (v : S.graph.V) :
   simpa using (f.toIso v).subgroup_eq
 
 end UnbasedIso
+
+@[simp] theorem Iso.toUnbasedIso_refl (S : StallingsGraph α) :
+    (Iso.refl S).toUnbasedIso = UnbasedIso.refl S := by
+  ext <;> simp
+
+@[simp] theorem Iso.toUnbasedIso_symm (f : Iso S T) :
+    f.symm.toUnbasedIso = f.toUnbasedIso.symm := by
+  ext <;> simp
+
+@[simp] theorem Iso.toUnbasedIso_trans (f : Iso R S) (g : Iso S T) :
+    (f.trans g).toUnbasedIso = f.toUnbasedIso.trans g.toUnbasedIso := by
+  ext <;> simp
 
 end TauCeti.StallingsGraph

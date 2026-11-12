@@ -97,48 +97,32 @@ theorem mem_cyclicDarts_of_mem_typeVertices {a : S.graph.V} (ha : a ∈ S.typeVe
   · rw [S.graph.isAcyclic_iff.mp h a p hp] at he
     simp at he
 
-/-- The type graph, based at one of its vertices `u`: the darts on cyclically reduced closed
-paths and the vertices `S.typeVertices`, with the labels of the ambient graph. Its carriers
-compute to these subtypes so that paths can be lifted through them. -/
+/-- The type graph, based at one of its vertices `u`: the subgraph on the darts on cyclically
+reduced closed paths and the vertices `S.typeVertices`, with the labels of the ambient graph. -/
 @[expose] def typeGraph (u : S.typeVertices) : StallingsGraph α where
-  graph :=
-    { V := S.typeVertices
-      E := S.graph.cyclicDarts
-      src := fun e => ⟨S.graph.src e.1, S.src_mem_typeVertices e.2⟩
-      rev := fun e => ⟨S.graph.rev e.1, (S.graph.rev_mem_cyclicDarts_iff e.1).mpr e.2⟩
-      rev_rev := fun e => Subtype.ext (S.graph.rev_rev e.1)
-      rev_ne := fun e he => S.graph.rev_ne e.1 (congrArg Subtype.val he) }
+  graph := S.graph.subgraph S.typeVertices S.graph.cyclicDarts (fun _ => S.src_mem_typeVertices)
+    fun e => (S.graph.rev_mem_cyclicDarts_iff e).mpr
   base := u
   label := fun e => S.label e.1
   label_rev := fun e => S.label_rev e.1
+
+@[simp] theorem typeGraph_graph (u : S.typeVertices) :
+    (S.typeGraph u).graph = S.graph.subgraph S.typeVertices S.graph.cyclicDarts
+      (fun _ => S.src_mem_typeVertices) fun e => (S.graph.rev_mem_cyclicDarts_iff e).mpr := (rfl)
 
 @[simp] theorem typeGraph_base (u : S.typeVertices) : (S.typeGraph u).base = u := (rfl)
 
 @[simp] theorem typeGraph_label (u : S.typeVertices) (e : (S.typeGraph u).graph.E) :
     (S.typeGraph u).label e = S.label e.1 := (rfl)
 
-@[simp] theorem typeGraph_src_val (u : S.typeVertices) (e : (S.typeGraph u).graph.E) :
-    ((S.typeGraph u).graph.src e).1 = S.graph.src e.1 := (rfl)
-
-@[simp] theorem typeGraph_rev_val (u : S.typeVertices) (e : (S.typeGraph u).graph.E) :
-    ((S.typeGraph u).graph.rev e).1 = S.graph.rev e.1 := (rfl)
-
-@[simp] theorem typeGraph_tgt_val (u : S.typeVertices) (e : (S.typeGraph u).graph.E) :
-    ((S.typeGraph u).graph.tgt e).1 = S.graph.tgt e.1 := by
-  rw [(S.typeGraph u).graph.tgt_def, S.graph.tgt_def]
-  rfl
-
 /-- The type graphs at two vertices differ only in their base vertex. -/
 @[simp] theorem typeGraph_withBase (u v : S.typeVertices) :
     (S.typeGraph u).withBase v = S.typeGraph v := (rfl)
 
 /-- Inclusion of the type graph into the ambient graph, based at the same vertex. -/
-@[expose] def typeInclusion (u : S.typeVertices) : (S.typeGraph u).Hom (S.withBase u.1) where
-  graphHom :=
-    { mapV := Subtype.val
-      mapE := Subtype.val
-      map_src := fun _ => rfl
-      map_rev := fun _ => rfl }
+def typeInclusion (u : S.typeVertices) : (S.typeGraph u).Hom (S.withBase u.1) where
+  graphHom := S.graph.subgraphInclusion S.typeVertices S.graph.cyclicDarts
+    (fun _ => S.src_mem_typeVertices) fun e => (S.graph.rev_mem_cyclicDarts_iff e).mpr
   map_base := rfl
   map_label := fun _ => rfl
 
@@ -148,32 +132,16 @@ compute to these subtypes so that paths can be lifted through them. -/
 @[simp] theorem typeInclusion_mapE (u : S.typeVertices) (e : (S.typeGraph u).graph.E) :
     (S.typeInclusion u).graphHom.mapE e = e.1 := (rfl)
 
-/-- A path between vertices of the type graph all of whose darts lie on cyclically reduced
-closed paths lifts through the inclusion of the type graph. -/
-theorem exists_typeGraph_path (u : S.typeVertices) {a b : S.graph.V} (p : S.graph.Path a b)
-    (hp : ∀ e ∈ SerreGraph.Path.darts S.graph p, e ∈ S.graph.cyclicDarts) (ha : a ∈ S.typeVertices)
-    (hb : b ∈ S.typeVertices) :
-    ∃ q : (S.typeGraph u).graph.Path ⟨a, ha⟩ ⟨b, hb⟩,
-      (S.typeInclusion u).graphHom.toPrefunctor.mapPath q = p := by
-  induction p with
-  | nil => exact ⟨.nil, rfl⟩
-  | @cons b c p e ih =>
-    have he : e.1 ∈ S.graph.cyclicDarts := hp e.1 (by simp)
-    have hprev : b ∈ S.typeVertices := by simpa only [e.2.1] using S.src_mem_typeVertices he
-    obtain ⟨q, hq⟩ := ih (fun f hf => hp f (by simp [hf])) hprev
-    let f : @Quiver.Hom (S.typeGraph u).graph.V (S.typeGraph u).graph.toQuiver
-        ⟨b, hprev⟩ ⟨c, hb⟩ :=
-      ⟨⟨e.1, he⟩, Subtype.ext e.2.1, Subtype.ext ((S.typeGraph_tgt_val u ⟨e.1, he⟩).trans e.2.2)⟩
-    exact ⟨q.cons f, congrArg (fun t => t.cons e) hq⟩
-
 /-- The type graph accepts, at each of its vertices, the same subgroup as the ambient graph. -/
 @[simp] theorem typeGraph_subgroup (u a : S.typeVertices) :
     (S.typeGraph u).subgroup a = S.subgroup a.1 := by
   refine le_antisymm ?_ fun g hg => ?_
   · exact ((S.typeInclusion u).subgroup_le_subgroup_mapV a).trans (S.subgroup_withBase u.1 a.1).le
   · obtain ⟨p, hp, rfl⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
-    obtain ⟨q, hq⟩ := S.exists_typeGraph_path u p
+    obtain ⟨q, hq⟩ := S.graph.exists_subgraph_path S.typeVertices S.graph.cyclicDarts
+      (fun _ => S.src_mem_typeVertices) (fun e => (S.graph.rev_mem_cyclicDarts_iff e).mpr) p
       (fun e he => S.mem_cyclicDarts_of_mem_typeVertices a.2 hp he) a.2 a.2
+    -- The graph morphism underlying `typeInclusion` is this subgraph inclusion.
     exact (S.typeGraph u).mem_subgroup_iff.mpr ⟨q, ((S.typeInclusion u).read_mapPath q).symm.trans
       ((S.read_withBase u.1 _).trans (congrArg S.read hq))⟩
 
@@ -311,8 +279,10 @@ theorem UnbasedIso.exists_subgroup_eq_map_conj {u : S.typeVertices} {u' : T.type
     (S.typeGraph_subgroup u u).symm.trans
       ((f.subgroup_eq u).trans (T.typeGraph_subgroup u' (f.vertexEquiv u)))
   refine ⟨(T.read q)⁻¹ * (S.read p)⁻¹, ?_⟩
-  rw [T.subgroup_conj q, ← h, S.subgroup_conj p, Subgroup.map_map, map_mul]
-  rfl
+  rw [T.subgroup_conj q, ← h, S.subgroup_conj p, Subgroup.map_map]
+  congr 1
+  ext x
+  simp [mul_assoc]
 
 /-- Folded based cores accepting conjugate subgroups have isomorphic type graphs: both are
 based cores of the coset graph of one of the subgroups, at two of its vertices. -/
