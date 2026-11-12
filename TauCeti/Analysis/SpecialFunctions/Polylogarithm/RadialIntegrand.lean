@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
-public import TauCeti.Analysis.SpecialFunctions.Integrability.Log
+public import TauCeti.Analysis.SpecialFunctions.Integrability.Log.Basic
 
 /-!
 # Integrability of the polylogarithm's radial integrand
