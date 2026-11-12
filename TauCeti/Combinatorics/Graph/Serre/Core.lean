@@ -162,14 +162,6 @@ theorem IsCore.connected (hΓ : Γ.IsCore v) : Γ.Connected := by
   obtain ⟨q⟩ := hΓ.1 b
   exact ⟨p.reverse.comp q⟩
 
-/-- A based core without darts consists of its base vertex alone. -/
-theorem IsCore.subsingleton_of_isEmpty [IsEmpty Γ.E] (hΓ : Γ.IsCore v) : Subsingleton Γ.V := by
-  refine subsingleton_of_forall_eq v fun a => ?_
-  obtain ⟨p⟩ := hΓ.1 a
-  cases p with
-  | nil => rfl
-  | cons p e => exact isEmptyElim e.1
-
 /-- The union of reduced based loops is itself a based core. -/
 theorem core_isCore : (Γ.core v).IsCore (Γ.coreBase v) := by
   refine ⟨Γ.core_reachable v, ?_⟩
