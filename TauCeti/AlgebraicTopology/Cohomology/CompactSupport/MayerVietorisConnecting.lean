@@ -556,7 +556,7 @@ private lemma compactSupportCohomologyExtend_restrictι [T2Space X] {S : Set X}
 
 /-- `restrictι` along a composite open embedding `i = g ≫ f`, followed by extension along `g`,
 is `restrictι` along `f` of the restriction to a larger compact set. -/
-private lemma compactSupportCohomologyExtend_restrictι_of_comp_eq [T2Space X]
+private lemma compactSupportCohomologyExtend_restrictι_of_comp_eq
     {Y' : TopCat.{v}} [T2Space Y] {g : Y' ⟶ Y} {i : Y' ⟶ X} (hg : IsOpenEmbedding g)
     (hi : IsOpenEmbedding i) (hgf : g ≫ f = i) {S T : Set X} (hS : IsCompact S)
     (hSi : S ⊆ Set.range i) (hT : IsCompact T) (hTf : T ⊆ Set.range f) (hST : S ⊆ T) {n : ℕ}
