@@ -355,7 +355,7 @@ theorem antiderivative_diff_at_tangent_target_tendsto_zero
     (h_chord.mono inf_le_left) (h_to.mono_left inf_le_left)
   refine (Tendsto.if (p := fun t => γ t ≠ s) h0
     (g := fun _ => (0 : ℝ)) (tendsto_const_nhds.congr' ?_)).congr fun t => ?_
-  · refine eventually_inf_principal.mpr (Eventually.of_forall fun t ht => ?_)
+  · refine eventually_inf_principal.mpr (Eventually.of_forall fun t _ => ?_)
     simp
   · split_ifs with h
     · rfl
