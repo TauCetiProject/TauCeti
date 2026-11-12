@@ -19,11 +19,17 @@ martingale after stopping at any stopping time. No completeness or right continu
 filtration is needed. Strong progressivity ensures literal adaptation of the stopped process;
 almost sure path regularity alone would not supply that on a raw filtration.
 
-Upward dyadic approximations converge in Lᵖ at each deterministic observation time whenever
-the martingale's value there belongs to Lᵖ, for finite p ≥ 1. Their stopped values are
-conditional expectations of that one terminal value, so uniform integrability supplies the
-limit passage without any pathwise integrable bound. The initial-time indicator form retains
-the convention used by native localization.
+For a martingale with almost surely right-continuous paths, upward dyadic stopping-time
+approximations give Lᵖ convergence of the stopped processes at each deterministic observation
+time T, assuming only that M T belongs to Lᵖ, for finite p ≥ 1. This convergence requires
+neither progressivity nor a pathwise integrable bound. The initial-time indicator form of
+martingale stopping retains the convention used by native localization.
+
+Bounded optional sampling for a strongly progressive, almost surely right-continuous
+martingale identifies its value at a stopping time τ ≤ T with M T conditioned on the
+stopping sigma algebra. For ordered stopping times σ ≤ τ ≤ T, the value at σ is the
+conditional expectation of the value at τ given the stopping sigma algebra at σ. Both
+stopping times may have arbitrary range.
 
 ## References
 
@@ -56,9 +62,10 @@ private theorem Martingale.stoppedProcess_dyadicCeilTime_ae_eq_condExp
   exact hM.stoppedValue_ae_eq_condExp_of_le_const_of_countable_range
     ((isStoppingTime_const ℱ T).min (hτ.dyadicCeilTime n)) (fun _ ↦ min_le_left _ _) hc
 
-/-- Upward dyadic approximations of a stopped martingale converge in Lᵖ at each observation
-time, for finite p ≥ 1. The moment assumption is only on the value at that observation time.
-No progressivity assumption is needed for this convergence statement. -/
+/-- For a martingale with almost surely right-continuous paths, upward dyadic stopping-time
+approximations give Lᵖ convergence of the stopped processes at each observation time, for
+finite p ≥ 1. The moment assumption is only on the value at that observation time.
+No progressivity assumption or pathwise integrable bound is needed. -/
 theorem Martingale.tendsto_eLpNorm_stoppedProcess_dyadicCeilTime
     (hM : Martingale M ℱ μ)
     (hcont : ∀ᵐ ω ∂μ, IsRightContinuous (fun t ↦ M t ω))
@@ -107,9 +114,9 @@ theorem Martingale.stoppedProcess_indicator_of_ae_isRightContinuous
     (fun t ↦ ℱ.mono bot_le _ ?_)
   simpa only [compl_ofPred, not_le, WithTop.coe_zero] using (hτ 0).compl
 
-/-- Bounded optional sampling at an arbitrary stopping time: its value is the conditional
-expectation of any later deterministic value. Strong progressivity supplies measurability
-for the stopping sigma algebra without completing the filtration. -/
+/-- For a strongly progressive martingale with almost surely right-continuous paths and a
+bounded stopping time τ ≤ T of arbitrary range, `stoppedValue M τ` equals M T conditioned on
+`hτ.measurableSpace` almost everywhere. No completion of the filtration is needed. -/
 theorem Martingale.stoppedValue_ae_eq_condExp_of_le_const_of_ae_isRightContinuous
     (hM : Martingale M ℱ μ) (hprog : IsStronglyProgressive ℱ M)
     (hcont : ∀ᵐ ω ∂μ, IsRightContinuous (fun t ↦ M t ω))
