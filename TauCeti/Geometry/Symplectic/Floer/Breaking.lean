@@ -431,7 +431,7 @@ private theorem sub_sub_integral_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
   set A := v (0, t₂) - v (0, t₁) - ∫ t in t₁..t₂, Φ (t, v (0, t))
   -- The defects of the translates along the segments `{r} × [t₁, t₂]` tend to zero in `L¹`, and
   -- they converge uniformly in `r ∈ [0, 1]` to the defect `A` of the limit.
-  have hzero : ∫⁻ r in Icc (0 : ℝ) 1, ‖A‖ₑ = 0 := by
+  have hzero : ∫⁻ _ in Icc (0 : ℝ) 1, ‖A‖ₑ = 0 := by
     refine lintegral_eq_zero_of_eventually_le_add
       (f := fun k r ↦ ‖u (r + s k, t₂) - u (r + s k, t₁) -
         ∫ t in t₁..t₂, Φ (t, u (r + s k, t))‖ₑ)

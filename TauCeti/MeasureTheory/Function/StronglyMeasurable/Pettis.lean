@@ -72,7 +72,7 @@ theorem aestronglyMeasurable_iff_forall_inner {h : α → E} :
   refine ⟨fun hh v ↦ hh.const_inner, fun hh ↦ ?_⟩
   obtain ⟨d, hd⟩ := exists_dense_seq E
   -- The spans `U n` of the initial segments of `d` increase to a dense subspace.
-  set U : ℕ → Submodule 𝕜 E := fun n ↦ span 𝕜 (d '' Iic n) with hU_def
+  set U : ℕ → Submodule 𝕜 E := fun n ↦ span 𝕜 (d '' Iic n)
   have hU : Monotone U := fun _ _ hmn ↦ span_mono (image_mono (Iic_subset_Iic.2 hmn))
   have : ∀ n, FiniteDimensional 𝕜 (U n) := fun n ↦
     FiniteDimensional.span_of_finite 𝕜 ((finite_Iic n).image d)

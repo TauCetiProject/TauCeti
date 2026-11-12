@@ -47,7 +47,6 @@ open TauCeti.AlgebraicGeometry (WeilDivisor)
 universe u
 
 variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
-  [IsManifold 𝓘(ℂ) 1 X]
 
 private theorem isDivisorSectionAt_toDivisorSection_mul {D E : WeilDivisor X}
     {h f : X → ℂ} {x : X} (hh : MeromorphicAt h x)
@@ -88,7 +87,6 @@ private theorem multiplySection_eventuallyEq {D E : WeilDivisor X} {U : Opens X}
       (tendsto_val_nhdsNE x)] with y hy
   simpa [multiplySection, Subtype.val_injective.extend_apply] using hy
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 private theorem section_ext_nhdsNE {D : WeilDivisor X} {U : Opens X}
     {f g : divisorSections D U} (h : ∀ x : U, f.1 =ᶠ[𝓝[≠] x] g.1) : f = g := by
   apply Subtype.ext
@@ -110,7 +108,6 @@ private def multiplySectionLinearMap {D E : WeilDivisor X} {U : Opens X} (h : X 
       multiplySection_eventuallyEq h hh ho f x] with y hcf hf
     simp_all [mul_left_comm]
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 private theorem inverse_order {D E : WeilDivisor X} {h : X → ℂ} {x : X}
     (ho : meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ)) :
     meromorphicOrderAt h⁻¹ x = ((E x - D x : ℤ) : WithTop ℤ) := by

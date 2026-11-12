@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.Hardy.Toeplitz
 public import TauCeti.Analysis.Fourier.LaurentOperator
+import TauCeti.Analysis.InnerProductSpace.Projection.ExtendByZero
 
 /-!
 # The Brown–Halmos characterization of Toeplitz operators
@@ -106,17 +107,6 @@ private theorem exists_fourierCoeff_eq_inner {T : HardySpace →L[ℂ] HardySpac
     have hd : (i : ℤ) - ((i + d : ℕ) : ℤ) = -d := by omega
     rw [hd, hrow, ← inner_hardyBasis_add_eq h 0 d i, zero_add, add_comm]
 
-/-- The operator `T` acting on circle `L²` through the Hardy projection. -/
-private abbrev ambient (T : HardySpace →L[ℂ] HardySpace) :
-    Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)) →L[ℂ] Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)) :=
-  hardySubmodule.subtypeL ∘L T ∘L hardySubmodule.orthogonalProjectionOnto
-
-/-- On the Hardy basis, `T` acting through the Hardy projection is `T` itself. -/
-private theorem ambient_coe_hardyBasis (T : HardySpace →L[ℂ] HardySpace) (j : ℕ) :
-    ambient T (hardyBasis j) = T (hardyBasis j) := by
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    orthogonalProjectionOnto_mem_subspace_eq_self, subtypeL_apply]
-
 /-- For trigonometric polynomials `f` and `q`, the matrix coefficient of multiplication by a
 symbol `b` of the shift-invariant Hardy matrix of `T` is the matrix coefficient of `T` at the
 translates `e_N f` and `e_N q`, for all sufficiently large `N`. -/
@@ -130,8 +120,11 @@ private theorem eventually_inner_multiplicationOperator_eq {T : HardySpace →L[
       ⟪f, Lp.multiplicationOperator (ContinuousMap.toLp (E := ℂ) ∞ AddCircle.haarAddCircle ℂ q)
         b⟫_ℂ =
       ⟪Lp.multiplicationOperator (fourierLp (T := 1) ∞ N) f,
-        ambient T (Lp.multiplicationOperator (fourierLp (T := 1) ∞ N)
+        hardySubmodule.extendByZero T (Lp.multiplicationOperator (fourierLp (T := 1) ∞ N)
           (ContinuousMap.toLp (E := ℂ) 2 AddCircle.haarAddCircle ℂ q))⟫_ℂ := by
+  have hA (u : HardySpace) : (hardySubmodule.extendByZero T) u = T u :=
+    hardySubmodule.extendByZero_apply_coe T u
+  generalize hardySubmodule.extendByZero T = A at hA ⊢
   induction hq using span_induction with
   | mem q hq =>
     obtain ⟨n, rfl⟩ := hq
@@ -149,7 +142,7 @@ private theorem eventually_inner_multiplicationOperator_eq {T : HardySpace →L[
       -- `ContinuousMap.toLp ∞` of `fourier n` is the abbreviation `fourierLp ∞ n`.
       rw [hq₂, inner_fourierBasis_multiplicationOperator_fourierLp]
       simp only [Lp.multiplicationOperator_apply, fourierLp_smul_fourierBasis]
-      rw [hi, hj, ← coe_hardyBasis, ← coe_hardyBasis, ambient_coe_hardyBasis, ← coe_inner, ← hb]
+      rw [hi, hj, ← coe_hardyBasis, ← coe_hardyBasis, hA, ← coe_inner, ← hb]
       congr 1
       omega
     | zero => exact Filter.Eventually.of_forall fun N ↦ by simp
@@ -184,16 +177,6 @@ private theorem norm_multiplicationOperator_toLp_apply_le {T : HardySpace →L[�
   have hU (N : ℤ) (g : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) :
       ‖Lp.multiplicationOperator (fourierLp (T := 1) ∞ N) g‖ = ‖g‖ :=
     Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one (ae_norm_fourierLp_eq_one ∞ N) g
-  have hT : ‖ambient T‖ ≤ ‖T‖ := by
-    calc ‖ambient T‖ ≤ ‖hardySubmodule.subtypeL‖ *
-          (‖T‖ * ‖hardySubmodule.orthogonalProjectionOnto‖) :=
-          (ContinuousLinearMap.opNorm_comp_le _ _).trans
-            (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
-      _ ≤ 1 * (‖T‖ * 1) := by
-          gcongr
-          · exact Submodule.norm_subtypeL_le _
-          · exact hardySubmodule.orthogonalProjectionOnto_norm_le
-      _ = ‖T‖ := by ring
   have hD : Dense (span ℂ (Set.range (fourierBasis (T := 1))) :
       Set (Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))) :=
     dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := 1)).dense_span
@@ -203,15 +186,11 @@ private theorem norm_multiplicationOperator_toLp_apply_le {T : HardySpace →L[�
     obtain ⟨N, hN⟩ := (eventually_inner_multiplicationOperator_eq hb hf hq).exists
     rw [hN]
     calc _ ≤ ‖Lp.multiplicationOperator (fourierLp (T := 1) ∞ N) f‖ *
-          (‖ambient T‖ * ‖Lp.multiplicationOperator (fourierLp (T := 1) ∞ N)
+          (‖hardySubmodule.extendByZero T‖ * ‖Lp.multiplicationOperator (fourierLp (T := 1) ∞ N)
             (ContinuousMap.toLp (E := ℂ) 2 AddCircle.haarAddCircle ℂ q)‖) :=
           (norm_inner_le_norm _ _).trans
             (mul_le_mul_of_nonneg_left (ContinuousLinearMap.le_opNorm _ _) (norm_nonneg _))
-      _ ≤ ‖f‖ * C := by
-          rw [hU, hU]
-          exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hT (norm_nonneg _))
-            (norm_nonneg _)
-      _ = C * ‖f‖ := mul_comm _ _
+      _ = C * ‖f‖ := by rw [hU, hU, hardySubmodule.norm_extendByZero, mul_comm]
   have hv := hbound v
   rw [inner_self_eq_norm_sq_to_K, norm_pow, RCLike.norm_ofReal, abs_norm, sq] at hv
   rcases (norm_nonneg v).eq_or_lt with h0 | hpos
