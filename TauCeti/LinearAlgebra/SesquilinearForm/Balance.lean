@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Module.LinearMap.Star
 public import Mathlib.Algebra.Order.Star.Basic
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
+public import Mathlib.Tactic.LinearCombination
 
 /-!
 # Balancing a sesquilinear form against a conjugate-semilinear map
@@ -43,6 +45,7 @@ scalars compatible with the star, and are stated over a commutative star-ordered
   against, once that map squares to a scalar of modulus one.
 * `LinearMap.isSymm_balance` and `LinearMap.isNonneg_balance`: balancing preserves Hermitian
   symmetry and nonnegativity.
+* `LinearMap.IsNonneg.isSymm`: a nonnegative sesquilinear form over `ℂ` is Hermitian.
 * `LinearMap.balance_apply_self_ne_zero`: for nonnegative `H`, the balanced form is nonzero on the
   diagonal wherever `H` is, so balancing preserves definiteness off the origin.
 -/
@@ -120,5 +123,26 @@ theorem balance_apply_self_ne_zero {H : V →ₗ⋆[R] V →ₗ[R] R} (hH : H.Is
 end StarOrderedRing
 
 end CommSemiring
+
+section ComplexOrder
+
+open scoped ComplexOrder
+
+variable {V : Type*} [AddCommMonoid V] [Module ℂ V]
+
+/-- **A nonnegative sesquilinear form over `ℂ` is Hermitian.**  Nonnegativity makes every diagonal
+value real, and polarizing at `x + y` and `x + I • y` then recovers `H x y = conj (H y x)`. -/
+theorem IsNonneg.isSymm {H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ} (hH : H.IsNonneg) : H.IsSymm := by
+  refine ⟨fun x y => ?_⟩
+  have real : ∀ z, starRingEnd ℂ (H z z) = H z z := fun z => by
+    rw [starRingEnd_apply]; exact (hH.nonneg z).star_eq
+  have h1 := real (x + y)
+  have h2 := real (x + Complex.I • y)
+  simp only [map_add, LinearMap.add_apply, map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul,
+    map_mul, map_neg, Complex.conj_I, RingHom.id_apply, real] at h1 h2
+  linear_combination (norm := (ring_nf; simp only [Complex.I_sq]; ring))
+    (1 / 2 : ℂ) * (h1 + Complex.I * h2)
+
+end ComplexOrder
 
 end LinearMap

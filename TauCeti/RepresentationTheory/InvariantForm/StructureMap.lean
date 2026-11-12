@@ -395,20 +395,6 @@ section OfStructureMap
 
 variable {G V : Type*} [Monoid G] [AddCommGroup V] [Module ℂ V] {ρ : Representation ℂ G V}
 
-/-- **A nonnegative sesquilinear form over `ℂ` is Hermitian.**  Nonnegativity makes every diagonal
-value real, and polarizing at `x + y` and `x + I • y` then recovers `H x y = conj (H y x)`. -/
-private theorem isSymm_of_isNonneg {H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ} (hH : H.IsNonneg) : H.IsSymm := by
-  refine ⟨fun x y => ?_⟩
-  have real : ∀ z, starRingEnd ℂ (H z z) = H z z := fun z => by
-    rw [starRingEnd_apply]; exact (hH.nonneg z).star_eq
-  have h1 := real (x + y)
-  have h2 := real (x + Complex.I • y)
-  simp only [map_add, LinearMap.add_apply, map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul,
-    map_mul, map_neg, Complex.conj_I, RingHom.id_apply, real] at h1 h2
-  have hI : Complex.I * Complex.I = -1 := Complex.I_mul_I
-  linear_combination (1 / 2 : ℂ) * (h1 + Complex.I * h2 -
-    (starRingEnd ℂ (H y x) - starRingEnd ℂ (H x y) + H y x - H x y) * hI)
-
 /-- **The balanced form of an invariant sesquilinear form against an equivariant map is
 invariant.**  Both summands of `LinearMap.balance H K` are, the second because `K` commutes with
 the action.  This is the only interaction between balancing and invariance that the passage from a
@@ -461,7 +447,7 @@ private theorem exists_isInvariantForm_flip_of_sq_eq_smul {H : V →ₗ⋆[ℂ] 
     rw [LinearMap.comp_apply, LinearMap.comp_apply]
     calc balance H K (K x) y
         = (starRingEnd ℂ) (balance H K y (K x)) :=
-          ((isSymm_balance (isSymm_of_isNonneg hHnonneg) K).eq y (K x)).symm
+          ((isSymm_balance hHnonneg.isSymm K).eq y (K x)).symm
       _ = (starRingEnd ℂ) (balance H K ((ε : ℂ) • K (K y)) (K x)) := by
             rw [hKsq y, smul_smul, hεC, one_smul]
       _ = (starRingEnd ℂ) ((ε : ℂ) * (starRingEnd ℂ) (balance H K (K y) x)) := by
