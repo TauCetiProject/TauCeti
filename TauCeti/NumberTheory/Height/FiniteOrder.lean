@@ -69,20 +69,6 @@ variable {F : Type*} [Field F] [CharZero F]
 
 open IntermediateField Module
 
-/-- The absolute multiplicative height is at least one, including its totalized value on
-nonalgebraic elements. -/
-theorem one_le_absMulHeight₁ (x : F) : 1 ≤ absMulHeight₁ x := by
-  rw [absMulHeight₁]
-  split_ifs with hx
-  · have : FiniteDimensional ℚ ℚ⟮x⟯ := adjoin.finiteDimensional hx
-    have : NumberField ℚ⟮x⟯ := {}
-    exact Real.one_le_rpow (one_le_mulHeight₁ _) (by positivity)
-  · exact le_rfl
-
-/-- The absolute logarithmic height is nonnegative. -/
-theorem zero_le_absLogHeight₁ (x : F) : 0 ≤ absLogHeight₁ x :=
-  Real.log_nonneg (one_le_absMulHeight₁ x)
-
 /-- Kronecker's criterion: an algebraic element has absolute multiplicative height one
 exactly when it is zero or has finite multiplicative order. -/
 theorem absMulHeight₁_eq_one_iff {x : F} (hx : IsIntegral ℚ x) :

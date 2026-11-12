@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import TauCeti.Analysis.Normed.Module.Dual.Submodule
 public import TauCeti.Analysis.Normed.Module.Dual.Quotient
-import Mathlib.Analysis.LocallyConvex.SeparatingDual
 
 /-!
 # Reflexivity of subspaces and quotients
@@ -18,9 +17,10 @@ reflexive. The statements use surjectivity of the canonical continuous bidual ma
 Completeness is a consequence of reflexivity, rather than an additional hypothesis.
 
 For a subspace, extend its bidual functional by precomposition with restriction.
-The representing ambient vector lies in the subspace, since continuous functionals
-on the Hausdorff quotient separate points. For a quotient, use the identification
-of its dual with an annihilator and Hahn–Banach extension from that annihilator.
+The representing ambient vector lies in the subspace, since by Hahn–Banach a vector
+outside a closed subspace is detected by a continuous functional vanishing on it.
+For a quotient, use the identification of its dual with an annihilator and
+Hahn–Banach extension from that annihilator.
 The latter proof also applies to the seminormed quotient by a nonclosed submodule.
 
 ## References
@@ -41,20 +41,17 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField �
 theorem surjective_inclusionInDoubleDual (S : Submodule 𝕜 E) (hS : IsClosed (S : Set E))
     (hE : Surjective (inclusionInDoubleDual 𝕜 E)) :
     Surjective (inclusionInDoubleDual 𝕜 S) := by
-  let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
-  let := hS
   intro Φ
   obtain ⟨x, hx⟩ := hE (Φ.comp (ContinuousLinearMap.precomp 𝕜 S.subtypeL))
   have hxS : x ∈ S := by
-    apply (Submodule.Quotient.mk_eq_zero S).1
-    apply SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜)
-    intro f
-    have hres : (f.comp S.mkQL).comp S.subtypeL = 0 := by
-      ext y
-      simp [(Submodule.Quotient.mk_eq_zero S).2 y.property]
-    have h := congrArg (fun Ψ ↦ Ψ (f.comp S.mkQL)) hx
-    simpa only [dual_def, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.precomp_apply, hres, map_zero, mkQL_apply, mkQ_apply] using h
+    -- Otherwise some `f` vanishing on `S` has `f x = 1`, but `hx` gives `f x = Φ 0 = 0`.
+    by_contra hxS
+    obtain ⟨f, hfS, hf⟩ := exists_dual_forall_mem_eq_zero_eq_one hS hxS
+    have hres : f.comp S.subtypeL = 0 := ContinuousLinearMap.ext fun y ↦ hfS y y.2
+    have h := congrArg (fun Ψ ↦ Ψ f) hx
+    simp only [dual_def, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.precomp_apply, hres, map_zero, hf] at h
+    exact one_ne_zero h
   refine ⟨⟨x, hxS⟩, ContinuousLinearMap.ext fun f ↦ ?_⟩
   obtain ⟨g, hg⟩ := S.surjective_precomp_subtypeL f
   have h := congrArg (fun Ψ ↦ Ψ g) hx

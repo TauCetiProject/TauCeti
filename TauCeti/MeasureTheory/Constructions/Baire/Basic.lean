@@ -79,11 +79,11 @@ theorem _root_.IsCompact.exists_baire_hull [T2Space X] [LocallyCompactSpace X]
   have hopen (n : ℕ) := hK.measurableSet.exists_isOpen_sdiff_lt
     (μ := μ) hμK
     (ε := ENNReal.ofReal (1 / ((n : ℝ) + 1))) (by positivity)
-  choose V hKV hV hVfin hVerr using hopen
+  choose V hKV hV _ hVerr using hopen
   have hcut (n : ℕ) := exists_continuous_one_zero_of_isCompact hK
     ((hV n).inter hU).isClosed_compl
     (disjoint_compl_right_iff_subset.2 (subset_inter (hKV n) hKU))
-  choose f hfK hfzero hfsupp hfrange using hcut
+  choose f hfK hfzero hfsupp _ using hcut
   let B : Set X := ⋂ n, (f n) ⁻¹' {1}
   have hKB : K ⊆ B := fun x hx => mem_iInter.2 fun n => hfK n hx
   have hBV (n : ℕ) : B ⊆ V n ∩ U := by

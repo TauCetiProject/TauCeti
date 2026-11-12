@@ -124,10 +124,9 @@ directions before taking products.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/HeegaardFloer/README.md`, Lane G.3, "The
-complexes and `∂² = 0`", where the annular cases in the juxtaposition proof use the fact that
-the two complementary cyclic intervals partition the non-endpoint columns or rows. The
-terminology follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+The annular cases in the juxtaposition proof of `∂² = 0` for grid complexes use the fact that the
+two complementary cyclic intervals partition the non-endpoint columns or rows. The terminology
+follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
 
 public section
@@ -1005,7 +1004,7 @@ theorem mem_cIoo_finRotate_left_iff {a x : Fin n} :
     have ha := val_finRotate_cases a
     have := a.isLt; have := x.isLt
     simp only [mem_cIoo, ne_eq, Fin.ext_iff]
-    rcases ha with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> rw [h2] <;> split_ifs <;> omega
+    rcases ha with ⟨h1, h2⟩ | ⟨_, h2⟩ <;> rw [h2] <;> split_ifs <;> omega
 
 /-- An endpoint pair whose second point is the cyclic successor of its first is non-interleaving
 with every endpoint pair whose first point avoids the first and whose second point avoids the

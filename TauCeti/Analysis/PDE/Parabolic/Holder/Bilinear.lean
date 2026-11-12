@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Interpolation
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
 public import TauCeti.Analysis.Holder.Bilinear
 import Mathlib.Analysis.Calculus.FDeriv.Bilinear
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -42,6 +43,10 @@ in parabolic Schauder estimates uses.
   `ContinuousLinearMap.spatialSecondFDerivL_compParabolicC2Holder₂` and
   `ContinuousLinearMap.timeDerivL_compParabolicC2Holder₂`: the Leibniz rules for its fields.
 * `ContinuousLinearMap.norm_compParabolicC2Holder₂_le`: the operator-norm bound `1200 ‖B‖`.
+* `ContinuousLinearMap.norm_valueL_compParabolicC2Holder₂_le`: the supremum-norm bound
+  `‖B u v‖_∞ ≤ ‖B‖ ‖u‖_∞ ‖v‖_∞`.
+* `ContinuousLinearMap.spatialTrace_compParabolicC2Holder₂_eq_zero`: `B u v` has vanishing trace
+  at every time where `v` does.
 
 ## References
 
@@ -265,6 +270,25 @@ theorem norm_compParabolicC2Holder₂_apply_le (u : ParabolicC2HolderSpace α E 
     ‖B.compParabolicC2Holder₂ hα u v‖ ≤ 1200 * ‖B‖ * ‖u‖ * ‖v‖ := by
   rw [compParabolicC2Holder₂_eq]
   exact norm_compParabolicC2HolderAux_le B hα u v
+
+/-- The supremum norm of `B u v` is at most `‖B‖ ‖u‖_∞ ‖v‖_∞`. -/
+theorem norm_valueL_compParabolicC2Holder₂_le (u : ParabolicC2HolderSpace α E F hab)
+    (v : ParabolicC2HolderSpace α E G hab) :
+    ‖valueL (B.compParabolicC2Holder₂ hα u v)‖ ≤ ‖B‖ * ‖valueL u‖ * ‖valueL v‖ :=
+  (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ by
+    have hu : ‖u p‖ ≤ ‖valueL u‖ := by simpa using (valueL u).norm_coe_le_norm p
+    have hv : ‖v p‖ ≤ ‖valueL v‖ := by simpa using (valueL v).norm_coe_le_norm p
+    rw [valueL_apply, compParabolicC2Holder₂_apply]
+    exact (B.le_opNorm₂ _ _).trans (by gcongr)
+
+/-- If `v` has vanishing trace at time `t`, so does `B u v`. -/
+theorem spatialTrace_compParabolicC2Holder₂_eq_zero (u : ParabolicC2HolderSpace α E F hab)
+    {v : ParabolicC2HolderSpace α E G hab} {t : Icc a b} (hv : v.spatialTrace t = 0) :
+    (B.compParabolicC2Holder₂ hα u v).spatialTrace t = 0 :=
+  CkHolderSpace.ext fun x ↦ by
+    have h := congrArg (· x) hv
+    simp only [spatialTrace_apply, CkHolderSpace.coe_zero, Pi.zero_apply] at h
+    simp [h]
 
 /-- Applying the flipped bilinear map is the flipped bilinear map of order-two spaces. -/
 @[simp]

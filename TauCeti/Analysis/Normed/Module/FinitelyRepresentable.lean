@@ -230,7 +230,7 @@ theorem finitelyRepresentable_iff_banachMazurDist_lt :
   · intro h S _ ε hε
     -- Embed `S` with distortion bounds `1 ± δ`, where `(1 + δ) / (1 - δ) < 1 + ε`, and
     -- compare `S` with the range of the embedding.
-    set δ := ε / (ε + 3) with hδ_def
+    set δ := ε / (ε + 3)
     have hδ : 0 < δ := by positivity
     have hδε : δ * (ε + 3) = ε := div_mul_cancel₀ _ (by positivity)
     have hδ1 : 0 < 1 - δ := by nlinarith
@@ -263,14 +263,13 @@ theorem finitelyRepresentable_iff_banachMazurDist_lt :
   · intro h S _ ε hε
     obtain ⟨G, hne, hd⟩ := h S ‹_› ε hε
     obtain ⟨e, he⟩ := banachMazurDist_lt_iff.1 hd
-    rcases subsingleton_or_nontrivial S with hS | hS
+    rcases subsingleton_or_nontrivial S with hS | _
     · exact ⟨0, fun x ↦ by simp [Subsingleton.elim x 0]⟩
     -- Rescale `e` by a scalar `a` with `‖e⁻¹‖ < ‖a‖ < (1 + ε) / ‖e‖`; the norms are dense.
     set k := ‖(e : S →L[𝕜] G)‖
     set c := ‖(e.symm : G →L[𝕜] S)‖
     have h₁ : 1 ≤ k * c := (one_le_banachMazurDist hne).trans (banachMazurDist_le e)
     have hc : 0 ≤ c := norm_nonneg _
-    have hk_nonneg : 0 ≤ k := norm_nonneg _
     have hk : 0 < k := by nlinarith
     obtain ⟨a, ha₁, ha₂⟩ := NormedField.exists_lt_norm_lt 𝕜 hc ((lt_div_iff₀' hk).2 he)
     refine ⟨a • G.subtypeL.comp (e : S →L[𝕜] G), fun x ↦ ?_⟩

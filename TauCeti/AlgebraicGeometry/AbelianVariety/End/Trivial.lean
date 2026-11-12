@@ -24,11 +24,9 @@ turns the uniqueness of homomorphisms into the trivial abelian variety
 `example` below records.
 
 This is the specialization of the endomorphism ring to the trivial abelian variety, kept apart from
-`End.Basic` so that the generic construction does not depend on the trivial-variety theory. It
-advances the same roadmap item, `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E, "`[n]` as an
-isogeny". No external mathematics is vendored: both facts come from the uniqueness of homomorphisms
-out of the zero object, already proved in
-`TauCeti.AlgebraicGeometry.AbelianVariety.Trivial`.
+`End.Basic` so that the generic construction does not depend on the trivial-variety theory. No
+external mathematics is vendored: both facts come from the uniqueness of homomorphisms out of the
+zero object, already proved in `TauCeti.AlgebraicGeometry.AbelianVariety.Trivial`.
 -/
 
 public section

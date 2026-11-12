@@ -77,6 +77,7 @@ private theorem symmetricPower_repr_tprod_apply_smul_basis [DecidableEq κ] (c :
     rw [Basis.symmetricPower_apply, tprodOfSym_ofFn]
   rw [(tprod R).map_smul_univ c fun i => b (p i), hbasis, map_smul, Basis.repr_self,
     Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_apply]
+  simp only [RingHom.id_apply]
 
 /-- **The coordinates of a pure symmetric tensor.**  Expanding each factor of `⨂ₛ v` in the basis
 `b` and collecting the resulting pure tensors of basis vectors by the unordered tuple of indices
