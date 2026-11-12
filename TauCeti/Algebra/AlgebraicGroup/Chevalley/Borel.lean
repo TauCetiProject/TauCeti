@@ -42,7 +42,7 @@ variable (A : Type v) [CommRing A]
 -/
 theorem range_torusPoints_le_normalizer_positivePoints :
     (D.torusPoints A).range ≤ Subgroup.normalizer (D.positivePoints A : Set _) := by
-  rw [D.positivePoints_eq_closure]
+  rw [D.positivePoints_def, D.subsystemPoints_eq_closure]
   apply Subgroup.le_normalizer_closure_iff.mpr
   rintro _ ⟨s, rfl⟩ _ ⟨γ, hγ, u, rfl⟩
   rw [← ofAdd_toAdd u, D.torusPoints_conj_rootSubgroupPoints]
@@ -63,7 +63,7 @@ theorem borelSubgroup_le_iff {P : Subgroup (D.points A)} :
     D.borelSubgroup A ≤ P ↔
       (∀ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht), ∀ u,
         D.rootSubgroupPoints γ A u ∈ P) ∧ (∀ s, D.torusPoints A s ∈ P) := by
-  rw [D.borelSubgroup_def, sup_le_iff, D.positivePoints_le_iff]
+  rw [D.borelSubgroup_def, sup_le_iff, D.positivePoints_def, D.subsystemPoints_le_iff]
   simp only [IsConcreteLE.le_iff, MonoidHom.mem_range, forall_exists_index,
     forall_apply_eq_imp_iff]
 
@@ -104,7 +104,10 @@ theorem map_borelSubgroup_le {B : Type w} [CommRing B] (f : A →+* B) :
       D.borelSubgroup B := by
   rw [D.borelSubgroup_def, Subgroup.map_sup]
   apply sup_le
-  · exact (D.map_positivePoints_le f).trans (D.positivePoints_le_borelSubgroup B)
+  · have hmap := D.map_subsystemPoints_le
+      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) f
+    rw [← D.positivePoints_def, ← D.positivePoints_def] at hmap
+    exact hmap.trans (D.positivePoints_le_borelSubgroup B)
   · rw [Subgroup.map_le_iff_le_comap]
     rintro _ ⟨s, rfl⟩
     simpa only [Subgroup.mem_comap, D.map_torusPoints] using
