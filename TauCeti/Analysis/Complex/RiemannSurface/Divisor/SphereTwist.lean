@@ -42,9 +42,8 @@ the case `n = -2`, so `h⁰(K) = h¹(𝒪)`, and every canonical divisor of `ℙ
 * `TauCeti.RiemannSurface.finrank_divisorSheaf_zsmul_ofPoint_sphere` and
   `TauCeti.RiemannSurface.finrank_divisorCechCohomology_one_zsmul_ofPoint_sphere`: the closed
   dimension formulas.
-* `TauCeti.RiemannSurface.finrank_pointTwist_neg_ofPoint_sphere` and
-  `TauCeti.RiemannSurface.pointTwistGlobalCoefficient_neg_ofPoint_bijective_sphere`: the
-  six-term sequence of `𝒪(-[x]) → 𝒪`.
+* `TauCeti.RiemannSurface.pointTwistGlobalCoefficient_neg_ofPoint_bijective_sphere`: in the
+  six-term sequence of `𝒪(-[x]) → 𝒪`, the coefficient map `H⁰(𝒪) → ℂ` is bijective.
 
 ## References
 
@@ -116,10 +115,6 @@ section Sphere
 
 variable (x : OnePoint ℂ)
 
-private theorem zsmul_ofPoint_add_one (n : ℤ) :
-    (n + 1) • WeilDivisor.ofPoint x = n • WeilDivisor.ofPoint x + WeilDivisor.ofPoint x := by
-  rw [add_zsmul, one_zsmul]
-
 /-- The first cohomology of `𝒪(n • [x])` on `ℙ¹` is finite-dimensional, stepping from
 `h¹(𝒪) = 0` through point twists in both directions. -/
 instance finiteDimensional_divisorCechCohomology_one_zsmul_ofPoint_sphere (n : ℤ) :
@@ -130,11 +125,11 @@ instance finiteDimensional_divisorCechCohomology_one_zsmul_ofPoint_sphere (n : �
     have := ModuleCat.isZero_iff_subsingleton.1 isZero_divisorCechCohomology_zero_one_sphere
     infer_instance
   | succ i ih =>
-    rw [zsmul_ofPoint_add_one]
+    rw [add_one_zsmul]
     exact (finiteDimensional_divisorCechCohomology_one_add_point_iff _ x).2 ih
   | pred i ih =>
     refine (finiteDimensional_divisorCechCohomology_one_add_point_iff _ x).1 ?_
-    rwa [← zsmul_ofPoint_add_one, sub_add_cancel]
+    rwa [← add_one_zsmul, sub_add_cancel]
 
 /-- **Riemann–Roch for point twists on `ℙ¹`.** `h⁰(𝒪(n • [x])) - h¹(𝒪(n • [x])) = n + 1`. -/
 theorem finrank_zsmul_ofPoint_euler_characteristic_sphere (n : ℤ) :
@@ -145,10 +140,10 @@ theorem finrank_zsmul_ofPoint_euler_characteristic_sphere (n : ℤ) :
     rw [zero_zsmul, finrank_divisorSheaf_zero_sphere, finrank_divisorCechCohomology_zero_one_sphere]
     norm_num
   | succ i ih =>
-    rw [zsmul_ofPoint_add_one, finrank_pointTwist_euler_characteristic, ih]
+    rw [add_one_zsmul, finrank_pointTwist_euler_characteristic, ih]
   | pred i ih =>
     have h := finrank_pointTwist_euler_characteristic ((-i - 1 : ℤ) • WeilDivisor.ofPoint x) x
-    rw [← zsmul_ofPoint_add_one, sub_add_cancel, ih] at h
+    rw [← add_one_zsmul, sub_add_cancel, ih] at h
     omega
 
 /-- `h¹(𝒪(n • [x])) = 0` on `ℙ¹` for `n ≥ 0`: the point-twist maps on `H¹` are surjective. -/
@@ -160,7 +155,7 @@ theorem finrank_divisorCechCohomology_one_zsmul_ofPoint_sphere_of_nonneg {n : �
     rw [Nat.cast_zero, zero_zsmul]
     exact finrank_divisorCechCohomology_zero_one_sphere
   | succ m ih =>
-    rw [Nat.cast_succ, zsmul_ofPoint_add_one]
+    rw [Nat.cast_succ, add_one_zsmul]
     have h := LinearMap.finrank_range_le
       (pointTwistCohomologyMap ((m : ℤ) • WeilDivisor.ofPoint x) x 1)
     rw [LinearMap.range_eq_top.2 (pointTwistCohomologyMap_one_surjective _ x), finrank_top,
@@ -220,43 +215,14 @@ theorem finrank_divisorCechCohomology_one_zsmul_ofPoint_sphere (n : ℤ) :
   rw [finrank_divisorSheaf_zsmul_ofPoint_sphere] at h
   omega
 
-/-- `𝒪(-1)` on `ℙ¹` has `(h⁰, h¹) = (0, 0)`. -/
-theorem finrank_neg_one_zsmul_ofPoint_sphere :
-    Module.finrank ℂ ((divisorSheaf ((-1 : ℤ) • WeilDivisor.ofPoint x)).obj.obj (op ⊤)) = 0 ∧
-      Module.finrank ℂ (divisorCechCohomology ((-1 : ℤ) • WeilDivisor.ofPoint x) 1) = 0 :=
-  ⟨finrank_divisorSheaf_zsmul_ofPoint_sphere x _,
-    finrank_divisorCechCohomology_one_zsmul_ofPoint_sphere x _⟩
-
-/-- `𝒪(-2)` on `ℙ¹` has `(h⁰, h¹) = (0, 1)`, so its Euler characteristic is `-1 = -2 + 1`. -/
-theorem finrank_neg_two_zsmul_ofPoint_sphere :
-    Module.finrank ℂ ((divisorSheaf ((-2 : ℤ) • WeilDivisor.ofPoint x)).obj.obj (op ⊤)) = 0 ∧
-      Module.finrank ℂ (divisorCechCohomology ((-2 : ℤ) • WeilDivisor.ofPoint x) 1) = 1 :=
-  ⟨finrank_divisorSheaf_zsmul_ofPoint_sphere x _,
-    finrank_divisorCechCohomology_one_zsmul_ofPoint_sphere x _⟩
-
-/-- **The point-twist sequence of `𝒪(-[x]) → 𝒪` on `ℙ¹`.** In the six-term sequence
-`0 → H⁰(𝒪(-[x])) → H⁰(𝒪) → ℂ → H¹(𝒪(-[x])) → H¹(𝒪) → 0` the dimensions of the four
-cohomology groups are `0`, `1`, `0` and `0`. -/
-theorem finrank_pointTwist_neg_ofPoint_sphere :
-    Module.finrank ℂ ((divisorSheaf (-WeilDivisor.ofPoint x)).obj.obj (op ⊤)) = 0 ∧
-      Module.finrank ℂ
-        ((divisorSheaf (-WeilDivisor.ofPoint x + WeilDivisor.ofPoint x)).obj.obj (op ⊤)) = 1 ∧
-      Module.finrank ℂ (divisorCechCohomology (-WeilDivisor.ofPoint x) 1) = 0 ∧
-      Module.finrank ℂ
-        (divisorCechCohomology (-WeilDivisor.ofPoint x + WeilDivisor.ofPoint x) 1) = 0 := by
-  refine ⟨finrank_divisorSheaf_neg_ofPoint_sphere x, ?_, ?_, ?_⟩
-  · rw [neg_add_cancel]
-    exact finrank_divisorSheaf_zero_sphere
-  · rw [← neg_one_zsmul]
-    exact (finrank_neg_one_zsmul_ofPoint_sphere x).2
-  · rw [neg_add_cancel]
-    exact finrank_divisorCechCohomology_zero_one_sphere
-
 /-- In the sequence of `𝒪(-[x]) → 𝒪` on `ℙ¹`, the coefficient map `H⁰(𝒪) → ℂ` is bijective; by
 `pointTwistGlobalCoefficient_neg_ofPoint_eq_of_forall_eq` it is evaluation of constants. -/
 theorem pointTwistGlobalCoefficient_neg_ofPoint_bijective_sphere :
     Function.Bijective (pointTwistGlobalCoefficient (-WeilDivisor.ofPoint x) x) := by
-  have h := (finrank_pointTwist_neg_ofPoint_sphere x).2.1
+  have h : Module.finrank ℂ
+      ((divisorSheaf (-WeilDivisor.ofPoint x + WeilDivisor.ofPoint x)).obj.obj (op ⊤)) = 1 := by
+    rw [neg_add_cancel]
+    exact finrank_divisorSheaf_zero_sphere
   have : FiniteDimensional ℂ
       ((divisorSheaf (-WeilDivisor.ofPoint x + WeilDivisor.ofPoint x)).obj.obj (op ⊤)) :=
     Module.finite_of_finrank_eq_succ h
@@ -273,7 +239,8 @@ theorem finrank_divisorSheaf_neg_two_infty_eq_finrank_divisorCechCohomology_zero
     Module.finrank ℂ
         ((divisorSheaf ((-2 : ℤ) • WeilDivisor.ofPoint (∞ : OnePoint ℂ))).obj.obj (op ⊤)) =
       Module.finrank ℂ (divisorCechCohomology (0 : WeilDivisor (OnePoint ℂ)) 1) := by
-  rw [(finrank_neg_two_zsmul_ofPoint_sphere ∞).1, finrank_divisorCechCohomology_zero_one_sphere]
+  rw [finrank_divisorSheaf_zsmul_ofPoint_sphere, finrank_divisorCechCohomology_zero_one_sphere]
+  rfl
 
 /-- Every canonical divisor of `ℙ¹` has degree `2 h¹(𝒪) - 2`, the value `-2` for analytic
 genus zero. -/
