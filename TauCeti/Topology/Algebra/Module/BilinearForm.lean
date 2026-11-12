@@ -90,9 +90,10 @@ use.
   below on the diagonal by one positive multiple of the squared norm.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le_compRight`: the same for the forms `b(·, B ·)` with
   `B` in a compact set of endomorphisms, which gives uniform tameness constants.
-* `IsCompact.eventually_exists_pos_forall_mul_norm_sq_le_mul_add`: Finsler's lemma over a compact
-  family. If the diagonal of `a x` is nonnegative and that of `b x` is positive at the nonzero
-  zeros of the diagonal of `a x`, then `t a x + b x` is uniformly coercive for every large `t`.
+* `IsCompact.eventually_exists_pos_forall_mul_norm_sq_le_mul_add`: the case of Finsler's
+  lemma where the first form is positive semidefinite, over a compact family. If the diagonal of
+  `a x` is nonnegative and that of `b x` is positive at the nonzero zeros of the diagonal of
+  `a x`, then `t a x + b x` is uniformly coercive for every large `t`.
 * `TauCeti.convex_setOfPred_symm_pos_isVonNBounded`: the continuous bilinear forms on a real
   topological vector space that are symmetric, positive definite and have a von Neumann bounded
   unit set form a convex set; these are the fibrewise conditions of a Riemannian metric.
@@ -435,13 +436,14 @@ theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le_compRight
     ((ContinuousLinearMap.compL ℝ E E ℝ).flip.continuous.clm_comp continuous_const).continuousOn
     hpos
 
-/-- **Finsler's lemma over a compact family.** On a finite-dimensional real normed space, let
-`a x` and `b x` be families of continuous bilinear forms, continuous on a compact set `K`. Suppose
-that for every `x ∈ K` the diagonal of `a x` is nonnegative, and the diagonal of `b x` is
-positive at every nonzero vector where that of `a x` vanishes. Then for every sufficiently large
-`t` one positive constant `c` gives `c ‖v‖² ≤ t a x v v + b x v v` for every `x ∈ K` and every
-`v`. Symmetry of the forms is not needed. For a single pair of forms this is Finsler's lemma
-(P. Finsler, Comment. Math. Helv. 9 (1937)). -/
+/-- **Finsler's lemma for a positive semidefinite form, over a compact family.** On a
+finite-dimensional real normed space, let `a x` and `b x` be families of continuous bilinear
+forms, continuous on a compact set `K`. Suppose that for every `x ∈ K` the diagonal of `a x` is
+nonnegative, and the diagonal of `b x` is positive at every nonzero vector where that of `a x`
+vanishes. Then for every sufficiently large `t` one positive constant `c` gives
+`c ‖v‖² ≤ t a x v v + b x v v` for every `x ∈ K` and every `v`. Symmetry of the forms is not
+needed. For a single pair of forms this is the case of Finsler's lemma where `a` is positive
+semidefinite (P. Finsler, Comment. Math. Helv. 9 (1937)). -/
 theorem _root_.IsCompact.eventually_exists_pos_forall_mul_norm_sq_le_mul_add
     {X E : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] {K : Set X} (hK : IsCompact K) {a b : X → E →L[ℝ] E →L[ℝ] ℝ}
@@ -456,7 +458,7 @@ theorem _root_.IsCompact.eventually_exists_pos_forall_mul_norm_sq_le_mul_add
   -- For large `t` the diagonal of `t a x + b x` is positive on the unit sphere, uniformly in
   -- `x ∈ K`; rescaling gives positivity at every nonzero vector, and the uniform coercivity of
   -- the compact family `t a + b` gives the constant.
-  filter_upwards [(hK.prod (isCompact_sphere (0 : E) 1)).eventually_forall_pos_mul_add
+  filter_upwards [(hK.prod (isCompact_sphere (0 : E) 1)).eventually_forall_mul_add_pos
     (hdiag ha) (hdiag hb) (fun p hp ↦ ha₀ p.1 hp.1 p.2) fun p hp ↦
       hpos p.1 hp.1 p.2 (ne_zero_of_mem_sphere one_ne_zero ⟨p.2, hp.2⟩)] with t ht
   -- Instance search for `ContinuousAdd` on continuous bilinear maps exceeds its budget, so the

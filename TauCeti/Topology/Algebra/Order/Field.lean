@@ -24,7 +24,7 @@ tends to `a` from the right, and likewise for `a - x` from the left. These are t
 blow-ups of `tendsto_inv_nhdsGT_zero` along a vanishing power. It records the one-sided bound
 `x ^ 2 < 1` for `x` sufficiently close to `1` from below. Finally, it records that `t f + g` is
 eventually positive on a compact set when `f ≥ 0` there and `g > 0` at the zeros of `f`, the
-scalar form of Finsler's lemma.
+scalar form of the case of Finsler's lemma where the first form is positive semidefinite.
 
 ## Main results
 
@@ -38,7 +38,7 @@ scalar form of Finsler's lemma.
   tends to `atTop` as `x` tends to `a` from the left.
 
 * `TauCeti.eventually_sq_lt_one_nhdsLT_one` — eventually `x ^ 2 < 1` along `𝓝[<] 1`.
-* `IsCompact.eventually_forall_pos_mul_add` — if `f` and `g` are continuous on a compact set `K`,
+* `IsCompact.eventually_forall_mul_add_pos` — if `f` and `g` are continuous on a compact set `K`,
   `f ≥ 0` on `K` and `g > 0` at the zeros of `f` in `K`, then for every sufficiently large `t`,
   `t f + g` is positive on `K`.
 
@@ -90,8 +90,8 @@ theorem eventually_sq_lt_one_nhdsLT_one {𝕜 : Type*} [Field 𝕜] [LinearOrder
 /-- **Eventual positivity of `t f + g` on a compact set.** Let `f` and `g` be continuous on a
 compact set `K`, with `f ≥ 0` on `K` and `g > 0` at the points of `K` where `f` vanishes. Then for
 every sufficiently large `t`, `t f + g` is positive on all of `K`. This is the scalar form of
-Finsler's lemma. -/
-theorem _root_.IsCompact.eventually_forall_pos_mul_add {X 𝕜 : Type*} [TopologicalSpace X]
+the case of Finsler's lemma where the first form is positive semidefinite. -/
+theorem _root_.IsCompact.eventually_forall_mul_add_pos {X 𝕜 : Type*} [TopologicalSpace X]
     [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜] [OrderTopology 𝕜]
     {K : Set X} (hK : IsCompact K) {f g : X → 𝕜} (hf : ContinuousOn f K) (hg : ContinuousOn g K)
     (hf₀ : ∀ x ∈ K, 0 ≤ f x) (hg₀ : ∀ x ∈ K, f x = 0 → 0 < g x) :

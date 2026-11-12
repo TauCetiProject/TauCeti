@@ -34,14 +34,13 @@ constant `t` must be uniform over the points of the disc bundle, which form a co
 the radius is fixed. The results are therefore stated for families of data that are continuous on
 a compact parameter set `S`; a single structure is the case of a one-point set.
 
-The proof is Finsler's lemma for compact families of bilinear forms
+The proof is the case of Finsler's lemma where the first form is positive semidefinite, for
+compact families of bilinear forms
 (`IsCompact.eventually_exists_pos_forall_mul_norm_sq_le_mul_add`), applied to
 `a_x(v, w) = ω_x (π v) (π (J_x w))` and `b_x(v, w) = σ_x v (J_x w)`.
 
 ## Main results
 
-* `TauCeti.SymplecticForm.ofTames`: an alternating form `B` with `B v (J v) > 0` for every nonzero
-  `v` is a symplectic form, which tames `J` (`TauCeti.SymplecticForm.tames_ofTames`).
 * `TauCeti.SymplecticForm.eventually_exists_pos_forall_mul_norm_sq_le_mul_apply_add_apply`: over
   a compact family, for every large `t` one constant `c > 0` gives
   `c ‖v‖² ≤ t ω_x (π v) (π (J_x v)) + σ_x v (J_x v)`.
@@ -65,33 +64,6 @@ open Filter
 namespace TauCeti
 
 namespace SymplecticForm
-
-section OfTames
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V] {B : LinearMap.BilinForm ℝ V}
-  {J : AlmostComplexStructure V}
-
-/-- An alternating bilinear form `B` with `B v (J v) > 0` for every nonzero `v` is nondegenerate,
-hence a symplectic form; it tames `J` (`TauCeti.SymplecticForm.tames_ofTames`). -/
-def ofTames (B : LinearMap.BilinForm ℝ V) (hB : B.IsAlt) (hJ : ∀ v, v ≠ 0 → 0 < B v (J v)) :
-    SymplecticForm V where
-  toBilinForm := B
-  isAlt := hB
-  nondegenerate := hB.isRefl.nondegenerate_iff_separatingLeft.mpr fun v hv ↦ by
-    by_contra h
-    exact (hJ v h).ne' (hv (J v))
-
-@[simp]
-theorem ofTames_toBilinForm (hB : B.IsAlt) (hJ : ∀ v, v ≠ 0 → 0 < B v (J v)) :
-    (ofTames B hB hJ).toBilinForm = B :=
-  (rfl)
-
-theorem tames_ofTames (hB : B.IsAlt) (hJ : ∀ v, v ≠ 0 → 0 < B v (J v)) :
-    (ofTames B hB hJ).Tames J := by
-  intro v hv
-  simpa using hJ v hv
-
-end OfTames
 
 section Projection
 
@@ -170,9 +142,7 @@ theorem eventually_forall_exists_tames
     rw [hB]
     exact (mul_pos hc (by positivity)).trans_le (h x hx v)
   have hBa : B.IsAlt := fun v ↦ by simp [hB, hσa x hx v]
-  refine ⟨ofTames B hBa hJB, fun v w ↦ ?_, tames_ofTames hBa hJB⟩
-  rw [← hB]
-  exact congrArg (fun C : LinearMap.BilinForm ℝ V ↦ C v w) (ofTames_toBilinForm hBa hJB)
+  exact ⟨ofTames B hBa hJB, fun v w ↦ by simp only [ofTames_apply, hB], tames_ofTames hBa hJB⟩
 
 end Projection
 
