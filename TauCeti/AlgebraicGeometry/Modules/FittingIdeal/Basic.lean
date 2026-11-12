@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.ResidueField
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.RingTheory.FittingIdeal.BaseChange
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
 # Fitting ideal sheaves of quasi-coherent modules

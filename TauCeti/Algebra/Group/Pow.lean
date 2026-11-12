@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Group.Basic
 import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Ring.Nat
+import TauCeti.Data.Nat.Carry
 
 /-!
 # Powers in monoids and groups
@@ -20,6 +22,8 @@ import Mathlib.Algebra.Group.Nat.Defs
   `a ^ i * b ^ j` multiply by adding their exponent vectors.
 * `TauCeti.eq_mul_zpow_sub_iff_mul_zpow_eq`: in a group, `a = b * h ^ (n - m)` if and only if
   `a * h ^ m = b * h ^ n`.
+* `TauCeti.pow_mul_mul_pow_mul_eq`: the carry of `Nat.add_eq_mod_add_carry`, read in the
+  powers of an `n`-th root of `a`.
 -/
 
 public section
@@ -54,5 +58,14 @@ theorem mul_zpow_mul_mul_zpow {G : Type*} [CommGroup G] (a b : G) (i j k i' j' k
 theorem eq_mul_zpow_sub_iff_mul_zpow_eq {G : Type*} [Group G] {a b h : G} {m n : ℤ} :
     a = b * h ^ (n - m) ↔ a * h ^ m = b * h ^ n := by
   rw [zpow_sub, ← mul_assoc, eq_mul_inv_iff_mul_eq]
+
+/-- **Carries under scaling, in a monoid.** If `α ^ n = a` and `n = m d`, then for `p, q < d` the
+product `α ^ (m p) * α ^ (m q)` is `α ^ ((m p + m q) % n)` times `a` when `p + q` carries
+modulo `d`. -/
+theorem pow_mul_mul_pow_mul_eq {α a : M} {n : ℕ} (hα : α ^ n = a) {m d p q : ℕ}
+    (hmd : m * d = n) (hp : p < d) (hq : q < d) :
+    α ^ (m * p) * α ^ (m * q) = α ^ ((m * p + m * q) % n) * if d ≤ p + q then a else 1 := by
+  rw [← pow_add, Nat.add_eq_mod_add_carry hmd hp hq, pow_add, pow_mul, hα]
+  split_ifs <;> simp
 
 end TauCeti
