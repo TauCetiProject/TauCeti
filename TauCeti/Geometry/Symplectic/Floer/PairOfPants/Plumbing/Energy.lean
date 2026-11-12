@@ -168,27 +168,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-! ### The curvature and energy of the two pieces, for a manifold target -/
 
-omit [IsManifold I ⊤ M] in
-/-- The components of the plumbed perturbation are `C¹` on the plumbed four-punctured sphere times
-the target manifold. -/
-private theorem contMDiffOn_uncurry_plumbedPerturbation (hq : q ≠ inf)
-    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
-    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) (v : ℂ) :
-    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
-      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
-      ({z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ×ˢ univ) := by
-  rintro ⟨z, x⟩ ⟨hz, -⟩
-  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) 1
-      (fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x) :=
-    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk
-      contMDiffAt_snd
-  exact (((contMDiffAt_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hz x).comp (z, x)
-    hφ).clm_apply contMDiffAt_const).contMDiffWithinAt
-
 /-- Over the receiving truncation `S_{L/2}`, the curvature of the plumbed perturbation along `u` is
 that of the receiving pair of pants. -/
 private theorem hamiltonianCurvature_plumbedPerturbation_receiving (ω : SmoothTwoForm I M)

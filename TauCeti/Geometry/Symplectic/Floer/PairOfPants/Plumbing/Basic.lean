@@ -149,6 +149,26 @@ theorem mdifferentiableAt_plumbedPerturbation_target (hq : q ≠ inf)
     (f := fun y : M ↦ (w, y)) x (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply
     contMDiffAt_const).mdifferentiableAt one_ne_zero
 
+/-- In the real coordinates, the components of the plumbed perturbation of Hamiltonians of class
+`C^n` are `C^n` on the plumbed four-punctured sphere times the target manifold. -/
+theorem contMDiffOn_uncurry_plumbedPerturbation {n : ℕ∞} (hq : q ≠ inf)
+    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) (v : ℂ) :
+    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
+      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
+      ({z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) n
+      (fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x) :=
+    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk
+      contMDiffAt_snd
+  exact (((contMDiffAt_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hz x).comp (z, x)
+    hφ).clm_apply contMDiffAt_const).contMDiffWithinAt
+
 omit [TopologicalSpace M] [ChartedSpace G M] in
 /-- Near a point off the collar `Re z ≥ L - 2` of the end `q`, the plumbed perturbation is the
 perturbation of the receiving pair of pants. -/
