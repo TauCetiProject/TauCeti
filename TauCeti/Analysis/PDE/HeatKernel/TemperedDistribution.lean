@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
 # The heat semigroup on tempered distributions

@@ -17,18 +17,19 @@ Let `B^s_{p,q}` be the inhomogeneous Besov space built from the Littlewood–Pal
 bump function `φ` (`TauCeti.BesovSpace`), and let `e^{tΔ}` be the heat semigroup on tempered
 distributions (`TemperedDistribution.heatSemigroup`). This file proves that `e^{tΔ}` acts on every
 `B^s_{p,q}`, `1 ≤ p, q ≤ ∞`, by contractions, and that for `t > 0` it gains any amount of
-smoothness: for `σ ≥ 0` there is a constant `C`, depending only on `φ`, `σ`, `E` and `F`,
-such that
+smoothness: `e^{tΔ}` is a continuous linear map `B^s_{p,q} → B^{s'}_{p,q}` for every `s'`
+(`TauCeti.BesovSpace.heatSemigroupOfNeZero`), and for `σ ≥ 0` there is a constant `C`, depending
+only on `φ`, `σ`, `E` and `F`, such that
 
 `‖e^{tΔ} u‖_{B^{s + 2σ}_{p,q}} ≤ C t^{-σ} ‖u‖_{B^s_{p,q}}` for `0 < t ≤ 1`
 
-(`TauCeti.BesovSpace.exists_toDistr_eq_heatSemigroup_and_norm_le_rpow_neg`). For `p = q = ∞` this
+(`TauCeti.BesovSpace.exists_norm_heatSemigroupOfNeZero_le_rpow_neg`). For `p = q = ∞` this
 is the smoothing estimate `‖e^{tΔ} u‖_{𝒞^{s + 2σ}} ≤ C t^{-σ} ‖u‖_{𝒞^s}` on the Hölder–Zygmund
 scale. For `σ > 0` the restriction `t ≤ 1` cannot be dropped: the constant `1` lies in every
 `𝒞^s` and is fixed by `e^{tΔ}`, so its norm does not tend to `0` as `t → ∞`, while `t^{-σ}` does.
 For all `t > 0` the bound holds
 with `max 1 (t^{-σ})` in place of `t^{-σ}`
-(`TauCeti.BesovSpace.exists_toDistr_eq_heatSemigroup_and_norm_le`).
+(`TauCeti.BesovSpace.exists_norm_heatSemigroupOfNeZero_le`).
 
 ## The argument
 
@@ -50,8 +51,14 @@ vanishing near the origin. The kernel of that multiplier has `L¹` norm `O(exp(-
 * `TauCeti.BesovSpace.heatSemigroup`: `e^{tΔ}` as a contraction of `B^s_{p,q}`, with
   `TauCeti.BesovSpace.heatSemigroup_zero` and the semigroup law
   `TauCeti.BesovSpace.heatSemigroup_heatSemigroup_apply`.
-* `TauCeti.BesovSpace.exists_toDistr_eq_heatSemigroup_and_norm_le_rpow_neg`: the smoothing
-  estimate `B^s_{p,q} → B^{s + 2σ}_{p,q}` with norm `O(t^{-σ})` for `0 < t ≤ 1`.
+* `TemperedDistribution.MemBesov.heatSemigroup` and
+  `TemperedDistribution.MemBesov.heatSemigroup_of_ne_zero`: `e^{tΔ}` preserves `B^s_{p,q}` and, for
+  `t > 0`, maps it into every `B^{s'}_{p,q}`.
+* `TauCeti.BesovSpace.heatSemigroupOfNeZero`: for `t > 0`, `e^{tΔ}` as a continuous linear map
+  `B^s_{p,q} → B^{s'}_{p,q}`, with the uniform bounds
+  `TauCeti.BesovSpace.exists_norm_heatSemigroupOfNeZero_le` and
+  `TauCeti.BesovSpace.exists_norm_heatSemigroupOfNeZero_le_rpow_neg`, the smoothing estimate
+  `B^s_{p,q} → B^{s + 2σ}_{p,q}` with norm `O(t^{-σ})` for `0 < t ≤ 1`.
 
 ## References
 
@@ -113,111 +120,84 @@ namespace BesovSpace
 
 variable [CompleteSpace F] {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- The heat flow of an element `u` of `B^s_{p,q}`: if `C`, `c` are the constants of
-`exists_littlewoodPaleyBlock_heatSemigroup_eq_and_norm_le` and the weights `w j ≥ 0` satisfy
-`w j * C exp(-c (4^j - 1) t) ≤ B 2^{js}`, then `e^{tΔ} u` has `Lᵖ` blocks with weighted norms
-`w j ‖Δⱼ e^{tΔ} u‖_p ≤ B 2^{js} ‖Δⱼ u‖_p`. -/
-private theorem exists_block_heatSemigroup {C c : ℝ}
-    (hCc : ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (t : ℝ≥0) (u : 𝓢'(E, F))
-      (f : Lp F p (volume : Measure E)), littlewoodPaleyBlock F φ j u = f →
-      ∃ g : Lp F p (volume : Measure E),
-        littlewoodPaleyBlock F φ j (TemperedDistribution.heatSemigroup E F t u) = g ∧
-          ‖g‖ ≤ C * rexp (-(c * ((4 ^ j - 1) * t))) * ‖f‖)
-    (t : ℝ≥0) {w : ℕ → ℝ} {B : ℝ} (hw : ∀ j, 0 ≤ w j)
-    (hwB : ∀ j, w j * (C * rexp (-(c * ((4 ^ j - 1) * t)))) ≤ B * 2 ^ (s * j))
-    (u : BesovSpace F φ s p q) :
-    ∃ g : ℕ → Lp F p (volume : Measure E),
-      (∀ j, littlewoodPaleyBlock F φ j (TemperedDistribution.heatSemigroup E F t u.toDistr) =
-        g j) ∧
-        ∀ j, w j * ‖g j‖ ≤ B * (2 ^ (s * j) * ‖u.block j‖) := by
-  choose g hg hgn using fun j ↦ hCc j t u.toDistr (u.block j) (coe_block u j).symm
-  refine ⟨g, hg, fun j ↦ ?_⟩
-  calc w j * ‖g j‖ ≤ w j * (C * rexp (-(c * ((4 ^ j - 1) * t))) * ‖u.block j‖) :=
-        mul_le_mul_of_nonneg_left (hgn j) (hw j)
-    _ = w j * (C * rexp (-(c * ((4 ^ j - 1) * t)))) * ‖u.block j‖ := by ring
-    _ ≤ B * 2 ^ (s * j) * ‖u.block j‖ := mul_le_mul_of_nonneg_right (hwB j) (norm_nonneg _)
-    _ = B * (2 ^ (s * j) * ‖u.block j‖) := by ring
-
-/-- The heat flow of an element of `B^s_{p,q}` lies in `B^{s'}_{p,q}` with norm at most `B ‖u‖`,
-once the weights satisfy `2^{js'} ‖Δⱼ e^{tΔ} u‖_p ≤ B 2^{js} ‖Δⱼ u‖_p`. -/
-private theorem exists_toDistr_eq_heatSemigroup_of_block [Fact (1 ≤ q)] {s' B : ℝ} (hB : 0 ≤ B)
-    (t : ℝ≥0) (u : BesovSpace F φ s p q) (g : ℕ → Lp F p (volume : Measure E))
-    (hg : ∀ j,
-      littlewoodPaleyBlock F φ j (TemperedDistribution.heatSemigroup E F t u.toDistr) = g j)
-    (hgn : ∀ j : ℕ, 2 ^ (s' * j) * ‖g j‖ ≤ B * (2 ^ (s * j) * ‖u.block j‖)) :
-    ∃ v : BesovSpace F φ s' p q,
-      v.toDistr = TemperedDistribution.heatSemigroup E F t u.toDistr ∧ ‖v‖ ≤ B * ‖u‖ := by
-  have hmem : (TemperedDistribution.heatSemigroup E F t u.toDistr).MemBesov φ s' p q := by
-    obtain ⟨f, hf, hfm⟩ := memBesov_iff.1 u.memBesov_toDistr
-    have hfu : ∀ j, f j = u.block j := fun j ↦ LinearMap.ker_eq_bot.1
-      Lp.ker_toTemperedDistributionCLM_eq_bot (by simp [← hf j])
-    refine memBesov_iff.2 ⟨g, hg, (hfm.const_mul B).mono fun j ↦ ?_⟩
-    rw [Real.norm_of_nonneg (by positivity), hfu]
-    exact hgn j
-  refine ⟨hmem.toBesovSpace, hmem.toDistr_toBesovSpace, ?_⟩
-  have hj (j : ℕ) : hmem.toBesovSpace.block j = g j := LinearMap.ker_eq_bot.1
-    Lp.ker_toTemperedDistributionCLM_eq_bot (by simp [hg j])
-  rw [← norm_weightedBlocks, ← norm_weightedBlocks]
-  calc ‖hmem.toBesovSpace.weightedBlocks‖ ≤ ‖(B : ℂ) • u.weightedBlocks‖ :=
-        lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
-          rw [lp.coeFn_smul, Pi.smul_apply, norm_smul, Complex.norm_of_nonneg hB,
-            norm_weightedBlocks_apply, norm_weightedBlocks_apply, hj]
-          exact hgn j
-    _ = B * ‖u.weightedBlocks‖ := by rw [norm_smul, Complex.norm_of_nonneg hB]
-
-/-- **The heat semigroup on a Besov space gains smoothness.** For `σ ≥ 0` there is a constant
-`C`, depending only on `φ`, `σ`, `E` and `F`, such that for every `1 ≤ p, q ≤ ∞`, every `s`,
-every `t > 0` and every `u ∈ B^s_{p,q}`, the heat flow `e^{tΔ} u` lies in `B^{s + 2σ}_{p,q}` with
-
-`‖e^{tΔ} u‖_{B^{s + 2σ}_{p,q}} ≤ C max 1 (t^{-σ}) ‖u‖_{B^s_{p,q}}`. -/
-theorem exists_toDistr_eq_heatSemigroup_and_norm_le {σ : ℝ} (hσ : 0 ≤ σ) :
-    ∃ C, 0 ≤ C ∧ ∀ {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (t : ℝ≥0), t ≠ 0 →
-      ∀ u : BesovSpace F φ s p q, ∃ v : BesovSpace F φ (s + 2 * σ) p q,
-        v.toDistr = TemperedDistribution.heatSemigroup E F t u.toDistr ∧
-          ‖v‖ ≤ C * max 1 ((t : ℝ) ^ (-σ)) * ‖u‖ := by
+/-- **The weighted heat flow on a block.** For `σ ≥ 0` there is `C ≥ 0`, depending only on `φ`,
+`σ`, `E` and `F`, such that for `s' ≤ s + 2σ` and `t > 0`: if the block `Δⱼ u` of a tempered
+distribution is an `Lᵖ` function `f`, then `Δⱼ e^{tΔ} u` is an `Lᵖ` function `g` with
+`2^{js'} ‖g‖_p ≤ C max 1 (t^{-σ}) 2^{js} ‖f‖_p`. -/
+private theorem exists_littlewoodPaleyBlock_heatSemigroup_eq_and_rpow_mul_norm_le {σ : ℝ}
+    (hσ : 0 ≤ σ) (φ : ContDiffBump (0 : E)) :
+    ∃ C, 0 ≤ C ∧ ∀ {s s' : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)], s' ≤ s + 2 * σ → ∀ t : ℝ≥0, t ≠ 0 →
+      ∀ (j : ℕ) (u : 𝓢'(E, F)) (f : Lp F p (volume : Measure E)),
+        littlewoodPaleyBlock F φ j u = f → ∃ g : Lp F p (volume : Measure E),
+          littlewoodPaleyBlock F φ j (TemperedDistribution.heatSemigroup E F t u) = g ∧
+            2 ^ (s' * j) * ‖g‖ ≤ C * max 1 ((t : ℝ) ^ (-σ)) * (2 ^ (s * j) * ‖f‖) := by
   obtain ⟨C, c, hC1, hc, hCc⟩ :=
     exists_littlewoodPaleyBlock_heatSemigroup_eq_and_norm_le (F := F) φ
   obtain ⟨A, hA0, hA⟩ := exists_rpow_mul_exp_le hσ hc
-  refine ⟨C * A, mul_nonneg (zero_le_one.trans hC1) hA0, fun {s p q} _ _ t ht u ↦ ?_⟩
-  have ht' : (0 : ℝ) < t := by positivity
-  have hwB (j : ℕ) : 2 ^ ((s + 2 * σ) * j) * (C * rexp (-(c * ((4 ^ j - 1) * t)))) ≤
-      C * A * max 1 ((t : ℝ) ^ (-σ)) * 2 ^ (s * j) := by
-    -- Raising the order from `s` to `s + 2σ` multiplies the weight `2^{js}` by `(4^j)^σ`.
-    have h4 : (4 : ℝ) ^ j = 2 ^ (2 * j : ℝ) := by
-      rw [rpow_mul zero_le_two, rpow_natCast, rpow_two]
-      norm_num
-    have hw : (2 : ℝ) ^ ((s + 2 * σ) * j) = ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) := by
-      rw [h4, ← rpow_mul zero_le_two, ← rpow_add two_pos]
-      ring_nf
-    rw [hw]
-    calc ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) * (C * rexp (-(c * ((4 ^ j - 1) * t))))
-        = C * (((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t)))) * 2 ^ (s * j) := by ring
-      _ ≤ C * (A * max 1 ((t : ℝ) ^ (-σ))) * 2 ^ (s * j) := by
-          exact mul_le_mul_of_nonneg_right
-            (mul_le_mul_of_nonneg_left (hA j ht') (zero_le_one.trans hC1)) (by positivity)
-      _ = C * A * max 1 ((t : ℝ) ^ (-σ)) * 2 ^ (s * j) := by ring
-  obtain ⟨g, hg, hgn⟩ := exists_block_heatSemigroup hCc t (fun j ↦ by positivity) hwB u
-  exact exists_toDistr_eq_heatSemigroup_of_block (by positivity) t u g hg hgn
+  have hC0 : 0 ≤ C := zero_le_one.trans hC1
+  refine ⟨C * A, mul_nonneg hC0 hA0, fun {s s' p} _ hs' t ht j u f hf ↦ ?_⟩
+  obtain ⟨g, hg, hgn⟩ := hCc j t u f hf
+  refine ⟨g, hg, ?_⟩
+  -- Raising the order from `s` to `s + 2σ` multiplies the weight `2^{js}` by `(4^j)^σ`.
+  have h4 : (4 : ℝ) ^ j = 2 ^ (2 * j : ℝ) := by
+    rw [rpow_mul zero_le_two, rpow_natCast, rpow_two]
+    norm_num
+  have hw : (2 : ℝ) ^ ((s + 2 * σ) * j) = ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) := by
+    rw [h4, ← rpow_mul zero_le_two, ← rpow_add two_pos]
+    ring_nf
+  have hs'j : (2 : ℝ) ^ (s' * j) ≤ ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) :=
+    (rpow_le_rpow_of_exponent_le one_le_two
+      (mul_le_mul_of_nonneg_right hs' j.cast_nonneg)).trans_eq hw
+  calc 2 ^ (s' * j) * ‖g‖
+      ≤ ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) * (C * rexp (-(c * ((4 ^ j - 1) * t))) * ‖f‖) :=
+        mul_le_mul hs'j hgn (norm_nonneg _) (by positivity)
+    _ = C * (((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t)))) * (2 ^ (s * j) * ‖f‖) := by
+        ring
+    _ ≤ C * (A * max 1 ((t : ℝ) ^ (-σ))) * (2 ^ (s * j) * ‖f‖) :=
+        mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_left (hA j (by positivity)) hC0) (by positivity)
+    _ = C * A * max 1 ((t : ℝ) ^ (-σ)) * (2 ^ (s * j) * ‖f‖) := by ring
 
-/-- **The smoothing estimate of the heat semigroup on Besov spaces.** For `σ ≥ 0` there is a
-constant `C`, depending only on `φ`, `σ`, `E` and `F`, such that for every `1 ≤ p, q ≤ ∞`,
-every `s`, every `0 < t ≤ 1` and every `u ∈ B^s_{p,q}`,
+/-- **The heat flow preserves Besov membership.** If `u ∈ B^s_{p,q}`, then `e^{tΔ} u ∈ B^s_{p,q}`
+for every `t ≥ 0`: each block is contracted. -/
+theorem _root_.TemperedDistribution.MemBesov.heatSemigroup {u : 𝓢'(E, F)}
+    (hu : u.MemBesov φ s p q) (t : ℝ≥0) :
+    (TemperedDistribution.heatSemigroup E F t u).MemBesov φ s p q := by
+  obtain ⟨f, hf, hfm⟩ := memBesov_iff.1 hu
+  choose g hg hgn using fun j ↦ exists_heatSemigroup_eq_and_norm_le t (f j)
+  refine memBesov_iff.2 ⟨g, fun j ↦ by rw [littlewoodPaleyBlock_heatSemigroup_comm, hf j, hg j],
+    hfm.mono fun j ↦ ?_⟩
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact mul_le_mul_of_nonneg_left (hgn j) (by positivity)
 
-`‖e^{tΔ} u‖_{B^{s + 2σ}_{p,q}} ≤ C t^{-σ} ‖u‖_{B^s_{p,q}}`.
+/-- **The heat flow gains every amount of smoothness.** If `u ∈ B^s_{p,q}` and `t > 0`, then
+`e^{tΔ} u ∈ B^{s'}_{p,q}` for every `s'`. -/
+theorem _root_.TemperedDistribution.MemBesov.heatSemigroup_of_ne_zero {u : 𝓢'(E, F)}
+    (hu : u.MemBesov φ s p q) {t : ℝ≥0} (ht : t ≠ 0) (s' : ℝ) :
+    (TemperedDistribution.heatSemigroup E F t u).MemBesov φ s' p q := by
+  obtain ⟨C, -, hC⟩ := exists_littlewoodPaleyBlock_heatSemigroup_eq_and_rpow_mul_norm_le
+    (F := F) (le_max_left 0 ((s' - s) / 2)) φ
+  have hs' : s' ≤ s + 2 * max 0 ((s' - s) / 2) := by linarith [le_max_right 0 ((s' - s) / 2)]
+  obtain ⟨f, hf, hfm⟩ := memBesov_iff.1 hu
+  choose g hg hgn using fun j ↦ hC hs' t ht j u (f j) (hf j)
+  refine memBesov_iff.2 ⟨g, hg,
+    (hfm.const_mul (C * max 1 ((t : ℝ) ^ (-max 0 ((s' - s) / 2))))).mono fun j ↦ ?_⟩
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact hgn j
 
-For `p = q = ∞` this is the smoothing estimate of the heat semigroup on the Hölder–Zygmund scale
-`𝒞^s = B^s_{∞,∞}`. -/
-theorem exists_toDistr_eq_heatSemigroup_and_norm_le_rpow_neg {σ : ℝ} (hσ : 0 ≤ σ) :
-    ∃ C, 0 ≤ C ∧ ∀ {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (t : ℝ≥0), t ≠ 0 →
-      t ≤ 1 → ∀ u : BesovSpace F φ s p q, ∃ v : BesovSpace F φ (s + 2 * σ) p q,
+/-- The heat flow at a time `t > 0` of an element `u` of `B^s_{p,q}`, as an element of
+`B^{s'}_{p,q}` for `s' ≤ s + 2σ`, with norm at most `C max 1 (t^{-σ}) ‖u‖`, where `C` depends only
+on `φ`, `σ`, `E` and `F`. -/
+private theorem exists_toDistr_eq_heatSemigroup_and_norm_le {σ : ℝ} (hσ : 0 ≤ σ) :
+    ∃ C, 0 ≤ C ∧ ∀ {s s' : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)], s' ≤ s + 2 * σ →
+      ∀ t : ℝ≥0, t ≠ 0 → ∀ u : BesovSpace F φ s p q, ∃ v : BesovSpace F φ s' p q,
         v.toDistr = TemperedDistribution.heatSemigroup E F t u.toDistr ∧
-          ‖v‖ ≤ C * (t : ℝ) ^ (-σ) * ‖u‖ := by
-  obtain ⟨C, hC0, hC⟩ := exists_toDistr_eq_heatSemigroup_and_norm_le (F := F) (φ := φ) hσ
-  refine ⟨C, hC0, fun {s p q} _ _ t ht ht1 u ↦ ?_⟩
-  obtain ⟨v, hv, hvn⟩ := hC t ht u
-  refine ⟨v, hv, hvn.trans_eq ?_⟩
-  rw [max_eq_right (one_le_rpow_of_pos_of_le_one_of_nonpos (by positivity)
-    (by exact_mod_cast ht1) (neg_nonpos.2 hσ))]
+          ‖v‖ ≤ C * max 1 ((t : ℝ) ^ (-σ)) * ‖u‖ := by
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_littlewoodPaleyBlock_heatSemigroup_eq_and_rpow_mul_norm_le (F := F) hσ φ
+  refine ⟨C, hC0, fun {s s' p q} _ _ hs' t ht u ↦ ?_⟩
+  choose g hg hgn using fun j ↦ hC hs' t ht j u.toDistr (u.block j) (coe_block u j).symm
+  exact exists_toDistr_eq_and_norm_le_of_block (by positivity) u g hg hgn
 
 variable [Fact (1 ≤ q)]
 
@@ -228,7 +208,8 @@ private theorem exists_toDistr_eq_heatSemigroup_and_norm_le_self (t : ℝ≥0)
     ∃ v : BesovSpace F φ s p q,
       v.toDistr = TemperedDistribution.heatSemigroup E F t u.toDistr ∧ ‖v‖ ≤ ‖u‖ := by
   choose g hg hgn using fun j ↦ exists_heatSemigroup_eq_and_norm_le t (u.block j)
-  obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_heatSemigroup_of_block (s' := s) zero_le_one t u g
+  obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_block (s' := s)
+    (w := TemperedDistribution.heatSemigroup E F t u.toDistr) zero_le_one u g
     (fun j ↦ by rw [littlewoodPaleyBlock_heatSemigroup_comm, ← coe_block, hg j])
     (fun j ↦ by rw [one_mul]; exact mul_le_mul_of_nonneg_left (hgn j) (by positivity))
   exact ⟨v, hv, hvn.trans_eq (one_mul _)⟩
@@ -289,6 +270,77 @@ theorem heatSemigroup_compL_heatSemigroup (t₁ t₂ : ℝ≥0) :
       heatSemigroup F φ s p q (t₁ + t₂) := by
   ext1 u
   exact heatSemigroup_heatSemigroup_apply t₁ t₂ u
+
+section Smoothing
+
+variable (F φ s p q) in
+/-- **The smoothing heat semigroup on the Besov scale.** For `t > 0`, `e^{tΔ}` maps `B^s_{p,q}`
+continuously into `B^{s'}_{p,q}` for every `s'`
+(`TemperedDistribution.MemBesov.heatSemigroup_of_ne_zero`). For `σ ≥ 0` and `s' ≤ s + 2σ` its
+norm is `O(max 1 (t^{-σ}))`, uniformly in `s`, `s'`, `p`, `q` and `t`
+(`TauCeti.BesovSpace.exists_norm_heatSemigroupOfNeZero_le`). -/
+def heatSemigroupOfNeZero (s' : ℝ) {t : ℝ≥0} (ht : t ≠ 0) :
+    BesovSpace F φ s p q →L[ℂ] BesovSpace F φ s' p q :=
+  LinearMap.mkContinuousOfExistsBound
+    { toFun u := (u.memBesov_toDistr.heatSemigroup_of_ne_zero ht s').toBesovSpace
+      map_add' u v := ext (by simp)
+      map_smul' c u := ext (by simp) } <| by
+    obtain ⟨C, -, hC⟩ := exists_toDistr_eq_heatSemigroup_and_norm_le (F := F) (φ := φ)
+      (le_max_left 0 ((s' - s) / 2))
+    refine ⟨C * max 1 ((t : ℝ) ^ (-max 0 ((s' - s) / 2))), fun u ↦ ?_⟩
+    obtain ⟨v, hv, hvn⟩ :=
+      hC (s := s) (s' := s') (by linarith [le_max_right 0 ((s' - s) / 2)]) t ht u
+    convert hvn using 2
+    exact ext (by simp [hv])
+
+@[simp]
+theorem toDistr_heatSemigroupOfNeZero (s' : ℝ) {t : ℝ≥0} (ht : t ≠ 0)
+    (u : BesovSpace F φ s p q) :
+    (heatSemigroupOfNeZero F φ s p q s' ht u).toDistr =
+      TemperedDistribution.heatSemigroup E F t u.toDistr := by
+  simp [heatSemigroupOfNeZero]
+
+/-- At the order `s' = s` the smoothing heat semigroup is the heat semigroup on `B^s_{p,q}`. -/
+theorem heatSemigroupOfNeZero_self {t : ℝ≥0} (ht : t ≠ 0) :
+    heatSemigroupOfNeZero F φ s p q s ht = heatSemigroup F φ s p q t := by
+  ext1 u
+  exact ext (by simp)
+
+variable (F φ) in
+/-- **The heat semigroup on a Besov space gains smoothness.** For `σ ≥ 0` there is a constant
+`C`, depending only on `φ`, `σ`, `E` and `F`, such that for every `1 ≤ p, q ≤ ∞`, every `s`, every
+`s' ≤ s + 2σ`, every `t > 0` and every `u ∈ B^s_{p,q}`,
+
+`‖e^{tΔ} u‖_{B^{s'}_{p,q}} ≤ C max 1 (t^{-σ}) ‖u‖_{B^s_{p,q}}`. -/
+theorem exists_norm_heatSemigroupOfNeZero_le {σ : ℝ} (hσ : 0 ≤ σ) :
+    ∃ C, 0 ≤ C ∧ ∀ {s s' : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)], s' ≤ s + 2 * σ →
+      ∀ {t : ℝ≥0} (ht : t ≠ 0) (u : BesovSpace F φ s p q),
+        ‖heatSemigroupOfNeZero F φ s p q s' ht u‖ ≤ C * max 1 ((t : ℝ) ^ (-σ)) * ‖u‖ := by
+  obtain ⟨C, hC0, hC⟩ := exists_toDistr_eq_heatSemigroup_and_norm_le (F := F) (φ := φ) hσ
+  refine ⟨C, hC0, fun {s s' p q} _ _ hs' t ht u ↦ ?_⟩
+  obtain ⟨v, hv, hvn⟩ := hC hs' t ht u
+  convert hvn using 2
+  exact ext (by simp [hv])
+
+variable (F φ) in
+/-- **The smoothing estimate of the heat semigroup on Besov spaces.** For `σ ≥ 0` there is a
+constant `C`, depending only on `φ`, `σ`, `E` and `F`, such that for every `1 ≤ p, q ≤ ∞`, every
+`s`, every `s' ≤ s + 2σ`, every `0 < t ≤ 1` and every `u ∈ B^s_{p,q}`,
+
+`‖e^{tΔ} u‖_{B^{s'}_{p,q}} ≤ C t^{-σ} ‖u‖_{B^s_{p,q}}`.
+
+For `p = q = ∞` and `s' = s + 2σ` this is the smoothing estimate of the heat semigroup on the
+Hölder–Zygmund scale `𝒞^s = B^s_{∞,∞}`. -/
+theorem exists_norm_heatSemigroupOfNeZero_le_rpow_neg {σ : ℝ} (hσ : 0 ≤ σ) :
+    ∃ C, 0 ≤ C ∧ ∀ {s s' : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)], s' ≤ s + 2 * σ →
+      ∀ {t : ℝ≥0} (ht : t ≠ 0), t ≤ 1 → ∀ u : BesovSpace F φ s p q,
+        ‖heatSemigroupOfNeZero F φ s p q s' ht u‖ ≤ C * (t : ℝ) ^ (-σ) * ‖u‖ := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_heatSemigroupOfNeZero_le F φ hσ
+  refine ⟨C, hC0, fun {s s' p q} _ _ hs' t ht ht1 u ↦ (hC hs' ht u).trans_eq ?_⟩
+  rw [max_eq_right (one_le_rpow_of_pos_of_le_one_of_nonpos (by positivity)
+    (by exact_mod_cast ht1) (neg_nonpos.2 hσ))]
+
+end Smoothing
 
 end BesovSpace
 

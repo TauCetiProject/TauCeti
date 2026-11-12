@@ -52,6 +52,9 @@ both its tempered distribution and this `Lᵖ` data.
   `TauCeti.BesovSpace.norm_eq_tsum_rpow` (`q < ∞`) and `TauCeti.BesovSpace.norm_eq_ciSup`
   (`q = ∞`) expressing the norm through the blocks, and the single-block bound
   `TauCeti.BesovSpace.rpow_mul_norm_block_le`.
+* `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_block`: a tempered distribution whose
+  blocks are `Lᵖ` functions with weighted norms `2^{js'} ‖Δⱼ w‖_p ≤ B 2^{js} ‖Δⱼ u‖_p` for some
+  `u ∈ B^s_{p,q}` lies in `B^{s'}_{p,q}`, with norm at most `B ‖u‖`.
 * `TauCeti.BesovSpace.toDistrCLM`: for `1 ≤ q`, the continuous inclusion of `B^s_{p,q}` in the
   tempered distributions, and the instance `CompleteSpace (TauCeti.BesovSpace F φ s p q)`:
   `B^s_{p,q}` is a Banach space.
@@ -485,6 +488,33 @@ theorem norm_eq_ciSup (u : BesovSpace F φ s p ∞) :
     ‖u‖ = ⨆ j : ℕ, 2 ^ (s * j) * ‖u.block j‖ := by
   rw [← norm_weightedBlocks, lp.norm_eq_ciSup]
   simp_rw [norm_weightedBlocks_apply]
+
+/-- **A blockwise criterion for Besov membership.** Let `u ∈ B^s_{p,q}` and `B ≥ 0`. If every
+block `Δⱼ w` of a tempered distribution `w` is an `Lᵖ` function `gⱼ` with
+`2^{js'} ‖gⱼ‖_p ≤ B 2^{js} ‖Δⱼ u‖_p`, then `w ∈ B^{s'}_{p,q}` with
+`‖w‖_{B^{s'}_{p,q}} ≤ B ‖u‖_{B^s_{p,q}}`. -/
+theorem exists_toDistr_eq_and_norm_le_of_block {s' B : ℝ} (hB : 0 ≤ B)
+    (u : BesovSpace F φ s p q) {w : 𝓢'(E, F)} (g : ℕ → Lp F p (volume : Measure E))
+    (hg : ∀ j, littlewoodPaleyBlock F φ j w = g j)
+    (hgn : ∀ j : ℕ, 2 ^ (s' * j) * ‖g j‖ ≤ B * (2 ^ (s * j) * ‖u.block j‖)) :
+    ∃ v : BesovSpace F φ s' p q, v.toDistr = w ∧ ‖v‖ ≤ B * ‖u‖ := by
+  have hmem : w.MemBesov φ s' p q := by
+    obtain ⟨f, hf, hfm⟩ := memBesov_iff.1 u.memBesov_toDistr
+    have hfu : ∀ j, f j = u.block j := fun j ↦ LinearMap.ker_eq_bot.1
+      Lp.ker_toTemperedDistributionCLM_eq_bot (by simp [← hf j])
+    refine memBesov_iff.2 ⟨g, hg, (hfm.const_mul B).mono fun j ↦ ?_⟩
+    rw [Real.norm_of_nonneg (by positivity), hfu]
+    exact hgn j
+  refine ⟨hmem.toBesovSpace, hmem.toDistr_toBesovSpace, ?_⟩
+  have hj (j : ℕ) : hmem.toBesovSpace.block j = g j := LinearMap.ker_eq_bot.1
+    Lp.ker_toTemperedDistributionCLM_eq_bot (by simp [hg j])
+  rw [← norm_weightedBlocks, ← norm_weightedBlocks]
+  calc ‖hmem.toBesovSpace.weightedBlocks‖ ≤ ‖(B : ℂ) • u.weightedBlocks‖ :=
+        lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
+          rw [lp.coeFn_smul, Pi.smul_apply, norm_smul, Complex.norm_of_nonneg hB,
+            norm_weightedBlocks_apply, norm_weightedBlocks_apply, hj]
+          exact hgn j
+    _ = B * ‖u.weightedBlocks‖ := by rw [norm_smul, Complex.norm_of_nonneg hB]
 
 end Normed
 
