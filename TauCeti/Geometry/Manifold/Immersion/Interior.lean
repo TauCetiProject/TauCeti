@@ -202,7 +202,7 @@ theorem of_writtenInExtChartAt_of_isInteriorPoint [Nontrivial E] [IsManifold I n
     (infinite_of_mem_nhds p (isOpen_interior.mem_nhds hx)).nontrivial.exists_ne 0
   obtain ⟨b, hb, hb0⟩ :=
     (infinite_of_mem_nhds _ (isOpen_interior.mem_nhds hfx)).nontrivial.exists_ne 0
-  obtain ⟨σ, ρ, L, hσ, hρ, hpσ, hσp, hgρ, hρg, hσI, hLJ, hW⟩ :=
+  obtain ⟨σ, ρ, L, hσ, hρ, hpσ, hσp, hgρ, hρg, _, hLJ, hW⟩ :=
     h.exists_recentred_charts ha0 hb0 isOpen_interior ha isOpen_interior hb
   -- The preferred extended charts on interior points, followed by the recentred charts, are
   -- charts of the maximal atlases once read back through the interior charts of the models.

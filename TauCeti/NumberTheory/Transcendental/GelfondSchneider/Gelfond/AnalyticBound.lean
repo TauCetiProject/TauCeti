@@ -87,7 +87,7 @@ private theorem norm_gelfond_auxiliary_le (l β : ℂ) {q : ℕ} {η : Fin q →
     rw [norm_mul, norm_mul]
     gcongr
   calc ‖∑ a, ∑ b, η a b * Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * β) * l * w)‖
-      ≤ ∑ a : Fin q, ∑ b : Fin q, A * Real.exp (q * (1 + ‖β‖) * ‖l‖ * T) :=
+      ≤ ∑ _ : Fin q, ∑ _ : Fin q, A * Real.exp (q * (1 + ‖β‖) * ‖l‖ * T) :=
         (norm_sum_le _ _).trans (sum_le_sum fun a _ ↦ (norm_sum_le _ _).trans
           (sum_le_sum fun b _ ↦ hterm a b))
     _ = (q * q : ℕ) * (A * Real.exp (q * (1 + ‖β‖) * ‖l‖ * T)) := by
@@ -109,7 +109,6 @@ private theorem norm_gelfond_auxiliary_le_sqrt (l β : ℂ) (c : ℝ) {m n q r :
   set S := √(r : ℝ)
   have hr' : (1 : ℝ) ≤ r := by exact_mod_cast hn.trans hnr
   have hr₀ : (0 : ℝ) ≤ r := by linarith
-  have hS : 1 ≤ S := Real.one_le_sqrt.mpr hr'
   have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
   have hc' : 1 ≤ max 1 |c| := le_max_left _ _
   -- `q ^ 2 ≤ 2 m r` and `q √r ≤ 2 m r`.
@@ -142,7 +141,6 @@ private theorem norm_gelfond_auxiliary_le_sqrt (l β : ℂ) (c : ℝ) {m n q r :
       Real.exp ((1 + ‖β‖) * ‖l‖ * (6 * m ^ 2)) ^ r := by
     rw [← Real.exp_nat_mul]
     refine Real.exp_le_exp.2 ?_
-    have hβl : 0 ≤ (1 + ‖β‖) * ‖l‖ := by positivity
     calc (q : ℝ) * (1 + ‖β‖) * ‖l‖ * (3 * m * S) = (1 + ‖β‖) * ‖l‖ * (3 * m * (q * S)) := by
           ring
       _ ≤ (1 + ‖β‖) * ‖l‖ * (3 * m * (2 * m * r)) := by gcongr
@@ -207,7 +205,6 @@ private theorem norm_iteratedDeriv_mul_sqrt_pow_le {f : ℂ → ℂ} (hf : ∀ z
     ‖iteratedDeriv r f t₀‖ * √(r : ℝ) ^ (m * r) ≤ r.factorial * M := by
   set S := √(r : ℝ)
   have hS : 1 ≤ S := Real.one_le_sqrt.mpr (by exact_mod_cast hr)
-  have hS₀ : 0 < S := by linarith
   set T := 3 * m * S
   have hm : 1 ≤ m := (mem_Icc.mp ht₀).1.trans (mem_Icc.mp ht₀).2
   have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
@@ -256,7 +253,6 @@ private theorem le_pow_mul_rpow_of_mul_sqrt_pow_le {D c' E : ℝ} {m r : ℕ} (h
     D ≤ (4 * (m + 1) * c' * E) ^ r * (r : ℝ) ^ (((3 - m : ℝ) * r + 1) / 2) := by
   set S := √(r : ℝ)
   have hr₀ : (0 : ℝ) < r := by exact_mod_cast hr
-  have hS₀ : 0 < S := Real.sqrt_pos.mpr hr₀
   have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
   have hfact : (r.factorial : ℝ) ≤ S ^ (2 * r) := by
     rw [pow_mul, sq, Real.mul_self_sqrt hr₀.le]
