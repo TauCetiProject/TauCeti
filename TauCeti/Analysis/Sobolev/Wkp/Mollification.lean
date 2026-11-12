@@ -29,9 +29,9 @@ of the same order, wherever the bump stays in `Ω`.
 The interior mollification is packaged as `TauCeti.Wkp.smoothField`, the convolution of a
 normalized bump with the zero extension of a field in `Lᵖ(Ω)`. It is smooth on the whole space
 (`TauCeti.Wkp.contDiff_smoothField`); where the bump stays in `Ω`, its gradient and Hessian are the
-mollified weak gradient and weak Hessian (`TauCeti.Wkp.gradient_smoothField`,
-`TauCeti.Wkp.fderiv_gradient_smoothField_value`); and the mollification of a function agreeing
-with a continuous `v` stays close to `v` where `v` varies little
+mollified weak gradient and weak Hessian (`TauCeti.Wkp.gradient_smoothField`, and the order-one
+case of `TauCeti.Wkp.iteratedGradientChain_smoothField_value`); and the mollification of a
+function agreeing with a continuous `v` stays close to `v` where `v` varies little
 (`TauCeti.Wkp.dist_smoothField_le`). `TauCeti.Wkp.smoothField_eq_zero_of_notMem_add_closedBall`
 locates its support near the set off which the field vanishes.
 These are the inputs for passing estimates from smooth functions to strong `W^{2,p}` solutions.
@@ -283,19 +283,6 @@ theorem gradient_smoothField (u : Wkp mu Omega p 1)
   apply integral_congr_ae
   filter_upwards with y
   by_cases hy : x - y ∈ Omega <;> simp [hy, ContinuousLinearMap.lsmul_apply]
-
-/-- Where every bump centred near `x` stays in `Ω`, the derivative at `x` of the gradient of the
-mollified value of `u ∈ W^{2,p}(Ω)`, its Hessian operator, is the mollified weak Hessian. -/
-theorem fderiv_gradient_smoothField_value (u : Wkp mu Omega p 2) (phi : ContDiffBump (0 : E))
-    {x : E} (hx : ∀ᶠ y in 𝓝 x, Metric.closedBall y phi.rOut ⊆ Omega) :
-    fderiv ℝ (∇ (smoothField phi (value 2 u))) x = smoothField phi (iteratedGradient 1 u) x := by
-  have hgrad : ∇ (smoothField phi (value 2 u)) =ᶠ[𝓝 x]
-      smoothField phi (iteratedGradient 0 (lowerOrder 1 u)) := by
-    filter_upwards [hx] with y hy
-    rw [value_succ]
-    exact gradient_smoothField (lowerOrder 1 u) phi y hy
-  rw [hgrad.fderiv_eq]
-  exact fderiv_smoothField 0 u phi x hx.self_of_nhds
 
 omit [Fact (1 ≤ p)] in
 /-- **Mollification of a continuous representative.** If `f ∈ Lᵖ(Ω)` agrees almost everywhere on

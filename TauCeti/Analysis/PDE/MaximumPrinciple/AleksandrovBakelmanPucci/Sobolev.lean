@@ -294,9 +294,8 @@ private theorem tendsto_setLIntegral_hessianOperator_smoothField_sub
       (Lp.aestronglyMeasurable _))]
   refine (setLIntegral_congr_fun (hUo k).measurableSet fun y hy => ?_).trans_le
     (lintegral_mono_set (hUΩ k))
-  rw [← fderiv_gradient,
-    Wkp.fderiv_gradient_smoothField_value u (φ k) (((hUo k).eventually_mem hy).mono (hball k)),
-    Pi.sub_apply]
+  rw [← fderiv_gradient, ← iteratedGradientChain_zero, ← iteratedGradientChain_succ,
+    Wkp.iteratedGradientChain_smoothField_value (φ k) (hUo k) (hball k) 1 u y hy, Pi.sub_apply]
 
 /-- **The Aleksandrov measure estimate for `W^{2,n}` functions** (Gilbarg–Trudinger, Lemma 9.2
 for strong solutions). Let `Ω` be a bounded open subset of a real inner product space of
