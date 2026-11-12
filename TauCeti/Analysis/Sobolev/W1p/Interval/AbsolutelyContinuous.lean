@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
+public import TauCeti.Analysis.Sobolev.W1p.Interval.Trace
 public import TauCeti.Analysis.Sobolev.WeakDeriv.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -20,7 +21,8 @@ existing construction of absolutely continuous representatives of interval Sobol
 The range of `W1p.intervalRepresentativeL` is exactly the continuous functions whose extension
 by endpoint projection is absolutely continuous and has derivative in `Lᵖ(a,b)`. In
 particular the characterization retains derivative integrability at `p = 2`; absolute
-continuity alone does not characterize `H¹`.
+continuity alone does not characterize `H¹`. For finite `p`, such a function that vanishes at
+both endpoints defines an element of `W^{1,p}_0(a,b)`.
 
 ## References
 
@@ -115,3 +117,33 @@ theorem mem_range_intervalRepresentativeL_iff (hab : a < b) (w : C(Icc a b, ℝ)
     simpa only [projIcc_of_mem hab.le t.property] using hu t
 
 end TauCeti.W1p
+
+namespace AbsolutelyContinuousOnInterval
+
+variable {a b : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : ℝ → ℝ}
+
+/-- For `p < ∞`, an absolutely continuous function with classical derivative in `Lᵖ(a,b)` that
+vanishes at both endpoints defines an element of `W^{1,p}_0(a,b)`, whose value and gradient agree
+almost everywhere with the function and its derivative. -/
+theorem exists_w1p0_value_gradient_ae_eq (hp : p ≠ ∞) (hab : a < b)
+    (hf : AbsolutelyContinuousOnInterval f a b)
+    (hdf : MemLp (deriv f) p (volume.restrict (Ioo a b))) (ha : f a = 0) (hb : f b = 0) :
+    ∃ v : TauCeti.W1p0 volume ⟨Ioo a b, isOpen_Ioo⟩ p,
+      TauCeti.W1p.value (v : TauCeti.W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p)
+          =ᵐ[volume.restrict (Ioo a b)] f ∧
+        TauCeti.W1p.gradient (v : TauCeti.W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p)
+          =ᵐ[volume.restrict (Ioo a b)] deriv f := by
+  obtain ⟨u, hu, hgu⟩ := hf.exists_w1p_value_gradient_ae_eq hdf
+  let w : C(Icc a b, ℝ) := ⟨fun t ↦ f t, (uIcc_of_le hab.le ▸ hf.continuousOn).domRestrict⟩
+  have heq : TauCeti.W1p.intervalRepresentativeL hab u = w := by
+    refine (TauCeti.W1p.intervalRepresentativeL_eq_iff hab u w).2 ?_
+    filter_upwards [hu, ae_restrict_mem measurableSet_Ioo] with t ht hmem
+    rw [projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)]
+    exact ht
+  have hmem : u ∈ TauCeti.w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ p := by
+    rw [TauCeti.W1p.mem_w1p0Submodule_iff_intervalTraceL_eq_zero hp hab,
+      TauCeti.W1p.intervalTraceL_apply, heq]
+    exact Prod.ext ha hb
+  exact ⟨⟨u, hmem⟩, hu, hgu⟩
+
+end AbsolutelyContinuousOnInterval
