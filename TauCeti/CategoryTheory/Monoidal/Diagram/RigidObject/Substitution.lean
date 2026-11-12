@@ -134,8 +134,15 @@ theorem subst_def (f : α → WindingWord β) (L : WindingWord α) :
     subst f (L ++ M) = subst f L ++ subst f M := by
   simp [subst]
 
+/-- Replacing every generator by the empty word gives the empty boundary. -/
+@[simp] theorem subst_nil_left (L : WindingWord α) :
+    subst (fun _ ↦ ([] : WindingWord β)) L = [] := by
+  induction L with
+  | nil => simp
+  | cons p L ih => simp [ih]
+
 /-- Shifting every replacing word shifts the substituted boundary without reversing ports. -/
-@[simp] theorem subst_shift_values (f : α → WindingWord β) (n : ℤ) (L : WindingWord α) :
+@[simp] theorem subst_shift_left (f : α → WindingWord β) (n : ℤ) (L : WindingWord α) :
     subst (fun a ↦ shift n (f a)) L = shift n (subst f L) := by
   induction L with
   | nil => simp
@@ -174,11 +181,16 @@ theorem subst_def (f : α → WindingWord β) (L : WindingWord α) :
   | nil => simp
   | cons p L ih => rcases p with ⟨a, n⟩; simp [ih]
 
-/-- A level-zero single port is the identity substitution. -/
-@[simp] theorem subst_self (L : WindingWord α) : subst (fun a ↦ [(a, 0)]) L = L := by
+/-- Replacing each generator by its single port at level `n` shifts the boundary by `n`. -/
+@[simp] theorem subst_singleton_left (n : ℤ) (L : WindingWord α) :
+    subst (fun a ↦ [(a, n)]) L = shift n L := by
   induction L with
   | nil => simp
-  | cons p L ih => rcases p with ⟨a, n⟩; simp [ih]
+  | cons p L ih => simp [ih, add_comm]
+
+/-- A level-zero single port is the identity substitution. -/
+theorem subst_self (L : WindingWord α) : subst (fun a ↦ [(a, 0)]) L = L := by
+  simp
 
 end WindingWord
 
@@ -191,11 +203,6 @@ right-hand side substitutes whole boundary words, not independent atoms for tens
 @[simp] theorem normalize_subst (f : α → RigidObject β) (X : RigidObject α) :
     normalize (subst f X) = WindingWord.subst (fun a ↦ normalize (f a)) (normalize X) := by
   induction X <;> simp_all
-
-/-- An equality of normalized boundaries remains valid after any object substitution. -/
-theorem normalize_subst_eq (f : α → RigidObject β) {X Y : RigidObject α}
-    (h : normalize X = normalize Y) : normalize (subst f X) = normalize (subst f Y) := by
-  simp [h]
 
 end RigidObject
 
