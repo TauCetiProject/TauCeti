@@ -190,7 +190,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
       · simp [h]
       · exact absurd (Or.inl ⟨hx.1, h⟩) hx.2
   -- A measurable map agreeing with `φ` on `U`, to which the area formula applies.
-  set ψ : E → E := (U : Set E).piecewise φ fun _ ↦ 0 with hψ_def
+  set ψ : E → E := (U : Set E).piecewise φ fun _ ↦ 0
   have hψm : Measurable ψ := hφd.continuousOn.measurable_piecewise continuousOn_const
     hs.measurableSet
   have hψφ : ∀ x ∈ (U : Set E), ψ =ᶠ[𝓝 x] φ := fun x hx ↦

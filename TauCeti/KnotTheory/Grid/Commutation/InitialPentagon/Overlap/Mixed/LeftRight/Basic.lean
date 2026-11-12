@@ -524,9 +524,9 @@ private theorem initialPentagonLeftRightOverlapPartner_injective :
   have hD := G.initialPentagonLeftRightOverlapPartner_isRecut C D
   have hE := G.initialPentagonLeftRightOverlapPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨honeD, hfD, hsD⟩ :=
+  obtain ⟨_, hfD, hsD⟩ :=
     G.initialPentagonLeftRightOverlapSource_recut_data C D.val D.property
-  obtain ⟨honeE, hfE, hsE⟩ :=
+  obtain ⟨_, hfE, hsE⟩ :=
     G.initialPentagonLeftRightOverlapSource_recut_data C E.val E.property
   have hbackD := hD.symm hfD hsD
   have hbackE := hE.symm hfE hsE
