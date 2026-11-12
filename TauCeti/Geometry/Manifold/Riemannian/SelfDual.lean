@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.HodgeStar
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
-import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
 
@@ -88,6 +88,9 @@ four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
 * `TauCeti.SmoothForm.eq_zero_of_selfDualPart_eq_zero`,
   `TauCeti.SmoothForm.eq_zero_of_antiSelfDualPart_eq_zero`: a compactly supported exact form with
   vanishing self-dual, or anti-self-dual, part is zero.
+* `TauCeti.SmoothForm.integralTopForm_inner_smul_riemannianVolumeForm_eq_poincarePairing`: for a
+  closed form `φ` and a compactly supported closed self-dual form `γ`, `∫_M ⟨φ, γ⟩ vol` is the
+  Poincaré pairing of their de Rham classes, so it depends only on the class of `φ`.
 
 ## References
 
@@ -755,6 +758,30 @@ theorem integralTopForm_inner_antiSelfDualPart_eq_zero (hk : Even k) {β : Smoot
   rw [h, ← coe_wedge]
   exact integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
     (wedge_mem_exactCompactlySupportedForms_of_left_mem hβ (neg_mem hγ))
+
+/-- **Pairings with a closed self-dual form are cohomological**: on an oriented boundaryless
+Riemannian manifold of dimension `k + k`, for a closed `k`-form `φ` and a compactly supported
+closed self-dual `k`-form `γ`, the integral `∫_M ⟨φ, γ⟩ vol` is the Poincaré pairing of the de Rham
+classes `[φ]` and `[γ]`. In particular it depends only on the class of `φ`: for the curvature
+`F_A` of a connection on a line bundle over a four-manifold, `∫_M ⟨i F_A, γ⟩ vol` depends only
+on the bundle, by Chern–Weil theory. -/
+theorem integralTopForm_inner_smul_riemannianVolumeForm_eq_poincarePairing
+    {φ : SmoothForm I M ℝ k} (hφ : φ ∈ closedForms I M k) {γ : SmoothForm I M ℝ k}
+    (hγ : γ ∈ compactlySupportedClosedForms I M k) (hγ' : γ ∈ selfDualForms o) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (φ.1 x) (γ.1 x) •
+      riemannianVolumeForm o x) =
+      poincarePairing I M o (deRhamCohomology.mk I k ⟨φ, hφ⟩)
+        (compactlySupportedDeRhamCohomology.mk I k ⟨γ, hγ⟩) := by
+  -- Pointwise `⟨φ, γ⟩ vol = φ ∧ ⋆γ = φ ∧ γ`.
+  have h : (fun x ↦ alternatingFormInner (TangentSpace I x) k (φ.1 x) (γ.1 x) •
+      riemannianVolumeForm o x) = RoughForm.wedge φ.1 γ.1 := by
+    funext x
+    ext v
+    have hd := congrFun (inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar o rfl φ γ) x
+    rw [mem_selfDualForms.1 hγ'] at hd
+    rw [hd, cast_apply, coe_wedge]
+    simp only [Function.comp_def, Fin.cast_eq_self]
+  rw [h, poincarePairing_mk]
 
 end Exact
 
