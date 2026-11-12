@@ -38,8 +38,9 @@ For a class `μ ∈ Hₙ(X; k)`, evaluating cup products on `μ` is the bilinear
 pairing is natural in `X` (`TopCat.singularCupPairing_naturality`) and graded commutative
 (`TopCat.singularCupPairing_gradedComm`), so in a middle degree it is reflexive
 (`TopCat.isRefl_singularCupPairing`), symmetric in even degree
-(`TopCat.isSymm_singularCupPairing`) and, when `2` is a left regular element of `k`, alternating
-in odd degree (`TopCat.isAlt_singularCupPairing`).
+(`TopCat.isSymm_singularCupPairing`) and, in odd degree, twice the pairing of a class with itself
+vanishes (`TopCat.two_mul_singularCupPairing_self_eq_zero_of_odd`), so the pairing is alternating
+when `2` is a left regular element of `k` (`TopCat.isAlt_singularCupPairing`).
 
 The key chain-level input is `SSet.chainComplexPairing_leftUnitor_hom_f`, from
 `TauCeti.AlgebraicTopology.SimplicialSet.Homology.Pairing`: the action of the tensor unit on
@@ -229,18 +230,23 @@ theorem isSymm_singularCupPairing {p n : ℕ} (hp : Even p) (h : p + p = n)
     rw [X.singularCupPairing_gradedComm k h h μ α β, (hp.mul_right p).neg_one_pow, one_mul,
       RingHom.id_apply]
 
+/-- In an odd middle degree `p` with `p + p = n`, twice the cup pairing of a class with itself
+on `μ` vanishes, `2 ⟨α ⌣ α, μ⟩ = 0`: by graded commutativity `⟨α ⌣ α, μ⟩ = -⟨α ⌣ α, μ⟩`. -/
+theorem two_mul_singularCupPairing_self_eq_zero_of_odd {p n : ℕ} (hp : Odd p) (h : p + p = n)
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X)
+    (α : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p) :
+    (2 : k) * X.singularCupPairing k h μ α α = 0 := by
+  have hcomm := X.singularCupPairing_gradedComm k h h μ α α
+  rw [(hp.mul hp).neg_one_pow, neg_one_mul, eq_neg_iff_add_eq_zero] at hcomm
+  rw [two_mul, hcomm]
+
 /-- In an odd middle degree `p` with `p + p = n`, the cup pairing on `μ` is alternating when `2`
 is a left regular element of `k`, for instance when `k = ℤ` or `2` is invertible in `k`. -/
 theorem isAlt_singularCupPairing (h2 : IsLeftRegular (2 : k)) {p n : ℕ} (hp : Odd p)
     (h : p + p = n)
     (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X) :
-    (X.singularCupPairing k h μ).IsAlt := fun α ↦ by
-  have := congr((X.singularKronecker k n $(X.two_smul_singularCup_self_eq_zero_of_odd k
-    (u := (λ_ (𝟙_ (ModuleCat.{w} k))).inv) (μ := (λ_ (𝟙_ (ModuleCat.{w} k))).hom)
-    (by simp [unitors_inv_equal]) (by simp [unitors_inv_equal]) hp h α)).hom μ)
-  rw [map_smul, map_zero, ModuleCat.hom_smul, ModuleCat.hom_zero, LinearMap.smul_apply,
-    LinearMap.zero_apply, smul_eq_mul, ← singularCupPairing_apply] at this
-  exact h2.mul_left_eq_zero_iff.1 this
+    (X.singularCupPairing k h μ).IsAlt := fun α ↦
+  h2.mul_left_eq_zero_iff.1 (X.two_mul_singularCupPairing_self_eq_zero_of_odd k hp h μ α)
 
 end ModuleCat
 
