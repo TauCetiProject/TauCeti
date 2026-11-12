@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Finsupp.Basic
 public import Mathlib.Data.Finsupp.Lex
-import Mathlib.LinearAlgebra.Finsupp.Supported
+public import Mathlib.LinearAlgebra.Finsupp.Supported
 
 /-!
 # Injective relabeling as extension by zero
@@ -15,7 +15,8 @@ import Mathlib.LinearAlgebra.Finsupp.Supported
 For an injective index map, pushing forward a finitely supported function is ordinary
 function extension by zero, over any additive commutative monoid. For an arbitrary index map `f`,
 the range of `Finsupp.mapDomain f` consists of the finitely supported functions vanishing outside
-the range of `f` (`Finsupp.mem_range_mapDomain_iff'`).
+the range of `f` (`Finsupp.mem_range_mapDomain_iff'`), that is, the functions supported on the
+range of `f` (`Finsupp.mem_supported_range_iff`).
 
 Pushing forward along a strictly monotone map of linearly ordered indices preserves and reflects
 the strict and non-strict lexicographic orders, since the relabeled functions vanish off the image
@@ -48,6 +49,12 @@ theorem mem_range_mapDomain_iff' {α β M : Type*} [AddCommMonoid M] (f : α →
       lmapDomain_supported M ℕ f Set.univ
   simpa only [LinearMap.mem_range, lmapDomain_apply, mem_supported', Set.mem_range] using
     SetLike.ext_iff.1 h x
+
+/-- A finitely supported function is supported on the range of `f` exactly when it is the
+push-forward of a finitely supported function along `f`. -/
+theorem mem_supported_range_iff {α β M R : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (f : α → β) (x : β →₀ M) : x ∈ supported M R (Set.range f) ↔ ∃ y, mapDomain f y = x :=
+  (mem_supported' R x).trans (mem_range_mapDomain_iff' f x).symm
 
 /-- A finitely supported function supported on a set `s` is the push-forward along the inclusion
 of its restriction to `s`. -/

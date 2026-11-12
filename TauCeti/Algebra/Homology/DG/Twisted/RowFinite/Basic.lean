@@ -38,13 +38,16 @@ is a cycle.
 
 * `RowFiniteTwistingCocycle`: homogeneous finite rows with the Maurer–Cartan equation.
 * `RowFiniteTwistingCocycle.wellFounded_mem_support`: a one-sided cocycle with generator indices
-  bounded below is semi-free, its row relation `y ∈ (m.m x).support` being well-founded.
+  bounded below is semi-free, its row relation `y ∈ (m.m x).support` being well-founded; so is a
+  cocycle whose rows lower a natural-number stage
+  (`RowFiniteTwistingCocycle.wellFounded_mem_support_of_lt`).
 * `rowFiniteTotalGrading` and `rowFiniteTwistedDifferential`: the graded free left module
   and its differential, characterized on homogeneous elementary vectors.
 * `RowFiniteTwistingCocycle.isDGLeftModule_rowFiniteTwistedDifferential`: the differential
   graded left module laws, with square-zero derived from the row equation and DG Leibniz rule.
 * `rowFiniteTwistedDifferential_mapDomain`: relabelling generators compatibly with the rows
-  commutes with the differentials.
+  commutes with the differentials, and `rowFiniteTwistedDifferential_congr`: the differential of
+  a vector only depends on the rows of the generators in its support.
 * `mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero`: the Maurer–Cartan equation of a
   row is the vanishing of its twisted differential.
 * The zero cocycle, whose differential is the coefficient differential alone
@@ -224,6 +227,15 @@ theorem wellFounded_mem_support (m : RowFiniteTwistingCocycle 𝒜 d P ind)
       omega)
     (InvImage.wf _ wellFounded_lt)
 
+omit [GradedAlgebra 𝒜] in
+/-- A cocycle whose rows strictly lower a natural-number stage `s` of the generators, as for
+generators attached one stage at a time, is **semi-free**: the relation
+`y ∈ (m.m x).support` is well-founded. -/
+theorem wellFounded_mem_support_of_lt (m : RowFiniteTwistingCocycle 𝒜 d P ind) (s : P → ℕ)
+    (hs : ∀ x, ∀ y ∈ (m.m x).support, s y < s x) :
+    WellFounded fun y x ↦ y ∈ (m.m x).support :=
+  Subrelation.wf (fun {y x} hy ↦ hs x y hy) (InvImage.wf s wellFounded_lt)
+
 end RowFiniteTwistingCocycle
 
 section SignedMap
@@ -358,6 +370,13 @@ theorem rowFiniteTwistedDifferential_zero :
       Finsupp.mapRange.linearMap d := by
   ext x a y
   simp [rowFiniteTwistedDifferential, rowFiniteSignedMap]
+
+/-- The differential on a vector only depends on the rows of the generators in its support. -/
+theorem rowFiniteTwistedDifferential_congr {m m' : P → P →₀ A} {f : P →₀ A}
+    (hm : ∀ x ∈ f.support, m x = m' x) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f =
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m' f := by
+  simp only [rowFiniteTwistedDifferential, LinearMap.add_apply, rowFiniteSignedMap_congr hm]
 
 /-- The differential evaluated on a single homogeneous coefficient. -/
 theorem rowFiniteTwistedDifferential_single (m : P → P →₀ A) (x : P)
