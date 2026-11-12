@@ -11,17 +11,17 @@ public import TauCeti.Geometry.Convex.Cone.Face.Exposed
 /-!
 # Exposed faces and homogenization
 
-Intersecting a closed convex set with a nonempty affine zero slice commutes
-with closed homogenization. Consequently, nonempty exposed faces homogenize
-to faces of the closed homogenized cone, including its height-zero directions.
-`PointedCone.IsFaceOf.lineal_congr` then shows that a nonempty
-exposed face has the same recession lineality as its ambient closed convex set.
+For a closed convex set `P` and a continuous linear functional `f : (V × ℝ) →L[ℝ] ℝ`,
+the homogenization of `{x ∈ P | f (x, 1) = 0}` is the intersection of the homogenization
+of `P` with the kernel of `f`, provided that the set `{x ∈ P | f (x, 1) = 0}` is nonempty.
+In particular, a nonempty exposed face homogenizes to a face of the homogenized cone
+and has the same recession lineality as the ambient closed convex set.
 
 Adapted from `Mei/Geometry/Convex/Homogenization/Face.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `7f1e4c7714fb020473694755ad8748c8f15d0e7f` (Apache 2.0).
-The zero-slice statements use an arbitrary continuous linear functional on the
-product, without introducing an affine-functional homogenization API.
+The affine constraint `f (x, 1) = 0` on `V` becomes the homogeneous constraint
+`z ∈ LinearMap.ker f.toLinearMap` on `V × ℝ`.
 -/
 
 public section
@@ -33,9 +33,10 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
 
 namespace Convex
 
-/-- Intersecting a closed convex base with a nonempty affine zero slice commutes
-with actual homogenization, including at height zero. -/
-theorem homogenization_inter_ker_eq {P : Set V}
+/-- For a closed convex set `P` and continuous linear functional `f` on `V × ℝ`,
+if `{x ∈ P | f (x, 1) = 0}` is nonempty, its homogenization is the intersection of
+the homogenization of `P` with the kernel of `f`. -/
+theorem homogenization_setOf_eq_zero_eq_inf_ker {P : Set V}
     (hconv : Convex ℝ P)
     (hclosed : IsClosed P) (f : (V × ℝ) →L[ℝ] ℝ)
     (hne : {x ∈ P | f (x, 1) = 0}.Nonempty) :
@@ -43,9 +44,9 @@ theorem homogenization_inter_ker_eq {P : Set V}
       PointedCone.ofSubmodule (LinearMap.ker f.toLinearMap) := by
   let D := homogenization P ⊓
     PointedCone.ofSubmodule (LinearMap.ker f.toLinearMap)
-  have hDclosed : IsClosed (D : Set (V × ℝ)) :=
-    (isClosed_homogenization P).inter
-      (isClosed_eq f.continuous continuous_const)
+  have hDclosed : IsClosed (D : Set (V × ℝ)) := by
+    simp only [D, Submodule.coe_inf, PointedCone.coe_ofSubmodule]
+    exact (isClosed_homogenization P).inter f.isClosed_ker
   have hslice : {x : V | (x, (1 : ℝ)) ∈ D} = {x ∈ P | f (x, 1) = 0} := by
     ext x
     simp only [D, Set.mem_ofPred_eq, Submodule.mem_inf, PointedCone.mem_ofSubmodule_iff,
@@ -56,27 +57,36 @@ theorem homogenization_inter_ker_eq {P : Set V}
     (fun z hz => homogenization_height_nonneg hz.1) hDne
   rwa [hslice] at hrec
 
-/-- A nonpositive affine support cuts out a genuine cone face after actual homogenization. -/
-theorem homogenization_inter_ker_isFaceOf {P : Set V}
+/-- Let `P` be closed and convex and let `f` be a continuous linear functional on `V × ℝ`
+with `f (x, 1) ≤ 0` for every `x ∈ P`. If `{x ∈ P | f (x, 1) = 0}` is nonempty, its
+homogenization is a face of the homogenization of `P`. -/
+theorem homogenization_setOf_eq_zero_isFaceOf {P : Set V}
     (hconv : Convex ℝ P)
     (hclosed : IsClosed P) (f : (V × ℝ) →L[ℝ] ℝ) (hg : ∀ x ∈ P, f (x, 1) ≤ 0)
     (hne : {x ∈ P | f (x, 1) = 0}.Nonempty) :
     (homogenization {x ∈ P | f (x, 1) = 0}).IsFaceOf (homogenization P) := by
-  rw [hconv.homogenization_inter_ker_eq hclosed f hne]
-  have hf : homogenization P ≤ (PointedCone.positive ℝ ℝ).comap (-f.toLinearMap) :=
-    (homogenization_le_iff (isClosed_le continuous_const (-f).continuous)).mpr
-      (fun x hx => neg_nonneg.mpr (hg x hx))
-  have hface := PointedCone.isFaceOf_inf_ker (φ := -f.toLinearMap) (fun z hz => hf hz)
-  have hker : LinearMap.ker (-f.toLinearMap) =
-      LinearMap.ker f.toLinearMap := by ext z; simp
-  rwa [hker] at hface
+  rw [hconv.homogenization_setOf_eq_zero_eq_inf_ker hclosed f hne]
+  have hmem (z : V × ℝ) :
+      z ∈ (PointedCone.positive ℝ ℝ).comap (-f.toLinearMap) ↔ f z ≤ 0 := by
+    simp only [PointedCone.mem_comap, PointedCone.mem_positive, LinearMap.neg_apply,
+      ContinuousLinearMap.coe_coe, neg_nonneg]
+  have hclosedCone : IsClosed ((PointedCone.positive ℝ ℝ).comap (-f.toLinearMap) :
+      Set (V × ℝ)) := by
+    have heq : ((PointedCone.positive ℝ ℝ).comap (-f.toLinearMap) : Set (V × ℝ)) =
+        {z | f z ≤ 0} := Set.ext hmem
+    rw [heq]
+    exact isClosed_le f.continuous continuous_const
+  have hf := (homogenization_le_iff hclosedCone).mpr fun x hx => (hmem (x, 1)).mpr (hg x hx)
+  have hface := PointedCone.isFaceOf_inf_ker (C := homogenization P) (φ := -f.toLinearMap)
+    fun z hz => by simpa only [PointedCone.mem_comap, PointedCone.mem_positive] using hf hz
+  rwa [LinearMap.ker_neg] at hface
 
 end Convex
 
 namespace IsExposed
 
 /-- Every nonempty exposed face of a closed convex set homogenizes to a face
-of its actual closed homogenization. -/
+of its homogenization. -/
 theorem homogenization_isFaceOf {P F : Set V} (hF : IsExposed ℝ P F)
     (hconv : Convex ℝ P) (hclosed : IsClosed P) (hne : F.Nonempty) :
     (Set.homogenization F).IsFaceOf (Set.homogenization P) := by
@@ -100,7 +110,7 @@ theorem homogenization_isFaceOf {P F : Set V} (hF : IsExposed ℝ P F)
       have heq : l x = l p := sub_eq_zero.mp (by simpa [f] using hzero)
       exact ⟨hx, fun y hy => (hpmax.2 y hy).trans_eq heq.symm⟩
   rw [hzero]
-  exact hconv.homogenization_inter_ker_isFaceOf hclosed f hg (hzero ▸ ⟨p, hp⟩)
+  exact hconv.homogenization_setOf_eq_zero_isFaceOf hclosed f hg (hzero ▸ ⟨p, hp⟩)
 
 /-- A nonempty exposed face of a closed convex set and the ambient set have the same
 recession-cone lineality space, without polyhedral or finite-dimensional assumptions. -/
