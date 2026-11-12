@@ -265,16 +265,19 @@ theorem paths_eq_nil (hf : IsCirculation f) : D.paths = [] :=
   List.eq_nil_iff_forall_not_mem.2 fun p hp ↦
     D.source_ne_of_mem_paths hp ((isCirculation_iff f).1 hf p.source).ge rfl
 
+/-- A path component of a decomposition is nonnegative. -/
+theorem assignment_nonneg_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
+    0 ≤ p.assignment := fun x y e ↦ by
+  by_cases he : ⟨x, y, e⟩ ∈ p.walk.arrows
+  · exact (D.assignment_apply_of_mem_arrows hp he).symm ▸ (D.weight_pos_of_mem_paths p hp).le
+  · simp [WeightedWalk.assignment_def, walkAssignment_eq_zero_of_notMem p.walk p.weight he]
+
 end Preorder
 
 section PartialOrder
 
 variable [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
   (D : PathCycleDecomposition f)
-
-theorem assignment_nonneg_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
-    0 ≤ p.assignment :=
-  walkAssignment_nonneg _ (D.weight_pos_of_mem_paths p hp).le
 
 theorem assignment_nonneg_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
     0 ≤ c.assignment :=
@@ -647,11 +650,13 @@ theorem Flow.exists_paths_card_eq_val {cap : Assignment Q ℤ} {s t : V}
   · simpa only [hPa] using D.pairwise_disjoint_arrows hf hij
 
 /-- An integer `s`–`t` flow carries a family of directed `s`–`t` paths, repetitions allowed, with
-as many members as its value, such that every vertex `v ≠ s` lies on at most as many members as the
-total value entering `v`. -/
+as many members as its value: the members, each weighted by one, add up to at most the flow on every
+arrow. In particular every vertex `v ≠ s` lies on at most as many members as the total value
+entering `v`. -/
 theorem Flow.exists_paths_card_eq_val_card_filter_le [DecidableEq V] {cap : Assignment Q ℤ}
     {s t : V} (f : Flow cap s t) :
     ∃ (k : ℕ) (P : Fin k → ArrowWalk Q s t), (k : ℤ) = f.val ∧ (∀ i, (P i).IsPath) ∧
+      (∑ i, walkAssignment (P i) (1 : ℤ)) ≤ f.toFun ∧
       ∀ v, v ≠ s → (#{i | v ∈ (P i).vertices} : ℤ) ≤ arrowSum f.toFun univ {v} := by
   obtain ⟨D⟩ := nonempty_pathCycleDecomposition (f := f.toFun) fun _ _ e ↦ f.nonneg e
   -- Every path of the decomposition is a path from `s` to `t`.
@@ -667,10 +672,19 @@ theorem Flow.exists_paths_card_eq_val_card_filter_le [DecidableEq V] {cap : Assi
   -- Repeat the `i`-th path as often as its weight.
   let ι := Σ i : Fin D.paths.length, Fin D.paths[(i : ℕ)].weight.toNat
   let e := Fintype.equivFin ι
-  refine ⟨Fintype.card ι, fun j ↦ W (e.symm j).1, ?_, fun j ↦ hW _, fun v hv ↦ ?_⟩
+  refine ⟨Fintype.card ι, fun j ↦ W (e.symm j).1, ?_, fun j ↦ hW _, ?_, fun v hv ↦ ?_⟩
   · rw [← D.sum_weight_paths_eq_val, ← Fin.sum_univ_fun_getElem, Fintype.card_sigma]
     simp only [Fintype.card_fin, Nat.cast_sum]
     exact sum_congr rfl fun i _ ↦ Int.toNat_of_nonneg (hpos i).le
+  -- The members add up to the sum of the path components, which is bounded by the flow.
+  · calc ∑ j, walkAssignment (W (e.symm j).1) (1 : ℤ)
+        = ∑ i : Fin D.paths.length, D.paths[(i : ℕ)].assignment := by
+          rw [e.symm.sum_comp fun x : ι ↦ walkAssignment (W x.1) (1 : ℤ), Fintype.sum_sigma]
+          refine sum_congr rfl fun i _ ↦ ?_
+          ext x y a
+          simp [← hWa, walkAssignment_apply, Int.toNat_of_nonneg (hpos i).le, mul_comm]
+      _ = D.pathAssignment := by rw [D.pathAssignment_def, ← Fin.sum_univ_fun_getElem]
+      _ ≤ f.toFun := D.pathAssignment_le
   -- The members through `v` are the repetitions of the paths through `v`, each of which brings its
   -- weight into `v`.
   let F : Finset (Fin D.paths.length) := {i | v ∈ (W i).vertices}

@@ -133,6 +133,7 @@ variable [I.Boundaryless] [T2Space M]
 
 namespace IsNormalDomain
 
+omit [I.Boundaryless] [T2Space M] in
 /-- Normal-frame connection coefficients are smooth throughout a normal neighbourhood. -/
 theorem contMDiffOn_normalFrameConnectionCoefficient (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p) (i j : ι) :
@@ -154,6 +155,7 @@ theorem normalFrameConnectionCoefficient_self (h : IsNormalDomain I M p U)
   rw [OrthonormalBasis.normalFrameConnectionCoefficient_apply,
     h.leviCivitaConnection_normalOrthonormalFrame_self b j, zero_apply, inner_zero_left]
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The connection operator is smooth on the normal neighbourhood. -/
 theorem contMDiffOn_normalFrameConnectionOperator (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p) :
@@ -183,6 +185,7 @@ theorem normalFrameConnectionOperator_self (h : IsNormalDomain I M p U)
     b.normalFrameConnectionOperator (U := U) v p = 0 := by
   simp [OrthonormalBasis.normalFrameConnectionOperator_apply, h]
 
+omit [I.Boundaryless] [T2Space M] in
 /-- On the normal neighbourhood, the normal-frame connection coefficient is the connection
 one-form of the normal orthonormal frame, with input index `j` and output index `i`, evaluated on
 the normal-coordinate field. -/
@@ -197,6 +200,7 @@ theorem normalFrameConnectionCoefficient_eq_connectionForm (h : IsNormalDomain I
     OrthonormalBasis.normalFrameConnectionCoefficient_apply, real_inner_comm]
   rfl
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The connection matrix of an orthonormal frame is skew-symmetric. -/
 theorem normalFrameConnectionCoefficient_add_swap (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p) (i j : ι) {q : M}

@@ -49,6 +49,8 @@ hypothesis of Landweber's exact functor theorem.
 * `FormalGroup.map_heightIdeal`: the height ideals commute with base change.
 * `TauCeti.FormalGroupIso.heightIdeal_eq`: isomorphic formal group laws have the same height
   ideals.
+* `FormalGroup.heightIdeal_𝔾ₘ_eq_top` and `FormalGroup.heightIdeal_𝔾ₐ`: `I_n(𝔾ₘ)` is the unit
+  ideal for `n ≥ 2`, while `I_n(𝔾ₐ) = (p)` for `n ≥ 1`.
 * `FormalGroup.heightIdeal_succ`: `I_(n+1) = I_n + (v_n)` for commutative `F`.
 * `FormalGroup.heightIdeal_one`: `I₁ = (p)` for commutative `F`.
 * `FormalGroup.heightIdeal_eq_span`: `I_n = (v₀, …, v_(n-1))` for commutative `F`.
@@ -141,6 +143,31 @@ theorem heightIdeal_smul (φ : TauCeti.FormalCoordinate R) (F : FormalGroup R) (
     (φ • F).heightIdeal p n = F.heightIdeal p n :=
   ((smulIso φ F).heightIdeal_eq p n).symm
 
+/-- The height ideals of the multiplicative formal group law `X + Y + XY` from `I₂` on are the unit
+ideal: the coefficient of `Xᵖ` in its `p`-series `(1 + X)ᵖ - 1` is `1`. -/
+@[simp]
+theorem heightIdeal_𝔾ₘ_eq_top (hp : 1 < p) {n : ℕ} (hn : 2 ≤ n) :
+    (𝔾ₘ : FormalGroup R).heightIdeal p n = ⊤ := by
+  have hn' : 1 < n := by omega
+  rw [Ideal.eq_top_iff_one]
+  convert coeff_nsmulSeries_mem_heightIdeal (F := (𝔾ₘ : FormalGroup R)) (k := p)
+    (by simpa using Nat.pow_lt_pow_right hp hn')
+  rw [nsmulSeries_𝔾ₘ, map_sub, add_comm, add_pow]
+  simp [PowerSeries.coeff_X_pow, PowerSeries.coeff_one, (zero_lt_one.trans hp).ne']
+
+/-- The height ideals `I_n` of the additive formal group law `X + Y` with `n ≥ 1` are all `(p)`:
+its `p`-series `p X` has no coefficient beyond the linear one. -/
+@[simp]
+theorem heightIdeal_𝔾ₐ (hp : 1 < p) {n : ℕ} (hn : n ≠ 0) :
+    (𝔾ₐ : FormalGroup R).heightIdeal p n = Ideal.span {(p : R)} := by
+  refine le_antisymm (heightIdeal_le_iff.mpr fun k _ ↦ ?_) ?_
+  · rw [nsmulSeries_𝔾ₐ, PowerSeries.coeff_natCast_mul, PowerSeries.coeff_X]
+    split_ifs <;> simp
+  · rw [Ideal.span_singleton_le_iff_mem]
+    convert coeff_nsmulSeries_mem_heightIdeal (F := (𝔾ₐ : FormalGroup R)) (k := 1)
+      (Nat.one_lt_pow hn hp) using 1
+    simp
+
 variable (F : FormalGroup R) [F.IsComm]
 
 /-- **Landweber's recursion for the height ideals.** For a commutative formal group law `F` and a
@@ -204,16 +231,16 @@ theorem heightIdeal_eq_span (hp : p.Prime) (n : ℕ) :
       ext; simp
     rw [F.heightIdeal_succ hp, ih, hI, Set.image_insert_eq, Ideal.span_insert, sup_comm]
 
-/-- The height ideals of a commutative formal group law are finitely generated. -/
-theorem heightIdeal_fg (hp : p.Prime) (n : ℕ) : (F.heightIdeal p n).FG :=
-  F.heightIdeal_eq_span hp n ▸ Submodule.fg_span ((Set.finite_Iio n).image _)
+omit [F.IsComm] in
+/-- The height ideals of a formal group law are finitely generated. -/
+theorem heightIdeal_fg (n : ℕ) : (F.heightIdeal p n).FG :=
+  Submodule.fg_span ((Set.finite_Iio (p ^ n)).image _)
 
 end FormalGroup
 
 namespace FormalGroup
 
-variable {K : Type*} [Field K] (F : FormalGroup K) [F.IsComm] {p : ℕ} [hp : Fact p.Prime]
-  [CharP K p]
+variable {K : Type*} [Field K] (F : FormalGroup K) [F.IsComm] {p : ℕ} [CharP K p]
 
 /-- Over a field of characteristic `p`, the height ideal `I_n(F)` is zero exactly when `F` has
 height at least `n`. -/
@@ -221,9 +248,11 @@ theorem heightIdeal_eq_bot_iff_le_height {n : ℕ} : F.heightIdeal p n = ⊥ ↔
   rw [heightIdeal_eq_bot_iff]
   by_cases h0 : F.nsmulSeries p = 0
   · simp [h0, F.height_eq_top_iff.mpr h0]
-  obtain ⟨h, -, hh⟩ := F.exists_order_nsmulSeries_eq_pow hp.out (CharP.cast_eq_zero K p) h0
-  rw [hh, F.height_eq_natCast_iff.mpr hh, Nat.cast_le, Nat.cast_le,
-    Nat.pow_le_pow_iff_right hp.out.one_lt]
+  obtain hp | rfl := CharP.char_is_prime_or_zero K p
+  · obtain ⟨h, -, hh⟩ := F.exists_order_nsmulSeries_eq_pow hp (CharP.cast_eq_zero K p) h0
+    rw [hh, F.height_eq_natCast_iff.mpr hh, Nat.cast_le, Nat.cast_le,
+      Nat.pow_le_pow_iff_right hp.one_lt]
+  · exact absurd (by simp) h0
 
 /-- Over a field of characteristic `p`, the height ideal `I_n(F)` is the unit ideal exactly when `F`
 has height less than `n`. -/

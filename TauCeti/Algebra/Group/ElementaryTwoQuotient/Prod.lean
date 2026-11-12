@@ -28,10 +28,8 @@ model of `G/G²` with the quotient by the range of doubling, rather than rebuilt
 
 This is the structural tool behind computing a class group's 2-rank from a decomposition: a finite
 abelian group is a product of cyclic groups, and its 2-rank is the number of even-order factors.
-This product additivity supports the Layer 2 class-group quotient API and the later Layer 3
-genus-field/2-rank theorem in the multiquadratic roadmap. For instance the class group `(ℤ/2)²`
-of `ℚ(√-21)` has 2-rank `1 + 1 = 2`, matching the `t - 1 = 3 - 1` count of ramified primes in the
-worked examples.
+For instance the class group `(ℤ/2)²` of `ℚ(√-21)` has 2-rank `1 + 1 = 2`, matching the genus
+theory count `t - 1 = 3 - 1` from its `t = 3` ramified primes `2`, `3` and `7`.
 
 ## Main results
 

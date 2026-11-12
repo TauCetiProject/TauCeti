@@ -72,10 +72,10 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@76688a6c293967d60ed0c33a154104f6e8313984
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@5d49641d46901054a68f78d900cbcb968b8538db
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 76688a6c293967d60ed0c33a154104f6e8313984
+          tools-ref: 5d49641d46901054a68f78d900cbcb968b8538db
           project-directory: .
       # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
@@ -226,28 +226,25 @@ jobs:
           PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
         run: bash scripts/lake-cache-get.sh .
 
-      - name: Save verified Lake archive records before building
-        run: python3 scripts/lake_cache_reuse.py snapshot . "$RUNNER_TEMP/lake-cache-reuse.json"
-
       - name: Audit import headers against the complete source inventory
         run: python3 scripts/check-imports.py
 
       # Temporary workaround; remove after adopting lean4#15868.
-      - name: Restore cached module archives
-        env:
-          LAKE_NO_CACHE: "true"
-        run: python3 scripts/bulk-unpack-cache.py
-
-      # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
-      # The build globs every TauCeti/ module directly, so nothing depends on a root that
-      # re-exports the library.
       - name: Build
         env:
           # Restore only from the locally-populated $LAKE_CACHE_DIR the earlier fetch step filled;
           # never let the build itself reach a remote cache service. Same rule as the
           # sandboxed build in pr-build.yml and as the publish step below.
           LAKE_NO_CACHE: "true"
-        run: lake build
+          S3_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT }}
+          S3_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT }}
+        run: |
+          lake_build_flags=()
+          if [ -n "$S3_ARTIFACT_ENDPOINT" ] && [ -n "$S3_REVISION_ENDPOINT" ]; then
+            export LAKE_ARTIFACT_CACHE=true LAKE_RESTORE_ARTIFACTS=true
+            lake_build_flags+=(--rehash -o .lake/outputs.jsonl)
+          fi
+          lake build "${lake_build_flags[@]}"
 
       # The same shared checks as trusted PR builds, compiled from merged main's sources.
       - name: Shared ownership and axiom audits
@@ -371,20 +368,9 @@ jobs:
           LAKE_NO_CACHE: "true"
           LAKE_CACHE_DIR: ${{ github.workspace }}/.lake/cache
           PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
-          LAKE_CACHE_FULL_PUBLICATION: ${{ vars.LAKE_CACHE_FULL_PUBLICATION }}
         run: |
-          # Pack the already-built oleans into the local Lake cache (no recompile, since the
-          # health-check build above left matching traces), emit the root-package
-          # input->output mappings. The key-free planner keeps the FULL map and stages
-          # new archives plus availability-check misses, reusing only matching downloaded
-          # records saved before the build. The isolated publisher SHA-256 checks inherited bytes.
-          lake build >/dev/null
-          python3 scripts/lake_cache_reuse.py reconnect . "$RUNNER_TEMP/lake-cache-reuse.json"
-          # Hash the linked archives themselves, ignoring any old .ltar.hash sidecars.
-          lake build --no-build --rehash -o .lake/outputs.jsonl
-          echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
-          python3 scripts/lake_cache_publish.py stage . "$RUNNER_TEMP/lake-cache-staging" \
-            --index "$RUNNER_TEMP/lake-cache-reuse.json"
+          lake cache stage .lake/outputs.jsonl .lake/publication-stage
+          python3 scripts/lake_cache_publish.py stage .lake/publication-stage "$RUNNER_TEMP/lake-cache-staging"
           # The isolated publisher never configures the workspace, so it cannot derive
           # the toolchain and platform halves of the upload scope. It supplies them from the sparse pin
           # instead, which is right only while the package config keeps the two assumptions

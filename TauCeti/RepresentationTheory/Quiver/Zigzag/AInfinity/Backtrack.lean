@@ -648,7 +648,7 @@ private theorem backtrack_component_four (x : Fin 4 → nonisolatedZigzagQuotien
     letter_add_zigzagBacktrackTaylor_subword_one, letter_add_zigzagBacktrackTaylor_subword_three]
   -- All Koszul twists are those of one grading, in which the arity-four suspension twists the
   -- first and third letters; the remaining identity is the coboundary identity with signs.
-  set 𝒢 := (zigzagStrictAInfinityAlgebra k hns).grading with h𝒢
+  set 𝒢 := (zigzagStrictAInfinityAlgebra k hns).grading
   have hG : (zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a)
       (fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients a hP)).grading = 𝒢 :=
     zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ _
@@ -740,7 +740,7 @@ theorem isHomogeneous_zigzagBacktrackTaylor :
   intro D z hz
   refine gradedPiece_induction
     (motive := fun w ↦ zigzagBacktrackTaylor hns P a w ∈
-      ((zigzagStrictAInfinityAlgebra k hns).grading.shift 1).piece (D + 0)) hz ?_ ?_ ?_ ?_
+      ((zigzagStrictAInfinityAlgebra k hns).grading.shift 1).piece (D + 0)) hz ?_ ?_ ?_
   · intro m hm 𝒟 y hy hD
     by_cases h₃ : m = 3
     · subst h₃
@@ -762,8 +762,6 @@ theorem isHomogeneous_zigzagBacktrackTaylor :
       ring
     · rw [zigzagBacktrackTaylor_of_tprod_of_ne hns a hm h₃]
       exact zero_mem _
-  · rw [map_zero]
-    exact zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact add_mem hu hv

@@ -9,6 +9,9 @@ public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
+import TauCeti.Analysis.Normed.Algebra.Logarithm.Naturality
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
+import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 import TauCeti.NumberTheory.Padics.PadicValNat
 import TauCeti.RingTheory.Valuation.PowSubPow
 import TauCeti.Topology.Algebra.ValuativeRel.HasSum
@@ -49,6 +52,8 @@ In particular it is injective on `U(K,i)`, and `v_K(log u) = v_K(u - 1)`, so it 
 * `TauCeti.valuation_log`: `v(log u) = v(u - 1)` on `U(K,i)`, and
   `TauCeti.exists_mem_maximalIdeal_pow_eq_log`: `log u` lies in `𝓂[K] ^ i`.
 * `TauCeti.log_unitFiltration_injective`: the logarithm is injective on `U(K,i)`.
+* `AlgEquiv.map_log`: the logarithm commutes with every automorphism of an extension of
+  nonarchimedean local fields.
 
 ## Implementation notes
 
@@ -290,3 +295,21 @@ theorem log_unitFiltration_injective {i : ℕ}
   exact Subtype.ext (Units.val_injective h)
 
 end TauCeti
+
+namespace AlgEquiv
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+
+/-- **The logarithm is Galois-equivariant.** Every `K`-automorphism of an extension `L/K` of
+nonarchimedean local fields (necessarily finite) commutes with the logarithm:
+`σ (log u) = log (σ u)`. This is `RingEquiv.map_log_of_continuous` for the homeomorphism `σ`. -/
+@[simp]
+theorem map_log (σ : L ≃ₐ[K] L) (u : L) :
+    σ (NormedSpace.log u) = NormedSpace.log (σ u) := by
+  have := TauCeti.finite_of_valuativeExtension K L
+  exact RingEquiv.map_log_of_continuous σ.toRingEquiv σ.continuous_of_valuativeExtension
+    σ.symm.continuous_of_valuativeExtension u
+
+end AlgEquiv

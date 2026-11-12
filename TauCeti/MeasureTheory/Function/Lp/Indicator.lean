@@ -37,9 +37,13 @@ sets, and equals the constant one at `univ`.
   disjoint sets.
 * `TauCeti.eq_sum_indicatorConstLp_fiber`: an `Lᵖ` class represented by `φ ∘ G`, for a simple
   function `G`, as a sum of indicator classes of the fibres of `G`.
+* `MeasureTheory.SimpleFunc.memLp_indicator`, `MeasureTheory.SimpleFunc.integrable_indicator`: a
+  simple function cut off to a measurable set of finite measure lies in every `Lᵖ`.
 * `TauCeti.linftyIndicator μ s hs`: the class in `L∞(μ)` of the indicator of a measurable set.
 * `MeasureTheory.SimpleFunc.toLpTop_piecewise_const_zero`: the class of a simple function
   `c • 1_s` is `c • linftyIndicator μ s hs`.
+* `ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton`: a continuous linear map out of
+  counting-measure `Lᵖ`, `p ≠ ∞`, that vanishes on singleton-supported vectors is zero.
 * `LinearMap.ext_linftyIndicator`: a continuous linear map out of real `L∞` is determined by its
   values at the classes `linftyIndicator μ s hs`.
 * `PositiveLinearMap.ext_linftyIndicator`: the same for positive linear functionals on real `L∞`,
@@ -139,6 +143,17 @@ theorem memLp_indicator_of_continuousOn_of_norm_le (hs : MeasurableSet s) (hμs 
 
 end IndicatorContinuousOn
 
+/-- A simple function cut off to a measurable set of finite measure lies in every `Lᵖ` space. -/
+theorem _root_.MeasureTheory.SimpleFunc.memLp_indicator (g : SimpleFunc α E)
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) : MemLp (s.indicator g) p μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs
+  exact (memLp_indicator_iff_restrict hs.nullMeasurableSet).2 (g.memLp_of_isFiniteMeasure p _)
+
+/-- A simple function cut off to a measurable set of finite measure is integrable. -/
+theorem _root_.MeasureTheory.SimpleFunc.integrable_indicator (g : SimpleFunc α E)
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) : Integrable (s.indicator g) μ :=
+  memLp_one_iff_integrable.1 (g.memLp_indicator hs hμs)
+
 end TauCeti
 
 noncomputable section
@@ -218,6 +233,44 @@ theorem linftyIndicator_of_measure_eq_zero (hs : MeasurableSet s) (h : μ s = 0)
   rw [hx, h0, Set.indicator_of_notMem hxs, Pi.zero_apply]
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+open scoped ENNReal
+
+/-- A continuous linear map out of counting-measure `Lᵖ`, `p ≠ ∞`, that vanishes on all
+singleton-supported vectors is zero. No countability of the index space is needed. -/
+theorem eq_zero_of_apply_indicatorConstLp_singleton
+    {α 𝕜 E F : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [NormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    (T : Lp E p (Measure.count : Measure α) →L[𝕜] F)
+    (h : ∀ (i : α) (v : E),
+      T (indicatorConstLp p (measurableSet_singleton i) (by simp) v) = 0) : T = 0 := by
+  -- Finite sets are finite disjoint unions of singletons.
+  have hfin (c : E) (t : Finset α) :
+      T (indicatorConstLp p t.measurableSet (by simp [Measure.count_apply_finset]) c) = 0 := by
+    classical
+    induction t using Finset.induction_on with
+    | empty => simp
+    | insert i t hi ih =>
+      have hd : Disjoint ({i} : Set α) (t : Set α) := by simpa using hi
+      have := indicatorConstLp_disjoint_union (p := p) (μ := (Measure.count : Measure α))
+        (measurableSet_singleton i) t.measurableSet (by simp)
+        (by simp [Measure.count_apply_finset]) hd c
+      simp only [Finset.coe_insert, ← Set.singleton_union] at *
+      rw [this, map_add, h, ih, add_zero]
+  refine ContinuousLinearMap.ext fun f ↦ ?_
+  refine Lp.induction (p := p) hp (fun f ↦ T f = 0) ?_ ?_
+    (isClosed_eq T.continuous continuous_const) f
+  · intro c s hs hμs
+    obtain ⟨t, rfl⟩ := (Measure.count_apply_lt_top.mp hμs).exists_finset_coe
+    exact hfin c t
+  · intro f g hf hg _ hTf hTg
+    rw [map_add, hTf, hTg, add_zero]
+
+end ContinuousLinearMap
 
 namespace LinearMap
 

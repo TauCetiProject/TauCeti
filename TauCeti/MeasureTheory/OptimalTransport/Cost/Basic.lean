@@ -137,10 +137,10 @@ theorem transportCost_eq_top_of_not_exists_isCoupling (h : ¬ ∃ π, IsCoupling
     (c : X × Y → ℝ≥0∞) : transportCost c μ ν = ⊤ :=
   eq_top_iff.2 <| le_transportCost fun π hπ ↦ absurd ⟨π, hπ⟩ h
 
-/-- A finite measure and a measure of a different total mass have transport cost `∞`. -/
-theorem transportCost_eq_top_of_measure_univ_ne [IsFiniteMeasure μ] (h : μ univ ≠ ν univ)
+/-- Measures of different total mass have transport cost `∞`. -/
+theorem transportCost_eq_top_of_measure_univ_ne (h : μ univ ≠ ν univ)
     (c : X × Y → ℝ≥0∞) : transportCost c μ ν = ⊤ :=
-  transportCost_eq_top_of_not_exists_isCoupling (fun hex ↦ h (exists_isCoupling_iff.1 hex)) c
+  transportCost_eq_top_of_not_exists_isCoupling (fun ⟨_, hπ⟩ ↦ h hπ.measure_univ_eq) c
 
 /-- A finite transport cost is witnessed by a coupling. The converse fails: a coupling of
 infinite cost leaves the transport cost `∞`, which is why this is not stated as an
@@ -149,6 +149,18 @@ theorem exists_isCoupling_of_transportCost_ne_top (h : transportCost c μ ν ≠
     ∃ π, IsCoupling π μ ν := by
   obtain ⟨π, hπ, -⟩ := transportCost_lt_iff.1 h.lt_top
   exact ⟨π, hπ⟩
+
+/-- A probability measure whose transport cost to `ν` is finite has a probability measure `ν`
+as target. -/
+theorem isProbabilityMeasure_right_of_transportCost_ne_top [IsProbabilityMeasure μ]
+    (h : transportCost c μ ν ≠ ⊤) : IsProbabilityMeasure ν :=
+  (exists_isCoupling_of_transportCost_ne_top h).choose_spec.isProbabilityMeasure_right
+
+/-- A probability measure that is the target of a finite transport cost has a probability measure
+`μ` as source. -/
+theorem isProbabilityMeasure_left_of_transportCost_ne_top [IsProbabilityMeasure ν]
+    (h : transportCost c μ ν ≠ ⊤) : IsProbabilityMeasure μ :=
+  ⟨by rw [(exists_isCoupling_of_transportCost_ne_top h).choose_spec.measure_univ_eq, measure_univ]⟩
 
 /-- The transport cost is monotone in the cost function. -/
 @[gcongr]
@@ -365,21 +377,21 @@ protected theorem IsOptimalCoupling.const_mul (h : IsOptimalCoupling c π μ ν)
   rw [lintegral_const_mul' a c ha, lintegral_const_mul' a c ha]
   exact mul_le_mul_of_nonneg_left (h.lintegral_le hσ) (by positivity)
 
-/-- Every coupling out of a Dirac measure is optimal, because there is only one. -/
-theorem IsCoupling.isOptimalCoupling_dirac_left [IsProbabilityMeasure ν] (hc : Measurable c)
+/-- Every coupling out of a Dirac measure is optimal, because there is only one. No measurability
+of the cost is needed. -/
+theorem IsCoupling.isOptimalCoupling_dirac_left
     {x : X} (hπ : IsCoupling π (Measure.dirac x) ν) :
-    IsOptimalCoupling c π (Measure.dirac x) ν where
-  toIsCoupling := hπ
-  lintegral_eq := by
-    rw [hπ.eq_map_prodMk, lintegral_map hc measurable_prodMk_left, transportCost_dirac_left hc]
+    IsOptimalCoupling c π (Measure.dirac x) ν :=
+  isOptimalCoupling_iff.2 ⟨hπ, fun _ hσ ↦ by rw [hπ.eq_map_prodMk, hσ.eq_map_prodMk]⟩
 
-/-- Every coupling into a Dirac measure is optimal, because there is only one. -/
-theorem IsCoupling.isOptimalCoupling_dirac_right [IsProbabilityMeasure μ] (hc : Measurable c)
+/-- Every coupling into a Dirac measure is optimal, because there is only one. No measurability
+of the cost is needed. -/
+theorem IsCoupling.isOptimalCoupling_dirac_right
     {y : Y} (hπ : IsCoupling π μ (Measure.dirac y)) :
     IsOptimalCoupling c π μ (Measure.dirac y) := by
   have hπ' : IsOptimalCoupling (fun z : Y × X ↦ c z.swap) (π.map Prod.swap)
       (Measure.dirac y) μ :=
-    hπ.swap.isOptimalCoupling_dirac_left (hc.comp measurable_swap)
+    hπ.swap.isOptimalCoupling_dirac_left
   have hπ'' := hπ'.swap
   have hmap : (π.map Prod.swap).map Prod.swap = π :=
     MeasurableEquiv.map_map_symm (ν := π) MeasurableEquiv.prodComm

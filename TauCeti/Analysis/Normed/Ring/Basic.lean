@@ -10,7 +10,8 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm.
+This file records elementary consequences of the submultiplicativity of the norm, and an estimate
+for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
 -/
 
 public section
@@ -76,6 +77,40 @@ theorem norm_mul_pow_le {R : Type*} [SeminormedRing R] (x y : R) (n : ℕ) :
   · simp
   · exact (norm_mul_le _ _).trans
       (mul_le_mul_of_nonneg_left (norm_pow_le' y n.succ_pos) (norm_nonneg x))
+
+/-- For a multiplicative norm with `‖1‖ = 1`, an element `w` of norm one and `r` of norm at most
+one, `‖w - 1‖ ≤ ‖(w - 1) a‖ + 2 ‖a - r‖ + 2 (1 - ‖r‖)` for every `a`. So `w - 1` is controlled by
+`(w - 1) a` wherever `a` is close to some `r` of norm close to one. -/
+theorem norm_sub_one_le_norm_sub_one_mul_add {R : Type*} [SeminormedRing R] [NormMulClass R]
+    [NormOneClass R] {w a r : R} (hw : ‖w‖ = 1) (hr : ‖r‖ ≤ 1) :
+    ‖w - 1‖ ≤ ‖(w - 1) * a‖ + 2 * ‖a - r‖ + 2 * (1 - ‖r‖) := by
+  have hw₂ : ‖w - 1‖ ≤ 2 := (norm_sub_le _ _).trans (by norm_num [hw])
+  have h₁ : ‖w - 1‖ * ‖r‖ ≤ ‖(w - 1) * a‖ + 2 * ‖a - r‖ := by
+    calc ‖w - 1‖ * ‖r‖ = ‖(w - 1) * a - (w - 1) * (a - r)‖ := by
+          rw [← norm_mul, ← mul_sub, sub_sub_cancel]
+      _ ≤ ‖(w - 1) * a‖ + ‖w - 1‖ * ‖a - r‖ := by
+          rw [← norm_mul]
+          exact norm_sub_le _ _
+      _ ≤ _ := by gcongr
+  nlinarith [mul_nonneg (sub_nonneg.2 hw₂) (sub_nonneg.2 hr), norm_nonneg (w - 1)]
+
+/-- A nonempty finite product is bounded by the product of the norms, in any seminormed
+commutative ring. This is Mathlib's `Finset.norm_prod_le'`, which assumes `NormedCommRing`,
+proved by induction on the finite set; it is the nonempty counterpart of
+`TauCeti.norm_prod_le_prod_norm`. -/
+theorem norm_prod_le_prod_norm_of_nonempty {ι R : Type*} [SeminormedCommRing R]
+    {s : Finset ι} (hs : s.Nonempty) (f : ι → R) : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := by
+  induction hs using Finset.Nonempty.cons_induction with
+  | singleton a => simp
+  | cons a s ha _ ih =>
+    rw [Finset.prod_cons, Finset.prod_cons]
+    exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ih (norm_nonneg _))
+
+/-- A point within distance `1` of `1` is not `0`. -/
+theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass R] {z : R}
+    (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
+  rintro rfl
+  simp at hz
 
 end TauCeti
 

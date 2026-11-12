@@ -18,7 +18,8 @@ on closed points is exactly the closed-point part of its full topological image.
 
 The file also records the affine charts of a morphism `X ⟶ Spec A` locally of finite type:
 every point lies in an affine open `Spec R ⟶ X` with `R` of finite type over `A`
-(`Scheme.Hom.exists_isOpenImmersion_finiteType`).
+(`Scheme.Hom.exists_isOpenImmersion_finiteType`), and the sections over every affine open are of
+finite type over `A` (`Scheme.Hom.finiteType_ΓSpecIso_inv_comp_appLE`).
 
 This complements Mathlib's `Scheme.Hom.closedPoints_subset_preimage_closedPoints` with the
 lifting direction, needed to compare rational and topological orbit images.
@@ -51,6 +52,13 @@ theorem exists_isOpenImmersion_finiteType (x : X) :
   obtain ⟨φ, hφ⟩ : ∃ φ, Spec.map φ = g ≫ f := ⟨_, Spec.map_preimage _⟩
   exact ⟨R, g, inferInstance, y, φ, hφ, rfl,
     (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType) (φ := φ)).mp (hφ ▸ inferInstance)⟩
+
+/-- On an affine open `U` of the source of a morphism `f : X ⟶ Spec A` locally of finite type,
+the ring map `A ⟶ Γ(X, U)` induced by `f` is of finite type. -/
+theorem finiteType_ΓSpecIso_inv_comp_appLE {U : X.Opens} (hU : IsAffineOpen U) :
+    ((Scheme.ΓSpecIso A).inv ≫ f.appLE ⊤ U le_top).hom.FiniteType :=
+  (f.finiteType_appLE (isAffineOpen_top _) hU le_top).comp
+    (.of_surjective _ (Scheme.ΓSpecIso A).symm.commRingCatIsoToRingEquiv.surjective)
 
 end Chart
 

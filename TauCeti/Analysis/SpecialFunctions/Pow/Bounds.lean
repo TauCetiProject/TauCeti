@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Topology.Order.Compact
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Elementary bounds on real powers
@@ -37,6 +38,10 @@ used as the normalizing denominator of a pair of weights.
 If `1 ≤ C`, `D < n` and `C ^ (D / (n - D)) < B + 1`, then `(⌊C B⌋₊ + 1) ^ D < (B + 1) ^ n`. This
 is the counting step of Siegel's lemma: it compares the integer points of a box with the cells
 of a partition of the image of that box under `D` linear forms.
+
+For `C ≥ 0` and every large natural number `r`, `C ^ r r ^ ((1 - r) / 2) < 1`: the power
+`r ^ (r / 2)` outgrows every geometric sequence. This is the final contradiction of Gelfond's
+proof of the Gelfond–Schneider theorem.
 
 For `t > 0` and every natural `k`, `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k`: the Japanese bracket
 decays at least as fast as `t ^ (-1)`. This converts symbol estimates of order `0` into Mihlin's
@@ -91,8 +96,8 @@ function that does not need a derivative.
 * `Real.one_sub_rpow_add_rpow_pos`: `0 < (1 - t) ^ r + t ^ r` for `t ∈ [0, 1]`.
 * `Real.floor_mul_add_one_pow_lt`: `(⌊C B⌋₊ + 1) ^ D < (B + 1) ^ n` for `1 ≤ C`, `D < n` and
   `C ^ (D / (n - D)) < B + 1`.
+* `Real.exists_pow_mul_rpow_lt_one`: `C ^ r r ^ ((1 - r) / 2) < 1` for `0 ≤ C` and all large `r`.
 * `Real.one_add_sq_rpow_neg_le`: `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k` for `0 < t`.
-* `Real.rpow_eq_sq_rpow_div_two`: `t ^ r = (t ^ 2) ^ (r / 2)` for `0 ≤ t`.
 * `Real.rpow_le_two_rpow_mul_one_add_sq_rpow` and `Real.one_add_sq_rpow_le_two_rpow_mul_rpow`:
   `t ^ r ≤ 2 ^ (|r| / 2) (1 + t ^ 2) ^ (r / 2)` and `(1 + t ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) t ^ r`
   for `1 ≤ t`.
@@ -119,6 +124,8 @@ function that does not need a derivative.
   `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half`: increment bounds
   `‖u b - u a‖ ≲ |b - a| |a| ^ (β - 1)` for a function constant on `(-∞, 0]` with
   `‖u r - c‖ ≤ K r ^ β` for `r ≥ 0`, when `a < 0`, respectively when `0 < a` and `b < a / 2`.
+* `TauCeti.norm_sub_le_three_mul_rpow_of_le_sub`: `‖x - y‖ ≤ 3 c (t - t') ^ β` from
+  `‖x‖ ≤ c t ^ β`, `‖y‖ ≤ c t' ^ β` and `t' ≤ t - t'`, for `0 ≤ β ≤ 1`.
 -/
 
 public section
@@ -225,6 +232,36 @@ theorem floor_mul_add_one_pow_lt {C : ℝ} (hC : 1 ≤ C) {D n B : ℕ} (hDn : D
     _ = (B + 1) ^ n := by
         rw [← rpow_natCast _ D, ← rpow_add (by positivity), sub_add_cancel, rpow_natCast]
 
+/-- For `C ≥ 0` and every large natural number `r`, `C ^ r r ^ ((1 - r) / 2) < 1`: writing
+`s = √r`, the left side is `s (C / s) ^ r ≤ s 2 ^ (-r)` as soon as `s ≥ 2 C`. -/
+theorem exists_pow_mul_rpow_lt_one {C : ℝ} (hC : 0 ≤ C) :
+    ∃ N : ℕ, ∀ r : ℕ, N ≤ r → C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) < 1 := by
+  refine ⟨⌈4 * C ^ 2⌉₊ + 1, fun r hr ↦ ?_⟩
+  have hr₁ : (1 : ℝ) ≤ r := by exact_mod_cast (Nat.le_add_left 1 _).trans hr
+  have hr₀ : (0 : ℝ) < r := zero_lt_one.trans_le hr₁
+  have hCr : 4 * C ^ 2 ≤ r :=
+    (Nat.le_ceil _).trans (by exact_mod_cast (Nat.le_succ _).trans hr)
+  set s := √(r : ℝ)
+  have hs₀ : 0 < s := sqrt_pos.2 hr₀
+  have hsr : s ≤ r := sqrt_le_self_iff.2 (Or.inr hr₁)
+  -- `2 C ≤ s`, since `(2 C) ^ 2 ≤ r`.
+  have hCs : 2 * C ≤ s := le_sqrt_of_sq_le (by nlinarith)
+  -- `r ^ ((1 - r) / 2) = s / s ^ r`.
+  have hrs : (r : ℝ) ^ ((1 - (r : ℝ)) / 2) = s / s ^ r := by
+    rw [show (1 - (r : ℝ)) / 2 = 1 / 2 * (1 - r) by ring, rpow_mul hr₀.le, ← sqrt_eq_rpow,
+      rpow_sub hs₀, rpow_one, rpow_natCast]
+  have hCs' : C / s ≤ 1 / 2 := by
+    rw [div_le_div_iff₀ hs₀ two_pos]
+    linarith
+  calc C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) = s * (C / s) ^ r := by
+        rw [hrs, div_pow]
+        field_simp
+    _ ≤ s * (1 / 2) ^ r := by gcongr
+    _ = s / 2 ^ r := by rw [one_div, inv_pow, div_eq_mul_inv]
+    _ < 1 := by
+        rw [div_lt_one (by positivity)]
+        exact hsr.trans_lt (by exact_mod_cast Nat.lt_two_pow_self)
+
 /-- For `t > 0`, `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k`. -/
 theorem one_add_sq_rpow_neg_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
     (1 + t ^ 2) ^ (-(k : ℝ) / 2) ≤ 1 / t ^ k := by
@@ -236,18 +273,12 @@ theorem one_add_sq_rpow_neg_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
   rw [neg_div, rpow_neg (by positivity), ← one_div]
   exact one_div_le_one_div_of_le (by positivity) hpow
 
-/-- For `t ≥ 0`, `t ^ r = (t ^ 2) ^ (r / 2)`. -/
-theorem rpow_eq_sq_rpow_div_two {t : ℝ} (ht : 0 ≤ t) (r : ℝ) :
-    t ^ r = (t ^ 2) ^ (r / 2) := by
-  rw [← rpow_natCast_mul ht]
-  ring_nf
-
 /-- For `t ≥ 1` and an exponent `r` of either sign, `t ^ r ≤ 2 ^ (|r| / 2) (1 + t²) ^ (r / 2)`. -/
 theorem rpow_le_two_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) :
     t ^ r ≤ 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
   have hu : 0 < t ^ 2 := by positivity
   have hs : 0 < 1 + t ^ 2 := by positivity
-  rw [rpow_eq_sq_rpow_div_two (t := t) (by linarith)]
+  rw [← sq_rpow_div_two (a := t) (by linarith) r]
   rcases le_total 0 r with hr | hr
   · calc (t ^ 2) ^ (r / 2) ≤ (1 + t ^ 2) ^ (r / 2) :=
           rpow_le_rpow hu.le (by linarith) (by linarith)
@@ -265,7 +296,7 @@ theorem rpow_le_two_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) 
 theorem one_add_sq_rpow_le_two_rpow_mul_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) :
     (1 + t ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) * t ^ r := by
   have hu : 0 < t ^ 2 := by positivity
-  rw [rpow_eq_sq_rpow_div_two (t := t) (by linarith)]
+  rw [← sq_rpow_div_two (a := t) (by linarith) r]
   rcases le_total 0 r with hr | hr
   · -- For a nonnegative exponent use `1 + t² ≤ 2 t²`.
     calc (1 + t ^ 2) ^ (r / 2) ≤ (2 * t ^ 2) ^ (r / 2) :=
@@ -290,16 +321,26 @@ theorem one_le_five_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : |t| ≤ 2) (r : ℝ
     _ ≤ 5 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
         gcongr
 
-/-- If `0 < d` and `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`. -/
-theorem rpow_neg_le_one_div_two_mul_sq {d p : ℝ} (hd : 0 < d) (h2 : 2 ≤ d ^ (p - 2)) :
+/-- If `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`. (For `d = 0` the hypothesis fails, as
+`0 ^ x ≤ 1`.) -/
+theorem rpow_neg_le_one_div_two_mul_sq {d p : ℝ} (h2 : 2 ≤ d ^ (p - 2)) :
     d ^ (-p) ≤ 1 / (2 * d ^ 2) := by
-  have hsplit : d ^ (-p) = (d ^ (p - 2))⁻¹ * (d ^ 2)⁻¹ := by
+  rcases eq_or_ne d 0 with rfl | hd0
+  · linarith [zero_rpow_le_one (p - 2)]
+  have hd : 0 < |d| := abs_pos.2 hd0
+  have h2' : 2 ≤ |d| ^ (p - 2) :=
+    h2.trans ((le_abs_self _).trans (abs_rpow_le_abs_rpow _ _))
+  have hsplit : |d| ^ (-p) = (|d| ^ (p - 2))⁻¹ * (|d| ^ 2)⁻¹ := by
     rw [← rpow_neg hd.le, ← rpow_natCast, ← rpow_neg hd.le, ← rpow_add hd]
     congr 1
     push_cast
     ring
-  rw [hsplit, one_div, mul_inv]
-  gcongr
+  calc d ^ (-p) ≤ |d| ^ (-p) := (le_abs_self _).trans (abs_rpow_le_abs_rpow _ _)
+    _ = (|d| ^ (p - 2))⁻¹ * (|d| ^ 2)⁻¹ := hsplit
+    _ ≤ 2⁻¹ * (d ^ 2)⁻¹ := by
+        rw [sq_abs]
+        gcongr
+    _ = 1 / (2 * d ^ 2) := by rw [one_div, mul_inv]
 
 /-- For `0 ≤ p ≤ 1`, a quantity at most `2 h` has `p`-th power at most `2 h^p`. -/
 theorem rpow_le_two_mul_rpow_of_le_two_mul {r h p : ℝ} (hr : 0 ≤ r) (hrh : r ≤ 2 * h)
@@ -567,5 +608,20 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half {F : Type*} [NormedAddCommGr
     _ ≤ 2 * (K * a ^ β) := by linarith [hrate a ha.le]
     _ ≤ 2 * (K * (2 * (|b - a| * a ^ (β - 1)))) := by gcongr
     _ = _ := by ring
+
+open Real in
+/-- If `‖x‖ ≤ c t ^ β` and `‖y‖ ≤ c t' ^ β` with `t' ≤ t - t'`, then `‖x - y‖ ≤ 3 c (t - t') ^ β`,
+since then `t ≤ 2 (t - t')`. -/
+theorem norm_sub_le_three_mul_rpow_of_le_sub {V : Type*} [SeminormedAddCommGroup V] {x y : V}
+    {c β t t' : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1) (ht' : 0 ≤ t')
+    (hsmall : t' ≤ t - t') (h₁ : ‖x‖ ≤ c * t ^ β) (h₂ : ‖y‖ ≤ c * t' ^ β) :
+    ‖x - y‖ ≤ 3 * c * (t - t') ^ β := by
+  have h₃ : t ^ β ≤ 2 * (t - t') ^ β :=
+    rpow_le_two_mul_rpow_of_le_two_mul (by linarith) (by linarith) hβ₀ hβ₁
+  have h₄ : t' ^ β ≤ (t - t') ^ β := rpow_le_rpow ht' hsmall hβ₀
+  calc ‖x - y‖ ≤ ‖x‖ + ‖y‖ := norm_sub_le _ _
+    _ ≤ c * t ^ β + c * t' ^ β := add_le_add h₁ h₂
+    _ ≤ c * (2 * (t - t') ^ β) + c * (t - t') ^ β := by gcongr
+    _ = 3 * c * (t - t') ^ β := by ring
 
 end TauCeti

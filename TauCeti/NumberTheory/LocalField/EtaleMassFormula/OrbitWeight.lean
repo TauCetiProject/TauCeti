@@ -188,4 +188,24 @@ theorem orbitDiscriminantExponent_sum
     apply E.injective
     simp [E]
 
+/-- Discriminant weight is additive over a finite family of actions with finitely many orbits.
+The group acts within each fibre of the disjoint union. -/
+@[simp]
+theorem orbitDiscriminantExponent_sigma {ι : Type*} [Fintype ι] {Y : ι → Type*}
+    [∀ i, MulAction Gal(SeparableClosure K/K) (Y i)]
+    [∀ i, Finite (orbitRel.Quotient Gal(SeparableClosure K/K) (Y i))] :
+    orbitDiscriminantExponent K (Σ i, Y i) = ∑ i, orbitDiscriminantExponent K (Y i) := by
+  classical
+  let (i : ι) := Fintype.ofFinite (orbitRel.Quotient Gal(SeparableClosure K/K) (Y i))
+  let E := MulAction.orbitRelQuotientSigmaEquiv
+    (G := Gal(SeparableClosure K/K)) (Y := Y)
+  rw [orbitDiscriminantExponent_def, ← finsum_comp_equiv E.symm,
+    finsum_eq_sum_of_fintype, Fintype.sum_sigma]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [orbitDiscriminantExponent_def, finsum_eq_sum_of_fintype]
+  refine Finset.sum_congr rfl fun ω _ ↦ ?_
+  rw [discriminantExponent_fixedField_stabilizer_out K
+    (x := Sigma.mk i ω.out) (by simp [E, ← MulAction.orbitRelQuotientSigmaEquiv_symm_mk]),
+    MulAction.stabilizer_sigma_mk]
+
 end TauCeti

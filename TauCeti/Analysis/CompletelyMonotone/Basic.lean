@@ -271,7 +271,7 @@ lemma hasDerivAt_iteratedDerivWithin_succ
     HasDerivAt (iteratedDerivWithin k f (Ici 0))
       (iteratedDerivWithin (k + 1) f (Ici 0) t) t :=
   hcm.contDiffOn.hasDerivAt_iteratedDerivWithin (mod_cast ENat.natCast_lt_top k)
-    (uniqueDiffOn_Ici 0) (Ici_mem_nhds ht)
+    (Ici_mem_nhds ht)
 
 /-- Completely monotone functions are closed under addition. -/
 lemma add (hf : IsCompletelyMonotone f) (hg : IsCompletelyMonotone g) :
@@ -471,10 +471,10 @@ theorem isCompletelyMonotoneOnIoi_of_forall_comp_add_const {f : ℝ → ℝ}
 
 /-! ## Closed-half-line complete monotonicity -/
 
-/-- Roadmap-level complete monotonicity on the closed half-line.
+/-- Complete monotonicity on the closed half-line.
 
 This is the classical finite-measure hypothesis: the function is continuous on `[0, ∞)` and
-completely monotone on the open half-line `(0, ∞)`. It is weaker at the endpoint than the existing
+completely monotone on the open half-line `(0, ∞)`. It is weaker at the endpoint than
 `IsCompletelyMonotone`, which requires all derivatives within `[0, ∞)` to exist at `0`. -/
 def IsContinuousCompletelyMonotoneOnIoi (f : ℝ → ℝ) : Prop :=
   ContinuousOn f (Ici 0) ∧ IsCompletelyMonotoneOnIoi f
@@ -499,7 +499,7 @@ lemma continuousOn (hf : IsContinuousCompletelyMonotoneOnIoi f) : ContinuousOn f
 lemma isCompletelyMonotoneOnIoi (hf : IsContinuousCompletelyMonotoneOnIoi f) :
     IsCompletelyMonotoneOnIoi f := hf.2
 
-/-- The existing strong Tau Ceti predicate implies the roadmap-level closed-half-line predicate. -/
+/-- The stronger predicate `IsCompletelyMonotone` implies the closed-half-line predicate. -/
 lemma of_isCompletelyMonotone (hf : IsCompletelyMonotone f) :
     IsContinuousCompletelyMonotoneOnIoi f :=
   ⟨hf.contDiffOn.continuousOn, hf.isCompletelyMonotoneOnIoi⟩

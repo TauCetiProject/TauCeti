@@ -24,7 +24,7 @@ be separated by the norm of an element of `𝕜`. They are separated after raisi
 Over an algebraically closed field `m`-th roots exist, so the radii themselves are separated:
 `NormedField.exists_lt_norm_lt_of_isAlgClosed`. Iterating, the norms of a sequence decrease
 strictly inside any interval `(r, s)`: `NormedField.exists_strictAnti_norm_mem_Ioo_of_isAlgClosed`.
-If instead the norms accumulate at `1`, then for `r < 1` and `n ≠ 0` some `ϖ` with `‖ϖ‖ < 1` has
+If instead the norms accumulate at `1`, then for `r < 1` and any `n` some `ϖ` with `‖ϖ‖ < 1` has
 `r < ‖ϖ‖ ^ n`: `NormedField.exists_lt_norm_pow_of_forall_exists_one_lt_norm_lt`.
 
 The same roots solve norm equations: over an algebraically closed normed field, for a multiset `s`
@@ -35,9 +35,17 @@ which that Gauss norm equals `‖c‖`.
 
 A normed field whose norm takes every positive real value is densely normed
 (`DenselyNormedField.ofForallExistsNormEq`).
+
+Finally, `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio `F / w` near `c⁻¹`
+into a relative error bound for `F - w / c`.
 -/
 
 public section
+
+/-- The inverse of an element of norm greater than one has norm less than one. -/
+theorem TauCeti.norm_inv_lt_one_of_one_lt_norm {K : Type*} [NormedDivisionRing K]
+    {j : K} (hj : 1 < ‖j‖) : ‖j⁻¹‖ < 1 := by
+  simpa only [norm_inv] using inv_lt_one_of_one_lt₀ hj
 
 namespace NormedField
 
@@ -97,10 +105,13 @@ theorem exists_strictAnti_norm_mem_Ioo_of_isAlgClosed [IsAlgClosed 𝕜] {r s : 
 
 variable {𝕜} in
 /-- **If the norms of `𝕜` accumulate at `1`, some element of norm less than one has `n`-th power
-of norm above any `r < 1`**: for `n ≠ 0` some `ϖ` with `0 < ‖ϖ‖ < 1` has `r < ‖ϖ‖ ^ n`. -/
+of norm above any `r < 1`**: for every `n` some `ϖ` with `0 < ‖ϖ‖ < 1` has `r < ‖ϖ‖ ^ n`. -/
 theorem exists_lt_norm_pow_of_forall_exists_one_lt_norm_lt
-    (hacc : ∀ ε : ℝ, 1 < ε → ∃ x : 𝕜, 1 < ‖x‖ ∧ ‖x‖ < ε) {r : ℝ} (hr : r < 1) {n : ℕ}
-    (hn : n ≠ 0) : ∃ ϖ : 𝕜, 0 < ‖ϖ‖ ∧ ‖ϖ‖ < 1 ∧ r < ‖ϖ‖ ^ n := by
+    (hacc : ∀ ε : ℝ, 1 < ε → ∃ x : 𝕜, 1 < ‖x‖ ∧ ‖x‖ < ε) {r : ℝ} (hr : r < 1) (n : ℕ) :
+    ∃ ϖ : 𝕜, 0 < ‖ϖ‖ ∧ ‖ϖ‖ < 1 ∧ r < ‖ϖ‖ ^ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · obtain ⟨ϖ, hϖ0, hϖ1⟩ := exists_norm_lt_one 𝕜
+    exact ⟨ϖ, hϖ0, hϖ1, by simpa using hr⟩
   rcases le_or_gt r 0 with hr0 | hr0
   · obtain ⟨ϖ, hϖ0, hϖ1⟩ := exists_norm_lt_one 𝕜
     exact ⟨ϖ, hϖ0, hϖ1, hr0.trans_lt (by positivity)⟩
@@ -178,3 +189,19 @@ def DenselyNormedField.ofForallExistsNormEq {𝕜 : Type*} [h' : NormedField �
   lt_norm_lt r₁ r₂ h₀ hr := by
     obtain ⟨x, hx⟩ := h ((r₁ + r₂) / 2) (by linarith)
     exact ⟨x, by linarith, by linarith⟩
+
+namespace TauCeti
+
+/-- A bound on the ratio `F / w` near `c⁻¹` is a relative error bound for `w / c`: if
+`dist (F / w) c⁻¹ ≤ η / ‖c‖` and `w ≠ 0`, then `‖F - w / c‖ ≤ η * ‖w / c‖`. -/
+theorem norm_sub_div_le_of_dist_div_le {𝕜 : Type*} [NormedField 𝕜] {F w c : 𝕜} {η : ℝ}
+    (hw : w ≠ 0) (h : dist (F / w) c⁻¹ ≤ η / ‖c‖) : ‖F - w / c‖ ≤ η * ‖w / c‖ := by
+  have hmul := mul_le_mul_of_nonneg_right h (norm_nonneg w)
+  rw [dist_eq_norm, ← norm_mul] at hmul
+  have heq : (F / w - c⁻¹) * w = F - w / c := by
+    field_simp
+  rw [heq] at hmul
+  calc ‖F - w / c‖ ≤ η / ‖c‖ * ‖w‖ := hmul
+    _ = η * ‖w / c‖ := by rw [norm_div]; ring
+
+end TauCeti

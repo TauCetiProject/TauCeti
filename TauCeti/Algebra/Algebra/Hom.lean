@@ -39,6 +39,11 @@ it; the round-trips are reachable only through `RingHom.equivIntAlgHom`, which i
 `rw` wants. Any file transporting an equality of ring homomorphisms into `AlgHom` needs these, and
 several do.
 
+## Powers equal to a scalar
+
+A power `α ^ n` of an element of an algebra into which the base ring embeds equals the image of a
+scalar `a ≠ 1` only when `n ≠ 0`.
+
 ## Main results
 
 * `AlgHom.algebraMap_toAlgebra_apply`: `algebraMap A B z = f z` for the algebra structure
@@ -282,3 +287,17 @@ theorem AlgHom.descend_unique (g : A →ₐ[R] B) (hg : Function.Surjective g) (
     (DFunLike.congr_fun hψ a).trans (g.descend_apply hg φ h a).symm
 
 end Descend
+
+section PowEqAlgebraMap
+
+variable {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+
+/-- A power of an element of an `R`-algebra into which `R` embeds can equal the image of a scalar
+`a ≠ 1` only for a nonzero exponent, since the zeroth power is `1`. -/
+theorem Algebra.ne_zero_of_pow_eq_algebraMap_of_injective
+    (hinj : Function.Injective (algebraMap R S)) {a : R} (ha : a ≠ 1) {α : S} {n : ℕ}
+    (hα : α ^ n = algebraMap R S a) : n ≠ 0 := by
+  rintro rfl
+  exact ha (hinj (by rw [map_one]; simpa using hα.symm))
+
+end PowEqAlgebraMap

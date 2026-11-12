@@ -19,9 +19,11 @@ import TauCeti.MeasureTheory.Function.Lp.Translation
 # Planar Cauchy kernel estimates
 
 The complex reciprocal and its norm are locally integrable. Their integrals over a disk admit a
-uniform bound in terms of the radius when the pole lies in that disk. Compact truncation of the
-kernel also gives local `L¹` continuity as the pole varies. The Cauchy integral of complex
-data splits into the integrals of their real and imaginary parts.
+uniform bound in terms of the radius when the pole lies in that disk, and the integral of the
+reciprocal over any set is bounded by `2π` plus the measure of the set, uniformly in the pole.
+The truncated kernel is in `L^q` for `q < 2`, and compact truncation also gives local `L¹`
+continuity as the pole varies. The Cauchy
+integral of complex data splits into the integrals of their real and imaginary parts.
 -/
 
 public section
@@ -67,6 +69,26 @@ theorem integrable_truncatedCauchyKernel (R : ℝ) : Integrable (truncatedCauchy
   (integrable_indicator_iff isClosed_closedBall.measurableSet).mpr
     (Complex.locallyIntegrable_inv.integrableOn_isCompact (isCompact_closedBall 0 R))
 
+/-- The truncated reciprocal kernel belongs to `L^q` for every `q < 2`. No positivity
+assumption on the cutoff radius is needed. -/
+theorem memLp_truncatedCauchyKernel {q : ENNReal} (hq : q < 2) (R : ℝ) :
+    MemLp (truncatedCauchyKernel R) q volume := by
+  rw [truncatedCauchyKernel_def, memLp_indicator_iff_restrict
+    measurableSet_closedBall.nullMeasurableSet]
+  have hm : AEStronglyMeasurable (fun z : ℂ ↦ z⁻¹)
+      (volume.restrict (closedBall 0 R)) := measurable_id.inv.aestronglyMeasurable
+  rcases eq_or_ne q 0 with rfl | hq0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm
+  have hqt : q ≠ ⊤ := ne_top_of_lt hq
+  have hqreal : q.toReal < 2 := by
+    exact_mod_cast (ENNReal.toReal_lt_toReal hqt (by simp)).2 hq
+  refine (integrable_norm_rpow_iff hm hq0 hqt).1 ?_
+  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball (0 : ℂ) R)]
+  simpa only [IntegrableOn, norm_inv, Real.inv_rpow (norm_nonneg _),
+    ← Real.rpow_neg (norm_nonneg _)] using
+    (integrableOn_norm_rpow_ball (mu := volume) (E := ℂ) (s := -q.toReal) (R := R)
+      (by simpa using (neg_lt_neg hqreal)))
+
 /-- The inverse-distance integral over a disk centered at its pole is `2πR`. -/
 theorem integral_norm_sub_inv_closedBall {R : ℝ} (hR : 0 ≤ R) (w : ℂ) :
     (∫ z in closedBall w R, ‖z - w‖⁻¹) = 2 * Real.pi * R := by
@@ -101,6 +123,37 @@ theorem integral_norm_sub_inv_closedBall_le {w c : ℂ} {R : ℝ}
     (∫ z in closedBall c R, ‖z - w‖⁻¹) ≤ 4 * Real.pi * R := by
   convert integral_norm_sub_inv_closedBall_le_add (dist_nonneg.trans (mem_closedBall.mp hw)) hw
     using 1; ring
+
+/-- The integral of `‖(w - z)⁻¹‖` over a set `s` is at most `2π + |s|`, uniformly in the pole `z`;
+in particular the reciprocal kernel is integrable over every set of finite measure. -/
+theorem setLIntegral_enorm_sub_inv_le (s : Set ℂ) (z : ℂ) :
+    ∫⁻ w in s, ‖(w - z)⁻¹‖ₑ ≤ ENNReal.ofReal (2 * Real.pi) + volume s := by
+  have hpt (w : ℂ) :
+      ‖(w - z)⁻¹‖ₑ ≤ (closedBall z 1).indicator (fun w ↦ ‖(w - z)⁻¹‖ₑ) w + 1 := by
+    by_cases hw : w ∈ closedBall z 1
+    · rw [indicator_of_mem hw]
+      exact le_self_add
+    · rw [indicator_of_notMem hw, zero_add, ← ofReal_norm, norm_inv]
+      rw [mem_closedBall, dist_eq_norm, not_le] at hw
+      exact ENNReal.ofReal_le_one.2 (inv_le_one_of_one_le₀ hw.le)
+  have hball : ∫⁻ w in closedBall z 1, ‖(w - z)⁻¹‖ₑ = ENNReal.ofReal (2 * Real.pi) := by
+    have hi : IntegrableOn (fun w ↦ (w - z)⁻¹) (closedBall z 1) :=
+      ((Complex.locallyIntegrable_sub_inv z).integrableOn_isCompact
+        (isCompact_closedBall z 1)).neg.congr_fun
+          (fun w _ ↦ by rw [Pi.neg_apply, ← inv_neg, neg_sub]) measurableSet_closedBall
+    rw [← ofReal_integral_norm_eq_lintegral_enorm hi]
+    simp_rw [norm_inv]
+    rw [integral_norm_sub_inv_closedBall zero_le_one, mul_one]
+  calc ∫⁻ w in s, ‖(w - z)⁻¹‖ₑ
+      ≤ ∫⁻ w in s, ((closedBall z 1).indicator (fun w ↦ ‖(w - z)⁻¹‖ₑ) w + 1) :=
+        lintegral_mono hpt
+    _ = (∫⁻ w in s, (closedBall z 1).indicator (fun w ↦ ‖(w - z)⁻¹‖ₑ) w) + volume s := by
+        rw [lintegral_add_right _ measurable_const, setLIntegral_const, one_mul]
+    _ ≤ (∫⁻ w, (closedBall z 1).indicator (fun w ↦ ‖(w - z)⁻¹‖ₑ) w) + volume s := by
+        gcongr ?_ + _
+        exact setLIntegral_le_lintegral _ _
+    _ = ENNReal.ofReal (2 * Real.pi) + volume s := by
+        rw [lintegral_indicator measurableSet_closedBall, hball]
 
 /-- The `L¹` norm of the truncated reciprocal kernel is `2πR`. -/
 theorem integral_norm_truncatedCauchyKernel {R : ℝ} (hR : 0 ≤ R) :

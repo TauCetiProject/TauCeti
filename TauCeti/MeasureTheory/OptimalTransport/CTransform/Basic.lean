@@ -312,11 +312,13 @@ theorem cTransformSymm_coe [Nonempty Y] (c : X × Y → ℝ) (ψ : Y → ℝ) (x
 
 /-- The infimal `c`-transform of a real potential inherits a uniform modulus of continuity from
 the target-variable sections of the cost. -/
-theorem uniformContinuous_iInf_sub [PseudoMetricSpace Y] [Nonempty X]
+theorem uniformContinuous_iInf_sub [PseudoMetricSpace Y]
     {c : X × Y → ℝ} {φ : X → ℝ}
     (hc : ∀ ε > 0, ∃ δ > 0, ∀ x y y', dist y y' < δ → dist (c (x, y)) (c (x, y')) < ε)
     (hbdd : ∀ y, BddBelow (Set.range fun x ↦ c (x, y) - φ x)) :
     UniformContinuous fun y ↦ ⨅ x, (c (x, y) - φ x) := by
+  rcases isEmpty_or_nonempty X with hX | hX
+  · simpa only [Real.iInf_of_isEmpty] using uniformContinuous_const (b := (0 : ℝ))
   refine Metric.uniformContinuous_iff.2 fun ε hε ↦ ?_
   obtain ⟨δ, hδ, hcδ⟩ := hc (ε / 2) (by positivity)
   have key : ∀ y₁ y₂ : Y, dist y₁ y₂ < δ →
@@ -335,7 +337,7 @@ theorem uniformContinuous_iInf_sub [PseudoMetricSpace Y] [Nonempty X]
 
 /-- The infimal `c`-transform of a real potential is uniformly continuous when the cost is. -/
 theorem uniformContinuous_iInf_sub_of_uniformContinuous [PseudoMetricSpace X]
-    [PseudoMetricSpace Y] [Nonempty X] {c : X × Y → ℝ} {φ : X → ℝ} (hc : UniformContinuous c)
+    [PseudoMetricSpace Y] {c : X × Y → ℝ} {φ : X → ℝ} (hc : UniformContinuous c)
     (hbdd : ∀ y, BddBelow (Set.range fun x ↦ c (x, y) - φ x)) :
     UniformContinuous fun y ↦ ⨅ x, (c (x, y) - φ x) :=
   uniformContinuous_iInf_sub (fun ε hε ↦ by
@@ -815,7 +817,7 @@ theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
   obtain ⟨x₀, a, ha⟩ := hfin
   set ψ := cTransform c φ
   have hφψ : cTransformSymm c ψ = φ := hφ.cTransformSymm_cTransform
-  obtain ⟨y₀, b, hb, hψ_le, hφ_le⟩ := hφ.exists_transform_eq_coe_and_le hM' ha
+  obtain ⟨y₀, b, _, hψ_le, hφ_le⟩ := hφ.exists_transform_eq_coe_and_le hM' ha
   have : Nonempty X := ⟨x₀⟩
   have : Nonempty Y := ⟨y₀⟩
   -- Each transform is an infimum of the cost minus a potential bounded above, hence bounded

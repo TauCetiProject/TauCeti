@@ -720,23 +720,22 @@ private theorem card_monodromyOrbit_add_orbitCount_le {m : ℕ} (R : PDCode m) (
 /-- **Resolving a crossing keeps a code planar.** Smoothing one crossing of a planar PD-code, by
 either of its two smoothings, gives a planar code. -/
 theorem IsPlanar.resolveCrossing (hD : D.IsPlanar) : (D.resolveCrossing c t).IsPlanar := by
-  obtain ⟨p, q, hpq, hcyc, hS⟩ := D.exists_localSmoothing_eq_swap_mul_finRotate c t
+  obtain ⟨p, q, _, hcyc, hS⟩ := D.exists_localSmoothing_eq_swap_mul_finRotate c t
   have hSS (k : Fin 4) : D.localSmoothing c t (D.localSmoothing c t k) = k :=
     D.localSmoothing_apply_apply c t k
-  have hSk (k : Fin 4) : D.localSmoothing c t k ≠ k := slotSmoothing_ne _ k
   -- Smooth the vertex `c` of the underlying ribbon graph.
   have h₁ := orbitCount_swap_mul_add_orbitCount_add_orbitCount_mul_swap_mul_eq
-    (a := .inr p) (b := .inr q) (by simpa using hpq)
+    (a := .inr p) (b := .inr q)
     (by rw [D.permCongr_crossingRotation c t]; simpa using hcyc)
     (D.orbitCount_add_orbitCount_add_orbitCount_mul_slot_eq c hD)
   rw [D.permCongr_crossingRotation c t, ← sumCongr_one_swap, Perm.sumCongr_mul, one_mul,
     ← hS] at h₁
   -- Cut off the two smoothing arcs, suppressing the two vertices of degree two.
   have h₂ := (D.slotMatching c).orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq
-    (a := .inr 0) (by simp [hSS]) (by simpa using hSk 0) h₁
+    (a := .inr 0) (by simp [hSS]) h₁
   rw [Perm.sumCongr_apply, Sum.map_inr, ← pinchedOnce] at h₂
   have h₃ := (D.pinchedOnce c t).orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq
-    (a := .inr 2) (by simp [hSS]) (by simpa using hSk 2) h₂
+    (a := .inr 2) (by simp [hSS]) h₂
   rw [Perm.sumCongr_apply, Sum.map_inr, ← pinchedTwice, pinchedTwice_val, Perm.sumCongr_mul,
     D.localSmoothing_mul_self c t] at h₃
   simp only [Perm.orbitCount_sumCongr, orbitCount_one, Nat.card_sum, Nat.card_fin] at h₃

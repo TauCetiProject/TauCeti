@@ -54,10 +54,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
           project-directory: .
       - name: Resolve immutable pins and validate before any dependency code executes
         env:
@@ -179,7 +179,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl -sSL --fail "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/bubblewrap_${BWRAP_VER}_amd64.deb" -o bwrap.deb
+          cp "$RUNNER_TEMP/tauceti-shared-scripts/vendor/bubblewrap_${BWRAP_VER}_amd64.deb" bwrap.deb
           echo "${BWRAP_DEB_SHA256}  bwrap.deb" | sha256sum -c -
           sudo dpkg -i bwrap.deb >/dev/null
           echo "${BWRAP_SHA256}  /usr/bin/bwrap" | sha256sum -c -

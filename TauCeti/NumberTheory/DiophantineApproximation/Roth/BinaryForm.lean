@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Homogenize
-public import TauCeti.Analysis.Normed.Field.LinearForms
+public import TauCeti.Analysis.Normed.Ring.LinearForms
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.Theorem
 
 import TauCeti.Data.Int.MaxAbs
@@ -79,57 +79,26 @@ theorem _root_.IsAlgebraic.exists_pos_mul_max_abs_rpow_le_norm_sub_mul {α : ℂ
     ∃ c : ℝ, 0 < c ∧ ∀ x y : ℤ, (x : ℂ) - α * y ≠ 0 →
       c * max |(x : ℝ)| |(y : ℝ)| ^ (1 - κ) ≤ ‖(x : ℂ) - α * y‖ := by
   obtain ⟨c₀, hc₀, h⟩ := hα.exists_pos_mul_mulHeight₁_rpow_neg_le_norm_sub hκ
-  set A := ‖α‖ + 1
-  have hA : 1 ≤ A := by linarith [norm_nonneg α]
-  refine ⟨min (1 / 2) (c₀ / (2 * A)), by positivity, fun x y hxy ↦ ?_⟩
-  set M := max |(x : ℝ)| |(y : ℝ)|
-  have hy₀ := abs_nonneg (y : ℝ)
-  have hM : 1 ≤ M := Int.one_le_max_abs_cast <| by
+  refine ⟨min (1 / 2) (c₀ / (2 * (‖α‖ + 1))), by positivity, fun x y hxy ↦ ?_⟩
+  have hM : 1 ≤ max |(x : ℝ)| |(y : ℝ)| := Int.one_le_max_abs_cast <| by
     by_contra! h0
     exact hxy (by simp [h0.1, h0.2])
-  have hM₀ : 0 < M := by linarith
-  rcases le_or_gt (2 * A * |(y : ℝ)|) |(x : ℝ)| with hbig | hsmall
-  · -- If `|x| ≥ 2 A |y|`, then `‖x - α y‖ ≥ |x| / 2 = M / 2`.
-    have hMx : M = |(x : ℝ)| := max_eq_left (by nlinarith)
-    have h1 : M / 2 ≤ ‖(x : ℂ) - α * y‖ := by
-      have := norm_sub_norm_le (x : ℂ) (α * y)
-      rw [Complex.norm_intCast, norm_mul, Complex.norm_intCast] at this
-      rw [hMx]
-      nlinarith [norm_nonneg α]
-    have h2 : M ^ (1 - κ) ≤ M := by
-      calc M ^ (1 - κ) ≤ M ^ (1 : ℝ) := rpow_le_rpow_of_exponent_le hM (by linarith)
-        _ = M := rpow_one M
-    calc min (1 / 2) (c₀ / (2 * A)) * M ^ (1 - κ) ≤ 1 / 2 * M := by
+  rcases le_or_gt (2 * (‖α‖ + 1) * |(y : ℝ)|) |(x : ℝ)| with hbig | hsmall
+  · have h1 := half_max_norm_le_norm_sub_of_mul_le α (x : ℂ) (y : ℂ)
+      (by simpa only [Complex.norm_intCast] using hbig)
+    simp only [Complex.norm_intCast] at h1
+    have h2 : max |(x : ℝ)| |(y : ℝ)| ^ (1 - κ) ≤ max |(x : ℝ)| |(y : ℝ)| :=
+      calc _ ≤ max |(x : ℝ)| |(y : ℝ)| ^ (1 : ℝ) :=
+            rpow_le_rpow_of_exponent_le hM (by linarith)
+        _ = _ := rpow_one _
+    calc min (1 / 2) (c₀ / (2 * (‖α‖ + 1))) * max |(x : ℝ)| |(y : ℝ)| ^ (1 - κ)
+        ≤ 1 / 2 * max |(x : ℝ)| |(y : ℝ)| := by
           gcongr
-          · exact min_le_left _ _
+          exact min_le_left _ _
       _ ≤ ‖(x : ℂ) - α * y‖ := by linarith
-  · -- Otherwise `y ≠ 0` and `M ≤ 2 A |y|`; apply Roth's theorem to `ξ = x / y`.
-    have hy : y ≠ 0 := by
-      rintro rfl
-      simp only [Int.cast_zero, abs_zero, mul_zero] at hsmall
-      linarith [abs_nonneg (x : ℝ)]
-    have hyR : (y : ℂ) ≠ 0 := Int.cast_ne_zero.2 hy
-    have hMy : M ≤ 2 * A * |(y : ℝ)| := max_le hsmall.le (by nlinarith)
-    set ξ : ℚ := (x : ℚ) / y
-    have hξ : (ξ : ℂ) = x / y := by simp [ξ]
-    have hsub : (x : ℂ) - α * y = y * ((ξ : ℂ) - α) := by
-      rw [hξ]
-      field_simp
-    have hξα : (ξ : ℂ) ≠ α := fun h ↦ hxy (by rw [hsub, h, sub_self, mul_zero])
-    have hH : mulHeight₁ ξ ≤ M := Rat.mulHeight₁_intCast_div_le x hy
-    have hHκ : M ^ (-κ) ≤ mulHeight₁ ξ ^ (-κ) :=
-      rpow_le_rpow_of_nonpos (mulHeight₁_pos ξ) hH (by linarith)
-    have hMκ : M ^ (1 - κ) = M * M ^ (-κ) := by
-      rw [sub_eq_add_neg, rpow_add hM₀, rpow_one]
-    rw [hsub, norm_mul, Complex.norm_intCast, hMκ]
-    calc min (1 / 2) (c₀ / (2 * A)) * (M * M ^ (-κ))
-        ≤ c₀ / (2 * A) * (2 * A * |(y : ℝ)| * M ^ (-κ)) := by
-          gcongr
-          exact min_le_right _ _
-      _ = |(y : ℝ)| * (c₀ * M ^ (-κ)) := by field_simp
-      _ ≤ |(y : ℝ)| * ‖(ξ : ℂ) - α‖ := by
-          gcongr
-          exact (mul_le_mul_of_nonneg_left hHκ hc₀.le).trans (h ξ hξα)
+  · refine le_trans ?_ (mul_max_abs_rpow_le_norm_sub_of_lt (by linarith) hc₀.le h hxy hsmall)
+    gcongr
+    exact min_le_right _ _
 
 /-- Let `ℓ.1 x + ℓ.2 y`, `ℓ ∈ T`, be pairwise non-proportional complex linear forms, each bounded
 below by `c max(|x|, |y|) ^ (1 - κ)` at the integer points where it does not vanish, for some
@@ -195,7 +164,7 @@ theorem _root_.MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eva
     {κ : ℝ} (hκ : 2 < κ) :
     ∃ c : ℝ, 0 < c ∧ ∀ x y : ℤ, MvPolynomial.eval ![x, y] F ≠ 0 →
       c * max |(x : ℝ)| |(y : ℝ)| ^ ((d : ℝ) - κ) ≤ |(MvPolynomial.eval ![x, y] F : ℝ)| := by
-  rcases eq_or_ne F 0 with rfl | hF₀
+  rcases eq_or_ne F 0 with rfl | _
   · exact ⟨1, one_pos, fun x y h ↦ absurd (map_zero _) h⟩
   -- Over `ℂ`, `F` splits into pairwise non-proportional linear factors.
   obtain ⟨a, ha, T, hTd, hT, hTL, hFT⟩ :=

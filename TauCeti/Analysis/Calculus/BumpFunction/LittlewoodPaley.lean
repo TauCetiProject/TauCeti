@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Distribution.TemperateGrowth
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
@@ -27,8 +29,11 @@ only finitely many nonzero terms. In finite dimension, the `k`-th derivative of 
 Keeping `φ` itself as a low-frequency piece and discarding the cutoffs with `j ≤ 0` gives the
 **inhomogeneous** partition `ψ₀ = φ, ψ₁, ψ₂, …`, which sums to `1` on all of `E`. Its partial sums
 are `∑_{j ≤ N} ψⱼ = φ (2^{-N} ·)`, each `ψ_{j+1}` is the rescaling `ψ₁ (2^{-j} ·)`, and pieces whose
-indices differ by at least a fixed `L` have disjoint supports. This is the partition used to
-decompose a tempered distribution into frequency blocks for Besov and Bessel-potential spaces.
+indices differ by at least a fixed `L` have disjoint supports, so that `∑ⱼ ψⱼ ξ ²` is bounded
+independently of `ξ`. The same holds for the pieces of the partitions of two different
+bump functions, so the two partitions differ only between pieces of nearby index. This is the
+partition used to decompose a tempered distribution into frequency blocks for Besov and
+Bessel-potential spaces.
 The sum `Ψⱼ` of the pieces with indices within `L` of `j` is then a smooth cutoff, equal to `1` on
 the support of `ψⱼ` and supported in a slightly larger ball or annulus, with the same rescaled
 derivative bounds; it localizes operators to the frequencies of a single block.
@@ -41,9 +46,18 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
-* `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces.
+* `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces,
+  also between the partitions of two bump functions.
+* `ContDiffBump.exists_sum_sq_inhomogeneousLittlewoodPaley_le`: `∑ⱼ ψⱼ ξ ²` is bounded uniformly
+  in `ξ` and in the set of indices.
+* `ContDiffBump.exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley`: on
+  the support of `ψⱼ`, `(1 + ‖ξ‖ ^ 2) ^ (t / 2) ≤ c (2^j) ^ t` with `c` independent of `j`.
 * `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le`: the uniform rescaled
-  derivative bounds for the inhomogeneous partition.
+  derivative bounds for the inhomogeneous partition, and
+  `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le`: their weighted
+  form `‖D^k ψⱼ ξ‖ (1 + ‖ξ‖) ^ k ≤ B`, so the pieces form a bounded family of symbols of order
+  zero; `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le` is the
+  same bound with the Japanese bracket weight `(1 + ‖ξ‖ ^ 2) ^ (k / 2)`.
 * `ContDiffBump.enlargedLittlewoodPaley`: the enlarged cutoffs `Ψⱼ`, sums of the neighbouring
   pieces.
 * `ContDiffBump.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley`: `Ψⱼ ψⱼ = ψⱼ`.
@@ -271,6 +285,56 @@ theorem tsupport_inhomogeneousLittlewoodPaley_succ_subset (j : ℕ) :
   refine (φ.tsupport_littlewoodPaley_subset _).trans fun ξ hξ ↦ ?_
   simpa [← zpow_natCast] using hξ
 
+/-- Every piece `ψⱼ` of the inhomogeneous partition is supported in the closed ball of radius
+`2^j φ.rOut`. -/
+theorem tsupport_inhomogeneousLittlewoodPaley_subset_closedBall (j : ℕ) :
+    tsupport (φ.inhomogeneousLittlewoodPaley j) ⊆ closedBall 0 (2 ^ j * φ.rOut) := by
+  rcases j with _ | j
+  · simpa using φ.tsupport_inhomogeneousLittlewoodPaley_zero_subset
+  · exact (φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset j).trans fun ξ hξ ↦
+      mem_closedBall_zero_iff.2 hξ.2
+
+/-- On the support of `ψⱼ`, the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)` is comparable to `2^j`,
+so every power `(1 + ‖ξ‖ ^ 2) ^ (t / 2)` is bounded by a constant independent of `j` times
+`(2^j) ^ t`. -/
+theorem exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley (t : ℝ) :
+    ∃ c, 0 ≤ c ∧ ∀ (j : ℕ) (ξ : E), ξ ∈ tsupport (φ.inhomogeneousLittlewoodPaley j) →
+      (1 + ‖ξ‖ ^ 2) ^ (t / 2) ≤ c * ((2 : ℝ) ^ j) ^ t := by
+  set c₁ := min 1 (φ.rIn / 2)
+  set c₂ := 1 + φ.rOut
+  have hc₁ : 0 < c₁ := lt_min one_pos (half_pos φ.rIn_pos)
+  have hc₂ : 0 < c₂ := by linarith [φ.rOut_pos]
+  refine ⟨max (c₁ ^ t) (c₂ ^ t), by positivity, fun j ξ hξ ↦ ?_⟩
+  set s := Real.sqrt (1 + ‖ξ‖ ^ 2)
+  have hs : (1 + ‖ξ‖ ^ 2) ^ (t / 2) = s ^ t := Real.rpow_div_two_eq_sqrt t (by positivity)
+  have h2 : (0 : ℝ) < 2 ^ j := by positivity
+  -- upper bound `s ≤ c₂ 2^j`
+  have hupper : s ≤ c₂ * 2 ^ j := by
+    have hξ' : ‖ξ‖ ≤ 2 ^ j * φ.rOut :=
+      mem_closedBall_zero_iff.1 (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j hξ)
+    have h1 : s ≤ 1 + ‖ξ‖ := sqrt_one_add_norm_sq_le ξ
+    have : (1 : ℝ) ≤ 2 ^ j := one_le_pow₀ one_le_two
+    nlinarith
+  -- lower bound `c₁ 2^j ≤ s`
+  have hlower : c₁ * 2 ^ j ≤ s := by
+    have hnorm : ‖ξ‖ ≤ s := (le_abs_self _).trans (Real.abs_le_sqrt (by linarith))
+    have hone : 1 ≤ s := Real.one_le_sqrt.2 (by nlinarith [norm_nonneg ξ])
+    rcases j with _ | j
+    · simp only [pow_zero, mul_one]
+      exact (min_le_left _ _).trans hone
+    · have hξ' := (φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset j hξ).1
+      calc c₁ * 2 ^ (j + 1) ≤ φ.rIn / 2 * 2 ^ (j + 1) := by gcongr; exact min_le_right _ _
+        _ = 2 ^ j * φ.rIn := by ring
+        _ ≤ s := hξ'.trans hnorm
+  rw [hs]
+  rcases le_total 0 t with ht | ht
+  · calc s ^ t ≤ (c₂ * 2 ^ j) ^ t := Real.rpow_le_rpow (by positivity) hupper ht
+      _ = c₂ ^ t * ((2 : ℝ) ^ j) ^ t := Real.mul_rpow hc₂.le h2.le
+      _ ≤ max (c₁ ^ t) (c₂ ^ t) * ((2 : ℝ) ^ j) ^ t := by gcongr; exact le_max_right _ _
+  · calc s ^ t ≤ (c₁ * 2 ^ j) ^ t := Real.rpow_le_rpow_of_nonpos (by positivity) hlower ht
+      _ = c₁ ^ t * ((2 : ℝ) ^ j) ^ t := Real.mul_rpow hc₁.le h2.le
+      _ ≤ max (c₁ ^ t) (c₂ ^ t) * ((2 : ℝ) ^ j) ^ t := by gcongr; exact le_max_left _ _
+
 /-- The partial sums of the inhomogeneous partition telescope:
 `∑_{j ≤ N} ψⱼ ξ = φ (2^{-N} ξ)`. -/
 theorem sum_inhomogeneousLittlewoodPaley_range (N : ℕ) (ξ : E) :
@@ -302,30 +366,31 @@ theorem hasSum_inhomogeneousLittlewoodPaley (ξ : E) :
     div_le_iff₀ (pow_pos two_pos _), mul_comm]
   exact hN'
 
-/-- **Finite overlap.** There is `L` such that the pieces `ψⱼ` and `ψₖ` have disjoint supports
-whenever `j + L ≤ k`. -/
-theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero :
+/-- **Finite overlap.** For two bump functions `φ` and `φ'`, there is `L` such that the piece `ψⱼ`
+of the partition of `φ` and the piece `ψ'ₖ` of the partition of `φ'` have disjoint supports
+whenever `j + L ≤ k`. For `φ' = φ` this is the finite overlap of a single partition. -/
+theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 : E)) :
     ∃ L : ℕ, ∀ j k : ℕ, j + L ≤ k → ∀ ξ : E,
-      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0 := by
-  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) (one_lt_two (α := ℝ))
-  have hn' : φ.rOut ≤ 2 ^ n * φ.rIn := ((div_lt_iff₀ φ.rIn_pos).1 hn).le
+      φ.inhomogeneousLittlewoodPaley j ξ * φ'.inhomogeneousLittlewoodPaley k ξ = 0 := by
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ'.rIn) (one_lt_two (α := ℝ))
+  have hn' : φ.rOut ≤ 2 ^ n * φ'.rIn := ((div_lt_iff₀ φ'.rIn_pos).1 hn).le
   refine ⟨n + 1, fun j k hjk ξ ↦ ?_⟩
   obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := Nat.exists_eq_add_one.2 (by omega)
-  rcases le_or_gt ‖ξ‖ (2 ^ k * φ.rIn) with hξ | hξ
-  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hξ, mul_zero]
+  rcases le_or_gt ‖ξ‖ (2 ^ k * φ'.rIn) with hξ | hξ
+  · rw [φ'.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hξ, mul_zero]
   · refine mul_eq_zero_of_left (φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm ?_) _
     refine le_trans ?_ hξ.le
-    calc (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ j * (2 ^ n * φ.rIn) :=
+    calc (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ j * (2 ^ n * φ'.rIn) :=
           mul_le_mul_of_nonneg_left hn' (pow_nonneg zero_le_two _)
-      _ = 2 ^ (j + n) * φ.rIn := by rw [pow_add, mul_assoc]
-      _ ≤ 2 ^ k * φ.rIn :=
-          mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ.rIn_pos.le
+      _ = 2 ^ (j + n) * φ'.rIn := by rw [pow_add, mul_assoc]
+      _ ≤ 2 ^ k * φ'.rIn :=
+          mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ'.rIn_pos.le
 
 /-- The **enlarged Littlewood–Paley cutoff** `Ψⱼ = ∑_{j + 1 - L ≤ k < j + L} ψₖ`, the sum of the
 pieces of the inhomogeneous partition whose indices are within `L` of `j`. It is supported in the
 ball of radius `2^{j+L} φ.rOut`, and for `j ≥ L` outside the ball of radius `2^{j-L} φ.rIn`. When
 the pieces whose indices differ by at least `L` have disjoint supports, as for the `L` of
-`exists_inhomogeneousLittlewoodPaley_mul_eq_zero`, it equals `1` on the support of `ψⱼ`
+`exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ`, it equals `1` on the support of `ψⱼ`
 (`enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley`), so that the Fourier multiplier
 `Δ'ⱼ` by `Ψⱼ` satisfies `Δ'ⱼ Δⱼ = Δⱼ`. -/
 noncomputable def enlargedLittlewoodPaley (L j : ℕ) (ξ : E) : ℝ :=
@@ -445,6 +510,46 @@ theorem exists_one_add_norm_sq_le_of_mem_tsupport_enlargedLittlewoodPaley (L : �
           rw [pow_add]
           ring
 
+/-- Every piece of the inhomogeneous partition takes values in `[-1, 1]`. -/
+theorem abs_inhomogeneousLittlewoodPaley_le_one (j : ℕ) (ξ : E) :
+    |φ.inhomogeneousLittlewoodPaley j ξ| ≤ 1 := by
+  rcases j with _ | j
+  · rw [inhomogeneousLittlewoodPaley_zero, abs_of_nonneg φ.nonneg]
+    exact φ.le_one
+  · rw [inhomogeneousLittlewoodPaley_succ_apply]
+    have := φ.nonneg (x := ((2 : ℝ) ^ (j + 1))⁻¹ • ξ)
+    have := φ.le_one (x := ((2 : ℝ) ^ (j + 1))⁻¹ • ξ)
+    have := φ.nonneg (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
+    have := φ.le_one (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
+    exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+
+/-- **Bounded sum of squares.** There is `L`, depending only on `φ`, with `∑ⱼ ψⱼ ξ ² ≤ L` for every
+`ξ`, over any finite set of indices: at each `ξ` at most `L` consecutive pieces are nonzero, and
+each lies in `[-1, 1]`. -/
+theorem exists_sum_sq_inhomogeneousLittlewoodPaley_le :
+    ∃ L : ℕ, ∀ (s : Finset ℕ) (ξ : E), ∑ j ∈ s, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 ≤ L := by
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
+  refine ⟨L, fun s ξ ↦ ?_⟩
+  set t := s.filter fun j ↦ φ.inhomogeneousLittlewoodPaley j ξ ≠ 0
+  have hst : ∑ j ∈ t, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 =
+      ∑ j ∈ s, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 :=
+    Finset.sum_filter_of_ne fun j _ h ↦ by simpa using h
+  have hle : ∑ j ∈ t, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 ≤ t.card := by
+    calc ∑ j ∈ t, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 ≤ ∑ _j ∈ t, (1 : ℝ) :=
+          Finset.sum_le_sum fun j _ ↦
+            (sq_le_one_iff_abs_le_one _).2 (φ.abs_inhomogeneousLittlewoodPaley_le_one j ξ)
+      _ = t.card := by simp
+  rw [← hst]
+  rcases t.eq_empty_or_nonempty with ht | ht
+  · simp [ht]
+  -- The nonzero pieces at `ξ` have indices in `[j₀, j₀ + L)`, where `j₀` is the least of them.
+  have hsub : t ⊆ Finset.Ico (t.min' ht) (t.min' ht + L) := fun j hj ↦ by
+    refine Finset.mem_Ico.2 ⟨t.min'_le j hj, lt_of_not_ge fun hjL ↦ ?_⟩
+    exact mul_ne_zero (Finset.mem_filter.1 (t.min'_mem ht)).2 (Finset.mem_filter.1 hj).2
+      (hL _ _ hjL ξ)
+  refine hle.trans ?_
+  exact_mod_cast (Finset.card_le_card hsub).trans (by simp)
+
 end HasContDiffBump
 
 section FiniteDimensional
@@ -516,6 +621,43 @@ theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le (k : ℕ) :
     refine (hB _ ξ).trans ?_
     rw [zpow_natCast]
     exact div_le_div_of_nonneg_right (le_max_left B M) (by positivity)
+
+/-- **The cutoffs are a bounded family of symbols of order zero.** The `k`-th derivative of `ψⱼ`
+satisfies `‖D^k ψⱼ ξ‖ (1 + ‖ξ‖) ^ k ≤ B` with `B` independent of `j`: the factor `2^{-jk}` from the
+derivative compensates `1 + ‖ξ‖ ≤ 2^j (1 + φ.rOut)` on the support of `ψⱼ`. -/
+theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le (k : ℕ) :
+    ∃ B, 0 ≤ B ∧ ∀ (j : ℕ) (ξ : E),
+      ‖iteratedFDeriv ℝ k (φ.inhomogeneousLittlewoodPaley j) ξ‖ * (1 + ‖ξ‖) ^ k ≤ B := by
+  obtain ⟨B, hB0, hB⟩ := φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le k
+  have hr := φ.rOut_pos
+  refine ⟨B * (1 + φ.rOut) ^ k, by positivity, fun j ξ ↦ ?_⟩
+  by_cases hξ : ξ ∈ tsupport (φ.inhomogeneousLittlewoodPaley j)
+  · have hξ' : ‖ξ‖ ≤ 2 ^ j * φ.rOut :=
+      mem_closedBall_zero_iff.1 (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j hξ)
+    calc ‖iteratedFDeriv ℝ k (φ.inhomogeneousLittlewoodPaley j) ξ‖ * (1 + ‖ξ‖) ^ k
+        ≤ B / (2 ^ j) ^ k * (2 ^ j * (1 + φ.rOut)) ^ k := by
+          refine mul_le_mul (hB j ξ) ?_ (by positivity) (by positivity)
+          gcongr
+          have : (1 : ℝ) ≤ 2 ^ j := one_le_pow₀ one_le_two
+          nlinarith
+      _ = B * (1 + φ.rOut) ^ k := by
+          rw [mul_pow]
+          field_simp
+  · rw [Function.notMem_support.1 (fun h ↦ hξ (support_iteratedFDeriv_subset (𝕜 := ℝ) k h)),
+      norm_zero, zero_mul]
+    positivity
+
+/-- The bound `exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le` with the Japanese
+bracket weight: `‖D^k ψⱼ ξ‖ (1 + ‖ξ‖ ^ 2) ^ (k / 2) ≤ B` with `B` independent of `j`. -/
+theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le (k : ℕ) :
+    ∃ B, 0 ≤ B ∧ ∀ (j : ℕ) (ξ : E),
+      ‖iteratedFDeriv ℝ k (φ.inhomogeneousLittlewoodPaley j) ξ‖ *
+        (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ B := by
+  obtain ⟨B, hB0, hB⟩ := φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le k
+  refine ⟨B, hB0, fun j ξ ↦ le_trans ?_ (hB j ξ)⟩
+  rw [Real.rpow_div_two_eq_sqrt _ (by positivity), Real.rpow_natCast]
+  gcongr
+  exact sqrt_one_add_norm_sq_le ξ
 
 /-- Each enlarged cutoff is compactly supported. -/
 theorem hasCompactSupport_enlargedLittlewoodPaley (L j : ℕ) :

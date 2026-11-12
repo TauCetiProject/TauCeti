@@ -313,9 +313,9 @@ private theorem IsNormalDomain.sameRay_riemannianLog_of_enorm_eq_add_pathELength
     rw [← contMDiffOn_iff_contDiffOn]
     exact (h.contMDiffOn_riemannianLog.of_le (by simp)).comp hγ hγU
   have hdom : MapsTo (riemannianLog I M p U ∘ γ) (Icc c d) U := fun u hu ↦
-    h.riemannianLog_mem (hγU hu)
+    riemannianLog_mem (hγU hu)
   have hEq : EqOn (riemannianExp I M p ∘ (riemannianLog I M p U ∘ γ)) γ (Icc c d) :=
-    fun u hu ↦ h.riemannianExp_riemannianLog (hγU hu)
+    fun u hu ↦ riemannianExp_riemannianLog (hγU hu)
   -- the radial norm grows by the arc length of the curve
   have hr : ∀ u ∈ Icc c d, ‖(riemannianLog I M p U ∘ γ) u‖ =
       ‖(riemannianLog I M p U ∘ γ) c‖ + ∫ s in c..u,
@@ -330,7 +330,6 @@ private theorem IsNormalDomain.sameRay_riemannianLog_of_enorm_eq_add_pathELength
     rw [← pathELength_congr (hEq.mono (Icc_subset_Icc_right hu.2)),
       ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin
         (contMDiffOn_riemannianExp_comp h hc hdom)
-        (uniqueMDiffOn_iff_uniqueDiffOn.2 (uniqueDiffOn_Icc hcd)) hu.1
         (Icc_subset_Icc_right hu.2), ← ofReal_norm, ← ofReal_norm,
       ← ENNReal.ofReal_add (norm_nonneg _) hnn] at h1
     exact (ENNReal.ofReal_eq_ofReal_iff (norm_nonneg _) (add_nonneg (norm_nonneg _) hnn)).1 h1
@@ -425,7 +424,7 @@ theorem IsNormalDomain.eq_riemannianExp_smul_of_pathELength_eq_of_piecewise
     {t : ℝ} (ht : t ∈ Icc a b) :
     γ t = riemannianExp I M p ((‖riemannianLog I M p U (γ t)‖ / ‖v‖) • v) := by
   rw [← h.riemannianLog_eq_smul_of_pathELength_eq_of_piecewise hv hγ hγU hγa hγb hlen ht,
-    h.riemannianExp_riemannianLog (hγU ht)]
+    riemannianExp_riemannianLog (hγU ht)]
 
 /-- **Piecewise `C¹` minimizers are reparametrized radial geodesics.** A piecewise `C¹` curve on
 `[a, b]` from the centre of a normal neighbourhood to `exp_p v`, staying in the neighbourhood and
