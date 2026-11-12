@@ -40,13 +40,14 @@ theorem ordProj_index_eq_ordProj_natCard {G : Type*} [Group G]
 /-- The `ℓ`-adic valuation of the index of a subgroup is at most that of any subgroup it contains,
 provided the smaller subgroup has nonzero index. -/
 theorem padicValNat_index_le_of_le {G : Type*} [Group G] {A B : Subgroup G} (h : A ≤ B)
-    (hA : A.index ≠ 0) (ℓ : ℕ) [Fact ℓ.Prime] :
-    (padicValNat ℓ B.index : ℕ∞) ≤ padicValNat ℓ A.index := by
+    (hA : A.index ≠ 0) (ℓ : ℕ) :
+    padicValNat ℓ B.index ≤ padicValNat ℓ A.index := by
   have hdvd := Subgroup.index_dvd_of_le h
-  simp only [Nat.padicValNat_def]
-  rw [multiplicity_eq_emultiplicity (ne_zero_of_dvd_ne_zero hA hdvd),
-    multiplicity_eq_emultiplicity hA]
-  exact emultiplicity_le_emultiplicity_of_dvd_right hdvd
+  rcases eq_or_ne ℓ 1 with rfl | hℓ
+  · simp [Nat.padicValNat_def]
+  rw [Nat.padicValNat_def, Nat.padicValNat_def,
+    ← Nat.pow_dvd_iff_le_multiplicity hℓ hA]
+  exact (pow_multiplicity_dvd ℓ B.index).trans hdvd
 
 /-- For subgroups `A ≤ B` with `A` of nonzero index, the `ℓ`-adic valuation of the index of `A`
 is the sum of the valuations of the relative index of `A` in `B` and of the index of `B`. -/
