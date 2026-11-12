@@ -30,6 +30,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 -- averages, `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`, is used only inside the proofs of
 -- the translation and dilation invariance of the maximal function.
 import TauCeti.MeasureTheory.Integral.Average
+-- `TauCeti.Analysis.Normed.Module.Ball` is imported privately: it supplies
+-- `TauCeti.preimage_smul_ball_smul_norm` inside the proof of the dilation invariance.
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # The Hardy–Littlewood maximal function
@@ -346,12 +349,10 @@ factor `|t|ⁿ`. -/
 theorem maximalFunction_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] {μ : Measure E}
     [μ.IsAddHaarMeasure] (f : E → F) {t : ℝ} (ht : t ≠ 0) (x : E) :
-    maximalFunction μ (fun y => f (t • y)) x = maximalFunction μ f (t • x) := by
-  refine maximalFunction_comp_of_map_eq_smul (e := MeasurableEquiv.smul₀ t ht)
+    maximalFunction μ (fun y => f (t • y)) x = maximalFunction μ f (t • x) :=
+  maximalFunction_comp_of_map_eq_smul (e := MeasurableEquiv.smul₀ t ht)
     (Measure.map_addHaar_smul μ ht) (by simp [ht]) ENNReal.ofReal_ne_top (norm_pos_iff.2 ht)
-    (fun x r => ?_) f x
-  rw [MeasurableEquiv.coe_smul₀, Set.preimage_smul₀ ht, smul_ball (inv_ne_zero ht),
-    inv_smul_smul₀ ht, ← mul_assoc, norm_inv, inv_mul_cancel₀ (norm_ne_zero_iff.2 ht), one_mul]
+    (fun x r => preimage_smul_ball_smul_norm x (norm_pos_iff.2 ht) r) f x
 
 end Invariance
 

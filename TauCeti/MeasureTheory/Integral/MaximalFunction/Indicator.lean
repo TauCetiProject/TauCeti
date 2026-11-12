@@ -86,8 +86,8 @@ theorem maximalFunction_indicator_Icc_of_mem_Ioo {x : ℝ} (hx : x ∈ Ioo a b) 
           (setLAverage_le_maximalFunction _ _ x hr)
 
 /-- To the right of the interval, the maximal function of its indicator is
-`(b - a) / (2 (x - a))`. The supremum is attained at the radius `x - a`, the smallest one whose
-ball centred at `x` covers the interval. -/
+`(b - a) / (2 (x - a))`. The supremum is attained at the radius `x - a`, whose ball
+`(a, 2 x - a)` contains `(a, b]`. -/
 theorem maximalFunction_indicator_Icc_of_right_le (hab : a ≤ b) {x : ℝ} (hx : b ≤ x) :
     maximalFunction volume ((Icc a b).indicator (1 : ℝ → ℝ)) x =
       ENNReal.ofReal ((b - a) / (2 * (x - a))) := by
@@ -136,10 +136,9 @@ theorem maximalFunction_indicator_Icc_add_sub (x : ℝ) :
   have hsymm : (fun y => (Icc a b).indicator (1 : ℝ → ℝ) ((-1 : ℝ) • y + (a + b))) =
       (Icc a b).indicator 1 := by
     ext y
-    simp only [indicator_apply, mem_Icc, smul_eq_mul, neg_one_mul]
-    congr 1
-    exact propext ⟨fun h => ⟨by linarith [h.2], by linarith [h.1]⟩,
-      fun h => ⟨by linarith [h.2], by linarith [h.1]⟩⟩
+    have hmem : -y + (a + b) ∈ Icc a b ↔ y ∈ Icc a b := by
+      constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+    simp only [indicator_apply, smul_eq_mul, neg_one_mul, hmem, Pi.one_apply]
   have h := maximalFunction_comp_smul (μ := volume)
     (fun z => (Icc a b).indicator (1 : ℝ → ℝ) (z + (a + b))) (t := -1) (by norm_num) x
   rw [hsymm, maximalFunction_comp_add_right] at h
@@ -151,8 +150,8 @@ theorem maximalFunction_indicator_Icc_of_le_left (hab : a ≤ b) {x : ℝ} (hx :
     maximalFunction volume ((Icc a b).indicator (1 : ℝ → ℝ)) x =
       ENNReal.ofReal ((b - a) / (2 * (b - x))) := by
   rw [← maximalFunction_indicator_Icc_add_sub,
-    maximalFunction_indicator_Icc_of_right_le hab (by linarith)]
-  ring_nf
+    maximalFunction_indicator_Icc_of_right_le hab (by linarith),
+    show a + b - x - a = b - x by ring]
 
 /-- **The maximal function is not bounded on `L¹`.** The indicator of `[a, b]` is integrable, but
 its maximal function is not: its tail `(b - a) / (2 (x - a))` decays only like `1 / x`. -/
