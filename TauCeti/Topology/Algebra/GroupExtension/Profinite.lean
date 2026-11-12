@@ -35,8 +35,13 @@ to equivalence of extensions.
 The continuous section is the only step that uses the topology of `E` in an essential way. It comes
 from the continuous section of a profinite group over the quotient by a closed subgroup, applied to
 the kernel, which is closed as the preimage of `1` under the continuous projection onto the
-Hausdorff base `G`. Compactness of `M` enters only in `TauCeti.GroupExtension.continuous_factorSet`
-and `TauCeti.GroupExtension.factorSetContinuousMulEquiv`. Nothing asks the kernel to be *open*: an
+Hausdorff base `G`. When the extension is decomposed as a twisted product, compactness of `M`
+enters only to turn the continuity of the inclusion into an embedding, in order to apply
+`TauCeti.GroupExtension.continuous_factorSet` in
+`TauCeti.GroupExtension.exists_continuous_factorSet`, and to make the twisted product compact in
+`TauCeti.GroupExtension.factorSetContinuousMulEquiv`
+(alongside `TauCeti.GroupExtension.isClosed_ker_rightHom` and
+`TauCeti.ProfiniteGroupExtension.ofFactorSet`). Nothing asks the kernel to be *open*: an
 open kernel would force `G` to be discrete, whereas the extensions this dictionary is used on have
 infinite `G`.
 
