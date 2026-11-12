@@ -23,7 +23,7 @@ With the arithmetic normalization of the slash action, the unnormalised diagonal
 `f ∣[k] diag(d, 1) = d ^ (k - 1) V_d f`.
 
 Consequently its `n`-th Fourier coefficient is `d ^ (k - 1) a_(n / d)` when `d ∣ n`, and zero
-otherwise. This is the second term in the roadmap's recurrence
+otherwise. This is the second term in the classical recurrence
 `a_n(T_p f) = a_(p n)(f) + χ(p) p ^ (k - 1) a_(n / p)(f)`; the factor `χ(p)` comes separately
 from the diamond operator and is not part of the diagonal slash.
 
@@ -100,13 +100,7 @@ theorem hasSum_slash_natDiagGL_d_one [NeZero d] (k : ℤ) {N : ℕ} (hN : 0 < N)
   rw [slash_natDiagGL_d_one_apply]
   have hs := (UpperHalfPlane.hasSum_qExpansion hN' hfper hfhol hfbdd (scaleGL d • τ)).mul_left
     ((d : ℂ) ^ (k - 1))
-  have hq : Function.Periodic.qParam N ((scaleGL d • τ : ℍ) : ℂ) =
-      Function.Periodic.qParam N (τ : ℂ) ^ d := by
-    rw [coe_scaleGL_smul]
-    simp only [Function.Periodic.qParam, ← Complex.exp_nat_mul]
-    congr 1
-    ring
-  rw [hq] at hs
+  rw [qParam_scaleGL_smul] at hs
   have hinj : Injective fun j : ℕ ↦ d * j := fun _ _ h ↦ Nat.eq_of_mul_eq_mul_left hd h
   refine (hinj.hasSum_iff fun x hx ↦ ?_).mp (hs.congr_fun fun j ↦ ?_)
   · have hnd : ¬d ∣ x := fun ⟨j, hj⟩ ↦ hx ⟨j, hj.symm⟩
@@ -138,7 +132,7 @@ theorem _root_.ModularForm.qExpansion_slash_natDiagGL_d_one
     exact bot_le
   rw [slash_natDiagGL_d_one_eq_smul_levelRaise hle f,
     UpperHalfPlane.qExpansion_smul
-      (ModularForm.analyticAt_cuspFunction_levelRaise h𝒢 hle f),
+      (ModularForm.analyticAt_cuspFunction_levelRaise (by simpa using nsmul_mem h𝒢 d) hle f),
     ModularForm.qExpansion_levelRaise h𝒢 hle]
 
 /-- The coefficient form of `qExpansion_slash_natDiagGL_d_one`: the diagonal term contributes

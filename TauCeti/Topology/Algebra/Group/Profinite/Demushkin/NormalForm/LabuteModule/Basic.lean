@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.Padics.UnitsDecomposition.Quotient
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Orientation
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.CharacterKernel
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Module
@@ -96,13 +97,35 @@ theorem orientationNeTwo_comp_mk_freeProPGen_one (hn : 1 < n) :
     orientationNeTwo_presentedProPGen_one q n u hu hn]
 
 /-- **The kernel of the standard orientation of the `q ≠ 2` normal form on the free pro-`p`
-group.** For `1 < n` and `q = p^f`, with `f ≥ 2` when `p = 2`, the kernel on
+group.** For `q = p^f`, with `f ≥ 2` when `p = 2`, the kernel on
 `F = freeProP p (Fin n)` of the character with `χ(x₂) = (1 - q)⁻¹` and `χ(x_i) = 1` otherwise is
-the closed normal closure of the generators `x_i`, `i ≠ 2`: this is Labute's `X = ker χ`. -/
-theorem ker_orientationNeTwo_comp_mk (hn : 1 < n) {f : ℕ} (hq : q = p ^ f) (hf₂ : p = 2 → 2 ≤ f)
+the closed normal closure of the generators `x_i`, `i ≠ 2`: this is Labute's `X = ker χ`. For
+`n ≤ 1` there is no generator `x₂`, the character is trivial and both sides are `F`. -/
+theorem ker_orientationNeTwo_comp_mk {f : ℕ} (hq : q = p ^ f) (hf₂ : p = 2 → 2 ≤ f)
     (hu' : (u : ℤ_[p]) * (1 - (q : ℤ_[p])) = 1) :
     ((orientationNeTwo q n u hu).comp (presentedProP.mk p _)).toMonoidHom.ker =
       (Subgroup.normalClosure (freeProPGen p n '' {i | i ≠ 1})).topologicalClosure := by
+  rcases Nat.lt_or_ge 1 n with hn | hn
+  swap
+  · -- Without `x₂` the character kills every generator, so both sides are the whole group.
+    have hgen : ∀ i, freeProPGen p n i ∈
+        Subgroup.normalClosure (freeProPGen p n '' {i | i ≠ 1}) := fun i ↦ by
+      by_cases hi : i = 1
+      · rw [hi, freeProPGen_eq_one_of_le p hn]
+        exact one_mem _
+      · exact Subgroup.subset_normalClosure ⟨i, hi, rfl⟩
+    have htop : (Subgroup.normalClosure (freeProPGen p n '' {i | i ≠ 1})).topologicalClosure =
+        ⊤ := by
+      have := topologicalClosure_closure_eq_top_of_range_freeProPGen_subset p
+        (s := (Subgroup.normalClosure (freeProPGen p n '' {i | i ≠ 1}) : Set _))
+        (by rintro _ ⟨i, rfl⟩; exact hgen i)
+      rwa [Subgroup.closure_eq] at this
+    rw [htop, eq_top_iff, ← htop]
+    exact Subgroup.topologicalClosure_minimal _
+      (Subgroup.normalClosure_le_normal (by
+        rintro _ ⟨i, hi, rfl⟩
+        exact orientationNeTwo_comp_mk_freeProPGen_of_ne q n u hu hi))
+      ((orientationNeTwo q n u hu).comp (presentedProP.mk p _)).isClosed_ker
   subst hq
   push_cast at hu'
   refine freeProP.ker_eq_topologicalClosure_normalClosure_image_freeProPGen _
@@ -113,14 +136,14 @@ theorem ker_orientationNeTwo_comp_mk (hn : 1 < n) {f : ℕ} (hq : q = p ^ f) (hf
   exact not_isOfFinOrder_of_val_mul_one_sub_pow_eq_one hf₂ hu'
 
 /-- **Labute's module `E` of the `q ≠ 2` normal form is spanned by the classes of the generators
-other than `x₂`.** For `1 < n` and `q = p^f`, with `f ≥ 2` when `p = 2`, let `X` be the kernel on
+other than `x₂`.** For `q = p^f`, with `f ≥ 2` when `p = 2`, let `X` be the kernel on
 `F = freeProP p (Fin n)` of the standard orientation, the character with
 `χ(x₂) = (1 - q)⁻¹` and `χ(x_i) = 1` otherwise. Then `E = X^{ab}` is spanned over
 `Λ = ℤ_p[[F ⧸ X]]`, for the module structure `TauCeti.IsProP.completedGroupAlgebraModule` through
 conjugation, by the classes `⟦y_i⟧` of the generators `x_i`, `i ≠ 2`, the basis elements lying in
 `X` (Labute, §4, p. 121). -/
 theorem span_topologicalAbelianization_ker_orientationNeTwo_comp_mk_eq_top
-    (hn : 1 < n) {f : ℕ} (hq : q = p ^ f) (hf₂ : p = 2 → 2 ≤ f)
+    {f : ℕ} (hq : q = p ^ f) (hf₂ : p = 2 → 2 ≤ f)
     (hu' : (u : ℤ_[p]) * (1 - (q : ℤ_[p])) = 1) :
     haveI := ((orientationNeTwo q n u hu).comp (presentedProP.mk p _)).isClosed_ker
     letI := ((isProP_freeProP p (Fin n)).topologicalAbelianization
@@ -137,7 +160,7 @@ theorem span_topologicalAbelianization_ker_orientationNeTwo_comp_mk_eq_top
           (Subtype.val ⁻¹' (freeProPGen p n '' {i | i ≠ 1})))) = ⊤ :=
   (isProP_freeProP p (Fin n)).span_completedGroupAlgebraModule_topologicalAbelianization_eq_top _
     ((finite_range_freeProPGen p n).subset (Set.image_subset_range _ _))
-    (ker_orientationNeTwo_comp_mk q n u hu hn hq hf₂ hu').symm
+    (ker_orientationNeTwo_comp_mk q n u hu hq hf₂ hu').symm
 
 end NeTwo
 
@@ -169,13 +192,13 @@ theorem orientationTwoEven_comp_mk_freeProPGen_three (hn : 3 < n) :
     orientationTwoEven_presentedProPGen_three a f n v u hn]
 
 /-- **The kernel of the orientation of the `q = 2`, `n` even normal form with procyclic image, on
-the free pro-`2` group.** For `3 < n`, `4 ∣ α ≠ 0` and `χ(x₄) = χ(x₂)^l`, the kernel on
+the free pro-`2` group.** For `3 < n`, `α ≠ 0` and `χ(x₄) = χ(x₂)^l`, the kernel on
 `F = freeProP 2 (Fin n)` of the character with `χ(x₂) = -(1 + α)⁻¹`, `χ(x₄) = u` and `χ(x_i) = 1`
 otherwise is the closed normal closure of the generators `x_i`, `i ≠ 2, 4`, together with
-`x₄ x₂^{-l}`: this is Labute's `X = ker χ` in the branch `Im χ = U^[v₂(α)]`. -/
+`x₄ x₂^{-l}`. The image of `χ` is the closed procyclic group generated by `v`; when `4 ∣ α` it
+is `U^[v₂(α)]`, and this is Labute's `X = ker χ` in that branch. -/
 theorem ker_orientationTwoEven_comp_mk (hn : 3 < n) (hv : (v : ℤ_[2]) * (1 + (a : ℤ_[2])) = -1)
-    (ha₄ : 4 ∣ (a : ℤ_[2])) (ha : (a : ℤ_[2]) ≠ 0) {l : ℤ_[2]}
-    (hl : isProP_units_padicInt_two.padicPow v l = u) :
+    (ha : (a : ℤ_[2]) ≠ 0) {l : ℤ_[2]} (hl : isProP_units_padicInt_two.padicPow v l = u) :
     ((orientationTwoEven a f n v u).comp (presentedProP.mk 2 _)).toMonoidHom.ker =
       (Subgroup.normalClosure (insert
         (freeProPGen 2 n 3 * ((isProP_freeProP 2 (Fin n)).padicPow (freeProPGen 2 n 1) l)⁻¹)
@@ -185,7 +208,19 @@ theorem ker_orientationTwoEven_comp_mk (hn : 3 < n) (hv : (v : ℤ_[2]) * (1 + (
     (fun i hi₁ hi₃ ↦ orientationTwoEven_comp_mk_freeProPGen_of_ne a f n v u hi₁ hi₃) ?_ ?_
   · rw [ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass,
       orientationTwoEven_comp_mk_freeProPGen_one a f n v u (by omega)]
-    exact not_isOfFinOrder_of_val_mul_one_add_eq_neg_one hv ha₄ ha
+    intro hfin
+    have hmem : v ∈ CommGroup.torsion ℤ_[2]ˣ := (CommGroup.mem_torsion _).2 hfin
+    rw [torsion_padicIntUnits_two] at hmem
+    obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.1 hmem
+    rcases Int.even_or_odd k with h | h
+    · rw [h.neg_one_zpow] at hk
+      subst hk
+      rw [Units.val_one, one_mul] at hv
+      have : ((a + 2 : ℕ) : ℤ_[2]) = 0 := by push_cast; linear_combination hv
+      exact absurd (Nat.cast_eq_zero.1 this) (by omega)
+    · rw [h.neg_one_zpow] at hk
+      subst hk
+      exact ha (by simpa using hv)
   · have h := (isProP_freeProP 2 (Fin n)).map_padicPow isProP_units_padicInt_two
       ((orientationTwoEven a f n v u).comp (presentedProP.mk 2 _) : freeProP 2 (Fin n) →* ℤ_[2]ˣ)
       (map_continuous ((orientationTwoEven a f n v u).comp (presentedProP.mk 2 _)))
@@ -196,14 +231,15 @@ theorem ker_orientationTwoEven_comp_mk (hn : 3 < n) (hv : (v : ℤ_[2]) * (1 + (
       orientationTwoEven_comp_mk_freeProPGen_one a f n v u (by omega), hl]
 
 /-- **Labute's module `E` of the `q = 2`, `n` even normal form with procyclic image is spanned by
-the classes of the generators other than `x₂`, `x₄` and of `x₄ x₂^{-l}`.** For `3 < n`, `4 ∣ α ≠ 0`
+the classes of the generators other than `x₂`, `x₄` and of `x₄ x₂^{-l}`.** For `3 < n`, `α ≠ 0`
 and `χ(x₄) = χ(x₂)^l`, let `X` be the kernel on `F = freeProP 2 (Fin n)` of the character with
 `χ(x₂) = -(1 + α)⁻¹`, `χ(x₄) = u` and `χ(x_i) = 1` otherwise. Then `E = X^{ab}` is spanned over
 `Λ = ℤ_2[[F ⧸ X]]`, for the module structure `TauCeti.IsProP.completedGroupAlgebraModule` through
 conjugation, by the classes of `x_i`, `i ≠ 2, 4`, and of `x₄ x₂^{-l}` (Labute, §4, p. 121, the
-branch `Im χ = U^[v₂(α)]`). -/
+branch `Im χ = U^[v₂(α)]`, which is the image of `χ`, the closed procyclic group generated by `v`,
+when `4 ∣ α`). -/
 theorem span_topologicalAbelianization_ker_orientationTwoEven_comp_mk_eq_top
-    (hn : 3 < n) (hv : (v : ℤ_[2]) * (1 + (a : ℤ_[2])) = -1) (ha₄ : 4 ∣ (a : ℤ_[2]))
+    (hn : 3 < n) (hv : (v : ℤ_[2]) * (1 + (a : ℤ_[2])) = -1)
     (ha : (a : ℤ_[2]) ≠ 0) {l : ℤ_[2]} (hl : isProP_units_padicInt_two.padicPow v l = u) :
     haveI := ((orientationTwoEven a f n v u).comp (presentedProP.mk 2 _)).isClosed_ker
     letI := ((isProP_freeProP 2 (Fin n)).topologicalAbelianization
@@ -222,7 +258,7 @@ theorem span_topologicalAbelianization_ker_orientationTwoEven_comp_mk_eq_top
             (freeProPGen 2 n '' {i | i ≠ 1 ∧ i ≠ 3})))) = ⊤ :=
   (isProP_freeProP 2 (Fin n)).span_completedGroupAlgebraModule_topologicalAbelianization_eq_top _
     (((finite_range_freeProPGen 2 n).subset (Set.image_subset_range _ _)).insert _)
-    (ker_orientationTwoEven_comp_mk a f n v u hn hv ha₄ ha hl).symm
+    (ker_orientationTwoEven_comp_mk a f n v u hn hv ha hl).symm
 
 end TwoEven
 
