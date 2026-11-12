@@ -187,7 +187,7 @@ theorem ncard_ofPred_singularValues_eq (T : E →ₗ[𝕜] F) {s : ℝ} (hs : 0 
 /-- A value `s ≤ 0` occurs among the singular values of `T` either never (`s < 0`) or infinitely
 often (`s = 0`, from the dimension of the source on), so its `ncard` is `0`. -/
 @[simp]
-theorem ncard_ofPred_singularValues_of_nonpos (T : E →ₗ[𝕜] F) {s : ℝ} (hs : s ≤ 0) :
+theorem ncard_ofPred_singularValues_eq_zero_of_nonpos (T : E →ₗ[𝕜] F) {s : ℝ} (hs : s ≤ 0) :
     {i | T.singularValues i = s}.ncard = 0 := by
   rcases hs.lt_or_eq with hs | rfl
   · have hempty : {i | T.singularValues i = s} = ∅ :=
@@ -204,8 +204,8 @@ theorem singularValues_adjoint (A : E →ₗ[𝕜] F) :
   refine Finsupp.eq_of_antitone_of_ncard_eq (singularValues_antitone _)
     (singularValues_antitone _) fun s hs ↦ ?_
   rcases hs.lt_or_gt with hs | hs
-  · rw [ncard_ofPred_singularValues_of_nonpos _ hs.le,
-      ncard_ofPred_singularValues_of_nonpos _ hs.le]
+  · rw [ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs.le,
+      ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs.le]
   · rw [ncard_ofPred_singularValues_eq _ hs, ncard_ofPred_singularValues_eq _ hs, adjoint_adjoint,
       finrank_eigenspace_comp_comm A (adjoint A) (by simpa using hs.ne')]
 

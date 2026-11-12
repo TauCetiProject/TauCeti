@@ -499,8 +499,8 @@ theorem principalSines_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
   rw [principalSines_def, principalSines_def]
   rcases hs.lt_or_gt with hs | hs
   · -- No principal sine is negative.
-    rw [LinearMap.ncard_ofPred_singularValues_of_nonpos _ hs.le,
-      LinearMap.ncard_ofPred_singularValues_of_nonpos _ hs.le]
+    rw [LinearMap.ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs.le,
+      LinearMap.ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs.le]
   rw [LinearMap.ncard_ofPred_singularValues_eq _ hs, LinearMap.ncard_ofPred_singularValues_eq _ hs]
   have ht₀ : ((s ^ 2 : ℝ) : 𝕜) ≠ 0 := by exact_mod_cast (pow_pos hs 2).ne'
   by_cases ht₁ : ((s ^ 2 : ℝ) : 𝕜) = 1

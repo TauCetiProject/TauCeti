@@ -163,8 +163,9 @@ theorem ncard_ofPred_singularValues_prodMap_withLpMap (A : E₁ →ₗ[𝕜] F�
     {i | ((A.prodMap B).withLpMap 2).singularValues i = s}.ncard =
       {i | A.singularValues i = s}.ncard + {i | B.singularValues i = s}.ncard := by
   rcases le_or_gt s 0 with hs | hs
-  · rw [ncard_ofPred_singularValues_of_nonpos _ hs, ncard_ofPred_singularValues_of_nonpos _ hs,
-      ncard_ofPred_singularValues_of_nonpos _ hs]
+  · rw [ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs,
+      ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs,
+      ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs]
   rw [ncard_ofPred_singularValues_eq _ hs, ncard_ofPred_singularValues_eq _ hs,
     ncard_ofPred_singularValues_eq _ hs, adjoint_prodMap_withLpMap, ← withLpMap_comp,
     prodMap_comp, finrank_eigenspace_prodMap_withLpMap]
