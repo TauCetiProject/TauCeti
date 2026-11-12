@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Algebra.Cluster.CoefficientSemifield.Tropical
 public import TauCeti.Algebra.Cluster.YSeed.Basic
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.FrozenSupport
+
+import TauCeti.Algebra.Order.Ring.PosPartMul
 
 import Mathlib.Data.Finsupp.SMulWithZero
-import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -20,9 +22,7 @@ vectors as frozen columns identifies Y-seeds over `Trop J` with extended exchang
 on `K ⊕ J` whose frozen columns have finite support. The principal matrix and its chosen
 symmetrizer are retained. The mutable and frozen index types can both be infinite.
 
-The correspondence intertwines the existing coefficient mutation with the existing matrix
-mutation. Matrix mutation is not defined by transporting coefficient mutation. Its direct
-entry formula also proves preservation of finite frozen support.
+The correspondence intertwines coefficient mutation with extended exchange-matrix mutation.
 
 ## References
 
@@ -38,28 +38,6 @@ variable {K K' J J' : Type*}
 
 namespace ExchangeMatrix
 
-/-- Each frozen column has finite support. There is no global finite frozen index set
-when the mutable index type is infinite. -/
-def HasFiniteFrozenSupport (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) : Prop :=
-  ∀ k, (Function.support fun j ↦ B.matrix (Sum.inr j) k).Finite
-
-/-- A finite frozen index type makes every frozen column finitely supported. -/
-theorem hasFiniteFrozenSupport_of_finite [Finite J]
-    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) :
-    B.HasFiniteFrozenSupport :=
-  fun _ ↦ Set.toFinite _
-
-/-- Read a frozen column as a finitely supported exponent vector. -/
-noncomputable def frozenColumn (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
-    (h : B.HasFiniteFrozenSupport) (k : K) : J →₀ ℤ :=
-  Finsupp.ofSupportFinite (fun j ↦ B.matrix (Sum.inr j) k) (h k)
-
-@[simp]
-theorem frozenColumn_apply (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
-    (h : B.HasFiniteFrozenSupport) (k : K) (j : J) :
-    B.frozenColumn h k j = B.matrix (Sum.inr j) k :=
-  (rfl)
-
 /-- Recover a tropical Y-seed from a finite-support extended matrix, retaining the chosen
 principal symmetrizer. -/
 noncomputable def toTropicalYSeed
@@ -73,39 +51,13 @@ theorem toTropicalYSeed_coefficient_toAdd
     (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
     (h : B.HasFiniteFrozenSupport) (k : K) (j : J) :
     ((B.toTropicalYSeed h).coefficient k).toAdd j = B.matrix (Sum.inr j) k :=
-  (rfl)
+  B.frozenColumn_apply h k j
 
 @[simp]
 theorem toTropicalYSeed_exchangeMatrix
     (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
     (h : B.HasFiniteFrozenSupport) : (B.toTropicalYSeed h).exchangeMatrix = B.principal :=
   (rfl)
-
-/-- Every entry in a mutated frozen column is supported on the union of that column's
-old support and the mutation column's old support. -/
-theorem support_mutation_frozen_subset [DecidableEq K] [DecidableEq J]
-    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) (k l : K) :
-    (Function.support fun j ↦ (B.mutation k).matrix (Sum.inr j) l) ⊆
-      (Function.support fun j ↦ B.matrix (Sum.inr j) l) ∪
-        Function.support fun j ↦ B.matrix (Sum.inr j) k := by
-  intro j hj
-  by_contra h
-  simp only [Set.mem_union, Function.mem_support, not_or, not_not] at h
-  exact hj (by simp [mutation_matrix, matrixMutation_apply, h.1, h.2])
-
-/-- Matrix mutation preserves finite support of every frozen column, directly from its
-entry formula. -/
-theorem HasFiniteFrozenSupport.mutation [DecidableEq K] [DecidableEq J]
-    {B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)}
-    (h : B.HasFiniteFrozenSupport) (k : K) : (B.mutation k).HasFiniteFrozenSupport :=
-  fun l ↦ ((h l).union (h k)).subset (B.support_mutation_frozen_subset k l)
-
-/-- An initially zero frozen row is fixed by mutation. -/
-theorem mutation_frozen_row_eq_zero [DecidableEq K] [DecidableEq J]
-    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) {j : J}
-    (h : ∀ l, B.matrix (Sum.inr j) l = 0) (k l : K) :
-    (B.mutation k).matrix (Sum.inr j) l = 0 := by
-  simp [mutation_matrix, matrixMutation_apply, h]
 
 end ExchangeMatrix
 
@@ -135,8 +87,9 @@ theorem toExtendedMatrix_symmetrizer (s : YSeed K (Trop J)) :
 
 /-- The matrix presentation of a tropical Y-seed has finitely supported frozen columns. -/
 theorem toExtendedMatrix_hasFiniteFrozenSupport (s : YSeed K (Trop J)) :
-    s.toExtendedMatrix.HasFiniteFrozenSupport :=
-  fun k ↦ (s.coefficient k).toAdd.hasFiniteSupport
+    s.toExtendedMatrix.HasFiniteFrozenSupport := by
+  rw [ExchangeMatrix.hasFiniteFrozenSupport_iff]
+  exact fun k ↦ (s.coefficient k).toAdd.hasFiniteSupport
 
 @[simp]
 theorem toExtendedMatrix_principal (s : YSeed K (Trop J)) :
@@ -153,7 +106,7 @@ theorem toTropicalYSeed_toExtendedMatrix (s : YSeed K (Trop J)) :
   · funext k
     apply Multiplicative.toAdd.injective
     ext j
-    rfl
+    simp
   · exact s.toExtendedMatrix_principal
 
 /-- The tropical coefficient is the finite product of the generators raised to the frozen
@@ -169,22 +122,8 @@ theorem coefficient_eq_prod_generator (s : YSeed K (Trop J)) (k : K) :
   simpa only [hid, MonoidHom.id_apply, ofAdd_toAdd] using
     freeAbelianCharEquiv_symm_apply_ofAdd (M := Trop J) Trop.generator (s.coefficient k).toAdd
 
-/-- Tropical auxiliary addition produces the correction in rectangular matrix mutation. -/
-private theorem tropical_mutation_correction (c b : ℤ) :
-    b⁺ * c + (-b) * min c 0 = c⁺ * b⁺ - c⁻ * b⁻ := by
-  by_cases hc : 0 ≤ c
-  · simp only [posPart_def, negPart_def, max_eq_left hc,
-      max_eq_right (neg_nonpos.mpr hc), min_eq_right hc, mul_zero]
-    ring
-  · have hc' : c ≤ 0 := le_of_not_ge hc
-    have hb := posPart_sub_negPart b
-    simp only [posPart_def, negPart_def] at hb
-    simp only [posPart_def, negPart_def, max_eq_right hc',
-      max_eq_left (neg_nonneg.mpr hc'), min_eq_left hc', zero_mul, zero_sub]
-    nlinarith
-
 /-- Reading tropical exponents intertwines coefficient mutation with the actual extended
-matrix mutation. This equality is proved entrywise from the two mutation formulas. -/
+matrix mutation. -/
 theorem toExtendedMatrix_mutation [DecidableEq K] [DecidableEq J]
     (s : YSeed K (Trop J)) (k : K) :
     (s.mutation k).toExtendedMatrix = s.toExtendedMatrix.mutation k := by
@@ -207,7 +146,7 @@ theorem toExtendedMatrix_mutation [DecidableEq K] [DecidableEq J]
         rw [ExchangeMatrix.mutation_matrix, matrixMutation_apply_of_ne (by simp) hl]
         simp only [toExtendedMatrix_frozen, toExtendedMatrix_mutable,
           Function.Embedding.inl_apply]
-        linarith [tropical_mutation_correction ((s.coefficient k).toAdd j)
+        linarith [Int.posPart_mul_add_neg_mul_min_zero ((s.coefficient k).toAdd j)
           (s.exchangeMatrix.matrix k l)]
   · simp [toExtendedMatrix_symmetrizer]
 
@@ -272,29 +211,9 @@ theorem toTropicalYSeed_mutation [DecidableEq K] [DecidableEq J]
     (B.mutation k).toTropicalYSeed (h.mutation k) = (B.toTropicalYSeed h).mutation k := by
   apply (tropicalYSeedEquiv (K := K) (J := J)).injective
   apply Subtype.ext
-  change ((B.mutation k).toTropicalYSeed (h.mutation k)).toExtendedMatrix =
-    ((B.toTropicalYSeed h).mutation k).toExtendedMatrix
+  simp only [tropicalYSeedEquiv_apply_val]
   rw [toExtendedMatrix_toTropicalYSeed, YSeed.toExtendedMatrix_mutation,
     toExtendedMatrix_toTropicalYSeed]
-
-/-- Simultaneous mutable and frozen relabelling preserves finite frozen support. -/
-theorem hasFiniteFrozenSupport_reindex_iff (eK : K ≃ K') (eJ : J ≃ J')
-    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) :
-    (reindex (row' := Function.Embedding.inl) (Equiv.sumCongr eK eJ) eK
-      (fun _ ↦ by
-        simp only [Function.Embedding.inl_apply, Equiv.sumCongr_apply, Sum.map_inl])
-      B).HasFiniteFrozenSupport ↔ B.HasFiniteFrozenSupport := by
-  constructor
-  · intro h k
-    have hf := (h (eK k)).preimage eJ.injective.injOn
-    simpa only [Function.support, Set.preimage_ofPred_eq, reindex_matrix,
-      Matrix.submatrix_apply, Equiv.sumCongr_symm,
-      Equiv.sumCongr_apply, Sum.map_inr, Equiv.symm_apply_apply] using hf
-  · intro h k
-    simpa only [Function.support, Set.preimage_ofPred_eq, reindex_matrix,
-      Matrix.submatrix_apply, Equiv.sumCongr_symm,
-      Equiv.sumCongr_apply, Sum.map_inr] using
-      (h (eK.symm k)).preimage eJ.symm.injective.injOn
 
 /-- Relabelling equivalence on finite-support extended matrices. It restricts the existing
 exchange-matrix reindexing equivalence, without changing its action. -/
@@ -341,33 +260,6 @@ theorem tropicalYSeedEquiv_symm_reindex_exchangeMatrix (eK : K ≃ K') (eJ : J �
   · ext i k
     simp [tropicalYSeedEquiv, principal_matrix]
   · simp [tropicalYSeedEquiv]
-
-/-- A specified initially zero frozen row stays zero after any finite sequence of actual
-matrix mutations. This requires no finiteness of either index type. -/
-theorem foldl_mutation_frozen_row_eq_zero [DecidableEq K] [DecidableEq J]
-    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) {j : J}
-    (h : ∀ l, B.matrix (Sum.inr j) l = 0) (w : List K) (l : K) :
-    (w.foldl (fun C k ↦ C.mutation k) B).matrix (Sum.inr j) l = 0 := by
-  induction w generalizing B with
-  | nil => exact h l
-  | cons k _w ih => exact ih (B.mutation k) (B.mutation_frozen_row_eq_zero h k)
-
-/-- For finitely many mutable directions, one finite set of initially active frozen rows
-contains every active frozen row after any finite sequence of mutations. This is a support
-invariant of the existing matrix action, not a new word-action API. -/
-theorem exists_finset_frozen_support_foldl [Finite K] [DecidableEq K] [DecidableEq J]
-    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
-    (h : B.HasFiniteFrozenSupport) :
-    ∃ S : Finset J, ∀ w : List K, ∀ j ∉ S, ∀ l,
-      (w.foldl (fun C k ↦ C.mutation k) B).matrix (Sum.inr j) l = 0 := by
-  classical
-  have hf : (⋃ k, Function.support fun j ↦ B.matrix (Sum.inr j) k).Finite :=
-    Set.finite_iUnion h
-  refine ⟨hf.toFinset, fun w j hj l ↦ ?_⟩
-  apply B.foldl_mutation_frozen_row_eq_zero _ w l
-  have hnot : j ∉ ⋃ k, Function.support fun j ↦ B.matrix (Sum.inr j) k := by
-    simpa using hj
-  simpa only [Set.mem_iUnion, Function.mem_support, not_exists, not_not] using hnot
 
 end ExchangeMatrix
 
