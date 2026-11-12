@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Derivatives of vector-valued functions
@@ -36,6 +37,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
   the component of its derivative.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
+* `Submodule.map_mvfderiv_eq_map_mfderiv`: both derivatives have the same image of a tangent
+  submodule.
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
   differentiability hypothesis.
@@ -95,6 +98,14 @@ theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(�
   rw [mvfderiv, ContinuousLinearMap.comp_apply]
   exact NormedSpace.fromTangentSpace_apply _ _
 
+/-- The image of a tangent submodule under the vector-valued derivative agrees with its image
+under the manifold derivative into the self model of the target. -/
+@[simp] theorem _root_.Submodule.map_mvfderiv_eq_map_mfderiv {x : M}
+    (S : Submodule 𝕜 (TangentSpace I x)) (f : M → F) :
+    S.map (mvfderiv I f x).toLinearMap = S.map (mfderiv I 𝓘(𝕜, F) f x).toLinearMap := by
+  exact congrArg (fun A : TangentSpace I x →ₗ[𝕜] F ↦ S.map A)
+    (LinearMap.ext fun v ↦ mvfderiv_apply_eq_mfderiv_apply f x v)
+
 /-- The derivative at `x` of a vector-valued function, read in the target space, depends only on
 the germ of the function at `x`. -/
 theorem _root_.Filter.EventuallyEq.mvfderiv_eq {f₁ f : M → F} {x : M} (hf : f₁ =ᶠ[𝓝 x] f) :
@@ -106,10 +117,10 @@ theorem _root_.Filter.EventuallyEq.mvfderiv_eq {f₁ f : M → F} {x : M} (hf : 
 
 /-- A map into the model space with the germ of the extended chart at `x` has the identity as
 derivative at `x`, a tangent vector at `x` being read as a vector of the model space. -/
-theorem mvfderiv_apply_of_eventuallyEq_extChartAt [IsManifold I 1 M] {f : M → E} {x : M}
+theorem mvfderiv_apply_of_eventuallyEq_extChartAt {f : M → E} {x : M}
     (hf : f =ᶠ[𝓝 x] extChartAt I x) (v : TangentSpace I x) : mvfderiv I f x v = v := by
   rw [hf.mvfderiv_eq]
-  simp only [mvfderiv, mfderiv_extChartAt_self]
+  simp only [mvfderiv, mfderiv_extChartAt_eq_id]
   -- Both tangent identifications are the identity of `E` across type synonyms.
   rfl
 

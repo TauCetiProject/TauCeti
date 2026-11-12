@@ -143,15 +143,9 @@ private theorem abs_log_normSq_sub_log_normSq_add_le_mul_exp
     by_cases h₀ : D w = 0
     · simp [hV, h₀]
     · simp only [hV, h₀, ↓reduceIte]
-      have hmono : 4 * c ^ 2 * D w ^ 2 ≤ (s w - s (w + h)) * D w :=
-        Real.mul_sq_log_sub_log_le_sub_mul_log_sub_log (hpos w (hw₁ w hw.le))
-          (hpos (w + h) (hwh w hw.le)) (hc4 w (hw₁ w hw.le)) (hc4 (w + h) (hwh w hw.le))
-      have hD2 : 0 < D w ^ 2 := lt_of_le_of_ne (sq_nonneg _) (pow_ne_zero 2 h₀).symm
-      have hquot : Δ D w / D w = (s w - s (w + h)) * D w / (4 * D w ^ 2) := by
-        rw [hΔD w hw.le]
-        field_simp
-      rw [hquot, le_div_iff₀ (by positivity)]
-      linarith
+      rw [hΔD w hw.le, div_right_comm]
+      linarith [Real.le_sub_div_log_sub_log (hpos w (hw₁ w hw.le))
+        (hpos (w + h) (hwh w hw.le)) (hc4 w (hw₁ w hw.le)) (hc4 (w + h) (hwh w hw.le)) h₀]
   -- Both `D` and `-D` tend to zero at infinity and are bounded by `L |h|` on the circle.
   have hcont : ContinuousOn D {w | R ≤ ‖w‖} := fun w hw ↦
     (hDcd w hw).continuousAt.continuousWithinAt
@@ -328,7 +322,6 @@ theorem exists_energyDensity_le_mul_exp
   obtain ⟨K₂, hK₂⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc'
   refine ⟨(1 / 64 + 1) * K₁ ^ 2 + 2 * K₂ ^ 2, fun z ↦ ?_⟩
   set E := Real.exp (-(c / 2 * ‖z‖)) with hE
-  have hE₀ : 0 ≤ E := (Real.exp_pos _).le
   have hEsq : E ^ 2 = Real.exp (-(c * ‖z‖)) := by
     rw [hE, ← Real.exp_nat_mul]
     ring_nf

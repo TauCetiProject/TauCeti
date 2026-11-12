@@ -76,10 +76,6 @@ theorem prod_ext {A G V W U : Type*} [Semiring A] [Monoid G]
   · exact congrArg IntertwiningMap.toLinearMap hl
   · exact congrArg IntertwiningMap.toLinearMap hr
 
-variable {A G V W : Type*} [CommSemiring A] [Monoid G]
-  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
-  {ρ : Representation A G V} {σ : Representation A G W}
-
 /-- **Evaluation of the `k[G]`-linear map attached to an intertwining map.** The map
 `Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f` is `f` itself on the underlying
 types, so it too may be erased from an application. -/
@@ -91,6 +87,12 @@ theorem equivLinearMapAsModule_apply
     (f : IntertwiningMap ρ σ) (x : ρ.asModule) :
     equivLinearMapAsModule ρ σ f x = (f (x : V) : W) :=
   (rfl)
+
+section codRestrict
+
+variable {A G V W : Type*} [Semiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- Corestrict an intertwining map to a subrepresentation of the target containing its image. -/
 def codRestrict (f : IntertwiningMap ρ σ) (P : Subrepresentation σ)
@@ -105,6 +107,12 @@ theorem codRestrict_apply_coe (f : IntertwiningMap ρ σ) (P : Subrepresentation
     (hP : ∀ v, f v ∈ P.toSubmodule) (v : V) :
     ((f.codRestrict P hP v : P.toSubmodule) : W) = f v := by
   rfl
+
+end codRestrict
+
+variable {A G V W : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- **An injective intertwining map is an isomorphism onto its image**, here onto any
 subrepresentation `P` that the image fills. -/
@@ -154,7 +162,7 @@ end lcomp
 
 section Restriction
 
-variable {A G H V W U : Type*} [CommSemiring A] [Monoid G] [Monoid H]
+variable {A G H V W U : Type*} [Semiring A] [Monoid G] [Monoid H]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
   {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
 
@@ -233,7 +241,7 @@ end Basis
 
 section Restriction
 
-variable {A G H V W U : Type*} [CommSemiring A] [Monoid G] [Monoid H]
+variable {A G H V W U : Type*} [Semiring A] [Monoid G] [Monoid H]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
   {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
 

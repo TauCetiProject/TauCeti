@@ -164,8 +164,7 @@ private theorem eLpNorm_value_sub_setAverage_le_of_mem_closure (hp : p ≠ ∞) 
           (W1p.valueL (mu := mu) (Omega := U) (p := p)).continuous
         simpa only [W1p.valueL_apply] using hcont
       · exact (Lp.constL p (mu.restrict (U : Set E)) ℝ).continuous.comp
-          (W1p.continuous_setAverage_value hSU
-            (ne_top_of_le_ne_top hUfin (measure_mono hSU)))
+          (W1p.continuous_setAverage_value hSU)
     have h2 : Continuous fun w : W1p mu U p ↦ C * ‖W1p.gradient w‖ := by
       refine continuous_const.mul (Continuous.norm ?_)
       have hcont : Continuous fun w : W1p mu U p ↦ W1p.gradientL w :=
@@ -444,7 +443,8 @@ on `Ω` with a constant. -/
 theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
     (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} (hu : W1p.gradient u = 0) :
     ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c := by
-  refine hconn.exists_ae_eq_const_of_forall_nhds fun x hx => ?_
+  refine hconn.exists_ae_eq_const_of_forall_nhds (HereditarilyLindelofSpace.isLindelof _)
+    fun x hx => ?_
   obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
   obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
   exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
