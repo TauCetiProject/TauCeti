@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.InnerProductSpace.LinearMap
 import Mathlib.Analysis.Normed.Ring.Units
 import Mathlib.Topology.MetricSpace.Contracting
@@ -23,11 +22,12 @@ class `C¹` on `Ω` solving the linear Cauchy–Riemann equation
 
 `∂ₛξ + i ∂ₜξ + C ξ = 0`
 
-on `Ω`, in the coordinate `z = s + i t`, for a continuous field `C` of *real*-linear endomorphisms
-of `V`. The **similarity principle** says that near every point `z₀ ∈ Ω` the solution factors as
-`ξ = Φ σ` with `Φ` a continuous family of invertible complex-linear maps and `σ` holomorphic
-(`TauCeti.exists_similarity_of_contDiffOn`). In particular `ξ` has a similarity factorization in
-the sense of `TauCeti.HasSimilarityFactorizationAt` at every point of `Ω`
+on `Ω`, in the coordinate `z = s + i t`, for a measurable, locally bounded (for instance
+continuous) field `C` of *real*-linear endomorphisms of `V`. The **similarity principle** says
+that near every point `z₀ ∈ Ω` the solution factors as `ξ = Φ σ` with `Φ` a continuous family of
+invertible complex-linear maps and `σ` holomorphic (`TauCeti.exists_similarity_of_contDiffOn`).
+In particular `ξ` has a similarity factorization in the sense of
+`TauCeti.HasSimilarityFactorizationAt` at every point of `Ω`
 (`TauCeti.hasSimilarityFactorizationAt_of_contDiffOn`), so it inherits the zero structure of a
 holomorphic map: unique continuation from a zero of infinite order
 (`TauCeti.eqOn_zero_of_contDiffOn_of_forall_isBigO`) and isolated zeros
@@ -101,22 +101,30 @@ private theorem norm_absorb_le (A : E →L[ℝ] E) (v : E) : ‖absorb A v‖ �
           exact A.le_opNorm v
       _ = ‖A‖ := by field_simp
 
-/-- On a set where `A` and `v` are continuous, `z ↦ absorb (A z) (v z)` is almost everywhere
-strongly measurable. It is continuous away from the zeros of `v`, but in general not at them. -/
+/-- On a set where `A` is almost everywhere strongly measurable and `v` is continuous,
+`z ↦ absorb (A z) (v z)` is almost everywhere strongly measurable. Even for continuous `A` it is
+in general discontinuous at the zeros of `v`. -/
 private theorem aestronglyMeasurable_absorb {A : ℂ → E →L[ℝ] E} {v : ℂ → E} {s : Set ℂ}
-    (hs : MeasurableSet s) (hA : ContinuousOn A s) (hv : ContinuousOn v s) :
+    (hs : MeasurableSet s) (hA : AEStronglyMeasurable A (volume.restrict s))
+    (hv : ContinuousOn v s) :
     AEStronglyMeasurable (fun z ↦ absorb (A z) (v z)) (volume.restrict s) := by
   have hn : AEMeasurable (fun z ↦ ((‖v z‖ : ℂ) ^ 2)⁻¹) (volume.restrict s) :=
     measurable_inv.comp_aemeasurable
       (((Complex.continuous_ofReal.comp_continuousOn hv.norm).pow 2).aestronglyMeasurable
         hs).aemeasurable
-  -- the rank-one map is `smulRight` of the functional `⟪v, ·⟫`, continuous in both arguments
-  have hi : ContinuousOn (fun z ↦ ContinuousLinearMap.smulRightL ℂ E E (innerSL ℂ (v z))) s :=
-    (ContinuousLinearMap.smulRightL ℂ E E).continuous.comp_continuousOn
-      ((innerSL ℂ (E := E)).continuous.comp_continuousOn hv)
-  have hr : ContinuousOn (fun z ↦ InnerProductSpace.rankOne ℂ (A z (v z)) (v z)) s :=
-    (hi.clm_apply (hA.clm_apply hv)).congr fun _ _ ↦ rfl
-  exact hn.aestronglyMeasurable.smul (hr.aestronglyMeasurable hs)
+  -- the rank-one map is `smulRight` of the functional `⟪v, ·⟫`, jointly continuous
+  have hg : Continuous fun p : E × E ↦ ContinuousLinearMap.smulRightL ℂ E E (innerSL ℂ p.1) p.2 :=
+    ((ContinuousLinearMap.smulRightL ℂ E E).continuous.comp
+      ((innerSL ℂ (E := E)).continuous.comp continuous_fst)).clm_apply continuous_snd
+  have hv' := hv.aestronglyMeasurable (μ := volume) hs
+  have hAv : AEStronglyMeasurable (fun z ↦ A z (v z)) (volume.restrict s) := by
+    simpa using (ContinuousLinearMap.id ℝ (E →L[ℝ] E)).aestronglyMeasurable_comp₂ hA hv'
+  have hr : AEStronglyMeasurable (fun z ↦ InnerProductSpace.rankOne ℂ (A z (v z)) (v z))
+      (volume.restrict s) := by
+    refine (hg.comp_aestronglyMeasurable (hv'.prodMk hAv)).congr (ae_of_all _ fun z ↦ ?_)
+    ext w
+    simp
+  exact hn.aestronglyMeasurable.smul hr
 
 /-! ### The Cauchy integral equation -/
 
@@ -283,33 +291,41 @@ private theorem conjWirtingerDeriv_add_eq_zero {ξ : ℂ → E} {C : E →L[ℝ]
     ContinuousLinearMap.comp_apply, hD, hC, add_apply, one_apply_eq_self, map_neg, map_smul]
   module
 
-/-- **The similarity principle on a disc**, for a solution of class `C¹` on the whole plane. -/
-private theorem exists_similarity_of_contDiff [FiniteDimensional ℂ E] {ξ : ℂ → E}
-    (hξ : ContDiff ℝ 1 ξ) {C : ℂ → E →L[ℝ] E} {c : ℂ} {R : ℝ} (hR : 0 < R)
-    (hC : ContinuousOn C (closedBall c R))
-    (heq : ∀ z ∈ ball c R, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I + C z (ξ z) = 0) :
-    ∃ r, 0 < r ∧ r ≤ R ∧ ∃ (Φ : ℂ → E →L[ℂ] E) (σ : ℂ → E), ContinuousOn Φ (ball c r) ∧
-      (∀ z ∈ ball c r, IsUnit (Φ z)) ∧ DifferentiableOn ℂ σ (ball c r) ∧
-      EqOn ξ (fun z ↦ Φ z (σ z)) (ball c r) := by
+/-- **The similarity principle** on a complex inner product space, for a solution of class `C¹`
+on an open set with a measurable, locally bounded coefficient: the factorization on a disc. -/
+private theorem exists_similarity_of_contDiffOn_of_innerProductSpace [FiniteDimensional ℂ E]
+    {Ω : Set ℂ} {ξ : ℂ → E} {C : ℂ → E →L[ℝ] E} (hΩ : IsOpen Ω) (hξ : ContDiffOn ℝ 1 ξ Ω)
+    (hCm : AEStronglyMeasurable C (volume.restrict Ω))
+    (hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M)
+    (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I + C z (ξ z) = 0) {z₀ : ℂ}
+    (hz₀ : z₀ ∈ Ω) :
+    ∃ r, 0 < r ∧ ball z₀ r ⊆ Ω ∧ ∃ (Φ : ℂ → E →L[ℂ] E) (σ : ℂ → E),
+      ContinuousOn Φ (ball z₀ r) ∧ (∀ z ∈ ball z₀ r, IsUnit (Φ z)) ∧
+      DifferentiableOn ℂ σ (ball z₀ r) ∧ EqOn ξ (fun z ↦ Φ z (σ z)) (ball z₀ r) := by
   have := FiniteDimensional.complete ℂ E
-  obtain ⟨M₀, hM₀⟩ := (isCompact_closedBall c R).exists_bound_of_continuousOn hC
+  -- a disc in `Ω` on which `C` is bounded
+  obtain ⟨M₀, hM₀⟩ := hCb z₀ hz₀
+  obtain ⟨R, hR, hRΩ⟩ := Metric.mem_nhds_iff.1 (inter_mem hM₀ (hΩ.mem_nhds hz₀))
   set M := max M₀ 0
   have hM : 0 ≤ M := le_max_right _ _
-  set r := min R (8 * (M + 1))⁻¹
-  have hr : 0 < r := lt_min hR (by positivity)
-  have hsub : closedBall c r ⊆ closedBall c R := closedBall_subset_closedBall (min_le_left _ _)
+  set r := min (R / 2) (8 * (M + 1))⁻¹
+  have hr : 0 < r := lt_min (by positivity) (by positivity)
+  have hsub : closedBall z₀ r ⊆ ball z₀ R :=
+    closedBall_subset_ball ((min_le_left _ _).trans_lt (half_lt_self hR))
+  have hsubΩ : closedBall z₀ r ⊆ Ω := fun z hz ↦ (hRΩ (hsub hz)).2
+  have hball : ball z₀ r ⊆ Ω := ball_subset_closedBall.trans hsubΩ
   -- absorb the real-linear coefficient and solve the Cauchy integral equation
   obtain ⟨g, hg, hTg, hgeq, hTg1⟩ := exists_cauchyTransform_eq hr.le hM (two_mul_min_mul_le hM)
-    (aestronglyMeasurable_absorb measurableSet_closedBall (hC.mono hsub)
-      hξ.continuous.continuousOn)
-    (fun z hz ↦ (norm_absorb_le _ _).trans ((hM₀ z (hsub hz)).trans (le_max_left _ _)))
+    (aestronglyMeasurable_absorb measurableSet_closedBall
+      (hCm.mono_measure (Measure.restrict_mono hsubΩ le_rfl)) (hξ.continuousOn.mono hsubΩ))
+    (fun z hz ↦ (norm_absorb_le _ _).trans ((hRΩ (hsub hz)).1.trans (le_max_left _ _)))
   set Ψ : ℂ → E →L[ℂ] E := fun z ↦ 1 + cauchyTransform g z with hΨ
-  have hunit (z : ℂ) (hz : z ∈ ball c r) : IsUnit (Ψ z) := by
+  have hunit (z : ℂ) (hz : z ∈ ball z₀ r) : IsUnit (Ψ z) := by
     by_contra h
     refine nonunits.subset_compl_ball h ?_
     rw [mem_ball_iff_norm, hΨ, add_sub_cancel_left]
     exact hTg1 z (ball_subset_closedBall hz)
-  refine ⟨r, hr, min_le_left _ _, fun z ↦ Ring.inverse (Ψ z), fun z ↦ Ψ z (ξ z),
+  refine ⟨r, hr, hball, fun z ↦ Ring.inverse (Ψ z), fun z ↦ Ψ z (ξ z),
     fun z hz ↦ ?_, fun z hz ↦ ?_, ?_, fun z hz ↦ ?_⟩
   · have hc := NormedRing.inverse_continuousAt (hunit z hz).unit
     rw [IsUnit.unit_spec] at hc
@@ -318,60 +334,25 @@ private theorem exists_similarity_of_contDiff [FiniteDimensional ℂ E] {ξ : �
     rw [← (hunit z hz).unit_spec, Ring.inverse_unit]
     exact Units.isUnit _
   · -- `Ψ ξ` is weakly holomorphic on the disc, hence holomorphic
-    let Ω : Opens ℂ := ⟨ball c r, isOpen_ball⟩
-    have hw := (hasWeakConjWirtingerDerivOn_of_contDiffOn (μ := volume) (Ω := Ω)
-      hξ.contDiffOn).add (hasWeakConjWirtingerDerivOn_cauchyTransform_apply hg hξ Ω)
-    have hval : ∀ z ∈ (Ω : Set ℂ), ((fun z ↦ conjWirtingerDeriv ξ z 1) +
+    let D : Opens ℂ := ⟨ball z₀ r, isOpen_ball⟩
+    have hξD : ContDiffOn ℝ 1 ξ D := hξ.mono hball
+    have hw := (hasWeakConjWirtingerDerivOn_of_contDiffOn (μ := volume) hξD).add
+      (hasWeakConjWirtingerDerivOn_cauchyTransform_apply hg hξD)
+    have hval : ∀ z ∈ (D : Set ℂ), ((fun z ↦ conjWirtingerDeriv ξ z 1) +
         fun z ↦ g z (ξ z) + cauchyTransform g z (conjWirtingerDeriv ξ z 1)) z = 0 :=
-      fun z hz ↦ conjWirtingerDeriv_add_eq_zero (heq z (ball_subset_ball (min_le_left _ _) hz))
+      fun z hz ↦ conjWirtingerDeriv_add_eq_zero (heq z (hball hz))
         (hgeq z (ball_subset_closedBall hz)) (absorb_apply_self _ _)
-    have hw0 := hw.congr_ae_deriv ((ae_restrict_iff' Ω.isOpen.measurableSet).2
+    have hw0 := hw.congr_ae_deriv ((ae_restrict_iff' D.isOpen.measurableSet).2
       (ae_of_all _ hval))
     have hσ : (ξ + fun z ↦ cauchyTransform g z (ξ z)) = fun z ↦ Ψ z (ξ z) := by
       ext1 z
       simp [hΨ]
     rw [hσ] at hw0
     exact hw0.differentiableOn
-      ((continuous_const.add hTg).clm_apply hξ.continuous).continuousOn
+      ((continuous_const.add hTg).continuousOn.clm_apply (hξ.continuousOn.mono hball))
   · beta_reduce
     rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.mul_def,
       Ring.inverse_mul_cancel _ (hunit z hz), one_apply_eq_self]
-
-/-- The similarity principle on a complex inner product space, for a solution of class `C¹` on an
-open set: the disc version cut off to the whole plane. -/
-private theorem exists_similarity_of_contDiffOn_of_innerProductSpace [FiniteDimensional ℂ E]
-    {Ω : Set ℂ} {ξ : ℂ → E} {C : ℂ → E →L[ℝ] E} (hΩ : IsOpen Ω) (hξ : ContDiffOn ℝ 1 ξ Ω)
-    (hC : ContinuousOn C Ω)
-    (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I + C z (ξ z) = 0) {z₀ : ℂ}
-    (hz₀ : z₀ ∈ Ω) :
-    ∃ r, 0 < r ∧ ball z₀ r ⊆ Ω ∧ ∃ (Φ : ℂ → E →L[ℂ] E) (σ : ℂ → E),
-      ContinuousOn Φ (ball z₀ r) ∧ (∀ z ∈ ball z₀ r, IsUnit (Φ z)) ∧
-      DifferentiableOn ℂ σ (ball z₀ r) ∧ EqOn ξ (fun z ↦ Φ z (σ z)) (ball z₀ r) := by
-  obtain ⟨ε, hε, hεΩ⟩ := Metric.isOpen_iff.1 hΩ z₀ hz₀
-  -- cut `ξ` off outside a smaller disc, to get a `C¹` map on the whole plane
-  let χ : ContDiffBump z₀ := ⟨ε / 4, ε / 2, by positivity, by linarith⟩
-  set ξ' : ℂ → E := fun z ↦ χ z • ξ z with hξ'
-  have hχΩ : closedBall z₀ (ε / 2) ⊆ Ω := (closedBall_subset_ball (by linarith)).trans hεΩ
-  have hξ'c : ContDiff ℝ 1 ξ' := by
-    refine contDiff_iff_contDiffAt.2 fun x ↦ ?_
-    by_cases hx : x ∈ Ω
-    · exact χ.contDiff.contDiffAt.smul (hξ.contDiffAt (hΩ.mem_nhds hx))
-    · refine (contDiffAt_const (c := (0 : E))).congr_of_eventuallyEq ?_
-      filter_upwards [isClosed_closedBall.isOpen_compl.mem_nhds fun h ↦ hx (hχΩ h)] with y hy
-      simp only [hξ', χ.zero_of_le_dist (le_of_lt (by simpa using hy)), zero_smul]
-  have hξ'eq : EqOn ξ' ξ (closedBall z₀ (ε / 4)) := fun z hz ↦ by
-    simp [hξ', χ.one_of_mem_closedBall hz]
-  have heq' (z : ℂ) (hz : z ∈ ball z₀ (ε / 4)) :
-      fderiv ℝ ξ' z 1 + I • fderiv ℝ ξ' z I + C z (ξ' z) = 0 := by
-    have hev : ξ' =ᶠ[𝓝 z] ξ := eventually_of_mem (isOpen_ball.mem_nhds hz) fun w hw ↦
-      hξ'eq (ball_subset_closedBall hw)
-    rw [hev.fderiv_eq, hξ'eq (ball_subset_closedBall hz)]
-    exact heq z (hεΩ (ball_subset_ball (by linarith) hz))
-  obtain ⟨r, hr, hrε, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ := exists_similarity_of_contDiff hξ'c
-    (by positivity) (hC.mono ((closedBall_subset_ball (by linarith)).trans hεΩ)) heq'
-  refine ⟨r, hr, (ball_subset_ball (by linarith)).trans hεΩ, Φ, σ, hΦ, hΦu, hσ, fun z hz ↦ ?_⟩
-  rw [← hξ'eq (ball_subset_closedBall (ball_subset_ball hrε hz))]
-  exact hξσ hz
 
 /-! ### Finite-dimensional complex normed spaces -/
 
@@ -379,12 +360,13 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimension
   {Ω : Set ℂ} {ξ : ℂ → V} {C : ℂ → V →L[ℝ] V}
 
 /-- **The similarity principle** (Carleman) for classical solutions. Let `ξ` be of class `C¹` on
-an open set `Ω ⊆ ℂ` and solve `∂ₛξ + i ∂ₜξ + C ξ = 0` on `Ω`, for a continuous field `C` of
-real-linear endomorphisms of a finite-dimensional complex normed space `V`. Then every point
-`z₀ ∈ Ω` is the centre of a disc in `Ω` on which `ξ = Φ σ`, with `Φ` a continuous family of
-invertible complex-linear maps and `σ` holomorphic. -/
+an open set `Ω ⊆ ℂ` and solve `∂ₛξ + i ∂ₜξ + C ξ = 0` on `Ω`, for a measurable, locally bounded
+field `C` of real-linear endomorphisms of a finite-dimensional complex normed space `V` (for
+instance a continuous one). Then every point `z₀ ∈ Ω` is the centre of a disc in `Ω` on which
+`ξ = Φ σ`, with `Φ` a continuous family of invertible complex-linear maps and `σ` holomorphic. -/
 theorem exists_similarity_of_contDiffOn (hΩ : IsOpen Ω) (hξ : ContDiffOn ℝ 1 ξ Ω)
-    (hC : ContinuousOn C Ω)
+    (hCm : AEStronglyMeasurable C (volume.restrict Ω))
+    (hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M)
     (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I + C z (ξ z) = 0) {z₀ : ℂ}
     (hz₀ : z₀ ∈ Ω) :
     ∃ r, 0 < r ∧ ball z₀ r ⊆ Ω ∧ ∃ (Φ : ℂ → V →L[ℂ] V) (σ : ℂ → V),
@@ -397,22 +379,24 @@ theorem exists_similarity_of_contDiffOn (hΩ : IsOpen Ω) (hξ : ContDiffOn ℝ 
     (e : V →L[ℂ] _).restrictScalars ℝ
   let eR' : EuclideanSpace ℂ (Fin (Module.finrank ℂ V)) →L[ℝ] V :=
     (e.symm : _ →L[ℂ] V).restrictScalars ℝ
-  -- the real restrictions act as `e` and `e.symm`
-  have h₁ (x : V) : eR x = e x := rfl
-  have h₂ (y : EuclideanSpace ℂ (Fin (Module.finrank ℂ V))) : eR' y = e.symm y := rfl
   have hξ' : ContDiffOn ℝ 1 (eR ∘ ξ) Ω := eR.contDiff.comp_contDiffOn hξ
-  have hC' : ContinuousOn (fun z ↦ eR.comp ((C z).comp eR')) Ω :=
-    continuousOn_const.clm_comp (hC.clm_comp continuousOn_const)
+  have hconj : Continuous fun A : V →L[ℝ] V ↦ eR.comp (A.comp eR') :=
+    continuous_const.clm_comp (continuous_id.clm_comp continuous_const)
+  have hC'b (z : ℂ) (hz : z ∈ Ω) : ∃ M, ∀ᶠ w in 𝓝 z, ‖eR.comp ((C w).comp eR')‖ ≤ M := by
+    obtain ⟨M, hM⟩ := hCb z hz
+    refine ⟨‖eR‖ * (M * ‖eR'‖), hM.mono fun w hw ↦ (eR.opNorm_comp_le _).trans ?_⟩
+    gcongr
+    exact ((C w).opNorm_comp_le _).trans (by gcongr)
   have heq' (z : ℂ) (hz : z ∈ Ω) : fderiv ℝ (eR ∘ ξ) z 1 + I • fderiv ℝ (eR ∘ ξ) z I +
       eR.comp ((C z).comp eR') ((eR ∘ ξ) z) = 0 := by
     have hd : fderiv ℝ (eR ∘ ξ) z = eR.comp (fderiv ℝ ξ z) :=
       (eR.hasFDerivAt.comp z (((hξ.differentiableOn one_ne_zero).differentiableAt
         (hΩ.mem_nhds hz)).hasFDerivAt)).fderiv
-    rw [hd, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, Function.comp_apply, h₁,
-      h₁, h₁, h₂, h₁, e.symm_apply_apply, ← map_smul, ← map_add, ← map_add, heq z hz, map_zero]
+    rw [hd]
+    simpa [eR, eR'] using congrArg e (heq z hz)
   obtain ⟨r, hr, hrΩ, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ :=
-    exists_similarity_of_contDiffOn_of_innerProductSpace hΩ hξ' hC' heq' hz₀
+    exists_similarity_of_contDiffOn_of_innerProductSpace hΩ hξ'
+      (hconj.comp_aestronglyMeasurable hCm) hC'b heq' hz₀
   refine ⟨r, hr, hrΩ, fun z ↦ e.symm.conjContinuousAlgEquiv (Φ z), fun z ↦ e.symm (σ z),
     ?_, fun z hz ↦ (hΦu z hz).map _,
     ((e.symm : _ →L[ℂ] V).differentiable.comp_differentiableOn hσ).congr fun _ _ ↦ rfl,
@@ -420,50 +404,54 @@ theorem exists_similarity_of_contDiffOn (hΩ : IsOpen Ω) (hξ : ContDiffOn ℝ 
   · simp only [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
     exact continuousOn_const.clm_comp (hΦ.clm_comp continuousOn_const)
   · have h := congrArg e.symm (hξσ hz)
-    rw [Function.comp_apply, h₁, e.symm_apply_apply] at h
+    simp only [Function.comp_apply, eR, ContinuousLinearMap.coe_restrictScalars',
+      ContinuousLinearEquiv.coe_coe, e.symm_apply_apply] at h
     simp [h]
 
-/-- A `C¹` solution of `∂ₛξ + i ∂ₜξ + C ξ = 0` on an open set `Ω`, with continuous real-linear
-coefficient `C`, has a similarity factorization at every point of `Ω`. -/
+/-- A `C¹` solution of `∂ₛξ + i ∂ₜξ + C ξ = 0` on an open set `Ω`, with measurable, locally
+bounded real-linear coefficient `C`, has a similarity factorization at every point of `Ω`. -/
 theorem hasSimilarityFactorizationAt_of_contDiffOn (hΩ : IsOpen Ω) (hξ : ContDiffOn ℝ 1 ξ Ω)
-    (hC : ContinuousOn C Ω)
+    (hCm : AEStronglyMeasurable C (volume.restrict Ω))
+    (hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M)
     (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I + C z (ξ z) = 0) {z₀ : ℂ}
     (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt ξ z₀ := by
   have := FiniteDimensional.complete ℂ V
-  obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ := exists_similarity_of_contDiffOn hΩ hξ hC heq hz₀
+  obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ :=
+    exists_similarity_of_contDiffOn hΩ hξ hCm hCb heq hz₀
   obtain ⟨u, hu⟩ := hΦu z₀ (mem_ball_self hr)
+  -- restricting scalars to `ℝ` preserves products equal to the identity
+  have hres {a b : V →L[ℂ] V} (h : a * b = 1) :
+      a.restrictScalars ℝ * b.restrictScalars ℝ = 1 := by
+    ext v
+    simpa using DFunLike.congr_fun h v
   refine .of_eqOn_ball hr (Φ := fun z ↦ (Φ z).restrictScalars ℝ)
     ((ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℂ).continuous.comp_continuousOn hΦ)
-    ⟨⟨(Φ z₀).restrictScalars ℝ, (↑u⁻¹ : V →L[ℂ] V).restrictScalars ℝ, ?_, ?_⟩, rfl⟩ hσ hξσ
-  · ext v
-    have h := DFunLike.congr_fun u.mul_inv v
-    rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply, one_apply_eq_self] at h
-    simpa [← hu] using h
-  · ext v
-    have h := DFunLike.congr_fun u.inv_mul v
-    rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply, one_apply_eq_self] at h
-    simpa [← hu] using h
+    ⟨⟨(Φ z₀).restrictScalars ℝ, (↑u⁻¹ : V →L[ℂ] V).restrictScalars ℝ,
+      hres (hu ▸ u.mul_inv), hres (hu ▸ u.inv_mul)⟩, rfl⟩ hσ hξσ
 
 /-- **Unique continuation** for classical solutions. On a connected open set `Ω`, a `C¹` solution
-of `∂ₛξ + i ∂ₜξ + C ξ = 0`, with continuous real-linear coefficient `C`, that vanishes to infinite
-order at one point of `Ω` vanishes on `Ω`. -/
+of `∂ₛξ + i ∂ₜξ + C ξ = 0`, with measurable, locally bounded real-linear coefficient `C`, that
+vanishes to infinite order at one point of `Ω` vanishes on `Ω`. -/
 theorem eqOn_zero_of_contDiffOn_of_forall_isBigO (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω)
-    (hξ : ContDiffOn ℝ 1 ξ Ω) (hC : ContinuousOn C Ω)
+    (hξ : ContDiffOn ℝ 1 ξ Ω) (hCm : AEStronglyMeasurable C (volume.restrict Ω))
+    (hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M)
     (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I + C z (ξ z) = 0) {z₀ : ℂ}
     (hz₀ : z₀ ∈ Ω) (h₀ : ∀ n : ℕ, ξ =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n) : EqOn ξ 0 Ω := by
   have := FiniteDimensional.complete ℂ V
   exact eqOn_zero_of_hasSimilarityFactorizationAt_of_forall_isBigO hΩ hΩc hξ.continuousOn
-    (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_contDiffOn hΩ hξ hC heq hz) hz₀ h₀
+    (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_contDiffOn hΩ hξ hCm hCb heq hz) hz₀ h₀
 
 /-- **Isolated zeros** of classical solutions. On a connected open set `Ω`, the zeros of a `C¹`
-solution of `∂ₛξ + i ∂ₜξ + C ξ = 0`, with continuous real-linear coefficient `C`, that is not
-identically zero on `Ω` form a discrete subset of `Ω`. -/
+solution of `∂ₛξ + i ∂ₜξ + C ξ = 0`, with measurable, locally bounded real-linear coefficient
+`C`, that is not identically zero on `Ω` form a discrete subset of `Ω`. -/
 theorem setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn (hΩ : IsOpen Ω)
-    (hΩc : IsPreconnected Ω) (hξ : ContDiffOn ℝ 1 ξ Ω) (hC : ContinuousOn C Ω)
+    (hΩc : IsPreconnected Ω) (hξ : ContDiffOn ℝ 1 ξ Ω)
+    (hCm : AEStronglyMeasurable C (volume.restrict Ω))
+    (hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M)
     (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I + C z (ξ z) = 0)
     (hne : ∃ z ∈ Ω, ξ z ≠ 0) : {z | ξ z ≠ 0} ∈ codiscreteWithin Ω := by
   have := FiniteDimensional.complete ℂ V
   exact setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt hΩ hΩc hξ.continuousOn
-    (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_contDiffOn hΩ hξ hC heq hz) hne
+    (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_contDiffOn hΩ hξ hCm hCb heq hz) hne
 
 end TauCeti
