@@ -203,6 +203,17 @@ private theorem endChart_mem_preimage_truncation_inter {q r : Puncture} {R c : �
       (w := Complex.equivRealProdCLM.symm (endChart r z)) (by rwa [re_endCoord_endChart])
     exact h.trans hc
 
+/-- For `0 ≤ c ≤ R`, the end chart sends the part `1 ≤ ±s ≤ h` of the end `r`, with height
+`h = c` if `r = q` and `h = R` otherwise, into the part `±s ≤ c` of the end `q` of the truncation
+`S_R`. -/
+private theorem endChart_mem_preimage_truncation_inter_of_le_ite {q r : Puncture} {R c : ℝ}
+    (hc : 0 ≤ c) (hcR : c ≤ R) {w : ℝ × ℝ} (hw₁ : 1 ≤ r.endSign * w.1)
+    (hw₂ : r.endSign * w.1 ≤ if r = q then c else R) :
+    endChart r w ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+      {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c} :=
+  endChart_mem_preimage_truncation_inter hc (by linarith)
+    (by split_ifs at hw₂ <;> linarith) fun hrq ↦ by simpa [hrq] using hw₂
+
 /-- A point of `S` inside the circle `±s = R` of the end `q`, and on its part `±s ≥ 1`, lies in
 the end piece of `q` of height `R`. -/
 private theorem mem_image_endPiece {R : ℝ} {z : ℝ × ℝ}
@@ -215,6 +226,20 @@ private theorem mem_image_endPiece {R : ℝ} {z : ℝ × ℝ}
       _ ∧ _), ?_⟩
   rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
     q.cylindricalEndLift_endCoord (ne_endCenter hz q), ContinuousLinearEquiv.apply_symm_apply]
+
+/-- A point of the part `±s ≤ c` of the end `q` of the truncation `S_R` outside the end pieces,
+of height `c` on the end `q` and `R` on the other ends, has every `±s < 1`. -/
+private theorem endSign_mul_re_endCoord_lt_one_of_mem_diff {q : Puncture} {R c : ℝ}
+    {z : ℝ × ℝ} (hz : z ∈ (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+      {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c}) \
+        ⋃ r, endChart r '' endPiece r (if r = q then c else R)) (r : Puncture) :
+    r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re < 1 := by
+  by_contra! h'
+  refine hz.2 (mem_iUnion.2 ⟨r, mem_image_endPiece (truncation_subset _ hz.1.1) ?_ h'⟩)
+  split_ifs with hrq
+  · subst hrq
+    exact hz.1.2
+  · exact (mem_truncation.1 hz.1.1).2.2 r
 
 /-- The end pieces of distinct ends are disjoint. -/
 private theorem disjoint_image_endPiece {R R' : ℝ} {q r : Puncture} (hqr : q ≠ r) :
@@ -513,14 +538,12 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncation_int
   set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
     {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c}
   -- The end pieces have height `c` on the end `q` and `R` on the other two ends.
-  set h : Puncture → ℝ := fun r ↦ if r = q then c else R with hh
+  set h : Puncture → ℝ := fun r ↦ if r = q then c else R
   set A : Puncture → Set (ℝ × ℝ) := fun r => endChart r '' endPiece r (h r)
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   have hendT (r : Puncture) {w : ℝ × ℝ} (hw₁ : 1 ≤ r.endSign * w.1)
       (hw₂ : r.endSign * w.1 ≤ h r) : endChart r w ∈ T :=
-    endChart_mem_preimage_truncation_inter hc (by linarith)
-      (by simp only [hh] at hw₂; split_ifs at hw₂ <;> linarith) fun hrq ↦ by
-        simpa [hh, hrq] using hw₂
+    endChart_mem_preimage_truncation_inter_of_le_ite hc hcR hw₁ hw₂
   -- On each end piece, change variables to the cylinder coordinates of the end.
   have hA (r : Puncture) : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -548,16 +571,9 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncation_int
       ((isCompact_preimage_truncation_inter q R c).isClosed.measurableSet.diff
         (MeasurableSet.iUnion fun r ↦ measurableSet_image_endPiece r (h r)))
     have hzS := truncation_subset _ hz.1.1
-    refine (ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (K := pairOfPantsPerturbation H)
-      (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y) hzS (fun r ↦ ?_)
-      (u z)).symm
-    by_contra! h'
-    refine hz.2 (mem_iUnion.2 ⟨r, mem_image_endPiece hzS ?_ h'⟩)
-    simp only [hh]
-    split_ifs with hrq
-    · subst hrq
-      exact hz.1.2
-    · exact (mem_truncation.1 hz.1.1).2.2 r
+    exact (ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (K := pairOfPantsPerturbation H)
+      (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y) hzS
+      (endSign_mul_re_endCoord_lt_one_of_mem_diff hz) (u z)).symm
   exact (hC.union (integrableOn_finite_iUnion.2 hA)).mono_set fun z hz ↦ by
     by_cases h : z ∈ ⋃ r, A r
     · exact Or.inr h
@@ -919,9 +935,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   -- Points of the end pieces lie in `T`.
   have hendT (r : Puncture) {w : ℝ × ℝ} (hw₁ : 1 ≤ r.endSign * w.1)
       (hw₂ : r.endSign * w.1 ≤ h r) : endChart r w ∈ T :=
-    endChart_mem_preimage_truncation_inter (by linarith) (by linarith)
-      (by simp only [hh] at hw₂; split_ifs at hw₂ <;> linarith) fun hrq ↦ by
-        simpa [hh, hrq] using hw₂
+    endChart_mem_preimage_truncation_inter_of_le_ite (by linarith) hcR hw₁ hw₂
   -- `T` is the disjoint union of its core `C`, where every `±s < 1`, and the three end pieces.
   have hAm (r : Puncture) : MeasurableSet (A r) := measurableSet_image_endPiece r (h r)
   have hAT (r : Puncture) : A r ⊆ T := by
@@ -938,15 +952,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   -- On the core the perturbation vanishes nearby, so the energy is the area and the curvature
   -- vanishes.
   have hcore {z : ℝ × ℝ} (hz : z ∈ C) :
-      ∀ r : Puncture, r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re < 1 := by
-    intro r
-    by_contra! h'
-    refine hz.2 (mem_iUnion.2 ⟨r, mem_image_endPiece (truncation_subset _ hz.1.1) ?_ h'⟩)
-    simp only [hh]
-    split_ifs with hrq
-    · subst hrq
-      exact hz.1.2
-    · exact (mem_truncation.1 hz.1.1).2.2 r
+      ∀ r : Puncture, r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re < 1 :=
+    endSign_mul_re_endCoord_lt_one_of_mem_diff hz
   have hCm : MeasurableSet C := hT.isClosed.measurableSet.diff (MeasurableSet.iUnion hAm)
   have hCE : ∫ z in C, ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
