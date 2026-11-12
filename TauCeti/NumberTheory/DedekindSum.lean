@@ -138,7 +138,7 @@ private theorem dedekindSum_natCast (h c : ℕ) :
     dedekindSum h c = ∑ r ∈ range c, ((r : ℚ) / c) * (((h * r % c : ℕ) : ℚ) / c - 1 / 2) := by
   rw [dedekindSum, ← sum_subset (s₁ := Ioo 0 c) (fun r hr ↦ mem_range.2 (mem_Ioo.1 hr).2)]
   · refine sum_nbij' Int.toNat Nat.cast (fun r hr ↦ ?_) (fun r hr ↦ ?_) (fun r hr ↦ ?_)
-      (fun r hr ↦ ?_) (fun r hr ↦ ?_)
+      (fun r _ ↦ ?_) (fun r hr ↦ ?_)
     · simp only [mem_Ioo] at hr ⊢; omega
     · simp only [mem_Ioo] at hr ⊢; omega
     · simp only [mem_Ioo] at hr ⊢; omega
