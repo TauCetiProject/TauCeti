@@ -59,7 +59,7 @@ example : swap ∈ Subgroup.zpowers swap :=
   (sift_iff swap).mp (by decide +kernel)
 
 /-- The certified sift separates two different transpositions in `Sym(3)`. -/
-public theorem swap_not_mem_zpowers_swap :
+public theorem swap_notMem_zpowers_swap :
     Equiv.swap (1 : Fin 3) 2 ∉ Subgroup.zpowers (Equiv.swap (0 : Fin 3) 1) := by
   rw [← sift_iff]
   decide +kernel

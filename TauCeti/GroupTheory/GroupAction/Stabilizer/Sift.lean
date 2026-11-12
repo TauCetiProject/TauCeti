@@ -144,6 +144,16 @@ fix `b 0, …, b (i - 1)`, and their images of `b i` are distinct. The body is e
     ((T i).all fun r ↦ (List.range i).all fun j ↦ decide (r • b j = b j)) &&
     decide ((T i).map (· • b i)).Nodup
 
+omit [DecidableEq G] in
+/-- The transversal check succeeds exactly when every list is nonempty, its elements fix
+all earlier base points, and their images of the current base point are distinct. -/
+@[simp]
+theorem transversalCheck_eq_true_iff {k : ℕ} :
+    transversalCheck b T k = true ↔ ∀ i < k, T i ≠ [] ∧
+      (∀ r ∈ T i, ∀ j < i, r • b j = b j) ∧ ((T i).map (· • b i)).Nodup := by
+  simp only [transversalCheck, List.all_eq_true, List.mem_range, Bool.and_eq_true,
+    Bool.not_eq_true', List.isEmpty_eq_false_iff, decide_eq_true_eq, and_assoc]
+
 /-- The sifting conditions at level `i`: for `i ≤ j < k`, every product `s * r` with `s ∈ T j`
 and `r ∈ T i` sifts through `T i, …, T (k - 1)`. The body is exposed so that `decide` can run the
 check in an importing module. -/
@@ -198,25 +208,24 @@ private theorem finite_closure_and_natCard_le_of_sift (hne : ∀ i < k, T i ≠ 
       _ = ∏ j ∈ Finset.Ico i k, (T j).length :=
         (Finset.prod_eq_prod_Ico_succ_bot hik fun j ↦ (T j).length).symm
 
-/-- The two bounds behind `natCard_eq_prod_length_of_sift`: `H` is finite, the lengths of the lists
-are bounded by the basic orbits, and the order of `H` by the product of the lengths. -/
-private theorem prod_length_le_and_natCard_le_of_sift
+/-- The bounds behind `natCard_eq_prod_length_of_sift`: `H` is finite, each list length is
+bounded by its basic orbit, and the order of `H` by the product of the lengths. -/
+theorem length_le_ncard_orbit_and_natCard_le_of_sift
     (hT : ∀ i < k, ∀ r ∈ T i, r ∈ H.stabilizerChain b i)
     (hne : ∀ i < k, T i ≠ []) (hnodup : ∀ i < k, ((T i).map (· • b i)).Nodup)
     (hH : H ≤ closure {r | ∃ i < k, r ∈ T i})
     (hsift : ∀ i < k, ∀ j < k, i ≤ j → ∀ s ∈ T j, ∀ r ∈ T i,
       TauCeti.sift b T i (k - i) 1 (s * r) = true) :
-    Finite H ∧ ∏ i ∈ Finset.range k, (T i).length ≤
-        ∏ i ∈ Finset.range k, (orbit (H.stabilizerChain b i) (b i)).ncard ∧
+    Finite H ∧ (∀ i < k, (T i).length ≤
+        (orbit (H.stabilizerChain b i) (b i)).ncard) ∧
       Nat.card H ≤ ∏ i ∈ Finset.range k, (T i).length := by
   have hS : {r | ∃ j, 0 ≤ j ∧ j < k ∧ r ∈ T j} = {r | ∃ i < k, r ∈ T i} := by simp
   obtain ⟨hfin, hcard⟩ := finite_closure_and_natCard_le_of_sift hne hsift 0
   rw [hS] at hfin hcard
   rw [← Finset.range_eq_Ico] at hcard
   have : Finite H := Finite.of_injective _ (inclusion_injective hH)
-  exact ⟨this, Finset.prod_le_prod fun i hi ↦
-      length_le_ncard_orbit (hT i (Finset.mem_range.1 hi)) (hnodup i (Finset.mem_range.1 hi))
-        (Finite.finite_mulAction_orbit _),
+  exact ⟨this, fun i hi ↦
+      length_le_ncard_orbit (hT i hi) (hnodup i hi) (Finite.finite_mulAction_orbit _),
     (card_le_of_le hH).trans hcard⟩
 
 /-- **The order of a group from successful sifts.** Let `T 0, …, T (k - 1)` be nonempty lists, each
@@ -230,7 +239,8 @@ theorem natCard_eq_prod_length_of_sift (hT : ∀ i < k, ∀ r ∈ T i, r ∈ H.s
     (hsift : ∀ i < k, ∀ j < k, i ≤ j → ∀ s ∈ T j, ∀ r ∈ T i,
       TauCeti.sift b T i (k - i) 1 (s * r) = true) :
     Nat.card H = ∏ i ∈ Finset.range k, (T i).length := by
-  obtain ⟨hfin, hlow, hup⟩ := prod_length_le_and_natCard_le_of_sift hT hne hnodup hH hsift
+  obtain ⟨hfin, hle, hup⟩ := length_le_ncard_orbit_and_natCard_le_of_sift hT hne hnodup hH hsift
+  have hlow := Finset.prod_le_prod fun i hi ↦ hle i (Finset.mem_range.1 hi)
   have hpos : 0 < Nat.card (H.stabilizerChain b k) := Nat.card_pos
   refine le_antisymm hup (hlow.trans ?_)
   rw [← H.prod_ncard_orbit_mul_card_stabilizerChain b k]
@@ -244,7 +254,8 @@ theorem stabilizerChain_eq_bot_of_sift (hT : ∀ i < k, ∀ r ∈ T i, r ∈ H.s
     (hsift : ∀ i < k, ∀ j < k, i ≤ j → ∀ s ∈ T j, ∀ r ∈ T i,
       TauCeti.sift b T i (k - i) 1 (s * r) = true) :
     H.stabilizerChain b k = ⊥ := by
-  obtain ⟨hfin, hlow, hup⟩ := prod_length_le_and_natCard_le_of_sift hT hne hnodup hH hsift
+  obtain ⟨hfin, hle, hup⟩ := length_le_ncard_orbit_and_natCard_le_of_sift hT hne hnodup hH hsift
+  have hlow := Finset.prod_le_prod fun i hi ↦ hle i (Finset.mem_range.1 hi)
   have hpos : 0 < ∏ i ∈ Finset.range k, (T i).length :=
     Finset.prod_pos fun i hi ↦ List.length_pos_iff.2 (hne i (Finset.mem_range.1 hi))
   rw [← card_le_one_iff_eq_bot]
@@ -256,7 +267,7 @@ theorem stabilizerChain_eq_bot_of_sift (hT : ∀ i < k, ∀ r ∈ T i, r ∈ H.s
 /-- The hypotheses of `natCard_eq_prod_length_of_sift` from the finite checks
 `TauCeti.transversalCheck` and `TauCeti.siftCheck`, the memberships of the listed elements in `H`,
 and generators of `H` that sift. -/
-private theorem hypotheses_of_siftCheck {gens : List G} (hT : ∀ i < k, ∀ r ∈ T i, r ∈ H)
+theorem hypotheses_of_siftCheck {gens : List G} (hT : ∀ i < k, ∀ r ∈ T i, r ∈ H)
     (hH : H ≤ closure {g | g ∈ gens}) (htrans : TauCeti.transversalCheck b T k = true)
     (hgens : gens.all (TauCeti.sift b T 0 k 1) = true)
     (hsift : ∀ i < k, TauCeti.siftCheck b T k i = true) :
@@ -264,11 +275,10 @@ private theorem hypotheses_of_siftCheck {gens : List G} (hT : ∀ i < k, ∀ r �
       (∀ i < k, ((T i).map (· • b i)).Nodup) ∧ H ≤ closure {r | ∃ i < k, r ∈ T i} ∧
       ∀ i < k, ∀ j < k, i ≤ j → ∀ s ∈ T j, ∀ r ∈ T i,
         TauCeti.sift b T i (k - i) 1 (s * r) = true := by
-  simp only [TauCeti.transversalCheck, List.all_eq_true, List.mem_range, Bool.and_eq_true,
-    Bool.not_eq_true', List.isEmpty_eq_false_iff, decide_eq_true_eq] at htrans
+  rw [TauCeti.transversalCheck_eq_true_iff] at htrans
   simp only [List.all_eq_true] at hgens
-  refine ⟨fun i hi r hr ↦ (mem_stabilizerChain_iff _ _).2 ⟨hT i hi r hr, (htrans i hi).1.2 r hr⟩,
-    fun i hi ↦ (htrans i hi).1.1, fun i hi ↦ (htrans i hi).2, hH.trans ((closure_le _).2 ?_), ?_⟩
+  refine ⟨fun i hi r hr ↦ (mem_stabilizerChain_iff _ _).2 ⟨hT i hi r hr, (htrans i hi).2.1 r hr⟩,
+    fun i hi ↦ (htrans i hi).1, fun i hi ↦ (htrans i hi).2.2, hH.trans ((closure_le _).2 ?_), ?_⟩
   · intro g hg
     have := TauCeti.inv_mul_mem_closure_of_sift (hgens g hg)
     rwa [inv_one, one_mul, zero_add, show {r | ∃ j, 0 ≤ j ∧ j < k ∧ r ∈ T j} =
