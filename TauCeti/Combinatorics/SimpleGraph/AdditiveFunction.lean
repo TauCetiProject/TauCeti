@@ -380,8 +380,10 @@ end Superadditive
 
 section Subadditive
 
-variable {G} {M : Type*} [AddCommMonoid M] [PartialOrder M] [IsOrderedAddMonoid M]
-  {C : Type*} [SMulZeroClass C M] {c : C} {a : V → M}
+omit [Fintype V] [DecidableRel G.Adj]
+
+variable {G} [G.LocallyFinite] {M : Type*} [AddCommMonoid M] [PartialOrder M]
+  [IsOrderedAddMonoid M] {C : Type*} [SMulZeroClass C M] {c : C} {a : V → M}
 
 omit [DecidableEq V] in
 /-- **Zero propagation along an edge.** A nonnegative weight with `∑_{j ∼ i} a j ≤ c • a i` at
@@ -417,12 +419,13 @@ end Subadditive
 
 section Copy
 
-variable {G} {W : Type*} [Fintype W] {H : SimpleGraph W} [DecidableRel H.Adj]
+variable {G} {W : Type*} {H : SimpleGraph W} [H.LocallyFinite]
   [CommSemiring R] [PartialOrder R] [IsStrictOrderedRing R]
 
 omit [DecidableEq V] in
 /-- **The proper-extension obstruction.** Let `f` be a copy, not necessarily induced, of a nonempty
-finite graph `G` carrying a positive additive function `δ` inside a preconnected finite graph `H`.
+finite graph `G` carrying a positive additive function `δ` inside a preconnected, locally finite
+graph `H`.
 If `H` carries a nonzero nonnegative weight `a` with `∑_{y ∼ x} a y ≤ 2 * a x` at every vertex,
 then `f` is an isomorphism: every vertex of `H` is a value of `f`, and every edge of `H` between
 two values of `f` is the image of an edge of `G`.
