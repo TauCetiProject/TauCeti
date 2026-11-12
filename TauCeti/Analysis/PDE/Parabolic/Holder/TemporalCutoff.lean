@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import Mathlib.Analysis.Calculus.BumpFunction.Normed
-import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Temporal cutoffs in the order-two parabolic Hölder space
@@ -44,35 +42,6 @@ private local instance : NormedSpace ℝ (E →L[ℝ] ℝ) := inferInstance
 private local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
 private local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
 
-private theorem exists_holderWith_deriv_smoothTransition (hα : α ≤ 2) :
-    ∃ M : ℝ≥0, (∀ t, ‖deriv smoothTransition t‖ ≤ M) ∧
-      HolderWith M (α / 2) (deriv smoothTransition) := by
-  have hd : ContDiff ℝ 1 (deriv smoothTransition) :=
-    (smoothTransition.contDiff (n := 2)).deriv'
-  obtain ⟨K, hK⟩ := hd.lipschitzWith_of_hasCompactSupport
-    smoothTransition.hasCompactSupport_deriv (by simp)
-  obtain ⟨B, hB⟩ := smoothTransition.exists_forall_norm_deriv_le
-  let M : ℝ≥0 := ⟨(K : ℝ) + 2 * |B|, by positivity⟩
-  have hMcoe : (M : ℝ) = K + 2 * |B| := (rfl)
-  have hBM : B ≤ M := by
-    rw [hMcoe]
-    nlinarith [le_abs_self B, abs_nonneg B, K.coe_nonneg]
-  have hbnn (x : ℝ) : ‖deriv smoothTransition x‖₊ ≤ |B|.toNNReal := by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.coe_toNNReal _ (abs_nonneg B)]
-    exact (hB x).trans (le_abs_self B)
-  have hzero : HolderWith M 0 (deriv smoothTransition) :=
-    (holderWith_zero_of_nnnorm_le hbnn).mono (by
-      rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_ofNat,
-        Real.coe_toNNReal _ (abs_nonneg B), hMcoe]
-      exact le_add_of_nonneg_left K.coe_nonneg)
-  refine ⟨M, fun t ↦ (hB t).trans hBM, ?_⟩
-  have hKM : K ≤ M := by
-    exact_mod_cast (show (K : ℝ) ≤ M by
-      rw [hMcoe]
-      exact le_add_of_nonneg_right (by positivity))
-  simpa only [max_self] using hzero.of_le_of_le (hK.weaken hKM).holderWith
-    (by positivity) ((div_le_iff₀ (by norm_num : (0 : ℝ≥0) < 2)).2 (by simpa using hα))
-
 omit [NormedSpace ℝ E] in
 private theorem holderWith_scaled_time_deriv {M : ℝ≥0}
     (hM : HolderWith M (α / 2) (deriv smoothTransition))
@@ -106,6 +75,38 @@ private theorem holderWith_scaled_time_deriv {M : ℝ≥0}
       ring
     _ ≤ M * δ ^ (-1 - (α : ℝ) / 2) * dist p q ^ (α : ℝ) := by gcongr
 
+omit [NormedSpace ℝ E] in
+private theorem exists_scaled_time_deriv {M : ℝ≥0}
+    (hM : ∀ t, ‖deriv smoothTransition t‖ ≤ M)
+    (hhol : HolderWith M (α / 2) (deriv smoothTransition))
+    {δ : ℝ} (hδ : 0 < δ) (s a b : ℝ) :
+    ∃ v : HolderSpace α (ParabolicSpaceTime.slab (E := E) a b) ℝ,
+      (∀ p, v p = δ⁻¹ * deriv smoothTransition
+        (((p : ParabolicSpaceTime E).time - s) / δ)) ∧
+      ‖v‖ ≤ M / δ + M * δ ^ (-1 - (α : ℝ) / 2) := by
+  let ut : ParabolicSpaceTime.slab (E := E) a b →ᵇ ℝ :=
+    BoundedContinuousFunction.ofNormedAddCommGroup
+      (fun p ↦ δ⁻¹ * deriv smoothTransition (((p : ParabolicSpaceTime E).time - s) / δ))
+      (by fun_prop) (M / δ) (fun p ↦ by
+        rw [norm_mul, Real.norm_of_nonneg (inv_nonneg.2 hδ.le)]
+        exact (mul_le_mul_of_nonneg_left (hM _) (inv_nonneg.2 hδ.le)).trans_eq
+          (by ring))
+  have huthol : HolderWith (M * (δ ^ (-1 - (α : ℝ) / 2)).toNNReal) α
+      (ut : ParabolicSpaceTime.slab (E := E) a b → ℝ) :=
+    holderWith_scaled_time_deriv hhol hδ s a b
+  let v := HolderSpace.ofBoundedContinuousFunction ut huthol.memHolder
+  have hvfun : (v : ParabolicSpaceTime.slab (E := E) a b → ℝ) = ut := by
+    ext p
+    exact HolderSpace.ofBoundedContinuousFunction_apply _ _ p
+  refine ⟨v, fun p ↦ by simp [v, ut], ?_⟩
+  have hut : ‖ut‖ ≤ M / δ :=
+    BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ (by positivity) _
+  have h := HolderSpace.norm_le_of_norm_le_of_holderWith (f := v)
+    (M := (M : ℝ) / δ) (by positivity)
+    (fun p ↦ by rw [hvfun]; exact (ut.norm_coe_le_norm p).trans hut)
+    (by rw [hvfun]; exact huthol)
+  simpa only [NNReal.coe_mul, Real.coe_toNNReal _ (rpow_nonneg hδ.le _)] using h
+
 /-- **Temporal cutoffs with parabolic scaling.** For `α ≤ 2`, one constant works for every
 transition interval `[s, s + δ]` and every closed time slab. The cutoff is zero before the
 transition, one afterwards, has zero spatial derivatives, and its order-two norm is bounded
@@ -120,7 +121,8 @@ theorem exists_temporal_cutoff (hα : α ≤ 2) :
           s + δ ≤ (p : ParabolicSpaceTime E).time → χ p = 1) ∧
         spatialFDerivL χ = 0 ∧ spatialSecondFDerivL χ = 0 ∧
         ‖χ‖ ≤ 1 + M / δ + M * δ ^ (-1 - (α : ℝ) / 2) := by
-  obtain ⟨M, hM, hhol⟩ := exists_holderWith_deriv_smoothTransition hα
+  obtain ⟨M, hM, hhol⟩ := smoothTransition.exists_holderWith_deriv
+    ((div_le_iff₀ (by norm_num : (0 : ℝ≥0) < 2)).2 (by simpa using hα))
   refine ⟨M, M.coe_nonneg, fun {δ} hδ s a b hab ↦ ?_⟩
   let f : ℝ → ℝ := fun t ↦ smoothTransition ((t - s) / δ)
   have hf : ContDiff ℝ ∞ f := smoothTransition.contDiff.comp
@@ -136,22 +138,7 @@ theorem exists_temporal_cutoff (hα : α ≤ 2) :
     BoundedContinuousFunction.ofNormedAddCommGroup
       (fun p ↦ f (p : ParabolicSpaceTime E).time)
       (hf.continuous.comp (by fun_prop)) 1 (fun p ↦ smoothTransition.abs_le_one _)
-  let ut : ParabolicSpaceTime.slab (E := E) a b →ᵇ ℝ :=
-    BoundedContinuousFunction.ofNormedAddCommGroup
-      (fun p ↦ δ⁻¹ * deriv smoothTransition (((p : ParabolicSpaceTime E).time - s) / δ))
-      (by fun_prop) (M / δ) (fun p ↦ by
-        rw [norm_mul, Real.norm_of_nonneg (inv_nonneg.2 hδ.le)]
-        exact (mul_le_mul_of_nonneg_left (hM _) (inv_nonneg.2 hδ.le)).trans_eq
-          (by ring))
-  have huthol : HolderWith (M * (δ ^ (-1 - (α : ℝ) / 2)).toNNReal) α
-      (ut : ParabolicSpaceTime.slab (E := E) a b → ℝ) :=
-    holderWith_scaled_time_deriv hhol hδ s a b
-  let v := HolderSpace.ofBoundedContinuousFunction ut huthol.memHolder
-  have hvfun : (v : ParabolicSpaceTime.slab (E := E) a b → ℝ) = ut := by
-    ext p
-    exact HolderSpace.ofBoundedContinuousFunction_apply _ _ p
-  have hv (p) : v p = δ⁻¹ * deriv smoothTransition
-      (((p : ParabolicSpaceTime E).time - s) / δ) := by simp [v, ut]
+  obtain ⟨v, hv, hvnorm⟩ := exists_scaled_time_deriv (E := E) hM hhol hδ s a b
   have hx (t : Icc a b) (x : E) :
       HasFDerivAt (fun y ↦ u (ParabolicSpaceTime.slabMk y t))
         ((0 : ParabolicSpaceTime.slab (E := E) a b →ᵇ (E →L[ℝ] ℝ))
@@ -175,8 +162,7 @@ theorem exists_temporal_cutoff (hα : α ≤ 2) :
   let χ := mk (hab := hab) u 0 0 v hx hxx ht
   have hχ (p : ParabolicSpaceTime.slab (E := E) a b) :
       χ p = f (p : ParabolicSpaceTime E).time := by
-    simp only [χ, mk_apply]
-    rfl
+    simp only [χ, mk_apply, u, BoundedContinuousFunction.coe_ofNormedAddCommGroup]
   refine ⟨χ, ?_, ?_, ?_, by simp only [χ, spatialFDerivL_mk],
     by simp only [χ, spatialSecondFDerivL_mk], ?_⟩
   · intro p
@@ -191,14 +177,6 @@ theorem exists_temporal_cutoff (hα : α ≤ 2) :
   · -- The norm is the value supremum plus the time-derivative Hölder norm.
     -- Scaling time by δ produces δ⁻¹ in the supremum and δ^(-1-α/2) in the seminorm.
     have hu : ‖u‖ ≤ 1 := BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ zero_le_one _
-    have hut : ‖ut‖ ≤ M / δ :=
-      BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ (by positivity) _
-    have hvnorm : ‖v‖ ≤ M / δ + M * δ ^ (-1 - (α : ℝ) / 2) := by
-      have h := HolderSpace.norm_le_of_norm_le_of_holderWith (f := v)
-        (M := (M : ℝ) / δ) (by positivity)
-        (fun p ↦ by rw [hvfun]; exact (ut.norm_coe_le_norm p).trans hut)
-        (by rw [hvfun]; exact huthol)
-      simpa only [NNReal.coe_mul, Real.coe_toNNReal _ (rpow_nonneg hδ.le _)] using h
     simp only [χ, norm_eq, valueL_mk, spatialFDerivL_mk,
       spatialSecondFDerivL_mk, timeDerivL_mk]
     have hz : ‖(0 : ParabolicSpaceTime.slab (E := E) a b →ᵇ (E →L[ℝ] ℝ))‖ = 0 := norm_zero
