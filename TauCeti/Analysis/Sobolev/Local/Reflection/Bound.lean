@@ -65,11 +65,8 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 /-- The node dilations are contractions. -/
 private theorem norm_imDilation_higherReflectionNode_le {k : ℕ} (j : Fin k) :
     ‖imDilation (higherReflectionNode j)‖ ≤ 1 := by
-  have hn : |higherReflectionNode j| ≤ 1 := by
-    rw [higherReflectionNode_eq, abs_neg, abs_inv, abs_of_pos (by positivity)]
-    exact inv_le_one_of_one_le₀ (by simp)
   exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun w => by
-    simpa using norm_imDilation_le hn w
+    simpa using norm_imDilation_le (abs_higherReflectionNode_le_one j) w
 
 variable {k : ℕ} {d : Fin k → ℝ}
 

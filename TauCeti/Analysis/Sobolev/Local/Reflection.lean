@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Complex.ImDilation
+public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.Trace.Reflection.Higher
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Analysis.Sobolev.Trace.Reflection.Basic
@@ -61,6 +62,9 @@ statement.
   (`TauCeti.MemWkpLoc.exists_ball_extension`).
 * `TauCeti.MemWkpLoc.exists_opens_memWkpLoc_planarReflection`: without any symmetry of `Ω`, the
   reflection is in `W^{k,p}_loc(V)` for an open `V` with `Ω ∩ {0 ≤ im} ⊆ V ⊆ Ω`.
+* `TopologicalSpace.Opens.reflectionHull`: the reflection hull of an open set `V`, an open set
+  between `V ∩ {0 ≤ im}` and `V` that is stable under the node dilations below the real axis
+  (`TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflectionHull`).
 * `TauCeti.eLpNorm_planarReflection_le`: the `Lᵖ(Ω)` bound by the `Lᵖ(Ω ∩ {0 ≤ im})` norm, with the
   constant `TauCeti.higherReflectionBound k p` for the Vandermonde weights. The same bound for weak
   derivatives of every order is in `TauCeti.Analysis.Sobolev.Local.Reflection.Bound`.
@@ -727,15 +731,12 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff {p : ℝ≥0∞} (hp : 
 theorem imDilation_higherReflectionNode_mem_ball (x : ℝ) (r : ℝ) {k : ℕ} (j : Fin k) {z : ℂ}
     (hz : z ∈ Metric.ball (x : ℂ) r) :
     imDilation (higherReflectionNode j) z ∈ Metric.ball (x : ℂ) r := by
-  have hn : |higherReflectionNode j| ≤ 1 := by
-    rw [higherReflectionNode_eq, abs_neg, abs_inv, abs_of_pos (by positivity)]
-    exact inv_le_one_of_one_le₀ (by simp)
   rw [Metric.mem_ball, dist_eq_norm] at hz ⊢
   have hx : imDilation (higherReflectionNode j) (x : ℂ) = x :=
     imDilation_of_im_eq_zero _ (Complex.ofReal_im x)
   calc ‖imDilation (higherReflectionNode j) z - x‖
       = ‖imDilation (higherReflectionNode j) (z - x)‖ := by rw [map_sub, hx]
-    _ ≤ ‖z - x‖ := norm_imDilation_le hn _
+    _ ≤ ‖z - x‖ := norm_imDilation_le (abs_higherReflectionNode_le_one j) _
     _ < r := hz
 
 /-- **Extension from a half-disc to the disc.** For a disc `D` centred on the real axis, a map in
@@ -830,6 +831,94 @@ theorem MemWkpLoc.exists_ball_extension {p : ℝ≥0∞} (hp : 1 ≤ p) {V : Set
     rw [← hwx]
     exact MemWkpLoc.planarReflection_higherReflectionCoeff_ball hp w.re r
       (hu.mono (inter_subset_inter_left _ (by rw [hwx]; exact hrV)))
+
+/-! ### Reflection hulls -/
+
+/-- The reflection hull of an open set `V ⊆ ℂ`: the points of `V` in the open upper half-plane,
+together with the points `z` of `V` whose vertical segment `{imDilation c z | -1 ≤ c ≤ 1}`, from `z`
+to its conjugate, lies in `V`. It is open, lies between `V ∩ {0 ≤ im}` and `V`, and is stable under
+the node dilations below the real axis
+(`TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflectionHull`), so the higher
+reflections extend local Sobolev maps from its closed upper half to the whole hull. -/
+def _root_.TopologicalSpace.Opens.reflectionHull (V : Opens ℂ) : Opens ℂ where
+  carrier := (V : Set ℂ) ∩ {z | 0 < z.im} ∪ {z | ∀ c ∈ Icc (-1 : ℝ) 1, imDilation c z ∈ V}
+  is_open' := by
+    refine (V.isOpen.inter (isOpen_lt continuous_const Complex.continuous_im)).union
+      (isOpen_iff_mem_nhds.2 fun z hz => ?_)
+    have hc : Continuous fun q : ℂ × ℝ => imDilation q.2 q.1 :=
+      continuous_imDilation_uncurry.comp continuous_swap
+    exact isCompact_Icc.eventually_forall_of_forall_eventually fun c hcI =>
+      hc.continuousAt.preimage_mem_nhds (V.isOpen.mem_nhds (hz c hcI))
+
+/-- Membership in the reflection hull. -/
+theorem _root_.TopologicalSpace.Opens.mem_reflectionHull {V : Opens ℂ} {z : ℂ} :
+    z ∈ V.reflectionHull ↔ (z ∈ V ∧ 0 < z.im) ∨ ∀ c ∈ Icc (-1 : ℝ) 1, imDilation c z ∈ V :=
+  Iff.rfl
+
+/-- The reflection hull of `V` lies in `V`. -/
+theorem _root_.TopologicalSpace.Opens.reflectionHull_le (V : Opens ℂ) : V.reflectionHull ≤ V := by
+  rintro z (hz | hz)
+  · exact hz.1
+  · simpa using hz 1 ⟨by norm_num, le_rfl⟩
+
+/-- The reflection hull of `V` contains `V ∩ {0 ≤ im}`: points on the real axis are fixed by the
+normal dilations. -/
+theorem _root_.TopologicalSpace.Opens.inter_setOf_im_nonneg_subset_reflectionHull (V : Opens ℂ) :
+    (V : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V.reflectionHull := by
+  rintro z ⟨hzV, hz⟩
+  have him : 0 ≤ z.im := hz
+  rcases him.lt_or_eq with hpos | hzero
+  · exact Or.inl ⟨hzV, hpos⟩
+  · exact Or.inr fun c _ => by rwa [imDilation_of_im_eq_zero c hzero.symm]
+
+/-- The vertical segment from a point of the reflection hull on or below the real axis to its
+conjugate lies in the original set. -/
+theorem _root_.TopologicalSpace.Opens.imDilation_mem_of_mem_reflectionHull {V : Opens ℂ} {z : ℂ}
+    (hz : z ∈ V.reflectionHull) (him : z.im ≤ 0) {c : ℝ} (hc : c ∈ Icc (-1 : ℝ) 1) :
+    imDilation c z ∈ V :=
+  hz.resolve_left (fun h => not_lt.2 him h.2) c hc
+
+/-- The reflection hull is stable under the node dilations below the real axis. -/
+theorem _root_.TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflectionHull
+    {V : Opens ℂ} {n : ℕ} (j : Fin n) {z : ℂ} (hz : z ∈ V.reflectionHull) (him : z.im < 0) :
+    imDilation (higherReflectionNode j) z ∈ V.reflectionHull := by
+  refine Or.inr fun c hc => ?_
+  have hcn : |c * higherReflectionNode j| ≤ 1 := by
+    rw [abs_mul]
+    exact (mul_le_mul (abs_le.2 hc) (abs_higherReflectionNode_le_one j) (abs_nonneg _)
+      zero_le_one).trans (one_mul 1).le
+  rw [imDilation_imDilation]
+  exact Opens.imDilation_mem_of_mem_reflectionHull hz him.le (abs_le.1 hcn)
+
+/-- A relatively compact open subset `W` of the reflection hull of `Ω` lies, with its closure, in
+the reflection hull of a relatively compact open subset `V` of `Ω`. -/
+theorem _root_.TopologicalSpace.Opens.exists_closure_subset_reflectionHull {Ω W : Opens ℂ}
+    (hWc : IsCompact (closure (W : Set ℂ))) (hWΩ : closure (W : Set ℂ) ⊆ Ω.reflectionHull) :
+    ∃ V : Opens ℂ, IsCompact (closure (V : Set ℂ)) ∧ closure (V : Set ℂ) ⊆ Ω ∧
+      closure (W : Set ℂ) ⊆ V.reflectionHull := by
+  set K := closure (W : Set ℂ)
+  have hK' : IsCompact (K ∪ (fun q : ℝ × ℂ => imDilation q.1 q.2) ''
+      (Icc (-1 : ℝ) 1 ×ˢ (K ∩ {z | z.im ≤ 0}))) :=
+    hWc.union ((isCompact_Icc.prod (hWc.inter_right
+      (isClosed_le Complex.continuous_im continuous_const))).image continuous_imDilation_uncurry)
+  obtain ⟨V, hVo, hKV, hVΩ, hVc⟩ := exists_open_between_and_isCompact_closure hK' Ω.isOpen (by
+    rintro _ (hz | ⟨⟨c, z⟩, ⟨hc, hzK, hz⟩, rfl⟩)
+    · exact Ω.reflectionHull_le (hWΩ hz)
+    · exact Opens.imDilation_mem_of_mem_reflectionHull (hWΩ hzK) hz hc)
+  refine ⟨⟨V, hVo⟩, hVc, hVΩ, fun z hz => ?_⟩
+  rcases lt_or_ge 0 z.im with h | h
+  · exact Or.inl ⟨hKV (Or.inl hz), h⟩
+  · exact Or.inr fun c hc => hKV (Or.inr ⟨(c, z), ⟨hc, hz, h⟩, rfl⟩)
+
+/-- The closure of the upper half of an open set whose closure lies in `Ω` lies in the reflection
+hull of `Ω`. -/
+theorem _root_.TopologicalSpace.Opens.closure_upperHalf_subset_reflectionHull {Ω W : Opens ℂ}
+    (hWΩ : closure (W : Set ℂ) ⊆ Ω) : closure (W.upperHalf : Set ℂ) ⊆ Ω.reflectionHull := by
+  rw [Opens.coe_upperHalf]
+  refine (closure_minimal (t := closure (W : Set ℂ) ∩ {z | 0 ≤ z.im})
+    (inter_subset_inter subset_closure (ofPred_subset_ofPred.2 fun _ => le_of_lt))
+    (isClosed_closure.inter (isClosed_le continuous_const Complex.continuous_im))).trans ?_
+  exact (inter_subset_inter_left _ hWΩ).trans (Ω.inter_setOf_im_nonneg_subset_reflectionHull)
 
 /-! ### The `Lᵖ` bound -/
 

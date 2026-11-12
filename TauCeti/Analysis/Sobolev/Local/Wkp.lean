@@ -86,16 +86,15 @@ variable {p : ℝ≥0∞} {Ω : Opens ℂ} {k : ℕ}
 /-- **`MemWkpLoc` from a chain of iterated gradients.** A chain of iterated-gradient-valued fields
 `G j, …, G (j + n)`, each locally `Lᵖ` on `U` and each the weak derivative of the previous one on
 the interior of `U`, gives `G j ∈ MemWkpLoc p U n`. The set `U` need not be open. -/
-theorem memWkpLoc_of_iteratedGradient_chain {U : Set ℂ} (n : ℕ) :
-    ∀ (j : ℕ) (G : (i : ℕ) → ℂ → IteratedGradient ℂ i),
-      (∀ i, j ≤ i → i < j + n → HasWeakFDerivOn volume (Opens.interior U) (G i) (G (i + 1))) →
-      (∀ i, j ≤ i → i ≤ j + n → MemLpLoc p U (G i)) → MemWkpLoc p U n (G j) := by
-  induction n with
-  | zero => exact fun j G _ hGp => memWkpLoc_zero_iff.2 (hGp j le_rfl (by omega))
+theorem memWkpLoc_of_iteratedGradient_chain {U : Set ℂ} (n j : ℕ)
+    (G : (i : ℕ) → ℂ → IteratedGradient ℂ i)
+    (hG : ∀ i, j ≤ i → i < j + n → HasWeakFDerivOn volume (Opens.interior U) (G i) (G (i + 1)))
+    (hGp : ∀ i, j ≤ i → i ≤ j + n → MemLpLoc p U (G i)) : MemWkpLoc p U n (G j) := by
+  induction n generalizing j with
+  | zero => exact memWkpLoc_zero_iff.2 (hGp j le_rfl (by omega))
   | succ n ih =>
-    intro j G hG hGp
     exact memWkpLoc_succ_iff.2 ⟨hGp j le_rfl (by omega), G (j + 1), hG j le_rfl (by omega),
-      ih (j + 1) G (fun i hji hi => hG i (by omega) (by omega))
+      ih (j + 1) (fun i hji hi => hG i (by omega) (by omega))
         fun i hji hi => hGp i (by omega) (by omega)⟩
 
 /-- `MemWkpLoc` for an iterated-gradient-valued field, through a chain of iterated gradients
@@ -175,29 +174,26 @@ the level-`j` fields, read through a linear isometry `L`, satisfy the chain boun
 `WeakDerivChainLe p S T C n`, then every level `i` of `Gf` from `j` through `j + n` has `Lᵖ(S)` norm
 at most `C` times the `Lᵖ(T)` norm of the same level of `Gg`. -/
 theorem eLpNorm_le_of_weakDerivChainLe_iteratedGradient {S T : Set ℂ} {C : ℝ≥0∞}
-    (n : ℕ) : ∀ (j : ℕ) {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-      (L : IteratedGradient ℂ j →ₗᵢ[ℝ] F) (Gf Gg : (i : ℕ) → ℂ → IteratedGradient ℂ i),
-      WeakDerivChainLe p S T C n (fun z => L (Gf j z)) (fun z => L (Gg j z)) →
-      (∀ i, j ≤ i → i < j + n →
-        HasWeakFDerivOn volume (Opens.interior S) (Gf i) (Gf (i + 1))) →
-      (∀ i, j ≤ i → i < j + n →
-        HasWeakFDerivOn volume (Opens.interior T) (Gg i) (Gg (i + 1))) →
-      ∀ i, j ≤ i → i ≤ j + n →
-        eLpNorm (Gf i) p (volume.restrict S) ≤ C * eLpNorm (Gg i) p (volume.restrict T) := by
-  induction n with
+    (n j : ℕ) {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    (L : IteratedGradient ℂ j →ₗᵢ[ℝ] F) (Gf Gg : (i : ℕ) → ℂ → IteratedGradient ℂ i)
+    (h : WeakDerivChainLe p S T C n (fun z => L (Gf j z)) (fun z => L (Gg j z)))
+    (hGf : ∀ i, j ≤ i → i < j + n →
+      HasWeakFDerivOn volume (Opens.interior S) (Gf i) (Gf (i + 1)))
+    (hGg : ∀ i, j ≤ i → i < j + n →
+      HasWeakFDerivOn volume (Opens.interior T) (Gg i) (Gg (i + 1)))
+    (i : ℕ) (hji : j ≤ i) (hi : i ≤ j + n) :
+    eLpNorm (Gf i) p (volume.restrict S) ≤ C * eLpNorm (Gg i) p (volume.restrict T) := by
+  induction n generalizing j F with
   | zero =>
-    intro j F _ _ _ L Gf Gg h _ _ i hji hi
     obtain rfl : i = j := by omega
     simpa only [LinearIsometry.eLpNorm_comp] using h.eLpNorm_le
   | succ n ih =>
-    intro j F _ _ _ L Gf Gg h hGf hGg i hji hi
     rcases Nat.lt_or_eq_of_le hji with hji | rfl
     · have hc := h.weakFDeriv ((hGf j le_rfl (by omega)).clm_comp L.toContinuousLinearMap)
         ((hGg j le_rfl (by omega)).clm_comp L.toContinuousLinearMap)
       let L' : IteratedGradient ℂ (j + 1) →ₗᵢ[ℝ] (ℂ →L[ℝ] F) := LinearIsometry.postcomp L
-      exact ih (j + 1) L' Gf Gg hc
-        (fun i hji hi => hGf i (by omega) (by omega)) (fun i hji hi => hGg i (by omega) (by omega))
-        i (by omega) (by omega)
+      exact ih (j + 1) L' hc (fun i hji hi => hGf i (by omega) (by omega))
+        (fun i hji hi => hGg i (by omega) (by omega)) (by omega) (by omega)
     · simpa only [LinearIsometry.eLpNorm_comp] using h.eLpNorm_le
 
 /-- The gluing step for iterated-gradient-valued fields: a field `g` at level `j` that, on every
