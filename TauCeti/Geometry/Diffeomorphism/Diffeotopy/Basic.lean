@@ -207,6 +207,11 @@ theorem mapsTo_final_of_eqOn_compl {K U : Set M} (hKU : K ⊆ U)
   simpa only [compl_compl] using
     ((Set.surjOn_id Uᶜ).congr hfix.symm).mapsTo_compl Φ.final.injective
 
+/-- The time slices of a conjugated diffeotopy are the conjugated time slices. -/
+theorem timeSlice_transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) (t : I) :
+    (Φ.transDiffeomorph f).timeSlice t = (f.symm.trans (Φ.timeSlice t)).trans f :=
+  _root_.Diffeomorph.ext fun x ↦ by simp
+
 /-- The final diffeomorphism of a conjugated diffeotopy is the conjugated final diffeomorphism. -/
 theorem final_transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) :
     (Φ.transDiffeomorph f).final = (f.symm.trans Φ.final).trans f :=
