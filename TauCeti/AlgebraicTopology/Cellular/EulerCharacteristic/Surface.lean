@@ -54,7 +54,12 @@ theorem eulerChar_eq_two_sub_finrank_singularHomology_one :
     eulerChar M = 2 - (finrank ℚ
       (((singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj
         (TopCat.of M)) : ℤ) := by
-  rw [eulerChar_eq_one_sub_finrank_add_finrank M ℚ hn, o.finrank_rat_singularHomology_top hn]
+  have h₂ : finrank ℚ
+      (((singularHomologyFunctor (ModuleCat.{0} ℚ) 2).obj (ModuleCat.of ℚ ℚ)).obj
+        (TopCat.of M)) = 1 := by
+    rw [(o.rationalFundamentalClassEquiv hn).symm.finrank_eq]
+    exact finrank_self ℚ
+  rw [eulerChar_eq_one_sub_finrank_add_finrank M ℚ hn, h₂]
   ring
 
 /-- A closed connected homologically oriented surface of finite CW type has Euler characteristic
