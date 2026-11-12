@@ -7,8 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
-public import TauCeti.AlgebraicGeometry.Modules.Biprod
-public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.CategoryTheory.Abelian.Subcategory
@@ -81,18 +79,17 @@ instance isFinitePresentation_isClosedUnderKernels (X : Scheme.{u}) [IsLocallyNo
     exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
       (limit.isoLimitCone ⟨k, hk⟩) (isFinitePresentation_kernel f)
 
+-- These specializations pre-elaborate the ringed-site hypotheses: synthesizing the site-level
+-- instances directly for `X.ringCatSheaf` exceeds the default typeclass search size (128).
 /-- The zero module sheaf is finitely presented. -/
 instance isFinitePresentation_containsZero (X : Scheme.{u}) :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).ContainsZero where
-  exists_zero := ⟨_, TauCeti.SheafOfModules.isZero_free PEmpty, inferInstance⟩
+    (SheafOfModules.isFinitePresentation X.ringCatSheaf).ContainsZero :=
+  TauCeti.SheafOfModules.isFinitePresentation_containsZero (R := X.ringCatSheaf)
 
 /-- Finitely presented sheaves are closed under binary products, computed as direct sums. -/
 instance isFinitePresentation_isClosedUnderBinaryProducts (X : Scheme.{u}) :
     (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderBinaryProducts :=
-  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun A B hA hB ↦ by
-    let := hA
-    let := hB
-    exact Scheme.Modules.isFinitePresentation_biprod A B
+  TauCeti.SheafOfModules.isFinitePresentation_isClosedUnderBinaryProducts (R := X.ringCatSheaf)
 
 /-- Finitely presented sheaves are closed under finite products. -/
 instance isFinitePresentation_isClosedUnderFiniteProducts (X : Scheme.{u}) :

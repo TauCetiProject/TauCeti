@@ -5,21 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Abelian
-public import Mathlib.Algebra.Category.FGModuleCat.Abelian
+public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
+public import Mathlib.Algebra.Category.FGModuleCat.Basic
 
 /-!
 # Coherent sheaves on the spectrum of a Noetherian ring
 
 For a Noetherian ring `R`, finitely presented sheaves on `Spec R` are precisely the sheaves
 associated with finite `R`-modules. Restricting the tilde/global-sections adjunction gives an
-equivalence with `FGModuleCat R`. In particular, this category of coherent sheaves is abelian,
-and its inclusion into all sheaves of modules is exact.
+additive equivalence `tildeEquiv` with `FGModuleCat R`. Its functors are `tildeFunctor` and
+`globalSectionsFunctor`; the unit and counit equations identify their components with those
+of the tilde adjunction.
 
-The kernel and cokernel of a morphism of coherent sheaves, computed in all module sheaves,
-are again coherent. Thus short exact sequences of coherent sheaves can be used in sheaf
-cohomology without changing their ambient kernels or cokernels. The cokernel result needs no
-Noetherian hypothesis; the kernel result does.
+The abelian structure and exact inclusion into all sheaves of modules follow from the generic
+object-property instances and the closure results in
+`TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian`. That module proves ambient
+kernel closure on locally Noetherian schemes and uses the existing cokernel result, which needs
+no Noetherian hypothesis.
 
 The construction follows Mathlib's `AlgebraicGeometry.tildeEquiv` and uses the finite-presentation
 comparison for tilde sheaves, rather than a new definition of coherence.
