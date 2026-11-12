@@ -178,6 +178,19 @@ theorem max'_support_mem_flagPivots {x : M} (hx : x ∈ W) (hs : (b.repr x).supp
   exact (Fin.castSucc_lt_iff_succ_le.mpr hj).not_ge
     (Fin.castSucc_le_castSucc_iff.mpr ((b.repr x).support.le_max' j (by simpa using hj')))
 
+/-- A vector of `W` whose coordinates at the pivots of `W` above `i` vanish lies in the span of the
+first `i + 1` basis vectors: otherwise the last index in its support would be a pivot above `i`. -/
+theorem mem_flag_succ_of_repr_flagPivots_eq_zero {i : Fin n} {x : M} (hx : x ∈ W)
+    (h : ∀ j ∈ b.flagPivots W, i < j → b.repr x j = 0) : x ∈ b.flag i.succ := by
+  rw [mem_flag_iff_repr_eq_zero]
+  intro j hj
+  by_contra hj'
+  have hs : (b.repr x).support.Nonempty := ⟨j, by simpa using hj'⟩
+  have hij : i < j := Fin.succ_le_castSucc_iff.mp hj
+  have hjk : j ≤ (b.repr x).support.max' hs := (b.repr x).support.le_max' j (by simpa using hj')
+  exact (Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs))
+    (h _ (max'_support_mem_flagPivots hx hs) (hij.trans_le hjk))
+
 /-- The coordinate at a pivot of `W` of the basis vector `single i 1` vanishes when `i` is not a
 pivot of `W`. -/
 private theorem single_apply_eq_zero_of_notMem_flagPivots {i j : Fin n}
@@ -398,25 +411,15 @@ theorem repr_flagEchelon {i j : Fin n} (hj : j ∈ b.flagPivots W) :
     b.repr (b.flagEchelon W i) j = Finsupp.single i 1 j := by
   by_cases hi : i ∈ b.flagPivots W
   · exact (flagEchelon_spec hi).2 j hj
-  · rw [flagEchelon_of_notMem hi, map_zero, Finsupp.coe_zero, Pi.zero_apply,
-      single_apply_eq_zero_of_notMem_flagPivots hi hj]
+  · simp [hi, single_apply_eq_zero_of_notMem_flagPivots hi hj]
 
 /-- The characterization of the reduced echelon basis vectors. -/
 theorem eq_flagEchelon {i : Fin n} {x : V} (hx : x ∈ W)
     (h : ∀ j ∈ b.flagPivots W, b.repr x j = Finsupp.single i 1 j) : x = b.flagEchelon W i := by
   by_cases hi : i ∈ b.flagPivots W
   · -- A coordinate beyond `i` vanishes: the last one in the support would be another pivot.
-    have hxF : x ∈ b.flag i.succ := by
-      rw [mem_flag_iff_repr_eq_zero]
-      intro j hj
-      by_contra hj'
-      have hs : (b.repr x).support.Nonempty := ⟨j, by simpa using hj'⟩
-      have hk := h _ (max'_support_mem_flagPivots hx hs)
-      have hij : i < j := Fin.succ_le_castSucc_iff.mp hj
-      have hjk : j ≤ (b.repr x).support.max' hs :=
-        (b.repr x).support.le_max' j (by simpa using hj')
-      rw [Finsupp.single_eq_of_ne (hij.trans_le hjk).ne'] at hk
-      exact (Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs)) hk
+    have hxF := mem_flag_succ_of_repr_flagPivots_eq_zero hx fun j hj hij ↦ by
+      rw [h j hj, Finsupp.single_eq_of_ne hij.ne']
     exact (existsUnique_flagEchelon b W i).unique ⟨⟨hx, hxF⟩, h⟩ (flagEchelon_spec hi)
   · rw [flagEchelon_of_notMem hi]
     exact eq_zero_of_repr_flagPivots_eq_zero hx fun j hj ↦ by
