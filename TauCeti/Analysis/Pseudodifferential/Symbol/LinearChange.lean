@@ -160,11 +160,8 @@ theorem isSmoothing_compProdMap_cutoffSymbol_sub_cutoffSymbol {n : ℕ}
   refine Symbol.isSmoothing_of_coefficient_eq_zero (2 * c) fun x ξ hξ => ?_
   have h2 : 2 ≤ ‖ξ‖ := by nlinarith
   have hQ : 2 ≤ ‖Q ξ‖ := by
-    have hle : ‖ξ‖ ≤ c * ‖Q ξ‖ :=
-      calc ‖ξ‖ = ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) (Q ξ)‖ := by simp
-        _ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
-          (Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm _
-        _ ≤ c * ‖Q ξ‖ := mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)
+    have hle : ‖ξ‖ ≤ c * ‖Q ξ‖ := (Q.antilipschitzWith.le_mul_norm (map_zero Q) ξ).trans
+      (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
     by_contra h
     nlinarith [not_le.1 h]
   simp [χ.apply_eq_one_of_two_le_norm h2, χ.apply_eq_one_of_two_le_norm hQ]

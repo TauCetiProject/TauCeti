@@ -208,11 +208,8 @@ theorem exists_norm_mixedDeriv_comp_prodMap_le_mul_rpow_weight {A : Type*}
     refine one_add_norm_sq_rpow_le_of_norm_le_mul hc₀ _ ?_ ?_
     · exact ((Q : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm ξ).trans
         (mul_le_mul_of_nonneg_right ((le_max_left _ _).trans (le_max_left _ _)) (norm_nonneg _))
-    · calc ‖ξ‖ = ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) (Q ξ)‖ := by simp
-        _ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
-          (Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm _
-        _ ≤ c₀ * ‖Q ξ‖ := mul_le_mul_of_nonneg_right
-          ((le_max_right _ _).trans (le_max_left _ _)) (norm_nonneg _)
+    · exact (Q.antilipschitzWith.le_mul_norm (map_zero Q) ξ).trans (mul_le_mul_of_nonneg_right
+        ((le_max_right _ _).trans (le_max_left _ _)) (norm_nonneg _))
   set M := max ‖P‖ ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
   set D := ∑ t : Fin (α.length + β.length) → Fin n,
     B (List.ofFn fun i => t (Fin.castAdd β.length i)) (List.ofFn fun i => t (Fin.natAdd α.length i))

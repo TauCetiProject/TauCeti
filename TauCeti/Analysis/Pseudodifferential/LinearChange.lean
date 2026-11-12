@@ -69,11 +69,7 @@ theorem quantizeSchwartzValue_compCLMOfContinuousLinearEquiv (a : E × E → V �
   have hd : |A.toLinearEquiv.toLinearMap.det| ≠ 0 :=
     abs_ne_zero.2 A.toLinearEquiv.isUnit_det'.ne_zero
   have hdet : B.toLinearEquiv.toLinearMap.det = A.toLinearEquiv.toLinearMap.det := by
-    have hB : B.toLinearEquiv.toLinearMap = LinearMap.adjoint A.toLinearEquiv.toLinearMap := by
-      ext ζ
-      simpa [B] using (congrArg (fun f : E →ₗ[ℝ] E => f ζ)
-        (ContinuousLinearMap.adjoint_toLinearMap (A : E →L[ℝ] E))).symm
-    rw [hB, LinearMap.det_adjoint, star_trivial]
+    rw [ContinuousLinearEquiv.det_adjointEquiv, star_trivial]
   set g : E → W := fun ζ => 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) (𝓕 (u ∘ A) ζ)
   have hL : quantizeSchwartzValue a (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A u) x =
       ∫ ζ, g ζ := by
