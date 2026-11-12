@@ -359,9 +359,8 @@ theorem IsIntegral.not_isUnimodular_smul [Nontrivial E] (h : IsIntegral L) {c : 
   intro hu
   -- A unimodular lattice spans the space, and `c • L` spans no more than `L` does.
   have : IsZLattice ℝ L := ⟨top_unique <| by
-    rw [← hu.span_eq_top, Submodule.span_le, coe_pointwise_smul]
-    rintro _ ⟨z, hz, rfl⟩
-    exact Submodule.smul_mem _ c (Submodule.subset_span hz)⟩
+    rw [← hu.span_eq_top, coe_pointwise_smul]
+    exact Submodule.span_smul_le _ c⟩
   have hdet := hu.det_eq_one
   rw [det_smul L, pow_mul, ← sq_abs, ← pow_mul] at hdet
   have hlt : 1 < |c| ^ (2 * finrank ℝ E) :=
