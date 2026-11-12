@@ -32,10 +32,9 @@ Since the diamond operators preserve the cusp forms, any complement of the cusp 
 and therefore splits each nebentypus space `M_k(N, χ)` against the image of `S_k(N, χ)`.
 
 Ported from the AINTLIB `LeanModularForms` project
-(`LeanModularForms/HeckeRIngs/GL2/Gamma1Pair.lean`, Chris Birkbeck), realizing Layer 0 of the
-ModularForms roadmap; the roadmap pins these definitions (eigenspace-in-a-`Submodule`, not a
-re-founded slash action with built-in character) and their names. The Hecke pair
-`(Γ₁(N), Δ₁(N))` from the same source file is Layer-2 material and is not ported here.
+(`LeanModularForms/HeckeRIngs/GL2/Gamma1Pair.lean`, Chris Birkbeck). The character spaces are
+eigenspaces inside a `Submodule`, not a re-founded slash action with a built-in character. The
+Hecke pair `(Γ₁(N), Δ₁(N))` from the same source file is not ported here.
 
 ## Main definitions
 

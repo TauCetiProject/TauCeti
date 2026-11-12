@@ -634,7 +634,6 @@ theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le (k : ℕ)
   by_cases hξ : ξ ∈ tsupport (φ.inhomogeneousLittlewoodPaley j)
   · have hξ' : ‖ξ‖ ≤ 2 ^ j * φ.rOut :=
       mem_closedBall_zero_iff.1 (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j hξ)
-    have h2 : (0 : ℝ) < (2 ^ j) ^ k := by positivity
     calc ‖iteratedFDeriv ℝ k (φ.inhomogeneousLittlewoodPaley j) ξ‖ * (1 + ‖ξ‖) ^ k
         ≤ B / (2 ^ j) ^ k * (2 ^ j * (1 + φ.rOut)) ^ k := by
           refine mul_le_mul (hB j ξ) ?_ (by positivity) (by positivity)
