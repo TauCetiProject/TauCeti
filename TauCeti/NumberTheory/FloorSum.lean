@@ -62,7 +62,7 @@ theorem Nat.Coprime.sum_range_div {h c : ℕ} (hhc : h.Coprime c) :
 
 /-- For coprime `h` and `c`, the floor sum is `(h - 1)(c - 1) / 2` in any
 division ring of characteristic zero. -/
-theorem Nat.Coprime.sum_range_cast_div {K : Type*} [DivisionRing K] [CharZero K]
+theorem Nat.Coprime.sum_range_natCast_div {K : Type*} [DivisionRing K] [CharZero K]
     {h c : ℕ} (hhc : h.Coprime c) :
     ∑ r ∈ range c, ((h * r / c : ℕ) : K) = (h - 1) * (c - 1) / 2 := by
   rcases h.eq_zero_or_pos with rfl | hh
@@ -77,9 +77,9 @@ theorem Nat.Coprime.sum_range_cast_div {K : Type*} [DivisionRing K] [CharZero K]
   push_cast [Nat.cast_sub hh, Nat.cast_sub hc] at heq
   exact (eq_div_iff (by norm_num)).2 heq
 
-/-- The second-moment identity `Nat.Coprime.mul_sum_range_cast_div_sq` over `ℚ`, from which the
-versions in `ℕ` and in any division ring of characteristic zero follow. -/
-private theorem Nat.Coprime.mul_sum_range_ratCast_div_sq {h c : ℕ} (hhc : h.Coprime c) :
+/-- The second-moment identity `Nat.Coprime.mul_sum_range_natCast_div_sq` over `ℚ`, from which
+the versions in `ℕ` and in any division ring of characteristic zero follow. -/
+private theorem Nat.Coprime.mul_sum_range_natCast_div_sq_rat {h c : ℕ} (hhc : h.Coprime c) :
     (c : ℚ) * ∑ r ∈ range c, ((h * r / c : ℕ) : ℚ) ^ 2 =
       2 * h * ∑ r ∈ range c, (r : ℚ) * ((h * r / c : ℕ) : ℚ) +
         (1 - h ^ 2) * ((c - 1) * (2 * c - 1) / 6) := by
@@ -107,7 +107,7 @@ theorem Nat.Coprime.mul_sum_range_div_sq_mul_six_add {h c : ℕ} (hhc : h.Coprim
     simp
   rcases c.eq_zero_or_pos with rfl | hc
   · simp
-  have hq := hhc.mul_sum_range_ratCast_div_sq
+  have hq := hhc.mul_sum_range_natCast_div_sq_rat
   have heq : (((c * (∑ r ∈ range c, (h * r / c) ^ 2) * 6 +
       (h ^ 2 - 1) * (c - 1) * (2 * c - 1) : ℕ)) : ℚ) =
       ((12 * h * ∑ r ∈ range c, r * (h * r / c) : ℕ) : ℚ) := by
@@ -118,12 +118,12 @@ theorem Nat.Coprime.mul_sum_range_div_sq_mul_six_add {h c : ℕ} (hhc : h.Coprim
 
 /-- For coprime `h` and `c` in a division ring of characteristic zero,
 `c ∑_{r < c} ⌊h r / c⌋² = 2h ∑_{r < c} r⌊h r / c⌋ + (1 - h²)(c - 1)(2c - 1)/6`. -/
-theorem Nat.Coprime.mul_sum_range_cast_div_sq {K : Type*} [DivisionRing K] [CharZero K]
+theorem Nat.Coprime.mul_sum_range_natCast_div_sq {K : Type*} [DivisionRing K] [CharZero K]
     {h c : ℕ} (hhc : h.Coprime c) :
     (c : K) * ∑ r ∈ range c, ((h * r / c : ℕ) : K) ^ 2 =
       2 * h * ∑ r ∈ range c, (r : K) * ((h * r / c : ℕ) : K) +
         (1 - h ^ 2) * ((c - 1) * (2 * c - 1) / 6) := by
-  have hq := congrArg (Rat.cast : ℚ → K) hhc.mul_sum_range_ratCast_div_sq
+  have hq := congrArg (Rat.cast : ℚ → K) hhc.mul_sum_range_natCast_div_sq_rat
   push_cast at hq
   exact hq
 

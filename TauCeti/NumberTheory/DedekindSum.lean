@@ -241,16 +241,17 @@ theorem dedekindSum_self_mul_sub (c k d : ℤ) :
 
 /-- The Dedekind sum `s(d, c)` is the empty sum for `c ≤ 1`. -/
 @[simp]
-theorem dedekindSum_of_le_one (d : ℤ) {c : ℤ} (hc : c ≤ 1) : dedekindSum d c = 0 := by
+theorem dedekindSum_eq_zero_of_le_one (d : ℤ) {c : ℤ} (hc : c ≤ 1) :
+    dedekindSum d c = 0 := by
   exact sum_eq_zero fun r hr ↦ absurd hr (by rw [mem_Ioo]; omega)
 
 /-- The Dedekind sum `s(d, 0)` vanishes. -/
 theorem dedekindSum_zero_right (d : ℤ) : dedekindSum d 0 = 0 :=
-  dedekindSum_of_le_one d zero_le_one
+  dedekindSum_eq_zero_of_le_one d zero_le_one
 
 /-- The Dedekind sum `s(d, 1)` vanishes. -/
 theorem dedekindSum_one_right (d : ℤ) : dedekindSum d 1 = 0 :=
-  dedekindSum_of_le_one d le_rfl
+  dedekindSum_eq_zero_of_le_one d le_rfl
 
 /-! ### The reciprocity law -/
 
@@ -315,8 +316,8 @@ theorem dedekindSum_add_dedekindSum {h c : ℤ} (hh : 0 < h) (hc : 0 < c) (hhc :
   push_cast at hcount
   simp only [sum_range_natCast, mul_add, mul_one, sum_add_distrib, hp, ← sum_div] at hcount
   -- The two residue-permutation identities for `c` modulo `h`.
-  have h₁ := hhc.symm.sum_range_cast_div (K := ℚ)
-  have h₂ := hhc.symm.mul_sum_range_cast_div_sq (K := ℚ)
+  have h₁ := hhc.symm.sum_range_natCast_div (K := ℚ)
+  have h₂ := hhc.symm.mul_sum_range_natCast_div_sq (K := ℚ)
   -- Eliminating the sums of `⌊c s / h⌋` and `⌊c s / h⌋²` relates the two floor sums.
   have hST : (h : ℚ) * ∑ x ∈ range c, (x : ℚ) * ((h * x / c : ℕ) : ℚ) +
       c * ∑ x ∈ range h, (x : ℚ) * ((c * x / h : ℕ) : ℚ) =

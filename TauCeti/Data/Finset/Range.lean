@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Finset.Filter
 public import Mathlib.Data.Finset.Range
-import Mathlib.Data.Nat.Order.Lemmas
 
 /-!
 # Filtering natural ranges
