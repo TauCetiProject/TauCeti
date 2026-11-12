@@ -95,7 +95,7 @@ private theorem extend_spec [Finite E(G)] (hG : G.IsEdgeConnected 2) {H : Graph 
         exact congrArg d.graphAfter (Fin.ext rfl)
       · rw [d.earAt_copy]
         exact congrArg d.earAt (Fin.ext rfl)
-  | case2 H d h ear ih =>
+  | case2 _ d _ ear ih =>
       obtain ⟨hle', hgraph', hear', hstart'⟩ := ih
       have hle₀ : d.length ≤ (d.snoc ear).length :=
         (Nat.le_succ d.length).trans_eq (d.length_snoc ear).symm

@@ -136,7 +136,7 @@ example :
         · simp [hv1]
   have hnot2 : ¬ H.IsEdgeConnected 2 := fun h2 ↦
     (SimpleGraph.isEdgeConnected_two_iff_forall_not_isBridge.mp h2) s(v0, v1) hbridge
-  have hfin : Finite V(G) := by
+  have : Finite V(G) := by
     have : V(G) = {0, 1} := by simp [G]
     rw [this]
     infer_instance
@@ -202,7 +202,7 @@ example :
       subst hw1
       have hhead : (o.head e0 : ℕ) = 1 := (Walk.followsOrientation_cons hf q |>.mp hp01).2.1
       cases p10 with
-      | @cons _ z _ g hg r =>
+      | @cons _ _ _ g hg r =>
           have hg0 : g = 0 := by simpa [G] using hg.edge_mem
           subst hg0
           have htail : (o.tail e0 : ℕ) = 1 := (Walk.followsOrientation_cons hg r |>.mp hp10).1
