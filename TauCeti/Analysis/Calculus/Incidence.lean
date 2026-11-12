@@ -57,17 +57,58 @@ theorem incidenceEquation_eq_zero (F : E × P → V) (j : W → V) (x : E) (y : 
 
 end Equation
 
+section Derivative
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+
+/-- The incidence equation has the differentiability order of the family and the map. -/
+theorem _root_.ContDiff.incidenceEquation {n : ℕ∞ω} {F : E × P → V} {j : W → V}
+    (hF : ContDiff 𝕜 n F) (hj : ContDiff 𝕜 n j) :
+    ContDiff 𝕜 n (incidenceEquation F j) := by
+  exact (hF.comp (contDiff_fst.fst.prodMk contDiff_snd)).sub
+    (hj.comp contDiff_fst.snd)
+
+/-- The full derivative of the incidence equation, including the parameter direction. -/
+theorem fderiv_incidenceEquation_apply
+    {F : E × P → V} {j : W → V} {x : E} {y : W} {p : P}
+    (hF : DifferentiableAt 𝕜 F (x, p)) (hj : DifferentiableAt 𝕜 j y)
+    (u : E) (v : W) (q : P) :
+    fderiv 𝕜 (incidenceEquation F j) ((x, y), p) ((u, v), q) =
+      fderiv 𝕜 F (x, p) (u, q) - fderiv 𝕜 j y v := by
+  have hfst : HasFDerivAt (Prod.fst : (E × W) × P → E × W)
+      (ContinuousLinearMap.fst 𝕜 (E × W) P) ((x, y), p) := hasFDerivAt_fst
+  have hsnd : HasFDerivAt (Prod.snd : (E × W) × P → P)
+      (ContinuousLinearMap.snd 𝕜 (E × W) P) ((x, y), p) := hasFDerivAt_snd
+  have hd := ((hF.hasFDerivAt.comp ((x, y), p) (hfst.fst.prodMk hsnd)).sub
+    (hj.hasFDerivAt.comp ((x, y), p) hfst.snd)).fderiv
+  exact congrArg (fun L : ((E × W) × P) →L[𝕜] V ↦ L ((u, v), q)) hd
+
+/-- The source derivative is `(u, v) ↦ D_x F (x, p) u - D j y v`. -/
+theorem fderiv_incidenceEquation_comp_inl
+    {F : E × P → V} {j : W → V} {x : E} {y : W} {p : P}
+    (hF : DifferentiableAt 𝕜 F (x, p)) (hj : DifferentiableAt 𝕜 j y) :
+    (fderiv 𝕜 (incidenceEquation F j) ((x, y), p)).comp
+        (ContinuousLinearMap.inl 𝕜 (E × W) P) =
+      ((fderiv 𝕜 F (x, p)).comp (ContinuousLinearMap.inl 𝕜 E P)).coprod
+        (-fderiv 𝕜 j y) := by
+  apply ContinuousLinearMap.ext
+  rintro ⟨u, v⟩
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
+    fderiv_incidenceEquation_apply hF hj, ContinuousLinearMap.coprod_apply,
+    neg_apply, sub_eq_add_neg]
+
+end Derivative
+
+section Regular
+
 variable [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup W] [NormedSpace ℝ W]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup P] [NormedSpace ℝ P]
-
-/-- The incidence equation has the differentiability order of the family and the map. -/
-theorem _root_.ContDiff.incidenceEquation {n : ℕ∞ω} {F : E × P → V} {j : W → V}
-    (hF : ContDiff ℝ n F) (hj : ContDiff ℝ n j) :
-    ContDiff ℝ n (incidenceEquation F j) := by
-  exact (hF.comp (contDiff_fst.fst.prodMk contDiff_snd)).sub
-    (hj.comp contDiff_fst.snd)
 
 /-- A parameter is regular for incidence when the slice is transverse to `j` at
 every incidence point. This uses the derivative only in the source variables. -/
@@ -78,35 +119,6 @@ def IsRegularIncidenceParameter (F : E × P → V) (j : W → V) (p : P) : Prop 
 theorem isRegularIncidenceParameter_iff (F : E × P → V) (j : W → V) (p : P) :
     IsRegularIncidenceParameter F j p ↔ IsRegularParameter (incidenceEquation F j) 0 p :=
   (Iff.rfl)
-
-/-- The full derivative of the incidence equation, including the parameter direction. -/
-theorem fderiv_incidenceEquation_apply
-    {F : E × P → V} {j : W → V} {x : E} {y : W} {p : P}
-    (hF : DifferentiableAt ℝ F (x, p)) (hj : DifferentiableAt ℝ j y)
-    (u : E) (v : W) (q : P) :
-    fderiv ℝ (incidenceEquation F j) ((x, y), p) ((u, v), q) =
-      fderiv ℝ F (x, p) (u, q) - fderiv ℝ j y v := by
-  have hfst : HasFDerivAt (Prod.fst : (E × W) × P → E × W)
-      (ContinuousLinearMap.fst ℝ (E × W) P) ((x, y), p) := hasFDerivAt_fst
-  have hsnd : HasFDerivAt (Prod.snd : (E × W) × P → P)
-      (ContinuousLinearMap.snd ℝ (E × W) P) ((x, y), p) := hasFDerivAt_snd
-  have hd := ((hF.hasFDerivAt.comp ((x, y), p) (hfst.fst.prodMk hsnd)).sub
-    (hj.hasFDerivAt.comp ((x, y), p) hfst.snd)).fderiv
-  exact congrArg (fun L : ((E × W) × P) →L[ℝ] V ↦ L ((u, v), q)) hd
-
-/-- The source derivative is `(u, v) ↦ D_x F (x, p) u - D j y v`. -/
-theorem fderiv_incidenceEquation_comp_inl
-    {F : E × P → V} {j : W → V} {x : E} {y : W} {p : P}
-    (hF : DifferentiableAt ℝ F (x, p)) (hj : DifferentiableAt ℝ j y) :
-    (fderiv ℝ (incidenceEquation F j) ((x, y), p)).comp
-        (ContinuousLinearMap.inl ℝ (E × W) P) =
-      ((fderiv ℝ F (x, p)).comp (ContinuousLinearMap.inl ℝ E P)).coprod
-        (-fderiv ℝ j y) := by
-  apply ContinuousLinearMap.ext
-  rintro ⟨u, v⟩
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
-    fderiv_incidenceEquation_apply hF hj, ContinuousLinearMap.coprod_apply,
-    neg_apply, sub_eq_add_neg]
 
 /-- For differentiable maps, regular incidence is the usual surjectivity criterion
 for the difference of their source derivatives. Differentiability is needed only at
@@ -177,5 +189,7 @@ theorem isRegularIncidenceParameter_id {F : E × P → V} {p : P}
     (fun x _ _ ↦ hF x) (fun _ y _ ↦ differentiableAt_id)
   intro x y hxy
   simpa using (Function.surjective_id : Surjective (id : V → V))
+
+end Regular
 
 end TauCeti
