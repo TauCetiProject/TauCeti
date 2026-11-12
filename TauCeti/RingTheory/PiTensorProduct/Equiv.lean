@@ -112,7 +112,9 @@ theorem congrAlgEquiv_tprod {ι : Type*} {A B : ι → Type*} [∀ i, Semiring (
 theorem congrAlgEquiv_symm {ι : Type*} {A B : ι → Type*} [∀ i, Semiring (A i)]
     [∀ i, Algebra R (A i)] [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)]
     (e : ∀ i, A i ≃ₐ[R] B i) :
-    (congrAlgEquiv e).symm = congrAlgEquiv fun i ↦ (e i).symm := (rfl)
+    (congrAlgEquiv e).symm = congrAlgEquiv fun i ↦ (e i).symm :=
+  AlgEquiv.toLinearEquiv_injective <| LinearEquiv.toLinearMap_injective <| PiTensorProduct.ext <|
+    MultilinearMap.ext fun a ↦ by simp [congr_symm_tprod]
 
 /-- `PiTensorProduct.congrAlgEquiv` of the identities is the identity. -/
 @[simp]

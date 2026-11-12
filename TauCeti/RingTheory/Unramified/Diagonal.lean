@@ -201,21 +201,22 @@ section BaseChange
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Algebra.EssFiniteType R S]
   [Algebra.FormallyUnramified R S] (T : Type*) [CommRing T] [Algebra R T]
 
-/-- The diagonal idempotent of `T ⊗[R] S` over `T` is the image of that of `S` over `R` under
-`a ⊗ b ↦ (1 ⊗ a) ⊗ (1 ⊗ b)`. -/
-private theorem productMap_includeLeft_includeRight_elem :
-    Algebra.TensorProduct.productMap
-        (((Algebra.TensorProduct.includeLeft (R := T) (S := T) (A := T ⊗[R] S)
-          (B := T ⊗[R] S)).restrictScalars R).comp Algebra.TensorProduct.includeRight)
-        (((Algebra.TensorProduct.includeRight (R := T) (A := T ⊗[R] S)
-          (B := T ⊗[R] S)).restrictScalars R).comp Algebra.TensorProduct.includeRight)
-        (Algebra.FormallyUnramified.elem R S) =
-      Algebra.FormallyUnramified.elem T (T ⊗[R] S) := by
-  set ψ := Algebra.TensorProduct.productMap
+variable (R S) in
+/-- The `R`-algebra map `S ⊗[R] S → (T ⊗[R] S) ⊗[T] (T ⊗[R] S)`, `a ⊗ b ↦ (1 ⊗ a) ⊗ (1 ⊗ b)`,
+along which the diagonal idempotent base changes. -/
+private noncomputable def baseChangeDiagonalMap :
+    S ⊗[R] S →ₐ[R] (T ⊗[R] S) ⊗[T] (T ⊗[R] S) :=
+  Algebra.TensorProduct.productMap
     (((Algebra.TensorProduct.includeLeft (R := T) (S := T) (A := T ⊗[R] S)
       (B := T ⊗[R] S)).restrictScalars R).comp Algebra.TensorProduct.includeRight)
     (((Algebra.TensorProduct.includeRight (R := T) (A := T ⊗[R] S)
       (B := T ⊗[R] S)).restrictScalars R).comp Algebra.TensorProduct.includeRight)
+
+/-- The diagonal idempotent of `T ⊗[R] S` over `T` is the image of that of `S` over `R` under
+`a ⊗ b ↦ (1 ⊗ a) ⊗ (1 ⊗ b)`. -/
+private theorem baseChangeDiagonalMap_elem :
+    baseChangeDiagonalMap R S T (Algebra.FormallyUnramified.elem R S) =
+      Algebra.FormallyUnramified.elem T (T ⊗[R] S) := by
   refine eq_elem (fun u ↦ ?_) ?_
   · -- The differences `1 ⊗ u - u ⊗ 1` are `T`-linear combinations of the images of the
     -- differences `1 ⊗ s - s ⊗ 1`, which the diagonal idempotent of `S` annihilates.
@@ -224,17 +225,19 @@ private theorem productMap_includeLeft_includeRight_elem :
       rw [TensorProduct.tmul_add, TensorProduct.add_tmul, add_sub_add_comm, add_mul, hu, hv,
         add_zero]
     | tmul t s =>
-      have h := congrArg ψ (Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem (R := R) s)
+      have h := congrArg (baseChangeDiagonalMap R S T)
+        (Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem (R := R) s)
       rw [map_mul, map_sub, map_zero] at h
       have hts : t ⊗ₜ[R] s = t • ((1 : T) ⊗ₜ[R] s) := by
         rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
       rw [hts, TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', ← smul_sub, smul_mul_assoc]
       convert congrArg (t • ·) h using 2
-      · simp [ψ, Algebra.TensorProduct.one_def]
+      · simp [baseChangeDiagonalMap, Algebra.TensorProduct.one_def]
       · simp
-  · have hcomm : ((Algebra.TensorProduct.lmul' T).restrictScalars R).comp ψ =
+  · have hcomm : ((Algebra.TensorProduct.lmul' T).restrictScalars R).comp
+        (baseChangeDiagonalMap R S T) =
         Algebra.TensorProduct.includeRight.comp (Algebra.TensorProduct.lmul' R) :=
-      Algebra.TensorProduct.ext' fun a b ↦ by simp [ψ]
+      Algebra.TensorProduct.ext' fun a b ↦ by simp [baseChangeDiagonalMap]
     simpa only [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
       Algebra.FormallyUnramified.lmul_elem, map_one] using
       DFunLike.congr_fun hcomm (Algebra.FormallyUnramified.elem R S)
@@ -249,7 +252,7 @@ theorem productMap_elem_baseChange {C : Type*} [CommSemiring C] [Algebra T C] [A
         ((f.restrictScalars R).comp Algebra.TensorProduct.includeRight)
         ((g.restrictScalars R).comp Algebra.TensorProduct.includeRight)
         (Algebra.FormallyUnramified.elem R S) := by
-  rw [← productMap_includeLeft_includeRight_elem, ← AlgHom.restrictScalars_apply R,
+  rw [← baseChangeDiagonalMap_elem, baseChangeDiagonalMap, ← AlgHom.restrictScalars_apply R,
     ← AlgHom.comp_apply]
   congr 1
   exact Algebra.TensorProduct.ext' fun a b ↦ by simp
