@@ -238,7 +238,6 @@ theorem abs_card_filter_colorOfPair_sub_prod_le (S : PairColorSystem κ V) (A : 
         (∏ i, (#(A i) : ℝ)) * ∏ p ∈ E, (pairColorDensity S (c p) (A p.1.1) (A p.1.2) : ℝ)| ≤
       #E * ε * ∏ i, (#(A i) : ℝ) := by
   set P : ℝ := ∏ i, (#(A i) : ℝ)
-  have hP : 0 ≤ P := prod_nonneg fun _ _ ↦ Nat.cast_nonneg _
   suffices key : |∑ g ∈ piFinset A, routeWeight S c E g -
       P * ∏ p ∈ E, (pairColorDensity S (c p) (A p.1.1) (A p.1.2) : ℝ)| ≤ #E * ε * P by
     convert key using 4
@@ -255,7 +254,7 @@ theorem abs_card_filter_colorOfPair_sub_prod_le (S : PairColorSystem κ V) (A : 
     have hregE : ∀ q ∈ E, S.IsRegularPair ε (A q.1.1) (A q.1.2) :=
       fun q hq ↦ hreg q (mem_insert_of_mem hq)
     have hreg_p := hreg p (mem_insert_self p E)
-    have hε : 0 ≤ ε := haveI : Nonempty κ := ⟨c p⟩; hreg_p.nonneg
+    have _ : 0 ≤ ε := haveI : Nonempty κ := ⟨c p⟩; hreg_p.nonneg
     have hd₀ : (0 : ℝ) ≤ pairColorDensity S (c p) (A p.1.1) (A p.1.2) :=
       mod_cast pairColorDensity_nonneg _ _ _ _
     have hd₁ : (pairColorDensity S (c p) (A p.1.1) (A p.1.2) : ℝ) ≤ 1 :=
