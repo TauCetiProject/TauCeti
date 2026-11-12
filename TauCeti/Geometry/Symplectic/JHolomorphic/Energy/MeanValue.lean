@@ -15,7 +15,7 @@ public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 
 /-!
-# The mean-value inequality for `J`-holomorphic curves
+# The mean-value inequality for `J`-holomorphic curves and linear Cauchy–Riemann equations
 
 Let `V` be a real inner product space and `J : V → (V →L[ℝ] V)` a `C²` family of linear maps with
 `J(x)² = -1`, an almost complex structure on `V` written as a matrix-valued function, as in local
@@ -48,6 +48,15 @@ For `J` that is `C²` on an open set containing a compact set `K`, one smallness
 works for all curves with image in `K`. As `∂ₜu = J(u) ∂ₛu`, these bounds control the full
 derivative of `u`.
 
+**Linear equations.** For a solution `v` of a linear Cauchy–Riemann equation
+`∂ₜv = J ∂ₛv + B v`, with coefficient families `J`, `B : ℂ → End V` and `J² = -1`, the same
+computation needs only one derivative of the equation. The second derivatives of `v` cancel in
+`Δ v`, and `Δ ‖v‖² ≥ -K ‖v‖²` with `K` depending on bounds for `J`, `B` and their first
+derivatives (`TauCeti.neg_mul_norm_sq_le_laplacian_of_fderiv_I_eq`). The right-hand side is
+linear in `‖v‖²`, so the mean-value inequality holds on every disc with `K r² ≤ 1`, whatever the
+integral (`TauCeti.pi_mul_sq_mul_norm_sq_le_five_mul_setIntegral_ball_of_fderiv_I_eq`). The
+`s`-derivative of a Floer cylinder solves such an equation.
+
 ## Main declarations
 
 * `TauCeti.IsJHolomorphicAt.fderiv_I_eq`: a `J`-holomorphic curve from `ℂ` satisfies
@@ -58,6 +67,10 @@ derivative of `u`.
   inequality for `J`-holomorphic curves, with explicit constants.
 * `TauCeti.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball`:
   the same with a smallness threshold that is uniform over curves with image in a compact set.
+* `TauCeti.neg_mul_norm_sq_le_laplacian_of_fderiv_I_eq`: the differential inequality
+  `Δ ‖v‖² ≥ -K ‖v‖²` for a solution of a linear Cauchy–Riemann equation.
+* `TauCeti.pi_mul_sq_mul_norm_sq_le_five_mul_setIntegral_ball_of_fderiv_I_eq`: the mean-value
+  inequality for solutions of linear Cauchy–Riemann equations.
 
 ## References
 
@@ -314,5 +327,140 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setInteg
     (fun y hy ↦ hC 2 le_rfl _ (huK y hy)) ?_
   rw [lt_div_iff₀ (by positivity)] at hE
   nlinarith
+
+/-! ### Linear Cauchy–Riemann equations -/
+
+section Linear
+
+variable {v : ℂ → V} {J B : ℂ → V →L[ℝ] V}
+
+/-- The linear equation `∂ₜv = J ∂ₛv + B v` differentiated once at `z`, in the direction `w`. -/
+private theorem fderiv_fderiv_apply_I_eq_of_linear (hv : ContDiffAt ℝ 2 v z)
+    (hJ : DifferentiableAt ℝ J z) (hB : DifferentiableAt ℝ B z)
+    (heq : ∀ᶠ y in 𝓝 z, fderiv ℝ v y I = J y (fderiv ℝ v y 1) + B y (v y)) (w : ℂ) :
+    fderiv ℝ (fderiv ℝ v) z w I =
+      fderiv ℝ J z w (fderiv ℝ v z 1) + J z (fderiv ℝ (fderiv ℝ v) z w 1) +
+        fderiv ℝ B z w (v z) + B z (fderiv ℝ v z w) := by
+  have hvd : DifferentiableAt ℝ v z := hv.differentiableAt (by norm_num)
+  have hDv : DifferentiableAt ℝ (fderiv ℝ v) z :=
+    (hv.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hvs : DifferentiableAt ℝ (fun y ↦ fderiv ℝ v y 1) z :=
+    hDv.clm_apply (differentiableAt_const 1)
+  have h := congrArg (fun L : ℂ →L[ℝ] V ↦ L w)
+    (Filter.EventuallyEq.fderiv_eq (𝕜 := ℝ) (f₁ := fun y ↦ fderiv ℝ v y I)
+      (f := fun y ↦ J y (fderiv ℝ v y 1) + B y (v y)) heq)
+  rw [fderiv_clm_apply_const_apply hDv, fderiv_fun_add (hJ.clm_apply hvs) (hB.clm_apply hvd),
+    fderiv_clm_apply hJ hvs, fderiv_clm_apply hB hvd] at h
+  simp only [add_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
+    fderiv_clm_apply_const_apply hDv] at h
+  rw [h]
+  abel
+
+/-- The Laplacian of a solution of `∂ₜv = J ∂ₛv + B v` with `J(z)² = -1`: the second derivatives
+of `v` drop out, leaving first-order terms in `v` whose coefficients involve `J`, `B` and their
+first derivatives. -/
+private theorem laplacian_eq_of_linear (hv : ContDiffAt ℝ 2 v z) (hJ : DifferentiableAt ℝ J z)
+    (hB : DifferentiableAt ℝ B z)
+    (heq : ∀ᶠ y in 𝓝 z, fderiv ℝ v y I = J y (fderiv ℝ v y 1) + B y (v y))
+    (hJsq : ∀ w, J z (J z w) = -w) :
+    Δ v z = fderiv ℝ J z I (fderiv ℝ v z 1) + J z (fderiv ℝ J z 1 (fderiv ℝ v z 1)) +
+      J z (B z (fderiv ℝ v z 1)) + B z (fderiv ℝ v z I) +
+      J z (fderiv ℝ B z 1 (v z)) + fderiv ℝ B z I (v z) := by
+  have hsymm : fderiv ℝ (fderiv ℝ v) z I 1 = fderiv ℝ (fderiv ℝ v) z 1 I :=
+    hv.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1
+  have h₁ := fderiv_fderiv_apply_I_eq_of_linear hv hJ hB heq I
+  have h₂ := fderiv_fderiv_apply_I_eq_of_linear hv hJ hB heq 1
+  rw [hsymm, h₂] at h₁
+  rw [laplacian_eq_iteratedFDeriv_complexPlane]
+  simp only [iteratedFDeriv_two_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one]
+  rw [h₁]
+  simp only [map_add, hJsq]
+  abel
+
+/-- **The squared norm of a solution of a linear Cauchy–Riemann equation is almost
+subharmonic.** Let `v : ℂ → V` be `C²` at `z` and solve `∂ₜv = J ∂ₛv + B v` near `z`, where the
+families `J`, `B : ℂ → End V` are differentiable at `z` and `J(z)² = -1`. If `a`, `b`, `β`, `γ`
+bound the norms of `J z`, of the derivative of `J` at `z`, of `B z` and of the derivative of `B`
+at `z`, then
+
+`Δ ‖v‖² ≥ -K ‖v‖²` at `z`, with `K = ((b + ab + aβ)² + β²) / 2 + 2 (aγ + γ)`.
+
+Unlike the nonlinear equation of `TauCeti.neg_mul_norm_fderiv_one_pow_four_le_laplacian`, the
+right-hand side is quadratic, not quartic, in `v`. The derivative `v = ∂ₛu` of a Floer cylinder
+for a Hamiltonian perturbation `H_t dt` solves such an equation. -/
+theorem neg_mul_norm_sq_le_laplacian_of_fderiv_I_eq {a b β γ : ℝ} (hv : ContDiffAt ℝ 2 v z)
+    (hJ : DifferentiableAt ℝ J z) (hB : DifferentiableAt ℝ B z)
+    (heq : ∀ᶠ y in 𝓝 z, fderiv ℝ v y I = J y (fderiv ℝ v y 1) + B y (v y))
+    (hJsq : ∀ w, J z (J z w) = -w) (ha : ‖J z‖ ≤ a) (hb : ‖fderiv ℝ J z‖ ≤ b)
+    (hβ : ‖B z‖ ≤ β) (hγ : ‖fderiv ℝ B z‖ ≤ γ) :
+    -((((b + a * b + a * β) ^ 2 + β ^ 2) / 2 + 2 * (a * γ + γ)) * ‖v z‖ ^ 2) ≤
+      Δ (fun y ↦ ‖v y‖ ^ 2) z := by
+  set vs := fderiv ℝ v z 1
+  set vt := fderiv ℝ v z I
+  have ha₀ : 0 ≤ a := (J z).opNorm_nonneg.trans ha
+  have hJ₀ : ∀ w, ‖J z w‖ ≤ a * ‖w‖ := fun w ↦ (J z).le_of_opNorm_le ha w
+  have hB₀ : ∀ w, ‖B z w‖ ≤ β * ‖w‖ := fun w ↦ (B z).le_of_opNorm_le hβ w
+  have hJ₁ : ∀ (d : ℂ) w, ‖d‖ ≤ 1 → ‖fderiv ℝ J z d w‖ ≤ b * ‖w‖ := fun d w hd ↦
+    ((fderiv ℝ J z d).le_opNorm w).trans (by
+      gcongr
+      exact ((fderiv ℝ J z).le_opNorm d).trans (by nlinarith [norm_nonneg (fderiv ℝ J z)]))
+  have hB₁ : ∀ (d : ℂ) w, ‖d‖ ≤ 1 → ‖fderiv ℝ B z d w‖ ≤ γ * ‖w‖ := fun d w hd ↦
+    ((fderiv ℝ B z d).le_opNorm w).trans (by
+      gcongr
+      exact ((fderiv ℝ B z).le_opNorm d).trans (by nlinarith [norm_nonneg (fderiv ℝ B z)]))
+  -- `‖Δ v‖ ≤ (b + ab + aβ) ‖∂ₛv‖ + β ‖∂ₜv‖ + (aγ + γ) ‖v‖`.
+  have hL : ‖Δ v z‖ ≤ (b + a * b + a * β) * ‖vs‖ + β * ‖vt‖ + (a * γ + γ) * ‖v z‖ := by
+    rw [laplacian_eq_of_linear hv hJ hB heq hJsq]
+    have h1 := hJ₁ I vs (by simp)
+    have h2 : ‖J z (fderiv ℝ J z 1 vs)‖ ≤ a * (b * ‖vs‖) :=
+      (hJ₀ _).trans (by gcongr; exact hJ₁ 1 vs (by simp))
+    have h3 : ‖J z (B z vs)‖ ≤ a * (β * ‖vs‖) := (hJ₀ _).trans (by gcongr; exact hB₀ vs)
+    have h4 := hB₀ vt
+    have h5 : ‖J z (fderiv ℝ B z 1 (v z))‖ ≤ a * (γ * ‖v z‖) :=
+      (hJ₀ _).trans (by gcongr; exact hB₁ 1 (v z) (by simp))
+    have h6 := hB₁ I (v z) (by simp)
+    refine (norm_add_le_of_le (norm_add_le_of_le (norm_add_le_of_le (norm_add_le_of_le
+      (norm_add_le_of_le h1 h2) h3) h4) h5) h6).trans_eq ?_
+    ring
+  have hinner := neg_le_of_abs_le (abs_real_inner_le_norm (v z) (Δ v z))
+  rw [hv.laplacian_norm_sq Complex.orthonormalBasisOneI]
+  simp only [Complex.coe_orthonormalBasisOneI, Fin.sum_univ_two, Fin.isValue,
+    Matrix.cons_val_zero, Matrix.cons_val_one]
+  have hX := norm_nonneg (v z)
+  nlinarith [mul_le_mul_of_nonneg_left hL hX,
+    sq_nonneg (‖vs‖ - (b + a * b + a * β) * ‖v z‖ / 2), sq_nonneg (‖vt‖ - β * ‖v z‖ / 2)]
+
+/-- **The mean-value inequality for linear Cauchy–Riemann equations.** Let `v : ℂ → V` be `C²` on
+the open disk `ball z₀ r` and continuous on its closure, and solve `∂ₜv = J ∂ₛv + B v` on the
+disk, where `J` and `B` are differentiable on the disk with `J² = -1` there. Suppose that `a`,
+`b`, `β`, `γ` bound the norms of `J`, of its derivative, of `B` and of its derivative on the disk,
+and put `K = ((b + ab + aβ)² + β²) / 2 + 2 (aγ + γ)`. If `K r² ≤ 1`, then
+
+`π r² ‖v(z₀)‖² ≤ 5 ∫_{B_r(z₀)} ‖v‖²`.
+
+No smallness of the integral is needed, in contrast to
+`TauCeti.pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball`. -/
+theorem pi_mul_sq_mul_norm_sq_le_five_mul_setIntegral_ball_of_fderiv_I_eq {z₀ : ℂ}
+    {r a b β γ : ℝ} (hr : 0 ≤ r) (hv : ContDiffOn ℝ 2 v (ball z₀ r))
+    (hvc : ContinuousOn v (closedBall z₀ r)) (hJ : ∀ y ∈ ball z₀ r, DifferentiableAt ℝ J y)
+    (hB : ∀ y ∈ ball z₀ r, DifferentiableAt ℝ B y)
+    (heq : ∀ y ∈ ball z₀ r, fderiv ℝ v y I = J y (fderiv ℝ v y 1) + B y (v y))
+    (hJsq : ∀ y ∈ ball z₀ r, ∀ w, J y (J y w) = -w) (ha : ∀ y ∈ ball z₀ r, ‖J y‖ ≤ a)
+    (hb : ∀ y ∈ ball z₀ r, ‖fderiv ℝ J y‖ ≤ b) (hβ : ∀ y ∈ ball z₀ r, ‖B y‖ ≤ β)
+    (hγ : ∀ y ∈ ball z₀ r, ‖fderiv ℝ B y‖ ≤ γ)
+    (hKr : (((b + a * b + a * β) ^ 2 + β ^ 2) / 2 + 2 * (a * γ + γ)) * r ^ 2 ≤ 1) :
+    π * r ^ 2 * ‖v z₀‖ ^ 2 ≤ 5 * ∫ y in ball z₀ r, ‖v y‖ ^ 2 := by
+  have h := mul_le_five_mul_setIntegral_ball_of_neg_mul_le_laplacian (μ := volume)
+    (by simp) (w := fun y ↦ ‖v y‖ ^ 2) (x₀ := z₀) (r := r)
+    (K := ((b + a * b + a * β) ^ 2 + β ^ 2) / 2 + 2 * (a * γ + γ)) (hv.norm_sq ℝ)
+    (hvc.norm.pow 2) (fun _ _ ↦ by positivity)
+    (fun y hy ↦ neg_mul_norm_sq_le_laplacian_of_fderiv_I_eq
+      (hv.contDiffAt (isOpen_ball.mem_nhds hy)) (hJ y hy) (hB y hy)
+      (eventually_of_mem (isOpen_ball.mem_nhds hy) heq) (hJsq y hy) (ha y hy) (hb y hy)
+      (hβ y hy) (hγ y hy)) hKr
+  simpa [measureReal_def, hr, mul_comm, mul_left_comm, mul_assoc] using h
+
+end Linear
 
 end TauCeti

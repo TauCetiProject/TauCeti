@@ -64,9 +64,9 @@ energy at most `C exp (-κ s) / h`, and the bound on `∂_s u` moves this estima
 `κ / 3`.
 
 Exponential convergence of a Floer solution to its asymptotic orbit is what places the moduli
-spaces of Floer cylinders and pairs of pants in weighted Sobolev spaces. Exponential decay of the
-derivatives of `u - x`, and the optimal rate given by the spectral gap of the asymptotic operator,
-are not treated here.
+spaces of Floer cylinders and pairs of pants in weighted Sobolev spaces. Exponential convergence in
+`C¹` is proved in `TauCeti.Geometry.Symplectic.Floer.ExponentialDecay.Derivative`; the optimal rate
+given by the spectral gap of the asymptotic operator is not treated.
 
 ## Main results
 
