@@ -226,30 +226,6 @@ theorem swapHorizontal_addHorizontal {ρ : StrandDiagram α} {U : Finset α} (ha
   have := @hρ x y
   grind
 
-/-- Moving a horizontal strand does not change the strands that are not horizontal. -/
-@[simp]
-theorem eraseHorizontal_swapHorizontal (φ : StrandDiagram α) (a b : α) :
-    (φ.swapHorizontal a b).eraseHorizontal = φ.eraseHorizontal := by
-  have key {a b : α} (h : φ.CanMoveHorizontal a b) :
-      (φ.swapHorizontal a b).eraseHorizontal = φ.eraseHorizontal := by
-    ext x y
-    simp only [← Option.mem_def, mem_eraseHorizontal, mem_swapHorizontal h]
-    constructor
-    · rintro ⟨⟨rfl, rfl⟩ | ⟨-, -, hxy⟩, hne⟩
-      exacts [absurd rfl hne, ⟨hxy, hne⟩]
-    · rintro ⟨hxy, hne⟩
-      refine ⟨Or.inr ⟨?_, ?_, hxy⟩, hne⟩
-      · rintro rfl
-        exact hne (Option.mem_unique h.mem hxy)
-      · rintro rfl
-        exact h.notMem_source (mem_source.2 ⟨y, hxy⟩)
-  by_cases h : φ.CanMoveHorizontal a b
-  · exact key h
-  by_cases h' : φ.CanMoveHorizontal b a
-  · rw [swapHorizontal_comm]
-    exact key h'
-  · rw [swapHorizontal_of_not h h']
-
 end StrandDiagram
 
 namespace StrandsAlgebra

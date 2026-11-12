@@ -22,9 +22,16 @@ parts.
 The key fact is that **horizontal strands do not change the grading**: adding a horizontal strand
 at a free point, or moving one, keeps the grading
 (`TauCeti.StrandDiagram.grading_addHorizontal`, `TauCeti.StrandDiagram.grading_swapHorizontal`).
-Hence every diagram has the grading of its strands that are not horizontal
-(`TauCeti.StrandDiagram.grading_eraseHorizontal`), and diagrams differing in the positions of
-their horizontal strands within matched classes have the same grading.
+Hence diagrams differing in the positions of their horizontal strands within matched classes have
+the same grading.
+
+The decomposition of the matched subalgebra holds for the parts `gradedPartBy R d` of any function
+`d` on strand diagrams that is unchanged by moving a horizontal strand within a matched pair
+(`TauCeti.StrandsAlgebra.matchedSum_mem_gradedPartBy`,
+`TauCeti.StrandsAlgebra.iSup_matchedSubalgebra_inf_gradedPartBy`,
+`TauCeti.StrandsAlgebra.iSupIndep_matchedSubalgebra_inf_gradedPartBy`), such as the grading and
+the refined gradings of `TauCeti.MatchedGradingRefinement`; the results for `gradedPart` are its
+instance for the grading.
 
 So the summands of a generator `a(ρ, h)` and of a matched completion sum all have the same
 grading (`TauCeti.StrandsAlgebra.horizontalCompletion_mem_gradedPart`,
@@ -38,8 +45,6 @@ properties of the graded parts of the strands algebra.
 
 ## Main results
 
-* `TauCeti.StrandDiagram.grading_eraseHorizontal`: removing the horizontal strands does not
-  change the grading.
 * `TauCeti.StrandDiagram.grading_eq_of_matchedSetoid`: diagrams differing in the positions of their
   horizontal strands within matched classes have the same grading.
 * `TauCeti.StrandsAlgebra.horizontalCompletion_mem_gradedPart`: `a(ρ, h)` has grading `gr(ρ)`.
@@ -50,6 +55,10 @@ properties of the graded parts of the strands algebra.
 * `TauCeti.StrandsAlgebra.iSup_matchedSubalgebra_inf_gradedPart`,
   `TauCeti.StrandsAlgebra.iSupIndep_matchedSubalgebra_inf_gradedPart`: the matched subalgebra is
   the sum of its homogeneous parts, which are independent.
+* `TauCeti.StrandsAlgebra.matchedSum_mem_gradedPartBy`,
+  `TauCeti.StrandsAlgebra.iSup_matchedSubalgebra_inf_gradedPartBy`,
+  `TauCeti.StrandsAlgebra.iSupIndep_matchedSubalgebra_inf_gradedPartBy`: the same for any function
+  on strand diagrams unchanged by moving a horizontal strand within a matched pair.
 
 ## References
 
@@ -70,13 +79,6 @@ open StrandGradingGroup
 
 variable {α : Type*} [LinearOrder α] [Fintype α] {φ : StrandDiagram α}
 
-/-- **A diagram has the grading of its strands that are not horizontal.** -/
-@[simp]
-theorem grading_eraseHorizontal (φ : StrandDiagram α) :
-    φ.eraseHorizontal.grading = φ.grading := by
-  conv_rhs => rw [← φ.addHorizontal_eraseHorizontal_horizontals]
-  rw [grading_addHorizontal (by simpa using sdiff_disjoint) (by simpa using sdiff_disjoint)]
-
 /-- Diagrams differing only in the positions of their horizontal strands within matched classes
 have the same grading. -/
 theorem grading_eq_of_matchedSetoid {β : Type*} {M : α → β} {ψ : StrandDiagram α}
@@ -89,33 +91,59 @@ namespace StrandsAlgebra
 
 open StrandDiagram StrandGradingGroup
 
-variable {R α β : Type*} [CommSemiring R] [LinearOrder α] [Fintype α] {M : α → β}
+variable {R α β G : Type*} [CommSemiring R] [LinearOrder α] [Fintype α] {M : α → β}
+  {d : StrandDiagram α → G}
+
+/-- **A matched completion sum is homogeneous** for any function `d` on strand diagrams unchanged
+by moving a horizontal strand within a matched pair, of the degree of the diagram it completes. -/
+theorem matchedSum_mem_gradedPartBy
+    (hd : ∀ φ a b, M a = M b → d (φ.swapHorizontal a b) = d φ) (φ : StrandDiagram α) :
+    matchedSum R M φ ∈ gradedPartBy R d (d φ) := by
+  classical
+  refine mem_gradedPartBy.2 fun ψ hψ ↦ ?_
+  rw [Finsupp.mem_support_iff, repr_matchedSum_apply, ne_eq, ite_eq_right_iff, not_imp] at hψ
+  exact (apply_eq_of_matchedSetoid hd hψ.1).symm
+
+/-- The matched subalgebra is the sum of its intersections with the parts `gradedPartBy R d g`, for
+any function `d` on strand diagrams unchanged by moving a horizontal strand within a matched
+pair. -/
+theorem iSup_matchedSubalgebra_inf_gradedPartBy
+    (hd : ∀ φ a b, M a = M b → d (φ.swapHorizontal a b) = d φ) :
+    ⨆ g : G, (matchedSubalgebra R M).toSubmodule ⊓ gradedPartBy R d g =
+      (matchedSubalgebra R M).toSubmodule := by
+  refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun x hx ↦ ?_
+  rw [← span_matchedSum] at hx
+  refine Submodule.span_le.2 ?_ hx
+  rintro _ ⟨φ, ⟨hS, hT⟩, rfl⟩
+  exact Submodule.mem_iSup_of_mem (d φ)
+    ⟨matchedSum_mem_matchedSubalgebra hS hT, matchedSum_mem_gradedPartBy hd φ⟩
+
+/-- The intersections of the matched subalgebra with the parts `gradedPartBy R d g` of different
+degrees are independent. -/
+theorem iSupIndep_matchedSubalgebra_inf_gradedPartBy (d : StrandDiagram α → G) :
+    iSupIndep fun g : G ↦ (matchedSubalgebra R M).toSubmodule ⊓ gradedPartBy R d g :=
+  (iSupIndep_gradedPartBy d).mono fun _ ↦ inf_le_right
 
 /-- **A matched completion sum is homogeneous**, of the grading of the diagram it completes. -/
 theorem matchedSum_mem_gradedPart (φ : StrandDiagram α) :
     matchedSum R M φ ∈ gradedPart R φ.grading := by
-  classical
-  refine mem_gradedPart.2 fun ψ hψ ↦ ?_
-  rw [Finsupp.mem_support_iff, repr_matchedSum_apply, ne_eq, ite_eq_right_iff, not_imp] at hψ
-  exact (grading_eq_of_matchedSetoid hψ.1).symm
+  rw [gradedPart_eq_gradedPartBy]
+  exact matchedSum_mem_gradedPartBy (fun φ a b _ ↦ grading_swapHorizontal φ a b) φ
 
 /-- **The grading of the matched subalgebra.** The matched subalgebra is the sum of its homogeneous
 parts, its intersections with the graded parts of the strands algebra. -/
 theorem iSup_matchedSubalgebra_inf_gradedPart :
     ⨆ g : StrandGradingGroup α, (matchedSubalgebra R M).toSubmodule ⊓ gradedPart R g =
       (matchedSubalgebra R M).toSubmodule := by
-  refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun x hx ↦ ?_
-  rw [← span_matchedSum] at hx
-  refine Submodule.span_le.2 ?_ hx
-  rintro _ ⟨φ, ⟨hS, hT⟩, rfl⟩
-  exact Submodule.mem_iSup_of_mem φ.grading
-    ⟨matchedSum_mem_matchedSubalgebra hS hT, matchedSum_mem_gradedPart φ⟩
+  simp_rw [gradedPart_eq_gradedPartBy]
+  exact iSup_matchedSubalgebra_inf_gradedPartBy fun φ a b _ ↦ grading_swapHorizontal φ a b
 
 /-- The homogeneous parts of the matched subalgebra of different gradings are independent. -/
 theorem iSupIndep_matchedSubalgebra_inf_gradedPart :
     iSupIndep fun g : StrandGradingGroup α ↦
-      (matchedSubalgebra R M).toSubmodule ⊓ gradedPart R g :=
-  iSupIndep_gradedPart.mono fun _ ↦ inf_le_right
+      (matchedSubalgebra R M).toSubmodule ⊓ gradedPart R g := by
+  simp_rw [gradedPart_eq_gradedPartBy]
+  exact iSupIndep_matchedSubalgebra_inf_gradedPartBy grading
 
 variable [DecidableEq β]
 
