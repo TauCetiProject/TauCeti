@@ -444,11 +444,11 @@ theorem norm_valueHolderL_le_add_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpac
     simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasTimeDerivWithinAt y ⟨t, ht⟩
   have h₁ := spaceEHolderNorm_one_le_of_hasFDerivAt hx (C := ‖spatialFDerivL f‖₊)
     fun y t _ ↦ by
-      rw [timeExtension_def, coe_nnnorm]
+      rw [timeExtension_def, coe_nnNorm]
       exact (spatialFDerivL f).norm_coe_le_norm _
   have h₂ := timeEHolderNorm_one_le_of_hasDerivWithinAt ht
     (C := ‖(timeDerivL f).toBoundedContinuousFunction‖₊) fun y t _ ↦ by
-      simpa only [timeExtension_def, HolderSpace.toBoundedContinuousFunction_apply, coe_nnnorm]
+      simpa only [timeExtension_def, HolderSpace.toBoundedContinuousFunction_apply, coe_nnNorm]
         using (timeDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
   rw [timeExtension_space_slabTime] at h₁ h₂
   -- Interpolate between the Lipschitz bounds and the oscillation bound, at the spatial scale `ε`

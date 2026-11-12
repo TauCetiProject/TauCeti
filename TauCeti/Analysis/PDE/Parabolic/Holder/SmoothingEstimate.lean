@@ -115,9 +115,9 @@ private theorem exists_timeCutoff {E : Type*} [NormedAddCommGroup E] [NormedSpac
     calc _ ≤ (L₁ : ℝ) * (2 / δ) := by gcongr; exact hL₁ _
       _ = _ := by ring
   have hlip : LipschitzWith L₂ (deriv Real.smoothTransition) :=
-    lipschitzWith_of_nnnorm_deriv_le
+    lipschitzWith_of_nnNorm_deriv_le
       (Real.smoothTransition.contDiff (n := 2)).differentiable_deriv_two fun x ↦ by
-        rw [← NNReal.coe_le_coe, coe_nnnorm]
+        rw [← NNReal.coe_le_coe, coe_nnNorm]
         exact hL₂ x
   -- Interpolating between the two bounds at the scale `δ` gives the `(α/2)`-Hölder bound.
   obtain ⟨δ', hδ'⟩ : ∃ δ' : ℝ≥0, (δ' : ℝ) = δ := ⟨⟨δ, hδ.le⟩, rfl⟩
