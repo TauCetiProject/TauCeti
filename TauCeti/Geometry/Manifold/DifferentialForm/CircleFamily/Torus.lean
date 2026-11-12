@@ -23,9 +23,9 @@ along the `i`-th coordinate `(b, x) ↦ (b, x i)` to the family of circles of `p
   of the family of circles of `p i`, the differential of the `i`-th normalized angle. It is
   defined and closed for all period functions, smooth or not, and restricts on the torus over `b`
   to `(p i b)⁻¹ • dt_i`.
-* The **time form** `η_i = p_i • β_i` (`TauCeti.TorusFamily.timeForm`), for smooth period
-  functions, is the pullback of the time form of the family of circles of `p i`. It restricts on
-  the torus over `b` to its coordinate time form `dt_i`, and its exterior derivative is
+* The **time form** `η_i = p_i • β_i` (`TauCeti.TorusFamily.timeForm`), for a smooth period
+  function `p i`, is the pullback of the time form of the family of circles of `p i`. It restricts
+  on the torus over `b` to its coordinate time form `dt_i`, and its exterior derivative is
   `d(p_i ∘ base) ∧ β_i`. It is not closed in general.
 
 Both forms are natural. Base change along a smooth map `f : B' → B` pulls back the forms of `p` to
@@ -37,7 +37,7 @@ of `p`, and the time form `η_i` of `q` back to `(q i / p i) • η_i`.
 ## Main definitions
 
 * `TauCeti.TorusFamily.angleForm p IB i`: the angle form `β_i`.
-* `TauCeti.TorusFamily.timeForm p IB hp i`: the time form `η_i = p_i • β_i`.
+* `TauCeti.TorusFamily.timeForm p IB i hp`: the time form `η_i = p_i • β_i`.
 
 ## Main results
 
@@ -65,6 +65,30 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
+section CommSquare
+
+variable {E₁ H₁ M₁ E₂ H₂ M₂ E₃ H₃ M₃ E₄ H₄ M₄ : Type*}
+  [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [TopologicalSpace H₁] [TopologicalSpace M₁]
+  [ChartedSpace H₁ M₁] {I₁ : ModelWithCorners ℝ E₁ H₁} [IsManifold I₁ 1 M₁]
+  [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂] [TopologicalSpace M₂]
+  [ChartedSpace H₂ M₂] {I₂ : ModelWithCorners ℝ E₂ H₂} [IsManifold I₂ 1 M₂]
+  [NormedAddCommGroup E₃] [NormedSpace ℝ E₃] [TopologicalSpace H₃] [TopologicalSpace M₃]
+  [ChartedSpace H₃ M₃] {I₃ : ModelWithCorners ℝ E₃ H₃} [IsManifold I₃ 1 M₃]
+  [NormedAddCommGroup E₄] [NormedSpace ℝ E₄] [TopologicalSpace H₄] [TopologicalSpace M₄]
+  [ChartedSpace H₄ M₄] {I₄ : ModelWithCorners ℝ E₄ H₄} [IsManifold I₄ 1 M₄]
+
+/-- Pulling a form back along the two sides of a commuting square of smooth maps gives the same
+form. -/
+private theorem mpullback_mpullback_of_comp_eq {f : M₁ → M₂} {g : M₂ → M₄} {h : M₁ → M₃}
+    {k : M₃ → M₄} (hf : ContMDiff I₁ I₂ ∞ f) (hg : ContMDiff I₂ I₄ ∞ g)
+    (hh : ContMDiff I₁ I₃ ∞ h) (hk : ContMDiff I₃ I₄ ∞ k) (hcomp : g ∘ f = k ∘ h)
+    (φ : SmoothForm I₄ M₄ ℝ 1) :
+    SmoothForm.mpullback f hf (SmoothForm.mpullback g hg φ) =
+      SmoothForm.mpullback h hh (SmoothForm.mpullback k hk φ) := by
+  simp only [SmoothForm.mpullback_mpullback, hcomp]
+
+end CommSquare
+
 namespace TorusFamily
 
 variable {B ι : Type*} [Fintype ι] (p : ι → B → PositivePeriod) {EB HB : Type*}
@@ -79,18 +103,10 @@ private theorem mpullback_mk_mpullback_coord (i : ι) (b : B)
         (SmoothForm.mpullback (coord p i) (contMDiff_coord p IB ∞ i) φ) =
       SmoothForm.mpullback (fun x ↦ x i) contMDiff_apply
         (SmoothForm.mpullback (CircleFamily.Pullback.mk b)
-          (CircleFamily.Pullback.contMDiff_mk (p i) IB ∞ b) φ) := by
+          (CircleFamily.Pullback.contMDiff_mk (p i) IB ∞ b) φ) :=
   -- On the torus over `b`, the `i`-th coordinate is the `i`-th factor followed by the inclusion
   -- of the circle over `b`.
-  have hcomp : coord p i ∘ mk (p := p) b = CircleFamily.Pullback.mk b ∘ fun x ↦ x i :=
-    funext (coord_mk p i b)
-  apply Subtype.ext
-  rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
-    SmoothForm.coe_mpullback,
-    ← mpullback_comp ((contMDiff_mk p IB ∞ b).mdifferentiable (by simp))
-      ((contMDiff_coord p IB ∞ i).mdifferentiable (by simp)), hcomp]
-  exact mpullback_comp ((contMDiff_apply (n := 1) (i := i)).mdifferentiable one_ne_zero)
-    ((CircleFamily.Pullback.contMDiff_mk (p i) IB ∞ b).mdifferentiable (by simp)) _
+  mpullback_mpullback_of_comp_eq _ _ _ _ (funext (coord_mk p i b)) φ
 
 /-! ### The angle forms -/
 
@@ -123,41 +139,41 @@ theorem mpullback_mk_angleForm (i : ι) (b : B) :
 
 /-! ### The time forms -/
 
-/-- The time form `η_i = p_i • β_i` of the family of tori, for smooth period functions: the pullback
-along the `i`-th coordinate of the time form of the family of circles of `p i`. It restricts to the
-coordinate time form `dt_i` on the torus over each `b`. -/
-def timeForm (hp : ∀ i, ContMDiff IB 𝓘(ℝ) ∞ (p i)) (i : ι) :
+/-- The time form `η_i = p_i • β_i` of the family of tori, for a smooth period function `p i`: the
+pullback along the `i`-th coordinate of the time form of the family of circles of `p i`. It
+restricts to the coordinate time form `dt_i` on the torus over each `b`. -/
+def timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) :
     SmoothForm (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) (TorusFamily p) ℝ 1 :=
   SmoothForm.mpullback (coord p i) (contMDiff_coord p IB ∞ i)
-    (CircleFamily.Pullback.timeForm (p i) IB (hp i))
+    (CircleFamily.Pullback.timeForm (p i) IB hp)
 
 /-- The time form `η_i` is the pullback along the `i`-th coordinate of the time form of the family
 of circles of `p i`. -/
 @[simp]
-theorem mpullback_coord_timeForm (hp : ∀ i, ContMDiff IB 𝓘(ℝ) ∞ (p i)) (i : ι) :
+theorem mpullback_coord_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) :
     SmoothForm.mpullback (coord p i) (contMDiff_coord p IB ∞ i)
-      (CircleFamily.Pullback.timeForm (p i) IB (hp i)) = timeForm p IB hp i :=
+      (CircleFamily.Pullback.timeForm (p i) IB hp) = timeForm p IB i hp :=
   (rfl)
 
 /-- The time form `η_i` is the angle form `β_i` rescaled by the `i`-th period at the base point. -/
 @[simp]
-theorem timeForm_apply (hp : ∀ i, ContMDiff IB 𝓘(ℝ) ∞ (p i)) (i : ι) (z : TorusFamily p)
+theorem timeForm_apply (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) (z : TorusFamily p)
     (v : Fin 1 → TangentSpace (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) z) :
-    (timeForm p IB hp i).1 z v = p i z.base * (angleForm p IB i).1 z v := by
+    (timeForm p IB i hp).1 z v = p i z.base * (angleForm p IB i).1 z v := by
   rw [timeForm, angleForm, SmoothForm.mpullback_apply, SmoothForm.mpullback_apply,
     CircleFamily.Pullback.timeForm_apply, base_coord]
 
 /-- On the torus over `b`, the time form `η_i` restricts to the coordinate time form `dt_i`. -/
 @[simp]
-theorem mpullback_mk_timeForm (hp : ∀ i, ContMDiff IB 𝓘(ℝ) ∞ (p i)) (i : ι) (b : B) :
-    SmoothForm.mpullback (mk b) (contMDiff_mk p IB ∞ b) (timeForm p IB hp i) =
+theorem mpullback_mk_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) (b : B) :
+    SmoothForm.mpullback (mk b) (contMDiff_mk p IB ∞ b) (timeForm p IB i hp) =
       torusTimeForm (fun j ↦ (p j b : ℝ)) i := by
   rw [timeForm, mpullback_mk_mpullback_coord, CircleFamily.Pullback.mpullback_mk_timeForm,
     torusTimeForm_def]
 
 /-- The exterior derivative of the time form `η_i` is `d(p_i ∘ base) ∧ β_i`. -/
-theorem mextDeriv_timeForm (hp : ∀ i, ContMDiff IB 𝓘(ℝ) ∞ (p i)) (i : ι) :
-    mextDeriv (timeForm p IB hp i).1 =
+theorem mextDeriv_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) :
+    mextDeriv (timeForm p IB i hp).1 =
       RoughForm.wedge
         (mextDeriv (RoughForm.ofFunction (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
           fun z : TorusFamily p ↦ (p i z.base : ℝ)))
@@ -165,7 +181,7 @@ theorem mextDeriv_timeForm (hp : ∀ i, ContMDiff IB 𝓘(ℝ) ∞ (p i)) (i : �
   have hc := contMDiff_coord p IB ∞ i
   have hg : ContMDiff (IB.prod 𝓘(ℝ)) 𝓘(ℝ, ℝ) ∞
       fun z : CircleFamily.Pullback (p i) ↦ (p i z.base : ℝ) :=
-    (contMDiff_subtype_val.comp (hp i)).comp (CircleFamily.Pullback.contMDiff_base (p i) IB ∞)
+    (contMDiff_subtype_val.comp hp).comp (CircleFamily.Pullback.contMDiff_base (p i) IB ∞)
   have hcomp : (fun z : CircleFamily.Pullback (p i) ↦ (p i z.base : ℝ)) ∘ coord p i =
       fun z ↦ (p i z.base : ℝ) :=
     funext fun z ↦ by simp
@@ -190,17 +206,8 @@ private theorem mpullback_comap_mpullback_coord (hf : ContMDiff IB' IB ∞ f) (i
         (SmoothForm.mpullback (coord p i) (contMDiff_coord p IB ∞ i) φ) =
       SmoothForm.mpullback (coord (fun i ↦ p i ∘ f) i) (contMDiff_coord _ IB' ∞ i)
         (SmoothForm.mpullback (CircleFamily.Pullback.comap (p i) f)
-          (CircleFamily.Pullback.contMDiff_comap (p i) f IB hf) φ) := by
-  have hcomp : coord p i ∘ comap p f =
-      CircleFamily.Pullback.comap (p i) f ∘ coord (fun i ↦ p i ∘ f) i :=
-    funext (coord_comap p f i)
-  apply Subtype.ext
-  rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
-    SmoothForm.coe_mpullback,
-    ← mpullback_comp ((contMDiff_comap p f IB hf).mdifferentiable (by simp))
-      ((contMDiff_coord p IB ∞ i).mdifferentiable (by simp)), hcomp]
-  exact mpullback_comp ((contMDiff_coord _ IB' ∞ i).mdifferentiable (by simp))
-    ((CircleFamily.Pullback.contMDiff_comap (p i) f IB hf).mdifferentiable (by simp)) _
+          (CircleFamily.Pullback.contMDiff_comap (p i) f IB hf) φ) :=
+  mpullback_mpullback_of_comp_eq _ _ _ _ (funext (coord_comap p f i)) φ
 
 /-- Base change along a smooth map `f` pulls the angle form `β_i` of the family of `p` back to the
 angle form `β_i` of the family of the periods `p i ∘ f`. -/
@@ -214,12 +221,12 @@ theorem mpullback_comap_angleForm (hf : ContMDiff IB' IB ∞ f) (i : ι) :
 /-- Base change along a smooth map `f` pulls the time form `η_i` of the family of `p` back to the
 time form `η_i` of the family of the periods `p i ∘ f`. -/
 @[simp]
-theorem mpullback_comap_timeForm (hp : ∀ i, ContMDiff IB 𝓘(ℝ) ∞ (p i))
-    (hf : ContMDiff IB' IB ∞ f) (i : ι) :
-    SmoothForm.mpullback (comap p f) (contMDiff_comap p f IB hf) (timeForm p IB hp i) =
-      timeForm (fun i ↦ p i ∘ f) IB' (fun i ↦ (hp i).comp hf) i := by
+theorem mpullback_comap_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i))
+    (hf : ContMDiff IB' IB ∞ f) :
+    SmoothForm.mpullback (comap p f) (contMDiff_comap p f IB hf) (timeForm p IB i hp) =
+      timeForm (fun i ↦ p i ∘ f) IB' i (hp.comp hf) := by
   rw [timeForm, mpullback_comap_mpullback_coord p IB f hf,
-    CircleFamily.Pullback.mpullback_comap_timeForm (p i) IB f (hp i) hf, timeForm]
+    CircleFamily.Pullback.mpullback_comap_timeForm (p i) IB f hp hf, timeForm]
 
 end BaseChange
 
@@ -233,26 +240,18 @@ it pulls the angle form `β_i` of `q` back to the angle form `β_i` of `p`. -/
 theorem mpullback_rescale_angleForm (i : ι) :
     SmoothForm.mpullback (rescale p IB q ∞) (rescale p IB q ∞).contMDiff (angleForm q IB i) =
       angleForm p IB i := by
-  have hcomp : coord q i ∘ rescale p IB q ∞ =
-      CircleFamily.Pullback.rescale (p i) IB (q i) ∞ ∘ coord p i :=
-    funext (coord_rescale p IB q ∞ i)
-  apply Subtype.ext
-  rw [angleForm, angleForm, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
-    SmoothForm.coe_mpullback,
-    ← mpullback_comp ((rescale p IB q ∞).contMDiff.mdifferentiable (by simp))
-      ((contMDiff_coord q IB ∞ i).mdifferentiable (by simp)), hcomp,
-    mpullback_comp ((contMDiff_coord p IB ∞ i).mdifferentiable (by simp))
-      ((CircleFamily.Pullback.rescale (p i) IB (q i) ∞).contMDiff.mdifferentiable (by simp)),
-    ← SmoothForm.coe_mpullback _ (CircleFamily.Pullback.rescale (p i) IB (q i) ∞).contMDiff,
-    CircleFamily.Pullback.mpullback_rescale_angleForm]
+  rw [angleForm, angleForm, mpullback_mpullback_of_comp_eq (rescale p IB q ∞).contMDiff
+    (contMDiff_coord q IB ∞ i) (contMDiff_coord p IB ∞ i)
+    (CircleFamily.Pullback.rescale (p i) IB (q i) ∞).contMDiff
+    (funext (coord_rescale p IB q ∞ i)), CircleFamily.Pullback.mpullback_rescale_angleForm]
 
 /-- The fiberwise rescaling from the periods `p` to the periods `q` pulls the time form `η_i` of
 `q` back to `(q i / p i) • η_i`. -/
-theorem mpullback_rescale_timeForm (hp : ∀ i, ContMDiff IB 𝓘(ℝ) ∞ (p i))
-    (hq : ∀ i, ContMDiff IB 𝓘(ℝ) ∞ (q i)) (i : ι) :
+theorem mpullback_rescale_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i))
+    (hq : ContMDiff IB 𝓘(ℝ) ∞ (q i)) :
     (SmoothForm.mpullback (rescale p IB q ∞) (rescale p IB q ∞).contMDiff
-        (timeForm q IB hq i)).1 =
-      fun z ↦ ((q i z.base : ℝ) / p i z.base) • (timeForm p IB hp i).1 z := by
+        (timeForm q IB i hq)).1 =
+      fun z ↦ ((q i z.base : ℝ) / p i z.base) • (timeForm p IB i hp).1 z := by
   refine funext fun z ↦ ContinuousAlternatingMap.ext fun v ↦ ?_
   have h := DFunLike.congr_fun
     (congrFun (congrArg Subtype.val (mpullback_rescale_angleForm p IB q i)) z) v

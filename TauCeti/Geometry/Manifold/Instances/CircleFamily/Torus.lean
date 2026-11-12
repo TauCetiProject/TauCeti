@@ -140,7 +140,8 @@ theorem mk_retraction {b : B} {z : TorusFamily p} (h : z.base = b) :
 
 /-- The `i`-th coordinate `(b, x) ↦ (b, x i)`, from the family of tori to the family of circles of
 the `i`-th period function. -/
-def coord (i : ι) (z : TorusFamily p) : CircleFamily.Pullback (p i) := ⟨z.base, z.point i⟩
+@[expose] def coord (i : ι) (z : TorusFamily p) : CircleFamily.Pullback (p i) :=
+  ⟨z.base, z.point i⟩
 
 /-- The `i`-th coordinate of a point of the torus over `b` is its `i`-th factor, over `b`. -/
 @[simp]
@@ -150,6 +151,10 @@ theorem coord_mk (i : ι) (b : B) (x : ∀ i, AddCircle (p i b : ℝ)) :
 /-- The coordinates cover the identity of the base. -/
 @[simp]
 theorem base_coord (i : ι) (z : TorusFamily p) : (coord p i z).base = z.base := (rfl)
+
+/-- The point of the `i`-th coordinate is the `i`-th factor of the point. -/
+@[simp]
+theorem point_coord (i : ι) (z : TorusFamily p) : (coord p i z).point = z.point i := (rfl)
 
 /-- For nonempty `ι`, a point of the family is determined by its coordinates. -/
 theorem coord_injective [Nonempty ι] :
