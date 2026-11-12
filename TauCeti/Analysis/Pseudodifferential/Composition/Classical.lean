@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
 
 /-!
@@ -19,18 +20,18 @@ symbols is classical of order `m' + m - 1`, with an explicit leading term.
 
 Each term `((-i)^k / k!) ∑_{|w| = k} ∂_ξ^w a ∘ ∂_x^w b` of the composition expansion is a
 classical symbol of order `m' + m - k` (`TauCeti.ClassicalSymbol.sharpTerm`), built from the
-pointwise composition and the derivatives of classical symbols. Collecting the homogeneous terms of
-the same degree, the term of degree `m' + m - j` of `a # b` is the sum over `k ≤ j` of the
-homogeneous term of index `j - k` of `sharpTerm a b k`
-(`TauCeti.ClassicalSymbol.homogeneousSharpTerms`). In particular the principal symbol of `a # b` is
-`a_{m'} ∘ b_m`, and its next term is
+pointwise composition and the derivatives of classical symbols. The composition symbol `a # b` is
+their asymptotic sum, hence classical (`TauCeti.ClassicalSymbol.ofAsymptoticSum`): its term of
+degree `m' + m - j` is the sum over `k ≤ j` of the homogeneous term of index `j - k` of
+`sharpTerm a b k` (`TauCeti.ClassicalSymbol.asymptoticSumTerms`). In particular the principal
+symbol of `a # b` is `a_{m'} ∘ b_m`, and its next term is
 
 `a_{m'} ∘ b_{m-1} + a_{m'-1} ∘ b_m - i ∑ⱼ ∂_{ξⱼ} a_{m'} ∘ ∂_{xⱼ} b_m`.
 
 ## Main results
 
 * `TauCeti.ClassicalSymbol.sharp`: **the composition of classical symbols is classical**, with the
-  terms `TauCeti.ClassicalSymbol.homogeneousSharpTerms`.
+  terms `TauCeti.ClassicalSymbol.asymptoticSumTerms`.
 * `TauCeti.ClassicalSymbol.principal_sharp`: the principal symbol of `a # b` is `a_{m'} ∘ b_m`.
 * `TauCeti.ClassicalSymbol.coefficient_term_one_sharp`: the term of degree `m' + m - 1` of `a # b`.
 * `TauCeti.ClassicalSymbol.sharpCommutator`: the commutator symbol `a # b - b # a` of two classical
@@ -109,51 +110,16 @@ theorem toSymbol_sharpTerm (a : ClassicalSymbol n W U m') (b : ClassicalSymbol n
     ext1
     simp [ih]
 
-end Term
-
-/-! ### The homogeneous terms of a composition -/
-
-section Terms
-
-/-- The homogeneous terms of the composition symbol `a # b` of classical symbols: the term of
-degree `m' + m - j` collects the terms of degree `m' + m - j` of the classical symbols
-`sharpTerm a b k`, `k ≤ j`, which is the term of index `j - k` of `sharpTerm a b k`. -/
-def homogeneousSharpTerms (a : ClassicalSymbol n W U m') (b : ClassicalSymbol n V W m) (j : ℕ) :
-    HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V U (m' + m - j) :=
-  ∑ k ∈ range (j + 1),
-    if h : k ≤ j then ((a.sharpTerm b k).term (j - k)).castDegree (by rw [Nat.cast_sub h]; ring)
-    else 0
-
-variable (a : ClassicalSymbol n W U m') (b : ClassicalSymbol n V W m)
-
-/-- The coefficient of the term of degree `m' + m - j` of `a # b` is
-`∑_{k ≤ j} (sharpTerm a b k)_{j - k}`. -/
-theorem coefficient_homogeneousSharpTerms (j : ℕ) (z : CoordinateSpace n × CoordinateSpace n) :
-    (homogeneousSharpTerms a b j).coefficient z =
-      ∑ k ∈ range (j + 1), ((a.sharpTerm b k).term (j - k)).coefficient z := by
-  rw [homogeneousSharpTerms, HomogeneousSymbol.coefficient_sum, Finset.sum_apply]
-  refine Finset.sum_congr rfl fun k hk => ?_
-  simp [Nat.le_of_lt_succ (Finset.mem_range.1 hk)]
-
-/-- The leading term of `a # b` is the composition `a_{m'} ∘ b_m` of the leading terms. -/
+/-- The leading term of the composition `a # b` of classical symbols is the composition
+`a_{m'} ∘ b_m` of the leading terms. -/
 @[simp]
-theorem coefficient_homogeneousSharpTerms_zero (z : CoordinateSpace n × CoordinateSpace n) :
-    (homogeneousSharpTerms a b 0).coefficient z =
+theorem coefficient_asymptoticSumTerms_sharpTerm_zero (a : ClassicalSymbol n W U m')
+    (b : ClassicalSymbol n V W m) (z : CoordinateSpace n × CoordinateSpace n) :
+    (asymptoticSumTerms (a.sharpTerm b) 0).coefficient z =
       ((a.term 0).coefficient z).comp ((b.term 0).coefficient z) := by
-  simp [coefficient_homogeneousSharpTerms, sharpTerm_zero]
+  simp [coefficient_asymptoticSumTerms, sharpTerm_zero]
 
-/-- The term of degree `m' + m - 1` of `a # b` is
-`a_{m'} ∘ b_{m-1} + a_{m'-1} ∘ b_m - i ∑ⱼ ∂_{ξⱼ} a_{m'} ∘ ∂_{xⱼ} b_m`. -/
-theorem coefficient_homogeneousSharpTerms_one (z : CoordinateSpace n × CoordinateSpace n) :
-    (homogeneousSharpTerms a b 1).coefficient z =
-      ((a.term 0).coefficient z).comp ((b.term 1).coefficient z) +
-        ((a.term 1).coefficient z).comp ((b.term 0).coefficient z) -
-        Complex.I • ∑ j, (((a.term 0).frequencyDeriv (EuclideanSpace.single j 1)).coefficient
-          z).comp (((b.term 0).spatialDeriv (EuclideanSpace.single j 1)).coefficient z) := by
-  simp [coefficient_homogeneousSharpTerms, Finset.sum_range_succ, sharpTerm_zero, sharpTerm_succ,
-    coefficient_compTerms, sub_eq_add_neg]
-
-end Terms
+end Term
 
 /-! ### The composition of classical symbols -/
 
@@ -161,53 +127,27 @@ section Sharp
 
 variable [CompleteSpace W] [CompleteSpace U]
 
-/-- The remainder of the composition symbol of classical symbols after `N` terms has order
-`m' + m - N`: it is the remainder of the composition expansion after `N` terms, plus the remainder
-after `N - k` homogeneous terms of each term `sharpTerm a b k`, `k < N`. -/
-private theorem exists_remainder_sharp (a : ClassicalSymbol n W U m') (b : ClassicalSymbol n V W m)
-    (hb : b.toSymbol.HasCompactSpatialSupport) (χ : FrequencyCutoff (CoordinateSpace n))
-    (N : ℕ) :
-    ∃ r : Symbol n V U (m' + m - N), ∀ p, r.coefficient p =
-      (a.toSymbol.sharp b.toSymbol hb).coefficient p -
-        ∑ j ∈ range N, χ p.2 • (homogeneousSharpTerms a b j).coefficient p := by
-  -- The remainder of `sharpTerm a b k` after `N - k` terms has order `m' + m - N` for `k ≤ N`,
-  -- and order `m' + m - k ≤ m' + m - N` for `k > N`.
-  have hord (k : ℕ) : m' + m - k - ((N - k : ℕ) : ℝ) ≤ m' + m - N := by
-    have : (N : ℝ) ≤ k + ((N - k : ℕ) : ℝ) := by exact_mod_cast le_add_tsub
-    linarith
-  refine ⟨a.toSymbol.sharpRemainder b.toSymbol hb N +
-    ∑ k ∈ range N, Symbol.inclusion (hord k) ((a.sharpTerm b k).remainder χ (N - k)),
-    fun p => ?_⟩
-  simp only [Symbol.coefficient_add, Symbol.coefficient_sum, Symbol.coefficient_inclusion,
-    Symbol.coefficient_sharpRemainder, Pi.add_apply, Pi.sub_apply, Finset.sum_apply,
-    coefficient_remainder, toSymbol_sharpTerm, coefficient_homogeneousSharpTerms, Finset.smul_sum,
-    Finset.sum_sub_distrib]
-  -- Reindex the double sum over `k + i = j < N` by `k < N`, `i < N - k`.
-  rw [Finset.sum_range_diag_flip N
-    fun k i => χ p.2 • ((a.sharpTerm b k).term i).coefficient p]
-  abel
-
 /-- **The composition of classical symbols is classical.** For classical symbols `a` of order
 `m'` and `b` of order `m`, with `b` of compact spatial support, the composition symbol `a # b`,
-whose quantization is `Op(a) ∘ Op(b)`, is a classical symbol of order `m' + m`. Its homogeneous
-term of degree `m' + m - j` is `∑_{k ≤ j} (sharpTerm a b k)_{j - k}`
-(`TauCeti.ClassicalSymbol.homogeneousSharpTerms`). -/
+whose quantization is `Op(a) ∘ Op(b)`, is a classical symbol of order `m' + m`: it is the
+asymptotic sum of the classical terms `sharpTerm a b k`. Its homogeneous term of degree
+`m' + m - j` is `∑_{k ≤ j} (sharpTerm a b k)_{j - k}`
+(`TauCeti.ClassicalSymbol.asymptoticSumTerms`). -/
 def sharp (a : ClassicalSymbol n W U m') (b : ClassicalSymbol n V W m)
-    (hb : b.toSymbol.HasCompactSpatialSupport) : ClassicalSymbol n V U (m' + m) where
-  toSymbol := a.toSymbol.sharp b.toSymbol hb
-  term := homogeneousSharpTerms a b
-  exists_remainder' := ⟨default, exists_remainder_sharp a b hb default⟩
+    (hb : b.toSymbol.HasCompactSpatialSupport) : ClassicalSymbol n V U (m' + m) :=
+  ofAsymptoticSum (a.toSymbol.sharp b.toSymbol hb) (a.sharpTerm b) <|
+    Symbol.isAsymptoticSum_iff.2 fun N ↦ ⟨a.toSymbol.sharpRemainder b.toSymbol hb N, by simp⟩
 
 variable (a : ClassicalSymbol n W U m') (b : ClassicalSymbol n V W m)
   (hb : b.toSymbol.HasCompactSpatialSupport)
 
 @[simp]
 theorem toSymbol_sharp : (a.sharp b hb).toSymbol = a.toSymbol.sharp b.toSymbol hb :=
-  (rfl)
+  toSymbol_ofAsymptoticSum ..
 
 @[simp]
-theorem term_sharp (j : ℕ) : (a.sharp b hb).term j = homogeneousSharpTerms a b j :=
-  (rfl)
+theorem term_sharp (j : ℕ) : (a.sharp b hb).term j = asymptoticSumTerms (a.sharpTerm b) j :=
+  term_ofAsymptoticSum ..
 
 /-- **The principal symbol of a composition** is the composition of the principal symbols. -/
 @[simp]
@@ -224,8 +164,8 @@ theorem coefficient_term_one_sharp (z : CoordinateSpace n × CoordinateSpace n) 
         ((a.term 1).coefficient z).comp (b.principal.coefficient z) -
         Complex.I • ∑ j, ((a.principal.frequencyDeriv (EuclideanSpace.single j 1)).coefficient
           z).comp ((b.principal.spatialDeriv (EuclideanSpace.single j 1)).coefficient z) := by
-  rw [term_sharp, coefficient_homogeneousSharpTerms_one, principal_def, principal_def]
-  simp
+  simp [coefficient_asymptoticSumTerms, Finset.sum_range_succ, sharpTerm_zero, sharpTerm_succ,
+    coefficient_compTerms, sub_eq_add_neg, principal_def]
 
 end Sharp
 

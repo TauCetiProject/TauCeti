@@ -438,15 +438,9 @@ theorem coefficient_eq_adjoint_of_forall_integral_inner_eq (ha : a.HasCompactSpa
       (hcont _ hf').locallyIntegrable fun g hg hgc ↦ ?_)) x
   have hu : HasCompactSupport fun y ↦ g y • e := hgc.smul_right
   have huc : ContDiff ℝ ∞ fun y ↦ g y • e := hg.smul contDiff_const
-  have key := (h (hu.toSchwartzMap huc) v hu hv).symm.trans
-    (integral_inner_quantizeSchwartzValue_adjoint a ha (hu.toSchwartzMap huc) v)
-  have hcoe : ⇑(hu.toSchwartzMap huc) = fun y ↦ g y • e :=
-    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  have hinner (y : CoordinateSpace n) (w : V) :
-      inner ℂ (g y • e) w = (g y : ℂ) * inner ℂ e w := by
-    rw [RCLike.real_smul_eq_coe_smul (K := ℂ), inner_smul_left]
-    simp
-  simpa only [hcoe, hinner, Complex.real_smul] using key
+  simpa only [HasCompactSupport.toSchwartzMap_toFun, inner_smul_left_eq_smul] using
+    (h (hu.toSchwartzMap huc) v hu hv).symm.trans
+      (integral_inner_quantizeSchwartzValue_adjoint a ha (hu.toSchwartzMap huc) v)
 
 end Adjoint
 
