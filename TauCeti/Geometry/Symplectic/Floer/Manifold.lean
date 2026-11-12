@@ -87,9 +87,13 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_zero_left`: for a perturbation
   `K = K_t dt`, nonnegativity of the energy density on solutions, and continuity of the curvature
   and of the energy density.
-* `SmoothTwoForm.tendsto_perturbedMFDeriv` and `SmoothTwoForm.continuousOn_floerEnergyDensity`:
-  convergence of perturbed derivatives in the tangent bundle, and continuity of the energy density
-  of a `C¹` map when the Hamiltonian vector fields are continuous into the tangent bundle.
+* `SmoothTwoForm.tendsto_perturbedMFDeriv`, `SmoothTwoForm.tendsto_floerEnergyDensity` and
+  `SmoothTwoForm.continuousOn_floerEnergyDensity`: convergence of perturbed derivatives in the
+  tangent bundle and of energy densities, and continuity of the energy density of a `C¹` map when
+  the Hamiltonian vector fields are continuous into the tangent bundle.
+* `SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_of_tendsto`: a map whose derivative is the
+  limit in the tangent bundle of derivatives of Floer solutions is a Floer solution, for
+  structures continuous in tangent coordinates.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`: the energy identity on a
   rectangle.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_hasCompactSupport`: the energy
@@ -279,6 +283,91 @@ theorem tendsto_perturbedMFDeriv (ω : SmoothTwoForm I M) {Ks Kt : ℝ × ℝ �
   simp only [perturbedMFDeriv_apply, map_sub, map_smul]
   exact (hD.sub ((hX hXs).const_smul e.1)).sub ((hX hXt).const_smul e.2)
 
+/-- **Convergence of Floer energy densities.** Let the derivatives of maps `u i` at points
+`z i → z₀` converge in the tangent bundle to the derivative of a map `v` at `z₀`, and let the
+Hamiltonian vector fields of `K` be continuous at `(z₀, v z₀)` as maps into the tangent bundle.
+Then the Floer energy densities of `u i` at `z i` converge to the Floer energy density of `v` at
+`z₀`. -/
+theorem tendsto_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ × ℝ → M → ℝ} {ι : Type*}
+    {l : Filter ι} {u : ι → ℝ × ℝ → M} {z : ι → ℝ × ℝ} {z₀ : ℝ × ℝ} {v : ℝ × ℝ → M}
+    (hz : Tendsto z l (𝓝 z₀))
+    (hdu : ∀ e, Tendsto (fun i ↦ (⟨u i (z i), mfderiv 𝓘(ℝ, ℝ × ℝ) I (u i) (z i) e⟩ :
+      TangentBundle I M)) l (𝓝 ⟨v z₀, mfderiv 𝓘(ℝ, ℝ × ℝ) I v z₀ e⟩))
+    (hXs : ContinuousAt (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Ks p.1) p.2⟩ : TangentBundle I M)) (z₀, v z₀))
+    (hXt : ContinuousAt (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (z₀, v z₀)) :
+    Tendsto (fun i ↦ ω.floerEnergyDensity Ks Kt (u i) (z i)) l
+      (𝓝 (ω.floerEnergyDensity Ks Kt v z₀)) := by
+  have hx : Tendsto (fun i ↦ u i (z i)) l (𝓝 (v z₀)) :=
+    (((trivializationAt E (TangentSpace I) (v z₀)).tendsto_mk_nhds_mk_iff ℝ
+      (FiberBundle.mem_baseSet_trivializationAt E _ (v z₀))).1 (hdu 0)).1
+  have hP (e : ℝ × ℝ) := ω.tendsto_perturbedMFDeriv hz hdu hXs hXt e
+  simp only [floerEnergyDensity_def, SmoothBundleForm.eval₂_apply]
+  refine (ω.isSmoothForm.of_le (by simp)).tendsto_apply hx (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
+  -- The limit in `hP` is the perturbed derivative of `v` at `z₀`, unfolded by
+  -- `perturbedMFDeriv_apply`; `convert` matches the two up to the tangent-space instances that the
+  -- unfolded form elaborates with.
+  · convert hP stdComplexLineReal using 3 <;> exact perturbedMFDeriv_apply ..
+  · convert hP stdComplexLineImag using 3 <;> exact perturbedMFDeriv_apply ..
+
+/-- **Limits of Floer solutions are Floer solutions.** Let maps `u i` solve the Floer equation
+`(du - X_K)^{0,1} = 0` at points `z i → z₀`, for a domain-dependent structure `J(z, x)` on
+`T_x M`, and let their derivatives at `z i` converge in the tangent bundle to the derivative of a
+map `v` at `z₀`. If the Hamiltonian vector fields of `K` are continuous at `(z₀, v z₀)` as maps
+into the tangent bundle, and `J` is continuous at `(z₀, v z₀)` in the tangent coordinates at
+`v z₀`, then `v` solves the Floer equation at `z₀`. -/
+theorem isComplexLinearMap_perturbedMFDeriv_of_tendsto (ω : SmoothTwoForm I M)
+    [FiniteDimensional ℝ E] {Ks Kt : ℝ × ℝ → M → ℝ} {ι : Type*} {l : Filter ι} [l.NeBot]
+    {u : ι → ℝ × ℝ → M} {z : ι → ℝ × ℝ} {z₀ : ℝ × ℝ} {v : ℝ × ℝ → M}
+    {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    (hz : Tendsto z l (𝓝 z₀))
+    (hdu : ∀ e, Tendsto (fun i ↦ (⟨u i (z i), mfderiv 𝓘(ℝ, ℝ × ℝ) I (u i) (z i) e⟩ :
+      TangentBundle I M)) l (𝓝 ⟨v z₀, mfderiv 𝓘(ℝ, ℝ × ℝ) I v z₀ e⟩))
+    (hJ : ContinuousAt (fun p : (ℝ × ℝ) × M ↦
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) (v z₀) p.2 (v z₀)
+        p.2 (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z₀, v z₀))
+    (hXs : ContinuousAt (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Ks p.1) p.2⟩ : TangentBundle I M)) (z₀, v z₀))
+    (hXt : ContinuousAt (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (z₀, v z₀))
+    (hsol : ∀ᶠ i in l, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J (z i) (u i (z i))) (ω.perturbedMFDeriv Ks Kt (u i) (z i)).toLinearMap) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z₀ (v z₀))
+      (ω.perturbedMFDeriv Ks Kt v z₀).toLinearMap := by
+  set T := trivializationAt E (TangentSpace I) (v z₀)
+  have hx₀ : v z₀ ∈ T.baseSet := FiberBundle.mem_baseSet_trivializationAt E _ (v z₀)
+  have hx : Tendsto (fun i ↦ u i (z i)) l (𝓝 (v z₀)) :=
+    ((T.tendsto_mk_nhds_mk_iff ℝ hx₀).1 (hdu 0)).1
+  have hbase : ∀ᶠ i in l, u i (z i) ∈ T.baseSet := hx (T.open_baseSet.mem_nhds hx₀)
+  -- In coordinates, the perturbed derivatives converge to the perturbed derivative of `v`, and the
+  -- structures along the sequence converge to `J z₀ (v z₀)`.
+  have hP (e : ℝ × ℝ) : Tendsto (fun i ↦ T.continuousLinearMapAt ℝ (u i (z i))
+      (ω.perturbedMFDeriv Ks Kt (u i) (z i) e)) l
+      (𝓝 (T.continuousLinearMapAt ℝ (v z₀) (ω.perturbedMFDeriv Ks Kt v z₀ e))) :=
+    ((T.tendsto_mk_nhds_mk_iff ℝ hx₀).1 (ω.tendsto_perturbedMFDeriv hz hdu hXs hXt e)).2
+  have h := (isBoundedBilinearMap_apply.continuous.tendsto _).comp
+    ((hJ.tendsto.comp (hz.prodMk_nhds hx)).prodMk_nhds (hP stdComplexLineReal))
+  -- Pass to the limit in `P i (0, 1) = J_i (P i (1, 0))`, read in coordinates, where the
+  -- coordinate expression of `J_i` acts on coordinates of vectors as `J_i` on the vectors.
+  have hlim : T.continuousLinearMapAt ℝ (v z₀) (ω.perturbedMFDeriv Ks Kt v z₀ stdComplexLineImag) =
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) (v z₀) (v z₀) (v z₀)
+        (v z₀) (J z₀ (v z₀)).toLinearMap.toContinuousLinearMap
+        (T.continuousLinearMapAt ℝ (v z₀) (ω.perturbedMFDeriv Ks Kt v z₀ stdComplexLineReal)) :=
+    tendsto_nhds_unique (hP stdComplexLineImag) (h.congr' ((hsol.and hbase).mono
+      fun i ⟨hi, hb⟩ ↦ ?_))
+  · rw [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.comp_apply, Bundle.Trivialization.symmL_continuousLinearMapAt _ hx₀]
+      at hlim
+    rw [isComplexLinearMap_stdComplexLine_iff, ContinuousLinearMap.coe_coe]
+    rw [← T.coe_continuousLinearEquivAt_eq hx₀] at hlim
+    exact (T.continuousLinearEquivAt ℝ (v z₀) hx₀).injective hlim
+  · rw [isComplexLinearMap_stdComplexLine_iff, ContinuousLinearMap.coe_coe] at hi
+    simp only [comp_apply]
+    rw [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.comp_apply, Bundle.Trivialization.symmL_continuousLinearMapAt _ hb, hi]
+    rfl
+
 /-- **Continuity of the Floer energy density, for a manifold target.** If `u` is `C¹` on an open
 set `U` of the domain and the Hamiltonian vector fields of the perturbation `K = K_s ds + K_t dt`
 are continuous on `U × M` as maps into the tangent bundle, then the Floer energy density of `u` is
@@ -290,31 +379,17 @@ theorem continuousOn_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ ×
     (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
       (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ)) :
     ContinuousOn (ω.floerEnergyDensity Ks Kt u) U := by
-  have hfun : ω.floerEnergyDensity Ks Kt u = fun z ↦ ω.1 (u z)
-      ![ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal,
-        ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag] :=
-    funext fun z ↦ by rw [floerEnergyDensity_def, SmoothBundleForm.eval₂_apply]
-  rw [hfun]
   intro z hz
   have hzU := hU.mem_nhds hz
   have hUM := (hU.prod isOpen_univ).mem_nhds (mk_mem_prod hz (mem_univ (u z)))
-  -- The derivatives of `u` along fixed vectors are continuous into the tangent bundle at `z`, and
-  -- so are the perturbed derivatives.
+  -- The derivatives of `u` along fixed vectors are continuous into the tangent bundle at `z`.
   have hD (e : ℝ × ℝ) : Tendsto (fun z' ↦ (⟨u z', mfderiv 𝓘(ℝ, ℝ × ℝ) I u z' e⟩ :
       TangentBundle I M)) (𝓝 z) (𝓝 ⟨u z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z e⟩) :=
     (((hu.contMDiffAt hzU).continuousAt_tangentMap le_rfl).comp
       ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, ℝ × ℝ)).symm.continuous.continuousAt.comp
         (continuous_id.prodMk continuous_const).continuousAt)).tendsto
-  have hP (e : ℝ × ℝ) := ω.tendsto_perturbedMFDeriv (u := fun _ ↦ u) tendsto_id hD
-    (hXs.continuousAt hUM) (hXt.continuousAt hUM) e
-  simp only [id_eq] at hP
-  refine ((ω.isSmoothForm.of_le (by simp)).tendsto_apply (hu.contMDiffAt hzU).continuousAt
-    (Fin.forall_fin_two.2 ⟨?_, ?_⟩)).mono_left nhdsWithin_le_nhds
-  -- The limit in `hP` is the perturbed derivative of `u` at `z`, unfolded by
-  -- `perturbedMFDeriv_apply`; `convert` matches the two up to the tangent-space instances that the
-  -- unfolded form elaborates with.
-  · convert hP stdComplexLineReal using 3 <;> exact perturbedMFDeriv_apply ..
-  · convert hP stdComplexLineImag using 3 <;> exact perturbedMFDeriv_apply ..
+  exact (ω.tendsto_floerEnergyDensity (u := fun _ ↦ u) tendsto_id hD (hXs.continuousAt hUM)
+    (hXt.continuousAt hUM)).mono_left nhdsWithin_le_nhds
 
 end Continuity
 
