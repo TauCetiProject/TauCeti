@@ -290,6 +290,28 @@ theorem coe_sumInr {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂]
   funext x
   exact sumInr_apply (I := I) (n := n) (M := M) x
 
+/-- In a square commuting near `x` whose ambient map is differentiable at `f x`, a base map with
+surjective differential is differentiable at `x`. -/
+theorem mdifferentiableAt_of_surjective_mfderiv {m : ℕ∞ω} {u : M → M'} {v : N → N'} {x : M}
+    (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' m M' N')
+    (hv : MDifferentiableAt J J' v (f x))
+    (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) (hsurj : Function.Surjective (mfderiv I I' u x)) :
+    MDifferentiableAt I I' u x := by
+  -- Otherwise the differential vanishes, forcing the target model space to be trivial.
+  -- Differentiability then reduces to continuity, which the embedding g reflects.
+  by_contra hu
+  have ht : Subsingleton (TangentSpace I' (u x)) := ⟨fun a b ↦ by
+    obtain ⟨a, rfl⟩ := hsurj a
+    obtain ⟨b, rfl⟩ := hsurj b
+    simp only [mfderiv_zero_of_not_mdifferentiableAt hu, zero_apply]⟩
+  -- The tangent space is a type synonym for the target model space.
+  have : Subsingleton F := ht
+  refine hu ((mdifferentiableAt_iff u x).mpr ⟨?_, ?_⟩)
+  · exact g.isEmbedding.isInducing.continuousAt_iff.mpr
+      ((hv.continuousAt.comp f.contMDiff.continuous.continuousAt).congr h)
+  · rw [Subsingleton.elim (writtenInExtChartAt I I' x u) fun _ ↦ 0]
+    exact differentiableWithinAt_const _
+
 end SmoothEmbedding
 
 open Manifold in
