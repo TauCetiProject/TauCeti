@@ -157,7 +157,7 @@ lemma cotangentLiouvilleForm_cotangentExactGraphTranslation {f : V → ℝ}
         (t • differentialOneForm f x.1).compContinuousLinearMap
           (ContinuousLinearMap.fst ℝ V (StrongDual ℝ V)) := by
   apply cotangentLiouvilleForm_cotangentFiberTranslate
-  exact (differentiableAt_differentialOneForm hdf).const_smul t
+  exact (differentiableAt_differentialOneForm_iff.2 hdf).const_smul t
 
 /-- Wherever the Hessian exists and is symmetric, exact graph translation preserves the
 canonical cotangent symplectic form. -/
@@ -169,8 +169,8 @@ lemma strongDualCotangentSymplecticForm_fderiv_cotangentExactGraphTranslation
         (fderiv ℝ (cotangentExactGraphTranslation f t) x w) =
       strongDualCotangentSymplecticForm v w := by
   apply strongDualCotangentSymplecticForm_fderiv_cotangentFiberTranslate_of_extDeriv_eq_zero
-  · exact (differentiableAt_differentialOneForm hdf).const_smul t
-  · rw [extDeriv_smul, extDeriv_differentialOneForm_apply_eq_zero hdf hf]
+  · exact (differentiableAt_differentialOneForm_iff.2 hdf).const_smul t
+  · rw [extDeriv_smul, extDeriv_differentialOneForm_apply_eq_zero hf]
     exact smul_zero _
 
 end TauCeti

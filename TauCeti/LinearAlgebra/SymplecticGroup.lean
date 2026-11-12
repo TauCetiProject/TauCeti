@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.SymplecticGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 
 -- Non-public: `noncomm_ring` normalises the conjugation identities below, the Schur complement
--- evaluates `det J`, `Fintype.equivFin` supplies an auxiliary linear order, and
--- `Matrix.subTransposeEqEquiv` builds the correction in the proof of
--- `exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`, but no statement mentions any of
--- them.
+-- evaluates `det J`, positive definiteness shows `1 + A Aᵀ` is invertible, `Fintype.equivFin`
+-- supplies an auxiliary linear order, and `Matrix.subTransposeEqEquiv` builds the correction in
+-- the proof of `exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`, but no statement
+-- mentions any of them.
+import Mathlib.Algebra.Order.Star.Real
+import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.Data.Fintype.EquivFin
 import TauCeti.LinearAlgebra.Matrix.Symmetric
@@ -50,6 +53,7 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   the latter, `tr (J * Jᵀ) = 2 * card l`.
 * `Matrix.J_apply_eq_zero_of_ne_swap` and `Matrix.J_apply_swap_ne_zero`: the nonzero entries of
   `J` are exactly those at the pairs `(x, x.swap)`.
+* `Matrix.sum_J_apply`: the row sums of `J` are its single nonzero entries.
 * `Matrix.sum_J_mul_J_eq_ite`: the columns of `J` are orthonormal, `Jᵀ * J = 1` read entrywise.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
 * `Matrix.J_mul_mul_J_mul_J`: sandwiching twice by `J` is the identity.
@@ -77,6 +81,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `SymplecticGroup.fromBlocks_upper_mem`: `fromBlocks 1 B 0 1` for symmetric `B`;
 * `SymplecticGroup.fromBlocks_lower_mem`: `fromBlocks 1 0 C 1` for symmetric `C`;
 * `SymplecticGroup.fromBlocks_diagonal_mem`: `fromBlocks A 0 0 D` when `Aᵀ * D = 1`.
+* `SymplecticGroup.isUnit_det_mul_J_add_J_mul`: for a real symplectic matrix `A`, the matrix
+  `A J + J A` is invertible.
 -/
 
 public section
@@ -140,6 +146,10 @@ omit [Fintype l] in
 particular nonzero. -/
 theorem J_apply_swap_ne_zero [Nontrivial R] (x : l ⊕ l) : J l R x x.swap ≠ 0 := by
   rcases x with i | i <;> simp [Matrix.J]
+
+/-- The row sums of `J` are its single nonzero entries: `∑ y, J x y = J x x.swap`. -/
+theorem sum_J_apply (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y = J l R x x.swap :=
+  Finset.sum_eq_single x.swap (fun _ _ hy ↦ J_apply_eq_zero_of_ne_swap l R hy) (by simp)
 
 /-- Each row of `J` pairs with itself to `1`, because `J * Jᵀ = 1`. -/
 theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 := by
@@ -343,6 +353,23 @@ theorem fromBlocks_diagonal_mem {A D : Matrix l l R} (hAD : Aᵀ * D = 1) :
     fromBlocks A 0 0 D ∈ symplecticGroup l R := by
   rw [fromBlocks_mem_iff]
   simp [hAD]
+
+/-- **For a real symplectic matrix `A`, the matrix `A J + J A` is invertible**:
+`(A J + J A) Aᵀ = J (1 + A Aᵀ)` and `1 + A Aᵀ` is positive definite. -/
+theorem isUnit_det_mul_J_add_J_mul {A : Matrix (l ⊕ l) (l ⊕ l) ℝ}
+    (hA : A ∈ symplecticGroup l ℝ) : IsUnit (A * J l ℝ + J l ℝ * A).det := by
+  have hsymp : A * J l ℝ * Aᵀ = J l ℝ := mem_iff.1 hA
+  have hkey : (A * J l ℝ + J l ℝ * A) * Aᵀ = J l ℝ * (1 + A * Aᵀ) := by
+    rw [add_mul, hsymp, mul_add, mul_one, Matrix.mul_assoc]
+  have hpos : (1 + A * Aᵀ).PosDef := by
+    simpa [conjTranspose_eq_transpose_of_trivial] using
+      PosDef.one.add_posSemidef (posSemidef_self_mul_conjTranspose A)
+  have h := congrArg Matrix.det hkey
+  rw [det_mul, det_mul] at h
+  have hne : (J l ℝ).det * (1 + A * Aᵀ).det ≠ 0 :=
+    mul_ne_zero (isUnit_det_J l ℝ).ne_zero hpos.det_pos.ne'
+  rw [← h] at hne
+  exact isUnit_iff_ne_zero.2 (left_ne_zero_of_mul hne)
 
 /-- For a symplectic matrix with invertible upper-left block `A` with inverse `A⁻¹`, the blocks
 `C A⁻¹` and `A⁻¹ B` are symmetric, and `D = (C A⁻¹) A (A⁻¹ B) + A⁻ᵀ`. -/
