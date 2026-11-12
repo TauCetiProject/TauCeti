@@ -137,7 +137,7 @@ theorem exists_contDiff_abs_sub_le_and_sum_mul_fderiv_fderiv_le_of_wkp {p : ℝ�
         exact eLpNorm_add_le Fact.out
     _ ≤ eLpNorm (fun x ↦ (f x)⁺) p (volume.restrict S) +
           ENNReal.ofReal N * ENNReal.ofReal (η / N) := by
-        rw [Real.enorm_eq_ofReal hN.le]
+        rw [Real.eNorm_eq_ofReal hN.le]
         gcongr
     _ = eLpNorm (fun x ↦ (f x)⁺) p (volume.restrict S) + ENNReal.ofReal η := by
         rw [← ENNReal.ofReal_mul hN.le, mul_div_cancel₀ _ hN.ne']
@@ -196,7 +196,7 @@ theorem exists_contDiff_div_le_and_sum_mul_fderiv_fderiv_le_of_wkp {p : ℝ≥0�
       (inv_pos.2 hσ).le, mul_zero]
   calc eLpNorm (fun x ↦ (σ⁻¹ * g x)⁺) p (volume.restrict S)
       = ENNReal.ofReal σ⁻¹ * eLpNorm (fun x ↦ (g x)⁺) p (volume.restrict S) := by
-        rw [hpos, eLpNorm_const_smul, Real.enorm_eq_ofReal (inv_pos.2 hσ).le]
+        rw [hpos, eLpNorm_const_smul, Real.eNorm_eq_ofReal (inv_pos.2 hσ).le]
     _ ≤ ENNReal.ofReal σ⁻¹ * (ENNReal.ofReal M + ENNReal.ofReal η) := by
         gcongr
         exact hg.trans (add_le_add_left hfM _)
