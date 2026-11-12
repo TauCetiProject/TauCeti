@@ -158,9 +158,7 @@ theorem torusRestriction_fullWeightTorusRestriction
     D.torusRestriction E h (D.fullWeightTorusRestriction A s) =
       E.fullWeightTorusRestriction A s := by
   funext i
-  rw [torusRestriction_def, torusPointMap_apply, weightLatticeInclusion_single,
-    ← Module.Basis.equivFun_apply, torusCharacter_fullWeightTorusRestriction,
-    fullWeightTorusRestriction_apply, Submodule.coe_inclusion]
+  simp [torusRestriction_def, torusPointMap_apply, weightLatticeInclusion_single]
 
 /-- If the value ring has divisible units, every torus point of the smaller lattice extends
 to the larger lattice. No such assertion holds for general fields. -/

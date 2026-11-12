@@ -96,12 +96,12 @@ theorem fullWeightTorusRestriction_apply (s : Fin t.rank → Aˣ) (i : Fin t.ran
   simp [fullWeightTorusRestriction, torusPointMap_apply]
 
 /-- Restriction is characterized by evaluation on every character of the actual weight lattice. -/
+@[simp]
 theorem torusCharacter_fullWeightTorusRestriction (s : Fin t.rank → Aˣ)
     (μ : D.weightLattice) :
-    torusCharacter (D.fullWeightTorusRestriction A s) (D.weightLatticeBasis.equivFun μ) =
+    torusCharacter (D.fullWeightTorusRestriction A s) (D.weightLatticeBasis.repr μ) =
       torusCharacter s (μ : Fin t.rank → ℤ) := by
-  rw [fullWeightTorusRestriction, torusCharacter_torusPointMap]
-  simp only [Module.Basis.equivFun_apply, weightLatticeEmbedding_repr]
+  simp [fullWeightTorusRestriction, torusCharacter_torusPointMap]
 
 /-- The kernel of full-weight restriction is the group of characters that are trivial on `Λ(D)`;
 these are exactly the characters that factor through `P / Λ(D)`. -/
