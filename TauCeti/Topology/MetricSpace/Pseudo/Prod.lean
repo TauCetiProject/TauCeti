@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.MetricSpace.Pseudo.Constructions
 
 /-!
-# Neighborhoods of a point times a relative neighborhood
+# Products of pseudometric spaces: neighborhoods and nested balls
 
 In a product of pseudometric spaces, a property holds eventually for the product filter
 `𝓝 x ×ˢ 𝓝[s] t` exactly when it holds on a box of points `(y, τ)` with `dist y x < δ`, `τ ∈ s`
