@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Comp
@@ -29,6 +30,8 @@ charts used to verify it.
 * `OpenPartialHomeomorph.isInvertible_fderiv`: a chart that is
   differentiable at a point, with inverse differentiable at the image point, has an invertible
   derivative there.
+* `OpenPartialHomeomorph.det_fderiv_ne_zero`: hence a chart of a space to itself that is
+  differentiable in both directions at a point has a derivative with nonzero determinant there.
 * `TauCeti.image_tangentConeAt_eq_tangentConeAt_preimage_symm`: the invertible derivative `A` of a
   chart at a point carries the tangent cone of a set there onto the tangent cone of its image.
 * `TauCeti.image_tangentConeAt_eq_of_preimage_eq`: the same for a homeomorphism carrying one set
@@ -69,6 +72,15 @@ theorem isInvertible_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ 
     exact (he'.comp (e y) hes').unique <|
       (hasFDerivAt_id (e y)).congr_of_eventuallyEq (e.eventually_right_inverse (e.map_source hy))
   exact _root_.ContinuousLinearMap.IsInvertible.of_inverse hright hleft
+
+/-- A chart of a space to itself which is differentiable at a point of its source, and whose
+inverse is differentiable at the image point, has a derivative with nonzero determinant there. -/
+theorem det_fderiv_ne_zero (e : OpenPartialHomeomorph E E) {y : E} (hy : y ∈ e.source)
+    (he : DifferentiableAt 𝕜 e y) (hes : DifferentiableAt 𝕜 e.symm (e y)) :
+    (fderiv 𝕜 e y).det ≠ 0 := by
+  obtain ⟨A, hA⟩ := e.isInvertible_fderiv hy he hes
+  rw [← hA]
+  exact A.toLinearEquiv.isUnit_det'.ne_zero
 
 /-- A chart which is differentiable at a point of its source, and whose inverse is differentiable
 at the image point, has a derivative represented by a continuous linear equivalence. -/
