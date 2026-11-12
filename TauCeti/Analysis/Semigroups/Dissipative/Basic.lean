@@ -57,7 +57,8 @@ condition does need completeness.
 * `TauCeti.Semigroups.isMDissipative_iff_forall_mem_resolventSet_and_norm_resolvent_le`:
   conversely, these resolvent conditions characterize m-dissipativity.
 * `TauCeti.Semigroups.StronglyContinuousSemigroup.norm_le_norm_smul_sub_generator`: the
-  resolvent-range inequality at a general growth bound `(ω, M)`.
+  resolvent-range inequality at a general growth bound `(ω, M)`, and its form through
+  `‖R(lambda)‖`, `StronglyContinuousSemigroup.norm_le_norm_resolvent_mul_norm_smul_sub_generator`.
 * `TauCeti.Semigroups.StronglyContinuousSemigroup.smul_sub_generator_bijective`:
   `lambda • I - A` is bijective from `D(A)` onto `X` for `lambda > ω`.
 * `TauCeti.Semigroups.ContractionSemigroup.isDissipative_generator` and
@@ -353,14 +354,13 @@ namespace StronglyContinuousSemigroup
 
 variable [CompleteSpace X]
 
-/-- **Resolvent-range inequality.** For a C₀-semigroup with growth bound `(ω, M)` and
-`lambda > ω`, every `x ∈ D(A)` satisfies `‖x‖ ≤ M / (lambda - ω) * ‖lambda x - A x‖`.
-
-This is the Hille--Yosida resolvent bound `‖R(lambda)‖ ≤ M / (lambda - ω)` read backwards
-through the left-inverse identity `R(lambda) (lambda x - A x) = x`. -/
-theorem norm_le_norm_smul_sub_generator (S : StronglyContinuousSemigroup X) {ω M : ℝ}
-    (hb : S.HasGrowthBound ω M) {lambda : ℝ} (hlambda : ω < lambda) (x : S.generator.domain) :
-    ‖(x : X)‖ ≤ M / (lambda - ω) * ‖lambda • (x : X) - S.generator x‖ := by
+/-- For a C₀-semigroup with growth bound `(ω, M)` and `lambda > ω`, every `x ∈ D(A)` satisfies
+`‖x‖ ≤ ‖R(lambda)‖ * ‖lambda x - A x‖`: apply the resolvent to `lambda x - A x` and use the
+left-inverse identity `R(lambda) (lambda x - A x) = x`. -/
+theorem norm_le_norm_resolvent_mul_norm_smul_sub_generator (S : StronglyContinuousSemigroup X)
+    {ω M : ℝ} (hb : S.HasGrowthBound ω M) {lambda : ℝ} (hlambda : ω < lambda)
+    (x : S.generator.domain) :
+    ‖(x : X)‖ ≤ ‖S.resolvent hb lambda hlambda‖ * ‖lambda • (x : X) - S.generator x‖ := by
   have hx : (x : X) ∈ S.domain := by
     rw [← S.generator_domain]
     exact x.property
@@ -370,9 +370,17 @@ theorem norm_le_norm_smul_sub_generator (S : StronglyContinuousSemigroup X) {ω 
         rw [key]
     _ ≤ ‖S.resolvent hb lambda hlambda‖ * ‖lambda • (x : X) - S.generator x‖ :=
         ContinuousLinearMap.le_opNorm _ _
-    _ ≤ M / (lambda - ω) * ‖lambda • (x : X) - S.generator x‖ := by
-        gcongr
-        exact S.resolvent_norm_le hb lambda hlambda
+
+/-- **Resolvent-range inequality.** For a C₀-semigroup with growth bound `(ω, M)` and
+`lambda > ω`, every `x ∈ D(A)` satisfies `‖x‖ ≤ M / (lambda - ω) * ‖lambda x - A x‖`.
+
+This is the Hille--Yosida resolvent bound `‖R(lambda)‖ ≤ M / (lambda - ω)` read backwards
+through the left-inverse identity `R(lambda) (lambda x - A x) = x`. -/
+theorem norm_le_norm_smul_sub_generator (S : StronglyContinuousSemigroup X) {ω M : ℝ}
+    (hb : S.HasGrowthBound ω M) {lambda : ℝ} (hlambda : ω < lambda) (x : S.generator.domain) :
+    ‖(x : X)‖ ≤ M / (lambda - ω) * ‖lambda • (x : X) - S.generator x‖ :=
+  (S.norm_le_norm_resolvent_mul_norm_smul_sub_generator hb hlambda x).trans
+    (by gcongr; exact S.resolvent_norm_le hb lambda hlambda)
 
 /-- For `lambda` beyond the growth exponent, `lambda • I - A` is injective on `D(A)`: the
 resolvent is a left inverse of it. -/

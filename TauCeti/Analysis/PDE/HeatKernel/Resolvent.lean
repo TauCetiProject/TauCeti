@@ -11,7 +11,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.Generator
-import TauCeti.Analysis.Semigroups.Resolvent.Identity
+import TauCeti.Analysis.Semigroups.Dissipative.Basic
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
@@ -195,27 +195,6 @@ theorem resolvent_heatSemigroup_ae_eq_convolution_coeFn (hp : p ≠ ∞) (hlambd
   simpa only [Lp.toLp_coeFn] using
     resolvent_heatSemigroup_ae_eq_convolution hp hlambda (Lp.memLp f)
 
-/-- An element `f` of the generator domain of the heat semigroup, with generator value `g`,
-satisfies `‖f‖ ≤ λ ‖(λ - Δ)⁻¹‖ ‖f‖ + λ⁻¹ ‖g‖`: write `f = (λ - Δ)⁻¹ (λ f - g)`. -/
-private theorem norm_le_mul_norm_resolvent_heatSemigroup_add (hp : p ≠ ∞) (hlambda : 0 < lambda)
-    {f g : Lp F p (volume : Measure E)} (hf : f ∈ (heatSemigroup (E := E) (F := F) hp).domain)
-    (hg : (heatSemigroup (E := E) (F := F) hp).generator
-      ⟨f, by rwa [StronglyContinuousSemigroup.generator_domain]⟩ = g) :
-    ‖f‖ ≤ lambda * ‖(heatSemigroup (E := E) (F := F) hp).resolvent lambda hlambda‖ * ‖f‖ +
-      lambda⁻¹ * ‖g‖ := by
-  set S := heatSemigroup (E := E) (F := F) hp
-  set R := S.resolvent lambda hlambda
-  have hleft := S.resolventLeftInv lambda hlambda ⟨f, hf⟩
-  rw [hg] at hleft
-  have hR : ‖R‖ ≤ lambda⁻¹ := (S.resolvent_norm_le lambda hlambda).trans_eq (one_div _)
-  calc ‖f‖ = ‖R (lambda • f - g)‖ := by rw [hleft]
-    _ ≤ ‖R‖ * (lambda * ‖f‖ + ‖g‖) := by
-        refine (R.le_opNorm _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-        refine (norm_sub_le _ _).trans_eq ?_
-        rw [norm_smul, norm_of_nonneg hlambda.le]
-    _ = lambda * ‖R‖ * ‖f‖ + ‖R‖ * ‖g‖ := by ring
-    _ ≤ lambda * ‖R‖ * ‖f‖ + lambda⁻¹ * ‖g‖ := by gcongr
-
 /-- **The norm of the heat resolvent.** For `1 ≤ p < ∞`, `λ > 0` and a nontrivial Banach space
 `F`, the resolvent `(λ - Δ)⁻¹` of the heat semigroup on `Lᵖ(E; F)` has operator norm exactly
 `1 / λ`: the Hille–Yosida bound of a contraction semigroup is attained. -/
@@ -252,9 +231,24 @@ theorem norm_resolvent_heatSemigroup [Nontrivial F] (hp : p ≠ ∞) (hlambda : 
     have hf := hφr.continuous.memLp_of_hasCompactSupport (μ := volume) (p := p) hφrc
     have hg := hφr.continuous_laplacian.memLp_of_hasCompactSupport (μ := volume) (p := p)
       hφrc.laplacian
-    have h := norm_le_mul_norm_resolvent_heatSemigroup_add hp hlambda
-      (mem_domain_heatSemigroup hp hφr hφrc hf.coeFn_toLp)
-      (generator_heatSemigroup hp hφr hφrc hf.coeFn_toLp hg.coeFn_toLp)
+    -- Write `f = (λ - Δ)⁻¹ (λ f - Δ f)` to get `‖f‖ ≤ λ ‖(λ - Δ)⁻¹‖ ‖f‖ + λ⁻¹ ‖Δ f‖`.
+    have h : ‖hf.toLp φr‖ ≤ lambda * ‖R‖ * ‖hf.toLp φr‖ + lambda⁻¹ * ‖hg.toLp (Δ φr)‖ := by
+      have hle := (heatSemigroup (E := E) (F := F) hp).toStronglyContinuousSemigroup
+        |>.norm_le_norm_resolvent_mul_norm_smul_sub_generator
+          (heatSemigroup hp).hasGrowthBound (lambda := lambda) (by simpa using hlambda)
+          ⟨hf.toLp φr, by
+            rw [StronglyContinuousSemigroup.generator_domain]
+            exact mem_domain_heatSemigroup hp hφr hφrc hf.coeFn_toLp⟩
+      rw [← ContractionSemigroup.resolvent_eq_stronglyContinuousSemigroup_resolvent,
+        generator_heatSemigroup hp hφr hφrc hf.coeFn_toLp hg.coeFn_toLp] at hle
+      have hR : ‖R‖ ≤ lambda⁻¹ :=
+        ((heatSemigroup hp).resolvent_norm_le lambda hlambda).trans_eq (one_div _)
+      calc ‖hf.toLp φr‖ ≤ ‖R‖ * (lambda * ‖hf.toLp φr‖ + ‖hg.toLp (Δ φr)‖) := by
+            refine hle.trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
+            refine (norm_sub_le _ _).trans_eq ?_
+            rw [norm_smul, norm_of_nonneg hlambda.le]
+        _ = lambda * ‖R‖ * ‖hf.toLp φr‖ + ‖R‖ * ‖hg.toLp (Δ φr)‖ := by ring
+        _ ≤ lambda * ‖R‖ * ‖hf.toLp φr‖ + lambda⁻¹ * ‖hg.toLp (Δ φr)‖ := by gcongr
     -- The `Lᵖ` norms of the dilate and of its Laplacian scale like `r^{n/p}` and `r^{n/p - 2}`.
     set s := r ^ ((Module.finrank ℝ E : ℝ) / p.toReal)
     have hs : 0 < s := by positivity
