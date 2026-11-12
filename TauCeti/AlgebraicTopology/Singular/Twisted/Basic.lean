@@ -1343,6 +1343,16 @@ lemma subsetTwistedChainComplexMap_twistedChainComplexMap (h : A ⊆ B) :
   exact (twistedChainComplexMap_comp (TopCat.ofHom (ContinuousMap.inclusion h))
     (TopCat.ofHom (ContinuousMap.subtypeVal B)) L).symm
 
+/-- The map induced by `A ⊆ B` is a change of coefficients followed by the inclusion map. -/
+lemma subsetTwistedChainComplexMap_def (h : A ⊆ B) :
+    subsetTwistedChainComplexMap L h =
+      twistedChainComplexCoefficientMap
+          ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
+            (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
+        twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
+          ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L) :=
+  (rfl)
+
 variable (f : X ⟶ Y) (M : LocalCoefficientSystem.{u, v, max v w} R Y) {B : Set Y}
   (hf : Set.MapsTo f A B)
 
