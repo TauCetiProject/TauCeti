@@ -458,7 +458,7 @@ example :
       ∀ x : Fin 1 × Fin 3 → ZMod 2, eval x (hasseDeriv 0 P) = 0 := by
   intro _ P
   refine ⟨?_, fun x ↦ ?_⟩
-  · have hM : ∀ h : Fin 1, (![1, 0, 0] : Fin 3 → ZMod 2) 0 ≠ 0 := fun _ ↦ one_ne_zero
+  · have hM : Fin 1 → (![1, 0, 0] : Fin 3 → ZMod 2) 0 ≠ 0 := fun _ ↦ one_ne_zero
     have hsub :
         substFormInv (fun _ : Fin 1 ↦ (![1, 0, 0] : Fin 3 → ZMod 2)) (fun _ ↦ 0) P = P := by
       simp [P]

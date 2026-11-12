@@ -108,7 +108,7 @@ example :
       support_X]
     simp [Finsupp.weight_apply]
   have hf : formIndex ![1] (fun _ : Fin 1 ↦ ![(-0 : ℚ), 1]) P = 0 := by
-    have hM : ∀ h : Fin 1, (![(-0 : ℚ), 1] : Fin 2 → ℚ) 1 ≠ 0 := fun _ ↦ one_ne_zero
+    have hM : Fin 1 → (![(-0 : ℚ), 1] : Fin 2 → ℚ) 1 ≠ 0 := fun _ ↦ one_ne_zero
     have hsub : substFormInv (fun _ : Fin 1 ↦ ![(-0 : ℚ), 1]) (fun _ ↦ 1) P = P := by
       have herase : (univ : Finset (Fin 2)).erase 1 = {0} := by decide
       have h1 := substFormInv_X_self (M := fun _ : Fin 1 ↦ ![(-0 : ℚ), 1])
