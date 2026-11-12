@@ -69,7 +69,7 @@ theorem coeff_minpoly_mem_maximalRealSubfield [Algebra K ℂ] {x : ℂ} (hx : st
   have h := minpoly.map_eq_self (σ := (complexConj K : K →+* K)) (τ := starRingEnd ℂ)
     (RingHom.ext fun c ↦ complexEmbedding_complexConj K (algebraMap K ℂ) c) (by simpa using hx)
   rw [← complexConj_eq_self_iff]
-  simpa using congrArg (coeff · n) h
+  simpa using congrArg (AddMonoidAlgebra.coeff · n) h
 
 end NumberField.IsCMField
 
