@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -416,11 +417,7 @@ theorem exists_of_isCompact_closure {Ω : Set E} (hΩ : IsOpen Ω)
     (hUc : IsCompact (closure (U : Set E))) (hUΩ : closure (U : Set E) ⊆ Ω)
     (hUV : MapsTo Φ U V) : ∃ L c, IsChangeOfVariables k U V Φ L c := by
   have hk' : (1 : ℕ∞ω) ≤ k := by exact_mod_cast hk
-  have hsum : ContinuousOn
-      (fun x => ∑ i ∈ Finset.range (k + 1), ‖iteratedFDeriv ℝ i Φ x‖) (closure (U : Set E)) :=
-    continuousOn_finsetSum _ fun i hi => (ContinuousOn.continuousOn_iteratedFDeriv hΦ hΩ
-      (by exact_mod_cast Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))).norm.mono hUΩ
-  obtain ⟨L, hL⟩ := hUc.exists_bound_of_continuousOn hsum
+  obtain ⟨L, -, hL⟩ := hΦ.exists_nonneg_bound_iteratedFDeriv_of_isOpen hΩ hUc hUΩ
   have hdetc : ContinuousOn (fun x => |(fderiv ℝ Φ x).det|) (closure (U : Set E)) :=
     (ContinuousLinearMap.continuous_det.comp_continuousOn
       ((hΦ.continuousOn_fderiv_of_isOpen hΩ hk').mono hUΩ)).abs
@@ -431,13 +428,9 @@ theorem exists_of_isCompact_closure {Ω : Set E} (hΩ : IsOpen Ω)
         (hΦ.mono (subset_closure.trans hUΩ)).differentiableOn (by positivity)
       injOn := hinj
       mapsTo := hUV
-      norm_iteratedFDeriv_le := fun i _ hik x hx => ?_
+      norm_iteratedFDeriv_le := fun i _ hik x hx => hL i hik x (subset_closure hx)
       pos := hc
       le_abs_det := fun x hx => hcdet x (subset_closure hx) }⟩
-  have hx := hL x (subset_closure hx)
-  rw [Real.norm_of_nonneg (Finset.sum_nonneg fun _ _ => norm_nonneg _)] at hx
-  exact (Finset.single_le_sum (fun j _ => norm_nonneg (iteratedFDeriv ℝ j Φ x))
-    (Finset.mem_range.2 (Nat.lt_succ_of_le hik))).trans hx
 
 variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
 
