@@ -18,8 +18,9 @@ The **topological genus** of a space `X` of finite CW type is
 characteristic `TauCeti.eulerChar`. This is the genus of a compact connected Riemann surface,
 read off its underlying topological surface, hence the namespace `TauCeti.RiemannSurface`; it
 needs only the Euler characteristic, so it lives here, below the complex-analytic theory. It is the
-same convention as `TauCeti.RibbonGraph.genus` and `TauCeti.PermutationTriple.genus`, and it is
-never the analytic genus `dim H¹(X, 𝒪)`.
+same convention as `TauCeti.RibbonGraph.genus` and `TauCeti.PermutationTriple.genus`. It is defined
+from the Euler characteristic, not as the analytic genus `dim H¹(X, 𝒪)`; the two agree on compact
+Riemann surfaces, but that is not proved here.
 
 The genus is defined on every space of finite CW type, so it returns a value also where it has no
 geometric meaning; the identity `χ(X) = 2 - 2 · genus X` holds exactly when `χ(X) ≤ 2` and

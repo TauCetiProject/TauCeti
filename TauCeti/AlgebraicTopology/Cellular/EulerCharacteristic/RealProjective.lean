@@ -42,19 +42,12 @@ theorem cwEulerChar_cwComplex :
     cwEulerChar (univ : Set (RealProjectiveSpace n)) = if Even n then 1 else 0 := by
   let := cwComplex n
   have := finite_cwComplex (n := n)
-  have hAlt (N : ℕ) :
-      ∑ m ∈ Finset.range (N + 1), (-1 : ℤ) ^ m = if Even N then 1 else 0 := by
-    induction N with
-    | zero => simp
-    | succ N ih =>
-      rw [Finset.sum_range_succ, ih]
-      rcases Nat.even_or_odd N with hN | hN
-      · simp [hN, Nat.even_add_one]
-      · simp [hN.add_one, Nat.not_even_iff_odd.2 hN]
   rw [cwEulerChar_eq_sum_range (C := (univ : Set (RealProjectiveSpace n))) (N := n + 1)
-      fun m hm ↦ ⟨fun c ↦ by have := le_of_cell_cwComplex c; omega⟩, ← hAlt n]
-  refine Finset.sum_congr rfl fun m hm ↦ ?_
-  simp [nat_card_cell_cwComplex, Nat.lt_succ_iff.1 (Finset.mem_range.1 hm)]
+      fun m hm ↦ ⟨fun c ↦ by have := le_of_cell_cwComplex c; omega⟩,
+    Finset.sum_congr rfl fun m hm ↦ show _ = (-1 : ℤ) ^ m by
+      simp [nat_card_cell_cwComplex, Nat.lt_succ_iff.1 (Finset.mem_range.1 hm)],
+    neg_one_geom_sum]
+  simp [Nat.even_add_one, -Nat.not_even_iff_odd]
 
 end RealProjectiveSpace
 
