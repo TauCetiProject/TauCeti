@@ -391,15 +391,7 @@ theorem irreducible_map_discrField_iff (hsep : f.Separable)
     irreducible_map_iff_isPretransitive_fixingSubgroup f.SplittingField _ hsep hdeg,
     fixingSubgroup_discrField hsep hchar, isPretransitive_evenAutSubgroup_iff]
   -- The root action in `E` is the transport of the root action in the splitting field.
-  let ε := Gal.rootsEquivRoots f E f.SplittingField
-  have hε : (Gal.galActionHom f E).range.map ε.permCongrHom.toMonoidHom =
-      (Gal.galActionHom f f.SplittingField).range := by
-    simp only [MonoidHom.map_range]
-    congr 1
-    ext g x
-    rw [MonoidHom.comp_apply, Gal.galActionHom_eq_permCongr f E f.SplittingField g]
-    rfl
-  rw [← hε, MulEquiv.toMonoidHom_eq_coe,
+  rw [← Gal.map_range_galActionHom f E f.SplittingField, MulEquiv.toMonoidHom_eq_coe,
     Equiv.isPretransitive_inf_alternatingGroup_map_permCongrHom_iff]
 
 open scoped Classical in
