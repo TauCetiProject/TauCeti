@@ -151,7 +151,7 @@ private theorem exists_mem_eval_eq_zero {R : Type*} [CommRing R] {J : Ideal R}
   rcases subsingleton_or_nontrivial R with _ | _
   · exact ⟨0, J.zero_mem, Subsingleton.elim _ _⟩
   have := _root_.isLocalHom_of_le_jacobson (HenselianRing.jac (R := R) (I := J))
-  set c := g.coeff 0 with hc
+  set c := g.coeff 0
   set u := g.coeff 1 with hu
   -- `g` is not constant, so its degree is `k + 1` for some `k`.
   obtain ⟨k, hk⟩ : ∃ k, g.natDegree = k + 1 := by

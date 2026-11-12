@@ -186,7 +186,7 @@ theorem hessian_apply_eq_mvfderiv_sub [IsManifold I 2 M]
     funext y
     exact inner_mgradient (I := I) (f := f) (x := y) (W y)
   rw [hinner'] at hinner
-  have hinner'' :
+  have _ :
       mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) =
         inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x (V x))
             (W x) +
