@@ -17,10 +17,10 @@ import Mathlib.Algebra.Group.End
 Let `S ⊆ G[X]` be a system of equations and `Y` a set of further variables, which do not occur in
 `S`. Regarded as a system `S'` in the variables `X ⊕ Y` (`TauCeti.GroupAlgGeom.addFreeVars`), its
 solutions in a group `H` receiving the coefficients are the solutions of `S` together with
-arbitrary values of the variables of `Y` (`TauCeti.GroupAlgGeom.mem_V_addFreeVars`).
+arbitrary values of the variables of `Y` (`TauCeti.GroupAlgGeom.V_addFreeVars`).
 
 * The group presented by `S'` is the free product of the group presented by `S` with the free
-  group on `Y` (`TauCeti.GroupAlgGeom.SystemGroup.exists_mulEquiv_addFreeVars`).
+  group on `Y` (`TauCeti.GroupAlgGeom.SystemGroup.addFreeVarsEquiv`).
 * For coordinate groups there is only a surjection `G_{R(S)} ∗ F(Y) → G_{R(S')}`
   (`TauCeti.GroupAlgGeom.CoordGroup.freeVarsHom`,
   `TauCeti.GroupAlgGeom.CoordGroup.freeVarsHom_surjective`). Its kernel consists of the elements
@@ -92,9 +92,16 @@ theorem addFreeVars_def (Y : Type*) (S : Set (GX G X)) :
 variable {ι} in
 /-- The solutions of a system with free variables `Y` are the solutions of the system with
 arbitrary values of the variables of `Y`. -/
+@[simp]
+theorem V_addFreeVars (Y : Type*) (S : Set (GX G X)) :
+    V ι (addFreeVars Y S) = (· ∘ Sum.inl) ⁻¹' V ι S := by
+  ext v
+  simp [addFreeVars_def]
+
+variable {ι} in
 theorem mem_V_addFreeVars {v : X ⊕ Y → H} :
     v ∈ V ι (addFreeVars Y S) ↔ v ∘ Sum.inl ∈ V ι S := by
-  simp [addFreeVars_def]
+  simp
 
 /-! ### The quotient of `G[X]` by a normal subgroup, with free variables -/
 
@@ -150,38 +157,75 @@ private theorem eval_toQuotientFreeVars {N : Subgroup (GX G X)} [N.Normal]
 
 namespace SystemGroup
 
+/-- The homomorphism `G_{S'} → G_S ∗ F(Y)` induced by `G[X ⊕ Y] → G_S ∗ F(Y)`. -/
+private def toFreeProd (Y : Type*) (S : Set (GX G X)) :
+    SystemGroup G (addFreeVars Y S) →* GX (SystemGroup G S) Y :=
+  QuotientGroup.lift _ (toQuotientFreeVars Y (normalClosure S)) <| normalClosure_le_normal <| by
+    rintro _ ⟨s, hs, rfl⟩
+    rw [SetLike.mem_coe, MonoidHom.mem_ker, toQuotientFreeVars_inclFreeVars,
+      (QuotientGroup.eq_one_iff s).2 (subset_normalClosure hs), map_one]
+
+/-- The homomorphism `G_S ∗ F(Y) → G_{S'}` induced by the inclusion of the variables of `X` and
+of `Y`. -/
+private def ofFreeProd (Y : Type*) (S : Set (GX G X)) :
+    GX (SystemGroup G S) Y →* SystemGroup G (addFreeVars Y S) :=
+  lift (QuotientGroup.map _ _ (inclFreeVars G X Y)
+      (normalClosure_le_normal fun _ hs => subset_normalClosure (Set.mem_image_of_mem _ hs)))
+    (FreeGroup.lift fun y => ((inr (FreeGroup.of (Sum.inr y)) : GX G (X ⊕ Y)) :
+      SystemGroup G (addFreeVars Y S)))
+
 /-- The group presented by a system with free variables `Y` is the free product of the group
-presented by the system with the free group on `Y`, compatibly with the variables. -/
-theorem exists_mulEquiv_addFreeVars (Y : Type*) (S : Set (GX G X)) :
-    ∃ e : SystemGroup G (addFreeVars Y S) ≃* GX (SystemGroup G S) Y,
-      (∀ w : GX G X, e ((inclFreeVars G X Y w : GX G (X ⊕ Y)) : SystemGroup G (addFreeVars Y S)) =
-        inl (w : SystemGroup G S)) ∧
-      ∀ y : Y, e ((inr (FreeGroup.of (Sum.inr y)) : GX G (X ⊕ Y)) :
-        SystemGroup G (addFreeVars Y S)) = inr (FreeGroup.of y) := by
-  have hle : normalClosure (addFreeVars Y S) ≤ (toQuotientFreeVars Y (normalClosure S)).ker :=
-    normalClosure_le_normal <| by
-      rintro _ ⟨s, hs, rfl⟩
-      rw [SetLike.mem_coe, MonoidHom.mem_ker, toQuotientFreeVars_inclFreeVars,
-        (QuotientGroup.eq_one_iff s).2 (subset_normalClosure hs), map_one]
-  have hle' : normalClosure S ≤ (normalClosure (addFreeVars Y S)).comap (inclFreeVars G X Y) :=
-    normalClosure_le_normal fun s hs => subset_normalClosure (Set.mem_image_of_mem _ hs)
-  let f : SystemGroup G (addFreeVars Y S) →* GX (SystemGroup G S) Y :=
-    QuotientGroup.lift _ (toQuotientFreeVars Y (normalClosure S)) hle
-  let g : GX (SystemGroup G S) Y →* SystemGroup G (addFreeVars Y S) :=
-    lift (QuotientGroup.map _ _ (inclFreeVars G X Y) hle')
-      (FreeGroup.lift fun y => ((inr (FreeGroup.of (Sum.inr y)) : GX G (X ⊕ Y)) :
-        SystemGroup G (addFreeVars Y S)))
-  have hgf : g.comp f = .id _ :=
-    QuotientGroup.monoidHom_ext _ <| hom_ext
-      (MonoidHom.ext fun a => by simp [f, g, toQuotientFreeVars])
-      (FreeGroup.ext_hom _ _ fun x => by cases x <;> simp [f, g, toQuotientFreeVars])
-  have hfg : f.comp g = .id _ :=
-    hom_ext
-      (QuotientGroup.monoidHom_ext _ <| MonoidHom.ext fun w => by
-        simp [f, g, toQuotientFreeVars_inclFreeVars])
-      (FreeGroup.ext_hom _ _ fun y => by simp [f, g, toQuotientFreeVars])
-  exact ⟨f.toMulEquiv g hgf hfg, fun w => toQuotientFreeVars_inclFreeVars _ w,
-    fun y => by simp [f, toQuotientFreeVars]⟩
+presented by the system with the free group on `Y`: the class of a word in the variables of `X`
+goes to its class in the first factor, and each variable of `Y` to the corresponding free
+generator. -/
+def addFreeVarsEquiv (Y : Type*) (S : Set (GX G X)) :
+    SystemGroup G (addFreeVars Y S) ≃* GX (SystemGroup G S) Y :=
+  (toFreeProd Y S).toMulEquiv (ofFreeProd Y S)
+    (QuotientGroup.monoidHom_ext _ <| hom_ext
+      (MonoidHom.ext fun _ => by simp [toFreeProd, ofFreeProd, toQuotientFreeVars])
+      (FreeGroup.ext_hom _ _ fun x => by
+        cases x <;> simp [toFreeProd, ofFreeProd, toQuotientFreeVars]))
+    (hom_ext
+      (QuotientGroup.monoidHom_ext _ <| MonoidHom.ext fun _ => by
+        simp [toFreeProd, ofFreeProd, toQuotientFreeVars_inclFreeVars])
+      (FreeGroup.ext_hom _ _ fun _ => by simp [toFreeProd, ofFreeProd, toQuotientFreeVars]))
+
+@[simp]
+theorem addFreeVarsEquiv_mk_inclFreeVars (w : GX G X) :
+    addFreeVarsEquiv Y S (inclFreeVars G X Y w : SystemGroup G (addFreeVars Y S)) =
+      inl (w : SystemGroup G S) :=
+  toQuotientFreeVars_inclFreeVars _ w
+
+@[simp]
+theorem addFreeVarsEquiv_mk_inl (g : G) :
+    addFreeVarsEquiv Y S ((inl g : GX G (X ⊕ Y)) : SystemGroup G (addFreeVars Y S)) =
+      inl ((inl g : GX G X) : SystemGroup G S) := by
+  simp [addFreeVarsEquiv, toFreeProd, toQuotientFreeVars]
+
+@[simp]
+theorem addFreeVarsEquiv_mk_inr_of_inl (x : X) :
+    addFreeVarsEquiv Y S ((inr (FreeGroup.of (Sum.inl x)) : GX G (X ⊕ Y)) :
+      SystemGroup G (addFreeVars Y S)) =
+      inl ((inr (FreeGroup.of x) : GX G X) : SystemGroup G S) := by
+  simp [addFreeVarsEquiv, toFreeProd, toQuotientFreeVars]
+
+@[simp]
+theorem addFreeVarsEquiv_mk_inr_of_inr (y : Y) :
+    addFreeVarsEquiv Y S ((inr (FreeGroup.of (Sum.inr y)) : GX G (X ⊕ Y)) :
+      SystemGroup G (addFreeVars Y S)) = inr (FreeGroup.of y) := by
+  simp [addFreeVarsEquiv, toFreeProd, toQuotientFreeVars]
+
+@[simp]
+theorem addFreeVarsEquiv_symm_inl_mk (w : GX G X) :
+    (addFreeVarsEquiv Y S).symm (inl (w : SystemGroup G S)) =
+      (inclFreeVars G X Y w : SystemGroup G (addFreeVars Y S)) :=
+  (MulEquiv.symm_apply_eq _).2 (addFreeVarsEquiv_mk_inclFreeVars w).symm
+
+@[simp]
+theorem addFreeVarsEquiv_symm_inr (w : FreeGroup Y) :
+    (addFreeVarsEquiv Y S).symm (inr w) =
+      ((inr (FreeGroup.map Sum.inr w) : GX G (X ⊕ Y)) : SystemGroup G (addFreeVars Y S)) :=
+  (MulEquiv.symm_apply_eq _).2 (toQuotientFreeVars_inr_map _ w).symm
 
 end SystemGroup
 
