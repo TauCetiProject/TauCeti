@@ -20,7 +20,7 @@ be a torsion-free connection on `TM`. Differentiating a two-parameter variation
 `∇_t (dφ_{s, t} v) = ∇_{dφ_{s, t} v} X_t`
 
 for every tangent vector `v ∈ T_x M`
-(`TauCeti.alongCurve_mfderiv_timeDependentFlowOf`). Its right-hand side is the covariant
+(`CovariantDerivative.alongCurve_mfderiv_timeDependentFlowOf`). Its right-hand side is the covariant
 derivative of the vector field `X_t` at the moved point, in the direction of the moved vector. The
 equation holds at every time at which the flow from `(s, x)` is defined; no completeness of `X`
 and no metric are needed.
@@ -31,7 +31,7 @@ derivative in `a` of the trajectory velocity `∂_t φ_{s, t}(c a) = X_t(φ_{s, 
 (`CovariantDerivative.alongCurve_curveVelocity_eq_covariantDerivative`, which needs the field
 equation only at the tested time, so it applies to the field `X_t` frozen at that time). The
 transverse velocity of `a ↦ φ_{s, t}(c a)` is `dφ_{s, t}(c' 0)`, and every tangent vector is the
-velocity of a smooth curve; for this last step the model is assumed boundaryless.
+velocity of a smooth curve; for this last step the manifold is assumed boundaryless.
 
 This intrinsic form of the variational equation is the one compared with the linearized Floer
 operator at a stationary cylinder, in
@@ -44,28 +44,24 @@ periodic field is in `TauCeti.Geometry.Manifold.Flow.Periodic`.
 
 ## Main results
 
-* `TauCeti.alongCurve_curveVelocity_timeDependentFlowOf`: the variational equation for the
-  transverse velocity of the family of trajectories through a `C²` curve of initial points.
-* `TauCeti.alongCurve_mfderiv_timeDependentFlowOf`: the variational equation for the derivative
-  `dφ_{s, t}` of the flow.
+* `CovariantDerivative.alongCurve_curveVelocity_timeDependentFlowOf`: the variational equation
+  for the transverse velocity of the family of trajectories through a `C²` curve of initial points.
+* `CovariantDerivative.alongCurve_mfderiv_timeDependentFlowOf`: the variational equation for the
+  derivative `dφ_{s, t}` of the flow.
 
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 6
   (variations and the symmetry lemma).
-* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Section 8.1 (linearized Hamiltonian flows and nondegenerate orbits).
-* J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, §3.2.
 -/
 
 public section
 
-open Bundle CovariantDerivative Filter Function Set
-open TauCeti.Manifold
+open Bundle Filter Function Set
+open TauCeti TauCeti.Manifold
 open scoped ContDiff Manifold Topology
 
-namespace TauCeti
+namespace CovariantDerivative
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -73,7 +69,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 variable [IsManifold I 2 M]
 
-/-- **The variational equation for a family of trajectories.** Let `c` be a curve of initial
+/-- **The variational equation for a family of trajectories.** Let `X` be a jointly `C²`
+time-dependent field on a finite-dimensional boundaryless manifold, let `c` be a curve of initial
 points, `C²` at `q`, and let the flow from `(s, c q)` be defined at time `t`. Along the trajectory
 `r ↦ φ_{s, r}(c q)`, the transverse velocity `V(r) = ∂_a φ_{s, r}(c a)` at `a = q` satisfies
 `∇_t V = ∇_{V(t)} X_t` for every torsion-free connection. -/
@@ -90,7 +87,7 @@ theorem alongCurve_curveVelocity_timeDependentFlowOf
   have hF : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
       (fun z : ℝ × ℝ ↦ timeDependentFlowOf X s z.2 (c z.1)) (q, t) :=
     contMDiffAt_timeDependentFlowOf_comp (n := 2) (by norm_num) hX
-      (contMDiff_iff_contDiff.mpr contDiff_snd).contMDiffAt
+      contMDiffAt_const (contMDiff_iff_contDiff.mpr contDiff_snd).contMDiffAt
       (hc.comp (q, t) (contMDiff_iff_contDiff.mpr contDiff_fst).contMDiffAt) h
   exact alongCurve_curveVelocity_eq_covariantDerivative (F := fun a r ↦
     timeDependentFlowOf X s r (c a)) cov htor hF
@@ -103,7 +100,7 @@ time-dependent field `X` on a finite-dimensional boundaryless manifold and a tor
 connection `∇`, the derivative of the flow along the trajectory `r ↦ φ_{s, r}(x)` satisfies
 `∇_t (dφ_{s, t} v) = ∇_{dφ_{s, t} v} X_t` at every time `t` at which the flow from `(s, x)` is
 defined. -/
-theorem alongCurve_mfderiv_timeDependentFlowOf [I.Boundaryless]
+theorem alongCurve_mfderiv_timeDependentFlowOf
     (cov : CovariantDerivative I E (TangentSpace I : M → Type _)) (htor : cov.IsTorsionFree)
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
@@ -127,4 +124,4 @@ theorem alongCurve_mfderiv_timeDependentFlowOf [I.Boundaryless]
   rw [← alongCurve_congr cov _ _ hfield, ← hfield.self_of_nhds]
   exact alongCurve_curveVelocity_timeDependentFlowOf cov htor hX hc h
 
-end TauCeti
+end CovariantDerivative

@@ -20,8 +20,8 @@ manifold-derivative API.
   derivatives taken at `x`, so the composite is an endomorphism of the single tangent space
   `T_x M`.
 * `HasMFDerivAt.iterate`: the chain rule for iterates at a fixed point, `d(f^[n])_x = (df_x) ^ n`.
-* `TauCeti.mfderiv_injective_of_leftInverse`: a map with a left inverse near a point, differentiable
-  at its image, has injective derivative there.
+* `TauCeti.mfderiv_injective_of_comp_eventuallyEq_id`: a map with a left inverse near a point,
+  differentiable at its image, has injective derivative there.
 * `TauCeti.mfderiv_comp_const_add_smul_apply`: the chain rule for the affine reparametrization
   `w ↦ c + ε • w` of a map from a normed space, `d(u(c + ε •))_w = ε • du_(c + ε • w)`, with no
   differentiability hypothesis.
@@ -67,15 +67,15 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [Topolo
 /-- A map `f` with a left inverse `g` near `x` has injective derivative at `x` if `f` is
 differentiable at `x` and `g` is differentiable at `f x`: by the chain rule, `dg_(f x)` is a left
 inverse of `df_x`. -/
-theorem mfderiv_injective_of_leftInverse {f : M → N} {g : N → M}
+theorem mfderiv_injective_of_comp_eventuallyEq_id {f : M → N} {g : N → M}
     (hg : MDifferentiableAt J I g (f x)) (hf : MDifferentiableAt I J f x)
     (hgf : g ∘ f =ᶠ[𝓝 x] id) : Function.Injective (mfderiv I J f x) := by
-  -- Applied to `v`, the derivative of the composite is `v`, up to the identity cast.
-  refine Function.LeftInverse.injective (g := mfderiv J I g (f x)) fun v ↦ ?_
-  have hv := congrArg (fun L ↦ L v) (hgf.mfderiv_eq (I := I) (I' := I))
-  simp only [mfderiv_comp x hg hf, mfderiv_id, ContinuousLinearMap.coe_comp,
-    Function.comp_apply] at hv
-  exact hv
+  refine Function.Injective.of_comp (f := mfderiv J I g (f x)) ?_
+  -- The composite of the derivatives is that of `g ∘ f`, the identity cast between the tangent
+  -- spaces at the equal points `x` and `g (f x)`.
+  rw [← ContinuousLinearMap.coe_comp, ← mfderiv_comp x hg hf, hgf.mfderiv_eq (I := I) (I' := I),
+    mfderiv_id, ContinuousLinearMap.comp_id, ContinuousLinearEquiv.coe_coe]
+  exact (tangentSpaceCast I (id x) ((g ∘ f) x)).injective
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] in
 /-- **The derivative of an affine reparametrization.** For a map `u` from a normed space, the
