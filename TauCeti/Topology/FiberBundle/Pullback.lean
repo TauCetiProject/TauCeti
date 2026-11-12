@@ -14,8 +14,9 @@ public import Mathlib.Topology.FiberBundle.Constructions
 Four facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is the fibre of `E` over
 `f x`, needed to pull back bundles with extra structure on their fibres or on their atlas.
 
-* The fibres of `f *ᵖ E` carry the actions of a monoid on the fibres of `E`
-  (`Bundle.Pullback.instMulAction`), as Mathlib already does for module structures. This is what
+* The fibres of `f *ᵖ E` carry the scalar operations and monoid actions on the fibres of `E`
+  (`Bundle.Pullback.instSMul`, `Bundle.Pullback.instMulAction`), as Mathlib already does for
+  module structures. This is what
   makes the pullback of a principal bundle again carry a right action on its fibres.
 * The coordinate change between the pullbacks `e.pullback f` and `e'.pullback f` of two
   trivializations, over a point `x` with `f x` in the base set of `e`, is the coordinate change
@@ -33,6 +34,11 @@ public section
 open Bundle Set Topology
 
 variable {B B' : Type*}
+
+/-- The fibres of a pullback bundle inherit scalar multiplication from the original fibres. -/
+instance Bundle.Pullback.instSMul {M : Type*} {E : B → Type*}
+    [i : ∀ b, SMul M (E b)] (f : B' → B) (x : B') : SMul M ((f *ᵖ E) x) :=
+  i (f x)
 
 /-- The fibres of a pullback bundle `f *ᵖ E` carry the actions on the fibres of `E`: the fibre over
 `x` is the fibre of `E` over `f x`. -/
@@ -118,6 +124,15 @@ end Lift
 variable {F : Type*} {E : B → Type*} [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace F]
   [TopologicalSpace (TotalSpace F E)] [∀ b, Nonempty (E b)] {K : Type*} [FunLike K B' B]
   [ContinuousMapClass K B' B]
+
+/-- The fibre coordinate in a pullback chart is the original chart's fibre coordinate at the
+canonical lift. -/
+theorem Bundle.Pullback.trivializationAt_snd [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+    (f : K) (x₀ : B') (z : TotalSpace F ((f : B' → B) *ᵖ E)) :
+    (trivializationAt F ((f : B' → B) *ᵖ E) x₀ z).2 =
+      (trivializationAt F E (f x₀) (Pullback.lift f z)).2 := by
+  simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
+    Trivialization.pullback_apply]
 
 /-- The coordinate change between the pullbacks of two trivializations, over a point `x` whose
 image `f x` lies in the base set of the first, is the coordinate change between the

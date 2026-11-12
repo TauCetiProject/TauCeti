@@ -114,12 +114,12 @@ private theorem exists_inverted_coordinate_tendsto_of_ne_zero {f₀ g₀ : ℂ �
 coordinate `g₀` of
 `TauCeti.exists_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_frontier_image_inv_sub`:
 `g₀ t = (w - q)⁻¹`, which is nonzero. -/
-private theorem exists_inverted_boundary_eq (hUo : IsOpen U) (hq : q ∉ closure U)
+private theorem exists_inverted_boundary_eq (hq : q ∉ closure U)
     (hUb : ¬IsBounded U) {f₀ g₀ : ℂ → ℂ} (hgc : ContinuousOn g₀ {z | 0 ≤ z.im})
     (hgf : EqOn g₀ (fun z => (f₀ z - q)⁻¹) upperHalfPlaneSet)
     (hgR : insert 0 (g₀ '' {z | z.im = 0}) = frontier ((fun z : ℂ => (z - q)⁻¹) '' U))
     (hw : w ∈ frontier U) : ∃ t : ℝ, g₀ t = (w - q)⁻¹ ∧ g₀ t ≠ 0 := by
-  obtain ⟨a, -, ha⟩ := exists_injective_prevertices_of_inverted_boundary hUo hq hUb hgc hgf hgR
+  obtain ⟨a, -, ha⟩ := exists_injective_prevertices_of_inverted_boundary hq hUb hgc hgf hgR
     (v := fun _ : Unit => w) (injective_of_subsingleton _) fun _ => hw
   refine ⟨a (), (ha ()).1, ?_⟩
   rw [(ha ()).1]
@@ -146,7 +146,7 @@ theorem exists_bijOn_upperHalfPlaneSet_tendsto_of_locallyConnectedSpace_frontier
       Tendsto g (cobounded ℂ ⊓ 𝓟 {z | 0 ≤ z.im}) (𝓝 (w - q)⁻¹) := by
   obtain ⟨f₀, g₀, hfd, hfU, hgc, hgd, hgf, hgne, hgK, hgR, hg0⟩ :=
     exists_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_frontier_image_inv_sub hUo hUs hq hUb
-  obtain ⟨t, hgt, ht⟩ := exists_inverted_boundary_eq hUo hq hUb hgc hgf hgR hw
+  obtain ⟨t, hgt, ht⟩ := exists_inverted_boundary_eq hq hUb hgc hgf hgR hw
   obtain ⟨f, g, hf, hfU', hgc', hgd', hgf', hgne', hK, hR, hlim, -⟩ :=
     exists_inverted_coordinate_tendsto_of_ne_zero hfd hfU hgc hgd hgf hgne hg0 ht
   rw [hgt] at hK hR hlim
@@ -177,7 +177,7 @@ theorem exists_bijOn_upperHalfPlaneSet_tendsto_of_isPreconnectedApproachAt
       InjOn g {z | 0 ≤ z.im ∧ g z ≠ 0} ∧ (w - q)⁻¹ ∉ g '' {z | 0 ≤ z.im} := by
   obtain ⟨f₀, g₀, hfd, hfU, hgc, hgd, hgf, hgne, hgK, hgR, hg0⟩ :=
     exists_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_frontier_image_inv_sub hUo hUs hq hUb
-  obtain ⟨t, hgt, ht⟩ := exists_inverted_boundary_eq hUo hq hUb hgc hgf hgR hw
+  obtain ⟨t, hgt, ht⟩ := exists_inverted_boundary_eq hq hUb hgc hgf hgR hw
   obtain ⟨f, g, hf, hfU', hgc', hgd', hgf', hgne', hK, hR, hlim, hinj⟩ :=
     exists_inverted_coordinate_tendsto_of_ne_zero hfd hfU hgc hgd hgf hgne hg0 ht
   obtain ⟨hgi, hgt'⟩ := hinj

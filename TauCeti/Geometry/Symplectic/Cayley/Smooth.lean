@@ -32,8 +32,9 @@ structure, is constant for parameters at most zero and at least one, and is smoo
 whole real line. Thus its endpoint jets of every positive order vanish. Smoothness is also
 proved jointly with external parameters for families expressed in Cayley coordinates. In
 operator-norm coordinates the path is the rational expression `TauCeti.cayleyPathFormula` in
-its two endpoints, which commutes with algebra isomorphisms and is smooth jointly in the
-parameter and both endpoints wherever its denominators are invertible.
+its two endpoints, which commutes with algebra isomorphisms, and hence with conjugation by linear
+isomorphisms intertwining the endpoints, and is smooth jointly in the parameter and both endpoints
+wherever its denominators are invertible.
 Over a manifold of parameters, `SymplecticForm.Compatible.contMDiffAt_cayleyEquiv_symm` shows
 that the inverse chart preserves smoothness, and conversely
 `SymplecticForm.Tames.contMDiffAt_cayley` shows that the forward chart sends a smooth family of
@@ -95,6 +96,20 @@ theorem contDiffAt_cayleyPathFormula {R : Type*} [NormedRing R] [NormedAlgebra �
 end Formula
 
 end TauCeti
+
+/-- A continuous linear equivalence `e` which intertwines `A` with `A'` and `B` with `B'`
+intertwines their Cayley path expressions. -/
+theorem ContinuousLinearEquiv.apply_cayleyPathFormula_apply {V W : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W] (e : V ≃L[ℝ] W) (b : ℝ)
+    {A B : V →L[ℝ] V} {A' B' : W →L[ℝ] W} (hA : ∀ v, e (A v) = A' (e v))
+    (hB : ∀ v, e (B v) = B' (e v)) (v : V) :
+    e (TauCeti.cayleyPathFormula b A B v) = TauCeti.cayleyPathFormula b A' B' (e v) := by
+  have hconj {C : V →L[ℝ] V} {C' : W →L[ℝ] W} (h : ∀ v, e (C v) = C' (e v)) :
+      e.conjContinuousAlgEquiv C = C' := by
+    ext w
+    rw [conjContinuousAlgEquiv_apply_apply, h, apply_symm_apply]
+  rw [← hconj hA, ← hconj hB, ← TauCeti.map_cayleyPathFormula, conjContinuousAlgEquiv_apply_apply,
+    symm_apply_apply]
 
 namespace TauCeti.SymplecticForm
 
@@ -254,6 +269,31 @@ theorem Compatible.contMDiffAt_cayleyEquiv_symm (h₀ : ω.Compatible J₀)
   exact ((contDiffAt_const.mul (contDiffAt_const.add contDiffAt_id)).mul
     ((contDiffAt_const.sub contDiffAt_id).inverse hu)).comp_contMDiffAt hCs
 
+/-- A family of `ω`-tame structures on a manifold whose Cayley coordinates relative to an
+`ω`-compatible `J₀` are `C^n` at a point `p` is itself `C^n` at `p`: it is the inverse Cayley chart
+applied to its Cayley coordinates. This is the converse of
+`TauCeti.SymplecticForm.Tames.contMDiffAt_cayley`. -/
+theorem Compatible.contMDiffAt_of_contMDiffAt_cayley (h₀ : ω.Compatible J₀)
+    {J : N → AlmostComplexStructure V} (hJ : ∀ y, ω.Tames (J y)) {n : WithTop ℕ∞} {p : N}
+    (hCs : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y))) p) :
+    ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) p := by
+  have hC (y : N) : (LinearMap.toContinuousLinearMap (J₀.cayley (J y))).toLinearMap ∈
+      ω.cayleyBall J₀ := by
+    simpa only [LinearMap.coe_toContinuousLinearMap] using h₀.cayley_mem_cayleyBall (hJ y)
+  -- Each structure is the inverse Cayley chart applied to its own Cayley coordinate.
+  have hJC (y : N) : J y = (h₀.cayleyEquiv.symm ⟨_, hC y⟩).val :=
+    congrArg Subtype.val (h₀.cayleyEquiv.eq_symm_apply.2 (Subtype.ext (by
+      simp only [Compatible.cayleyEquiv_apply_coe, LinearMap.coe_toContinuousLinearMap])) :
+        (⟨J y, hJ y⟩ : {J : AlmostComplexStructure V // ω.Tames J}) = _)
+  have hfun : (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) =
+      fun y => LinearMap.toContinuousLinearMap (h₀.cayleyEquiv.symm ⟨_, hC y⟩).val.toLinearMap :=
+    funext fun y => congrArg (fun J : AlmostComplexStructure V =>
+      LinearMap.toContinuousLinearMap J.toLinearMap) (hJC y)
+  rw [hfun]
+  exact h₀.contMDiffAt_cayleyEquiv_symm hC hCs
+
 /-- The forward Cayley chart relative to an `ω`-tame `J₀` sends a `C^n` family of `ω`-tame
 structures on a manifold to a `C^n` family of Cayley coordinates. -/
 theorem Tames.contMDiff_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplexStructure V}
@@ -263,6 +303,17 @@ theorem Tames.contMDiff_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplexSt
     ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n
       (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y))) :=
   fun p => h₀.contMDiffAt_cayley (hJ p) (hJs p)
+
+/-- A family of `ω`-tame structures on a manifold whose Cayley coordinates relative to an
+`ω`-compatible `J₀` are `C^n` is itself `C^n`. This is the converse of
+`TauCeti.SymplecticForm.Tames.contMDiff_cayley`. -/
+theorem Compatible.contMDiff_of_contMDiff_cayley (h₀ : ω.Compatible J₀)
+    {J : N → AlmostComplexStructure V} (hJ : ∀ y, ω.Tames (J y)) {n : WithTop ℕ∞}
+    (hCs : ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y)))) :
+    ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) :=
+  fun p => h₀.contMDiffAt_of_contMDiffAt_cayley hJ (hCs p)
 
 end Manifold
 

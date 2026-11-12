@@ -67,11 +67,10 @@ about indices outside the chain, since finite type passes to principal submatric
 ## References
 
 This file supplies the "at most one multiple edge" step of the classification of finite-type Cartan
-matrices, Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See
-J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, step (5), and
-Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4. The two affine diagrams and their
-labels are Table Aff 2 of V. G. Kac, *Infinite Dimensional Lie Algebras*, CUP (1990), whose
-convention `aᵢⱼ = ⟨αⱼ, αᵢ^∨⟩` is the transpose of the one used here.
+matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, step
+(5), and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4. The two affine diagrams
+and their labels are Table Aff 2 of V. G. Kac, *Infinite Dimensional Lie Algebras*, CUP (1990),
+whose convention `aᵢⱼ = ⟨αⱼ, αᵢ^∨⟩` is the transpose of the one used here.
 -/
 
 public section
@@ -436,7 +435,7 @@ theorem IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le (h : IsFiniteType
   have hsimple' : ∀ s, 0 < s → s < m + 1 → A (v s) (v (s + 1)) = -1 ∧ A (v (s + 1)) (v s) = -1 := by
     intro s hpos hlt
     have h1 := h.apply_le_zero_of_ne (hvne s (s + 1) (by omega) (by omega) (by omega))
-    rcases Int.mul_eq_one_iff_eq_one_or_neg_one.1 (hsimple s hpos hlt) with ⟨e1, e2⟩ | ⟨e1, e2⟩
+    rcases Int.mul_eq_one_iff_eq_one_or_neg_one.1 (hsimple s hpos hlt) with ⟨e1, _⟩ | ⟨e1, e2⟩
     · omega
     · exact ⟨e1, e2⟩
   -- Both orientations of the first edge are excluded, the second by transposition.

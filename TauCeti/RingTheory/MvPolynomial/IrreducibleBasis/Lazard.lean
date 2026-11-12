@@ -55,7 +55,7 @@ theorem exists_isRoot_lazardEval_iff (hB : F.IsIrreducibleBasis B) (a : Fin n �
   classical
   constructor
   · rintro ⟨f, hf, hf0, ht⟩
-    obtain ⟨e, he⟩ := hB.isSquarefreeBasis.exists_rootMultiplicity_lazardEval_eq_sum hf hf0
+    obtain ⟨e, he⟩ := hB.isSquarefreeBasis.exists_rootMultiplicity_lazardEval_eq_sum hf
     have hp : swap f ≠ 0 := EmbeddingLike.map_ne_zero_iff.mpr hf0
     have hpos := (Polynomial.rootMultiplicity_pos (lazardEval_ne_zero hp _)).mpr ht
     rw [he] at hpos
