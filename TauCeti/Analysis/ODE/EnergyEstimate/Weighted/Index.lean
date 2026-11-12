@@ -19,9 +19,11 @@ the unweighted trajectory operator `D_{A - w'}` of the shifted family `A - w' �
 are `A± - δ± • id`. For the decay weight `w(s) = δ log (cosh s)`, which is `δ |s|` up to a bounded
 error, the slopes are `δ± = ±δ`.
 
-This file computes the index of `D_{A - c}` for a continuous scalar function `c` with limits
-`δ±` at `±∞` that are not eigenvalues of `A±`. Then `A± - δ± • id` are invertible and symmetric,
-so the index is the number of negative eigenvalues of `A⁻ - δ⁻` minus that of `A⁺ - δ⁺`, that is,
+This file shows that, for symmetric limits, `D_{A - c}` is Fredholm exactly when the limits `δ±`
+at `±∞` of the continuous scalar function `c` are not eigenvalues of `A±`
+(`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_sub_smul_id_iff`), and computes its index in
+that case. Then `A± - δ± • id` are invertible and symmetric, so the index is the number of
+negative eigenvalues of `A⁻ - δ⁻` minus that of `A⁺ - δ⁺`, that is,
 
 `ind D_{A - c} = n(A⁻, δ⁻) - n(A⁺, δ⁺)`,
 
@@ -35,28 +37,33 @@ computed by the shifted spectra.
 As a consequence, the index jumps exactly when a slope crosses an eigenvalue of a limit
 (`TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_index_sub_finrank_sub_finrank`).
 If the slope at `+∞` increases from `δ₁` to `δ₂`, or the slope at `-∞` decreases from `δ₁` to
-`δ₂`, the weight decays faster at that end, and the index decreases by the number of eigenvalues
+`δ₂`, the weight `exp w` grows faster at that end, imposing faster decay on the weighted space,
+and the index decreases by the number of eigenvalues
 of the limit at that end in `[δ₁, δ₂)` or `[δ₂, δ₁)`, counted with multiplicity. When exactly one
 eigenvalue `λ` is crossed, this is the dimension of its eigenspace
 (`Module.End.pointSpectralSubspace_eq_eigenspace`). For small decay weights, with slopes
 `δ⁻ < 0 < δ⁺` closer to `0` than every nonzero eigenvalue of the respective limits, the index is
 `n⁻(A⁻) - n⁻(A⁺) - dim ker A⁺`: the kernel of the limit at `+∞` is counted as negative, and that
 at `-∞` as positive
-(`WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_ker`).
+(`index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_ker`, in
+`TauCeti.WeakDerivStep`).
 
-For a constant scalar coefficient `a • id` the index is `dim E` if `a < δ⁻`, minus `dim E` if
-`a < δ⁺` (`TauCeti.WeakDerivStep.index_trajectoryOperator_smul_id_sub_smul_id`). For `a = 0`
+For a constant scalar coefficient `a • id` the index is `dim E` when `δ⁺ < a < δ⁻`, `-dim E` when
+`δ⁻ < a < δ⁺`, and `0` when `δ⁻` and `δ⁺` lie on the same side of `a`
+(`TauCeti.WeakDerivStep.index_trajectoryOperator_smul_id_sub_smul_id`). For `a = 0`
 the unweighted operator `d/ds`, which is not Fredholm when `E ≠ 0`, becomes Fredholm of index
 `-dim E` for decay weights and of index `dim E` for growth weights.
 
 ## Main results
 
+* `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_sub_smul_id_iff`:
+  `D_{A - c}` is Fredholm exactly when `δ±` are not eigenvalues of `A±`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id`:
   the index of `D_{A - c}` is `n(A⁻, δ⁻) - n(A⁺, δ⁺)`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_index_sub_finrank_sub_finrank`:
   faster decay at the ends decreases the index by the number of eigenvalues crossed by the slopes.
-* `WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_ker`:
-  small decay weights give the index `n⁻(A⁻) - n⁻(A⁺) - dim ker A⁺`.
+* `index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_ker`, in
+  `TauCeti.WeakDerivStep`: small decay weights give the index `n⁻(A⁻) - n⁻(A⁺) - dim ker A⁺`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_smul_id_sub_smul_id`: the scalar example.
 
 ## References
@@ -81,6 +88,41 @@ namespace TauCeti.WeakDerivStep
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {A : ℝ → E →L[ℝ] E} {Aminus Aplus : E →L[ℝ] E}
+
+omit [FiniteDimensional ℝ E] in
+/-- Shifting a symmetric operator by a real scalar keeps it symmetric. -/
+private theorem isSymmetric_sub_smul_id {B : E →L[ℝ] E} (hB : (B : E →ₗ[ℝ] E).IsSymmetric)
+    (δ : ℝ) : ((B - δ • ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric := by
+  simpa using hB.sub (LinearMap.IsSymmetric.id.smul (conj_trivial δ))
+
+/-- **The trajectory operator on exponentially weighted spaces is Fredholm exactly when the weight
+slopes are not eigenvalues of the limits.** Let `A` be a continuous family of operators on a
+finite-dimensional real inner product space with symmetric limits `A±` at `±∞`, and let `c` be a
+continuous scalar function with limits `δ±` at `±∞`. Then the trajectory operator
+`u ↦ u' + (A - c • id) u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm if and only if `δ⁻` is
+not an eigenvalue of `A⁻` and `δ⁺` is not an eigenvalue of `A⁺`. -/
+theorem isFredholm_trajectoryOperator_sub_smul_id_iff
+    (hA : Continuous A)
+    (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric) (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) {c : ℝ → ℝ}
+    {δminus δplus : ℝ} (hc : Continuous c) (hcbot : Tendsto c atBot (𝓝 δminus))
+    (hctop : Tendsto c atTop (𝓝 δplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - c s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) AL).IsFredholm ↔
+      ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) δminus ∧
+        ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) δplus := by
+  -- `B - δ • id` is injective exactly when its kernel, the eigenspace of `B` at `δ`, vanishes.
+  have hinj (B : E →L[ℝ] E) (δ : ℝ) :
+      Function.Injective (B - δ • ContinuousLinearMap.id ℝ E) ↔
+        ¬Module.End.HasEigenvalue (B : E →ₗ[ℝ] E) δ := by
+    rw [Module.End.hasEigenvalue_iff, not_not, Module.End.eigenspace_def, LinearMap.ker_eq_bot]
+    rfl
+  rw [isFredholm_trajectoryOperator_iff (hA.sub (hc.smul continuous_const))
+      (isSymmetric_sub_smul_id hsymminus δminus) (isSymmetric_sub_smul_id hsymplus δplus)
+      (hbot.sub (hcbot.smul tendsto_const_nhds)) (htop.sub (hctop.smul tendsto_const_nhds)) AL hAL,
+    hinj, hinj]
 
 /-- **The index of the trajectory operator on exponentially weighted spaces.** Let `A` be a
 continuous family of operators on a finite-dimensional real inner product space with symmetric
@@ -124,11 +166,9 @@ theorem index_trajectoryOperator_sub_smul_id
     rwa [preimage_sub_const_Iio, zero_add] at h
   obtain ⟨αminus, hαminus, hminus⟩ := hbelow Aminus δminus hδminus
   obtain ⟨αplus, hαplus, hplus⟩ := hbelow Aplus δplus hδplus
-  have hsym (B : E →L[ℝ] E) (hB : (B : E →ₗ[ℝ] E).IsSymmetric) (δ : ℝ) :
-      ((B - δ • ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric := by
-    simpa using hB.sub (LinearMap.IsSymmetric.id.smul (conj_trivial δ))
   rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
-      (hA.sub (hc.smul continuous_const)) (hsym _ hsymminus δminus) (hsym _ hsymplus δplus)
+      (hA.sub (hc.smul continuous_const)) (isSymmetric_sub_smul_id hsymminus δminus)
+      (isSymmetric_sub_smul_id hsymplus δplus)
       (lt_min hαminus hαplus)
       (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (hminus v))
       (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (hplus v))
@@ -137,8 +177,9 @@ theorem index_trajectoryOperator_sub_smul_id
 
 /-- **The index jumps when a weight slope crosses an eigenvalue.** Compare two continuous scalar
 functions `c₁` and `c₂` with limits `δ₁±` and `δ₂±` at `±∞`, where `δ₂⁻ ≤ δ₁⁻` and `δ₁⁺ ≤ δ₂⁺`, so
-that the weight `exp w₂` with `w₂' = c₂` decays at least as fast as `exp w₁` at both ends. Then
-the index of `D_{A - c₂}` is that of `D_{A - c₁}` minus the number of eigenvalues of `A⁻` in
+that the weight `exp w₂` with `w₂' = c₂` grows at least as fast as `exp w₁` at both ends: elements
+of the space weighted by `exp w₂` decay at least as fast as those weighted by `exp w₁`. Then the
+index of `D_{A - c₂}` is that of `D_{A - c₁}` minus the number of eigenvalues of `A⁻` in
 `[δ₂⁻, δ₁⁻)` and minus the number of eigenvalues of `A⁺` in `[δ₁⁺, δ₂⁺)`, counted with
 multiplicity. -/
 theorem index_trajectoryOperator_sub_smul_id_eq_index_sub_finrank_sub_finrank
@@ -226,16 +267,16 @@ theorem index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_
 
 /-- **The scalar example.** For the constant coefficient `a • id` on a finite-dimensional real
 inner product space `E` and a continuous scalar function `c` with limits `δ±` different from `a`,
-the trajectory operator `u ↦ u' + (a - c) u` has index `dim E` if `a < δ⁻`, minus `dim E` if
-`a < δ⁺`. In particular, for `a = 0` the operator `d/ds`, which is not Fredholm on unweighted
-spaces when `E ≠ 0`, has index `-dim E` for decay weights (`δ⁻ < 0 < δ⁺`) and `dim E` for growth
-weights (`δ⁺ < 0 < δ⁻`). -/
+the trajectory operator `u ↦ u' + (a - c) u` has index `dim E` when `δ⁺ < a < δ⁻`, `-dim E` when
+`δ⁻ < a < δ⁺`, and `0` when `δ⁻` and `δ⁺` lie on the same side of `a`. In particular, for `a = 0`
+the operator `d/ds`, which is not Fredholm on unweighted spaces when `E ≠ 0`, has index `-dim E`
+for decay weights (`δ⁻ < 0 < δ⁺`) and `dim E` for growth weights (`δ⁺ < 0 < δ⁻`). -/
 theorem index_trajectoryOperator_smul_id_sub_smul_id (a : ℝ) {c : ℝ → ℝ} {δminus δplus : ℝ}
     (hc : Continuous c) (hcbot : Tendsto c atBot (𝓝 δminus)) (hctop : Tendsto c atTop (𝓝 δplus))
     (hminus : δminus ≠ a) (hplus : δplus ≠ a)
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ (a - c s) • ContinuousLinearMap.id ℝ E) :
+      fun s ↦ a • ContinuousLinearMap.id ℝ E - c s • ContinuousLinearMap.id ℝ E) :
     (trajectoryOperator (p := 2) AL).index =
       (if a < δminus then (Module.finrank ℝ E : ℤ) else 0) -
         if a < δplus then (Module.finrank ℝ E : ℤ) else 0 := by
@@ -246,7 +287,7 @@ theorem index_trajectoryOperator_smul_id_sub_smul_id (a : ℝ) {c : ℝ → ℝ}
   -- `a • id` has the single eigenvalue `a`.
   have hpss (Ω : Set ℝ) : Module.End.pointSpectralSubspace (a • LinearMap.id : E →ₗ[ℝ] E) Ω =
       if a ∈ Ω then ⊤ else ⊥ := by
-    simpa using Module.End.pointSpectralSubspace_smul_id (𝕜 := ℝ) (E := E) (Ω := Ω) a
+    exact Module.End.pointSpectralSubspace_smul_id a
   have hfin (δ : ℝ) :
       (Module.finrank ℝ (Module.End.pointSpectralSubspace (a • LinearMap.id : E →ₗ[ℝ] E)
         (Iio δ)) : ℤ) = if a < δ then (Module.finrank ℝ E : ℤ) else 0 := by
@@ -265,8 +306,7 @@ theorem index_trajectoryOperator_smul_id_sub_smul_id (a : ℝ) {c : ℝ → ℝ}
       Module.End.pointSpectralSubspace_eq_bot_iff] at hbot
     exact hbot δ rfl
   rw [index_trajectoryOperator_sub_smul_id continuous_const hsym hsym tendsto_const_nhds
-      tendsto_const_nhds hc hcbot hctop (hev hminus) (hev hplus) AL
-      (hAL.trans (.of_forall fun s ↦ by simp [sub_smul])),
+      tendsto_const_nhds hc hcbot hctop (hev hminus) (hev hplus) AL hAL,
     hcoe, hfin, hfin]
 
 end TauCeti.WeakDerivStep
