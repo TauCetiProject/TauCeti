@@ -74,6 +74,38 @@ the gradient. -/
 theorem dirichletEnergyOn_def (φ : M → ℝ) (s : Set M) :
     dirichletEnergyOn I φ s = ∫ x in s, ‖mgradient I φ x‖ ^ 2 ∂riemannianVolume I M := (rfl)
 
+/-- A constant function has zero Dirichlet energy. -/
+@[simp]
+theorem dirichletEnergy_const (c : ℝ) : dirichletEnergy I (fun _ : M ↦ c) = 0 := by
+  simp [dirichletEnergy_def]
+
+/-- The zero function has zero Dirichlet energy. -/
+@[simp]
+theorem dirichletEnergy_zero : dirichletEnergy I (0 : M → ℝ) = 0 :=
+  dirichletEnergy_const 0
+
+/-- A constant function has zero Dirichlet energy on every subset. -/
+@[simp]
+theorem dirichletEnergyOn_const (c : ℝ) (s : Set M) :
+    dirichletEnergyOn I (fun _ : M ↦ c) s = 0 := by
+  simp [dirichletEnergyOn_def]
+
+/-- The zero function has zero Dirichlet energy on every subset. -/
+@[simp]
+theorem dirichletEnergyOn_zero (s : Set M) : dirichletEnergyOn I (0 : M → ℝ) s = 0 :=
+  dirichletEnergyOn_const 0 s
+
+/-- The Dirichlet energy on the empty set vanishes. -/
+@[simp]
+theorem dirichletEnergyOn_empty (φ : M → ℝ) : dirichletEnergyOn I φ ∅ = 0 := by
+  simp [dirichletEnergyOn_def]
+
+/-- The Dirichlet energy on the whole manifold is the Dirichlet energy. -/
+@[simp]
+theorem dirichletEnergyOn_univ (φ : M → ℝ) :
+    dirichletEnergyOn I φ univ = dirichletEnergy I φ := by
+  simp [dirichletEnergyOn_def, dirichletEnergy_def]
+
 /-- The Dirichlet energy is nonnegative. -/
 theorem dirichletEnergy_nonneg (φ : M → ℝ) : 0 ≤ dirichletEnergy I φ :=
   integral_nonneg fun _ ↦ sq_nonneg _
