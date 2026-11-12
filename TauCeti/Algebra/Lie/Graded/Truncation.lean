@@ -44,7 +44,7 @@ No freeness, finite rank, or assumption on the coefficient ring beyond commutati
 
 Adapted from `Mei/Algebra/Lie/Graded/Truncation/{Basic,Transition}.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
-`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`, released under Apache 2.0.
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7`, released under Apache 2.0.
 -/
 
 public section
@@ -185,6 +185,15 @@ instance truncatedGrading_isPositiveGrading (k : ℕ) :
     IsPositiveGrading d (d.truncatedGrading ℒ k) where
   eq_bot n hn := by
     rw [truncatedGrading_eq, IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) n hn, Submodule.map_bot]
+
+/-- Homogeneous projection in the truncation commutes with the quotient map. -/
+@[simp]
+theorem decompose_truncatedGrading_mk (k : ℕ) (n : N) (x : L) :
+    (DirectSum.decompose (d.truncatedGrading ℒ k) (Submodule.Quotient.mk x) n :
+      d.truncatedLie ℒ k) = Submodule.Quotient.mk (DirectSum.decompose ℒ x n : L) :=
+  (DirectSum.map_decompose_shift ℒ (d.truncatedGrading ℒ k)
+    (d.degreeIdeal ℒ k).mkQ.toLinearMap.toAddMonoidHom id Function.injective_id
+    (fun _ x hx => (d.mem_truncatedGrading_iff ℒ).mpr ⟨x, hx, rfl⟩) n x).symm
 
 /-- Pieces above the cutoff vanish in the truncation. -/
 @[simp]

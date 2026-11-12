@@ -49,9 +49,10 @@ apply to all three ends.
   end.
 * `TauCeti.Floer.continuousOn_endSign_mul_re_endCoord`,
   `TauCeti.Floer.isCompact_preimage_truncation_inter`,
-  `TauCeti.Floer.isOpen_setOf_endSign_mul_re_endCoord_lt`: the signed longitudinal coordinate of an
-  end is continuous on `S`, so cutting `S_R` along a circle of an end leaves a compact set, and the
-  part of `S` inside such a circle is open.
+  `TauCeti.Floer.isOpen_setOf_endSign_mul_re_endCoord_lt`,
+  `TauCeti.Floer.preimage_truncation_inter_subset_setOf_lt`: the signed longitudinal coordinate of
+  an end is continuous on `S`, so cutting `S_R` along a circle of an end leaves a compact set, and
+  the part of `S` inside such a circle is open and contains every smaller cut truncation.
 * `TauCeti.Floer.setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation`: the integral over
   `S` of a function vanishing beyond `R` on every end is its integral over `S_R`.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
@@ -164,6 +165,16 @@ theorem isOpen_setOf_endSign_mul_re_endCoord_lt (q : Puncture) (c : ℝ) :
     isOpen_thricePuncturedSphereReal (isOpen_Iio (a := c)) using 1
   ext z
   simp [and_assoc]
+
+/-- The part `±s ≤ c` of the end `q` of the truncation `S_R` lies in the part `±s < c'` of `S`,
+for `c < c'`. -/
+theorem preimage_truncation_inter_subset_setOf_lt (q : Puncture) (R : ℝ) {c c' : ℝ}
+    (hc : c < c') :
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+        {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c} ⊆
+      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 ∧
+        q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < c'} := fun _ hz ↦
+  ⟨(truncation_subset _ hz.1).1, (truncation_subset _ hz.1).2, lt_of_le_of_lt hz.2 hc⟩
 
 /-- A point of `S` outside the truncation `S_R` lies beyond `R` on some end. -/
 theorem exists_lt_endSign_mul_re_endCoord_of_notMem_truncation {R : ℝ} {z : ℝ × ℝ}

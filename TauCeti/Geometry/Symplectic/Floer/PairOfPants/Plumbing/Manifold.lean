@@ -90,74 +90,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M} {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture}
   {L : ℝ}
 
-/-- The part `±s < L/2 + 1` of the end `q` of the receiving pair of pants lies in the plumbed
-four-punctured sphere: the puncture `ψ(1)` lies beyond `±s = L`. -/
-private theorem setOf_lt_subset_plumbedSphere (hq : q ≠ inf) (hL : 4 < L) :
-    {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 ∧
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < L / 2 + 1} ⊆
-      {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := fun z hz ↦ by
-  refine ⟨⟨hz.1, hz.2.1⟩, fun h ↦ ?_⟩
-  have h' := hz.2.2
-  rw [h, re_endCoord_plumbingMap q L one_ne_zero, endSign_eq_one hq, one_mul] at h'
-  linarith [re_endCoord_inf_one_pos]
-
-/-- In real coordinates, the plumbing map sends the part `±s < L/2 + 1` of the end at `∞` of the
-inserted pair of pants into the plumbed four-punctured sphere. -/
-private theorem mapsTo_realChart_plumbingMap_setOf_lt (hq : q ≠ inf) (hL : 4 < L) :
-    MapsTo (realChart (q.plumbingMap L))
-      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 ∧
-        inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re < L / 2 + 1}
-      {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := fun z hz ↦ by
-  have hre : -(inf.endCoord (Complex.equivRealProdCLM.symm z)).re < L / 2 + 1 := by
-    simpa [endSign_inf] using hz.2.2
-  exact mapsTo_realChart_plumbingMap hq (by linarith) ⟨⟨hz.1, hz.2.1⟩, by linarith⟩
-
-/-- The part `±s ≤ L/2` of the end at `∞` of a truncation of the inserted pair of pants lies in
-the part `Re z > 2 - L` of that end, where the pullback of the plumbed datum along the plumbing
-chart is the datum of the inserted pair of pants. -/
-private theorem preimage_truncation_inter_subset (hL : 4 < L) (R : ℝ) :
-    Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
-        {z | inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2} ⊆
-      {w | (Complex.equivRealProdCLM.symm w ≠ 0 ∧ Complex.equivRealProdCLM.symm w ≠ 1) ∧
-        2 - L < (inf.endCoord (Complex.equivRealProdCLM.symm w)).re} := fun w hw ↦ by
-  have h : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2 := hw.2
-  rw [endSign_inf] at h
-  exact ⟨truncation_subset _ hw.1, by linarith⟩
-
-omit [FiniteDimensional ℝ E] in
-/-- On the part of the plane inside the circle `±s = L/2` of the end `q`, the plumbed datum is the
-datum of the receiving pair of pants, so its energy density and curvature agree with those of the
-receiving pair of pants. -/
-private theorem floerEnergyDensity_plumbedPerturbation_eq_and_hamiltonianCurvature_eq
-    (hq : q ≠ inf) (hab : Hb q = Ha inf) (hL : 4 < L) (u : ℝ × ℝ → M) {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter)
-    (hre : q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2) :
-    ω.floerEnergyDensity
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z =
-      ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z ∧
-    ω.hamiltonianCurvature
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        z (u z) =
-      ω.hamiltonianCurvature
-        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
-        z (u z) := by
-  rw [endSign_eq_one hq, one_mul] at hre
-  refine ⟨ω.floerEnergyDensity_congr_perturbation u (funext fun x ↦ ?_) (funext fun x ↦ ?_),
-    by rw [ω.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt hq hab hz
-      (by linarith)]⟩ <;>
-    rw [plumbedPerturbation_of_re_endCoord_le hq hab (by linarith) x]
-
 /-- **The receiving part of the truncated plumbed sphere.** Inside the circle `±s = L/2` of the
 end `q` the plumbed datum is the datum of the receiving pair of pants, so the energy there is
 given by the energy identity of that pair of pants with the end `q` cut short; the energy and
@@ -204,19 +136,30 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_
   set A := Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
     {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2} with hA
   have hAm : MeasurableSet A := measurableSet_preimage_truncation_inter q R _
-  have hu' := hu.mono (setOf_lt_subset_plumbedSphere hq hL)
+  have hAV : A ⊆ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} :=
+    (preimage_truncation_inter_subset_setOf_lt q R (lt_add_one (L / 2))).trans
+      (setOf_endSign_mul_re_endCoord_lt_subset_plumbedSphere hq hL)
   obtain ⟨hE, -, hR'⟩ := hω.integrableOn_truncation_inter_pairOfPantsPerturbation hHb hHbs q
-    (c := L / 2) (by linarith) hR hu'
+    (c := L / 2) (by linarith) hR (isOpen_plumbedSphere q L) hAV hu
   have h := hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_inter hHb hHbs q
-    (c := L / 2) (by linarith) hR hu'
+    (c := L / 2) (by linarith) hR (isOpen_plumbedSphere q L) hAV hu
   -- On `A` the plumbed datum is the datum of the receiving pair of pants.
-  have heq {z : ℝ × ℝ} (hz : z ∈ A) :=
-    floerEnergyDensity_plumbedPerturbation_eq_and_hamiltonianCurvature_eq (ω := ω) hq hab hL u
-      (ne_endCenter (truncation_subset _ hz.1) q) hz.2
-  refine ⟨⟨hE.congr_fun (fun z hz ↦ (heq hz).1.symm) hAm,
-    hR'.congr_fun (fun z hz ↦ (heq hz).2.symm) hAm⟩, ?_⟩
-  rw [setIntegral_congr_fun hAm fun z hz ↦ (heq hz).1,
-    setIntegral_congr_fun hAm fun z hz ↦ (heq hz).2, h,
+  have hre {z : ℝ × ℝ} (hz : z ∈ A) :
+      (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2 := by
+    have h' : q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2 := hz.2
+    rwa [endSign_eq_one hq, one_mul] at h'
+  have hEeq {z : ℝ × ℝ} (hz : z ∈ A) :=
+    ω.floerEnergyDensity_plumbedPerturbation_of_re_endCoord_le hq hab u (L := L)
+      (by linarith [hre hz])
+  have hReq {z : ℝ × ℝ} (hz : z ∈ A) := congrFun
+    (ω.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt (Ha := Ha) (L := L) hq hab
+      (ne_endCenter (truncation_subset _ hz.1) q) (by linarith [hre hz])) (u z)
+  refine ⟨⟨hE.congr_fun (fun z hz ↦ (hEeq hz).symm) hAm,
+    hR'.congr_fun (fun z hz ↦ (hReq hz).symm) hAm⟩, ?_⟩
+  rw [setIntegral_congr_fun hAm fun z hz ↦ hEeq hz,
+    setIntegral_congr_fun hAm fun z hz ↦ hReq hz, h,
     smoothTransition.one_of_one_le (by linarith), smoothTransition.one_of_one_le (by linarith)]
   simp only [hA, endSign_eq_one hq, one_mul]
 
@@ -270,19 +213,21 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_
   set B := Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
     {z | inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2} with hB
   have hBm : MeasurableSet B := measurableSet_preimage_truncation_inter inf R _
-  have hBS := preimage_truncation_inter_subset hL R
+  have hBS := preimage_truncation_inter_subset_setOf_lt_re_endCoord_inf hL R
   have hS₄o := isOpen_plumbedSphere q L
   -- The pulled-back map `u ∘ ψ` is `C¹` inside the circle `±s = L/2 + 1` of the end at `∞`.
   have hu' : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 (u ∘ realChart (q.plumbingMap L))
       {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 ∧
         inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re < L / 2 + 1} :=
     hu.comp (contDiff_realChart_plumbingMap q L).contMDiff.contMDiffOn
-      (mapsTo_realChart_plumbingMap_setOf_lt hq hL)
+      (mapsTo_realChart_plumbingMap_setOf_endSign_mul_re_endCoord_lt hq hL)
+  have hBV := preimage_truncation_inter_subset_setOf_lt inf R (lt_add_one (L / 2))
+  have hVo := isOpen_setOf_endSign_mul_re_endCoord_lt inf (L / 2 + 1)
   have hud := hu.mdifferentiableOn one_ne_zero
   obtain ⟨hE, -, hR'⟩ := hω.integrableOn_truncation_inter_pairOfPantsPerturbation hHa hHas inf
-    (c := L / 2) (by linarith) hR hu'
+    (c := L / 2) (by linarith) hR hVo hBV hu'
   have h := hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_inter hHa hHas inf
-    (c := L / 2) (by linarith) hR hu'
+    (c := L / 2) (by linarith) hR hVo hBV hu'
   refine ⟨⟨(ω.integrableOn_floerEnergyDensity_image_plumbingMap_iff hq hHa hHb hHas hHbs hab hL
       hBm hBS hud).2 hE,
     (ω.integrableOn_hamiltonianCurvature_image_plumbingMap_iff hq hHa hHb hHas hHbs hab hL
@@ -307,10 +252,8 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_
       fun t : ℝ ↦ u (Complex.equivRealProdCLM
         (q.cylindricalEndLift (↑(L / 2) + ↑t * Complex.I))) := by
     funext t
-    rw [comp_apply, realChart_equivRealProdCLM, ← cylindricalEndLift_add_ofReal, endSign_inf]
-    congr 3
-    push_cast
-    ring
+    rw [comp_apply, realChart_equivRealProdCLM, plumbingMap_cylindricalEndLift_inf hq,
+      endSign_eq_one hq, one_mul]
   have hsum : ∑ r ∈ Finset.univ.erase inf, r.endSign * ∫ t in (0 : ℝ)..1, Ha r t
       ((u ∘ realChart (q.plumbingMap L)) (Complex.equivRealProdCLM
         (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I)))) =

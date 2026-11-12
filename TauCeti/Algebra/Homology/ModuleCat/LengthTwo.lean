@@ -128,7 +128,7 @@ noncomputable def projectiveResolution :
       projective := ?_
       «π» := augmentation f g hcomp
       quasiIso := ?_ }
-  · rintro (_ | _ | _ | n)
+  · rintro (_ | _ | _ | _)
     · exact inferInstanceAs (Projective (ModuleCat.of A P₀))
     · exact inferInstanceAs (Projective (ModuleCat.of A P₁))
     · exact inferInstanceAs (Projective (ModuleCat.of A P₂))
