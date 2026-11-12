@@ -294,9 +294,6 @@ theorem schwarzChristoffelFiniteBoundary_eq_union_edges {n : ℕ}
       schwarzChristoffelBoundary_image_Ici a e z₀ hright hamax hS]
     have hVl : schwarzChristoffelVertexAtInfinity a e z₀ ∈
         segment ℝ (B (b 0)) (schwarzChristoffelVertexAtInfinity a e z₀) := right_mem_segment ..
-    have hVr : schwarzChristoffelVertexAtInfinity a e z₀ ∈
-        segment ℝ (B (b (Fin.last n))) (schwarzChristoffelVertexAtInfinity a e z₀) :=
-      right_mem_segment ..
     ext w
     simp only [mem_union, mem_sdiff, mem_singleton_iff]
     grind

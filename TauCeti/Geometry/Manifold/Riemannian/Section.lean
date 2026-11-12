@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Symmetric
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -162,6 +163,14 @@ def toSymmetricSection (g : ContMDiffRiemannianMetric IB n F V) :
 theorem coe_toSymmetricSection_apply (g : ContMDiffRiemannianMetric IB n F V) (x : B) :
     (g.toSymmetricSection x : V x →L[ℝ] V x →L[ℝ] ℝ) = g.inner x :=
   coe_symmetricBilinearSectionEquiv_symm_apply _ x
+
+/-- Lowering the smoothness of a metric does not change its symmetric tensor at any point. -/
+@[simp]
+theorem toSymmetricSection_ofLE_apply (g : ContMDiffRiemannianMetric IB n F V)
+    {m : ℕ∞ω} (h : m ≤ n) (x : B) :
+    (g.ofLE h).toSymmetricSection x = g.toSymmetricSection x := by
+  apply Subtype.ext
+  simp only [coe_toSymmetricSection_apply, ofLE_inner]
 
 /-- Under the identification of sections of the symmetric bundle with symmetric bilinear
 sections, the section of a metric is its bilinear section. -/

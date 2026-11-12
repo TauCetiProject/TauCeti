@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.Local.W1p
+import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -25,6 +26,7 @@ has a representative that is continuous on `Ω` and Hölder continuous with expo
 The representative is the precise representative `u*` of `u`, the limit of its averages over
 shrinking balls; it agrees with `u` almost everywhere on `Ω`. The constant `C` depends only on `p`
 and `F`. At the endpoint `p = ∞` the exponent is `1` and `u*` is Lipschitz on compact subsets.
+Applied to the weak derivative, this shows that a continuous map in `W^{2,p}_loc` is `C¹`.
 
 A real function in `MemWkpLoc p Ω 1` is represented by an element of `W1p volume W p` on every
 open `W` with compact closure in `Ω` (`TauCeti.MemWkpLoc.exists_w1p`). The scalar Morrey
@@ -40,6 +42,8 @@ applied on such a `W`; the vector-valued statement follows coordinatewise in a b
   with exponent `1 - 2 / p` on compact subsets of `Ω`.
 * `TauCeti.MemWkpLoc.exists_lipschitzOnWith_preciseRepresentative_of_isCompact`: the endpoint
   `p = ∞`.
+* `TauCeti.MemWkpLoc.contDiffOn_one_of_continuousOn`: a continuous member of `W^{2,p}_loc` is `C¹`
+  on `Ω`.
 
 ## References
 
@@ -257,6 +261,18 @@ theorem MemWkpLoc.exists_lipschitzOnWith_preciseRepresentative_of_isCompact
     hu.exists_holderOnWith_preciseRepresentative_of_isCompact ENNReal.ofNat_lt_top hK hKΩ
   simp only [ENNReal.div_top, tsub_zero, ENNReal.toNNReal_one] at hC
   exact ⟨C, holderOnWith_one.1 hC⟩
+
+/-- **Continuous `W^{2,p}_loc` maps are `C¹` for `p > 2`.** The weak derivative of
+`u ∈ MemWkpLoc p Ω 2` is in `W^{1,p}_loc`, so it agrees almost everywhere with its continuous
+precise representative, which is then a continuous weak derivative of `u`. If `u` itself is
+continuous on `Ω`, it is therefore `C¹` there. -/
+theorem MemWkpLoc.contDiffOn_one_of_continuousOn (hp : 2 < p) (hv : MemWkpLoc p Ω 2 u)
+    (hc : ContinuousOn u Ω) : ContDiffOn ℝ 1 u Ω := by
+  have : CompleteSpace F := FiniteDimensional.complete ℝ F
+  obtain ⟨D, hD, hD1⟩ := hv.exists_weakFDeriv_of_isOpen
+  have hD' := hD.congr_ae_deriv (hD1.memLpLoc.ae_eq_preciseRepresentative (one_le_two.trans hp.le))
+  simpa using hD'.contDiffOn_succ hc (n := 0)
+    (contDiffOn_zero.2 (hD1.continuousOn_preciseRepresentative hp))
 
 end Planar
 

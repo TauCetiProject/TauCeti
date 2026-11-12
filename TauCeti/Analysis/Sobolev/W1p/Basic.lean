@@ -481,10 +481,10 @@ theorem W1p.value_midpoint_ae (u v : W1p mu Omega p) :
 
 /-- The weak gradient of the midpoint of two Sobolev functions is the midpoint of their weak
 gradients. -/
+@[simp]
 theorem W1p.gradient_midpoint (u v : W1p mu Omega p) :
     W1p.gradient (midpoint ℝ u v) = midpoint ℝ (W1p.gradient u) (W1p.gradient v) :=
   (W1p.gradientL (mu := mu) (Omega := Omega) (p := p)).toLinearMap.toAffineMap.map_midpoint u v
-
 
 /-- As for `TauCeti.W1p.value_coe`: the Sobolev gradient component is the gradient component of
 the underlying ambient jet. -/

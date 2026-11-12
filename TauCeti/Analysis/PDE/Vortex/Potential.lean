@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
 public import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -54,11 +54,7 @@ theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub (P : Polynomial
   let Φ : ℝ → ℝ := fun t ↦ Real.exp (2 * t) - 1 - 2 * t
   have hh : Continuous h := by dsimp [h]; fun_prop (disch := intro z; positivity)
   have hΦ : Continuous Φ := by dsimp [Φ]; fun_prop
-  have hconv : ConvexOn ℝ univ Φ := by
-    have hlin := (LinearMap.mulLeft ℝ (2 : ℝ)).concaveOn (convex_univ : Convex ℝ (univ : Set ℝ))
-    simpa only [preimage_univ, Pi.sub_def, Function.comp_def, LinearMap.mulLeft_apply, Φ] using
-      ((convexOn_exp.comp_linearMap (LinearMap.mulLeft ℝ (2 : ℝ))).sub
-        (concaveOn_const (1 : ℝ) convex_univ)).sub hlin
+  have hconv : ConvexOn ℝ univ Φ := Real.convexOn_exp_two_mul_sub_one_sub_two_mul
   have heq (u : Lp ℝ 2 μ) :
       (∫⁻ z, ENNReal.ofReal (Φ (u z)) ∂(μ.withDensity (fun z ↦ ENNReal.ofReal (h z)))) =
         ∫⁻ z, ENNReal.ofReal (h z * Φ (u z)) ∂μ := by

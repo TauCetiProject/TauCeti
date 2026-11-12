@@ -10,7 +10,7 @@ import Mathlib.Analysis.Complex.Convex
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.Complex.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.ReProdIm
 import TauCeti.Algebra.Order.Floor.Ring
@@ -323,7 +323,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 /-- A `1`-periodic family `J_t(x)`, continuous on `ℝ × K` for a compact `K` and tamed by `ω` there,
 has uniform taming and norm constants: `c ‖v‖² ≤ ω(v, J_t(x) v)` and `‖J_t(x) v‖ ≤ M ‖v‖` for
 all `t` and all `x ∈ K`, with `c > 0`. -/
-private theorem exists_pos_forall_mul_norm_sq_le_and_norm_le (hK : IsCompact K)
+theorem exists_pos_forall_mul_norm_sq_le_and_norm_le (hK : IsCompact K)
     (hJ : ContinuousOn (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
       (univ ×ˢ K))
     (hJper : Periodic J 1) (hJt : ∀ t, ∀ x ∈ K, ω.Tames (J t x)) :

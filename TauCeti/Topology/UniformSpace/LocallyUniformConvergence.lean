@@ -24,6 +24,12 @@ subsequence of `F` converges locally uniformly on `s`
 (`TauCeti.not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop`), while dividing a fixed
 continuous function by `m` gives a sequence tending to `0` locally uniformly
 (`TauCeti.tendstoLocallyUniformly_div_natCast`).
+
+A family `Φ : α → δ → γ` that is jointly continuous at every point of `α × {q}` converges locally
+uniformly in its first argument as the second tends to `q`
+(`TauCeti.tendstoLocallyUniformly_of_forall_continuousAt`), with no local compactness assumption
+on `α` or `δ`. For a flow, this gives locally uniform convergence of orbits from convergent
+initial points.
 -/
 
 public section
@@ -67,5 +73,17 @@ theorem tendstoLocallyUniformly_div_natCast {𝕜 : Type*} [RCLike 𝕜] {g : α
       (tendsto_diag_uniformity (fun q : ℕ × α ↦ g q.2) _)).tendstoLocallyUniformly
   simpa [div_eq_mul_inv] using
     hg'.fun_mul₀ hinv.tendstoUniformly_const.tendstoLocallyUniformly hg continuous_const
+
+/-- A family `Φ` jointly continuous at every point of `α × {q}` converges locally uniformly to
+`fun x ↦ Φ x q` along any parameter family `p` tending to `q`. -/
+theorem tendstoLocallyUniformly_of_forall_continuousAt {δ γ : Type*} [TopologicalSpace δ]
+    [UniformSpace γ] {Φ : α → δ → γ} {q : δ} (hΦ : ∀ x, ContinuousAt (Function.uncurry Φ) (x, q))
+    {p : ι → δ} (hp : Tendsto p l (𝓝 q)) :
+    TendstoLocallyUniformly (fun i x ↦ Φ x (p i)) (fun x ↦ Φ x q) l := by
+  refine tendstoLocallyUniformly_iff_forall_tendsto.mpr fun x ↦ ?_
+  have hx : Tendsto (fun y : ι × α ↦ y.2) (l ×ˢ 𝓝 x) (𝓝 x) := tendsto_snd
+  have hlim := (hΦ x).tendsto.comp (hx.prodMk_nhds tendsto_const_nhds)
+  have hfam := (hΦ x).tendsto.comp (hx.prodMk_nhds (hp.comp tendsto_fst))
+  exact (hlim.prodMk_nhds hfam).mono_right (nhds_le_uniformity _)
 
 end TauCeti

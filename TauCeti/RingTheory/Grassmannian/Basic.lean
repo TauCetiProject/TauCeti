@@ -138,7 +138,7 @@ theorem ker_baseChangeMkQ [Algebra A B] [IsScalarTower R A B] (N : Submodule A (
 /-- A `B`-linear map `Φ` out of `B ⊗[R] M` vanishes on the kernel of `baseChangeMkQ B N` exactly
 when it vanishes on the image of `N`. -/
 theorem ker_baseChangeMkQ_le_ker_iff [Algebra A B] [IsScalarTower R A B]
-    (N : Submodule A (A ⊗[R] M)) {Y : Type*} [AddCommGroup Y] [Module B Y]
+    (N : Submodule A (A ⊗[R] M)) {Y : Type*} [AddCommMonoid Y] [Module B Y]
     (Φ : B ⊗[R] M →ₗ[B] Y) :
     LinearMap.ker (baseChangeMkQ B N) ≤ LinearMap.ker Φ ↔
       ∀ x ∈ N, Φ ((IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x) = 0 := by
@@ -176,31 +176,21 @@ of `N` to `B`. -/
 theorem rTensor_mem_map_iff_of_injective {f : A →ₐ[R] B} (hf : Function.Injective f)
     {N : G(k, A ⊗[R] M; A)} {x : A ⊗[R] M} :
     f.toLinearMap.rTensor M x ∈ (map f N).toSubmodule ↔ x ∈ N.toSubmodule := by
-  refine ⟨fun hx ↦ ?_, rTensor_mem_map f⟩
   algebraize [f.toRingHom]
   have hf' : IsScalarTower.toAlgHom R A B = f := AlgHom.ext fun _ ↦ rfl
   have hmk := baseChangeMkQ_rTensor (B := B) N.toSubmodule x
   rw [hf'] at hmk
-  rw [map_toSubmodule, LinearMap.mem_ker, hmk] at hx
-  -- `q ↦ 1 ⊗ₜ q` is injective on the flat quotient `Q`, so the class of `x` vanishes
-  let Q := (A ⊗[R] M) ⧸ N.toSubmodule
-  have hinj := Module.Flat.rTensor_preserves_injective_linearMap (M := Q) (Algebra.linearMap A B) hf
-  have h1 : (1 : A) ⊗ₜ[A] N.toSubmodule.mkQ x = 0 :=
-    hinj (by simpa using hx)
-  have h2 := congrArg (TensorProduct.lid A Q) h1
-  simp only [lid_tmul, one_smul, map_zero, Submodule.mkQ_apply] at h2
-  exact (Submodule.Quotient.mk_eq_zero _).mp h2
+  rw [map_toSubmodule, LinearMap.mem_ker, hmk]
+  -- `q ↦ 1 ⊗ₜ q` is injective on the flat quotient, so `1 ⊗ₜ [x]` vanishes exactly when `[x]` does
+  have : FaithfulSMul A B := (faithfulSMul_iff_algebraMap_injective A B).mpr hf
+  simpa using map_eq_zero_iff _
+    (Module.Flat.tensorProduct_mk_injective (R := A) (S := B) _) (x := N.mkQ x)
 
 /-- **Base change along an injective map is injective on points.** -/
 theorem map_injective {f : A →ₐ[R] B} (hf : Function.Injective f) :
-    Function.Injective (map (k := k) (M := M) f) := by
-  intro N N' h
+    Function.Injective (map (k := k) (M := M) f) := fun N N' h ↦ by
   ext x
-  constructor <;> intro hx
-  · rw [← rTensor_mem_map_iff_of_injective hf, ← h]
-    exact rTensor_mem_map f hx
-  · rw [← rTensor_mem_map_iff_of_injective hf, h]
-    exact rTensor_mem_map f hx
+  rw [← rTensor_mem_map_iff_of_injective hf, h, rTensor_mem_map_iff_of_injective hf]
 
 end BaseChange
 
