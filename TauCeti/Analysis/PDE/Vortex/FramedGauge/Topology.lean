@@ -19,11 +19,12 @@ modelled on the Hilbert space `H^s(ℂ)`: two gauges are close when `u - v` is s
 file constructs that topology and shows that `G_s` is a Hausdorff topological group for it.
 
 Since `G_s` already has the pointwise topology, the Sobolev topology lives on a type synonym,
-`TauCeti.Vortex.SobolevGaugeGroup hs`, identified with the subgroup by
-`TauCeti.Vortex.SobolevGaugeGroup.toSubgroup`. An element `u` determines the element
+`TauCeti.Vortex.SobolevTopologicalGaugeGroup hs`, identified with the subgroup by
+`TauCeti.Vortex.SobolevTopologicalGaugeGroup.toSubgroup`. An element `u` determines the element
 `subOne u` of `H^s(ℂ)` whose `L²` function is `u - 1`
-(`TauCeti.Vortex.SobolevGaugeGroup.coeFn_toLp_inclusion_subOne`), and `u` is determined by it
-(`TauCeti.Vortex.SobolevGaugeGroup.subOne_injective`), since `u` is continuous.
+(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.coeFn_toLp_inclusion_subOne`), and `u` is
+determined by it (`TauCeti.Vortex.SobolevTopologicalGaugeGroup.subOne_injective`), since `u` is
+continuous.
 
 The group laws in these coordinates are
 
@@ -38,21 +39,22 @@ converges exactly when both `u - 1` and `conj (u - 1)` converge in `H^s`.
 
 ## Main definitions
 
-* `TauCeti.Vortex.SobolevGaugeGroup hs`: the group `G_s`, `s > 1`, with its Sobolev topology.
-* `TauCeti.Vortex.SobolevGaugeGroup.subOne`: the element `u - 1` of `H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup hs`: the group `G_s`, `s > 1`, with its Sobolev
+  topology.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.subOne`: the element `u - 1` of `H^s(ℂ)`.
 
 ## Main results
 
-* `TauCeti.Vortex.SobolevGaugeGroup.subOne_mul`: the product law
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.subOne_mul`: the product law
   `(u v) - 1 = (u - 1) + (v - 1) + (u - 1) (v - 1)` in `H^s(ℂ)`.
-* `TauCeti.Vortex.SobolevGaugeGroup.coeFn_toLp_inclusion_subOne_inv`: the `L²` function of
-  `u⁻¹ - 1` is `conj u - 1`.
-* `TauCeti.Vortex.SobolevGaugeGroup.isEmbedding_subOne_prod`: the topology of `G_s` is induced by
-  the injective map `u ↦ (u - 1, u⁻¹ - 1)` into `H^s(ℂ) × H^s(ℂ)`.
-* `TauCeti.Vortex.SobolevGaugeGroup.continuous_iff`: a map into `G_s` is continuous exactly when
-  `u - 1` and `u⁻¹ - 1` depend continuously on the parameter in `H^s(ℂ)`.
-* `TauCeti.Vortex.SobolevGaugeGroup.instIsTopologicalGroup`,
-  `TauCeti.Vortex.SobolevGaugeGroup.instT2Space`: `G_s` is a Hausdorff topological group.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.coeFn_toLp_inclusion_subOne_inv`: the `L²`
+  function of `u⁻¹ - 1` is `conj u - 1`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne_prod`: the topology of `G_s` is
+  induced by the injective map `u ↦ (u - 1, u⁻¹ - 1)` into `H^s(ℂ) × H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.continuous_iff`: a map into `G_s` is continuous
+  exactly when `u - 1` and `u⁻¹ - 1` depend continuously on the parameter in `H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.instIsTopologicalGroup`,
+  `TauCeti.Vortex.SobolevTopologicalGaugeGroup.instT2Space`: `G_s` is a Hausdorff topological group.
 
 The Banach charts of `G_s`, its completeness and the continuity of its action on the field space
 `A_m^k` are not treated here.
@@ -77,32 +79,33 @@ open scoped SchwartzMap BesselPotentialSpace
 variable {s : ℝ}
 
 /-- **The Sobolev framed gauge group `G_s` with its Sobolev topology**, `s > 1`. As a group it is
-the subgroup `sobolevGaugeGroup hs` of `ℂ → Circle` (`SobolevGaugeGroup.toSubgroup`); its topology
-is that of `u - 1` and `u⁻¹ - 1` in `H^s(ℂ)` (`SobolevGaugeGroup.continuous_iff`), rather than the
-pointwise topology of the subgroup. -/
-def SobolevGaugeGroup (hs : 1 < s) : Type := sobolevGaugeGroup hs
+the subgroup `sobolevGaugeGroup hs` of `ℂ → Circle` (`SobolevTopologicalGaugeGroup.toSubgroup`);
+its topology is that of `u - 1` and `u⁻¹ - 1` in `H^s(ℂ)`
+(`SobolevTopologicalGaugeGroup.continuous_iff`), rather than the pointwise topology of the
+subgroup. -/
+def SobolevTopologicalGaugeGroup (hs : 1 < s) : Type := sobolevGaugeGroup hs
 
-namespace SobolevGaugeGroup
+namespace SobolevTopologicalGaugeGroup
 
 variable {hs : 1 < s}
 
 private theorem nonneg (hs : 1 < s) : 0 ≤ s := zero_le_one.trans hs.le
 
-instance : Group (SobolevGaugeGroup hs) := inferInstanceAs (Group (sobolevGaugeGroup hs))
+instance : Group (SobolevTopologicalGaugeGroup hs) := inferInstanceAs (Group (sobolevGaugeGroup hs))
 
 variable (hs) in
-/-- The identification of `SobolevGaugeGroup hs` with the subgroup `sobolevGaugeGroup hs` of
-`ℂ → Circle`. -/
-def toSubgroup : SobolevGaugeGroup hs ≃* sobolevGaugeGroup hs := MulEquiv.refl _
+/-- The identification of `SobolevTopologicalGaugeGroup hs` with the subgroup
+`sobolevGaugeGroup hs` of `ℂ → Circle`. -/
+def toSubgroup : SobolevTopologicalGaugeGroup hs ≃* sobolevGaugeGroup hs := MulEquiv.refl _
 
 /-- **The element `u - 1` of `H^s(ℂ)`** of a Sobolev gauge `u ∈ G_s`: its `L²` function is `u - 1`
-(`SobolevGaugeGroup.coeFn_toLp_inclusion_subOne`). -/
-def subOne (u : SobolevGaugeGroup hs) : H^{s}(ℂ) :=
+(`SobolevTopologicalGaugeGroup.coeFn_toLp_inclusion_subOne`). -/
+def subOne (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
   (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup
     (toSubgroup hs u).2).choose_spec.2.toBesselPotentialSpace
 
 /-- The `L²` function of `subOne u` is `u - 1`. -/
-theorem coeFn_toLp_inclusion_subOne (h : 0 ≤ s) (u : SobolevGaugeGroup hs) :
+theorem coeFn_toLp_inclusion_subOne (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
     ⇑(inclusion h (subOne u)).toLp =ᵐ[volume]
       fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) - 1 := by
   obtain ⟨hae, -⟩ :=
@@ -111,7 +114,7 @@ theorem coeFn_toLp_inclusion_subOne (h : 0 ≤ s) (u : SobolevGaugeGroup hs) :
   exact hae
 
 /-- The `L²` function of `subOne u⁻¹` is `conj u - 1`. -/
-theorem coeFn_toLp_inclusion_subOne_inv (h : 0 ≤ s) (u : SobolevGaugeGroup hs) :
+theorem coeFn_toLp_inclusion_subOne_inv (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
     ⇑(inclusion h (subOne u⁻¹)).toLp =ᵐ[volume]
       fun z ↦ (starRingEnd ℂ) ((toSubgroup hs u : ℂ → Circle) z) - 1 := by
   filter_upwards [coeFn_toLp_inclusion_subOne h u⁻¹] with z hz
@@ -119,14 +122,15 @@ theorem coeFn_toLp_inclusion_subOne_inv (h : 0 ≤ s) (u : SobolevGaugeGroup hs)
   simp only [InvMemClass.coe_inv, Pi.inv_apply, Circle.coe_inv_eq_conj]
 
 /-- A Sobolev gauge is determined by its element `u - 1` of `H^s(ℂ)`. -/
-theorem subOne_injective : Function.Injective (subOne : SobolevGaugeGroup hs → H^{s}(ℂ)) := by
+theorem subOne_injective :
+    Function.Injective (subOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
   intro u v huv
   have h := nonneg hs
   have hae := (coeFn_toLp_inclusion_subOne h u).symm.trans
     ((congrArg (fun a ↦ ⇑(inclusion h a).toLp) huv).eventuallyEq.trans
       (coeFn_toLp_inclusion_subOne h v))
   -- Both gauges are continuous, so almost everywhere equality is equality.
-  have hcont (w : SobolevGaugeGroup hs) :
+  have hcont (w : SobolevTopologicalGaugeGroup hs) :
       Continuous fun z ↦ ((toSubgroup hs w : ℂ → Circle) z : ℂ) - 1 :=
     (continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs w).2).1).sub
       continuous_const
@@ -137,16 +141,16 @@ theorem subOne_injective : Function.Injective (subOne : SobolevGaugeGroup hs →
 
 /-- The identity gauge has `u - 1 = 0`. -/
 @[simp]
-theorem subOne_one : subOne (1 : SobolevGaugeGroup hs) = 0 := by
+theorem subOne_one : subOne (1 : SobolevTopologicalGaugeGroup hs) = 0 := by
   have h := nonneg hs
   refine toLp_inclusion_injective h (Lp.ext ?_)
-  filter_upwards [coeFn_toLp_inclusion_subOne h (1 : SobolevGaugeGroup hs),
+  filter_upwards [coeFn_toLp_inclusion_subOne h (1 : SobolevTopologicalGaugeGroup hs),
     Lp.coeFn_zero ℂ 2 (volume : Measure ℂ)] with z h₁ h₂
   rw [h₁, map_zero, toLp_zero, h₂, map_one]
   simp
 
 /-- **The product law in `H^s(ℂ)`:** `(u v) - 1 = (u - 1) + (v - 1) + (u - 1) (v - 1)`. -/
-theorem subOne_mul (u v : SobolevGaugeGroup hs) :
+theorem subOne_mul (u v : SobolevTopologicalGaugeGroup hs) :
     subOne (u * v) = subOne u + subOne v +
       mulCLM (finrank_real_complex_lt_two_mul hs) (subOne u) (subOne v) := by
   have h := nonneg hs
@@ -163,41 +167,44 @@ theorem subOne_mul (u v : SobolevGaugeGroup hs) :
   ring
 
 /-- **The Sobolev topology of `G_s`**, induced by `u ↦ (u - 1, u⁻¹ - 1) ∈ H^s(ℂ) × H^s(ℂ)`. -/
-instance : TopologicalSpace (SobolevGaugeGroup hs) :=
+instance : TopologicalSpace (SobolevTopologicalGaugeGroup hs) :=
   .induced (fun u ↦ (subOne u, subOne u⁻¹)) inferInstance
 
 /-- **The defining embedding of `G_s`**: its Sobolev topology is that of
 `u ↦ (u - 1, u⁻¹ - 1) ∈ H^s(ℂ) × H^s(ℂ)`, which is injective since `u ↦ u - 1` is. -/
 theorem isEmbedding_subOne_prod :
-    IsEmbedding fun u : SobolevGaugeGroup hs ↦ (subOne u, subOne u⁻¹) :=
+    IsEmbedding fun u : SobolevTopologicalGaugeGroup hs ↦ (subOne u, subOne u⁻¹) :=
   ⟨⟨rfl⟩, fun _ _ h ↦ subOne_injective (congrArg Prod.fst h)⟩
 
 /-- **Continuity into `G_s`.** A map into `G_s` is continuous exactly when `u - 1` and `u⁻¹ - 1`
 depend continuously on the parameter in `H^s(ℂ)`. -/
-theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → SobolevGaugeGroup hs} :
+theorem continuous_iff {X : Type*} [TopologicalSpace X]
+    {f : X → SobolevTopologicalGaugeGroup hs} :
     Continuous f ↔
       Continuous (fun x ↦ subOne (f x)) ∧ Continuous (fun x ↦ subOne (f x)⁻¹) :=
   isEmbedding_subOne_prod.continuous_iff.trans continuous_prodMk
 
 /-- `u ↦ u - 1` is continuous from `G_s` to `H^s(ℂ)`. -/
 @[fun_prop, continuity]
-theorem continuous_subOne : Continuous (subOne : SobolevGaugeGroup hs → H^{s}(ℂ)) :=
-  ((continuous_iff (f := (id : SobolevGaugeGroup hs → _))).1 continuous_id).1
+theorem continuous_subOne : Continuous (subOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) :=
+  ((continuous_iff (f := (id : SobolevTopologicalGaugeGroup hs → _))).1 continuous_id).1
 
 /-- `u ↦ u⁻¹ - 1` is continuous from `G_s` to `H^s(ℂ)`. -/
 @[fun_prop, continuity]
 theorem continuous_subOne_inv :
-    Continuous (fun u : SobolevGaugeGroup hs ↦ subOne u⁻¹) :=
-  ((continuous_iff (f := (id : SobolevGaugeGroup hs → _))).1 continuous_id).2
+    Continuous (fun u : SobolevTopologicalGaugeGroup hs ↦ subOne u⁻¹) :=
+  ((continuous_iff (f := (id : SobolevTopologicalGaugeGroup hs → _))).1 continuous_id).2
 
 /-- **`G_s` is a topological group** for its Sobolev topology: by `subOne_mul`, multiplication
 acts on `u - 1` and, through `(u v)⁻¹ = v⁻¹ u⁻¹`, on `u⁻¹ - 1` by continuous polynomial maps of
 `H^s(ℂ)`, while inversion exchanges `u - 1` and `u⁻¹ - 1`. -/
-instance instIsTopologicalGroup : IsTopologicalGroup (SobolevGaugeGroup hs) where
+instance instIsTopologicalGroup : IsTopologicalGroup (SobolevTopologicalGaugeGroup hs) where
   continuous_mul := by
-    have hu : Continuous fun p : SobolevGaugeGroup hs × SobolevGaugeGroup hs ↦ subOne p.1⁻¹ :=
+    have hu : Continuous fun p : SobolevTopologicalGaugeGroup hs ×
+        SobolevTopologicalGaugeGroup hs ↦ subOne p.1⁻¹ :=
       continuous_subOne_inv.comp continuous_fst
-    have hv : Continuous fun p : SobolevGaugeGroup hs × SobolevGaugeGroup hs ↦ subOne p.2⁻¹ :=
+    have hv : Continuous fun p : SobolevTopologicalGaugeGroup hs ×
+        SobolevTopologicalGaugeGroup hs ↦ subOne p.2⁻¹ :=
       continuous_subOne_inv.comp continuous_snd
     exact continuous_iff.2 ⟨by simp only [subOne_mul]; fun_prop,
       by simp only [mul_inv_rev, subOne_mul]; fun_prop⟩
@@ -205,9 +212,9 @@ instance instIsTopologicalGroup : IsTopologicalGroup (SobolevGaugeGroup hs) wher
     simpa only [inv_inv] using continuous_subOne⟩
 
 /-- `G_s` is Hausdorff for its Sobolev topology, since `u ↦ u - 1` is injective. -/
-instance instT2Space : T2Space (SobolevGaugeGroup hs) :=
+instance instT2Space : T2Space (SobolevTopologicalGaugeGroup hs) :=
   isEmbedding_subOne_prod.t2Space
 
-end SobolevGaugeGroup
+end SobolevTopologicalGaugeGroup
 
 end TauCeti.Vortex

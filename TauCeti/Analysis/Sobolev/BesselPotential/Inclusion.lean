@@ -40,7 +40,8 @@ common compact support, are statements about this map.
   the `L²` function of the inclusion is additive and homogeneous almost everywhere.
 * `BesselPotentialSpace.toTemperedDistribution_toLp_inclusion`: for `s ≥ 0`, the inclusion into
   `H^0(E, F) = L²` exhibits every element of `H^s(E, F)` as an `L²` function, which lies in `H^s`
-  (`BesselPotentialSpace.memSobolev_toLp_inclusion`).
+  (`BesselPotentialSpace.memSobolev_toLp_inclusion`) and defines `u` again
+  (`BesselPotentialSpace.toBesselPotentialSpace_memSobolev_toLp_inclusion`).
 * `BesselPotentialSpace.toLp_inclusion_toBesselPotentialSpace`: for `s ≥ 0`, the `L²` function of
   the element of `H^s(E, F)` defined by an `L²` function `g` is `g`.
 -/
@@ -184,6 +185,12 @@ theorem memSobolev_toLp_inclusion (h : 0 ≤ s) (u : H^{s}(E, F)) :
     MemSobolev s 2 ((inclusion h u).toLp : 𝓢'(E, F)) := by
   rw [toTemperedDistribution_toLp_inclusion]
   exact u.memSobolev_toDistr
+
+/-- For `s ≥ 0`, the element of `H^s(E, F)` defined by the `L²` function of `u ∈ H^s(E, F)` is
+`u`. -/
+theorem toBesselPotentialSpace_memSobolev_toLp_inclusion (h : 0 ≤ s) (u : H^{s}(E, F)) :
+    (memSobolev_toLp_inclusion h u).toBesselPotentialSpace = u :=
+  ext (by simp)
 
 /-- For `s ≥ 0`, the `L²` function of the element of `H^s(E, F)` defined by an `L²` function `g`
 is `g`. -/
