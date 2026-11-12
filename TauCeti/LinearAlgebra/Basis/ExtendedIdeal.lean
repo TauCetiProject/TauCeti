@@ -103,18 +103,14 @@ noncomputable def quotient (b : Basis ι R A) (J : Ideal R) :
 @[simp]
 theorem quotient_apply (b : Basis ι R A) (J : Ideal R) (i : ι) :
     b.quotient J i = Ideal.Quotient.mk _ (b i) := by
-  rw [quotient, Basis.map_apply, Basis.baseChange_apply, AlgEquiv.toLinearEquiv_apply,
-    AlgEquiv.symm_apply_eq, Algebra.TensorProduct.quotIdealMapEquivQuotTensor_mk]
+  simp [quotient, AlgEquiv.symm_apply_eq]
 
 /-- The coordinates of the class of `x` in `b.quotient J` are the classes of the coordinates of
 `x` in `b`. -/
 @[simp]
 theorem quotient_repr_mk (b : Basis ι R A) (J : Ideal R) (x : A) (i : ι) :
     (b.quotient J).repr (Ideal.Quotient.mk _ x) i = Ideal.Quotient.mk J (b.repr x i) := by
-  rw [quotient, Basis.map_repr, LinearEquiv.trans_apply, ← AlgEquiv.toLinearEquiv_symm,
-    AlgEquiv.symm_symm, AlgEquiv.toLinearEquiv_apply,
-    Algebra.TensorProduct.quotIdealMapEquivQuotTensor_mk,
-    Basis.baseChange_repr_tmul, Algebra.smul_def, mul_one, Ideal.Quotient.algebraMap_eq]
+  simp [quotient, Algebra.smul_def]
 
 end Quotient
 
