@@ -132,7 +132,7 @@ variable [Fintype ι]
 /-- The multilinear map `(ωᵢ)ᵢ ↦ ∏ᵢ ωᵢ` from the determinant lines of the `U i` to that of
 `Πᵢ U i`, the product being taken in the center of the exterior algebra. -/
 private def detLinePiMultilinear (h : ∀ i, Even (finrank K (U i))) :
-    MultilinearMap K (fun i ↦ detLine K (U i)) (detLine K ((i : ι) → U i)) :=
+    ((i : ι) → detLine K (U i)) →ₘₗ[K] detLine K ((i : ι) → U i) :=
   ((Subalgebra.center K _).val.toLinearMap.compMultilinearMap
       ((MultilinearMap.mkPiAlgebra K ι (Subalgebra.center K _)).compLinearMap
         (detLineSingle K U h))).codRestrict _ fun x ↦ by
