@@ -86,8 +86,14 @@ instance GeneratingSections.finite_symmetricPower_I : Finite (σ.symmetricPower 
   rw [GeneratingSections.symmetricPower_I]
   infer_instance
 
+end LocallyFree
+
+section FiniteLocallyFree
+
 variable [Limits.HasPullbacks C]
-variable [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
+  {M : SheafOfModules.{u} (ringCatSheaf R)} (n : ℕ)
 
 variable (M) in
 /-- Symmetric powers of a finite locally free sheaf of modules are finite locally free. -/
@@ -101,7 +107,7 @@ theorem isFiniteLocallyFree_symmetricPower (hM : isFiniteLocallyFree (ringCatShe
        generators i := (q.generators i).symmetricPower n }, ⟨fun _ ↦ inferInstance⟩,
       ⟨fun _ ↦ ⟨inferInstance⟩⟩⟩
 
-end LocallyFree
+end FiniteLocallyFree
 
 end SheafOfModules
 

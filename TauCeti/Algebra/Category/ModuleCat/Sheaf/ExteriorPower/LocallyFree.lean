@@ -94,8 +94,14 @@ instance GeneratingSections.finite_exteriorPower_I : Finite (σ.exteriorPower n)
   rw [GeneratingSections.exteriorPower_I]
   infer_instance
 
+end LocallyFree
+
+section FiniteLocallyFree
+
 variable [Limits.HasPullbacks C]
-variable [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
+  {M : SheafOfModules.{u} (ringCatSheaf R)} (n : ℕ)
 
 variable (M) in
 /-- The exterior powers of a finite locally free sheaf of modules are finite locally free. -/
@@ -111,7 +117,7 @@ theorem isFiniteLocallyFree_exteriorPower (hM : isFiniteLocallyFree (ringCatShea
        generators i := (q.generators i).exteriorPower n }, ⟨fun i ↦ inferInstance⟩,
       ⟨fun i ↦ ⟨inferInstance⟩⟩⟩
 
-end LocallyFree
+end FiniteLocallyFree
 
 end SheafOfModules
 
