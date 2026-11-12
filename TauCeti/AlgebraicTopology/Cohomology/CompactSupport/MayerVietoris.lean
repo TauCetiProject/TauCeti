@@ -62,78 +62,6 @@ namespace TopCat
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{v} C] [Abelian C] {R : C}
   {k : Type v} [Ring k] [Linear k C] {M : C} {X : TopCat.{v}}
 
-/-! ### Classes restricted to an open subset and extended back -/
-
-section Extend
-
-variable {P W : TopCat.{v}}
-
-/-- The restriction `Hⁿ(X, X ∖ f(K)) ⟶ Hⁿ(P, P ∖ K)` along an injective map `f : P ⟶ X`. -/
-private abbrev compactsRestrict {f : P ⟶ X} (hf : Function.Injective f) (K : Compacts P)
-    (n : ℕ) :
-    (TopPair.ofSubset (K.map f f.hom.continuous : Set X)ᶜ).singularCohomology R k M n ⟶
-      (TopPair.ofSubset (K : Set P)ᶜ).singularCohomology R k M n :=
-  TopPair.singularCohomologyMap (TopPair.ofSubsetMap f (mapsTo_compl_compacts_map hf K)) n
-
-/-- Restricting along `f` commutes with enlarging the compact set. -/
-private lemma compactSupportCohomologyι_compactsRestrict_complRestrict {f : P ⟶ X}
-    (hf : Function.Injective f) {K L : Compacts P} (hKL : K ≤ L) {n : ℕ}
-    (a : (TopPair.ofSubset (K.map f f.hom.continuous : Set X)ᶜ).singularCohomology R k M n) :
-    compactSupportCohomologyι n L (compactsRestrict hf L n
-        (singularCohomologyComplRestrict R k M (Compacts.map_mono f f.hom.continuous hKL) n a)) =
-      compactSupportCohomologyι n K (compactsRestrict hf K n a) := by
-  have hpair : TopPair.ofSubsetMap (𝟙 P) (mapsTo_id_compl_compacts hKL) ≫
-        TopPair.ofSubsetMap f (mapsTo_compl_compacts_map hf K) =
-      TopPair.ofSubsetMap f (mapsTo_compl_compacts_map hf L) ≫
-        TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl (Compacts.map_mono f f.hom.continuous hKL)) :=
-    TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ (by simp)
-  rw [← singularCohomologyMap_comp_compactSupportCohomologyι_apply n hKL]
-  simp only [← TopPair.singularCohomologyMap_comp_apply, hpair]
-
-/-- A class of `Hⁿ(X, X ∖ i(M))`, restricted to `Hⁿ(W, W ∖ M)` along an open embedding
-`i = g ≫ f` and extended to `P` along `g`, is the class restricted along `f` from the larger
-compact set `f(K) ⊇ i(M)`. -/
-private lemma compactSupportCohomologyExtend_compactSupportCohomologyι_compactsRestrict
-    [T2Space P] {f : P ⟶ X} {g : W ⟶ P} {i : W ⟶ X} (hf : IsOpenEmbedding f)
-    (hg : IsOpenEmbedding g) (hi : IsOpenEmbedding i) (hgf : g ≫ f = i) {M' : Compacts W}
-    {K : Compacts P} (hMK : (M'.map i i.hom.continuous : Set X) ⊆ K.map f f.hom.continuous)
-    {n : ℕ}
-    (z : (TopPair.ofSubset (M'.map i i.hom.continuous : Set X)ᶜ).singularCohomology R k M n) :
-    compactSupportCohomologyExtend hg n
-        (compactSupportCohomologyι n M' (compactsRestrict hi.injective M' n z)) =
-      compactSupportCohomologyι n K
-        (compactsRestrict hf.injective K n (singularCohomologyComplRestrict R k M hMK n z)) := by
-  have hset : ((M'.map g g.hom.continuous).map f f.hom.continuous : Set X) =
-      M'.map i i.hom.continuous := by
-    simp only [Compacts.coe_map, ← hgf, TopCat.hom_comp, ContinuousMap.coe_comp, Set.image_comp]
-  have hle : M'.map g g.hom.continuous ≤ K := fun x hx ↦ by
-    have hx' : f x ∈ ((M'.map g g.hom.continuous).map f f.hom.continuous : Set X) :=
-      Set.mem_image_of_mem f hx
-    rw [hset] at hx'
-    simpa [hf.injective.mem_set_image] using hMK hx'
-  have hz : compactsRestrict hi.injective M' n z =
-      TopPair.singularCohomologyMap (TopPair.ofSubsetMap g
-        (mapsTo_compl_compacts_map hg.injective M')) n
-        (compactsRestrict hf.injective _ n
-          (singularCohomologyComplRestrict R k M hset.ge n z)) := by
-    have hpair : (TopPair.ofSubsetMap g (mapsTo_compl_compacts_map hg.injective M') ≫
-          TopPair.ofSubsetMap f (mapsTo_compl_compacts_map hf.injective _)) ≫
-          TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl hset.ge) =
-        TopPair.ofSubsetMap i (mapsTo_compl_compacts_map hi.injective M') := by
-      rw [TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq (g'' := g ≫ f) _ _
-          (fun _ hx ↦ mapsTo_compl_compacts_map hf.injective _
-            (mapsTo_compl_compacts_map hg.injective M' hx)) rfl]
-      exact TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by rw [Category.comp_id, hgf])
-    rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
-      hpair]
-  rw [hz, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-    singularCohomologyMap_comp_compactSupportCohomologyι_comp_extend,
-    ← compactSupportCohomologyι_compactsRestrict_complRestrict hf.injective hle,
-    singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict hset.ge
-      (Compacts.map_mono f f.hom.continuous hle)]
-
-end Extend
-
 /-! ### The first two maps -/
 
 variable (R k M) (U V : Opens X) [T2Space X]
@@ -226,11 +154,11 @@ private lemma exists_compactSupportCohomologyExtend_eq_neg_of_add_eq_zero (hUV :
   have hiW := (U ⊓ V).isOpenEmbedding
   obtain ⟨K, -, x', rfl⟩ := exists_compactSupportCohomologyι_eq x ⊥
   obtain ⟨L, -, y', rfl⟩ := exists_compactSupportCohomologyι_eq y ⊥
-  obtain ⟨a, rfl⟩ : ∃ a, compactsRestrict hiU.injective K n a = x' := by
+  obtain ⟨a, rfl⟩ : ∃ a, singularCohomologyComplCompactsMap hiU.injective K n a = x' := by
     refine ⟨(singularCohomologyComplCompactsMapIso R k M hiU K n).inv x', ?_⟩
     have := (singularCohomologyComplCompactsMapIso R k M hiU K n).inv_hom_id_apply x'
     rwa [singularCohomologyComplCompactsMapIso_hom] at this
-  obtain ⟨b, rfl⟩ : ∃ b, compactsRestrict hiV.injective L n b = y' := by
+  obtain ⟨b, rfl⟩ : ∃ b, singularCohomologyComplCompactsMap hiV.injective L n b = y' := by
     refine ⟨(singularCohomologyComplCompactsMapIso R k M hiV L n).inv y', ?_⟩
     have := (singularCohomologyComplCompactsMapIso R k M hiV L n).inv_hom_id_apply y'
     rwa [singularCohomologyComplCompactsMapIso_hom] at this
@@ -292,18 +220,23 @@ private lemma exists_compactSupportCohomologyExtend_eq_neg_of_add_eq_zero (hUV :
       (L₂.map _ (map_continuous _)).isCompact.isClosed⟩)
     (Set.inter_subset_inter (by rintro _ ⟨x, -, rfl⟩; exact x.2)
       (by rintro _ ⟨x, -, rfl⟩; exact x.2))
-  refine ⟨compactSupportCohomologyι n M' (compactsRestrict hiW.injective M' n
-    (singularCohomologyComplRestrict R k M hM'.ge n z)), ?_, ?_⟩
-  · rw [compactSupportCohomologyExtend_compactSupportCohomologyι_compactsRestrict hiU
-      (isOpenEmbedding_toTopCat_map (homOfLE inf_le_left)) hiW (toTopCat_map_comp_inclusion' _)
+  refine ⟨compactSupportCohomologyι n M' (singularCohomologyComplCompactsMap hiW.injective M'
+    n (singularCohomologyComplRestrict R k M hM'.ge n z)), ?_, ?_⟩
+  · rw [compactSupportCohomologyExtend_compactSupportCohomologyι_singularCohomologyComplCompactsMap
+      hiU (isOpenEmbedding_toTopCat_map (homOfLE inf_le_left)) hiW
+      (toTopCat_map_comp_inclusion' _)
       (K := K₂) (hM'.trans_subset Set.inter_subset_left),
       singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict, hzS,
-      compactSupportCohomologyι_compactsRestrict_complRestrict hiU.injective hKK₂]
-  · rw [compactSupportCohomologyExtend_compactSupportCohomologyι_compactsRestrict hiV
-      (isOpenEmbedding_toTopCat_map (homOfLE inf_le_right)) hiW (toTopCat_map_comp_inclusion' _)
+      compactSupportCohomologyι_singularCohomologyComplCompactsMap_singularCohomologyComplRestrict
+        hiU.injective hKK₂]
+  · rw [compactSupportCohomologyExtend_compactSupportCohomologyι_singularCohomologyComplCompactsMap
+      hiV (isOpenEmbedding_toTopCat_map (homOfLE inf_le_right)) hiW
+      (toTopCat_map_comp_inclusion' _)
       (K := L₂) (hM'.trans_subset Set.inter_subset_right),
       singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict, hzT,
-      map_neg, map_neg, compactSupportCohomologyι_compactsRestrict_complRestrict hiV.injective hLL₂]
+      map_neg, map_neg,
+      compactSupportCohomologyι_singularCohomologyComplCompactsMap_singularCohomologyComplRestrict
+        hiV.injective hLL₂]
 
 variable (R k M U V) in
 /-- **Exactness of the Mayer–Vietoris sequence of cohomology with compact supports at

@@ -82,7 +82,7 @@ lemma exists_compacts_map_inclusion'_eq {U : Opens X} {K : Compacts X} (hK : (K 
     ∃ K' : Compacts ((toTopCat X).obj U),
       (K'.map (inclusion' U) (map_continuous _) : Set X) = K := by
   obtain ⟨K', hK'⟩ := (Compacts.range_map U.isOpenEmbedding.isInducing).ge
-    (show (K : Set X) ⊆ Set.range (inclusion' U) by rwa [set_range_inclusion'])
+    (by rwa [set_range_inclusion'])
   exact ⟨K', congrArg SetLike.coe hK'⟩
 
 /-- An open subset of a Hausdorff space is Hausdorff. -/
