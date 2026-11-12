@@ -24,6 +24,10 @@ continuous linear map, which does not change the underlying almost everywhere eq
 ## Main results
 
 * `MeasureTheory.Lp.coeFn_ofExponentLEL`: the inclusion does not change the underlying function.
+* `MeasureTheory.Lp.opNorm_ofExponentLEL_le`, `MeasureTheory.Lp.norm_ofExponentLEL_apply_le`: the
+  bound `ν(univ) ^ (1/p - 1/q)` on the operator norm.
+* `MeasureTheory.Lp.ofExponentLEL_self`, `MeasureTheory.Lp.ofExponentLEL_ofExponentLEL`: the
+  identity at `p = q` and transitivity.
 
 ## References
 
@@ -39,7 +43,8 @@ namespace MeasureTheory.Lp
 open scoped ENNReal
 
 variable {α F : Type*} [MeasurableSpace α] {ν : Measure α} [IsFiniteMeasure ν]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+  [Fact (1 ≤ r)]
 
 /-- The continuous inclusion `L^q(ν) → Lᵖ(ν)` for a finite measure `ν` and `p ≤ q`, with norm at
 most `ν(univ) ^ (1/p - 1/q)`; it does not change the underlying almost everywhere equivalence
@@ -68,6 +73,27 @@ theorem ofExponentLEL_apply (hpq : p ≤ q) (f : Lp F q ν) :
 /-- Lowering the exponent does not change the underlying function. -/
 @[simp]
 theorem coeFn_ofExponentLEL (hpq : p ≤ q) (f : Lp F q ν) : ⇑(ofExponentLEL F hpq f) = ⇑f :=
+  (rfl)
+
+/-- The operator norm of the inclusion `L^q(ν) → Lᵖ(ν)` is at most `ν(univ) ^ (1/p - 1/q)`. -/
+theorem opNorm_ofExponentLEL_le (hpq : p ≤ q) :
+    ‖ofExponentLEL (ν := ν) F hpq‖ ≤ (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal :=
+  LinearMap.mkContinuous_norm_le _ ENNReal.toReal_nonneg _
+
+/-- Lowering the exponent multiplies the norm by at most `ν(univ) ^ (1/p - 1/q)`. -/
+theorem norm_ofExponentLEL_apply_le (hpq : p ≤ q) (f : Lp F q ν) :
+    ‖ofExponentLEL F hpq f‖ ≤ (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal * ‖f‖ :=
+  (ofExponentLEL F hpq).le_of_opNorm_le (opNorm_ofExponentLEL_le hpq) f
+
+/-- Lowering the exponent from `p` to itself is the identity. -/
+@[simp]
+theorem ofExponentLEL_self (f : Lp F p ν) : ofExponentLEL F le_rfl f = f :=
+  (rfl)
+
+/-- Exponent inclusions compose transitively. -/
+@[simp]
+theorem ofExponentLEL_ofExponentLEL (hpq : p ≤ q) (hqr : q ≤ r) (f : Lp F r ν) :
+    ofExponentLEL F hpq (ofExponentLEL F hqr f) = ofExponentLEL F (hpq.trans hqr) f :=
   (rfl)
 
 end MeasureTheory.Lp

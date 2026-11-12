@@ -29,6 +29,8 @@ exponent `q` of a `Cᵏ` section to its Sobolev section of exponent `p`.
 
 * `TauCeti.SobolevSection.chartValueL_ofExponentLEL_ae`: the chart data are unchanged.
 * `TauCeti.SobolevSection.ofExponentLEL_injective`: the inclusion is injective.
+* `TauCeti.SobolevSection.ofExponentLEL_self`,
+  `TauCeti.SobolevSection.ofExponentLEL_ofExponentLEL`: the identity at `p = q` and transitivity.
 * `TauCeti.SobolevSection.lowerOrderL_ofExponentLEL`: compatibility with `lowerOrderL`.
 * `TauCeti.SobolevSection.ofExponentLEL_ofContMDiffSection`: compatibility with the Sobolev
   sections of `Cᵏ` sections.
@@ -53,7 +55,7 @@ variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDi
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
   [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   (A : FiniteBundleAtlas E M F V) (μ : Measure E) [μ.IsAddHaarMeasure]
-  {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (k : ℕ)
+  {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)] (k : ℕ)
 
 namespace SobolevSection
 
@@ -73,8 +75,8 @@ variable {A μ k}
 
 /-- The components of `ofExponentLEL hpq w` are the components of `w` with lowered exponent. -/
 @[simp]
-theorem ofExponentLEL_apply (hpq : p ≤ q) (w : SobolevSection A μ q k) (i : Fin A.n)
-    (j : Fin (finrank ℝ F)) :
+theorem ofExponentLEL_apply (hpq : p ≤ q) (w : SobolevSection A μ q k)
+    (i : Fin A.sectionChartData.n) (j : Fin (finrank ℝ F)) :
     (ofExponentLEL A μ k hpq w : A.sectionChartData.SobolevData μ p k) i j =
       Wkp.ofExponentLEL hpq k ((w : A.sectionChartData.SobolevData μ q k) i j) :=
   (rfl)
@@ -89,7 +91,7 @@ theorem chartValueL_ofExponentLEL_ae (hpq : p ≤ q) (w : SobolevSection A μ q 
       Wkp.value_ofExponentLEL_ae hpq k ((w : A.sectionChartData.SobolevData μ q k) i j)]
     with y hp hq hj
   rw [hp, hq]
-  exact Finset.sum_congr rfl fun j _ ↦ by rw [ofExponentLEL_apply, hj j]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [ofExponentLEL_apply (i := i), hj j]
 
 /-- Lowering the exponent keeps the underlying section: if the chart data of `w` are the
 coordinates of `s`, so are those of `ofExponentLEL hpq w`. -/
@@ -103,16 +105,29 @@ theorem chartValueL_ofExponentLEL_ae_coord (hpq : p ≤ q) {w : SobolevSection A
 /-- Lowering the exponent is injective. -/
 theorem ofExponentLEL_injective (hpq : p ≤ q) :
     Function.Injective (ofExponentLEL A μ k hpq) := fun w w' h ↦
-  Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦
+  Subtype.ext <| funext fun i ↦ funext fun j ↦
     Wkp.ofExponentLEL_injective hpq k <| by
       rw [← ofExponentLEL_apply, ← ofExponentLEL_apply, h]
+
+/-- Lowering the exponent from `p` to itself is the identity. -/
+@[simp]
+theorem ofExponentLEL_self (w : SobolevSection A μ p k) : ofExponentLEL A μ k le_rfl w = w :=
+  Subtype.ext <| funext fun i ↦ funext fun j ↦ by rw [ofExponentLEL_apply, Wkp.ofExponentLEL_self]
+
+/-- Exponent inclusions compose transitively. -/
+@[simp]
+theorem ofExponentLEL_ofExponentLEL (hpq : p ≤ q) (hqr : q ≤ r) (w : SobolevSection A μ r k) :
+    ofExponentLEL A μ k hpq (ofExponentLEL A μ k hqr w) = ofExponentLEL A μ k (hpq.trans hqr) w :=
+  Subtype.ext <| funext fun i ↦ funext fun j ↦ by
+    rw [ofExponentLEL_apply, ofExponentLEL_apply, ofExponentLEL_apply,
+      Wkp.ofExponentLEL_ofExponentLEL]
 
 /-- Lowering the exponent commutes with forgetting the highest derivative. -/
 theorem lowerOrderL_ofExponentLEL (hpq : p ≤ q) (w : SobolevSection A μ q (k + 1)) :
     A.sectionChartData.lowerOrderL μ p k (ofExponentLEL A μ (k + 1) hpq w) =
       ofExponentLEL A μ k hpq (A.sectionChartData.lowerOrderL μ q k w) :=
-  Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦ by
-    erw [SectionChartData.lowerOrderL_apply, ofExponentLEL_apply, ofExponentLEL_apply,
+  Subtype.ext <| funext fun i ↦ funext fun j ↦ by
+    rw [SectionChartData.lowerOrderL_apply, ofExponentLEL_apply, ofExponentLEL_apply,
       SectionChartData.lowerOrderL_apply, Wkp.lowerOrder_ofExponentLEL]
 
 variable [IsManifold 𝓘(ℝ, E) k M] [ContMDiffVectorBundle k F V 𝓘(ℝ, E)]

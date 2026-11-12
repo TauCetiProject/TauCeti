@@ -30,6 +30,8 @@ is unchanged up to almost everywhere equality.
 
 ## Main results
 
+* `TauCeti.Wkp.value_ofExponentLEL`, `TauCeti.Wkp.iteratedGradient_ofExponentLEL`: the value and
+  the highest weak derivative are their `Lᵖ` copies.
 * `TauCeti.Wkp.value_ofExponentLEL_ae`, `TauCeti.Wkp.iteratedGradient_ofExponentLEL_ae`: the value
   and the highest weak derivative are unchanged.
 * `TauCeti.Wkp.lowerOrder_ofExponentLEL`, `TauCeti.Wkp.restrictL_ofExponentLEL`: compatibility with
@@ -128,6 +130,20 @@ def ofExponentLEL (hpq : p ≤ q) (k : ℕ) : Wkp mu Omega q k →L[ℝ] Wkp mu 
 theorem value_ofExponentLEL_ae (hpq : p ≤ q) (k : ℕ) (u : Wkp mu Omega q k) :
     ⇑(value k (ofExponentLEL hpq k u)) =ᵐ[mu.restrict Omega] value k u :=
   value_ofExponentLEFun_ae hpq k u
+
+/-- The value of the image of a Sobolev function is the `Lᵖ` copy of its value. -/
+@[simp]
+theorem value_ofExponentLEL (hpq : p ≤ q) (k : ℕ) (u : Wkp mu Omega q k) :
+    value k (ofExponentLEL hpq k u) = Lp.ofExponentLEL ℝ hpq (value k u) :=
+  value_ofExponentLEFun hpq k u
+
+/-- The highest weak derivative of the image of a Sobolev function is the `Lᵖ` copy of its
+highest weak derivative.
+Use `rw` with this lemma: `simp` does not match its dependently indexed left-hand side. -/
+theorem iteratedGradient_ofExponentLEL (hpq : p ≤ q) (k : ℕ) (u : Wkp mu Omega q (k + 1)) :
+    iteratedGradient k (ofExponentLEL hpq (k + 1) u) =
+      Lp.ofExponentLEL _ hpq (iteratedGradient k u) :=
+  iteratedGradient_ofExponentLEFun hpq k u
 
 /-- Lowering the exponent does not change the highest weak derivative of a Sobolev function. -/
 theorem iteratedGradient_ofExponentLEL_ae (hpq : p ≤ q) (k : ℕ) (u : Wkp mu Omega q (k + 1)) :
