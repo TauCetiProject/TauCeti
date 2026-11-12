@@ -10,23 +10,13 @@ public import TauCeti.Analysis.InnerProductSpace.BlockSum
 public import TauCeti.Analysis.InnerProductSpace.Projection.AngleOperator
 public import TauCeti.Analysis.InnerProductSpace.Projection.Block
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basic
-import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
-import Mathlib.Tactic.Module
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
 
 /-!
 # Unitarily invariant seminorms and orthogonal projections
 
-For arbitrary linear maps `H : E → F`, orthogonal projections `P_U` on `E`
-and `P_V` on `F`, the checkerboard operator `H P_U - P_V H` has seminorm at most
-that of `H`.
-The bound holds for every unitarily invariant seminorm, without spectral-gap
-assumptions. It is proved with two subspace reflections in `Basic.lean`, which also derives
-from it that composing with an orthogonal projection does not increase the seminorm.
-
-The sine-angle operator `|P_U - P_V|` and the projector difference have the
-same singular values and hence the same unitarily invariant seminorm.
+For orthogonal projections `P_U` and `P_V`, the sine-angle operator `|P_U - P_V|` and the
+projector difference `P_U - P_V` have the same singular values and hence the same unitarily
+invariant seminorm.
 
 ## Main results
 
