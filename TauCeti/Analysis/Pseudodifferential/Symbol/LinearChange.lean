@@ -183,33 +183,58 @@ classical, with homogeneous terms `a_{m-j}(P x, Q ξ)`. The cutoff `χ(Q ξ)` th
 produces is replaced by `χ(ξ)` at the cost of smoothing symbols
 (`TauCeti.HomogeneousSymbol.isSmoothing_compProdMap_cutoffSymbol_sub_cutoffSymbol`). -/
 def compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
-    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : ClassicalSymbol n V W m) :
-    ClassicalSymbol n V W m where
-  toSymbol := Symbol.compProdMap P Q a.toSymbol
-  term j := ((a.term j).compPosition P P.contDiff).compFrequency Q
-  exists_remainder' := by
-    obtain ⟨χ, -⟩ := a.exists_remainder'
-    refine ⟨χ, fun N => ?_⟩
-    choose s hs using fun j => Symbol.isSmoothing_iff.1
-      (isSmoothing_compProdMap_cutoffSymbol_sub_cutoffSymbol χ (a.term j) P Q) (m - N)
-    refine ⟨Symbol.compProdMap P Q (a.remainder χ N) + ∑ j ∈ Finset.range N, s j, fun p => ?_⟩
-    simp only [Symbol.coefficient_add, Pi.add_apply, Symbol.coefficient_sum, Finset.sum_apply, hs,
-      Symbol.coefficient_compProdMap, coefficient_remainder, Symbol.coefficient_sub, Pi.sub_apply,
-      coefficient_cutoffSymbol, Finset.sum_sub_distrib, coefficient_compFrequency,
-      coefficient_compPosition]
-    abel
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) :
+    ClassicalSymbol n V W m →ₗ[ℂ] ClassicalSymbol n V W m where
+  toFun a :=
+    { toSymbol := Symbol.compProdMap P Q a.toSymbol
+      term j := ((a.term j).compPosition P P.contDiff).compFrequency Q
+      exists_remainder' := by
+        obtain ⟨χ, -⟩ := a.exists_remainder'
+        refine ⟨χ, fun N => ?_⟩
+        choose s hs using fun j => Symbol.isSmoothing_iff.1
+          (isSmoothing_compProdMap_cutoffSymbol_sub_cutoffSymbol χ (a.term j) P Q) (m - N)
+        refine ⟨Symbol.compProdMap P Q (a.remainder χ N) + ∑ j ∈ Finset.range N, s j,
+          fun p => ?_⟩
+        simp only [Symbol.coefficient_add, Pi.add_apply, Symbol.coefficient_sum,
+          Finset.sum_apply, hs, Symbol.coefficient_compProdMap, coefficient_remainder,
+          Symbol.coefficient_sub, Pi.sub_apply, coefficient_cutoffSymbol, Finset.sum_sub_distrib,
+          coefficient_compFrequency, coefficient_compPosition]
+        abel }
+  map_add' a b := ext <| by simp
+  map_smul' c a := ext <| by simp
 
 @[simp]
 theorem toSymbol_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
     (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : ClassicalSymbol n V W m) :
-    (a.compProdMap P Q).toSymbol = Symbol.compProdMap P Q a.toSymbol :=
+    (compProdMap P Q a).toSymbol = Symbol.compProdMap P Q a.toSymbol :=
   (rfl)
 
 @[simp]
 theorem term_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
     (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : ClassicalSymbol n V W m) (j : ℕ) :
-    (a.compProdMap P Q).term j = ((a.term j).compPosition P P.contDiff).compFrequency Q :=
+    (compProdMap P Q a).term j = ((a.term j).compPosition P P.contDiff).compFrequency Q :=
   (rfl)
+
+/-- Changing variables twice is changing variables by the composite maps. -/
+@[simp]
+theorem compProdMap_compProdMap (P P' : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q Q' : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : ClassicalSymbol n V W m) :
+    compProdMap P Q (compProdMap P' Q' a) = compProdMap (P'.comp P) (Q.trans Q') a :=
+  ext (by simp)
+
+@[simp]
+theorem compProdMap_id_refl (a : ClassicalSymbol n V W m) :
+    compProdMap (ContinuousLinearMap.id ℝ _) (ContinuousLinearEquiv.refl ℝ _) a = a :=
+  ext (by simp)
+
+/-- A linear change of variables commutes with the pointwise composition of classical symbols. -/
+@[simp]
+theorem compProdMap_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m' : ℝ}
+    (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (b : ClassicalSymbol n W U m')
+    (a : ClassicalSymbol n V W m) :
+    compProdMap P Q (b.comp a) = (compProdMap P Q b).comp (compProdMap P Q a) :=
+  ext (by simp)
 
 /-- **The principal symbol transforms as a function of covectors.** Under the linear change of
 variables `(x, ξ) ↦ (P x, Q ξ)`, the principal symbol is the transformed principal symbol
@@ -217,13 +242,13 @@ variables `(x, ξ) ↦ (P x, Q ξ)`, the principal symbol is the transformed pri
 @[simp]
 theorem principal_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
     (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : ClassicalSymbol n V W m) :
-    (a.compProdMap P Q).principal = (a.principal.compPosition P P.contDiff).compFrequency Q :=
+    (compProdMap P Q a).principal = (a.principal.compPosition P P.contDiff).compFrequency Q :=
   HomogeneousSymbol.ext (funext fun p => by simp)
 
 /-- A linear change of variables preserves ellipticity. -/
 theorem IsElliptic.compProdMap {a : ClassicalSymbol n V W m} (ha : a.IsElliptic)
     (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
-    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) : (a.compProdMap P Q).IsElliptic := by
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) : (compProdMap P Q a).IsElliptic := by
   rw [isElliptic_def, principal_compProdMap]
   exact (isElliptic_def.1 ha).compPosition P P.contDiff |>.compFrequency Q
 
