@@ -127,7 +127,7 @@ theorem natCard_H2_sq_le_natCard_H2_ker (χ : G →ₜ* Multiplicative (ZMod p))
   have h3 : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
       [DistribMulAction G A] [ContinuousSMul G A], (∀ a : A, p • a = 0) →
       Subsingleton (continuousCohomology 3 (ofDiscreteModule ℤ G A)) := fun A _ _ _ _ _ hA ↦
-    cohomologicalDimensionLE_iff.mp hcd A (isPPrimaryTorsion_iff.2 fun a ↦ ⟨1, by rw [pow_one, hA]⟩)
+    cohomologicalDimensionLE_iff.mp hcd A (fun a ↦ ⟨1, by rw [pow_one, hA]⟩)
       3 (by norm_num)
   have : ContinuousSMul G (ULift.{u} (ZMod p)) :=
     ⟨continuous_snd.congr fun q ↦ ULift.ext (htriv q.1 q.2.down).symm⟩
@@ -305,7 +305,7 @@ theorem isDemushkin_of_topologicalGeneratorRankNat_openSubgroup_index_eq (hG : I
   have : Finite (H2 G (ZMod p)) := Nat.finite_of_card_ne_zero (by
     rw [natCard_H2_eq_pow_finrank_cohomFp_two p G htriv]; exact pow_ne_zero _ hp.out.ne_zero)
   -- the three-term Euler formula for `U`
-  have hE := one_sub_topologicalGeneratorRankNat_add_finrank_H2 hG hfg htriv hcd U
+  have hE := one_sub_topologicalGeneratorRankNat_add_finrank_H2 hG hfg hcd U
   rw [← (cohomFpLinearEquivH2 p G htriv).finrank_eq, h2, hUi] at hE
   rw [(cohomFpLinearEquivH2 p (U : Subgroup G) fun u m ↦ htriv u m).finrank_eq]
   have hrank := hU U hUn hUi

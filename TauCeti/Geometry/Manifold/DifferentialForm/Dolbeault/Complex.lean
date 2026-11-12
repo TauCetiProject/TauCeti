@@ -78,9 +78,10 @@ theorem dolbeaultComplex_d_apply (p q : ℕ) (φ : (dolbeaultComplex E M F p).X 
     ModuleCat.comp_apply, ModuleCat.ofHom_apply]
 
 -- Fix the scalar ring before searching for the group structure on nested submodules of forms;
--- otherwise synthesis for closed forms and their quotient exceeds the default instance budget.
+-- otherwise synthesis for closed forms and their quotient exceeds the default instance budget,
+-- here and in importing modules.
 /-- The native additive group of type forms, with complex coefficients fixed. -/
-local instance typeFormsAddCommGroup (p q : ℕ) :
+instance typeFormsAddCommGroup (p q : ℕ) :
     AddCommGroup ((ofComplexManifold E M).typeForms (F := F) p q) :=
   Submodule.addCommGroup _
 
@@ -122,6 +123,17 @@ theorem mem_exactForms_succ (p q : ℕ)
       ∃ ψ : (ofComplexManifold E M).typeForms (F := F) p q,
         (ofComplexManifold E M).delBar ψ.1 = φ.1 := by
   simp only [exactForms, LinearMap.mem_range, Subtype.ext_iff, coe_delBarType]
+
+/-- A type form is exact if, after identifying its antiholomorphic degree with a successor,
+it is the Dolbeault differential of a type form in the preceding degree. -/
+theorem mem_exactForms_of_eq_delBar {p q n : ℕ} (hq : q = n + 1)
+    (φ : (ofComplexManifold E M).typeForms (F := F) p q)
+    (α : (ofComplexManifold E M).typeForms (F := F) p n)
+    (hφ : LinearEquiv.cast (R := ℝ) (M := fun k ↦ SmoothForm 𝓘(ℝ, E) M F k)
+      (congrArg (p + ·) hq) φ.1 = (ofComplexManifold E M).delBar α.1) :
+    φ ∈ exactForms E M F p q := by
+  subst q
+  exact (mem_exactForms_succ p n φ).mpr ⟨α, hφ.symm⟩
 
 /-- Every `∂bar`-exact form is `∂bar`-closed. -/
 theorem exactForms_le_closedForms (p q : ℕ) :

@@ -202,14 +202,16 @@ theorem measurable_dMinus (r σ K : ℝ) :
   simp only [dMinus_def]
   exact (measurable_dPlus r σ K).sub (measurable_const.mul measurable_snd.sqrt)
 
-/-- For `τ ≥ 0`, `d₋ = (log (s / K) + (r - σ² / 2) τ) / (σ √τ)`. When `σ √τ = 0` both sides
-vanish. -/
-theorem dMinus_eq (s r σ K : ℝ) (hτ : 0 ≤ τ) :
+/-- `d₋ = (log (s / K) + (r - σ² / 2) τ) / (σ √τ)`, for every `τ`: if `σ √τ ≠ 0` then `τ > 0`,
+since `√τ = 0` for `τ ≤ 0`. Lean subtlety: when `σ √τ = 0` (that is, `σ = 0` or `τ ≤ 0`) both sides
+are `0`, by Lean's convention `x / 0 = 0`. -/
+theorem dMinus_eq (s r σ K τ : ℝ) :
     dMinus s r σ K τ = (log (s / K) + (r - σ ^ 2 / 2) * τ) / (σ * √τ) := by
   rw [dMinus_def, dPlus_def]
   rcases eq_or_ne (σ * √τ) 0 with h | h
   · simp [h]
-  · have hsq : (σ * √τ) ^ 2 = σ ^ 2 * τ := by rw [mul_pow, sq_sqrt hτ]
+  · have hτ : 0 < τ := sqrt_ne_zero'.1 (right_ne_zero_of_mul h)
+    have hsq : (σ * √τ) ^ 2 = σ ^ 2 * τ := by rw [mul_pow, sq_sqrt hτ.le]
     rw [eq_div_iff h, sub_mul, div_mul_cancel₀ _ h]
     linear_combination -1 * hsq
 
@@ -287,7 +289,7 @@ theorem lt_terminalSpot_iff (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < 
   calc K < terminalSpot s r σ τ z ↔ log (K / s) < (r - σ ^ 2 / 2) * τ + σ * √τ * z := by
         rw [terminalSpot_def, ← div_lt_iff₀' hs, log_lt_iff_lt_exp (div_pos hK hs)]
     _ ↔ -dMinus s r σ K τ < z := by
-        rw [dMinus_eq s r σ K hτ.le, neg_lt, lt_div_iff₀ ha, log_div hK.ne' hs.ne',
+        rw [dMinus_eq s r σ K τ, neg_lt, lt_div_iff₀ ha, log_div hK.ne' hs.ne',
           log_div hs.ne' hK.ne']
         constructor <;> intro h <;> linarith
 

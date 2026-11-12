@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Chain
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 
 /-!
@@ -29,8 +29,8 @@ equivalently `(p - 1) (q - 1) < 2`, whose solutions with both chains nonempty ar
 chains `Cₙ`), `p = 1` (the chains `Bₙ`), and `p = q = 2` (`F₄`).
 
 This file builds that diagram as a matrix, `TauCeti.doubleEdgeCartanMatrix`, out of the chain
-entries of `TauCeti.LinearAlgebra.RootSystem.Chain`, and proves the bound. The elimination tool is
-the one the fork bound uses: a finite-type matrix admits no nonzero
+entries of `TauCeti.LinearAlgebra.Matrix.Cartan.Chain`, and proves the bound. The elimination tool
+is the one the fork bound uses: a finite-type matrix admits no nonzero
 **subdominant** vector, one whose every coordinate `xᵢ` has `xᵢ · (A x)ᵢ ≤ 0`
 (`TauCeti.IsFiniteType.eq_zero_of_forall_mul_sum_apply_mul_nonpos`). The certificate is the vector
 of **marks** `TauCeti.doubleEdgeMark`, which grows linearly along each of the two chains towards
@@ -75,12 +75,10 @@ branch vertex is established - is outside this file.
 
 ## References
 
-This file supplies the chain half of the "chain/fork length constraints" step of the classification
-of finite-type Cartan matrices, Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See J. E. Humphreys, *Introduction to
-Lie Algebras and Representation Theory*, §11.4, step (6), where the same linear weighting of the two
-chains gives `(p - 1) (q - 1) < 2`, and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*,
-Ch. VI §4.
+This file supplies the chain half of the chain and fork length constraints of the classification of
+finite-type Cartan matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, §11.4, step (6), where the same linear weighting of the two chains gives
+`(p - 1) (q - 1) < 2`, and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
 -/
 
 public section

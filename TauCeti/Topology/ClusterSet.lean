@@ -34,10 +34,11 @@ extension theorem over an arbitrary `T3` codomain, into a compact subset of whic
 assumed to take its values; a proper metric codomain with a bounded image is the special case in
 which that compact set is supplied by the boundedness. The complex-analytic consequences — that the
 boundary cluster set of a conformal map lies on the frontier of the image — are in
-`TauCeti/Analysis/Complex/Conformal/ClusterSet.lean`, the consumer this file was written for:
-Carathéodory's boundary correspondence, layer **L5** of the conformal-mapping roadmap, is applied
-by checking that the boundary cluster sets of a Riemann map are singletons and feeding that into
-`TauCeti.exists_continuousOn_closure_eqOn`.
+`TauCeti/Analysis/Complex/Conformal/ClusterSet.lean`, the consumer this file was written for.
+Carathéodory's continuity theorem, in `TauCeti/Analysis/Complex/Conformal/Caratheodory.lean`, is
+proved by checking that the boundary cluster sets of a conformal map of a disc are singletons and
+feeding that into the bounded form `TauCeti.exists_continuousOn_closure_eqOn_of_isBounded` of the
+extension theorem `TauCeti.exists_continuousOn_closure_eqOn`.
 
 The cluster set is `{v | MapClusterPt v (𝓝[U] w) f}`; Mathlib has the `ClusterPt`/`MapClusterPt`
 API, on which everything below is built, but no name for this set. The extension itself is
@@ -63,6 +64,8 @@ criterion adds is the production of the pointwise limits that theorem asks for.
   set a singleton, in particular at a point of `U` where `f` is continuous; conversely a
   subsingleton cluster set at a point of `closure U` produces a limit, provided `f` maps `U` into a
   compact set.
+* `ContinuousOn.subsingleton_clusterSetOn_of_notMem_frontier` — off the frontier of `U` a cluster
+  set of a continuous map is a point or empty.
 * `TauCeti.exists_mem_closure_mem_clusterSetOn`,
   `TauCeti.exists_mem_frontier_mem_clusterSetOn_of_notMem_image`,
   `TauCeti.closure_image_eq_biUnion_clusterSetOn` and
@@ -169,6 +172,14 @@ lemma isCompact_clusterSetOn [T2Space Y] (hK : IsCompact K) (hfK : MapsTo f U K)
     clusterSetOn_subset_closure_image.trans <|
       hK.isClosed.closure_subset_iff.mpr hfK.image_subset
 
+/-- **Off the closure of `U` the cluster set is empty**: the filter `𝓝[U] w` is then trivial. -/
+@[simp]
+lemma clusterSetOn_eq_empty_of_notMem_closure (hw : w ∉ closure U) : clusterSetOn f U w = ∅ := by
+  have hbot : 𝓝[U] w = ⊥ := not_neBot.mp fun h => hw (mem_closure_iff_nhdsWithin_neBot.mpr h)
+  ext v
+  rw [mem_clusterSetOn_iff_frequently, hbot]
+  simpa using (⟨univ, univ_mem⟩ : ∃ s : Set Y, s ∈ 𝓝 v)
+
 /-- **The cluster set is nonempty at every point of the closure**, provided `f` maps `U` into a
 compact set. Some such hypothesis is needed: the cluster set of `z ↦ 1 / z` on
 `ball 0 1 \ {0}` at `0` is empty, the values escaping to infinity. -/
@@ -219,6 +230,17 @@ theorem exists_tendsto_of_clusterSetOn_subsingleton (hK : IsCompact K) (hfK : Ma
   obtain ⟨v, hv⟩ := clusterSetOn_nonempty hK hfK hw
   exact ⟨v, hK.tendsto_nhds_of_unique_mapClusterPt
     (mem_of_superset self_mem_nhdsWithin hfK) fun _ _ hu => hsub hu hv⟩
+
+/-- **Off the frontier of a set the cluster set is a subsingleton.** At a point of the interior of
+`U` it is the single value `f w` by continuity, and at a point outside `closure U` it is empty. -/
+theorem _root_.ContinuousOn.subsingleton_clusterSetOn_of_notMem_frontier [T2Space Y]
+    (hfc : ContinuousOn f U) (hw : w ∉ frontier U) : (clusterSetOn f U w).Subsingleton := by
+  by_cases hwU : w ∈ U
+  · rw [clusterSetOn_eq_singleton_of_continuousWithinAt hwU (hfc w hwU)]
+    exact subsingleton_singleton
+  · rw [clusterSetOn_eq_empty_of_notMem_closure fun hc =>
+      hw ⟨hc, fun hi => hwU (interior_subset hi)⟩]
+    exact subsingleton_empty
 
 /-! ## The cluster sets cover the closure of the image -/
 
@@ -409,13 +431,13 @@ section Extension
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [T3Space Y] {U : Set X}
   {K : Set Y} {f : X → Y}
 
-/-- **The extension criterion.** A continuous function on an open `U`, taking values in a compact
-set and whose cluster set at each boundary point has at most one element, extends continuously to
-`closure U`.
+/-- **The extension criterion.** A continuous function on `U`, taking values in a compact set and
+whose cluster set at each boundary point has at most one element, extends continuously to
+`closure U`. `U` need not be open: a point of `closure U` outside `U` lies in `frontier U`.
 
 The compactness is what `TauCeti.exists_tendsto_of_clusterSetOn_subsingleton` consumes to turn each
-subsingleton boundary cluster set into a limit; at an interior point continuity already supplies
-the limit. Having a limit at every point of `closure U`, the map extends by Mathlib's `extendFrom`,
+subsingleton boundary cluster set into a limit; at a point of `U` continuity already supplies the
+limit. Having a limit at every point of `closure U`, the map extends by Mathlib's `extendFrom`,
 which is continuous on `closure U` by `continuousOn_extendFrom` and agrees with `f` on `U` by
 `extendFrom_extends`. `TauCeti.exists_continuousOn_closure_eqOn_of_isBounded` is the common special
 case of a bounded-image map into a proper metric space.
@@ -429,7 +451,7 @@ set the singleton `{f w}`.
 The conclusion is exactly a continuous extension: `F` is continuous on `closure U` and agrees with
 `f` on `U`. Nothing is claimed about injectivity of `F` on `closure U`; that is an independent
 matter, requiring a separate proof that `F` is injective on `frontier U`. -/
-theorem exists_continuousOn_closure_eqOn (hUo : IsOpen U) (hfc : ContinuousOn f U)
+theorem exists_continuousOn_closure_eqOn (hfc : ContinuousOn f U)
     (hK : IsCompact K) (hfK : MapsTo f U K)
     (hsub : ∀ w ∈ frontier U, (clusterSetOn f U w).Subsingleton) :
     ∃ F : X → Y, ContinuousOn F (closure U) ∧ EqOn F f U := by
@@ -438,7 +460,7 @@ theorem exists_continuousOn_closure_eqOn (hUo : IsOpen U) (hfc : ContinuousOn f 
     by_cases hwU : w ∈ U
     · exact ⟨f w, hfc w hwU⟩
     · exact exists_tendsto_of_clusterSetOn_subsingleton hK hfK hw
-        (hsub w (by rw [hUo.frontier_eq]; exact ⟨hw, hwU⟩))
+        (hsub w ⟨hw, fun hwi => hwU (interior_subset hwi)⟩)
   exact ⟨extendFrom U f, continuousOn_extendFrom subset_rfl hall, extendFrom_extends hfc⟩
 
 end Extension
@@ -450,11 +472,11 @@ variable {X Y : Type*} [TopologicalSpace X] [MetricSpace Y] [ProperSpace Y] {U :
 /-- **The extension criterion for a bounded map into a proper metric space.** The special case of
 `TauCeti.exists_continuousOn_closure_eqOn` in which the compact set containing the values of `f` is
 the closure of a bounded image, properness of the codomain being what makes that closure compact. -/
-theorem exists_continuousOn_closure_eqOn_of_isBounded (hUo : IsOpen U) (hfc : ContinuousOn f U)
+theorem exists_continuousOn_closure_eqOn_of_isBounded (hfc : ContinuousOn f U)
     (hfb : Bornology.IsBounded (f '' U))
     (hsub : ∀ w ∈ frontier U, (clusterSetOn f U w).Subsingleton) :
     ∃ F : X → Y, ContinuousOn F (closure U) ∧ EqOn F f U :=
-  exists_continuousOn_closure_eqOn hUo hfc hfb.isCompact_closure
+  exists_continuousOn_closure_eqOn hfc hfb.isCompact_closure
     (fun z hz => subset_closure ⟨z, hz, rfl⟩) hsub
 
 end ProperExtension
@@ -470,8 +492,7 @@ extends continuously to `closure U`.
 
 The limits at the boundary points come from the Cauchy criterion
 `TauCeti.exists_tendsto_of_forall_exists`, so, unlike `TauCeti.exists_continuousOn_closure_eqOn`,
-no compact set containing the values of `f` is needed. Nor is `U` assumed open: a point of
-`closure U` outside `U` lies in `frontier U`. -/
+no compact set containing the values of `f` is needed. Neither theorem assumes `U` open. -/
 theorem exists_continuousOn_closure_eqOn_of_forall_exists (hfc : ContinuousOn f U)
     (h : ∀ w ∈ frontier U, ∀ ε > 0, ∃ δ > 0, ∀ x ∈ U ∩ Metric.ball w δ,
       ∀ y ∈ U ∩ Metric.ball w δ, dist (f x) (f y) ≤ ε) :

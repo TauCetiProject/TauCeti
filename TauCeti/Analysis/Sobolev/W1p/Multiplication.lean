@@ -28,17 +28,16 @@ and gradient component `ψ ∇u + u ∇ψ`.
 Boundedness of `ψ` *and* of `∇ψ` on `Ω` is what the statement needs, and neither is automatic: for
 `ψ x = exp ‖x‖²` on `Ω = ℝⁿ`, multiplication by `ψ` need not preserve `Lᵖ`.  Both bounds are
 therefore carried explicitly, through a single constant `M`, so that the operator norm is visible
-rather than hidden behind an unquantified `∃ C`; that is the convention the PDE roadmap asks for.
-A cutoff built from `ContDiffBump` satisfies them, which is the intended use.
+rather than hidden behind an unquantified `∃ C`.  A cutoff built from `ContDiffBump` satisfies
+them, which is the intended use.
 
-## The operator and the milestone
+## Multiplication as localization
 
-Multiplication by a cutoff is the localization device of Lane A of
-`TauCetiRoadmap/PDE/README.md`: it is the first step of the Meyers--Serrin `H = W` density theorem
-and of the extension operator (Lane A.2 and A.6), and it is what converts an interior estimate
-into an estimate on a compactly contained subdomain.  Having it as a *bounded operator*, rather
-than as a pointwise membership statement, is what lets those arguments range over a family of
-cutoffs while keeping uniform control of the resulting Sobolev norms.
+Multiplication by a cutoff is the standard localization device for Sobolev spaces: it is the first
+step of the Meyers--Serrin `H = W` density theorem and of the extension operator, and it is what
+converts an interior estimate into an estimate on a compactly contained subdomain.  Having it as a
+*bounded operator*, rather than as a pointwise membership statement, is what lets those arguments
+range over a family of cutoffs while keeping uniform control of the resulting Sobolev norms.
 
 The factor `2` in `‖ψ u‖ ≤ 2 M ‖u‖` is explicit, and it is the only shape the downstream
 localization arguments need.
@@ -69,7 +68,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set TopologicalSpace
+open _root_.MeasureTheory Set TopologicalSpace
 open scoped ContDiff Distributions ENNReal Gradient InnerProductSpace
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -77,12 +76,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {psi : E → ℝ} {M : ℝ}
 
 /-! ### The two `Lᵖ` components -/
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The gradient of a smooth function is continuous.  This is what makes the product below
-measurable. -/
-theorem ContDiff.continuous_gradient (hpsi : ContDiff ℝ ∞ psi) : Continuous (∇ psi) :=
-  (hpsi.gradient_right (m := ∞) (by simp)).continuous
 
 omit [FiniteDimensional ℝ E] in
 /-- The value component `ψ u` of the product is `Lᵖ`, because `ψ` is bounded. -/
@@ -110,7 +103,7 @@ theorem W1p.memLp_smul_gradient (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
       exact mul_le_mul_of_nonneg_right (hpsiM x hx) (norm_nonneg _)
   · refine MemLp.of_le ((Lp.memLp (W1p.value u)).const_mul M) ?_ ?_
     · exact (Lp.aestronglyMeasurable _).smul
-        (ContDiff.continuous_gradient hpsi).aestronglyMeasurable
+        (ContDiff.continuous_gradient hpsi (by simp)).aestronglyMeasurable
     · filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
       rw [norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_mul, abs_of_nonneg hM, mul_comm M]
       exact mul_le_mul_of_nonneg_left (hgradM x hx) (abs_nonneg _)
@@ -284,8 +277,8 @@ theorem W1p.norm_gradient_contDiffSMul_sq_le (hpsi : ContDiff ℝ ∞ psi) (hM :
         rw [Real.norm_eq_abs, abs_pow]
         exact pow_le_pow_left₀ (abs_nonneg _) (hpsiM x hx) 2)
   have hI2 : Integrable (fun x => ‖∇ psi x‖ ^ 2 * W1p.value u x ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_value_sq u).bdd_mul
-      ((ContDiff.continuous_gradient hpsi).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
+    (Lp.memLp (W1p.value u)).integrable_sq.bdd_mul
+      ((ContDiff.continuous_gradient hpsi (by simp)).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
       (hmem.mono fun x hx => by
         rw [Real.norm_eq_abs, abs_pow, abs_norm]
         exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x hx) 2)
@@ -324,8 +317,8 @@ theorem W1p.contDiffSMul_ofTestFunctionₗ (hpsi : ContDiff ℝ ∞ psi) (hM : 0
 
 /-- **`W^{1,p}_0(Ω)` is stable under multiplication by a smooth cutoff.**  Since `ψ φ` is again a
 test function supported in `Ω`, the operator maps the generating test-function jets back into
-`W^{1,p}_0(Ω)`, and continuity extends that to their closure.  This is the form the localization
-arguments of Lane A use, because a cutoff must not create a boundary trace. -/
+`W^{1,p}_0(Ω)`, and continuity extends that to their closure.  This is the form localization
+arguments for zero-boundary functions use, because a cutoff must not create a boundary trace. -/
 theorem W1p.contDiffSMul_mem_w1p0Submodule (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
     (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M)
     {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :

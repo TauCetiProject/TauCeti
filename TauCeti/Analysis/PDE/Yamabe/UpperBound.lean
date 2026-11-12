@@ -184,9 +184,6 @@ theorem exists_contMDiff_hasCompactSupport_yamabeQuotient_lt [I.Boundaryless]
   set B := ∫ z, v z ^ 2 with hB_def
   set D := ∫ z, |v z| ^ P with hD_def
   set S := |Scal p| + 1
-  have hS : 0 ≤ S := by positivity
-  have hB : 0 ≤ B := integral_nonneg fun _ ↦ sq_nonneg _
-  have hA : 0 ≤ A := mul_nonneg ha.le (integral_nonneg fun _ ↦ sq_nonneg _)
   set G : ℝ → ℝ := fun η ↦
     ((1 + η) ^ 3 * A + S * (1 + η) * η ^ 2 * B) / ((1 - η) ^ (2 / P) * D ^ (2 / P))
   have hG : Tendsto G (𝓝 0) (𝓝 (A / D ^ (2 / P))) := by
@@ -277,8 +274,7 @@ theorem exists_contMDiff_hasCompactSupport_yamabeQuotient_lt [I.Boundaryless]
   /- Step 5: integrals over `M` of functions supported in `tsupport u` are computed in the ball,
   and integrals over `E` of functions of `Ψ y` are integrals over `F`, scaled by `t ^ n / ρ p`. -/
   have hu1 : ContMDiff I 𝓘(ℝ) 1 u := hu.of_le (by simp)
-  have hgradsq : Continuous fun x ↦ ‖mgradient I u x‖ ^ 2 := by
-    simpa only [real_inner_self_eq_norm_sq] using continuous_inner_mgradient hu1 hu1
+  have hgradsq : Continuous fun x ↦ ‖mgradient I u x‖ ^ 2 := continuous_norm_sq_mgradient hu1
   have hsupp_tsupp {f : M → ℝ} (hf : ∀ x ∉ tsupport u, f x = 0) :
       Function.support f ⊆ φ.source ∩ φ ⁻¹' ball (φ p) R := fun x hx ↦
     hK'W x (htsupp (by_contra fun h ↦ hx (hf x h)))

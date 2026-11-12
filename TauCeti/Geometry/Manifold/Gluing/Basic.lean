@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import Mathlib.Geometry.Manifold.Immersion
 
 /-!
 # Manifolds glued from open pieces
@@ -51,6 +52,8 @@ The gluing condition has the local-deck-transformation shape of
   diffeomorphism exactly when its composite with every embedding is.
 * `TauCeti.maximalAtlas_eq_of_forall_isLocalDiffeomorph`: two `C^n` manifold structures making
   every map of a jointly surjective family a local diffeomorphism have the same maximal atlas.
+* `TauCeti.exists_contMDiffAt_transition_of_isLocalDiffeomorph`: maps that are local
+  diffeomorphisms for a smooth structure on the target have smooth overlap transitions.
 * `TauCeti.maximalAtlas_chartedSpaceOfIsOpenEmbedding_eq`: uniqueness of the glued atlas.
 
 ## Implementation notes
@@ -79,6 +82,48 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
   {J : Type*} {U : J → Type*} [∀ j, TopologicalSpace (U j)] [∀ j, ChartedSpace H (U j)]
   {M : Type*} [TopologicalSpace M] {φ : ∀ j, U j → M}
   (hφ : ∀ j, IsOpenEmbedding (φ j)) (hcover : ∀ x, ∃ j y, φ j y = x)
+
+include hφ in
+/-- Open embeddings into a common topological space have smooth overlap transitions if their
+composites with a common map into an ambient manifold are smooth immersions. -/
+theorem exists_contMDiffAt_transition_of_isImmersion
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    [TopologicalSpace N] [ChartedSpace H' N] {g : M → N}
+    (hg : ∀ j, Manifold.IsImmersion I I' n (g ∘ φ j))
+    (j k : J) (x : U j) (y : U k) (hxy : φ j x = φ k y) :
+    ∃ T : U j → U k, ContMDiffAt I I n T x ∧ φ k ∘ T =ᶠ[𝓝 x] φ j := by
+  have : Nonempty (U k) := ⟨y⟩
+  let e := (hφ k).toOpenPartialHomeomorph (φ k)
+  let T := e.symm ∘ φ j
+  have hx : φ j x ∈ range (φ k) := ⟨y, hxy.symm⟩
+  have hT : ContinuousAt T x :=
+    (e.continuousOn_symm.continuousAt (by
+      simpa only [e, IsOpenEmbedding.toOpenPartialHomeomorph_target] using
+        (hφ k).isOpen_range.mem_nhds hx)).comp (hφ j).continuous.continuousAt
+  have hEq : φ k ∘ T =ᶠ[𝓝 x] φ j := by
+    filter_upwards [(hφ j).continuous.continuousAt.preimage_mem_nhds
+      ((hφ k).isOpen_range.mem_nhds hx)] with z hz
+    exact (hφ k).toOpenPartialHomeomorph_right_inv _ hz
+  refine ⟨T, ?_, hEq⟩
+  rw [ContMDiffAt.iff_comp_isImmersionAt ((hg k).isImmersionAt (T x))]
+  exact ⟨hT, ((hg j).contMDiff x).congr_of_eventuallyEq (hEq.fun_comp g)⟩
+
+/-- Maps into a common topological space have `C^n` overlap transitions if each of them is a `C^n`
+local diffeomorphism for some `C^n` manifold structure on that space. -/
+theorem exists_contMDiffAt_transition_of_isLocalDiffeomorph {c : ChartedSpace H M}
+    (hφc : ∀ j, letI := c; IsLocalDiffeomorph I I n (φ j))
+    (j k : J) (x : U j) (y : U k) (hxy : φ j x = φ k y) :
+    ∃ T : U j → U k, ContMDiffAt I I n T x ∧ φ k ∘ T =ᶠ[𝓝 x] φ j := by
+  let := c
+  have hk := hφc k y
+  refine ⟨hk.localInverse ∘ φ j, ?_, ?_⟩
+  · have h1 := hk.contMDiffAt_localInverse
+    rw [← hxy] at h1
+    exact h1.comp x (hφc j x).contMDiffAt
+  · have h2 := hk.localInverse_eventuallyEq_right
+    rw [← hxy] at h2
+    exact (hφc j x).contMDiffAt.continuousAt.eventually h2
 
 /-- The charted-space structure on a space covered by open embeddings of charted spaces: the chart
 at a point is the inverse of the embedding of a piece containing it, followed by a chart of that
@@ -356,7 +401,7 @@ theorem maximalAtlas_eq_of_forall_isLocalDiffeomorph {c c' : ChartedSpace H M}
   ext e
   rw [key c hc hφc, key c' hc' hφc']
 
-include hdeck in
+omit hdeck in
 /-- **Uniqueness of the glued atlas.** A `C^n` manifold structure on `M` for which the embedding
 of every piece is a `C^n` local diffeomorphism has the same maximal atlas as
 `chartedSpaceOfIsOpenEmbedding`. -/
@@ -364,8 +409,10 @@ theorem maximalAtlas_chartedSpaceOfIsOpenEmbedding_eq [∀ j, IsManifold I n (U 
     {c : ChartedSpace H M} (hc : letI := c; IsManifold I n M)
     (hφc : ∀ j, letI := c; IsLocalDiffeomorph I I n (φ j)) :
     (letI := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover; maximalAtlas I n M) =
-      (letI := c; maximalAtlas I n M) :=
-  maximalAtlas_eq_of_forall_isLocalDiffeomorph hcover
+      (letI := c; maximalAtlas I n M) := by
+  -- The transition maps are `C^n` because each `φ k` is a local diffeomorphism for `c`.
+  have hdeck := exists_contMDiffAt_transition_of_isLocalDiffeomorph hφc
+  exact maximalAtlas_eq_of_forall_isLocalDiffeomorph hcover
     (isManifold_chartedSpaceOfIsOpenEmbedding hφ hcover hdeck) hc
     (isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding hφ hcover hdeck) hφc
 

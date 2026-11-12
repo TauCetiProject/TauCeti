@@ -174,7 +174,7 @@ namespace TauCeti.Comodule.Hom
 universe u v w x
 
 variable {R : Type u} {C : Type v} {M : Type w} {N : Type x}
-variable [CommRing R] [AddCommMonoid C] [Module R C] [Coalgebra R C] [One C]
+variable [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C] [One C]
 variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 variable [AddCommMonoid N] [Module R N] [Comodule R C N] [Module.Flat R C]
 
@@ -182,8 +182,6 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N] [Module.Flat R C]
 theorem mem_fixedSubcomodule_iff_of_injective (f : Hom R C M N)
     (hf : Function.Injective f) (m : M) :
     f m ∈ fixedSubcomodule R C N ↔ m ∈ fixedSubcomodule R C M := by
-  let : AddCommGroup M := Module.addCommMonoidToAddCommGroup R
-  let : AddCommGroup N := Module.addCommMonoidToAddCommGroup R
   refine ⟨fun hm ↦ ?_, f.mem_fixedSubcomodule⟩
   rw [Comodule.mem_fixedSubcomodule] at hm ⊢
   apply Module.Flat.rTensor_preserves_injective_linearMap f.toLinearMap hf

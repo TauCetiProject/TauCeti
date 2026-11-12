@@ -43,6 +43,8 @@ distinct, a discrete valuation ring is also infinite.
   equivalent to `n ≤ addVal (x - y)`.
 * `Irreducible.residue_eq_zero_iff_dvd`: for a uniformizer `ϖ`, the residue of `x` vanishes
   exactly when `ϖ ∣ x`.
+* `Irreducible.smodEq_maximalIdeal_pow_iff_dvd`: for a uniformizer `ϖ`, congruence modulo
+  `𝔪 ^ n` is divisibility of the difference by `ϖ ^ n`.
 * `TauCeti.IsDiscreteValuationRing.infinite`: a discrete valuation ring is infinite, since the
   powers of a uniformizer are pairwise distinct.
 -/
@@ -54,13 +56,6 @@ open IsLocalRing
 namespace TauCeti.IsDiscreteValuationRing
 
 variable {S : Type*} [CommRing S] [IsDomain S] [_root_.IsDiscreteValuationRing S]
-
-/-- Any multiple of the `n`-th power of a uniformizer lies in the `n`-th power of the maximal
-ideal. -/
-theorem mul_pow_mem_maximalIdeal_pow {ϖ : S} (hϖ : Irreducible ϖ) (n : ℕ) (c : S) :
-    c * ϖ ^ n ∈ maximalIdeal S ^ n :=
-  (maximalIdeal S ^ n).mul_mem_left c
-    (Ideal.pow_mem_pow ((mem_maximalIdeal ϖ).2 hϖ.not_isUnit) n)
 
 /-- Cancelling a uniformizer power from membership in the next maximal-ideal power leaves
 the coefficient in the maximal ideal. -/
@@ -165,6 +160,13 @@ theorem addVal_eq_one_iff_irreducible {x : S} :
 theorem _root_.Irreducible.residue_eq_zero_iff_dvd {ϖ : S} (hϖ : Irreducible ϖ) (x : S) :
     residue S x = 0 ↔ ϖ ∣ x := by
   rw [residue_eq_zero_iff, hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
+
+/-- For a uniformizer `ϖ` of a discrete valuation ring, two elements are congruent modulo
+`𝔪 ^ n` exactly when `ϖ ^ n` divides their difference. -/
+theorem _root_.Irreducible.smodEq_maximalIdeal_pow_iff_dvd {ϖ : S} (hϖ : Irreducible ϖ)
+    {n : ℕ} {x y : S} :
+    x ≡ y [SMOD maximalIdeal S ^ n] ↔ ϖ ^ n ∣ x - y := by
+  rw [SModEq.sub_mem, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
 
 /-- A discrete valuation ring is infinite: the powers of a uniformizer are pairwise distinct. -/
 instance infinite : Infinite S := by

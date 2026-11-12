@@ -322,18 +322,13 @@ private theorem initialPentagonRectangleInitialSelfPartner_injective :
   have hD := G.initialPentagonRectangleInitialSelfPartner_isRecut C D
   have hF := G.initialPentagonRectangleInitialSelfPartner_isRecut C F
   rw [← h] at hF
-  obtain ⟨hcommonD, hcolD, hfirstD, hsecondD⟩ :=
+  obtain ⟨_, _, hfirstD, hsecondD⟩ :=
     G.initialPentagonRectangleInitialSelfSource_data C D.val D.property
-  obtain ⟨hcommonF, hcolF, hfirstF, hsecondF⟩ :=
+  obtain ⟨_, _, hfirstF, hsecondF⟩ :=
     G.initialPentagonRectangleInitialSelfSource_data C F.val F.property
-  have honeD :=
-    D.val.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hcommonD hcolD
-  have hbackD := hD.symm honeD hfirstD hsecondD
-  have hbackF := hF.symm
-    (F.val.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hcommonF
-      hcolF) hfirstF hsecondF
+  have hbackD := hD.symm hfirstD hsecondD
+  have hbackF := hF.symm hfirstF hsecondF
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridInitialPentagonRectangleDecomposition.toGridRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone

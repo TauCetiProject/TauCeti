@@ -58,13 +58,9 @@ transported along the identification of `fieldPullback` with the `q`-power map o
 identification is `Isogeny.fieldPullback_unique`: both maps restrict to `x ↦ x ^ q` on the
 coordinate ring, and only one extension to the fraction field exists.
 
-This is the `frobeniusIsogeny` seed of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, where
-it is described as "`f ↦ f ^ q` out of the coordinate ring into the function field … whose
-`MapsInfinity` is the integrality of the coordinates over their `q`-th powers". The seed follows
-Silverman, *The Arithmetic of Elliptic Curves*, II.2.11: part (a) identifies the pullback image
-with the `q`-th powers, part (b) proves pure inseparability, and part (c) computes the degree. The
-roadmap's `Suggested.lean` states the pullback and degree with `sorry`; the formal proofs here are
-original.
+The results follow Silverman, *The Arithmetic of Elliptic Curves*, II.2.11: part (a) identifies
+the pullback image with the `q`-th powers, part (b) proves pure inseparability, and part (c)
+computes the degree. The formal proofs here are original.
 
 ## References
 
@@ -160,10 +156,12 @@ theorem frobeniusIsogeny_ne_id : frobeniusIsogeny W ≠ id W := fun h ↦ by
 
 /-- **The Frobenius isogeny has separable degree one**, as pure inseparability in Silverman
 II.2.11(b) requires. -/
+@[simp]
 theorem separableDegree_frobeniusIsogeny : (frobeniusIsogeny W).separableDegree = 1 :=
   separableDegree_eq_one_of_isPurelyInseparable (frobeniusIsogeny W)
 
 /-- **The Frobenius isogeny has inseparable degree `q`**, combining Silverman II.2.11(b,c). -/
+@[simp]
 theorem inseparableDegree_frobeniusIsogeny :
     (frobeniusIsogeny W).inseparableDegree = Nat.card F := by
   rw [inseparableDegree_eq_degree_of_isPurelyInseparable, degree_frobeniusIsogeny]

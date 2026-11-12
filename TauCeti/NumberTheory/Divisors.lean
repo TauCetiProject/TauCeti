@@ -59,7 +59,7 @@ theorem sum_divisors_ite_eq_add {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → 
       exact Nat.dvd_of_mem_divisors hd
 
 /-- The sum over the divisors `d` of `N` of `f d` restricted to `a = N - d`. -/
-theorem sum_divisors_ite_eq_sub {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → M) :
+theorem sum_divisors_ite_eq_sub {N : ℕ} (a : ℕ) (f : ℕ → M) :
     ∑ d ∈ N.divisors, (if a = N - d then f d else 0) =
       if a < N ∧ N - a ∣ a then f (N - a) else 0 := by
   split_ifs with h
@@ -68,7 +68,7 @@ theorem sum_divisors_ite_eq_sub {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → 
     · intro d hd hne
       have := Nat.divisor_le hd
       rw [ite_eq_right (by omega)]
-    · refine fun h' ↦ absurd (Nat.mem_divisors.mpr ⟨?_, hN⟩) h'
+    · refine fun h' ↦ absurd (Nat.mem_divisors.mpr ⟨?_, by omega⟩) h'
       have h'' := Nat.dvd_add_self_right.mpr h.2
       rwa [Nat.add_sub_cancel' h.1.le] at h''
   · refine Finset.sum_eq_zero fun d hd ↦ ite_eq_right fun ha ↦ h ⟨?_, ?_⟩
@@ -181,7 +181,7 @@ theorem isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal
     have hmul : a * d = n := by
       have ha2 : 2 * a = |t| - |u| := by dsimp [a]; omega
       have hd2 : 2 * d = |t| + |u| := by dsimp [d]; omega
-      nlinarith
+      nlinarith [hd2]
     refine ⟨(a.toNat, d.toNat), ?_, by omega, by omega⟩
     simpa only [Int.toNat_natCast] using
       prodMk_toNat_mem_divisorsAntidiagonal_toNat ha (by omega) hmul

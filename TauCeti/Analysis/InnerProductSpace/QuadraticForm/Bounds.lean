@@ -6,6 +6,7 @@ Authors: Jon Crall, GPT 5.6 High
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.RealAlgebra
 
 /-!
 # Quadratic-form bounds on subspaces
@@ -13,6 +14,10 @@ public import Mathlib.Analysis.InnerProductSpace.Positive
 Scalar-generic lower and upper bounds for the real part of the quadratic form
 of a bounded operator, restricted to a subspace.  These predicates are useful
 well beyond Davis--Kahan perturbation theory.
+
+The predicates, their monotonicity and the form of a real scalar operator only need a
+seminormed inner product space; the comparison with Mathlib's `IsPositive` uses the normed
+setting in which that predicate is defined.
 
 ## Provenance
 
@@ -29,11 +34,14 @@ public section
 open scoped InnerProductSpace
 
 variable {𝕜 E : Type*} [RCLike 𝕜]
-variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 /-! Form-bound predicates extend the `ContinuousLinearMap` API and support
 dot notation on bounded operators. -/
 namespace ContinuousLinearMap
+
+section Seminormed
+
+variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 /-- Lower quadratic-form bound on a subspace. -/
 def LowerFormBoundOn (A : E →L[𝕜] E) (U : Submodule 𝕜 E) (c : ℝ) : Prop :=
@@ -86,6 +94,12 @@ theorem UpperFormBoundOn.mono_subspace {A : E →L[𝕜] E} {U U' : Submodule �
   (upperFormBoundOn_iff A U' c).2 fun x hx =>
     (upperFormBoundOn_iff A U c).1 h x (hU hx)
 
+end Seminormed
+
+section Normed
+
+variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
 /-- Positivity implies the zero lower form bound on the whole space. -/
 theorem IsPositive.lowerFormBoundOn_top {A : E →L[𝕜] E} (hA : A.IsPositive) :
     A.LowerFormBoundOn ⊤ 0 :=
@@ -100,5 +114,22 @@ theorem isPositive_of_lowerFormBoundOn_top {A : E →L[𝕜] E} (hsym : A.IsSymm
   ⟨hsym, fun x => by
     simpa [ContinuousLinearMap.reApplyInnerSelf] using
       (lowerFormBoundOn_iff A ⊤ 0).1 h x Submodule.mem_top⟩
+
+end Normed
+
+section RealScalar
+
+variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+attribute [local instance] realAlgebra realIsScalarTower
+
+/-- The real quadratic form of a real scalar operator is the scalar times the squared norm. -/
+@[simp] theorem re_inner_algebraMap_apply (c : ℝ) (x : E) :
+    RCLike.re ⟪(algebraMap ℝ (E →L[𝕜] E) c) x, x⟫_𝕜 = c * ‖x‖ ^ 2 := by
+  rw [Algebra.algebraMap_eq_smul_one, ← IsScalarTower.algebraMap_smul 𝕜]
+  simp only [smul_apply, one_apply_eq_self]
+  simp [inner_smul_left, RCLike.algebraMap_eq_ofReal]
+
+end RealScalar
 
 end ContinuousLinearMap

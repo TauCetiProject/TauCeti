@@ -18,7 +18,7 @@ The restriction of a module of finite type along an open immersion is of finite 
 inverse of the equivalence between modules on an open subscheme and modules on its slice site
 preserves finite type. Consequently, finite type can be checked on restrictions to any open
 cover, or to all affine opens. This is the finite-type analogue of
-`TauCeti.AlgebraicGeometry.isQuasicoherent_of_isQuasicoherent_restrict`.
+`AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_of_iSup_eq_top`.
 -/
 
 public section
@@ -79,3 +79,30 @@ theorem isFiniteType_of_isFiniteType_restrict_affineOpens {X : Scheme.{u}}
     (iSup_affineOpens_eq_top X) h
 
 end TauCeti.AlgebraicGeometry
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+/-- A module is of finite type on a union of opens if it is of finite type on each member. -/
+theorem isFiniteType_restrict_iSup {X : Scheme.{u}} (M : X.Modules) {ι : Type*}
+    (U : ι → X.Opens) (hU : ∀ i, (M.restrict (U i).ι).IsFiniteType) :
+    (M.restrict (⨆ i, U i).ι).IsFiniteType := by
+  let V := ⨆ i, U i
+  let W (i : ι) := V.ι ⁻¹ᵁ U i
+  apply TauCeti.AlgebraicGeometry.isFiniteType_of_isFiniteType_restrict
+    (M.restrict V.ι) W
+  · apply top_unique
+    intro x _
+    obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp x.property
+    exact TopologicalSpace.Opens.mem_iSup.mpr ⟨i, hi⟩
+  · intro i
+    let f := V.ι.resLE (U i) (W i) le_rfl
+    have : IsOpenImmersion f := by dsimp [f, Scheme.Hom.resLE]; infer_instance
+    have := hU i
+    have : ((M.restrict (U i).ι).restrict f).IsFiniteType := inferInstance
+    exact SheafOfModules.IsFiniteType.of_iso (R := (W i).toScheme.ringCatSheaf)
+      (M := (M.restrict (U i).ι).restrict f)
+      (((restrictFunctorComp f (U i).ι).app M).symm ≪≫
+        (restrictFunctorCongr (V.ι.resLE_comp_ι le_rfl)).app M ≪≫
+        (restrictFunctorComp (W i).ι V.ι).app M)
+
+end AlgebraicGeometry.Scheme.Modules

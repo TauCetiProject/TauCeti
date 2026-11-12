@@ -53,7 +53,7 @@ to `k + 2 · A m` shifts it by `-χ_k(m)`, and spin^c conjugation leaves it fixe
   `TauCeti.PlumbingGraph.le_sInfCharacteristicWeight` the greatest-lower-bound rule, and
   `TauCeti.PlumbingGraph.sInfCharacteristicWeight_le` and
   `TauCeti.PlumbingGraph.exists_characteristicWeight_eq_sInfCharacteristicWeight` saying that on a
-  negative-definite plumbing it is a lower bound and that it is attained.
+  negative-definite plumbing it is a lower bound, and that it is attained on every plumbing.
 * `TauCeti.PlumbingGraph.sInfCharacteristicWeight_add_two_mulVec` and
   `TauCeti.PlumbingGraph.sInfCharacteristicWeight_conjugate`: how that value transforms under the
   two moves on the representative of a spin^c structure.
@@ -62,10 +62,7 @@ to `k + 2 · A m` shifts it by `-χ_k(m)`, and spin^c conjugation leaves it fixe
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-whose target is "Némethi's lattice (co)homology `ℍ⁻`/`ℍ⁰` as a `ℤ[U]`-module from lattice points
-and weight functions … and `d`-invariant analogues": the sublevel sets treated here are the ones
-that filtration is taken over. See Némethi,
+The sublevel-set filtration of lattice homology follows Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/
@@ -170,7 +167,8 @@ theorem bddBelow_range_characteristicWeight (h : P.IsNegativeDefinite)
 /-- The infimum of the characteristic weight function, as an integer.
 
 On a negative-definite plumbing this is a genuine minimum — `sInfCharacteristicWeight_le` bounds
-the weight below by it and `exists_characteristicWeight_eq_sInfCharacteristicWeight` attains it —
+the weight below by it and `exists_characteristicWeight_eq_sInfCharacteristicWeight` attains it
+(on every plumbing) —
 and it is the numerical input to the `d`-invariant of the plumbed three-manifold in the spin^c
 structure recorded by `k`. Without negative-definiteness the range need not be bounded below and
 the value is the junk value `0` of `Int.csInf_of_not_bddBelow`, which is why the name records the
@@ -201,12 +199,16 @@ theorem sInfCharacteristicWeight_le (h : P.IsNegativeDefinite) (k : P.characteri
     (x : V → ℤ) : P.sInfCharacteristicWeight k ≤ P.characteristicWeight k x :=
   csInf_le (P.bddBelow_range_characteristicWeight h k) ⟨x, rfl⟩
 
-/-- On a negative-definite plumbing the infimum of the characteristic weight is attained: some
-lattice point has that exact weight, so it is a minimum. -/
-theorem exists_characteristicWeight_eq_sInfCharacteristicWeight (h : P.IsNegativeDefinite)
-    (k : P.characteristicVectors) :
-    ∃ x : V → ℤ, P.characteristicWeight k x = P.sInfCharacteristicWeight k :=
-  Int.csInf_mem (Set.range_nonempty _) (P.bddBelow_range_characteristicWeight h k)
+/-- The infimum of the characteristic weight is attained: some lattice point has that exact
+weight. When the weight is bounded below, as on a negative-definite plumbing, this is a minimum;
+when it is unbounded below, the infimum is the junk value `0`, which the origin attains. -/
+theorem exists_characteristicWeight_eq_sInfCharacteristicWeight (k : P.characteristicVectors) :
+    ∃ x : V → ℤ, P.characteristicWeight k x = P.sInfCharacteristicWeight k := by
+  by_cases hb : BddBelow (Set.range (P.characteristicWeight k))
+  · rw [sInfCharacteristicWeight_def]
+    exact Int.csInf_mem (Set.range_nonempty _) hb
+  · exact ⟨0, by rw [P.characteristicWeight_zero, sInfCharacteristicWeight_def,
+      Int.csInf_of_not_bddBelow hb]⟩
 
 /-- Passing to the other representative `k + 2 · A m` of the same spin^c structure shifts the
 minimal characteristic weight by the constant `-χ_k(m)`.
@@ -220,9 +222,9 @@ theorem sInfCharacteristicWeight_add_two_mulVec (h : P.IsNegativeDefinite)
     P.sInfCharacteristicWeight
         ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩ =
       P.sInfCharacteristicWeight k - P.characteristicWeight k m := by
-  obtain ⟨x₀, hx₀⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight h
+  obtain ⟨x₀, hx₀⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight
     ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩
-  obtain ⟨x₁, hx₁⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight h k
+  obtain ⟨x₁, hx₁⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight k
   -- the shifted weight at `x₀` and at `x₁ - m` compares the two infima in both directions
   have hx₀' := P.characteristicWeight_add_two_mulVec_eq_sub k m x₀
   have hx₁' := P.characteristicWeight_add_two_mulVec_eq_sub k m (x₁ - m)

@@ -280,9 +280,7 @@ and its topological local degree agrees with analytic local multiplicity
 def toTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
     (hdegree : degree P.β = n) : TopBranchedCover n where
   Z := P.X
-  instSecondCountableTopology := ChartedSpace.secondCountable_of_sigmaCompact ℂ P.X
   π := ⟨P.β, P.β.holomorphic.continuous⟩
-  surjective := P.β.surjective
   isCoveringMapOn := by
     convert P.isCoveringMapOn using 1
     ext y
@@ -512,7 +510,7 @@ theorem coe_β_pow {n : ℕ} (hn : n ≠ 0) : ⇑(pow hn).β = OnePoint.map fun 
 
 /-- The power map `z ↦ z ^ n` of the sphere is a Belyi map of degree `n`. -/
 theorem degree_β_pow {n : ℕ} (hn : n ≠ 0) : degree (pow hn).β = n :=
-  (congrArg degree (coe_β_pow hn)).trans (degree_onePointMap_pow hn)
+  (congrArg degree (coe_β_pow hn)).trans degree_onePointMap_pow
 
 /-- The power map `z ↦ z ^ n` is unramified over `1`. -/
 theorem one_notMem_branchValues_β_pow {n : ℕ} (hn : n ≠ 0) :

@@ -76,7 +76,7 @@ definition of `Tₚ`.
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
   HeckeRing.GLn PowerSeries
 
 open scoped MatrixGroups ModularForm

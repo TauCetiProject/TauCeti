@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 -- `TauCeti.Algebra.CentralSimple.TensorProduct` is imported publicly: its instances
--- `TauCeti.Algebra.IsCentral.tensorProduct` and `IsSimpleRing.tensorProduct` are two of the
+-- `Algebra.IsCentral.tensorProduct_of_field` and `IsSimpleRing.tensorProduct` are two of the
 -- three things that make `TauCeti.CSA.tensorProduct` well defined. It re-exports
 -- `Mathlib.RingTheory.TensorProduct.Basic` (hence the `⊗[K]` notation),
 -- `Mathlib.Algebra.Central.Basic` and `Mathlib.RingTheory.SimpleRing.Basic`, which is why none of
@@ -47,10 +47,10 @@ product respects Brauer equivalence, so that it descends to `BrauerGroup K`.
 The group law itself is deliberately not installed here. Multiplication, commutativity,
 associativity and the identity are all available from the statements below, but the inverse is not:
 it rests on the separate opposite isomorphism `A ⊗[K] Aᵐᵒᵖ ≃ₐ[K] M_{finrank K A}(K)`, which belongs
-to the theory of the Azumaya map rather than to the Brauer-equivalence bookkeeping done here.
-Installing a monoid structure now, to replace it by a group structure later, would only create
-work; so `BrauerGroup K` is left as Mathlib's bare quotient. Which algebras are in the identity
-class is the subject of `TauCeti/Algebra/BrauerGroup/Trivial.lean`, which builds on this file.
+to the theory of the Azumaya map rather than to the Brauer-equivalence bookkeeping done here. So
+`BrauerGroup K` is left as Mathlib's bare quotient here, and the group structure is installed in
+`TauCeti/Algebra/BrauerGroup/Group.lean`. Which algebras are in the identity class is the subject
+of `TauCeti/Algebra/BrauerGroup/Trivial.lean`, which builds on this file.
 
 ## Matrix absorption
 
@@ -97,8 +97,6 @@ moved. This is not a restriction in practice: `BrauerGroup K` is the interesting
 
 ## References
 
-* [Semisimple algebras, Artin-Wedderburn, and the structure of their modules roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
-  Layer 6, "Brauer-triviality prerequisites".
 * P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, CUP (2006), §2.4.
 * R. S. Pierce, *Associative Algebras*, Springer GTM 88 (1982), Chapter 12.
 -/
@@ -144,7 +142,7 @@ abbrev matrix (A : CSA.{u, v} K) (n : ℕ) [NeZero n] : CSA.{u, v} K :=
   of K (Matrix (Fin n) (Fin n) A)
 
 /-- The tensor product of two central simple `K`-algebras, again a central simple `K`-algebra by
-`TauCeti.Algebra.IsCentral.tensorProduct` and `IsSimpleRing.tensorProduct`. This is the
+`Algebra.IsCentral.tensorProduct_of_field` and `IsSimpleRing.tensorProduct`. This is the
 operation that descends to the group law on `BrauerGroup K`
 (`TauCeti.isBrauerEquivalent_tensorProduct_congr`). -/
 abbrev tensorProduct (A B : CSA.{u, v} K) : CSA.{u, v} K :=

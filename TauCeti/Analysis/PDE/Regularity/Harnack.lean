@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Crossover
 public import TauCeti.Analysis.PDE.Regularity.ReverseHolder
 public import TauCeti.Analysis.PDE.Regularity.Supersolution.Lp
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -117,7 +119,6 @@ private theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos [None
   set V := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
   have hV : 0 < V := measureReal_ball_pos mu 0 one_pos
   set K' := max K 1
-  have hK' : 0 < K' := lt_max_of_lt_right one_pos
   refine ⟨p₀, hp₀, min_le_right _ _, K' ^ p₀⁻¹ * D * V ^ p₀⁻¹, by positivity, ?_⟩
   intro Omega a u ε x₀ r h ha hu hε hεu hball
   rcases le_or_gt r 0 with hr | hr
@@ -148,22 +149,15 @@ private theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos [None
     Real.mul_rpow (by positivity) hV.le, ← Real.rpow_mul h2r.le] at h1
   filter_upwards [h1, ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (by linarith)) hpos]
     with x hx hux
-  have hone : 1 ≤ D * V ^ p₀⁻¹ * An ^ p₀⁻¹ * W1p.value u x := by
-    have e : D * (2 * r) ^ (-n / p₀) * ((2 * r) ^ (n * p₀⁻¹) * V ^ p₀⁻¹ * An ^ p₀⁻¹) =
-        D * V ^ p₀⁻¹ * An ^ p₀⁻¹ := by
-      rw [neg_div, Real.rpow_neg h2r.le, div_eq_mul_inv n p₀]
-      field_simp
-    rw [e] at hx
-    rw [← inv_mul_cancel₀ hux.ne']
-    exact mul_le_mul_of_nonneg_right hx hux.le
+  have e : D * (2 * r) ^ (-n / p₀) * ((2 * r) ^ (n * p₀⁻¹) * V ^ p₀⁻¹ * An ^ p₀⁻¹) =
+      D * V ^ p₀⁻¹ * An ^ p₀⁻¹ := by
+    rw [neg_div, Real.rpow_neg h2r.le, div_eq_mul_inv n p₀]
+    field_simp
+  rw [e] at hx
   -- Multiply the crossover estimate by the lower bound.
-  calc Ap ^ p₀⁻¹ ≤ Ap ^ p₀⁻¹ * (D * V ^ p₀⁻¹ * An ^ p₀⁻¹ * W1p.value u x) :=
-        le_mul_of_one_le_right (by positivity) hone
-    _ = (Ap * An) ^ p₀⁻¹ * (D * V ^ p₀⁻¹ * W1p.value u x) := by
-        rw [Real.mul_rpow hAp hAn]
-        ring
-    _ ≤ K' ^ p₀⁻¹ * (D * V ^ p₀⁻¹ * W1p.value u x) := by gcongr
-    _ = K' ^ p₀⁻¹ * D * V ^ p₀⁻¹ * W1p.value u x := by ring
+  rw [mul_assoc (K' ^ p₀⁻¹) D]
+  exact Real.rpow_le_mul_of_mul_le_of_inv_le (inv_nonneg.2 hp₀.le) hAp hAn
+    hcross' hx hux
 
 /-- **Moser's weak Harnack inequality at a small exponent.** Let `n ≥ 1` be the dimension. There
 are an exponent `p₀ ∈ (0, 2]` and a constant `C > 0`, depending only on `λ`, `Λ`, the dimension
@@ -230,44 +224,18 @@ theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
         ⨍ y in ball x₀ (2 * r), (W1p.value u y + δ) ^ p₀ ∂mu :=
       average_congr (hwv2.mono fun y hy => congrArg (· ^ p₀) hy)
     rw [e] at hH
-    -- `0 ≤ u^{p₀} ≤ (u + δ)^{p₀}`, and `(u + δ)^{p₀}` is integrable on `B(x₀, 2r)` as `p₀ ≤ 2`.
-    have hle : ∀ᵐ y ∂mu.restrict (ball x₀ (2 * r)),
-        W1p.value u y ^ p₀ ≤ (W1p.value u y + δ) ^ p₀ :=
-      hu02.mono fun y hy => Real.rpow_le_rpow hy (by linarith) hp₀.le
-    have hint' : IntegrableOn (fun y => (W1p.value u y + δ) ^ p₀) (ball x₀ (2 * r)) mu := by
-      have hmem : MemLp (fun y => W1p.value u y + δ) (ENNReal.ofReal p₀)
-          (mu.restrict (ball x₀ (2 * r))) :=
-        (hmem2.add (memLp_const δ)).mono_exponent
-          ((ENNReal.ofReal_le_ofReal hp₀2).trans_eq (ENNReal.ofReal_ofNat 2))
-      refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp₀).ne'
-        ENNReal.ofReal_ne_top).congr ?_
-      filter_upwards [hu02] with y hy
-      rw [ENNReal.toReal_ofReal hp₀.le, Real.norm_of_nonneg (by linarith)]
-    have hint : IntegrableOn (fun y => W1p.value u y ^ p₀) (ball x₀ (2 * r)) mu := by
-      refine hint'.mono' (hmem2.aestronglyMeasurable.aemeasurable.pow_const p₀).aestronglyMeasurable
-        ?_
-      filter_upwards [hu02, hle] with y hy hyle
-      rwa [Real.norm_of_nonneg (Real.rpow_nonneg hy _)]
     -- The average of `u^{p₀}` is at most that of `(u + δ)^{p₀}`.
-    have hmono : ⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu ≤
-        ⨍ y in ball x₀ (2 * r), (W1p.value u y + δ) ^ p₀ ∂mu := by
-      rw [setAverage_eq, setAverage_eq]
-      exact smul_le_smul_of_nonneg_left (integral_mono_ae hint hint' hle) (by positivity)
+    have hmono := average_rpow_le_average_add_const_rpow hp₀ hδ0.le
+      (hmem2.mono_exponent ((ENNReal.ofReal_le_ofReal hp₀2).trans_eq (ENNReal.ofReal_ofNat 2)))
+      hu02
     filter_upwards [hH, ae_restrict_of_ae_restrict_of_subset hrU hwv] with x hx hwx
     rw [hwx] at hx
     exact (Real.rpow_le_rpow (average_nonneg_of_ae (hu02.mono fun y hy => Real.rpow_nonneg hy _))
       hmono (inv_nonneg.2 hp₀.le)).trans hx
   -- Let `δ → 0`.
   filter_upwards [ae_all_iff.2 hδ] with x hx
-  refine le_of_forall_pos_lt_add fun ε hε => ?_
-  obtain ⟨k, hk⟩ := exists_nat_one_div_lt (div_pos hε hC)
-  calc (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹
-      ≤ C * (W1p.value u x + 1 / ((k : ℝ) + 1)) := hx k
-    _ < C * W1p.value u x + ε := by
-        rw [mul_add]
-        have := mul_lt_mul_of_pos_left hk hC
-        rw [mul_div_cancel₀ ε hC.ne'] at this
-        linarith
+  simpa using ge_of_tendsto'
+    ((tendsto_one_div_add_atTop_nhds_zero_nat.const_add _).const_mul C) hx
 
 /-- **Moser's weak Harnack inequality.** Let `n ≥ 1` be the dimension. For every exponent `s > 0`
 with `(n - 2) s < n`, that is `s < n/(n - 2)` when `n ≥ 3` and `s` arbitrary when `n ≤ 2`, there

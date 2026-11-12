@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.One
-public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
+public import TauCeti.Analysis.Holder.Normed
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Calculus.UniformLimitsDeriv
+import TauCeti.Analysis.Holder.JetBounds
 
 /-!
 # Bounded `C^{k,α}` maps of every order
@@ -372,6 +374,21 @@ theorem nnHolderNorm_iteratedFDeriv_le (f : CkHolderSpace k α E F) :
   rw [norm_eq]
   exact le_add_of_nonneg_left (Finset.sum_nonneg fun j _ ↦ norm_nonneg _)
 
+/-- Every derivative field through order `k` is globally `α`-Hölder when `α ≤ 1`. Lower
+fields are controlled by their supremum norm and the bound on their next derivative. -/
+theorem holderWith_iteratedFDeriv_of_le (f : CkHolderSpace k α E F) (hα : α ≤ 1)
+    {j : ℕ} (hj : j ≤ k) :
+    HolderWith (3 * ‖f‖₊) α (_root_.iteratedFDeriv ℝ j f) := by
+  rcases hj.eq_or_lt with rfl | hj
+  · exact f.memHolder_iteratedFDeriv.holderWith.mono (by
+      exact_mod_cast (f.nnHolderNorm_iteratedFDeriv_le.trans
+        (by nlinarith [norm_nonneg f] : ‖f‖ ≤ 3 * ‖f‖)))
+  · have h := holderOnWith_univ.mp
+      (f.contDiff.contDiffOn.holderOnWith_iteratedFDeriv_of_lt isOpen_univ (convex_univ)
+        (M := ‖f‖₊) (L := ‖f‖₊) hj hα (fun x _ ↦ f.norm_iteratedFDeriv_apply_le hj.le x)
+        (fun x _ ↦ f.norm_iteratedFDeriv_apply_le hj x))
+    convert h using 1; ring
+
 /-- The values of a bounded `C^{k,α}` map are controlled by the supremum norm of its order-zero
 field. -/
 theorem norm_apply_le_iteratedFDeriv_zero (f : CkHolderSpace k α E F) (x : E) :
@@ -405,10 +422,8 @@ seminorm of `D²f`. -/
 theorem holderWith_fderiv_fderiv (f : CkHolderSpace 2 α E F) :
     HolderWith (nnHolderNorm α (_root_.iteratedFDeriv ℝ 2 f)) α (fderiv ℝ (fderiv ℝ f)) := by
   have he : (fun x ↦ continuousMultilinearCurryFin2 ℝ E F (_root_.iteratedFDeriv ℝ 2 f x)) =
-      fderiv ℝ (fderiv ℝ f) := by
-    funext x
-    ext v w
-    simp [_root_.iteratedFDeriv_two_apply]
+      fderiv ℝ (fderiv ℝ f) :=
+    funext fun x ↦ continuousMultilinearCurryFin2_iteratedFDeriv_two _ x
   simpa [Function.comp_def, he] using
     (continuousMultilinearCurryFin2 ℝ E F).isometry.lipschitzWith.holderWith.comp
       f.memHolder_iteratedFDeriv.holderWith
@@ -581,5 +596,35 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderSpace k α
 attribute [irreducible] instNormedAddCommGroup instNormedSpace _root_.TauCeti.CkHolderSpace
 
 end CkHolderSpace
+
+/-- Bounded finite-order Hölder maps vanishing outside a prescribed set, as a submodule of the
+native derivative-graph space. -/
+def supportedCkHolderSubmodule {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (k : ℕ) (α : ℝ≥0) (s : Set E) :
+    Submodule ℝ (CkHolderSpace k α E F) where
+  carrier := {f | ∀ x ∉ s, f x = 0}
+  zero_mem' := by simp
+  add_mem' := by
+    intro f g hf hg x hx
+    simp [hf x hx, hg x hx]
+  smul_mem' := by
+    intro c f hf x hx
+    simp [hf x hx]
+
+/-- Membership in the supported submodule means vanishing outside its defining set. -/
+@[simp]
+theorem mem_supportedCkHolderSubmodule_iff {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {k : ℕ} {α : ℝ≥0} {s : Set E} {f : CkHolderSpace k α E F} :
+    f ∈ supportedCkHolderSubmodule k α s ↔ ∀ x ∉ s, f x = 0 := Iff.rfl
+
+/-- The support of an element of the supported Hölder submodule lies in its defining set. -/
+theorem support_subset_of_mem_supportedCkHolderSubmodule {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {k : ℕ} {α : ℝ≥0} {s : Set E} {f : CkHolderSpace k α E F}
+    (hf : f ∈ supportedCkHolderSubmodule k α s) : Function.support f ⊆ s := by
+  intro x hx
+  by_contra h
+  exact hx (hf x h)
 
 end TauCeti

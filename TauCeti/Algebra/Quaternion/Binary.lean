@@ -40,9 +40,7 @@ open scoped Quaternion
 
 namespace TauCeti.QuaternionAlgebra
 
-universe u
-
-variable {R : Type u} [CommRing R]
+variable {R : Type*} [CommRing R]
 
 /-- The diagonal binary form `⟨w 0, w 1⟩` is isometric to Mathlib's quaternion plane form
 `CliffordAlgebraQuaternion.Q (w 0) (w 1)`, whose Clifford algebra is `ℍ[R, w 0, w 1]`, through
@@ -58,14 +56,11 @@ are equivalent, then the quaternion algebras `ℍ[R,a,b]` and `ℍ[R,c,d]` are i
 
 This follows by functoriality of Clifford algebras under isometries and Mathlib's identification
 of the Clifford algebra of a binary diagonal form with the corresponding quaternion algebra. -/
-theorem nonempty_algEquiv_of_equivalent_binary (a b c d : R)
-    (h : (weightedSumSquares R ![a, b]).Equivalent
-      (weightedSumSquares R ![c, d])) :
-    Nonempty (ℍ[R,(a : R),(b : R)] ≃ₐ[R] ℍ[R,(c : R),(d : R)]) := by
-  obtain ⟨e⟩ := h
-  exact ⟨CliffordAlgebraQuaternion.equiv.symm |>.trans
+theorem nonempty_algEquiv_of_equivalent_binary {a b c d : R}
+    (h : (weightedSumSquares R ![a, b]).Equivalent (weightedSumSquares R ![c, d])) :
+    Nonempty (ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d]) :=
+  h.map fun e ↦ CliffordAlgebraQuaternion.equiv.symm.trans <|
     (CliffordAlgebra.equivOfIsometry ((weightedSumSquaresIsometryEquivQ ![a, b]).symm.trans
-      (e.trans (weightedSumSquaresIsometryEquivQ ![c, d])))) |>.trans
-    CliffordAlgebraQuaternion.equiv⟩
+      (e.trans (weightedSumSquaresIsometryEquivQ ![c, d])))).trans CliffordAlgebraQuaternion.equiv
 
 end TauCeti.QuaternionAlgebra

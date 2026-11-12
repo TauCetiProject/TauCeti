@@ -23,7 +23,7 @@ A nonempty convex subset of `t` whose intrinsic interior misses that of `t`, suc
 of the intrinsic frontier of `t`, has strictly smaller dimension
 (`TauCeti.finrank_vectorSpan_lt_of_disjoint_intrinsicInterior`): equal dimensions would force
 equal affine spans, and the intrinsic interior is monotone on sets with a common affine span
-(`TauCeti.intrinsicInterior_mono_of_affineSpan_eq`). Consequently, in a family of nonempty convex
+(`TauCeti.intrinsicInterior_mono_of_affineSpan_eq`). Consequently, in a family of convex
 cells with pairwise disjoint intrinsic interiors whose intrinsic frontiers are covered by a set
 `S` and the smaller cells, every point of a cell lies in `S` or in the intrinsic interior of a
 cell contained in it (`TauCeti.mem_intrinsicInterior_or_of_mem`), and the intrinsic interior of a
@@ -36,8 +36,11 @@ intrinsic interior points of `t` in `U` are intrinsic interior points of `s`
 every small move along the affine span stays in the set
 (`TauCeti.eventually_add_smul_mem_of_mem_intrinsicInterior`). Consequently an affine function
 which is nonnegative on a set and vanishes at one of its intrinsic interior points vanishes on the
-whole set (`TauCeti.eq_zero_of_nonneg_of_mem_intrinsicInterior`). The intrinsic frontier of a
-closed set consists of its points outside its intrinsic interior
+whole set (`TauCeti.eq_zero_of_nonneg_of_mem_intrinsicInterior`). In particular, an inequality
+`a ≤ b` between affine functions on `s`, which persists on the convex hull of `s`
+(`TauCeti.le_of_forall_le_of_mem_convexHull`), is strict on the intrinsic interior of that hull
+unless `a = b` on all of it (`TauCeti.eq_of_le_of_mem_intrinsicInterior`). The intrinsic
+frontier of a closed set consists of its points outside its intrinsic interior
 (`IsClosed.sdiff_intrinsicInterior`). These are the tools for computing intrinsic interiors and
 frontiers of concrete cells, such as the bands of `TauCeti/Analysis/Convex/RegionBetween.lean`,
 and the cells of a hyperplane arrangement.
@@ -62,6 +65,14 @@ unit vector `u` of `V` the number `(gauge (-c +ᵥ C) u)⁻¹` is the length of 
 direction `u` inside `C`. No finite-dimensionality is needed. This identifies every nonempty
 compact convex set of a finite-dimensional space with a disk, which is how Brouwer's fixed-point
 theorem passes from the disk to compact convex sets.
+
+`Convex.inter_affineSpan_subset` says that a convex set meeting a set and avoiding its
+intrinsic frontier meets its affine span only inside the set. Its statement and line-segment
+argument, and the relative-frontier nowhere-density and local-membership lemmas, are adapted from
+`Mei/Analysis/Convex/Intrinsic.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
+Original copyright (c) 2026 Mei contributors; original author: Codex.
 -/
 
 public section
@@ -173,7 +184,65 @@ theorem intrinsicInterior_inter_intrinsicInterior_subset :
   exact ⟨hys (affineSpan_mono 𝕜 inter_subset_left hy),
     hyt (affineSpan_mono 𝕜 inter_subset_right hy)⟩
 
+/-- The intrinsic frontier of a closed cell is covered by the other cells contained in it, when
+every point of the cell lies in the intrinsic interior of a cell contained in it. -/
+theorem intrinsicFrontier_subset_iUnion_of_exists_mem_intrinsicInterior {ι : Type*}
+    {Q : ι → Set P} (i : ι) (hQc : IsClosed (Q i))
+    (h : ∀ x ∈ Q i, ∃ j, x ∈ intrinsicInterior 𝕜 (Q j) ∧ Q j ⊆ Q i) :
+    intrinsicFrontier 𝕜 (Q i) ⊆ ⋃ (j) (_ : j ≠ i ∧ Q j ⊆ Q i), Q j := by
+  intro x hx
+  obtain ⟨j, hxj, hji⟩ := h x (intrinsicFrontier_subset hQc hx)
+  have hxi : x ∉ intrinsicInterior 𝕜 (Q i) := by
+    rw [← intrinsicClosure_sdiff_intrinsicInterior] at hx
+    exact hx.2
+  exact mem_iUnion₂.2 ⟨j, ⟨fun hji' => hxi (hji' ▸ hxj), hji⟩, intrinsicInterior_subset hxj⟩
+
+/-- The relative boundary of a closed set is nowhere dense in its affine span. -/
+theorem _root_.IsClosed.isNowhereDense_preimage_intrinsicFrontier {s : Set P} (hs : IsClosed s)
+    {A : AffineSubspace 𝕜 P} (hA : affineSpan 𝕜 s = A) :
+    IsNowhereDense ((↑) ⁻¹' intrinsicFrontier 𝕜 s : Set A) := by
+  subst hA
+  rw [intrinsicFrontier, preimage_image_eq _ Subtype.val_injective,
+    isClosed_frontier.isNowhereDense_iff]
+  exact interior_frontier (hs.preimage continuous_subtype_val)
+
+/-- Off the relative boundary of a set, membership in the set is locally constant within
+its affine span. -/
+theorem eventually_mem_iff_of_notMem_intrinsicFrontier {s : Set P}
+    {A : AffineSubspace 𝕜 P} (hA : affineSpan 𝕜 s = A) {x : A}
+    (hx : (x : P) ∉ intrinsicFrontier 𝕜 s) :
+    ∀ᶠ y : A in nhds x, ((y : P) ∈ s ↔ (x : P) ∈ s) := by
+  subst hA
+  have hxfr : x ∉ frontier ((↑) ⁻¹' s : Set (affineSpan 𝕜 s)) :=
+    fun hfr => hx ⟨x, hfr, rfl⟩
+  by_cases hxP : (x : P) ∈ s
+  · have hint : x ∈ interior ((↑) ⁻¹' s : Set (affineSpan 𝕜 s)) :=
+      (mem_interior_iff_notMem_frontier
+        (s := ((↑) ⁻¹' s : Set (affineSpan 𝕜 s))) hxP).mpr hxfr
+    filter_upwards [mem_interior_iff_mem_nhds.mp hint] with y hy
+    exact iff_of_true hy hxP
+  · have hint : x ∈ interior (((↑) ⁻¹' s : Set (affineSpan 𝕜 s))ᶜ) :=
+      (mem_interior_iff_notMem_frontier
+        (s := ((↑) ⁻¹' s : Set (affineSpan 𝕜 s))ᶜ) hxP).mpr
+        (by rwa [frontier_compl])
+    filter_upwards [mem_interior_iff_mem_nhds.mp hint] with y hy
+    exact iff_of_false hy hxP
+
 end AffineSpan
+
+section Frontier
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {C S : Set E}
+
+/-- A point of `C` lying in a set `S` which the intrinsic interior of `C` avoids lies in the
+intrinsic frontier of `C`. -/
+theorem inter_subset_intrinsicFrontier_of_disjoint
+    (hint : Disjoint (intrinsicInterior ℝ C) S) : C ∩ S ⊆ intrinsicFrontier ℝ C :=
+  fun x ⟨hxC, hxS⟩ => by
+    rw [← intrinsicClosure_sdiff_intrinsicInterior]
+    exact ⟨subset_intrinsicClosure hxC, fun hxi => Set.disjoint_left.1 hint hxi hxS⟩
+
+end Frontier
 
 section FiniteDimensional
 
@@ -205,7 +274,6 @@ variable {ι : Type*} {P : ι → Set E} {S : Set E}
 smaller-dimensional cell contained in it, when the frontier of every cell is covered by `S` and
 the other cells contained in it. -/
 theorem mem_intrinsicInterior_or_of_mem (hPv : ∀ i, Convex ℝ (P i))
-    (hPne : ∀ i, (P i).Nonempty)
     (hri : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (P i)) (intrinsicInterior ℝ (P j)))
     (hfr : ∀ i, intrinsicFrontier ℝ (P i) ⊆ S ∪ ⋃ (j) (_ : j ≠ i ∧ P j ⊆ P i), P j)
     {i : ι} {x : E} (hx : x ∈ P i) :
@@ -225,7 +293,7 @@ theorem mem_intrinsicInterior_or_of_mem (hPv : ∀ i, Convex ℝ (P i))
   obtain ⟨j, ⟨hji, hjP⟩, hxj⟩ := hx'
   -- the cell `P j` lies in the frontier of `P i`, so it has smaller dimension
   have hj : _ < n :=
-    hn ▸ finrank_vectorSpan_lt_of_disjoint_intrinsicInterior (hPv j) (hPne j) hjP (hri hji)
+    hn ▸ finrank_vectorSpan_lt_of_disjoint_intrinsicInterior (hPv j) ⟨x, hxj⟩ hjP (hri hji)
   rcases ih _ hj hxj rfl with h | h | ⟨k, hk, hkj, hxk⟩
   · exact .inr (.inr ⟨j, hj, hjP, h⟩)
   · exact .inr (.inl h)
@@ -235,13 +303,12 @@ theorem mem_intrinsicInterior_or_of_mem (hPv : ∀ i, Convex ℝ (P i))
 interiors of the cells avoid `S`, the intrinsic interior of a cell meets no other cell of smaller
 or equal dimension. -/
 theorem eq_or_finrank_lt_of_mem_intrinsicInterior (hPv : ∀ i, Convex ℝ (P i))
-    (hPne : ∀ i, (P i).Nonempty)
     (hri : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (P i)) (intrinsicInterior ℝ (P j)))
     (hfr : ∀ i, intrinsicFrontier ℝ (P i) ⊆ S ∪ ⋃ (j) (_ : j ≠ i ∧ P j ⊆ P i), P j)
     (hS : ∀ i, Disjoint (intrinsicInterior ℝ (P i)) S) {i j : ι} {x : E}
     (hxi : x ∈ intrinsicInterior ℝ (P i)) (hxj : x ∈ P j) :
     i = j ∨ Module.finrank ℝ (vectorSpan ℝ (P i)) < Module.finrank ℝ (vectorSpan ℝ (P j)) := by
-  rcases mem_intrinsicInterior_or_of_mem hPv hPne hri hfr hxj with h | h | ⟨k, hk, -, hxk⟩
+  rcases mem_intrinsicInterior_or_of_mem hPv hri hfr hxj with h | h | ⟨k, hk, -, hxk⟩
   · by_contra hij
     exact Set.disjoint_left.1 (hri fun h => hij (.inl h)) hxi h
   · exact (Set.disjoint_left.1 (hS i) hxi h).elim
@@ -253,6 +320,20 @@ end Cells
 
 end FiniteDimensional
 
+section Convex
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E]
+
+/-- An inequality between two affine functions on a set persists on its convex hull. -/
+theorem le_of_forall_le_of_mem_convexHull {a b : E →ᵃ[ℝ] ℝ} {s : Set E}
+    (h : ∀ x ∈ s, a x ≤ b x) {x : E} (hx : x ∈ convexHull ℝ s) : a x ≤ b x := by
+  have hc : Convex ℝ {y | a y ≤ b y} := by
+    convert (convex_Ici (0 : ℝ)).affine_preimage (b - a) using 1
+    ext y
+    simp [sub_nonneg]
+  exact convexHull_min (fun y hy ↦ h y hy) hc hx
+
+end Convex
 
 open Bornology Metric Topology
 open scoped Pointwise
@@ -301,12 +382,24 @@ lemma isVonNBounded_setOf_add_mem (hb : IsBounded C) :
   rw [mem_closedBall, dist_self_add_left] at hv'
   rwa [mem_closedBall_zero_iff, ← Submodule.norm_coe]
 
-/-- For `c` in the affine span of `C`, `c + v` lies in the intrinsic frontier of `C` iff `v`
-lies in the frontier, within the direction, of the displacement set `{w | c + w ∈ C}`. -/
-lemma add_mem_intrinsicFrontier_iff (hc : c ∈ affineSpan ℝ C)
-    (v : (affineSpan ℝ C).direction) :
+/-- `c + v` lies in the intrinsic frontier of `C` iff `v` lies in the frontier, within the
+direction of the affine span of `C`, of the displacement set `{w | c + w ∈ C}`. -/
+lemma add_mem_intrinsicFrontier_iff (v : (affineSpan ℝ C).direction) :
     c + (v : E) ∈ intrinsicFrontier ℝ C ↔
       v ∈ frontier {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} := by
+  by_cases hc : c ∈ affineSpan ℝ C
+  swap
+  · -- A displacement `w` in the direction with `c + w` in the span puts `c` in the span.
+    have key (w : (affineSpan ℝ C).direction) (h : c + (w : E) ∈ affineSpan ℝ C) :
+        c ∈ affineSpan ℝ C := by
+      have := AffineSubspace.vadd_mem_of_mem_direction (neg_mem w.2) h
+      rwa [vadd_eq_add, show -(w : E) + (c + w) = c by abel] at this
+    have hempty : {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} = ∅ :=
+      Set.eq_empty_of_forall_notMem fun w hw ↦ hc (key w (subset_affineSpan ℝ C hw))
+    rw [hempty, frontier_empty]
+    simp only [Set.mem_empty_iff_false, iff_false]
+    rintro ⟨y, -, hy⟩
+    exact hc (key v (hy ▸ y.2))
   let cA : affineSpan ℝ C := ⟨c, hc⟩
   let : Nonempty (affineSpan ℝ C) := ⟨cA⟩
   let e := Homeomorph.vaddConst cA
@@ -367,6 +460,17 @@ theorem eq_zero_of_nonneg_of_mem_intrinsicInterior {g : E →ᵃ[ℝ] ℝ} (hg :
   have h := hg _ hε
   rw [hgε, hgc] at h
   nlinarith [hg y hy, mem_Ioi.1 hεpos]
+
+/-- If `a ≤ b` on `s` for two affine functions, with equality at an intrinsic interior point of
+the convex hull of `s`, then `a = b` on the whole convex hull. -/
+theorem eq_of_le_of_mem_intrinsicInterior {a b : E →ᵃ[ℝ] ℝ} {s : Set E}
+    (h : ∀ x ∈ s, a x ≤ b x) {x y : E} (hx : x ∈ intrinsicInterior ℝ (convexHull ℝ s))
+    (hxe : a x = b x) (hy : y ∈ convexHull ℝ s) : a y = b y := by
+  have := eq_zero_of_nonneg_of_mem_intrinsicInterior (g := b - a)
+    (fun z hz ↦ by simpa [sub_nonneg] using le_of_forall_le_of_mem_convexHull h hz) hx
+    (by simp [hxe]) hy
+  rw [AffineMap.coe_sub, Pi.sub_apply, sub_eq_zero] at this
+  exact this.symm
 
 /-- A subset `u` of a convex set `s` meeting the intrinsic interior of `s` has its intrinsic
 interior inside that of `s`. -/
@@ -488,7 +592,7 @@ theorem coe_convexClosedBallHomeomorph_mem_intrinsicFrontier_iff (hconv : Convex
     (convexClosedBallHomeomorph hconv hcl hb hc v : E) ∈ intrinsicFrontier ℝ C ↔
       ‖v.1‖ = 1 := by
   rw [coe_convexClosedBallHomeomorph_apply_eq_gaugeRescale,
-    add_mem_intrinsicFrontier_iff (subset_affineSpan ℝ C (intrinsicInterior_subset hc)),
+    add_mem_intrinsicFrontier_iff,
     ← gauge_eq_one_iff_mem_frontier (convex_setOf_add_mem hconv)
       (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc),
     gauge_gaugeRescale _
@@ -496,3 +600,32 @@ theorem coe_convexClosedBallHomeomorph_mem_intrinsicFrontier_iff (hconv : Convex
       (isVonNBounded_setOf_add_mem hb), gauge_closedBall zero_le_one, div_one]
 
 end TauCeti
+
+namespace Convex
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [ContinuousSMul ℝ V]
+
+/-- A convex set meeting a set and avoiding its intrinsic frontier meets its affine span
+only inside that set. Neither set needs to be closed. -/
+theorem inter_affineSpan_subset {S U : Set V} (hU : Convex ℝ U) (hUS : (U ∩ S).Nonempty)
+    (hfr : Disjoint U (intrinsicFrontier ℝ S)) : U ∩ affineSpan ℝ S ⊆ S := by
+  rintro z ⟨hzU, hzA⟩
+  obtain ⟨w, hwU, hwP⟩ := hUS
+  let g : unitInterval → affineSpan ℝ S := fun r =>
+    ⟨AffineMap.lineMap w z (r : ℝ),
+      AffineMap.lineMap_mem _ (subset_affineSpan ℝ S hwP) hzA⟩
+  have hg : Continuous g :=
+    (AffineMap.lineMap_continuous.comp continuous_subtype_val).subtype_mk _
+  let B : Set (affineSpan ℝ S) := (↑) ⁻¹' S
+  have havoid : Set.range g ⊆ (frontier B)ᶜ := by
+    rintro _ ⟨r, rfl⟩ hr
+    exact hfr.notMem_of_mem_left (hU.lineMap_mem hwU hzU r.property) ⟨g r, hr, rfl⟩
+  rw [compl_frontier_eq_union_interior] at havoid
+  rcases (isPreconnected_range hg).subset_or_subset isOpen_interior isOpen_interior
+      (disjoint_compl_right.mono interior_subset interior_subset) havoid with hin | hout
+  · simpa [B, g] using interior_subset (hin (Set.mem_range_self 1))
+  · have := interior_subset (hout (Set.mem_range_self 0))
+    exact (this (by simpa [B, g] using hwP)).elim
+
+end Convex

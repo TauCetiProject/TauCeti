@@ -6,44 +6,45 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.IsolatedZeros
-public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
-# Critical points of holomorphic maps
+# Critical points of analytic maps
 
-For a nonconstant analytic map on a connected complex domain, the derivative cannot vanish on a
-neighborhood of any point. Since the derivative is analytic, the identity principle and the
-isolated-zero theorem then show that every critical point is isolated. This local fact is a first
-step toward the local theory of holomorphic curves and the analysis of their moduli spaces.
+For a map `f : 𝕜 → F` (with `𝕜 = ℝ` or `ℂ`) that is analytic on a preconnected set `U` and not
+constant there, every critical point of `f` in `U` is isolated: the derivative of `f` does not
+vanish on a punctured neighborhood of any point of `U`. For `𝕜 = ℂ` this is the familiar fact
+about nonconstant holomorphic maps on a domain, used in the local theory of holomorphic curves.
 -/
 
 public section
 
-open Filter
+open Filter Metric
 open scoped Topology
 
 namespace AnalyticOnNhd
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-  {f : ℂ → F} {U : Set ℂ}
+variable {𝕜 : Type*} [RCLike 𝕜] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [CompleteSpace F] {f : 𝕜 → F} {U : Set 𝕜}
 
-/-- **Critical points of a nonconstant analytic map are isolated.** Let `f` be analytic on an open,
+/-- **Critical points of a nonconstant analytic map are isolated.** Let `f` be analytic on a
 preconnected set `U`, and suppose it is not constant there. At each `z ∈ U`, its derivative is
 nonzero on a punctured neighborhood of `z`. In particular, every critical point of `f` in `U` is
 isolated. -/
-theorem eventually_deriv_ne_zero_of_not_eqOn_const (hf : AnalyticOnNhd ℂ f U)
-    (hUo : IsOpen U) (hUc : IsPreconnected U)
-    (hnc : ¬ ∃ c, Set.EqOn f (fun _ : ℂ ↦ c) U) {z : ℂ} (hz : z ∈ U) :
+theorem eventually_deriv_ne_zero_of_not_eqOn_const (hf : AnalyticOnNhd 𝕜 f U)
+    (hU : IsPreconnected U) (hnc : ¬ ∃ c, Set.EqOn f (fun _ : 𝕜 ↦ c) U) {z : 𝕜} (hz : z ∈ U) :
     ∀ᶠ w in 𝓝[≠] z, deriv f w ≠ 0 := by
-  have hdf := hf.deriv
-  rcases (hf z hz).deriv.eventually_eq_zero_or_eventually_ne_zero with hzero | hnonzero
-  · have hdfzero := hdf.eqOn_zero_of_preconnected_of_eventuallyEq_zero hUc hz hzero
-    exfalso
-    apply hnc
-    refine ⟨f z, fun w hw ↦ ?_⟩
-    exact (hUo.is_const_of_deriv_eq_zero hUc hf.differentiableOn hdfzero hz hw).symm
-  · exact hnonzero
+  refine (hf z hz).deriv.eventually_eq_zero_or_eventually_ne_zero.resolve_left fun hzero ↦ hnc ?_
+  obtain ⟨r, hr, hball⟩ :=
+    eventually_nhds_iff_ball.1 (hzero.and (hf z hz).eventually_analyticAt)
+  have hloc : f =ᶠ[𝓝 z] fun _ ↦ f z :=
+    eventually_of_mem (ball_mem_nhds z hr) fun _ hw ↦
+      isOpen_ball.is_const_of_deriv_eq_zero (convex_ball z r).isPreconnected
+        (fun y hy ↦ (hball y hy).2.differentiableAt.differentiableWithinAt)
+        (fun y hy ↦ (hball y hy).1) hw (mem_ball_self hr)
+  exact ⟨f z, hf.eqOn_of_preconnected_of_eventuallyEq analyticOnNhd_const hU hz hloc⟩
 
 end AnalyticOnNhd
 

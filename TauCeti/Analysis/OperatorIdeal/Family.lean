@@ -17,7 +17,9 @@ ideal, while the extended value `∞` allows one family to describe both members
 
 A symmetric operator-ideal family additionally identifies the gauges of an operator and its
 adjoint. This requires source and target to live in the same universe, since taking adjoints swaps
-them.
+them. In that setting every operator-ideal family is already adjoint invariant
+(`OperatorIdealFamily.gauge_adjoint`), so the symmetric variant is a bundled form rather than an
+extra condition.
 
 This file provides the common algebraic API of these families: zero and negation laws,
 definiteness, finite-sum subadditivity, one-sided ideal inequalities, contraction bounds, and
@@ -75,7 +77,13 @@ structure OperatorIdealFamily (𝕜 : Type u) [RCLike 𝕜] where
 attribute [simp] OperatorIdealFamily.gauge_smul
 
 /-- A symmetric operator-ideal family is an operator-ideal family whose diagonal-universe gauge
-is invariant under adjoints. -/
+is invariant under adjoints.
+
+Adjoint invariance is automatic here: `OperatorIdealFamily.gauge_adjoint`, proved in
+`TauCeti.Analysis.OperatorIdeal.Family.Modulus`, shows it for every `OperatorIdealFamily.{u, v, v}`
+over any `RCLike` field and every pair of Hilbert spaces in universe `v`. The `gauge_adjoint` field
+therefore adds no condition beyond the underlying family; the structure is kept as the bundled
+form that records adjoint invariance alongside the gauge. -/
 structure SymmetricOperatorIdealFamily (𝕜 : Type u) [RCLike 𝕜]
     extends OperatorIdealFamily.{u, v, v} 𝕜 where
   /-- Taking the adjoint preserves the gauge. -/
@@ -196,7 +204,5 @@ theorem ext {Φ Ψ : SymmetricOperatorIdealFamily.{u, v} 𝕜}
       rfl
 
 end SymmetricOperatorIdealFamily
-
-attribute [simp] SymmetricOperatorIdealFamily.gauge_adjoint
 
 end TauCeti

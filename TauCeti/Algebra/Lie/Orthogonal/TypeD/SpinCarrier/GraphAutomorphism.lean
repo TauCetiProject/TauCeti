@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.PointsFunctor
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.NumberedSymmetry
-public import TauCeti.CategoryTheory.Aut.Basic
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.GraphAutomorphism
 import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generation
 
@@ -59,8 +58,8 @@ the spin group scheme or the pinned simply connected Chevalley--Demazure group s
 What this feeds is the graph-twisted family `²Dₙ(q)`, whose Steinberg endomorphism is `γ ∘ Frob_q`
 for the `γ` built here and the `q`-power Frobenius of
 `TauCeti/Algebra/Lie/Orthogonal/TypeD/SpinCarrier/Frobenius.lean`, on the very carrier
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeD.lean` attaches to the three families on a type-`D`
-diagram. The type-`A` counterpart of this construction is
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeD/Basic.lean` attaches to the three families on a
+type-`D` diagram. The type-`A` counterpart of this construction is
 `TauCeti/Algebra/Lie/SpecialLinear/StandardCarrier/GraphAutomorphism.lean`, and the counterpart on
 the Geck carrier is
 `TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/GeckLattice/GraphAutomorphism.lean`.
@@ -334,7 +333,7 @@ private theorem graphAut_hom :
     (graphAut n hn).asIso.hom =
       eqToHom (groupScheme_eq_kostantToralGroupScheme n hn) ≫ (toralGraphAut n hn).asIso.hom ≫
         eqToHom (groupScheme_eq_kostantToralGroupScheme n hn).symm := by
-  rw [graphAut, TauCeti.CategoryTheory.autMulEquivOfIso_hom, eqToIso.inv, eqToIso.hom]
+  simp [graphAut]
 
 /-- **The graph automorphism renumbers every pinned raising and lowering root subgroup by the fork
 exchange, without changing its additive parameter.** This is the equation `γ (x_α(t)) = x_{γ α}(t)`

@@ -236,14 +236,17 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} {n : Type w} [Fintype n] [DecidableEq n] [Nonempty n]
   [Invertible (2 : K)]
 
+omit [Nonempty n] in
 /-- In a matrix-product model of a nondegenerate six-dimensional even Clifford algebra,
 reversal exchanges the two central idempotents. -/
 @[simp]
 theorem map_reverseEven_symm_one_zero_of_finrank_eq_six
     (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K)
     (hQ : Q.Nondegenerate) (hV : finrank K V = 6) :
-    e (reverseEven Q (e.symm (1, 0))) = (0, 1) :=
-  TauCeti.matrixProdReverse_one_zero hQ hV e
+    e (reverseEven Q (e.symm (1, 0))) = (0, 1) := by
+  rcases isEmpty_or_nonempty n with hn | hn
+  · exact Subsingleton.elim _ _
+  exact TauCeti.matrixProdReverse_one_zero hQ hV e
 
 /-- Projecting to the first matrix factor identifies the reverse-unitary group of a
 nondegenerate six-dimensional even Clifford algebra with the general linear group.
@@ -332,7 +335,7 @@ four. -/
 theorem finrank_spinPlus_eq_four_of_finrank_eq_six (hV : finrank K V = 6) :
     finrank K (spinPlus Q P) = 4 := by
   have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  rw [finrank_spinPlus P (P.W_ne_bot_of_finrank_eq_six hV),
+  rw [finrank_spinPlus P,
     P.finrank_W_eq_three_of_finrank_eq_six hV]
   norm_num
 
@@ -393,6 +396,7 @@ noncomputable def hyperbolicSixEvenEquivMatrixProd :
     (splitEvenPolarization_W_ne_bot K (by norm_num))
       ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
 
+omit [NeZero (2 : K)] in
 /-- The hyperbolic matrix-product model is the model of the canonical split polarization. -/
 theorem hyperbolicSixEvenEquivMatrixProd_apply (x : even (splitEvenForm K 3)) :
     hyperbolicSixEvenEquivMatrixProd K x =

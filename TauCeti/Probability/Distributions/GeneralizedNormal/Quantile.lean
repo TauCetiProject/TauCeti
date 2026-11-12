@@ -63,7 +63,7 @@ private theorem cdf_generalizedNormalMeasure_signed_inverse (hs : 0 < s) (hp : 0
   have ht : 2 * u - 1 ≠ 0 := by intro h; apply hhalf; linarith
   have hv : |2 * u - 1| ∈ Ioo (0 : ℝ) 1 :=
     ⟨abs_pos.mpr ht, abs_lt.mpr ⟨by linarith [hu.1], by linarith [hu.2]⟩⟩
-  set b := inverseRegularizedGamma p⁻¹ |2 * u - 1| with hb
+  set b := inverseRegularizedGamma p⁻¹ |2 * u - 1|
   have hbpos : 0 < b := inverseRegularizedGamma_pos (inv_pos.mpr hp) hv
   have hpow : 0 < b ^ p⁻¹ := rpow_pos_of_pos hbpos _
   have hG : regularizedGamma p⁻¹ b = |2 * u - 1| :=
@@ -90,7 +90,7 @@ theorem quantile_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) (hu : u ∈ 
 /-- Generalized normal quantiles vary continuously with interior probability levels. -/
 theorem continuousOn_quantile_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) :
     ContinuousOn (generalizedNormalMeasure m s p).quantile (Ioo 0 1) :=
-  Measure.continuousOn_quantile _ (continuous_cdf_generalizedNormalMeasure hs hp)
+  Measure.continuousOn_quantile _
     ((strictMono_cdf_generalizedNormalMeasure hs hp).strictMonoOn _)
 
 /-- Generalized normal quantiles tend to minus infinity as the level decreases to zero. -/

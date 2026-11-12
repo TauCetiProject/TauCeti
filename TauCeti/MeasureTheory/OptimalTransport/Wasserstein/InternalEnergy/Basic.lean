@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
-public import TauCeti.Analysis.Convex.RecessionConstant
+public import TauCeti.Analysis.Convex.Recession.Constant
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.PotentialEnergy
 
 /-!
@@ -182,6 +182,21 @@ theorem internalEnergy_eq_potentialEnergy_add {r : ℝ} (hU : recessionConstant 
   norm_cast
   linear_combination (μ.singularPart m univ).toReal * max_zero_sub_max_neg_zero_eq_self r
 
+/-- The internal energy is the potential energy of any potential `W` whose positive and negative
+parts have the integrals of the positive and negative parts occurring in the definition of the
+internal energy. -/
+theorem internalEnergy_eq_potentialEnergy_of_lintegral_eq {W : X → ℝ}
+    (hpos : ∫⁻ x, ENNReal.ofReal (U (μ.rnDeriv m x).toReal) ∂m
+      + (recessionConstant U).toENNReal * μ.singularPart m univ = ∫⁻ x, ENNReal.ofReal (W x) ∂m)
+    (hneg : ∫⁻ x, ENNReal.ofReal (-U (μ.rnDeriv m x).toReal) ∂m
+      + (-recessionConstant U).toENNReal * μ.singularPart m univ =
+        ∫⁻ x, ENNReal.ofReal (-W x) ∂m) :
+    internalEnergy U m μ = potentialEnergy W m := by
+  rw [internalEnergy_def, hpos, hneg]
+  by_cases h : ∫⁻ x, ENNReal.ofReal (W x) ∂m = ∞
+  · simp only [h, ↓reduceIte, potentialEnergy_eq_top_iff.2 h]
+  · simp only [h, ↓reduceIte, potentialEnergy_of_lintegral_ne_top h]
+
 /-- The internal energy of the zero measure is `0` when `U 0 = 0`. -/
 @[simp]
 theorem internalEnergy_zero_measure (hU : U 0 = 0) (m : Measure X) :
@@ -313,8 +328,9 @@ theorem klDiv_eq_boltzmannEntropy_add_sub [IsFiniteMeasure μ] [IsFiniteMeasure 
 
 /-- For finite measures of equal mass, in particular for probability measures, the
 Kullback–Leibler divergence is the Boltzmann entropy. -/
-theorem klDiv_eq_boltzmannEntropy_of_measure_univ_eq [IsFiniteMeasure μ] [IsFiniteMeasure m]
+theorem klDiv_eq_boltzmannEntropy_of_measure_univ_eq [IsFiniteMeasure μ]
     (h : μ univ = m univ) : (klDiv μ m : EReal) = boltzmannEntropy m μ := by
+  have : IsFiniteMeasure m := ⟨h ▸ measure_lt_top μ univ⟩
   rw [klDiv_eq_boltzmannEntropy_add_sub, measureReal_def, measureReal_def, h,
     EReal.add_sub_cancel_right]
 
@@ -348,10 +364,19 @@ theorem boltzmannEntropy_eq_potentialEnergy_llr [SigmaFinite μ] [SigmaFinite m]
 that the tilted measure `m.tilted f = Z⁻¹ exp(f) m` with `Z = ∫ exp f dm` is a finite reference
 measure, then for every finite measure `μ` against which `f` is integrable,
 `Ent_{m.tilted f}(μ) = Ent_m(μ) - ∫ f dμ + μ(X) log Z`. The reference `m` may be infinite. -/
-theorem boltzmannEntropy_tilted [SigmaFinite m] [IsFiniteMeasure μ] {f : X → ℝ}
+theorem boltzmannEntropy_tilted [IsFiniteMeasure μ] {f : X → ℝ}
     (hf : Integrable (fun x ↦ Real.exp (f x)) m) (hfμ : Integrable f μ) :
     boltzmannEntropy (m.tilted f) μ = boltzmannEntropy m μ - ((∫ x, f x ∂μ : ℝ) : EReal) +
       ((μ.real univ * Real.log (∫ x, Real.exp (f x) ∂m) : ℝ) : EReal) := by
+  have : SigmaFinite m := by
+    have hne : ∀ x, ENNReal.ofReal (Real.exp (f x)) ≠ 0 := fun x ↦
+      (ENNReal.ofReal_pos.2 (Real.exp_pos _)).ne'
+    have := isFiniteMeasure_withDensity_ofReal (μ := m) hf.2
+    have hs : SigmaFinite ((m.withDensity fun x ↦ ENNReal.ofReal (Real.exp (f x))).withDensity
+        fun x ↦ (ENNReal.ofReal (Real.exp (f x)))⁻¹) :=
+      SigmaFinite.withDensity_of_ne_top' fun x ↦ ENNReal.inv_ne_top.2 (hne x)
+    rwa [withDensity_inv_same₀ hf.1.aemeasurable.ennreal_ofReal (Filter.Eventually.of_forall hne)
+      (Filter.Eventually.of_forall fun x ↦ ENNReal.ofReal_ne_top)] at hs
   by_cases hac : μ ≪ m
   swap
   · have hac' : ¬ μ ≪ m.tilted f := fun h ↦ hac (h.trans (tilted_absolutelyContinuous m f))
@@ -375,7 +400,7 @@ theorem boltzmannEntropy_tilted [SigmaFinite m] [IsFiniteMeasure μ] {f : X → 
 integrable, `klDiv μ (m.tilted f) = Ent_m(μ) - ∫ f dμ + μ(X) log Z + 1 - μ(X)`. For
 `f x = -a d(x, x₀)²` this is the confining Gaussian reference against which the entropy of laws
 with finite second moment is controlled. -/
-theorem klDiv_tilted_eq_boltzmannEntropy [SigmaFinite m] [NeZero m] [IsFiniteMeasure μ]
+theorem klDiv_tilted_eq_boltzmannEntropy [NeZero m] [IsFiniteMeasure μ]
     {f : X → ℝ} (hf : Integrable (fun x ↦ Real.exp (f x)) m) (hfμ : Integrable f μ) :
     (klDiv μ (m.tilted f) : EReal) = boltzmannEntropy m μ - ((∫ x, f x ∂μ : ℝ) : EReal) +
       ((μ.real univ * Real.log (∫ x, Real.exp (f x) ∂m) : ℝ) : EReal) + 1 - μ.real univ := by
@@ -386,7 +411,7 @@ theorem klDiv_tilted_eq_boltzmannEntropy [SigmaFinite m] [NeZero m] [IsFiniteMea
 /-- If `exp f` is integrable against the reference `m` and `f` is integrable against a finite
 measure `μ`, then the Boltzmann entropy of `μ` is not `⊥`, even when `m` is infinite: it is
 bounded below through the entropy against the finite reference `m.tilted f`. -/
-theorem boltzmannEntropy_ne_bot_of_integrable_exp [SigmaFinite m] [IsFiniteMeasure μ] {f : X → ℝ}
+theorem boltzmannEntropy_ne_bot_of_integrable_exp [IsFiniteMeasure μ] {f : X → ℝ}
     (hf : Integrable (fun x ↦ Real.exp (f x)) m) (hfμ : Integrable f μ) :
     boltzmannEntropy m μ ≠ ⊥ := fun h ↦ by
   have := boltzmannEntropy_tilted hf hfμ

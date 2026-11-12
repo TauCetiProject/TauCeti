@@ -21,22 +21,24 @@ that is, `a₁ = 3μ`, `a₃ = μ³ - 1` and `a₂ = a₄ = a₆ = 0`
 
   `c₄ = 9μ (μ³ + 8)`, `Δ = 27 (μ³ - 1)³`, `j = 27μ³ (μ³ + 8)³ / (μ³ - 1)³`,
 
-so it is elliptic exactly when `3` and `μ³ - 1` are units. The point `P = (0, 0)` is a flex with
-tangent `Y = 0`, so it has order `3`. If `ζ² + ζ + 1 = 0`, the point
+so it is elliptic exactly when `3` and `μ³ - 1` are units. When it is, the point `P = (0, 0)` is a
+flex with tangent `Y = 0`, so it has order `3`. If `ζ² + ζ + 1 = 0`, the point
 
 `Q = (-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`
 
-also lies on the curve and has order `3`; since `μ² + μ + 1` divides `μ³ - 1`, its `x`-coordinate
-differs from that of `P` in every fibre, so `P` and `Q` form a basis of the `3`-torsion.
+also lies on the curve and, when the curve is elliptic, has order `3`; since `μ² + μ + 1` divides
+`μ³ - 1`, its `x`-coordinate differs from that of `P` in every fibre, so `P` and `Q` then form a
+basis of the `3`-torsion.
 
 Conversely, let `W` be a Weierstrass curve over a commutative ring `R` in which `3` is a unit, and
 let `P = (x₁, y₁)` and `Q = (x₂, y₂)` be points of `W` at which the `3`-division polynomial `Ψ₃`
 vanishes, the `2`-division polynomial `ψ₂ = 2Y + a₁X + a₃` is a unit, and with `x₂ - x₁` a unit.
 Over a field these say that `P` and `Q` have order `3` and that `Q` is not `±P`, so that `(P, Q)`
-is a basis of the `3`-torsion; over a ring they say this at every point of `Spec R`
-(`WeierstrassCurve.IsThreeTorsionBasis`). Then exactly one change of variables,
-`WeierstrassCurve.toLevelThreeNormalForm`, carries `W` to a level-three normal form, `P` to
-`(0, 0)` and `Q` to the point above
+is a basis of the `3`-torsion; over a ring they say that `P` and `Q` are points killed by `3` (the
+vanishing of `Ψ₃` holds in `R` itself, not only in each fibre) that form a basis of the `3`-torsion
+at every point of `Spec R` (`WeierstrassCurve.IsThreeTorsionBasis`). Then exactly one change of
+variables, `WeierstrassCurve.toLevelThreeNormalForm`, carries `W` to a level-three normal form,
+`P` to `(0, 0)` and `Q` to the point above
 (`WeierstrassCurve.existsUnique_variableChange_levelThreeNormalForm`). The Legendre
 form attached to a basis of the `2`-torsion is unique only after the choice of an invariant
 differential, because `[-1]` fixes every point of order `2`. No such choice is needed here:
@@ -62,8 +64,9 @@ the bases (`WeierstrassCurve.UniversalLevelThree.existsUnique_lift`).
 ## Main definitions
 
 * `WeierstrassCurve.levelThreeNormalForm μ`: the curve `Y² + 3μXY + (μ³ - 1)Y = X³`.
-* `WeierstrassCurve.IsThreeTorsionBasis W x₁ y₁ x₂ y₂`: `(x₁, y₁)` and `(x₂, y₂)` form a basis of
-  the `3`-torsion of `W` in every fibre, over a ring in which `3` is a unit.
+* `WeierstrassCurve.IsThreeTorsionBasis W x₁ y₁ x₂ y₂`: `(x₁, y₁)` and `(x₂, y₂)` are points killed
+  by `3` that form a basis of the `3`-torsion of `W` in every fibre, over a ring in which `3` is a
+  unit.
 * `WeierstrassCurve.toLevelThreeNormalForm h`, `WeierstrassCurve.levelThreeParameter h`,
   `WeierstrassCurve.levelThreeRootOfUnity h`: the change of variables carrying such a basis to
   level-three normal form, and the `μ` and `ζ` it reaches.
@@ -80,7 +83,7 @@ the bases (`WeierstrassCurve.UniversalLevelThree.existsUnique_lift`).
   discriminant and `j`-invariant.
 * `WeierstrassCurve.equation_levelThreeNormalForm_basisPoint`,
   `WeierstrassCurve.eval_Ψ₃_levelThreeNormalForm_basisPoint`: the point `Q` lies on the curve and
-  has order `3`.
+  `Ψ₃` vanishes at its `x`-coordinate (it has order `3` when the curve is elliptic).
 * `WeierstrassCurve.toLevelThreeNormalForm_smul`, `WeierstrassCurve.eq_toLevelThreeNormalForm`:
   `toLevelThreeNormalForm h` reaches a level-three normal form, and is the only change of variables
   doing so that matches the bases.
@@ -127,7 +130,8 @@ variable {R : Type*} [CommRing R]
 
 /-- The Weierstrass curve `Y² + 3μXY + (μ³ - 1)Y = X³` in **level-three normal form**:
 `a₁ = 3μ`, `a₃ = μ³ - 1` and `a₂ = a₄ = a₆ = 0`. With a root `ζ` of `ζ² + ζ + 1`, the points
-`(0, 0)` and `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` form a basis of its `3`-torsion. -/
+`(0, 0)` and `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` form a basis of its `3`-torsion when it is
+elliptic, that is, when `3` and `μ³ - 1` are units. -/
 def levelThreeNormalForm (μ : R) : WeierstrassCurve R where
   a₁ := 3 * μ
   a₂ := 0
@@ -194,8 +198,8 @@ theorem levelThreeNormalForm_j {F : Type*} [Field F] (μ : F) [(levelThreeNormal
 theorem equation_levelThreeNormalForm_zero : (levelThreeNormalForm μ).toAffine.Equation 0 0 :=
   Affine.equation_zero.mpr (levelThreeNormalForm_a₆ μ)
 
-/-- On the level-three normal form the `3`-division polynomial `Ψ₃` vanishes at `0`: the origin is
-a point of order `3`. -/
+/-- On the level-three normal form the `3`-division polynomial `Ψ₃` vanishes at `0`: when the curve
+is elliptic, the origin is a point of order `3`. -/
 @[simp]
 theorem eval_Ψ₃_levelThreeNormalForm_zero : (levelThreeNormalForm μ).Ψ₃.eval 0 = 0 := by
   simp [eval_Ψ₃]
@@ -218,7 +222,7 @@ theorem equation_levelThreeNormalForm_basisPoint {ζ : R} (hζ : ζ ^ 2 + ζ + 1
   linear_combination (μ ^ 2 + μ + 1) ^ 2 * hζ
 
 /-- On the level-three normal form the `3`-division polynomial `Ψ₃` vanishes at `-(μ² + μ + 1)`:
-the points above it have order `3`. -/
+when the curve is elliptic, the points above it have order `3`. -/
 theorem eval_Ψ₃_levelThreeNormalForm_basisPoint :
     (levelThreeNormalForm μ).Ψ₃.eval (-(μ ^ 2 + μ + 1)) = 0 := by
   rw [eval_Ψ₃, levelThreeNormalForm_b₂, levelThreeNormalForm_b₄, levelThreeNormalForm_b₆,
@@ -241,11 +245,12 @@ theorem map_levelThreeNormalForm {A : Type*} [CommRing A] (φ : R →+* A) :
 
 /-! ### Bases of the `3`-torsion -/
 
-/-- The points `P = (x₁, y₁)` and `Q = (x₂, y₂)` form a **basis of the `3`-torsion** of `W` in every
-fibre, over a ring in which `3` is a unit: they lie on `W`, the `3`-division polynomial `Ψ₃`
-vanishes at both, the `2`-division polynomial `ψ₂ = 2Y + a₁X + a₃` is a unit at both, and
-`x₂ - x₁` is a unit. Over a field these say that `P` and `Q` have order `3` and that `Q` is not
-`±P`. -/
+/-- The points `P = (x₁, y₁)` and `Q = (x₂, y₂)` are points killed by `3` that form a **basis of the
+`3`-torsion** of `W` in every fibre, over a ring in which `3` is a unit: they lie on `W`, the
+`3`-division polynomial `Ψ₃` vanishes at both (in `R` itself, which over a non-reduced ring is
+stronger than vanishing in each fibre), the `2`-division polynomial `ψ₂ = 2Y + a₁X + a₃` is a unit
+at both, and `x₂ - x₁` is a unit. Over a field these say that `P` and `Q` have order `3` and that
+`Q` is not `±P`. -/
 structure IsThreeTorsionBasis (W : WeierstrassCurve R) (x₁ y₁ x₂ y₂ : R) : Prop where
   /-- `3` is a unit. -/
   isUnit_three : IsUnit (3 : R)
@@ -465,6 +470,28 @@ noncomputable def levelThreeRootOfUnity : R :=
   levelThreeParameter h + ↑(toLevelThreeNormalForm h).u⁻¹ *
     (y₂ - y₁ - (toLevelThreeNormalForm h).s * (x₂ - x₁)) * ↑h.isUnit_sub.unit⁻¹
 
+/-- A change of variables `C` with `C.r = x₁`, `C.t = y₁` that satisfies the shear and scaling
+equations carries a curve through `(x₁, y₁)` to the level-three normal form with parameter `μ`. -/
+private theorem smul_eq_levelThreeNormalForm {C : VariableChange R} {μ : R} (hr : C.r = x₁)
+    (ht : C.t = y₁) (hσ : C.s * (2 * y₁ + W.a₁ * x₁ + W.a₃) =
+      W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2)
+    (hP : y₁ ^ 2 + W.toAffine.a₁ * x₁ * y₁ + W.toAffine.a₃ * y₁ =
+      x₁ ^ 3 + W.toAffine.a₂ * x₁ ^ 2 + W.toAffine.a₄ * x₁ + W.toAffine.a₆)
+    (ha₁ : W.a₁ + 2 * C.s = C.u * (3 * μ)) (ha₂ : W.a₂ - C.s * W.a₁ + 3 * x₁ - C.s ^ 2 = 0)
+    (ha₃ : 2 * y₁ + W.a₁ * x₁ + W.a₃ = C.u ^ 3 * (μ ^ 3 - 1)) :
+    C • W = levelThreeNormalForm μ := by
+  have hu' := C.u.inv_mul
+  ext
+  · simp only [variableChange_a₁, levelThreeNormalForm_a₁, ha₁, Units.inv_mul_cancel_left]
+  · simp only [variableChange_a₂, hr, levelThreeNormalForm_a₂, ha₂, mul_zero]
+  · rw [variableChange_a₃, hr, ht, levelThreeNormalForm_a₃]
+    linear_combination (↑C.u⁻¹ : R) ^ 3 * ha₃ +
+      (μ ^ 3 - 1) * (((↑C.u⁻¹ : R) * C.u) ^ 2 + (↑C.u⁻¹ : R) * C.u + 1) * hu'
+  · rw [variableChange_a₄, hr, ht, levelThreeNormalForm_a₄]
+    linear_combination -(↑C.u⁻¹ : R) ^ 4 * hσ
+  · rw [variableChange_a₆, hr, ht, levelThreeNormalForm_a₆]
+    linear_combination -(↑C.u⁻¹ : R) ^ 6 * hP
+
 /-- The properties of `toLevelThreeNormalForm h`, `levelThreeParameter h` and
 `levelThreeRootOfUnity h`. -/
 private theorem toLevelThreeNormalForm_spec :
@@ -517,17 +544,8 @@ private theorem toLevelThreeNormalForm_spec :
       3 * (y₂ - y₁ - C.s * (x₂ - x₁)) * hwₓ
   obtain ⟨hζ₀, ha₁, ha₃, hX, hY⟩ :=
     scaling_spec h.isUnit_three h.isUnit_sub hv hE hF hu hμv hζv
-  refine ⟨hζ₀, ?_, by linear_combination hX, by linear_combination hY + C.s * hX⟩
-  ext
-  · simp only [variableChange_a₁, levelThreeNormalForm_a₁, ha₁, Units.inv_mul_cancel_left]
-  · simp only [variableChange_a₂, hr, levelThreeNormalForm_a₂, ha₂, mul_zero]
-  · rw [variableChange_a₃, hr, ht, levelThreeNormalForm_a₃]
-    linear_combination (↑C.u⁻¹ : R) ^ 3 * ha₃ +
-      (μ ^ 3 - 1) * (((↑C.u⁻¹ : R) * C.u) ^ 2 + (↑C.u⁻¹ : R) * C.u + 1) * hu'
-  · rw [variableChange_a₄, hr, ht, levelThreeNormalForm_a₄]
-    linear_combination -(↑C.u⁻¹ : R) ^ 4 * hσ
-  · rw [variableChange_a₆, hr, ht, levelThreeNormalForm_a₆]
-    linear_combination -(↑C.u⁻¹ : R) ^ 6 * hP
+  exact ⟨hζ₀, smul_eq_levelThreeNormalForm hr ht hσ hP ha₁ ha₂ ha₃, by linear_combination hX,
+    by linear_combination hY + C.s * hX⟩
 
 /-- The root of unity of a basis of the `3`-torsion is a root of `ζ² + ζ + 1`. -/
 theorem levelThreeRootOfUnity_sq_add_levelThreeRootOfUnity_add_one :

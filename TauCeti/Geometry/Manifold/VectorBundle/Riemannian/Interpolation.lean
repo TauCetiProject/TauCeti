@@ -115,6 +115,18 @@ theorem toBilinearSection_convexCombination
   ext x v w
   simp
 
+/-- The symmetric section of a convex interpolation is the same convex combination of
+symmetric sections. -/
+@[simp]
+theorem toSymmetricSection_convexCombination (g h : ContMDiffRiemannianMetric IB n F V)
+    (t : unitInterval) :
+    (g.convexCombination h t).toSymmetricSection =
+      (1 - (t : ℝ)) • g.toSymmetricSection + (t : ℝ) • h.toSymmetricSection := by
+  ext x : 1
+  apply Subtype.ext
+  ext v w
+  simp
+
 /-- Interpolation starts at the first metric. -/
 @[simp]
 theorem convexCombination_zero (g h : ContMDiffRiemannianMetric IB n F V) :

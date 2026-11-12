@@ -58,6 +58,8 @@ of `(Kˣ)ⁿ` with a step of the filtration, which is open in `Kˣ`.
   `U(K,i)` contains no nontrivial `n`-th root of unity.
 * `TauCeti.pow_mem_unitFiltration_add_natCastValuation_iff`: under the same depth condition, the
   `n`-th power map shifts every deeper step by exactly `v_K(n)` on `U(K,i)`.
+* `TauCeti.log_normalizedValuationWithZero_sub_one_le_of_pow_eq_one`: in characteristic zero, a
+  root of unity `ζ ≠ 1` has `v_K(ζ - 1) ≤ v_K(p)`, with `p` the residue characteristic.
 * `TauCeti.map_powMonoidHom_unitFiltration_succ_of_isUnit`: when `n` is invertible in `𝒪[K]`,
   the `n`-th power map carries every positive-depth step onto itself.
 * `TauCeti.powMonoidHom_unitFiltration_succ_bijective_of_isUnit`: the same map is a bijection.
@@ -89,9 +91,7 @@ private theorem valuation_one_add_pow_sub_sub_le {p : ℕ} (hp : p.Prime) (hpK :
   set e := natCastValuation K p hpK
   have hγ1 : γ < 1 := Valuation.integer.v_irreducible_lt_one hπ
   have hγ0 : 0 < γ := Valuation.integer.v_irreducible_pos hπ
-  have hi0 : i ≠ 0 := by
-    rintro rfl
-    simp at hi
+  have hi0 : i ≠ 0 := by rintro rfl; simp at hi
   have hvp : valuation K (p : K) = γ ^ e := valuation_natCast_eq_pow hπ p hpK
   have hxγ : valuation K x ≤ γ :=
     hx.trans (pow_le_of_le_one hγ0.le hγ1.le hi0)
@@ -126,8 +126,7 @@ private theorem valuation_one_add_pow_sub_sub_le {p : ℕ} (hp : p.Prime) (hpK :
             _ = valuation K x * γ := one_mul _
       _ = γ ^ e * valuation K x * γ := by ac_rfl
   · -- The top term `x ^ p`: here the threshold `v_K(p) < (p - 1) * i` is used.
-    have hk' : k = m := by omega
-    subst hk'
+    obtain rfl : k = m := by omega
     calc valuation K x ^ (k + 2) * valuation K ((k + 2).choose (k + 2) : K)
         = valuation K x * valuation K x ^ (k + 1) := by
           rw [Nat.choose_self, Nat.cast_one, map_one, mul_one, pow_succ']
@@ -342,15 +341,37 @@ theorem disjoint_rootsOfUnity_unitFiltration {n : ℕ} (hn : (n : K) ≠ 0) {i :
       hub hua
     exact Subgroup.disjoint_def.mp (iha ha hia) ((mem_rootsOfUnity a u).mpr h1) hui
 
+/-- **A root of unity is shallow.** With `p` the residue characteristic and `e = v_K(p)`, a root of
+unity `ζ ≠ 1` of `K` has `v_K(ζ - 1) ≤ e`: the step `U(K, e + 1)` contains no nontrivial root of
+unity. -/
+theorem log_normalizedValuationWithZero_sub_one_le_of_pow_eq_one [CharZero K] {ζ : Kˣ} {n : ℕ}
+    (hn : n ≠ 0) (hζn : ζ ^ n = 1) (hζ : ζ ≠ 1) :
+    WithZero.log (normalizedValuationWithZero K ((ζ : K) - 1)) ≤
+      natCastValuation K (ringChar 𝓀[K]) (natCast_ringChar_residueField_ne_zero K) := by
+  have hpK := natCast_ringChar_residueField_ne_zero K
+  have hnK : (n : K) ≠ 0 := Nat.cast_ne_zero.mpr hn
+  have hdeep : ζ ∉ unitFiltration K (natCastValuation K (ringChar 𝓀[K]) hpK + 1) := fun h ↦
+    hζ <| Subgroup.disjoint_def.mp (disjoint_rootsOfUnity_unitFiltration hnK
+      fun ℓ hℓ hℓK _ ↦ natCastValuation_lt_sub_one_mul_natCastValuation_ringChar_add_one hpK hℓ hℓK)
+      ((mem_rootsOfUnity n ζ).mpr hζn) h
+  rw [mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one (Nat.succ_ne_zero _) hζ]
+    at hdeep
+  push_cast at hdeep
+  omega
+
 /-- **Powers shift deep steps exactly.** For `(n : K) ≠ 0`, a depth `i` with
 `v_K(p) < (p - 1) * i` for every prime `p ∣ n`, and `x ∈ U(K,i)`, the power `x ^ n` lies in
-`U(K, j + v_K(n))` exactly when `x` lies in `U(K,j)`, for every `j ≥ i`. Thus the `n`-th power
+`U(K, j + v_K(n))` exactly when `x` lies in `U(K,j)`, for every `j`. Thus the `n`-th power
 map moves the exact depth of every `x ∈ U(K,i)` by `v_K(n)`. -/
 theorem pow_mem_unitFiltration_add_natCastValuation_iff {n : ℕ} (hn : (n : K) ≠ 0) {i j : ℕ}
     (hi : ∀ p : ℕ, p.Prime → ∀ hpK : (p : K) ≠ 0, p ∣ n →
       natCastValuation K p hpK < (p - 1) * i)
-    (hij : i ≤ j) {x : Kˣ} (hx : x ∈ unitFiltration K i) :
+    {x : Kˣ} (hx : x ∈ unitFiltration K i) :
     x ^ n ∈ unitFiltration K (j + natCastValuation K n hn) ↔ x ∈ unitFiltration K j := by
+  rcases le_total j i with hji | hij
+  · -- Both sides hold: `x ∈ U(K,i) ≤ U(K,j)` and `x ^ n ∈ U(K, i + v_K(n)) ≤ U(K, j + v_K(n))`.
+    exact ⟨fun _ ↦ unitFiltration_antitone hji hx, fun _ ↦ unitFiltration_antitone
+      (Nat.add_le_add_right hji _) ((map_powMonoidHom_unitFiltration hn hi).le ⟨x, hx, rfl⟩)⟩
   have hj : ∀ p : ℕ, p.Prime → ∀ hpK : (p : K) ≠ 0, p ∣ n →
       natCastValuation K p hpK < (p - 1) * j :=
     fun p hp hpK hpn ↦ (hi p hp hpK hpn).trans_le (Nat.mul_le_mul_left _ hij)
@@ -407,6 +428,6 @@ theorem pow_mem_unitFiltration_succ_iff_of_isUnit {n : ℕ} (hn : IsUnit (n : �
   have hv := natCastValuation_eq_zero_of_isUnit K hnK hn
   simpa [hv] using pow_mem_unitFiltration_add_natCastValuation_iff hnK (j := i + 1)
     (fun p hp hpK hpn ↦ natCastValuation_lt_sub_one_mul_of_lt_of_dvd hnK (hv ▸ Nat.one_pos) hp
-      hpK hpn) (Nat.le_add_left 1 i) hx
+      hpK hpn) hx
 
 end TauCeti

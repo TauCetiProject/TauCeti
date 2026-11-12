@@ -81,10 +81,16 @@ theorem isProbabilityMeasure_betaPrimeMeasure_iff :
   · rintro ⟨ha, hb⟩
     exact isProbabilityMeasure_betaPrimeMeasure ha hb
 
-/-- A beta-prime law is the positive rescaling by `a / b` of an F law with degrees `2a, 2b`. -/
-theorem betaPrimeMeasure_eq_map_fisherSnedecorMeasure (ha : 0 < a) (hb : 0 < b) :
+/-- A beta-prime law is the positive rescaling by `a / b` of an F law with degrees `2a, 2b`.
+At invalid parameters both sides are zero. -/
+theorem betaPrimeMeasure_eq_map_fisherSnedecorMeasure :
     betaPrimeMeasure a b =
       (fisherSnedecorMeasure (2 * a) (2 * b)).map (fun y ↦ (a / b) * y) := by
+  by_cases h : 0 < a ∧ 0 < b
+  swap
+  · rw [betaPrimeMeasure_of_not_pos h, fisherSnedecorMeasure_of_not_pos (by grind),
+      Measure.map_zero]
+  obtain ⟨ha, hb⟩ := h
   have ha2 : 2 * a / 2 = a := by ring
   have hb2 : 2 * b / 2 = b := by ring
   rw [betaPrimeMeasure_eq_map ha hb,
@@ -106,7 +112,7 @@ theorem betaPrimeMeasure_eq_map_fisherSnedecorMeasure (ha : 0 < a) (hb : 0 < b) 
 theorem ae_mem_Ioi_betaPrimeMeasure (a b : ℝ) :
     ∀ᵐ x ∂betaPrimeMeasure a b, x ∈ Ioi 0 := by
   by_cases h : 0 < a ∧ 0 < b
-  · rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure h.1 h.2, ae_map_iff
+  · rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure, ae_map_iff
       (by fun_prop : AEMeasurable (fun y : ℝ ↦ (a / b) * y)
         (fisherSnedecorMeasure (2 * a) (2 * b))) (by measurability)]
     filter_upwards [ae_mem_Ioi_fisherSnedecorMeasure (2 * a) (2 * b)] with y hy
@@ -203,7 +209,7 @@ theorem betaPrimeMeasure_eq_withDensity (a b : ℝ) :
     betaPrimeMeasure a b = volume.withDensity (betaPrimePDF a b) := by
   by_cases h : 0 < a ∧ 0 < b
   · -- `map_affine_withDensity_volume` expects the scaling map in affine form.
-    rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure h.1 h.2,
+    rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure,
       fisherSnedecorMeasure_eq_withDensity,
       show (fun y : ℝ ↦ a / b * y) = fun y ↦ 0 + (a / b) * y by ext; simp,
       map_affine_withDensity_volume _ (div_ne_zero h.1.ne' h.2.ne'),
@@ -249,7 +255,7 @@ is the regularized incomplete Beta function at `x / (1 + x)`. -/
 theorem cdf_betaPrimeMeasure_eq (ha : 0 < a) (hb : 0 < b) (x : ℝ) :
     cdf (betaPrimeMeasure a b) x =
       if x ≤ 0 then 0 else regularizedIncompleteBeta a b (x / (1 + x)) := by
-  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure ha hb]
+  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure]
   let _ : IsProbabilityMeasure (fisherSnedecorMeasure (2 * a) (2 * b)) :=
     isProbabilityMeasure_fisherSnedecorMeasure (mul_pos (by norm_num) ha)
       (mul_pos (by norm_num) hb)

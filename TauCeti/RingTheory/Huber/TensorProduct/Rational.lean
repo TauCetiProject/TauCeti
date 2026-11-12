@@ -444,6 +444,83 @@ private theorem toLoc_inr :
 
 /-! ### The map `D⟨T''/s''⟩ → B⟨T/s⟩ ⊗̂_A C⟨T'/s'⟩` -/
 
+/-- The unit `s ⊗ s'` and the power-bounded numerators for the map
+`B ⊗̂_A C → B⟨T/s⟩ ⊗̂_A C⟨T'/s'⟩`: its image of `inl(s) · inr(s')` is a unit, and the images of the
+numerators of `inl(T) ∪ {inl(s)}` and `inr(T') ∪ {inr(s')}` are power-bounded multiples of the
+images of `inl(s)` and `inr(s')`. -/
+private theorem isUnit_and_exists_isPowerBounded_map_inl_inr :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    letI : Algebra A (Completion S) :=
+      ((toCompletionLoc P T s S hden).comp (algebraMap A B)).toAlgebra
+    letI : Algebra A (Completion S') :=
+      ((toCompletionLoc P' T' s' S' hden').comp (algebraMap A C)).toAlgebra
+    haveI : IsAdicHom (algebraMap A (Completion S)) :=
+      IsAdicHom.comp (isAdicHom_toCompletionLoc P T s S hden)
+        (inferInstanceAs (IsAdicHom (algebraMap A B)))
+    haveI : IsAdicHom (algebraMap A (Completion S')) :=
+      IsAdicHom.comp (isAdicHom_toCompletionLoc P' T' s' S' hden')
+        (inferInstanceAs (IsAdicHom (algebraMap A C)))
+    ∀ f : CompletedTensor A B C →+* CompletedTensor A (Completion S) (Completion S'),
+      f = map (RingHom.id A) (toCompletionLoc P T s S hden) (toCompletionLoc P' T' s' S' hden')
+          rfl rfl (continuous_toCompletionLoc P T s S hden)
+          (continuous_toCompletionLoc P' T' s' S' hden') →
+      IsUnit (f (inl A B C s * inr A B C s')) ∧
+      (∀ a ∈ insert (inl A B C s) (T.image (inl A B C)), ∃ y, IsPowerBounded y ∧
+        f a = y * f (inl A B C s)) ∧
+      ∀ b ∈ insert (inr A B C s') (T'.image (inr A B C)), ∃ z, IsPowerBounded z ∧
+        f b = z * f (inr A B C s') := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P' T' s' S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  let _ : Algebra A (Completion S) :=
+    ((toCompletionLoc P T s S hden).comp (algebraMap A B)).toAlgebra
+  let _ : Algebra A (Completion S') :=
+    ((toCompletionLoc P' T' s' S' hden').comp (algebraMap A C)).toAlgebra
+  have _ : IsAdicHom (algebraMap A (Completion S)) :=
+    IsAdicHom.comp (isAdicHom_toCompletionLoc P T s S hden)
+        (inferInstanceAs (IsAdicHom (algebraMap A B)))
+  have _ : IsAdicHom (algebraMap A (Completion S')) :=
+    IsAdicHom.comp (isAdicHom_toCompletionLoc P' T' s' S' hden')
+        (inferInstanceAs (IsAdicHom (algebraMap A C)))
+  intro f hf
+  have hs := isUnit_toCompletionLoc_of_dvd P T s S hden (dvd_refl s)
+  have hs' := isUnit_toCompletionLoc_of_dvd P' T' s' S' hden' (dvd_refl s')
+  have hu : IsUnit (f (inl A B C s * inr A B C s')) := by
+    rw [map_mul, hf, map_inl, map_inr]
+    exact (hs.map _).mul (hs'.map _)
+  have hleft : ∀ a ∈ insert (inl A B C s) (T.image (inl A B C)), ∃ y, IsPowerBounded y ∧
+      f a = y * f (inl A B C s) := by
+    intro a ha
+    rcases Finset.mem_insert.mp ha with rfl | ha
+    · exact ⟨1, isPowerBounded_one, (one_mul _).symm⟩
+    obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp ha
+    refine ⟨inl A (Completion S) (Completion S') (toCompletionLoc P T s S hden t * ↑hs.unit⁻¹),
+      (isAdicHom_inl _ _ _).isPowerBounded_map
+        (isPowerBounded_toCompletionLoc_mul_unit_inv P T s S hden (mul_one s).symm hs
+          ((mul_one t).symm ▸ ht)), ?_⟩
+    rw [hf, map_inl, map_inl, ← map_mul, mul_assoc, hs.val_inv_mul, mul_one]
+  have hright : ∀ b ∈ insert (inr A B C s') (T'.image (inr A B C)), ∃ z, IsPowerBounded z ∧
+      f b = z * f (inr A B C s') := by
+    intro b hb
+    rcases Finset.mem_insert.mp hb with rfl | hb
+    · exact ⟨1, isPowerBounded_one, (one_mul _).symm⟩
+    obtain ⟨t', ht', rfl⟩ := Finset.mem_image.mp hb
+    refine ⟨inr A (Completion S) (Completion S')
+        (toCompletionLoc P' T' s' S' hden' t' * ↑hs'.unit⁻¹),
+      (isAdicHom_inr _ _ _).isPowerBounded_map
+        (isPowerBounded_toCompletionLoc_mul_unit_inv P' T' s' S' hden' (mul_one s').symm hs'
+          ((mul_one t').symm ▸ ht')), ?_⟩
+    rw [hf, map_inr, map_inr, ← map_mul, mul_assoc, hs'.val_inv_mul, mul_one]
+  exact ⟨hu, hleft, hright⟩
+
 /-- `D → B⟨T/s⟩ ⊗̂_A C⟨T'/s'⟩` extends to `D⟨T''/s''⟩`: the denominator becomes the unit
 `s ⊗ s'`, and the fraction of `inl(t) · inr(s')` is `(t/s) ⊗ 1`, the image of a power-bounded
 element under the adic coprojection (symmetrically for `inr(t') · inl(s)`). -/
@@ -491,38 +568,11 @@ private theorem existsUnique_ofLoc :
   let _ := locUniformSpace Q _ _ S'' hden''
   have _ := isUniformAddGroup_locUniformSpace Q _ _ S'' hden''
   have _ := isTopologicalRing_locUniformSpace Q _ _ S'' hden''
-  have hs := isUnit_toCompletionLoc_of_dvd P T s S hden (dvd_refl s)
-  have hs' := isUnit_toCompletionLoc_of_dvd P' T' s' S' hden' (dvd_refl s')
   set f := map (RingHom.id A) (toCompletionLoc P T s S hden) (toCompletionLoc P' T' s' S' hden')
     rfl rfl (continuous_toCompletionLoc P T s S hden)
     (continuous_toCompletionLoc P' T' s' S' hden') with hf
-  have hu : IsUnit (f (inl A B C s * inr A B C s')) := by
-    rw [map_mul, hf, map_inl, map_inr]
-    exact (hs.map _).mul (hs'.map _)
-  -- every numerator of the left factor is a power-bounded multiple of the image of `inl(s)`
-  have hleft : ∀ a ∈ insert (inl A B C s) (T.image (inl A B C)), ∃ y, IsPowerBounded y ∧
-      f a = y * f (inl A B C s) := by
-    intro a ha
-    rcases Finset.mem_insert.mp ha with rfl | ha
-    · exact ⟨1, isPowerBounded_one, (one_mul _).symm⟩
-    obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp ha
-    refine ⟨inl A (Completion S) (Completion S') (toCompletionLoc P T s S hden t * ↑hs.unit⁻¹),
-      (isAdicHom_inl _ _ _).isPowerBounded_map
-        (isPowerBounded_toCompletionLoc_mul_unit_inv P T s S hden (mul_one s).symm hs
-          ((mul_one t).symm ▸ ht)), ?_⟩
-    rw [hf, map_inl, map_inl, ← map_mul, mul_assoc, hs.val_inv_mul, mul_one]
-  have hright : ∀ b ∈ insert (inr A B C s') (T'.image (inr A B C)), ∃ z, IsPowerBounded z ∧
-      f b = z * f (inr A B C s') := by
-    intro b hb
-    rcases Finset.mem_insert.mp hb with rfl | hb
-    · exact ⟨1, isPowerBounded_one, (one_mul _).symm⟩
-    obtain ⟨t', ht', rfl⟩ := Finset.mem_image.mp hb
-    refine ⟨inr A (Completion S) (Completion S')
-        (toCompletionLoc P' T' s' S' hden' t' * ↑hs'.unit⁻¹),
-      (isAdicHom_inr _ _ _).isPowerBounded_map
-        (isPowerBounded_toCompletionLoc_mul_unit_inv P' T' s' S' hden' (mul_one s').symm hs'
-          ((mul_one t').symm ▸ ht')), ?_⟩
-    rw [hf, map_inr, map_inr, ← map_mul, mul_assoc, hs'.val_inv_mul, mul_one]
+  obtain ⟨hu, hleft, hright⟩ :=
+    isUnit_and_exists_isPowerBounded_map_inl_inr P T s S hden P' T' s' S' hden' f hf
   refine existsUnique_continuous_ringHom_completion_locTopology Q _ _ S'' hden''
     (continuous_map ..).continuousAt hu fun x hx ↦ ?_
   obtain ⟨a, ha, b, hb, rfl⟩ := Finset.mem_mul.mp hx

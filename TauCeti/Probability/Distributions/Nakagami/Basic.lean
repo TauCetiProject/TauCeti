@@ -257,15 +257,25 @@ theorem nakagamiMeasure_map_sq (hm : 0 < m) (hΩ : 0 < Ω) :
   exact sq_sqrt hx.le
 
 /-- Nakagami shape `m` and spread `Ω` correspond to chi degree `2 * m` and scale
-`√(Ω / (2 * m))`. -/
-theorem nakagamiMeasure_eq_chiMeasure (hm : 0 < m) (hΩ : 0 < Ω) :
+`√(Ω / (2 * m))`, including the zero laws at invalid parameters. -/
+theorem nakagamiMeasure_eq_chiMeasure :
     nakagamiMeasure m Ω = chiMeasure (2 * m) (√(Ω / (2 * m))) := by
+  by_cases h : 0 < m ∧ 0 < Ω
+  swap
+  · rw [nakagamiMeasure_of_not_pos h]
+    rcases lt_or_ge m 0 with hm | hm
+    · exact (chiMeasure_of_neg (by linarith)).symm
+    · refine (chiMeasure_of_scale_nonpos (le_of_eq (sqrt_eq_zero_of_nonpos ?_))).symm
+      rcases hm.eq_or_lt with rfl | hm
+      · simp
+      · exact div_nonpos_of_nonpos_of_nonneg (not_lt.mp fun hΩ ↦ h ⟨hm, hΩ⟩) (by positivity)
+  obtain ⟨hm, hΩ⟩ := h
   have hk : 0 < 2 * m := by positivity
   have hs : 0 < √(Ω / (2 * m)) := by positivity
   have hsq : (chiMeasure (2 * m) (√(Ω / (2 * m)))).map (fun x ↦ x ^ 2) =
       gammaMeasure m (m / Ω) := by
     rw [chiMeasure_map_sq hs, chiSquaredMeasure_eq_gammaMeasure hk,
-      gammaMeasure_map_const_mul (half_pos hk) one_half_pos (by positivity)]
+      gammaMeasure_map_const_mul (by positivity)]
     congr 1
     · ring
     · rw [sq_sqrt (by positivity)]
@@ -279,9 +289,9 @@ including the zero laws at invalid parameters. -/
 theorem nakagamiMeasure_map_const_mul (hc : 0 < c) :
     (nakagamiMeasure m Ω).map (fun x ↦ c * x) = nakagamiMeasure m (c ^ 2 * Ω) := by
   by_cases h : 0 < m ∧ 0 < Ω
-  · obtain ⟨hm, hΩ⟩ := h
-    rw [nakagamiMeasure_eq_chiMeasure hm hΩ, chiMeasure_map_const_mul hc,
-      nakagamiMeasure_eq_chiMeasure hm (by positivity)]
+  · obtain ⟨_, _⟩ := h
+    rw [nakagamiMeasure_eq_chiMeasure, chiMeasure_map_const_mul hc,
+      nakagamiMeasure_eq_chiMeasure]
     congr 1
     rw [show c ^ 2 * Ω / (2 * m) = c ^ 2 * (Ω / (2 * m)) by ring,
       sqrt_mul (sq_nonneg c), sqrt_sq hc.le]
@@ -298,8 +308,7 @@ theorem cdf_nakagamiMeasure_eq (hm : 0 < m) (hΩ : 0 < Ω) (x : ℝ) :
       if x < 0 then 0 else regularizedGamma m (m / Ω * x ^ 2) := by
   let _ := isProbabilityMeasure_nakagamiMeasure hm hΩ
   let _ := isProbabilityMeasure_gammaMeasure hm (div_pos hm hΩ)
-  rw [cdf_eq_real, nakagamiMeasure_of_pos hm hΩ,
-    map_measureReal_apply (by fun_prop) measurableSet_Iic]
+  rw [nakagamiMeasure_of_pos hm hΩ, Measure.cdf_map _ _ (by fun_prop)]
   by_cases hx : x < 0
   · have he : Real.sqrt ⁻¹' Iic x = ∅ := by
       ext y

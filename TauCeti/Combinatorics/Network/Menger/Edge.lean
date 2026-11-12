@@ -83,11 +83,14 @@ variable {V : Type u} {Q : V → V → Type v} {s t : V}
 /-- If every vertex of `C` has an arrow to every vertex outside `C`, then any finite set containing
 all arrows leaving `C` has at least `Nat.card V - 1` members, provided `C` and its complement are
 nonempty. -/
-theorem natCard_sub_one_le_card_of_completeCut [Finite V] {C : Set V} (hs : s ∈ C) (ht : t ∉ C)
+theorem natCard_sub_one_le_card_of_completeCut {C : Set V} (hs : s ∈ C) (ht : t ∉ C)
     (hC : ∀ u ∈ C, ∀ w ∉ C, Nonempty (Q u w)) {F : Finset (Σ x y, Q x y)}
     (hF : ∀ ⦃v w : V⦄ (e : Q v w), v ∈ C → w ∉ C → ⟨v, w, e⟩ ∈ F) :
     Nat.card V - 1 ≤ #F := by
   classical
+  rcases finite_or_infinite V with hV | hV
+  swap
+  · simp [Nat.card_eq_zero_of_infinite]
   let _ := Fintype.ofFinite V
   set D : Finset V := {v | v ∈ C}
   have hsub : D ×ˢ Dᶜ ⊆ ({a ∈ F | a.1 ∈ C ∧ a.2.1 ∉ C}).image fun a ↦ (a.1, a.2.1) := by
@@ -158,7 +161,7 @@ theorem exists_paths_arrowSeparator_card_eq [Finite V] [∀ x y, Finite (Q x y)]
   -- `S`, which separate `t` from `s`.
   obtain ⟨f, S, hs, ht, hval⟩ :=
     Flow.exists_val_eq_arrowSum hst (cap := (1 : Assignment Q ℤ)) fun _ _ _ ↦ zero_le_one
-  obtain ⟨k, P, hk, hP, -, hdisj⟩ := f.exists_paths_card_eq_val hst fun _ _ e ↦ f.le_upper e
+  obtain ⟨k, P, hk, hP, -, hdisj⟩ := f.exists_paths_card_eq_val fun _ _ e ↦ f.le_upper e
   refine ⟨k, P, ({a : Σ x y, Q x y | a.1 ∈ S ∧ a.2.1 ∈ Sᶜ} : Finset _), hP, hdisj,
     fun h ↦ ht ?_, ?_⟩
   · refine h.mem_of_mem (C := (S : Set V)) hs fun v w e hv he ↦ ?_

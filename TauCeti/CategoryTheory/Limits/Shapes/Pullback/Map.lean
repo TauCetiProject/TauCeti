@@ -66,10 +66,11 @@ product of `T₁ ×_S X₁` and `T₂ ×_S X₂` over `S`, with the projections 
 `X`. -/
 theorem pullback_map_pullback_map [HasPullback t x] [HasPullback t₁ x₁] [HasPullback t₂ x₂]
     (hT : IsPullback p₁ p₂ t₁ t₂) (hX : IsPullback q₁ q₂ x₁ x₂)
-    (ht₁ : p₁ ≫ t₁ = t) (ht₂ : p₂ ≫ t₂ = t) (hx₁ : q₁ ≫ x₁ = x) (hx₂ : q₂ ≫ x₂ = x) :
+    (ht₁ : p₁ ≫ t₁ = t) (hx₁ : q₁ ≫ x₁ = x) :
     IsPullback (pullback.map t x t₁ x₁ p₁ q₁ (𝟙 S) (by simp [ht₁]) (by simp [hx₁]))
-      (pullback.map t x t₂ x₂ p₂ q₂ (𝟙 S) (by simp [ht₂]) (by simp [hx₂]))
+      (pullback.map t x t₂ x₂ p₂ q₂ (𝟙 S) (by simp [← hT.w, ht₁]) (by simp [← hX.w, hx₁]))
       (pullback.snd t₁ x₁ ≫ x₁) (pullback.snd t₂ x₂ ≫ x₂) := by
+  have hx₂ : q₂ ≫ x₂ = x := hX.w.symm.trans hx₁
   have hc₁ {W : C} (a : W ⟶ pullback t₁ x₁) :
       a ≫ pullback.fst t₁ x₁ ≫ t₁ = a ≫ pullback.snd t₁ x₁ ≫ x₁ := by
     rw [pullback.condition]

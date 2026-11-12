@@ -214,6 +214,16 @@ theorem lazardValuation_eq_lazardExponent {p : MvPolynomial (Fin n) S} (hp : p �
   apply lazardValuation_eq_coe_iff.2
   simpa only [coeff_taylor_lazardExponent] using (lazardExponent_eq_iff hp).1 rfl
 
+/-- A nonzero polynomial whose Lazard valuation is constant on a set `A` has eventually constant
+Lazard valuation, equal to that of the exponent at `x ∈ A`, along any map `φ` that is eventually in
+`A`. -/
+theorem eventually_lazardValuation_eq {α : Type*} {l : Filter α} {A : Set (Fin n → S)}
+    {p : MvPolynomial (Fin n) S} (hp : p ≠ 0) {φ : α → Fin n → S} (hφA : ∀ᶠ u in l, φ u ∈ A)
+    (heq : ∀ x ∈ A, ∀ y ∈ A, p.lazardValuation x = p.lazardValuation y) (x : A) :
+    ∀ᶠ u in l, p.lazardValuation (φ u) = toLex (p.lazardExponent x) := by
+  filter_upwards [hφA] with u hu
+  rw [heq (φ u) hu x x.2, lazardValuation_eq_lazardExponent hp x]
+
 /-- A fixed polynomial has only finitely many vectors of removed Lazard exponents. -/
 theorem finite_range_lazardExponent (p : MvPolynomial (Fin n) S) :
     (Set.range p.lazardExponent).Finite := by
@@ -344,7 +354,7 @@ theorem lazardEvalHom_apply (a : Fin n → S) (p : MvPolynomial (Fin n) S) :
 /-- The exponents removed from a power of a nonzero polynomial are multiplied by the power. -/
 theorem lazardExponent_pow {p : MvPolynomial (Fin n) S} (hp : p ≠ 0)
     (a : Fin n → S) (k : ℕ) : (p ^ k).lazardExponent a = k • p.lazardExponent a := by
-  rcases subsingleton_or_nontrivial S with hS | hS
+  rcases subsingleton_or_nontrivial S with hS | _
   · exact False.elim (hp (by ext d; exact Subsingleton.elim _ _))
   induction k with
   | zero => simpa using lazardExponent_C (1 : S) a

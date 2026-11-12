@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Convex.Segment
+import Mathlib.Tactic.Module
 
 /-!
 # Separating planar segments by a supporting line
@@ -16,6 +17,10 @@ functional. Suppose this functional, applied to displacement from the first
 segment's initial endpoint, vanishes on that segment and has the same strict
 sign at both endpoints of another. Then the segments are disjoint. This is a
 convenient signed half-plane test for polygonal boundaries with reentrant corners.
+
+Variants handle a point off the line through an edge, a second segment touching the
+supporting line at one endpoint, the edges of a polyline whose interior vertices lie on one
+side, and a segment meeting a horizontal line.
 -/
 
 public section
@@ -24,18 +29,16 @@ open Set
 
 namespace TauCeti
 
-/-- Positive imaginary height relative to an edge excludes membership in that segment. -/
-theorem notMem_segment_of_im_div_sub_pos {p q z : ℂ} (h : 0 < ((z - p) / (q - p)).im) :
+/-- Nonzero imaginary height relative to an edge, on either side of it, excludes membership in
+that segment. -/
+theorem notMem_segment_of_im_div_sub_ne_zero {p q z : ℂ} (h : ((z - p) / (q - p)).im ≠ 0) :
     z ∉ segment ℝ p q := by
   have hv : q - p ≠ 0 := by
     intro he
-    simp only [he, div_zero, Complex.zero_im] at h
-    exact h.false
+    simp [he] at h
   rw [segment_eq_image']
   rintro ⟨t, _, rfl⟩
-  rw [add_sub_cancel_left, Complex.real_smul, mul_div_cancel_right₀ _ hv,
-    Complex.ofReal_im] at h
-  exact h.false
+  simp [Complex.real_smul, hv] at h
 
 /-- If a real-linear height is zero along one segment and positive at both
 endpoints of a second segment, the segments are disjoint. -/
@@ -56,9 +59,7 @@ theorem disjoint_segment_of_im_mul_sub_pos (c u v w x : ℂ)
       (1 - t) * (c * (w - u)).im + t * (c * (x - u)).im := by
     have heq : w + t • (x - w) - u =
         (1 - t) • (w - u) + t • (x - u) := by
-      rw [Complex.real_smul, Complex.real_smul, Complex.real_smul]
-      push_cast
-      ring
+      module
     rw [heq, mul_add, mul_smul_comm, mul_smul_comm, Complex.add_im,
       Complex.smul_im, Complex.smul_im]
     simp only [smul_eq_mul]
@@ -96,9 +97,7 @@ theorem eq_left_of_mem_segment_of_im_mul_sub_ne (c u v w x z : ℂ)
   obtain ⟨t, _, rfl⟩ := hz₂
   have hcomb : (c * (w + t • (x - w) - u)).im = t * (c * (x - u)).im := by
     have heq : w + t • (x - w) - u = (1 - t) • (w - u) + t • (x - u) := by
-      rw [Complex.real_smul, Complex.real_smul, Complex.real_smul]
-      push_cast
-      ring
+      module
     rw [heq, mul_add, mul_smul_comm, mul_smul_comm, Complex.add_im,
       Complex.smul_im, Complex.smul_im, hw]
     simp
@@ -123,19 +122,14 @@ theorem eq_endpoint_of_mem_segment_of_polyline_edge_of_im_mul_sub_pos {n : ℕ}
     z = V 0 ∨ z = V (Fin.last (n + 1)) := by
   by_cases hi0 : i = 0
   · have hsucc : i.succ ≠ Fin.last (n + 1) := by
-      rw [hi0, Ne, Fin.ext_iff]
-      simp only [Fin.val_succ, Fin.val_zero, Fin.val_last]
+      simp only [hi0, ne_eq, Fin.ext_iff, Fin.val_succ, Fin.val_zero, Fin.val_last]
       omega
     have hz := eq_left_of_mem_segment_of_im_mul_sub_ne c u v
       (V i.castSucc) (V i.succ) z hline (by simpa [hi0] using hfirst)
       (hheight i.succ (Fin.succ_ne_zero i) hsucc).ne' hzline hzedge
     exact Or.inl (by simpa [hi0] using hz)
-  · have hstart : i.castSucc ≠ (0 : Fin (n + 2)) := by
-      intro h
-      apply hi0
-      apply Fin.ext
-      simpa only [Fin.val_castSucc, Fin.val_zero] using (congrArg Fin.val h)
-    have hhstart := hheight i.castSucc hstart (Fin.castSucc_lt_last i).ne
+  · have hhstart := hheight i.castSucc (Fin.castSucc_ne_zero_iff.mpr hi0)
+      (Fin.castSucc_lt_last i).ne
     by_cases hilast : i.succ = Fin.last (n + 1)
     · have hzedge' : z ∈ segment ℝ (V i.succ) (V i.castSucc) := by
         rwa [segment_symm]
@@ -162,3 +156,22 @@ theorem eq_left_of_mem_segment_of_im_le_of_lt {u v z : ℂ} {h : ℝ}
   simp [ht0, hs1]
 
 end TauCeti
+
+namespace Complex
+
+/-- A point on a later side lies strictly on the positive side of the line through an earlier side,
+when the rotated first side is real, the intermediate chord is strictly positive and the later
+side is nonnegative. -/
+theorem im_mul_lineMap_sub_pos (u Vi Vi' Vj Vj' : ℂ) (s t : ℝ) (ht : 0 ≤ t)
+    (hfirst : (u * (Vi' - Vi)).im = 0) (hmiddle : 0 < (u * (Vj - Vi')).im)
+    (hlast : 0 ≤ (u * (Vj' - Vj)).im) :
+    0 < (u * (AffineMap.lineMap Vj Vj' t - AffineMap.lineMap Vi Vi' s)).im := by
+  have hdecomp : AffineMap.lineMap Vj Vj' t - AffineMap.lineMap Vi Vi' s =
+      (1 - s) • (Vi' - Vi) + (Vj - Vi') + t • (Vj' - Vj) := by
+    simp only [AffineMap.lineMap_apply_module']
+    module
+  simp only [hdecomp, mul_add, Complex.add_im, mul_smul_comm, Complex.smul_im, smul_eq_mul,
+    hfirst, mul_zero, zero_add]
+  exact add_pos_of_pos_of_nonneg hmiddle (mul_nonneg ht hlast)
+
+end Complex

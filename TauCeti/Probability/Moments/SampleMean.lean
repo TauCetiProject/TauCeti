@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Independence.Integration
-public import Mathlib.MeasureTheory.Function.L2Space
+public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Convex.FiniteMean
 
 /-!
@@ -53,8 +53,9 @@ namespace TauCeti
 
 variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
-variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] [MeasurableSpace E]
-  [BorelSpace E]
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+variable [CompleteSpace E] [MeasurableSpace E] [BorelSpace E]
 
 /-- **Bienaymé's identity for random vectors.** If the random vectors `X i`, `i ∈ s`, in a real
 Hilbert space are square-integrable, centered and pairwise independent, then the expected squared
@@ -66,13 +67,6 @@ theorem integral_norm_sum_sq_of_pairwise_indepFun [IsFiniteMeasure μ] {X : ι �
   -- Over `ℝ`, `innerSL ℝ` is linear only up to `starRingEnd ℝ = RingHom.id ℝ`, so its applications
   -- below are not syntactically `⟪·, ·⟫` and `simp` cannot rewrite them with
   -- `innerSL_apply_apply`; they agree with `⟪·, ·⟫` by that lemma, which is `rfl`.
-  have hint : ∀ i ∈ s, ∀ j ∈ s, Integrable (fun ω ↦ ⟪X i ω, X j ω⟫) μ := by
-    intro i hi j hj
-    obtain rfl | hij := eq_or_ne i j
-    · simpa only [real_inner_self_eq_norm_sq] using
-        (memLp_two_iff_integrable_sq_norm (hX i hi).aestronglyMeasurable).1 (hX i hi)
-    · exact (hindep hi hj hij).integrable_bilin ((hX i hi).integrable one_le_two)
-        ((hX j hj).integrable one_le_two) (innerSL ℝ)
   -- Pairwise independence makes every cross term `∫ ⟪X i, X j⟫` vanish.
   have hcross : ∀ i ∈ s, ∀ j ∈ s, j ≠ i → ∫ ω, ⟪X i ω, X j ω⟫ ∂μ = 0 := by
     intro i hi j hj hji
@@ -80,11 +74,9 @@ theorem integral_norm_sum_sq_of_pairwise_indepFun [IsFiniteMeasure μ] {X : ι �
       ((hX j hj).integrable one_le_two) (innerSL ℝ)
     rw [hmean i hi, map_zero, zero_apply] at h
     exact h
-  simp_rw [← real_inner_self_eq_norm_sq, sum_inner, inner_sum]
-  rw [integral_finsetSum _ fun i hi ↦ integrable_finsetSum _ fun j hj ↦ hint i hi j hj]
-  refine sum_congr rfl fun i hi ↦ ?_
-  rw [integral_finsetSum _ fun j hj ↦ hint i hi j hj,
-    sum_eq_single_of_mem i hi fun j hj hji ↦ hcross i hi j hj hji]
+  exact integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero
+    (fun i hi j hj ↦ (hX i hi).integrable_inner (hX j hj))
+    (fun i hi j hj hij ↦ hcross i hi j hj hij.symm)
 
 variable [Fintype ι] [Nonempty ι]
 

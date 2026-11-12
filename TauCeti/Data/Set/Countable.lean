@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Countable
+public import Mathlib.Data.Finset.Lattice.Fold
 
 /-!
-# Countably many predicates with countable truth sides
+# Countable ranges and predicates with countable truth sides
 
 Let `P i` be countably many predicates on a type `X`, each of which *splits* `X` with a countable
 side: either `{x | P i x}` or `{x | ¬ P i x}` is countable. Off the union of the countable sides,
@@ -21,6 +22,10 @@ values of countably many sentences.
 
 ## Main results
 
+* `Set.Countable.range_min`: the pointwise minimum of two countable-range functions has
+  countable range.
+* `Finset.countable_range_sup`: the pointwise finite supremum of countable-range functions
+  has countable range.
 * `TauCeti.exists_countable_exceptions_of_splits`: outside one countable set, every `P i` is
   constant.
 * `TauCeti.countable_range_of_splits`: a map that depends only on the truth values of the `P i`
@@ -41,6 +46,25 @@ values of countably many sentences.
 public section
 
 universe u v w
+
+/-- The pointwise minimum of two functions with countable ranges has countable range. -/
+theorem Set.Countable.range_min {α β : Type*} [Min β] {f g : α → β}
+    (hf : (Set.range f).Countable) (hg : (Set.range g).Countable) :
+    (Set.range fun x ↦ min (f x) (g x)).Countable :=
+  (hf.image2 hg min).mono (by rintro _ ⟨x, rfl⟩; exact ⟨f x, ⟨x, rfl⟩, g x, ⟨x, rfl⟩, rfl⟩)
+
+/-- The pointwise finite supremum of countable-range functions has countable range.
+The empty supremum is the constant bottom function. -/
+theorem Finset.countable_range_sup {κ α Ω : Type*} [SemilatticeSup α] [OrderBot α]
+    (s : Finset κ) {f : κ → Ω → α} (hf : ∀ j ∈ s, (Set.range (f j)).Countable) :
+    (Set.range (fun ω ↦ s.sup (fun j ↦ f j ω))).Countable := by
+  have h := Finset.sup_induction (p := fun g : Ω → α ↦ (Set.range g).Countable)
+    ((Set.countable_singleton (⊥ : α)).mono (by simp))
+    (fun a ha b hb ↦ (ha.image2 hb (· ⊔ ·)).mono (by
+      rintro _ ⟨ω, rfl⟩
+      exact ⟨a ω, ⟨ω, rfl⟩, b ω, ⟨ω, rfl⟩, rfl⟩)) hf
+  have heq : s.sup f = fun ω ↦ s.sup (fun j ↦ f j ω) := funext (s.sup_apply f)
+  exact heq ▸ h
 
 namespace TauCeti
 

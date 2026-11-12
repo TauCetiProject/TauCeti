@@ -16,8 +16,10 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.GroupWithZero.DivId
 
 /-!
@@ -29,7 +31,10 @@ Write `s = |α|²`. Away from the zeros of `α` the pair has the gauge-invariant
 
 `τ = Im (conj α ∇_a α) / s = Im (α⁻¹ dα) + b`,
 
-whose first summand is the differential of a local branch of `arg α`. In Taubes's passage from
+whose first summand is the differential of a local branch of `arg α`. The modulus is governed by
+the real part instead: `ds = 2 Re (conj α ∇_a α)`, so `|ds| ≤ 2 |α| |∇_a α|`
+(`fderiv_norm_sq_apply_eq_re_conj_mul_covariantDeriv`,
+`norm_fderiv_norm_sq_le_mul_norm_covariantDeriv`). In Taubes's passage from
 Seiberg–Witten solutions to pseudoholomorphic curves, `α` is the component of the rescaled
 spinor along the canonical unit spinor, its zero set concentrates along the limiting curve, and
 the curvature `i F_a = -db` is compared with the current of that curve through the **cutoff
@@ -47,6 +52,10 @@ where `χ` is a cutoff function vanishing near `0` and equal to `1` above a thre
 * `Θ` and `χ(s) τ` are invariant under gauge transformations
   `(b, α) ↦ (b - Im (u⁻¹ du), u α)` by unit-modulus functions `u`, which is how they are defined
   on a nontrivial line from local trivializations (`cutoffCurrent_sub_phaseForm_mul`);
+* `Θ` and `χ(s) τ` are natural under pullback: for a map `f` that is `C²` at a point, the cutoff
+  current of the pair `(f^* b, α ∘ f)` there is `f^* Θ` (`cutoffCurrent_comp`), so the integral
+  of `Θ` over a smooth disc is the flux of the cutoff current of the pulled-back pair through a
+  disc in the plane;
 * on a disc in the plane on whose boundary circle `χ(s) = 1`, the integral of `Θ` is the winding
   integral `∮ Im (α⁻¹ dα)` of `α`, with no contribution from `b`
   (`integral_cutoffCurrent_closedBall`). The flux of `i F_a` instead retains the boundary term
@@ -65,14 +74,40 @@ Given an almost complex structure `J`, the cutoff phase form also has a modulus 
 (`abs_modulusPotential_le`, `norm_cutoffDBarForm_le`). Since `Θ - i F_a = d(χ(s) τ)`, its pairing
 with a test form `ζ` is the pairing of `χ(s) τ = d^c_J H(s) + E` with `dζ`; after an integration
 by parts in the first term, these pointwise bounds reduce that pairing to integral bounds on
-`1 - |α|²` and on `∂bar_a α`. Those integral bounds and the integration by parts are not part of
-this file.
+`1 - |α|²` and on `∂bar_a α`. This reduction is carried out in
+`TauCeti.Analysis.PDE.SeibergWitten.CurvatureComparison`.
+
+On a pair of vectors the cutoff current is an explicit combination of the curvature and of the
+covariant derivative: with `s = |α|²` and `χ'` the derivative of `χ`,
+
+`Θ(v, w) = (1 - χ(s)) i F_a(v, w) + 2 χ'(s) Im (conj (∇_v α) ∇_w α)`
+
+(`cutoffCurrent_apply_pair`), at every point, including the zeros of `α`. Write
+`∂_a α = ∇_a α - ∂bar_a α` for the `J`-linear part of `∇_a α`. On a complex line the second term
+is `2 χ'(s) (|∂_v α|² - |∂bar_v α|²)` (`cutoffCurrent_apply_pair_apply`), so for a nondecreasing
+cutoff
+
+`Θ(v, J v) ≥ (1 - χ(s)) i F_a(v, J v) - 2 χ'(s) |∂bar_v α|²`
+
+(`le_cutoffCurrent_apply_pair_apply`). Hence a lower bound `i F_a(v, J v) ≥ -K |v|²` on the
+Hermitian part of the curvature, with `K ≥ 0`, and a bound `|∂bar_a α| ≤ D` give
+`Θ(v, J v) ≥ -(K + 2 M D²) |v|²` when `0 ≤ χ ≤ 1` and `0 ≤ χ' ≤ M`
+(`neg_mul_le_cutoffCurrent_apply_pair_apply`). On a `J`-holomorphic disc this bounds the negative
+part of the slice density of `Θ` by a multiple of `∫ |dσ (1)|²`, which is the area of the disc
+when the norm comes from an inner product for which `J` is orthogonal
+(`integral_negPart_cutoffCurrent_compContinuousLinearMap_le`). The anti-`J`-invariant part of `Θ`
+is that of `(1 - χ(s)) i F_a` up to the mixed products of `∂_a α` with `∂bar_a α`
+(`cutoffCurrent_apply_pair_apply_sub`, `abs_cutoffCurrent_apply_pair_apply_sub_add_le`). In
+Taubes's analysis these bound the negative mass of the slices of the cutoff current on the normal
+discs of a pseudoholomorphic curve, and the distance of the cutoff current to the cone of positive
+`(1,1)`-forms.
 
 The cutoff phase form, the cutoff current, their regularity, support and gauge invariance are
 stated on an arbitrary real normed space, which plays the role of a coordinate chart; the gauge
 invariance makes the constructions independent of the trivialization. The flux identity is
-stated on the plane `ℂ`, and the modulus-potential decomposition and the bound on the correction
-form on a finite-dimensional real normed space carrying an almost complex structure.
+stated on the plane `ℂ`, and the modulus-potential decomposition, the bound on the correction
+form and the statements on complex lines on a finite-dimensional real normed space carrying an
+almost complex structure.
 
 The phase form `Im (α⁻¹ dα)` (`TauCeti.phaseForm`) and the twisted differential `d^c_J`
 (`TauCeti.AlmostComplexStructure.twistedDifferential`) are general constructions defined in
@@ -123,6 +158,40 @@ theorem covariantDeriv_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → 
     covariantDeriv b α x v = fderiv ℝ α x v + I * b x (fun _ ↦ v) * α x := by
   simp [covariantDeriv, ofSubsingletonLIE_symm_apply]
   ring
+
+/-- The covariant derivative of a `C¹` section for a continuous connection form is
+continuous. -/
+theorem continuous_covariantDeriv (hα : ContDiff ℝ 1 α) (hb : Continuous b) :
+    Continuous (covariantDeriv b α) := by
+  unfold covariantDeriv
+  fun_prop
+
+/-- The derivative of `|α|²` is `2 Re (conj α ∇_a α)`, for every connection form `a = i b`: the
+connection term contributes `Re (conj α · i b α) = Re (i b |α|²) = 0`. This is the modulus
+counterpart of `covariantPhaseForm_apply_eq_div`, which reads the phase form off the imaginary
+part. -/
+theorem fderiv_norm_sq_apply_eq_re_conj_mul_covariantDeriv (hα : DifferentiableAt ℝ α x)
+    (v : E) :
+    fderiv ℝ (fun y ↦ ‖α y‖ ^ 2) x v = 2 * (conj (α x) * covariantDeriv b α x v).re := by
+  rw [hα.hasFDerivAt.norm_sq.fderiv, covariantDeriv_apply]
+  simp only [_root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, Complex.inner,
+    nsmul_eq_mul, Nat.cast_ofNat, mul_add, add_re, mul_re, mul_im, conj_re, conj_im, I_re, I_im,
+    ofReal_re, ofReal_im]
+  ring
+
+/-- The derivative of `|α|²` is bounded by `2 |α| |∇_a α|`, for every connection form. -/
+theorem norm_fderiv_norm_sq_le_mul_norm_covariantDeriv (hα : DifferentiableAt ℝ α x) :
+    ‖fderiv ℝ (fun y ↦ ‖α y‖ ^ 2) x‖ ≤ 2 * ‖α x‖ * ‖covariantDeriv b α x‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  rw [fderiv_norm_sq_apply_eq_re_conj_mul_covariantDeriv (b := b) hα, Real.norm_eq_abs, abs_mul,
+    abs_two, mul_assoc, mul_assoc]
+  refine mul_le_mul_of_nonneg_left ?_ zero_le_two
+  calc |(conj (α x) * covariantDeriv b α x v).re|
+      ≤ ‖conj (α x) * covariantDeriv b α x v‖ := abs_re_le_norm _
+    _ = ‖α x‖ * ‖covariantDeriv b α x v‖ := by rw [norm_mul, RCLike.norm_conj]
+    _ ≤ ‖α x‖ * (‖covariantDeriv b α x‖ * ‖v‖) := by
+      gcongr
+      exact ContinuousLinearMap.le_opNorm _ _
 
 /-- The phase form `τ = Im (α⁻¹ dα) + b` of a pair `(a, α)` with `a = i b`. Away from the zeros
 of `α` it is `Im (conj α ∇_a α) / |α|²` (`covariantPhaseForm_apply_eq_div`). -/
@@ -236,18 +305,20 @@ theorem extDeriv_cutoffCurrent (hα : ContDiff ℝ 3 α) (hb : ContDiff ℝ 2 b)
 /-- The cutoff current vanishes at a point `x` with `α x ≠ 0` where `χ` is `1` near `|α x|²`:
 there `d(χ(|α|²) τ) = dτ = db`. -/
 theorem cutoffCurrent_eq_zero (hα : ContDiffAt ℝ 2 α x) (h : α x ≠ 0)
-    (hb : DifferentiableAt ℝ b x) (hχ : χ =ᶠ[𝓝 (normSq (α x))] 1) :
-    cutoffCurrent χ b α x = 0 := by
+    (hχ : χ =ᶠ[𝓝 (normSq (α x))] 1) : cutoffCurrent χ b α x = 0 := by
+  have hτ := (contDiffAt_phaseForm hα h le_rfl).differentiableAt one_ne_zero
   rw [cutoffCurrent_apply,
     (cutoffPhaseForm_eventuallyEq_covariantPhaseForm hα.continuousAt hχ).extDeriv_eq,
-    covariantPhaseForm,
-    extDeriv_add ((contDiffAt_phaseForm hα h le_rfl).differentiableAt one_ne_zero) hb,
-    extDeriv_phaseForm hα h, zero_add, sub_self]
+    covariantPhaseForm]
+  by_cases hb : DifferentiableAt ℝ b x
+  · rw [extDeriv_add hτ hb, extDeriv_phaseForm hα h, zero_add, sub_self]
+  · have hs : ¬ DifferentiableAt ℝ (phaseForm α + b) x := fun h' ↦ hb (by simpa using h'.sub hτ)
+    rw [extDeriv_of_not_differentiableAt hb, extDeriv_of_not_differentiableAt hs, sub_zero]
 
 /-- **Support of the cutoff current.** If `χ = 1` on `(c, ∞)` with `c ≥ 0`, the cutoff current is
 supported in `{|α|² ≤ c}`. -/
 theorem tsupport_cutoffCurrent_subset {c : ℝ} (hc : 0 ≤ c) (hα : ContDiff ℝ 2 α)
-    (hb : Differentiable ℝ b) (hχ : EqOn χ 1 (Ioi c)) :
+    (hχ : EqOn χ 1 (Ioi c)) :
     tsupport (cutoffCurrent χ b α) ⊆ {x | normSq (α x) ≤ c} := by
   refine closure_minimal (fun x hx ↦ ?_)
     (isClosed_le (continuous_normSq.comp hα.continuous) continuous_const)
@@ -257,7 +328,7 @@ theorem tsupport_cutoffCurrent_subset {c : ℝ} (hc : 0 ≤ c) (hα : ContDiff �
     rintro h
     rw [h, normSq_zero] at hlt
     exact hlt.not_ge hc
-  exact hx (cutoffCurrent_eq_zero hα.contDiffAt h₀ (hb x)
+  exact hx (cutoffCurrent_eq_zero hα.contDiffAt h₀
     (eventuallyEq_of_mem (Ioi_mem_nhds hlt) hχ))
 
 /-! ### Gauge invariance -/
@@ -287,6 +358,46 @@ theorem cutoffCurrent_sub_phaseForm_mul (hu : ∀ y, ‖u y‖ = 1) (hu₂ : Con
     extDeriv_sub (hb y)
       ((contDiffAt_phaseForm hu₂.contDiffAt hu₀ le_rfl).differentiableAt one_ne_zero),
     extDeriv_phaseForm hu₂.contDiffAt hu₀, sub_zero]
+
+/-! ### Naturality under pullback -/
+
+section Pullback
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : F → E}
+
+/-- **Naturality of the cutoff phase form.** The cutoff phase form of the pulled-back pair
+`(f^* b, α ∘ f)` is the pullback by `f` of the cutoff phase form of `(b, α)`. -/
+theorem cutoffPhaseForm_comp {y : F} (hα : DifferentiableAt ℝ α (f y))
+    (hf : DifferentiableAt ℝ f y) :
+    cutoffPhaseForm χ (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z)) (α ∘ f) y =
+      (cutoffPhaseForm χ b α (f y)).compContinuousLinearMap (fderiv ℝ f y) := by
+  ext v
+  simp [phaseForm_comp hα hf]
+
+/-- **Naturality of the cutoff current.** For a map `f` that is `C²` at `y`, the cutoff current of
+the pulled-back pair `(f^* b, α ∘ f)` at `y` is the pullback by `f` of the cutoff current of
+`(b, α)` at `f y`. -/
+theorem cutoffCurrent_comp {y : F} (hα : ContDiffAt ℝ 2 α (f y)) (hb : ContDiffAt ℝ 1 b (f y))
+    (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hf : ContDiffAt ℝ 2 f y) :
+    cutoffCurrent χ (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z)) (α ∘ f) y =
+      (cutoffCurrent χ b α (f y)).compContinuousLinearMap (fderiv ℝ f y) := by
+  have hτ : ContDiffAt ℝ 1 (cutoffPhaseForm χ b α) (f y) :=
+    contDiffAt_cutoffPhaseForm hα hb hχ hχ₀
+  have hpull : cutoffPhaseForm χ (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z))
+      (α ∘ f) =ᶠ[𝓝 y]
+        fun z ↦ (cutoffPhaseForm χ b α (f z)).compContinuousLinearMap (fderiv ℝ f z) := by
+    filter_upwards [hf.continuousAt.eventually (hα.eventually (by simp)), hf.eventually (by simp)]
+      with z hαz hfz
+    exact cutoffPhaseForm_comp (hαz.differentiableAt two_ne_zero)
+      (hfz.differentiableAt two_ne_zero)
+  rw [cutoffCurrent_apply, hpull.extDeriv_eq,
+    extDeriv_pullback (hτ.differentiableAt one_ne_zero) hf (by simp),
+    extDeriv_pullback (hb.differentiableAt one_ne_zero) hf (by simp),
+    cutoffCurrent_apply]
+  ext v
+  simp
+
+end Pullback
 
 /-! ### The flux through a disc -/
 
@@ -320,6 +431,59 @@ theorem integral_cutoffCurrent_closedBall {α : ℂ → ℂ} {b : ℂ → ℂ [�
   refine intervalIntegral.integral_congr fun θ _ ↦ ?_
   simp [hbd θ]
 
+/-! ### The cutoff current on a pair of vectors -/
+
+/-- **The cutoff current on a pair of vectors.** For a cutoff `χ` vanishing near `0` and
+differentiable at `s = |α(x)|²`,
+
+`Θ(v, w) = (1 - χ(s)) i F_a(v, w) + 2 χ'(s) Im (conj (∇_v α) ∇_w α)`,
+
+where `i F_a = -db`. Away from the zeros of `α` the second term is `χ'(s) ds ∧ τ`, with
+`ds = 2 Re (conj α ∇_a α)` and `τ = Im (conj α ∇_a α) / s`; near the zeros of `α` it vanishes and
+`Θ = i F_a`. The identity holds at every point, including the zeros of `α`. -/
+theorem cutoffCurrent_apply_pair (hα : ContDiffAt ℝ 2 α x) (hb : DifferentiableAt ℝ b x)
+    (hχ : DifferentiableAt ℝ χ (normSq (α x))) (hχ₀ : χ =ᶠ[𝓝 0] 0) (v w : E) :
+    cutoffCurrent χ b α x ![v, w] =
+      -(1 - χ (normSq (α x))) * extDeriv b x ![v, w] +
+        2 * deriv χ (normSq (α x)) *
+          (conj (covariantDeriv b α x v) * covariantDeriv b α x w).im := by
+  by_cases h : α x = 0
+  · -- Near a zero of `α` the cutoff phase form vanishes, and so do `χ(0)` and `χ'(0)`.
+    have hz : extDeriv (cutoffPhaseForm χ b α) x = 0 := by
+      rw [(cutoffPhaseForm_eventuallyEq_zero hα.continuousAt (by simpa [h] using hχ₀)).extDeriv_eq,
+        Pi.zero_def, extDeriv_const, Pi.zero_apply]
+    have hd : deriv χ 0 = 0 := by
+      rw [hχ₀.deriv_eq]
+      simp
+    simp [cutoffCurrent_apply, hz, h, hχ₀.self_of_nhds, hd]
+  · -- Away from the zeros, `d(χ(s) τ) = χ(s) dτ + χ'(s) ds ∧ τ` and `dτ = db`.
+    have hs : HasFDerivAt (fun y ↦ normSq (α y))
+        (2 • (innerSL ℝ (α x)).comp (fderiv ℝ α x)) x := by
+      simp_rw [normSq_eq_norm_sq]
+      exact (hα.differentiableAt (by simp)).hasFDerivAt.norm_sq
+    have hc : HasFDerivAt (fun y ↦ χ (normSq (α y)))
+        (deriv χ (normSq (α x)) • 2 • (innerSL ℝ (α x)).comp (fderiv ℝ α x)) x :=
+      hχ.hasDerivAt.comp_hasFDerivAt x hs
+    have hφ : DifferentiableAt ℝ (phaseForm α) x :=
+      (contDiffAt_phaseForm hα h le_rfl).differentiableAt one_ne_zero
+    have hτ : DifferentiableAt ℝ (covariantPhaseForm b α) x := hφ.add hb
+    have hdτ : extDeriv (covariantPhaseForm b α) x = extDeriv b x := by
+      rw [covariantPhaseForm, extDeriv_add hφ hb, extDeriv_phaseForm hα h, zero_add]
+    have hsplit : cutoffPhaseForm χ b α = (fun y ↦ χ (normSq (α y))) • covariantPhaseForm b α :=
+      funext fun y ↦ cutoffPhaseForm_apply χ b α y
+    rw [cutoffCurrent_apply, hsplit, extDeriv_function_smul hc.differentiableAt hτ, hdτ,
+      hc.fderiv, ContinuousAlternatingMap.sub_apply, ContinuousAlternatingMap.add_apply,
+      alternatizeUncurryFin_apply_pair]
+    have hn := (normSq_pos.2 h).ne'
+    simp only [ContinuousAlternatingMap.smul_apply, ContinuousLinearMap.smulRight_apply,
+      _root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, Complex.inner,
+      smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat, covariantPhaseForm_apply_eq_div h,
+      covariantDeriv_apply, mul_re, mul_im, add_re, add_im, conj_re, conj_im, ofReal_re,
+      ofReal_im, I_re, I_im]
+    field_simp
+    rw [normSq_apply]
+    ring
+
 /-! ### The modulus potential -/
 
 /-- The modulus potential `H(s) = ∫₁ˢ χ(t) / t dt`, normalized by `H(1) = 0`. When `χ` is
@@ -341,21 +505,35 @@ theorem hasDerivAt_modulusPotential (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝
   intervalIntegral.integral_hasDerivAt_right (hcont.intervalIntegrable _ _)
     hcont.aestronglyMeasurable.stronglyMeasurableAtFilter hcont.continuousAt
 
-/-- The modulus potential is constant near `0`, for a continuous cutoff vanishing near `0`. -/
-theorem modulusPotential_eventuallyEq (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) :
+/-- The modulus potential of a continuous cutoff vanishing near `0` is `C¹`. -/
+theorem contDiff_modulusPotential (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) :
+    ContDiff ℝ 1 (modulusPotential χ) := by
+  refine contDiff_one_iff_deriv.2
+    ⟨fun t ↦ (hasDerivAt_modulusPotential hχ hχ₀ t).differentiableAt, ?_⟩
+  rw [show deriv (modulusPotential χ) = fun t ↦ χ t / t from
+    funext fun t ↦ (hasDerivAt_modulusPotential hχ hχ₀ t).deriv]
+  exact hχ.div_id_of_eventuallyEq_zero hχ₀
+
+/-- The modulus potential is constant near `0`, for a cutoff vanishing near `0`. -/
+theorem modulusPotential_eventuallyEq (hχ₀ : χ =ᶠ[𝓝 0] 0) :
     modulusPotential χ =ᶠ[𝓝 0] fun _ ↦ modulusPotential χ 0 := by
   obtain ⟨ε, hε, hzero⟩ := (nhds_basis_Ioo_pos (0 : ℝ)).eventually_iff.1 hχ₀
   rw [zero_sub, zero_add] at hzero
-  have hcont := hχ.div_id_of_eventuallyEq_zero hχ₀
   filter_upwards [Ioo_mem_nhds (neg_lt_zero.2 hε) hε] with s hs
   have hsub : uIcc 0 s ⊆ Ioo (-ε) ε := ordConnected_Ioo.uIcc_subset ⟨by linarith, hε⟩ hs
+  have hf0 : EqOn (fun t ↦ χ t / t) 0 (uIcc 0 s) := fun t ht ↦ by simp [hzero (hsub ht)]
+  have hint : IntervalIntegrable (fun t ↦ χ t / t) volume 0 s :=
+    intervalIntegrable_iff.2 (integrableOn_zero.congr_fun
+      (fun t ht ↦ (hf0 (uIoc_subset_uIcc ht)).symm) measurableSet_uIoc)
   have h0s : (∫ t in (0 : ℝ)..s, χ t / t) = 0 := by
-    rw [intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ by
-      simp [hzero (hsub ht)]]
+    rw [intervalIntegral.integral_congr hf0]
     exact intervalIntegral.integral_zero
-  rw [modulusPotential, modulusPotential,
-    ← intervalIntegral.integral_add_adjacent_intervals (hcont.intervalIntegrable _ _)
-      (hcont.intervalIntegrable _ _), h0s, add_zero]
+  by_cases h : IntervalIntegrable (fun t ↦ χ t / t) volume 1 0
+  · rw [modulusPotential, modulusPotential,
+      ← intervalIntegral.integral_add_adjacent_intervals h hint, h0s, add_zero]
+  · have h' : ¬ IntervalIntegrable (fun t ↦ χ t / t) volume 1 s := fun h's ↦ h (h's.trans hint.symm)
+    rw [modulusPotential, modulusPotential, intervalIntegral.integral_undef h,
+      intervalIntegral.integral_undef h']
 
 /-- **Pointwise bound on the modulus potential.** If `χ` vanishes on `(0, c)` and `|χ| ≤ 1`, then
 `|H(s)| ≤ |s - 1| / c` for `s ≥ 0`. -/
@@ -412,6 +590,57 @@ theorem covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E
     (covariantDeriv b α x : E →ₗ[ℝ] ℂ)).apply v
   rw [← coe_covariantDBar_eq_complexAntilinearPart, DistribSMul.toLinearMap_apply] at h
   rw [h, smul_eq_mul, neg_mul]
+
+/-- `∂_a α = ∇_a α - ∂bar_a α` is the complex-linear part `TauCeti.complexLinearPart` of
+`∇_a α`, for the structure `J` on `E` and multiplication by `I` on `ℂ`. -/
+theorem coe_covariantDeriv_sub_covariantDBar_eq_complexLinearPart (b : E → E [⋀^Fin 1]→L[ℝ] ℝ)
+    (α : E → ℂ) (x : E) :
+    ((covariantDeriv b α x - covariantDBar J b α x : E →L[ℝ] ℂ) : E →ₗ[ℝ] ℂ) =
+      complexLinearPart J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ I)
+        (covariantDeriv b α x : E →ₗ[ℝ] ℂ) := by
+  ext v
+  simp only [ContinuousLinearMap.coe_coe, _root_.sub_apply, covariantDBar_apply,
+    complexLinearPart_apply, DistribSMul.toLinearMap_apply, smul_eq_mul, real_smul, ofReal_inv,
+    ofReal_ofNat]
+  ring
+
+/-- The `J`-linear part `∂_a α = ∇_a α - ∂bar_a α` of the covariant derivative is `J`-linear:
+`∂_a α (J v) = i ∂_a α v`. -/
+theorem covariantDeriv_sub_covariantDBar_isComplexLinear (b : E → E [⋀^Fin 1]→L[ℝ] ℝ)
+    (α : E → ℂ) (x : E) :
+    IsComplexLinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ I)
+      ((covariantDeriv b α x - covariantDBar J b α x : E →L[ℝ] ℂ) : E →ₗ[ℝ] ℂ) := by
+  rw [coe_covariantDeriv_sub_covariantDBar_eq_complexLinearPart]
+  exact complexLinearPart_isComplexLinear J.square_neg Complex.toLinearMap_I_comp_toLinearMap_I _
+
+/-- If `J` preserves the norm, then `‖∂_a α‖ ≤ ‖∇_a α‖`, since
+`∂_v α = (∇_v α - i ∇_{J v} α) / 2`. -/
+theorem norm_covariantDeriv_sub_covariantDBar_le (hJ : ∀ v, ‖J v‖ = ‖v‖)
+    (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
+    ‖covariantDeriv b α x - covariantDBar J b α x‖ ≤ ‖covariantDeriv b α x‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
+  have hv : (covariantDeriv b α x - covariantDBar J b α x) v =
+      (covariantDeriv b α x v - I * covariantDeriv b α x (J v)) / 2 := by
+    simp only [_root_.sub_apply, covariantDBar_apply]
+    ring
+  rw [hv, norm_div, Complex.norm_ofNat]
+  calc ‖covariantDeriv b α x v - I * covariantDeriv b α x (J v)‖ / 2
+      ≤ (‖covariantDeriv b α x v‖ + ‖covariantDeriv b α x (J v)‖) / 2 := by
+        gcongr
+        refine (norm_sub_le _ _).trans_eq ?_
+        rw [norm_mul, norm_I, one_mul]
+    _ ≤ (‖covariantDeriv b α x‖ * ‖v‖ + ‖covariantDeriv b α x‖ * ‖v‖) / 2 := by
+        gcongr
+        · exact (covariantDeriv b α x).le_opNorm v
+        · exact ((covariantDeriv b α x).le_opNorm (J v)).trans_eq (by rw [hJ])
+    _ = ‖covariantDeriv b α x‖ * ‖v‖ := by ring
+
+/-- `∂bar_a α` of a `C¹` section for a continuous connection form is continuous. -/
+theorem continuous_covariantDBar {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} (hα : ContDiff ℝ 1 α)
+    (hb : Continuous b) : Continuous (covariantDBar J b α) := by
+  have h := continuous_covariantDeriv hα hb
+  unfold covariantDBar
+  fun_prop
 
 /-- The correction one-form `E = 2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J`. -/
 def cutoffDBarForm (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
@@ -502,6 +731,204 @@ theorem norm_cutoffDBarForm_le {c : ℝ} (hc : 0 < c) (hχc : ∀ t, 0 ≤ t →
           have hD := mul_nonneg (norm_nonneg (covariantDBar J b α x)) (norm_nonneg (v 0))
           rw [mul_one, div_eq_mul_inv]
           nlinarith
+
+/-! ### The cutoff current on complex lines -/
+
+/-- On a complex line `(v, J v)`, `Im (conj (∇_v α) ∇_{J v} α) = |∂_v α|² - |∂bar_v α|²`, where
+`∂_a α = ∇_a α - ∂bar_a α` is the `J`-linear part of the covariant derivative. -/
+theorem im_conj_covariantDeriv_mul_covariantDeriv_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ)
+    (α : E → ℂ) (x v : E) :
+    (conj (covariantDeriv b α x v) * covariantDeriv b α x (J v)).im =
+      ‖covariantDeriv b α x v - covariantDBar J b α x v‖ ^ 2 -
+        ‖covariantDBar J b α x v‖ ^ 2 := by
+  simp only [covariantDBar_apply, ← normSq_eq_norm_sq, normSq_apply, mul_im, mul_re, sub_re,
+    sub_im, add_re, add_im, div_ofNat_re, div_ofNat_im, conj_re, conj_im, I_re, I_im]
+  ring
+
+/-- **The cutoff current on a complex line.** For a cutoff `χ` vanishing near `0` and
+differentiable at `s = |α(x)|²`,
+
+`Θ(v, J v) = (1 - χ(s)) i F_a(v, J v) + 2 χ'(s) (|∂_v α|² - |∂bar_v α|²)`,
+
+where `i F_a = -db` and `∂_a α = ∇_a α - ∂bar_a α`. In particular, where `α` is covariantly
+`J`-holomorphic, `∂bar_a α = 0`, and `χ` is nondecreasing, the cutoff current is at least
+`(1 - χ(s))` times the curvature on every complex line. -/
+theorem cutoffCurrent_apply_pair_apply (hα : ContDiffAt ℝ 2 α x) (hb : DifferentiableAt ℝ b x)
+    (hχ : DifferentiableAt ℝ χ (normSq (α x))) (hχ₀ : χ =ᶠ[𝓝 0] 0) (v : E) :
+    cutoffCurrent χ b α x ![v, J v] =
+      -(1 - χ (normSq (α x))) * extDeriv b x ![v, J v] +
+        2 * deriv χ (normSq (α x)) *
+          (‖covariantDeriv b α x v - covariantDBar J b α x v‖ ^ 2 -
+            ‖covariantDBar J b α x v‖ ^ 2) := by
+  rw [cutoffCurrent_apply_pair hα hb hχ hχ₀, im_conj_covariantDeriv_mul_covariantDeriv_apply]
+
+/-- **Lower bound for the cutoff current on a complex line.** For a cutoff `χ` vanishing near `0`
+with `χ'(s) ≥ 0` at `s = |α(x)|²`,
+
+`Θ(v, J v) ≥ (1 - χ(s)) i F_a(v, J v) - 2 χ'(s) |∂bar_v α|²`,
+
+where `i F_a = -db`. -/
+theorem le_cutoffCurrent_apply_pair_apply (hα : ContDiffAt ℝ 2 α x) (hb : DifferentiableAt ℝ b x)
+    (hχ : DifferentiableAt ℝ χ (normSq (α x))) (hχ₀ : χ =ᶠ[𝓝 0] 0)
+    (hχ' : 0 ≤ deriv χ (normSq (α x))) (v : E) :
+    -(1 - χ (normSq (α x))) * extDeriv b x ![v, J v] -
+        2 * deriv χ (normSq (α x)) * ‖covariantDBar J b α x v‖ ^ 2 ≤
+      cutoffCurrent χ b α x ![v, J v] := by
+  rw [cutoffCurrent_apply_pair_apply J hα hb hχ hχ₀]
+  have := sq_nonneg ‖covariantDeriv b α x v - covariantDBar J b α x v‖
+  nlinarith
+
+/-- **Uniform lower bound for the cutoff current on a complex line.** Suppose that
+`0 ≤ χ(s) ≤ 1` and `0 ≤ χ'(s) ≤ M` at `s = |α(x)|²`, that the curvature satisfies
+`i F_a(v, J v) ≥ -K |v|²` with `K ≥ 0`, where `i F_a = -db`, and that `|∂bar_a α| ≤ D` at `x`. Then
+
+`Θ(v, J v) ≥ -(K + 2 M D²) |v|²`.
+
+In the large-parameter analysis of the Seiberg–Witten equations the curvature bound is the lower
+bound on the Hermitian part of `i F_a` and `D` comes from the Dirac equation, so this bounds the
+negative part of the slices of the cutoff current on `J`-holomorphic discs. -/
+theorem neg_mul_le_cutoffCurrent_apply_pair_apply (hα : ContDiffAt ℝ 2 α x)
+    (hb : DifferentiableAt ℝ b x) (hχ : DifferentiableAt ℝ χ (normSq (α x)))
+    (hχ₀ : χ =ᶠ[𝓝 0] 0) {K M D : ℝ} (hχ₁ : χ (normSq (α x)) ∈ Icc 0 1)
+    (hχ' : deriv χ (normSq (α x)) ∈ Icc 0 M) (hK : 0 ≤ K) {v : E}
+    (hF : -K * ‖v‖ ^ 2 ≤ -extDeriv b x ![v, J v]) (hD : ‖covariantDBar J b α x‖ ≤ D) :
+    -(K + 2 * M * D ^ 2) * ‖v‖ ^ 2 ≤ cutoffCurrent χ b α x ![v, J v] := by
+  refine le_trans ?_ (le_cutoffCurrent_apply_pair_apply J hα hb hχ hχ₀ hχ'.1 v)
+  have hv : ‖covariantDBar J b α x v‖ ^ 2 ≤ D ^ 2 * ‖v‖ ^ 2 := by
+    rw [← mul_pow]
+    exact pow_le_pow_left₀ (norm_nonneg _)
+      (((covariantDBar J b α x).le_opNorm v).trans
+        (mul_le_mul_of_nonneg_right hD (norm_nonneg v))) 2
+  have h₁ : -(K * ‖v‖ ^ 2) ≤ -(1 - χ (normSq (α x))) * extDeriv b x ![v, J v] := by
+    have h1χ : 0 ≤ 1 - χ (normSq (α x)) := sub_nonneg.2 hχ₁.2
+    have hKv : 0 ≤ K * ‖v‖ ^ 2 := by positivity
+    nlinarith [hχ₁.1]
+  have h₂ : 2 * deriv χ (normSq (α x)) * ‖covariantDBar J b α x v‖ ^ 2 ≤
+      2 * M * (D ^ 2 * ‖v‖ ^ 2) := by
+    have := mul_le_mul hχ'.2 hv (sq_nonneg _) (hχ'.1.trans hχ'.2)
+    linarith
+  linarith
+
+/-- **Lower bound for the slices of the cutoff current on a `J`-holomorphic disc.** If
+`σ : ℂ → E` is `J`-holomorphic at `z`, `dσ (i) = J dσ (1)`, then under the bounds of
+`TauCeti.SeibergWitten.neg_mul_le_cutoffCurrent_apply_pair_apply` at `σ z` the density of the
+pulled-back cutoff current `σ^* Θ` satisfies `(σ^* Θ)(1, i) ≥ -(K + 2 M D²) |dσ (1)|²`. -/
+theorem neg_mul_le_cutoffCurrent_compContinuousLinearMap {σ : ℂ → E} {z : ℂ}
+    (hσ : fderiv ℝ σ z I = J (fderiv ℝ σ z 1)) (hα : ContDiffAt ℝ 2 α (σ z))
+    (hb : DifferentiableAt ℝ b (σ z)) (hχ : DifferentiableAt ℝ χ (normSq (α (σ z))))
+    (hχ₀ : χ =ᶠ[𝓝 0] 0) {K M D : ℝ} (hχ₁ : χ (normSq (α (σ z))) ∈ Icc 0 1)
+    (hχ' : deriv χ (normSq (α (σ z))) ∈ Icc 0 M) (hK : 0 ≤ K)
+    (hF : -K * ‖fderiv ℝ σ z 1‖ ^ 2 ≤
+      -extDeriv b (σ z) ![fderiv ℝ σ z 1, J (fderiv ℝ σ z 1)])
+    (hD : ‖covariantDBar J b α (σ z)‖ ≤ D) :
+    -(K + 2 * M * D ^ 2) * ‖fderiv ℝ σ z 1‖ ^ 2 ≤
+      (cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] := by
+  have hv : fderiv ℝ σ z ∘ ![1, I] = ![fderiv ℝ σ z 1, J (fderiv ℝ σ z 1)] := by
+    rw [← hσ]
+    funext i
+    fin_cases i <;> rfl
+  rw [compContinuousLinearMap_apply, hv]
+  exact neg_mul_le_cutoffCurrent_apply_pair_apply J hα hb hχ hχ₀ hχ₁ hχ' hK hF hD
+
+/-- **Negative mass of the slices of the cutoff current on a `J`-holomorphic disc.** Let
+`σ : ℂ → E` be `J`-holomorphic on a measurable set `s`, and let `χ` be a cutoff vanishing near `0`.
+Suppose that at each `z ∈ s`, with `t = |α(σ z)|²` and `v = dσ (1)`, the cutoff is
+differentiable at `t` with `0 ≤ χ(t) ≤ 1` and `0 ≤ χ'(t) ≤ M`, the curvature satisfies
+`i F_a(v, J v) ≥ -K |v|²` with `K ≥ 0`, where `i F_a = -db`, and `|∂bar_a α| ≤ D` at `σ z`. Then
+the negative part of the density `(σ^* Θ)(1, i)` has integral over `s` at most `K + 2 M D²` times
+the directional energy `∫_s |dσ (1)|²`. This is the area of `σ` on `s` when the norm comes from an
+inner product for which `J` is orthogonal. -/
+theorem integral_negPart_cutoffCurrent_compContinuousLinearMap_le {σ : ℂ → E} {s : Set ℂ}
+    (hs : MeasurableSet s) (hα : ∀ z ∈ s, ContDiffAt ℝ 2 α (σ z))
+    (hb : ∀ z ∈ s, DifferentiableAt ℝ b (σ z))
+    (hχ : ∀ z ∈ s, DifferentiableAt ℝ χ (normSq (α (σ z)))) (hχ₀ : χ =ᶠ[𝓝 0] 0) {K M D : ℝ}
+    (hχ₁ : ∀ z ∈ s, χ (normSq (α (σ z))) ∈ Icc 0 1)
+    (hχ' : ∀ z ∈ s, deriv χ (normSq (α (σ z))) ∈ Icc 0 M) (hK : 0 ≤ K)
+    (hσ : ∀ z ∈ s, fderiv ℝ σ z I = J (fderiv ℝ σ z 1))
+    (hF : ∀ z ∈ s, -K * ‖fderiv ℝ σ z 1‖ ^ 2 ≤
+      -extDeriv b (σ z) ![fderiv ℝ σ z 1, J (fderiv ℝ σ z 1)])
+    (hD : ∀ z ∈ s, ‖covariantDBar J b α (σ z)‖ ≤ D)
+    (hint : IntegrableOn (fun z ↦ ‖fderiv ℝ σ z 1‖ ^ 2) s) :
+    ∫ z in s, ((cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I])⁻ ≤
+      (K + 2 * M * D ^ 2) * ∫ z in s, ‖fderiv ℝ σ z 1‖ ^ 2 := by
+  rw [← integral_const_mul]
+  refine integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ negPart_nonneg _)
+    (hint.const_mul _) ((ae_restrict_iff' hs).2 (Eventually.of_forall fun z hz ↦ ?_))
+  have hM : 0 ≤ M := (hχ' z hz).1.trans (hχ' z hz).2
+  have h := neg_mul_le_cutoffCurrent_compContinuousLinearMap J (hσ z hz) (hα z hz) (hb z hz)
+    (hχ z hz) hχ₀ (hχ₁ z hz) (hχ' z hz) hK (hF z hz) (hD z hz)
+  simp only [negPart_def]
+  exact sup_le (by linarith) (by positivity)
+
+/-- `Im (conj (∇_{J v} α) ∇_{J w} α) - Im (conj (∇_v α) ∇_w α)
+= -2 Im (conj (∂_v α) ∂bar_w α + conj (∂bar_v α) ∂_w α)`, where `∂_a α = ∇_a α - ∂bar_a α`. The
+anti-`J`-invariant part of `Im (conj (∇_a α) ∇_a α)` only involves the mixed products of `∂_a α`
+with `∂bar_a α`. -/
+theorem im_conj_covariantDeriv_mul_covariantDeriv_apply_sub (b : E → E [⋀^Fin 1]→L[ℝ] ℝ)
+    (α : E → ℂ) (x v w : E) :
+    (conj (covariantDeriv b α x (J v)) * covariantDeriv b α x (J w)).im -
+        (conj (covariantDeriv b α x v) * covariantDeriv b α x w).im =
+      -2 * (conj (covariantDeriv b α x v - covariantDBar J b α x v) * covariantDBar J b α x w +
+        conj (covariantDBar J b α x v) *
+          (covariantDeriv b α x w - covariantDBar J b α x w)).im := by
+  simp only [covariantDBar_apply, mul_im, mul_re, sub_re, sub_im, add_re, add_im, div_ofNat_re,
+    div_ofNat_im, conj_re, conj_im, I_re, I_im, map_sub]
+  ring
+
+/-- **The anti-`J`-invariant part of the cutoff current.** For a cutoff `χ` vanishing near `0` and
+differentiable at `s = |α(x)|²`, the defect of `J`-invariance of `Θ` is that of `(1 - χ(s)) i F_a`,
+where `i F_a = -db`, up to the mixed products of `∂_a α = ∇_a α - ∂bar_a α` with `∂bar_a α`:
+
+`Θ(J v, J w) - Θ(v, w) = (1 - χ(s)) (i F_a(J v, J w) - i F_a(v, w))
+  - 4 χ'(s) Im (conj (∂_v α) ∂bar_w α + conj (∂bar_v α) ∂_w α)`. -/
+theorem cutoffCurrent_apply_pair_apply_sub (hα : ContDiffAt ℝ 2 α x)
+    (hb : DifferentiableAt ℝ b x) (hχ : DifferentiableAt ℝ χ (normSq (α x)))
+    (hχ₀ : χ =ᶠ[𝓝 0] 0) (v w : E) :
+    cutoffCurrent χ b α x ![J v, J w] - cutoffCurrent χ b α x ![v, w] =
+      -(1 - χ (normSq (α x))) * (extDeriv b x ![J v, J w] - extDeriv b x ![v, w]) -
+        4 * deriv χ (normSq (α x)) *
+          (conj (covariantDeriv b α x v - covariantDBar J b α x v) * covariantDBar J b α x w +
+            conj (covariantDBar J b α x v) *
+              (covariantDeriv b α x w - covariantDBar J b α x w)).im := by
+  have h := im_conj_covariantDeriv_mul_covariantDeriv_apply_sub J b α x v w
+  rw [cutoffCurrent_apply_pair hα hb hχ hχ₀, cutoffCurrent_apply_pair hα hb hχ hχ₀]
+  linear_combination 2 * deriv χ (normSq (α x)) * h
+
+/-- **Bound on the anti-`J`-invariant part of the cutoff current.** For a cutoff `χ` vanishing
+near `0` and differentiable at `s = |α(x)|²`, with `i F_a = -db` and `∂_a α = ∇_a α - ∂bar_a α`,
+
+`|Θ(J v, J w) - Θ(v, w) - (1 - χ(s)) (i F_a(J v, J w) - i F_a(v, w))|
+  ≤ 8 |χ'(s)| |∂_a α| |∂bar_a α| |v| |w|`.
+
+Where the curvature is nearly `J`-invariant and `|χ'(s)| |∂_a α| |∂bar_a α|` is small, so is the
+anti-`J`-invariant part of `Θ`. -/
+theorem abs_cutoffCurrent_apply_pair_apply_sub_add_le (hα : ContDiffAt ℝ 2 α x)
+    (hb : DifferentiableAt ℝ b x) (hχ : DifferentiableAt ℝ χ (normSq (α x)))
+    (hχ₀ : χ =ᶠ[𝓝 0] 0) (v w : E) :
+    |cutoffCurrent χ b α x ![J v, J w] - cutoffCurrent χ b α x ![v, w] +
+        (1 - χ (normSq (α x))) * (extDeriv b x ![J v, J w] - extDeriv b x ![v, w])| ≤
+      8 * |deriv χ (normSq (α x))| * ‖covariantDeriv b α x - covariantDBar J b α x‖ *
+        ‖covariantDBar J b α x‖ * ‖v‖ * ‖w‖ := by
+  have hcancel (a c d m : ℝ) : -a * c - 4 * d * m + a * c = -(4 * d * m) := by ring
+  rw [cutoffCurrent_apply_pair_apply_sub J hα hb hχ hχ₀, hcancel, abs_neg, abs_mul, abs_mul,
+    abs_of_pos (by norm_num : (0 : ℝ) < 4)]
+  set P := covariantDeriv b α x - covariantDBar J b α x
+  have hP (u : E) : covariantDeriv b α x u - covariantDBar J b α x u = P u :=
+    (_root_.sub_apply _ _ u).symm
+  simp only [hP]
+  set Q := covariantDBar J b α x
+  -- Each mixed product is bounded by `‖P‖ ‖Q‖ ‖v‖ ‖w‖`.
+  have hm : ‖conj (P v) * Q w + conj (Q v) * P w‖ ≤ 2 * (‖P‖ * ‖Q‖ * ‖v‖ * ‖w‖) := by
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_mul, norm_mul, Complex.norm_conj, Complex.norm_conj]
+    have h₁ := mul_le_mul (P.le_opNorm v) (Q.le_opNorm w) (norm_nonneg _) (by positivity)
+    have h₂ := mul_le_mul (Q.le_opNorm v) (P.le_opNorm w) (norm_nonneg _) (by positivity)
+    linarith
+  calc 4 * |deriv χ (normSq (α x))| * |(conj (P v) * Q w + conj (Q v) * P w).im|
+      ≤ 4 * |deriv χ (normSq (α x))| * (2 * (‖P‖ * ‖Q‖ * ‖v‖ * ‖w‖)) := by
+        gcongr
+        exact (abs_im_le_norm _).trans hm
+    _ = 8 * |deriv χ (normSq (α x))| * ‖P‖ * ‖Q‖ * ‖v‖ * ‖w‖ := by ring
 
 end AlmostComplex
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Geometry.Symplectic.Prod.Skew
@@ -50,7 +51,10 @@ one-form `X(z, x) : ℂ →L[ℝ] V` that need not come from a symplectic form, 
 product `WithLp 2 (ℂ × V)` sending `(ξ, v)` to `(i ξ, J(z, x)(v - X(z, x) ξ) + X(z, x)(i ξ))`. For
 Floer data `ω`, `J`, `K_s`, `K_t` it is `J_K` read in the complex coordinate `z = s + i t`
 (`TauCeti.Floer.graphStructure_toLp_eq_floerGraphAlmostComplex`). This is the form consumed by
-the local compactness theory of pseudoholomorphic curves. It squares to `-1` wherever `J` does
+the local compactness theory of pseudoholomorphic curves. The arbitrary-one-form operator is the
+native algebraic skew product in these coordinates
+(`TauCeti.Floer.graphStructure_toLp_eq_skewProd`),
+without a finite-dimensionality requirement on the target. It squares to `-1` wherever `J` does
 (`TauCeti.Floer.graphStructure_graphStructure`), is as regular as `J` and `X`
 (`TauCeti.Floer.contDiffOn_graphStructure`), and `u` solves
 `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` at `y` exactly when its graph `U` solves
@@ -404,6 +408,16 @@ theorem graphStructure_apply (p ζ : WithLp 2 (ℂ × V)) :
       J p.ofLp (ζ.snd - X p.ofLp ζ.fst) + X p.ofLp (I * ζ.fst)) := by
   simp [graphStructure, WithLp.ext_iff]
 
+/-- The arbitrary-one-form Euclidean graph operator is the existing algebraic skew product,
+read through the canonical `WithLp` product coordinates. A continuous-linear representation of
+the target structure at the point suffices, without a finite-dimensionality assumption. -/
+theorem graphStructure_toLp_eq_skewProd (p ζ : ℂ × V) (K : AlmostComplexStructure V)
+    (hK : ∀ v, J p v = K v) :
+    graphStructure J X (WithLp.toLp 2 p) (WithLp.toLp 2 ζ) =
+      WithLp.toLp 2 ((AlmostComplexStructure.ofComplexModule ℂ).skewProd K
+        (X p).toLinearMap ζ) := by
+  simp [AlmostComplexStructure.ofComplexModule_apply, hK]
+
 variable {J X}
 
 /-- Gromov's structure squares to `-1` wherever `J` does. -/
@@ -465,6 +479,8 @@ theorem graphStructure_toLp_eq_floerGraphAlmostComplex (ω : SymplecticForm V)
       WithLp.toLp 2 (equivRealProd.symm
           (ω.floerGraphAlmostComplex J Ks Kt (equivRealProd z, x) (equivRealProd ξ, v)).1,
         (ω.floerGraphAlmostComplex J Ks Kt (equivRealProd z, x) (equivRealProd ξ, v)).2) := by
+  rw [graphStructure_toLp_eq_skewProd _ _ (z, x) (ξ, v) (J (equivRealProd z) x)
+    (fun _ ↦ rfl)]
   simp [Complex.ext_iff]
 
 end FloerData

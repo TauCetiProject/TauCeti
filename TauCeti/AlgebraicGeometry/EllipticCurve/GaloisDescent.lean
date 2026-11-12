@@ -13,10 +13,10 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 /-!
 # Galois descent for Weierstrass curve data
 
-Let `L/K` be a separable quadratic extension. Data attached to a Weierstrass curve over `L` and
-fixed by the nontrivial `σ ∈ Gal(L/K)` descends to `K`, because an element of `L` fixed by `σ` is
-already in `K` (`Algebra.IsQuadraticExtension.mem_range_algebraMap_of_apply_eq`). Two descent
-results are proved here:
+Let `L/K` be a quadratic extension. Data attached to a Weierstrass curve over `L` and fixed by a
+nontrivial `σ ∈ Gal(L/K)` descends to `K`, because an element of `L` fixed by `σ` is already in
+`K` (`Algebra.IsQuadraticExtension.mem_range_algebraMap_iff_apply_eq_self`). No separability is
+assumed: the existence of `σ` already makes `L/K` Galois. Two descent results are proved here:
 
 * `WeierstrassCurve.VariableChange.exists_baseChange_eq_of_map_eq`: an admissible change of
   variables over `L` fixed by `σ` is the base change of one over `K`;
@@ -34,12 +34,11 @@ and `WeierstrassCurve.VariableChange.mem_range_baseChange_iff_fixed` say that su
 is the base change of data over `K` exactly when every automorphism of `L/K` fixes its
 coefficients. The quadratic change-of-variables result is derived from this general criterion.
 
-These are the descent steps of the quadratic-twist layer of
-`TauCetiRoadmap/EllipticCurves/README.md` (§Layer 5): the twist point isomorphism and the
+These are the descent steps for quadratic twists: the twist point isomorphism and the
 classification of twists both descend `L`-data fixed by the Galois action to `K`-data.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
-`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/GaloisDescent.lean` at the roadmap's pin
+`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/GaloisDescent.lean` at
 `bc2fe8ff7396`, FLT PR #1088, Apache 2.0). That file's own header reads
 `Authors: Kevin Buzzard, Michael Stoll, Claude`; following this repository's convention for
 adapted material, the upstream authorship is credited here rather than in the copyright header.
@@ -107,7 +106,7 @@ end VariableChange
 end Galois
 
 variable {K : Type*} [Field K] (L : Type*) [Field L] [Algebra K L]
-variable [Algebra.IsQuadraticExtension K L] [Algebra.IsSeparable K L]
+variable [Algebra.IsQuadraticExtension K L]
 
 namespace VariableChange
 
@@ -116,6 +115,7 @@ nontrivial `σ ∈ Gal(L/K)` has all its coefficients in `K`, so it is the base 
 of variables over `K`. -/
 lemma exists_baseChange_eq_of_map_eq {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {C : VariableChange L}
     (hCinv : C.map σ.toAlgHom.toRingHom = C) : ∃ CK : VariableChange K, CK.baseChange L = C := by
+  have := isGalois_of_algEquiv_ne_one K L hσ
   refine Set.mem_range.mp ((mem_range_baseChange_iff_fixed C).2 ?_)
   intro τ
   rcases algEquiv_eq_one_or_eq K L hσ τ with rfl | rfl
@@ -137,8 +137,8 @@ theorem exists_baseChange_eq_of_map_eq [DecidableEq K] [DecidableEq L]
   · exact ⟨0, Affine.Point.map_zero _⟩
   · rw [Affine.Point.map_some] at hR
     injection hR with hx hy
-    obtain ⟨x₀, rfl⟩ := mem_range_algebraMap_of_apply_eq K L hσ hx
-    obtain ⟨y₀, rfl⟩ := mem_range_algebraMap_of_apply_eq K L hσ hy
+    obtain ⟨x₀, rfl⟩ := (mem_range_algebraMap_iff_apply_eq_self K L hσ).mpr hx
+    obtain ⟨y₀, rfl⟩ := (mem_range_algebraMap_iff_apply_eq_self K L hσ).mpr hy
     -- `Algebra.ofId K L` and `algebraMap K L` are the same map; make the bridge explicit.
     simp only [← Algebra.ofId_apply] at h ⊢
     exact ⟨.some x₀ y₀ ((Affine.baseChange_nonsingular W

@@ -82,22 +82,21 @@ theorem signedUnblockedCoefficient_self (x : GridState n) :
 linear map on `GC⁻` over the polynomial ring. -/
 noncomputable def signedUnblockedDifferential :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm (G.signedUnblockedCoefficient S R x)
+  GridChain.matrixMap R (G.signedUnblockedCoefficient S R)
 
 /-- The `y`-coefficient of the signed differential of the generator `x` is the signed matrix
 coefficient. -/
 theorem signedUnblockedDifferential_single_apply (x y : GridState n) :
     G.signedUnblockedDifferential S R (Finsupp.single x 1) y =
       G.signedUnblockedCoefficient S R x y := by
-  simp [signedUnblockedDifferential]
+  rw [signedUnblockedDifferential, GridChain.matrixMap_single_apply, one_mul]
 
 /-- The coefficient formula for the signed differential on an arbitrary chain. -/
 @[simp]
 theorem signedUnblockedDifferential_apply_apply (c : GridChainMinus R n) (y : GridState n) :
     G.signedUnblockedDifferential S R c y =
-      c.sum fun x a => a * G.signedUnblockedCoefficient S R x y := by
-  simp [signedUnblockedDifferential, Finsupp.linearCombination_apply, Finsupp.sum_apply]
+      c.sum fun x a => a * G.signedUnblockedCoefficient S R x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-- The matrix of the square of the signed differential: its `(x, z)` entry is the sum over
 intermediate grid states of the products of the two matrix coefficients. -/
@@ -159,7 +158,7 @@ theorem sum_signedUnblockedCoefficient_mul_signedUnblockedCoefficient_eq_zero
     · rw [he] at h₂
       exact absurd h₂ (Finset.notMem_empty _)
   refine G.sum_unblockedDecompositions_eq_zero hzx _ (fun D hD h => ?_)
-    (fun D hD hone hfirst hsecond => ?_)
+    (fun D _ hone hfirst hsecond => ?_)
   · obtain ⟨h₁, h₂⟩ := hmem D hD
     refine hcancel D _ (S.signOf_mul_signOf_eq_neg h₁ h₂ (D.isEmpty_commute_first h h₁ h₂)
       (D.isEmpty_commute_second h h₁ h₂) (D.commute_ne h) ?_)

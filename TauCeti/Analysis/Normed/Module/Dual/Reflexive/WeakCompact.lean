@@ -13,8 +13,10 @@ import TauCeti.Analysis.Normed.Module.DoubleDual
 # Reflexivity and weak compactness
 
 A real or complex seminormed space is reflexive if and only if its closed unit ball is
-weakly compact. More generally, every bounded set in a reflexive space has weakly
-compact closure, and every norm-closed bounded real-convex set is weakly compact.
+weakly compact. More generally, every norm-closed bounded real-convex set in a reflexive space is
+weakly compact. This rests on `TauCeti.isCompact_closure_toWeakSpace` from
+`TauCeti.Analysis.Normed.Module.DoubleDual`: over any proper nontrivially normed field, every
+bounded set in a reflexive space has weakly compact closure.
 
 Reflexivity means surjectivity of `NormedSpace.inclusionInDoubleDual`. No completeness,
 separability or separation hypothesis is needed for the equivalence. For normed spaces,
@@ -59,19 +61,6 @@ theorem surjective_inclusionInDoubleDual_of_isCompact_toWeakSpace_closedBall
   simpa only [inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
     StrongDual.toStrongDual_toWeakDual, ContinuousLinearMap.coe_coe] using
       congrArg WeakDual.toStrongDual hx
-
-/-- In a reflexive seminormed space, every norm-bounded set has weakly compact closure. -/
-theorem isCompact_closure_toWeakSpace
-    (hE : Surjective (inclusionInDoubleDual 𝕜 E)) {s : Set E} (hs : IsBounded s) :
-    IsCompact (closure (toWeakSpace 𝕜 E '' s)) := by
-  apply NormedSpace.isCompact_closure_weakSpace_of_isBounded 𝕜 E
-  · simpa only [preimage_image_eq _ (toWeakSpace 𝕜 E).injective] using hs
-  · intro φ _
-    obtain ⟨x, hx⟩ := hE (WeakDual.toStrongDual φ)
-    refine ⟨toWeakSpace 𝕜 E x, ?_⟩
-    apply WeakDual.toStrongDual.injective
-    simpa only [inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
-      StrongDual.toStrongDual_toWeakDual] using hx
 
 /-- Norm-closed bounded real-convex subsets of a reflexive seminormed space are weakly compact.
 Convexity over real scalars also covers complex seminormed spaces. -/

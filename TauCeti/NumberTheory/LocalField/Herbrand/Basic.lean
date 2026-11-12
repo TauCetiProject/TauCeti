@@ -349,11 +349,15 @@ theorem coe_herbrand_sub_coe_herbrand_of_forall_eq {a b : RamificationIndexDomai
   exact herbrandReal_sub_of_forall_eq K L (Subtype.coe_le_coe.2 hab) h
 
 /-- The Herbrand function is the identity as long as the lower ramification filtration is
-constant from `0` through `u`. -/
-theorem herbrand_eq_self_of_forall_eq {u : RamificationIndexDomain} (hu : 0 ≤ (u : ℝ))
+constant from `0` through `u`. For `u ≤ 0` the hypothesis is vacuous and the conclusion is
+`herbrand_of_coe_le_zero`. -/
+theorem herbrand_eq_self_of_forall_eq {u : RamificationIndexDomain}
     (h : ∀ t : ℝ, 0 < t → t ≤ u →
       lowerRamificationGroupReal K L t = lowerRamificationGroup K L 0) :
     herbrand K L u = u := by
+  by_cases hu : (u : ℝ) ≤ 0
+  · exact herbrand_of_coe_le_zero K L hu
+  replace hu : 0 ≤ (u : ℝ) := le_of_not_ge hu
   apply Subtype.ext
   rw [coe_herbrand]
   have hcard : (Nat.card (lowerRamificationGroup K L 0) : ℝ) ≠ 0 := by
@@ -374,6 +378,17 @@ theorem herbrand_eq_self_of_forall_eq {u : RamificationIndexDomain} (hu : 0 ≤ 
 theorem inverseHerbrand_of_coe_le_zero {v : RamificationIndexDomain} (hv : (v : ℝ) ≤ 0) :
     inverseHerbrand K L v = v :=
   (herbrandOrderIso K L).symm_apply_eq.2 (herbrand_of_coe_le_zero K L hv).symm
+
+variable {K L} in
+/-- If the inverse Herbrand function sends `u` to `-1`, then `u = -1`. -/
+theorem coe_eq_neg_one_of_inverseHerbrand_eq_neg_one {u : RamificationIndexDomain}
+    (hinverse : inverseHerbrand K L u = ⟨(-1 : ℝ), le_rfl⟩) : (u : ℝ) = -1 := by
+  have hinverse_neg_one :
+      inverseHerbrand K L ⟨(-1 : ℝ), le_rfl⟩ = ⟨(-1 : ℝ), le_rfl⟩ :=
+    inverseHerbrand_of_coe_le_zero K L (by norm_num)
+  have hu_eq : u = ⟨(-1 : ℝ), le_rfl⟩ :=
+    (inverseHerbrand_strictMono K L).injective <| hinverse.trans hinverse_neg_one.symm
+  exact congrArg Subtype.val hu_eq
 
 omit [IsGalois K L] in
 private theorem herbrandReal_of_mem_Icc (n : ℕ) {u : ℝ} (h₁ : (n : ℝ) ≤ u) (h₂ : u ≤ n + 1) :

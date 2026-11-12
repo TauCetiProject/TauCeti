@@ -36,7 +36,7 @@ and `E₈` matrix. Those live on the sum and sigma
 index types that make the classification argument uniform rather than on `Fin`, and their marks are
 rational and unnormalized -- `TauCeti.starMark ![2, 2, 2]` is `9` times the marks below -- so
 identifying them with the diagrams of this file is a relabelling problem of its own, of a piece
-with the Bourbaki relabelling that the roadmap asks for and that is not proved here either. This
+with relabelling them into the Bourbaki numbering, which is not proved here either. This
 file is the affine complement, and it is deliberately *graph* first, because its consumers --
 zigzag and preprojective algebras, and the McKay correspondence -- start from the diagram rather
 than from a root system.
@@ -99,10 +99,8 @@ number, which reduces connectedness to a single induction. Explicitly:
 
 ## References
 
-This is the affine simply-laced family of Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`; the `E₈` numbering below is the one that roadmap's
-`Suggested.lean` fixes in `affineE8ArmRel`. See V. Kac, *Infinite dimensional Lie algebras*,
-3rd ed., Chapter 4 and Table Aff 1, for the diagrams, their marks and the null root.
+See V. Kac, *Infinite dimensional Lie algebras*, 3rd ed., Chapter 4 and Table Aff 1, for the
+diagrams, their marks and the null root.
 -/
 
 public section
@@ -476,6 +474,15 @@ lemma cartanMatrix_apply_of_not_adj {t : AffineDynkinType} {i j : Fin t.nodes} (
     rw [graph_A, SimpleGraph.cycleGraph_two_eq_top] at h
     exact (h ((SimpleGraph.top_adj i j).2 hij)).elim
   · simp [cartanMatrix_apply ht, hij, h]
+
+open scoped Classical in
+/-- The affine `E₆` Cartan matrix entries, with the conditional indexed by `Fin 7`: the Cartan API
+is indexed by `Fin E6.nodes`, whose implicit decidability instance is opaque outside its
+module, so adjacency is decided classically. -/
+lemma cartanMatrix_E6_apply (i j : Fin 7) : E6.cartanMatrix i j =
+    if i = j then 2 else if E6.graph.Adj i j then -1 else 0 := by
+  convert cartanMatrix_apply isGraphical_E6 i j using 1
+  split_ifs <;> first | rfl | contradiction
 
 /-- The generalized Cartan matrix of an affine simply-laced diagram is symmetric, `A₁` included:
 away from `A₁` the matrix is `2I - A` and an adjacency matrix is symmetric, while at `A₁` the

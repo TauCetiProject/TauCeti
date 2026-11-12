@@ -38,7 +38,7 @@ attached to an integer weight on each coordinate.
 
 The construction is the scheme-level realization of `TauCeti.basisWeightTorus`. In particular,
 when `wt` is the weight function of a finite free admissible lattice, it supplies the split-torus
-morphism in the pinned Chevalley--Demazure construction of Layer 9 of the ReductiveGroups roadmap.
+morphism in the pinned Chevalley--Demazure construction.
 No faithfulness is asserted: an arbitrary weight family may have a common kernel.
 
 ## Main declarations
@@ -72,6 +72,8 @@ No faithfulness is asserted: an arbitrary weight family may have a common kernel
   algebra-valued points.
 * `TauCeti.GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap`: the diagonal
   coordinates of that point map are the prescribed characters.
+* `TauCeti.GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap_id`: for the
+  identity point of the group algebra, the coordinates are the monomials of the weights.
 * `TauCeti.GeneralLinear.weightTorusCoordinateMap_reindex`: composing every weight with a
   permutation of the torus index relabels the weight-torus coordinate map.
 * `TauCeti.GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap`: the diagonal
@@ -100,12 +102,12 @@ variable {R κ : Type u} [CommRing R] {N : ℕ}
 
 section DirectCoordinateMap
 
-variable {S : Type u} {sigma : Type v} [CommRing S] [Finite sigma]
+variable {S : Type u} {sigma : Type v} [CommRing S]
 
 /-- The weight-torus coordinate bialgebra morphism constructed directly as a diagonal
 representation. Unlike the categorical factorization through `diagonalTorusCoordinateMap`, this
 construction permits the base ring and the torus index to live in different universes. -/
-noncomputable def weightTorusCoordinateBialgHom (wt : Fin N → sigma → ℤ) :
+noncomputable def weightTorusCoordinateBialgHom [Finite sigma] (wt : Fin N → sigma → ℤ) :
     coordinateHopfAlgebra S N →ₐc[S]
       MonoidAlgebra S (Multiplicative (sigma →₀ ℤ)) := by
   let _ : Fintype sigma := Fintype.ofFinite sigma
@@ -145,7 +147,7 @@ theorem pointsMulEquiv_comp_weightTorusCoordinateBialgHom [Fintype sigma]
 /-- A generic matrix entry maps under the direct weight-torus bialgebra morphism to the
 prescribed character on the diagonal, and to zero off the diagonal. -/
 @[simp]
-theorem weightTorusCoordinateBialgHom_X (wt : Fin N → sigma → ℤ) (i j : Fin N) :
+theorem weightTorusCoordinateBialgHom_X [Finite sigma] (wt : Fin N → sigma → ℤ) (i j : Fin N) :
     weightTorusCoordinateBialgHom (S := S) wt
         (coordinateHopfAlgebraAlgEquiv S N
           (coordinateRingMap S N (MvPolynomial.X (i, j)))) =
@@ -168,8 +170,8 @@ theorem weightTorusCoordinateBialgHom_X (wt : Fin N → sigma → ℤ) (i j : Fi
 
 /-- Relabelling the torus index along `e` relabels the direct weight-torus coordinate morphism:
 the induced equivalence of character lattices carries each weight `wt i` to `wt i ∘ e.symm`. -/
-theorem domCongrBialgEquiv_comp_weightTorusCoordinateBialgHom {tau : Type w} [Finite tau]
-    (e : sigma ≃ tau) (wt : Fin N → sigma → ℤ) :
+theorem domCongrBialgEquiv_comp_weightTorusCoordinateBialgHom [Finite sigma] {tau : Type w}
+    [Finite tau] (e : sigma ≃ tau) (wt : Fin N → sigma → ℤ) :
     (MonoidAlgebra.domCongrBialgEquiv S S
         (AddEquiv.toMultiplicative (Finsupp.domCongr e))).toBialgHom.comp
         (weightTorusCoordinateBialgHom (S := S) wt) =
@@ -192,7 +194,7 @@ theorem domCongrBialgEquiv_comp_weightTorusCoordinateBialgHom {tau : Type w} [Fi
 
 /-- Corestricting the standard general-linear comodule along a weight-torus coordinate morphism
 is the direct sum of its prescribed one-dimensional weight comodules. -/
-theorem corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights
+theorem corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights [Finite sigma]
     (wt : Fin N → sigma → ℤ) :
     let _ := standardComodule S N
     Comodule.Corestrict (weightTorusCoordinateBialgHom (S := S) wt).toCoalgHom =
@@ -281,14 +283,12 @@ end DirectCoordinateMap
 
 section Construction
 
-variable [Finite κ]
-
 /-- The character-lattice map associated to a family of weights. It sends the standard
 character at `i : Fin N` to the finitely supported function corresponding to `wt i`.
 
 Contravariance turns this map into a morphism from the rank-`κ` split torus to the rank-`N`
 diagonal torus. -/
-noncomputable def weightCharacterMap (wt : Fin N → κ → ℤ) :
+noncomputable def weightCharacterMap [Finite κ] (wt : Fin N → κ → ℤ) :
     Multiplicative (ULift.{u} (Fin N) →₀ ℤ) →*
       Multiplicative (κ →₀ ℤ) :=
   AddMonoidHom.toMultiplicative
@@ -297,7 +297,7 @@ noncomputable def weightCharacterMap (wt : Fin N → κ → ℤ) :
 
 /-- The weight character-lattice map takes a standard character to the corresponding weight. -/
 @[simp]
-theorem weightCharacterMap_ofAdd_single (wt : Fin N → κ → ℤ) (i : Fin N) :
+theorem weightCharacterMap_ofAdd_single [Finite κ] (wt : Fin N → κ → ℤ) (i : Fin N) :
     weightCharacterMap wt
         (Multiplicative.ofAdd (Finsupp.single (ULift.up i) 1)) =
       Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt i)) := by
@@ -307,7 +307,7 @@ theorem weightCharacterMap_ofAdd_single (wt : Fin N → κ → ℤ) (i : Fin N) 
 /-- The coordinate Hopf-algebra morphism of the weight torus. It first restricts functions on
 `GL_N` to its diagonal torus, then applies the group-algebra map induced by the prescribed
 weights. Its direction is opposite to the represented group-scheme morphism. -/
-noncomputable def weightTorusCoordinateMap (wt : Fin N → κ → ℤ) :
+noncomputable def weightTorusCoordinateMap [Finite κ] (wt : Fin N → κ → ℤ) :
     coordinateHopfAlgebra R N ⟶
       (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup κ)).obj :=
   diagonalTorusCoordinateMap ≫
@@ -316,7 +316,7 @@ noncomputable def weightTorusCoordinateMap (wt : Fin N → κ → ℤ) :
 
 /-- Applying the weight-torus coordinate map first restricts to the diagonal torus and then
 maps each diagonal character along `weightCharacterMap`. -/
-theorem weightTorusCoordinateMap_apply (wt : Fin N → κ → ℤ)
+theorem weightTorusCoordinateMap_apply [Finite κ] (wt : Fin N → κ → ℤ)
     (x : coordinateHopfAlgebra R N) :
     (weightTorusCoordinateMap (R := R) wt).hom x =
       MonoidAlgebra.mapDomainBialgHom R (weightCharacterMap wt)
@@ -327,7 +327,7 @@ theorem weightTorusCoordinateMap_apply (wt : Fin N → κ → ℤ)
 /-- A generic matrix entry restricts along the weight torus to the prescribed character on the
 diagonal, and to zero off the diagonal. -/
 @[simp]
-theorem weightTorusCoordinateMap_X (wt : Fin N → κ → ℤ) (i j : Fin N) :
+theorem weightTorusCoordinateMap_X [Finite κ] (wt : Fin N → κ → ℤ) (i j : Fin N) :
     (weightTorusCoordinateMap (R := R) wt).hom
         (coordinateHopfAlgebraAlgEquiv R N
           (coordinateRingMap R N (MvPolynomial.X (i, j)))) =
@@ -351,7 +351,7 @@ theorem map_genericMatrix_weightTorusCoordinateMap [Fintype κ] (wt : Fin N → 
 
 /-- The categorical weight-torus coordinate map is the direct diagonal-representation
 bialgebra morphism when the base ring and torus index live in the same universe. -/
-theorem hom_weightTorusCoordinateMap (wt : Fin N → κ → ℤ) :
+theorem hom_weightTorusCoordinateMap [Finite κ] (wt : Fin N → κ → ℤ) :
     (weightTorusCoordinateMap (R := R) wt).hom =
       weightTorusCoordinateBialgHom (S := R) wt := by
   apply coordinateHopfAlgebra_bialgHom_ext R N
@@ -359,7 +359,7 @@ theorem hom_weightTorusCoordinateMap (wt : Fin N → κ → ℤ) :
   rw [weightTorusCoordinateMap_X, weightTorusCoordinateBialgHom_X]
 
 /-- A spanning family of weights makes the weight-torus coordinate morphism surjective. -/
-theorem weightTorusCoordinateMap_surjective (wt : Fin N → κ → ℤ)
+theorem weightTorusCoordinateMap_surjective [Finite κ] (wt : Fin N → κ → ℤ)
     (hwt : Submodule.span ℤ (Set.range wt) = ⊤) :
     Function.Surjective (weightTorusCoordinateMap (R := R) wt).hom := by
   let _ : Fintype κ := Fintype.ofFinite κ
@@ -369,7 +369,7 @@ theorem weightTorusCoordinateMap_surjective (wt : Fin N → κ → ℤ)
 
 /-- The group-scheme morphism from a split torus to `GL_N` prescribed by a family of weights.
 It factors through the diagonal torus: the `i`-th diagonal entry is the character `wt i`. -/
-noncomputable def weightTorus (wt : Fin N → κ → ℤ) :
+noncomputable def weightTorus [Finite κ] (wt : Fin N → κ → ℤ) :
     SplitTorus.groupScheme R κ ⟶ groupScheme R N :=
   DiagonalizableGroup.groupSchemeMap R
       (FGCommGrpCat.ofHom (weightCharacterMap wt)) ≫
@@ -377,7 +377,7 @@ noncomputable def weightTorus (wt : Fin N → κ → ℤ) :
 
 /-- The weight torus is relative spectrum applied contravariantly to its coordinate morphism,
 transported across the named presentations of the split torus and `GL_N`. -/
-theorem weightTorus_def (wt : Fin N → κ → ℤ) :
+theorem weightTorus_def [Finite κ] (wt : Fin N → κ → ℤ) :
     weightTorus (R := R) wt =
       eqToHom (DiagonalizableGroup.groupScheme_def R (SplitTorus.characterGroup κ)) ≫
         (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
@@ -413,7 +413,7 @@ theorem weightTorus_eq_diagonalGroupSchemeHom [Fintype κ] (wt : Fin N → κ �
 
 /-- **A family of weights spanning the character lattice represents the split torus as a closed
 subgroup of `GL_N`.** -/
-theorem isClosedImmersion_weightTorus (wt : Fin N → κ → ℤ)
+theorem isClosedImmersion_weightTorus [Finite κ] (wt : Fin N → κ → ℤ)
     (hwt : Submodule.span ℤ (Set.range wt) = ⊤) :
     IsClosedImmersion (weightTorus (R := R) wt).hom.hom.left := by
   let _ : Fintype κ := Fintype.ofFinite κ
@@ -424,7 +424,7 @@ theorem isClosedImmersion_weightTorus (wt : Fin N → κ → ℤ)
 
 /-- The split torus represented by a spanning family of weights, as a closed subgroup scheme of
 `GL_N`. This does not assert maximality in an ambient reductive group. -/
-noncomputable def weightTorusClosedSubgroup (wt : Fin N → κ → ℤ)
+noncomputable def weightTorusClosedSubgroup [Finite κ] (wt : Fin N → κ → ℤ)
     (hwt : Submodule.span ℤ (Set.range wt) = ⊤) :
     ClosedSubgroupScheme (groupScheme R N) :=
   have _ := isClosedImmersion_weightTorus (R := R) wt hwt
@@ -433,7 +433,7 @@ noncomputable def weightTorusClosedSubgroup (wt : Fin N → κ → ℤ)
 /-- The underlying subobject of a closed weight torus is represented by its defining weight-torus
 morphism. -/
 @[simp]
-theorem coe_weightTorusClosedSubgroup (wt : Fin N → κ → ℤ)
+theorem coe_weightTorusClosedSubgroup [Finite κ] (wt : Fin N → κ → ℤ)
     (hwt : Submodule.span ℤ (Set.range wt) = ⊤) :
     let _ := isClosedImmersion_weightTorus (R := R) wt hwt
     (weightTorusClosedSubgroup (R := R) wt hwt).1 =
@@ -518,13 +518,13 @@ theorem weightTorusBaseChangeCoordinateMap_baseChange
     (coordinateHopfAlgebraBaseChangeIso.{max u v, w} A B N).inv ≫
         CommHopfAlgCat.baseChangeMap (weightTorusBaseChangeCoordinateMap.{u, v} R A wt) ≫
         (_root_.CommHopfAlgCat.isoMk
-          (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv A B
+          (MonoidAlgebra.scalarTensorBialgEquiv A B
             (G := SplitTorus.characterGroup κ))).hom =
       weightTorusBaseChangeCoordinateMap.{u, max v w} R B wt := by
   rw [weightTorusBaseChangeCoordinateMap_def, weightTorusBaseChangeCoordinateMap_def]
   exact coordinateHopfAlgebraBaseChangeIso_inv_comp_baseChangeMap_tower R A B N _ _ _ _
-    fun _ ↦
-      TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_one_tmul_scalarTensorBialgEquiv_one_tmul A B
+    fun y ↦
+      MonoidAlgebra.scalarTensorBialgEquiv_tmul_scalarTensorBialgEquiv_one_tmul A B 1 y
 
 end BaseChange
 
@@ -569,6 +569,28 @@ theorem diagonalTorusCoordinates_pointsMap_weightCharacterMap [Fintype κ]
     simp
   rw [hweight, SplitTorus.apply_weightCharacter,
     ← SplitTorus.pointsMulEquiv_eq_freeAbelianCharEquiv]
+
+/-- The diagonal coordinate of the weight torus point of the identity point of the group algebra
+of the character lattice is the group-algebra monomial of the corresponding weight. -/
+theorem diagonalTorusCoordinates_pointsMap_weightCharacterMap_id [Fintype κ]
+    (wt : Fin N → κ → ℤ) (i : Fin N) :
+    (diagonalTorusCoordinates
+        (SplitTorus.pointsMulEquiv
+          (DiagonalizableGroup.pointsMap (weightCharacterMap wt)
+            (toConv (AlgHom.id R (MonoidAlgebra R (SplitTorus.characterGroup κ)))))) i :
+        MonoidAlgebra R (SplitTorus.characterGroup κ)) =
+      MonoidAlgebra.single (SplitTorus.weightCharacter (wt i)) 1 := by
+  let H := MonoidAlgebra R (SplitTorus.characterGroup κ)
+  let p : WithConv (H →ₐ[R] H) := toConv (AlgHom.id R H)
+  have hweight : (DiagonalizableGroup.charOfPoint p.ofConv
+      (SplitTorus.weightCharacter (wt i)) : H) =
+      MonoidAlgebra.single (SplitTorus.weightCharacter (wt i)) 1 := by
+    have hp : p.ofConv = AlgHom.id R H := WithConv.ofConv_toConv _
+    rw [DiagonalizableGroup.charOfPoint_apply_coe, hp, AlgHom.id_apply]
+  have hcoordUnits :=
+    diagonalTorusCoordinates_pointsMap_weightCharacterMap wt (CommAlgCat.of R H) p i
+  rw [← SplitTorus.charOfPoint_weightCharacter] at hcoordUnits
+  exact (congrArg Units.val hcoordUnits).trans hweight
 
 /-- On algebra-valued points, the weight-torus coordinate morphism is the diagonal matrix whose
 `i`-th entry is the value of the character `wt i`. -/

@@ -22,7 +22,9 @@ elliptic orbits.
 
 Restricted to the coarse quotient, the biholomorphism shows that `j` is injective there
 (`jQuotient_injective`): two points of the upper half-plane have the same value of `j` exactly
-when they lie in one `SL(2, ℤ)`-orbit (`j_eq_j_iff`).
+when they lie in one `SL(2, ℤ)`-orbit (`j_eq_j_iff`). Away from the cusp it is in fact a bijection
+from the coarse quotient onto `ℂ` (`jQuotient_bijective`), so the modular invariant `j : ℍ → ℂ` is
+surjective (`TauCeti.ModularForm.j_surjective`).
 
 ## References
 
@@ -206,6 +208,22 @@ theorem jBiholomorph_I :
 theorem jQuotient_injective : Function.Injective jQuotient := fun p q h ↦ by
   have : jBiholomorph (ofQuotient p) = jBiholomorph (ofQuotient q) := by simp [h]
   exact ofQuotient.inj (jBiholomorph.injective this)
+
+/-- The descended modular invariant is a bijection from the coarse level-one quotient onto `ℂ`:
+these are the points of the Riemann sphere other than the image `∞` of the cusp. -/
+theorem jQuotient_bijective : Bijective jQuotient := by
+  refine ⟨jQuotient_injective, fun w ↦ ?_⟩
+  obtain ⟨x, hx⟩ := jBiholomorph.surjective (w : OnePoint ℂ)
+  cases x with
+  | ofQuotient p => exact ⟨p, by simpa using hx⟩
+  | ofCusp C => simp at hx
+
+/-- **The modular invariant `j : ℍ → ℂ` is surjective.** -/
+theorem _root_.TauCeti.ModularForm.j_surjective : Surjective j := by
+  intro w
+  obtain ⟨p, hp⟩ := jQuotient_bijective.2 w
+  induction p using Quotient.inductionOn with
+  | h z => exact ⟨z, by rwa [jQuotient_mk] at hp⟩
 
 /-- **The modular invariant classifies `SL(2, ℤ)`-orbits**: `j z = j w` exactly when `w` lies in
 the `SL(2, ℤ)`-orbit of `z`. -/

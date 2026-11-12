@@ -265,16 +265,19 @@ theorem paths_eq_nil (hf : IsCirculation f) : D.paths = [] :=
   List.eq_nil_iff_forall_not_mem.2 fun p hp ↦
     D.source_ne_of_mem_paths hp ((isCirculation_iff f).1 hf p.source).ge rfl
 
+/-- A path component of a decomposition is nonnegative. -/
+theorem assignment_nonneg_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
+    0 ≤ p.assignment := fun x y e ↦ by
+  by_cases he : ⟨x, y, e⟩ ∈ p.walk.arrows
+  · exact (D.assignment_apply_of_mem_arrows hp he).symm ▸ (D.weight_pos_of_mem_paths p hp).le
+  · simp [WeightedWalk.assignment_def, walkAssignment_eq_zero_of_notMem p.walk p.weight he]
+
 end Preorder
 
 section PartialOrder
 
 variable [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
   (D : PathCycleDecomposition f)
-
-theorem assignment_nonneg_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
-    0 ≤ p.assignment :=
-  walkAssignment_nonneg _ (D.weight_pos_of_mem_paths p hp).le
 
 theorem assignment_nonneg_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
     0 ≤ c.assignment :=
@@ -475,40 +478,43 @@ private def PathCycleDecomposition.consPath {g : Assignment Q K} (D : PathCycleD
     conv_rhs => rw [← D.sum_paths_add_sum_cycles]
     abel
 
-/-- **Path–cycle decomposition.** Every nonnegative arrow assignment `f` on a finite arrow family
-is a sum of positively weighted directed paths, each from a vertex of negative excess to a vertex
-of positive excess, and positively weighted directed cycles. The number of components is at most
-the number of arrows on which `f` is positive, and if the values of `f` lie in an additive subgroup
-`H`, then so do all weights. -/
-theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
-    (hH : ∀ ⦃x y : V⦄ (e : Q x y), f e ∈ H) :
-    ∃ D : PathCycleDecomposition f, (∀ p ∈ D.paths, p.weight ∈ H) ∧
-      (∀ c ∈ D.cycles, c.weight ∈ H) ∧
-      D.paths.length + D.cycles.length ≤ #{a : Σ x y, Q x y | 0 < f a.2.2} := by
-  classical
-  suffices ∀ n (f : Assignment Q K), 0 ≤ f → (∀ ⦃x y : V⦄ (e : Q x y), f e ∈ H) →
-      #{a : Σ x y, Q x y | 0 < f a.2.2} = n →
-      ∃ D : PathCycleDecomposition f, (∀ p ∈ D.paths, p.weight ∈ H) ∧
-        (∀ c ∈ D.cycles, c.weight ∈ H) ∧
-        D.paths.length + D.cycles.length ≤ #{a : Σ x y, Q x y | 0 < f a.2.2} from
-    this _ f hf hH rfl
-  intro n
-  induction n using Nat.strong_induction_on with
+/-- The induction motive of `exists_pathCycleDecomposition`: `f` has a path–cycle decomposition
+whose weights all lie in `H` and which has at most as many components as `f` has positive
+arrows. -/
+private def HasBoundedDecomposition (H : AddSubgroup K) (f : Assignment Q K) : Prop :=
+  ∃ D : PathCycleDecomposition f, (∀ p ∈ D.paths, p.weight ∈ H) ∧
+    (∀ c ∈ D.cycles, c.weight ∈ H) ∧
+    D.paths.length + D.cycles.length ≤ #{a : Σ x y, Q x y | 0 < f a.2.2}
+
+/-- Peeling off a walk of positive arrows weighted by its bottleneck leaves a nonnegative
+assignment with values in `H` and fewer positive arrows, which is decomposed by the induction
+hypothesis `ih`. -/
+private theorem hasBoundedDecomposition_sub_walkAssignment (H : AddSubgroup K) (hf : 0 ≤ f)
+    (hH : ∀ ⦃x y : V⦄ (e : Q x y), f e ∈ H)
+    (ih : ∀ g : Assignment Q K, 0 ≤ g → (∀ ⦃x y : V⦄ (e : Q x y), g e ∈ H) →
+      #{a : Σ x y, Q x y | 0 < g a.2.2} < #{a : Σ x y, Q x y | 0 < f a.2.2} →
+      HasBoundedDecomposition H g)
+    {s t : V} (p : ArrowWalk Q s t) (hnd : p.arrows.Nodup) (hne : p.arrows ≠ [])
+    (hpos : ∀ a ∈ p.arrows, 0 < f a.2.2) :
+    ∃ q : K, 0 < q ∧ q ∈ H ∧ 0 ≤ f - walkAssignment p q ∧
+      HasBoundedDecomposition H (f - walkAssignment p q) ∧
+      #{a : Σ x y, Q x y | 0 < (f - walkAssignment p q) a.2.2} <
+        #{a : Σ x y, Q x y | 0 < f a.2.2} := by
+  obtain ⟨hq, hqH, hg, hgH, hcard⟩ := sub_walkAssignment_bottleneck_spec H hf hH hnd hne hpos
+  exact ⟨_, hq, hqH, hg, ih _ hg hgH hcard, hcard⟩
+
+/-- Strong induction on the number of positive arrows: peel off a cycle of positive arrows if
+there is one, and otherwise a path of positive arrows between vertices of nonzero excess. -/
+private theorem hasBoundedDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
+    (hH : ∀ ⦃x y : V⦄ (e : Q x y), f e ∈ H) : HasBoundedDecomposition H f := by
+  induction hn : #{a : Σ x y, Q x y | 0 < f a.2.2} using Nat.strong_induction_on generalizing f
+    with
   | _ n ih =>
-  intro f hf hH hn
   subst hn
-  -- Peeling off a walk of positive arrows weighted by its bottleneck leaves a nonnegative
-  -- assignment with values in `H` and fewer positive arrows, which is decomposed by induction.
-  have peel {s t : V} (p : ArrowWalk Q s t) (hnd : p.arrows.Nodup) (hne : p.arrows ≠ [])
-      (hpos : ∀ a ∈ p.arrows, 0 < f a.2.2) :
-      ∃ q : K, 0 < q ∧ q ∈ H ∧ 0 ≤ f - walkAssignment p q ∧
-        ∃ D : PathCycleDecomposition (f - walkAssignment p q),
-          (∀ p ∈ D.paths, p.weight ∈ H) ∧ (∀ c ∈ D.cycles, c.weight ∈ H) ∧
-          D.paths.length + D.cycles.length + 1 ≤ #{a : Σ x y, Q x y | 0 < f a.2.2} := by
-    obtain ⟨hq, hqH, hg, hgH, hcard⟩ :=
-      sub_walkAssignment_bottleneck_spec H hf hH hnd hne hpos
-    obtain ⟨D, hP, hC, hlen⟩ := ih _ hcard _ hg hgH rfl
-    exact ⟨_, hq, hqH, hg, D, hP, hC, by omega⟩
+  replace ih : ∀ g : Assignment Q K, 0 ≤ g → (∀ ⦃x y : V⦄ (e : Q x y), g e ∈ H) →
+      #{a : Σ x y, Q x y | 0 < g a.2.2} < #{a : Σ x y, Q x y | 0 < f a.2.2} →
+      HasBoundedDecomposition H g :=
+    fun g hg hgH hlt ↦ ih _ hlt hg hgH rfl
   by_cases hz : ∀ ⦃x y : V⦄ (e : Q x y), f e ≤ 0
   · -- The zero assignment has the empty decomposition.
     have hf0 : f = 0 :=
@@ -523,7 +529,8 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
     obtain ⟨v, hv⟩ := hcyc
     obtain ⟨c, hc, hpos⟩ := exists_isCycle_iff_transGen.2 hv
     have hne : c.arrows ≠ [] := hc.arrows_ne_nil
-    obtain ⟨q, hq, hqH, -, D, hP, hC, hlen⟩ := peel c hc.nodup_arrows hne hpos
+    obtain ⟨q, hq, hqH, -, ⟨D, hP, hC, hlen⟩, hcard⟩ :=
+      hasBoundedDecomposition_sub_walkAssignment H hf hH ih c hc.nodup_arrows hne hpos
     refine ⟨D.consCycle ⟨v, c, q⟩ hc hq (sub_add_cancel _ _).symm, hP,
       List.forall_mem_cons.2 ⟨hqH, hC⟩, ?_⟩
     simp only [PathCycleDecomposition.consCycle, List.length_cons]
@@ -534,12 +541,25 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
     have hfacyc : f.IsAcyclic := (Assignment.isAcyclic_iff_forall_not_transGen f).2 hcyc
     obtain ⟨s, t, p, hp, hst, hpos, hin, hout⟩ := exists_isPath_of_isAcyclic hf hfacyc e he
     have hne : p.arrows ≠ [] := p.arrows_ne_nil hst
-    obtain ⟨q, hq, hqH, hg, D, hP, hC, hlen⟩ := peel p hp.nodup_arrows hne hpos
+    obtain ⟨q, hq, hqH, hg, ⟨D, hP, hC, hlen⟩, hcard⟩ :=
+      hasBoundedDecomposition_sub_walkAssignment H hf hH ih p hp.nodup_arrows hne hpos
     obtain ⟨hs, ht, hneg, hpos'⟩ := excessAt_sign_of_sub_walkAssignment hst hq hg hin hout
     refine ⟨D.consPath ⟨s, t, p, q⟩ hp hq hs ht hneg hpos' (sub_add_cancel _ _).symm,
       List.forall_mem_cons.2 ⟨hqH, hP⟩, hC, ?_⟩
     simp only [PathCycleDecomposition.consPath, List.length_cons]
     omega
+
+/-- **Path–cycle decomposition.** Every nonnegative arrow assignment `f` on a finite arrow family
+is a sum of positively weighted directed paths, each from a vertex of negative excess to a vertex
+of positive excess, and positively weighted directed cycles. The number of components is at most
+the number of arrows on which `f` is positive, and if the values of `f` lie in an additive subgroup
+`H`, then so do all weights. -/
+theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
+    (hH : ∀ ⦃x y : V⦄ (e : Q x y), f e ∈ H) :
+    ∃ D : PathCycleDecomposition f, (∀ p ∈ D.paths, p.weight ∈ H) ∧
+      (∀ c ∈ D.cycles, c.weight ∈ H) ∧
+      D.paths.length + D.cycles.length ≤ #{a : Σ x y, Q x y | 0 < f a.2.2} :=
+  hasBoundedDecomposition H hf hH
 
 /-- Every nonnegative arrow assignment on a finite arrow family has a path–cycle
 decomposition. -/
@@ -603,10 +623,10 @@ theorem pairwise_disjoint_arrows (hf : ∀ ⦃x y : V⦄ (e : Q x y), f e ≤ 1)
 
 end PathCycleDecomposition
 
-/-- An integer `s`–`t` flow between distinct vertices carrying at most one unit on every arrow
-carries as many directed `s`–`t` paths as its value, no two of which traverse a common arrow:
-every arrow of these paths carries one unit of the flow. -/
-theorem Flow.exists_paths_card_eq_val {cap : Assignment Q ℤ} {s t : V} (hst : s ≠ t)
+/-- An integer `s`–`t` flow carrying at most one unit on every arrow carries as many directed
+`s`–`t` paths as its value, no two of which traverse a common arrow: every arrow of these paths
+carries one unit of the flow. -/
+theorem Flow.exists_paths_card_eq_val {cap : Assignment Q ℤ} {s t : V}
     (f : Flow cap s t) (hf : ∀ ⦃x y : V⦄ (e : Q x y), f.toFun e ≤ 1) :
     ∃ (k : ℕ) (P : Fin k → ArrowWalk Q s t), (k : ℤ) = f.val ∧ (∀ i, (P i).IsPath) ∧
       (∀ i, ∀ a ∈ (P i).arrows, f.toFun a.2.2 = 1) ∧
@@ -630,11 +650,13 @@ theorem Flow.exists_paths_card_eq_val {cap : Assignment Q ℤ} {s t : V} (hst : 
   · simpa only [hPa] using D.pairwise_disjoint_arrows hf hij
 
 /-- An integer `s`–`t` flow carries a family of directed `s`–`t` paths, repetitions allowed, with
-as many members as its value, such that every vertex `v ≠ s` lies on at most as many members as the
-total value entering `v`. -/
+as many members as its value: the members, each weighted by one, add up to at most the flow on every
+arrow. In particular every vertex `v ≠ s` lies on at most as many members as the total value
+entering `v`. -/
 theorem Flow.exists_paths_card_eq_val_card_filter_le [DecidableEq V] {cap : Assignment Q ℤ}
     {s t : V} (f : Flow cap s t) :
     ∃ (k : ℕ) (P : Fin k → ArrowWalk Q s t), (k : ℤ) = f.val ∧ (∀ i, (P i).IsPath) ∧
+      (∑ i, walkAssignment (P i) (1 : ℤ)) ≤ f.toFun ∧
       ∀ v, v ≠ s → (#{i | v ∈ (P i).vertices} : ℤ) ≤ arrowSum f.toFun univ {v} := by
   obtain ⟨D⟩ := nonempty_pathCycleDecomposition (f := f.toFun) fun _ _ e ↦ f.nonneg e
   -- Every path of the decomposition is a path from `s` to `t`.
@@ -650,10 +672,19 @@ theorem Flow.exists_paths_card_eq_val_card_filter_le [DecidableEq V] {cap : Assi
   -- Repeat the `i`-th path as often as its weight.
   let ι := Σ i : Fin D.paths.length, Fin D.paths[(i : ℕ)].weight.toNat
   let e := Fintype.equivFin ι
-  refine ⟨Fintype.card ι, fun j ↦ W (e.symm j).1, ?_, fun j ↦ hW _, fun v hv ↦ ?_⟩
+  refine ⟨Fintype.card ι, fun j ↦ W (e.symm j).1, ?_, fun j ↦ hW _, ?_, fun v hv ↦ ?_⟩
   · rw [← D.sum_weight_paths_eq_val, ← Fin.sum_univ_fun_getElem, Fintype.card_sigma]
     simp only [Fintype.card_fin, Nat.cast_sum]
     exact sum_congr rfl fun i _ ↦ Int.toNat_of_nonneg (hpos i).le
+  -- The members add up to the sum of the path components, which is bounded by the flow.
+  · calc ∑ j, walkAssignment (W (e.symm j).1) (1 : ℤ)
+        = ∑ i : Fin D.paths.length, D.paths[(i : ℕ)].assignment := by
+          rw [e.symm.sum_comp fun x : ι ↦ walkAssignment (W x.1) (1 : ℤ), Fintype.sum_sigma]
+          refine sum_congr rfl fun i _ ↦ ?_
+          ext x y a
+          simp [← hWa, walkAssignment_apply, Int.toNat_of_nonneg (hpos i).le, mul_comm]
+      _ = D.pathAssignment := by rw [D.pathAssignment_def, ← Fin.sum_univ_fun_getElem]
+      _ ≤ f.toFun := D.pathAssignment_le
   -- The members through `v` are the repetitions of the paths through `v`, each of which brings its
   -- weight into `v`.
   let F : Finset (Fin D.paths.length) := {i | v ∈ (W i).vertices}

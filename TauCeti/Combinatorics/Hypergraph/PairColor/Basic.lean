@@ -9,6 +9,8 @@ public import Mathlib.Data.Prod.Basic
 public import Mathlib.Data.Option.Basic
 public import Mathlib.Data.Sym.Sym2
 public import Mathlib.Logic.Equiv.Defs
+public import Mathlib.Data.Fintype.Pi
+import Mathlib.Data.Finset.Prod
 
 /-!
 # Coherent colors on ordered distinct pairs
@@ -22,7 +24,9 @@ only diagonal pairs have color `none`. `PairColorSystem.ofRaw` makes any directe
 coherent by recording its colors in both orientations, using the product palette.
 `PairColorSystem.relabel` renames the palette along an equivalence.
 `PairColorSystem.split` refines a coloring by a symmetric labelling of the unordered pairs.
-`coordPair` extracts the ordered distinct pair of two coordinates of an injective tuple.
+`PairColorSystem.comap` restricts a coloring along a vertex embedding, preserving the palette.
+`coordPair` extracts the ordered distinct pair of two coordinates of an injective tuple, and
+`card_filter_coordPair_mem_le` counts the injective triples with a coordinate pair in a given set.
 -/
 
 public section
@@ -75,31 +79,23 @@ theorem colorOfPair_of_ne (S : PairColorSystem κ V) {u v : V} (h : u ≠ v) :
 @[simp]
 theorem colorOfPair_eq_none_iff (S : PairColorSystem κ V) (u v : V) :
     S.colorOfPair u v = none ↔ u = v := by
-  classical
   simp [colorOfPair]
 
 /-- A prescribed pair color implies distinctness and identifies the underlying color. -/
 theorem colorOfPair_eq_some_iff (S : PairColorSystem κ V) (u v : V) (c : κ) :
     S.colorOfPair u v = some c ↔ ∃ h : u ≠ v, S.color ⟨(u, v), h⟩ = c := by
-  classical
-  by_cases h : u ≠ v <;> simp [colorOfPair, h]
+  by_cases h : u = v <;> simp [h]
 
 /-- Exchanging vertices applies palette reversal to the total color. -/
 theorem colorOfPair_swap (S : PairColorSystem κ V) (u v : V) :
     S.colorOfPair v u = (S.colorOfPair u v).map S.rev := by
-  by_cases h : u ≠ v
-  · rw [S.colorOfPair_of_ne h, S.colorOfPair_of_ne h.symm, Option.map_some]
-    exact congrArg some (S.color_rev ⟨(u, v), h⟩)
-  · obtain rfl := not_ne_iff.mp h
-    simp
+  by_cases h : u = v <;> simp [h, Ne.symm, ← S.color_rev]
 
 /-- A reversed pair has the reversed color exactly when the original pair has that color. -/
 theorem colorOfPair_swap_eq_some_iff (S : PairColorSystem κ V) (u v : V) (c : κ) :
     S.colorOfPair v u = some (S.rev c) ↔ S.colorOfPair u v = some c := by
-  rw [S.colorOfPair_swap]
-  simpa only [Option.map_some] using
-    (Option.map_injective S.rev_involutive.injective).eq_iff
-      (a := S.colorOfPair u v) (b := some c)
+  rw [S.colorOfPair_swap, Option.map_eq_some_iff]
+  simp only [S.rev_involutive.injective.eq_iff, exists_eq_right]
 
 /-- Make a directed coloring coherent by retaining the colors in both orientations.
 The palette is `κ × κ`, and reversal exchanges the coordinates. -/
@@ -155,10 +151,7 @@ theorem split_rev (S : PairColorSystem κ V) (f : Sym2 V → ι) (c : κ × ι) 
 /-- The total split color is the total original color together with the label of the pair. -/
 theorem colorOfPair_split (S : PairColorSystem κ V) (f : Sym2 V → ι) (u v : V) :
     (S.split f).colorOfPair u v = (S.colorOfPair u v).map fun c ↦ (c, f s(u, v)) := by
-  by_cases h : u = v
-  · subst h
-    simp
-  · simp [h]
+  by_cases h : u = v <;> simp [h]
 
 @[simp]
 theorem colorOfPair_split_eq_some_iff (S : PairColorSystem κ V) (f : Sym2 V → ι) (u v : V)
@@ -166,6 +159,37 @@ theorem colorOfPair_split_eq_some_iff (S : PairColorSystem κ V) (f : Sym2 V →
     (S.split f).colorOfPair u v = some (c, i) ↔ S.colorOfPair u v = some c ∧ f s(u, v) = i := by
   rw [colorOfPair_split]
   cases S.colorOfPair u v <;> simp
+
+/-- Restrict a coherent pair coloring along a vertex embedding. The palette and its
+reversal are unchanged. -/
+def comap {W : Type*} (S : PairColorSystem κ W) (f : V ↪ W) : PairColorSystem κ V where
+  color p := S.color ⟨(f p.1.1, f p.1.2), f.injective.ne p.2⟩
+  rev := S.rev
+  rev_involutive := S.rev_involutive
+  color_rev p := S.color_rev ⟨(f p.1.1, f p.1.2), f.injective.ne p.2⟩
+
+@[simp]
+theorem comap_color {W : Type*} (S : PairColorSystem κ W) (f : V ↪ W)
+    (p : {p : V × V // p.1 ≠ p.2}) :
+    (S.comap f).color p = S.color ⟨(f p.1.1, f p.1.2), f.injective.ne p.2⟩ := (rfl)
+
+@[simp]
+theorem comap_rev {W : Type*} (S : PairColorSystem κ W) (f : V ↪ W) (c : κ) :
+    (S.comap f).rev c = S.rev c := (rfl)
+
+@[simp]
+theorem colorOfPair_comap {W : Type*} (S : PairColorSystem κ W) (f : V ↪ W) (u v : V) :
+    (S.comap f).colorOfPair u v = S.colorOfPair (f u) (f v) := by
+  by_cases h : u = v <;> simp [h]
+
+@[simp]
+theorem comap_refl (S : PairColorSystem κ V) : S.comap (.refl V) = S := by
+  ext <;> rfl
+
+@[simp]
+theorem comap_comap {W U : Type*} (S : PairColorSystem κ U) (g : W ↪ U) (f : V ↪ W) :
+    (S.comap g).comap f = S.comap (f.trans g) := by
+  ext <;> rfl
 
 end PairColorSystem
 
@@ -185,5 +209,21 @@ theorem PairColorSystem.color_coordPair_eq_iff {ι κ V : Type*} (C : PairColorS
     C.color (coordPair x i j hij) = k ↔ C.colorOfPair (x.1 i) (x.1 j) = some k := by
   rw [C.colorOfPair_of_ne (fun h ↦ hij (x.2 h)), Option.some_inj]
   rfl
+
+open Finset in
+/-- The injective triples whose coordinate pair on the roles `i` and `j` lies in `E` are at most
+`|E| |V|` many: such a triple is determined by that pair and its third coordinate `k`. -/
+theorem card_filter_coordPair_mem_le {V : Type*} [Fintype V] [DecidableEq V]
+    (E : Finset {p : V × V // p.1 ≠ p.2}) {i j k : Fin 3} (hij : i ≠ j)
+    (hl : ∀ l : Fin 3, l = i ∨ l = j ∨ l = k) :
+    #{x : {x : Fin 3 → V // Function.Injective x} | coordPair x i j hij ∈ E} ≤
+      #E * Fintype.card V := by
+  rw [← card_univ (α := V), ← card_product]
+  refine card_le_card_of_injOn (fun x ↦ (coordPair x i j hij, x.1 k))
+    (fun x hx ↦ mem_product.2 ⟨(mem_filter.1 hx).2, mem_univ _⟩)
+    fun x _ y _ hxy ↦ Subtype.ext <| funext fun l ↦ ?_
+  simp only [Prod.mk.injEq, Subtype.ext_iff, coe_coordPair] at hxy
+  obtain ⟨⟨hi, hj⟩, hk⟩ := hxy
+  obtain rfl | rfl | rfl := hl l <;> assumption
 
 end TauCeti

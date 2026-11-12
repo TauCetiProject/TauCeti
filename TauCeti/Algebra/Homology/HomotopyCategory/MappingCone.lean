@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomotopyCategory.Acyclic
 public import Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated
 public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 public import TauCeti.Algebra.Homology.Homotopy
@@ -27,6 +28,9 @@ object of a distinguished triangle is zero exactly when its first morphism is an
 the mapping cone of `f` is zero in the homotopy category as soon as `f` becomes an isomorphism
 there, in particular when `f` is a homotopy equivalence. Being zero in the homotopy category means
 that the identity is null-homotopic, which is the form in which this file records the statement.
+In an abelian category the same triangle shows that `f` is a quasi-isomorphism exactly when its
+mapping cone is acyclic, since the quasi-isomorphisms of the homotopy category are the morphisms
+whose cones are acyclic.
 
 ## Main results
 
@@ -36,6 +40,10 @@ that the identity is null-homotopic, which is the form in which this file record
   of a morphism inverted by the homotopy category is contractible.
 * `CochainComplex.mappingCone.nonempty_homotopy_id_zero_of_homotopyEquiv`: the mapping cone of a
   homotopy equivalence is contractible.
+* `CochainComplex.quasiIso_iff_acyclic_mappingCone`: in an abelian category, a morphism is a
+  quasi-isomorphism exactly when its mapping cone is acyclic.
+* `CochainComplex.mappingCone.isIso_map_f`: the map of mapping cones induced by a commutative
+  square is an isomorphism in each degree where the vertical maps are.
 
 ## Mapping cones of natural transformations and shifts
 
@@ -425,6 +433,27 @@ lemma map_triangle_mor₃_comp_shiftIso_inv :
 
 end Transpose
 
+section Map
+
+/-! ### Components of the map of mapping cones induced by a commutative square -/
+
+variable {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} (φ₁ : K₁ ⟶ L₁) (φ₂ : K₂ ⟶ L₂) (a : K₁ ⟶ K₂)
+  (b : L₁ ⟶ L₂) (comm : φ₁ ≫ b = a ≫ φ₂)
+
+/-- The map of mapping cones induced by a commutative square is an isomorphism in degree `p` when
+the vertical maps are isomorphisms in degrees `p + 1` (on the sources) and `p` (on the
+targets). -/
+lemma isIso_map_f (p q : ℤ) (hpq : p + 1 = q) [IsIso (a.f q)] [IsIso (b.f p)] :
+    IsIso ((map φ₁ φ₂ a b comm).f p) := by
+  refine ⟨(fst φ₂).1.v p q hpq ≫ inv (a.f q) ≫ (inl φ₁).v q p (by lia) +
+      (snd φ₂).v p p (add_zero p) ≫ inv (b.f p) ≫ (inr φ₁).f p, ?_, ?_⟩
+  · apply ext_from φ₁ q p (by lia) <;> simp
+  · simp only [Preadditive.add_comp, Category.assoc, inl_v_map_f, inr_f_map_f,
+      IsIso.inv_hom_id_assoc]
+    exact id_X φ₂ p q hpq
+
+end Map
+
 section MapHomologicalComplex
 
 variable {D : Type*} [Category* D] [Preadditive D] [HasBinaryBiproducts D] {F G : C ⥤ D}
@@ -446,6 +475,22 @@ lemma mapHomologicalComplexIso_hom_naturality :
 end MapHomologicalComplex
 
 end CochainComplex.mappingCone
+
+namespace CochainComplex
+
+variable {C : Type u} [Category.{v} C] [Abelian C]
+
+/-- A morphism of cochain complexes in an abelian category is a quasi-isomorphism exactly when its
+mapping cone is acyclic. -/
+theorem quasiIso_iff_acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) :
+    QuasiIso φ ↔ (mappingCone φ).Acyclic := by
+  rw [← HomologicalComplex.mem_quasiIso_iff, ← HomotopyCategory.quotient_map_mem_quasiIso_iff,
+    HomotopyCategory.quasiIso_eq_trW_subcategoryAcyclic,
+    ← HomotopyCategory.quotient_obj_mem_subcategoryAcyclic_iff_acyclic]
+  exact ObjectProperty.trW_iff_of_distinguished _ _
+    (HomotopyCategory.mappingCone_triangleh_distinguished φ)
+
+end CochainComplex
 
 namespace CategoryTheory.NatTrans
 

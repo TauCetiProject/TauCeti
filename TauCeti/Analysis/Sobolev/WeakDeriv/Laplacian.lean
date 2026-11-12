@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -37,6 +38,8 @@ function is compactly supported in `Ω`, and no regularity of `∂Ω` is used.
   integration by parts in one direction, `∫ ∂ᵥ∂ᵥφ • u = ∫ φ • ∂ᵥ∂ᵥu`.
 * `ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian`: Green's second identity
   against a test function, `∫ Δφ • u = ∫ φ • Δu`.
+* `ContDiffOn.eqOn_laplacian_of_forall_integral_laplacian_smul_eq`: conversely, a `C²` function
+  whose distributional Laplacian is a continuous function `f` satisfies `Δu = f` pointwise.
 * `InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero`: a harmonic function is
   weakly harmonic.
 * `MeasureTheory.LocallyIntegrable.integral_laplacian_mul_eq_neg_integral_sum`: for a locally
@@ -63,6 +66,7 @@ section NormedSpace
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure]
 
+omit [CompleteSpace F] in
 /-- **Second-order integration by parts against a test function**, in one direction `v`. For
 `u` of class `C²` on the open set `Ω` in a finite-dimensional real normed space and a test
 function `φ` on `Ω`,
@@ -71,6 +75,10 @@ theorem _root_.ContDiffOn.integral_fderiv_fderiv_smul_eq_integral_smul_fderiv_fd
     (hu : ContDiffOn ℝ 2 u Ω) (φ : 𝓓(Ω, ℝ)) (v : E) :
     ∫ x, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y v) x v • u x ∂μ =
       ∫ x, (φ : E → ℝ) x • fderiv ℝ (fun y ↦ fderiv ℝ u y v) x v ∂μ := by
+  by_cases hF : CompleteSpace F
+  swap
+  · rw [integral_of_not_completeSpace hF, integral_of_not_completeSpace hF]
+  have := hF
   have hΩ : IsOpen (Ω : Set E) := Ω.isOpen
   set g : E → F := fun y ↦ fderiv ℝ u y v with _
   have hu1 : ContDiffOn ℝ 1 (fderiv ℝ u) Ω := hu.fderiv_of_isOpen hΩ (by norm_num)
@@ -102,12 +110,17 @@ end NormedSpace
 variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure]
 
+omit [CompleteSpace F] in
 /-- **Green's second identity against a test function.** For `u` of class `C²` on the open set
 `Ω` and a test function `φ` on `Ω`, `∫ Δφ • u ∂μ = ∫ φ • Δu ∂μ`: the classical Laplacian of a `C²`
 function is its distributional Laplacian. -/
 theorem _root_.ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
     (hu : ContDiffOn ℝ 2 u Ω) (φ : 𝓓(Ω, ℝ)) :
     ∫ x, Δ (φ : E → ℝ) x • u x ∂μ = ∫ x, (φ : E → ℝ) x • Δ u x ∂μ := by
+  by_cases hF : CompleteSpace F
+  swap
+  · rw [integral_of_not_completeSpace hF, integral_of_not_completeSpace hF]
+  have := hF
   have hΩ : IsOpen (Ω : Set E) := Ω.isOpen
   set b := stdOrthonormalBasis ℝ E
   have hφ1 : ContDiff ℝ 1 (fderiv ℝ (φ : E → ℝ)) := φ.contDiff.fderiv_right (by simp)
@@ -131,8 +144,8 @@ theorem _root_.ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
     simpa only [TestFunction.lineDeriv_lineDeriv_eq_fderiv_fderiv] using this
   have hint₂ : ∀ i,
       Integrable (fun x ↦ (φ : E → ℝ) x • fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i)) μ :=
-    fun i ↦ integrable_smul_of_locallyIntegrableOn
-      ((hu.continuousOn_fderiv_fderiv_apply hΩ (b i)).locallyIntegrableOn hΩ.measurableSet) φ
+    fun i ↦ φ.integrable_smul
+      ((hu.continuousOn_fderiv_fderiv_apply hΩ (b i)).locallyIntegrableOn hΩ.measurableSet)
   calc ∫ x, Δ (φ : E → ℝ) x • u x ∂μ
       = ∑ i, ∫ x, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y (b i)) x (b i) • u x ∂μ := by
         simp_rw [hΔφ, Finset.sum_smul]
@@ -148,6 +161,35 @@ theorem _root_.ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
         · rw [hΔu x hx, Finset.smul_sum]
         · simp [φ.zero_on_compl hx]
 
+/-- **A `C²` distributional solution of `Δu = f` is a classical one.** If `u` is `C²` on the open
+set `Ω`, `f` is continuous on `Ω`, and `∫ Δφ • u ∂μ = ∫ φ • f ∂μ` for every test function `φ` on
+`Ω`, then `Δu = f` at every point of `Ω`. -/
+theorem _root_.ContDiffOn.eqOn_laplacian_of_forall_integral_laplacian_smul_eq
+    (hu : ContDiffOn ℝ 2 u Ω) {f : E → F} (hf : ContinuousOn f Ω)
+    (h : ∀ φ : 𝓓(Ω, ℝ), ∫ x, Δ (φ : E → ℝ) x • u x ∂μ = ∫ x, (φ : E → ℝ) x • f x ∂μ) :
+    Set.EqOn (Δ u) f Ω := by
+  have hΔ : ContinuousOn (Δ u) Ω := hu.continuousOn_laplacian Ω.isOpen
+  have hloc : LocallyIntegrableOn (Δ u - f) Ω μ :=
+    (hΔ.sub hf).locallyIntegrableOn Ω.isOpen.measurableSet
+  have hzero := IsOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero Ω.isOpen hloc
+    fun g hg hgc hgs ↦ by
+    set φ : 𝓓(Ω, ℝ) := ⟨g, hg, hgc, hgs⟩
+    have hΔi : Integrable (fun x ↦ g x • Δ u x) μ := by
+      simpa [φ] using φ.integrable_smul (hΔ.locallyIntegrableOn Ω.isOpen.measurableSet)
+    have hfi : Integrable (fun x ↦ g x • f x) μ := by
+      simpa [φ] using φ.integrable_smul (hf.locallyIntegrableOn Ω.isOpen.measurableSet)
+    have hgreen := hu.integral_laplacian_smul_eq_integral_smul_laplacian (μ := μ) φ
+    rw [h φ] at hgreen
+    simp only [Pi.sub_apply, smul_sub]
+    rw [integral_sub hΔi hfi, sub_eq_zero]
+    exact hgreen.symm
+  have hae : Δ u =ᵐ[μ.restrict Ω] f := by
+    rw [Filter.EventuallyEq, ae_restrict_iff' Ω.isOpen.measurableSet]
+    filter_upwards [hzero] with x hx hxΩ
+    exact sub_eq_zero.1 (hx hxΩ)
+  exact Measure.eqOn_open_of_ae_eq hae Ω.isOpen hΔ hf
+
+omit [CompleteSpace F] in
 /-- **A harmonic function is weakly harmonic.** If `u` is harmonic on the open set `Ω`, then
 `∫ Δφ • u ∂μ = 0` for every test function `φ` on `Ω`. -/
 theorem _root_.InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero
@@ -229,8 +271,8 @@ theorem HasWeakFDerivOn.integral_laplacian_smul_eq_neg_integral_inner [OpensMeas
   have hint₂ : ∀ i,
       Integrable (fun x ↦ fderiv ℝ (φ : E → ℝ) x (b i) • ⟪g x, b i⟫_ℝ) μ := by
     intro i
-    have := integrable_smul_of_locallyIntegrableOn
-      (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv (TestFunction.lineDerivCLM ℝ (b i) φ)
+    have := TestFunction.integrable_smul (TestFunction.lineDerivCLM ℝ (b i) φ : 𝓓(Ω, ℝ))
+      (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv
     rw [TestFunction.coe_lineDerivCLM] at this
     simpa only [hline, innerSL_apply_apply] using this
   calc ∫ x, Δ (φ : E → ℝ) x • u x ∂μ

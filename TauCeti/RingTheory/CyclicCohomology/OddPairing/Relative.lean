@@ -69,11 +69,12 @@ theorem AlgebraicK1.oddPairing_map_algebraMap_toUnitization_eq_zero (m : ℕ) (y
     (c : relativeCyclicCohomology ℂ A M (2 * m + 1)) :
     (AlgebraicK1.oddPairing (Unitization ℂ A) M m
         (AlgebraicK1.map (algebraMap ℂ (Unitization ℂ A)) y)).toAdd
-      (relativeCyclicCohomology.toUnitization ℂ A M (2 * m + 1) c) = 0 := by
+      (reducedCyclicCohomology.toCyclic ℂ (Unitization ℂ A) M (2 * m + 1) c) = 0 := by
   obtain ⟨n, u, rfl⟩ := AlgebraicK1.exists_mk y
-  obtain ⟨φ, rfl⟩ := relativeCyclicCohomology.mk_surjective ℂ A M (2 * m + 1) c
+  obtain ⟨φ, rfl⟩ := reducedCyclicCohomology.mk_surjective ℂ (Unitization ℂ A) M (2 * m + 1) c
   rw [AlgebraicK1.map_mk, AlgebraicK1.oddPairing_mk, toAdd_ofAdd, LinearMap.comp_apply,
-    relativeCyclicCohomology.toUnitization_mk, oddPairing_matrixExtension_mk]
+    reducedCyclicCohomology.toCyclic_mk,
+    oddPairing_matrixExtension_mk]
   simp only [Units.coe_map_inv, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
     RingHom.mapMatrix_apply]
   -- Both entries `u⁻¹ - 1` and `u - 1` of the pairing are scalar matrices.
@@ -96,7 +97,7 @@ def oddPairing (m : ℕ) :
       Multiplicative (relativeCyclicCohomology ℂ A M (2 * m + 1) →ₗ[ℂ] M) :=
   MonoidHom.comp
     (AddMonoidHom.toMultiplicative (LinearMap.lcomp ℂ M
-      (relativeCyclicCohomology.toUnitization ℂ A M (2 * m + 1)).hom).toAddMonoidHom)
+      (reducedCyclicCohomology.toCyclic ℂ (Unitization ℂ A) M (2 * m + 1)).hom).toAddMonoidHom)
     ((AlgebraicK1.oddPairing (Unitization ℂ A) M m).comp (relativeAlgebraicK1 ℂ A).subtype)
 
 /-- The odd pairing of a relative class `x` with a relative cyclic class `c` is the odd pairing of
@@ -105,7 +106,7 @@ theorem oddPairing_apply (m : ℕ) (x : relativeAlgebraicK1 ℂ A)
     (c : relativeCyclicCohomology ℂ A M (2 * m + 1)) :
     (oddPairing A M m x).toAdd c =
       (AlgebraicK1.oddPairing (Unitization ℂ A) M m x).toAdd
-        (relativeCyclicCohomology.toUnitization ℂ A M (2 * m + 1) c) :=
+        (reducedCyclicCohomology.toCyclic ℂ (Unitization ℂ A) M (2 * m + 1) c) :=
   (rfl)
 
 /-- **Connes' formula for the relative odd pairing**: an invertible matrix `u` over `A⁺` with a
@@ -113,8 +114,9 @@ relative class pairs with the class of a relative cyclic cocycle `φ` of degree 
 `(1 + i)⁻¹ 2⁻ⁿ Γ(n/2 + 1)⁻¹ (φ#Tr)(u⁻¹ - 1, u - 1, …, u⁻¹ - 1, u - 1)`. -/
 theorem oddPairing_mk_mk (m n : ℕ) (u : GL (Fin n) (Unitization ℂ A))
     (hu : AlgebraicK1.mk (Unitization ℂ A) n u ∈ relativeAlgebraicK1 ℂ A)
-    (φ : relativeCyclicCocycles ℂ A M (2 * m + 1)) :
-    (oddPairing A M m ⟨_, hu⟩).toAdd (relativeCyclicCohomology.mk ℂ A M (2 * m + 1) φ) =
+    (φ : reducedCyclicCocycles ℂ (Unitization ℂ A) M (2 * m + 1)) :
+    (oddPairing A M m ⟨_, hu⟩).toAdd
+        (reducedCyclicCohomology.mk ℂ (Unitization ℂ A) M (2 * m + 1) φ) =
       ((1 + Complex.I)⁻¹ * ((2 : ℂ) ^ (2 * m + 1))⁻¹ *
           ((Real.Gamma ((2 * m + 1 : ℝ) / 2 + 1) : ℂ))⁻¹) •
         matrixCochainExtension (Fin n) (2 * m + 1)
@@ -122,7 +124,8 @@ theorem oddPairing_mk_mk (m n : ℕ) (u : GL (Fin n) (Unitization ℂ A))
             MultilinearMap ℂ (fun _ : Fin (2 * m + 2) ↦ Unitization ℂ A) M)
           fun k ↦ if Even (k : ℕ) then ↑u⁻¹ - 1 else ↑u - 1 := by
   rw [oddPairing_apply, AlgebraicK1.oddPairing_mk, toAdd_ofAdd, LinearMap.comp_apply,
-    relativeCyclicCohomology.toUnitization_mk, oddPairing_matrixExtension_mk]
+    reducedCyclicCohomology.toCyclic_mk,
+    oddPairing_matrixExtension_mk]
 
 /-- **The pairing of an arbitrary class of `A⁺` sees only its relative part**: a class `x` of `A⁺`
 pairs with a relative cyclic class as its relative part `x · s(ε(x))⁻¹` does. -/
@@ -131,7 +134,7 @@ theorem oddPairing_projection (m : ℕ) (x : AlgebraicK1 (Unitization ℂ A))
     (c : relativeCyclicCohomology ℂ A M (2 * m + 1)) :
     (oddPairing A M m (projection ℂ A x)).toAdd c =
       (AlgebraicK1.oddPairing (Unitization ℂ A) M m x).toAdd
-        (relativeCyclicCohomology.toUnitization ℂ A M (2 * m + 1) c) := by
+        (reducedCyclicCohomology.toCyclic ℂ (Unitization ℂ A) M (2 * m + 1) c) := by
   conv_rhs => rw [← coe_projection_mul_map_algebraMap x, ← AlgebraicK1.map_map]
   rw [map_mul, toAdd_mul, LinearMap.add_apply,
     AlgebraicK1.oddPairing_map_algebraMap_toUnitization_eq_zero, add_zero, oddPairing_apply]
@@ -145,7 +148,7 @@ theorem oddPairing_map {B : Type _} [NonUnitalRing B] [Module ℂ B] [IsScalarTo
       (oddPairing A M m x).toAdd ∘ₗ (relativeCyclicCohomology.map M f (2 * m + 1)).hom := by
   refine LinearMap.ext fun c ↦ ?_
   rw [oddPairing_apply, coe_map_apply, LinearMap.comp_apply, oddPairing_apply,
-    relativeCyclicCohomology.toUnitization_map]
+    relativeCyclicCohomology.toCyclic_map_unitization]
   exact LinearMap.congr_fun (AlgebraicK1.oddPairing_map (Unitization.map f) m (x : _)) _
 
 end relativeAlgebraicK1

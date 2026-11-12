@@ -18,11 +18,11 @@ We build it first on the full multiplicative group `Kˣ` — `fieldUnitSignature
 totally positive units `totallyPositiveUnits` — and then restrict along `(𝓞 K)ˣ → Kˣ` to the
 arithmetic unit group to obtain `unitSignature`, whose kernel is the totally positive integer units.
 
-The integer-unit signature is the archimedean input to the narrow class group `Cl⁺(K)` (Layer 3 of
-the multiquadratic roadmap): the *cokernel* of the signature — the full sign group modulo the
-signatures realized by units — is what contributes the kernel of the surjection `Cl⁺(K) → Cl(K)`
-between the narrow and ordinary class groups, and the `2`-rank of `Cl⁺(K)` is what the `t - 1`
-genus-theory formula computes for a real quadratic field.
+The integer-unit signature is the archimedean input to the narrow class group `Cl⁺(K)`: the
+*cokernel* of the signature — the full sign group modulo the signatures realized by units — is
+what contributes the kernel of the surjection `Cl⁺(K) → Cl(K)` between the narrow and ordinary
+class groups, and the `2`-rank of `Cl⁺(K)` is what the `t - 1` genus-theory formula computes for
+a real quadratic field.
 
 ## Main definitions and results
 
@@ -71,15 +71,12 @@ theorem fieldUnitSignature_ker :
     fieldUnitSignature u = 1 ↔ IsTotallyPositive (u : K) := by
   rw [← MonoidHom.mem_ker, fieldUnitSignature_ker, mem_totallyPositiveUnits]
 
-variable [NumberField K]
-
 /-- The **signature homomorphism** on the integer units `(𝓞 K)ˣ`, the restriction of
 `fieldUnitSignature` along the inclusion `(𝓞 K)ˣ → Kˣ`. -/
 noncomputable def unitSignature :
     (𝓞 K)ˣ →* ({w : InfinitePlace K // w.IsReal} → ℝˣ ⧸ Units.posSubgroup ℝ) :=
   fieldUnitSignature.comp (Units.map (algebraMap (𝓞 K) K).toMonoidHom)
 
-omit [NumberField K] in
 /-- Componentwise evaluation of the integer-unit signature: the class, in the sign group, of the
 image of `u` under the real embedding `w` composed with `(𝓞 K) → K`. -/
 @[simp] theorem unitSignature_apply (u : (𝓞 K)ˣ) (w : {w : InfinitePlace K // w.IsReal}) :
@@ -87,7 +84,6 @@ image of `u` under the real embedding `w` composed with `(𝓞 K) → K`. -/
       (Units.map (algebraMap (𝓞 K) K).toMonoidHom u) : ℝˣ ⧸ Units.posSubgroup ℝ) := by
   simp only [unitSignature, MonoidHom.comp_apply, fieldUnitSignature_apply]
 
-omit [NumberField K] in
 /-- The signature of an integer unit is the field-unit signature of its image in `Kˣ`. -/
 theorem unitSignature_eq_fieldUnitSignature (u : (RingOfIntegers K)ˣ) :
     unitSignature u =
@@ -95,14 +91,12 @@ theorem unitSignature_eq_fieldUnitSignature (u : (RingOfIntegers K)ˣ) :
   funext w
   rw [unitSignature_apply, fieldUnitSignature_apply]
 
-omit [NumberField K] in
 /-- An integer unit has trivial signature exactly when its image in `K` is totally positive. -/
 @[simp] theorem unitSignature_eq_one_iff {u : (𝓞 K)ˣ} :
     unitSignature u = 1 ↔ IsTotallyPositive (algebraMap (𝓞 K) K (u : 𝓞 K)) := by
   simp only [unitSignature, MonoidHom.comp_apply, fieldUnitSignature_eq_one_iff, Units.coe_map,
     RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
 
-omit [NumberField K] in
 /-- The kernel of the integer-unit signature is exactly the totally positive integer units. -/
 theorem unitSignature_ker :
     MonoidHom.ker (unitSignature (K := K)) = totallyPositiveIntegerUnits := by

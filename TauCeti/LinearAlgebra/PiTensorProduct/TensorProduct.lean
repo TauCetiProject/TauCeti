@@ -88,6 +88,8 @@ private theorem exists_tensorDistribEquiv (ι : Type x) [Finite ι] :
     simp only [LinearEquiv.trans_apply, optionEquiv_tprod, TensorProduct.congr_tmul, hf,
       LinearEquiv.refl_apply, TensorProduct.tensorTensorTensorComm_tmul,
       optionEquiv_symm_tmul]
+    -- reassembling `m none` and `fun i ↦ m (some i)` by `Option.rec` gives back `m`
+    congr 2 <;> ext (_ | _) <;> rfl
 
 variable {ι : Type x} [Finite ι]
   {M : ι → Type v} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]

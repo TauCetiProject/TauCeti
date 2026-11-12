@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ADEInequality
-public import TauCeti.LinearAlgebra.RootSystem.Chain
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
 
 /-!
@@ -30,7 +30,7 @@ behind `B`, `C`, `F₄`), which is
 `TauCeti.LinearAlgebra.RootSystem.FiniteType.DoubleEdge.Basic`.
 
 This file builds the star as a matrix, `TauCeti.starCartanMatrix`, out of the chain entries of
-`TauCeti.LinearAlgebra.RootSystem.Chain`, over an arbitrary finite index type of arms, and proves
+`TauCeti.LinearAlgebra.Matrix.Cartan.Chain`, over an arbitrary finite index type of arms, and proves
 the bound. The elimination tool is a new one, living with the others in
 `TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic`: a finite-type matrix admits no nonzero
 **subdominant** vector, one whose every coordinate `xᵢ` has `xᵢ · (A x)ᵢ ≤ 0`
@@ -75,12 +75,10 @@ exclusion of `D̃₄` that `TauCeti.not_isFiniteType_affineD₄` gets from the d
 
 ## References
 
-This file supplies the fork half of the "chain/fork length constraints" step of the classification
-of finite-type Cartan matrices, Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See
-J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, step (7), where
-the inequality `1/p + 1/q + 1/r > 1` is obtained from the same linear weighting of the arms, and
-Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
+This file supplies the fork half of the chain and fork length constraints of the classification of
+finite-type Cartan matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, §11.4, step (7), where the inequality `1/p + 1/q + 1/r > 1` is obtained from the same
+linear weighting of the arms, and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
 -/
 
 public section
@@ -277,7 +275,7 @@ section RowSums
 
 The two computations behind the bound: the row of `starCartanMatrix` at an arm vertex annihilates
 the marks, and the row at the centre evaluates to `∑ᵢ ∏_{j ≠ i} (ℓ j + 1) - (n - 2) ∏ᵢ (ℓ i + 1)`.
-Both are assembled from the chain row of `TauCeti.LinearAlgebra.RootSystem.Chain`,
+Both are assembled from the chain row of `TauCeti.LinearAlgebra.Matrix.Cartan.Chain`,
 `TauCeti.sum_range_chainEntry_mul`, taken at an abstract weight function `g`.
 -/
 

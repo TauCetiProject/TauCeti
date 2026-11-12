@@ -29,9 +29,12 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
 
 ## Main results
 
-* `Measure.map_dirac_of_aemeasurable` — the Dirac pushforward formula for a map that is
-  only a.e. measurable.
-* `Measure.dirac_eq_dirac_of_inseparable` — inseparable points have equal Borel Dirac measures.
+* `MeasureTheory.Measure.map_dirac_of_aemeasurable` — the Dirac pushforward formula for a map
+  that is only a.e. measurable.
+* `MeasureTheory.Measure.dirac_eq_dirac_iff_inseparable` — two points have equal Borel Dirac
+  measures exactly when they are topologically inseparable.
+* `MeasureTheory.Measure.dirac_le_iff_one_le_apply_singleton` — a measure dominates a unit point
+  mass exactly when it gives the point mass at least one.
 * `MeasureTheory.Measure.support_dirac` — the topological support of a Dirac measure.
 * `TauCeti.MeasureTheory.measurePreserving_const_dirac` — a constant map out of a probability
   space onto a point `b` is measure preserving onto `Measure.dirac b`.
@@ -43,6 +46,11 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
   measures is a probability measure.
 * `TauCeti.eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac` — summands of a Dirac measure are
   supported at the same point.
+* `TauCeti.isProbabilityMeasure_natWeights`, `Finset.natWeights_compl_eq_zero` — the normalised
+  measure `(∑ m)⁻¹ • ∑ m x • δₓ` with natural multiplicities `m` on a finite set `S` is a
+  probability measure when `0 < ∑ m`, and it is carried by `S`.
+* `TauCeti.exists_finset_prod_natWeights_eq` — such a measure on values of a family `u` is indexed
+  by a finite set of pairs `(i, k)`, `k` being the multiplicity of the value `u i`.
 * `Multiset.measureReal_univ_sum_map_dirac`, `Multiset.sum_map_dirac_apply_eq_zero` — the
   counting measure `∑_{x ∈ s} δₓ` of a multiset `s` is finite, has mass `card s` and vanishes on
   measurable sets avoiding `s`.
@@ -51,9 +59,11 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
 public section
 
 open MeasureTheory
-open scoped NNReal Topology
+open scoped ENNReal NNReal Topology
 
-namespace Measure
+namespace MeasureTheory.Measure
+
+open Set
 
 variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {T : X → Y}
 
@@ -70,52 +80,47 @@ theorem map_dirac_of_aemeasurable {x : X} (hT : AEMeasurable T (Measure.dirac x)
     exact one_ne_zero h0
   rw [Measure.map_congr hT.ae_eq_mk, Measure.map_dirac' hT.measurable_mk, ← hx]
 
-/-- Dirac measures at topologically inseparable points agree: Borel measurable sets cannot
-separate the points. -/
-theorem dirac_eq_dirac_of_inseparable [TopologicalSpace X] [BorelSpace X]
-    {x y : X} (hxy : Inseparable x y) : Measure.dirac x = Measure.dirac y := by
-  apply MeasureTheory.dirac_eq_dirac_iff_forall_mem_iff_mem.2
-  exact fun _ hs ↦ hxy.mem_measurableSet_iff hs
+/-- Two points have equal Borel Dirac measures exactly when they are topologically inseparable:
+Borel measurable sets separate points no better than open sets do. -/
+theorem dirac_eq_dirac_iff_inseparable [TopologicalSpace X] [BorelSpace X] {x y : X} :
+    dirac x = dirac y ↔ Inseparable x y :=
+  dirac_eq_dirac_iff_forall_mem_iff_mem.trans
+    ⟨fun h ↦ inseparable_iff_forall_isOpen.2 fun _ hs ↦ h _ hs.measurableSet,
+      fun h _ hs ↦ h.mem_measurableSet_iff hs⟩
 
-end Measure
-
-namespace MeasureTheory.Measure
-
-open Set
+/-- A measure dominates a unit point mass exactly when its mass at that point is at least one. -/
+@[simp]
+theorem dirac_le_iff_one_le_apply_singleton (μ : Measure X) (x : X) :
+    dirac x ≤ μ ↔ 1 ≤ μ {x} := by
+  refine ⟨fun h ↦ by simpa only [dirac_apply_of_mem (mem_singleton x)] using h {x},
+    fun hx ↦ le_iff.2 fun A hA ↦ ?_⟩
+  rw [dirac_apply' _ hA]
+  exact indicator_apply_le' (fun hxA ↦ hx.trans (measure_mono (singleton_subset_iff.2 hxA)))
+    fun _ ↦ zero_le
 
 /-- The topological support of a Dirac measure is the closure of its singleton atom. -/
 @[simp]
-theorem support_dirac {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
-    [OpensMeasurableSpace X] (a : X) : (dirac a).support = closure {a} := by
+theorem support_dirac [TopologicalSpace X] [OpensMeasurableSpace X] (a : X) :
+    (dirac a).support = closure {a} := by
   ext x
-  rw [support_eq_forall_isOpen, Set.mem_ofPred_eq, mem_closure_iff]
-  constructor
-  · intro hx U hU hxU
-    have haU : a ∈ U := by
-      by_contra haU
-      simpa [dirac_apply' _ hU.measurableSet, Set.indicator_of_notMem haU] using
-        hx U hxU hU
-    exact ⟨a, haU, Set.mem_singleton a⟩
-  · intro hx U hxU hU
-    obtain ⟨_, haU, rfl⟩ := hx U hU hxU
-    rw [dirac_apply_of_mem haU]
-    exact zero_lt_one
+  rw [support_eq_forall_isOpen, mem_ofPred_eq, ← specializes_iff_mem_closure,
+    specializes_iff_forall_open]
+  -- An open set has positive Dirac mass exactly when it contains the atom.
+  refine forall_congr' fun U ↦ imp.swap.trans <| forall_congr' fun hU ↦
+    imp_congr_right fun _ ↦ ?_
+  rw [pos_iff_ne_zero, Ne, dirac_eq_zero_iff_notMem hU.measurableSet, not_not]
 
 /-- A measure vanishing on every measurable set avoiding `x` is its total mass times the
 Dirac measure at `x`. No measurability assumption on `{x}` is needed. -/
-theorem eq_smul_dirac_of_forall_notMem {X : Type*} [MeasurableSpace X]
-    (κ : Measure X) (x : X)
+theorem eq_smul_dirac_of_forall_notMem (κ : Measure X) (x : X)
     (hk : ∀ s, MeasurableSet s → x ∉ s → κ s = 0) :
-    κ = κ Set.univ • Measure.dirac x := by
-  apply Measure.ext
-  intro s hs
+    κ = κ univ • dirac x := by
+  ext s hs
   by_cases hx : x ∈ s
-  · rw [_root_.smul_apply, Measure.dirac_apply' _ hs,
-      Set.indicator_of_mem hx, Pi.one_apply, smul_eq_mul, mul_one]
-    exact measure_of_measure_compl_eq_zero (hk sᶜ hs.compl (by simpa))
-  · rw [_root_.smul_apply, Measure.dirac_apply' _ hs,
-      Set.indicator_of_notMem hx, smul_eq_mul, mul_zero]
-    exact hk s hs hx
+  · -- `κ` gives the complement of `s` no mass, so `κ s` is the total mass.
+    simpa [dirac_apply' _ hs, hx] using
+      measure_of_measure_compl_eq_zero (hk sᶜ hs.compl (notMem_compl_iff.2 hx))
+  · simpa [dirac_apply' _ hs, hx] using hk s hs hx
 
 end MeasureTheory.Measure
 
@@ -153,8 +158,8 @@ theorem sum_map_dirac_apply_eq_zero {s : Multiset X} {A : Set X} (hA : Measurabl
   induction s using Multiset.induction_on with
   | empty => simp
   | cons a s ih =>
-    rw [map_cons, sum_cons, _root_.add_apply, ih fun x hx => hs x (mem_cons_of_mem hx),
-      add_zero, Measure.dirac_apply' _ hA, Set.indicator_of_notMem (hs a (mem_cons_self a s))]
+    simp [ih fun x hx ↦ hs x (mem_cons_of_mem hx), Measure.dirac_apply' _ hA,
+      hs a (mem_cons_self a s)]
 
 end Multiset
 
@@ -191,14 +196,49 @@ theorem eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableS
     {μ ν : Measure X} {x : X}
     (h : μ + ν = Measure.dirac x) :
     μ = μ Set.univ • Measure.dirac x ∧ ν = ν Set.univ • Measure.dirac x := by
-  have hzero (s : Set X) (hs : MeasurableSet s) (hx : x ∉ s) :
-      μ s = 0 ∧ ν s = 0 := by
-    have h' := congrArg (fun η : Measure X => η s) h
-    rw [_root_.add_apply, Measure.dirac_apply' _ hs,
-      Set.indicator_of_notMem hx] at h'
-    exact add_eq_zero.mp h'
+  have hzero (s : Set X) (hs : MeasurableSet s) (hx : x ∉ s) : μ s = 0 ∧ ν s = 0 := by
+    simpa [Measure.dirac_apply' _ hs, hx] using congr($h s)
   exact ⟨μ.eq_smul_dirac_of_forall_notMem x (fun s hs hx => (hzero s hs hx).1),
     ν.eq_smul_dirac_of_forall_notMem x (fun s hs hx => (hzero s hs hx).2)⟩
+
+section NatWeights
+
+variable {X : Type*} [MeasurableSpace X]
+
+/-- The normalised measure `(∑ m)⁻¹ • ∑ m x • δₓ` with natural multiplicities `m x` on the points
+of a finite set `S` is a probability measure when the total multiplicity is positive. -/
+theorem isProbabilityMeasure_natWeights {S : Finset X} {m : X → ℕ} (hm : 0 < ∑ x ∈ S, m x) :
+    IsProbabilityMeasure
+      ((∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x) := by
+  constructor
+  -- The total mass is `(∑ m)⁻¹ * ∑ m`.
+  simp only [_root_.smul_apply, FunLike.coe_sum, Finset.sum_apply, measure_univ, smul_eq_mul,
+    mul_one]
+  exact ENNReal.inv_mul_cancel (by simpa using hm.ne') (by simp)
+
+/-- The measure with natural multiplicities on a finite set of values of a family `u` is of the
+form `(∑ m)⁻¹ • ∑ m • δ_(u i)` for a finite set of pairs `(i, k)`, where `k` is the
+multiplicity of the value `u i`. -/
+theorem exists_finset_prod_natWeights_eq {ι : Type*} {u : ι → X} {S : Finset X} (m : X → ℕ)
+    (hS : ∀ x ∈ S, x ∈ Set.range u) :
+    ∃ t : Finset (ι × ℕ), (∑ q ∈ t, (q.2 : ℝ≥0∞))⁻¹ •
+        ∑ q ∈ t, (q.2 : ℝ≥0∞) • Measure.dirac (u q.1) =
+      (∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x := by
+  classical
+  obtain rfl | ⟨x₀, hx₀⟩ := S.eq_empty_or_nonempty
+  · exact ⟨∅, by simp⟩
+  -- `choose!` needs an index to fill in off `S`.
+  have : Nonempty ι := ⟨(hS x₀ hx₀).choose⟩
+  choose! i hi using hS
+  have hinj : ∀ x ∈ S, ∀ y ∈ S, (i x, m x) = (i y, m y) → x = y := by
+    intro x hx y hy hxy
+    have hix : i x = i y := congrArg Prod.fst hxy
+    rw [← hi x hx, ← hi y hy, hix]
+  refine ⟨S.image fun x ↦ (i x, m x), ?_⟩
+  rw [Finset.sum_image hinj, Finset.sum_image hinj]
+  exact congrArg₂ _ rfl (Finset.sum_congr rfl fun x hx ↦ by rw [hi x hx])
+
+end NatWeights
 
 end TauCeti
 
@@ -217,3 +257,15 @@ theorem measurePreserving_const_dirac {μ : Measure X} [IsProbabilityMeasure μ]
 end MeasureTheory
 
 end TauCeti
+
+/-- The measure with natural multiplicities `m x` on the points of a finite set `S` is carried
+by `S`. -/
+theorem Finset.natWeights_compl_eq_zero {X : Type*} [MeasurableSpace X]
+    [MeasurableSingletonClass X] (S : Finset X) (m : X → ℕ) :
+    ((∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x)
+      ((S : Set X)ᶜ) = 0 := by
+  have hzero : (∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x) ((S : Set X)ᶜ) = 0 := by
+    rw [FunLike.coe_sum, Finset.sum_apply]
+    exact Finset.sum_eq_zero fun x hx ↦ by
+      simp [Measure.dirac_apply' _ S.measurableSet.compl, Finset.mem_coe.2 hx]
+  rw [_root_.smul_apply, hzero, smul_zero]

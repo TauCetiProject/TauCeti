@@ -25,7 +25,7 @@ wt(x + y) + #(supp x ∩ supp y) + #(supp x \ supp (x + y)) = wt x + wt y,
 ```
 
 where the last set consists of the coordinates at which `y` cancels `x`. It follows that weight is
-subadditive and is additive on words with disjoint supports. Scaling coordinatewise by `c`
+additive on words with disjoint supports; weight is also subadditive. Scaling coordinatewise by `c`
 intersects the support with `supp c`.
 
 The file also records that Hamming weight and distance on a function whose domain is a disjoint
@@ -109,6 +109,15 @@ theorem hammingDist_eq_ncard_support_sub [Fintype ι] [AddGroup A] [DecidableEq 
     (x y : ι → A) : hammingDist x y = (support (y - x)).ncard := by
   rw [hammingDist_eq_hammingNorm_sub', hammingNorm_eq_ncard_support]
 
+/-- Hamming weight is subadditive. -/
+theorem hammingNorm_add_le {β : ι → Type*} [Fintype ι] [∀ i, AddZeroClass (β i)]
+    [∀ i, DecidableEq (β i)] (x y : ∀ i, β i) :
+    hammingNorm (x + y) ≤ hammingNorm x + hammingNorm y := by
+  classical
+  refine (Finset.card_le_card fun i ↦ ?_).trans (Finset.card_union_le _ _)
+  simp only [Finset.mem_union, Finset.mem_filter_univ, Pi.add_apply]
+  grind [add_zero]
+
 section AddZeroClass
 
 variable [Fintype ι] [AddZeroClass A] [DecidableEq A]
@@ -128,12 +137,6 @@ theorem hammingNorm_add_add_ncard_inter_add_ncard_sdiff (x y : ι → A) :
   rw [hunion] at hdisj
   have hinter := Set.ncard_union_add_ncard_inter (support x) (support y)
   simp only [hammingNorm_eq_ncard_support]
-  omega
-
-/-- Hamming weight is subadditive. -/
-theorem hammingNorm_add_le (x y : ι → A) :
-    hammingNorm (x + y) ≤ hammingNorm x + hammingNorm y := by
-  have := hammingNorm_add_add_ncard_inter_add_ncard_sdiff x y
   omega
 
 /-- Words with disjoint supports have additive Hamming weight. -/
@@ -184,12 +187,8 @@ theorem hammingDist_sumRec [Fintype ι] [Fintype κ] [∀ z, DecidableEq (β z)]
 theorem hammingNorm_sumRec [Fintype ι] [Fintype κ] [∀ z, DecidableEq (β z)]
     [∀ z, Zero (β z)] (x : ∀ i, β (.inl i)) (y : ∀ j, β (.inr j)) :
     hammingNorm (Sum.rec (motive := β) x y) = hammingNorm x + hammingNorm y := by
-  have sumRec_zero :
-      Sum.rec (motive := β) (0 : ∀ i, β (.inl i)) (0 : ∀ j, β (.inr j)) = 0 := by
-    funext z
-    cases z <;> rfl
-  simpa only [← hammingDist_zero_right, sumRec_zero] using
-    hammingDist_sumRec x (0 : ∀ i, β (.inl i)) y (0 : ∀ j, β (.inr j))
+  simp only [hammingNorm, Finset.card_filter]
+  rw [Fintype.sum_sum_type]
 
 /-- The Hamming distance between two pairs of words over a common alphabet, combined on a disjoint
 union, is the sum of the distances between the respective words. -/
@@ -208,8 +207,8 @@ theorem hammingNorm_sumElim {A : Type*} [Fintype ι] [Fintype κ] [DecidableEq A
   hammingNorm_sumRec (β := fun _ ↦ A) x y
 
 /-- Hamming weight splits over a retained coordinate set and its complement. -/
-theorem hammingNorm_eq_domRestrict_add_domRestrict_compl {ι : Type*} {A : ι → Type*}
-    [Fintype ι] [∀ i, Zero (A i)] [∀ i, DecidableEq (A i)]
+theorem hammingNorm_eq_domRestrict_add_domRestrict_compl {A : ι → Type*} [Fintype ι]
+    [∀ i, Zero (A i)] [∀ i, DecidableEq (A i)]
     (s : Set ι) [DecidablePred (· ∈ s)] (x : ∀ i, A i) :
     hammingNorm x = hammingNorm (s.domRestrict x) + hammingNorm (sᶜ.domRestrict x) := by
   simp only [hammingNorm, Finset.card_filter]
@@ -245,20 +244,20 @@ theorem hammingNorm_comp [Zero α] (e : κ ≃ ι) (x : ι → α) :
 
 section Relabelling
 
-variable {R : Type*} [Semiring R]
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
 /-- Relabelling a word along an equivalence of finite coordinate types preserves its Hamming
 weight, when the relabelling is expressed as a linear map between function spaces. -/
 @[simp]
-theorem hammingNorm_funLeft [DecidableEq R] (e : κ ≃ ι) (x : ι → R) :
-    hammingNorm (LinearMap.funLeft R R e x) = hammingNorm x :=
+theorem hammingNorm_funLeft [DecidableEq M] (e : κ ≃ ι) (x : ι → M) :
+    hammingNorm (LinearMap.funLeft R M e x) = hammingNorm x :=
   Equiv.hammingNorm_comp e x
 
 /-- Relabelling two words along an equivalence of finite coordinate types preserves their Hamming
 distance, when the relabelling is expressed as a linear map between function spaces. -/
 @[simp]
-theorem hammingDist_funLeft [DecidableEq R] (e : κ ≃ ι) (x y : ι → R) :
-    hammingDist (LinearMap.funLeft R R e x) (LinearMap.funLeft R R e y) = hammingDist x y :=
+theorem hammingDist_funLeft [DecidableEq M] (e : κ ≃ ι) (x y : ι → M) :
+    hammingDist (LinearMap.funLeft R M e x) (LinearMap.funLeft R M e y) = hammingDist x y :=
   Equiv.hammingDist_comp e x y
 
 end Relabelling

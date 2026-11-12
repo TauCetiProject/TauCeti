@@ -61,9 +61,8 @@ theorem lift_apply_of (f : M →+ G) (a : M) : lift f (of a) = f a :=
 /-- Two additive maps out of the Grothendieck group agree as soon as they agree on the image of
 the monoid. -/
 theorem addHom_ext {F₁ F₂ : GrothendieckAddGroup M →+ G}
-    (h : ∀ a : M, F₁ (of a) = F₂ (of a)) : F₁ = F₂ := by
-  rw [← lift.apply_symm_apply F₁, ← lift.apply_symm_apply F₂, lift_symm_apply, lift_symm_apply]
-  exact congrArg _ (AddMonoidHom.ext h)
+    (h : ∀ a : M, F₁ (of a) = F₂ (of a)) : F₁ = F₂ :=
+  lift.symm.injective (AddMonoidHom.ext h)
 
 /-- Every element of the Grothendieck group is a difference of two elements of the monoid. -/
 theorem exists_eq_sub_of (x : GrothendieckAddGroup M) : ∃ a b : M, x = of a - of b := by
@@ -72,12 +71,8 @@ theorem exists_eq_sub_of (x : GrothendieckAddGroup M) : ∃ a b : M, x = of a - 
 
 /-- The universal property of the Grothendieck group, upgraded to an isomorphism of the additive
 groups of homomorphisms. -/
-noncomputable def liftAddEquiv : (M →+ G) ≃+ (GrothendieckAddGroup M →+ G) where
-  __ := lift
-  map_add' f g := addHom_ext fun a => by
-    simp only [Equiv.toFun_as_coe]
-    rw [lift_apply_of, AddMonoidHom.add_apply, AddMonoidHom.add_apply, lift_apply_of,
-      lift_apply_of]
+noncomputable def liftAddEquiv : (M →+ G) ≃+ (GrothendieckAddGroup M →+ G) :=
+  (AddEquiv.mk' lift.symm fun F₁ F₂ => AddMonoidHom.add_comp F₁ F₂ of).symm
 
 @[simp]
 theorem coe_liftAddEquiv : ⇑(liftAddEquiv : (M →+ G) ≃+ _) = lift := (rfl)
@@ -88,37 +83,28 @@ section NonUnitalNonAssoc
 
 variable {S : Type*} [NonUnitalNonAssocSemiring S]
 
-/-- Multiplication on the Grothendieck ring of a semiring. -/
+/-- Multiplication on the Grothendieck ring of a semiring: the universal property extends
+`fun a b => of (a * b)` first in `b`, then in `a`. -/
 noncomputable instance instMul : Mul (GrothendieckAddGroup S) :=
-  ⟨fun x y =>
-    lift (((liftAddEquiv (M := S) (G := GrothendieckAddGroup S)).toAddMonoidHom.comp
-      (AddMonoidHom.compHom (of : S →+ GrothendieckAddGroup S))).comp AddMonoidHom.mul) x y⟩
+  ⟨fun x y => lift (liftAddEquiv.toAddMonoidHom.comp (AddMonoidHom.mul.compr₂ of)) x y⟩
 
 /-- The canonical map into the Grothendieck ring is multiplicative. -/
-theorem of_mul_of (a b : S) : (of a : GrothendieckAddGroup S) * of b = of (a * b) := by
-  -- Unfold the multiplication here to establish its first public characteristic equation: the
-  -- multiplication is defined by applying the additive Grothendieck-group universal property twice.
-  change lift (((liftAddEquiv (M := S) (G := GrothendieckAddGroup S)).toAddMonoidHom.comp
-    (AddMonoidHom.compHom (of : S →+ GrothendieckAddGroup S))).comp AddMonoidHom.mul) (of a)
-      (of b) = of (a * b)
-  rw [lift_apply_of]
-  exact lift_apply_of ((of : S →+ GrothendieckAddGroup S).comp (AddMonoidHom.mulLeft a)) b
+theorem of_mul_of (a b : S) : (of a : GrothendieckAddGroup S) * of b = of (a * b) :=
+  -- By the definition of `instMul`, `of a * of b` is the double extension evaluated at `of a`
+  -- and `of b`; `lift_apply_of` evaluates the outer and then the inner extension.
+  (DFunLike.congr_fun (lift_apply_of _ a) (of b)).trans (lift_apply_of _ b)
 
-/-- The Grothendieck group of a semiring is a ring for the induced multiplication; associativity
-and the unit are supplied by `Algebra.GrothendieckAddGroup.instRing`. -/
-noncomputable instance instNonUnitalNonAssocRing : NonUnitalNonAssocRing (GrothendieckAddGroup S)
-    := by
-  let mulAddHom :
-      GrothendieckAddGroup S →+ (GrothendieckAddGroup S →+ GrothendieckAddGroup S) :=
-    lift (((liftAddEquiv (M := S) (G := GrothendieckAddGroup S)).toAddMonoidHom.comp
-      (AddMonoidHom.compHom (of : S →+ GrothendieckAddGroup S))).comp AddMonoidHom.mul)
-  have mul_def (x y : GrothendieckAddGroup S) : x * y = mulAddHom x y := rfl
-  exact
-    { __ := (inferInstance : AddCommGroup (GrothendieckAddGroup S))
-      left_distrib x y z := map_add (mulAddHom x) y z
-      right_distrib x y z := by rw [mul_def, map_add, AddMonoidHom.add_apply, mul_def, mul_def]
-      zero_mul x := by rw [mul_def, map_zero, AddMonoidHom.zero_apply]
-      mul_zero x := map_zero (mulAddHom x) }
+/-- The Grothendieck group of a non-unital non-associative semiring is a non-unital
+non-associative ring for the induced multiplication. -/
+noncomputable instance instNonUnitalNonAssocRing :
+    NonUnitalNonAssocRing (GrothendieckAddGroup S) :=
+  -- The multiplication is, by definition, evaluation of this biadditive map.
+  let mulHom : GrothendieckAddGroup S →+ GrothendieckAddGroup S →+ GrothendieckAddGroup S :=
+    lift (liftAddEquiv.toAddMonoidHom.comp (AddMonoidHom.mul.compr₂ of))
+  { left_distrib x := map_add (mulHom x)
+    right_distrib x y := DFunLike.congr_fun (map_add mulHom x y)
+    zero_mul := DFunLike.congr_fun (map_zero mulHom)
+    mul_zero x := map_zero (mulHom x) }
 
 end NonUnitalNonAssoc
 
@@ -204,7 +190,7 @@ theorem ringHom_ext {F₁ F₂ : GrothendieckAddGroup S →+* R}
 ring extends uniquely to the Grothendieck ring of `S`. -/
 noncomputable def liftRingHom : (S →+* R) ≃ (GrothendieckAddGroup S →+* R) where
   toFun f :=
-    { __ := lift (f : S →+* R).toAddMonoidHom
+    { __ := lift f.toAddMonoidHom
       map_one' := by rw [one_def]; exact (lift_apply_of _ _).trans f.map_one
       map_mul' x y := by
         obtain ⟨a, b, rfl⟩ := exists_eq_sub_of x

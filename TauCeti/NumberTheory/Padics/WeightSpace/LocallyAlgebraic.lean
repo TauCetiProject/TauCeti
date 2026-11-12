@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import TauCeti.NumberTheory.Padics.WeightSpace
+public import TauCeti.NumberTheory.Padics.WeightSpace.Basic
 public import TauCeti.RingTheory.RootsOfUnity.Ultrametric
 import Mathlib.Analysis.Normed.Algebra.Ultra
 

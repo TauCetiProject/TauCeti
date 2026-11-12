@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Real
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Pushing a weighted measure forward
@@ -33,8 +34,7 @@ A map that is injective only on part of the line admits the same change of varia
 price of restricting Lebesgue measure to that part and inserting the absolute derivative into the
 weight. The substitution `x = t ^ 2` on the positive half-line is the case a square-root law needs.
 
-Finally, a weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite
-measure finite.
+A weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite measure finite.
 
 ## Main statements
 
@@ -44,6 +44,10 @@ measure finite.
   absolute value has the folded density.
 * `MeasureTheory.Measure.map_withDensity_eq_withDensity`: a pointwise factorization of one weight
   through a map whose Jacobian identity is already known transports that weight to the image.
+* `MeasureTheory.Measure.map_withDensity_comp`: the image of a measure weighted by a pulled-back
+  weight is the image measure weighted by that weight.
+* `MeasurableEmbedding.map_withDensity_comp`: the same along a measurable embedding, with no
+  measurability of the weight.
 * `MeasureTheory.Measure.map_add_right_withDensity`: translating a weighted right-invariant
   measure translates the weight.
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
@@ -59,6 +63,8 @@ measure finite.
   support is exactly the open set.
 * `MeasureTheory.Measure.support_withDensity_ofReal`: a continuous nonnegative real density
   has the same topological support as the measure it defines.
+* `MeasureTheory.absolutelyContinuous_withDensity_ofReal`: a measure is absolutely continuous with
+  respect to itself weighted by an almost-everywhere positive real density.
 * `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq`: continuous nonnegative real densities
   presenting the same weighted measure are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
@@ -138,7 +144,7 @@ on nonempty open sets.
 
 This form allows the density to take arbitrary values on the boundary. -/
 theorem support_withDensity_eq_closure_of_subset {X : Type*} [TopologicalSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure]
+    [MeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure]
     {f : X → ℝ≥0∞} {U : Set X} (hf : Measurable f) (hU : IsOpen U)
     (hU_support : U ⊆ Function.support f)
     (hsupport_closure : Function.support f ⊆ closure U) :
@@ -150,7 +156,8 @@ theorem support_withDensity_eq_closure_of_subset {X : Type*} [TopologicalSpace X
   · rw [support_eq_forall_isOpen]
     intro x hx V hxV hV
     obtain ⟨y, hyV, hyU⟩ := mem_closure_iff.mp hx V hV hxV
-    rw [withDensity_apply _ hV.measurableSet, setLIntegral_pos_iff hf]
+    refine lt_of_lt_of_le ?_ (withDensity_apply_le f V)
+    rw [setLIntegral_pos_iff hf]
     exact ((hU.inter hV).measure_pos μ ⟨y, hyU, hyV⟩).trans_le
       (measure_mono fun _ hz ↦ ⟨hU_support hz.1, hz.2⟩)
 
@@ -158,7 +165,7 @@ theorem support_withDensity_eq_closure_of_subset {X : Type*} [TopologicalSpace X
 topological support equal to the closure of that set, provided the reference measure is positive
 on nonempty open sets. -/
 theorem support_withDensity_eq_closure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
-    [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → ℝ≥0∞}
+    {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → ℝ≥0∞}
     {U : Set X} (hf : Measurable f) (hU : IsOpen U) (hsupp : Function.support f = U) :
     (μ.withDensity f).support = closure U := by
   exact support_withDensity_eq_closure_of_subset hf hU (hsupp.ge)
@@ -200,6 +207,24 @@ theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : 
       Set.indicator_of_mem hzq, hz]
   · rw [Set.indicator_of_notMem (Set.mem_preimage.not.mpr hzq), Pi.mul_apply,
       Set.indicator_of_notMem hzq, mul_zero]
+
+/-- **A pulled-back weight is pushed forward.** The image under a measurable `f` of `μ` weighted by
+`g ∘ f` is the image of `μ` weighted by `g`. This is the case of
+`map_withDensity_eq_withDensity` with trivial Jacobian. -/
+theorem map_withDensity_comp {μ : Measure α} {f : α → β} {g : β → ℝ≥0∞} (hf : Measurable f)
+    (hg : Measurable g) : (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g :=
+  map_withDensity_eq_withDensity (jac := fun _ => 1) hf measurable_const hg (by simp) (by simp)
+
+/-- **A pulled-back weight is pushed forward along a measurable embedding.** Unlike
+`map_withDensity_comp`, no measurability of the weight `g` is needed. -/
+theorem _root_.MeasurableEmbedding.map_withDensity_comp {μ : Measure α} {f : α → β}
+    (hf : MeasurableEmbedding f) (g : β → ℝ≥0∞) :
+    (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g := by
+  ext s hs
+  rw [Measure.map_apply hf.measurable hs, withDensity_apply _ (hf.measurable hs),
+    withDensity_apply _ hs, ← lintegral_indicator (hf.measurable hs), ← lintegral_indicator hs,
+    hf.lintegral_map]
+  exact lintegral_congr fun x ↦ Set.indicator_comp_right f
 
 /-- **Translating a weighted invariant measure translates its weight.** If `μ` is invariant under
 right translation, then pushing `μ.withDensity f` forward along `x ↦ x + y` gives `μ` weighted by
@@ -264,16 +289,7 @@ theorem rnDeriv_map_affine (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃L[�
   let r : ℝ≥0∞ := ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹|
   have hdet : LinearMap.det (A : E →ₗ[ℝ] E) ≠ 0 := ((A : E ≃ₗ[ℝ] E).isUnit_det').ne_zero
   have hr : r ≠ 0 := by simp [r, hdet]
-  have hmapμ : μ.map (fun x ↦ c + A x) = r • μ := by
-    have hmapA : μ.map A = r • μ := by
-      simpa [r] using Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
-    calc
-      μ.map (fun x ↦ c + A x) = (μ.map A).map (fun y : E ↦ c + y) :=
-        (Measure.map_map (by fun_prop) (by fun_prop)).symm
-      _ = (r • μ).map (fun y : E ↦ c + y) := by rw [hmapA]
-      _ = r • μ := by
-        rw [Measure.map_smul r
-          ((by fun_prop : Measurable fun y : E ↦ c + y).aemeasurable), map_add_left_eq_self]
+  have hmapμ : μ.map (fun x ↦ c + A x) = r • μ := Measure.map_affine_addHaar_eq_smul μ A c
   have hsing : (ν.singularPart μ).map (fun x ↦ c + A x) ⟂ₘ μ := by
     have h := hemb.mutuallySingular_map (Measure.mutuallySingular_singularPart ν μ)
     rw [hmapμ] at h
@@ -298,6 +314,14 @@ end MeasureTheory.Measure
 
 namespace MeasureTheory
 
+/-- A measure is absolutely continuous with respect to itself weighted by an almost-everywhere
+positive real density: the weight `ENNReal.ofReal ∘ w` vanishes only on a null set, so weighting
+destroys no null sets. -/
+theorem absolutelyContinuous_withDensity_ofReal {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {w : α → ℝ} (hwm : AEMeasurable w μ) (hwpos : ∀ᵐ x ∂μ, 0 < w x) :
+    μ ≪ μ.withDensity fun x => ENNReal.ofReal (w x) :=
+  withDensity_absolutelyContinuous' hwm.ennreal_ofReal (by simpa using hwpos)
+
 /-- Continuous nonnegative real densities that present the same measure are equal pointwise. -/
 theorem continuous_eq_of_withDensity_ofReal_eq {X : Type*} [TopologicalSpace X]
     [MeasurableSpace X] [OpensMeasurableSpace X] {ν : Measure X} [SigmaFinite ν]
@@ -317,12 +341,14 @@ theorem continuous_eq_of_withDensity_ofReal_eq {X : Type*} [TopologicalSpace X]
 /-- A measure with log-density bounded above almost everywhere against a finite measure is
 finite. -/
 theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    [IsFiniteMeasure μ] {g : α → ℝ} {M : ℝ} (hg : AEMeasurable g μ) (hgM : ∀ᵐ x ∂μ, g x ≤ M) :
+    [IsFiniteMeasure μ] {g : α → ℝ} {M : ℝ} (hgM : ∀ᵐ x ∂μ, g x ≤ M) :
     IsFiniteMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (Real.exp (g x))) := by
-  refine isFiniteMeasure_withDensity_ofReal (Integrable.of_bound
-    (Real.measurable_exp.comp_aemeasurable hg).aestronglyMeasurable (Real.exp M)
-    (hgM.mono fun x hx ↦ ?_)).2
-  rwa [Function.comp_apply, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
+  refine ⟨?_⟩
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+  refine lt_of_le_of_lt (lintegral_mono_ae (g := fun _ ↦ ENNReal.ofReal (Real.exp M))
+    (hgM.mono fun x hx ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 hx))) ?_
+  rw [lintegral_const]
+  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (measure_lt_top _ _)
 
 end MeasureTheory
 
@@ -344,14 +370,28 @@ This is the measure-level form of Mathlib's
 `MeasurableEquiv.withDensity_ofReal_map_symm_apply_eq_integral_abs_deriv_mul`, it does not ask
 `φ` to be injective off `s`, which is what a substitution on a half-line needs. The weight `f` is
 arbitrary; no measurability of it is required. -/
-theorem map_withDensity_abs_deriv_mul (hs : MeasurableSet s) (hφ : Measurable φ)
+theorem map_withDensity_abs_deriv_mul (hs : MeasurableSet s)
     (hφ' : ∀ x ∈ s, HasDerivWithinAt φ (φ' x) s x) (hinj : InjOn φ s) :
     ((volume.restrict s).withDensity fun t ↦ ENNReal.ofReal |φ' t| * f (φ t)).map φ =
       (volume.restrict (φ '' s)).withDensity f := by
+  classical
+  -- `φ` agrees on `s` with the measurable `ψ`, which changes neither side.
+  set ψ := s.piecewise φ 0
+  have hψ : Measurable ψ := ContinuousOn.measurable_piecewise
+    (fun x hx ↦ (hφ' x hx).continuousWithinAt) continuous_zero.continuousOn hs
+  have he : ∀ᵐ t ∂volume.restrict s, ψ t = φ t := by
+    filter_upwards [ae_restrict_mem hs] with t ht using piecewise_eq_of_mem _ _ _ ht
+  rw [← Measure.map_congr ((withDensity_absolutelyContinuous _ _).ae_eq he),
+    withDensity_congr_ae (g := fun t ↦ ENNReal.ofReal |φ' t| * f (ψ t))
+      (by filter_upwards [he] with t ht; rw [ht]),
+    ← image_congr (piecewise_eqOn s φ 0)]
+  replace hφ' x (hx : x ∈ s) : HasDerivWithinAt ψ (φ' x) s x :=
+    (hφ' x hx).congr (fun y hy ↦ piecewise_eq_of_mem _ _ _ hy) (piecewise_eq_of_mem _ _ _ hx)
+  replace hinj : InjOn ψ s := hinj.congr (piecewise_eqOn s φ 0).symm
   ext A hA
-  rw [Measure.map_apply hφ hA, withDensity_apply _ (hφ hA), withDensity_apply _ hA,
-    Measure.restrict_restrict (hφ hA), Measure.restrict_restrict hA,
-    ← image_preimage_inter φ s A, lintegral_image_eq_lintegral_abs_deriv_mul ((hφ hA).inter hs)
+  rw [Measure.map_apply hψ hA, withDensity_apply _ (hψ hA), withDensity_apply _ hA,
+    Measure.restrict_restrict (hψ hA), Measure.restrict_restrict hA,
+    ← image_preimage_inter ψ s A, lintegral_image_eq_lintegral_abs_deriv_mul ((hψ hA).inter hs)
     (fun x hx ↦ (hφ' x hx.2).mono inter_subset_right) (hinj.mono inter_subset_right)]
 
 /-- **The substitution `x = t ^ 2` on the positive half-line.** Weighting Lebesgue measure on
@@ -374,7 +414,7 @@ theorem map_sq_withDensity_restrict_Ioi (f : ℝ → ℝ≥0∞) :
     rw [abs_of_pos (by simpa using ht : (0 : ℝ) < 2 * t)]
   have hderiv : ∀ t : ℝ, HasDerivAt (fun u : ℝ ↦ u ^ 2) (2 * t) t := fun t ↦ by
     simpa using hasDerivAt_pow 2 t
-  rw [withDensity_congr_ae hweight, map_withDensity_abs_deriv_mul measurableSet_Ioi (by fun_prop)
+  rw [withDensity_congr_ae hweight, map_withDensity_abs_deriv_mul measurableSet_Ioi
     (fun t _ ↦ (hderiv t).hasDerivWithinAt) hinj, himage]
 
 end TauCeti.MeasureTheory

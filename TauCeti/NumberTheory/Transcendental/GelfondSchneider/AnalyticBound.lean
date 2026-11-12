@@ -143,7 +143,6 @@ private theorem schneider_circle_bound_le_exp {c₁ κ μ : ℝ} {L D₁ D₂ : 
     linarith [Real.log_two_gt_d9, Real.log_le_log (by norm_num) hL']
   have hlogκ := Real.log_nonneg hκ
   have hD₁ : (0 : ℝ) ≤ D₁ := D₁.cast_nonneg
-  have hD₂ : (0 : ℝ) ≤ D₂ := D₂.cast_nonneg
   have h₁ : (D₁ : ℝ) ≤ Real.exp (2 * (D₁ * Real.log L)) :=
     (le_add_of_nonneg_right zero_le_one).trans
       ((Real.add_one_le_exp _).trans (Real.exp_le_exp.2 (by nlinarith)))

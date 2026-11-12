@@ -41,6 +41,11 @@ The comparison sends it to `(f a)ⁿ`, which freely generates `Γ(D₊(f a), �
 
 ## Main declarations
 
+* `AlgebraicGeometry.Proj.twistingSheaf.comap_chartGenerator`,
+  `AlgebraicGeometry.Proj.twistingSheafMap_app_chartGenerator` and
+  `AlgebraicGeometry.Proj.twistingSheafMap_app_chartSectionsLinearEquiv`: the pullback of sections
+  sends the standard generator `aⁿ` on `D₊(a)` to `(f a)ⁿ`, so in standard chart coordinates the
+  morphism of twisting sheaves is the pullback of functions along `Proj.map f hf`.
 * `AlgebraicGeometry.Proj.pullbackTwistingSheafMap`: the comparison
   `(Proj.map f hf)^* 𝒪(n) ⟶ 𝒪(n)`, adjoint to `twistingSheafMap`
   (`AlgebraicGeometry.Proj.unit_app_comp_pushforward_map_pullbackTwistingSheafMap`), and
@@ -57,6 +62,8 @@ The comparison sends it to `(f a)ⁿ`, which freely generates `Γ(D₊(f a), �
 
 * R. Hartshorne, *Algebraic Geometry*, Proposition II.5.12(c).
 * [The Stacks Project, Lemma 27.11.1](https://stacks.math.columbia.edu/tag/01MX).
+* [The Stacks Project, Tag 01N1](https://stacks.math.columbia.edu/tag/01N1), for the chart
+  computation of the pullback of `𝒪(n)`.
 -/
 
 public section
@@ -93,6 +100,44 @@ theorem twistingSheaf.comap_chartGenerator (n : ℤ) {a : A} (ha : a ∈ 𝒜 1)
   congr 1
   · exact map_pow f a _
   · exact Subtype.ext (map_pow f a _)
+
+/-- **In standard chart coordinates the pullback of sections of `𝒪(n)` is the pullback of
+functions**: the section `b • aⁿ` of `𝒪_{Proj 𝒜}(n)` on `U ≤ D₊(a)` pulls back to
+`(Proj.map f hf)^* b • (f a)ⁿ`. -/
+@[simp]
+theorem twistingSheaf.comap_chartSectionsLinearEquiv (n : ℤ) {a : A} (ha : a ∈ 𝒜 1)
+    {U : (Proj 𝒜).Opens} (hU : U ≤ basicOpen 𝒜 a) {V : (Proj ℬ).Opens}
+    (hUV : V.1 ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.1) (b : Γ(Proj 𝒜, U)) :
+    twistingSheaf.comap f hf hUV (twistingSheaf.chartSectionsLinearEquiv n a ha U hU b) =
+      twistingSheaf.chartSectionsLinearEquiv n (f a) (Graded.map_mem f ha) V
+        (fun _ hy ↦ hU (hUV hy)) ((map f hf).appLE U V hUV b) := by
+  rw [twistingSheaf.chartSectionsLinearEquiv_apply, twistingSheaf.comap_smul,
+    twistingSheaf.comap_chartGenerator]
+  -- `hUV` is passed to `appLE` as `V ≤ map f hf ⁻¹ᵁ U` only up to unfolding, so rewriting the
+  -- right-hand side gives an ill-typed motive; the last step is closed by `exact`.
+  exact (twistingSheaf.chartSectionsLinearEquiv_apply ..).symm
+
+/-- The morphism of twisting sheaves `twistingSheafMap` sends the standard generator `aⁿ` of
+`𝒪_{Proj 𝒜}(n)` on `U ≤ D₊(a)` to the standard generator `(f a)ⁿ` of `𝒪_{Proj ℬ}(n)` on the
+preimage of `U`. -/
+theorem twistingSheafMap_app_chartGenerator (n : ℤ) {a : A} (ha : a ∈ 𝒜 1)
+    {U : (Proj 𝒜).Opens} (hU : U ≤ basicOpen 𝒜 a) :
+    (twistingSheafMap f hf n).app U (twistingSheaf.chartGenerator n a ha U hU) =
+      twistingSheaf.chartGenerator n (f a) (Graded.map_mem f ha) (map f hf ⁻¹ᵁ U)
+        (fun _ hy ↦ hU hy) := by
+  rw [twistingSheafMap_app]
+  exact twistingSheaf.comap_chartGenerator f hf n ha hU Set.Subset.rfl
+
+/-- **The morphism of twisting sheaves in standard chart coordinates**: on `U ≤ D₊(a)`, the
+morphism `twistingSheafMap` sends the section `b • aⁿ` of `𝒪_{Proj 𝒜}(n)` to the section
+`(Proj.map f hf)^* b • (f a)ⁿ` of `𝒪_{Proj ℬ}(n)` on the preimage of `U`. -/
+theorem twistingSheafMap_app_chartSectionsLinearEquiv (n : ℤ) {a : A} (ha : a ∈ 𝒜 1)
+    {U : (Proj 𝒜).Opens} (hU : U ≤ basicOpen 𝒜 a) (b : Γ(Proj 𝒜, U)) :
+    (twistingSheafMap f hf n).app U (twistingSheaf.chartSectionsLinearEquiv n a ha U hU b) =
+      twistingSheaf.chartSectionsLinearEquiv n (f a) (Graded.map_mem f ha) (map f hf ⁻¹ᵁ U)
+        (fun _ hy ↦ hU hy) ((map f hf).app U b) := by
+  rw [twistingSheafMap_app, Scheme.Hom.app_eq_appLE]
+  exact twistingSheaf.comap_chartSectionsLinearEquiv f hf n ha hU Set.Subset.rfl b
 
 /-- **The comparison of twisting sheaves along `Proj.map`**: the morphism
 `(Proj.map f hf)^* 𝒪_{Proj 𝒜}(n) ⟶ 𝒪_{Proj ℬ}(n)` adjoint to

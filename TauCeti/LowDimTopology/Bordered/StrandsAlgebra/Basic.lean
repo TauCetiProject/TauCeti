@@ -24,10 +24,11 @@ and the inversion counts add, `inv (ψ ∘ φ) = inv φ + inv ψ`, and zero othe
 diagrams `I(S)` on the subsets `S` are orthogonal idempotents summing to the unit.
 
 This file constructs the underlying associative algebra `TauCeti.StrandsAlgebra R α` of the
-strands algebra of a finite linear order `α`, over an arbitrary commutative semiring `R`, without
-the differential that resolves crossings. Lipshitz, Ozsváth and Thurston work over `𝔽₂`, which is
-the case `R = ZMod 2`, `α = Fin n`; the product of basis elements involves no
-coefficients other than `0` and `1`, so its definition makes sense over any `R`. Associativity
+strands algebra of a finite linear order `α`, over an arbitrary commutative semiring `R`. Its
+differential, which resolves crossings, is `TauCeti.StrandsAlgebra.differential`. Lipshitz, Ozsváth
+and Thurston work over `𝔽₂`, which is the case `R = ZMod 2`, `α = Fin n`; the product of basis
+elements involves no coefficients other than `0` and `1`, so its definition makes sense over any
+`R`. Associativity
 comes from the subadditivity of inversion counts
 (`TauCeti.StrandDiagram.trans_composable_and_composable_iff`).
 
@@ -46,6 +47,8 @@ comes from the subadditivity of inversion counts
   orthogonal idempotents summing to `1`.
 * `TauCeti.StrandsAlgebra.idem_mul_of`, `TauCeti.StrandsAlgebra.of_mul_idem`: `I(s) φ` is `φ` when
   `s` is the source of `φ` and zero otherwise, and `φ I(t)` is `φ` when `t` is its target.
+* `TauCeti.StrandsAlgebra.map_mul_of_basis`: a linear map out of the strands algebra is
+  multiplicative once it is multiplicative on basis elements.
 
 ## References
 
@@ -65,8 +68,8 @@ variable (R α : Type*) [CommSemiring R] [LinearOrder α]
 /-- The strands algebra of a finite linear order `α` over a commutative semiring `R`: the free
 `R`-module on the strand diagrams of `α`, multiplied by concatenating composable diagrams. For
 `α = Fin n` and `R = ZMod 2` it is the algebra underlying the strands algebra `A(n)` of Lipshitz,
-Ozsváth and Thurston, the direct sum of their algebras `A(n, k)` over the number `k` of strands,
-without the differential that resolves crossings. -/
+Ozsváth and Thurston, the direct sum of their algebras `A(n, k)` over the number `k` of strands.
+Its differential, which resolves crossings, is `TauCeti.StrandsAlgebra.differential`. -/
 def StrandsAlgebra : Type _ :=
   StrandDiagram α →₀ R
 
@@ -96,6 +99,11 @@ def basis : Module.Basis (StrandDiagram α) R (StrandsAlgebra R α) :=
 theorem basis_apply (φ : StrandDiagram α) : basis R α φ = of φ :=
   congrFun Finsupp.coe_basisSingleOne φ
 
+/-- The coordinates of a basis element. -/
+@[simp]
+theorem basis_repr_of (φ : StrandDiagram α) : (basis R α).repr (of φ) = Finsupp.single φ 1 := by
+  rw [← basis_apply, Module.Basis.repr_self]
+
 private theorem single_eq_smul_of (φ : StrandDiagram α) (r : R) :
     (Finsupp.single φ r : StrandsAlgebra R α) = r • of φ :=
   (Finsupp.smul_single_one φ r).symm
@@ -114,6 +122,19 @@ def idem (s : Finset α) : StrandsAlgebra R α :=
 
 theorem idem_def (s : Finset α) : (idem s : StrandsAlgebra R α) = of (StrandDiagram.idOn s) :=
   (rfl)
+
+/-- The coefficient of `φ` in a finite linear combination is the combination of the coefficients
+of `φ`. -/
+theorem repr_sum_smul_apply {ι : Type*} [Fintype ι] (c : ι → R) (v : ι → StrandsAlgebra R α)
+    (φ : StrandDiagram α) :
+    (basis R α).repr (∑ i, c i • v i) φ = ∑ i, c i * (basis R α).repr (v i) φ := by
+  simp [Finsupp.coe_finsetSum, Finset.sum_apply]
+
+open scoped Classical in
+/-- The coefficients of a sum of basis elements: `1` on the summed diagrams and `0` elsewhere. -/
+theorem repr_sum_of_apply (s : Finset (StrandDiagram α)) (ψ : StrandDiagram α) :
+    (basis R α).repr (∑ φ ∈ s, of φ) ψ = if ψ ∈ s then 1 else 0 := by
+  simp [Finset.sum_apply', Finsupp.single_apply]
 
 variable [Fintype α]
 
@@ -182,6 +203,18 @@ theorem of_mul_idem_target (φ : StrandDiagram α) :
     (of φ * idem φ.target : StrandsAlgebra R α) = of φ := by
   simp [of_mul_idem]
 
+/-- Two single strands meeting at `j` multiply to their concatenation. -/
+theorem of_single_mul_of_single {i j k : α} (h : i ≤ j) (h' : j ≤ k) :
+    (of (.single i j h) * of (.single j k h') : StrandsAlgebra R α) =
+      of (.single i k (h.trans h')) := by
+  rw [of_mul_of_of_composable (StrandDiagram.composable_single_single_iff.2 rfl),
+    StrandDiagram.single_trans_single]
+
+/-- Two single strands multiply to zero unless the first ends where the second starts. -/
+theorem of_single_mul_of_single_of_ne {i j j' k : α} (h : i ≤ j) (h' : j' ≤ k) (hj : j ≠ j') :
+    (of (.single i j h) * of (.single j' k h') : StrandsAlgebra R α) = 0 :=
+  of_mul_of_of_not_composable (StrandDiagram.composable_single_single_iff.not.2 hj)
+
 /-- The idempotents `I(s)` are orthogonal: `I(s) I(t)` is `I(s)` when `s = t` and zero
 otherwise. -/
 @[simp]
@@ -249,6 +282,51 @@ instance {R : Type*} [CommRing R] : Ring (StrandsAlgebra R α) where
 
 theorem isIdempotentElem_idem (s : Finset α) : IsIdempotentElem (idem s : StrandsAlgebra R α) := by
   simp [IsIdempotentElem, idem_mul_idem]
+
+/-- **Multiplicativity is a basis-level condition.** An `R`-linear map out of the strands
+algebra that is multiplicative on pairs of basis elements is multiplicative. -/
+theorem map_mul_of_basis {A : Type*} [NonUnitalNonAssocSemiring A] [Module R A]
+    [IsScalarTower R A A] [SMulCommClass R A A] (f : StrandsAlgebra R α →ₗ[R] A)
+    (h : ∀ φ ψ, f (of φ * of ψ) = f (of φ) * f (of ψ)) (x y : StrandsAlgebra R α) :
+    f (x * y) = f x * f y := by
+  induction x using induction_on with
+  | zero => simp only [zero_mul, map_zero]
+  | add x x' hx hx' => simp only [add_mul, map_add, hx, hx']
+  | smul_of r φ =>
+    induction y using induction_on with
+    | zero => simp only [mul_zero, map_zero]
+    | add y y' hy hy' => simp only [mul_add, map_add, hy, hy']
+    | smul_of s ψ => simp only [smul_mul_assoc, mul_smul_comm, map_smul, h]
+
+/-- The coefficient of `χ` in a product is the sum of the products of the coefficients of the
+pairs of composable diagrams whose composite is `χ`. -/
+theorem repr_mul_apply [Fintype (StrandDiagram α)] (x y : StrandsAlgebra R α)
+    (χ : StrandDiagram α) :
+    (basis R α).repr (x * y) χ = ∑ φ, ∑ ψ, if φ.Composable ψ ∧ φ.trans ψ = χ then
+      (basis R α).repr x φ * (basis R α).repr y ψ else 0 := by
+  conv_lhs => rw [← (basis R α).sum_repr x, ← (basis R α).sum_repr y, Finset.sum_mul_sum]
+  simp only [map_sum, Finset.sum_apply', smul_mul_smul_comm, basis_apply, map_smul,
+    Finsupp.smul_apply, smul_eq_mul]
+  refine Finset.sum_congr rfl fun φ _ ↦ Finset.sum_congr rfl fun ψ _ ↦ ?_
+  rw [of_mul_of]
+  by_cases h : φ.Composable ψ
+  · rw [ite_eq_left h, ← basis_apply, Module.Basis.repr_self, Finsupp.single_apply]
+    by_cases h' : φ.trans ψ = χ <;> simp [h, h']
+  · simp [h]
+
+/-- A diagram with a nonzero coefficient in a product is the composite of two composable diagrams
+with nonzero coefficients in the factors. -/
+theorem exists_of_repr_mul_ne_zero {x y : StrandsAlgebra R α} {χ : StrandDiagram α}
+    (h : (basis R α).repr (x * y) χ ≠ 0) :
+    ∃ φ ψ, φ.Composable ψ ∧ φ.trans ψ = χ ∧ (basis R α).repr x φ ≠ 0 ∧
+      (basis R α).repr y ψ ≠ 0 := by
+  have := Fintype.ofFinite (StrandDiagram α)
+  rw [repr_mul_apply] at h
+  obtain ⟨φ, -, hφ⟩ := Finset.exists_ne_zero_of_sum_ne_zero h
+  obtain ⟨ψ, -, hψ⟩ := Finset.exists_ne_zero_of_sum_ne_zero hφ
+  rw [ne_eq, ite_eq_right_iff, not_imp] at hψ
+  obtain ⟨⟨hc, rfl⟩, hψ⟩ := hψ
+  exact ⟨φ, ψ, hc, rfl, left_ne_zero_of_mul hψ, right_ne_zero_of_mul hψ⟩
 
 end StrandsAlgebra
 

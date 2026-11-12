@@ -219,7 +219,7 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn
       ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 d (v : W1p mu Omega 2) =
         ∫ x in Omega, Wkp.value k G x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
   obtain ⟨w, hw⟩ := hw
-  set b := EuclideanSpace.basisFun ι ℝ with hb
+  set b := EuclideanSpace.basisFun ι ℝ
   have haΩ : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega := fun i j =>
     (ha i j).mono (subset_closure.trans hΩU)
   -- The energy integrand of `a` is bounded on `Ω`, so the equation may be tested on test functions.
@@ -267,15 +267,9 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn
     rw [Wkp.value_firstOrder] at h
     filter_upwards [hM₂ i j, (hE i j).ae_eq h] with x h₁ h₂
     rw [h₁, h₂, innerSL_apply_apply]
-  rw [Wkp.value_add]
-  filter_upwards [Lp.coeFn_add (Wkp.value k Fe) _,
-    Wkp.value_finsetSum_ae k Finset.univ fun i => ∑ j, (M₁ i j + M₂ i j),
-    Filter.eventually_all.2 fun i => Wkp.value_finsetSum_ae k Finset.univ fun j => M₁ i j + M₂ i j,
-    Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j =>
-      Lp.coeFn_add (Wkp.value k (M₁ i j)) (Wkp.value k (M₂ i j)), hu₁, hu₂]
-    with x h₁ h₂ h₃ h₄ h₅ h₆
-  rw [h₁, Pi.add_apply, h₂]
-  simp only [h₃, Wkp.value_add, h₄, Pi.add_apply, h₅, h₆, hb]
+  filter_upwards [Wkp.ae_value_add_sum_eq Fe Finset.univ Finset.univ M₁ M₂
+    (hu₁.mono fun x h i _ j _ ↦ h i j) (hu₂.mono fun x h i _ j _ ↦ h i j)] with x hx
+  rw [hx]
 
 /-! ### Interior `H^{k+2}` regularity -/
 

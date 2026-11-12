@@ -13,6 +13,8 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 
 This module relates the singular-chain functor to the chain map induced by a map of singular
 simplicial sets, and the singular homology functor to the simplicial homology map it induces.
+It records restriction along subspace inclusions (`TopCat.chainComplexMap_f_comp_subtypeVal`)
+without requiring the small-chain subdivision theory.
 It also records the degree-zero component of Mathlib's identification of the singular chains of
 a totally disconnected space with an alternating constant complex
 (`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`).
@@ -69,13 +71,33 @@ lemma ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_ho
   change _ ≫ ((AlgebraicTopology.alternatingFaceMapComplex C).map
       (Functor.whiskerRight (TopCat.toSSetIsoConst X).hom (sigmaConst.obj R) ≫
         (Functor.constComp _ _ _).hom)).f 0 ≫ 𝟙 _ = _
-  simp only [SSet.ιChainComplex, Functor.map_comp, HomologicalComplex.comp_f,
-    AlgebraicTopology.alternatingFaceMapComplex_map_f, Functor.whiskerRight_app,
-    sigmaConst_obj_map, Functor.constComp_hom_app]
-  refine (congrArg _ ((Category.comp_id _).trans (Category.comp_id _))).trans ?_
-  rw [Sigma.ι_comp_map', Category.id_comp]
+  simp only [sigmaConst_obj_obj, AlgebraicTopology.alternatingFaceMapComplex_obj_X,
+    Functor.const_obj_obj, Functor.comp_obj, SSet.ιChainComplex, Functor.map_comp,
+    HomologicalComplex.comp_f, AlgebraicTopology.alternatingFaceMapComplex_map_f,
+    Functor.whiskerRight_app, sigmaConst_obj_map, Functor.constComp_hom_app, Category.comp_id,
+    Sigma.ι_comp_map', Category.id_comp]
   -- The constant-set isomorphism evaluates a simplex at an arbitrary point of the topological
   -- `0`-simplex, which is the unique point there.
   exact congrArg _ (congrArg (TopCat.toSSetObjEquiv X _ σ) (Subsingleton.elim _ _))
 
 end TauCeti
+
+namespace TopCat
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
+  {R : C} {X : TopCat.{w}}
+
+/-- Pushing singular chains forward along a map of subspaces of `X` commuting with the inclusions,
+and then along the inclusion of the target, is pushing them forward along the inclusion of the
+source. The reassociated form restricts a singular cochain of `X` in two steps. -/
+@[reassoc]
+lemma chainComplexMap_f_comp_subtypeVal {S' T' : Set X} (g : of ↥S' ⟶ of ↥T')
+    (hg : ∀ x, (g x : X) = x) (n : ℕ) :
+    (SSet.chainComplexMap (toSSet.map g) R).f n ≫
+        (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal T'))) R).f n =
+      (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal S'))) R).f n := by
+  rw [← HomologicalComplex.comp_f, ← Functor.map_comp, ← Functor.map_comp]
+  congr 4
+  exact TopCat.ext hg
+
+end TopCat

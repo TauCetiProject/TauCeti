@@ -268,10 +268,11 @@ theorem isUnramifiedAway (h : IsAdmissibleModulus K L 𝔪) :
 modulus `𝔪` admissible for `L/K`, every prime of `L` above a prime ideal of `K` prime to `𝔪` is
 unramified over `K`. -/
 theorem isUnramifiedAt_of_integralIdealsPrimeTo (h : IsAdmissibleModulus K L 𝔪)
-    (I : integralIdealsPrimeTo 𝔪) [(I : Ideal (𝓞 K)).IsMaximal]
+    (I : integralIdealsPrimeTo 𝔪)
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
     Algebra.IsUnramifiedAt (𝓞 K) Q := by
   obtain ⟨hI, hS⟩ := Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)
+  have : (I : Ideal (𝓞 K)).IsPrime := Ideal.isPrime_of_liesOver Q _
   let v : HeightOneSpectrum (𝓞 K) := ⟨I, inferInstance, hI⟩
   have : Q.LiesOver v.asIdeal := ‹Q.LiesOver (I : Ideal (𝓞 K))›
   exact h.isUnramifiedAway v (fun hv ↦ hS v hv dvd_rfl) Q
@@ -282,7 +283,7 @@ modulus admissible for `L/K`, in particular the conductor `abelianConductor K L`
 theorem ramifiedSupport_subset_support (h : IsAdmissibleModulus K L 𝔪) :
     TauCeti.NumberField.ramifiedSupport K L ⊆ 𝔪.support := fun v hv ↦ by
   rw [TauCeti.NumberField.mem_ramifiedSupport,
-    dvd_relDiscr_iff_exists_not_isUnramifiedAt v.ne_bot] at hv
+    dvd_relDiscr_iff_exists_not_isUnramifiedAt] at hv
   obtain ⟨⟨Q, _, _⟩, hQ⟩ := hv
   exact h.mem_support_of_ramified v Q hQ
 

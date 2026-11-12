@@ -26,7 +26,8 @@ This file develops the elementary calculus for arbitrary unit-valued twists. Ove
 an additively cancellative semiring, crossed homomorphisms vanish at `1`, their values at natural
 powers are geometric sums, and they are additive on products where the twist is trivial. Over a
 group and a ring, their values at inverses are determined by their values at the original
-elements. Only the commutator formula needs a multiplicative character.
+elements. Only the three-element product formula needs a multiplicative twist. The commutator
+formula holds for arbitrary unit-valued twists over a commutative ring.
 
 Continuous crossed homomorphisms and uniqueness on topological generating sets are treated in
 `TauCeti/Topology/Algebra/Group/CrossedHom.lean`. For `R = ℤ_p`, their values on a minimal
@@ -43,8 +44,10 @@ generating tuple are what Labute's prescription property of a continuous charact
 * `TauCeti.IsCrossedHom.map_pow`: `F (x ^ k) = (1 + χ x + ⋯ + χ x ^ (k - 1)) * F x`.
 * `TauCeti.IsCrossedHom.map_list_prod_of_forall_eq_one`: on a product of elements on which `χ` is
   trivial, `F` is additive.
-* `TauCeti.IsCrossedHom.map_commutatorElement`: for a character into a commutative ring,
+* `TauCeti.IsCrossedHom.map_commutatorElement`: for a unit-valued twist into a commutative ring,
   `F ⁅x, y⁆ = (χ x - 1) * F y - (χ y - 1) * F x`.
+* `TauCeti.IsCrossedHom.map_mul_mul`: for a multiplicative twist, the value on a product of
+  three elements.
 
 ## References
 
@@ -100,6 +103,19 @@ end IsCrossedHom
 
 end Semiring
 
+section MulHom
+
+variable {H : Type*} [Mul H] {R : Type*} [Semiring R]
+  {F' : Type*} [FunLike F' H Rˣ] [MulHomClass F' H Rˣ] {χ : F'} {F : H → R}
+
+/-- The value of a crossed homomorphism for a multiplicative twist on a product of three
+elements. -/
+theorem IsCrossedHom.map_mul_mul (hF : IsCrossedHom χ F) (a b c : H) :
+    F (a * b * c) = (χ a : R) * χ b * F c + ((χ a : R) * F b + F a) := by
+  rw [hF.map_mul, hF.map_mul, _root_.map_mul, Units.val_mul]
+
+end MulHom
+
 section MulOneClass
 
 variable {H : Type*} [MulOneClass H] {R : Type*} [Semiring R] [IsLeftCancelAdd R]
@@ -113,10 +129,8 @@ include hF
 /-- A crossed homomorphism into an additively cancellative semiring vanishes at `1`, even when
 its twist is not multiplicative. -/
 theorem map_one : F 1 = 0 := by
-  apply (χ 1).mul_right_inj.mp
   have h := hF.map_mul 1 1
-  rw [one_mul, add_comm] at h
-  simpa only [mul_zero] using add_eq_left.mp h.symm
+  rwa [one_mul, add_comm, left_eq_add, Units.mul_right_eq_zero] at h
 
 grind_pattern map_one => IsCrossedHom χ F
 
@@ -125,9 +139,7 @@ theorem map_list_prod_of_forall_eq_one {l : List H} (hl : ∀ a ∈ l, χ a = 1)
     F l.prod = (l.map F).sum := by
   induction l with
   | nil => simp [hF.map_one]
-  | cons a l ih =>
-    rw [List.prod_cons, hF.map_mul, hl a (by simp), Units.val_one, one_mul,
-      ih fun b hb ↦ hl b (by simp [hb]), List.map_cons, List.sum_cons, add_comm]
+  | cons a l ih => simp_all [hF.map_mul, add_comm]
 
 end IsCrossedHom
 
@@ -179,9 +191,7 @@ theorem mul_map_inv (x : H) : (χ x : R) * F x⁻¹ = -F x := by
 
 /-- The value of a crossed homomorphism at an inverse. -/
 theorem map_inv (x : H) : F x⁻¹ = -(((χ x)⁻¹ : Rˣ) : R) * F x := by
-  calc F x⁻¹ = (((χ x)⁻¹ : Rˣ) : R) * ((χ x : R) * F x⁻¹) := by
-        rw [← mul_assoc, Units.inv_mul, one_mul]
-    _ = -(((χ x)⁻¹ : Rˣ) : R) * F x := by rw [hF.mul_map_inv, mul_neg, neg_mul]
+  rw [neg_mul, ← mul_neg, ← hF.mul_map_inv, Units.inv_mul_cancel_left]
 
 end IsCrossedHom
 
@@ -192,18 +202,42 @@ section CommRing
 open scoped commutatorElement
 
 variable {H : Type*} [Group H] {R : Type*} [CommRing R]
-  {F' : Type*} [FunLike F' H Rˣ] [MonoidHomClass F' H Rˣ] {χ : F'} {F : H → R}
+  {F' : Type*} [FunLike F' H Rˣ] {χ : F'} {F : H → R}
 
 /-- The value of a crossed homomorphism on the commutator `⁅x, y⁆ = x * y * x⁻¹ * y⁻¹`; the
-character kills the commutator because `Rˣ` is commutative. -/
+twist kills the commutator on the values of `F`, because `Rˣ` is commutative. -/
 theorem IsCrossedHom.map_commutatorElement (hF : IsCrossedHom χ F) (x y : H) :
     F ⁅x, y⁆ = ((χ x : R) - 1) * F y - ((χ y : R) - 1) * F x := by
+  have hone : F 1 = 0 := hF.map_one
+  have hone' (z : H) : (χ 1 : R) * F z = F z := by
+    have h := hF 1 z
+    rw [one_mul, hone] at h
+    linear_combination -h
+  -- the twist is multiplicative on the values of `F`
+  have hd (a b z : H) : (χ (a * b) : R) * F z = χ a * χ b * F z := by
+    have h1 := hF (a * b) z
+    have h2 := hF a (b * z)
+    have h3 := hF b z
+    rw [mul_assoc] at h1
+    have h4 := hF a b
+    linear_combination h2 - h1 - h4 + (χ a : R) * h3
+  have hcomm (z : H) : (χ ⁅x, y⁆ : R) * F z = F z := by
+    have e1 := hd (x * y * x⁻¹) y⁻¹ z
+    have e2 := hd (x * y) x⁻¹ z
+    have e3 := hd x y z
+    have e4 := hd x x⁻¹ z
+    have e5 := hd y y⁻¹ z
+    rw [mul_inv_cancel, hone'] at e4 e5
+    rw [commutatorElement_def]
+    linear_combination e1 + (χ y⁻¹ : R) * e2 + (χ y⁻¹ : R) * (χ x⁻¹ : R) * e3 -
+      (χ y : R) * (χ y⁻¹ : R) * e4 - e5
   have h : ⁅x, y⁆ * (y * x) = x * y := by
     simp [commutatorElement_def, mul_assoc]
-  have h1 := hF.map_mul ⁅x, y⁆ (y * x)
-  rw [h, hF.map_mul x y, hF.map_mul y x, _root_.map_commutatorElement,
-    commutatorElement_eq_one_iff_mul_comm.2 (mul_comm (χ x) (χ y)), Units.val_one, one_mul] at h1
-  linear_combination -h1
+  have h1 := hF ⁅x, y⁆ (y * x)
+  have hc := hcomm (y * x)
+  rw [h, hF x y] at h1
+  rw [hF y x] at hc h1
+  linear_combination -h1 - hc
 
 end CommRing
 

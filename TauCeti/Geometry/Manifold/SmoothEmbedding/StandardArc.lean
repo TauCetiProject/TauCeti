@@ -208,13 +208,7 @@ theorem exists_diffeomorph_apply_eq_line (hn : 3 ≤ n) (F : Concordance f g) {z
     ∃ (Ψ : (sphere (0 : E) 1 × ℝ) ≃ₘ⟮(𝓡 n).prod 𝓘(ℝ), (𝓡 n).prod 𝓘(ℝ)⟯ (sphere (0 : E) 1 × ℝ))
       (C : Set (sphere (0 : E) 1 × ℝ)), IsCompact C ∧ (∀ q ∈ C, q.2 ∈ Ioo (0 : ℝ) 1) ∧
       (∀ q ∉ C, Ψ q = q) ∧ ∀ t, Ψ (F (z₀, t)) = (f z₀, t) := by
-  -- Near both of its ends the arc is the straight line over `f z₀`.
-  obtain ⟨ε₀, hε₀, hF₀⟩ := F.isCollaredTrack.exists_pos_apply_eq_left
-  obtain ⟨ε₁, hε₁, hF₁⟩ := F.isCollaredTrack.exists_pos_apply_eq_right
-  have hend : ∀ t, t ≤ ε₀ ∨ 1 - ε₁ ≤ t → F (z₀, t) = (f z₀, t) := by
-    rintro t (ht | ht)
-    · exact hF₀ z₀ t ht
-    · rw [hF₁ z₀ t ht, hz₀]
+  obtain ⟨ε₀, hε₀, ε₁, hε₁, hend⟩ := F.isCollaredTrack.exists_pos_apply_eq_line hz₀
   -- A point `p` of the sphere off the arc; the arc lies in the chart `χ` at `p`, as `χ ∘ β`.
   obtain ⟨p, hp⟩ := exists_notMem_range_real_sphere (f := fun t : ℝ => (F (z₀, t)).1)
     (by omega : 2 ≤ n) ((contMDiff_fst.comp (F.toSmoothEmbedding.contMDiff.comp

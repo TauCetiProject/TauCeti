@@ -16,6 +16,8 @@ import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.Topology.Algebra.GroupCompletion
+import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
+import TauCeti.Topology.Algebra.Ring.Ideal
 import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!
@@ -28,10 +30,10 @@ power-series ring `A⟨X₁, …, Xₖ⟩_T` on finitely many variables, each we
 that the presenting algebra is `TauCeti.Huber.restrictedMvPowerSeriesCompletion`, the object this
 library writes `A⟨X₁, …, Xₖ⟩`.
 
-The notion is what three results the adic-spaces roadmap needs are stated in terms of: the second
-half of Proposition and Definition 6.36 (a Tate ring is strongly noetherian exactly when every
-Tate ring topologically of finite type over it is noetherian), Remark 6.37(1), and Example 6.38,
-which Proposition 8.30 cites by name.
+Three results of the theory are stated in terms of this notion: the second half of Proposition and
+Definition 6.36 (a Tate ring is strongly noetherian exactly when every Tate ring topologically of
+finite type over it is noetherian), Remark 6.37(1), and Example 6.38, which Proposition 8.30 cites
+by name.
 
 ## What is and is not assumed
 
@@ -45,7 +47,7 @@ of `B` should assume it alongside, not read it out of these definitions.
 ## Notation, and one thing it is easy to get backwards
 
 `A⟨X₁, …, Xₖ⟩_T` names the **uncompleted** weighted ring `TauCeti.Huber.weightedRestrictedSubring`
-of Wedhorn's Remark and Definition 5.48, as it does in the roadmap (`AdicSpaces/README.md`, §0.4).
+of Wedhorn's Remark and Definition 5.48.
 Wedhorn's presenting algebra in 6.28/6.29 is its **completion**, which he writes `Â⟨…⟩`; at the
 trivial weight family that completion is `restrictedMvPowerSeriesCompletion`, which this library
 writes `A⟨X₁, …, Xₖ⟩` without a subscript. So the domain of `π` below is a completion throughout,
@@ -53,12 +55,11 @@ never the subring itself.
 
 ## The weighted algebra, and why not the Tate-only one
 
-The presenting algebra is the **weighted** one. That is Wedhorn's own 6.29(i), and it is what the
-roadmap asks for (`AdicSpaces/README.md`, §5.2): the Tate-only algebra is too narrow downstream,
-since `A_inf` is Huber and not Tate. Definition 6.28, the strict variant, is the Tate-only case;
-the implication between them is `IsStrictlyTopologicallyFiniteType.isTopologicallyFiniteType`, and
-over a Tate ring the converse `IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType` holds
-as well.
+The presenting algebra is the **weighted** one. That is Wedhorn's own 6.29(i), and the Tate-only
+algebra would be too narrow, since `A_inf` is Huber and not Tate. Definition 6.28, the strict
+variant, is the Tate-only case; the implication between them is
+`IsStrictlyTopologicallyFiniteType.isTopologicallyFiniteType`, and over a Tate ring the converse
+`IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType` holds as well.
 
 Two conditions on the weight family are in play and they are not the same. Wedhorn's standing
 hypothesis on `T` — needed even to *form* `A⟨X⟩_T` — is `TauCeti.Huber.IsWeightFamily`, that
@@ -133,6 +134,35 @@ public section
 namespace TauCeti.Huber
 
 open UniformSpace
+
+/-- The image under a ring map `π : D → B` of the weights `algebraMap A D '' V i`, followed by the
+trivial weights, is the corresponding weight family `φ '' V i`, followed by the trivial weights,
+whenever `π` restricts to `φ` on `A`. -/
+theorem image_append_algebraMap_weights {A B D : Type*} [CommRing A] [CommRing B] [CommRing D]
+    [Algebra A D] {φ : A →+* B} {m n : ℕ} (V : Fin m → Set A) (π : D →+* B)
+    (hπφ : ∀ a, π (algebraMap A D a) = φ a) (i : Fin (m + n)) :
+    π '' (Fin.append (fun i ↦ algebraMap A D '' V i) (fun _ ↦ ({1} : Set D))) i =
+      Fin.append (fun i ↦ φ '' V i) (fun _ ↦ ({1} : Set B)) i :=
+  Fin.addCases
+    (fun j ↦ by
+      simp only [Fin.append_left, Set.image_image]
+      exact Set.image_congr fun a _ ↦ hπφ a)
+    (fun j ↦ by simp) i
+
+/-- The image under `algebraMap A D` of the weights `Fin.append T (Fin.append V 1)` after the `T`
+block is `algebraMap A D '' V i`, followed by the trivial weights. -/
+theorem image_algebraMap_append_append_weights {A D : Type*} [CommRing A] [CommRing D]
+    [Algebra A D] {k m n : ℕ} (T : Fin k → Set A) (V : Fin m → Set A) (j : Fin (m + n)) :
+    algebraMap A D '' (Fin.append T (Fin.append V fun _ : Fin n ↦ ({1} : Set A))) (Fin.natAdd k j) =
+      Fin.append (fun i ↦ algebraMap A D '' V i) (fun _ ↦ ({1} : Set D)) j :=
+  Fin.addCases (fun i ↦ by simp) (fun i ↦ by simp) j
+
+/-- Appending `T`, `V` and the trivial weights keeps all weight sets finite. -/
+theorem finite_append_append_weights {A : Type*} [One A] {k m n : ℕ} {T : Fin k → Set A}
+    {V : Fin m → Set A} (hT : ∀ i, (T i).Finite) (hV : ∀ i, (V i).Finite) :
+    ∀ i, (Fin.append T (Fin.append V fun _ : Fin n ↦ ({1} : Set A)) i).Finite := fun i ↦
+  Fin.addCases (fun j ↦ by simpa using hT j)
+    (fun j ↦ Fin.addCases (fun l ↦ by simpa using hV l) (fun _ ↦ by simp) j) i
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
   {B : Type*} [CommRing B] [TopologicalSpace B]
@@ -227,19 +257,23 @@ theorem IsTopologicallyFiniteType.comp_isOpenQuotientMap {φ : A →+* B} {ψ : 
   exact isTopologicallyFiniteType_iff.mpr
     ⟨k, T, hTfin, hT, ψ.comp π, hψ.comp hπ, by rw [RingHom.comp_assoc, hcomm]⟩
 
-variable [IsTopologicalRing B]
-
 /-- **Strict finite type passes to a quotient by an ideal.** The quotient map of a topological
-ring is an open quotient map, so this is the previous lemma at `ψ = Ideal.Quotient.mk I`. -/
+ring is an open quotient map, so this is the previous lemma at `ψ = Ideal.Quotient.mk I`. The
+topological ring structure of `B` comes from the presentation, as an open quotient of a topological
+ring. -/
 theorem IsStrictlyTopologicallyFiniteType.quotientMk {φ : A →+* B}
     (h : IsStrictlyTopologicallyFiniteType φ) (I : Ideal B) :
-    IsStrictlyTopologicallyFiniteType ((Ideal.Quotient.mk I).comp φ) :=
-  h.comp_isOpenQuotientMap (QuotientRing.isOpenQuotientMap_mk I)
+    IsStrictlyTopologicallyFiniteType ((Ideal.Quotient.mk I).comp φ) := by
+  obtain ⟨k, π, hπ, -⟩ := isStrictlyTopologicallyFiniteType_iff.mp h
+  have := hπ.isTopologicalRing
+  exact h.comp_isOpenQuotientMap (QuotientRing.isOpenQuotientMap_mk I)
 
 /-- **Finite type passes to a quotient by an ideal.** -/
 theorem IsTopologicallyFiniteType.quotientMk {φ : A →+* B} (h : IsTopologicallyFiniteType φ)
-    (I : Ideal B) : IsTopologicallyFiniteType ((Ideal.Quotient.mk I).comp φ) :=
-  h.comp_isOpenQuotientMap (QuotientRing.isOpenQuotientMap_mk I)
+    (I : Ideal B) : IsTopologicallyFiniteType ((Ideal.Quotient.mk I).comp φ) := by
+  obtain ⟨k, T, -, hT, π, hπ, -⟩ := isTopologicallyFiniteType_iff.mp h
+  have := hπ.isTopologicalRing
+  exact h.comp_isOpenQuotientMap (QuotientRing.isOpenQuotientMap_mk I)
 
 /-- **Every quotient of `A⟨X₁, …, Xₖ⟩` is strictly topologically of finite type over `A`.** This is
 the form every Laurent and rational presentation takes — Wedhorn's Examples 6.38 and 6.39 exhibit
@@ -349,8 +383,9 @@ variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [
   [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B]
   [T0Space B]
 
+omit [CompleteSpace B] in
 /-- **Strong noetherianness passes to an algebra strictly topologically of finite type.** Over a
-strongly noetherian Huber ring `A`, a complete Hausdorff nonarchimedean ring `B` admitting a map
+strongly noetherian Huber ring `A`, a Hausdorff nonarchimedean ring `B` admitting a map
 `φ : A →+* B` strictly topologically of finite type is again strongly noetherian.
 
 The intended use is Wedhorn's §8.2, where
@@ -363,6 +398,7 @@ noetherianness of the base alone. -/
 theorem IsStrictlyTopologicallyFiniteType.isStronglyNoetherian {φ : A →+* B}
     (hφ : IsStrictlyTopologicallyFiniteType φ) : IsStronglyNoetherian B := by
   obtain ⟨k, π, hπ, -⟩ := isStrictlyTopologicallyFiniteType_iff.mp hφ
+  have := hπ.completeSpace
   exact hπ.isStronglyNoetherian
 
 end StronglyNoetherian
@@ -933,10 +969,10 @@ theorem isStrictlyTopologicallyFiniteType_iff_isTopologicallyFiniteType {B : Typ
     IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType⟩
 
 /-- **Strong noetherianness passes to an algebra topologically of finite type over a Tate
-ring.** Over a strongly noetherian Tate ring `A`, a complete Hausdorff nonarchimedean ring `B`
+ring.** Over a strongly noetherian Tate ring `A`, a Hausdorff nonarchimedean ring `B`
 admitting a map `φ : A →+* B` topologically of finite type is again strongly noetherian. -/
 theorem IsTopologicallyFiniteType.isStronglyNoetherian [IsStronglyNoetherian A] {B : Type*}
-    [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B]
+    [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
     [T0Space B] {φ : A →+* B} (hφ : IsTopologicallyFiniteType φ) : IsStronglyNoetherian B :=
   hφ.isStrictlyTopologicallyFiniteType.isStronglyNoetherian
 

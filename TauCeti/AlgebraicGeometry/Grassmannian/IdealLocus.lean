@@ -188,7 +188,7 @@ private theorem comap_specMap_comp_fromSpec {A : Type u} [CommRing A] [Algebra R
     (schemeIdealLocus I hI).comap
         (Spec.map (CommRingCat.ofHom (φ : Γ(scheme R M k, U) →+* A)) ≫ hU.fromSpec) =
       ofIdealTop ((I (map φ (affinePoint hU))).map (Scheme.ΓSpecIso (.of A)).inv.hom) := by
-  rw [comap_comp, comap_fromSpec_eq_ofIdealTop, TauCeti.comap_ofIdealTop_map_ΓSpecIso_inv,
+  rw [comap_comp, comap_fromSpec_eq_ofIdealTop, comap_ofIdealTop_map_ΓSpecIso_inv,
     CommRingCat.hom_ofHom, Ideal.map_coe, hI]
   rfl
 
@@ -226,7 +226,7 @@ theorem comap_toSchemeHom_schemeIdealLocus {A : Type u} [CommRing A] [Algebra R 
       (Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a.1))) ≫ toSchemeHom N) =
     (ofIdealTop _).comap (Spec.map (CommRingCat.ofHom (algebraMap A _)))
   rw [hι, comap_toSchemeHom_of_range_subset I hI _ hU (hι ▸ hNU),
-    TauCeti.comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom, hI]
+    comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom, hI]
   rfl
 
 /-- **The universal property of the closed subscheme cut out by `I`.** For an `R`-algebra `A`, the

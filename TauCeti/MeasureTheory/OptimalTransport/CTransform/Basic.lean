@@ -20,11 +20,11 @@ against a cost `c : X × Y → ℝ` is the pointwise inequality `φ x + ψ y ≤
 fixed, the largest `ψ` satisfying it is the *infimal `c`-transform*
 `cTransform c φ y = ⨅ x, (c (x, y) - φ x)`, and symmetrically with `ψ` fixed. This file builds
 that transform, the two closure operations it generates, the `c`-concave potentials they fix,
-and the contact set on which the dual constraint is an equality. It is the finite-real slice of
-the roadmap's broader transform interface; the analytic-sublevel interface lives in
-`TauCeti.MeasureTheory.OptimalTransport.CTransform.Analytic`, and the compact attainment and
-lower-semicontinuity interface in `TauCeti.MeasureTheory.OptimalTransport.CTransform.Compact`.
-The extended-cost interface is a follow-up slice. The elementary
+and the contact set on which the dual constraint is an equality, for a finite real cost. The
+analytic-sublevel interface lives in `TauCeti.MeasureTheory.OptimalTransport.CTransform.Analytic`,
+the compact attainment and lower-semicontinuity interface in
+`TauCeti.MeasureTheory.OptimalTransport.CTransform.Compact`, and the transform for an extended
+cost in `TauCeti.MeasureTheory.OptimalTransport.CTransform.Extended`. The elementary
 upper-semicontinuity result for infimal transforms, the Borel measurability it gives with no
 hypothesis on the opposite factor, and a metric continuity result for real-valued transforms are
 included here.
@@ -39,7 +39,8 @@ no side condition, which gives the adjunction `ψ ≤ cTransform c φ ↔ φ ≤
 recorded as `TauCeti.cTransform_galoisConnection`. For an extended-valued cost the same formula
 is *not* the right one: with `c ≡ ⊤` and `φ ≡ 0`, `EReal` subtraction gives `⊤ - ⊤ = ⊥`, so the
 double transform of `φ` is `⊥` on nonempty factors and the inequality `φ ≤ φᶜᶜ` fails. The
-extended-cost interface needs its own conventions and is not built here.
+extended-cost transform needs its own conventions; `TauCeti.cTransformExtended` replaces the
+subtraction by additive residuation.
 
 Apart from the upper-semicontinuity and Borel measurability results, and the metric continuity
 result on pseudometric spaces, the two factors are bare types and the results are
@@ -92,8 +93,6 @@ marginal integrals of a dual pair meaningful.
 * `TauCeti.exists_boundedContinuousFunction_of_eq_iInf_sub` — for a bounded uniformly continuous
   cost, two real potentials each the infimal transform of the other are bounded continuous
   functions.
-
-This is the finite-real algebraic slice of Layer 2, item 2 of the optimal-transport roadmap.
 
 ## References
 
@@ -312,11 +311,13 @@ theorem cTransformSymm_coe [Nonempty Y] (c : X × Y → ℝ) (ψ : Y → ℝ) (x
 
 /-- The infimal `c`-transform of a real potential inherits a uniform modulus of continuity from
 the target-variable sections of the cost. -/
-theorem uniformContinuous_iInf_sub [PseudoMetricSpace Y] [Nonempty X]
+theorem uniformContinuous_iInf_sub [PseudoMetricSpace Y]
     {c : X × Y → ℝ} {φ : X → ℝ}
     (hc : ∀ ε > 0, ∃ δ > 0, ∀ x y y', dist y y' < δ → dist (c (x, y)) (c (x, y')) < ε)
     (hbdd : ∀ y, BddBelow (Set.range fun x ↦ c (x, y) - φ x)) :
     UniformContinuous fun y ↦ ⨅ x, (c (x, y) - φ x) := by
+  rcases isEmpty_or_nonempty X with hX | hX
+  · simpa only [Real.iInf_of_isEmpty] using uniformContinuous_const (b := (0 : ℝ))
   refine Metric.uniformContinuous_iff.2 fun ε hε ↦ ?_
   obtain ⟨δ, hδ, hcδ⟩ := hc (ε / 2) (by positivity)
   have key : ∀ y₁ y₂ : Y, dist y₁ y₂ < δ →
@@ -332,6 +333,15 @@ theorem uniformContinuous_iInf_sub [PseudoMetricSpace Y] [Nonempty X]
   have h2 := key y y' hy'
   rw [Real.dist_eq, abs_lt]
   constructor <;> linarith
+
+/-- The infimal `c`-transform of a real potential is uniformly continuous when the cost is. -/
+theorem uniformContinuous_iInf_sub_of_uniformContinuous [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {c : X × Y → ℝ} {φ : X → ℝ} (hc : UniformContinuous c)
+    (hbdd : ∀ y, BddBelow (Set.range fun x ↦ c (x, y) - φ x)) :
+    UniformContinuous fun y ↦ ⨅ x, (c (x, y) - φ x) :=
+  uniformContinuous_iInf_sub (fun ε hε ↦ by
+    obtain ⟨δ, hδ, h⟩ := Metric.uniformContinuous_iff.1 hc ε hε
+    exact ⟨δ, hδ, fun x y y' hy ↦ h (by simpa [Prod.dist_eq] using hy)⟩) hbdd
 
 /-- **Regularity of conjugate potentials.** Let `c` be a bounded uniformly continuous cost on a
 product of nonempty pseudometric spaces, and let `φ`, `ψ` be real potentials each of which is the
@@ -371,18 +381,12 @@ theorem exists_boundedContinuousFunction_of_eq_iInf_sub [PseudoMetricSpace X]
   have hψge (y : Y) : m - max (M - ψ y₀) 0 ≤ ψ y := by
     rw [hψ y]
     exact le_ciInf fun x ↦ by linarith [hcm (x, y), hφle x]
-  -- The sections of a uniformly continuous cost share a uniform modulus of continuity.
-  have hmod := Metric.uniformContinuous_iff.1 hc
   have hψu : UniformContinuous ψ := by
-    have h := uniformContinuous_iInf_sub (c := c) (φ := φ) (fun ε hε ↦ by
-      obtain ⟨δ, hδ, h⟩ := hmod ε hε
-      exact ⟨δ, hδ, fun x y y' hy ↦ h (by simpa [Prod.dist_eq] using hy)⟩) hbψ
+    have h := uniformContinuous_iInf_sub_of_uniformContinuous (φ := φ) hc hbψ
     rwa [← funext hψ] at h
   have hφu : UniformContinuous φ := by
-    have h := uniformContinuous_iInf_sub (c := fun z : Y × X ↦ c (z.2, z.1)) (φ := ψ)
-      (fun ε hε ↦ by
-        obtain ⟨δ, hδ, h⟩ := hmod ε hε
-        exact ⟨δ, hδ, fun y x x' hx ↦ h (by simpa [Prod.dist_eq] using hx)⟩) hbφ
+    have h := uniformContinuous_iInf_sub_of_uniformContinuous (c := fun z : Y × X ↦ c (z.2, z.1))
+      (φ := ψ) (hc.comp uniformContinuous_swap) hbφ
     rwa [← funext hφ] at h
   set C := |m| + max (M - φ x₀) 0 + max (M - ψ y₀) 0
   exact ⟨.ofNormedAddCommGroup φ hφu.continuous C fun x ↦ abs_le.2
@@ -761,22 +765,13 @@ section Bounded
 
 variable {c : X × Y → ℝ} {φ : X → EReal}
 
-/-- **`c`-concave potentials of a bounded cost are bounded and real.** If the cost is bounded
-and the `c`-concave potential `φ` takes a finite value somewhere, then `φ` and its
-`c`-transform take only finite values, given by two bounded real potentials `f` and `g`, and
-each of these is the real infimal transform of the other. The pair `(f, g)` is therefore a
-bounded real dual pair with the same contact set as `(φ, φᶜ)`. -/
-theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
-    (hcb : BddBelow (Set.range c)) (hca : BddAbove (Set.range c))
-    (hfin : ∃ (x : X) (a : ℝ), φ x = a) :
-    ∃ (f : X → ℝ) (g : Y → ℝ), (∀ x, φ x = f x) ∧ (∀ y, cTransform c φ y = g y) ∧
-      Bornology.IsBounded (Set.range f) ∧ Bornology.IsBounded (Set.range g) ∧
-      (∀ x, f x = ⨅ y, (c (x, y) - g y)) ∧ ∀ y, g y = ⨅ x, (c (x, y) - f x) := by
-  obtain ⟨m, hm⟩ := hcb
-  obtain ⟨M, hM⟩ := hca
-  have hm' : ∀ z, m ≤ c z := fun z ↦ hm (Set.mem_range_self z)
-  have hM' : ∀ z, c z ≤ M := fun z ↦ hM (Set.mem_range_self z)
-  obtain ⟨x₀, a, ha⟩ := hfin
+/-- **Upper bounds for `c`-concave potentials of a bounded-above cost.** If `φ` is `c`-concave and
+takes a finite value `a` somewhere, then its `c`-transform is bounded above by `M - a`, it is finite
+at some point `y₀`, and `φ` is bounded above by `M - b` where `b` is that finite value. -/
+private theorem IsCConcave.exists_transform_eq_coe_and_le (hφ : IsCConcave c φ) {M : ℝ}
+    (hM' : ∀ z, c z ≤ M) {x₀ : X} {a : ℝ} (ha : φ x₀ = a) :
+    ∃ (y₀ : Y) (b : ℝ), cTransform c φ y₀ = b ∧
+      (∀ y, cTransform c φ y ≤ ((M - a : ℝ) : EReal)) ∧ ∀ x, φ x ≤ ((M - b : ℝ) : EReal) := by
   set ψ := cTransform c φ
   have hφψ : cTransformSymm c ψ = φ := hφ.cTransformSymm_cTransform
   -- The finite value of `φ` bounds its transform from above.
@@ -795,14 +790,35 @@ theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
   obtain ⟨b, hb⟩ : ∃ b : ℝ, ψ y₀ = b :=
     ⟨(ψ y₀).toReal, (EReal.coe_toReal (ne_top_of_le_ne_top (EReal.coe_ne_top _) (hψ_le y₀))
       hy₀).symm⟩
-  have : Nonempty X := ⟨x₀⟩
-  have : Nonempty Y := ⟨y₀⟩
   -- That finite value of the transform bounds `φ` from above.
   have hφ_le (x : X) : φ x ≤ ((M - b : ℝ) : EReal) := by
     rw [← hφψ]
     refine (cTransformSymm_le c ψ x y₀).trans ?_
     rw [hb, ← EReal.coe_sub, EReal.coe_le_coe_iff]
     linarith [hM' (x, y₀)]
+  exact ⟨y₀, b, hb, hψ_le, hφ_le⟩
+
+/-- **`c`-concave potentials of a bounded cost are bounded and real.** If the cost is bounded
+and the `c`-concave potential `φ` takes a finite value somewhere, then `φ` and its
+`c`-transform take only finite values, given by two bounded real potentials `f` and `g`, and
+each of these is the real infimal transform of the other. The pair `(f, g)` is therefore a
+bounded real dual pair with the same contact set as `(φ, φᶜ)`. -/
+theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
+    (hcb : BddBelow (Set.range c)) (hca : BddAbove (Set.range c))
+    (hfin : ∃ (x : X) (a : ℝ), φ x = a) :
+    ∃ (f : X → ℝ) (g : Y → ℝ), (∀ x, φ x = f x) ∧ (∀ y, cTransform c φ y = g y) ∧
+      Bornology.IsBounded (Set.range f) ∧ Bornology.IsBounded (Set.range g) ∧
+      (∀ x, f x = ⨅ y, (c (x, y) - g y)) ∧ ∀ y, g y = ⨅ x, (c (x, y) - f x) := by
+  obtain ⟨m, hm⟩ := hcb
+  obtain ⟨M, hM⟩ := hca
+  have hm' : ∀ z, m ≤ c z := fun z ↦ hm (Set.mem_range_self z)
+  have hM' : ∀ z, c z ≤ M := fun z ↦ hM (Set.mem_range_self z)
+  obtain ⟨x₀, a, ha⟩ := hfin
+  set ψ := cTransform c φ
+  have hφψ : cTransformSymm c ψ = φ := hφ.cTransformSymm_cTransform
+  obtain ⟨y₀, b, _, hψ_le, hφ_le⟩ := hφ.exists_transform_eq_coe_and_le hM' ha
+  have : Nonempty X := ⟨x₀⟩
+  have : Nonempty Y := ⟨y₀⟩
   -- Each transform is an infimum of the cost minus a potential bounded above, hence bounded
   -- below.
   have hφ_ge (x : X) : ((m - (M - a) : ℝ) : EReal) ≤ φ x := by

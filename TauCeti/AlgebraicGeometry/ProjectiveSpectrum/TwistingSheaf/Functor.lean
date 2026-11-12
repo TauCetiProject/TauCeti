@@ -55,6 +55,8 @@ the structure sheaf.
   `AlgebraicGeometry.Proj.twistingSheafMap_app_apply_of_eq_comp` and
   `AlgebraicGeometry.Proj.twistingSheafMap_app_apply_of_eq_id` for graded homomorphisms only
   propositionally equal to a composite or to the identity.
+* `AlgebraicGeometry.Proj.res_twistingSheafMap_app_res_of_comp_eq`: the morphisms along two equal
+  composites agree on sections, up to restrictions to a common open.
 
 ## References
 
@@ -255,6 +257,14 @@ theorem twistingSheafMap_app (U : (Proj 𝒜).Opens) :
       AddCommGrpCat.ofHom (comap f hf (U := U) Set.Subset.rfl) :=
   (rfl)
 
+/-- The morphisms of twisting sheaves send the sections `r / 1` to the sections `f r / 1`. -/
+-- Not a simp lemma: `Scheme.Modules.pushforward_obj_obj` already rewrites its left-hand side.
+theorem twistingSheafMap_app_toTwistingSheaf (U : (Proj 𝒜).Opens) {j : ℕ} (h : (j : ℤ) = n)
+    (r : 𝒜 j) :
+    (twistingSheafMap f hf n).app U (toTwistingSheaf 𝒜 h U r) =
+      toTwistingSheaf ℬ h (map f hf ⁻¹ᵁ U) ⟨f r, Graded.map_mem f r.2⟩ :=
+  comap_toTwistingSheaf f hf Set.Subset.rfl h r
+
 /-- The morphisms of twisting sheaves are multiplicative on sections: they send the product of
 sections of `𝒪(m)` and `𝒪(n)` to the product of their images. -/
 theorem twistingSheafMap_app_mul {m : ℤ} (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 𝒜 m, U))
@@ -337,6 +347,32 @@ theorem twistingSheafMap_app_apply_of_eq_id (g : 𝒜 →+*ᵍ 𝒜) (hg : 𝒜�
   -- the remaining composites are of maps whose sources and targets agree with those in the goal
   -- only definitionally, so `simp` cannot split them; they unfold to the goal
   exact this
+
+variable {D ω : Type u} [CommRing D] [SetLike ω D] [AddSubgroupClass ω D] {𝒟 : ℕ → ω}
+  [GradedRing 𝒟] in
+/-- **The morphisms of twisting sheaves along two equal composites agree, on sections**: for graded
+ring homomorphisms with `g.comp f = g'.comp f'`, the images of a section under the morphisms
+induced by `f` and then `g`, and by `f'` and then `g'`, agree after restriction to a common open. -/
+theorem res_twistingSheafMap_app_res_of_comp_eq (g : ℬ →+*ᵍ 𝒟) (hg : 𝒟₊ ≤ ℬ₊.map g)
+    (f' : 𝒜 →+*ᵍ 𝒞) (hf' : 𝒞₊ ≤ 𝒜₊.map f') (g' : 𝒞 →+*ᵍ 𝒟) (hg' : 𝒟₊ ≤ 𝒞₊.map g')
+    (e : g.comp f = g'.comp f') (n : ℤ) {U : (Proj 𝒜).Opens} {V : (Proj ℬ).Opens}
+    {V' : (Proj 𝒞).Opens} {W : (Proj 𝒟).Opens} (i : W ⟶ map g hg ⁻¹ᵁ V) (j : V ⟶ map f hf ⁻¹ᵁ U)
+    (i' : W ⟶ map g' hg' ⁻¹ᵁ V') (j' : V' ⟶ map f' hf' ⁻¹ᵁ U) (s : Γ(twistingSheaf 𝒜 n, U)) :
+    (twistingSheaf 𝒟 n).presheaf.map i.op ((twistingSheafMap g hg n).app V
+      ((twistingSheaf ℬ n).presheaf.map j.op ((twistingSheafMap f hf n).app U s))) =
+    (twistingSheaf 𝒟 n).presheaf.map i'.op ((twistingSheafMap g' hg' n).app V'
+      ((twistingSheaf 𝒞 n).presheaf.map j'.op ((twistingSheafMap f' hf' n).app U s))) := by
+  refine twistingSheaf.ext fun z ↦ ?_
+  have k := DFunLike.congr_fun (localizationsMap_comp f hf g hg z.1) (s.1 ⟨_, j.le (i.le z.2)⟩)
+  have k' := DFunLike.congr_fun (localizationsMap_comp f' hf' g' hg' z.1)
+    (s.1 ⟨_, j'.le (i'.le z.2)⟩)
+  -- the maps of localizations along the two equal composites agree
+  have key : ∀ (h h' : 𝒜 →+*ᵍ 𝒟) (_ : h = h') (hh : 𝒟₊ ≤ 𝒜₊.map h) (hh' : 𝒟₊ ≤ 𝒜₊.map h')
+      (p : ProjectiveSpectrum.comap h hh z.1 ∈ U) (p' : ProjectiveSpectrum.comap h' hh' z.1 ∈ U),
+      localizationsMap h hh z.1 (s.1 ⟨_, p⟩) = localizationsMap h' hh' z.1 (s.1 ⟨_, p'⟩) := by
+    rintro h _ rfl _ _ _ _
+    rfl
+  exact (k.symm.trans (key _ _ e _ _ _ _)).trans k'
 
 end Proj
 

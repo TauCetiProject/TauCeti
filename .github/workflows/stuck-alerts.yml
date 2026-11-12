@@ -20,7 +20,7 @@ name: Stuck-automation alerts
 
 on:
   schedule:
-  - cron: "47 * * * *"   # hourly, offset from merge-sweep (:37) and housekeeping (:20)
+  - cron: "47 * * * *"   # hourly, offset from housekeeping (:20)
   workflow_dispatch: {}
 
 permissions:

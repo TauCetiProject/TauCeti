@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.TerminalPair
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.InitialPair.Weight
-public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.PentagonPair
+public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Pentagon.Pair
 import TauCeti.Algebra.BigOperators.Finset.Pairing
 import TauCeti.Algebra.CharP.Two
 
@@ -154,15 +154,13 @@ theorem sum_pentagonPairWeight_sameSide_eq_sum_partners
     obtain ⟨hfE, hsE⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
       (G.sameSidePentagonPairs_subset C x z hE)
     apply GridPentagonPairDecomposition.toRectangleDecomposition_injective
-    exact hDF.eq_of_isRecut hEF
-      (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hDF hzx)
-      (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hEF hzx) hfD hsD hfE hsE
+    exact hDF.eq_of_isRecut hEF hfD hsD hfE hsE
   · obtain ⟨hf, hs⟩ := G.isEmpty_of_mem_pentagonPairDecompositions C
       (G.sameSidePentagonPairs_subset C x z hD)
     exact G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z
       (hunpaired hF) (hunpaired hF')
       ((D.toRectangleDecomposition.existsUnique_isRecut
-        (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hDF hzx) hf hs).unique hDF hDF')
+        (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hDF) hf hs).unique hDF hDF')
 
 open scoped Classical in
 /-- The off-diagonal homotopy coefficient equation holds exactly when the remaining

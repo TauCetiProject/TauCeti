@@ -92,8 +92,8 @@ theorem connectedComponent_mk_eq_of_eqvGen {i j : ι}
       obtain ⟨f, rfl, rfl⟩ := hab
       exact iff_of_true ⟨d.fstPt f⟩ ⟨d.sndPt f⟩
     | refl a => rfl
-    | symm a b hab ih => exact ih.symm
-    | trans a b c hab hbc ih₁ ih₂ => exact ih₁.trans ih₂
+    | symm a b _ ih => exact ih.symm
+    | trans a b c _ _ ih₁ ih₂ => exact ih₁.trans ih₂
   induction h with
   | rel i j h =>
     obtain ⟨f, rfl, rfl⟩ := h
@@ -107,8 +107,8 @@ theorem connectedComponent_mk_eq_of_eqvGen {i j : ι}
         rw [sndPoint_def]
         exact connectedComponent_mk_eq d _ _ y
   | refl i => exact connectedComponent_mk_eq d i x y
-  | symm i j h ih => exact (ih y x).symm
-  | trans i j k h₁ h₂ ih₁ ih₂ =>
+  | symm i j _ ih => exact (ih y x).symm
+  | trans i j k h₁ _ ih₁ ih₂ =>
     have : Nonempty (X j) := (hn h₁).mp ⟨x⟩
     exact (ih₁ x (Classical.arbitrary (X j))).trans (ih₂ (Classical.arbitrary (X j)) y)
 
@@ -124,8 +124,9 @@ theorem mem_connectedComponent_mk_iff (x y : Σ i, X i) :
 
 variable [∀ i, Nonempty (X i)]
 
-/-- The glued curve is preconnected exactly when its dual graph is preconnected. Empty
-normalizations are allowed here. -/
+/-- The glued curve is preconnected exactly when its dual graph is preconnected. Every
+normalization component is assumed nonempty: an empty component contributes a vertex of the dual
+graph that no point of the glued curve lies over. -/
 theorem preconnectedSpace_gluedCurve_iff :
     PreconnectedSpace (GluedCurve d) ↔
       ∀ i j, Relation.EqvGen (fun i j ↦ ∃ f, d.fst f = i ∧ d.snd f = j) i j := by

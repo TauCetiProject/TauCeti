@@ -31,6 +31,8 @@ generators and the evaluation map; the theorem itself is proved in
 ## Main results
 
 * `HeckeRing.GLn.heckeGen_mem_pLocalSubring`: each generator lies in `pLocalSubring`.
+* `HeckeRing.GLn.heckeGenDiag_rev_zero`, `HeckeRing.GLn.heckeGen_rev_zero`: at the last index
+  `Fin.rev 0`, the generator is the scalar operator `T(p, …, p)`.
 * `HeckeRing.GLn.evalHom_apply`: the coefficient of the image of a polynomial at a double coset.
 * `HeckeRing.GLn.heckeGen_zero_eq_heckeTDiag`, `HeckeRing.GLn.heckeGen_one_eq_heckeTScalar`:
   for `n = 2` the generators are the classical `T(1, p)` and `T(p, p)`.
@@ -64,7 +66,7 @@ does not reduce across the module boundary, so the `NonAssocSemiring` it carries
 *definitionally* the ambient one and `MvPolynomial.eval₂Hom` will not typecheck against it.
 Writing the same structure here makes its body transparent where it is needed and nowhere else,
 which is why the upstream definitions stay sealed rather than `@[expose]`d. -/
-noncomputable local instance commSemiringIntegralHeckeRingLocal [NeZero n] :
+noncomputable local instance commSemiringIntegralHeckeRingLocal :
     CommSemiring (IntegralHeckeRing n) :=
   { (HeckeCosetModule.instSemiringHeckeRing ℤ : Semiring (IntegralHeckeRing n)) with
     mul_comm := HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
@@ -114,7 +116,11 @@ lemma heckeGenExponent_monotone (k : Fin n) : Monotone (heckeGenExponent n k) :=
   simp only [heckeGenExponent_apply]
   split_ifs <;> omega
 
-variable [NeZero n]
+/-- At the last generator index `Fin.rev 0 = n - 1`, `heckeGenDiag` is the constant tuple
+`(p, …, p)`. -/
+@[simp]
+theorem heckeGenDiag_rev_zero [NeZero n] : heckeGenDiag n p (Fin.rev 0) = fun _ ↦ p := by
+  funext i; rw [heckeGenDiag_apply, Fin.val_rev, Fin.val_zero, ite_eq_right (by omega)]
 
 include hp in
 /-- The k-th generator of pLocalSubring: `T(1,...,1,p,...,p)` with `k+1` entries of `p`. -/
@@ -122,9 +128,14 @@ noncomputable def heckeGen (k : Fin n) : IntegralHeckeRing n :=
   diagElem (heckeGenDiag n p k)
 
 include hp in
-omit hp [NeZero n] in
+omit hp in
 /-- Defining equation for the sealed definition `heckeGen`. -/
 lemma heckeGen_def (k : Fin n) : heckeGen n p k = diagElem (heckeGenDiag n p k) := (rfl)
+
+/-- The last Shimura generator `heckeGen n p (Fin.rev 0)` is the scalar operator `T(p, …, p)`. -/
+@[simp]
+theorem heckeGen_rev_zero [NeZero n] : heckeGen n p (Fin.rev 0) = diagElem (fun _ ↦ p) := by
+  rw [heckeGen_def, heckeGenDiag_rev_zero]
 
 include hp in
 omit hp in
@@ -139,7 +150,7 @@ end TGen
 
 section PolynomialRing
 
-variable [NeZero n] (p : ℕ) (hp : p.Prime)
+variable (p : ℕ) (hp : p.Prime)
 
 /-- Evaluation homomorphism: `Xₖ ↦ heckeGen k`.
     Maps `ℤ[X₁,...,Xₙ]` into the Hecke algebra. -/
@@ -227,7 +238,7 @@ lemma heckeGen_zero_eq_heckeTDiag (p : ℕ) (hp : 0 < p) :
   rw [heckeGen_def]
   have h : heckeGenDiag 2 p (0 : Fin 2) = ![1, p] := by
     funext i; simp only [heckeGenDiag_apply]; fin_cases i <;> simp
-  rw [h, heckeTDiag_eq_diagElem Nat.one_pos hp (one_dvd _)]
+  rw [h, heckeTDiag_eq_diagElem hp (one_dvd _)]
 
 /-- `heckeGen 2 p 1 = heckeTScalar p`: the second generator is the diamond operator.
 

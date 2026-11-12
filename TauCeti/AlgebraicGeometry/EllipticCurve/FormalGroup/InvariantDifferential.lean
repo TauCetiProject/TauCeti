@@ -48,10 +48,16 @@ strict isomorphism `FormalGroup.logIso` from `Ê` to the additive formal group l
 
 ## Main results
 
+* `WeierstrassCurve.derivative_formalW_mul_formalInvariantDifferentialDenom`: the differentiated
+  `w`-equation identifies the tangent slope through the same denominator.
 * `WeierstrassCurve.inv_evalEval_polynomialY_smul_derivation_div`: for any derivation `D` on a
   field and any solution `(q, w)` of the `w`-equation, `(2y + a₁x + a₃)⁻¹ • D x` at the point
-  `(x, y) = (q / w, -1 / w)` is `D q` scaled by the inverse of the denominator at `(q, w)`. This is
-  the change of coordinates from `(x, y)` to `(z, w)` in `ω`.
+  `(x, y) = (q / w, -1 / w)` is `D q` scaled by the inverse of the denominator at `(q, w)`. Division
+  is the totalized division of a field, so this is an identity for every `(q, w)`, including
+  `w = 0`; for `w ≠ 0` it is the change of coordinates from `(x, y)` to `(z, w)` in `ω`.
+* `WeierstrassCurve.inv_mul_derivation_div_subst_formalW`: over a domain with `2 ≠ 0`, the same
+  identity with a series parameter `q` (totalized division, so also for `q = 0`), read in a fraction
+  field of the series ring.
 * `WeierstrassCurve.invariantDifferential_formalGroup_mul_formalInvariantDifferentialDenom`: the
   invariant differential of `Ê` times the denominator is `1`.
 * `WeierstrassCurve.subst_pderiv_formalGroup`: `F_X(0, T)` is the denominator.
@@ -103,6 +109,20 @@ theorem formalInvariantDifferentialDenom_def :
       1 - W.a₁ • PowerSeries.X - W.a₂ • PowerSeries.X ^ 2 - (2 * W.a₃) • formalW W -
         (2 * W.a₄) • (PowerSeries.X * formalW W) - (3 * W.a₆) • formalW W ^ 2 :=
   (rfl)
+
+/-- The derivative of the `w`-expansion satisfies the differentiated Weierstrass equation,
+with the invariant-differential denominator as its coefficient. -/
+theorem derivative_formalW_mul_formalInvariantDifferentialDenom :
+    PowerSeries.derivative W.formalW * W.formalInvariantDifferentialDenom =
+    3 * PowerSeries.X ^ 2 + W.a₁ • W.formalW +
+      (2 * W.a₂) • (PowerSeries.X * W.formalW) + W.a₄ • W.formalW ^ 2 := by
+  have h := congrArg PowerSeries.derivative W.formalW_wEquation
+  rw [wEquationRHS_powerSeries] at h
+  simp only [map_add, Derivation.leibniz, PowerSeries.derivative_C,
+    PowerSeries.derivative_X, Derivation.leibniz_pow, smul_eq_mul, mul_one] at h
+  rw [formalInvariantDifferentialDenom_def]
+  simp only [PowerSeries.smul_eq_C_mul, map_mul, map_ofNat]
+  linear_combination h
 
 /-- The denominator read at a substitutable series `a`: the same expression in `a` and `w(a)`. -/
 theorem subst_formalInvariantDifferentialDenom {τ S : Type*} [CommRing S] [Algebra R S]
@@ -161,14 +181,15 @@ theorem coeff_two_formalInvariantDifferentialDenom :
 /-! ### The invariant differential in the coordinates `(z, w)` -/
 
 /-- **The invariant differential in the coordinates `z = -x / y`, `w = -1 / y`.** Let `D` be a
-derivation over `R` on a field `K`, and let `(q, w)` solve the `w`-equation of `W` with `w ≠ 0`, so
-that `(x, y) = (q / w, -1 / w)` is a point of `W⁄K`. If `2y + a₁x + a₃` and the denominator
+derivation over `R` on a field `K`, and let `(q, w)` solve the `w`-equation of `W`, so that
+`(x, y) = (q / w, -1 / w)` is a point of `W⁄K` when `w ≠ 0`. If `2y + a₁x + a₃` and the denominator
 `1 - a₁q - a₂q² - 2a₃w - 2a₄qw - 3a₆w²` do not vanish, then
 `(2y + a₁x + a₃)⁻¹ • D x = (1 - a₁q - a₂q² - 2a₃w - 2a₄qw - 3a₆w²)⁻¹ • D q`. The hypothesis on
-`2y + a₁x + a₃` is stated in the cleared form `-2 + a₁q + a₃w ≠ 0`. -/
+`2y + a₁x + a₃` is stated in the cleared form `-2 + a₁q + a₃w ≠ 0`, which is equivalent to it
+when `w ≠ 0`. -/
 theorem inv_evalEval_polynomialY_smul_derivation_div {K M : Type*} [Field K] [Algebra R K]
     [AddCommGroup M] [Module R M] [Module K M]
-    (D : Derivation R K M) {q w : K} (hw : w ≠ 0) (heq : w = wEquationRHS W q w)
+    (D : Derivation R K M) {q w : K} (heq : w = wEquationRHS W q w)
     (hG : 1 - algebraMap R K W.a₁ * q - algebraMap R K W.a₂ * q ^ 2 -
       2 * algebraMap R K W.a₃ * w - 2 * algebraMap R K W.a₄ * (q * w) -
       3 * algebraMap R K W.a₆ * w ^ 2 ≠ 0)
@@ -178,6 +199,10 @@ theorem inv_evalEval_polynomialY_smul_derivation_div {K M : Type*} [Field K] [Al
         2 * algebraMap R K W.a₃ * w - 2 * algebraMap R K W.a₄ * (q * w) -
         3 * algebraMap R K W.a₆ * w ^ 2)⁻¹ • D q := by
   rw [wEquationRHS_def] at heq
+  by_cases hw : w = 0
+  · subst hw
+    obtain rfl : q = 0 := pow_eq_zero_iff (n := 3) (by norm_num) |>.1 (by simpa using heq.symm)
+    simp
   have hd := congrArg D heq
   have hD (r : R) : D (algebraMap R K r) = 0 := D.map_algebraMap r
   rw [Affine.evalEval_polynomialY, D.leibniz_div]
@@ -204,6 +229,98 @@ theorem inv_evalEval_polynomialY_smul_derivation_div {K M : Type*} [Field K] [Al
   subst hg
   linear_combination 3 * heq
 
+/-! ### Points with series parameters
+
+Over a domain `R`, a series `q` in `R⟦σ⟧` with vanishing constant coefficient is the parameter of
+the point `(q / w(q), -1 / w(q))` of `W` over a fraction field `KK` of `R⟦σ⟧`. At such a point the
+invariant differential is `D q / G(q)` for every derivation `D`, where `G` is the denominator. -/
+
+section SeriesParameter
+
+variable {σ KK : Type*} [Field KK] [Algebra R KK] [Algebra (MvPowerSeries σ R) KK]
+  [IsScalarTower R (MvPowerSeries σ R) KK]
+
+omit [Algebra R KK] [IsScalarTower R (MvPowerSeries σ R) KK] in
+/-- The denominator at a parameter `q` has constant coefficient `1`, so it does not vanish. -/
+private theorem algebraMap_subst_formalInvariantDifferentialDenom_ne_zero [IsDomain R]
+    [IsFractionRing (MvPowerSeries σ R) KK] {q : MvPowerSeries σ R} (hq : constantCoeff q = 0) :
+    algebraMap (MvPowerSeries σ R) KK
+      (PowerSeries.subst q W.formalInvariantDifferentialDenom) ≠ 0 := by
+  refine (map_ne_zero_iff _ (IsFractionRing.injective (MvPowerSeries σ R) KK)).2 fun h ↦ ?_
+  have := congrArg constantCoeff h
+  rw [PowerSeries.constantCoeff_subst_of_constantCoeff_zero hq] at this
+  simp at this
+
+/-- The denominator at a parameter `q`, written out in `KK`. -/
+private theorem algebraMap_subst_formalInvariantDifferentialDenom {q : MvPowerSeries σ R}
+    (hq : constantCoeff q = 0) :
+    algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q W.formalInvariantDifferentialDenom) =
+      1 - algebraMap R KK W.a₁ * algebraMap (MvPowerSeries σ R) KK q -
+        algebraMap R KK W.a₂ * algebraMap (MvPowerSeries σ R) KK q ^ 2 -
+        2 * algebraMap R KK W.a₃ *
+          algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) -
+        2 * algebraMap R KK W.a₄ * (algebraMap (MvPowerSeries σ R) KK q *
+          algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W))) -
+        3 * algebraMap R KK W.a₆ *
+          algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) ^ 2 := by
+  rw [subst_formalInvariantDifferentialDenom _ (PowerSeries.HasSubst.of_constantCoeff_zero hq)]
+  simp only [Algebra.smul_def, map_sub, map_one, map_mul, map_pow, map_ofNat,
+    ← IsScalarTower.algebraMap_apply R (MvPowerSeries σ R) KK]
+
+/-- When `2 ≠ 0` in `R`, `-2 + a₁q + a₃w(q)` has constant coefficient `-2`, so it does not
+vanish. -/
+private theorem neg_two_add_ne_zero [IsFractionRing (MvPowerSeries σ R) KK] (h2 : (2 : R) ≠ 0)
+    {q : MvPowerSeries σ R} (hq : constantCoeff q = 0) :
+    -2 + algebraMap R KK W.a₁ * algebraMap (MvPowerSeries σ R) KK q +
+      algebraMap R KK W.a₃ *
+        algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) ≠ 0 := by
+  have hw0 : constantCoeff (PowerSeries.subst q (formalW W)) = 0 :=
+    PowerSeries.constantCoeff_subst_eq_zero hq _ (constantCoeff_formalW _)
+  have h : (-2 + W.a₁ • q + W.a₃ • PowerSeries.subst q (formalW W) : MvPowerSeries σ R) ≠ 0 :=
+    fun h ↦ h2 (by simpa [hq, hw0, map_ofNat] using congrArg constantCoeff h)
+  simpa [Algebra.smul_def, ← IsScalarTower.algebraMap_apply R (MvPowerSeries σ R) KK,
+    map_ofNat] using
+    (map_ne_zero_iff _ (IsFractionRing.injective (MvPowerSeries σ R) KK)).2 h
+
+/-- `(q, w(q))` solves the `w`-equation in `KK`. -/
+private theorem algebraMap_subst_formalW_eq_wEquationRHS {q : MvPowerSeries σ R}
+    (hq : constantCoeff q = 0) :
+    algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) =
+      wEquationRHS W (algebraMap (MvPowerSeries σ R) KK q)
+        (algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W))) := by
+  rw [← algebraMap_wEquationRHS,
+    ← subst_formalW_wEquation _ (PowerSeries.HasSubst.of_constantCoeff_zero hq)]
+
+/-- **The invariant differential at a point with a series parameter.** Over a ring `R` in which
+`2 ≠ 0`, put `(x, y) = (q / w(q), -1 / w(q))` for the parameter `q`, with totalized division
+(this is an affine point exactly when `q ≠ 0`; the identity also holds for `q = 0`). Every
+derivation `D` satisfies `(2y + a₁x + a₃)⁻¹ · D x = G(q)⁻¹ · D q`, where
+`G = 1 - a₁z - a₂z² - 2a₃w - 2a₄zw - 3a₆w²` is `formalInvariantDifferentialDenom`. -/
+theorem inv_mul_derivation_div_subst_formalW [IsFractionRing (MvPowerSeries σ R) KK]
+    (h2 : (2 : R) ≠ 0) (D : Derivation R KK KK)
+    {q : MvPowerSeries σ R} (hq : constantCoeff q = 0) :
+    ((W⁄KK).toAffine.polynomialY.evalEval
+        (algebraMap (MvPowerSeries σ R) KK q /
+          algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)))
+        (-1 / algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W))))⁻¹ *
+        D (algebraMap (MvPowerSeries σ R) KK q /
+          algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W))) =
+      (algebraMap (MvPowerSeries σ R) KK
+        (PowerSeries.subst q W.formalInvariantDifferentialDenom))⁻¹ *
+        D (algebraMap (MvPowerSeries σ R) KK q) := by
+  -- `R` embeds in the fraction field `KK` of its series ring, hence is a domain
+  have hinj : Function.Injective (algebraMap R KK) := by
+    rw [IsScalarTower.algebraMap_eq R (MvPowerSeries σ R) KK]
+    exact (IsFractionRing.injective (MvPowerSeries σ R) KK).comp MvPowerSeries.C_injective
+  have : IsDomain R := hinj.isDomain _
+  have hG0 := W.algebraMap_subst_formalInvariantDifferentialDenom_ne_zero (KK := KK) hq
+  rw [W.algebraMap_subst_formalInvariantDifferentialDenom hq] at hG0 ⊢
+  simpa only [smul_eq_mul] using
+    W.inv_evalEval_polynomialY_smul_derivation_div D
+    (W.algebraMap_subst_formalW_eq_wEquationRHS hq) hG0 (W.neg_two_add_ne_zero h2 hq)
+
+end SeriesParameter
+
 /-! ### The universal curve
 
 The comparison is made for the universal curve over `ℤ[A₁, ⋯, A₆]`, where the two-variable series
@@ -217,62 +334,12 @@ private abbrev UnivSeries := MvPowerSeries (Fin 2) (MvPolynomial Coeff ℤ)
 /-- The fraction field of `UnivSeries`. -/
 private abbrev UnivField := FractionRing UnivSeries
 
-/-- The denominator at a parameter `q` has constant coefficient `1`, so it does not vanish. -/
-private theorem algebraMap_subst_formalInvariantDifferentialDenom_ne_zero {q : UnivSeries}
-    (hq : constantCoeff q = 0) :
-    algebraMap UnivSeries UnivField
-      (PowerSeries.subst q Universal.curve.formalInvariantDifferentialDenom) ≠ 0 := by
-  refine (map_ne_zero_iff _ (IsFractionRing.injective UnivSeries UnivField)).2 fun h ↦ ?_
-  have := congrArg constantCoeff h
-  rw [PowerSeries.constantCoeff_subst_of_constantCoeff_zero hq] at this
-  simp at this
-
-/-- The denominator at a parameter `q`, written out in `UnivField`. -/
-private theorem algebraMap_subst_formalInvariantDifferentialDenom {q : UnivSeries}
-    (hq : constantCoeff q = 0) :
-    algebraMap UnivSeries UnivField
-        (PowerSeries.subst q Universal.curve.formalInvariantDifferentialDenom) =
-      1 - algebraMap _ UnivField Universal.curve.a₁ * algebraMap UnivSeries UnivField q -
-        algebraMap _ UnivField Universal.curve.a₂ * algebraMap UnivSeries UnivField q ^ 2 -
-        2 * algebraMap _ UnivField Universal.curve.a₃ *
-          algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve)) -
-        2 * algebraMap _ UnivField Universal.curve.a₄ * (algebraMap UnivSeries UnivField q *
-          algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve))) -
-        3 * algebraMap _ UnivField Universal.curve.a₆ *
-          algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve)) ^ 2 := by
-  rw [subst_formalInvariantDifferentialDenom _ (PowerSeries.HasSubst.of_constantCoeff_zero hq)]
-  simp only [Algebra.smul_def, map_sub, map_one, map_mul, map_pow, map_ofNat,
-    ← IsScalarTower.algebraMap_apply (MvPolynomial Coeff ℤ) UnivSeries UnivField]
-
-/-- `-2 + a₁q + a₃w(q)` has constant coefficient `-2`, so it does not vanish. -/
-private theorem neg_two_add_ne_zero {q : UnivSeries} (hq : constantCoeff q = 0) :
-    -2 + algebraMap _ UnivField Universal.curve.a₁ * algebraMap UnivSeries UnivField q +
-      algebraMap _ UnivField Universal.curve.a₃ *
-        algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve)) ≠ 0 := by
-  have hw0 : constantCoeff (PowerSeries.subst q (formalW Universal.curve)) = 0 :=
-    PowerSeries.constantCoeff_subst_eq_zero hq _ (constantCoeff_formalW _)
-  have h : (-2 + Universal.curve.a₁ • q +
-      Universal.curve.a₃ • PowerSeries.subst q (formalW Universal.curve) : UnivSeries) ≠ 0 :=
-    fun h ↦ by simpa [hq, hw0, map_ofNat] using congrArg constantCoeff h
-  simpa [Algebra.smul_def, ← IsScalarTower.algebraMap_apply (MvPolynomial Coeff ℤ) UnivSeries,
-    map_ofNat] using
-    (map_ne_zero_iff _ (IsFractionRing.injective UnivSeries UnivField)).2 h
-
 /-- The curve on which the points with series parameters live is the base change of the universal
 curve to `UnivField`. -/
 private theorem fracCurve_eq_baseChange :
     fracCurve Universal.curve (Fin 2) UnivField = Universal.curve⁄UnivField := by
   rw [fracCurve_def, ← IsScalarTower.algebraMap_eq]
   rfl
-
-/-- `(q, w(q))` solves the `w`-equation in `UnivField`. -/
-private theorem algebraMap_subst_formalW_eq_wEquationRHS {q : UnivSeries}
-    (hq : constantCoeff q = 0) :
-    algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve)) =
-      wEquationRHS Universal.curve (algebraMap UnivSeries UnivField q)
-        (algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve))) := by
-  rw [← algebraMap_wEquationRHS,
-    ← subst_formalW_wEquation _ (PowerSeries.HasSubst.of_constantCoeff_zero hq)]
 
 /-- The point with series parameter `q` is the affine point `(q / w(q), -1 / w(q))`. -/
 private theorem coords_thetaPoint (hΔ : (fracCurve Universal.curve (Fin 2) UnivField).Δ ≠ 0)
@@ -292,7 +359,7 @@ private theorem coords_thetaPoint (hΔ : (fracCurve Universal.curve (Fin 2) Univ
     refine chord_point_nonsingular _ ?_
       (algebraMap_subst_formalW_ne_zero Universal.curve hq hq0) hΔ'
     simpa [wEquationRHS_def, WeierstrassCurve.baseChange] using
-      algebraMap_subst_formalW_eq_wEquationRHS hq
+      Universal.curve.algebraMap_subst_formalW_eq_wEquationRHS hq
   rw [thetaPoint_eq_some Universal.curve hΔ hq hq0 h]
   exact ⟨Affine.Point.some_ne_zero h, Affine.Point.xCoord_some h, Affine.Point.yCoord_some h⟩
 
@@ -307,28 +374,8 @@ private theorem evalEval_polynomialY_div_ne_zero {q : UnivSeries} (hq : constant
   have hw := algebraMap_subst_formalW_ne_zero Universal.curve (KK := UnivField) hq hq0
   rw [Affine.evalEval_polynomialY]
   simp only [WeierstrassCurve.baseChange, map_a₁, map_a₃]
-  convert div_ne_zero (neg_two_add_ne_zero hq) hw using 1
+  convert div_ne_zero (Universal.curve.neg_two_add_ne_zero two_ne_zero hq) hw using 1
   field_simp
-
-/-- At the point `(q / w(q), -1 / w(q))`, `(2y + a₁x + a₃)⁻¹ · D x = G(q)⁻¹ · D q`. -/
-private theorem inv_mul_derivation_div_formalW
-    (D : Derivation (MvPolynomial Coeff ℤ) UnivField UnivField)
-    {q : UnivSeries} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    ((Universal.curve⁄UnivField).toAffine.polynomialY.evalEval
-        (algebraMap UnivSeries UnivField q /
-          algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve)))
-        (-1 / algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve))))⁻¹ *
-        D (algebraMap UnivSeries UnivField q /
-          algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve))) =
-      (algebraMap UnivSeries UnivField
-        (PowerSeries.subst q Universal.curve.formalInvariantDifferentialDenom))⁻¹ *
-        D (algebraMap UnivSeries UnivField q) := by
-  have hG0 := algebraMap_subst_formalInvariantDifferentialDenom_ne_zero hq
-  rw [algebraMap_subst_formalInvariantDifferentialDenom hq] at hG0 ⊢
-  simpa only [smul_eq_mul] using
-    Universal.curve.inv_evalEval_polynomialY_smul_derivation_div D
-    (algebraMap_subst_formalW_ne_zero Universal.curve hq hq0)
-    (algebraMap_subst_formalW_eq_wEquationRHS hq) hG0 (neg_two_add_ne_zero hq)
 
 /-- **The invariance of `ω` for the universal curve**: `F_X(X, Y) · G(X) = G(F(X, Y))`. -/
 private theorem pderiv_mul_subst_formalInvariantDifferentialDenom_universal :
@@ -364,32 +411,34 @@ private theorem pderiv_mul_subst_formalInvariantDifferentialDenom_universal :
   have hFc := constantCoeff_subst_pair_formalAdd Universal.curve hc₀ hc₁
   have hF0 := subst_pair_formalAdd_ne_zero Universal.curve hχ hc₀ hc₁ hχ₀ hχ₁
   -- the three points with parameters `X 0`, `X 1` and `F(X 0, X 1)`, and their sum relation
-  obtain ⟨hP, hPx, hPy⟩ := coords_thetaPoint hΔ hc₀ h₀
-  obtain ⟨hQ, hQx, hQy⟩ := coords_thetaPoint hΔ hc₁ h₁
-  obtain ⟨hS, hSx, hSy⟩ := coords_thetaPoint hΔ hFc hF0
+  obtain ⟨-, hPx, hPy⟩ := coords_thetaPoint hΔ hc₀ h₀
+  obtain ⟨-, hQx, hQy⟩ := coords_thetaPoint hΔ hc₁ h₁
+  obtain ⟨-, hSx, hSy⟩ := coords_thetaPoint hΔ hFc hF0
   have e := thetaPoint_add_of_subst_separates Universal.curve (KK := UnivField) hΔ hχ hc₀ hc₁
     h₀ h₁ hχ₀ hχ₁ hFc hF0
-  generalize Universal.curve.thetaPoint hΔ hc₀ h₀ = P at hP hPx hPy e
-  generalize Universal.curve.thetaPoint hΔ hc₁ h₁ = Q at hQ hQx hQy e
-  generalize Universal.curve.thetaPoint hΔ hFc hF0 = S at hS hSx hSy e
+  generalize Universal.curve.thetaPoint hΔ hc₀ h₀ = P at hPx hPy e
+  generalize Universal.curve.thetaPoint hΔ hc₁ h₁ = Q at hQx hQy e
+  generalize Universal.curve.thetaPoint hΔ hFc hF0 = S at hSx hSy e
   -- move them to `Universal.curve⁄UnivField`, the curve the derivation lemmas are stated on
   revert P Q S
   rw [fracCurve_eq_baseChange]
-  intro P hP hPx hPy Q hQ hQx hQy S hS hSx hSy e
+  intro P hPx hPy Q hQx hQy S hSx hSy e
   -- additivity of `dx / (2y + a₁x + a₃)` along `P + Q = S`
-  have key := Affine.Point.inv_smul_derivation_xCoord_add D hP hQ (e ▸ hS)
+  have key := Affine.Point.inv_smul_derivation_xCoord_add D
     (fun _ ↦ hPx ▸ hPy ▸ evalEval_polynomialY_div_ne_zero hc₀ h₀)
     (fun _ ↦ hQx ▸ hQy ▸ evalEval_polynomialY_div_ne_zero hc₁ h₁)
     (e ▸ hSx ▸ hSy ▸ evalEval_polynomialY_div_ne_zero hFc hF0)
   rw [e, hPx, hPy, hQx, hQy, hSx, hSy, smul_eq_mul, smul_eq_mul, smul_eq_mul,
-    inv_mul_derivation_div_formalW D hc₀ h₀, inv_mul_derivation_div_formalW D hc₁ h₁,
-    inv_mul_derivation_div_formalW D hFc hF0] at key
+    Universal.curve.inv_mul_derivation_div_subst_formalW two_ne_zero D hc₀,
+    Universal.curve.inv_mul_derivation_div_subst_formalW two_ne_zero D hc₁,
+    Universal.curve.inv_mul_derivation_div_subst_formalW two_ne_zero D hFc] at key
   simp only [hD, pderiv_X_self, pderiv_X_of_ne (show (1 : Fin 2) ≠ 0 by simp), map_one,
     _root_.map_zero, mul_one, mul_zero, add_zero] at key
   apply IsFractionRing.injective UnivSeries UnivField
   rw [map_mul, (inv_mul_eq_iff_eq_mul₀
-    (algebraMap_subst_formalInvariantDifferentialDenom_ne_zero hFc)).1 key]
-  field_simp [algebraMap_subst_formalInvariantDifferentialDenom_ne_zero hc₀]
+    (Universal.curve.algebraMap_subst_formalInvariantDifferentialDenom_ne_zero hFc)).1 key]
+  field_simp [Universal.curve.algebraMap_subst_formalInvariantDifferentialDenom_ne_zero
+    (KK := UnivField) hc₀]
 
 /-- For the universal curve, `F_X(0, T)` is the denominator: set `X = 0` in the invariance. -/
 private theorem subst_pderiv_formalGroup_universal :

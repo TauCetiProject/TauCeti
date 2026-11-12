@@ -277,22 +277,16 @@ theorem cup_δ_of_flat (M : Rep k G) [Module.Flat k M.V] {S : ShortComplex (Rep 
     have hδD : IsIso (_root_.TateCohomology.δ hMD n) :=
       ((_root_.TateCohomology.map_tateComplexFunctor_shortExact hMD).δIso n (n + 1) rfl
         (isZero_tensor_indBot S.X₃.V M n) (isZero_tensor_indBot S.X₃.V M (n + 1))).isIso_hom
-    -- `ψ.τ₃` is the identity, so naturality of the connecting maps along `M ◁ ψ` reads
-    -- `δ_{M ⊗ T} ≫ (M ◁ ψ.τ₁)_* = δ_{M ⊗ D}`.
+    -- `ψ.τ₃` is the identity, so it induces the identity on Tate cohomology.
     have e₃ : (tateCohomologyFunctor n).map ((tensorLeft M).mapShortComplex.map ψ).τ₃ = 𝟙 _ :=
       (congrArg (tateCohomologyFunctor n).map ((tensorLeft M).map_id S.X₃)).trans
         ((tateCohomologyFunctor n).map_id _)
-    have e := _root_.TateCohomology.δ_naturality hMT hMD ((tensorLeft M).mapShortComplex.map ψ) n
-    rw [e₃] at e
-    have e' : _root_.TateCohomology.δ hMT n ≫ (tateCohomologyFunctor (n + 1)).map (M ◁ ψ.τ₁) =
-        _root_.TateCohomology.δ hMD n :=
-      e.trans (Category.id_comp _)
-    have : IsIso (_root_.TateCohomology.δ hMT n ≫
-        (tateCohomologyFunctor (n + 1)).map (M ◁ ψ.τ₁)) := by
-      rw [e']
-      exact hδD
-    have := IsIso.of_isIso_comp_left (_root_.TateCohomology.δ hMT n)
-      ((tateCohomologyFunctor (n + 1)).map (M ◁ ψ.τ₁))
+    have : IsIso ((tateCohomologyFunctor n).map ((tensorLeft M).mapShortComplex.map ψ).τ₃) := by
+      rw [e₃]
+      exact IsIso.id _
+    have := isIso_map_τ₁_of_isIso_δ hMT hMD ((tensorLeft M).mapShortComplex.map ψ) n
+    -- `tensorLeft M` acts on a morphism `f` by `M ◁ f`, by definition.
+    rw [Functor.mapShortComplex_map_τ₁, show (tensorLeft M).map ψ.τ₁ = M ◁ ψ.τ₁ from rfl] at this
     exact (ModuleCat.mono_iff_injective _).1 inferInstance
   -- The rule for `T`, from the rule for `D` through `ψ`.
   have hT' : cup M T.X₁ p (q + 1) (n + 1) (by omega) x (_root_.TateCohomology.δ hT q y) =

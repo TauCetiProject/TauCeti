@@ -99,44 +99,49 @@ theorem mfderiv_alongCurve_mpullback (hf : IsLocalRiemannianIsometry I J f)
 
 /-! ### Arbitrary tangent fields along a curve -/
 
-/-- **Naturality of covariant differentiation along a curve under a local Riemannian isometry.**
-The differential of an isometry carries the Levi-Civita derivative of a differentiable tangent
-field along `γ` to the derivative of the transported field along `f ∘ γ`.
+omit [FiniteDimensional ℝ F] [IsContMDiffRiemannianBundle I 1 E fun x : M ↦ TangentSpace I x]
+  [IsContMDiffRiemannianBundle J 1 F fun y : N ↦ TangentSpace J y] in
+/-- The coordinate expression along a curve of a pulled-back ambient field is differentiable. -/
+private theorem differentiableWithinAt_sectionCoord_mpullback
+    (hf : IsLocalRiemannianIsometry I J f) {γ : ℝ → M} {s : Set ℝ} {t : ℝ}
+    {Y : Π y : N, TangentSpace J y}
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t) (hY : MDiffAt (T% Y) (f (γ t))) :
+    DifferentiableWithinAt ℝ
+      (sectionCoord (F := E) γ (fun r ↦ mpullback I J f Y (γ r)) (γ t)) s t := by
+  have hX : MDiffAt (T% (mpullback I J f Y)) (γ t) :=
+    hY.mpullback_vectorField (hf.contMDiff.contMDiffAt)
+      (hf.isInvertible_mfderiv _) (by simp)
+  exact differentiableWithinAt_sectionCoord γ (fun r ↦ mpullback I J f Y (γ r))
+    (hX.comp_mdifferentiableWithinAt t hγ)
+    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
 
-The hypothesis `hV` expresses differentiability of the tangent field in local bundle
-coordinates. -/
-theorem mfderiv_alongCurveWithin (hf : IsLocalRiemannianIsometry I J f)
+/-- Pairing both sides of `mfderiv_alongCurveWithin` against a differentiable field on the target
+gives the same number: the metric-compatible product rules on source and target differentiate the
+same inner product. -/
+private theorem inner_mfderiv_alongCurveWithin_eq (hf : IsLocalRiemannianIsometry I J f)
     {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set ℝ} {t : ℝ}
     (hs : UniqueDiffWithinAt ℝ s t)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hV : DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ V (γ t)) s t) :
-    mfderiv I J f (γ t)
-        (alongCurveWithin (leviCivitaConnection I M) γ V s t) =
-      alongCurveWithin (leviCivitaConnection J N) (f ∘ γ)
-        (fun r ↦ mfderiv I J f (γ r) (V r)) s t := by
+    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hfV : DifferentiableWithinAt ℝ
+      (sectionCoord (F := F) (f ∘ γ)
+        (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) s t)
+    {Y : Π y : N, TangentSpace J y} (hY : MDiffAt (T% Y) (f (γ t))) :
+    inner ℝ
+        (mfderiv I J f (γ t) (alongCurveWithin (leviCivitaConnection I M) γ V s t))
+        (Y (f (γ t))) =
+      inner ℝ
+        (alongCurveWithin (leviCivitaConnection J N) (f ∘ γ)
+          (fun r ↦ mfderiv I J f (γ r) (V r)) s t)
+        (Y (f (γ t))) := by
   let W : ∀ r, TangentSpace J ((f ∘ γ) r) :=
     fun r ↦ mfderiv I J f (γ r) (V r)
   have hfγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) J (f ∘ γ) s t :=
     (hf.mdifferentiableAt (γ t)).comp_mdifferentiableWithinAt t hγ
-  have hfV : DifferentiableWithinAt ℝ
-      (sectionCoord (F := F) (f ∘ γ)
-        (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) s t :=
-    hf.contMDiff.contMDiffAt.differentiableWithinAt_sectionCoord_mfderiv (by simp) hγ hV
-  -- Test both sides against pullbacks of differentiable fields `Y` on the target: the
-  -- metric-compatible product rules on source and target differentiate the same inner product.
-  refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (f (γ t)) ?_
-  ext Y hY
-  dsimp only
   let X : ∀ x : M, TangentSpace I x := mpullback I J f Y
-  have hX : MDiffAt (T% X) (γ t) :=
-    hY.mpullback_vectorField (hf.contMDiff.contMDiffAt)
-      (hf.isInvertible_mfderiv _) (by simp)
   have hXcoord : DifferentiableWithinAt ℝ
       (sectionCoord (F := E) γ (fun r ↦ X (γ r)) (γ t)) s t :=
-    differentiableWithinAt_sectionCoord γ (fun r ↦ X (γ r))
-      (hX.comp_mdifferentiableWithinAt t hγ)
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
+    hf.differentiableWithinAt_sectionCoord_mpullback hγ hY
   have hYcoord : DifferentiableWithinAt ℝ
       (sectionCoord (F := F) (f ∘ γ) (fun r ↦ Y ((f ∘ γ) r)) (f (γ t))) s t :=
     differentiableWithinAt_sectionCoord (f ∘ γ) (fun r ↦ Y ((f ∘ γ) r))
@@ -144,10 +149,10 @@ theorem mfderiv_alongCurveWithin (hf : IsLocalRiemannianIsometry I J f)
       (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f (γ t)))
   have hsource :=
     (isMetricCompatible_leviCivitaConnection (I := I) (M := M)).derivWithin_inner_alongCurveWithin
-      hs hγ hV hXcoord
+      hγ hV hXcoord
   have htarget :=
     (isMetricCompatible_leviCivitaConnection (I := J) (M := N)).derivWithin_inner_alongCurveWithin
-      hs hfγ hfV hYcoord
+      hfγ hfV hYcoord
   have hXY (r : ℝ) : mfderiv I J f (γ r) (X (γ r)) = Y ((f ∘ γ) r) := by
     dsimp only [X, Function.comp_apply]
     exact hf.mfderiv_apply_mpullback Y (γ r)
@@ -180,6 +185,32 @@ theorem mfderiv_alongCurveWithin (hf : IsLocalRiemannianIsometry I J f)
   dsimp only [W] at hderiv hsecond
   linarith [hsource, htarget, hderiv, hsecond]
 
+/-- **Naturality of covariant differentiation along a curve under a local Riemannian isometry.**
+The differential of an isometry carries the Levi-Civita derivative of a differentiable tangent
+field along `γ` to the derivative of the transported field along `f ∘ γ`.
+
+The hypothesis `hV` expresses differentiability of the tangent field in local bundle
+coordinates. Where `s` does not have unique derivatives at `t`, both sides take the junk value
+`0`. -/
+theorem mfderiv_alongCurveWithin (hf : IsLocalRiemannianIsometry I J f)
+    {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set ℝ} {t : ℝ}
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
+    (hV : DifferentiableWithinAt ℝ
+      (sectionCoord (F := E) γ V (γ t)) s t) :
+    mfderiv I J f (γ t)
+        (alongCurveWithin (leviCivitaConnection I M) γ V s t) =
+      alongCurveWithin (leviCivitaConnection J N) (f ∘ γ)
+        (fun r ↦ mfderiv I J f (γ r) (V r)) s t := by
+  by_cases hs : UniqueDiffWithinAt ℝ s t
+  · have hfV : DifferentiableWithinAt ℝ
+        (sectionCoord (F := F) (f ∘ γ)
+          (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) s t :=
+      hf.contMDiff.contMDiffAt.differentiableWithinAt_sectionCoord_mfderiv (by simp) hγ hV
+    refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (f (γ t)) ?_
+    ext Y hY
+    exact inner_mfderiv_alongCurveWithin_eq hf hs hγ hV hfV hY
+  · simp [alongCurveWithin_of_not_uniqueDiffWithinAt _ _ _ hs]
+
 /-- The unrestricted form of naturality of covariant differentiation along a curve under a
 local Riemannian isometry. -/
 theorem mfderiv_alongCurve (hf : IsLocalRiemannianIsometry I J f)
@@ -190,7 +221,7 @@ theorem mfderiv_alongCurve (hf : IsLocalRiemannianIsometry I J f)
       alongCurve (leviCivitaConnection J N) (f ∘ γ)
         (fun r ↦ mfderiv I J f (γ r) (V r)) t := by
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ]
-  exact hf.mfderiv_alongCurveWithin uniqueDiffWithinAt_univ hγ.mdifferentiableWithinAt
+  exact hf.mfderiv_alongCurveWithin hγ.mdifferentiableWithinAt
     hV.differentiableWithinAt
 
 end TauCeti.IsLocalRiemannianIsometry

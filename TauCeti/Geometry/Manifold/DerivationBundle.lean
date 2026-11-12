@@ -32,12 +32,8 @@ a canonical linear map from the ordinary tangent space to the algebraic point de
 * `pointDerivationEquivTangentSpace`: the resulting canonical linear equivalence.
 * `PointDerivation.congr_of_eventuallyEq`: on a finite-dimensional Hausdorff real manifold, a point
   derivation depends only on the germ of a smooth function at its basepoint.
+* `Derivation.apply_congr_of_eventuallyEq`: derivations of smooth functions are local operators.
 * `tangentToPointDerivation_mfderiv`: this association commutes with differentials.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The Lie algebra and the tangent space at `1`".
 -/
 
 public section
@@ -129,15 +125,6 @@ theorem tangentToPointDerivation_injective
   rw [hd] at hfv
   exact hfv
 
-/-- The constant smooth map `algebraMap ℝ C^∞⟮…⟯ s` takes the value `s` at every point.
-
-The algebra structure on smooth maps is pointwise, so this holds by unfolding; stating it gives
-that normalization a name, so the proofs below need not rely on it silently. -/
-private theorem algebraMap_contMDiffMap_apply {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (s : ℝ) (y : E) :
-    (algebraMap ℝ C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯ s) y = s :=
-  rfl
-
 /-- **Subtracting its value at the base point does not change a derivation**, since the constant
 subtracted off is annihilated by `D`. -/
 private theorem derivation_sub_algebraMap {E : Type*} [NormedAddCommGroup E]
@@ -173,7 +160,7 @@ private theorem derivation_mul_sub_algebraMap {E : Type*} [NormedAddCommGroup E]
   change D (p * r) = p x * D r + r x * D p at hleibniz
   have hrx : r x = 0 := by
     rw [hr]
-    simp [algebraMap_contMDiffMap_apply]
+    simp
   rw [hleibniz, hrx, hr, derivation_sub_algebraMap, zero_mul, add_zero]
 
 private theorem tangentToPointDerivation_surjective_model
@@ -184,8 +171,7 @@ private theorem tangentToPointDerivation_surjective_model
   -- Read `D` on a finite coordinate system and use those values as the coordinates of the
   -- candidate tangent vector.
   let b := Module.finBasis ℝ E
-  let c (i : Fin (Module.finrank ℝ E)) : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯ :=
-    ⟨b.coord i, (b.coord i).toContinuousLinearMap.contDiff.contMDiff⟩
+  let c := b.smoothCoord
   -- `PointedContMDiffMap` is a type synonym for `C^∞⟮…⟯`, so `D` applies to an ordinary smooth
   -- map directly and no pointed-map wrapper is needed.
   let v : TangentSpace (modelWithCornersSelf ℝ E) x := ∑ i, D (c i) • b i
@@ -199,7 +185,7 @@ private theorem tangentToPointDerivation_surjective_model
   -- Hadamard's lemma factors `f - f(x)` through the coordinate functions, with smooth factors,
   -- so this identity lives in the algebra on which the derivation acts.
   obtain ⟨a, hax, ha⟩ := ContMDiffMap.exists_hadamard_coords f' x b
-  have hfactor := TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap x f' a c ha
+  have hfactor := TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap x f' a c (by simpa [c] using ha)
   -- `D`'s domain is a type synonym for `C^∞⟮…⟯`, so the sum below lives *syntactically* in the
   -- unpointed type and `rw` cannot use `map_sum` as stated; this restatement supplies the
   -- matching form, and holds by definitional unfolding alone.
@@ -263,6 +249,16 @@ theorem congr_of_eventuallyEq
   exact sub_eq_zero.mp (heq.trans hsub).symm
 
 end PointDerivation
+
+/-- **Locality of derivations.** On a finite-dimensional Hausdorff real manifold, a derivation of
+`C^∞(M, ℝ)` evaluated at `x` depends only on the germ of the function at `x`. -/
+theorem Derivation.apply_congr_of_eventuallyEq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+    (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) {f g : C^∞⟮I, M; ℝ⟯} {x : M}
+    (hfg : (f : M → ℝ) =ᶠ[𝓝 x] g) : δ f x = δ g x :=
+  (Derivation.evalAt x δ).congr_of_eventuallyEq f g hfg
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}

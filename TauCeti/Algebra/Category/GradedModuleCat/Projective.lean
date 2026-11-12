@@ -84,17 +84,17 @@ theorem exists_isHomogeneous_comp_eq_of_epi (P : GradedModuleCat.{v} 𝒜) [Proj
     ∃ v : P →ₗ[A] L, LinearMap.IsHomogeneous v P.grading.piece L.grading.piece p ∧
       g.hom ∘ₗ v = u := by
   -- A map of degree `p` into `N` is a map of degree zero into the shift `N{-p}`.
-  have hdeg {N : GradedModuleCat.{v} 𝒜} (f : P →ₗ[A] N) :
-      LinearMap.IsHomogeneous f P.grading.piece N.grading.piece p ↔
-        LinearMap.IsHomogeneous f P.grading.piece (N.shiftObj (-p)).grading.piece 0 := by
-    simp only [LinearMap.isHomogeneous_def, InternalGrading.shift_piece, neg_neg, add_zero]
   have : Epi ((shiftFunctor (-p)).map g) :=
     (epi_iff_surjective _).2 ((epi_iff_surjective g).1 ‹_›)
-  let u' : P ⟶ M.shiftObj (-p) := ofHom u ((hdeg u).1 hu)
-  refine ⟨(Projective.factorThru u' ((shiftFunctor (-p)).map g)).hom,
-    (hdeg (N := L) _).2 (Projective.factorThru u' ((shiftFunctor (-p)).map g)).isHomogeneous, ?_⟩
-  have hl := congrArg Hom.hom (Projective.factorThru_comp u' ((shiftFunctor (-p)).map g))
-  rwa [hom_comp, hom_shiftFunctor_map] at hl
+  let u' : P ⟶ M.shiftObj (-p) := ofHom u (by
+    rw [_root_.LinearMap.isHomogeneous_shiftObj_iff]
+    simpa only [zero_sub, neg_neg] using hu)
+  refine ⟨(Projective.factorThru u' ((shiftFunctor (-p)).map g)).hom, ?_, ?_⟩
+  · simpa only [zero_sub, neg_neg] using
+      (_root_.LinearMap.isHomogeneous_shiftObj_iff (M := P) (N := L) _ (-p) 0).1
+        (Projective.factorThru u' ((shiftFunctor (-p)).map g)).isHomogeneous
+  · have hl := congrArg Hom.hom (Projective.factorThru_comp u' ((shiftFunctor (-p)).map g))
+    rwa [hom_comp, hom_shiftFunctor_map] at hl
 
 variable [DirectSum.Decomposition 𝒜]
 

@@ -45,9 +45,7 @@ Sobolev functions and density results comparing different domains are not proved
 
 ## References
 
-This is the arbitrary-order `C_c^∞(Ω)`-closure part of Lane A.2 in
-`TauCetiRoadmap/PDE/README.md`.  The construction follows L. C. Evans, *Partial Differential
-Equations*, Section 5.2.
+The construction follows L. C. Evans, *Partial Differential Equations*, Section 5.2.
 -/
 
 public section
@@ -215,7 +213,6 @@ theorem hasWeakFDerivOn_iteratedGradientTestFunctionLp (k : ℕ)
   have hclassical : HasWeakFDerivOn mu Omega (iteratedGradientTestFunction phi k)
       (fderiv ℝ (iteratedGradientTestFunction phi k)) :=
     hasWeakFDerivOn_of_differentiableOn
-      ((hsmooth.continuous.locallyIntegrable (μ := mu)).locallyIntegrableOn (Omega : Set E))
       (((contDiff_infty_iff_fderiv.mp hsmooth).2.continuous.locallyIntegrable
         (μ := mu)).locallyIntegrableOn (Omega : Set E))
       fun x _ => (hsmooth.differentiable (by simp)) x

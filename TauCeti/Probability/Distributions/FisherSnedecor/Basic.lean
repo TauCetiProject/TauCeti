@@ -394,7 +394,7 @@ private theorem abs_deriv_mul_fisherSnedecorPDFReal (hm : 0 < m) (hn : 0 < n)
   rw [hscale]
   have hsum : m / 2 + n / 2 = (m + n) / 2 := by ring
   rw [← hsum]
-  have hchart := abs_deriv_smul_one_add_rpow (m / 2) (n / 2) hu
+  have hchart := abs_deriv_smul_one_add_rpow (m / 2) (n / 2) hu.2
   simp only [smul_eq_mul, abs_of_pos (inv_pos.mpr (sq_pos_of_pos h1u))] at hchart
   calc
     (n / m) * ((1 - u) ^ 2)⁻¹ *
@@ -433,7 +433,6 @@ theorem fisherSnedecorMeasure_eq_withDensity (m n : ℝ) :
     rw [fisherSnedecorMeasure_eq_map hm hn, betaMeasure_eq_withDensity_restrict_Ioo,
       withDensity_congr_ae hweight,
       MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioo
-        (measurable_fisherSnedecorMap m n)
         (fun u hu ↦ (hasDerivAt_fisherSnedecorMap m n hu.2.ne).hasDerivWithinAt)
         ((fisherSnedecorMap_strictMonoOn hm hn).injOn.mono fun _ hu ↦ hu.2),
       fisherSnedecorMap_image_Ioo hm hn, ← withDensity_indicator measurableSet_Ioi,
@@ -501,7 +500,6 @@ theorem support_fisherSnedecorMeasure (hm : 0 < m) (hn : 0 < n) :
     rw [Function.mem_support, mem_Ioi]
     refine ⟨fun hx ↦ lt_of_not_ge fun hx' ↦ hx (fisherSnedecorPDF_of_nonpos hx' m n), fun hx ↦ ?_⟩
     rw [fisherSnedecorPDF_of_pos hm hn hx, ENNReal.ofReal_ne_zero_iff]
-    have hbase : 0 < 1 + m * x / n := by positivity
     have := Real.Gamma_pos_of_pos (by positivity : 0 < (m + n) / 2)
     have := Real.Gamma_pos_of_pos (by positivity : 0 < m / 2)
     have := Real.Gamma_pos_of_pos (by positivity : 0 < n / 2)

@@ -17,10 +17,10 @@ public import TauCeti.Probability.Cdf
 This file develops uniform probability measures on finite discrete spaces.  It identifies the
 conditional counting measure `ProbabilityTheory.uniformOn` with Mathlib's finite Dirac-sum
 measure, computes its masses and Bochner integrals, and shows that embeddings transport finite
-uniform measures to uniform measures on their images. For labels in a measurable space, it
-computes masses by counting inputs, retaining multiplicities of repeated labels; for real labels,
-it also computes the cdf. Quantile formulas and endpoint limits are in
-`TauCeti.Probability.Distributions.Uniform.Quantile`.
+uniform measures to uniform measures on their images, including uniform `n`-element subsets. For
+labels in a measurable space, it computes masses by counting inputs, retaining multiplicities of
+repeated labels; for real labels, it also computes the cdf. Quantile formulas and endpoint limits
+are in `TauCeti.Probability.Distributions.Uniform.Quantile`.
 
 ## Main results
 
@@ -55,7 +55,7 @@ finite sum of Dirac measures.  This includes the common zero-measure convention 
 set. -/
 theorem uniformOn_coe_finset_eq_uniformOfFinset (s : Finset α) :
     uniformOn (s : Set α) = Measure.uniformOfFinset s := by
-  ext t ht
+  ext t _
   rw [uniformOn, cond_apply s.measurableSet, Measure.uniformOfFinset_apply]
   rw [Measure.count_apply_finset]
   rw [Measure.count_apply_finite _ (s.finite_toSet.inter_of_left t)]
@@ -105,13 +105,6 @@ theorem uniformOn_univ_real_finset [Fintype α] (s : Finset α) :
 end Finset
 
 namespace TauCeti.Probability
-
-/-- Every point of a nonempty finite type has mass the reciprocal of the cardinality under the
-uniform law. -/
-@[simp]
-theorem uniformOn_univ_apply_singleton [Fintype α] (a : α) :
-    uniformOn (Set.univ : Set α) {a} = (Fintype.card α : ℝ≥0∞)⁻¹ := by
-  simpa using Finset.uniformOn_coe_finset_apply_singleton (Finset.univ : Finset α) a
 
 /-- The cdf after assigning real labels to a uniform sample from a nonempty finite type is the
 proportion of labels no larger than the cutoff. Equal labels are counted with their full
@@ -205,16 +198,43 @@ theorem map_uniformOn_finset (e : α ↪ β) (s : Finset α) :
   simpa only [Finset.coe_map] using
     e.injective.injOn.bijOn_image.map_uniformOn
 
+section PowersetCard
+
+variable {γ δ : Type*}
+    [MeasurableSpace (Finset γ)] [MeasurableSingletonClass (Finset γ)]
+    [MeasurableSpace (Finset δ)] [MeasurableSingletonClass (Finset δ)]
+
+/-- An embedding sends a uniform `n`-element subset of a finset `s` to a uniform `n`-element
+subset of the image of `s`. This moves positions indexed by `Fin N` into `ℕ`. -/
+theorem map_finsetMap_uniformOn_powersetCard (f : γ ↪ δ) (s : Finset γ) (n : ℕ) :
+    (uniformOn (s.powersetCard n : Set (Finset γ))).map (Finset.map f) =
+      uniformOn ((s.map f).powersetCard n : Set (Finset δ)) := by
+  rw [Finset.powersetCard_map]
+  exact (Finset.mapEmbedding f).toEmbedding.map_uniformOn_finset _
+
+end PowersetCard
+
 end Function.Embedding
 
 namespace Equiv
 
-variable [MeasurableSpace β] [MeasurableSingletonClass β]
+variable [MeasurableSpace β]
 
 /-- A bijection transports the uniform law on a type to the uniform law on its codomain. -/
 theorem map_uniformOn_univ (e : α ≃ β) :
     (uniformOn (_root_.Set.univ : Set α)).map e = uniformOn (_root_.Set.univ : Set β) := by
-  exact e.bijective.bijOn_univ.map_uniformOn
+  by_cases hα : Finite α
+  · have he : Measurable e := .of_discrete
+    ext t ht
+    rw [Measure.map_apply he ht]
+    simp only [uniformOn, cond_apply .univ, _root_.Set.univ_inter, Measure.count_apply .univ,
+      Measure.count_apply ht, Measure.count_apply (he ht)]
+    rw [Set.encard_univ, Set.encard_univ, ENat.card_congr e,
+      Set.encard_preimage_of_injective_subset_range e.injective (by simp)]
+  · have hα' : Infinite α := not_finite_iff_infinite.mp hα
+    have hβ : Infinite β := Infinite.of_injective e e.injective
+    rw [(uniformOn_eq_zero' .univ).2 (Or.inl Set.infinite_univ),
+      (uniformOn_eq_zero' .univ).2 (Or.inl Set.infinite_univ), Measure.map_zero]
 
 end Equiv
 
@@ -283,16 +303,15 @@ theorem ae_mem_image_map_uniformOn_finset [MeasurableSingletonClass β] (s : Fin
 
 open Classical in
 /-- Every label attained by a finite uniform sample has nonzero mass. -/
-theorem map_uniformOn_finset_singleton_ne_zero [MeasurableSingletonClass β]
-    (s : Finset α) (f : α → β)
+theorem map_uniformOn_finset_singleton_ne_zero (s : Finset α) (f : α → β)
     {x : β} (hx : x ∈ s.image f) : (uniformOn (s : Set α)).map f {x} ≠ 0 := by
   classical
   obtain ⟨i, hi, rfl⟩ := mem_image.mp hx
-  rw [Measure.map_apply_of_aemeasurable (s.aemeasurable_uniformOn_finset f)
-    (measurableSet_singleton _)]
   apply ne_of_gt
   calc
     0 < uniformOn (s : Set α) {i} := by simp [hi]
     _ ≤ uniformOn (s : Set α) (f ⁻¹' {f i}) := measure_mono (by simp)
+    _ ≤ (uniformOn (s : Set α)).map f {f i} :=
+      Measure.le_map_apply (s.aemeasurable_uniformOn_finset f) _
 
 end Finset

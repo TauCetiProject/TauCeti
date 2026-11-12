@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import TauCeti.Analysis.Calculus.IteratedGradient
+public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Calculus.Morse.Basic
 -- Private: symmetry of the second derivative, strict differentiability, and the
 -- gradient/Fréchet-derivative norm comparison are used only in proofs below.
@@ -44,7 +45,10 @@ results that identify the operator as the derivative of the gradient and prove s
 
 * `TauCeti.hessianOperator`: the Riesz-represented Hessian as an endomorphism of the Hilbert space.
 * `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
-* `OrthonormalBasis.toMatrix_hessianOperator_apply`: its entries in an orthonormal basis.
+* `OrthonormalBasis.toMatrix_hessianOperator_apply` and `OrthonormalBasis.det_hessianOperator`:
+  its entries and its determinant in an orthonormal basis.
+* `TauCeti.hessianOperator_single_apply`: for a `C²` function on `ℝⁿ`, its entries in the
+  standard basis are the second partial derivatives.
 * `ContDiffAt.contDiffAt_hessianOperator`: pointwise regularity of the Hessian field.
 * `ContDiffAt.fderiv_hessianOperator_apply`: its directional derivative is the Hessian of the
   directional derivative of the function.
@@ -132,6 +136,26 @@ theorem _root_.OrthonormalBasis.toMatrix_hessianOperator_apply {ι : Type*} [Fin
   simp only [LinearMap.toMatrix_apply, b.coe_toBasis, b.coe_toBasis_repr_apply,
     ContinuousLinearMap.coe_coe, b.repr_apply_apply]
   rw [real_inner_comm, inner_hessianOperator_left]
+
+/-- In an orthonormal basis, the determinant of the Hessian operator is the determinant of the
+matrix whose entry in row `i` and column `j` is the second derivative with the input directions
+`b j` and `b i`. -/
+theorem _root_.OrthonormalBasis.det_hessianOperator {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : OrthonormalBasis ι ℝ E) (f : E → ℝ) (x : E) :
+    (hessianOperator f x).det = (Matrix.of fun i j => fderiv ℝ (fderiv ℝ f) x (b j) (b i)).det := by
+  rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix b.toBasis]
+  congr 1
+  ext i j
+  exact b.toMatrix_hessianOperator_apply f x i j
+
+/-- In the standard basis of `ℝⁿ`, the entries `(D²u(y) eⱼ)ᵢ` of the Hessian operator of a function
+`C²` at `y` are the second partial derivatives `∂ᵢ∂ⱼu(y)`. -/
+theorem hessianOperator_single_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {u : EuclideanSpace ℝ ι → ℝ} {y : EuclideanSpace ℝ ι} (hu : ContDiffAt ℝ 2 u y) (i j : ι) :
+    hessianOperator u y (EuclideanSpace.single j 1) i =
+      fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+  rw [← hu.isSymmSndFDerivAt (by simp), ← inner_hessianOperator_left]
+  simp [EuclideanSpace.inner_single_right]
 
 /-- Applying the Riesz map to the Hessian operator recovers the dual-valued second derivative. -/
 @[simp]

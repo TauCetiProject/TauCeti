@@ -71,14 +71,25 @@ structure TwoTermSupport where
   ne : a ≠ b
   /-- All differentials out of the high term vanish. -/
   outgoing : ∀ j, K.d b j = 0
-  /-- All differentials into the low term vanish. -/
-  incoming : ∀ j, K.d j a = 0
   /-- Every other term is zero. -/
   support : ∀ j, j ≠ a → j ≠ b → IsZero (K.X j)
 
 namespace TwoTermSupport
 
-variable {C₁} [HasZeroObject C₁]
+variable {C₁}
+
+/-- All differentials into the low term vanish: a differential into the low term starts at the
+high term, where every differential vanishes, or at a zero term. -/
+theorem incoming (s : TwoTermSupport C₁) (j : ℤ) : s.K.d j s.a = 0 := by
+  by_cases hj : j = s.b
+  · subst hj
+    exact s.outgoing _
+  by_cases hja : j = s.a
+  · subst hja
+    exact s.K.shape _ _ (by simp)
+  · exact (s.support j hja hj).eq_of_src _ _
+
+variable [HasZeroObject C₁]
 
 local notation "c" => ComplexShape.up ℤ
 

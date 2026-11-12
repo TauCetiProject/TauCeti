@@ -23,18 +23,16 @@ a `ℂ`-linear endomorphism `frickeOperator` of `M_k(Γ₁(N))` and `frickeOpera
 
 `frickeOperator` is the **raw slash by `W`**: it carries no normalizing scalar, and it is
 therefore **not an involution**. With mathlib's weight-`k` slash and `W² = (-N) • 1`
-(`coe_frickeGL_sq`) it squares to multiplication by the scalar `N ^ (2 * (k - 1)) * (-N) ^ (-k)`,
+(`frickeGL_sq`) it squares to multiplication by the scalar `N ^ (2 * (k - 1)) * (-N) ^ (-k)`,
 that is `(-1) ^ k * N ^ (k - 2)`. That scalar is `frickeScalar N k` and the identity is
 `frickeGL_sq_slash`, both in `TauCeti/NumberTheory/ModularForms/Fricke/Involution.lean`; they are
 not restated here.
 
-The roadmap's Fricke operator is the **normalized** `𝒲_N = (√N) ^ (2 - k) • (· ∣[k] W)`, which
-brings that scalar down to `(-1) ^ k` and so is an involution in even weight — the weights the
-sign theory lives in. It is a later rung, and every downstream statement about signs, eigenvalues
-and functional equations is about `𝒲_N`, not about the map defined here. The name
-`frickeOperator` is AINTLIB's own name for the un-normalized map that this file ports, and the
-roadmap names it as the declaration to migrate, so it is kept; a consumer wanting `𝒲_N` must
-supply the normalization.
+The **normalized** Fricke operator is `𝒲_N = (√N) ^ (2 - k) • (· ∣[k] W)`, which brings that
+scalar down to `(-1) ^ k` and so is an involution in even weight — the weights the sign theory
+lives in. Statements about signs, eigenvalues and functional equations are about `𝒲_N`, not about
+the map defined here. The name `frickeOperator` is AINTLIB's own name for the un-normalized map
+that this file ports; a consumer wanting `𝒲_N` must supply the normalization.
 
 ## Construction
 
@@ -82,8 +80,7 @@ transport of the later Fricke rungs is built from.
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GL2/Fricke.lean`](https://github.com/CBirkbeck/AINTLIB),
-commit `340875adfb2`, Apache-2.0, Chris Birkbeck), realizing part of Layer 6 of the ModularForms
-roadmap.
+commit `340875adfb2`, Apache-2.0, Chris Birkbeck).
 
 AINTLIB slashes by `(frickeGL N : GL (Fin 2) ℚ)` and lets the coercion to `GL (Fin 2) ℝ` do the
 work, so its `frickeSlash_invariant` consumes the hand-transported identity

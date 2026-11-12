@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Order.IntermediateValue
+import Mathlib.Topology.Algebra.Order.Group
+import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Order.Compact
+import Mathlib.Topology.Order.ProjIcc
 
 /-!
 # Intervals in order topologies
@@ -15,12 +18,18 @@ An unordered closed interval is a neighbourhood of each of its points other than
 Each point of the open interval between two endpoints that avoids a closed set is interior to a
 closed subinterval whose interior avoids that set.
 A nonempty compact subset of an open interval lies in the interior of a smaller closed interval.
+An open set containing a closed interval contains an open interval around it.
 Every nonempty closed unbounded order-connected set in a conditionally complete linear order is
 a left half-line, a right half-line, or the whole space.
 
-The image of a half-infinite real interval under a continuous strictly monotone map is determined
+A continuous function on a half-infinite interval, above `v`, tending to `v` at infinity and to `+∞`
+at the finite endpoint, has image `Ioi v`.
+The image of a half-infinite interval under a continuous strictly monotone map is determined
 by its value at the finite endpoint and its limit at infinity.  The endpoint at infinity is omitted
 when the limit is finite.
+A continuous strictly increasing function on a compact interval has a continuous inverse on
+its range, extended to the whole codomain by clamping.
+A path that starts in an open set and leaves it has a first exit time.
 
 ## Main results
 
@@ -29,14 +38,26 @@ when the limit is finite.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
   outside a closed set `s` lies in the interior of a closed subinterval of `[[a, b]]` whose
   interior is disjoint from `s`.
+* `TauCeti.tendsto_sub_nhdsGT_nhdsWithin_Icc` — the curve `δ ↦ b - δ` tends to `b` within `[a, b]`
+  as `δ → 0⁺`.
 * `IsCompact.exists_Icc_between` — a nonempty compact subset of `Ioo a b` lies in the interior of
   a closed interval contained in `Ioo a b`.
+* `IsOpen.exists_Ioo_subset_of_uIcc_subset` — an open set containing `[[a, b]]` contains an open
+  interval around it.
 * `Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ` — classification of nonempty closed unbounded
   order-connected sets.
-* `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly
-  increasing map
-  on `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
+* `ContinuousOn.apply_ne_apply_of_injOn_Ico` — a continuous function injective on `[a, b)` takes
+  different values at `a` and `b`.
+* `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly increasing map on
+  `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
   endpoint value and its limit.
+* `ContinuousOn.image_Ioi_eq_Ioi_of_tendsto`, `ContinuousOn.image_Iio_eq_Ioi_of_tendsto` — a
+  continuous function on a half-infinite interval that stays above `v`, tends to `v` at infinity
+  and to `+∞` at the finite endpoint has image `Ioi v`.
+* `TauCeti.exists_continuous_projIcc_inverse` — a continuous strictly increasing function on
+  `[a, b]` has a continuous inverse on its range, clamped to be constant outside it.
+* `IsOpen.exists_first_exit` — a path continuous on `[a, b]` that starts in an open set and leaves
+  it has a first exit time.
 -/
 
 public section
@@ -85,6 +106,23 @@ theorem _root_.IsCompact.exists_Icc_between {α : Type*} [LinearOrder α] [Topol
   exact ⟨c, d, fun x hx ↦ ⟨hcm.trans_le (hm hx), (hM hx).trans_lt hMd⟩,
     fun x hx ↦ ⟨hac.trans_le hx.1, hx.2.trans_lt hdb⟩⟩
 
+/-- An open set `s` containing the unordered closed interval `[[a, b]]` contains an open interval
+`Ioo c d` around `[[a, b]]`. -/
+theorem _root_.IsOpen.exists_Ioo_subset_of_uIcc_subset {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [NoMinOrder α] [NoMaxOrder α] {s : Set α}
+    (hs : IsOpen s) {a b : α} (h : uIcc a b ⊆ s) :
+    ∃ c d, uIcc a b ⊆ Ioo c d ∧ Ioo c d ⊆ s := by
+  obtain ⟨c, hc, hcs⟩ := exists_Ioc_subset_of_mem_nhds
+    (hs.mem_nhds (h ⟨le_rfl, inf_le_sup⟩)) (exists_lt (a ⊓ b))
+  obtain ⟨d, hd, hds⟩ := exists_Ico_subset_of_mem_nhds
+    (hs.mem_nhds (h ⟨inf_le_sup, le_rfl⟩)) (exists_gt (a ⊔ b))
+  refine ⟨c, d, fun u hu ↦ ⟨hc.trans_le hu.1, hu.2.trans_lt hd⟩, fun u hu ↦ ?_⟩
+  rcases le_or_gt u (a ⊓ b) with hu₁ | hu₁
+  · exact hcs ⟨hu.1, hu₁⟩
+  rcases le_or_gt (a ⊔ b) u with hu₂ | hu₂
+  · exact hds ⟨hu₂, hu.2⟩
+  exact h ⟨hu₁.le, hu₂.le⟩
+
 /-- A nonempty closed order-connected set which is not bounded on both sides is a right
 half-line, a left half-line, or the whole space. -/
 theorem _root_.Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ
@@ -92,30 +130,24 @@ theorem _root_.Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ
     {s : Set α} (hs : s.OrdConnected) (hne : s.Nonempty) (hclosed : IsClosed s)
     (hunbounded : ¬(BddBelow s ∧ BddAbove s)) :
     (∃ a, s = Ici a) ∨ (∃ b, s = Iic b) ∨ s = univ := by
-  have exists_gt (x : α) (h : ¬BddAbove s) : ∃ y ∈ s, x < y := by
-    by_contra! h'
-    exact h ⟨x, h'⟩
-  have exists_lt (x : α) (h : ¬BddBelow s) : ∃ y ∈ s, y < x := by
-    by_contra! h'
-    exact h ⟨x, h'⟩
   by_cases hbelow : BddBelow s
   · have habove : ¬BddAbove s := fun h ↦ hunbounded ⟨hbelow, h⟩
     refine Or.inl ⟨sInf s, ?_⟩
     rw [← upperClosure_eq_Ici_csInf hne hbelow hclosed]
     apply Subset.antisymm subset_upperClosure
     rintro x ⟨y, hy, hyx⟩
-    obtain ⟨z, hz, hxz⟩ := exists_gt x habove
+    obtain ⟨z, hz, hxz⟩ := not_bddAbove_iff.1 habove x
     exact hs.out hy hz ⟨hyx, hxz.le⟩
   · by_cases habove : BddAbove s
     · refine Or.inr <| Or.inl ⟨sSup s, ?_⟩
       rw [← lowerClosure_eq_Iic_csSup hne habove hclosed]
       apply Subset.antisymm subset_lowerClosure
       rintro x ⟨y, hy, hxy⟩
-      obtain ⟨z, hz, hzx⟩ := exists_lt x hbelow
+      obtain ⟨z, hz, hzx⟩ := not_bddBelow_iff.1 hbelow x
       exact hs.out hz hy ⟨hzx.le, hxy⟩
     · refine Or.inr <| Or.inr <| eq_univ_of_forall fun x ↦ ?_
-      obtain ⟨y, hy, hyx⟩ := exists_lt x hbelow
-      obtain ⟨z, hz, hxz⟩ := exists_gt x habove
+      obtain ⟨y, hy, hyx⟩ := not_bddBelow_iff.1 hbelow x
+      obtain ⟨z, hz, hxz⟩ := not_bddAbove_iff.1 habove x
       exact hs.out hy hz ⟨hyx.le, hxz.le⟩
 
 /-- **A continuous strictly increasing map sends a half-line to a half-open interval.** The finite
@@ -127,21 +159,138 @@ theorem _root_.ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto
     (hdcont : ContinuousOn d (Ici p))
     (hdmono : StrictMonoOn d (Ici p)) (hdl : Tendsto d atTop (𝓝 D)) :
     d '' Ici p = Ico (d p) D := by
-  have hle : ∀ x ∈ Ici p, d x ≤ D := by
-    intro x hx
-    apply ge_of_tendsto hdl
-    filter_upwards [eventually_ge_atTop x] with y hxy
-    have hy : y ∈ Ici p := hx.trans hxy
-    exact hdmono.monotoneOn hx hy hxy
-  apply Subset.antisymm
-  · rintro _ ⟨x, hx, rfl⟩
-    have hxp : p ≤ x := hx
-    obtain ⟨x1, hx1⟩ := exists_gt x
-    have hx1' : x1 ∈ Ici p := hx.trans hx1.le
-    have hlt : d x < D := lt_of_lt_of_le
-      (hdmono hx hx1' hx1) (hle x1 hx1')
-    exact ⟨hdmono.monotoneOn self_mem_Ici hx hxp, hlt⟩
-  · exact isPreconnected_Ici.intermediate_value_Ico self_mem_Ici
-      (le_principal_iff.mpr (Ici_mem_atTop p)) hdcont hdl
+  refine Subset.antisymm ?_ <| isPreconnected_Ici.intermediate_value_Ico self_mem_Ici
+    (le_principal_iff.mpr (Ici_mem_atTop p)) hdcont hdl
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨y, hxy⟩ := exists_gt x
+  have hy : y ∈ Ici p := hx.trans hxy.le
+  have hyD : d y ≤ D := ge_of_tendsto hdl <|
+    eventually_atTop.2 ⟨y, fun z hz ↦ hdmono.monotoneOn hy (hy.trans hz) hz⟩
+  exact ⟨hdmono.monotoneOn self_mem_Ici hx hx, (hdmono hx hy hxy).trans_le hyD⟩
+
+/-- A continuous strictly increasing function `f` on `[a, b]` has a continuous inverse `τ` on its
+range `[c, d]`, extended to the whole codomain by being constant outside `[c, d]` (that is, `τ` is
+the inverse composed with the clamp `projIcc c d`, whose value is `max c (min d r)`). -/
+theorem exists_continuous_projIcc_inverse {α β : Type*} [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [LinearOrder β] [TopologicalSpace β]
+    [OrderTopology β] {f : α → β} {a b : α} {c d : β} (hab : a ≤ b)
+    (hf : ContinuousOn f (Icc a b)) (hm : StrictMonoOn f (Icc a b)) (hc : f a = c) (hd : f b = d) :
+    ∃ τ : β → α, Continuous τ ∧ (∀ r, τ r ∈ Icc a b) ∧
+      (∀ r, f (τ r) = max c (min d r)) ∧ ∀ s ∈ Icc a b, τ (f s) = s := by
+  have ha : a ∈ Icc a b := left_mem_Icc.2 hab
+  have hb : b ∈ Icc a b := right_mem_Icc.2 hab
+  have hcd : c ≤ d := hc ▸ hd ▸ hm.monotoneOn ha hb hab
+  subst hc hd
+  let g : Icc a b → Icc (f a) (f b) := fun s ↦
+    ⟨f s, hm.monotoneOn ha s.2 s.2.1, hm.monotoneOn s.2 hb s.2.2⟩
+  have hg_cont : Continuous g :=
+    Continuous.subtype_mk (continuousOn_iff_continuous_domRestrict.1 hf) _
+  have hg_bij : Function.Bijective g := by
+    refine ⟨fun s s' h ↦ Subtype.ext (hm.injOn s.2 s'.2 (congrArg Subtype.val h)), fun r ↦ ?_⟩
+    obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab hf r.2
+    exact ⟨⟨s, hs⟩, Subtype.ext hsr⟩
+  -- `homeoOfEquivCompactToT2` only adds continuity data to the equivalence `Equiv.ofBijective g`,
+  -- and Mathlib states no lemma for its coercion.
+  let F : Icc a b ≃ₜ Icc (f a) (f b) :=
+    hg_cont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g hg_bij)
+  have hF (s : Icc a b) : (F s : β) = f s := rfl
+  refine ⟨fun r ↦ F.symm (projIcc (f a) (f b) hcd r),
+    continuous_subtype_val.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦ (F.symm _).2,
+    fun r ↦ ?_, fun s hs ↦ ?_⟩
+  · rw [← hF, Homeomorph.apply_symm_apply, coe_projIcc, min_comm]
+  · have : projIcc (f a) (f b) hcd (f s) = F ⟨s, hs⟩ :=
+      Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).2)
+    simp only [this, Homeomorph.symm_apply_apply]
+
+/-- **First exit from an open set.** A path continuous on `[a, b]` that starts in an open set `V`
+and leaves it has a first exit time `T > a`: the path stays in `V` on `[a, T)`, and `γ T` lies in
+the closure of `V` but not in `V`. -/
+theorem _root_.IsOpen.exists_first_exit {α X : Type*} [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [TopologicalSpace X] {V : Set X}
+    (hV : IsOpen V) {γ : α → X} {a b : α} (hγ : ContinuousOn γ (Icc a b)) (ha : γ a ∈ V)
+    (hex : ∃ t ∈ Icc a b, γ t ∉ V) :
+    ∃ T ∈ Icc a b, a < T ∧ γ T ∉ V ∧ γ T ∈ closure V ∧ ∀ t ∈ Ico a T, γ t ∈ V := by
+  obtain ⟨t₀, ht₀, ht₀V⟩ := hex
+  have hA_closed : IsClosed (Icc a b ∩ γ ⁻¹' Vᶜ) :=
+    hγ.preimage_isClosed_of_isClosed isClosed_Icc hV.isClosed_compl
+  obtain ⟨T, hTA, hT⟩ := (isCompact_Icc.of_isClosed_subset hA_closed fun t ht ↦ ht.1).exists_isLeast
+    ⟨t₀, ht₀, ht₀V⟩
+  have hbefore : ∀ t ∈ Ico a T, γ t ∈ V := by
+    intro t ht
+    by_contra hnot
+    exact (not_le.mpr ht.2) (hT ⟨⟨ht.1, ht.2.le.trans hTA.1.2⟩, hnot⟩)
+  have hTpos : a < T := lt_of_le_of_ne hTA.1.1 fun h ↦ hTA.2 (h ▸ ha)
+  have := right_nhdsWithin_Ioo_neBot hTpos
+  have htend : Tendsto γ (𝓝[Ioo a T] T) (𝓝 (γ T)) :=
+    ((hγ T hTA.1).mono (Ioo_subset_Icc_self.trans (Icc_subset_Icc le_rfl hTA.1.2))).tendsto
+  exact ⟨T, hTA.1, hTpos, hTA.2, mem_closure_of_tendsto htend
+    (eventually_nhdsWithin_of_forall fun t ht ↦ hbefore t ⟨ht.1.le, ht.2⟩), hbefore⟩
+
+/-- The curve `δ ↦ b - δ` tends to `b` within `[a, b]` as `δ → 0⁺`. -/
+theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {G : Type*} [AddCommGroup G] [LinearOrder G]
+    [IsOrderedAddMonoid G] [TopologicalSpace G] [OrderTopology G] {a b : G} (hab : a < b) :
+    Tendsto (fun δ : G ↦ b - δ) (𝓝[>] 0) (𝓝[Icc a b] b) := by
+  refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+  · exact ((continuous_const.sub continuous_id).tendsto' 0 b (sub_zero b)).mono_left
+      nhdsWithin_le_nhds
+  · filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hab)] with δ hδ
+    exact ⟨le_sub_comm.1 hδ.2.le, sub_le_self _ hδ.1.le⟩
+
+/-- A continuous function on `[a, b]` that is injective on `[a, b)` takes different values at the
+two endpoints. -/
+theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
+    [ConditionallyCompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α]
+    [LinearOrder δ] [TopologicalSpace δ] [OrderClosedTopology δ] {f : α → δ}
+    {a b : α} (hf : ContinuousOn f (Icc a b)) (hab : a < b) (hinj : InjOn f (Ico a b)) :
+    f a ≠ f b := by
+  have ha : a ∈ Ico a b := ⟨le_rfl, hab⟩
+  intro hab'
+  obtain ⟨m, hm⟩ := exists_between hab
+  -- A value strictly between `f a` and `f m` would be attained on both `[a, m]` and `[m, b]`.
+  obtain ⟨v, hv, hva, hvm⟩ : ∃ v ∈ uIcc (f a) (f m), v ≠ f a ∧ v ≠ f m := by
+    obtain ⟨m', hm'⟩ := exists_between hm.1
+    have ham' : a ∈ Icc a m := ⟨le_rfl, hm.1.le⟩
+    have hm'm : m' ∈ Icc a m := ⟨hm'.1.le, hm'.2.le⟩
+    have hmm : m ∈ Icc a m := ⟨hm.1.le, le_rfl⟩
+    rcases (hf.mono (Icc_subset_Icc le_rfl hm.2.le)).strictMonoOn_of_injOn_Icc' hm.1.le
+      (hinj.mono (Icc_subset_Ico_right hm.2)) with h | h
+    · exact ⟨f m', mem_uIcc.2 (Or.inl ⟨(h ham' hm'm hm'.1).le, (h hm'm hmm hm'.2).le⟩),
+        (h ham' hm'm hm'.1).ne', (h hm'm hmm hm'.2).ne⟩
+    · exact ⟨f m', mem_uIcc.2 (Or.inr ⟨(h hm'm hmm hm'.2).le, (h ham' hm'm hm'.1).le⟩),
+        (h ham' hm'm hm'.1).ne, (h hm'm hmm hm'.2).ne'⟩
+  obtain ⟨s, hs, hsv⟩ := intermediate_value_uIcc
+    (hf.mono (by rw [uIcc_of_le hm.1.le]; exact Icc_subset_Icc le_rfl hm.2.le)) hv
+  obtain ⟨t, ht, htv⟩ := intermediate_value_uIcc
+    (hf.mono (by rw [uIcc_of_le hm.2.le]; exact Icc_subset_Icc hm.1.le le_rfl))
+    (by simpa only [← hab', uIcc_comm] using hv)
+  rw [uIcc_of_le hm.1.le] at hs
+  rw [uIcc_of_le hm.2.le] at ht
+  have htb : t ≠ b := by rintro rfl; exact hva (htv.symm.trans hab'.symm)
+  have hst : s = t := hinj ⟨hs.1, hs.2.trans_lt hm.2⟩ ⟨hm.1.le.trans ht.1, ht.2.lt_of_ne htb⟩
+    (hsv.trans htv.symm)
+  have hsm : s = m := le_antisymm hs.2 (hst ▸ ht.1)
+  exact hvm (hsv.symm.trans (congrArg f hsm))
+
+/-- A continuous function on `Ioi p` that is above `v`, tends to `v` at `+∞` and to `+∞` at `p⁺`
+has image `Ioi v`. -/
+theorem _root_.ContinuousOn.image_Ioi_eq_Ioi_of_tendsto {α β : Type*}
+    [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [NoMaxOrder α]
+    [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] {d : α → β} {p : α} {v : β}
+    (hcont : ContinuousOn d (Ioi p)) (hpos : ∀ x ∈ Ioi p, v < d x)
+    (htop : Tendsto d atTop (𝓝 v)) (hp : Tendsto d (𝓝[>] p) atTop) : d '' Ioi p = Ioi v :=
+  Subset.antisymm (by rintro _ ⟨x, hx, rfl⟩; exact hpos x hx)
+    (isPreconnected_Ioi.intermediate_value_Ioi (le_principal_iff.mpr (Ioi_mem_atTop p))
+      (le_principal_iff.mpr self_mem_nhdsWithin) hcont htop hp)
+
+/-- A continuous function on `Iio p` that is above `v`, tends to `v` at `-∞` and to `+∞` at `p⁻`
+has image `Ioi v`. -/
+theorem _root_.ContinuousOn.image_Iio_eq_Ioi_of_tendsto {α β : Type*}
+    [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [NoMinOrder α]
+    [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] {d : α → β} {p : α} {v : β}
+    (hcont : ContinuousOn d (Iio p)) (hpos : ∀ x ∈ Iio p, v < d x)
+    (hbot : Tendsto d atBot (𝓝 v)) (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi v :=
+  ContinuousOn.image_Ioi_eq_Ioi_of_tendsto (α := αᵒᵈ) hcont hpos hbot hp
 
 end TauCeti
