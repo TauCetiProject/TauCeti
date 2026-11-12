@@ -38,6 +38,9 @@ derivatives is not known to have a weak derivative.
 
 ## Main declarations
 
+* `TauCeti.uniformCauchySeqOn_preciseRepresentative_of_tendsto_eLpNorm`: `Lᵖ` convergence on
+  compact sets and `W^{1,p}` bounds make the precise representatives uniformly Cauchy on compact
+  sets.
 * `TauCeti.tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_eLpNorm`: `Lᵖ` convergence
   on compact sets and `W^{1,p}` bounds give locally uniform convergence of precise
   representatives.
@@ -74,6 +77,113 @@ section Morrey
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {p : ℝ≥0∞} {Ω : Opens ℂ}
 
+/-- **Uniform Cauchy property from `Lᵖ` convergence and `W^{1,p}` bounds.** Let `2 < p ≤ ∞`.
+Let `f m ∈ MemWkpLoc p Ω 1` have weak derivatives `D m` on `Ω` which are bounded in `Lᵖ(K)`
+uniformly in `m` for every compact `K ⊆ Ω`, and suppose that `f m` converges in `Lᵖ(K)` to a
+locally `Lᵖ` function `g` for every compact `K ⊆ Ω`. Then the precise representatives of the `f m`
+are uniformly Cauchy on every compact subset of `Ω`. The proof applies the local Morrey sup bound
+`TauCeti.MemWkpLoc.exists_norm_preciseRepresentative_le` to `f m - f n` on balls of a small
+radius `r`: the derivative term is small for small `r`, and the `Lᵖ` term by `Lᵖ` convergence. -/
+theorem uniformCauchySeqOn_preciseRepresentative_of_tendsto_eLpNorm (hp : 2 < p)
+    {f : ℕ → ℂ → F} {D : ℕ → ℂ → ℂ →L[ℝ] F} {g : ℂ → F} (hf : ∀ m, MemWkpLoc p Ω 1 (f m))
+    (hD : ∀ m, HasWeakFDerivOn volume Ω (f m) (D m))
+    (hDbdd : ∀ K : Set ℂ, IsCompact K → K ⊆ Ω →
+      ∃ M : ℝ≥0, ∀ m, eLpNorm (D m) p (volume.restrict K) ≤ M)
+    (hg : MemLpLoc p Ω g)
+    (hfg : ∀ K : Set ℂ, IsCompact K → K ⊆ Ω →
+      Tendsto (fun m => eLpNorm (f m - g) p (volume.restrict K)) atTop (𝓝 0))
+    {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    UniformCauchySeqOn (fun m => preciseRepresentative volume (f m)) atTop K := by
+  have hp1 : 1 ≤ p := one_le_two.trans hp.le
+  set α : ℝ := (((1 : ℝ≥0∞) - 2 / p).toNNReal : ℝ)
+  have hα : 0 < α := by
+    have h2p : 2 / p < 1 := by
+      exact ENNReal.div_lt_of_lt_mul (by rwa [one_mul])
+    simp only [α, NNReal.coe_pos, ENNReal.toNNReal_pos_iff]
+    exact ⟨tsub_pos_of_lt h2p, tsub_le_self.trans_lt ENNReal.one_lt_top⟩
+  obtain ⟨C, hC, hsup⟩ := MemWkpLoc.exists_norm_preciseRepresentative_le (F := F) hp
+  obtain ⟨R, hR, hRK⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
+  have hK' : IsCompact (cthickening R K) := hK.cthickening
+  obtain ⟨M, hM⟩ := hDbdd _ hK' hRK
+  have hmem : ∀ m, MemLp (f m) p (volume.restrict (cthickening R K)) := fun m =>
+    memLpLoc_iff.1 (hf m).memLpLoc _ hRK hK'
+  have hgK : MemLp g p (volume.restrict (cthickening R K)) := memLpLoc_iff.1 hg _ hRK hK'
+  rw [Metric.uniformCauchySeqOn_iff]
+  intro ε hε
+  have hrα : Tendsto (fun r : ℝ => r ^ α) (𝓝[>] 0) (𝓝 0) := by
+    have := (Real.continuousAt_rpow_const 0 α (Or.inr hα.le)).tendsto
+    rw [Real.zero_rpow hα.ne'] at this
+    exact this.mono_left nhdsWithin_le_nhds
+  have hev : ∀ᶠ r : ℝ in 𝓝[>] 0, 0 < r ∧ r ≤ R / 2 ∧ C * (2 * M) * r ^ α < ε / 2 := by
+    have e1 : ∀ᶠ r : ℝ in 𝓝[>] 0, 0 < r := eventually_mem_nhdsWithin
+    have e2 : ∀ᶠ r : ℝ in 𝓝[>] 0, r ≤ R / 2 :=
+      Filter.mem_of_superset (Ioo_mem_nhdsGT (half_pos hR))
+        fun r (hr : r ∈ Ioo 0 (R / 2)) => (hr.2.le : r ≤ R / 2)
+    refine e1.and (e2.and ?_)
+    have h0 : Tendsto (fun r : ℝ => C * (2 * M) * r ^ α) (𝓝[>] 0) (𝓝 0) := by
+      simpa using hrα.const_mul (C * (2 * M))
+    exact h0.eventually (gt_mem_nhds (half_pos hε))
+  obtain ⟨r, hr0, hrR, hrε⟩ := hev.exists
+  set T := r ^ (-(2 / p.toReal))
+  have hT : 0 < T := Real.rpow_pos_of_pos hr0 _
+  have hconv : Tendsto (fun m => (eLpNorm (f m - g) p
+      (volume.restrict (cthickening R K))).toReal) atTop (𝓝 0) := by
+    simpa only [ENNReal.toReal_zero, Function.comp_def] using
+      (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (hfg _ hK' hRK)
+  obtain ⟨N, hN⟩ := eventually_atTop.1
+    (hconv.eventually (gt_mem_nhds (show 0 < ε / (4 * (T + 1)) by positivity)))
+  refine ⟨N, fun m hm n hn x hx => ?_⟩
+  have hxr : closedBall x (2 * r) ⊆ cthickening R K :=
+    (closedBall_subset_cthickening hx _).trans (cthickening_mono (by linarith) K)
+  have hball : ball x (2 * r) ⊆ cthickening R K := ball_subset_closedBall.trans hxr
+  have hball' : ball x r ⊆ cthickening R K :=
+    (ball_subset_ball (by linarith)).trans hball
+  have hb := hsup ((hf m).sub (hf n)) ((hD m).sub (hD n)) hr0 (hxr.trans hRK)
+  rw [(hf m).eqOn_preciseRepresentative_sub hp (hf n) (hRK (self_subset_cthickening K hx))]
+    at hb
+  -- The `Lᵖ` term.
+  have hfmg := ((hmem m).sub hgK).eLpNorm_ne_top
+  have hfng := ((hmem n).sub hgK).eLpNorm_ne_top
+  have h1 : (eLpNorm (f m - f n) p (volume.restrict (ball x r))).toReal ≤
+      (eLpNorm (f m - g) p (volume.restrict (cthickening R K))).toReal +
+        (eLpNorm (f n - g) p (volume.restrict (cthickening R K))).toReal := by
+    rw [← ENNReal.toReal_add hfmg hfng]
+    refine ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hfmg, hfng⟩) ?_
+    calc eLpNorm (f m - f n) p (volume.restrict (ball x r))
+        ≤ eLpNorm (f m - f n) p (volume.restrict (cthickening R K)) :=
+          eLpNorm_mono_measure _ (Measure.restrict_mono hball' le_rfl)
+      _ = eLpNorm ((f m - g) - (f n - g)) p (volume.restrict (cthickening R K)) := by
+          rw [sub_sub_sub_cancel_right]
+      _ ≤ _ := eLpNorm_sub_le hp1
+  -- The derivative term.
+  have h2 : (eLpNorm (D m - D n) p (volume.restrict (ball x (2 * r)))).toReal ≤ 2 * M := by
+    have hle : eLpNorm (D m - D n) p (volume.restrict (ball x (2 * r))) ≤ 2 * (M : ℝ≥0∞) :=
+      calc _ ≤ eLpNorm (D m - D n) p (volume.restrict (cthickening R K)) :=
+            eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)
+        _ ≤ eLpNorm (D m) p (volume.restrict (cthickening R K)) +
+            eLpNorm (D n) p (volume.restrict (cthickening R K)) :=
+            eLpNorm_sub_le hp1
+        _ ≤ M + M := add_le_add (hM m) (hM n)
+        _ = 2 * (M : ℝ≥0∞) := (two_mul _).symm
+    simpa only [ENNReal.toReal_mul, ENNReal.toReal_ofNat, ENNReal.coe_toReal] using
+      ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top ENNReal.coe_ne_top) hle
+  have hm' := hN m hm
+  have hn' := hN n hn
+  rw [dist_eq_norm]
+  calc _ ≤ T * (eLpNorm (f m - f n) p (volume.restrict (ball x r))).toReal +
+        C * (eLpNorm (D m - D n) p (volume.restrict (ball x (2 * r)))).toReal * r ^ α := hb
+    _ ≤ T * (ε / (4 * (T + 1)) + ε / (4 * (T + 1))) + C * (2 * M) * r ^ α := by
+        gcongr
+        exact h1.trans (add_le_add hm'.le hn'.le)
+    _ < ε / 2 + ε / 2 := by
+        refine add_lt_add_of_le_of_lt ?_ hrε
+        rw [show T * (ε / (4 * (T + 1)) + ε / (4 * (T + 1))) = ε / 2 * (T / (T + 1)) by
+          field_simp
+          ring]
+        exact mul_le_of_le_one_right (by positivity)
+          ((div_le_one (by positivity)).2 (by linarith))
+    _ = ε := add_halves ε
+
 /-- **Locally uniform convergence from `Lᵖ` convergence and `W^{1,p}` bounds.** Let `2 < p ≤ ∞`.
 Let `f m ∈ MemWkpLoc p Ω 1` have weak derivatives `D m` on `Ω` which are bounded in `Lᵖ(K)`
 uniformly in `m` for every compact `K ⊆ Ω`, and suppose that `f m` converges in `Lᵖ(K)` to a
@@ -92,101 +202,9 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_eLpNorm (hp :
       (preciseRepresentative volume g) atTop Ω := by
   have hp1 : 1 ≤ p := one_le_two.trans hp.le
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
-  set α : ℝ := (((1 : ℝ≥0∞) - 2 / p).toNNReal : ℝ)
-  have hα : 0 < α := by
-    have h2p : 2 / p < 1 := by
-      exact ENNReal.div_lt_of_lt_mul (by rwa [one_mul])
-    simp only [α, NNReal.coe_pos, ENNReal.toNNReal_pos_iff]
-    exact ⟨tsub_pos_of_lt h2p, tsub_le_self.trans_lt ENNReal.one_lt_top⟩
-  obtain ⟨C, hC, hsup⟩ := MemWkpLoc.exists_norm_preciseRepresentative_le (F := F) hp
-  -- The precise representatives are uniformly Cauchy on compact subsets of `Ω`.
   have hcauchy : ∀ K : Set ℂ, IsCompact K → K ⊆ Ω →
-      UniformCauchySeqOn (fun m => preciseRepresentative volume (f m)) atTop K := by
-    intro K hK hKΩ
-    obtain ⟨R, hR, hRK⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
-    have hK' : IsCompact (cthickening R K) := hK.cthickening
-    obtain ⟨M, hM⟩ := hDbdd _ hK' hRK
-    have hmem : ∀ m, MemLp (f m) p (volume.restrict (cthickening R K)) := fun m =>
-      memLpLoc_iff.1 (hf m).memLpLoc _ hRK hK'
-    have hgK : MemLp g p (volume.restrict (cthickening R K)) := memLpLoc_iff.1 hg _ hRK hK'
-    have _hDmem : ∀ m, MemLp (D m) p (volume.restrict (cthickening R K)) := fun m =>
-      memLpLoc_iff.1 ((hf m).memLpLoc_of_hasWeakFDerivOn (hD m)) _ hRK hK'
-    rw [Metric.uniformCauchySeqOn_iff]
-    intro ε hε
-    have hrα : Tendsto (fun r : ℝ => r ^ α) (𝓝[>] 0) (𝓝 0) := by
-      have := (Real.continuousAt_rpow_const 0 α (Or.inr hα.le)).tendsto
-      rw [Real.zero_rpow hα.ne'] at this
-      exact this.mono_left nhdsWithin_le_nhds
-    have hev : ∀ᶠ r : ℝ in 𝓝[>] 0, 0 < r ∧ r ≤ R / 2 ∧ C * (2 * M) * r ^ α < ε / 2 := by
-      have e1 : ∀ᶠ r : ℝ in 𝓝[>] 0, 0 < r := eventually_mem_nhdsWithin
-      have e2 : ∀ᶠ r : ℝ in 𝓝[>] 0, r ≤ R / 2 :=
-        Filter.mem_of_superset (Ioo_mem_nhdsGT (half_pos hR))
-          fun r (hr : r ∈ Ioo 0 (R / 2)) => (hr.2.le : r ≤ R / 2)
-      refine e1.and (e2.and ?_)
-      have h0 : Tendsto (fun r : ℝ => C * (2 * M) * r ^ α) (𝓝[>] 0) (𝓝 0) := by
-        simpa using hrα.const_mul (C * (2 * M))
-      exact h0.eventually (gt_mem_nhds (half_pos hε))
-    obtain ⟨r, hr0, hrR, hrε⟩ := hev.exists
-    set T := r ^ (-(2 / p.toReal))
-    have hT : 0 < T := Real.rpow_pos_of_pos hr0 _
-    have hconv : Tendsto (fun m => (eLpNorm (f m - g) p
-        (volume.restrict (cthickening R K))).toReal) atTop (𝓝 0) := by
-      simpa only [ENNReal.toReal_zero, Function.comp_def] using
-        (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (hfg _ hK' hRK)
-    obtain ⟨N, hN⟩ := eventually_atTop.1
-      (hconv.eventually (gt_mem_nhds (show 0 < ε / (4 * (T + 1)) by positivity)))
-    refine ⟨N, fun m hm n hn x hx => ?_⟩
-    have hxr : closedBall x (2 * r) ⊆ cthickening R K :=
-      (closedBall_subset_cthickening hx _).trans (cthickening_mono (by linarith) K)
-    have hball : ball x (2 * r) ⊆ cthickening R K := ball_subset_closedBall.trans hxr
-    have hball' : ball x r ⊆ cthickening R K :=
-      (ball_subset_ball (by linarith)).trans hball
-    have hb := hsup ((hf m).sub (hf n)) ((hD m).sub (hD n)) hr0 (hxr.trans hRK)
-    rw [(hf m).eqOn_preciseRepresentative_sub hp (hf n) (hRK (self_subset_cthickening K hx))]
-      at hb
-    -- The `Lᵖ` term.
-    have hfmg := ((hmem m).sub hgK).eLpNorm_ne_top
-    have hfng := ((hmem n).sub hgK).eLpNorm_ne_top
-    have h1 : (eLpNorm (f m - f n) p (volume.restrict (ball x r))).toReal ≤
-        (eLpNorm (f m - g) p (volume.restrict (cthickening R K))).toReal +
-          (eLpNorm (f n - g) p (volume.restrict (cthickening R K))).toReal := by
-      rw [← ENNReal.toReal_add hfmg hfng]
-      refine ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hfmg, hfng⟩) ?_
-      calc eLpNorm (f m - f n) p (volume.restrict (ball x r))
-          ≤ eLpNorm (f m - f n) p (volume.restrict (cthickening R K)) :=
-            eLpNorm_mono_measure _ (Measure.restrict_mono hball' le_rfl)
-        _ = eLpNorm ((f m - g) - (f n - g)) p (volume.restrict (cthickening R K)) := by
-            rw [sub_sub_sub_cancel_right]
-        _ ≤ _ := eLpNorm_sub_le hp1
-    -- The derivative term.
-    have h2 : (eLpNorm (D m - D n) p (volume.restrict (ball x (2 * r)))).toReal ≤ 2 * M := by
-      have hle : eLpNorm (D m - D n) p (volume.restrict (ball x (2 * r))) ≤ 2 * (M : ℝ≥0∞) :=
-        calc _ ≤ eLpNorm (D m - D n) p (volume.restrict (cthickening R K)) :=
-              eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)
-          _ ≤ eLpNorm (D m) p (volume.restrict (cthickening R K)) +
-              eLpNorm (D n) p (volume.restrict (cthickening R K)) :=
-              eLpNorm_sub_le hp1
-          _ ≤ M + M := add_le_add (hM m) (hM n)
-          _ = 2 * (M : ℝ≥0∞) := (two_mul _).symm
-      simpa only [ENNReal.toReal_mul, ENNReal.toReal_ofNat, ENNReal.coe_toReal] using
-        ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top ENNReal.coe_ne_top) hle
-    have hm' := hN m hm
-    have hn' := hN n hn
-    rw [dist_eq_norm]
-    have _hrα0 : 0 ≤ r ^ α := Real.rpow_nonneg hr0.le _
-    calc _ ≤ T * (eLpNorm (f m - f n) p (volume.restrict (ball x r))).toReal +
-          C * (eLpNorm (D m - D n) p (volume.restrict (ball x (2 * r)))).toReal * r ^ α := hb
-      _ ≤ T * (ε / (4 * (T + 1)) + ε / (4 * (T + 1))) + C * (2 * M) * r ^ α := by
-          gcongr
-          exact h1.trans (add_le_add hm'.le hn'.le)
-      _ < ε / 2 + ε / 2 := by
-          refine add_lt_add_of_le_of_lt ?_ hrε
-          rw [show T * (ε / (4 * (T + 1)) + ε / (4 * (T + 1))) = ε / 2 * (T / (T + 1)) by
-            field_simp
-            ring]
-          exact mul_le_of_le_one_right (by positivity)
-            ((div_le_one (by positivity)).2 (by linarith))
-      _ = ε := add_halves ε
+      UniformCauchySeqOn (fun m => preciseRepresentative volume (f m)) atTop K := fun K hK hKΩ =>
+    uniformCauchySeqOn_preciseRepresentative_of_tendsto_eLpNorm hp hf hD hDbdd hg hfg hK hKΩ
   -- The pointwise limit `h`, which is continuous on `Ω`.
   set h : ℂ → F := fun y => limUnder atTop fun m => preciseRepresentative volume (f m) y
   have hpt : ∀ y ∈ (Ω : Set ℂ),
