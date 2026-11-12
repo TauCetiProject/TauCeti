@@ -283,6 +283,12 @@ theorem eval₂_apply (φ : SmoothBundleForm I F V 2) (x : M)
     φ.eval₂ x v w = φ.1 x ![v, w] :=
   by simp [eval₂]
 
+/-- A degree-two form applied to a family `u` of two tangent vectors is its evaluation on the
+ordered pair `u 0`, `u 1`. -/
+theorem apply_eq_eval₂ (φ : SmoothBundleForm I F V 2) (x : M) (u : Fin 2 → TangentSpace I x) :
+    φ.1 x u = φ.eval₂ x (u 0) (u 1) :=
+  ((eval₂_apply _ _ _ _).trans (congrArg _ (funext fun i ↦ by fin_cases i <;> rfl))).symm
+
 /-- Evaluation of a sum of degree-two forms is the sum of the evaluations. -/
 theorem eval₂_add (φ ψ : SmoothBundleForm I F V 2) (x : M)
     (v w : TangentSpace I x) :

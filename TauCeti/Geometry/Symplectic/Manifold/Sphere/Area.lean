@@ -86,14 +86,11 @@ theorem _root_.Orientation.abs_mpullback_diffeomorphSphere_sphereVolumeForm_appl
     rw [← inner_tangentSpace_sphere, OnePoint.inner_mfderiv_diffeomorphSphere,
       OnePoint.eval₂_fubiniStudyForm_I_mul]
     ring
-  have hω : OnePoint.fubiniStudyForm.1 x u =
-      SmoothBundleForm.eval₂ OnePoint.fubiniStudyForm x (u 0) (u 1) :=
-    ((SmoothBundleForm.eval₂_apply _ _ _ _).trans
-      (congrArg _ (funext fun i ↦ by fin_cases i <;> rfl))).symm
   -- The point is a unit normal to the tangent vectors, so only their Gram determinant remains.
   rw [mpullback_apply, Orientation.sphereVolumeForm_apply,
     o.abs_volumeForm_cons_eq_sqrt_det_gram (norm_eq_of_mem_sphere _)
-      fun i ↦ inner_coe_mvfderiv_subtypeVal_sphere _ _, Matrix.det_fin_two, hω]
+      fun i ↦ inner_coe_mvfderiv_subtypeVal_sphere _ _, Matrix.det_fin_two,
+    SmoothBundleForm.apply_eq_eval₂]
   obtain ⟨a, b, rfl⟩ : ∃ a b : ℂ, u = ![a, b] :=
     ⟨u 0, u 1, funext fun i ↦ by fin_cases i <;> rfl⟩
   simp only [Matrix.gram_apply, Matrix.cons_val_zero, Matrix.cons_val_one, hinner,
@@ -106,13 +103,9 @@ theorem _root_.Orientation.abs_mpullback_diffeomorphSphere_sphereVolumeForm_appl
 
 section Measure
 
-variable [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
 
 attribute [local instance] finrank_euclideanSpace_fin_succ_fact Complex.finrank_real_complex_fact
-
-/-- A space of dimension `2 + 1` is finite dimensional, so its unit sphere is compact. -/
-local instance finiteDimensional_of_finrank_eq_two_add_one : FiniteDimensional ℝ E :=
-  .of_fact_finrank_eq_succ 2
 
 /-- **The area of the two-sphere is `4π`.** The measure `|vol|` of the volume form of the unit
 sphere of an oriented three-dimensional inner product space gives the whole sphere measure `4π`. -/

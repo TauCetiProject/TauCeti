@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Surface
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
 import TauCeti.Geometry.Manifold.DifferentialForm.Chart
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The Fubini–Study form of the Riemann sphere
@@ -326,22 +327,14 @@ theorem measure_fubiniStudyForm_univ {m : MeasurableSpace (OnePoint ℂ)}
       simp
     have h := RoughForm.inChartAt_chart_apply fubiniStudyForm.1 _ hy b
     rw [show extChartAt 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ) (y : OnePoint ℂ) = y by simp] at h
-    have hv : (fubiniStudyForm.1 y fun i ↦
-          tangentCoordChange 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ) y y (b i)) =
-        SmoothBundleForm.eval₂ fubiniStudyForm (y : OnePoint ℂ)
-          (tangentCoordChange 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ) y y (b 0))
-          (tangentCoordChange 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ) y y (b 1)) :=
-      ((SmoothBundleForm.eval₂_apply _ _ _ _).trans
-        (congrArg _ (by funext i; fin_cases i <;> rfl))).symm
-    rw [h, hv, eval₂_fubiniStudyForm_tangentCoordChange (by simp), ← Orientation.volumeFormL_apply,
+    refine h.trans ((SmoothBundleForm.apply_eq_eval₂ _ _ _).trans ?_)
+    rw [eval₂_fubiniStudyForm_tangentCoordChange (by simp), ← Orientation.volumeFormL_apply,
       Complex.orientation_volumeFormL_apply]
     simp
   -- Lebesgue measure of `ℂ` is the Haar measure of `b` scaled by the area of `b`.
   have hvol (b : Module.Basis (Fin 2) ℝ ℂ) :
       (volume : Measure ℂ) = ENNReal.ofReal |Complex.orientation.volumeForm b| • b.addHaar := by
-    rw [← AlternatingMap.measure_parallelepiped, Complex.orientation.measure_eq_volume,
-      Module.Basis.addHaar_def, ← Module.Basis.coe_parallelepiped]
-    exact Measure.addHaarMeasure_unique volume b.parallelepiped
+    rw [Complex.orientation.abs_volumeForm_apply_eq_sqrt_det_gram, b.volume_eq_smul_addHaar]
   have hint : Integrable fubiniStudyDensity :=
     Integrable.of_integral_ne_zero (by rw [integral_fubiniStudyDensity]; exact one_ne_zero)
   rw [← compl_union_self {(∞ : OnePoint ℂ)}, measure_union disjoint_compl_left
