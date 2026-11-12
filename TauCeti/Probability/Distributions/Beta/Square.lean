@@ -65,7 +65,7 @@ private theorem betaPDFReal_centered_sq {a x : ℝ} (hx : 0 < x) :
     rw [betaPDFReal_self_add_one_div_two a ⟨by linarith, hx₁⟩, betaPDFReal, ite_eq_left hx₂,
       hsq]
     field_simp
-  · have hx₁' : 1 ≤ x := le_of_not_gt hx₁
+  · have _ : 1 ≤ x := le_of_not_gt hx₁
     rw [betaPDFReal, ite_eq_right (by rintro ⟨_, h⟩; nlinarith : ¬ (0 < x ^ 2 ∧ x ^ 2 < 1)),
       betaPDFReal, ite_eq_right (by rintro ⟨_, h⟩; linarith)]
     ring

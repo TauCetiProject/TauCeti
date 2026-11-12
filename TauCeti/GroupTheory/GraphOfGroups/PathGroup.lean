@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Path.Functoriality
+public import TauCeti.Combinatorics.Quiver.PathWeight
 public import TauCeti.GroupTheory.GraphOfGroups.Presentation
 
 /-!
@@ -14,7 +15,9 @@ public import TauCeti.GroupTheory.GraphOfGroups.Presentation
 A spanning tree identifies the reduced closed paths of a Serre graph with the tree
 presentation of any graph of groups on it having trivial vertex groups. The inverse sends
 a dart to the based loop that follows the tree to its source, crosses the dart, and returns
-through the tree. Consequently the reduced path group is free on the positive non-tree darts.
+through the tree. Consequently the reduced path group is free on the positive non-tree darts,
+and the free coordinates of a closed path are computed dart by dart: a positive non-tree dart
+contributes its generator, its reverse the inverse generator, and a tree dart nothing.
 This comparison retains signed loop directions and distinct parallel edges and applies to
 infinite graphs as well as finite ones.
 
@@ -154,6 +157,24 @@ def pathGroupEquivFreeGroup {O : Set Γ.E} (hO : Γ.IsOrientation O) :
     T.pathGroupEquivFreeGroup v hO (T.loop v e.1) = FreeGroup.of e := by
   apply (T.pathGroupEquivFreeGroup v hO).symm.injective
   simp
+
+/-- In tree coordinates a closed path is the product of the signed coordinates of its darts:
+each positive non-tree dart contributes its generator, its reverse contributes the inverse
+generator, and tree darts contribute nothing. The path need not be reduced. -/
+theorem pathGroupEquivFreeGroup_ofPath {O : Set Γ.E} (hO : Γ.IsOrientation O) (p : Γ.Path v v) :
+    T.pathGroupEquivFreeGroup v hO (PathGroup.ofPath p) =
+      p.weight (fun {a b : Γ.V} (e : a ⟶ b) =>
+        GraphOfGroups.π₁Tree.dartWord O T.darts e.1) := by
+  simp [pathGroupEquivFreeGroup, Quiver.Path.map_weight,
+    GraphOfGroups.π₁Tree.equivFreeGroup_edge_eq_dartWord]
+
+/-- The tree coordinates of a reduced closed path are the product of the signed coordinates
+of its darts. -/
+theorem pathGroupEquivFreeGroup_apply {O : Set Γ.E} (hO : Γ.IsOrientation O) (g : PathGroup Γ v) :
+    T.pathGroupEquivFreeGroup v hO g =
+      g.toPath.weight (fun {a b : Γ.V} (e : a ⟶ b) =>
+        GraphOfGroups.π₁Tree.dartWord O T.darts e.1) := by
+  rw [← T.pathGroupEquivFreeGroup_ofPath v hO, PathGroup.ofPath_toPath]
 
 end
 

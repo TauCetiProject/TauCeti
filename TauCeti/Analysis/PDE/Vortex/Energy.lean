@@ -143,7 +143,7 @@ theorem integrable_covariantDerivative_norm_sq
       hs.continuous |>.div_const 4 |>.aestronglyMeasurable)
     apply ae_of_all
     intro z
-    have hs0 : 0 ≤ s z := by dsimp [s]; positivity
+    have : 0 ≤ s z := by dsimp [s]; positivity
     have hdef : 0 ≤ 1 - s z := sub_nonneg.mpr (hs1 z)
     dsimp only [Pi.div_apply, Pi.mul_apply, Pi.sub_apply]
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
@@ -170,7 +170,7 @@ theorem integrable_energyDensity
     intro z
     dsimp only [Pi.pow_apply, Pi.sub_apply, Pi.mul_apply, Pi.add_apply]
     rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-    have hs0 : 0 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by positivity
+    have : 0 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by positivity
     nlinarith [hs1 z]
   have hcurv : Integrable (fun z ↦ curvature x z ^ 2) μ := by
     exact (hpot.div_const 64).congr (ae_of_all μ fun z ↦ by

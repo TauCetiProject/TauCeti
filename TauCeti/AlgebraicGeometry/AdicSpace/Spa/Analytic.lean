@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.Huber.AdicHom.Basic
 import TauCeti.RingTheory.Huber.AdicHom.Localization
 public import TauCeti.RingTheory.Huber.Continuous.Coarsen
 import TauCeti.RingTheory.Huber.Continuous.PowerBounded
+import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 public import TauCeti.RingTheory.Huber.OpenIdeal
 public import TauCeti.RingTheory.Valuation.Microbial
@@ -45,6 +46,9 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
 * `TauCeti.ValuationSpectrum.isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp` :
   **Wedhorn Remark 7.40(1)**, over a Huber ring a point is analytic exactly when some
   topologically nilpotent element is outside its support.
+* `TauCeti.ValuationSpectrum.IsContinuous.supp_eq_of_specializes` : generizations of analytic
+  points are vertical: a continuous point that specializes to an analytic point has the same
+  support.
 * `TauCeti.ValuationSpectrum.isOpen_val_preimage_spaAnalytic` : the analytic locus is open.
 * `TauCeti.ValuationSpectrum.isCompact_val_preimage_spaAnalytic` : **Wedhorn Remark 7.40(2)**,
   the analytic locus is quasi-compact; with the previous result, open and quasi-compact.
@@ -184,6 +188,34 @@ theorem isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp [IsHuber
     isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isRadical
       (inferInstance : v.supp.IsPrime).isRadical]
   exact Set.not_subset
+
+/-- **Generizations of analytic points are vertical.** A continuous point `x` of `Spv A` that
+specializes to an analytic point `x'` has the same support. -/
+theorem IsContinuous.supp_eq_of_specializes [IsHuberRing A] {x x' : Spv A} (hx : x.IsContinuous)
+    (hx' : IsAnalyticPoint x') (h : x ⤳ x') : x.supp = x'.supp := by
+  obtain ⟨t, ht, htx'⟩ :=
+    (isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp x').mp hx'
+  refine le_antisymm (fun a ha ↦ ?_) (fun a ha ↦ ?_)
+  · -- an element vanishing at `x` vanishes at its specialization
+    rw [mem_supp_iff] at ha ⊢
+    by_contra hax'
+    exact ((mem_basicOpen_iff _ _ _).mp (h.mem_open (isOpen_basicOpen a a)
+      ((mem_basicOpen_iff _ _ _).mpr ⟨x'.toValuativeRel.vle_refl a, hax'⟩))).2 ha
+  · -- `x'(a) = 0 ≤ x'(tⁿ) ≠ 0` gives `x(a) ≤ x(t)ⁿ` for all `n`, so `x(a) = 0` by continuity
+    rw [mem_supp_iff] at ha ⊢
+    by_contra hax
+    have hpos : x.valuation 0 < x.valuation a := by
+      rwa [valuation_lt_iff]
+    obtain ⟨n, hn⟩ := exists_pow_lt_of_isTopologicallyNilpotent (v := x.valuation)
+      ((Valuation.isContinuous_def.mp ((ValuationSpectrum.isContinuous_def x).mp hx) a).mem_nhds
+        hpos) ht
+    have htn : ¬ x'.toValuativeRel.vle (t ^ n) 0 := fun htn ↦
+      htx' ((inferInstance : x'.supp.IsPrime).mem_of_pow_mem n ((mem_supp_iff _ _).mpr htn))
+    have hle := ((mem_basicOpen_iff _ _ _).mp (h.mem_open (isOpen_basicOpen a (t ^ n))
+      ((mem_basicOpen_iff _ _ _).mpr
+        ⟨x'.toValuativeRel.vle_trans ha (@ValuativeRel.zero_vle A _ x'.toValuativeRel _), htn⟩))).1
+    rw [← valuation_le_iff, map_pow] at hle
+    exact hle.not_gt hn
 
 /-- An analytic point supplies an element of an ideal of definition which is outside its
 support. Unlike an arbitrary element of the extended ideal, this witness is topologically

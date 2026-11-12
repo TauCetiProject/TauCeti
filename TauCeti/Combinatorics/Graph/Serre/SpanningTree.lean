@@ -276,6 +276,13 @@ theorem homotopic_path_comp_path (a b c : Γ.V) :
     T.path (Γ.src e) (Γ.tgt e) = (Γ.dart e).toPath :=
   (T.eq_path (Path.isReduced_toPath Γ _) (by simpa using he)).symm
 
+/-- Two darts of a spanning tree with the same source and the same target are equal. -/
+theorem eq_of_src_eq_of_tgt_eq {e f : Γ.E} (he : e ∈ T.darts) (hf : f ∈ T.darts)
+    (hs : Γ.src e = Γ.src f) (ht : Γ.tgt e = Γ.tgt f) : e = f := by
+  have h : Path.darts Γ (T.path (Γ.src e) (Γ.tgt e)) =
+      Path.darts Γ (T.path (Γ.src f) (Γ.tgt f)) := by rw [hs, ht]
+  simpa [T.path_src_tgt he, T.path_src_tgt hf] using h
+
 /-- A spanning tree contains no loop. -/
 theorem src_ne_tgt {e : Γ.E} (he : e ∈ T.darts) : Γ.src e ≠ Γ.tgt e :=
   T.isTree.isAcyclic.src_ne_tgt ⟨e, he⟩
