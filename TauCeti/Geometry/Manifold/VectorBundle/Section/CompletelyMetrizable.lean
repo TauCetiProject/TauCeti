@@ -14,11 +14,11 @@ public import Mathlib.Topology.Baire.CompleteMetrizable
 # The compact derivative topology on bundle sections is completely metrizable
 
 Let `V` be a smooth vector bundle with Banach model fibre `F` over a boundaryless manifold `M`
-modelled on a locally compact, second-countable normed space over `ℝ` or `ℂ`. Its `C^n` sections,
-for finite or smooth regularity `n`, carry the compact derivative topology
-`ContMDiffSection.frameTopology` of any covering system of smooth frames, which does not depend on
-the covering system (`ContMDiffSection.frameTopology_eq_of_covers`). For instance the `C^k`
-vector fields on `M` are the `C^k` sections of its tangent bundle.
+modelled on a locally compact normed space over `ℝ` or `ℂ`. Its `C^n` sections, for finite or
+smooth regularity `n`, carry the compact derivative topology `ContMDiffSection.frameTopology` of
+any covering system of smooth frames, which does not depend on the covering system
+(`ContMDiffSection.frameTopology_eq_of_covers`). For instance the `C^k` vector fields on `M` are
+the `C^k` sections of its tangent bundle.
 
 This file proves that for a second-countable base this topology is completely metrizable
 (`ContMDiffSection.isCompletelyMetrizableSpace_frameTopology`), hence a Baire space
@@ -66,7 +66,6 @@ namespace ContMDiffSection
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [LocallyCompactSpace E]
-  [SecondCountableTopology E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
@@ -89,15 +88,16 @@ theorem isCompletelyMetrizableSpace_frameTopology_of_countable [Countable ι]
   let _ := frameUniformSpace (I := I) (n := n) e U hU
   have := isUniformAddGroup_frameUniformSpace (I := I) (n := n) e U hU
   have := completeSpace_frameTopology (I := I) (n := n) e U hU hcover
+  have : ProperSpace E := .of_locallyCompactSpace 𝕜
   have := metrizableSpace_frameTopology_of_sigmaCompactDomains (I := I) (n := n) e U hU hcover
   have : (uniformity Cₛ^n⟮I; F, V⟯).IsCountablyGenerated :=
     IsUniformAddGroup.uniformity_countably_generated
   infer_instance
 
 /-- **Sections are completely metrizable.** Over a second-countable boundaryless manifold
-modelled on a locally compact, second-countable space over `ℝ` or `ℂ`, the `C^n` sections of a
-vector bundle with Banach model fibre, for finite or smooth regularity `n`, form a completely
-metrizable space in the compact derivative topology of any covering system of smooth frames. -/
+modelled on a locally compact space over `ℝ` or `ℂ`, the `C^n` sections of a vector bundle with
+Banach model fibre, for finite or smooth regularity `n`, form a completely metrizable space in the
+compact derivative topology of any covering system of smooth frames. -/
 theorem isCompletelyMetrizableSpace_frameTopology [SecondCountableTopology M]
     (hcover : ∀ x, ∃ i, x ∈ U i) :
     let _ := frameTopology (I := I) (n := n) e U hU
@@ -123,10 +123,10 @@ theorem isCompletelyMetrizableSpace_frameTopology [SecondCountableTopology M]
     (fun j : T ↦ e j) (fun j ↦ U j) (fun j ↦ hU j) hcover'
 
 /-- **Sections form a Baire space.** Over a second-countable boundaryless manifold modelled on a
-locally compact, second-countable space over `ℝ` or `ℂ`, the `C^n` sections of a vector bundle
-with Banach model fibre, for finite or smooth regularity `n`, form a Baire space in the compact
-derivative topology of any covering system of smooth frames: a countable intersection of open
-dense sets of sections is dense. -/
+locally compact space over `ℝ` or `ℂ`, the `C^n` sections of a vector bundle with Banach model
+fibre, for finite or smooth regularity `n`, form a Baire space in the compact derivative topology
+of any covering system of smooth frames: a countable intersection of open dense sets of sections
+is dense. -/
 theorem baireSpace_frameTopology [SecondCountableTopology M] (hcover : ∀ x, ∃ i, x ∈ U i) :
     let _ := frameTopology (I := I) (n := n) e U hU
     BaireSpace Cₛ^n⟮I; F, V⟯ := by
