@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Functions of bounded and of vanishing mean oscillation
@@ -178,6 +179,48 @@ theorem bmoSeminorm_sub_le (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeas
     bmoSeminorm (f - g) μ ≤ bmoSeminorm f μ + bmoSeminorm g μ := by
   simpa [sub_eq_add_neg] using bmoSeminorm_add_le hf hg.neg
 
+/-- Lipschitz postcomposition increases the BMO seminorm by at most twice the Lipschitz
+constant. No normalization of the outer map at zero is needed. -/
+theorem _root_.LipschitzWith.bmoSeminorm_comp_le
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    {φ : F → G} {K : ℝ≥0} (hφ : LipschitzWith K φ) (hf : AEStronglyMeasurable f μ) :
+    bmoSeminorm (φ ∘ f) μ ≤ 2 * K * bmoSeminorm f μ := by
+  by_cases hK : K = 0
+  · subst K
+    have heq : φ ∘ f = fun _ => φ 0 :=
+      funext fun x => (LipschitzWith.zero_iff φ).1 hφ (f x) 0
+    simp [heq]
+  by_cases htop : bmoSeminorm f μ = ∞
+  · simp [htop, hK]
+  refine bmoSeminorm_le fun c r => ?_
+  by_cases hμ : μ (ball c r) = ∞
+  · simp [setLAverage_eq, hμ]
+  by_cases hi : IntegrableOn f (ball c r) μ
+  swap
+  · have h := setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ c r
+    rw [setLAverage_enorm_sub_const_eq_top hf.restrict hμ hi] at h
+    exact (htop (top_unique h)).elim
+  have : IsFiniteMeasure (μ.restrict (ball c r)) := isFiniteMeasure_restrict.2 hμ
+  have hφi : IntegrableOn (φ ∘ f) (ball c r) μ := by
+    refine ((hi.norm.const_mul (K : ℝ)).add (integrable_const ‖φ 0‖)).mono'
+      (hφ.continuous.comp_aestronglyMeasurable hi.aestronglyMeasurable)
+      (.of_forall fun x => ?_)
+    exact (norm_le_norm_sub_add (φ (f x)) (φ 0)).trans
+      (add_le_add (by simpa using hφ.norm_sub_le (f x) 0) le_rfl)
+  calc
+    ⨍⁻ y in ball c r, ‖φ (f y) - ⨍ z in ball c r, φ (f z) ∂μ‖ₑ ∂μ ≤
+        2 * ⨍⁻ y in ball c r, ‖φ (f y) - φ (⨍ z in ball c r, f z ∂μ)‖ₑ ∂μ :=
+      setLAverage_enorm_sub_setAverage_le hφi _
+    _ ≤ 2 * ⨍⁻ y in ball c r, (K : ℝ≥0∞) * ‖f y - ⨍ z in ball c r, f z ∂μ‖ₑ ∂μ := by
+      gcongr
+      exact .of_forall fun y => by
+        simpa only [edist_eq_enorm_sub] using hφ (f y) (⨍ z in ball c r, f z ∂μ)
+    _ = 2 * K * ⨍⁻ y in ball c r, ‖f y - ⨍ z in ball c r, f z ∂μ‖ₑ ∂μ := by
+      rw [laverage_const_mul ENNReal.coe_ne_top, mul_assoc]
+    _ ≤ 2 * K * bmoSeminorm f μ := by
+      gcongr
+      exact setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ c r
+
 /-- **Bounded functions have bounded mean oscillation**: `‖f‖_{BMO} ≤ 2 ‖f‖_∞`. -/
 theorem bmoSeminorm_le_two_mul_eLpNorm_top (f : X → F) (μ : Measure X) :
     bmoSeminorm f μ ≤ 2 * eLpNorm f ∞ μ := by
@@ -235,6 +278,17 @@ theorem MemBMO.add [SecondCountableTopology X] (hf : MemBMO f μ) (hg : MemBMO g
 theorem MemBMO.sub [SecondCountableTopology X] (hf : MemBMO f μ) (hg : MemBMO g μ) :
     MemBMO (f - g) μ := by
   simpa [sub_eq_add_neg] using hf.add hg.neg
+
+/-- A Lipschitz function of a BMO function is again BMO. -/
+theorem MemBMO.comp_lipschitz [SecondCountableTopology X] [IsLocallyFiniteMeasure μ]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    (hf : MemBMO f μ) {φ : F → G} {K : ℝ≥0} (hφ : LipschitzWith K φ) :
+    MemBMO (φ ∘ f) μ := by
+  apply memBMO_iff.2
+  refine ⟨locallyIntegrableOn_univ.1
+    ((locallyIntegrableOn_univ.2 hf.locallyIntegrable).comp_lipschitz hφ), ?_⟩
+  exact (hφ.bmoSeminorm_comp_le hf.locallyIntegrable.aestronglyMeasurable).trans_lt
+    (ENNReal.mul_lt_top (by finiteness) hf.bmoSeminorm_lt_top)
 
 /-- Essentially bounded functions have bounded mean oscillation. -/
 theorem _root_.MeasureTheory.MemLp.memBMO [IsLocallyFiniteMeasure μ] (hf : MemLp f ∞ μ) :
