@@ -60,7 +60,7 @@ not made here. Its cross quotient `H¹(Y; ℤ)` is torsion-free, which the follo
 any coefficient change. A map `g : M ⟶ M'` of coefficient modules which is injective induces an
 injective map `H¹(Y; M) → H¹(Y; M')`, because `H₀(Y; k)` is free and so
 `H¹(Y; M) = Hom(H₁(Y; k), M)`
-(`TopCat.injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt`). Since slant
+(`TopCat.injective_homologyMap_linearYonedaObjMap_one`). Since slant
 products commute with coefficient changes (`TopCat.singularSlant_linearYonedaObjMap`), a class
 `φ ∈ H¹⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M)` whose image in `H¹⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M')` is pulled back from `Y` is itself
 pulled back from `Y` (`TopCat.mem_range_singularCohomologyMap_snd_sphere_one_add_of_injective`, the
@@ -266,14 +266,9 @@ theorem mem_range_singularCohomologyMap_snd_sphere_one_add_of_injective (Y : Top
     φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
         (M := M) (CartesianMonoidalCategory.snd (TopCat.sphere.{w} (d + 1)) Y)
         (1 + (d + 1))).hom := by
-  have : Projective (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Projective (ModuleCat.of k k))
-  -- `H₀(Y; k)` is free, so `H¹(Y; M) = Hom(H₁(Y; k), M)` and `g` is injective on it
+  have : Module.Free k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Free k k)
   exact mem_range_singularCohomologyMap_snd_sphere_of_injective (n := 1) Y g
-    (Y.injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt g hg 1 fun j hj ↦ by
-      obtain rfl : j = 0 := by omega
-      exact ModuleCat.projective_of_free (Module.Free.chooseBasis k
-        (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (𝟙_ (ModuleCat.{w} k))).obj Y)))
-    φ hφ
+    (Y.injective_homologyMap_linearYonedaObjMap_one g hg) φ hφ
 
 end Coefficients
 

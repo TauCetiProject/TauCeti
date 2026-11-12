@@ -155,6 +155,19 @@ theorem ofSymplecticGroup_mem (S : Matrix.symplecticGroup l R) :
     ofSymplecticGroup l R S ∈ GLSymplectic l R := by
   simpa only [mem_iff_mem_symplecticGroup, coe_ofSymplecticGroup] using S.2
 
+/-- The canonical inclusion of the matrix symplectic group has range `GLSymplectic`. -/
+@[simp]
+theorem range_ofSymplecticGroup :
+    (ofSymplecticGroup l R).range = GLSymplectic l R := by
+  ext A
+  rw [MonoidHom.mem_range, mem_iff_mem_symplecticGroup]
+  constructor
+  · rintro ⟨X, rfl⟩
+    simpa only [coe_ofSymplecticGroup] using X.property
+  · intro hA
+    exact ⟨⟨(A : Matrix (l ⊕ l) (l ⊕ l) R), hA⟩,
+      Units.ext (coe_ofSymplecticGroup l R _)⟩
+
 /-- **The symplectic subgroup of the general linear group is Mathlib's symplectic group.** The
 two carriers agree because a symplectic matrix is invertible in Mathlib's symplectic group, so the
 equivalence is the identity on underlying matrices; its content is that the two group structures
@@ -227,6 +240,18 @@ theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) :
   simp
 
 end Map
+
+/-- The inverse algebraic equivalence sends a symplectic matrix to its canonical unit. -/
+@[simp]
+theorem coe_mulEquivSymplecticGroup_symm_apply (A : Matrix.symplecticGroup l R) :
+    ((mulEquivSymplecticGroup l R).symm A : GL (l ⊕ l) R) =
+      ofSymplecticGroup l R A := by
+  apply Units.ext
+  have h := coe_mulEquivSymplecticGroup l R
+    ((mulEquivSymplecticGroup l R).symm A)
+  rw [MulEquiv.apply_symm_apply] at h
+  simpa only [coe_ofSymplecticGroup] using h.symm
+
 
 end GLSymplectic
 

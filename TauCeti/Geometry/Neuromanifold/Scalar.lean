@@ -63,7 +63,7 @@ variable {K}
 /-- The scalar evaluation is faithful: a coefficient is recovered from its function. -/
 theorem scalarEvaluation_injective : Function.Injective (scalarEvaluation K) := by
   intro a b h
-  funext u
+  funext _
   simpa using congrFun h 1
 
 /-- Evaluating the coefficients `φ w` gives the scalar model `w ↦ (x ↦ φ w * x)`. -/

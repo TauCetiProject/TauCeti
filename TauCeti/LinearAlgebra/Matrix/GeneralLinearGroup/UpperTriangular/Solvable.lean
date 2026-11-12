@@ -19,8 +19,7 @@ The diagonal quotient of the upper-triangular group is abelian, while its kernel
 nilpotent upper-unitriangular group. Hence every upper-triangular general linear group over a
 commutative ring is solvable.
 
-This advances the "Lie--Kolchin; solvable groups" milestone in Layer 5 of the ReductiveGroups
-roadmap. It supplies the abstract solvability input for the upper-triangular subgroup scheme in
+This supplies the abstract solvability input for the upper-triangular subgroup scheme in
 `TauCeti.Algebra.AlgebraicGroup.Solvable.UpperTriangular`.
 
 ## Main declaration

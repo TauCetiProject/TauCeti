@@ -170,8 +170,6 @@ theorem hasOneCommonSide_of_right_eq_left (D : GridRectangleDecomposition x z)
   · simp [GridRectangleBetween.mem_sideColumns, hcommon]
   · intro c hc
     simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
-    have hfirst := D.first.left_ne_right
-    have hsecond := D.second.left_ne_right
     grind
 
 /-- Two rectangles, the first starting where the second ends, whose other sides differ share
@@ -184,8 +182,6 @@ theorem hasOneCommonSide_of_left_eq_right (D : GridRectangleDecomposition x z)
   · simp [GridRectangleBetween.mem_sideColumns, hcommon]
   · intro c hc
     simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
-    have hfirst := D.first.left_ne_right
-    have hsecond := D.second.left_ne_right
     grind
 
 /-- If two rectangles share exactly one side column, that column occurs in one of the four

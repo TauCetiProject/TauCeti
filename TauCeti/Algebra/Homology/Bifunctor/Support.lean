@@ -37,20 +37,22 @@ variable [F.PreservesZeroMorphisms] [∀ X₁, (F.obj X₁).PreservesZeroMorphis
   (c : ComplexShape J) [TotalComplexShape c₁ c₂ c]
   [HasMapBifunctor K₁ K₂ F c] [DecidableEq J]
 
+section One
+
+variable (p₀ : I₁) (q₀ : I₂) (j : J) (h : ComplexShape.π c₁ c₂ c (p₀, q₀) = j)
+  (hzero : ∀ p q, ComplexShape.π c₁ c₂ c (p, q) = j →
+    ¬ (p = p₀ ∧ q = q₀) → IsZero ((F.obj (K₁.X p)).obj (K₂.X q)))
+
 open Classical in
 /-- A totalization term with only one potentially nonzero summand is that summand. -/
-def mapBifunctorSingleSummandIso (p₀ : I₁) (q₀ : I₂) (j : J)
-    (h : ComplexShape.π c₁ c₂ c (p₀, q₀) = j)
-    (hzero : ∀ p q, ComplexShape.π c₁ c₂ c (p, q) = j →
-      ¬ (p = p₀ ∧ q = q₀) → IsZero ((F.obj (K₁.X p)).obj (K₂.X q))) :
+def mapBifunctorSingleSummandIso :
     (mapBifunctor K₁ K₂ F c).X j ≅ (F.obj (K₁.X p₀)).obj (K₂.X q₀) where
   hom := mapBifunctorDesc (fun p q _ ↦ Pi.single
     (M := fun pq : I₁ × I₂ ↦ (F.obj (K₁.X pq.1)).obj (K₂.X pq.2) ⟶ _)
     (p₀, q₀) (𝟙 _) (p, q))
   inv := ιMapBifunctor K₁ K₂ F c p₀ q₀ j h
   hom_inv_id := by
-    apply mapBifunctor.hom_ext
-    intro p q hpq
+    ext p q hpq
     by_cases h₀ : p = p₀ ∧ q = q₀
     · rcases h₀ with ⟨rfl, rfl⟩
       simp only [ι_mapBifunctorDesc_assoc, Pi.single_eq_same,
@@ -61,36 +63,32 @@ def mapBifunctorSingleSummandIso (p₀ : I₁) (q₀ : I₂) (j : J)
 
 /-- The unique supported inclusion is the inverse of the single-summand comparison. -/
 @[reassoc (attr := simp)]
-theorem ι_mapBifunctorSingleSummandIso_hom (p₀ : I₁) (q₀ : I₂) (j : J)
-    (h : ComplexShape.π c₁ c₂ c (p₀, q₀) = j)
-    (hzero : ∀ p q, ComplexShape.π c₁ c₂ c (p, q) = j →
-      ¬ (p = p₀ ∧ q = q₀) → IsZero ((F.obj (K₁.X p)).obj (K₂.X q))) :
+theorem ι_mapBifunctorSingleSummandIso_hom :
     ιMapBifunctor K₁ K₂ F c p₀ q₀ j h ≫
       (mapBifunctorSingleSummandIso K₁ K₂ F c p₀ q₀ j h hzero).hom = 𝟙 _ := by
   simp only [mapBifunctorSingleSummandIso, ι_mapBifunctorDesc, Pi.single_eq_same]
 
 /-- The inverse of the single-summand comparison is the totalization inclusion. -/
 @[simp]
-theorem mapBifunctorSingleSummandIso_inv (p₀ : I₁) (q₀ : I₂) (j : J)
-    (h : ComplexShape.π c₁ c₂ c (p₀, q₀) = j)
-    (hzero : ∀ p q, ComplexShape.π c₁ c₂ c (p, q) = j →
-      ¬ (p = p₀ ∧ q = q₀) → IsZero ((F.obj (K₁.X p)).obj (K₂.X q))) :
+theorem mapBifunctorSingleSummandIso_inv :
     (mapBifunctorSingleSummandIso K₁ K₂ F c p₀ q₀ j h hzero).inv =
       ιMapBifunctor K₁ K₂ F c p₀ q₀ j h := by
   rfl
 
+end One
+
 section Two
+
+variable (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂) (j : J)
+  [HasBinaryBiproduct ((F.obj (K₁.X p₀)).obj (K₂.X q₀)) ((F.obj (K₁.X p₁)).obj (K₂.X q₁))]
+  (h₀ : ComplexShape.π c₁ c₂ c (p₀, q₀) = j)
+  (h₁ : ComplexShape.π c₁ c₂ c (p₁, q₁) = j) (hne : (p₁, q₁) ≠ (p₀, q₀))
+  (hzero : ∀ p q, ComplexShape.π c₁ c₂ c (p, q) = j →
+    ¬ ((p = p₀ ∧ q = q₀) ∨ (p = p₁ ∧ q = q₁)) → IsZero ((F.obj (K₁.X p)).obj (K₂.X q)))
 
 open Classical in
 /-- A totalization term with two potentially nonzero summands is their binary biproduct. -/
-def mapBifunctorTwoSummandIso (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂) (j : J)
-    [HasBinaryBiproduct ((F.obj (K₁.X p₀)).obj (K₂.X q₀))
-      ((F.obj (K₁.X p₁)).obj (K₂.X q₁))]
-    (h₀ : ComplexShape.π c₁ c₂ c (p₀, q₀) = j)
-    (h₁ : ComplexShape.π c₁ c₂ c (p₁, q₁) = j) (hne : (p₁, q₁) ≠ (p₀, q₀))
-    (hzero : ∀ p q, ComplexShape.π c₁ c₂ c (p, q) = j →
-      ¬ ((p = p₀ ∧ q = q₀) ∨ (p = p₁ ∧ q = q₁)) →
-        IsZero ((F.obj (K₁.X p)).obj (K₂.X q))) :
+def mapBifunctorTwoSummandIso :
     (mapBifunctor K₁ K₂ F c).X j ≅
       (F.obj (K₁.X p₀)).obj (K₂.X q₀) ⊞ (F.obj (K₁.X p₁)).obj (K₂.X q₁) where
   hom := mapBifunctorDesc (fun p q _ ↦
@@ -101,8 +99,7 @@ def mapBifunctorTwoSummandIso (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : 
   inv := biprod.desc (ιMapBifunctor K₁ K₂ F c p₀ q₀ j h₀)
     (ιMapBifunctor K₁ K₂ F c p₁ q₁ j h₁)
   hom_inv_id := by
-    apply mapBifunctor.hom_ext
-    intro p q hpq
+    ext p q hpq
     by_cases h₀' : p = p₀ ∧ q = q₀
     · rcases h₀' with ⟨rfl, rfl⟩
       simp [Ne.symm hne]
@@ -117,14 +114,7 @@ def mapBifunctorTwoSummandIso (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : 
 
 /-- The first supported inclusion computes as the first biproduct inclusion. -/
 @[reassoc (attr := simp)]
-theorem ι_mapBifunctorTwoSummandIso_hom_left (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂) (j : J)
-    [HasBinaryBiproduct ((F.obj (K₁.X p₀)).obj (K₂.X q₀))
-      ((F.obj (K₁.X p₁)).obj (K₂.X q₁))]
-    (h₀ : ComplexShape.π c₁ c₂ c (p₀, q₀) = j)
-    (h₁ : ComplexShape.π c₁ c₂ c (p₁, q₁) = j) (hne : (p₁, q₁) ≠ (p₀, q₀))
-    (hzero : ∀ p q, ComplexShape.π c₁ c₂ c (p, q) = j →
-      ¬ ((p = p₀ ∧ q = q₀) ∨ (p = p₁ ∧ q = q₁)) →
-        IsZero ((F.obj (K₁.X p)).obj (K₂.X q))) :
+theorem ι_mapBifunctorTwoSummandIso_hom_left :
     ιMapBifunctor K₁ K₂ F c p₀ q₀ j h₀ ≫
       (mapBifunctorTwoSummandIso K₁ K₂ F c p₀ q₀ p₁ q₁ j h₀ h₁ hne hzero).hom =
         biprod.inl := by
@@ -132,14 +122,7 @@ theorem ι_mapBifunctorTwoSummandIso_hom_left (p₀ : I₁) (q₀ : I₂) (p₁ 
 
 /-- The second supported inclusion computes as the second biproduct inclusion. -/
 @[reassoc (attr := simp)]
-theorem ι_mapBifunctorTwoSummandIso_hom_right (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂) (j : J)
-    [HasBinaryBiproduct ((F.obj (K₁.X p₀)).obj (K₂.X q₀))
-      ((F.obj (K₁.X p₁)).obj (K₂.X q₁))]
-    (h₀ : ComplexShape.π c₁ c₂ c (p₀, q₀) = j)
-    (h₁ : ComplexShape.π c₁ c₂ c (p₁, q₁) = j) (hne : (p₁, q₁) ≠ (p₀, q₀))
-    (hzero : ∀ p q, ComplexShape.π c₁ c₂ c (p, q) = j →
-      ¬ ((p = p₀ ∧ q = q₀) ∨ (p = p₁ ∧ q = q₁)) →
-        IsZero ((F.obj (K₁.X p)).obj (K₂.X q))) :
+theorem ι_mapBifunctorTwoSummandIso_hom_right :
     ιMapBifunctor K₁ K₂ F c p₁ q₁ j h₁ ≫
       (mapBifunctorTwoSummandIso K₁ K₂ F c p₀ q₀ p₁ q₁ j h₀ h₁ hne hzero).hom =
         biprod.inr := by
@@ -147,14 +130,7 @@ theorem ι_mapBifunctorTwoSummandIso_hom_right (p₀ : I₁) (q₀ : I₂) (p₁
 
 /-- The inverse two-summand comparison is the desc map of the supported inclusions. -/
 @[simp]
-theorem mapBifunctorTwoSummandIso_inv (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂) (j : J)
-    [HasBinaryBiproduct ((F.obj (K₁.X p₀)).obj (K₂.X q₀))
-      ((F.obj (K₁.X p₁)).obj (K₂.X q₁))]
-    (h₀ : ComplexShape.π c₁ c₂ c (p₀, q₀) = j)
-    (h₁ : ComplexShape.π c₁ c₂ c (p₁, q₁) = j) (hne : (p₁, q₁) ≠ (p₀, q₀))
-    (hzero : ∀ p q, ComplexShape.π c₁ c₂ c (p, q) = j →
-      ¬ ((p = p₀ ∧ q = q₀) ∨ (p = p₁ ∧ q = q₁)) →
-        IsZero ((F.obj (K₁.X p)).obj (K₂.X q))) :
+theorem mapBifunctorTwoSummandIso_inv :
     (mapBifunctorTwoSummandIso K₁ K₂ F c p₀ q₀ p₁ q₁ j h₀ h₁ hne hzero).inv =
       biprod.desc (ιMapBifunctor K₁ K₂ F c p₀ q₀ j h₀)
         (ιMapBifunctor K₁ K₂ F c p₁ q₁ j h₁) := by

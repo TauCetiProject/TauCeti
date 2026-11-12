@@ -217,8 +217,6 @@ private theorem HasCompactSpatialSupport.exists_norm_rightCoeff_le
     (hc : c.HasCompactSpatialSupport) :
     ∃ C, 0 ≤ C ∧ ∀ p, ‖rightCoeff c.coefficient p‖ ≤ C * (1 + ‖p.2‖ ^ 2) ^ (m / 2) := by
   obtain ⟨C, hC0, hC⟩ := hc.exists_norm_rightIntegrand_le
-  have hI : 0 ≤ ∫ θ : CoordinateSpace n, (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) :=
-    integral_nonneg fun θ ↦ by positivity
   refine ⟨C * ∫ θ : CoordinateSpace n, (1 + ‖θ‖) ^ (-((n : ℝ) + 1)), by positivity, fun p ↦ ?_⟩
   calc ‖rightCoeff c.coefficient p‖
       ≤ ∫ θ, C * (1 + ‖p.2‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) :=
