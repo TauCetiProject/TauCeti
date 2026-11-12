@@ -74,8 +74,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
   finitely many elements `fᵢ` produces exactly the sums `∑ fᵢ • mᵢ`.
 * `Submodule.span_smul_le_iff`, `Submodule.span_mul_span_mul_smul_le`: bounding the action of
   (products of) spanned ideals on a submodule by checking generators.
-* `Submodule.map_subtype_smul_top_inf_comap`: transport of the filtration induced by
-  `J • ⊤` from a submodule `N₀` to the ambient module, where it becomes `J • N₀ ⊓ L`.
+* `Submodule.map_subtype_smul_top_inf_comap`: for submodules `N₀` and `L` and a left ideal `J`,
+  pushing `J • ⊤ ⊓ L.comap N₀.subtype` forward along the inclusion `N₀ → M` gives `J • N₀ ⊓ L`.
 * `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: if a subalgebra and a principal left
   ideal additively span the ambient algebra, and the subalgebra contains a generator of the
   ideal, then the same holds with the ideal replaced by any power.
@@ -311,15 +311,15 @@ namespace Submodule
 
 variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
-/-- Pushing the filtration that `J • ⊤` induces on `L ∩ N₀`, viewed inside `N₀`, forward along
-the inclusion `N₀ → M` gives `J • N₀ ⊓ L`. -/
+/-- For submodules `N₀` and `L` of `M` and a left ideal `J`, pushing the submodule
+`J • ⊤ ⊓ L.comap N₀.subtype` of `N₀` (the ideal multiple `J • ⊤` of `N₀`, met with the preimage
+of `L`) forward along the inclusion `N₀ → M` gives `J • N₀ ⊓ L`. -/
 @[simp]
 theorem map_subtype_smul_top_inf_comap (N₀ : Submodule R M) (J : Ideal R) (L : Submodule R M) :
     (J • ⊤ ⊓ L.comap N₀.subtype).map N₀.subtype = J • N₀ ⊓ L := by
-  -- the injective inclusion commutes with `⊓`, and carries `L.comap N₀.subtype` to `N₀ ⊓ L`
-  rw [Submodule.map_inf _ N₀.injective_subtype, Submodule.map_comap_subtype, ← inf_assoc]
-  -- `map_smul''` carries `J • ⊤` to `J • N₀`, which lies in `N₀`
-  simp [Submodule.smul_le_right]
+  -- `map_inf_eq_map_inf_comap` pulls `⊓ L` out of the pushforward, and `map_smul''`,
+  -- `map_top`, `range_subtype` carry `J • ⊤` to `J • N₀`
+  simp [← Submodule.map_inf_eq_map_inf_comap]
 
 end Submodule
 

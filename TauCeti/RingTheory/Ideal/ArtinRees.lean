@@ -50,7 +50,10 @@ the Huber development that consumes it.
 Adapted from AINTLIB's `ArtinRees.controlled_lift`, branch `dev/adic-spaces`, commit `37bbdaeb`,
 Apache-2.0, Chris Birkbeck, `projects/AdicSpaces/Adic spaces/ArtinReesConvergence.lean`, whose
 reference is given there as Wedhorn Lemma 8.31; the citation below is that source's own
-attribution. Two generalisations:
+attribution. That lemma is not itself an Artin–Rees statement: in arXiv:1910.05934v1 it says
+that for a noetherian complete Tate ring `A` the ring `A⟨X⟩` is faithfully flat over `A`, and
+that `A⟨X⟩ / (f - X)` and `A⟨X⟩ / (1 - f X)` are flat over `A` for every `f ∈ A`.
+Two generalisations:
 
 * the source fixes the ambient module to `Fin l → R` and the source of the surjection to
   `Fin k → R`, presenting the map as `∑ j, c j • s j` for a chosen spanning family; here the
@@ -65,7 +68,8 @@ One declaration is not ported: the source's `pi_smul_top_component`, which has n
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.31.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.31 (flatness of
+  `A⟨X⟩`; cited by the AINTLIB source).
 * [C. Birkbeck, *AINTLIB*](https://github.com/CBirkbeck/AINTLIB), branch `dev/adic-spaces`,
   commit `37bbdaeb`, `projects/AdicSpaces/Adic spaces/ArtinReesConvergence.lean`.
 -/
