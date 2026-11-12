@@ -16,9 +16,10 @@ import TauCeti.Algebra.CharP.Invertible
 Homogeneous elements of `TauCeti.SignedSym G`, not just its generators, obey the Koszul
 commutation rule. Passing to `TauCeti.parityGrading` extends these identities to elements of pure
 parity across multiple integer degrees: even-parity elements lie in the center of `SignedSym G`
-over any commutative ring, and every element of odd parity has square zero when `2` is invertible
-in the coefficient ring. These identities allow the signed symmetric algebra to serve as a
-receiving supercommutative algebra in universal properties and tensor comparisons.
+over any commutative ring (in particular `SignedSym G` is commutative whenever all odd-degree
+pieces vanish), and every element of odd parity has square zero when `2` is invertible in the
+coefficient ring. These identities allow the signed symmetric algebra to serve as a receiving
+supercommutative algebra in universal properties and tensor comparisons.
 
 The proof uses `TauCeti.SignedSym.homogeneous_induction` from the grading API.
 The construction follows the supercommutative algebra of J. Pardon,
@@ -104,8 +105,9 @@ theorem sq_eq_zero [Invertible (2 : R)] {p : ℤ} {a : SignedSym G}
 /-- The canonical generator map preserves parity. -/
 theorem generator_mem_parityGrading {k : ZMod 2} {x : V} (hx : x ∈ parityGrading G.piece k) :
     generator G x ∈ parityGrading (signedSymPiece G) k := by
-  simpa only [LinearMap.IsHomogeneous.coe_restrictParity_apply] using
-    ((isHomogeneous_signedSymGenerator G).restrictParity k ⟨x, hx⟩).2
+  simpa only [add_zero] using
+    ((isHomogeneous_signedSymGenerator G).coarsenGrading_zero
+      (Int.castAddHom (ZMod 2))).map_mem hx
 
 /-- Elements of pure parity supercommute with the sign determined by their parities, even when
 they combine multiple integer degrees. -/
@@ -118,8 +120,7 @@ theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading {i j : ZMod 2} {a b : SignedS
 /-- Every element of even parity commutes with all of `SignedSym G`. -/
 theorem commute_of_mem_parityGrading_zero {a : SignedSym G}
     (ha : a ∈ parityGrading (signedSymPiece G) 0) (b : SignedSym G) : Commute a b :=
-  TauCeti.commute_of_mem_parityGrading_zero
-    (fun ha hb => by rw [Units.smul_def]; exact mul_eq_negOnePow_smul_mul G ha hb) ha b
+  TauCeti.commute_of_mem_zero (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha b
 
 /-- Every element of even parity lies in the center of `SignedSym G`. -/
 theorem mem_center_of_mem_parityGrading_zero {a : SignedSym G}
@@ -130,8 +131,7 @@ theorem mem_center_of_mem_parityGrading_zero {a : SignedSym G}
 theorem sq_eq_neg_of_mem_parityGrading_one {a : SignedSym G}
     (ha : a ∈ parityGrading (signedSymPiece G) 1) : a ^ 2 = -(a ^ 2) := by
   rw [pow_two]
-  exact TauCeti.mul_self_eq_neg_of_mem_parityGrading_one
-    (fun ha hb => by rw [Units.smul_def]; exact mul_eq_negOnePow_smul_mul G ha hb) ha
+  exact TauCeti.mul_self_eq_neg_of_mem_one (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha
 
 /-- Every element of odd parity has square zero when `2` is invertible in the coefficient ring,
 even if it sums terms of distinct odd integer degrees. -/
@@ -148,5 +148,17 @@ theorem generator_mem_center_of_mem_parityGrading_zero {x : V}
 theorem generator_sq_eq_zero_of_mem_parityGrading_one [Invertible (2 : R)] {x : V}
     (hx : x ∈ parityGrading G.piece 1) : generator G x ^ 2 = 0 :=
   sq_eq_zero_of_mem_parityGrading_one G (generator_mem_parityGrading G hx)
+
+/-- When all odd-degree pieces of `V` vanish, `SignedSym G` is commutative over any commutative
+ring. -/
+theorem mul_comm_of_odd_piece_eq_bot (hG : ∀ p, Odd p → G.piece p = ⊥)
+    (a b : SignedSym G) : a * b = b * a :=
+  (Subalgebra.mem_center_iff.mp
+    (SignedSym.induction G (P := (· ∈ Subalgebra.center R (SignedSym G)))
+      (algebraMap_mem _)
+      (fun x => generator_mem_center_of_mem_parityGrading_zero G
+        (mem_parityGrading_zero_of_odd_eq_bot hG x))
+      (fun _ _ => mul_mem)
+      (fun _ _ => add_mem) a) b).symm
 
 end TauCeti.SignedSym

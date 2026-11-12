@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorAlgebra.Grading
-public import TauCeti.Algebra.RingQuot
-public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Basic
-public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
+public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Grading
 
 /-!
 # Word length in the signed symmetric algebra
@@ -18,7 +16,9 @@ The Koszul relations preserve word length, independently of the input degrees. C
 internal natural-number grading. Mathlib's `GradedAlgebra.proj` supplies its linear projections.
 The length-zero projection is the canonical augmentation followed by the coefficient inclusion;
 the length-one projection retains generators. These distinguish constant and linear terms in
-an orbit-algebra differential, which need not preserve word length.
+an orbit-algebra differential, which need not preserve word length. When `V` is concentrated in a
+single nonzero degree `d`, `signedSymPiece G (n * d)` coincides with `lengthPiece G n`
+(`TauCeti.SignedSym.signedSymPiece_eq_lengthPiece_of_piece_eq_bot`).
 
 This is the word decomposition of the free supercommutative algebra in J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1). We use Mathlib's tensor
@@ -208,5 +208,45 @@ theorem decompose_lengthPiece_map (f : V →ₗ[R] W)
   simpa only [AlgHom.toLinearMap_apply] using h.symm
 
 end Map
+
+section SingleDegree
+
+/-- When `V` is concentrated in degree `d`, words of length `n` have input degree `n * d`. -/
+theorem lengthPiece_le_signedSymPiece_of_piece_eq_bot {d : ℤ}
+    (hG : ∀ p, p ≠ d → G.piece p = ⊥) (n : ℕ) :
+    lengthPiece G n ≤ signedSymPiece G (n * d) := by
+  intro a ha
+  refine length_induction G (P := fun m b => b ∈ signedSymPiece G (m * d))
+    (fun r => ?_) (fun _ _ _ hx hy => add_mem hx hy) (fun m x b hb => ?_) ha
+  · rw [Nat.cast_zero, zero_mul, Algebra.algebraMap_eq_smul_one]
+    exact Submodule.smul_mem _ r (SetLike.one_mem_graded (signedSymPiece G))
+  · have hdeg : (m + 1 : ℕ) * d = d + m * d := by push_cast; rw [add_mul, one_mul, add_comm]
+    rw [hdeg]
+    exact SetLike.mul_mem_graded
+      (generator_mem_signedSymPiece G (G.mem_piece_of_piece_eq_bot hG x)) hb
+
+/-- When `V` is concentrated in a nonzero degree `d`, the input-degree piece `n * d` coincides
+with the word-length piece `lengthPiece G n`. -/
+theorem signedSymPiece_eq_lengthPiece_of_piece_eq_bot {d : ℤ} (hd : d ≠ 0)
+    (hG : ∀ q, q ≠ d → G.piece q = ⊥) (n : ℕ) :
+    signedSymPiece G (n * d) = lengthPiece G n := by
+  refine le_antisymm ?_ (lengthPiece_le_signedSymPiece_of_piece_eq_bot G hG n)
+  rw [signedSymPiece_eq_span, Submodule.span_le]
+  rintro _ ⟨m, deg, x, hx, hsum, rfl⟩
+  by_cases hdeg : ∀ i, deg i = d
+  · have hmn : m = n := by
+      apply Int.ofNat.inj
+      refine mul_right_cancel₀ hd ?_
+      simpa [hdeg] using hsum
+    subst hmn
+    exact word_mem_lengthPiece G x
+  · obtain ⟨i, hi⟩ := not_forall.mp hdeg
+    have hxi : x i = 0 := by
+      have := hx i
+      rwa [hG (deg i) hi, Submodule.mem_bot] at this
+    rw [List.prod_eq_zero (List.mem_ofFn.mpr ⟨i, by simp [hxi]⟩)]
+    exact zero_mem _
+
+end SingleDegree
 
 end TauCeti.SignedSym

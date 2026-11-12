@@ -24,10 +24,12 @@ generates the whole algebra. An algebra morphism whose range contains this eleme
 surjective, a criterion used for coordinate morphisms of additive root subgroups.
 
 A ring homomorphism out of a symmetric algebra is determined by its values on scalars and on
-generators (`SymmetricAlgebra.ringHom_ext`), even when its target is nonassociative. The `ext`
-tactic reduces equality of these homomorphisms to agreement on scalars and generators.
-The inverse of the universal property `SymmetricAlgebra.lift` restricts an algebra morphism
-to the generators (`SymmetricAlgebra.lift_symm_apply`).
+generators (`SymmetricAlgebra.ringHom_ext`), even when its target is nonassociative, and an
+algebra homomorphism into a possibly noncommutative algebra is determined by its restriction to
+generators (`SymmetricAlgebra.hom_ext`). The `ext` tactic reduces equality of these homomorphisms
+to agreement on scalars and generators. The inverse of the universal property
+`SymmetricAlgebra.lift` restricts an algebra morphism to the generators
+(`SymmetricAlgebra.lift_symm_apply`).
 -/
 
 public section
@@ -72,6 +74,13 @@ theorem ringHom_ext {A : Type*} [NonAssocSemiring A] {F G : SymmetricAlgebra R M
   | ι m => exact h₂ m
   | mul a b ha hb => rw [map_mul, map_mul, ha, hb]
   | add a b ha hb => rw [map_add, map_add, ha, hb]
+
+/-- Two algebra homomorphisms out of a symmetric algebra into a (possibly noncommutative) algebra
+agree if they agree on generators. See note [partially-applied ext lemmas]. -/
+@[ext 1100]
+theorem hom_ext {A : Type*} [Semiring A] [Algebra R A] {F G : SymmetricAlgebra R M →ₐ[R] A}
+    (h : F.toLinearMap.comp (ι R M) = G.toLinearMap.comp (ι R M)) : F = G :=
+  AlgHom.toRingHom_injective <| ringHom_ext (by ext; simp) fun m ↦ LinearMap.congr_fun h m
 
 /-- The inverse of `SymmetricAlgebra.lift` restricts an algebra morphism to the generators: it
 sends `H` to the linear map `x ↦ H (ι x)`. -/

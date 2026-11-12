@@ -26,6 +26,7 @@ The multilinear counterpart, and the degree calculus for substitution, are in
 ## Main definitions
 
 * `LinearMap.IsHomogeneous`: a linear map shifts homogeneous degree by a fixed amount.
+* `LinearMap.IsHomogeneous.restrict`: restriction of a degree-zero homogeneous map to each piece.
 * `LinearMap.homogeneousSubmodule`: the submodule of linear maps of a fixed degree.
 
 ## Main results
@@ -99,6 +100,18 @@ theorem IsHomogeneous.comp {P : Type uP} {σP : Type*} [AddCommMonoid P] [Module
     IsHomogeneous (g.comp f) 𝒜 𝒞 (q + r) := by
   intro p x hx
   simpa only [_root_.LinearMap.comp_apply, add_assoc] using hg (hf hx)
+
+/-- A degree-zero homogeneous linear map restricts to a linear map on each graded piece. -/
+def IsHomogeneous.restrict {g : M →ₗ[R] N} {ℳ : ι → Submodule R M} {𝒩 : ι → Submodule R N}
+    (hg : IsHomogeneous g ℳ 𝒩 0) (k : ι) : ℳ k →ₗ[R] 𝒩 k :=
+  g.restrict fun _ hx ↦ by simpa only [add_zero] using hg.map_mem hx
+
+/-- Coercing `IsHomogeneous.restrict` back to the ambient module applies the original map. -/
+@[simp]
+theorem IsHomogeneous.coe_restrict_apply {g : M →ₗ[R] N} {ℳ : ι → Submodule R M}
+    {𝒩 : ι → Submodule R N} (hg : IsHomogeneous g ℳ 𝒩 0) (k : ι) (x : ℳ k) :
+    (hg.restrict k x : N) = g x :=
+  _root_.LinearMap.coe_restrict_apply _ x
 
 end Semiring
 
