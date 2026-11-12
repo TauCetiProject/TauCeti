@@ -29,8 +29,9 @@ the transposed diagonal by `TauCeti.NatChainComplex.cup_koszulBraidingHom`.
 * `TopCat.singularCup_gradedComm`: graded commutativity for braided coefficient data.
 * `TopCat.singularCup_gradedComm_tensorUnit`: graded commutativity for a commutative pairing on
   cohomology with unit coefficient object.
-* `TopCat.singularCup_self_eq_zero_of_odd`: over a field `k` with `2 ≠ 0`, `α ⌣ α = 0` for `α`
-  of odd degree.
+* `TopCat.two_smul_singularCup_self_eq_zero_of_odd` and
+  `TopCat.singularCup_self_eq_zero_of_odd`: for commutative coefficients, `2 • (a ⌣ a) = 0` for
+  `a` of odd degree, so `a ⌣ a = 0` when `2` is invertible in `k`.
 
 ## References
 
@@ -87,23 +88,27 @@ theorem singularCup_gradedComm_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing
   singularCup_gradedComm X k (by
     rw [braiding_tensorUnit_left, Iso.inv_hom_id_assoc, unitors_inv_equal]) hμ h a b
 
-/-- **Cup squares of odd classes vanish** when `2 ≠ 0` in the field `k`: by graded commutativity,
-`α ⌣ α = -(α ⌣ α)` for `α` of odd degree. -/
-theorem singularCup_self_eq_zero_of_odd {k : Type w} [Field k] (X : TopCat.{w})
-    (h2 : (2 : k) ≠ 0) {p n : ℕ} (hp : Odd p) (h : p + p = n)
-    (α : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p) :
-    X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ (𝟙_ (ModuleCat.{w} k))).hom
-      p p n h α α = 0 := by
-  have hμ : (β_ (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k))).hom ≫
-      (λ_ (𝟙_ (ModuleCat.{w} k))).hom = (λ_ (𝟙_ (ModuleCat.{w} k))).hom := by
-    simp [unitors_inv_equal]
-  have hcomm := X.singularCup_gradedComm_tensorUnit k hμ h α α
+/-- **Twice an odd cup square vanishes**: for coefficients in an object `M` with a commutative
+pairing `μ`, graded commutativity gives `a ⌣ a = -(a ⌣ a)` for `a` of odd degree, so
+`2 • (a ⌣ a) = 0`. -/
+theorem two_smul_singularCup_self_eq_zero_of_odd (X : TopCat.{w}) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] {μ : M ⊗ M ⟶ M} (hμ : (β_ M M).hom ≫ μ = μ) {p n : ℕ}
+    (hp : Odd p) (h : p + p = n) (a : X.singularCohomology (𝟙_ C) k M p) :
+    (2 : k) • X.singularCup k (λ_ _).inv μ p p n h a a = 0 := by
+  have hcomm := X.singularCup_gradedComm_tensorUnit k hμ h a a
   rw [(hp.mul hp).neg_one_pow, neg_one_smul] at hcomm
-  have h2' : (2 : k) • X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
-      (λ_ (𝟙_ (ModuleCat.{w} k))).hom p p n h α α = 0 := by
-    rw [two_smul]
-    nth_rw 1 [hcomm]
-    exact neg_add_cancel _
-  exact (smul_eq_zero.1 h2').resolve_left h2
+  rw [two_smul]
+  nth_rw 1 [hcomm]
+  exact neg_add_cancel _
+
+/-- **Cup squares of odd classes vanish** when `2` is invertible in `k`: for coefficients in an
+object `M` with a commutative pairing `μ`, `a ⌣ a = 0` for `a` of odd degree. -/
+theorem singularCup_self_eq_zero_of_odd (X : TopCat.{w}) (k : Type*) [CommRing k]
+    [Invertible (2 : k)] [Linear k C] [MonoidalLinear k C] {μ : M ⊗ M ⟶ M}
+    (hμ : (β_ M M).hom ≫ μ = μ) {p n : ℕ} (hp : Odd p) (h : p + p = n)
+    (a : X.singularCohomology (𝟙_ C) k M p) :
+    X.singularCup k (λ_ _).inv μ p p n h a a = 0 := by
+  rw [← one_smul k (X.singularCup k (λ_ _).inv μ p p n h a a), ← invOf_mul_self (2 : k),
+    mul_smul, X.two_smul_singularCup_self_eq_zero_of_odd k hμ hp h a, smul_zero]
 
 end TopCat

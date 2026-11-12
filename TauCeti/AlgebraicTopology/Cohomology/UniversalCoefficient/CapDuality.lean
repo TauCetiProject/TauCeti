@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
-public import TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Field
 public import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
@@ -26,9 +25,10 @@ with `μ` is injective in degree `p` exactly when the cup pairing has trivial le
 If `2 ≠ 0` in `k`, graded commutativity of the cup product makes the square of an odd degree
 class vanish (`TopCat.singularCup_self_eq_zero_of_odd`, from
 `TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity`), so in the middle degree `p` of an odd
-`p + p = n` the cup pairing is alternating. If moreover `Hᵖ(X; k)` is finite-dimensional and
-capping with `μ` is injective on it, the pairing is a nondegenerate alternating form and `Hᵖ(X; k)`
-has even dimension
+`p + p = n` the cup pairing is alternating (`TopCat.isAlt_singularCupPairing`, from
+`TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker`). If moreover `Hᵖ(X; k)` is
+finite-dimensional and capping with `μ` is injective on it, the pairing is a nondegenerate
+alternating form and `Hᵖ(X; k)` has even dimension
 (`TopCat.even_finrank_singularCohomology_of_injective_singularCapLinearMap`). The hypothesis on
 `2` cannot be dropped: over `𝔽₂`, the real projective plane has `H¹` of dimension one and capping
 with its mod two fundamental class is bijective. When capping with `μ` is bijective, the Betti
@@ -43,8 +43,6 @@ All cohomology and homology here has coefficients in the tensor unit `𝟙_ (Mod
 
 * `TopCat.singularCapLinearMap_eq_zero_iff` and `TopCat.injective_singularCapLinearMap_iff`:
   capping with `μ` kills `α` exactly when `α` lies in the left kernel of the cup pairing.
-* `TopCat.isAlt_singularCupPairing`: the middle odd degree cup pairing is alternating when
-  `2 ≠ 0` in `k`.
 * `TopCat.even_finrank_singularCohomology_of_injective_singularCapLinearMap` and
   `TopCat.finrank_singularHomology_eq_of_bijective_singularCapLinearMap`: the Betti number
   consequences.
@@ -90,14 +88,6 @@ theorem injective_singularCapLinearMap_iff {p q n : ℕ} (h : p + q = n)
   rw [injective_iff_map_eq_zero]
   exact forall_congr' fun α ↦ imp_congr_left (X.singularCapLinearMap_eq_zero_iff h μ α)
 
-/-- In odd degree `p` with `p + p = n`, the cup pairing on `μ` is alternating when `2 ≠ 0`
-in `k`. -/
-theorem isAlt_singularCupPairing (h2 : (2 : k) ≠ 0) {p n : ℕ} (hp : Odd p) (h : p + p = n)
-    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X) :
-    (X.singularCupPairing h μ).IsAlt := fun α ↦ by
-  rw [singularCupPairing_apply, X.singularCup_self_eq_zero_of_odd h2 hp h α, map_zero]
-  rfl
-
 /-- **Middle odd degree cohomology has even dimension under duality**: if `2 ≠ 0` in `k`,
 `p` is odd, `p + p = n`, `Hᵖ(X; k)` is finite-dimensional and capping with `μ ∈ Hₙ(X; k)` is
 injective on it, then the cup pairing on `μ` is a nondegenerate alternating form on `Hᵖ(X; k)`,
@@ -110,7 +100,8 @@ theorem even_finrank_singularCohomology_of_injective_singularCapLinearMap (h2 : 
     (hinj : Function.Injective (X.singularCapLinearMap h μ)) :
     Even (finrank k
       (X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)) := by
-  refine (X.isAlt_singularCupPairing h2 hp h μ).even_finrank_of_injective ?_ (finrank_self k)
+  have := invertibleOfNonzero h2
+  refine (X.isAlt_singularCupPairing hp h μ).even_finrank_of_injective ?_ (finrank_self k)
   rw [injective_iff_map_eq_zero]
   exact fun α hα ↦ (X.injective_singularCapLinearMap_iff h μ).1 hinj α fun β ↦ by
     rw [hα, LinearMap.zero_apply]

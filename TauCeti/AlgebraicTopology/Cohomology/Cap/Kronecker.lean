@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 
 /-!
@@ -30,7 +32,9 @@ the cup product under the Kronecker pairing.
 
 For a class `μ ∈ Hₙ(X; k)`, evaluating cup products on `μ` is the bilinear cup pairing
 `TopCat.singularCupPairing`, `(α, β) ↦ ⟨α ⌣ β, μ⟩`, and the identity above says that it is
-`⟨β, μ ⌢ α⟩` (`TopCat.singularCupPairing_eq_singularKronecker_singularCapLinearMap`).
+`⟨β, μ ⌢ α⟩` (`TopCat.singularCupPairing_eq_singularKronecker_singularCapLinearMap`). When `2`
+is invertible in `k`, graded commutativity makes the cup pairing in an odd middle degree
+alternating (`TopCat.isAlt_singularCupPairing`).
 
 The key chain-level input is `SSet.chainComplexPairing_leftUnitor_hom_f`, from
 `TauCeti.AlgebraicTopology.SimplicialSet.Homology.Pairing`: the action of the tensor unit on
@@ -109,6 +113,15 @@ theorem singularCupPairing_eq_singularKronecker_singularCapLinearMap {p q n : �
       (X.singularKronecker k q β).hom (X.singularCapLinearMap h μ α) := by
   rw [singularCupPairing_apply, singularCapLinearMap_apply,
     ← singularCap_comp_singularKronecker]
+  rfl
+
+/-- In odd degree `p` with `p + p = n`, the cup pairing on `μ` is alternating when `2` is
+invertible in `k`. -/
+theorem isAlt_singularCupPairing [Invertible (2 : k)] {p n : ℕ} (hp : Odd p) (h : p + p = n)
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X) :
+    (X.singularCupPairing h μ).IsAlt := fun α ↦ by
+  rw [singularCupPairing_apply,
+    X.singularCup_self_eq_zero_of_odd k (by simp [unitors_inv_equal]) hp h α, map_zero]
   rfl
 
 end ModuleCat
