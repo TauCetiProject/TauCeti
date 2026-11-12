@@ -25,8 +25,14 @@ are allowed. Only finite-dimensional Brownian laws, adaptedness to the filtratio
 filtration-relative increment independence are used; neither path continuity nor usual
 conditions are needed.
 
+The isometry also holds for finite families of pairwise chronologically disjoint intervals,
+without an order on their index type. Its arbitrary-observation-time version truncates both
+endpoints at `T`, while keeping each height measurable at its original left endpoint. Intervals
+not yet started contribute zero, so future heights need not be measurable at `T`.
+
 These are the elementary isometry and orthogonality identities used to extend the Brownian
-integral by completion. No integral for general predictable processes is constructed here.
+integral by completion and compute its second moment at each observation time. No integral for
+general predictable processes is constructed here.
 
 ## References
 
@@ -94,6 +100,43 @@ theorem integral_mul_sub_mul_mul_sub_eq_zero (hW : IsFilteredPreBrownianReal ℱ
         (hW.adapted.stronglyAdapted.stronglyMeasurable_le (huv.trans hvs)))).mul hη)
   simpa only [mul_assoc] using hW.integral_mul_sub_eq_zero hst hknown
 
+/-- A finite sum of weighted Brownian increments with square-integrable left-endpoint
+heights lies in `L²`. No disjointness of the intervals is required. -/
+theorem memLp_sum_mul_sub_of_le (hW : IsFilteredPreBrownianReal ℱ W P)
+    {ι : Type*} (I : Finset ι) {s t : ι → ℝ≥0} {X : ι → Ω → ℝ}
+    (hst : ∀ i ∈ I, s i ≤ t i)
+    (hX : ∀ i ∈ I, StronglyMeasurable[ℱ (s i)] (X i))
+    (hXi : ∀ i ∈ I, MemLp (X i) 2 P) :
+    MemLp (fun ω => ∑ i ∈ I, X i ω * (W (t i) ω - W (s i) ω)) 2 P :=
+  memLp_finsetSum _ fun i hi => hW.memLp_mul_sub (hst i hi) (hX i hi) (hXi i hi)
+
+/-- **The elementary Brownian isometry for disjoint interval families.** The second moment
+of a finite sum of weighted increments equals the sum of the expected squared heights times
+the interval lengths. The intervals are pairwise chronologically disjoint, but their index type
+need not be ordered. Heights are known at their own left endpoints and belong to `L²`;
+no independence between heights is assumed. Empty families and zero-length intervals are allowed. -/
+theorem integral_sq_sum_mul_sub_of_pairwise_disjoint (hW : IsFilteredPreBrownianReal ℱ W P)
+    {ι : Type*} (I : Finset ι) {s t : ι → ℝ≥0} {X : ι → Ω → ℝ}
+    (hst : ∀ i ∈ I, s i ≤ t i)
+    (hdisj : (I : Set ι).Pairwise fun i j => t i ≤ s j ∨ t j ≤ s i)
+    (hX : ∀ i ∈ I, StronglyMeasurable[ℱ (s i)] (X i))
+    (hXi : ∀ i ∈ I, MemLp (X i) 2 P) :
+    ∫ ω, (∑ i ∈ I, X i ω * (W (t i) ω - W (s i) ω)) ^ 2 ∂P =
+      ∑ i ∈ I, (∫ ω, X i ω ^ 2 ∂P) * (↑(t i) - ↑(s i)) := by
+  let U (i : ι) (ω : Ω) := X i ω * (W (t i) ω - W (s i) ω)
+  have hU i (hi : i ∈ I) : MemLp (U i) 2 P :=
+    hW.memLp_mul_sub (hst i hi) (hX i hi) (hXi i hi)
+  have hcross i (hi : i ∈ I) j (hj : j ∈ I) (hij : i ≠ j) :
+      ∫ ω, U i ω * U j ω ∂P = 0 := by
+    rcases hdisj hi hj hij with hij | hji
+    · exact hW.integral_mul_sub_mul_mul_sub_eq_zero (hst i hi) hij
+        (hst j hj) (hX i hi) (hX j hj)
+    · simpa only [mul_comm] using
+        hW.integral_mul_sub_mul_mul_sub_eq_zero (hst j hj) hji
+          (hst i hi) (hX j hj) (hX i hi)
+  rw [integral_sq_sum_of_pairwise_integral_mul_eq_zero hU hcross]
+  exact sum_congr rfl fun i hi => hW.integral_sq_mul_sub (hst i hi) (hX i hi)
+
 variable {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
 
 /-- An elementary Brownian integral with square-integrable predictable heights lies in `L²`.
@@ -103,11 +146,10 @@ theorem memLp_sum_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
     (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
     MemLp (fun ω => ∑ i ∈ range n, a i ω * (W (τ (i + 1)) ω - W (τ i) ω)) 2 P := by
-  exact memLp_finsetSum _ fun i hi =>
-    hW.memLp_mul_sub
-      (hτ (Set.mem_Iic.mpr (mem_range.mp hi).le)
-        (Set.mem_Iic.mpr (Nat.succ_le_of_lt (mem_range.mp hi))) (Nat.le_succ i))
-      (ha i (mem_range.mp hi)) (ha₂ i (mem_range.mp hi))
+  exact hW.memLp_sum_mul_sub_of_le (range n)
+    (fun i hi => hτ (Set.mem_Iic.mpr (mem_range.mp hi).le)
+      (Set.mem_Iic.mpr (Nat.succ_le_of_lt (mem_range.mp hi))) (Nat.le_succ i))
+    (fun i hi => ha i (mem_range.mp hi)) (fun i hi => ha₂ i (mem_range.mp hi))
 
 /-- **The elementary Brownian isometry.** The second moment of a finite predictable
 increment sum is the sum of the expected squared heights times the interval lengths.
@@ -118,27 +160,69 @@ theorem integral_sq_sum_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
     ∫ ω, (∑ i ∈ range n, a i ω * (W (τ (i + 1)) ω - W (τ i) ω)) ^ 2 ∂P =
       ∑ i ∈ range n, (∫ ω, a i ω ^ 2 ∂P) * ((τ (i + 1) : ℝ) - τ i) := by
-  let Z (i : ℕ) (ω : Ω) := a i ω * (W (τ (i + 1)) ω - W (τ i) ω)
-  have hstep (i : ℕ) (hi : i < n) : τ i ≤ τ (i + 1) :=
-    hτ (Set.mem_Iic.mpr hi.le) (Set.mem_Iic.mpr (Nat.succ_le_of_lt hi)) (Nat.le_succ i)
-  have hordered (i j : ℕ) (hij : i < j) (hj : j < n) : τ (i + 1) ≤ τ j :=
-    hτ (Set.mem_Iic.mpr ((Nat.succ_le_of_lt hij).trans hj.le))
-      (Set.mem_Iic.mpr hj.le) (Nat.succ_le_of_lt hij)
-  have hZ (i : ℕ) (hi : i < n) : MemLp (Z i) 2 P :=
-    hW.memLp_mul_sub (hstep i hi) (ha i hi) (ha₂ i hi)
-  have hoff (i j : ℕ) (hi : i < n) (hj : j < n) (hij : i < j) :
-      ∫ ω, Z i ω * Z j ω ∂P = 0 :=
-    hW.integral_mul_sub_mul_mul_sub_eq_zero (hstep i hi)
-      (hordered i j hij hj) (hstep j hj) (ha i hi) (ha j hj)
-  have hpair (i j : ℕ) (hi : i < n) (hj : j < n) (hij : i ≠ j) :
-      ∫ ω, Z i ω * Z j ω ∂P = 0 := by
-    rcases hij.lt_or_gt with hij | hij
-    · exact hoff i j hi hj hij
-    · simpa only [mul_comm] using hoff j i hj hi hij
-  rw [integral_sq_sum_of_pairwise_integral_mul_eq_zero
-    (fun i hi ↦ hZ i (mem_range.mp hi))
-    (fun i hi j hj hij ↦ hpair i j (mem_range.mp hi) (mem_range.mp hj) hij)]
-  exact sum_congr rfl fun i hi =>
-    hW.integral_sq_mul_sub (hstep i (mem_range.mp hi)) (ha i (mem_range.mp hi))
+  apply hW.integral_sq_sum_mul_sub_of_pairwise_disjoint (range n)
+    (fun i hi => hτ (by simpa using (mem_range.mp hi).le)
+      (by simpa using Nat.succ_le_of_lt (mem_range.mp hi)) (Nat.le_succ i))
+    (hX := fun i hi => ha i (mem_range.mp hi)) (hXi := fun i hi => ha₂ i (mem_range.mp hi))
+  intro i hi j hj hij
+  rcases hij.lt_or_gt with hij | hji
+  · exact Or.inl (hτ (by simpa using Nat.succ_le_of_lt (mem_range.mp hi))
+      (by simpa using (mem_range.mp hj).le) (Nat.succ_le_of_lt hij))
+  · exact Or.inr (hτ (by simpa using Nat.succ_le_of_lt (mem_range.mp hj))
+      (by simpa using (mem_range.mp hi).le) (Nat.succ_le_of_lt hji))
+
+/-- A finite sum of weighted Brownian increments truncated at an observation time lies in
+`L²`. Heights need only be measurable at their original left endpoints: intervals not yet
+started contribute zero. No disjointness of the intervals is required. -/
+theorem memLp_sum_mul_sub_min (hW : IsFilteredPreBrownianReal ℱ W P)
+    {ι : Type*} (I : Finset ι) {s t : ι → ℝ≥0} {X : ι → Ω → ℝ}
+    (hst : ∀ i ∈ I, s i ≤ t i)
+    (hX : ∀ i ∈ I, StronglyMeasurable[ℱ (s i)] (X i))
+    (hXi : ∀ i ∈ I, MemLp (X i) 2 P) (T : ℝ≥0) :
+    MemLp (fun ω => ∑ i ∈ I,
+      X i ω * (W (min (t i) T) ω - W (min (s i) T) ω)) 2 P := by
+  refine memLp_finsetSum _ fun i hi => ?_
+  by_cases hs : s i ≤ T
+  · simpa only [min_eq_left hs] using
+      hW.memLp_mul_sub (le_min (hst i hi) hs) (hX i hi) (hXi i hi)
+  · have hTs : T ≤ s i := (lt_of_not_ge hs).le
+    simp only [min_eq_right hTs, min_eq_right (hTs.trans (hst i hi)), sub_self, mul_zero]
+    exact MemLp.zero
+
+/-- The elementary Brownian isometry at an arbitrary observation time. Intervals after `T`
+contribute zero and an interval straddling `T` contributes only its elapsed length. The
+heights remain measurable at their original left endpoints; no measurability at an
+earlier, truncated time is assumed. -/
+theorem integral_sq_sum_mul_sub_min (hW : IsFilteredPreBrownianReal ℱ W P)
+    {ι : Type*} (I : Finset ι) {s t : ι → ℝ≥0} {X : ι → Ω → ℝ}
+    (hst : ∀ i ∈ I, s i ≤ t i)
+    (hdisj : (I : Set ι).Pairwise fun i j => t i ≤ s j ∨ t j ≤ s i)
+    (hX : ∀ i ∈ I, StronglyMeasurable[ℱ (s i)] (X i))
+    (hXi : ∀ i ∈ I, MemLp (X i) 2 P) (T : ℝ≥0) :
+    ∫ ω, (∑ i ∈ I, X i ω * (W (min (t i) T) ω - W (min (s i) T) ω)) ^ 2 ∂P =
+      ∑ i ∈ I, (∫ ω, X i ω ^ 2 ∂P) * (↑(min (t i) T) - ↑(min (s i) T)) := by
+  classical
+  -- Discard intervals not yet started before applying the disjoint-family isometry
+  -- integral_sq_sum_mul_sub_of_pairwise_disjoint. Their heights need not be measurable
+  -- at the observation time.
+  have h := hW.integral_sq_sum_mul_sub_of_pairwise_disjoint (I.filter fun i => s i < T)
+    (s := s) (t := fun i => min (t i) T) (X := X)
+    (fun i hi => le_min (hst i (mem_filter.mp hi).1) (mem_filter.mp hi).2.le)
+    (fun i hi j hj hij => (hdisj (mem_filter.mp hi).1 (mem_filter.mp hj).1 hij).imp
+      (fun hij => (min_le_left _ _).trans hij) (fun hji => (min_le_left _ _).trans hji))
+    (fun i hi => hX i (mem_filter.mp hi).1)
+    (fun i hi => hXi i (mem_filter.mp hi).1)
+  have hfilter (c : ι → ℝ) (f : ι → ℝ≥0 → ℝ) :
+      (∑ i ∈ I, c i * (f i (min (t i) T) - f i (min (s i) T))) =
+        ∑ i ∈ I.filter (fun i => s i < T), c i * (f i (min (t i) T) - f i (s i)) := by
+    rw [sum_filter]
+    refine sum_congr rfl fun i hi => ?_
+    by_cases hs : s i < T
+    · simp [hs, min_eq_left hs.le]
+    · have hTs : T ≤ s i := le_of_not_gt hs
+      simp [hs, min_eq_right hTs, min_eq_right (hTs.trans (hst i hi))]
+  have hsum (ω : Ω) := hfilter (fun i => X i ω) (fun _ r => W r ω)
+  simp_rw [hsum, hfilter]
+  exact h
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
