@@ -24,16 +24,16 @@ open TensorProduct
 namespace Derivation
 
 variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
-  (S : Type*) [CommSemiring S] [Algebra R S]
+  {S : Type*} [CommSemiring S] [Algebra R S]
 
+variable (S) in
 /-- Extend a derivation by differentiating the second factor of a tensor product. -/
 noncomputable def baseChange (D : Derivation R A A) :
     Derivation S (S ⊗[R] A) (S ⊗[R] A) where
   __ := D.toLinearMap.baseChange S
   map_one_eq_zero' := by
     rw [Algebra.TensorProduct.one_def, LinearMap.baseChange_tmul]
-    change (1 : S) ⊗ₜ[R] D 1 = 0
-    rw [map_one_eq_zero, tmul_zero]
+    simp only [coeFn_coe, map_one_eq_zero, tmul_zero]
   leibniz' a b := by
     induction a using TensorProduct.inductionOn with
     | add a a' ha ha' =>
@@ -46,9 +46,8 @@ noncomputable def baseChange (D : Derivation R A A) :
           add_comm, add_left_comm, add_assoc]
       | tmul s' b =>
         simp only [Algebra.TensorProduct.tmul_mul_tmul, LinearMap.baseChange_tmul]
-        change (s * s') ⊗ₜ[R] D (a * b) =
-          (s ⊗ₜ[R] a) * (s' ⊗ₜ[R] D b) + (s' ⊗ₜ[R] b) * (s ⊗ₜ[R] D a)
-        simp only [leibniz, smul_eq_mul, tmul_add, Algebra.TensorProduct.tmul_mul_tmul,
+        simp only [coeFn_coe, leibniz, smul_eq_mul, tmul_add,
+          Algebra.TensorProduct.tmul_mul_tmul,
           mul_comm s s']
 
 /-- The extended derivation differentiates the right tensor factor. -/
@@ -58,13 +57,15 @@ theorem baseChange_tmul (D : Derivation R A A) (s : S) (a : A) :
   rfl
 
 /-- The underlying linear map is the ordinary scalar extension. -/
+@[simp]
 theorem baseChange_toLinearMap (D : Derivation R A A) :
     (D.baseChange S).toLinearMap = D.toLinearMap.baseChange S := by
   rfl
 
 /-- An `S`-derivation of `S ⊗[R] A` is determined by its values on the right factor. -/
 @[ext]
-theorem tensorProduct_ext {D E : Derivation S (S ⊗[R] A) (S ⊗[R] A)}
+theorem baseChange_ext {M : Type*} [AddCommMonoid M] [Module S M]
+    [Module (S ⊗[R] A) M] {D E : Derivation S (S ⊗[R] A) M}
     (h : ∀ a : A, D (1 ⊗ₜ[R] a) = E (1 ⊗ₜ[R] a)) : D = E := by
   apply Derivation.ext
   intro x
@@ -77,7 +78,7 @@ theorem tensorProduct_ext {D E : Derivation S (S ⊗[R] A) (S ⊗[R] A)}
 /-- Extending the zero derivation gives zero. -/
 @[simp]
 theorem baseChange_zero : (0 : Derivation R A A).baseChange S = 0 := by
-  apply tensorProduct_ext S
+  apply baseChange_ext
   intro a
   simp
 
@@ -85,7 +86,7 @@ theorem baseChange_zero : (0 : Derivation R A A).baseChange S = 0 := by
 @[simp]
 theorem baseChange_add (D E : Derivation R A A) :
     (D + E).baseChange S = D.baseChange S + E.baseChange S := by
-  apply tensorProduct_ext S
+  apply baseChange_ext
   intro a
   simp [tmul_add]
 
@@ -93,8 +94,29 @@ theorem baseChange_add (D E : Derivation R A A) :
 @[simp]
 theorem baseChange_smul (a : A) (D : Derivation R A A) :
     (a • D).baseChange S = ((1 : S) ⊗ₜ[R] a) • D.baseChange S := by
-  apply tensorProduct_ext S
+  apply baseChange_ext
   intro b
   simp [Algebra.TensorProduct.tmul_mul_tmul, smul_eq_mul]
+
+section Ring
+
+variable {R A S : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [CommRing S] [Algebra R S]
+
+/-- Scalar extension preserves negation of derivations. -/
+@[simp]
+theorem baseChange_neg (D : Derivation R A A) :
+    (-D).baseChange S = -D.baseChange S := by
+  apply baseChange_ext
+  intro a
+  simp [tmul_neg]
+
+/-- Scalar extension preserves subtraction of derivations. -/
+@[simp]
+theorem baseChange_sub (D E : Derivation R A A) :
+    (D - E).baseChange S = D.baseChange S - E.baseChange S := by
+  simp [sub_eq_add_neg]
+
+end Ring
 
 end Derivation
