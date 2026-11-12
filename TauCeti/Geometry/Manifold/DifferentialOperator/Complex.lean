@@ -167,7 +167,7 @@ principal symbol `TauCeti.complexSmoothPrincipalSymbol`. -/
 def complexSmoothCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ} :
     differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m →ₗ[ℂ]
-      MultilinearMap ℂ (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℂ) ℂ where
+      MultilinearMap (RingHom.id ℂ) (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℂ) ℂ where
   toFun D := ((evalOneAt x).compMultilinearMap
       ((commutatorSymbol ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) D)).compLinearMap
@@ -339,7 +339,8 @@ theorem complexSmoothPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m
     complexSmoothPrincipalSymbol I hx D (c • ξ) =
       c ^ m * complexSmoothPrincipalSymbol I hx D ξ := by
   have h := (complexSmoothCommutatorSymbol I hx D).map_smul_univ (fun _ ↦ c) fun _ ↦ ξ
-  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul] at h
+  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul,
+    RingHom.id_apply] at h
   rw [complexSmoothPrincipalSymbol_def, complexSmoothPrincipalSymbol_def, h]
   ring
 
