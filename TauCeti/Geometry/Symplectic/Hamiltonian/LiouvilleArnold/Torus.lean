@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Topology.Algebra.Module.CompactQuotient
 import TauCeti.Topology.Algebra.Module.Quotient
-import TauCeti.Topology.Connected.CompactComponent
+import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Liouville tori are smooth Lagrangian embeddings of `ℝⁿ / Λ`
@@ -320,9 +320,8 @@ theorem exists_isLagrangianEmbedding_of_isCompact (hdim : 2 * Fintype.card ι = 
       isOpen_univ (subset_univ _)
   have hσW := hσ.mpullback_subtype_val W
   have hFW : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ (fun y : W ↦ F y) := hF.comp contMDiff_subtype_val
-  have hcommW (i j : ι) (y : W) := (hσ.isNondegenerate.poissonBracket_comp_subtype_val W
-    (((contMDiff_pi_module_iff.1 hF i) y).mdifferentiableAt (by simp))
-    (((contMDiff_pi_module_iff.1 hF j) y).mdifferentiableAt (by simp))).trans (hcomm i j y)
+  have hcommW := hσ.isNondegenerate.poissonBracket_comp_subtype_val_eq_zero W
+    (hF.mdifferentiable (by simp)) hcomm
   set x' : W := ⟨x, hLW (mem_connectedComponentIn rfl)⟩
   -- The component of `x'` in its level of `F|_W` is `L`, so it is compact and regular.
   have hLW' : (↑) '' connectedComponentIn ((fun y : W ↦ F y) ⁻¹' {F x}) x' =

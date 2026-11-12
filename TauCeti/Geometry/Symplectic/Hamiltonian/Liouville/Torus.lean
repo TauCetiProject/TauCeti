@@ -15,20 +15,25 @@ import TauCeti.Topology.Algebra.Module.Quotient
 # Compact regular components are Liouville tori
 
 Let `σ` be a symplectic form on a `2n`-dimensional boundaryless manifold `M` and let
-`F : M → (ι → ℝ)` be `n` smooth, pairwise Poisson-commuting functions whose Hamiltonian vector
-fields are complete, with the conventions `ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`.
+`F : M → (ι → ℝ)` be `n` smooth, pairwise Poisson-commuting functions, with the conventions
+`ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`.
 
-The Hamiltonian flow action identifies a regular connected component `L` of a common level
-with the quotient of `ι → ℝ` by its discrete stabilizer `Λ`
+When the Hamiltonian vector fields of the `Fᵢ` are complete, the Hamiltonian flow action
+identifies a regular connected component `L` of a common level with the quotient of `ι → ℝ` by its
+discrete stabilizer `Λ`
 (`TauCeti.SmoothTwoForm.IsSymplectic.quotientHamiltonianFlowStabilizerHomeomorph`). If `L` is
-compact, this quotient is compact, so `Λ` spans `ι → ℝ` and is a full lattice. A lattice basis
-then identifies `L` with the torus `(ℝ / ℤ)ⁿ`.
+compact, this quotient is compact, so `Λ` spans `ι → ℝ`
+(`TauCeti.SmoothTwoForm.IsSymplectic.span_hamiltonianFlowStabilizer_eq_top`, the one result here
+that assumes completeness).
 
-The flows need only be complete along `L`, which they are automatically since `L` is compact. A
-compact regular component is the image of a Lagrangian embedding of a torus `(ι → ℝ) / Λ` without
-any completeness hypothesis on `M`
-(`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLagrangianEmbedding_of_isCompact`), so it is
-homeomorphic to `(ℝ / ℤ)ⁿ` without that hypothesis too.
+The homeomorphism of a compact regular component `L` with the torus `(ℝ / ℤ)ⁿ` needs no
+completeness hypothesis on `M`. The flows of the system restricted to an open neighbourhood `W` of
+`L` are complete
+(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField`),
+so `L` is the range of a Lagrangian embedding of a torus `(ι → ℝ) / Λ` for a full lattice `Λ`
+(`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLagrangianEmbedding_of_isCompact`). This quotient is
+identified with `(ι → ℝ) ⧸ Λ` (`Submodule.orbitRelQuotientContinuousAddEquiv`), and a lattice basis
+then identifies it with `(ℝ / ℤ)ⁿ`.
 
 Other components of the level need not be regular. The smooth identification and action-angle
 coordinates near `L` are not treated here.

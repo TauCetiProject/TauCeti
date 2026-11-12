@@ -23,7 +23,8 @@ pulling one form back to the other (`TauCeti.SmoothTwoForm.IsNondegenerate.poiss
 applied to the inclusion, whose differential is everywhere invertible.
 
 So a family of Poisson-commuting functions on `M` restricts to a Poisson-commuting family on every
-open subset, with the restricted Hamiltonian vector fields. This is how Hamiltonian systems are
+open subset (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp_subtype_val_eq_zero`), with
+the restricted Hamiltonian vector fields. This is how Hamiltonian systems are
 localized to neighbourhoods on which their flows are complete.
 -/
 
@@ -61,5 +62,17 @@ theorem poissonBracket_comp_subtype_val {f g : M → ℝ} {y : U}
         (g ∘ Subtype.val) y = σ.poissonBracket f g y :=
   (hσ.mpullback_subtype_val U).poissonBracket_comp hσ contMDiff_subtype_val rfl
     (isRegularPoint_iff.1 (isRegularPoint_subtype_val y)) hf hg
+
+/-- **Poisson-commuting families restrict to open subsets.** If the components of a differentiable
+family `F` pairwise Poisson-commute for `σ`, then their restrictions to an open subset `U`
+pairwise Poisson-commute for the restricted form. -/
+theorem poissonBracket_comp_subtype_val_eq_zero {ι : Type*} [Fintype ι] {F : M → ι → ℝ}
+    (hF : MDifferentiable I 𝓘(ℝ, ι → ℝ) F)
+    (hcomm : ∀ i j x, σ.poissonBracket (F · i) (F · j) x = 0) (i j : ι) (y : U) :
+    SmoothTwoForm.poissonBracket
+        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) (fun y : U ↦ F y i)
+        (fun y : U ↦ F y j) y = 0 :=
+  (hσ.poissonBracket_comp_subtype_val U (mdifferentiableAt_pi_space.1 (hF y) i)
+    (mdifferentiableAt_pi_space.1 (hF y) j)).trans (hcomm i j y)
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
