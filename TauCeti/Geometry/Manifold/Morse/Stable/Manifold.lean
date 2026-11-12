@@ -158,7 +158,7 @@ theorem exists_stableSet_chart (hX : IsAdaptedPseudoGradient f X)
       q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
       ∀ z ∈ q.source, z ∈ hX.flow.stableSet x ↔ q z ∈ φ.stableSubspace := by
   obtain ⟨ε, hε, hloc⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
-  set D := φ.toChart.source ∩ φ.toChart ⁻¹' {v : E | ‖φ.coord v‖ < ε} with hDdef
+  set D := φ.toChart.source ∩ φ.toChart ⁻¹' {v : E | ‖φ.coord v‖ < ε}
   have hD : IsOpen D := φ.toChart.continuousOn.isOpen_inter_preimage φ.toChart.open_source
     (isOpen_lt (continuous_norm.comp φ.continuous_coord) continuous_const)
   have hxD : x ∈ D := ⟨φ.mem_source, by simpa using hε⟩
