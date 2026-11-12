@@ -36,6 +36,9 @@ dense in `Lᵖ` (`ContinuousLinearMap.isCompactOperator_holderL_comp_of_ae_eq`).
   `W^{1,q}_0(Ω)` for bounded open `Ω`.
 * `TauCeti.W1p.exists_isCompactOperator_value_smul_of_isLipschitzDomainWith`: compact
   multiplication on `W^{1,q}(Ω)` for a bounded Lipschitz domain `Ω ⊆ ℝ × E` (Lebesgue measure).
+* `TauCeti.W1p0.exists_isCompactOperator_value_smul_of_memLp` and
+  `TauCeti.W1p.exists_isCompactOperator_value_smul_of_memLp_of_isLipschitzDomainWith`: the same
+  statements for a coefficient given as a function `α` with `MemLp α r`.
 * `TauCeti.W1p0.exists_isCompactOperator_value_smul_of_memLp_top` and
   `TauCeti.W1p.exists_isCompactOperator_value_smul_of_memLp_top_of_isLipschitzDomainWith`:
   compact multiplication by a bounded coefficient `α ∈ L^∞(Ω, G)` at every `q`, which is
@@ -152,6 +155,56 @@ theorem W1p.exists_isCompactOperator_value_smul_of_isLipschitzDomainWith {G : Ty
     (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb) hTV α
   exact ⟨M, fun u => by simpa only [W1p.valueL_apply] using hM u, hMc⟩
 
+/-- Compact multiplication on `W^{1,q}_0(Ω)` by a coefficient `α ∈ Lʳ(Ω, G)` given as a function,
+for `n < r` and `q ≤ r`: the function form of `TauCeti.W1p0.exists_isCompactOperator_value_smul`. -/
+theorem W1p0.exists_isCompactOperator_value_smul_of_memLp {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [CompleteSpace G] {Ω : Opens E} (hΩ : IsBounded (Ω : Set E)) {r : ℝ≥0}
+    (hnr : (finrank ℝ E : ℝ≥0) < r) (hqr : q ≤ r) {α : E → G} (hα : MemLp α r (μ.restrict Ω)) :
+    ∃ M : W1p0 μ Ω q →L[ℝ] Lp G q (μ.restrict Ω),
+      (∀ u, M u =ᵐ[μ.restrict Ω] fun x => W1p.value (u : W1p μ Ω q) x • α x) ∧
+        IsCompactOperator M := by
+  obtain ⟨M, hM, hMc⟩ :=
+    W1p0.exists_isCompactOperator_value_smul (μ := μ) hΩ hnr hqr (hα.toLp α)
+  refine ⟨M, fun u => ?_, hMc⟩
+  filter_upwards [hM u, hα.coeFn_toLp] with x h₁ h₂
+  rw [h₁, h₂]
+
+omit [Nontrivial E] in
+/-- Compact multiplication on `W^{1,q}(Ω)` for a bounded Lipschitz domain `Ω ⊆ ℝ × E` by a
+coefficient `α ∈ Lʳ(Ω, G)` given as a function, for `n < r` and `q ≤ r`: the function form of
+`TauCeti.W1p.exists_isCompactOperator_value_smul_of_isLipschitzDomainWith`. -/
+theorem W1p.exists_isCompactOperator_value_smul_of_memLp_of_isLipschitzDomainWith {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    {Ω : Opens (WithLp 2 (ℝ × E))} {L : ℝ≥0}
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {r : ℝ≥0}
+    (hnr : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0) < r) (hqr : q ≤ r)
+    {α : WithLp 2 (ℝ × E) → G} (hα : MemLp α r (volume.restrict (Ω : Set (WithLp 2 (ℝ × E))))) :
+    ∃ M : W1p volume Ω q →L[ℝ] Lp G q (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))),
+      (∀ u, M u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))]
+        fun x => W1p.value u x • α x) ∧ IsCompactOperator M := by
+  obtain ⟨M, hM, hMc⟩ :=
+    W1p.exists_isCompactOperator_value_smul_of_isLipschitzDomainWith hΩ hb hnr hqr (hα.toLp α)
+  refine ⟨M, fun u => ?_, hMc⟩
+  filter_upwards [hM u, hα.coeFn_toLp] with x h₁ h₂
+  rw [h₁, h₂]
+
+/-- Compact multiplication by a bounded coefficient `α ∈ L^∞(ν, G)` after a compact operator
+`V` into `L^q(ν)`: Hölder multiplication `L^∞ × L^q → L^q` composed with `V`. -/
+private theorem exists_isCompactOperator_smul_of_memLp_top {X Y : Type*}
+    [SeminormedAddCommGroup X] [NormedSpace ℝ X] [MeasurableSpace Y] {ν : Measure Y}
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {V : X →L[ℝ] Lp ℝ q ν}
+    (hV : IsCompactOperator V) {α : Y → G} (hα : MemLp α ∞ ν) :
+    ∃ M : X →L[ℝ] Lp G q ν, (∀ u, M u =ᵐ[ν] fun x => V u x • α x) ∧ IsCompactOperator M := by
+  let B : G →L[ℝ] ℝ →L[ℝ] G := (ContinuousLinearMap.lsmul ℝ ℝ).flip
+  refine ⟨(B.holderL ν ∞ q q (hα.toLp α)).comp V, fun u => ?_, ?_⟩
+  · filter_upwards [B.coeFn_holder (r := (q : ℝ≥0∞)) (hα.toLp α) (V u), hα.coeFn_toLp]
+      with x h₁ h₂
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂]
+    simp [B]
+  · rw [ContinuousLinearMap.coe_comp]
+    exact hV.clm_comp _
+
 omit [Nontrivial E] in
 /-- **Compact multiplication by bounded coefficients on `W^{1,q}_0`.** For a bounded open `Ω`
 and `α ∈ L^∞(Ω, G)`, multiplication `u ↦ u α` is a compact operator `W^{1,q}_0(Ω) → L^q(Ω, G)`
@@ -162,16 +215,9 @@ theorem W1p0.exists_isCompactOperator_value_smul_of_memLp_top {G : Type*}
     ∃ M : W1p0 μ Ω q →L[ℝ] Lp G q (μ.restrict Ω),
       (∀ u, M u =ᵐ[μ.restrict Ω] fun x => W1p.value (u : W1p μ Ω q) x • α x) ∧
         IsCompactOperator M := by
-  let B : G →L[ℝ] ℝ →L[ℝ] G := (ContinuousLinearMap.lsmul ℝ ℝ).flip
-  refine ⟨(B.holderL (μ.restrict Ω) ∞ q q (hα.toLp α)).comp (W1p0.valueL (mu := μ)),
-    fun u => ?_, ?_⟩
-  · filter_upwards [B.coeFn_holder (r := (q : ℝ≥0∞)) (hα.toLp α) (W1p0.valueL (mu := μ) u),
-      hα.coeFn_toLp] with x h₁ h₂
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂,
-      W1p0.valueL_apply]
-    simp [B]
-  · rw [ContinuousLinearMap.coe_comp]
-    exact (W1p0.isCompactOperator_valueL ENNReal.coe_ne_top hΩ).clm_comp _
+  obtain ⟨M, hM, hMc⟩ := exists_isCompactOperator_smul_of_memLp_top (q := q)
+    (W1p0.isCompactOperator_valueL (mu := μ) (Omega := Ω) ENNReal.coe_ne_top hΩ) hα
+  exact ⟨M, fun u => by simpa only [W1p0.valueL_apply] using hM u, hMc⟩
 
 omit [Nontrivial E] in
 /-- **Compact multiplication by bounded coefficients on bounded Lipschitz domains.** For a
@@ -185,15 +231,10 @@ theorem W1p.exists_isCompactOperator_value_smul_of_memLp_top_of_isLipschitzDomai
     ∃ M : W1p volume Ω q →L[ℝ] Lp G q (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))),
       (∀ u, M u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))]
         fun x => W1p.value u x • α x) ∧ IsCompactOperator M := by
-  let B : G →L[ℝ] ℝ →L[ℝ] G := (ContinuousLinearMap.lsmul ℝ ℝ).flip
-  refine ⟨(B.holderL _ ∞ q q (hα.toLp α)).comp (W1p.valueL (mu := volume)), fun u => ?_, ?_⟩
-  · filter_upwards [B.coeFn_holder (r := (q : ℝ≥0∞)) (hα.toLp α) (W1p.valueL (mu := volume) u),
-      hα.coeFn_toLp] with x h₁ h₂
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂,
-      W1p.valueL_apply]
-    simp [B]
-  · rw [ContinuousLinearMap.coe_comp]
-    exact (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb).clm_comp _
+  obtain ⟨M, hM, hMc⟩ := exists_isCompactOperator_smul_of_memLp_top
+    (V := W1p.valueL (mu := volume) (Omega := Ω) (p := q))
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb) hα
+  exact ⟨M, fun u => by simpa only [W1p.valueL_apply] using hM u, hMc⟩
 
 end TauCeti
 

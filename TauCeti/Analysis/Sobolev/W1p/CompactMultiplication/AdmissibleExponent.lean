@@ -15,8 +15,8 @@ This is the `k = 1` row of McDuff--Salamon, Lemma C.2.2: for a real Cauchy--Riem
 class `W^{ℓ-1,p}` on a surface, `p > 2`, multiplication by the zeroth-order term
 `α ∈ W^{ℓ-1,p}` is compact `W^{1,q} → L^q` at every admissible exponent
 (`TauCeti.IsAdmissibleRealizationExponent ℓ p 1 q`). For `ℓ = 1` admissibility means `q ≤ p`
-and the `Lᵖ` statement `TauCeti.W1p0.exists_isCompactOperator_value_smul` applies; for `ℓ ≥ 2`
-every `q > 1` is admissible and the Sobolev coefficient statement
+and the `Lᵖ` statement `TauCeti.W1p0.exists_isCompactOperator_value_smul_of_memLp` applies;
+for `ℓ ≥ 2` every `q > 1` is admissible and the Sobolev coefficient statement
 `TauCeti.W1p0.exists_isCompactOperator_value_smul_of_wkp` applies.
 
 ## Main declarations
@@ -73,11 +73,8 @@ theorem W1p0.exists_isCompactOperator_value_smul_of_isAdmissibleRealizationExpon
     have hα : MemLp (Wkp.value 0 α) p (μ.restrict Ω) :=
       (Lp.memLp (Wkp.value 0 α)).mono_measure
         (Measure.restrict_mono_set μ (subset_closure.trans hΩΩ'))
-    obtain ⟨M, hM, hMc⟩ := W1p0.exists_isCompactOperator_value_smul hΩ hnp
-      (le_of_isAdmissibleRealizationExponent_one hp hq) (hα.toLp _)
-    refine ⟨M, fun u => ?_, hMc⟩
-    filter_upwards [hM u, hα.coeFn_toLp] with x h₁ h₂
-    rw [h₁, h₂]
+    exact W1p0.exists_isCompactOperator_value_smul_of_memLp hΩ hnp
+      (le_of_isAdmissibleRealizationExponent_one hp hq) hα
   | succ m => exact W1p0.exists_isCompactOperator_value_smul_of_wkp hΩ hΩΩ' hnp.le m α
 
 namespace W1p

@@ -50,25 +50,10 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {q : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))]
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
 
 section Interior
 
 variable {μ : Measure E} [μ.IsAddHaarMeasure]
-
-/-- Compact multiplication on `W^{1,q}_0(Ω)` by a coefficient `α ∈ Lʳ(Ω, G)` given as a function,
-for `n < r` and `q ≤ r`. -/
-private theorem W1p0.exists_isCompactOperator_value_smul_of_memLp [Nontrivial E] {Ω : Opens E}
-    (hΩ : IsBounded (Ω : Set E)) {r : ℝ≥0} (hnr : (finrank ℝ E : ℝ≥0) < r) (hqr : q ≤ r)
-    {α : E → G} (hα : MemLp α r (μ.restrict Ω)) :
-    ∃ M : W1p0 μ Ω q →L[ℝ] Lp G q (μ.restrict Ω),
-      (∀ u, M u =ᵐ[μ.restrict Ω] fun x => W1p.value (u : W1p μ Ω q) x • α x) ∧
-        IsCompactOperator M := by
-  obtain ⟨M, hM, hMc⟩ :=
-    W1p0.exists_isCompactOperator_value_smul (μ := μ) hΩ hnr hqr (hα.toLp α)
-  refine ⟨M, fun u => ?_, hMc⟩
-  filter_upwards [hM u, hα.coeFn_toLp] with x h₁ h₂
-  rw [h₁, h₂]
 
 /-- **Compact multiplication by `W^{1,p}` coefficients on `W^{1,q}_0`, every `q`.** Let `Ω` be
 a bounded open set whose closure lies in an open set `Ω'`, let `n ≤ p < ∞` and
@@ -123,22 +108,6 @@ section LipschitzDomain
 
 variable {Ω : Opens (WithLp 2 (ℝ × E))} {L : ℝ≥0}
 
-/-- Compact multiplication on `W^{1,q}(Ω)` for a bounded Lipschitz domain `Ω ⊆ ℝ × E` by a
-coefficient `α ∈ Lʳ(Ω, G)` given as a function, for `n < r` and `q ≤ r`. -/
-private theorem W1p.exists_isCompactOperator_value_smul_of_memLp_of_isLipschitzDomainWith
-    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
-    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {r : ℝ≥0}
-    (hnr : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0) < r) (hqr : q ≤ r)
-    {α : WithLp 2 (ℝ × E) → G} (hα : MemLp α r (volume.restrict (Ω : Set (WithLp 2 (ℝ × E))))) :
-    ∃ M : W1p volume Ω q →L[ℝ] Lp G q (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))),
-      (∀ u, M u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))]
-        fun x => W1p.value u x • α x) ∧ IsCompactOperator M := by
-  obtain ⟨M, hM, hMc⟩ :=
-    W1p.exists_isCompactOperator_value_smul_of_isLipschitzDomainWith hΩ hb hnr hqr (hα.toLp α)
-  refine ⟨M, fun u => ?_, hMc⟩
-  filter_upwards [hM u, hα.coeFn_toLp] with x h₁ h₂
-  rw [h₁, h₂]
-
 /-- **Compact multiplication by `W^{1,p}` coefficients on bounded Lipschitz domains, every
 `q`.** Let `Ω ⊆ ℝ × E` be a bounded Lipschitz domain, `n = dim (ℝ × E)`, `n ≤ p < ∞` and
 `α ∈ W^{1,p}(Ω)`. Then multiplication `u ↦ u α` is a compact operator `W^{1,q}(Ω) → L^q(Ω)` for
@@ -190,13 +159,14 @@ theorem W1p.exists_isCompactOperator_value_smul_of_wkp_of_isLipschitzDomainWith
     have hr0 : (m + 1) * p ≠ 0 := mul_ne_zero (by positivity) hp0
     have hnr : ((m + 1) * p)⁻¹ ≤ ((finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0))⁻¹ :=
       inv_anti₀ hn hnp
-    rw [← ENNReal.coe_natCast (finrank ℝ (WithLp 2 (ℝ × E))), ← ENNReal.coe_natCast m,
-      ← ENNReal.coe_inv hp0, ← ENNReal.coe_inv hr0, ← ENNReal.coe_inv hn.ne', ← ENNReal.coe_mul,
-      ← ENNReal.coe_add, ENNReal.coe_le_coe]
-    calc p⁻¹ = ((m + 1) * p)⁻¹ + m * ((m + 1) * p)⁻¹ := by
-          field_simp
-          ring
-      _ ≤ _ := by gcongr
+    have h : p⁻¹ ≤ ((m + 1) * p)⁻¹ + m * ((finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0))⁻¹ :=
+      calc p⁻¹ = ((m + 1) * p)⁻¹ + m * ((m + 1) * p)⁻¹ := by
+            field_simp
+            ring
+        _ ≤ _ := by gcongr
+    have h' := ENNReal.coe_le_coe.2 h
+    push_cast [ENNReal.coe_inv hp0, ENNReal.coe_inv hr0, ENNReal.coe_inv hn.ne'] at h'
+    exact h'
   obtain ⟨T, hT⟩ := Wkp.exists_w1pEmbeddingL_of_isLipschitzDomainWith m ENNReal.coe_ne_top h₁
     (ENNReal.inv_le_inv.2 (ENNReal.coe_le_coe.2 hpr)) hΩ hb
   obtain ⟨M, hM, hMc⟩ :=
