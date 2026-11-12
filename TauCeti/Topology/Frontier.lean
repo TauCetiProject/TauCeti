@@ -110,6 +110,8 @@ let alone a holomorphic map.
 * `TauCeti.eq_of_mem_frontier_of_mem_iff_le` — a function whose superlevel set `{a ≤ f}` agrees
   with a set on an open set takes the value `a` at the frontier points of the set in that open
   set where it is continuous.
+* `TauCeti.nonneg_of_forall_abs_le_frontier` — a bound for the absolute value of a function on the
+  frontier of a nonempty compact set in a preconnected noncompact space is nonnegative.
 -/
 
 public section
@@ -318,5 +320,18 @@ theorem eq_of_mem_frontier_of_mem_iff_le (hU : IsOpen U) (hD : ∀ y ∈ U, y �
     exact hyD hy
 
 end DefiningFunction
+
+section Bound
+
+variable {X : Type*} [TopologicalSpace X] [PreconnectedSpace X] [NoncompactSpace X]
+
+/-- A nonempty compact set `K` in a preconnected noncompact space has a nonempty frontier, so a
+bound `M` for the absolute value of a function on `frontier K` is nonnegative. -/
+theorem nonneg_of_forall_abs_le_frontier {K : Set X} (hK : IsCompact K) (hne : K.Nonempty)
+    {f : X → ℝ} {M : ℝ} (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) : 0 ≤ M := by
+  obtain ⟨y, hy⟩ := nonempty_frontier_iff.2 ⟨hne, hK.ne_univ⟩
+  exact (abs_nonneg _).trans (hbdry hy)
+
+end Bound
 
 end TauCeti
