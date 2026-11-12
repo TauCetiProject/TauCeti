@@ -164,6 +164,41 @@ theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero [Finite K]
     rw [one_mul, add_comm, hb]
   · exact ⟨1, one_ne_zero, by simp⟩
 
+/-- Over a field of order `q²` with `σ(a) = a ^ q`, the affine trace equation
+`z + σ(z) = σ(x) x` has exactly `q³` solutions `(z, x)`. -/
+theorem natCard_add_map_eq_map_mul {q : ℕ} {σ : K →+* K}
+    (hK : Nat.card K = q ^ 2) (hσ : ∀ a, σ a = a ^ q) :
+    Nat.card {c : K × K // c.1 + σ c.1 = σ c.2 * c.2} = q ^ 3 := by
+  classical
+  have hq : q ≠ 0 := by
+    intro hq
+    simpa [hq] using hσ 0
+  have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
+  let := Fintype.ofFinite K
+  -- The square root of a finite field's order is a power of its characteristic.
+  obtain ⟨p, hchar, n, hprime, hcard⟩ := _root_.FiniteField.card' K
+  let : CharP K p := hchar
+  let : Fact p.Prime := ⟨hprime⟩
+  have hdvd : q ∣ p ^ (n : ℕ) := by
+    rw [← hcard, ← Nat.card_eq_fintype_card, hK]
+    exact dvd_pow_self q two_ne_zero
+  obtain ⟨n, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hdvd
+  have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by
+    rw [← hK, Nat.card_eq_fintype_card]
+    exact _root_.FiniteField.pow_card a
+  have hfib (x : K) : Nat.card {z : K // z ^ p ^ n + z = x ^ p ^ n * x} = p ^ n := by
+    apply natCard_pow_add_self_eq hK
+    rw [mul_pow, ← pow_mul, ← sq, hpow, mul_comm]
+  let e : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2} ≃
+      {c : K × K // c.2 ^ p ^ n + c.2 = c.1 ^ p ^ n * c.1} :=
+    Equiv.subtypeEquiv (Equiv.prodComm K K) (by intro c; simp [hσ, add_comm])
+  rw [Nat.card_congr e,
+    Nat.card_congr (Equiv.subtypeProdEquivSigmaSubtype
+      fun x z : K => z ^ p ^ n + z = x ^ p ^ n * x), Nat.card_sigma]
+  simp only [hfib, Finset.sum_const, Finset.card_univ, smul_eq_mul]
+  rw [← Nat.card_eq_fintype_card, hK]
+  ring
+
 end FiniteField
 
 end TauCeti

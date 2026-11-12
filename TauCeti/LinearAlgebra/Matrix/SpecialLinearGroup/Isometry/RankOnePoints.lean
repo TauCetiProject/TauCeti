@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.GraphAutomorphism
 public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 import TauCeti.FieldTheory.Finite.PowAddSelf
-import Mathlib.FieldTheory.Finite.Basic
 
 /-!
 # Coordinates on the rank-one unitary isotropic points
@@ -37,14 +36,6 @@ open scoped LinearAlgebra.Projectivization
 
 namespace TauCeti.UnitaryRankOne
 
-/-- The bilinear pairing for the signed reversal form in dimension three. -/
-theorem dotProduct_typeAGraphConjugator_two_mulVec (K : Type*) [Ring K]
-    (v w : Fin 3 → K) :
-    v ⬝ᵥ ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K) *ᵥ w) =
-      v 0 * w 2 - v 1 * w 1 + v 2 * w 0 := by
-  simp [dotProduct, mulVec, Fin.sum_univ_succ, typeAGraphConjugator_apply]
-  abel
-
 variable (K : Type*) [Field K] (σ : K →+* K)
 
 /-- The distinguished isotropic point `[1 : 0 : 0]`. -/
@@ -66,12 +57,10 @@ def point (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
     linear_combination c.2⟩
 
 /-- The homogeneous coordinates of the point at infinity. -/
-@[simp]
 theorem coe_infinity :
     (infinity K σ : ℙ K (Fin 3 → K)) = Projectivization.mk K ![1, 0, 0] (by simp) := (rfl)
 
 /-- The homogeneous coordinates of an affine isotropic point. -/
-@[simp]
 theorem coe_point (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
     (point K σ c : ℙ K (Fin 3 → K)) =
       Projectivization.mk K ![c.1.1, c.1.2, 1] (by
@@ -80,7 +69,7 @@ theorem coe_point (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
         simp at this) := (rfl)
 
 /-- The last standard affine chart recovers the two coordinates of an affine isotropic point. -/
-@[simp↓]
+@[simp]
 theorem affineChart_point (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
     Projectivization.affineChart 2 (point K σ c : ℙ K (Fin 3 → K)) = ![c.1.1, c.1.2] := by
   ext i
@@ -141,12 +130,21 @@ theorem eq_infinity_iff (p :
     ext i
     fin_cases i <;> simp [hp, hv1]
 
-/-- The last affine chart of a non-infinite isotropic point satisfies the trace equation. -/
+/-- An isotropic point lies in the last standard affine chart exactly when it is not infinity. -/
+@[simp]
+theorem coe_mem_affineOpen_two_iff (p :
+    (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).isotropicPoints σ) :
+    (p : ℙ K (Fin 3 → K)) ∈ Projectivization.affineOpen 2 ↔ p ≠ infinity K σ := by
+  rw [ne_eq, eq_infinity_iff]
+  exact not_not.symm
+
+/-- The last affine chart of any isotropic point satisfies the trace equation. -/
 theorem affineChart_add_map_eq (p :
-    (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).isotropicPoints σ)
-    (hp : p ≠ infinity K σ) :
+    (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).isotropicPoints σ) :
     let a := Projectivization.affineChart 2 (p : ℙ K (Fin 3 → K))
     a 0 + σ (a 0) = σ (a 1) * a 1 := by
+  rcases eq_or_ne p (infinity K σ) with rfl | hp
+  · simp [coe_infinity]
   have hopen := not_not.mp (mt (eq_infinity_iff K σ p).mpr hp)
   let a := Projectivization.affineChart 2 (p : ℙ K (Fin 3 → K))
   have ha : (Projectivization.affineChart 2).symm a = (p : ℙ K (Fin 3 → K)) :=
@@ -170,7 +168,7 @@ theorem point_affineChart (p :
     (hp : p ≠ infinity K σ) :
     point K σ ⟨((Projectivization.affineChart 2 (p : ℙ K (Fin 3 → K))) 0,
       (Projectivization.affineChart 2 (p : ℙ K (Fin 3 → K))) 1),
-      affineChart_add_map_eq K σ p hp⟩ = p := by
+      affineChart_add_map_eq K σ p⟩ = p := by
   apply Subtype.ext
   apply (Projectivization.affineChart 2).injOn
   · simp [point]
@@ -228,7 +226,7 @@ theorem isotropicPointsEquiv_symm_apply_of_ne_infinity (p :
     (isotropicPointsEquiv K σ).symm p =
       some ⟨((Projectivization.affineChart 2 (p : ℙ K (Fin 3 → K))) 0,
         (Projectivization.affineChart 2 (p : ℙ K (Fin 3 → K))) 1),
-        affineChart_add_map_eq K σ p hp⟩ := by
+        affineChart_add_map_eq K σ p⟩ := by
   rw [Equiv.symm_apply_eq, isotropicPointsEquiv_some, point_affineChart K σ p hp]
 
 /-- Over a field of order `q²` with `σ(a) = a ^ q`, the dimension-three signed reversal form
@@ -238,38 +236,11 @@ theorem natCard_isotropicPoints {q : ℕ}
     (hK : Nat.card K = q ^ 2) (hσ : ∀ a, σ a = a ^ q) :
     Nat.card ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).isotropicPoints σ) =
       q ^ 3 + 1 := by
-  classical
   have hq : q ≠ 0 := by
     intro hq
     simpa [hq] using hσ 0
   have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
-  let := Fintype.ofFinite K
-  -- The square root of a finite field's order is a power of its characteristic.
-  obtain ⟨p, hchar, n, hprime, hcard⟩ := _root_.FiniteField.card' K
-  let : CharP K p := hchar
-  let : Fact p.Prime := ⟨hprime⟩
-  have hdvd : q ∣ p ^ (n : ℕ) := by
-    rw [← hcard, ← Nat.card_eq_fintype_card, hK]
-    exact dvd_pow_self q two_ne_zero
-  obtain ⟨n, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hdvd
-  have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by
-    rw [← hK, Nat.card_eq_fintype_card]
-    exact _root_.FiniteField.pow_card a
-  have hfib (x : K) : Nat.card {z : K // z ^ p ^ n + z = x ^ p ^ n * x} = p ^ n := by
-    apply FiniteField.natCard_pow_add_self_eq hK
-    rw [mul_pow, ← pow_mul, ← sq, hpow, mul_comm]
-  have hcoords : Nat.card {c : K × K // c.1 + σ c.1 = σ c.2 * c.2} = (p ^ n) ^ 3 := by
-    let e : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2} ≃
-        {c : K × K // c.2 ^ p ^ n + c.2 = c.1 ^ p ^ n * c.1} :=
-      Equiv.subtypeEquiv (Equiv.prodComm K K) (by intro c; simp [hσ, add_comm])
-    rw [Nat.card_congr e,
-      Nat.card_congr (Equiv.subtypeProdEquivSigmaSubtype
-        fun x z : K => z ^ p ^ n + z = x ^ p ^ n * x), Nat.card_sigma]
-    simp only [hfib, Finset.sum_const, Finset.card_univ, smul_eq_mul]
-    rw [← Nat.card_eq_fintype_card, hK]
-    ring
-  rw [← Nat.card_congr (isotropicPointsEquiv K σ)]
-  simpa only [Nat.card_eq_fintype_card, Fintype.card_option] using
-    congrArg (· + 1) hcoords
+  rw [← Nat.card_congr (isotropicPointsEquiv K σ), Finite.card_option,
+    FiniteField.natCard_add_map_eq_map_mul hK hσ]
 
 end TauCeti.UnitaryRankOne
