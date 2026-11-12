@@ -40,6 +40,9 @@ disc, continuous up to the boundary, with infinite Dirichlet energy.
 
 * `TauCeti.PDE.energyFormH1_one_zero_zero_ofTestFunctionₗ_eq_neg_integral_laplacian_smul`: Green's
   identity `∫_Ω ∇φ · ∇u = -∫ Δφ u` for `u ∈ H¹(Ω)` and a test function `φ`.
+* `TauCeti.PDE.energyFormH1_one_zero_zero_eq_setIntegral_of_forall_integral_laplacian_smul_eq`:
+  if `u ∈ H¹(Ω)` solves `-Δu = f` in the sense of distributions on `Ω`, with `f ∈ L²(Ω)`, then
+  `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul`: Green's first
   identity `∫_Ω ∇v · ∇u = -∫_Ω Δw v` for `v ∈ H¹₀(Ω)` and `u ∈ H¹(Ω)` represented by a `C²`
   function `w` with `Δw ∈ L²(Ω)`.
@@ -73,21 +76,48 @@ open scoped Distributions Gradient InnerProductSpace ENNReal Topology
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)} {w : EuclideanSpace ℝ ι → ℝ}
 
-/-- **Green's identity against a test function.** For `u ∈ H¹(Ω)` and a test function `φ` on
-`Ω`, the energy form of `-Δ` is `∫_Ω ∇φ · ∇u = -∫ Δφ u`. No boundary condition is imposed on
-`u`. -/
+/-- **Green's identity against a test function.** Let `u ∈ H¹(Ω)` agree almost everywhere on `Ω`
+with a function `w`. For a test function `φ` on `Ω`, the energy form of `-Δ` is
+`∫_Ω ∇φ · ∇u = -∫ Δφ w`. No boundary condition is imposed on `u`. -/
 theorem energyFormH1_one_zero_zero_ofTestFunctionₗ_eq_neg_integral_laplacian_smul [DecidableEq ι]
-    (u : W1p mu Omega 2) (φ : 𝓓(Omega, ℝ)) :
+    {u : W1p mu Omega 2} (hu : W1p.value u =ᵐ[mu.restrict Omega] w) (φ : 𝓓(Omega, ℝ)) :
     energyFormH1 (fun _ => 1) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
-      -∫ x, Δ (φ : EuclideanSpace ℝ ι → ℝ) x • W1p.value u x ∂mu := by
-  rw [(W1p.hasWeakFDerivOn u).integral_laplacian_smul_eq_neg_integral_inner φ, neg_neg,
-    energyFormH1_zero_zero_eq_setIntegral]
+      -∫ x, Δ (φ : EuclideanSpace ℝ ι → ℝ) x • w x ∂mu := by
+  rw [((W1p.hasWeakFDerivOn u).congr_ae hu).integral_laplacian_smul_eq_neg_integral_inner φ,
+    neg_neg, energyFormH1_one_zero_zero_apply]
   simp_rw [real_inner_comm (W1p.gradient u _)]
   rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
   refine integral_congr_ae ?_
   filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-  rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply]
-  exact EuclideanSpace.inner_eq_star_dotProduct _ _
+  rw [W1p.gradient_ofTestFunctionₗ, hx]
+  exact (EuclideanSpace.inner_eq_star_dotProduct _ _).symm
+
+/-- **Distributional solutions of Poisson's equation are weak solutions.** Let `u ∈ H¹(Ω)` agree
+almost everywhere on `Ω` with a function `w`, and let `f ∈ L²(Ω)`. If `-Δw = f` in the sense of
+distributions on `Ω`, that is `∫ Δφ w = -∫ φ f` for every test function `φ` on `Ω`, then
+`∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. No boundary condition is imposed on `u`. -/
+theorem energyFormH1_one_zero_zero_eq_setIntegral_of_forall_integral_laplacian_smul_eq
+    [DecidableEq ι] {u : W1p mu Omega 2} (hu : W1p.value u =ᵐ[mu.restrict Omega] w)
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f 2 (mu.restrict Omega))
+    (hw : ∀ φ : 𝓓(Omega, ℝ), ∫ x, Δ (φ : EuclideanSpace ℝ ι → ℝ) x • w x ∂mu =
+      -∫ x, (φ : EuclideanSpace ℝ ι → ℝ) x • f x ∂mu)
+    (v : W1p0 mu Omega 2) :
+    energyFormH1 (fun _ => 1) 0 0 u (v : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+  have hcoeff : MemLp (fun x => energyIntegrand ((fun _ => (1 : Matrix ι ι ℝ)) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega) := by
+    simpa using memLp_top_const (μ := mu.restrict Omega) (energyIntegrand (1 : Matrix ι ι ℝ) 0 0)
+  have hF := hf.coeFn_toLp
+  refine ((forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff (hf.toLp f) u).2
+    (fun φ => ?_) v).trans (integral_congr_ae ?_)
+  · rw [energyFormH1_one_zero_zero_ofTestFunctionₗ_eq_neg_integral_laplacian_smul hu, hw, neg_neg,
+      ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by simp [φ.zero_on_compl hx]]
+    refine integral_congr_ae ?_
+    filter_upwards [hF] with x hx
+    rw [hx, smul_eq_mul, mul_comm]
+  · filter_upwards [hF] with x hx
+    rw [hx]
 
 /-- **Green's first identity against `H¹₀(Ω)`.** Let `u ∈ H¹(Ω)` agree almost everywhere on `Ω`
 with a function `w` of class `C²` on `Ω` whose Laplacian lies in `L²(Ω)`. Then
@@ -98,36 +128,11 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul [DecidableEq
     (hu : W1p.value u =ᵐ[mu.restrict Omega] w)
     (hΔ : MemLp (Δ w) 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
     energyFormH1 (fun _ => 1) 0 0 u (v : W1p mu Omega 2) =
-      ∫ x in Omega, -Δ w x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  have hO : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
-  have h1 := uniformlyEllipticOn_const_one_one (n := ι) (Omega : Set (EuclideanSpace ℝ ι))
-  have hcoeff := memLp_energyIntegrand_of_bounds (mu := mu) (b := 0) (c := 0) (beta := 0)
-    (gamma := 0) h1.upper_nonneg aestronglyMeasurable_const aestronglyMeasurable_const
-    aestronglyMeasurable_const (fun _x hx eta xi => h1.upper_bound hx eta xi) (fun _ _ => by simp)
-    (fun _ _ => by simp)
-  have hf := hΔ.neg.coeFn_toLp
-  refine ((forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff
-    (hΔ.neg.toLp _) u).2 (fun φ => ?_) v).trans (integral_congr_ae ?_)
-  · -- Against a test function: `∫ ⟪∇φ, ∇u⟫ = -∫ Δφ u = -∫ Δφ w = -∫ φ Δw`.
-    have hval : ∫ x, Δ (φ : EuclideanSpace ℝ ι → ℝ) x • W1p.value u x ∂mu =
-        ∫ x, Δ (φ : EuclideanSpace ℝ ι → ℝ) x • w x ∂mu := by
-      refine integral_congr_ae ?_
-      filter_upwards [(ae_restrict_iff' hO).1 hu] with x hx
-      by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
-      · rw [hx hxΩ]
-      · rw [image_eq_zero_of_notMem_tsupport fun h' =>
-          hxΩ (φ.tsupport_subset (tsupport_laplacian_subset _ h'))]
-        simp
-    rw [energyFormH1_one_zero_zero_ofTestFunctionₗ_eq_neg_integral_laplacian_smul, hval,
-      hw.integral_laplacian_smul_eq_integral_smul_laplacian φ, ← integral_neg,
-      ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_]
-    · refine integral_congr_ae ?_
-      filter_upwards [ae_restrict_of_ae_restrict_of_subset subset_rfl hf] with x hx
-      rw [hx, Pi.neg_apply, smul_eq_mul]
-      ring
-    · simp [φ.zero_on_compl hx]
-  · filter_upwards [hf] with x hx
-    rw [hx, Pi.neg_apply]
+      ∫ x in Omega, -Δ w x * W1p.value (v : W1p mu Omega 2) x ∂mu :=
+  energyFormH1_one_zero_zero_eq_setIntegral_of_forall_integral_laplacian_smul_eq hu hΔ.neg
+    (fun φ => by
+      rw [hw.integral_laplacian_smul_eq_integral_smul_laplacian φ, ← integral_neg]
+      simp only [Pi.neg_apply, smul_neg, neg_neg]) v
 
 /-- **The energy of a classical solution above a positive level.** Let `w` be of class `C²` on a
 bounded open set `Ω`, continuous on its closure, zero on its frontier, with `|w| ≤ S` on `Ω` and

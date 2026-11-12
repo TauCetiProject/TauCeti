@@ -58,9 +58,9 @@ smoothness of the data nor regularity of `∂Ω` is used.
 The kernel is locally integrable with locally integrable derivative
 (`TauCeti.locallyIntegrable_newtonianKernel`, `TauCeti.locallyIntegrable_fderiv_newtonianKernel`),
 and integration by parts against it holds across the pole
-(`TauCeti.integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul`). Pairing the potential with a
-test function `ψ` and exchanging the integrals
-(`MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_comp_sub`),
+(`TauCeti.integral_fderiv_mul_newtonianKernel_sub`). Pairing the potential with a test function
+`ψ` and exchanging the integrals
+(`MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_left_comp_sub`),
 
 `∫ ψ (Gₙ ⋆ f) = ∫ f(y) (∫ ψ(x) Gₙ(x - y) dx) dy`,
 
@@ -68,7 +68,9 @@ moves every derivative from the potential onto the kernel with pole `y`. With `�
 the weak derivative, and with `ψ = Δφ` the distributional identity `-ΔGₙ = δ`
 (`TauCeti.integral_laplacian_mul_newtonianKernel_sub`) gives Poisson's equation. Square
 integrability on bounded sets is Young's inequality applied to the kernel cut off to a ball
-(`HasCompactSupport.memLp_convolution_right_of_isBounded`).
+(`HasCompactSupport.memLp_convolution_right_of_isBounded`). Poisson's equation against the test
+functions on `Ω` then gives the weak formulation against `H¹₀(Ω)`
+(`TauCeti.PDE.energyFormH1_one_zero_zero_eq_setIntegral_of_forall_integral_laplacian_smul_eq`).
 
 ## References
 
@@ -91,21 +93,6 @@ open scoped Convolution Distributions Gradient InnerProductSpace
 
 variable {n : ℕ} {f : EuclideanSpace ℝ (Fin n) → ℝ}
 
-/-- Integration by parts against the Newtonian kernel with pole `t`:
-`∫ ∂ᵥg (x) Gₙ(x - t) dx = -∫ g(x) ∂ᵥGₙ(x - t) dx` for a `C¹` function `g` with compact support. -/
-private theorem integral_fderiv_mul_newtonianKernel_sub (hn : 3 ≤ n)
-    {g : EuclideanSpace ℝ (Fin n) → ℝ} (hg : ContDiff ℝ 1 g) (hc : HasCompactSupport g)
-    (v t : EuclideanSpace ℝ (Fin n)) :
-    ∫ x, fderiv ℝ g x v * newtonianKernel n (x - t) =
-      -∫ x, g x * fderiv ℝ (newtonianKernel n) (x - t) v := by
-  have h := integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn (g := fun y ↦ g (y + t))
-    (hg.comp (contDiff_id.add contDiff_const)) (hc.comp_homeomorph (Homeomorph.addRight t)) v
-  simp only [fderiv_comp_add_right] at h
-  rw [← integral_add_right_eq_self (fun x ↦ fderiv ℝ g x v * newtonianKernel n (x - t)) t,
-    ← integral_add_right_eq_self (fun x ↦ g x * fderiv ℝ (newtonianKernel n) (x - t) v) t]
-  simp only [add_sub_cancel_right]
-  simpa only [mul_comm] using h
-
 /-- **The Newtonian potential is weakly differentiable.** For `n ≥ 3` and `f` integrable with
 compact support, the derivative of the Newtonian potential `Gₙ ⋆ f` on every open set is, weakly,
 the convolution `∇Gₙ ⋆ f`, `x ↦ ∫ f(x - y) • DGₙ(y) dy`, of `f` with the locally integrable
@@ -123,8 +110,7 @@ theorem hasWeakFDerivOn_newtonianKernel_convolution (hn : 3 ≤ n) (hf : Integra
     (ContinuousLinearMap.apply ℝ ℝ v).locallyIntegrableOn_comp (hG'.locallyIntegrableOn univ)
   have hgv : Continuous fun x ↦ fderiv ℝ g x v :=
     (hg.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have hgvc : HasCompactSupport fun x ↦ fderiv ℝ g x v :=
-    (hgc.fderiv ℝ).comp_left (g := fun L : EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ ↦ L v) rfl
+  have hgvc : HasCompactSupport fun x ↦ fderiv ℝ g x v := hgc.fderiv_apply ℝ v
   -- Where the operator-valued convolution exists, it may be evaluated at `v` under the integral.
   have hU : (fun x ↦ (fderiv ℝ (newtonianKernel n) ⋆[(lsmul ℝ ℝ).flip] f) x v) =ᵐ[volume]
       f ⋆ fun z ↦ fderiv ℝ (newtonianKernel n) z v := by
@@ -132,11 +118,8 @@ theorem hasWeakFDerivOn_newtonianKernel_convolution (hn : 3 ≤ n) (hf : Integra
     rw [convolution_def, ContinuousLinearMap.integral_apply hx, convolution_lsmul_swap]
     simp
   calc ∫ x, fderiv ℝ g x v • (newtonianKernel n ⋆ f) x
-      = ∫ x, fderiv ℝ g x v * (f ⋆ newtonianKernel n) x := by
-        simp only [smul_eq_mul, convolution_lsmul_comm (newtonianKernel n) f]
-    _ = ∫ t, f t * ∫ x, fderiv ℝ g x v * newtonianKernel n (x - t) :=
-        integral_mul_convolution_eq_integral_mul_integral_comp_sub hgv hgvc hf hfc
-          (hG.locallyIntegrableOn univ) fun _ _ _ _ ↦ mem_univ _
+      = ∫ t, f t * ∫ x, fderiv ℝ g x v * newtonianKernel n (x - t) :=
+        integral_mul_convolution_eq_integral_mul_integral_left_comp_sub hgv hgvc hG hf hfc
     _ = -∫ t, f t * ∫ x, g x * fderiv ℝ (newtonianKernel n) (x - t) v := by
         simp_rw [integral_fderiv_mul_newtonianKernel_sub hn hg hgc v, mul_neg, integral_neg]
     _ = -∫ x, g x * (f ⋆ fun z ↦ fderiv ℝ (newtonianKernel n) z v) x := by
@@ -154,10 +137,8 @@ theorem integral_laplacian_mul_newtonianKernel_convolution (hn : 3 ≤ n) (hf : 
     (hfc : HasCompactSupport f) {φ : EuclideanSpace ℝ (Fin n) → ℝ} (hφ : ContDiff ℝ 2 φ)
     (hφc : HasCompactSupport φ) :
     ∫ x, Δ φ x * (newtonianKernel n ⋆ f) x = -∫ x, φ x * f x := by
-  rw [convolution_lsmul_comm, integral_mul_convolution_eq_integral_mul_integral_comp_sub
-    hφ.continuous_laplacian hφc.laplacian hf hfc
-    ((locallyIntegrable_newtonianKernel n).locallyIntegrableOn univ) fun _ _ _ _ ↦ mem_univ _,
-    ← integral_neg]
+  rw [integral_mul_convolution_eq_integral_mul_integral_left_comp_sub hφ.continuous_laplacian
+    hφc.laplacian (locallyIntegrable_newtonianKernel n) hf hfc, ← integral_neg]
   simp_rw [integral_laplacian_mul_newtonianKernel_sub hn hφ hφc, mul_neg, mul_comm]
 
 namespace PDE
@@ -179,7 +160,6 @@ theorem exists_value_ae_eq_newtonianKernel_convolution_and_energyFormH1_eq (hn :
           ((fderiv ℝ (newtonianKernel n) ⋆[(lsmul ℝ ℝ).flip] f) x)) ∧
       ∀ v : W1p0 volume Omega 2, energyFormH1 (fun _ => 1) 0 0 w (v : W1p volume Omega 2) =
         ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x := by
-  have hO : MeasurableSet (Omega : Set (EuclideanSpace ℝ (Fin n))) := Omega.isOpen.measurableSet
   -- `f` is integrable, being square integrable on the compact set carrying it.
   have hfi : Integrable f := by
     have : IsFiniteMeasure (volume.restrict (tsupport f)) :=
@@ -192,37 +172,11 @@ theorem exists_value_ae_eq_newtonianKernel_convolution_and_energyFormH1_eq (hn :
     (hfc.memLp_convolution_right_of_isBounded _ (locallyIntegrable_fderiv_newtonianKernel n) hf
       one_le_two hOmega)
     (hasWeakFDerivOn_newtonianKernel_convolution hn hfi hfc Omega)
-  refine ⟨w, hwv, hwg, ?_⟩
-  have h1 := uniformlyEllipticOn_const_one_one (n := Fin n)
-    (Omega : Set (EuclideanSpace ℝ (Fin n)))
-  have hcoeff := memLp_energyIntegrand_of_bounds (mu := volume) (b := 0) (c := 0) (beta := 0)
-    (gamma := 0) h1.upper_nonneg aestronglyMeasurable_const aestronglyMeasurable_const
-    aestronglyMeasurable_const (fun _x hx eta xi => h1.upper_bound hx eta xi) (fun _ _ => by simp)
-    (fun _ _ => by simp)
-  have hF := (hf.restrict (Omega : Set (EuclideanSpace ℝ (Fin n)))).coeFn_toLp
-  intro v
-  rw [(forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff
-    ((hf.restrict _).toLp f) w).2 (fun φ ↦ ?_) v]
-  · refine integral_congr_ae ?_
-    filter_upwards [hF] with x hx
-    rw [hx]
-  -- Against a test function: `∫ ⟪∇φ, ∇w⟫ = -∫ Δφ w = -∫ Δφ (Gₙ ⋆ f) = ∫ φ f`.
-  have hval : ∫ x, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x • W1p.value w x =
-      ∫ x, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x * (newtonianKernel n ⋆ f) x := by
-    refine integral_congr_ae ?_
-    filter_upwards [(ae_restrict_iff' hO).1 hwv] with x hx
-    by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ (Fin n)))
-    · rw [hx hxΩ, smul_eq_mul]
-    · rw [image_eq_zero_of_notMem_tsupport fun h' =>
-        hxΩ (φ.tsupport_subset (tsupport_laplacian_subset _ h'))]
-      simp
-  rw [energyFormH1_one_zero_zero_ofTestFunctionₗ_eq_neg_integral_laplacian_smul, hval,
-    integral_laplacian_mul_newtonianKernel_convolution hn hfi hfc
-      (φ.contDiff.of_le (by simp)) φ.hasCompactSupport, neg_neg,
-    ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by simp [φ.zero_on_compl hx]]
-  refine integral_congr_ae ?_
-  filter_upwards [hF] with x hx
-  rw [hx, mul_comm]
+  refine ⟨w, hwv, hwg,
+    energyFormH1_one_zero_zero_eq_setIntegral_of_forall_integral_laplacian_smul_eq hwv
+      (hf.restrict _) fun φ ↦ ?_⟩
+  simpa only [smul_eq_mul] using integral_laplacian_mul_newtonianKernel_convolution hn hfi hfc
+    (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
 
 /-- **The Green representation of the weak Dirichlet solution for `L²` data.** Let `n ≥ 3`, let
 `Ω ⊆ ℝⁿ` be a bounded open set, let `f ∈ L²(ℝⁿ)` have compact support and let `g ∈ L²(Ω)` agree
@@ -243,12 +197,12 @@ theorem IsWeakSolutionDirichlet.exists_harmonicOnNhd_value_ae_eq_of_memLp (hn : 
           newtonianKernel n ⋆ f - h := by
   obtain ⟨w, hwv, -, hw⟩ :=
     exists_value_ae_eq_newtonianKernel_convolution_and_energyFormH1_eq hn hOmega hf hfc
-  have h1 := uniformlyEllipticOn_const_one_one (n := Fin n)
-    (Omega : Set (EuclideanSpace ℝ (Fin n)))
-  have hcoeff := memLp_energyIntegrand_of_bounds (mu := volume) (b := 0) (c := 0) (beta := 0)
-    (gamma := 0) h1.upper_nonneg aestronglyMeasurable_const aestronglyMeasurable_const
-    aestronglyMeasurable_const (fun _x hx eta xi => h1.upper_bound hx eta xi) (fun _ _ => by simp)
-    (fun _ _ => by simp)
+  have hcoeff : MemLp (fun x => energyIntegrand ((fun _ => (1 : Matrix (Fin n) (Fin n) ℝ)) x)
+      ((0 : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)) x)
+      ((0 : EuclideanSpace ℝ (Fin n) → ℝ) x)) ⊤
+      (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin n)))) := by
+    simpa using memLp_top_const (μ := volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin n))))
+      (energyIntegrand (1 : Matrix (Fin n) (Fin n) ℝ) 0 0)
   -- The difference `w - u` of the potential and the solution is weakly harmonic.
   have hH : ∀ v : W1p0 volume Omega 2,
       energyFormH1 (fun _ => 1) 0 0 (w - (u : W1p volume Omega 2)) (v : W1p volume Omega 2) = 0 :=

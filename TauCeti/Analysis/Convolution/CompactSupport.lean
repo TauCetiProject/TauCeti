@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convolution
+import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.Young
 
 /-!
 # Convolving a compactly supported function with a locally integrable kernel
 
 Let `K` be a locally integrable kernel and `f` a function with compact support on a proper normed
-additive group `G`, with a right-invariant σ-finite measure. The kernels of potential theory, such
+additive group `G`, with a right-invariant s-finite measure. The kernels of potential theory, such
 as the Newtonian kernel `‖x‖ ^ (2 - n)` and its derivatives, are locally integrable but not
 integrable, so the convolution `K ⋆ f` is not covered by the theory of convolutions of integrable
 functions. It still behaves like one locally:
@@ -26,12 +27,9 @@ functions. It still behaves like one locally:
 All three follow from one observation. At a point `x` of the closed ball `closedBall 0 R`, the
 convolution `(K ⋆ f) x = ∫ L (K t) (f (x - t)) dt` only sees `K` on the compact set of differences
 `closedBall 0 R - tsupport f`, so `K` may be replaced there by its indicator on that set
-(`indicator_convolution_eq_of_forall_sub_mem`), which is integrable. The convolution of two
-integrable functions exists almost everywhere and is integrable, and Young's inequality
+(`MeasureTheory.indicator_convolution_eq_of_forall_sub_mem`), which is integrable. The convolution
+of two integrable functions exists almost everywhere and is integrable, and Young's inequality
 (`MeasureTheory.eLpNorm_convolution_le`) bounds it in `Lᵖ`.
-
-For real or complex scalar functions the convolution is commutative
-(`convolution_lsmul_comm`).
 
 ## References
 
@@ -49,54 +47,6 @@ variable {𝕜 G E E' F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F]
   (L : E →L[𝕜] E' →L[𝕜] F) {K : G → E} {f : G → E'}
-
-section Indicator
-
-variable [Sub G] {s : Set G} {x : G}
-
-omit [NormedSpace ℝ F] in
-/-- The integrand of a convolution at `x` sees the kernel `K` only at the points `t` with
-`x - t` in the support of `f`, so `K` may be replaced by its indicator on any set containing all
-of them. -/
-private theorem indicator_convolution_integrand_eq (h : ∀ t, x - t ∈ Function.support f → t ∈ s) :
-    (fun t ↦ L (s.indicator K t) (f (x - t))) = fun t ↦ L (K t) (f (x - t)) := by
-  funext t
-  by_cases ht : f (x - t) = 0
-  · simp [ht]
-  · rw [indicator_of_mem (h t ht)]
-
-variable [MeasurableSpace G] {μ : Measure G}
-
-/-- A convolution at `x` sees the kernel `K` only at the points `t` with `x - t` in the support of
-`f`, so `K` may be replaced by its indicator on any set containing all of them. -/
-theorem indicator_convolution_eq_of_forall_sub_mem
-    (h : ∀ t, x - t ∈ Function.support f → t ∈ s) :
-    (s.indicator K ⋆[L, μ] f) x = (K ⋆[L, μ] f) x := by
-  simp only [convolution_def, indicator_convolution_integrand_eq L h]
-
-omit [NormedSpace ℝ F] in
-/-- The convolution of `K` and `f` exists at `x` exactly when that of the indicator of `K` on a set
-containing every `t` with `x - t` in the support of `f` does. -/
-theorem convolutionExistsAt_indicator_iff_of_forall_sub_mem
-    (h : ∀ t, x - t ∈ Function.support f → t ∈ s) :
-    ConvolutionExistsAt (s.indicator K) f x L μ ↔ ConvolutionExistsAt K f x L μ := by
-  simp only [ConvolutionExistsAt, indicator_convolution_integrand_eq L h]
-
-end Indicator
-
-section Commutative
-
-variable [AddCommGroup G] [MeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
-  {μ : Measure G} [μ.IsAddLeftInvariant] [μ.IsNegInvariant] [NormedSpace ℝ 𝕜]
-
-/-- **Convolution of scalar functions is commutative.** -/
-theorem convolution_lsmul_comm (f g : G → 𝕜) :
-    f ⋆[lsmul 𝕜 𝕜, μ] g = g ⋆[lsmul 𝕜 𝕜, μ] f := by
-  ext x
-  rw [convolution_lsmul, convolution_lsmul_swap]
-  simp only [smul_eq_mul, mul_comm]
-
-end Commutative
 
 section Proper
 
@@ -124,7 +74,7 @@ private theorem integrable_indicator_image_sub (hK : LocallyIntegrable K μ)
   have hS := isCompact_image_sub_closedBall_prod hfc R
   (hK.integrableOn_isCompact hS).integrable_indicator hS.measurableSet
 
-variable [μ.IsAddRightInvariant] [SigmaFinite μ]
+variable [μ.IsAddRightInvariant] [SFinite μ]
 
 omit [NormedSpace ℝ F] in
 /-- **A locally integrable kernel convolves with a compactly supported integrable function almost
