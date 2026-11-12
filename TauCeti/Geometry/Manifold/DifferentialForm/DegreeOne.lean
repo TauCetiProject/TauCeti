@@ -363,7 +363,7 @@ end OnceDifferentiable
 
 section Coframe
 
-variable [IsManifold I ∞ M] {ι : Type*}
+variable [IsManifold I 1 M] {ι : Type*}
 
 /-- Real one-forms form a frame of the cotangent bundle on a set `U` exactly when their values form
 a basis of every cotangent space over `U`: smoothness of the frame is automatic. -/
