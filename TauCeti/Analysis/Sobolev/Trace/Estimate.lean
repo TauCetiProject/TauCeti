@@ -179,7 +179,6 @@ theorem abs_rpow_le_integral_Ioi {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g) (hs :
       rw [← Real.rpow_mul (abs_nonneg _), ← Real.rpow_mul (abs_nonneg _),
         show r * ((r - 1) / r) = r - 1 by field_simp, show r * (1 / r) = 1 by field_simp,
         Real.rpow_one] at hw
-      have hr' : 0 < r := zero_lt_one.trans hr1
       calc r * |g t| ^ (r - 1) * |deriv g t| = r * (|g t| ^ (r - 1) * |deriv g t|) := by ring
         _ ≤ r * ((r - 1) / r * |g t| ^ r + 1 / r * |deriv g t| ^ r) := by gcongr
         _ = (r - 1) * |g t| ^ r + |deriv g t| ^ r := by field_simp

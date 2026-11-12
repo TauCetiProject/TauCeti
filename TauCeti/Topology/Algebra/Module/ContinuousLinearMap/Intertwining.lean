@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
-public import TauCeti.Algebra.Polynomial.AlgebraMap
+public import TauCeti.LinearAlgebra.End.Aeval
 import Mathlib.Algebra.Polynomial.Div
 
 /-!
@@ -124,7 +124,7 @@ theorem aeval_comp_comp_of_retract {i : M →L[R] N} {r : N →L[R] M}
       r.comp (Polynomial.aeval (i.comp (u.comp r)) Q) := by
     apply ContinuousLinearMap.coe_injective
     simpa only [toLinearMap_comp, toLinearMap_aeval] using
-      Polynomial.aeval_comp_eq_comp_aeval hr Q
+      Module.End.aeval_comp_of_comp_eq hr Q
   simp only [map_mul, Polynomial.aeval_X, mul_def, comp_assoc]
   rw [← hQ]
 

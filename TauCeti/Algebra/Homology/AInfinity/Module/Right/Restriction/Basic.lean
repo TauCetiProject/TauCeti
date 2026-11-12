@@ -206,7 +206,7 @@ theorem lTensor_coaugmentedBarMap_comp_gradedCoderiv (G : InternalGrading R M)
     (F : (M ⊗[R] TensorWords R B) →ₗ[R] M) :
     f.coaugmentedBarMap.lTensor M ∘ₗ gradedCoderiv AA G (F ∘ₗ f.coaugmentedBarMap.lTensor M) =
       gradedCoderiv BB G F ∘ₗ f.coaugmentedBarMap.lTensor M := by
-  set L := f.coaugmentedBarMap.lTensor M with hLdef
+  set L := f.coaugmentedBarMap.lTensor M
   set DA := gradedCoderiv AA G (F ∘ₗ L)
   set DB := gradedCoderiv BB G F
   have hA : Comodule.coact (R := R) (C := TensorWords R A) (M := M ⊗[R] TensorWords R A) ∘ₗ DA =

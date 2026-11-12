@@ -107,6 +107,15 @@ theorem perimeter_empty : perimeter μ Ω ∅ = 0 := by
   rw [perimeter_def, indicator_empty]
   exact totalVariationOn_zero
 
+/-- The perimeter of a subset `t ⊆ s` with respect to `μ.restrict s` agrees with its perimeter with
+respect to `μ`, because the indicator of `t` vanishes off `s`. -/
+theorem perimeter_restrict_of_subset {t : Set E} (h : t ⊆ s) :
+    perimeter (μ.restrict s) Ω t = perimeter μ Ω t := by
+  rw [perimeter_def, perimeter_def, totalVariationOn_def, totalVariationOn_def]
+  refine iSup_congr fun φ => iSup_congr fun _ => congrArg ENNReal.ofReal ?_
+  exact setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+    simp [indicator_of_notMem (fun hxt => hx (h hxt))]
+
 section Haar
 
 variable [BorelSpace E] [μ.IsAddHaarMeasure]

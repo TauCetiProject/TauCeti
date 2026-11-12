@@ -110,25 +110,25 @@ theorem sum_range_ascFactorial_mul_choose_mul_choose {N K r : ℕ} (hr : r ≤ K
     intro k _
     have h := add_ascFactorial_mul_multichoose r m k
     rw [multichoose_eq, multichoose_eq] at h
-    rw [← mul_assoc, ← mul_assoc, Nat.add_comm k r, h,
+    rw [← mul_assoc, ← mul_assoc, add_comm k r, h,
       show r + k + m - 1 = r + m + k - 1 by omega]
   rw [Finset.sum_congr rfl hterm, ← Finset.mul_sum]
   congr 1
-  rcases Nat.eq_zero_or_pos (r + m) with hrm | hrm
+  rcases eq_zero_or_pos (r + m) with hrm | hrm
   · -- With `r = m = 0`, only the term `k = 0` survives.
     obtain ⟨rfl, rfl⟩ : r = 0 ∧ m = 0 := by omega
     rw [Finset.sum_range_succ']
-    simp [Nat.choose_succ_self]
+    simp [choose_succ_self]
   · -- Otherwise this is the upper-index Vandermonde convolution with lower indices
     -- `r + m - 1` and `K - r`.
-    have h := Nat.sum_antidiagonal_choose_add_mul_choose_add (r + m - 1) (K - r) (N - K)
+    have h := sum_antidiagonal_choose_add_mul_choose_add (r + m - 1) (K - r) (N - K)
     rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ
       (fun i j ↦ (r + m - 1 + i).choose (r + m - 1) * (K - r + j).choose (K - r))] at h
     rw [show N + m = r + m - 1 + (K - r) + 1 + (N - K) by omega,
       show K + m = r + m - 1 + (K - r) + 1 by omega, ← h]
     refine Finset.sum_congr rfl fun k hk ↦ ?_
     have hk : k ≤ N - K := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-    rw [show k + r + m - 1 = r + m - 1 + k by omega, Nat.choose_symm_add,
+    rw [show k + r + m - 1 = r + m - 1 + k by omega, choose_symm_add,
       show N - r - k = K - r + (N - K - k) by omega]
 
 /-- Moving one element from the second population to the first in a partial Vandermonde sum
@@ -139,7 +139,7 @@ theorem sum_range_choose_mul_choose_succ (m n K r : ℕ) (hr : r < K) :
       ∑ j ∈ range (r + 1), m.choose j * (n + 1).choose (K - j) := by
   induction r with
   | zero =>
-    simp only [Nat.zero_add, sum_range_one, choose_zero_right, one_mul, Nat.sub_zero]
+    simp only [zero_add, sum_range_one, choose_zero_right, one_mul, Nat.sub_zero]
     rw [choose_succ_left _ _ (by omega)]
     omega
   | succ r ih =>
@@ -161,9 +161,9 @@ theorem sum_range_choose_mul_choose_add_sum_range_choose_mul_choose
     (∑ i ∈ range (k + 1), (i + r - 1).choose i * (N - r - i).choose (K - r)) +
         (∑ j ∈ range r, (k + r).choose j * (N - k - r).choose (K - j)) =
       N.choose K := by
-  rcases Nat.eq_zero_or_pos r with rfl | hr
+  rcases eq_zero_or_pos r with rfl | hr
   · -- Only the term `i = 0` of the first sum is nonzero, and the second sum is empty.
-    simp [sum_range_succ', Nat.choose_succ_self]
+    simp [sum_range_succ', choose_succ_self]
   induction k with
   | zero =>
     have hsum := add_choose_eq r (N - r) K
@@ -178,9 +178,9 @@ theorem sum_range_choose_mul_choose_add_sum_range_choose_mul_choose
       simp only [mem_range, not_lt] at hj
       simp [choose_eq_zero_of_lt (by omega : r < j)]
     rw [htruncate, sum_range_succ] at hsum
-    simp only [sum_range_one, Nat.zero_add, choose_zero_right, one_mul, Nat.sub_zero,
+    simp only [sum_range_one, zero_add, choose_zero_right, one_mul, Nat.sub_zero,
       choose_self] at *
-    rw [Nat.add_sub_of_le (by omega : r ≤ N)] at hsum
+    rw [add_sub_of_le (by omega : r ≤ N)] at hsum
     omega
   | succ k ih =>
     have ih := ih (by omega)
@@ -211,16 +211,16 @@ theorem sum_antidiagonal_snd_add_choose (N k m : ℕ) :
         ∑ r ∈ Icc m (N + m), r.choose (k + m) := by
       convert! (sum_map (range (N + 1)) (addRightEmbedding m)
         (fun r ↦ r.choose (k + m))).symm using 2
-      rw [range_eq_Ico, map_add_right_Ico, zero_add, Nat.add_right_comm,
+      rw [range_eq_Ico, map_add_right_Ico, zero_add, add_right_comm,
         Ico_add_one_right_eq_Icc]
     _ = ∑ r ∈ Icc (k + m) (N + m), r.choose (k + m) := by
       symm
       apply sum_subset (by intro r hr; simp only [mem_Icc] at *; omega)
       intro r hr hnot
-      apply Nat.choose_eq_zero_of_lt
+      apply choose_eq_zero_of_lt
       simp only [mem_Icc] at *
       omega
     _ = (N + (m + 1)).choose (k + (m + 1)) := by
-      simpa only [Nat.add_assoc] using Nat.sum_Icc_choose (N + m) (k + m)
+      simpa only [add_assoc] using sum_Icc_choose (N + m) (k + m)
 
 end Nat
