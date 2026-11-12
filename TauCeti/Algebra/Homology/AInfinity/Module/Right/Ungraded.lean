@@ -347,6 +347,13 @@ def HigherActVanishesOn (U : Set A) : Prop :=
 
 variable {Mm} {U : Set A} {e : A}
 
+/-- The higher operations vanish on `U` exactly when `m_{n+2}(m, a₁, …, aₙ₊₂) = 0` whenever one of
+the inputs `aᵢ` lies in `U`. -/
+theorem higherActVanishesOn_iff :
+    Mm.HigherActVanishesOn U ↔
+      ∀ (n : ℕ) (a : Fin (n + 2) → A) (i : Fin (n + 2)), a i ∈ U → Mm.act (n + 2) a = 0 :=
+  Iff.rfl
+
 /-- An operation `m_{n+1}` with `n ≥ 2` vanishes when one of its inputs lies in a set on which the
 higher operations vanish. -/
 theorem HigherActVanishesOn.act_eq_zero (hU : Mm.HigherActVanishesOn U) {n : ℕ} (hn : 2 ≤ n)
@@ -412,14 +419,7 @@ theorem act_act_one_of_mul_eq [CharP R 2] (hU : Mm.HigherActVanishesOn U) (he : 
       LinearMap.zero_apply]
   -- The remaining product term contracts `e * a 0` to `a 0`.
   have hc : (Fin.castSucc 0).contractNth (· * ·) (Fin.cons e a) = a := by
-    funext k
-    by_cases hk : k = 0
-    · subst hk
-      rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl]
-      exact ha
-    · rw [Fin.contractNth_apply_of_gt _ _ _ _ (by
-        rw [Fin.val_castSucc, Fin.val_zero]; exact Nat.pos_of_ne_zero (Fin.val_ne_iff.mpr hk)),
-        Fin.cons_succ]
+    simpa only [Fin.castSucc_zero, Fin.contractNth_zero_cons, ha] using Fin.cons_self_tail a
   have h₁ : Mm.act (n + 2 - ((1 : Fin (n + 3)) : ℕ))
       (fun l => (Fin.cons e a : Fin (n + 2) → A) ⟨((1 : Fin (n + 3)) : ℕ) + l, by omega⟩) =
       Mm.act (n + 1) a :=
@@ -470,14 +470,7 @@ theorem act_one_act_of_mul_eq [CharP R 2] (hU : Mm.HigherActVanishesOn U) (he : 
         Fin.snoc_last]), LinearMap.zero_apply]
   -- The remaining product term contracts `a n * e` to `a n`.
   have hc : (Fin.last n).castSucc.contractNth (· * ·) (Fin.snoc a e) = a := by
-    funext k
-    by_cases hk : k = Fin.last n
-    · subst hk
-      rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Fin.succ_last, Fin.snoc_last,
-        Fin.snoc_castSucc]
-      exact ha
-    · rw [Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using Fin.val_lt_last hk),
-        Fin.snoc_castSucc]
+    rw [Fin.contractNth_castSucc_last_snoc, ha, Fin.snoc_init_self]
   have h₁ : Mm.act (n + 2 - ((⟨n + 1, by omega⟩ : Fin (n + 3)) : ℕ))
       (fun l => (Fin.snoc a e : Fin (n + 2) → A)
         ⟨((⟨n + 1, by omega⟩ : Fin (n + 3)) : ℕ) + l, by omega⟩) = Mm.act 1 fun _ => e :=
