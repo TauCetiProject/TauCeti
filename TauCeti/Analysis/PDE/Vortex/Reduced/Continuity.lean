@@ -8,12 +8,14 @@ module
 public import TauCeti.Analysis.PDE.Vortex.EulerLagrange
 public import TauCeti.Analysis.PDE.Vortex.Reduced.Regularity
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Analysis.Polynomial.SublevelVolume
 import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.Analysis.Sobolev.Poincare.Planar
 import TauCeti.Analysis.Sobolev.W1p.Density
+import TauCeti.Analysis.Sobolev.W1p.Exponential
 
 /-!
 # Uniqueness and continuous dependence of the minimizer of Taubes's functional
@@ -125,12 +127,10 @@ theorem inner_gradient_add_integral_reducedSource_mul_eq_zero (hm : 0 < P.natDeg
       simp only [S, hz, RCLike.inner_apply, conj_trivial, mul_comm])
   have hcont : Continuous fun v : W1p (volume : Measure ℂ) ⊤ 2 ↦
       ⟪W1p.gradient u, W1p.gradient v⟫ + ⟪S, W1p.value v⟫ := by
-    have hg := (W1p.gradientL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2)).continuous
-    have hv := (W1p.valueL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2)).continuous
-    rw [show ⇑(W1p.gradientL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2)) = W1p.gradient
-      from funext W1p.gradientL_apply] at hg
-    rw [show ⇑(W1p.valueL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2)) = W1p.value
-      from funext W1p.valueL_apply] at hv
+    have hg := (W1p.gradientL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2)).continuous.congr
+      W1p.gradientL_apply
+    have hv := (W1p.valueL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2)).continuous.congr
+      W1p.valueL_apply
     exact (continuous_const.inner hg).add (continuous_const.inner hv)
   rw [hint]
   refine (W1p.denseRange_ofTestFunctionₗ_top (mu := (volume : Measure ℂ)) (p := 2)
@@ -180,8 +180,8 @@ private theorem integrable_and_stability {Q : Polynomial ℂ} (hP : 0 < P.natDeg
   have hud : U =ᵐ[volume] fun z ↦ W z + D z := by
     have h := W1p.value_add_ae (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2) w d
     simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at h
-    rw [show w + d = u from add_sub_cancel w u] at h
-    exact h
+    have hwd : w + d = u := add_sub_cancel w u
+    rwa [hwd] at h
   -- Integrability of the pieces of the expansion.
   have hA : Integrable fun z ↦ hQ' z * (Real.exp (2 * U z) - 1 - 2 * U z) := by
     simpa only [hQ', backgroundWeight_def] using
@@ -190,7 +190,8 @@ private theorem integrable_and_stability {Q : Polynomial ℂ} (hP : 0 < P.natDeg
     simpa only [hQ', backgroundWeight_def] using
       sobolevReducedFunctional_ne_top_iff.1 (sobolevReducedFunctional_ne_top Q w)
   have hC : Integrable fun z ↦ hQ' z * ((Real.exp (2 * W z) - 1) * D z) :=
-    ((memLp_exp_two_mul_value_sub_one w).integrable_mul (W1p.memLp_value d)).bdd_mul
+    ((W1p.memLp_exp_two_mul_value_sub_one volume Complex.finrank_real_complex w).integrable_mul
+      (W1p.memLp_value d)).bdd_mul
       hhc.aestronglyMeasurable (c := 1) (ae_of_all _ fun z ↦ by
         rw [Real.norm_of_nonneg (hh0 z)]; exact hh1 z)
   have hexpand : (fun z ↦ hQ' z * Real.exp (2 * W z) *
@@ -341,13 +342,6 @@ open Polynomial
 
 variable {ι : Type*} [Fintype ι]
 
-/-- A product `∏ i, (X - a i)` over a nonempty finite type has positive degree. -/
-private theorem natDegree_prod_X_sub_C_pos [Nonempty ι] (a : ι → ℂ) :
-    0 < (∏ i, (X - C (a i))).natDegree := by
-  classical
-  rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_univ]
-  exact Fintype.card_pos
-
 /-- **Uniform decay of the linear coefficient.** For roots in a fixed disc, the coefficient
 `2 ‖P'‖² / (1 + ‖P‖²)² - (1 + ‖P‖²)⁻¹ / 8` of the linear term of Taubes's functional of
 `P = ∏ i, (X - a i)` is bounded by `K (1 + ‖z‖)⁻²`, with `K` independent of the roots. -/
@@ -446,7 +440,7 @@ private theorem exists_abs_linearCoeff_le [Nonempty ι] (ρ : ℝ) (hρ : 0 ≤ 
       nlinarith [sq_nonneg (n : ℝ), sq_nonneg ‖z‖]
     have h2 : (1 + ‖p‖ ^ 2)⁻¹ / 8 ≤ 1 / ‖z‖ ^ 2 := by
       have : ‖z‖ ^ 2 ≤ 8 * (1 + ‖p‖ ^ 2) := by nlinarith
-      rw [show (1 + ‖p‖ ^ 2)⁻¹ / 8 = 1 / (8 * (1 + ‖p‖ ^ 2)) by field_simp]
+      rw [inv_div_left, ← one_div]
       exact one_div_le_one_div_of_le (by positivity) this
     calc 2 * ‖q‖ ^ 2 / (1 + ‖p‖ ^ 2) ^ 2 + (1 + ‖p‖ ^ 2)⁻¹ / 8
         ≤ (8 * (n : ℝ) ^ 2 + 1) / ‖z‖ ^ 2 := by rw [add_div]; linarith
@@ -482,7 +476,7 @@ private theorem tendsto_integral_reducedSource_sub_sq [Nonempty ι]
   classical
   set W : ℂ → ℝ := ⇑(W1p.value w)
   obtain ⟨K, -, hKb⟩ := exists_abs_linearCoeff_le (ι := ι) (‖a₀‖ + 1) (by positivity)
-  have hexp := memLp_exp_two_mul_value_sub_one w
+  have hexp := W1p.memLp_exp_two_mul_value_sub_one volume Complex.finrank_real_complex w
   set bound : ℂ → ℝ := fun z ↦
     2 * ((Real.exp (2 * W z) - 1) ^ 2 / 64) + 2 * (4 * K ^ 2 * (1 + ‖z‖) ^ (-4 : ℝ))
   have hbound : Integrable bound := by
@@ -599,17 +593,6 @@ private theorem sq_add_sq_le {X G E C κ S τ B : ℝ} (hG : 0 ≤ G) (hE : 0 �
     gcongr
   have : (2 + C * G) ^ 2 * S ≤ 3 ^ 2 * S := by gcongr
   have : 2 * 3 * (16 * τ * B / κ) = 96 * τ * B / κ := by ring
-  nlinarith
-
-/-- For `A ≥ 0` and `ε > 0` there is `M ≥ 1` with `A / M² ≤ ε`. -/
-private theorem exists_one_le_div_sq_le {A ε : ℝ} (hA : 0 ≤ A) (hε : 0 < ε) :
-    ∃ M : ℝ, 1 ≤ M ∧ A / M ^ 2 ≤ ε := by
-  have hAε : 0 ≤ A / ε := by positivity
-  have hM : 1 ≤ A / ε + 1 := by linarith
-  refine ⟨A / ε + 1, hM, ?_⟩
-  rw [div_le_iff₀ (by positivity)]
-  have h1 : A ≤ ε * (A / ε + 1) := by rw [mul_add, mul_div_cancel₀ _ hε.ne']; linarith
-  have h2 : A / ε + 1 ≤ (A / ε + 1) ^ 2 := by nlinarith
   nlinarith
 
 /-- The choice of the tolerance `τ` in the convergence of minimizers. -/
@@ -800,7 +783,10 @@ theorem tendsto_of_forall_sobolevReducedFunctional_le {X : Type*} {l : Filter X}
   set θ := η ^ 2 / 40
   have hθ : 0 < θ := by positivity
   obtain ⟨δ, hδ, hδb⟩ := hlev (θ / 2) (by positivity)
-  obtain ⟨M, hM, hMθ⟩ := exists_one_le_div_sq_le (sq_nonneg ‖W1p.value w‖) (half_pos hθ)
+  have hMlim : Tendsto (fun M : ℝ ↦ ‖W1p.value w‖ ^ 2 / M ^ 2) atTop (𝓝 0) :=
+    tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero)
+  obtain ⟨M, hM, hMθ⟩ :=
+    ((eventually_ge_atTop 1).and (hMlim.eventually (eventually_le_nhds (half_pos hθ)))).exists
   set κ := δ ^ 2 / (1 + δ ^ 2) * Real.exp (-(2 * M))
   have hκ : 0 < κ := by positivity
   obtain ⟨τ, hτ, hτ1, hτC, hτη⟩ := exists_pos_mul_le hB (C := C₀)
@@ -835,8 +821,8 @@ theorem continuous_of_forall_sobolevReducedFunctional_le {ι : Type*} [Fintype �
     Continuous u := by
   classical
   refine continuous_iff_continuousAt.2 fun a₀ ↦ ?_
-  exact tendsto_of_forall_sobolevReducedFunctional_le (natDegree_prod_X_sub_C_pos a₀) (hu a₀)
-    natDegree_prod_X_sub_C_pos
+  exact tendsto_of_forall_sobolevReducedFunctional_le
+    (Polynomial.natDegree_prod_X_sub_C_pos a₀) (hu a₀) Polynomial.natDegree_prod_X_sub_C_pos
     (fun a ↦ hu a (u a₀)) (tendsto_integral_reducedSource_sub_sq (u a₀) a₀)
     fun _ hη ↦ exists_volume_setOf_norm_eval_prod_lt_le hη
 

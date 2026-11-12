@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import TauCeti.Analysis.PDE.Vortex.Reduced.Regularity
 import TauCeti.Analysis.PDE.Vortex.Variational
 
 /-!

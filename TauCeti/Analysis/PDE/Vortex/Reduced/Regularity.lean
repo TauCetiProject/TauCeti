@@ -13,7 +13,6 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
-import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 import TauCeti.Analysis.Sobolev.W1p.Exponential
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
@@ -57,10 +56,6 @@ This is the decay at infinity that gives the reconstructed vortex its degree-`m`
 
 ## Main results
 
-* `TauCeti.Vortex.memLp_exp_two_mul_value_sub_one`: `exp (2w) - 1 ∈ L²(ℂ)` for `w ∈ H¹(ℂ)`.
-* `TauCeti.Vortex.integrable_exp_two_mul_value_sub_one_sub`,
-  `TauCeti.Vortex.sobolevReducedFunctional_ne_top`: the potential of an `H¹` function is
-  integrable, so Taubes's functional is finite on `H¹(ℂ)`.
 * `TauCeti.Vortex.memLp_reducedSource`: `reducedSource P w ∈ L²(ℂ)` for `w ∈ H¹(ℂ)`.
 * `TauCeti.Vortex.exists_wkp_value_ae_eq_of_forall_integral_reducedSource`: a weak solution in
   `H¹(ℂ)` of the reduced equation lies in `H²(ℂ)`.
@@ -112,50 +107,6 @@ theorem reducedSource_eq_add (w : ℂ → ℝ) (z : ℂ) :
   field_simp
   ring
 
-/-- For `w ∈ H¹(ℂ)`, `exp (2w) - 1 ∈ L²(ℂ)`: this is `TauCeti.W1p.memLp_exp_value_sub_one` for
-`2w`. -/
-theorem memLp_exp_two_mul_value_sub_one (u : W1p (volume : Measure ℂ) ⊤ 2) :
-    MemLp (fun z ↦ Real.exp (2 * W1p.value u z) - 1) 2 volume := by
-  have h2u : (W1p.value ((2 : ℝ) • u) : ℂ → ℝ) =ᵐ[volume] fun z ↦ 2 * W1p.value u z := by
-    have h := W1p.value_smul_ae (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2) 2 u
-    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at h
-    exact h.mono fun z hz ↦ by rw [hz, Pi.smul_apply, smul_eq_mul]
-  exact (W1p.memLp_exp_value_sub_one volume Complex.finrank_real_complex ((2 : ℝ) • u)).ae_eq
-    (h2u.mono fun z hz ↦ by simp only [hz])
-
-/-- **The potential of an `H¹` function is integrable.** For `u ∈ H¹(ℂ)` the potential
-`exp (2u) - 1 - 2u` of Taubes's functional is integrable, because `exp (2u) - 1` is square
-integrable (`TauCeti.Vortex.memLp_exp_two_mul_value_sub_one`) and
-`exp (2t) - 1 - 2t ≤ t² + (exp (2t) - 1)²` (`Real.exp_two_mul_sub_one_sub_two_mul_le`). -/
-theorem integrable_exp_two_mul_value_sub_one_sub (u : W1p (volume : Measure ℂ) ⊤ 2) :
-    Integrable fun z ↦ Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z := by
-  have hexp := memLp_exp_two_mul_value_sub_one u
-  have hsq : Integrable fun z ↦ W1p.value u z ^ 2 + (Real.exp (2 * W1p.value u z) - 1) ^ 2 :=
-    ((memLp_two_iff_integrable_sq (W1p.memLp_value u).aestronglyMeasurable).1
-      (W1p.memLp_value u)).add
-      ((memLp_two_iff_integrable_sq hexp.aestronglyMeasurable).1 hexp)
-  refine hsq.mono' ?_ (ae_of_all _ fun z ↦ ?_)
-  · exact ((by fun_prop : Continuous fun t : ℝ ↦ Real.exp (2 * t) - 1 - 2 * t)
-      |>.comp_aestronglyMeasurable (W1p.memLp_value u).aestronglyMeasurable)
-  · rw [Real.norm_of_nonneg (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)]
-    exact Real.exp_two_mul_sub_one_sub_two_mul_le _
-
-/-- **Taubes's functional is finite on `H¹(ℂ)`.** Its potential `(1 / 16) ∫ h (exp (2u) - 1 - 2u)`
-is finite for every `u ∈ H¹(ℂ)`, by `TauCeti.Vortex.integrable_exp_two_mul_value_sub_one_sub` and
-`0 ≤ h ≤ 1`. -/
-theorem sobolevReducedFunctional_ne_top (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) :
-    sobolevReducedFunctional P u ≠ ⊤ := by
-  refine sobolevReducedFunctional_ne_top_iff.2 ((integrable_exp_two_mul_value_sub_one_sub u).mono'
-    ?_ (ae_of_all _ fun z ↦ ?_))
-  · have hΦ : Continuous fun t : ℝ ↦ Real.exp (2 * t) - 1 - 2 * t := by fun_prop
-    exact ((continuous_backgroundWeight P.continuous).congr
-      (backgroundWeight_def _)).aestronglyMeasurable.mul
-      (hΦ.comp_aestronglyMeasurable (W1p.memLp_value u).aestronglyMeasurable)
-  · have hψ := Real.exp_two_mul_sub_one_sub_two_mul_nonneg (W1p.value u z)
-    rw [← backgroundWeight_def (P.eval ·), norm_mul,
-      Real.norm_of_nonneg (backgroundWeight_nonneg _ z), Real.norm_of_nonneg hψ]
-    exact mul_le_of_le_one_left hψ (backgroundWeight_lt_one _ z).le
-
 /-- **The source of the reduced equation is square integrable.** For a polynomial `P` of positive
 degree and `w ∈ H¹(ℂ)`, `(exp (2w) h - 1) / 8 + g ∈ L²(ℂ)`. -/
 theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure ℂ) ⊤ 2) :
@@ -166,7 +117,7 @@ theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure �
     rw [show h z = _ from backgroundWeight_def _ z]
     exact div_le_one_of_le₀ (by linarith) (by positivity)
   have hhc : Continuous h := continuous_backgroundWeight P.continuous
-  have hexp := memLp_exp_two_mul_value_sub_one u
+  have hexp := W1p.memLp_exp_two_mul_value_sub_one volume Complex.finrank_real_complex u
   have htop : MemLp h ⊤ volume :=
     memLp_top_of_bound hhc.aestronglyMeasurable 1 (Eventually.of_forall fun z ↦ by
       rw [Real.norm_of_nonneg (hh0 z)]; exact hh1 z)
