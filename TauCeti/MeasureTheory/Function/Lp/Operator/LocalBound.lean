@@ -47,7 +47,7 @@ theorem setLIntegral_enorm_apply_le_of_ae_eq_indicator (T : Lp E p μ →L[𝕜]
   have hp : 1 ≤ p := Fact.out
   calc ∫⁻ x in t, ‖T g x‖ₑ ∂μ
       = eLpNorm (T g) 1 (μ.restrict t) :=
-        (eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _).restrict).symm
+        (eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _).restrict).symm
     _ ≤ eLpNorm (T g) p (μ.restrict t) * μ t ^ (1 - p.toReal⁻¹) := by
         refine (eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := p) hp
           (Lp.aestronglyMeasurable _).restrict).trans_eq ?_
@@ -56,9 +56,9 @@ theorem setLIntegral_enorm_apply_le_of_ae_eq_indicator (T : Lp E p μ →L[𝕜]
     _ ≤ ‖T‖ₑ * (eLpNorm f ∞ μ * μ s ^ p.toReal⁻¹) * μ t ^ (1 - p.toReal⁻¹) := by
         gcongr
         refine (eLpNorm_mono_measure _ Measure.restrict_le_self).trans ?_
-        rw [← Lp.enorm_def]
+        rw [← Lp.eNorm_def]
         refine T.le_opENorm_of_le ?_
-        rw [Lp.enorm_def, eLpNorm_congr_ae hg,
+        rw [Lp.eNorm_def, eLpNorm_congr_ae hg,
           eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet]
         calc eLpNorm f p (μ.restrict s)
             ≤ eLpNorm f ∞ (μ.restrict s) *
