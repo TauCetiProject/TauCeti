@@ -33,6 +33,8 @@ are in `TauCeti.Probability.Distributions.Uniform.Quantile`.
   normalized finite sum.
 * `Finset.measureReal_map_uniformOn_finset_apply` and `Finset.cdf_map_uniformOn_finset`:
   label masses and cumulative masses are proportions of inputs.
+* `Finset.integrable_map_uniformOn_finset` and `Finset.integral_map_uniformOn_finset`:
+  every labelled observable is integrable, with expectation given by its average over inputs.
 * `Set.BijOn.map_uniformOn`: a bijection between sets pushes a uniform law to
   the uniform law on its target, with no finiteness restriction.
 * `TauCeti.Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal`: two independent uniform
@@ -300,6 +302,29 @@ theorem ae_mem_image_map_uniformOn_finset [MeasurableSingletonClass β] (s : Fin
   intro i hi
   apply Measure.ae_smul_measure
   simpa using s.mem_image_of_mem f hi
+
+/-- Every observable is integrable against a finitely labelled uniform law. Neither the labels
+nor the observable need be globally measurable. -/
+@[simp]
+theorem integrable_map_uniformOn_finset [MeasurableSingletonClass β]
+    {E : Type*} [NormedAddCommGroup E] (s : Finset α) (f : α → β) (g : β → E) :
+    Integrable g ((uniformOn (s : Set α)).map f) := by
+  classical
+  have h : IntegrableOn g (s.image f : Set β) ((uniformOn (s : Set α)).map f) :=
+    IntegrableOn.finset
+  rwa [IntegrableOn, Measure.restrict_eq_self_of_ae_mem
+    (s.ae_mem_image_map_uniformOn_finset f)] at h
+
+/-- The expectation of an observable of a finite uniform sample is its average over inputs.
+Repeated labels retain their multiplicities. -/
+theorem integral_map_uniformOn_finset [MeasurableSingletonClass β]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    (s : Finset α) (f : α → β) (g : β → E) :
+    ∫ x, g x ∂(uniformOn (s : Set α)).map f =
+      (s.card : ℝ)⁻¹ • ∑ i ∈ s, g (f i) := by
+  rw [integral_map (s.aemeasurable_uniformOn_finset f)
+    (s.integrable_map_uniformOn_finset f g).aestronglyMeasurable,
+    integral_uniformOn_finset]
 
 open Classical in
 /-- Every label attained by a finite uniform sample has nonzero mass. -/
