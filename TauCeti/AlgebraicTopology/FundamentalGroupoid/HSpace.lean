@@ -31,6 +31,16 @@ constant loop. A path in `Ω X x` from a loop `γ` to the constant loop is a dis
 `pathHmul` places two such discs side by side; the unit laws say that placing the constant disc
 beside a sphere at the constant loop does not change the sphere.
 
+The loop space is moreover associative up to a homotopy that is continuous in the three loops
+(`Path.loopAssocHomotopy`): the triple concatenations `(γ₁ ⬝ γ₂) ⬝ γ₃` and `γ₁ ⬝ (γ₂ ⬝ γ₃)` differ
+by the reparametrization of Mathlib's `Path.Homotopy.trans_assoc_reparam`, and running the
+straight-line homotopy from this reparametrization to the identity gives a homotopy between the
+two maps `Ω X x × Ω X x × Ω X x → Ω X x`. Its traces `Path.loopAssoc γ₁ γ₂ γ₃` are natural for
+products of path classes (`Path.pathHmul_pathHmul_comp_loopAssoc`), again by
+`FundamentalGroupoidFunctor.homotopicMapsNatIso`, and at the constant loops the trace is the
+constant path (`Path.loopAssoc_refl`). For discs this says that placing three discs side by side
+does not depend on the bracketing, up to rebracketing their boundary loops.
+
 ## References
 
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. (2) **54**
@@ -70,6 +80,22 @@ theorem pathHmul_id (a b : Y) :
   rw [FundamentalGroupoid.id_eq_path_refl, FundamentalGroupoid.id_eq_path_refl,
     FundamentalGroupoid.id_eq_path_refl]
   exact congrArg Path.Homotopic.Quotient.mk (Path.ext rfl)
+
+/-- The product of a transport along an equality of points with an identity is a transport. -/
+@[simp]
+theorem pathHmul_eqToHom_id {a b : Y} (h : a = b) (c : Y) :
+    pathHmul (eqToHom (congrArg FundamentalGroupoid.mk h)) (𝟙 (⟨c⟩ : FundamentalGroupoid Y)) =
+      eqToHom (congrArg FundamentalGroupoid.mk (congrArg (· ⋀ c) h)) := by
+  subst h
+  simp only [eqToHom_refl, pathHmul_id]
+
+/-- The product of an identity with a transport along an equality of points is a transport. -/
+@[simp]
+theorem pathHmul_id_eqToHom (c : Y) {a b : Y} (h : a = b) :
+    pathHmul (𝟙 (⟨c⟩ : FundamentalGroupoid Y)) (eqToHom (congrArg FundamentalGroupoid.mk h)) =
+      eqToHom (congrArg FundamentalGroupoid.mk (congrArg (c ⋀ ·) h)) := by
+  subst h
+  simp only [eqToHom_refl, pathHmul_id]
 
 /-- **The product of path classes is functorial**: the product of two composites is the composite
 of the products. -/
@@ -155,3 +181,99 @@ theorem pathHmul_id_right_comp_eqToHom (p : (⟨e⟩ : FundamentalGroupoid Y) �
   exact pathHmul_id_right_comp_evalAt_hmulE p
 
 end HSpace
+
+namespace Path
+
+open unitInterval
+
+variable {X : Type*} [TopologicalSpace X] {x : X}
+
+/-- The loop `γ₁ ⬝ (γ₂ ⬝ γ₃)` run through the reparametrization `θ t + (1 - θ) f(t)`, where `f` is
+the reparametrization of `Path.Homotopy.trans_assoc_reparam` carrying it to `(γ₁ ⬝ γ₂) ⬝ γ₃`. At
+`θ = 0` it is `(γ₁ ⬝ γ₂) ⬝ γ₃` and at `θ = 1` it is `γ₁ ⬝ (γ₂ ⬝ γ₃)`. -/
+private def loopAssocAux (θ : I) (γ : Path x x × Path x x × Path x x) : Path x x where
+  toFun t := (γ.1.trans (γ.2.1.trans γ.2.2))
+    ⟨θ * t + σ θ * Homotopy.transAssocReparamAux t,
+      convex_Icc _ _ t.2 (Homotopy.transAssocReparamAux_mem_I t) θ.2.1 (σ θ).2.1 (by simp)⟩
+  continuous_toFun :=
+    (γ.1.trans (γ.2.1.trans γ.2.2)).continuous.comp (Continuous.subtype_mk (by fun_prop) _)
+  source' := by simp [Homotopy.transAssocReparamAux_zero]
+  target' := by simp [Homotopy.transAssocReparamAux_one]
+
+private theorem continuous_loopAssocAux :
+    Continuous fun p : I × (Path x x × Path x x × Path x x) => loopAssocAux p.1 p.2 := by
+  refine continuous_uncurry_iff.mp ?_
+  have h : Continuous fun p : I × (Path x x × Path x x × Path x x) =>
+      p.2.1.trans (p.2.2.1.trans p.2.2.2) := by fun_prop
+  exact (h.comp continuous_fst).eval (Continuous.subtype_mk (by fun_prop) _)
+
+/-- At the constant loops every stage of the reparametrization is the constant loop. -/
+private theorem loopAssocAux_refl (θ : I) :
+    loopAssocAux θ (Path.refl x, Path.refl x, Path.refl x) = Path.refl x := by
+  ext t
+  simp [loopAssocAux]
+
+/-- **The loop space is homotopy associative**: a homotopy, continuous in the three loops, from
+`(γ₁, γ₂, γ₃) ↦ (γ₁ ⬝ γ₂) ⬝ γ₃` to `(γ₁, γ₂, γ₃) ↦ γ₁ ⬝ (γ₂ ⬝ γ₃)` as maps
+`Ω X x × Ω X x × Ω X x → Ω X x`. -/
+def loopAssocHomotopy :
+    ContinuousMap.Homotopy
+      (⟨fun γ : Path x x × Path x x × Path x x => (γ.1.trans γ.2.1).trans γ.2.2,
+        by fun_prop⟩ : C(Path x x × Path x x × Path x x, Path x x))
+      ⟨fun γ => γ.1.trans (γ.2.1.trans γ.2.2), by fun_prop⟩ where
+  toFun p := loopAssocAux p.1 p.2
+  continuous_toFun := continuous_loopAssocAux
+  map_zero_left γ := by
+    simp only [ContinuousMap.coe_mk]
+    rw [Homotopy.trans_assoc_reparam]
+    ext t
+    simp [loopAssocAux]
+  map_one_left γ := by
+    simp only [ContinuousMap.coe_mk]
+    ext t
+    simp [loopAssocAux]
+
+private theorem loopAssocHomotopy_apply (p : I × (Path x x × Path x x × Path x x)) :
+    loopAssocHomotopy p = loopAssocAux p.1 p.2 :=
+  (rfl)
+
+/-- **The associator of the loop space on path classes**: the class of the trace of
+`Path.loopAssocHomotopy` at `(γ₁, γ₂, γ₃)`, a path in `Ω X x` from `(γ₁ ⬝ γ₂) ⬝ γ₃` to
+`γ₁ ⬝ (γ₂ ⬝ γ₃)`. -/
+def loopAssoc (γ₁ γ₂ γ₃ : Path x x) :
+    (⟨(γ₁.trans γ₂).trans γ₃⟩ : FundamentalGroupoid (Path x x)) ⟶ ⟨γ₁.trans (γ₂.trans γ₃)⟩ :=
+  ⟦loopAssocHomotopy.evalAt (γ₁, γ₂, γ₃)⟧
+
+/-- **Naturality of the associator**: for path classes `pᵢ : γᵢ ⟶ γᵢ'` in the loop space, placing
+them side by side with either bracketing gives the same class, up to the associators of the
+endpoints. -/
+@[reassoc]
+theorem pathHmul_pathHmul_comp_loopAssoc {γ₁ γ₂ γ₃ γ₁' γ₂' γ₃' : Path x x}
+    (p₁ : (⟨γ₁⟩ : FundamentalGroupoid (Path x x)) ⟶ ⟨γ₁'⟩)
+    (p₂ : (⟨γ₂⟩ : FundamentalGroupoid (Path x x)) ⟶ ⟨γ₂'⟩)
+    (p₃ : (⟨γ₃⟩ : FundamentalGroupoid (Path x x)) ⟶ ⟨γ₃'⟩) :
+    HSpace.pathHmul (HSpace.pathHmul p₁ p₂) p₃ ≫ loopAssoc γ₁' γ₂' γ₃' =
+      loopAssoc γ₁ γ₂ γ₃ ≫ HSpace.pathHmul p₁ (HSpace.pathHmul p₂ p₃) := by
+  have h := (FundamentalGroupoidFunctor.homotopicMapsNatIso loopAssocHomotopy).naturality
+    (X := ⟨(γ₁, γ₂, γ₃)⟩) (Y := ⟨(γ₁', γ₂', γ₃')⟩)
+    (Path.Homotopic.prod p₁ (Path.Homotopic.prod p₂ p₃))
+  simp only [FundamentalGroupoidFunctor.homotopicMapsNatIso_app] at h
+  -- As in `HSpace.pathHmul_id_left_comp_evalAt_eHmul`, the images of the product class under the
+  -- two triple concatenations agree with the iterated products `pathHmul` definitionally only
+  -- once representatives are chosen.
+  induction p₁ using Path.Homotopic.Quotient.ind with | mk p₁ =>
+  induction p₂ using Path.Homotopic.Quotient.ind with | mk p₂ =>
+  induction p₃ using Path.Homotopic.Quotient.ind with | mk p₃ =>
+  exact h
+
+/-- At the constant loops the associator is the constant path, transported along
+`(c ⬝ c) ⬝ c = c ⬝ (c ⬝ c)`. -/
+theorem loopAssoc_refl :
+    loopAssoc (Path.refl x) (Path.refl x) (Path.refl x) =
+      eqToHom (congrArg FundamentalGroupoid.mk (by rw [refl_trans_refl, refl_trans_refl])) := by
+  rw [FundamentalGroupoid.eqToHom_eq (by rw [refl_trans_refl, refl_trans_refl])]
+  refine congrArg Path.Homotopic.Quotient.mk
+    (Path.ext (funext fun θ => Path.ext (funext fun t => ?_)))
+  simp [ContinuousMap.Homotopy.evalAt, loopAssocHomotopy_apply, loopAssocAux_refl]
+
+end Path
