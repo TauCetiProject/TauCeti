@@ -300,7 +300,7 @@ theorem exists_forall_norm_fderiv_le_of_lintegral_ne_top
     (huK : ∀ z, a < z.re → u z ∈ K)
     (hfin : ∫⁻ z in Ioi a ×ℂ Icc 0 1, ‖fderiv ℝ u z 1‖ₑ ^ 2 ≠ ∞) :
     ∃ M, ∀ z, b ≤ z.re → ‖fderiv ℝ u z‖ ≤ M := by
-  obtain ⟨r, hr, ε, hε, B, hB⟩ := exists_pos_forall_norm_fderiv_le_of_setLIntegral_le
+  obtain ⟨r, _, ε, hε, B, hB⟩ := exists_pos_forall_norm_fderiv_le_of_setLIntegral_le
     hW hJ hX hK hKW hJsq hJ1 hJI hX1 hXI
   have hU : IsOpen {z : ℂ | a < z.re} := isOpen_lt continuous_const continuous_re
   -- Far out along the end, the energy over one period of the half-strip is at most `ε`.
