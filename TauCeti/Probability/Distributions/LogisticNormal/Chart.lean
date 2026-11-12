@@ -13,7 +13,7 @@ public import TauCeti.Probability.Distributions.LogisticNormal.Basic
 # The logistic chart as a smooth equivalence onto the open simplex
 
 The logistic chart `logisticNormalChart r` sends log ratios `z` to the normalized exponentials
-`(e^{z̄ᵢ} / ∑ⱼ e^{z̄ⱼ})ᵢ`, where `z̄` extends `z` by `z̄ᵣ = 0`. Its inverse on the strictly
+`(e^{z'ᵢ} / ∑ⱼ e^{z'ⱼ})ᵢ`, where `z'` extends `z` by `z'ᵣ = 0`. Its inverse on the strictly
 positive simplex is the additive log-ratio map `x ↦ (log (xᵢ / xᵣ))_{i ≠ r}`.
 
 This file shows that the two maps are smooth inverse charts: the logistic chart is smooth of
