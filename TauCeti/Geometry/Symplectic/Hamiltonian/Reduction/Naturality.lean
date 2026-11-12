@@ -154,20 +154,10 @@ theorem exists_comp_eq_and_mpullback_eq_of_smul [IZ.Boundaryless] {L : Type*} [M
   choose φ hφ using fun l : L ↦ existsUnique_comp_eq_and_mpullback_eq hi hp hi hp.contMDiff hpi
     hpi hsurj (hL l) (hLσ l) (hfib l)
   have hpφ (l : L) : φ l ∘ p = fun z ↦ p (l • z) := (hφ l).1.1
-  refine ⟨φ, hpφ, ?_, fun l l' ↦ ?_, fun l ↦ (hφ l).1.2⟩
-  · -- Both `φ 1` and `id` descend the identity of `Z`.
-    refine hsurj.injective_comp_right ?_
-    dsimp only
-    rw [hpφ]
-    funext z
-    simp only [one_smul, id_comp]
-  · -- Both sides descend `z ↦ (l * l') • z = l • l' • z`.
-    refine hsurj.injective_comp_right ?_
-    dsimp only
-    rw [comp_assoc, hpφ, hpφ]
-    funext z
-    simp only [comp_apply, mul_smul]
-    exact (congrFun (hpφ l) (l' • z)).symm
+  -- The descended maps form an action of `L` on `Q`, since `p` is surjective and equivariant.
+  let : SMul L Q := ⟨φ⟩
+  let : MulAction L Q := hsurj.mulAction p fun l z ↦ (congrFun (hpφ l) z).symm
+  exact ⟨φ, hpφ, funext (one_smul L), fun l l' ↦ funext (mul_smul l l'), fun l ↦ (hφ l).1.2⟩
 
 end SmoothForm
 
@@ -222,10 +212,7 @@ theorem eq_prod_of_mpullback_prodMap_eq (hsurj₁ : Surjective p₁)
     (hη.trans (mpullback_prodMap_prod_eq_mpullback_prodMap_prod hi₁ hp₁ hi₂ hp₂ hpi₁ hpi₂).symm)
   rw [mfderiv_prodMap ((hp₁ z.1).mdifferentiableAt (by simp)) ((hp₂ z.2).mdifferentiableAt
     (by simp))]
-  intro w
-  obtain ⟨u, hu⟩ := hdp₁ z.1 w.1
-  obtain ⟨v, hv⟩ := hdp₂ z.2 w.2
-  exact ⟨(u, v), Prod.ext hu hv⟩
+  exact (hdp₁ z.1).prodMap (hdp₂ z.2)
 
 end SmoothTwoForm
 
