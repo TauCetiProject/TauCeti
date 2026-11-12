@@ -68,6 +68,13 @@ namespace TauCeti.PDE
 
 variable {x₀ x₁ lam M : ℝ} {G : ℝ → ℝ} {g₀ g₁ : ℝ}
 
+/-- A function integrable on `(x₀, x₁)` is interval integrable between any two points of
+`[x₀, x₁]`. -/
+private theorem intervalIntegrable_of_integrableOn_Ioo {h : ℝ → ℝ}
+    (hh : IntegrableOn h (Ioo x₀ x₁)) (y z : Icc x₀ x₁) : IntervalIntegrable h volume y z :=
+  ((integrableOn_Icc_iff_integrableOn_Ioo (μ := volume)).2 hh |>.mono_set
+    (uIcc_subset_Icc y.2 z.2)).intervalIntegrable
+
 /-- **Compactness of the frozen-solution map.** Let `a i`, for `i ∈ ι`, be coefficients with
 uniform bounds `λ ≤ a i ≤ M`. The solutions of the linear problems with coefficients `a i` form a
 relatively compact subset of `C([x₀, x₁])`: their derivatives are all dominated by one integrable
@@ -87,11 +94,7 @@ theorem isCompact_closure_range_intervalDirichletSolution {ι : Type*} (hx : x�
       |intervalDirichletSlope x₀ x₁ g₀ g₁ G (a i) t| ≤ H t :=
     fun i => ae_abs_intervalDirichletSlope_le hlam ((haM i).mono fun _ h => h.1)
       (abs_intervalDirichletFluxConst_le hx hlam g₀ g₁ (ha i) (haM i) hG)
-  have hIcc : ∀ {h : ℝ → ℝ}, IntegrableOn h (Ioo x₀ x₁) → IntegrableOn h (Icc x₀ x₁) :=
-    fun hh => by rwa [IntegrableOn, ← restrict_Ioo_eq_restrict_Icc]
-  have hII : ∀ {h : ℝ → ℝ}, IntegrableOn h (Ioo x₀ x₁) → ∀ y z : Icc x₀ x₁,
-      IntervalIntegrable h volume y z := fun hh y z =>
-    ((hIcc hh).mono_set (uIcc_subset_Icc y.2 z.2)).intervalIntegrable
+  have hII := @intervalIntegrable_of_integrableOn_Ioo x₀ x₁
   let x₀' : Icc x₀ x₁ := ⟨x₀, left_mem_Icc.2 hx.le⟩
   -- The common modulus of continuity `Ψ = ∫_{x₀}^x H` and the common bound.
   set Ψ : ℝ → ℝ := fun y => ∫ t in x₀..y, H t with hΨdef
@@ -135,37 +138,34 @@ theorem isCompact_closure_range_intervalDirichletSolution {ι : Type*} (hx : x�
   exact hmod i y z
 
 /-- **Continuity of the frozen-solution map.** Let `a v`, for `v` in a sequential space `X`, be
-coefficients with uniform bounds `λ ≤ a v ≤ M`, such that `a vₙ → a v` almost everywhere whenever
+coefficients with a uniform lower bound `λ ≤ a v`, such that `a vₙ → a v` almost everywhere whenever
 `vₙ → v`. Then the solution of the linear problem with coefficient `a v` depends continuously on
 `v` in `C([x₀, x₁])`, by dominated convergence. -/
 theorem continuous_intervalDirichletSolution {X : Type*} [TopologicalSpace X] [SequentialSpace X]
     (hx : x₀ < x₁) (hlam : 0 < lam) {a : X → ℝ → ℝ}
     (ha : ∀ v, AEStronglyMeasurable (a v) (volume.restrict (Ioo x₀ x₁)))
-    (haM : ∀ v, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a v t ∧ a v t ≤ M)
+    (hla : ∀ v, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a v t)
     (hlim : ∀ (vn : ℕ → X) (v : X), Tendsto vn atTop (𝓝 v) →
       ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Tendsto (fun n => a (vn n) t) atTop (𝓝 (a v t)))
     (hG : IntegrableOn G (Ioo x₀ x₁))
     (hs : ∀ v, IntegrableOn (intervalDirichletSlope x₀ x₁ g₀ g₁ G (a v)) (Ioo x₀ x₁)) :
     Continuous fun v => intervalDirichletSolution hx.le g₀ g₁ (hs v) := by
-  have hIcc : ∀ {h : ℝ → ℝ}, IntegrableOn h (Ioo x₀ x₁) → IntegrableOn h (Icc x₀ x₁) :=
-    fun hh => by rwa [IntegrableOn, ← restrict_Ioo_eq_restrict_Icc]
-  have hII : ∀ {h : ℝ → ℝ}, IntegrableOn h (Ioo x₀ x₁) → ∀ y : Icc x₀ x₁,
-      IntervalIntegrable h volume x₀ y := fun hh y =>
-    ((hIcc hh).mono_set (uIcc_subset_Icc (left_mem_Icc.2 hx.le) y.2)).intervalIntegrable
+  let x₀' : Icc x₀ x₁ := ⟨x₀, left_mem_Icc.2 hx.le⟩
   refine continuous_iff_seqContinuous.2 fun vn v hv => ?_
   rw [tendsto_iff_norm_sub_tendsto_zero]
   refine squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_)
     (tendsto_integral_abs_intervalDirichletSlope_sub hx hlam g₀ g₁ (fun n => ha (vn n))
-      (fun n => haM (vn n)) (ha v) (haM v) hG (hlim vn v hv))
+      (fun n => hla (vn n)) (ha v) (hla v) hG (hlim vn v hv))
   refine (ContinuousMap.norm_le _ (integral_nonneg fun _ => abs_nonneg _)).2 fun y => ?_
   rw [Function.comp_apply, ContinuousMap.sub_apply, intervalDirichletSolution_apply,
     intervalDirichletSolution_apply, add_sub_add_left_eq_sub,
-    ← intervalIntegral.integral_sub (hII (hs _) y) (hII (hs _) y),
+    ← intervalIntegral.integral_sub (intervalIntegrable_of_integrableOn_Ioo (hs _) x₀' y)
+      (intervalIntegrable_of_integrableOn_Ioo (hs _) x₀' y),
     Real.norm_eq_abs, intervalIntegral.integral_of_le y.2.1, ← integral_Icc_eq_integral_Ioo]
   refine abs_integral_le_integral_abs.trans (setIntegral_mono_set ?_
     (ae_of_all _ fun _ => abs_nonneg _)
     (Ioc_subset_Icc_self.trans (Icc_subset_Icc_right y.2.2)).eventuallyLE)
-  exact (hIcc ((hs _).sub (hs _))).abs
+  exact ((integrableOn_Icc_iff_integrableOn_Ioo (μ := volume)).2 ((hs _).sub (hs _))).abs
 
 /-- **The fixed point.** Let `a v` be a coefficient depending on `v ∈ C([x₀, x₁])`, with uniform
 bounds `λ ≤ a v ≤ M`, such that `a vₙ → a v` almost everywhere whenever `vₙ → v`. Then for some
@@ -187,7 +187,8 @@ private theorem exists_intervalDirichletSolution_eq_self (hx : x₀ < x₁) (hla
   obtain ⟨ū, -, hū⟩ := schauderFixedPoint_closedConvex_continuousOn
     (C := closedBall (0 : C(Icc x₀ x₁, ℝ)) R) isClosed_closedBall (convex_closedBall _ _)
     (nonempty_closedBall.2 (dist_nonneg.trans (hmem 0)))
-    (continuous_intervalDirichletSolution hx hlam ha haM hlim hG hs).continuousOn
+    (continuous_intervalDirichletSolution hx hlam ha (fun v => (haM v).mono fun _ h => h.1) hlim
+      hG hs).continuousOn
     (fun v _ => hmem v) (hcpt.of_isClosed_subset isClosed_closure
       (closure_mono (image_subset_range _ _)))
   exact ⟨ū, hū⟩

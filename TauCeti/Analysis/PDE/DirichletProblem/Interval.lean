@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 public import Mathlib.Analysis.Distribution.TestFunction
-import TauCeti.Analysis.Distribution.TestFunction.Primitive
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Inv
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
@@ -28,8 +27,8 @@ is `u ∈ W^{1,p}(x₀, x₁)` whose endpoint trace is `(g₀, g₁)` and which 
 
 The problem is solved explicitly: the flux `a u' + F` equals `k - ∫_{x₀}^x f`, so `u' = (k - G) / a`
 with `G = ∫_{x₀}^x f + F`, and the constant `k` is fixed by `∫ (k - G) / a = g₁ - g₀`. The solution
-depends continuously on the coefficient: if `aₙ → a` almost everywhere with uniform bounds
-`λ ≤ aₙ ≤ M`, the derivatives of the solutions converge in `L¹`. This is the continuity needed to
+depends continuously on the coefficient: if `aₙ → a` almost everywhere with a uniform lower bound
+`λ ≤ aₙ`, the derivatives of the solutions converge in `L¹`. This is the continuity needed to
 solve quasilinear problems by a fixed-point argument.
 
 ## Main declarations
@@ -204,26 +203,24 @@ theorem intervalDirichletSolution_right (hx : x₀ < x₁) (hlam : 0 < lam) (g�
     integral_Ioc_eq_integral_Ioo, integral_intervalDirichletSlope hx hlam g₀ g₁ ha hla hG,
     add_sub_cancel]
 
-/-- **Continuous dependence on the coefficient.** If `aₙ → a` almost everywhere with uniform
-bounds `λ ≤ aₙ ≤ M`, the derivatives of the solutions of the linear problems converge in `L¹`. -/
+/-- **Continuous dependence on the coefficient.** If `aₙ → a` almost everywhere with a uniform
+lower bound `λ ≤ aₙ`, the derivatives of the solutions of the linear problems converge in `L¹`. -/
 theorem tendsto_integral_abs_intervalDirichletSlope_sub (hx : x₀ < x₁) (hlam : 0 < lam)
     (g₀ g₁ : ℝ) {an : ℕ → ℝ → ℝ}
     (han : ∀ n, AEStronglyMeasurable (an n) (volume.restrict (Ioo x₀ x₁)))
-    (hanM : ∀ n, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ an n t ∧ an n t ≤ M)
+    (hanl : ∀ n, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ an n t)
     (ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
-    (haM : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t ∧ a t ≤ M)
+    (hla : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t)
     (hG : IntegrableOn G (Ioo x₀ x₁))
     (hlim : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Tendsto (fun n => an n t) atTop (𝓝 (a t))) :
     Tendsto (fun n => ∫ t in Ioo x₀ x₁,
       |intervalDirichletSlope x₀ x₁ g₀ g₁ G (an n) t - intervalDirichletSlope x₀ x₁ g₀ g₁ G a t|)
       atTop (𝓝 0) := by
   have : NeZero (volume.restrict (Ioo x₀ x₁)) := ⟨by simp [hx]⟩
-  have hla := haM.mono fun _ h => h.1
-  have hanl := fun n => (hanM n).mono fun _ h => h.1
   have hinv : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
       Tendsto (fun n => (an n t)⁻¹) atTop (𝓝 (a t)⁻¹) := by
-    filter_upwards [hlim, haM] with t ht hat
-    exact ht.inv₀ (hlam.trans_le hat.1).ne'
+    filter_upwards [hlim, hla] with t ht hat
+    exact ht.inv₀ (hlam.trans_le hat).ne'
   -- The two integrals defining the flux constant converge by dominated convergence.
   have hc' : Tendsto (fun n => ∫ t in Ioo x₀ x₁, (an n t)⁻¹) atTop
       (𝓝 (∫ t in Ioo x₀ x₁, (a t)⁻¹)) :=
@@ -243,23 +240,24 @@ theorem tendsto_integral_abs_intervalDirichletSlope_sub (hx : x₀ < x₁) (hlam
   have hk : Tendsto (fun n => intervalDirichletFluxConst x₀ x₁ g₀ g₁ G (an n)) atTop
       (𝓝 (intervalDirichletFluxConst x₀ x₁ g₀ g₁ G a)) :=
     (tendsto_const_nhds.add hd).div hc' (integral_inv_pos_of_le hlam ha hla).ne'
-  -- The derivatives converge almost everywhere, under a common integrable bound.
-  set K := M / (x₁ - x₀) * (|g₁ - g₀| + (∫ t in Ioo x₀ x₁, |G t|) / lam)
-  have h0 := tendsto_integral_of_dominated_convergence (fun t => 2 * (lam⁻¹ * (K + |G t|)))
+  -- The derivatives converge almost everywhere, under a common integrable bound: the convergent
+  -- flux constants are bounded by some `K`.
+  obtain ⟨K, hK⟩ := hk.abs.bddAbove_range
+  set k := intervalDirichletFluxConst x₀ x₁ g₀ g₁ G a
+  have h0 := tendsto_integral_of_dominated_convergence
+    (fun t => lam⁻¹ * (K + |G t|) + lam⁻¹ * (|k| + |G t|))
     (F := fun n t =>
       |intervalDirichletSlope x₀ x₁ g₀ g₁ G (an n) t - intervalDirichletSlope x₀ x₁ g₀ g₁ G a t|)
     (f := fun _ => 0)
     (fun n => ((aestronglyMeasurable_intervalDirichletSlope (han n) hG).sub
       (aestronglyMeasurable_intervalDirichletSlope ha hG)).norm)
-    (((integrable_const K).add hG.abs).const_mul lam⁻¹ |>.const_mul 2) (fun n => ?_) ?_
+    ((((integrable_const K).add hG.abs).const_mul lam⁻¹).add
+      (((integrable_const |k|).add hG.abs).const_mul lam⁻¹)) (fun n => ?_) ?_
   · simpa using h0
-  · filter_upwards [ae_abs_intervalDirichletSlope_le hlam (hanl n)
-      (abs_intervalDirichletFluxConst_le hx hlam g₀ g₁ (han n) (hanM n) hG),
-      ae_abs_intervalDirichletSlope_le hlam hla
-        (abs_intervalDirichletFluxConst_le hx hlam g₀ g₁ ha haM hG)] with t h1 h2
+  · filter_upwards [ae_abs_intervalDirichletSlope_le hlam (hanl n) (hK (mem_range_self n)),
+      ae_abs_intervalDirichletSlope_le hlam hla le_rfl] with t h1 h2
     rw [Real.norm_eq_abs, abs_abs]
-    linarith [abs_sub (intervalDirichletSlope x₀ x₁ g₀ g₁ G (an n) t)
-      (intervalDirichletSlope x₀ x₁ g₀ g₁ G a t)]
+    exact (abs_sub _ _).trans (add_le_add h1 h2)
   · filter_upwards [hinv] with t ht
     have h : Tendsto (fun n => intervalDirichletSlope x₀ x₁ g₀ g₁ G (an n) t) atTop
         (𝓝 (intervalDirichletSlope x₀ x₁ g₀ g₁ G a t)) := ht.mul (hk.sub_const _)
@@ -267,27 +265,23 @@ theorem tendsto_integral_abs_intervalDirichletSlope_sub (hx : x₀ < x₁) (hlam
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {f F : ℝ → ℝ}
 
-/-- The derivative `(k - G) / a` lies in `Lᵖ` when `G = Φ + F` with `Φ, F ∈ Lᵖ`, since
-`|(k - G) / a| ≤ λ⁻¹ (|k| + |Φ| + |F|)`. -/
-theorem memLp_intervalDirichletSlope (hlam : 0 < lam) (g₀ g₁ : ℝ) {Φ : ℝ → ℝ}
+/-- The derivative `(k - G) / a` lies in `Lᵖ` when `G ∈ Lᵖ`, since
+`|(k - G) / a| ≤ λ⁻¹ (|k| + |G|)`. -/
+theorem memLp_intervalDirichletSlope (hlam : 0 < lam) (g₀ g₁ : ℝ)
     (ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
     (hla : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t)
-    (hΦ : MemLp Φ p (volume.restrict (Ioo x₀ x₁))) (hF : MemLp F p (volume.restrict (Ioo x₀ x₁))) :
-    MemLp (intervalDirichletSlope x₀ x₁ g₀ g₁ (fun t => Φ t + F t) a) p
-      (volume.restrict (Ioo x₀ x₁)) := by
-  have hG : IntegrableOn (fun t => Φ t + F t) (Ioo x₀ x₁) :=
-    (hΦ.integrable Fact.out).add (hF.integrable Fact.out)
-  set K := |intervalDirichletFluxConst x₀ x₁ g₀ g₁ (fun t => Φ t + F t) a|
-  have hb : MemLp (fun t => lam⁻¹ * (K + (‖Φ t‖ + ‖F t‖))) p (volume.restrict (Ioo x₀ x₁)) :=
-    ((memLp_const K).add (hΦ.norm.add hF.norm)).const_mul lam⁻¹
-  refine MemLp.of_le hb (aestronglyMeasurable_intervalDirichletSlope ha hG) ?_
+    (hG : MemLp G p (volume.restrict (Ioo x₀ x₁))) :
+    MemLp (intervalDirichletSlope x₀ x₁ g₀ g₁ G a) p (volume.restrict (Ioo x₀ x₁)) := by
+  set K := |intervalDirichletFluxConst x₀ x₁ g₀ g₁ G a|
+  have hb : MemLp (fun t => lam⁻¹ * (K + ‖G t‖)) p (volume.restrict (Ioo x₀ x₁)) :=
+    ((memLp_const K).add hG.norm).const_mul lam⁻¹
+  refine MemLp.of_le hb
+    (aestronglyMeasurable_intervalDirichletSlope ha (hG.integrable Fact.out)) ?_
   filter_upwards [ae_abs_intervalDirichletSlope_le hlam hla le_rfl] with t ht
-  have hK0 : 0 ≤ K + (‖Φ t‖ + ‖F t‖) := by positivity
-  rw [Real.norm_eq_abs, Real.norm_of_nonneg (mul_nonneg (inv_nonneg.2 hlam.le) hK0)]
-  refine ht.trans (mul_le_mul_of_nonneg_left ?_ (inv_nonneg.2 hlam.le))
-  simp only [Real.norm_eq_abs]
-  gcongr
-  exact abs_add_le _ _
+  have hK0 : 0 ≤ K + ‖G t‖ := by positivity
+  rw [Real.norm_eq_abs, Real.norm_of_nonneg (mul_nonneg (inv_nonneg.2 hlam.le) hK0),
+    Real.norm_eq_abs]
+  exact ht
 
 /-- The explicit solution of the linear problem: `u = g₀ + ∫_{x₀}^x (k - G) / a` lies in
 `W^{1,p}(x₀, x₁)`, has endpoint trace `(g₀, g₁)` and solves `-(a u' + F)' = f` weakly. -/
@@ -312,9 +306,10 @@ theorem exists_w1p_intervalRepresentativeL_eq (hx : x₀ < x₁) (hlam : 0 < lam
   have hΦp : MemLp Φ p (volume.restrict (Ioo x₀ x₁)) :=
     hΦc.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo Ioo_subset_Icc_self p
   have hF1 : IntegrableOn F (Ioo x₀ x₁) := hF.integrable Fact.out
-  have hG : IntegrableOn G (Ioo x₀ x₁) := (hΦp.integrable Fact.out).add hF1
+  have hGp : MemLp G p (volume.restrict (Ioo x₀ x₁)) := hΦp.add hF
+  have hG : IntegrableOn G (Ioo x₀ x₁) := hGp.integrable Fact.out
   have hsp : MemLp s p (volume.restrict (Ioo x₀ x₁)) :=
-    memLp_intervalDirichletSlope hlam g₀ g₁ ha hla hΦp hF
+    memLp_intervalDirichletSlope hlam g₀ g₁ ha hla hGp
   have hsI : IntervalIntegrable s volume x₀ x₁ :=
     (intervalIntegrable_iff_integrableOn_Ioo_of_le hx.le).2 (hsp.integrable Fact.out)
   -- The candidate `P = g₀ + ∫_{x₀}^x s` is absolutely continuous with derivative `s`.
@@ -347,17 +342,19 @@ theorem exists_w1p_intervalRepresentativeL_eq (hx : x₀ < x₁) (hlam : 0 < lam
     filter_upwards [hgu, hdP, hla] with t h1 h2 h3
     rw [h1, h2, hsdef, intervalDirichletSlope, mul_inv_cancel_left₀ (hlam.trans_le h3).ne']
     ring
-  have h1 : IntegrableOn (deriv φ) (Ioo x₀ x₁) :=
-    hdφ.integrableOn_Icc.mono_set Ioo_subset_Icc_self
-  have h2 : IntegrableOn (fun t => Φ t * deriv φ t) (Ioo x₀ x₁) :=
-    (hΦc.mul hdφ.continuousOn).integrableOn_Icc.mono_set Ioo_subset_Icc_self
-  have hprim : ∫ t in Ioo x₀ x₁, Φ t * deriv φ t = -∫ t in Ioo x₀ x₁, f t * φ t := by
-    simpa only [smul_eq_mul, mul_comm (deriv φ _), mul_comm (φ _)] using
-      φ.integral_Ioo_deriv_smul_primitive hf
+  -- `k - Φ` has weak derivative `-f`; both pairings vanish off `(x₀, x₁)`.
+  have hw := (TauCeti.hasWeakLineDerivOn_const (μ := volume) (Ω := ⟨Ioo x₀ x₁, isOpen_Ioo⟩)
+    (v := (1 : ℝ)) k).sub (TauCeti.hasWeakLineDerivOn_intervalIntegral_left hf)
   have he : ∫ t in Ioo x₀ x₁, (k - Φ t) * deriv φ t = ∫ t in Ioo x₀ x₁, f t * φ t := by
-    simp only [sub_mul]
-    rw [integral_sub (h1.const_mul k) h2, integral_const_mul, φ.integral_Ioo_deriv_eq_zero, hprim]
-    ring
+    have hφ0 : ∀ t ∉ Ioo x₀ x₁, φ t = 0 := fun t ht => φ.zero_on_compl ht
+    have hφ'0 : ∀ t ∉ Ioo x₀ x₁, deriv φ t = 0 := fun t ht =>
+      Function.notMem_support.1 fun h => ht (φ.tsupport_subset (support_deriv_subset h))
+    have h := hw.integral_lineDeriv_smul_eq_neg_integral_smul φ
+    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (μ := volume) (s := Ioo x₀ x₁)
+        fun t ht => by simp [hφ'0 t ht],
+      ← setIntegral_eq_integral_of_forall_compl_eq_zero (μ := volume) (s := Ioo x₀ x₁)
+        fun t ht => by simp [hφ0 t ht]] at h
+    simpa [Φ, mul_comm, integral_neg] using h
   have hint1 : IntegrableOn (fun t => (k - Φ t) * deriv φ t) (Ioo x₀ x₁) :=
     ((continuousOn_const.sub hΦc).mul hdφ.continuousOn).integrableOn_Icc.mono_set
       Ioo_subset_Icc_self
