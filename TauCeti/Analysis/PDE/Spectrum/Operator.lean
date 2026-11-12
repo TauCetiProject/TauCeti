@@ -11,58 +11,67 @@ public import TauCeti.Analysis.PDE.Spectrum.Sequence
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
-# The Dirichlet realization of an elliptic operator on `L²(Ω)`
+# The Dirichlet realization of a divergence-form operator
 
-Let `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` be a divergence-form operator on an open set
-`Ω ⊆ ℝⁿ` whose energy form `a(·, ·)` is coercive on `H¹₀(Ω)`. The **Dirichlet realization** of
-`L` is the unbounded operator `A` on `L²(Ω)` with
+Let `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` be a divergence-form operator on an open set `Ω ⊆ ℝⁿ` whose
+energy form `a` is bounded and coercive on `H¹₀(Ω)`. This file realizes `L` with the Dirichlet
+boundary condition as an unbounded operator on `L²(Ω)`, the partial linear map
+`TauCeti.PDE.dirichletOperator`. Its domain consists of the `u ∈ H¹₀(Ω)` with `L u ∈ L²(Ω)` in the
+weak sense, and it sends `u` to `L u`: `(u, f)` lies on its graph exactly when
 
-`D(A) = {u ∈ H¹₀(Ω) : L u ∈ L²(Ω)}`, `A u = L u`,
+`a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`,
 
-where `L u = g ∈ L²(Ω)` is meant weakly: `a(u, v) = ⟪g, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`
-(`TauCeti.PDE.mem_graph_dirichletOperator_iff`). It is the inverse of the Dirichlet solution
-operator `S = TauCeti.PDE.dirichletSolutionOperator`, which is injective because the value map
-`H¹₀(Ω) → L²(Ω)` has dense range, and that is how it is constructed here
-(`TauCeti.PDE.dirichletOperator`). The operator theory of `A` then comes from the bounded
-operator `S`:
+that is, when `u` is the weak solution of the Dirichlet problem `L u = f` in `Ω`, `u = 0` on `∂Ω`
+(`TauCeti.PDE.mem_graph_dirichletOperator_iff`). For `L = -Δ` the weak condition is the
+distributional one, so the domain is `{u ∈ H¹₀(Ω) : Δu ∈ L²(Ω)}`, the values of `H¹₀(Ω)` whose
+distributional Laplacian on `Ω` is an `L²(Ω)` function
+(`TauCeti.PDE.mem_domain_dirichletOperator_laplacian_iff`). The boundary condition is
+membership in `H¹₀(Ω)`, so no regularity of `∂Ω` enters.
 
-* `A` is self-adjoint when the energy form is symmetric, for instance for `-Δ`
-  (`TauCeti.PDE.isSelfAdjoint_dirichletOperator`);
-* `0` is a resolvent point of `A`, with resolvent `-S`;
-* on a bounded domain `A` has compact resolvent, and its spectrum is exactly the set of
-  Dirichlet eigenvalues (`TauCeti.PDE.mem_spectrum_dirichletOperator_iff`); off the spectrum the
-  resolvent `(κ I - A)⁻¹ f` is the solution of the shifted Dirichlet problem `L u - κ u = -f`.
+By coercivity the Dirichlet problem is uniquely solvable, and the realization is defined as the
+inverse of the injective solution operator `S = TauCeti.PDE.dirichletSolutionOperator`. Its
+operator theory follows from that of `S`
+(`TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Inverse`,
+`TauCeti.Analysis.InnerProductSpace.LinearPMap.Inverse`):
 
-For `-Δ` the weak condition is the distributional one: `u ∈ H¹₀(Ω)` lies in the domain exactly
-when its distributional Laplacian is an `L²(Ω)` function
-(`TauCeti.PDE.mem_domain_dirichletOperator_laplacian_iff`), so `D(A) = {u ∈ H¹₀(Ω) : Δu ∈ L²}`.
-No regularity of `∂Ω` is used: the boundary condition is membership in `H¹₀(Ω)`.
+* `0` is a resolvent point with `R(0) = -S`, and on a bounded domain the resolvent is compact
+  (`TauCeti.PDE.hasCompactResolvent_dirichletOperator`);
+* on a bounded domain the spectrum is exactly the set of Dirichlet eigenvalues
+  (`TauCeti.PDE.spectrum_dirichletOperator`), and at every resolvent point `κ` the resolvent
+  sends `f` to `-u`, where `u` is a weak solution of `L u - κ u = f`
+  (`TauCeti.PDE.resolvent_dirichletOperator_apply`);
+* for a symmetric energy form, for instance with no drift and an almost everywhere symmetric
+  principal coefficient, the realization is self-adjoint
+  (`TauCeti.PDE.isSelfAdjoint_dirichletOperator`).
+
+For `-Δ` on a nonempty bounded open subset of `ℝ^{n+1}` this is the self-adjoint Dirichlet
+Laplacian with compact resolvent, whose spectrum is the nondecreasing sequence of Dirichlet
+eigenvalues `0 < λ₀ ≤ λ₁ ≤ ⋯ → ∞` and which is diagonal in an orthonormal basis of `L²(Ω)`
+(`TauCeti.PDE.exists_isSelfAdjoint_dirichletOperator_laplacian`). In the generator convention
+`A = Δ`, the operator `A = -L` has spectrum `{-λₖ}`, and its resolvent at `λ` is `-R(-λ)`.
 
 ## Main declarations
 
-* `TauCeti.PDE.dirichletOperator`: the Dirichlet realization of `L` as a partial linear map on
-  `L²(Ω)`, with its graph and domain characterized by
-  `TauCeti.PDE.mem_graph_dirichletOperator_iff` and
-  `TauCeti.PDE.mem_domain_dirichletOperator_iff`.
+* `TauCeti.PDE.dirichletOperator`: the Dirichlet realization, with
+  `TauCeti.PDE.mem_graph_dirichletOperator_iff`, `TauCeti.PDE.mem_domain_dirichletOperator_iff`,
+  `TauCeti.PDE.isWeakSolutionDirichlet_dirichletOperator` and
+  `TauCeti.PDE.dirichletOperator_apply_eq_of_isWeakSolutionDirichlet`.
 * `TauCeti.PDE.isSelfAdjoint_dirichletOperator`: self-adjointness for a symmetric energy form.
-* `TauCeti.PDE.mem_spectrum_dirichletOperator_iff` and
-  `TauCeti.PDE.hasCompactResolvent_dirichletOperator`: the spectrum and compactness of the
-  resolvent on a bounded domain.
-* `TauCeti.PDE.exists_value_eq_resolvent_dirichletOperator`: the resolvent solves the shifted
-  Dirichlet problem.
+* `TauCeti.PDE.spectrum_dirichletOperator`: the spectrum is the Dirichlet spectrum.
+* `TauCeti.PDE.resolvent_dirichletOperator_apply`: the resolvent solves the shifted Dirichlet
+  problem.
 * `TauCeti.PDE.mem_graph_dirichletOperator_laplacian_iff` and
   `TauCeti.PDE.mem_domain_dirichletOperator_laplacian_iff`: for `-Δ`, the graph and domain
   through distributional Laplacians.
-* `TauCeti.PDE.exists_spectrum_dirichletOperator_laplacian_eq_range`: on a nonempty bounded
-  domain the Dirichlet Laplacian is self-adjoint with spectrum `{λ₀ ≤ λ₁ ≤ ⋯ → ∞}`.
+* `TauCeti.PDE.exists_isSelfAdjoint_dirichletOperator_laplacian`: the Dirichlet Laplacian.
 
 ## References
 
-* L. C. Evans, *Partial Differential Equations*, Section 6.5.
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., Section 6.5.1.
 * H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
   Section 9.8.
-* D. Gilbarg and N. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Section 8.12.
+* M. Reed and B. Simon, *Methods of Modern Mathematical Physics IV: Analysis of Operators*,
+  §XIII.14.
 -/
 
 public section
@@ -73,187 +82,237 @@ namespace TauCeti
 
 namespace PDE
 
-open Bornology InnerProductSpace Laplacian MeasureTheory Module.End TopologicalSpace
-open scoped Distributions InnerProductSpace
+open Bornology Filter MeasureTheory Set TopologicalSpace
+open scoped InnerProductSpace
+
+section Domain
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
-  {Omega : Opens (EuclideanSpace ℝ ι)}
+  {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+  {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
 
-attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace
+/-! ### The realization -/
 
-section Operator
+/-- **The Dirichlet realization** of `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` on `L²(Ω)`, for an energy
+form that is coercive on `H¹₀(Ω)`. It is the inverse of the solution operator
+`S = TauCeti.PDE.dirichletSolutionOperator`, which is injective. Its domain consists of the
+values of the `u ∈ H¹₀(Ω)` with `L u ∈ L²(Ω)` weakly, and it sends such a `u` to `L u`: `(u, f)`
+lies on its graph exactly when `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`
+(`TauCeti.PDE.mem_graph_dirichletOperator_iff`). -/
+def dirichletOperator
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
+    Lp ℝ 2 (mu.restrict Omega) →ₗ.[ℝ] Lp ℝ 2 (mu.restrict Omega) :=
+  ((dirichletSolutionOperator hcoeff hcoercive :
+    Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)).toPMap ⊤).inverse
 
-variable {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-  {c : EuclideanSpace ℝ ι → ℝ}
-  (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-  (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+/-- The Dirichlet realization is, by definition, the inverse of the solution operator. -/
+theorem dirichletOperator_def
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
+    dirichletOperator hcoeff hcoercive =
+      ((dirichletSolutionOperator hcoeff hcoercive :
+        Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)).toPMap ⊤).inverse :=
+  (rfl)
 
-/-- **The Dirichlet realization** of the divergence-form operator
-`L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` on `L²(Ω)`: the unbounded operator with domain
-`{u ∈ H¹₀(Ω) : L u ∈ L²(Ω)}` acting by `L`, defined as the inverse of the Dirichlet solution
-operator. Its graph is described by `TauCeti.PDE.mem_graph_dirichletOperator_iff`. -/
-def dirichletOperator : Lp ℝ 2 (mu.restrict Omega) →ₗ.[ℝ] Lp ℝ 2 (mu.restrict Omega) :=
-  ((dirichletSolutionOperator hcoeff hcoercive : Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ]
-    Lp ℝ 2 (mu.restrict Omega)).toPMap ⊤).inverse
-
-/-- **The graph of the Dirichlet realization.** `(f, g)` lies on the graph of `A` exactly when
-`f` is the value of some `u ∈ H¹₀(Ω)` solving `L u = g` weakly. -/
-theorem mem_graph_dirichletOperator_iff {f g : Lp ℝ 2 (mu.restrict Omega)} :
-    (f, g) ∈ (dirichletOperator hcoeff hcoercive).graph ↔
-      ∃ u : W1p0 mu Omega 2, W1p.value (u : W1p mu Omega 2) = f ∧
-        IsWeakSolutionDirichlet a b c g u := by
-  -- `delta` rather than `rw`, which would generate an equation lemma whose statement is slow to
-  -- type-check at default transparency.
-  delta dirichletOperator
-  rw [ContinuousLinearMap.mem_graph_inverse_toPMap_top_iff
-    (injective_dirichletSolutionOperator hcoeff hcoercive), dirichletSolutionOperator_apply]
+/-- **The graph of the Dirichlet realization** consists of the pairs `(u, f)` for which
+`u ∈ H¹₀(Ω)` is a weak solution of `L u = f`. -/
+theorem mem_graph_dirichletOperator_iff
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    {x : Lp ℝ 2 (mu.restrict Omega) × Lp ℝ 2 (mu.restrict Omega)} :
+    x ∈ (dirichletOperator hcoeff hcoercive).graph ↔
+      ∃ u : W1p0 mu Omega 2,
+        W1p.value (u : W1p mu Omega 2) = x.1 ∧ IsWeakSolutionDirichlet a b c x.2 u := by
+  rw [dirichletOperator_def, ContinuousLinearMap.mem_graph_inverse_toPMap_top_iff _
+    (dirichletSolutionOperator_injective hcoeff hcoercive), dirichletSolutionOperator_apply]
   constructor
   · intro h
-    exact ⟨_, h, isWeakSolutionDirichlet_weakSolutionDirichlet hcoeff hcoercive g⟩
-  · rintro ⟨u, rfl, hu⟩
-    rw [← eq_weakSolutionDirichlet hcoeff hcoercive hu]
+    exact ⟨_, h, isWeakSolutionDirichlet_weakSolutionDirichlet hcoeff hcoercive x.2⟩
+  · rintro ⟨u, hu, hsol⟩
+    rw [← eq_weakSolutionDirichlet hcoeff hcoercive hsol, hu]
 
-/-- **The domain of the Dirichlet realization** is `{u ∈ H¹₀(Ω) : L u ∈ L²(Ω)}`: the values of
-those `u ∈ H¹₀(Ω)` that solve `L u = g` weakly for some `g ∈ L²(Ω)`. -/
-theorem mem_domain_dirichletOperator_iff {f : Lp ℝ 2 (mu.restrict Omega)} :
+/-- **The domain of the Dirichlet realization**: the values of the `u ∈ H¹₀(Ω)` for which `L u`
+lies in `L²(Ω)`, that is, which weakly solve `L u = g` for some `g ∈ L²(Ω)`. -/
+theorem mem_domain_dirichletOperator_iff
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    {f : Lp ℝ 2 (mu.restrict Omega)} :
     f ∈ (dirichletOperator hcoeff hcoercive).domain ↔
       ∃ u : W1p0 mu Omega 2, W1p.value (u : W1p mu Omega 2) = f ∧
         ∃ g : Lp ℝ 2 (mu.restrict Omega), IsWeakSolutionDirichlet a b c g u := by
-  constructor
-  · intro hf
-    obtain ⟨u, hu, hsol⟩ := (mem_graph_dirichletOperator_iff hcoeff hcoercive).1
-      ((dirichletOperator hcoeff hcoercive).mem_graph ⟨f, hf⟩)
-    exact ⟨u, hu, _, hsol⟩
-  · rintro ⟨u, hu, g, hsol⟩
-    exact LinearPMap.mem_domain_of_mem_graph
-      ((mem_graph_dirichletOperator_iff hcoeff hcoercive).2 ⟨u, hu, hsol⟩)
+  simp only [LinearPMap.mem_domain_iff, mem_graph_dirichletOperator_iff]
+  exact ⟨fun ⟨g, u, hu, hg⟩ => ⟨u, hu, g, hg⟩, fun ⟨u, hu, g, hg⟩ => ⟨g, u, hu, hg⟩⟩
 
-/-- The value of the Dirichlet realization: `A f = g` exactly when `f` is the value of some
-`u ∈ H¹₀(Ω)` solving `L u = g` weakly. -/
-theorem dirichletOperator_apply_eq_iff (f : (dirichletOperator hcoeff hcoercive).domain)
-    (g : Lp ℝ 2 (mu.restrict Omega)) :
-    dirichletOperator hcoeff hcoercive f = g ↔
-      ∃ u : W1p0 mu Omega 2, W1p.value (u : W1p mu Omega 2) = f ∧
-        IsWeakSolutionDirichlet a b c g u := by
-  rw [← mem_graph_dirichletOperator_iff hcoeff hcoercive, LinearPMap.mem_graph_iff]
-  constructor
-  · rintro rfl
-    exact ⟨f, rfl, rfl⟩
-  · rintro ⟨f', hf', h⟩
-    exact (congrArg _ (Subtype.ext hf'.symm)).trans h
+/-- The value of a weak solution of `L u = g` lies in the domain of the Dirichlet realization. -/
+theorem value_mem_domain_dirichletOperator
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    {g : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a b c g u) :
+    W1p.value (u : W1p mu Omega 2) ∈ (dirichletOperator hcoeff hcoercive).domain :=
+  (mem_domain_dirichletOperator_iff hcoeff hcoercive).2 ⟨u, rfl, g, hu⟩
 
-/-- Every value of the Dirichlet solution operator lies in the domain of the Dirichlet
-realization. -/
-theorem dirichletSolutionOperator_mem_domain_dirichletOperator (g : Lp ℝ 2 (mu.restrict Omega)) :
-    dirichletSolutionOperator hcoeff hcoercive g ∈ (dirichletOperator hcoeff hcoercive).domain :=
-  ContinuousLinearMap.apply_mem_domain_inverse_toPMap_top g
+/-- **The Dirichlet realization is `L`**: if `u ∈ H¹₀(Ω)` represents `f` in its domain, then `u`
+is a weak solution of `L u = A f`. -/
+theorem isWeakSolutionDirichlet_dirichletOperator
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    (f : (dirichletOperator hcoeff hcoercive).domain) {u : W1p0 mu Omega 2}
+    (hu : W1p.value (u : W1p mu Omega 2) = f) :
+    IsWeakSolutionDirichlet a b c (dirichletOperator hcoeff hcoercive f) u := by
+  obtain ⟨w, hw, hwf⟩ := (mem_graph_dirichletOperator_iff hcoeff hcoercive).1
+    ((dirichletOperator hcoeff hcoercive).mem_graph f)
+  rwa [Subtype.ext (W1p.ext_value (hw.trans hu.symm))] at hwf
 
-/-- The Dirichlet realization inverts the solution operator: `A (S g) = g`. -/
-theorem dirichletOperator_dirichletSolutionOperator (g : Lp ℝ 2 (mu.restrict Omega))
-    (hg : dirichletSolutionOperator hcoeff hcoercive g ∈
-      (dirichletOperator hcoeff hcoercive).domain) :
-    dirichletOperator hcoeff hcoercive ⟨_, hg⟩ = g :=
-  ContinuousLinearMap.inverse_toPMap_top_apply
-    (injective_dirichletSolutionOperator hcoeff hcoercive) g hg
+/-- The Dirichlet realization sends the value of a weak solution of `L u = g` to `g`. -/
+theorem dirichletOperator_apply_eq_of_isWeakSolutionDirichlet
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    {f : (dirichletOperator hcoeff hcoercive).domain} {g : Lp ℝ 2 (mu.restrict Omega)}
+    {u : W1p0 mu Omega 2} (hu : W1p.value (u : W1p mu Omega 2) = f)
+    (hg : IsWeakSolutionDirichlet a b c g u) : dirichletOperator hcoeff hcoercive f = g :=
+  ((LinearPMap.image_iff f.2).2
+    ((mem_graph_dirichletOperator_iff hcoeff hcoercive).2 ⟨u, hu, hg⟩)).symm
 
-/-- The solution operator inverts the Dirichlet realization: `S (A f) = f`. -/
-theorem dirichletSolutionOperator_dirichletOperator
-    (f : (dirichletOperator hcoeff hcoercive).domain) :
-    dirichletSolutionOperator hcoeff hcoercive (dirichletOperator hcoeff hcoercive f) = f :=
-  (ContinuousLinearMap.inverse_toPMap_top_apply_eq_iff
-    (injective_dirichletSolutionOperator hcoeff hcoercive) f _).1 rfl
+/-- A Dirichlet eigenfunction is an eigenvector of the Dirichlet realization: if
+`a(u, v) = κ ⟪u, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`, the value of `u` lies in the domain and is
+sent to `κ u`. -/
+theorem exists_dirichletOperator_apply_eq_smul
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    {kappa : ℝ} {u : W1p0 mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ) :
+    ∃ hmem : W1p.value (u : W1p mu Omega 2) ∈ (dirichletOperator hcoeff hcoercive).domain,
+      dirichletOperator hcoeff hcoercive ⟨_, hmem⟩ = kappa • W1p.value (u : W1p mu Omega 2) := by
+  have hsol : IsWeakSolutionDirichlet a b c (kappa • W1p.value (u : W1p mu Omega 2)) u :=
+    (isWeakSolutionDirichlet_iff_inner _ _).2 fun v => by rw [hu v, real_inner_smul_left]
+  exact ⟨value_mem_domain_dirichletOperator hcoeff hcoercive hsol,
+    dirichletOperator_apply_eq_of_isWeakSolutionDirichlet hcoeff hcoercive rfl hsol⟩
 
-/-- **The Dirichlet realization of a symmetric operator is self-adjoint.** With no drift and an
-almost everywhere symmetric principal coefficient, the symmetry hypothesis is supplied by
+/-- **The resolvent of the Dirichlet realization solves the shifted Dirichlet problem.** At a
+point `κ` of the resolvent set, the resolvent sends `f` to `-u`, where `u` is a weak solution of
+`L u - κ u = f`. -/
+theorem resolvent_dirichletOperator_apply
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    {kappa : ℝ} (hkappa : kappa ∈ (dirichletOperator hcoeff hcoercive).resolventSet)
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichletMassShift a b c kappa f u) :
+    (dirichletOperator hcoeff hcoercive).resolvent kappa f = -W1p.value (u : W1p mu Omega 2) := by
+  -- `L (-u) = -(f + κ u)`, so `(κ - L) (-u) = f`.
+  have hsol : IsWeakSolutionDirichlet a b c
+      (-(f + kappa • W1p.value (u : W1p mu Omega 2))) (-u) := by
+    refine (isWeakSolutionDirichlet_iff_inner _ _).2 fun v => ?_
+    have h := (isWeakSolutionDirichletMassShift_iff kappa f u).1 hu v
+    rw [← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply] at h
+    rw [← energyFormH1L0_apply hcoeff, map_neg, neg_apply, energyFormH1L0_apply, inner_neg_left,
+      inner_add_left, real_inner_smul_left, ← h]
+    ring
+  have hval : W1p.value ((-u : W1p0 mu Omega 2) : W1p mu Omega 2) =
+      -W1p.value (u : W1p mu Omega 2) := by
+    rw [← W1p0.valueL_apply, ← W1p0.valueL_apply, map_neg]
+  have hmem : -W1p.value (u : W1p mu Omega 2) ∈ (dirichletOperator hcoeff hcoercive).domain :=
+    hval ▸ value_mem_domain_dirichletOperator hcoeff hcoercive hsol
+  have happly := dirichletOperator_apply_eq_of_isWeakSolutionDirichlet hcoeff hcoercive
+    (f := ⟨_, hmem⟩) hval hsol
+  have h := LinearPMap.resolvent_smul_sub_apply hkappa ⟨_, hmem⟩
+  rwa [happly, smul_neg, sub_neg_eq_add, neg_add_cancel_comm_assoc] at h
+
+/-! ### Self-adjointness, resolvent and spectrum -/
+
+/-- **The Dirichlet realization of a symmetric coercive form is self-adjoint.** With no drift and
+an almost everywhere symmetric principal coefficient the symmetry hypothesis is supplied by
 `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`. -/
 theorem isSelfAdjoint_dirichletOperator
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
         energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2)) :
     IsSelfAdjoint (dirichletOperator hcoeff hcoercive) :=
-  ContinuousLinearMap.isSelfAdjoint_inverse_toPMap_top
-    (isSymmetric_dirichletSolutionOperator hcoeff hcoercive hsymm)
-    (injective_dirichletSolutionOperator hcoeff hcoercive)
+  ContinuousLinearMap.isSelfAdjoint_inverse_toPMap_top _
+    (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2
+      (isSymmetric_dirichletSolutionOperator hcoeff hcoercive hsymm))
+    (dirichletSolutionOperator_injective hcoeff hcoercive)
 
-/-- `0` lies in the resolvent set of the Dirichlet realization. -/
-theorem zero_mem_resolventSet_dirichletOperator :
+/-- `0` is a resolvent point of the Dirichlet realization. -/
+theorem zero_mem_resolventSet_dirichletOperator
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
     (0 : ℝ) ∈ (dirichletOperator hcoeff hcoercive).resolventSet :=
-  ContinuousLinearMap.zero_mem_resolventSet_inverse_toPMap_top
-    (injective_dirichletSolutionOperator hcoeff hcoercive)
+  ContinuousLinearMap.zero_mem_resolventSet_inverse_toPMap_top _
+    (dirichletSolutionOperator_injective hcoeff hcoercive)
 
-/-- The resolvent of the Dirichlet realization at `0` is minus the solution operator:
-`(0 • I - A)⁻¹ = -S`. -/
-theorem resolvent_dirichletOperator_zero :
+/-- The resolvent of the Dirichlet realization at `0` is minus the solution operator. -/
+@[simp]
+theorem resolvent_dirichletOperator_zero
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
     (dirichletOperator hcoeff hcoercive).resolvent 0 =
       -dirichletSolutionOperator hcoeff hcoercive :=
-  ContinuousLinearMap.resolvent_inverse_toPMap_top_zero
-    (injective_dirichletSolutionOperator hcoeff hcoercive)
+  ContinuousLinearMap.resolvent_inverse_toPMap_top_zero _
+    (dirichletSolutionOperator_injective hcoeff hcoercive)
 
-/-- **The resolvent solves the shifted Dirichlet problem.** At a resolvent point `κ` of the
-Dirichlet realization, `(κ I - A)⁻¹ f` is the value of some `u ∈ H¹₀(Ω)` solving
-`L u - κ u = -f` weakly. -/
-theorem exists_value_eq_resolvent_dirichletOperator {κ : ℝ}
-    (hκ : κ ∈ (dirichletOperator hcoeff hcoercive).resolventSet)
-    (f : Lp ℝ 2 (mu.restrict Omega)) :
-    ∃ u : W1p0 mu Omega 2,
-      W1p.value (u : W1p mu Omega 2) = (dirichletOperator hcoeff hcoercive).resolvent κ f ∧
-        IsWeakSolutionDirichletMassShift a b c κ (-f) u := by
-  set A := dirichletOperator hcoeff hcoercive
-  set w : A.domain := ⟨_, LinearPMap.resolvent_mem_domain hκ f⟩
-  -- `(κ I - A) w = f`, so `A w = κ w - f`.
-  have hAw : A w = κ • (w : Lp ℝ 2 (mu.restrict Omega)) - f := by
-    rw [← LinearPMap.smul_sub_apply_resolvent hκ f, sub_sub_cancel]
-  obtain ⟨u, hu, hsol⟩ := (dirichletOperator_apply_eq_iff hcoeff hcoercive w _).1 hAw
-  refine ⟨u, hu, (isWeakSolutionDirichletMassShift_iff κ (-f) u).2 fun v ↦ ?_⟩
-  rw [← dirichletForcing_apply_eq_setIntegral, hsol.energyFormH1_eq_dirichletForcing v,
-    dirichletForcing_apply, dirichletForcing_apply, hu, inner_sub_left, real_inner_smul_left,
-    inner_neg_left]
-  ring
-
-/-- **The spectrum of the Dirichlet realization** on a bounded domain is exactly the set of
-Dirichlet eigenvalues. No symmetry of the energy form is needed. -/
-theorem mem_spectrum_dirichletOperator_iff (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
-    {κ : ℝ} :
-    κ ∈ (dirichletOperator hcoeff hcoercive).spectrum ↔ IsDirichletEigenvalue mu Omega a b c κ := by
-  delta dirichletOperator
-  rw [ContinuousLinearMap.mem_spectrum_inverse_toPMap_top_iff
-    (injective_dirichletSolutionOperator hcoeff hcoercive)]
-  constructor
-  · rintro ⟨hκ, hmem⟩
-    rw [isDirichletEigenvalue_iff_hasEigenvalue hcoeff hcoercive hκ]
-    exact ((isCompactOperator_dirichletSolutionOperator hcoeff hcoercive hOmega)
-      |>.hasEigenvalue_iff_mem_spectrum (inv_ne_zero hκ)).2 hmem
-  · intro h
-    have hκ := (pos_of_isDirichletEigenvalue hcoeff hcoercive h).ne'
-    refine ⟨hκ, ((isCompactOperator_dirichletSolutionOperator hcoeff hcoercive hOmega)
-      |>.hasEigenvalue_iff_mem_spectrum (inv_ne_zero hκ)).1 ?_⟩
-    exact (isDirichletEigenvalue_iff_hasEigenvalue hcoeff hcoercive hκ).1 h
-
-/-- On a bounded domain the Dirichlet realization has compact resolvent, by
+/-- **The Dirichlet realization has compact resolvent** on a bounded domain, by
 Rellich--Kondrachov. -/
 theorem hasCompactResolvent_dirichletOperator
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι))) :
     (dirichletOperator hcoeff hcoercive).HasCompactResolvent :=
-  ContinuousLinearMap.hasCompactResolvent_inverse_toPMap_top
-    (injective_dirichletSolutionOperator hcoeff hcoercive)
+  ContinuousLinearMap.hasCompactResolvent_inverse_toPMap_top _
+    (dirichletSolutionOperator_injective hcoeff hcoercive)
     (isCompactOperator_dirichletSolutionOperator hcoeff hcoercive hOmega)
 
-end Operator
+/-- **The spectrum of the Dirichlet realization is the Dirichlet spectrum**: on a bounded domain,
+`κ` lies in the spectrum exactly when `L u = κ u` has a nonzero weak solution `u ∈ H¹₀(Ω)`. -/
+theorem mem_spectrum_dirichletOperator_iff
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι))) {kappa : ℝ} :
+    kappa ∈ (dirichletOperator hcoeff hcoercive).spectrum ↔
+      IsDirichletEigenvalue mu Omega a b c kappa := by
+  rcases eq_or_ne kappa 0 with rfl | hkappa
+  · exact iff_of_false (fun h => (LinearPMap.mem_spectrum_iff _ _).1 h
+      (zero_mem_resolventSet_dirichletOperator hcoeff hcoercive))
+      fun h => (pos_of_isDirichletEigenvalue hcoeff hcoercive h).ne rfl
+  · rw [isDirichletEigenvalue_iff_hasEigenvalue hcoeff hcoercive hkappa]
+    exact ContinuousLinearMap.mem_spectrum_inverse_toPMap_top_iff_hasEigenvalue _
+      (dirichletSolutionOperator_injective hcoeff hcoercive)
+      (isCompactOperator_dirichletSolutionOperator hcoeff hcoercive hOmega) hkappa
 
-/-! ### The Dirichlet Laplacian -/
+/-- The spectrum of the Dirichlet realization, as a set: the Dirichlet eigenvalues. -/
+theorem spectrum_dirichletOperator
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι))) :
+    (dirichletOperator hcoeff hcoercive).spectrum =
+      {kappa | IsDirichletEigenvalue mu Omega a b c kappa} :=
+  Set.ext fun _ => mem_spectrum_dirichletOperator_iff hcoeff hcoercive hOmega
 
-section Laplacian
+end Domain
 
-variable [DecidableEq ι]
-  (hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix ι ι ℝ)) x)
-    ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
-    (mu.restrict Omega))
-  (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+/-! ### The domain of the Dirichlet Laplacian -/
+
+section LaplacianDomain
+
+open Laplacian
+open scoped Distributions
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+  [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
 
 /-- **The graph of the Dirichlet Laplacian.** For `-Δ`, `(f, g)` lies on the graph of the
 Dirichlet realization exactly when `f` is the value of some `u ∈ H¹₀(Ω)` and `-Δf = g` in the
 sense of distributions on `Ω`. -/
-theorem mem_graph_dirichletOperator_laplacian_iff {f g : Lp ℝ 2 (mu.restrict Omega)} :
+theorem mem_graph_dirichletOperator_laplacian_iff
+    (hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix ι ι ℝ)) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) {f g : Lp ℝ 2 (mu.restrict Omega)} :
     (f, g) ∈ (dirichletOperator hcoeff hcoercive).graph ↔
       (∃ u : W1p0 mu Omega 2, W1p.value (u : W1p mu Omega 2) = f) ∧
         ∀ φ : 𝓓(Omega, ℝ), -∫ x in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) x * f x ∂mu =
@@ -277,7 +336,11 @@ theorem mem_graph_dirichletOperator_laplacian_iff {f g : Lp ℝ 2 (mu.restrict O
 
 /-- **The domain of the Dirichlet Laplacian** is `{u ∈ H¹₀(Ω) : Δu ∈ L²(Ω)}`: the values of
 `H¹₀(Ω)` whose distributional Laplacian on `Ω` is an `L²(Ω)` function. -/
-theorem mem_domain_dirichletOperator_laplacian_iff {f : Lp ℝ 2 (mu.restrict Omega)} :
+theorem mem_domain_dirichletOperator_laplacian_iff
+    (hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix ι ι ℝ)) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) {f : Lp ℝ 2 (mu.restrict Omega)} :
     f ∈ (dirichletOperator hcoeff hcoercive).domain ↔
       (∃ u : W1p0 mu Omega 2, W1p.value (u : W1p mu Omega 2) = f) ∧
         ∃ g : Lp ℝ 2 (mu.restrict Omega), ∀ φ : 𝓓(Omega, ℝ),
@@ -300,31 +363,52 @@ theorem mem_domain_dirichletOperator_laplacian_iff {f : Lp ℝ 2 (mu.restrict Om
     filter_upwards [Lp.coeFn_neg g] with x hx
     rw [hx, Pi.neg_apply, neg_mul]
 
-/-- **The spectrum of the Dirichlet Laplacian.** On a nonempty bounded open set `Ω ⊆ ℝ^{n+1}`
-the Dirichlet realization of `-Δ` is a self-adjoint operator on `L²(Ω)` whose spectrum is the
-range of the sequence of Dirichlet eigenvalues `0 < λ₀ ≤ λ₁ ≤ ⋯ → ∞`, repeated according to
-multiplicity as in `TauCeti.PDE.exists_hilbertBasis_nat_isDirichletEigenvalue_laplacian_monotone`.
--/
-theorem exists_spectrum_dirichletOperator_laplacian_eq_range {n : ℕ}
-    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+end LaplacianDomain
+
+/-! ### The Dirichlet Laplacian -/
+
+section Laplacian
+
+variable {n : ℕ} {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+
+/-- **The Dirichlet Laplacian.** On a nonempty bounded open set `Ω ⊆ ℝ^{n+1}`, the Dirichlet
+realization of `-Δ` on `L²(Ω)`, with domain `{u ∈ H¹₀(Ω) : Δu ∈ L²(Ω)}`, is self-adjoint with
+compact resolvent. Its spectrum is a nondecreasing sequence `0 < λ₀ ≤ λ₁ ≤ ⋯ → ∞`, repeated
+according to multiplicity, with an orthonormal basis `(eₖ)` of `L²(Ω)` in its domain such that
+`-Δ eₖ = λₖ eₖ`. -/
+theorem exists_isSelfAdjoint_dirichletOperator_laplacian
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
-    (hOmega_nonempty : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))).Nonempty)
-    (hcoeff : MemLp (fun x ↦ energyIntegrand
-      ((fun _ ↦ (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)) x)
-      ((0 : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) x)
-      ((0 : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x)) ⊤
-      (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
-    IsSelfAdjoint (dirichletOperator hcoeff hcoercive) ∧
-      ∃ kappa : ℕ → ℝ, 0 < kappa 0 ∧ Monotone kappa ∧ Filter.Tendsto kappa Filter.atTop
-        Filter.atTop ∧ (dirichletOperator hcoeff hcoercive).spectrum = Set.range kappa := by
-  refine ⟨isSelfAdjoint_dirichletOperator hcoeff hcoercive
-    fun u v ↦ energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ ↦ Matrix.isSymm_one) _ _, ?_⟩
-  refine (exists_hilbertBasis_nat_isDirichletEigenvalue_laplacian_monotone hOmega
-    hOmega_nonempty).elim fun _ h ↦ h.elim fun kappa h ↦ h.elim fun _ h ↦
-      ⟨kappa, h.1, h.2.1, h.2.2.1, Set.ext fun κ ↦ ?_⟩
-  rw [mem_spectrum_dirichletOperator_iff hcoeff hcoercive hOmega, Set.mem_range]
-  exact h.2.2.2.2.2.2 κ
+    (hOmega_nonempty : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))).Nonempty) :
+    ∃ (hcoeff : MemLp (fun x ↦ energyIntegrand
+        ((fun _ ↦ (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)) x)
+        ((0 : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) x)
+        ((0 : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x)) ⊤
+        (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))))
+      (hcoercive : IsCoercive (energyFormH1L0 hcoeff)),
+      IsSelfAdjoint (dirichletOperator hcoeff hcoercive) ∧
+      (dirichletOperator hcoeff hcoercive).HasCompactResolvent ∧
+      ∃ (basis : HilbertBasis ℕ ℝ
+          (Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))))
+        (kappa : ℕ → ℝ),
+        0 < kappa 0 ∧ Monotone kappa ∧ Tendsto kappa atTop atTop ∧
+        (∀ k, ∃ hk : basis k ∈ (dirichletOperator hcoeff hcoercive).domain,
+          dirichletOperator hcoeff hcoercive ⟨basis k, hk⟩ = kappa k • basis k) ∧
+        (dirichletOperator hcoeff hcoercive).spectrum = range kappa := by
+  have hsymm (u v : W1p0 volume Omega 2) :
+      energyFormH1 (fun _ ↦ 1) 0 0 (u : W1p volume Omega 2) (v : W1p volume Omega 2) =
+        energyFormH1 (fun _ ↦ 1) 0 0 (v : W1p volume Omega 2) (u : W1p volume Omega 2) :=
+    energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ ↦ Matrix.isSymm_one) _ _
+  refine (exists_isCoercive_laplacian_of_isBounded hOmega).elim fun hcoeff hcoercive ↦ ?_
+  obtain ⟨basis, kappa, u, hpos, hmono, htends, -, hvalue, heq, hiff⟩ :=
+    exists_hilbertBasis_nat_isDirichletEigenvalue_laplacian_monotone hOmega hOmega_nonempty
+  refine ⟨hcoeff, hcoercive, isSelfAdjoint_dirichletOperator hcoeff hcoercive hsymm,
+    hasCompactResolvent_dirichletOperator hcoeff hcoercive hOmega, basis, kappa, hpos, hmono,
+    htends, fun k => ?_, ?_⟩
+  · obtain ⟨hmem, happly⟩ := exists_dirichletOperator_apply_eq_smul hcoeff hcoercive (heq k)
+    simp only [hvalue k] at hmem happly
+    exact ⟨hmem, happly⟩
+  · ext kappa'
+    exact (mem_spectrum_dirichletOperator_iff hcoeff hcoercive hOmega).trans (hiff kappa')
 
 end Laplacian
 

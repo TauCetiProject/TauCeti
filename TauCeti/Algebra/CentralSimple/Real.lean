@@ -84,9 +84,6 @@ use. The division algebras of Frobenius' theorem supply those instances.
 
 ## References
 
-This is the classification of "the finite-dimensional real division algebras with center `ℝ`"
-listed as a prerequisite of the real base field target in Layer 6 of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 13, and P. Gille, T. Szamuely, *Central
 Simple Algebras and Galois Cohomology*, CUP (2006), §1.1.
 -/

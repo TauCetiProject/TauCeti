@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
 
 import Mathlib.LinearAlgebra.Matrix.Integer
+import TauCeti.Data.Nat.GCD
+import TauCeti.GroupTheory.DoubleCoset.Identity
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.CongruenceSplit
 
 /-!
@@ -18,13 +20,15 @@ triple (Shimura, Proposition 3.16): when the determinants `∏ aᵢ`, `∏ bᵢ`
 product of the two diagonal double cosets is again a single diagonal coset,
 `T(a) · T(b) = T(a * b)`.
 
-The two levels differ in what they assume. The **set-level** results — the double-coset
-statements and their supporting lemmas — carry `∀ i, 0 < a i` explicitly, because
-`natDiagGL` sends a tuple with a zero entry to its junk value `1` and those statements are
-about genuine diagonal representatives. The **ring-level** theorem
-`diagElem_mul_of_coprime` needs no positivity at all: on a tuple with a zero entry both
-sides degenerate, and coprimality forces the *other* tuple to be all ones (a zero entry makes
-that determinant `0`, and `Nat.Coprime 0 m` holds only for `m = 1`), so the identity survives.
+The two levels differ in what they assume. The set-level statement `mul_mem_doubleCoset_of_coprime`
+needs only coprimality: a zero entry in one tuple forces the other tuple to be all ones (a zero
+entry makes that determinant `0`, and `Nat.Coprime 0 m` holds only for `m = 1`), so both
+diagonal representatives are `1` (the junk value of `natDiagGL` on the tuple with a zero entry,
+and `natDiagGL` of the all-ones tuple), and the claim reduces to `mapGL ℚ τ ∈ SLnZ n`. Only its
+private supporting lemmas, which are about genuine diagonal representatives, still carry
+`∀ i, 0 < a i`. The **ring-level** theorem
+`diagElem_mul_of_coprime` likewise needs no positivity at all: on a tuple with a zero entry both
+sides degenerate, so the identity survives.
 Both levels hold for every rank `n`.
 
 The scalar row (Shimura 3.17) lives in `GLn/ScalarMul.lean`.
@@ -41,9 +45,9 @@ Chris Birkbeck).
 
 ## Main results
 
-* `HeckeRing.GLn.mul_mem_doubleCoset_of_coprime`: the set-level statement — for **positive**
-  tuples with coprime determinants, a product of representatives lies in the double coset of
-  the product tuple.
+* `HeckeRing.GLn.mul_mem_doubleCoset_of_coprime`: the set-level statement — for tuples with
+  coprime determinants, a product of representatives lies in the double coset of the product
+  tuple.
 * `HeckeRing.GLn.diagElem_mul_of_coprime`: the ring-level statement — `T(a) · T(b) = T(a * b)`
   from **coprimality alone**; the zero-entry case degenerates as described above.
 
@@ -160,12 +164,26 @@ section CoprimeCosets
 
 /-- **The set-level coprime product** (Shimura, Proposition 3.16, key step): sandwiching any
 `τ ∈ SL_n(ℤ)` between the diagonals of `a` and `b` stays inside the double coset of the
-diagonal of `a * b`, when the determinants are coprime. -/
+diagonal of `a * b`, when the determinants are coprime. If an entry is zero, the other tuple
+is `1`, so both diagonal representatives are `1` and the claim reduces to
+`mapGL ℚ τ ∈ SLnZ n`. -/
 lemma mul_mem_doubleCoset_of_coprime (a b : Fin n → ℕ)
-    (ha_pos : ∀ i, 0 < a i) (hb_pos : ∀ i, 0 < b i)
     (hcop : Nat.Coprime (∏ i, a i) (∏ i, b i)) (τ : SpecialLinearGroup (Fin n) ℤ) :
     natDiagGL n a * mapGL ℚ τ * natDiagGL n b ∈
       doubleCoset (natDiagGL n (a * b) : GL (Fin n) ℚ) (SLnZ n) (SLnZ n) := by
+  have h1 : natDiagGL n (1 : Fin n → ℕ) = 1 := by rw [Pi.one_def, natDiagGL_one]
+  by_cases ha_pos : ∀ i, 0 < a i
+  swap
+  · obtain rfl := Nat.Coprime.eq_one_of_exists_eq_zero hcop (by simpa using ha_pos)
+    rw [mul_one a, natDiagGL_of_not_pos n ha_pos, h1, one_mul, mul_one,
+      TauCeti.doubleCoset_one_self]
+    exact coe_mem_SLnZ n τ
+  by_cases hb_pos : ∀ i, 0 < b i
+  swap
+  · obtain rfl := Nat.Coprime.eq_one_of_exists_eq_zero hcop.symm (by simpa using hb_pos)
+    rw [one_mul b, natDiagGL_of_not_pos n hb_pos, h1, one_mul, mul_one,
+      TauCeti.doubleCoset_one_self]
+    exact coe_mem_SLnZ n τ
   have hcop' : IsCoprime (∏ i, (a i : ℤ)) (∏ i, (b i : ℤ)) := by
     exact_mod_cast Nat.isCoprime_iff_coprime.2 hcop
   obtain ⟨τ₁, τ₂, hτ, hτ₁, hτ₂⟩ := exists_mul_modEq_one_of_isCoprime hcop' τ
@@ -186,8 +204,7 @@ lemma mul_mem_doubleCoset_of_coprime (a b : Fin n → ℕ)
     _ = mapGL ℚ σ₁ * natDiagGL n (a * b) * mapGL ℚ σ₂ := by
         rw [natDiagGL_mul n a b ha_pos hb_pos]
 
-private lemma mulMap_coprime_eq (a b : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i)
-    (hb_pos : ∀ i, 0 < b i) (hcop : Nat.Coprime (∏ i, a i) (∏ i, b i))
+private lemma mulMap_coprime_eq (a b : Fin n → ℕ) (hcop : Nat.Coprime (∏ i, a i) (∏ i, b i))
     (p : DecompQuotient (SLnZ n) (SLnZ n) (((diagCoset a).rep : GL (Fin n) ℚ)) ×
       DecompQuotient (SLnZ n) (SLnZ n) (((diagCoset b).rep : GL (Fin n) ℚ))) :
     HeckeCoset.mulMap (SLnZ n) (SLnZ n) (SLnZ n) (diagCoset a).rep (diagCoset b).rep p =
@@ -196,7 +213,7 @@ private lemma mulMap_coprime_eq (a b : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i)
   obtain ⟨h₁b, hh₁b, h₂b, hh₂b, hδb⟩ := exists_rep_diagCoset_eq_mul_natDiagGL_mul b
   obtain ⟨σ, hσ⟩ := (mem_SLnZ_iff n).mp
     ((SLnZ n).mul_mem ((SLnZ n).mul_mem hh₂a p.2.out.2) hh₁b)
-  have h_cop := mul_mem_doubleCoset_of_coprime n a b ha_pos hb_pos hcop σ
+  have h_cop := mul_mem_doubleCoset_of_coprime n a b hcop σ
   rw [hσ, mem_doubleCoset] at h_cop
   obtain ⟨hc₁, hhc₁, hc₂, hhc₂, h_eq⟩ := h_cop
   have hprod : (p.1.out : GL (Fin n) ℚ) * ((diagCoset a).rep : GL (Fin n) ℚ) *
@@ -507,7 +524,7 @@ This is the positive case; the public `diagElem_mul_of_coprime` below reduces to
 private theorem diagElem_mul_of_coprime_of_pos (a b : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i)
     (hb_pos : ∀ i, 0 < b i) (hcop : Nat.Coprime (∏ i, a i) (∏ i, b i)) :
     diagElem a * diagElem b = diagElem (a * b) :=
-  diagElem_mul_of_mulMap_eq _ _ _ (mulMap_coprime_eq n a b ha_pos hb_pos hcop)
+  diagElem_mul_of_mulMap_eq _ _ _ (mulMap_coprime_eq n a b hcop)
     (multiplicity_coprime_le_one n a b ha_pos hb_pos hcop _)
 
 /-- Coprime product in the integral `GL_n` Hecke ring (Shimura, Proposition 3.16):
@@ -520,27 +537,15 @@ the same element. -/
 theorem diagElem_mul_of_coprime (a b : Fin n → ℕ)
     (hcop : Nat.Coprime (∏ i, a i) (∏ i, b i)) :
     diagElem a * diagElem b = diagElem (a * b) := by
-  have hones : ∀ x y : Fin n → ℕ, Nat.Coprime (∏ i, x i) (∏ i, y i) →
-      ¬(∀ i, 0 < x i) → ∀ j, y j = 1 := by
-    intro x y hc hx j
-    obtain ⟨i, hi⟩ := not_forall.mp hx
-    have hx0 : (∏ i, x i) = 0 :=
-      Finset.prod_eq_zero (Finset.mem_univ i) (Nat.eq_zero_of_not_pos hi)
-    have hy1 : (∏ i, y i) = 1 := (Nat.coprime_zero_left _).mp (hx0 ▸ hc)
-    exact Nat.dvd_one.mp (hy1 ▸ Finset.dvd_prod_of_mem y (Finset.mem_univ j))
   by_cases ha_pos : ∀ i, 0 < a i
   · by_cases hb_pos : ∀ i, 0 < b i
     · exact diagElem_mul_of_coprime_of_pos n a b ha_pos hb_pos hcop
     · -- `b` is not positive, so coprimality forces `a` to be all ones
-      have ha1 : a = fun _ ↦ 1 := funext (hones b a hcop.symm hb_pos)
-      subst ha1
-      have hmul : ((fun _ : Fin n ↦ 1) * b) = b := funext fun i ↦ Nat.one_mul (b i)
-      rw [hmul, diagElem_one, one_mul]
+      obtain rfl := Nat.Coprime.eq_one_of_exists_eq_zero hcop.symm (by simpa using hb_pos)
+      rw [one_mul, Pi.one_def, diagElem_one, one_mul]
   · -- `a` is not positive, so coprimality forces `b` to be all ones
-    have hb1 : b = fun _ ↦ 1 := funext (hones a b hcop ha_pos)
-    subst hb1
-    have hmul : (a * fun _ : Fin n ↦ 1) = a := funext fun i ↦ Nat.mul_one (a i)
-    rw [hmul, diagElem_one, mul_one]
+    obtain rfl := Nat.Coprime.eq_one_of_exists_eq_zero hcop (by simpa using ha_pos)
+    rw [mul_one, Pi.one_def, diagElem_one, mul_one]
 
 end CoprimeIntegrality
 
