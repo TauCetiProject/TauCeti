@@ -21,7 +21,8 @@ of the Baire category argument `nonempty_interior_of_iUnion_of_closed`, valid in
 topological space.
 
 Conversely, a locally compact subspace of a Hausdorff space is locally closed
-(`isLocallyClosed_of_locallyCompactSpace`), the converse of `IsLocallyClosed.locallyCompactSpace`.
+(`TauCeti.isLocallyClosed_of_locallyCompactSpace`), the converse of
+`IsLocallyClosed.locallyCompactSpace`.
 
 A set with empty interior need not be nowhere dense: the rationals have empty interior and are
 dense in the real line. They are not locally closed.
@@ -49,6 +50,8 @@ theorem IsLocallyClosed.isNowhereDense_iff (hs : IsLocallyClosed s) :
   have hy : y ∈ interior s := interior_maximal hsub hopen ⟨hyU, subset_coborder hys⟩
   simp [h] at hy
 
+namespace TauCeti
+
 /-- **A locally compact subspace of a Hausdorff space is locally closed.** This is the converse of
 `IsLocallyClosed.locallyCompactSpace`. -/
 theorem isLocallyClosed_of_locallyCompactSpace [T2Space X] [LocallyCompactSpace s] :
@@ -61,11 +64,9 @@ theorem isLocallyClosed_of_locallyCompactSpace [T2Space X] [LocallyCompactSpace 
   refine ⟨interior V, interior_mem_nhds.2 hV, fun y hy ↦ ?_⟩
   have hKcl := (hKc.image continuous_subtype_val).isClosed
   have h1 : interior V ∩ s ⊆ Subtype.val '' K := fun z ⟨hz, hzu⟩ ↦
-    ⟨⟨z, hzu⟩, hVK (show z ∈ V from interior_subset hz), rfl⟩
+    ⟨⟨z, hzu⟩, hVK (mem_preimage.2 (interior_subset hz)), rfl⟩
   obtain ⟨z, -, rfl⟩ := closure_minimal h1 hKcl (isOpen_interior.inter_closure hy)
   exact z.2
-
-namespace TauCeti
 
 /-- **Finite covers by locally closed sets.** If a nonempty space is the union of finitely many
 locally closed sets, one of them has nonempty interior. -/
