@@ -15,13 +15,17 @@ import TauCeti.Analysis.Normed.Ring.Basic
 
 The Hasse derivative `∂^d (c X^μ)` is `c ∏ₛ choose (μ s) (d s) · X^(μ - d)`, so the triangle
 inequality bounds the norm of `∂^d F` at a point `a` by a product-binomial-weighted sum of the
-coefficient norms of `F`. This file records that bound for a polynomial supported on a finite set
-of exponents, and the resulting bounds on the family `μ ↦ ∂^d (X^μ) (a)` over a finite set of
-exponents, which is a row of a multivariate jet matrix. The one-variable bounds are in
+coefficient norms of `F`. This file records the resulting bound
+`H ∑_{μ ∈ T} ∏ₛ choose (μ s) (d s) · A s ^ (μ s - d s)` for a polynomial supported on a finite set
+`T` of exponents with coefficients of norm at most `H` on `T`, evaluated at a point with
+`‖a s‖ ≤ A s`, and the bounds on the family `μ ↦ ∂^d (X^μ) (a)` over a finite set of exponents,
+which is a row of a multivariate jet matrix. The one-variable bounds are in
 `TauCeti/Analysis/Polynomial/HasseDerivBound.lean`.
 
-For an absolute value `v : AbsoluteValue R ℝ`, a coarse bound in terms of the coefficient length
-is `AbsoluteValue.apply_eval_hasseDeriv_le`; the norm on a seminormed commutative ring need not be
+For an absolute value `v : AbsoluteValue R ℝ`, a coarse bound in terms of a bound `B` on the
+absolute values of all coefficients and partial degrees `degreeOf i P ≤ L i`,
+`v((∂^d P)(a)) ≤ B ∏ᵢ (L i + 1) ∏ᵢ (2 max(v(aᵢ), 1)) ^ L i`, is
+`AbsoluteValue.apply_eval_hasseDeriv_le`; the norm on a seminormed commutative ring need not be
 multiplicative, and this file does not restate that bound for it.
 
 ## Main results
