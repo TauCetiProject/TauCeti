@@ -209,10 +209,6 @@ theorem exists_mem_differentialOperators_iff_apply_eq_zero_of_eventuallyEq [Comp
     (P : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) :
     (∃ r, P ∈ TauCeti.differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ r) ↔
       ∀ (f : C^∞⟮I, M; ℝ⟯) (x : M), (f : M → ℝ) =ᶠ[𝓝 x] 0 → P f x = 0 := by
-  -- The kernel of evaluation at `x` is the vanishing ideal `I_x`, and `I_x • C^∞(M) = I_x`.
-  have hI (x : M) : RingHom.ker (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ) =
-      TauCeti.smoothVanishingIdeal I x := Ideal.ext fun g ↦ by
-    rw [RingHom.mem_ker, ContMDiffMap.evalAlgHom_apply, TauCeti.mem_smoothVanishingIdeal_iff]
   constructor
   · rintro ⟨r, hP⟩ f x hf
     -- A function vanishing near `x` has vanishing jets at `x`.
@@ -234,7 +230,8 @@ theorem exists_mem_differentialOperators_iff_apply_eq_zero_of_eventuallyEq [Comp
     refine ⟨r, (TauCeti.mem_differentialOperators_iff_forall_apply_mem_smul_top
       (fun x : M ↦ (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ)) hsep).2
       fun x g hg ↦ ?_⟩
-    rw [smul_eq_mul, Ideal.mul_top, hI] at hg ⊢
+    -- The kernel of evaluation at `x` is the vanishing ideal `I_x`, and `I_x • C^∞(M) = I_x`.
+    rw [smul_eq_mul, Ideal.mul_top, TauCeti.ker_evalAlgHom_eq_smoothVanishingIdeal] at hg ⊢
     exact TauCeti.mem_smoothVanishingIdeal_iff.2 (hr x (mem_univ x) g hg)
 
 end LinearMap
