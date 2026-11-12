@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Lie.Quotient
 public import Mathlib.LinearAlgebra.Projection
-public import Mathlib.Algebra.Lie.IdealOperations
 public import Mathlib.Algebra.Lie.Abelian
 
 /-!
