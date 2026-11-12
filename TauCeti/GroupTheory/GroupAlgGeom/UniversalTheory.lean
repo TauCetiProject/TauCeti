@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import TauCeti.ModelTheory.Algebra.Group.Basic
 public import TauCeti.ModelTheory.Complexity
-import Mathlib.GroupTheory.OrderOfElement
+import Mathlib.Data.Int.Cast.Lemmas
 import TauCeti.GroupTheory.FiniteAbelian.TorsionFree
 import TauCeti.ModelTheory.Algebra.Group.ExistentialUniversal
 
@@ -201,7 +201,7 @@ theorem realize_iff_multiplicative_int_of_isMulCommutative_of_isMulTorsionFree_o
   · -- `ℤ` embeds into `G` through the powers of a nontrivial element.
     obtain ⟨g, hg⟩ := exists_ne (1 : G)
     exact (zpowersHom G g).realize_of_isUniversal_of_injective
-      (injective_zpow_iff_not_isOfFinOrder.2 (not_isOfFinOrder_of_isMulTorsionFree hg)) hσ hG
+      (fun a b h => by simpa [hg] using h) hσ hG
   · -- A finitely generated subgroup is isomorphic to some `ℤᵏ`, which is discriminated by `ℤ`.
     obtain ⟨k, -, ⟨e⟩⟩ := Subgroup.exists_mulEquiv_closure_of_pairwise_commute
       (s := S) fun a _ b _ _ => mul_comm' a b
