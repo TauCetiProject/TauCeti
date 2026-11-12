@@ -25,8 +25,9 @@ Let `A` be an algebra over a commutative ring `R` and `E` an injective `R`-modul
   `TauCeti.Algebra.Category.ModuleCat.MatlisDual.Stable`).
 
 Defining `τ` as the composite of these functors makes it a functor without choices beyond the
-presentations defining `Tr`; changing them gives an isomorphic functor. Over a field, with
-`E = k`, this is the translate of `TauCeti.AuslanderReitenTranslate`, in the stable category
+presentations defining `Tr`; changing them gives an isomorphic functor. Over a field `k` with
+`E = k`, the presentation-level translate `TauCeti.AuslanderReitenTranslate k p₁` is the Matlis
+dual `MatlisDual k k (Tr p₁)` as an `A`-module
 (`TauCeti.AuslanderReitenTranslate.linearEquivMatlisDual`).
 
 ## Main definitions
