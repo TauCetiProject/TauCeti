@@ -121,16 +121,13 @@ theorem exists_bundleDiffeomorph_prod_of_isCompl [Fintype ι']
   have : CompleteSpace 𝕜 := by
     let := IsRCLikeNormedField.rclike 𝕜
     infer_instance
-  -- On each fibre, `(v, w) ↦ v + w` is a linear equivalence from a finite-dimensional space, which
-  -- has a basis given by the local frames, onto a Hausdorff space, which a trivialization
-  -- identifies with the model `F`; hence it is continuous.
+  -- On each fibre, `(v, w) ↦ v + w` is a linear equivalence from a finite-dimensional space, whose
+  -- summands are fibres of bundles with model `ι → 𝕜` and `ι' → 𝕜`, onto a Hausdorff space, a
+  -- fibre of a bundle with model `F`; hence it is continuous.
   have hfib (x : B) : FiniteDimensional 𝕜 (V x × W x) ∧ T2Space (E x) := by
-    obtain ⟨_, -, hxV, _, hXV, -⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hV x
-    obtain ⟨_, -, hxW, _, hXW, -⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hW x
-    have := Module.Finite.of_basis (hXV.basis hxV)
-    have := Module.Finite.of_basis (hXW.basis hxW)
-    exact ⟨inferInstance, ((trivializationAt F E x).continuousLinearEquivAt 𝕜 x
-      (FiberBundle.mem_baseSet_trivializationAt' x)).toHomeomorph.isEmbedding.t2Space⟩
+    have := VectorBundle.finiteDimensional 𝕜 (ι → 𝕜) (fun x ↦ V x) x
+    have := VectorBundle.finiteDimensional 𝕜 (ι' → 𝕜) (fun x ↦ W x) x
+    exact ⟨inferInstance, FiberBundle.t2Space F E x⟩
   refine ⟨bundleDiffeomorph (fun x ↦ have := (hfib x).1; have := (hfib x).2
     (Submodule.prodEquivOfIsCompl _ _ (hVW x)).toContinuousLinearEquiv) ?_, fun v ↦ ?_⟩
   · simpa only [LinearEquiv.coe_toContinuousLinearEquiv', Submodule.coe_prodEquivOfIsCompl']
