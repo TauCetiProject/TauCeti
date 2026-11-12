@@ -25,6 +25,9 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 -- This import is public: `Module.Basis` appears in the hypothesis of
 -- `Module.Basis.hasWeakFDerivOn_of_forall`.
 public import Mathlib.LinearAlgebra.Basis.Defs
+-- This import is private: commuting directional derivatives with postcomposition is used only
+-- inside the proof of `HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul_complex`.
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
 # Weak derivatives on an open set
@@ -126,6 +129,9 @@ weaken them for no gain.
   `TauCeti.HasWeakLineDerivOn.locallyIntegrableOn_deriv` and
   `TauCeti.HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul`: the components of the
   definition.
+* `TauCeti.HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul_complex`: for a
+  complex vector space `F`, the defining identity holds for complex test functions too, by
+  splitting them into real and imaginary parts.
 * `TauCeti.HasWeakFDerivOn.locallyIntegrableOn_deriv`: in finite dimension, a weak Fréchet
   derivative is locally integrable as an operator-valued function.
 * `TauCeti.hasWeakLineDerivOn_iff`: the unbundled restatement of the defining identity.
@@ -932,5 +938,49 @@ theorem HasWeakFDerivOn.ae_eq_fderiv {U : E → E →L[ℝ] F} (h : HasWeakFDeri
   h.ae_eq (hasWeakFDerivOn_of_differentiableOn hd hdiff)
 
 end Comparison
+
+/-! ### Complex test functions -/
+
+section ComplexTest
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [MeasurableSpace E]
+  [OpensMeasurableSpace E] {μ : Measure E} {u u' : E → F}
+
+/-- The defining identity of a weak line derivative with values in a complex vector space, tested
+against a complex test function: split `ψ` into its real and imaginary parts, and test `u` and
+`I • u` against them. -/
+theorem HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul_complex
+    (h : HasWeakLineDerivOn μ Ω u u' v) (ψ : 𝓓(Ω, ℂ)) :
+    ∫ x, lineDeriv ℝ (ψ : E → ℂ) x v • u x ∂μ = -∫ x, ψ x • u' x ∂μ := by
+  have := h.completeSpace
+  set a : 𝓓(Ω, ℝ) := TestFunction.postcompCLM Complex.reCLM ψ
+  set b : 𝓓(Ω, ℝ) := TestFunction.postcompCLM Complex.imCLM ψ
+  have hI := h.clm_comp (ContinuousLinearMap.lsmul ℝ ℂ Complex.I : F →L[ℝ] F)
+  have hd (L : ℂ →L[ℝ] ℝ) (x : E) :
+      lineDeriv ℝ ((TestFunction.postcompCLM L ψ : 𝓓(Ω, ℝ)) : E → ℝ) x v =
+        L (lineDeriv ℝ (ψ : E → ℂ) x v) := by
+    simpa using congrFun (congrArg DFunLike.coe (TestFunction.lineDerivCLM_postcompCLM
+      (n := ⊤) (k := ⊤) L v ψ)) x
+  have hsplit (c : ℂ) (y : F) : c • y = c.re • y + c.im • (Complex.I • y) := by
+    conv_lhs => rw [← Complex.re_add_im c]
+    rw [add_smul, mul_smul, Complex.coe_smul, Complex.coe_smul]
+  have h1 (x : E) : lineDeriv ℝ (ψ : E → ℂ) x v • u x =
+      lineDeriv ℝ (a : E → ℝ) x v • u x + lineDeriv ℝ (b : E → ℝ) x v • (Complex.I • u x) := by
+    rw [hd, hd, hsplit]
+    rfl
+  have h2 (x : E) : ψ x • u' x = a x • u' x + b x • (Complex.I • u' x) := hsplit _ _
+  have hib : Integrable (fun x ↦ lineDeriv ℝ (b : E → ℝ) x v • (Complex.I • u x)) μ := by
+    simpa using integrable_lineDeriv_smul_of_locallyIntegrableOn hI.locallyIntegrableOn b v
+  have hib' : Integrable (fun x ↦ b x • (Complex.I • u' x)) μ := by
+    simpa using b.integrable_smul hI.locallyIntegrableOn_deriv
+  have hb : ∫ x, lineDeriv ℝ (b : E → ℝ) x v • (Complex.I • u x) ∂μ =
+      -∫ x, b x • (Complex.I • u' x) ∂μ := by
+    simpa using hI.integral_lineDeriv_smul_eq_neg_integral_smul b
+  simp only [h1, h2]
+  rw [integral_add (integrable_lineDeriv_smul_of_locallyIntegrableOn h.locallyIntegrableOn a v)
+      hib, integral_add (a.integrable_smul h.locallyIntegrableOn_deriv) hib',
+    h.integral_lineDeriv_smul_eq_neg_integral_smul a, hb, neg_add]
+
+end ComplexTest
 
 end TauCeti

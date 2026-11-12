@@ -49,6 +49,8 @@ below the axis; for `F = ℂ` it is `TauCeti.schwarzReflection`.
   satisfying `v (conj z) = star (v z)`. It is a weak analogue of
   `TauCeti.differentiableOn_schwarzReflection_of_symmetric`; recovering that lemma from it would
   also need the half-plane boundary-term computation for smooth data, which is not proved here.
+* `HasWeakConjWirtingerDerivRealBoundaryOn.add`, `.sub`, `.const_smul`, `.mono`: the solutions
+  form a real vector space, local in `Ω`.
 * Check: the even reflection `s + i|t|`, which omits the conjugation, is not a weak solution
   below the axis. The companion check that the reflection of `z` is `z` is
   `TauCeti.starSchwarzReflection_id`.
@@ -66,7 +68,7 @@ moved to the upper one by the measure-preserving substitution `z ↦ conj z`.
 
 public noncomputable section
 
-open Complex MeasureTheory TopologicalSpace Set Filter Topology
+open Complex MeasureTheory TopologicalSpace Set Filter Topology LineDeriv
 open scoped ContDiff Distributions ComplexConjugate ComplexStarModule
 
 namespace TauCeti
@@ -186,6 +188,69 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.congr_ae_deriv {η' : ℂ → F}
   · rw [hz ⟨hzΩ, hz0⟩]
   · rw [image_eq_zero_of_notMem_tsupport (fun h' ↦ hzΩ (χ.tsupport_subset h'))]
     simp
+
+/-! ### Linear structure and locality -/
+
+omit [StarAddMonoid F] [StarModule ℂ F] in
+/-- A complex test function pairs integrably over the closed upper half-plane with a map locally
+integrable up to the boundary. -/
+private theorem integrable_smul_of_locallyIntegrableOn {w : ℂ → F}
+    (hw : LocallyIntegrableOn w ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) (ψ : 𝓓(Ω, ℂ)) :
+    Integrable (fun z ↦ ψ z • w z) (volume.restrict {z : ℂ | 0 ≤ z.im}) := by
+  simpa using ψ.integrable_bilin (ContinuousLinearMap.lsmul ℝ ℂ : ℂ →L[ℝ] F →L[ℝ] F)
+    (hw.restrict_of_inter Ω.isOpen isClosed_im_nonneg)
+
+omit [StarAddMonoid F] [StarModule ℂ F] in
+/-- The Cauchy–Riemann pairing of the weak formulation is integrable over the closed upper
+half-plane. -/
+private theorem integrable_cauchyRiemann_smul {w : ℂ → F}
+    (hw : LocallyIntegrableOn w ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) (χ : 𝓓(Ω, ℂ)) :
+    Integrable (fun z ↦ (lineDeriv ℝ (χ : ℂ → ℂ) z 1 + I * lineDeriv ℝ (χ : ℂ → ℂ) z I) • w z)
+      (volume.restrict {z : ℂ | 0 ≤ z.im}) := by
+  simpa using integrable_smul_of_locallyIntegrableOn hw (∂_{(1 : ℂ)} χ + I • ∂_{I} χ)
+
+namespace HasWeakConjWirtingerDerivRealBoundaryOn
+
+/-- Solutions of the weak real-boundary equation add. -/
+theorem add {ξ₁ ξ₂ η₁ η₂ : ℂ → F} (h₁ : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ₁ η₁)
+    (h₂ : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ₂ η₂) :
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω (ξ₁ + ξ₂) (η₁ + η₂) := by
+  refine ⟨h₁.1, h₁.2.1.add h₂.2.1, h₁.2.2.1.add h₂.2.2.1, fun χ hχ ↦ ?_⟩
+  simp only [Pi.add_apply, smul_add]
+  rw [integral_add (integrable_cauchyRiemann_smul h₁.2.1 χ)
+      (integrable_cauchyRiemann_smul h₂.2.1 χ),
+    integral_add (integrable_smul_of_locallyIntegrableOn h₁.2.2.1 χ)
+      (integrable_smul_of_locallyIntegrableOn h₂.2.2.1 χ), map_add, map_add,
+    h₁.2.2.2 χ hχ, h₂.2.2.2 χ hχ, smul_add]
+
+/-- Solutions of the weak real-boundary equation subtract. -/
+theorem sub {ξ₁ ξ₂ η₁ η₂ : ℂ → F} (h₁ : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ₁ η₁)
+    (h₂ : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ₂ η₂) :
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω (ξ₁ - ξ₂) (η₁ - η₂) := by
+  refine ⟨h₁.1, h₁.2.1.sub h₂.2.1, h₁.2.2.1.sub h₂.2.2.1, fun χ hχ ↦ ?_⟩
+  simp only [Pi.sub_apply, smul_sub]
+  rw [integral_sub (integrable_cauchyRiemann_smul h₁.2.1 χ)
+      (integrable_cauchyRiemann_smul h₂.2.1 χ),
+    integral_sub (integrable_smul_of_locallyIntegrableOn h₁.2.2.1 χ)
+      (integrable_smul_of_locallyIntegrableOn h₂.2.2.1 χ), map_sub, map_sub,
+    h₁.2.2.2 χ hχ, h₂.2.2.2 χ hχ, smul_sub]
+
+/-- Real multiples of solutions of the weak real-boundary equation are solutions. Complex
+multiples are not: `i` times a solution real on `ℝ` is imaginary there. -/
+theorem const_smul (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) (c : ℝ) :
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω (c • ξ) (c • η) := by
+  refine ⟨h.1, h.2.1.smul c, h.2.2.1.smul c, fun χ hχ ↦ ?_⟩
+  simp only [Pi.smul_apply, smul_comm _ c]
+  rw [integral_smul, integral_smul, map_smul, map_smul, h.2.2.2 χ hχ, smul_comm]
+
+/-- The weak real-boundary equation restricts to smaller open sets. -/
+theorem mono {Ω' : Opens ℂ} (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) (hΩ : Ω' ≤ Ω) :
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω' ξ η :=
+  ⟨h.1, h.2.1.mono_set (inter_subset_inter_left _ hΩ),
+    h.2.2.1.mono_set (inter_subset_inter_left _ hΩ),
+    fun χ hχ ↦ h.2.2.2 ⟨χ, χ.contDiff, χ.hasCompactSupport, χ.tsupport_subset.trans hΩ⟩ hχ⟩
+
+end HasWeakConjWirtingerDerivRealBoundaryOn
 
 /-! ### Test functions -/
 

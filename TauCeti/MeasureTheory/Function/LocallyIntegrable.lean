@@ -47,7 +47,8 @@ normed lattice with solid norm, and finite sums of functions locally integrable 
 locally integrable on it.
 
 Local integrability on the trace `U ∩ s` of a closed set on an open set is local integrability on
-`U` for the measure restricted to `s`.
+`U` for the measure restricted to `s`. Conversely, local integrability on any `U` for the measure
+restricted to any `s` gives local integrability on `U ∩ s`.
 
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
@@ -304,6 +305,17 @@ theorem LocallyIntegrableOn.restrict_of_inter [OpensMeasurableSpace X] {F : Type
     rw [IntegrableOn, Measure.restrict_restrict hs.isOpen_compl.measurableSet,
       compl_inter_self, Measure.restrict_empty]
     exact integrable_zero_measure
+
+/-- Local integrability on `U` for the restriction of the measure to `s` gives local integrability
+on the trace `U ∩ s`. This converse of `MeasureTheory.LocallyIntegrableOn.restrict_of_inter`
+needs no hypothesis on `U` or `s`. -/
+theorem LocallyIntegrableOn.inter_of_restrict {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε]
+    {f : X → ε} {U s : Set X} (hf : LocallyIntegrableOn f U (μ.restrict s)) :
+    LocallyIntegrableOn f (U ∩ s) μ := by
+  intro x hx
+  obtain ⟨t, ht, hint⟩ := hf x hx.1
+  exact ⟨t ∩ s, Filter.inter_mem (nhdsWithin_mono _ inter_subset_left ht)
+    (nhdsWithin_mono _ inter_subset_right self_mem_nhdsWithin), hint.inter_of_restrict⟩
 
 /-- For a locally finite measure, the indicator of a constant on a set `t` that is null-measurable
 for the restriction of the measure to `s` is locally integrable on `s`. -/
