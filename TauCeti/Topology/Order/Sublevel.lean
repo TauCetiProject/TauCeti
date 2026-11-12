@@ -590,7 +590,6 @@ theorem exists_homotopyEquiv_sublevel_band (hf : Continuous f) {s : ℝ} (has : 
     · have h0 : 0 ≤ min (f y - a) (s - f y) := le_min (by linarith) (by linarith)
       have hσy : σ y = min (f y - a) (s - f y) := max_eq_right h0
       have h1 : σ y ≤ f y - a := hσy ▸ min_le_left _ _
-      have h2 : 0 ≤ σ y := hσy ▸ h0
       exact ⟨hφ _ _ ⟨hya, hys⟩ ⟨by nlinarith [ht.1, ht.2], by nlinarith [ht.1, ht.2]⟩,
         by nlinarith [ht.1, ht.2], by nlinarith [ht.1, ht.2]⟩
     · have hσy : σ y = 0 := max_eq_left ((min_le_right _ _).trans (by linarith))
