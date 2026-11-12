@@ -81,7 +81,7 @@ variable [AddCommMonoid S] [Module R S] [AddCommMonoid T] [Module R T]
 theorem assoc_rTensor_lTensor_comp (f : N →ₗ[R] P) (g : Q →ₗ[R] S)
     (ρ : M →ₗ[R] T ⊗[R] N) (t : M ⊗[R] Q) :
     TensorProduct.assoc R T P S ((f.lTensor T ∘ₗ ρ).rTensor S (g.lTensor M t)) =
-      TensorProduct.map LinearMap.id (TensorProduct.map f g)
+      TensorProduct.map id (TensorProduct.map f g)
         (TensorProduct.assoc R T N Q (ρ.rTensor Q t)) := by
   simp only [lTensor_def, rTensor_map, comp_id]
   rw [← map_rTensor, ← TensorProduct.map_map_assoc]
@@ -102,11 +102,11 @@ theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :
 /-- Composing the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ b) ∘ (τ ⊗ 𝟙)` on `N ⊗ N` with itself:
 if `τ` is an involution anticommuting with `b`, the cross terms cancel and the composite is
 `(b ∘ b) ⊗ 𝟙 + 𝟙 ⊗ (b ∘ b)`. -/
-theorem rTensor_add_lTensor_comp_rTensor_comp_self (b τ : N →ₗ[R] N) (hτ : τ ∘ₗ τ = LinearMap.id)
+theorem rTensor_add_lTensor_comp_rTensor_comp_self (b τ : N →ₗ[R] N) (hτ : τ ∘ₗ τ = id)
     (hodd : b ∘ₗ τ + τ ∘ₗ b = 0) :
     (b.rTensor N + b.lTensor N ∘ₗ τ.rTensor N) ∘ₗ (b.rTensor N + b.lTensor N ∘ₗ τ.rTensor N) =
       (b ∘ₗ b).rTensor N + (b ∘ₗ b).lTensor N := by
-  refine LinearMap.ext fun w ↦ ?_
+  refine ext fun w ↦ ?_
   have hcross : TensorProduct.map (b ∘ₗ τ) b w + TensorProduct.map (τ ∘ₗ b) b w = 0 := by
     rw [← LinearMap.add_apply, ← TensorProduct.map_add_left, hodd, TensorProduct.map_zero_left,
       LinearMap.zero_apply]
@@ -120,7 +120,7 @@ theorem rTensor_add_lTensor_comp_rTensor_comp_self (b τ : N →ₗ[R] N) (hτ :
   have hcrossRight :
       b.lTensor N (τ.rTensor N (b.rTensor N w)) = TensorProduct.map (τ ∘ₗ b) b w := by
     rw [← rTensor_comp_apply, ← comp_apply, lTensor_comp_rTensor]
-  simp only [LinearMap.add_apply, LinearMap.comp_apply, map_add]
+  simp only [LinearMap.add_apply, comp_apply, map_add]
   rw [hcrossLeft, hcrossRight, hlast, ← rTensor_comp_apply]
   rw [show ∀ A B X Y : N ⊗[R] N, A + Y + (X + B) = A + B + (X + Y) from fun A B X Y ↦ by abel,
     hcross, add_zero]
@@ -129,7 +129,7 @@ end Naturality
 
 /-- Apply a linear functional to the right factor of a tensor, linearly in the functional. -/
 noncomputable def tensorComponent : (N →ₗ[R] R) →ₗ[R] M ⊗[R] N →ₗ[R] M :=
-  (LinearMap.compRight R (TensorProduct.rid R M).toLinearMap).comp (LinearMap.lTensorHom M)
+  (compRight R (TensorProduct.rid R M).toLinearMap).comp (lTensorHom M)
 
 /-- Contraction is the tensor product of the functional with the identity, followed by the
 right tensor unitor. -/
@@ -208,22 +208,22 @@ variable {R M N P : Type*} [CommSemiring R]
 /-- Contraction of the last tensor factor commutes with reassociation. -/
 @[simp]
 theorem tensorComponent_assoc_symm (phi : P →ₗ[R] R) (u : M ⊗[R] (N ⊗[R] P)) :
-    LinearMap.tensorComponent phi ((TensorProduct.assoc R M N P).symm u) =
-      (LinearMap.tensorComponent phi).lTensor M u := by
+    tensorComponent phi ((TensorProduct.assoc R M N P).symm u) =
+      (tensorComponent phi).lTensor M u := by
   induction u using TensorProduct.inductionOn with
   | add u v hu hv => simp only [map_add, hu, hv]
   | tmul m v =>
     induction v using TensorProduct.inductionOn with
     | add v w hv hw => simp only [tmul_add, map_add, hv, hw]
     | tmul n p =>
-      simp only [TensorProduct.assoc_symm_tmul, LinearMap.tensorComponent_tmul,
-        LinearMap.lTensor_tmul, TensorProduct.tmul_smul]
+      simp only [TensorProduct.assoc_symm_tmul, tensorComponent_tmul,
+        lTensor_tmul, TensorProduct.tmul_smul]
 
 /-- Contracting the middle factor after reassociation is contraction of the left factor of the
 second tensor factor, followed by the left unitor. -/
 @[simp]
 theorem rTensor_tensorComponent_assoc_symm (phi : N →ₗ[R] R) (u : M ⊗[R] (N ⊗[R] P)) :
-    (LinearMap.tensorComponent phi).rTensor P ((TensorProduct.assoc R M N P).symm u) =
+    (tensorComponent phi).rTensor P ((TensorProduct.assoc R M N P).symm u) =
       (TensorProduct.lid R P ∘ₗ phi.rTensor P).lTensor M u := by
   induction u using TensorProduct.inductionOn with
   | add u v hu hv => simp only [map_add, hu, hv]
@@ -243,11 +243,11 @@ theorem tensorComponent_comp_tensorComponent (phi : N →ₗ[R] R) (psi : P →�
 
 /-- Applying functionals to both factors is independent of the order of contraction. -/
 theorem comp_tensorComponent (psi : M →ₗ[R] R) (phi : N →ₗ[R] R) :
-    psi ∘ₗ LinearMap.tensorComponent phi =
+    psi ∘ₗ tensorComponent phi =
       phi ∘ₗ (TensorProduct.lid R N).toLinearMap ∘ₗ psi.rTensor N := by
   refine TensorProduct.ext' fun m n ↦ ?_
-  simp only [LinearMap.comp_apply, LinearMap.tensorComponent_tmul, map_smul,
-    smul_eq_mul, LinearMap.rTensor_tmul, LinearEquiv.coe_coe, TensorProduct.lid_tmul,
+  simp only [comp_apply, tensorComponent_tmul, map_smul,
+    smul_eq_mul, rTensor_tmul, LinearEquiv.coe_coe, TensorProduct.lid_tmul,
     mul_comm]
 
 /-- Contracting the coefficient of a product in an algebra tensor product `A ⊗ C` against a
@@ -379,23 +379,23 @@ theorem exists_eq_sum_tmul_of_span_eq_top {κ : Type*} [Fintype κ] {n : κ → 
 `F - id - D` and the term `(F - id) ⊗ (F - id)` in which both factors move. -/
 theorem map_sub_sub_add_eq {R : Type*} [CommSemiring R] {P : Type*} [AddCommGroup P] [Module R P]
     (F D : P →ₗ[R] P) (w : P ⊗[R] P) :
-    TensorProduct.map F F w - w - (LinearMap.rTensor _ D w + LinearMap.lTensor _ D w) =
-      TensorProduct.map (F - LinearMap.id - D) LinearMap.id w +
-        TensorProduct.map LinearMap.id (F - LinearMap.id - D) w +
-        TensorProduct.map (F - LinearMap.id) (F - LinearMap.id) w := by
-  have hr : TensorProduct.map (F - LinearMap.id) (LinearMap.id (M := P)) =
-      TensorProduct.map (F - LinearMap.id - D) LinearMap.id + TensorProduct.map D LinearMap.id := by
-    rw [← TensorProduct.map_add_left]
+    map F F w - w - (LinearMap.rTensor _ D w + LinearMap.lTensor _ D w) =
+      map (F - LinearMap.id - D) LinearMap.id w +
+        map LinearMap.id (F - LinearMap.id - D) w +
+        map (F - LinearMap.id) (F - LinearMap.id) w := by
+  have hr : map (F - LinearMap.id) (LinearMap.id (M := P)) =
+      map (F - LinearMap.id - D) LinearMap.id + map D LinearMap.id := by
+    rw [← map_add_left]
     congr 1
     abel
-  have hl : TensorProduct.map (LinearMap.id (M := P)) (F - LinearMap.id) =
-      TensorProduct.map LinearMap.id (F - LinearMap.id - D) + TensorProduct.map LinearMap.id D := by
-    rw [← TensorProduct.map_add_right]
+  have hl : map (LinearMap.id (M := P)) (F - LinearMap.id) =
+      map LinearMap.id (F - LinearMap.id - D) + map LinearMap.id D := by
+    rw [← map_add_right]
     congr 1
     abel
   conv_lhs => rw [← add_sub_cancel LinearMap.id F]
-  rw [TensorProduct.map_add_left, TensorProduct.map_add_right, TensorProduct.map_add_right,
-    TensorProduct.map_id, hr, hl]
+  rw [map_add_left, map_add_right, map_add_right,
+    map_id, hr, hl]
   simp only [LinearMap.add_apply, LinearMap.id_apply, LinearMap.rTensor_def,
     LinearMap.lTensor_def]
   abel
@@ -419,6 +419,6 @@ theorem tensorTensorTensorComm_comm_tmul_comm (x : M ⊗[R] N) (y : P ⊗[R] Q) 
 trivial too (`TensorProduct.uniqueRight`). -/
 theorem nontrivial_right [Nontrivial (M ⊗[R] N)] : Nontrivial N :=
   not_subsingleton_iff_nontrivial.1 fun _ =>
-    not_subsingleton (M ⊗[R] N) TensorProduct.uniqueRight.instSubsingleton
+    not_subsingleton (M ⊗[R] N) uniqueRight.instSubsingleton
 
 end TensorProduct
