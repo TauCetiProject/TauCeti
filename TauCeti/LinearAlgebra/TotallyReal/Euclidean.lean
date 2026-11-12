@@ -28,6 +28,8 @@ symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`, hence Lagrangian.
   (`TauCeti.forall_re_inner_I_smul_eq_zero_iff_mem_realSubspace`).
 * `Matrix.realImage`: the image `M ℝⁿ` of `ℝⁿ` under a complex matrix `M`, maximal totally real
   for invertible `M` (`Matrix.isMaximalTotallyReal_realImage`).
+* `Matrix.finrank_realImage_inf_realSubspace_add_rank`: for invertible `M`, the real points of
+  `M ℝⁿ` form a subspace of dimension `n - rank (Im M)`.
 * `Matrix.realImage_mul_map_ofReal`, `Matrix.exists_eq_mul_map_ofReal`: `M ℝⁿ` determines an
   invertible `M` up to right multiplication by an invertible real matrix.
 * `Matrix.exists_mem_orthogonalGroup_eq_mul_map_ofReal`: for frames orthonormal for `Re ⟪·, ·⟫`,
@@ -214,6 +216,50 @@ theorem exists_mem_orthogonalGroup_eq_mul_map_ofReal {M M' : GL n ℂ}
   refine ⟨O, (mem_orthogonalGroup_iff' n ℝ).2 ?_, hO⟩
   have := map_re_conjTranspose_mul_self_mul_map_ofReal (M : Matrix n n ℂ) O
   rwa [← hO, hM', hM, mul_one, eq_comm] at this
+
+/-- **The real points of `M ℝⁿ`.** For an invertible complex matrix `M`, the real vectors in
+`M ℝⁿ` are the images `M x` of the real vectors `x` with `(Im M) x = 0`, so they form a real
+subspace of dimension `n - rank (Im M)`. -/
+theorem finrank_realImage_inf_realSubspace_add_rank {M : Matrix n n ℂ} (hM : M.det ≠ 0) :
+    Module.finrank ℝ ↥(M.realImage ⊓ realSubspace n) + (M.map Complex.im).rank =
+      Fintype.card n := by
+  -- The real vectors, as vectors of `ℂⁿ`, and their images under `M`.
+  let ι : (n → ℝ) →ₗ[ℝ] EuclideanSpace ℂ n :=
+    { toFun x := WithLp.toLp 2 fun i => (x i : ℂ)
+      map_add' x y := by ext i; simp
+      map_smul' a x := by ext i; simp }
+  let ψ : (n → ℝ) →ₗ[ℝ] EuclideanSpace ℂ n :=
+    (((toEuclideanCLM (𝕜 := ℂ) M : EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) :
+      EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) ∘ₗ ι
+  have hψ_apply (x : n → ℝ) (i : n) : ψ x i = ∑ j, M i j * (x j : ℂ) := by
+    simp [ψ, ι, mulVec, dotProduct]
+  have him (x : n → ℝ) (i : n) : (ψ x i).im = (M.map Complex.im *ᵥ x) i := by
+    simp [hψ_apply, Complex.im_sum, Complex.mul_im, mulVec, dotProduct]
+  have hψ : Function.Injective ψ := by
+    intro x y hxy
+    have hxy' : M *ᵥ (fun j => (x j : ℂ)) = M *ᵥ (fun j => (y j : ℂ)) := funext fun i => by
+      simpa [hψ_apply, mulVec, dotProduct] using congrArg (fun v : EuclideanSpace ℂ n => v i) hxy
+    funext j
+    simpa using congrFun
+      (mulVec_injective_iff_isUnit.2 ((isUnit_iff_isUnit_det M).2 (isUnit_iff_ne_zero.2 hM)) hxy') j
+  have hS : M.realImage ⊓ realSubspace n =
+      (LinearMap.ker (M.map Complex.im).mulVecLin).map ψ := by
+    ext v
+    simp only [Submodule.mem_inf, mem_realImage, TauCeti.mem_realSubspace, Submodule.mem_map,
+      LinearMap.mem_ker, mulVecLin_apply]
+    constructor
+    · rintro ⟨⟨y, hy, rfl⟩, hv⟩
+      have hyx : y = ι fun j => (y j).re := by
+        ext j
+        exact Complex.ext rfl (by simp [ι, hy j])
+      refine ⟨fun j => (y j).re, funext fun i => ?_, by rw [hyx]; rfl⟩
+      rw [← him, Pi.zero_apply]
+      have : ψ (fun j => (y j).re) = toEuclideanCLM (𝕜 := ℂ) M y := by rw [hyx]; rfl
+      rw [this, hv]
+    · rintro ⟨x, hx, rfl⟩
+      exact ⟨⟨ι x, fun _ => by simp [ι], rfl⟩, fun i => by rw [him, hx, Pi.zero_apply]⟩
+  rw [hS, ← (Submodule.equivMapOfInjective ψ hψ _).finrank_eq, rank, add_comm,
+    LinearMap.finrank_range_add_finrank_ker, Module.finrank_fintype_fun_eq_card]
 
 /-- The image of `ℝⁿ` under the matrix of a continuous linear automorphism of `ℂⁿ` is its image
 under the automorphism. -/
