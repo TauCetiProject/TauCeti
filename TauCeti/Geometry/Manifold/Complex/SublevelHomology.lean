@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Cell.Band
 public import TauCeti.Geometry.Manifold.Morse.TopHomology
 public import TauCeti.Geometry.Manifold.RegularValue.Polynomial
 public import TauCeti.Topology.Maps.Proper.Metric
-
-import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
 # Homology and cohomology of pseudoconvex Morse functions and of affine complete intersections
@@ -80,9 +77,6 @@ dimension at most `n + q`.
   finite-dimensional complex inner product space has no homology above its complex dimension.
 * `TauCeti.isZero_singularHomology_affineZeroLocus`: a smooth affine complete intersection has no
   homology above its complex dimension.
-* `TauCeti.exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le`:
-  along a proper holomorphic immersion, some squared distance is a proper Morse exhaustion,
-  bounded below, of index at most `n`.
 * `TauCeti.free_singularHomology_of_isProperMap_holomorphic_immersion`,
   `TauCeti.free_singularHomology_of_isClosedEmbedding`,
   `TauCeti.free_singularHomology_affineZeroLocus`: the homology in the complex dimension is free.
@@ -214,27 +208,6 @@ theorem IsMorse.isZero_singularHomology_of_isManifoldStronglyPseudoconvexAt
     IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
   exact hf.isZero_singularHomology_of_manifoldMorseIndex_le hp hbdd
     (fun x hx ↦ (hq x hx).manifoldMorseIndex_le_of_mem_criticalPoints (hf.contMDiff x) hx) R hk
-
-omit [T2Space M] in
-/-- **A proper low-index squared-distance Morse exhaustion along a proper holomorphic
-immersion.** If `i` is a smooth proper holomorphic immersion of a complex manifold of complex
-dimension `n` into a proper complex inner product space, then for some centre `a` the squared
-distance `x ↦ ‖i x - a‖²` is a proper Morse function, bounded below, all of whose critical points
-have Morse index at most `n`. -/
-theorem exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le {F : Type*}
-    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [ProperSpace F]
-    {i : M → F} (hi : ContMDiff 𝓘(ℂ, E) 𝓘(ℂ, F) ∞ i)
-    (hinj : ∀ x, Function.Injective (mvfderiv 𝓘(ℂ, E) i x)) (hip : IsProperMap i) :
-    ∃ a : F, IsMorse 𝓘(ℝ, E) (fun x ↦ ‖i x - a‖ ^ 2) ∧
-      IsProperMap (fun x ↦ ‖i x - a‖ ^ 2) ∧ BddBelow (range fun x ↦ ‖i x - a‖ ^ 2) ∧
-      ∀ x ∈ criticalPoints 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2),
-        manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x ≤ finrank ℂ E := by
-  have : FiniteDimensional ℂ F := .of_locallyCompactSpace ℂ
-  have : SigmaCompactSpace M := hip.sigmaCompactSpace
-  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact E M
-  obtain ⟨a, ha, hidx⟩ := exists_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le hi hinj
-  exact ⟨a, ha, (isProperMap_norm_sq_sub_comp_iff hi.continuous a).2 hip,
-    ⟨0, by rintro _ ⟨x, rfl⟩; positivity⟩, hidx⟩
 
 /-- **Andreotti–Frankel theorem for proper holomorphic immersions.** If a complex manifold `M` of
 complex dimension `n` admits a smooth proper holomorphic immersion into a proper complex inner

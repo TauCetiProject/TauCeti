@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.Pseudoconvex.Strong
-public import TauCeti.Geometry.Manifold.Morse.Cell.Band
 public import TauCeti.Geometry.Manifold.Morse.Generic.Strong
 public import TauCeti.Geometry.Manifold.Morse.TopHomology
 
