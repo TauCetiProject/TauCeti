@@ -60,7 +60,8 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
   the solution operator.
 * `continuousAt_inverse_euclideanParabolicOperatorL_prod_spatialTraceL`: continuity of the
   solution operator in the coefficients.
-* `bijective_euclideanBackwardParabolicOperatorL_prod_spatialTraceL`: the terminal-value problem.
+* `isInvertible_euclideanBackwardParabolicOperatorL_prod_spatialTraceL` and
+  `bijective_euclideanBackwardParabolicOperatorL_prod_spatialTraceL`: the terminal-value problem.
 
 ## References
 
@@ -80,17 +81,6 @@ open Set ParabolicSpaceTime
 open scoped NNReal
 
 variable {α : ℝ≥0} {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- A local shortcut for the norm on Euclidean Hessians, needed to state the reversed second-order
-coefficient field: the norm instance on the domain of the coefficient space only arises as a nested
-instance problem during unification. -/
-private local instance instHessianNorm :
-    NormedAddCommGroup (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) :=
-  inferInstance
-/-- A local shortcut for scalar operations on Euclidean Hessians. -/
-private local instance instHessianSpace :
-    NormedSpace ℝ (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) :=
-  inferInstance
 
 /-! ### The path from the heat operator -/
 
@@ -126,9 +116,9 @@ private theorem lineMap_heatCoeff_ellipticity
         (Matrix.of fun i j ↦ AffineMap.lineMap heatCoeff a s i j p).toQuadraticForm' ξ ∧
       (Matrix.of fun i j ↦ AffineMap.lineMap heatCoeff a s i j p).toQuadraticForm' ξ ≤
         max 1 Lam * ‖ξ‖ ^ 2 := by
-  rw [of_lineMap_heatCoeff_apply, Matrix.toQuadraticForm'_add, Matrix.toQuadraticForm'_smul,
+  simp only [of_lineMap_heatCoeff_apply, Matrix.toQuadraticForm'_add,
     Matrix.toQuadraticForm'_smul, _root_.add_apply, _root_.smul_apply,
-    _root_.smul_apply, PDE.toQuadraticForm'_one, smul_eq_mul, smul_eq_mul]
+    PDE.toQuadraticForm'_one, smul_eq_mul]
   have h₁ := ha p ξ
   have h₂ := ha' p ξ
   have hξ := sq_nonneg ‖ξ‖
@@ -144,20 +134,6 @@ private theorem lineMap_heatCoeff_ellipticity
     have hM₂ : Lam * ‖ξ‖ ^ 2 ≤ max 1 Lam * ‖ξ‖ ^ 2 :=
       mul_le_mul_of_nonneg_right (le_max_right _ _) hξ
     nlinarith [mul_le_mul_of_nonneg_left hM₁ hs₀, mul_le_mul_of_nonneg_left (h₂.trans hM₂) hs.1]
-
-/-- A convex combination of two elements of norm at most `K₀` and `K` has norm at most
-`K₀ + K`. -/
-private theorem norm_lineMap_le {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
-    {x y : V} {K₀ K : ℝ} (hx : ‖x‖ ≤ K₀) (hy : ‖y‖ ≤ K)
-    {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
-    ‖AffineMap.lineMap x y s‖ ≤ K₀ + K := by
-  rw [AffineMap.lineMap_apply_module]
-  refine (norm_add_le _ _).trans ?_
-  rw [norm_smul, norm_smul, Real.norm_of_nonneg (sub_nonneg.2 hs.2), Real.norm_of_nonneg hs.1]
-  have h₁ : (1 - s) * ‖x‖ ≤ K₀ :=
-    (mul_le_of_le_one_left (norm_nonneg _) (by linarith [hs.1])).trans hx
-  have h₂ : s * ‖y‖ ≤ K := (mul_le_of_le_one_left (norm_nonneg _) hs.2).trans hy
-  linarith
 
 /-- The segment of initial-data operators from the heat operator to `P` is the initial-data
 operator of the segment of coefficients. -/
@@ -208,30 +184,33 @@ private theorem exists_norm_le_lineMap (hα₀ : 0 < α) (hα₁ : α < 1) {lam 
     (Matrix.toQuadraticForm'_le_sum_abs_mul_sq _ ξ).trans (mul_le_mul_of_nonneg_right
       (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦
         (HolderSpace.norm_apply_le (a i j) p).trans (hak i j)) (sq_nonneg _))
+  -- The closed ball of radius `1 + K` is convex, so it contains the segments of coefficients.
+  have hball {x y : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+      (hx : ‖x‖ ≤ 1 + K) (hy : ‖y‖ ≤ 1 + K) : ‖AffineMap.lineMap x y s‖ ≤ 1 + K :=
+    mem_closedBall_zero_iff.1 ((convex_closedBall 0 _).lineMap_mem
+      (mem_closedBall_zero_iff.2 hx) (mem_closedBall_zero_iff.2 hy) hs)
+  have hK : (K : ℝ) ≤ 1 + K := le_add_of_nonneg_left zero_le_one
   have h := hC T hT hTT₀ (AffineMap.lineMap heatCoeff a s) (AffineMap.lineMap 0 b s)
     (AffineMap.lineMap 0 c s) (fun p ξ ↦ (lineMap_heatCoeff_ellipticity ha ha' hs p ξ).1)
     (fun p ξ ↦ (lineMap_heatCoeff_ellipticity ha ha' hs p ξ).2)
     (fun i j ↦ by
       push_cast
-      exact norm_lineMap_le ((HolderSpace.norm_const_le _).trans (by
-        rw [Matrix.one_apply]; split_ifs <;> simp)) (hak i j) hs)
+      exact hball ((HolderSpace.norm_const_le _).trans (by
+        rw [Matrix.one_apply]; split_ifs <;> simp [hK.trans' K.2])) ((hak i j).trans hK))
     (fun i ↦ by
       push_cast
-      exact norm_lineMap_le (by simp) (hbk i) hs)
+      exact hball (by simpa using K.2.trans hK) ((hbk i).trans hK))
     (by
       push_cast
-      exact norm_lineMap_le (by simp) hck hs) u
+      exact hball (by simpa using K.2.trans hK) (hck.trans hK)) u
   rw [lineMap_prod_spatialTraceL, ContinuousLinearMap.prod_apply, Prod.norm_mk,
     spatialTraceL_apply]
+  set P := ‖euclideanParabolicOperatorL hα₁.le (AffineMap.lineMap heatCoeff a s)
+    (AffineMap.lineMap 0 b s) (AffineMap.lineMap 0 c s) u‖
+  set G := ‖u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩‖
   refine h.trans ?_
   rw [mul_assoc, mul_left_comm]
-  exact mul_le_mul_of_nonneg_left (by
-    linarith [le_max_left ‖euclideanParabolicOperatorL hα₁.le (AffineMap.lineMap heatCoeff a s)
-        (AffineMap.lineMap 0 b s) (AffineMap.lineMap 0 c s) u‖
-        ‖u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩‖,
-      le_max_right ‖euclideanParabolicOperatorL hα₁.le (AffineMap.lineMap heatCoeff a s)
-        (AffineMap.lineMap 0 b s) (AffineMap.lineMap 0 c s) u‖
-        ‖u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩‖]) hC₀
+  exact mul_le_mul_of_nonneg_left (by linarith [le_max_left P G, le_max_right P G]) hC₀
 
 end Path
 
@@ -309,15 +288,15 @@ theorem exists_norm_inverse_euclideanParabolicOperatorL_prod_spatialTraceL_le (h
         ‖((euclideanParabolicOperatorL hα₁.le a b c).prod
           (spatialTraceL (F := ℝ) (hab := hT) ⟨0, left_mem_Icc.2 hT.le⟩)).inverse‖ ≤ C := by
   obtain ⟨C, hC₀, hC⟩ := exists_norm_le_lineMap (ι := ι) hα₀ hα₁ hlam K T₀
-  refine ⟨C, hC₀, fun T hT hTT₀ a b c ha hak hbk hck ↦
-    ContinuousLinearMap.opNorm_le_bound _ hC₀ fun d ↦ ?_⟩
-  have h := hC T hT hTT₀ a b c ha hak hbk hck 1 (right_mem_Icc.2 zero_le_one)
-    (((euclideanParabolicOperatorL hα₁.le a b c).prod
-      (spatialTraceL (F := ℝ) (hab := hT) ⟨0, left_mem_Icc.2 hT.le⟩)).inverse d)
-  have hinv := (isInvertible_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁
-    hT b c hlam ha).self_apply_inverse d
-  rw [AffineMap.lineMap_apply_one, hinv] at h
-  convert h using 2
+  refine ⟨C, hC₀, fun T hT hTT₀ a b c ha hak hbk hck ↦ ?_⟩
+  have hL := isInvertible_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT b c hlam ha
+  have hCL := hC T hT hTT₀ a b c ha hak hbk hck 1 (right_mem_Icc.2 zero_le_one)
+  rw [AffineMap.lineMap_apply_one] at hCL
+  have h := ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le hL.bijective.2 hCL
+  -- `h` measures norms through the `NormedAddCommGroup` instances (`Prod.normedAddCommGroup`),
+  -- `opNorm_le_bound` through the `SeminormedAddCommGroup` ones (`Prod.seminormedAddCommGroup`).
+  -- Unifying the two instance paths directly fails, so `convert` matches them.
+  exact ContinuousLinearMap.opNorm_le_bound _ hC₀ fun d ↦ by convert h d using 2
 
 /-- **The solution operator depends continuously on the coefficients.** Under the hypotheses of
 `isInvertible_euclideanParabolicOperatorL_prod_spatialTraceL`, the solution operator
@@ -354,34 +333,37 @@ section Backward
 
 variable {T : ℝ≥0}
 
-/-- Reading the coefficients backward in time commutes with assembling the Euclidean operator. -/
-private theorem parabolicOperatorL_compLipschitzL_euclidean (hα : α ≤ 1) (hT : (0 : ℝ) < T)
-    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (ha : (0 : ℝ) = T - T) (hb : (T : ℝ) = T - 0) :
-    parabolicOperatorL (ht := hT) hα
-        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
-          (euclideanSecondOrderCoeff a))
-        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
-          (euclideanFirstOrderCoeff b))
-        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
-          (euclideanZerothOrderCoeff c)) =
-      euclideanParabolicOperatorL hα
-        (fun i j ↦ HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
-          (a i j))
-        (fun i ↦ HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
-          (b i))
-        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith c) := by
-  ext u p
-  simp [parabolicOperatorL_apply, HolderSpace.compLipschitzL_apply]
-
 /-- **The terminal-value problem with variable coefficients is well posed.** For `0 < α < 1`, a
 horizon `T > 0` and coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}(ℝⁿ × [0, T])` with
-`lam ‖ξ‖² ≤ ξᵀ a ξ` and `0 < lam`, for every forcing `f ∈ C_b^{α,α/2}` and terminal datum
-`g ∈ C_b^{2,α}` there is exactly one `u ∈ C_b^{2+α,1+α/2}` with
-`∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = f` and `u(·, T) = g`. The proof reverses time and solves a
-forward Cauchy problem. -/
+`lam ‖ξ‖² ≤ ξᵀ a ξ` and `0 < lam`, the terminal-data map
+`u ↦ (∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u, u(·, T))` is an isomorphism of Banach spaces from
+`C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
+theorem isInvertible_euclideanBackwardParabolicOperatorL_prod_spatialTraceL (hα₀ : 0 < α)
+    (hα₁ : α < 1) (hT : (0 : ℝ) < T)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) {lam : ℝ} (hlam : 0 < lam)
+    (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
+    ((euclideanBackwardParabolicOperatorL hα₁.le a b c).prod
+      (spatialTraceL (F := ℝ) (hab := hT) ⟨T, right_mem_Icc.2 hT.le⟩)).IsInvertible := by
+  have h₀ : (0 : ℝ) = T - T := (sub_self _).symm
+  have h₁ : (T : ℝ) = T - 0 := (sub_zero _).symm
+  have h : Function.Bijective ((euclideanBackwardParabolicOperatorL hα₁.le a b c).prod
+      (spatialTraceL (F := ℝ) (hab := hT) ⟨T, right_mem_Icc.2 hT.le⟩)) := by
+    rw [euclideanBackwardParabolicOperatorL_def,
+      bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (T := T) (ha := h₀) (hb := h₁),
+      parabolicOperatorL_compLipschitzL_euclidean hα₁.le hT a b c]
+    exact bijective_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT _ _ hlam
+      fun p ξ ↦ by simpa only [HolderSpace.compLipschitzL_apply] using ha _ ξ
+  -- A bijective bounded operator between Banach spaces is an isomorphism (open mapping).
+  exact ⟨ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot_of_injective h.1)
+    (LinearMap.range_eq_top_of_surjective _ h.2), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩
+
+/-- **Existence and uniqueness for the terminal-value problem with variable coefficients.** Under
+the hypotheses of `isInvertible_euclideanBackwardParabolicOperatorL_prod_spatialTraceL`, for every
+forcing `f ∈ C_b^{α,α/2}` and terminal datum `g ∈ C_b^{2,α}` there is exactly one
+`u ∈ C_b^{2+α,1+α/2}` with `∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = f` and `u(·, T) = g`. -/
 theorem bijective_euclideanBackwardParabolicOperatorL_prod_spatialTraceL (hα₀ : 0 < α)
     (hα₁ : α < 1) (hT : (0 : ℝ) < T)
     {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
@@ -390,14 +372,9 @@ theorem bijective_euclideanBackwardParabolicOperatorL_prod_spatialTraceL (hα₀
     (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
       lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
     Function.Bijective ((euclideanBackwardParabolicOperatorL hα₁.le a b c).prod
-      (spatialTraceL (F := ℝ) (hab := hT) ⟨T, right_mem_Icc.2 hT.le⟩)) := by
-  have h₀ : (0 : ℝ) = T - T := (sub_self _).symm
-  have h₁ : (T : ℝ) = T - 0 := (sub_zero _).symm
-  rw [euclideanBackwardParabolicOperatorL_def,
-    bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (T := T) (ha := h₀) (hb := h₁),
-    parabolicOperatorL_compLipschitzL_euclidean hα₁.le hT a b c h₀ h₁]
-  exact bijective_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT _ _ hlam
-    fun p ξ ↦ by simpa only [HolderSpace.compLipschitzL_apply] using ha _ ξ
+      (spatialTraceL (F := ℝ) (hab := hT) ⟨T, right_mem_Icc.2 hT.le⟩)) :=
+  (isInvertible_euclideanBackwardParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT b c hlam
+    ha).bijective
 
 end Backward
 
