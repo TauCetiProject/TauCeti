@@ -91,14 +91,6 @@ private theorem hasDerivAt_dMinus_spot (hs : s ≠ 0) (hK : K ≠ 0) :
 
 /-! ### Greeks of the call -/
 
-/-- Without a diffusion term (`σ √τ = 0`) both `d₊` and `d₋` vanish, and the call price is the
-affine function `(s - K e^{-rτ}) / 2` of the spot. -/
-private theorem callPrice_of_mul_sqrt_eq_zero (h : σ * √τ = 0) (x : ℝ) :
-    callPrice x r σ K τ = (x - K * exp (-r * τ)) / 2 := by
-  simp only [callPrice_def, dMinus_def, dPlus_def, h, div_zero, sub_zero,
-    cdf_gaussianReal_self 0 one_ne_zero]
-  ring
-
 /-- **Call delta.** The derivative of the Black–Scholes call price in the spot is `Φ(d₊)`. -/
 theorem hasDerivAt_callPrice_spot (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
     HasDerivAt (fun x => callPrice x r σ K τ) (cdf (gaussianReal 0 1) (dPlus s r σ K τ)) s := by
@@ -194,7 +186,7 @@ theorem hasDerivAt_callPrice_volatility (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 
     rw [sqrt_eq_zero_of_nonpos hτ, mul_zero]
     convert hasDerivAt_const σ ((s - K * exp (-r * τ)) / 2) using 1
     ext v
-    exact callPrice_of_mul_sqrt_eq_zero (by rw [sqrt_eq_zero_of_nonpos hτ, mul_zero]) s
+    exact callPrice_of_mul_sqrt_eq_zero (by rw [sqrt_eq_zero_of_nonpos hτ, mul_zero])
   have hlin : HasDerivAt (fun v => v * √τ) (1 * √τ) σ := (hasDerivAt_id σ).mul_const √τ
   -- The value of `∂d₊/∂σ` is irrelevant: its two contributions cancel.
   obtain ⟨D, hd⟩ : ∃ D, HasDerivAt (fun v => dPlus s r v K τ) D σ := by

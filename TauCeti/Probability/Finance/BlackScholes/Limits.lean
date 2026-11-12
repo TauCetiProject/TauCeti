@@ -467,7 +467,7 @@ theorem tendsto_deriv_callPrice_volatility_maturity_zero (hs : 0 < s) (hσ : σ 
   have hup := (tendsto_mul_sqrt_nhds_zero (s * (√(2 * π))⁻¹)).mono_left
     (nhdsWithin_le_nhds (s := Ioi 0))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hup ?_ ?_ <;>
-    filter_upwards [self_mem_nhdsWithin] with u hu <;>
+    filter_upwards [self_mem_nhdsWithin] with u _ <;>
     rw [(hasDerivAt_callPrice_volatility hs hK hσ).deriv]
   · have := gaussianPDFReal_nonneg 0 1 (dPlus s r σ K u)
     positivity
