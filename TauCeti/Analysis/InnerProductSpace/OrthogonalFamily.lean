@@ -12,12 +12,14 @@ public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 
 The squared norm of a finite sum of pairwise orthogonal vectors is the sum of their squared
 norms, `‖∑ i ∈ s, v i‖² = ∑ i ∈ s, ‖v i‖²`, and passing to the limit gives the same identity for a
-convergent series of pairwise orthogonal vectors.
+convergent series of pairwise orthogonal vectors. Both hold in a seminormed inner product space.
 
 Vectors are pairwise orthogonal exactly when their spans form an `OrthogonalFamily`
-(`orthogonalFamily_span_singleton_iff`). This allows orthogonal-series results for subspaces to
-apply directly to a vector family, including one with zero terms: the span of a zero vector is the
-zero subspace. These results all hold in a seminormed inner product space.
+(`orthogonalFamily_span_singleton_iff`); this equivalence also holds in a seminormed inner product
+space. When the space is normed, it allows orthogonal-series results for subspaces to apply
+directly to a vector family, including one with zero terms: the span of a zero vector is the zero
+subspace. The normed hypothesis is needed there because Mathlib's `OrthogonalFamily` lemmas ask
+each subspace to be a `NormedAddCommGroup`, which a cyclic span is only when the space is normed.
 
 Normalizing the nonzero vectors of a pairwise orthogonal family gives an orthonormal family.
 
