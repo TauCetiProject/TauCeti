@@ -143,6 +143,11 @@ private theorem cutoffFamily_of_eq_zero {l : Λ} {p : (ℝ × ℝ) × M}
     cutoffFamily hσn hK₀c hK₁c ρ hρ l p = K₀ l p :=
   hσn.cutoffInterp_of_eq_zero _ _ _ _ (n := (l, p)) h
 
+/-- Where the prescribed family is the background family, so is the cutoff family. -/
+private theorem cutoffFamily_of_eq {l : Λ} {p : (ℝ × ℝ) × M} (h : K₁ l p = K₀ l p) :
+    cutoffFamily hσn hK₀c hK₁c ρ hρ l p = K₀ l p :=
+  hσn.cutoffInterp_of_eq _ _ _ _ (n := (l, p)) h
+
 /-- Over the preimage of `U`, the cutoff family acts by the Cayley path expression in the
 operators of `K₀` and `K₁`. -/
 private theorem cutoffFamily_apply_of_mem {l : Λ} {p : (ℝ × ℝ) × M}
@@ -273,7 +278,7 @@ structures, jointly smooth in `(λ, ((s, t), x))`, periodic in `s`, seam-compati
 `σ`-compatible, and let `K₁ λ` be a prescribed family with these properties over the preimage of an
 open set `U ⊆ Λ × X_φ`. For a smooth cutoff `ρ : Λ × X_φ → [0, 1]` with topological support in
 `U`, there is a family `K λ` with all these properties everywhere, equal to `K₁` where the pulled
-back cutoff is one and to `K₀` where it vanishes. -/
+back cutoff is one and to `K₀` where it vanishes, and equal to `K₀` wherever `K₁` already is. -/
 theorem exists_verticalFamily_eq_of_cutoff (ρ : Λ × (UnitAddCircle × SmoothMappingTorus φ) → ℝ)
     (hρ : ∀ y, ρ y ∈ Icc 0 1) (hsρ : ContMDiff (IΛ.prod (𝓘(ℝ).prod (𝓘(ℝ).prod I))) 𝓘(ℝ) ∞ ρ)
     (hsupp : tsupport ρ ⊆ U) :
@@ -288,21 +293,24 @@ theorem exists_verticalFamily_eq_of_cutoff (ρ : Λ × (UnitAddCircle × SmoothM
           K l (p.1 + (0, 1), φ.symm p.2) (mfderiv I I φ.symm p.2 v)) ∧
       (∀ l p, (hσn.symplecticFormAt p.2).Compatible (K l p)) ∧
       (∀ l p, ρ (l, suspensionCover φ p) = 1 → K l p = K₁ l p) ∧
-      (∀ l p, ρ (l, suspensionCover φ p) = 0 → K l p = K₀ l p) :=
+      (∀ l p, ρ (l, suspensionCover φ p) = 0 → K l p = K₀ l p) ∧
+      (∀ l p, K₁ l p = K₀ l p → K l p = K₀ l p) :=
   ⟨cutoffFamily hσn hK₀c hK₁c ρ hρ,
     contMDiff_cutoffFamily hσn hK₀c hK₁c ρ hρ hU hK₀ hK₁ hsρ hsupp,
     cutoffFamily_add_fst hσn hK₀c hK₁c ρ hρ hs₀ hs₁,
     mfderiv_symm_cutoffFamily hσn hK₀c hK₁c ρ hρ ht₀ ht₁,
     compatible_cutoffFamily hσn hK₀c hK₁c ρ hρ,
     fun _ _ ↦ cutoffFamily_of_eq_one hσn hK₀c hK₁c ρ hρ hsupp,
-    fun _ _ ↦ cutoffFamily_of_eq_zero hσn hK₀c hK₁c ρ hρ⟩
+    fun _ _ ↦ cutoffFamily_of_eq_zero hσn hK₀c hK₁c ρ hρ,
+    fun _ _ ↦ cutoffFamily_of_eq hσn hK₀c hK₁c ρ hρ⟩
 
 include hK₀ hs₀ ht₀ hK₀c hU hK₁ hs₁ ht₁ hK₁c in
 /-- **Relative seam-compatible families on closed regions.** With the hypotheses of
 `exists_verticalFamily_eq_of_cutoff`, on a Hausdorff second-countable finite-dimensional parameter
 manifold and for a second-countable `M`, let `A ⊆ U` be a closed set of `Λ × X_φ`. There is a
 jointly smooth, periodic, seam-compatible and `σ`-compatible family `K λ` equal to the prescribed
-family `K₁` over `A` and to the background `K₀` outside `U`. -/
+family `K₁` over `A` and to the background `K₀` outside `U`, and equal to `K₀` wherever `K₁`
+already is. -/
 theorem exists_verticalFamily_eqOn [IsManifold IΛ ∞ Λ] [FiniteDimensional ℝ EΛ] [T2Space Λ]
     [SecondCountableTopology Λ] [SecondCountableTopology M]
     {A : Set (Λ × (UnitAddCircle × SmoothMappingTorus φ))} (hA : IsClosed A) (hAU : A ⊆ U) :
@@ -317,7 +325,8 @@ theorem exists_verticalFamily_eqOn [IsManifold IΛ ∞ Λ] [FiniteDimensional �
           K l (p.1 + (0, 1), φ.symm p.2) (mfderiv I I φ.symm p.2 v)) ∧
       (∀ l p, (hσn.symplecticFormAt p.2).Compatible (K l p)) ∧
       (∀ l p, (l, suspensionCover φ p) ∈ A → K l p = K₁ l p) ∧
-      (∀ l p, (l, suspensionCover φ p) ∉ U → K l p = K₀ l p) := by
+      (∀ l p, (l, suspensionCover φ p) ∉ U → K l p = K₀ l p) ∧
+      (∀ l p, K₁ l p = K₀ l p → K l p = K₀ l p) := by
   have : LocallyCompactSpace HΛ := IΛ.locallyCompactSpace
   have : LocallyCompactSpace Λ := ChartedSpace.locallyCompactSpace HΛ Λ
   have : LocallyCompactSpace H := I.locallyCompactSpace
@@ -326,9 +335,9 @@ theorem exists_verticalFamily_eqOn [IsManifold IΛ ∞ Λ] [FiniteDimensional �
     ChartedSpace.locallyCompactSpace (ModelProd ℝ H) _
   obtain ⟨ρ, hsρ, hρ, hsupp, hone⟩ :=
     hA.exists_contMDiff_tsupport_subset_eq_one_iff (I := IΛ.prod (𝓘(ℝ).prod (𝓘(ℝ).prod I))) hU hAU
-  obtain ⟨K, hK, hs, ht, hc, hloc, hbg⟩ := exists_verticalFamily_eq_of_cutoff hσn hK₀ hs₀ ht₀ hK₀c
-    hU hK₁ hs₁ ht₁ hK₁c ρ hρ hsρ hsupp
-  refine ⟨K, hK, hs, ht, hc, fun l p h ↦ hloc l p ((hone _).mp h), fun l p h ↦ hbg l p ?_⟩
+  obtain ⟨K, hK, hs, ht, hc, hloc, hbg, heq⟩ := exists_verticalFamily_eq_of_cutoff hσn hK₀ hs₀ ht₀
+    hK₀c hU hK₁ hs₁ ht₁ hK₁c ρ hρ hsρ hsupp
+  refine ⟨K, hK, hs, ht, hc, fun l p h ↦ hloc l p ((hone _).mp h), fun l p h ↦ hbg l p ?_, heq⟩
   exact Function.notMem_support.mp fun h' ↦ h (hsupp (subset_tsupport ρ h'))
 
 include hU hK₁ hs₁ ht₁ hK₁c in
@@ -338,7 +347,7 @@ seam-compatible families built from a smooth family `J₀ λ` of `σ`-compatible
 (`TauCeti.SmoothMappingTorus.seamFamily`), for a `σ` preserved by `φ`. There is a jointly smooth,
 periodic, seam-compatible and `σ`-compatible family equal to `K₁` over `A` and, outside `U`, to the
 Cayley path from `(φ ^ k)^* J₀ λ` to `(φ ^ (k + 1))^* J₀ λ` on each time interval `[k, k + 1]`; in
-particular to `J₀ λ` there for `|t| ≤ 1/3`. -/
+particular to `J₀ λ` there for `|t| ≤ 1/3`. It also equals the seam family wherever `K₁` does. -/
 theorem exists_verticalFamily_eqOn_seamFamily [IsManifold IΛ ∞ Λ] [FiniteDimensional ℝ EΛ]
     [T2Space Λ] [SecondCountableTopology Λ] [SecondCountableTopology M]
     (hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ) {J₀ : Λ → SmoothAlmostComplexStructure I M}
@@ -359,7 +368,8 @@ theorem exists_verticalFamily_eqOn_seamFamily [IsManifold IΛ ∞ Λ] [FiniteDim
           K l (p.1 + (0, 1), φ.symm p.2) (mfderiv I I φ.symm p.2 v)) ∧
       (∀ l p, (hσn.symplecticFormAt p.2).Compatible (K l p)) ∧
       (∀ l p, (l, suspensionCover φ p) ∈ A → K l p = K₁ l p) ∧
-      (∀ l p, (l, suspensionCover φ p) ∉ U → K l p = seamFamily hσ (hJ₀ l) p) :=
+      (∀ l p, (l, suspensionCover φ p) ∉ U → K l p = seamFamily hσ (hJ₀ l) p) ∧
+      (∀ l p, K₁ l p = seamFamily hσ (hJ₀ l) p → K l p = seamFamily hσ (hJ₀ l) p) :=
   exists_verticalFamily_eqOn hσn (contMDiff_seamFamily_family hσ hJ₀ hJ₀s)
     (fun l ↦ seamFamily_add_fst hσ (hJ₀ l)) (fun l ↦ mfderiv_symm_seamFamily hσ (hJ₀ l))
     (fun l ↦ compatible_seamFamily hσ (hJ₀ l) hσn) hU hK₁ hs₁ ht₁ hK₁c hA hAU
@@ -405,7 +415,7 @@ theorem exists_suspensionAlmostComplexStructure_eqOn [IsManifold IΛ ∞ Λ] [Fi
             (Manifold.tangentSpaceProdEquiv _).symm
               (-b, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
                 ((Manifold.tangentSpaceProdEquiv (t, x)).symm (a, K₀ l ((s, t), x) v)))) := by
-  obtain ⟨K, hK, hs, ht, hc, hloc, hbg⟩ := exists_verticalFamily_eqOn hσn hK₀ hs₀ ht₀ hK₀c hU hK₁
+  obtain ⟨K, hK, hs, ht, hc, hloc, hbg, -⟩ := exists_verticalFamily_eqOn hσn hK₀ hs₀ ht₀ hK₀c hU hK₁
     hs₁ ht₁ hK₁c hA hAU
   refine ⟨fun l ↦ suspensionAlmostComplexStructure φ
       (hK.comp (contMDiff_const.prodMk contMDiff_id)) (hs l) (ht l),
