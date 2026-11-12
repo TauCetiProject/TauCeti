@@ -10,14 +10,15 @@ public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# Smoothness of determinants and matrix entries
+# Smoothness of determinants and of basis coordinates
 
 The determinant of a square matrix is a polynomial in its entries, so a matrix-valued map whose
 entries are `C^n` has a `C^n` determinant. This is the `C^n` counterpart of Mathlib's
 `Continuous.matrix_det`, and holds at every regularity, including analytic regularity.
 
-In the other direction, the entries of the matrix of a `C^n` operator-valued map in bases of the
-source and a finite-dimensional target space are `C^n` (`Module.Basis.contDiffOn_repr_apply`).
+In the other direction, the coordinates of a `C^n` map into a finite-dimensional space in any basis
+are `C^n` (`Module.Basis.contDiffOn_repr_apply`); in particular so are the entries of the matrix of
+a `C^n` operator-valued map.
 -/
 
 public section
@@ -33,15 +34,12 @@ theorem ContDiff.matrix_det {M : E → Matrix ι ι 𝔸} (hM : ∀ i j, ContDif
 
 namespace Module.Basis
 
-variable [CompleteSpace 𝕜] {U : Set E} {ι κ : Type*} {F F' : Type*} [NormedAddCommGroup F]
-  [NormedSpace 𝕜 F] [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] {g : E → F →L[𝕜] F'}
+variable [CompleteSpace 𝕜] {U : Set E} {κ : Type*} {F : Type*} [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F] {f : E → F}
 
-/-- The entries of the matrix of a `C^n` operator-valued function in bases of the source and
-finite-dimensional target spaces are `C^n`. -/
-theorem contDiffOn_repr_apply (b : Basis ι 𝕜 F) (b' : Basis κ 𝕜 F') [FiniteDimensional 𝕜 F']
-    (hg : ContDiffOn 𝕜 n g U) (m : κ) (l : ι) :
-    ContDiffOn 𝕜 n (fun x ↦ b'.repr (g x (b l)) m) U :=
-  ((b'.coord m).toContinuousLinearMap.contDiff.comp_contDiffOn
-    (hg.clm_apply (contDiffOn_const (c := b l)))).congr fun _ _ ↦ by simp
+/-- The coordinates in a basis of a `C^n` map into a finite-dimensional space are `C^n`. -/
+theorem contDiffOn_repr_apply (b : Basis κ 𝕜 F) (hf : ContDiffOn 𝕜 n f U) (m : κ) :
+    ContDiffOn 𝕜 n (fun x ↦ b.repr (f x) m) U :=
+  (b.coord m).toContinuousLinearMap.contDiff.comp_contDiffOn hf
 
 end Module.Basis

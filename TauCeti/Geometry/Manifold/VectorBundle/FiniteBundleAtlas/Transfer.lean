@@ -19,12 +19,11 @@ domains used to move chart data between charts.
 For a `C^n` vector bundle over a `C^n` manifold without boundary modelled on a real normed space,
 the coordinate change of the bundle, read in chart `i`, is `C^n` on the transfer domain.
 
-If `M` is Hausdorff, the image of each chart is covered by finitely many open pieces with compact
-closure in a transfer domain, each mapped by the chart coordinate change
+If `M` and `E` are Hausdorff, the image of each chart is covered by finitely many open pieces with
+compact closure in a transfer domain, each mapped by the chart coordinate change
 `(A.chart i).symm ≫ₕ A.chart j` into an open set with compact closure in the image of another chart.
-These pieces are built from the shrinking `TauCeti.FiniteBundleAtlas.exists_shrinking` of the chart
-domains; regularity and invertible derivative of chart coordinate changes are
-`TauCeti.contDiffOn_chartAt_coordChange` and `TauCeti.det_fderiv_chartAt_coordChange_ne_zero`.
+These pieces are built from the shrinking
+`TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom` of the chart domains.
 
 ## Main definitions
 
@@ -33,6 +32,9 @@ domains; regularity and invertible derivative of chart coordinate changes are
 
 ## Main results
 
+* `TauCeti.FiniteBundleAtlas.mem_transferDomain`,
+  `TauCeti.FiniteBundleAtlas.overlap_subset_transferDomain`: membership in transfer domains, which
+  contain the overlaps of chart domains.
 * `TauCeti.FiniteBundleAtlas.exists_transfer_cover`: the transfer cover of the chart images.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coordChangeL_transferDomain`: the coordinate change of the
   bundle, read in chart `i`, is `C^n` on the transfer domain.
@@ -50,7 +52,7 @@ universe u
 namespace TauCeti
 
 section Geometry
-variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [TopologicalSpace M]
+variable {E : Type u} [TopologicalSpace E] {M : Type*} [TopologicalSpace M]
   [ChartedSpace E M] {F : Type*} [TopologicalSpace F] {V : M → Type*}
   [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
   (A : FiniteBundleAtlas E M F V)
@@ -66,13 +68,26 @@ def transferDomain (i j : Fin A.n) : Set E :=
   (A.chart i).target ∩
     (A.chart i).symm ⁻¹' ((A.chart j).source ∩ ((A.triv i).baseSet ∩ (A.triv j).baseSet))
 
-omit [NormedSpace ℝ E] in
+theorem mem_transferDomain {i j : Fin A.n} {y : E} :
+    y ∈ A.transferDomain i j ↔ y ∈ (A.chart i).target ∧ (A.chart i).symm y ∈ (A.chart j).source ∧
+      (A.chart i).symm y ∈ (A.triv i).baseSet ∧ (A.chart i).symm y ∈ (A.triv j).baseSet :=
+  Iff.rfl
+
+/-- The overlap of the domains of charts `j` and `i`, read in chart `i`, lies in the transfer
+domain. -/
+theorem overlap_subset_transferDomain (i j : Fin A.n) : A.overlap j i ⊆ A.transferDomain i j := by
+  intro _ hy
+  obtain ⟨x, ⟨hxj, hxi⟩, rfl⟩ := A.mem_overlap.1 hy
+  have hs := A.dom_subset_chart_source i hxi
+  refine A.mem_transferDomain.2 ⟨(A.chart i).map_source hs, ?_⟩
+  rw [(A.chart i).left_inv hs]
+  exact ⟨A.dom_subset_chart_source j hxj, A.dom_subset_baseSet i hxi, A.dom_subset_baseSet j hxj⟩
+
 /-- Transfer domains are open. -/
 theorem isOpen_transferDomain (i j : Fin A.n) : IsOpen (A.transferDomain i j) :=
   (A.chart i).isOpen_inter_preimage_symm ((A.chart j).open_source.inter
     ((A.triv i).open_baseSet.inter (A.triv j).open_baseSet))
 
-omit [NormedSpace ℝ E] in
 /-- The transfer domain lies in the source of the chart coordinate change from chart `i` to chart
 `j`. -/
 theorem transferDomain_subset_source (i j : Fin A.n) :
@@ -80,21 +95,19 @@ theorem transferDomain_subset_source (i j : Fin A.n) :
   rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source]
   exact ⟨hy.1, hy.2.1⟩
 
-omit [NormedSpace ℝ E] in
 /-- **Transfer cover.** For a finite bundle atlas of a Hausdorff manifold, the image of each chart
 `i` is covered by finitely many open pieces `P i j`. The piece `P i j` lies in the overlap of the
 domains of charts `j` and `i`, has compact closure in the transfer domain, and is mapped by the
 chart coordinate change into an open set `Q j` with compact closure inside the image of chart `j`.
-The pieces are `A.chart i '' (A.dom i ∩ D j)` and `Q j = A.chart j '' D j` for a shrinking `D` of
-the chart domains. -/
-theorem exists_transfer_cover [T2Space M] :
+-/
+theorem exists_transfer_cover [T2Space E] [T2Space M] :
     ∃ (P : Fin A.n → Fin A.n → Opens E) (Q : Fin A.n → Opens E),
       (∀ i j, (P i j : Set E) ⊆ A.overlap j i) ∧ (∀ i j, IsCompact (closure (P i j : Set E))) ∧
       (∀ i j, closure (P i j : Set E) ⊆ A.transferDomain i j) ∧
       (∀ j, IsCompact (closure (Q j : Set E))) ∧ (∀ j, closure (Q j : Set E) ⊆ A.image j) ∧
       (∀ i j, MapsTo ((A.chart i).symm ≫ₕ A.chart j) (P i j) (Q j)) ∧
       ∀ i, A.image i ≤ ⨆ j, P i j := by
-  obtain ⟨D, hDo, hD, hcov⟩ := A.exists_shrinking
+  obtain ⟨D, hDo, hD, hcov⟩ := A.exists_isOpen_closure_subset_dom
   have hDdom (j : Fin A.n) : D j ⊆ A.dom j := subset_closure.trans (hD j)
   have hKc (i j : Fin A.n) : IsCompact (A.chart i '' (closure (A.dom i) ∩ closure (D j))) :=
     ((A.isCompact_closure_dom i).inter_right isClosed_closure).image_of_continuousOn

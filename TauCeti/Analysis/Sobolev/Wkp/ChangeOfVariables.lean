@@ -431,9 +431,9 @@ theorem ae_comp [mu.IsAddHaarMeasure] (h : IsChangeOfVariables k U V Φ L c) {P 
 end IsChangeOfVariables
 
 /-- **Changes of variables on relatively compact sets.** A map that is `Cⁿ` on an open set `Ω`,
-with `k ≤ n` and `1 ≤ n`, injective on `U` and mapping `U` into `V`, whose derivative is
-invertible on the compact set `closure U ⊆ Ω`, is a change of variables of order `k` from `U`
-into `V`: the derivative bounds and the lower bound for the Jacobian come from compactness. -/
+with `k ≤ n` and `1 ≤ n`, injective on `U` and mapping `U` into `V`, whose Jacobian determinant
+does not vanish on the compact set `closure U ⊆ Ω`, is a change of variables of order `k` from
+`U` into `V`. -/
 theorem exists_isChangeOfVariables_of_isCompact_closure {n : WithTop ℕ∞} {Ω : Set E}
     (hΩ : IsOpen Ω) (hΦ : ContDiffOn ℝ n Φ Ω) (hk : k ≤ n) (hn : 1 ≤ n) (hinj : InjOn Φ U)
     (hdet : ∀ x ∈ closure (U : Set E), (fderiv ℝ Φ x).det ≠ 0)

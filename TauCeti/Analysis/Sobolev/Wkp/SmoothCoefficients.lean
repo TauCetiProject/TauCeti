@@ -24,7 +24,8 @@ the same way on the components of `F`-valued Sobolev maps in a basis `b` of `F`,
 product are the components in `b'` of `g x` applied to the vector with components `u l x`
 (`TauCeti.Wkp.value_contDiffOnOperatorSMulL_ae`). These are the multiplications by the coordinate
 changes of a vector bundle that relate the chart data of a Sobolev section in two charts. The
-smoothness of the matrix entries of `g` is `Module.Basis.contDiffOn_repr_apply`.
+smoothness of the matrix entries of `g` follows from `Module.Basis.contDiffOn_repr_apply`. Both
+multiplications commute with forgetting the highest weak derivative.
 
 ## Main declarations
 
@@ -33,6 +34,8 @@ smoothness of the matrix entries of `g` is `Module.Basis.contDiffOn_repr_apply`.
 * `TauCeti.Wkp.contDiffOnOperatorSMulL`: multiplication by a smooth operator-valued coefficient in
   bases of the source and target spaces.
 * `TauCeti.Wkp.value_contDiffOnOperatorSMulL_ae`: its components are those of the pointwise image.
+* `TauCeti.Wkp.lowerOrder_contDiffOnMatrixSMulL`, `TauCeti.Wkp.lowerOrder_contDiffOnOperatorSMulL`:
+  compatibility with forgetting the highest weak derivative.
 -/
 
 public section
@@ -85,6 +88,16 @@ theorem value_contDiffOnMatrixSMulL_ae (hU : IsOpen U)
   rw [hx]
   exact Finset.sum_congr rfl fun l _ ↦ hl l
 
+/-- Smooth matrix multiplication commutes with forgetting the highest weak derivative. -/
+theorem lowerOrder_contDiffOnMatrixSMulL (hU : IsOpen U)
+    (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
+    (ha : ∀ m l, ContDiffOn ℝ ∞ (a m l) U) (u : ι → Wkp mu Omega p (k + 1)) (m : κ) :
+    lowerOrder k (contDiffOnMatrixSMulL hU hΩ hΩU (k + 1) ha u m) =
+      contDiffOnMatrixSMulL hU hΩ hΩU k ha (fun l ↦ lowerOrder k (u l)) m := by
+  rw [contDiffOnMatrixSMulL_apply, contDiffOnMatrixSMulL_apply, ← lowerOrderL_apply, map_sum]
+  exact Finset.sum_congr rfl fun l _ ↦ by
+    rw [lowerOrderL_apply, lowerOrder_contDiffOnSMulL]
+
 end Matrix
 
 section Operator
@@ -101,7 +114,18 @@ def contDiffOnOperatorSMulL (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : S
     (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) (b : Basis ι ℝ F) (b' : Basis κ ℝ F')
     [FiniteDimensional ℝ F'] (hg : ContDiffOn ℝ ∞ g U) :
     (ι → Wkp mu Omega p k) →L[ℝ] (κ → Wkp mu Omega p k) :=
-  contDiffOnMatrixSMulL hU hΩ hΩU k (b.contDiffOn_repr_apply b' hg)
+  contDiffOnMatrixSMulL hU hΩ hΩU k fun m l ↦
+    b'.contDiffOn_repr_apply (hg.clm_apply (contDiffOn_const (c := b l))) m
+
+@[simp]
+theorem contDiffOnOperatorSMulL_apply (hU : IsOpen U)
+    (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
+    (b : Basis ι ℝ F) (b' : Basis κ ℝ F') [FiniteDimensional ℝ F'] (hg : ContDiffOn ℝ ∞ g U)
+    (u : ι → Wkp mu Omega p k) (m : κ) :
+    contDiffOnOperatorSMulL hU hΩ hΩU k b b' hg u m =
+      ∑ l, contDiffOnSMulL hU hΩ hΩU k
+        (b'.contDiffOn_repr_apply (hg.clm_apply (contDiffOn_const (c := b l))) m) (u l) := by
+  rw [contDiffOnOperatorSMulL, contDiffOnMatrixSMulL_apply]
 
 /-- The components in `b'` of a product with a smooth operator coefficient are, almost everywhere
 on `Ω`, the components of `g x` applied to the vector whose components in `b` are the values of
@@ -112,10 +136,21 @@ theorem value_contDiffOnOperatorSMulL_ae (hU : IsOpen U)
     (u : ι → Wkp mu Omega p k) (m : κ) :
     (value k (contDiffOnOperatorSMulL hU hΩ hΩU k b b' hg u m) : E → ℝ) =ᵐ[mu.restrict Omega]
       fun x ↦ b'.repr (g x (∑ l, value k (u l) x • b l)) m := by
-  filter_upwards [value_contDiffOnMatrixSMulL_ae hU hΩ hΩU k
-    (b.contDiffOn_repr_apply b' hg) u m] with x hx
-  rw [contDiffOnOperatorSMulL, hx]
+  rw [contDiffOnOperatorSMulL]
+  filter_upwards [value_contDiffOnMatrixSMulL_ae hU hΩ hΩU k _ u m] with x hx
+  rw [hx]
   simp [mul_comm]
+
+/-- Multiplication by a smooth operator coefficient commutes with forgetting the highest weak
+derivative. -/
+theorem lowerOrder_contDiffOnOperatorSMulL (hU : IsOpen U)
+    (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
+    (b : Basis ι ℝ F) (b' : Basis κ ℝ F') [FiniteDimensional ℝ F'] (hg : ContDiffOn ℝ ∞ g U)
+    (u : ι → Wkp mu Omega p (k + 1)) (m : κ) :
+    lowerOrder k (contDiffOnOperatorSMulL hU hΩ hΩU (k + 1) b b' hg u m) =
+      contDiffOnOperatorSMulL hU hΩ hΩU k b b' hg (fun l ↦ lowerOrder k (u l)) m := by
+  rw [contDiffOnOperatorSMulL, contDiffOnOperatorSMulL]
+  exact lowerOrder_contDiffOnMatrixSMulL hU hΩ hΩU k _ u m
 
 end Operator
 

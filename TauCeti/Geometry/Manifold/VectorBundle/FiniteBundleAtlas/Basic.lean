@@ -20,9 +20,9 @@ trivialization at a point `center i`. Every compact Hausdorff manifold modelled 
 compact space has one (`TauCeti.FiniteBundleAtlas.nonempty`), even one whose chart domains have
 closures inside any prescribed open neighbourhoods of their centres
 (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset`), and the chart domains of a finite bundle
-atlas of a Hausdorff manifold have a shrinking (`TauCeti.FiniteBundleAtlas.exists_shrinking`).
-Such atlases are the finite chart data from which function spaces of sections, such as Sobolev
-spaces, are built chartwise.
+atlas of a Hausdorff manifold have a shrinking
+(`TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom`). Such atlases are the finite chart
+data from which function spaces of sections, such as Sobolev spaces, are built chartwise.
 
 The same chart domains serve as a finite bundle atlas of any other fibre bundle `V'` over `M` as
 soon as their closures also lie in the base sets of the preferred trivializations of `V'`
@@ -57,8 +57,8 @@ closed upper half-plane are read in `ℂ` in
   `TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`: existence of atlases subordinate
   to given neighbourhoods, and of joint atlases.
 * `TauCeti.FiniteBundleAtlas.compactSpace`: a manifold with a finite bundle atlas is compact.
-* `TauCeti.FiniteBundleAtlas.exists_shrinking`: the chart domains of a finite bundle atlas of a
-  Hausdorff manifold have a shrinking.
+* `TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom`: the chart domains of a finite
+  bundle atlas of a Hausdorff manifold have a shrinking.
 * `TauCeti.FiniteBundleAtlas.coord_eq_coordChange`: coordinates in two charts differ by the
   coordinate change of the bundle.
 * `TauCeti.FiniteBundleAtlas.differentiableOn_transition`: chart transitions are differentiable.
@@ -155,8 +155,7 @@ theorem exists_closure_dom_subset_baseSet [LocallyCompactSpace E] [CompactSpace 
 variable (A : FiniteBundleAtlas E M F V)
 
 include A in
-/-- A manifold with a finite bundle atlas is compact, being covered by the finitely many compact
-sets `closure (A.dom i)`. -/
+/-- A manifold with a finite bundle atlas is compact. -/
 theorem compactSpace : CompactSpace M := by
   refine ⟨?_⟩
   have huniv : (univ : Set M) = ⋃ i, closure (A.dom i) :=
@@ -164,10 +163,9 @@ theorem compactSpace : CompactSpace M := by
   rw [huniv]
   exact isCompact_iUnion fun i ↦ A.isCompact_closure_dom i
 
-/-- A finite bundle atlas of a Hausdorff manifold has a shrinking: open sets `D j` with
-`closure (D j) ⊆ A.dom j` still covering `M`. The manifold is compact
-(`TauCeti.FiniteBundleAtlas.compactSpace`), hence normal. -/
-theorem exists_shrinking [T2Space M] :
+/-- The chart domains of a finite bundle atlas of a Hausdorff manifold have a shrinking: open sets
+`D j` with `closure (D j) ⊆ A.dom j` still covering `M`. -/
+theorem exists_isOpen_closure_subset_dom [T2Space M] :
     ∃ D : Fin A.n → Set M, (∀ j, IsOpen (D j)) ∧ (∀ j, closure (D j) ⊆ A.dom j) ∧
       ∀ x, ∃ j, x ∈ D j := by
   have := A.compactSpace

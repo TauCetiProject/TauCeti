@@ -45,12 +45,13 @@ boundaryless model, their domains are open. A compact coordinate set of a chart 
 finitely many compact pieces, each in the overlap with one of a given family of charts at points of
 the manifold. For a manifold modelled on a normed space itself, without boundary, the extended
 coordinate change between two charts is their coordinate change
-(`TauCeti.extendCoordChange_modelWithCornersSelf`); on a `C^n` manifold it is `C^n` on its source,
-and for `n ≥ 1` its derivative is invertible there. On an open subset, extended chart targets lie
-in the ambient chart targets, and inverse charts agree through inclusion on the smaller target.
-Near a chart point the inverse charts of nested open subsets likewise differ only by the inclusion.
-Over `ℝ`, every chart point has a convex neighbourhood within the model range, inside the chart
-target, on which flat calculus applies even when the manifold has boundary.
+(`TauCeti.extendCoordChange_modelWithCornersSelf`); on a `C^n` manifold the coordinate change
+between preferred charts is `C^n` on its source, and for `n ≥ 1` it is differentiable there with
+nonvanishing Jacobian determinant. On an open subset, extended chart targets lie in the ambient
+chart targets, and inverse charts agree through inclusion on the smaller target. Near a chart point
+the inverse charts of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every
+chart point has a convex neighbourhood within the model range, inside the chart target, on which
+flat calculus applies even when the manifold has boundary.
 
 For a boundaryless model `I`, a chart `c` read in the model vector space and then moved by a
 homeomorphism `Ψ` is again a chart, `OpenPartialHomeomorph.extendTrans`. When the charts lie in the
