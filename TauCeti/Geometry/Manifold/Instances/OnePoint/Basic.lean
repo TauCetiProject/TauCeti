@@ -39,7 +39,8 @@ inverted chart (`OnePoint.mdifferentiableAt_iff_of_eq_infty`).
 * `OnePoint.affineChart` and `OnePoint.invChart`: the two charts of `OnePoint 𝕜`.
 * `OnePoint.instChartedSpace`: the charted space structure, with preferred charts
   `OnePoint.chartAt_coe` and `OnePoint.chartAt_infty`.
-* `OnePoint.instIsManifold`: the analytic manifold structure.
+* `OnePoint.instIsManifold`: the analytic manifold structure, whose maximal atlas contains both
+  charts (`OnePoint.affineChart_mem_maximalAtlas` and `OnePoint.invChart_mem_maximalAtlas`).
 * `OnePoint.contMDiff_coe` and `OnePoint.contMDiff_invChart_symm`: the inverses of the two charts,
   the inclusion `𝕜 → OnePoint 𝕜` and `w ↦ w⁻¹` (with `0 ↦ ∞`), are analytic.
 * `OnePoint.mdifferentiableAt_iff_of_ne_infty`, `OnePoint.mdifferentiableAt_iff_of_eq_infty`
@@ -262,17 +263,19 @@ instance instIsManifold : IsManifold 𝓘(𝕜) ω (OnePoint 𝕜) := by
     simp [invChart_symm_of_ne_zero (hsub hw)]
   · exact hself _
 
-/-- The affine chart belongs to the maximal atlas of `OnePoint 𝕜`, at every smoothness level. -/
-theorem affineChart_mem_maximalAtlas {n : WithTop ℕ∞} [IsManifold 𝓘(𝕜) n (OnePoint 𝕜)] :
+/-- The affine chart belongs to the maximal atlas of `OnePoint 𝕜` at every regularity. -/
+theorem affineChart_mem_maximalAtlas {n : ℕ∞ω} :
     (affineChart : OpenPartialHomeomorph (OnePoint 𝕜) 𝕜) ∈
-      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) :=
-  IsManifold.subset_maximalAtlas (Or.inl rfl)
+      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) := by
+  simpa only [chartAt_coe] using
+    IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜)) (n := n) ((0 : 𝕜) : OnePoint 𝕜)
 
-/-- The inverted chart belongs to the maximal atlas of `OnePoint 𝕜`, at every smoothness level. -/
-theorem invChart_mem_maximalAtlas {n : WithTop ℕ∞} [IsManifold 𝓘(𝕜) n (OnePoint 𝕜)] :
+/-- The inverted chart belongs to the maximal atlas of `OnePoint 𝕜` at every regularity. -/
+theorem invChart_mem_maximalAtlas {n : ℕ∞ω} :
     (invChart : OpenPartialHomeomorph (OnePoint 𝕜) 𝕜) ∈
-      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) :=
-  IsManifold.subset_maximalAtlas (Or.inr rfl)
+      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) := by
+  simpa only [chartAt_infty] using
+    IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜)) (n := n) (∞ : OnePoint 𝕜)
 
 /-! ### Differentiable maps into the projective line
 
