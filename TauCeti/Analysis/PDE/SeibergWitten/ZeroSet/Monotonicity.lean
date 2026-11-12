@@ -165,14 +165,12 @@ theorem mul_inner_kahlerForm_sub_hermitianForm_le (hr : 1 ≤ r) (hC : 0 ≤ C)
   set w := max (1 - a) 0
   set δ := C / √r
   have ha : 0 ≤ a := sq_nonneg _
-  have hb0 : 0 ≤ bb := sq_nonneg _
   have hw0 : 0 ≤ w := le_max_right _ _
   have hw1 : w ≤ 1 := max_le (by linarith) zero_le_one
   have h1a : 1 - a ≤ w := le_max_left _ _
   have hs1 : 1 ≤ √r := Real.one_le_sqrt.2 hr
   have hδ0 : 0 ≤ δ := by positivity
   have hδC : δ ≤ C := div_le_self hC hs1
-  have hs2 : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
   have hs2p : 0 < √2 := by positivity
   -- The coarse bound on `β`: `r |β|² ≤ C w + C / r ≤ 2 C`.
   have hrb : r * bb ≤ 2 * C := by
@@ -213,7 +211,7 @@ theorem mul_inner_kahlerForm_sub_hermitianForm_le (hr : 1 ≤ r) (hC : 0 ≤ C)
     have e3 : (1 + δ) * (r / 4 * |1 - a - bb| + C / 2) =
         (1 + δ) * (r / 4 * |1 - a - bb|) + C / 2 + δ * (C / 2) := by ring
     have e4 : (1 + C) * C / 2 = C / 2 + C * (C / 2) := by ring
-    linarith
+    linarith [e1, e2, e3, e4]
   have hv := sq_nonneg ‖v‖
   have hBle : ‖v‖ ^ 2 * ⟪J.kahlerForm, F⟫ - J.hermitianForm F v v ≤
       ‖v‖ ^ 2 * (⟪J.kahlerForm, F⟫ / 2 + m / √2) := by
@@ -278,8 +276,6 @@ theorem exists_ae_measure_closedBall_le_mul_deriv_add {C N : ℝ} (hC : 0 ≤ C)
   set N₁ := (√2 * N + C) / 2
   set K₂ := (1 + C) * C / 2 + C / 4 + √2 * N / 4 + C / √2
   set V₁ := (volume : Measure V).real (ball 0 1)
-  have hN₁ : 0 ≤ N₁ := by positivity
-  have hK₂ : 0 ≤ K₂ := by positivity
   refine ⟨V₁ * (N₁ + 2 * K₂), by positivity, ?_⟩
   intro r b F η φ β x R hr hb hF hφc hβc hφ hβ hFeq hη hFm hφβ hβK
   -- Writing `E(σ) = ∫_{ball x σ} d` for the defect density `d`, the flux identity gives
@@ -288,16 +284,15 @@ theorem exists_ae_measure_closedBall_le_mul_deriv_add {C N : ℝ} (hC : 0 ≤ C)
   -- `∫_{sphere x σ} d = E'(σ)` and `μH(sphere x σ) = 4 V₁ σ³` at almost every radius.
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
   set δ := C / √r
-  set d : V → ℝ := fun y ↦ r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2| with hddef
+  set d : V → ℝ := fun y ↦ r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|
   have hdc : Continuous d :=
     continuous_const.mul ((continuous_const.sub (hφc.norm.pow 2)).sub (hβc.norm.pow 2)).abs
   have hd0 (y : V) : 0 ≤ d y := by positivity
   have hFc : Continuous F :=
     AlmostComplexStructure.continuous_of_alternatingFormEquiv_eq_neg_extDeriv hb hF
-  set g : V → ℝ := fun y ↦ ⟪J.kahlerForm, F y⟫ with hgdef
+  set g : V → ℝ := fun y ↦ ⟪J.kahlerForm, F y⟫
   have hg : Continuous g := continuous_const.inner hFc
   set Qf : V → ℝ := fun y ↦ ‖y - x‖ ^ 2 * g y - J.hermitianForm (F y) (y - x) (y - x)
-    with hQdef
   have hQc : Continuous Qf :=
     (((continuous_id.sub continuous_const).norm.pow 2).mul hg).sub
       (AlmostComplexStructure.continuous_hermitianForm_apply_sub_apply_sub hFc x)

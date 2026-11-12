@@ -338,7 +338,7 @@ theorem ae_setIntegral_ball_inner_kahlerForm_eq [MeasurableSpace V] [BorelSpace 
     (((continuous_id.sub continuous_const).norm.pow 2).mul hg).sub
       (continuous_hermitianForm_apply_sub_apply_sub hFc x)
   set G : ℝ → ℝ := fun σ ↦ ∫ y in ball x σ, g y with hGdef
-  set S : ℝ → ℝ := fun σ ↦ ∫ y in sphere x σ, Q y ∂μHE[finrank ℝ V - 1] with hSdef
+  set S : ℝ → ℝ := fun σ ↦ ∫ y in sphere x σ, Q y ∂μHE[finrank ℝ V - 1]
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
   have hgR (R : ℝ) : IntegrableOn g (ball x R) :=
     (hg.continuousOn.integrableOn_compact (isCompact_closedBall x R)).mono_set
@@ -358,7 +358,7 @@ theorem ae_setIntegral_ball_inner_kahlerForm_eq [MeasurableSpace V] [BorelSpace 
     simp only [indicator, mem_ball, dist_eq_norm, mem_ofPred_eq, Function.comp_apply]
   have hGb (R σ : ℝ) (hσ : σ ≤ R) : ‖G σ‖ ≤ ∫ y in ball x R, ‖g y‖ :=
     (norm_integral_le_integral_norm _).trans (setIntegral_mono_set (hgR R).norm
-      (Eventually.of_forall fun _ ↦ norm_nonneg _) (ball_subset_ball hσ).eventuallyLE)
+      (Eventually.of_forall fun _ ↦ norm_nonneg _) (ball_subset_ball hσ).eventuallySubset)
   -- On `(0, M)` the sphere integrals `S` are those of `Q` cut off outside `ball x M`.
   have hSM (M : ℝ) : IntegrableOn S (Ioo 0 M) := by
     have hf : Integrable ((ball x M).indicator Q) := (integrable_indicator_iff measurableSet_ball).2
@@ -412,7 +412,7 @@ theorem ae_setIntegral_ball_inner_kahlerForm_eq [MeasurableSpace V] [BorelSpace 
       exact integral_setIntegral_Ioi_norm_sub_mul_eq_integral_mul_setIntegral_ball x
         (hϕ.continuous.integrable_of_hasCompactSupport hc) hhigh
         (hgR R)
-    have hT (r : ℝ) (hr : r ∈ Ioi 0) :
+    have hT (r : ℝ) (_ : r ∈ Ioi 0) :
         ∫ y in sphere x r, ϕ ‖y - x‖ / (2 * ‖y - x‖) * Q y ∂μHE[finrank ℝ V - 1] =
           ϕ r * ((2 * r)⁻¹ * S r) := by
       rw [setIntegral_congr_fun isClosed_sphere.measurableSet
