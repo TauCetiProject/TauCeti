@@ -7,14 +7,14 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import TauCeti.Analysis.Complex.GrowthOrder.Logarithmic
-public import TauCeti.Analysis.SpecialFunctions.Gamma.ReciprocalGrowth
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Reciprocal.Growth
 
 /-!
 # The order of the reciprocal Gamma functions
 
 The reciprocals `1/Γ`, `1/Γ_ℝ` and `1/Γ_ℂ` are entire of order exactly one. The upper bounds are
 the explicit estimates `‖Γ(s)⁻¹‖ ≤ exp (C (1 + ‖s‖) log (2 + ‖s‖))` of
-`TauCeti.Analysis.SpecialFunctions.Gamma.ReciprocalGrowth`.
+`TauCeti.Analysis.SpecialFunctions.Gamma.Reciprocal.Growth`.
 
 The order cannot be lowered, and `1/Γ` is not even of exponential type. Euler's reflection
 formula gives `‖Γ(-n - 1/2)⁻¹‖ = Γ(n + 3/2)/π ≥ n!/π`, which beats every `exp (C n)`; at the

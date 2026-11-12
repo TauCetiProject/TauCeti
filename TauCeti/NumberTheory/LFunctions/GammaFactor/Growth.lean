@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.ReciprocalOrder
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Reciprocal.Order
 public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
 public import TauCeti.NumberTheory.LFunctions.GammaFactor.Basic
 
@@ -14,7 +14,7 @@ public import TauCeti.NumberTheory.LFunctions.GammaFactor.Basic
 
 The analytic reciprocal `invGammaFactor d` of the gamma factor of an analytic L-function record
 is a finite product of shifted reciprocals `1/Γ_ℝ` and `1/Γ_ℂ`, so it has order at most one by
-the bounds of `TauCeti.Analysis.SpecialFunctions.Gamma.ReciprocalOrder`. For the `ζ` record it is
+the bounds of `TauCeti.Analysis.SpecialFunctions.Gamma.Reciprocal.Order`. For the `ζ` record it is
 `1/Γ_ℝ`, whose order is exactly one.
 
 ## Main results
