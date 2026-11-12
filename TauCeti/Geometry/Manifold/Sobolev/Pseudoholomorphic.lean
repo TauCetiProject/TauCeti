@@ -25,7 +25,7 @@ import TauCeti.LinearAlgebra.Complex.Module
 Let `X` be a Riemann surface without boundary, given as a charted space modelled on `ℂ` with
 holomorphic coordinate changes, with its almost complex structure
 `j = TauCeti.SmoothAlmostComplexStructure.ofComplexManifold ℂ X`. Let `M` be a manifold modelled
-on a finite-dimensional real normed space `E`, `J` a domain-dependent almost complex structure on
+on a real normed space `E`, `J` a domain-dependent almost complex structure on
 `M` of class `C^ℓ` and `ν` an inhomogeneous term for `(j, J)`. A map `u : X → M` is *weakly
 pseudoholomorphic* on `s ⊆ X` for `(J, ν)` and an exponent `p`
 (`TauCeti.IsWeakPseudoholomorphicOn J ν p u s`) when it lies in the local Sobolev class
@@ -64,6 +64,8 @@ value on `∂ₛ`, since `ν` is complex antilinear.
 As for `TauCeti.MemWkpLocMapOn`, the charts tested are those of the maximal atlases, so the
 predicate does not depend on chosen atlases, and it is intended for open sets `s`. The class is
 meant for `p > 2`, where Sobolev maps are continuous; the definition is stated for every `p`.
+No dimension hypothesis on `E` is needed; the theorems assume it complete, as weak derivatives
+require.
 That the equation in one atlas of each implies it in all charts, its invariance under
 biholomorphisms of `X` and diffeomorphisms of `M`, and boundary conditions are not treated here.
 
