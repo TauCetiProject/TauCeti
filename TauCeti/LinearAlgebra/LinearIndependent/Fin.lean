@@ -61,9 +61,11 @@ theorem fin_append_left_append [Semiring R] [AddCommMonoid V] [Module R V] {r : 
     LinearIndependent R (Fin.append x y) := by
   have hinj : Function.Injective (Fin.append (Fin.castAdd (q + r))
       (fun j : Fin q ↦ Fin.natAdd p (Fin.castAdd r j))) := by
-    intro a b hab
-    induction a using Fin.addCases <;> induction b using Fin.addCases <;>
-      simp [Fin.ext_iff] at hab ⊢ <;> omega
+    refine Fin.append_injective_iff.2 ⟨Fin.castAdd_injective _ _,
+      (Fin.natAdd_injective _ _).comp (Fin.castAdd_injective _ _), ?_⟩
+    intro i j
+    simp [Fin.ext_iff]
+    omega
   convert h.comp _ hinj using 1
   refine funext (Fin.addCases (fun i ↦ ?_) fun j ↦ ?_)
   · simp
@@ -77,9 +79,11 @@ theorem fin_append_right_append [Semiring R] [AddCommMonoid V] [Module R V] {r :
     LinearIndependent R (Fin.append x z) := by
   have hinj : Function.Injective (Fin.append (Fin.castAdd (q + r))
       (fun j : Fin r ↦ Fin.natAdd p (Fin.natAdd q j))) := by
-    intro a b hab
-    induction a using Fin.addCases <;> induction b using Fin.addCases <;>
-      simp [Fin.ext_iff] at hab ⊢ <;> omega
+    refine Fin.append_injective_iff.2 ⟨Fin.castAdd_injective _ _,
+      (Fin.natAdd_injective _ _).comp (Fin.natAdd_injective _ _), ?_⟩
+    intro i j
+    simp [Fin.ext_iff]
+    omega
   convert h.comp _ hinj using 1
   refine funext (Fin.addCases (fun i ↦ ?_) fun j ↦ ?_)
   · simp
