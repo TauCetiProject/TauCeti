@@ -84,6 +84,14 @@ segment from `z` to `z + v` (`t` real, `0 ≤ t ≤ 1`) takes the same value at 
 vanish, so the map need not be constant near the segment. Consequently, if `π` is a continuous
 projection and the derivative of a map kills `ker π` on a ball about `0`, then near `0` the map
 only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`).
+
+## Signs from monotonicity on the real line
+
+A real function on `[x, ∞)` with nonpositive (negative) derivative beyond `x` that tends to `0`
+at `+∞` is nonnegative (positive) at `x` (`TauCeti.nonneg_of_tendsto_atTop_of_deriv_nonpos`,
+`TauCeti.pos_of_tendsto_atTop_of_deriv_neg`). A function with nonnegative derivative inside
+`[a, b]` satisfies `f a ≤ f b` (`TauCeti.le_of_deriv_nonneg_Icc`), and one vanishing at `a` with
+positive derivative beyond `a` is positive there (`TauCeti.pos_of_deriv_pos_of_eq_zero`).
 -/
 
 public section
@@ -452,3 +460,67 @@ theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
   simpa [sub_eq_zero, eq_comm] using h
 
 end IsPreconnected
+
+namespace TauCeti
+
+open Filter Set
+open scoped Topology
+
+/-- A real function that has a nonpositive derivative beyond `x` and tends to `0` at `+∞` is
+nonnegative at `x`. -/
+theorem nonneg_of_tendsto_atTop_of_deriv_nonpos {f f' : ℝ → ℝ} {x : ℝ}
+    (hf : ∀ y, x ≤ y → HasDerivAt f (f' y) y) (hlim : Tendsto f atTop (𝓝 0))
+    (hf' : ∀ y, x < y → f' y ≤ 0) : 0 ≤ f x := by
+  have hanti : AntitoneOn f (Ici x) :=
+    antitoneOn_of_deriv_nonpos (convex_Ici x)
+      (fun y hy => (hf y hy).continuousAt.continuousWithinAt)
+      (fun y hy => by
+        rw [interior_Ici] at hy
+        exact (hf y (le_of_lt hy)).differentiableAt.differentiableWithinAt)
+      (fun y hy => by rw [interior_Ici] at hy; rw [(hf y (le_of_lt hy)).deriv]; exact hf' y hy)
+  refine le_of_tendsto hlim ?_
+  filter_upwards [eventually_ge_atTop x] with t ht
+  exact hanti (mem_Ici.mpr le_rfl) (mem_Ici.mpr ht) ht
+
+/-- A real function that has a negative derivative beyond `x` and tends to `0` at `+∞` is
+positive at `x`. -/
+theorem pos_of_tendsto_atTop_of_deriv_neg {f f' : ℝ → ℝ} {x : ℝ}
+    (hf : ∀ y, x ≤ y → HasDerivAt f (f' y) y) (hlim : Tendsto f atTop (𝓝 0))
+    (hf' : ∀ y, x < y → f' y < 0) : 0 < f x := by
+  have hanti : StrictAntiOn f (Ici x) :=
+    strictAntiOn_of_deriv_neg (convex_Ici x)
+      (fun y hy => (hf y hy).continuousAt.continuousWithinAt)
+      (fun y hy => by rw [interior_Ici] at hy; rw [(hf y (le_of_lt hy)).deriv]; exact hf' y hy)
+  have h1 : 0 ≤ f (x + 1) := nonneg_of_tendsto_atTop_of_deriv_nonpos
+    (fun y hy => hf y (by linarith)) hlim (fun y hy => (hf' y (by linarith)).le)
+  have := hanti (mem_Ici.mpr le_rfl) (mem_Ici.mpr (by linarith : x ≤ x + 1)) (by linarith)
+  linarith
+
+/-- A real function with nonnegative derivative inside `[a, b]` satisfies `f a ≤ f b`. -/
+theorem le_of_deriv_nonneg_Icc {f f' : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
+    (hf : ∀ y ∈ Icc a b, HasDerivAt f (f' y) y) (hf' : ∀ y ∈ Ioo a b, 0 ≤ f' y) :
+    f a ≤ f b := by
+  have hmono : MonotoneOn f (Icc a b) :=
+    monotoneOn_of_deriv_nonneg (convex_Icc a b)
+      (fun y hy => (hf y hy).continuousAt.continuousWithinAt)
+      (fun y hy => by
+        rw [interior_Icc] at hy
+        exact (hf y (Ioo_subset_Icc_self hy)).differentiableAt.differentiableWithinAt)
+      (fun y hy => by
+        rw [interior_Icc] at hy
+        rw [(hf y (Ioo_subset_Icc_self hy)).deriv]
+        exact hf' y hy)
+  exact hmono ⟨le_rfl, hab⟩ ⟨hab, le_rfl⟩ hab
+
+/-- A real function vanishing at `a` with positive derivative beyond `a` is positive beyond
+`a`. -/
+theorem pos_of_deriv_pos_of_eq_zero {f f' : ℝ → ℝ} {a : ℝ}
+    (hf : ∀ y, a ≤ y → HasDerivAt f (f' y) y) (ha : f a = 0) (hf' : ∀ y, a < y → 0 < f' y)
+    {x : ℝ} (hx : a < x) : 0 < f x := by
+  have hmono : StrictMonoOn f (Ici a) :=
+    strictMonoOn_of_deriv_pos (convex_Ici a)
+      (fun y hy => (hf y hy).continuousAt.continuousWithinAt)
+      (fun y hy => by rw [interior_Ici] at hy; rw [(hf y hy.le).deriv]; exact hf' y hy)
+  simpa [ha] using hmono (mem_Ici.mpr le_rfl) (mem_Ici.mpr hx.le) hx
+
+end TauCeti
