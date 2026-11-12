@@ -48,8 +48,9 @@ a fixed point (`TauCeti.schaeferFixedPoint`).
   the ambient space.
 * `TauCeti.schauderFixedPoint_closedConvex`: Schauder's theorem for a bundled self-map.
 * `TauCeti.schauderFixedPoint_compactConvex`: Schauder's theorem for compact convex sets.
-* `TauCeti.exists_sum_smul_apply_apply_eq_self`: fixed points of averages of finitely many maps
-  with a partition of unity.
+* `TauCeti.exists_sum_smul_apply_apply_eq_self`: if `g` maps a closed convex set `C` into a
+  compact set covered by the preimages of the interior of `C` under finitely many maps `f i`,
+  then some `x ∈ C` is a convex combination of the points `f i (g x)`.
 * `TauCeti.leraySchauderFixedPoint_closedBall`: the Leray–Schauder boundary condition on a ball.
 * `TauCeti.schaeferFixedPoint`: Schaefer's a priori bound form.
 
@@ -156,7 +157,7 @@ theorem schauderFixedPoint_compactConvex (hC : IsCompact C) (hconv : Convex ℝ 
   schauderFixedPoint_closedConvex hC.isClosed hconv hne f <| hC.of_isClosed_subset
     isClosed_closure (closure_minimal (range_subset_iff.2 fun x ↦ (f x).2) hC.isClosed)
 
-/-- **Fixed points of partition-of-unity averages**: let `g` map a nonempty closed convex set `C`
+/-- **Convex-combination fixed points**: let `g` map a nonempty closed convex set `C`
 continuously into a compact set `S`, and let `f i` be finitely many continuous maps such that each
 point of `S` is sent into the interior of `C` by some `f i`. Then some `x ∈ C` is a convex
 combination of the points `f i (g x)`. This is the fixed-point step of Lomonosov's lemma. -/
