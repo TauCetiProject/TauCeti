@@ -569,13 +569,13 @@ theorem contMDiff_normalMetricChange
   -- The change of metric is the sum of the composites of the projections for `g₀` and for `g₁`
   -- (`normalMetricChange_apply`), and each projection is a `C^k` map of total spaces.
   intro w₀
-  have hA := Bundle.contMDiffAt_totalSpace.mp
+  have hA := Bundle.contMDiffAt_totalSpace_iff.mp
     ((contMDiff_projection_negativeNormalSpace hn h hk hf hdim g₁).comp
       (contMDiff_projection_negativeNormalSpace hn h hk hf hdim g₀) w₀)
-  have hB := Bundle.contMDiffAt_totalSpace.mp
+  have hB := Bundle.contMDiffAt_totalSpace_iff.mp
     ((contMDiff_projection_positiveNormalSpace hn h hk hf hdim g₁).comp
       (contMDiff_projection_positiveNormalSpace hn h hk hf hdim g₀) w₀)
-  rw [Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨hA.1, ?_⟩
   have hw₀ := mem_baseSet_trivializationAt P (fun s ↦ i.NormalSpace s hn) w₀.proj
   refine (hA.2.add hB.2).congr_of_eventuallyEq ?_
