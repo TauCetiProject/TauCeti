@@ -87,7 +87,7 @@ theorem thomMap_apply {n p m : ℕ} (h : p + n = m)
     thomMap F E M n p m h u a =
       (thomPair F E).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p n m h
         (TopCat.singularCohomologyMap (thomPairProj F E) p a) u :=
-  (rfl)
+  TopPair.pullbackCup_apply _ _ h u a
 
 /-- **The Thom map sends `1` to `u`**: the image of the class of the constant `0`-cocycle with
 value `1 ∈ K` is `u`. -/

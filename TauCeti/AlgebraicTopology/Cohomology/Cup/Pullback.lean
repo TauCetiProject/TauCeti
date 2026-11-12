@@ -28,7 +28,7 @@ asserts to be bijective when `u` is a Thom class.
 * `TopPair.pullbackCup_naturality`: its naturality in maps of pairs.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -74,6 +74,7 @@ theorem pullbackCup_naturality {P P' : TopPair.{w}} (φ : P ⟶ P') {Z Z' : TopC
   rw [pullbackCup_apply, pullbackCup_apply, ← TopPair.singularCup_naturality,
     ← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, ← hg,
     TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply]
+  -- The two sides agree up to how the module morphisms are coerced to functions.
   rfl
 
 end TopPair

@@ -90,30 +90,6 @@ private abbrev restrictInter :
 private abbrev restrictUnion : (TopPair.ofInclusion (union_subset_union hAU hBV)).fst ⟶ Y :=
   TopCat.ofHom (ContinuousMap.subtypeVal (U' ∪ V')) ≫ π
 
-/-- The map of pairs `(U', A) ⟶ (U' ∪ V', A ∪ B)` induced by the inclusion. -/
-private abbrev leftToUnion :
-    TopPair.ofInclusion hAU ⟶ TopPair.ofInclusion (union_subset_union hAU hBV) :=
-  TopPair.ofInclusionMap hAU (union_subset_union hAU hBV)
-    (ContinuousMap.inclusion subset_union_left) fun _ hx ↦ subset_union_left hx
-
-/-- The map of pairs `(V', B) ⟶ (U' ∪ V', A ∪ B)` induced by the inclusion. -/
-private abbrev rightToUnion :
-    TopPair.ofInclusion hBV ⟶ TopPair.ofInclusion (union_subset_union hAU hBV) :=
-  TopPair.ofInclusionMap hBV (union_subset_union hAU hBV)
-    (ContinuousMap.inclusion subset_union_right) fun _ hx ↦ subset_union_right hx
-
-/-- The map of pairs `(U' ∩ V', A ∩ B) ⟶ (U', A)` induced by the inclusion. -/
-private abbrev interToLeft :
-    TopPair.ofInclusion (inter_subset_inter hAU hBV) ⟶ TopPair.ofInclusion hAU :=
-  TopPair.ofInclusionMap (inter_subset_inter hAU hBV) hAU
-    (ContinuousMap.inclusion inter_subset_left) fun _ hx ↦ inter_subset_left hx
-
-/-- The map of pairs `(U' ∩ V', A ∩ B) ⟶ (V', B)` induced by the inclusion. -/
-private abbrev interToRight :
-    TopPair.ofInclusion (inter_subset_inter hAU hBV) ⟶ TopPair.ofInclusion hBV :=
-  TopPair.ofInclusionMap (inter_subset_inter hAU hBV) hBV
-    (ContinuousMap.inclusion inter_subset_right) fun _ hx ↦ inter_subset_right hx
-
 variable {n : ℕ}
   (u : (TopPair.ofInclusion (union_subset_union hAU hBV)).singularCohomology (ModuleCat.of K K) K
     (ModuleCat.of K K) n)
@@ -126,12 +102,12 @@ private abbrev Φ (p m : ℕ) (h : p + n = m) :=
 /-- The map `a ↦ π^*a ⌣ u` over `U`, as a morphism of modules. -/
 private abbrev ΦU (p m : ℕ) (h : p + n = m) :=
   ModuleCat.ofHom ((TopPair.ofInclusion hAU).pullbackCup M (restrictLeft π hAU hπU) n p m h
-    (TopPair.singularCohomologyMap (leftToUnion hAU hBV) n u))
+    (TopPair.singularCohomologyMap (leftToUnionMap hAU hBV) n u))
 
 /-- The map `a ↦ π^*a ⌣ u` over `V`, as a morphism of modules. -/
 private abbrev ΦV (p m : ℕ) (h : p + n = m) :=
   ModuleCat.ofHom ((TopPair.ofInclusion hBV).pullbackCup M (restrictRight π hBV hπV) n p m h
-    (TopPair.singularCohomologyMap (rightToUnion hAU hBV) n u))
+    (TopPair.singularCohomologyMap (rightToUnionMap hAU hBV) n u))
 
 /-- The map `a ↦ π^*a ⌣ u` over `U ∩ V`, as a morphism of modules. -/
 private abbrev ΦI (p m : ℕ) (h : p + n = m) :=
@@ -140,22 +116,17 @@ private abbrev ΦI (p m : ℕ) (h : p + n = m) :=
     (TopPair.singularCohomologyMap (interToUnionMap hAU hBV) n u))
 
 omit [CommRing K] in
-private lemma fst_ofInclusionMap {X Y : TopCat.{w}} {s t : Set X} {s' t' : Set Y} (hst : s ⊆ t)
-    (hst' : s' ⊆ t') (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s') :
-    Hom.fst (TopPair.ofInclusionMap hst hst' g hg) = TopCat.ofHom g := by
-  ext x
-  exact TopPair.ofInclusionMap_fst_apply g hg x
-
-omit [CommRing K] in
 private lemma interToLeft_comp_leftToUnion :
-    interToLeft hAU hBV ≫ leftToUnion hAU hBV = interToUnionMap hAU hBV := by
+    interToLeftMap hAU hBV ≫ leftToUnionMap hAU hBV = interToUnionMap hAU hBV := by
   rw [← TopPair.ofInclusionMap_comp]
+  -- Both sides are induced by the inclusion `U' ∩ V' → U' ∪ V'`.
   rfl
 
 omit [CommRing K] in
 private lemma interToRight_comp_rightToUnion :
-    interToRight hAU hBV ≫ rightToUnion hAU hBV = interToUnionMap hAU hBV := by
+    interToRightMap hAU hBV ≫ rightToUnionMap hAU hBV = interToUnionMap hAU hBV := by
   rw [← TopPair.ofInclusionMap_comp]
+  -- Both sides are induced by the inclusion `U' ∩ V' → U' ∪ V'`.
   rfl
 
 /-- The maps over `Y` and over `U` and `V` commute with the restrictions. -/
@@ -170,17 +141,19 @@ private lemma toBiprod_comm (p m : ℕ) (h : p + n = m) :
       singularCohomologyMayerVietorisToBiprod_fst_assoc]
     ext a
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom]
-    exact pullbackCup_naturality (leftToUnion hAU hBV) (restrictLeft π hAU hπU)
+    -- In the side condition both maps `U' ⟶ Y` are the restriction of `π`, so `rfl` closes it.
+    exact pullbackCup_naturality (leftToUnionMap hAU hBV) (restrictLeft π hAU hπU)
       (restrictUnion π hAU hBV) (TopCat.ofHom (ContinuousMap.subtypeVal U))
-      (by rw [fst_ofInclusionMap]; rfl) h u a
+      (by rw [ofInclusionMap_fst]; rfl) h u a
   · rw [Category.assoc, Category.assoc, biprod.map_snd,
       singularCohomologyPairMayerVietorisToBiprod_snd,
       singularCohomologyMayerVietorisToBiprod_snd_assoc]
     ext a
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom]
-    exact pullbackCup_naturality (rightToUnion hAU hBV) (restrictRight π hBV hπV)
+    -- In the side condition both maps `V' ⟶ Y` are the restriction of `π`, so `rfl` closes it.
+    exact pullbackCup_naturality (rightToUnionMap hAU hBV) (restrictRight π hBV hπV)
       (restrictUnion π hAU hBV) (TopCat.ofHom (ContinuousMap.subtypeVal V))
-      (by rw [fst_ofInclusionMap]; rfl) h u a
+      (by rw [ofInclusionMap_fst]; rfl) h u a
 
 /-- The maps over `U`, `V` and `U ∩ V` commute with the differences of restrictions. -/
 private lemma fromBiprod_comm (p m : ℕ) (h : p + n = m) :
@@ -194,18 +167,20 @@ private lemma fromBiprod_comm (p m : ℕ) (h : p + n = m) :
     ext a
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom]
     rw [← interToLeft_comp_leftToUnion, TopPair.singularCohomologyMap_comp, ModuleCat.comp_apply]
-    exact pullbackCup_naturality (interToLeft hAU hBV) (restrictInter π hAU hBV hπU hπV)
+    -- In the side condition both maps `U' ∩ V' ⟶ U` are the restriction of `π`, so `rfl` closes it.
+    exact pullbackCup_naturality (interToLeftMap hAU hBV) (restrictInter π hAU hBV hπU hπV)
       (restrictLeft π hAU hπU) (TopCat.ofHom (ContinuousMap.inclusion inter_subset_left))
-      (by rw [fst_ofInclusionMap]; rfl) h _ a
+      (by rw [ofInclusionMap_fst]; rfl) h _ a
   · rw [inr_singularCohomologyMayerVietorisFromBiprod_assoc, biprod.inr_map_assoc,
       inr_singularCohomologyPairMayerVietorisFromBiprod, Preadditive.neg_comp, Preadditive.comp_neg,
       neg_inj]
     ext a
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom]
     rw [← interToRight_comp_rightToUnion, TopPair.singularCohomologyMap_comp, ModuleCat.comp_apply]
-    exact pullbackCup_naturality (interToRight hAU hBV) (restrictInter π hAU hBV hπU hπV)
+    -- In the side condition both maps `U' ∩ V' ⟶ V` are the restriction of `π`, so `rfl` closes it.
+    exact pullbackCup_naturality (interToRightMap hAU hBV) (restrictInter π hAU hBV hπU hπV)
       (restrictRight π hBV hπV) (TopCat.ofHom (ContinuousMap.inclusion inter_subset_right))
-      (by rw [fst_ofInclusionMap]; rfl) h _ a
+      (by rw [ofInclusionMap_fst]; rfl) h _ a
 
 variable (hU' : IsOpen U') (hV' : IsOpen V') (hUV' : U' ∪ V' = univ)
   (hA : IsOpen ((↑) ⁻¹' A : Set ↥(A ∪ B))) (hB : IsOpen ((↑) ⁻¹' B : Set ↥(A ∪ B)))
@@ -221,6 +196,7 @@ private lemma δ_comm (q mq m : ℕ) (hq : q + n = mq) (hm : mq + 1 = m) (h : q 
       singularCohomologyMayerVietorisδ (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl ≫
         Φ π hAU hBV u (q + 1) m h := by
   ext a
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom, pullbackCup_apply]
   refine (singularCohomologyPairMayerVietorisδ_singularCup K hU' hV' hUV' hAU hBV hA hB
     (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom hq rfl hm h
     (TopCat.singularCohomologyMap (restrictInter π hAU hBV hπU hπV) q a) u).trans ?_
@@ -234,14 +210,6 @@ private lemma δ_comm (q mq m : ℕ) (hq : q + n = mq) (hm : mq + 1 = m) (h : q 
   simp only [ConcreteCategory.comp_apply] at e₁ e₂
   exact (congrArg (TopCat.singularCohomologyMap
     (TopCat.ofHom (ContinuousMap.subtypeVal (U' ∪ V'))) (q + 1)) e₁).symm.trans e₂.symm
-
-omit [CommRing K] in
-private lemma bijective_biprod_map {K : Type w} [Ring K] {P Q P' Q' : ModuleCat.{w} K}
-    (f : P ⟶ P') (g : Q ⟶ Q') (hf : Function.Bijective f) (hg : Function.Bijective g) :
-    Function.Bijective (biprod.map f g) := by
-  have := (ConcreteCategory.isIso_iff_bijective f).2 hf
-  have := (ConcreteCategory.isIso_iff_bijective g).2 hg
-  exact (ConcreteCategory.isIso_iff_bijective _).1 (biprod.mapIso (asIso f) (asIso g)).isIso_hom
 
 include hU' hV' hUV' hA hB hU hV hUV in
 /-- **The Mayer–Vietoris step for `a ↦ π^*a ⌣ u`.** Let `π : X ⟶ Y` carry the members of an open
@@ -257,12 +225,10 @@ theorem bijective_pullbackCup_union
         M q))
     (hΦU : ∀ p m (h : p + n = m), Function.Bijective ((TopPair.ofInclusion hAU).pullbackCup M
       (TopCat.ofHom ⟨hπU.restrict, π.hom.continuous.restrict hπU⟩) n p m h
-      (TopPair.singularCohomologyMap (TopPair.ofInclusionMap hAU (union_subset_union hAU hBV)
-        (ContinuousMap.inclusion subset_union_left) fun _ hx ↦ subset_union_left hx) n u)))
+      (TopPair.singularCohomologyMap (leftToUnionMap hAU hBV) n u)))
     (hΦV : ∀ p m (h : p + n = m), Function.Bijective ((TopPair.ofInclusion hBV).pullbackCup M
       (TopCat.ofHom ⟨hπV.restrict, π.hom.continuous.restrict hπV⟩) n p m h
-      (TopPair.singularCohomologyMap (TopPair.ofInclusionMap hBV (union_subset_union hAU hBV)
-        (ContinuousMap.inclusion subset_union_right) fun _ hx ↦ subset_union_right hx) n u)))
+      (TopPair.singularCohomologyMap (rightToUnionMap hAU hBV) n u)))
     (hΦI : ∀ p m (h : p + n = m), Function.Bijective
       ((TopPair.ofInclusion (inter_subset_inter hAU hBV)).pullbackCup M
         (TopCat.ofHom ⟨(hπU.inter_inter hπV).restrict,
@@ -275,9 +241,12 @@ theorem bijective_pullbackCup_union
   have hV'' := hV'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
   have hbiprod : ∀ p m (h : p + n = m), Function.Bijective
       (biprod.map (ΦU π hAU hBV hπU u p m h) (ΦV π hAU hBV hπV u p m h)) := fun p m h ↦
-    bijective_biprod_map _ _ (hΦU p m h) (hΦV p m h)
+    ModuleCat.bijective_biprod_map _ _ (hΦU p m h) (hΦV p m h)
   cases p with
   | zero =>
+    -- Injectivity: if `Φ a = 0`, the maps over `U` and `V` send the restriction of `a` to
+    -- `H⁰(U) ⊞ H⁰(V)` to the restriction of `Φ a = 0`. They are injective, so the restriction of
+    -- `a` vanishes, and the restriction `H⁰(Y) ⟶ H⁰(U) ⊞ H⁰(V)` is injective.
     have hT := (ModuleCat.mono_iff_injective _).1
       (mono_singularCohomologyMayerVietorisToBiprod_zero (ModuleCat.of K K) K M hU hV hUV)
     refine ⟨(injective_iff_map_eq_zero _).2 fun a ha ↦ hT ?_, fun y ↦ ?_⟩
@@ -285,6 +254,9 @@ theorem bijective_pullbackCup_union
       rw [map_zero, ← ConcreteCategory.comp_apply, toBiprod_comm, ConcreteCategory.comp_apply]
       simp only [ConcreteCategory.hom_ofHom]
       rw [ha, map_zero, map_zero]
+    -- Surjectivity: lift the restriction of `y` to `z ∈ H⁰(U) ⊞ H⁰(V)`. Its difference of
+    -- restrictions is sent to `0` by the injective map over `U ∩ V`, so it vanishes and, by
+    -- exactness at `H⁰(U) ⊞ H⁰(V)`, `z` is the restriction of some `a ∈ H⁰(Y)`.
     obtain ⟨z, hz⟩ := (hbiprod 0 m h).2
       (singularCohomologyPairMayerVietorisToBiprod (ModuleCat.of K K) K M hAU hBV m y)
     obtain ⟨a, rfl⟩ := ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
@@ -293,19 +265,25 @@ theorem bijective_pullbackCup_union
         (fromBiprod_comm π hAU hBV hπU hπV u 0 m h) z).trans ?_)
       rw [map_zero, ConcreteCategory.comp_apply, hz, ← ConcreteCategory.comp_apply,
         singularCohomologyPairMayerVietorisToBiprod_fromBiprod]
+      -- The zero morphism sends `y` to `0` by definition.
       rfl
     have hy : singularCohomologyPairMayerVietorisToBiprod (ModuleCat.of K K) K M hAU hBV m
         (y - Φ π hAU hBV u 0 m h a) = 0 := by
       rw [map_sub, ← hz, sub_eq_zero]
       exact ConcreteCategory.congr_hom (toBiprod_comm π hAU hBV hπU hπV u 0 m h) a
+    -- Then `y - Φ a` restricts to `0`; it remains to see that the restriction to
+    -- `Hᵐ(U', A) ⊞ Hᵐ(V', B)` is injective.
     refine ⟨a, (sub_eq_zero.1 ?_).symm⟩
     cases n with
     | zero =>
+      -- In degree `0` the restriction is injective at the start of the sequence of the pairs.
       obtain rfl : m = 0 := by lia
       exact (ModuleCat.mono_iff_injective _).1
         (mono_singularCohomologyPairMayerVietorisToBiprod_zero (ModuleCat.of K K) K M hAU hBV
           hU'' hV'' hA hB) (hy.trans (map_zero _).symm)
     | succ n =>
+      -- Otherwise `y - Φ a` is in the image of the connecting morphism from the cohomology of
+      -- `(U' ∩ V', A ∩ B)` in degree `m - 1`, which vanishes by `hI₀`.
       obtain ⟨w, hw⟩ := ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
         (singularCohomologyPairMayerVietoris_exact₁ (ModuleCat.of K K) K M hAU hBV hU'' hV'' hA hB
           n m (by lia)) _).1 hy
@@ -313,6 +291,7 @@ theorem bijective_pullbackCup_union
       rw [Subsingleton.elim w 0, map_zero] at hw
       exact hw.symm
   | succ q =>
+    -- In positive degrees the five lemma applies to the two Mayer–Vietoris sequences.
     have hq : q + n + 1 = m := by lia
     exact LinearMap.bijective_of_surjective_of_bijective_of_bijective_of_injective _ _ _ _ _ _ _ _
       _ _ _ _ _

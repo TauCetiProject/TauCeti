@@ -48,6 +48,9 @@ uses.
   Mayer–Vietoris sequence of two pairs, applied to `a ⌣ b|`, is `δ a ⌣ b`.
 * `TopCat.interToUnionMap`: the map of pairs `(U ∩ V, A ∩ B) ⟶ (U ∪ V, A ∪ B)` along which `b`
   is restricted.
+* `TopCat.interToLeftMap`, `TopCat.interToRightMap`, `TopCat.leftToUnionMap`,
+  `TopCat.rightToUnionMap`: the other inclusions of pairs among `(U ∩ V, A ∩ B)`, `(U, A)`,
+  `(V, B)` and `(U ∪ V, A ∪ B)`.
 
 ## References
 
@@ -94,25 +97,25 @@ abbrev interToUnionMap :
     Set.subset_union_left)) fun _ hx ↦ Set.subset_union_left hx.1
 
 /-- The map of pairs `(U ∩ V, A ∩ B) ⟶ (U, A)` induced by the inclusion. -/
-private abbrev interToLeftMap :
+abbrev interToLeftMap :
     TopPair.ofInclusion (Set.inter_subset_inter hAU hBV) ⟶ TopPair.ofInclusion hAU :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.inter_subset_left)
     fun _ hx ↦ Set.inter_subset_left hx
 
 /-- The map of pairs `(U ∩ V, A ∩ B) ⟶ (V, B)` induced by the inclusion. -/
-private abbrev interToRightMap :
+abbrev interToRightMap :
     TopPair.ofInclusion (Set.inter_subset_inter hAU hBV) ⟶ TopPair.ofInclusion hBV :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.inter_subset_right)
     fun _ hx ↦ Set.inter_subset_right hx
 
 /-- The map of pairs `(U, A) ⟶ (U ∪ V, A ∪ B)` induced by the inclusion. -/
-private abbrev leftToUnionMap :
+abbrev leftToUnionMap :
     TopPair.ofInclusion hAU ⟶ TopPair.ofInclusion (Set.union_subset_union hAU hBV) :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.subset_union_left)
     fun _ hx ↦ Set.subset_union_left hx
 
 /-- The map of pairs `(V, B) ⟶ (U ∪ V, A ∪ B)` induced by the inclusion. -/
-private abbrev rightToUnionMap :
+abbrev rightToUnionMap :
     TopPair.ofInclusion hBV ⟶ TopPair.ofInclusion (Set.union_subset_union hAU hBV) :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.subset_union_right)
     fun _ hx ↦ Set.subset_union_right hx

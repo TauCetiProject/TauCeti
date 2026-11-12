@@ -170,6 +170,10 @@ variable {hst hst'}
 lemma ofInclusionMap_fst_apply (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s')
     (x : t) : Hom.fst (ofInclusionMap hst hst' g hg) x = g x := (rfl)
 
+/-- The map of ambient spaces of `ofInclusionMap hst hst' g hg` is `g`. -/
+lemma ofInclusionMap_fst (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s') :
+    Hom.fst (ofInclusionMap hst hst' g hg) = TopCat.ofHom g := (rfl)
+
 @[simp]
 lemma ofInclusionMap_snd_apply (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s')
     (x : s) : (Hom.snd (ofInclusionMap hst hst' g hg) x).1 = (g ⟨x.1, hst x.2⟩).1 := (rfl)
