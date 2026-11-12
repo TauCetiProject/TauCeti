@@ -9,34 +9,31 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Complex.Wirtinger.Similarity.Transported
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Sobolev.Local.ChainRule
 import TauCeti.Analysis.Sobolev.Local.Multiplication
-import TauCeti.Geometry.Symplectic.Complex.Module.Basic
-import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # Reducing a variable complex structure to the standard one
 
-Let `V` be a finite-dimensional complex normed space and `J : ℂ → V →L[ℝ] V` a field of
-real-linear maps with `J² = -1`. The vector similarity principle (McDuff–Salamon, Theorem 2.3.5)
+Let `V` be a complex Banach space and `J : ℂ → V →L[ℝ] V` a field of real-linear maps with
+`J² = -1`. The vector similarity principle (McDuff–Salamon, Theorem 2.3.5)
 asks for a family `Φ` of real-linear automorphisms with `Φ⁻¹ J Φ = i` and the regularity of `J`.
 This file builds such a frame near a point `z₀` and shows that it turns the weak linear
 Cauchy–Riemann equation `∂ₛξ + J ∂ₜξ + C ξ = 0` into an equation for `η = Φ⁻¹ ξ` with the
 constant structure `i`.
 
-* At one point, a real-linear `A` with `A² = -1` satisfies `A Φ₁ = Φ₁ i` for some real-linear
-  automorphism `Φ₁`, which sends an adapted basis of `i` to one of `A`.
+* At one point, a real-linear automorphism `Φ₁` with `J(z₀) Φ₁ = Φ₁ i` is an input; in finite
+  dimension one exists by `ContinuousLinearMap.exists_continuousLinearEquiv_comp_eq_comp_I_smul`.
 * The frame `Φ(z) = ½(1 - J(z) J(z₀)) Φ₁` satisfies `J(z) Φ(z) = Φ(z) i` wherever `J(z)² = -1`,
   since `J(z)(1 - J(z) J(z₀)) = J(z) + J(z₀) = (1 - J(z) J(z₀)) J(z₀)`. It equals `Φ₁` at `z₀`,
   so it is invertible near `z₀` when `J` is continuous, and it is an affine function of `J`, so it
   lies in `W^{1,p}_loc` with `J`. Its pointwise inverse is in `W^{1,p}_loc` as well, by the chain
   rule for the inverse of a normed algebra.
-* For any continuous invertible frame `Φ ∈ W^{1,p}_loc` with `J Φ = Φ i`, `p > 2`, the map `ξ`
-  solves the equation for `J` and `C` exactly when `η = Φ⁻¹ ξ` solves it for `i` and
-  `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`. Expanding `ξ = Φ η` by the Leibniz rule gives
-  `∂ₛξ + J ∂ₜξ + C ξ = Φ(∂ₛη + i ∂ₜη + C' η)`. The coefficient `C'` is locally `Lᵖ` exactly when
-  `C` is.
+* For `V` finite-dimensional, where the weak Leibniz rule is available, and any continuous
+  invertible frame `Φ ∈ W^{1,p}_loc` with `J Φ = Φ i`, `p > 2`, the map `ξ` solves the equation
+  for `J` and `C` exactly when `η = Φ⁻¹ ξ` solves it for `i` and `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`.
+  Expanding `ξ = Φ η` by the Leibniz rule gives `∂ₛξ + J ∂ₜξ + C ξ = Φ(∂ₛη + i ∂ₜη + C' η)`. The
+  coefficient `C'` is locally `Lᵖ` exactly when `C` is.
 
 So a local similarity factorization of `η` for the structure `i` gives one of `ξ = Φ η`
 (`TauCeti.HasSimilarityFactorizationAt.clm_apply`), and unique continuation and the zero orders
@@ -44,18 +41,18 @@ for a variable `J` reduce to the case `J = i`.
 
 ## Main declarations
 
-* `TauCeti.exists_continuousLinearEquiv_comp_eq_comp_I_smul`: `A Φ₁ = Φ₁ i` at one point.
 * `TauCeti.standardFrame`: the frame `½(1 - J(z) J(z₀)) Φ₁`.
 * `TauCeti.comp_standardFrame`: `J(z) Φ(z) = Φ(z) i`.
 * `TauCeti.exists_ball_isUnit_standardFrame`, `TauCeti.memWkpLoc_standardFrame`,
   `TauCeti.memWkpLoc_ring_inverse_standardFrame`: invertibility near `z₀` and Sobolev regularity
   of the frame and its inverse.
-* `TauCeti.frameCoeff`: the coefficient `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`.
+* `TauCeti.frameCoeff`: the coefficient `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`, with
+  `TauCeti.frameCoeff_apply`.
 * `TauCeti.isWeakLinearCauchyRiemannOn_iff_frame`: the reduction for any frame, and
   `TauCeti.isWeakLinearCauchyRiemannOn_iff_standardFrame` for the standard frame.
 * `TauCeti.memLpLoc_frameCoeff_iff`: `C'` is locally `Lᵖ` exactly when `C` is.
 * `TauCeti.commute_symm_comp_standardFrame_transportedComplexStructure`: for `J = Ψ i Ψ⁻¹`, the
-  standard frame is `Ψ` up to a frame commuting with `i`.
+  standard frame is `Ψ` composed with a real-linear map commuting with `i`.
 
 ## References
 
@@ -70,38 +67,7 @@ open scoped NNReal ENNReal
 
 namespace TauCeti
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
-
-/-! ### The intertwining automorphism at one point -/
-
-/-- **Adapted frames at a point.** A real-linear `A` with `A² = -1` on a finite-dimensional complex
-vector space is conjugate to multiplication by `i`: some real-linear automorphism `Φ₁` satisfies
-`A Φ₁ = Φ₁ i`. It sends an adapted basis `(v₁, i v₁, …, vₙ, i vₙ)` to an adapted basis
-`(w₁, A w₁, …, wₙ, A wₙ)`. -/
-theorem exists_continuousLinearEquiv_comp_eq_comp_I_smul (A : V →L[ℝ] V)
-    (hA : A ∘L A = -ContinuousLinearMap.id ℝ V) :
-    ∃ Φ₁ : V ≃L[ℝ] V,
-      A ∘L (Φ₁ : V →L[ℝ] V) = (Φ₁ : V →L[ℝ] V) ∘L (I • ContinuousLinearMap.id ℝ V) := by
-  have hA' (v : V) : A (A v) = -v := congr($hA v)
-  let JA : AlmostComplexStructure V := ⟨A.toLinearMap, by ext v; exact hA' v⟩
-  obtain ⟨n, bA, hbA⟩ := JA.exists_basis_apply_one_eq
-  obtain ⟨m, bI, hbI⟩ := (AlmostComplexStructure.ofComplexModule V).exists_basis_apply_one_eq
-  obtain rfl : n = m := by
-    have h := (Module.finrank_eq_card_basis bA).symm.trans (Module.finrank_eq_card_basis bI)
-    simp only [Fintype.card_prod, Fintype.card_fin] at h
-    omega
-  have hbA' (i : Fin n) : bA (i, 1) = A (bA (i, 0)) := hbA i
-  have hbI' (i : Fin n) : I • bI (i, 0) = bI (i, 1) := by
-    rw [hbI i]
-    exact (AlmostComplexStructure.ofComplexModule_apply _).symm
-  let e := (bI.equiv bA (Equiv.refl _)).toContinuousLinearEquiv
-  have he (x) : e (bI x) = bA x := bI.equiv_apply x bA (Equiv.refl _)
-  refine ⟨e, ContinuousLinearMap.coe_injective (bI.ext fun ⟨i, k⟩ => ?_)⟩
-  fin_cases k
-  · change A (e (bI (i, 0))) = e (I • bI (i, 0))
-    rw [he, hbI', he, hbA']
-  · change A (e (bI (i, 1))) = e (I • bI (i, 1))
-    rw [he, hbA', hA', ← hbI', smul_smul, I_mul_I, neg_one_smul, map_neg, he]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
 
 /-! ### The standard frame -/
 
@@ -114,13 +80,13 @@ def standardFrame (J : ℂ → V →L[ℝ] V) (z₀ : ℂ) (Φ₁ : V ≃L[ℝ] 
 
 variable {J : ℂ → V →L[ℝ] V} {z₀ z : ℂ} {Φ₁ : V ≃L[ℝ] V}
 
-omit [FiniteDimensional ℂ V] in
+omit [CompleteSpace V] in
 /-- `Φ(z) v = ½(Φ₁ v - J(z) J(z₀) Φ₁ v)`. -/
 theorem standardFrame_apply (v : V) :
     standardFrame J z₀ Φ₁ z v = (2 : ℝ)⁻¹ • (Φ₁ v - J z (J z₀ (Φ₁ v))) := by
   simp [standardFrame]
 
-omit [FiniteDimensional ℂ V] in
+omit [CompleteSpace V] in
 /-- **The intertwining identity** `J(z) Φ(z) = Φ(z) i`, wherever `J(z)² = -1`, given
 `J(z₀)² = -1` and `J(z₀) Φ₁ = Φ₁ i`. Both sides are `½(J(z) + J(z₀)) Φ₁`. -/
 theorem comp_standardFrame (hz : J z ∘L J z = -ContinuousLinearMap.id ℝ V)
@@ -135,7 +101,7 @@ theorem comp_standardFrame (hz : J z ∘L J z = -ContinuousLinearMap.id ℝ V)
   simp only [comp_apply, standardFrame_apply, smul_apply, id_apply, hΦ₁', map_smul, map_sub, hz',
     h₀', map_neg, sub_neg_eq_add, add_comm]
 
-omit [FiniteDimensional ℂ V] in
+omit [CompleteSpace V] in
 /-- The standard frame equals `Φ₁` at the base point. -/
 theorem standardFrame_self (h₀ : J z₀ ∘L J z₀ = -ContinuousLinearMap.id ℝ V) :
     standardFrame J z₀ Φ₁ z₀ = Φ₁ := by
@@ -144,14 +110,14 @@ theorem standardFrame_self (h₀ : J z₀ ∘L J z₀ = -ContinuousLinearMap.id 
   rw [standardFrame_apply, h₀', sub_neg_eq_add, ← two_smul ℝ, smul_smul,
     inv_mul_cancel₀ two_ne_zero, one_smul, ContinuousLinearEquiv.coe_coe]
 
-omit [FiniteDimensional ℂ V] in
+omit [CompleteSpace V] in
 /-- The standard frame is invertible at the base point. -/
 theorem isUnit_standardFrame_self (h₀ : J z₀ ∘L J z₀ = -ContinuousLinearMap.id ℝ V) :
     IsUnit (standardFrame J z₀ Φ₁ z₀) := by
   rw [standardFrame_self h₀]
   exact Φ₁.toUnit.isUnit
 
-omit [FiniteDimensional ℂ V] in
+omit [CompleteSpace V] in
 /-- The standard frame is continuous where `J` is. -/
 theorem continuousOn_standardFrame {U : Set ℂ} (hJ : ContinuousOn J U) :
     ContinuousOn (standardFrame J z₀ Φ₁) U :=
@@ -196,15 +162,20 @@ def frameCoeff (J C Φ : ℂ → V →L[ℝ] V) (DΦ : ℂ → ℂ →L[ℝ] V �
 
 variable {p : ℝ≥0} {Ω : Opens ℂ} {C Φ : ℂ → V →L[ℝ] V} {DΦ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ : ℂ → V}
 
-omit [FiniteDimensional ℂ V] in
-/-- The linear equation on an open set, with the weak derivative taken on the set itself. -/
-private theorem isWeakLinearCauchyRiemannOn_iff_of_isOpen {q : ℝ≥0∞} {A : ℂ → V →L[ℝ] V} :
-    IsWeakLinearCauchyRiemannOn q Ω A C ξ ↔ ContinuousOn ξ Ω ∧ MemLpLoc q Ω ξ ∧
-      ∃ D : ℂ → ℂ →L[ℝ] V, HasWeakFDerivOn volume Ω ξ D ∧ MemLpLoc q Ω D ∧
-        ∀ᵐ z ∂volume.restrict (Ω : Set ℂ), D z 1 + A z (D z I) + C z (ξ z) = 0 := by
-  rw [isWeakLinearCauchyRiemannOn_iff, Opens.interior_coe, Ω.isOpen.interior_eq]
+omit [CompleteSpace V] in
+/-- The defining formula `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)` of `TauCeti.frameCoeff`. -/
+theorem frameCoeff_def :
+    frameCoeff J C Φ DΦ z = Ring.inverse (Φ z) ∘L ((DΦ z 1 + J z ∘L DΦ z I) + C z ∘L Φ z) := by
+  rw [frameCoeff]
 
-omit [FiniteDimensional ℂ V] in
+omit [CompleteSpace V] in
+/-- `C' v = Φ⁻¹(∂ₛΦ v + J ∂ₜΦ v + C Φ v)`. -/
+theorem frameCoeff_apply (v : V) :
+    frameCoeff J C Φ DΦ z v =
+      Ring.inverse (Φ z) (DΦ z 1 v + J z (DΦ z I v) + C z (Φ z v)) := by
+  simp [frameCoeff]
+
+omit [CompleteSpace V] in
 /-- The pointwise identity behind the reduction: for `ξ = Φ η` with `J Φ = Φ i`,
 `∂ₛξ + J ∂ₜξ + C ξ = Φ(∂ₛη + i ∂ₜη + C' η)`, written for the values `a = ∂ₛη`, `b = ∂ₜη` and
 `w = η`. -/
@@ -215,15 +186,17 @@ private theorem add_frame_eq (hu : IsUnit (Φ z))
   have hJ' (v : V) : J z (Φ z v) = Φ z (I • v) := by simpa using congr($hJ v)
   have hinv (v : V) : Φ z (Ring.inverse (Φ z) v) = v := by
     simpa using congr($(Ring.mul_inverse_cancel _ hu) v)
-  simp only [frameCoeff, comp_apply, add_apply, map_add, hinv, hJ']
+  simp only [frameCoeff_apply, map_add, hinv, hJ']
   abel
 
-/-- **Reduction to the standard structure.** Let `p > 2` and let `Φ` be a continuous family of
-real-linear automorphisms on an open set `Ω`, with weak derivative `DΦ ∈ Lᵖ_loc` and
-`J Φ = Φ i` on `Ω`. Then `ξ` solves `∂ₛξ + J ∂ₜξ + C ξ = 0` weakly on `Ω` exactly when
-`η = Φ⁻¹ ξ` solves `∂ₛη + i ∂ₜη + C' η = 0` with `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`. -/
-theorem isWeakLinearCauchyRiemannOn_iff_frame (hp : 2 < p) (hΦc : ContinuousOn Φ Ω)
-    (hΦ : HasWeakFDerivOn volume Ω Φ DΦ) (hDΦ : MemLpLoc p Ω DΦ) (hu : ∀ z ∈ Ω, IsUnit (Φ z))
+/-- **Reduction to the standard structure.** Let `V` be finite-dimensional, as the weak Leibniz
+rule requires, let `p > 2` and let `Φ` be a continuous family of real-linear automorphisms on an
+open set `Ω`, with weak derivative `DΦ ∈ Lᵖ_loc` and `J Φ = Φ i` on `Ω`. Then `ξ` solves
+`∂ₛξ + J ∂ₜξ + C ξ = 0` weakly on `Ω` exactly when `η = Φ⁻¹ ξ` solves `∂ₛη + i ∂ₜη + C' η = 0`
+with `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`. -/
+theorem isWeakLinearCauchyRiemannOn_iff_frame [FiniteDimensional ℂ V] (hp : 2 < p)
+    (hΦc : ContinuousOn Φ Ω) (hΦ : HasWeakFDerivOn volume Ω Φ DΦ) (hDΦ : MemLpLoc p Ω DΦ)
+    (hu : ∀ z ∈ Ω, IsUnit (Φ z))
     (hJ : ∀ z ∈ Ω, J z ∘L Φ z = Φ z ∘L (I • ContinuousLinearMap.id ℝ V)) :
     IsWeakLinearCauchyRiemannOn p Ω J C ξ ↔
       IsWeakLinearCauchyRiemannOn p Ω (fun _ => I • ContinuousLinearMap.id ℝ V)
@@ -286,18 +259,8 @@ theorem isWeakLinearCauchyRiemannOn_iff_frame (hp : 2 < p) (hΦc : ContinuousOn 
     simp only [smul_apply, id_apply] at hz'
     rw [h, hz', map_zero]
 
-omit [FiniteDimensional ℂ V] in
-/-- Composing a locally `Lᵖ` operator family on both sides with continuous ones. -/
-private theorem memLpLoc_comp_comp {q : ℝ≥0∞} {U : Set ℂ} {A B E : ℂ → V →L[ℝ] V}
-    (hA : ContinuousOn A U) (hB : MemLpLoc q U B) (hE : ContinuousOn E U) :
-    MemLpLoc q U (fun z => A z ∘L B z ∘L E z) := memLpLoc_iff.2 fun K hKU hK => by
-  simpa only [compL_apply, comp_assoc] using (compL ℝ V V V).memLp_of_bilin q
-    ((memLpLoc_iff.1 hB K hKU hK).clm_comp_of_continuousOn (hA.mono hKU) hK hK.measurableSet
-      subset_rfl)
-    ((hE.mono hKU).memLp_top_restrict_of_subset_isCompact hK hK.measurableSet subset_rfl)
-
 /-- **Integrability of the new coefficient.** For a frame `Φ` continuous and invertible on a
-measurable set `U`, with `DΦ` and `J` locally `Lᵖ` and continuous on `U`, the coefficient
+measurable set `U`, with `DΦ` locally `Lᵖ` and `J` continuous on `U`, the coefficient
 `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)` is locally `Lᵖ` on `U` exactly when `C` is. -/
 theorem memLpLoc_frameCoeff_iff {q : ℝ≥0∞} {U : Set ℂ} (hU : MeasurableSet U)
     (hΦc : ContinuousOn Φ U) (hDΦ : MemLpLoc q U DΦ) (hu : ∀ z ∈ U, IsUnit (Φ z))
@@ -307,24 +270,23 @@ theorem memLpLoc_frameCoeff_iff {q : ℝ≥0∞} {U : Set ℂ} (hU : MeasurableS
     have h := NormedRing.inverse_continuousAt (hu z hz).unit
     rw [IsUnit.unit_spec] at h
     exact h.comp_continuousWithinAt (hΦc z hz)
-  have hT : MemLpLoc q U (fun z => Ring.inverse (Φ z) ∘L (DΦ z 1 + J z ∘L DΦ z I) ∘L
-      ContinuousLinearMap.id ℝ V) := by
-    refine memLpLoc_comp_comp hΨc ((hDΦ.clm_comp (apply ℝ (V →L[ℝ] V) (1 : ℂ))).add ?_)
-      continuousOn_const
-    simpa using memLpLoc_comp_comp hJc (hDΦ.clm_comp (apply ℝ (V →L[ℝ] V) I))
-      (continuousOn_const (c := ContinuousLinearMap.id ℝ V))
+  have h1 : MemLpLoc q U (fun z => DΦ z 1) := by
+    simpa using hDΦ.clm_comp (apply ℝ (V →L[ℝ] V) (1 : ℂ))
+  have hI : MemLpLoc q U (fun z => DΦ z I) := by
+    simpa using hDΦ.clm_comp (apply ℝ (V →L[ℝ] V) I)
+  have hT : MemLpLoc q U (fun z => Ring.inverse (Φ z) ∘L (DΦ z 1 + J z ∘L DΦ z I)) :=
+    (h1.add (hI.continuousOn_clm_comp hJc)).continuousOn_clm_comp hΨc
   have hsplit : frameCoeff J C Φ DΦ = (fun z => Ring.inverse (Φ z) ∘L
-      (DΦ z 1 + J z ∘L DΦ z I) ∘L ContinuousLinearMap.id ℝ V) +
-      fun z => Ring.inverse (Φ z) ∘L C z ∘L Φ z := by
+      (DΦ z 1 + J z ∘L DΦ z I)) + fun z => Ring.inverse (Φ z) ∘L C z ∘L Φ z := by
     ext z v
-    simp [frameCoeff]
+    simp [frameCoeff_apply]
   constructor
   · intro h
-    have hdiff : frameCoeff J C Φ DΦ - (fun z => Ring.inverse (Φ z) ∘L
-        (DΦ z 1 + J z ∘L DΦ z I) ∘L ContinuousLinearMap.id ℝ V) =
+    have hdiff : frameCoeff J C Φ DΦ -
+        (fun z => Ring.inverse (Φ z) ∘L (DΦ z 1 + J z ∘L DΦ z I)) =
         fun z => Ring.inverse (Φ z) ∘L C z ∘L Φ z := by
       rw [hsplit, add_sub_cancel_left]
-    have h' := memLpLoc_comp_comp hΦc (hdiff ▸ h.sub hT) hΨc
+    have h' := ((hdiff ▸ h.sub hT).clm_comp_continuousOn hΨc).continuousOn_clm_comp hΦc
     refine h'.congr_ae ((ae_restrict_iff' hU).2 (Eventually.of_forall fun z hz => ?_))
     have hinv (v : V) : Φ z (Ring.inverse (Φ z) v) = v := by
       simpa using congr($(Ring.mul_inverse_cancel _ (hu z hz)) v)
@@ -332,15 +294,16 @@ theorem memLpLoc_frameCoeff_iff {q : ℝ≥0∞} {U : Set ℂ} (hU : MeasurableS
     simp [hinv]
   · intro h
     rw [hsplit]
-    exact hT.add (memLpLoc_comp_comp hΨc h hΦc)
+    exact hT.add ((h.clm_comp_continuousOn hΦc).continuousOn_clm_comp hΨc)
 
-/-- **Reduction to the standard structure with the standard frame.** Let `p > 2`, let `J` be
-continuous on an open set `Ω` with `J² = -1` there, and let `J(z₀)² = -1` and
-`J(z₀) Φ₁ = Φ₁ i`. Where the standard frame `Φ` is invertible on `Ω`, with weak derivative
-`DΦ ∈ Lᵖ_loc` (which exists when `J ∈ W^{1,p}_loc`, by `TauCeti.memWkpLoc_standardFrame`), `ξ`
-solves `∂ₛξ + J ∂ₜξ + C ξ = 0` weakly on `Ω` exactly when `η = Φ⁻¹ ξ` solves
-`∂ₛη + i ∂ₜη + C' η = 0` with `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`. -/
-theorem isWeakLinearCauchyRiemannOn_iff_standardFrame (hp : 2 < p) (hJc : ContinuousOn J Ω)
+/-- **Reduction to the standard structure with the standard frame.** Let `V` be
+finite-dimensional, let `p > 2`, let `J` be continuous on an open set `Ω` with `J² = -1` there,
+and let `J(z₀)² = -1` and `J(z₀) Φ₁ = Φ₁ i`. Where the standard frame `Φ` is invertible on `Ω`,
+with weak derivative `DΦ ∈ Lᵖ_loc` (which exists when `J ∈ W^{1,p}_loc`, by
+`TauCeti.memWkpLoc_standardFrame`), `ξ` solves `∂ₛξ + J ∂ₜξ + C ξ = 0` weakly on `Ω` exactly when
+`η = Φ⁻¹ ξ` solves `∂ₛη + i ∂ₜη + C' η = 0` with `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`. -/
+theorem isWeakLinearCauchyRiemannOn_iff_standardFrame [FiniteDimensional ℂ V]
+    (hp : 2 < p) (hJc : ContinuousOn J Ω)
     (hJ : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ V)
     (h₀ : J z₀ ∘L J z₀ = -ContinuousLinearMap.id ℝ V)
     (hΦ₁ : J z₀ ∘L (Φ₁ : V →L[ℝ] V) = (Φ₁ : V →L[ℝ] V) ∘L (I • ContinuousLinearMap.id ℝ V))
@@ -355,10 +318,11 @@ theorem isWeakLinearCauchyRiemannOn_iff_standardFrame (hp : 2 < p) (hJc : Contin
 
 /-! ### Check: a transported structure -/
 
-omit [FiniteDimensional ℂ V] in
+omit [CompleteSpace V] in
 /-- **The transported structure.** For `J = Ψ i Ψ⁻¹` and any `Φ₁` with `J(z₀) Φ₁ = Φ₁ i`, for
-instance `Φ₁ = Ψ(z₀)`, the standard frame is `Ψ` composed with a frame commuting with `i`: the
-frame of the reduction is determined by `J` up to complex-linear changes. -/
+instance `Φ₁ = Ψ(z₀)`, the standard frame is `Ψ` composed with a real-linear map commuting with
+`i`, that is, a complex-linear map. Where the standard frame is invertible, so is that map, and the
+frame of the reduction is then determined by `J` up to a complex-linear change of frame. -/
 theorem commute_symm_comp_standardFrame_transportedComplexStructure {Ψ : ℂ → V ≃L[ℝ] V}
     (hΦ₁ : transportedComplexStructure Ψ z₀ ∘L (Φ₁ : V →L[ℝ] V) =
       (Φ₁ : V →L[ℝ] V) ∘L (I • ContinuousLinearMap.id ℝ V)) (z : ℂ) :
