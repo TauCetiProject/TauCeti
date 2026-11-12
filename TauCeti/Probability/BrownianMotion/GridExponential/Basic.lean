@@ -98,7 +98,7 @@ theorem _root_.MeasureTheory.Adapted.measurable_gridExponential (hW : Adapted �
 
 /-- A normalized Brownian exponential increment with a bounded left-measurable height
 preserves integrability and has conditional mean equal to its left-measurable multiplier. -/
-theorem IsFilteredPreBrownianReal.integrable_mul_exp_sub_and_condExp
+private theorem IsFilteredPreBrownianReal.integrable_mul_exp_sub_and_condExp
     (hW : IsFilteredPreBrownianReal ℱ W P) {u v : ℝ≥0} (huv : u ≤ v)
     {a X : Ω → ℝ} (ha : Measurable[ℱ u] a) (hK : ∀ᵐ ω ∂P, |a ω| ≤ K)
     (hX : Measurable[ℱ u] X) (hi : Integrable X P) :
@@ -138,6 +138,26 @@ theorem IsFilteredPreBrownianReal.integrable_mul_exp_sub_and_condExp
   have hz : -(a ω ^ 2 * ((v : ℝ) - u) / 2) +
       ((v : ℝ) - u) * a ω ^ 2 / 2 = 0 := by ring
   rw [hz, exp_zero, mul_one]
+
+/-- A normalized Brownian exponential increment with a bounded left-measurable height
+preserves integrability of a left-measurable multiplier. -/
+theorem IsFilteredPreBrownianReal.integrable_mul_exp_sub
+    (hW : IsFilteredPreBrownianReal ℱ W P) {u v : ℝ≥0} (huv : u ≤ v)
+    {a X : Ω → ℝ} (ha : Measurable[ℱ u] a) (hK : ∀ᵐ ω ∂P, |a ω| ≤ K)
+    (hX : Measurable[ℱ u] X) (hi : Integrable X P) :
+    Integrable (fun ω ↦ X ω *
+      exp (a ω * (W v ω - W u ω) - a ω ^ 2 * ((v : ℝ) - u) / 2)) P :=
+  (hW.integrable_mul_exp_sub_and_condExp huv ha hK hX hi).1
+
+/-- A normalized Brownian exponential increment with a bounded left-measurable height
+has conditional mean equal to its left-measurable multiplier. -/
+theorem IsFilteredPreBrownianReal.condExp_mul_exp_sub
+    (hW : IsFilteredPreBrownianReal ℱ W P) {u v : ℝ≥0} (huv : u ≤ v)
+    {a X : Ω → ℝ} (ha : Measurable[ℱ u] a) (hK : ∀ᵐ ω ∂P, |a ω| ≤ K)
+    (hX : Measurable[ℱ u] X) (hi : Integrable X P) :
+    P[(fun ω ↦ X ω *
+      exp (a ω * (W v ω - W u ω) - a ω ^ 2 * ((v : ℝ) - u) / 2)) | ℱ u] =ᵐ[P] X :=
+  (hW.integrable_mul_exp_sub_and_condExp huv ha hK hX hi).2
 
 private theorem gridExponential_step (hW : IsFilteredPreBrownianReal ℱ W P)
     (hτ : Monotone τ) (hθ : ∀ j, Measurable[ℱ (τ j)] (θ j))

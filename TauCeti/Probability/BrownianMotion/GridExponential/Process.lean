@@ -114,7 +114,7 @@ private theorem integrable_mul_stepExponential (hW : IsFilteredPreBrownianReal �
     (ha : Measurable[ℱ u] a) (hK : ∀ᵐ ω ∂P, |a ω| ≤ K)
     (hX : Measurable[ℱ u] X) (hXi : Integrable X P) (t : ℝ≥0) :
     Integrable (X * stepExponential a W u t) P := by
-  exact (hW.integrable_mul_exp_sub_and_condExp (le_max_left u t) ha hK hX hXi).1
+  exact hW.integrable_mul_exp_sub (le_max_left u t) ha hK hX hXi
 
 private theorem stronglyMeasurable_stepExponential (hW : Adapted ℱ W)
     (ha : Measurable[ℱ u] a) (t : ℝ≥0) :
@@ -137,9 +137,9 @@ private theorem condExp_stepExponential_of_le (hW : IsFilteredPreBrownianReal �
   have hi : Integrable (stepExponential a W u s) P := by
     simpa only [one_mul] using
       integrable_mul_stepExponential (X := 1) hW ha hK measurable_const (integrable_const 1) s
-  have hc := (hW.integrable_mul_exp_sub_and_condExp hst
+  have hc := hW.condExp_mul_exp_sub hst
     (ha.mono (ℱ.mono hus) le_rfl) hK
-    (stronglyMeasurable_stepExponential hW.adapted ha s).measurable hi).2
+    (stronglyMeasurable_stepExponential hW.adapted ha s).measurable hi
   have heq : (fun ω ↦ stepExponential a W u s ω *
       exp (a ω * (W t ω - W s ω) - a ω ^ 2 * ((t : ℝ) - s) / 2)) =
       stepExponential a W u t := by
@@ -201,11 +201,11 @@ private theorem gridExponentialProcess_succ_eq_add {τ : ℕ → ℝ≥0} (hτ :
   · have hzero := stepExponential_of_le (θ n) W
       ((min_le_right (τ (n + 1)) t).trans htn)
     ext ω
-    rw [Pi.add_apply, Pi.mul_apply, Pi.sub_apply, hzero, Pi.one_apply, sub_self,
-      mul_zero, add_zero, gridExponentialProcess_succ, ← hstep ω, hzero, Pi.one_apply, mul_one]
+    rw [gridExponentialProcess_succ, ← hstep ω]
+    simp [hzero]
   · have hfreeze := gridExponentialProcess_eq_gridExponential_of_ge hτ θ W n (le_of_not_ge htn)
     ext ω
-    rw [Pi.add_apply, Pi.mul_apply, Pi.sub_apply, Pi.one_apply,
+    simp only [Pi.add_apply, Pi.mul_apply, Pi.sub_apply, Pi.one_apply,
       gridExponentialProcess_succ, ← hstep ω, hfreeze]
     ring
 
