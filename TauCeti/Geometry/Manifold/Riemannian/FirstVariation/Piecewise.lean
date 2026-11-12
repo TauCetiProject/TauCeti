@@ -103,7 +103,6 @@ theorem eventually_energy_eq_sum_of_piecewise {n : ℕ} (τ : Fin (n + 1) → �
 end EnergySum
 
 variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- The first variation of energy for a continuous piecewise smooth family, including all

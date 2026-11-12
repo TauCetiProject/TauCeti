@@ -111,9 +111,10 @@ gluing lemma consumes.
   quadratic cost is integrable against a coupling of laws of finite second moment, and
   `TauCeti.lintegral_edist_sq_eq_ofReal_integral` rewrites its transport integral as a real one;
 * `TauCeti.wassersteinEDist_rpow_eq_transportCost` and
-  `TauCeti.wassersteinEDist_eq_transportCost_rpow` — for `0 < p < ∞`, the exact bridge to Layer 1's
-  transport cost of `edist ^ p`, with `TauCeti.isOptimalCoupling_edist_rpow_iff` identifying the
-  minimizers, `TauCeti.wassersteinEDist_one_eq_transportCost` giving the case `p = 1`, and
+  `TauCeti.wassersteinEDist_eq_transportCost_rpow` — for `0 < p < ∞`, the exact bridge to the
+  transport cost `TauCeti.transportCost` of `edist ^ p`, with
+  `TauCeti.isOptimalCoupling_edist_rpow_iff` identifying the minimizers,
+  `TauCeti.wassersteinEDist_one_eq_transportCost` giving the case `p = 1`, and
   `TauCeti.wassersteinEDist_rpow_le_lintegral` the bound by the transport integral of a single
   coupling, and `TauCeti.transportCost_edist_rpow_eq_top_of_not_hasFiniteMoment` the infinite
   value against a target without finite moment;
@@ -496,7 +497,7 @@ theorem hasFiniteMoment_iff_exists_wassersteinEDist_dirac_ne_top
 
 /-- **The two-Dirac value.** The only coupling of `δ x` with `δ y` is `δ (x, y)`, so the
 Wasserstein distance of two Dirac measures is the ground distance of their atoms, for every
-nonzero exponent. This is the acceptance check `W_p (δ_x, δ_y) = d (x, y)`.
+nonzero exponent: `W_p (δ_x, δ_y) = d (x, y)`.
 
 Uniqueness of the coupling pins the infimum down without any measurability of the ground
 distance, which is also what makes this a usable `simp` lemma: the one-sided Dirac identities

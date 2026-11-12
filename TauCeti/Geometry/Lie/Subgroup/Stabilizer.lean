@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
+public import TauCeti.Geometry.Lie.Subgroup.OneParameter
 public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 
 import TauCeti.Topology.Algebra.ConstMulAction
@@ -25,7 +26,9 @@ This file relates the two. On a `T₁` manifold the stabilizer is closed, hence 
 subgroup by the closed-subgroup theorem. The one-parameter subgroup `t ↦ exp (t ξ)` fixes `x`
 exactly when `ξ_M(x) = 0`: the curve `t ↦ exp (t ξ) • x` is an integral curve of `ξ_M` through
 `x`, which is the constant curve exactly when `ξ_M(x) = 0`, by uniqueness of integral curves
-(`TauCeti.mulInvariantExp_smul_smul_eq_iff`).
+(`TauCeti.mulInvariantExp_smul_smul_eq_iff`). Since the stabilizer is closed, `ξ_M(x) = 0` also
+says that the closed one-parameter subgroup `T_ξ` (`TauCeti.Lie.closedOneParameterSubgroup`), the
+closure of `{exp (t ξ) | t ∈ ℝ}`, fixes `x`.
 Consequently **the Lie algebra of `G_x` is `𝔤_x`**. Along an orbit, the isotropy algebras are
 conjugate, `𝔤_{g • x} = Ad_g 𝔤_x`, as the stabilizers are
 (`TauCeti.adjointContinuousLinearMap_mem_isotropy_smul_iff`).
@@ -38,6 +41,8 @@ with discrete stabilizer, at which the form is nondegenerate, a regular point of
 
 ## Main results
 
+* `TauCeti.Lie.mem_isotropy_fundamental_iff_closedOneParameterSubgroup_le`: `ξ ∈ 𝔤_x` exactly
+  when the closed one-parameter subgroup `T_ξ`, the closure of `{exp (t ξ) | t ∈ ℝ}`, fixes `x`.
 * `TauCeti.Lie.isEmbeddedLieSubgroup_stabilizer`: the stabilizer of a point of a `T₁` space under a
   continuous action of a finite-dimensional real Lie group is an embedded Lie subgroup.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_stabilizer`: **the Lie algebra of `G_x` is the isotropy
@@ -98,6 +103,17 @@ theorem mem_isotropy_fundamental_iff [CompleteSpace E'] {ξ : GroupLieAlgebra I 
   simp only [InfinitesimalAction.mem_isotropy_iff, InfinitesimalAction.fundamental_apply,
     MulAction.mem_stabilizer_iff]
   exact mulInvariantExp_smul_smul_eq_iff.symm
+
+/-- **Isotropy and closed one-parameter subgroups.** `ξ ∈ 𝔤_x` exactly when the closed
+one-parameter subgroup `T_ξ`, the closure of `{exp (t ξ) | t ∈ ℝ}`, fixes `x`: the stabilizer is
+closed, so it contains `T_ξ` as soon as it contains every `exp (t ξ)`. -/
+theorem mem_isotropy_fundamental_iff_closedOneParameterSubgroup_le [CompleteSpace E']
+    [IsTopologicalGroup G] {ξ : GroupLieAlgebra I G} {x : M} :
+    ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x ↔
+      closedOneParameterSubgroup ξ ≤ MulAction.stabilizer G x := by
+  have : ContinuousSMul G M := ContMDiffSMul.continuousSMul (I := I) (I' := I') ∞
+  rw [closedOneParameterSubgroup_le (isClosed_stabilizer (continuous_id.smul continuous_const)),
+    mem_isotropy_fundamental_iff]
 
 /-- **The Lie algebra of the stabilizer is the isotropy algebra.** Under the identification of
 left-invariant derivations with `𝔤` by evaluation at the identity, the Lie algebra

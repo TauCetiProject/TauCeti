@@ -283,7 +283,7 @@ theorem exists_contMDiffRiemannianMetric_compatible_totallyReal_on {n : ℕ∞}
           refine ⟨fun v w ↦ ?_, fun v hv ↦ ?_, fun v w ↦ ?_, fun _ a ha c hc ↦ ?_⟩
           · rw [hs y hy, hs y hy]
             exact ((hLW y hy).isSymm_compatibleForm
-              (LinearMap.BilinForm.isSymm_def.2 fun v w ↦ by simpa using g.symm y v w)).eq v w
+              fun a _ b _ ↦ by simpa using g.symm y a b).eq v w
           · rw [hs y hy]
             exact (hLW y hy).compatibleForm_pos hJ (fun a _ ha ↦ by simpa using g.pos y a ha) hv
           · rw [hs y hy, hs y hy]
