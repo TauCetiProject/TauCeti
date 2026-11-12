@@ -41,8 +41,6 @@ namespace TauCeti
 variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-section Complete
-
 /-- The normal-bundle addition map in projected coordinates from the normal space at `u₀`. -/
 def normalParametrization (g : E → V) (u₀ : E) : E × (fderiv ℝ g u₀).rangeᗮ → V :=
   fun p => g p.1 + (fderiv ℝ g p.1).rangeᗮ.starProjection p.2
@@ -52,8 +50,6 @@ def normalParametrization (g : E → V) (u₀ : E) : E × (fderiv ℝ g u₀).ra
     (p : E × (fderiv ℝ g u₀).rangeᗮ) :
     normalParametrization g u₀ p = g p.1 + (fderiv ℝ g p.1).rangeᗮ.starProjection p.2 :=
   (rfl)
-
-variable [CompleteSpace V]
 
 /-- Normal parametrizations lose one derivative, just as the normal projection does.
 Only injectivity of the differential at the base point of `p` is needed. -/
@@ -91,8 +87,6 @@ theorem hasFDerivAt_normalParametrization {g : E → V} {u₀ : E}
   intro p
   simp [W, Q, ContinuousLinearMap.coprod_apply,
     Submodule.starProjection_eq_self_iff.mpr p.2.property]
-
-end Complete
 
 variable [FiniteDimensional ℝ V]
 
