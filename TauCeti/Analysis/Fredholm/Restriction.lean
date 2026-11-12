@@ -46,28 +46,28 @@ plus `codim F₁`. -/
 @[simp]
 theorem index_restrict (hE₁ : IsClosed (E₁ : Set E)) [E₁.CoFG]
     (hF₁ : IsClosed (F₁ : Set F)) [F₁.CoFG] (hT : Set.MapsTo T E₁ F₁)
-    (hT₁ : ContinuousLinearMap.IsFredholm (T.restrict hT)) :
-    ContinuousLinearMap.index (T.restrict hT) = ContinuousLinearMap.index T -
+    (hT₁ : IsFredholm (T.restrict hT)) :
+    index (T.restrict hT) = index T -
       (finrank K (E ⧸ E₁) : ℤ) + finrank K (F ⧸ F₁) := by
-  have hTfull := ContinuousLinearMap.IsFredholm.of_restrict hE₁ hF₁ hT hT₁
+  have hTfull := IsFredholm.of_restrict hE₁ hF₁ hT hT₁
   have hιE := Submodule.isFredholm_subtypeL hE₁
   have hιF := Submodule.isFredholm_subtypeL hF₁
   have hfactor : T.comp E₁.subtypeL = F₁.subtypeL.comp (T.restrict hT) := by
     ext x
-    exact (congrArg Subtype.val (ContinuousLinearMap.restrict_apply hT x)).symm
-  have hdom : ContinuousLinearMap.index (T.comp E₁.subtypeL) =
-      ContinuousLinearMap.index T + ContinuousLinearMap.index E₁.subtypeL := by
-    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+    exact (congrArg Subtype.val (restrict_apply hT x)).symm
+  have hdom : index (T.comp E₁.subtypeL) =
+      index T + index E₁.subtypeL := by
+    simpa only [index_def, toLinearMap_comp] using
       hTfull.index_comp hιE
-  have hcod : ContinuousLinearMap.index (F₁.subtypeL.comp (T.restrict hT)) =
-      ContinuousLinearMap.index F₁.subtypeL + ContinuousLinearMap.index (T.restrict hT) := by
-    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+  have hcod : index (F₁.subtypeL.comp (T.restrict hT)) =
+      index F₁.subtypeL + index (T.restrict hT) := by
+    simpa only [index_def, toLinearMap_comp] using
       hιF.index_comp hT₁
-  have hEindex : ContinuousLinearMap.index E₁.subtypeL = -(finrank K (E ⧸ E₁) : ℤ) := by
-    rw [ContinuousLinearMap.index_of_injective E₁.subtypeL Subtype.val_injective,
+  have hEindex : index E₁.subtypeL = -(finrank K (E ⧸ E₁) : ℤ) := by
+    rw [index_of_injective E₁.subtypeL Subtype.val_injective,
       Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
-  have hFindex : ContinuousLinearMap.index F₁.subtypeL = -(finrank K (F ⧸ F₁) : ℤ) := by
-    rw [ContinuousLinearMap.index_of_injective F₁.subtypeL Subtype.val_injective,
+  have hFindex : index F₁.subtypeL = -(finrank K (F ⧸ F₁) : ℤ) := by
+    rw [index_of_injective F₁.subtypeL Subtype.val_injective,
       Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
   rw [hfactor, hcod, hEindex, hFindex] at hdom
   omega

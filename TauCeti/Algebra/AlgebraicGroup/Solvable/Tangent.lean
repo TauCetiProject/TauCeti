@@ -15,10 +15,10 @@ import TauCeti.RingTheory.Smooth.GeometricallyReduced
 /-!
 # Lie algebras of solvable affine groups
 
-A geometrically reduced, geometrically connected finite-type affine group with solvable
-geometric points has solvable Lie algebra, in every characteristic. Over an algebraically
-closed field, Lie--Kolchin embeds the group into an upper triangular general linear group.
-The differential is injective and the upper triangular tangent Lie algebra is solvable.
+A geometrically reduced finite-type affine group with solvable geometric points has solvable
+Lie algebra, in every characteristic. Over an algebraically closed field, the identity component
+has the same Lie algebra, and Lie--Kolchin embeds it into an upper triangular general linear
+group. The differential is injective and the upper triangular tangent Lie algebra is solvable.
 Scalar extension and faithful-flat descent of Lie solvability give the general field case.
 
 In characteristic zero this completes the equivalence between geometric solvability of a
@@ -47,31 +47,44 @@ universe u
 
 noncomputable section
 
-/-- Over an algebraically closed field, a reduced connected affine group of finite type with
-solvable rational points has solvable Lie algebra, in every characteristic. -/
+/-- Over an algebraically closed field, a reduced affine group of finite type with solvable
+rational points has solvable Lie algebra, in every characteristic. -/
 theorem isSolvable_lieAlgebra_of_isSolvable_points
     {k : Type u} [Field k] [IsAlgClosed k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
-    [IsReduced H] [ConnectedSpace (PrimeSpectrum H)]
-    [Group.IsSolvable (WithConv (H →ₐ[k] k))] :
+    [IsReduced H] [Group.IsSolvable (WithConv (H →ₐ[k] k))] :
     LieAlgebra.IsSolvable (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
-  obtain ⟨n, f, hf⟩ := exists_upperTriangular_surjective_of_weight_vectors
-    (k := k) (H := H) fun _ _ _ _ _ _ ↦
-      Comodule.hasNonzeroWeightVector_of_isSolvable (k := k) (H := H)
-  exact Function.Injective.lieAlgebra_isSolvable (R := k)
-    (f := derivationCompLieHom (B := k) f.hom)
-    (derivationCompLieHom_injective_of_surjective (B := k) f.hom hf)
+  -- The identity component is reduced (`isReduced_identityComponent`) and connected with
+  -- solvable points, and has the same Lie algebra.
+  let Q := FiniteTypeCommHopfAlgCat.identityComponent H
+  have : Group.IsSolvable (WithConv (Q →ₐ[k] k)) :=
+    Group.isSolvable_of_isSolvable_injective
+      (f := GrpCat.Hom.hom (CommHopfAlgCat.quotientPointsHom H.obj
+        (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k)))
+      (CommHopfAlgCat.quotientPointsHom_injective _ _ _)
+  have hQ : LieAlgebra.IsSolvable (Derivation k Q (Bialgebra.CounitAlgebra k Q k)) := by
+    obtain ⟨n, f, hf⟩ := exists_upperTriangular_surjective_of_weight_vectors
+      (k := k) (H := Q) fun _ _ _ _ _ _ ↦
+        Comodule.hasNonzeroWeightVector_of_isSolvable (k := k) (H := Q)
+    exact Function.Injective.lieAlgebra_isSolvable (R := k)
+      (f := derivationCompLieHom (B := k) f.hom)
+      (derivationCompLieHom_injective_of_surjective (B := k) f.hom hf)
+  let I := HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)
+  have hI : I.lieSubalgebra (B := k) = ⊤ :=
+    HopfIdeal.lieSubalgebra_identityComponentHopfIdeal_eq_top
+  have hsub : LieAlgebra.IsSolvable (I.lieSubalgebra (B := k)) :=
+    (LieAlgebra.solvable_iff_equiv_solvable (HopfIdeal.quotientLieEquiv (B := k) I)).mp hQ
+  exact (LieAlgebra.solvable_iff_equiv_solvable
+    ((LieEquiv.ofEq _ _ (by rw [hI])).trans LieSubalgebra.topEquiv)).mp hsub
 
-/-- The Lie algebra of a geometrically reduced and geometrically connected solvable affine
-group of finite type is solvable, over every field. -/
+/-- The Lie algebra of a geometrically reduced solvable affine group of finite type is solvable,
+over every field. -/
 theorem geometricallySolvablePointsCommHopfAlgProperty.isSolvable_lieAlgebra
     {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
     [Algebra.IsGeometricallyReduced k H]
-    (hsolv : geometricallySolvablePointsCommHopfAlgProperty k H.obj)
-    (hconn : geometricallyConnectedCommHopfAlgProperty k H.obj) :
+    (hsolv : geometricallySolvablePointsCommHopfAlgProperty k H.obj) :
     LieAlgebra.IsSolvable (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
   let K := AlgebraicClosure k
   let HK := FiniteTypeCommHopfAlgCat.baseChange (K := K) H
-  let _ : ConnectedSpace (PrimeSpectrum HK) := hconn.connectedSpace_algebraicClosureBaseChange
   let _ : IsReduced HK := inferInstance
   let _ : Group.IsSolvable (WithConv (H →ₐ[k] K)) :=
     (geometricallySolvablePointsCommHopfAlgProperty_iff k H.obj).mp hsolv
@@ -96,7 +109,7 @@ theorem geometricallySolvablePointsCommHopfAlgProperty_iff_isSolvable_lieAlgebra
   let _ : Algebra.Smooth k H :=
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k H.obj)
   constructor
-  · exact fun hsolv ↦ hsolv.isSolvable_lieAlgebra hconn
+  · exact fun hsolv ↦ hsolv.isSolvable_lieAlgebra
   · intro hlie
     let _ := hlie
     exact geometricallySolvablePointsCommHopfAlgProperty.of_geometricallyConnected_of_isSolvable_lie

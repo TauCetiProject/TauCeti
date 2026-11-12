@@ -70,7 +70,22 @@ def sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℂ :=
 theorem sectionValue_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue x z = 2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I) := (rfl)
 
+/-- The section of a sum of fields is the sum of their sections. -/
+@[simp]
+theorem sectionValue_add (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue (x + y) z = sectionValue x z + sectionValue y z := by
+  simp only [sectionValue_apply, Pi.add_apply, PiLp.add_apply, ofReal_add]
+  ring
+
+/-- The section of a real multiple of a field is the multiple of its section. -/
+@[simp]
+theorem sectionValue_smul (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue (t • x) z = t * sectionValue x z := by
+  simp only [sectionValue_apply, Pi.smul_apply, PiLp.smul_apply, smul_eq_mul, ofReal_mul]
+  ring
+
 /-- The section of a difference of fields is the difference of their sections. -/
+@[simp]
 theorem sectionValue_sub (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue (x - y) z = sectionValue x z - sectionValue y z := by
   simp only [sectionValue_apply, Pi.sub_apply, PiLp.sub_apply, ofReal_sub]
@@ -296,8 +311,6 @@ continuous. -/
 theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ 1 x)
     (v : ℂ) : Continuous fun z ↦ covariantDerivative x z v := by
   have hxi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i := (contDiff_piLp 2).1 hx i
-  have hdx (i : Fin 4) : Continuous fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
-    ((hxi i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   have := hx.continuous
   simp only [covariantDerivative_apply, sectionValue_apply,
     fderiv_sectionValue_apply ((hxi 2).differentiable one_ne_zero _)

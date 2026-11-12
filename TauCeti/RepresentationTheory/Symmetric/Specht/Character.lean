@@ -65,8 +65,6 @@ orthogonality relations and the specification `TauCeti.IsCharacterTableSpec` —
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 6.
 * B. E. Sagan, *The Symmetric Group*, 2nd ed. (2001), Section 4.10.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 6, "The Specht character".
 -/
 
 public section

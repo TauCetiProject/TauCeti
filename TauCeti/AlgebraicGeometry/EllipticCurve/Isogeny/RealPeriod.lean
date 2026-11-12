@@ -133,7 +133,7 @@ private theorem substitution_hypotheses (φ : Isogeny W₁ W₂) {c : ℝ}
     rw [oddPart]
     field_simp
   · rw [oddPart, div_pow, div_mul_eq_mul_div,
-      eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc hD]
+      eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc x]
     field_simp
 
 /-- **The real period integral under an isogeny, counting fibres.** Let `φ : W₁ → W₂` be an
@@ -148,7 +148,7 @@ theorem ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard (φ : Isogeny 
             (fun x ↦ φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) ⁻¹' {y}).encard *
           ENNReal.ofReal (√(W₂.Ψ₂Sq.eval y))⁻¹ := by
   refine W₁.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard
-    (ne_zero_of_pullbackDifferential_eq_smul φ hc) (countable_exceptional φ hc)
+    (countable_exceptional φ hc)
     (s := oddPart φ c)
     (fun x _ hx ↦ ?_) (fun x _ hx ↦ ?_) (fun x _ hx ↦ ?_) <;>
   · simp only [mem_union, mem_ofPred_eq, IsRoot.def, not_or] at hx
@@ -164,8 +164,7 @@ theorem abs_mul_realPeriod_eq_of_ae_encard_eq (φ : Isogeny W₁ W₂) {c : ℝ}
     {n : ℕ} (hn : ∀ᵐ y, 0 < W₂.Ψ₂Sq.eval y → ({x | 0 < W₁.Ψ₂Sq.eval x} ∩
       (fun x ↦ φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) ⁻¹' {y}).encard = n) :
     |c| * W₁.realPeriod = n * W₂.realPeriod := by
-  refine W₁.abs_mul_realPeriod_eq_of_ae_encard_eq (ne_zero_of_pullbackDifferential_eq_smul φ hc)
-    (countable_exceptional φ hc)
+  refine W₁.abs_mul_realPeriod_eq_of_ae_encard_eq (countable_exceptional φ hc)
     (s := oddPart φ c)
     (fun x _ hx ↦ ?_) (fun x _ hx ↦ ?_) (fun x _ hx ↦ ?_) hn <;>
   · simp only [mem_union, mem_ofPred_eq, IsRoot.def, not_or] at hx
@@ -393,7 +392,7 @@ private theorem nonneg_eval_Ψ₂Sq_div
     (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
     {x : ℝ} (hD : φ.xRatFunc.denom.eval x ≠ 0) (hx : 0 ≤ W₁.Ψ₂Sq.eval x) :
     0 ≤ W₂.Ψ₂Sq.eval (φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) := by
-  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc hD
+  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc x
   have hc0 := ne_zero_of_pullbackDifferential_eq_smul φ hc
   have hpos : 0 < c ^ 2 * φ.xRatFunc.denom.eval x ^ 4 := by positivity
   exact (mul_nonneg_iff_of_pos_left hpos).mp (h ▸ mul_nonneg (sq_nonneg _) hx)
@@ -404,7 +403,7 @@ private theorem eval_Ψ₂Sq_div_eq_zero
     {x : ℝ} (hD : φ.xRatFunc.denom.eval x ≠ 0)
     (hx : (wronskian φ.xRatFunc.denom φ.xRatFunc.num).eval x * W₁.Ψ₂Sq.eval x = 0) :
     W₂.Ψ₂Sq.eval (φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) = 0 := by
-  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc hD
+  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc x
   have hc0 := ne_zero_of_pullbackDifferential_eq_smul φ hc
   rw [sq, mul_assoc, hx, mul_zero] at h
   simpa [hc0, hD] using h.symm
@@ -435,7 +434,7 @@ private theorem exists_forall_lt_eval_denom_ne_zero_and_pos :
   set Z := {x | φ.xRatFunc.denom.eval x = 0 ∨ W₁.Ψ₂Sq.eval x ≤ 0}
   obtain ⟨e, he, hpos⟩ := exists_isRoot_Ψ₂Sq_and_forall_lt_pos_eval W₁
   obtain ⟨M, hM⟩ := eventually_atTop.mp
-    (Polynomial.eventually_atTop_not_isRoot _ φ.xRatFunc.denom_ne_zero)
+    (Polynomial.eventually_atTop_not_isRoot φ.xRatFunc.denom_ne_zero)
   have heZ : e ∈ Z := Or.inr he.eq_zero.le
   have hZb : BddAbove Z := ⟨max e M, fun x hx ↦ le_of_not_gt fun h ↦ by
     rcases hx with hx | hx
@@ -462,7 +461,7 @@ private theorem tendsto_eval_div_atTop
     Tendsto (fun x ↦ φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) atTop atTop := by
   obtain ⟨p, -, -, hgt⟩ := exists_forall_lt_eval_denom_ne_zero_and_pos φ
   refine tendsto_eval_div_atTop_of_tendsto_abs hc
-    (abs_div_tendsto_atTop_atTop_of_degree_gt _ _
+    (abs_div_tendsto_atTop_atTop_of_degree_gt
       (degree_lt_degree (natDegree_denom_lt_natDegree_num_xRatFunc φ)) φ.xRatFunc.denom_ne_zero)
     ((eventually_gt_atTop p).mono fun x hx ↦ ⟨(hgt hx).1, (hgt hx).2.le⟩)
 
