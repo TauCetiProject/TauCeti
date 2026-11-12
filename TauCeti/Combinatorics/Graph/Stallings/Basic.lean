@@ -141,15 +141,6 @@ def subgroup (a : S.graph.V) : Subgroup (FreeGroup α) where
 theorem read_mem_subgroup {a : S.graph.V} (p : S.graph.Path a a) :
     S.read p ∈ S.subgroup a := ⟨p, rfl⟩
 
-/-- A labelled graph without darts accepts only the trivial subgroup, at every vertex. -/
-theorem subgroup_eq_bot_of_isEmpty [IsEmpty S.graph.E] (a : S.graph.V) :
-    S.subgroup a = ⊥ := by
-  refine (Subgroup.eq_bot_iff_forall _).mpr ?_
-  rintro _ ⟨p, rfl⟩
-  cases p with
-  | nil => exact S.read_nil a
-  | cons p e => exact isEmptyElim e.1
-
 /-- A path whose label word is freely reduced is a reduced path, in any labelled graph:
 a dart followed by its reverse reads a letter followed by its inverse. -/
 theorem isReduced_of_isReduced_word {a b : S.graph.V} (p : S.graph.Path a b)
@@ -232,6 +223,14 @@ theorem subgroup_eq_bot_of_isAcyclic (h : S.graph.IsAcyclic) (a : S.graph.V) :
   intro g hg
   obtain ⟨p, hp, rfl⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
   simp [(S.graph.isAcyclic_iff.mp h) a p hp]
+
+/-- A labelled graph without darts accepts only the trivial subgroup, at every vertex. -/
+theorem subgroup_eq_bot_of_isEmpty [IsEmpty S.graph.E] (a : S.graph.V) :
+    S.subgroup a = ⊥ :=
+  S.subgroup_eq_bot_of_isAcyclic (S.graph.isAcyclic_iff.mpr fun _ p _ => by
+    cases p with
+    | nil => rfl
+    | cons _ e => exact isEmptyElim e.1) a
 
 /-- Moving the base vertex along a path conjugates the accepted subgroup by its label. -/
 theorem subgroup_conj {a b : S.graph.V} (p : S.graph.Path a b) :

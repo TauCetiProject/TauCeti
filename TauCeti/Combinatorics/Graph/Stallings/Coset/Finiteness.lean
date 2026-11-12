@@ -73,7 +73,7 @@ subgroup it accepts is finitely generated. The alphabet must be finite: the rose
 infinite alphabet has one vertex and accepts the whole free group. -/
 theorem IsFolded.finite_vertex_iff_fg [Finite α] (hS : S.IsFolded)
     (hc : S.graph.IsCore S.base) : Finite S.graph.V ↔ (S.subgroup S.base).FG :=
-  ⟨fun _ => (hS.finite_dart_iff_fg hc).mp hS.finite_dart, hS.finite_vertex_of_fg hc⟩
+  ⟨fun _ => (hS.finite_dart_iff_fg hc).mp hS.finite_E, hS.finite_vertex_of_fg hc⟩
 
 /-! ### Invariance of the Stallings graph of a list of words -/
 
