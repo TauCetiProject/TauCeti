@@ -374,9 +374,9 @@ theorem finrank_squareIntegrableSolutionsOn_Ioi_add_finrank_pointSpectralSubspac
   have hU' := squareIntegrableSolutionsOn_Iio_eq_bot
     (fun τ x y ↦ (ContinuousLinearMap.adjoint_inner_right (B τ) x y).symm) hU
   -- All eigenvalues of `-1` are negative.
-  have hneg : Module.End.pointSpectralSubspace ((-1 : E →L[ℝ] E) : E →ₗ[ℝ] E) (Iio 0) = ⊤ :=
-    eq_top_iff.2 fun x _ ↦ Module.End.eigenspace_le_pointSpectralSubspace
-      (show (-1 : ℝ) ∈ Iio 0 by norm_num) (Module.End.mem_eigenspace_iff.2 (by simp))
+  have hneg : Module.End.pointSpectralSubspace ((-1 : E →L[ℝ] E) : E →ₗ[ℝ] E) (Iio 0) = ⊤ := by
+    simpa using Module.End.pointSpectralSubspace_smul_one_of_mem (𝕜 := ℝ) (E := E) (μ := -1)
+      (Ω := Iio 0) (by norm_num)
   rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hB, hU, top_inf_eq,
     squareIntegrableSolutionsOn_Ioi_congr hB hA fun τ hτ ↦ leftCap_of_nonneg hτ,
     ← squareIntegrableSolutionsOn_Iio_inf_Ioi hBadj, hU', bot_inf_eq, finrank_bot,
