@@ -7,26 +7,19 @@ module
 
 public import Mathlib.Algebra.FiveLemma
 public import TauCeti.Algebra.Category.ModuleCat.Biproducts
+public import TauCeti.AlgebraicTopology.Cohomology.Cup.Thom
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Cup
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Pair
 
 /-!
-# The Thom map of a pair over a base and its Mayer–Vietoris gluing
+# The Mayer–Vietoris gluing step for the Thom map
 
-Let `P = (X, A)` be a pair of spaces, `π : X ⟶ Y` a map to a base and `u ∈ Hⁿ(X, A; K)` a relative
-class with coefficients in a commutative ring `K`. The **Thom map** of `u` is
-
-`Φ_u : Hᵖ(Y; M) ⟶ Hᵖ⁺ⁿ(X, A; M)`,  `a ↦ π^*a ⌣ u`
-
-(`TopPair.thomMap`), for any `K`-module of coefficients `M`. It is natural in maps of pairs over
-maps of bases (`TopPair.thomMap_naturality`), so its bijectivity is invariant under isomorphisms
-(`TopPair.bijective_thomMap_iff_of_isIso`). For the Thom pair `(E, E₀)` of a vector bundle over its
-projection, and `u` a Thom class, it is the map `TauCeti.thomMap` of the Thom isomorphism.
-
-For a subset `Z ⊆ X` and a subset `S ⊆ Y` of the base, restricting `u ∈ Hⁿ(X, Z)` to the pair
-`(π⁻¹ S, π⁻¹ S ∩ Z)` over the restriction `π⁻¹ S ⟶ S` of `π` gives the **Thom map over `S`**
-(`TopCat.thomMapRestrict`). For a vector bundle and `Z` its nonzero vectors, this pair is the Thom
-pair `(E|_S, E₀|_S)` of the restriction of the bundle to `S`.
+Let `π : X ⟶ Y` be a map to a base, `Z ⊆ X` and `u ∈ Hⁿ(X, Z; K)` a relative class with
+coefficients in a commutative ring `K`. For a subset `S ⊆ Y` of the base, the Thom map over `S`
+(`TopCat.thomMapRestrict`, defined in `TauCeti.AlgebraicTopology.Cohomology.Cup.Thom`) is the map
+`Hᵖ(S; M) ⟶ Hᵖ⁺ⁿ(π⁻¹ S, π⁻¹ S ∩ Z; M)`, `a ↦ π^*a ⌣ u|`. For a vector bundle and `Z` its nonzero
+vectors, the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` is the Thom pair `(E|_S, E₀|_S)` of the restriction of the
+bundle to `S`.
 
 The main result is the **Mayer–Vietoris gluing step** (`TopCat.bijective_thomMapRestrict_union`):
 for open sets `U` and `V` of the base, if the Thom maps over `U`, `V` and `U ∩ V` are bijective in
@@ -46,12 +39,8 @@ vanishing hypothesis appears. The step is first proved when `U ∪ V = Y`
 (`TopCat.bijective_thomMap_of_union_eq_univ`), and the general case follows by restricting `π` over
 `U ∪ V`.
 
-## Main definitions and results
+## Main results
 
-* `TopPair.thomMap`: the Thom map `a ↦ π^*a ⌣ u` of a pair over a base.
-* `TopPair.thomMap_naturality`, `TopPair.bijective_thomMap_iff_of_isIso`: naturality and invariance
-  of bijectivity under isomorphisms.
-* `TopCat.thomMapRestrict`: the Thom map over a subset of the base.
 * `TopCat.bijective_thomMap_of_union_eq_univ`: the gluing step for an open cover of the base by two
   sets.
 * `TopCat.bijective_thomMapRestrict_union`: the gluing step over the union of two open sets.
@@ -72,122 +61,9 @@ open CategoryTheory Limits MonoidalCategory
 
 universe w
 
-namespace TopPair
-
-variable {K : Type w} [CommRing K] (M : ModuleCat.{w} K)
-
-/-- **The Thom map** of a pair `P = (X, A)` over a base `π : X ⟶ Y`: for a relative class
-`u ∈ Hⁿ(X, A; K)`, the map `Hᵖ(Y; M) ⟶ Hᵐ(X, A; M)`, `a ↦ π^*a ⌣ u`, `p + n = m`, as a
-`K`-bilinear map of `u` and `a`. -/
-def thomMap (P : TopPair.{w}) {Y : TopCat.{w}} (π : P.fst ⟶ Y) (n p m : ℕ) (h : p + n = m) :
-    P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n →ₗ[K]
-      Y.singularCohomology (ModuleCat.of K K) K M p →ₗ[K]
-        P.singularCohomology (ModuleCat.of K K) K M m :=
-  (P.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p n m h ∘ₗ
-    (TopCat.singularCohomologyMap π p).hom).flip
-
-variable {M}
-
-/-- The Thom map is the cup product of the pull-back to `X` with `u`. -/
-theorem thomMap_apply (P : TopPair.{w}) {Y : TopCat.{w}} (π : P.fst ⟶ Y) {n p m : ℕ}
-    (h : p + n = m) (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
-    (a : Y.singularCohomology (ModuleCat.of K K) K M p) :
-    P.thomMap M π n p m h u a =
-      P.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p n m h
-        (TopCat.singularCohomologyMap π p a) u :=
-  (rfl)
-
-/-- **Naturality of the Thom map.** A map of pairs `φ : P' ⟶ P` covering a map of bases
-`g : Y' ⟶ Y` intertwines the Thom map of `u` with that of its pull-back `φ^*u`:
-`Φ_{φ^*u}(g^*a) = φ^*Φ_u(a)`. -/
-theorem thomMap_naturality {P P' : TopPair.{w}} {Y Y' : TopCat.{w}} {π : P.fst ⟶ Y}
-    {π' : P'.fst ⟶ Y'} (φ : P' ⟶ P) (g : Y' ⟶ Y) (hφ : Hom.fst φ ≫ π = π' ≫ g) {n p m : ℕ}
-    (h : p + n = m) (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
-    (a : Y.singularCohomology (ModuleCat.of K K) K M p) :
-    P'.thomMap M π' n p m h (TopPair.singularCohomologyMap φ n u)
-        (TopCat.singularCohomologyMap g p a) =
-      TopPair.singularCohomologyMap φ m (P.thomMap M π n p m h u a) := by
-  rw [thomMap_apply, thomMap_apply, ← singularCup_naturality, ← ConcreteCategory.comp_apply,
-    ← TopCat.singularCohomologyMap_comp, ← hφ, TopCat.singularCohomologyMap_comp,
-    ConcreteCategory.comp_apply]
-  rfl
-
-/-- Bijectivity of the Thom map is invariant under isomorphisms of pairs over isomorphisms of
-bases. -/
-theorem bijective_thomMap_iff_of_isIso {P P' : TopPair.{w}} {Y Y' : TopCat.{w}} {π : P.fst ⟶ Y}
-    {π' : P'.fst ⟶ Y'} (φ : P' ⟶ P) (g : Y' ⟶ Y) [IsIso φ] [IsIso g]
-    (hφ : Hom.fst φ ≫ π = π' ≫ g) {n p m : ℕ} (h : p + n = m)
-    (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
-    Function.Bijective (P'.thomMap M π' n p m h (TopPair.singularCohomologyMap φ n u)) ↔
-      Function.Bijective (P.thomMap M π n p m h u) := by
-  have hg : Function.Bijective (TopCat.singularCohomologyMap (R := ModuleCat.of K K) (k := K)
-      (M := M) g p) :=
-    ((TauCeti.singularCohomologyFunctor _ K _ p).mapIso (asIso g).op).toLinearEquiv.bijective
-  have hφ' : Function.Bijective (TopPair.singularCohomologyMap (R := ModuleCat.of K K) (k := K)
-      (M := M) φ m) :=
-    ((TopPair.singularCohomologyFunctor _ K _ m).mapIso (asIso φ).op).toLinearEquiv.bijective
-  have hc : ⇑(P'.thomMap M π' n p m h (TopPair.singularCohomologyMap φ n u)) ∘
-      TopCat.singularCohomologyMap g p =
-        TopPair.singularCohomologyMap φ m ∘ P.thomMap M π n p m h u :=
-    funext fun a ↦ thomMap_naturality φ g hφ h u a
-  constructor
-  · intro h'
-    have := h'.comp hg
-    rw [hc] at this
-    exact (Function.Bijective.of_comp_iff' hφ' _).1 this
-  · intro h'
-    have := hφ'.comp h'
-    rw [← hc] at this
-    exact (Function.Bijective.of_comp_iff _ hg).1 this
-
-end TopPair
-
 namespace TopCat
 
 variable {K : Type w} [CommRing K] {X Y : TopCat.{w}} (π : X ⟶ Y) (Z : Set X)
-
-/-! ### Restriction over a subset of the base -/
-
-section Restrict
-
-/-- The inclusion `(π⁻¹ S, π⁻¹ S ∩ Z) ⟶ (X, Z)` of the restriction of the pair `(X, Z)` over a
-subset `S` of the base. -/
-def restrictPreimagePairMap (S : Set Y) :
-    TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S) ⟶ TopPair.ofSubset Z :=
-  TopPair.ofHom (ofHom (ContinuousMap.subtypeVal _)) (ofHom ⟨fun x ↦ ⟨x.1, x.2.2⟩, by fun_prop⟩)
-    (by ext; rfl)
-
-@[simp]
-theorem restrictPreimagePairMap_fst_apply (S : Set Y) (x : ↥(π ⁻¹' S)) :
-    TopPair.Hom.fst (restrictPreimagePairMap π Z S) x = x.1 :=
-  (rfl)
-
-variable (M : ModuleCat.{w} K)
-
-/-- The Thom map over a subset `S` of the base: the Thom map of the restriction of
-`u ∈ Hⁿ(X, Z)` to the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` over the restriction `π⁻¹ S ⟶ S` of `π`, from
-`Hᵖ(S; M)` to `Hᵐ(π⁻¹ S, π⁻¹ S ∩ Z; M)`. -/
-def thomMapRestrict (S : Set Y) (n p m : ℕ) (h : p + n = m) :
-    (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n →ₗ[K]
-      (of S).singularCohomology (ModuleCat.of K K) K M p →ₗ[K]
-        (TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S)).singularCohomology
-          (ModuleCat.of K K) K M m :=
-  (TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S)).thomMap M
-      (ofHom (π.hom.restrictPreimage S)) n p m h ∘ₗ
-    (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n).hom
-
-variable {M} in
-/-- The Thom map over `S` is the Thom map of the restriction of `u` to the pair over `S`. -/
-theorem thomMapRestrict_apply (S : Set Y) {n p m : ℕ} (h : p + n = m)
-    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
-    (a : (of S).singularCohomology (ModuleCat.of K K) K M p) :
-    thomMapRestrict π Z M S n p m h u a =
-      (TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S)).thomMap M
-        (ofHom (π.hom.restrictPreimage S)) n p m h
-        (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n u) a :=
-  (rfl)
-
-end Restrict
 
 /-! ### The gluing step for an open cover of the base -/
 
@@ -282,19 +158,17 @@ private theorem thomMapUnion_restrict {S : Set Y} (hS : π ⁻¹' S ⊆ π ⁻¹
           (Set.inter_subset_left : π ⁻¹' V ∩ Z ⊆ π ⁻¹' V))
         (ContinuousMap.inclusion hS) fun _ hx ↦ hSZ hx) ≫
       unionPairMap π Z U V = restrictPreimagePairMap π Z S :=
-    TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ by
-      -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-      erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply]
-      rfl)
+    TopPair.hom_ext_of_fst _ (by
+      simp only [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst]
+      exact TopCat.ext fun _ ↦ rfl)
   have hφπ : TopPair.Hom.fst (TopPair.ofInclusionMap
         (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S)
         (Set.union_subset_union (Set.inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U)
           (Set.inter_subset_left : π ⁻¹' V ∩ Z ⊆ π ⁻¹' V))
         (ContinuousMap.inclusion hS) fun _ hx ↦ hSZ hx) ≫ ofHom (ContinuousMap.subtypeVal _) ≫ π =
-      ofHom (π.hom.restrictPreimage S) ≫ ofHom (ContinuousMap.subtypeVal S) :=
-    TopCat.ext fun _ ↦ by
-      erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply]
-      rfl
+      ofHom (π.hom.restrictPreimage S) ≫ ofHom (ContinuousMap.subtypeVal S) := by
+    rw [TopPair.ofInclusionMap_fst]
+    exact TopCat.ext fun _ ↦ rfl
   rw [thomMapRestrict_apply, ← hφ, TopPair.singularCohomologyMap_comp_apply,
     TopPair.thomMap_naturality _ _ hφπ]
 
@@ -320,11 +194,9 @@ private theorem thomMapRestrict_restrict_inter {S : Set Y} (hS : U ∩ V ⊆ S)
         fun _ hx ↦ hSZ hx) ≫ restrictPreimagePairMap π Z S =
       interToUnionMap (Set.inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U)
         (Set.inter_subset_left : π ⁻¹' V ∩ Z ⊆ π ⁻¹' V) ≫ unionPairMap π Z U V :=
-    TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ by
-      -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-      erw [CategoryTheory.comp_apply, CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply,
-        TopPair.ofInclusionMap_fst_apply]
-      rfl)
+    TopPair.hom_ext_of_fst _ (by
+      simp only [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst]
+      exact TopCat.ext fun _ ↦ rfl)
   have hφπ : TopPair.Hom.fst (TopPair.ofInclusionMap
         (Set.inter_subset_inter (Set.inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U)
           (Set.inter_subset_left : π ⁻¹' V ∩ Z ⊆ π ⁻¹' V))
@@ -332,10 +204,9 @@ private theorem thomMapRestrict_restrict_inter {S : Set Y} (hS : U ∩ V ⊆ S)
         (ContinuousMap.inclusion (fun _ hx ↦ hS hx : π ⁻¹' U ∩ π ⁻¹' V ⊆ π ⁻¹' S))
         fun _ hx ↦ hSZ hx) ≫ ofHom (π.hom.restrictPreimage S) =
       ofHom ⟨((Set.mapsTo_preimage π U).inter_inter (Set.mapsTo_preimage π V)).restrict,
-        π.hom.continuous.restrict _⟩ ≫ ofHom (ContinuousMap.inclusion hS) :=
-    TopCat.ext fun _ ↦ by
-      erw [CategoryTheory.comp_apply, CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply]
-      rfl
+        π.hom.continuous.restrict _⟩ ≫ ofHom (ContinuousMap.inclusion hS) := by
+    rw [TopPair.ofInclusionMap_fst]
+    exact TopCat.ext fun _ ↦ rfl
   rw [thomMapRestrict_apply, ← TopPair.thomMap_naturality _ _ hφπ,
     ← TopPair.singularCohomologyMap_comp_apply, hφ, TopPair.singularCohomologyMap_comp_apply]
 
@@ -353,11 +224,10 @@ private theorem bijective_thomMapInter_iff {n p m : ℕ} (h : p + n = m)
       TopPair.singularCohomologyMap (interPairIso π Z U V).hom n
         (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z (U ∩ V)) n u) := by
     rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply]
-    refine congrArg (fun f ↦ TopPair.singularCohomologyMap f n u)
-      (TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ ?_))
-    -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-    erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply]
-    rfl
+    exact congrArg (fun f ↦ TopPair.singularCohomologyMap f n u)
+      (TopPair.hom_ext_of_fst _ (by
+        simp only [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst]
+        exact TopCat.ext fun _ ↦ rfl))
   rw [thomMapInter, hu]
   exact TopPair.bijective_thomMap_iff_of_isIso (π := ofHom (π.hom.restrictPreimage (U ∩ V)))
     (π' := ofHom ⟨((Set.mapsTo_preimage π U).inter_inter (Set.mapsTo_preimage π V)).restrict,
@@ -408,7 +278,8 @@ private theorem pairMayerVietorisδ_thomMapInter {n l m' m : ℕ} (h : l + n = m
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hδ
   -- The Thom map on the intersection pair is the cup product of `π^*a` with the restriction of
   -- `u`, so the cup-product form of the connecting morphism applies.
-  have key := singularCohomologyPairMayerVietorisδ_singularCup K (hU.preimage π.hom.continuous)
+  have key := singularCohomologyPairMayerVietorisδ_singularCup (R := ModuleCat.of K K)
+    (S := ModuleCat.of K K) (T := ModuleCat.of K K) K (hU.preimage π.hom.continuous)
     (hV.preimage π.hom.continuous) (preimage_union_preimage_eq_univ π hUV)
     (Set.inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U)
     (Set.inter_subset_left : π ⁻¹' V ∩ Z ⊆ π ⁻¹' V) hA hB (λ_ (𝟙_ (ModuleCat.{w} K))).inv
@@ -417,11 +288,8 @@ private theorem pairMayerVietorisδ_thomMapInter {n l m' m : ℕ} (h : l + n = m
         π.hom.continuous.restrict _⟩) l a)
     (TopPair.singularCohomologyMap (unionPairMap π Z U V) n u)
   refine key.trans ?_
-  -- `hδ` is stated with the coefficients `ModuleCat.of K K`, which the cup-product lemma writes as
-  -- the monoidal unit; `erw` identifies the two.
-  erw [← hδ]
-  rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp]
-  rfl
+  rw [← hδ, ← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp]
+  exact (TopPair.thomMap_apply _ _ h' _ _).symm
 
 variable {M} in
 /-- The Thom maps commute with the second maps of the Mayer–Vietoris sequences, the differences of
@@ -693,14 +561,14 @@ private theorem bijective_thomMapRestrict_restrict_iff (hSW : S ⊆ W) {n p m : 
         (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n u) := by
     rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
       ← TopPair.singularCohomologyMap_comp_apply]
-    refine congrArg (fun f ↦ TopPair.singularCohomologyMap f n u)
-      (TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ ?_))
-    -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-    erw [CategoryTheory.comp_apply, CategoryTheory.comp_apply,
-      TopPair.ofSubsetPreimageValIso_hom_fst_apply]
-    rfl
-  rw [thomMapRestrict, thomMapRestrict, LinearMap.comp_apply, LinearMap.comp_apply]
-  erw [hu]
+    exact congrArg (fun f ↦ TopPair.singularCohomologyMap f n u)
+      (TopPair.hom_ext_of_fst _ (by
+        simp only [TopPair.Hom.fst_comp, TopPair.ofSubsetPreimageValIso_hom_fst]
+        exact TopCat.ext fun _ ↦ rfl))
+  rw [show thomMapRestrict (ofHom (π.hom.restrictPreimage W)) ((↑) ⁻¹' (π ⁻¹' W ∩ Z)) M
+      ((↑) ⁻¹' S) n p m h (restrictClass π Z W u) = _ from
+      LinearMap.ext (thomMapRestrict_apply _ _ _ h _),
+    LinearMap.ext (thomMapRestrict_apply π Z S h u), hu]
   have hS : S ⊆ Set.range ((↑) : W → Y) := by rwa [Subtype.range_coe]
   let g := isoOfHomeo (X := of ↥((↑) ⁻¹' S : Set ↥W)) (Y := of ↥S)
     (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange hS)
@@ -749,8 +617,8 @@ theorem bijective_thomMapRestrict_union {U V : Set Y} (hU : IsOpen U) (hV : IsOp
   rw [e]
   refine (TopPair.bijective_thomMap_iff_of_isIso (TopPair.ofSubsetPreimageValIso
     (Set.inter_subset_left : π ⁻¹' (U ∪ V) ∩ Z ⊆ π ⁻¹' (U ∪ V))).hom (𝟙 _)
-    (π' := ofHom (π.hom.restrictPreimage (U ∪ V))) (TopCat.ext fun _ ↦ by
-      erw [CategoryTheory.comp_apply, TopPair.ofSubsetPreimageValIso_hom_fst_apply]; rfl) rfl
+    (π' := ofHom (π.hom.restrictPreimage (U ∪ V)))
+    (by rw [TopPair.ofSubsetPreimageValIso_hom_fst]; exact TopCat.ext fun _ ↦ rfl) rfl
     (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z (U ∪ V)) n u)).1 ?_
   exact key p hp
 

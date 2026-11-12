@@ -174,6 +174,9 @@ variable {hst hst'}
 lemma ofInclusionMap_fst_apply (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s')
     (x : t) : Hom.fst (ofInclusionMap hst hst' g hg) x = g x := (rfl)
 
+lemma ofInclusionMap_fst (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s') :
+    Hom.fst (ofInclusionMap hst hst' g hg) = TopCat.ofHom g := (rfl)
+
 @[simp]
 lemma ofInclusionMap_snd_apply (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s')
     (x : s) : (Hom.snd (ofInclusionMap hst hst' g hg) x).1 = (g ⟨x.1, hst x.2⟩).1 := (rfl)
@@ -234,6 +237,8 @@ def ofSubsetPreimageValIso :
 @[simp]
 lemma ofSubsetPreimageValIso_hom_fst_apply (x : t) :
     Hom.fst (ofSubsetPreimageValIso hst).hom x = x := (rfl)
+
+lemma ofSubsetPreimageValIso_hom_fst : Hom.fst (ofSubsetPreimageValIso hst).hom = 𝟙 _ := (rfl)
 
 @[simp]
 lemma ofSubsetPreimageValIso_hom_snd_apply (x : (Subtype.val ⁻¹' s : Set t)) :

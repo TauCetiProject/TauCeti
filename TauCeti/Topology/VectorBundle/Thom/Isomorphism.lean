@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Thom
+public import TauCeti.AlgebraicTopology.Cohomology.Cup.Thom
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
 
@@ -80,6 +80,13 @@ def thomMap (n p m : ℕ) (h : p + n = m) :
       (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p →ₗ[K]
         (thomPair F E).singularCohomology (ModuleCat.of K K) K M m :=
   (thomPair F E).thomMap M (thomPairProj F E) n p m h
+
+/-- The Thom map of a vector bundle is the Thom map `TopPair.thomMap` of its Thom pair over the
+projection, so the results stated for the latter, such as the Mayer–Vietoris gluing step
+`TopCat.bijective_thomMapRestrict_union`, apply to it. -/
+theorem thomMap_def (n p m : ℕ) (h : p + n = m) :
+    thomMap F E M n p m h = (thomPair F E).thomMap M (thomPairProj F E) n p m h :=
+  (rfl)
 
 variable {M}
 
