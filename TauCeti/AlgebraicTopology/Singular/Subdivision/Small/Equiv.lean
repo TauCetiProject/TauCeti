@@ -39,7 +39,8 @@ because subdivision and the prism operator restrict to the chains of `S`: the ch
   homotopy inverse is a strict retraction
   (`TauCeti.chainComplexMap_comp_smallSingularChainHomotopyEquiv_inv`).
 * `TauCeti.subcomplexSmallChainHomotopyEquiv`: the same for the chains of an affinely stable
-  subcomplex (`TauCeti.chainComplexMap_comp_subcomplexSmallChainHomotopyEquiv_inv`).
+  subcomplex (`TauCeti.chainComplexMap_comp_subcomplexSmallChainHomotopyEquiv_inv`), and
+  `TauCeti.subcomplexSmallHomologyIso` the induced isomorphism on homology.
 
 ## References
 
@@ -161,8 +162,11 @@ lemma AffineChain.subcomplexChain_mem_chainRange {T : (TopCat.toSSet.obj X).Subc
     subcomplexChain R S σ k c ∈ chainRange R (homOfLE hT) k := by
   rw [← c.sum_single, map_finsuppSum, Finsupp.sum]
   refine AddSubgroup.sum_mem _ fun v hv ↦ ?_
-  rw [subcomplexChain_single]
-  exact AddSubgroup.zsmul_mem _ (ιChainComplex_app_mem_chainRange (i := homOfLE hT) ⟨_, hc v hv⟩) _
+  have hσ : (SSet.Subcomplex.homOfLE hT).app _ ⟨_, hc v hv⟩ =
+      ⟨_, IsAffineStable.comp_affineMapMk_mem σ.property v⟩ :=
+    Subtype.ext (SSet.Subcomplex.homOfLE_app_val hT _ _)
+  rw [subcomplexChain_single, ← hσ]
+  exact AddSubgroup.zsmul_mem _ (ιChainComplex_app_mem_chainRange _) _
 
 variable (hU : ∀ i, IsOpen (U i)) (hcov : ⋃ i, U i = Set.univ)
 include hU hcov
@@ -213,6 +217,56 @@ lemma chainComplexMap_comp_subcomplexSmallChainHomotopyEquiv_inv :
       (subcomplexSmallChainHomotopyEquiv R U S hU hcov).inv = 𝟙 _ := by
   rw [subcomplexSmallChainHomotopyEquiv, chainRangeHomotopyEquiv_inv,
     chainComplexMap_comp_chainRangeRetraction]
+
+/-- The isomorphism on homology induced by the inclusion of the chains of an affinely stable
+subcomplex subordinate to an open cover. -/
+def subcomplexSmallHomologyIso [CategoryWithHomology C] (n : ℕ) :
+    (((S ⊓ X.smallSingularSubcomplex U : (TopCat.toSSet.obj X).Subcomplex) :
+      SSet).chainComplex R).homology n ≅ ((S : SSet).chainComplex R).homology n :=
+  (subcomplexSmallChainHomotopyEquiv R U S hU hcov).toHomologyIso n
+
+@[simp]
+lemma subcomplexSmallHomologyIso_hom [CategoryWithHomology C] (n : ℕ) :
+    (subcomplexSmallHomologyIso R U S hU hcov n).hom = HomologicalComplex.homologyMap
+      (SSet.chainComplexMap (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R) n :=
+  congrArg (HomologicalComplex.homologyMap · n)
+    (subcomplexSmallChainHomotopyEquiv_hom R U S hU hcov)
+
+/-- The small-chain homology isomorphism of an affinely stable subcomplex is natural under maps of
+simplicial sets compatible with the inclusions of the chains subordinate to the covers. -/
+lemma subcomplexSmallHomologyIso_naturality [CategoryWithHomology C]
+    {κ : Type*} {Y : TopCat.{w}} (V : κ → Set Y) (S' : (TopCat.toSSet.obj Y).Subcomplex)
+    [S'.IsAffineStable] (hV : ∀ j, IsOpen (V j)) (hcovV : ⋃ j, V j = Set.univ)
+    (f : ((S ⊓ X.smallSingularSubcomplex U : (TopCat.toSSet.obj X).Subcomplex) : SSet) ⟶
+      ((S' ⊓ Y.smallSingularSubcomplex V : (TopCat.toSSet.obj Y).Subcomplex) : SSet))
+    (g : (S : SSet) ⟶ (S' : SSet))
+    (hfg : f ≫ homOfLE inf_le_left = homOfLE inf_le_left ≫ g) (n : ℕ) :
+    (subcomplexSmallHomologyIso R U S hU hcov n).hom ≫
+        HomologicalComplex.homologyMap (SSet.chainComplexMap g R) n =
+      HomologicalComplex.homologyMap (SSet.chainComplexMap f R) n ≫
+        (subcomplexSmallHomologyIso R V S' hV hcovV n).hom := by
+  rw [subcomplexSmallHomologyIso_hom, subcomplexSmallHomologyIso_hom,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
+    ← Functor.map_comp, ← Functor.map_comp, hfg]
+
+/-- The inclusion of the chains of an affinely stable subcomplex subordinate to an open cover
+induces an isomorphism on homology in every degree. -/
+theorem isIso_homologyMap_subcomplexSmallChainι [CategoryWithHomology C] (n : ℕ) :
+    IsIso (HomologicalComplex.homologyMap
+      (SSet.chainComplexMap (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R)
+        n) := by
+  rw [← subcomplexSmallHomologyIso_hom R U S hU hcov n]
+  infer_instance
+
+/-- The inclusion of the chains of an affinely stable subcomplex subordinate to an open cover is a
+quasi-isomorphism. -/
+theorem quasiIso_chainComplexMap_subcomplexSmall_homOfLE [CategoryWithHomology C] :
+    QuasiIso (SSet.chainComplexMap
+      (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R) := by
+  rw [quasiIso_iff]
+  intro n
+  rw [quasiIsoAt_iff_isIso_homologyMap]
+  exact isIso_homologyMap_subcomplexSmallChainι R U S hU hcov n
 
 end Subcomplex
 

@@ -42,7 +42,7 @@ homotopy operator on the summand of `σ`, produces an operator `D` whose associa
 * `TauCeti.chainRangeApprox i h`: the chain endomorphism `ρ`, chain homotopic to the identity
   (`TauCeti.chainRangeApproxHomotopy`), and equal to the identity on the chains of `L`
   (`TauCeti.chainComplexMap_comp_chainRangeApprox`).
-* `TauCeti.mem_chainRange_ιChainComplex_comp_chainRangeApprox`: `ρ` lands in the chains of `L`.
+* `TauCeti.ιChainComplex_comp_chainRangeApprox_f_mem_chainRange`: `ρ` lands in the chains of `L`.
 * `TauCeti.chainRangeRetraction`: the resulting retraction onto the chains of `L`.
 * `TauCeti.chainRangeHomotopyEquiv`: the inclusion of the chains of `L` is a chain homotopy
   equivalence.
@@ -95,16 +95,16 @@ variable {s : K.chainComplex R ⟶ K.chainComplex R}
 
 /-- Once a chain has been carried into the chains of `L` by `m` applications of an endomorphism
 `s` preserving the chains of `L`, any larger number of applications keeps it there. -/
-lemma comp_pow_mem_chainRange_of_le
-    (hs : ∀ n, ∃ g, g ≫ (SSet.chainComplexMap i R).f n = (SSet.chainComplexMap i R).f n ≫ s.f n)
-    {n m m' : ℕ} (hm : m ≤ m') {f : R ⟶ (K.chainComplex R).X n}
+lemma comp_pow_mem_chainRange_of_le {n : ℕ}
+    (hs : ∃ g, g ≫ (SSet.chainComplexMap i R).f n = (SSet.chainComplexMap i R).f n ≫ s.f n)
+    {m m' : ℕ} (hm : m ≤ m') {f : R ⟶ (K.chainComplex R).X n}
     (hf : f ≫ (End.of s ^ m).asHom.f n ∈ chainRange R i n) :
     f ≫ (End.of s ^ m').asHom.f n ∈ chainRange R i n := by
   induction m', hm using Nat.le_induction with
   | base => exact hf
   | succ m' _ ih =>
     rw [HomologicalComplex.pow_f_succ, ← Category.assoc]
-    exact comp_mem_chainRange ih (hs n)
+    exact comp_mem_chainRange ih hs
 
 variable (i s)
 
@@ -115,6 +115,11 @@ def chainRangeOrder {n : ℕ} (σ : K _⦋n⦌) : ℕ :=
 
 variable {i s}
 
+lemma chainRangeOrder_def {n : ℕ} (σ : K _⦋n⦌) :
+    chainRangeOrder i s σ =
+      sInf {m | K.ιChainComplex σ ≫ (End.of s ^ m).asHom.f n ∈ chainRange R i n} :=
+  (rfl)
+
 /-- The order is at most any number of applications of `s` carrying the simplex into the chains of
 `L`. -/
 lemma chainRangeOrder_le {n m : ℕ} {σ : K _⦋n⦌}
@@ -123,15 +128,14 @@ lemma chainRangeOrder_le {n m : ℕ} {σ : K _⦋n⦌}
   Nat.sInf_le hσ
 
 /-- After `chainRangeOrder` applications of `s`, or any larger number, a simplex is a chain of
-`L`, provided `s` preserves the chains of `L` and eventually carries every simplex into them. -/
-theorem ιChainComplex_comp_pow_mem_chainRange
-    (hs : ∀ n, ∃ g, g ≫ (SSet.chainComplexMap i R).f n = (SSet.chainComplexMap i R).f n ≫ s.f n)
-    (hfin : ∀ n (σ : K _⦋n⦌), ∃ m, K.ιChainComplex σ ≫ (End.of s ^ m).asHom.f n ∈
-      chainRange R i n)
-    {n : ℕ} (σ : K _⦋n⦌) {m : ℕ} (hm : chainRangeOrder i s σ ≤ m) :
+`L`, provided `s` preserves the chains of `L` and eventually carries the simplex into them. -/
+theorem ιChainComplex_comp_pow_mem_chainRange {n : ℕ}
+    (hs : ∃ g, g ≫ (SSet.chainComplexMap i R).f n = (SSet.chainComplexMap i R).f n ≫ s.f n)
+    {σ : K _⦋n⦌} (hσ : ∃ m, K.ιChainComplex σ ≫ (End.of s ^ m).asHom.f n ∈ chainRange R i n)
+    {m : ℕ} (hm : chainRangeOrder i s σ ≤ m) :
     K.ιChainComplex σ ≫ (End.of s ^ m).asHom.f n ∈ chainRange R i n :=
   comp_pow_mem_chainRange_of_le hs hm (Nat.sInf_mem (s := {m |
-    K.ιChainComplex σ ≫ (End.of s ^ m).asHom.f n ∈ chainRange R i n}) (hfin n σ))
+    K.ιChainComplex σ ≫ (End.of s ^ m).asHom.f n ∈ chainRange R i n}) hσ)
 
 /-- A simplex of `L` needs no application of `s`. -/
 @[simp]
@@ -155,6 +159,15 @@ def chainRangeDepth (n : ℕ) (σ : K _⦋n⦌) : ℕ :=
 
 variable {i s}
 
+@[simp]
+lemma chainRangeDepth_zero (σ : K _⦋0⦌) : chainRangeDepth i s 0 σ = chainRangeOrder i s σ :=
+  (rfl)
+
+lemma chainRangeDepth_succ (n : ℕ) (σ : K _⦋n + 1⦌) :
+    chainRangeDepth i s (n + 1) σ = max (chainRangeOrder i s σ)
+      (Finset.univ.sup fun j : Fin (n + 2) ↦ chainRangeDepth i s n (K.δ j σ)) :=
+  (rfl)
+
 lemma chainRangeOrder_le_chainRangeDepth (n : ℕ) (σ : K _⦋n⦌) :
     chainRangeOrder i s σ ≤ chainRangeDepth i s n σ := by
   cases n with
@@ -163,7 +176,7 @@ lemma chainRangeOrder_le_chainRangeDepth (n : ℕ) (σ : K _⦋n⦌) :
 
 lemma chainRangeDepth_δ_le (n : ℕ) (σ : K _⦋n + 1⦌) (j : Fin (n + 2)) :
     chainRangeDepth i s n (K.δ j σ) ≤ chainRangeDepth i s (n + 1) σ := by
-  rw [chainRangeDepth]
+  rw [chainRangeDepth_succ]
   exact le_max_of_le_right (Finset.le_sup (f := fun j : Fin (n + 2) ↦
     chainRangeDepth i s n (K.δ j σ)) (Finset.mem_univ j))
 
@@ -176,12 +189,10 @@ lemma chainRangeDepth_app_eq_zero : ∀ (n : ℕ) (σ : L _⦋n⦌),
   | zero => exact fun σ ↦ chainRangeOrder_app_eq_zero σ
   | succ n ih =>
     intro σ
-    rw [chainRangeDepth, chainRangeOrder_app_eq_zero, Nat.max_eq_right (Nat.zero_le _)]
+    rw [chainRangeDepth_succ, chainRangeOrder_app_eq_zero, Nat.max_eq_right (Nat.zero_le _)]
     refine Nat.le_zero.1 (Finset.sup_le fun j _ ↦ ?_)
     -- The faces of the image of `σ` are the images of the faces of `σ`.
-    have hδ : K.δ j (i.app _ σ) = i.app _ (L.δ j σ) :=
-      (NatTrans.naturality_apply i (SimplexCategory.δ j).op σ).symm
-    rw [hδ]
+    rw [← SSet.δ_naturality_apply]
     exact (ih _).le
 
 /-! ### The approximation -/
@@ -208,7 +219,7 @@ lemma chainRangeApproxHom_eq_zero (a b : ℕ) (hab : ¬ (ComplexShape.down ℕ).
 
 /-- The approximation: a chain endomorphism of the chains of `K`, chain homotopic to the identity,
 all of whose values are chains of `L` under the hypotheses of
-`TauCeti.mem_chainRange_ιChainComplex_comp_chainRangeApprox`. It is Hatcher's operator
+`TauCeti.ιChainComplex_comp_chainRangeApprox_f_mem_chainRange`. It is Hatcher's operator
 `ρ = 1 - ∂D - D∂`, where `D` is `TauCeti.chainRangeApproxHom`. -/
 def chainRangeApprox : K.chainComplex R ⟶ K.chainComplex R :=
   𝟙 _ - Homotopy.nullHomotopicMap (chainRangeApproxHom i h)
@@ -228,7 +239,13 @@ def chainRangeApproxHomotopy : Homotopy (𝟙 _) (chainRangeApprox i h) where
     rw [chainRangeApprox_f]
     abel
 
+@[simp]
+lemma chainRangeApproxHomotopy_hom :
+    (chainRangeApproxHomotopy i h).hom = chainRangeApproxHom i h :=
+  (rfl)
+
 /-- The approximation operator kills the chains of `L`. -/
+@[reassoc (attr := simp)]
 lemma chainComplexMap_f_comp_chainRangeApproxHom (a b : ℕ) :
     (SSet.chainComplexMap i R).f a ≫ chainRangeApproxHom i h a b = 0 := by
   ext τ
@@ -240,33 +257,34 @@ lemma chainComplexMap_f_comp_chainRangeApproxHom (a b : ℕ) :
 @[reassoc (attr := simp)]
 lemma chainComplexMap_comp_chainRangeApprox :
     SSet.chainComplexMap i R ≫ chainRangeApprox i h = SSet.chainComplexMap i R := by
+  have h0 : (fun a b ↦ (SSet.chainComplexMap i R).f a ≫ chainRangeApproxHom i h a b) = 0 := by
+    funext a b
+    exact chainComplexMap_f_comp_chainRangeApproxHom i h a b
+  rw [chainRangeApprox, Preadditive.comp_sub, Category.comp_id, Homotopy.comp_nullHomotopicMap, h0]
   ext n : 1
-  have hd : (SSet.chainComplexMap i R).f n ≫ dNext n (chainRangeApproxHom i h) = 0 := by
-    rw [dNext, AddMonoidHom.mk'_apply, ← Category.assoc, HomologicalComplex.Hom.comm,
-      Category.assoc, chainComplexMap_f_comp_chainRangeApproxHom, comp_zero]
-  have hp : (SSet.chainComplexMap i R).f n ≫ prevD n (chainRangeApproxHom i h) = 0 := by
-    rw [prevD, AddMonoidHom.mk'_apply, ← Category.assoc,
-      chainComplexMap_f_comp_chainRangeApproxHom, zero_comp]
-  rw [HomologicalComplex.comp_f, chainRangeApprox_f, Preadditive.comp_sub, Category.comp_id,
-    Preadditive.comp_add, hd, hp, add_zero, sub_zero]
+  simp [Homotopy.nullHomotopicMap]
 
 variable {i h}
 variable
   (hh : ∀ n, ∃ g, g ≫ (SSet.chainComplexMap i R).f (n + 1) =
     (SSet.chainComplexMap i R).f n ≫ h.hom n (n + 1))
 
-variable
-  (hfin : ∀ n (σ : K _⦋n⦌), ∃ m, K.ιChainComplex σ ≫ (End.of s ^ m).asHom.f n ∈
-    chainRange R i n)
+include hh in
+/-- If the operators of a homotopy `h` from the identity to `s` restrict to the chains of `L`,
+then so does `s`. -/
+lemma exists_comp_chainComplexMap_f_eq_comp_f (n : ℕ) :
+    ∃ g, g ≫ (SSet.chainComplexMap i R).f n = (SSet.chainComplexMap i R).f n ≫ s.f n :=
+  h.exists_comp_f_eq_comp_f _ _ (fun _ ↦ ⟨𝟙 _, by simp⟩) (fun a b hab ↦ by
+    rw [ComplexShape.down_Rel] at hab
+    subst hab
+    exact hh a) n
 
-include hh hfin
-
+include hh in
 /-- Enlarging the number of iterations in the iterated homotopy operator changes it by a chain of
-`L`, provided the simplex is already a chain of `L` after the smaller number of applications of
-`s`. -/
-lemma ιChainComplex_comp_idPow_hom_sub_mem_chainRange {n : ℕ} (σ : K _⦋n⦌) {m m' : ℕ}
-    (hm' : chainRangeOrder i s σ ≤ m') (hmm : m' ≤ m) :
-    K.ιChainComplex σ ≫ ((h.idPow m).hom n (n + 1) - (h.idPow m').hom n (n + 1)) ∈
+`L` on any chain that is already a chain of `L` after the smaller number of applications of `s`. -/
+lemma comp_idPow_hom_sub_mem_chainRange {n m m' : ℕ} {f : R ⟶ (K.chainComplex R).X n}
+    (hf : f ≫ (End.of s ^ m').asHom.f n ∈ chainRange R i n) (hmm : m' ≤ m) :
+    f ≫ ((h.idPow m).hom n (n + 1) - (h.idPow m').hom n (n + 1)) ∈
       chainRange R i (n + 1) := by
   have hsum : (h.idPow m).hom n (n + 1) - (h.idPow m').hom n (n + 1) =
       ∑ k ∈ Finset.Ico m' m, (End.of s ^ k).asHom.f n ≫ h.hom n (n + 1) := by
@@ -274,12 +292,17 @@ lemma ιChainComplex_comp_idPow_hom_sub_mem_chainRange {n : ℕ} (σ : K _⦋n�
   rw [hsum, Preadditive.comp_sum]
   refine AddSubgroup.sum_mem _ fun k hk ↦ ?_
   rw [← Category.assoc]
-  exact comp_mem_chainRange (ιChainComplex_comp_pow_mem_chainRange
-    (h.exists_comp_f_eq_comp_f _ _ (fun _ ↦ ⟨𝟙 _, by simp⟩) fun n _ hn ↦ hn ▸ hh n) hfin σ
-    (hm'.trans (Finset.mem_Ico.1 hk).1)) (hh n)
+  exact comp_mem_chainRange (comp_pow_mem_chainRange_of_le
+    (exists_comp_chainComplexMap_f_eq_comp_f hh n) (Finset.mem_Ico.1 hk).1 hf) (hh n)
+
+variable
+  (hfin : ∀ n (σ : K _⦋n⦌), ∃ m, K.ιChainComplex σ ≫ (End.of s ^ m).asHom.f n ∈
+    chainRange R i n)
+
+include hh hfin
 
 /-- **The approximation lands in the chains of `L`.** -/
-theorem mem_chainRange_ιChainComplex_comp_chainRangeApprox {n : ℕ} (σ : K _⦋n⦌) :
+theorem ιChainComplex_comp_chainRangeApprox_f_mem_chainRange {n : ℕ} (σ : K _⦋n⦌) :
     K.ιChainComplex σ ≫ (chainRangeApprox i h).f n ∈ chainRange R i n := by
   set m := chainRangeDepth i s n σ
   -- The two homotopy operators agree on the summand of `σ` in the `prevD` direction.
@@ -299,11 +322,11 @@ theorem mem_chainRange_ιChainComplex_comp_chainRangeApprox {n : ℕ} (σ : K _�
         SSet.ιChainComplex_d, Preadditive.sum_comp, Preadditive.sum_comp,
         ← Finset.sum_sub_distrib]
       refine AddSubgroup.sum_mem _ fun j _ ↦ ?_
-      rw [Preadditive.zsmul_comp, Preadditive.zsmul_comp, ← smul_sub, ← Preadditive.comp_sub,
-        Preadditive.comp_sub, ιChainComplex_chainRangeApproxHom, ← Preadditive.comp_sub]
-      exact AddSubgroup.zsmul_mem _
-        (ιChainComplex_comp_idPow_hom_sub_mem_chainRange hh hfin _
-          (chainRangeOrder_le_chainRangeDepth k _) (chainRangeDepth_δ_le k σ j)) _
+      simp only [Preadditive.zsmul_comp, ιChainComplex_chainRangeApproxHom, ← smul_sub,
+        ← Preadditive.comp_sub]
+      exact AddSubgroup.zsmul_mem _ (comp_idPow_hom_sub_mem_chainRange hh
+        (ιChainComplex_comp_pow_mem_chainRange (exists_comp_chainComplexMap_f_eq_comp_f hh k)
+          (hfin k _) (chainRangeOrder_le_chainRangeDepth k _)) (chainRangeDepth_δ_le k σ j)) _
   have hf : K.ιChainComplex σ ≫ (chainRangeApprox i h).f n =
       K.ιChainComplex σ ≫ (End.of s ^ m).asHom.f n +
         K.ιChainComplex σ ≫ (dNext n (h.idPow m).hom - dNext n (chainRangeApproxHom i h)) := by
@@ -316,7 +339,7 @@ theorem mem_chainRange_ιChainComplex_comp_chainRangeApprox {n : ℕ} (σ : K _�
     rw [hsplit, Preadditive.comp_add, Preadditive.comp_add, hprev, add_zero]
   rw [hf]
   exact AddSubgroup.add_mem _ (ιChainComplex_comp_pow_mem_chainRange
-    (h.exists_comp_f_eq_comp_f _ _ (fun _ ↦ ⟨𝟙 _, by simp⟩) fun n _ hn ↦ hn ▸ hh n) hfin σ
+    (exists_comp_chainComplexMap_f_eq_comp_f hh n) (hfin n σ)
     (chainRangeOrder_le_chainRangeDepth n σ)) hdnext
 
 /-! ### The retraction onto the chains of `L` -/
@@ -324,7 +347,7 @@ theorem mem_chainRange_ιChainComplex_comp_chainRangeApprox {n : ℕ} (σ : K _�
 private theorem exists_comp_eq_ιChainComplex_comp_chainRangeApprox {n : ℕ} (σ : K _⦋n⦌) :
     ∃ g : R ⟶ (L.chainComplex R).X n,
       g ≫ (SSet.chainComplexMap i R).f n = K.ιChainComplex σ ≫ (chainRangeApprox i h).f n :=
-  (mem_chainRange_iff _).1 (mem_chainRange_ιChainComplex_comp_chainRangeApprox hh hfin σ)
+  (mem_chainRange_iff _).1 (ιChainComplex_comp_chainRangeApprox_f_mem_chainRange hh hfin σ)
 
 /-- The degreewise factorisation of the approximation through the chains of `L`, obtained by
 choosing a factorisation on each summand. -/
@@ -389,5 +412,20 @@ lemma chainRangeHomotopyEquiv_hom :
 @[simp]
 lemma chainRangeHomotopyEquiv_inv :
     (chainRangeHomotopyEquiv hh hfin).inv = chainRangeRetraction hh hfin := (rfl)
+
+/-- The homotopy `hom ≫ inv ≃ 𝟙` of `TauCeti.chainRangeHomotopyEquiv` is the zero homotopy, since
+the retraction is strict. -/
+@[simp]
+lemma chainRangeHomotopyEquiv_homotopyHomInvId_hom :
+    (chainRangeHomotopyEquiv hh hfin).homotopyHomInvId.hom = 0 :=
+  (rfl)
+
+/-- The homotopy `inv ≫ hom ≃ 𝟙` of `TauCeti.chainRangeHomotopyEquiv` is given, up to sign, by the
+operator `TauCeti.chainRangeApproxHom`. -/
+@[simp]
+lemma chainRangeHomotopyEquiv_homotopyInvHomId_hom :
+    (chainRangeHomotopyEquiv hh hfin).homotopyInvHomId.hom = -chainRangeApproxHom i h := by
+  funext a b
+  simp [chainRangeHomotopyEquiv, chainRangeApproxHomotopy]
 
 end TauCeti

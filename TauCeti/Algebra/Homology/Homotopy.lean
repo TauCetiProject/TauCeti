@@ -142,17 +142,13 @@ theorem exists_comp_f_eq_comp_f {C : Type u} [Category.{v} C] [Preadditive C]
     by_cases hij : c.Rel j i
     · exact hh i j hij
     · exact ⟨0, by rw [h.zero i j hij, zero_comp, comp_zero]⟩
+  choose g hg using hh'
   obtain ⟨ge, hge⟩ := he i
-  obtain ⟨gn, hgn⟩ := hh' (c.next i) i
-  obtain ⟨gp, hgp⟩ := hh' i (c.prev i)
-  refine ⟨ge - (P.d i (c.next i) ≫ gn + gp ≫ P'.d (c.prev i) i), ?_⟩
-  have he' : e'.f i = e.f i - (dNext i h.hom + prevD i h.hom) := by
-    rw [h.comm i]
-    abel
-  rw [he', Preadditive.sub_comp, Preadditive.add_comp, Category.assoc, hgn, Category.assoc,
-    ← HomologicalComplex.Hom.comm, reassoc_of% hgp, hge, Preadditive.comp_sub,
-    Preadditive.comp_add, ← HomologicalComplex.Hom.comm_assoc, dNext, prevD,
-    AddMonoidHom.mk'_apply, AddMonoidHom.mk'_apply]
+  refine ⟨ge - (dNext i g + prevD i g), ?_⟩
+  have hgφ : (fun i j ↦ g i j ≫ φ'.f j) = fun i j ↦ φ.f i ≫ h.hom i j := funext₂ hg
+  rw [Preadditive.sub_comp, Preadditive.add_comp, ← dNext_comp_right, ← prevD_comp_right, hgφ,
+    dNext_comp_left, prevD_comp_left, hge, ← Preadditive.comp_add, ← Preadditive.comp_sub, h.comm i,
+    add_sub_cancel_left]
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
   {K L M L' M' : HomologicalComplex C c}

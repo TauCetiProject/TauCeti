@@ -193,8 +193,7 @@ the summand of that simplex. -/
 lemma AffineChain.subcomplexChain_simplex {n : ℕ} (σ : (S : SSet) _⦋n⦌) :
     subcomplexChain R S σ n (simplex n) = (S : SSet).ιChainComplex σ := by
   apply (cancel_mono ((SSet.chainComplexMap S.ι R).f n)).1
-  rw [subcomplexChain_ι, singularChain_simplex, SSet.ι_chainComplexMap_f]
-  rfl
+  simp [singularChain_simplex]
 
 /-- Pushing an iterated barycentric subdivision of an affine chain forward along a simplex of an
 affinely stable subcomplex is the corresponding iterate of the restricted subdivision. -/
