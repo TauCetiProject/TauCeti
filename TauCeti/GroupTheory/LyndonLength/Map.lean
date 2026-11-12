@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Order
 public import Mathlib.Algebra.Order.Group.PiLex
 public import TauCeti.Algebra.Order.Group.PiLex
+public import TauCeti.Algebra.Order.Monoid.Submonoid
 public import TauCeti.GroupTheory.LyndonLength.Basic
 
 /-!
@@ -47,15 +48,15 @@ single convex subgroup of `ℤ³`.
 
 * `TauCeti.LyndonLength.IsRegular.map`, `TauCeti.LyndonLength.isRegular_map_iff`: regularity under
   change of value group.
-* `TauCeti.LyndonLength.IsFree.map`, `TauCeti.LyndonLength.isFree_iff_isFree_map`: freeness
-  under change of value group along an injective homomorphism.
-* `TauCeti.LyndonLength.map_codRestrict`: `l.codRestrict S h` composed with the inclusion of `S`
-  is `l`.
+* `TauCeti.LyndonLength.IsFree.map`, `TauCeti.LyndonLength.isFree_iff_isFree_map_and_mem_range`:
+  freeness under change of value group along an injective homomorphism.
+* `TauCeti.LyndonLength.map_codRestrict`: `l.codRestrict S h` composed with the inclusion
+  `AddSubmonoidClass.orderedSubtype S` of `S` is `l`.
 * `TauCeti.LyndonLength.isRegular_codRestrict_iff`, `TauCeti.LyndonLength.isFree_codRestrict_iff`:
   regularity and freeness of the restriction to a subgroup.
-* `TauCeti.LyndonLength.isFree_absLength_map_single`,
-  `TauCeti.LyndonLength.isRegular_absLength_map_single`: the absolute value in one coordinate of
-  a lexicographic power is free and regular.
+* `TauCeti.LyndonLength.isFree_map_absLength_singleOrderAddMonoidHom`,
+  `TauCeti.LyndonLength.isRegular_map_absLength_singleOrderAddMonoidHom`: the absolute value in
+  one coordinate of a lexicographic power is free and regular.
 
 ## References
 
@@ -125,8 +126,8 @@ theorem coe_codRestrict_apply (g : G) : (l.codRestrict S h g : Λ) = l g :=
 
 /-- The restriction `l.codRestrict S h` composed with the inclusion of `S` is `l`. -/
 @[simp]
-theorem map_codRestrict : (l.codRestrict S h).map ⟨S.subtype, fun _ _ hab => hab⟩ = l :=
-  (rfl)
+theorem map_codRestrict : (l.codRestrict S h).map (AddSubmonoidClass.orderedSubtype S) = l :=
+  ext fun _ => by simp
 
 end codRestrict
 
@@ -182,7 +183,7 @@ theorem IsFree.map (hl : l.IsFree) (hφ : Function.Injective φ) : (l.map φ).Is
 
 /-- For an injective homomorphism `φ` of ordered groups, a Lyndon length function `l` is free
 exactly when `l.map φ` is free and all Gromov products of `l.map φ` lie in the image of `φ`. -/
-theorem isFree_iff_isFree_map (hφ : Function.Injective φ) :
+theorem isFree_iff_isFree_map_and_mem_range (hφ : Function.Injective φ) :
     l.IsFree ↔ (l.map φ).IsFree ∧ ∀ g f, ∀ c' : Λ',
       (c' : DivisibleHull Λ') = (l.map φ).gromovProduct g f → c' ∈ Set.range φ := by
   refine ⟨fun hl => ⟨hl.map hφ, fun g f c' hc' => ?_⟩, fun ⟨hl, hc⟩ => ⟨fun g f => ?_, fun g hg =>
@@ -204,17 +205,16 @@ values in `S` exactly when it is regular. -/
 @[simp]
 theorem isRegular_codRestrict_iff : (l.codRestrict S h).IsRegular ↔ l.IsRegular := by
   simpa only [map_codRestrict] using (isRegular_map_iff (l := l.codRestrict S h)
-    (φ := ⟨S.subtype, fun _ _ hab => hab⟩) S.subtype_injective).symm
+    (AddSubmonoidClass.orderedSubtype_injective S)).symm
 
 /-- A Lyndon length function with values in a subgroup `S` is free as a length function with
 values in `S` exactly when it is free and all its Gromov products lie in `S`. -/
 theorem isFree_codRestrict_iff :
     (l.codRestrict S h).IsFree ↔ l.IsFree ∧ ∀ g f, ∀ c : Λ,
       (c : DivisibleHull Λ) = l.gromovProduct g f → c ∈ S := by
-  rw [isFree_iff_isFree_map (φ := ⟨S.subtype, fun _ _ hab => hab⟩) S.subtype_injective,
+  rw [isFree_iff_isFree_map_and_mem_range (AddSubmonoidClass.orderedSubtype_injective S),
     map_codRestrict]
-  refine and_congr_right fun _ => forall₃_congr fun g f c => imp_congr_right fun _ => ?_
-  exact ⟨fun ⟨a, ha⟩ => ha ▸ a.2, fun hc => ⟨⟨c, hc⟩, rfl⟩⟩
+  simp
 
 /-- A free Lyndon length function whose values and Gromov products lie in a subgroup `S` is free
 as a length function with values in `S`. -/
@@ -232,15 +232,15 @@ variable {ι : Type*} [LinearOrder ι] [WellFoundedLT ι] (i : ι)
 /-- The length function `a ↦ (0, …, 0, |a|, 0, …, 0)` on a linearly ordered abelian group `Λ`,
 with values in the lexicographic power `Lex (ι → Λ)` and with `|a|` in the coordinate `i`, is
 free. For `Λ = ℤ` and `i = 2` in `Lex (Fin 3 → ℤ)` this is `k ↦ (0, 0, |k|)`. -/
-theorem isFree_absLength_map_single :
-    ((absLength Λ).map (Pi.Lex.singleOrderAddMonoidHom (α := fun _ : ι => Λ) i)).IsFree :=
+theorem isFree_map_absLength_singleOrderAddMonoidHom :
+    ((absLength Λ).map (Pi.Lex.singleOrderAddMonoidHom (fun _ : ι => Λ) i)).IsFree :=
   isFree_absLength.map (Pi.Lex.singleOrderAddMonoidHom_injective i)
 
 /-- The length function `a ↦ (0, …, 0, |a|, 0, …, 0)` on a linearly ordered abelian group `Λ`,
 with values in the lexicographic power `Lex (ι → Λ)` and with `|a|` in the coordinate `i`, is
 regular. -/
-theorem isRegular_absLength_map_single :
-    ((absLength Λ).map (Pi.Lex.singleOrderAddMonoidHom (α := fun _ : ι => Λ) i)).IsRegular :=
+theorem isRegular_map_absLength_singleOrderAddMonoidHom :
+    ((absLength Λ).map (Pi.Lex.singleOrderAddMonoidHom (fun _ : ι => Λ) i)).IsRegular :=
   isRegular_absLength.map _
 
 end Lex
