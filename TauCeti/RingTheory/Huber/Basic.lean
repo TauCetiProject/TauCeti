@@ -94,8 +94,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   `TauCeti.Huber.isTateRing_iff_exists_isOpen_isBounded`: conversely, a topological ring with an
   open bounded subring and a pseudouniformiser is a Tate ring. This is how Tate rings given by a
   norm, such as nonarchimedean normed fields, are recognised.
-* `TauCeti.Huber.IsHuberRing.of_discreteTopology`: a discrete ring is Huber, the first of the
-  roadmap's Layer-0 examples.
+* `TauCeti.Huber.IsHuberRing.of_discreteTopology`: a discrete ring is Huber, the simplest
+  example.
 * `TauCeti.Huber.PairOfDefinition.exists_pow_idealOfDefinition_eq_bot`: every ideal
   of definition of a discrete ring is nilpotent.
 * `TauCeti.Huber.exists_sum_eq_of_mem_span_mul`: pure algebra, stated here because it is what
@@ -107,8 +107,7 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 `PairOfDefinition` and `IsHuberRing` follow the shape of sfingali's mathlib4#42312, which bundles
 the same five fields; the name `PairOfDefinition` is used rather than that PR's `RingOfDefinition`
 because the structure carries the pair `(A₀, I)`, which is what Wedhorn calls a pair of
-definition — a ring of definition is the `A₀` alone. Everything else here is new. The selection
-of results follows `AdicSpaces/Suggested.lean` in the roadmap.
+definition — a ring of definition is the `A₀` alone. Everything else here is new.
 
 ## Implementation notes
 
@@ -800,8 +799,8 @@ theorem PairOfDefinition.exists_pow_idealOfDefinition_eq_bot (P : PairOfDefiniti
   refine ⟨n, (Submodule.eq_bot_iff _).mpr fun x hx ↦ Subtype.ext ?_⟩
   simpa using hn ((P.mem_idealImage n).mpr ⟨x, hx, rfl⟩)
 
-/-- A discrete ring is Huber, with `(A, 0)` as a pair of definition. This is the first of the
-roadmap's Layer-0 examples, and the witness that `IsHuberRing` is not vacuous. -/
+/-- A discrete ring is Huber, with `(A, 0)` as a pair of definition. This is the simplest example,
+and the witness that `IsHuberRing` is not vacuous. -/
 instance (priority := 100) IsHuberRing.of_discreteTopology [IsTopologicalRing A] :
     IsHuberRing A :=
   ⟨⟨PairOfDefinition.discrete A⟩⟩
