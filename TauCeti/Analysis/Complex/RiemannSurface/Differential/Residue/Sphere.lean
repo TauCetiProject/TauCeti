@@ -28,9 +28,9 @@ and `h` has no pole other than `0` in the disc `|w| ≤ 1/R`. The classical resi
 
 For a finite holomorphic map `F : X → ℙ¹` from a compact Riemann surface `X` and a `1`-form `η`
 meromorphic on `ℙ¹`, the residues of the pullback `F^* η` add up to zero over the preimage of the
-poles of `η` (`TauCeti.RiemannSurface.OneForm.sum_residue_pullback_sphere`) and over the divisor
-of `F^* η` (`TauCeti.RiemannSurface.OneForm.sum_residue_divisor_pullback_sphere`): over a fibre
-the residues add up to `deg F` times the residue downstairs.
+poles of `η` (`TauCeti.RiemannSurface.OneForm.sum_residue_preimage_support_pullback_sphere`) and
+over the divisor of `F^* η` (`TauCeti.RiemannSurface.OneForm.sum_residue_pullback_sphere`): over a
+fibre the residues add up to `deg F` times the residue downstairs.
 
 The general residue theorem on a compact Riemann surface is not proved here.
 
@@ -96,9 +96,8 @@ private theorem sum_residue_support_eq_residue_infty_add (hω : ∀ x, ω.Meromo
     induction x using OnePoint.rec with
     | infty => exact Finset.mem_insert_self _ _
     | coe z => exact Finset.mem_insert_of_mem (Finset.mem_map_of_mem _ (by simpa [T] using hx))
-  rw [Finset.sum_subset hsub fun x _ hx ↦
-      residue_eq_zero_of_order_nonneg (order_nonneg_of_notMem_support hω hx),
-    Finset.sum_insert (by simp), Finset.sum_map]
+  rw [sum_residue_divisor_support_eq_of_subset hω hsub, Finset.sum_insert (by simp),
+    Finset.sum_map]
   rfl
 
 /-! ### The residue theorem on the sphere -/
@@ -163,14 +162,8 @@ theorem sum_residue_sphere (hω : ∀ x, ω.MeromorphicAt x) :
 
 /-! ### Pullbacks along finite maps to the sphere -/
 
-variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] {η : OneForm (OnePoint ℂ)}
-
-/-- The preimage under a map with finite fibres of the support of the divisor of `η` is finite. -/
-theorem finite_preimage_support_divisor (F : FiniteHolomorphicMap X (OnePoint ℂ))
-    (η : OneForm (OnePoint ℂ)) : (F ⁻¹' (η.divisor.support : Set (OnePoint ℂ))).Finite :=
-  η.divisor.support.finite_toSet.preimage' fun y _ ↦ F.finite_fiber y
-
-variable [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X] [T2Space X]
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X]
+  [T2Space X] {η : OneForm (OnePoint ℂ)}
 
 /-- **The residue theorem for a pullback from the sphere.** Let `F : X → ℙ¹` be a finite
 holomorphic map from a compact Riemann surface and `η` a `1`-form meromorphic everywhere on the
@@ -178,7 +171,7 @@ sphere. Then the residues of `F^* η` over the preimage of the support of the di
 up to zero: over each fibre they add up to `deg F` times the residue of `η`
 (`TauCeti.RiemannSurface.OneForm.sum_residue_pullback_eq_degree_mul`), and the residues of `η`
 add up to zero (`TauCeti.RiemannSurface.OneForm.sum_residue_sphere`). -/
-theorem sum_residue_pullback_sphere (F : FiniteHolomorphicMap X (OnePoint ℂ))
+theorem sum_residue_preimage_support_pullback_sphere (F : FiniteHolomorphicMap X (OnePoint ℂ))
     (hη : ∀ y, η.MeromorphicAt y) :
     ∑ x ∈ (finite_preimage_support_divisor F η).toFinset, (η.pullback F).residue x = 0 := by
   classical
@@ -198,7 +191,7 @@ theorem sum_residue_pullback_sphere (F : FiniteHolomorphicMap X (OnePoint ℂ))
 /-- **The residue theorem for a pullback from the sphere**, summed over the divisor of the
 pullback. Let `F : X → ℙ¹` be a finite holomorphic map from a compact Riemann surface and `η` a
 `1`-form meromorphic everywhere on the sphere. Then the residues of `F^* η` add up to zero. -/
-theorem sum_residue_divisor_pullback_sphere (F : FiniteHolomorphicMap X (OnePoint ℂ))
+theorem sum_residue_pullback_sphere (F : FiniteHolomorphicMap X (OnePoint ℂ))
     (hη : ∀ y, η.MeromorphicAt y) :
     ∑ x ∈ (η.pullback F).divisor.support, (η.pullback F).residue x = 0 := by
   classical
@@ -206,17 +199,13 @@ theorem sum_residue_divisor_pullback_sphere (F : FiniteHolomorphicMap X (OnePoin
   · set P := (finite_preimage_support_divisor F η).toFinset
     have hpull : ∀ x, (η.pullback F).residue x = localMultiplicity F x * η.residue (F x) :=
       fun x ↦ residue_pullback (hη (F x)) (.of_forall fun z ↦ F.holomorphic z)
-    have h1 : ∑ x ∈ (η.pullback F).divisor.support, (η.pullback F).residue x =
-        ∑ x ∈ (η.pullback F).divisor.support ∪ P, (η.pullback F).residue x :=
-      Finset.sum_subset Finset.subset_union_left fun x _ hx ↦
-        residue_eq_zero_of_order_nonneg (order_nonneg_of_notMem_support hm hx)
-    have h2 : ∑ x ∈ P, (η.pullback F).residue x =
+    have hP : ∑ x ∈ P, (η.pullback F).residue x =
         ∑ x ∈ (η.pullback F).divisor.support ∪ P, (η.pullback F).residue x := by
       refine Finset.sum_subset Finset.subset_union_right fun x _ hx ↦ ?_
       have hFx : F x ∉ η.divisor.support := by simpa [P] using hx
-      rw [hpull, residue_eq_zero_of_order_nonneg (order_nonneg_of_notMem_support hη hFx),
-        mul_zero]
-    rw [h1, ← h2, sum_residue_pullback_sphere F hη]
+      rw [hpull, residue_eq_zero_of_notMem_support hη hFx, mul_zero]
+    rw [sum_residue_divisor_support_eq_of_subset hm Finset.subset_union_left, ← hP,
+      sum_residue_preimage_support_pullback_sphere F hη]
   · simp [divisor_of_not_forall_meromorphicAt hm]
 
 /-! ### Check: the form `dz / z` on the sphere -/
