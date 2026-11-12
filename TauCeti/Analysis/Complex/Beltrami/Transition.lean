@@ -54,17 +54,18 @@ namespace TauCeti.Beltrami
 
 variable {J : ℂ → ℂ →L[ℝ] ℂ} {e e₁ e₂ : OpenPartialHomeomorph ℂ ℂ} {w : ℂ}
 
-/-- **Cauchy–Riemann equation for a transition map, pointwise.** Let `z = e₁.symm w`. If `e₁`
-and `e₂` are real differentiable at `z`, their derivatives carry `J z` to multiplication by `I`,
-and the derivative of `e₁` at `z` is invertible, then the transition map `e₁.symm.trans e₂` is
+/-- **Cauchy–Riemann equation for a transition map, pointwise.** Let `z = e₁.symm w`. If `e₂` is
+real differentiable at `z`, the derivatives of `e₁` and `e₂` carry `J z` to multiplication by
+`I`, and the derivative of `e₁` at `z` is invertible, then the transition map `e₁.symm.trans e₂` is
 complex differentiable at `w`. -/
 theorem differentiableAt_symm_trans_of_fderiv_comp (hw : w ∈ (e₁.symm.trans e₂).source)
-    (hd₁ : DifferentiableAt ℝ e₁ (e₁.symm w)) (hd₂ : DifferentiableAt ℝ e₂ (e₁.symm w))
+    (hd₂ : DifferentiableAt ℝ e₂ (e₁.symm w))
     (hinv : (fderiv ℝ e₁ (e₁.symm w)).IsInvertible)
     (hJ₁ : ∀ v, fderiv ℝ e₁ (e₁.symm w) (J (e₁.symm w) v) = I * fderiv ℝ e₁ (e₁.symm w) v)
     (hJ₂ : ∀ v, fderiv ℝ e₂ (e₁.symm w) (J (e₁.symm w) v) = I * fderiv ℝ e₂ (e₁.symm w) v) :
     DifferentiableAt ℂ (e₁.symm.trans e₂) w := by
   rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hw
+  have hd₁ := differentiableAt_of_isInvertible_fderiv hinv
   obtain ⟨L, hL⟩ := hinv
   set z := e₁.symm w
   have hsymm : HasFDerivAt e₁.symm (L.symm : ℂ →L[ℝ] ℂ) w :=
@@ -77,12 +78,12 @@ theorem differentiableAt_symm_trans_of_fderiv_comp (hw : w ∈ (e₁.symm.trans 
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, smul_eq_mul]
   rw [hLJ, hJ₂]
 
-/-- **Transition maps between isothermal charts are holomorphic.** If `e₁` and `e₂` are real
-differentiable on their sources, their derivatives carry `J` to multiplication by `I` there, and
-the derivative of `e₁` is invertible on its source, then the transition map `e₁.symm.trans e₂`
-satisfies the Cauchy–Riemann equation, so it is holomorphic on its source. -/
-theorem differentiableOn_symm_trans_of_fderiv_comp (hd₁ : DifferentiableOn ℝ e₁ e₁.source)
-    (hd₂ : DifferentiableOn ℝ e₂ e₂.source)
+/-- **Transition maps between isothermal charts are holomorphic.** If `e₂` is real
+differentiable on its source, the derivatives of `e₁` and `e₂` carry `J` to multiplication by `I`
+on their sources, and the derivative of `e₁` is invertible on its source, then the transition
+map `e₁.symm.trans e₂` satisfies the Cauchy–Riemann equation, so it is holomorphic on its
+source. -/
+theorem differentiableOn_symm_trans_of_fderiv_comp (hd₂ : DifferentiableOn ℝ e₂ e₂.source)
     (hinv : ∀ z ∈ e₁.source, (fderiv ℝ e₁ z).IsInvertible)
     (hJ₁ : ∀ z ∈ e₁.source, ∀ v, fderiv ℝ e₁ z (J z v) = I * fderiv ℝ e₁ z v)
     (hJ₂ : ∀ z ∈ e₂.source, ∀ v, fderiv ℝ e₂ z (J z v) = I * fderiv ℝ e₂ z v) :
@@ -92,7 +93,6 @@ theorem differentiableOn_symm_trans_of_fderiv_comp (hd₁ : DifferentiableOn ℝ
   rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hw'
   have h₁ : e₁.symm w ∈ e₁.source := e₁.map_target hw'.1
   exact (differentiableAt_symm_trans_of_fderiv_comp hw
-    (hd₁.differentiableAt (e₁.open_source.mem_nhds h₁))
     (hd₂.differentiableAt (e₂.open_source.mem_nhds hw'.2)) (hinv _ h₁) (hJ₁ _ h₁)
     (hJ₂ _ hw'.2)).differentiableWithinAt
 
@@ -101,13 +101,13 @@ theorem differentiableOn_symm_trans_of_fderiv_comp (hd₁ : DifferentiableOn ℝ
 is of class `C^n` on the common source: there `e₂` is the holomorphic transition map composed
 with `e₁`. -/
 theorem contDiffOn_inter_of_fderiv_comp {n : WithTop ℕ∞} (hc₁ : ContDiffOn ℝ n e₁ e₁.source)
-    (hd₁ : DifferentiableOn ℝ e₁ e₁.source) (hd₂ : DifferentiableOn ℝ e₂ e₂.source)
+    (hd₂ : DifferentiableOn ℝ e₂ e₂.source)
     (hinv : ∀ z ∈ e₁.source, (fderiv ℝ e₁ z).IsInvertible)
     (hJ₁ : ∀ z ∈ e₁.source, ∀ v, fderiv ℝ e₁ z (J z v) = I * fderiv ℝ e₁ z v)
     (hJ₂ : ∀ z ∈ e₂.source, ∀ v, fderiv ℝ e₂ z (J z v) = I * fderiv ℝ e₂ z v) :
     ContDiffOn ℝ n e₂ (e₁.source ∩ e₂.source) := by
   have hT : ContDiffOn ℝ n (e₁.symm.trans e₂) (e₁.symm.trans e₂).source :=
-    ((differentiableOn_symm_trans_of_fderiv_comp hd₁ hd₂ hinv hJ₁ hJ₂).contDiffOn
+    ((differentiableOn_symm_trans_of_fderiv_comp hd₂ hinv hJ₁ hJ₂).contDiffOn
       (e₁.symm.trans e₂).open_source).restrict_scalars ℝ
   have hmaps : MapsTo e₁ (e₁.source ∩ e₂.source) (e₁.symm.trans e₂).source := by
     intro z hz
@@ -127,10 +127,9 @@ theorem contDiffOn_infty_of_fderiv_comp (hd : DifferentiableOn ℝ e e.source)
       ∀ y ∈ e'.source, ∀ v, fderiv ℝ e' y (J y v) = I * fderiv ℝ e' y v) :
     ContDiffOn ℝ ∞ e e.source := by
   refine contDiffOn_infty.2 fun m ↦ contDiffOn_of_locally_contDiffOn fun z hz ↦ ?_
-  obtain ⟨e', hz', hc', hinv', hJ'⟩ := h z hz (m + 1)
+  obtain ⟨e', hz', hc', hinv', hJ'⟩ := h z hz m
   refine ⟨e'.source, e'.open_source, hz', ?_⟩
   rw [inter_comm]
-  exact contDiffOn_inter_of_fderiv_comp (hc'.of_le (by exact_mod_cast m.le_succ))
-    (hc'.differentiableOn (by simp)) hd hinv' hJ' hJ
+  exact contDiffOn_inter_of_fderiv_comp hc' hd hinv' hJ' hJ
 
 end TauCeti.Beltrami
