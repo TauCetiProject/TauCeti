@@ -130,7 +130,8 @@ theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_and_divMatrixGradient_eq_zer
     refine ⟨Omega, hx, fun k => ⟨0, ?_⟩⟩
     rw [← Wkp.valueL_apply, map_zero]
     exact Lp.coeFn_zero _ _ _
-  obtain ⟨g, hg, hug⟩ := UniformlyEllipticOn.exists_contDiffOn_ae_eq hlam hA hf
+  obtain ⟨g, hg, hug⟩ := UniformlyEllipticOn.exists_contDiffOn_ae_eq hlam hA (b := 0) (c := 0)
+    contDiffOn_const contDiffOn_const hf
     (fun v => by simpa using hu v)
   have hderiv := ((W1p.hasWeakFDerivOn u).congr_ae hug).ae_eq
     (hasWeakFDerivOn_gradient_of_contDiffOn (μ := volume) (hg.of_le (by simp)))
