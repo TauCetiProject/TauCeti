@@ -106,14 +106,8 @@ theorem thomMap_one {n : ℕ} (h : 0 + n = n)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     thomMap F E (ModuleCat.of K K) n 0 n h u
         (((TopCat.of B).singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).homologyπ 0
-          ((TopCat.of B).constSingularCocycle K (𝟙 (ModuleCat.of K K)))) = u := by
-  rw [thomMap_apply]
-  refine (congrArg (fun x ↦ (thomPair F E).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv
-    (ρ_ (ModuleCat.of K K)).hom 0 n n h x u)
-    (TopCat.singularCohomologyMap_homologyπ_constSingularCocycle (thomPairProj F E) K
-      (𝟙 (ModuleCat.of K K)))).trans ?_
-  exact TopPair.singularCup_constSingularCocycle_left K (thomPair F E) (η := 𝟙 _)
-    (by monoidal) (by monoidal) h u
+          ((TopCat.of B).constSingularCocycle K (𝟙 (ModuleCat.of K K)))) = u :=
+  TopPair.thomMap_one _ _ h u
 
 /-- **Naturality of the Thom map.** A map of Thom pairs `φ : (E', E'₀) ⟶ (E, E₀)` covering a map
 of bases `g : B' ⟶ B` intertwines the Thom map of `u` with that of its pull-back `φ^*u`:

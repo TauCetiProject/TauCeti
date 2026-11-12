@@ -46,6 +46,9 @@ projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product
 in the union when `A`, respectively `B`, is open
 (`TopCat.isOpen_subtypeVal_preimage_preimage_fst_union`), and a product of maps of pairs carries
 them into each other (`TopCat.mapsTo_tensorHom_preimage_fst`).
+
+For a map `π : X ⟶ Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` over
+`S` includes into `(X, Z)` (`TopCat.restrictPreimagePairMap`).
 -/
 
 public section
@@ -469,5 +472,27 @@ lemma mapsTo_tensorHom_preimage_snd {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
     exact hg hx
 
 end Preimage
+
+section RestrictPreimage
+
+variable {X Y : TopCat.{u}} (π : X ⟶ Y) (Z : Set X)
+
+/-- The inclusion `(π⁻¹ S, π⁻¹ S ∩ Z) ⟶ (X, Z)` of the restriction of the pair `(X, Z)` over a
+subset `S` of the base of a map `π : X ⟶ Y`. -/
+def restrictPreimagePairMap (S : Set Y) :
+    TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S) ⟶ TopPair.ofSubset Z :=
+  TopPair.ofHom (ofHom (ContinuousMap.subtypeVal _)) (ofHom ⟨fun x ↦ ⟨x.1, x.2.2⟩, by fun_prop⟩)
+    (by ext; rfl)
+
+@[simp]
+lemma restrictPreimagePairMap_fst_apply (S : Set Y) (x : ↥(π ⁻¹' S)) :
+    TopPair.Hom.fst (restrictPreimagePairMap π Z S) x = x.1 :=
+  (rfl)
+
+lemma restrictPreimagePairMap_fst (S : Set Y) :
+    TopPair.Hom.fst (restrictPreimagePairMap π Z S) = ofHom (ContinuousMap.subtypeVal _) :=
+  (rfl)
+
+end RestrictPreimage
 
 end TopCat

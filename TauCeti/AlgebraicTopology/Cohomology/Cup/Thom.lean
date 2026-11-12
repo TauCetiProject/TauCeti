@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
+public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
 
 /-!
 # The Thom map of a pair over a base
@@ -15,7 +16,8 @@ class with coefficients in a commutative ring `K`. The **Thom map** of `u` is
 
 `Φ_u : Hᵖ(Y; M) ⟶ Hᵖ⁺ⁿ(X, A; M)`,  `a ↦ π^*a ⌣ u`
 
-(`TopPair.thomMap`), for any `K`-module of coefficients `M`. It is natural in maps of pairs over
+(`TopPair.thomMap`), for any `K`-module of coefficients `M`. It sends the unit `1 ∈ H⁰(Y; K)` to
+`u` (`TopPair.thomMap_one`). It is natural in maps of pairs over
 maps of bases (`TopPair.thomMap_naturality`), so its bijectivity is invariant under isomorphisms
 (`TopPair.bijective_thomMap_iff_of_isIso`). For the Thom pair `(E, E₀)` of a vector bundle over its
 projection, and `u` a Thom class, it is the map `TauCeti.thomMap` of the Thom isomorphism.
@@ -29,6 +31,7 @@ these maps is in `TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Thom`.
 ## Main definitions and results
 
 * `TopPair.thomMap`: the Thom map `a ↦ π^*a ⌣ u` of a pair over a base.
+* `TopPair.thomMap_one`: `Φ_u(1) = u`.
 * `TopPair.thomMap_naturality`, `TopPair.bijective_thomMap_iff_of_isIso`: naturality and invariance
   of bijectivity under isomorphisms.
 * `TopCat.thomMapRestrict`: the Thom map over a subset of the base.
@@ -73,6 +76,21 @@ theorem thomMap_apply (P : TopPair.{w}) {Y : TopCat.{w}} (π : P.fst ⟶ Y) {n p
       P.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p n m h
         (TopCat.singularCohomologyMap π p a) u :=
   (rfl)
+
+/-- **The Thom map sends `1` to `u`**: the image of the class of the constant `0`-cocycle with
+value `1 ∈ K` is `u`. -/
+@[simp]
+theorem thomMap_one (P : TopPair.{w}) {Y : TopCat.{w}} (π : P.fst ⟶ Y) {n : ℕ} (h : 0 + n = n)
+    (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    P.thomMap (ModuleCat.of K K) π n 0 n h u
+        ((Y.singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).homologyπ 0
+          (Y.constSingularCocycle K (𝟙 (ModuleCat.of K K)))) = u := by
+  rw [thomMap_apply]
+  refine (congrArg (fun x ↦ P.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv
+    (ρ_ (ModuleCat.of K K)).hom 0 n n h x u)
+    (TopCat.singularCohomologyMap_homologyπ_constSingularCocycle π K
+      (𝟙 (ModuleCat.of K K)))).trans ?_
+  exact P.singularCup_constSingularCocycle_left K (η := 𝟙 _) (by monoidal) (by monoidal) h u
 
 /-- **Naturality of the Thom map.** A map of pairs `φ : P' ⟶ P` covering a map of bases
 `g : Y' ⟶ Y` intertwines the Thom map of `u` with that of its pull-back `φ^*u`:
@@ -126,22 +144,6 @@ variable {K : Type w} [CommRing K] {X Y : TopCat.{w}} (π : X ⟶ Y) (Z : Set X)
 /-! ### Restriction over a subset of the base -/
 
 section Restrict
-
-/-- The inclusion `(π⁻¹ S, π⁻¹ S ∩ Z) ⟶ (X, Z)` of the restriction of the pair `(X, Z)` over a
-subset `S` of the base. -/
-def restrictPreimagePairMap (S : Set Y) :
-    TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S) ⟶ TopPair.ofSubset Z :=
-  TopPair.ofHom (ofHom (ContinuousMap.subtypeVal _)) (ofHom ⟨fun x ↦ ⟨x.1, x.2.2⟩, by fun_prop⟩)
-    (by ext; rfl)
-
-@[simp]
-theorem restrictPreimagePairMap_fst_apply (S : Set Y) (x : ↥(π ⁻¹' S)) :
-    TopPair.Hom.fst (restrictPreimagePairMap π Z S) x = x.1 :=
-  (rfl)
-
-theorem restrictPreimagePairMap_fst (S : Set Y) :
-    TopPair.Hom.fst (restrictPreimagePairMap π Z S) = ofHom (ContinuousMap.subtypeVal _) :=
-  (rfl)
 
 variable (M : ModuleCat.{w} K)
 
