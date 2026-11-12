@@ -132,10 +132,11 @@ theorem mem_spectrum_cayley_iff (h : -I ∈ A.resolventSet) {z : ℂ} (hz : z �
     rw [hw_def, inv_div]
     field_simp
     ring_nf
-  conv_lhs => rw [hU, hzw]
-  rw [spectrum.add_mem_add_iff, spectrum.smul_mem_smul_iff, ← not_iff_not,
-    LinearPMap.mem_spectrum_iff, not_not, TauCeti.LinearPMap.notMem_spectrum_resolvent_iff h hw,
-    hinv]
+  -- Spectral mapping for `U = 1 + (2i) R(-i)`, then for the resolvent `R(-i)`.
+  conv_lhs => rw [hU, hzw, spectrum.add_mem_add_iff, spectrum.smul_mem_smul_iff]
+  rw [← hinv]
+  simpa [LinearPMap.mem_spectrum_iff] using
+    (TauCeti.LinearPMap.notMem_spectrum_resolvent_iff h hw).not
 
 /-- The Cayley transform is surjective when both `i` and `-i` are resolvent points. -/
 theorem cayley_surjective (hp : I ∈ A.resolventSet) (hm : -I ∈ A.resolventSet) :

@@ -80,8 +80,9 @@ theorem Intertwines.eq_zero_of_disjoint_spectrum {A : E →ₗ.[ℂ] E} {B : F �
   have hfB : (_root_.spectrum ℂ B.cayley).EqOn f 0 := fun z hz => by simp [f, hz]
   have hX := h.comp_cfc_cayley_eq hA hB f
     ((continuousOn_const.sub continuousOn_id).congr hfA) (continuousOn_const.congr hfB)
-  rw [cfc_congr hfA, cfc_congr hfB, cfc_zero ℂ B.cayley, cfc_sub (fun _ => 1) (fun z => z),
-    cfc_const_one ℂ A.cayley, cfc_id' ℂ A.cayley, ContinuousLinearMap.zero_comp] at hX
+  rw [cfc_congr hfA, cfc_congr hfB] at hX
+  simp [cfc_sub (fun _ : ℂ => (1 : ℂ)) (fun z : ℂ => z) A.cayley, cfc_const_one ℂ A.cayley,
+    cfc_id' ℂ A.cayley] at hX
   -- `X` vanishes on the dense domain of `A`, which is the range of `1 - U_A`.
   refine DFunLike.coe_injective <| X.continuous.ext_on hA.dense_domain continuous_const
     fun y hy => ?_
