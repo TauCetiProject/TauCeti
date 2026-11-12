@@ -116,6 +116,17 @@ theorem chartPoint_val (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
     (chartPoint f A i hi x).val = Spec.map (CommRingCat.ofHom x.toRingHom) ≫ i :=
   (rfl)
 
+/-- A chart precomposed with a map of affine schemes is the chart applied to composed points. -/
+theorem chartPoint_spec_map_comp {A C : CommAlgCat.{u} k} (i : Spec (.of C) ⟶ X)
+    (hi : i ≫ f = Spec.algebraMap k C) (φ : C →ₐ[k] A)
+    (h : (Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ i) ≫ f = Spec.algebraMap k A)
+    (a : A →ₐ[k] R) :
+    chartPoint f A (Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ i) h a =
+      chartPoint f C i hi (a.comp φ) := by
+  apply Subtype.ext
+  simp only [chartPoint_val, AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom,
+    CommRingCat.ofHom_comp, Spec.map_comp, Category.assoc]
+
 /-- A chart point is the image of the corresponding affine-scheme point under the chart. -/
 theorem chartPoint_eq_map_comp_homEquivAlgHom_symm (A : CommAlgCat.{u} k)
     (i : Spec (.of A) ⟶ X) (hi : i ≫ f = Spec.algebraMap k A) :

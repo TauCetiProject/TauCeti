@@ -65,6 +65,42 @@ theorem map_chartPoint (g : X ⟶ Y) (hg : g ≫ fY = fX)
   apply Subtype.ext
   simp
 
+/-- A point of `X` whose image in `Y` lies in an affine open chart `Spec C ⟶ Y` lies in an affine
+open chart `Spec A ⟶ X` mapping to it, through an algebra map `C → A`. -/
+theorem exists_chartPoint_over [IsLocalRing R] (g : X ⟶ Y) (hg : g ≫ fY = fX)
+    (C : CommAlgCat.{u} k) (iC : Spec (.of C) ⟶ Y) (hiC : iC ≫ fY = Spec.algebraMap k C)
+    [IsOpenImmersion iC] (x : Points (R := R) fX)
+    (hx : map g hg x ∈ Set.range (chartPoint fY C iC hiC)) :
+    ∃ (A : CommAlgCat.{u} k) (iA : Spec (.of A) ⟶ X) (hiA : iA ≫ fX = Spec.algebraMap k A)
+      (_ : IsOpenImmersion iA) (φ : C →ₐ[k] A),
+      Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ iC = iA ≫ g ∧
+        x ∈ Set.range (chartPoint fX A iA hiA) := by
+  -- Work in the open subscheme `U = g⁻¹(Spec C)`, which contains the image of `x`.
+  let U : X.Opens := g ⁻¹ᵁ iC.opensRange
+  have hxU : x ∈ Set.range (map U.ι (rfl : U.ι ≫ fX = U.ι ≫ fX)) := by
+    rw [mem_range_map_iff, Scheme.Opens.range_ι]
+    rintro _ ⟨p, rfl⟩
+    have h := (mem_range_chartPoint_iff fY C iC hiC _).1 hx ⟨p, rfl⟩
+    simpa [U] using h
+  obtain ⟨x', rfl⟩ := hxU
+  obtain ⟨A, i, hi, _, a, rfl⟩ := exists_mem_range_chartPoint (U.ι ≫ fX) x'
+  have hiA : (i ≫ U.ι) ≫ fX = Spec.algebraMap k A := by rw [Category.assoc, hi]
+  have hrange : Set.range (i ≫ U.ι ≫ g) ⊆ Set.range iC := by
+    rintro _ ⟨p, rfl⟩
+    have h : U.ι (i p) ∈ U := by
+      have h' : U.ι (i p) ∈ Set.range U.ι := Set.mem_range_self _
+      rwa [Scheme.Opens.range_ι] at h'
+    simpa [U] using h
+  let : Y.Over (Spec (.of k)) := ⟨fY⟩
+  have : iC.IsOver (Spec (.of k)) := ⟨hiC⟩
+  have hbase : (i ≫ U.ι ≫ g) ≫ fY = Spec.algebraMap k A := by
+    rw [Category.assoc, Category.assoc, hg, hi]
+  have : (i ≫ U.ι ≫ g).IsOver (Spec (.of k)) := ⟨hbase⟩
+  obtain ⟨φ, hφ, -⟩ :=
+    AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset (R := k) iC _ hrange
+  refine ⟨A, i ≫ U.ι, hiA, inferInstance, φ, by rw [hφ, Category.assoc], a, ?_⟩
+  rw [map_chartPoint]
+
 /-- On affine schemes the induced map on points is precomposition of algebra maps,
 under the native equivalence `Spec.homEquivAlgHom`. -/
 @[simp]

@@ -87,62 +87,16 @@ theorem pullbackPointsEquiv_symm_apply_val
       pullback.lift p.1.1.val p.1.2.val (by simpa using congrArg Subtype.val p.2) :=
   (rfl)
 
-omit [Algebra k R] in
-/-- A chart composed with a map of affine schemes is the chart applied to composed points. -/
-private theorem chartPoint_spec_map_comp [Algebra k R] {A C : CommAlgCat.{u} k}
-    (iC : Spec (.of C) ⟶ Z) (hiC : iC ≫ fZ = Spec.algebraMap k C) (φ : C →ₐ[k] A)
-    (h : (Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ iC) ≫ fZ = Spec.algebraMap k A)
-    (a : A →ₐ[k] R) :
-    chartPoint fZ A (Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ iC) h a =
-      chartPoint fZ C iC hiC (a.comp φ) := by
-  apply Subtype.ext
-  simp only [chartPoint_val, AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom,
-    CommRingCat.ofHom_comp, Spec.map_comp, Category.assoc]
-
-/-- A point of `X` whose image in `Z` lies in an affine open chart `Spec C ⟶ Z` lies in an affine
-open chart `Spec A ⟶ X` mapping to it, through an algebra map `C → A`. -/
-private theorem exists_chartPoint_over [IsLocalRing R] (C : CommAlgCat.{u} k)
-    (iC : Spec (.of C) ⟶ Z) (hiC : iC ≫ fZ = Spec.algebraMap k C) [IsOpenImmersion iC]
-    (x : Points (R := R) fX) (hx : map g₁ hg₁ x ∈ Set.range (chartPoint fZ C iC hiC)) :
-    ∃ (A : CommAlgCat.{u} k) (iA : Spec (.of A) ⟶ X) (hiA : iA ≫ fX = Spec.algebraMap k A)
-      (_ : IsOpenImmersion iA) (φ : C →ₐ[k] A),
-      Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ iC = iA ≫ g₁ ∧
-        x ∈ Set.range (chartPoint fX A iA hiA) := by
-  -- Work in the open subscheme `U = g₁⁻¹(Spec C)`, which contains the image of `x`.
-  let U : X.Opens := g₁ ⁻¹ᵁ iC.opensRange
-  have hxU : x ∈ Set.range (map U.ι (rfl : U.ι ≫ fX = U.ι ≫ fX)) := by
-    rw [mem_range_map_iff, Scheme.Opens.range_ι]
-    rintro _ ⟨p, rfl⟩
-    have h := (mem_range_chartPoint_iff fZ C iC hiC _).1 hx ⟨p, rfl⟩
-    simpa [U] using h
-  obtain ⟨x', rfl⟩ := hxU
-  obtain ⟨A, i, hi, _, a, rfl⟩ := exists_mem_range_chartPoint (U.ι ≫ fX) x'
-  have hiA : (i ≫ U.ι) ≫ fX = Spec.algebraMap k A := by rw [Category.assoc, hi]
-  have hrange : Set.range (i ≫ U.ι ≫ g₁) ⊆ Set.range iC := by
-    rintro _ ⟨p, rfl⟩
-    have h : U.ι (i p) ∈ U := by
-      have h' : U.ι (i p) ∈ Set.range U.ι := Set.mem_range_self _
-      rwa [Scheme.Opens.range_ι] at h'
-    simpa [U] using h
-  let : Z.Over (Spec (.of k)) := ⟨fZ⟩
-  have : iC.IsOver (Spec (.of k)) := ⟨hiC⟩
-  have : (i ≫ U.ι ≫ g₁).IsOver (Spec (.of k)) := ⟨by
-    change i ≫ U.ι ≫ g₁ ≫ fZ = _
-    rw [hg₁, ← Category.assoc, hiA]
-    rfl⟩
-  obtain ⟨φ, hφ, -⟩ :=
-    AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset (R := k) iC _ hrange
-  refine ⟨A, i ≫ U.ι, hiA, inferInstance, φ, by rw [hφ, Category.assoc], a, ?_⟩
-  rw [map_chartPoint]
-
 section Topology
 
-variable [TopologicalSpace R] [IsTopologicalRing R] [IsLocalRing R] [IsOpenUnits R]
+variable [TopologicalSpace R] [IsLocalRing R] [IsOpenUnits R]
 
 /-- The fibre-product comparison is continuous: the projections act continuously on points. -/
-theorem continuous_pullbackPointsEquiv :
+theorem continuous_pullbackPointsEquiv [ContinuousMul R] :
     Continuous (pullbackPointsEquiv (R := R) g₁ g₂ hg₁ hg₂) :=
   ((continuous_map _ _).prodMk (continuous_map _ _)).subtype_mk _
+
+variable [IsTopologicalRing R]
 
 /-- The inverse fibre-product comparison is continuous: near a compatible pair it is read in an
 affine chart `Spec (A ⊗[C] B) ⟶ X ×_Z Y`, where it is the affine comparison
@@ -180,7 +134,7 @@ theorem continuous_pullbackPointsEquiv_symm :
         q.1.comp (IsScalarTower.toAlgHom k C A) = q.2.comp (IsScalarTower.toAlgHom k C B) := by
     rw [map_chartPoint, map_chartPoint]
     simp only [← hφA, ← hφB]
-    rw [chartPoint_spec_map_comp iC hiC, chartPoint_spec_map_comp iC hiC]
+    rw [chartPoint_spec_map_comp fZ iC hiC, chartPoint_spec_map_comp fZ iC hiC]
     exact (chartPoint_injective fZ C iC hiC).eq_iff
   let S : Set (Points (R := R) fX × Points (R := R) fY) := {p | map g₁ hg₁ p.1 = map g₂ hg₂ p.2}
   let c := Prod.map (chartPoint (R := R) fX A iA hiA) (chartPoint (R := R) fY B iB hiB)
@@ -195,20 +149,17 @@ theorem continuous_pullbackPointsEquiv_symm :
   have key : (pullbackPointsEquiv (R := R) g₁ g₂ hg₁ hg₂).symm ∘ S.restrictPreimage c =
       chartPoint _ (CommAlgCat.of k (A ⊗[C] B)) j hj ∘
         (PointTopology.relativeTensorProductHomeomorph k C A B R).symm ∘ τ := by
-    funext q
+    funext ⟨⟨a', b'⟩, hq⟩
     apply Subtype.ext
-    simp only [Function.comp_apply, pullbackPointsEquiv_symm_apply_val, chartPoint_val]
+    simp only [Function.comp_apply, Set.restrictPreimage_mk, c, Prod.map_fst, Prod.map_snd,
+      pullbackPointsEquiv_symm_apply_val, chartPoint_val]
     refine pullback.hom_ext ?_ ?_
     · rw [pullback.lift_fst, Category.assoc, hj₁, ← Category.assoc, ← Spec.map_comp,
         ← CommRingCat.ofHom_comp]
-      rw [show (S.restrictPreimage c q : Points (R := R) fX × Points (R := R) fY).1 =
-        chartPoint fX A iA hiA q.1.1 from rfl, chartPoint_val]
       refine congrArg (fun φ ↦ Spec.map (CommRingCat.ofHom φ) ≫ iA) (RingHom.ext fun t ↦ ?_)
       simp [τ]
     · rw [pullback.lift_snd, Category.assoc, hj₂, ← Category.assoc, ← Spec.map_comp,
         ← CommRingCat.ofHom_comp]
-      rw [show (S.restrictPreimage c q : Points (R := R) fX × Points (R := R) fY).2 =
-        chartPoint fY B iB hiB q.1.2 from rfl, chartPoint_val]
       refine congrArg (fun φ ↦ Spec.map (CommRingCat.ofHom φ) ≫ iB) (RingHom.ext fun t ↦ ?_)
       simp [τ]
   have hmem : (⟨(chartPoint fX A iA hiA a, chartPoint fY B iB hiB b), hxy⟩ :
@@ -236,6 +187,13 @@ noncomputable def pullbackPointsHomeomorph :
 @[simp]
 theorem coe_pullbackPointsHomeomorph :
     ⇑(pullbackPointsHomeomorph (R := R) g₁ g₂ hg₁ hg₂) = pullbackPointsEquiv g₁ g₂ hg₁ hg₂ :=
+  (rfl)
+
+/-- The inverse fibre-product homeomorphism is the inverse fibre-product comparison of points. -/
+@[simp]
+theorem coe_pullbackPointsHomeomorph_symm :
+    ⇑(pullbackPointsHomeomorph (R := R) g₁ g₂ hg₁ hg₂).symm =
+      (pullbackPointsEquiv g₁ g₂ hg₁ hg₂).symm :=
   (rfl)
 
 end Topology
