@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
@@ -40,6 +41,9 @@ complex normed space, including Schwartz functions by coercion.
   Fourier transform.
 * `TauCeti.eLpNorm_fourierInv_comp_inv_smul`: dilation rescales the `Lʳ` norm of the inverse
   Fourier transform.
+* `TauCeti.fourier_comp_sub_const`, `TauCeti.support_fourier_comp_sub_const`: translating a
+  function by `a` multiplies its Fourier transform by the character `𝐞 (-⟪a, ·⟫)`, so the support
+  of the Fourier transform does not change.
 * `TauCeti.fourier_fourierChar_smul`: modulation by the character `𝐞 ⟪·, c⟫` translates the
   Fourier transform by `c`.
 * `TauCeti.fourier_smul_const`: the Fourier transform of `f · • v` is `𝓕 f · • v`.
@@ -149,6 +153,26 @@ theorem eLpNorm_fourierInv_comp_inv_smul (g : E → F) {R : ℝ} (hR : 0 < R) (r
     ← ofReal_norm, Real.norm_eq_abs, abs_of_pos (by positivity),
     ← ENNReal.ofReal_mul (by positivity), Real.inv_rpow hR.le, ← Real.rpow_natCast,
     ← Real.rpow_neg hR.le, ← Real.rpow_add hR, sub_eq_add_neg]
+
+/-! ### Translation -/
+
+/-- **Fourier transform of a translate**: translation becomes modulation,
+`𝓕 (f (· - a)) ξ = 𝐞 (-⟪a, ξ⟫) • 𝓕 f ξ`. -/
+theorem fourier_comp_sub_const (f : E → F) (a ξ : E) :
+    𝓕 (fun x ↦ f (x - a)) ξ = 𝐞 (-⟪a, ξ⟫) • 𝓕 f ξ := by
+  -- On functions, `𝓕` is the Fourier integral for the pairing `innerₗ E`.
+  have h := congrFun (VectorFourier.fourierIntegral_comp_add_right 𝐞 volume (innerₗ E) f (-a)) ξ
+  simp only [Function.comp_def, ← sub_eq_add_neg, map_neg, LinearMap.neg_apply,
+    innerₗ_apply_apply] at h
+  exact h
+
+/-- **Frequencies of a translate**: translating a function does not change the support of its
+Fourier transform. -/
+theorem support_fourier_comp_sub_const (f : E → F) (a : E) :
+    Function.support (𝓕 (fun x ↦ f (x - a))) = Function.support (𝓕 f) := by
+  ext ξ
+  rw [Function.mem_support, Function.mem_support, fourier_comp_sub_const,
+    Circle.smul_def, smul_ne_zero_iff_right (Circle.coe_ne_zero _)]
 
 /-! ### Translation in frequency -/
 

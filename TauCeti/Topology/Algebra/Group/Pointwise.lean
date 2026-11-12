@@ -29,6 +29,7 @@ the first coordinate ranges over a noncompact set.
   `TauCeti.closure_sub_closure_subset`.
 * `IsClosed.image_mul_of_snd_subset`, with its additive form
   `IsClosed.image_add_of_snd_subset`.
+* `IsClosed.div_right_of_isCompact`, with its additive form `IsClosed.sub_right_of_isCompact`.
 -/
 
 public section
@@ -68,5 +69,13 @@ theorem IsClosed.image_mul_of_snd_subset {G : Type*} [TopologicalSpace G]
     exact ⟨(p.1 * p.2, ⟨p.2, hsub ⟨p, hp, rfl⟩⟩), by simpa, rfl⟩
   · rintro ⟨p, hp, rfl⟩
     exact ⟨(p.1 / p.2, p.2), hp, by simp⟩
+
+/-- The quotient `t / s` of a closed set `t` by a compact set `s` is closed. -/
+@[to_additive /-- The difference `t - s` of a closed set `t` and a compact set `s` is closed. -/]
+theorem IsClosed.div_right_of_isCompact {G : Type*} [TopologicalSpace G] [Group G]
+    [IsTopologicalGroup G] {s t : Set G} (ht : IsClosed t) (hs : IsCompact s) :
+    IsClosed (t / s) := by
+  rw [div_eq_mul_inv]
+  exact ht.mul_right_of_isCompact hs.inv
 
 end
