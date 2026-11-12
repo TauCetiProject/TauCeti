@@ -91,7 +91,6 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex
           ((H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
             (K.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞) := by
   let _ : CompactSpace K := isCompact_iff_compactSpace.mp hK.isCompact
-  have : Fact (ell : ℕ).Prime := ⟨ell.prop⟩
   rw [Subgroup.profiniteIndex_apply]
   apply le_antisymm
   · refine iSup_le fun V ↦ ?_
@@ -102,8 +101,8 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex
           (K.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞)) N)
     rw [Subgroup.index_map_mk'_eq_index_sup,
       relIndex_map_quotient_eq_index_sup_comap H K hHK N]
-    exact Subgroup.padicValNat_index_le_of_le (sup_le_sup_left hNV (H.subgroupOf K))
-      (index_subgroupOf_sup_comap_ne_zero H K N) ell
+    exact Nat.cast_le.mpr <| Subgroup.padicValNat_index_le_of_le
+      (sup_le_sup_left hNV (H.subgroupOf K)) (index_subgroupOf_sup_comap_ne_zero H K N) ell
   · refine iSup_le fun N ↦ ?_
     refine le_iSup_of_le (OpenNormalSubgroup.comap N K.subtype continuous_subtype_val) ?_
     have hV : (OpenNormalSubgroup.comap N K.subtype continuous_subtype_val).toSubgroup =
@@ -116,7 +115,7 @@ omit [TotallyDisconnectedSpace G] in
 /-- The suprema over open normal subgroups of the `ℓ`-adic valuations of the relative index and of
 the index of `K` add up, because both valuations increase along refinement of `N`. -/
 private lemma iSup_padicValNat_relIndex_add_iSup_padicValNat_index [CompactSpace K]
-    (hHK : H ≤ K) (ell : ℕ) [Fact ell.Prime] :
+    (hHK : H ≤ K) (ell : ℕ) :
     (⨆ N : OpenNormalSubgroup G,
         (padicValNat ell
           ((H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
@@ -136,10 +135,10 @@ private lemma iSup_padicValNat_relIndex_add_iSup_padicValNat_index [CompactSpace
   refine ⟨P, add_le_add ?_ ?_⟩
   · rw [relIndex_map_quotient_eq_index_sup_comap H K hHK N,
       relIndex_map_quotient_eq_index_sup_comap H K hHK P]
-    exact Subgroup.padicValNat_index_le_of_le
+    exact Nat.cast_le.mpr <| Subgroup.padicValNat_index_le_of_le
       (sup_le_sup_left (Subgroup.comap_mono inf_le_left) (H.subgroupOf K))
       (index_subgroupOf_sup_comap_ne_zero H K P) ell
-  · exact K.padicValNat_index_map_mk'_anti ell inf_le_right
+  · exact Nat.cast_le.mpr <| K.padicValNat_index_map_mk'_anti ell inf_le_right
 
 /-- Primewise multiplicativity of profinite index through a closed intermediate subgroup. -/
 theorem _root_.Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex

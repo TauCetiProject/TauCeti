@@ -272,7 +272,7 @@ theorem IsPwC1ImmersionOn.exp_two_pi_I_mul_windingNumber_eq_exp_sum_crossingAngl
     · rintro l u₀ u - - ⟨v₁, h₁, e₁⟩ ⟨v₂, h₂, e₂⟩
       refine ⟨v₁ + v₂, h₁.concat h₂, ?_⟩
       rw [Complex.exp_add, mul_comm (Complex.exp v₁), mul_assoc, e₁, e₂]
-    · intro t₀ ht₀'
+    · intro t₀ ht₀' _
       have ht₀ : t₀ ∈ T := (Finset.mem_sort _).mp ht₀'
       exact exists_hasCauchyPVAt_exp_mul_eq_of_crossing_window h_imm hab hT ht₀ hρ_pos
         (hρ_le_R t₀ ht₀) (by linarith [(h_endpts t₀ ht₀).1]) (by linarith [(h_endpts t₀ ht₀).2])
