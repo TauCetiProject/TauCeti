@@ -29,7 +29,7 @@ the even Clifford subalgebra, and in particular the two Spin representations: th
 invisible to `Spin(V)`.
 
 On the whole Clifford algebra it is visible in odd dimension. There the volume element `ω` of a
-spanning orthogonal list is central, odd, and squares to a scalar `c`, so whenever `W` is finite
+spanning orthogonal list is central, odd, and squares to a scalar `c`, so whenever `W` is
 free it acts on `S` by a scalar `λ` with `λ² = c` under `c_P`, and by `-λ` under `c_{P⁻}`.
 
 The scalar `c` vanishes for some spanning orthogonal lists, such as those containing zero vectors.
