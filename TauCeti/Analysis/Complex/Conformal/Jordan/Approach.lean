@@ -145,7 +145,7 @@ theorem IsJordanDomain.exists_isPreconnected_inter_ball_subset
       exact ⟨min δ ε, lt_min hδ hε, ∅, empty_subset _, isPreconnected_empty, fun z hz =>
         absurd (subset_closure hz.1) (hdisj (ball_subset_ball (min_le_left _ _) hz.2))⟩
   obtain ⟨S, hSJ, hScompact, hSpre, haS, hball⟩ :=
-    hU.isJordanCurve_frontier.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball ha hε
+    hU.isJordanCurve_frontier.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball hε
   have hcancel : frontier U \ (frontier U \ S) = S := sdiff_sdiff_cancel_left hSJ
   refine hU.exists_isPreconnected_inter_ball_subset_of_arc hε (W := frontier U \ S)
     (fun z hz => ⟨hz.1, hball hz⟩) ⟨ha, haS⟩ ?_ ?_
@@ -169,11 +169,8 @@ theorem IsJordanDomain.injOn_closedBall_of_conformal
     (hFc : ContinuousOn F (closedBall c r))
     (hFf : EqOn F f (ball c r))
     (hJ : IsJordanDomain (f '' ball c r)) :
-    InjOn F (closedBall c r) := by
-  -- a degenerate disc has at most one closed point
-  rcases le_or_gt r 0 with hr | hr
-  · exact (subsingleton_closedBall c hr).injOn F
-  exact injOn_closedBall_of_isPreconnected_image_approach hr hfd hfi hFc hFf
+    InjOn F (closedBall c r) :=
+  injOn_closedBall_of_isPreconnected_image_approach hfd hfi hFc hFf
     fun _ _ => hJ.isPreconnectedApproachAt
 
 /-- **Boundary injectivity, Jordan case**, in the hypothesis shape of

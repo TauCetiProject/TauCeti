@@ -22,7 +22,9 @@ families. For distinct `i` and `j`, specializing the positive relation at parame
 and the negative relation at `-c` gives the corresponding formula for `-eᵢ-eⱼ`. Thus a
 subgroup containing every difference-root and long-root element contains every root element of
 the standard symplectic realization. The argument uses no division, so it works over every
-commutative ring, including characteristic two.
+commutative ring, including characteristic two. This is the sum-root generation step needed to
+identify the explicit full-weight type-`C` carrier with the standard symplectic group on
+field-valued points.
 
 ## Main results
 
@@ -38,12 +40,6 @@ commutative ring, including characteristic two.
 
 * R. W. Carter, *Simple Groups of Lie Type* (1972), §5.2.
 * R. Steinberg, *Lectures on Chevalley Groups* (1968), §§3--4.
-
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: it is the sum-root generation step needed to identify
-the explicit full-weight type-`C` carrier with the standard symplectic group on field-valued
-points. That identification is consumed by the `C_n(q)` branch of milestone L0 in
-`TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section

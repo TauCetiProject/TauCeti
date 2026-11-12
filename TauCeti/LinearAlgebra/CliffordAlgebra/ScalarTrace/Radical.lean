@@ -121,7 +121,7 @@ theorem mem_span_radical_iff_basis_repr_eq_zero
       (scalarTrace_mul_eq_zero_of_mem_span_radical hx) hs
   · intro hx
     rw [← (basis Q b).linearCombination_repr x, Finsupp.linearCombination_apply]
-    refine (TwoSidedIdeal.span (ι Q '' (Q.radical : Set V))).asIdeal.sum_mem fun s hs ↦ ?_
+    refine (TwoSidedIdeal.span (ι Q '' (Q.radical : Set V))).asIdeal.sum_mem fun s _ ↦ ?_
     by_cases hweight : ∏ i ∈ s, Q (b i) = 0
     · simp only [Algebra.smul_def]
       exact TwoSidedIdeal.mul_mem_left _ _ _ (basis_mem_span_radical_of_prod_eq_zero hb hweight)

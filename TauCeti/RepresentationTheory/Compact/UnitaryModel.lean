@@ -46,9 +46,9 @@ finite-dimensional continuous representations alone.
 ## Implementation notes
 
 The conjugating automorphism is not asked to be canonical:
-`TauCeti.exists_continuousLinearEquiv_inner_map_map` chooses an eigenbasis of the Gram operator,
-and only its existence is exported. Nothing downstream needs more, since the unitary structure it
-produces is unique up to a unitary equivalence anyway.
+`TauCeti.exists_continuousLinearEquiv_inner_map_map` exports only its existence. Nothing
+downstream needs more, since the unitary structure it produces is unique up to a unitary
+equivalence anyway.
 
 Finite dimensionality enters only through that standardization, which is proved by the spectral
 theorem; the Gram operator itself is built for an arbitrary Hilbert-space carrier.
@@ -73,7 +73,7 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopo
   [CompactSpace G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 private local instance instCompleteSpaceUnitaryModel : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 /-- **A finite-dimensional continuous representation of a compact group is conjugate to a unitary
 one.** There is a continuous linear automorphism `e` of the carrier for which the transported
