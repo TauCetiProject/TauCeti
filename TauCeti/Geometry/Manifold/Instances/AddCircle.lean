@@ -64,6 +64,10 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
 * `AddCircle.coe_extChartAt_apply`, `AddCircle.coe_extChartAt_self`,
   `AddCircle.extChartAt_symm_apply`: the extended charts are local lifts, and their inverses are
   the quotient map on their targets.
+* `AddCircle.exists_extChartAt_coe_eq_add_zsmul`,
+  `AddCircle.comp_extChartAt_symm_eventuallyEq_of_forall_coe`: the extended chart at the class of
+  `t` sends it to `t` up to a multiple of the period, and a function on `AddCircle p` read in an
+  extended chart is its lift to `ℝ`, which is periodic (`AddCircle.periodic_of_forall_coe`).
 * `AddCircle.contDiffAt_chartAt_comp_coe`, `AddCircle.hasFDerivAt_chartAt_comp_coe`: a map out of
   `AddCircle p`, lifted to `ℝ` and read in a chart of its target, keeps its smoothness and its
   derivative.
@@ -514,6 +518,33 @@ theorem extChartAt_symm_apply (x : AddCircle p) {z : ℝ} (hz : z ∈ (extChartA
     (extChartAt 𝓘(ℝ) x).symm z = (z : AddCircle p) := by
   simpa using symm_apply_of_coe_apply
     (fun y hy ↦ coe_apply_of_mem_atlas (chart_mem_atlas ℝ x) hy) (by simpa using hz)
+
+variable {p} in
+/-- The extended chart of `AddCircle p` at the class of `t` sends it to `t` plus an integer
+multiple of the period. -/
+theorem exists_extChartAt_coe_eq_add_zsmul (t : ℝ) :
+    ∃ k : ℤ, extChartAt 𝓘(ℝ) (t : AddCircle p) (t : AddCircle p) = t + k • p := by
+  have h := coe_extChartAt_self (t : AddCircle p)
+  rw [eq_comm, QuotientAddGroup.eq, AddSubgroup.mem_zmultiples_iff] at h
+  obtain ⟨k, hk⟩ := h
+  exact ⟨k, by rw [hk]; ring⟩
+
+omit [Fact (0 < p)] in
+variable {p} in
+/-- A function on the reals whose values are those of a function on `AddCircle p` at the classes
+of real numbers is `p`-periodic. -/
+theorem periodic_of_forall_coe {α : Type*} {f : AddCircle p → α} {F : ℝ → α}
+    (hf : ∀ t : ℝ, f t = F t) : Function.Periodic F p := fun t ↦ by
+  rw [← hf, ← hf, coe_add_period]
+
+variable {p} in
+/-- If a function `f` on `AddCircle p` takes the value `F t` at the class of every real `t`, then
+near the image of `x` in its extended chart, the coordinate expression of `f` is `F`. -/
+theorem comp_extChartAt_symm_eventuallyEq_of_forall_coe {α : Type*} {f : AddCircle p → α}
+    {F : ℝ → α} (hf : ∀ t : ℝ, f t = F t) (x : AddCircle p) :
+    f ∘ (extChartAt 𝓘(ℝ) x).symm =ᶠ[𝓝 (extChartAt 𝓘(ℝ) x x)] F := by
+  filter_upwards [(isOpen_extChartAt_target x).mem_nhds (mem_extChartAt_target x)] with z hz
+  rw [Function.comp_apply, extChartAt_symm_apply x hz, hf]
 
 variable {p} in
 /-- At each point of its target, the inverse of an extended chart of `AddCircle p` has derivative
