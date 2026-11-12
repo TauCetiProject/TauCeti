@@ -26,8 +26,7 @@ Invariance under homotopy equivalence, and so in particular under homeomorphism,
 The product results reuse the existing product isomorphisms for fundamental and higher
 homotopy groups.
 
-This implements the general API for `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4,
-item 13, "`K(G, 1)` spaces". Concrete circle and torus examples are respectively in
+Concrete circle and torus examples are respectively in
 `TauCeti.AlgebraicTopology.UniversalCover.Circle.EilenbergMacLane` and
 `TauCeti.AlgebraicTopology.UniversalCover.Torus.EilenbergMacLane`.
 

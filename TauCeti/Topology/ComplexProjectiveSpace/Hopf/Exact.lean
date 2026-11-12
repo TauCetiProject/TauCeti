@@ -113,7 +113,7 @@ private instance pathConnectedSpace_fiber : PathConnectedSpace ((hopfHom n).fibe
     ((fiberHomeomorph v).trans Circle.homeomorphSphere.symm).symm.continuous
 
 /-- The unit sphere `S²ⁿ⁺¹` of `ℂⁿ⁺¹` is `2n`-connected. -/
-private theorem subsingleton_homotopyGroup_sphere [Finite N] (hN : Nat.card N < 2 * n + 1)
+theorem subsingleton_homotopyGroup_sphere [Finite N] (hN : Nat.card N < 2 * n + 1)
     (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
     Subsingleton (HomotopyGroup N (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) x) :=
   subsingleton_homotopyGroup_sphere_of_lt (by

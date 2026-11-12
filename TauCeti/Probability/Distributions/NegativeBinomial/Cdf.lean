@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
+public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Basic
 public import TauCeti.Probability.Cdf
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
 import TauCeti.Probability.Distributions.Dirac

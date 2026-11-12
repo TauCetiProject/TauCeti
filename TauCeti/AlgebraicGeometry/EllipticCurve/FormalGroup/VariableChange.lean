@@ -354,8 +354,6 @@ private theorem subst_formalCoordinate_formalInvariantDifferentialDenom_of_isDom
   have hC (c : R) : ι (PowerSeries.C c) = algebraMap R K c := by
     rw [← PowerSeries.algebraMap_eq, ← IsScalarTower.algebraMap_apply]
   have hinj := IsFractionRing.injective (MvPowerSeries Unit R) K
-  have hψ : (C.formalCoordinate W).toPowerSeries ≠ 0 := fun h ↦
-    (C.u⁻¹).ne_zero (by simpa [h] using (coeff_one_formalCoordinate C W).symm)
   -- `ω` at the point with parameter `ψ(z)` of `W` and at the point with parameter `z` of `C • W`
   have e₁ := W.inv_mul_derivation_div_subst_formalW h2 D
     (C.formalCoordinate W).constantCoeff_toPowerSeries

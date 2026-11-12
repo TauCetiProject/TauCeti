@@ -187,7 +187,7 @@ theorem not_integrableOn_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsAddHaar
         = ENNReal.ofReal (κ * ((4 : ℝ) ^ k) ^ (-d)) * μ (((4 : ℝ) ^ k) • A) := by
           rw [hμ, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), mul_assoc,
             ← Real.rpow_add (by positivity), neg_add_cancel, Real.rpow_zero, mul_one]
-      _ = ∫⁻ x in ((4 : ℝ) ^ k) • A, ENNReal.ofReal (κ * ((4 : ℝ) ^ k) ^ (-d)) ∂μ :=
+      _ = ∫⁻ _ in ((4 : ℝ) ^ k) • A, ENNReal.ofReal (κ * ((4 : ℝ) ^ k) ^ (-d)) ∂μ :=
           (setLIntegral_const _ _).symm
       _ ≤ ∫⁻ x in ((4 : ℝ) ^ k) • A, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ := by
           refine setLIntegral_mono' (hSm k) fun x hx ↦ ?_
@@ -299,7 +299,7 @@ theorem integral_norm_rpow_mul_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsA
     ∫ x : V, ‖x‖ ^ p * (1 + ‖x‖ ^ 2) ^ (-r / 2) ∂μ =
       (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) *
         (beta (((finrank ℝ V : ℝ) + p) / 2) ((r - finrank ℝ V - p) / 2) / 2) := by
-  set d := finrank ℝ V with hd
+  set d := finrank ℝ V
   have hd0 : 0 < d := finrank_pos
   -- In polar coordinates the moment is the radial beta integral with `s = d + p`.
   have hrad :
@@ -502,7 +502,7 @@ theorem setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow
       (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) * (2 ^ (m - 1) * t ^ m *
         (log (1 + (R / t) ^ 2) -
           ∑ k ∈ Finset.range (m - 1), (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1))) := by
-  rcases eq_or_ne t 0 with rfl | ht
+  rcases eq_or_ne t 0 with rfl | _
   · simp [hm]
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hm
   simp only [Nat.add_sub_cancel]
@@ -603,7 +603,6 @@ theorem integral_rpow_neg_one_add_norm_sq {r : ℝ} (hr : (finrank ℝ V : ℝ) 
   have hmoment := integral_norm_rpow_mul_rpow_neg_one_add_norm_sq (volume : Measure V)
     le_rfl (p := 0) (r := r) (by rwa [add_zero])
   simp only [Real.rpow_zero, one_mul, add_zero, sub_zero] at hmoment
-  have hΓ := Gamma_pos_of_pos (show 0 < (d : ℝ) / 2 by positivity)
   rw [hmoment, volume_real_unitBall, beta, Gamma_add_one (by positivity), hsum, ← hd]
   field_simp
 
