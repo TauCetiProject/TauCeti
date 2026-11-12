@@ -36,8 +36,8 @@ statements.
 
 * `TauCeti.RiemannSurface.finrank_cechCohomology_zero_holomorphicStructureSheafModules`:
   `dim H⁰(X, 𝒪) = 1` on a nonempty compact connected complex curve.
-* `TauCeti.RiemannSurface.finrank_cechCohomology_zero_holomorphicStructureSheafModules_of_isEmpty`:
-  on the empty curve `dim H⁰(X, 𝒪) = 0`.
+* `TauCeti.RiemannSurface.finrank_cechCohomology_holomorphicStructureSheafModules_of_isEmpty`:
+  on the empty curve `dim Hⁿ(X, 𝒪) = 0` for every `n`, in particular `dim H⁰(X, 𝒪) = 0`.
 * `TauCeti.RiemannSurface.finrank_cechCohomology_zero_skyscraperSheaf`: `dim H⁰(X, ℂ_x) = 1`.
 * `TauCeti.RiemannSurface.finrank_cechCohomology_succ_skyscraperSheaf`: `dim Hⁿ⁺¹(X, ℂ_x) = 0`.
 * `TauCeti.RiemannSurface.finrank_cechCohomology_of_isZero_sections`: a presheaf with zero
@@ -74,15 +74,16 @@ theorem finrank_cechCohomology_zero_holomorphicStructureSheafModules [IsManifold
   rw [← (cechCohomologyZeroIso (holomorphicStructureSheafModules 𝓘(ℂ) X)).toLinearEquiv.finrank_eq]
   exact holomorphicStructureSheafModules.finrank_globalSections 𝓘(ℂ) X
 
-/-- **Nonemptiness is essential for `H⁰(𝒪) = ℂ`.** On an empty complex curve the degree-zero
-Čech cohomology of the holomorphic structure sheaf has dimension zero, not one, although the
-curve is compact and preconnected. Nonemptiness is the extra condition that makes a preconnected
-space connected. Compare `finrank_cechCohomology_zero_holomorphicStructureSheafModules`. -/
-theorem finrank_cechCohomology_zero_holomorphicStructureSheafModules_of_isEmpty [IsEmpty X] :
-    Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 0).obj
+/-- **Nonemptiness is essential for `H⁰(𝒪) = ℂ`.** On an empty complex curve every Čech
+cohomology group of the holomorphic structure sheaf has dimension zero. In degree zero this gives
+dimension zero, not one, although the curve is compact and preconnected. Nonemptiness is the extra
+condition that makes a preconnected space connected. Compare
+`finrank_cechCohomology_zero_holomorphicStructureSheafModules`. -/
+theorem finrank_cechCohomology_holomorphicStructureSheafModules_of_isEmpty [IsEmpty X] (n : ℕ) :
+    Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).obj
       (holomorphicStructureSheafModules 𝓘(ℂ) X).obj) = 0 :=
   have : IsEmpty (TopCat.of X) := inferInstanceAs (IsEmpty X)
-  ModuleCat.finrank_eq_zero_of_isZero (isZero_cechCohomology_obj_of_isEmpty _ _ 0 _)
+  ModuleCat.finrank_eq_zero_of_isZero (isZero_cechCohomology_obj_of_isEmpty _ _ n _)
 
 end StructureSheaf
 
