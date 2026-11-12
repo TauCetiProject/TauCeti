@@ -106,9 +106,9 @@ theorem conleyZehnderIndex_eq_of_homotopic {A B : GLSymplectic n ℝ} {γ₀ γ�
 @[simp]
 theorem conleyZehnderIndex_refl (A : GLSymplectic n ℝ) :
     conleyZehnderIndex (Path.refl A) = 0 := by
-  rw [conleyZehnderIndex_def, neg_eq_zero,
-    ← Matrix.UnitaryGroup.maslovIndex_refl (graphDiagonalFrame A)]
-  rfl
+  rw [conleyZehnderIndex_def, Matrix.UnitaryGroup.maslovIndex_eq_of_souriau_eq _
+      (Path.refl (graphDiagonalFrame A)) fun _ => by simp,
+    Matrix.UnitaryGroup.maslovIndex_refl, neg_zero]
 
 /-- **Catenation.** The Conley–Zehnder index of a concatenation of paths is the sum of their
 indices. -/
@@ -126,39 +126,6 @@ theorem conleyZehnderIndex_symm {A B : GLSymplectic n ℝ} (γ : Path A B) :
     Matrix.UnitaryGroup.maslovIndex_symm]
 
 /-! ### Frames of graphs of rotations -/
-
-/-- For an orthogonal symplectic matrix `A`, `1 + Aᵀ A = 2`, so the unitary frame of the graph is
-the graph frame divided by `√2`. -/
-private theorem coe_graphUnitary_of_transpose_mul_self {A : GLSymplectic n ℝ}
-    (hA : ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * (A : GL (n ⊕ n) ℝ) = 1) :
-    (graphUnitary A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
-      ((Real.sqrt 2)⁻¹ : ℂ) • graphFrame (A : GL (n ⊕ n) ℝ) := by
-  have h2 : (1 + 1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) = algebraMap ℝ≥0 _ 2 := by
-    rw [Algebra.algebraMap_eq_smul_one, two_smul]
-  rw [coe_graphUnitary, hA, h2, CFC.rpow_algebraMap, Algebra.algebraMap_eq_smul_one,
-    NNReal.smul_def, NNReal.coe_rpow, NNReal.coe_ofNat, Real.rpow_neg (by norm_num),
-    ← Real.sqrt_eq_rpow]
-  have hmap : ((√2)⁻¹ • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) =
-      ((√2)⁻¹ : ℂ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℂ) := by
-    ext i j
-    by_cases h : i = j <;> simp [h]
-  rw [hmap, Matrix.mul_smul, Matrix.mul_one]
-
-/-- For an orthogonal symplectic matrix `A`, the frame of the graph relative to the diagonal is
-`F(1)ᴴ F(A) / 2`, for the graph frames `F`. -/
-private theorem coe_graphDiagonalFrame_of_transpose_mul_self {A : GLSymplectic n ℝ}
-    (hA : ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * (A : GL (n ⊕ n) ℝ) = 1) :
-    (graphDiagonalFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
-      (1 / 2 : ℂ) •
-        ((graphFrame (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ))ᴴ * graphFrame (A : GL (n ⊕ n) ℝ)) := by
-  have h1 := coe_graphUnitary_of_transpose_mul_self (A := (1 : GLSymplectic n ℝ)) (by simp)
-  rw [graphDiagonalFrame_def, Submonoid.coe_mul, Unitary.coe_star, h1,
-    coe_graphUnitary_of_transpose_mul_self hA, star_eq_conjTranspose, conjTranspose_smul,
-    Matrix.smul_mul, Matrix.mul_smul, smul_smul]
-  congr 1
-  rw [Complex.star_def, map_inv₀, Complex.conj_ofReal, ← mul_inv, ← Complex.ofReal_mul,
-    Real.mul_self_sqrt (by norm_num)]
-  norm_num
 
 /-- **The graph of a rotation relative to the diagonal.** For the rotation
 `A = diag (e^{2 i ψ_j})` of `ℂⁿ`, the frame of the graph of `A` relative to the diagonal is the
@@ -308,26 +275,6 @@ theorem conleyZehnderIndex_eq_card_of_rotation {A B : GLSymplectic n ℝ} (γ : 
   ring
 
 /-! ### Loops -/
-
-/-- The square of the determinant of the unitary frame of the graph is the graph phase
-`det F / conj (det F)` of the graph frame `F`. -/
-private theorem detCircle_graphUnitary_sq (A : GLSymplectic n ℝ) :
-    detCircle (graphUnitary A) ^ 2 = graphPhase A := by
-  set F := graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)
-  set r := (((1 + ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * (A : GL (n ⊕ n) ℝ)) ^
-    (-(1 / 2) : ℝ)).det)
-  have hdet : (graphUnitary A : Matrix (n ⊕ n) (n ⊕ n) ℂ).det = F.det * r := by
-    rw [coe_graphUnitary, det_mul]
-    exact congrArg _ (RingHom.map_det Complex.ofRealHom _).symm
-  -- The determinant `w = det F * r` of a unitary matrix satisfies `conj w * w = 1`.
-  have hw : star (F.det * r) * (F.det * r) = 1 := by
-    rw [← hdet, ← det_conjTranspose, ← det_mul, ← star_eq_conjTranspose,
-      Matrix.UnitaryGroup.star_mul_self, det_one]
-  have hF : F.det ≠ 0 := det_graphFrame_ne_zero A
-  refine Circle.ext ?_
-  rw [Circle.coe_pow, coe_detCircle, coe_graphPhase, hdet, eq_div_iff ((map_ne_zero _).2 hF)]
-  simp only [star_mul', Complex.star_def, Complex.conj_ofReal] at hw
-  linear_combination F.det * hw
 
 /-- **The loop property.** On a loop of symplectic matrices, the Conley–Zehnder index is minus twice
 the Maslov index of the loop. -/

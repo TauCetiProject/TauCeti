@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Exponential.Log
 public import TauCeti.Analysis.Matrix.SymplecticGroup.Maslov
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
+public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
@@ -41,8 +41,9 @@ loop, and the Maslov index of its graph.
 Graphs relative to the diagonal are also how the Conley–Zehnder index of symplectic paths is
 expressed as a Robbin–Salamon index, which needs unitary frames. For symplectic `A` the graph frame
 `F` has the real positive definite Gram matrix `Fᴴ F = 1 + Aᵀ A`
-(`Matrix.conjTranspose_graphFrame_mul_graphFrame`), so `F (1 + Aᵀ A) ^ (-1/2)` is a unitary frame
-of the graph (`TauCeti.GLSymplectic.graphUnitary`), depending continuously on `A`. Moving it by the
+(`Matrix.conjTranspose_graphFrame_mul_graphFrame`), so its real orthonormalization
+(`Matrix.GeneralLinearGroup.realOrthonormalize`) `F (1 + Aᵀ A) ^ (-1/2)` is a unitary frame of the
+graph (`TauCeti.GLSymplectic.graphUnitary`), depending continuously on `A`. Moving it by the
 inverse of the unitary frame of the diagonal gives `TauCeti.GLSymplectic.graphDiagonalFrame`, which
 is the identity at `A = 1`.
 
@@ -391,14 +392,22 @@ open scoped MatrixOrder Matrix.Norms.L2Operator NNReal
 
 /-! ### The unitary frame of a graph -/
 
-/-- The matrix of the unitary frame of the graph of `A`: the graph frame, normalized on the right
-by the real matrix `(1 + Aᵀ A) ^ (-1/2)`. -/
-private noncomputable def graphUnitaryMatrix (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
-    Matrix (n ⊕ n) (n ⊕ n) ℂ :=
-  graphFrame A * ((1 + Aᵀ * A) ^ (-(1 / 2) : ℝ)).map ((↑) : ℝ → ℂ)
+/-- The real orthonormalization of the graph frame `F` of a symplectic matrix `A` is
+`F (1 + Aᵀ A) ^ (-1/2)`, since the real Gram matrix of `F` is `1 + Aᵀ A`. -/
+private theorem coe_realOrthonormalize_graphFrame {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hA : A ∈ symplecticGroup n ℝ) :
+    (realOrthonormalize ((isUnit_iff_isUnit_det _).2 (isUnit_det_graphFrame hA)).unit :
+        Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+      graphFrame A * ((1 + Aᵀ * A) ^ (-(1 / 2) : ℝ)).map ((↑) : ℝ → ℂ) := by
+  have hre : (Complex.re ∘ ((↑) : ℝ → ℂ)) = id := funext Complex.ofReal_re
+  rw [coe_realOrthonormalize, IsUnit.unit_spec, conjTranspose_graphFrame_mul_graphFrame hA,
+    Matrix.map_map, hre, Matrix.map_id]
 
-private theorem graphUnitaryMatrix_mem {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
-    (hA : A ∈ symplecticGroup n ℝ) : graphUnitaryMatrix A ∈ unitaryGroup (n ⊕ n) ℂ := by
+/-- The real orthonormalization of the graph frame of a symplectic matrix is unitary. -/
+private theorem realOrthonormalize_graphFrame_mem {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hA : A ∈ symplecticGroup n ℝ) :
+    (realOrthonormalize ((isUnit_iff_isUnit_det _).2 (isUnit_det_graphFrame hA)).unit :
+      Matrix (n ⊕ n) (n ⊕ n) ℂ) ∈ unitaryGroup (n ⊕ n) ℂ := by
   have hP : (1 + Aᵀ * A).PosDef := by
     simpa only [conjTranspose_eq_transpose_of_trivial] using
       posDef_one_add_conjTranspose_mul_self A
@@ -420,17 +429,27 @@ private theorem graphUnitaryMatrix_mem {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
       conjTranspose_eq_transpose_of_trivial, hR]
   have h := congrArg Complex.ofRealHom.mapMatrix hRPR
   rw [map_mul, map_mul, map_one] at h
-  rw [mem_unitaryGroup_iff', star_eq_conjTranspose, graphUnitaryMatrix, conjTranspose_mul, hRstar,
-    Matrix.mul_assoc, ← Matrix.mul_assoc (graphFrame A)ᴴ,
+  rw [mem_unitaryGroup_iff', star_eq_conjTranspose, coe_realOrthonormalize_graphFrame hA,
+    conjTranspose_mul, hRstar, Matrix.mul_assoc, ← Matrix.mul_assoc (graphFrame A)ᴴ,
     conjTranspose_graphFrame_mul_graphFrame hA, ← Matrix.mul_assoc]
   exact h
 
-/-- The **unitary frame of the graph** of a symplectic matrix `A`: the graph frame `F`, normalized
-on the right by the real matrix `(1 + Aᵀ A) ^ (-1/2)`, where `1 + Aᵀ A = Fᴴ F`. It frames the graph
-of `A` (`TauCeti.GLSymplectic.realImage_graphUnitary`). -/
+/-- The **unitary frame of the graph** of a symplectic matrix `A`: the real orthonormalization
+`F Re (Fᴴ F) ^ (-1/2)` (`Matrix.GeneralLinearGroup.realOrthonormalize`) of the graph frame `F`.
+Since `Fᴴ F = 1 + Aᵀ A` is real, it is the unitary matrix `F (1 + Aᵀ A) ^ (-1/2)`
+(`TauCeti.GLSymplectic.coe_graphUnitary`). It frames the graph of `A`
+(`TauCeti.GLSymplectic.realImage_graphUnitary`). -/
 noncomputable def graphUnitary (A : GLSymplectic n ℝ) : unitaryGroup (n ⊕ n) ℂ :=
-  ⟨graphUnitaryMatrix (A : GL (n ⊕ n) ℝ),
-    graphUnitaryMatrix_mem (mem_iff_mem_symplecticGroup.1 A.2)⟩
+  ⟨realOrthonormalize ((isUnit_iff_isUnit_det _).2
+      (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2))).unit,
+    realOrthonormalize_graphFrame_mem (mem_iff_mem_symplecticGroup.1 A.2)⟩
+
+/-- The unitary frame of the graph of `A` is the real orthonormalization of the graph frame. -/
+theorem coe_graphUnitary_eq_realOrthonormalize (A : GLSymplectic n ℝ) :
+    (graphUnitary A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+      realOrthonormalize ((isUnit_iff_isUnit_det _).2
+        (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2))).unit :=
+  (rfl)
 
 /-- The unitary frame of the graph of `A` is `F (1 + Aᵀ A) ^ (-1/2)`, for the graph frame `F`. -/
 theorem coe_graphUnitary (A : GLSymplectic n ℝ) :
@@ -438,35 +457,62 @@ theorem coe_graphUnitary (A : GLSymplectic n ℝ) :
       graphFrame (A : GL (n ⊕ n) ℝ) *
         ((1 + ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * (A : GL (n ⊕ n) ℝ)) ^
           (-(1 / 2) : ℝ)).map ((↑) : ℝ → ℂ) :=
-  (rfl)
+  coe_realOrthonormalize_graphFrame (mem_iff_mem_symplecticGroup.1 A.2)
 
 /-- The unitary frame of the graph of `A` frames the graph of `A`. -/
 @[simp]
 theorem realImage_graphUnitary (A : GLSymplectic n ℝ) :
     (graphUnitary A : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage = graphSubspace (A : GL (n ⊕ n) ℝ) := by
-  set B := ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)
-  have hP : (1 + Bᵀ * B).PosDef := by
-    simpa only [conjTranspose_eq_transpose_of_trivial] using
-      posDef_one_add_conjTranspose_mul_self B
-  have hR : IsUnit ((1 + Bᵀ * B) ^ (-(1 / 2) : ℝ)) :=
-    (CFC.isUnit_rpow_iff _ _ (by norm_num) hP.posSemidef.nonneg).2 hP.isUnit
-  rw [coe_graphUnitary, realImage_mul_map_ofReal _ hR, realImage_graphFrame]
+  rw [coe_graphUnitary_eq_realOrthonormalize, realImage_realOrthonormalize, IsUnit.unit_spec,
+    realImage_graphFrame]
 
 /-- The unitary frame of the graph depends continuously on the symplectic matrix. -/
 theorem continuous_graphUnitary :
     Continuous (graphUnitary : GLSymplectic n ℝ → unitaryGroup (n ⊕ n) ℂ) := by
-  have hB : Continuous fun A : GLSymplectic n ℝ =>
-      ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) :=
-    Units.continuous_val.comp continuous_subtype_val
-  have hP : Continuous fun A : GLSymplectic n ℝ =>
-      (1 + ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * (A : GL (n ⊕ n) ℝ)) :=
-    continuous_const.add (hB.matrix_transpose.matrix_mul hB)
-  have hR := (contDiffOn_rpow (n := n ⊕ n) (𝕜 := ℝ) (-(1 / 2)) (k := 0)).continuousOn
-    |>.comp_continuous hP fun A => by
-      simpa only [Set.mem_ofPred_eq, conjTranspose_eq_transpose_of_trivial] using
-        posDef_one_add_conjTranspose_mul_self ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)
-  refine Continuous.subtype_mk ?_ _
-  exact (continuous_graphFrame.comp hB).matrix_mul (hR.matrix_map Complex.continuous_ofReal)
+  -- The graph frames form a continuous family of invertible matrices.
+  have hF : Continuous fun A : GLSymplectic n ℝ => ((isUnit_iff_isUnit_det _).2
+      (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2))).unit :=
+    Units.isOpenEmbedding_val.continuous_iff.2 <| by
+      simpa only [Function.comp_def, IsUnit.unit_spec] using
+        continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtype_val)
+  exact (Units.continuous_val.comp (continuous_realOrthonormalize hF)).subtype_mk _
+
+/-- For an orthogonal symplectic matrix `A`, `1 + Aᵀ A = 2`, so the unitary frame of the graph is
+the graph frame divided by `√2`. -/
+theorem coe_graphUnitary_of_transpose_mul_self {A : GLSymplectic n ℝ}
+    (hA : ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * (A : GL (n ⊕ n) ℝ) = 1) :
+    (graphUnitary A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+      ((Real.sqrt 2)⁻¹ : ℂ) • graphFrame (A : GL (n ⊕ n) ℝ) := by
+  have h2 : (1 + 1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) = algebraMap ℝ≥0 _ 2 := by
+    rw [Algebra.algebraMap_eq_smul_one, two_smul]
+  rw [coe_graphUnitary, hA, h2, CFC.rpow_algebraMap, Algebra.algebraMap_eq_smul_one,
+    NNReal.smul_def, NNReal.coe_rpow, NNReal.coe_ofNat, Real.rpow_neg (by norm_num),
+    ← Real.sqrt_eq_rpow]
+  have hmap : ((√2)⁻¹ • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) =
+      ((√2)⁻¹ : ℂ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℂ) := by
+    ext i j
+    by_cases h : i = j <;> simp [h]
+  rw [hmap, Matrix.mul_smul, Matrix.mul_one]
+
+/-- The square of the determinant of the unitary frame of the graph is the graph phase
+`det F / conj (det F)` of the graph frame `F`. -/
+theorem detCircle_graphUnitary_sq (A : GLSymplectic n ℝ) :
+    detCircle (graphUnitary A) ^ 2 = graphPhase A := by
+  set F := graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)
+  set r := (((1 + ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * (A : GL (n ⊕ n) ℝ)) ^
+    (-(1 / 2) : ℝ)).det)
+  have hdet : (graphUnitary A : Matrix (n ⊕ n) (n ⊕ n) ℂ).det = F.det * r := by
+    rw [coe_graphUnitary, det_mul]
+    exact congrArg _ (RingHom.map_det Complex.ofRealHom _).symm
+  -- The determinant `w = det F * r` of a unitary matrix satisfies `conj w * w = 1`.
+  have hw : star (F.det * r) * (F.det * r) = 1 := by
+    rw [← hdet, ← det_conjTranspose, ← det_mul, ← star_eq_conjTranspose,
+      Matrix.UnitaryGroup.star_mul_self, det_one]
+  have hF : F.det ≠ 0 := det_graphFrame_ne_zero A
+  refine Circle.ext ?_
+  rw [Circle.coe_pow, coe_detCircle, coe_graphPhase, hdet, eq_div_iff ((map_ne_zero _).2 hF)]
+  simp only [star_mul', Complex.star_def, Complex.conj_ofReal] at hw
+  linear_combination F.det * hw
 
 /-! ### The graph relative to the diagonal -/
 
@@ -498,13 +544,29 @@ theorem realImage_graphDiagonalFrame (A : GLSymplectic n ℝ) :
           (star (graphUnitary (1 : GLSymplectic n ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℂ)) :
             EuclideanSpace ℂ (n ⊕ n) →L[ℂ] EuclideanSpace ℂ (n ⊕ n)) :
               EuclideanSpace ℂ (n ⊕ n) →ₗ[ℂ] EuclideanSpace ℂ (n ⊕ n)).restrictScalars ℝ) := by
-  rw [graphDiagonalFrame_def, Submonoid.coe_mul, realImage_mul, realImage_graphUnitary]
-  rfl
+  rw [graphDiagonalFrame_def, Submonoid.coe_mul, Unitary.coe_star, realImage_mul,
+    realImage_graphUnitary]
 
 /-- The frame of the graph relative to the diagonal depends continuously on the matrix. -/
 theorem continuous_graphDiagonalFrame :
     Continuous (graphDiagonalFrame : GLSymplectic n ℝ → unitaryGroup (n ⊕ n) ℂ) :=
   continuous_const.mul continuous_graphUnitary
+
+/-- For an orthogonal symplectic matrix `A`, the frame of the graph relative to the diagonal is
+`F(1)ᴴ F(A) / 2`, for the graph frames `F`. -/
+theorem coe_graphDiagonalFrame_of_transpose_mul_self {A : GLSymplectic n ℝ}
+    (hA : ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * (A : GL (n ⊕ n) ℝ) = 1) :
+    (graphDiagonalFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+      (1 / 2 : ℂ) •
+        ((graphFrame (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ))ᴴ * graphFrame (A : GL (n ⊕ n) ℝ)) := by
+  have h1 := coe_graphUnitary_of_transpose_mul_self (A := (1 : GLSymplectic n ℝ)) (by simp)
+  rw [graphDiagonalFrame_def, Submonoid.coe_mul, Unitary.coe_star, h1,
+    coe_graphUnitary_of_transpose_mul_self hA, star_eq_conjTranspose, conjTranspose_smul,
+    Matrix.smul_mul, Matrix.mul_smul, smul_smul]
+  congr 1
+  rw [Complex.star_def, map_inv₀, Complex.conj_ofReal, ← mul_inv, ← Complex.ofReal_mul,
+    Real.mul_self_sqrt (by norm_num)]
+  norm_num
 
 end UnitaryFrame
 
