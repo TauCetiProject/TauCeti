@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.CircleContinuation.Basic
 public import TauCeti.Analysis.Calculus.Morse.IntervalBase
 import TauCeti.Analysis.Calculus.ContDiff.GlueHalfLine
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Index-preserving continuation trajectories on the circle, by basin membership
@@ -24,7 +25,7 @@ the target function.
 
 Near a constant end the equation is solved explicitly. With the time coordinate
 `U(t) = log t - (1 / 2) log (1 - t²)` of `TauCeti.intervalBaseTimeCoordinate`, the relative angle
-`ψ = Θ - c` solves `ψ' = 2 δ sin (2 ψ) U'(t)`, so `tan (ψ - κ) exp (-4 δ σ U)` is constant for any
+`ψ = Θ - c` solves `ψ' = 2 δ sin (2 ψ) U'(t)`, so `tan (Θ - κ) exp (-4 δ σ U)` is constant for any
 critical angle `κ` of the end function, with `σ = cos (2 (κ - c)) = ±1`
 (`TauCeti.eqOn_arctan_of_hasDerivAt_circleContinuationSlope`). Since `U → -∞` at `t = 0` and
 `U → +∞` at `t = 1`, a solution tends at `t = 0` to the maximum `κ` with `|Θ a - κ| < π / 2`, and at
@@ -50,8 +51,8 @@ spatial basis of critical points (`TauCeti.tendsto_nhdsGT_zero_of_tendsto_nhdsLT
 `r(t) + j π` along the path moves each maximum to the other one. For rotations by `π / 3` and by
 `2 π / 3` the integers are `n = 0` and `n = 1`, so in the moving labels the continuation maps of the
 two halves of a rotation by `2 π / 3` are identities while that of the whole rotation is the
-exchange (`TauCeti.tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_thirdTurn`,
-`TauCeti.tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_twoThirdsTurn`).
+exchange (`TauCeti.tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_sixthTurn`,
+`TauCeti.tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_thirdTurn`).
 
 ## Main results
 
@@ -83,50 +84,27 @@ open Filter Real Set Topology
 
 namespace TauCeti
 
-/-! ### Integer multiples of `π` -/
+/-! ### Critical angles of the end functions -/
 
-/-- Every real number is within `π / 2` of an integer multiple of `π`. -/
-private theorem exists_abs_sub_int_mul_pi_le (x : ℝ) : ∃ n : ℤ, |x - n * π| ≤ π / 2 := by
-  refine ⟨round (x / π), ?_⟩
-  have h := abs_sub_round (x / π)
-  calc |x - round (x / π) * π| = |x / π - round (x / π)| * π := by
-        rw [← abs_of_pos pi_pos, ← abs_mul, abs_of_pos pi_pos, sub_mul,
-          div_mul_cancel₀ _ pi_ne_zero]
-    _ ≤ 1 / 2 * π := by gcongr
-    _ = π / 2 := by ring
+/-- The angles `c + k π` are the maxima of `δ cos (2 (θ - c))`. -/
+private theorem sin_cos_two_mul_add_int_mul_pi_sub (c : ℝ) (k : ℤ) :
+    sin (2 * (c + k * π - c)) = 0 ∧ cos (2 * (c + k * π - c)) = 1 := by
+  rw [show 2 * (c + k * π - c) = ((2 * k : ℤ) : ℝ) * π by push_cast; ring, sin_int_mul_pi,
+    show ((2 * k : ℤ) : ℝ) * π = (k : ℝ) * (2 * π) by push_cast; ring, cos_int_mul_two_pi]
+  exact ⟨rfl, rfl⟩
 
-/-- At distance exactly `π / 2` from an integer multiple of `π`, `sin (2 x)` vanishes. -/
-private theorem sin_two_mul_eq_zero_of_abs_sub_int_mul_pi_eq {x : ℝ} {n : ℤ}
-    (h : |x - n * π| = π / 2) : sin (2 * x) = 0 := by
-  rcases (abs_eq (by positivity)).1 h with h | h
-  · rw [show 2 * x = ((2 * n + 1 : ℤ) : ℝ) * π by push_cast; linarith, sin_int_mul_pi]
-  · rw [show 2 * x = ((2 * n - 1 : ℤ) : ℝ) * π by push_cast; linarith, sin_int_mul_pi]
-
-/-- An odd multiple of `π / 2` is at distance at least `π / 2` from `0`. -/
-private theorem pi_div_two_le_abs_int_mul_pi_sub_pi_div_two (N : ℤ) :
-    π / 2 ≤ |N * π - π / 2| := by
-  have h : (1 : ℝ) ≤ |((2 * N - 1 : ℤ) : ℝ)| := by
-    rw [← Int.cast_abs]
-    exact_mod_cast Int.one_le_abs (by omega)
-  calc π / 2 = 1 * (π / 2) := by ring
-    _ ≤ |((2 * N - 1 : ℤ) : ℝ)| * (π / 2) := by gcongr
-    _ = |N * π - π / 2| := by
-        rw [← abs_of_pos (half_pos pi_pos), ← abs_mul, abs_of_pos (half_pos pi_pos)]
-        push_cast
-        ring_nf
-
-/-- A maximum `c + n π` of an end function is not a minimum `c + π / 2 + m π`. -/
-private theorem add_int_mul_pi_ne (c : ℝ) (n m : ℤ) : c + n * π ≠ c + π / 2 + m * π := by
-  intro h
-  have h' := pi_div_two_le_abs_int_mul_pi_sub_pi_div_two (n - m)
-  rw [show ((n - m : ℤ) : ℝ) * π - π / 2 = 0 by push_cast; linarith, abs_zero] at h'
-  linarith [pi_pos]
+/-- The angles `c + π / 2 + k π` are the minima of `δ cos (2 (θ - c))`. -/
+private theorem sin_cos_two_mul_add_pi_div_two_add_int_mul_pi_sub (c : ℝ) (k : ℤ) :
+    sin (2 * (c + π / 2 + k * π - c)) = 0 ∧ cos (2 * (c + π / 2 + k * π - c)) = -1 := by
+  rw [show 2 * (c + π / 2 + k * π - c) = ((2 * k + 1 : ℤ) : ℝ) * π by push_cast; ring,
+    sin_int_mul_pi, show ((2 * k + 1 : ℤ) : ℝ) * π = π + (k : ℝ) * (2 * π) by push_cast; ring,
+    cos_add_int_mul_two_pi, cos_pi]
+  exact ⟨rfl, rfl⟩
 
 /-! ### Uniqueness and the explicit solution at a constant end -/
 
 /-- **Uniqueness.** Two solutions of `Θ' = circleContinuationSlope δ r t (Θ t)` on an interval
-`I ⊆ (0, 1)` which agree at one time of `I` agree on `I`. The slope is Lipschitz in the angle
-uniformly on every compact subinterval of `(0, 1)`. -/
+`I ⊆ (0, 1)` which agree at one time of `I` agree on `I`. -/
 theorem eqOn_of_hasDerivAt_circleContinuationSlope {δ : ℝ} {r Θ₁ Θ₂ : ℝ → ℝ} {I : Set ℝ}
     (hI : I ⊆ Ioo 0 1) (hIc : I.OrdConnected)
     (hΘ₁ : ∀ t ∈ I, HasDerivAt Θ₁ (circleContinuationSlope δ r t (Θ₁ t)) t)
@@ -205,16 +183,14 @@ theorem eqOn_const_of_hasDerivAt_circleContinuationSlope {δ c t₀ : ℝ} {r Θ
     exact hasDerivAt_const _ _) ht₀ rfl
 
 /-- **Solutions at a constant end.** On a set `I ⊆ (0, 1)` where the path is constant, there is a
-solution on `I` with any value at any time `t₀`: an explicit `arctan` solution, or a constant one if
-`θ₀` is a minimum or maximum of the end function at distance `π / 2` from the chosen reference. -/
+solution on `I` with any value `θ₀` at any time `t₀`. -/
 theorem exists_hasDerivAt_circleContinuationSlope_of_forall_eq (δ : ℝ) {r : ℝ → ℝ} {c t₀ : ℝ}
     {I : Set ℝ} (hI : I ⊆ Ioo 0 1) (hr : ∀ t ∈ I, r t = c) (θ₀ : ℝ) :
     ∃ Θ : ℝ → ℝ, Θ t₀ = θ₀ ∧ ∀ t ∈ I, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t := by
   obtain ⟨n, hn⟩ := exists_abs_sub_int_mul_pi_le (θ₀ - c)
   rcases hn.lt_or_eq with hlt | heq
   · set κ := c + n * π
-    have hκ : sin (2 * (κ - c)) = 0 := by
-      rw [show 2 * (κ - c) = ((2 * n : ℤ) : ℝ) * π by push_cast; ring, sin_int_mul_pi]
+    have hκ : sin (2 * (κ - c)) = 0 := (sin_cos_two_mul_add_int_mul_pi_sub c n).1
     have hψ : |θ₀ - κ| < π / 2 := by rwa [show θ₀ - κ = θ₀ - c - n * π by ring]
     refine ⟨fun t ↦ κ + arctan (tan (θ₀ - κ) * exp (4 * δ * cos (2 * (κ - c)) *
       (intervalBaseTimeCoordinate t - intervalBaseTimeCoordinate t₀))), ?_,
@@ -237,10 +213,7 @@ theorem tendsto_nhdsGT_zero_circleContinuationSlope {δ c a : ℝ} {r Θ : ℝ �
     (hΘ : ∀ t ∈ Ioc 0 a, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t) (m : ℤ)
     (hψ : |Θ a - (c + m * π)| < π / 2) : Tendsto Θ (𝓝[>] 0) (𝓝 (c + m * π)) := by
   have hI : Ioc 0 a ⊆ Ioo 0 1 := fun t ht ↦ ⟨ht.1, ht.2.trans_lt ha.2⟩
-  have hκ : sin (2 * (c + m * π - c)) = 0 := by
-    rw [show 2 * (c + m * π - c) = ((2 * m : ℤ) : ℝ) * π by push_cast; ring, sin_int_mul_pi]
-  have hσ : cos (2 * (c + m * π - c)) = 1 := by
-    rw [show 2 * (c + m * π - c) = (m : ℝ) * (2 * π) by ring, cos_int_mul_two_pi]
+  obtain ⟨hκ, hσ⟩ := sin_cos_two_mul_add_int_mul_pi_sub c m
   have hEq := eqOn_arctan_of_hasDerivAt_circleContinuationSlope hI ordConnected_Ioc hr hΘ hκ
     ⟨ha.1, le_rfl⟩ hψ
   rw [hσ, mul_one] at hEq
@@ -265,12 +238,7 @@ theorem tendsto_nhdsLT_one_circleContinuationSlope {δ c b : ℝ} {r Θ : ℝ �
     (hΘ : ∀ t ∈ Ico b 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t) (m : ℤ)
     (hψ : |Θ b - (c + π / 2 + m * π)| < π / 2) : Tendsto Θ (𝓝[<] 1) (𝓝 (c + π / 2 + m * π)) := by
   have hI : Ico b 1 ⊆ Ioo 0 1 := fun t ht ↦ ⟨hb.1.trans_le ht.1, ht.2⟩
-  have hκ : sin (2 * (c + π / 2 + m * π - c)) = 0 := by
-    rw [show 2 * (c + π / 2 + m * π - c) = ((2 * m + 1 : ℤ) : ℝ) * π by push_cast; ring,
-      sin_int_mul_pi]
-  have hσ : cos (2 * (c + π / 2 + m * π - c)) = -1 := by
-    rw [show 2 * (c + π / 2 + m * π - c) = π + (m : ℝ) * (2 * π) by ring, cos_add_int_mul_two_pi,
-      cos_pi]
+  obtain ⟨hκ, hσ⟩ := sin_cos_two_mul_add_pi_div_two_add_int_mul_pi_sub c m
   have hEq := eqOn_arctan_of_hasDerivAt_circleContinuationSlope hI ordConnected_Ico hr hΘ hκ
     ⟨le_rfl, hb.2⟩ hψ
   rw [hσ] at hEq
@@ -301,7 +269,7 @@ theorem eqOn_of_tendsto_nhdsGT_zero_circleContinuationSlope {δ c a : ℝ} {r Θ
   · -- Otherwise `Θ` would tend to the maximum `c + n π`.
     have h' := tendsto_nhdsGT_zero_circleContinuationSlope hδ ha hr hΘ n
       (by rwa [show Θ a - (c + n * π) = Θ a - c - n * π by ring])
-    exact absurd (tendsto_nhds_unique h' h) (add_int_mul_pi_ne c n m)
+    exact absurd (tendsto_nhds_unique h' h) (add_int_mul_pi_ne_add_pi_div_two_add_int_mul_pi c n m)
   · have hEq := eqOn_const_of_hasDerivAt_circleContinuationSlope hI ordConnected_Ioc hr hΘ
       ⟨ha.1, le_rfl⟩ (sin_two_mul_eq_zero_of_abs_sub_int_mul_pi_eq heq)
     have hc : Tendsto Θ (𝓝[>] 0) (𝓝 (Θ a)) :=
@@ -322,7 +290,7 @@ theorem eqOn_of_tendsto_nhdsLT_one_circleContinuationSlope {δ c b : ℝ} {r Θ 
   · -- Otherwise `Θ` would tend to the minimum `c + π / 2 + n π`.
     have h' := tendsto_nhdsLT_one_circleContinuationSlope hδ hb hr hΘ n
       (by rwa [show Θ b - (c + π / 2 + n * π) = Θ b - c - π / 2 - n * π by ring])
-    exact absurd (tendsto_nhds_unique h h') (add_int_mul_pi_ne c m n)
+    exact absurd (tendsto_nhds_unique h h') (add_int_mul_pi_ne_add_pi_div_two_add_int_mul_pi c m n)
   · have hsin : sin (2 * (Θ b - c)) = 0 := by
       have := sin_two_mul_eq_zero_of_abs_sub_int_mul_pi_eq heq
       rwa [show 2 * (Θ b - c - π / 2) = 2 * (Θ b - c) - π by ring, sin_sub_pi, neg_eq_zero]
@@ -340,12 +308,13 @@ theorem eqOn_of_tendsto_nhdsLT_one_circleContinuationSlope {δ c b : ℝ} {r Θ 
 /-- **Existence of solutions on `(0, 1)`.** For a path `r` which is constant on `(0, a]` and on
 `[b, 1)` and continuous on `[a, b]`, where `0 < a` and `b < 1`, the equation
 `Θ' = circleContinuationSlope δ r t (Θ t)` has a solution on `(0, 1)` with any value at any time
-`t₀ ∈ [a, b]`. It is glued from a solution on the window and the explicit solutions at the ends. -/
+`t₀ ∈ [a, b]`. -/
 theorem exists_hasDerivAt_circleContinuationSlope (δ : ℝ) {r : ℝ → ℝ} {a b r₀ r₁ t₀ : ℝ}
     (ha : 0 < a) (hb : b < 1) (hr : ContinuousOn r (Icc a b)) (hr₀ : ∀ t ∈ Ioc 0 a, r t = r₀)
     (hr₁ : ∀ t ∈ Ico b 1, r t = r₁) (ht₀ : t₀ ∈ Icc a b) (θ₀ : ℝ) :
     ∃ Θ : ℝ → ℝ, Θ t₀ = θ₀ ∧
       ∀ t ∈ Ioo 0 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t := by
+  -- Glue a solution on the window to the explicit solutions at the ends.
   have hab : a ≤ b := ht₀.1.trans ht₀.2
   obtain ⟨Θm, hΘm₀, hΘm⟩ := exists_hasDerivWithinAt_circleContinuationSlope_Icc δ ha hb hr ht₀ θ₀
   obtain ⟨Θl, hΘl₀, hΘl⟩ := exists_hasDerivAt_circleContinuationSlope_of_forall_eq δ (t₀ := a)
@@ -438,9 +407,8 @@ theorem exists_tendsto_nhdsLT_one_max (ha : 0 < a) (hab : a ≤ b) (hb : b < 1)
     ⟨hab, le_rfl⟩ (r₁ + k * π)
   have hEq := eqOn_const_of_hasDerivAt_circleContinuationSlope (I := Ico b 1)
     (fun t ht ↦ ⟨ha.trans_le (hab.trans ht.1), ht.2⟩) ordConnected_Ico hr₁
-    (fun t ht ↦ hΘ t ⟨ha.trans_le (hab.trans ht.1), ht.2⟩) ⟨le_rfl, hb⟩ (by
-      rw [hΘb, show 2 * (r₁ + k * π - r₁) = ((2 * k : ℤ) : ℝ) * π by push_cast; ring,
-        sin_int_mul_pi])
+    (fun t ht ↦ hΘ t ⟨ha.trans_le (hab.trans ht.1), ht.2⟩) ⟨le_rfl, hb⟩
+    (by rw [hΘb]; exact (sin_cos_two_mul_add_int_mul_pi_sub r₁ k).1)
   refine ⟨Θ, hΘ, ?_⟩
   rw [← hΘb]
   exact tendsto_const_nhds.congr' (eventually_of_mem (Ioo_mem_nhdsLT hb) fun t ht ↦
@@ -498,9 +466,8 @@ theorem exists_tendsto_nhdsGT_zero_min (ha : 0 < a) (hab : a ≤ b) (hb : b < 1)
     ⟨le_rfl, hab⟩ (r₀ + π / 2 + k * π)
   have hEq := eqOn_const_of_hasDerivAt_circleContinuationSlope (I := Ioc 0 a)
     (fun t ht ↦ ⟨ht.1, ht.2.trans_lt (hab.trans_lt hb)⟩) ordConnected_Ioc hr₀
-    (fun t ht ↦ hΘ t ⟨ht.1, ht.2.trans_lt (hab.trans_lt hb)⟩) ⟨ha, le_rfl⟩ (by
-      rw [hΘa, show 2 * (r₀ + π / 2 + k * π - r₀) = ((2 * k + 1 : ℤ) : ℝ) * π by push_cast; ring,
-        sin_int_mul_pi])
+    (fun t ht ↦ hΘ t ⟨ht.1, ht.2.trans_lt (hab.trans_lt hb)⟩) ⟨ha, le_rfl⟩
+    (by rw [hΘa]; exact (sin_cos_two_mul_add_pi_div_two_add_int_mul_pi_sub r₀ k).1)
   refine ⟨Θ, hΘ, ?_⟩
   rw [← hΘa]
   exact tendsto_const_nhds.congr' (eventually_of_mem (Ioc_mem_nhdsGT ha) fun t ht ↦
@@ -508,15 +475,16 @@ theorem exists_tendsto_nhdsGT_zero_min (ha : 0 < a) (hab : a ≤ b) (hb : b < 1)
 
 /-- **No trajectory runs from a source minimum to a target maximum.** For `δ > 0`, let the path be
 `r₀` on `(0, a]` and `r₁` on `[b, 1)`, and let `|r₁ - r₀ - n π|` plus the drift
-`2 δ ∫_a^b (t (1 - t²))⁻¹ dt` across the window be less than `π / 2`. Both ends of such a
-trajectory would be constant, at angles at least `π / 2 - |r₁ - r₀ - n π|` apart, which is more than
-the drift. These connections between zeros of equal index of the parameter field would have expected
-dimension `-1`. -/
+`2 δ ∫_a^b (t (1 - t²))⁻¹ dt` across the window be less than `π / 2`. Then no trajectory leaves a
+source minimum at `t = 0` and converges to a target maximum at `t = 1`. Such connections between
+zeros of equal index of the parameter field would have expected dimension `-1`. -/
 theorem not_tendsto_nhdsGT_zero_min_and_tendsto_nhdsLT_one_max (hδ : 0 < δ) (ha : 0 < a)
     (hab : a ≤ b) (hb : b < 1) (hr₀ : ∀ t ∈ Ioc 0 a, r t = r₀) (hr₁ : ∀ t ∈ Ico b 1, r t = r₁)
     (hn : |r₁ - r₀ - n * π| + 2 * δ * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ < π / 2)
     (hΘ : ∀ t ∈ Ioo 0 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t) (j k : ℤ) :
     ¬ (Tendsto Θ (𝓝[>] 0) (𝓝 (r₀ + π / 2 + j * π)) ∧ Tendsto Θ (𝓝[<] 1) (𝓝 (r₁ + k * π))) := by
+  -- Both ends would be constant, at angles at least `π / 2 - |r₁ - r₀ - n π|` apart, which is
+  -- more than the drift.
   rintro ⟨h₀, h₁⟩
   have ha' : a ∈ Ioo 0 1 := ⟨ha, hab.trans_lt hb⟩
   have hb' : b ∈ Ioo 0 1 := ⟨ha.trans_le hab, hb⟩
@@ -571,13 +539,13 @@ theorem tendsto_nhdsLT_one_of_tendsto_nhdsGT_zero_halfTurn {ρ : ℝ → ℝ} (h
   push_cast
   ring
 
-/-! ### Rotations by a third and two thirds of a turn -/
+/-! ### Rotations by a sixth and a third of a turn -/
 
 /-- **A rotation by `π / 3` continues each maximum to the same label.** If the path rotates by
 `r₁ - r₀ = π / 3` and the drift `2 δ ∫_a^b (t (1 - t²))⁻¹ dt` is less than `π / 6`, a trajectory
 converging at `t = 1` to the target maximum `r₁ + k π` comes from the source maximum `r₀ + k π`:
 in the labels `r + j π`, `j mod 2`, of the maxima, the continuation map is the identity. -/
-theorem tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_thirdTurn (hδ : 0 < δ) (ha : 0 < a)
+theorem tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_sixthTurn (hδ : 0 < δ) (ha : 0 < a)
     (hab : a ≤ b) (hb : b < 1) (hr₀ : ∀ t ∈ Ioc 0 a, r t = r₀) (hr₁ : ∀ t ∈ Ico b 1, r t = r₁)
     (hr : r₁ - r₀ = π / 3) (hdrift : 2 * δ * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ < π / 6)
     (hΘ : ∀ t ∈ Ioo 0 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t) (k : ℤ)
@@ -592,9 +560,9 @@ theorem tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_thirdTurn (hδ : 0 < δ) (ha :
 converging at `t = 1` to the target maximum `r₁ + k π` comes from the source maximum
 `r₀ + (k + 1) π`: in the labels `r + j π`, `j mod 2`, of the maxima, the continuation map is the
 exchange. Composing two rotations by `π / 3`, each with identity continuation map
-(`TauCeti.tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_thirdTurn`), therefore does not give the
+(`TauCeti.tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_sixthTurn`), therefore does not give the
 continuation map of the composite rotation. -/
-theorem tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_twoThirdsTurn (hδ : 0 < δ) (ha : 0 < a)
+theorem tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_thirdTurn (hδ : 0 < δ) (ha : 0 < a)
     (hab : a ≤ b) (hb : b < 1) (hr₀ : ∀ t ∈ Ioc 0 a, r t = r₀) (hr₁ : ∀ t ∈ Ico b 1, r t = r₁)
     (hr : r₁ - r₀ = 2 * π / 3) (hdrift : 2 * δ * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ < π / 6)
     (hΘ : ∀ t ∈ Ioo 0 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t) (k : ℤ)

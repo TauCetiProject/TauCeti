@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
+import TauCeti.Analysis.Calculus.ContDiff.GlueHalfLine
 
 /-!
 # The parameter field of a continuation of `δ cos (2 (θ - r))` on the circle
@@ -345,12 +346,13 @@ theorem lipschitzWith_circleContinuationSlope (δ : ℝ) (r : ℝ → ℝ) {a b 
 
 /-- **Solutions on a window.** For a path `r` continuous on a window `[a, b] ⊆ (0, 1)`, the
 equation `Θ' = circleContinuationSlope δ r t (Θ t)` has a solution on `[a, b]` with any value `θ₀`
-at any time `t₀ ∈ [a, b]`. On the window the slope is bounded by `2 |δ| / (a (1 - b²))` and
-Lipschitz in the angle, uniformly in the angle, so Picard–Lindelöf applies on the whole window. -/
+at any time `t₀ ∈ [a, b]`. -/
 theorem exists_hasDerivWithinAt_circleContinuationSlope_Icc (δ : ℝ) {r : ℝ → ℝ} {a b t₀ : ℝ}
     (ha : 0 < a) (hb : b < 1) (hr : ContinuousOn r (Icc a b)) (ht₀ : t₀ ∈ Icc a b) (θ₀ : ℝ) :
     ∃ Θ : ℝ → ℝ, Θ t₀ = θ₀ ∧ ∀ t ∈ Icc a b,
       HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Icc a b) t := by
+  -- On the window the slope is bounded by `2 |δ| / (a (1 - b²))` and Lipschitz in the angle,
+  -- uniformly in `t`, so Picard–Lindelöf applies on the whole window.
   have hab : a ≤ b := ht₀.1.trans ht₀.2
   have hmem : ∀ t ∈ Icc a b, 0 < t ∧ t < 1 := fun t ht ↦ ⟨ha.trans_le ht.1, ht.2.trans_lt hb⟩
   set m := a * (1 - b ^ 2)
@@ -507,43 +509,36 @@ private theorem exists_hasDerivAt_circleContinuationSlope_of_window {δ : ℝ} {
     rcases ht.eq_or_lt with rfl | h
     · simp only [Θg, h3, le_refl, ↓reduceIte, hΘb]
     · simp only [Θg, h3, not_le.2 h, ↓reduceIte]
-  have hΘgΘ : ∀ t ∈ Icc (1 / 3 : ℝ) (5 / 6), Θg t = Θ t := fun t ht ↦ by
-    rcases ht.1.eq_or_lt with rfl | h
-    · rw [hΘg₀ _ le_rfl, hΘa]
-    · simp only [Θg, not_le.2 h, ht.2, ↓reduceIte]
   have hzero₀ : ∀ t ≤ 1 / 3, circleContinuationSlope δ r t (π / 2) = 0 := fun t ht ↦
     circleContinuationSlope_eq_zero (by
       simp only [r]; rw [h0 t ht, mul_zero, sub_zero, mul_div_cancel₀ _ two_ne_zero, sin_pi])
   have hzero₁ : ∀ t, 2 / 3 ≤ t → circleContinuationSlope δ r t π = 0 := fun t ht ↦
     circleContinuationSlope_eq_zero (by
       simp only [r]; rw [h1 t ht, mul_one, sub_self, mul_zero, sin_zero])
-  have hleft : ∀ t ≤ 1 / 3, HasDerivWithinAt Θg 0 (Iic (1 / 3)) t := fun t ht ↦
-    (hasDerivWithinAt_const t _ (π / 2)).congr (fun y hy ↦ hΘg₀ y hy) (hΘg₀ t ht)
-  have hright : ∀ t, 5 / 6 ≤ t → HasDerivWithinAt Θg 0 (Ici (5 / 6)) t := fun t ht ↦
-    (hasDerivWithinAt_const t _ π).congr (fun y hy ↦ hΘg₁ y hy) (hΘg₁ t ht)
-  have hmid : ∀ t ∈ Icc (1 / 3 : ℝ) (5 / 6),
-      HasDerivWithinAt Θg (circleContinuationSlope δ r t (Θg t)) (Icc (1 / 3) (5 / 6)) t :=
+  -- First glue the window solution to the constant `π`, on `[1/3, ∞)`.
+  have hright : ∀ t, 1 / 3 ≤ t → HasDerivWithinAt (fun t ↦ if t ≤ 5 / 6 then Θ t else π)
+      (circleContinuationSlope δ r t (if t ≤ 5 / 6 then Θ t else π)) (Ici (1 / 3)) t :=
     fun t ht ↦ by
-      rw [hΘgΘ t ht]
-      exact (hΘ t ht).congr (fun y hy ↦ hΘgΘ y hy) (hΘgΘ t ht)
+      rw [apply_ite (circleContinuationSlope δ r t)]
+      exact hasDerivWithinAt_if_le (f' := fun t ↦ circleContinuationSlope δ r t (Θ t))
+        (g' := fun t ↦ circleContinuationSlope δ r t π) (mem_Ici.2 ht)
+        (fun htb ↦ (hΘ t ⟨ht, htb⟩).mono fun y (hy : y ∈ Ici (1 / 3) ∩ Iic (5 / 6)) ↦ hy)
+        (fun hbt ↦ by
+          rw [hzero₁ t (by linarith)]
+          exact hasDerivWithinAt_const _ _ _) hΘb (by rw [hΘb])
+  -- Then glue the constant `π / 2` to it, on the whole line.
   refine ⟨Θg, hΘg₀, hΘg₁, fun t ↦ ?_⟩
-  rcases lt_trichotomy t (1 / 3) with h | rfl | h
-  · rw [hΘg₀ t h.le, hzero₀ t h.le]
-    exact (hleft t h.le).hasDerivAt (Iic_mem_nhds h)
-  · rw [hΘg₀ _ le_rfl, hzero₀ _ le_rfl, ← hasDerivWithinAt_univ, ← Iic_union_Ici]
-    refine (hleft _ le_rfl).union ?_
-    have h := (hmid (1 / 3) ⟨le_rfl, by norm_num⟩).mono_of_mem_nhdsWithin
-      (Icc_mem_nhdsGE (by norm_num))
-    rwa [hΘg₀ _ le_rfl, hzero₀ _ le_rfl] at h
-  rcases lt_trichotomy t (5 / 6) with h' | rfl | h'
-  · exact (hmid t ⟨h.le, h'.le⟩).hasDerivAt (Icc_mem_nhds h h')
-  · rw [hΘg₁ _ le_rfl, hzero₁ _ (by norm_num), ← hasDerivWithinAt_univ, ← Iic_union_Ici]
-    refine HasDerivWithinAt.union ?_ (hright _ le_rfl)
-    have h := (hmid (5 / 6) ⟨by norm_num, le_rfl⟩).mono_of_mem_nhdsWithin
-      (Icc_mem_nhdsLE (by norm_num))
-    rwa [hΘg₁ _ le_rfl, hzero₁ _ (by norm_num)] at h
-  · rw [hΘg₁ t h'.le, hzero₁ t (by linarith)]
-    exact (hright t h'.le).hasDerivAt (Ici_mem_nhds h')
+  have hglue : (if (1 / 3 : ℝ) ≤ 5 / 6 then Θ (1 / 3) else π) = π / 2 := by
+    rw [ite_eq_left (by norm_num), hΘa]
+  rw [← hasDerivWithinAt_univ]
+  simp only [Θg]
+  rw [apply_ite (circleContinuationSlope δ r t)]
+  exact hasDerivWithinAt_if_le (f' := fun t ↦ circleContinuationSlope δ r t (π / 2))
+    (g' := fun t ↦ circleContinuationSlope δ r t (if t ≤ 5 / 6 then Θ t else π)) (mem_univ t)
+    (fun hta ↦ by
+      rw [hzero₀ t hta]
+      exact hasDerivWithinAt_const _ _ _)
+    (fun hat ↦ (hright t hat).mono inter_subset_right) hglue.symm (by rw [hglue])
 
 /-- **A slice-wise Morse–Smale continuation whose parameter field is not transverse.** Let `ρ` be
 `C¹`, nondecreasing, `0` for `t ≤ 1/3` and `1` for `t ≥ 2/3`, and consider the half-turn path
