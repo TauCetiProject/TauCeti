@@ -35,10 +35,9 @@ subsets of `U`, every statement applies verbatim to half-discs.
 
 * `TauCeti.IsWeakCauchyRiemannOn.comp_contDiffOn_of_intertwine`: composition with a `C¹` map
   intertwining `J` with a field `J'`.
-* `OpenPartialHomeomorph.transportCauchyRiemannTerm`: the term `Ψ_* η` transported by an open
-  partial homeomorphism; the field `Ψ_* J` is `OpenPartialHomeomorph.pullbackEnd` along `Ψ.symm`.
 * `TauCeti.isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp`: invariance under `C¹`
-  diffeomorphisms of the target.
+  diffeomorphisms of the target. The field `Ψ_* J` is `OpenPartialHomeomorph.pullbackEnd` along
+  `Ψ.symm` and the term `Ψ_* η` is Mathlib's `VectorField.pullback` along `Ψ.symm`.
 * `TauCeti.IsWeakCauchyRiemannOn.comp_graph_of_intertwine`: domain-dependent changes of target
   coordinates `z ↦ Φ(z, u z)`.
 * `TauCeti.IsWeakCauchyRiemannOn.conj_comp`: complex conjugation transports the standard
@@ -95,58 +94,38 @@ theorem IsWeakCauchyRiemannOn.comp_contDiffOn_of_intertwine [CompleteSpace W] {�
 
 /-! ### Diffeomorphisms of the target -/
 
-end TauCeti
-
-namespace OpenPartialHomeomorph
-
-/-- The inhomogeneous term `Ψ_* η` transported by an open partial homeomorphism `Ψ`:
-`(Ψ_* η)(z, y) = dΨ(Ψ⁻¹ y) (η(z, Ψ⁻¹ y))`. It is meaningful on the target of `Ψ`. The
-transported field of endomorphisms `Ψ_* J = dΨ ∘ J ∘ dΨ⁻¹` is the pullback
-`Ψ.symm.pullbackEnd (J z)` along the inverse. At a point `y` of the target where `Ψ.symm` is
-differentiable at `y`, `Ψ` is differentiable at `Ψ⁻¹ y` and `J(z, Ψ⁻¹ y)` squares to `-1`, the
-transported endomorphism squares to `-1` as well
-(`OpenPartialHomeomorph.pullbackEnd_apply_pullbackEnd_apply`). -/
-def transportCauchyRiemannTerm (Ψ : OpenPartialHomeomorph V W) (η : ℂ → V → V) :
-    ℂ → W → W :=
-  fun z y => fderiv ℝ Ψ (Ψ.symm y) (η z (Ψ.symm y))
-
-@[simp]
-theorem transportCauchyRiemannTerm_apply (Ψ : OpenPartialHomeomorph V W) (η : ℂ → V → V)
-    (z : ℂ) (y : W) :
-    Ψ.transportCauchyRiemannTerm η z y = fderiv ℝ Ψ (Ψ.symm y) (η z (Ψ.symm y)) :=
-  (rfl)
-
-end OpenPartialHomeomorph
-
-namespace TauCeti
-
 section Diffeomorphism
 
 variable {Ψ : OpenPartialHomeomorph V W}
 
+/-- A `C¹` open partial homeomorphism with `C¹` inverse is differentiable at every point `x` of
+its source, and its inverse is differentiable at `Ψ x`. -/
+private theorem differentiableAt_and_symm (hΨ : ContDiffOn ℝ 1 Ψ Ψ.source)
+    (hΨs : ContDiffOn ℝ 1 Ψ.symm Ψ.target) {x : V} (hx : x ∈ Ψ.source) :
+    DifferentiableAt ℝ Ψ x ∧ DifferentiableAt ℝ Ψ.symm (Ψ x) :=
+  ⟨(hΨ.differentiableOn one_ne_zero).differentiableAt (Ψ.open_source.mem_nhds hx),
+    (hΨs.differentiableOn one_ne_zero).differentiableAt
+      (Ψ.open_target.mem_nhds (Ψ.map_source hx))⟩
+
 /-- **Invariance under `C¹` diffeomorphisms of the target, forward direction.** If `Ψ` is a `C¹`
 open partial homeomorphism with `C¹` inverse whose source contains `u '' U`, and `u` is a weak
-solution for `J` and `η`, then `Ψ ∘ u` is a weak solution for `Ψ_* J` and `Ψ_* η`. -/
+solution for `J` and `η`, then `Ψ ∘ u` is a weak solution for `Ψ_* J` and `Ψ_* η`. The
+transported field `Ψ_* J = dΨ ∘ J ∘ dΨ⁻¹` is the pullback `Ψ.symm.pullbackEnd (J z)` along the
+inverse, and the transported term `Ψ_* η = dΨ η` is Mathlib's vector field pullback
+`VectorField.pullback ℝ Ψ.symm (η z)` along the inverse. Wherever `J(z, u z)` squares to `-1`,
+so does `Ψ_* J` at `(z, Ψ (u z))` (`OpenPartialHomeomorph.pullbackEnd_apply_pullbackEnd_apply`). -/
 theorem IsWeakCauchyRiemannOn.openPartialHomeomorph_comp [CompleteSpace W]
     (h : IsWeakCauchyRiemannOn p U J η u) (hΨ : ContDiffOn ℝ 1 Ψ Ψ.source)
     (hΨs : ContDiffOn ℝ 1 Ψ.symm Ψ.target) (huΨ : MapsTo u U Ψ.source) :
     IsWeakCauchyRiemannOn p U (fun z => Ψ.symm.pullbackEnd (J z))
-      (Ψ.transportCauchyRiemannTerm η) (fun z => Ψ (u z)) := by
+      (fun z => VectorField.pullback ℝ Ψ.symm (η z)) (fun z => Ψ (u z)) := by
   refine h.comp_contDiffOn_of_intertwine Ψ.open_source hΨ huΨ ?_ ?_ <;>
     refine (ae_restrict_iff' measurableSet_interior).2 (Filter.Eventually.of_forall fun z hz => ?_)
-  · have hx := huΨ (interior_subset hz)
-    have hd : DifferentiableAt ℝ Ψ (Ψ.symm (Ψ (u z))) := by
-      rw [Ψ.left_inv hx]
-      exact (hΨ.differentiableOn one_ne_zero).differentiableAt (Ψ.open_source.mem_nhds hx)
-    have hds : DifferentiableAt ℝ Ψ.symm (Ψ (u z)) :=
-      (hΨs.differentiableOn one_ne_zero).differentiableAt
-        (Ψ.open_target.mem_nhds (Ψ.map_source hx))
-    refine ContinuousLinearMap.ext fun v => ?_
-    have hl := Ψ.fderiv_symm_apply_fderiv_apply (Ψ.map_source hx) hd hds v
-    rw [Ψ.left_inv hx] at hl
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      OpenPartialHomeomorph.pullbackEnd_apply, Ψ.symm_symm, Ψ.left_inv hx, hl]
-  · rw [Ψ.transportCauchyRiemannTerm_apply, Ψ.left_inv (huΨ (interior_subset hz))]
+  all_goals
+    have hx := huΨ (interior_subset hz)
+    obtain ⟨hd, hds⟩ := differentiableAt_and_symm hΨ hΨs hx
+  · exact Ψ.symm_pullbackEnd_comp_fderiv (J z) hx hd hds
+  · exact Ψ.pullback_symm_apply (η z) hx hd hds
 
 /-- **Invariance under `C¹` diffeomorphisms of the target.** For a `C¹` open partial
 homeomorphism `Ψ` with `C¹` inverse whose source contains `u '' U`, `u` is a weak solution for
@@ -157,25 +136,19 @@ theorem isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp [CompleteSpace V] [
     (huΨ : MapsTo u U Ψ.source) :
     IsWeakCauchyRiemannOn p U J η u ↔
       IsWeakCauchyRiemannOn p U (fun z => Ψ.symm.pullbackEnd (J z))
-        (Ψ.transportCauchyRiemannTerm η) (fun z => Ψ (u z)) := by
+        (fun z => VectorField.pullback ℝ Ψ.symm (η z)) (fun z => Ψ (u z)) := by
   refine ⟨fun h => h.openPartialHomeomorph_comp hΨ hΨs huΨ, fun h => ?_⟩
   have hvΨ : MapsTo (fun z => Ψ (u z)) U Ψ.target := fun z hz => Ψ.map_source (huΨ hz)
   refine (h.comp_contDiffOn_of_intertwine (J' := J) (η' := η) Ψ.open_target hΨs hvΨ ?_
-    ?_).congr_eqOn fun z hz => Ψ.left_inv (huΨ hz) <;>
+    ?_).congr fun z hz => Ψ.left_inv (huΨ hz) <;>
     refine (ae_restrict_iff' measurableSet_interior).2 (Filter.Eventually.of_forall fun z hz => ?_)
   all_goals
     have hx := huΨ (interior_subset hz)
-    have hd : DifferentiableAt ℝ Ψ (Ψ.symm (Ψ (u z))) := by
-      rw [Ψ.left_inv hx]
-      exact (hΨ.differentiableOn one_ne_zero).differentiableAt (Ψ.open_source.mem_nhds hx)
-    have hds : DifferentiableAt ℝ Ψ.symm (Ψ (u z)) :=
-      (hΨs.differentiableOn one_ne_zero).differentiableAt
-        (Ψ.open_target.mem_nhds (Ψ.map_source hx))
-  · have := Ψ.symm.fderiv_comp_pullbackEnd (J z) (Ψ.map_source hx) hds (by rwa [Ψ.symm_symm])
-    exact this.symm
-  · have := Ψ.fderiv_symm_apply_fderiv_apply (Ψ.map_source hx) hd hds (η z (u z))
-    rw [Ψ.left_inv hx] at this
-    rw [Ψ.transportCauchyRiemannTerm_apply, Ψ.left_inv hx, this]
+    obtain ⟨hd, hds⟩ := differentiableAt_and_symm hΨ hΨs hx
+  · exact (Ψ.symm.fderiv_comp_pullbackEnd (J z) (Ψ.map_source hx) hds
+      (by rwa [Ψ.symm_symm, Ψ.left_inv hx])).symm
+  · exact (VectorField.fderiv_pullback Ψ.symm (η z) (Ψ (u z))
+      (Ψ.isInvertible_fderiv_symm hx hd hds)).symm
 
 end Diffeomorphism
 
@@ -276,13 +249,12 @@ example [CompleteSpace V] [CompleteSpace W] (A : V ≃L[ℝ] W) :
     funext z y
     ext v
     rw [OpenPartialHomeomorph.pullbackEnd_apply, OpenPartialHomeomorph.symm_symm, e1, e2,
-      A.fderiv, A.symm.fderiv]
-    rfl
-  have hT : A.toHomeomorph.toOpenPartialHomeomorph.transportCauchyRiemannTerm η =
+      A.fderiv, A.symm.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply]
+  have hT : (fun z => VectorField.pullback ℝ A.toHomeomorph.toOpenPartialHomeomorph.symm (η z)) =
       fun z y => A (η z (A.symm y)) := by
     funext z y
-    rw [OpenPartialHomeomorph.transportCauchyRiemannTerm_apply, e1, e2, A.fderiv,
-      ContinuousLinearEquiv.coe_coe]
+    rw [VectorField.pullback_eq_of_fderiv_eq (M := A.symm) (by rw [e2, A.symm.fderiv]), e2,
+      ContinuousLinearEquiv.symm_symm]
   rwa [hS, hT, e1] at h
 
 end Checks

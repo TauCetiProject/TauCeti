@@ -22,9 +22,8 @@ open scoped ComplexConjugate
 
 namespace Complex
 
-/-- Conjugation is real-linear, so its real derivative applies conjugation. This is the applied
-form of `ContinuousLinearEquiv.fderiv` for `conjCLE`, with the coercion of `conjCLE` to `conj`
-rewritten by `Complex.conjCLE_apply`. -/
+/-- The real derivative of conjugation at any point is conjugation:
+`fderiv ℝ conj z w = conj w`. -/
 @[simp]
 theorem fderiv_conj_apply (z w : ℂ) : fderiv ℝ conj z w = conj w := by
   have hconj : (conj : ℂ → ℂ) = conjCLE := funext fun x => (conjCLE_apply x).symm

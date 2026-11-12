@@ -138,7 +138,7 @@ theorem mono_exponent (h : IsWeakCauchyRiemannOn p U J η u) (hqp : q ≤ p) :
 
 /-- A weak solution stays a weak solution when it is replaced by a map agreeing with it on `U`.
 The predicate only sees values on `U`. -/
-theorem congr_eqOn (h : IsWeakCauchyRiemannOn p U J η u) {v : ℂ → V} (huv : Set.EqOn u v U) :
+theorem congr (h : IsWeakCauchyRiemannOn p U J η u) {v : ℂ → V} (huv : Set.EqOn u v U) :
     IsWeakCauchyRiemannOn p U J η v := by
   obtain ⟨hc, hu, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff.1 h
   have hint : u =ᵐ[volume.restrict (interior U)] v :=
