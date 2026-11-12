@@ -164,9 +164,9 @@ theorem abs_digamma_sub_log_le {x : ℝ} (hx : 0 < x) : |digamma x - log x| ≤ 
   rw [abs_le]
   constructor <;> linarith
 
-/-- Real digamma is monotone on the positive real axis. It is the derivative of `log ∘ Gamma`,
-which is convex there by the Bohr–Mollerup theorem. -/
+/-- Real digamma is monotone on the positive real axis. -/
 theorem monotoneOn_digamma : MonotoneOn digamma (Ioi 0) := by
+  -- Digamma is the derivative of `log ∘ Gamma`, which is convex by the Bohr–Mollerup theorem.
   have hd : EqOn digamma (deriv (log ∘ Gamma)) (Ioi 0) := fun x hx ↦
     digamma_eq_deriv_log_Gamma (Complex.real_ne_neg_nat_of_pos hx)
   exact (convexOn_log_Gamma.monotoneOn_deriv fun x hx ↦
@@ -184,16 +184,18 @@ theorem digamma_one_half_neg : digamma (1 / 2) < 0 := by
   rw [digamma_one_half]
   linarith [one_half_lt_eulerMascheroniConstant, log_pos one_lt_two]
 
-/-- The value `ψ(3/2) = 2 - γ - 2 log 2`, from `ψ(1/2)` and the recurrence. -/
+/-- The value `ψ(3/2) = 2 - γ - 2 log 2`. -/
 theorem digamma_three_halves : digamma (3 / 2) = 2 - eulerMascheroniConstant - 2 * log 2 := by
+  -- `ψ(1/2 + 1) = ψ(1/2) + 2`.
   have h : (3 / 2 : ℝ) = 1 / 2 + 1 := by norm_num
   rw [h, digamma_apply_add_one (Complex.real_ne_neg_nat_of_pos one_half_pos), digamma_one_half]
   ring
 
 /-- Euler's constant satisfies `γ + 2 log 2 < 2`. With `γ ≈ 0.57722` the gap is about
-`0.03649`; it follows from `γ < H₁₆ - log 16` and `log 2 > 0.6931471803`. -/
+`0.03649`. -/
 theorem eulerMascheroniConstant_add_two_mul_log_two_lt_two :
     eulerMascheroniConstant + 2 * log 2 < 2 := by
+  -- `γ < harmonic 16 - log 16` and `log 2 > 0.6931471803` suffice.
   have h := eulerMascheroniConstant_lt_eulerMascheroniSeq' 16
   have h16 : eulerMascheroniSeq' 16 = (harmonic 16 : ℝ) - 4 * log 2 := by
     have h24 : ((16 : ℕ) : ℝ) = 2 ^ 4 := by norm_num
