@@ -36,6 +36,24 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
   {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
   {M : Type*} [TopologicalSpace M] [ChartedSpace HM M] {n : ℕ∞ω}
+/-- A map into a direct-sum bundle is smooth within a set exactly when both component bundle maps
+are. -/
+theorem Bundle.contMDiffWithinAt_totalSpace_prod_iff
+    {f : M → TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)} {s : Set M} {x : M} :
+    ContMDiffWithinAt J (I.prod 𝓘(𝕜, F₁ × F₂)) n f s x ↔
+      ContMDiffWithinAt J (I.prod 𝓘(𝕜, F₁)) n
+        (fun y ↦ (⟨(f y).proj, (f y).2.1⟩ : TotalSpace F₁ E₁)) s x ∧
+      ContMDiffWithinAt J (I.prod 𝓘(𝕜, F₂)) n
+        (fun y ↦ (⟨(f y).proj, (f y).2.2⟩ : TotalSpace F₂ E₂)) s x := by
+  rw [Bundle.contMDiffWithinAt_totalSpace, Bundle.contMDiffWithinAt_totalSpace,
+    Bundle.contMDiffWithinAt_totalSpace]
+  simp only [FiberBundle.prod_trivializationAt', contMDiffWithinAt_prod_module_iff]
+  constructor
+  · rintro ⟨hb, h₁, h₂⟩
+    exact ⟨⟨hb, h₁⟩, hb, h₂⟩
+  · rintro ⟨⟨hb, h₁⟩, -, h₂⟩
+    exact ⟨hb, h₁, h₂⟩
+
 /-- A map into a direct-sum bundle is smooth exactly when both component bundle maps are smooth. -/
 theorem Bundle.contMDiffAt_totalSpace_prod_iff {f : M → TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)} {x : M} :
     ContMDiffAt J (I.prod 𝓘(𝕜, F₁ × F₂)) n f x ↔
@@ -43,15 +61,26 @@ theorem Bundle.contMDiffAt_totalSpace_prod_iff {f : M → TotalSpace (F₁ × F�
         (fun y ↦ (⟨(f y).proj, (f y).2.1⟩ : TotalSpace F₁ E₁)) x ∧
       ContMDiffAt J (I.prod 𝓘(𝕜, F₂)) n
         (fun y ↦ (⟨(f y).proj, (f y).2.2⟩ : TotalSpace F₂ E₂)) x := by
-  rw [Bundle.contMDiffAt_totalSpace, Bundle.contMDiffAt_totalSpace,
-    Bundle.contMDiffAt_totalSpace]
-  simp only [FiberBundle.prod_trivializationAt',
-    contMDiffAt_prod_module_iff]
-  constructor
-  · rintro ⟨hb, h₁, h₂⟩
-    exact ⟨⟨hb, h₁⟩, hb, h₂⟩
-  · rintro ⟨⟨hb, h₁⟩, -, h₂⟩
-    exact ⟨hb, h₁, h₂⟩
+  simp only [← contMDiffWithinAt_univ]
+  exact Bundle.contMDiffWithinAt_totalSpace_prod_iff
+
+/-- A section of a direct-sum bundle is smooth within a set at a point exactly when both of its
+components are. -/
+theorem Bundle.contMDiffWithinAt_section_prod_iff {σ : Π x, E₁ x × E₂ x} {s : Set B} {x : B} :
+    ContMDiffWithinAt I (I.prod 𝓘(𝕜, F₁ × F₂)) n
+        (fun y ↦ TotalSpace.mk' (F₁ × F₂) (E := E₁ ×ᵇ E₂) y (σ y)) s x ↔
+      ContMDiffWithinAt I (I.prod 𝓘(𝕜, F₁)) n (fun y ↦ TotalSpace.mk' F₁ y (σ y).1) s x ∧
+      ContMDiffWithinAt I (I.prod 𝓘(𝕜, F₂)) n (fun y ↦ TotalSpace.mk' F₂ y (σ y).2) s x :=
+  Bundle.contMDiffWithinAt_totalSpace_prod_iff
+
+/-- A section of a direct-sum bundle is smooth at a point exactly when both of its components
+are. -/
+theorem Bundle.contMDiffAt_section_prod_iff {σ : Π x, E₁ x × E₂ x} {x : B} :
+    ContMDiffAt I (I.prod 𝓘(𝕜, F₁ × F₂)) n
+        (fun y ↦ TotalSpace.mk' (F₁ × F₂) (E := E₁ ×ᵇ E₂) y (σ y)) x ↔
+      ContMDiffAt I (I.prod 𝓘(𝕜, F₁)) n (fun y ↦ TotalSpace.mk' F₁ y (σ y).1) x ∧
+      ContMDiffAt I (I.prod 𝓘(𝕜, F₂)) n (fun y ↦ TotalSpace.mk' F₂ y (σ y).2) x :=
+  Bundle.contMDiffAt_totalSpace_prod_iff
 
 namespace Bundle.Prod
 

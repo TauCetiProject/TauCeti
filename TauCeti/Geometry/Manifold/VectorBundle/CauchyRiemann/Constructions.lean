@@ -47,11 +47,14 @@ statements.
   `TauCeti.IsRealCauchyRiemannOperator.antilinearPart_transport`), is the identity along the
   identity (`TauCeti.sectionTransport_refl`) and composes
   (`TauCeti.sectionTransport_sectionTransport`).
-* `TauCeti.IsRealCauchyRiemannOperator.affineCombination`: for every function `t : M → ℝ`, the
-  pointwise affine combination `(1 - t) • D₀ + t • D₁` of two real Cauchy–Riemann operators is a
-  real Cauchy–Riemann operator, differing from `D₀` by `t` times the difference of `D₁` and `D₀`
-  (`TauCeti.IsRealCauchyRiemannOperator.difference_affineCombination`). For constant `t` this is
-  the straight line between them (`TauCeti.IsRealCauchyRiemannOperator.lineMap`).
+* `TauCeti.IsRealCauchyRiemannOperator.smul_add_smul`: for weight functions `a b : M → ℝ` with
+  `a + b = 1`, the pointwise combination `a • D₀ + b • D₁` of two real Cauchy–Riemann operators is
+  a real Cauchy–Riemann operator, differing from `D₀` by `b` times the difference of `D₁` and `D₀`
+  (`TauCeti.IsRealCauchyRiemannOperator.difference_smul_add_smul`). Special cases are the affine
+  combination `t • D₀ + (1 - t) • D₁`, in the convention of
+  `IsCovariantDerivativeOn.affine_combination`
+  (`TauCeti.IsRealCauchyRiemannOperator.affineCombination`), and the straight line
+  `(1 - t) • D₀ + t • D₁` between them (`TauCeti.IsRealCauchyRiemannOperator.lineMap`).
 
 ## References
 
@@ -504,14 +507,14 @@ section LineMap
 
 variable {D₀ D₁ : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
 
-/-- A pointwise linear combination `a • D₀ + b • D₁` of two complex linear operators, with weight
-functions `a b : M → S`, is complex linear; in particular so is every point `(1 - t) • D₀ + t • D₁`
-of the straight line between them. -/
+/-- A pointwise linear combination `a • D₀ + b • D₁` of two complex linear operators, with weights
+`a b : Π x, S x` acting on the fibres, is complex linear; in particular so is every point
+`(1 - t) • D₀ + t • D₁` of the straight line between them. -/
 theorem IsComplexLinearOperator.smul_add_smul [∀ x, IsScalarTower ℝ ℂ (V x)]
-    [∀ x, ContinuousSMul ℂ (V x)] {S : Type*} [Monoid S] [∀ x, DistribMulAction S (V x)]
-    [∀ x, SMulCommClass ℝ S (V x)] [∀ x, SMulCommClass ℂ S (V x)]
-    [∀ x, ContinuousConstSMul S (V x)] (hD₀ : IsComplexLinearOperator F D₀)
-    (hD₁ : IsComplexLinearOperator F D₁) (a b : M → S) :
+    [∀ x, ContinuousSMul ℂ (V x)] {S : M → Type*} [∀ x, DistribSMul (S x) (V x)]
+    [∀ x, SMulCommClass ℝ (S x) (V x)] [∀ x, SMulCommClass ℂ (S x) (V x)]
+    [∀ x, ContinuousConstSMul (S x) (V x)] (hD₀ : IsComplexLinearOperator F D₀)
+    (hD₁ : IsComplexLinearOperator F D₁) (a b : Π x, S x) :
     IsComplexLinearOperator F fun σ x ↦ a x • D₀ σ x + b x • D₁ σ x where
   add hσ hσ' := by
     simp only [hD₀.add hσ hσ', hD₁.add hσ hσ', smul_add]
@@ -525,55 +528,71 @@ variable [IsManifold I ∞ M] {j : SmoothAlmostComplexStructure I M}
 
 namespace IsRealCauchyRiemannOperator
 
-/-- For every function `t : M → ℝ`, the pointwise affine combination `(1 - t) • D₀ + t • D₁` of
-two real Cauchy–Riemann operators is a real Cauchy–Riemann operator. -/
-theorem affineCombination [∀ x, IsScalarTower ℝ ℂ (V x)]
+/-- For weight functions `a b : M → ℝ` with `a + b = 1`, the pointwise combination
+`a • D₀ + b • D₁` of two real Cauchy–Riemann operators is a real Cauchy–Riemann operator. -/
+theorem smul_add_smul [∀ x, IsScalarTower ℝ ℂ (V x)]
     (hD₀ : IsRealCauchyRiemannOperator F j D₀) (hD₁ : IsRealCauchyRiemannOperator F j D₁)
-    (t : M → ℝ) :
-    IsRealCauchyRiemannOperator F j fun σ x ↦ (1 - t x) • D₀ σ x + t x • D₁ σ x where
+    (a b : M → ℝ) (hab : ∀ x, a x + b x = 1) :
+    IsRealCauchyRiemannOperator F j fun σ x ↦ a x • D₀ σ x + b x • D₁ σ x where
   isZeroOneForm σ x := isZeroOneForm_iff.2 fun v ↦ by
     simp only [add_apply, smul_apply,
       isZeroOneForm_iff.1 (hD₀.isZeroOneForm σ x) v, isZeroOneForm_iff.1 (hD₁.isZeroOneForm σ x) v,
       smul_neg, smul_add, neg_add]
-    rw [smul_comm Complex.I (1 - t x), smul_comm Complex.I (t x)]
+    rw [smul_comm Complex.I (a x), smul_comm Complex.I (b x)]
   add hσ hσ' := by
     simp only [hD₀.add hσ hσ', hD₁.add hσ hσ', smul_add]
     abel
   leibniz {σ g x} hσ hg := by
     simp only [hD₀.leibniz hσ hg, hD₁.leibniz hσ hg, smul_add, smul_comm (g x)]
-    module
+    rw [add_add_add_comm, ← add_smul, hab, one_smul]
+
+/-- For every function `t : M → ℝ`, the affine combination `t • D₀ + (1 - t) • D₁` of two real
+Cauchy–Riemann operators is a real Cauchy–Riemann operator. This is the convention of
+`IsCovariantDerivativeOn.affine_combination`. -/
+theorem affineCombination [∀ x, IsScalarTower ℝ ℂ (V x)]
+    (hD₀ : IsRealCauchyRiemannOperator F j D₀) (hD₁ : IsRealCauchyRiemannOperator F j D₁)
+    (t : M → ℝ) :
+    IsRealCauchyRiemannOperator F j fun σ ↦ t • D₀ σ + (1 - t) • D₁ σ :=
+  hD₀.smul_add_smul hD₁ t (1 - t) fun x ↦ add_sub_cancel (t x) 1
 
 /-- Every point `(1 - t) • D₀ + t • D₁` of the straight line between two real Cauchy–Riemann
 operators is a real Cauchy–Riemann operator. -/
 theorem lineMap [∀ x, IsScalarTower ℝ ℂ (V x)] (hD₀ : IsRealCauchyRiemannOperator F j D₀)
     (hD₁ : IsRealCauchyRiemannOperator F j D₁) (t : ℝ) :
     IsRealCauchyRiemannOperator F j fun σ x ↦ (1 - t) • D₀ σ x + t • D₁ σ x :=
-  hD₀.affineCombination hD₁ fun _ ↦ t
+  hD₀.smul_add_smul hD₁ (fun _ ↦ 1 - t) (fun _ ↦ t) fun _ ↦ sub_add_cancel 1 t
 
 section Difference
 
 variable [∀ x, IsScalarTower ℝ ℂ (V x)] [VectorBundle ℝ F V] [FiniteDimensional ℝ F]
   [ContMDiffVectorBundle 1 F V I]
 
-/-- The affine combination `(1 - t) • D₀ + t • D₁` differs from `D₀` by `t` times the difference
-of `D₁` and `D₀`. -/
-theorem difference_affineCombination (hD₀ : IsRealCauchyRiemannOperator F j D₀)
-    (hD₁ : IsRealCauchyRiemannOperator F j D₁) (t : M → ℝ) (x : M) :
-    (hD₀.affineCombination hD₁ t).difference hD₀ x = t x • hD₁.difference hD₀ x := by
+/-- The combination `a • D₀ + b • D₁` with `a + b = 1` differs from `D₀` by `b` times the
+difference of `D₁` and `D₀`. -/
+theorem difference_smul_add_smul (hD₀ : IsRealCauchyRiemannOperator F j D₀)
+    (hD₁ : IsRealCauchyRiemannOperator F j D₁) (a b : M → ℝ) (hab : ∀ x, a x + b x = 1) (x : M) :
+    (hD₀.smul_add_smul hD₁ a b hab).difference hD₀ x = b x • hD₁.difference hD₀ x := by
   ext e : 1
   have hσ := mdifferentiableAt_extend I F e
-  have k := (hD₀.affineCombination hD₁ t).difference_apply hD₀ hσ
+  have k := (hD₀.smul_add_smul hD₁ a b hab).difference_apply hD₀ hσ
   have k' := hD₁.difference_apply hD₀ hσ
   simp only [extend_apply_self] at k k'
-  rw [smul_apply, k, k']
+  rw [smul_apply, k, k', eq_sub_of_add_eq (hab x)]
   module
+
+/-- The affine combination `t • D₀ + (1 - t) • D₁` differs from `D₀` by `1 - t` times the
+difference of `D₁` and `D₀`. -/
+theorem difference_affineCombination (hD₀ : IsRealCauchyRiemannOperator F j D₀)
+    (hD₁ : IsRealCauchyRiemannOperator F j D₁) (t : M → ℝ) (x : M) :
+    (hD₀.affineCombination hD₁ t).difference hD₀ x = (1 - t x) • hD₁.difference hD₀ x :=
+  hD₀.difference_smul_add_smul hD₁ t (1 - t) (fun y ↦ add_sub_cancel (t y) 1) x
 
 /-- The point `(1 - t) • D₀ + t • D₁` of the straight line differs from `D₀` by `t` times the
 difference of `D₁` and `D₀`. -/
 theorem difference_lineMap (hD₀ : IsRealCauchyRiemannOperator F j D₀)
     (hD₁ : IsRealCauchyRiemannOperator F j D₁) (t : ℝ) (x : M) :
     (hD₀.lineMap hD₁ t).difference hD₀ x = t • hD₁.difference hD₀ x :=
-  hD₀.difference_affineCombination hD₁ (fun _ ↦ t) x
+  hD₀.difference_smul_add_smul hD₁ (fun _ ↦ 1 - t) (fun _ ↦ t) (fun _ ↦ sub_add_cancel 1 t) x
 
 end Difference
 
