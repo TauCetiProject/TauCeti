@@ -118,7 +118,7 @@ theorem laplacian_norm_rpow_mul_comp_inner_div_norm {v : E} (hv : ‖v‖ = 1) (
       ‖x‖ ^ (μ - 2) * (μ * (μ + Module.finrank ℝ E - 2) * F (⟪v, x⟫_ℝ / ‖x‖) +
         (1 - (⟪v, x⟫_ℝ / ‖x‖) ^ 2) * deriv (deriv F) (⟪v, x⟫_ℝ / ‖x‖) -
         (Module.finrank ℝ E - 1) * (⟪v, x⟫_ℝ / ‖x‖) * deriv F (⟪v, x⟫_ℝ / ‖x‖)) := by
-  set s : E → ℝ := fun y ↦ ⟪v, y⟫_ℝ / ‖y‖ with hs_def
+  set s : E → ℝ := fun y ↦ ⟪v, y⟫_ℝ / ‖y‖
   have hr : 0 < ‖x‖ := norm_pos_iff.2 hx
   have hs : ContDiffAt ℝ 2 s x :=
     (innerSL ℝ v).contDiff.contDiffAt.div (contDiffAt_norm ℝ hx) hr.ne'
