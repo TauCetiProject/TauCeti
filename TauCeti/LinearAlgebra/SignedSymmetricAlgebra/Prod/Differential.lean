@@ -138,15 +138,15 @@ theorem eq_prodDifferential (hV : IsDGAlgebra (signedSymPiece G) dV)
     (eq_liftDerivation hδ hd.leibniz (fun _ => rfl)).symm
 
 /-- The product differential obeys the signed tensor rule on products of included elements. -/
-theorem prodDifferential_inl_mul_inr (hV : IsDGAlgebra (signedSymPiece G) dV)
-    (hW : IsDGAlgebra (signedSymPiece H) dW) {p : ℤ} {a : SignedSym G}
+theorem prodDifferential_inl_mul_inr {p : ℤ} {a : SignedSym G}
     (ha : a ∈ signedSymPiece G p) (b : SignedSym H) :
     prodDifferential G H dV dW (inl G H a * inr G H b) =
       inl G H (dV a) * inr G H b +
         p.negOnePow • (inl G H a * inr G H (dW b)) := by
-  have ha' : inl G H a ∈ signedSymPiece (G.prod H) p := (inl G H).map_mem ha
-  rw [(isDGAlgebra_prodDifferential hV hW).leibniz ha',
-    prodDifferential_inl hW.map_one_eq_zero, prodDifferential_inr hV.map_one_eq_zero]
+  apply (prodEquiv G H).injective
+  simp only [prodEquiv_apply, ofProd_prodDifferential, map_mul, map_add, map_zsmul_unit,
+    ofProd_inl, ofProd_inr, GradedTensorProduct.tmul_one_mul_one_tmul]
+  exact dgTensorDifferential_tmul_of_mem ha b
 
 /-- The inclusion of the left orbit algebra is a DG algebra map. -/
 noncomputable def dgInl (hV : IsDGAlgebra (signedSymPiece G) dV)
