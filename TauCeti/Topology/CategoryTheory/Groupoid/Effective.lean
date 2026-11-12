@@ -26,9 +26,10 @@ composition is open when the source is open (`TauCeti.eventually_exists_comp_eq`
 the ineffective automorphisms of an object `x` form a normal subgroup
 `TauCeti.ineffectiveKernel hs x` of `Aut x`, the ineffective kernel, and an isomorphism `x ≅ y`
 carries the ineffective kernel at `x` onto the one at `y`. In particular its order only depends
-on the isomorphism class of `x`. When the source-target map is also proper, the automorphism
-groups are finite (`TauCeti.finite_aut_of_proper_source_target`), hence so are the ineffective
-kernels (`TauCeti.finite_ineffectiveKernel`).
+on the isomorphism class of `x`, so it is a function on the coarse space
+(`TauCeti.isomorphismClassesCardIneffectiveKernel`). When the source-target map is also proper,
+the automorphism groups are finite (`TauCeti.finite_aut_of_proper_source_target`), hence so are
+the ineffective kernels (`TauCeti.finite_ineffectiveKernel`).
 
 Two parallel arrows are related by the germ relation `TauCeti.germRel C` when they induce the same
 germ, that is, when one followed by the inverse of the other is ineffective. This is a congruence,
@@ -58,6 +59,8 @@ For the action groupoid of a discrete group acting on a space, these notions are
   they induce the same germ.
 * `TauCeti.quotientIneffectiveKernelMulEquivAut`: the isotropy of the effective quotient at `x` is
   `Aut x` divided by the ineffective kernel.
+* `TauCeti.isomorphismClassesCardIneffectiveKernel C hs`: the order of the ineffective kernel as a
+  function on the coarse space.
 * `TauCeti.EffectiveQuotient.isomorphismClassesHomeomorph`: the coarse spaces of `C` and of its
   effective quotient are homeomorphic.
 
@@ -374,6 +377,20 @@ theorem card_ineffectiveKernel_eq_of_iso {x y : C} (e : x ≅ y) :
     Nat.card (ineffectiveKernel hs x) = Nat.card (ineffectiveKernel hs y) := by
   rw [← map_autMulEquivOfIso_ineffectiveKernel hs e]
   exact (Subgroup.card_map_of_injective (Aut.autMulEquivOfIso e).injective).symm
+
+variable (C) in
+/-- The order of the ineffective kernel as a function on the coarse space, the space of
+isomorphism classes. It is well defined by `TauCeti.card_ineffectiveKernel_eq_of_iso`. -/
+noncomputable def isomorphismClassesCardIneffectiveKernel :
+    _root_.Quotient (isIsomorphicSetoid C) → ℕ :=
+  _root_.Quotient.lift (fun x ↦ Nat.card (ineffectiveKernel hs x)) fun _ _ ⟨e⟩ ↦
+    card_ineffectiveKernel_eq_of_iso hs e
+
+@[simp]
+theorem isomorphismClassesCardIneffectiveKernel_mk (x : C) :
+    isomorphismClassesCardIneffectiveKernel C hs (_root_.Quotient.mk _ x) =
+      Nat.card (ineffectiveKernel hs x) :=
+  (rfl)
 
 include hs in
 /-- In an étale groupoid the germ relation is a congruence. -/
