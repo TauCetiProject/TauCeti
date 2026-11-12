@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Dilation scaling of the `Lᵖ` seminorm
@@ -28,7 +29,8 @@ norm of the gradient and the critical `L^{p⋆}` norm are invariant.
 
 More generally, composing with a linear automorphism `e` multiplies the `Lᵖ` seminorm by
 `|det e|^(-1 / p)`, and the `Lᵖ` seminorm on a preimage `e ⁻¹' s` by the same factor relative to
-the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a continuous extended norm.
+the `Lᵖ` seminorm on `s`, for any set `s`. The same holds for a homothety of ratio `r ≠ 0`, with
+the factor `|r ^ n|^(-1 / p)`. The codomain only needs a continuous extended norm.
 
 ## Main declarations
 
@@ -37,6 +39,8 @@ the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a continuou
   `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
 * `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity
   for the `Lᵖ` seminorms on `e ⁻¹' s` and on `s`.
+* `MeasureTheory.Measure.eLpNorm_comp_homothety_restrict_preimage`: the identity for a homothety,
+  on the preimage of a set.
 -/
 
 public section
@@ -78,6 +82,25 @@ theorem eLpNorm_comp_continuousLinearEquiv_restrict_preimage
   have he : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
   rw [← he.eLpNorm_map_measure, ← he.restrict_map, hmap, restrict_smul,
     eLpNorm_smul_measure_of_ne_zero (by simpa using hdet), smul_eq_mul]
+
+/-- **Homothety change of variables in the `Lᵖ` seminorm on a preimage:** composing with the
+homothety of ratio `r ≠ 0` about `x` multiplies the `Lᵖ` seminorm on the preimage of `s`, against
+an additive Haar measure, by `|r ^ n|^(-1 / p)` relative to the `Lᵖ` seminorm on `s`, where `n` is
+the dimension of `E`. The set `s` need not be measurable. -/
+theorem eLpNorm_comp_homothety_restrict_preimage (u : E → G) (x : E) {r : ℝ} (hr : r ≠ 0)
+    (p : ℝ≥0∞) {s : Set E} :
+    eLpNorm (u ∘ AffineMap.homothety x r) p (μ.restrict (AffineMap.homothety x r ⁻¹' s)) =
+      ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| ^ (1 / p).toReal * eLpNorm u p (μ.restrict s) := by
+  have he : MeasurableEmbedding (AffineMap.homothety x r) := by
+    have h : ⇑(AffineMap.homothety x r) = (Homeomorph.subRight x).trans
+        ((Homeomorph.smulOfNeZero r hr).trans (Homeomorph.addRight x)) := by
+      funext y
+      simp [AffineMap.homothety_apply]
+    rw [h]
+    exact Homeomorph.measurableEmbedding _
+  rw [← he.eLpNorm_map_measure, ← he.restrict_map, map_addHaar_homothety μ x hr, restrict_smul,
+    eLpNorm_smul_measure_of_ne_zero
+      (ENNReal.ofReal_pos.2 (abs_pos.2 (inv_ne_zero (pow_ne_zero _ hr)))).ne', smul_eq_mul]
 
 /-- **Linear change of variables in the `Lᵖ` seminorm:** composing with a linear automorphism `e`
 multiplies the `Lᵖ` seminorm against an additive Haar measure by `|det e|^(-1 / p)`. The exponent

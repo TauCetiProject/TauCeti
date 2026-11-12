@@ -68,6 +68,8 @@ Morse-theoretic definitions that use them.
 * `TauCeti.eventually_fderiv_ne`: where the second derivative is invertible, the differential
   avoids any prescribed value on a punctured neighbourhood of the point.
 * `TauCeti.fderiv_fderiv_comp_apply`: the second-order chain rule for `C²` maps.
+* `TauCeti.fderiv_fderiv_comp_homothety_apply`: precomposing with a homothety of ratio `r`
+  multiplies the second derivative by `r²`.
 * `TauCeti.fderiv_fderiv_comp_apply_of_fderiv_eq_zero`: for `C²` maps, where the differential of
   the outer function vanishes, the second derivative of a composition is the pullback of the
   second derivative along the differential of the inner function.
@@ -192,6 +194,24 @@ theorem fderiv_fderiv_comp_apply_of_fderiv_eq_zero {f : E → G} {φ : F → E} 
     fderiv 𝕜 (fderiv 𝕜 (f ∘ φ)) b v w =
       fderiv 𝕜 (fderiv 𝕜 f) (φ b) (fderiv 𝕜 φ b v) (fderiv 𝕜 φ b w) := by
   simp [fderiv_fderiv_comp_apply hf hφ, hc]
+
+/-- **The second derivative under a homothety.** Precomposing a map that is `C²` at
+`AffineMap.homothety c r x` with the homothety of ratio `r` about `c` multiplies its second
+derivative at `x` by `r²`. -/
+theorem fderiv_fderiv_comp_homothety_apply {f : E → G} (c : E) (r : 𝕜) {x : E}
+    (hf : ContDiffAt 𝕜 2 f (AffineMap.homothety c r x)) (v w : E) :
+    fderiv 𝕜 (fderiv 𝕜 (f ∘ AffineMap.homothety c r)) x v w =
+      r ^ 2 • fderiv 𝕜 (fderiv 𝕜 f) (AffineMap.homothety c r x) v w := by
+  have hh : ⇑(AffineMap.homothety c r) = fun y ↦ r • (y - c) + c := by
+    funext y
+    simp [AffineMap.homothety_apply]
+  -- The homothety has constant derivative `r • id`, hence vanishing second derivative.
+  have hd : fderiv 𝕜 (AffineMap.homothety c r) = fun _ ↦ r • ContinuousLinearMap.id 𝕜 E := by
+    rw [hh]
+    funext y
+    exact ((((hasFDerivAt_id y).sub_const c).const_smul r).add_const c).fderiv
+  rw [fderiv_fderiv_comp_apply hf (by rw [hh]; fun_prop), hd, fderiv_fun_const]
+  simp [pow_two, smul_smul]
 
 /-- The second derivative of the restriction `y ↦ f (a, y)` of a `C²` map on a product to a fibre
 is the second derivative of `f` evaluated on fibre directions. -/
