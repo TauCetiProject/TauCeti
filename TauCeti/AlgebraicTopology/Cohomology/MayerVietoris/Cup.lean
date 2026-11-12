@@ -50,7 +50,8 @@ uses.
   is restricted.
 * `TopCat.interToLeftMap`, `TopCat.interToRightMap`, `TopCat.leftToUnionMap`,
   `TopCat.rightToUnionMap`: the other inclusions of pairs among `(U ∩ V, A ∩ B)`, `(U, A)`,
-  `(V, B)` and `(U ∪ V, A ∪ B)`.
+  `(V, B)` and `(U ∪ V, A ∪ B)`, and how they compose to `TopCat.interToUnionMap`
+  (`TopCat.interToLeftMap_comp_leftToUnionMap`, `TopCat.interToRightMap_comp_rightToUnionMap`).
 
 ## References
 
@@ -119,6 +120,24 @@ abbrev rightToUnionMap :
     TopPair.ofInclusion hBV ⟶ TopPair.ofInclusion (Set.union_subset_union hAU hBV) :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.subset_union_right)
     fun _ hx ↦ Set.subset_union_right hx
+
+/-- Including `(U ∩ V, A ∩ B)` into `(U, A)` and then into `(U ∪ V, A ∪ B)` is
+`interToUnionMap`. -/
+@[reassoc]
+theorem interToLeftMap_comp_leftToUnionMap :
+    interToLeftMap hAU hBV ≫ leftToUnionMap hAU hBV = interToUnionMap hAU hBV := by
+  rw [← TopPair.ofInclusionMap_comp]
+  -- Both sides are induced by the inclusion `U ∩ V → U ∪ V`.
+  rfl
+
+/-- Including `(U ∩ V, A ∩ B)` into `(V, B)` and then into `(U ∪ V, A ∪ B)` is
+`interToUnionMap`. -/
+@[reassoc]
+theorem interToRightMap_comp_rightToUnionMap :
+    interToRightMap hAU hBV ≫ rightToUnionMap hAU hBV = interToUnionMap hAU hBV := by
+  rw [← TopPair.ofInclusionMap_comp]
+  -- Both sides are induced by the inclusion `U ∩ V → U ∪ V`.
+  rfl
 
 /-- The pair `(U ∩ V, A ∩ B)`. -/
 private abbrev interPair : TopPair.{w} := TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)
@@ -304,9 +323,9 @@ private lemma cupLift_g_eq (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q : ℕ}
     LinearMap.neg_apply] at hgx
   -- Restricting the components of the lift to `(U ∩ V, A ∩ B)`.
   have eU := cupLift_restrict_component k hAU hBV _ u μ (interToLeftMap hAU hBV)
-    (leftToUnionMap hAU hBV) (by rw [← TopPair.ofInclusionMap_comp]; congr 1) rfl yU b'
+    (leftToUnionMap hAU hBV) (interToLeftMap_comp_leftToUnionMap hAU hBV) rfl yU b'
   have eV := cupLift_restrict_component k hAU hBV _ u μ (interToRightMap hAU hBV)
-    (rightToUnionMap hAU hBV) (by rw [← TopPair.ofInclusionMap_comp]; congr 1) rfl yV b'
+    (rightToUnionMap hAU hBV) (interToRightMap_comp_rightToUnionMap hAU hBV) rfl yV b'
   -- Cupping is linear in its first argument.
   have hlin : ∀ (a₁ a₂ : ((toSSet.obj (TopPair.ofInclusion
       (Set.inter_subset_inter hAU hBV)).fst).chainComplex R).X p ⟶ M)

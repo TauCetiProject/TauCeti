@@ -115,20 +115,6 @@ private abbrev ΦI (p m : ℕ) (h : p + n = m) :=
     (restrictInter π hAU hBV hπU hπV) n p m h
     (TopPair.singularCohomologyMap (interToUnionMap hAU hBV) n u))
 
-omit [CommRing K] in
-private lemma interToLeft_comp_leftToUnion :
-    interToLeftMap hAU hBV ≫ leftToUnionMap hAU hBV = interToUnionMap hAU hBV := by
-  rw [← TopPair.ofInclusionMap_comp]
-  -- Both sides are induced by the inclusion `U' ∩ V' → U' ∪ V'`.
-  rfl
-
-omit [CommRing K] in
-private lemma interToRight_comp_rightToUnion :
-    interToRightMap hAU hBV ≫ rightToUnionMap hAU hBV = interToUnionMap hAU hBV := by
-  rw [← TopPair.ofInclusionMap_comp]
-  -- Both sides are induced by the inclusion `U' ∩ V' → U' ∪ V'`.
-  rfl
-
 /-- The maps over `Y` and over `U` and `V` commute with the restrictions. -/
 private lemma toBiprod_comm (p m : ℕ) (h : p + n = m) :
     singularCohomologyMayerVietorisToBiprod (ModuleCat.of K K) K M U V p ≫
@@ -166,7 +152,8 @@ private lemma fromBiprod_comm (p m : ℕ) (h : p + n = m) :
       inl_singularCohomologyPairMayerVietorisFromBiprod]
     ext a
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom]
-    rw [← interToLeft_comp_leftToUnion, TopPair.singularCohomologyMap_comp, ModuleCat.comp_apply]
+    rw [← interToLeftMap_comp_leftToUnionMap, TopPair.singularCohomologyMap_comp,
+      ModuleCat.comp_apply]
     -- In the side condition both maps `U' ∩ V' ⟶ U` are the restriction of `π`, so `rfl` closes it.
     exact pullbackCup_naturality (interToLeftMap hAU hBV) (restrictInter π hAU hBV hπU hπV)
       (restrictLeft π hAU hπU) (TopCat.ofHom (ContinuousMap.inclusion inter_subset_left))
@@ -176,7 +163,8 @@ private lemma fromBiprod_comm (p m : ℕ) (h : p + n = m) :
       neg_inj]
     ext a
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom]
-    rw [← interToRight_comp_rightToUnion, TopPair.singularCohomologyMap_comp, ModuleCat.comp_apply]
+    rw [← interToRightMap_comp_rightToUnionMap, TopPair.singularCohomologyMap_comp,
+      ModuleCat.comp_apply]
     -- In the side condition both maps `U' ∩ V' ⟶ V` are the restriction of `π`, so `rfl` closes it.
     exact pullbackCup_naturality (interToRightMap hAU hBV) (restrictInter π hAU hBV hπU hπV)
       (restrictRight π hBV hπV) (TopCat.ofHom (ContinuousMap.inclusion inter_subset_right))
@@ -211,6 +199,67 @@ private lemma δ_comm (q mq m : ℕ) (hq : q + n = mq) (hm : mq + 1 = m) (h : q 
   exact (congrArg (TopCat.singularCohomologyMap
     (TopCat.ofHom (ContinuousMap.subtypeVal (U' ∪ V'))) (q + 1)) e₁).symm.trans e₂.symm
 
+include hU' hV' hA hB hU hV hUV in
+/-- The Mayer–Vietoris step in degree `0`. The sequence of `Y` starts with the injective
+restriction `H⁰(Y; M) ⟶ H⁰(U; M) ⊞ H⁰(V; M)`, and the vanishing of `Hⁿ⁻¹(U' ∩ V', A ∩ B; M)`
+replaces the missing terms of the sequence of the pairs. -/
+private lemma bijective_pullbackCup_union_zero
+    (hI₀ : ∀ q, q + 1 = n → IsZero
+      ((TopPair.ofInclusion (inter_subset_inter hAU hBV)).singularCohomology (ModuleCat.of K K) K
+        M q))
+    {m : ℕ} (h : 0 + n = m)
+    (hbiprod : Function.Bijective
+      (biprod.map (ΦU (M := M) π hAU hBV hπU u 0 m h) (ΦV (M := M) π hAU hBV hπV u 0 m h)))
+    (hΦI : Function.Injective (ΦI (M := M) π hAU hBV hπU hπV u 0 m h)) :
+    Function.Bijective (Φ (M := M) π hAU hBV u 0 m h) := by
+  have hU'' := hU'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
+  have hV'' := hV'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
+  -- Injectivity: if `Φ a = 0`, the maps over `U` and `V` send the restriction of `a` to
+  -- `H⁰(U) ⊞ H⁰(V)` to the restriction of `Φ a = 0`. They are injective, so the restriction of
+  -- `a` vanishes, and the restriction `H⁰(Y) ⟶ H⁰(U) ⊞ H⁰(V)` is injective.
+  have hT := (ModuleCat.mono_iff_injective _).1
+    (mono_singularCohomologyMayerVietorisToBiprod_zero (ModuleCat.of K K) K M hU hV hUV)
+  refine ⟨(injective_iff_map_eq_zero _).2 fun a ha ↦ hT ?_, fun y ↦ ?_⟩
+  · refine hbiprod.1 ?_
+    rw [map_zero, ← ConcreteCategory.comp_apply, toBiprod_comm, ConcreteCategory.comp_apply]
+    simp only [ConcreteCategory.hom_ofHom] at ha ⊢
+    rw [ha, map_zero, map_zero]
+  -- Surjectivity: lift the restriction of `y` to `z ∈ H⁰(U) ⊞ H⁰(V)`. Its difference of
+  -- restrictions is sent to `0` by the injective map over `U ∩ V`, so it vanishes and, by
+  -- exactness at `H⁰(U) ⊞ H⁰(V)`, `z` is the restriction of some `a ∈ H⁰(Y)`.
+  obtain ⟨z, hz⟩ := hbiprod.2
+    (singularCohomologyPairMayerVietorisToBiprod (ModuleCat.of K K) K M hAU hBV m y)
+  obtain ⟨a, rfl⟩ := ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+    (singularCohomologyMayerVietoris_exact₂ (ModuleCat.of K K) K M hU hV hUV 0) z).1 <| by
+    refine hΦI ((ConcreteCategory.congr_hom
+      (fromBiprod_comm π hAU hBV hπU hπV u 0 m h) z).trans ?_)
+    rw [map_zero, ConcreteCategory.comp_apply, hz, ← ConcreteCategory.comp_apply,
+      singularCohomologyPairMayerVietorisToBiprod_fromBiprod]
+    simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+  have hy : singularCohomologyPairMayerVietorisToBiprod (ModuleCat.of K K) K M hAU hBV m
+      (y - Φ π hAU hBV u 0 m h a) = 0 := by
+    rw [map_sub, ← hz, sub_eq_zero]
+    exact ConcreteCategory.congr_hom (toBiprod_comm π hAU hBV hπU hπV u 0 m h) a
+  -- Then `y - Φ a` restricts to `0`; it remains to see that the restriction to
+  -- `Hᵐ(U', A) ⊞ Hᵐ(V', B)` is injective.
+  refine ⟨a, (sub_eq_zero.1 ?_).symm⟩
+  cases n with
+  | zero =>
+    -- In degree `0` the restriction is injective at the start of the sequence of the pairs.
+    obtain rfl : m = 0 := by lia
+    exact (ModuleCat.mono_iff_injective _).1
+      (mono_singularCohomologyPairMayerVietorisToBiprod_zero (ModuleCat.of K K) K M hAU hBV
+        hU'' hV'' hA hB) (hy.trans (map_zero _).symm)
+  | succ n =>
+    -- Otherwise `y - Φ a` is in the image of the connecting morphism from the cohomology of
+    -- `(U' ∩ V', A ∩ B)` in degree `m - 1`, which vanishes by `hI₀`.
+    obtain ⟨w, hw⟩ := ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      (singularCohomologyPairMayerVietoris_exact₁ (ModuleCat.of K K) K M hAU hBV hU'' hV'' hA hB
+        n m (by lia)) _).1 hy
+    have := ModuleCat.isZero_iff_subsingleton.1 (hI₀ n rfl)
+    rw [Subsingleton.elim w 0, map_zero] at hw
+    exact hw.symm
+
 include hU' hV' hUV' hA hB hU hV hUV in
 /-- **The Mayer–Vietoris step for `a ↦ π^*a ⌣ u`.** Let `π : X ⟶ Y` carry the members of an open
 cover `{U', V'}` of `X` into those of an open cover `{U, V}` of `Y`, let `A ⊆ U'` and `B ⊆ V'` be
@@ -237,61 +286,17 @@ theorem bijective_pullbackCup_union
     {p m : ℕ} (h : p + n = m) :
     Function.Bijective ((TopPair.ofInclusion (union_subset_union hAU hBV)).pullbackCup M
       (TopCat.ofHom (ContinuousMap.subtypeVal (U' ∪ V')) ≫ π) n p m h u) := by
-  have hU'' := hU'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
-  have hV'' := hV'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
   have hbiprod : ∀ p m (h : p + n = m), Function.Bijective
       (biprod.map (ΦU π hAU hBV hπU u p m h) (ΦV π hAU hBV hπV u p m h)) := fun p m h ↦
     ModuleCat.bijective_biprod_map _ _ (hΦU p m h) (hΦV p m h)
   cases p with
   | zero =>
-    -- Injectivity: if `Φ a = 0`, the maps over `U` and `V` send the restriction of `a` to
-    -- `H⁰(U) ⊞ H⁰(V)` to the restriction of `Φ a = 0`. They are injective, so the restriction of
-    -- `a` vanishes, and the restriction `H⁰(Y) ⟶ H⁰(U) ⊞ H⁰(V)` is injective.
-    have hT := (ModuleCat.mono_iff_injective _).1
-      (mono_singularCohomologyMayerVietorisToBiprod_zero (ModuleCat.of K K) K M hU hV hUV)
-    refine ⟨(injective_iff_map_eq_zero _).2 fun a ha ↦ hT ?_, fun y ↦ ?_⟩
-    · refine (hbiprod 0 m h).1 ?_
-      rw [map_zero, ← ConcreteCategory.comp_apply, toBiprod_comm, ConcreteCategory.comp_apply]
-      simp only [ConcreteCategory.hom_ofHom]
-      rw [ha, map_zero, map_zero]
-    -- Surjectivity: lift the restriction of `y` to `z ∈ H⁰(U) ⊞ H⁰(V)`. Its difference of
-    -- restrictions is sent to `0` by the injective map over `U ∩ V`, so it vanishes and, by
-    -- exactness at `H⁰(U) ⊞ H⁰(V)`, `z` is the restriction of some `a ∈ H⁰(Y)`.
-    obtain ⟨z, hz⟩ := (hbiprod 0 m h).2
-      (singularCohomologyPairMayerVietorisToBiprod (ModuleCat.of K K) K M hAU hBV m y)
-    obtain ⟨a, rfl⟩ := ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-      (singularCohomologyMayerVietoris_exact₂ (ModuleCat.of K K) K M hU hV hUV 0) z).1 <| by
-      refine (hΦI 0 m h).1 ((ConcreteCategory.congr_hom
-        (fromBiprod_comm π hAU hBV hπU hπV u 0 m h) z).trans ?_)
-      rw [map_zero, ConcreteCategory.comp_apply, hz, ← ConcreteCategory.comp_apply,
-        singularCohomologyPairMayerVietorisToBiprod_fromBiprod]
-      -- The zero morphism sends `y` to `0` by definition.
-      rfl
-    have hy : singularCohomologyPairMayerVietorisToBiprod (ModuleCat.of K K) K M hAU hBV m
-        (y - Φ π hAU hBV u 0 m h a) = 0 := by
-      rw [map_sub, ← hz, sub_eq_zero]
-      exact ConcreteCategory.congr_hom (toBiprod_comm π hAU hBV hπU hπV u 0 m h) a
-    -- Then `y - Φ a` restricts to `0`; it remains to see that the restriction to
-    -- `Hᵐ(U', A) ⊞ Hᵐ(V', B)` is injective.
-    refine ⟨a, (sub_eq_zero.1 ?_).symm⟩
-    cases n with
-    | zero =>
-      -- In degree `0` the restriction is injective at the start of the sequence of the pairs.
-      obtain rfl : m = 0 := by lia
-      exact (ModuleCat.mono_iff_injective _).1
-        (mono_singularCohomologyPairMayerVietorisToBiprod_zero (ModuleCat.of K K) K M hAU hBV
-          hU'' hV'' hA hB) (hy.trans (map_zero _).symm)
-    | succ n =>
-      -- Otherwise `y - Φ a` is in the image of the connecting morphism from the cohomology of
-      -- `(U' ∩ V', A ∩ B)` in degree `m - 1`, which vanishes by `hI₀`.
-      obtain ⟨w, hw⟩ := ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-        (singularCohomologyPairMayerVietoris_exact₁ (ModuleCat.of K K) K M hAU hBV hU'' hV'' hA hB
-          n m (by lia)) _).1 hy
-      have := ModuleCat.isZero_iff_subsingleton.1 (hI₀ n rfl)
-      rw [Subsingleton.elim w 0, map_zero] at hw
-      exact hw.symm
+    exact bijective_pullbackCup_union_zero π hAU hBV hπU hπV u hU' hV' hA hB hU hV hUV hI₀ h
+      (hbiprod 0 m h) (hΦI 0 m h).1
   | succ q =>
     -- In positive degrees the five lemma applies to the two Mayer–Vietoris sequences.
+    have hU'' := hU'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
+    have hV'' := hV'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
     have hq : q + n + 1 = m := by lia
     exact LinearMap.bijective_of_surjective_of_bijective_of_bijective_of_injective _ _ _ _ _ _ _ _
       _ _ _ _ _

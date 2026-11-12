@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
-public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
 
 /-!
 # The cup product with a relative class after pulling back
