@@ -147,6 +147,15 @@ open scoped InnerProductSpace
 
 namespace Module.End
 
+/-- Shifting an endomorphism by a scalar shifts its eigenspaces: the eigenspace of `f - ρ • id` at
+`μ` is the eigenspace of `f` at `μ + ρ`. -/
+@[simp]
+theorem eigenspace_sub_smul_id {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    (f : Module.End R M) (ρ μ : R) :
+    (f - ρ • LinearMap.id).eigenspace μ = f.eigenspace (μ + ρ) := by
+  have h : f - ρ • LinearMap.id - μ • 1 = f - (μ + ρ) • 1 := by module
+  simp only [eigenspace_def, h]
+
 variable {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E]
 
 /-! ### The restricted point spectrum -/
@@ -351,16 +360,10 @@ theorem pointSpectralSubspace_neg :
   · simpa only [h, neg_neg] using
       eigenspace_le_pointSpectralSubspace (A := -A) (Set.mem_neg.mp hμ)
 
-/-- Shifting an endomorphism by a scalar shifts its eigenspaces: the eigenspace of `A - ρ • id` at
-`μ` is the eigenspace of `A` at `μ + ρ`. -/
-theorem eigenspace_sub_smul_id (ρ μ : 𝕜) :
-    (A - ρ • LinearMap.id).eigenspace μ = A.eigenspace (μ + ρ) := by
-  have h : A - ρ • LinearMap.id - μ • 1 = A - (μ + ρ) • 1 := by module
-  simp only [eigenspace_def, h]
-
 /-- Shifting an endomorphism by a real scalar `c` shifts its point-spectral subspaces: the
 point-spectral subspace of `A - c • id` selected by `Ω` is that of `A` selected by `Ω + c`, the
 preimage of `Ω` under `μ ↦ μ - c`. -/
+@[simp]
 theorem pointSpectralSubspace_sub_smul_id (c : ℝ) :
     (A - (c : 𝕜) • LinearMap.id).pointSpectralSubspace Ω =
       A.pointSpectralSubspace ((· - c) ⁻¹' Ω) := by
@@ -373,6 +376,7 @@ theorem pointSpectralSubspace_sub_smul_id (c : ℝ) :
 
 /-- A real scalar operator `ρ • id` has the single eigenvalue `ρ`: its point-spectral subspace
 selected by `Ω` is everything if `ρ ∈ Ω` and zero otherwise. -/
+@[simp]
 theorem pointSpectralSubspace_smul_id (ρ : ℝ) [Decidable (ρ ∈ Ω)] :
     ((ρ : 𝕜) • LinearMap.id : Module.End 𝕜 E).pointSpectralSubspace Ω =
       if ρ ∈ Ω then ⊤ else ⊥ := by

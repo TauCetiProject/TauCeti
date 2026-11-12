@@ -38,10 +38,11 @@ If the slope at `+∞` increases from `δ₁` to `δ₂`, or the slope at `-∞`
 `δ₂`, the weight decays faster at that end, and the index decreases by the number of eigenvalues
 of the limit at that end in `[δ₁, δ₂)` or `[δ₂, δ₁)`, counted with multiplicity. When exactly one
 eigenvalue `λ` is crossed, this is the dimension of its eigenspace
-(`Module.End.pointSpectralSubspace_eq_eigenspace`). For small decay weights, with slopes `-δ` and
-`δ` closer to `0` than every nonzero eigenvalue of the respective limits, the index is
+(`Module.End.pointSpectralSubspace_eq_eigenspace`). For small decay weights, with slopes
+`δ⁻ < 0 < δ⁺` closer to `0` than every nonzero eigenvalue of the respective limits, the index is
 `n⁻(A⁻) - n⁻(A⁺) - dim ker A⁺`: the kernel of the limit at `+∞` is counted as negative, and that
-at `-∞` as positive (`TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_of_small`).
+at `-∞` as positive
+(`WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_ker`).
 
 For a constant scalar coefficient `a • id` the index is `dim E` if `a < δ⁻`, minus `dim E` if
 `a < δ⁺` (`TauCeti.WeakDerivStep.index_trajectoryOperator_smul_id_sub_smul_id`). For `a = 0`
@@ -54,7 +55,7 @@ the unweighted operator `d/ds`, which is not Fredholm when `E ≠ 0`, becomes Fr
   the index of `D_{A - c}` is `n(A⁻, δ⁻) - n(A⁺, δ⁺)`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_index_sub_finrank_sub_finrank`:
   faster decay at the ends decreases the index by the number of eigenvalues crossed by the slopes.
-* `TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_of_small`:
+* `WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_ker`:
   small decay weights give the index `n⁻(A⁻) - n⁻(A⁺) - dim ker A⁺`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_smul_id_sub_smul_id`: the scalar example.
 
@@ -177,19 +178,20 @@ theorem index_trajectoryOperator_sub_smul_id_eq_index_sub_finrank_sub_finrank
   push_cast
   ring
 
-/-- **The index for small decay weights.** Let `δ > 0` be smaller than the absolute value of every
-negative eigenvalue of `A⁻` and of every positive eigenvalue of `A⁺`, and let `c` be a continuous
-scalar function with limits `-δ` at `-∞` and `δ` at `+∞`, as for the slope of the decay weight
-`δ log (cosh s)`. Then the index of `D_{A - c}` is the number of negative eigenvalues of `A⁻`,
-minus the number of negative eigenvalues of `A⁺`, minus the dimension of the kernel of `A⁺`. -/
-theorem index_trajectoryOperator_sub_smul_id_of_small
+/-- **The index for small decay weights.** Let `δminus > 0` be smaller than the absolute value of
+every negative eigenvalue of `A⁻`, let `δplus > 0` be smaller than every positive eigenvalue of
+`A⁺`, and let `c` be a continuous scalar function with limits `-δminus` at `-∞` and `δplus` at
+`+∞`, as for the slope of a decay weight equal to `δminus |s|` near `-∞` and to `δplus |s|` near
+`+∞`. Then the index of `D_{A - c}` is the number of negative eigenvalues of `A⁻`, minus the
+number of negative eigenvalues of `A⁺`, minus the dimension of the kernel of `A⁺`. -/
+theorem index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_ker
     (hA : Continuous A)
     (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric) (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) {c : ℝ → ℝ} {δ : ℝ}
-    (hδ : 0 < δ) (hc : Continuous c) (hcbot : Tendsto c atBot (𝓝 (-δ)))
-    (hctop : Tendsto c atTop (𝓝 δ))
-    (hgapminus : ∀ μ ∈ Ico (-δ) 0, ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) μ)
-    (hgapplus : ∀ μ ∈ Ioc 0 δ, ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) μ)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) {c : ℝ → ℝ}
+    {δminus δplus : ℝ} (hδminus : 0 < δminus) (hδplus : 0 < δplus) (hc : Continuous c)
+    (hcbot : Tendsto c atBot (𝓝 (-δminus))) (hctop : Tendsto c atTop (𝓝 δplus))
+    (hgapminus : ∀ μ ∈ Ico (-δminus) 0, ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) μ)
+    (hgapplus : ∀ μ ∈ Ioc 0 δplus, ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) μ)
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ A s - c s • ContinuousLinearMap.id ℝ E) :
@@ -198,18 +200,19 @@ theorem index_trajectoryOperator_sub_smul_id_of_small
         Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0)) -
           Module.finrank ℝ (LinearMap.ker (Aplus : E →ₗ[ℝ] E)) := by
   rw [index_trajectoryOperator_sub_smul_id hA hsymminus hsymplus hbot htop hc hcbot hctop
-      (hgapminus _ ⟨le_rfl, neg_lt_zero.2 hδ⟩) (hgapplus _ ⟨hδ, le_rfl⟩) AL hAL]
-  -- At `-∞` no eigenvalue lies in `[-δ, 0)`, so the count below `-δ` is the count below `0`.
+      (hgapminus _ ⟨le_rfl, neg_lt_zero.2 hδminus⟩) (hgapplus _ ⟨hδplus, le_rfl⟩) AL hAL]
+  -- At `-∞` no eigenvalue lies in `[-δminus, 0)`, so the count below `-δminus` is the count below
+  -- `0`.
   have hminus : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0) =
-      Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio (-δ)) := by
-    rw [← Iio_union_Ico_eq_Iio (neg_nonpos.2 hδ.le), Module.End.pointSpectralSubspace_union,
+      Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio (-δminus)) := by
+    rw [← Iio_union_Ico_eq_Iio (neg_nonpos.2 hδminus.le), Module.End.pointSpectralSubspace_union,
       Module.End.pointSpectralSubspace_eq_bot_iff.2 hgapminus, sup_bot_eq]
-  -- At `+∞` the eigenvalues below `δ` are the negative ones and `0`, whose eigenspace is the
+  -- At `+∞` the eigenvalues below `δplus` are the negative ones and `0`, whose eigenspace is the
   -- kernel.
-  have hplus : Iio δ = (Iio 0 ∪ {0}) ∪ Ioo 0 δ := by
-    rw [Iio_union_right, Iic_union_Ioo_eq_Iio hδ]
+  have hplus : Iio δplus = (Iio 0 ∪ {0}) ∪ Ioo 0 δplus := by
+    rw [Iio_union_right, Iic_union_Ioo_eq_Iio hδplus]
   have hdisj : Disjoint (Iio (0 : ℝ)) {0} := disjoint_singleton_right.2 (lt_irrefl 0)
-  have hdisj' : Disjoint (Iio (0 : ℝ) ∪ {0}) (Ioo 0 δ) := by
+  have hdisj' : Disjoint (Iio (0 : ℝ) ∪ {0}) (Ioo 0 δplus) := by
     rw [Iio_union_right]
     exact disjoint_left.2 fun x hx hx' ↦ (not_lt.2 hx) hx'.1
   rw [hplus, Module.End.finrank_pointSpectralSubspace_union hdisj',
