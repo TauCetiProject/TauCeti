@@ -24,8 +24,9 @@ The extension of a module annihilator is contained in its annihilator after arbi
 scalar extension, without a flatness hypothesis. The coefficient algebra `S` need not be
 commutative; extended ideals are left ideals.
 
-For an ideal `I` and a module `M`, injectivity of `I ⊗ M → R ⊗ M` is the vanishing of
-`Tor₁(R ⧸ I, M)`. `Ideal.sup_subtype_rTensor_injective` propagates it from `I` and `J` to `I ⊔ J`,
+For an ideal `I` and a module `M` over a commutative ring `R`, injectivity of `I ⊗ M → R ⊗ M` is
+the vanishing of `Tor₁(R ⧸ I, M)`; over a commutative semiring only the injectivity is meaningful.
+`Ideal.sup_subtype_rTensor_injective` propagates it from `I` and `J` to `I ⊔ J`,
 provided `I M ∩ J M = (I ⊓ J) M`. For an `M`-regular element `x` it holds for the ideal `(x)`
 (`IsSMulRegular.span_singleton_subtype_rTensor_injective`).
 
@@ -139,9 +140,10 @@ end Ideal
 
 section IsSMulRegular
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
-/-- If `x` is `M`-regular, then `Tor₁ᴿ(R ⧸ (x), M) = 0`: the map `(x) ⊗[R] M → M` is injective. -/
+/-- If `x` is `M`-regular, the map `(x) ⊗[R] M → R ⊗[R] M` is injective. For a commutative ring `R`
+and an `R`-module `M`, this says `Tor₁ᴿ(R ⧸ (x), M) = 0`. -/
 theorem IsSMulRegular.span_singleton_subtype_rTensor_injective {x : R}
     (reg : IsSMulRegular M x) :
     Function.Injective ((Ideal.span {x}).subtype.rTensor M) := by
@@ -155,10 +157,11 @@ theorem IsSMulRegular.span_singleton_subtype_rTensor_injective {x : R}
       obtain ⟨m, rfl⟩ := ht
       obtain ⟨n, rfl⟩ := hu
       exact ⟨m + n, (tmul_add _ _ _).symm⟩
-  refine (injective_iff_map_eq_zero _).mpr fun t ht ↦ ?_
+  intro t u htu
   obtain ⟨m, rfl⟩ := h t
-  have : x • m = 0 := by simpa [x'] using congr(TensorProduct.lid R M $ht)
-  rw [reg (this.trans (smul_zero x).symm), tmul_zero]
+  obtain ⟨n, rfl⟩ := h u
+  have : x • m = x • n := by simpa [x'] using congr(TensorProduct.lid R M $htu)
+  rw [reg this]
 
 end IsSMulRegular
 
@@ -340,6 +343,22 @@ end Ideal
 
 namespace TensorProduct
 
+section Monoid
+
+variable {R S M : Type*} [CommSemiring R] [Semiring S] [Algebra R S] [AddCommMonoid M]
+  [Module R M]
+
+/-- If `m ∈ J M` for an ideal `J` of `R`, then `1 ⊗ m ∈ (J S) (S ⊗[R] M)`. -/
+theorem one_tmul_mem_map_smul_top {J : Ideal R} {m : M} (hm : m ∈ (J • ⊤ : Submodule R M)) :
+    (1 : S) ⊗ₜ[R] m ∈ (J.map (algebraMap R S) • ⊤ : Submodule S (S ⊗[R] M)) := by
+  refine Submodule.smul_induction_on hm (fun a ha y _ ↦ ?_) (fun x y hx hy ↦ ?_)
+  · rw [tmul_smul, ← algebraMap_smul S a]
+    exact Submodule.smul_mem_smul (Ideal.mem_map_of_mem _ ha) Submodule.mem_top
+  · rw [tmul_add]
+    exact add_mem hx hy
+
+end Monoid
+
 variable {R S M : Type*} [CommRing R] [CommRing S] [Algebra R S] [AddCommGroup M] [Module R M]
 
 /-- If `R → S ⧸ J` is surjective, then every element of `S ⊗[R] M` is of the form `1 ⊗ m` modulo
@@ -364,14 +383,5 @@ theorem exists_sub_one_tmul_mem_smul_top {J : Ideal S}
     rw [tmul_add]
     convert add_mem hm hm' using 1
     abel
-
-/-- If `m ∈ J M` for an ideal `J` of `R`, then `1 ⊗ m ∈ (J S) (S ⊗[R] M)`. -/
-theorem one_tmul_mem_map_smul_top {J : Ideal R} {m : M} (hm : m ∈ (J • ⊤ : Submodule R M)) :
-    (1 : S) ⊗ₜ[R] m ∈ (J.map (algebraMap R S) • ⊤ : Submodule S (S ⊗[R] M)) := by
-  refine Submodule.smul_induction_on hm (fun a ha y _ ↦ ?_) (fun x y hx hy ↦ ?_)
-  · rw [tmul_smul, ← algebraMap_smul S a]
-    exact Submodule.smul_mem_smul (Ideal.mem_map_of_mem _ ha) Submodule.mem_top
-  · rw [tmul_add]
-    exact add_mem hx hy
 
 end TensorProduct
