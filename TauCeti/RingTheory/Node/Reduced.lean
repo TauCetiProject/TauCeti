@@ -8,14 +8,16 @@ module
 public import TauCeti.RingTheory.Node.BranchSequence
 public import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import Mathlib.Algebra.MvPolynomial.Nilpotent
+import Mathlib.LinearAlgebra.TensorProduct.Basis
+import TauCeti.RingTheory.Node.BaseChange
 
 /-!
 # Reduced coordinate algebras of nodes
 
-The split node over a reduced ring is reduced, since it embeds in the product of its two
-polynomial branch algebras. Over a field every smoothing `xy = a` is reduced: the case `a = 0`
-is the split node, while for nonzero `a` the algebra is smooth. These facts supply reduced
-geometric fibres for the standard nodal chart.
+Every smoothing `xy = a` over a reduced ring is reduced. Over a field, the case `a = 0`
+embeds in the product of its polynomial branch algebras, while for nonzero `a` the algebra
+is smooth. The free module structure then detects nilpotents over a reduced base by passing
+to all residue fields. This supplies reduced geometric fibres for the standard nodal chart.
 
 ## References
 
@@ -24,24 +26,48 @@ geometric fibres for the standard nodal chart.
 
 public section
 
+noncomputable section
+
 namespace TauCeti.NodeAlgebra
 
-variable (R : Type*) [CommRing R]
+open scoped TensorProduct
 
-/-- The split node over a reduced ring is reduced. -/
-instance isReduced_zero [IsReduced R] : IsReduced (NodeAlgebra R 0) := by
+private theorem isReduced_zero (R : Type*) [CommRing R] [IsReduced R] :
+    IsReduced (NodeAlgebra R 0) := by
   have : IsReduced (Polynomial R) := isReduced_of_injective
     (MvPolynomial.uniqueAlgEquiv.{_, 0} R PUnit).symm
     (MvPolynomial.uniqueAlgEquiv.{_, 0} R PUnit).symm.injective
   exact isReduced_of_injective (branchMap R) (branchMap_injective R)
 
-/-- Every node smoothing over a field is reduced. -/
-instance isReduced_of_field {K : Type*} [Field K] (a : K) : IsReduced (NodeAlgebra K a) := by
+private theorem isReduced_of_field {K : Type*} [Field K] (a : K) : IsReduced (NodeAlgebra K a) := by
   by_cases ha : a = 0
   · subst a
-    infer_instance
+    exact isReduced_zero K
   · have : Algebra.IsStandardSmooth K (NodeAlgebra K a) :=
       (isStandardSmoothOfRelativeDimension_of_isUnit a (isUnit_iff_ne_zero.mpr ha)).isStandardSmooth
     exact TauCeti.isReduced_of_smooth K (NodeAlgebra K a)
+
+/-- Every node smoothing over a reduced coefficient ring is reduced. -/
+instance isReduced {R : Type*} [CommRing R] [IsReduced R] (a : R) :
+    IsReduced (NodeAlgebra R a) := by
+  let b := Module.Free.chooseBasis R (NodeAlgebra R a)
+  constructor
+  intro z hz
+  apply b.repr.injective
+  ext i
+  suffices IsNilpotent (b.repr z i) by simpa using this.eq_zero
+  rw [nilpotent_iff_mem_prime]
+  intro p hp
+  let := hp
+  let K := p.ResidueField
+  have : IsReduced (NodeAlgebra K (algebraMap R K a)) := isReduced_of_field _
+  have : IsReduced (K ⊗[R] NodeAlgebra R a) :=
+    isReduced_of_injective (baseChange a) (baseChange a).injective
+  have hzK : (1 : K) ⊗ₜ[R] z = 0 :=
+    (hz.map (Algebra.TensorProduct.includeRight :
+      NodeAlgebra R a →ₐ[R] K ⊗[R] NodeAlgebra R a)).eq_zero
+  have hi := congrArg (fun w ↦ (b.baseChange K).repr w i) hzK
+  simpa [Module.Basis.baseChange_repr_tmul, Algebra.smul_def,
+    ← Ideal.algebraMap_residueField_eq_zero] using hi
 
 end TauCeti.NodeAlgebra

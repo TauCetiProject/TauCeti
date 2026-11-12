@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyReduced
 import TauCeti.AlgebraicGeometry.Curves.Node.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Reduced
 import TauCeti.RingTheory.Node.Reduced
-import TauCeti.RingTheory.Node.BaseChange
 
 /-!
 # Nodal curves have geometrically reduced fibres
@@ -35,60 +34,33 @@ public section
 noncomputable section
 
 open CategoryTheory Limits AlgebraicGeometry
-open scoped TensorProduct
 
 universe u
 
-namespace TauCeti.NodeAlgebra
-
-/-- The standard node smoothing has geometrically reduced fibres over any coefficient ring. -/
-instance geometricallyReduced_spec {R : Type u} [CommRing R] (a : R) :
-    GeometricallyReduced (Spec.algebraMap R (NodeAlgebra R a)) := by
-  rw [GeometricallyReduced.eq_geometrically,
-    geometrically_iff_of_commRing_of_isClosedUnderIsomorphisms]
-  intro K _ _
-  have : _root_.IsReduced (K ⊗[R] NodeAlgebra R a) :=
-    isReduced_of_injective (baseChange a) (baseChange a).injective
-  have : _root_.IsReduced (NodeAlgebra R a ⊗[R] K) :=
-    isReduced_of_injective (Algebra.TensorProduct.comm R (NodeAlgebra R a) K)
-      (Algebra.TensorProduct.comm R (NodeAlgebra R a) K).injective
-  exact isReduced_of_isOpenImmersion (pullbackSpecIso R (NodeAlgebra R a) K).hom
-
-end TauCeti.NodeAlgebra
-
 namespace TauCeti.AlgebraicGeometry
 
-private theorem isReduced_of_nodal_toSpec_field {K : Type u} [Field K]
-    (X : Scheme.{u}) [X.Over (Spec (.of K))]
-    (h : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) : IsReduced X := by
-  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of K)) := h.syntomic
-  have : LocallyOfFinitePresentation (X ↘ Spec (.of K)) :=
-    SyntomicOfRelativeDimension.locallyOfFinitePresentation 1 _
+/-- A nodal relative curve over a field is reduced. -/
+theorem AtWorstNodalOfRelativeDimensionOne.isReduced_of_field {K : Type u} [Field K]
+    {X : Scheme.{u}} {f : X ⟶ Spec (.of K)}
+    (h : AtWorstNodalOfRelativeDimensionOne f) : IsReduced X := by
+  let _ : X.Over (Spec (.of K)) := ⟨f⟩
+  have : SyntomicOfRelativeDimension 1 f := h.syntomic
   have (x : X) : _root_.IsReduced (X.presheaf.stalk x) := by
-    by_cases hx : x ∈ (X ↘ Spec (.of K)).smoothLocus
-    · let U := (X ↘ Spec (.of K)).smoothLocus
-      have : Smooth (U.ι ≫ (X ↘ Spec (.of K))) := by
-        rw [← Scheme.Hom.smoothLocus_eq_top_iff, ← Scheme.Hom.preimage_smoothLocus_eq]
-        simp [U]
-      have : IsReduced U.toScheme :=
-        GeometricallyReduced.isReduced_of_flat_of_isLocallyNoetherian
-          (U.ι ≫ (X ↘ Spec (.of K)))
-      let y : U.toScheme := ⟨x, hx⟩
-      have : _root_.IsReduced (U.toScheme.presheaf.stalk y) :=
-        isReduced_stalk_of_isReduced U.toScheme y
-      exact U.ι.isReduced_stalk_of_flat y
+    by_cases hx : x ∈ f.smoothLocus
+    · have : IsReduced (f.smoothLocus : Scheme) :=
+        GeometricallyReduced.isReduced_of_flat_of_isLocallyNoetherian (f.smoothLocus.ι ≫ f)
+      -- Stalk instance synthesis does not recover the smooth-locus scheme argument here.
+      have := isReduced_stalk_of_isReduced (f.smoothLocus : Scheme) ⟨x, hx⟩
+      exact f.smoothLocus.ι.isReduced_stalk_of_flat ⟨x, hx⟩
     · obtain ⟨R', _, _, _, T, _, a, g, ψ, y, hg, hψ, hy, -⟩ :=
-        X.exists_etale_nodeAlgebra h hx
+        X.exists_etale_nodeAlgebra (R := K) h hx
       have : Etale (Spec.algebraMap K R') :=
         (HasRingHomProperty.Spec_iff (P := @Etale)).mpr
           (RingHom.etale_algebraMap.mpr inferInstance)
       have : IsLocallyNoetherian (Spec (.of R')) :=
         LocallyOfFiniteType.isLocallyNoetherian (Spec.algebraMap K R')
-      have : IsReduced (Spec (.of R')) :=
-        GeometricallyReduced.isReduced_of_flat_of_isLocallyNoetherian (Spec.algebraMap K R')
-      have : IsReduced (Spec (.of (NodeAlgebra R' a))) :=
-        GeometricallyReduced.isReduced_of_flat_of_isLocallyNoetherian
-          (Spec.algebraMap R' (NodeAlgebra R' a))
+      have : _root_.IsReduced R' := TauCeti.isReduced_of_smooth K R'
+      have : IsReduced (Spec (.of (NodeAlgebra R' a))) := inferInstance
       have : IsLocallyNoetherian (Spec (.of (NodeAlgebra R' a))) :=
         LocallyOfFiniteType.isLocallyNoetherian (Spec.algebraMap R' (NodeAlgebra R' a))
       have : IsReduced (Spec (.of T)) :=
@@ -102,7 +74,15 @@ theorem AtWorstNodalOfRelativeDimensionOne.geometricallyReduced
     GeometricallyReduced f := by
   constructor
   intro K _ s Z fst snd H
-  let _ : Z.Over (Spec (.of K)) := ⟨snd⟩
-  exact isReduced_of_nodal_toSpec_field (K := K) Z (MorphismProperty.of_isPullback H h)
+  exact (MorphismProperty.of_isPullback H h).isReduced_of_field
 
 end TauCeti.AlgebraicGeometry
+
+namespace TauCeti.NodeAlgebra
+
+/-- The standard node smoothing has geometrically reduced fibres over any coefficient ring. -/
+instance geometricallyReduced_spec {R : Type u} [CommRing R] (a : R) :
+    GeometricallyReduced (Spec.algebraMap R (NodeAlgebra R a)) :=
+  (atWorstNodalOfRelativeDimensionOne a).geometricallyReduced
+
+end TauCeti.NodeAlgebra

@@ -28,11 +28,14 @@ universe u
 theorem isReduced_stalk_of_flat {X Y : Scheme.{u}} (f : X ⟶ Y) [Flat f]
     (x : X) [_root_.IsReduced (X.presheaf.stalk x)] :
     _root_.IsReduced (Y.presheaf.stalk (f x)) := by
+  have := Flat.stalkMap f x
   algebraize [(f.stalkMap x).hom]
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) := by
+    rw [RingHom.algebraMap_toAlgebra]
+    infer_instance
   have : Module.FaithfullyFlat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) :=
-    @Module.FaithfullyFlat.of_flat_of_isLocalHom _ _ _ _ _ _ _
-      (Flat.stalkMap f x) (f.toLRSHom.prop x)
-  exact isReduced_of_injective (f.stalkMap x).hom
-    ‹RingHom.FaithfullyFlat (f.stalkMap x).hom›.injective
+    Module.FaithfullyFlat.of_flat_of_isLocalHom
+  exact isReduced_of_injective (algebraMap _ (X.presheaf.stalk x))
+    (FaithfulSMul.algebraMap_injective _ _)
 
 end AlgebraicGeometry.Scheme.Hom
