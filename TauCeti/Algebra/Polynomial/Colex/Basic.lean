@@ -65,7 +65,7 @@ which their coefficients differ. It is pulled back from the colexicographic orde
 coefficient sequences `ℕ →₀ R`. -/
 instance linearOrder : LinearOrder (Colex R[X]) :=
   LinearOrder.lift' (fun p ↦ toColex (ofColex p).coeff)
-    (toColex.injective.comp (coeff_injective.comp ofColex.injective))
+    (toColex.injective.comp (AddMonoidAlgebra.coeff_injective.comp ofColex.injective))
 
 /-- Two polynomials compare as their coefficients at the largest degree where they differ. -/
 theorem toColex_lt_toColex {p q : R[X]} :
@@ -128,14 +128,14 @@ theorem toColex_C_lt_toColex_X [ZeroLEOneClass R] [NeZero (1 : R)] (a : R) :
 instance isOrderedCancelAddMonoid [IsOrderedCancelAddMonoid R] :
     IsOrderedCancelAddMonoid (Colex R[X]) :=
   Function.Injective.isOrderedCancelAddMonoid (fun p ↦ toColex (ofColex p).coeff)
-    (fun _ _ ↦ (congrArg toColex (Finsupp.ext (coeff_add _ _))).trans (toColex_add _ _)) .rfl
+    (fun _ _ ↦ (congrArg toColex (AddMonoidAlgebra.coeff_add _ _)).trans (toColex_add _ _)) .rfl
 
 /-- Polynomials that agree in every positive degree compare as their constant terms. -/
 theorem toColex_le_toColex_of_coeff_zero_le {p q : R[X]} (h : ∀ j, 0 < j → p.coeff j = q.coeff j)
     (h0 : p.coeff 0 ≤ q.coeff 0) : toColex p ≤ toColex q := by
   rcases h0.lt_or_eq with h0 | h0
   · exact (toColex_lt_toColex.2 ⟨0, h, h0⟩).le
-  · exact (congrArg toColex (ext fun j ↦ by rcases j with _ | j <;> grind)).le
+  · exact (congrArg toColex (by ext j; rcases j with _ | j <;> grind)).le
 
 /-- If `succ a = a + 1` in `R` and addition in `R` is left-cancellative, then `succ p = p + 1` in
 `Colex R[X]`: the polynomial `p + 1` is the least polynomial larger than `p`. Cancellation cannot
@@ -150,7 +150,7 @@ noncomputable instance succAddOrder [SuccAddOrder R] [IsLeftCancelAdd R] :
       (by simpa [Order.succ_eq_add_one] using Order.le_succ (p.coeff 0))
   have hmax (p : R[X]) (h : toColex (p + 1) ≤ toColex p) : IsMax (toColex p) := by
     have hp : p + 1 = p := toColex.injective (h.antisymm (hle p))
-    have h1 : (1 : R) = 0 := by simpa using congrArg (coeff · 0) hp
+    have h1 : (1 : R) = 0 := by simpa using congrArg (·.coeff 0) hp
     have : Subsingleton R := subsingleton_of_zero_eq_one h1.symm
     have : Subsingleton (Colex R[X]) := ofColex.subsingleton
     exact fun q _ ↦ (Subsingleton.elim q _).le
