@@ -30,8 +30,8 @@ group, is separated by `F` (`TauCeti.GroupAlgGeom.CoordGroup.isSeparatedBy_coeff
 embeds in the product of the coordinate groups of the two components
 (`TauCeti.GroupAlgGeom.CoordGroup.exists_injective_toPi_unionEquations`), but it is not
 discriminated by `F`, and not even fully residually free: a fully residually free group is CSA,
-and a CSA group containing the nonabelian group `F` is a domain over `F`, which would make the
-union irreducible.
+and a CSA coordinate group over the nonabelian group `F` would make the union irreducible
+(`TauCeti.GroupAlgGeom.isIrreducible_V_of_isCSA`).
 
 ## Main results
 
@@ -256,18 +256,12 @@ theorem not_isFullyResiduallyFree_coordGroup_unionEquations_commutatorElement_of
     (hab : a ≠ b) : ¬IsFullyResiduallyFree (CoordGroup (X := X) (.id (FreeGroup α))
       (unionEquations {⁅(inr (of x) : GX (FreeGroup α) X), inl (of a)⁆}
         {⁅(inr (of x) : GX (FreeGroup α) X), inl (of b)⁆})) := by
-  intro h
-  have : Nontrivial α := ⟨⟨a, b, hab⟩⟩
-  have hne : (V (.id (FreeGroup α)) (unionEquations
-      {⁅(inr (of x) : GX (FreeGroup α) X), inl (of a)⁆}
-      {⁅(inr (of x) : GX (FreeGroup α) X), inl (of b)⁆})).Nonempty :=
-    ⟨1, by rw [V_unionEquations_commutatorElement_of]; exact Or.inl (one_mem _)⟩
-  -- A fully residually free group is CSA, hence a domain over the nonabelian group `F`.
-  have hdom := IsGDomain.of_isCSA_of_injective h.isCSA
-    (CoordGroup.coeff_injective Function.injective_id hne)
-    fun hF => not_subsingleton α (FreeGroup.isMulCommutative_iff_subsingleton.1 hF)
-  have hirr := (isIrreducible_V_iff_isGDomain FreeGroup.isGDomain_id hne).2 hdom
-  rw [V_unionEquations_commutatorElement_of] at hirr
-  exact not_isIrreducible_setOf_mem_zpowers_of_or x hab hirr
+  -- A fully residually free group is CSA, and `a` and `b` do not commute.
+  refine fun h => not_isIrreducible_setOf_mem_zpowers_of_or x hab ?_
+  rw [← V_unionEquations_commutatorElement_of]
+  refine isIrreducible_V_of_isCSA ⟨1, ?_⟩ h.isCSA (a := of a) (b := of b) fun hc =>
+    hab (eq_of_commute_of_of hc)
+  rw [V_unionEquations_commutatorElement_of]
+  exact Or.inl (one_mem _)
 
 end TauCeti.GroupAlgGeom
