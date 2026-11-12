@@ -47,8 +47,6 @@ Gram matrix of `b`: the coefficient of `b j` along the dual vector indexed by `i
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md` (Layer 2).
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`.
 -/
 
 public section

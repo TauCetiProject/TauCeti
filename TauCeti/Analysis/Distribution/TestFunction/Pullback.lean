@@ -158,7 +158,6 @@ private theorem exists_norm_iteratedFDeriv_pullbackFun_le (hΦ : ContDiffOn ℝ 
   refine ⟨∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * |R₁ j| * ((i - j)! * D ^ (i - j)),
     Finset.sum_nonneg fun j _ ↦ by positivity, fun ω hω B hB x hx ↦ ?_⟩
   have hxΩ : x ∈ Ω := hCΩ hx
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) 0)
   rw [((pullbackFun_eventuallyEq hxΩ).iteratedFDeriv ℝ i).eq_of_nhds,
     ← iteratedFDerivWithin_of_isOpen i Ω.isOpen hxΩ, Finset.sum_mul]
   refine (norm_iteratedFDerivWithin_clm_apply hM (hω.comp_contDiffOn hΦ)

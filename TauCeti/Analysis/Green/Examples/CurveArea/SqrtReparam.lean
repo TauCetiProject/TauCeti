@@ -137,7 +137,6 @@ theorem norm_deriv_sqrtCircle {t : ℝ} (ht : 0 < t) :
         (circleMap 0 1 (sqrtAngle t) * Complex.I)) t :=
     (hasDerivAt_circleMap 0 1 (sqrtAngle t)).scomp t hθ
   rw [hγ.deriv]
-  have hs := Real.sqrt_pos.mpr ht
   simp only [norm_smul, norm_mul, norm_circleMap_zero, Complex.norm_I,
     abs_one, mul_one, Real.norm_eq_abs]
   rw [abs_of_pos (by positivity), abs_of_pos (by positivity), abs_of_pos (by positivity)]

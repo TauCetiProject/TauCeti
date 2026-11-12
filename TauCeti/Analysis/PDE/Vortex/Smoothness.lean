@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Background
 public import TauCeti.Analysis.PDE.Regularity.PlanarPoisson
+public import TauCeti.Analysis.PDE.Regularity.Semilinear
 import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
@@ -35,6 +36,14 @@ framing exactly when `w → 0` at infinity
 (`TauCeti.Vortex.tendsto_sectionValue_amplitudeField_backgroundAmplitude_add_iff`). Since
 `exp(u₀ + w)` has no zeros, its section `exp(u₀ + w) P` vanishes exactly at the roots of `P`.
 
+Taubes's existence proof minimizes `TauCeti.Vortex.taubesFunctional` over `H¹`, so it produces a
+weak solution `u ∈ H¹(Ω)` of `Δw = h (exp (2w) - 1) / 8 + k` in the energy form
+`∫_Ω ⟨∇u, ∇v⟩ = -∫_Ω (h (exp (2w) - 1) / 8 + k) v` for every `v ∈ H¹₀(Ω)`, for coefficients `h`
+and `k` smooth on an open subset `Ω` of `EuclideanSpace ℝ (Fin 2)`. If `u` agrees almost
+everywhere with a function `w` continuous on `Ω`, then `w` is smooth on `Ω`: this is the case
+`a = 1`, `A = -h / 8`, `Φ(t) = exp (2t)`, `C = h / 8 - k` of the semilinear bootstrap
+`TauCeti.PDE.UniformlyEllipticOn.contDiffOn_of_energyFormH1_eq`.
+
 ## Main results
 
 All in the namespace `TauCeti.Vortex`:
@@ -45,6 +54,8 @@ All in the namespace `TauCeti.Vortex`:
   the field reconstructed from it solves the vortex equation.
 * `contDiff_amplitudeField_backgroundAmplitude_add_of_forall_integral_laplacian_mul_eq`: for
   entire `f` and `U = ℂ`, that field is smooth on the plane.
+* `contDiffOn_of_energyFormH1_eq_neg`: a continuous `H¹` weak solution of the reduced equation, in
+  the energy form, is smooth.
 
 ## References
 
@@ -133,5 +144,28 @@ theorem contDiff_amplitudeField_backgroundAmplitude_add_of_forall_integral_lapla
   have hfc : ContDiff ℝ ∞ f := (hf.contDiff (n := ∞)).restrict_scalars ℝ
   exact contDiff_amplitudeField (n := ⊤)
     (((contDiff_backgroundAmplitude hfc).add hwc).of_le (by simp)) hfc
+
+/-- **Continuous `H¹` weak solutions of Taubes's reduced vortex equation are smooth.** Let `h` and
+`k` be smooth on an open subset `Ω` of the plane. If `u ∈ H¹(Ω)` agrees almost everywhere on `Ω`
+with a function `w` continuous on `Ω`, and weakly solves `Δw = h (exp (2w) - 1) / 8 + k`, in the
+sense that `∫_Ω ⟨∇u, ∇v⟩ = -∫_Ω (h (exp (2w) - 1) / 8 + k) v` for every `v ∈ H¹₀(Ω)`, then `w` is
+smooth on `Ω`. -/
+theorem contDiffOn_of_energyFormH1_eq_neg {Omega : Opens (EuclideanSpace ℝ (Fin 2))}
+    {h k : EuclideanSpace ℝ (Fin 2) → ℝ} (hh : ContDiffOn ℝ ∞ h Omega)
+    (hk : ContDiffOn ℝ ∞ k Omega) {u : W1p volume Omega 2} {w : EuclideanSpace ℝ (Fin 2) → ℝ}
+    (hw : ContinuousOn w Omega)
+    (huw : (W1p.value u : EuclideanSpace ℝ (Fin 2) → ℝ) =ᵐ[volume.restrict (Omega : Set _)] w)
+    (hu : ∀ v : W1p0 volume Omega 2, PDE.energyFormH1 (fun _ => 1) 0 0 u (v : W1p volume Omega 2) =
+      -∫ x in Omega, (h x * (Real.exp (2 * w x) - 1) / 8 + k x) *
+        W1p.value (v : W1p volume Omega 2) x) :
+    ContDiffOn ℝ ∞ w Omega := by
+  refine (PDE.uniformlyEllipticOn_const_one_one _).contDiffOn_of_energyFormH1_eq (by simp)
+    (fun _ _ => contDiffOn_const) (hh.neg.div_const 8) ((hh.div_const 8).sub hk)
+    (Φ := fun t => Real.exp (2 * t)) (Real.contDiff_exp.comp (contDiff_const.mul contDiff_id))
+    hw huw fun v => ?_
+  rw [hu v, ← integral_neg]
+  congr 1
+  ext x
+  ring
 
 end TauCeti.Vortex
