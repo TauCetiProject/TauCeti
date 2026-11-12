@@ -545,13 +545,14 @@ def matchedSummandAlgEquiv :
     sum_mem fun k _ ↦ matchedSummand_le_matchedSubalgebra (k : ℕ) (y k).2⟩
   left_inv x := Subtype.ext (sum_matchedSummandOne_mul x.2)
   right_inv y := funext fun k ↦ Subtype.ext <| by
-    change matchedSummandOne R M k * ∑ j, (y j : StrandsAlgebra R α) = y k
+    -- `dsimp only` projects the values out of the anonymous constructors above.
+    dsimp only
     rw [mul_sum_eq_mul_of_mem_strandSummand (matchedSummandOne_mem_matchedSummand M k).2
       fun j ↦ (y j).2.2, matchedSummandOne_mul_of_mem (y k).2]
   map_mul' x y := funext fun k ↦ Subtype.ext <| by
     -- Only the part of `y` with `k` strands contributes to `(e_k x) y`.
-    change matchedSummandOne R M k * (x * y) =
-      matchedSummandOne R M k * x * (matchedSummandOne R M k * y)
+    dsimp only
+    rw [Pi.mul_apply, MulMemClass.coe_mul, MulMemClass.coe_mul]
     have h := mul_sum_eq_mul_of_mem_strandSummand (matchedSummandOne_mul_mem (k := k) x.2).2
       (y := fun j ↦ matchedSummandOne R M j * y) fun j ↦ (matchedSummandOne_mul_mem y.2).2
     rw [sum_matchedSummandOne_mul y.2] at h
