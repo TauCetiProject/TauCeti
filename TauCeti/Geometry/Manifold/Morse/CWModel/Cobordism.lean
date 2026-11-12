@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.CWModel
-import TauCeti.Dynamics.Flow.Basic
 import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
 
 /-!
@@ -32,9 +31,11 @@ The incoming model is the relative CW model of the sublevels of `f` on the open 
 from `f⁻¹(a)` itself. Since `a` is a regular value, the band `f⁻¹[a, s]` is a collar without
 critical points for some `s > a`, along which a flow `φ` moves `f` at unit speed
 (`TauCeti.exists_flow_apply_eq_sub`). Pushing the level `f⁻¹(a)` up into `V` along `φ` identifies
-it, up to homotopy, with the sublevel `{x ∈ V | f x ≤ s}`, and pushing the bottom of the collar
-back down identifies `{x ∈ V | f x ≤ b} = f⁻¹(a, b]` with `W`. The two pushes are chosen to
-cancel on `f⁻¹(a)`, so the resulting homotopy equivalence is exactly the inclusion there.
+it, up to homotopy, with the sublevel `{x ∈ V | f x ≤ s}`
+(`Flow.exists_homotopyEquiv_level_sublevel`), and pushing the bottom of the collar back down
+identifies `{x ∈ V | f x ≤ b} = f⁻¹(a, b]` with `W` (`Flow.exists_homotopyEquiv_sublevel_band`).
+The two pushes are chosen to cancel on `f⁻¹(a)`, so the resulting homotopy equivalence is exactly
+the inclusion there.
 
 ## Main results
 
@@ -69,154 +70,6 @@ namespace TauCeti
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ}
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- **The collar of a regular level as a sublevel of the open superlevel.** Let `φ` be a flow
-moving `f` at unit speed through a collar `f⁻¹[a, s]`, `a < s`, and let `V` be the open set
-`{a < f}`. Pushing the level `f⁻¹(a)` up to the middle level `(a + s) / 2` of the collar is a
-homotopy equivalence onto the sublevel `f⁻¹(a, s]` of `V`, whose inverse flows each point down to
-`f⁻¹(a)`. -/
-private theorem exists_homotopyEquiv_level_sublevel (hfc : Continuous f) (φ : Flow ℝ M)
-    {a s : ℝ} (has : a < s)
-    (hφ : ∀ y t, f y ∈ Icc a s → f y - t ∈ Icc a s → f (φ t y) = f y - t)
-    (V : TopologicalSpace.Opens M) (hV : ∀ x, x ∈ V ↔ a < f x) :
-    ∃ h₀ : f ⁻¹' {a} ≃ₕ {y : V | (f ∘ Subtype.val) y ≤ s},
-      ∀ x, ((h₀ x : V) : M) = φ (a - (a + s) / 2) x ∧ f ((h₀ x : V) : M) = (a + s) / 2 := by
-  set m := (a + s) / 2 with hm
-  have hup (x : f ⁻¹' {a}) : f (φ (a - m) x) = m := by
-    have hx : f x = a := x.2
-    rw [hφ _ _ ⟨hx.ge, by linarith⟩ ⟨by linarith, by linarith⟩, hx]
-    ring
-  let p₀ : C({y : V | (f ∘ Subtype.val) y ≤ s}, M) := ⟨fun y ↦ ((y : V) : M), by fun_prop⟩
-  have hp₀ (y : {y : V | (f ∘ Subtype.val) y ≤ s}) : a < f (p₀ y) ∧ f (p₀ y) ≤ s :=
-    ⟨(hV _).1 (y : V).2, y.2⟩
-  have hdown (y : {y : V | (f ∘ Subtype.val) y ≤ s}) : f (φ (f (p₀ y) - a) (p₀ y)) = a := by
-    rw [hφ _ _ ⟨(hp₀ y).1.le, (hp₀ y).2⟩ ⟨by linarith, by linarith [has, (hp₀ y).2]⟩]
-    ring
-  let up : C(f ⁻¹' {a}, {y : V | (f ∘ Subtype.val) y ≤ s}) :=
-    ⟨fun x ↦ ⟨⟨φ (a - m) x, (hV _).2 (by rw [hup]; linarith)⟩,
-      by simp only [mem_ofPred_eq, Function.comp_apply, hup]; linarith⟩, by fun_prop⟩
-  let down : C({y : V | (f ∘ Subtype.val) y ≤ s}, f ⁻¹' {a}) :=
-    ⟨fun y ↦ ⟨φ (f (p₀ y) - a) (p₀ y), hdown y⟩, by fun_prop⟩
-  refine ⟨⟨up, down, ?_, ?_⟩, fun x ↦ ⟨rfl, hup x⟩⟩
-  · -- Flowing up and back down is the identity of `f⁻¹(a)`.
-    refine φ.homotopic_of_eq_apply IsEmbedding.subtypeVal continuous_subtype_val continuous_const
-      continuous_const (τ₀ := fun _ ↦ 0) (τ₁ := fun _ ↦ 0) (fun x ↦ ?_) (fun x ↦ by simp)
-      fun x t _ ↦ ⟨x, by simp⟩
-    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, up, down, p₀, Flow.map_zero_apply]
-    rw [hup, ← Flow.map_add, show m - a + (a - m) = 0 by ring, Flow.map_zero_apply]
-  · -- Flowing down and back up moves `f⁻¹(a, s]` to the level `m` along its flow lines.
-    refine φ.homotopic_of_eq_apply (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal)
-      p₀.continuous (by fun_prop) continuous_const (τ₀ := fun y ↦ f (p₀ y) - m)
-      (τ₁ := fun _ ↦ 0) (fun y ↦ ?_) (fun y ↦ by simp [p₀]) fun y t ht ↦ ?_
-    · simp only [Function.comp_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk, up, down]
-      rw [← Flow.map_add]
-      congr 1
-      ring
-    obtain ⟨hya, hys⟩ := hp₀ y
-    simp only [mul_zero, add_zero]
-    have hf' : f (φ ((1 - t) * (f (p₀ y) - m)) (p₀ y)) =
-        f (p₀ y) - (1 - t) * (f (p₀ y) - m) :=
-      hφ _ _ ⟨hya.le, hys⟩ ⟨by nlinarith [ht.1, ht.2], by nlinarith [ht.1, ht.2]⟩
-    refine ⟨⟨⟨_, (hV _).2 ?_⟩, ?_⟩, rfl⟩ <;>
-      simp only [mem_ofPred_eq, Function.comp_apply, hf'] <;> nlinarith [ht.1, ht.2]
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- **Removing the bottom level of a band.** Let `φ` be a flow moving `f` at unit speed through a
-collar `f⁻¹[a, s]`, `a < s ≤ b`, and let `V` be the open set `{a < f}`. Then the sublevel
-`f⁻¹(a, b]` of `V` is homotopy equivalent to the band `f⁻¹[a, b]` by a map which pushes the bottom
-of the collar down along `φ`, carrying the middle level `(a + s) / 2` to `f⁻¹(a)`. -/
-private theorem exists_homotopyEquiv_sublevel_band (hfc : Continuous f) (φ : Flow ℝ M)
-    {a s b : ℝ} (has : a < s) (hsb : s ≤ b)
-    (hφ : ∀ y t, f y ∈ Icc a s → f y - t ∈ Icc a s → f (φ t y) = f y - t)
-    (V : TopologicalSpace.Opens M) (hV : ∀ x, x ∈ V ↔ a < f x) :
-    ∃ k : {y : V | (f ∘ Subtype.val) y ≤ b} ≃ₕ f ⁻¹' Icc a b,
-      ∀ y : {y : V | (f ∘ Subtype.val) y ≤ b}, f (y : V) = (a + s) / 2 →
-        (k y : M) = φ ((a + s) / 2 - a) (y : V) := by
-  let p₁ : C({y : V | (f ∘ Subtype.val) y ≤ b}, M) := ⟨fun y ↦ ((y : V) : M), by fun_prop⟩
-  have hp₁ (y : {y : V | (f ∘ Subtype.val) y ≤ b}) : a < f (p₁ y) ∧ f (p₁ y) ≤ b :=
-    ⟨(hV _).1 (y : V).2, y.2⟩
-  -- The point `y` is pushed down for the time `σ y`, which carries the middle level of the collar
-  -- to `a`, and back up for the time `θ y`.
-  let σ : M → ℝ := fun y ↦ max 0 (min (f y - a) (s - f y))
-  have hσc : Continuous σ := by fun_prop
-  let θ : M → ℝ := fun y ↦ max 0 (s - f y) / 2
-  have hθc : Continuous θ := by fun_prop
-  -- Flowing for any time between `0` and `σ y` keeps a point `y` of the band in the band.
-  have hσ (y : M) (hya : a ≤ f y) (hyb : f y ≤ b) (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
-      f (φ (t * σ y) y) = f y - t * σ y ∧ a ≤ f y - t * σ y ∧ f y - t * σ y ≤ b := by
-    rcases le_or_gt (f y) s with hys | hys
-    · have h0 : 0 ≤ min (f y - a) (s - f y) := le_min (by linarith) (by linarith)
-      have hσy : σ y = min (f y - a) (s - f y) := max_eq_right h0
-      have h1 : σ y ≤ f y - a := hσy ▸ min_le_left _ _
-      have h2 : 0 ≤ σ y := hσy ▸ h0
-      exact ⟨hφ _ _ ⟨hya, hys⟩ ⟨by nlinarith [ht.1, ht.2], by nlinarith [ht.1, ht.2]⟩,
-        by nlinarith [ht.1, ht.2], by nlinarith [ht.1, ht.2]⟩
-    · have hσy : σ y = 0 := max_eq_left ((min_le_right _ _).trans (by linarith))
-      rw [hσy, mul_zero, Flow.map_zero_apply, sub_zero]
-      exact ⟨rfl, hya, hyb⟩
-  -- Flowing back for any time between `0` and `θ y` keeps a point `y` of the band in the band,
-  -- and for the time `θ y` it lifts `y` strictly above `a`.
-  have hθ (y : M) (hya : a ≤ f y) (hyb : f y ≤ b) (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
-      f (φ (-(t * θ y)) y) = f y + t * θ y ∧ f y ≤ f y + t * θ y ∧ f y + t * θ y ≤ b ∧
-        a < f y + θ y := by
-    rcases le_or_gt (f y) s with hys | hys
-    · have hθy : θ y = (s - f y) / 2 := by
-        simp only [θ, max_eq_right (by linarith : 0 ≤ s - f y)]
-      have h := hφ y (-(t * θ y)) ⟨hya, hys⟩
-        ⟨by rw [hθy]; nlinarith [ht.1, ht.2], by rw [hθy]; nlinarith [ht.1, ht.2]⟩
-      refine ⟨by rw [h]; ring, ?_, ?_, ?_⟩ <;> rw [hθy] <;> nlinarith [ht.1, ht.2]
-    · have hθy : θ y = 0 := by simp only [θ, max_eq_left (by linarith : s - f y ≤ 0), zero_div]
-      rw [hθy, mul_zero, neg_zero, Flow.map_zero_apply, add_zero]
-      exact ⟨rfl, le_rfl, hyb, has.trans hys⟩
-  let k : C({y : V | (f ∘ Subtype.val) y ≤ b}, f ⁻¹' Icc a b) :=
-    ⟨fun y ↦ ⟨φ (σ (p₁ y)) (p₁ y), by
-      obtain ⟨h₁, h₂, h₃⟩ := hσ _ (hp₁ y).1.le (hp₁ y).2 1 ⟨zero_le_one, le_rfl⟩
-      rw [one_mul] at h₁ h₂ h₃
-      exact ⟨h₁ ▸ h₂, h₁ ▸ h₃⟩⟩, by fun_prop⟩
-  let incl : C({y : V | (f ∘ Subtype.val) y ≤ b}, f ⁻¹' Icc a b) :=
-    ⟨fun y ↦ ⟨p₁ y, (hp₁ y).1.le, (hp₁ y).2⟩, by fun_prop⟩
-  let ρ : C(f ⁻¹' Icc a b, {y : V | (f ∘ Subtype.val) y ≤ b}) :=
-    ⟨fun y ↦ ⟨⟨φ (-(1 * θ y)) y, (hV _).2 <| by
-        obtain ⟨h₁, -, -, h₄⟩ := hθ _ y.2.1 y.2.2 1 ⟨zero_le_one, le_rfl⟩
-        rw [h₁, one_mul]
-        exact h₄⟩, by
-        obtain ⟨h₁, -, h₃, -⟩ := hθ _ y.2.1 y.2.2 1 ⟨zero_le_one, le_rfl⟩
-        simp only [mem_ofPred_eq, Function.comp_apply, h₁]
-        exact h₃⟩, by fun_prop⟩
-  -- `k` is homotopic to the inclusion, which has the homotopy inverse `ρ`.
-  have hk : k.Homotopic incl := φ.homotopic_of_eq_apply IsEmbedding.subtypeVal p₁.continuous
-    (hσc.comp p₁.continuous) continuous_const (τ₀ := fun y ↦ σ (p₁ y)) (τ₁ := fun _ ↦ 0)
-    (fun y ↦ rfl) (fun y ↦ by simp [incl])
-    fun y t ht ↦ by
-      obtain ⟨h₁, h₂, h₃⟩ := hσ _ (hp₁ y).1.le (hp₁ y).2 (1 - t)
-        ⟨by linarith [ht.2], by linarith [ht.1]⟩
-      simp only [mul_zero, add_zero]
-      exact ⟨⟨_, h₁ ▸ h₂, h₁ ▸ h₃⟩, rfl⟩
-  have hρ₁ : (incl.comp ρ).Homotopic (ContinuousMap.id _) := φ.homotopic_of_eq_apply
-    IsEmbedding.subtypeVal continuous_subtype_val (by fun_prop) continuous_const
-    (τ₀ := fun y ↦ -(1 * θ y)) (τ₁ := fun _ ↦ 0) (fun y ↦ rfl) (fun y ↦ by simp)
-    fun y t ht ↦ by
-      obtain ⟨h₁, h₂, h₃, -⟩ := hθ _ y.2.1 y.2.2 (1 - t) ⟨by linarith [ht.2], by linarith [ht.1]⟩
-      rw [mul_zero, add_zero, show (1 - t) * -(1 * θ y) = -((1 - t) * θ y) by ring]
-      exact ⟨⟨_, by rw [h₁]; linarith [y.2.1], by rw [h₁]; exact h₃⟩, rfl⟩
-  have hρ₂ : (ρ.comp incl).Homotopic (ContinuousMap.id _) := φ.homotopic_of_eq_apply
-    (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal) p₁.continuous
-    (by fun_prop) continuous_const (τ₀ := fun y ↦ -(1 * θ (p₁ y))) (τ₁ := fun _ ↦ 0)
-    (fun y ↦ rfl) (fun y ↦ by simp [p₁])
-    fun y t ht ↦ by
-      obtain ⟨h₁, h₂, h₃, -⟩ := hθ _ (hp₁ y).1.le (hp₁ y).2 (1 - t)
-        ⟨by linarith [ht.2], by linarith [ht.1]⟩
-      rw [mul_zero, add_zero, show (1 - t) * -(1 * θ (p₁ y)) = -((1 - t) * θ (p₁ y)) by ring]
-      exact ⟨⟨⟨_, (hV _).2 (by rw [h₁]; linarith [(hp₁ y).1])⟩,
-        by simp only [mem_ofPred_eq, Function.comp_apply, h₁]; exact h₃⟩, rfl⟩
-  refine ⟨⟨k, ρ, ((ContinuousMap.Homotopic.refl ρ).comp hk).trans hρ₂,
-    (hk.comp (ContinuousMap.Homotopic.refl ρ)).trans hρ₁⟩, fun y hy ↦ ?_⟩
-  -- At the middle level of the collar `σ` is the distance to `a`.
-  have hσy : σ (y : V) = (a + s) / 2 - a := by
-    simp only [σ, hy]
-    rw [show s - (a + s) / 2 = (a + s) / 2 - a by ring, min_self, max_eq_right (by linarith)]
-  simp only [k, p₁, ContinuousMap.coe_mk, hσy]
 
 /-- **The relative CW model of a regular cobordism.** Let `f` be a Morse function and `a ≤ b`
 regular values of `f` with compact band `f⁻¹[a, b]`. Then the band is homotopy equivalent to a CW
@@ -270,8 +123,8 @@ theorem IsMorse.exists_relCWComplex_homotopyEquiv_band (hf : IsMorse I f) {a b :
     fun ⟨x, hx, hxs⟩ ↦ hcrit x hx ⟨hxs.symm ▸ has.le, hxs.le⟩
   -- The relative CW model of `f⁻¹(a, b]` over `f⁻¹(a, s]`, started from `f⁻¹(a)` itself, followed
   -- by the identification of `f⁻¹(a, b]` with the band.
-  obtain ⟨h₀, hh₀⟩ := exists_homotopyEquiv_level_sublevel hfc φ has hφ V hV
-  obtain ⟨k, hk⟩ := exists_homotopyEquiv_sublevel_band hfc φ has hsb hφ V hV
+  obtain ⟨h₀, hh₀⟩ := φ.exists_homotopyEquiv_level_sublevel hfc has hφ V hV
+  obtain ⟨k, hk⟩ := φ.exists_homotopyEquiv_sublevel_band hfc has hsb hφ V hV
   let := relCWComplexSelf (univ : Set (f ⁻¹' {a})) isClosed_univ
   obtain ⟨X, _, _, ι, D', _, h', hD', hι, hh, e, -⟩ :=
     hfV.exists_relCWComplex_extension_homotopyEquiv_sublevel hsb hKV (hs.restrict V)
@@ -302,8 +155,8 @@ theorem IsMorse.exists_relCWComplex_homotopyEquiv_band (hf : IsMorse I f) {a b :
   have hm : f ((h' (ι x) : V) : M) = (a + s) / 2 := by
     rw [hh x]
     exact (hh₀ x).2
-  rw [ContinuousMap.HomotopyEquiv.trans_apply, hk _ hm, hx, ← Flow.map_add,
-    show (a + s) / 2 - a + (a - (a + s) / 2) = 0 by ring, Flow.map_zero_apply]
+  rw [ContinuousMap.HomotopyEquiv.trans_apply, hk _ hm, hx, ← Flow.map_add, sub_add_sub_cancel,
+    sub_self, Flow.map_zero_apply]
 
 /-- **The relative CW model of a regular cobordism relative to its outgoing boundary.** Let `f` be
 a Morse function on a manifold of dimension `n`, and `a ≤ b` regular values of `f` with compact
