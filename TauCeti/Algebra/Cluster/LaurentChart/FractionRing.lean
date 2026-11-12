@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.AlgebraicIndependent.Basic
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Localization.Integral
+public import TauCeti.RingTheory.Localization.FractionRing
 
 /-!
 # Generating Laurent charts and fraction fields
@@ -39,6 +40,10 @@ variable {R K F G : Type*} [CommRing R] [Field F] [Algebra R F]
 /-- A chart is generating when its image generates the entire ambient field as a subfield. -/
 def Generates (c : LaurentChart R K F) : Prop := Subfield.closure (Set.range c) = ⊤
 
+/-- A public introduction and elimination rule for the generation property. -/
+theorem generates_iff (c : LaurentChart R K F) :
+    c.Generates ↔ Subfield.closure (Set.range c) = ⊤ := Iff.rfl
+
 /-- A generating chart writes every ambient element as a quotient of chart values. -/
 theorem Generates.exists_div {c : LaurentChart R K F} (h : c.Generates) (z : F) :
     ∃ p q : LaurentRing R K, c p / c q = z := by
@@ -63,45 +68,38 @@ theorem isFractionRing (c : LaurentChart R K F) (h : c.Generates) :
   obtain ⟨p, q, hpq⟩ := h.exists_div z
   exact ⟨p, q, hpq.symm⟩
 
+/-- An ambient isomorphism carries a generating chart to a generating chart. -/
+theorem Generates.map {c : LaurentChart R K F} (h : c.Generates) (e : F ≃ₐ[R] G) :
+    (c.map e.toAlgHom).Generates := by
+  have hr : Set.range (c.map e.toAlgHom) = e.toAlgHom.toRingHom '' Set.range c := by
+    calc
+      Set.range (c.map e.toAlgHom) = Set.range (e.toAlgHom.toRingHom ∘ c) := by
+        congr 1
+        funext p
+        exact c.map_apply e.toAlgHom p
+      _ = e.toAlgHom.toRingHom '' Set.range c := Set.range_comp _ _
+  rw [generates_iff, hr]
+  rw [← RingHom.map_field_closure e.toAlgHom.toRingHom, h]
+  exact (RingHom.fieldRange_eq_map e.toAlgHom.toRingHom).symm.trans
+    (RingHom.fieldRange_eq_top_iff.mpr e.surjective)
+
 /-- Generation is unchanged by an isomorphism of ambient algebras. -/
 @[simp]
 theorem generates_map_iff (c : LaurentChart R K F) (e : F ≃ₐ[R] G) :
-    (c.map e).Generates ↔ c.Generates := by
+    (c.map e.toAlgHom).Generates ↔ c.Generates := by
   constructor
   · intro h
-    apply top_unique
-    intro z _
-    obtain ⟨p, q, hpq⟩ := h.exists_div (e z)
-    have hz : c p / c q = z := e.injective (by simpa using hpq)
-    rw [← hz]
-    exact Subfield.div_mem _ (Subfield.subset_closure ⟨p, rfl⟩)
-      (Subfield.subset_closure ⟨q, rfl⟩)
-  · intro h
-    apply top_unique
-    intro z _
-    obtain ⟨p, q, hpq⟩ := h.exists_div (e.symm z)
-    have hz : c.map e p / c.map e q = z := by simpa using congrArg e hpq
-    rw [← hz]
-    exact Subfield.div_mem _ (Subfield.subset_closure ⟨p, rfl⟩)
-      (Subfield.subset_closure ⟨q, rfl⟩)
+    simpa using h.map e.symm
+  · exact fun h ↦ h.map e
 
-/-- Relabelling coordinates does not change whether a chart generates its ambient field. -/
+/-- Relabelling coordinates does not change generation. -/
 @[simp]
 theorem generates_reindex_iff (c : LaurentChart R K F) {K' : Type*} (e : K ≃ K') :
     (c.reindex e).Generates ↔ c.Generates := by
-  have hr : Set.range (c.reindex e) = Set.range c := by
-    ext z
-    constructor
-    · rintro ⟨p, hp⟩
-      exact ⟨LaurentRing.rename e.symm p, by simpa using hp⟩
-    · rintro ⟨p, hp⟩
-      exact ⟨LaurentRing.rename e p, by simpa [LaurentRing.rename_rename] using hp⟩
-  simp only [Generates, hr]
-
-variable [IsDomain R]
+  simp only [generates_iff, range_reindex]
 
 /-- Inverting the variables does not change the generated subfield. -/
-theorem closure_range_polynomial (c : LaurentChart R K F) :
+theorem closure_range_comp_toLaurent (c : LaurentChart R K F) :
     Subfield.closure (Set.range (c.toAlgHom.comp MvPolynomial.toLaurent)) =
       Subfield.closure (Set.range c) := by
   apply le_antisymm
@@ -110,59 +108,95 @@ theorem closure_range_polynomial (c : LaurentChart R K F) :
     exact ⟨MvPolynomial.toLaurent p, rfl⟩
   · apply Subfield.closure_le.mpr
     rintro _ ⟨f, rfl⟩
-    obtain ⟨n, p, hp⟩ := LaurentRing.exists_mul_toLaurent_monomial f
-    have hn : c (MvPolynomial.toLaurent (MvPolynomial.monomial n (1 : R))) ≠ 0 := by
-      exact (map_ne_zero_iff c.toAlgHom c.injective).mpr
-        (MvPolynomial.toLaurent_ne_zero.mpr (by simp))
+    let M := Submonoid.closure (Set.range (MvPolynomial.X : K → MvPolynomial K R))
+    obtain ⟨⟨p, m⟩, hp⟩ := IsLocalization.surj M f
+    have hm : c (MvPolynomial.toLaurent (m : MvPolynomial K R)) ≠ 0 := by
+      exact ((IsLocalization.map_units (LaurentRing R K) m).map c.toAlgHom).ne_zero
     have heq : c f = c (MvPolynomial.toLaurent p) /
-        c (MvPolynomial.toLaurent (MvPolynomial.monomial n (1 : R))) := by
-      apply (eq_div_iff hn).mpr
+        c (MvPolynomial.toLaurent (m : MvPolynomial K R)) := by
+      apply (eq_div_iff hm).mpr
       simpa using congrArg c hp
     rw [heq]
     apply Subfield.div_mem <;> exact Subfield.subset_closure ⟨_, rfl⟩
 
+/-- The chart image and the coefficients together with coordinates generate the same subfield. -/
+theorem closure_range_eq (c : LaurentChart R K F) :
+    Subfield.closure (Set.range c) =
+      Subfield.closure (Set.range (algebraMap R F) ∪ Set.range c.coordinate) := by
+  rw [← c.closure_range_comp_toLaurent]
+  apply le_antisymm
+  · apply Subfield.closure_le.mpr
+    rintro _ ⟨p, rfl⟩
+    rw [AlgHom.comp_apply, c.toAlgHom_apply, c.apply_toLaurent]
+    induction p using MvPolynomial.induction_on with
+    | C r =>
+      simpa using Subfield.subset_closure (Set.mem_union_left _ (Set.mem_range_self r))
+    | add p q hp hq => simpa using Subfield.add_mem _ hp hq
+    | mul_X p i hp =>
+      simpa using Subfield.mul_mem _ hp
+        (Subfield.subset_closure (Set.mem_union_right _ (Set.mem_range_self i)))
+  · apply Subfield.closure_le.mpr
+    rintro z (⟨r, rfl⟩ | ⟨i, rfl⟩)
+    · exact Subfield.subset_closure ⟨MvPolynomial.C r, by simp⟩
+    · exact Subfield.subset_closure ⟨MvPolynomial.X i, by simp⟩
+
+/-- Generation can be checked on coefficients and coordinates. -/
+theorem generates_iff_closure_range_coordinate (c : LaurentChart R K F) :
+    c.Generates ↔
+      Subfield.closure (Set.range (algebraMap R F) ∪ Set.range c.coordinate) = ⊤ := by
+  rw [generates_iff, closure_range_eq]
+
+/-- Generation is equivalent to a quotient expression for every ambient value. -/
+theorem generates_iff_exists_div (c : LaurentChart R K F) :
+    c.Generates ↔ ∀ z : F, ∃ p q : LaurentRing R K, c p / c q = z := by
+  refine ⟨fun h ↦ h.exists_div, fun h ↦ ?_⟩
+  apply (c.generates_iff).mpr
+  apply top_unique
+  intro z _
+  obtain ⟨p, q, rfl⟩ := h z
+  exact Subfield.div_mem _ (Subfield.subset_closure ⟨p, rfl⟩)
+    (Subfield.subset_closure ⟨q, rfl⟩)
+
 /-- A generating faithful chart also supplies the fraction field of its polynomial ring. -/
-theorem isFractionRing_polynomial (c : LaurentChart R K F) (h : c.Generates) :
+theorem isFractionRing_mvPolynomial (c : LaurentChart R K F) (h : c.Generates) :
     let _ := (c.toAlgHom.comp MvPolynomial.toLaurent).toRingHom.toAlgebra
     IsFractionRing (MvPolynomial K R) F := by
-  let f := c.toAlgHom.comp (MvPolynomial.toLaurent : MvPolynomial K R →ₐ[R] LaurentRing R K)
-  let _ := f.toRingHom.toAlgebra
-  have hf : Function.Injective f := c.injective.comp MvPolynomial.toLaurent_injective
-  have : FaithfulSMul (MvPolynomial K R) F :=
-    (faithfulSMul_iff_algebraMap_injective _ _).mpr hf
-  apply IsFractionRing.of_field
-  intro z
-  have hz : z ∈ Subfield.closure (Set.range f) := by
-    rw [show Subfield.closure (Set.range f) = Subfield.closure (Set.range c) from
-      c.closure_range_polynomial, h]
-    trivial
-  obtain ⟨x, hx, y, hy, hxy⟩ := Subfield.mem_closure_iff.mp hz
-  have hr : Subring.closure (Set.range f) = f.toRingHom.range :=
-    Subring.closure_eq f.toRingHom.range
-  rw [hr] at hx hy
-  obtain ⟨p, rfl⟩ := hx
-  obtain ⟨q, rfl⟩ := hy
-  exact ⟨p, q, hxy.symm⟩
+  let _ := c.toAlgHom.toRingHom.toAlgebra
+  let _ := (c.toAlgHom.comp MvPolynomial.toLaurent).toRingHom.toAlgebra
+  have : IsDomain R := c.isDomain
+  have : IsScalarTower (MvPolynomial K R) (LaurentRing R K) F :=
+    .of_algebraMap_eq fun _ ↦ rfl
+  have : IsFractionRing (LaurentRing R K) F := c.isFractionRing h
+  exact TauCeti.IsFractionRing.of_isLocalization_of_isFractionRing
+    (Submonoid.closure (Set.range (MvPolynomial.X : K → MvPolynomial K R)))
+    (LaurentRing R K) F
+    (TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial
+      (Submonoid.closure (Set.range (MvPolynomial.X : K → MvPolynomial K R)))
+      (LaurentRing R K))
 
 /-- Coordinates of a generating chart are a transcendence basis of the ambient field. -/
 theorem isTranscendenceBasis (c : LaurentChart R K F) (h : c.Generates) :
     IsTranscendenceBasis R c.coordinate := by
+  have : IsDomain R := c.isDomain
   apply c.algebraicIndependent.isTranscendenceBasis_iff_isAlgebraic.mpr
   let A := Algebra.adjoin R (Set.range c.coordinate)
   let _ := (c.toAlgHom.comp MvPolynomial.toLaurent).toRingHom.toAlgebra
-  have : IsFractionRing (MvPolynomial K R) F := c.isFractionRing_polynomial h
+  have : IsFractionRing (MvPolynomial K R) F := c.isFractionRing_mvPolynomial h
   have : IsFractionRing A F :=
     IsFractionRing.of_ringEquiv_left c.algebraicIndependent.aevalEquiv.symm.toRingEquiv
       (fun a ↦ by
-        change (a : F) = c (MvPolynomial.toLaurent (c.algebraicIndependent.aevalEquiv.symm a))
-        rw [c.apply_toLaurent]
-        exact (c.algebraicIndependent.aeval_repr a).symm)
+        rw [RingHom.algebraMap_toAlgebra, AlgEquiv.coe_toRingEquiv]
+        simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, AlgHom.comp_apply,
+          toAlgHom_apply, c.apply_toLaurent, AlgEquiv.apply_symm_apply] using
+          c.algebraicIndependent.algebraMap_aevalEquiv
+            (c.algebraicIndependent.aevalEquiv.symm a))
   exact IsFractionRing.comap_isAlgebraic_iff.mpr (inferInstance : Algebra.IsAlgebraic F F)
 
 /-- A proper subfamily of algebraically independent coordinates cannot generate the ambient
 field, whether or not the original chart was generating. -/
 theorem not_generates_restrict (c : LaurentChart R K F) {K' : Type*} (f : K' ↪ K)
     (hf : ¬ Function.Surjective f) : ¬ (c.restrict f).Generates := by
+  have : IsDomain R := c.isDomain
   intro h
   have hb := (c.restrict f).isTranscendenceBasis h
   have hs : Set.range (c.restrict f).coordinate ⊆ Set.range c.coordinate := by
@@ -177,45 +211,83 @@ theorem not_generates_restrict (c : LaurentChart R K F) {K' : Type*} (f : K' ↪
   obtain ⟨i, hi⟩ := hj
   exact ⟨i, c.algebraicIndependent.injective (by simpa using hi)⟩
 
+/-- Generating charts correspond to field-generating transcendence bases. -/
+noncomputable def generatingCoordinatesEquiv :
+    {c : LaurentChart R K F // c.Generates} ≃
+      {x : K → F // IsTranscendenceBasis R x ∧
+        Subfield.closure (Set.range (algebraMap R F) ∪ Set.range x) = ⊤} where
+  toFun c := ⟨c.1.coordinate, c.1.isTranscendenceBasis c.2,
+    c.1.generates_iff_closure_range_coordinate.mp c.2⟩
+  invFun x := by
+    have : IsDomain R := Function.Injective.isDomain (algebraMap R F) x.2.1.1.algebraMap_injective
+    let u : K → Fˣ := fun i ↦ Units.mk0 (x.1 i) (x.2.1.1.ne_zero i)
+    let c := ofCoordinates u (by simpa [u] using x.2.1.1)
+    refine ⟨c, c.generates_iff_closure_range_coordinate.mpr ?_⟩
+    have hc : c.coordinate = x.1 := funext fun i ↦ by simp [c, u]
+    rw [hc]
+    exact x.2.2
+  left_inv c := by
+    apply Subtype.ext
+    ext i
+    simp
+  right_inv x := by
+    apply Subtype.ext
+    funext i
+    simp
+
+@[simp]
+theorem val_generatingCoordinatesEquiv_apply (c : {c : LaurentChart R K F // c.Generates}) :
+    (generatingCoordinatesEquiv c).1 = c.1.coordinate := (rfl)
+
+@[simp]
+theorem coordinate_generatingCoordinatesEquiv_symm
+    (x : {x : K → F // IsTranscendenceBasis R x ∧
+      Subfield.closure (Set.range (algebraMap R F) ∪ Set.range x) = ⊤}) :
+    (generatingCoordinatesEquiv.symm x).1.coordinate = x.1 := by
+  funext i
+  simp [generatingCoordinatesEquiv]
+
 section Standard
+
+variable [IsDomain R]
 
 local notation "P" => MvPolynomial K R
 local notation "Q" => FractionRing P
 
 /-- The independent coordinate units in the rational-function model. -/
-noncomputable def standardUnit (i : K) : Qˣ :=
+private noncomputable def standardUnit (i : K) : Qˣ :=
   Units.mk0 (algebraMap P Q (MvPolynomial.X i))
     ((map_ne_zero_iff _ (IsFractionRing.injective P Q)).mpr (MvPolynomial.X_ne_zero i))
 
-@[simp]
-theorem val_standardUnit (i : K) :
-    (standardUnit (R := R) i : Q) = algebraMap P Q (MvPolynomial.X i) := (rfl)
-
+variable (R K) in
 /-- The faithful Laurent chart in the fraction field of the polynomial ring. -/
 noncomputable def standard : LaurentChart R K Q :=
   ofCoordinates standardUnit <| by
-    simpa [Function.comp_def] using
+    simpa [Function.comp_def, standardUnit] using
       (MvPolynomial.algebraicIndependent_X K R).map'
         (f := IsScalarTower.toAlgHom R P Q) (IsFractionRing.injective P Q)
 
 @[simp]
 theorem coordinate_standard (i : K) :
-    (standard (R := R) (K := K)).coordinate i = algebraMap P Q (MvPolynomial.X i) := by
-  simp [standard]
+    (standard R K).coordinate i = algebraMap P Q (MvPolynomial.X i) := by
+  simp [standard, standardUnit]
 
 /-- On ordinary polynomials the standard chart is the canonical fraction-ring inclusion. -/
 theorem standard_comp_toLaurent :
-    (standard (R := R) (K := K)).toAlgHom.comp MvPolynomial.toLaurent =
+    (standard R K).toAlgHom.comp MvPolynomial.toLaurent =
       IsScalarTower.toAlgHom R P Q := by
-  apply MvPolynomial.algHom_ext
-  intro i
-  change standard (MvPolynomial.toLaurent (MvPolynomial.X i)) = _
-  rw [MvPolynomial.toLaurent_X, ← coordinate_eq]
-  exact coordinate_standard i
+  rw [comp_toLaurent]
+  exact MvPolynomial.algHom_ext fun i ↦ by simp
+
+@[simp]
+theorem standard_toLaurent (p : MvPolynomial K R) :
+    standard R K (MvPolynomial.toLaurent p) = algebraMap P Q p :=
+  DFunLike.congr_fun standard_comp_toLaurent p
 
 /-- The standard chart generates its rational-function ambient field. -/
-theorem standard_generates : (standard (R := R) (K := K)).Generates := by
-  rw [Generates, ← closure_range_polynomial, standard_comp_toLaurent]
+@[simp]
+theorem generates_standard : (standard R K).Generates := by
+  rw [generates_iff, ← closure_range_comp_toLaurent, standard_comp_toLaurent]
   exact IsFractionRing.closure_range_algebraMap P Q
 
 end Standard
