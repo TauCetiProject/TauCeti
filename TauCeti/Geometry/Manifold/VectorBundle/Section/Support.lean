@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import Mathlib.Topology.Perfect
 public import Mathlib.Topology.Sets.Compacts
 
 /-!
@@ -24,12 +25,15 @@ on the support acts as the identity. These operations provide the support stages
 localizations used in test sections and their inductive-limit topologies.
 
 The smoothness of multiplication is supplied by Mathlib's `ContMDiff.smul_section`.
+
+Over a base without isolated points, two sections that agree off a point are equal
+(`ContMDiffSection.eq_of_forall_ne`).
 -/
 
 public section
 
 open Set Bundle TopologicalSpace
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace ContMDiffSection
 
@@ -38,6 +42,28 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
   {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω} {V : M → Type*}
   [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+
+/-- Over a base without isolated points, two `C^n` sections of a fiber bundle that agree off a
+point are equal. -/
+theorem eq_of_forall_ne [PerfectSpace M] {s t : Cₛ^n⟮I; F, V⟯} {x : M}
+    (h : ∀ z, z ≠ x → s z = t z) : s = t := by
+  refine ContMDiffSection.ext fun z ↦ ?_
+  by_cases hzx : z = x
+  · subst hzx
+    have : ∀ w, Nonempty (V w) := fun w ↦ ⟨s w⟩
+    have hz := mem_baseSet_trivializationAt F V z
+    have hcont (u : Cₛ^n⟮I; F, V⟯) :
+        ContinuousAt (fun y ↦ (trivializationAt F V z ⟨y, u y⟩).2) z :=
+      ((contMDiffAt_section z).1 (u.contMDiff z)).continuousAt
+    have heq : (fun y ↦ (trivializationAt F V z ⟨y, s y⟩).2) =ᶠ[𝓝[≠] z]
+        fun y ↦ (trivializationAt F V z ⟨y, t y⟩).2 :=
+      eventually_nhdsWithin_of_forall fun y hy ↦ by dsimp only; rw [h y hy]
+    have key := tendsto_nhds_unique
+      (((hcont s).tendsto.mono_left nhdsWithin_le_nhds).congr' heq)
+      ((hcont t).tendsto.mono_left nhdsWithin_le_nhds)
+    rw [← (trivializationAt F V z).symm_apply_apply_mk hz (s z), key,
+      (trivializationAt F V z).symm_apply_apply_mk hz]
+  · exact h z hzx
 
 section Support
 
