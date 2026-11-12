@@ -310,7 +310,6 @@ theorem neg_re_endCoord_inf_le {R : ℝ} (hR : 0 ≤ R) {w : ℂ}
 off the closed disc `‖w‖ ≤ 2 exp (2πr)` bounded by the circle `s = -r` of that end. -/
 theorem lt_neg_re_endCoord_inf_iff {r : ℝ} {w : ℂ} (hw : w ≠ 0) :
     r < -(inf.endCoord w).re ↔ 2 * Real.exp (2 * π * r) < ‖w‖ := by
-  have hd : 0 < ‖w‖ := norm_pos_iff.2 hw
   rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero, neg_div, neg_neg,
     lt_div_iff₀ (by positivity), norm_div, Complex.norm_ofNat,
     Real.lt_log_iff_exp_lt (by positivity), lt_div_iff₀ (by norm_num), mul_comm r]
