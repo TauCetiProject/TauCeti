@@ -200,7 +200,7 @@ theorem IsSymm.exists_equivalent_weightedSumSquares_of_isUnit_det (hB : B.IsSymm
     simpa only [hw] using hc.toMatrix_eq_diagonal
   refine ⟨w, ?_, (b.toMatrix c).det, ?_⟩
   · simpa only [QuadraticMap.weightedSumSquares_units, hw] using
-      hB.equivalent_weightedSumSquares_of_iIsOrtho c hc
+      hc.equivalent_weightedSumSquares
   · rw [← Matrix.det_diagonal, ← hmatrix, det_toMatrix_eq_det_sq_mul_det b c]
 
 end LinearMap.BilinForm

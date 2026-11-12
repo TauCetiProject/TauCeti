@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.EulerCharacteristic
-public import TauCeti.AlgebraicGeometry.Curves.Degree
+public import TauCeti.AlgebraicGeometry.Curves.Degree.Basic
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Finite
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Invertible
 

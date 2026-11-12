@@ -40,8 +40,11 @@ The construction follows the organization of Mathlib's bounded-below category
 * `TauCeti.HomotopyCategory.Bounded.quotient`: the quotient functor from bounded complexes. It is
   a localization functor with respect to the homotopy equivalences, so functors and their shift
   compatibilities descend along it.
+* `TauCeti.HomotopyCategory.Bounded.toPlus`: the inclusion `Kᵇ(C) ⥤ K⁺(C)`.
+* `TauCeti.HomotopyCategory.Bounded.mk`: the class in `Kᵇ(C)` of a bounded cochain complex.
 * `TauCeti.HomotopyCategory.Bounded.rep`: the underlying cochain complex of an object of the
-  bounded homotopy category.
+  bounded homotopy category, strictly bounded below and above
+  (`TauCeti.HomotopyCategory.Bounded.exists_isStrictlyGE_isStrictlyLE`).
 * `TauCeti.HomotopyCategory.Bounded.quotientCompιIso`: the bounded quotient followed by the
   inclusion agrees with the ordinary homotopy quotient.
 * `TauCeti.HomotopyCategory.Bounded.singleFunctors`: the single functors
@@ -277,6 +280,10 @@ abbrev ι : HomotopyCategory.Bounded C ⥤ HomotopyCategory C (.up ℤ) :=
 abbrev fullyFaithfulι : (ι C).FullyFaithful :=
   ObjectProperty.fullyFaithfulι _
 
+/-- The inclusion `Kᵇ(C) ⥤ K⁺(C)` of bounded complexes into bounded below complexes. -/
+abbrev toPlus : HomotopyCategory.Bounded C ⥤ _root_.HomotopyCategory.Plus C :=
+  ObjectProperty.ιOfLE (bounded_le_plus C)
+
 variable {C} in
 /-- The bounded cochain complex underlying an object of the bounded homotopy category. -/
 def rep (K : HomotopyCategory.Bounded C) : CochainComplex C ℤ :=
@@ -294,6 +301,29 @@ variable {C} in
 lemma bounded_rep (K : HomotopyCategory.Bounded C) : CochainComplex.bounded C (rep K) := by
   rw [← HomotopyCategory.bounded_quotient_obj_iff, quotient_obj_rep]
   exact K.property
+
+variable {C} in
+/-- The class in `Kᵇ(C)` of a bounded cochain complex. -/
+abbrev mk (K : CochainComplex C ℤ) (hK : CochainComplex.bounded C K) :
+    HomotopyCategory.Bounded C :=
+  ⟨_, (HomotopyCategory.bounded_quotient_obj_iff K).2 hK⟩
+
+variable {C} in
+/-- The underlying complex of an object of the bounded homotopy category is strictly bounded
+below and above. -/
+lemma exists_isStrictlyGE_isStrictlyLE (K : HomotopyCategory.Bounded C) :
+    ∃ a b : ℤ, CochainComplex.IsStrictlyGE K.obj.as a ∧ CochainComplex.IsStrictlyLE K.obj.as b :=
+  (CochainComplex.bounded_iff C _).1 (bounded_rep K)
+
+variable {C} in
+/-- The underlying complexes of two objects of the bounded homotopy category are strictly bounded
+above by a common integer. -/
+lemma exists_isStrictlyLE_isStrictlyLE (K L : HomotopyCategory.Bounded C) :
+    ∃ n : ℤ, CochainComplex.IsStrictlyLE K.obj.as n ∧ CochainComplex.IsStrictlyLE L.obj.as n := by
+  obtain ⟨_, b, _, _⟩ := exists_isStrictlyGE_isStrictlyLE K
+  obtain ⟨_, b', _, _⟩ := exists_isStrictlyGE_isStrictlyLE L
+  exact ⟨max b b', CochainComplex.isStrictlyLE_of_le K.obj.as b _ (le_max_left _ _),
+    CochainComplex.isStrictlyLE_of_le L.obj.as b' _ (le_max_right _ _)⟩
 
 /-- The quotient functor from bounded cochain complexes to their bounded homotopy category. -/
 @[implicit_reducible]

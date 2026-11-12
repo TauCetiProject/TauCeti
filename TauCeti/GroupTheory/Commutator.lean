@@ -38,8 +38,8 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   commutators with each joined subgroup lie in that join.
 * `TauCeti.commutator_le_iff_map_mk'_eq_bot`: `⁅A, B⁆ ≤ N` for a normal `N` says that the images
   of `A` and `B` in `G ⧸ N` commute.
-* `TauCeti.le_centralizer_of_le_normalizer_of_inf_eq_bot`: a normal subgroup that normalizes `U`
-  and meets it trivially centralizes `U`.
+* `TauCeti.le_centralizer_of_le_normalizer_of_inf_eq_bot`: two subgroups that normalize each
+  other and meet trivially centralize each other.
 * `QuotientGroup.commute_mk_iff`: two classes in `G ⧸ N` commute exactly when the commutator of
   representatives lies in `N`.
 * `MonoidHom.commutatorElement_mem_ker_iff`: the images of two elements under a homomorphism
@@ -338,8 +338,7 @@ theorem commutator_closure_le_iff [N.Normal] {A : Subgroup G} :
     ⁅A, closure Y⁆ ≤ N ↔ ∀ a ∈ A, ∀ y ∈ Y, ⁅a, y⁆ ∈ N := by
   refine ⟨fun h a ha y hy ↦ h (commutator_mem_commutator ha (subset_closure hy)), fun h ↦ ?_⟩
   have hle := commutator_closure_closure_le (X := (A : Set G)) (Y := Y) (N := N)
-    (by rw [closure_eq, normalizer_eq_top]; exact le_top)
-    (by rw [normalizer_eq_top]; exact le_top) fun a ha y hy ↦ h a ha y hy
+    le_normalizer_of_normal le_normalizer_of_normal h
   rwa [closure_eq] at hle
 
 /-- For a normal subgroup `N`, the commutator `⁅A, B⁆` lies in `N` exactly when the images of `A`
@@ -348,19 +347,15 @@ theorem commutator_le_iff_map_mk'_eq_bot {A B : Subgroup G} [N.Normal] :
     ⁅A, B⁆ ≤ N ↔ ⁅A.map (QuotientGroup.mk' N), B.map (QuotientGroup.mk' N)⁆ = ⊥ := by
   rw [← map_commutator, Subgroup.map_eq_bot_iff, QuotientGroup.ker_mk']
 
-/-- A normal subgroup `Z` that normalizes a subgroup `U` and meets it trivially centralizes `U`:
-the commutator `⁅Z, U⁆` lies in `Z` by normality and in `U` because `Z` normalizes `U`. -/
-theorem le_centralizer_of_le_normalizer_of_inf_eq_bot {Z U : Subgroup G} [Z.Normal]
-    (hZU : Z ≤ normalizer (U : Set G)) (hinf : Z ⊓ U = ⊥) : Z ≤ centralizer (U : Set G) :=
+/-- Two subgroups `Z` and `U` that normalize each other and meet trivially centralize each other:
+the commutator `⁅Z, U⁆` lies in `Z` because `U` normalizes `Z` and in `U` because `Z` normalizes
+`U`. For a normal `Z`, the hypothesis `U ≤ normalizer Z` is `Subgroup.le_normalizer_of_normal`. -/
+theorem le_centralizer_of_le_normalizer_of_inf_eq_bot {Z U : Subgroup G}
+    (hZU : Z ≤ normalizer (U : Set G)) (hUZ : U ≤ normalizer (Z : Set G)) (hinf : Z ⊓ U = ⊥) :
+    Z ≤ centralizer (U : Set G) :=
   commutator_eq_bot_iff_le_centralizer.mp <| eq_bot_iff.mpr <| hinf ▸
-    le_inf (commutator_le_left Z U) (le_normalizer_iff_commutator_le_right.mp hZU)
-
-/-- Two classes in `G ⧸ N` commute exactly when the commutator of representatives lies in `N`. -/
-theorem _root_.QuotientGroup.commute_mk_iff [N.Normal] {a b : G} :
-    Commute (a : G ⧸ N) (b : G ⧸ N) ↔ ⁅a, b⁆ ∈ N := by
-  rw [← commutatorElement_eq_one_iff_commute, ← QuotientGroup.mk'_apply N a,
-    ← QuotientGroup.mk'_apply N b, ← map_commutatorElement, QuotientGroup.mk'_apply,
-    QuotientGroup.eq_one_iff]
+    le_inf (le_normalizer_iff_commutator_le_left.mp hUZ)
+      (le_normalizer_iff_commutator_le_right.mp hZU)
 
 /-- The images of `a` and `b` under a homomorphism `f` into a monoid commute exactly when the
 commutator `⁅a, b⁆` lies in the kernel of `f`.  For `f` the quotient map this is
@@ -370,6 +365,12 @@ theorem _root_.MonoidHom.commutatorElement_mem_ker_iff {M : Type*} [Monoid M] (f
   rw [← MonoidHom.ker_toHomUnits, MonoidHom.mem_ker, map_commutatorElement,
     commutatorElement_eq_one_iff_commute, ← Commute.units_val_iff, MonoidHom.coe_toHomUnits,
     MonoidHom.coe_toHomUnits]
+
+/-- Two classes in `G ⧸ N` commute exactly when the commutator of representatives lies in `N`. -/
+theorem _root_.QuotientGroup.commute_mk_iff [N.Normal] {a b : G} :
+    Commute (a : G ⧸ N) (b : G ⧸ N) ↔ ⁅a, b⁆ ∈ N := by
+  rw [← QuotientGroup.mk'_apply N a, ← QuotientGroup.mk'_apply N b,
+    ← MonoidHom.commutatorElement_mem_ker_iff, QuotientGroup.ker_mk']
 
 /-- If `p` has central kernel, then a homomorphism `φ` kills the commutators of arbitrary elements
 with the elements of the kernel of `p ∘ φ`. -/
@@ -432,7 +433,7 @@ namespace Subgroup
 
 open scoped commutatorElement
 
-variable {G : Type*} [Group G] {P : Type*} [One P]
+variable {G : Type*} [Group G] {P : Type*} [One P] {m : ℕ}
 
 /-- A subgroup normalizes a join of subgroups if its commutators with each of the joined
 subgroups lie in that join. -/
@@ -463,38 +464,25 @@ theorem mem_of_adjacent_of_commutator (H : Subgroup G)
     (hadjacent : ∀ {i j : Fin m} (hij : i ≠ j) (a : P),
       i.val + 1 = j.val ∨ j.val + 1 = i.val → x hij a ∈ H)
     {i j : Fin m} (hij : i ≠ j) (a : P) : x hij a ∈ H := by
-  let Q : ℕ → Prop := fun d =>
-    ∀ (i j : Fin m) (hij : i ≠ j), Nat.dist i.val j.val = d → ∀ a : P, x hij a ∈ H
-  suffices ∀ d, Q d by
-    exact this (Nat.dist i.val j.val) i j hij rfl a
-  intro d
-  induction d using Nat.strong_induction_on with
+  -- Induct on the distance from `i` to `j`, stepping from `i` to its neighbour `k` towards `j`.
+  induction hd : Nat.dist i.val j.val using Nat.strong_induction_on generalizing i j a with
   | ind d ih =>
-      intro i j hij hdist a
-      by_cases hforward : i.val + 1 = j.val
-      · exact hadjacent hij a (Or.inl hforward)
-      by_cases hbackward : j.val + 1 = i.val
-      · exact hadjacent hij a (Or.inr hbackward)
-      have hval : i.val ≠ j.val := Fin.val_ne_of_ne hij
-      let k : Fin m := if h : i.val < j.val then
-        ⟨i.val + 1, by omega⟩ else ⟨i.val - 1, by omega⟩
-      have hik : i ≠ k := by
-        dsimp only [k]
-        split_ifs with h <;> simp only [Fin.ext_iff, ne_eq] <;> omega
-      have hkj : k ≠ j := by
-        dsimp only [k]
-        split_ifs with h <;> simp only [Fin.ext_iff, ne_eq] <;> omega
-      have hdist_ik : Nat.dist i.val k.val < Nat.dist i.val j.val := by
-        dsimp only [k]
-        split_ifs with h <;> simp only [Nat.dist] <;> omega
-      have hdist_kj : Nat.dist k.val j.val < Nat.dist i.val j.val := by
-        dsimp only [k]
-        split_ifs with h <;> simp only [Nat.dist] <;> omega
-      rw [hdist] at hdist_ik hdist_kj
-      have hik_mem := ih (Nat.dist i.val k.val) hdist_ik i k hik rfl a
-      have hkj_mem := ih (Nat.dist k.val j.val) hdist_kj k j hkj rfl 1
-      rw [← hcomm hik hkj hij a, commutatorElement_def]
-      exact H.mul_mem (H.mul_mem (H.mul_mem hik_mem hkj_mem) (H.inv_mem hik_mem))
-        (H.inv_mem hkj_mem)
+    by_cases hadj : i.val + 1 = j.val ∨ j.val + 1 = i.val
+    · exact hadjacent hij a hadj
+    have hval : i.val ≠ j.val := Fin.val_ne_of_ne hij
+    obtain ⟨k, hik, hkj, hdik, hdkj⟩ : ∃ k : Fin m, i ≠ k ∧ k ≠ j ∧
+        Nat.dist i.val k.val < d ∧ Nat.dist k.val j.val < d := by
+      rcases Nat.lt_or_gt_of_ne hval with h | h
+      · refine ⟨⟨i.val + 1, by omega⟩, ?_⟩
+        simp only [ne_eq, Fin.ext_iff, Nat.dist] at hd ⊢
+        omega
+      · refine ⟨⟨i.val - 1, by omega⟩, ?_⟩
+        simp only [ne_eq, Fin.ext_iff, Nat.dist] at hd ⊢
+        omega
+    have hik_mem := ih _ hdik hik a rfl
+    have hkj_mem := ih _ hdkj hkj 1 rfl
+    rw [← hcomm hik hkj hij a, commutatorElement_def]
+    exact H.mul_mem (H.mul_mem (H.mul_mem hik_mem hkj_mem) (H.inv_mem hik_mem))
+      (H.inv_mem hkj_mem)
 
 end Subgroup

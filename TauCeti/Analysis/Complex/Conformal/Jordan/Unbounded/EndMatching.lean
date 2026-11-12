@@ -244,7 +244,6 @@ theorem surjective_of_eventually_mem_end {κ : Type*} {g : ℂ → ℂ} {q c₀ 
   obtain ⟨δ', hδ', hK⟩ := hKc.exists_forall_le' (hgc.norm.mono fun z hz => hz.1.2) hKg
   -- so on the preimage of `E k` the coordinate `g` is bounded away from `0`, and `E k` is bounded
   set δ := min (‖c₀‖ / 2) δ'
-  have hδ : 0 < δ := lt_min (half_pos (norm_pos_iff.mpr hc₀)) hδ'
   have hHc : ∀ z ∈ upperHalfPlaneSet, z ∈ {z : ℂ | 0 ≤ z.im} := fun z (hz : 0 < z.im) => hz.le
   have hgδ : ∀ z ∈ upperHalfPlaneSet, q + (g z)⁻¹ ∈ E k → δ ≤ ‖g z‖ := by
     intro z hz hzE

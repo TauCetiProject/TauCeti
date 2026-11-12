@@ -32,6 +32,8 @@ passing to the `p`-free parts strictly shrinks the gcd.
 * `TauCeti.Nat.gcd_ordCompl_lt`: removing the `p`-part strictly shrinks the gcd.
 * `Nat.coprime_iff_coprime_ordCompl`: coprimality to `n` splits into a condition at `p`
   and coprimality to the `p`-free part of `n`.
+* `Nat.gcd_mul_prime_eq_of_factorization_le`: multiplying `c` by a prime `p` does not change
+  `gcd n c` once the `p`-part of `n` already divides `c`.
 -/
 
 public section
@@ -112,6 +114,20 @@ theorem coprime_iff_coprime_ordCompl {p m n : ℕ} (hp : p.Prime) :
   · rw [Nat.coprime_pow_right_iff (Nat.pos_of_ne_zero he), Nat.coprime_comm,
       hp.coprime_iff_not_dvd]
     simp [he]
+
+/-- Multiplying `c` by a prime `p` does not change its gcd with `n` when `p` divides `c` at least
+as often as it divides `n`: the exponent of `p` in the gcd is already that of `n`. -/
+theorem gcd_mul_prime_eq_of_factorization_le {n c p : ℕ} (hp : p.Prime) (hn : n ≠ 0)
+    (hc : c ≠ 0) (h : n.factorization p ≤ c.factorization p) : n.gcd (c * p) = n.gcd c := by
+  apply Nat.eq_of_factorization_eq (Nat.gcd_ne_zero_left hn) (Nat.gcd_ne_zero_left hn)
+  intro q
+  rw [Nat.factorization_gcd hn (mul_ne_zero hc hp.ne_zero), Nat.factorization_gcd hn hc,
+    Nat.factorization_mul hc hp.ne_zero, hp.factorization]
+  simp only [Finsupp.inf_apply, Finsupp.add_apply]
+  rcases eq_or_ne q p with rfl | hq
+  · simp only [Finsupp.single_eq_same]
+    omega
+  · simp [Finsupp.single_eq_of_ne hq]
 
 end Nat
 
