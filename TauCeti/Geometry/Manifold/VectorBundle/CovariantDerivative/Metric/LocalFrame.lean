@@ -85,6 +85,7 @@ theorem coeff_covariantDerivative_add_eq_zero (hx : x ∈ u) (i j : ι)
 include hn hu ho hcov in
 /-- The diagonal entries of the connection matrix of a metric connection in an orthonormal local
 frame vanish: `∇_v sᵢ` has no component along `sᵢ`. -/
+@[simp]
 theorem coeff_covariantDerivative_self_eq_zero (hx : x ∈ u) (i : ι)
     (v : TangentSpace I x) : hs.coeff i x (cov (s i) x v) = 0 := by
   have h := hs.coeff_covariantDerivative_add_eq_zero hn hu ho hcov hx i i v
@@ -103,6 +104,7 @@ theorem connectionForm_add_connectionForm_swap [FiniteDimensional ℝ E]
 include hu ho hcov in
 /-- The diagonal connection forms of a metric connection in a `C²` orthonormal local frame
 vanish: `Aⁱᵢ = 0` at every point of the domain. -/
+@[simp]
 theorem connectionForm_self_eq_zero [FiniteDimensional ℝ E]
     (hs : IsLocalFrameOn I F 2 s u) (hx : x ∈ u) (i : ι) :
     hs.connectionForm cov i i x = 0 := by
