@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 public import TauCeti.Geometry.Symplectic.Finrank
 public import TauCeti.LinearAlgebra.Complex.Module
 public import TauCeti.Topology.VectorBundle.Hom
+public import TauCeti.Topology.VectorBundle.RestrictScalars
 
 /-!
 # Complex vector bundles from fibrewise complex structures
@@ -505,41 +506,6 @@ theorem trivializationAt_symm_apply {b₀ b : B} (hb : b ∈ J.unitSet b₀) (z 
       (trivializationAt F V b₀).symm b (J.complexLinearPart b₀ b (J.modelEquiv G b₀ z)) :=
   J.pretrivializationAt_symm_apply G hb z
 
-private theorem complexLinearPart_modelEquiv_fiberMap {b₀ b : B} (hb : b ∈ J.unitSet b₀)
-    (v : V b) :
-    J.complexLinearPart b₀ b (J.modelEquiv G b₀ (J.fiberMap G b₀ b v)) =
-      (trivializationAt F V b₀).continuousLinearMapAt ℝ b v := by
-  simp only [fiberMap, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.apply_symm_apply, J.complexLinearPart_inverse_complexLinearPart_apply hb]
-
-/-- The identity of the fibres, from the total space of `J.Fiber` to that of `V`, is continuous.
--/
-private theorem continuous_toTotalSpace :
-    Continuous fun p : TotalSpace G J.Fiber ↦ (⟨p.1, J.fiberEquiv p.1 p.2⟩ : TotalSpace F V) := by
-  refine continuous_iff_continuousAt.mpr fun p₀ ↦ ?_
-  rw [FiberBundle.continuousAt_totalSpace]
-  refine ⟨(FiberBundle.continuous_proj G J.Fiber).continuousAt, ?_⟩
-  -- Near `p₀`, the coordinate of `p` in the trivialization of `V` at `p₀.1` is
-  -- `A (φ z)`, where `z` is its coordinate in the complex trivialization at `p₀.1`.
-  have hsrc : (trivializationAt G J.Fiber p₀.1).source ∈ 𝓝 p₀ :=
-    (trivializationAt G J.Fiber p₀.1).open_source.mem_nhds
-      (FiberBundle.mem_trivializationAt_proj_source)
-  have hA : ContinuousAt (fun p : TotalSpace G J.Fiber ↦ J.complexLinearPart p₀.1 p.1) p₀ :=
-    ((J.continuousOn_complexLinearPart p₀.1).continuousAt
-      ((trivializationAt F V p₀.1).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt F V p₀.1))).comp
-      (FiberBundle.continuous_proj G J.Fiber).continuousAt
-  have hT : ContinuousAt (fun p ↦ (trivializationAt G J.Fiber p₀.1 p).2) p₀ :=
-    ((trivializationAt G J.Fiber p₀.1).continuousAt
-      FiberBundle.mem_trivializationAt_proj_source).snd
-  refine (hA.clm_apply ((J.modelEquiv G p₀.1).continuous.continuousAt.comp hT))
-    |>.congr_of_eventuallyEq ?_
-  filter_upwards [hsrc] with p hp
-  have hp' : p.1 ∈ (trivializationAt F V p₀.1).baseSet := J.unitSet_subset _ hp
-  simp only [Function.comp_apply, trivializationAt_apply,
-    J.complexLinearPart_modelEquiv_fiberMap G hp,
-    Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hp']
-
 /-- The identity of the fibres, from the total space of `V` to that of `J.Fiber`, is continuous.
 -/
 private theorem continuous_ofTotalSpace :
@@ -566,23 +532,25 @@ private theorem continuous_ofTotalSpace :
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
     Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hq']
 
+local instance (b : B) : ContinuousSMul ℝ (J.Fiber b) := IsScalarTower.continuousSMul ℂ
+
+/-- `J.Fiber` as a real vector bundle, by restriction of scalars. -/
+local instance : VectorBundle ℝ G J.Fiber := VectorBundle.restrictScalars ℝ ℂ G J.Fiber
+
 /-- The total space of the complex vector bundle `J.Fiber` is homeomorphic to that of `V`, by the
 identity of the fibres. -/
-def totalSpaceHomeomorph : TotalSpace G J.Fiber ≃ₜ TotalSpace F V where
-  toFun p := ⟨p.1, J.fiberEquiv p.1 p.2⟩
-  invFun p := ⟨p.1, (J.fiberEquiv p.1).symm p.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := J.continuous_toTotalSpace G
-  continuous_invFun := J.continuous_ofTotalSpace G
+def totalSpaceHomeomorph : TotalSpace G J.Fiber ≃ₜ TotalSpace F V :=
+  (bundleHomeomorph (fun b ↦ (J.fiberEquiv b).symm) (J.continuous_ofTotalSpace G)).symm
 
 @[simp]
 theorem totalSpaceHomeomorph_apply (p : TotalSpace G J.Fiber) :
-    J.totalSpaceHomeomorph G p = ⟨p.1, J.fiberEquiv p.1 p.2⟩ := (rfl)
+    J.totalSpaceHomeomorph G p = ⟨p.1, J.fiberEquiv p.1 p.2⟩ :=
+  bundleHomeomorph_symm_apply _ _ p
 
 @[simp]
 theorem totalSpaceHomeomorph_symm_apply (p : TotalSpace F V) :
-    (J.totalSpaceHomeomorph G).symm p = ⟨p.1, (J.fiberEquiv p.1).symm p.2⟩ := (rfl)
+    (J.totalSpaceHomeomorph G).symm p = ⟨p.1, (J.fiberEquiv p.1).symm p.2⟩ :=
+  bundleHomeomorph_apply _ _ p
 
 end Model
 
