@@ -66,7 +66,6 @@ private theorem setLAverage_enorm_sub_setAverage_rpow_le_of_pos {f : (ι → ℝ
       ENNReal.ofReal (7 * (2 ^ (Fintype.card ι + 1) * q / Real.log (3 / 2)) ^ q) * M ^ q := by
   set n := Fintype.card ι
   set K : ℝ := 2 ^ (n + 1) * q / Real.log (3 / 2)
-  have hlog : 0 < Real.log (3 / 2) := Real.log_pos (by norm_num)
   have hK : 0 < K := by positivity
   -- Closed and open balls agree up to a null set, so the BMO bound applies to closed balls.
   have hMc : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →

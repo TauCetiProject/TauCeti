@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 public import Mathlib.SetTheory.Cardinal.Finite
-public import TauCeti.GroupTheory.SurfaceGroup.Basic
+public import TauCeti.GroupTheory.SurfaceGroup.Free
 import Mathlib.Tactic.Group
 
 /-!
@@ -18,9 +17,10 @@ This file identifies the surface groups `S±(g, m)` of `TauCeti.GroupTheory.Surf
 the smallest surfaces.
 
 * **Genus zero with boundary.** In `S⁺(0, m + 1)` the relation `p₁ ⋯ p_{m+1} = 1` only determines
-  the last peripheral element, so `S⁺(0, m + 1)` is free on `p₁, …, p_m`. In particular the disc
-  group `S⁺(0, 1)` is trivial and the pair-of-pants group `S⁺(0, 3)` is free of rank two on `p₁`
-  and `p₂`, with `p₃ = (p₁ p₂)⁻¹`.
+  the last peripheral element, so `S⁺(0, m + 1)` is free on `p₁, …, p_m`: this is the genus-zero
+  case of `TauCeti.SurfaceGroup.Orientable.freeBasis`. In particular the disc group `S⁺(0, 1)` is
+  trivial and the pair-of-pants group `S⁺(0, 3)` is free of rank two on `p₁` and `p₂`, with
+  `p₃ = (p₁ p₂)⁻¹`.
 * **The sphere.** `S⁺(0, 0)` has no generators, so it is trivial.
 * **The torus.** `S⁺(1, 0) = ⟨a, b | a⁻¹ b⁻¹ a b⟩` is free abelian of rank two.
 * **The projective plane.** `S⁻(1, 0) = ⟨c | c ^ 2⟩` is cyclic of order two.
@@ -31,7 +31,6 @@ are `1, 2, -1, 0, 1`, and in each case with boundary the group is free of rank `
 
 ## Main definitions
 
-* `TauCeti.SurfaceGroup.Orientable.genusZeroEquivFreeGroup`: `S⁺(0, m + 1) ≃* FreeGroup (Fin m)`.
 * `TauCeti.SurfaceGroup.Orientable.genusZeroBasis`: the free basis `p₁, …, p_m` of `S⁺(0, m + 1)`.
 * `TauCeti.SurfaceGroup.Orientable.torusEquiv`: `S⁺(1, 0) ≃* Multiplicative (Fin 2 → ℤ)`.
 * `TauCeti.SurfaceGroup.Nonorientable.projectivePlaneEquiv`:
@@ -42,8 +41,6 @@ are `1, 2, -1, 0, 1`, and in each case with boundary the group is free of rank `
 * `TauCeti.SurfaceGroup.Orientable.instSubsingletonOrientableZeroZero` and
   `TauCeti.SurfaceGroup.Orientable.instSubsingletonOrientableZeroOne`: the sphere and disc groups
   are trivial.
-* `TauCeti.SurfaceGroup.Orientable.instIsFreeGroupOrientableZeroSucc`: `S⁺(0, m + 1)` is a free
-  group.
 * `TauCeti.SurfaceGroup.Orientable.commute_torus_a_b`: the two generators of the torus group
   commute.
 * `TauCeti.SurfaceGroup.Nonorientable.natCard_projectivePlane`: `S⁻(1, 0)` has order two.
@@ -78,61 +75,20 @@ instance instSubsingletonOrientableZeroZero : Subsingleton (Orientable 0 0) := b
   obtain ⟨w, rfl⟩ := PresentedGroup.mk_surjective _ x
   rw [Subsingleton.elim w 1, map_one]
 
-/-- The surface word of a genus-zero surface whose last peripheral element closes up the product
-of the others is trivial. -/
-private theorem orientableWord_genusZero {G : Type*} [Group G] {m : ℕ} (γ : Fin m → G) :
-    orientableWord (Fin.elim0 : Fin 0 → G) Fin.elim0
-      (Fin.lastCases (List.ofFn γ).prod⁻¹ γ) = 1 := by
-  rw [orientableWord_def, List.ofFn_succ' (Fin.lastCases _ _), List.prod_concat]
-  simp only [List.ofFn_zero, List.prod_nil, one_mul, Fin.lastCases_castSucc, Fin.lastCases_last,
-    mul_inv_cancel]
-
-/-- **Genus-zero surface groups with boundary are free.** The orientable surface group
-`S⁺(0, m + 1)` is the free group on the peripheral elements `p₁, …, p_m`; the last peripheral
-element is `p_{m+1} = (p₁ ⋯ p_m)⁻¹`. -/
-def genusZeroEquivFreeGroup (m : ℕ) : Orientable 0 (m + 1) ≃* FreeGroup (Fin m) :=
-  MonoidHom.toMulEquiv
-    (lift Fin.elim0 Fin.elim0 (Fin.lastCases (List.ofFn of).prod⁻¹ of)
-      (orientableWord_genusZero of))
-    (FreeGroup.lift fun j ↦ peripheral 0 (m + 1) j.castSucc)
-    (hom_ext (fun i ↦ i.elim0) (fun i ↦ i.elim0) fun j ↦ by
-      induction j using Fin.lastCases with
-      | last =>
-        simp [peripheral_last, map_list_prod, List.map_ofFn, Function.comp_def]
-      | cast j => simp)
-    (FreeGroup.ext_hom _ _ fun j ↦ by simp)
-
-@[simp]
-theorem genusZeroEquivFreeGroup_peripheral_castSucc {m : ℕ} (j : Fin m) :
-    genusZeroEquivFreeGroup m (peripheral 0 (m + 1) j.castSucc) = of j := by
-  simp [genusZeroEquivFreeGroup]
-
-@[simp]
-theorem genusZeroEquivFreeGroup_peripheral_last (m : ℕ) :
-    genusZeroEquivFreeGroup m (peripheral 0 (m + 1) (Fin.last m)) = (List.ofFn of).prod⁻¹ := by
-  simp [genusZeroEquivFreeGroup]
-
-@[simp]
-theorem genusZeroEquivFreeGroup_symm_of {m : ℕ} (j : Fin m) :
-    (genusZeroEquivFreeGroup m).symm (of j) = peripheral 0 (m + 1) j.castSucc := by
-  simp [genusZeroEquivFreeGroup]
-
-/-- The free basis `p₁, …, p_m` of the orientable surface group `S⁺(0, m + 1)`. -/
+/-- The free basis `p₁, …, p_m` of the genus-zero orientable surface group `S⁺(0, m + 1)`: the
+free basis of `S⁺(g, m + 1)` for `g = 0`, indexed by `Fin m`. In particular the pair-of-pants group
+`S⁺(0, 3)` is free on `p₁` and `p₂`. -/
 def genusZeroBasis (m : ℕ) : FreeGroupBasis (Fin m) (Orientable 0 (m + 1)) :=
-  .ofRepr (genusZeroEquivFreeGroup m)
+  (freeBasis 0 m).reindex ((Equiv.emptySum _ _).trans (Equiv.emptySum _ _))
 
 @[simp]
 theorem genusZeroBasis_apply {m : ℕ} (j : Fin m) :
-    genusZeroBasis m j = peripheral 0 (m + 1) j.castSucc :=
-  genusZeroEquivFreeGroup_symm_of j
-
-/-- A genus-zero orientable surface group with nonempty boundary is free. -/
-instance instIsFreeGroupOrientableZeroSucc (m : ℕ) : IsFreeGroup (Orientable 0 (m + 1)) :=
-  (genusZeroBasis m).isFreeGroup
+    genusZeroBasis m j = peripheral 0 (m + 1) j.castSucc := by
+  simp [genusZeroBasis]
 
 /-- The orientable surface group `S⁺(0, 1)` of the disc is trivial. -/
 instance instSubsingletonOrientableZeroOne : Subsingleton (Orientable 0 1) :=
-  (genusZeroEquivFreeGroup 0).toEquiv.subsingleton
+  (equivFreeGroup 0 0).toEquiv.subsingleton
 
 /-- The two generators of the torus group `S⁺(1, 0)` commute. -/
 theorem commute_torus_a_b : Commute (a 1 0 0) (b 1 0 0) := by
