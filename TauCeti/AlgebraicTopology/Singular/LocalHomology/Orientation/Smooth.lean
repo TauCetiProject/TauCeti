@@ -588,14 +588,10 @@ variable {M N : Type w} [TopologicalSpace M] [T1Space M] [TopologicalSpace N] [T
   {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
 
-/-- **Naturality of oriented-chart local orientations.** Let `j : M → N` be continuous with
-`j ⁻¹' {j a} ⊆ {a}`, so that `a` is the only point of `M` sent to `j a`, and let `φ` and `ψ` be
-charts of `M` and `N` with `j` mapping the source of `φ` into that of `ψ` and `ψ ∘ j = φ` there.
-Then the map of local homology induced by `j` carries the local orientation at
-`a` selected by an orientation `ω` of the model in `φ` to the one at `j a` selected by `ω` in
-`ψ`. -/
-theorem _root_.OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart
-    (j : C(M, N)) (φ : OpenPartialHomeomorph M E) (ψ : OpenPartialHomeomorph N E) {a : M}
+/-- `OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart` when `j` maps the
+whole source of `φ` into that of `ψ` and `ψ ∘ j = φ` there. -/
+private theorem localHomologyMap_localOrientationOfOrientedChart_of_eqOn (j : C(M, N))
+    (φ : OpenPartialHomeomorph M E) (ψ : OpenPartialHomeomorph N E) {a : M}
     (ha : a ∈ φ.source) (hmaps : MapsTo j φ.source ψ.source) (hφψ : EqOn (ψ ∘ j) φ φ.source)
     (h : j ⁻¹' {j a} ⊆ {a}) :
     localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) j h (n + 1)
@@ -635,6 +631,35 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_localOrientationOfOriented
   rw [← hφ, ← hψ, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
     localHomologyMap_comp, localHomologyMap_comp]
   rfl
+
+/-- **Naturality of oriented-chart local orientations.** Let `j : M → N` be continuous with
+`j ⁻¹' {j a} ⊆ {a}`, so that `a` is the only point of `M` sent to `j a`, and let `φ` and `ψ` be
+charts of `M` at `a` and of `N` at `j a` with `ψ ∘ j = φ` near `a`. Then the map of local
+homology induced by `j` carries the local orientation at `a` selected by an orientation `ω` of
+the model in `φ` to the one at `j a` selected by `ω` in `ψ`. -/
+theorem _root_.OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart
+    (j : C(M, N)) (φ : OpenPartialHomeomorph M E) (ψ : OpenPartialHomeomorph N E) {a : M}
+    (ha : a ∈ φ.source) (hja : j a ∈ ψ.source) (hφψ : ψ ∘ j =ᶠ[𝓝 a] φ)
+    (h : j ⁻¹' {j a} ⊆ {a}) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) j h (n + 1)
+        (φ.localOrientationOfOrientedChart ha ω hE).val =
+      (ψ.localOrientationOfOrientedChart hja ω hE).val := by
+  -- Restrict `φ` to an open neighbourhood `W` of `a` on which `j` maps into the source of `ψ` and
+  -- `ψ ∘ j = φ`; the restricted chart selects the same local orientation at `a` as `φ`.
+  obtain ⟨W, hWsub, hWo, haW⟩ := mem_nhds_iff.1
+    (hφψ.and (j.continuous.continuousAt.preimage_mem_nhds (ψ.open_source.mem_nhds hja)))
+  have haW' : a ∈ (φ.restrOpen W hWo).source := ⟨ha, haW⟩
+  have hφW : ((φ.restrOpen W hWo).localOrientationOfOrientedChart haW' ω hE).val =
+      (φ.localOrientationOfOrientedChart ha ω hE).val := by
+    refine Eq.trans ?_ (localHomologyMap_localOrientationOfOrientedChart_of_eqOn ω hE
+      (ContinuousMap.id M) (φ.restrOpen W hWo) φ haW' (fun _ hy ↦ hy.1) (fun _ _ ↦ rfl) subset_rfl)
+    -- The identity of `M` induces the identity of local homology at `a`.
+    exact ((ConcreteCategory.congr_hom
+      ((localHomologyMap_id _ (S := {a}) (T := {a}) subset_rfl _).trans
+        (localHomologyRestriction_refl _ {a} _)) _).trans (ConcreteCategory.id_apply _)).symm
+  rw [← hφW]
+  exact localHomologyMap_localOrientationOfOrientedChart_of_eqOn ω hE j (φ.restrOpen W hWo) ψ
+    haW' (fun _ hy ↦ (hWsub hy.2).2) (fun _ hy ↦ (hWsub hy.2).1) h
 
 end ChartNaturality
 

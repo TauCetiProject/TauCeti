@@ -502,6 +502,7 @@ theorem mapFundamentalClass_comap {N : Type} [TopologicalSpace N] [T2Space N] [C
     (γ := (o.comap e.isOpenEmbedding).mapFundamentalClass hn (e : C(N, M))) fun y ↦ ?_
   obtain ⟨x, rfl⟩ := e.surjective y
   have hx : (e : C(N, M)) ⁻¹' {e x} ⊆ {x} := fun z hz ↦ e.injective hz
+  refine (singularHomologyToLocalHomology_apply _ (e x) _).trans ?_
   rw [singularHomologyπ_mapFundamentalClass, ← ConcreteCategory.comp_apply,
     localHomologyMap_comp_localHomologyRestriction,
     ← localHomologyRestriction_comp_localHomologyMap (hS := singleton_subset_iff.2 (mem_univ x))
