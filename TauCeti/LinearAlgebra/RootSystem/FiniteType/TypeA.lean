@@ -48,9 +48,8 @@ whose diagrams are also paths, and without the degree bound they are `Dₙ` and 
 ## References
 
 This is the type `Aₙ` case of the reindexing step of the classification of finite-type Cartan
-matrices, Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See
-J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, and Bourbaki,
-*Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
+matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, and
+Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
 -/
 
 public section
@@ -141,8 +140,8 @@ theorem hasCartanType_A_of_isSimplyLaced_of_degree_le_two (b : P.Base)
 
 /-- **An irreducible root system whose Dynkin diagram is simply laced and has no branch node has
 exactly one valid Dynkin type.** Existence is the identification with type `Aₙ` above and
-uniqueness is `TauCeti.HasCartanType.eq_of_valid`, so this is the classification target
-`existsUnique_dynkinType` on the diagrams this file names. -/
+uniqueness is `TauCeti.HasCartanType.eq_of_valid`, so this is the classification theorem
+`TauCeti.existsUnique_dynkinType` on the diagrams this file names. -/
 theorem existsUnique_dynkinType_of_isSimplyLaced_of_degree_le_two (b : P.Base)
     (hsl : b.cartanMatrix.IsSimplyLaced)
     (hdeg : ∀ i, (diagramGraph b.cartanMatrix).degree i ≤ 2) :

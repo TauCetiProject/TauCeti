@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Biproducts
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
@@ -70,6 +71,9 @@ cochains (`SSetPair.quasiIso_cochainComplexMap`).
   `TopCat.isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion`: for `U` and `V`
   open in `U ∪ V`, the cochains of `X` relative to its singular simplices lying in `U` or in `V`
   compute the cohomology of `(X, U ∪ V)`.
+* `TopCat.exists_singularCohomologyComplRestrict_eq_of_add_eq_zero`: exactness at the middle term
+  of the Mayer–Vietoris sequence of the pairs `(X, X ∖ S)` and `(X, X ∖ T)` for closed sets `S`
+  and `T`, stated with the restrictions `TopCat.singularCohomologyComplRestrict`.
 
 ## References
 
@@ -198,9 +202,10 @@ lemma shortExact_mayerVietorisCochainShortComplex :
     (((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
       (linearYonedaFunctor k M).mapBiprod _ _).symm)
     (Iso.refl ((linearYonedaFunctor k M).obj (op (P₁.chainComplex R)))) ?_ ?_
-  · rw [Iso.symm_hom, he]
+  · rw [Iso.symm_hom]
     dsimp [ShortComplex.op, -linearYonedaFunctor_obj]
-    simp [biprod.desc_eq, ← Functor.map_comp, ← op_comp, -linearYonedaFunctor_obj]
+    rw [Category.id_comp]
+    exact (Functor.biprod_lift_map_op_comp_mapIso_biprod_opIso_trans_mapBiprod_inv _ _ _).symm
   · rw [Iso.symm_hom, he]
     dsimp [ShortComplex.op, -linearYonedaFunctor_obj]
     apply biprod.hom_ext' <;>
@@ -257,14 +262,18 @@ lemma mayerVietorisCochain_exact₃ (n m : ℕ) (h : n + 1 = m := by lia) :
     (by simpa) using 2
   exacts [mayerVietorisCochainFromBiprod_eq R k M n, rfl]
 
-include sqL sqR in
+include sqR in
+omit [Mono t.left] [Mono t.right] in
 /-- The map `H⁰(P₄) ⟶ H⁰(P₂) ⊞ H⁰(P₃)` at the start of the relative cochain Mayer–Vietoris
 sequence is a monomorphism. -/
 lemma mono_mayerVietorisCochainToBiprod_zero :
     Mono (mayerVietorisCochainToBiprod R k M r b 0) := by
-  have := (shortExact_mayerVietorisCochainShortComplex R k M sqL sqR).mono_f
-  have : Mono (HomologicalComplex.homologyMap
-      (mayerVietorisCochainShortComplex R k M (MorphismProperty.Arrow.Hom.ext sqL.w sqR.w)).f 0) :=
+  have hepi := epi_biprod_desc_chainComplexMap R (r := r) (b := b) sqR
+  have : Mono (biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r)
+      (cochainComplexMap b)) :=
+    mono_biprod_lift_linearYonedaFunctor_map_op_of_epi_f k M _ _ fun i ↦ inferInstance
+  have : Mono (HomologicalComplex.homologyMap (biprod.lift
+      (cochainComplexMap (R := R) (k := k) (M := M) r) (cochainComplexMap b)) 0) :=
     HomologicalComplex.mono_homologyMap_of_mono_of_not_rel _ 0 fun i h ↦ by
       rw [ComplexShape.up_Rel] at h
       omega
@@ -585,7 +594,7 @@ lemma mono_singularCohomologyPairMayerVietorisToBiprod_zero :
     Mono (singularCohomologyPairMayerVietorisToBiprod R k M hCA hDB 0) := by
   have := isIso_homologyMap_cochainComplexMap_smallSingularPairToUnion R k M hCA hDB hA hB hC hD 0
   have := SSetPair.mono_mayerVietorisCochainToBiprod_zero R k M
-    (isPushout_toSmallSingularPair_left hCA hDB) (isPushout_toSmallSingularPair_right hCA hDB)
+    (isPushout_toSmallSingularPair_right hCA hDB)
   rw [← homologyMap_smallSingularPairToUnion_comp_mayerVietorisCochainToBiprod R k M hCA hDB 0]
   infer_instance
 
@@ -679,5 +688,96 @@ lemma singularCohomologyPairMayerVietorisδ_naturality_of_subset (n m : ℕ)
         singularCohomologyPairMayerVietorisδ R k M hCA hDB hA hB hC hD n m h :=
   singularCohomologyPairMayerVietorisδ_naturality R k M hCA hDB hA hB hC hD hCA' hDB' hA' hB' hC'
     hD' (𝟙 X) hAA' hBB' hCC' hDD' n m h
+
+/-! ### Mayer–Vietoris for the complements of two closed sets -/
+
+section Compl
+
+variable {R k M}
+
+/-- **Mayer–Vietoris for the complements of two closed sets**, exactness at the middle term: if
+`a ∈ Hⁿ(X, X ∖ S)` and `b ∈ Hⁿ(X, X ∖ T)` restrict to classes of `Hⁿ(X, X ∖ (S ∪ T))` with sum
+zero, then `a` and `-b` are the restrictions of one class of `Hⁿ(X, X ∖ (S ∩ T))`. This is
+`TopCat.singularCohomologyPairMayerVietoris_exact₂` for the pairs `(X, X ∖ S)` and
+`(X, X ∖ T)`. -/
+lemma exists_singularCohomologyComplRestrict_eq_of_add_eq_zero {S T : Set X} (hS : IsClosed S)
+    (hT : IsClosed T) {n : ℕ} (a : (TopPair.ofSubset Sᶜ).singularCohomology R k M n)
+    (b : (TopPair.ofSubset Tᶜ).singularCohomology R k M n)
+    (h : singularCohomologyComplRestrict R k M Set.subset_union_left n a +
+      singularCohomologyComplRestrict R k M Set.subset_union_right n b = 0) :
+    ∃ z : (TopPair.ofSubset (S ∩ T)ᶜ).singularCohomology R k M n,
+      singularCohomologyComplRestrict R k M Set.inter_subset_left n z = a ∧
+        singularCohomologyComplRestrict R k M Set.inter_subset_right n z = -b := by
+  -- identify the pairs `(univ, X ∖ S)`, `(univ, X ∖ T)` and their union and intersection with
+  -- pairs of the form `(X, -)`
+  have hCA : Sᶜ ⊆ (Set.univ : Set X) := Set.subset_univ _
+  have hDB : Tᶜ ⊆ (Set.univ : Set X) := Set.subset_univ _
+  let eC := TopPair.ofInclusionIsoOfSubset hCA Set.mem_univ (s₀ := Sᶜ) fun _ ↦ Iff.rfl
+  let eD := TopPair.ofInclusionIsoOfSubset hDB Set.mem_univ (s₀ := Tᶜ) fun _ ↦ Iff.rfl
+  let eU := TopPair.ofInclusionIsoOfSubset (Set.union_subset_union hCA hDB)
+    (fun _ ↦ Or.inl (Set.mem_univ _)) (s₀ := (S ∩ T)ᶜ) fun _ ↦ by rw [Set.compl_inter]
+  let eI := TopPair.ofInclusionIsoOfSubset (t := Set.univ ∩ Set.univ)
+    (Set.inter_subset_inter hCA hDB) (fun _ ↦ ⟨Set.mem_univ _, Set.mem_univ _⟩)
+    (s₀ := (S ∪ T)ᶜ) fun _ ↦ by rw [Set.compl_union]
+  have hiA : _ ≫ eC.hom = eI.hom ≫ _ :=
+    TopPair.ofInclusionMap_inclusion_comp_ofInclusionIsoOfSubset_hom _ _ _ _ Set.inter_subset_left
+      (fun _ hx ↦ Set.inter_subset_left hx) (mapsTo_id_compl Set.subset_union_left)
+  have hiB : _ ≫ eD.hom = eI.hom ≫ _ :=
+    TopPair.ofInclusionMap_inclusion_comp_ofInclusionIsoOfSubset_hom _ _ _ _ Set.inter_subset_right
+      (fun _ hx ↦ Set.inter_subset_right hx) (mapsTo_id_compl Set.subset_union_right)
+  have hjA : _ ≫ eU.hom = eC.hom ≫ _ :=
+    TopPair.ofInclusionMap_inclusion_comp_ofInclusionIsoOfSubset_hom _ _ _ _ Set.subset_union_left
+      (fun _ hx ↦ Set.subset_union_left hx) (mapsTo_id_compl Set.inter_subset_left)
+  have hjB : _ ≫ eU.hom = eD.hom ≫ _ :=
+    TopPair.ofInclusionMap_inclusion_comp_ofInclusionIsoOfSubset_hom _ _ _ _ Set.subset_union_right
+      (fun _ hx ↦ Set.subset_union_right hx) (mapsTo_id_compl Set.inter_subset_right)
+  -- the four squares, evaluated at cohomology classes
+  have hsq {P Q P' Q' : TopPair.{w}} {f : P ⟶ Q} {g : Q ⟶ Q'} {f' : P ⟶ P'} {g' : P' ⟶ Q'}
+      (hfg : f ≫ g = f' ≫ g') (y : Q'.singularCohomology R k M n) :
+      TopPair.singularCohomologyMap f n (TopPair.singularCohomologyMap g n y) =
+        TopPair.singularCohomologyMap f' n (TopPair.singularCohomologyMap g' n y) := by
+    simp only [← TopPair.singularCohomologyMap_comp_apply, hfg]
+  -- apply the Mayer–Vietoris sequence of the pairs `(univ, X ∖ S)` and `(univ, X ∖ T)`
+  have hA : IsOpen ((↑) ⁻¹' (Set.univ : Set X) : Set ↥((Set.univ : Set X) ∪ Set.univ)) := by
+    simp
+  have hex := (ShortComplex.moduleCat_exact_iff _).1
+    (singularCohomologyPairMayerVietoris_exact₂ R k M hCA hDB hA hA
+      (hS.isOpen_compl.preimage continuous_subtype_val)
+      (hT.isOpen_compl.preimage continuous_subtype_val) n)
+  let HC := (TopPair.ofInclusion hCA).singularCohomology R k M n
+  let HD := (TopPair.ofInclusion hDB).singularCohomology R k M n
+  have hinl (y : HC) := ConcreteCategory.congr_hom
+    (inl_singularCohomologyPairMayerVietorisFromBiprod R k M hCA hDB n) y
+  have hinr (y : HD) := ConcreteCategory.congr_hom
+    (inr_singularCohomologyPairMayerVietorisFromBiprod R k M hCA hDB n) y
+  have hfst := ConcreteCategory.congr_hom
+    (singularCohomologyPairMayerVietorisToBiprod_fst R k M hCA hDB n)
+  have hsnd := ConcreteCategory.congr_hom
+    (singularCohomologyPairMayerVietorisToBiprod_snd R k M hCA hDB n)
+  simp only [ConcreteCategory.comp_apply] at hinl hinr hfst hsnd
+  obtain ⟨q, hq⟩ := hex ((biprod.inl : HC ⟶ HC ⊞ HD) (TopPair.singularCohomologyMap eC.hom n a) +
+    (biprod.inr : HD ⟶ HC ⊞ HD) (-TopPair.singularCohomologyMap eD.hom n b)) (by
+      dsimp only [HC, HD]
+      simp only [map_add, map_neg, hinl, hinr, ModuleCat.hom_neg, LinearMap.neg_apply, neg_neg,
+        hsq hiA, hsq hiB]
+      rw [← map_add, h, map_zero])
+  -- transport the solution back along the identifications of pairs
+  let z := TopPair.singularCohomologyMap eU.inv n q
+  have hz : TopPair.singularCohomologyMap eU.hom n z = q := by
+    rw [← TopPair.singularCohomologyMap_comp_apply, eU.hom_inv_id,
+      TopPair.singularCohomologyMap_id, ModuleCat.id_apply]
+  have hinjC : Function.Injective (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      eC.hom n) :=
+    ((TopPair.singularCohomologyFunctor R k M n).mapIso eC.op).toLinearEquiv.injective
+  have hinjD : Function.Injective (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      eD.hom n) :=
+    ((TopPair.singularCohomologyFunctor R k M n).mapIso eD.op).toLinearEquiv.injective
+  refine ⟨z, hinjC ?_, hinjD ?_⟩
+  · rw [← hsq hjA, hz, ← hfst, hq]
+    simp [HC, HD]
+  · rw [← hsq hjB, hz, ← hsnd, hq]
+    simp [HC, HD]
+
+end Compl
 
 end TopCat

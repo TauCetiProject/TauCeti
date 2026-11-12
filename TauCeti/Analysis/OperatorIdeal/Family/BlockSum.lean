@@ -150,14 +150,14 @@ theorem opGauge_withLpProdMap {F₁ F₂ : Type*}
     [SeminormedAddCommGroup F₂] [InnerProductSpace 𝕜 F₂]
     (T₁ : E₁ →L[𝕜] F₁) (T₂ : E₂ →L[𝕜] F₂) :
     Φ.opGauge (T₁.withLpProdMap p T₂) =
-      Φ.extend fun n ↦ (decreasingMerge T₁.singularValue T₂.singularValue n : ℝ≥0∞) := by
+      Φ.extend fun n ↦ (↑(decreasingMerge T₁.singularValue T₂.singularValue n) : ℝ≥0∞) := by
   simp only [opGauge_def, singularValue_withLpProdMap]
 
 /-- **Extended gauge of a decreasing merge.** For decreasing sequences `a` and `b`, the extended
 gauge of their generalized decreasing merge is at most the sum of their extended gauges:
 `Φ∞(a ⊔↓ b) ≤ Φ∞(a) + Φ∞(b)`. -/
 theorem extend_decreasingMerge_le {a b : ℕ → ℝ≥0} (ha : Antitone a) (hb : Antitone b) :
-    Φ.extend (fun n ↦ (decreasingMerge a b n : ℝ≥0∞)) ≤
+    Φ.extend (fun n ↦ (↑(decreasingMerge a b n) : ℝ≥0∞)) ≤
       Φ.extend (fun n ↦ (a n : ℝ≥0∞)) + Φ.extend (fun n ↦ (b n : ℝ≥0∞)) := by
   -- Realise `a` and `b` as the approximation numbers of diagonal operators on real `ℓ²`.
   obtain ⟨d₁, rfl⟩ := lp.exists_singularValue_diagonalCLM_eq (𝕜 := ℝ) (p := 2) ha
