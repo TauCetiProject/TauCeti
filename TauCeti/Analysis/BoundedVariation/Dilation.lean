@@ -23,7 +23,8 @@ zero. A one-sided domain inclusion gives the corresponding localization inequali
 
 Combined with translation invariance, the perimeter in `ball 0 R` of the blow-up
 `(fun y => x + r • y) ⁻¹' s` is `r / r ^ n` times the perimeter of `s` in `ball x (r * R)`
-(`TauCeti.perimeter_ball_zero_preimage_add_smul`).
+(`TauCeti.perimeter_ball_zero_preimage_add_smul`), that is, the perimeter of `s` in
+`ball x (r * R)` divided by `r ^ (n - 1)` (`TauCeti.perimeter_ball_zero_preimage_add_smul_eq_div`).
 
 The proof uses the divergence of a dilated test vector field and change of variables for an
 additive Haar measure; it does not require a derivative measure or boundary regularity.
@@ -176,5 +177,22 @@ theorem perimeter_ball_zero_preimage_add_smul {x : E} (hr : 0 < r) (R : ℝ) :
     simpa [norm_smul, abs_of_pos hr, mul_lt_mul_iff_right₀ hr] using hy
   · intro y hy
     simpa [norm_smul, abs_of_pos hr, inv_mul_lt_iff₀ hr] using hy
+
+/-- **The perimeter of a blow-up in a ball, normalized.** Against an additive Haar measure on a
+nontrivial space of dimension `n` and for `r > 0`, the perimeter in `ball 0 R` of the blow-up
+`(fun y => x + r • y) ⁻¹' s` is the perimeter of `s` in `ball x (r * R)` divided by
+`r ^ (n - 1)`. -/
+theorem perimeter_ball_zero_preimage_add_smul_eq_div [Nontrivial E] {x : E} (hr : 0 < r)
+    (R : ℝ) :
+    perimeter μ ⟨Metric.ball 0 R, Metric.isOpen_ball⟩ ((fun y => x + r • y) ⁻¹' s) =
+      perimeter μ ⟨Metric.ball x (r * R), Metric.isOpen_ball⟩ s /
+        ENNReal.ofReal (r ^ (Module.finrank ℝ E - 1)) := by
+  obtain ⟨m, hm⟩ : ∃ m, Module.finrank ℝ E = m + 1 :=
+    ⟨_, (Nat.sub_add_cancel Module.finrank_pos).symm⟩
+  rw [perimeter_ball_zero_preimage_add_smul hr, ENNReal.div_eq_inv_mul,
+    ← ENNReal.ofReal_inv_of_pos (by positivity)]
+  congr 2
+  rw [hm, Nat.add_sub_cancel, pow_succ]
+  field_simp
 
 end TauCeti
