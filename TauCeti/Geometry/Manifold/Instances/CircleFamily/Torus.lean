@@ -48,7 +48,7 @@ the coordinates and with base change.
 * `TauCeti.TorusFamily.coord p i`: the `i`-th coordinate, a map to the family of circles of `p i`.
 * `TauCeti.TorusFamily.retraction p b`: the retraction onto the torus over `b`.
 * `TauCeti.TorusFamily.comap p f`: base change along `f`.
-* `TauCeti.TorusFamily.rescale p q IB n`: the fiberwise rescaling from the periods `p` to the
+* `TauCeti.TorusFamily.rescale p IB q n`: the fiberwise rescaling from the periods `p` to the
   periods `q`.
 
 ## Main results
@@ -58,9 +58,10 @@ the coordinates and with base change.
   and the retraction onto it are smooth.
 * `TauCeti.TorusFamily.fiberHomeomorph`: the torus over `b` is homeomorphic to the subspace fiber
   of the base projection.
-* `TauCeti.TorusFamily.contMDiff_coord`, `TauCeti.TorusFamily.contMDiff_iff`: the coordinates are
-  smooth, and a map into the family is `C^n` exactly when its base and its coordinates are.
-* `TauCeti.TorusFamily.contMDiff_comap`, `TauCeti.TorusFamily.isLocalDiffeomorph_comap`,
+* `TauCeti.TorusFamily.contMDiff_coord`, `TauCeti.TorusFamily.contMDiffWithinAt_iff`: the
+  coordinates are smooth, and a map into the family is `C^n` within a set at a point exactly when
+  its base and its coordinates are.
+* `TauCeti.TorusFamily.contMDiffWithinAt_comap`, `TauCeti.TorusFamily.isLocalDiffeomorphAt_comap`,
   `TauCeti.TorusFamily.opensHomeomorph`: smooth base change and open restriction.
 * `TauCeti.TorusFamily.rescale_mk`, `TauCeti.TorusFamily.rescale_trans`,
   `TauCeti.TorusFamily.coord_rescale`: the fiberwise rescalings.
@@ -135,6 +136,16 @@ theorem mk_retraction {b : B} {z : TorusFamily p} (h : z.base = b) :
   subst b
   rcases z with ⟨b, x⟩
   exact congrArg (mk b) (retraction_mk p b x)
+
+/-- The retraction to the torus over `b` rescales each factor from its period at the base point to
+its period at `b`. -/
+@[simp]
+theorem retraction_apply (b : B) (z : TorusFamily p) (i : ι) :
+    retraction p b z i =
+      AddCircle.diffeomorphAddCircle (p i z.base : ℝ) (p i b : ℝ) ⊤ (z.point i) := by
+  rw [retraction, normalizationEquiv_apply, AddCircle.diffeomorphAddCircle_symm]
+  exact DFunLike.congr_fun
+    (AddCircle.diffeomorphAddCircle_trans (p i z.base : ℝ) 1 (p i b : ℝ) ⊤) (z.point i)
 
 /-! ### Coordinates -/
 
@@ -306,27 +317,76 @@ theorem continuous_coord (i : ι) : Continuous (coord p i) := by
   exact (continuous_fst.prodMk ((continuous_apply i).comp continuous_snd)).comp
     (normalizationHomeomorph p).continuous
 
-/-- A map into the family is continuous exactly when its base and all its coordinates are: the
-family is the fiber product of the families of circles of its period functions. -/
-theorem continuous_iff {X : Type*} [TopologicalSpace X] {g : X → TorusFamily p} :
-    Continuous g ↔ Continuous (base ∘ g) ∧ ∀ i, Continuous (coord p i ∘ g) := by
-  refine ⟨fun hg ↦ ⟨(continuous_base p).comp hg, fun i ↦ (continuous_coord p i).comp hg⟩,
-    fun ⟨hb, hc⟩ ↦ continuous_of_normalizationEquiv_comp p ?_⟩
-  have h : normalizationEquiv p ∘ g = fun x ↦ ((base ∘ g) x,
+section ContinuousIff
+
+variable {X : Type*} [TopologicalSpace X] {g : X → TorusFamily p} {s : Set X} {x : X}
+
+/-- A map into the family is continuous within a set at a point exactly when its base and all its
+coordinates are: the family is the fiber product of the families of circles of its period
+functions. -/
+theorem continuousWithinAt_iff :
+    ContinuousWithinAt g s x ↔
+      ContinuousWithinAt (base ∘ g) s x ∧ ∀ i, ContinuousWithinAt (coord p i ∘ g) s x := by
+  refine ⟨fun hg ↦ ⟨(continuous_base p).continuousAt.comp_continuousWithinAt hg,
+    fun i ↦ (continuous_coord p i).continuousAt.comp_continuousWithinAt hg⟩, fun ⟨hb, hc⟩ ↦ ?_⟩
+  have h : normalizationHomeomorph p ∘ g = fun x ↦ ((base ∘ g) x,
       fun i ↦ (CircleFamily.Pullback.normalizationHomeomorph (p i) ((coord p i ∘ g) x)).2) :=
     funext fun x ↦ by simp [coord]
-  rw [h]
-  exact hb.prodMk (continuous_pi fun i ↦ continuous_snd.comp
-    ((CircleFamily.Pullback.normalizationHomeomorph (p i)).continuous.comp (hc i)))
+  rw [(normalizationHomeomorph p).comp_continuousWithinAt_iff, h]
+  exact hb.prodMk (continuousWithinAt_pi.2 fun i ↦
+    ((continuous_snd.comp (CircleFamily.Pullback.normalizationHomeomorph (p i)).continuous).tendsto
+      _).comp (hc i))
+
+/-- A map into the family is continuous at a point exactly when its base and all its coordinates
+are. -/
+theorem continuousAt_iff :
+    ContinuousAt g x ↔ ContinuousAt (base ∘ g) x ∧ ∀ i, ContinuousAt (coord p i ∘ g) x := by
+  simp only [← continuousWithinAt_univ, TorusFamily.continuousWithinAt_iff]
+
+/-- A map into the family is continuous on a set exactly when its base and all its coordinates
+are. -/
+theorem continuousOn_iff :
+    ContinuousOn g s ↔ ContinuousOn (base ∘ g) s ∧ ∀ i, ContinuousOn (coord p i ∘ g) s := by
+  simp only [ContinuousOn, TorusFamily.continuousWithinAt_iff]
+  exact ⟨fun h ↦ ⟨fun x hx ↦ (h x hx).1, fun i x hx ↦ (h x hx).2 i⟩,
+    fun h x hx ↦ ⟨h.1 x hx, fun i ↦ h.2 i x hx⟩⟩
+
+/-- A map into the family is continuous exactly when its base and all its coordinates are: the
+family is the fiber product of the families of circles of its period functions. -/
+theorem continuous_iff :
+    Continuous g ↔ Continuous (base ∘ g) ∧ ∀ i, Continuous (coord p i ∘ g) := by
+  simp only [← continuousOn_univ, TorusFamily.continuousOn_iff]
+
+end ContinuousIff
 
 /-! ### Continuity of base change -/
 
 variable [TopologicalSpace B']
 
+/-- Base change is continuous within the part of the family over `s` at a point over which `f` is
+continuous within `s`. -/
+theorem continuousWithinAt_comap {s : Set B'} {z : TorusFamily fun i ↦ p i ∘ f}
+    (hf : ContinuousWithinAt f s z.base) : ContinuousWithinAt (comap p f) (base ⁻¹' s) z := by
+  have h : normalizationHomeomorph p ∘ comap p f =
+      fun w ↦ (f w.base, (normalizationHomeomorph _ w).2) := (rfl)
+  rw [(normalizationHomeomorph p).comp_continuousWithinAt_iff, h]
+  exact (hf.comp (continuous_base _).continuousWithinAt (mapsTo_preimage _ _)).prodMk
+    (continuous_snd.comp (normalizationHomeomorph _).continuous).continuousWithinAt
+
+/-- Base change is continuous at a point over which `f` is continuous. -/
+theorem continuousAt_comap {z : TorusFamily fun i ↦ p i ∘ f} (hf : ContinuousAt f z.base) :
+    ContinuousAt (comap p f) z := by
+  rw [← continuousWithinAt_univ] at hf ⊢
+  simpa only [preimage_univ] using continuousWithinAt_comap p f hf
+
+/-- Base change is continuous on the part of the family over a set on which `f` is continuous. -/
+theorem continuousOn_comap {s : Set B'} (hf : ContinuousOn f s) :
+    ContinuousOn (comap p f) (base ⁻¹' s) :=
+  fun _ hz ↦ continuousWithinAt_comap p f (hf _ hz)
+
 /-- Base change is continuous along a continuous map. -/
 theorem continuous_comap (hf : Continuous f) : Continuous (comap p f) :=
-  continuous_of_normalizationEquiv_comp p ((hf.prodMap continuous_id).comp
-    (normalizationHomeomorph _).continuous)
+  continuous_iff_continuousAt.2 fun _ ↦ continuousAt_comap p f hf.continuousAt
 
 /-- Base change along an open embedding is an open embedding. -/
 theorem isOpenEmbedding_comap (hf : IsOpenEmbedding f) : IsOpenEmbedding (comap p f) := by
@@ -412,10 +472,29 @@ theorem normalization_symm_apply (n : ℕ∞ω) (z : B × (ι → AddCircle (1 :
 
 /-- In normalized coordinates, a point of the torus over `b` keeps its base point and each factor
 is rescaled to period one. -/
+@[simp]
 theorem normalization_mk (n : ℕ∞ω) (b : B) (x : ∀ i, AddCircle (p i b : ℝ)) :
     normalization p IB n (mk b x) =
       (b, fun i ↦ AddCircle.diffeomorphAddCircle (p i b : ℝ) 1 ⊤ (x i)) := by
   rw [coe_normalization, normalizationEquiv_apply]
+
+omit [Fintype ι] in
+/-- In normalized coordinates, the `i`-th coordinate of a point keeps its base point and its
+`i`-th factor, rescaled to period one. -/
+@[simp]
+theorem normalization_coord (n : ℕ∞ω) (i : ι) (z : TorusFamily p) :
+    CircleFamily.Pullback.normalization (p i) IB n (coord p i z) =
+      (z.base, AddCircle.diffeomorphAddCircle (p i z.base : ℝ) 1 ⊤ (z.point i)) :=
+  CircleFamily.Pullback.normalization_mk (p i) IB n z.base (z.point i)
+
+/-- In normalized coordinates, the base change of a point lies over the image of its base point,
+with the same factors rescaled to period one. -/
+@[simp]
+theorem normalization_comap (n : ℕ∞ω) (z : TorusFamily fun i ↦ p i ∘ f) :
+    normalization p IB n (comap p f z) =
+      (f z.base, fun i ↦ AddCircle.diffeomorphAddCircle (p i (f z.base) : ℝ) 1 ⊤ (z.point i)) := by
+  rw [coe_normalization]
+  rfl
 
 /-- The base projection of the family is `C^n`. -/
 theorem contMDiff_base (n : ℕ∞ω) :
@@ -467,26 +546,56 @@ theorem contMDiff_coord (n : ℕ∞ω) (i : ι) :
   exact (CircleFamily.Pullback.normalization (p i) IB n).symm.contMDiff.comp
     ((contMDiff_id.prodMap contMDiff_apply).comp (normalization p IB n).contMDiff)
 
-/-- A map into the family is `C^n` exactly when its base and all its coordinates are: the family is
-the fiber product of the families of circles of its period functions. -/
-theorem contMDiff_iff {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX]
-    [TopologicalSpace HX] {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X]
-    [ChartedSpace HX X] {n : ℕ∞ω} {g : X → TorusFamily p} :
-    ContMDiff IX (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n g ↔
-      ContMDiff IX IB n (base ∘ g) ∧ ∀ i, ContMDiff IX (IB.prod 𝓘(ℝ)) n (coord p i ∘ g) := by
-  refine ⟨fun hg ↦ ⟨(contMDiff_base p IB n).comp hg, fun i ↦ (contMDiff_coord p IB n i).comp hg⟩,
+section ContMDiffIff
+
+variable {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
+  {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X] {n : ℕ∞ω}
+  {g : X → TorusFamily p} {s : Set X} {x : X}
+
+/-- A map into the family is `C^n` within a set at a point exactly when its base and all its
+coordinates are: the family is the fiber product of the families of circles of its period
+functions. -/
+theorem contMDiffWithinAt_iff :
+    ContMDiffWithinAt IX (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n g s x ↔
+      ContMDiffWithinAt IX IB n (base ∘ g) s x ∧
+        ∀ i, ContMDiffWithinAt IX (IB.prod 𝓘(ℝ)) n (coord p i ∘ g) s x := by
+  refine ⟨fun hg ↦ ⟨(contMDiff_base p IB n).contMDiffAt.comp_contMDiffWithinAt x hg,
+    fun i ↦ (contMDiff_coord p IB n i).contMDiffAt.comp_contMDiffWithinAt x hg⟩,
     fun ⟨hb, hc⟩ ↦ ?_⟩
-  have h : g = (normalization p IB n).symm ∘ fun x ↦ ((base ∘ g) x,
+  have h : normalization p IB n ∘ g = fun x ↦ ((base ∘ g) x,
       fun i ↦ (CircleFamily.Pullback.normalization (p i) IB n ((coord p i ∘ g) x)).2) := by
     funext x
-    rw [Function.comp_apply, ← (normalization p IB n).symm_apply_apply (g x)]
-    congr 1
-    ext
-    · simp
-    · simp [coord]
-  rw [h]
-  exact (normalization p IB n).symm.contMDiff.comp (hb.prodMk (contMDiff_pi_iff.2 fun i ↦
-    contMDiff_snd.comp ((CircleFamily.Pullback.normalization (p i) IB n).contMDiff.comp (hc i))))
+    ext <;> simp
+  rw [← (normalization p IB n).contMDiffWithinAt_diffeomorph_comp_iff le_rfl, h]
+  exact hb.prodMk (contMDiffWithinAt_pi_iff.2 fun i ↦ contMDiffAt_snd.comp_contMDiffWithinAt x
+    ((CircleFamily.Pullback.normalization (p i) IB n).contMDiffAt.comp_contMDiffWithinAt x
+      (hc i)))
+
+/-- A map into the family is `C^n` at a point exactly when its base and all its coordinates
+are. -/
+theorem contMDiffAt_iff :
+    ContMDiffAt IX (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n g x ↔
+      ContMDiffAt IX IB n (base ∘ g) x ∧
+        ∀ i, ContMDiffAt IX (IB.prod 𝓘(ℝ)) n (coord p i ∘ g) x := by
+  simp only [← contMDiffWithinAt_univ, TorusFamily.contMDiffWithinAt_iff]
+
+/-- A map into the family is `C^n` on a set exactly when its base and all its coordinates are. -/
+theorem contMDiffOn_iff :
+    ContMDiffOn IX (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n g s ↔
+      ContMDiffOn IX IB n (base ∘ g) s ∧
+        ∀ i, ContMDiffOn IX (IB.prod 𝓘(ℝ)) n (coord p i ∘ g) s := by
+  simp only [ContMDiffOn, TorusFamily.contMDiffWithinAt_iff]
+  exact ⟨fun h ↦ ⟨fun x hx ↦ (h x hx).1, fun i x hx ↦ (h x hx).2 i⟩,
+    fun h x hx ↦ ⟨h.1 x hx, fun i ↦ h.2 i x hx⟩⟩
+
+/-- A map into the family is `C^n` exactly when its base and all its coordinates are: the family is
+the fiber product of the families of circles of its period functions. -/
+theorem contMDiff_iff :
+    ContMDiff IX (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n g ↔
+      ContMDiff IX IB n (base ∘ g) ∧ ∀ i, ContMDiff IX (IB.prod 𝓘(ℝ)) n (coord p i ∘ g) := by
+  simp only [← contMDiffOn_univ, TorusFamily.contMDiffOn_iff]
+
+end ContMDiffIff
 
 /-! ### Smooth base change -/
 
@@ -502,24 +611,63 @@ private theorem comap_eq :
     ← (normalization p IB n).symm_apply_apply (comap p f z), coe_normalization, coe_normalization,
     normalizationEquiv_comap]
 
+/-- Base change is `C^n` within the part of the family over `s` at a point over which `f` is `C^n`
+within `s`. -/
+theorem contMDiffWithinAt_comap {s : Set B'} {z : TorusFamily fun i ↦ p i ∘ f}
+    (hf : ContMDiffWithinAt IB' IB n f s z.base) :
+    ContMDiffWithinAt (IB'.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
+      (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n (comap p f) (base ⁻¹' s) z := by
+  have h : normalization p IB n ∘ comap p f =
+      fun w ↦ (f w.base, (normalization _ IB' n w).2) := by
+    funext w
+    simp
+  rw [← (normalization p IB n).contMDiffWithinAt_diffeomorph_comp_iff le_rfl, h]
+  exact (hf.comp z (contMDiff_base _ IB' n z).contMDiffWithinAt (mapsTo_preimage _ _)).prodMk
+    (contMDiff_snd.comp (normalization _ IB' n).contMDiff z).contMDiffWithinAt
+
+/-- Base change is `C^n` at a point over which `f` is `C^n`. -/
+theorem contMDiffAt_comap {z : TorusFamily fun i ↦ p i ∘ f} (hf : ContMDiffAt IB' IB n f z.base) :
+    ContMDiffAt (IB'.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
+      (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n (comap p f) z := by
+  rw [← contMDiffWithinAt_univ] at hf ⊢
+  simpa only [preimage_univ] using contMDiffWithinAt_comap p f IB hf
+
+/-- Base change is `C^n` on the part of the family over a set on which `f` is `C^n`. -/
+theorem contMDiffOn_comap {s : Set B'} (hf : ContMDiffOn IB' IB n f s) :
+    ContMDiffOn (IB'.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
+      (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n (comap p f) (base ⁻¹' s) :=
+  fun _ hz ↦ contMDiffWithinAt_comap p f IB (hf _ hz)
+
 /-- Base change along a `C^n` map is `C^n`. -/
 theorem contMDiff_comap (hf : ContMDiff IB' IB n f) :
     ContMDiff (IB'.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
-      (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n (comap p f) := by
+      (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n (comap p f) :=
+  fun _ ↦ contMDiffAt_comap p f IB (hf _)
+
+/-- Base change is a `C^n` local diffeomorphism at a point over which `f` is one. -/
+theorem isLocalDiffeomorphAt_comap {z : TorusFamily fun i ↦ p i ∘ f}
+    (hf : IsLocalDiffeomorphAt IB' IB n f z.base) :
+    IsLocalDiffeomorphAt (IB'.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
+      (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n (comap p f) z := by
   rw [comap_eq p f IB (IB' := IB') (n := n)]
-  exact (normalization p IB n).symm.contMDiff.comp
-    ((hf.prodMap contMDiff_id).comp (normalization _ IB' n).contMDiff)
+  have h := hf.prodMap ((Diffeomorph.refl (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+    (ι → AddCircle (1 : ℝ)) n).isLocalDiffeomorph (normalization _ IB' n z).2)
+  rw [← normalization_fst _ IB' n z] at h
+  exact ((normalization _ IB' n).isLocalDiffeomorph z).comp _ _
+    (h.comp _ _ ((normalization p IB n).symm.isLocalDiffeomorph _))
+
+/-- Base change is a `C^n` local diffeomorphism on the part of the family over a set on which `f`
+is one. -/
+theorem isLocalDiffeomorphOn_comap {s : Set B'} (hf : IsLocalDiffeomorphOn IB' IB n f s) :
+    IsLocalDiffeomorphOn (IB'.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
+      (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n (comap p f) (base ⁻¹' s) :=
+  fun z ↦ isLocalDiffeomorphAt_comap p f IB (hf ⟨z.1.base, z.2⟩)
 
 /-- Base change along a `C^n` local diffeomorphism is a `C^n` local diffeomorphism. -/
 theorem isLocalDiffeomorph_comap (hf : IsLocalDiffeomorph IB' IB n f) :
     IsLocalDiffeomorph (IB'.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
-      (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n (comap p f) := by
-  rw [comap_eq p f IB (IB' := IB') (n := n)]
-  intro z
-  have h := hf.prodMap (Diffeomorph.refl (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-    (ι → AddCircle (1 : ℝ)) n).isLocalDiffeomorph
-  exact ((normalization _ IB' n).isLocalDiffeomorph z).comp _ _
-    ((h _).comp _ _ ((normalization p IB n).symm.isLocalDiffeomorph _))
+      (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n (comap p f) :=
+  fun z ↦ isLocalDiffeomorphAt_comap p f IB (hf z.base)
 
 /-! ### Fiberwise rescaling -/
 

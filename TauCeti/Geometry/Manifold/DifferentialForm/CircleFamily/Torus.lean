@@ -32,7 +32,7 @@ Both forms are natural. Base change along a smooth map `f : B' → B` pulls back
 those of the periods `p i ∘ f`; in particular, along the inclusion of an open subset, the forms of
 `p` restrict to those of the family over that subset. The fiberwise rescaling from the periods `p`
 to the periods `q` keeps the normalized angles, so it pulls the angle form `β_i` of `q` back to that
-of `p`, and the time form `η_i` of `q` back to `(q i / p i) • η_i`.
+of `p`, and the time form `η_i` of `q` back to `(q i / p i)` times the time form `η_i` of `p`.
 
 ## Main definitions
 
@@ -41,6 +41,8 @@ of `p`, and the time form `η_i` of `q` back to `(q i / p i) • η_i`.
 
 ## Main results
 
+* `TauCeti.TorusFamily.angleForm_apply`: the angle form is the differential of the `i`-th
+  normalized angle.
 * `TauCeti.TorusFamily.isClosed_angleForm`, `TauCeti.TorusFamily.mpullback_mk_angleForm`: the
   angle form is closed and restricts to `(p i b)⁻¹ • dt_i` on the torus over `b`.
 * `TauCeti.TorusFamily.timeForm_apply`, `TauCeti.TorusFamily.mpullback_mk_timeForm`: the time form
@@ -100,6 +102,23 @@ theorem mpullback_coord_angleForm (i : ι) :
     SmoothForm.mpullback (coord p i) (contMDiff_coord p IB ∞ i)
       (CircleFamily.Pullback.angleForm (p i) IB) = angleForm p IB i :=
   (rfl)
+
+/-- The angle form `β_i` is the differential of the `i`-th normalized angle, read in the real
+tangent lines of the unit-period circle. -/
+@[simp]
+theorem angleForm_apply (i : ι) (z : TorusFamily p)
+    (v : Fin 1 → TangentSpace (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) z) :
+    (angleForm p IB i).1 z v =
+      mfderiv (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) 𝓘(ℝ)
+        (fun z ↦ (normalization p IB ∞ z).2 i) z (v 0) := by
+  have hg := ((contMDiff_snd.comp (CircleFamily.Pullback.normalization (p i) IB ∞).contMDiff)
+    (coord p i z)).mdifferentiableAt (by simp)
+  have hc := (contMDiff_coord p IB ∞ i z).mdifferentiableAt (by simp)
+  have h : (Prod.snd ∘ CircleFamily.Pullback.normalization (p i) IB ∞) ∘ coord p i =
+      fun z ↦ (normalization p IB ∞ z).2 i :=
+    funext fun z ↦ by simp
+  rw [angleForm, SmoothForm.mpullback_apply, CircleFamily.Pullback.angleForm_apply, ← h]
+  exact (mfderiv_comp_apply z hg hc (v 0)).symm
 
 /-- The angle forms are closed. -/
 theorem isClosed_angleForm (i : ι) : (angleForm p IB i).IsClosed :=
@@ -222,7 +241,7 @@ theorem mpullback_rescale_angleForm (i : ι) :
     (funext (coord_rescale p IB q ∞ i)), CircleFamily.Pullback.mpullback_rescale_angleForm]
 
 /-- The fiberwise rescaling from the periods `p` to the periods `q` pulls the time form `η_i` of
-`q` back to `(q i / p i) • η_i`. -/
+`q` back to `(q i / p i)` times the time form `η_i` of `p`. -/
 theorem mpullback_rescale_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i))
     (hq : ContMDiff IB 𝓘(ℝ) ∞ (q i)) :
     (SmoothForm.mpullback (rescale p IB q ∞) (rescale p IB q ∞).contMDiff
