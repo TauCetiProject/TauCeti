@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.Algebra.Group.Basic
 public import Mathlib.ModelTheory.Complexity
 import Mathlib.GroupTheory.Commutator.Basic
+import TauCeti.ModelTheory.Term.Constants
 
 /-!
 # A nontrivial-centralizer sentence and the commutativity sentence
@@ -74,9 +75,7 @@ theorem realize_nontrivialCentralizerSentence_iff [Group G] (c : A → G) (a : A
     letI := Language.constantsOn.structure c
     G ⊨ nontrivialCentralizerSentence a ↔ ∃ x : G, Commute x (c a) ∧ x ≠ 1 := by
   let := Language.constantsOn.structure c
-  -- The coefficient name `a` is interpreted by `c a`, by definition of `constantsOn.structure`.
-  have hc : ((Language.group.con a : Language.group[[A]].Constants) : G) = c a := rfl
-  simp [nontrivialCentralizerSentence, Sentence.Realize, Formula.Realize, Fin.snoc, hc,
+  simp [nontrivialCentralizerSentence, Sentence.Realize, Formula.Realize, Fin.snoc,
     ← commutatorElement_def, commutatorElement_eq_one_iff_commute]
 
 /-- A nontrivial coefficient commutes with itself, so `nontrivialCentralizerSentence a` holds
