@@ -23,6 +23,7 @@ and supporting receiver notation on the ideal and the homomorphism.
 
 ## Main definitions
 
+* `LieIdeal.quotEquivOfEq`: the Lie equivalence between quotients by equal ideals.
 * `LieIdeal.liftQ`: the homomorphism `L ⧸ I →ₗ⁅R⁆ L'` induced by a homomorphism
   `L →ₗ⁅R⁆ L'` whose kernel contains `I`.
 * `LieIdeal.factor`: the transition `L ⧸ I →ₗ⁅R⁆ L ⧸ J` between the quotients by nested ideals
@@ -64,6 +65,30 @@ namespace LieIdeal
 
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
 variable (I : LieIdeal R L)
+
+/-- Quotienting by equal Lie ideals gives equivalent Lie algebras, refining
+`Submodule.quotEquivOfEq` by retaining the Lie bracket. -/
+def quotEquivOfEq (J : LieIdeal R L) (h : I = J) : (L ⧸ I) ≃ₗ⁅R⁆ L ⧸ J where
+  __ := Submodule.quotEquivOfEq I.toSubmodule J.toSubmodule (congrArg LieSubmodule.toSubmodule h)
+  map_lie' {x y} := by
+    induction x using Submodule.Quotient.induction_on
+    induction y using Submodule.Quotient.induction_on
+    -- The underlying quotient equivalence preserves representatives definitionally.
+    rfl
+
+/-- The equivalence between quotients by equal ideals preserves representatives. -/
+@[simp]
+theorem quotEquivOfEq_mk (J : LieIdeal R L) (h : I = J) (x : L) :
+    I.quotEquivOfEq J h (LieSubmodule.Quotient.mk x) = LieSubmodule.Quotient.mk x :=
+  Submodule.quotEquivOfEq_mk _ _ (congrArg LieSubmodule.toSubmodule h) x
+
+/-- The inverse equivalence between quotients by equal ideals preserves representatives. -/
+@[simp]
+theorem quotEquivOfEq_symm_mk (J : LieIdeal R L) (h : I = J) (x : L) :
+    (I.quotEquivOfEq J h).symm (LieSubmodule.Quotient.mk x) =
+      LieSubmodule.Quotient.mk x := by
+  apply (I.quotEquivOfEq J h).injective
+  simp
 
 /-- The homomorphism `L ⧸ I →ₗ⁅R⁆ L'` induced by a homomorphism `f : L →ₗ⁅R⁆ L'` whose kernel
 contains the ideal `I`. -/
