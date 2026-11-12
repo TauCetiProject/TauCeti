@@ -69,9 +69,7 @@ itself is not carried out here.
 * `TauCeti.integral_sum_euclideanWittenLaplacian_mul_eq`: the IMS localization formula for the
   quadratic form of `Δ_t`.
 * `TauCeti.sum_sum_neg_fderiv_fderiv_mul_add_mul_sum_sq_le_sum_euclideanWittenLaplacian_mul`: the
-  pointwise lower bound for `⟨Δ_t φ, φ⟩`, with
-  `TauCeti.continuousAt_mul_sum_fderiv_apply_sq_sub_mul_sum_sum_abs_fderiv_fderiv_apply` the
-  continuity of its potential.
+  pointwise lower bound for `⟨Δ_t φ, φ⟩`.
 * `TauCeti.integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul` and
   `TauCeti.mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul`: lower bounds for the
   quadratic form of `Δ_t` by the potential `t² |df|² - |t| |Hess f|`.
@@ -246,10 +244,11 @@ theorem integral_sum_euclideanWittenLaplacian_mul_eq {α : Type*} {A : Finset α
 
 /-! ### The lower bound away from the critical points -/
 
+omit [LinearOrder ι] in
 /-- The potential `t² |df|² - |t| ∑_{i,j} |∂ᵢ∂ⱼf|` of a function `f` that is `C²` at `x` is
 continuous at `x`. -/
-theorem continuousAt_mul_sum_fderiv_apply_sq_sub_mul_sum_sum_abs_fderiv_fderiv_apply
-    {f : (ι → ℝ) → ℝ} {x : ι → ℝ} (hf : ContDiffAt ℝ 2 f x) (t : ℝ) :
+private theorem continuousAt_mul_sum_fderiv_apply_sq_sub_mul_sum_sum_abs_fderiv_fderiv_apply
+    [DecidableEq ι] {f : (ι → ℝ) → ℝ} {x : ι → ℝ} (hf : ContDiffAt ℝ 2 f x) (t : ℝ) :
     ContinuousAt (fun y ↦ t ^ 2 * ∑ i, fderiv ℝ f y (Pi.single i 1) ^ 2 -
       |t| * ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) y (Pi.single i 1) (Pi.single j 1)|) x := by
   have hf₁ : ContinuousAt (fderiv ℝ f) x := (hf.fderiv_right (m := 1) (by norm_num)).continuousAt

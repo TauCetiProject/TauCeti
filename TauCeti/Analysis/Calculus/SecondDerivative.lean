@@ -96,7 +96,8 @@ Morse-theoretic definitions that use them.
   derivative.
 * `TauCeti.fderiv_fderiv_smul_apply`: the second-order product rule for a scalar multiple, with
   `TauCeti.fderiv_fderiv_fun_smul_apply` its form for `fun y ↦ f y • g y`, and
-  `TauCeti.fderiv_fderiv_mul_apply` its case of a product of scalar-valued maps.
+  `TauCeti.fderiv_fderiv_mul_apply` (and `TauCeti.fderiv_fderiv_fun_mul_apply`) its case of a
+  product of maps into a commutative algebra.
 * `TauCeti.sum_mul_fderiv_apply_eq_zero_of_sum_sq_eventuallyEq_const` and
   `TauCeti.sum_mul_fderiv_fderiv_apply_add_fderiv_apply_mul_eq_zero_of_sum_sq_eventuallyEq_const`:
   the first and second derivatives of a partition of unity by squares, `∑ₐ Jₐ²` constant.
@@ -434,16 +435,17 @@ theorem fderiv_fderiv_smul_apply {𝕜' : Type*} [NormedRing 𝕜'] [NormedAlgeb
     ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.flip_apply]
   abel
 
-/-- **The second-order product rule.** For scalar-valued maps `f` and `g` which are `C²` at `x`,
+/-- **The second-order product rule.** For maps `f` and `g` into a normed commutative algebra
+which are `C²` at `x`,
 `D²(f g)(v, w) = f D²g(v, w) + g D²f(v, w) + Df(v) Dg(w) + Dg(v) Df(w)`. This is the case
-`𝕜' = F = 𝕜` of `TauCeti.fderiv_fderiv_smul_apply`. -/
-theorem fderiv_fderiv_mul_apply {f g : E → 𝕜} {x : E} (hf : ContDiffAt 𝕜 2 f x)
-    (hg : ContDiffAt 𝕜 2 g x) (v w : E) :
+`𝕜' = F` of `TauCeti.fderiv_fderiv_smul_apply`. -/
+@[to_fun fderiv_fderiv_fun_mul_apply]
+theorem fderiv_fderiv_mul_apply {𝔸' : Type*} [NormedCommRing 𝔸'] [NormedAlgebra 𝕜 𝔸']
+    {f g : E → 𝔸'} {x : E} (hf : ContDiffAt 𝕜 2 f x) (hg : ContDiffAt 𝕜 2 g x) (v w : E) :
     fderiv 𝕜 (fderiv 𝕜 (f * g)) x v w =
       f x * fderiv 𝕜 (fderiv 𝕜 g) x v w + g x * fderiv 𝕜 (fderiv 𝕜 f) x v w +
         fderiv 𝕜 f x v * fderiv 𝕜 g x w + fderiv 𝕜 g x v * fderiv 𝕜 f x w := by
-  rw [show f * g = f • g from rfl, fderiv_fderiv_smul_apply hf hg v w]
-  simp only [smul_eq_mul]
+  simp_rw [Pi.mul_def, ← smul_eq_mul, fderiv_fderiv_fun_smul_apply hf hg v w, smul_eq_mul]
   ring
 
 /-- **The derivative of a partition of unity by squares.** If `∑ₐ Jₐ²` is constant near `x` and
