@@ -77,12 +77,8 @@ of `G`, equivalently the central extensions of `G` by `kˣ` up to equivalence.
 
 ## References
 
-This is the second-cohomology target of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` ("projective representations,
-factor sets, and the Schur multiplier"), which asks for `groupCohomology.H2` of the module of
-scalars together with a proof that it classifies factor sets up to cohomology. See
-G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Ch. 1, and
-K. S. Brown, *Cohomology of Groups*, Springer GTM 87 (1982), Ch. IV.3.
+See G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Ch. 1,
+and K. S. Brown, *Cohomology of Groups*, Springer GTM 87 (1982), Ch. IV.3.
 -/
 
 public section
