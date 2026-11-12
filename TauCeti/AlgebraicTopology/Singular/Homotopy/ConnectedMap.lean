@@ -42,6 +42,12 @@ both are defined this makes the inclusion of the bottom face surjective on homol
 one degree lower (`TauCeti.epi_twistedHomologyMap_subtypeVal_of_relHomotopyGroup`,
 `TauCeti.isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt`).
 
+For a map of pairs `(X, A) → (Y, B)` which is `n`-connected on the ambient spaces and on the
+subspaces, the five lemma in the long exact sequences of the two pairs gives isomorphisms
+`H_m(X, A; R) ≅ H_m(Y, B; R)` for `m < n` and a surjection for `m = n`
+(`TopPair.isIso_singularHomologyMap_of_isNConnected`,
+`TopPair.epi_singularHomologyMap_of_isNConnected`).
+
 For the inclusion of the `n`-skeleton of a relative CW complex, which is `n`-connected
 (`TauCeti.isNConnected_inclusion_skeletonLT`), this gives surjectivity on homology in degree `n`.
 The isomorphisms below degree `n` are the classical statement that the skeleton carries the
@@ -60,6 +66,10 @@ homology of the complex (Hatcher, Lemma 2.34(c)), already available as
 * `ContinuousMap.IsNConnected.isIso_twistedHomologyMap`,
   `ContinuousMap.IsNConnected.epi_twistedHomologyMap`: an `n`-connected map induces isomorphisms
   on homology with local coefficients below degree `n`, and surjections up to degree `n`.
+* `TopPair.isIso_singularHomologyMap_of_isNConnected`,
+  `TopPair.epi_singularHomologyMap_of_isNConnected`: a map of pairs which is `n`-connected on the
+  ambient spaces and on the subspaces induces isomorphisms on relative singular homology below
+  degree `n`, and surjections up to degree `n`.
 * `TauCeti.epi_singularHomologyMap_inclusion_skeletonLT`: the inclusion of the `n`-skeleton of a
   relative CW complex induces surjections on singular homology up to degree `n`.
 
@@ -244,3 +254,63 @@ theorem epi_twistedHomologyMap (hf : f.IsNConnected n)
       hf.subsingleton_relHomotopyGroup_mappingCylinder_fin _ (by lia))
 
 end ContinuousMap.IsNConnected
+
+/-! ### Pairs of spaces -/
+
+namespace TopPair
+
+variable {P P' : TopPair.{u}} (f : P ⟶ P') {n : ℕ} (R : Type u) [Ring R]
+
+/-- **A map of pairs which is `n`-connected on the ambient spaces and on the subspaces induces
+isomorphisms on relative singular homology below degree `n`**: the map
+`H_m(X, A; R) → H_m(Y, B; R)` is an isomorphism for every `m < n`, by the five lemma in the long
+exact sequences of the two pairs. -/
+theorem isIso_singularHomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConnected n)
+    (hsnd : (Hom.snd f).hom.IsNConnected n) {m : ℕ} (hm : m < n) :
+    IsIso (TopPair.singularHomologyMap f (ModuleCat.of R R) m) := by
+  -- The components of the morphism of chain sequences are the chain maps of `Hom.snd f`,
+  -- `Hom.fst f` and the relative chain map, and the singular homology maps of `Hom.snd f` and
+  -- `Hom.fst f` are by definition the homology maps of their chain maps
+  -- (`singularHomologyFunctor_obj_map`).
+  have h := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₃
+    (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) (ModuleCat.of R R))
+    ((toSSetPair.obj P).shortExact_chainComplexShortComplex _)
+    ((toSSetPair.obj P').shortExact_chainComplexShortComplex _) m
+    (by
+      rw [SSetPair.chainComplexShortComplexMap_τ₁, toSSetPair_map_left]
+      exact hsnd.epi_singularHomologyMap R hm.le)
+    (by
+      rw [SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
+      exact hfst.isIso_singularHomologyMap R hm)
+    (fun j hj ↦ by
+      rw [SSetPair.chainComplexShortComplexMap_τ₁, toSSetPair_map_left]
+      exact hsnd.isIso_singularHomologyMap R (by simp at hj; lia))
+    (fun j hj ↦ by
+      rw [SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
+      exact @IsIso.mono_of_iso _ _ _ _ _ (hfst.isIso_singularHomologyMap R (by simp at hj; lia)))
+  rwa [SSetPair.chainComplexShortComplexMap_τ₃] at h
+
+/-- **A map of pairs which is `n`-connected on the ambient spaces and on the subspaces induces
+surjections on relative singular homology up to degree `n`**: the map
+`H_m(X, A; R) → H_m(Y, B; R)` is an epimorphism for every `m ≤ n`. -/
+theorem epi_singularHomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConnected n)
+    (hsnd : (Hom.snd f).hom.IsNConnected n) {m : ℕ} (hm : m ≤ n) :
+    Epi (TopPair.singularHomologyMap f (ModuleCat.of R R) m) := by
+  -- As in `isIso_singularHomologyMap_of_isNConnected`, the components are the chain maps of
+  -- `Hom.snd f`, `Hom.fst f` and the relative chain map.
+  have h := HomologicalComplex.HomologySequence.epi_homologyMap_τ₃
+    (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) (ModuleCat.of R R))
+    ((toSSetPair.obj P).shortExact_chainComplexShortComplex _)
+    ((toSSetPair.obj P').shortExact_chainComplexShortComplex _) m
+    (by
+      rw [SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
+      exact hfst.epi_singularHomologyMap R hm)
+    (fun j hj ↦ by
+      rw [SSetPair.chainComplexShortComplexMap_τ₁, toSSetPair_map_left]
+      exact hsnd.epi_singularHomologyMap R (by simp at hj; lia))
+    (fun j hj ↦ by
+      rw [SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
+      exact @IsIso.mono_of_iso _ _ _ _ _ (hfst.isIso_singularHomologyMap R (by simp at hj; lia)))
+  rwa [SSetPair.chainComplexShortComplexMap_τ₃] at h
+
+end TopPair
