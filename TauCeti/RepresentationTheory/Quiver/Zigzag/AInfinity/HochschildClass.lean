@@ -675,31 +675,23 @@ theorem hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra {n : ℕ}
       ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩) = 0 := by
   have hG :=
     zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading (hns := hns) c hc
-  rcases n.eq_zero_or_pos with rfl | hn
-  · -- In arity two the obstruction vanishes: the two binary operations agree.
-    have hm : ∀ r, 0 < r → r ≤ 2 → (zigzagLoopAInfinityAlgebra hns c hc).m r = (𝒵).m r := by
-      intro r hr hr2
-      rcases eq_or_ne r 2 with rfl | h₂
-      · exact zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc
-      · rw [zigzagLoopAInfinityAlgebra_m_eq_zero _ _ h₂ (by omega),
-          zigzagStrictAInfinityAlgebra_m_eq_zero h₂]
-    have h0 : (zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨0 + 2, by omega⟩ = 0 := by
-      refine LinearMap.ext fun z ↦ ?_
-      rw [AInfinityAlgebra.obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply,
-        AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq hG hm
-          (lengthProj_mem_filtration _ _ ⟨0 + 2, by omega⟩ z), sub_self]
-      rfl
-    rw [h0, AInfinityAlgebra.hochschildDifferential_zero]
-  -- The loop deformation agrees with the strict zigzag algebra up to arity `n + 1`.
-  have hm : ∀ r, 0 < r → r ≤ n + 1 → (zigzagLoopAInfinityAlgebra hns c hc).m r = (𝒵).m r := by
-    intro r hr hrn
+  -- The loop deformation agrees with the strict zigzag algebra except in arity `n + 2`.
+  have hm : ∀ r, 0 < r → (r = 2 ∨ r ≠ n + 2) →
+      (zigzagLoopAInfinityAlgebra hns c hc).m r = (𝒵).m r := by
+    intro r hr hr'
     rcases eq_or_ne r 2 with rfl | h₂
     · exact zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc
     · rw [zigzagLoopAInfinityAlgebra_m_eq_zero _ _ h₂ (by omega),
         zigzagStrictAInfinityAlgebra_m_eq_zero h₂]
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- In arity two the obstruction vanishes: the two binary operations agree.
+    rw [AInfinityAlgebra.obstruction_eq_zero_of_forall_m_eq hG (n := ⟨0 + 2, by omega⟩)
+      fun r hr hr2 ↦ hm r hr (by simp only at hr2; omega),
+      AInfinityAlgebra.hochschildDifferential_zero]
   exact AInfinityAlgebra.hochschildDifferential_obstruction isMinimal_zigzagStrictAInfinityAlgebra
     (fun r hr ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG (n := n + 1) (by omega)
-    fun z hz ↦ AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq hG hm hz
+    fun z hz ↦ AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq hG
+      (fun r hr hrn ↦ hm r hr (by omega)) hz
 
 omit [Fintype G.Dart] in
 /-- **A higher loop operation which is not a coboundary gives a nonzero Hochschild class.** If the
