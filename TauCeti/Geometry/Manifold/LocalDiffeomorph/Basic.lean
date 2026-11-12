@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -41,7 +42,10 @@ homeomorphism to the model space which is a local diffeomorphism on its source i
 maximal atlas.
 
 The extended-chart constructor lets maximal-atlas coordinates, including Frobenius flat charts,
-serve as partial diffeomorphisms in constructions of local submanifolds.
+serve as partial diffeomorphisms in constructions of local submanifolds. A partial
+diffeomorphism of the model space read through it has explicit source and forward map
+(`TauCeti.mem_extChartPartialDiffeomorph_trans_trans_symm_source`,
+`TauCeti.extChartPartialDiffeomorph_trans_trans_symm_apply`).
 
 ## Main results
 
@@ -298,6 +302,34 @@ theorem extChartPartialDiffeomorph_symm_apply (x : M) (y : E) :
     (extChartPartialDiffeomorph I n x).toPartialEquiv.symm y = (extChartAt I x).symm y := by
   rw [extChartPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.IsImage.restr_symm_apply]
+
+variable {n} in
+/-- A point lies in the source of a partial diffeomorphism `Θ` of the model space read through the
+restricted extended chart at `x` exactly when it lies in the source of that chart, its coordinate
+lies in the source of `Θ`, and the image of the coordinate under `Θ` lies in the interior of the
+chart target. -/
+theorem mem_extChartPartialDiffeomorph_trans_trans_symm_source (x : M)
+    (Θ : PartialDiffeomorph 𝓘(𝕂, E) 𝓘(𝕂, E) E E n) {y : M} :
+    y ∈ (((extChartPartialDiffeomorph I n x).trans Θ).trans
+        (extChartPartialDiffeomorph I n x).symm).source ↔
+      y ∈ (extChartPartialDiffeomorph I n x).source ∧ extChartAt I x y ∈ Θ.source ∧
+        Θ (extChartAt I x y) ∈ interior (extChartAt I x).target := by
+  simp only [PartialDiffeomorph.trans_source, PartialDiffeomorph.coe_trans,
+    PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source,
+    extChartPartialDiffeomorph_target, coe_extChartPartialDiffeomorph, mem_inter_iff, mem_preimage,
+    Function.comp_apply, and_assoc]
+
+variable {n} in
+/-- A partial diffeomorphism `Θ` of the model space read through the restricted extended chart at
+`x` sends `y` to the inverse chart applied to `Θ` of the coordinate of `y`. -/
+theorem extChartPartialDiffeomorph_trans_trans_symm_apply (x : M)
+    (Θ : PartialDiffeomorph 𝓘(𝕂, E) 𝓘(𝕂, E) E E n) (y : M) :
+    (((extChartPartialDiffeomorph I n x).trans Θ).trans
+        (extChartPartialDiffeomorph I n x).symm) y =
+      (extChartAt I x).symm (Θ (extChartAt I x y)) := by
+  rw [PartialDiffeomorph.coe_trans, PartialDiffeomorph.coe_trans, Function.comp_apply,
+    Function.comp_apply, coe_extChartPartialDiffeomorph,
+    ← extChartPartialDiffeomorph_symm_apply I n x, ← PartialDiffeomorph.symm_toPartialEquiv]
 
 /-- A diffeomorphism from the model space onto a normed space `F`, composed with the extended chart
 at `x₀` restricted to the preimage of an open set `V₀` inside the interior of the chart target, is a
