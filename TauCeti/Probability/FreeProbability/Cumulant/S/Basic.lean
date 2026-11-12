@@ -22,7 +22,8 @@ coefficient. The moment–cumulant equation identifies this series with `C₀⁻
 `C₀(z) = C(z) - 1 = z R(z)`, so `z S(z)` is a two-sided compositional inverse of `C₀`, which
 characterizes `S`. In particular its constant coefficient is the inverse mean and
 it is a unit power series. These are formal identities over a commutative ring; they assert
-neither analytic convergence nor multiplicativity on free products.
+no analytic convergence. The multiplicativity `S_{ab} = S_a S_b` for free `a` and `b` is
+`TauCeti.IsFreelyIndependent.sSeries_mul`.
 
 The definition also makes sense without normalization, following the convention for
 `momentSeries`; the interpretation as the inverse of `Ψ` and the cumulant comparison use
