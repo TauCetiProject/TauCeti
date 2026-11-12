@@ -9,11 +9,11 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
-# Multiplication as a change of measure in Lᵖ
+# Scalar multiplication as a change of measure in Lᵖ
 
-For a finite positive exponent, multiplying a function by a measurable coefficient
-is equivalent in Lᵖ seminorm to weighting the measure by the coefficient's absolute
-value to that exponent. This permits approximation in weighted spaces without dividing
+For a finite exponent, multiplying a function by a measurable scalar coefficient
+is equivalent in Lᵖ seminorm to weighting the measure by the coefficient's extended norm
+to that exponent. This permits approximation in weighted spaces without dividing
 by a coefficient, including on its zero set.
 -/
 
@@ -24,23 +24,27 @@ open scoped ENNReal
 
 namespace MeasureTheory
 
-variable {α 𝕜 : Type*} [MeasurableSpace α] [NormedDivisionRing 𝕜]
+variable {α 𝕜 ε : Type*} [MeasurableSpace α]
+  [TopologicalSpace 𝕜] [ContinuousENorm 𝕜] [TopologicalSpace ε] [ContinuousENorm ε]
+  [SMul 𝕜 ε] [ContinuousSMul 𝕜 ε] [ENormSMulClass 𝕜 ε]
   {μ : Measure α} {p : ℝ≥0∞}
 
-/-- Multiplication by a coefficient in a normed division ring is a change of measure
-with density `‖w‖^p`.
-The coefficient may vanish; neither function needs finite Lᵖ norm. -/
-theorem eLpNorm_mul_eq_withDensity {w f : α → 𝕜} (hw : AEStronglyMeasurable w μ)
-    (hf : AEStronglyMeasurable f μ) (hp₀ : p ≠ 0) (hp : p ≠ ∞) :
-    eLpNorm (w * f) p μ =
+/-- Scalar multiplication by a coefficient `w` is a change of measure with density `‖w‖ₑ^p`.
+The coefficient may vanish; neither function needs finite Lᵖ norm. For multiplication in a
+normed division ring, take `ε = 𝕜` and rewrite `w • f` with `smul_eq_mul`. -/
+theorem eLpNorm_smul_eq_eLpNorm_withDensity {w : α → 𝕜} {f : α → ε}
+    (hw : AEStronglyMeasurable w μ) (hf : AEStronglyMeasurable f μ) (hp : p ≠ ∞) :
+    eLpNorm (w • f) p μ =
       eLpNorm f p (μ.withDensity fun x ↦ ‖w x‖ₑ ^ p.toReal) := by
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp (hw.mul hf),
-    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp
-      (hf.mono_ac (withDensity_absolutelyContinuous _ _)),
+  have hfw := hf.mono_ac (withDensity_absolutelyContinuous μ fun x ↦ ‖w x‖ₑ ^ p.toReal)
+  rcases eq_or_ne p 0 with rfl | hp₀
+  · rw [eLpNorm_exponent_zero (hw.smul hf), eLpNorm_exponent_zero hfw]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp (hw.smul hf),
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp hfw,
     lintegral_withDensity_eq_lintegral_mul₀ (hw.eNorm.pow_const _) (hf.eNorm.pow_const _)]
   congr 1
   apply lintegral_congr
   intro x
-  simp [Pi.mul_apply, ENNReal.mul_rpow_of_nonneg _ _ ENNReal.toReal_nonneg]
+  simp [eNorm_smul, ENNReal.mul_rpow_of_nonneg _ _ ENNReal.toReal_nonneg]
 
 end MeasureTheory
