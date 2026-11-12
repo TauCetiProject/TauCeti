@@ -99,36 +99,31 @@ theorem isCompact_twoFieldEquators [FiniteDimensional ℝ E] (hu : Continuous u)
     (hv : Continuous v) : IsCompact (twoFieldEquators u v) :=
   (isClosed_twoFieldEquators hu hv).isCompact
 
-/-- The orthonormality relations among `x`, `u x` and `v x` used below. -/
-private theorem orthonormal_relations {x a b : E} (h : Orthonormal ℝ ![x, a, b]) :
-    ‖a‖ = 1 ∧ ‖b‖ = 1 ∧ ⟪x, a⟫ = 0 ∧ ⟪x, b⟫ = 0 ∧ ⟪b, a⟫ = 0 :=
-  ⟨by simpa using h.1 1, by simpa using h.1 2, by simpa using h.2 (show (0 : Fin 3) ≠ 1 by decide),
-    by simpa using h.2 (show (0 : Fin 3) ≠ 2 by decide),
-    by simpa using h.2 (show (2 : Fin 3) ≠ 1 by decide)⟩
-
 variable (h : ∀ x : sphere (0 : E) 1, Orthonormal ℝ ![(x : E), u x, v x])
 include h
 
 /-- A point of the sphere lies on its own equator. -/
 theorem mk_self_mem_twoFieldEquators (x : sphere (0 : E) 1) : (x, x) ∈ twoFieldEquators u v :=
-  ⟨(orthonormal_relations (h x)).2.2.1, (orthonormal_relations (h x)).2.2.2.1⟩
+  ⟨(h x).inner_eq_zero (by decide : (0 : Fin 3) ≠ 1),
+    (h x).inner_eq_zero (by decide : (0 : Fin 3) ≠ 2)⟩
 
 /-- A point `x` of the sphere lies on the equator orthogonal to `u x`. -/
 theorem mem_sphereEquator_self_of_orthonormal (x : sphere (0 : E) 1) :
     x ∈ sphereEquator (u x) :=
-  mem_sphereEquator.2 (orthonormal_relations (h x)).2.2.1
+  mem_sphereEquator.2 ((h x).inner_eq_zero (by decide : (0 : Fin 3) ≠ 1))
 
 /-- The circle through `x` and `q` tangent to `v x` lies on the unit sphere. -/
 private theorem norm_tangentCircle_inner (xq : twoFieldEquators u v) (θ : ℝ) :
     ‖tangentCircle (xq.1.1 : E) (v xq.1.1) (xq.1.2 : E) θ‖ = 1 :=
-  norm_tangentCircle (norm_eq_of_mem_sphere xq.1.1) (orthonormal_relations (h xq.1.1)).2.1
-    (orthonormal_relations (h xq.1.1)).2.2.2.1 (norm_eq_of_mem_sphere xq.1.2) xq.2.2 θ
+  norm_tangentCircle (norm_eq_of_mem_sphere xq.1.1) ((h xq.1.1).norm_eq_one 2)
+    ((h xq.1.1).inner_eq_zero (by decide : (0 : Fin 3) ≠ 2)) (norm_eq_of_mem_sphere xq.1.2)
+    xq.2.2 θ
 
 /-- The circle through `x` and `q` tangent to `v x` is orthogonal to `u x`. -/
 private theorem inner_tangentCircle_inner (xq : twoFieldEquators u v) (θ : ℝ) :
     ⟪tangentCircle (xq.1.1 : E) (v xq.1.1) (xq.1.2 : E) θ, u xq.1.1⟫ = 0 :=
-  inner_tangentCircle_eq_zero (orthonormal_relations (h xq.1.1)).2.2.1
-    (orthonormal_relations (h xq.1.1)).2.2.2.2 xq.2.1 θ
+  inner_tangentCircle_eq_zero ((h xq.1.1).inner_eq_zero (by decide : (0 : Fin 3) ≠ 1))
+    ((h xq.1.1).inner_eq_zero (by decide : (2 : Fin 3) ≠ 1)) xq.2.1 θ
 
 /-- The **inner circle** of the two-sphere of `(x, q)`: the circle through `x` and `q` tangent to
 `v x`, `s ↦ tangentCircle x (v x) q (2π s)`, as a loop at `x` in the equator of the sphere
@@ -155,8 +150,8 @@ theorem coe_twoFieldInnerLoop_apply (xq : twoFieldEquators u v) (z : I^(Fin 1)) 
 private theorem norm_tangentCircle_outer (xq : twoFieldEquators u v) (s t : ℝ) :
     ‖tangentCircle (xq.1.1 : E) (u xq.1.1)
       (tangentCircle (xq.1.1 : E) (v xq.1.1) (xq.1.2 : E) s) t‖ = 1 :=
-  norm_tangentCircle (norm_eq_of_mem_sphere xq.1.1) (orthonormal_relations (h xq.1.1)).1
-    (orthonormal_relations (h xq.1.1)).2.2.1 (norm_tangentCircle_inner h xq s)
+  norm_tangentCircle (norm_eq_of_mem_sphere xq.1.1) ((h xq.1.1).norm_eq_one 1)
+    ((h xq.1.1).inner_eq_zero (by decide : (0 : Fin 3) ≠ 1)) (norm_tangentCircle_inner h xq s)
     (inner_tangentCircle_inner h xq s) t
 
 variable (hu : Continuous u) (hv : Continuous v)
