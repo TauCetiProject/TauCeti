@@ -43,6 +43,22 @@ namespace TauCeti.DynkinType.ChevalleyDatum
 
 variable {t : DynkinType} {ht : t.Valid} (D E : ChevalleyDatum t ht)
   {A : Type*} [CommRing A] (f : D.points A →* E.points A)
+
+/-- Matching both signs of a simple root map forces compatibility with its simple coroot,
+over every commutative ring. -/
+theorem map_simpleCorootPoints_of_rootSubgroupPoints (i : Fin t.rank)
+    (hpos : ∀ u, f (D.rootSubgroupPoints (t.simpleIndex ht i) A u) =
+      E.rootSubgroupPoints (t.simpleIndex ht i) A u)
+    (hneg : ∀ u, f (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
+      (t.simpleIndex ht i) (t.simpleIndex ht i)) A u) =
+        E.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
+          (t.simpleIndex ht i) (t.simpleIndex ht i)) A u)
+    (s : Aˣ) : f (D.simpleCorootPoints i A s) = E.simpleCorootPoints i A s := by
+  rw [D.simpleCorootPoints_eq_weylElement_mul_inv,
+    E.simpleCorootPoints_eq_weylElement_mul_inv]
+  simp only [weylElement_def, map_mul, map_inv, hpos, hneg]
+
+variable
   (hpos : ∀ i u, f (D.rootSubgroupPoints (t.simpleIndex ht i) A u) =
     E.rootSubgroupPoints (t.simpleIndex ht i) A u)
   (hneg : ∀ i u, f (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
@@ -52,14 +68,6 @@ variable {t : DynkinType} {ht : t.Valid} (D E : ChevalleyDatum t ht)
 
 include hpos hneg
 
-/-- Matching both signs of the simple root maps forces compatibility with every simple
-coroot, over every commutative ring. -/
-theorem map_simpleCorootPoints_of_rootSubgroupPoints (i : Fin t.rank) (s : Aˣ) :
-    f (D.simpleCorootPoints i A s) = E.simpleCorootPoints i A s := by
-  rw [D.simpleCorootPoints_eq_weylElement_mul_inv,
-    E.simpleCorootPoints_eq_weylElement_mul_inv]
-  simp only [weylElement_def, map_mul, map_inv, hpos, hneg]
-
 /-- Root compatibility determines the map on the full-weight torus image, without assuming
 that this image is the entire actual torus. -/
 theorem map_torusPoints_fullWeightTorusRestriction_of_rootSubgroupPoints
@@ -68,8 +76,10 @@ theorem map_torusPoints_fullWeightTorusRestriction_of_rootSubgroupPoints
       E.torusPoints A (E.fullWeightTorusRestriction A s) := by
   rw [D.torusPoints_fullWeightTorusRestriction_eq_prod_simpleCorootPoints,
     E.torusPoints_fullWeightTorusRestriction_eq_prod_simpleCorootPoints, map_list_prod]
-  simp only [List.map_ofFn, Function.comp_def,
-    D.map_simpleCorootPoints_of_rootSubgroupPoints E f hpos hneg]
+  simp only [List.map_ofFn, Function.comp_def]
+  congr 2
+  funext i
+  exact D.map_simpleCorootPoints_of_rootSubgroupPoints E f i (hpos i) (hneg i) (s i)
 
 /-- If full-weight restriction reaches every source torus parameter, root compatibility
 forces the actual torus equation by restriction of characters. -/
