@@ -23,11 +23,6 @@ segment from `0` to `(n i • p i)ᵢ`: it winds `n i` times around the `i`-th c
 matrices act on these loops through `Matrix.mulVec` (`Matrix.smulVecHom_comp_torusLoop`). They are
 the representatives used to compute the fundamental group and first homology of a torus
 naturally in the matrix.
-
-A torus of rank `r` has at most `n ^ r` points of order dividing `n`
-(`TauCeti.natCard_torsion_pi_le_of_isSMulRegular`), since these points are the families of such
-points of its circles (`TauCeti.torsionPiEquiv`): there are at most `n` on each circle. For
-`n = 2` this bounds the elementary abelian `2`-subgroups that a torus can contain.
 -/
 
 public section
@@ -52,49 +47,6 @@ def torusLoop (p : ι → ℝ) (n : ι → ℤ) : Path (0 : ∀ i, AddCircle (p 
 theorem torusLoop_apply (p : ι → ℝ) (n : ι → ℤ) (t : I) (i : ι) :
     torusLoop p n t i = ((t * (n i • p i) : ℝ) : AddCircle (p i)) :=
   (rfl)
-
-/-! ### Points of finite order -/
-
-section Torsion
-
-variable {𝕜 : Type*} [AddCommGroup 𝕜] (p : ι → 𝕜) (n : ℕ)
-
-/-- The points of order dividing `n` of a torus are the families of such points of its circles. -/
-def torsionPiEquiv :
-    {x : ∀ i, AddCircle (p i) // n • x = 0} ≃ ∀ i, {y : AddCircle (p i) // n • y = 0} :=
-  (Equiv.subtypeEquivRight fun _ ↦ by simp [funext_iff]).trans Equiv.subtypePiEquivPi
-
-@[simp]
-theorem coe_torsionPiEquiv_apply (x : {x : ∀ i, AddCircle (p i) // n • x = 0}) (i : ι) :
-    (torsionPiEquiv p n x i : AddCircle (p i)) = (x : ∀ i, AddCircle (p i)) i :=
-  (rfl)
-
-@[simp]
-theorem coe_torsionPiEquiv_symm_apply (y : ∀ i, {y : AddCircle (p i) // n • y = 0}) :
-    ((torsionPiEquiv p n).symm y : ∀ i, AddCircle (p i)) = fun i ↦ (y i : AddCircle (p i)) :=
-  (rfl)
-
-/-- A torus with finitely many circles has finitely many points of order dividing `n`, when
-multiplication by `n` is injective on the coefficients, as it is on `ℝ` for `n ≠ 0`. -/
-theorem finite_torsion_pi_of_isSMulRegular [Finite ι] (hn : IsSMulRegular 𝕜 n) :
-    Finite {x : ∀ i, AddCircle (p i) // n • x = 0} :=
-  have (i : ι) := (AddCircle.finite_torsion_of_isSMulRegular (p i) n hn).to_subtype
-  .of_equiv _ (torsionPiEquiv p n).symm
-
-/-- **A torus of rank `r` has at most `n ^ r` points of order dividing `n`**, when `n ≠ 0` and
-multiplication by `n` is injective on the coefficients. Each circle has at most `n` such points
-(`AddCircle.card_torsion_le_of_isSMulRegular`). -/
-theorem natCard_torsion_pi_le_of_isSMulRegular [Fintype ι] (h0 : n ≠ 0)
-    (hn : IsSMulRegular 𝕜 n) :
-    Nat.card {x : ∀ i, AddCircle (p i) // n • x = 0} ≤ n ^ Fintype.card ι := by
-  have hle (i : ι) : Nat.card {y : AddCircle (p i) // n • y = 0} ≤ n := by
-    have h := AddCircle.card_torsion_le_of_isSMulRegular (p i) n h0 hn
-    rwa [← (AddCircle.finite_torsion_of_isSMulRegular (p i) n hn).cast_ncard_eq, Nat.cast_le,
-      ← Nat.card_coe_set_eq] at h
-  rw [Nat.card_congr (torsionPiEquiv p n), Nat.card_pi]
-  exact (Finset.prod_le_prod fun i _ ↦ hle i).trans_eq (by simp)
-
-end Torsion
 
 end TauCeti
 
