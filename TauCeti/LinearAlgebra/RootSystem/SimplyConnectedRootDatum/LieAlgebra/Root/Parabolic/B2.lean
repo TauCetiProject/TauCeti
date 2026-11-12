@@ -53,6 +53,34 @@ variable (hnil : ∀ i, IsNilpotent
 -- Match the integral scalar action stored in the value-ring object.
 attribute [local instance high] Algebra.toModule
 
+/-- Adding either sign of a simple B₂ root to a different positive root gives either no
+root, a single root, or a two-root string, with every resulting root still positive and
+different from the chosen simple root. The last case records the reversed string. -/
+private theorem b2_parabolic_pairs (i : Fin 2) (k l : Fin 8)
+    (hk : k.val = i.val ∨ k.val = i.val + 4) (hl : l.val < 4 ∧ l.val ≠ i.val) :
+    (b2Root k + b2Root l ∉ Set.range b2Root ∧ b2Root k + b2Root l ≠ 0) ∨
+    (∃ m : Fin 8, (m.val < 4 ∧ m.val ≠ i.val) ∧
+      b2Root m = b2Root k + b2Root l ∧
+      2 • b2Root k + b2Root l ∉ Set.range b2Root ∧
+      b2Root k + 2 • b2Root l ∉ Set.range b2Root) ∨
+    (∃ m n : Fin 8, (m.val < 4 ∧ m.val ≠ i.val) ∧ (n.val < 4 ∧ n.val ≠ i.val) ∧
+      b2Root m = b2Root k + b2Root l ∧ b2Root n = 2 • b2Root k + b2Root l ∧
+      3 • b2Root k + b2Root l ∉ Set.range b2Root ∧
+      b2Root k + 2 • b2Root l ∉ Set.range b2Root) ∨
+    (∃ m n : Fin 8, (m.val < 4 ∧ m.val ≠ i.val) ∧ (n.val < 4 ∧ n.val ≠ i.val) ∧
+      b2Root m = b2Root l + b2Root k ∧ b2Root n = 2 • b2Root l + b2Root k ∧
+      3 • b2Root l + b2Root k ∉ Set.range b2Root ∧
+      b2Root l + 2 • b2Root k ∉ Set.range b2Root) := by
+  simp only [Set.mem_range, ne_eq, funext_iff]
+  fin_cases i <;> fin_cases k <;> fin_cases l <;> norm_num at hk <;> norm_num at hl <;> first
+    | exact Or.inl (by decide)
+    | exact Or.inr (Or.inl ⟨3, by decide⟩)
+    | exact Or.inr (Or.inl ⟨0, by decide⟩)
+    | exact Or.inr (Or.inr (Or.inl ⟨2, 3, by decide⟩))
+    | exact Or.inr (Or.inr (Or.inl ⟨2, 0, by decide⟩))
+    | exact Or.inr (Or.inr (Or.inr ⟨2, 3, by decide⟩))
+    | exact Or.inr (Or.inr (Or.inr ⟨1, 3, by decide⟩))
+
 private theorem b2_parabolic_commutator_mem (i : Fin 2) (k l : Fin 8)
     (hk : k.val = i.val ∨ k.val = i.val + 4) (hl : l.val < 4 ∧ l.val ≠ i.val)
     (A : CommAlgCat ℤ) (H : Subgroup (LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)))
