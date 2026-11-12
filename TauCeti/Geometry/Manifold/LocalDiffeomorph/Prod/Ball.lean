@@ -22,7 +22,8 @@ with the same image under `Φ` lie in a single product, where `Φ` is injective
 products (`TauCeti.exists_partialDiffeomorph_source_eq_biUnion_prod_ball`).
 
 This is how local normal forms which are all restrictions of one fibre-preserving map, such as the
-parametric Morse coordinate, glue to a single chart along the whole zero section `X × {c}`.
+parametric Morse coordinate, glue to a single chart along the part of the zero section lying over
+`⋃ i ∈ U, V i`; when the `V i` cover `X`, this is the whole zero section `X × {c}`.
 
 ## Main results
 
