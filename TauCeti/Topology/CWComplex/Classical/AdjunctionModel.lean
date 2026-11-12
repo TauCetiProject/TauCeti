@@ -567,7 +567,10 @@ private theorem isPushout_relCWBaseInclusion_sigmaDiskAttachingMap
     (sigmaDiskBoundaryIsoCoproduct n).symm (sigmaDiskIsoCoproduct n).symm (.refl _) (.refl _)
     (Sigma.hom_ext _ _ fun i ↦ by
       refine ConcreteCategory.hom_ext _ _ fun s ↦ Subtype.ext ?_
-      simp [sigmaDiskBoundaryIsoCoproduct, sigmaDiskIsoCoproduct])
+      simp [sigmaDiskBoundaryIsoCoproduct, sigmaDiskIsoCoproduct]
+      -- `Homeomorph.setCongr` and `Homeomorph.Set.univ` keep the underlying point, and have no
+      -- `simp` lemmas saying so.
+      rfl)
     (Sigma.hom_ext _ _ fun i ↦ by
       ext s
       simp [sigmaDiskBoundaryIsoCoproduct])

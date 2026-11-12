@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
 public import TauCeti.Geometry.Manifold.Morse.Deformation
-public import TauCeti.Topology.CWComplex.Classical.Disk
+public import TauCeti.Topology.CWComplex.Classical.AdjunctionModel
+import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
 # Crossing a critical value between regular levels attaches cells
@@ -33,15 +34,16 @@ boundary sphere. The attaching map `α p` into `M_a` is this map followed by a r
 The homotopy equivalence is the composite of three. First, the cells attached to `M_{c-ε}` along
 the attaching maps of the charts give the same space as Milnor's
 `TauCeti.morseCellAttachment`, the pushout of the coproduct of these maps along the coproduct
-of the boundary inclusions of the disks (`TauCeti.isPushout_sigmaDiskAdjunctionSpace`); Milnor's
+of the boundary inclusions of the disks (`TauCeti.sigmaDiskAdjunctionIsoPushout`); Milnor's
 cell attachment theorem makes its comparison map to `M_{c+ε}` a homotopy equivalence which is the
 inclusion on `M_{c-ε}` (`TauCeti.IsMorse.exists_morseCellAttachment_deformation`). Second, the
 inclusion `M_{c+ε} → M_b` is a homotopy equivalence across the band `f⁻¹[c + ε, b]`
 (`TauCeti.exists_sublevelHomotopyEquiv`). Third, the retraction `r` is a homotopy equivalence with
-homotopy inverse the inclusion, and attaching along a cofibration is homotopy invariant under a
-change of base (`CategoryTheory.IsPushout.exists_homotopic_id_of_homotopic_id`): attaching the
-cells to `M_a` along `r ∘ α` is homotopy equivalent to attaching them to `M_{c-ε}` along `α`, by a
-map which is the inclusion on `M_a`.
+homotopy inverse the inclusion (`ContinuousMap.HomotopyEquiv.ofRetraction`), and attaching cells
+is homotopy invariant under a change of base
+(`ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_relCWAdjunctionSpace`): attaching the cells to
+`M_a` along `r ∘ α` is homotopy equivalent to attaching them to `M_{c-ε}` along `α`, by a map which
+is the inclusion on `M_a`.
 
 This is the step by which the sublevels of a Morse function are built cell by cell along a
 sequence of regular levels separating its critical values.
@@ -94,12 +96,14 @@ private theorem exists_homotopyEquiv_sigmaDiskAdjunctionSpace_of_leftInverse
         fun i ↦ ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i)).hom)) z) : M) = z := by
   let := sigmaDiskRelCWComplex k
   set Φ := morseCellComparison φ k hk hε hball hf
-  -- The two pushouts of the same span are isomorphic, compatibly with the inclusions of
-  -- `M_{c-ε}`.
-  let iso := (isPushout_sigmaDiskAdjunctionSpace _).isoIsPushout _ _
-    (isPushout_morseCellAttachment φ k hk hball hf hε)
-  have hiso : pushout.inr _ _ ≫ iso.hom = morseCellAttachmentIncl φ k hk hε hball hf :=
-    IsPushout.inl_isoIsPushout_hom _ _ _ _
+  -- The adjunction space is the pushout defining the cell attachment, compatibly with the
+  -- inclusions of `M_{c-ε}`.
+  have hP := isPushout_morseCellAttachment φ k hk hball hf hε
+  let iso := sigmaDiskAdjunctionIsoPushout (fun i ↦ (φ i).morseAttachingMap (hk i) hε (hball i)
+    (hf i)) ≪≫ hP.isoPushout.symm
+  have hiso : pushout.inr _ _ ≫ iso.hom = morseCellAttachmentIncl φ k hk hε hball hf := by
+    rw [Iso.trans_hom, Iso.symm_hom, inr_sigmaDiskAdjunctionIsoPushout_hom_assoc]
+    exact hP.inl_isoPushout_inv
   refine ⟨⟨(iso.hom ≫ Φ).hom, iso.inv.hom.comp g, ?_, ?_⟩, fun z ↦ ?_⟩
   · have : (iso.inv.hom.comp g).comp (iso.hom ≫ Φ).hom = ContinuousMap.id _ := by
       ext x
@@ -184,19 +188,16 @@ theorem IsMorse.exists_homotopyEquiv_sigmaDiskAdjunctionSpace (hf : IsMorse I f)
     (fun p ↦ (ψ p).toOpenPartialHomeomorph) k _ hε.le hball hψ hg hΦ.homotopic.symm
   -- Change the base of the attachment from `M_{c-ε}` to `M_a` along `r`, a homotopy equivalence
   -- with homotopy inverse the inclusion.
-  let er : {x | f x ≤ c - ε} ≃ₕ {x | f x ≤ a} :=
-    { toFun := r
-      invFun := sublevelInclusion f a (c - ε) hεa
-      left_inv := ⟨R.toHomotopy⟩
-      right_inv := by
-        rw [show r.comp (sublevelInclusion f a (c - ε) hεa) = ContinuousMap.id _ from
-          ContinuousMap.ext hr] }
+  rw [sublevelInclusion_eq_inclusion] at hr R
+  let er := (ContinuousMap.HomotopyEquiv.ofRetraction _ r hr R.toHomotopy).symm
   obtain ⟨E, -, hE⟩ := er.exists_homotopyEquiv_relCWAdjunctionSpace
     (univ.sigma fun p ↦ (univ : Set (TopCat.disk.{u} (k p)))) (sigmaDiskAttachingMap α)
-  rw [ContinuousMap.sigmaDiskAttachingMap_comp]
+  have her : er.toFun = r :=
+    ContinuousMap.ext (ContinuousMap.HomotopyEquiv.coe_ofRetraction_symm_apply _ r hr _)
+  rw [ContinuousMap.sigmaDiskAttachingMap_comp, ← her]
   refine ⟨E.symm.trans (e₁.trans e₂), fun z ↦ ?_⟩
   rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.trans_apply, hE, he₂,
     he₁]
-  exact coe_sublevelInclusion_apply f hεa z
+  exact ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ r hr _ z
 
 end TauCeti

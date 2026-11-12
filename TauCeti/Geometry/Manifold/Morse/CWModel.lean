@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
+public import TauCeti.Geometry.Manifold.Morse.Cell.Adjunction
 public import TauCeti.Topology.CWComplex.Classical.AdjunctionModel
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
@@ -116,39 +116,14 @@ private theorem IsMorse.exists_homotopyEquiv_sigmaDiskAdjunction (hf : IsMorse I
             (univ.sigma fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦
               (univ : Set (TopCat.disk.{u} (manifoldMorseIndex I f p)))))
               (TopCat.ofHom (sigmaDiskAttachingMap a)) z) : M) = z := by
-  -- Shrink the band so that its only critical points lie on the level `c`.
-  obtain ⟨δ', hδ', hδ'δ, hsub⟩ := hf.exists_criticalPoints_inter_preimage_Icc_subset hδ hcompact
-  have hcompact' : IsCompact (f ⁻¹' Icc (c - δ') (c + δ')) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
-      (preimage_mono (Icc_subset_Icc (by linarith) (by linarith)))
-  obtain ⟨ε, hε, hεδ', ψ, -, -, hball, hψ, g, hg, hH⟩ :=
-    hf.exists_morseCellAttachment_deformation hδ' hcompact'
-  -- The comparison map from the cell attachment to `M_{c+ε}` is a homotopy equivalence.
-  let Φ := morseCellComparison (fun p ↦ (ψ p).toOpenPartialHomeomorph)
-    (manifoldMorseIndex I f ·) (fun _ ↦ manifoldMorseIndex_le_finrank) hε.le hball hψ
-  have hgΦ : g.comp Φ.hom = ContinuousMap.id _ := ContinuousMap.ext hg
-  let e : (morseCellAttachment (fun p ↦ (ψ p).toOpenPartialHomeomorph)
-      (manifoldMorseIndex I f ·) (fun _ ↦ manifoldMorseIndex_le_finrank) hε.le hball hψ :
-        TopCat.{u}) ≃ₕ {x | f x ≤ c + ε} :=
-    ⟨Φ.hom, g, hgΦ ▸ .refl _, hH.homotopic.symm⟩
-  let a := fun p ↦ (ψ p).toOpenPartialHomeomorph.morseAttachingMap manifoldMorseIndex_le_finrank
-    hε.le (hball p) (hψ p)
-  have hP := isPushout_morseCellAttachment (fun p ↦ (ψ p).toOpenPartialHomeomorph)
-    (manifoldMorseIndex I f ·) (fun _ ↦ manifoldMorseIndex_le_finrank) hball hψ hε.le
-  -- The adjunction space is the pushout defining the cell attachment.
-  let i := sigmaDiskAdjunctionIsoPushout a ≪≫ hP.isoPushout.symm
-  refine ⟨ε, hε, hεδ'.trans hδ'δ,
-    fun x hx ↦ hsub ⟨hx.1, Icc_subset_Icc (by linarith) (by linarith) hx.2⟩,
-    fun p ↦ (a p).hom, (TopCat.homeoOfIso i).toHomotopyEquiv.trans e, fun z ↦ ?_⟩
-  -- On `M_{c-ε}` both identifications are the inclusions of `M_{c-ε}`.
-  have hi : pushout.inr _ _ ≫ i.hom =
-      morseCellAttachmentIncl (fun p ↦ (ψ p).toOpenPartialHomeomorph) (manifoldMorseIndex I f ·)
-        (fun _ ↦ manifoldMorseIndex_le_finrank) hε.le hball hψ := by
-    rw [Iso.trans_hom, Iso.symm_hom, inr_sigmaDiskAdjunctionIsoPushout_hom_assoc]
-    exact hP.inl_isoPushout_inv
-  simp only [ContinuousMap.HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv,
-    TopCat.homeoOfIso_apply, ← ConcreteCategory.comp_apply, hi]
-  exact coe_morseCellComparison_morseCellAttachmentIncl _ _ _ _ hψ hε.le z
+  -- Shrink the band so that its only critical points lie on the level `c`, and cross it.
+  obtain ⟨ε, hε, hεδ, hsub⟩ := hf.exists_criticalPoints_inter_preimage_Icc_subset hδ hcompact
+  obtain ⟨ε', hε', -, -, ψ, -, -, hball, hψ, r, -, h⟩ :=
+    hf.exists_homotopyEquiv_sigmaDiskAdjunctionSpace (a := c - ε) (b := c + ε) (by linarith)
+      (by linarith) (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
+        (preimage_mono (Icc_subset_Icc (by linarith) (by linarith))))
+      fun x hx hfx ↦ hsub ⟨hx, hfx⟩
+  exact ⟨ε, hε, hεδ, hsub, _, h⟩
 
 variable (I f) in
 /-- Every relative CW model `h : W ≃ₕ M_s` of the sublevel `M_s = {f ≤ s}`, a CW complex `W`
