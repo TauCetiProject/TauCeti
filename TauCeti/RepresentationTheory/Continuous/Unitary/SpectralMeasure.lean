@@ -14,9 +14,10 @@ public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 # Spectral measure of a unitary representation of a discrete abelian group
 
 Let `π` be a unitary representation of a discrete abelian group `G` on a complex Hilbert space
-`H`, written additively as `π : ContRepresentation ℂ (Multiplicative G) H`, and let
-`PontryaginDual G` be the Pontryagin dual of `G`, a compact abelian group. This file constructs
-the projection-valued measure `P` on `PontryaginDual G` with
+`H`. The group `G` is written additively (`[AddCommGroup G]`), so `π` has type
+`ContRepresentation ℂ (Multiplicative G) H` and the Pontryagin dual of `G`, a compact abelian
+group, is `PontryaginDual (Multiplicative G)`. This file constructs the projection-valued measure
+`P` on `PontryaginDual (Multiplicative G)` with
 
 `π g = ∫ χ(g) dP(χ)`,
 
@@ -27,14 +28,15 @@ characters of `ℤⁿ`.
 The operators `π g` are commuting unitaries, so they generate a commutative unital C⋆-algebra
 `A`. Restricting a character of `A` to the operators `π g` gives a continuous character of `G`;
 composing with the inverse Gelfand transform of `A`, this yields a unital star homomorphism
-`C(PontryaginDual G, ℂ) → (H →L[ℂ] H)`, the spectral calculus of `π`, sending the evaluation
-character `χ ↦ χ g` to `π g`. Its projection-valued measure
+`C(PontryaginDual (Multiplicative G), ℂ) → (H →L[ℂ] H)`, the spectral calculus of `π`, sending
+the evaluation character `χ ↦ χ g` to `π g`. Its projection-valued measure
 `TauCeti.ProjValMeasure.ofRepresentation` is the spectral measure. The evaluation characters span
-a dense subspace of `C(PontryaginDual G, ℂ)` (`PontryaginDual.dense_span_evalBoundedContinuous`),
-so both objects are determined by the values `π g`.
+a dense subspace of `C(PontryaginDual (Multiplicative G), ℂ)`
+(`PontryaginDual.dense_span_evalBoundedContinuous`), so both objects are determined by the
+values `π g`.
 
-The trivial character carries the invariant vectors: the spectral projection of `{1}` is the
-projection onto the `π`-invariant vectors. Hence `π` has no nonzero invariant vector exactly
+The trivial character carries the invariant vectors: the range of the spectral projection of
+`{1}` is the subspace of `π`-invariant vectors. Hence `π` has no nonzero invariant vector exactly
 when `P({1}) = 0`.
 
 ## Main declarations
@@ -49,8 +51,8 @@ when `P({1}) = 0`.
   regular diagonal measures.
 * `ContRepresentation.forall_commute_spectralPVM_proj_iff`: the operators commuting with the
   spectral measure are those commuting with `π`.
-* `ContRepresentation.range_spectralPVM_proj_singleton_one`: `P({1})` projects onto the
-  `π`-invariant vectors.
+* `ContRepresentation.range_spectralPVM_proj_singleton_one`: the range of `P({1})` is the
+  subspace of `π`-invariant vectors.
 
 ## References
 
@@ -86,9 +88,6 @@ private theorem coe_unitaryOp (hπ : π.IsUnitary) (g : Multiplicative G) :
 private def algebra (hπ : π.IsUnitary) : StarSubalgebra ℂ (H →L[ℂ] H) :=
   (StarAlgebra.adjoin ℂ (Set.range fun g => (unitaryOp hπ g : H →L[ℂ] H))).topologicalClosure
 
-private theorem star_apply (hπ : π.IsUnitary) (g : Multiplicative G) : star (π g) = π g⁻¹ := by
-  rw [ContinuousLinearMap.star_eq_adjoint, hπ.adjoint_eq_inv]
-
 omit [CompleteSpace H] in
 private theorem commute_apply (g h : Multiplicative G) : Commute (π g) (π h) := by
   rw [Commute, SemiconjBy, ← map_mul, ← map_mul, mul_comm]
@@ -98,12 +97,12 @@ private instance (hπ : π.IsUnitary) : IsMulCommutative (algebra hπ) := by
       (StarAlgebra.adjoin ℂ (Set.range fun g => (unitaryOp hπ g : H →L[ℂ] H))) := by
     refine StarAlgebra.isMulCommutative_adjoin ℂ ?_ ?_ ?_
     · rintro _ ⟨g, rfl⟩
-      exact ⟨by simp only [coe_unitaryOp, star_apply hπ]; exact commute_apply _ _⟩
+      exact ⟨by simp only [coe_unitaryOp, hπ.star_eq_inv]; exact commute_apply _ _⟩
     · rintro _ ⟨g, rfl⟩ _ ⟨h, rfl⟩ _
       simp only [coe_unitaryOp]
       exact commute_apply g h
     · rintro _ ⟨g, rfl⟩ _ ⟨h, rfl⟩ _
-      simp only [coe_unitaryOp, star_apply hπ]
+      simp only [coe_unitaryOp, hπ.star_eq_inv]
       exact commute_apply g h⁻¹
   unfold algebra
   infer_instance
@@ -124,7 +123,7 @@ private def op (hπ : π.IsUnitary) (g : Multiplicative G) : algebra hπ :=
 
 private theorem star_op (hπ : π.IsUnitary) (g : Multiplicative G) :
     star (op hπ g) = op hπ g⁻¹ :=
-  Subtype.ext (star_apply hπ g)
+  Subtype.ext (hπ.star_eq_inv g)
 
 private theorem op_mul (hπ : π.IsUnitary) (g h : Multiplicative G) :
     op hπ (g * h) = op hπ g * op hπ h :=
@@ -170,9 +169,9 @@ private theorem coe_toDual_apply (hπ : π.IsUnitary) (ω : characterSpace ℂ (
 
 private theorem continuous_toDual (hπ : π.IsUnitary) : Continuous (toDual hπ) := by
   refine ContinuousMonoidHom.continuous_of_continuous_uncurry _
-    (continuous_prod_of_discrete_right.2 fun g => ?_)
-  exact ((eval_continuous (op hπ g)).comp continuous_subtype_val).subtype_mk
-    (apply_op_mem_sphere hπ · g)
+    (continuous_prod_of_discrete_right.2 fun g => continuous_induced_rng.2 ?_)
+  exact ((eval_continuous (op hπ g)).comp continuous_subtype_val).congr
+    fun ω => (coe_toDual_apply hπ ω g).symm
 
 end SpectralPVM
 
@@ -323,8 +322,7 @@ private theorem diag_spectralPVM_compl_singleton_one (hπ : π.IsUnitary) {ξ : 
     have h0 : (π.spectralPVM hπ).integral
         (BoundedBorelFunction.ofContinuousMap (evalBoundedContinuous g).toContinuousMap - 1) ξ =
           0 := by
-      rw [map_sub, map_one, integral_spectralPVM_evalBoundedContinuous, sub_apply, hξ,
-        one_apply_eq_self, sub_self]
+      simp [(mem_invariants ξ).1 hξ]
     simpa [sub_eq_zero] using
       ae_iff.1 (((π.spectralPVM hπ).integral_apply_eq_zero_iff _ ξ).1 h0)
   -- By regularity, a nonnull open set contains a nonnull compact set, which is covered by
@@ -347,8 +345,8 @@ private theorem diag_spectralPVM_compl_singleton_one (hπ : π.IsUnitary) {ξ : 
 iff it is `π`-invariant. -/
 theorem spectralPVM_proj_singleton_one_apply_eq_self_iff (hπ : π.IsUnitary) (ξ : H) :
     (π.spectralPVM hπ).proj {1} (measurableSet_singleton 1) ξ = ξ ↔ ξ ∈ π.invariants := by
-  refine ⟨fun h g => by rw [← h]; exact apply_spectralPVM_proj_singleton_one hπ g ξ,
-    fun hξ => ?_⟩
+  refine ⟨fun h => (mem_invariants ξ).2 fun g => by
+      rw [← h]; exact apply_spectralPVM_proj_singleton_one hπ g ξ, fun hξ => ?_⟩
   have h0 : (π.spectralPVM hπ).proj {1}ᶜ (measurableSet_singleton 1).compl ξ = 0 := by
     rw [← norm_eq_zero, ← sq_eq_zero_iff, ProjValMeasure.norm_sq_proj_apply,
       diag_spectralPVM_compl_singleton_one hπ hξ, ENNReal.toReal_zero]
@@ -356,15 +354,14 @@ theorem spectralPVM_proj_singleton_one_apply_eq_self_iff (hπ : π.IsUnitary) (�
     sub_eq_zero] at h0
   exact h0.symm
 
-/-- **Invariant vectors.** The spectral projection of the trivial character is the projection onto
-the `π`-invariant vectors. -/
+/-- **Invariant vectors.** The range of the spectral projection of the trivial character is the
+subspace of `π`-invariant vectors. -/
 theorem range_spectralPVM_proj_singleton_one (hπ : π.IsUnitary) :
     LinearMap.range ((π.spectralPVM hπ).proj {1} (measurableSet_singleton 1) : H →ₗ[ℂ] H) =
       π.invariants := by
   ext ξ
-  refine ⟨?_, fun hξ => ⟨ξ, (π.spectralPVM_proj_singleton_one_apply_eq_self_iff hπ ξ).2 hξ⟩⟩
-  rintro ⟨η, rfl⟩ g
-  exact apply_spectralPVM_proj_singleton_one hπ g η
+  rw [LinearMap.mem_range, ← π.spectralPVM_proj_singleton_one_apply_eq_self_iff hπ]
+  exact ⟨fun ⟨η, hη⟩ => hη ▸ (π.spectralPVM hπ).proj_apply_proj _ _ η, fun h => ⟨ξ, h⟩⟩
 
 /-- The trivial character carries no spectral mass iff `π` has no nonzero invariant vector. -/
 theorem spectralPVM_proj_singleton_one_eq_zero_iff (hπ : π.IsUnitary) :

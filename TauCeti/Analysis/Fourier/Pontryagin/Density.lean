@@ -13,23 +13,24 @@ public import Mathlib.Topology.ContinuousMap.StoneWeierstrass
 /-!
 # Density of the evaluation characters on a compact Pontryagin dual
 
-The Pontryagin dual `PontryaginDual G` of a discrete abelian group `G` is compact, and the
-evaluation characters `χ ↦ χ g`, `g ∈ G`, separate its points and are closed under conjugation.
-By the Stone–Weierstrass theorem they therefore span a dense subspace of
-`C(PontryaginDual G, ℂ)`. Consequently a closed subspace of `C(PontryaginDual G, ℂ)` containing
-every evaluation character is everything, and a star homomorphism out of
-`C(PontryaginDual G, ℂ)` into a C⋆-algebra is determined by its values on the evaluation
-characters. This is the uniqueness statement for the spectral calculus of a unitary
-representation of `G`.
+Let `G` be a discrete abelian group, written additively, so that its Pontryagin dual is
+`PontryaginDual (Multiplicative G)`. This dual is compact, and the evaluation characters
+`χ ↦ χ g`, `g ∈ G` (evaluation at `Multiplicative.ofAdd g`), separate its points and are closed
+under conjugation. By the Stone–Weierstrass theorem they therefore span a dense subspace of
+`C(PontryaginDual (Multiplicative G), ℂ)`. Consequently a closed subspace of these continuous
+functions containing every evaluation character is everything, and a star homomorphism out of
+them into a C⋆-algebra is determined by its values on the evaluation characters. This is the
+uniqueness statement for the spectral calculus of a unitary representation of `G`.
 
 ## Main declarations
 
 * `PontryaginDual.dense_span_evalBoundedContinuous`: the evaluation characters span a dense
-  subspace of `C(PontryaginDual G, ℂ)`.
+  subspace of `C(PontryaginDual (Multiplicative G), ℂ)`.
 * `PontryaginDual.mem_of_isClosed_of_forall_evalBoundedContinuous_mem`: a closed subspace
   containing every evaluation character is everything.
-* `PontryaginDual.starAlgHom_ext`: star homomorphisms out of `C(PontryaginDual G, ℂ)` into a
-  C⋆-algebra agreeing on the evaluation characters are equal.
+* `PontryaginDual.starAlgHom_ext`: star homomorphisms out of
+  `C(PontryaginDual (Multiplicative G), ℂ)` into a C⋆-algebra agreeing on the evaluation
+  characters are equal.
 -/
 
 public section
@@ -54,7 +55,8 @@ theorem dense_span_evalBoundedContinuous :
   rintro _ ⟨f, hf, rfl⟩
   obtain ⟨a, rfl⟩ := (mem_evalPoly f).1 hf
   simp only [Finsupp.sum, map_sum, SetLike.mem_coe]
-  exact Submodule.sum_mem _ fun g _ => Submodule.smul_mem _ _ (Submodule.subset_span ⟨g, rfl⟩)
+  exact Submodule.sum_mem _ fun g _ =>
+    Submodule.smul_mem _ _ (Submodule.subset_span ⟨g, by ext; simp⟩)
 
 /-- A closed subspace of the continuous functions on the compact Pontryagin dual of a discrete
 abelian group which contains every evaluation character is the whole space. -/
