@@ -34,7 +34,7 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
 * `TauCeti.W1p.setIntegral_norm_gradient_sub_sq_eq`: the `L²` distance on the smaller set between
   the weak gradients of a function and of a function defined only there.
 * `TauCeti.W1p.continuous_setAverage_value`: the mean of the value component over a fixed
-  finite-measure subset depends continuously on the Sobolev function.
+  subset depends continuously on the Sobolev function.
 
 ## References
 
@@ -270,11 +270,13 @@ theorem W1p.setIntegral_norm_gradient_sub_sq_eq (hU : U ≤ Omega) (u : W1p mu O
 /-! ### Subset averages -/
 
 omit [FiniteDimensional ℝ E] in
-/-- The mean of the value of a first-order Sobolev function over a fixed subset of finite
-measure depends continuously on the function. -/
-theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
-    (hSfin : mu S ≠ ∞) :
+/-- The mean of the value of a first-order Sobolev function over a fixed subset
+depends continuously on the function (for a subset of infinite measure the mean is `0`). -/
+theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E)) :
     Continuous fun v : W1p mu U p => ⨍ y in S, W1p.value v y ∂mu := by
+  by_cases hSfin : mu S = ∞
+  · simp only [setAverage_eq, measureReal_def, hSfin, ENNReal.toReal_top, inv_zero, zero_smul]
+    exact continuous_const
   have hrs : (mu.restrict (U : Set E)).restrict S = mu.restrict S :=
     Measure.restrict_restrict_of_subset hSU
   have hmeas : (mu.restrict (U : Set E)) S = mu S := by
@@ -284,7 +286,7 @@ theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
     rw [setAverage_eq, smul_eq_mul, W1p.valueL_apply, hrs]
   have hSlt : (mu.restrict (U : Set E)) S < ∞ := by
     rw [hmeas]
-    exact hSfin.lt_top
+    exact lt_top_iff_ne_top.2 hSfin
   have hF : Continuous fun f : Lp ℝ p (mu.restrict (U : Set E)) =>
       ∫ y in S, f y ∂(mu.restrict (U : Set E)) :=
     (Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (μ := mu.restrict (U : Set E)) (p := p) S

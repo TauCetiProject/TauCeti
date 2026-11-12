@@ -69,7 +69,7 @@ theorem vonMisesAngleMeasure_eq_withDensity (hκ : 0 ≤ κ) :
     vonMisesAngleMeasure m κ = (volume.restrict (Ico (-π) π)).withDensity
       (fun t : ℝ ↦ ENNReal.ofReal (vonMisesPDFReal m κ t / (2 * π))) := by
   rw [vonMisesAngleMeasure_def, vonMisesMeasure_of_nonneg hκ,
-    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π) (measurable_vonMisesPDF m κ)]
+    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π)]
   have hπ : -π + 2 * π = π := by ring
   rw [hπ]
   congr 1

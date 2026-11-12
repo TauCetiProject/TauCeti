@@ -28,8 +28,8 @@ filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 * `TauCeti.tendstoInMeasure_of_tendsto_measure_dist_le_rate`: the
   high-probability phrasing for a probability measure, with hypothesis
   `μ {x | dist (f i x) (g x) ≤ rate i} → 1`; here null-measurability of the
-  good events is genuinely needed, since an outer measure can assign full
-  measure to both a set and its complement.
+  good events (eventually along the filter) is genuinely needed, since an outer
+  measure can assign full measure to both a set and its complement.
 
 ## Source
 
@@ -75,22 +75,12 @@ theorem tendstoInMeasure_of_tendsto_measure_rate_lt_dist [PseudoMetricSpace E]
     {f : ι → α → E} {g : α → E} {rate : ι → ℝ} (hrate : Tendsto rate l (𝓝 0))
     (h : Tendsto (fun i => μ {x | rate i < dist (f i x) (g x)}) l (𝓝 0)) :
     TendstoInMeasure μ f l g := by
-  -- The extended-distance rate `ENNReal.ofReal ∘ rate` tends to `0` by
-  -- continuity of `ENNReal.ofReal`, and its exceptional set is contained
-  -- in the present one: `ofReal p < ofReal q` (q > 0) iff p < q.
-  let rate' (i : ι) := ENNReal.ofReal (rate i)
-  have hrate' : Tendsto rate' l (𝓝 0) := by
-    simpa [ENNReal.ofReal_zero] using ENNReal.tendsto_ofReal hrate
-  have h' : Tendsto (fun i => μ {x | rate' i < edist (f i x) (g x)}) l (𝓝 0) := by
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h
-      (Eventually.of_forall fun i => zero_le) (Eventually.of_forall fun i => ?_)
-    exact measure_mono fun x hx => by
-      simp only [Set.mem_ofPred_eq] at hx
-      rw [edist_dist] at hx
-      have h2 := (ENNReal.ofReal_lt_ofReal_iff'
-          (p := rate i) (q := dist (f i x) (g x))).1 hx
-      exact h2.1
-  exact tendstoInMeasure_of_tendsto_measure_rate_lt_edist hrate' h'
+  rw [tendstoInMeasure_iff_dist]
+  intro ε hε
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h
+    (Eventually.of_forall fun i => zero_le) ?_
+  filter_upwards [hrate.eventually_lt_const hε] with i hi
+  exact measure_mono fun x hx => hi.trans_le hx
 
 /--
 **High-probability phrasing.** If, for a probability measure, the events
@@ -98,24 +88,22 @@ theorem tendstoInMeasure_of_tendsto_measure_rate_lt_dist [PseudoMetricSpace E]
 tends to `0`, then `f` tends to `g` in measure.
 
 Unlike `tendstoInMeasure_of_tendsto_measure_rate_lt_dist`, null-measurability
-of the good events cannot be dropped here: an outer measure can assign measure
-`1` to both a set and its complement, so `μ s → 1` alone says nothing about
-`μ sᶜ`.
+of the good events cannot be dropped here (it is required only eventually along
+`l`): an outer measure can assign measure `1` to both a set and its complement,
+so `μ s → 1` alone says nothing about `μ sᶜ`.
 -/
 theorem tendstoInMeasure_of_tendsto_measure_dist_le_rate [PseudoMetricSpace E]
     [IsProbabilityMeasure μ] {f : ι → α → E} {g : α → E} {rate : ι → ℝ}
     (hrate : Tendsto rate l (𝓝 0))
-    (hmeas : ∀ i, NullMeasurableSet {x | dist (f i x) (g x) ≤ rate i} μ)
+    (hmeas : ∀ᶠ i in l, NullMeasurableSet {x | dist (f i x) (g x) ≤ rate i} μ)
     (hprob : Tendsto (fun i => μ {x | dist (f i x) (g x) ≤ rate i}) l (𝓝 1)) :
     TendstoInMeasure μ f l g := by
   refine tendstoInMeasure_of_tendsto_measure_rate_lt_dist hrate ?_
-  have hcompl : ∀ i, μ {x | rate i < dist (f i x) (g x)}
-      = 1 - μ {x | dist (f i x) (g x) ≤ rate i} := fun i => by
-    rw [← prob_compl_eq_one_sub₀ (hmeas i)]
-    congr 1
-    ext x
-    simp [not_le]
-  simpa [hcompl] using
-    ENNReal.Tendsto.sub tendsto_const_nhds hprob (Or.inl ENNReal.one_ne_top)
+  have h := ENNReal.Tendsto.sub tendsto_const_nhds hprob (Or.inl ENNReal.one_ne_top)
+  rw [tsub_self] at h
+  refine h.congr' ?_
+  filter_upwards [hmeas] with i hi
+  rw [← prob_compl_eq_one_sub₀ hi, Set.compl_ofPred]
+  simp_rw [not_le]
 
 end TauCeti
