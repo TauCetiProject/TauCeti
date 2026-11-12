@@ -57,7 +57,9 @@ attaching region `{f = c - ε}` carried onto `∂D^λ × D^(m-λ)` (`TauCeti.qua
 
 * `TauCeti.exists_sublevel_union_cells_deformation`: for normal-form charts with disjoint sources
   around the critical points of a compact band `f⁻¹[c - ε, c + ε]`, the sublevel `M_{c+ε}`
-  strong deformation retracts onto `M_{c-ε}` with the cells of the charts attached.
+  strong deformation retracts onto its intersection with `M_{c-ε}` with the cells of the charts
+  attached; for `0 ≤ ε` this is `M_{c-ε}` with the cells attached, and for `ε ≤ 0` the retraction
+  is the identity.
 * `TauCeti.IsMorse.exists_sublevel_union_cells_deformation`: **Milnor's cell attachment
   theorem** for a Morse function with a compact band around a critical value, with the charts and
   the width `ε₀` supplied by `TauCeti.IsMorse.exists_admissible_morseCharts`, valid for all
@@ -523,13 +525,15 @@ in its target, in which `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`. S
 chart `ψ i` is the disc `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ k i}` of the first `k i` coordinates, read in
 `M`.
 
-Then the lower sublevel `{f ≤ c - ε}` with these cells attached is a strong deformation retract
-of `{f ≤ c + ε}`: there is a retraction of `{f ≤ c + ε}` onto it, and a homotopy in
-`{f ≤ c + ε}` from this retraction to the identity which fixes it pointwise. The cells lie in
-`{f ≤ c}`, so intersecting with `{f ≤ c + ε}` does not change the retract. -/
+Then the intersection with `{f ≤ c + ε}` of the lower sublevel `{f ≤ c - ε}` with these cells
+attached is a strong deformation retract of `{f ≤ c + ε}`: there is a retraction of
+`{f ≤ c + ε}` onto it, and a homotopy in `{f ≤ c + ε}` from this retraction to the identity which
+fixes it pointwise. For `0 ≤ ε` the cells lie in `{f ≤ c}`, so the intersection does not change
+the retract: it is the lower sublevel with the cells attached. For `ε ≤ 0` the sublevel
+`{f ≤ c + ε}` lies in `{f ≤ c - ε}`, and the retraction is the identity. -/
 theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (ψ : ι → PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
-    (hψ : Pairwise (Disjoint on fun i ↦ (ψ i).source)) (k : ι → ℕ) (hε : 0 < ε)
+    (hψ : Pairwise (Disjoint on fun i ↦ (ψ i).source)) (k : ι → ℕ)
     (hball : ∀ i, closedBall 0 √(2 * ε) ⊆ (ψ i).target)
     (hf : ∀ i, ∀ y ∈ (ψ i).source, f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ i y j ^ 2)
     (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)))
@@ -540,6 +544,15 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
       Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
         (ContinuousMap.id _) {x | (x : M) ∈ {x | f x ≤ c - ε} ∪
           ⋃ i, (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0}}) := by
+  rcases le_or_gt ε 0 with hε | hε
+  · -- For `ε ≤ 0` the sublevel `{f ≤ c + ε}` lies in `{f ≤ c - ε}`, so the retraction is trivial.
+    have hsub : ∀ x : {x | f x ≤ c + ε}, (x : M) ∈ {x | f x ≤ c - ε} ∪
+        ⋃ i, (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0} :=
+      -- `x.2 : (x : M) ∈ {x | f x ≤ c + ε}` is the inequality `f x ≤ c + ε` by the definition of
+      -- membership in a set-builder set.
+      fun x ↦ Or.inl (le_trans (b := c + ε) x.2 (by linarith))
+    exact ⟨⟨fun x ↦ ⟨x.1, x.2, hsub x⟩, continuous_subtype_val.subtype_mk _⟩, fun x ↦ rfl,
+      ⟨ContinuousMap.HomotopyRel.refl _ _⟩⟩
   have := Fintype.ofFinite ι
   -- Milnor's cutoff, equal to `2ε` on `(-∞, ε]` and to `0` on `[2ε, ∞)`.
   obtain ⟨μ, hμ, hμa, hμ_nonneg, hμ₀, hμ_eq, -⟩ :=
@@ -683,7 +696,7 @@ theorem IsMorse.exists_sublevel_union_cells_deformation (hf : IsMorse I f) {δ :
     ((hf.finite_criticalPoints_inter hcompact).subset
       (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
   refine ⟨ε₀, hε₀, hε₀δ, ψ, hψ, fun p ↦ ⟨(hψp p).1, (hψp p).2.2.1, (hψp p).2.2.2⟩,
-    fun ε hε hεε₀ ↦ TauCeti.exists_sublevel_union_cells_deformation hf.contMDiff ψ hψ _ hε
+    fun ε hε hεε₀ ↦ TauCeti.exists_sublevel_union_cells_deformation hf.contMDiff ψ hψ _
       (fun p ↦ (closedBall_subset_closedBall (Real.sqrt_le_sqrt (by linarith))).trans
         (hψp p).2.2.2.1) (fun p ↦ (hψp p).2.2.2.2)
       (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
