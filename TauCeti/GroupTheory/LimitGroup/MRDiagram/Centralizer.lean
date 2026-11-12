@@ -166,13 +166,19 @@ theorem exists_mem_branchHoms_centralizer_apply_t_eq {g : G} :
   · rintro ⟨k, rfl⟩
     exact ⟨retractionGHom fun _ => k, mem_branchHoms_centralizer.2 ⟨k, rfl⟩, retraction_t _ 0⟩
 
+/-- The solutions of `[x, u] = 1` are the elements commuting with `u`. -/
+private theorem mem_V_commutatorElement_iff {v : Unit → G} :
+    v ∈ V (.id G) {⁅(inr (FreeGroup.of ()) : GX G Unit), (inl u : GX G Unit)⁆} ↔
+      Commute (v ()) u := by
+  simp only [mem_V, Set.mem_singleton_iff, forall_eq, map_commutatorElement, eval_inr_of,
+    eval_inl, MonoidHom.id_apply, commutatorElement_eq_one_iff_commute]
+
 /-- Every diagram of `G(u, ℤ)` is sound for the equation `[x, u] = 1` at `x = t`. -/
 theorem isSound_centralizerExt (D : MRDiagram (of : G →* CentralizerExt u 1)) :
     D.IsSound (.id G) {⁅(inr (FreeGroup.of ()) : GX G Unit), (inl u : GX G Unit)⁆}
-      fun _ => t 0 := by
-  refine isSound_iff.2 fun φ _ => ?_
-  have h := ((commute_of_t (mem_centralizer_singleton_iff.2 rfl) 0).map φ).symm
-  simpa [mem_V, map_commutatorElement, commutatorElement_eq_one_iff_commute] using h
+      fun _ => t 0 :=
+  isSound_iff.2 fun φ _ => mem_V_commutatorElement_iff.2 <| by
+    simpa using ((commute_of_t (mem_centralizer_singleton_iff.2 rfl) 0).map φ).symm
 
 /-- The diagram of `[x, u] = 1` is complete exactly when every element commuting with the
 centralizer of `u` is a power of `u`. -/
@@ -208,12 +214,9 @@ theorem exists_mem_branchHoms_centralizer_iff (hu : Subgroup.centralizer {u} ≤
     {v : Unit → G} :
     (∃ φ ∈ (centralizer u).branchHoms (.id G), φ (t 0) = v ()) ↔
       v ∈ V (.id G) {⁅(inr (FreeGroup.of ()) : GX G Unit), (inl u : GX G Unit)⁆} := by
-  have hV : v ∈ V (.id G) {⁅(inr (FreeGroup.of ()) : GX G Unit), (inl u : GX G Unit)⁆} ↔
-      v () ∈ Subgroup.centralizer {u} := by
-    simp [mem_V, map_commutatorElement, commutatorElement_eq_one_iff_commute,
-      mem_centralizer_singleton_iff, Commute, SemiconjBy, eq_comm]
-  rw [hV, exists_mem_branchHoms_centralizer_apply_t_eq]
-  exact ⟨fun h => zpowers_le.2 (mem_centralizer_singleton_iff.2 rfl) h, fun h => hu h⟩
+  rw [mem_V_commutatorElement_iff, exists_mem_branchHoms_centralizer_apply_t_eq]
+  exact ⟨fun ⟨k, hk⟩ => hk ▸ Commute.zpow_self u k,
+    fun h => hu (mem_centralizer_singleton_iff.2 h.eq)⟩
 
 /-- Without modular automorphisms, the only branch composite of the three-vertex diagram of
 `G(u, ℤ)` is the quotient `t ↦ 1`. -/
