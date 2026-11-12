@@ -148,7 +148,7 @@ theorem _root_.ContinuousMap.Nullhomotopic.pi {ι : Type*} {Y : ι → Type*}
     [∀ i, TopologicalSpace (Y i)] {f : ∀ i, C(X, Y i)} (hf : ∀ i, (f i).Nullhomotopic) :
     (ContinuousMap.pi f).Nullhomotopic := by
   choose y hy using hf
-  exact ⟨y, ⟨(Homotopy.pi fun i ↦ (hy i).some).cast rfl rfl⟩⟩
+  exact ⟨y, ⟨(Homotopy.pi fun i ↦ (hy i).some).cast rfl (ContinuousMap.ext fun _ ↦ rfl)⟩⟩
 
 /-- In a path-connected space, the inclusion of a union of pairwise disjoint open sets is
 nullhomotopic as soon as the inclusion of each of them is. The nullhomotopies of the pieces can be
