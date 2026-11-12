@@ -82,8 +82,28 @@ theorem quotEquivOfEq_mk (J : LieIdeal R L) (h : I = J) (x : L) :
     I.quotEquivOfEq J h (LieSubmodule.Quotient.mk x) = LieSubmodule.Quotient.mk x :=
   Submodule.quotEquivOfEq_mk _ _ (congrArg LieSubmodule.toSubmodule h) x
 
-/-- The inverse equivalence between quotients by equal ideals preserves representatives. -/
+/-- The underlying linear equivalence is the comparison for equal submodules. -/
+-- Leave this projection out of simp so the function coercion normalizes to the Lie equivalence.
+theorem toLinearEquiv_quotEquivOfEq (J : LieIdeal R L) (h : I = J) :
+    (I.quotEquivOfEq J h).toLinearEquiv =
+      Submodule.quotEquivOfEq I.toSubmodule J.toSubmodule
+        (congrArg LieSubmodule.toSubmodule h) := (rfl)
+
+/-- The comparison from an ideal to itself is the identity. -/
 @[simp]
+theorem quotEquivOfEq_refl : I.quotEquivOfEq I rfl = LieEquiv.refl := by
+  ext x
+  induction x using Submodule.Quotient.induction_on
+  simp
+
+/-- Reversing the equality of ideals gives the inverse comparison. -/
+@[simp]
+theorem quotEquivOfEq_symm (J : LieIdeal R L) (h : I = J) :
+    (I.quotEquivOfEq J h).symm = J.quotEquivOfEq I h.symm := by
+  subst J
+  simp
+
+/-- The inverse equivalence between quotients by equal ideals preserves representatives. -/
 theorem quotEquivOfEq_symm_mk (J : LieIdeal R L) (h : I = J) (x : L) :
     (I.quotEquivOfEq J h).symm (LieSubmodule.Quotient.mk x) =
       LieSubmodule.Quotient.mk x := by

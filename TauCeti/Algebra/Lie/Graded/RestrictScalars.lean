@@ -42,7 +42,7 @@ instance GradedLieAlgebra.restrictScalars [GradedLieAlgebra ℒ] :
 namespace TauCeti.PositiveDegrees
 
 variable {ι : Type} [DecidableEq ι] [AddCommMonoid ι]
-  (ℒ : ι → Submodule S L) (d : TauCeti.PositiveDegrees ι)
+  (d : TauCeti.PositiveDegrees ι) (ℒ : ι → Submodule S L)
   [GradedLieAlgebra ℒ] [TauCeti.IsPositiveGrading d ℒ]
 
 /-- The degree ideal of the restricted grading is the restriction of the degree ideal. -/
@@ -53,6 +53,7 @@ theorem degreeIdeal_restrictScalars (k : ℕ) :
   apply LieSubmodule.toSubmodule_injective
   simp
 
+variable (R) in
 /-- Restricting scalars commutes with finite Lie truncation. -/
 def truncatedRestrictScalarsEquiv (k : ℕ) :
     d.truncatedLie (fun n => (ℒ n).restrictScalars R) k ≃ₗ⁅R⁆
@@ -63,23 +64,23 @@ def truncatedRestrictScalarsEquiv (k : ℕ) :
 /-- The truncation comparison preserves representatives. -/
 @[simp]
 theorem truncatedRestrictScalarsEquiv_mk (k : ℕ) (x : L) :
-    d.truncatedRestrictScalarsEquiv (R := R) ℒ k (Submodule.Quotient.mk x) =
+    d.truncatedRestrictScalarsEquiv R ℒ k (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk x := by
   simp [truncatedRestrictScalarsEquiv]
 
 /-- The inverse comparison preserves quotient representatives. -/
 @[simp]
 theorem truncatedRestrictScalarsEquiv_symm_mk (k : ℕ) (x : L) :
-    (d.truncatedRestrictScalarsEquiv (R := R) ℒ k).symm (Submodule.Quotient.mk x) =
+    (d.truncatedRestrictScalarsEquiv R ℒ k).symm (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk x := by
-  apply (d.truncatedRestrictScalarsEquiv (R := R) ℒ k).injective
+  apply (d.truncatedRestrictScalarsEquiv R ℒ k).injective
   simp
 
 /-- The comparison intertwines the restricted quotient projection and the quotient projection
 of the restricted grading. -/
 @[simp]
 theorem truncatedRestrictScalarsEquiv_comp_mkQ (k : ℕ) :
-    (d.truncatedRestrictScalarsEquiv (R := R) ℒ k).toLieHom.comp
+    (d.truncatedRestrictScalarsEquiv R ℒ k).toLieHom.comp
         (d.degreeIdeal (fun n => (ℒ n).restrictScalars R) k).mkQ =
       (d.degreeIdeal ℒ k).mkQ.restrictScalars R := by
   ext x
@@ -88,7 +89,7 @@ theorem truncatedRestrictScalarsEquiv_comp_mkQ (k : ℕ) :
 /-- The comparison identifies homogeneous pieces with their restrictions of scalars. -/
 theorem map_truncatedGrading_restrictScalars (k : ℕ) (n : ι) :
     (d.truncatedGrading (fun n => (ℒ n).restrictScalars R) k n).map
-        (d.truncatedRestrictScalarsEquiv (R := R) ℒ k).toLinearMap =
+        (d.truncatedRestrictScalarsEquiv R ℒ k).toLinearMap =
       (d.truncatedGrading ℒ k n).restrictScalars R := by
   simp only [truncatedGrading_eq, ← Submodule.map_comp, Submodule.restrictScalars_map]
   congr 1
@@ -101,12 +102,12 @@ theorem map_truncatedGrading_restrictScalars (k : ℕ) (n : ι) :
 @[simp]
 theorem truncatedRestrictScalarsEquiv_mem_iff (k : ℕ) (n : ι)
     (x : d.truncatedLie (fun n => (ℒ n).restrictScalars R) k) :
-    d.truncatedRestrictScalarsEquiv (R := R) ℒ k x ∈ d.truncatedGrading ℒ k n ↔
+    d.truncatedRestrictScalarsEquiv R ℒ k x ∈ d.truncatedGrading ℒ k n ↔
       x ∈ d.truncatedGrading (fun n => (ℒ n).restrictScalars R) k n := by
   rw [← Submodule.restrictScalars_mem R, ← d.map_truncatedGrading_restrictScalars ℒ k n]
   constructor
   · rintro ⟨y, hy, h⟩
-    exact (d.truncatedRestrictScalarsEquiv (R := R) ℒ k).injective h ▸ hy
+    exact (d.truncatedRestrictScalarsEquiv R ℒ k).injective h ▸ hy
   · intro hx
     exact ⟨x, hx, rfl⟩
 
@@ -114,20 +115,30 @@ theorem truncatedRestrictScalarsEquiv_mem_iff (k : ℕ) (n : ι)
 @[simp]
 theorem truncatedRestrictScalarsEquiv_decompose (k : ℕ) (n : ι)
     (x : d.truncatedLie (fun n => (ℒ n).restrictScalars R) k) :
-    d.truncatedRestrictScalarsEquiv (R := R) ℒ k
+    d.truncatedRestrictScalarsEquiv R ℒ k
         (DirectSum.decompose (d.truncatedGrading (fun n => (ℒ n).restrictScalars R) k) x n :
           d.truncatedLie (fun n => (ℒ n).restrictScalars R) k) =
       (DirectSum.decompose (d.truncatedGrading ℒ k)
-        (d.truncatedRestrictScalarsEquiv (R := R) ℒ k x) n : d.truncatedLie ℒ k) := by
+        (d.truncatedRestrictScalarsEquiv R ℒ k x) n : d.truncatedLie ℒ k) := by
   induction x using Submodule.Quotient.induction_on with | _ x
+  simp
+
+/-- The comparison commutes with each transition applied to a truncation element. -/
+@[simp]
+theorem truncatedRestrictScalarsEquiv_truncationMap {k l : ℕ} (h : k ≤ l)
+    (x : d.truncatedLie (fun n => (ℒ n).restrictScalars R) l) :
+    d.truncatedRestrictScalarsEquiv R ℒ k
+        (d.truncationMap (fun n => (ℒ n).restrictScalars R) h x) =
+      d.truncationMap ℒ h (d.truncatedRestrictScalarsEquiv R ℒ l x) := by
+  induction x using Submodule.Quotient.induction_on
   simp
 
 /-- The finite-order comparisons commute with transitions to smaller cutoffs. -/
 theorem truncatedRestrictScalarsEquiv_comp_truncationMap {k l : ℕ} (h : k ≤ l) :
-    (d.truncatedRestrictScalarsEquiv (R := R) ℒ k).toLieHom.comp
+    (d.truncatedRestrictScalarsEquiv R ℒ k).toLieHom.comp
         (d.truncationMap (fun n => (ℒ n).restrictScalars R) h) =
       ((d.truncationMap ℒ h).restrictScalars R).comp
-        (d.truncatedRestrictScalarsEquiv (R := R) ℒ l).toLieHom := by
+        (d.truncatedRestrictScalarsEquiv R ℒ l).toLieHom := by
   ext x
   simp [LieIdeal.mkQ_apply]
 
