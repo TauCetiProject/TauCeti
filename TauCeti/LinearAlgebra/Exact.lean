@@ -13,7 +13,10 @@ public import Mathlib.LinearAlgebra.Prod
 # Exact sequences of linear maps
 
 This file records elementary constructions and consequences for exact pairs of linear maps,
-including the left exactness of `Hom` over a noncommutative ring
+including products of exact pairs with an identity factor (`Function.Exact.id_prodMap`,
+`Function.Exact.prodMap_id`), the exact sequence `A → D → F` of nested exact sequences
+`A → B → C` and `B → D → E` compatible with `C → F → E` (`Function.Exact.comp_of_comp_eq` and
+`Function.Exact.surjective_of_comp_eq`), the left exactness of `Hom` over a noncommutative ring
 (`Function.Exact.lcomp_of_surjective`), the generators and relations of an extension
 (`Function.Exact.surjective_coprod`, `TauCeti.ker_coprod_eq_map_prod_top`), the horseshoe step
 `TauCeti.exists_surjective_ker_exact`, the short exact sequence of kernels
@@ -74,6 +77,73 @@ theorem _root_.Function.Exact.prodMap
     exact ⟨(y₁, y₂), by ext <;> assumption⟩
   · rintro ⟨y, rfl⟩
     exact Prod.ext ((h₁ _).2 ⟨y.1, rfl⟩) ((h₂ _).2 ⟨y.2, rfl⟩)
+
+/-- An exact pair `M → N → P` stays exact after a product with a factor `Z` on the left: the pair
+`Z × M → Z × N → P`, the second map being `g` on the second component, is exact. -/
+theorem _root_.Function.Exact.id_prodMap {R M N P : Type*} (Z : Type*) [Semiring R]
+    [AddCommMonoid M] [AddCommMonoid N] [AddCommMonoid P] [AddCommMonoid Z]
+    [Module R M] [Module R N] [Module R P] [Module R Z] {f : M →ₗ[R] N} {g : N →ₗ[R] P}
+    (h : Function.Exact f g) :
+    Function.Exact ((LinearMap.id : Z →ₗ[R] Z).prodMap f) (g ∘ₗ LinearMap.snd R Z N) := by
+  intro x
+  constructor
+  · intro hx
+    obtain ⟨y, hy⟩ := (h x.2).1 hx
+    exact ⟨(x.1, y), Prod.ext rfl hy⟩
+  · rintro ⟨y, rfl⟩
+    exact (h _).2 ⟨y.2, rfl⟩
+
+/-- An exact pair `M → N → P` stays exact after a product with a factor `Z` on the right: the pair
+`M × Z → N × Z → P`, the second map being `g` on the first component, is exact. -/
+theorem _root_.Function.Exact.prodMap_id {R M N P : Type*} (Z : Type*) [Semiring R]
+    [AddCommMonoid M] [AddCommMonoid N] [AddCommMonoid P] [AddCommMonoid Z]
+    [Module R M] [Module R N] [Module R P] [Module R Z] {f : M →ₗ[R] N} {g : N →ₗ[R] P}
+    (h : Function.Exact f g) :
+    Function.Exact (f.prodMap (LinearMap.id : Z →ₗ[R] Z)) (g ∘ₗ LinearMap.fst R N Z) := by
+  intro x
+  constructor
+  · intro hx
+    obtain ⟨y, hy⟩ := (h x.1).1 hx
+    exact ⟨(y, x.2), Prod.ext hy rfl⟩
+  · rintro ⟨y, rfl⟩
+    exact (h _).2 ⟨y.1, rfl⟩
+
+/-- Nested exact sequences. Let `A → B → C` and `B → D → E` be exact, with `B → D` written `f'`,
+and let `h : D → F` restrict on `B` to `B → C → F` with `i : C → F` injective, and induce
+`D → E` through `j : F → E`. Then `A → D → F` is exact: its kernel `h⁻¹(0)` lies in `B` and is
+the kernel of `B → C` there. -/
+theorem _root_.Function.Exact.comp_of_comp_eq {R A B C D E F : Type*} [Ring R]
+    [AddCommGroup A] [AddCommGroup B] [AddCommGroup C] [AddCommGroup D] [AddCommGroup E]
+    [AddCommGroup F] [Module R A] [Module R B] [Module R C] [Module R D] [Module R E]
+    [Module R F] {f : A →ₗ[R] B} {g : B →ₗ[R] C} {f' : B →ₗ[R] D} {g' : D →ₗ[R] E}
+    {h : D →ₗ[R] F} {i : C →ₗ[R] F} {j : F →ₗ[R] E} (hfg : Function.Exact f g)
+    (hfg' : Function.Exact f' g') (hi : Function.Injective i) (hhi : h ∘ₗ f' = i ∘ₗ g)
+    (hjh : j ∘ₗ h = g') : Function.Exact (f' ∘ₗ f) h := by
+  intro d
+  refine ⟨fun hd ↦ ?_, ?_⟩
+  · obtain ⟨b, rfl⟩ := (hfg' d).1 (by rw [← hjh, LinearMap.comp_apply, hd, map_zero])
+    have hb : i (g b) = 0 := by rw [← LinearMap.comp_apply, ← hhi, LinearMap.comp_apply, hd]
+    obtain ⟨a, rfl⟩ := (hfg b).1 (hi (hb.trans (map_zero i).symm))
+    exact ⟨a, rfl⟩
+  · rintro ⟨a, rfl⟩
+    rw [LinearMap.comp_apply, ← LinearMap.comp_apply h, hhi, LinearMap.comp_apply,
+      hfg.apply_apply_eq_zero, map_zero]
+
+/-- In the situation of `Function.Exact.comp_of_comp_eq`, with `B → C`, `D → E` surjective and
+`C → F → E` exact, the map `h : D → F` is surjective. -/
+theorem _root_.Function.Exact.surjective_of_comp_eq {R B C D E F : Type*} [Ring R]
+    [AddCommGroup B] [AddCommGroup C] [AddCommGroup D] [AddCommGroup E] [AddCommGroup F]
+    [Module R B] [Module R C] [Module R D] [Module R E] [Module R F] {g : B →ₗ[R] C}
+    {f' : B →ₗ[R] D} {g' : D →ₗ[R] E} {h : D →ₗ[R] F} {i : C →ₗ[R] F} {j : F →ₗ[R] E}
+    (hij : Function.Exact i j) (hg : Function.Surjective g) (hg' : Function.Surjective g')
+    (hhi : h ∘ₗ f' = i ∘ₗ g) (hjh : j ∘ₗ h = g') : Function.Surjective h := by
+  intro w
+  obtain ⟨d, hd⟩ := hg' (j w)
+  obtain ⟨c, hc⟩ := (hij (w - h d)).1 (by
+    rw [map_sub, ← LinearMap.comp_apply j h, hjh, hd, sub_self])
+  obtain ⟨b, rfl⟩ := hg c
+  refine ⟨d + f' b, ?_⟩
+  rw [map_add, ← LinearMap.comp_apply h f', hhi, LinearMap.comp_apply, hc, add_sub_cancel]
 
 /-- If `M --f--> N --g--> P` is exact at `N`, then so is `M --f--> N --g--> range g`, with `g`
 corestricted to its range. When `f` is injective, `0 → M → N → range g → 0` is then a short exact

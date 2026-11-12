@@ -57,6 +57,18 @@ identity drops one dimension, contributing `dim T`. This is the linear input for
 codimension-one faces of compactified spaces of Morse–Bott trajectories, whose broken strata are
 fibre products over critical submanifolds.
 
+Iterated fibre products are associative, without a sign. For `α : X → T`, `β : Y → T`,
+`γ : Y → S` and `δ : Z → S`, the identification `(X ×_T Y) ×_S Z ≃ X ×_T (Y ×_S Z)` of triples
+`(ξ, η, ζ)` with `α ξ = β η` and `γ η = δ ζ` (`LinearMap.fiberProductAssoc`) carries the iterated
+fibre product orientations into each other (`Orientation.map_fiberProduct_assoc`), as the formal
+expression `[X][T]^∨[Y][S]^∨[Z]` suggests. The proof reads both groupings as kernels in the triple
+products `(X × Y) × Z` and `X × (Y × Z)`, onto `S × T` and `T × S` respectively, and compares the
+two through the associativity of subspace-first orientations (`Orientation.shortExact_assoc`).
+The signs `(-1) ^ (dim Y · dim T + dim T · dim Z + dim Z · dim S)` and
+`(-1) ^ (dim (Y ×_S Z) · dim T + dim Z · dim S)` of the two groupings against `[X][Y][Z]` differ
+by the exchange of `S` and `T`. This is the linear model of the associativity of iterated broken
+trajectories `𝓜(C, E) ×_E 𝓜(E, F) ×_F 𝓜(F, D)` through two intermediate critical submanifolds.
+
 ## Main definitions
 
 * `Orientation.fiberProduct`: the orientation of the fibre product of two transverse maps.
@@ -70,6 +82,7 @@ fibre products over critical submanifolds.
 * `Orientation.map_fiberProduct_comm`: the sign of exchanging the factors of a fibre product.
 * `Orientation.transverse_fiberProduct_left`, `Orientation.transverse_fiberProduct_right`: the
   boundary formula for fibre product orientations.
+* `Orientation.map_fiberProduct_assoc`: associativity of iterated fibre product orientations.
 
 ## References
 
@@ -343,5 +356,280 @@ theorem transverse_fiberProduct_right {p : Submodule K Y}
   congr 1
   rw [← pow_add, ← pow_add, show x + t + ((y + 1) * t + x) = y * t + 2 * (x + t) by ring,
     pow_add, (even_two_mul _).neg_one_pow, mul_one]
+
+end Orientation
+
+/-! ### Associativity -/
+
+namespace Orientation
+
+variable {K X Y Z S T : Type*} [Field K]
+  [AddCommGroup X] [Module K X] [AddCommGroup Y] [Module K Y] [AddCommGroup Z] [Module K Z]
+  [AddCommGroup S] [Module K S] [AddCommGroup T] [Module K T]
+  {α : X →ₗ[K] T} {β : Y →ₗ[K] T} {γ : Y →ₗ[K] S} {δ : Z →ₗ[K] S}
+
+open LinearMap
+
+/-! The two groupings of a triple fibre product are kernels in the triple products:
+`(X ×_T Y) ×_S Z` of `((ξ, η), ζ) ↦ (γ η - δ ζ, α ξ - β η)` on `(X × Y) × Z`, and
+`X ×_T (Y ×_S Z)` of `(ξ, (η, ζ)) ↦ (α ξ - β η, γ η - δ ζ)` on `X × (Y × Z)`. -/
+
+/-- On `(X ×_T Y) × Z`, the map `((ξ, η), ζ) ↦ (γ η - δ ζ, α ξ - β η)` has second component
+zero. -/
+private theorem comp_prodMap_subtype_left :
+    ((γ ∘ₗ snd K X Y).coprod (-δ)).prod (α.coprod (-β) ∘ₗ fst K (X × Y) Z) ∘ₗ
+        (ker (α.coprod (-β))).subtype.prodMap LinearMap.id =
+      inl K S T ∘ₗ (γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ) := by
+  ext q <;> simp
+
+private theorem snd_comp_prod_left :
+    snd K S T ∘ₗ ((γ ∘ₗ snd K X Y).coprod (-δ)).prod (α.coprod (-β) ∘ₗ fst K (X × Y) Z) =
+      α.coprod (-β) ∘ₗ fst K (X × Y) Z := by
+  ext <;> simp
+
+/-- On `X × (Y ×_S Z)`, the map `(ξ, (η, ζ)) ↦ (α ξ - β η, γ η - δ ζ)` has second component
+zero. -/
+private theorem comp_prodMap_subtype_right :
+    (α.coprod (-(β ∘ₗ fst K Y Z))).prod (γ.coprod (-δ) ∘ₗ snd K X (Y × Z)) ∘ₗ
+        (LinearMap.id : X →ₗ[K] X).prodMap (ker (γ.coprod (-δ))).subtype =
+      inl K T S ∘ₗ α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)) := by
+  ext q <;> simp
+
+private theorem snd_comp_prod_right :
+    snd K T S ∘ₗ (α.coprod (-(β ∘ₗ fst K Y Z))).prod (γ.coprod (-δ) ∘ₗ snd K X (Y × Z)) =
+      γ.coprod (-δ) ∘ₗ snd K X (Y × Z) := by
+  ext <;> simp
+
+private theorem injective_comp_subtype_left :
+    Function.Injective ((ker (α.coprod (-β))).subtype.prodMap (LinearMap.id : Z →ₗ[K] Z) ∘ₗ
+      (ker ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))).subtype) := by
+  rw [LinearMap.coe_comp, LinearMap.coe_prodMap, LinearMap.id_coe]
+  exact ((ker _).injective_subtype.prodMap Function.injective_id).comp
+    (Submodule.injective_subtype _)
+
+private theorem exact_comp_subtype_left :
+    Function.Exact ((ker (α.coprod (-β))).subtype.prodMap (LinearMap.id : Z →ₗ[K] Z) ∘ₗ
+      (ker ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))).subtype)
+      (((γ ∘ₗ snd K X Y).coprod (-δ)).prod (α.coprod (-β) ∘ₗ fst K (X × Y) Z)) :=
+  (exact_subtype_ker_map _).comp_of_comp_eq ((exact_subtype_ker_map (α.coprod (-β))).prodMap_id Z)
+    inl_injective comp_prodMap_subtype_left snd_comp_prod_left
+
+private theorem surjective_prod_left (h₁ : Function.Surjective (α.coprod (-β)))
+    (h₂ : Function.Surjective ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))) :
+    Function.Surjective
+      (((γ ∘ₗ snd K X Y).coprod (-δ)).prod (α.coprod (-β) ∘ₗ fst K (X × Y) Z)) :=
+  Function.Exact.inl_snd.surjective_of_comp_eq h₂
+    (by rw [LinearMap.coe_comp]; exact h₁.comp LinearMap.fst_surjective)
+    comp_prodMap_subtype_left snd_comp_prod_left
+
+private theorem injective_comp_subtype_right :
+    Function.Injective ((LinearMap.id : X →ₗ[K] X).prodMap (ker (γ.coprod (-δ))).subtype ∘ₗ
+      (ker (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))).subtype) := by
+  rw [LinearMap.coe_comp, LinearMap.coe_prodMap, LinearMap.id_coe]
+  exact (Function.injective_id.prodMap (ker _).injective_subtype).comp
+    (Submodule.injective_subtype _)
+
+private theorem exact_comp_subtype_right :
+    Function.Exact ((LinearMap.id : X →ₗ[K] X).prodMap (ker (γ.coprod (-δ))).subtype ∘ₗ
+      (ker (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))).subtype)
+      ((α.coprod (-(β ∘ₗ fst K Y Z))).prod (γ.coprod (-δ) ∘ₗ snd K X (Y × Z))) :=
+  (exact_subtype_ker_map _).comp_of_comp_eq ((exact_subtype_ker_map (γ.coprod (-δ))).id_prodMap X)
+    inl_injective comp_prodMap_subtype_right snd_comp_prod_right
+
+private theorem surjective_prod_right (h₃ : Function.Surjective (γ.coprod (-δ)))
+    (h₄ : Function.Surjective (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))) :
+    Function.Surjective
+      ((α.coprod (-(β ∘ₗ fst K Y Z))).prod (γ.coprod (-δ) ∘ₗ snd K X (Y × Z))) :=
+  Function.Exact.inl_snd.surjective_of_comp_eq h₄
+    (by rw [LinearMap.coe_comp]; exact h₃.comp LinearMap.snd_surjective)
+    comp_prodMap_subtype_right snd_comp_prod_right
+
+variable [LinearOrder K] [IsStrictOrderedRing K] [FiniteDimensional K X] [FiniteDimensional K Y]
+  [FiniteDimensional K Z] [FiniteDimensional K S] [FiniteDimensional K T] {x y z s t q₁ q₂ m : ℕ}
+
+/-- The left grouping `(X ×_T Y) ×_S Z`, read in `(X × Y) × Z` as the kernel of
+`((ξ, η), ζ) ↦ (γ η - δ ζ, α ξ - β η)`: the induced orientation of `(X × Y) × Z` is
+`(-1) ^ (dim Y · dim T + dim T · dim Z + dim Z · dim S)` times `([X][Y])[Z]`. -/
+private theorem shortExact_fiberProduct_fiberProduct_left
+    (h₁ : Function.Surjective (α.coprod (-β)))
+    (h₂ : Function.Surjective ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ)))
+    (ox : Orientation K X (Fin x)) (oy : Orientation K Y (Fin y)) (oz : Orientation K Z (Fin z))
+    (ot : Orientation K T (Fin t)) (os : Orientation K S (Fin s)) (hx : finrank K X = x)
+    (hy : finrank K Y = y) (hz : finrank K Z = z) (ht : finrank K T = t)
+    (hs : finrank K S = s) (hq₁ : q₁ + t = x + y) (hm : m + s = q₁ + z)
+    (hQ₁ : finrank K (ker (α.coprod (-β))) = q₁)
+    (hP : finrank K (ker ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))) = m)
+    (hST : finrank K (S × T) = s + t) :
+    shortExact (U := ker ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ)))
+        (V := (X × Y) × Z) (W := S × T) injective_comp_subtype_left exact_comp_subtype_left
+        (surjective_prod_left h₁ h₂)
+        (fiberProduct h₂ (fiberProduct h₁ ox oy ot hx hy ht hq₁) oz os hQ₁ hz hs hm)
+        (prod os ot hs ht) hP hST =
+      (-1 : Kˣ) ^ (y * t + t * z + z * s) • reindex K ((X × Y) × Z)
+        (finCongr (by omega : x + y + z = m + (s + t)))
+        (prod (prod ox oy hx hy) oz (by rw [finrank_prod, hx, hy]) hz) := by
+  set Q₁ := ker (α.coprod (-β))
+  have hf' : Function.Injective (Q₁.subtype.prodMap (LinearMap.id : Z →ₗ[K] Z)) := by
+    rw [LinearMap.coe_prodMap, LinearMap.id_coe]
+    exact Q₁.injective_subtype.prodMap Function.injective_id
+  have hg' : Function.Surjective (α.coprod (-β) ∘ₗ fst K (X × Y) Z) := by
+    rw [LinearMap.coe_comp]
+    exact h₁.comp LinearMap.fst_surjective
+  -- Orient `(X × Y) × Z` through `Q₁ × Z`, with quotient `T`, and through `S × T`.
+  have hL := shortExact_assoc (Submodule.injective_subtype _) (exact_subtype_ker_map _) h₂ hf'
+    ((exact_subtype_ker_map (α.coprod (-β))).prodMap_id Z) hg' injective_comp_subtype_left
+    exact_comp_subtype_left (surjective_prod_left h₁ h₂) inl_injective
+    Function.Exact.inl_snd snd_surjective rfl comp_prodMap_subtype_left snd_comp_prod_left
+    (fiberProduct h₂ (fiberProduct h₁ ox oy ot hx hy ht hq₁) oz os hQ₁ hz hs hm) os ot hP hs ht
+    (by rw [finrank_prod, hQ₁, hz]; omega) hST
+  -- `[Q₁ × Z]` with `T` gives `([Q₁ ×_T ...][T])[Z]` up to the exchange of `T` and `Z`.
+  have hPL := prod_shortExact_left Q₁.injective_subtype (exact_subtype_ker_map _) h₁
+    (fiberProduct h₁ ox oy ot hx hy ht hq₁) ot oz hQ₁ ht hz (by rw [finrank_prod, hx, hy]; omega)
+  simp only [shortExact_inl_snd] at hL
+  rw [eq_comm, smul_eq_iff_eq_inv_smul, ← Equiv.eq_symm_apply] at hPL
+  rw [← (reindex K ((X × Y) × Z) (finCongr (add_assoc m s t).symm)).injective.eq_iff, ← hL,
+    shortExact_fiberProduct, shortExact_reindex_finCongr_left, shortExact_units_smul_left, hPL,
+    shortExact_fiberProduct, prod_reindex_finCongr_left, prod_units_smul_left]
+  simp only [reindex_symm, reindex_units_smul, smul_smul, ← reindex_trans]
+  -- Compare the signs and the recastings of the index types.
+  congr 1
+  rw [← inv_pow, inv_neg_one, ← pow_add, ← pow_add]
+  ring_nf
+
+/-- The right grouping `X ×_T (Y ×_S Z)`, read in `X × (Y × Z)` as the kernel of
+`(ξ, (η, ζ)) ↦ (α ξ - β η, γ η - δ ζ)`: the induced orientation of `X × (Y × Z)` is
+`(-1) ^ (dim (Y ×_S Z) · dim T + dim Z · dim S)` times `[X]([Y][Z])`. -/
+private theorem shortExact_fiberProduct_fiberProduct_right
+    (h₃ : Function.Surjective (γ.coprod (-δ)))
+    (h₄ : Function.Surjective (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype))))
+    (ox : Orientation K X (Fin x)) (oy : Orientation K Y (Fin y)) (oz : Orientation K Z (Fin z))
+    (ot : Orientation K T (Fin t)) (os : Orientation K S (Fin s)) (hx : finrank K X = x)
+    (hy : finrank K Y = y) (hz : finrank K Z = z) (ht : finrank K T = t)
+    (hs : finrank K S = s) (hq₂ : q₂ + s = y + z) (hm : m + t = x + q₂)
+    (hQ₂ : finrank K (ker (γ.coprod (-δ))) = q₂)
+    (hP : finrank K (ker (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))) = m)
+    (hTS : finrank K (T × S) = t + s) :
+    shortExact (U := ker (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype))))
+        (V := X × Y × Z) (W := T × S) injective_comp_subtype_right exact_comp_subtype_right
+        (surjective_prod_right h₃ h₄)
+        (fiberProduct h₄ ox (fiberProduct h₃ oy oz os hy hz hs hq₂) ot hx hQ₂ ht hm)
+        (prod ot os ht hs) hP hTS =
+      (-1 : Kˣ) ^ (q₂ * t + z * s) • reindex K (X × Y × Z)
+        (finCongr (by omega : x + (y + z) = m + (t + s)))
+        (prod ox (prod oy oz hy hz) hx (by rw [finrank_prod, hy, hz])) := by
+  set Q₂ := ker (γ.coprod (-δ))
+  have hf' : Function.Injective ((LinearMap.id : X →ₗ[K] X).prodMap Q₂.subtype) := by
+    rw [LinearMap.coe_prodMap, LinearMap.id_coe]
+    exact Function.injective_id.prodMap Q₂.injective_subtype
+  have hg' : Function.Surjective (γ.coprod (-δ) ∘ₗ snd K X (Y × Z)) := by
+    rw [LinearMap.coe_comp]
+    exact h₃.comp LinearMap.snd_surjective
+  -- Orient `X × (Y × Z)` through `X × Q₂`, with quotient `S`, and through `T × S`.
+  have hR := shortExact_assoc (Submodule.injective_subtype _) (exact_subtype_ker_map _) h₄ hf'
+    ((exact_subtype_ker_map (γ.coprod (-δ))).id_prodMap X) hg' injective_comp_subtype_right
+    exact_comp_subtype_right (surjective_prod_right h₃ h₄) inl_injective
+    Function.Exact.inl_snd snd_surjective rfl comp_prodMap_subtype_right snd_comp_prod_right
+    (fiberProduct h₄ ox (fiberProduct h₃ oy oz os hy hz hs hq₂) ot hx hQ₂ ht hm) ot os hP ht hs
+    (by rw [finrank_prod, hx, hQ₂]; omega) hTS
+  -- `[X][Y × Z]` with `[Y × Z]` induced through `Q₂` is induced through `X × Q₂`.
+  have hPR := prod_shortExact_right Q₂.injective_subtype (exact_subtype_ker_map _) h₃ ox
+    (fiberProduct h₃ oy oz os hy hz hs hq₂) os hx hQ₂ hs (by rw [finrank_prod, hy, hz]; omega)
+  simp only [shortExact_inl_snd] at hR
+  rw [eq_comm, ← Equiv.eq_symm_apply] at hPR
+  rw [← (reindex K (X × Y × Z) (finCongr (add_assoc m t s).symm)).injective.eq_iff, ← hR,
+    shortExact_fiberProduct, shortExact_reindex_finCongr_left, shortExact_units_smul_left, hPR,
+    shortExact_fiberProduct, prod_reindex_finCongr_right, prod_units_smul_right]
+  simp only [reindex_symm, reindex_units_smul, smul_smul, ← reindex_trans]
+  -- Compare the signs and the recastings of the index types.
+  rw [← pow_add]
+  congr 1
+
+/-- The associativity isomorphisms `(X × Y) × Z ≃ X × (Y × Z)`, `S × T ≃ T × S` and
+`(X ×_T Y) ×_S Z ≃ X ×_T (Y ×_S Z)` form an isomorphism of the short exact sequences of the two
+groupings. -/
+private theorem map_prodAssoc_shortExact (h₁ : Function.Surjective (α.coprod (-β)))
+    (h₂ : Function.Surjective ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ)))
+    (h₃ : Function.Surjective (γ.coprod (-δ)))
+    (h₄ : Function.Surjective (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype))))
+    (o : Orientation K (ker ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ)))
+      (Fin m)) (p : Orientation K (S × T) (Fin (s + t)))
+    (hP : finrank K (ker ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))) = m)
+    (hST : finrank K (S × T) = s + t)
+    (hP' : finrank K (ker (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))) = m)
+    (hTS : finrank K (T × S) = s + t) :
+    map (Fin (m + (s + t))) (LinearEquiv.prodAssoc K X Y Z)
+        (shortExact (U := ker ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ)))
+          (V := (X × Y) × Z) (W := S × T) injective_comp_subtype_left exact_comp_subtype_left
+          (surjective_prod_left h₁ h₂) o p hP hST) =
+      shortExact (U := ker (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype))))
+        (V := X × Y × Z) (W := T × S) injective_comp_subtype_right exact_comp_subtype_right
+        (surjective_prod_right h₃ h₄) (map (Fin m) (fiberProductAssoc α β γ δ) o)
+        (map (Fin (s + t)) (LinearEquiv.prodComm K S T) p) hP' hTS :=
+  map_shortExact (U := ker ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ)))
+    (V := (X × Y) × Z) (W := S × T)
+    (U' := ker (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype))))
+    (V' := X × Y × Z) (W' := T × S) injective_comp_subtype_left exact_comp_subtype_left
+    (surjective_prod_left h₁ h₂) hP hST injective_comp_subtype_right exact_comp_subtype_right
+    (surjective_prod_right h₃ h₄) (fiberProductAssoc α β γ δ)
+    (LinearEquiv.prodAssoc K X Y Z) (LinearEquiv.prodComm K S T)
+    (LinearMap.ext fun _ ↦ by simp) (by ext <;> simp) o p
+
+/-- **Associativity of fibre product orientations.** For `α : X → T`, `β : Y → T`,
+`γ : Y → S` and `δ : Z → S`, the associativity isomorphism
+`(X ×_T Y) ×_S Z ≃ X ×_T (Y ×_S Z)` (`LinearMap.fiberProductAssoc`) carries the fibre product
+orientation of `[X ×_T Y]` and `[Z]` to that of `[X]` and `[Y ×_S Z]`. In the formal notation
+`[X ×_T Y] = [X][T]^∨[Y]`, both are `[X][T]^∨[Y][S]^∨[Z]`. Transversality is assumed for the left
+grouping; it implies transversality for the right one
+(`LinearMap.surjective_coprod_neg_of_comp_left`, `LinearMap.surjective_coprod_neg_of_assoc`). -/
+theorem map_fiberProduct_assoc (h₁ : Function.Surjective (α.coprod (-β)))
+    (h₂ : Function.Surjective ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ)))
+    (ox : Orientation K X (Fin x)) (oy : Orientation K Y (Fin y)) (oz : Orientation K Z (Fin z))
+    (ot : Orientation K T (Fin t)) (os : Orientation K S (Fin s)) (hx : finrank K X = x)
+    (hy : finrank K Y = y) (hz : finrank K Z = z) (ht : finrank K T = t)
+    (hs : finrank K S = s) (hq₁ : q₁ + t = x + y) (hq₂ : q₂ + s = y + z) (hm : m + s = q₁ + z)
+    (hQ₁ : finrank K (ker (α.coprod (-β))) = q₁) (hQ₂ : finrank K (ker (γ.coprod (-δ))) = q₂) :
+    map (Fin m) (fiberProductAssoc α β γ δ)
+        (fiberProduct h₂ (fiberProduct h₁ ox oy ot hx hy ht hq₁) oz os hQ₁ hz hs hm) =
+      fiberProduct (surjective_coprod_neg_of_assoc (α := α) (β := β) (γ := γ) (δ := δ) h₁ h₂) ox
+        (fiberProduct (surjective_coprod_neg_of_comp_left (α := γ) (β := δ)
+          (snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype) h₂) oy oz os hy hz hs hq₂) ot hx hQ₂
+        ht (by omega) := by
+  set h₃ := surjective_coprod_neg_of_comp_left (α := γ) (β := δ)
+    (snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype) h₂
+  set h₄ := surjective_coprod_neg_of_assoc (α := α) (β := β) (γ := γ) (δ := δ) h₁ h₂
+  have hm' : m + t = x + q₂ := by omega
+  have hP := finrank_ker_coprod_neg h₂ hQ₁ hz hs hm
+  have hP' := finrank_ker_coprod_neg h₄ hx hQ₂ ht hm'
+  have hST : finrank K (S × T) = s + t := by rw [finrank_prod, hs, ht]
+  have hTS : finrank K (T × S) = t + s := by rw [finrank_prod, ht, hs]
+  -- Both groupings are kernels in the triple products, of `(X × Y) × Z → S × T` and
+  -- `X × (Y × Z) → T × S`.
+  -- The associativity isomorphisms of the triple products and of their quotients compare the two
+  -- kernel orientations.
+  -- The associativity isomorphisms of the triple products and of their quotients compare the two
+  -- kernel orientations.
+  have hN := map_prodAssoc_shortExact h₁ h₂ h₃ h₄
+    (fiberProduct h₂ (fiberProduct h₁ ox oy ot hx hy ht hq₁) oz os hQ₁ hz hs hm)
+    (prod os ot hs ht) hP hST hP' (by rw [finrank_prod, ht, hs, add_comm])
+  rw [shortExact_fiberProduct_fiberProduct_left h₁ h₂ ox oy oz ot os hx hy hz ht hs hq₁ hm hQ₁ hP
+      hST, map_units_smul, map_reindex, map_prodAssoc_prod, map_prodComm_prod,
+    shortExact_units_smul_right, shortExact_reindex_finCongr_right, eq_comm,
+    smul_eq_iff_eq_inv_smul, ← Equiv.eq_symm_apply] at hN
+  refine (shortExact_inj_left
+    (U := ker (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype))))
+    (V := X × Y × Z) (W := T × S) injective_comp_subtype_right exact_comp_subtype_right
+    (surjective_prod_right h₃ h₄) hP' hTS (prod ot os ht hs)).1 ?_
+  rw [hN, shortExact_fiberProduct_fiberProduct_right h₃ h₄ ox oy oz ot os hx hy hz ht hs hq₂ hm' hQ₂
+      hP' hTS]
+  simp only [reindex_symm, reindex_units_smul, smul_smul, ← reindex_trans]
+  -- The signs agree since `dim Y + dim Z = dim (Y ×_S Z) + dim S`; the recastings of the index
+  -- types agree.
+  congr 1
+  have he : s * t + (y * t + t * z + z * s) = q₂ * t + z * s + 2 * (s * t) := by
+    have h := congrArg (· * t) hq₂
+    simp only [add_mul] at h
+    linarith
+  rw [← inv_pow, inv_neg_one, ← pow_add, he, pow_add _ _ (2 * (s * t)),
+    (even_two_mul _).neg_one_pow, mul_one]
 
 end Orientation

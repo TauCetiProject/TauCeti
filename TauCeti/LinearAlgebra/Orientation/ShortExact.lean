@@ -7,9 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.Orientation.Prod
 public import Mathlib.Algebra.Exact.Basic
+public import TauCeti.LinearAlgebra.Exact
 import Mathlib.Algebra.Module.Projective
 import TauCeti.LinearAlgebra.Basis.Exact
-import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.Ray
 
 /-!
@@ -37,6 +37,16 @@ homology. The construction is natural for isomorphisms of short exact sequences
 This is the orientation counterpart of the determinant-line isomorphism
 `TauCeti.detLineShortExactEquiv`, which uses the same subspace-first order.
 
+The subspace-first order is associative (`Orientation.shortExact_assoc`): for nested subspaces
+`A ⊆ B ⊆ D`, orienting `D` from `A`, `B / A` and `D / B` through `B` or through `D / A` gives the
+same orientation, since both list a basis of `A`, then lifts of one of `B / A`, then lifts of one of
+`D / B`. For the split sequence `A → A × C → C` the induced orientation is the product orientation
+(`Orientation.shortExact_inl_snd`). Together these describe products with a fixed factor `Z`: the
+orientation `[Z][B]` is induced through `Z × A ⊆ Z × B` by `[Z][A]` and `[C]`
+(`Orientation.prod_shortExact_right`), while `[B][Z]` is induced through `A × Z ⊆ B × Z` by
+`[A][Z]` and `[C]` up to the sign `(-1) ^ (dim C · dim Z)` of moving `C` past `Z`
+(`Orientation.prod_shortExact_left`).
+
 ## Main definitions
 
 * `Orientation.shortExact`: the orientation of `V` induced by orientations of `U` and `W`.
@@ -52,6 +62,12 @@ This is the orientation counterpart of the determinant-line isomorphism
 * `Orientation.shortExact_inj_left`, `Orientation.shortExact_inj_right`: the induced orientation
   determines each outer orientation given the other.
 * `Orientation.shortExactLeft_eq_iff`: the characterization of `Orientation.shortExactLeft`.
+* `Orientation.shortExact_inl_snd`: for a split sequence the induced orientation is the product
+  orientation.
+* `Orientation.shortExact_assoc`: associativity of subspace-first orientations for nested
+  subspaces.
+* `Orientation.prod_shortExact_right`, `Orientation.prod_shortExact_left`: products of an induced
+  orientation with an orientation of a further factor.
 
 ## References
 
@@ -309,5 +325,236 @@ theorem shortExactLeft_units_smul_right (u : Kˣ) (ov : Orientation K V (Fin (a 
     shortExactLeft hf hfg hg ha hc ov (u • p) = u • shortExactLeft hf hfg hg ha hc ov p :=
   Module.Ray.units_smul_of_map_neg (F := (shortExactLeft hf hfg hg ha hc ov ·))
     (shortExactLeft_neg_right hf hfg hg ha hc ov ·) u p
+
+end Orientation
+
+/-! ### Split sequences, nested sequences and products with a factor -/
+
+namespace Orientation
+
+variable {K A B C D E F : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [AddCommGroup A] [Module K A] [AddCommGroup B] [Module K B] [AddCommGroup C] [Module K C]
+  [AddCommGroup D] [Module K D] [AddCommGroup E] [Module K E] [AddCommGroup F] [Module K F]
+  [FiniteDimensional K A] [FiniteDimensional K C] {a c e : ℕ}
+
+/-- For the split exact sequence `0 → A → A × C → C → 0`, the subspace-first orientation is the
+product orientation. -/
+@[simp]
+theorem shortExact_inl_snd (o : Orientation K A (Fin a)) (p : Orientation K C (Fin c))
+    (ha : finrank K A = a) (hc : finrank K C = c) :
+    shortExact LinearMap.inl_injective Function.Exact.inl_snd LinearMap.snd_surjective o p ha hc =
+      prod o p ha hc := by
+  set b := finBasisOfFinrankEq K A ha
+  set e := finBasisOfFinrankEq K C hc
+  have hbase : shortExact LinearMap.inl_injective Function.Exact.inl_snd
+      LinearMap.snd_surjective b.orientation e.orientation ha hc =
+      prod b.orientation e.orientation ha hc := by
+    rw [prod_basis_orientation]
+    exact shortExact_basis_orientation _ _ _ ha hc b e _ (fun i ↦ by simp [Basis.prod_apply])
+      (fun j ↦ by simp [Basis.prod_apply])
+  rcases o.eq_or_eq_neg b.orientation (by rw [Fintype.card_fin, ha]) with rfl | rfl <;>
+  rcases p.eq_or_eq_neg e.orientation (by rw [Fintype.card_fin, hc]) with rfl | rfl <;>
+  simp only [shortExact_neg_left, shortExact_neg_right, prod_neg_left, prod_neg_right, hbase]
+
+/-- Recasting the index type of the subspace orientation along `a = a'` recasts that of the
+induced orientation. -/
+theorem shortExact_reindex_finCongr_left {f : A →ₗ[K] B} {g : B →ₗ[K] C}
+    (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g) {a' : ℕ}
+    (h : a = a') (o : Orientation K A (Fin a)) (p : Orientation K C (Fin c))
+    (ha : finrank K A = a') (hc : finrank K C = c) :
+    shortExact hf hfg hg (reindex K A (finCongr h) o) p ha hc =
+      reindex K B (finCongr (by rw [h])) (shortExact hf hfg hg o p (ha.trans h.symm) hc) := by
+  subst h
+  simp only [finCongr_refl, reindex_refl, Equiv.refl_apply]
+
+/-- Recasting the index type of the quotient orientation along `c = c'` recasts that of the
+induced orientation. -/
+theorem shortExact_reindex_finCongr_right {f : A →ₗ[K] B} {g : B →ₗ[K] C}
+    (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g) {c' : ℕ}
+    (h : c = c') (o : Orientation K A (Fin a)) (p : Orientation K C (Fin c))
+    (ha : finrank K A = a) (hc : finrank K C = c') :
+    shortExact hf hfg hg o (reindex K C (finCongr h) p) ha hc =
+      reindex K B (finCongr (by rw [h])) (shortExact hf hfg hg o p ha (hc.trans h.symm)) := by
+  subst h
+  simp only [finCongr_refl, reindex_refl, Equiv.refl_apply]
+
+variable [FiniteDimensional K B] [FiniteDimensional K E] [FiniteDimensional K F]
+
+/-- **Associativity of subspace-first orientations.** Let `0 → A → B → C → 0` and
+`0 → B → D → E → 0` be short exact, so that `A ⊆ B ⊆ D`, and let `0 → A → D → F → 0` and
+`0 → C → F → E → 0` be short exact sequences compatible with them: `D → F` restricts on `B` to
+`B → C → F`, and `D → F → E` is `D → E`. Orienting `D` from `A`, `C` and `E` through `B` or
+through `F` gives the same orientation: in both, a positive basis of `D` lists a positive basis of
+`A`, then lifts of one of `C`, then lifts of one of `E`. The hypotheses on `A → D → F` follow from
+the others (`Function.Exact.comp_of_comp_eq`, `Function.Exact.surjective_of_comp_eq`); they are
+taken separately, with `k` any map equal to the composite `A → B → D`, so that the induced
+orientations can be stated. -/
+theorem shortExact_assoc {f : A →ₗ[K] B} {g : B →ₗ[K] C} {f' : B →ₗ[K] D} {g' : D →ₗ[K] E}
+    {k : A →ₗ[K] D} {h : D →ₗ[K] F} {i : C →ₗ[K] F} {j : F →ₗ[K] E}
+    (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g)
+    (hf' : Function.Injective f') (hfg' : Function.Exact f' g') (hg' : Function.Surjective g')
+    (hk : Function.Injective k) (hkh : Function.Exact k h) (hh : Function.Surjective h)
+    (hi : Function.Injective i) (hij : Function.Exact i j) (hj : Function.Surjective j)
+    (hfk : f' ∘ₗ f = k) (hhi : h ∘ₗ f' = i ∘ₗ g) (hjh : j ∘ₗ h = g')
+    (o : Orientation K A (Fin a)) (p : Orientation K C (Fin c)) (r : Orientation K E (Fin e))
+    (ha : finrank K A = a) (hc : finrank K C = c) (he : finrank K E = e)
+    (hB : finrank K B = a + c) (hF : finrank K F = c + e) :
+    shortExact hf' hfg' hg' (shortExact hf hfg hg o p ha hc) r hB he =
+      reindex K D (finCongr (add_assoc a c e).symm)
+        (shortExact hk hkh hh o (shortExact hi hij hj p r hc he) ha hF) := by
+  set bA := finBasisOfFinrankEq K A ha
+  set bC := finBasisOfFinrankEq K C hc
+  set bE := finBasisOfFinrankEq K E he
+  choose tC htC using fun l ↦ hg (bC l)
+  choose tE htE using fun l ↦ hg' (bE l)
+  have htF (l : Fin e) : j (h (tE l)) = bE l := by
+    rw [← htE l, ← hjh, LinearMap.comp_apply]
+  -- The subspace-first bases of `B`, `D` and `F`.
+  set bB := (Basis.ofExactLift hf hfg bA bC tC htC).reindex finSumFinEquiv
+  set bD := (Basis.ofExactLift hf' hfg' bB bE tE htE).reindex finSumFinEquiv
+  set bF := (Basis.ofExactLift hi hij bC bE (h ∘ tE) htF).reindex finSumFinEquiv
+  have hbase : shortExact hf' hfg' hg' (shortExact hf hfg hg bA.orientation bC.orientation ha hc)
+      bE.orientation hB he = reindex K D (finCongr (add_assoc a c e).symm)
+        (shortExact hk hkh hh bA.orientation
+          (shortExact hi hij hj bC.orientation bE.orientation hc he) ha hF) := by
+    rw [shortExact_basis_orientation hf hfg hg ha hc bA bC bB (by simp [bB])
+        (by simp [bB, htC]),
+      shortExact_basis_orientation hf' hfg' hg' hB he bB bE bD (by simp [bD])
+        (by simp [bD, htE]),
+      shortExact_basis_orientation hi hij hj hc he bC bE bF (by simp [bF])
+        (by simp [bF, htF]),
+      shortExact_basis_orientation hk hkh hh ha hF bA bF
+        (bD.reindex (finCongr (add_assoc a c e))) (fun l ↦ ?_) (fun l ↦ ?_),
+      Basis.orientation_reindex bD, ← reindex_trans]
+    · rw [show (finCongr (add_assoc a c e)).trans (finCongr (add_assoc a c e).symm) =
+        Equiv.refl _ from Equiv.ext fun _ ↦ Fin.ext rfl, reindex_refl]
+      rfl
+    · -- The first `a` vectors of `bD` are the images of `bA` in `D`.
+      have hl (h' : a + (c + e) = a + c + e) :
+          Fin.cast h' (Fin.castAdd (c + e) l) = Fin.castAdd e (Fin.castAdd c l) := Fin.ext rfl
+      simp [bD, bB, hl, ← hfk]
+    · -- The last `c + e` vectors of `bD` are lifts of the basis `bF` of `F`.
+      refine Fin.addCases (fun l ↦ ?_) (fun l ↦ ?_) l
+      · have hl (h' : a + (c + e) = a + c + e) :
+            Fin.cast h' (Fin.natAdd a (Fin.castAdd e l)) = Fin.castAdd e (Fin.natAdd a l) :=
+          Fin.ext rfl
+        simp [bD, bB, bF, hl, ← LinearMap.comp_apply h f', hhi, htC]
+      · have hl (h' : a + (c + e) = a + c + e) :
+            Fin.cast h' (Fin.natAdd a (Fin.natAdd c l)) = Fin.natAdd (a + c) l :=
+          Fin.ext (by simp [Nat.add_assoc])
+        simp [bD, bF, hl]
+  rcases o.eq_or_eq_neg bA.orientation (by rw [Fintype.card_fin, ha]) with rfl | rfl <;>
+  rcases p.eq_or_eq_neg bC.orientation (by rw [Fintype.card_fin, hc]) with rfl | rfl <;>
+  rcases r.eq_or_eq_neg bE.orientation (by rw [Fintype.card_fin, he]) with rfl | rfl <;>
+  simp only [shortExact_neg_left, shortExact_neg_right, Orientation.reindex_neg, hbase]
+
+/-- **A product with a factor on the left.** For a short exact sequence `0 → A → B → C → 0` and a
+space `Z`, the product orientation `[Z][B]` of `Z × B`, with `[B]` induced by `[A]` and `[C]`, is
+induced through `0 → Z × A → Z × B → C → 0` by `[Z][A]` and `[C]`. -/
+theorem prod_shortExact_right {Z : Type*} [AddCommGroup Z] [Module K Z] [FiniteDimensional K Z]
+    {f : A →ₗ[K] B} {g : B →ₗ[K] C} (hf : Function.Injective f) (hfg : Function.Exact f g)
+    (hg : Function.Surjective g) {z : ℕ} (oz : Orientation K Z (Fin z))
+    (o : Orientation K A (Fin a)) (p : Orientation K C (Fin c)) (hz : finrank K Z = z)
+    (ha : finrank K A = a) (hc : finrank K C = c) (hB : finrank K B = a + c) :
+    prod oz (shortExact hf hfg hg o p ha hc) hz hB =
+      reindex K (Z × B) (finCongr (add_assoc z a c))
+        (shortExact (by
+            rw [LinearMap.coe_prodMap, LinearMap.id_coe]
+            exact Function.injective_id.prodMap hf) (hfg.id_prodMap Z)
+          (by rw [LinearMap.coe_comp]; exact hg.comp LinearMap.snd_surjective) (prod oz o hz ha)
+          p (by rw [finrank_prod, hz, ha]) hc) := by
+  have hf' : Function.Injective (LinearMap.id.prodMap f : Z × A →ₗ[K] Z × B) := by
+    rw [LinearMap.coe_prodMap, LinearMap.id_coe]
+    exact Function.injective_id.prodMap hf
+  have hg' : Function.Surjective (g ∘ₗ LinearMap.snd K Z B) := by
+    rw [LinearMap.coe_comp]
+    exact hg.comp LinearMap.snd_surjective
+  have h := shortExact_assoc (f := LinearMap.inl K Z A) (g := LinearMap.snd K Z A)
+    (f' := LinearMap.id.prodMap f) (g' := g ∘ₗ LinearMap.snd K Z B) (k := LinearMap.inl K Z B)
+    (h := LinearMap.snd K Z B) (i := f) (j := g) LinearMap.inl_injective Function.Exact.inl_snd
+    LinearMap.snd_surjective hf' (hfg.id_prodMap Z) hg' LinearMap.inl_injective
+    Function.Exact.inl_snd
+    LinearMap.snd_surjective hf hfg hg (by ext <;> simp) (by ext <;> simp) rfl oz o p hz ha hc
+    (by rw [finrank_prod, hz, ha]) hB
+  rw [shortExact_inl_snd, shortExact_inl_snd] at h
+  rw [h, ← reindex_trans, show (finCongr (add_assoc z a c).symm).trans
+    (finCongr (add_assoc z a c)) = Equiv.refl _ from Equiv.ext fun _ ↦ Fin.ext rfl, reindex_refl]
+  rfl
+
+/-- **A product with a factor on the right.** For a short exact sequence `0 → A → B → C → 0` and
+a space `Z`, the product orientation `[B][Z]` of `B × Z`, with `[B]` induced by `[A]` and `[C]`,
+is `(-1) ^ (dim C · dim Z)` times the orientation induced through `0 → A × Z → B × Z → C → 0` by
+`[A][Z]` and `[C]`: the lifts of a basis of `C` move past a basis of `Z`. -/
+theorem prod_shortExact_left {Z : Type*} [AddCommGroup Z] [Module K Z] [FiniteDimensional K Z]
+    {f : A →ₗ[K] B} {g : B →ₗ[K] C} (hf : Function.Injective f) (hfg : Function.Exact f g)
+    (hg : Function.Surjective g) {z : ℕ} (o : Orientation K A (Fin a))
+    (p : Orientation K C (Fin c)) (oz : Orientation K Z (Fin z)) (ha : finrank K A = a)
+    (hc : finrank K C = c) (hz : finrank K Z = z) (hB : finrank K B = a + c) :
+    prod (shortExact hf hfg hg o p ha hc) oz hB hz =
+      (-1 : Kˣ) ^ (c * z) • reindex K (B × Z) (finCongr (by omega))
+        (shortExact (by
+            rw [LinearMap.coe_prodMap, LinearMap.id_coe]
+            exact hf.prodMap Function.injective_id) (hfg.prodMap_id Z)
+          (by rw [LinearMap.coe_comp]; exact hg.comp LinearMap.fst_surjective) (prod o oz ha hz)
+          p (by rw [finrank_prod, ha, hz]) hc) := by
+  have hf' : Function.Injective (f.prodMap LinearMap.id : A × Z →ₗ[K] B × Z) := by
+    rw [LinearMap.coe_prodMap, LinearMap.id_coe]
+    exact hf.prodMap Function.injective_id
+  have hg' : Function.Surjective (g ∘ₗ LinearMap.fst K B Z) := by
+    rw [LinearMap.coe_comp]
+    exact hg.comp LinearMap.fst_surjective
+  have hAZ : finrank K (A × Z) = a + z := by rw [finrank_prod, ha, hz]
+  -- The inclusion `A → B × Z` is the kernel of `g × id : B × Z → C × Z` and of
+  -- `(b, z) ↦ (z, g b) : B × Z → Z × C`.
+  set φ := (LinearMap.snd K B Z).prod (g ∘ₗ LinearMap.fst K B Z)
+  have hhi₁ : g.prodMap LinearMap.id ∘ₗ LinearMap.inl K B Z = LinearMap.inl K C Z ∘ₗ g := by
+    ext <;> simp
+  have hjh₁ : LinearMap.snd K C Z ∘ₗ g.prodMap LinearMap.id = LinearMap.snd K B Z := by
+    ext <;> simp
+  have hhi₂ : φ ∘ₗ f.prodMap LinearMap.id = LinearMap.inl K Z C ∘ₗ LinearMap.snd K A Z := by
+    ext <;> simp [φ, hfg.apply_apply_eq_zero]
+  have hjh₂ : LinearMap.snd K Z C ∘ₗ φ = g ∘ₗ LinearMap.fst K B Z := by
+    ext <;> simp [φ]
+  have hk₁ : Function.Injective (LinearMap.inl K B Z ∘ₗ f) := by
+    rw [LinearMap.coe_comp]
+    exact LinearMap.inl_injective.comp hf
+  have hk₂ : Function.Injective (f.prodMap LinearMap.id ∘ₗ LinearMap.inl K A Z) := by
+    rw [LinearMap.coe_comp]
+    exact hf'.comp LinearMap.inl_injective
+  -- Through `C × Z`, the orientation `[B][Z]` is induced by `[A]` and `[C][Z]`.
+  have h₁ := shortExact_assoc (f := f) (g := g) (f' := LinearMap.inl K B Z)
+    (g' := LinearMap.snd K B Z) (h := g.prodMap LinearMap.id) (i := LinearMap.inl K C Z)
+    (j := LinearMap.snd K C Z) hf hfg hg LinearMap.inl_injective Function.Exact.inl_snd
+    LinearMap.snd_surjective hk₁
+    (hfg.comp_of_comp_eq Function.Exact.inl_snd LinearMap.inl_injective hhi₁ hjh₁)
+    (Function.Exact.inl_snd.surjective_of_comp_eq hg LinearMap.snd_surjective hhi₁ hjh₁)
+    LinearMap.inl_injective Function.Exact.inl_snd LinearMap.snd_surjective rfl hhi₁ hjh₁ o p oz
+    ha hc hz hB (by rw [finrank_prod, hc, hz])
+  -- Through `Z × C`, the orientation induced by `[A][Z]` and `[C]` is induced by `[A]` and
+  -- `[Z][C]`.
+  have h₂ := shortExact_assoc (f := LinearMap.inl K A Z) (g := LinearMap.snd K A Z)
+    (f' := f.prodMap LinearMap.id) (g' := g ∘ₗ LinearMap.fst K B Z) (h := φ)
+    (i := LinearMap.inl K Z C) (j := LinearMap.snd K Z C) LinearMap.inl_injective
+    Function.Exact.inl_snd LinearMap.snd_surjective hf' (hfg.prodMap_id Z) hg' hk₂
+    (Function.Exact.inl_snd.comp_of_comp_eq (hfg.prodMap_id Z) LinearMap.inl_injective hhi₂ hjh₂)
+    (Function.Exact.inl_snd.surjective_of_comp_eq LinearMap.snd_surjective hg' hhi₂ hjh₂)
+    LinearMap.inl_injective Function.Exact.inl_snd LinearMap.snd_surjective rfl hhi₂ hjh₂ o oz p
+    ha hz hc hAZ (by rw [finrank_prod, hz, hc])
+  -- The exchange `C × Z ≃ Z × C` compares the two quotient maps.
+  have hnat := map_shortExact hk₁
+    (hfg.comp_of_comp_eq Function.Exact.inl_snd LinearMap.inl_injective hhi₁ hjh₁)
+    (Function.Exact.inl_snd.surjective_of_comp_eq hg LinearMap.snd_surjective hhi₁ hjh₁) ha
+    (by rw [finrank_prod, hc, hz]) hk₂
+    (Function.Exact.inl_snd.comp_of_comp_eq (hfg.prodMap_id Z) LinearMap.inl_injective hhi₂ hjh₂)
+    (Function.Exact.inl_snd.surjective_of_comp_eq LinearMap.snd_surjective hg' hhi₂ hjh₂)
+    (LinearEquiv.refl K A) (LinearEquiv.refl K (B × Z)) (LinearEquiv.prodComm K C Z)
+    (by ext <;> simp) (by ext <;> simp [φ]) o (prod p oz hc hz)
+  simp only [shortExact_inl_snd] at h₁ h₂
+  rw [map_refl, map_refl, Equiv.refl_apply, Equiv.refl_apply, map_prodComm_prod,
+    shortExact_units_smul_right, shortExact_reindex_finCongr_right] at hnat
+  rw [h₁, hnat, h₂]
+  -- What remains are the recastings of the index types.
+  simp only [reindex_units_smul, ← reindex_trans]
+  congr 2
 
 end Orientation

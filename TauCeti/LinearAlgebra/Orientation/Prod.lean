@@ -150,6 +150,20 @@ theorem prod_neg_right (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n
   congr 1
   module
 
+/-- Scaling the first factor by a unit scales the product orientation. -/
+@[simp]
+theorem prod_units_smul_left (u : Rˣ) (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
+    (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) :
+    prod (u • o) p hm hn = u • prod o p hm hn :=
+  Module.Ray.units_smul_of_map_neg (F := (prod · p hm hn)) (prod_neg_left · p hm hn) u o
+
+/-- Scaling the second factor by a unit scales the product orientation. -/
+@[simp]
+theorem prod_units_smul_right (u : Rˣ) (o : Orientation R E (Fin m))
+    (p : Orientation R F (Fin n)) (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) :
+    prod o (u • p) hm hn = u • prod o p hm hn :=
+  Module.Ray.units_smul_of_map_neg (F := (prod o · hm hn)) (prod_neg_right o · hm hn) u p
+
 /-- Simultaneous reversal of both factors preserves the product orientation. -/
 theorem prod_neg_neg (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
     (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) :
@@ -166,6 +180,26 @@ theorem prod_reindex_finCongr {m' n' : ℕ} (o : Orientation R E (Fin m))
       reindex R (E × F) (finCongr (by rw [h, h']))
         (prod o p (hm.trans h.symm) (hn.trans h'.symm)) := by
   subst h h'
+  simp only [finCongr_refl, reindex_refl, Equiv.refl_apply]
+
+/-- Recasting the index type of the first factor along `m = m'` recasts the index type of the
+product orientation along `m + n = m' + n`. -/
+theorem prod_reindex_finCongr_left {m' : ℕ} (o : Orientation R E (Fin m))
+    (p : Orientation R F (Fin n)) (h : m = m') (hm : Module.finrank R E = m')
+    (hn : Module.finrank R F = n) :
+    prod (reindex R E (finCongr h) o) p hm hn =
+      reindex R (E × F) (finCongr (by rw [h])) (prod o p (hm.trans h.symm) hn) := by
+  subst h
+  simp only [finCongr_refl, reindex_refl, Equiv.refl_apply]
+
+/-- Recasting the index type of the second factor along `n = n'` recasts the index type of the
+product orientation along `m + n = m + n'`. -/
+theorem prod_reindex_finCongr_right {n' : ℕ} (o : Orientation R E (Fin m))
+    (p : Orientation R F (Fin n)) (h : n = n') (hm : Module.finrank R E = m)
+    (hn : Module.finrank R F = n') :
+    prod o (reindex R F (finCongr h) p) hm hn =
+      reindex R (E × F) (finCongr (by rw [h])) (prod o p hm (hn.trans h.symm)) := by
+  subst h
   simp only [finCongr_refl, reindex_refl, Equiv.refl_apply]
 
 /-- The relative sign in a product basis is the product of the two relative factor signs. -/
