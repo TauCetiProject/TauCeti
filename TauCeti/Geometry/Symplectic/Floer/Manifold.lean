@@ -78,6 +78,8 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SmoothTwoForm.hamiltonianCurvature_continuation`: the curvature is local in the domain, and a
   continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`.
+* `SmoothTwoForm.floerEnergyDensity_congr_of_eventuallyEq`: the energy density at a point only
+  depends on the germ of the map there.
 * `SmoothTwoForm.hamiltonianCurvature_eq_zero_of_cylindrical`: the curvature vanishes along a line
   near which the perturbation is cylindrical; the vector-space case is
   `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`.
@@ -248,6 +250,18 @@ theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) 
 section Continuity
 
 open Filter Set Topology
+
+/-- The Floer energy density at `z` only depends on the germ of the map at `z`. -/
+theorem floerEnergyDensity_congr_of_eventuallyEq (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    {u u' : ℝ × ℝ → M} {z : ℝ × ℝ} (h : u =ᶠ[𝓝 z] u') :
+    ω.floerEnergyDensity Ks Kt u z = ω.floerEnergyDensity Ks Kt u' z := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
+    perturbedMFDeriv_apply_stdComplexLineImag, perturbedMFDeriv_apply_stdComplexLineReal,
+    perturbedMFDeriv_apply_stdComplexLineImag, h.mfderiv_eq, h.eq_of_nhds]
+  -- `mfderiv_eq` inserts the identification of the tangent spaces at the two equal points
+  -- `u z = u' z`, which is the identity.
+  rfl
+
 
 /-- **Convergence of perturbed derivatives.** Let the derivatives of maps `u i` at points
 `z i → z₀` converge in the tangent bundle, `du_i(z i) e → L e` over `x₀`, and let the Hamiltonian
