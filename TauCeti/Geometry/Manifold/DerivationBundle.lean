@@ -34,11 +34,6 @@ a canonical linear map from the ordinary tangent space to the algebraic point de
   derivation depends only on the germ of a smooth function at its basepoint.
 * `Derivation.apply_congr_of_eventuallyEq`: derivations of smooth functions are local operators.
 * `tangentToPointDerivation_mfderiv`: this association commutes with differentials.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The Lie algebra and the tangent space at `1`".
 -/
 
 public section

@@ -12,6 +12,11 @@ public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.LinearAlgebra.Pi
+-- Private: used only inside the proof of `TauCeti.Module.dual_finrank_eq`: vanishing of `finrank`
+-- in infinite rank, and the strong rank condition for commutative rings.
+import Mathlib.LinearAlgebra.Dimension.Finite
+import Mathlib.LinearAlgebra.Dimension.Free
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 
 /-!
 # Duals of modules with a basis
@@ -21,9 +26,9 @@ For a left module `M` over a possibly noncommutative semiring `R`, the dual
 A basis of `M` indexed by `ι` identifies this dual with the coordinate module `ι → Rᵐᵒᵖ`,
 by evaluating a functional at the basis vectors. No finiteness is assumed.
 
-The linear dual of a finite free module over a commutative ring has the same rank as the module,
-since a finite basis identifies the module with its dual (`Module.Basis.toDualEquiv`). Over a
-field this is Mathlib's `Subspace.dual_finrank_eq`.
+The linear dual of a free module over a commutative ring has the same `finrank` as the module: for a
+finite basis it is identified with its dual (`Module.Basis.toDualEquiv`), and otherwise both
+`finrank`s are `0`. Over a field this is Mathlib's `Subspace.dual_finrank_eq`.
 
 ## Main definitions
 
@@ -32,8 +37,8 @@ field this is Mathlib's `Subspace.dual_finrank_eq`.
 
 ## Main results
 
-* `TauCeti.Module.dual_finrank_eq`: `finrank R (Dual R M) = finrank R M` for a finite free
-  module `M`.
+* `TauCeti.Module.dual_finrank_eq`: `finrank R (Dual R M) = finrank R M` for a free module
+  `M`.
 -/
 
 public section
@@ -66,13 +71,21 @@ end Module.Basis
 
 namespace TauCeti.Module
 
-/-- A finite free module and its linear dual have the same rank. Over a field this is
-`Subspace.dual_finrank_eq`. -/
+/-- A free module and its linear dual have the same `finrank`. If the module is not finite, both
+`finrank`s are `0` by convention. Over a field this is `Subspace.dual_finrank_eq`. -/
 @[simp]
 theorem dual_finrank_eq (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
-    [Module.Free R M] [Module.Finite R M] :
+    [Module.Free R M] :
     Module.finrank R (Module.Dual R M) = Module.finrank R M := by
   classical
-  exact (Module.Free.chooseBasis R M).toDualEquiv.finrank_eq.symm
+  by_cases hM : Module.Finite R M
+  · exact (Module.Free.chooseBasis R M).toDualEquiv.finrank_eq.symm
+  · rcases subsingleton_or_nontrivial R with hR | hR
+    · have := Module.subsingleton R M
+      exact absurd (Module.Finite.of_finite (R := R) (M := M)) hM
+    · have : Infinite (Module.Free.ChooseBasisIndex R M) :=
+        not_finite_iff_infinite.1 fun _ ↦ hM (Module.Finite.of_basis (Module.Free.chooseBasis R M))
+      rw [(Module.Free.chooseBasis R M).linearIndependent_coord.finrank_eq_zero_of_infinite,
+        _root_.Module.finrank_of_not_finite hM]
 
 end TauCeti.Module
