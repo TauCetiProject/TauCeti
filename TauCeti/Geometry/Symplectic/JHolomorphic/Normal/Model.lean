@@ -97,11 +97,8 @@ open Complex ComplexConjugate
 open scoped InnerProductSpace
 
 /-- The real-linear map `ξ ↦ -(c conj ξ)`, the shear of the normal model. -/
-private def normalModelShear (c : ℂ) : ℂ →ₗ[ℝ] ℂ where
-  toFun ξ := -(c * conj ξ)
-  map_add' ξ ζ := by simp only [map_add]; ring
-  map_smul' r ξ := by simp only [Complex.real_smul, map_mul, Complex.conj_ofReal,
-    RingHom.id_apply]; ring
+private def normalModelShear (c : ℂ) : ℂ →ₗ[ℝ] ℂ :=
+  (-c) • Complex.conjAe.toLinearMap
 
 /-- The almost complex structure `J_N` on the total space `ℂ × ℂ` of a trivialized complex line
 over a planar base, determined by the real Cauchy–Riemann operator
@@ -118,7 +115,8 @@ theorem normalModelStructure_apply (ν μ : ℂ → ℂ) (p ξ : ℂ × ℂ) :
       (I * ξ.1, I * ξ.2 + 2 * I * (ν p.1 * p.2 + μ p.1 * conj p.2) * conj ξ.1) := by
   simp only [normalModelStructure, AlmostComplexStructure.skewProd_apply,
     AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul, normalModelShear,
-    LinearMap.coe_mk, AddHom.coe_mk, map_mul, conj_I, Prod.mk.injEq, true_and]
+    LinearMap.smul_apply, AlgEquiv.toLinearMap_apply, Complex.conjAe_coe, map_mul, conj_I,
+    Prod.mk.injEq, true_and]
   ring
 
 variable {ν μ : ℂ → ℂ}
@@ -185,8 +183,8 @@ theorem isJHolomorphicAt_graph_normalModelStructure_iff {s : ℂ → ℂ} {z : �
       AlmostComplexStructure.isComplexLinearMap_id_prod_skewProd_iff, isComplexLinearMap_iff_apply]
     simp only [normalModelShear, AlmostComplexStructure.ofComplexModule_apply]
     refine forall_congr' fun ξ ↦ ?_
-    simp only [LinearMap.sub_apply, LinearMap.coe_mk, AddHom.coe_mk, smul_eq_mul, map_mul,
-      conj_I]
+    simp only [LinearMap.sub_apply, LinearMap.smul_apply, AlgEquiv.toLinearMap_apply,
+      Complex.conjAe_coe, smul_eq_mul, map_mul, conj_I]
     constructor <;> intro h <;> linear_combination h
   constructor
   · rw [isJHolomorphicAt_iff]
