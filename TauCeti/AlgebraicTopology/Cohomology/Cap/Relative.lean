@@ -196,70 +196,6 @@ end Homology
 
 section Connecting
 
-section Splitting
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] (Q : SSetPair.{w}) (R : C)
-
-/-- The boundary of the lift of a relative cycle by the degreewise section of the quotient map
-`C(Y) ⟶ C(Y, X)` comes from the chains of `X`: retracting it onto `X` and including back does not
-change it. -/
-private lemma splitting_s_d_r_comp (m : ℕ) :
-    ((Q.chainComplex R).iCycles (m + 1) ≫ (SSetPair.chainComplexXSplitting R Q (m + 1)).s ≫
-        (Q.right.chainComplex R).d (m + 1) m ≫ (SSetPair.chainComplexXSplitting R Q m).r) ≫
-        (SSet.chainComplexMap Q.hom R).f m =
-      (Q.chainComplex R).iCycles (m + 1) ≫ (SSetPair.chainComplexXSplitting R Q (m + 1)).s ≫
-        (Q.right.chainComplex R).d (m + 1) m := by
-  have hid := (SSetPair.chainComplexXSplitting R Q m).id
-  have hsg := (SSetPair.chainComplexXSplitting R Q (m + 1)).s_g
-  dsimp at hid hsg
-  have hπ : (Q.chainComplex R).iCycles (m + 1) ≫ (SSetPair.chainComplexXSplitting R Q (m + 1)).s ≫
-      (Q.right.chainComplex R).d (m + 1) m ≫ (Q.chainComplexπ R).f m = 0 := by
-    rw [← HomologicalComplex.Hom.comm, reassoc_of% hsg, HomologicalComplex.iCycles_d]
-  have hr : (SSetPair.chainComplexXSplitting R Q m).r ≫ (SSet.chainComplexMap Q.hom R).f m =
-      𝟙 _ - (Q.chainComplexπ R).f m ≫ (SSetPair.chainComplexXSplitting R Q m).s :=
-    eq_sub_of_add_eq hid
-  simp only [Category.assoc, hr, Preadditive.comp_sub, Category.comp_id, reassoc_of% hπ,
-    zero_comp, sub_zero]
-
-/-- The retracted boundary of the lift of a relative cycle is a cycle of the subobject. -/
-private lemma splitting_s_d_r_comp_d (m j : ℕ) :
-    ((Q.chainComplex R).iCycles (m + 1) ≫ (SSetPair.chainComplexXSplitting R Q (m + 1)).s ≫
-        (Q.right.chainComplex R).d (m + 1) m ≫ (SSetPair.chainComplexXSplitting R Q m).r) ≫
-        (Q.left.chainComplex R).d m j = 0 := by
-  rw [← cancel_mono ((SSet.chainComplexMap Q.hom R).f j), zero_comp, Category.assoc,
-    ← HomologicalComplex.Hom.comm, ← Category.assoc, splitting_s_d_r_comp]
-  simp
-
-/-- On a relative cycle, the connecting morphism `Hₘ₊₁(Y, X) ⟶ Hₘ(X)` is computed by the
-degreewise splitting of `0 ⟶ C(X) ⟶ C(Y) ⟶ C(Y, X) ⟶ 0`: lift the cycle to a chain of `Y` by the
-section, take its boundary and retract it onto the chains of `X`. -/
-@[reassoc]
-private lemma homologyπ_homologyδ (m : ℕ) :
-    (Q.chainComplex R).homologyπ (m + 1) ≫ Q.homologyδ R (m + 1) m =
-      (Q.left.chainComplex R).liftCycles
-          ((Q.chainComplex R).iCycles (m + 1) ≫ (SSetPair.chainComplexXSplitting R Q (m + 1)).s ≫
-            (Q.right.chainComplex R).d (m + 1) m ≫ (SSetPair.chainComplexXSplitting R Q m).r) _
-          rfl (splitting_s_d_r_comp_d Q R m _) ≫
-        (Q.left.chainComplex R).homologyπ m := by
-  have := (Q.shortExact_chainComplexShortComplex R).δ_eq (m + 1) m (by simp)
-    ((Q.chainComplex R).iCycles (m + 1)) (by simp)
-    ((Q.chainComplex R).iCycles (m + 1) ≫ (SSetPair.chainComplexXSplitting R Q (m + 1)).s)
-    (by
-      have hsg := (SSetPair.chainComplexXSplitting R Q (m + 1)).s_g
-      dsimp at hsg
-      simp [hsg])
-    ((Q.chainComplex R).iCycles (m + 1) ≫ (SSetPair.chainComplexXSplitting R Q (m + 1)).s ≫
-      (Q.right.chainComplex R).d (m + 1) m ≫ (SSetPair.chainComplexXSplitting R Q m).r)
-    (by simpa using splitting_s_d_r_comp Q R m) _ rfl
-  have hlift : (Q.chainComplex R).liftCycles ((Q.chainComplex R).iCycles (m + 1)) m (by simp)
-      (by simp) = 𝟙 _ := by
-    rw [← cancel_mono ((Q.chainComplex R).iCycles (m + 1)), HomologicalComplex.liftCycles_i,
-      Category.id_comp]
-  rw [hlift, Category.id_comp] at this
-  exact this
-
-end Splitting
-
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
   [MonoidalPreadditive C] {R S T M N : C}
   [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
@@ -372,7 +308,7 @@ theorem singularCap_singularCohomologyδ (P : TopPair.{w}) (k : Type*) [Ring k] 
     (P.shortExact_singularCochainComplexShortComplex R k M).moduleCat_exists_d_eq_of_δ_eq p
       (p + 1) rfl β ζ hζ.symm
   rw [← hζ, ← cancel_epi ((P.singularChainComplex T).homologyπ (m + 1)), singularCap_homologyπ,
-    homologyπ_homologyδ_assoc (toSSetPair.obj P) T m]
+    SSetPair.homologyπ_homologyδ_assoc (toSSetPair.obj P) T m]
   -- The subspace of `toSSetPair.obj P` is `TopCat.toSSet.obj P.snd` only up to definitional
   -- unfolding (`toSSetPair_obj_left`), so the cap product on `A` is computed on cycles by
   -- `TopCat.singularCap_homologyπ` in a `have` and substituted with `Eq.trans` rather than `rw`.
@@ -394,8 +330,8 @@ theorem singularCap_singularCohomologyδ (P : TopPair.{w}) (k : Type*) [Ring k] 
     (SSetPair.chainComplexXSplitting T (toSSetPair.obj P) (m + 1)).s
     (SSetPair.chainComplexXSplitting T (toSSetPair.obj P) m).r
     (SSetPair.chainComplexXSplitting T (toSSetPair.obj P) (m + 1)).s_g
-    (splitting_s_d_r_comp (toSSetPair.obj P) T m)
-    (splitting_s_d_r_comp_d (toSSetPair.obj P) T m _)]
+    (SSetPair.chainComplexXSplitting_s_d_r_comp (toSSetPair.obj P) T m)
+    (SSetPair.chainComplexXSplitting_s_d_r_comp_d (toSSetPair.obj P) T m _)]
   simp only [Preadditive.add_comp, Category.assoc, HomologicalComplex.toCycles_comp_homologyπ,
     comp_zero, add_zero]
   -- The two sides differ only by `toSSetPair_obj_left` and `toSSetPair_obj_right`.
