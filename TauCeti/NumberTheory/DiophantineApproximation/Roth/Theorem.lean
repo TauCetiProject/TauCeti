@@ -41,7 +41,7 @@ The proof assembles the steps of the auxiliary polynomial method. Suppose that i
   (`TauCeti.exists_roth_auxiliary_polynomial`).
 * By Roth's lemma (`TauCeti.weightedIndex_le_of_logHeight_le`), the index of `P` at
   `β = (β₀, …, β_{n-1})` is at most `5 n ε / 2`; the parameters are chosen as in
-  `TauCeti.inv_mul_add_le_floor_div_mul`.
+  `TauCeti.inv_mul_add_lt_floor_div_mul`.
 * The key inequality (`TauCeti.roth_key_inequality`) then gives
   `κ (1 - ε) (1 / 2 - 3 ε) ≤ 1 + C₂ / (n L)`, which fails for small `ε` and large `L` because
   `κ > 2`.
@@ -99,7 +99,7 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
       n + (4 * log (12 * b * max 1 (house α)) + 2 * log (2 * max 1 |α|) + 4) / L := by
   set σ := (5 * ε / 4) ^ 2 ^ (n - 1) with hσ_def
   set C₁ := log (12 * b * max 1 (house α)) with hC₁_def
-  set h : ℕ → ℝ := fun k ↦ logHeight₁ (β k) with h_def
+  set h : ℕ → ℝ := fun k ↦ logHeight₁ (β k)
   have hσ₀ : 0 < σ := by positivity
   have hσ : σ ≤ 5 * ε / 4 :=
     pow_le_of_le_one (by positivity) (by linarith) (pow_ne_zero _ two_ne_zero)
@@ -133,18 +133,18 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
     (Real.log_exp _)
   -- Roth's lemma bounds the index of `P` at `β`.
   have : NeZero n := ⟨hn.ne'⟩
-  set P' := P.map (Int.castRingHom ℚ) with hP'_def
+  set P' := P.map (Int.castRingHom ℚ)
   have hP'0 : P' ≠ 0 := fun h0 ↦ hP0 (map_injective _ (RingHom.injective_int _) (by simpa))
   have hP'deg (i : Fin n) : P'.degreeOf i ≤ r i := (degreeOf_map_le _ P i).trans (hPdeg i)
   have hP'height : P'.logHeight ≤ C₁ * ∑ k ∈ range n, (⌊D / h k⌋₊ : ℝ) := hsum ▸ hPlog
   have hindβ := weightedIndex_le_of_logHeight_le (K := ℚ) hP'0 hr hP'deg hσ₀
     (by linarith) (fun i j hij ↦ by
       simp only [hr_def, hij]
-      exact floor_div_le_mul_floor_div hσ₀ hM (hpos i) (hh i) (by linarith [h5D i, hpos i]))
+      exact (floor_div_lt_mul_floor_div hσ₀ hM (hpos i) (hh i) (by linarith [h5D i, hpos i])).le)
     (fun i ↦ β i) (fun i ↦ by
       rw [Module.finrank_self, Nat.cast_one, mul_one]
-      exact inv_mul_add_le_floor_div_mul hσ₀ hL₀ hM₂ h₀ (fun j _ ↦ hh j) hC₁₀ hL (hpos i)
-        (h5D i) hP'height)
+      exact (inv_mul_add_lt_floor_div_mul hσ₀ hL₀ hM₂ h₀ (fun j _ ↦ hh j) hC₁₀ hL (hpos i)
+        (h5D i) hP'height).le)
   have hθ := two_mul_mul_rpow_inv_two_pow hε₀.le n
   rw [← hσ_def] at hθ
   rw [hθ] at hindβ
@@ -194,7 +194,7 @@ theorem _root_.IsAlgebraic.finite_setOfPred_abs_sub_le_mulHeight₁_rpow_neg {α
   set L := max (σ⁻¹ * (5 * log (12 * b * max 1 (house α)) / 2 + 5 * n)) (C₂ / ε)
   -- Good approximations of rapidly increasing heights.
   obtain ⟨β, hβ, h₀, hh⟩ := Northcott.exists_seq_mem_lt (logHeight₁ (K := ℚ))
-    (fun x ↦ 2 / σ * x) hS L
+    (fun x ↦ 2 / σ * logHeight₁ x) hS L
   have key := roth_inequality hb hbα hε₀ hε hn hd hκ₀.le (M := 2 / σ)
     (by rw [mul_div_cancel₀ _ hσ₀.ne']) (le_max_left _ _) hβ h₀.le fun k ↦ (hh k).le
   have hn₁ : (1 : ℝ) ≤ n := by exact_mod_cast hn
@@ -207,7 +207,6 @@ theorem _root_.IsAlgebraic.finite_setOfPred_abs_sub_le_mulHeight₁_rpow_neg {α
     linarith
   -- Multiplying `1 + ε < κ (1 - ε) (1 / 2 - 3 ε)` by `n ≥ 1` contradicts `key`, as
   -- `C₂ / L ≤ ε ≤ ε n`.
-  have key' : κ * (1 - ε) * ((1 / 2 - 3 * ε) * n) ≤ n + C₂ / L := key
   have hκεn : (1 + ε) * n < κ * (1 - ε) * ((1 / 2 - 3 * ε) * n) := by
     linarith [mul_lt_mul_of_pos_right hκε (by positivity : (0 : ℝ) < n)]
   linarith [mul_le_mul_of_nonneg_left hn₁ hε₀.le]

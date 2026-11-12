@@ -102,7 +102,7 @@ theorem contDiff_norm_rpow_of_lt {k : ℕ} {p : ℝ}
       (norm_ne_zero_iff.mpr hx)).contDiffWithinAt
   apply contDiff_of_iteratedFDeriv_norm_rpow_bound hf
     (by simp [Real.zero_rpow (lt_of_le_of_lt (Nat.cast_nonneg k) hp).ne']) hp
-  intro j hj
+  intro j _
   by_cases hE : Subsingleton E
   · let := hE
     exact ⟨0, fun x hx ↦ (hx (Subsingleton.elim _ _)).elim⟩
@@ -113,7 +113,6 @@ theorem contDiff_norm_rpow_of_lt {k : ℕ} {p : ℝ}
     refine ⟨‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) e‖, fun x hx ↦ ?_⟩
     let θ : E := ‖x‖⁻¹ • x
     have hθ : ‖θ‖ = 1 := by simp [θ, norm_smul, hx]
-    have hθ0 : θ ≠ 0 := norm_ne_zero_iff.mp (by rw [hθ]; norm_num)
     have hscale := norm_iteratedFDeriv_smul_of_homogeneous
       (f := fun x : E ↦ ‖x‖ ^ p) (p := p) (j := j)
       (fun t ht y ↦ by simp only [norm_smul, Real.norm_of_nonneg ht.le,

@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 
 /-!
@@ -288,17 +287,6 @@ carrier. -/
 instance isClosedImmersion_weightTorus : IsClosedImmersion weightTorus.hom.hom.left :=
   TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantWeightTorusToToral
     _ _ _ _ _ _ _ _ span_range_matrixWeight_eq_top
-
-/-- Two morphisms out of the doubled type-`E₆` carrier agree when they agree on its numbered root
-subgroups and represented split torus. -/
-@[ext]
-theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
-    (f g : groupScheme ⟶
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
-    (hroot : ∀ k, rootSubgroup k ≫ f = rootSubgroup k ≫ g)
-    (htorus : weightTorus ≫ f = weightTorus ≫ g) : f = g :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme_hom_ext
-    _ _ _ _ _ _ _ _ f g hroot htorus
 
 /-! ## Matrix-valued points -/
 

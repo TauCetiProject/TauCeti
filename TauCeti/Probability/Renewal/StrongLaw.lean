@@ -96,8 +96,8 @@ theorem ae_tendsto_natCast_div_arrival
   by_cases hmean : ∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P = ⊤
   · have hinf : ∫⁻ ω, ENNReal.ofReal (X 0 ω) ∂P = ⊤ := by
       simpa only [X, ENNReal.ofReal_coe_nnreal] using hmean
-    filter_upwards [strong_law_ae_real_of_lintegral_eq_top X hpos hXi hXd hinf]
-      with ω hω
+    filter_upwards [strong_law_ae_real_of_lintegral_eq_top X hXi hXd
+      (by simp [X, ENNReal.ofReal_of_nonpos]) hinf] with ω hω
     simpa only [Function.comp_def, hsum, inv_div, hmean, ENNReal.inv_top,
       ENNReal.toReal_zero]
       using tendsto_inv_atTop_zero.comp hω
