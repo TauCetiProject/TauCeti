@@ -37,7 +37,9 @@ condition of a Mathlib Lie subalgebra: Mathlib has `LieAlgebra.Orthogonal.so`,
 `LieAlgebra.Symplectic.sp` and `LieAlgebra.SpecialLinear.sl`, but no special unitary counterpart —
 `𝔰𝔲` is only a *real* subalgebra of `Matrix n n ℂ`, not a complex one — so membership is the
 explicit conjunction.
-`specialUnitaryMatrixLieAlgebra` packages that real matrix Lie subalgebra.
+The imported `TauCeti.Lie.specialUnitaryMatrixLieAlgebra` from
+`TauCeti.Algebra.Lie.SpecialUnitary` packages that real matrix Lie subalgebra. That module also
+provides its membership criterion and `TauCeti.Lie.specialUnitaryMatrixLieAlgebra_self_eq_so`.
 
 The trace condition is not redundant over `ℂ`: a skew-Hermitian matrix has purely imaginary
 trace, and for a nonempty index type `i • 1` is skew-Hermitian without being trace-free.  Over
@@ -47,12 +49,8 @@ recorded below.
 
 ## Main results
 
-* `TauCeti.Lie.specialUnitaryMatrixLieAlgebra`: the real matrix-coordinate Lie subalgebra.
-* `TauCeti.Lie.mem_specialUnitaryMatrixLieAlgebra_iff`: trace-zero skew-Hermitian membership.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_GLSpecialUnitary`:
   the matrix-coordinate image of the subgroup Lie algebra.
-* `TauCeti.Lie.specialUnitaryMatrixLieAlgebra_real_eq_so`:
-  its real specialization to Mathlib's `so`.
 
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_GLSpecialUnitary`: the Lie algebra of the special unitary
   group is the intersection of the Lie algebras of the unitary and special linear groups.

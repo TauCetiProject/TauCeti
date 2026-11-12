@@ -14,14 +14,15 @@ public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 
 The skew-Hermitian matrices of trace zero form a Lie algebra over any commutative scalar
 ring fixed by the involution. The coefficient ring may be any commutative star ring, with
-no topology or characteristic assumption. When its star is trivial and its additive group is
-torsion-free, skewness already forces zero trace, recovering the scalar restriction of `so`.
+no topology or characteristic assumption. When the coefficient ring has trivial star and its
+additive group is torsion-free, skewness forces zero trace. Taking the coefficient ring itself
+as scalars then recovers `so`.
 
 ## Main declarations
 
 * `TauCeti.Lie.specialUnitaryMatrixLieAlgebra`: the trace-free skew-Hermitian Lie subalgebra.
-* `TauCeti.Lie.mem_specialUnitaryMatrixLieAlgebra_iff`: its entrywise membership condition.
-* `TauCeti.Lie.specialUnitaryMatrixLieAlgebra_self_eq_so`: the trivial-star case.
+* `TauCeti.Lie.mem_specialUnitaryMatrixLieAlgebra_iff`: the skew-Hermitian and trace-zero membership condition.
+* `TauCeti.Lie.specialUnitaryMatrixLieAlgebra_self_eq_so`: the trivial-star case over the coefficient ring itself.
 
 ## References
 
@@ -67,7 +68,8 @@ variable {n R} in
 theorem mem_specialUnitaryMatrixLieAlgebra_iff (A : Matrix n n R) :
     A ∈ specialUnitaryMatrixLieAlgebra R₀ n R ↔ Aᴴ = -A ∧ A.trace = 0 := Iff.rfl
 
-/-- With trivial star and no additive torsion, the trace condition follows from skewness. -/
+/-- Over the coefficient ring itself, trivial star and no additive torsion identify the
+trace-free skew-Hermitian Lie algebra with the orthogonal Lie algebra. -/
 @[simp]
 theorem specialUnitaryMatrixLieAlgebra_self_eq_so [TrivialStar R]
     [IsAddTorsionFree R] :
@@ -78,9 +80,6 @@ theorem specialUnitaryMatrixLieAlgebra_self_eq_so [TrivialStar R]
     and_iff_left_iff_imp]
   intro hA
   have h := congrArg Matrix.trace hA
-  rw [Matrix.trace_transpose, Matrix.trace_neg] at h
-  apply eq_of_nsmul_eq_nsmul_of_addCommute (show (2 : ℕ) ≠ 0 by decide)
-    (AddCommute.all A.trace 0)
-  simpa only [two_smul, add_zero] using eq_neg_iff_add_eq_zero.mp h
+  rwa [Matrix.trace_transpose, Matrix.trace_neg, self_eq_neg] at h
 
 end TauCeti.Lie
