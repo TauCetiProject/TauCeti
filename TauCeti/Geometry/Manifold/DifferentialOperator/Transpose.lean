@@ -7,9 +7,11 @@ module
 
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Integrable
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Coordinates
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Algebra.BigOperators.Pi
 
 /-!
 # The formal transpose of a differential operator
@@ -75,19 +77,6 @@ noncomputable section
 open MeasureTheory Finset Function TauCeti
 open scoped ContDiff Manifold
 
-namespace ContMDiffMap
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
-  [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
-
-/-- The product of two smooth functions, one of which has compact support, is integrable. -/
-theorem integrable_mul_of_hasCompactSupport {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
-    (hfg : HasCompactSupport f ∨ HasCompactSupport g) : Integrable (fun x ↦ f x * g x) μ :=
-  (f.contMDiff.continuous.mul g.contMDiff.continuous).integrable_of_hasCompactSupport
-    (hfg.elim (·.mul_right) (·.mul_left))
-
-end ContMDiffMap
-
 namespace LinearMap
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
@@ -113,12 +102,17 @@ def formalTranspose (D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮�
 
 variable {D D' D₁ D₂ D₁' D₂' : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯} {μ : Measure E}
 
-omit [MeasurableSpace E] in
-/-- An operator on `C^∞(E)` that does not enlarge supports preserves compact support. -/
-theorem _root_.HasCompactSupport.apply_of_tsupport_subset
-    (hD : ∀ f, tsupport (D f) ⊆ tsupport f) {f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hf : HasCompactSupport f) :
-    HasCompactSupport (D f) :=
-  hf.of_isClosed_subset (isClosed_tsupport _) (hD f)
+/-- Unfolding `LinearMap.IsFormalTranspose`: `D'` is a formal transpose of `D` if and only if
+`∫ (D f) g dμ = ∫ f (D' g) dμ` whenever `f` or `g` has compact support. -/
+theorem isFormalTranspose_iff : D.IsFormalTranspose D' μ ↔
+    ∀ f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯, HasCompactSupport f ∨ HasCompactSupport g →
+      ∫ x, D f x * g x ∂μ = ∫ x, f x * D' g x ∂μ :=
+  Iff.rfl
+
+/-- An operator without a formal transpose has formal transpose `0` by convention. -/
+theorem formalTranspose_eq_zero_of_not_exists (h : ¬∃ D', D.IsFormalTranspose D' μ) :
+    D.formalTranspose μ = 0 := by
+  simp [formalTranspose, h]
 
 /-! ### The algebra of formal transposes -/
 
@@ -175,18 +169,6 @@ section Integrable
 
 variable [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ]
 
-private theorem integrable_apply_mul (hD : ∀ f, tsupport (D f) ⊆ tsupport f)
-    {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
-    Integrable (fun x ↦ D f x * g x) μ :=
-  ContMDiffMap.integrable_mul_of_hasCompactSupport
-    (hfg.imp (·.apply_of_tsupport_subset hD) _root_.id)
-
-private theorem integrable_mul_apply (hD : ∀ f, tsupport (D f) ⊆ tsupport f)
-    {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
-    Integrable (fun x ↦ f x * D g x) μ :=
-  ContMDiffMap.integrable_mul_of_hasCompactSupport
-    (hfg.imp _root_.id (·.apply_of_tsupport_subset hD))
-
 /-- Formal transposes of operators that do not enlarge supports add. -/
 theorem IsFormalTranspose.add (h₁ : D₁.IsFormalTranspose D₁' μ)
     (h₂ : D₂.IsFormalTranspose D₂' μ) (hD₁ : ∀ f, tsupport (D₁ f) ⊆ tsupport f)
@@ -195,9 +177,10 @@ theorem IsFormalTranspose.add (h₁ : D₁.IsFormalTranspose D₁' μ)
     (D₁ + D₂).IsFormalTranspose (D₁' + D₂') μ := by
   intro f g hfg
   simp only [LinearMap.add_apply, ContMDiffMap.coe_add, Pi.add_apply, add_mul, mul_add]
-  rw [integral_add (integrable_apply_mul hD₁ hfg) (integrable_apply_mul hD₂ hfg),
-    integral_add (integrable_mul_apply hD₁' hfg) (integrable_mul_apply hD₂' hfg), h₁ f g hfg,
-    h₂ f g hfg]
+  rw [integral_add (ContMDiffMap.integrable_apply_mul_of_tsupport_subset hD₁ hfg)
+      (ContMDiffMap.integrable_apply_mul_of_tsupport_subset hD₂ hfg),
+    integral_add (ContMDiffMap.integrable_mul_apply_of_tsupport_subset hD₁' hfg)
+      (ContMDiffMap.integrable_mul_apply_of_tsupport_subset hD₂' hfg), h₁ f g hfg, h₂ f g hfg]
 
 /-- Formal transposes of operators that do not enlarge supports subtract. -/
 theorem IsFormalTranspose.sub (h₁ : D₁.IsFormalTranspose D₁' μ)
@@ -272,7 +255,8 @@ theorem formalTranspose_neg : (-D).formalTranspose μ = -D.formalTranspose μ :=
     rw [h.formalTranspose_eq, h.neg.formalTranspose_eq]
   · have h' : ¬∃ D', (-D).IsFormalTranspose D' μ := fun ⟨D', hD'⟩ ↦
       h ⟨-D', by simpa using hD'.neg⟩
-    simp [formalTranspose, h, h']
+    rw [formalTranspose_eq_zero_of_not_exists h, formalTranspose_eq_zero_of_not_exists h',
+      neg_zero]
 
 /-- Formal transposition commutes with scalar multiplication. -/
 @[simp]
@@ -284,7 +268,8 @@ theorem formalTranspose_smul (c : ℝ) : (c • D).formalTranspose μ = c • D.
     rw [h.formalTranspose_eq, (h.smul c).formalTranspose_eq]
   · have h' : ¬∃ D', (c • D).IsFormalTranspose D' μ := fun ⟨D', hD'⟩ ↦
       h ⟨c⁻¹ • D', by simpa [smul_smul, hc] using hD'.smul c⁻¹⟩
-    simp [formalTranspose, h, h']
+    rw [formalTranspose_eq_zero_of_not_exists h, formalTranspose_eq_zero_of_not_exists h',
+      smul_zero]
 
 end Unique
 
@@ -307,10 +292,8 @@ theorem isFormalTranspose_lineDerivation [FiniteDimensional ℝ E] [BorelSpace E
   have hd (h : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) : Differentiable ℝ h :=
     h.contMDiff.contDiff.differentiable (by simp)
   have hs := tsupport_lineDerivation_apply_subset (𝕜 := ℝ) v
-  have hint := ContMDiffMap.integrable_mul_of_hasCompactSupport (μ := μ)
-    (f := lineDerivation ℝ v f) (g := g) (hfg.imp (·.apply_of_tsupport_subset hs) _root_.id)
-  have hint' := ContMDiffMap.integrable_mul_of_hasCompactSupport (μ := μ)
-    (f := f) (g := lineDerivation ℝ v g) (hfg.imp _root_.id (·.apply_of_tsupport_subset hs))
+  have hint := ContMDiffMap.integrable_apply_mul_of_tsupport_subset (μ := μ) hs hfg
+  have hint' := ContMDiffMap.integrable_mul_apply_of_tsupport_subset (μ := μ) hs hfg
   simp only [LinearMap.neg_apply, Derivation.coeFn_coe, ContMDiffMap.coe_neg, Pi.neg_apply,
     lineDerivation_apply_apply, mul_neg, integral_neg] at hint hint' ⊢
   rw [integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable hint hint'

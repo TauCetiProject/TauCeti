@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
 public import TauCeti.RingTheory.Derivation.Coordinates
+import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 
 /-!
@@ -120,6 +121,12 @@ namespace TauCeti
 open Function
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- An operator on `C^∞(E)` that does not enlarge supports preserves compact support. -/
+theorem _root_.HasCompactSupport.apply_of_tsupport_subset
+    {D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hD : ∀ f, tsupport (D f) ⊆ tsupport f)
+    {f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hf : HasCompactSupport f) : HasCompactSupport (D f) :=
+  hf.of_isClosed_subset (isClosed_tsupport _) (hD f)
 
 /-- Multiplication by a smooth function does not enlarge supports. -/
 theorem tsupport_mulLeft_apply_subset (c f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :

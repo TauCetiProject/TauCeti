@@ -13,6 +13,7 @@ import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Factorial.BigOperators
 import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.RingTheory.Derivation.Basic
 import TauCeti.RingTheory.Ideal.IsAugmentation
 
@@ -49,7 +50,6 @@ monomials of degree at most `m` in the `uᵢ - uᵢ(x)` (`AlgHom.exists_sub_mem_
 
 ## Main results
 
-* `TauCeti.multiIndex_induction_add_single`: induction on multi-indices by adding unit vectors.
 * `TauCeti.multiIndexDeriv_mem_differentialOperators`,
   `TauCeti.coordinateOperator_mem_differentialOperators`: coordinate expressions of order `m`
   are differential operators of order at most `m`.
@@ -75,34 +75,6 @@ open scoped Nat
 noncomputable section
 
 namespace TauCeti
-
-/-- **Induction on multi-indices.** To prove a property of every multi-index `α : ι → ℕ`, it
-suffices to prove it for `0` and to show that it passes from `α` to `α + eᵢ`. -/
-@[elab_as_elim]
-theorem multiIndex_induction_add_single {ι : Type*} [Finite ι] [DecidableEq ι]
-    {P : (ι → ℕ) → Prop} (zero : P 0) (add_single : ∀ α i, P α → P (α + Pi.single i 1))
-    (α : ι → ℕ) : P α := by
-  have := Fintype.ofFinite ι
-  induction h : ∑ i, α i generalizing α with
-  | zero =>
-    obtain rfl : α = 0 := funext fun i ↦ (Finset.sum_eq_zero_iff.1 h) i (mem_univ i)
-    exact zero
-  | succ n ih =>
-    obtain ⟨i, hi⟩ : ∃ i, α i ≠ 0 := by
-      by_contra! h'
-      simp [h'] at h
-    have hα : α - Pi.single i 1 + Pi.single i 1 = α := by
-      ext j
-      rcases eq_or_ne j i with rfl | hj
-      · simp only [Pi.add_apply, Pi.sub_apply, Pi.single_eq_same]
-        omega
-      · simp [hj]
-    rw [← hα]
-    refine add_single _ i (ih _ ?_)
-    have := congrArg (fun β : ι → ℕ ↦ ∑ j, β j) hα
-    simp only [Pi.add_apply, sum_add_distrib, h, Finset.sum_pi_single', mem_univ,
-      ite_true] at this
-    omega
 
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] {ι : Type*} [Fintype ι]
 
@@ -324,7 +296,7 @@ theorem sum_neg_one_pow_smul_multiIndexDeriv_comp_mulLeft_mem_differentialOperat
       differentialOperators R A A A m := by
   refine sum_mem fun k hk ↦ sum_mem fun α hα ↦ Submodule.smul_mem _ _ ?_
   rw [mem_piAntidiag] at hα
-  refine differentialOperators_mono (show k ≤ m by simpa [Nat.lt_succ_iff] using hk) ?_
+  refine differentialOperators_mono (Nat.le_of_lt_succ (mem_range.mp hk)) ?_
   simpa [hα.1] using comp_mem_differentialOperators
     (multiIndexDeriv_mem_differentialOperators d hd α)
     (LinearMap.mulLeft_mem_differentialOperators_zero (c α))
