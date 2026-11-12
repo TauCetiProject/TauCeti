@@ -92,6 +92,13 @@ lemma blaschkeFactor_of_norm_eq_one (ha : ‖a‖ = 1) (z : ℂ) : blaschkeFacto
 lemma blaschkeFactor_zero (z : ℂ) : blaschkeFactor 0 z = z := by
   simp [blaschkeFactor_of_norm_lt_one (a := 0) (by simp)]
 
+/-- Every Blaschke factor takes the value `-a` at the origin. -/
+@[simp]
+lemma blaschkeFactor_apply_zero (a : ℂ) : blaschkeFactor a 0 = -a := by
+  by_cases ha : ‖a‖ < 1
+  · simp [blaschkeFactor_of_norm_lt_one ha]
+  · exact blaschkeFactor_of_one_le_norm (not_lt.1 ha) 0
+
 /-- For a parameter in the closed unit disc, the Blaschke factor agrees with the rational
 expression `(z - a) / (1 - conj a * z)` wherever its denominator is nonzero.  For `‖a‖ = 1`
 this says that the constant `-a` is the removable extension of that expression. -/
@@ -179,6 +186,30 @@ lemma blaschkeProduct_apply (a : ι → ℂ) (n : ι → ℕ) (z : ℂ) :
     blaschkeProduct a n z = ∏ i, blaschkeFactor (a i) z ^ n i :=
   (rfl)
 
+/-- A finite Blaschke product is the product of the functions `blaschkeFactor (a i) ^ n i`. -/
+lemma blaschkeProduct_def (a : ι → ℂ) (n : ι → ℕ) :
+    blaschkeProduct a n = ∏ i, blaschkeFactor (a i) ^ n i := by
+  ext z
+  simp [blaschkeProduct_apply, Finset.prod_apply]
+
+/-- The value of a finite Blaschke product at the origin. -/
+@[simp]
+lemma blaschkeProduct_apply_zero (a : ι → ℂ) (n : ι → ℕ) :
+    blaschkeProduct a n 0 = ∏ i, (-a i) ^ n i := by
+  simp [blaschkeProduct_apply]
+
+/-- The finite Blaschke product with all multiplicities zero is `1`. -/
+@[simp]
+lemma blaschkeProduct_zero_right (a : ι → ℂ) : blaschkeProduct a 0 = 1 := by
+  ext z
+  simp [blaschkeProduct_apply]
+
+/-- Finite Blaschke products are multiplicative in the multiplicities. -/
+lemma blaschkeProduct_add (a : ι → ℂ) (n m : ι → ℕ) :
+    blaschkeProduct a (n + m) = blaschkeProduct a n * blaschkeProduct a m := by
+  ext z
+  simp [blaschkeProduct_apply, pow_add, Finset.prod_mul_distrib]
+
 /-- The finite Blaschke product of an empty family is `1`. -/
 @[simp]
 lemma blaschkeProduct_of_isEmpty [IsEmpty ι] (a : ι → ℂ) (n : ι → ℕ) :
@@ -216,11 +247,15 @@ lemma norm_blaschkeProduct_eq_one (ha : ∀ i, ‖a i‖ ≤ 1) (hz : ‖z‖ = 
     ‖blaschkeProduct a n z‖ = 1 := by
   simp [blaschkeProduct_apply, norm_blaschkeFactor_eq_one (ha _) hz]
 
-/-- A finite Blaschke product whose parameters all lie on the unit circle has modulus one
-everywhere. -/
-lemma norm_blaschkeProduct_of_forall_norm_eq_one (ha : ∀ i, ‖a i‖ = 1) (z : ℂ) :
+/-- A finite Blaschke product whose parameters of positive multiplicity all lie on the unit
+circle has modulus one everywhere. -/
+lemma norm_blaschkeProduct_of_forall_norm_eq_one (ha : ∀ i, n i ≠ 0 → ‖a i‖ = 1) (z : ℂ) :
     ‖blaschkeProduct a n z‖ = 1 := by
-  simp [blaschkeProduct_apply, norm_blaschkeFactor_of_norm_eq_one (ha _)]
+  rw [blaschkeProduct_apply, norm_prod]
+  refine Finset.prod_eq_one fun i _ => ?_
+  rcases eq_or_ne (n i) 0 with hn | hn
+  · simp [hn]
+  · rw [norm_pow, norm_blaschkeFactor_of_norm_eq_one (ha i hn), one_pow]
 
 /-- A finite Blaschke product with parameters in the closed unit disc maps the closed unit disc
 into itself. -/
@@ -239,12 +274,8 @@ lemma norm_blaschkeProduct_lt_one_iff (ha : ∀ i, ‖a i‖ ≤ 1) (hz : ‖z�
   constructor
   · intro h
     by_contra! hne
-    refine h.ne ?_
-    rw [blaschkeProduct_apply, norm_prod]
-    refine Finset.prod_eq_one fun i _ => ?_
-    rcases (ha i).lt_or_eq with hai | hai
-    · simp [hne i hai]
-    · rw [norm_pow, norm_blaschkeFactor_of_norm_eq_one hai, one_pow]
+    exact h.ne (norm_blaschkeProduct_of_forall_norm_eq_one
+      (fun i hi => (ha i).eq_of_not_lt fun hai => hi (hne i hai)) z)
   · rintro ⟨i, hai, hni⟩
     classical
     rw [blaschkeProduct_apply, norm_prod, ← Finset.mul_prod_erase _ _ (Finset.mem_univ i)]
