@@ -31,6 +31,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   of `φ`.
 * `TestFunction.coe_iterate_lineDerivOp_one`: repeated derivatives on the real line agree with
   the iterates of the ordinary derivative.
+* `TestFunction.lineDeriv_eq_fderiv`: the classical directional derivative of a test function is
+  its Fréchet derivative in that direction.
 * `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
   by a continuous linear map.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
@@ -95,6 +97,12 @@ directional derivative. -/
 theorem coe_lineDerivCLM (φ : 𝓓(Ω, F)) (v : E) :
     ⇑(lineDerivCLM ℝ v φ : 𝓓(Ω, F)) = fun x ↦ lineDeriv ℝ (φ : E → F) x v :=
   funext fun _ ↦ lineDerivCLM_apply_of_le le_top
+
+/-- The classical directional derivative of a test function is its Fréchet derivative evaluated in
+that direction. -/
+theorem lineDeriv_eq_fderiv (φ : 𝓓(Ω, F)) (x v : E) :
+    lineDeriv ℝ (φ : E → F) x v = fderiv ℝ (φ : E → F) x v :=
+  (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv
 
 /-- Directional derivatives of test functions commute with postcomposition by a continuous linear
 map, at every pair of orders. -/
