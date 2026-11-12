@@ -11,9 +11,9 @@ public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Box
 /-!
 # The cut-off flux and the box Cauchy–Fueter formulas
 
-Multiplying a field `F` by the radial cutoff `ψ(‖q - q₀‖ / ε)` removes any singularity of `F`
-at the pole `q₀`. The cut-off field is continuous on a set where `F` is continuous away from
-the pole, and differentiable wherever `F` is differentiable away from the pole.
+Multiplying a field `F` by the radial cutoff `ψ(‖q - q₀‖ / ε)` gives the cut-off field
+`cauchyFueterCutoffField`, defined with its elementary API in
+`TauCeti.Analysis.Quaternion.Cutoff`; it removes any singularity of `F` at the pole `q₀`.
 
 For the left kernel-weighted field `G(q - q₀) * eᵢ * f q` with `f` left Fueter regular away
 from the pole, and for the right field `f q * eᵢ * G(q - q₀)` with `f` right Fueter regular
@@ -44,78 +44,6 @@ open scoped Quaternion Topology
 namespace TauCeti
 
 open TauCeti.Quaternion _root_.Quaternion
-
-/-! ### The cut-off field -/
-
-/-- A quaternion field `F` with its pole `q₀` removed by the radial cutoff of radius `ε`.
-It is applied to the left and right kernel-weighted fields `G(q - q₀) * eᵢ * f q` and
-`f q * eᵢ * G(q - q₀)`. -/
-noncomputable def cauchyFueterCutoffField (ε : ℝ) (q₀ : ℍ) (F : ℍ → ℍ) (q : ℍ) : ℍ :=
-  cauchyFueterCutoff (‖q - q₀‖ / ε) • F q
-
-/-- Evaluation of the cut-off field. -/
-theorem cauchyFueterCutoffField_apply (ε : ℝ) (q₀ : ℍ) (F : ℍ → ℍ) (q : ℍ) :
-    cauchyFueterCutoffField ε q₀ F q = cauchyFueterCutoff (‖q - q₀‖ / ε) • F q := (rfl)
-
-/-- Inside the excised ball the field vanishes, regardless of `F`. -/
-theorem cauchyFueterCutoffField_eq_zero {ε : ℝ} (hε : 0 < ε) {q q₀ : ℍ}
-    (hq : ‖q - q₀‖ ≤ ε / 2) (F : ℍ → ℍ) :
-    cauchyFueterCutoffField ε q₀ F q = 0 := by
-  rw [cauchyFueterCutoffField_apply, cauchyFueterCutoff_of_le, zero_smul]
-  rw [div_le_iff₀ hε]
-  linarith
-
-@[simp]
-theorem cauchyFueterCutoffField_self (ε : ℝ) (q₀ : ℍ) (F : ℍ → ℍ) :
-    cauchyFueterCutoffField ε q₀ F q₀ = 0 := by
-  simp [cauchyFueterCutoffField_apply]
-
-/-- Outside the cutoff radius the cut-off field is the original field. -/
-theorem cauchyFueterCutoffField_of_le {ε : ℝ} (hε : 0 < ε) {q q₀ : ℍ}
-    (hq : ε ≤ ‖q - q₀‖) (F : ℍ → ℍ) :
-    cauchyFueterCutoffField ε q₀ F q = F q := by
-  rw [cauchyFueterCutoffField_apply, cauchyFueterCutoff_of_one_le, one_smul]
-  exact (le_div_iff₀ hε).2 (by simpa using hq)
-
-/-- Near its pole the cut-off field is identically zero, for an arbitrary `F`. -/
-theorem cauchyFueterCutoffField_eventuallyEq_zero {ε : ℝ} (hε : 0 < ε)
-    (q₀ : ℍ) (F : ℍ → ℍ) :
-    cauchyFueterCutoffField ε q₀ F =ᶠ[𝓝 q₀] 0 := by
-  filter_upwards [Metric.ball_mem_nhds q₀ (half_pos hε)] with q hq
-  exact cauchyFueterCutoffField_eq_zero hε
-    (by simpa only [dist_eq_norm] using (Metric.mem_ball.mp hq).le) F
-
-/-- The cutoff removes any singularity of `F` at the pole: only continuity of `F`
-within the given set away from the pole is used. -/
-theorem continuousOn_cauchyFueterCutoffField {ε : ℝ} (hε : 0 < ε)
-    {q₀ : ℍ} {F : ℍ → ℍ} {s : Set ℍ} (hF : ContinuousOn F (s \ {q₀})) :
-    ContinuousOn (cauchyFueterCutoffField ε q₀ F) s := by
-  intro q hq
-  by_cases hp : q = q₀
-  · subst q
-    exact ((continuousAt_const.congr
-      (cauchyFueterCutoffField_eventuallyEq_zero hε q₀ F).symm)).continuousWithinAt
-  · exact (hasFDerivAt_cauchyFueterCutoff_norm_sub_div q q₀ ε).continuousAt.continuousWithinAt.smul
-      (continuousWithinAt_sdiff_singleton.mp (hF q ⟨hq, hp⟩))
-
-/-- Pointwise differentiability of the cut-off field. No differentiability of `F` is
-needed at the pole. -/
-theorem differentiableAt_cauchyFueterCutoffField {ε : ℝ} (hε : 0 < ε)
-    {q q₀ : ℍ} {F : ℍ → ℍ} (hF : q ≠ q₀ → DifferentiableAt ℝ F q) :
-    DifferentiableAt ℝ (cauchyFueterCutoffField ε q₀ F) q := by
-  by_cases hp : q = q₀
-  · subst q
-    exact ((hasFDerivAt_const (𝕜 := ℝ) (0 : ℍ) q₀).congr_of_eventuallyEq
-      (cauchyFueterCutoffField_eventuallyEq_zero hε q₀ F)).differentiableAt
-  · exact (hasFDerivAt_cauchyFueterCutoff_norm_sub_div q q₀ ε).differentiableAt.smul (hF hp)
-
-/-- The product rule for the cut-off field at a point where `F` is differentiable. -/
-theorem fderiv_cauchyFueterCutoffField (ε : ℝ) {q q₀ : ℍ} {F : ℍ → ℍ}
-    (hF : DifferentiableAt ℝ F q) :
-    fderiv ℝ (cauchyFueterCutoffField ε q₀ F) q =
-      cauchyFueterCutoff (‖q - q₀‖ / ε) • fderiv ℝ F q +
-        (fderiv ℝ (fun p ↦ cauchyFueterCutoff (‖p - q₀‖ / ε)) q).smulRight (F q) :=
-  fderiv_fun_smul (hasFDerivAt_cauchyFueterCutoff_norm_sub_div q q₀ ε).differentiableAt hF
 
 /-! ### Divergence of the cut-off fields -/
 
