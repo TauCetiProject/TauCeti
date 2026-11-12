@@ -242,11 +242,11 @@ theorem length_canonicalWord (n : ℕ) : (canonicalWord n).length = n := by
   simp only [canonicalWord]
   split_ifs <;> simp_all
 
-/-- Coding a word in the first component of a sufficiently large pair produces an extension
-of that word. -/
-theorem prefix_canonicalWord_pair (r : List Bool) {k : ℕ} (hk : r.length ≤ k) :
+/-- Coding a word in the first component of a pair produces an extension of that word. -/
+theorem prefix_canonicalWord_pair (r : List Bool) (k : ℕ) :
     r <+: canonicalWord (Nat.pair (Encodable.encode r) k) := by
-  have hle : r.length ≤ Nat.pair (Encodable.encode r) k := hk.trans (Nat.right_le_pair _ _)
+  have hle : r.length ≤ Nat.pair (Encodable.encode r) k :=
+    (Encodable.length_le_encode r).trans (Nat.left_le_pair _ _)
   simp [canonicalWord, hle, List.prefix_append]
 
 /-- Canonical words are distinguished by their lengths. -/
@@ -270,7 +270,7 @@ theorem canonicalWord_mem_canonicalWords (n : ℕ) : canonicalWord n ∈ canonic
 theorem denseWords_canonicalWords : DenseWords canonicalWords := by
   intro r
   exact ⟨_, mem_range_self (Nat.pair (Encodable.encode r) r.length),
-    prefix_canonicalWord_pair r le_rfl⟩
+    prefix_canonicalWord_pair r r.length⟩
 
 /-- There is only one canonical word of each length. -/
 theorem sparseWords_canonicalWords : SparseWords canonicalWords := by

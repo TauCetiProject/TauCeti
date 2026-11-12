@@ -134,7 +134,7 @@ theorem lintegral_posDef_multivariateGamma (ha : ((p : ℝ) - 1) / 2 < a) :
     filter_upwards [ae_restrict_mem (measurableSet_posDiagLowerRegion p)] with x hx
     exact mul_nonneg (det_rpow_mul_exp_neg_trace_nonneg x _) (mul_nonneg (by positivity)
       (Finset.prod_nonneg fun i _ => pow_nonneg ((mem_posDiagLowerRegion p).mp hx i).le _))
-  rw [setLIntegral_posDef_symmetricLebesgue p (by fun_prop)]
+  rw [setLIntegral_posDef_symmetricLebesgue p]
   simp_rw [hpt]
   rw [← ofReal_integral_eq_lintegral_ofReal
       (integrableOn_lowerTriangle_det_rpow_mul_exp_neg_trace fun _ ↦ ha) hnonneg,
@@ -171,7 +171,7 @@ theorem integral_posDef_multivariateGamma (ha : ((p : ℝ) - 1) / 2 < a) :
       (A : Matrix (Fin p) (Fin p) ℝ).det ^ (a - ((p : ℝ) + 1) / 2) *
         exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace) ∂symmetricLebesgue p =
       multivariateGamma p a := by
-  rw [integral_posDef_symmetricLebesgue p (Measurable.aestronglyMeasurable (by fun_prop)),
+  rw [integral_posDef_symmetricLebesgue p,
     ← integral_lowerTriangle_det_rpow_mul_exp_neg_trace fun _ ↦ ha]
   refine setIntegral_congr_fun (measurableSet_posDiagLowerRegion p) fun x _ => ?_
   simp only [coe_lowerTriangleGram, smul_eq_mul]

@@ -56,29 +56,29 @@ theorem indResHomEquiv_hom_apply {k : Type u} {G : Type v} {H : Type w}
 `Rep.indMap φ (f + g) = Rep.indMap φ f + Rep.indMap φ g`. -/
 theorem indMap_add {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G] [Group H]
     (φ : G →* H) {A B : Rep.{w'} k G} (f g : A ⟶ B) :
-    Rep.indMap φ (f + g) = Rep.indMap φ f + Rep.indMap φ g := by
+    indMap φ (f + g) = indMap φ f + indMap φ g := by
   ext h a
-  simp [Rep.indMap, Rep.add_hom]
+  simp [indMap, add_hom]
 
 /-- **Induction along a homomorphism of groups is an additive functor**, the functorial form of
 `Rep.indMap_add`. -/
 instance indFunctor_additive {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G]
     [Group H] (φ : G →* H) :
-    ((Rep.indFunctor k φ : Rep.{w'} k G ⥤ Rep k H)).Additive where
+    ((indFunctor k φ : Rep.{w'} k G ⥤ Rep k H)).Additive where
   map_add {_ _} f g := indMap_add φ f g
 
 /-- Inducing an intertwiner commutes with scalar multiplication. -/
 @[simp]
 theorem indMap_smul {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G]
     [Group H] (φ : G →* H) {A B : Rep.{w'} k G} (r : k) (f : A ⟶ B) :
-    Rep.indMap φ (r • f) = r • Rep.indMap φ f := by
+    indMap φ (r • f) = r • indMap φ f := by
   ext h a
-  simp [Rep.indMap, Rep.smul_hom]
+  simp [indMap, smul_hom]
 
 /-- Induction along a group homomorphism is linear over the coefficient ring. -/
 instance indFunctor_linear {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G]
     [Group H] (φ : G →* H) :
-    Functor.Linear k (Rep.indFunctor k φ : Rep.{w'} k G ⥤ Rep k H) where
+    Functor.Linear k (indFunctor k φ : Rep.{w'} k G ⥤ Rep k H) where
   map_smul f r := indMap_smul φ r f
 
 end Rep
@@ -106,7 +106,7 @@ namespace Rep
 theorem indMap_injective {k : Type u} {G : Type v} [CommRing k] [Group G] {S : Subgroup G}
     {V W : Rep.{w'} k S} : Function.Injective (indMap S.subtype : (V ⟶ W) → _) := by
   intro f g h
-  apply Rep.hom_ext
+  apply hom_ext
   ext x
   apply IndV.mk_one_injective S W.ρ
   simpa using congrArg (fun m : ind S.subtype V ⟶ ind S.subtype W ↦

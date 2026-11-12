@@ -9,6 +9,7 @@ public import TauCeti.Probability.Cdf
 public import TauCeti.Probability.Distributions.Stable.Smooth
 import TauCeti.Probability.Cdf.Density
 import TauCeti.Probability.Distributions.Dirac
+import TauCeti.Probability.Distributions.Stable.Support
 
 /-!
 # Cumulative distribution functions of scalar stable laws
@@ -20,8 +21,8 @@ the stable density is smooth, so is the cumulative distribution function.
 
 The zero-scale law is a point mass at its location.
 
-These results provide the analytic cdf interface used to obtain strict increase and quantiles
-once positivity on the interior of the stable law's support is known.
+These results provide the analytic cdf interface used for quantiles. The exact support theorems
+also give strict increase on the support of each fully skewed law below shape one.
 
 ## Main results
 
@@ -29,6 +30,10 @@ once positivity on the interior of the stable law's support is known.
   stable density;
 * `TauCeti.Probability.hasDerivAt_cdf_stableMeasure` identifies its derivative pointwise;
 * `TauCeti.Probability.contDiff_cdf_stableMeasure` proves that the cdf is smooth;
+* `TauCeti.Probability.strictMono_cdf_stableMeasure_of_one_le` gives strict increase on the
+  whole real line from shape one onward, including full skewness;
+* `TauCeti.Probability.strictMonoOn_cdf_stableMeasure_one_of_lt_one` and its negative-skew
+  counterpart give strict increase on the corresponding support half-lines below shape one;
 * `TauCeti.Probability.cdf_stableMeasure_zero_scale` gives the atomic boundary formula.
 
 ## References
@@ -89,6 +94,37 @@ theorem contDiff_cdf_stableMeasure (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs
 theorem continuous_cdf_stableMeasure (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s) :
     Continuous (cdf (stableMeasure α β s m)) :=
   (contDiff_cdf_stableMeasure hα hβ hs).continuous
+
+/-- From shape one onward, the cdf of every positive-scale stable law is strictly increasing on
+the whole real line, including at full skewness. -/
+theorem strictMono_cdf_stableMeasure_of_one_le (hα : α ∈ Icc 1 2) (hβ : |β| ≤ 1)
+    (hs : 0 < s) (m : ℝ) : StrictMono (cdf (stableMeasure α β s m)) := by
+  let := isProbabilityMeasure_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ s m
+  exact strictMono_cdf_of_eq_withDensity (stableMeasure_eq_withDensity_ofReal α β hs m)
+    (measurable_stablePDFReal α β s m).aemeasurable
+    (stablePDFReal_pos_of_one_le hα hβ hs m)
+
+/-- Below shape one, the cdf of a positive-scale stable law with skewness `1` is strictly
+increasing on its support half-line. -/
+theorem strictMonoOn_cdf_stableMeasure_one_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 < s)
+    (m : ℝ) : StrictMonoOn (cdf (stableMeasure α 1 s m))
+      (Ici (stableS1Location α 1 s m)) := by
+  let := isProbabilityMeasure_stableMeasure
+    ⟨hα.1, hα.2.le.trans (by norm_num)⟩
+    (by norm_num : |(1 : ℝ)| ≤ 1) s m
+  apply Measure.strictMonoOn_cdf_of_subset_support _ ordConnected_Ici
+  rw [support_stableMeasure_one_of_lt_one hα hs]
+
+/-- Below shape one, the cdf of a positive-scale stable law with skewness `-1` is strictly
+increasing on its support half-line. -/
+theorem strictMonoOn_cdf_stableMeasure_neg_one_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 < s)
+    (m : ℝ) : StrictMonoOn (cdf (stableMeasure α (-1) s m))
+      (Iic (stableS1Location α (-1) s m)) := by
+  let := isProbabilityMeasure_stableMeasure
+    ⟨hα.1, hα.2.le.trans (by norm_num)⟩
+    (by norm_num : |(-1 : ℝ)| ≤ 1) s m
+  apply Measure.strictMonoOn_cdf_of_subset_support _ ordConnected_Iic
+  rw [support_stableMeasure_neg_one_of_lt_one hα hs]
 
 /-- At zero scale, a valid stable law has the cdf of the point mass at its location. -/
 theorem cdf_stableMeasure_zero_scale (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (m x : ℝ) :

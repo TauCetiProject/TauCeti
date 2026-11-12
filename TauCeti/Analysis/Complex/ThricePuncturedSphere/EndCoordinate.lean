@@ -145,6 +145,28 @@ theorem endScale_ne_zero (q : Puncture) : q.endScale ≠ 0 := by
 theorem norm_endScale {q : Puncture} (hq : q ≠ inf) : ‖q.endScale‖ = 1 / 2 := by
   cases q <;> simp_all
 
+/-- The doubled scale of an end at a finite puncture has norm `1`. -/
+theorem norm_two_mul_endScale {q : Puncture} (hq : q ≠ inf) : ‖2 * q.endScale‖ = 1 := by
+  rw [norm_mul, norm_endScale hq]
+  norm_num
+
+/-- The end centers lie in the closed unit disc. -/
+theorem norm_endCenter_le_one (q : Puncture) : ‖q.endCenter‖ ≤ 1 := by
+  cases q <;> simp
+
+/-- The centers of the two ends at the finite punctures are at distance `1`. -/
+theorem norm_endCenter_sub_endCenter {q r : Puncture} (hq : q ≠ inf) (hr : r ≠ inf)
+    (hrq : r ≠ q) : ‖q.endCenter - r.endCenter‖ = 1 := by
+  cases q <;> cases r <;> simp_all
+
+/-- A point at distance `d` from the center of one finite end is at distance at least `1 - d` from
+the center of the other. -/
+theorem one_sub_norm_sub_endCenter_le {q r : Puncture} (hq : q ≠ inf) (hr : r ≠ inf)
+    (hrq : r ≠ q) (w : ℂ) : 1 - ‖w - q.endCenter‖ ≤ ‖w - r.endCenter‖ := by
+  have h := norm_sub_norm_le (q.endCenter - r.endCenter) (q.endCenter - w)
+  rwa [sub_sub_sub_cancel_left, norm_endCenter_sub_endCenter hq hr hrq, norm_sub_rev q.endCenter w]
+    at h
+
 /-- The ends other than the one at `∞` are positive. -/
 theorem endSign_eq_one {q : Puncture} (hq : q ≠ inf) : q.endSign = 1 := by
   cases q <;> simp_all
@@ -295,6 +317,15 @@ theorem le_re_endCoord_of_norm_sub_endCenter_le {q : Puncture} (hq : q ≠ inf) 
     Real.log_le_iff_le_exp (by positivity), div_le_iff₀ (by norm_num), mul_comm r]
   linarith
 
+/-- Away from the center of a positive end `q`, the longitudinal coordinate of that end is at most
+`r` exactly off the open disc `‖w - c_q‖ < exp (-2πr) / 2` bounded by the circle `s = r`. -/
+theorem re_endCoord_le_iff {q : Puncture} (hq : q ≠ inf) {r : ℝ} {w : ℂ} (hw : w ≠ q.endCenter) :
+    (q.endCoord w).re ≤ r ↔ Real.exp (-(2 * π * r)) / 2 ≤ ‖w - q.endCenter‖ := by
+  have hd : 0 < ‖w - q.endCenter‖ := norm_pos_iff.2 (sub_ne_zero.2 hw)
+  rw [re_endCoord, norm_div, norm_endScale hq, div_le_iff₀ (by positivity), neg_le,
+    Real.le_log_iff_exp_le (by positivity), le_div_iff₀ (by norm_num), mul_comm r]
+  constructor <;> intro h <;> linarith
+
 /-- Off the open disc of radius `1/2` about the center of a positive end `q`, the longitudinal
 coordinate of that end is nonpositive: the disc is bounded by the circle `s = 0` of the end. -/
 theorem re_endCoord_nonpos_of_le_norm_sub_endCenter {q : Puncture} (hq : q ≠ inf) {w : ℂ}
@@ -365,7 +396,6 @@ theorem im_endCoord_mem_Ico (q : Puncture) (w : ℂ) :
     (q.endCoord w).im ∈ Ico (-1 / 2 : ℝ) (1 / 2) := by
   have h₁ := Complex.neg_pi_lt_arg ((w - q.endCenter) / q.endScale)
   have h₂ := Complex.arg_le_pi ((w - q.endCenter) / q.endScale)
-  have hπ := Real.pi_pos
   rw [im_endCoord, mem_Ico, le_div_iff₀ (by positivity), div_lt_iff₀ (by positivity)]
   constructor <;> linarith
 
