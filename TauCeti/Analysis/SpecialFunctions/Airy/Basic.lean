@@ -154,4 +154,15 @@ theorem deriv_airyBi_zero : deriv airyBi 0 = (3 : ℂ) ^ (1 / 6 : ℂ) / Gamma (
   rw [funext airyBi_def, h.deriv]
   convert airy_derivative_coefficient (-5 / 6) using 1 <;> norm_num [div_eq_mul_inv]
 
+/-- `Bi(0) = √3 Ai(0)`. -/
+theorem airyBi_zero_eq : airyBi 0 = (3 : ℂ) ^ (1 / 2 : ℂ) * airyAi 0 := by
+  rw [airyAi_zero, airyBi_zero, ← mul_div_assoc, ← cpow_add _ _ (by norm_num)]
+  norm_num
+
+/-- `Bi′(0) = −√3 Ai′(0)`. -/
+theorem deriv_airyBi_zero_eq : deriv airyBi 0 = -(3 : ℂ) ^ (1 / 2 : ℂ) * deriv airyAi 0 := by
+  rw [deriv_airyAi_zero, deriv_airyBi_zero,
+    show (1 / 6 : ℂ) = 1 / 2 + -1 / 3 by norm_num, cpow_add _ _ (by norm_num)]
+  ring
+
 end TauCeti

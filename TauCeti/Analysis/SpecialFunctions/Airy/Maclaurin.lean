@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
-public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
+public import TauCeti.Data.Nat.Factorial.Triplication
 
 /-!
 # Maclaurin series of the Airy functions
@@ -17,15 +17,12 @@ The Maclaurin series of `Ai` and `Bi` in the Pochhammer form of DLMF 9.4.1 and 9
 
 and the same for `Bi` with `Bi(0)`, `Bi′(0)` in place of `Ai(0)`, `Ai′(0)`. They follow from the
 Gamma-denominator series of `TauCeti.Analysis.SpecialFunctions.Airy.Basic` and the triplication
-of factorials `(3k)! = 27^k k! (⅓)_k (⅔)_k`, `(3k + 1)! = 27^k k! (⅔)_k (4/3)_k`.
+of factorials `(3k)! = 27^k k! (⅓)_k (⅔)_k`, `(3k + 1)! = 27^k k! (⅔)_k (4/3)_k` of
+`TauCeti.Data.Nat.Factorial.Triplication`.
 
 ## Main results
 
-* `TauCeti.factorial_three_mul`, `TauCeti.factorial_three_mul_add_one`: triplication of
-  factorials;
-* `TauCeti.hasSum_airyAi`, `TauCeti.hasSum_airyBi`: DLMF 9.4.1 and 9.4.3;
-* `TauCeti.airyBi_zero_eq`, `TauCeti.deriv_airyBi_zero_eq`: `Bi(0) = √3 Ai(0)` and
-  `Bi′(0) = −√3 Ai′(0)`.
+* `TauCeti.hasSum_airyAi`, `TauCeti.hasSum_airyBi`: DLMF 9.4.1 and 9.4.3.
 
 ## References
 
@@ -44,56 +41,6 @@ open scoped Nat
 
 namespace TauCeti
 
-/-- Triplication of factorials: `(3k)! = 27^k k! (⅓)_k (⅔)_k`. -/
-theorem factorial_three_mul (k : ℕ) :
-    (((3 * k)! : ℕ) : ℂ) =
-      27 ^ k * k ! * (ascPochhammer ℂ k).eval (1 / 3) * (ascPochhammer ℂ k).eval (2 / 3) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [show 3 * (k + 1) = 3 * k + 2 + 1 by ring, Nat.factorial_succ, Nat.factorial_succ,
-      Nat.factorial_succ]
-    push_cast
-    rw [ih, ascPochhammer_succ_eval, ascPochhammer_succ_eval, Nat.factorial_succ]
-    push_cast
-    ring
-
-/-- Triplication of factorials: `(3k + 1)! = 27^k k! (⅔)_k (4/3)_k`. -/
-theorem factorial_three_mul_add_one (k : ℕ) :
-    (((3 * k + 1)! : ℕ) : ℂ) =
-      27 ^ k * k ! * (ascPochhammer ℂ k).eval (2 / 3) * (ascPochhammer ℂ k).eval (4 / 3) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [show 3 * (k + 1) + 1 = 3 * k + 1 + 2 + 1 by ring, Nat.factorial_succ, Nat.factorial_succ,
-      Nat.factorial_succ]
-    push_cast
-    rw [ih, ascPochhammer_succ_eval, ascPochhammer_succ_eval, Nat.factorial_succ]
-    push_cast
-    ring
-
-/-- `Γ(c + k) = (c)_k Γ(c)` for `0 < re c`. -/
-private theorem Gamma_add_nat_eq {c : ℂ} (hc : 0 < c.re) (k : ℕ) :
-    Gamma (c + k) = (ascPochhammer ℂ k).eval c * Gamma c := by
-  have hz : ∀ m : ℕ, c ≠ -m := by
-    intro m h
-    have := congrArg re h
-    simp only [neg_re, natCast_re] at this
-    linarith [(Nat.cast_nonneg m : (0 : ℝ) ≤ m)]
-  rw [← Gamma_add_nat_div_Gamma_eq c hz, div_mul_cancel₀ _ (Gamma_ne_zero_of_re_pos hc)]
-
-/-- `(c)_k ≠ 0` for `0 < re c`. -/
-private theorem ascPochhammer_eval_ne_zero {c : ℂ} (hc : 0 < c.re) (k : ℕ) :
-    (ascPochhammer ℂ k).eval c ≠ 0 := by
-  intro h
-  have h' := Gamma_add_nat_eq hc k
-  rw [h, zero_mul] at h'
-  exact Gamma_ne_zero_of_re_pos (by simp only [add_re, natCast_re]; positivity) h'
-
-/-- `3 ^ (a + 1) = 3 ^ a * 3` for complex `a`. -/
-private theorem three_cpow_add_one (a : ℂ) : (3 : ℂ) ^ (a + 1) = (3 : ℂ) ^ a * 3 := by
-  rw [cpow_add _ _ (by norm_num), cpow_one]
-
 /-- The two Gamma-denominator terms in Pochhammer form, for any coefficients `A`, `B`. -/
 private theorem airy_term_eq (A B z : ℂ) (k : ℕ) :
     A * ((z ^ 3 / 9) ^ k / (k ! * Gamma (2 / 3 + k))) + B * z *
@@ -104,11 +51,16 @@ private theorem airy_term_eq (A B z : ℂ) (k : ℕ) :
   have h43 : Gamma (4 / 3 : ℂ) = Gamma (1 / 3) / 3 := by
     rw [show (4 / 3 : ℂ) = 1 / 3 + 1 by norm_num, Gamma_add_one _ (by norm_num)]
     ring
-  rw [Gamma_add_nat_eq (by norm_num) k, Gamma_add_nat_eq (by norm_num) k, h43,
-    factorial_three_mul, factorial_three_mul_add_one]
-  have p1 := ascPochhammer_eval_ne_zero (c := 1 / 3) (by norm_num) k
-  have p2 := ascPochhammer_eval_ne_zero (c := 2 / 3) (by norm_num) k
-  have p4 := ascPochhammer_eval_ne_zero (c := 4 / 3) (by norm_num) k
+  have hoff : ∀ c : ℂ, 0 < c.re → ∀ m : ℕ, c ≠ -m := fun c hc m h => by
+    have := congrArg re h
+    simp only [neg_re, natCast_re] at this
+    linarith [(Nat.cast_nonneg m : (0 : ℝ) ≤ m)]
+  rw [Gamma_add_natCast_eq_ascPochhammer_eval_mul (hoff _ (by norm_num)) k,
+    Gamma_add_natCast_eq_ascPochhammer_eval_mul (hoff _ (by norm_num)) k, h43,
+    factorial_three_mul (K := ℂ), factorial_three_mul_add_one (K := ℂ)]
+  have p1 := ascPochhammer_eval_ne_zero (hoff (1 / 3) (by norm_num)) k
+  have p2 := ascPochhammer_eval_ne_zero (hoff (2 / 3) (by norm_num)) k
+  have p4 := ascPochhammer_eval_ne_zero (hoff (4 / 3) (by norm_num)) k
   have g1 : Gamma (1 / 3 : ℂ) ≠ 0 := Gamma_ne_zero_of_re_pos (by norm_num)
   have g2 : Gamma (2 / 3 : ℂ) ≠ 0 := Gamma_ne_zero_of_re_pos (by norm_num)
   have hk : (k ! : ℂ) ≠ 0 := by exact_mod_cast k.factorial_ne_zero
@@ -124,7 +76,8 @@ theorem hasSum_airyAi (z : ℂ) :
       (airyAi z) := by
   refine (hasSum_airyAi_gamma z).congr_fun fun k => ?_
   rw [airyAi_zero, deriv_airyAi_zero, sub_eq_add_neg, ← neg_mul, ← neg_mul,
-    airy_term_eq, show (-1 / 3 : ℂ) = -4 / 3 + 1 by norm_num, three_cpow_add_one]
+    airy_term_eq, show (-1 / 3 : ℂ) = -4 / 3 + 1 by norm_num,
+    cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
   ring
 
 /-- **The Maclaurin series of `Bi`** (DLMF 9.4.3). -/
@@ -136,18 +89,8 @@ theorem hasSum_airyBi (z : ℂ) :
       (airyBi z) := by
   refine (hasSum_airyBi_gamma z).congr_fun fun k => ?_
   rw [airyBi_zero, deriv_airyBi_zero, airy_term_eq,
-    show (1 / 6 : ℂ) = -5 / 6 + 1 by norm_num, three_cpow_add_one]
-  ring
-
-/-- `Bi(0) = √3 Ai(0)`. -/
-theorem airyBi_zero_eq : airyBi 0 = (3 : ℂ) ^ (1 / 2 : ℂ) * airyAi 0 := by
-  rw [airyAi_zero, airyBi_zero, ← mul_div_assoc, ← cpow_add _ _ (by norm_num)]
-  norm_num
-
-/-- `Bi′(0) = −√3 Ai′(0)`. -/
-theorem deriv_airyBi_zero_eq : deriv airyBi 0 = -(3 : ℂ) ^ (1 / 2 : ℂ) * deriv airyAi 0 := by
-  rw [deriv_airyAi_zero, deriv_airyBi_zero,
-    show (1 / 6 : ℂ) = 1 / 2 + -1 / 3 by norm_num, cpow_add _ _ (by norm_num)]
+    show (1 / 6 : ℂ) = -5 / 6 + 1 by norm_num, cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0),
+    cpow_one]
   ring
 
 end TauCeti

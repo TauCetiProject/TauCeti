@@ -51,6 +51,8 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
+* `TauCeti.ascPochhammer_eval_ne_zero` — `(c)ₖ ≠ 0` off the nonpositive integers, in any domain.
+* `Complex.Gamma_add_natCast_eq_ascPochhammer_eval_mul` — `Γ(c + k) = (c)ₖ Γ(c)` off the poles.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
@@ -63,6 +65,13 @@ open Filter Asymptotics Topology
 open scoped Nat
 
 namespace TauCeti
+
+/-- The Pochhammer symbol `(c)ₖ` does not vanish when `c` is not a nonpositive integer. -/
+theorem ascPochhammer_eval_ne_zero {R : Type*} [CommRing R] [IsDomain R] {c : R}
+    (hc : ∀ m : ℕ, c ≠ -m) (k : ℕ) : (ascPochhammer R k).eval c ≠ 0 := by
+  rw [Ne, ascPochhammer_eval_eq_zero_iff]
+  rintro ⟨m, -, hm⟩
+  exact hc m (by rw [hm, neg_neg])
 
 /-- The real Gamma function is Borel measurable on all of `ℝ`, including at its poles. -/
 @[fun_prop]
@@ -225,6 +234,11 @@ theorem tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop {a b : ℝ} (hab :
 end Real
 
 namespace Complex
+
+/-- `Γ(c + k) = (c)ₖ Γ(c)` for `c` off the poles of `Γ`. -/
+theorem Gamma_add_natCast_eq_ascPochhammer_eval_mul {c : ℂ} (hc : ∀ m : ℕ, c ≠ -m) (k : ℕ) :
+    Gamma (c + k) = (ascPochhammer ℂ k).eval c * Gamma c := by
+  rw [← Gamma_add_nat_div_Gamma_eq c hc, div_mul_cancel₀ _ (Gamma_ne_zero hc)]
 
 /-- On the half-plane `1 ≤ Re s`, the reciprocal Gamma function decays factorially along
 `s + k`: `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!`. Together with the boundedness of `1 / Γ` on compact
