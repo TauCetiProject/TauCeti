@@ -24,6 +24,9 @@ neighbourhood of a point has the germ there of a globally smooth map
 (`ContMDiffOn.exists_contMDiffMap_eventuallyEq`), with no paracompactness assumption.
 A smooth map on an open subset, extended arbitrarily outside it, stays smooth on that subset
 (`ContMDiffMap.contMDiffOn_extend`).
+For manifold-valued curves on an open convex subset of the real line containing zero,
+`ContMDiffOn.exists_contMDiff_eventuallyEq_of_convex` gives a global curve agreeing near
+any compact subset of the domain.
 Reference: M. Hirsch, *Differential Topology*, Chapter 2, §2, and Chapter 8, §1.
 -/
 
@@ -49,6 +52,30 @@ theorem contMDiffOn_extend (U : TopologicalSpace.Opens M) (f : C^n⟮I, U; I', M
   exact f.contMDiff _
 
 end ContMDiffMap
+
+/-- A manifold-valued `C^n` curve on an open convex set containing zero agrees near any compact
+subset of that set with a globally `C^n` curve. -/
+theorem ContMDiffOn.exists_contMDiff_eventuallyEq_of_convex
+    {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+    {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞}
+    {γ : ℝ → M} {U K : Set ℝ} (hγ : ContMDiffOn 𝓘(ℝ) I n γ U)
+    (hU : IsOpen U) (hconv : Convex ℝ U) (h0 : 0 ∈ U) (hK : IsCompact K) (hKU : K ⊆ U) :
+    ∃ f : ℝ → M, ContMDiff 𝓘(ℝ) I n f ∧ ∀ t ∈ K, f =ᶠ[𝓝 t] γ := by
+  obtain ⟨δ, hδ, hδU⟩ := hK.exists_cthickening_subset_open hU hKU
+  obtain ⟨ρ, hρ, hρI, hρU, hρ1⟩ := exists_contDiff_support_eq_eq_one_iff (n := n)
+    hU Metric.isClosed_cthickening hδU
+  have hφU (x : ℝ) : ρ x * x ∈ U := by
+    by_cases hx : x ∈ U
+    · exact hconv.smul_mem_of_zero_mem h0 hx (hρI (mem_range_self x))
+    · rw [← hρU, mem_support, not_not] at hx
+      rw [hx, zero_mul]
+      exact h0
+  refine ⟨fun x ↦ γ (ρ x * x), fun x ↦ ?_, fun t ht ↦ ?_⟩
+  · exact (hγ.contMDiffAt (hU.mem_nhds (hφU x))).comp (f := fun y ↦ ρ y * y) x
+      (hρ.mul contDiff_id).contMDiff.contMDiffAt
+  · filter_upwards [Metric.ball_mem_nhds t hδ] with x hx
+    rw [(hρ1 x).1 (Metric.mem_cthickening_of_dist_le x t δ K ht
+      (Metric.mem_ball.1 hx).le), one_mul]
 
 variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]

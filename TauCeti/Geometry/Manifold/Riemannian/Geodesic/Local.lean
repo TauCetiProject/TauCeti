@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+public import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
-public import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
 # Local behaviour of maximal geodesics
@@ -18,8 +18,7 @@ is the radial geodesic `s ↦ exp_p (s • v)`. This file proves three local pro
 geodesics, used to cut simple closed geodesic polygons out of radial geodesics.
 
 * A maximal geodesic with nonzero initial velocity is injective near every parameter of its
-  interval: near `t`, it is the exponential map at `γ_v(t)` along a line through the origin, and
-  the exponential map is injective on a normal ball.
+  interval, since its derivative is injective there.
 * Two radial geodesics from `p` whose initial velocities do not lie on a common ray do not meet
   for small positive parameters, by injectivity of `exp_p` on a normal ball.
 * Near a compact set of parameters of its maximal interval, a maximal geodesic agrees with a curve
@@ -63,31 +62,11 @@ injective on a neighbourhood of each parameter of its maximal interval. -/
 theorem exists_mem_nhds_injOn_maximalGeodesic {t : ℝ} (hv : v ≠ 0)
     (ht : t ∈ geodesicInterval I M p v) :
     ∃ U ∈ 𝓝 t, InjOn (maximalGeodesic I M p v) U := by
-  set G := geodesicInterval I M p v
-  set γ := maximalGeodesic I M p v
-  set u := curveVelocityWithin I γ G t with hu_def
-  have hu : u ≠ 0 := by
-    rw [hu_def, curveVelocityWithin_of_mem_nhds (isOpen_geodesicInterval.mem_nhds ht)]
-    exact curveVelocity_maximalGeodesic_ne_zero hv ht
-  have hupos : 0 < ‖u‖ := norm_pos_iff.2 hu
-  obtain ⟨r, hr, hN⟩ := exists_isNormalDomain_ball (I := I) (γ t)
-  have hU : G ∩ ball t (r / ‖u‖) ∈ 𝓝 t :=
-    inter_mem (isOpen_geodesicInterval.mem_nhds ht) (ball_mem_nhds t (div_pos hr hupos))
-  have hexp {s : ℝ} (hs : s ∈ G ∩ ball t (r / ‖u‖)) :
-      γ s = riemannianExp I M (γ t) ((s - t) • u) ∧ (s - t) • u ∈ ball 0 r := by
-    have hs' : t + (s - t) ∈ G := by
-      rw [add_sub_cancel]
-      exact hs.1
-    refine ⟨?_, ?_⟩
-    · rw [riemannianExp_smul, ← maximalGeodesic_add ht hs', add_sub_cancel]
-    · have h := hs.2
-      rw [mem_ball, Real.dist_eq, lt_div_iff₀ hupos] at h
-      rwa [mem_ball_zero_iff, norm_smul, Real.norm_eq_abs]
-  refine ⟨_, hU, fun a ha b hb hab ↦ ?_⟩
-  obtain ⟨ha1, ha2⟩ := hexp ha
-  obtain ⟨hb1, hb2⟩ := hexp hb
-  have h := smul_left_injective ℝ hu (hN.injOn ha2 hb2 (ha1.symm.trans (hab.trans hb1)))
-  linarith
+  have hγ := (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.contMDiffAt_infty
+    (isOpen_geodesicInterval.mem_nhds ht)
+  refine hγ.exists_mem_nhds_injOn (by simp) ?_
+  rw [(hasMFDerivAt_curveVelocity (hγ.mdifferentiableAt (by simp))).mfderiv]
+  exact smul_left_injective ℝ (curveVelocity_maximalGeodesic_ne_zero hv ht)
 
 /-- **Radial geodesics in different directions separate.** If the tangent vectors `v` and
 `w` at `p` do not lie on a common ray, the radial geodesics from `p` with these initial
@@ -115,23 +94,9 @@ which is smooth on the whole line. -/
 theorem exists_contMDiff_eventuallyEq_maximalGeodesic {K : Set ℝ} (hK : IsCompact K)
     (hKG : K ⊆ geodesicInterval I M p v) :
     ∃ f : ℝ → M, ContMDiff 𝓘(ℝ) I ∞ f ∧ ∀ t ∈ K, f =ᶠ[𝓝 t] maximalGeodesic I M p v := by
-  obtain ⟨δ, hδ, hδG⟩ := hK.exists_cthickening_subset_open isOpen_geodesicInterval hKG
-  obtain ⟨ρ, hρ, hρI, hρG, hρ1⟩ := exists_contDiff_support_eq_eq_one_iff (n := (⊤ : ℕ∞))
-    isOpen_geodesicInterval isClosed_cthickening hδG
-  have hφG (x : ℝ) : ρ x * x ∈ geodesicInterval I M p v := by
-    by_cases hx : x ∈ geodesicInterval I M p v
-    · exact isPreconnected_geodesicInterval.ordConnected.convex.smul_mem_of_zero_mem
-        zero_mem_geodesicInterval hx (hρI (mem_range_self x))
-    · rw [← hρG, mem_support, not_not] at hx
-      rw [hx, zero_mul]
-      exact zero_mem_geodesicInterval
-  refine ⟨fun x ↦ maximalGeodesic I M p v (ρ x * x), fun x ↦ ?_, fun t ht ↦ ?_⟩
-  · have hφ : ContMDiffAt 𝓘(ℝ) 𝓘(ℝ) ∞ (fun y ↦ ρ y * y) x :=
-      (hρ.mul contDiff_id).contMDiff.contMDiffAt
-    exact ((isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.contMDiffAt_infty
-      (isOpen_geodesicInterval.mem_nhds (hφG x))).comp (f := fun y ↦ ρ y * y) x hφ
-  · filter_upwards [ball_mem_nhds t hδ] with x hx
-    rw [(hρ1 x).1 (mem_cthickening_of_dist_le x t δ K ht (mem_ball.1 hx).le), one_mul]
+  exact (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.contMDiffOn_infty
+    |>.exists_contMDiff_eventuallyEq_of_convex isOpen_geodesicInterval
+      isPreconnected_geodesicInterval.ordConnected.convex zero_mem_geodesicInterval hK hKG
 
 /-- **An affinely reparametrized geodesic segment as a smooth geodesic piece.** If `v ≠ 0`,
 `m ≠ 0`, `t₀ < t₁` and `m * u + k` lies in the maximal interval of `v` for `u ∈ [t₀, t₁]`, there
