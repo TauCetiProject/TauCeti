@@ -269,7 +269,7 @@ theorem covolume_mixedImage [DecidableEq ι] {Λ : Submodule (𝓞 K) (ι → K)
   -- The local factors of the norms of the coefficient ideals.
   have hsupp (i : ι) : Function.HasFiniteMulSupport fun v : FinitePlace K ↦
       (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J i) :=
-    FinitePlace.hasFiniteMulSupport_fun_pow_multiplicity (hJ i) fun I ↦ (absNorm I : ℝ)
+    FinitePlace.hasFiniteMulSupport_fun_pow_multiplicity (J i) fun I ↦ (absNorm I : ℝ)
   have hsupp' (i : ι) : Function.HasFiniteMulSupport fun v : FinitePlace K ↦
       ((v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J i))⁻¹ :=
     (hsupp i).inv
@@ -277,7 +277,7 @@ theorem covolume_mixedImage [DecidableEq ι] {Λ : Submodule (𝓞 K) (ι → K)
       (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J i) =
         absNorm (J i) := by
     conv_rhs => rw [← FinitePlace.finprod_finitePlace_pow_multiplicity (hJ i)]
-    rw [map_finprod _ (FinitePlace.hasFiniteMulSupport_fun_pow_multiplicity (hJ i) (·)),
+    rw [map_finprod _ (FinitePlace.hasFiniteMulSupport_fun_pow_multiplicity (J i) (·)),
       Nat.cast_finprod']
     simp
   rw [covolume_mixedImage_of_pseudoBasis b hJ hmem, finprod_congr hBv,
