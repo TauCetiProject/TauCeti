@@ -194,12 +194,8 @@ theorem perimeter_ball_zero_mul_setOf_inner_lt [Nontrivial E] (ν : E) {t : ℝ}
   have h := perimeter_ball_zero_preimage_add_smul (μ := μ) (s := {y : E | ⟪y, ν⟫ < 0})
     (x := 0) ht R
   rw [hpre] at h
-  obtain ⟨m, hm⟩ : ∃ m, Module.finrank ℝ E = m + 1 :=
-    ⟨_, (Nat.sub_add_cancel Module.finrank_pos).symm⟩
-  have hscale : t ^ m * (t / t ^ (m + 1)) = 1 := by
-    field_simp
-    ring
-  rw [h, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), hm, Nat.add_sub_cancel, hscale,
-    ENNReal.ofReal_one, one_mul]
+  have hscale : t ^ (Module.finrank ℝ E - 1) * (t / t ^ Module.finrank ℝ E) = 1 := by
+    rw [mul_div_assoc', pow_sub_one_mul Module.finrank_pos.ne', div_self (by positivity)]
+  rw [h, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), hscale, ENNReal.ofReal_one, one_mul]
 
 end TauCeti
