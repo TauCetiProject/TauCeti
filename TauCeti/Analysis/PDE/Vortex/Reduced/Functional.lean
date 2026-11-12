@@ -580,9 +580,9 @@ theorem sobolevReducedFunctional_midpoint_add_add_le (hm : 0 < P.natDegree)
     sobolevReducedFunctional P (midpoint ℝ u v) + sobolevReducedFunctional P (midpoint ℝ u v) +
         ((‖W1p.gradient (u - v)‖ ^ 2 / 4 : ℝ) : EReal) ≤
       sobolevReducedFunctional P u + sobolevReducedFunctional P v := by
-  set h : ℂ → ℝ := fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) with h_def
+  set h : ℂ → ℝ := fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2)
   set c : ℂ → ℝ := fun z ↦ 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
-    (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8 with c_def
+    (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8
   have hh (z : ℂ) : 0 ≤ h z := by positivity
   -- If one of the two potentials is not integrable, the right-hand side is `⊤`.
   by_cases hu : Integrable fun z ↦ h z * (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)
