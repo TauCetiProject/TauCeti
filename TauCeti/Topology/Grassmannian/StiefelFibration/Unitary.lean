@@ -223,8 +223,8 @@ private theorem continuousOn_frameGramSchmidt :
     ContinuousOn (frameGramSchmidt (𝕜 := 𝕜) (r := r) (m := m)) frameSectionDomain := by
   have h (k : Fin (r + m)) : ContinuousOn (fun f ↦ gramSchmidtNormed 𝕜 (frameCompletion f) k)
       (frameSectionDomain (𝕜 := 𝕜) (r := r) (m := m)) :=
-    ContinuousOn.gramSchmidtNormed (v := fun l f ↦ frameCompletion f l)
-      (fun l ↦ (continuous_frameCompletion l).continuousOn) (fun _ hf ↦ hf) k
+    ContinuousOn.gramSchmidtNormed (v := fun l f ↦ frameCompletion f l) k
+      (fun l _ ↦ (continuous_frameCompletion l).continuousOn) (fun _ hf ↦ hf.linearIndepOn _)
   exact continuousOn_pi.2 fun a ↦ continuousOn_pi.2 fun k ↦
     ((continuous_apply a).comp (PiLp.continuous_ofLp 2 _)).comp_continuousOn (h k)
 
