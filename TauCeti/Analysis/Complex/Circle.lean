@@ -48,6 +48,7 @@ glued at their endpoints `±1`.
   integer multiple of `2π / n`.
 * `Circle.exp_neg_arg_mul_self`: rotating `x : ℂ` by `exp (-i arg x)` gives `‖x‖`.
 * `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
+* `Circle.im_coe_eq_zero_iff`: the real points of the circle are `1` and `-1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
@@ -212,6 +213,11 @@ theorem coordinate_mem_unitary : coordinate ∈ unitary C(Circle, ℂ) :=
 /-- A point of the circle is its own inverse exactly when it is `1` or `-1`. -/
 theorem inv_eq_self_iff (v : Circle) : v⁻¹ = v ↔ v = 1 ∨ v = -1 := by
   simp [inv_eq_iff_mul_eq_one, ← Circle.coe_inj, mul_self_eq_one_iff]
+
+/-- A point of the circle is real exactly when it is `1` or `-1`. -/
+theorem im_coe_eq_zero_iff (v : Circle) : (v : ℂ).im = 0 ↔ v = 1 ∨ v = -1 := by
+  -- Being real means being fixed by conjugation, which on the circle is inversion.
+  rw [← inv_eq_self_iff, ← coe_inj, coe_inv_eq_conj, Complex.conj_eq_iff_im]
 
 /-! ### The upper semicircle -/
 
