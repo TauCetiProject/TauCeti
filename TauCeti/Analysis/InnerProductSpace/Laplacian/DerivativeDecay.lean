@@ -86,10 +86,10 @@ private theorem exists_norm_sub_le_mul_exp_of_laplacian_eq_smul_add {g Φ : E �
     (hglim : Tendsto g (cocompact E) (𝓝 0)) :
     ∃ K, 0 ≤ K ∧ ∀ x : E, R + 1 ≤ ‖x‖ → ∀ h : E, ‖h‖ ≤ 1 →
       ‖g (x + h) - g x‖ ≤ ‖h‖ * (K * Real.exp (-(c * ‖x‖))) := by
-  set R₁ := R + 1 with hR₁
+  set R₁ := R + 1
   have hR₁pos : 0 < R₁ := by linarith
   -- A bound for the derivative of `g` on the annulus `R ≤ ‖y‖ ≤ R₁ + 1`.
-  set A : Set E := closedBall 0 (R₁ + 1) ∩ {y | R ≤ ‖y‖} with hA
+  set A : Set E := closedBall 0 (R₁ + 1) ∩ {y | R ≤ ‖y‖}
   have hAc : IsCompact A :=
     (isCompact_closedBall 0 (R₁ + 1)).inter_right (isClosed_le continuous_const continuous_norm)
   have hAcont : ContinuousOn (fderiv ℝ g) A := fun y hy ↦
@@ -97,7 +97,6 @@ private theorem exists_norm_sub_le_mul_exp_of_laplacian_eq_smul_add {g Φ : E �
   obtain ⟨M₀, hM₀⟩ := hAc.exists_bound_of_continuousOn hAcont
   set M := max M₀ 0
   set B := (L * Kg + KΦ) * Real.exp c with hB
-  have hB₀ : 0 ≤ B := by positivity
   have hgap : 0 < a ^ 2 - c ^ 2 := by nlinarith
   refine ⟨M * Real.exp (c * R₁) + B / (a ^ 2 - c ^ 2), by positivity, fun x hx h hh ↦ ?_⟩
   set D : E → G := fun y ↦ g (y + h) - g y with hD
@@ -407,7 +406,7 @@ private theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff {�
       ∀ i ≤ n, iteratedFDeriv ℝ i (fun y ↦ Real.exp (ℓ y)) =O[cocompact E]
         fun _ ↦ (1 : ℝ) := by
   set ρ : E → ℝ := fun x ↦ Real.exp (-(c * ‖x‖)) with hρ
-  set e : E → ℝ := fun x ↦ Real.exp (ℓ x) with he_def
+  set e : E → ℝ := fun x ↦ Real.exp (ℓ x)
   have he : ContDiff ℝ ∞ e := Real.contDiff_exp.comp hℓ
   have hρ1 : ρ =O[cocompact E] fun _ ↦ (1 : ℝ) :=
     isBigO_of_le _ fun x ↦ by
@@ -424,7 +423,7 @@ private theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff {�
   have he0 : e =O[cocompact E] fun _ ↦ (1 : ℝ) := by
     simpa using (he1.trans hρ1).add (isBigO_refl (fun _ : E ↦ (1 : ℝ)) (cocompact E))
   -- A rate `a` between `c` and `√κ`.
-  set a := Real.sqrt ((c ^ 2 + κ) / 2) with ha
+  set a := Real.sqrt ((c ^ 2 + κ) / 2)
   have ha2 : a ^ 2 = (c ^ 2 + κ) / 2 := Real.sq_sqrt (by nlinarith)
   have hca : c < a := Real.lt_sqrt hc.le |>.mpr (by linarith)
   have hκa : a ^ 2 < κ := by rw [ha2]; linarith
