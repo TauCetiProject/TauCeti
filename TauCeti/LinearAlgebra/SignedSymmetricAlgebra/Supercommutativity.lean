@@ -120,7 +120,8 @@ theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading {i j : ZMod 2} {a b : SignedS
 /-- Every element of even parity commutes with all of `SignedSym G`. -/
 theorem commute_of_mem_parityGrading_zero {a : SignedSym G}
     (ha : a ∈ parityGrading (signedSymPiece G) 0) (b : SignedSym G) : Commute a b :=
-  TauCeti.commute_of_mem_zero (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha b
+  TauCeti.commute_of_mul_eq_uzpow_smul_mul_of_mem_zero
+    (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha b
 
 /-- Every element of even parity lies in the center of `SignedSym G`. -/
 theorem mem_center_of_mem_parityGrading_zero {a : SignedSym G}
@@ -131,7 +132,8 @@ theorem mem_center_of_mem_parityGrading_zero {a : SignedSym G}
 theorem sq_eq_neg_of_mem_parityGrading_one {a : SignedSym G}
     (ha : a ∈ parityGrading (signedSymPiece G) 1) : a ^ 2 = -(a ^ 2) := by
   rw [pow_two]
-  exact TauCeti.mul_self_eq_neg_of_mem_one (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha
+  exact TauCeti.mul_self_eq_neg_of_mul_eq_uzpow_smul_mul_of_mem_one
+    (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha
 
 /-- Every element of odd parity has square zero when `2` is invertible in the coefficient ring,
 even if it sums terms of distinct odd integer degrees. -/

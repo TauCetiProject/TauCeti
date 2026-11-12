@@ -67,7 +67,8 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.LinearMap.IsHomogeneous.map_decompose` and
   `TauCeti.LinearMap.IsHomogeneous.restrict_decompose`: a homogeneous map commutes with homogeneous
   projection, up to the shift of degree.
-* `TauCeti.InternalGrading.mem_piece_of_piece_eq_bot`: when all pieces outside one degree vanish,
+* `TauCeti.DirectSum.mem_of_forall_ne_eq_bot` and
+  `TauCeti.InternalGrading.mem_piece_of_piece_eq_bot`: when all pieces outside one degree vanish,
   every element lies in that piece.
 * `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
   `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
@@ -335,11 +336,11 @@ end InternalGrading
 
 /-- When all pieces of a direct-sum decomposition of submodules outside degree `i` vanish, every
 element lies in the degree-`i` piece. -/
-theorem mem_of_forall_ne_eq_bot {R M ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    [DecidableEq ι] {ℳ : ι → Submodule R M} [DirectSum.Decomposition ℳ] {i : ι}
-    (h : ∀ j, j ≠ i → ℳ j = ⊥) (x : M) : x ∈ ℳ i := by
+theorem DirectSum.mem_of_forall_ne_eq_bot {R M ι : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [DecidableEq ι] {ℳ : ι → Submodule R M} [_root_.DirectSum.Decomposition ℳ]
+    {i : ι} (h : ∀ j, j ≠ i → ℳ j = ⊥) (x : M) : x ∈ ℳ i := by
   have htop : ⊤ ≤ ℳ i := by
-    rw [← (DirectSum.Decomposition.isInternal ℳ).submodule_iSup_eq_top]
+    rw [← (_root_.DirectSum.Decomposition.isInternal ℳ).submodule_iSup_eq_top]
     refine iSup_le fun j ↦ ?_
     by_cases hj : j = i
     · exact hj ▸ le_rfl
@@ -351,7 +352,7 @@ theorem mem_of_forall_ne_eq_bot {R M ι : Type*} [Semiring R] [AddCommMonoid M] 
 theorem InternalGrading.mem_piece_of_piece_eq_bot {R M : Type*} [Semiring R] [AddCommMonoid M]
     [Module R M] {ι : Type} [DecidableEq ι] (G : InternalGrading R M ι) {i : ι}
     (hG : ∀ j, j ≠ i → G.piece j = ⊥) (x : M) : x ∈ G.piece i :=
-  mem_of_forall_ne_eq_bot hG x
+  DirectSum.mem_of_forall_ne_eq_bot hG x
 
 namespace LinearMap.IsHomogeneous
 

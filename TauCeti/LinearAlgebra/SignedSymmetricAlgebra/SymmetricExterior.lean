@@ -11,9 +11,10 @@ public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Supercommutativity
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.WordLength
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
-import Mathlib.LinearAlgebra.DirectSum.Basis
 import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 import Mathlib.LinearAlgebra.TensorProduct.Basis
+import TauCeti.Algebra.Algebra.Operations
+import TauCeti.Algebra.DirectSum.Component
 import TauCeti.Data.ZMod.IntUnitsPower
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
@@ -66,10 +67,11 @@ algebra in J. Pardon, *Contact homology and virtual fundamental cycles*, equatio
   the factor inclusions embed into `SignedSym G`.
 * `TauCeti.SignedSym.map_lengthPiece_toSymTensorExterior` and
   `TauCeti.SignedSym.map_parityGrading_toSymTensorExterior`: compatibility of
-  `toSymTensorExterior` (and hence `symTensorExteriorEquiv`) with word length and parity over any
-  commutative ring.
-* `TauCeti.SignedSym.instModuleFree` and `TauCeti.SignedSym.free_of_free_piece`: freeness of
-  `SignedSym G` as an `R`-module when `2` is invertible.
+  `toSymTensorExterior` with word length and parity over any commutative ring (and hence of
+  `symTensorExteriorEquiv` when `2` is invertible).
+* `TauCeti.SignedSym.instModuleFree`: freeness of `SignedSym G` as an `R`-module when `2` is
+  invertible and the parity summands of `V` (for instance when all graded pieces `G.piece p`,
+  via `TauCeti.instModuleFreeCoarsenGrading`) are free `R`-modules.
 -/
 
 public section
@@ -85,36 +87,6 @@ variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
 variable (G : InternalGrading R V)
 
-/-! ### Parity projections on the generating module -/
-
-private noncomputable def parityComponent (k : ZMod 2) : V →ₗ[R] parityGrading G.piece k :=
-  (DirectSum.component R (ZMod 2) (fun i => parityGrading G.piece i) k).comp
-    (DirectSum.decomposeLinearEquiv (parityGrading G.piece)).toLinearMap
-
-@[simp]
-private theorem parityComponent_apply (k : ZMod 2) (x : V) :
-    parityComponent G k x = DirectSum.decompose (parityGrading G.piece) x k := by
-  rw [parityComponent, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    DirectSum.decomposeLinearEquiv_apply, ← DirectSum.apply_eq_component]
-
-private theorem decompose_parityGrading_of_mem_same {k : ZMod 2} {x : V}
-    (hx : x ∈ parityGrading G.piece k) :
-    DirectSum.decompose (parityGrading G.piece) x k = ⟨x, hx⟩ :=
-  Subtype.ext (DirectSum.decompose_of_mem_same (parityGrading G.piece) hx)
-
-private theorem decompose_parityGrading_of_mem_ne {j k : ZMod 2} {x : V}
-    (hx : x ∈ parityGrading G.piece j) (hjk : j ≠ k) :
-    DirectSum.decompose (parityGrading G.piece) x k = 0 :=
-  Subtype.ext (DirectSum.decompose_of_mem_ne (parityGrading G.piece) hx hjk)
-
-private theorem algHom_mem_pow_of_mem_pow {A B : Type*} [Semiring A] [Algebra R A]
-    [Semiring B] [Algebra R B] {M : Submodule R A} {N : Submodule R B} (f : A →ₐ[R] B)
-    (hf : M.map f.toLinearMap ≤ N) {n : ℕ} {a : A} (ha : a ∈ M ^ n) : f a ∈ N ^ n := by
-  have hpow : (M ^ n).map f.toLinearMap ≤ N ^ n := by
-    rw [Submodule.map_pow]
-    exact pow_le_pow_left' hf n
-  simpa only [AlgHom.toLinearMap_apply] using hpow (Submodule.mem_map_of_mem ha)
-
 /-! ### Even and odd factor inclusions and projections -/
 
 /-- The canonical algebra map from the symmetric algebra on the even part of `V` into
@@ -122,29 +94,16 @@ private theorem algHom_mem_pow_of_mem_pow {A B : Type*} [Semiring A] [Algebra R 
 is required. -/
 def fromSymmetricEven :
     SymmetricAlgebra R (parityGrading G.piece 0) →ₐ[R] SignedSym G :=
-  (Subalgebra.center R (SignedSym G)).val.comp <|
-    SymmetricAlgebra.lift (A := Subalgebra.center R (SignedSym G)) <|
-      (generator G).restrict (q := (Subalgebra.center R (SignedSym G)).toSubmodule)
-        fun _ hx => generator_mem_center_of_mem_parityGrading_zero G hx
+  SymmetricAlgebra.liftOfCommute
+    ⟨(generator G).comp (parityGrading G.piece 0).subtype, fun x _ =>
+      commute_of_mem_parityGrading_zero G (generator_mem_parityGrading G x.2) _⟩
 
 /-- `fromSymmetricEven` sends a symmetric-algebra generator to the corresponding generator of
 `SignedSym G`. -/
 @[simp]
 theorem fromSymmetricEven_ι (x : parityGrading G.piece 0) :
-    fromSymmetricEven G (SymmetricAlgebra.ι R (parityGrading G.piece 0) x) = generator G x := by
-  simp only [fromSymmetricEven, AlgHom.comp_apply, SymmetricAlgebra.lift_ι_apply,
-    Subalgebra.coe_val]
-  exact LinearMap.coe_restrict_apply _ x
-
-/-- Every element in the image of `fromSymmetricEven` lies in the center of `SignedSym G`. -/
-theorem fromSymmetricEven_mem_center (s : SymmetricAlgebra R (parityGrading G.piece 0)) :
-    fromSymmetricEven G s ∈ Subalgebra.center R (SignedSym G) := by
-  simp [fromSymmetricEven]
-
-/-- Every element in the image of `fromSymmetricEven` commutes with all of `SignedSym G`. -/
-theorem commute_fromSymmetricEven (s : SymmetricAlgebra R (parityGrading G.piece 0))
-    (a : SignedSym G) : Commute (fromSymmetricEven G s) a :=
-  (Subalgebra.mem_center_iff.mp (fromSymmetricEven_mem_center G s) a).symm
+    fromSymmetricEven G (SymmetricAlgebra.ι R (parityGrading G.piece 0) x) = generator G x :=
+  SymmetricAlgebra.liftOfCommute_ι_apply _ _ x
 
 /-- Every element in the image of `fromSymmetricEven` has even parity. -/
 theorem fromSymmetricEven_mem_parityGrading_zero
@@ -165,6 +124,16 @@ theorem fromSymmetricEven_mem_parityGrading_zero
     rw [map_add]
     exact add_mem ha hb
 
+/-- Every element in the image of `fromSymmetricEven` lies in the center of `SignedSym G`. -/
+theorem fromSymmetricEven_mem_center (s : SymmetricAlgebra R (parityGrading G.piece 0)) :
+    fromSymmetricEven G s ∈ Subalgebra.center R (SignedSym G) :=
+  mem_center_of_mem_parityGrading_zero G (fromSymmetricEven_mem_parityGrading_zero G s)
+
+/-- Every element in the image of `fromSymmetricEven` commutes with all of `SignedSym G`. -/
+theorem commute_fromSymmetricEven (s : SymmetricAlgebra R (parityGrading G.piece 0))
+    (a : SignedSym G) : Commute (fromSymmetricEven G s) a :=
+  commute_of_mem_parityGrading_zero G (fromSymmetricEven_mem_parityGrading_zero G s) a
+
 /-- `fromSymmetricEven` carries homogeneous polynomials of degree `n` into word length `n`. -/
 theorem fromSymmetricEven_mem_lengthPiece {n : ℕ}
     {s : SymmetricAlgebra R (parityGrading G.piece 0)}
@@ -172,25 +141,23 @@ theorem fromSymmetricEven_mem_lengthPiece {n : ℕ}
     fromSymmetricEven G s ∈ lengthPiece G n := by
   rw [TauCeti.SymmetricAlgebra.homogeneousSubmodule] at hs
   rw [lengthPiece_def]
-  exact algHom_mem_pow_of_mem_pow (fromSymmetricEven G)
+  exact Submodule.algHom_mem_pow_of_mem_pow (fromSymmetricEven G)
     (by rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩; exact ⟨x.1, by simp⟩) hs
 
 /-- The algebra projection from `SignedSym G` onto the symmetric algebra of the even part of `V`,
 sending odd-parity generators to zero. No invertibility of `2` is needed. -/
 noncomputable def toSymmetricEven :
     SignedSym G →ₐ[R] SymmetricAlgebra R (parityGrading G.piece 0) :=
-  lift G ((SymmetricAlgebra.ι R (parityGrading G.piece 0)).comp (parityComponent G 0)) <| by
-    intro p q x y hx hy
-    simp only [LinearMap.comp_apply, parityComponent_apply]
+  lift G ((SymmetricAlgebra.ι R (parityGrading G.piece 0)).comp
+      (homogeneousProj (parityGrading G.piece) 0)) <| by
+    intro p q x y hx _
+    simp only [LinearMap.comp_apply, homogeneousProj_apply]
     have hx' : x ∈ parityGrading G.piece (p : ZMod 2) := mem_parityGrading_of_mem hx
-    have hy' : y ∈ parityGrading G.piece (q : ZMod 2) := mem_parityGrading_of_mem hy
     by_cases hp : (p : ZMod 2) = 0
-    · by_cases hq : (q : ZMod 2) = 0
-      · have hsign : (p * q).negOnePow = 1 := by
-          rw [← uzpow_intCast_eq_negOnePow, Int.cast_mul, hp, hq, mul_zero, uzpow_zero]
-        rw [hsign, Units.val_one, one_smul, mul_comm]
-      · rw [decompose_parityGrading_of_mem_ne G hy' hq, map_zero, mul_zero, zero_mul, smul_zero]
-    · rw [decompose_parityGrading_of_mem_ne G hx' hp, map_zero, zero_mul, mul_zero, smul_zero]
+    · have hsign : (p * q).negOnePow = 1 := by
+        rw [← uzpow_intCast_eq_negOnePow, Int.cast_mul, hp, zero_mul, uzpow_zero]
+      rw [hsign, Units.val_one, one_smul, mul_comm]
+    · simp [decompose_apply_of_mem_ne (parityGrading G.piece) hx' hp]
 
 /-- On generators, `toSymmetricEven` projects onto the even parity component. -/
 @[simp]
@@ -201,15 +168,18 @@ theorem toSymmetricEven_generator (x : V) :
   simp [toSymmetricEven]
 
 /-- On an even-parity generator, `toSymmetricEven` is the canonical symmetric-algebra generator. -/
-theorem toSymmetricEven_generator_of_mem_zero {x : V} (hx : x ∈ parityGrading G.piece 0) :
+theorem toSymmetricEven_generator_of_mem_parityGrading_zero {x : V}
+    (hx : x ∈ parityGrading G.piece 0) :
     toSymmetricEven G (generator G x) =
       SymmetricAlgebra.ι R (parityGrading G.piece 0) ⟨x, hx⟩ := by
-  rw [toSymmetricEven_generator, decompose_parityGrading_of_mem_same G hx]
+  rw [toSymmetricEven_generator, decompose_apply_of_mem_same (parityGrading G.piece) hx]
 
 /-- `toSymmetricEven` annihilates odd-parity generators. -/
-theorem toSymmetricEven_generator_of_mem_one {x : V} (hx : x ∈ parityGrading G.piece 1) :
+theorem toSymmetricEven_generator_of_mem_parityGrading_one {x : V}
+    (hx : x ∈ parityGrading G.piece 1) :
     toSymmetricEven G (generator G x) = 0 := by
-  rw [toSymmetricEven_generator, decompose_parityGrading_of_mem_ne G hx (by decide), map_zero]
+  rw [toSymmetricEven_generator,
+    decompose_apply_of_mem_ne (parityGrading G.piece) hx (by decide), map_zero]
 
 /-- Over any commutative ring, `toSymmetricEven` preserves word length. -/
 theorem toSymmetricEven_mem_homogeneousSubmodule {n : ℕ} {a : SignedSym G}
@@ -218,7 +188,7 @@ theorem toSymmetricEven_mem_homogeneousSubmodule {n : ℕ} {a : SignedSym G}
       TauCeti.SymmetricAlgebra.homogeneousSubmodule R (parityGrading G.piece 0) n := by
   rw [lengthPiece_def] at ha
   rw [TauCeti.SymmetricAlgebra.homogeneousSubmodule]
-  exact algHom_mem_pow_of_mem_pow (toSymmetricEven G)
+  exact Submodule.algHom_mem_pow_of_mem_pow (toSymmetricEven G)
     (by
       rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
       exact ⟨DirectSum.decompose (parityGrading G.piece) x 0, by simp⟩)
@@ -230,7 +200,7 @@ theorem toSymmetricEven_comp_fromSymmetricEven :
     (toSymmetricEven G).comp (fromSymmetricEven G) =
       AlgHom.id R (SymmetricAlgebra R (parityGrading G.piece 0)) := by
   ext x
-  simp [toSymmetricEven_generator_of_mem_zero G x.2]
+  simp [toSymmetricEven_generator_of_mem_parityGrading_zero G x.2]
 
 /-- Applying `toSymmetricEven` after `fromSymmetricEven` recovers the original element. -/
 @[simp]
@@ -259,9 +229,10 @@ sending even-parity generators to zero. Exterior generators square to zero and h
 over any commutative ring, so no invertibility of `2` is needed. -/
 noncomputable def toExteriorOdd :
     SignedSym G →ₐ[R] ExteriorAlgebra R (parityGrading G.piece 1) :=
-  lift G ((ExteriorAlgebra.ι R (M := parityGrading G.piece 1)).comp (parityComponent G 1)) <| by
+  lift G ((ExteriorAlgebra.ι R (M := parityGrading G.piece 1)).comp
+      (homogeneousProj (parityGrading G.piece) 1)) <| by
     intro p q x y hx hy
-    simp only [LinearMap.comp_apply, parityComponent_apply]
+    simp only [LinearMap.comp_apply, homogeneousProj_apply]
     have hx' : x ∈ parityGrading G.piece (p : ZMod 2) := mem_parityGrading_of_mem hx
     have hy' : y ∈ parityGrading G.piece (q : ZMod 2) := mem_parityGrading_of_mem hy
     by_cases hp : (p : ZMod 2) = 1
@@ -270,8 +241,8 @@ noncomputable def toExteriorOdd :
           rw [← uzpow_intCast_eq_negOnePow, Int.cast_mul, hp, hq, mul_one, uzpow_one]
         rw [hsign, Units.val_neg, Units.val_one, neg_smul, one_smul]
         exact eq_neg_of_add_eq_zero_left (ExteriorAlgebra.ι_add_mul_swap _ _)
-      · rw [decompose_parityGrading_of_mem_ne G hy' hq, map_zero, mul_zero, zero_mul, smul_zero]
-    · rw [decompose_parityGrading_of_mem_ne G hx' hp, map_zero, zero_mul, mul_zero, smul_zero]
+      · simp [decompose_apply_of_mem_ne (parityGrading G.piece) hy' hq]
+    · simp [decompose_apply_of_mem_ne (parityGrading G.piece) hx' hp]
 
 /-- On generators, `toExteriorOdd` projects onto the odd parity component. -/
 @[simp]
@@ -281,14 +252,17 @@ theorem toExteriorOdd_generator (x : V) :
   simp [toExteriorOdd]
 
 /-- `toExteriorOdd` annihilates even-parity generators. -/
-theorem toExteriorOdd_generator_of_mem_zero {x : V} (hx : x ∈ parityGrading G.piece 0) :
+theorem toExteriorOdd_generator_of_mem_parityGrading_zero {x : V}
+    (hx : x ∈ parityGrading G.piece 0) :
     toExteriorOdd G (generator G x) = 0 := by
-  rw [toExteriorOdd_generator, decompose_parityGrading_of_mem_ne G hx (by decide), map_zero]
+  rw [toExteriorOdd_generator,
+    decompose_apply_of_mem_ne (parityGrading G.piece) hx (by decide), map_zero]
 
 /-- On an odd-parity generator, `toExteriorOdd` is the canonical exterior-algebra generator. -/
-theorem toExteriorOdd_generator_of_mem_one {x : V} (hx : x ∈ parityGrading G.piece 1) :
+theorem toExteriorOdd_generator_of_mem_parityGrading_one {x : V}
+    (hx : x ∈ parityGrading G.piece 1) :
     toExteriorOdd G (generator G x) = ExteriorAlgebra.ι R ⟨x, hx⟩ := by
-  rw [toExteriorOdd_generator, decompose_parityGrading_of_mem_same G hx]
+  rw [toExteriorOdd_generator, decompose_apply_of_mem_same (parityGrading G.piece) hx]
 
 /-- Over any commutative ring, `toExteriorOdd` carries word length `n` into the `n`-th exterior
 power. -/
@@ -297,7 +271,7 @@ theorem toExteriorOdd_mem_exteriorPower {n : ℕ} {a : SignedSym G}
     toExteriorOdd G a ∈ ⋀[R]^n (parityGrading G.piece 1) := by
   rw [lengthPiece_def] at ha
   rw [_root_.ExteriorAlgebra.exteriorPower]
-  exact algHom_mem_pow_of_mem_pow (toExteriorOdd G)
+  exact Submodule.algHom_mem_pow_of_mem_pow (toExteriorOdd G)
     (by
       rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
       exact ⟨DirectSum.decompose (parityGrading G.piece) x 1, by simp⟩)
@@ -325,10 +299,10 @@ theorem toExteriorOdd_mem_parityGrading {k : ZMod 2} {a : SignedSym G}
     have hx' : x ∈ parityGrading G.piece (q : ZMod 2) := mem_parityGrading_of_mem hx
     rcases (by decide : ∀ j : ZMod 2, j = 0 ∨ j = 1) (q : ZMod 2) with hq | hq
     · rw [hq] at hx' ⊢
-      rw [toExteriorOdd_generator_of_mem_zero G hx']
+      rw [toExteriorOdd_generator_of_mem_parityGrading_zero G hx']
       exact zero_mem _
     · rw [hq] at hx' ⊢
-      rw [toExteriorOdd_generator_of_mem_one G hx']
+      rw [toExteriorOdd_generator_of_mem_parityGrading_one G hx']
       exact mem_parityGrading_of_mem
         (TauCeti.ExteriorAlgebra.ι_mem_integerGrading_one (R := R)
           (⟨x, hx'⟩ : parityGrading G.piece 1))
@@ -355,7 +329,7 @@ theorem toExteriorOdd_comp_fromExteriorOdd [Invertible (2 : R)] :
     (toExteriorOdd G).comp (fromExteriorOdd G) =
       AlgHom.id R (ExteriorAlgebra R (parityGrading G.piece 1)) := by
   ext x
-  simp [toExteriorOdd_generator_of_mem_one G x.2]
+  simp [toExteriorOdd_generator_of_mem_parityGrading_one G x.2]
 
 /-- Applying `toExteriorOdd` after `fromExteriorOdd` recovers the original exterior element. -/
 @[simp]
@@ -377,7 +351,7 @@ theorem fromExteriorOdd_mem_lengthPiece [Invertible (2 : R)] {n : ℕ}
     fromExteriorOdd G e ∈ lengthPiece G n := by
   rw [_root_.ExteriorAlgebra.exteriorPower] at he
   rw [lengthPiece_def]
-  exact algHom_mem_pow_of_mem_pow (fromExteriorOdd G)
+  exact Submodule.algHom_mem_pow_of_mem_pow (fromExteriorOdd G)
     (by rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩; exact ⟨x.1, by simp⟩) he
 
 /-- When `2` is invertible, membership of `fromExteriorOdd G e` in `lengthPiece G n` is
@@ -389,50 +363,6 @@ theorem fromExteriorOdd_mem_lengthPiece_iff [Invertible (2 : R)] {n : ℕ}
   ⟨fun h => by simpa using toExteriorOdd_mem_exteriorPower G h,
     fromExteriorOdd_mem_lengthPiece G⟩
 
-/-- `fromExteriorOdd` preserves parity with respect to the integer grading of the exterior
-algebra. -/
-theorem fromExteriorOdd_mem_parityGrading [Invertible (2 : R)] {k : ZMod 2}
-    {e : ExteriorAlgebra R (parityGrading G.piece 1)}
-    (he : e ∈ parityGrading
-      (TauCeti.ExteriorAlgebra.integerGrading R (parityGrading G.piece 1)) k) :
-    fromExteriorOdd G e ∈ parityGrading (signedSymPiece G) k := by
-  refine coarsenGrading_induction he (fun p hp a ha => ?_) (by simp) fun x y hx hy => by
-    rw [map_add]; exact add_mem hx hy
-  rcases lt_or_ge p 0 with hpneg | hpnonneg
-  · rw [TauCeti.ExteriorAlgebra.integerGrading_of_neg hpneg, Submodule.mem_bot] at ha
-    simp [ha]
-  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hpnonneg
-  rw [TauCeti.ExteriorAlgebra.integerGrading_natCast,
-    _root_.ExteriorAlgebra.exteriorPower] at ha
-  rw [← hp]
-  have hn : ∀ {m : ℕ} {b : ExteriorAlgebra R (parityGrading G.piece 1)},
-      b ∈ LinearMap.range (ExteriorAlgebra.ι R) ^ m →
-        fromExteriorOdd G b ∈ parityGrading (signedSymPiece G) (m : ZMod 2) := by
-    intro m b hb
-    induction hb using Submodule.pow_induction_on_left' with
-    | algebraMap r =>
-      rw [AlgHom.commutes, Algebra.algebraMap_eq_smul_one, Nat.cast_zero]
-      exact Submodule.smul_mem _ r (SetLike.one_mem_graded (parityGrading (signedSymPiece G)))
-    | add x y l _ _ hx hy =>
-      rw [map_add]
-      exact add_mem hx hy
-    | mem_mul u hu l y _ hy =>
-      obtain ⟨x, rfl⟩ := hu
-      rw [map_mul, fromExteriorOdd_ι, Nat.cast_succ, add_comm _ (1 : ZMod 2)]
-      exact SetLike.mul_mem_graded (generator_mem_parityGrading G x.2) hy
-  exact hn ha
-
-/-- When `2` is invertible, `fromExteriorOdd G e` has parity `k` if and only if `e` has parity `k`
-with respect to the integer grading of the exterior algebra. -/
-@[simp]
-theorem fromExteriorOdd_mem_parityGrading_iff [Invertible (2 : R)] {k : ZMod 2}
-    {e : ExteriorAlgebra R (parityGrading G.piece 1)} :
-    fromExteriorOdd G e ∈ parityGrading (signedSymPiece G) k ↔
-      e ∈ parityGrading
-        (TauCeti.ExteriorAlgebra.integerGrading R (parityGrading G.piece 1)) k :=
-  ⟨fun h => by simpa using toExteriorOdd_mem_parityGrading G h,
-    fromExteriorOdd_mem_parityGrading G⟩
-
 /-! ### The tensor product comparison and algebra equivalence -/
 
 private noncomputable def symTensorExteriorGenerator :
@@ -440,29 +370,32 @@ private noncomputable def symTensorExteriorGenerator :
       SymmetricAlgebra R (parityGrading G.piece 0) ⊗[R]
         ExteriorAlgebra R (parityGrading G.piece 1) :=
   Algebra.TensorProduct.includeLeft.toLinearMap.comp
-      ((SymmetricAlgebra.ι R (parityGrading G.piece 0)).comp (parityComponent G 0)) +
+      ((SymmetricAlgebra.ι R (parityGrading G.piece 0)).comp
+        (homogeneousProj (parityGrading G.piece) 0)) +
     Algebra.TensorProduct.includeRight.toLinearMap.comp
-      ((ExteriorAlgebra.ι R (M := parityGrading G.piece 1)).comp (parityComponent G 1))
+      ((ExteriorAlgebra.ι R (M := parityGrading G.piece 1)).comp
+        (homogeneousProj (parityGrading G.piece) 1))
 
-private theorem symTensorExteriorGenerator_of_mem_zero {x : V}
+private theorem symTensorExteriorGenerator_of_mem_parityGrading_zero {x : V}
     (hx : x ∈ parityGrading G.piece 0) :
     symTensorExteriorGenerator G x =
       SymmetricAlgebra.ι R (parityGrading G.piece 0) ⟨x, hx⟩ ⊗ₜ[R] 1 := by
   simp only [symTensorExteriorGenerator, LinearMap.add_apply, LinearMap.comp_apply,
     AlgHom.toLinearMap_apply, Algebra.TensorProduct.includeLeft_apply,
-    Algebra.TensorProduct.includeRight_apply, parityComponent_apply]
-  rw [decompose_parityGrading_of_mem_same G hx,
-    decompose_parityGrading_of_mem_ne G hx (by decide), map_zero, TensorProduct.tmul_zero,
-    add_zero]
+    Algebra.TensorProduct.includeRight_apply, homogeneousProj_apply]
+  rw [decompose_apply_of_mem_same (parityGrading G.piece) hx,
+    decompose_apply_of_mem_ne (parityGrading G.piece) hx (by decide), map_zero,
+    TensorProduct.tmul_zero, add_zero]
 
-private theorem symTensorExteriorGenerator_of_mem_one {x : V}
+private theorem symTensorExteriorGenerator_of_mem_parityGrading_one {x : V}
     (hx : x ∈ parityGrading G.piece 1) :
     symTensorExteriorGenerator G x = 1 ⊗ₜ[R] ExteriorAlgebra.ι R ⟨x, hx⟩ := by
   simp only [symTensorExteriorGenerator, LinearMap.add_apply, LinearMap.comp_apply,
     AlgHom.toLinearMap_apply, Algebra.TensorProduct.includeLeft_apply,
-    Algebra.TensorProduct.includeRight_apply, parityComponent_apply]
-  rw [decompose_parityGrading_of_mem_ne G hx (by decide),
-    decompose_parityGrading_of_mem_same G hx, map_zero, TensorProduct.zero_tmul, zero_add]
+    Algebra.TensorProduct.includeRight_apply, homogeneousProj_apply]
+  rw [decompose_apply_of_mem_ne (parityGrading G.piece) hx (by decide),
+    decompose_apply_of_mem_same (parityGrading G.piece) hx, map_zero,
+    TensorProduct.zero_tmul, zero_add]
 
 /-- The comparison algebra homomorphism from `SignedSym G` to
 `SymmetricAlgebra R (parityGrading G.piece 0) ⊗[R] ExteriorAlgebra R (parityGrading G.piece 1)`,
@@ -480,28 +413,20 @@ noncomputable def toSymTensorExterior :
     rcases (by decide : ∀ k : ZMod 2, k = 0 ∨ k = 1) (p : ZMod 2) with hp | hp <;>
       rcases (by decide : ∀ k : ZMod 2, k = 0 ∨ k = 1) (q : ZMod 2) with hq | hq
     · rw [hp] at hx'; rw [hq] at hy'
-      rw [hp, hq, mul_zero, uzpow_zero, Units.val_one, one_smul,
-        symTensorExteriorGenerator_of_mem_zero G hx',
-        symTensorExteriorGenerator_of_mem_zero G hy',
-        Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_comm]
+      simp [hp, hq, symTensorExteriorGenerator_of_mem_parityGrading_zero G hx',
+        symTensorExteriorGenerator_of_mem_parityGrading_zero G hy', mul_comm]
     · rw [hp] at hx'; rw [hq] at hy'
-      rw [hp, hq, zero_mul, uzpow_zero, Units.val_one, one_smul,
-        symTensorExteriorGenerator_of_mem_zero G hx',
-        symTensorExteriorGenerator_of_mem_one G hy',
-        Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
-        mul_one, one_mul, one_mul, mul_one]
+      simp [hp, hq, symTensorExteriorGenerator_of_mem_parityGrading_zero G hx',
+        symTensorExteriorGenerator_of_mem_parityGrading_one G hy']
     · rw [hp] at hx'; rw [hq] at hy'
-      rw [hp, hq, mul_zero, uzpow_zero, Units.val_one, one_smul,
-        symTensorExteriorGenerator_of_mem_one G hx',
-        symTensorExteriorGenerator_of_mem_zero G hy',
-        Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
-        one_mul, mul_one, mul_one, one_mul]
+      simp [hp, hq, symTensorExteriorGenerator_of_mem_parityGrading_one G hx',
+        symTensorExteriorGenerator_of_mem_parityGrading_zero G hy']
     · rw [hp] at hx'; rw [hq] at hy'
-      rw [hp, hq, mul_one, uzpow_one, Units.val_neg, Units.val_one, neg_smul, one_smul,
-        symTensorExteriorGenerator_of_mem_one G hx',
-        symTensorExteriorGenerator_of_mem_one G hy',
-        Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one,
+      rw [symTensorExteriorGenerator_of_mem_parityGrading_one G hx',
+        symTensorExteriorGenerator_of_mem_parityGrading_one G hy',
+        Algebra.TensorProduct.tmul_mul_tmul,
         eq_neg_of_add_eq_zero_left (ExteriorAlgebra.ι_add_mul_swap _ _), TensorProduct.tmul_neg]
+      simp [hp, hq]
 
 /-- `toSymTensorExterior` splits a generator into its even symmetric and odd exterior parts. -/
 @[simp]
@@ -513,18 +438,17 @@ theorem toSymTensorExterior_generator (x : V) :
   simp [toSymTensorExterior, symTensorExteriorGenerator]
 
 /-- On an even-parity generator, `toSymTensorExterior` lands in the left tensor factor. -/
-theorem toSymTensorExterior_generator_of_mem_zero {x : V} (hx : x ∈ parityGrading G.piece 0) :
+theorem toSymTensorExterior_generator_of_mem_parityGrading_zero {x : V}
+    (hx : x ∈ parityGrading G.piece 0) :
     toSymTensorExterior G (generator G x) =
-      SymmetricAlgebra.ι R (parityGrading G.piece 0) ⟨x, hx⟩ ⊗ₜ[R] 1 := by
-  rw [toSymTensorExterior_generator, decompose_parityGrading_of_mem_same G hx,
-    decompose_parityGrading_of_mem_ne G hx (by decide), map_zero, TensorProduct.tmul_zero,
-    add_zero]
+      SymmetricAlgebra.ι R (parityGrading G.piece 0) ⟨x, hx⟩ ⊗ₜ[R] 1 :=
+  (lift_generator G _ _ x).trans (symTensorExteriorGenerator_of_mem_parityGrading_zero G hx)
 
 /-- On an odd-parity generator, `toSymTensorExterior` lands in the right tensor factor. -/
-theorem toSymTensorExterior_generator_of_mem_one {x : V} (hx : x ∈ parityGrading G.piece 1) :
-    toSymTensorExterior G (generator G x) = 1 ⊗ₜ[R] ExteriorAlgebra.ι R ⟨x, hx⟩ := by
-  rw [toSymTensorExterior_generator, decompose_parityGrading_of_mem_ne G hx (by decide),
-    decompose_parityGrading_of_mem_same G hx, map_zero, TensorProduct.zero_tmul, zero_add]
+theorem toSymTensorExterior_generator_of_mem_parityGrading_one {x : V}
+    (hx : x ∈ parityGrading G.piece 1) :
+    toSymTensorExterior G (generator G x) = 1 ⊗ₜ[R] ExteriorAlgebra.ι R ⟨x, hx⟩ :=
+  (lift_generator G _ _ x).trans (symTensorExteriorGenerator_of_mem_parityGrading_one G hx)
 
 /-- `toSymTensorExterior` embeds `fromSymmetricEven` as the left tensor inclusion `s ↦ s ⊗ₜ 1`,
 over any commutative ring. -/
@@ -532,7 +456,7 @@ over any commutative ring. -/
 theorem toSymTensorExterior_comp_fromSymmetricEven :
     (toSymTensorExterior G).comp (fromSymmetricEven G) = Algebra.TensorProduct.includeLeft := by
   ext x
-  simp [toSymTensorExterior_generator_of_mem_zero G x.2]
+  simp [toSymTensorExterior_generator_of_mem_parityGrading_zero G x.2]
 
 /-- Pointwise form of `toSymTensorExterior_comp_fromSymmetricEven`. -/
 @[simp]
@@ -547,7 +471,7 @@ inclusion `e ↦ 1 ⊗ₜ e`. -/
 theorem toSymTensorExterior_comp_fromExteriorOdd [Invertible (2 : R)] :
     (toSymTensorExterior G).comp (fromExteriorOdd G) = Algebra.TensorProduct.includeRight := by
   ext x
-  simp [toSymTensorExterior_generator_of_mem_one G x.2]
+  simp [toSymTensorExterior_generator_of_mem_parityGrading_one G x.2]
 
 /-- Pointwise form of `toSymTensorExterior_comp_fromExteriorOdd`. -/
 @[simp]
@@ -596,7 +520,7 @@ theorem fromSymTensorExterior_comp_toSymTensorExterior [Invertible (2 : R)] :
   ext x
   simp only [AlgHom.comp_apply, AlgHom.id_apply, toSymTensorExterior_generator, map_add,
     fromSymTensorExterior_tmul, map_one, mul_one, one_mul, fromSymmetricEven_ι, fromExteriorOdd_ι]
-  rw [← map_add, decompose_zero_add_one]
+  rw [← map_add, coe_decompose_zero_add_coe_decompose_one]
 
 /-- Pointwise form of `fromSymTensorExterior_comp_toSymTensorExterior`. -/
 @[simp]
@@ -611,12 +535,12 @@ theorem toSymTensorExterior_comp_fromSymTensorExterior [Invertible (2 : R)] :
     (toSymTensorExterior G).comp (fromSymTensorExterior G) =
       AlgHom.id R
         (SymmetricAlgebra R (parityGrading G.piece 0) ⊗[R]
-          ExteriorAlgebra R (parityGrading G.piece 1)) := by
+           ExteriorAlgebra R (parityGrading G.piece 1)) := by
   apply Algebra.TensorProduct.ext
   · ext x
-    simp [toSymTensorExterior_generator_of_mem_zero G x.2]
+    simp [toSymTensorExterior_generator_of_mem_parityGrading_zero G x.2]
   · ext x
-    simp [toSymTensorExterior_generator_of_mem_one G x.2]
+    simp [toSymTensorExterior_generator_of_mem_parityGrading_one G x.2]
 
 /-- Pointwise form of `toSymTensorExterior_comp_fromSymTensorExterior`. -/
 @[simp]
@@ -660,21 +584,12 @@ theorem symTensorExteriorEquiv_symm_apply [Invertible (2 : R)]
 /-! ### Module freeness -/
 
 /-- When `2` is invertible and both parity summands of `V` are free `R`-modules, `SignedSym G` is
-a free `R`-module. -/
+a free `R`-module. In particular, this applies automatically when every graded piece `G.piece p`
+is free, via `TauCeti.instModuleFreeCoarsenGrading`. -/
 instance instModuleFree [Invertible (2 : R)]
     [Module.Free R (parityGrading G.piece 0)] [Module.Free R (parityGrading G.piece 1)] :
     Module.Free R (SignedSym G) :=
   Module.Free.of_equiv (symTensorExteriorEquiv G).symm.toLinearEquiv
-
-/-- When `2` is invertible and every homogeneous piece `G.piece p` is a free `R`-module,
-`SignedSym G` is a free `R`-module. -/
-theorem free_of_free_piece [Invertible (2 : R)] [∀ p, Module.Free R (G.piece p)] :
-    Module.Free R (SignedSym G) := by
-  have : Module.Free R (parityGrading G.piece 0) :=
-    Module.Free.of_equiv (coarsenGradingEquiv G.piece (Int.castAddHom (ZMod 2)) 0)
-  have : Module.Free R (parityGrading G.piece 1) :=
-    Module.Free.of_equiv (coarsenGradingEquiv G.piece (Int.castAddHom (ZMod 2)) 1)
-  exact inferInstance
 
 /-! ### Word-length and parity compatibility -/
 
@@ -706,7 +621,7 @@ private theorem exists_toSymTensorExterior_eq_one_tmul {j : ℕ}
         SetLike.mul_mem_graded (generator_mem_lengthPiece G x.1) hb_len
     · rw [Nat.cast_succ, add_comm _ (1 : ZMod 2)]
       exact SetLike.mul_mem_graded (generator_mem_parityGrading G x.2) hb_par
-    · rw [map_mul, toSymTensorExterior_generator_of_mem_one G x.2, hb_eq,
+    · rw [map_mul, toSymTensorExterior_generator_of_mem_parityGrading_one G x.2, hb_eq,
         Algebra.TensorProduct.tmul_mul_tmul, mul_one]
 
 /-- Over any commutative ring, `toSymTensorExterior` maps the word-length-`n` submodule onto the
@@ -781,6 +696,39 @@ theorem toSymTensorExterior_mem_iSup_map₂_homogeneousSubmodule_exteriorPower {
   rw [← map_lengthPiece_toSymTensorExterior G n, ← AlgHom.toLinearMap_apply]
   exact Submodule.mem_map_of_mem ha
 
+/-- When `2` is invertible, `toSymTensorExterior G a` lies in the sum of the bidegree `(i, j)`
+symmetric-exterior tensor pieces with `i + j = n` if and only if `a ∈ lengthPiece G n`. -/
+@[simp]
+theorem toSymTensorExterior_mem_iSup_map₂_homogeneousSubmodule_exteriorPower_iff
+    [Invertible (2 : R)] {n : ℕ} {a : SignedSym G} :
+    toSymTensorExterior G a ∈
+        (⨆ (i : ℕ) (j : ℕ) (_ : i + j = n),
+          Submodule.map₂
+            (TensorProduct.mk R (SymmetricAlgebra R (parityGrading G.piece 0))
+              (ExteriorAlgebra R (parityGrading G.piece 1)))
+            (TauCeti.SymmetricAlgebra.homogeneousSubmodule R (parityGrading G.piece 0) i)
+            (⋀[R]^j (parityGrading G.piece 1))) ↔
+      a ∈ lengthPiece G n := by
+  rw [← symTensorExteriorEquiv_apply G a, ← map_lengthPiece_toSymTensorExterior G n,
+    ← symTensorExteriorEquiv_toLinearMap G, ← AlgEquiv.toLinearEquiv_toLinearMap,
+    Submodule.mem_map_equiv, ← AlgEquiv.toLinearEquiv_apply, LinearEquiv.symm_apply_apply]
+
+/-- When `2` is invertible, `fromSymTensorExterior G z` has word length `n` if and only if `z`
+lies in the sum of the bidegree `(i, j)` symmetric-exterior tensor pieces with `i + j = n`. -/
+@[simp]
+theorem fromSymTensorExterior_mem_lengthPiece_iff [Invertible (2 : R)] {n : ℕ}
+    {z : SymmetricAlgebra R (parityGrading G.piece 0) ⊗[R]
+      ExteriorAlgebra R (parityGrading G.piece 1)} :
+    fromSymTensorExterior G z ∈ lengthPiece G n ↔
+      z ∈ ⨆ (i : ℕ) (j : ℕ) (_ : i + j = n),
+        Submodule.map₂
+          (TensorProduct.mk R (SymmetricAlgebra R (parityGrading G.piece 0))
+            (ExteriorAlgebra R (parityGrading G.piece 1)))
+          (TauCeti.SymmetricAlgebra.homogeneousSubmodule R (parityGrading G.piece 0) i)
+          (⋀[R]^j (parityGrading G.piece 1)) := by
+  rw [← toSymTensorExterior_mem_iSup_map₂_homogeneousSubmodule_exteriorPower_iff G,
+    toSymTensorExterior_fromSymTensorExterior]
+
 private theorem toSymTensorExterior_mem_parity_of_mem_signedSymPiece {p : ℤ} {a : SignedSym G}
     (ha : a ∈ signedSymPiece G p) :
     toSymTensorExterior G a ∈
@@ -806,12 +754,12 @@ private theorem toSymTensorExterior_mem_parity_of_mem_signedSymPiece {p : ℤ} {
     have hx' : x ∈ parityGrading G.piece (q : ZMod 2) := mem_parityGrading_of_mem hx
     rcases (by decide : ∀ j : ZMod 2, j = 0 ∨ j = 1) (q : ZMod 2) with hq | hq
     · rw [hq] at hx' ⊢
-      rw [toSymTensorExterior_generator_of_mem_zero G hx']
+      rw [toSymTensorExterior_generator_of_mem_parityGrading_zero G hx']
       exact Submodule.apply_mem_map₂ _ Submodule.mem_top
         (SetLike.one_mem_graded (parityGrading
           (TauCeti.ExteriorAlgebra.integerGrading R (parityGrading G.piece 1))))
     · rw [hq] at hx' ⊢
-      rw [toSymTensorExterior_generator_of_mem_one G hx']
+      rw [toSymTensorExterior_generator_of_mem_parityGrading_one G hx']
       exact Submodule.apply_mem_map₂ _ Submodule.mem_top <|
         mem_parityGrading_of_mem
           (TauCeti.ExteriorAlgebra.ι_mem_integerGrading_one (R := R)
@@ -868,6 +816,58 @@ theorem toSymTensorExterior_mem_map₂_top_parityGrading {k : ZMod 2} {a : Signe
           (TauCeti.ExteriorAlgebra.integerGrading R (parityGrading G.piece 1)) k) := by
   rw [← map_parityGrading_toSymTensorExterior G k, ← AlgHom.toLinearMap_apply]
   exact Submodule.mem_map_of_mem ha
+
+/-- When `2` is invertible, `toSymTensorExterior G a` lies in the submodule of tensors whose
+exterior factor has parity `k` if and only if `a ∈ parityGrading (signedSymPiece G) k`. -/
+@[simp]
+theorem toSymTensorExterior_mem_map₂_top_parityGrading_iff [Invertible (2 : R)]
+    {k : ZMod 2} {a : SignedSym G} :
+    toSymTensorExterior G a ∈
+        Submodule.map₂
+          (TensorProduct.mk R (SymmetricAlgebra R (parityGrading G.piece 0))
+            (ExteriorAlgebra R (parityGrading G.piece 1)))
+          ⊤ (parityGrading
+            (TauCeti.ExteriorAlgebra.integerGrading R (parityGrading G.piece 1)) k) ↔
+      a ∈ parityGrading (signedSymPiece G) k := by
+  rw [← symTensorExteriorEquiv_apply G a, ← map_parityGrading_toSymTensorExterior G k,
+    ← symTensorExteriorEquiv_toLinearMap G, ← AlgEquiv.toLinearEquiv_toLinearMap,
+    Submodule.mem_map_equiv, ← AlgEquiv.toLinearEquiv_apply, LinearEquiv.symm_apply_apply]
+
+/-- When `2` is invertible, `fromSymTensorExterior G z` has parity `k` if and only if `z` lies in
+the submodule of tensors whose exterior factor has parity `k`. -/
+@[simp]
+theorem fromSymTensorExterior_mem_parityGrading_iff [Invertible (2 : R)] {k : ZMod 2}
+    {z : SymmetricAlgebra R (parityGrading G.piece 0) ⊗[R]
+      ExteriorAlgebra R (parityGrading G.piece 1)} :
+    fromSymTensorExterior G z ∈ parityGrading (signedSymPiece G) k ↔
+      z ∈ Submodule.map₂
+        (TensorProduct.mk R (SymmetricAlgebra R (parityGrading G.piece 0))
+          (ExteriorAlgebra R (parityGrading G.piece 1)))
+        ⊤ (parityGrading
+          (TauCeti.ExteriorAlgebra.integerGrading R (parityGrading G.piece 1)) k) := by
+  rw [← toSymTensorExterior_mem_map₂_top_parityGrading_iff G,
+    toSymTensorExterior_fromSymTensorExterior]
+
+/-- `fromExteriorOdd` preserves parity with respect to the integer grading of the exterior
+algebra. -/
+theorem fromExteriorOdd_mem_parityGrading [Invertible (2 : R)] {k : ZMod 2}
+    {e : ExteriorAlgebra R (parityGrading G.piece 1)}
+    (he : e ∈ parityGrading
+      (TauCeti.ExteriorAlgebra.integerGrading R (parityGrading G.piece 1)) k) :
+    fromExteriorOdd G e ∈ parityGrading (signedSymPiece G) k := by
+  rw [← toSymTensorExterior_mem_map₂_top_parityGrading_iff G, toSymTensorExterior_fromExteriorOdd]
+  exact Submodule.apply_mem_map₂ _ Submodule.mem_top he
+
+/-- When `2` is invertible, `fromExteriorOdd G e` has parity `k` if and only if `e` has parity `k`
+with respect to the integer grading of the exterior algebra. -/
+@[simp]
+theorem fromExteriorOdd_mem_parityGrading_iff [Invertible (2 : R)] {k : ZMod 2}
+    {e : ExteriorAlgebra R (parityGrading G.piece 1)} :
+    fromExteriorOdd G e ∈ parityGrading (signedSymPiece G) k ↔
+      e ∈ parityGrading
+        (TauCeti.ExteriorAlgebra.integerGrading R (parityGrading G.piece 1)) k :=
+  ⟨fun h => by simpa using toExteriorOdd_mem_parityGrading G h,
+    fromExteriorOdd_mem_parityGrading G⟩
 
 /-! ### Functoriality along degree-preserving maps -/
 

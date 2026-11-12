@@ -17,9 +17,7 @@ The images of the input-degree pieces of the tensor algebra form an internal int
 of `TauCeti.SignedSym G`. Equivalently, its degree-`p` piece is spanned by words of homogeneous
 generators whose degrees sum to `p`. Homogeneous induction retains this total input degree.
 Multiplication adds degrees, and a degree-preserving linear map satisfying the Koszul relations
-extends to a graded algebra map. When `V` is concentrated in a single degree `d`, input-degree
-pieces outside nonnegative multiples `n * d` vanish
-(`TauCeti.SignedSym.signedSymPiece_eq_bot_of_forall_mul_ne`).
+extends to a graded algebra map.
 
 The construction of the free supercommutative algebra follows J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1). Grading descent uses
@@ -130,22 +128,6 @@ theorem homogeneous_induction {P : ℤ → SignedSym G → Prop}
   | zero => exact zero p
   | add a b _ _ ha hb => exact add p a b ha hb
   | smul r a _ ha => exact smul p r a ha
-
-/-- When `V` is concentrated in degree `d`, input degrees not of the form `n * d` (`n : ℕ`)
-vanish in `SignedSym G`. -/
-theorem signedSymPiece_eq_bot_of_forall_mul_ne {d p : ℤ}
-    (hG : ∀ q, q ≠ d → G.piece q = ⊥) (hp : ∀ n : ℕ, (n : ℤ) * d ≠ p) :
-    signedSymPiece G p = ⊥ := by
-  rw [signedSymPiece_eq_span, Submodule.span_eq_bot]
-  rintro _ ⟨n, deg, x, hx, rfl, rfl⟩
-  by_cases hdeg : ∀ i, deg i = d
-  · refine (hp n ?_).elim
-    simp [hdeg]
-  · obtain ⟨i, hi⟩ := not_forall.mp hdeg
-    have hxi : x i = 0 := by
-      have := hx i
-      rwa [hG (deg i) hi, Submodule.mem_bot] at this
-    exact List.prod_eq_zero (List.mem_ofFn.mpr ⟨i, by simp [hxi]⟩)
 
 end SignedSym
 
