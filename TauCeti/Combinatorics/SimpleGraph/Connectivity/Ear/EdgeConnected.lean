@@ -15,24 +15,25 @@ from one vertex by repeatedly adjoining open or closed ears. One direction holds
 finiteness assumption and is `SimpleGraph.EarDecomposition.isEdgeConnected_two`; this file proves
 the converse.
 
-The extension step needs no finiteness. A non-bridge edge `uv` leaving a subgraph `H`, with
-`u ∈ H` and `v ∉ H`, lies on an ear: after deleting `uv`, a path leads from `v` back to `u`, and
-stopping it at its first vertex `w` of `H` gives a closed ear when `w = u` and an open ear
-otherwise. In a `2`-edge-connected graph no edge is a bridge, so every proper subgraph with a
-vertex admits an ear: if it misses a vertex, connectivity supplies an edge leaving it; otherwise
-it misses an edge, which is a single-edge open ear. On a finite vertex type the subgraphs form a
-finite lattice, so adjoining ears until the whole graph is reached extends every ear decomposition
-of a subgraph to one of `⊤` with the same initial subgraph.
+The extension step needs no finiteness. A non-bridge edge `uv` of `G` missing from a subgraph `H`,
+with `u ∈ H`, lies on an ear. If `v ∈ H`, the edge itself is a single-edge open ear. Otherwise,
+after deleting `uv`, a path leads from `v` back to `u`, and stopping it at its first vertex `w` of
+`H` gives a closed ear when `w = u` and an open ear otherwise. In a `2`-edge-connected graph no
+edge is a bridge, so every proper subgraph with a vertex admits an ear: if it misses a vertex,
+connectivity supplies an edge leaving it; otherwise it misses an edge, which is a single-edge open
+ear. On a finite vertex type the subgraphs form a finite lattice, so by adjoining ears until the
+whole graph is reached, any ear decomposition of a subgraph yields an ear decomposition of `⊤`
+with the same initial subgraph.
 
 ## Main results
 
-* `SimpleGraph.Adj.exists_ear_mem_edges`: a non-bridge edge leaving a subgraph lies on an ear over
-  that subgraph.
-* `SimpleGraph.IsEdgeConnected.exists_ear`: in a `2`-edge-connected graph, every proper subgraph
+* `SimpleGraph.Adj.exists_ear_mem_edges`: a non-bridge edge missing from a subgraph, with an
+  endpoint in that subgraph, lies on an ear over that subgraph.
+* `SimpleGraph.IsEdgeConnected.nonempty_ear`: in a `2`-edge-connected graph, every proper subgraph
   with a vertex admits an ear.
-* `SimpleGraph.IsEdgeConnected.exists_earDecomposition_of_earDecomposition`: in a finite
-  `2`-edge-connected graph, every ear decomposition of a subgraph extends to one of `⊤` with the
-  same initial subgraph.
+* `SimpleGraph.IsEdgeConnected.exists_earDecomposition_of_earDecomposition`: if a subgraph of a
+  finite `2`-edge-connected graph has an ear decomposition, then `⊤` has an ear decomposition with
+  the same initial subgraph.
 * `SimpleGraph.IsEdgeConnected.exists_earDecomposition_initial_eq_singletonSubgraph`: such a graph
   has an ear decomposition of `⊤` starting at any prescribed vertex.
 * `SimpleGraph.isEdgeConnected_two_iff_exists_earDecomposition_initial_eq_singletonSubgraph`,
@@ -55,12 +56,15 @@ namespace SimpleGraph
 
 variable {V : Type u} {G : SimpleGraph V} {H : G.Subgraph}
 
-/-- A non-bridge edge from a vertex of `H` to a vertex outside `H` lies on an open or closed ear
-over `H`. No finiteness assumption is needed. -/
+/-- A non-bridge edge of `G` from a vertex of `H` that is not an edge of `H` lies on an open or
+closed ear over `H`. No finiteness assumption is needed. -/
 theorem Adj.exists_ear_mem_edges {u v : V} (huv : G.Adj u v) (hu : u ∈ H.verts)
-    (hv : v ∉ H.verts) (hb : ¬G.IsBridge s(u, v)) :
+    (hnotH : ¬H.Adj u v) (hb : ¬G.IsBridge s(u, v)) :
     ∃ e : G.Ear H, s(u, v) ∈ e.toWalk.2.2.edges := by
   classical
+  -- An edge between two vertices of `H` is itself a single-edge open ear.
+  by_cases hv : v ∈ H.verts
+  · exact ⟨.ofAdj huv hu hv hnotH, by rw [Ear.toWalk_ofAdj]; simp⟩
   -- A path `q` from `v` back to `u` avoiding the edge `uv`.
   have hreach : (G.deleteEdges {s(u, v)}).Reachable v u := by
     by_contra h
@@ -109,7 +113,7 @@ theorem Adj.exists_ear_mem_edges {u v : V} (huv : G.Adj u v) (hu : u ∈ H.verts
 
 /-- In a `2`-edge-connected simple graph, every proper subgraph with at least one vertex admits an
 open or closed ear. No finiteness assumption is needed. -/
-theorem IsEdgeConnected.exists_ear (hG : G.IsEdgeConnected 2) (hH : H ≠ ⊤)
+theorem IsEdgeConnected.nonempty_ear (hG : G.IsEdgeConnected 2) (hH : H ≠ ⊤)
     (hverts : H.verts.Nonempty) : Nonempty (G.Ear H) := by
   by_cases hspan : H.IsSpanning
   · obtain ⟨e, -⟩ := hspan.exists_open_ear hH
@@ -118,12 +122,12 @@ theorem IsEdgeConnected.exists_ear (hG : G.IsEdgeConnected 2) (hH : H ≠ ⊤)
     obtain ⟨x, hx⟩ := hverts
     obtain ⟨p⟩ := hG.preconnected two_ne_zero x y
     obtain ⟨d, -, hd₁, hd₂⟩ := p.exists_boundary_dart H.verts hx hy
-    obtain ⟨e, -⟩ := d.adj.exists_ear_mem_edges hd₁ hd₂
+    obtain ⟨e, -⟩ := d.adj.exists_ear_mem_edges hd₁ (fun h ↦ hd₂ (H.edge_vert h.symm))
       (isEdgeConnected_two_iff_forall_not_isBridge.mp hG _)
     exact ⟨e⟩
 
-/-- In a `2`-edge-connected simple graph on a finite vertex type, every ear decomposition of a
-subgraph extends to an ear decomposition of `⊤` with the same initial subgraph. -/
+/-- Given an ear decomposition of a subgraph `H` in a `2`-edge-connected simple graph on a finite
+vertex type, there exists an ear decomposition of `⊤` with the same initial subgraph. -/
 theorem IsEdgeConnected.exists_earDecomposition_of_earDecomposition [Finite V]
     (hG : G.IsEdgeConnected 2) (d₀ : G.EarDecomposition H) :
     ∃ d : G.EarDecomposition (⊤ : G.Subgraph), d.initial = d₀.initial := by
@@ -131,7 +135,7 @@ theorem IsEdgeConnected.exists_earDecomposition_of_earDecomposition [Finite V]
   | ind H ih =>
     by_cases htop : H = ⊤
     · exact ⟨d₀.copy htop, d₀.initial_copy htop⟩
-    · obtain ⟨e⟩ := hG.exists_ear htop d₀.connected_final.nonempty
+    · obtain ⟨e⟩ := hG.nonempty_ear htop d₀.connected_final.nonempty
       obtain ⟨d, hinit⟩ := ih e.adjoin e.lt_adjoin (d₀.snoc e)
       exact ⟨d, hinit.trans (d₀.initial_snoc e)⟩
 
