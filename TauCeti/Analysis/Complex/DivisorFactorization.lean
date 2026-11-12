@@ -124,7 +124,8 @@ theorem exists_eq_finprod_zpow_mul (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)
     rw [hD']; split_ifs <;> simp [hD ρ]
   -- Split the zeros into those in the small disc (exponent `D'`) and the rest (`D - D'`).
   have hsplit := Function.FactorizedRational.finprod_eq_finprod_mul_finprod_sub
-    (D.finiteSupport (isCompact_closedBall _ _)) (fun u ↦ (hD'D u).1) (fun u ↦ (hD'D u).2)
+    (D.finiteSupport (isCompact_closedBall _ _)) (d' := D') fun u hu hDu ↦ hu <| by
+      simp [hD' u, show D u = 0 from hDu]
   -- `G` is the factor for the zeros outside the small disc times `g`.
   refine ⟨(∏ᶠ u, (· - u) ^ (D u - D' u)) * g, fun z hz ↦ ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
   · exact (Function.FactorizedRational.analyticAt (d := fun u ↦ D u - D' u)

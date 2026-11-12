@@ -18,8 +18,8 @@ the function `∏ᶠ u, (· - u) ^ d u`. This file adds three facts about it:
   `∏ u ∈ support d, (y - u) ^ d u`;
 * `Function.FactorizedRational.logDeriv_eq_finsum`: at a point `z` with `d z = 0` its logarithmic
   derivative is `∑ᶠ u, d u / (z - u)`;
-* `Function.FactorizedRational.finprod_eq_finprod_mul_finprod_sub`: for `0 ≤ d' ≤ d` it is the
-  product of the factorized rational functions with exponents `d'` and `d - d'`.
+* `Function.FactorizedRational.finprod_eq_finprod_mul_finprod_sub`: if `d'` vanishes wherever `d`
+  does, it is the product of the factorized rational functions with exponents `d'` and `d - d'`.
 -/
 
 public section
@@ -55,34 +55,27 @@ theorem logDeriv_eq_finsum (hd : d.support.Finite) {z : 𝕜} (hz : d z = 0) :
     simp [logDeriv_apply, div_eq_mul_inv]
   · exact fun u hu ↦ hd.mem_toFinset.2 fun h ↦ hu (by simp [h])
 
-/-- **Splitting a factorized rational function.** If `0 ≤ d' ≤ d` pointwise and `d` has finite
-support, then `∏ᶠ u, (· - u) ^ d u` is the product of the factorized rational functions with
-exponents `d'` and `d - d'`. -/
+/-- **Splitting a factorized rational function.** If `d` has finite support and `d'` vanishes
+wherever `d` does, then `∏ᶠ u, (· - u) ^ d u` is the product of the factorized rational functions
+with exponents `d'` and `d - d'`. -/
 theorem finprod_eq_finprod_mul_finprod_sub {d' : 𝕜 → ℤ} (hd : d.support.Finite)
-    (h₀ : ∀ u, 0 ≤ d' u) (h : ∀ u, d' u ≤ d u) :
+    (h : d'.support ⊆ d.support) :
     (∏ᶠ u, (· - u) ^ d u) = (∏ᶠ u, (· - u) ^ d' u) * ∏ᶠ u, (· - u) ^ (d u - d' u) := by
   have hfin {e : 𝕜 → ℤ} (he : e.support.Finite) :
       (fun u ↦ (· - u) ^ e u : 𝕜 → 𝕜 → 𝕜).HasFiniteMulSupport := by
     rw [Function.HasFiniteMulSupport, mulSupport]
     exact he
-  have hd' : d'.support.Finite := hd.subset fun u hu h' ↦ hu <| by
-    have := h₀ u
-    have := h u
-    omega
-  have hsub : (fun u ↦ d u - d' u).support.Finite := hd.subset fun u hu h' ↦ hu <| by
-    have := h₀ u
-    have := h u
-    beta_reduce
-    omega
-  rw [← finprod_mul_distrib (hfin hd') (hfin hsub)]
+  -- `d'` vanishes wherever `d` does.
+  have h' {u : 𝕜} (hdu : d u = 0) : d' u = 0 := notMem_support.1 fun hu ↦ h hu hdu
+  have hsub : (fun u ↦ d u - d' u).support.Finite := hd.subset fun u hu hdu ↦
+    hu <| by simp [hdu, h' hdu]
+  rw [← finprod_mul_distrib (hfin (hd.subset h)) (hfin hsub)]
   refine finprod_congr fun u ↦ funext fun x ↦ ?_
   simp only [Pi.mul_apply, Pi.pow_apply]
   rw [← zpow_add']
   · simp
-  · have := h₀ u
-    have := h u
-    rcases eq_or_ne (d u) 0 with h' | h'
-    · exact .inr (.inr (by omega))
-    · exact .inr (.inl (by omega))
+  · by_cases hdu : d u = 0
+    · exact .inr (.inr ⟨h' hdu, by simp [hdu, h' hdu]⟩)
+    · exact .inr (.inl (by simpa using hdu))
 
 end Function.FactorizedRational
