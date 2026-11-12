@@ -125,6 +125,10 @@ output, the reference coordinates are given by the corresponding products of the
   `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right`,
   `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix`:
   the matrix formulas for a map of a matrix composed with a product of a matrix, on either side.
+* `TauCeti.NovikovModule.novikovProductOfMatrix_eq_novikovMapOfMatrix_right`,
+  `TauCeti.NovikovModule.novikovProductOfMatrix_eq_novikovMapOfMatrix_left`: fixing one input of
+  the product of a matrix of Novikov series gives the map of the matrix contracted with the
+  coordinates of that input.
 
 ## References
 
@@ -1094,6 +1098,51 @@ theorem coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix
     _ = _ := by simp only [Finset.mul_sum]
 
 end MapOfMatrix
+
+section MatrixContraction
+
+variable {R H ι₁ ι₂ ι₀ : Type*} [CommSemiring R] [AddCommGroup H] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
+  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
+  (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
+  (M : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
+
+/-- **Multiplying by a fixed first input is the map of a matrix.** For the product of a matrix
+`M`, multiplication by `e` on the left is the map of the matrix `∑ᵢ eᵢ Mᵢⱼₖ`, where `eᵢ` are the
+coordinates of `e`. -/
+theorem novikovProductOfMatrix_eq_novikovMapOfMatrix_right [Fintype ι₁] [Finite ι₂] [Finite ι₀]
+    (e : NovikovModule R F₁)
+    (b : NovikovModule R F₂) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ M e b =
+      novikovMapOfMatrix hF₂ hF₀ r₂ r₀
+        (Matrix.of fun j k => ∑ i, coordinates hF₁ r₁ e i * M i j k) b := by
+  have := Fintype.ofFinite ι₂
+  refine (coordinates hF₀ r₀).injective (funext fun k => ?_)
+  simp only [coordinates_novikovProductOfMatrix, coordinates_novikovMapOfMatrix, Matrix.of_apply,
+    Finset.mul_sum]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
+
+/-- **Multiplying by a fixed second input is the map of a matrix.** For the product of a matrix
+`M`, multiplication by `e` on the right is the map of the matrix `∑ⱼ eⱼ Mᵢⱼₖ`, where `eⱼ` are the
+coordinates of `e`. -/
+theorem novikovProductOfMatrix_eq_novikovMapOfMatrix_left [Finite ι₁] [Fintype ι₂] [Finite ι₀]
+    (a : NovikovModule R F₁)
+    (e : NovikovModule R F₂) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ M a e =
+      novikovMapOfMatrix hF₁ hF₀ r₁ r₀
+        (Matrix.of fun i k => ∑ j, coordinates hF₂ r₂ e j * M i j k) a := by
+  have := Fintype.ofFinite ι₁
+  refine (coordinates hF₀ r₀).injective (funext fun k => ?_)
+  simp only [coordinates_novikovProductOfMatrix, coordinates_novikovMapOfMatrix, Matrix.of_apply,
+    Finset.mul_sum]
+  exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
+
+end MatrixContraction
 
 end NovikovModule
 
