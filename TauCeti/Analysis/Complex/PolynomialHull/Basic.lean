@@ -159,7 +159,6 @@ theorem exists_norm_eval_lt_one_lt_of_notMem_polynomialHull (hz : z ∉ polynomi
     exact ⟨C 2, fun w hw ↦ (hK w hw).elim, by norm_num⟩
   -- Rescale `p` by `2 / (a + s)`, where `a = max c (s / 2)` satisfies `0 < a < s`.
   set a := max c (s / 2)
-  have ha : 0 < a := (half_pos hs).trans_le (le_max_right _ _)
   have has : a < s := max_lt hcz (half_lt_self hs)
   have hr : 0 < 2 / (a + s) := by positivity
   have hnorm (w : ι → ℂ) :

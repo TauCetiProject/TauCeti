@@ -272,7 +272,9 @@ theorem cutColumn_X_mem_toGridRectangle_coveredSquares_of_disjoint_crossingChang
     (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet) {x y : GridState n}
     (P : GridCommutationHexagonBetween a C.turnRow t x y) :
     (P.cutColumn, G.X P.cutColumn) ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares :=
-  P.crossingCutSquares_subset (cutColumn_X_mem_crossingCutSquares hX P)
+  P.cutColumn_X_mem_toGridRectangle_coveredSquares_of_mem
+    (X_column_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares P.ne hX)
+    (X_next_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares P.ne hX)
 
 /-- If the annulus squares carry no `X`-marking, a crossing-change hexagon is counted exactly when
 its underlying rectangle is empty and carries exactly one `X`-marking, that of the column the

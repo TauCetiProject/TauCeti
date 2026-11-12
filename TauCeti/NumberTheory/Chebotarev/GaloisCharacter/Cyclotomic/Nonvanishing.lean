@@ -46,7 +46,7 @@ variable {K F : Type*} [Field K] [NumberField K] [Field F] [NumberField F] [Alge
 
 /-- **Nonvanishing on `Re s = 1`.** For `F = K(μ_m)` and a nontrivial character `χ` of
 `Gal(F/K)`, the continued `L`-series of `χ` does not vanish at any `s` with `Re s = 1`. -/
-theorem cyclotomicCharacterSeriesC_ne_zero_of_re_eq_one (m : ℕ) [NeZero m]
+theorem cyclotomicCharacterSeriesC_ne_zero_of_re_eq_one (m : ℕ)
     [IsCyclotomicExtension {m} K F] (χ : (F ≃ₐ[K] F) →* ℂˣ) (hχ : χ ≠ 1) {s : ℂ}
     (hs : s.re = 1) : cyclotomicCharacterSeriesC K F χ s ≠ 0 := by
   -- At `s = 1` this is the nonvanishing at the edge of the half-plane of convergence.
@@ -76,7 +76,7 @@ variable (K F) in
 character `χ` of `Gal(F/K)`, the logarithmic derivative of the continued series of `χ` is
 continuous on the closed half-plane `Re s ≥ 1`: the series is holomorphic on a neighbourhood of it
 and does not vanish on it. -/
-theorem continuousOn_logDeriv_cyclotomicCharacterSeriesC (m : ℕ) [NeZero m]
+theorem continuousOn_logDeriv_cyclotomicCharacterSeriesC (m : ℕ)
     [IsCyclotomicExtension {m} K F] (χ : (F ≃ₐ[K] F) →* ℂˣ) (hχ : χ ≠ 1) :
     ContinuousOn (logDeriv (cyclotomicCharacterSeriesC K F χ)) {s | 1 ≤ s.re} := by
   have hd := differentiableOn_cyclotomicCharacterSeriesC K F m χ hχ

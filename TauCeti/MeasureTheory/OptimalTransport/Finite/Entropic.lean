@@ -207,21 +207,21 @@ theorem entropicDualValue_eq_mul_relEntropyDual (C : Matrix ι κ ℝ) (ε : ℝ
         rw [hmass]
         congr 1
         apply Finset.sum_congr rfl
-        intro i hi
+        intro i _
         apply Finset.sum_congr rfl
-        intro j hj
+        intro j _
         ring
   have hφ :
       (ε : ℝ) * ∑ i, (μ i).toReal * (φ i / ε) = ∑ i, (μ i).toReal * φ i := by
     rw [Finset.mul_sum]
     apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     field_simp
   have hψ :
       (ε : ℝ) * ∑ j, (ν j).toReal * (ψ j / ε) = ∑ j, (ν j).toReal * ψ j := by
     rw [Finset.mul_sum]
     apply Finset.sum_congr rfl
-    intro j hj
+    intro j _
     field_simp
   rw [TauCeti.entropicDualValue_def, ← TauCeti.finiteDualValue_eq_kantorovichDualValue,
     MeasureTheory.integral_fintype Integrable.of_finite, Matrix.relEntropyDual_def,
