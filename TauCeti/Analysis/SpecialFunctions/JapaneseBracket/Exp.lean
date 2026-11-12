@@ -12,8 +12,10 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 /-!
 # Smooth radial exponential weights
 
-The weight `exp(c √(1 + ‖z‖²))` is smooth on any real inner product space, and the
-norm of its derivative is bounded by `|c|` times the weight.
+For `b > 0`, the weight `exp(c √(b + ‖z‖²))` is smooth on any real inner product space. The
+norm of its derivative is `|c| ‖z‖ / √(b + ‖z‖²)` times the weight, so it is bounded by `|c|`
+times the weight, and by an arbitrarily small multiple of the weight on a fixed ball once `b` is
+large. The usual choice is `b = 1`.
 
 For `ε > 0`, the bounded weight `E / (1 + ε E)` with `E(z) = exp(c √(1 + ‖z‖²))`
 (`TauCeti.boundedExpWeight`) is smooth, bounded by `E` and by `ε⁻¹`, still has logarithmic gradient
@@ -25,42 +27,49 @@ public section
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {b : ℝ}
 
 /-- The regularized radial exponential weight is smooth, of every order. -/
-theorem contDiff_exp_mul_sqrt_one_add_norm_sq (c : ℝ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (fun z : E ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))) := by
-  have hq : ContDiff ℝ n (fun z : E ↦ 1 + ‖z‖ ^ 2) :=
+theorem contDiff_exp_mul_sqrt_add_norm_sq (c : ℝ) (hb : 0 < b) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (fun z : E ↦ Real.exp (c * √(b + ‖z‖ ^ 2))) := by
+  have hq : ContDiff ℝ n (fun z : E ↦ b + ‖z‖ ^ 2) :=
     contDiff_const.add (contDiff_id.norm_sq ℝ)
   exact (contDiff_const.mul (hq.sqrt (fun z ↦ by positivity))).exp
 
 /-- The derivative of the regularized radial exponential weight, as a real functional. -/
-theorem fderiv_exp_mul_sqrt_one_add_norm_sq (c : ℝ) (z : E) :
-    fderiv ℝ (fun t : E ↦ Real.exp (c * √(1 + ‖t‖ ^ 2))) z =
-      (Real.exp (c * √(1 + ‖z‖ ^ 2)) * c / √(1 + ‖z‖ ^ 2)) • innerSL ℝ z := by
-  have hp : 0 < 1 + ‖z‖ ^ 2 := by positivity
+theorem fderiv_exp_mul_sqrt_add_norm_sq (c : ℝ) (hb : 0 < b) (z : E) :
+    fderiv ℝ (fun t : E ↦ Real.exp (c * √(b + ‖t‖ ^ 2))) z =
+      (Real.exp (c * √(b + ‖z‖ ^ 2)) * c / √(b + ‖z‖ ^ 2)) • innerSL ℝ z := by
+  have hp : 0 < b + ‖z‖ ^ 2 := by positivity
   have hd :=
-    ((((hasStrictFDerivAt_norm_sq z).hasFDerivAt.const_add 1).sqrt hp.ne').const_mul c).exp
+    ((((hasStrictFDerivAt_norm_sq z).hasFDerivAt.const_add b).sqrt hp.ne').const_mul c).exp
   rw [hd.fderiv]
   ext v
   simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
   field_simp
   ring
 
+/-- The exact norm of the derivative of the regularized radial exponential weight: the
+logarithmic gradient has norm `|c| ‖z‖ / √(b + ‖z‖²)`. -/
+theorem norm_fderiv_exp_mul_sqrt_add_norm_sq (c : ℝ) (hb : 0 < b) (z : E) :
+    ‖fderiv ℝ (fun t : E ↦ Real.exp (c * √(b + ‖t‖ ^ 2))) z‖ =
+      |c| * Real.exp (c * √(b + ‖z‖ ^ 2)) * (‖z‖ / √(b + ‖z‖ ^ 2)) := by
+  rw [fderiv_exp_mul_sqrt_add_norm_sq c hb, norm_smul, innerSL_apply_norm, Real.norm_eq_abs,
+    abs_div, abs_mul, abs_of_pos (Real.exp_pos _),
+    abs_of_nonneg (Real.sqrt_nonneg _)]
+  ring
+
 /-- The logarithmic gradient of the regularized radial exponential weight has norm
 at most `|c|`, with no restriction on the sign of `c`. -/
-theorem norm_fderiv_exp_mul_sqrt_one_add_norm_sq_le (c : ℝ) (z : E) :
-    ‖fderiv ℝ (fun t : E ↦ Real.exp (c * √(1 + ‖t‖ ^ 2))) z‖ ≤
-      |c| * Real.exp (c * √(1 + ‖z‖ ^ 2)) := by
-  have hp : 0 < 1 + ‖z‖ ^ 2 := by positivity
-  have hb : ‖z‖ / √(1 + ‖z‖ ^ 2) ≤ 1 := by
+theorem norm_fderiv_exp_mul_sqrt_add_norm_sq_le (c : ℝ) (hb : 0 < b) (z : E) :
+    ‖fderiv ℝ (fun t : E ↦ Real.exp (c * √(b + ‖t‖ ^ 2))) z‖ ≤
+      |c| * Real.exp (c * √(b + ‖z‖ ^ 2)) := by
+  have hp : 0 < b + ‖z‖ ^ 2 := by positivity
+  have hq : ‖z‖ / √(b + ‖z‖ ^ 2) ≤ 1 := by
     apply (div_le_one (Real.sqrt_pos.2 hp)).2
     exact (Real.le_sqrt (norm_nonneg z) hp.le).2 (by linarith)
-  rw [fderiv_exp_mul_sqrt_one_add_norm_sq]
-  calc
-    _ = (|c| * Real.exp (c * √(1 + ‖z‖ ^ 2))) * (‖z‖ / √(1 + ‖z‖ ^ 2)) := by
-      simp [norm_smul, abs_of_nonneg, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc]
-    _ ≤ _ := mul_le_of_le_one_right (by positivity) hb
+  rw [norm_fderiv_exp_mul_sqrt_add_norm_sq c hb]
+  exact mul_le_of_le_one_right (by positivity) hq
 
 section Bounded
 
@@ -117,8 +126,8 @@ include hε
 
 /-- The bounded weight is smooth, of every order. -/
 theorem contDiff_boundedExpWeight {n : WithTop ℕ∞} : ContDiff ℝ n (boundedExpWeight (F := E) c ε) :=
-  (contDiff_exp_mul_sqrt_one_add_norm_sq c).div
-    (contDiff_const.add (contDiff_const.mul (contDiff_exp_mul_sqrt_one_add_norm_sq c)))
+  (contDiff_exp_mul_sqrt_add_norm_sq c one_pos).div
+    (contDiff_const.add (contDiff_const.mul (contDiff_exp_mul_sqrt_add_norm_sq c one_pos)))
     fun z ↦ (zero_lt_one.trans_le (one_le_one_add_mul_exp hε z)).ne'
 
 /-- The logarithmic gradient of the bounded weight has norm at most `|c|`, as for the
@@ -132,10 +141,11 @@ theorem norm_fderiv_boundedExpWeight_le (z : E) :
       (zero_lt_one.trans_le h1).ne'
     rwa [show 1 * (1 + ε * W z) - W z * (ε * 1) = 1 by ring] at h
   have hW : HasFDerivAt W (fderiv ℝ W z) z :=
-    ((contDiff_exp_mul_sqrt_one_add_norm_sq (n := 1) c).differentiable one_ne_zero z).hasFDerivAt
+    ((contDiff_exp_mul_sqrt_add_norm_sq (n := 1) c one_pos).differentiable one_ne_zero
+      z).hasFDerivAt
   rw [boundedExpWeight_eq_comp, (hg.comp_hasFDerivAt z hW).fderiv, norm_smul,
     Real.norm_of_nonneg (r := 1 / (1 + ε * W z) ^ 2) (by positivity)]
-  have hd := norm_fderiv_exp_mul_sqrt_one_add_norm_sq_le c z
+  have hd := norm_fderiv_exp_mul_sqrt_add_norm_sq_le c one_pos z
   have hWz : 0 < W z := Real.exp_pos _
   calc 1 / (1 + ε * W z) ^ 2 * ‖fderiv ℝ W z‖ ≤ 1 / (1 + ε * W z) ^ 2 * (|c| * W z) :=
         mul_le_mul_of_nonneg_left hd (by positivity)

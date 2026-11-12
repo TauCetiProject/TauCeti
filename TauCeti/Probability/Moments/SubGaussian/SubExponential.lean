@@ -40,9 +40,9 @@ theorem hasSubexponentialMGF_of_centered {Ω : Type*} [MeasurableSpace Ω]
     funext ω
     simp
   refine ⟨hK, hX, ?_, ?_⟩
-  · intro t ht
+  · intro t _
     exact hcenter.integrable_exp_mul t
-  · intro t ht
+  · intro t _
     have hbound : (c : ℝ) * t ^ 2 / 2 ≤ K ^ 2 * t ^ 2 := by
       nlinarith [mul_le_mul_of_nonneg_right hc (sq_nonneg t)]
     exact (hcenter.mgf_le t).trans (Real.exp_le_exp.mpr hbound)

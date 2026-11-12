@@ -539,7 +539,6 @@ private theorem norm_le_div_of_tendsto (hx : Continuous x) {c₀ : ℝ} (hc₀ :
   have hg : √c₀ * ‖u‖ ≤ ‖y‖ := le_of_tendsto_of_tendsto' (hT.norm.const_mul _) hS.norm
     fun n ↦ sqrt_mul_norm_ambientToLp_le hx hc₀.le hgap (η n)
   have hs : √c₀ ^ 2 = c₀ := Real.sq_sqrt hc₀.le
-  have hs0 : 0 ≤ √c₀ := Real.sqrt_nonneg c₀
   rw [le_div_iff₀ hc₀]
   rcases (norm_nonneg u).eq_or_lt with h0 | h0
   · rw [← h0, zero_mul]
@@ -547,7 +546,7 @@ private theorem norm_le_div_of_tendsto (hx : Continuous x) {c₀ : ℝ} (hc₀ :
   · have h2 : (√c₀ * ‖u‖) ^ 2 ≤ ‖f‖ * ‖u‖ :=
       (pow_le_pow_left₀ (by positivity) hg 2).trans hy
     rw [mul_pow, hs] at h2
-    nlinarith
+    nlinarith [Real.sqrt_nonneg c₀]
 
 /-- The estimate at the regularized weight `E / (1 + ε E)`, uniformly in `ε > 0`. -/
 private theorem eLpNorm_boundedExpWeight_smul_le (hx : ContDiff ℝ 1 x)
@@ -627,7 +626,7 @@ theorem exists_eLpNorm_exp_smul_le_mul_eLpNorm_exp_smul (hx : ContDiff ℝ 1 x)
   obtain ⟨R, hR₀, hR⟩ := exists_exterior_lt_mass hlim (a := (c ^ 2 + 1 / 4) / 2) (by linarith)
   -- A cutoff `β = 1` on the disc of radius `R`, and the constants of the core region.
   set E : ℂ → ℝ := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))
-  have hEc : Continuous E := (contDiff_exp_mul_sqrt_one_add_norm_sq (n := 0) c).continuous
+  have hEc : Continuous E := (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous
   let b : ContDiffBump (0 : ℂ) := ⟨R, R + 1, hR₀, by linarith⟩
   have hb : ContDiff ℝ 2 b := b.contDiff
   obtain ⟨M₀, hM₀⟩ := (b.continuous.mul hEc).bounded_above_of_compact_support

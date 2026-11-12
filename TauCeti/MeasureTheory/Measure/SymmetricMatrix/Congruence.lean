@@ -112,6 +112,14 @@ theorem coe_symmetricCongruenceLinearMap_permMatrix_apply (σ : Equiv.Perm (Fin 
       (A : Matrix (Fin p) (Fin p) ℝ).submatrix σ σ := by
   simp [PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv, Equiv.Perm.inv_def]
 
+/-- Congruence by a diagonal matrix multiplies each entry by its row and column factors. -/
+theorem coe_symmetricCongruenceLinearMap_diagonal_apply (s : Fin p → ℝ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (i j : Fin p) :
+    (symmetricCongruenceLinearMap (diagonal s) A : Matrix (Fin p) (Fin p) ℝ) i j =
+      s i * (A : Matrix (Fin p) (Fin p) ℝ) i j * s j := by
+  simp only [coe_symmetricCongruenceLinearMap_apply, diagonal_transpose, mul_diagonal,
+    diagonal_mul]
+
 /-- Congruence by a square matrix `M` multiplies the determinant of a symmetric matrix by
 `(det M) ^ 2`, including when `M` is singular. -/
 theorem det_coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin p) (Fin p) ℝ)
