@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.ProperSubgraph
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Topology
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Data.Fintype.Card.LT
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
@@ -421,7 +422,7 @@ private lemma IsSelfIntersectionMinusTwoChain.false_of_cycle {t : ℕ} {c : ℕ 
   -- The cycle is affine: the all-ones vector makes every row of the intersection form vanish,
   -- which negative definiteness on a proper subset of the components forbids.
   refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c)
-    (Fintype.exists_forall_lt_ne_of_lt_card hcard)
+    (Fintype.exists_forall_lt_ne_of_lt_card c hcard)
     (y := fun _ ↦ (1 : ℤ)) (fun _ _ ↦ by norm_num) ⟨0, by omega, one_pos⟩ ?_
   intro i hi
   simp only [mul_one]
@@ -722,16 +723,9 @@ theorem left_fiber_relation {t : ℕ} {c : ℕ → T.Component}
       T.intersection (c i) (c j) = 0) :
     (T.multiplicity (c 0) : ℤ) * T.intersection (c 0) (c 0) +
       T.multiplicity (c 1) * T.intersection (c 0) (c 1) = 0 := by
-  have h := sum_range_multiplicity_mul_intersection_eq_zero hinj hcard 0
   rcases lt_or_ge t 2 with ht | ht
-  · obtain rfl : t = 1 := by
-      by_contra hne
-      obtain rfl : t = 0 := by omega
-      exact (Fintype.card_eq_zero_iff.mp hcard).false (c 0)
-    have hsub : Subsingleton T.Component := Fintype.card_le_one_iff_subsingleton.mp hcard.le
-    rw [Subsingleton.elim (c 1) (c 0)]
-    simp only [sum_range_one] at h
-    linarith
+  · simp [T.intersection_eq_zero_of_card_eq_one (le_antisymm (by omega) Fintype.card_pos)]
+  have h := sum_range_multiplicity_mul_intersection_eq_zero hinj hcard 0
   rw [sum_range_eq_of_eq_zero_off_pair (a := 0) (b := 1) (by omega) (by omega) (by omega)
     (fun j hj hj0 hj1 ↦ by rw [hzero 0 (by omega) j hj hj0.symm (by omega) (by omega), mul_zero])
     rfl] at h
@@ -765,15 +759,9 @@ theorem right_fiber_relation {t : ℕ} {c : ℕ → T.Component}
       T.intersection (c i) (c j) = 0) :
     (T.multiplicity (c (t - 2)) : ℤ) * T.intersection (c (t - 1)) (c (t - 2)) +
       T.multiplicity (c (t - 1)) * T.intersection (c (t - 1)) (c (t - 1)) = 0 := by
-  have h := sum_range_multiplicity_mul_intersection_eq_zero hinj hcard (t - 1)
   rcases lt_or_ge t 2 with ht | ht
-  · obtain rfl : t = 1 := by
-      by_contra hne
-      obtain rfl : t = 0 := by omega
-      exact (Fintype.card_eq_zero_iff.mp hcard).false (c 0)
-    simp only [sum_range_one] at h
-    norm_num only
-    linarith
+  · simp [T.intersection_eq_zero_of_card_eq_one (le_antisymm (by omega) Fintype.card_pos)]
+  have h := sum_range_multiplicity_mul_intersection_eq_zero hinj hcard (t - 1)
   rw [sum_range_eq_of_eq_zero_off_pair (a := t - 2) (b := t - 1)
     (by omega) (by omega) (by omega)
     (fun j hj hprev hself ↦ by
@@ -941,7 +929,7 @@ private lemma IsSelfIntersectionMinusTwoChain.false_of_end_factors
     have e₂ : j ≠ t - 1 := by omega
     simp [hydef, e₁, e₂]
   refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c)
-    (Fintype.exists_forall_lt_ne_of_lt_card hcard)
+    (Fintype.exists_forall_lt_ne_of_lt_card c hcard)
     (y := y) ?_ ⟨0, by omega, by rw [hy₀]; exact hα⟩
     (hc.sum_intersection_mul_nonneg_of_end_factors hcard h4 hy₀ hyₗ hy₂ hint hmidedge hα₁ hα₂
       hγ₁ hγ₂)

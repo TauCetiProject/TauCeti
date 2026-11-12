@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Fork
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Branch
+import TauCeti.Data.Fintype.Card.LT
 import Mathlib.Tactic.IntervalCases
 
 /-!
@@ -176,7 +177,7 @@ theorem intersection_branch_eq_zero {c : ℕ → T.Component}
   let d : ℕ → T.Component := fun i ↦ if i = 7 then branch else c i
   let y : ℕ → ℤ := fun i ↦ if i = 7 then 2 else if i ≤ 3 then i + 1 else 7 - i
   refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := d)
-    (Fintype.exists_forall_lt_ne_of_lt_card hcard) (y := y)
+    (Fintype.exists_forall_lt_ne_of_lt_card d hcard) (y := y)
     (fun i _ ↦ by simp only [y]; split_ifs <;> omega) ⟨0, by omega, by simp [y]⟩ fun i hi ↦ ?_
   interval_cases i <;>
     norm_num [Finset.sum_range_succ, d, y] <;>

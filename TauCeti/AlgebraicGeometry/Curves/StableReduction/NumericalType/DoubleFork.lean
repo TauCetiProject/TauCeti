@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Fork
+import TauCeti.Data.Fintype.Card.LT
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.AffineD
 
 /-!
@@ -402,7 +403,7 @@ private lemma false_of_intersection_doubleForkEmbedding_eq
     simp [n]
     omega
   exact (T.not_forall_fintype_sum_intersection_mul_nonneg_of_pos (y := mark)
-    (Fintype.exists_forall_ne_of_card_lt (by rw [hindexCard]; exact hcard)) (fun i ↦ by
+    (Fintype.exists_forall_ne_of_card_lt e (by rw [hindexCard]; exact hcard)) (fun i ↦ by
       rcases i with _ | _ | _ <;> simp [mark]) ⟨Sum.inl 0, by simp [mark]⟩) hrow
 
 /-- A chain of at least four `(-2)`-indices cannot have additional leaves meeting its second and

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.ProperSubgraph
+import TauCeti.Data.Fintype.Card.LT
 import Mathlib.Tactic.IntervalCases
-import Mathlib.Tactic.Linarith
 
 /-!
 # Branched chains of `(-2)`-indices in a numerical type
@@ -136,7 +136,7 @@ private theorem false_of_affine_e6 (hcard : 7 < Fintype.card T.Component)
     if i = 0 then 1 else if i = 1 then 2 else if i = 2 then 3 else if i = 3 then 2
       else if i = 4 then 1 else if i = 5 then 2 else 1
   refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c)
-    (Fintype.exists_forall_lt_ne_of_lt_card hcard) (y := y) ?_
+    (Fintype.exists_forall_lt_ne_of_lt_card c hcard) (y := y) ?_
     ⟨0, by omega, by simp [y]⟩ ?_
   · intro i hi
     interval_cases i <;> norm_num [y]

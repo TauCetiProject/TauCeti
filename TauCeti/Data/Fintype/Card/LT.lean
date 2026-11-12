@@ -21,16 +21,16 @@ public section
 namespace Fintype
 
 /-- A finite family which has fewer members than a finite type `X` misses a value of `X`. -/
-theorem exists_forall_ne_of_card_lt {I X : Type*} [Fintype I] [Fintype X] {e : I → X}
+theorem exists_forall_ne_of_card_lt {I X : Type*} [Fintype I] [Fintype X] (e : I → X)
     (hcard : card I < card X) : ∃ m, ∀ i, e i ≠ m := by
   by_contra! h
   exact absurd (card_le_of_surjective e h) (not_le.mpr hcard)
 
 /-- An initial segment of the natural numbers with fewer members than a finite type `X` misses a
 value of `X` under any map `ℕ → X`. -/
-theorem exists_forall_lt_ne_of_lt_card {X : Type*} [Fintype X] {t : ℕ} {c : ℕ → X}
+theorem exists_forall_lt_ne_of_lt_card {X : Type*} [Fintype X] {t : ℕ} (c : ℕ → X)
     (hcard : t < card X) : ∃ m, ∀ i < t, c i ≠ m := by
-  obtain ⟨m, hm⟩ := exists_forall_ne_of_card_lt (e := fun i : Fin t ↦ c i) (by simpa using hcard)
+  obtain ⟨m, hm⟩ := exists_forall_ne_of_card_lt (fun i : Fin t ↦ c i) (by simpa using hcard)
   exact ⟨m, fun i hi ↦ hm ⟨i, hi⟩⟩
 
 end Fintype

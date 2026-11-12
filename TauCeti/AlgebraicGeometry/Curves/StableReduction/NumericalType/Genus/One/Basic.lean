@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Minimal
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Topology
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.IntersectionForm
+import TauCeti.Data.Fintype.Card.LT
 import TauCeti.Data.Int.MulAddMulEqFour
 import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 import Mathlib.Tactic.IntervalCases
@@ -221,7 +222,7 @@ private lemma forall_sum_intersection_eq_zero (hself : ∀ i, -(2 * (T.weight i 
     refine T.not_forall_fintype_sum_intersection_mul_nonneg_of_pos (I := s) (e := Subtype.val)
       ?_ (y := fun _ ↦ 1) (fun _ ↦ zero_le_one) ⟨⟨i₀, hi₀⟩, one_pos⟩
       fun i ↦ ?_
-    · refine Fintype.exists_forall_ne_of_card_lt ?_
+    · refine Fintype.exists_forall_ne_of_card_lt Subtype.val ?_
       rw [Fintype.card_coe]
       exact (card_lt_iff_ne_univ s).mpr hsu
     · have h := hrow i i.2

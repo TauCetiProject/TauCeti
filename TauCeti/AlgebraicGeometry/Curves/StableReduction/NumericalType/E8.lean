@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Fork
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Branch
+import TauCeti.Data.Fintype.Card.LT
 import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 import Mathlib.Tactic.IntervalCases
 
@@ -212,7 +213,7 @@ theorem not_affineE8 {c : ℕ → T.Component}
   let y : ℕ → ℤ := fun i ↦
     if hi : i < 9 then AffineDynkinType.E8.marks (e ⟨i, hi⟩) else 0
   refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := d)
-    (Fintype.exists_forall_lt_ne_of_lt_card hcard) (y := y) ?_ ?_ ?_
+    (Fintype.exists_forall_lt_ne_of_lt_card d hcard) (y := y) ?_ ?_ ?_
   · intro i hi
     simpa [y, hi] using (AffineDynkinType.marks_pos (e ⟨i, hi⟩)).le
   · refine ⟨0, by omega, ?_⟩
