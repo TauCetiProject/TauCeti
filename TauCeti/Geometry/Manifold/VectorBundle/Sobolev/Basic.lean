@@ -235,17 +235,17 @@ abbrev SobolevData : Type u :=
 
 namespace SobolevData
 
-variable {C μ p k} {k' : ℕ}
+variable {C μ p k} {p' : ℝ≥0∞} [Fact (1 ≤ p')] {k' : ℕ}
 
 /-- Applies a continuous linear map between scalar Sobolev spaces of the image of chart `i` to
 every chart-`i` component of a tuple. -/
-def mapL (T : ∀ i : Fin C.n, Wkp μ (C.image i) p k →L[ℝ] Wkp μ (C.image i) p k') :
-    C.SobolevData μ p k →L[ℝ] C.SobolevData μ p k' :=
+def mapL (T : ∀ i : Fin C.n, Wkp μ (C.image i) p k →L[ℝ] Wkp μ (C.image i) p' k') :
+    C.SobolevData μ p k →L[ℝ] C.SobolevData μ p' k' :=
   ContinuousLinearMap.piMap fun i ↦ ContinuousLinearMap.piMap fun _ ↦ T i
 
 omit [FiniteDimensional ℝ F] in
 @[simp]
-theorem mapL_apply (T : ∀ i : Fin C.n, Wkp μ (C.image i) p k →L[ℝ] Wkp μ (C.image i) p k')
+theorem mapL_apply (T : ∀ i : Fin C.n, Wkp μ (C.image i) p k →L[ℝ] Wkp μ (C.image i) p' k')
     (w : C.SobolevData μ p k) (i : Fin C.n) (j : Fin (finrank ℝ F)) :
     mapL T w i j = T i (w i j) := by
   rfl
@@ -547,6 +547,22 @@ end SectionChartData
 
 namespace FiniteBundleAtlas
 
+section FiniteMeasure
+
+variable {E : Type*} [TopologicalSpace E] [T2Space E] [MeasurableSpace E] {M : Type*}
+  [TopologicalSpace M] [ChartedSpace E M] {F : Type*} [TopologicalSpace F] {V : M → Type*}
+  [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+  (A : FiniteBundleAtlas E M F V) (μ : Measure E) [IsFiniteMeasureOnCompacts μ]
+
+/-- The image of a chart of a finite bundle atlas has finite measure for a measure that is finite on
+compact sets, such as a Haar measure, since its closure is compact. -/
+instance isFiniteMeasure_restrict_image (i : Fin A.n) :
+    IsFiniteMeasure (μ.restrict (A.image i)) :=
+  isFiniteMeasure_restrict.2
+    ((measure_mono subset_closure).trans_lt (A.isCompact_closure_image i).measure_lt_top).ne
+
+end FiniteMeasure
+
 variable {E : Type*} [TopologicalSpace E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
@@ -620,14 +636,6 @@ theorem sectionChartData_coord_ae_eq [MeasurableSpace E] [OpensMeasurableSpace E
 section FiniteMeasure
 
 variable [T2Space E] [MeasurableSpace E] (μ : Measure E) [IsFiniteMeasureOnCompacts μ]
-
-omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
-/-- The image of a chart of a finite bundle atlas has finite measure for a measure that is finite on
-compact sets, such as a Haar measure, since its closure is compact. -/
-instance isFiniteMeasure_restrict_image (i : Fin A.n) :
-    IsFiniteMeasure (μ.restrict (A.image i)) :=
-  isFiniteMeasure_restrict.2
-    ((measure_mono subset_closure).trans_lt (A.isCompact_closure_image i).measure_lt_top).ne
 
 /-- The image of chart `i` in the chart data of a finite bundle atlas has finite measure. -/
 instance isFiniteMeasure_restrict_sectionChartData_image (i : Fin A.sectionChartData.n) :

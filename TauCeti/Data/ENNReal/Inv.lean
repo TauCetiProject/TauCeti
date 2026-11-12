@@ -93,10 +93,8 @@ theorem one_sub_one_div_toReal_nonneg {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 
 finite measure space. -/
 theorem one_div_toReal_sub_one_div_toReal_nonneg {p q : ℝ≥0∞} (hp : p ≠ 0) (hpq : p ≤ q) :
     0 ≤ 1 / p.toReal - 1 / q.toReal := by
-  rcases eq_or_ne q ∞ with rfl | hq
-  · simp
-  exact sub_nonneg.2 (one_div_le_one_div_of_le (toReal_pos hp (hpq.trans_lt hq.lt_top).ne)
-    (toReal_mono hq hpq))
+  simpa only [one_div, toReal_inv, sub_nonneg] using
+    toReal_mono (inv_ne_top.2 hp) (ENNReal.inv_le_inv.2 hpq)
 
 /-- **Absorption**: a finite quantity bounded by `b` plus half of itself is at most `2 b`. -/
 theorem le_mul_two_of_le_add_div_two {a b : ℝ≥0∞} (ha : a ≠ ∞) (h : a ≤ b + a / 2) :
