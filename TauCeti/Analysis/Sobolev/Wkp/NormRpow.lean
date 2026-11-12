@@ -407,8 +407,9 @@ private theorem lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow (hγ0 : 0
   by_contra hq
   rw [not_lt] at hq
   set q := ENNReal.ofReal (finrank ℝ E / (2 - γ)) with hq_def
-  have hqr : q.toReal = finrank ℝ E / (2 - γ) := ENNReal.toReal_ofReal (by positivity)
-  have hq0 : q ≠ 0 := by rw [hq_def, ne_eq, ENNReal.ofReal_eq_zero, not_le]; positivity
+  have hqr : q.toReal = finrank ℝ E / (2 - γ) := ENNReal.toReal_ofReal (div_pos hnpos h2γ).le
+  have hq0 : q ≠ 0 := by
+    rw [hq_def, ne_eq, ENNReal.ofReal_eq_zero, not_le]; exact div_pos hnpos h2γ
   obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1 hΩ
   have : IsFiniteMeasure (μ.restrict (ball (0 : E) r)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne

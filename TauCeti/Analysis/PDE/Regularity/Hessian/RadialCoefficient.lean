@@ -184,7 +184,7 @@ private theorem exists_ball_le_abs_sq_div_norm_sq_sub [Nontrivial ι] (i : ι) (
     rw [abs_of_nonneg (by linarith)]
     linarith
   · refine ⟨c j, hsub j, fun y hy => ?_⟩
-    obtain ⟨h1, h2⟩ := hnorm j y hy
+    have h1 := (hnorm j y hy).1
     have hyi := abs_lt.1 (hcoord j y hy)
     simp only [hji.symm, ↓reduceIte, sub_zero] at hyi
     have hq : y i ^ 2 / ‖y‖ ^ 2 ≤ 1 / 9 := by
