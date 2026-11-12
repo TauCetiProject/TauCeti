@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import TauCeti.Geometry.Manifold.Morse.LusternikSchnirelmann
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
-import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 
 /-!
@@ -40,9 +39,7 @@ functions on the pieces, and smooth functions on the pieces glue to a smooth fun
 boundaryless manifold of positive dimension every component is a compact manifold with at least two
 points, so every continuous function has at least twice as many critical points as there are
 components (`TauCeti.two_mul_card_connectedComponents_le_totalCriticalCount`), hence so does `c(M)`
-(`TauCeti.two_mul_card_connectedComponents_le_minCriticalCount`), and a manifold carrying a
-continuous function with fewer than four critical points is preconnected
-(`TauCeti.preconnectedSpace_of_totalCriticalCount_lt_four`).
+(`TauCeti.two_mul_card_connectedComponents_le_minCriticalCount`).
 
 ## Main declarations
 
@@ -58,11 +55,8 @@ continuous function with fewer than four critical points is preconnected
 * `TauCeti.minCriticalCount_sphere`: the minimum is `2` on every sphere.
 * `TauCeti.minCriticalCount_eq_sum` and `TauCeti.minCriticalCount_eq_sum_connectedComponents`:
   the minimum is additive over finite disjoint open covers and over connected components.
-* `TauCeti.two_mul_card_connectedComponents_le_totalCriticalCount` and
-  `TauCeti.two_mul_card_connectedComponents_le_minCriticalCount`: each component of a compact
-  boundaryless manifold of positive dimension contributes at least two critical points.
-* `TauCeti.preconnectedSpace_of_totalCriticalCount_lt_four`: fewer than four critical points force
-  such a manifold to be preconnected.
+* `TauCeti.two_mul_card_connectedComponents_le_minCriticalCount`: each component of a compact
+  boundaryless manifold of positive dimension contributes at least two to `c(M)`.
 
 ## References
 
@@ -168,50 +162,12 @@ least two critical points, so `2 ≤ c(M)`. -/
 theorem two_le_minCriticalCount [Nontrivial M] : 2 ≤ minCriticalCount I M :=
   le_minCriticalCount_iff.2 fun _ hf ↦ two_le_totalCriticalCount hf.continuous
 
-/-- On a compact boundaryless manifold of positive dimension, every continuous function has at
-least two critical points on each connected component, so its critical count is at least twice the
-number of components. -/
-theorem two_mul_card_connectedComponents_le_totalCriticalCount [Nontrivial E] (hf : Continuous f) :
-    2 * ENat.card (ConnectedComponents M) ≤ totalCriticalCount I f := by
-  have : LocallyConnectedSpace H := I.toHomeomorph.locallyConnectedSpace
-  have : LocallyConnectedSpace M := ChartedSpace.locallyConnectedSpace H M
-  have : PerfectSpace H := perfectSpace_iff_forall_not_isolated.2 fun x ↦ by
-    simpa using (PerfectSpace.not_isolated (I.toHomeomorph x)).map I.toHomeomorph.symm
-  have := Fintype.ofFinite (ConnectedComponents M)
-  rw [totalCriticalCount_eq_sum_connectedComponents, ENat.card_eq_coe_fintype_card, mul_comm,
-    ← nsmul_eq_mul, ← Finset.card_univ, ← Finset.sum_const]
-  refine Finset.sum_le_sum fun C _ ↦ ?_
-  -- Each component is a nonempty compact boundaryless manifold with no isolated points.
-  obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe C
-  have : Nonempty (ConnectedComponents.mk x).opens := ⟨⟨x, ConnectedComponents.mem_opens.2 rfl⟩⟩
-  have : Nontrivial (ConnectedComponents.mk x).opens := ChartedSpace.nontrivial (H := H)
-  have : CompactSpace (ConnectedComponents.mk x).opens :=
-    isCompact_iff_compactSpace.1 (ConnectedComponents.isClopen_opens _).isClosed.isCompact
-  exact two_le_totalCriticalCount (hf.comp continuous_subtype_val)
-
 /-- On a compact boundaryless manifold of positive dimension, `c(M)` is at least twice the number
 of connected components. -/
 theorem two_mul_card_connectedComponents_le_minCriticalCount [Nontrivial E] :
     2 * ENat.card (ConnectedComponents M) ≤ minCriticalCount I M :=
   le_minCriticalCount_iff.2 fun _ hf ↦
     two_mul_card_connectedComponents_le_totalCriticalCount hf.continuous
-
-/-- A compact boundaryless manifold of positive dimension carrying a continuous function with fewer
-than four critical points is preconnected, hence connected when nonempty: each connected component
-carries at least two of the critical points. -/
-theorem preconnectedSpace_of_totalCriticalCount_lt_four [Nontrivial E]
-    (hf : Continuous f) (h4 : totalCriticalCount I f < 4) : PreconnectedSpace M := by
-  have hle := two_mul_card_connectedComponents_le_totalCriticalCount (I := I) hf
-  have : Subsingleton (ConnectedComponents M) := by
-    rw [← ENat.card_le_one_iff_subsingleton]
-    by_contra! h
-    have : (4 : ℕ∞) ≤ 2 * ENat.card (ConnectedComponents M) :=
-      calc (4 : ℕ∞) = 2 * 2 := by norm_num
-        _ ≤ 2 * ENat.card (ConnectedComponents M) := by
-          gcongr; simpa [one_add_one_eq_two] using Order.add_one_le_of_lt h
-    exact (this.trans hle).not_gt h4
-  exact preconnectedSpace_iff_connectedComponent.2 fun x ↦ eq_univ_of_forall fun _ ↦
-    ConnectedComponents.coe_eq_coe'.1 (Subsingleton.elim _ _)
 
 variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
 
