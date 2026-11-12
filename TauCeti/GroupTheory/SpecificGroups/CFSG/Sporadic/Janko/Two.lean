@@ -10,10 +10,9 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the second Janko group
 
-This file carries the `J₂` row of the sporadic presentation manifest required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records a published two-generator, three-relator
-presentation in `TauCeti.GroupPresentation`, including its exact source, generator convention,
-transcription notes, and expected counts.
+This file carries the `J₂` row of the sporadic presentation manifest. It records a published
+two-generator, three-relator presentation in `TauCeti.GroupPresentation`, including its exact
+source, generator convention, transcription notes, and expected counts.
 
 The presentation is the `n = 7`, order `604800` entry in Section 3 of Stoytchev's paper. In the
 source's notation it is
@@ -74,7 +73,7 @@ first equality, multiplying by `(bab)⁻¹` gives the stored six-letter relator;
 multiplying by `b⁻⁵` gives the stored nine-letter relator. Thus the source family, chosen display,
 sign, equation orientation, every exponent, and all three source-order positions agree with the
 sealed row. This comparison was performed from the pinned PDF bytes independently of the original
-transcription and closes this row's S1 source-to-Lean read-through.
+transcription and closes this row's source-to-Lean read-through.
 
 ## Independent comparison with `FiniteSimpleGroups`
 
@@ -99,7 +98,7 @@ of order `604800`.
 The check used Python 3.14.6 and SymPy 1.14.0. Concatenating the forward image tables for `a` and
 then `b`, with each image stored as one byte, has SHA-256
 `2208e51b4e8a911e8618a614f0c475cc88b08e3a858fa137e304d6e63c4c6f71`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau Ceti.
+comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 ## Main definitions and results
 

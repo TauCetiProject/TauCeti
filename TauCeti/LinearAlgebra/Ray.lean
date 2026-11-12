@@ -243,6 +243,13 @@ theorem Set.Pairwise.eq_of_map_snd_eq_of_inv_smul_mem
       rw [List.forall_mem_cons] at hp hq
       rw [hS.eq_of_snd_eq_of_inv_smul_mem h0 hp.1 hq.1 h.1, ih hp.2 hq.2 h.2]
 
+end Duration
+
+section Velocity
+
+variable {R M : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommMonoid M]
+  [Module R M]
+
 omit [LinearOrder R] [IsStrictOrderedRing R] in
 /-- Rescaling a pair `(d, v)` by a nonzero factor does not change the velocity `d⁻¹ • v`. -/
 theorem Prod.inv_fst_smul_snd_smul {a : R} (ha : a ≠ 0) (z : R × M) :
@@ -255,9 +262,9 @@ theorem Prod.sameRay_iff_inv_fst_smul_snd_eq {y z : R × M} (hy : 0 < y.1) (hz :
     SameRay R y z ↔ y.1⁻¹ • y.2 = z.1⁻¹ • z.2 := by
   constructor
   · intro h
-    obtain ⟨r, hr, rfl⟩ := h.exists_pos_left (fun h0 ↦ hy.ne' (by simp [h0]))
+    obtain ⟨r₁, r₂, hr₁, hr₂, h⟩ := h.exists_pos (fun h0 ↦ hy.ne' (by simp [h0]))
       (fun h0 ↦ hz.ne' (by simp [h0]))
-    exact (inv_fst_smul_snd_smul hr.ne' y).symm
+    rw [← Prod.inv_fst_smul_snd_smul hr₁.ne' y, ← Prod.inv_fst_smul_snd_smul hr₂.ne' z, h]
   · intro h
     -- Both pairs are positive multiples of `(1, u)`, where `u` is their common velocity.
     have hy' : y = y.1 • ((1 : R), z.1⁻¹ • z.2) := by
@@ -268,4 +275,4 @@ theorem Prod.sameRay_iff_inv_fst_smul_snd_eq {y z : R × M} (hy : 0 < y.1) (hz :
       hy.le).nonneg_smul_right hz.le
     rwa [← hy', ← hz'] at h
 
-end Duration
+end Velocity
