@@ -37,8 +37,8 @@ starting with `Sum.inl e` and ending with `Γ.subdivideLast a e`.
 
 ## Main results
 
-* `TauCeti.SerreGraph.Connected.subdivide`: subdividing an edge of a connected graph gives a
-  connected graph.
+* `TauCeti.SerreGraph.connected_subdivide_iff`: a graph is connected exactly when its
+  subdivision is.
 * `TauCeti.SerreGraph.card_subdivide_V`, `TauCeti.SerreGraph.card_subdivide_geomEdge`: a subdivision
   has one more vertex and one more geometric edge.
 
@@ -266,25 +266,66 @@ theorem Connected.subdivide (h : Γ.Connected) : (Γ.subdivide a).Connected := b
     exact ⟨p.cons ⟨.inl a, rfl, subdivide_tgt_inl_self a⟩⟩
   · exact nonempty_subdivide_path a (Γ.preconnected_iff.1 hpre x y).some
 
+/-- The step of the contraction of the subdivided edge onto the source of `a`: the endpoints of a
+dart of `Γ.subdivide a`, the new vertex sent to the source of `a`, are joined by a path of `Γ`. -/
+private theorem nonempty_path_getD_dart (x : (Γ.subdivide a).E) :
+    Nonempty (Γ.Path (((Γ.subdivide a).src x).getD (Γ.src a))
+      (((Γ.subdivide a).tgt x).getD (Γ.src a))) := by
+  obtain e | _ | _ := x
+  · by_cases h : e = a
+    · subst h
+      exact ⟨by simpa using (Quiver.Path.nil : Γ.Path (Γ.src e) (Γ.src e))⟩
+    · by_cases h' : e = Γ.rev a
+      · subst h'
+        simpa using Nonempty.intro (Quiver.Hom.toPath (Γ.dart (Γ.rev a)))
+      · rw [subdivide_tgt_inl_of_ne h h']
+        exact ⟨Quiver.Hom.toPath (Γ.dart e)⟩
+  · exact ⟨by simpa using (Quiver.Path.nil : Γ.Path (Γ.src a) (Γ.src a))⟩
+  · simpa using Nonempty.intro (Quiver.Hom.toPath (Γ.dart a))
+
+/-- Contracting the subdivided edge onto the source of `a` turns a path of `Γ.subdivide a` into a
+path of `Γ`. -/
+private theorem nonempty_path_getD {x y : (Γ.subdivide a).V} (p : (Γ.subdivide a).Path x y) :
+    Nonempty (Γ.Path (x.getD (Γ.src a)) (y.getD (Γ.src a))) := by
+  -- The vertex type of the subdivision reduces to `Option Γ.V`, which hides its quiver structure.
+  let := (Γ.subdivide a).toQuiver
+  induction p with
+  | nil => exact ⟨.nil⟩
+  | cons _ e ih =>
+    obtain ⟨q⟩ := ih
+    obtain ⟨r⟩ := nonempty_path_getD_dart a e.1
+    rw [e.2.1, e.2.2] at r
+    exact ⟨q.comp r⟩
+
+/-- A graph is connected exactly when the graph obtained by subdividing one of its edges is. -/
+@[simp] theorem connected_subdivide_iff : (Γ.subdivide a).Connected ↔ Γ.Connected :=
+  ⟨fun h => (connected_iff _).2 ⟨⟨Γ.src a⟩, (preconnected_iff _).2 fun x y =>
+    nonempty_path_getD a ((preconnected_iff _).1 ((connected_iff _).1 h).2 (some x)
+      (some y)).some⟩,
+    Connected.subdivide a⟩
+
 /-! ### Counting vertices and edges -/
 
 /-- A subdivision has one more vertex. -/
 theorem card_subdivide_V [Finite Γ.V] : Nat.card (Γ.subdivide a).V = Nat.card Γ.V + 1 :=
   Finite.card_option
 
-/-- The two halves of the subdivided edge at the source of `a` are mutually reverse. -/
-theorem subdivide_toGeomEdge_inr_false :
+/-- The two darts of the half of the subdivided edge at the source of `a` have the same geometric
+edge. -/
+theorem toGeomEdge_subdivide_inr_false :
     (Γ.subdivide a).toGeomEdge (.inr false) = (Γ.subdivide a).toGeomEdge (.inl a) :=
   ((Γ.subdivide a).toGeomEdge_rev (.inr false)).symm
 
-/-- The two halves of the subdivided edge at the target of `a` are mutually reverse. -/
-theorem subdivide_toGeomEdge_inr_true :
+/-- The two darts of the half of the subdivided edge at the target of `a` have the same geometric
+edge. -/
+theorem toGeomEdge_subdivide_inr_true :
     (Γ.subdivide a).toGeomEdge (.inr true) = (Γ.subdivide a).toGeomEdge (.inl (Γ.rev a)) :=
   ((Γ.subdivide a).toGeomEdge_rev (.inr true)).symm
 
 variable {a} in
-/-- Away from the subdivided edge, mutually reverse darts stay mutually reverse. -/
-theorem subdivide_toGeomEdge_inl_rev_of_ne {e : Γ.E} (h : e ≠ a) (h' : e ≠ Γ.rev a) :
+/-- Away from the subdivided edge, the initial halves of a dart and of its reverse have the same
+geometric edge. -/
+theorem toGeomEdge_subdivide_inl_rev_of_ne {e : Γ.E} (h : e ≠ a) (h' : e ≠ Γ.rev a) :
     (Γ.subdivide a).toGeomEdge (.inl (Γ.rev e)) = (Γ.subdivide a).toGeomEdge (.inl e) := by
   rw [← subdivideRev_inl_of_ne h h']
   exact (Γ.subdivide a).toGeomEdge_rev (.inl e)
@@ -315,11 +356,11 @@ private def subdivideGeomEdgeInv (e : Γ.E) : (Γ.subdivide a).GeomEdge :=
 private theorem subdivideGeomEdgeInv_rev (e : Γ.E) :
     subdivideGeomEdgeInv a (Γ.rev e) = subdivideGeomEdgeInv a e := by
   by_cases h : e = a
-  · simpa [subdivideGeomEdgeInv, h, Γ.rev_ne a] using (subdivide_toGeomEdge_inr_true a).symm
+  · simpa [subdivideGeomEdgeInv, h, Γ.rev_ne a] using (toGeomEdge_subdivide_inr_true a).symm
   · by_cases h' : e = Γ.rev a
-    · simpa [subdivideGeomEdgeInv, h', Γ.rev_ne a] using subdivide_toGeomEdge_inr_true a
+    · simpa [subdivideGeomEdgeInv, h', Γ.rev_ne a] using toGeomEdge_subdivide_inr_true a
     · have hr : Γ.rev e ≠ a := fun hr => h' (by rw [← hr, Γ.rev_rev])
-      simpa [subdivideGeomEdgeInv, h, hr] using subdivide_toGeomEdge_inl_rev_of_ne h h'
+      simpa [subdivideGeomEdgeInv, h, hr] using toGeomEdge_subdivide_inl_rev_of_ne h h'
 
 variable (Γ) in
 /-- The geometric edges of a subdivision are the geometric edges of the original graph and one
@@ -334,7 +375,7 @@ def subdivideGeomEdgeEquiv : (Γ.subdivide a).GeomEdge ≃ Option Γ.GeomEdge wh
     · by_cases h : e = a
       · simp [subdivideGeomEdgeFun, h]
       · simp [subdivideGeomEdgeFun, subdivideGeomEdgeInv, h]
-    · simpa [subdivideGeomEdgeFun] using (subdivide_toGeomEdge_inr_false a).symm
+    · simpa [subdivideGeomEdgeFun] using (toGeomEdge_subdivide_inr_false a).symm
     · simp [subdivideGeomEdgeFun, subdivideGeomEdgeInv]
   right_inv x := by
     obtain _ | x := x
@@ -368,8 +409,13 @@ geometric edge of any other dart names the edge of its initial half. -/
   simp only [subdivideGeomEdgeEquiv, Equiv.coe_fn_symm_mk, Option.elim_some,
     GeomEdge.lift_toGeomEdge, subdivideGeomEdgeInv]
 
+/-- A subdivision of a graph with finitely many geometric edges has finitely many geometric
+edges. -/
+instance [Finite Γ.GeomEdge] : Finite (Γ.subdivide a).GeomEdge :=
+  .of_equiv _ (Γ.subdivideGeomEdgeEquiv a).symm
+
 /-- A subdivision has one more geometric edge. -/
-theorem card_subdivide_geomEdge [Finite Γ.GeomEdge] :
+@[simp] theorem card_subdivide_geomEdge [Finite Γ.GeomEdge] :
     Nat.card (Γ.subdivide a).GeomEdge = Nat.card Γ.GeomEdge + 1 := by
   rw [Nat.card_congr (Γ.subdivideGeomEdgeEquiv a), Finite.card_option]
 

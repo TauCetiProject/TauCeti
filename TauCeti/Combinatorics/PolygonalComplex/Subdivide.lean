@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Subdivide
-public import TauCeti.Combinatorics.PolygonalComplex.SurfaceModel
+public import TauCeti.Combinatorics.PolygonalComplex.Examples
 public import TauCeti.Logic.Equiv.Fin.Sigma
 import Mathlib.Tactic.Ring
 
@@ -27,11 +27,12 @@ sides replacing the side of `c`. They coincide unless the side of `c` is attache
 its reverse, and every corner of the subdivision is the first or the last corner of the corner
 `C.subdivideOriginCorner a c` of `C` on whose side it lies.
 
-The move does not change the surface. The link of an old vertex is unchanged, in the sense that
-its germs keep their degrees and the link maps onto the new one; the link of the new vertex has
-two germs, joined by one corner for every side attached along the subdivided edge. So a surface
-model stays a surface model (`SurfaceModel.subdivide`), with the same Euler characteristic, the
-same orientability and the corresponding boundary darts.
+The move does not change the surface. The link of an old vertex is unchanged: the subdivision
+maps it isomorphically onto the new link, and its germs keep their degrees. The link of the new
+vertex has two germs, joined by one corner for every side attached along the subdivided edge. So
+a surface model stays a surface model (`SurfaceModel.subdivide`), with the same Euler
+characteristic, the same orientability and the corresponding boundary darts. Subdividing an edge
+of the torus gives again a closed orientable model with Euler characteristic `0`.
 
 ## Main definitions
 
@@ -44,16 +45,22 @@ same orientability and the corresponding boundary darts.
 
 ## Main results
 
-* `TauCeti.PolygonalComplex.linkDegree_subdivide_inl`,
-  `TauCeti.PolygonalComplex.linkDegree_subdivide_inr`: the link degrees of the subdivision.
-* `TauCeti.PolygonalComplex.HasSurfaceLink.subdivide`,
-  `TauCeti.PolygonalComplex.hasSurfaceLink_subdivide_none`: the surface-link condition at the old
-  vertices and at the new vertex.
+* `TauCeti.PolygonalComplex.ofFn_subdivideSide`: the word along a subdivided face.
+* `TauCeti.PolygonalComplex.sideCount_subdivide`, `TauCeti.PolygonalComplex.linkDegree_subdivide`:
+  the side counts and link degrees of the subdivision.
+* `TauCeti.PolygonalComplex.subdivideLinkHom_mapV_bijective`,
+  `TauCeti.PolygonalComplex.subdivideLinkHom_mapE_bijective`: the link of an old vertex is
+  unchanged.
+* `TauCeti.PolygonalComplex.hasSurfaceLink_subdivide_some_iff`,
+  `TauCeti.PolygonalComplex.hasSurfaceLink_subdivide_none_iff`: the surface-link condition at the
+  old vertices and at the new vertex.
 * `TauCeti.PolygonalComplex.eulerChar_subdivide`: the Euler characteristic is unchanged.
 * `TauCeti.PolygonalComplex.isOrientable_subdivide_iff`: orientability is unchanged.
-* `TauCeti.SurfaceModel.inl_mem_boundaryDarts_subdivide_iff`,
-  `TauCeti.SurfaceModel.inr_mem_boundaryDarts_subdivide_iff`: the boundary darts of the
-  subdivision.
+* `TauCeti.SurfaceModel.boundaryDarts_subdivide`: the boundary darts of the subdivision.
+* `TauCeti.SurfaceModel.eulerChar_torus_subdivide`,
+  `TauCeti.SurfaceModel.linkDegree_torus_subdivide_inr`,
+  `TauCeti.SurfaceModel.isOrientable_torus_subdivide`: a subdivided torus has Euler characteristic
+  `0`, a circle link at its new vertex, and is orientable.
 
 ## References
 
@@ -137,6 +144,19 @@ private theorem subdivideBlock_of_add_one_eq (f : C.Face) (i : Fin (C.sides f))
   · have := C.subdivideLen_of_not a h
     rw [not_or] at h
     simp [subdivideBlock, show (j : ℕ) = 0 by omega, SerreGraph.subdivideLast_of_ne h.1 h.2]
+
+/-- The word along a face of the subdivision: each letter `e` of the word along that face in `C`
+is replaced by the path replacing `e`, which has a second letter when `e` is `a` or its reverse. -/
+theorem ofFn_subdivideSide (f : C.Face) :
+    List.ofFn (C.subdivideSide a f) = (List.ofFn (C.side f)).flatMap fun e =>
+      if e = a ∨ e = C.graph.rev a then [.inl e, C.graph.subdivideLast a e] else [.inl e] := by
+  refine (List.ofFn_sum (n := fun i => C.subdivideLen a (C.side f i)) _).trans ?_
+  rw [List.flatMap_def, List.map_ofFn]
+  refine congrArg List.flatten (congrArg List.ofFn (funext fun i => ?_))
+  simp only [subdivideSide_apply, subdivideBlock]
+  by_cases h : C.side f i = a ∨ C.side f i = C.graph.rev a
+  · simp [subdivideLen, h, List.ofFn_succ]
+  · simp [subdivideLen, h]
 
 private theorem finRotate_subdivideSides_of_lt (f : C.Face) (i : Fin (C.sides f))
     (j : Fin (C.subdivideLen a (C.side f i))) (hj : (j : ℕ) + 1 < C.subdivideLen a (C.side f i)) :
@@ -237,6 +257,11 @@ private theorem outgoing_subdivideCorner (f : C.Face)
 
 @[simp] theorem subdivideOriginCorner_fst (c : (C.subdivide a).Corner) :
     (C.subdivideOriginCorner a c).1 = c.1 := (rfl)
+
+/-- The corner `0` of a face of `C` gives the corner `0` of that face in the subdivision. -/
+@[simp] theorem subdivideFirstCorner_zero (f : C.Face) (h : 0 < C.sides f) :
+    C.subdivideFirstCorner a ⟨f, ⟨0, h⟩⟩ = ⟨f, ⟨0, (C.subdivide a).sides_pos f⟩⟩ :=
+  Sigma.ext rfl (heq_of_eq (Fin.ext (by simp [subdivideFirstCorner, subdivideCorner])))
 
 @[simp] theorem subdivideOriginCorner_subdivideFirstCorner (c : C.Corner) :
     C.subdivideOriginCorner a (C.subdivideFirstCorner a c) = c :=
@@ -429,19 +454,24 @@ private def subdivideSideEquiv : (x : (C.subdivide a).graph.E) →
   | .inr b => (C.subdivideSideInrEquiv a b).trans
       (Equiv.subtypeEquivRight fun _ => by rw [SerreGraph.subdivideOrigin_inr])
 
+/-- The number of sides of the subdivision attached along a dart `x` is the number of sides of
+`C` attached along the dart on which `x` lies. -/
+theorem sideCount_subdivide (x : (C.subdivide a).graph.E) :
+    (C.subdivide a).sideCount x = C.sideCount (C.graph.subdivideOrigin a x) := by
+  rw [sideCount_def, sideCount_def]
+  exact Nat.card_congr (C.subdivideSideEquiv a x)
+
 /-- The initial half of a dart `e` lies on as many sides of the subdivision as `e` lies on sides
 of `C`. -/
 @[simp] theorem sideCount_subdivide_inl (e : C.graph.E) :
     (C.subdivide a).sideCount (.inl e) = C.sideCount e := by
-  rw [sideCount_def, sideCount_def]
-  exact Nat.card_congr (C.subdivideSideInlEquiv a e)
+  rw [sideCount_subdivide, SerreGraph.subdivideOrigin_inl]
 
 /-- The dart from the new vertex to the target of `a` lies on as many sides of the subdivision as
 `a` lies on sides of `C`, and the dart to the source of `a` on as many as the reverse of `a`. -/
 @[simp] theorem sideCount_subdivide_inr (b : Bool) :
     (C.subdivide a).sideCount (.inr b) = C.sideCount (cond b a (C.graph.rev a)) := by
-  rw [sideCount_def, sideCount_def]
-  exact Nat.card_congr (C.subdivideSideInrEquiv a b)
+  rw [sideCount_subdivide, SerreGraph.subdivideOrigin_inr]
 
 /-- A dart of the subdivision has the link degree of the dart of `C` on which it lies. -/
 theorem linkDegree_subdivide (x : (C.subdivide a).graph.E) :
@@ -485,15 +515,11 @@ def subdivideLinkHom (v : C.graph.V) :
 @[simp] theorem subdivideLinkHom_mapV_val (v : C.graph.V) (g : (C.vertexLink v).V) :
     ((C.subdivideLinkHom a v).mapV g).1 = .inl g.1 := (rfl)
 
-@[simp] theorem subdivideLinkHom_mapE (v : C.graph.V) (d : (C.vertexLink v).E) :
+@[simp] theorem subdivideLinkHom_mapE_fst_val (v : C.graph.V) (d : (C.vertexLink v).E) :
     ((C.subdivideLinkHom a v).mapE d).1.1 = C.subdivideFirstCorner a d.1.1 := (rfl)
 
-/-- Every germ of the subdivision at an old vertex is the initial half of a germ of `C`. -/
-theorem subdivideLinkHom_mapV_surjective (v : C.graph.V) :
-    Function.Surjective (C.subdivideLinkHom a v).mapV := by
-  rintro ⟨e | b, he⟩
-  · exact ⟨⟨e, Option.some_injective _ he⟩, rfl⟩
-  · exact absurd he (by simp)
+@[simp] theorem subdivideLinkHom_mapE_snd (v : C.graph.V) (d : (C.vertexLink v).E) :
+    ((C.subdivideLinkHom a v).mapE d).2 = d.2 := (rfl)
 
 variable {C a} in
 /-- A corner of the subdivision at an old vertex is the first corner on its side. -/
@@ -506,39 +532,75 @@ private theorem eq_subdivideFirstCorner_of_cornerVertex_eq_some {c : (C.subdivid
   · rw [hc] at h
     exact absurd h (by simp)
 
-/-- Every corner of the subdivision at an old vertex is the first corner on the side of a corner
-of `C` at that vertex. -/
-theorem subdivideLinkHom_mapE_surjective (v : C.graph.V) :
-    Function.Surjective (C.subdivideLinkHom a v).mapE := by
+variable {C a} in
+private theorem cornerVertex_subdivideOriginCorner_of_eq_some {c : (C.subdivide a).Corner}
+    {v : C.graph.V} (h : (C.subdivide a).cornerVertex c = some v) :
+    C.cornerVertex (C.subdivideOriginCorner a c) = v :=
+  Option.some_injective _ <| by
+    rw [← cornerVertex_subdivideFirstCorner, ← eq_subdivideFirstCorner_of_cornerVertex_eq_some h, h]
+
+variable {C a} in
+private theorem src_subdivideOrigin_of_src_eq_some {x : (C.subdivide a).graph.E} {v : C.graph.V}
+    (h : (C.subdivide a).graph.src x = some v) : C.graph.src (C.graph.subdivideOrigin a x) = v := by
+  obtain e | b := x
+  · rw [SerreGraph.subdivideOrigin_inl]
+    exact Option.some_injective _ h
+  · exact absurd h (by simp)
+
+/-- The germs of the subdivision at an old vertex are the initial halves of the germs of `C`. -/
+theorem subdivideLinkHom_mapV_bijective (v : C.graph.V) :
+    Function.Bijective (C.subdivideLinkHom a v).mapV := by
+  refine ⟨fun g g' h => Subtype.ext (Sum.inl_injective (congrArg Subtype.val h)), ?_⟩
+  rintro ⟨x, hx⟩
+  obtain ⟨e, rfl⟩ : ∃ e, x = .inl e := by
+    obtain e | b := x
+    exacts [⟨e, rfl⟩, absurd hx (by simp)]
+  exact ⟨⟨e, Option.some_injective _ hx⟩, rfl⟩
+
+/-- The corners of the subdivision at an old vertex are the first corners on the sides of the
+corners of `C` at that vertex. -/
+theorem subdivideLinkHom_mapE_bijective (v : C.graph.V) :
+    Function.Bijective (C.subdivideLinkHom a v).mapE := by
+  refine ⟨fun d d' h => Prod.ext (Subtype.ext (C.subdivideFirstCorner_injective a
+    (congrArg (fun d => d.1.1) h))) (congrArg (fun d => d.2) h :), ?_⟩
   rintro ⟨⟨c, hc⟩, b⟩
-  have h := eq_subdivideFirstCorner_of_cornerVertex_eq_some hc
-  refine ⟨(⟨C.subdivideOriginCorner a c, Option.some_injective _ ?_⟩, b),
-    Prod.ext (Subtype.ext h.symm) rfl⟩
-  rw [← cornerVertex_subdivideFirstCorner, ← h, hc]
+  exact ⟨(⟨C.subdivideOriginCorner a c, cornerVertex_subdivideOriginCorner_of_eq_some hc⟩, b),
+    Prod.ext (Subtype.ext (eq_subdivideFirstCorner_of_cornerVertex_eq_some hc).symm) rfl⟩
+
+/-- The inverse of `C.subdivideLinkHom a v`: a germ of the subdivision at `v` is sent to the dart
+of `C` on which it lies, and the link edge of a corner to that of the corner of `C` on whose side
+it lies. -/
+private def subdivideLinkInv (v : C.graph.V) :
+    ((C.subdivide a).vertexLink (some v)).Hom (C.vertexLink v) where
+  mapV x := ⟨C.graph.subdivideOrigin a x.1, src_subdivideOrigin_of_src_eq_some x.2⟩
+  mapE d := (⟨C.subdivideOriginCorner a d.1.1,
+    cornerVertex_subdivideOriginCorner_of_eq_some d.1.2⟩, d.2)
+  map_src := by
+    rintro ⟨⟨c, hc⟩, b⟩
+    obtain ⟨c, rfl⟩ : ∃ c₀, c = C.subdivideFirstCorner a c₀ :=
+      ⟨_, eq_subdivideFirstCorner_of_cornerVertex_eq_some hc⟩
+    refine Subtype.ext ?_
+    cases b <;> simp
+  map_rev _ := rfl
+
+variable {a} in
+/-- An old vertex has a surface link in the subdivision exactly when it has one in `C`: its link
+is unchanged, and its germs keep their degrees. -/
+@[simp] theorem hasSurfaceLink_subdivide_some_iff {v : C.graph.V} :
+    (C.subdivide a).HasSurfaceLink (some v) ↔ C.HasSurfaceLink v := by
+  rw [hasSurfaceLink_iff, hasSurfaceLink_iff]
+  refine and_congr (Equiv.ofBijective _ (C.subdivideLinkHom_mapE_bijective a v)).finite_iff.symm
+    (and_congr ⟨(C.subdivideLinkInv a v).connected_of_surjective fun g =>
+      ⟨(C.subdivideLinkHom a v).mapV g, Subtype.ext (SerreGraph.subdivideOrigin_inl a g.1)⟩,
+      (C.subdivideLinkHom a v).connected_of_surjective
+        (C.subdivideLinkHom_mapV_bijective a v).2⟩ ?_)
+  simp [Sum.forall, Sum.exists]
 
 variable {C} in
 /-- A vertex with a surface link keeps a surface link when an edge is subdivided. -/
 theorem HasSurfaceLink.subdivide {v : C.graph.V} (h : C.HasSurfaceLink v) :
-    (C.subdivide a).HasSurfaceLink (some v) := by
-  obtain ⟨hfin, hconn, hdeg⟩ := (C.hasSurfaceLink_iff v).1 h
-  refine ((C.subdivide a).hasSurfaceLink_iff _).2
-    ⟨Finite.of_surjective _ (C.subdivideLinkHom_mapE_surjective a v),
-      (C.subdivideLinkHom a v).connected_of_surjective (C.subdivideLinkHom_mapV_surjective a v)
-        hconn, ?_⟩
-  have hsrc : ∀ x : (C.subdivide a).graph.E, (C.subdivide a).graph.src x = some v →
-      ∃ e, x = .inl e ∧ C.graph.src e = v := by
-    rintro (e | b) hx
-    · exact ⟨e, rfl, Option.some_injective _ hx⟩
-    · exact absurd hx (by simp)
-  rcases hdeg with hcirc | ⟨e₁, e₂, hne, hs₁, hs₂, h₁, h₂, hrest⟩
-  · refine .inl fun x hx => ?_
-    obtain ⟨e, rfl, he⟩ := hsrc x hx
-    rw [linkDegree_subdivide_inl, hcirc e he]
-  · refine .inr ⟨.inl e₁, .inl e₂, Sum.inl_injective.ne hne, congrArg some hs₁, congrArg some hs₂,
-      by rw [linkDegree_subdivide_inl, h₁], by rw [linkDegree_subdivide_inl, h₂],
-      fun x hx hx₁ hx₂ => ?_⟩
-    obtain ⟨e, rfl, he⟩ := hsrc x hx
-    rw [linkDegree_subdivide_inl, hrest e he (fun h => hx₁ (h ▸ rfl)) fun h => hx₂ (h ▸ rfl)]
+    (C.subdivide a).HasSurfaceLink (some v) :=
+  C.hasSurfaceLink_subdivide_some_iff.2 h
 
 /-- The two germs at the new vertex are joined in its link as soon as a side is attached along
 the subdivided edge. -/
@@ -590,6 +652,14 @@ theorem hasSurfaceLink_subdivide_none (h : C.linkDegree a = 1 ∨ C.linkDegree a
     · refine .inl fun x hx => ?_
       rcases hsrc x hx with rfl | rfl <;> simp [h]
 
+/-- The new vertex of a subdivision has a surface link exactly when the subdivided edge lies on
+one or two face sides. -/
+@[simp] theorem hasSurfaceLink_subdivide_none_iff :
+    (C.subdivide a).HasSurfaceLink none ↔ C.linkDegree a = 1 ∨ C.linkDegree a = 2 := by
+  refine ⟨fun h => ?_, C.hasSurfaceLink_subdivide_none a⟩
+  rw [← C.linkDegree_subdivide_inr a true]
+  exact HasSurfaceLink.linkDegree_eq_one_or_two (C.subdivide a) (e := .inr true) h
+
 /-! ### Euler characteristic and orientability -/
 
 /-- Subdividing an edge of a finite complex does not change its Euler characteristic: there is
@@ -640,15 +710,31 @@ abbrev subdivide : SurfaceModel.{u, v, w} where
     · exact (S.hasSurfaceLink v).subdivide a
 
 /-- Subdividing an edge of a surface model does not change its Euler characteristic. -/
-theorem eulerChar_subdivide : (S.subdivide a).eulerChar = S.eulerChar := by
+@[simp] theorem eulerChar_subdivide :
+    -- Stated for `S.toPolygonalComplex.subdivide a`, the form to which `simp` reduces the
+    -- complex underlying `S.subdivide a`: stated for the latter, `simp` does not find the lemma.
+    (S.toPolygonalComplex.subdivide a).eulerChar = S.eulerChar := by
   have : Finite S.graph.GeomEdge := Finite.of_surjective _ S.graph.toGeomEdge_surjective
   exact PolygonalComplex.eulerChar_subdivide _ a
+
+variable {S a} in
+/-- A dart of the subdivision is a boundary dart exactly when the dart of `S` on which it lies is
+a boundary dart. -/
+theorem mem_boundaryDarts_subdivide_iff {x : (S.subdivide a).graph.E} :
+    x ∈ (S.subdivide a).boundaryDarts ↔ S.graph.subdivideOrigin a x ∈ S.boundaryDarts := by
+  rw [← linkDegree_eq_one_iff_mem_boundaryDarts, ← linkDegree_eq_one_iff_mem_boundaryDarts,
+    linkDegree_subdivide]
+
+/-- The boundary darts of the subdivision are the darts lying on boundary darts of `S`. -/
+theorem boundaryDarts_subdivide :
+    (S.subdivide a).boundaryDarts = S.graph.subdivideOrigin a ⁻¹' S.boundaryDarts :=
+  Set.ext fun _ => mem_boundaryDarts_subdivide_iff
 
 variable {S a} in
 /-- The initial half of a dart is a boundary dart of the subdivision exactly when the dart is a
 boundary dart. -/
 @[simp] theorem inl_mem_boundaryDarts_subdivide_iff {e : S.graph.E} :
-    -- Membership is stated in `Set (S.graph.E ⊕ Bool)`, the reduced form of
+    -- Membership is stated in `Set (S.graph.E ⊕ Bool)`, the form to which `simp` reduces
     -- `Set (S.subdivide a).graph.E`: stated in the latter form, the lemma is not found by `simp`.
     @Membership.mem (S.graph.E ⊕ Bool) (Set (S.graph.E ⊕ Bool)) _ (S.subdivide a).boundaryDarts
       (.inl e) ↔ e ∈ S.boundaryDarts := by
@@ -664,6 +750,29 @@ dart is a boundary dart. -/
       (.inr b) ↔ a ∈ S.boundaryDarts := by
   rw [← linkDegree_eq_one_iff_mem_boundaryDarts, ← linkDegree_eq_one_iff_mem_boundaryDarts,
     linkDegree_subdivide_inr]
+
+/-! ### The subdivided torus -/
+
+/-- Subdividing an edge of the torus keeps the Euler characteristic `0`. -/
+theorem eulerChar_torus_subdivide (a : torus.graph.E) : (torus.subdivide a).eulerChar = 0 :=
+  (torus.eulerChar_subdivide a).trans eulerChar_torus
+
+/-- Subdividing an edge of the torus creates no boundary. -/
+theorem boundaryDarts_torus_subdivide (a : torus.graph.E) :
+    (torus.subdivide a).boundaryDarts = ∅ := by
+  rw [boundaryDarts_subdivide, boundaryDarts_torus, Set.preimage_empty]
+
+/-- The link of the new vertex of a subdivided torus is a circle: both of its germs have degree
+two. -/
+theorem linkDegree_torus_subdivide_inr (a : torus.graph.E) (b : Bool) :
+    (torus.subdivide a).linkDegree (.inr b) = 2 :=
+  linkDegree_eq_two_iff_notMem_boundaryDarts.2 (by
+    rw [boundaryDarts_torus_subdivide]
+    exact Set.notMem_empty _)
+
+/-- Subdividing an edge of the torus keeps it orientable. -/
+theorem isOrientable_torus_subdivide (a : torus.graph.E) : (torus.subdivide a).IsOrientable :=
+  (isOrientable_subdivide_iff _ a).2 isOrientable_torus
 
 end SurfaceModel
 
