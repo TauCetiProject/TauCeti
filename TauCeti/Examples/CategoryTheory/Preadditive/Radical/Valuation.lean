@@ -9,7 +9,7 @@ public import TauCeti.CategoryTheory.Preadditive.Radical.Valuation
 public import TauCeti.Examples.CategoryTheory.Exact.AlmostSplit
 -- Non-public: the underlying linear maps of morphisms, the local endomorphism ring of `R` over
 -- itself, the zero-object criterion, the irreducibility of the maps of an almost-split sequence,
--- the maximal ideal of `ℤ/p²ℤ` and the nilpotence of `p` in `ℤ/p²ℤ` are used only inside proofs.
+-- the maximal ideal of `ℤ/p²ℤ` and the nonvanishing of `p` in `ℤ/p²ℤ` are used only inside proofs.
 import TauCeti.Algebra.Category.FGModuleCat.Basic
 import TauCeti.Algebra.Category.FGModuleCat.End
 import TauCeti.Algebra.Category.FGModuleCat.Zero
@@ -99,7 +99,7 @@ theorem irreducibleMorphismValuation_zmod_residueFG_self :
     irreducibleMorphismValuation (ZMod (p ^ 2)) (residueFG (ZMod (p ^ 2)))
       (FGModuleCat.of _ (ZMod (p ^ 2))) = (1, 1) :=
   irreducibleMorphismValuation_residueFG_self (ZMod.maximalIdeal_prime_pow_eq_span p 2 two_pos)
-    (ZMod.natCast_self_sq_mul_self_eq_zero p)
+    (by rw [← sq]; exact ZMod.natCast_pow_eq_zero_of_le p le_rfl)
     (ZMod.natCast_self_pow_ne_zero (Fact.out : p.Prime).one_lt one_lt_two)
 
 /-- **The arrow `ℤ/p²ℤ ⟶ ℤ/pℤ` has valuation `(1, 1)`** in the finitely generated `ℤ/p²ℤ`-modules,
@@ -108,7 +108,7 @@ theorem irreducibleMorphismValuation_zmod_self_residueFG :
     irreducibleMorphismValuation (ZMod (p ^ 2)) (FGModuleCat.of _ (ZMod (p ^ 2)))
       (residueFG (ZMod (p ^ 2))) = (1, 1) :=
   irreducibleMorphismValuation_self_residueFG (ZMod.maximalIdeal_prime_pow_eq_span p 2 two_pos)
-    (ZMod.natCast_self_sq_mul_self_eq_zero p)
+    (by rw [← sq]; exact ZMod.natCast_pow_eq_zero_of_le p le_rfl)
     (ZMod.natCast_self_pow_ne_zero (Fact.out : p.Prime).one_lt one_lt_two)
 
 end ZMod

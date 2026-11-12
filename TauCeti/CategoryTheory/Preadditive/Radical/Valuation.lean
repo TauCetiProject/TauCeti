@@ -170,9 +170,7 @@ theorem irreducibleMorphismValuation_fst_eq_one_iff :
     refine ⟨f, irreducibleMorphismMk_ne_zero_iff.mp hv, fun u hu => ?_⟩
     obtain ⟨c, hc⟩ := hgen (irreducibleMorphismMk k X Y ⟨u, mem_jacobsonRadicalSubmodule.mpr hu⟩)
     obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective c
-    rw [irreducibleMorphismSpace_residue_smul_eq,
-      irreducibleMorphismPostcomp_irreducibleMorphismMk, irreducibleMorphismMk_eq_iff,
-      coe_jacobsonRadicalPostcomp] at hc
+    rw [residue_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff] at hc
     exact ⟨g.asHom, by simpa using neg_mem hc⟩
   · rintro ⟨f, hf, hgen⟩
     refine ⟨irreducibleMorphismMk k X Y
@@ -181,9 +179,7 @@ theorem irreducibleMorphismValuation_fst_eq_one_iff :
     obtain ⟨u, rfl⟩ := irreducibleMorphismMk_surjective w
     obtain ⟨g, hg⟩ := hgen u (mem_jacobsonRadicalSubmodule.mp u.2)
     refine ⟨Ideal.Quotient.mk _ (End.of g), ?_⟩
-    rw [irreducibleMorphismSpace_residue_smul_eq,
-      irreducibleMorphismPostcomp_irreducibleMorphismMk, irreducibleMorphismMk_eq_iff,
-      coe_jacobsonRadicalPostcomp]
+    rw [residue_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff]
     simpa using neg_mem hg
 
 /-- **The second entry of the valuation is one exactly when one irreducible morphism generates
@@ -199,9 +195,7 @@ theorem irreducibleMorphismValuation_snd_eq_one_iff :
     refine ⟨f, irreducibleMorphismMk_ne_zero_iff.mp hv, fun u hu => ?_⟩
     obtain ⟨c, hc⟩ := hgen (irreducibleMorphismMk k X Y ⟨u, mem_jacobsonRadicalSubmodule.mpr hu⟩)
     obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective c
-    rw [irreducibleMorphismSpace_residueOp_smul_eq,
-      irreducibleMorphismPrecomp_irreducibleMorphismMk, irreducibleMorphismMk_eq_iff,
-      coe_jacobsonRadicalPrecomp] at hc
+    rw [residueOp_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff] at hc
     exact ⟨a.unop.asHom, by simpa using neg_mem hc⟩
   · rintro ⟨f, hf, hgen⟩
     refine ⟨irreducibleMorphismMk k X Y
@@ -210,9 +204,7 @@ theorem irreducibleMorphismValuation_snd_eq_one_iff :
     obtain ⟨u, rfl⟩ := irreducibleMorphismMk_surjective w
     obtain ⟨a, ha⟩ := hgen u (mem_jacobsonRadicalSubmodule.mp u.2)
     refine ⟨Ideal.Quotient.mk _ (MulOpposite.op (End.of a)), ?_⟩
-    rw [irreducibleMorphismSpace_residueOp_smul_eq,
-      irreducibleMorphismPrecomp_irreducibleMorphismMk, irreducibleMorphismMk_eq_iff,
-      coe_jacobsonRadicalPrecomp]
+    rw [residueOp_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff]
     simpa using neg_mem ha
 
 /-- **The valuation is `(1, 1)` when one irreducible morphism spans over the base**: if every

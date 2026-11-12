@@ -22,7 +22,6 @@ is needed. For `p = 2` these say that the units of `ℤ/2^{k+1}` are exactly the
 * `ZMod.isNilpotent_natCast_self_pow`: `p` is nilpotent in `ℤ/p^n`.
 * `ZMod.isUnit_natCast_mul_add`: `p c + u` is a unit in `ℤ/p^n` when `u` is.
 * `ZMod.not_isUnit_natCast_mul`: `p c` is not a unit in a nontrivial `ℤ/p^n`.
-* `ZMod.natCast_self_sq_mul_self_eq_zero`: `p * p = 0` in `ℤ/p²`.
 * `ZMod.natCast_self_pow_ne_zero`: `p ≠ 0` in `ℤ/p^n` for `1 < p` and `1 < n`.
 -/
 
@@ -45,10 +44,6 @@ theorem isUnit_natCast_mul_add {c u : ZMod (p ^ n)} (hu : IsUnit u) : IsUnit (p 
 theorem not_isUnit_natCast_mul [Nontrivial (ZMod (p ^ n))] (c : ZMod (p ^ n)) :
     ¬ IsUnit ((p : ZMod (p ^ n)) * c) :=
   fun h ↦ h.not_isNilpotent ((Commute.all _ c).isNilpotent_mul_right isNilpotent_natCast_self_pow)
-
-/-- **`p` squares to zero modulo `p²`**: `p * p = 0` in `ℤ/p²`. -/
-theorem natCast_self_sq_mul_self_eq_zero (p : ℕ) : (p : ZMod (p ^ 2)) * p = 0 := by
-  rw [← Nat.cast_mul, ← sq, ZMod.natCast_self]
 
 /-- `p` is nonzero modulo `p ^ n` when `1 < p` and `1 < n`. -/
 theorem natCast_self_pow_ne_zero (hp : 1 < p) (hn : 1 < n) : (p : ZMod (p ^ n)) ≠ 0 := by
