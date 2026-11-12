@@ -85,8 +85,8 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_pos {σ t : ℝ} (ht : 0 <
     |Real.log ‖Complex.Gamma (σ + t * I)‖ -
         ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2)| ≤
       (2 / (1 - Real.cos (π / 4)) ^ 3 + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
-  set s : ℂ := σ + t * I with hs_def
-  set K : ℝ := 2 / (1 - Real.cos (π / 4)) ^ 3 with hK_def
+  set s : ℂ := σ + t * I
+  set K : ℝ := 2 / (1 - Real.cos (π / 4)) ^ 3
   have hre : s.re = σ := by simp [s]
   have him : s.im = t := by simp [s]
   rw [abs_of_pos ht]
