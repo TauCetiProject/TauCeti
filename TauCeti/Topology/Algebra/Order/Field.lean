@@ -20,7 +20,8 @@ up to a two-sided additive bounded error and `g` diverges, then `f / g` tends to
 
 It also records that the reciprocal of a positive power of `x - a` diverges to `atTop` as `x`
 tends to `a` from the right, and likewise for `a - x` from the left. These are the one-sided
-blow-ups of `tendsto_inv_nhdsGT_zero` along a vanishing power. Finally, it records the
+blow-ups of `tendsto_inv_nhdsGT_zero` along a vanishing power, and their consequence that
+`x / (1 - x)` diverges as `x` tends to `1` from the left. Finally, it records the
 one-sided bound `x ^ 2 < 1` for `x` sufficiently close to `1` from below.
 
 ## Main results
@@ -33,6 +34,8 @@ one-sided bound `x ^ 2 < 1` for `x` sufficiently close to `1` from below.
 * `TauCeti.tendsto_inv_pow_sub_nhdsGT`, `TauCeti.tendsto_inv_pow_sub_nhdsLT` — for `k ≠ 0`,
   `((x - a) ^ k)⁻¹` tends to `atTop` as `x` tends to `a` from the right, and `((a - x) ^ k)⁻¹`
   tends to `atTop` as `x` tends to `a` from the left.
+* `TauCeti.tendsto_div_one_sub_nhdsLT_one` — `x / (1 - x)` tends to `atTop` as `x` tends to `1`
+  from the left.
 
 * `TauCeti.eventually_sq_lt_one_nhdsLT_one` — eventually `x ^ 2 < 1` along `𝓝[<] 1`.
 
@@ -103,6 +106,13 @@ theorem tendsto_inv_pow_sub_nhdsLT {k : ℕ} (hk : k ≠ 0) :
       (by simp [zero_pow hk])).mono_left nhdsWithin_le_nhds
   · filter_upwards [self_mem_nhdsWithin] with x hx
     exact pow_pos (sub_pos.2 hx) k
+
+/-- The ratio `x / (1 - x)` tends to `+∞` from the left of `1`. -/
+theorem tendsto_div_one_sub_nhdsLT_one :
+    Tendsto (fun x : 𝕜 ↦ x / (1 - x)) (𝓝[<] 1) atTop := by
+  have h := (tendsto_nhdsWithin_of_tendsto_nhds tendsto_id).pos_mul_atTop one_pos
+    (tendsto_inv_pow_sub_nhdsLT (a := (1 : 𝕜)) one_ne_zero)
+  simpa [div_eq_mul_inv] using h
 
 end InvPow
 
