@@ -9,9 +9,6 @@ public import TauCeti.Probability.Distributions.Poisson.Mixed.Support
 public import TauCeti.Probability.Quantile.Discrete
 public import Mathlib.Topology.Instances.EReal.Lemmas
 
-import TauCeti.Probability.Distributions.Dirac
-import TauCeti.Probability.Distributions.Poisson.Basic
-
 /-!
 # Quantiles of mixed Poisson laws
 
@@ -93,19 +90,13 @@ theorem tendsto_quantile_map_cast_mixedPoissonMeasure_nhdsLT_one (ρ : Measure �
       (fun u ↦ (((mixedPoissonMeasure ρ).map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
       (𝓝[<] 1) (𝓝 (if ρ {0}ᶜ = 0 then 0 else ⊤)) := by
   by_cases hρ : ρ {0}ᶜ = 0
-  · have hz : ∀ᵐ r ∂ρ, r = 0 := by
-      filter_upwards [mem_ae_iff.mpr hρ] with r hr
-      exact mem_singleton_iff.mp hr
-    have hlaw : mixedPoissonMeasure ρ = dirac 0 := by
-      rw [mixedPoissonMeasure_def]
-      calc
-        ρ.bind poissonMeasure = ρ.bind (fun _ ↦ dirac 0) :=
-          bind_congr_right (hz.mono fun r hr ↦ by simp [hr, poissonMeasure_zero])
-        _ = dirac 0 := by simp [bind_const]
-    simp only [hρ, ↓reduceIte, hlaw, map_dirac, Nat.cast_zero]
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [Ioo_mem_nhdsLT (zero_lt_one : (0 : ℝ) < 1)] with u hu
-    simp [quantile_dirac 0 hu.1 hu.2.le]
+  · simp only [hρ, ↓reduceIte]
+    apply tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one _ (c := 0)
+    · filter_upwards [support_mem_ae] with x hx
+      exact le_of_eq (by simpa [support_map_cast_mixedPoissonMeasure, hρ] using hx)
+    · intro x hx
+      apply cdf_lt_one_of_mem_support_of_lt _ (y := 0) _ hx
+      simp [support_map_cast_mixedPoissonMeasure, hρ]
   · simp only [hρ, ↓reduceIte]
     apply tendsto_quantile_nhdsLT_one_of_cdf_lt_one
     intro x
