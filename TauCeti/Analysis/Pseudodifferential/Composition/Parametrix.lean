@@ -70,7 +70,7 @@ terms modulo order `-N`. This is the construction of Taylor, Lecture I, (4.1)–
 right parametrix symbol differ by a smoothing symbol
 (`TauCeti.Symbol.isSmoothing_sub_of_isAsymptoticSum_sharpTerm`), so each of them is two-sided.
 
-If `a` and `b₀` are uniform and `b₀ a - 1` is uniform of every order, every correction `d_N` and
+If `a` and `b₀` are uniform and `b₀ a - 1` is uniform of order `-1`, every correction `d_N` and
 every remainder is uniform, and the corrections have an asymptotic sum with uniform remainders
 (`TauCeti.Symbol.exists_isUniform_forall_of_exists_add`); for a uniformly elliptic `a` the uniform
 cut-off inverse provides `b₀`.
@@ -176,12 +176,12 @@ theorem exists_isAsymptoticSum_sharpTerm_left {a : Symbol n V W m} {b₀ : Symbo
   exact ⟨b, isAsymptoticSum_iff.2 fun N ↦ by simpa using hb N⟩
 
 /-- **Uniform left parametrix symbols.** If a uniform symbol `b₀` of order `-m` is a pointwise left
-inverse of the uniform symbol `a` of order `m` modulo symbols that are uniform of every order,
-then `a` has a uniform left parametrix symbol `b`: `1 ∼ ∑ₖ sharpTerm b a k` with remainders of
-order `-N` whose estimates are uniform in the position. -/
+inverse of the uniform symbol `a` of order `m` modulo a uniform symbol of order `-1`, then `a`
+has a uniform left parametrix symbol `b`: `1 ∼ ∑ₖ sharpTerm b a k` with remainders of order `-N`
+whose estimates are uniform in the position. -/
 theorem exists_isUniformAsymptoticSum_sharpTerm_left {a : Symbol n V W m} (ha : a.IsUniform)
     {b₀ : Symbol n W V (-m)} (hb₀ : b₀.IsUniform)
-    (hb₀a : ∀ m' : ℝ, ∃ s : Symbol n V V m', s.IsUniform ∧
+    (hb₀a : ∃ s : Symbol n V V (-1), s.IsUniform ∧
       s.coefficient = (b₀.comp a - inclusion (neg_add_cancel m).ge (const (.id ℂ V))).coefficient) :
     ∃ b : Symbol n W V (-m), b.IsUniform ∧ IsUniformAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
       (inclusion (by simp) (const (.id ℂ V))) (b.sharpTerm a) := by
@@ -196,7 +196,7 @@ theorem exists_isUniformAsymptoticSum_sharpTerm_left {a : Symbol n V W m} (ha : 
     (fun N b hbu ⟨r, hru, hr⟩ ↦ by
       have hR := hru.sub (hbu.sharpTerm ha N)
       -- The term `(r - sharpTerm b a N) (b₀ a - 1)` is uniform of order `-N - 1`.
-      obtain ⟨s, hsu, hs⟩ := hb₀a (-1)
+      obtain ⟨s, hsu, hs⟩ := hb₀a
       obtain ⟨d, rfl, hd⟩ := exists_coefficient_sub_sum_sharpTerm_left_succ (b₀ := b₀) hr
         (t := inclusion (by push_cast; linarith) ((r - b.sharpTerm a N).comp s))
         (funext fun p ↦ by simp only [coefficient_inclusion, coefficient_comp, hs])
@@ -310,12 +310,12 @@ theorem exists_isAsymptoticSum_sharpTerm_right {a : Symbol n V W m} {b₀ : Symb
   exact ⟨b, isAsymptoticSum_iff.2 fun N ↦ by simpa using hb N⟩
 
 /-- **Uniform right parametrix symbols.** If a uniform symbol `b₀` of order `-m` is a pointwise
-right inverse of the uniform symbol `a` of order `m` modulo symbols that are uniform of every
-order, then `a` has a uniform right parametrix symbol `b`: `1 ∼ ∑ₖ sharpTerm a b k` with
-remainders of order `-N` whose estimates are uniform in the position. -/
+right inverse of the uniform symbol `a` of order `m` modulo a uniform symbol of order `-1`, then
+`a` has a uniform right parametrix symbol `b`: `1 ∼ ∑ₖ sharpTerm a b k` with remainders of order
+`-N` whose estimates are uniform in the position. -/
 theorem exists_isUniformAsymptoticSum_sharpTerm_right {a : Symbol n V W m} (ha : a.IsUniform)
     {b₀ : Symbol n W V (-m)} (hb₀ : b₀.IsUniform)
-    (hab₀ : ∀ m' : ℝ, ∃ s : Symbol n W W m', s.IsUniform ∧
+    (hab₀ : ∃ s : Symbol n W W (-1), s.IsUniform ∧
       s.coefficient = (a.comp b₀ - inclusion (add_neg_cancel m).ge (const (.id ℂ W))).coefficient) :
     ∃ b : Symbol n W V (-m), b.IsUniform ∧ IsUniformAsymptoticSum (m := fun k : ℕ ↦ m + -m - k)
       (inclusion (by simp) (const (.id ℂ W))) (a.sharpTerm b) := by
@@ -330,7 +330,7 @@ theorem exists_isUniformAsymptoticSum_sharpTerm_right {a : Symbol n V W m} (ha :
     (fun N b hbu ⟨r, hru, hr⟩ ↦ by
       have hR := hru.sub (ha.sharpTerm hbu N)
       -- The term `(a b₀ - 1) (r - sharpTerm a b N)` is uniform of order `-N - 1`.
-      obtain ⟨s, hsu, hs⟩ := hab₀ (-1)
+      obtain ⟨s, hsu, hs⟩ := hab₀
       obtain ⟨d, rfl, hd⟩ := exists_coefficient_sub_sum_sharpTerm_right_succ (b₀ := b₀) hr
         (t := inclusion (by push_cast; linarith) (s.comp (r - a.sharpTerm b N)))
         (funext fun p ↦ by simp only [coefficient_inclusion, coefficient_comp, hs])
@@ -403,14 +403,14 @@ theorem IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm [Comple
       IsUniformAsymptoticSum (m := fun k : ℕ ↦ m + -m - k) (inclusion (by simp) (const (.id ℂ W)))
         (a.sharpTerm b') := by
   obtain ⟨b₀, hb₀, R', hb₀R⟩ := (exists_isUniformlyEllipticAbove_iff hau).1 ⟨R, ha⟩
-  refine ⟨exists_isUniformAsymptoticSum_sharpTerm_left hau hb₀ fun m' ↦ ?_,
-    exists_isUniformAsymptoticSum_sharpTerm_right hau hb₀ fun m' ↦ ?_⟩
-  · exact IsUniform.exists_isUniform_of_coefficient_eq_zero
+  refine ⟨exists_isUniformAsymptoticSum_sharpTerm_left hau hb₀ ?_,
+    exists_isUniformAsymptoticSum_sharpTerm_right hau hb₀ ?_⟩
+  · exact isUniformlySmoothing_iff.1 (IsUniform.isUniformlySmoothing_of_coefficient_eq_zero
       ((hb₀.comp hau).sub ((isUniform_const _).inclusion _)) R'
-      (fun x ξ hξ ↦ by simp [(hb₀R x ξ hξ).1]) m'
-  · exact IsUniform.exists_isUniform_of_coefficient_eq_zero
+      fun x ξ hξ ↦ by simp [(hb₀R x ξ hξ).1]) (-1)
+  · exact isUniformlySmoothing_iff.1 (IsUniform.isUniformlySmoothing_of_coefficient_eq_zero
       ((hau.comp hb₀).sub ((isUniform_const _).inclusion _)) R'
-      (fun x ξ hξ ↦ by simp [(hb₀R x ξ hξ).2]) m'
+      fun x ξ hξ ↦ by simp [(hb₀R x ξ hξ).2]) (-1)
 
 /-- **Uniqueness of left parametrix symbols.** If `b` is a two-sided parametrix symbol of `a`, then
 the left parametrix symbols of `a` are exactly the symbols `b'` with `b' - b` smoothing. -/

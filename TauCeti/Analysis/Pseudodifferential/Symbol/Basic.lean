@@ -75,7 +75,8 @@ order `0` that is not uniform (`TauCeti.Symbol.not_isUniform_ofSpatial_smul`).
 Composition preserves uniform estimates (`TauCeti.Symbol.IsUniform.comp`) and compact spatial
 support of either factor. Composing with the symbol of multiplication by a compactly supported
 smooth function (`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_iff`) is therefore a spatial
-cutoff, producing a symbol with uniform estimates.
+cutoff, producing a symbol with uniform estimates. A symbol of every order with uniform estimates
+is *uniformly smoothing* (`TauCeti.Symbol.IsUniformlySmoothing`).
 
 The mixed derivative `TauCeti.mixedDeriv α β a x ξ`, defined with the coordinate derivatives,
 takes the frequency derivatives first. For smooth `a` the two kinds of derivatives commute
@@ -1285,6 +1286,29 @@ theorem IsSmoothing.comp_left {a : Symbol n V W m} (ha : a.IsSmoothing) (b : Sym
   obtain ⟨a', ha'⟩ := ha (m'' - m')
   exact ⟨Symbol.inclusion (by linarith) (b.comp a'), funext fun p => by simp [ha']⟩
 
+/-- A symbol is *uniformly smoothing* if its coefficient is a symbol of every real order with
+estimates uniform in the position. -/
+def IsUniformlySmoothing (a : Symbol n V W m) : Prop :=
+  ∀ m' : ℝ, ∃ b : Symbol n V W m', b.IsUniform ∧ b.coefficient = a.coefficient
+
+theorem isUniformlySmoothing_iff {a : Symbol n V W m} : a.IsUniformlySmoothing ↔
+    ∀ m' : ℝ, ∃ b : Symbol n V W m', b.IsUniform ∧ b.coefficient = a.coefficient :=
+  Iff.rfl
+
+theorem IsUniformlySmoothing.isSmoothing {a : Symbol n V W m} (ha : a.IsUniformlySmoothing) :
+    a.IsSmoothing := fun m' => (ha m').imp fun _ hb => hb.2
+
+theorem IsUniformlySmoothing.isUniform {a : Symbol n V W m} (ha : a.IsUniformlySmoothing) :
+    a.IsUniform := by
+  obtain ⟨b, hb, hba⟩ := ha m
+  rwa [isUniform_iff, ← hba]
+
+theorem IsUniformlySmoothing.sub {a b : Symbol n V W m} (ha : a.IsUniformlySmoothing)
+    (hb : b.IsUniformlySmoothing) : (a - b).IsUniformlySmoothing := fun m' => by
+  obtain ⟨a', ha', haa⟩ := ha m'
+  obtain ⟨b', hb', hbb⟩ := hb m'
+  exact ⟨a' - b', ha'.sub hb', by simp [haa, hbb]⟩
+
 /-- A smooth coefficient vanishing at every frequency of norm at least `R`, such as the difference
 of two cut-off expansions, is a symbol of every order `m`. -/
 def ofBoundedFrequencySupport (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
@@ -1337,10 +1361,10 @@ theorem isSmoothing_of_coefficient_eq_zero {a : Symbol n V W m} (R : ℝ)
   fun _ => ⟨ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R ha, rfl⟩
 
 /-- A symbol with estimates uniform in the position that vanishes at every frequency of norm at
-least `R` is a symbol of every order `m'`, again with estimates uniform in the position. -/
-theorem IsUniform.exists_isUniform_of_coefficient_eq_zero {a : Symbol n V W m} (ha : a.IsUniform)
-    (R : ℝ) (h : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) (m' : ℝ) :
-    ∃ b : Symbol n V W m', b.IsUniform ∧ b.coefficient = a.coefficient := by
+least `R` is uniformly smoothing. -/
+theorem IsUniform.isUniformlySmoothing_of_coefficient_eq_zero {a : Symbol n V W m}
+    (ha : a.IsUniform) (R : ℝ) (h : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) :
+    a.IsUniformlySmoothing := fun m' => by
   refine ⟨ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R h, fun α β => ?_, rfl⟩
   obtain ⟨C, hC0, hC⟩ := ha α β
   refine ⟨C * (1 + R ^ 2) ^ (|m - m'| / 2), by positivity, fun x ξ => ?_⟩

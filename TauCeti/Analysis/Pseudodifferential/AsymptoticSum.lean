@@ -58,9 +58,10 @@ If every `aⱼ` satisfies its estimates uniformly in the position (`TauCeti.Symb
 radii can be chosen so that the `j`-th term is at most `2^{-j}` at every position. The Borel sum
 `b` is then uniform too, and so are all its remainders `b - ∑_{j < N} aⱼ`
 (`TauCeti.Symbol.exists_isUniformAsymptoticSum`). This is the asymptotic summation of the calculus
-of symbols with estimates uniform on all of `ℝⁿ`, in which the parametrix of a uniformly elliptic
-symbol is constructed (`TauCeti.Symbol.exists_isUniformAsymptoticSum_sharpTerm_left`). Such sums are
-unique modulo symbols that are uniform of every order.
+of symbols with estimates uniform on all of `ℝⁿ`, used to construct the uniform left and right
+parametrix symbols of a uniformly elliptic symbol
+(`TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm`). Such sums are
+unique modulo uniformly smoothing symbols (`TauCeti.Symbol.IsUniformlySmoothing`).
 
 Applied to the cut-off terms `χ(ξ) a_{m-j}(x, ξ)` of a sequence of homogeneous symbols, asymptotic
 summation constructs a classical symbol with these homogeneous terms. So the homogeneous terms
@@ -84,9 +85,9 @@ homogeneous symbols of degrees `m - j`.
 * `TauCeti.Symbol.IsUniform.exists_norm_mixedDeriv_cutoff_smul_le`: the estimates of the cut-off
   symbols `χ(ξ / t) a(x, ξ)` of a uniform symbol, uniform in `t ≥ 1` and in the position.
 * `TauCeti.Symbol.IsUniformAsymptoticSum`: `b` is an asymptotic sum of the symbols `aⱼ` with
-  remainders whose estimates are uniform in the position; such sums are unique modulo symbols
-  that are uniform of every order
-  (`TauCeti.Symbol.IsUniformAsymptoticSum.isUniformAsymptoticSum_iff`).
+  remainders whose estimates are uniform in the position; such sums are unique modulo uniformly
+  smoothing symbols
+  (`TauCeti.Symbol.IsUniformAsymptoticSum.isUniformAsymptoticSum_iff_isUniformlySmoothing_sub`).
 * `TauCeti.Symbol.exists_isUniformAsymptoticSum`: every sequence of uniform symbols of orders
   decreasing to `-∞` has an asymptotic sum with uniform remainders.
 * `TauCeti.Symbol.exists_isUniform_forall_of_exists_add`: the same summation of successive
@@ -720,6 +721,26 @@ private theorem antitone_sub_natCast_and_tendsto (μ : ℝ) :
   ⟨fun _ _ hij ↦ sub_le_sub_left (Nat.cast_le.2 hij) μ, tendsto_atBot_add_const_left atTop μ <|
     tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop⟩
 
+/-- The successive approximations of `b₀`: if every `b` with `P N b` can be improved to
+`P (N + 1)` by a correction `d` of order `μ - N` with `Q N d`, then there are corrections `c N`
+with `Q N (c N)` such that each `b₀ + ∑_{j < N} c j` has the property `P N`. -/
+private theorem exists_corrections_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → Prop)
+    (Q : ∀ N : ℕ, Symbol n V W (μ - N) → Prop) {b₀ : Symbol n V W μ} (h₀ : P 0 b₀)
+    (hsucc : ∀ (N : ℕ) b, P N b →
+      ∃ d : Symbol n V W (μ - N), Q N d ∧ P (N + 1) (b + inclusion (by simp) d)) :
+    ∃ c : ∀ N : ℕ, Symbol n V W (μ - N), (∀ N, Q N (c N)) ∧ ∀ N, ∃ b, P N b ∧
+      b.coefficient = b₀.coefficient + ∑ j ∈ Finset.range N, (c j).coefficient := by
+  choose d hdQ hd using hsucc
+  -- The successive approximations `s N`, with `P N (s N)`, and the corrections between them.
+  let s : ∀ N, {b : Symbol n V W μ // P N b} := fun N ↦ Nat.rec ⟨b₀, h₀⟩
+    (fun N b ↦ ⟨b.1 + inclusion (by simp) (d N b.1 b.2), hd N b.1 b.2⟩) N
+  refine ⟨fun N ↦ d N (s N).1 (s N).2, fun N ↦ hdQ N _ _, fun N ↦ ⟨(s N).1, (s N).2, ?_⟩⟩
+  induction N with
+  | zero => simp [s]
+  | succ N ih =>
+    rw [Finset.sum_range_succ, ← add_assoc, ← ih]
+    simp [s]
+
 /-- **Asymptotic summation of successive corrections.** Let `P N` be properties of symbols of
 order `μ` which `b₀` has for `N = 0`, which are stable under changes by symbols of order `μ - N`,
 and which can be improved from `N` to `N + 1` by such a change. Then one symbol has all of them. -/
@@ -730,24 +751,15 @@ theorem exists_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → 
     (hsucc : ∀ (N : ℕ) b, P N b →
       ∃ d : Symbol n V W (μ - N), P (N + 1) (b + inclusion (by simp) d)) :
     ∃ b, ∀ N, P N b := by
-  choose d hd using hsucc
-  -- The successive approximations `s N`, with `P N (s N)`, and the corrections `c N` between them.
-  let s : ∀ N, {b : Symbol n V W μ // P N b} := fun N ↦ Nat.rec ⟨b₀, h₀⟩
-    (fun N b ↦ ⟨b.1 + inclusion (by simp) (d N b.1 b.2), hd N b.1 b.2⟩) N
-  let c : ∀ N : ℕ, Symbol n V W (μ - N) := fun N ↦ d N (s N).1 (s N).2
-  have hs (N : ℕ) :
-      (s N).1.coefficient = b₀.coefficient + ∑ j ∈ Finset.range N, (c j).coefficient := by
-    induction N with
-    | zero => simp [s]
-    | succ N ih =>
-      rw [Finset.sum_range_succ, ← add_assoc, ← ih]
-      simp [s, c]
+  obtain ⟨c, -, hc⟩ := exists_corrections_of_exists_add P (fun _ _ ↦ True) h₀
+    fun N b hb ↦ (hsucc N b hb).imp fun _ hd ↦ ⟨trivial, hd⟩
   obtain ⟨B, hB⟩ := exists_asymptoticSum (antitone_sub_natCast_and_tendsto μ).1
     (antitone_sub_natCast_and_tendsto μ).2 c
   refine ⟨b₀ + inclusion (by simp) B, fun N ↦ ?_⟩
   obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hB N
-  refine hcongr N (s N).1 _ r (s N).2 ?_
-  rw [coefficient_add, coefficient_inclusion, ← hr, hs]
+  obtain ⟨b, hb, hbc⟩ := hc N
+  refine hcongr N b _ r hb ?_
+  rw [coefficient_add, coefficient_inclusion, ← hr, hbc]
   abel
 
 /-! ### Asymptotic sums of uniform symbols -/
@@ -766,9 +778,9 @@ private theorem IsUniform.exists_isUniform_cutoff_smul_sub {μ : ℝ} {a : Symbo
     (ha : a.IsUniform) (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (ht : 1 ≤ t) (μ' : ℝ) :
     ∃ E : Symbol n V W μ', E.IsUniform ∧
       E.coefficient = (fun p => χ (t⁻¹ • p.2) • a.coefficient p) - a.coefficient := by
-  obtain ⟨e, he, hec⟩ := ((isUniform_dilatedCutoff χ ht).sub
-    (isUniform_const (ContinuousLinearMap.id ℂ W))).exists_isUniform_of_coefficient_eq_zero
-      (2 * t) (fun x ξ hξ => by
+  obtain ⟨e, he, hec⟩ := isUniformlySmoothing_iff.1 (((isUniform_dilatedCutoff χ ht).sub
+    (isUniform_const (ContinuousLinearMap.id ℂ W))).isUniformlySmoothing_of_coefficient_eq_zero
+      (2 * t) fun x ξ hξ => by
         simp [dilatedCutoff, χ.apply_inv_smul_eq_one (one_pos.trans_le ht) hξ]) (μ' - μ)
   refine ⟨Symbol.inclusion (sub_add_cancel μ' μ).le (e.comp a), (he.comp ha).inclusion _, ?_⟩
   funext p
@@ -823,15 +835,14 @@ theorem IsUniformAsymptoticSum.isUniform {m : ℕ → ℝ} {b : Symbol n V W (m 
   rw [isUniform_iff, hbr]
   exact isUniform_iff.1 hr
 
-/-- Asymptotic sums with uniform remainders are unique modulo symbols that are uniform of every
-order: if `b` is an asymptotic sum with uniform remainders of symbols `aⱼ` whose orders tend to
-`-∞`, then `b'` is one exactly when `b' - b` is a uniform symbol of every order. -/
-theorem IsUniformAsymptoticSum.isUniformAsymptoticSum_iff {m : ℕ → ℝ}
+/-- Asymptotic sums with uniform remainders are unique modulo uniformly smoothing symbols: if `b`
+is an asymptotic sum with uniform remainders of symbols `aⱼ` whose orders tend to `-∞`, then `b'`
+is one exactly when `b' - b` is uniformly smoothing. -/
+theorem IsUniformAsymptoticSum.isUniformAsymptoticSum_iff_isUniformlySmoothing_sub {m : ℕ → ℝ}
     (hm' : Tendsto m atTop atBot) {a : ∀ j, Symbol n V W (m j)} {b b' : Symbol n V W (m 0)}
     (hb : b.IsUniformAsymptoticSum a) :
-    b'.IsUniformAsymptoticSum a ↔
-      ∀ m'' : ℝ, ∃ s : Symbol n V W m'', s.IsUniform ∧ s.coefficient = (b' - b).coefficient := by
-  refine ⟨fun hb' m'' => ?_, fun h N => ?_⟩
+    b'.IsUniformAsymptoticSum a ↔ (b' - b).IsUniformlySmoothing := by
+  refine ⟨fun hb' => isUniformlySmoothing_iff.2 fun m'' => ?_, fun h N => ?_⟩
   · obtain ⟨N, hN⟩ := (hm'.eventually (eventually_le_atBot m'')).exists
     obtain ⟨r, hr, hbr⟩ := hb N
     obtain ⟨r', hr', hbr'⟩ := hb' N
@@ -839,7 +850,7 @@ theorem IsUniformAsymptoticSum.isUniformAsymptoticSum_iff {m : ℕ → ℝ}
     rw [coefficient_inclusion, coefficient_sub, ← hbr, ← hbr', coefficient_sub]
     abel
   · obtain ⟨r, hr, hbr⟩ := hb N
-    obtain ⟨s, hs, hsc⟩ := h (m N)
+    obtain ⟨s, hs, hsc⟩ := isUniformlySmoothing_iff.1 h (m N)
     refine ⟨s + r, hs.add hr, ?_⟩
     rw [coefficient_add, hsc, ← hbr, coefficient_sub]
     abel
@@ -890,25 +901,16 @@ theorem exists_isUniform_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V
     (hsucc : ∀ (N : ℕ) b, b.IsUniform → P N b →
       ∃ d : Symbol n V W (μ - N), d.IsUniform ∧ P (N + 1) (b + inclusion (by simp) d)) :
     ∃ b, b.IsUniform ∧ ∀ N, P N b := by
-  choose d hdu hd using hsucc
-  -- The successive uniform approximations `s N`, with `P N (s N)`, and the corrections `c N`.
-  let s : ∀ N, {b : Symbol n V W μ // b.IsUniform ∧ P N b} := fun N ↦ Nat.rec ⟨b₀, hb₀, h₀⟩
-    (fun N b ↦ ⟨b.1 + inclusion (by simp) (d N b.1 b.2.1 b.2.2),
-      b.2.1.add ((hdu N b.1 b.2.1 b.2.2).inclusion _), hd N b.1 b.2.1 b.2.2⟩) N
-  let c : ∀ N : ℕ, Symbol n V W (μ - N) := fun N ↦ d N (s N).1 (s N).2.1 (s N).2.2
-  have hs (N : ℕ) :
-      (s N).1.coefficient = b₀.coefficient + ∑ j ∈ Finset.range N, (c j).coefficient := by
-    induction N with
-    | zero => simp [s]
-    | succ N ih =>
-      rw [Finset.sum_range_succ, ← add_assoc, ← ih]
-      simp [s, c]
+  obtain ⟨c, hcu, hc⟩ := exists_corrections_of_exists_add (fun N b ↦ b.IsUniform ∧ P N b)
+    (fun _ d ↦ d.IsUniform) ⟨hb₀, h₀⟩ fun N b hb ↦
+      (hsucc N b hb.1 hb.2).imp fun _ hd ↦ ⟨hd.1, hb.1.add (hd.1.inclusion _), hd.2⟩
   obtain ⟨B, hB⟩ := exists_isUniformAsymptoticSum (antitone_sub_natCast_and_tendsto μ).1
-    (antitone_sub_natCast_and_tendsto μ).2 fun N ↦ hdu N _ _ _
+    (antitone_sub_natCast_and_tendsto μ).2 hcu
   refine ⟨b₀ + inclusion (by simp) B, hb₀.add (hB.isUniform.inclusion _), fun N ↦ ?_⟩
   obtain ⟨r, hr, hBr⟩ := hB N
-  refine hcongr N (s N).1 _ r hr (s N).2.2 ?_
-  rw [coefficient_add, coefficient_inclusion, ← hBr, hs]
+  obtain ⟨b, hb, hbc⟩ := hc N
+  refine hcongr N b _ r hr hb.2 ?_
+  rw [coefficient_add, coefficient_inclusion, ← hBr, hbc]
   abel
 
 end Symbol
