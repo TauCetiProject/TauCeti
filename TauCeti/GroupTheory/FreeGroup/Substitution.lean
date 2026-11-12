@@ -166,27 +166,18 @@ word, then the word in variables and letters was already reduced: a cancelling p
 is replaced by a nonempty word followed by its formal inverse. -/
 theorem IsReduced.of_substituteVars {U : X → List (A × Bool)} (hU : ∀ x, U x ≠ [])
     {w : List ((X ⊕ A) × Bool)} (h : IsReduced (substituteVars U w)) : IsReduced w := by
-  classical
   refine IsReduced.of_forall_not_step fun w' hstep => ?_
   obtain @⟨L₁, L₂, y, b⟩ := hstep
-  have hinv : substituteVars U [(y, !b)] = invRev (substituteVars U [(y, b)]) := by
+  have hinv : substituteVars U [(y, !b)] = FreeGroup.invRev (substituteVars U [(y, b)]) := by
     rw [← substituteVars_invRev]
-    simp [invRev]
-  have hne : substituteVars U [(y, b)] ≠ [] := by
-    obtain x | a := y
-    · cases b
-      · simpa [invRev] using hU x
-      · simpa using hU x
-    · simp
-  have hred : IsReduced (substituteVars U [(y, b)] ++ invRev (substituteVars U [(y, b)])) := by
+    simp [FreeGroup.invRev]
+  have hred : IsReduced (substituteVars U [(y, b)] ++ substituteVars U [(y, !b)]) := by
     refine h.infix ⟨substituteVars U L₁, substituteVars U L₂, ?_⟩
-    rw [← hinv, ← substituteVars_append, ← substituteVars_append, ← substituteVars_append]
+    rw [← substituteVars_append, ← substituteVars_append, ← substituteVars_append]
     simp
-  have hmk : mk (substituteVars U [(y, b)] ++ invRev (substituteVars U [(y, b)])) = mk [] := by
-    rw [← mul_mk, ← inv_mk, mul_inv_cancel, one_eq_mk]
-  have hnil := reduce.sound hmk
-  rw [hred.reduce_eq] at hnil
-  simp_all
+  have hnil := hred.eq_of_mk_eq .nil <| by
+    rw [hinv, ← mul_mk, ← inv_mk, mul_inv_cancel, one_eq_mk]
+  obtain x | a := y <;> cases b <;> simp [hU] at hnil
 
 end Vars
 
