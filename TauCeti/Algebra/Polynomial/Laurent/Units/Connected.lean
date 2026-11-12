@@ -61,7 +61,7 @@ theorem isClopen_basicOpen_coeff_of_isUnit (f : R[T;T⁻¹]) (hf : IsUnit f) (n 
   · rw [Set.disjoint_left]
     intro p hn hp
     obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hp
-    obtain ⟨j, hj, huniq⟩ := f.existsUnique_coeff_notMem_prime_of_isUnit hf p
+    obtain ⟨j, _, huniq⟩ := f.existsUnique_coeff_notMem_prime_of_isUnit hf p
     exact i.2 ((huniq i ((PrimeSpectrum.mem_basicOpen _ _).mp hi)).trans
       (huniq n ((PrimeSpectrum.mem_basicOpen _ _).mp hn)).symm)
 
@@ -88,7 +88,7 @@ theorem exists_isUnit_coeff_of_isUnit [PreconnectedSpace (PrimeSpectrum R)]
       intro I hI
       let q : PrimeSpectrum R := ⟨I, hI⟩
       by_contra h
-      obtain ⟨j, hj, huniq⟩ := f.existsUnique_coeff_notMem_prime_of_isUnit hf q
+      obtain ⟨j, _, huniq⟩ := f.existsUnique_coeff_notMem_prime_of_isUnit hf q
       exact hi ((huniq i h).trans (huniq n (hall q)).symm)
 
 end LaurentPolynomial

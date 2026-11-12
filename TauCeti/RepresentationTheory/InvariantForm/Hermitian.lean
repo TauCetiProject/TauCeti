@@ -66,9 +66,6 @@ positivity results over `RCLike` would fix the wrong one of the two for the `ℂ
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 7: the "compatible Hermitian form" that the realizability target
-  `frobeniusSchurIndicatorRep_eq_one_realizable` is built from.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2.
 -/
 

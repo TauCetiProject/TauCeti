@@ -714,7 +714,7 @@ theorem eLpNorm_apply_le_rpow_mul_rpow_mul_eLpNorm (T : Lp ℂ 2 μ →L[ℂ] Lp
   have hptop : p ≠ ∞ := by
     rw [← ENNReal.inv_ne_zero, hp']
     exact (lt_of_lt_of_le (ENNReal.mul_pos (by simpa using hθ.1) (by simp)) le_add_self).ne'
-  exact eLpNorm_apply_le_of_forall_simpleFunc ENNReal.ofNat_ne_top T hp1 hptop ENNReal.coe_ne_top
+  exact eLpNorm_apply_le_of_forall_simpleFunc ENNReal.ofNat_ne_top T hp1 hptop
     (eLpNorm_apply_toLp_le T h₀ h₁ hθ hp' hq' hqtop) f hf
 
 end ContinuousLinearMap

@@ -508,7 +508,6 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
   let : MeasurableSpace E' := borel E'
   have : BorelSpace E' := ⟨rfl⟩
   have hd (x : M) := (ho x).isInvertible_mfderiv
-  have hmd (x : M) := mdifferentiableAt_of_isInvertible_mfderiv (hd x)
   have hE : Module.finrank ℝ E = Module.finrank ℝ E' := o.card_eq.symm.trans o'.card_eq
   have hint := hf.integrableTopForm_mpullback_iff hd hE hφ
   by_cases hφi : IntegrableTopForm φ
