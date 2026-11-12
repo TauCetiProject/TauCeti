@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.ContinuousMap.Algebra
+public import TauCeti.Topology.Algebra.GroupAction.OrbitTrivialization
 public import TauCeti.Topology.Homotopy.HurewiczFibration.LocallyTrivial
 public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 public import TauCeti.Topology.MappingSpace.Evaluation
@@ -22,18 +23,22 @@ Evaluation at the basepoint `ev : Map(B, X) → X` is equivariant
 `Map_*(B, X)` of maps sending `b₀` to `x`, and the stabilizer of `x` acts continuously on that
 fibre (`TauCeti.BasedMap.instMulActionStabilizer`, `TauCeti.BasedMap.instContinuousSMulStabilizer`).
 
-The action restricted to `G × Map_*(B, X)` (`TauCeti.BasedMap.actionMap`) is a map of fibrations:
-it lies over the orbit map `g ↦ g • x` (`TauCeti.mappingSpaceEval_actionMap`), and on the fibre
-over `x` of the orbit map, the stabilizer, it is the action of the stabilizer on the based mapping
-space (`TauCeti.BasedMap.coe_stabilizer_smul`). For a homogeneous space `X = G ⧸ H` and `B = S²`
-these are the actions `Φ : G × Map(S², G ⧸ H) → Map(S², G ⧸ H)` and
+The action restricted to `G × Map_*(B, X)` (`TauCeti.BasedMap.actionMap`) lies over the orbit map
+`g ↦ g • x`: evaluating at `b₀` after acting is the orbit map after projecting to `G`
+(`TauCeti.mappingSpaceEval_actionMap`), a commuting square. On the fibre over `x` of the orbit map,
+the stabilizer, it is the action of the stabilizer on the based mapping space: `actionMap` is
+`(g, γ) ↦ g • γ` (`TauCeti.BasedMap.actionMap_apply`), which for `g` in the stabilizer is the
+stabilizer action (`TauCeti.BasedMap.coe_stabilizer_smul`). For a homogeneous space `X = G ⧸ H`
+and `B = S²` these are the actions `Φ : G × Map(S², G ⧸ H) → Map(S², G ⧸ H)` and
 `Φ_H : H × Ω²(G ⧸ H) → Ω²(G ⧸ H)` of Barraud–Damian–Humilière–Oancea, Proposition 6.36: the
 stabilizer of the coset `eH` is `H` (`MulAction.stabilizer_quotient`).
 
 A continuous local section `s` of the orbit map over an open set `U`, `s y • x = y` for `y ∈ U`,
 translates every map with `f(b₀) ∈ U` to a based map: `f ↦ (f(b₀), s(f(b₀))⁻¹ • f)` is a local
 trivialization of evaluation over `U` with fibre `Map_*(B, X)`, with inverse
-`(y, γ) ↦ s(y) • γ` (`TauCeti.mappingSpaceEvalTrivialization`). This generalizes the global
+`(y, γ) ↦ s(y) • γ` (`TauCeti.mappingSpaceEvalTrivialization`). This is the chart
+`TauCeti.equivariantLocalSectionTrivialization` of an equivariant map, which adapts the chart of
+`Subgroup.localSectionTrivializationOfCosetFibers` to an action. It generalizes the global
 product decomposition `G × Map_*(B, G) ≃ₜ Map(B, G)` of maps into a group
 (`TauCeti.mappingSpaceGroupHomeomorph`), where the section is the identity. So if the orbit map
 has continuous local sections around every point, then evaluation is locally trivial with fibre
@@ -130,12 +135,12 @@ instance instContinuousSMulStabilizer :
     ((continuous_subtype_val.comp continuous_fst).smul
       (continuous_subtype_val.comp continuous_snd)).subtype_mk _
 
-/-! ### The action map as a map of fibrations -/
+/-! ### The action map over the orbit map -/
 
 variable (b₀ x) in
 /-- The action map `G × Map_*(B, X) → Map(B, X)`, `(g, γ) ↦ g • γ`. It lies over the orbit map
-`g ↦ g • x` (`TauCeti.mappingSpaceEval_actionMap`), and on the stabilizer it is the action of the
-stabilizer on based maps (`TauCeti.BasedMap.coe_stabilizer_smul`). -/
+`g ↦ g • x` (`TauCeti.mappingSpaceEval_actionMap`). For `g` in the stabilizer of `x`, `g • γ` is
+the stabilizer action on based maps (`TauCeti.BasedMap.coe_stabilizer_smul`). -/
 def actionMap : C(G × BasedMap B X b₀ x, C(B, X)) :=
   ⟨fun p ↦ p.1 • p.2.1, continuous_fst.smul (continuous_subtype_val.comp continuous_snd)⟩
 
@@ -158,65 +163,22 @@ section Trivialization
 
 variable [ContinuousInv G] (b₀ : B) (x : X)
 
-/-- The based map `s(f(b₀))⁻¹ • f` when `f(b₀)` lies in the domain `U` of the local section `s`,
-and the constant map otherwise. -/
-private def sectionTranslate (U : Set X) (s : X → G) (hsec : ∀ y ∈ U, s y • x = y)
-    (f : C(B, X)) : BasedMap B X b₀ x :=
-  letI := Classical.dec (f b₀ ∈ U)
-  if hf : f b₀ ∈ U then
-    ⟨(s (f b₀))⁻¹ • f, by
-      rw [ContinuousMap.smul_apply, inv_smul_eq_iff]
-      exact (hsec _ hf).symm⟩
-  else ⟨ContinuousMap.const B x, rfl⟩
-
-omit [ContinuousInv G] in
-private theorem coe_sectionTranslate {U : Set X} {s : X → G} {hsec : ∀ y ∈ U, s y • x = y}
-    {f : C(B, X)} (hf : f b₀ ∈ U) :
-    (sectionTranslate b₀ x U s hsec f : C(B, X)) = (s (f b₀))⁻¹ • f := by
-  simp only [sectionTranslate, hf, ↓reduceDIte]
-
 /-- A section `s` of the orbit map `g ↦ g • x`, continuous on an open set `U`, defines a local
 trivialization of evaluation at `b₀` over `U` with fibre the based mapping space: it sends a map
 `f` with `f(b₀) ∈ U` to `(f(b₀), s(f(b₀))⁻¹ • f)`, and its inverse sends `(y, γ)` to
-`s(y) • γ`. -/
+`s(y) • γ`. This is `TauCeti.equivariantLocalSectionTrivialization` for evaluation, which is
+equivariant by `ContinuousMap.smul_apply`. -/
 def mappingSpaceEvalTrivialization (U : Set X) (hU : IsOpen U) (s : X → G)
     (hs : ContinuousOn s U) (hsec : ∀ y ∈ U, s y • x = y) :
-    Bundle.Trivialization (BasedMap B X b₀ x) (mappingSpaceEval (X := X) b₀) where
-  toFun f := (f b₀, sectionTranslate b₀ x U s hsec f)
-  invFun p := s p.1 • p.2.1
-  source := {f | f b₀ ∈ U}
-  target := U ×ˢ univ
-  map_source' _ hf := ⟨hf, mem_univ _⟩
-  map_target' p hp := by
-    change (s p.1 • p.2.1) b₀ ∈ U
-    rw [ContinuousMap.smul_apply, p.2.2, hsec _ hp.1]
-    exact hp.1
-  left_inv' f hf := by
-    change s (f b₀) • (sectionTranslate b₀ x U s hsec f : C(B, X)) = f
-    rw [coe_sectionTranslate b₀ x hf, smul_inv_smul]
-  right_inv' p hp := by
-    have hp' : (s p.1 • p.2.1) b₀ = p.1 := by
-      rw [ContinuousMap.smul_apply, p.2.2, hsec _ hp.1]
-    refine Prod.ext hp' (Subtype.ext ?_)
-    change (sectionTranslate b₀ x U s hsec (s p.1 • p.2.1) : C(B, X)) = p.2.1
-    rw [coe_sectionTranslate b₀ x (hp'.symm ▸ hp.1 : (s p.1 • p.2.1) b₀ ∈ U), hp',
-      inv_smul_smul]
-  open_source := hU.preimage (continuous_eval_const b₀)
-  open_target := hU.prod isOpen_univ
-  continuousOn_toFun := by
-    refine (continuous_eval_const b₀).continuousOn.prodMk ?_
-    refine (IsEmbedding.subtypeVal (p := fun f : C(B, X) ↦ f b₀ = x)).isInducing.continuousOn_iff.2
-      ?_
-    exact ((hs.comp (continuous_eval_const b₀).continuousOn fun _ hf ↦ hf).inv.smul
-      continuousOn_id).congr fun f hf ↦ coe_sectionTranslate b₀ x hf
-  continuousOn_invFun :=
-    (hs.comp (continuousOn_fst (s := U ×ˢ univ)) fun _ hp ↦ hp.1).smul
-      (continuous_subtype_val.comp_continuousOn continuousOn_snd)
-  baseSet := U
-  open_baseSet := hU
-  source_eq := by ext; simp
-  target_eq := rfl
-  proj_toFun _ _ := (mappingSpaceEval_apply _ _).symm
+    Bundle.Trivialization (BasedMap B X b₀ x) (mappingSpaceEval (X := X) b₀) :=
+  -- The general chart has projection `fun f ↦ f b₀`, so that its fibre is `BasedMap B X b₀ x`;
+  -- only the projection fields are restated for `mappingSpaceEval b₀`.
+  let e := equivariantLocalSectionTrivialization (fun f : C(B, X) ↦ f b₀)
+    (continuous_eval_const b₀) (fun g f ↦ ContinuousMap.smul_apply g f b₀) x
+    ⟨ContinuousMap.const B x, rfl⟩ U hU s hs hsec
+  { e with
+    source_eq := by rw [e.source_eq]; ext; simp
+    proj_toFun := fun f hf ↦ (e.proj_toFun f hf).trans (mappingSpaceEval_apply b₀ f).symm }
 
 variable {b₀ x} {U : Set X} {s : X → G} {hU : IsOpen U} {hs : ContinuousOn s U}
   {hsec : ∀ y ∈ U, s y • x = y}
@@ -225,14 +187,14 @@ variable {b₀ x} {U : Set X} {s : X → G} {hU : IsOpen U} {hs : ContinuousOn s
 @[simp]
 theorem mappingSpaceEvalTrivialization_baseSet :
     (mappingSpaceEvalTrivialization b₀ x U hU s hs hsec).baseSet = U :=
-  (rfl)
+  equivariantLocalSectionTrivialization_baseSet
 
 /-- On the chart source, the fibre coordinate of `mappingSpaceEvalTrivialization` is the
 translate `s(f(b₀))⁻¹ • f`. -/
 @[simp]
 theorem mappingSpaceEvalTrivialization_fiberCoordinate {f : C(B, X)} (hf : f b₀ ∈ U) :
     ((mappingSpaceEvalTrivialization b₀ x U hU s hs hsec f).2 : C(B, X)) = (s (f b₀))⁻¹ • f :=
-  coe_sectionTranslate b₀ x (hsec := hsec) hf
+  equivariantLocalSectionTrivialization_fiberCoordinate hf
 
 /-- The inverse of `mappingSpaceEvalTrivialization` translates a based map by the local
 section. -/
@@ -240,7 +202,7 @@ section. -/
 theorem mappingSpaceEvalTrivialization_symm_apply (p : X × BasedMap B X b₀ x) :
     (mappingSpaceEvalTrivialization b₀ x U hU s hs hsec).toOpenPartialHomeomorph.symm p =
       s p.1 • p.2.1 :=
-  (rfl)
+  equivariantLocalSectionTrivialization_symm_apply p
 
 variable (b₀ x)
 
@@ -252,7 +214,8 @@ theorem exists_trivialization_mappingSpaceEval
     ∃ e : Bundle.Trivialization (BasedMap B X b₀ x) (mappingSpaceEval (X := X) b₀),
       y ∈ e.baseSet := by
   obtain ⟨U, hU, hy, s, hs, hsec⟩ := h y
-  exact ⟨mappingSpaceEvalTrivialization b₀ x U hU s hs hsec, hy⟩
+  exact ⟨mappingSpaceEvalTrivialization b₀ x U hU s hs hsec, by
+    rwa [mappingSpaceEvalTrivialization_baseSet]⟩
 
 /-- If the orbit map `g ↦ g • x` has a continuous local section around every point, evaluation
 at `b₀` is a Hurewicz fibration over a normal paracompact space. -/
