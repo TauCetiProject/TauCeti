@@ -17,8 +17,11 @@ and repair runner, verify the repository IDs and immutable pins, configure a
 read-only native retention credential as `CI_SOURCE_READ_TOKEN`, and confirm the
 existing trusted cache publication secret. Give the queue execution App its
 separately scoped GitHub role. Copy the exact source configuration/policy bytes
-from the merged caller to the private queue profile and record that caller's
-immutable revision. Run observation first, then explicitly enable hosted CI and
+from the merged caller to enroll the private queue profile. New requests select
+the current protected execution main and freeze its caller, policy and
+configuration together; normal control updates need no extra caller approval.
+Keep native source access configured when pausing new Forgejo intake with
+`forgejo_admission_enabled = false`. Run observation first, then explicitly enable hosted CI and
 mixed admission for a supervised canary. Queue setup and primary changes are
 covered in Worker `docs/queue/mixed-sources.md`.
 

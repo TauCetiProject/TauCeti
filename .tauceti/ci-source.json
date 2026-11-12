@@ -29,7 +29,7 @@
     "name": "TauCetiProject/TauCetiTools",
     "id": 1426390374
   },
-  "harness_revision": "717a1a6ee5677eeeada66aab37f952e5c7b76105",
+  "harness_revision": "de7633dd55b5fb6e596b69c0f4345f3e82322640",
   "base_branch": "main",
   "execution_branch": "main",
   "require_publication": true,
