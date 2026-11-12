@@ -62,7 +62,8 @@ homeomorphism between the sublevels on either side of a band without critical po
 
 Under the same hypotheses the band `f⁻¹[a, b]` is homeomorphic to `f⁻¹(a) × [a, b]` by a
 homeomorphism preserving the value of `f` (`Flow.bandHomeomorph`): a point of the band is sent to
-the point where its flow line meets the level `a`, together with its value.
+the point where its flow line meets the level `a`, together with its value. Inside the band the
+flow moves `f` at unit speed backwards in time as well (`Flow.apply_eq_sub_of_mem_Icc`).
 
 Along an inducing map `j : M → X` whose range contains a band `F⁻¹[a, b]`, compactness of the
 band pulls back to the band of `F ∘ j` (`Topology.IsInducing.isCompact_comp_preimage_Icc`).
@@ -479,6 +480,26 @@ theorem apply_neg_eq_add_of_apply_eq_sub (hf : Continuous f)
     have h2 := hφa y (t - u) hy (by linarith)
     rw [← Flow.map_add, ← sub_eq_add_neg, hfu, add_sub_cancel_right] at h1
     exact lt_irrefl a (h1 ▸ h2)
+
+/-- **Unit speed through the band in both directions of time.** Under the hypotheses of
+`Flow.apply_eq_iff_of_apply_eq_sub`, the flow moves `f` at unit speed between any two values in
+`[a, b]`, forwards or backwards in time: if `f y` and `f y - t` lie in `[a, b]`, then
+`f (φ t y) = f y - t`. -/
+theorem apply_eq_sub_of_mem_Icc (hf : Continuous f)
+    (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
+    (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)
+    (hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a) {y : X} {t : ℝ} (hy : f y ∈ Icc a b)
+    (ht : f y - t ∈ Icc a b) : f (φ t y) = f y - t := by
+  rcases le_or_gt 0 t with ht₀ | ht₀
+  · exact hφf y t ht₀ ht.1 hy.2
+  -- Flow `y` down to the level `a`, and then back up for a longer time.
+  have hy₀ : f (φ (f y - a) y) = a := by
+    rw [hφf y _ (sub_nonneg.2 hy.1) (by linarith) hy.2]
+    ring
+  have h := φ.apply_neg_eq_add_of_apply_eq_sub hf hanti hφf hφa hy₀ (t := f y - a - t)
+    (by linarith [hy.1]) (by linarith [ht.2])
+  rwa [← Flow.map_add, show -(f y - a - t) + (f y - a) = t by ring,
+    show a + (f y - a - t) = f y - t by ring] at h
 
 /-- **A band traversed at unit speed is a product.** Under the hypotheses of
 `Flow.apply_eq_iff_of_apply_eq_sub`, following the flow line of a point `x` of the band
