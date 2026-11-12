@@ -690,6 +690,16 @@ def length (γ : MooreLoopSpace X x) : ℝ≥0 :=
 theorem length_toMoorePath (γ : MooreLoopSpace X x) : γ.toMoorePath.length = γ.length :=
   (rfl)
 
+/-- A Moore loop starts at its base point. -/
+@[simp]
+theorem toMoorePath_apply_zero (γ : MooreLoopSpace X x) : γ.toMoorePath 0 = x :=
+  γ.source_eq
+
+/-- A Moore loop is back at its base point at its length. -/
+@[simp]
+theorem toMoorePath_apply_length (γ : MooreLoopSpace X x) : γ.toMoorePath γ.length = x :=
+  γ.target_eq
+
 @[simp]
 theorem length_one : (1 : MooreLoopSpace X x).length = 0 :=
   (rfl)

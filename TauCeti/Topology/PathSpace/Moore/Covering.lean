@@ -170,18 +170,6 @@ theorem isTransitive (Φ : MooreLiftingFunction p) : Φ.IsTransitive :=
 
 variable (e : E)
 
-/-- The unit Moore loop at `p e` lifts to the constant Moore path of length zero at `e`. -/
-private theorem lift_eq_refl_of_eq_one {γ : MooreLoopSpace B (p e)} (hγ : γ = 1) :
-    hp.mooreLiftingFunction.lift e γ.toMoorePath (by simp) = MoorePath.refl e := by
-  subst hγ
-  exact MooreLiftingFunction.lift_eq_refl_of_length_eq_zero _ _ _ _ (MoorePath.length_refl _)
-
-omit hp in
-/-- A double Moore loop starts at the unit. -/
-private theorem toMoorePath_apply_zero (Γ : MooreLoopSpace (MooreLoopSpace B (p e)) 1) :
-    Γ.toMoorePath 0 = 1 := by
-  rw [← MoorePath.source_def, MooreLoopSpace.source_eq]
-
 /-- A Moore loop at `p e` in the family of a double Moore loop lifts to a Moore loop at `e`: the end
 points of the lifts lie in the fibre over `p e` and vary continuously along the family, which
 starts at the unit, so they stay at `e`. -/
@@ -193,7 +181,8 @@ private theorem target_lift_apply (Γ : MooreLoopSpace (MooreLoopSpace B (p e)) 
       (MooreLoopSpace.continuous_toMoorePath.comp Γ.toMoorePath.continuous) fun _ ↦ by simp)
     (fun s s' ↦ by simp) s 0
   -- At time zero the family is at the unit, whose lift is the constant path at `e`.
-  rw [hconst, lift_eq_refl_of_eq_one hp e (toMoorePath_apply_zero e Γ), MoorePath.target_refl]
+  rw [hconst]
+  simp
 
 /-- The lift from `e` of the Moore loop at time `s` of a double Moore loop, as a Moore loop at
 `e`. -/
@@ -222,12 +211,8 @@ private def doubleLift (Γ : MooreLoopSpace (MooreLoopSpace B (p e)) 1) :
           rw [Γ.toMoorePath.apply_of_length_le hs, MoorePath.target_def]
         exact MooreLoopSpace.ext (congrArg (fun γ : MooreLoopSpace B (p e) ↦
           hp.mooreLiftingFunction.lift e γ.toMoorePath (by simp)) h) }
-  source_eq := MooreLoopSpace.ext <| by
-    rw [MoorePath.source_def, MooreLoopSpace.toMoorePath_one]
-    exact lift_eq_refl_of_eq_one hp e (toMoorePath_apply_zero e Γ)
-  target_eq := MooreLoopSpace.ext <| by
-    rw [MoorePath.target_def, MooreLoopSpace.toMoorePath_one]
-    exact lift_eq_refl_of_eq_one hp e (by rw [← MoorePath.target_def, MooreLoopSpace.target_eq])
+  source_eq := MooreLoopSpace.ext <| by simp [MoorePath.source_def, liftLoop]
+  target_eq := MooreLoopSpace.ext <| by simp [MoorePath.target_def, liftLoop]
 
 private theorem doubleLift_apply (Γ : MooreLoopSpace (MooreLoopSpace B (p e)) 1) (s : ℝ≥0) :
     ((doubleLift hp e Γ).toMoorePath s).toMoorePath =
@@ -273,6 +258,7 @@ theorem doubleMooreLoopSpaceHomeomorph_apply (Δ : MooreLoopSpace (MooreLoopSpac
   (rfl)
 
 /-- The inverse of `doubleMooreLoopSpaceHomeomorph` lifts the Moore loop at each time from `e`. -/
+@[simp]
 theorem toMoorePath_doubleMooreLoopSpaceHomeomorph_symm_apply
     (Γ : MooreLoopSpace (MooreLoopSpace B (p e)) 1) (s : ℝ≥0) :
     (((hp.doubleMooreLoopSpaceHomeomorph e).symm Γ).toMoorePath s).toMoorePath =
