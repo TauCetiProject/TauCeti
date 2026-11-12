@@ -55,6 +55,11 @@ unique matrix `t` with `e t = t = t e`.
   injective multiplicative map into the matrices `t` with `e t = t = t e`.
 * `IsIdempotentElem.apply_eq_endToMatrix_mulVec`: an endomorphism of `e Aⁱ` is left multiplication
   by its matrix.
+* `Matrix.rangeMulVecBilinEnd`: left multiplication by a matrix `t` with `e t = t` as an
+  endomorphism of `e Aⁱ`, inverse to `IsIdempotentElem.endToMatrix` on matrices with
+  `e t = t = t e`.
+* `IsIdempotentElem.mem_range_endToMatrix_iff`: the matrices of endomorphisms of `e Aⁱ` are exactly
+  the matrices `t` with `e t = t = t e`.
 
 ## References
 
@@ -326,6 +331,42 @@ theorem IsIdempotentElem.endToMatrix_injective (he : IsIdempotentElem e) :
     Function.Injective he.endToMatrix := fun s t h ↦
   LinearMap.ext fun v ↦ Subtype.ext <| by
     rw [he.apply_eq_endToMatrix_mulVec, he.apply_eq_endToMatrix_mulVec, h]
+
+/-- Left multiplication by a matrix `t` with `e t = t`, as an endomorphism of the right module
+`e Aⁱ`. For an idempotent `e` this inverts `IsIdempotentElem.endToMatrix` on the matrices with
+`e t = t = t e`. -/
+def Matrix.rangeMulVecBilinEnd (t : Matrix ι ι A) {e : Matrix ι ι A} (ht : e * t = t) :
+    Module.End Aᵐᵒᵖ (range (Matrix.mulVecBilin A Aᵐᵒᵖ e)) :=
+  (Matrix.mulVecBilin A Aᵐᵒᵖ t).restrict fun v _ ↦ ⟨t *ᵥ v, by simp [mulVec_mulVec, ht]⟩
+
+@[simp]
+theorem Matrix.coe_rangeMulVecBilinEnd_apply (t : Matrix ι ι A) {e : Matrix ι ι A}
+    (ht : e * t = t) (v : range (Matrix.mulVecBilin A Aᵐᵒᵖ e)) :
+    (t.rangeMulVecBilinEnd ht v : ι → A) = t *ᵥ (v : ι → A) :=
+  (rfl)
+
+/-- The matrix of left multiplication by `t` on `e Aⁱ` is `t e`. -/
+theorem IsIdempotentElem.endToMatrix_rangeMulVecBilinEnd (he : IsIdempotentElem e)
+    {t : Matrix ι ι A} (ht : e * t = t) : he.endToMatrix (t.rangeMulVecBilinEnd ht) = t * e := by
+  ext i j
+  rw [endToMatrix_apply, coe_rangeMulVecBilinEnd_apply, ← col_apply (t * e),
+    col_mul_eq_mulVec_col]
+
+/-- Left multiplication by the matrix of an endomorphism of `e Aⁱ` recovers the endomorphism. -/
+@[simp]
+theorem IsIdempotentElem.rangeMulVecBilinEnd_endToMatrix (he : IsIdempotentElem e)
+    (s : Module.End Aᵐᵒᵖ (range (Matrix.mulVecBilin A Aᵐᵒᵖ e))) :
+    (he.endToMatrix s).rangeMulVecBilinEnd (he.mul_endToMatrix s) = s :=
+  LinearMap.ext fun v ↦ Subtype.ext (he.apply_eq_endToMatrix_mulVec s v).symm
+
+/-- The matrices of the endomorphisms of `e Aⁱ` are exactly the matrices `t` with
+`e t = t = t e`. -/
+theorem IsIdempotentElem.mem_range_endToMatrix_iff (he : IsIdempotentElem e)
+    {t : Matrix ι ι A} : t ∈ Set.range he.endToMatrix ↔ e * t = t ∧ t * e = t := by
+  refine ⟨?_, fun ⟨hl, hr⟩ ↦ ⟨t.rangeMulVecBilinEnd hl, ?_⟩⟩
+  · rintro ⟨s, rfl⟩
+    exact ⟨he.mul_endToMatrix s, he.endToMatrix_mul s⟩
+  · rw [he.endToMatrix_rangeMulVecBilinEnd, hr]
 
 end Column
 
