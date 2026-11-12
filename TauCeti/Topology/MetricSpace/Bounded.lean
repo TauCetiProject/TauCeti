@@ -14,7 +14,8 @@ A closed ball of radius `r` has extended diameter at most `2 r`
 (`Metric.ediam_closedBall_le`). This is the extended-diameter counterpart of Mathlib's
 `Metric.diam_closedBall`, stated for every real radius: a ball of negative radius is empty.
 
-In a bounded space any two points are within the diameter of the whole space
+Two points of a bounded set are within its diameter (`Metric.edist_le_diam_of_mem`), and in a
+bounded space any two points are within the diameter of the whole space
 (`Metric.edist_le_diam_univ`), in the extended form used by Mathlib's Hölder bounds.
 
 Closed balls of a fixed radius `r` leave every bounded set as their centre does: as `x` tends to
@@ -36,12 +37,17 @@ theorem ediam_closedBall_le (x : X) (r : ℝ) :
   ediam_le_of_forall_dist_le fun y hy z hz => (dist_triangle_right y z x).trans <| by
     linarith [mem_closedBall.1 hy, mem_closedBall.1 hz]
 
+/-- Two points of a bounded set are within its diameter, in extended form. -/
+theorem edist_le_diam_of_mem {s : Set X} (hs : Bornology.IsBounded s) {x y : X} (hx : x ∈ s)
+    (hy : y ∈ s) : edist x y ≤ ((diam s).toNNReal : ENNReal) := by
+  rw [edist_dist]
+  exact ENNReal.ofReal_le_ofReal (dist_le_diam_of_mem hs hx hy)
+
 /-- In a bounded space any two points are within the diameter of the whole space. -/
 theorem edist_le_diam_univ [BoundedSpace X] (x y : X) :
-    edist x y ≤ ((diam (Set.univ : Set X)).toNNReal : ENNReal) := by
-  rw [edist_dist]
-  exact ENNReal.ofReal_le_ofReal (dist_le_diam_of_mem (Bornology.isBounded_univ.2 inferInstance)
-    (Set.mem_univ x) (Set.mem_univ y))
+    edist x y ≤ ((diam (Set.univ : Set X)).toNNReal : ENNReal) :=
+  edist_le_diam_of_mem (Bornology.isBounded_univ.2 inferInstance) (Set.mem_univ x)
+    (Set.mem_univ y)
 
 /-- Closed balls of a fixed radius tend to infinity with their centres: as `x` tends to infinity
 in the cobounded filter, `closedBall x r` is eventually contained in each set whose complement is

@@ -18,16 +18,18 @@ The spaces `C^{k,α}` of `TauCeti.CkHolderSpace` (on the whole space `E`) and
 space: bounded continuous fields `X →ᵇ (E [×i]→L[ℝ] F)` of `i`-multilinear maps for `i < k`, with
 the `ℓ¹` norm, together with a bounded `α`-Hölder field `X → E [×k]→L[ℝ] F`. Here `X` is the
 domain of the fields (`E` itself, or `Ω`) and `E` is the space of derivative directions. This file
-defines that jet space, the projection onto the field of each order `i ≤ k`, and left currying of
-multilinear maps as a continuous linear map, which together express the derivative identities
-cutting out each `C^{k,α}` space.
+defines that jet space, the projection onto the field of each order `i ≤ k`, through which the
+derivative identities cutting out each `C^{k,α}` space are expressed, the norm of a jet in terms
+of these fields, and the jet with prescribed fields.
 
 ## Main declarations
 
 * `TauCeti.HolderJet k α X E F`: the jet space.
 * `TauCeti.HolderJet.fieldL`: the field of order `i ≤ k` of a jet, as a continuous linear map.
-* `TauCeti.HolderJet.curryLeftL`: left currying of `(j + 1)`-multilinear maps, as a continuous
-  linear map.
+* `TauCeti.HolderJet.ext_fieldL`: a jet is determined by its fields.
+* `TauCeti.HolderJet.norm_eq`: the norm of a jet is the sum of the supremum norms of its fields and
+  the Hölder seminorm of its top field.
+* `TauCeti.HolderJet.ofFields`: the jet with prescribed fields.
 -/
 
 public section
@@ -89,17 +91,45 @@ theorem fieldL_last (J : HolderJet k α X E F) :
     (last := HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
     (cast := fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)))).trans (by simp)
 
-variable (E F) in
-/-- Left currying of `(j + 1)`-multilinear maps, as a continuous linear map. -/
--- Exposed so that it unfolds to `continuousMultilinearCurryLeftEquiv` in those carriers.
-@[expose] def curryLeftL (j : ℕ) : (E [×j + 1]→L[ℝ] F) →L[ℝ] E →L[ℝ] (E [×j]→L[ℝ] F) :=
-  (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F).toContinuousLinearEquiv
+/-- A jet is determined by its fields of all orders `i ≤ k`. -/
+theorem ext_fieldL {J K : HolderJet k α X E F} (h : ∀ i, fieldL i J = fieldL i K) : J = K := by
+  apply WithLp.ofLp_injective 1
+  apply Prod.ext
+  · apply WithLp.ofLp_injective 1
+    funext j
+    have := h j.castSucc
+    rwa [fieldL_castSucc, fieldL_castSucc] at this
+  · apply HolderSpace.ext
+    intro x
+    have := DFunLike.congr_fun (h (Fin.last k)) x
+    rwa [fieldL_last, fieldL_last, HolderSpace.toBoundedContinuousFunction_apply,
+      HolderSpace.toBoundedContinuousFunction_apply] at this
+
+/-- The norm of a jet is the sum of the supremum norms of its fields through order `k` and the
+`α`-Hölder seminorm of its field of order `k`. -/
+theorem norm_eq (J : HolderJet k α X E F) :
+    ‖J‖ = ∑ i : Fin (k + 1), ‖fieldL i J‖ +
+      nnHolderNorm α (J.ofLp.2 : X → E [×k]→L[ℝ] F) := by
+  rw [WithLp.prod_norm_eq_of_L1, PiLp.norm_eq_of_L1, Fin.sum_univ_castSucc,
+    HolderSpace.norm_def, ← HolderSpace.coe_toBoundedContinuousFunction, add_assoc]
+  simp only [fieldL_castSucc, fieldL_last, WithLp.ofLp_fst, WithLp.ofLp_snd]
+
+/-- The jet with prescribed bounded continuous fields of all orders `i ≤ k`, the field of order
+`k` being `α`-Hölder. -/
+def ofFields (g : ∀ i : Fin (k + 1), X →ᵇ (E [×i]→L[ℝ] F))
+    (hg : MemHolder α (g (Fin.last k) : X → E [×k]→L[ℝ] F)) : HolderJet k α X E F :=
+  WithLp.toLp 1 (WithLp.toLp 1 fun j : Fin k ↦ g j.castSucc,
+    HolderSpace.ofBoundedContinuousFunction (g (Fin.last k)) hg)
 
 @[simp]
-theorem curryLeftL_apply (j : ℕ) (g : E [×j + 1]→L[ℝ] F) :
-    curryLeftL E F j g = g.curryLeft := by
-  ext x v
-  simp [curryLeftL]
+theorem fieldL_ofFields (g : ∀ i : Fin (k + 1), X →ᵇ (E [×i]→L[ℝ] F))
+    (hg : MemHolder α (g (Fin.last k) : X → E [×k]→L[ℝ] F)) (i : Fin (k + 1)) :
+    fieldL i (ofFields g hg) = g i := by
+  induction i using Fin.lastCases with
+  | last =>
+    rw [fieldL_last, ofFields, HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction]
+  | cast j =>
+    rw [fieldL_castSucc, ofFields]
 
 end HolderJet
 
