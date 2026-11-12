@@ -113,7 +113,7 @@ namespace IsRelativeHopfModule
 section Semiring
 
 variable {R H A B N : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
-  [CommSemiring A] [Algebra R A] [AddCommMonoid N] [Module R N] [Module A N] [IsScalarTower R A N]
+  [Semiring A] [Algebra R A] [AddCommMonoid N] [Module R N] [Module A N] [IsScalarTower R A N]
 
 variable (R H A N) in
 /-- The action `(a ⊗ h) • (n ⊗ h') = a • n ⊗ h h'` of `A ⊗[R] H` on `N ⊗[R] H`. -/
@@ -161,18 +161,16 @@ private theorem coact_smul_eq_tensorSMul (a : A) (n : N) :
     | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
     | tmul n h' => simp [tensorSMul_tmul_tmul]
 
+/-- The coaction of a relative Hopf module is linear over the coinvariants of `A`. -/
+theorem coact_smul_of_mem_coinvariants {a : A} (ha : a ∈ ComoduleAlgebra.coinvariants R H A)
+    (n : N) :
+    Comodule.coact (R := R) (C := H) (a • n) = a • Comodule.coact (R := R) (C := H) n := by
+  rw [coact_smul_eq_tensorSMul, ComoduleAlgebra.mem_coinvariants.1 ha,
+    ← mul_one (a ⊗ₜ[R] (1 : H)), tensorSMul_tmul_one_mul, tensorSMul_one]
+
 variable [CommSemiring B] [Algebra R B] [Algebra B A]
   [Module B N] [IsScalarTower B A N] [IsScalarTower R B N]
   (hB : ∀ b : B, algebraMap B A b ∈ ComoduleAlgebra.coinvariants R H A)
-
-include hB in
-/-- The coaction of a relative Hopf module is linear over an algebra `B` acting on `A` by
-coinvariants. -/
-theorem coact_smul_of_mem_coinvariants (b : B) (n : N) :
-    Comodule.coact (R := R) (C := H) (b • n) = b • Comodule.coact (R := R) (C := H) n := by
-  rw [← algebraMap_smul A b n, coact_smul_eq_tensorSMul,
-    ComoduleAlgebra.mem_coinvariants.1 (hB b), ← mul_one (algebraMap B A b ⊗ₜ[R] (1 : H)),
-    tensorSMul_tmul_one_mul, tensorSMul_one, algebraMap_smul]
 
 variable (B N) in
 /-- The coaction of a relative Hopf module, as a `B`-linear map for an algebra `B` acting on `A`
@@ -180,23 +178,13 @@ by coinvariants. -/
 noncomputable def coactLinearMap : N →ₗ[B] N ⊗[R] H where
   toFun := Comodule.coact (R := R) (C := H)
   map_add' := map_add _
-  map_smul' := coact_smul_of_mem_coinvariants hB
+  map_smul' b n := by
+    rw [RingHom.id_apply, ← algebraMap_smul A b n, coact_smul_of_mem_coinvariants (hB b),
+      algebraMap_smul]
 
 @[simp]
 theorem coactLinearMap_apply (n : N) :
     coactLinearMap B N hB n = Comodule.coact (R := R) (C := H) n :=
-  (rfl)
-
-variable (B N) in
-/-- The **Galois map** `A ⊗[B] N → N ⊗[R] H`, `a ⊗ n ↦ a • coact n`, of a relative Hopf module,
-for an algebra `B` acting on `A` by coinvariants. For `N = A` it is the Galois map
-`TauCeti.ComoduleAlgebra.galoisMap` of `A` (`TauCeti.IsRelativeHopfModule.galoisMap_self`). -/
-noncomputable def galoisMap : A ⊗[B] N →ₗ[A] N ⊗[R] H :=
-  (coactLinearMap B N hB).liftBaseChange A
-
-@[simp]
-theorem galoisMap_tmul (a : A) (n : N) :
-    galoisMap B N hB (a ⊗ₜ n) = a • Comodule.coact (R := R) (C := H) n :=
   (rfl)
 
 variable (R H B N) in
@@ -229,6 +217,29 @@ theorem coe_coinvariants :
   ext n
   simp [Comodule.mem_fixedSubcomodule]
 
+end Semiring
+
+section Galois
+
+variable {R H A B N : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
+  [CommSemiring A] [Algebra R A] [ComoduleAlgebra R H A]
+  [AddCommMonoid N] [Module R N] [Module A N] [IsScalarTower R A N] [Comodule R H N]
+  [IsRelativeHopfModule R H A N] [CommSemiring B] [Algebra R B] [Algebra B A]
+  [Module B N] [IsScalarTower B A N] [IsScalarTower R B N]
+  (hB : ∀ b : B, algebraMap B A b ∈ ComoduleAlgebra.coinvariants R H A)
+
+variable (B N) in
+/-- The **Galois map** `A ⊗[B] N → N ⊗[R] H`, `a ⊗ n ↦ a • coact n`, of a relative Hopf module,
+for an algebra `B` acting on `A` by coinvariants. For `N = A` it is the Galois map
+`TauCeti.ComoduleAlgebra.galoisMap` of `A` (`TauCeti.IsRelativeHopfModule.galoisMap_self`). -/
+noncomputable def galoisMap : A ⊗[B] N →ₗ[A] N ⊗[R] H :=
+  (coactLinearMap B N hB).liftBaseChange A
+
+@[simp]
+theorem galoisMap_tmul (a : A) (n : N) :
+    galoisMap B N hB (a ⊗ₜ n) = a • Comodule.coact (R := R) (C := H) n :=
+  (rfl)
+
 /-- The Galois map of `A`, as a relative Hopf module over itself, is the Galois map of the
 comodule algebra `A`. -/
 theorem galoisMap_self [IsScalarTower R B A] :
@@ -236,7 +247,7 @@ theorem galoisMap_self [IsScalarTower R B A] :
   ext a
   simp [Algebra.smul_def, Algebra.TensorProduct.algebraMap_apply]
 
-end Semiring
+end Galois
 
 section Bijective
 
@@ -310,21 +321,18 @@ private theorem galoisMap_translationAct (t : H ⊗[R] N) :
 variable (N) in
 /-- The inverse of the Galois map of `N`: `n ⊗ h ↦ ∑ β⁻¹(1 ⊗ S n₁ h) • (1 ⊗ n₀)`. -/
 private noncomputable def galoisMapInv : N ⊗[R] H →ₗ[R] A ⊗[B] N :=
-  translationAct N hβ ∘ₗ Comodule.antipodeShear R H N ∘ₗ
-    (Comodule.coact (R := R) (C := H)).rTensor H
+  translationAct N hβ ∘ₗ (Comodule.mulCoactEquiv R H N).symm.toLinearMap
 
 private theorem galoisMap_galoisMapInv (y : N ⊗[R] H) :
     galoisMap B N hB (galoisMapInv N hβ y) = y := by
-  induction y with
-  | add y y' hy hy' => simp only [map_add, hy, hy']
-  | tmul n h =>
-    simp only [galoisMapInv, LinearMap.comp_apply, LinearMap.rTensor_tmul,
-      galoisMap_translationAct, Comodule.mulCoact_antipodeShear_coact]
+  rw [galoisMapInv, LinearMap.comp_apply, galoisMap_translationAct, ← Comodule.mulCoactEquiv_apply,
+    LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
 
 omit [IsRelativeHopfModule R H A N] [IsScalarTower R B N] in
-private theorem galoisMapInv_mulCoact (h : H) (m : N) :
-    galoisMapInv N hβ (Comodule.mulCoact R H N (h ⊗ₜ m)) = translationAct N hβ (h ⊗ₜ m) := by
-  simp only [galoisMapInv, LinearMap.comp_apply, Comodule.antipodeShear_mulCoact]
+private theorem galoisMapInv_mulCoact (t : H ⊗[R] N) :
+    galoisMapInv N hβ (Comodule.mulCoact R H N t) = translationAct N hβ t := by
+  rw [galoisMapInv, LinearMap.comp_apply, ← Comodule.mulCoactEquiv_apply, LinearEquiv.coe_coe,
+    LinearEquiv.symm_apply_apply]
 
 /-- `h ⊗ x ↦ β⁻¹(1 ⊗ h) (1 ⊗ x)`. -/
 private noncomputable def untwist : H ⊗[R] A →ₗ[R] A ⊗[B] A :=
@@ -390,7 +398,7 @@ end Bijective
 
 section Descent
 
-variable {R H A B N : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
+variable {R H A B N : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
   [CommRing A] [Algebra R A] [ComoduleAlgebra R H A]
   [CommRing B] [Algebra R B] [Algebra B A] [IsScalarTower R B A]
   [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N] [Comodule R H N]

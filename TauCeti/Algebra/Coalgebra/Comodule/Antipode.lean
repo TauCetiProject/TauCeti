@@ -22,6 +22,7 @@ so that `n ⊗ h ↦ ∑ S n₁ h ⊗ n₀`.
 
 * `TauCeti.Comodule.antipodeShear`: the map `(n ⊗ c) ⊗ h ↦ S c h ⊗ n`.
 * `TauCeti.Comodule.mulCoact`: the map `h ⊗ n ↦ ∑ n₀ ⊗ h n₁`.
+* `TauCeti.Comodule.mulCoactEquiv`: `TauCeti.Comodule.mulCoact` as a linear equivalence.
 
 ## Main results
 
@@ -37,8 +38,29 @@ namespace TauCeti
 
 namespace Comodule
 
-variable {R H N : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
-  [AddCommMonoid N] [Module R N]
+variable {R H N : Type*} [CommSemiring R] [AddCommMonoid N] [Module R N]
+
+section Bialgebra
+
+variable [Semiring H] [Bialgebra R H] [Comodule R H N]
+
+variable (R H N) in
+/-- The map `h ⊗ n ↦ (1 ⊗ h) • coact n = ∑ n₀ ⊗ h n₁`. -/
+noncomputable def mulCoact : H ⊗[R] N →ₗ[R] N ⊗[R] H :=
+  TensorProduct.lift ((LinearMap.lTensorHom N ∘ₗ LinearMap.mul R H).compl₂
+    (Comodule.coact (R := R) (C := H)))
+
+@[simp]
+theorem mulCoact_tmul (h : H) (n : N) :
+    mulCoact R H N (h ⊗ₜ n) =
+      (LinearMap.mulLeft R h).lTensor N (Comodule.coact (R := R) (C := H) n) :=
+  (rfl)
+
+end Bialgebra
+
+section HopfAlgebra
+
+variable [Semiring H] [HopfAlgebra R H]
 
 variable (R H N) in
 /-- The map `(n ⊗ c) ⊗ h ↦ S c * h ⊗ n`, where `S` is the antipode. -/
@@ -47,22 +69,16 @@ noncomputable def antipodeShear : (N ⊗[R] H) ⊗[R] H →ₗ[R] H ⊗[R] N :=
     (LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).rTensor H).lTensor N ∘ₗ
     (TensorProduct.assoc R N H H).toLinearMap
 
+@[simp]
 theorem antipodeShear_tmul (n : N) (c h : H) :
     antipodeShear R H N ((n ⊗ₜ c) ⊗ₜ h) = (HopfAlgebra.antipode R c * h) ⊗ₜ[R] n := by
   simp [antipodeShear]
 
-variable [Comodule R H N]
+end HopfAlgebra
 
-variable (R H N) in
-/-- The map `h ⊗ n ↦ (1 ⊗ h) • coact n = ∑ n₀ ⊗ h n₁`. -/
-noncomputable def mulCoact : H ⊗[R] N →ₗ[R] N ⊗[R] H :=
-  TensorProduct.lift ((LinearMap.lTensorHom N ∘ₗ LinearMap.mul R H).compl₂
-    (Comodule.coact (R := R) (C := H)))
+section CommHopfAlgebra
 
-theorem mulCoact_tmul (h : H) (n : N) :
-    mulCoact R H N (h ⊗ₜ n) =
-      (LinearMap.mulLeft R h).lTensor N (Comodule.coact (R := R) (C := H) n) :=
-  (rfl)
+variable [CommSemiring H] [HopfAlgebra R H] [Comodule R H N]
 
 /-- `∑ (1 ⊗ S n₁ h) • coact n₀ = n ⊗ h`: the map `n ⊗ h ↦ ∑ S n₁ h ⊗ n₀` is a right inverse of
 `TauCeti.Comodule.mulCoact`. -/
@@ -117,6 +133,33 @@ theorem antipodeShear_mulCoact (h : H) (m : N) :
   | tmul n c =>
     simp [HopfAlgebra.mul_antipode_rTensor_comul_apply, ← Algebra.commutes, ← Algebra.smul_def,
       TensorProduct.smul_tmul]
+
+variable (R H N) in
+/-- `TauCeti.Comodule.mulCoact` as a linear equivalence, with inverse `n ⊗ h ↦ ∑ S n₁ h ⊗ n₀`. -/
+noncomputable def mulCoactEquiv : H ⊗[R] N ≃ₗ[R] N ⊗[R] H :=
+  LinearEquiv.ofLinearMap (mulCoact R H N)
+    (antipodeShear R H N ∘ₗ (Comodule.coact (R := R) (C := H)).rTensor H)
+    (TensorProduct.ext' fun n h ↦ by
+      simp only [LinearMap.comp_apply, LinearMap.rTensor_tmul, LinearMap.id_apply,
+        mulCoact_antipodeShear_coact])
+    (TensorProduct.ext' fun h m ↦ by
+      simp only [LinearMap.comp_apply, LinearMap.id_apply, antipodeShear_mulCoact])
+
+@[simp]
+theorem coe_mulCoactEquiv : (mulCoactEquiv R H N : H ⊗[R] N →ₗ[R] N ⊗[R] H) = mulCoact R H N :=
+  (rfl)
+
+@[simp]
+theorem mulCoactEquiv_apply (t : H ⊗[R] N) : mulCoactEquiv R H N t = mulCoact R H N t :=
+  (rfl)
+
+@[simp]
+theorem mulCoactEquiv_symm_tmul (n : N) (h : H) :
+    (mulCoactEquiv R H N).symm (n ⊗ₜ h) =
+      antipodeShear R H N (Comodule.coact (R := R) (C := H) n ⊗ₜ h) :=
+  (rfl)
+
+end CommHopfAlgebra
 
 end Comodule
 
