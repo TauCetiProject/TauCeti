@@ -373,6 +373,7 @@ private lemma stage_of_mem_skeletonLT {m : ℕ} {s : I} {x : X}
     (hx : x ∈ (skeletonLT C (m : ℕ∞) : Set X)) : stage A m s x = x :=
   cellDeformation_of_mem_skeletonLT hx
 
+omit [T2Space X] in
 /-- Through the characteristic map of a cell outside `A`, a stage is the radial push. -/
 private lemma stage_map {m : ℕ} {j : cell C m} (hj : j ∉ A.I m) (s : I) {y : Fin m → ℝ}
     (hy : ‖y‖ ≤ 1) : stage A m s (map m j y) = map m j (radialPush 2⁻¹ s y) :=
@@ -399,7 +400,7 @@ private lemma stage_mem {m : ℕ} (s : I) {x : X} (hx : x ∈ A.radialNeighborho
     obtain ⟨h2, hp⟩ := ((map_mem_radialNeighborhood_iff A j hy1).1 hx).resolve_left hj
     rw [stage_map A hj s hy1.le]
     have hle := norm_le_norm_radialPush (r := 2⁻¹) (by norm_num) (by norm_num) s hy1.le
-    rcases (norm_radialPush_le_one (r := 2⁻¹) (by norm_num) s hy1.le).lt_or_eq with h1 | h1
+    rcases (norm_radialPush_le_one (r := 2⁻¹) s hy1.le).lt_or_eq with h1 | h1
     · rw [map_mem_radialNeighborhood_iff A j h1, inv_norm_smul_radialPush (by norm_num) h2.le s]
       exact .inr ⟨h2.trans_le hle, hp⟩
     · -- The push reached the unit sphere: the point is its own radial projection.
@@ -678,7 +679,7 @@ private lemma continuousOn_radialDeformation_map (n : ℕ) (j : cell C n) :
     rw [stageTime_of_ge hpc.ge, radialPush_one_of_le_norm (by norm_num) h2.le,
       radialDeformation_of_le A hpc.le (map_inv_norm_smul_mem_skeletonLT j h2.le)]
   · refine ((continuousOn (m + 1) j).comp_continuous ?_ fun p ↦
-      mem_closedBall_zero_iff.2 (norm_radialPush_le_one (by norm_num) _
+      mem_closedBall_zero_iff.2 (norm_radialPush_le_one _
         (mem_closedBall_zero_iff.1 p.2.2))).continuousOn
     exact continuous_radialPush (E := Fin (m + 1) → ℝ) (by norm_num) |>.comp
       ((continuous_stageTime (m + 1)).comp continuous_fst |>.prodMk
