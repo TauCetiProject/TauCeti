@@ -275,7 +275,7 @@ theorem measurable_ofReal_mul_deriv_mul_sub_mul {X : Type*} [MeasurableSpace X] 
     {w : X → ℝ≥0∞} (hg : Measurable g) (hw : Measurable w) (c : ℝ) :
     Measurable fun p : ℝ × X =>
       ENNReal.ofReal (c * deriv smoothTransition (c * (p.1 - g p.2))) * w p.2 := by
-  have hψ : Measurable (deriv smoothTransition) := measurable_deriv _
+  have _ : Measurable (deriv smoothTransition) := measurable_deriv _
   fun_prop
 
 /-- Integrating the weight `c ψ'(c (t - g x)) w x` over `x` and then over the level `t` gives
@@ -292,7 +292,7 @@ theorem lintegral_lintegral_ofReal_mul_deriv_mul_sub_mul {X : Type*} [Measurable
     rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
       lintegral_ofReal_deriv_mul_sub _ hc.ne', ← ENNReal.ofReal_mul hc.le,
       abs_of_pos hc, mul_inv_cancel₀ hc.ne', ENNReal.ofReal_one]
-  have hψ : Measurable (deriv smoothTransition) := measurable_deriv _
+  have _ : Measurable (deriv smoothTransition) := measurable_deriv _
   rw [lintegral_mul_const _ (by fun_prop), hk, one_mul]
 
 /-- Averaging a function `a` against the derivative `ψ'(c y - T)` of the smooth transition

@@ -17,7 +17,7 @@ import Mathlib.MeasureTheory.Measure.Prod
 A **sublinear** operator `T` that is simultaneously of **weak type `(1,1)`** and bounded on `L^∞`
 is bounded on `L^p` for every `1 < p < ∞`. This is the diagonal case `p₀ = 1`, `p₁ = ∞` of the
 Marcinkiewicz interpolation theorem, and it is the mechanism that turns the Hardy–Littlewood
-maximal inequality into the strong `(p,p)` bounds, item 9 of Lane B of the PDE roadmap.
+maximal inequality into the strong `(p,p)` bounds.
 
 ## The statements proved here
 
@@ -278,7 +278,7 @@ theorem mul_meas_ofReal_lt_le_setLIntegral
   have hdt : 0 ≤ d * t := (mul_pos hd ht).le
   have hbct : 0 ≤ b * (c * t) := mul_nonneg hb hct
   have hdinv : 0 ≤ d⁻¹ := inv_nonneg.2 hd.le
-  set g : α → G := hv.mk v with _
+  set g : α → G := hv.mk v
   have hvg : v =ᵐ[μ] g := hv.ae_eq_mk
   have hgmeas : Measurable g := hv.measurable_mk
   set S : Set α := {x | ENNReal.ofReal (c * t) < ‖g x‖ₑ} with hSdef

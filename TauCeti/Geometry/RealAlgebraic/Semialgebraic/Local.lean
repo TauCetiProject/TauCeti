@@ -100,7 +100,7 @@ theorem semialgebraicAt_iff_exists_ball [Fintype σ] :
     SemialgebraicAt s x ↔ ∃ ε > 0, IsSemialgebraic (s ∩ ball x ε) := by
   refine ⟨fun hs => ?_, fun ⟨ε, hε, hs⟩ =>
     ⟨ball x ε, isOpen_ball, mem_ball_self hε, isSemialgebraic_ball x ε, hs⟩⟩
-  obtain ⟨U, hUo, hxU, hU, hsU⟩ := hs
+  obtain ⟨U, hUo, hxU, _, hsU⟩ := hs
   obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hUo x hxU
   refine ⟨ε, hε, ?_⟩
   rw [← inter_eq_right.2 hεU, ← inter_assoc]

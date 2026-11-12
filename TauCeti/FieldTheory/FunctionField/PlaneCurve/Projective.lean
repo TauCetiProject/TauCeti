@@ -488,7 +488,7 @@ private theorem exists_aeval_sub_mul_eq_zero (hG : G.IsHomogeneous d)
     insertNth_two u v 1
   have h21 : (2 : Fin 3).succAbove 1 = 1 := rfl
   have h20 : (2 : Fin 3).succAbove 0 = 0 := rfl
-  set g := dehomogenize 2 G with hg_def
+  set g := dehomogenize 2 G
   -- The affine chart is smooth, so `∂g/∂X₀` and `∂g/∂X₁` do not both vanish at `(x, y)`.
   have hsm2 := span_dehomogenize_two_pderiv_eq_top hG hsm
   have hgxy : aeval ![x, y] g = 0 := by rw [aeval_dehomogenize, hpt, h]
@@ -509,7 +509,7 @@ private theorem exists_aeval_sub_mul_eq_zero (hG : G.IsHomogeneous d)
   obtain ⟨c, hc, hcab⟩ := exists_eval_ne_zero_and_mul_add_ne_zero hG
     (aeval_X_one_zero_ne_zero (K := K) hG hsm h) hcard hab
   obtain ⟨hirr', hlead, hdeg', hsmA, hsmI⟩ := irreducible_dehomogenize_linearSubst_shear hG hsm h hc
-  set μ := (eval ![c, 1, 0] G)⁻¹ with hμ
+  set μ := (eval ![c, 1, 0] G)⁻¹
   have hμ0 : μ ≠ 0 := inv_ne_zero hc
   set g' := dehomogenize 2 (C μ * linearSubst (shear c) G) with hg'_def
   -- The projection from `(c : 1 : 0)` is `u = x - c y`.

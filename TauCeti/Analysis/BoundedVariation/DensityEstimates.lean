@@ -149,7 +149,7 @@ private theorem ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf
         (by rwa [Subtype.range_coe]))
   -- Cutoffs between `closedBall x r` and `ball x (r + h)` with Lipschitz constant `t / h`.
   choose! ψ hψs hψ01 hψ1 hψR hψK using fun h (hh : 0 < h) =>
-    exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x hr hh ht
+    exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x hh ht
   -- The pairings with the cutoffs converge to `⟪v, Dχ_s (closedBall x r)⟫`.
   have hlim : Tendsto (fun h => ∫ y, ψ h y * ⟪v, σ y⟫ ∂ν) (𝓝[>] 0)
       (𝓝 ⟪v, ∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, σ y ∂ν⟫) := by

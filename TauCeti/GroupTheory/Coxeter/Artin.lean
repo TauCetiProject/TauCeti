@@ -70,10 +70,6 @@ above correct rather than merely plausible.
 * E. Artin, *Theorie der Zöpfe*, Abh. Math. Sem. Univ. Hamburg 4 (1925), 47-72.
 * E. Brieskorn, K. Saito, *Artin-Gruppen und Coxeter-Gruppen*, Invent. Math. 17 (1972), 245-271.
 * J. Birman, *Braids, Links, and Mapping Class Groups*, Annals of Mathematics Studies 82 (1974).
-
-This file is Layer 4 ("knot theory, done properly") of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`), which asks for "braid closures (over
-`PresentedMonoid` braid groups with the Artin relations)" as one of the presentations of a knot.
 -/
 
 public section

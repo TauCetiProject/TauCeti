@@ -135,7 +135,7 @@ theorem picClass_mul_picClass_of_united {a a' B C : ℤ} {f g h : primitiveForms
   obtain ⟨h, hhm⟩ := h
   simp only at hf hg hh
   subst hf hg hh
-  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp hfm
+  obtain ⟨_, hfp⟩ := (mem_primitiveForms D _).mp hfm
   obtain ⟨hhD, -⟩ := (mem_primitiveForms D _).mp hhm
   simp only [picClass_def, ← map_mul]
   congr 1

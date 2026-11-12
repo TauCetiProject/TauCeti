@@ -517,8 +517,8 @@ private theorem primeCount_eq_primeSummatory (S : Set (HeightOneSpectrum (𝓞 K
   rw [primeCount_apply, primeSummatory_apply]
 
 /-- **Chebyshev's `ϑ` from `π`.**  The logarithmically weighted prime count is recovered from the
-unweighted one by Abel summation, with the inclusive cutoff and the half-open integration range
-fixed by the roadmap's conventions. -/
+unweighted one by Abel summation, with the inclusive cutoff `N𝔭 ≤ x` and the half-open
+integration range `Set.Ioc 2 x`. -/
 theorem primeTheta_eq_log_mul_primeCount_sub_integral (S : Set (HeightOneSpectrum (𝓞 K)))
     (x : ℝ) :
     primeTheta K S x =
@@ -547,8 +547,9 @@ theorem primeTheta_eq_log_mul_primeCount_sub_integral (S : Set (HeightOneSpectru
   rw [key, hI]
 
 /-- **Chebyshev's `π` from `ϑ`.**  The unweighted prime count is recovered from the logarithmically
-weighted one by Abel summation.  This is the finite identity whose two terms Layer 6.2 estimates
-in order to turn `ϑ(x) ∼ δx` into `π(x) ∼ δ Li(x)`. -/
+weighted one by Abel summation.  This is the finite identity whose two terms
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Transfer.lean` estimates in order to turn
+`ϑ(x) ∼ δx` into `π(x) ∼ δ Li(x)`. -/
 theorem primeCount_eq_primeTheta_div_log_add_integral (S : Set (HeightOneSpectrum (𝓞 K)))
     (x : ℝ) :
     primeCount K S x = primeTheta K S x / Real.log x +

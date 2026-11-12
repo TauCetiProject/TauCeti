@@ -413,7 +413,7 @@ theorem withDensity_withDensity_mul (hg : μ.Integrable g) (h : X → 𝕜) :
   by_cases hh : (μ.withDensity g (ContinuousLinearMap.mul ℝ 𝕜)).Integrable h; swap
   · rw [withDensity_of_not_integrable hh,
       withDensity_of_not_integrable (mt (integrable_withDensity_mul_iff hg).2 hh)]
-  ext s hs : 1
+  ext s _ : 1
   rw [withDensity_apply hh, withDensity_apply ((integrable_withDensity_mul_iff hg).1 hh),
     restrict_withDensity hg, integral_withDensity_mul hg.restrict]
 
@@ -421,7 +421,7 @@ theorem withDensity_withDensity_mul (hg : μ.Integrable g) (h : X → 𝕜) :
 @[simp]
 theorem withDensity_const_mul (c : 𝕜) :
     μ.withDensity (fun _ => c) (ContinuousLinearMap.mul ℝ 𝕜) = c • μ := by
-  ext s hs : 1
+  ext s _ : 1
   rw [withDensity_apply (integrable_const c), setIntegral_const, ContinuousLinearMap.mul_apply',
     smul_apply, smul_eq_mul]
 

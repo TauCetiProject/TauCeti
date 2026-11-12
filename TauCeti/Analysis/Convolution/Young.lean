@@ -41,7 +41,7 @@ needs any integrability hypothesis.
 
 ## `L¹ ⋆ Lᵖ ⊆ Lᵖ` for the Bochner convolution
 
-Let `μ` be a σ-finite right-invariant measure on a measurable additive group `G`, and let
+Let `μ` be an s-finite right-invariant measure on a measurable additive group `G`, and let
 `L : E →L[𝕜] E' →L[𝕜] F` be a continuous bilinear map. For `1 ≤ p ≤ ∞`, an integrable `f` and
 `g ∈ Lᵖ(μ)`, the convolution `(f ⋆[L] g)(x) = ∫ L (f t) (g (x - t)) dμ(t)` satisfies
 
@@ -160,7 +160,7 @@ theorem enorm_convolution_le_lintegral [Sub G] [MeasurableSpace G] (μ : Measure
   (eNorm_integral_le_lintegral_eNorm _).trans <| lintegral_mono fun _ ↦ L.le_opENorm₂ _ _
 
 variable [AddGroup G] [MeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
-  {μ : Measure G} [SigmaFinite μ] [IsAddRightInvariant μ]
+  {μ : Measure G} [SFinite μ] [IsAddRightInvariant μ]
 
 /-- **Young's inequality** for convolution with an integrable function: for `1 ≤ p ≤ ∞`,
 `‖f ⋆[L] g‖_p ≤ ‖L‖ ‖f‖₁ ‖g‖_p`. -/

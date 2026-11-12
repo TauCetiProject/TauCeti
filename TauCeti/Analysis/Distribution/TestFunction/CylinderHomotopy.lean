@@ -261,7 +261,7 @@ theorem pullbackCLM_prodMk_left_apply {S : Set ℝ} (hW : ∀ p ∈ W, p.2 ∈ S
   · rw [pullbackCLM_apply_of_mem _ hx, (hasFDerivAt_prodMk_left x t).fderiv]
   · have hxt : (x, t) ∉ tsupport ω := fun h ↦ hx (hW _ (ω.tsupport_subset h) ht)
     rw [pullbackCLM_apply_of_notMem _ hx, image_eq_zero_of_notMem_tsupport hxt]
-    ext v
+    ext _
     simp
 
 /-- **The homotopy formula on test forms**: `h ∘ d = ι₁^* - ι₀^* - d ∘ h` on test
@@ -382,7 +382,7 @@ private theorem pullbackCLM_reparam_apply (hab : a ≠ b) {m : ℕ}
       rw [SetLike.mem_coe.symm, coe_reparamPreimage, mem_preimage]
       exact ω.tsupport_subset h
     rw [pullbackCLM_apply_of_notMem _ hp, image_eq_zero_of_notMem_tsupport hp']
-    ext v
+    ext _
     simp
 
 variable {hW : ∀ p ∈ W, p.2 ∈ uIcc a b → p.1 ∈ Ω}

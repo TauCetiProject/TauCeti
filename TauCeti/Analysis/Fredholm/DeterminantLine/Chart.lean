@@ -19,8 +19,8 @@ import TauCeti.LinearAlgebra.TensorProduct.Separation
 The determinant lines `det (ker T) ⊗ (det (F ⧸ range T))^*` of a continuous family of Fredholm
 operators `T x : E →L[𝕜] F` form a line bundle over the parameter space, although kernel and
 cokernel jump. This file constructs its local trivializations and proves that they are
-compatible: their transition functions are continuous and nowhere zero. Assembling the bundle
-itself from these charts, and the orientation transport it supports, are not done here.
+compatible: their transition functions are continuous and nowhere zero. The bundle itself is
+assembled from these charts in `TauCeti.Analysis.Fredholm.DeterminantLine.Bundle`.
 
 A *kernel chart* is a finite stabilization `D₂ : Λ →L[𝕜] F`, with `Λ` finite-dimensional,
 together with a kernel coordinate `q : E × Λ →L[𝕜] G`, with `G` finite-dimensional, for which the

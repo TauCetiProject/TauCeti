@@ -264,8 +264,8 @@ private theorem ae_value_le_add_of_toReal_eLpNorm_posPartAbove_le (hOmega : mu O
       refine measure_mono_ae ?_
       filter_upwards [W1p.value_posPartAbove_ae (by norm_num) (hk.trans hkl) u] with x hx hxt
       rw [hx, Real.eNorm_of_nonneg (le_max_right _ _)]
-      have hxt' : t < W1p.value u x := hxt
-      exact ENNReal.ofReal_le_ofReal (le_max_of_le_left (by linarith))
+      exact ENNReal.ofReal_le_ofReal (le_max_of_le_left
+        (sub_le_sub_right (show t < W1p.value u x from hxt).le l))
     have hfin' : eLpNorm (W1p.value w) s ν ^ ((s : ℝ≥0∞).toReal) ≠ ∞ :=
       ENNReal.rpow_ne_top_of_nonneg (by positivity) (hfin l hkl)
     have hreal : (t - l) ^ (s : ℝ) * φ t ≤ W ^ (s : ℝ) := by
@@ -406,7 +406,6 @@ private theorem exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow [No
           (Real.toNNReal (K * mu.real Omega ^ ((Fintype.card ι : ℝ)⁻¹ - δ)) : ℝ≥0∞) *
             ‖W1p.gradient v‖ₑ := by
   set n : ℕ := Fintype.card ι
-  have hn0 : (0 : ℝ) < n := by exact_mod_cast Fintype.card_pos
   set s : ℝ≥0 := Real.toNNReal (2⁻¹ - δ)⁻¹
   have hs : (s : ℝ) = (2⁻¹ - δ)⁻¹ := Real.coe_toNNReal _ (inv_nonneg.2 (by linarith))
   have hs2 : (2 : ℝ≥0∞) ≤ s := by
@@ -681,8 +680,6 @@ private theorem toReal_eLpNorm_posPartAbove_le_divergence
   set m := ν.real A ^ (2⁻¹ - (q : ℝ)⁻¹)
   have hlam := h.pos
   have hG : lam * ‖W1p.gradient w‖ ≤ Fq * m := by
-    have hkey : lam * ‖W1p.gradient w‖ ^ 2 ≤ Fq * ‖W1p.gradient w‖ * m :=
-      henergy.trans (hinner.trans hholder)
     rcases (norm_nonneg (W1p.gradient w)).eq_or_lt with hG0 | hGpos
     · rw [← hG0, mul_zero]
       positivity

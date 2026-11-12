@@ -73,10 +73,10 @@ Nothing here is analytic: `g` is an arbitrary measurable weight, and the two inp
 polar-coordinate change of variables and Hölder's inequality. The analytic use is
 `TauCeti/Analysis/Complex/Conformal/LengthArea.lean`, which takes `g` to be `‖deriv f‖ₑ` cut off
 outside a set `s`, so that `circleLIntegral g ζ ρ` becomes the arc length of the image of a circular
-arc under a holomorphic `f` and `∫⁻ z, g z ^ 2` its Dirichlet integral, hence the area of the image;
-that file is the layer **L5** input of `TauCetiRoadmap/ConformalMapping/README.md`. Stating the
-estimates for a weight keeps them available to any other length-versus-area argument — the plane
-integral on the right need not be an area and the circle integral on the left need not be a length.
+arc under a holomorphic `f` and `∫⁻ z, g z ^ 2` its Dirichlet integral, hence the area of the
+image. Stating the estimates for a weight keeps them available to any other length-versus-area
+argument — the plane integral on the right need not be an area and the circle integral on the left
+need not be a length.
 
 ## Main definitions and results
 

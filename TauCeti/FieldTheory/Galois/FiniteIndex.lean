@@ -148,7 +148,7 @@ theorem map_minpoly_fixedField_eq_prod_orbit (hx : (orbit U x).Finite) :
     (minpoly (fixedField U) x).map (algebraMap (fixedField U) M) =
       ∏ y ∈ hx.toFinset, (X - C y) := by
   classical
-  obtain ⟨q, hq, hqmonic⟩ := exists_monic_map_eq_prod_orbit hx
+  obtain ⟨q, hq, _⟩ := exists_monic_map_eq_prod_orbit hx
   have hint := isIntegral_fixedField_of_finite_orbit hx
   have hmonic : ((minpoly (fixedField U) x).map (algebraMap (fixedField U) M)).Monic :=
     (minpoly.monic hint).map _

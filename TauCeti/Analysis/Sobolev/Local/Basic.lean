@@ -28,6 +28,7 @@ These predicates concern actual functions; almost-everywhere changes do not affe
 They impose no global integrability condition on the possibly unbounded domain.
 
 This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
+pairing of fields of continuous linear maps into product maps,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
 supported in the domain), pairing, decreasing the integrability exponent, and decreasing the
 derivative order. On an open set, local `Lᵖ` membership is detected on the open subsets with
@@ -203,6 +204,18 @@ theorem MemLpLoc.clm_comp (hf : MemLpLoc p U f) (A : F →L[ℝ] G) :
     MemLpLoc p U (fun z => A (f z)) :=
   fun K hK hc => A.comp_memLp' (hf K hK hc)
 
+/-- Pairing two locally `Lᵖ` fields of continuous linear maps into their product map preserves
+local `Lᵖ` membership. -/
+theorem MemLpLoc.clm_prod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {A : ℂ → E →L[ℝ] F} {B : ℂ → E →L[ℝ] G} (hA : MemLpLoc p U A) (hB : MemLpLoc p U B) :
+    MemLpLoc p U (fun z => (A z).prod (B z)) := by
+  convert (hA.clm_comp (ContinuousLinearMap.compL ℝ E F (F × G)
+    (ContinuousLinearMap.inl ℝ F G))).add
+      (hB.clm_comp (ContinuousLinearMap.compL ℝ E G (F × G) (ContinuousLinearMap.inr ℝ F G)))
+    using 1
+  funext z
+  ext v <;> simp
+
 open TauCeti.MeasureTheory in
 /-- A locally `Lᵖ` function on an open set `Ω`, with `1 ≤ p`, agrees almost everywhere on `Ω` with
 its precise representative. -/
@@ -350,7 +363,7 @@ theorem MemWkpLoc.of_succ (hf : MemWkpLoc p U (k + 1) f) : MemWkpLoc p U k f := 
 theorem MemWkpLoc.of_le (hf : MemWkpLoc p U k f) (hlk : l ≤ k) : MemWkpLoc p U l f := by
   induction hlk with
   | refl => exact hf
-  | step h ih => exact ih hf.of_succ
+  | step _ ih => exact ih hf.of_succ
 
 /-- The zero function lies in every local Sobolev class with complete codomain. -/
 @[simp]

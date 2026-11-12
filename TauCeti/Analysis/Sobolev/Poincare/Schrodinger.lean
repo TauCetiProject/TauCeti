@@ -66,7 +66,6 @@ theorem exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_
   set ρ := max R 0
   set Ω := ball (0 : E) (ρ + 1)
   set S := Ω ∩ (closedBall (0 : E) ρ)ᶜ
-  have hρ : 0 ≤ ρ := le_max_right R 0
   have hSΩ : S ⊆ Ω := inter_subset_left
   have hS : MeasurableSet S := measurableSet_ball.inter measurableSet_closedBall.compl
   have hρR : R ≤ ρ := le_max_left R 0

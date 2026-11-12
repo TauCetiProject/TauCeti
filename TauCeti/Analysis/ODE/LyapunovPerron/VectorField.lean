@@ -134,7 +134,7 @@ theorem exists_localStableGraph_of_contDiffAt :
   let N : E → E := fun z ↦ V (x + z) - A z
   have hN0 : N 0 = 0 := by simp [N, hx]
   have hfield : (fun (_ : ℝ) z ↦ A z + N z) = fun (_ : ℝ) z ↦ V (x + z) := by
-    funext t z
+    funext _ z
     simp [N]
   let g := localStableGraphMap A P N r hs hu hr.le hN hsmall
   refine ⟨r, hr, ρ, hρ, g, _, lipschitzWith_localStableGraphMap hs hu hr.le hN hsmall,
@@ -172,7 +172,7 @@ theorem exists_localUnstableGraph_of_contDiffAt :
   let N : E → E := fun z ↦ V (x + z) - A z
   have hN0 : N 0 = 0 := by simp [N, hx]
   have hfield : (fun (_ : ℝ) z ↦ A z + N z) = fun (_ : ℝ) z ↦ V (x + z) := by
-    funext t z
+    funext _ z
     simp [N]
   let g := localUnstableGraphMap A P N r hs hu hr.le hN hsmall
   refine ⟨r, hr, ρ, hρ, g, _, lipschitzWith_localUnstableGraphMap hs hu hr.le hN hsmall,

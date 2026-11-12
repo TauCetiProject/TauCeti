@@ -102,7 +102,7 @@ private theorem derivative_mul_le (k i : ℕ) (hi : i ≤ k)
         Real.nnNorm_of_nonneg (mul_nonneg (Nat.cast_nonneg _) hM)]
       rfl
     _ ≤ ∑ j ∈ Finset.range (i + 1), a j * ‖u‖ := by
-      gcongr with j hj
+      gcongr with j _
       exact Wkp.lpNorm_iteratedFDeriv_le_of_contDiffOn k u hf hu (i - j)
         ((Nat.sub_le _ _).trans hi)
     _ = 2 ^ i * M * ‖u‖ := by

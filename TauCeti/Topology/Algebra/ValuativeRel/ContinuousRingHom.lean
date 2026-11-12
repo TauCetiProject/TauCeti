@@ -110,7 +110,7 @@ theorem TauCeti.continuous_algebraMap_integerRing (K L : Type*)
   refine continuous_induced_rng.2 ?_
   have : ((↑) : Valuation.integer (valuation L) → L) ∘ algebraMap _ _ =
       algebraMap K L ∘ ((↑) : Valuation.integer (valuation K) → K) :=
-    funext coe_algebraMap_integerRing
+    funext Valuation.HasExtension.val_algebraMap
   rw [this]
   exact (continuous_algebraMap_of_valuativeExtension K L).comp continuous_subtype_val
 

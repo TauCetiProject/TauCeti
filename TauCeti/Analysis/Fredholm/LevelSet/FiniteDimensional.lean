@@ -125,7 +125,7 @@ theorem exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_z
   have hsurj : Surjective (D₁.coprod D₂) := by rwa [hcop]
   have hker : (D₁.coprod D₂).ker.ClosedComplemented :=
     (D₁.coprod D₂).ker_closedComplemented_of_finiteDimensional_range
-  set Φ := levelSetChart hstrict (LinearMap.range_eq_top.mpr hsurj) hker hxl with hΦ
+  set Φ := levelSetChart hstrict (LinearMap.range_eq_top.mpr hsurj) hker hxl
   set g := levelSetParameterMap hstrict hsurj hker hxl
   have hgC : ContDiffAt ℝ n g 0 := contDiffAt_levelSetParameterMap hstrict hcont hsurj hker hxl
   -- Morse--Sard for the parameter map on a neighbourhood of the chart origin.

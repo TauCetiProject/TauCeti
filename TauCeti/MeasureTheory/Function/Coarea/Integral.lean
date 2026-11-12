@@ -89,7 +89,7 @@ theorem lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
       lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv
         (hs.inter ht.nullMeasurableSet) (fun x hx ↦ hd x hx.1) (fun x hx ↦ hsurj x hx.1),
       inter_comm t s, mul_comm]
-  · intro g h hdisj hg hh ihg ihh
+  · intro g h _ hg _ ihg ihh
     simp_rw [Pi.add_apply, mul_add, lintegral_add_left hg]
     have hprod : Measurable (fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * g x) :=
       hJ.mul hg
