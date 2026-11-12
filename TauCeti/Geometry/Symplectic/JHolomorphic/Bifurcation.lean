@@ -23,37 +23,44 @@ The curves taking part in a bifurcation are close to each other, so they form a 
 every candidate `d` outside the cluster is compatible with either all or none of its members.
 Writing `U` for the candidates compatible with the cluster, a configuration of `K ∪ s` either
 avoids `K`, or splits into a nonempty configuration of `K` in some class `B` and a configuration
-of `U` in class `A - B`. Hence (`TauCeti.configurationCount_union`)
+of `U` in class `A - B`. Hence, when the configurations of `K ∪ s` in class `A` are finite in
+number (`TauCeti.configurationCount_union`),
 
 `N_{K ∪ s}(A) = N_s(A) + ∑ᶠ B ≠ 0, N_K(B) N_U(A - B)`,
 
-so the count depends on the cluster only through its *local counts* `N_K(B)`, `B ≠ 0`. Replacing
-`K` by a cluster `K'` with the same compatibility with `s` and the same local counts does not
-change any count (`TauCeti.configurationCount_union_eq_union`). The local counts are then
-computed for the three bifurcations:
+so the count in class `A` depends on the cluster only through its *local counts* `N_K(B)` in the
+classes `B ≠ 0` for which `U` has a configuration in class `A - B`; for candidates of nonnegative
+area `ω`, these classes have `ω B ≤ ω A`. Replacing `K` by a cluster `K'` with the same
+compatibility with `s` and the same local counts in these classes does not change the count in
+class `A` (`TauCeti.configurationCount_union_eq_union`). The local counts are then computed for
+the three bifurcations:
 
 * **Ordinary birth and death.** Two incompatible candidates `c` and `d` of the same class, with
   the same compatibility with the other candidates and opposite weights `w d k = -w c k`, have
-  vanishing local counts. Adding them does not change the count
-  (`TauCeti.configurationCount_insert_insert_of_weight_eq_neg`).
-* **Tori on a ray.** The local counts of a compatible cluster of tori on the ray of a class `A₀`
-  that is not torsion are the coefficients of its ray series `∏ f_(σ c, i c)(t ^ m c)`
-  (`TauCeti.rayTorusWeightSeries`). Two such clusters with the same ray series give the same
-  counts (`TauCeti.configurationCount_union_eq_union_of_rayTorusWeightSeries_eq`). In particular,
+  vanishing local counts (`TauCeti.configurationCount_pair_eq_zero`). Adding them does not change
+  the count (`TauCeti.configurationCount_insert_insert_of_weight_eq_neg`).
+* **Tori on a ray.** For candidates of positive area `ω` with finitely many of area at most
+  `ω A`, the local counts of a finite pairwise compatible cluster of tori on the ray of a class
+  `A₀` are the coefficients of its ray series `∏ f_(σ c, i c)(t ^ m c)`
+  (`TauCeti.rayTorusWeightSeries`). Two such clusters whose ray series agree up to area `ω A`
+  give the same count in class `A`
+  (`TauCeti.configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq`). In particular,
   adding two compatible tori of the same class and index with opposite determinant signs does not
-  change the count (`TauCeti.configurationCount_insert_insert_torusWeight_not`), and neither does
-  period doubling: a torus of label `(σ, j)` contributes as much as a torus of label `(σ, j + 1)`
-  in the same class together with a torus of label `(σ, j % 2)` in twice its class
-  (`TauCeti.configurationCount_insert_eq_insert_insert_torusWeight_castSucc`), or with a torus of
-  label `(!σ, j % 2)` when the first torus has label `(σ, j + 1)` and is replaced by one of label
-  `(σ, j)` (`TauCeti.configurationCount_insert_eq_insert_insert_torusWeight_succ`).
+  change the count (`TauCeti.configurationCount_insert_insert_of_eq_torusWeight_not`), and neither
+  does period doubling: a torus of label `(σ, j)` contributes as much as a torus of label
+  `(σ, j + 1)` in the same class together with a torus of label `(σ, j % 2)` in twice its class
+  (`TauCeti.configurationCount_insert_eq_insert_insert_of_eq_torusWeight_castSucc`), or with a
+  torus of label `(!σ, j % 2)` when the first torus has label `(σ, j + 1)` and is replaced by one
+  of label `(σ, j)` (`TauCeti.configurationCount_insert_eq_insert_insert_of_eq_torusWeight_succ`).
+  When the double cover of a torus has area larger than `ω A`, its index may change with no other
+  torus appearing (`TauCeti.configurationCount_insert_eq_insert_of_area_lt_two_mul`).
 
 The ray-series identities behind the torus statements are
 `TauCeti.torusWeightSeries_mul_not`, `TauCeti.torusWeightSeries_castSucc` and
 `TauCeti.torusWeightSeries_succ`. Unlike the ray-series statements of
 `TauCeti.Geometry.Symplectic.JHolomorphic.TorusWeight`, the invariance here holds for the count
-over an arbitrary set of candidates, whose members need not be pairwise compatible and need not
-lie on one ray.
+over a set of candidates whose members need not be pairwise compatible and need not lie on one
+ray.
 
 The candidates, their classes, weights and compatibility, and the description of a bifurcation
 as the replacement of one cluster by another, are inputs here; constructing the one-dimensional
@@ -65,11 +72,13 @@ bifurcation models of a generic path of almost complex structures is separate.
 * `TauCeti.configurationCount_union_eq_union`: replacing a cluster by one with the same local
   counts.
 * `TauCeti.configurationCount_insert_insert_of_weight_eq_neg`: ordinary birth and death.
-* `TauCeti.configurationCount_union_eq_union_of_rayTorusWeightSeries_eq`: replacing a cluster of
-  tori by one with the same ray series.
-* `TauCeti.configurationCount_insert_insert_torusWeight_not`: birth and death of tori.
-* `TauCeti.configurationCount_insert_eq_insert_insert_torusWeight_castSucc`,
-  `TauCeti.configurationCount_insert_eq_insert_insert_torusWeight_succ`: period doubling.
+* `TauCeti.configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq`: replacing a
+  cluster of tori by one with the same ray series up to the area cutoff.
+* `TauCeti.configurationCount_insert_insert_of_eq_torusWeight_not`: birth and death of tori.
+* `TauCeti.configurationCount_insert_eq_insert_insert_of_eq_torusWeight_castSucc`,
+  `TauCeti.configurationCount_insert_eq_insert_insert_of_eq_torusWeight_succ`: period doubling.
+* `TauCeti.configurationCount_insert_eq_insert_of_area_lt_two_mul`: changing the index of a torus
+  whose double cover lies beyond the area cutoff.
 
 ## References
 
@@ -89,7 +98,6 @@ variable {ι H R : Type*}
 section Cluster
 
 variable [AddCommGroup H] {r : ι → ι → Prop} {cls : ι → H} {K K' s U : Set ι} {A B : H}
-  {ω : H →+ ℝ}
 
 /-- A configuration `m` of the cluster `K` together with a configuration `n` of the candidates
 `U` compatible with `K` is a configuration of `K ∪ s`, and splitting it along `K` recovers `m`
@@ -149,26 +157,36 @@ private theorem filter_mem_compatibleConfigurations [DecidablePred (· ∈ K)]
       hl.2.1 hd.1 hk.1 fun h ↦ hd.2 (h ▸ hk.2)⟩
   · rw [eq_sub_iff_add_eq', ← map_add, Finsupp.filter_add_filter_not, hl.2.2]
 
+/-- If the configurations of `K ∪ s` in class `A` are finite in number, then so are those of the
+cluster `K` in every class `B` for which the candidates `U` compatible with `K` have a
+configuration in class `A - B`. -/
+theorem finite_compatibleConfigurations_of_union (hKs : Disjoint K s) (hUs : U ⊆ s)
+    (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
+    (hfin : (compatibleConfigurations r cls (K ∪ s) A).Finite)
+    (hn : (compatibleConfigurations r cls U (A - B)).Nonempty) :
+    (compatibleConfigurations r cls K B).Finite := by
+  classical
+  obtain ⟨n, hn⟩ := hn
+  exact (hfin.preimage (add_left_injective n).injOn).subset fun m hm ↦
+    (add_mem_compatibleConfigurations_union hKs hUs hU hm hn).1
+
 variable [CommSemiring R] {w : ι → ℕ → R}
 
 /-- **Cluster expansion of the count.** Let `K` be a cluster of candidates, disjoint from `s`,
 such that a candidate `d ∈ s` is compatible with a member of `K` exactly when `d ∈ U`. If the
-candidates of `K ∪ s` have positive area `ω`, with finitely many of area at most `ω A`, then the
-count in class `A` over `K ∪ s` is the count over `s` plus the contributions of the nonempty
-configurations of `K`: the local count `N_K(B)` in each class `B ≠ 0`, times the count over `U`
-in the complementary class `A - B`. -/
+configurations of `K ∪ s` in class `A` are finite in number, then the count in class `A` over
+`K ∪ s` is the count over `s` plus the contributions of the nonempty configurations of `K`: the
+local count `N_K(B)` in each class `B ≠ 0`, times the count over `U` in the complementary class
+`A - B`. -/
 theorem configurationCount_union (hKs : Disjoint K s) (hUs : U ⊆ s)
-    (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U) (hpos : ∀ c ∈ K ∪ s, 0 < ω (cls c))
-    (hfin : {c ∈ K ∪ s | ω (cls c) ≤ ω A}.Finite) :
+    (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
+    (hfin : (compatibleConfigurations r cls (K ∪ s) A).Finite) :
     configurationCount r cls w (K ∪ s) A =
       configurationCount r cls w s A +
         ∑ᶠ B ∈ {B : H | B ≠ 0},
           configurationCount r cls w K B * configurationCount r cls w U (A - B) := by
   classical
-  have hposK : ∀ c ∈ K, 0 < ω (cls c) := fun c hc ↦ hpos c (Or.inl hc)
-  have hposU : ∀ c ∈ U, 0 < ω (cls c) := fun c hc ↦ hpos c (Or.inr (hUs hc))
-  have hfinA := finite_compatibleConfigurations (r := r) hpos hfin
-  set F := hfinA.toFinset
+  set F := hfin.toFinset
   -- The class of the part of a configuration lying in `K`.
   set κ : (ι →₀ ℕ) → H := fun l ↦ Finsupp.linearCombination ℕ cls (l.filter (· ∈ K))
   -- The configurations of `K` and of `U` occurring in a splitting are finite in number.
@@ -177,21 +195,33 @@ theorem configurationCount_union (hKs : Disjoint K s) (hUs : U ⊆ s)
         (compatibleConfigurations r cls U (A - κ l)).Finite := by
     rw [Set.Finite.mem_toFinset] at hl
     obtain ⟨hm, hn⟩ := filter_mem_compatibleConfigurations hU hl hlK
-    have hB := area_nonneg_of_mem_compatibleConfigurations (fun c hc ↦ (hposK c hc).le) hm
-    have hAB := area_nonneg_of_mem_compatibleConfigurations (fun c hc ↦ (hposU c hc).le) hn
-    have hω : ω A = ω (κ l) + ω (A - κ l) := by rw [← map_add, add_sub_cancel]
-    refine ⟨fun h ↦ hlK (eq_zero_of_mem_compatibleConfigurations_of_area_nonpos hposK hm
-      (by simp only [κ] at h; rw [h, map_zero])),
-      finite_compatibleConfigurations hposK (hfin.subset ?_),
-      finite_compatibleConfigurations hposU (hfin.subset ?_)⟩
-    · exact fun c hc ↦ ⟨Or.inl hc.1, hc.2.trans (by linarith)⟩
-    · exact fun c hc ↦ ⟨Or.inr (hUs hc.1), hc.2.trans (by linarith)⟩
-  rw [configurationCount_eq_sum hfinA,
+    refine ⟨fun h ↦ ?_, finite_compatibleConfigurations_of_union hKs hUs hU hfin ⟨_, hn⟩,
+      (hfin.preimage (add_right_injective _).injOn).subset fun n hn' ↦
+        (add_mem_compatibleConfigurations_union hKs hUs hU hm hn').1⟩
+    -- A nonempty configuration of `K` in class zero could be added to `l` any number of times.
+    simp only [κ] at h
+    rw [mem_compatibleConfigurations] at hl
+    have hsupp (j : ℕ) : ↑(l + j • l.filter (· ∈ K)).support ⊆ (↑l.support : Set ι) :=
+      fun d hd ↦ by
+        simp only [Finset.mem_coe, Finsupp.mem_support_iff, Finsupp.coe_add, Finsupp.coe_smul,
+          Pi.add_apply, Pi.smul_apply, smul_eq_mul, Finsupp.filter_apply] at hd ⊢
+        intro hd'
+        simp [hd'] at hd
+    refine hfin.not_infinite (Set.infinite_of_injective_forall_mem
+      (f := fun j : ℕ ↦ l + j • l.filter (· ∈ K)) (fun j j' hj ↦ ?_) fun j ↦ ?_)
+    · obtain ⟨k, hk⟩ := Finsupp.support_nonempty_iff.2 hlK
+      have := DFunLike.congr_fun (add_left_cancel hj) k
+      simp only [Finsupp.coe_smul, Pi.smul_apply, smul_eq_mul] at this
+      exact Nat.eq_of_mul_eq_mul_right (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.1 hk)) this
+    · rw [mem_compatibleConfigurations]
+      exact ⟨(hsupp j).trans hl.1, hl.2.1.mono (hsupp j), by
+        rw [map_add, map_nsmul, h, smul_zero, add_zero, hl.2.2]⟩
+  rw [configurationCount_eq_sum hfin,
     ← Finset.sum_filter_add_sum_filter_not F fun l ↦ l.filter (· ∈ K) = 0]
   congr 1
   · -- The configurations avoiding `K` are the configurations of `s`.
     have hfins : (compatibleConfigurations r cls s A).Finite :=
-      hfinA.subset (compatibleConfigurations_mono Set.subset_union_right)
+      hfin.subset (compatibleConfigurations_mono Set.subset_union_right)
     rw [configurationCount_eq_sum hfins]
     refine Finset.sum_congr (Finset.ext fun l ↦ ?_) fun _ _ ↦ rfl
     rw [Finset.mem_filter, Set.Finite.mem_toFinset, Set.Finite.mem_toFinset,
@@ -252,18 +282,25 @@ theorem configurationCount_union (hKs : Disjoint K s) (hUs : U ⊆ s)
 
 /-- **Replacing a cluster.** Let `K` and `K'` be two clusters of candidates, disjoint from `s`,
 with the same compatibility with `s`: a candidate `d ∈ s` is compatible with a member of `K`, or
-of `K'`, exactly when `d ∈ U`. If `K` and `K'` have the same local counts `N_K(B) = N_K'(B)` in
-every class `B ≠ 0`, then replacing `K` by `K'` does not change the count in any class. -/
+of `K'`, exactly when `d ∈ U`. Suppose that the configurations of `K ∪ s` and of `K' ∪ s` in
+class `A` are finite in number. If `K` and `K'` have the same local counts `N_K(B) = N_K'(B)` in
+every class `B ≠ 0` for which `U` has a configuration in class `A - B`, then replacing `K` by `K'`
+does not change the count in class `A`. When the candidates of `U` have nonnegative area `ω`, only
+the classes `B` with `ω B ≤ ω A` matter. -/
 theorem configurationCount_union_eq_union (hKs : Disjoint K s) (hK's : Disjoint K' s)
     (hUs : U ⊆ s) (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
-    (hU' : ∀ k ∈ K', ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U) (hpos : ∀ c ∈ K ∪ s, 0 < ω (cls c))
-    (hpos' : ∀ c ∈ K' ∪ s, 0 < ω (cls c)) (hfin : {c ∈ K ∪ s | ω (cls c) ≤ ω A}.Finite)
-    (hfin' : {c ∈ K' ∪ s | ω (cls c) ≤ ω A}.Finite)
-    (hK : ∀ B ≠ 0, configurationCount r cls w K B = configurationCount r cls w K' B) :
+    (hU' : ∀ k ∈ K', ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
+    (hfin : (compatibleConfigurations r cls (K ∪ s) A).Finite)
+    (hfin' : (compatibleConfigurations r cls (K' ∪ s) A).Finite)
+    (hK : ∀ B ≠ 0, (compatibleConfigurations r cls U (A - B)).Nonempty →
+      configurationCount r cls w K B = configurationCount r cls w K' B) :
     configurationCount r cls w (K ∪ s) A = configurationCount r cls w (K' ∪ s) A := by
-  rw [configurationCount_union hKs hUs hU hpos hfin, configurationCount_union hK's hUs hU' hpos'
-    hfin']
-  exact congrArg _ (finsum_mem_congr rfl fun B hB ↦ by rw [hK B hB])
+  rw [configurationCount_union hKs hUs hU hfin, configurationCount_union hK's hUs hU' hfin']
+  refine congrArg _ (finsum_mem_congr rfl fun B hB ↦ ?_)
+  by_cases hn : (compatibleConfigurations r cls U (A - B)).Nonempty
+  · rw [hK B hB hn]
+  · rw [configurationCount_def (s := U), Set.not_nonempty_iff_eq_empty.1 hn, finsum_mem_empty,
+      mul_zero, mul_zero]
 
 end Cluster
 
@@ -272,23 +309,16 @@ end Cluster
 section BirthDeath
 
 variable [AddCommGroup H] [CommRing R] {r : ι → ι → Prop} {cls : ι → H} {w : ι → ℕ → R}
-  {s : Set ι} {A B : H} {ω : H →+ ℝ} {c d : ι}
+  {s : Set ι} {A B : H} {c d : ι}
 
-/-- The weight of a single candidate taken with positive multiplicity. -/
-private theorem prod_single_of_ne_zero (e : ι) {k : ℕ} (hk : k ≠ 0) :
-    (Finsupp.single e k).prod w = w e k := by
-  rw [Finsupp.prod, Finsupp.support_single _ hk, Finset.prod_singleton,
-    Finsupp.single_eq_same]
-
-/-- The local counts of two incompatible candidates of the same class with opposite weights
-vanish in every nonzero class. -/
-private theorem configurationCount_pair_eq_zero (hcd : c ≠ d) (hr : ¬(r c d ∧ r d c))
+/-- **Local count of a birth or death pair.** Two distinct incompatible candidates of the same
+class with opposite weights `w d k = -w c k` have vanishing local count in every nonzero class `B`
+in which they have finitely many configurations. -/
+theorem configurationCount_pair_eq_zero (hcd : c ≠ d) (hr : ¬(r c d ∧ r d c))
     (hcls : cls d = cls c) (hw : ∀ k ≠ 0, w d k = -w c k)
-    (hpos : ∀ e ∈ ({c, d} : Set ι), 0 < ω (cls e)) (hB : B ≠ 0) :
+    (hfin : (compatibleConfigurations r cls {c, d} B).Finite) (hB : B ≠ 0) :
     configurationCount r cls w {c, d} B = 0 := by
   classical
-  have hfin := finite_compatibleConfigurations (r := r) (A := B) hpos
-    ((Set.toFinite {c, d}).subset fun e he ↦ he.1)
   -- Since `c` and `d` are incompatible, a configuration is one of them with some multiplicity.
   have hsingle (l : ι →₀ ℕ) (hl : l ∈ compatibleConfigurations r cls {c, d} B) :
       ∃ e ∈ ({c, d} : Set ι), ∃ k ≠ 0, l = Finsupp.single e k ∧ k • cls e = B := by
@@ -322,7 +352,8 @@ private theorem configurationCount_pair_eq_zero (hcd : c ≠ d) (hr : ¬(r c d �
   refine Finset.sum_involution (fun l _ ↦ l.equivMapDomain (Equiv.swap c d)) (fun l hl ↦ ?_)
     (fun l hl _ ↦ ?_) (fun l hl ↦ ?_) fun l hl ↦ ?_
   · obtain ⟨e, he, k, hk, rfl, -⟩ := hsingle l ((Set.Finite.mem_toFinset _).1 hl)
-    rw [Finsupp.equivMapDomain_single, prod_single_of_ne_zero e hk, prod_single_of_ne_zero _ hk]
+    simp only [Finsupp.equivMapDomain_single, Finsupp.prod, Finsupp.support_single _ hk,
+      Finset.prod_singleton, Finsupp.single_eq_same]
     rcases he with rfl | rfl
     · rw [Equiv.swap_apply_left, hw k hk, add_neg_cancel]
     · rw [Equiv.swap_apply_right, hw k hk, neg_add_cancel]
@@ -339,14 +370,13 @@ private theorem configurationCount_pair_eq_zero (hcd : c ≠ d) (hr : ¬(r c d �
 
 /-- **Ordinary birth and death.** Let `c` and `d` be two incompatible candidates outside `s` of
 the same class, with the same compatibility with the candidates of `s` and opposite weights
-`w d k = -w c k` for `k ≠ 0`. If the candidates have positive area `ω`, with finitely many of area
-at most `ω A`, then adding `c` and `d` to `s` does not change the count in class `A`. Two distinct
+`w d k = -w c k` for `k ≠ 0`. If the configurations of `s ∪ {c, d}` in class `A` are finite in
+number, then adding `c` and `d` to `s` does not change the count in class `A`. Two distinct
 embedded curves in the same class of positive square intersect, so they are incompatible. -/
 theorem configurationCount_insert_insert_of_weight_eq_neg (hcd : c ≠ d) (hc : c ∉ s)
     (hd : d ∉ s) (hr : ¬(r c d ∧ r d c)) (hcls : cls d = cls c)
     (hcomp : ∀ e ∈ s, r d e ∧ r e d ↔ r c e ∧ r e c) (hw : ∀ k ≠ 0, w d k = -w c k)
-    (hpos : ∀ e ∈ insert c (insert d s), 0 < ω (cls e))
-    (hfin : {e ∈ insert c (insert d s) | ω (cls e) ≤ ω A}.Finite) :
+    (hfin : (compatibleConfigurations r cls (insert c (insert d s)) A).Finite) :
     configurationCount r cls w (insert c (insert d s)) A = configurationCount r cls w s A := by
   classical
   have hunion : insert c (insert d s) = ({c, d} : Set ι) ∪ s := by
@@ -354,20 +384,23 @@ theorem configurationCount_insert_insert_of_weight_eq_neg (hcd : c ≠ d) (hc : 
   have hKs : Disjoint ({c, d} : Set ι) s := Set.disjoint_left.2 fun e he hes ↦ by
     rcases he with rfl | rfl
     exacts [hc hes, hd hes]
-  have hsub : ∅ ∪ s ⊆ insert c (insert d s) := by
-    rw [Set.empty_union]
-    exact (Set.subset_insert d s).trans (Set.subset_insert c _)
-  rw [hunion] at hpos hfin
-  rw [hunion, configurationCount_union_eq_union (K' := ∅) (U := {e ∈ s | r c e ∧ r e c}) hKs
-    (Set.empty_disjoint s) (Set.sep_subset _ _) (fun k hk e he ↦ ?_) (fun k hk ↦ hk.elim) hpos
-    (fun e he ↦ hpos e (hunion ▸ hsub he)) hfin
-    (hfin.subset fun e he ↦ ⟨hunion ▸ hsub he.1, he.2⟩) fun B hB ↦ ?_, Set.empty_union]
-  · rw [Set.mem_sep_iff]
+  have hU : ∀ k ∈ ({c, d} : Set ι), ∀ e ∈ s, r k e ∧ r e k ↔ e ∈ {e ∈ s | r c e ∧ r e c} := by
+    intro k hk e he
+    rw [Set.mem_sep_iff]
     rcases hk with rfl | rfl
     · exact ⟨fun h ↦ ⟨he, h⟩, fun h ↦ h.2⟩
     · exact ⟨fun h ↦ ⟨he, (hcomp e he).1 h⟩, fun h ↦ (hcomp e he).2 h.2⟩
-  · rw [configurationCount_pair_eq_zero hcd hr hcls hw (fun e he ↦ hpos e (Or.inl he)) hB,
-      configurationCount_empty, ite_eq_right_iff.2 fun h ↦ (hB h).elim]
+  have hsub : ∅ ∪ s ⊆ insert c (insert d s) := by
+    rw [Set.empty_union]
+    exact (Set.subset_insert d s).trans (Set.subset_insert c _)
+  rw [hunion] at hfin
+  rw [hunion, configurationCount_union_eq_union (K' := ∅) hKs (Set.empty_disjoint s)
+    (Set.sep_subset _ _) hU (fun k hk ↦ hk.elim) hfin
+    (hfin.subset (compatibleConfigurations_mono (hunion ▸ hsub))) fun B hB hn ↦ ?_,
+    Set.empty_union]
+  rw [configurationCount_pair_eq_zero hcd hr hcls hw
+      (finite_compatibleConfigurations_of_union hKs (Set.sep_subset _ _) hU hfin hn) hB,
+    configurationCount_empty, ite_eq_right_iff.2 fun h ↦ (hB h).elim]
 
 end BirthDeath
 
@@ -378,83 +411,69 @@ section Ray
 variable [AddCommGroup H] {r : ι → ι → Prop} {cls : ι → H} {w : ι → ℕ → ℤ}
   {s U : Set ι} {A A₀ : H} {ω : H →+ ℝ} {m : ι → ℕ+} {σ : ι → Bool} {i : ι → Fin 4}
 
-/-- A configuration of candidates on the ray of `A₀` has its class on that ray. -/
-private theorem exists_eq_nsmul_of_mem_compatibleConfigurations {T : Set ι}
-    (hcls : ∀ c ∈ T, cls c = (m c : ℕ) • A₀) {l : ι →₀ ℕ}
-    (hl : l ∈ compatibleConfigurations r cls T A) : ∃ j : ℕ, A = j • A₀ := by
-  rw [mem_compatibleConfigurations] at hl
-  refine ⟨∑ c ∈ l.support, l c * m c, ?_⟩
-  rw [← hl.2.2, Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_smul]
-  exact Finset.sum_congr rfl fun c hc ↦ by rw [hcls c (hl.1 hc), smul_smul]
-
-variable [DecidableEq ι]
-
-/-- Two compatible families of tori on the ray of `A₀` with the same ray series have the same
-counts in every class. -/
-private theorem configurationCount_eq_of_rayTorusWeightSeries_eq {K K' : Finset ι}
+/-- **Replacing a cluster of tori.** Let `K` and `K'` be finite families of pairwise compatible
+tori, disjoint from `s`, on the ray of a class `A₀`, the torus `c` having class `m c • A₀` and
+the four-twist weights `w c = w_(σ c, i c)`. Suppose that a candidate `d ∈ s` is compatible with
+a torus of `K`, or of `K'`, exactly when `d ∈ U`. If the candidates have positive area `ω`, with
+finitely many of area at most `ω A`, and the ray series `∏ f_(σ c, i c)(t ^ m c)` of `K` and `K'`
+have the same coefficients up to area `ω A`, then replacing `K` by `K'` does not change the count
+in class `A`. -/
+theorem configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq {K K' : Finset ι}
+    (hKs : Disjoint (K : Set ι) s) (hK's : Disjoint (K' : Set ι) s) (hUs : U ⊆ s)
+    (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U) (hU' : ∀ k ∈ K', ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
     (hK : (K : Set ι).Pairwise r) (hK' : (K' : Set ι).Pairwise r)
-    (hcls : ∀ c ∈ K ∪ K', cls c = (m c : ℕ) • A₀) (hA₀ : Function.Injective fun n : ℕ ↦ n • A₀)
-    (hw : ∀ c ∈ K ∪ K', w c = torusWeight (σ c) (i c))
-    (hseries : rayTorusWeightSeries K m σ i = rayTorusWeightSeries K' m σ i) (B : H) :
-    configurationCount r cls w K B = configurationCount r cls w K' B := by
-  have hclsK : ∀ c ∈ (K : Set ι), cls c = (m c : ℕ) • A₀ := fun c hc ↦
-    hcls c (Finset.mem_union_left _ hc)
-  have hclsK' : ∀ c ∈ (K' : Set ι), cls c = (m c : ℕ) • A₀ := fun c hc ↦
-    hcls c (Finset.mem_union_right _ hc)
+    (hcls : ∀ c ∈ (↑K ∪ ↑K' : Set ι), cls c = (m c : ℕ) • A₀)
+    (hw : ∀ c ∈ (↑K ∪ ↑K' : Set ι), w c = torusWeight (σ c) (i c))
+    (hpos : ∀ c ∈ (↑K ∪ ↑K' : Set ι) ∪ s, 0 < ω (cls c))
+    (hfin : {c ∈ (↑K ∪ ↑K' : Set ι) ∪ s | ω (cls c) ≤ ω A}.Finite)
+    (hseries : ∀ j : ℕ, ω (j • A₀) ≤ ω A →
+      coeff j (rayTorusWeightSeries K m σ i) = coeff j (rayTorusWeightSeries K' m σ i)) :
+    configurationCount r cls w (↑K ∪ s) A = configurationCount r cls w (↑K' ∪ s) A := by
+  have hsub : (↑K ∪ s : Set ι) ⊆ (↑K ∪ ↑K') ∪ s :=
+    Set.union_subset_union_left _ Set.subset_union_left
+  have hsub' : (↑K' ∪ s : Set ι) ⊆ (↑K ∪ ↑K') ∪ s :=
+    Set.union_subset_union_left _ Set.subset_union_right
+  refine configurationCount_union_eq_union hKs hK's hUs hU hU'
+    (finite_compatibleConfigurations (fun c hc ↦ hpos c (hsub hc))
+      (hfin.subset fun c hc ↦ ⟨hsub hc.1, hc.2⟩))
+    (finite_compatibleConfigurations (fun c hc ↦ hpos c (hsub' hc))
+      (hfin.subset fun c hc ↦ ⟨hsub' hc.1, hc.2⟩)) fun B _ ⟨n, hn⟩ ↦ ?_
   by_cases hB : ∃ j : ℕ, B = j • A₀
   · obtain ⟨j, rfl⟩ := hB
-    rw [configurationCount_eq_coeff_rayTorusWeightSeries hK hclsK hA₀
-      (fun c hc ↦ hw c (Finset.mem_union_left _ hc)) subset_rfl fun c hc _ ↦ hc,
-      configurationCount_eq_coeff_rayTorusWeightSeries hK' hclsK' hA₀
-      (fun c hc ↦ hw c (Finset.mem_union_right _ hc)) subset_rfl fun c hc _ ↦ hc, hseries]
-  · have h₀ {T : Set ι} (hT : ∀ c ∈ T, cls c = (m c : ℕ) • A₀) :
+    rcases Set.eq_empty_or_nonempty (↑K ∪ ↑K' : Set ι) with h | ⟨c, hc⟩
+    · rw [(Set.union_empty_iff.1 h).1, (Set.union_empty_iff.1 h).2]
+    -- The class `A₀` has positive area, so it is not torsion.
+    have hA₀ : 0 < ω A₀ := by
+      have := hpos c (Or.inl hc)
+      rw [hcls c hc, map_nsmul, nsmul_eq_mul] at this
+      exact pos_of_mul_pos_right this (Nat.cast_nonneg _)
+    have hinj : Function.Injective fun n : ℕ ↦ n • A₀ := .of_comp (f := ω) <| by
+      simpa only [Function.comp_def, map_nsmul] using (nsmul_left_strictMono hA₀).injective
+    -- The class `j • A₀` is at most `A` in area, as `U` has a configuration in class `A - j • A₀`.
+    have hj : ω (j • A₀) ≤ ω A := by
+      have := area_nonneg_of_mem_compatibleConfigurations
+        (fun c hc ↦ (hpos c (Or.inr (hUs hc))).le) hn
+      rw [map_sub] at this
+      linarith
+    rw [configurationCount_eq_coeff_rayTorusWeightSeries hK (fun c hc ↦ hcls c (Or.inl hc)) hinj
+      (fun c hc ↦ hw c (Or.inl hc)) subset_rfl fun c hc _ ↦ hc,
+      configurationCount_eq_coeff_rayTorusWeightSeries hK' (fun c hc ↦ hcls c (Or.inr hc)) hinj
+      (fun c hc ↦ hw c (Or.inr hc)) subset_rfl fun c hc _ ↦ hc, hseries j hj]
+  · -- Off the ray, neither cluster has a configuration.
+    have h₀ {T : Set ι} (hT : ∀ c ∈ T, cls c = (m c : ℕ) • A₀) :
         configurationCount r cls w T B = 0 := by
       rw [configurationCount_def]
-      exact finsum_mem_eq_zero_of_forall_eq_zero fun l hl ↦
-        (hB (exists_eq_nsmul_of_mem_compatibleConfigurations hT hl)).elim
-    rw [h₀ hclsK, h₀ hclsK']
+      refine finsum_mem_eq_zero_of_forall_eq_zero fun l hl ↦ ?_
+      rw [mem_compatibleConfigurations] at hl
+      exact (hB ⟨_, hl.2.2.symm.trans (linearCombination_eq_nsmul_of_support_subset hT hl.1)⟩).elim
+    rw [h₀ fun c hc ↦ hcls c (Or.inl hc), h₀ fun c hc ↦ hcls c (Or.inr hc)]
 
-/-- **Replacing a cluster of tori.** Let `K` and `K'` be finite families of pairwise compatible
-tori, disjoint from `s`, on the ray of a class `A₀` that is not torsion, the torus `c` having
-class `m c • A₀` and the four-twist weights `w c = w_(σ c, i c)`. Suppose that a candidate
-`d ∈ s` is compatible with a torus of `K` or of `K'` exactly when `d ∈ U`. If the candidates have
-positive area `ω`, with finitely many of area at most `ω A`, and `K` and `K'` have the same ray
-series `∏ f_(σ c, i c)(t ^ m c)`, then replacing `K` by `K'` does not change the count in
-class `A`. -/
-theorem configurationCount_union_eq_union_of_rayTorusWeightSeries_eq {K K' : Finset ι}
-    (hKs : Disjoint (K : Set ι) s) (hK's : Disjoint (K' : Set ι) s) (hUs : U ⊆ s)
-    (hU : ∀ k ∈ K ∪ K', ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
-    (hK : (K : Set ι).Pairwise r) (hK' : (K' : Set ι).Pairwise r)
-    (hcls : ∀ c ∈ K ∪ K', cls c = (m c : ℕ) • A₀) (hA₀ : Function.Injective fun n : ℕ ↦ n • A₀)
-    (hw : ∀ c ∈ K ∪ K', w c = torusWeight (σ c) (i c))
-    (hpos : ∀ c ∈ (↑(K ∪ K') : Set ι) ∪ s, 0 < ω (cls c))
-    (hfin : {c ∈ (↑(K ∪ K') : Set ι) ∪ s | ω (cls c) ≤ ω A}.Finite)
-    (hseries : rayTorusWeightSeries K m σ i = rayTorusWeightSeries K' m σ i) :
-    configurationCount r cls w (↑K ∪ s) A = configurationCount r cls w (↑K' ∪ s) A := by
-  have hsub : (↑K ∪ s : Set ι) ⊆ ↑(K ∪ K') ∪ s :=
-    Set.union_subset_union_left _ (Finset.coe_subset.2 Finset.subset_union_left)
-  have hsub' : (↑K' ∪ s : Set ι) ⊆ ↑(K ∪ K') ∪ s :=
-    Set.union_subset_union_left _ (Finset.coe_subset.2 Finset.subset_union_right)
-  exact configurationCount_union_eq_union hKs hK's hUs
-    (fun k hk ↦ hU k (Finset.mem_union_left _ hk)) (fun k hk ↦ hU k (Finset.mem_union_right _ hk))
-    (fun c hc ↦ hpos c (hsub hc)) (fun c hc ↦ hpos c (hsub' hc))
-    (hfin.subset fun c hc ↦ ⟨hsub hc.1, hc.2⟩) (hfin.subset fun c hc ↦ ⟨hsub' hc.1, hc.2⟩)
-    fun B _ ↦ configurationCount_eq_of_rayTorusWeightSeries_eq hK hK' hcls hA₀ hw hseries B
-
-/-- A class of positive area is not torsion. -/
-private theorem injective_nsmul_of_area_pos {B : H} (hB : 0 < ω B) :
-    Function.Injective fun n : ℕ ↦ n • B := fun n n' h ↦ by
-  have h' := congrArg ω h
-  simp only [map_nsmul, nsmul_eq_mul] at h'
-  exact_mod_cast mul_right_cancel₀ hB.ne' h'
-
-omit [DecidableEq ι] in
 /-- **Birth and death of tori.** Let `c` and `d` be two compatible tori outside `s` of the same
 class, with the same compatibility with the candidates of `s`, with the same index and opposite
 determinant signs: `w c = w_(σ, j)` and `w d = w_(!σ, j)`. If the candidates have positive area
 `ω`, with finitely many of area at most `ω A`, then adding `c` and `d` to `s` does not change the
 count in class `A`. -/
-theorem configurationCount_insert_insert_torusWeight_not {c d : ι} (hcd : c ≠ d) (hc : c ∉ s)
+theorem configurationCount_insert_insert_of_eq_torusWeight_not {c d : ι} (hc : c ∉ s)
     (hd : d ∉ s) (hr : r c d ∧ r d c) (hcls : cls d = cls c)
     (hcomp : ∀ e ∈ s, r d e ∧ r e d ↔ r c e ∧ r e c) {σ₀ : Bool} {j : Fin 4}
     (hwc : w c = torusWeight σ₀ j) (hwd : w d = torusWeight (!σ₀) j)
@@ -462,24 +481,33 @@ theorem configurationCount_insert_insert_torusWeight_not {c d : ι} (hcd : c ≠
     (hfin : {e ∈ insert c (insert d s) | ω (cls e) ≤ ω A}.Finite) :
     configurationCount r cls w (insert c (insert d s)) A = configurationCount r cls w s A := by
   classical
+  -- The tori have opposite weights `±1` with multiplicity one, so they are distinct.
+  have hcd : c ≠ d := by
+    rintro rfl
+    have := congrFun (hwc.symm.trans hwd) 1
+    rw [torusWeight_def, torusWeight_def, coeff_one_torusWeightSeries,
+      coeff_one_torusWeightSeries] at this
+    cases σ₀ <;> simp at this
   have hK : (↑(insert c (insert d ∅) : Finset ι) : Set ι) ∪ s = insert c (insert d s) := by
     simp [Set.insert_union]
-  have hKK : (↑(insert c (insert d ∅) ∪ ∅ : Finset ι) : Set ι) ∪ s = insert c (insert d s) := by
-    rw [Finset.union_empty, hK]
-  have hmem {e : ι} (he : e ∈ (insert c (insert d ∅) ∪ ∅ : Finset ι)) : e = c ∨ e = d := by
+  have hKK : (↑(insert c (insert d ∅) : Finset ι) ∪ ↑(∅ : Finset ι) : Set ι) ∪ s =
+      insert c (insert d s) := by
+    rw [Finset.coe_empty, Set.union_empty, hK]
+  have hmem {e : ι} (he : e ∈ (↑(insert c (insert d ∅) : Finset ι) ∪ ↑(∅ : Finset ι) : Set ι)) :
+      e = c ∨ e = d := by
     simpa using he
   rw [← hK]
   conv_rhs => rw [← Set.empty_union s, ← Finset.coe_empty]
-  refine configurationCount_union_eq_union_of_rayTorusWeightSeries_eq (m := fun _ ↦ 1)
+  refine configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq (m := fun _ ↦ 1)
     (σ := fun e ↦ if e = c then σ₀ else !σ₀) (i := fun _ ↦ j) (A₀ := cls c)
-    (U := {e ∈ s | r c e ∧ r e c}) ?_ (by simp) (Set.sep_subset _ _) (fun k hk e he ↦ ?_) ?_
-    (by simp) (fun e he ↦ ?_) (injective_nsmul_of_area_pos (hpos c (Set.mem_insert c _)))
-    (fun e he ↦ ?_) (hKK ▸ hpos) (hKK ▸ hfin) ?_
+    (U := {e ∈ s | r c e ∧ r e c}) ?_ (by simp) (Set.sep_subset _ _) (fun k hk e he ↦ ?_)
+    (by simp) ?_ (by simp) (fun e he ↦ ?_) (fun e he ↦ ?_) (hKK ▸ hpos) (hKK ▸ hfin)
+    fun _ _ ↦ ?_
   · exact Set.disjoint_left.2 fun e he hes ↦ by
-      rcases hmem (Finset.mem_union_left _ he) with rfl | rfl
+      rcases hmem (Or.inl he) with rfl | rfl
       exacts [hc hes, hd hes]
   · rw [Set.mem_sep_iff]
-    rcases hmem hk with rfl | rfl
+    rcases hmem (Or.inl hk) with rfl | rfl
     · exact ⟨fun h ↦ ⟨he, h⟩, fun h ↦ h.2⟩
     · exact ⟨fun h ↦ ⟨he, (hcomp e he).1 h⟩, fun h ↦ (hcomp e he).2 h.2⟩
   · rw [Finset.coe_insert, Finset.coe_insert, Finset.coe_empty, LawfulSingleton.insert_empty_eq]
@@ -490,46 +518,80 @@ theorem configurationCount_insert_insert_torusWeight_not {c d : ι} (hcd : c ≠
   · rcases hmem he with rfl | rfl
     · simp [hwc]
     · simp [hwd, Ne.symm hcd]
-  · exact rayTorusWeightSeries_insert_insert (c := c) (d := d) (s := ∅) (by simp)
-      (Finset.notMem_empty d) rfl (by simp [Ne.symm hcd]) rfl
+  · rw [rayTorusWeightSeries_insert_insert (c := c) (d := d) (s := ∅) (by simp)
+      (Finset.notMem_empty d) rfl (by simp [Ne.symm hcd]) rfl]
 
-/-- The common bookkeeping of the two period-doubling statements: replacing the torus `c` by the
-compatible tori `c'` and `d`, all with the same compatibility with `s`, where `c'` has the class of
-`c` and `d` twice that class, and the ray series of `{c}` and `{c', d}` agree. -/
-private theorem configurationCount_insert_eq_insert_insert_of_rayTorusWeightSeries_eq
-    {c c' d : ι} (hcc' : c ≠ c') (hcd : c ≠ d) (hc'd : c' ≠ d) (hc : c ∉ s) (hc' : c' ∉ s)
-    (hd : d ∉ s) (hr : r c' d ∧ r d c') (hcls' : cls c' = cls c) (hclsd : cls d = 2 • cls c)
-    (hcomp' : ∀ e ∈ s, r c' e ∧ r e c' ↔ r c e ∧ r e c)
-    (hcompd : ∀ e ∈ s, r d e ∧ r e d ↔ r c e ∧ r e c)
-    (hm : ∀ e, m e = if e = d then 2 else 1)
-    (hw : ∀ e ∈ ({c, c', d} : Set ι), w e = torusWeight (σ e) (i e))
+/-- **Replacing a torus by a pair.** Let `c` be a torus outside `s` of label `(σc, ic)`, and let
+`c'` and `d` be compatible tori outside `s`, of labels `(σc', ic')` and `(σd, id)`, `c'` of the
+class of `c` and `d` of twice that class, all three with the same compatibility with the
+candidates of `s`. If the candidates have positive area `ω`, with finitely many of area at most
+`ω A`, and the local series satisfy `f_(σc, ic)(t) = f_(σc', ic')(t) f_(σd, id)(t ^ 2)`, then
+replacing `c` by `c'` and `d` does not change the count in class `A`. -/
+private theorem configurationCount_insert_eq_insert_insert_of_torusWeightSeries_eq {c c' d : ι}
+    (hc : c ∉ s) (hc' : c' ∉ s) (hd : d ∉ s) (hr : r c' d ∧ r d c') (hcls' : cls c' = cls c)
+    (hclsd : cls d = 2 • cls c) (hcomp' : ∀ e ∈ s, r c' e ∧ r e c' ↔ r c e ∧ r e c)
+    (hcompd : ∀ e ∈ s, r d e ∧ r e d ↔ r c e ∧ r e c) {σc σc' σd : Bool} {ic ic' id : Fin 4}
+    (hwc : w c = torusWeight σc ic) (hwc' : w c' = torusWeight σc' ic')
+    (hwd : w d = torusWeight σd id)
     (hpos : ∀ e ∈ insert c (insert c' (insert d s)), 0 < ω (cls e))
     (hfin : {e ∈ insert c (insert c' (insert d s)) | ω (cls e) ≤ ω A}.Finite)
-    (hseries : rayTorusWeightSeries {c} m σ i = rayTorusWeightSeries {c', d} m σ i) :
+    (hseries : torusWeightSeries σc ic =
+      torusWeightSeries σc' ic' * expand 2 two_ne_zero (torusWeightSeries σd id)) :
     configurationCount r cls w (insert c s) A =
       configurationCount r cls w (insert c' (insert d s)) A := by
+  classical
+  -- The three tori are distinct: `d` has twice the positive area of `c` and `c'`, and `c'` has a
+  -- different weight series from `c`, since the factor `f_(σd, id)(t ^ 2)` is not `1`.
+  have hcd : c ≠ d := by
+    rintro rfl
+    have := hpos c (Set.mem_insert c _)
+    rw [two_nsmul, left_eq_add] at hclsd
+    rw [hclsd, map_zero] at this
+    exact this.false
+  have hc'd : c' ≠ d := by
+    rintro rfl
+    have := hpos c (Set.mem_insert c _)
+    rw [hcls', two_nsmul, left_eq_add] at hclsd
+    rw [hclsd, map_zero] at this
+    exact this.false
+  have hcc' : c ≠ c' := by
+    rintro rfl
+    have hf : torusWeightSeries σc ic = torusWeightSeries σc' ic' :=
+      PowerSeries.ext fun n ↦ by simpa using congrFun (hwc.symm.trans hwc') n
+    rw [hf] at hseries
+    have h1 := congrArg (coeff 2) ((isUnit_torusWeightSeries σc' ic').mul_left_cancel
+      (hseries.symm.trans (mul_one _).symm))
+    rw [coeff_expand, coeff_one, coeff_one_torusWeightSeries] at h1
+    cases σd <;> simp at h1
+  set m : ι → ℕ+ := fun e ↦ if e = d then 2 else 1 with hm
+  set σ : ι → Bool := fun e ↦ if e = c then σc else if e = c' then σc' else σd with hσ
+  set i : ι → Fin 4 := fun e ↦ if e = c then ic else if e = c' then ic' else id with hi
   have hK : (↑({c} : Finset ι) : Set ι) ∪ s = insert c s := by simp
   have hK' : (↑({c', d} : Finset ι) : Set ι) ∪ s = insert c' (insert d s) := by
     simp [Set.insert_union]
-  have hKK : (↑({c} ∪ {c', d} : Finset ι) : Set ι) ∪ s = insert c (insert c' (insert d s)) := by
+  have hKK : (↑({c} : Finset ι) ∪ ↑({c', d} : Finset ι) : Set ι) ∪ s =
+      insert c (insert c' (insert d s)) := by
     ext e
-    simp only [Finset.coe_union, Finset.coe_singleton, Finset.coe_insert, Set.mem_union,
-      Set.mem_insert_iff, Set.mem_singleton_iff]
+    simp only [Finset.coe_singleton, Finset.coe_insert, Set.mem_union, Set.mem_insert_iff,
+      Set.mem_singleton_iff]
     tauto
-  have hmem {e : ι} (he : e ∈ ({c} ∪ {c', d} : Finset ι)) : e = c ∨ e = c' ∨ e = d := by
-    simp only [Finset.mem_union, Finset.mem_singleton, Finset.mem_insert] at he
+  have hmem {e : ι} (he : e ∈ (↑({c} : Finset ι) ∪ ↑({c', d} : Finset ι) : Set ι)) :
+      e = c ∨ e = c' ∨ e = d := by
+    simp only [Finset.coe_singleton, Finset.coe_insert, Set.mem_union, Set.mem_insert_iff,
+      Set.mem_singleton_iff] at he
     tauto
   rw [← hK, ← hK']
-  refine configurationCount_union_eq_union_of_rayTorusWeightSeries_eq (A₀ := cls c)
-    (U := {e ∈ s | r c e ∧ r e c}) (by simpa using hc) (by simp [hc', hd]) (Set.sep_subset _ _)
-    (fun k hk e he ↦ ?_) (by simp) ?_ (fun e he ↦ ?_)
-    (injective_nsmul_of_area_pos (hpos c (Set.mem_insert c _))) (fun e he ↦ ?_) (hKK ▸ hpos)
-    (hKK ▸ hfin) hseries
+  refine configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq (A₀ := cls c)
+    (m := m) (σ := σ) (i := i) (U := {e ∈ s | r c e ∧ r e c}) (by simpa using hc)
+    (by simp [hc', hd]) (Set.sep_subset _ _) (fun k hk e he ↦ ?_) (fun k hk e he ↦ ?_) (by simp)
+    ?_ (fun e he ↦ ?_) (fun e he ↦ ?_) (hKK ▸ hpos) (hKK ▸ hfin) fun j _ ↦ ?_
+  · rw [Set.mem_sep_iff, Finset.mem_singleton.1 hk]
+    exact ⟨fun h ↦ ⟨he, h⟩, fun h ↦ h.2⟩
   · rw [Set.mem_sep_iff]
-    rcases hmem hk with rfl | rfl | rfl
-    · exact ⟨fun h ↦ ⟨he, h⟩, fun h ↦ h.2⟩
+    rcases Finset.mem_insert.1 hk with rfl | hk
     · exact ⟨fun h ↦ ⟨he, (hcomp' e he).1 h⟩, fun h ↦ (hcomp' e he).2 h.2⟩
-    · exact ⟨fun h ↦ ⟨he, (hcompd e he).1 h⟩, fun h ↦ (hcompd e he).2 h.2⟩
+    · rw [Finset.mem_singleton.1 hk]
+      exact ⟨fun h ↦ ⟨he, (hcompd e he).1 h⟩, fun h ↦ (hcompd e he).2 h.2⟩
   · simp only [Finset.coe_insert, Finset.coe_singleton]
     exact Set.pairwise_pair.2 fun _ ↦ hr
   · rcases hmem he with rfl | rfl | rfl
@@ -537,84 +599,100 @@ private theorem configurationCount_insert_eq_insert_insert_of_rayTorusWeightSeri
     · simp [hm, hc'd, hcls']
     · simp [hm, hclsd]
   · rcases hmem he with rfl | rfl | rfl
-    exacts [hw _ (Or.inl rfl), hw _ (Or.inr (Or.inl rfl)), hw _ (Or.inr (Or.inr rfl))]
+    · simp [hσ, hi, hwc]
+    · simp [hσ, hi, hwc', Ne.symm hcc']
+    · simp [hσ, hi, hwd, Ne.symm hcd, Ne.symm hc'd]
+  · rw [rayTorusWeightSeries_def, rayTorusWeightSeries_def, Finset.prod_singleton,
+      Finset.prod_pair hc'd]
+    simp [hm, hσ, hi, hcd, hc'd, Ne.symm hcc', Ne.symm hcd, Ne.symm hc'd, hseries]
 
-omit [DecidableEq ι] in
 /-- **Period doubling.** Let `c` be a torus outside `s` of label `(σ, j)`, `j ∈ {0, 1, 2}`, and let
 `c'` and `d` be compatible tori outside `s`: `c'` of the class of `c` and label `(σ, j + 1)`, and
 `d` of twice that class and label `(σ, j % 2)`, all three with the same compatibility with the
 candidates of `s`. If the candidates have positive area `ω`, with finitely many of area at most
 `ω A`, then replacing `c` by `c'` and `d` does not change the count in class `A`. -/
-theorem configurationCount_insert_eq_insert_insert_torusWeight_castSucc {c c' d : ι}
-    (hcc' : c ≠ c') (hcd : c ≠ d) (hc'd : c' ≠ d) (hc : c ∉ s) (hc' : c' ∉ s) (hd : d ∉ s)
-    (hr : r c' d ∧ r d c') (hcls' : cls c' = cls c) (hclsd : cls d = 2 • cls c)
-    (hcomp' : ∀ e ∈ s, r c' e ∧ r e c' ↔ r c e ∧ r e c)
+theorem configurationCount_insert_eq_insert_insert_of_eq_torusWeight_castSucc {c c' d : ι}
+    (hc : c ∉ s) (hc' : c' ∉ s) (hd : d ∉ s) (hr : r c' d ∧ r d c') (hcls' : cls c' = cls c)
+    (hclsd : cls d = 2 • cls c) (hcomp' : ∀ e ∈ s, r c' e ∧ r e c' ↔ r c e ∧ r e c)
     (hcompd : ∀ e ∈ s, r d e ∧ r e d ↔ r c e ∧ r e c) {σ₀ : Bool} {j : Fin 3}
     (hwc : w c = torusWeight σ₀ j.castSucc) (hwc' : w c' = torusWeight σ₀ j.succ)
     (hwd : w d = torusWeight σ₀ (j % 2).castSucc)
     (hpos : ∀ e ∈ insert c (insert c' (insert d s)), 0 < ω (cls e))
     (hfin : {e ∈ insert c (insert c' (insert d s)) | ω (cls e) ≤ ω A}.Finite) :
     configurationCount r cls w (insert c s) A =
-      configurationCount r cls w (insert c' (insert d s)) A := by
-  classical
-  set m : ι → ℕ+ := fun e ↦ if e = d then 2 else 1 with hm
-  set i : ι → Fin 4 := fun e ↦ if e = c then j.castSucc else if e = c' then j.succ else
-    (j % 2).castSucc with hi
-  refine configurationCount_insert_eq_insert_insert_of_rayTorusWeightSeries_eq (σ := fun _ ↦ σ₀)
-    (m := m) (i := i) hcc' hcd hc'd hc hc' hd hr hcls' hclsd hcomp' hcompd (fun _ ↦ rfl)
-    (fun e he ↦ ?_) hpos hfin ?_
-  · rcases he with rfl | rfl | rfl
-    · simp [hi, hwc]
-    · simp [hi, hwc', Ne.symm hcc']
-    · simp [hi, hwd, Ne.symm hcd, Ne.symm hc'd]
-  · have hd' : d ∉ ({c'} : Finset ι) := by simp [hc'd.symm]
-    rw [show ({c', d} : Finset ι) = insert d {c'} from Finset.pair_comm c' d,
-      rayTorusWeightSeries_insert_eq_update_castSucc (j := j) (Finset.mem_singleton_self c') hd'
-        (by simp [hm, hc'd]) rfl (by simp [hi, Ne.symm hcc'])
-        (by simp [hi, Ne.symm hcd, Ne.symm hc'd]),
-      rayTorusWeightSeries_def, rayTorusWeightSeries_def, Finset.prod_singleton,
-      Finset.prod_singleton, Function.update_self, show m c' = m c by simp [hm, hc'd, hcd]]
-    simp [hi]
+      configurationCount r cls w (insert c' (insert d s)) A :=
+  configurationCount_insert_eq_insert_insert_of_torusWeightSeries_eq hc hc' hd hr hcls' hclsd
+    hcomp' hcompd hwc hwc' hwd hpos hfin (torusWeightSeries_castSucc σ₀ j)
 
-omit [DecidableEq ι] in
 /-- **Period doubling**, in the other direction. Let `c` be a torus outside `s` of label
 `(σ, j + 1)`, `j ∈ {0, 1, 2}`, and let `c'` and `d` be compatible tori outside `s`: `c'` of the
 class of `c` and label `(σ, j)`, and `d` of twice that class and label `(!σ, j % 2)`, all three
 with the same compatibility with the candidates of `s`. If the candidates have positive area `ω`,
 with finitely many of area at most `ω A`, then replacing `c` by `c'` and `d` does not change the
 count in class `A`. -/
-theorem configurationCount_insert_eq_insert_insert_torusWeight_succ {c c' d : ι}
-    (hcc' : c ≠ c') (hcd : c ≠ d) (hc'd : c' ≠ d) (hc : c ∉ s) (hc' : c' ∉ s) (hd : d ∉ s)
-    (hr : r c' d ∧ r d c') (hcls' : cls c' = cls c) (hclsd : cls d = 2 • cls c)
-    (hcomp' : ∀ e ∈ s, r c' e ∧ r e c' ↔ r c e ∧ r e c)
+theorem configurationCount_insert_eq_insert_insert_of_eq_torusWeight_succ {c c' d : ι}
+    (hc : c ∉ s) (hc' : c' ∉ s) (hd : d ∉ s) (hr : r c' d ∧ r d c') (hcls' : cls c' = cls c)
+    (hclsd : cls d = 2 • cls c) (hcomp' : ∀ e ∈ s, r c' e ∧ r e c' ↔ r c e ∧ r e c)
     (hcompd : ∀ e ∈ s, r d e ∧ r e d ↔ r c e ∧ r e c) {σ₀ : Bool} {j : Fin 3}
     (hwc : w c = torusWeight σ₀ j.succ) (hwc' : w c' = torusWeight σ₀ j.castSucc)
     (hwd : w d = torusWeight (!σ₀) (j % 2).castSucc)
     (hpos : ∀ e ∈ insert c (insert c' (insert d s)), 0 < ω (cls e))
     (hfin : {e ∈ insert c (insert c' (insert d s)) | ω (cls e) ≤ ω A}.Finite) :
     configurationCount r cls w (insert c s) A =
-      configurationCount r cls w (insert c' (insert d s)) A := by
+      configurationCount r cls w (insert c' (insert d s)) A :=
+  configurationCount_insert_eq_insert_insert_of_torusWeightSeries_eq hc hc' hd hr hcls' hclsd
+    hcomp' hcompd hwc hwc' hwd hpos hfin (torusWeightSeries_succ σ₀ j)
+
+/-- **Changing the index of a torus below its double cover.** Let `c` and `c'` be tori outside
+`s` of the same class and the same determinant sign `σ`, with any indices `j` and `j'`, and with
+the same compatibility with the candidates of `s`. If the candidates have positive area `ω`, with
+finitely many of area at most `ω A`, and `ω A` is less than the area of the double cover of `c`,
+then replacing `c` by `c'` does not change the count in class `A`: only the weights
+`w_(σ, j)(1) = w_(σ, j')(1) = ±1` of the tori taken once contribute. -/
+theorem configurationCount_insert_eq_insert_of_area_lt_two_mul {c c' : ι} (hc : c ∉ s)
+    (hc' : c' ∉ s) (hcls' : cls c' = cls c) (hcomp' : ∀ e ∈ s, r c' e ∧ r e c' ↔ r c e ∧ r e c)
+    {σ₀ : Bool} {j j' : Fin 4} (hwc : w c = torusWeight σ₀ j) (hwc' : w c' = torusWeight σ₀ j')
+    (hpos : ∀ e ∈ insert c (insert c' s), 0 < ω (cls e))
+    (hfin : {e ∈ insert c (insert c' s) | ω (cls e) ≤ ω A}.Finite) (hA : ω A < 2 * ω (cls c)) :
+    configurationCount r cls w (insert c s) A = configurationCount r cls w (insert c' s) A := by
   classical
-  set m : ι → ℕ+ := fun e ↦ if e = d then 2 else 1 with hm
-  set σ : ι → Bool := fun e ↦ if e = d then !σ₀ else σ₀ with hσ
-  set i : ι → Fin 4 := fun e ↦ if e = c then j.succ else if e = c' then j.castSucc else
-    (j % 2).castSucc with hi
-  refine configurationCount_insert_eq_insert_insert_of_rayTorusWeightSeries_eq (σ := σ)
-    (m := m) (i := i) hcc' hcd hc'd hc hc' hd hr hcls' hclsd hcomp' hcompd (fun _ ↦ rfl)
-    (fun e he ↦ ?_) hpos hfin ?_
-  · rcases he with rfl | rfl | rfl
-    · simp [hi, hσ, hwc, hcd]
-    · simp [hi, hσ, hwc', Ne.symm hcc', hc'd]
-    · simp [hi, hσ, hwd, Ne.symm hcd, Ne.symm hc'd]
-  · have hd' : d ∉ ({c'} : Finset ι) := by simp [hc'd.symm]
-    rw [show ({c', d} : Finset ι) = insert d {c'} from Finset.pair_comm c' d,
-      rayTorusWeightSeries_insert_eq_update_succ (j := j) (Finset.mem_singleton_self c') hd'
-        (by simp [hm, hc'd]) (by simp [hσ, hc'd]) (by simp [hi, Ne.symm hcc'])
-        (by simp [hi, Ne.symm hcd, Ne.symm hc'd]),
-      rayTorusWeightSeries_def, rayTorusWeightSeries_def, Finset.prod_singleton,
-      Finset.prod_singleton, Function.update_self, show m c' = m c by simp [hm, hc'd, hcd],
-      show σ c' = σ c by simp [hσ, hc'd, hcd]]
-    simp [hi]
+  rcases eq_or_ne c c' with rfl | hcc'
+  · rfl
+  have hK (e : ι) : (↑({e} : Finset ι) : Set ι) ∪ s = insert e s := by simp
+  have hKK : (↑({c} : Finset ι) ∪ ↑({c'} : Finset ι) : Set ι) ∪ s = insert c (insert c' s) := by
+    ext e
+    simp only [Finset.coe_singleton, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff]
+    tauto
+  have hmem {e : ι} (he : e ∈ (↑({c} : Finset ι) ∪ ↑({c'} : Finset ι) : Set ι)) :
+      e = c ∨ e = c' := by
+    simpa only [Finset.coe_singleton, Set.mem_union, Set.mem_singleton_iff] using he
+  rw [← hK, ← hK]
+  refine configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq (A₀ := cls c)
+    (m := fun _ ↦ 1) (σ := fun _ ↦ σ₀) (i := fun e ↦ if e = c then j else j')
+    (U := {e ∈ s | r c e ∧ r e c}) (by simpa using hc) (by simpa using hc') (Set.sep_subset _ _)
+    (fun k hk e he ↦ ?_) (fun k hk e he ↦ ?_) (by simp) (by simp) (fun e he ↦ ?_)
+    (fun e he ↦ ?_) (hKK ▸ hpos) (hKK ▸ hfin) fun n hn ↦ ?_
+  · rw [Set.mem_sep_iff, Finset.mem_singleton.1 hk]
+    exact ⟨fun h ↦ ⟨he, h⟩, fun h ↦ h.2⟩
+  · rw [Set.mem_sep_iff, Finset.mem_singleton.1 hk]
+    exact ⟨fun h ↦ ⟨he, (hcomp' e he).1 h⟩, fun h ↦ (hcomp' e he).2 h.2⟩
+  · rcases hmem he with rfl | rfl
+    · simp
+    · simp [hcls']
+  · rcases hmem he with rfl | rfl
+    · simp [hwc]
+    · simp [hwc', Ne.symm hcc']
+  · -- Only the coefficients of `t ^ 0` and `t ^ 1` are below the cutoff.
+    have hn2 : n < 2 := by
+      rw [map_nsmul, nsmul_eq_mul] at hn
+      have := hpos c (Set.mem_insert c _)
+      exact_mod_cast lt_of_mul_lt_mul_right (hn.trans_lt hA) this.le
+    simp only [rayTorusWeightSeries_def, Finset.prod_singleton, PNat.one_coe, expand_one,
+      AlgHom.id_apply, Ne.symm hcc', ↓reduceIte]
+    interval_cases n
+    · rw [coeff_zero_eq_constantCoeff_apply, coeff_zero_eq_constantCoeff_apply,
+        constantCoeff_torusWeightSeries, constantCoeff_torusWeightSeries]
+    · rw [coeff_one_torusWeightSeries, coeff_one_torusWeightSeries]
 
 end Ray
 
