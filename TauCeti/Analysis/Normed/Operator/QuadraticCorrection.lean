@@ -44,14 +44,17 @@ gluing constructions, with explicit radii.
 * **Uniqueness.** Two solutions in the range of `Q` of norm at most `r ≤ δ` coincide as soon as
   `C L r < 1` (`TauCeti.eq_of_add_add_eq_zero`). The radius `r` may be much larger than the
   radius `2 C ‖e‖` where the solution is constructed.
-* **Existence.** If `E` is complete, `2 C ‖e‖ ≤ δ` and `2 C² L ‖e‖ < 1`, then the map
+* **Existence.** On the closed ball of radius `R ≤ δ`, the map `z ↦ Q (e + N z)` is Lipschitz with
+  constant `C L R` (`TauCeti.lipschitzOnWith_apply_add_apply`). If `E` is complete,
+  `2 C ‖e‖ ≤ δ` and `2 C² L ‖e‖ < 1`, it follows that the map
   `x ↦ -Q (e + N x)` contracts the closed ball of radius `2 C ‖e‖`, and its fixed point is a
   solution `x` in the range of `Q` with `‖x‖ ≤ 2 C ‖e‖`
   (`TauCeti.exists_mem_range_norm_le_add_add_eq_zero`).
 * **Dependence on a parameter.** For a family of equations `e p + D p x + N p x = 0` with
   constants `C` and `L` uniform in `p`, solutions `x p` in the range of `Q p` of norm at most
   `r ≤ δ`, with `C L r < 1`, depend continuously on `p` as soon as each fixed-point map
-  `p ↦ Q p (e p + N p z)` does (`TauCeti.continuousAt_of_forall_add_add_eq_zero`,
+  `p ↦ Q p (e p + N p z)` does (`TauCeti.continuousAt_of_eventually_add_add_eq_zero`, which only
+  needs the hypotheses near the base point, and
   `TauCeti.continuous_of_forall_add_add_eq_zero`); in particular the solutions constructed above
   form a continuous family (`TauCeti.exists_continuous_forall_add_add_eq_zero`). Smooth
   dependence is in `TauCeti.Analysis.Calculus.QuadraticCorrection`.
@@ -78,8 +81,8 @@ arbitrary approximate solutions in that range.
 
 public section
 
-open Metric Set
-open scoped NNReal
+open Filter Metric Set
+open scoped NNReal Topology
 
 namespace TauCeti
 
@@ -182,6 +185,23 @@ theorem one_sub_mul_norm_sub_le_mul_norm_sub {e' : F} {x y : E} (hx : x ∈ clos
   rw [← map_sub, add_sub_add_right_eq_sub]
   exact hQ _
 
+omit hDQ in
+/-- On the closed ball of radius `R ≤ δ`, the fixed-point map `z ↦ Q (e + N z)` is Lipschitz with
+constant `C L R`. -/
+theorem lipschitzOnWith_apply_add_apply {R : ℝ} (hRδ : R ≤ δ) :
+    LipschitzOnWith (C * L * R).toNNReal (fun z ↦ Q (e + N z)) (closedBall 0 R) := by
+  refine LipschitzOnWith.of_dist_le_mul fun z hz w hw ↦ ?_
+  have hz' := mem_closedBall_zero_iff.1 hz
+  have hw' := mem_closedBall_zero_iff.1 hw
+  have hR : 0 ≤ R := (norm_nonneg _).trans hz'
+  rw [Real.coe_toNNReal _ (by positivity), dist_eq_norm, dist_eq_norm]
+  calc ‖Q (e + N z) - Q (e + N w)‖ = ‖Q (N z - N w)‖ := by
+        rw [← map_sub, add_sub_add_left_eq_sub]
+    _ ≤ C * (L / 2 * (‖z‖ + ‖w‖) * ‖z - w‖) := by
+        grw [hQ, hN z (closedBall_subset_closedBall hRδ hz) w (closedBall_subset_closedBall hRδ hw)]
+    _ ≤ C * (L / 2 * (R + R) * ‖z - w‖) := by gcongr
+    _ = C * L * R * ‖z - w‖ := by ring
+
 end Seminormed
 
 section Normed
@@ -243,17 +263,11 @@ theorem exists_mem_range_norm_le_add_add_eq_zero [CompleteSpace E] (hN0 : N 0 = 
       _ = C * ‖e‖ * (1 + 2 * C ^ 2 * L * ‖e‖) := by rw [hR]; ring
       _ ≤ C * ‖e‖ * 2 := by gcongr; linarith
       _ = R := by rw [hR]; ring
-  have hlip : LipschitzOnWith (Real.toNNReal (C * L * R)) T (closedBall 0 R) := by
-    refine LipschitzOnWith.of_dist_le_mul fun x hx y hy ↦ ?_
-    have hx' := mem_closedBall_zero_iff.1 hx
-    have hy' := mem_closedBall_zero_iff.1 hy
-    rw [Real.coe_toNNReal _ (by positivity), dist_eq_norm, dist_eq_norm]
-    calc ‖T x - T y‖ = ‖Q (N x - N y)‖ := by
-          rw [hT, ← norm_neg]; simp only [map_add, map_sub]; congr 1; abel
-      _ ≤ C * (L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖) := by
-          grw [hQ, hN x (hball hx) y (hball hy)]
-      _ ≤ C * (L / 2 * (R + R) * ‖x - y‖) := by gcongr
-      _ = C * L * R * ‖x - y‖ := by ring
+  have hlip : LipschitzOnWith (Real.toNNReal (C * L * R)) T (closedBall 0 R) :=
+    LipschitzOnWith.of_dist_le_mul fun x hx y hy ↦ by
+      have h := (lipschitzOnWith_apply_add_apply (e := e) hQ hN hδ).dist_le_mul x hx y hy
+      rw [dist_comm, dist_eq_norm] at h
+      simpa only [hT, dist_eq_norm, neg_sub_neg] using h
   have hK : ContractingWith (Real.toNNReal (C * L * R)) (hmaps.restrict T _ _) :=
     ⟨Real.toNNReal_lt_one.2 (by rw [hR]; linarith), hlip.mapsToRestrict hmaps⟩
   obtain ⟨x, hxs, hfix, -⟩ := hK.exists_fixedPoint' isClosed_closedBall.isComplete hmaps
@@ -272,38 +286,45 @@ variable {P : Type*} [TopologicalSpace P] {Q : P → G} {D N : P → E → F} {e
 section Seminormed
 
 variable [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [AddMonoidHomClass G F E]
-  (hDQ : ∀ p y, D p (Q p y) = y) (hQ : ∀ p y, ‖Q p y‖ ≤ C * ‖y‖)
-  (hN : ∀ p, ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
-    ‖N p x - N p y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
-include hDQ hQ hN
 
 /-- **Continuous dependence on a parameter.** Let `e p + D p x + N p x = 0` be a family of
 equations, with right inverses `Q p` of `D p` and remainders `N p` satisfying the bounds with
-constants `C` and `L` uniform in `p`. A family of solutions `x p` in the range of `Q p`, all of
-norm at most `r ≤ δ` with `C L r < 1`, is continuous at `p₀` as soon as the fixed-point map
-`p ↦ Q p (e p + N p z)` is continuous at `p₀` for the single point `z = x p₀`. Quantitatively,
-`(1 - C L r) ‖x p - x p₀‖` is at most the variation of that map
+constants `C` and `L` uniform in `p` near `p₀`. A family of solutions `x p` in the range of `Q p`,
+of norm at most `r ≤ δ` with `C L r < 1` for `p` near `p₀`, is continuous at `p₀` as soon as the
+fixed-point map `p ↦ Q p (e p + N p z)` is continuous at `p₀` for the single point `z = x p₀`.
+Quantitatively, `(1 - C L r) ‖x p - x p₀‖` is at most the variation of that map
 (`TauCeti.one_sub_mul_norm_sub_le_norm_apply_sub_apply`). -/
-theorem continuousAt_of_forall_add_add_eq_zero {x : P → E} {r : ℝ} (hrδ : r ≤ δ)
-    (hr : C * L * r < 1) (hx : ∀ p, ‖x p‖ ≤ r) (hxQ : ∀ p, x p ∈ range (Q p))
-    (hxe : ∀ p, e p + D p (x p) + N p (x p) = 0) {p₀ : P}
+theorem continuousAt_of_eventually_add_add_eq_zero {p₀ : P}
+    (hDQ : ∀ᶠ p in 𝓝 p₀, ∀ y, D p (Q p y) = y) (hQ : ∀ᶠ p in 𝓝 p₀, ∀ y, ‖Q p y‖ ≤ C * ‖y‖)
+    (hN : ∀ᶠ p in 𝓝 p₀, ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
+      ‖N p x - N p y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
+    {x : P → E} {r : ℝ} (hrδ : r ≤ δ) (hr : C * L * r < 1) (hx : ∀ᶠ p in 𝓝 p₀, ‖x p‖ ≤ r)
+    (hxQ : ∀ᶠ p in 𝓝 p₀, x p ∈ range (Q p))
+    (hxe : ∀ᶠ p in 𝓝 p₀, e p + D p (x p) + N p (x p) = 0)
     (hT : ContinuousAt (fun p ↦ Q p (e p + N p (x p₀))) p₀) : ContinuousAt x p₀ := by
   have hC : (0 : ℝ) ≤ C := C.2
   have hL : (0 : ℝ) ≤ L := L.2
   have hk : 0 < 1 - C * L * r := by linarith
-  have hxδ (p : P) : x p ∈ closedBall 0 δ := mem_closedBall_zero_iff.2 ((hx p).trans hrδ)
+  have hx₀ := hx.self_of_nhds
   rw [Metric.continuousAt_iff'] at hT ⊢
   intro ε hε
-  filter_upwards [hT ((1 - C * L * r) * ε) (mul_pos hk hε)] with p hp
+  filter_upwards [hT ((1 - C * L * r) * ε) (mul_pos hk hε), hDQ, hQ, hN, hx, hxQ, hxe]
+    with p hp hDQp hQp hNp hxp hxQp hxep
   rw [dist_eq_norm] at hp ⊢
-  have h := one_sub_mul_norm_sub_le_norm_apply_sub_apply (hDQ p) (hQ p) (hN p) (hDQ p₀) (hxδ p)
-    (hxδ p₀) (hxQ p) (hxe p) (hxQ p₀) (hxe p₀)
+  have h := one_sub_mul_norm_sub_le_norm_apply_sub_apply hDQp hQp hNp hDQ.self_of_nhds
+    (mem_closedBall_zero_iff.2 (hxp.trans hrδ)) (mem_closedBall_zero_iff.2 (hx₀.trans hrδ)) hxQp
+    hxep hxQ.self_of_nhds hxe.self_of_nhds
   -- The weight in the comparison estimate is at least `1 - C L r`.
   have hw : 1 - C * L * r ≤ 1 - C * (L / 2 * (‖x p‖ + ‖x p₀‖)) := by
-    have := add_le_add (hx p) (hx p₀)
+    have := add_le_add hxp hx₀
     nlinarith [mul_nonneg hC hL]
   refine lt_of_mul_lt_mul_left ?_ hk.le
   exact ((mul_le_mul_of_nonneg_right hw (norm_nonneg _)).trans h).trans_lt hp
+
+variable (hDQ : ∀ p y, D p (Q p y) = y) (hQ : ∀ p y, ‖Q p y‖ ≤ C * ‖y‖)
+  (hN : ∀ p, ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
+    ‖N p x - N p y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
+include hDQ hQ hN
 
 /-- **Continuous dependence on a parameter**, global form: a family of solutions `x p` in the
 range of `Q p`, of norm at most `r ≤ δ` with `C L r < 1`, is continuous when every fixed-point map
@@ -313,7 +334,8 @@ theorem continuous_of_forall_add_add_eq_zero {x : P → E} {r : ℝ} (hrδ : r �
     (hxe : ∀ p, e p + D p (x p) + N p (x p) = 0)
     (hT : ∀ z, Continuous fun p ↦ Q p (e p + N p z)) : Continuous x :=
   continuous_iff_continuousAt.2 fun _ ↦
-    continuousAt_of_forall_add_add_eq_zero hDQ hQ hN hrδ hr hx hxQ hxe (hT _).continuousAt
+    continuousAt_of_eventually_add_add_eq_zero (.of_forall hDQ) (.of_forall hQ) (.of_forall hN)
+      hrδ hr (.of_forall hx) (.of_forall hxQ) (.of_forall hxe) (hT _).continuousAt
 
 end Seminormed
 
