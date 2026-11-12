@@ -24,7 +24,8 @@ group `ℤ^{d+1}` with the lexicographic order.
 * `Polynomial.Colex.degreeLT R n`: the polynomials of degree `< n`, as an additive subgroup of
   `Colex R[X]`.
 * `Polynomial.Colex.degreeLTEquiv R n`: its isomorphism of ordered additive groups with
-  `Lex (Fin n → R)`, sending `p` to `(p_{n-1}, …, p_1, p_0)`.
+  `Lex (Fin n → R)`, sending `p` to `(p_{n-1}, …, p_1, p_0)`; its inverse is described by
+  `Polynomial.Colex.degreeLTEquiv_symm_apply_coeff`.
 
 ## Main results
 
@@ -54,9 +55,9 @@ def degreeLT (n : ℕ) : AddSubgroup (Colex R[X]) where
 
 variable {R}
 
-/-- A polynomial lies in `degreeLT R n` exactly when its degree is `< n`. -/
+/-- An element of `Colex R[X]` lies in `degreeLT R n` exactly when its degree is `< n`. -/
 @[simp]
-theorem toColex_mem_degreeLT {n : ℕ} {p : R[X]} : toColex p ∈ degreeLT R n ↔ p.degree < n :=
+theorem mem_degreeLT {n : ℕ} {x : Colex R[X]} : x ∈ degreeLT R n ↔ (ofColex x).degree < n :=
   Polynomial.mem_degreeLT
 
 variable [LinearOrder R]
@@ -68,7 +69,7 @@ theorem ordConnected_degreeLT (n : ℕ) : (degreeLT R n : Set (Colex R[X])).OrdC
   obtain ⟨p, rfl⟩ := toColex.surjective a
   obtain ⟨q, rfl⟩ := toColex.surjective b
   obtain ⟨r, rfl⟩ := toColex.surjective x
-  rw [SetLike.mem_coe, toColex_mem_degreeLT] at ha hb ⊢
+  simp only [SetLike.mem_coe, mem_degreeLT, ofColex_toColex] at ha hb ⊢
   by_contra! hr
   -- `r` has larger degree than `p` and `q`, so its sign decides both comparisons.
   have hrp : toColex r ≤ toColex p := not_lt.1 fun h ↦ hx.2.not_gt <|
@@ -92,7 +93,7 @@ private theorem strictMono_degreeLTEquivAux (n : ℕ) :
   rintro ⟨p, hp⟩ ⟨q, hq⟩ h
   obtain ⟨p, rfl⟩ := toColex.surjective p
   obtain ⟨q, rfl⟩ := toColex.surjective q
-  rw [toColex_mem_degreeLT] at hp hq
+  rw [mem_degreeLT, ofColex_toColex] at hp hq
   obtain ⟨i, hi, hlt⟩ := toColex_lt_toColex.1 (Subtype.mk_lt_mk.1 h)
   have hin : i < n := by
     by_contra! hni
@@ -109,13 +110,26 @@ variable (R) in
 degree `< n`, ordered colexicographically, with `Rⁿ` ordered lexicographically. -/
 noncomputable def degreeLTEquiv (n : ℕ) : degreeLT R n ≃+o Lex (Fin n → R) where
   toEquiv := degreeLTEquivAux n
-  map_add' _ _ := (congrArg toLex (funext fun _ ↦ coeff_add _ _ _)).trans (toLex_add _ _)
+  map_add' p q := ofLex.injective <| funext fun i ↦ by
+    rw [ofLex_add]
+    simp [degreeLTEquivAux_apply]
   map_le_map_iff' := (strictMono_degreeLTEquivAux n).le_iff_le
 
 @[simp]
 theorem degreeLTEquiv_apply {n : ℕ} (p : degreeLT R n) (i : Fin n) :
     degreeLTEquiv R n p i = (ofColex (p : Colex R[X])).coeff i.rev :=
-  (rfl)
+  degreeLTEquivAux_apply p i
+
+/-- The polynomial corresponding to `v : Lex (Fin n → R)` has coefficient `v (n - 1 - i)` in each
+degree `i < n` and coefficient `0` in each degree `≥ n`. -/
+@[simp]
+theorem degreeLTEquiv_symm_apply_coeff {n : ℕ} (v : Lex (Fin n → R)) (i : ℕ) :
+    (ofColex ((degreeLTEquiv R n).symm v : Colex R[X])).coeff i =
+      if h : i < n then v (Fin.rev ⟨i, h⟩) else 0 := by
+  split_ifs with h
+  · simpa using congrFun ((degreeLTEquiv R n).apply_symm_apply v) (Fin.rev ⟨i, h⟩)
+  · exact coeff_eq_zero_of_degree_lt <| (mem_degreeLT.1 ((degreeLTEquiv R n).symm v).2).trans_le
+      (by exact_mod_cast not_lt.1 h)
 
 end Colex
 

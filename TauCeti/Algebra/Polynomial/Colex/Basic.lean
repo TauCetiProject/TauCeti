@@ -27,7 +27,9 @@ which `t` exceeds every integer; it is not Archimedean.
 * `Polynomial.Colex.linearOrder`: the colexicographic linear order on `Colex R[X]`.
 * `Polynomial.Colex.toColex_lt_toColex`: `p < q` exactly when `p` and `q` agree above some degree
   `i` and the coefficient of `p` at `i` is smaller.
-* `Polynomial.Colex.toColex_pos`: a polynomial is positive iff its leading coefficient is.
+* `Polynomial.Colex.toColex_pos`, `Polynomial.Colex.toColex_nonneg`,
+  `Polynomial.Colex.toColex_lt_zero`, `Polynomial.Colex.toColex_nonpos`: a polynomial has the sign
+  of its leading coefficient.
 * `Polynomial.Colex.toColex_lt_toColex_iff_of_degree_lt`: a polynomial of larger degree is larger
   iff its leading coefficient is positive.
 * `Polynomial.Colex.isOrderedCancelAddMonoid`: the order is compatible with addition.
@@ -88,6 +90,21 @@ theorem toColex_pos {p : R[X]} : 0 < toColex p ↔ 0 < p.leadingCoeff := by
   rcases eq_or_ne p 0 with rfl | hp
   · simp
   · simpa using toColex_lt_toColex_iff_of_degree_lt (p := 0) (by simpa [bot_lt_iff_ne_bot] using hp)
+
+/-- A polynomial is nonnegative exactly when its leading coefficient is. -/
+@[simp]
+theorem toColex_nonneg {p : R[X]} : 0 ≤ toColex p ↔ 0 ≤ p.leadingCoeff := by
+  simp [le_iff_lt_or_eq, eq_comm (a := (0 : R)), eq_comm (a := (0 : Colex R[X]))]
+
+/-- A polynomial is negative exactly when its leading coefficient is. -/
+@[simp]
+theorem toColex_lt_zero {p : R[X]} : toColex p < 0 ↔ p.leadingCoeff < 0 := by
+  rw [← not_le, toColex_nonneg, not_le]
+
+/-- A polynomial is nonpositive exactly when its leading coefficient is. -/
+@[simp]
+theorem toColex_nonpos {p : R[X]} : toColex p ≤ 0 ↔ p.leadingCoeff ≤ 0 := by
+  rw [← not_lt, toColex_pos, not_lt]
 
 /-- The constant polynomials are ordered as `R`. -/
 @[simp]
