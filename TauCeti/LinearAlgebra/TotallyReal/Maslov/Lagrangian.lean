@@ -23,10 +23,15 @@ continuous frames. Write `Λ t = M t ℝⁿ` (`Matrix.realImage`) for a continuo
 invertible matrices. The closed frame `M` deforms through closed frames to a path `U` of unitary
 matrices, by orthonormalizing its real frames and then contracting the positive factor of their
 polar decomposition (`TauCeti.exists_realImage_homotopy_unitaryGroup`). Homotopy invariance of the
-Maslov index (`TauCeti.TotallyRealLoop.maslovIndex_eq_of_homotopy`) then compares the two loops.
+Maslov index (`TauCeti.TotallyRealLoop.maslovIndex_eq_of_realImage_homotopy`) then compares the
+two loops.
 
 ## Main declarations
 
+* `TauCeti.TotallyRealLoop.ofRealImage`: the loop `t ↦ M t ℝⁿ` of a continuous path `M` of
+  invertible matrices whose images of `ℝⁿ` close up.
+* `TauCeti.TotallyRealLoop.maslovIndex_eq_of_realImage_homotopy`: homotopy invariance of the
+  Maslov index along a continuous family of such paths.
 * `TauCeti.TotallyRealLoop.exists_unitary_maslovIndex_eq`: every loop of maximal totally real
   subspaces of `ℂⁿ` has the Maslov index of a loop `t ↦ U t ℝⁿ` with `U` a continuous path of
   unitary matrices.
@@ -53,6 +58,42 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-! ### Loops of totally real subspaces of `ℂⁿ` -/
 
+/-- The loop `t ↦ M t ℝⁿ` of maximal totally real subspaces of `ℂⁿ` framed by a continuous path
+`M` of invertible matrices whose images of `ℝⁿ` close up. -/
+def TotallyRealLoop.ofRealImage (M : I → GL n ℂ) (hM : Continuous M)
+    (h01 : (M 0 : Matrix n n ℂ).realImage = (M 1 : Matrix n n ℂ).realImage) :
+    TotallyRealLoop (EuclideanSpace ℂ n) where
+  toFun t := (M t : Matrix n n ℂ).realImage
+  exists_frame := ⟨realSubspace n, isMaximalTotallyReal_realSubspace,
+    fun t ↦ (M t : Matrix n n ℂ).toEuclideanCLE (M t).det_ne_zero,
+    GeneralLinearGroup.continuous_toEuclideanCLE hM, fun _ ↦ realImage_eq_map_toEuclideanCLE _⟩
+  toFun_zero_eq_toFun_one := h01
+
+/-- The loop of images of `ℝⁿ` under `M` at time `t` is `M t ℝⁿ`. -/
+@[simp]
+theorem TotallyRealLoop.ofRealImage_apply (M : I → GL n ℂ) (hM : Continuous M)
+    (h01 : (M 0 : Matrix n n ℂ).realImage = (M 1 : Matrix n n ℂ).realImage) (t : I) :
+    ofRealImage M hM h01 t = (M t : Matrix n n ℂ).realImage :=
+  (rfl)
+
+/-- **Homotopy invariance through images of `ℝⁿ`.** Two loops of maximal totally real subspaces of
+`ℂⁿ` have the same Maslov index when they are the loops `t ↦ F (0, t) ℝⁿ` and `t ↦ F (1, t) ℝⁿ`
+of a continuous family `F` of invertible matrices along which every loop `t ↦ F (s, t) ℝⁿ` closes
+up. -/
+theorem TotallyRealLoop.maslovIndex_eq_of_realImage_homotopy
+    (Λ₀ Λ₁ : TotallyRealLoop (EuclideanSpace ℂ n)) (F : I × I → GL n ℂ) (hF : Continuous F)
+    (h₀ : ∀ t, Λ₀ t = (F (0, t) : Matrix n n ℂ).realImage)
+    (h₁ : ∀ t, Λ₁ t = (F (1, t) : Matrix n n ℂ).realImage)
+    (h01 : ∀ s, (F (s, 0) : Matrix n n ℂ).realImage = (F (s, 1) : Matrix n n ℂ).realImage) :
+    Λ₀.maslovIndex = Λ₁.maslovIndex := by
+  refine Λ₀.maslovIndex_eq_of_homotopy Λ₁ (L₀ := realSubspace n)
+    (fun p ↦ (F p : Matrix n n ℂ).toEuclideanCLE (F p).det_ne_zero)
+    (GeneralLinearGroup.continuous_toEuclideanCLE hF) (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)
+  · rw [h₀, realImage_eq_map_toEuclideanCLE]
+  · rw [h₁, realImage_eq_map_toEuclideanCLE]
+  · rw [← realImage_eq_map_toEuclideanCLE, ← realImage_eq_map_toEuclideanCLE]
+    exact h01 s
+
 /-- **Loops of totally real subspaces deform to Lagrangian loops.** Every loop `Λ` of maximal
 totally real subspaces of `ℂⁿ` has the Maslov index of a loop `t ↦ U t ℝⁿ` of Lagrangian
 subspaces, for a continuous path `U` of unitary matrices. -/
@@ -78,23 +119,10 @@ theorem TotallyRealLoop.exists_unitary_maslovIndex_eq
   obtain ⟨F, hFc, hF0, hFclosed, hF1⟩ :=
     exists_realImage_homotopy_unitaryGroup hMc (by rw [hMΛ, hMΛ]; exact Λ.toFun_zero_eq_toFun_one)
   have hF1c : Continuous fun t : I ↦ F (1, t) := hFc.comp (Continuous.prodMk_right 1)
-  let Λ' : TotallyRealLoop (EuclideanSpace ℂ n) :=
-    { toFun := fun t ↦ (F (1, t) : Matrix n n ℂ).realImage
-      exists_frame := ⟨realSubspace n, isMaximalTotallyReal_realSubspace,
-        fun t ↦ (F (1, t) : Matrix n n ℂ).toEuclideanCLE (F (1, t)).det_ne_zero,
-        GeneralLinearGroup.continuous_toEuclideanCLE hF1c,
-        fun t ↦ realImage_eq_map_toEuclideanCLE _⟩
-      toFun_zero_eq_toFun_one := hFclosed 1 }
   refine ⟨fun t ↦ ⟨F (1, t), hF1 t⟩, (Units.continuous_val.comp hF1c).subtype_mk _,
-    Λ', fun t ↦ rfl, ?_⟩
-  refine (Λ.maslovIndex_eq_of_homotopy Λ' (L₀ := realSubspace n)
-    (fun p ↦ (F p : Matrix n n ℂ).toEuclideanCLE (F p).det_ne_zero)
-    (GeneralLinearGroup.continuous_toEuclideanCLE hFc) (fun t ↦ ?_) (fun t ↦ ?_)
-    (fun s ↦ ?_)).symm
-  · rw [← realImage_eq_map_toEuclideanCLE, ← hMΛ]
-    exact (hF0 t).symm
-  · rw [← realImage_eq_map_toEuclideanCLE]
-  · rw [← realImage_eq_map_toEuclideanCLE, ← realImage_eq_map_toEuclideanCLE]
-    exact hFclosed s
+    TotallyRealLoop.ofRealImage _ hF1c (hFclosed 1), fun t ↦ rfl,
+    (Λ.maslovIndex_eq_of_realImage_homotopy _ F hFc (fun t ↦ ?_) (fun _ ↦ rfl) hFclosed).symm⟩
+  rw [← hMΛ]
+  exact (hF0 t).symm
 
 end TauCeti

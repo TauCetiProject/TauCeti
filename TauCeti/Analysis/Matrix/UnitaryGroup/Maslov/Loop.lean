@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
-public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
+public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Lagrangian
 public import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
@@ -99,22 +99,11 @@ theorem souriau_eq_souriau_iff_realImage_eq {U V : unitaryGroup n ℂ} :
             (star (U : Matrix n n ℂ) * (U : Matrix n n ℂ))ᵀ := by
             rw [hUV, transpose_mul]; simp only [mul_assoc]
         _ = 1 := by rw [star_mul_self U, transpose_one, one_mul]
-    set N : Matrix n n ℝ := W.map Complex.re
-    have hN : N.map ((↑) : ℝ → ℂ) = W := by
-      ext i j
-      exact Complex.ext (by simp [N])
-        (by simp [N, im_apply_eq_zero_of_mul_transpose_eq_one hWu hWT])
-    have hNunit : IsUnit N := by
-      rw [isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
-      intro h0
-      have hdet : W.det = 0 := by
-        have := RingHom.map_det Complex.ofRealHom N
-        rw [h0, map_zero, RingHom.mapMatrix_apply] at this
-        exact (this.trans (congrArg det hN)).symm
-      exact det_ne_zero_of_left_inverse (mem_unitaryGroup_iff'.1 hWu) hdet
-    have hV : (V : Matrix n n ℂ) = U * N.map ((↑) : ℝ → ℂ) := by
-      rw [hN, hWdef, ← mul_assoc, mem_unitaryGroup_iff.1 U.2, one_mul]
-    rw [hV, realImage_mul_map_ofReal _ hNunit]
+    obtain ⟨O, hO, hOW⟩ := exists_mem_orthogonalGroup_map_ofReal_eq hWu hWT
+    have hV : (V : Matrix n n ℂ) = U * O.map ((↑) : ℝ → ℂ) := by
+      rw [hOW, hWdef, ← mul_assoc, mem_unitaryGroup_iff.1 U.2, one_mul]
+    have hOu : IsUnit O := (Unitary.toUnits (⟨O, hO⟩ : orthogonalGroup n ℝ)).isUnit
+    rw [hV, realImage_mul_map_ofReal _ hOu]
   · intro h
     -- Frames of the same Lagrangian differ by a real orthogonal matrix, which drops out of `U Uᵀ`.
     have hre (W : unitaryGroup n ℂ) :
@@ -123,35 +112,24 @@ theorem souriau_eq_souriau_iff_realImage_eq {U V : unitaryGroup n ℂ} :
       simp [← star_eq_conjTranspose, star_mul_self W]
     obtain ⟨O, hO, hVO⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
       (M := Unitary.toUnits U) (M' := Unitary.toUnits V) h (hre U) (hre V)
-    have hOO : O.map ((↑) : ℝ → ℂ) * (O.map ((↑) : ℝ → ℂ))ᵀ = 1 := by
-      have := congrArg Complex.ofRealHom.mapMatrix ((mem_orthogonalGroup_iff n ℝ).1 hO)
-      rw [map_mul, map_one, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply] at this
-      rw [← transpose_map]
-      exact this
     have hV : V = U * ⟨O.map ((↑) : ℝ → ℂ), map_ofReal_mem_unitaryGroup hO⟩ :=
       Subtype.ext (by simpa using hVO)
-    rw [hV, souriau_mul_of_mul_transpose_eq_one _ _ hOO]
+    rw [hV, souriau_mul_of_mul_transpose_eq_one _ _ (map_ofReal_mul_transpose_eq_one hO)]
 
 /-- The **loop of Lagrangians** `t ↦ γ t ℝⁿ` of a path `γ` of unitary frames whose Souriau maps
 agree at the endpoints, as a loop of maximal totally real subspaces of `ℂⁿ`. -/
 noncomputable def lagrangianLoop {U V : unitaryGroup n ℂ} (γ : Path U V)
-    (h : souriau U = souriau V) : TotallyRealLoop (EuclideanSpace ℂ n) where
-  toFun t := (γ t : Matrix n n ℂ).realImage
-  exists_frame := ⟨realSubspace n, isMaximalTotallyReal_realSubspace,
-    fun t ↦ ((Unitary.toUnits (γ t) : GL n ℂ) : Matrix n n ℂ).toEuclideanCLE
-      (GeneralLinearGroup.det_ne_zero (Unitary.toUnits (γ t))),
-    GeneralLinearGroup.continuous_toEuclideanCLE (Unitary.continuous_toUnits.comp γ.continuous),
-    fun t ↦ realImage_eq_map_toEuclideanCLE _⟩
-  toFun_zero_eq_toFun_one := by
-    rw [γ.source, γ.target]
-    exact souriau_eq_souriau_iff_realImage_eq.1 h
+    (h : souriau U = souriau V) : TotallyRealLoop (EuclideanSpace ℂ n) :=
+  TotallyRealLoop.ofRealImage (fun t ↦ Unitary.toUnits (γ t))
+    (Unitary.continuous_toUnits.comp γ.continuous) <| by
+      simpa using souriau_eq_souriau_iff_realImage_eq.1 h
 
 /-- The loop of Lagrangians of `γ` at time `t` is `γ t ℝⁿ`. -/
 @[simp]
 theorem lagrangianLoop_apply {U V : unitaryGroup n ℂ} (γ : Path U V)
     (h : souriau U = souriau V) (t : I) :
     lagrangianLoop γ h t = (γ t : Matrix n n ℂ).realImage :=
-  (rfl)
+  TotallyRealLoop.ofRealImage_apply _ _ _ t
 
 /-- The Maslov phase of the Lagrangian `U ℝⁿ` relative to `ℝⁿ`, for a unitary matrix `U`, is
 `det U / conj (det U) = det U ^ 2`. The subspace is given as any `L = U ℝⁿ`, so that the lemma
@@ -172,10 +150,11 @@ theorem maslovPhase_eq_det_sq (U : unitaryGroup n ℂ) {L : Submodule ℝ (Eucli
       (isMaximalTotallyReal_realSubspace.map_linearEquiv
         ((U : Matrix n n ℂ).toEuclideanCLE hdet).toLinearEquiv)
       (hLU.trans (realImage_eq_map_toEuclideanCLE hdet)),
-    IsMaximalTotallyReal.maslovPhase_map, hdetU, div_eq_iff ((map_ne_zero _).2 hdet), sq,
-    mul_assoc, mul_comm _ (conj _), ← RCLike.star_def,
-    -- `conj (det U) * det U = 1` since `det U` is unitary.
-    Unitary.star_mul_self_of_mem (det_of_mem_unitary U.2), mul_one]
+    IsMaximalTotallyReal.maslovPhase_map, hdetU, div_eq_iff ((map_ne_zero _).2 hdet)]
+  -- `conj (det U) * det U = 1` since `det U` is unitary.
+  have hconj : conj (U : Matrix n n ℂ).det * (U : Matrix n n ℂ).det = 1 :=
+    Unitary.star_mul_self_of_mem (det_of_mem_unitary U.2)
+  linear_combination -(U : Matrix n n ℂ).det * hconj
 
 /-- **Loop comparison.** The native Maslov index of the loop of Lagrangians `t ↦ γ t ℝⁿ` of a path
 `γ` of unitary frames that closes up is the Robbin–Salamon index of `γ`. -/
@@ -202,17 +181,9 @@ theorem maslovIndex_eq_of_homotopy_of_souriau_eq {U₀ V₀ U₁ V₁ : unitaryG
   have hγ₁ : souriau U₁ = souriau V₁ := by simpa [h₁] using hF01 1
   rw [← coe_maslovIndex_lagrangianLoop γ₀ hγ₀,
     ← coe_maslovIndex_lagrangianLoop γ₁ hγ₁]
-  congr 1
-  refine TotallyRealLoop.maslovIndex_eq_of_homotopy _ _ (L₀ := realSubspace n)
-    (fun p ↦ ((Unitary.toUnits (F p) : GL n ℂ) : Matrix n n ℂ).toEuclideanCLE
-      (GeneralLinearGroup.det_ne_zero (Unitary.toUnits (F p))))
-    (GeneralLinearGroup.continuous_toEuclideanCLE (Unitary.continuous_toUnits.comp hF))
-    (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)
-  · rw [lagrangianLoop_apply, ← h₀]
-    exact realImage_eq_map_toEuclideanCLE _
-  · rw [lagrangianLoop_apply, ← h₁]
-    exact realImage_eq_map_toEuclideanCLE _
-  · rw [← realImage_eq_map_toEuclideanCLE, ← realImage_eq_map_toEuclideanCLE]
-    exact souriau_eq_souriau_iff_realImage_eq.1 (hF01 s)
+  exact congrArg _ <| TotallyRealLoop.maslovIndex_eq_of_realImage_homotopy _ _
+    (fun p ↦ Unitary.toUnits (F p)) (Unitary.continuous_toUnits.comp hF)
+    (fun t ↦ by simp [h₀]) (fun t ↦ by simp [h₁])
+    fun s ↦ souriau_eq_souriau_iff_realImage_eq.1 (hF01 s)
 
 end Matrix.UnitaryGroup

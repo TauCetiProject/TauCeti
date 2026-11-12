@@ -22,6 +22,8 @@ and it is positive definite when `Mᴴ M` is, in particular when `M` has indepen
 ## Main results
 
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
+* `Matrix.map_ofReal_mul_transpose_eq_one`: an orthogonal real matrix `O` satisfies `O Oᵀ = 1`
+  as a complex matrix.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
@@ -46,6 +48,14 @@ theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n 
   rw [mem_unitaryGroup_iff', star_eq_conjTranspose,
     ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
     conjTranspose_eq_transpose_of_trivial]
+  exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans ((congrArg _ hO).trans (map_one _))
+
+/-- An orthogonal real matrix `O` satisfies `O Oᵀ = 1` as a complex matrix. -/
+theorem map_ofReal_mul_transpose_eq_one [Fintype n] [DecidableEq n] {O : Matrix n n ℝ}
+    (hO : O ∈ orthogonalGroup n ℝ) :
+    O.map ((↑) : ℝ → ℂ) * (O.map ((↑) : ℝ → ℂ))ᵀ = 1 := by
+  rw [mem_orthogonalGroup_iff] at hO
+  rw [← transpose_map]
   exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans ((congrArg _ hO).trans (map_one _))
 
 /-- A real symmetric matrix is Hermitian as a complex matrix. -/
