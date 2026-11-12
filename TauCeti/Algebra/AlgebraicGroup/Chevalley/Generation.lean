@@ -57,20 +57,6 @@ theorem simpleCorootPoints_eq_weylElement_mul_inv (i : Fin t.rank) (s : Aˣ) :
   rw [D.coe_simpleCorootPoints_eq_root_word]
   simp [weylElement_def]
 
-/-- A full-weight torus parameter is the product of the corresponding simple coroots in node
-order. This identity holds over every commutative ring, even when restriction does not reach the
-whole actual torus. -/
-theorem torusPoints_fullWeightTorusRestriction_eq_prod_simpleCorootPoints
-    (s : Fin t.rank → Aˣ) :
-    D.torusPoints A (D.fullWeightTorusRestriction A s) =
-      (List.ofFn fun i => D.simpleCorootPoints i A (s i)).prod := by
-  have hp : D.fullWeightTorusRestriction A s =
-      (List.ofFn fun i => D.simpleCorootParameter i A (s i)).prod := by
-    ext j
-    simp [List.prod_ofFn, fullWeightTorusRestriction_apply, torusCharacter_def]
-  rw [hp, map_list_prod]
-  simp only [List.map_ofFn, Function.comp_def, simpleCorootPoints_eq_torusPoints]
-
 /-- The full-weight torus of a Chevalley datum lies in its Kostant elementary subgroup over
 every commutative ring, without any divisibility assumption on the units. -/
 theorem kostantTorusSubgroup_weight_le_kostantElementarySubgroup (A : CommAlgCat ℤ) :

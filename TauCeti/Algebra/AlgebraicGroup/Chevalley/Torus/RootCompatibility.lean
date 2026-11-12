@@ -71,23 +71,32 @@ theorem map_torusPoints_fullWeightTorusRestriction_of_rootSubgroupPoints
   simp only [List.map_ofFn, Function.comp_def,
     D.map_simpleCorootPoints_of_rootSubgroupPoints E f hpos hneg]
 
+/-- If full-weight restriction reaches every source torus parameter, root compatibility
+forces the actual torus equation by restriction of characters. -/
+theorem map_torusPoints_of_rootSubgroupPoints_of_surjective
+    (hs : Function.Surjective (D.fullWeightTorusRestriction A))
+    (h : E.weightLattice ≤ D.weightLattice) (s : Fin t.rank → Aˣ) :
+    f (D.torusPoints A s) = E.torusPoints A (D.torusRestriction E h s) := by
+  obtain ⟨u, rfl⟩ := hs s
+  rw [D.map_torusPoints_fullWeightTorusRestriction_of_rootSubgroupPoints E f hpos hneg,
+    torusRestriction_fullWeightTorusRestriction]
+
 /-- With divisible units, a root-preserving homomorphism matches the actual tori by restriction
 of characters. In particular this applies over every algebraically closed field. -/
 theorem map_torusPoints_of_rootSubgroupPoints [RootableBy Aˣ ℕ]
     (h : E.weightLattice ≤ D.weightLattice) (s : Fin t.rank → Aˣ) :
-    f (D.torusPoints A s) = E.torusPoints A (D.torusRestriction E h s) := by
-  obtain ⟨u, rfl⟩ := D.fullWeightTorusRestriction_surjective A s
-  rw [D.map_torusPoints_fullWeightTorusRestriction_of_rootSubgroupPoints E f hpos hneg,
-    torusRestriction_fullWeightTorusRestriction]
+    f (D.torusPoints A s) = E.torusPoints A (D.torusRestriction E h s) :=
+  D.map_torusPoints_of_rootSubgroupPoints_of_surjective E f hpos hneg
+    (D.fullWeightTorusRestriction_surjective A) h s
 
 /-- For a source datum with full weight lattice, matching the simple root maps forces the
 actual torus equation over every commutative ring, not only over algebraically closed fields. -/
 theorem map_torusPoints_of_rootSubgroupPoints_of_weightLattice_eq_top
     (hD : D.weightLattice = ⊤) (s : Fin t.rank → Aˣ) :
     f (D.torusPoints A s) =
-      E.torusPoints A (D.torusRestriction E (le_top.trans hD.ge) s) := by
-  obtain ⟨u, rfl⟩ := D.fullWeightTorusRestriction_surjective_of_weightLattice_eq_top A hD s
-  rw [D.map_torusPoints_fullWeightTorusRestriction_of_rootSubgroupPoints E f hpos hneg,
-    torusRestriction_fullWeightTorusRestriction]
+      E.torusPoints A (D.torusRestriction E (le_top.trans hD.ge) s) :=
+  D.map_torusPoints_of_rootSubgroupPoints_of_surjective E f hpos hneg
+    (D.fullWeightTorusRestriction_surjective_of_weightLattice_eq_top A hD)
+    (le_top.trans hD.ge) s
 
 end TauCeti.DynkinType.ChevalleyDatum
