@@ -637,11 +637,6 @@ noncomputable def splitFaceMergeFacesCornerEquiv :
     ((C.splitFaceMergeFacesCornerEquiv h h₂ c).2 : ℕ) = c.2 :=
   (rfl)
 
-/-- The darts of the merged complex start where they start in `C`. -/
-private theorem src_mergeFaces (e : (C.mergeFaces h).graph.E) :
-    (C.mergeFaces h).graph.src e = C.graph.src e.1 :=
-  (rfl)
-
 /-- The second side of `g₂ = d⁻¹ Y` starts at the source of `d`. -/
 private theorem src_side_one_eq (h : C.IsMergeable g₁ g₂) (h₂ : 1 < C.sides g₂) :
     C.graph.src (C.side g₂ ⟨1, h₂⟩) = C.graph.src (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
@@ -651,21 +646,21 @@ private theorem src_side_one_eq (h : C.IsMergeable g₁ g₂) (h₂ : 1 < C.side
 /-- The side of the merged face at the position where `Y` starts is the second side of `g₂`, which
 starts at the source of `d`. -/
 private theorem src_mergeFacesSide_sides_sub_one :
-    (C.mergeFaces h).graph.src ((C.mergeFaces h).side none
-      ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩) =
+    C.graph.src ((C.mergeFaces h).side none
+      ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).1 =
         C.graph.src (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   have := C.sides_pos g₁
-  rw [← outgoing_mk, src_mergeFaces, coe_outgoing_mergeFaces,
+  rw [← outgoing_mk, coe_outgoing_mergeFaces,
     mergeFacesCornerOrigin_none_of_not_lt (by dsimp only; omega), outgoing_mk,
     ← src_side_one_eq h h₂]
   exact congrArg (fun j => C.graph.src (C.side g₂ j)) (Fin.ext (by dsimp only; omega))
 
 /-- The side of the merged face at the position `0` starts at the target of `d`. -/
 private theorem src_mergeFacesSide_zero :
-    (C.mergeFaces h).graph.src ((C.mergeFaces h).side none ⟨0, (C.mergeFaces h).sides_pos none⟩) =
+    C.graph.src ((C.mergeFaces h).side none ⟨0, (C.mergeFaces h).sides_pos none⟩).1 =
       C.graph.tgt (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   have := C.sides_pos g₁
-  rw [← outgoing_mk, src_mergeFaces, coe_outgoing_mergeFaces]
+  rw [← outgoing_mk, coe_outgoing_mergeFaces]
   by_cases h₁ : 1 < C.sides g₁
   · rw [mergeFacesCornerOrigin_none_of_lt (k := ⟨0, (C.mergeFaces h).sides_pos none⟩)
         (by dsimp only; omega), outgoing_mk, incoming_mk_zero,
