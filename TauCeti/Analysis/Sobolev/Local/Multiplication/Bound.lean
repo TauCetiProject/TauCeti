@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Multiplication
 public import TauCeti.Analysis.Sobolev.Local.Norm
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.Data.ENNReal.Mul
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -19,9 +20,9 @@ order-zero and order-one mixed-exponent products of `TauCeti.Analysis.Sobolev.Lo
 stated with the `W^{k,p}` size `TauCeti.eLpNormWkp`. There is a constant `C` such that for every
 continuous bilinear map `B : F × G → H`:
 
-* order zero, on a compact `K ⊆ Ω`: `‖B(f, g)‖_{L^q(K)} ≤ C ‖B‖ ‖f‖_{Lᵖ(K)} ‖g‖_{W^{1,q}(Ω)}`;
-* order one, for `1 < q`, finite-dimensional `F` and complete `H`, on a set `U` whose closure is
-  compact and contained in `Ω`:
+* order zero, on a set `U` whose closure is compact and contained in `Ω`:
+  `‖B(f, g)‖_{L^q(U)} ≤ C ‖B‖ ‖f‖_{Lᵖ(U)} ‖g‖_{W^{1,q}(Ω)}`;
+* order one, for `1 < q`, finite-dimensional `F` and complete `H`, on such a set `U`:
   `‖B(f, g)‖_{W^{1,q}(U)} ≤ C ‖B‖ ‖f‖_{W^{1,p}(Ω)} ‖g‖_{W^{1,q}(Ω)}`. Taking `U` open controls
   the weak derivative of the product on all of `U`.
 
@@ -54,21 +55,27 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω : Opens ℂ} {p q : ℝ≥0}
 
 /-- **Local bound for order-zero mixed products.** Fix real normed spaces `F`, `G` and `H` with
-`G` finite-dimensional. For `p > 2`, `1 ≤ q ≤ p` and a compact `K ⊆ Ω`, there is a constant `C`
-such that `‖B(f, g)‖_{L^q(K)} ≤ C ‖B‖ ‖f‖_{Lᵖ(K)} ‖g‖_{W^{1,q}(Ω)}` for every continuous bilinear
-map `B : F →L[ℝ] G →L[ℝ] H` and all `f : ℂ → F` and `g : ℂ → G`. -/
-theorem exists_eLpNorm_bilin_le_eLpNormWkp_one (hp : 2 < p) (hqp : q ≤ p)
-    [Fact (1 ≤ (q : ℝ≥0∞))] {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+`G` finite-dimensional. For `p > 2`, `1 ≤ q ≤ p` and a set `U` whose closure is compact and
+contained in `Ω`, there is a constant `C` such that
+`‖B(f, g)‖_{L^q(U)} ≤ C ‖B‖ ‖f‖_{Lᵖ(U)} ‖g‖_{W^{1,q}(Ω)}` for every continuous bilinear map
+`B : F →L[ℝ] G →L[ℝ] H` and all `f : ℂ → F` and `g : ℂ → G`. -/
+theorem exists_eLpNorm_bilin_le_eLpNormWkp_one (hp : 2 < p) (hq : 1 ≤ q) (hqp : q ≤ p)
+    {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
     ∃ C : ℝ≥0, ∀ (B : F →L[ℝ] G →L[ℝ] H) (f : ℂ → F) (g : ℂ → G),
-      eLpNorm (fun z => B (f z) (g z)) q (volume.restrict K) ≤
-        C * ‖B‖ₑ * eLpNorm f p (volume.restrict K) * eLpNormWkp q Ω 1 g := by
-  obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_bilin_le (μ := volume) (Ω := Ω) (F := F) (G := G)
-    (H := H) (by simpa using hp) hqp hK hKΩ
+      eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) ≤
+        C * ‖B‖ₑ * eLpNorm f p (volume.restrict U) * eLpNormWkp q Ω 1 g := by
+  have hq1 : (1 : ℝ≥0∞) ≤ q := by exact_mod_cast hq
+  let _ : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨hq1⟩
+  let _ := ENNReal.HolderTriple.of_le (p := (p : ℝ≥0∞)) (q := q) (by exact_mod_cast hqp)
+  obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_le_of_holderTriple (μ := volume) (Ω := Ω) (G := G)
+    (r := ((q : ℝ≥0∞)⁻¹ - (p : ℝ≥0∞)⁻¹)⁻¹) (by simpa using hp) hqp hU hUΩ
   refine ⟨C + 1, fun B f g => ?_⟩
-  have hq0 : (q : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ q)).ne'
-  -- If `B = 0` or either factor vanishes almost everywhere on `K`, so does the product.
-  have hvanish (h : (fun z => B (f z) (g z)) =ᵐ[volume.restrict K] 0) :
-      eLpNorm (fun z => B (f z) (g z)) q (volume.restrict K) = 0 := by
+  have hq0 : (q : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le hq1).ne'
+  have hUm : volume.restrict U ≤ volume.restrict Ω :=
+    Measure.restrict_mono (subset_closure.trans hUΩ) le_rfl
+  -- If `B = 0` or either factor vanishes almost everywhere on `U`, so does the product.
+  have hvanish (h : (fun z => B (f z) (g z)) =ᵐ[volume.restrict U] 0) :
+      eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) = 0 := by
     rw [eLpNorm_congr_ae h, eLpNorm_zero]
   refine ENNReal.le_mul_mul_of_ne_top_imp_le (fun hCB => hvanish (.of_forall fun z => ?_))
     (fun hf0 => hvanish ?_) (fun hg0 => hvanish ?_) fun _ hf hg => ?_
@@ -77,19 +84,26 @@ theorem exists_eLpNorm_bilin_le_eLpNormWkp_one (hp : 2 < p) (hqp : q ≤ p)
   · filter_upwards [(eLpNorm_eq_zero_iff (by simpa using (zero_lt_two.trans hp).ne')).1 hf0]
       with z hz
     simp [hz]
-  · filter_upwards [ae_mono (Measure.restrict_mono hKΩ le_rfl)
-      (ae_eq_zero_of_eLpNormWkp_eq_zero hq0 hg0)] with z hz
+  · filter_upwards [ae_mono hUm (ae_eq_zero_of_eLpNormWkp_eq_zero hq0 hg0)] with z hz
     simp [hz]
   obtain ⟨Dg, hDg, hgq, hDgq, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
   rw [eLpNormWkp_zero] at hDgq hgΩ
-  have hf : AEStronglyMeasurable f (volume.restrict K) :=
+  have hf : AEStronglyMeasurable f (volume.restrict U) :=
     (memLp_iff.2 (lt_top_iff_ne_top.2 hf)).aestronglyMeasurable
+  -- Hölder on `U`, then the gain of integrability of `g` on `closure U`.
   calc
-    _ ≤ C * ‖B‖ₑ * eLpNorm f p (volume.restrict K) *
-        (eLpNorm g q (volume.restrict Ω) + eLpNorm Dg q (volume.restrict Ω)) :=
-      hC B f g Dg hf hDg hgq (memLp_iff.2 (lt_top_iff_ne_top.2 hDgq))
+    _ ≤ ‖B‖ₑ * eLpNorm f p (volume.restrict U) *
+        eLpNorm g ((q : ℝ≥0∞)⁻¹ - (p : ℝ≥0∞)⁻¹)⁻¹ (volume.restrict U) :=
+      eLpNorm_le_enorm_mul_eLpNorm_mul_eLpNorm B hf (hgq.aestronglyMeasurable.mono_measure hUm)
+    _ ≤ ‖B‖ₑ * eLpNorm f p (volume.restrict U) *
+        (C * (eLpNorm g q (volume.restrict Ω) + eLpNorm Dg q (volume.restrict Ω))) := by
+      gcongr
+      exact (eLpNorm_mono_measure g (Measure.restrict_mono subset_closure le_rfl)).trans
+        (hC g Dg hDg hgq (memLp_iff.2 (lt_top_iff_ne_top.2 hDgq)))
+    _ = C * ‖B‖ₑ * eLpNorm f p (volume.restrict U) * eLpNormWkp q Ω 1 g := by
+      rw [hgΩ]
+      ring
     _ ≤ _ := by
-      rw [← hgΩ]
       gcongr
       exact_mod_cast le_self_add
 
@@ -136,9 +150,7 @@ theorem exists_eLpNormWkp_one_bilin_le [FiniteDimensional ℝ F] [CompleteSpace 
   replace hDfp : MemLp Df p (volume.restrict Ω) := memLp_iff.2 (lt_top_iff_ne_top.2 hDfp)
   replace hDgq : MemLp Dg q (volume.restrict Ω) := memLp_iff.2 (lt_top_iff_ne_top.2 hDgq)
   -- `f` is locally bounded on `Ω`, so the weak Leibniz rule applies there.
-  have hfloc : MemWkpLoc p Ω 1 f :=
-    memWkpLoc_succ_iff_of_isOpen.2
-      ⟨hfp.memLpLoc, Df, hDf, memWkpLoc_zero_iff.2 hDfp.memLpLoc⟩
+  have hfloc : MemWkpLoc p Ω 1 f := memWkpLoc_of_eLpNormWkp_ne_top hf
   have hLeib := hDf.bilin_of_memLpLoc B hp hq hqp
     ((hfloc.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top) hDfp.memLpLoc
     hDg hgq.memLpLoc hDgq.memLpLoc

@@ -21,10 +21,11 @@ interior and its norms on `U` itself, matching `TauCeti.MemWkpLoc`. On an open s
 derivatives are unique almost everywhere, so the minimum is attained by every weak derivative.
 
 This is the quantity in which interior estimates of elliptic equations are stated. The file
-supplies its unfolding, its value through a given weak derivative on an open set, the extraction
-of a weak derivative from a finite successor-order norm, the almost-everywhere vanishing of
-a function of zero norm, monotonicity in the set, invariance under almost-everywhere change, the
-triangle inequality and the operator-norm bound under a continuous linear map of the codomain.
+supplies its unfolding, its value through a given weak derivative on an open set, the `Lᵖ` and
+`W^{k,p}_loc` membership of a function of finite norm, the extraction of a weak derivative from a
+finite successor-order norm, the almost-everywhere vanishing of a function of zero norm,
+monotonicity in the set, invariance under almost-everywhere change, the triangle inequality and
+the operator-norm bound under a continuous linear map of the codomain.
 
 ## References
 
@@ -67,6 +68,11 @@ theorem eLpNorm_le_eLpNormWkp : eLpNorm f p (volume.restrict U) ≤ eLpNormWkp p
   cases k with
   | zero => exact le_rfl
   | succ k => exact le_self_add
+
+/-- A function of finite `W^{k,p}` norm is `Lᵖ` on the set. -/
+theorem memLp_of_eLpNormWkp_ne_top (hf : eLpNormWkp p U k f ≠ ∞) :
+    MemLp f p (volume.restrict U) :=
+  memLp_iff.2 (eLpNorm_le_eLpNormWkp.trans_lt (lt_top_iff_ne_top.2 hf))
 
 /-- A function of zero `W^{k,p}` norm vanishes almost everywhere on the set. -/
 theorem ae_eq_zero_of_eLpNormWkp_eq_zero (hp : p ≠ 0) (hf : eLpNormWkp p U k f = 0) :
@@ -115,16 +121,24 @@ theorem eLpNormWkp_succ_eq_of_hasWeakFDerivOn {Ω : Opens ℂ} {D : ℂ → ℂ 
   gcongr
   exact le_iInf₂ fun D' hD' => (eLpNormWkp_congr_ae (hD.ae_eq hD')).le
 
-/-- A finite successor-order norm makes the function `Lᵖ` and provides a weak derivative on the
-interior of finite norm of the previous order. -/
+/-- A finite successor-order norm provides a weak derivative on the interior of finite norm of
+the previous order. -/
 theorem exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (hf : eLpNormWkp p U (k + 1) f ≠ ∞) :
-    MemLp f p (volume.restrict U) ∧ ∃ D : ℂ → ℂ →L[ℝ] F,
+    ∃ D : ℂ → ℂ →L[ℝ] F,
       HasWeakFDerivOn volume (Opens.interior U) f D ∧ eLpNormWkp p U k D ≠ ∞ := by
   rw [eLpNormWkp_succ, ENNReal.add_ne_top] at hf
   obtain ⟨D, hD, hlt⟩ : ∃ D : ℂ → ℂ →L[ℝ] F,
       HasWeakFDerivOn volume (Opens.interior U) f D ∧ eLpNormWkp p U k D < ∞ := by
     simpa [iInf_lt_iff, lt_top_iff_ne_top] using hf.2
-  exact ⟨memLp_iff.2 (lt_top_iff_ne_top.2 hf.1), D, hD, hlt.ne⟩
+  exact ⟨D, hD, hlt.ne⟩
+
+/-- A function of finite `W^{k,p}` norm lies in the local Sobolev class `W^{k,p}_loc`. -/
+theorem memWkpLoc_of_eLpNormWkp_ne_top (hf : eLpNormWkp p U k f ≠ ∞) : MemWkpLoc p U k f := by
+  induction k generalizing F with
+  | zero => exact memWkpLoc_zero_iff.2 (memLp_of_eLpNormWkp_ne_top hf).memLpLoc
+  | succ k ih =>
+    obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
+    exact memWkpLoc_succ_iff.2 ⟨(memLp_of_eLpNormWkp_ne_top hf).memLpLoc, D, hD, ih hDk⟩
 
 /-- On an open set, a finite successor-order norm is realized by a weak derivative of finite norm
 of the previous order, and the function is `Lᵖ` there. -/
@@ -133,9 +147,9 @@ theorem exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top {Ω : Opens ℂ}
     ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemLp f p (volume.restrict Ω) ∧
       eLpNormWkp p Ω k D ≠ ∞ ∧
       eLpNormWkp p Ω (k + 1) f = eLpNorm f p (volume.restrict Ω) + eLpNormWkp p Ω k D := by
-  obtain ⟨hfp, D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
+  obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
   rw [Opens.interior_coe] at hD
-  exact ⟨D, hD, hfp, hDk, eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD⟩
+  exact ⟨D, hD, memLp_of_eLpNormWkp_ne_top hf, hDk, eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD⟩
 
 /-- The zero function has zero `W^{k,p}` norm. -/
 @[simp]
