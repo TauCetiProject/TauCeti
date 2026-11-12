@@ -25,9 +25,9 @@ already fixed by the root-systems development, without introducing a second tabl
 and `F₄`.
 
 The permutation selector has only the four half-Frobenius branches: Suzuki and Ree `G₂` use the
-rank-two node swap, while Ree `F₄` and Tits use diagram reversal. Milestone L2 must reduce every
-branch to the corresponding pinned permutation when selecting the upstream special isogeny, so the
-four branch equations are simp lemmas rather than the selector body being exposed.
+rank-two node swap, while Ree `F₄` and Tits use diagram reversal. Selecting the upstream special
+isogeny reduces every branch to the corresponding pinned permutation, so the four branch equations
+are simp lemmas rather than the selector body being exposed.
 
 ## Main definitions and results
 
@@ -50,10 +50,8 @@ four branch equations are simp lemmas rather than the selector body being expose
   `TauCeti.SuzukiReeIndex.exponent_eq_characteristic_iff` compute and characterize the two
   exponents, and `TauCeti.SuzukiReeIndex.exponent_mul_exponent_lengthPerm` multiplies the two
   exponents of a length-exchanged pair to the characteristic.
-The permutation, the exponents, and their branch equations are the Suzuki--Ree numbered-data part
-of milestone I0 in `TauCetiRoadmap/CFSGStatement/README.md`. The exponent convention follows Carter,
-*Simple Groups of Lie Type*. The permutations and numbering follow Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4--6*, plates II, VIII, and IX, as fixed by the CFSG and root-systems roadmaps.
+The exponent convention follows Carter, *Simple Groups of Lie Type*. The permutations and numbering
+follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, plates II, VIII, and IX.
 -/
 
 public section
