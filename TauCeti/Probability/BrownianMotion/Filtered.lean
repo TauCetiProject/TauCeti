@@ -50,7 +50,7 @@ produce a new Brownian motion.
 public section
 
 open MeasureTheory ProbabilityTheory
-open scoped NNReal
+open scoped NNReal ENNReal
 
 namespace TauCeti.Probability
 
@@ -129,10 +129,24 @@ theorem isFilteredPreBrownianReal_natural (hB : IsPreBrownianReal B P)
     rw [this, ← MeasurableSpace.comap_comp]
     exact MeasurableSpace.comap_mono (measurable_pi_apply _).comap_le
 
+/-- Every natural power of a pre-Brownian value has every finite `Lᵖ` moment. -/
+theorem memLp_pow_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) (n : ℕ) {p : ℝ≥0∞}
+    (hp : p ≠ ∞) : MemLp (fun ω ↦ B t ω ^ n) p P := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · have := (hB.hasLaw_eval 0).isProbabilityMeasure
+    simpa only [pow_zero] using (memLp_const (μ := P) (p := p) (1 : ℝ))
+  have hn' : (n : ℝ≥0∞) ≠ 0 := by exact_mod_cast hn
+  have h := (hB.hasLaw_eval t).memLp (memLp_id_gaussianReal' (p * n) (by finiteness))
+  have hpow : MemLp (fun ω ↦ ‖B t ω‖ ^ n) p P := by
+    simpa only [ENNReal.toReal_natCast, Real.rpow_natCast,
+      ENNReal.mul_div_cancel_right hn' (ENNReal.natCast_ne_top n)] using h.norm_rpow_div n
+  exact hpow.congr_norm (h.aestronglyMeasurable.pow n)
+    (ae_of_all _ fun ω ↦ by simp [norm_pow])
+
 /-- Every natural power of a pre-Brownian value is integrable. -/
 theorem integrable_pow_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) (n : ℕ) :
     Integrable (fun ω ↦ B t ω ^ n) P :=
-  (hB.hasLaw_eval t).integrable_comp (TauCeti.integrable_pow_gaussianReal 0 t n)
+  memLp_one_iff_integrable.mp (hB.memLp_pow_eval t n ENNReal.one_ne_top)
 
 /-- The second moment of a pre-Brownian value is its time. -/
 theorem integral_sq_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
@@ -140,14 +154,6 @@ theorem integral_sq_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
   have h := (hB.hasLaw_eval t).integral_comp (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
   simpa only [Function.comp_apply, integral_sq_gaussianReal, zero_pow two_ne_zero,
     add_zero] using h
-
-/-- The square of every pre-Brownian value is square integrable. -/
-theorem memLp_sq_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
-    MemLp (fun ω ↦ B t ω ^ 2) 2 P := by
-  let : ENNReal.HolderTriple 4 4 2 := .of_toReal (by
-    norm_num [Real.holderTriple_iff])
-  have h := (hB.hasLaw_eval t).memLp (memLp_id_gaussianReal' 4 (by norm_num))
-  simpa only [pow_two, Pi.mul_def] using (h.mul h : MemLp (B t * B t) 2 P)
 
 /-- For `s ≤ t`, the increment `B t - B s` of a pre-Brownian motion has law `N(0, t - s)`. -/
 theorem hasLaw_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :

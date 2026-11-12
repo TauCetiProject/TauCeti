@@ -33,7 +33,7 @@ integral is constructed here. Repeated dates and the empty zero-horizon grid are
 -/
 
 open MeasureTheory ProbabilityTheory TauCeti.Probability Finset Filter Set
-open scoped NNReal Topology
+open scoped NNReal ENNReal Topology
 
 public section
 
@@ -41,17 +41,17 @@ namespace ProbabilityTheory.IsPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
 
-/-- The increment of squared Brownian motion is square integrable, in either time order. -/
-theorem memLp_sq_sub_sq (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
-    MemLp (fun ω ↦ B t ω ^ 2 - B s ω ^ 2) 2 P :=
-  (hB.memLp_sq_eval t).sub (hB.memLp_sq_eval s)
+/-- The increment of squared Brownian motion has every finite `Lᵖ` moment,
+in either time order. -/
+theorem memLp_sq_sub_sq (hB : IsPreBrownianReal B P) (s t : ℝ≥0) {p : ℝ≥0∞}
+    (hp : p ≠ ∞) : MemLp (fun ω ↦ B t ω ^ 2 - B s ω ^ 2) p P :=
+  (hB.memLp_pow_eval t 2 hp).sub (hB.memLp_pow_eval s 2 hp)
 
 /-- The mean-square increment of squared Brownian motion, for `s ≤ t`. This is distinct
 from the fourth moment of the Brownian increment. -/
 theorem integral_sq_sq_sub_sq (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :
     ∫ ω, (B t ω ^ 2 - B s ω ^ 2) ^ 2 ∂P =
       4 * (s : ℝ) * ((t : ℝ) - s) + 3 * ((t : ℝ) - s) ^ 2 := by
-  have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
   have hi : IndepFun (B s) (fun ω ↦ B t ω - B s ω) P := by
     have h := (hB.indepFun_shift s).symm.comp
       (measurable_pi_apply (⟨s, self_mem_Iic⟩ : Iic s)) (measurable_pi_apply (t - s))
@@ -91,7 +91,7 @@ theorem intervalIntegrable_integral_sq_sq_sub_sq (hB : IsPreBrownianReal B P) {a
     (hab : a ≤ b) :
     IntervalIntegrable (fun u : ℝ ↦ ∫ ω, (B u.toNNReal ω ^ 2 - B a ω ^ 2) ^ 2 ∂P)
       volume (a : ℝ) b := by
-  have hab' : (a : ℝ) ≤ b := hab
+  have hab' : (a : ℝ) ≤ b := NNReal.coe_le_coe.mpr hab
   have hc : Continuous (fun u : ℝ ↦ 4 * (a : ℝ) * (u - a) + 3 * (u - a) ^ 2) := by
     fun_prop
   refine (hc.intervalIntegrable _ _).congr ?_
@@ -109,7 +109,7 @@ theorem integral_integral_sq_sq_sub_sq (hB : IsPreBrownianReal B P) {a b : ℝ�
     (hab : a ≤ b) :
     (∫ u in (a : ℝ)..b, ∫ ω, (B u.toNNReal ω ^ 2 - B a ω ^ 2) ^ 2 ∂P) =
       2 * (a : ℝ) * ((b : ℝ) - a) ^ 2 + ((b : ℝ) - a) ^ 3 := by
-  have hab' : (a : ℝ) ≤ b := hab
+  have hab' : (a : ℝ) ≤ b := NNReal.coe_le_coe.mpr hab
   have hm : (∫ u in (a : ℝ)..b, ∫ ω, (B u.toNNReal ω ^ 2 - B a ω ^ 2) ^ 2 ∂P) =
       ∫ u in (a : ℝ)..b, 4 * (a : ℝ) * (u - a) + 3 * (u - a) ^ 2 := by
     apply intervalIntegral.integral_congr
@@ -151,7 +151,8 @@ theorem sum_integral_integral_sq_sq_sub_sq_le (hB : IsPreBrownianReal B P)
   rw [hB.sum_integral_integral_sq_sq_sub_sq hτ,
     ← Fin.sum_univ_succ_sub_castSucc (fun i ↦ (τ i : ℝ) ^ 2), mul_sum]
   refine sum_le_sum fun i _ ↦ ?_
-  have hab : (τ i.castSucc : ℝ) ≤ τ i.succ := hτ (Fin.castSucc_le_succ i)
+  have hab : (τ i.castSucc : ℝ) ≤ τ i.succ :=
+    NNReal.coe_le_coe.mpr (hτ (Fin.castSucc_le_succ i))
   have hs : 0 ≤ (τ i.succ : ℝ) ^ 2 - (τ i.castSucc : ℝ) ^ 2 := by
     nlinarith [(τ i.castSucc).coe_nonneg]
   calc
@@ -221,7 +222,8 @@ theorem tendsto_sum_integral_integral_sq_sq_sub_sq (hB : IsPreBrownianReal B P)
     apply sum_nonneg
     intro i _
     exact intervalIntegral.integral_nonneg
-      (hτ k (Fin.castSucc_le_succ i)) (fun _ _ ↦ integral_nonneg fun _ ↦ sq_nonneg _)
+      (NNReal.coe_le_coe.mpr (hτ k (Fin.castSucc_le_succ i)))
+      (fun _ _ ↦ integral_nonneg fun _ ↦ sq_nonneg _)
   · intro k
     calc
       _ ≤ |δ k| * ((grid k (Fin.last (N k)) : ℝ) ^ 2 - (grid k 0 : ℝ) ^ 2) :=
