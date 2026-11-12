@@ -786,9 +786,9 @@ theorem
   have hout' (i : ι) : ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π) := by
     nlinarith [hout i, norm_nonneg (a i)]
   rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg (Finset.sum_nonneg fun i _ ↦ hB₀ i) hBout₀),
-    ← Real.enorm_eq_ofReal_abs, ENNReal.ofReal_add (Finset.sum_nonneg fun i _ ↦ hB₀ i) hBout₀,
+    ← Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_add (Finset.sum_nonneg fun i _ ↦ hB₀ i) hBout₀,
     ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hB₀ i]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (ω.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le hH hHs hHout hHouts ha
       hsep' hout' hB hBout u))
 
