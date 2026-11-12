@@ -151,7 +151,7 @@ instance : SMul ℂ (LocalSymbol U V W m) where
       exists_bound := fun K hKU hK α β => by
         obtain ⟨C, hC, ha⟩ := a.exists_bound K hKU hK α β
         refine ⟨‖c‖ * C, mul_nonneg (norm_nonneg c) hC, fun x hx ξ => ?_⟩
-        obtain ⟨f, hf, hfa⟩ := a.exists_contDiff_eventually_eq_coefficient (hKU hx)
+        obtain ⟨f, _, hfa⟩ := a.exists_contDiff_eventually_eq_coefficient (hKU hx)
         have hcf : ∀ᶠ y in 𝓝 x, ∀ η, (c • a.coefficient) (y, η) = (c • f) (y, η) := by
           filter_upwards [hfa] with y hy η
           rw [Pi.smul_apply, Pi.smul_apply, hy]

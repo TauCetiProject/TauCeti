@@ -63,7 +63,7 @@ non-top value implies feasibility.
 * `TauCeti.mongeCost_zero_measure` and `TauCeti.mongeCost_eq_transportCost_zero_measure` — at
   zero mass, with a nonempty target type, both values vanish;
 * `TauCeti.mongeCost_eq_transportCost_of_normalized` — equality of the two values for the
-  measures rescaled by a nonzero finite source mass transfers to the source and its target;
+  measures rescaled by a finite source mass transfers to the source and its target;
 * `TauCeti.transportCost_lt_mongeCost_dirac` — the inequality is strict for a Dirac source and
   a target that is null on singletons, where
   `TauCeti.mongeCost_eq_top_of_measure_singleton_ne_zero` makes the Monge problem infeasible
@@ -277,15 +277,26 @@ theorem mongeCost_eq_transportCost_zero_measure [Nonempty Y] (c : X × Y → ℝ
     mongeCost c (0 : Measure X) (0 : Measure Y) = transportCost c 0 0 :=
   le_antisymm ((mongeCost_zero_measure c).trans_le bot_le) (transportCost_le_mongeCost c 0 0)
 
-/-- Equality of the Monge and Kantorovich values for the measures obtained by rescaling a nonzero
-finite source `μ` and a target `ν` by the mass of `μ` transfers to `μ` and `ν` themselves. The
-rescaled source is a probability measure, and the rescaled target is one when `ν univ = μ univ`.
-Combined with `TauCeti.mongeCost_eq_transportCost_zero_measure`, this reduces equality for finite
-measures of equal mass to the probability case. -/
-theorem mongeCost_eq_transportCost_of_normalized [IsFiniteMeasure μ] (hμ : μ ≠ 0)
+/-- Equality of the Monge and Kantorovich values for the measures obtained by rescaling a finite
+source `μ` and a target `ν` by the mass of `μ` transfers to `μ` and `ν` themselves. For a nonzero
+`μ` the rescaled source is a probability measure, and the rescaled target is one when
+`ν univ = μ univ`. Combined with `TauCeti.mongeCost_eq_transportCost_zero_measure`, this reduces
+equality for finite measures of equal mass to the probability case. -/
+theorem mongeCost_eq_transportCost_of_normalized [IsFiniteMeasure μ]
     (hnorm : mongeCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν) =
       transportCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν)) :
     mongeCost c μ ν = transportCost c μ ν := by
+  by_cases hμ : μ = 0
+  · subst hμ
+    by_cases hν : ν = 0
+    · subst hν
+      simpa using hnorm
+    · have hne : (0 : Measure X) univ ≠ ν univ := fun h ↦
+        hν (Measure.measure_univ_eq_zero.1 (by simpa using h.symm))
+      rw [transportCost_eq_top_of_measure_univ_ne hne,
+        mongeCost_eq_top_of_not_exists_hasLaw]
+      rintro ⟨T, hT⟩
+      exact hν (by rw [← hT.map_eq, Measure.map_zero])
   have hm₀ : μ univ ≠ 0 := mt Measure.measure_univ_eq_zero.1 hμ
   have hm_top : μ univ ≠ ∞ := measure_ne_top μ univ
   have hscale (ρ : Measure X) : μ univ • ((μ univ)⁻¹ • ρ) = ρ := by
@@ -502,12 +513,14 @@ target that is null on singletons and has finite cost is a Kantorovich problem w
 value and a Monge problem with no competitor at all. This is the standard obstruction to
 Monge's problem: there is no map carrying a point mass onto such a measure. -/
 theorem transportCost_lt_mongeCost_dirac [IsProbabilityMeasure ν] [NullSingletonClass ν]
-    (hc : Measurable c) {x : X} (h : ∫⁻ y, c (x, y) ∂ν ≠ ⊤) :
+    {x : X} (h : ∫⁻ y, c (x, y) ∂ν ≠ ⊤) :
     transportCost c (Measure.dirac x) ν < mongeCost c (Measure.dirac x) ν := by
   have hx : Measure.dirac x {x} ≠ 0 := by
     rw [Measure.dirac_apply_of_mem (mem_singleton x)]
     exact one_ne_zero
-  rw [transportCost_dirac_left hc x, mongeCost_eq_top_of_measure_singleton_ne_zero hx c]
-  exact h.lt_top
+  rw [mongeCost_eq_top_of_measure_singleton_ne_zero hx c]
+  refine lt_of_le_of_lt ((transportCost_le_lintegral (isCoupling_map_prodMk x ν) c).trans ?_)
+    h.lt_top
+  exact (lintegral_map_le c measurable_prodMk_left.aemeasurable).trans_eq rfl
 
 end TauCeti

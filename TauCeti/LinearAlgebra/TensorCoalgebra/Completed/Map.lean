@@ -174,7 +174,7 @@ theorem hasLengthBound_map (f : M →ₗ[R] N) : HasLengthBound 0 (TensorWords.m
 @[simp]
 theorem hasLengthBound_zero (c : ℕ) :
     HasLengthBound c (0 : TensorWords R M →ₗ[R] TensorWords R N) := by
-  intro k x
+  intro k _
   simp
 
 /-- Adding finite-word maps with a common length bound preserves that bound. -/

@@ -102,7 +102,7 @@ theorem norm_prod_le_prod_norm_of_nonempty {ι R : Type*} [SeminormedCommRing R]
     {s : Finset ι} (hs : s.Nonempty) (f : ι → R) : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := by
   induction hs using Finset.Nonempty.cons_induction with
   | singleton a => simp
-  | cons a s ha hs ih =>
+  | cons a s ha _ ih =>
     rw [Finset.prod_cons, Finset.prod_cons]
     exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ih (norm_nonneg _))
 
