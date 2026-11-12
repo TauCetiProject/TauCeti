@@ -364,6 +364,7 @@ private lemma coeffMap_sub_diagMap_lof_mem (n : ℕ) (hs : ∀ p ≤ n, ∀ i, i
     rw [diagMap_lof, diagPart, map_sum]
     refine Finset.sum_congr rfl fun l _ ↦ ?_
     rw [shiftCup_lof]
+    -- The summand index `q + 0` and the cup product degree `q + 0` reduce to `q` by `Nat.add`.
     rfl
   rw [coeffMap_lof, hdiag, ← map_sub]
   exact shiftCup_filt_le n p q h a (sub_diagPart_mem_filt s p (hs p (by omega)) (γ p i))
@@ -471,8 +472,8 @@ theorem singularCohomologyMap_prodFiberInclusion_lerayHirschProdOfClasses (x : X
     by_cases hq : q' = 0
     · subst hq
       obtain rfl : p' = p := by omega
-      rw [TauCeti.singularCohomologyMap_const_zero, LinearMap.map_smul₂,
-        singularCup_singularCohomologyZeroOne_left, Finset.sum_eq_single i]
+      rw [TauCeti.singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul,
+        LinearMap.map_smul₂, singularCup_singularCohomologyZeroOne_left, Finset.sum_eq_single i]
       · rw [lhLof_apply_self]
       · intro l _ hl
         rw [lhLof_apply_of_ne _ _ hl, map_zero, zero_smul]
