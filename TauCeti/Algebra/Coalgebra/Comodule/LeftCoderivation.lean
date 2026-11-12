@@ -443,11 +443,11 @@ variable {R : Type uR} {C : Type uC} {P : Type uP} {X : Type uX}
 `τ = G.koszulTwist r`.  The parameter `r` is the degree of `D`, and `τ` records the Koszul sign
 `(-1)^(r * |c|)` acquired when `D` passes the coalgebra factor `c`.  Homogeneity of `D` and the
 comodule axioms of `δ` are separate conditions. -/
-def IsLeftGradedCoderivationOver (δ : X →ₗ[R] C ⊗[R] X) (G : InternalGrading R C) (r : ℤ)
+def IsLeftGradedCoderivationOver (δ : X →ₗ[R] C ⊗[R] X) (G : InternalGrading R C ℤ) (r : ℤ)
     (b : C →ₗ[R] C) (D : X →ₗ[R] X) : Prop :=
   δ ∘ₗ D = b.rTensor X ∘ₗ δ + TensorProduct.map (G.koszulTwist r) D ∘ₗ δ
 
-variable {δ : X →ₗ[R] C ⊗[R] X} {G : InternalGrading R C} {r : ℤ} {b : C →ₗ[R] C}
+variable {δ : X →ₗ[R] C ⊗[R] X} {G : InternalGrading R C ℤ} {r : ℤ} {b : C →ₗ[R] C}
   {D E : X →ₗ[R] X}
 
 /-- The left co-Leibniz law evaluated on one element. -/
