@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -30,11 +31,12 @@ They impose no global integrability condition on the possibly unbounded domain.
 This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
 pairing of fields of continuous linear maps into product maps,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
-supported in the domain), pairing, decreasing the integrability exponent, and decreasing the
-derivative order. On an open set, local `Lᵖ` membership is detected on the open subsets with
-compact closure inside it. Smoothness on an open neighbourhood gives membership, without requiring
-a global smooth extension. Conversely, if `g` is `Cᵏ` on an open set `Ω` and agrees almost
-everywhere there with `u ∈ MemWkpLoc p Ω (k + m)`, then `fderiv ℝ g` is a weak derivative of `u`
+supported in the domain), composition of local `Lᵖ` operator families with continuous ones,
+pairing, decreasing the integrability exponent, and decreasing the derivative order. On an open
+set, local `Lᵖ` membership is detected on the open subsets with compact closure inside it.
+Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension.
+Conversely, if `g` is `Cᵏ` on an open set `Ω` and agrees almost everywhere there with
+`u ∈ MemWkpLoc p Ω (k + m)`, then `fderiv ℝ g` is a weak derivative of `u`
 (`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`, for `k ≥ 1`) and
 `iteratedFDeriv ℝ k g ∈ MemWkpLoc p Ω m` (`TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn`).
 On a relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane the interior is
@@ -218,6 +220,23 @@ theorem MemLpLoc.clm_prod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     using 1
   funext z
   ext v <;> simp
+
+/-- Composing a locally `Lᵖ` operator family on the left with one continuous on `U` preserves
+local `Lᵖ` membership, since the continuous factor is bounded on every compact subset of `U`. -/
+theorem MemLpLoc.continuousOn_clm_comp {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
+    {A : ℂ → G →L[ℝ] H} {B : ℂ → F →L[ℝ] G} (hB : MemLpLoc p U B) (hA : ContinuousOn A U) :
+    MemLpLoc p U (fun z => A z ∘L B z) :=
+  memLpLoc_iff.2 fun K hKU hK => (memLpLoc_iff.1 hB K hKU hK).clm_comp_of_continuousOn
+    (hA.mono hKU) hK hK.measurableSet subset_rfl
+
+/-- Composing a locally `Lᵖ` operator family on the right with one continuous on `U` preserves
+local `Lᵖ` membership, since the continuous factor is bounded on every compact subset of `U`. -/
+theorem MemLpLoc.clm_comp_continuousOn {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
+    {B : ℂ → G →L[ℝ] H} {E : ℂ → F →L[ℝ] G} (hB : MemLpLoc p U B) (hE : ContinuousOn E U) :
+    MemLpLoc p U (fun z => B z ∘L E z) :=
+  memLpLoc_iff.2 fun K hKU hK => (ContinuousLinearMap.compL ℝ F G H).memLp_of_bilin p
+    (memLpLoc_iff.1 hB K hKU hK)
+    ((hE.mono hKU).memLp_top_restrict_of_subset_isCompact hK hK.measurableSet subset_rfl)
 
 open TauCeti.MeasureTheory in
 /-- A locally `Lᵖ` function on an open set `Ω`, with `1 ≤ p`, agrees almost everywhere on `Ω` with
@@ -483,12 +502,7 @@ theorem _root_.ContDiffOn.memWkpLoc [CompleteSpace F]
     have hD : ContDiffOn ℝ k (fderiv ℝ f) (Ω : Set ℂ) :=
       hf.fderiv_of_isOpen Ω.isOpen (by simp)
     refine ⟨(hf.continuousOn.mono hU).memLpLoc, fderiv ℝ f, ?_, ih hD⟩
-    have hweak : HasWeakFDerivOn volume Ω f (fderiv ℝ f) := by
-      apply hasWeakFDerivOn_of_differentiableOn
-        (hD.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)
-      intro z hz
-      exact (hf.differentiableOn (by simp)).differentiableAt (Ω.isOpen.mem_nhds hz)
-    exact hweak.mono (interior_subset.trans hU)
+    exact (hf.of_le (by simp)).hasWeakFDerivOn_fderiv.mono (interior_subset.trans hU)
 
 /-! ### Bounds for chains of weak derivatives -/
 
@@ -555,11 +569,7 @@ theorem MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn (hu : MemWkpLoc p Ω (k +
     (hg : ContDiffOn ℝ 1 g Ω) (hug : u =ᵐ[volume.restrict Ω] g) :
     HasWeakFDerivOn volume Ω u (fderiv ℝ g) ∧ MemWkpLoc p Ω k (fderiv ℝ g) := by
   have := hu.completeSpace
-  have hg' : HasWeakFDerivOn volume Ω g (fderiv ℝ g) :=
-    hasWeakFDerivOn_of_differentiableOn
-      ((hg.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
-        Ω.isOpen.measurableSet)
-      fun x hx => (hg.differentiableOn one_ne_zero x hx).differentiableAt (Ω.isOpen.mem_nhds hx)
+  have hg' : HasWeakFDerivOn volume Ω g (fderiv ℝ g) := hg.hasWeakFDerivOn_fderiv
   obtain ⟨D, hD, hDk⟩ := hu.exists_weakFDeriv_of_isOpen
   exact ⟨hg'.congr_ae hug.symm, hDk.congr_ae ((hD.congr_ae hug).ae_eq hg')⟩
 

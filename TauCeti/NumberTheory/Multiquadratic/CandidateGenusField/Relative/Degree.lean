@@ -15,8 +15,8 @@ import TauCeti.NumberTheory.Multiquadratic.RelativeDegree
 
 For a squarefree integer `d`, `candidateGenusField hd` contains a chosen square root of `d`.
 This file names that root and the resulting copy of `ℚ(√d)` inside the candidate genus field.
-When `d` is not a rational square, this base has degree two over `ℚ`, and the full candidate
-genus field has relative degree
+When `d` is not a rational square, this base has degree two over `ℚ`; in all cases the full
+candidate genus field has relative degree
 
 `[candidateGenusField hd : ℚ(√d)] = 2 ^ ((genusPrimeDiscriminants hd).card - 1)`.
 
@@ -117,15 +117,21 @@ theorem finrank_candidateGenusFieldBase {d : ℤ} (hd : Squarefree d)
     hx2 hxnot
   rwa [bot_sup_eq, IntermediateField.finrank_bot, one_mul] at h
 
-/-- **Relative degree of the candidate genus field over `ℚ(√d)`.** If the squarefree integer
-`d` is not a rational square, the prime-discriminant compositum has degree
-`2 ^ (t - 1)` over its embedded quadratic base, where
+/-- **Relative degree of the candidate genus field over `ℚ(√d)`.** For a squarefree integer `d`,
+the prime-discriminant compositum has degree `2 ^ (t - 1)` over its embedded quadratic base, where
 `t = (genusPrimeDiscriminants hd).card`. -/
-theorem finrank_candidateGenusField_over_candidateGenusFieldBase {d : ℤ} (hd : Squarefree d)
-    (hnsq : ¬ IsSquare (((d : ℤ) : ℚ))) :
+theorem finrank_candidateGenusField_over_candidateGenusFieldBase {d : ℤ} (hd : Squarefree d) :
     Module.finrank (candidateGenusFieldBase hd) (candidateGenusField hd) =
       2 ^ ((genusPrimeDiscriminants hd).card - 1) := by
   classical
+  by_cases hnsq : IsSquare (((d : ℤ) : ℚ))
+  · -- A rational square has trivial candidate genus field, so the degree is `1 = 2 ^ (0 - 1)`.
+    have hempty := genusPrimeDiscriminants_eq_empty_of_isSquare hd hnsq
+    have h1 : Module.finrank ℚ (candidateGenusField hd) = 1 := by
+      simp [finrank_candidateGenusField, hempty]
+    have h := Module.finrank_mul_finrank ℚ (candidateGenusFieldBase hd) (candidateGenusField hd)
+    rw [h1] at h
+    simp [hempty, Nat.eq_one_of_mul_eq_one_left h]
   let e : candidateGenusField hd ≃ₐ[ℚ] adjoin ℚ (Set.range (genusFieldRoot hd)) :=
     IntermediateField.equivOfEq (candidateGenusField_def hd)
   let F : IntermediateField ℚ (adjoin ℚ (Set.range (genusFieldRoot hd))) :=
