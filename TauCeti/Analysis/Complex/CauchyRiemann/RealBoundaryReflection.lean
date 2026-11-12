@@ -78,21 +78,11 @@ variable [NormedSpace ℝ F] [StarAddMonoid F] [StarModule ℝ F] [ContinuousSta
 
 /-! ### The reflected coefficient -/
 
-/-- Conjugation of a real-linear endomorphism by `star`, as a continuous linear map on the space
-of endomorphisms: `A ↦ star ∘ A ∘ star`. -/
-private def starConjCLM : (F →L[ℝ] F) →L[ℝ] (F →L[ℝ] F) :=
-  (ContinuousLinearMap.compL ℝ F F F (starL' ℝ : F ≃L[ℝ] F).toContinuousLinearMap).comp
-    ((ContinuousLinearMap.compL ℝ F F F).flip (starL' ℝ : F ≃L[ℝ] F).toContinuousLinearMap)
-
-private theorem starConjCLM_apply_apply (A : F →L[ℝ] F) (x : F) :
-    starConjCLM A x = star (A (star x)) := by
-  simp [starConjCLM]
-
 /-- The reflection of a field of real-linear endomorphisms across the real axis: `C z` on the
 closed upper half-plane and `star ∘ C (conj z) ∘ star` below it. It is the coefficient of the
 reflected equation, by `TauCeti.starSchwarzReflection_clm_apply`. -/
 def starSchwarzReflectionCoeff (C : ℂ → F →L[ℝ] F) (z : ℂ) : F →L[ℝ] F :=
-  if 0 ≤ z.im then C z else starConjCLM (C (conj z))
+  if 0 ≤ z.im then C z else (starL' ℝ : F ≃L[ℝ] F).arrowCongr (starL' ℝ) (C (conj z))
 
 variable {C : ℂ → F →L[ℝ] F}
 
@@ -103,8 +93,7 @@ theorem starSchwarzReflectionCoeff_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) :
 @[simp]
 theorem starSchwarzReflectionCoeff_apply_of_im_neg {z : ℂ} (hz : z.im < 0) (x : F) :
     starSchwarzReflectionCoeff C z x = star (C (conj z) (star x)) := by
-  rw [starSchwarzReflectionCoeff, ite_eq_right_iff.2 fun h ↦ (hz.not_ge h).elim,
-    starConjCLM_apply_apply]
+  simp [starSchwarzReflectionCoeff, hz.not_ge]
 
 /-- **The reflected equation, pointwise.** Reflecting `z ↦ C z (ξ z)` is applying the reflected
 coefficient to the reflected function. -/
@@ -121,7 +110,7 @@ doubled domain. -/
 theorem MemLpLoc.starSchwarzReflectionCoeff {p : ℝ≥0∞} {Ω : Set ℂ}
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hC : MemLpLoc p (Ω ∩ {z | 0 ≤ z.im}) C) :
     MemLpLoc p Ω (starSchwarzReflectionCoeff C) :=
-  hC.ite_conj hΩ (starConjCLM (F := F))
+  (hC.ite_conj hΩ ((starL' ℝ : F ≃L[ℝ] F).arrowCongr (starL' ℝ)).toContinuousLinearMap :)
 
 end Real
 
