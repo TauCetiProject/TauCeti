@@ -68,11 +68,10 @@ private theorem exists_eq_tmul_one_of_isIdempotentElem_of_finiteType
     [CommRing A] [Algebra k A] [ConnectedSpace (PrimeSpectrum A)]
     [CommRing B] [Algebra k B] [Algebra.FiniteType k B]
     {e : B ⊗[k] A} (he : IsIdempotentElem e) :
-    ∃ c : B, e = c ⊗ₜ[k] (1 : A) := by
+    ∃ c : B, IsIdempotentElem c ∧ e = c ⊗ₜ[k] (1 : A) := by
   let : Nontrivial A := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
   let q : B →ₐ[k] B ⧸ nilradical B := Ideal.Quotient.mkₐ k (nilradical B)
   have hq : Function.Surjective q := Ideal.Quotient.mkₐ_surjective k _
-  have : Algebra.FiniteType k (B ⧸ nilradical B) := Algebra.FiniteType.of_surjective q hq
   have hqker : RingHom.ker q = nilradical B := Ideal.Quotient.mkₐ_ker k _
   let G := Algebra.TensorProduct.map q (AlgHom.id k A)
   -- the kernel of `G` is the extension of the nilradical, which consists of nilpotents
@@ -88,7 +87,7 @@ private theorem exists_eq_tmul_one_of_isIdempotentElem_of_finiteType
   obtain ⟨c, hc, hcq⟩ := exists_isIdempotentElem_eq_of_ker_isNilpotent (q : B →+* _)
     (fun x hx ↦ by simpa [mem_nilradical] using (hqker ▸ hx : x ∈ nilradical B)) cb
     (RingHom.mem_range.mpr (hq cb)) hcbid
-  refine ⟨c, eq_of_isNilpotent_sub_of_isIdempotentElem he ?_ (hker _ ?_)⟩
+  refine ⟨c, hc, eq_of_isNilpotent_sub_of_isIdempotentElem he ?_ (hker _ ?_)⟩
   · simpa using hc.map (Algebra.TensorProduct.includeLeft : B →ₐ[k] B ⊗[k] A)
   · rw [RingHom.mem_ker, map_sub, hcb, sub_eq_zero]
     simp [G, ← hcq]
@@ -117,14 +116,10 @@ theorem _root_.IsIdempotentElem.exists_isIdempotentElem_eq_tmul_one
   have hF : Function.Injective F := fun a b h ↦
     hlin ((hFlin a).symm.trans (h.trans (hFlin b)))
   have hxe : F x = e := (hFlin x).trans hx
-  obtain ⟨c, hc⟩ := exists_eq_tmul_one_of_isIdempotentElem_of_finiteType (A := A) (e := x)
+  obtain ⟨c, hc, hcx⟩ := exists_eq_tmul_one_of_isIdempotentElem_of_finiteType (A := A) (e := x)
     ((IsIdempotentElem.map_iff hF).mp (by rwa [hxe]))
-  have hec : e = (c : B) ⊗ₜ[k] (1 : A) := by rw [← hxe, hc]; simp [F]
-  have hinj : Function.Injective (Algebra.TensorProduct.includeLeft : B →ₐ[k] B ⊗[k] A) :=
-    Algebra.TensorProduct.includeLeft_injective (S := k) (B := A)
-      (FaithfulSMul.algebraMap_injective k A)
-  exact ⟨c, (IsIdempotentElem.map_iff hinj).mp
-    (by rwa [Algebra.TensorProduct.includeLeft_apply, ← hec]), hec⟩
+  have hec : e = (c : B) ⊗ₜ[k] (1 : A) := by rw [← hxe, hcx]; simp [F]
+  exact ⟨c, hc.map B'.val, hec⟩
 
 /-- The tensor product of two connected algebras over an algebraically closed field has connected
 spectrum. -/
