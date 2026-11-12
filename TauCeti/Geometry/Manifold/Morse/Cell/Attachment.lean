@@ -248,7 +248,6 @@ private theorem milnorFunction_symm_scale_le (hμa : Antitone μ)
   simp only [e, ContinuousLinearEquiv.apply_symm_apply, norm_smul, mul_pow, Real.norm_eq_abs,
     sq_abs]
   have hs2 : s ^ 2 ≤ 1 := pow_le_one₀ hs.1 hs.2
-  have hb : 0 ≤ ‖(e (ψ i x)).2‖ ^ 2 := sq_nonneg _
   have hμle := hμa (show ‖(e (ψ i x)).1‖ ^ 2 + 2 * (s ^ 2 * ‖(e (ψ i x)).2‖ ^ 2) ≤
     ‖(e (ψ i x)).1‖ ^ 2 + 2 * ‖(e (ψ i x)).2‖ ^ 2 by nlinarith)
   nlinarith
@@ -372,8 +371,7 @@ private theorem milnorFunction_eq_add_iff (hμ_nonneg : ∀ r, 0 ≤ μ r) :
     set e := EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k i
     rcases le_or_gt (2 * ε) (‖(e (ψ i x)).1‖ ^ 2 + 2 * ‖(e (ψ i x)).2‖ ^ 2) with h | h
     · rw [hFx, hμ₀ _ h, sub_zero, ← hfx]
-    · have hu := sq_nonneg ‖(e (ψ i x)).1‖
-      have hμx := hμ_nonneg (‖(e (ψ i x)).1‖ ^ 2 + 2 * ‖(e (ψ i x)).2‖ ^ 2)
+    · have hμx := hμ_nonneg (‖(e (ψ i x)).1‖ ^ 2 + 2 * ‖(e (ψ i x)).2‖ ^ 2)
       rw [hFx, hfx]
       constructor <;> intro h' <;> nlinarith
   · rw [milnorFunction_of_forall_notMem (not_exists.1 hxs)]

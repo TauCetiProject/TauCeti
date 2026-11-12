@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Basic
 public import TauCeti.Geometry.Manifold.VectorField.ModelChart
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.PartitionOfUnity
@@ -49,6 +50,10 @@ union with the interiors of the critical-point neighbourhoods is the returned ne
   compact set whose critical points are nondegenerate, and its Morse-function specialization
   `TauCeti.IsMorse.exists_contMDiff_pseudoGradientOn_nhds`.
 * `TauCeti.IsMorse.exists_isAdaptedPseudoGradient`: existence of adapted pseudo-gradients.
+* `TauCeti.IsAdaptedPseudoGradient.mdifferentiable`: differentiability of `f` follows from the
+  Morse-chart condition of an adapted pseudo-gradient.
+* `TauCeti.IsAdaptedPseudoGradient.antitone_comp`: `f` is antitone along every integral curve of an
+  adapted pseudo-gradient.
 
 The chart calculus used here is general and lives in
 `TauCeti/Geometry/Manifold/MFDeriv/ModelChart.lean` and
@@ -353,6 +358,32 @@ end IsManifold
 
 end MorseChart
 
+namespace IsAdaptedPseudoGradient
+
+variable [IsManifold 𝓘(ℝ, E) ∞ M] {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
+
+/-- If `X` is an adapted pseudo-gradient for `f`, then `f` is differentiable; this hypothesis need
+not be assumed separately. -/
+theorem mdifferentiable (hX : IsAdaptedPseudoGradient f X) : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f :=
+  fun p ↦ by
+  -- Where `mfderiv` is nonzero, `f` is differentiable by definition of `mfderiv`; a zero of the
+  -- derivative has a Morse chart, in which `f` is the (smooth) quadratic normal form.
+  by_contra hd
+  obtain ⟨φ, -⟩ := hX.exists_morseChart p (mfderiv_zero_of_not_mdifferentiableAt hd)
+  have := Module.Finite.equiv φ.coord.symm
+  have h : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) (φ.quadratic ∘ φ.toChart) p :=
+    (φ.differentiableAt_quadratic _).mdifferentiableAt.comp p
+      (φ.mdifferentiableAt_toChart φ.mem_source)
+  exact hd (h.congr_of_eventuallyEq (Filter.eventuallyEq_of_mem
+    (φ.toChart.open_source.mem_nhds φ.mem_source) φ.eqOn_quadratic))
+
+/-- **`f` is antitone along every integral curve of an adapted pseudo-gradient.** -/
+theorem antitone_comp {γ : ℝ → M} (hX : IsAdaptedPseudoGradient f X) (hγ : IsMIntegralCurve γ X) :
+    Antitone (f ∘ γ) :=
+  hγ.antitone_comp (fun t ↦ hX.mdifferentiable (γ t)) fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
+
+end IsAdaptedPseudoGradient
+
 section Existence
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
@@ -613,23 +644,6 @@ theorem IsMorse.exists_isAdaptedPseudoGradient [CompactSpace M] [T2Space M]
   refine ⟨X, hX, fun y hy ↦ hdesc y (hUuniv ▸ mem_univ y) hy, fun x hx ↦ ?_⟩
   obtain ⟨φ, -, hφ⟩ := hchart x (mem_univ x) hx
   exact ⟨φ, fun y hy ↦ hφ y hy ▸ φ.coord_mfderiv_field hy⟩
-
-namespace IsAdaptedPseudoGradient
-
-omit [FiniteDimensional ℝ E] in
-/-- **An adapted pseudo-gradient makes `f` differentiable.** An adapted pseudo-gradient supplies
-`MDifferentiable f`, so results about it need no separate differentiability hypothesis. -/
-theorem mdifferentiable {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} (hX : IsAdaptedPseudoGradient f X) :
-    MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := fun y ↦ by
-  -- At a point where `f` is not differentiable, `mfderiv` vanishes, so the point is critical and
-  -- `f` is a quadratic form in a Morse chart around it, which is differentiable.
-  by_contra hy
-  obtain ⟨φ, -⟩ := hX.exists_morseChart y (mfderiv_zero_of_not_mdifferentiableAt hy)
-  exact hy (((φ.differentiableAt_quadratic _).mdifferentiableAt.comp y
-    (φ.mdifferentiableAt_toChart φ.mem_source)).congr_of_eventuallyEq
-      (φ.eqOn_quadratic.eventuallyEq_of_mem (φ.toChart.open_source.mem_nhds φ.mem_source)))
-
-end IsAdaptedPseudoGradient
 
 end Existence
 

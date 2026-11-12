@@ -91,7 +91,7 @@ theorem IsMorse.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_ne [H
     (fun _ _ hst hcompact hcrit ↦ isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero
       hf.contMDiff hst hcompact
         (fun x hx₁ hx₂ hx ↦ hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hx₁, hx₂⟩) R n)
-    (fun p hp hap hpb _ hδ hcompact ↦ by
+    (fun p _ hap hpb _ hδ hcompact ↦ by
       obtain ⟨ε, hε, hεδ, hiso⟩ := hf.exists_singularHomology_sublevelPair_iso_sigma hδ hcompact
       -- No critical point of the level has index `n`, so the coproduct is empty.
       have : IsEmpty {q : ↥(criticalPoints I f ∩ f ⁻¹' {f p}) // manifoldMorseIndex I f q = n} :=

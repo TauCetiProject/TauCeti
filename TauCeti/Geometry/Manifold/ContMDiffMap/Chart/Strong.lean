@@ -39,6 +39,8 @@ neighbourhoods, for every finite order at most `n`.
   (`ContMDiffMap.StrongCkControl.isOpen_ball`).
 * `ContMDiffMap.manifoldStrongWhitneyTopology_le_manifoldWeakWhitneyTopology`: the strong
   topology is finer than the weak Whitney topology; in particular it is Hausdorff.
+* `ContMDiffMap.tendsto_smul_manifoldStrongWhitney`: small multiples of a compactly supported map
+  tend to zero.
 * `ContMDiffMap.manifoldStrongWhitneyTopology_eq_manifoldWeakWhitneyTopology`: on a compact
   manifold the two topologies agree, so that compact chart `C^k` seminorm balls generate the
   strong topology there.
@@ -318,6 +320,34 @@ theorem manifoldStrongWhitneyTopology_le_manifoldWeakWhitneyTopology :
   refine isOpen_iff_mem_nhds.mpr fun f hf ↦ ?_
   obtain ⟨ε, hε, hsub⟩ := exists_ball_single_subset_chartJetSet x y hm hK hV hf
   exact mem_nhds_manifoldStrongWhitney_iff.mpr ⟨_, hsub⟩
+
+/-- **Small multiples of a compactly supported map tend to zero in the strong Whitney topology.**
+Compact support cannot be dropped: on `ℝ` a strong neighbourhood of `0` whose tolerances tend to
+zero at infinity contains no nonzero constant. -/
+theorem tendsto_smul_manifoldStrongWhitney (u : C^n⟮I, M; 𝓘(𝕜, F), F⟯)
+    (hu : HasCompactSupport u) : Tendsto (fun δ : 𝕜 ↦ δ • u) (𝓝 0) (𝓝 0) := by
+  refine (hasBasis_nhds_manifoldStrongWhitney 0).tendsto_right_iff.mpr fun c _ ↦ ?_
+  let A : c.ι → Set M := fun i ↦ (extChartAt I (c.center i)).symm ''
+    (Subtype.val '' (c.compact i : Set (extChartAt I (c.center i)).target))
+  have hfin : {i | (A i ∩ tsupport u).Nonempty}.Finite :=
+    c.locallyFinite.finite_nonempty_inter_compact hu
+  have hlt : ∀ i ∈ {i | (A i ∩ tsupport u).Nonempty}, ∀ᶠ δ : 𝕜 in 𝓝 0,
+      ‖δ‖ * chartCkSeminorm (c.center i) (c.compact i) c.order c.order_le u < c.tolerance i := by
+    intro i _
+    have h : Tendsto (fun δ : 𝕜 ↦ ‖δ‖ * chartCkSeminorm (c.center i) (c.compact i) c.order
+        c.order_le u) (𝓝 0) (𝓝 0) := by
+      simpa using (continuous_norm.tendsto (0 : 𝕜)).mul_const
+        (chartCkSeminorm (c.center i) (c.compact i) c.order c.order_le u)
+    exact h.eventually (gt_mem_nhds (c.tolerance_pos i))
+  filter_upwards [(eventually_all_finite hfin).mpr hlt] with δ hδ
+  refine StrongCkControl.mem_ball.mpr fun i ↦ ?_
+  rw [sub_zero, map_smul_eq_mul]
+  by_cases hi : (A i ∩ tsupport u).Nonempty
+  · exact hδ i hi
+  · -- The coordinate set misses the support of `u`, where `u` vanishes locally.
+    rw [chartCkSeminorm_eq_zero_of_eventuallyEq_zero _ _ _ _ fun z hz ↦
+      notMem_tsupport_iff_eventuallyEq.mp fun h ↦ hi ⟨_, ⟨z, ⟨z, hz, rfl⟩, rfl⟩, h⟩, mul_zero]
+    exact c.tolerance_pos i
 
 end Strong
 

@@ -429,7 +429,7 @@ theorem isNondegenerateQuadraticFamily_prod_of_finrank_eq_two (hV₁ : finrank �
     (hV₂ : finrank ℝ V₂ = 2) {Q₁ : QuadraticForm ℝ V₁} {Q₂ : QuadraticForm ℝ V₂}
     (hQ₁ : Q₁.Nondegenerate) (hQ₂ : Q₂.Nondegenerate) :
     (ω₁.prod ω₂).IsNondegenerateQuadraticFamily ![Q₁.prod 0, (0 : QuadraticForm ℝ V₁).prod Q₂] := by
-  obtain ⟨c₁, hc₁0, hc₁⟩ := exists_hamiltonianEnd_mul_self_eq_smul_one (ω := ω₁) hV₁ hQ₁
+  obtain ⟨c₁, _, hc₁⟩ := exists_hamiltonianEnd_mul_self_eq_smul_one (ω := ω₁) hV₁ hQ₁
   obtain ⟨c₂, hc₂0, hc₂⟩ := exists_hamiltonianEnd_mul_self_eq_smul_one (ω := ω₂) hV₂ hQ₂
   -- Rescale `Q₂` by `s` so that the squares `c₁` and `s² c₂` of the two Hamiltonian
   -- endomorphisms differ; their minimal polynomials are then coprime.

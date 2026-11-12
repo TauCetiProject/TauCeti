@@ -103,7 +103,7 @@ theorem even_ncard_morseBrokenTrajectorySet (p r : criticalPoints 𝓘(ℝ, E) f
     (hX.value_lt_of_mem_morseTrajectorySlice (hne hqr) hz₂).trans
       (hX.value_lt_of_mem_morseTrajectorySlice (hne hpq) hz₁)
   obtain ⟨c₁, c₂, hr₂, h₂₁, h₁p, hgap⟩ := hf.exists_lt_lt_forall_mem_Ioo hlt
-  rw [← hX.ncard_morseBrokenTrajectoryPairs hX.mdifferentiable p r hr₂ h₁p hgap]
+  rw [← hX.ncard_morseBrokenTrajectoryPairs p r hr₂ h₁p hgap]
   exact h.even_ncard_morseBrokenTrajectoryPairs hf (by omega) hr₂ h₂₁ h₁p hgap
 
 /-- **The mod-two Morse boundary squares to zero.** For a Morse function on a compact

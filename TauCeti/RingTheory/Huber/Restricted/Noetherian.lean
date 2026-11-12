@@ -51,8 +51,7 @@ public section
 
 namespace TauCeti.Huber
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
-  [CompleteSpace K]
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 /-- **The completed one-variable Tate algebra over a complete nonarchimedean field is a principal
 ideal ring.** This is transported from the restricted univariate series ring, where Weierstrass

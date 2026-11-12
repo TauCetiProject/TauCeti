@@ -75,8 +75,7 @@ theorem finrank_candidateGenusField_over_candidateGenusFieldBase_eq_two_pow_ncar
     (hd : Squarefree d) :
     Module.finrank (candidateGenusFieldBase hd) (candidateGenusField hd) =
       2 ^ ((ramifiedPrimes K).ncard - 1) := by
-  rw [finrank_candidateGenusField_over_candidateGenusFieldBase hd
-      (NumberField.not_isSquare_radicand hmin),
+  rw [finrank_candidateGenusField_over_candidateGenusFieldBase hd,
     card_genusPrimeDiscriminants_eq_ncard_ramifiedPrimes hmin hgen hd]
 
 end TauCeti.Multiquadratic

@@ -96,7 +96,7 @@ theorem mem_morseTrajectorySlice {p q z : M} :
 theorem value_lt_of_mem_morseTrajectorySlice {p q z : M}
     (hpq : p ≠ q) (hz : z ∈ hX.morseTrajectorySlice p q) : f q < f p := by
   rw [mem_morseTrajectorySlice] at hz
-  have h := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hX.mdifferentiable hpq ⟨hz.1, hz.2.1⟩
+  have h := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq ⟨hz.1, hz.2.1⟩
   exact h.1.trans h.2
 
 /-- **Reversing the pseudo-gradient reverses the trajectories.** The middle-level slice of the
@@ -107,7 +107,7 @@ theorem neg_morseTrajectorySlice (hf : IsMorse 𝓘(ℝ, E) f) (p q : M) :
   ext z
   simp only [mem_morseTrajectorySlice, hX.neg_flow hf, Flow.unstableSet_reverse,
     Flow.stableSet_reverse, Pi.neg_apply]
-  exact ⟨fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₂, h₁, by linarith⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₂, h₁, by linarith⟩⟩
+  exact ⟨fun ⟨h₁, h₂, _⟩ ↦ ⟨h₂, h₁, by linarith⟩, fun ⟨h₁, h₂, _⟩ ↦ ⟨h₂, h₁, by linarith⟩⟩
 
 /-- **Trajectories read off a decomposition of a stable set.** Suppose that, apart from `q` itself,
 the stable set of a point `q` is covered by the orbits of points `y i`, where `y i` flows
@@ -121,7 +121,6 @@ theorem morseTrajectorySlice_eq_image_of_stableSet_subset
     (hy : ∀ i, y i ∈ hX.flow.unstableSet (a i) ∩ hX.flow.stableSet q)
     (hτ : ∀ i, f (hX.flow (τ i) (y i)) = (f (a i) + f q) / 2) :
     hX.morseTrajectorySlice p q = (fun i ↦ hX.flow (τ i) (y i)) '' {i | a i = p} := by
-  have hf := hX.mdifferentiable
   ext w
   simp only [mem_morseTrajectorySlice, mem_image, mem_ofPred_eq]
   constructor
@@ -139,7 +138,7 @@ theorem morseTrajectorySlice_eq_image_of_stableSet_subset
         ((Flow.apply_mem_unstableSet_iff _ _).2 (hy i).1) hwu rfl
     -- The orbit of `y i` crosses the middle level only once.
     obtain ⟨s, -, hs⟩ :=
-      hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hf (hai ▸ hpq) (hy i)
+      hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet (hai ▸ hpq) (hy i)
     refine ⟨i, hai, ?_⟩
     rw [hs (τ i) (hτ i), hs t (hwc.trans (by rw [hai]))]
   · rintro ⟨i, rfl, rfl⟩
@@ -162,13 +161,12 @@ trajectories from `p` to `q` are as many as the points of the middle-level slice
 theorem natCard_orbitQuotient_eq_ncard_morseTrajectorySlice {p q : M} :
     Nat.card (Quotient (Flow.connectingOrbitSetoid hX.flow p q)) =
       (hX.morseTrajectorySlice p q).ncard := by
-  have hf := hX.mdifferentiable
   rw [morseTrajectorySlice]
   by_cases hpq : p = q
   · -- A trajectory from a point back to itself is constant, so there is at most one.
     subst hpq
     have hC : ∀ y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet p, y = p := fun y hy ↦
-      hX.eq_of_mem_unstableSet_inter_stableSet hf hy
+      hX.eq_of_mem_unstableSet_inter_stableSet hy
     have : Subsingleton ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet p) :=
       ⟨fun a b ↦ Subtype.ext ((hC _ a.2).trans (hC _ b.2).symm)⟩
     have hlevel : hX.flow.unstableSet p ∩ hX.flow.stableSet p ∩ {z | f z = (f p + f p) / 2} =
@@ -178,14 +176,14 @@ theorem natCard_orbitQuotient_eq_ncard_morseTrajectorySlice {p q : M} :
     exact (Nat.card_congr (Equiv.ofBijective (Quotient.mk (Flow.connectingOrbitSetoid hX.flow p p))
       ⟨fun a b _ ↦ Subsingleton.elim a b, Quotient.mk_surjective⟩).symm)
   by_cases hlt : f q < f p
-  · obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hf hpq
+  · obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hpq
       (c := (f p + f q) / 2) ⟨by linarith, by linarith⟩
     exact (Nat.card_congr e.toEquiv).trans (Nat.card_coe_set_eq _)
   · -- Without a drop in value there are no trajectories at all.
     have hC : hX.flow.unstableSet p ∩ hX.flow.stableSet q = ∅ :=
       eq_empty_of_forall_notMem fun y hy ↦
-        hlt ((hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hpq hy).1.trans
-          (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hpq hy).2)
+        hlt ((hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq hy).1.trans
+          (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq hy).2)
     have : IsEmpty ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet q) := by
       rw [hC]
       infer_instance
