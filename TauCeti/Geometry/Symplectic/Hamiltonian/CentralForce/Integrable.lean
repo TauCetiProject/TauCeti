@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Integrable
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
-import TauCeti.Geometry.Symplectic.Manifold.Opens
+import TauCeti.Geometry.Symplectic.Hamiltonian.Opens
 
 /-!
 # Planar central forces are completely integrable
@@ -377,10 +377,8 @@ theorem poissonBracket_centralForceEnergyMomentum_comp_subtypeVal [FiniteDimensi
       (fun y ↦ centralForceEnergyMomentum b m U y k) ∘ Subtype.val := rfl
   -- The bracket is computed on `V × V`, where `{H, L} = 0`.
   rw [hcomp, hcomp,
-    ((SymplecticForm.isNondegenerate_constSmooth _).mpullback_subtype_val _).poissonBracket_comp
-      (SymplecticForm.isNondegenerate_constSmooth _) contMDiff_subtype_val rfl
-      (isRegularPoint_iff.1 (isRegularPoint_subtype_val x))
-      (hdiff i) (hdiff j),
+    (SymplecticForm.isNondegenerate_constSmooth _).poissonBracket_comp_subtype_val W (hdiff i)
+      (hdiff j),
     SymplecticForm.poissonBracket_constSmooth]
   have h := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum (m := m)
     (U := U) (x := (x : V × V)) (b 0) (b 1)

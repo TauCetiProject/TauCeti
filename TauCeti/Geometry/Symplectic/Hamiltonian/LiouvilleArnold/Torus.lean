@@ -300,12 +300,7 @@ Liouville–Arnold theorem). Let `F` be a family of `n` Poisson-commuting functi
 `2n`-dimensional symplectic manifold, whose Hamiltonian vector fields need not be complete. If the
 connected component `L` of `x` in its level `F⁻¹(F x)` is compact and consists of regular points of
 `F`, then there are a discrete full lattice `Λ ⊆ ι → ℝ` and a Lagrangian embedding of the torus
-`(ι → ℝ) / Λ` into `M` with range `L`.
-
-The lattice is the stabilizer of `x` for the Hamiltonian flow action of the system restricted to an
-open neighbourhood of `L` on which its flows are complete
-(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField`),
-and the embedding is `[v] ↦ v • x`. -/
+`(ι → ℝ) / Λ` into `M` with range `L`. -/
 theorem exists_isLagrangianEmbedding_of_isCompact (hdim : 2 * Fintype.card ι = finrank ℝ E)
     {x : M}
     (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)

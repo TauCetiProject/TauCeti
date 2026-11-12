@@ -36,8 +36,9 @@ so `L` is the range of a Lagrangian embedding of a torus `(ι → ℝ) / Λ` for
 identified with `(ι → ℝ) ⧸ Λ` (`Submodule.orbitRelQuotientContinuousAddEquiv`), and a lattice basis
 then identifies it with `(ℝ / ℤ)ⁿ`.
 
-Other components of the level need not be regular. The smooth identification and action-angle
-coordinates near `L` are not treated here.
+Other components of the level need not be regular. Action-angle coordinates near `L` are not
+treated here; the smooth Lagrangian embedding of the torus onto `L` is proved in
+`TauCeti.Geometry.Symplectic.Hamiltonian.LiouvilleArnold.Torus`.
 
 ## Main results
 
