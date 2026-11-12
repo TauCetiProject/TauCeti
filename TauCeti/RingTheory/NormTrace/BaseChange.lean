@@ -148,7 +148,6 @@ theorem Algebra.norm_sum_X_tmul_tensorProductBasis {ι : Type*} [Fintype ι]
       MvPolynomial.map (algebraMap K T) (Algebra.norm (MvPolynomial ι K)
         (∑ j, (MvPolynomial.X j : MvPolynomial ι K) ⊗ₜ[K] b j)) := by
   let := Module.Free.of_basis b
-  let := Module.Finite.of_basis b
   -- Reassociate and remove the middle copy of `T`, allowing `B` to be noncommutative.
   let e := (Algebra.TensorProduct.assoc K T (MvPolynomial ι T) (MvPolynomial ι T) T B).symm.trans
     (Algebra.TensorProduct.congr (Algebra.TensorProduct.rid T (MvPolynomial ι T)
@@ -164,7 +163,6 @@ theorem _root_.Module.Basis.norm_sum_tmul_eq_aeval {ι : Type*} [Fintype ι] (b 
     Algebra.norm T (∑ j, x j ⊗ₜ[K] b j) = MvPolynomial.aeval x
       (Algebra.norm (MvPolynomial ι K) (∑ j, (MvPolynomial.X j : MvPolynomial ι K) ⊗ₜ[K] b j)) := by
   let := Module.Free.of_basis b
-  let := Module.Finite.of_basis b
   rw [← Algebra.norm_rTensor]
   simp
 
@@ -184,7 +182,6 @@ theorem Algebra.trace_baseChange_tmul (x : B) :
   by_cases hfin : Module.Finite K B
   · simp only [Algebra.trace_apply, ← Algebra.baseChange_lmul, LinearMap.trace_baseChange]
   · nontriviality A
-    have : Nontrivial K := (algebraMap K A).domain_nontrivial
     have hfin' : ¬ Module.Finite A (A ⊗[K] B) := mt Module.Finite.of_baseChange hfin
     rw [Algebra.trace_eq_zero_of_not_exists_basis K fun ⟨_, ⟨b⟩⟩ ↦ hfin (.of_basis b),
       Algebra.trace_eq_zero_of_not_exists_basis A fun ⟨_, ⟨b⟩⟩ ↦ hfin' (.of_basis b)]
