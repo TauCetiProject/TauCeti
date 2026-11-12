@@ -168,20 +168,20 @@ theorem chartValueL_contMDiffSMulL_ae_halfCoord
 @[simp]
 theorem contMDiffSMulL_const (c : ℝ) :
     contMDiffSMulL A p k (contMDiff_const (c := c)) = c • ContinuousLinearMap.id ℝ _ :=
-  A.halfSectionChartData.contDiffOnSMulL_const volume p k _ _ _ c _
+  A.halfSectionChartData.contDiffOnSMulL_const volume p k _ _ _ c
 
 /-- Smooth multiplication is additive in the multiplier: `(φ + ψ) • w = φ • w + ψ • w`. -/
 theorem contMDiffSMulL_add (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ ψ) :
     contMDiffSMulL A p k (hφ.add hψ) = contMDiffSMulL A p k hφ + contMDiffSMulL A p k hψ :=
-  A.halfSectionChartData.contDiffOnSMulL_add volume p k _ _ _ _ _ _ _ _
+  A.halfSectionChartData.contDiffOnSMulL_add volume p k _ _ _ _ _ _ _
 
 /-- Smooth multiplication is multiplicative in the multiplier: `(φ ψ) • w = φ • (ψ • w)`. -/
 theorem contMDiffSMulL_mul (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ ψ) :
     contMDiffSMulL A p k (hφ.mul hψ) =
       (contMDiffSMulL A p k hφ).comp (contMDiffSMulL A p k hψ) :=
-  A.halfSectionChartData.contDiffOnSMulL_mul volume p k _ _ _ _ _ _ _ _
+  A.halfSectionChartData.contDiffOnSMulL_mul volume p k _ _ _ _ _ _ _
 
 /-- Smooth multiplication commutes with the inclusion `W^{k+1,p}(V) → W^{k,p}(V)`. -/
 theorem lowerOrderL_contMDiffSMulL (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)

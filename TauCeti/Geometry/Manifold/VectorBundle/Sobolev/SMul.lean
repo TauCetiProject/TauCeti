@@ -150,12 +150,42 @@ theorem chartValueL_contDiffOnSMulL_ae (w : C.sobolevSections μ p k) (i : Fin C
       =ᵐ[μ.restrict (C.image i)] fun y ↦ ψ i y • C.chartValueL μ p k i w y :=
   C.chartValueL_ae_eq_smul μ p k (C.value_contDiffOnSMulL_ae μ p k hU hK hKU hψ hsec w i)
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ F] in
+/-- Multiplying the readings of a section by a constant gives the readings of a section. -/
+theorem exists_coord_eq_const_smul (c : ℝ) (s : S) :
+    ∃ t, ∀ i, ∀ y ∈ C.image i, C.coord i t y = c • C.coord i s y :=
+  ⟨c • s, fun i y hy ↦ C.coord_smul i c s y hy⟩
+
+include hsec in
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ F] in
+/-- If multiplying the readings of sections by `ψ` and by `φ` gives the readings of sections,
+then so does multiplying them by `ψ + φ`. -/
+theorem exists_coord_eq_add_smul
+    (hsecφ : ∀ s, ∃ t, ∀ i, ∀ y ∈ C.image i, C.coord i t y = φ i y • C.coord i s y) (s : S) :
+    ∃ t, ∀ i, ∀ y ∈ C.image i, C.coord i t y = (ψ i y + φ i y) • C.coord i s y := by
+  obtain ⟨t₁, ht₁⟩ := hsec s
+  obtain ⟨t₂, ht₂⟩ := hsecφ s
+  exact ⟨t₁ + t₂, fun i y hy ↦ by rw [C.coord_add i t₁ t₂ y hy, ht₁ i y hy, ht₂ i y hy, add_smul]⟩
+
+include hsec in
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ F] in
+/-- If multiplying the readings of sections by `ψ` and by `φ` gives the readings of sections,
+then so does multiplying them by `ψ * φ`. -/
+theorem exists_coord_eq_mul_smul
+    (hsecφ : ∀ s, ∃ t, ∀ i, ∀ y ∈ C.image i, C.coord i t y = φ i y • C.coord i s y) (s : S) :
+    ∃ t, ∀ i, ∀ y ∈ C.image i, C.coord i t y = (ψ i y * φ i y) • C.coord i s y := by
+  obtain ⟨t₁, ht₁⟩ := hsecφ s
+  obtain ⟨t₂, ht₂⟩ := hsec t₁
+  exact ⟨t₂, fun i y hy ↦ by rw [ht₂ i y hy, ht₁ i y hy, mul_smul]⟩
+
 /-- Multiplication by a constant is scalar multiplication. -/
 @[simp]
-theorem contDiffOnSMulL_const (c : ℝ)
-    (hc : ∀ s, ∃ t, ∀ i, ∀ y ∈ C.image i, C.coord i t y = c • C.coord i s y) :
-    C.contDiffOnSMulL μ p k hU hK hKU (ψ := fun _ _ ↦ c) (fun _ ↦ contDiffOn_const) hc =
-      c • ContinuousLinearMap.id ℝ _ := by
+theorem contDiffOnSMulL_const (c : ℝ) :
+    C.contDiffOnSMulL μ p k hU hK hKU (ψ := fun _ _ ↦ c) (fun _ ↦ contDiffOn_const)
+      (C.exists_coord_eq_const_smul c) = c • ContinuousLinearMap.id ℝ _ := by
   ext1 w
   refine Subtype.ext <| funext fun i ↦ funext fun j ↦ ?_
   rw [contDiffOnSMulL_apply, smul_apply, ContinuousLinearMap.id_apply,
@@ -164,9 +194,9 @@ theorem contDiffOnSMulL_const (c : ℝ)
 
 /-- Chartwise smooth multiplication is additive in the multiplier: `(ψ + φ) • w = ψ • w + φ • w`. -/
 theorem contDiffOnSMulL_add (hφ : ∀ i, ContDiffOn ℝ ∞ (φ i) (U i))
-    (hsecφ : ∀ s, ∃ t, ∀ i, ∀ y ∈ C.image i, C.coord i t y = φ i y • C.coord i s y)
-    (hsecψφ : ∀ s, ∃ t, ∀ i, ∀ y ∈ C.image i, C.coord i t y = (ψ i y + φ i y) • C.coord i s y) :
-    C.contDiffOnSMulL μ p k hU hK hKU (fun i ↦ (hψ i).add (hφ i)) hsecψφ =
+    (hsecφ : ∀ s, ∃ t, ∀ i, ∀ y ∈ C.image i, C.coord i t y = φ i y • C.coord i s y) :
+    C.contDiffOnSMulL μ p k hU hK hKU (fun i ↦ (hψ i).add (hφ i))
+      (C.exists_coord_eq_add_smul hsec hsecφ) =
       C.contDiffOnSMulL μ p k hU hK hKU hψ hsec + C.contDiffOnSMulL μ p k hU hK hKU hφ hsecφ := by
   ext1 w
   refine Subtype.ext <| funext fun i ↦ funext fun j ↦ ?_
@@ -177,9 +207,9 @@ theorem contDiffOnSMulL_add (hφ : ∀ i, ContDiffOn ℝ ∞ (φ i) (U i))
 /-- Chartwise smooth multiplication is multiplicative in the multiplier:
 `(ψ φ) • w = ψ • (φ • w)`. -/
 theorem contDiffOnSMulL_mul (hφ : ∀ i, ContDiffOn ℝ ∞ (φ i) (U i))
-    (hsecφ : ∀ s, ∃ t, ∀ i, ∀ y ∈ C.image i, C.coord i t y = φ i y • C.coord i s y)
-    (hsecψφ : ∀ s, ∃ t, ∀ i, ∀ y ∈ C.image i, C.coord i t y = (ψ i y * φ i y) • C.coord i s y) :
-    C.contDiffOnSMulL μ p k hU hK hKU (fun i ↦ (hψ i).mul (hφ i)) hsecψφ =
+    (hsecφ : ∀ s, ∃ t, ∀ i, ∀ y ∈ C.image i, C.coord i t y = φ i y • C.coord i s y) :
+    C.contDiffOnSMulL μ p k hU hK hKU (fun i ↦ (hψ i).mul (hφ i))
+      (C.exists_coord_eq_mul_smul hsec hsecφ) =
       (C.contDiffOnSMulL μ p k hU hK hKU hψ hsec).comp
         (C.contDiffOnSMulL μ p k hU hK hKU hφ hsecφ) := by
   ext1 w
@@ -285,20 +315,20 @@ theorem chartValueL_contMDiffSMulL_ae_coord (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(�
 @[simp]
 theorem contMDiffSMulL_const (c : ℝ) :
     contMDiffSMulL A μ p k (contMDiff_const (c := c)) = c • ContinuousLinearMap.id ℝ _ :=
-  A.sectionChartData.contDiffOnSMulL_const μ p k _ _ _ c _
+  A.sectionChartData.contDiffOnSMulL_const μ p k _ _ _ c
 
 /-- Smooth multiplication is additive in the multiplier: `(φ + ψ) • w = φ • w + ψ • w`. -/
 theorem contMDiffSMulL_add (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ψ) :
     contMDiffSMulL A μ p k (hφ.add hψ) = contMDiffSMulL A μ p k hφ + contMDiffSMulL A μ p k hψ :=
-  A.sectionChartData.contDiffOnSMulL_add μ p k _ _ _ _ _ _ _ _
+  A.sectionChartData.contDiffOnSMulL_add μ p k _ _ _ _ _ _ _
 
 /-- Smooth multiplication is multiplicative in the multiplier: `(φ ψ) • w = φ • (ψ • w)`. -/
 theorem contMDiffSMulL_mul (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ψ) :
     contMDiffSMulL A μ p k (hφ.mul hψ) =
       (contMDiffSMulL A μ p k hφ).comp (contMDiffSMulL A μ p k hψ) :=
-  A.sectionChartData.contDiffOnSMulL_mul μ p k _ _ _ _ _ _ _ _
+  A.sectionChartData.contDiffOnSMulL_mul μ p k _ _ _ _ _ _ _
 
 /-- Smooth multiplication commutes with the inclusion `W^{k+1,p}(V) → W^{k,p}(V)`. -/
 theorem lowerOrderL_contMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
