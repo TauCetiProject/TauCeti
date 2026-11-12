@@ -29,7 +29,7 @@ open scoped ENNReal
 namespace MeasureTheory
 
 /-- The supremum of a nonempty finite family of `Lᵖ` functions is in `Lᵖ`. -/
-theorem memLp_finset_sup' {α E ι : Type*} [MeasurableSpace α] {μ : Measure α}
+theorem memLp_finset_sup' {α E ι : Type*} {m : MeasurableSpace α} {μ : Measure[m] α}
     {p : ℝ≥0∞} [NormedAddCommGroup E] [Lattice E] [HasSolidNorm E]
     [IsOrderedAddMonoid E] {s : Finset ι} (hs : s.Nonempty) {f : ι → α → E}
     (hf : ∀ j ∈ s, MemLp (f j) p μ) : MemLp (s.sup' hs f) p μ :=

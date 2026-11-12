@@ -9,7 +9,7 @@ public import TauCeti.Probability.BrownianMotion.QuadraticVariation
 public import TauCeti.Probability.BrownianMotion.Martingale
 public import TauCeti.Probability.Process.Filtration.Comp
 public import TauCeti.MeasureTheory.Function.Lp.Order
-import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.Order.BigOperators.Ring.Finset
 import TauCeti.Probability.Martingale.MaximalInequality.L2
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 

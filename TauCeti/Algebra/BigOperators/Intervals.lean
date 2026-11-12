@@ -8,10 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Group.Nat.Even
 public import Mathlib.Algebra.Notation.Indicator
-public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Data.Int.Interval
 import Mathlib.Algebra.BigOperators.Ring.Finset
-import TauCeti.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Order.SuccPred.Int
 import Mathlib.Tactic.Abel
@@ -21,9 +19,6 @@ import Mathlib.Tactic.Ring
 
 /-!
 # Sums over intervals of natural numbers and integers
-
-Along a monotone prefix in an ordered ring, the sum of squared successive differences
-`t (i + 1) - t i` is bounded by the endpoint difference `t n - t 0` times any common upper bound.
 
 A sum `∑ k ∈ Ico m (n + 1), f k` whose summands split as `f m = β m`, `f n = γ n`, and
 `f k = γ k + β k` for `m < k < n` regroups as the sum over `m ≤ k < n` of the adjacent pairs
@@ -40,8 +35,6 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 
 ## Main results
 
-* `Finset.sum_range_sq_sub_le`: bound the sum of squared successive differences along a
-  monotone prefix by its endpoint difference times a common upper bound.
 * `Finset.sum_Ico_eq_sum_Ico_add`: the regrouping of `∑ k ∈ Ico m (n + 1), f k` into the pairs
   `β k + γ (k + 1)`.
 * `Finset.sum_Ico_one_sub_one_const`: `∑ _k ∈ Ico 1 (n - 1), c = (n - 2) * c` for `2 ≤ n`.
@@ -59,19 +52,6 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 public section
 
 namespace Finset
-
-/-- Along a monotone prefix, the sum of squared successive differences is at most the
-endpoint difference times any common upper bound on the successive differences. -/
-theorem sum_range_sq_sub_le {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
-    (t : ℕ → R) (n : ℕ) (ht : MonotoneOn t (Set.Iic n)) {δ : R}
-    (hmesh : ∀ i < n, t (i + 1) - t i ≤ δ) :
-    ∑ i ∈ range n, (t (i + 1) - t i) ^ 2 ≤ (t n - t 0) * δ := by
-  simpa only [sum_range_sub] using
-    sum_sq_le_sum_mul (s := range n) (f := fun i ↦ t (i + 1) - t i)
-      (fun i hi ↦ sub_nonneg.mpr
-        (ht (by have := mem_range.mp hi; simp only [Set.mem_Iic]; omega)
-          (by have := mem_range.mp hi; simp only [Set.mem_Iic]; omega) (Nat.le_succ i)))
-      (fun i hi ↦ hmesh i (mem_range.mp hi))
 
 /-- If `m < n`, the summands `f m = β m`, `f n = γ n`, and `f k = γ k + β k` for
 `m < k < n` regroup as the adjacent pairs `β k + γ (k + 1)` over `m ≤ k < n`. -/
