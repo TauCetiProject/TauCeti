@@ -5,44 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Expect
 public import Mathlib.Algebra.GroupWithZero.Units.Fintype
-public import Mathlib.Algebra.Module.BigOperators
-public import Mathlib.Algebra.Order.Module.Defs
 public import Mathlib.Algebra.Order.Star.Real
-public import Mathlib.Algebra.Star.BigOperators
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Int.Order.Units
+public import TauCeti.Analysis.Convex.FiniteMean
 import Mathlib.Tactic.LinearCombination
 
 /-!
 # Averages over the sign cube and moments of Rademacher sums
 
 The *sign cube* of a finite type `ι` is the finite group `ι → ℤˣ` of sign vectors. Averaging over
-it is the expectation with respect to independent symmetric random signs `εᵢ`, the Rademacher
-variables. For a family `x : ι → E` in an additive group, the Rademacher sum `∑ᵢ εᵢ xᵢ` is the
-random sum whose moments control Khintchine-type inequalities; the coefficients may lie in a
-noncommutative ring, such as a C⋆-algebra, so products are kept in order throughout.
+it with the mean `TauCeti.finiteMean ℝ f = 2⁻ⁿ ∑_ε f ε`, for `f` with values in a real vector
+space, is the expectation with respect to independent symmetric random signs `εᵢ`, the
+Rademacher variables. C⋆-algebras and real normed spaces carry real scalars but not the
+`ℚ≥0`-module structure needed by Mathlib's `𝔼`; the two averages agree by
+`TauCeti.finiteMean_eq_expect` whenever both are defined. For a family `x : ι → E` in an additive
+group, the Rademacher sum `∑ᵢ εᵢ xᵢ` is the random sum whose moments control Khintchine-type
+inequalities; the coefficients may lie in a noncommutative ring, such as a C⋆-algebra, so
+products are kept in order throughout.
 
 ## Main declarations
 
-* `TauCeti.signAverage f`: the average `2⁻ⁿ ∑_ε f ε` of a function on the sign cube with values
-  in a real vector space. It is linear, fixes constants, is invariant under translating the sign
-  vector, commutes with multiplication by a fixed element and with `star`, and is monotone. It
-  agrees with Mathlib's `𝔼` whenever both are defined (`TauCeti.signAverage_eq_expect`).
 * `TauCeti.rademacherSum x ε`: the Rademacher sum `∑ᵢ εᵢ • xᵢ`. It is additive and equivariant
   in the coefficient family `x`.
-* `TauCeti.signAverage_units_smul`, `TauCeti.signAverage_units_mul_units_smul`: the first and
+* `TauCeti.finiteMean_units_smul`, `TauCeti.finiteMean_units_mul_units_smul`: the first and
   second sign moments, `𝔼 εᵢ = 0` and `𝔼 εᵢ εⱼ = δᵢⱼ`.
-* `TauCeti.signAverage_rademacherSum`, `TauCeti.signAverage_rademacherSum_mul_self`: a
+* `TauCeti.finiteMean_rademacherSum`, `TauCeti.finiteMean_rademacherSum_mul_self`: a
   Rademacher sum `S` has `𝔼 S = 0` and `𝔼 S² = ∑ᵢ xᵢ²`.
-* `TauCeti.signAverage_units_smul_rademacherSum`: the coefficients of a Rademacher sum are
+* `TauCeti.finiteMean_units_smul_rademacherSum`: the coefficients of a Rademacher sum are
   recovered as `𝔼 εₖ S = xₖ`.
-* `TauCeti.signAverage_rademacherSum_mul_four`: in a possibly noncommutative, possibly
+* `TauCeti.finiteMean_rademacherSum_mul_four`: in a possibly noncommutative, possibly
   nonunital ring, the fourth moment of a Rademacher sum expands over the three pairings of four
   indices as `𝔼 S⁴ = (∑ᵢ xᵢ²)² + ∑ᵢ xᵢ (∑ⱼ xⱼ²) xᵢ + ∑ᵢ ∑ⱼ xᵢ xⱼ xᵢ xⱼ - 2 ∑ᵢ xᵢ⁴`. For
   commuting scalars this is the classical `𝔼 S⁴ = 3 (∑ᵢ xᵢ²)² - 2 ∑ᵢ xᵢ⁴`.
-* `TauCeti.sum_star_mul_le_signAverage_star_mul`, `TauCeti.sum_mul_star_le_signAverage_mul_star`:
+* `TauCeti.sum_star_mul_le_finiteMean_star_mul`, `TauCeti.sum_mul_star_le_finiteMean_mul_star`:
   Bessel's inequality in a star-ordered ring. For any `Φ` on the sign cube, the coefficients
   `yₖ = 𝔼 εₖ Φ` satisfy `∑ₖ yₖ* yₖ ≤ 𝔼 Φ* Φ` and `∑ₖ yₖ yₖ* ≤ 𝔼 Φ Φ*`.
 
@@ -185,84 +182,21 @@ private theorem sum_units_apply_mul_four (i j k l : ι) :
 
 end SignSums
 
-/-! ### The average over the sign cube -/
+/-! ### Sign moments of the mean over the sign cube -/
 
 section Average
 
 variable [AddCommGroup E] [Module ℝ E]
 
-/-- The average `2⁻ⁿ ∑_ε f ε` of a function `f` on the sign cube `ι → ℤˣ`, where `n` is the
-cardinality of `ι`: the expectation of `f` under independent symmetric random signs. -/
-def signAverage (f : (ι → ℤˣ) → E) : E :=
-  (Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε, f ε
-
-/-- Unfolding lemma for `TauCeti.signAverage`. -/
-theorem signAverage_def (f : (ι → ℤˣ) → E) :
-    signAverage f = (Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε, f ε := (rfl)
-
 private theorem card_signCube_ne_zero : (Fintype.card (ι → ℤˣ) : ℝ) ≠ 0 :=
   Nat.cast_ne_zero.2 Fintype.card_ne_zero
 
-/-- The average over the sign cube is invariant under any permutation of the sign cube. -/
-theorem signAverage_comp_equiv (e : (ι → ℤˣ) ≃ (ι → ℤˣ)) (f : (ι → ℤˣ) → E) :
-    signAverage (fun ε => f (e ε)) = signAverage f := by
-  rw [signAverage_def, signAverage_def, e.sum_comp]
-
-/-- The average over the sign cube is invariant under translating the sign vector. -/
-@[simp]
-theorem signAverage_comp_mul_left (σ : ι → ℤˣ) (f : (ι → ℤˣ) → E) :
-    signAverage (fun ε => f (σ * ε)) = signAverage f :=
-  signAverage_comp_equiv (Equiv.mulLeft σ) f
-
-/-- The average over the sign cube is Mathlib's expectation `𝔼` whenever the latter is
-defined. -/
-theorem signAverage_eq_expect [Module ℚ≥0 E] (f : (ι → ℤˣ) → E) :
-    signAverage f = 𝔼 ε, f ε := by
-  rw [signAverage_def, ← Fintype.card_smul_expect, ← Nat.cast_smul_eq_nsmul ℝ,
-    inv_smul_smul₀ card_signCube_ne_zero]
-
-/-- Averaging a constant function returns the constant. -/
-@[simp]
-theorem signAverage_const (a : E) : signAverage (fun _ : ι → ℤˣ => a) = a := by
-  rw [signAverage_def, Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul ℝ,
-    inv_smul_smul₀ card_signCube_ne_zero]
-
-/-- The average over the sign cube is additive. -/
-@[simp]
-theorem signAverage_add (f g : (ι → ℤˣ) → E) :
-    signAverage (fun ε => f ε + g ε) = signAverage f + signAverage g := by
-  simp only [signAverage_def, Finset.sum_add_distrib, smul_add]
-
-/-- The average over the sign cube commutes with negation. -/
-@[simp]
-theorem signAverage_neg (f : (ι → ℤˣ) → E) :
-    signAverage (fun ε => -f ε) = -signAverage f := by
-  simp only [signAverage_def, Finset.sum_neg_distrib, smul_neg]
-
-/-- The average over the sign cube commutes with subtraction. -/
-@[simp]
-theorem signAverage_sub (f g : (ι → ℤˣ) → E) :
-    signAverage (fun ε => f ε - g ε) = signAverage f - signAverage g := by
-  simp only [signAverage_def, Finset.sum_sub_distrib, smul_sub]
-
-/-- The average over the sign cube is homogeneous. -/
-@[simp]
-theorem signAverage_smul (c : ℝ) (f : (ι → ℤˣ) → E) :
-    signAverage (fun ε => c • f ε) = c • signAverage f := by
-  simp only [signAverage_def, ← Finset.smul_sum, smul_comm c]
-
-/-- The average over the sign cube commutes with finite sums. -/
-theorem signAverage_sum {κ : Type*} (s : Finset κ) (f : κ → (ι → ℤˣ) → E) :
-    signAverage (fun ε => ∑ k ∈ s, f k ε) = ∑ k ∈ s, signAverage (f k) := by
-  simp only [signAverage_def, Finset.smul_sum]
-  exact Finset.sum_comm
-
 /-- Averaging integer multiples `n ε • a` of a fixed vector, when the integers `n ε` sum to
 `c` times the number of sign vectors. -/
-private theorem signAverage_zsmul_const {n : (ι → ℤˣ) → ℤ} {c : ℤ}
+private theorem finiteMean_zsmul_const {n : (ι → ℤˣ) → ℤ} {c : ℤ}
     (hn : ∑ ε, n ε = c * Fintype.card (ι → ℤˣ)) (a : E) :
-    signAverage (fun ε => n ε • a) = c • a := by
-  rw [signAverage_def, ← Finset.sum_smul, hn, ← Int.cast_smul_eq_zsmul ℝ (c * _),
+    finiteMean ℝ (fun ε => n ε • a) = c • a := by
+  rw [finiteMean_eq_inv_smul_sum, ← Finset.sum_smul, hn, ← Int.cast_smul_eq_zsmul ℝ (c * _),
     ← Int.cast_smul_eq_zsmul ℝ c, smul_smul]
   congr 1
   push_cast
@@ -270,58 +204,25 @@ private theorem signAverage_zsmul_const {n : (ι → ℤˣ) → ℤ} {c : ℤ}
 
 /-- The first sign moment: `𝔼 εᵢ a = 0`. -/
 @[simp]
-theorem signAverage_units_smul (i : ι) (a : E) :
-    signAverage (fun ε : ι → ℤˣ => (ε i : ℤ) • a) = 0 := by
-  rw [signAverage_zsmul_const (c := 0) (by rw [sum_units_apply_eq_zero, zero_mul]), zero_smul]
+theorem finiteMean_units_smul (i : ι) (a : E) :
+    finiteMean ℝ (fun ε : ι → ℤˣ => (ε i : ℤ) • a) = 0 := by
+  rw [finiteMean_zsmul_const (c := 0) (by rw [sum_units_apply_eq_zero, zero_mul]), zero_smul]
 
 /-- The second sign moment: `𝔼 εᵢ εⱼ a = δᵢⱼ a`. -/
 @[simp]
-theorem signAverage_units_mul_units_smul (i j : ι) (a : E) :
-    signAverage (fun ε : ι → ℤˣ => ((ε i : ℤ) * ε j) • a) = if i = j then a else 0 := by
-  rw [signAverage_zsmul_const (c := if i = j then 1 else 0)
+theorem finiteMean_units_mul_units_smul (i j : ι) (a : E) :
+    finiteMean ℝ (fun ε : ι → ℤˣ => ((ε i : ℤ) * ε j) • a) = if i = j then a else 0 := by
+  rw [finiteMean_zsmul_const (c := if i = j then 1 else 0)
     (by rw [sum_units_apply_mul_units_apply]; split_ifs <;> simp)]
   split_ifs <;> simp
 
 /-- The fourth sign moment, in the form used to expand fourth powers of Rademacher sums. -/
-private theorem signAverage_units_mul_four_smul (i j k l : ι) (a : E) :
-    signAverage (fun ε : ι → ℤˣ => ((ε i : ℤ) * ε j * ε k * ε l) • a) =
+private theorem finiteMean_units_mul_four_smul (i j k l : ι) (a : E) :
+    finiteMean ℝ (fun ε : ι → ℤˣ => ((ε i : ℤ) * ε j * ε k * ε l) • a) =
       ((if i = j ∧ k = l then 1 else 0) + (if i = k ∧ j = l then 1 else 0) +
         (if i = l ∧ j = k then 1 else 0) - 2 * (if i = j ∧ j = k ∧ k = l then 1 else 0) : ℤ) •
         a :=
-  signAverage_zsmul_const (sum_units_apply_mul_four i j k l) a
-
-section Ring
-
-variable {R : Type*} [NonUnitalRing R] [Module ℝ R]
-
-/-- Right multiplication by a fixed element commutes with the average over the sign cube. -/
-theorem signAverage_mul_const [IsScalarTower ℝ R R] (f : (ι → ℤˣ) → R) (a : R) :
-    signAverage (fun ε => f ε * a) = signAverage f * a := by
-  simp only [signAverage_def, smul_mul_assoc, Finset.sum_mul]
-
-/-- Left multiplication by a fixed element commutes with the average over the sign cube. -/
-theorem signAverage_const_mul [SMulCommClass ℝ R R] (a : R) (f : (ι → ℤˣ) → R) :
-    signAverage (fun ε => a * f ε) = a * signAverage f := by
-  simp only [signAverage_def, mul_smul_comm, Finset.mul_sum]
-
-end Ring
-
-/-- The average over the sign cube commutes with `star`. -/
-@[simp]
-theorem star_signAverage [StarAddMonoid E] [StarModule ℝ E] (f : (ι → ℤˣ) → E) :
-    star (signAverage f) = signAverage fun ε => star (f ε) := by
-  simp only [signAverage_def, star_smul, star_sum, star_trivial]
-
-/-- The average over the sign cube is monotone. -/
-theorem signAverage_mono [PartialOrder E] [IsOrderedAddMonoid E] [PosSMulMono ℝ E]
-    {f g : (ι → ℤˣ) → E} (h : ∀ ε, f ε ≤ g ε) : signAverage f ≤ signAverage g := by
-  rw [signAverage_def, signAverage_def]
-  exact smul_le_smul_of_nonneg_left (Finset.sum_le_sum fun ε _ => h ε) (by positivity)
-
-/-- The average of a nonnegative function over the sign cube is nonnegative. -/
-theorem signAverage_nonneg [PartialOrder E] [IsOrderedAddMonoid E] [PosSMulMono ℝ E]
-    {f : (ι → ℤˣ) → E} (h : ∀ ε, 0 ≤ f ε) : 0 ≤ signAverage f := by
-  simpa using signAverage_mono (f := fun _ => 0) h
+  finiteMean_zsmul_const (sum_units_apply_mul_four i j k l) a
 
 end Average
 
@@ -331,19 +232,19 @@ section Rademacher
 
 /-- A Rademacher sum has mean zero. -/
 @[simp]
-theorem signAverage_rademacherSum [AddCommGroup E] [Module ℝ E] (x : ι → E) :
-    signAverage (rademacherSum x) = 0 := by
+theorem finiteMean_rademacherSum [AddCommGroup E] [Module ℝ E] (x : ι → E) :
+    finiteMean ℝ (rademacherSum x) = 0 := by
   have h : rademacherSum x = fun ε => ∑ i, (ε i : ℤ) • x i := funext (rademacherSum_def x)
-  rw [h, signAverage_sum]
+  rw [h, finiteMean_sum]
   simp
 
 /-- The coefficients of a Rademacher sum are recovered by averaging against the signs:
 `𝔼 εₖ (∑ᵢ εᵢ xᵢ) = xₖ`. -/
 @[simp]
-theorem signAverage_units_smul_rademacherSum [AddCommGroup E] [Module ℝ E] (x : ι → E) (k : ι) :
-    signAverage (fun ε => (ε k : ℤ) • rademacherSum x ε) = x k := by
-  simp only [rademacherSum_def, Finset.smul_sum, smul_smul, signAverage_sum,
-    signAverage_units_mul_units_smul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+theorem finiteMean_units_smul_rademacherSum [AddCommGroup E] [Module ℝ E] (x : ι → E) (k : ι) :
+    finiteMean ℝ (fun ε => (ε k : ℤ) • rademacherSum x ε) = x k := by
+  simp only [rademacherSum_def, Finset.smul_sum, smul_smul, finiteMean_sum,
+    finiteMean_units_mul_units_smul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
 
 variable {R : Type*} [NonUnitalRing R] [Module ℝ R]
 
@@ -355,23 +256,23 @@ private theorem rademacherSum_mul_rademacherSum (x y : ι → R) (ε : ι → �
   simp only [smul_mul_smul_comm]
 
 /-- The second moment of a Rademacher sum: `𝔼 (∑ᵢ εᵢ xᵢ) (∑ⱼ εⱼ yⱼ) = ∑ᵢ xᵢ yᵢ`. -/
-theorem signAverage_rademacherSum_mul_rademacherSum (x y : ι → R) :
-    signAverage (fun ε => rademacherSum x ε * rademacherSum y ε) = ∑ i, x i * y i := by
-  simp only [rademacherSum_mul_rademacherSum, signAverage_sum,
-    signAverage_units_mul_units_smul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+theorem finiteMean_rademacherSum_mul_rademacherSum (x y : ι → R) :
+    finiteMean ℝ (fun ε => rademacherSum x ε * rademacherSum y ε) = ∑ i, x i * y i := by
+  simp only [rademacherSum_mul_rademacherSum, finiteMean_sum,
+    finiteMean_units_mul_units_smul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
 
 /-- The second moment of a Rademacher sum: `𝔼 S² = ∑ᵢ xᵢ²`. -/
-theorem signAverage_rademacherSum_mul_self (x : ι → R) :
-    signAverage (fun ε => rademacherSum x ε * rademacherSum x ε) = ∑ i, x i * x i :=
-  signAverage_rademacherSum_mul_rademacherSum x x
+theorem finiteMean_rademacherSum_mul_self (x : ι → R) :
+    finiteMean ℝ (fun ε => rademacherSum x ε * rademacherSum x ε) = ∑ i, x i * x i :=
+  finiteMean_rademacherSum_mul_rademacherSum x x
 
 /-- **The fourth moment of a Rademacher sum.** In a possibly noncommutative ring, averaging
 `S⁴` for `S = ∑ᵢ εᵢ xᵢ` keeps the terms whose four indices match in pairs. The pairings
 `(i = j, k = l)`, `(i = l, j = k)` and `(i = k, j = l)` give `(∑ᵢ xᵢ²)²`, `∑ᵢ xᵢ (∑ⱼ xⱼ²) xᵢ`
 and `∑ᵢ ∑ⱼ xᵢ xⱼ xᵢ xⱼ`, and the diagonal `i = j = k = l`, counted by all three pairings, is
 corrected by `- 2 ∑ᵢ xᵢ⁴`. -/
-theorem signAverage_rademacherSum_mul_four (x : ι → R) :
-    signAverage (fun ε => rademacherSum x ε * rademacherSum x ε * rademacherSum x ε *
+theorem finiteMean_rademacherSum_mul_four (x : ι → R) :
+    finiteMean ℝ (fun ε => rademacherSum x ε * rademacherSum x ε * rademacherSum x ε *
         rademacherSum x ε) =
       (∑ i, x i * x i) * (∑ i, x i * x i) + ∑ i, x i * (∑ j, x j * x j) * x i +
         ∑ i, ∑ j, x i * x j * x i * x j - 2 • ∑ i, x i * x i * x i * x i := by
@@ -382,7 +283,7 @@ theorem signAverage_rademacherSum_mul_four (x : ι → R) :
     simp only [rademacherSum_def, Finset.sum_mul, Finset.mul_sum, smul_mul_smul_comm]
   rw [Finset.sum_comm (f := fun i j => x i * x j * x i * x j)]
   -- average each monomial with the fourth sign moment, then collapse the pairings
-  simp only [hS, signAverage_sum, signAverage_units_mul_four_smul]
+  simp only [hS, finiteMean_sum, finiteMean_units_mul_four_smul]
   simp only [sub_smul, add_smul, mul_smul, Finset.sum_add_distrib, Finset.sum_sub_distrib,
     ite_and, ite_smul, one_smul, zero_smul, Finset.sum_ite_irrel,
     Finset.sum_const_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, Finset.sum_mul,
@@ -403,51 +304,54 @@ variable {R : Type*} [NonUnitalRing R] [StarRing R] [Module ℝ R] [StarModule �
 
 omit [SMulCommClass ℝ R R] in
 /-- Averaging `star (Φ ε) * ∑ₖ εₖ yₖ` against the signs recovers the coefficients of `Φ`. -/
-private theorem signAverage_star_mul_rademacherSum (Φ : (ι → ℤˣ) → R) :
-    signAverage (fun ε => star (Φ ε) * rademacherSum
-        (fun k => signAverage fun ε => (ε k : ℤ) • Φ ε) ε) =
-      ∑ k, star (signAverage fun ε => (ε k : ℤ) • Φ ε) *
-        signAverage fun ε => (ε k : ℤ) • Φ ε := by
+private theorem finiteMean_star_mul_rademacherSum (Φ : (ι → ℤˣ) → R) :
+    finiteMean ℝ (fun ε => star (Φ ε) * rademacherSum
+        (fun k => finiteMean ℝ fun ε => (ε k : ℤ) • Φ ε) ε) =
+      ∑ k, star (finiteMean ℝ fun ε => (ε k : ℤ) • Φ ε) *
+        finiteMean ℝ fun ε => (ε k : ℤ) • Φ ε := by
   simp only [rademacherSum_def, Finset.mul_sum, mul_smul_comm, ← smul_mul_assoc,
-    signAverage_sum, signAverage_mul_const, star_signAverage, star_zsmul]
+    finiteMean_sum, finiteMean_mul_const, star_finiteMean, star_zsmul]
 
 variable [PartialOrder R] [StarOrderedRing R]
 
 /-- **Bessel's inequality for the sign functions.** For `Φ : (ι → ℤˣ) → R`, the coefficients
 `yₖ = 𝔼 εₖ Φ` satisfy `∑ₖ yₖ* yₖ ≤ 𝔼 Φ* Φ`. -/
-theorem sum_star_mul_le_signAverage_star_mul (Φ : (ι → ℤˣ) → R) :
-    ∑ k, star (signAverage fun ε => (ε k : ℤ) • Φ ε) * signAverage (fun ε => (ε k : ℤ) • Φ ε) ≤
-      signAverage fun ε => star (Φ ε) * Φ ε := by
-  set y : ι → R := fun k => signAverage fun ε => (ε k : ℤ) • Φ ε
+theorem sum_star_mul_le_finiteMean_star_mul (Φ : (ι → ℤˣ) → R) :
+    ∑ k, star (finiteMean ℝ fun ε => (ε k : ℤ) • Φ ε) *
+        finiteMean ℝ (fun ε => (ε k : ℤ) • Φ ε) ≤
+      finiteMean ℝ fun ε => star (Φ ε) * Φ ε := by
+  set y : ι → R := fun k => finiteMean ℝ fun ε => (ε k : ℤ) • Φ ε
   -- the remainder `Φ - ∑ₖ εₖ yₖ` has `𝔼 (Φ - ∑ₖ εₖ yₖ)* (Φ - ∑ₖ εₖ yₖ) = 𝔼 Φ* Φ - ∑ₖ yₖ* yₖ`
-  have h₁ : signAverage (fun ε => star (Φ ε) * rademacherSum y ε) = ∑ k, star (y k) * y k :=
-    signAverage_star_mul_rademacherSum Φ
-  have h₂ : signAverage (fun ε => star (rademacherSum y ε) * Φ ε) = ∑ k, star (y k) * y k := by
+  have h₁ : finiteMean ℝ (fun ε => star (Φ ε) * rademacherSum y ε) = ∑ k, star (y k) * y k :=
+    finiteMean_star_mul_rademacherSum Φ
+  have h₂ : finiteMean ℝ (fun ε => star (rademacherSum y ε) * Φ ε) = ∑ k, star (y k) * y k := by
     have := congrArg star h₁
-    simpa only [star_signAverage, star_mul, star_star, star_sum] using this
-  have h₃ : signAverage (fun ε => star (rademacherSum y ε) * rademacherSum y ε) =
+    simpa only [star_finiteMean, star_mul, star_star, star_sum] using this
+  have h₃ : finiteMean ℝ (fun ε => star (rademacherSum y ε) * rademacherSum y ε) =
       ∑ k, star (y k) * y k := by
     simpa only [star_rademacherSum] using
-      signAverage_rademacherSum_mul_rademacherSum (fun k => star (y k)) y
-  have h₀ : 0 ≤ signAverage fun ε => star (Φ ε - rademacherSum y ε) * (Φ ε - rademacherSum y ε) :=
-    signAverage_nonneg fun ε => star_mul_self_nonneg _
+      finiteMean_rademacherSum_mul_rademacherSum (fun k => star (y k)) y
+  have h₀ : 0 ≤ finiteMean ℝ fun ε =>
+      star (Φ ε - rademacherSum y ε) * (Φ ε - rademacherSum y ε) :=
+    finiteMean_nonneg fun ε => star_mul_self_nonneg _
   have hexp (ε : ι → ℤˣ) : star (Φ ε - rademacherSum y ε) * (Φ ε - rademacherSum y ε) =
       star (Φ ε) * Φ ε - star (Φ ε) * rademacherSum y ε - star (rademacherSum y ε) * Φ ε +
         star (rademacherSum y ε) * rademacherSum y ε := by
     simp only [star_sub, sub_mul, mul_sub]
     abel
-  simp only [hexp, signAverage_add, signAverage_sub, h₁, h₂, h₃] at h₀
+  simp only [hexp, finiteMean_add, finiteMean_sub, h₁, h₂, h₃] at h₀
   rw [← sub_nonneg]
   convert h₀ using 1
   abel
 
 /-- **Bessel's inequality for the sign functions, row form.** For `Φ : (ι → ℤˣ) → R`, the
 coefficients `yₖ = 𝔼 εₖ Φ` satisfy `∑ₖ yₖ yₖ* ≤ 𝔼 Φ Φ*`. -/
-theorem sum_mul_star_le_signAverage_mul_star (Φ : (ι → ℤˣ) → R) :
-    ∑ k, signAverage (fun ε => (ε k : ℤ) • Φ ε) * star (signAverage fun ε => (ε k : ℤ) • Φ ε) ≤
-      signAverage fun ε => Φ ε * star (Φ ε) := by
-  simpa only [star_signAverage, star_zsmul, star_star] using
-    sum_star_mul_le_signAverage_star_mul fun ε => star (Φ ε)
+theorem sum_mul_star_le_finiteMean_mul_star (Φ : (ι → ℤˣ) → R) :
+    ∑ k, finiteMean ℝ (fun ε => (ε k : ℤ) • Φ ε) *
+        star (finiteMean ℝ fun ε => (ε k : ℤ) • Φ ε) ≤
+      finiteMean ℝ fun ε => Φ ε * star (Φ ε) := by
+  simpa only [star_finiteMean, star_zsmul, star_star] using
+    sum_star_mul_le_finiteMean_star_mul fun ε => star (Φ ε)
 
 end Bessel
 
