@@ -65,21 +65,68 @@ def inl {x y : V} (e : Q x y) : DisjointSumHom Q R (.inl x) (.inl y) :=
 def inr {x y : W} (e : R x y) : DisjointSumHom Q R (.inr x) (.inr y) :=
   ULift.up e
 
+/- The lemmas below whose statements mention the type of `inl e` or `inr e` are not `@[simp]`:
+simp indexes that type as an unreduced match on `DisjointSumHom`, so they would never fire. -/
+
+theorem inl_inj {x y : V} {e e' : Q x y} :
+    (inl e : DisjointSumHom Q R (.inl x) (.inl y)) = inl e' ↔ e = e' :=
+  ⟨congrArg ULift.down, congrArg _⟩
+
+theorem inr_inj {x y : W} {e e' : R x y} :
+    (inr e : DisjointSumHom Q R (.inr x) (.inr y)) = inr e' ↔ e = e' :=
+  ⟨congrArg ULift.down, congrArg _⟩
+
+/-- A property holds for every arrow of a disjoint sum exactly when it holds for the arrows of
+both summands. -/
+theorem forall_iff {P : ∀ ⦃a b : V ⊕ W⦄, DisjointSumHom Q R a b → Prop} :
+    (∀ ⦃a b⦄ (e : DisjointSumHom Q R a b), P e) ↔
+      (∀ ⦃x y : V⦄ (e : Q x y), P (inl e)) ∧ ∀ ⦃x y : W⦄ (e : R x y), P (inr e) := by
+  refine ⟨fun h ↦ ⟨fun _ _ e ↦ h (inl e), fun _ _ e ↦ h (inr e)⟩, fun ⟨hl, hr⟩ a b e ↦ ?_⟩
+  rcases a with x | x <;> rcases b with y | y
+  · exact hl e.down
+  · exact e.elim
+  · exact e.elim
+  · exact hr e.down
+
+variable (Q R) in
+/-- The arrows of the left family between two vertices are the corresponding arrows of the
+disjoint sum. -/
+def inlEquiv (x y : V) : Q x y ≃ DisjointSumHom Q R (.inl x) (.inl y) :=
+  Equiv.ulift.symm
+
+variable (Q R) in
+/-- The arrows of the right family between two vertices are the corresponding arrows of the
+disjoint sum. -/
+def inrEquiv (x y : W) : R x y ≃ DisjointSumHom Q R (.inr x) (.inr y) :=
+  Equiv.ulift.symm
+
+theorem inlEquiv_apply {x y : V} (e : Q x y) : inlEquiv Q R x y e = inl e :=
+  (rfl)
+
+theorem inrEquiv_apply {x y : W} (e : R x y) : inrEquiv Q R x y e = inr e :=
+  (rfl)
+
+theorem inlEquiv_symm_inl {x y : V} (e : Q x y) : (inlEquiv Q R x y).symm (inl e) = e :=
+  (rfl)
+
+theorem inrEquiv_symm_inr {x y : W} (e : R x y) : (inrEquiv Q R x y).symm (inr e) = e :=
+  (rfl)
+
 section Sum
 
 variable [AddCommMonoid K]
 
 /-- A sum over the left arrows of a disjoint sum is a sum over the original left arrows. -/
-theorem sum_inl_inl [∀ x y, Fintype (Q x y)] {x y : V}
+theorem sum_inl_inl {x y : V} [Fintype (Q x y)]
     (f : DisjointSumHom Q R (.inl x) (.inl y) → K) :
     ∑ e, f e = ∑ e : Q x y, f (inl e) :=
-  Fintype.sum_equiv Equiv.ulift f (fun e ↦ f (inl e)) fun _ ↦ rfl
+  (Fintype.sum_equiv (inlEquiv Q R x y) _ f fun _ ↦ rfl).symm
 
 /-- A sum over the right arrows of a disjoint sum is a sum over the original right arrows. -/
-theorem sum_inr_inr [∀ x y, Fintype (R x y)] {x y : W}
+theorem sum_inr_inr {x y : W} [Fintype (R x y)]
     (f : DisjointSumHom Q R (.inr x) (.inr y) → K) :
     ∑ e, f e = ∑ e : R x y, f (inr e) :=
-  Fintype.sum_equiv Equiv.ulift f (fun e ↦ f (inr e)) fun _ ↦ rfl
+  (Fintype.sum_equiv (inrEquiv Q R x y) _ f fun _ ↦ rfl).symm
 
 end Sum
 
@@ -106,6 +153,16 @@ def restrictRight (f : Assignment (DisjointSumHom Q R) K) : Assignment R K :=
   fun _ _ e ↦ f (DisjointSumHom.inr e)
 
 @[simp]
+theorem restrictLeft_apply (f : Assignment (DisjointSumHom Q R) K) {x y : V} (e : Q x y) :
+    f.restrictLeft e = f (DisjointSumHom.inl e) :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_apply (f : Assignment (DisjointSumHom Q R) K) {x y : W} (e : R x y) :
+    f.restrictRight e = f (DisjointSumHom.inr e) :=
+  (rfl)
+
+@[simp]
 theorem disjointSum_inl (f : Assignment Q K) (g : Assignment R K) {x y : V} (e : Q x y) :
     disjointSum f g (DisjointSumHom.inl e) = f e :=
   (rfl)
@@ -129,12 +186,15 @@ theorem restrictRight_disjointSum (f : Assignment Q K) (g : Assignment R K) :
 @[simp]
 theorem disjointSum_restrict (f : Assignment (DisjointSumHom Q R) K) :
     disjointSum f.restrictLeft f.restrictRight = f := by
-  funext x y e
-  rcases x with x | x <;> rcases y with y | y
-  · rfl
-  · exact e.elim
-  · exact e.elim
-  · rfl
+  funext _ _ e
+  exact (DisjointSumHom.forall_iff
+    (P := fun _ _ e ↦ disjointSum f.restrictLeft f.restrictRight e = f e)).2
+      ⟨fun _ _ _ ↦ rfl, fun _ _ _ ↦ rfl⟩ e
+
+/-- Assignments on a disjoint sum agree when their restrictions to both summands agree. -/
+theorem ext_restrict {f g : Assignment (DisjointSumHom Q R) K}
+    (hl : f.restrictLeft = g.restrictLeft) (hr : f.restrictRight = g.restrictRight) : f = g := by
+  rw [← f.disjointSum_restrict, ← g.disjointSum_restrict, hl, hr]
 
 /-- Assignments on a disjoint sum are equivalent to pairs of assignments on its summands. -/
 def disjointSumEquiv : Assignment (DisjointSumHom Q R) K ≃ Assignment Q K × Assignment R K where
@@ -153,6 +213,108 @@ theorem disjointSumEquiv_symm_apply (p : Assignment Q K × Assignment R K) :
     disjointSumEquiv.symm p = disjointSum p.1 p.2 :=
   (rfl)
 
+section Algebra
+
+@[simp]
+theorem disjointSum_zero [Zero K] : disjointSum (0 : Assignment Q K) (0 : Assignment R K) = 0 :=
+  ext_restrict rfl rfl
+
+@[simp]
+theorem restrictLeft_zero [Zero K] : (0 : Assignment (DisjointSumHom Q R) K).restrictLeft = 0 :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_zero [Zero K] : (0 : Assignment (DisjointSumHom Q R) K).restrictRight = 0 :=
+  (rfl)
+
+theorem disjointSum_add [Add K] (f₁ f₂ : Assignment Q K) (g₁ g₂ : Assignment R K) :
+    disjointSum (f₁ + f₂) (g₁ + g₂) = disjointSum f₁ g₁ + disjointSum f₂ g₂ :=
+  ext_restrict rfl rfl
+
+@[simp]
+theorem restrictLeft_add [Add K] (f g : Assignment (DisjointSumHom Q R) K) :
+    (f + g).restrictLeft = f.restrictLeft + g.restrictLeft :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_add [Add K] (f g : Assignment (DisjointSumHom Q R) K) :
+    (f + g).restrictRight = f.restrictRight + g.restrictRight :=
+  (rfl)
+
+theorem disjointSum_neg [Neg K] (f : Assignment Q K) (g : Assignment R K) :
+    disjointSum (-f) (-g) = -disjointSum f g :=
+  ext_restrict rfl rfl
+
+@[simp]
+theorem restrictLeft_neg [Neg K] (f : Assignment (DisjointSumHom Q R) K) :
+    (-f).restrictLeft = -f.restrictLeft :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_neg [Neg K] (f : Assignment (DisjointSumHom Q R) K) :
+    (-f).restrictRight = -f.restrictRight :=
+  (rfl)
+
+theorem disjointSum_sub [Sub K] (f₁ f₂ : Assignment Q K) (g₁ g₂ : Assignment R K) :
+    disjointSum (f₁ - f₂) (g₁ - g₂) = disjointSum f₁ g₁ - disjointSum f₂ g₂ :=
+  ext_restrict rfl rfl
+
+@[simp]
+theorem restrictLeft_sub [Sub K] (f g : Assignment (DisjointSumHom Q R) K) :
+    (f - g).restrictLeft = f.restrictLeft - g.restrictLeft :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_sub [Sub K] (f g : Assignment (DisjointSumHom Q R) K) :
+    (f - g).restrictRight = f.restrictRight - g.restrictRight :=
+  (rfl)
+
+theorem disjointSum_map {L : Type*} (f : Assignment Q K) (g : Assignment R K) (φ : K → L) :
+    (disjointSum f g).map φ = disjointSum (f.map φ) (g.map φ) :=
+  ext_restrict rfl rfl
+
+@[simp]
+theorem restrictLeft_map {L : Type*} (f : Assignment (DisjointSumHom Q R) K) (φ : K → L) :
+    (f.map φ).restrictLeft = f.restrictLeft.map φ :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_map {L : Type*} (f : Assignment (DisjointSumHom Q R) K) (φ : K → L) :
+    (f.map φ).restrictRight = f.restrictRight.map φ :=
+  (rfl)
+
+end Algebra
+
+section Order
+
+/-- The pointwise order on a disjoint sum is the order on both restrictions. -/
+theorem le_iff_restrict [LE K] {f g : Assignment (DisjointSumHom Q R) K} :
+    f ≤ g ↔ f.restrictLeft ≤ g.restrictLeft ∧ f.restrictRight ≤ g.restrictRight :=
+  DisjointSumHom.forall_iff (P := fun _ _ e ↦ f e ≤ g e)
+
+@[simp]
+theorem disjointSum_le_disjointSum_iff [LE K] {f₁ f₂ : Assignment Q K}
+    {g₁ g₂ : Assignment R K} :
+    disjointSum f₁ g₁ ≤ disjointSum f₂ g₂ ↔ f₁ ≤ f₂ ∧ g₁ ≤ g₂ :=
+  le_iff_restrict
+
+variable [Preorder K] {lo₁ hi₁ : Assignment Q K} {lo₂ hi₂ : Assignment R K}
+
+/-- An assignment on a disjoint sum respects combined bounds exactly when both of its
+restrictions respect the corresponding bounds. -/
+theorem mem_Icc_disjointSum_iff {f : Assignment (DisjointSumHom Q R) K} :
+    f ∈ Set.Icc (disjointSum lo₁ lo₂) (disjointSum hi₁ hi₂) ↔
+      f.restrictLeft ∈ Set.Icc lo₁ hi₁ ∧ f.restrictRight ∈ Set.Icc lo₂ hi₂ := by
+  simp only [Set.mem_Icc, le_iff_restrict, restrictLeft_disjointSum, restrictRight_disjointSum,
+    and_and_and_comm]
+
+theorem disjointSum_mem_Icc_iff {f : Assignment Q K} {g : Assignment R K} :
+    disjointSum f g ∈ Set.Icc (disjointSum lo₁ lo₂) (disjointSum hi₁ hi₂) ↔
+      f ∈ Set.Icc lo₁ hi₁ ∧ g ∈ Set.Icc lo₂ hi₂ :=
+  mem_Icc_disjointSum_iff
+
+end Order
+
 end Assignment
 
 namespace Network
@@ -168,50 +330,23 @@ def disjointSum (N : Network K V) (M : Network K W) : Network K (V ⊕ W) where
   Hom := DisjointSumHom N.Hom M.Hom
   lower := N.lower.disjointSum M.lower
   upper := N.upper.disjointSum M.upper
-  lower_le_upper := fun {x y} e ↦ by
-    rcases x with x | x <;> rcases y with y | y
-    · exact N.lower_le_upper e.down
-    · exact e.elim
-    · exact e.elim
-    · exact M.lower_le_upper e.down
+  lower_le_upper := fun {_ _} e ↦
+    Assignment.disjointSum_le_disjointSum_iff.2
+      ⟨fun _ _ ↦ N.lower_le_upper, fun _ _ ↦ M.lower_le_upper⟩ _ _ e
 
 @[simp]
 theorem disjointSum_Hom (N : Network K V) (M : Network K W) :
     (N.disjointSum M).Hom = DisjointSumHom N.Hom M.Hom :=
   (rfl)
 
-/-- An arrow of the left network as an arrow of the disjoint-sum network. -/
-def disjointSumInl (N : Network K V) (M : Network K W) {x y : V} (e : N.Hom x y) :
-    (N.disjointSum M).Hom (.inl x) (.inl y) :=
-  ULift.up e
-
-/-- An arrow of the right network as an arrow of the disjoint-sum network. -/
-def disjointSumInr (N : Network K V) (M : Network K W) {x y : W} (e : M.Hom x y) :
-    (N.disjointSum M).Hom (.inr x) (.inr y) :=
-  ULift.up e
-
 @[simp]
-theorem disjointSum_lower_inl (N : Network K V) (M : Network K W) {x y : V}
-    (e : N.Hom x y) :
-    (N.disjointSum M).lower (disjointSumInl N M e) = N.lower e :=
+theorem disjointSum_lower (N : Network K V) (M : Network K W) :
+    (N.disjointSum M).lower = N.lower.disjointSum M.lower :=
   (rfl)
 
 @[simp]
-theorem disjointSum_lower_inr (N : Network K V) (M : Network K W) {x y : W}
-    (e : M.Hom x y) :
-    (N.disjointSum M).lower (disjointSumInr N M e) = M.lower e :=
-  (rfl)
-
-@[simp]
-theorem disjointSum_upper_inl (N : Network K V) (M : Network K W) {x y : V}
-    (e : N.Hom x y) :
-    (N.disjointSum M).upper (disjointSumInl N M e) = N.upper e :=
-  (rfl)
-
-@[simp]
-theorem disjointSum_upper_inr (N : Network K V) (M : Network K W) {x y : W}
-    (e : M.Hom x y) :
-    (N.disjointSum M).upper (disjointSumInr N M e) = M.upper e :=
+theorem disjointSum_upper (N : Network K V) (M : Network K W) :
+    (N.disjointSum M).upper = N.upper.disjointSum M.upper :=
   (rfl)
 
 end Network
@@ -279,6 +414,35 @@ theorem excessAt_restrictRight (f : Assignment (DisjointSumHom Q R) K) (x : W) :
       (excessAt_disjointSum_inr _ _ _).symm
     _ = excessAt f (.inr x) := congrArg (fun g ↦ excessAt g (.inr x)) f.disjointSum_restrict
 
+theorem excessAt_disjointSum (f : Assignment Q K) (g : Assignment R K) :
+    excessAt (f.disjointSum g) = Sum.elim (excessAt f) (excessAt g) :=
+  funext fun x ↦ by rcases x with x | x <;> simp
+
+@[simp]
+theorem isCirculation_disjointSum_iff {f : Assignment Q K} {g : Assignment R K} :
+    IsCirculation (f.disjointSum g) ↔ IsCirculation f ∧ IsCirculation g := by
+  simp [isCirculation_iff, Sum.forall]
+
+theorem IsCirculation.restrictLeft {f : Assignment (DisjointSumHom Q R) K}
+    (hf : IsCirculation f) : IsCirculation f.restrictLeft :=
+  (isCirculation_disjointSum_iff.1 (f.disjointSum_restrict ▸ hf)).1
+
+theorem IsCirculation.restrictRight {f : Assignment (DisjointSumHom Q R) K}
+    (hf : IsCirculation f) : IsCirculation f.restrictRight :=
+  (isCirculation_disjointSum_iff.1 (f.disjointSum_restrict ▸ hf)).2
+
+omit [Fintype V] [Fintype W] in
+/-- An arrow sum on a disjoint sum splits into arrow sums on the two summands. -/
+theorem arrowSum_disjointSum (f : Assignment Q K) (g : Assignment R K)
+    (S T : Finset (V ⊕ W)) :
+    arrowSum (f.disjointSum g) S T =
+      arrowSum f S.toLeft T.toLeft + arrowSum g S.toRight T.toRight := by
+  simp only [arrowSum_def, Finset.sum_sum_eq_sum_toLeft_add_sum_toRight,
+    Finset.univ_eq_empty, Finset.sum_empty, Finset.sum_const_zero, add_zero, zero_add]
+  congr 1 <;> refine Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ ?_
+  · exact DisjointSumHom.sum_inl_inl _
+  · exact DisjointSumHom.sum_inr_inr _
+
 namespace ExcessFlow
 
 variable [Preorder K]
@@ -288,34 +452,21 @@ variable [Preorder K]
 def restrictLeft
     (f : ExcessFlow (lo₁.disjointSum lo₂) (hi₁.disjointSum hi₂) (Sum.elim b₁ b₂)) :
     ExcessFlow lo₁ hi₁ b₁ :=
-  ⟨f.val.restrictLeft, ⟨fun _ _ e ↦ f.mem_Icc.1 _ _ (DisjointSumHom.inl e),
-    fun _ _ e ↦ f.mem_Icc.2 _ _ (DisjointSumHom.inl e)⟩,
+  ⟨f.val.restrictLeft, (Assignment.mem_Icc_disjointSum_iff.1 f.mem_Icc).1,
     funext fun x ↦ by simp [congrFun f.property.2 (.inl x)]⟩
 
 /-- Restrict a prescribed-excess assignment on a disjoint sum to its right summand. -/
 def restrictRight
     (f : ExcessFlow (lo₁.disjointSum lo₂) (hi₁.disjointSum hi₂) (Sum.elim b₁ b₂)) :
     ExcessFlow lo₂ hi₂ b₂ :=
-  ⟨f.val.restrictRight, ⟨fun _ _ e ↦ f.mem_Icc.1 _ _ (DisjointSumHom.inr e),
-    fun _ _ e ↦ f.mem_Icc.2 _ _ (DisjointSumHom.inr e)⟩,
+  ⟨f.val.restrictRight, (Assignment.mem_Icc_disjointSum_iff.1 f.mem_Icc).2,
     funext fun x ↦ by simp [congrFun f.property.2 (.inr x)]⟩
 
 /-- Combine prescribed-excess assignments on two arrow families with no arrows between them. -/
 def disjointSum (f : ExcessFlow lo₁ hi₁ b₁) (g : ExcessFlow lo₂ hi₂ b₂) :
     ExcessFlow (lo₁.disjointSum lo₂) (hi₁.disjointSum hi₂) (Sum.elim b₁ b₂) :=
-  ⟨f.val.disjointSum g.val, ⟨fun x y e ↦ by
-      rcases x with x | x <;> rcases y with y | y
-      · exact f.mem_Icc.1 _ _ e.down
-      · exact e.elim
-      · exact e.elim
-      · exact g.mem_Icc.1 _ _ e.down,
-    fun x y e ↦ by
-      rcases x with x | x <;> rcases y with y | y
-      · exact f.mem_Icc.2 _ _ e.down
-      · exact e.elim
-      · exact e.elim
-      · exact g.mem_Icc.2 _ _ e.down⟩,
-    funext fun x ↦ by rcases x with x | x <;> simp⟩
+  ⟨f.val.disjointSum g.val, Assignment.disjointSum_mem_Icc_iff.2 ⟨f.mem_Icc, g.mem_Icc⟩, by
+    rw [excessAt_disjointSum, f.property.2, g.property.2]⟩
 
 @[simp]
 theorem disjointSum_val (f : ExcessFlow lo₁ hi₁ b₁) (g : ExcessFlow lo₂ hi₂ b₂) :
@@ -334,6 +485,24 @@ theorem restrictRight_val
     f.restrictRight.val = f.val.restrictRight :=
   (rfl)
 
+@[simp]
+theorem restrictLeft_disjointSum (f : ExcessFlow lo₁ hi₁ b₁) (g : ExcessFlow lo₂ hi₂ b₂) :
+    (f.disjointSum g).restrictLeft = f :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_disjointSum (f : ExcessFlow lo₁ hi₁ b₁) (g : ExcessFlow lo₂ hi₂ b₂) :
+    (f.disjointSum g).restrictRight = g :=
+  (rfl)
+
+/-- A prescribed-excess assignment on a disjoint sum is reconstructed from its two
+restrictions. -/
+@[simp]
+theorem disjointSum_restrict
+    (f : ExcessFlow (lo₁.disjointSum lo₂) (hi₁.disjointSum hi₂) (Sum.elim b₁ b₂)) :
+    f.restrictLeft.disjointSum f.restrictRight = f :=
+  Subtype.ext f.val.disjointSum_restrict
+
 /-- Prescribed-excess assignments on a disjoint sum are exactly pairs of such assignments on its
 two summands. -/
 def disjointSumEquiv :
@@ -341,8 +510,8 @@ def disjointSumEquiv :
       ExcessFlow lo₁ hi₁ b₁ × ExcessFlow lo₂ hi₂ b₂ where
   toFun f := (f.restrictLeft, f.restrictRight)
   invFun p := p.1.disjointSum p.2
-  left_inv f := Subtype.ext f.val.disjointSum_restrict
-  right_inv p := by rcases p with ⟨f, g⟩; apply Prod.ext <;> apply Subtype.ext <;> rfl
+  left_inv := disjointSum_restrict
+  right_inv _ := rfl
 
 @[simp]
 theorem disjointSumEquiv_apply
@@ -366,16 +535,14 @@ variable [Preorder K]
 /-- Restrict an interval-excess assignment on a disjoint sum to its left summand. -/
 def restrictLeft (f : ExcessIntervalFlow (lo₁.disjointSum lo₂) (hi₁.disjointSum hi₂)
     (Sum.elim a₁ a₂) (Sum.elim b₁ b₂)) : ExcessIntervalFlow lo₁ hi₁ a₁ b₁ :=
-  ⟨f.val.restrictLeft, ⟨fun _ _ e ↦ f.mem_Icc.1 _ _ (DisjointSumHom.inl e),
-    fun _ _ e ↦ f.mem_Icc.2 _ _ (DisjointSumHom.inl e)⟩,
+  ⟨f.val.restrictLeft, (Assignment.mem_Icc_disjointSum_iff.1 f.mem_Icc).1,
     ⟨fun x ↦ by simpa using f.excessAt_mem_Icc.1 (.inl x),
       fun x ↦ by simpa using f.excessAt_mem_Icc.2 (.inl x)⟩⟩
 
 /-- Restrict an interval-excess assignment on a disjoint sum to its right summand. -/
 def restrictRight (f : ExcessIntervalFlow (lo₁.disjointSum lo₂) (hi₁.disjointSum hi₂)
     (Sum.elim a₁ a₂) (Sum.elim b₁ b₂)) : ExcessIntervalFlow lo₂ hi₂ a₂ b₂ :=
-  ⟨f.val.restrictRight, ⟨fun _ _ e ↦ f.mem_Icc.1 _ _ (DisjointSumHom.inr e),
-    fun _ _ e ↦ f.mem_Icc.2 _ _ (DisjointSumHom.inr e)⟩,
+  ⟨f.val.restrictRight, (Assignment.mem_Icc_disjointSum_iff.1 f.mem_Icc).2,
     ⟨fun x ↦ by simpa using f.excessAt_mem_Icc.1 (.inr x),
       fun x ↦ by simpa using f.excessAt_mem_Icc.2 (.inr x)⟩⟩
 
@@ -384,26 +551,10 @@ def disjointSum (f : ExcessIntervalFlow lo₁ hi₁ a₁ b₁)
     (g : ExcessIntervalFlow lo₂ hi₂ a₂ b₂) :
     ExcessIntervalFlow (lo₁.disjointSum lo₂) (hi₁.disjointSum hi₂)
       (Sum.elim a₁ a₂) (Sum.elim b₁ b₂) :=
-  ⟨f.val.disjointSum g.val, ⟨fun x y e ↦ by
-      rcases x with x | x <;> rcases y with y | y
-      · exact f.mem_Icc.1 _ _ e.down
-      · exact e.elim
-      · exact e.elim
-      · exact g.mem_Icc.1 _ _ e.down,
-    fun x y e ↦ by
-      rcases x with x | x <;> rcases y with y | y
-      · exact f.mem_Icc.2 _ _ e.down
-      · exact e.elim
-      · exact e.elim
-      · exact g.mem_Icc.2 _ _ e.down⟩,
-    ⟨fun x ↦ by
-        rcases x with x | x
-        · simpa using f.excessAt_mem_Icc.1 x
-        · simpa using g.excessAt_mem_Icc.1 x,
-      fun x ↦ by
-        rcases x with x | x
-        · simpa using f.excessAt_mem_Icc.2 x
-        · simpa using g.excessAt_mem_Icc.2 x⟩⟩
+  ⟨f.val.disjointSum g.val, Assignment.disjointSum_mem_Icc_iff.2 ⟨f.mem_Icc, g.mem_Icc⟩, by
+    rw [excessAt_disjointSum]
+    exact ⟨Sum.elim_le_elim_iff.2 ⟨f.excessAt_mem_Icc.1, g.excessAt_mem_Icc.1⟩,
+      Sum.elim_le_elim_iff.2 ⟨f.excessAt_mem_Icc.2, g.excessAt_mem_Icc.2⟩⟩⟩
 
 @[simp]
 theorem disjointSum_val (f : ExcessIntervalFlow lo₁ hi₁ a₁ b₁)
@@ -423,6 +574,26 @@ theorem restrictRight_val (f : ExcessIntervalFlow (lo₁.disjointSum lo₂)
     f.restrictRight.val = f.val.restrictRight :=
   (rfl)
 
+@[simp]
+theorem restrictLeft_disjointSum (f : ExcessIntervalFlow lo₁ hi₁ a₁ b₁)
+    (g : ExcessIntervalFlow lo₂ hi₂ a₂ b₂) :
+    (f.disjointSum g).restrictLeft = f :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_disjointSum (f : ExcessIntervalFlow lo₁ hi₁ a₁ b₁)
+    (g : ExcessIntervalFlow lo₂ hi₂ a₂ b₂) :
+    (f.disjointSum g).restrictRight = g :=
+  (rfl)
+
+/-- An interval-excess assignment on a disjoint sum is reconstructed from its two
+restrictions. -/
+@[simp]
+theorem disjointSum_restrict (f : ExcessIntervalFlow (lo₁.disjointSum lo₂)
+    (hi₁.disjointSum hi₂) (Sum.elim a₁ a₂) (Sum.elim b₁ b₂)) :
+    f.restrictLeft.disjointSum f.restrictRight = f :=
+  Subtype.ext f.val.disjointSum_restrict
+
 /-- Interval-excess assignments on a disjoint sum are exactly pairs of such assignments on its
 two summands. -/
 def disjointSumEquiv :
@@ -431,8 +602,8 @@ def disjointSumEquiv :
       ExcessIntervalFlow lo₁ hi₁ a₁ b₁ × ExcessIntervalFlow lo₂ hi₂ a₂ b₂ where
   toFun f := (f.restrictLeft, f.restrictRight)
   invFun p := p.1.disjointSum p.2
-  left_inv f := Subtype.ext f.val.disjointSum_restrict
-  right_inv p := by rcases p with ⟨f, g⟩; apply Prod.ext <;> apply Subtype.ext <;> rfl
+  left_inv := disjointSum_restrict
+  right_inv _ := rfl
 
 @[simp]
 theorem disjointSumEquiv_apply (f : ExcessIntervalFlow (lo₁.disjointSum lo₂)
