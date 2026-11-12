@@ -322,7 +322,6 @@ theorem exists_energyDensity_le_mul_exp
   obtain ⟨K₂, hK₂⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc'
   refine ⟨(1 / 64 + 1) * K₁ ^ 2 + 2 * K₂ ^ 2, fun z ↦ ?_⟩
   set E := Real.exp (-(c / 2 * ‖z‖)) with hE
-  have hE₀ : 0 ≤ E := (Real.exp_pos _).le
   have hEsq : E ^ 2 = Real.exp (-(c * ‖z‖)) := by
     rw [hE, ← Real.exp_nat_mul]
     ring_nf

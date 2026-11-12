@@ -63,6 +63,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   iterated directional derivative, `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`.
 * `SchwartzMap.norm_fourierInv_iterate_lineDerivOp_sq`: its consequence for squared norms,
   `‖𝓕⁻ (∂_m^N σ) x‖² = (2π) ^ (2N) ⟪x, m⟫ ^ (2N) ‖𝓕⁻ σ x‖²`.
+* `SchwartzMap.exists_seminorm_fourier_le_sum_seminorm`: each seminorm `‖ξ‖ ^ k ‖𝓕 g ξ‖` of the
+  Fourier transform is bounded by finitely many Schwartz seminorms of `g`.
 * `SchwartzMap.fourierInv_postcompCLM_apply`: the inverse Fourier transform commutes with
   postcomposition by a continuous linear map.
 * `SchwartzMap.norm_fourierInv_toL2_eq`: Plancherel's theorem for the inverse Fourier transform.
@@ -246,6 +248,17 @@ theorem norm_fourierInv_iterate_lineDerivOp_sq (σ : 𝓢(E, F)) (m : E) (N : �
     ← (even_two_mul N).pow_abs ⟪x, m⟫]
   ring
 
+/-- The Fourier transform is continuous on Schwartz space, so each seminorm
+`‖ξ‖ ^ k ‖𝓕 g ξ‖` of `𝓕 g` is bounded by a constant times finitely many seminorms of `g`. -/
+theorem exists_seminorm_fourier_le_sum_seminorm (k : ℕ) :
+    ∃ (s : Finset (ℕ × ℕ)) (c : ℝ), 0 ≤ c ∧ ∀ g : 𝓢(E, F),
+      SchwartzMap.seminorm ℂ k 0 (𝓕 g) ≤ c * ∑ i ∈ s, SchwartzMap.seminorm ℂ i.1 i.2 g := by
+  have hq : Continuous ((SchwartzMap.seminorm ℂ k 0).comp (fourierCLM ℂ 𝓢(E, F)).toLinearMap) :=
+    ((schwartz_withSeminorms ℂ _ _).continuous_seminorm (k, 0)).comp (fourierCLM ℂ _).continuous
+  obtain ⟨s, c, -, hc⟩ := Seminorm.bound_sum_of_continuous (schwartz_withSeminorms ℂ _ _) _ hq
+  refine ⟨s, c, c.2, fun g ↦ (hc g).trans_eq ?_⟩
+  simp [schwartzSeminormFamily, NNReal.smul_def]
+
 /-- The inverse Fourier transform of a Schwartz function commutes with postcomposition by a
 continuous complex-linear map: `𝓕⁻ (L ∘ f) = L ∘ 𝓕⁻ f`. -/
 @[simp]
@@ -343,7 +356,7 @@ theorem sum_sum_norm_toLp_lineDerivOp_lineDerivOp_sq {ι : Type*} [Fintype ι]
   have hint (g : 𝓢(E, F)) : Integrable (fun ξ ↦ ‖𝓕 g ξ‖ ^ 2) :=
     ((𝓕 g).memLp 2).integrable_norm_pow two_ne_zero
   simp only [hF]
-  simp_rw [← integral_finsetSum _ fun i _ ↦ hint _]
+  simp_rw [← integral_finsetSum _ fun _ _ ↦ hint _]
   rw [← integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hint _]
   refine integral_congr_ae (Filter.Eventually.of_forall fun ξ ↦ ?_)
   have hsum : ∑ i, ∑ j, (⟪ξ, b i⟫ * ⟪ξ, b j⟫) ^ 2 = (‖ξ‖ ^ 2) ^ 2 := by

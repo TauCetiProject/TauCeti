@@ -83,6 +83,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   continuous there, and `ContDiff.continuous_laplacian` its global form.
 * `TauCeti.laplacian_eq_sum_fderiv_fderiv_apply`: the Laplacian as the sum of the second
   directional derivatives along an orthonormal basis.
+* `TauCeti.laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I`: its planar form in
+  the orthonormal directions `1` and `I`.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
   squared norm.
 * `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
@@ -190,6 +192,15 @@ theorem laplacian_eq_sum_fderiv_fderiv_apply {ι : Type*} [Fintype ι]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [iteratedFDeriv_two_apply, fderiv_clm_apply hf (differentiableAt_const _)]
   simp
+
+open Complex in
+/-- The Laplacian on the complex plane is the sum of the second directional derivatives in the
+orthonormal directions `1` and `I`, when `fderiv ℝ f` is differentiable at the point. -/
+theorem laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I {f : ℂ → F} {z : ℂ}
+    (hf : DifferentiableAt ℝ (fderiv ℝ f) z) :
+    Δ f z = fderiv ℝ (fun w ↦ fderiv ℝ f w 1) z 1 + fderiv ℝ (fun w ↦ fderiv ℝ f w I) z I := by
+  rw [laplacian_eq_sum_fderiv_fderiv_apply orthonormalBasisOneI hf]
+  simp [Fin.sum_univ_two]
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
 /-- Scalar dilation as a continuous linear equivalence. -/

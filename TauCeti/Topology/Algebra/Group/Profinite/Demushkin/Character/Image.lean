@@ -125,15 +125,14 @@ For `q(G) = 0` this holds for every `k`. -/
   have : Nonempty (ULift.{v} (Fin (demushkinRank hG))) := ⟨⟨⟨0, hG.demushkinRank_pos⟩⟩⟩
   obtain ⟨x₀, hx₀⟩ := PreValuationRing.exists_forall_dvd (exponentSum p _ r).toAdd
   obtain ⟨w, hw, hv⟩ := exists_eq_smul_of_forall_dvd hx₀
-  have hpq := dvd_exponentSum_of_mem_proPFrattini p _ hr x₀
   have hall : (∀ x, (p : ℤ_[p]) ^ k ∣ (exponentSum p _ r).toAdd x) ↔
       (p : ℤ_[p]) ^ k ∣ (exponentSum p _ r).toAdd x₀ :=
     ⟨fun h ↦ h x₀, fun h x ↦ h.trans (hx₀ x)⟩
   rw [hall]
   by_cases hq : (exponentSum p _ r).toAdd x₀ = 0
-  · rw [(demushkinQ_presentedProP_eq_zero_iff hw hv hP hpq).2 hq, hq]
+  · rw [(demushkinQ_presentedProP_eq_zero_iff hw hv hP).2 hq, hq]
     simp
-  · rw [demushkinQ_presentedProP_eq_pow_valuation hw hv hP hpq hq,
+  · rw [demushkinQ_presentedProP_eq_pow_valuation hw hv hP hq,
       Nat.pow_dvd_pow_iff_le_right (Fact.out : p.Prime).one_lt, ← Ideal.mem_span_singleton,
       PadicInt.mem_span_pow_iff_le_valuation _ hq]
 
