@@ -12,8 +12,8 @@ public import TauCeti.Probability.Distributions.VonMisesFisher.Basic
 
 Tilting a von Mises–Fisher law by the linear weight `exp ⟪θ, x⟫` adds `θ` to its
 natural parameter. In direction/concentration coordinates the new concentration is the
-norm of the resulting vector and the new direction is its normalization. If the vectors
-cancel, the tilted law is uniform, so no direction needs to be chosen at zero.
+norm of the resulting vector and the new direction is given by `sphereDirection`. If the
+vectors cancel, this retains the original direction at zero concentration, giving the uniform law.
 
 The natural-parameter identity also includes the empty sphere in dimension zero. The
 direction/concentration identity assumes a nonnegative input concentration, as negative
@@ -52,25 +52,16 @@ theorem vonMisesFisherNaturalMeasure_tilted_inner (η θ : E) :
   ext x
   simp only [Pi.add_apply, inner_add_left]
 
-open scoped Classical in
 /-- Tilting a direction/concentration law adds the tilt vector to `κ • m`. A zero resultant
-gives uniform sphere probability; otherwise its norm and normalization are the new parameters.
+retains `m` at zero concentration, giving uniform sphere probability; otherwise its norm and
+normalization are the new parameters.
 -/
 theorem vonMisesFisherMeasure_tilted_inner (m : sphere (0 : E) 1) {κ : ℝ}
     (hκ : 0 ≤ κ) (θ : E) :
     (vonMisesFisherMeasure m κ).tilted (fun x ↦ ⟪θ, (x : E)⟫_ℝ) =
-      if h : κ • (m : E) + θ = 0 then uniformSphereMeasure E
-      else vonMisesFisherMeasure
-        ⟨‖κ • (m : E) + θ‖⁻¹ • (κ • (m : E) + θ),
-          by
-            rw [mem_sphere_zero_iff_norm, norm_smul]
-            simp [h]⟩
+      vonMisesFisherMeasure (sphereDirection m (κ • (m : E) + θ))
         ‖κ • (m : E) + θ‖ := by
-  rw [vonMisesFisherMeasure_of_nonneg m hκ, vonMisesFisherNaturalMeasure_tilted_inner]
-  split_ifs with h
-  · simp [h]
-  · rw [vonMisesFisherMeasure_of_nonneg _ (norm_nonneg _)]
-    congr 1
-    simp [smul_smul, h]
+  rw [vonMisesFisherMeasure_of_nonneg m hκ, vonMisesFisherNaturalMeasure_tilted_inner,
+    vonMisesFisherMeasure_of_nonneg _ (norm_nonneg _), norm_smul_sphereDirection]
 
 end TauCeti.Probability
