@@ -64,7 +64,8 @@ polynomial in the Morse inequalities.
 
 * `TauCeti.criticalPoints`: the critical set, with `TauCeti.mem_criticalPoints_iff_mfderiv_eq_zero`,
   on boundaryless manifolds `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`,
-  and on a normed space `TauCeti.mem_criticalPoints_iff_fderiv_eq_zero`.
+  on a normed space `TauCeti.mem_criticalPoints_iff_fderiv_eq_zero`, and on the real line
+  `TauCeti.mem_criticalPoints_iff_deriv_eq_zero`.
 * `TauCeti.criticalPoints_pow`: the only critical point of `y ↦ yᵐ` on the real line, `m ≥ 2`,
   is `0`.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
@@ -167,19 +168,18 @@ theorem mem_criticalPoints_iff_fderiv_eq_zero {f : E → ℝ} {x : E} :
   -- `NormedSpace.fromTangentSpace x` is the identity of `E`, read on the tangent space.
   exact Iff.rfl
 
+/-- On the real line, a point is critical exactly when the derivative vanishes there. -/
+theorem mem_criticalPoints_iff_deriv_eq_zero {f : ℝ → ℝ} {x : ℝ} :
+    x ∈ criticalPoints 𝓘(ℝ, ℝ) f ↔ deriv f x = 0 := by
+  rw [mem_criticalPoints_iff_fderiv_eq_zero, ← toSpanSingleton_deriv,
+    ← ContinuousLinearMap.toSpanSingleton_zero, ContinuousLinearMap.toSpanSingleton_inj]
+
 /-- On the real line, the only critical point of `y ↦ y ^ m` with `m ≥ 2` is `0`. -/
 theorem criticalPoints_pow {m : ℕ} (hm : 2 ≤ m) :
     criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ m) = {0} := by
   ext y
-  have hderiv : deriv (fun y : ℝ ↦ y ^ m) y = m * y ^ (m - 1) := deriv_pow_field m
-  rw [mem_criticalPoints_iff_fderiv_eq_zero, mem_singleton_iff]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have h1 := fderiv_apply_one_eq_deriv (f := fun y : ℝ ↦ y ^ m) (x := y)
-    rw [h, hderiv, zero_apply] at h1
-    exact pow_eq_zero_iff (by omega) |>.1 <|
-      (mul_eq_zero.1 h1.symm).resolve_left (by exact_mod_cast (by omega : m ≠ 0))
-  · rw [← toSpanSingleton_deriv, hderiv, h, zero_pow (by omega), mul_zero,
-      ContinuousLinearMap.toSpanSingleton_zero]
+  rw [mem_criticalPoints_iff_deriv_eq_zero, deriv_pow_field, mem_singleton_iff]
+  simp [show m ≠ 0 by omega, show m - 1 ≠ 0 by omega]
 
 /-- The critical set is the zero locus of the manifold derivative `mfderiv I 𝓘(ℝ) f`. -/
 theorem criticalPoints_eq_setOf_mfderiv_eq_zero :
