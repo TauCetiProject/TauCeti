@@ -87,7 +87,10 @@ instance : Category TLDiagCat where
 
 variable {X Y Z : TLDiagCat}
 
-/-- Two morphisms of the Temperley–Lieb diagram category are equal if their diagrams are. -/
+/-- Two morphisms of the Temperley–Lieb diagram category are equal if their diagrams are.
+
+This registers extensionality for categorical morphisms `X ⟶ Y`: the generated `Hom.ext` is
+indexed by `Hom X Y`, which the `ext` tactic does not find on a goal stated using `⟶`. -/
 @[ext]
 theorem hom_ext {f g : X ⟶ Y} (h : f.diagram = g.diagram) : f = g :=
   Hom.ext h
