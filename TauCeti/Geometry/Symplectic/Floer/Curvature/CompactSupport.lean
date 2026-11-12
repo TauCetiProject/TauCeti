@@ -133,17 +133,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
 
-omit [FiniteDimensional ℝ V] in
-/-- A family on `(P × (ℝ × ℝ)) × V` which is jointly `C¹` is `C¹` for the product of the
-self-models of `P`, `ℝ × ℝ` and `V`, the form in which the manifold statements take it. -/
-private theorem contMDiff_family_of_contDiff {K : P → ℝ × ℝ → V → ℝ}
-    (hK : ContDiff ℝ 1 (fun q : (P × (ℝ × ℝ)) × V ↦ K q.1.1 q.1.2 q.2)) :
-    ContMDiff ((𝓘(ℝ, P).prod 𝓘(ℝ, ℝ × ℝ)).prod 𝓘(ℝ, V)) 𝓘(ℝ) 1
-      (fun q : (P × (ℝ × ℝ)) × V ↦ K q.1.1 q.1.2 q.2) := by
-  have h := contMDiff_prod_modelWithCornersSelf_iff.2 hK.contMDiff
-  rwa [modelWithCornersSelf_prod (E := P) (F := ℝ × ℝ),
-    ← chartedSpaceSelf_prod (H := P) (H' := ℝ × ℝ)] at h
-
 /-- The curvature of a jointly `C¹` Hamiltonian family is continuous jointly in the external
 parameter, domain point and target point. -/
 theorem continuous_hamiltonianCurvature_family (ω : SymplecticForm V)
@@ -153,7 +142,8 @@ theorem continuous_hamiltonianCurvature_family (ω : SymplecticForm V)
     Continuous (fun q : (P × (ℝ × ℝ)) × V ↦
       ω.hamiltonianCurvature (Ks q.1.1) (Kt q.1.1) q.1.2 q.2) := by
   simpa using (isNondegenerate_constSmooth ω).continuous_hamiltonianCurvature_family
-    (contMDiff_family_of_contDiff hKs) (contMDiff_family_of_contDiff hKt)
+    (contMDiff_prod_prod_modelWithCornersSelf_iff.2 hKs.contMDiff)
+      (contMDiff_prod_prod_modelWithCornersSelf_iff.2 hKt.contMDiff)
 
 /-- A jointly `C¹` family supported in a common compact domain set has a finite integrated
 curvature bound, uniform over compact parameter and target windows and over all maps into the
@@ -169,6 +159,7 @@ theorem exists_lintegral_enorm_hamiltonianCurvature_le_of_isCompact
       ∫⁻ z, ‖ω.hamiltonianCurvature (Ks p) (Kt p) z (u z)‖ₑ ≤ ENNReal.ofReal C := by
   simpa using
     (isNondegenerate_constSmooth ω).exists_lintegral_enorm_hamiltonianCurvature_le_of_isCompact
-      (contMDiff_family_of_contDiff hKs) (contMDiff_family_of_contDiff hKt) hA hD hQ hs ht
+      (contMDiff_prod_prod_modelWithCornersSelf_iff.2 hKs.contMDiff)
+      (contMDiff_prod_prod_modelWithCornersSelf_iff.2 hKt.contMDiff) hA hD hQ hs ht
 
 end TauCeti.SymplecticForm

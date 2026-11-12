@@ -28,6 +28,8 @@ compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and
   for the product of the self-models if and only if it is `C^n` for the self-model of the product.
 * `contMDiffOn_prod_modelWithCornersSelf_iff`, `contMDiffAt_prod_modelWithCornersSelf_iff`: the
   same bridge for `C^n` maps on a set and at a point.
+* `contMDiff_prod_prod_modelWithCornersSelf_iff`: the same bridge for a nested product
+  `(E₁ × E₂) × E₃`.
 * `TauCeti.exists_isOpen_prod_contMDiffOn`: the tube lemma for maps from a product which are
   `C^n` along a compact slice.
 
@@ -66,6 +68,15 @@ theorem contMDiffAt_prod_modelWithCornersSelf_iff {x : E₁ × E₂} :
     ContMDiffAt (𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)) I' n f x ↔
       ContMDiffAt 𝓘(𝕜, E₁ × E₂) I' n f x := by
   rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+
+/-- A map from a nested product `(E₁ × E₂) × E₃` of model vector spaces is `C^n` for the nested
+product of the self-models if and only if it is `C^n` for the self-model of the product. -/
+theorem contMDiff_prod_prod_modelWithCornersSelf_iff {E₃ : Type*} [NormedAddCommGroup E₃]
+    [NormedSpace 𝕜 E₃] {g : (E₁ × E₂) × E₃ → M} :
+    ContMDiff ((𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)).prod 𝓘(𝕜, E₃)) I' n g ↔
+      ContMDiff 𝓘(𝕜, (E₁ × E₂) × E₃) I' n g := by
+  rw [← contMDiff_prod_modelWithCornersSelf_iff, modelWithCornersSelf_prod (E := E₁) (F := E₂),
+    ← chartedSpaceSelf_prod (H := E₁) (H' := E₂)]
 
 namespace TauCeti
 
