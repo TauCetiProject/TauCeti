@@ -34,6 +34,29 @@ open ComposableArrows Limits
 
 variable {C : Type*} [Category* C] [Abelian C] {X Y : SpectralObject C EInt} (φ : X ⟶ Y)
 
+/-- If `b ≤ a`, `H^n(⊥ ≤ a)` and `H^n(b ≤ ⊤)` vanish for a spectral object over `EInt`, then so does
+`H^n(⊥ ≤ ⊤)`: the map `H^n(⊥ ≤ b) ⟶ H^n(⊥ ≤ ⊤)` is epi by exactness, since `H^n(b ≤ ⊤) = 0`,
+and it factors through `H^n(⊥ ≤ a) = 0`. -/
+lemma isZero_H_abutment_of_le (Z : SpectralObject C EInt) {a b : ℤ} (n : ℤ) (hba : (b : EInt) ≤ a)
+    (hZa : IsZero ((Z.H n).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ a)))))
+    (hZb : IsZero ((Z.H n).obj (mk₁ (homOfLE (le_top : (b : EInt) ≤ ⊤))))) :
+    IsZero ((Z.H n).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) := by
+  have hepi : Epi ((Z.H n).map (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ b))
+      (homOfLE (le_top : (b : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _))) := by
+    exact (Z.exact₂ (homOfLE (bot_le : (⊥ : EInt) ≤ b))
+      (homOfLE (le_top : (b : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _) n).epi_f
+      (hZb.eq_of_tgt _ _)
+  refine IsZero.of_epi_eq_zero ((Z.H n).map (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ b))
+      (homOfLE (le_top : (b : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _))) ?_
+  rw [show (Z.H n).map (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ b))
+      (homOfLE (le_top : (b : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _)) =
+      (Z.H n).map (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ b)) (homOfLE hba)
+        (homOfLE (bot_le : (⊥ : EInt) ≤ a)) (Subsingleton.elim _ _)) ≫
+      (Z.H n).map (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ a))
+        (homOfLE (le_top : (a : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _)) by
+    rw [← Functor.map_comp]; exact congrArg _ (Subsingleton.elim _ _),
+    hZa.eq_of_tgt ((Z.H n).map _) 0, zero_comp]
+
 /-- **The comparison theorem on `E∞`.** Let `φ : X ⟶ Y` be a morphism of spectral objects
 indexed by `EInt` and integers `a`, `b` such that `H^n(⊥ ≤ a)` and `H^n(b ≤ ⊤)` vanish for `X`
 and `Y` (the filtrations of the abutments in degree `n` start at `a` and end at `b`; if `b < a`
@@ -50,27 +73,10 @@ theorem isIso_hom_app_abutment {a b n : ℤ}
     IsIso ((φ.hom n).app (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) := by
   by_cases hab : a ≤ b
   swap
-  · -- If `b < a`, the abutments vanish: `H^n(⊥ ≤ b) ⟶ H^n(⊥ ≤ ⊤)` is epi since `H^n(b ≤ ⊤) = 0`,
-    -- and it factors through `H^n(⊥ ≤ a) = 0`.
+  · -- If `b < a`, the abutments vanish.
     have hba : (b : EInt) ≤ a := WithBotTop.coe_le_coe.mpr (not_le.1 hab).le
-    have hzero (Z : SpectralObject C EInt) (hZa : IsZero ((Z.H n).obj
-        (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ a)))))
-        (hZb : IsZero ((Z.H n).obj (mk₁ (homOfLE (le_top : (b : EInt) ≤ ⊤))))) :
-        IsZero ((Z.H n).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) := by
-      let S := Z.sc₂ (homOfLE (bot_le : (⊥ : EInt) ≤ b)) (homOfLE (le_top : (b : EInt) ≤ ⊤))
-        (homOfLE bot_le) (Subsingleton.elim _ _) n
-      have hS : S.Exact := Z.exact₂ _ _ _ _ n
-      have hepi : Epi S.f := hS.epi_f (hZb.eq_of_tgt _ _)
-      refine @IsZero.of_epi_eq_zero _ _ _ _ _ S.f hepi ?_
-      have hf : S.f = (Z.H n).map (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ b)) (homOfLE hba)
-          (homOfLE (bot_le : (⊥ : EInt) ≤ a)) (Subsingleton.elim _ _)) ≫
-          (Z.H n).map (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ a))
-            (homOfLE (le_top : (a : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _)) := by
-        rw [← Functor.map_comp]
-        exact congrArg _ (Subsingleton.elim _ _)
-      rw [hf, hZa.eq_of_tgt ((Z.H n).map _) 0, zero_comp]
-      rfl
-    exact ⟨⟨0, (hzero X hXa hXb).eq_of_src _ _, (hzero Y hYa hYb).eq_of_src _ _⟩⟩
+    exact ⟨⟨0, (isZero_H_abutment_of_le X n hba hXa hXb).eq_of_src _ _,
+      (isZero_H_abutment_of_le Y n hba hYa hYb).eq_of_src _ _⟩⟩
   have key : ∀ q, a ≤ q → q ≤ b → IsIso (opcyclesMapOfHom φ
       (homOfLE (bot_le : (⊥ : EInt) ≤ q)) (homOfLE (le_top : (q : EInt) ≤ ⊤)) n) := by
     intro q hq
