@@ -88,17 +88,11 @@ private lemma contDiff_littlewoodPaley_smul (hm : ContDiffOn ℝ ∞ m {0}ᶜ) (
   · exact (φ.contDiff_littlewoodPaley j).contDiffAt.smul
       (hm.contDiffAt (isOpen_compl_singleton.mem_nhds hξ))
 
-private lemma hasCompactSupport_littlewoodPaley_smul (j : ℤ) :
-    HasCompactSupport (fun ξ ↦ φ.littlewoodPaley j ξ • m ξ) :=
-  HasCompactSupport.intro (isCompact_closedBall (0 : E) (2 ^ j * φ.rOut)) fun ξ hξ ↦ by
-    rw [φ.littlewoodPaley_eq_zero_of_le_norm
-      (not_le.1 (by simpa [mem_closedBall_zero_iff] using hξ)).le, zero_smul]
-
 /-- The **Littlewood–Paley piece** `ψⱼ • m` of a function `m` smooth away from the origin, as a
 Schwartz function. It is supported in `closedBall 0 (2^j φ.rOut)`, and the pieces sum to `m` on
 `E \ {0}`. -/
 noncomputable def littlewoodPaleyPiece (hm : ContDiffOn ℝ ∞ m {0}ᶜ) (j : ℤ) : 𝓢(E, F) :=
-  (φ.hasCompactSupport_littlewoodPaley_smul j).toSchwartzMap
+  ((φ.hasCompactSupport_littlewoodPaley j).smul_right (f' := m)).toSchwartzMap
     (φ.contDiff_littlewoodPaley_smul hm j)
 
 /-- The values of the piece `ψⱼ • m`. -/
