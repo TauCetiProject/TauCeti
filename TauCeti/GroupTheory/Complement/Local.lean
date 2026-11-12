@@ -129,6 +129,25 @@ theorem IsComplement'.isLocalComplement_inf (h : N.IsComplement' K) (hNH : N ≤
     exact (N ⊔ K ⊓ H).mul_mem (mem_sup_left n.property)
       (mem_sup_right ⟨k.property, hkH⟩)
 
+/-- A complement of the image of a subgroup pulls back along an injective homomorphism. -/
+theorem IsComplement'.of_map {f : G →* G'} {D : Subgroup G'}
+    (h : (N.map f).IsComplement' D) (hf : Function.Injective f) :
+    N.IsComplement' (D.comap f) := by
+  apply isComplement'_of_disjoint_and_mul_eq_univ
+  · rw [disjoint_iff_inf_le]
+    intro x hx
+    apply hf
+    exact (disjoint_iff_inf_le.mp h.disjoint
+      ⟨mem_map.mpr ⟨x, hx.1, rfl⟩, hx.2⟩).trans (map_one f).symm
+  · apply Set.eq_univ_iff_forall.mpr
+    intro x
+    obtain ⟨⟨n, d⟩, hd⟩ := h.surjective (f x)
+    obtain ⟨n, hn, he⟩ := n.property
+    have hfd : f (n⁻¹ * x) = d := by
+      rw [map_mul, map_inv, he, ← hd, inv_mul_cancel_left]
+    refine ⟨n, hn, n⁻¹ * x, ?_, by simp⟩
+    exact mem_comap.mpr (hfd.symm ▸ d.property)
+
 /-- Local complementation is global complementation inside the specified subgroup. -/
 theorem isLocalComplement_iff_isComplement'_subgroupOf [(N.subgroupOf H).Normal]
     (hNH : N ≤ H) (hKH : K ≤ H) :
