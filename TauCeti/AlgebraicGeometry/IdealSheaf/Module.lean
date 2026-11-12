@@ -37,6 +37,8 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
   through `I`;
 * `Scheme.IdealSheafData.isIso_sheafι_top`: the unit ideal sheaf, which cuts out the empty closed
   subscheme, is the whole structure sheaf.
+* `Scheme.IdealSheafData.isZero_sheaf_bot`: the zero ideal sheaf, which cuts out all of `X`, is
+  the zero module.
 
 ## References
 
@@ -186,6 +188,21 @@ instance isIso_sheafι_top : IsIso (⊤ : X.IdealSheafData).sheafι := by
   refine ⟨sheafι_app_injective _ U, fun s ↦ ⟨sectionMk _ s ?_, rfl⟩⟩
   rw [sections_top]
   exact Submodule.mem_top
+
+/-- The zero ideal sheaf has no nonzero sections: it cuts out all of `X`. -/
+@[simp]
+lemma sections_bot (U : X.Opens) : (⊥ : X.IdealSheafData).sections U = ⊥ :=
+  -- The closed subscheme cut out by `⊥` is `X` itself, so restriction to it is injective.
+  (RingHom.injective_iff_ker_eq_bot _).mp
+    (ConcreteCategory.bijective_of_isIso ((⊥ : X.IdealSheafData).subschemeι.app U)).1
+
+/-- The zero ideal sheaf is the zero module. -/
+theorem isZero_sheaf_bot : Limits.IsZero (⊥ : X.IdealSheafData).sheaf := by
+  refine Limits.IsZero.of_mono_eq_zero (⊥ : X.IdealSheafData).sheafι ?_
+  refine Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun t ↦ ?_
+  have ht := (⊥ : X.IdealSheafData).sheafι_app_mem U t
+  rw [sections_bot] at ht
+  exact (Ideal.mem_bot (R := Γ(X, U))).mp ht
 
 end
 
