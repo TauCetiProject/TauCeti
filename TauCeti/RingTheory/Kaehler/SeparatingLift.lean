@@ -67,19 +67,24 @@ theorem exists_forall_transcendental_and_isSeparable_adjoin_add_smul
   let f (i : ι) : A →ₗ[R] Ω[F i⁄K] :=
     ((D K (F i)).toLinearMap.restrictScalars R).comp
       (IsScalarTower.toAlgHom R A (F i)).toLinearMap
+  -- `f i` is `D K (F i)` precomposed with the structure map `A → F i`.
+  have hf (i : ι) (x : A) : f i x = D K (F i) (algebraMap A (F i) x) := rfl
   have hnonzero (i : ι) : ∃ x : A, f i x ≠ 0 := by
     by_contra! h
     have hzero : (D K (F i) : F i → Ω[F i⁄K]) = fun _ ↦ 0 := by
       apply IsLocalization.eq_of_leibniz (S i) (D K (F i)).leibniz
       · simp
-      · exact h
+      · exact fun x ↦ (hf i x).symm.trans (h x)
     obtain ⟨y, hy, hsep⟩ := finrank_kaehlerDifferential_eq_one_iff.mp (hdim i)
     exact D_ne_zero_of_separating hy (congrFun hzero y)
   let U := LinearMap.range (LinearMap.lsmul R A π)
   have hU (i : ι) : ∃ x ∈ U, f i x ≠ 0 := by
     obtain ⟨x, hx⟩ := hnonzero i
-    exact ⟨π • x, ⟨x, rfl⟩, by simpa only [map_smul] using smul_ne_zero hπ hx⟩
+    exact ⟨π • x, ⟨x, LinearMap.lsmul_apply π x⟩,
+      by simpa only [map_smul] using smul_ne_zero hπ hx⟩
   obtain ⟨x, ⟨b, rfl⟩, hx⟩ := LinearMap.exists_mem_forall_apply_add_ne_zero f U hU a
-  exact ⟨b, fun i ↦ transcendental_and_isSeparable_adjoin_of_D_ne_zero (hdim i) (hx i)⟩
+  refine ⟨b, fun i ↦ transcendental_and_isSeparable_adjoin_of_D_ne_zero (hdim i) ?_⟩
+  rw [← LinearMap.lsmul_apply, ← hf]
+  exact hx i
 
 end TauCeti
