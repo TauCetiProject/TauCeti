@@ -17,7 +17,8 @@ For two letters `a`, `b` and a list of exponents `m₁, …, m_n`, the *Merzljak
 positive word `b a^{m₁} b a^{m₂} b ⋯ a^{m_n} b`, and its *blocks* are the subwords `b a^{m_i} b`;
 consecutive blocks overlap in one letter `b`. These words are the test values substituted for the
 universally quantified variables in the proof of Merzljakov's theorem on positive sentences of
-free groups: their blocks can be recognised inside any factorisation of the word.
+free groups: if such a word lies in a concatenation of at most as many pieces as it has exponents,
+then one of the pieces contains a whole block.
 
 This file records the combinatorics of these words which that proof uses. Here a word is a list
 of signed letters `α × Bool` and a subword is an infix, `List.IsInfix`.
