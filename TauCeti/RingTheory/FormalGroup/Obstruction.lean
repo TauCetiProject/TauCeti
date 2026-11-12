@@ -355,7 +355,6 @@ private theorem exists_homogeneousComponent_defectPoint (hf : PowerSeries.consta
     have hval (y z : F.Point (Fin 3)) : (defectPoint G hf y z).val =
         (coordDefect F G hf).val.subst ![y.val, z.val] := by
       rw [defectPoint_eq_substPointHom, val_substPointHom]
-    have hn' : ((1 : ℕ) : ℕ∞) ≤ n := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hn
     have h0 {y z : F.Point (Fin 3)} (hy : constantCoeff y.val = 0)
         (hz : constantCoeff z.val = 0) : constantCoeff (defectPoint G hf y z).val = 0 :=
       order_ne_zero_iff_constCoeff_eq_zero.mp fun h ↦ by

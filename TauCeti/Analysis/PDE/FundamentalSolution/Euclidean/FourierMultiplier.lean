@@ -134,8 +134,6 @@ private theorem annulus_bound_nonneg (hn : 3 ≤ n) {C R A : ℝ} (hR : 1 ≤ R)
     have := (norm_nonneg _).trans (hχ' 0)
     rwa [le_div_iff₀ hR0, zero_mul] at this
   have hV := volume_real_unitBall_pos n
-  have hCd : 0 ≤ ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
-    inv_nonneg.2 (mul_nonneg (by linarith) hV.le)
   have hCn :
       0 ≤ ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
     inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith)) hV.le)
@@ -164,14 +162,12 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le_of_norm_m
   have hC : 0 ≤ C := by
     have := (norm_nonneg _).trans (hχ' 0)
     rwa [le_div_iff₀ hR0, zero_mul] at this
-  have hCd : 0 ≤ Cd := inv_nonneg.2 (mul_nonneg (by linarith) (volume_real_unitBall_pos n).le)
   have hCn : 0 ≤ Cn := inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith))
     (volume_real_unitBall_pos n).le)
   have hu : ContDiff ℝ ∞ u := contDiff_newtonianKernel_convolution hφ hc
   have hΔu : Δ u = -φ := laplacian_newtonianKernel_convolution hn (hφ.of_le (by simp)) hc
   have hφx : ∀ y : EuclideanSpace ℝ (Fin n), R₀ < ‖y‖ → φ y = 0 := fun y hy =>
     image_eq_zero_of_notMem_tsupport fun h => (mem_closedBall_zero_iff.1 (hR₀ h)).not_gt hy
-  have hA₀ := integral_nonneg (μ := volume) (f := fun y => ‖φ y‖) fun y => norm_nonneg _
   -- On the annulus, expand `Δ(χ u)` by the Leibniz rule.
   have hxR₀ : R / 2 ≤ ‖x‖ - R₀ := by linarith
   have hpow : (‖x‖ - R₀) ^ (2 - (n : ℝ)) ≤ (R / 2) ^ (2 - (n : ℝ)) :=
@@ -261,7 +257,6 @@ private theorem tendsto_mul_rpow_mul_measureReal_closedBall_rpow (hn : 3 ≤ n) 
       rw [← Real.rpow_neg_one, ← Real.rpow_add hR, ← Real.rpow_add hR]
       congr 1
       ring
-    have h₂ : (0 : ℝ) < 2 ^ (2 - (n : ℝ)) := by positivity
     rw [h₁]
     field_simp
     simp only [c]

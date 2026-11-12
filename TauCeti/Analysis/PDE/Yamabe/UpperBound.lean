@@ -184,9 +184,6 @@ theorem exists_contMDiff_hasCompactSupport_yamabeQuotient_lt [I.Boundaryless]
   set B := ∫ z, v z ^ 2 with hB_def
   set D := ∫ z, |v z| ^ P with hD_def
   set S := |Scal p| + 1
-  have hS : 0 ≤ S := by positivity
-  have hB : 0 ≤ B := integral_nonneg fun _ ↦ sq_nonneg _
-  have hA : 0 ≤ A := mul_nonneg ha.le (integral_nonneg fun _ ↦ sq_nonneg _)
   set G : ℝ → ℝ := fun η ↦
     ((1 + η) ^ 3 * A + S * (1 + η) * η ^ 2 * B) / ((1 - η) ^ (2 / P) * D ^ (2 / P))
   have hG : Tendsto G (𝓝 0) (𝓝 (A / D ^ (2 / P))) := by

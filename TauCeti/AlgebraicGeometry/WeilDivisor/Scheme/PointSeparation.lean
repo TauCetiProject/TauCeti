@@ -69,7 +69,7 @@ theorem eq_of_linearlyEquivalent_ofPoint_of_genus_pos
     rwa [← genus_eq_genus_functionField hex hX.out hF hk]
   apply (CodimensionOnePoint.equivPlace hex hX.out).injective
   rw [CodimensionOnePoint.equivPlace_apply, CodimensionOnePoint.equivPlace_apply]
-  refine Place.eq_of_linearlyEquivalent_ofPoint_of_genus_pos hF hk hgF
+  refine Place.eq_of_linearlyEquivalent_ofPoint_of_genus_pos hF hgF
     (by rw [X.toPlace_degree_eq_residueDegree, hx]) ?_
   rw [← equivFunctionFieldDivisor_ofPoint hex hX.out,
     ← equivFunctionFieldDivisor_ofPoint hex hX.out,

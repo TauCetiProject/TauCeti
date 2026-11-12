@@ -113,9 +113,9 @@ theorem ext {T₁ T₂ : CWSubcomplexTower W newCell}
   have hstep' : T₁.step = T₂.step := funext hstep
   have hsub : T₁.subcomplex = T₂.subcomplex := funext (subcomplex_eq_of_step_eq hstep')
   cases T₁ with
-  | mk step₁ emb₁ sub₁ coe₁ zero₁ old₁ new₁ map₁ =>
+  | mk step₁ _ sub₁ _ zero₁ old₁ new₁ map₁ =>
     cases T₂ with
-    | mk step₂ emb₂ sub₂ coe₂ zero₂ old₂ new₂ map₂ =>
+    | mk step₂ _ sub₂ _ zero₂ old₂ new₂ map₂ =>
       dsimp at hstep' hsub hzero hnew
       subst hstep' hsub
       congr

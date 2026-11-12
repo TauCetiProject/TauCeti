@@ -229,7 +229,7 @@ private def diskRadialPush {r : ℝ} (hr : 0 ≤ r) :
     C(I × TopCat.disk.{w} n, TopCat.disk.{w} n) where
   toFun q := (diskHomeomorphClosedBall n).symm
     ⟨radialPush r q.1 (diskHomeomorphClosedBall n q.2 : Fin n → ℝ), mem_closedBall_zero_iff.2
-      (norm_radialPush_le_one hr q.1
+      (norm_radialPush_le_one q.1
         (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n q.2).2))⟩
   continuous_toFun := (diskHomeomorphClosedBall n).symm.continuous.comp
     (Continuous.subtype_mk ((continuous_radialPush hr).comp (continuous_fst.prodMk

@@ -28,8 +28,8 @@ field `k`:
 
 * the lines `[1 : 0]` and `[0 : 1]` through the two standard basis vectors are fixed by the whole
   group scheme, so their orbits are single closed points;
-* the orbit of `[1 : 1]` is dense in `ℙ¹` (over any domain) and consists of all points except the
-  two fixed points, so it is not closed;
+* the orbit of `[1 : 1]` is dense in `ℙ¹` (over any commutative ring) and consists of all points
+  except the two fixed points, so it is not closed;
 * hence the boundary of that orbit, its closure minus the orbit, is exactly the two fixed points.
 
 This is the standard example of the closed-orbit lemma: the open orbit has a boundary made of
@@ -203,8 +203,6 @@ theorem eq_zero_of_orbitCoordinates_one_eq_zero {n : ℕ}
     map_eq_zero_iff _ Polynomial.toLaurent_injective,
     AlgebraicGeometry.projectiveLine.dehomogenize_eq_zero_iff R 1 hs'] at hcomp
   rw [← hss', hcomp, map_zero]
-
-variable [IsDomain R]
 
 /-- The orbit of `[1 : 1]` is dense in the projective line. -/
 theorem dense_range_projectiveOrbitMap_one :

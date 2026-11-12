@@ -42,6 +42,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   multiplication by the matrix.
 * `Matrix.rank_eq_card_iff_mulVec_injective` characterizes full column rank by injectivity of
   matrix-vector multiplication.
+* `Matrix.finite_of_mulVec_surjective`: a matrix whose `mulVec` is surjective has finitely many
+  rows.
 * `Matrix.rank_left_factor_eq` and `Matrix.range_left_factor_eq`: an exact-rank
   factorization gives a full-column-rank left factor with the same column range.
 * `Matrix.rank_mul_eq_right_of_rank_eq_card`: left multiplication by a full-column-rank matrix
@@ -177,7 +179,7 @@ theorem finrank_ker_mulVecLin_of_linearIndependent_rows {K m ι : Type*} [Field 
     [Fintype m] [Fintype ι] {A : Matrix m ι K} (hA : LinearIndependent K A.row) :
     Module.finrank K (LinearMap.ker A.mulVecLin) = Fintype.card ι - Fintype.card m := by
   have h := A.mulVecLin.finrank_range_add_finrank_ker
-  rw [← Matrix.rank, hA.rank_matrix, Module.finrank_fintype_fun_eq_card] at h
+  rw [← rank, hA.rank_matrix, Module.finrank_fintype_fun_eq_card] at h
   omega
 
 end KernelDimension
@@ -195,6 +197,18 @@ theorem rank_eq_card_iff_mulVec_injective (B : Matrix m n R) :
 
 end FullColumnRank
 
+section FiniteRows
+
+/-- If `A.mulVec` is surjective, then `A` has finitely many rows: a finite-dimensional space
+cannot surject onto the infinite-dimensional space `m → K`. -/
+theorem finite_of_mulVec_surjective {K : Type*} [Field K] {m n : Type*} [Fintype n]
+    (A : Matrix m n K) (h : Function.Surjective A.mulVec) : Finite m := by
+  have : Module.Finite K (m → K) := Module.Finite.of_surjective (mulVecLin A) h
+  classical
+  exact (Pi.linearIndependent_single_one m K).finite
+
+end FiniteRows
+
 section ExactRankFactorization
 
 variable {R m n : Type*} [CommSemiring R] [StrongRankCondition R] [Fintype n]
@@ -209,7 +223,7 @@ theorem rank_left_factor_eq {ι : Type*} [Fintype ι]
   refine le_antisymm (by simpa using L.rank_le_card_width) ?_
   calc Fintype.card ι = M.rank := hM.symm
     _ = (L * C).rank := by rw [h]
-    _ ≤ L.rank := Matrix.rank_mul_le_left L C
+    _ ≤ L.rank := rank_mul_le_left L C
 
 end ExactRankFactorization
 
@@ -231,10 +245,10 @@ theorem range_left_factor_eq {ι : Type*} [Fintype ι]
     {R : Matrix ι n 𝕜} (hM : M.rank = Fintype.card ι) (h : M = L * R) :
     LinearMap.range L.mulVecLin = LinearMap.range M.mulVecLin := by
   refine (Submodule.eq_of_le_of_finrank_eq ?_ ?_).symm
-  · rw [h, Matrix.mulVecLin_mul]
+  · rw [h, mulVecLin_mul]
     exact LinearMap.range_comp_le_range _ _
   · have hL := rank_left_factor_eq hM h
-    rw [Matrix.rank] at hM hL
+    rw [rank] at hM hL
     exact hM.trans hL.symm
 
 end ExactRankFactorRange
@@ -294,7 +308,7 @@ end
 
 /-- The rank of a sum of matrices over a field is at most the sum of the ranks. -/
 theorem rank_add_le (A B : Matrix m n K) : (A + B).rank ≤ A.rank + B.rank := by
-  rw [Matrix.rank, Matrix.rank, Matrix.rank, mulVecLin_add]
+  rw [rank, rank, rank, mulVecLin_add]
   refine (Submodule.finrank_mono ?_).trans
     (Submodule.finrank_add_le_finrank_add_finrank (LinearMap.range A.mulVecLin)
       (LinearMap.range B.mulVecLin))
@@ -304,7 +318,7 @@ theorem rank_add_le (A B : Matrix m n K) : (A + B).rank ≤ A.rank + B.rank := b
 size of the matrices. -/
 lemma card_le_rank_add_rank_add_rank [Fintype m] [DecidableEq m] (P e Q : Matrix m m K)
     (h : P + e + Q = 1) : Fintype.card m ≤ P.rank + e.rank + Q.rank := by
-  rw [← Matrix.rank_one (R := K) (n := m), ← h]
+  rw [← rank_one (R := K) (n := m), ← h]
   exact (rank_add_le _ _).trans (Nat.add_le_add_right (rank_add_le _ _) _)
 
 /-- Over a field, let `e` be an idempotent and `A₁`, `A₂` matrices with `e A₁ = 0`, `A₂ e = 0` and
@@ -316,21 +330,21 @@ lemma rank_add_rank_add_rank_le [Fintype m] {a c : Type*} [Fintype a] (e : Matri
   classical
   have hdisj : LinearMap.range e.mulVecLin ⊓ LinearMap.range A₁.mulVecLin = ⊥ := by
     refine eq_bot_iff.2 fun x ⟨⟨y, hy⟩, ⟨z, hz⟩⟩ ↦ ?_
-    simp only [Matrix.mulVecLin_apply] at hy hz
-    have h1 : e *ᵥ x = x := by rw [← hy, Matrix.mulVec_mulVec, he]
-    have h2 : e *ᵥ x = 0 := by rw [← hz, Matrix.mulVec_mulVec, h₁, Matrix.zero_mulVec]
+    simp only [mulVecLin_apply] at hy hz
+    have h1 : e *ᵥ x = x := by rw [← hy, mulVec_mulVec, he]
+    have h2 : e *ᵥ x = 0 := by rw [← hz, mulVec_mulVec, h₁, zero_mulVec]
     exact (Submodule.mem_bot K).2 (h1.symm.trans h2)
   have hle : LinearMap.range e.mulVecLin ⊔ LinearMap.range A₁.mulVecLin ≤
       LinearMap.ker A₂.mulVecLin := by
     refine sup_le ?_ ?_ <;> rintro _ ⟨y, rfl⟩ <;>
-      simp [LinearMap.mem_ker, Matrix.mulVec_mulVec, h₂, h₃]
+      simp [LinearMap.mem_ker, mulVec_mulVec, h₂, h₃]
   have hsum := Submodule.finrank_sup_add_finrank_inf_eq (LinearMap.range e.mulVecLin)
     (LinearMap.range A₁.mulVecLin)
   rw [hdisj, finrank_bot, add_zero] at hsum
   have hker := LinearMap.finrank_range_add_finrank_ker A₂.mulVecLin
   rw [Module.finrank_fintype_fun_eq_card] at hker
   have := Submodule.finrank_mono hle
-  simp only [Matrix.rank]
+  simp only [rank]
   omega
 
 /-- A decomposition of the identity into a homology projector and two null-homotopy terms
@@ -392,7 +406,7 @@ theorem exists_eq_mul_fin_rank (A : Matrix m n K) :
     ext v i
     simp [l, r, LinearMap.comp_apply]
   refine ⟨LinearMap.toMatrix' l, LinearMap.toMatrix' r, ?_⟩
-  rw [← LinearMap.toMatrix'_comp, h, ← Matrix.toLin'_apply', LinearMap.toMatrix'_toLin']
+  rw [← LinearMap.toMatrix'_comp, h, ← toLin'_apply', LinearMap.toMatrix'_toLin']
 
 /-- A rank bound gives a factorization through `Fin r`, padding an exact-rank factorization
 with zero columns and rows when necessary. -/
@@ -447,7 +461,7 @@ theorem isCompl_iInf_ker_mulVecLin_iSup_range_mulVecLin_conjTranspose {ι : Type
   classical
   have := Fintype.ofFinite ι
   -- Stack the family into one matrix with rows indexed by `ι × m`.
-  let B : Matrix (ι × m) n R := Matrix.of fun p => A p.1 p.2
+  let B : Matrix (ι × m) n R := of fun p => A p.1 p.2
   have hker : LinearMap.ker B.mulVecLin = ⨅ i, LinearMap.ker (A i).mulVecLin := by
     ext x
     simp [B, Submodule.mem_iInf, funext_iff, mulVec, Prod.forall]

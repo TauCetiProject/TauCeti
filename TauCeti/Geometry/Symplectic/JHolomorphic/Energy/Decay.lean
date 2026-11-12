@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.PuncturedDisc
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Radial
 import TauCeti.Analysis.Calculus.PowerGrowth
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!

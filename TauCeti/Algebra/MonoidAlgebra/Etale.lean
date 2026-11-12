@@ -61,20 +61,34 @@ theorem formallyUnramified_of_isUnit_card (h : IsUnit (Nat.card G : R)) :
         (D.map_smul r (single g 1)).trans (by rw [hsingle, smul_zero])
   exact hzero x
 
-/-- A finite commutative group algebra is étale if its group order is invertible in
-the base ring. This includes arbitrary, possibly non-Noetherian, base rings. -/
+omit [Finite G] in
+/-- A commutative group algebra is étale if its group order is invertible in the base ring. This
+includes arbitrary, possibly non-Noetherian, base rings. For an infinite group the order
+`Nat.card G` is `0`, so the hypothesis forces the base ring to be trivial. -/
 theorem etale_of_isUnit_card (h : IsUnit (Nat.card G : R)) :
     Algebra.Etale R (MonoidAlgebra R G) := by
   let := formallyUnramified_of_isUnit_card R G h
+  have : Module.Finite R (MonoidAlgebra R G) := by
+    rcases finite_or_infinite G with hG | hG
+    · infer_instance
+    · rw [Nat.card_eq_zero_of_infinite, Nat.cast_zero, isUnit_zero_iff] at h
+      have := subsingleton_of_zero_eq_one h
+      exact Module.Finite.of_finite
   let := Module.finitePresentation_of_projective R (MonoidAlgebra R G)
   exact Algebra.Etale.of_formallyUnramified_of_flat
 
-/-- Over a field, a finite commutative group algebra is étale exactly when its group
-order is invertible, equivalently when the characteristic does not divide that order. -/
+omit [Finite G] in
+/-- Over a field, a commutative group algebra is étale exactly when its group order is
+invertible, equivalently when the group is finite and the characteristic does not divide its
+order. -/
 theorem etale_iff_isUnit_card (k : Type*) [Field k] :
     Algebra.Etale k (MonoidAlgebra k G) ↔ IsUnit (Nat.card G : k) := by
   refine ⟨fun he => ?_, etale_of_isUnit_card k G⟩
   let := he
+  -- An étale algebra is finite over the field, and the group is the basis of the group algebra.
+  have : Module.Free k (MonoidAlgebra k G) := Module.Free.of_basis (MonoidAlgebra.basis G k)
+  have : Module.Finite k (MonoidAlgebra k G) := Algebra.FormallyUnramified.finite_of_free k _
+  have : Finite G := Module.Finite.finite_basis (MonoidAlgebra.basis G k)
   by_contra h
   exact not_isReduced_monoidAlgebra_of_not_isUnit_card k G h
     (Algebra.FormallyUnramified.isReduced_of_field k _)

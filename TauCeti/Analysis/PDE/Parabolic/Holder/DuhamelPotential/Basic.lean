@@ -627,7 +627,6 @@ private theorem norm_potentialTwo_le (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (
   set L := ‖traceL (E := E) (F := F)‖
   have hCg : 0 ≤ Cg := gradientConstant_nonneg
   have hCh : 0 ≤ Ch := NNReal.coe_nonneg _
-  have hL : 0 ≤ L := norm_nonneg _
   have hf : 0 ≤ ‖f‖ := norm_nonneg _
   have hT0 : (0 : ℝ) ≤ T := T.coe_nonneg
   -- The four fields of the potential.

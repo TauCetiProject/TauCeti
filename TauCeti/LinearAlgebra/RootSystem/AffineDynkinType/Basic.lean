@@ -36,7 +36,7 @@ and `E₈` matrix. Those live on the sum and sigma
 index types that make the classification argument uniform rather than on `Fin`, and their marks are
 rational and unnormalized -- `TauCeti.starMark ![2, 2, 2]` is `9` times the marks below -- so
 identifying them with the diagrams of this file is a relabelling problem of its own, of a piece
-with the Bourbaki relabelling that the roadmap asks for and that is not proved here either. This
+with relabelling them into the Bourbaki numbering, which is not proved here either. This
 file is the affine complement, and it is deliberately *graph* first, because its consumers --
 zigzag and preprojective algebras, and the McKay correspondence -- start from the diagram rather
 than from a root system.
@@ -99,10 +99,8 @@ number, which reduces connectedness to a single induction. Explicitly:
 
 ## References
 
-This is the affine simply-laced family of Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`; the `E₈` numbering below is the one that roadmap's
-`Suggested.lean` fixes in `affineE8ArmRel`. See V. Kac, *Infinite dimensional Lie algebras*,
-3rd ed., Chapter 4 and Table Aff 1, for the diagrams, their marks and the null root.
+See V. Kac, *Infinite dimensional Lie algebras*, 3rd ed., Chapter 4 and Table Aff 1, for the
+diagrams, their marks and the null root.
 -/
 
 public section

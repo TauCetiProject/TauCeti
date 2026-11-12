@@ -72,10 +72,10 @@ variable {α : ℕ → Type t} {A B : (n : ℕ) → α n → TopCat.{u}}
 target `Y`, provided its basic cells are closed embeddings into normal spaces. -/
 theorem normalSpace [NormalSpace X] [∀ n i, NormalSpace (B n i)]
     (hc : ∀ s : c.Cells, IsClosedEmbedding (basicCell s.j s.i)) : NormalSpace Y := by
-  have hF (n : ℕ) : NormalSpace (c.F.obj n) := by
+  have _ (n : ℕ) : NormalSpace (c.F.obj n) := by
     induction n with
     | zero => exact (TopCat.homeoOfIso c.isoBot).symm.normalSpace
-    | succ n ih => exact (c.attachCells n (not_isMax n)).normalSpace fun i ↦ hc ⟨n, not_isMax n, i⟩
+    | succ n _ => exact (c.attachCells n (not_isMax n)).normalSpace fun i ↦ hc ⟨n, not_isMax n, i⟩
   exact TauCeti.TopCat.normalSpace_of_isColimit
     (fun n ↦ c.isClosedEmbedding_map hc n.le_succ) c.isColimit
 

@@ -123,32 +123,25 @@ theorem mfderiv_proj_comp_mfderivWithin_extChartAt_symm [IsManifold IB 1 B]
 point `p` of the total space are read in the preferred chart at `p`, as pairs of a base and a fibre
 coordinate, and tangent vectors of the base in the chart at `p.proj`; in these coordinates the
 derivative of the projection keeps the base coordinate. -/
-theorem mfderiv_proj [IsManifold IB 1 B] [IsManifold (IB.prod 𝓘(𝕜, F)) 1 (TotalSpace F V)]
-    (p : TotalSpace F V) :
+theorem mfderiv_proj (p : TotalSpace F V) :
     mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) p = ContinuousLinearMap.fst 𝕜 EB F := by
-  have h := mfderiv_proj_comp_mfderivWithin_extChartAt_symm (IB := IB) p
-    (mem_extChartAt_target (I := IB.prod 𝓘(𝕜, F)) p)
-  -- Both chart derivatives are taken at the centres of their charts, where they are the identity.
-  have h1 : (extChartAt (IB.prod 𝓘(𝕜, F)) p p).1 = extChartAt IB p.proj p.proj := by
-    simp [FiberBundle.chartedSpace_chartAt]
-  rw [extChartAt_to_inv, mfderivWithin_range_extChartAt_symm, h1,
-    mfderivWithin_range_extChartAt_symm] at h
-  exact ContinuousLinearMap.ext fun u ↦ DFunLike.congr_fun h u
+  refine HasMFDerivAt.mfderiv ⟨(FiberBundle.continuous_proj F V).continuousAt, ?_⟩
+  have hy := mem_extChartAt_target (I := IB.prod 𝓘(𝕜, F)) p
+  -- In the preferred charts the projection is the first projection of the model.
+  refine (hasFDerivAt_fst (𝕜 := 𝕜) (E := EB) (F := F)).hasFDerivWithinAt.congr_of_eventuallyEq
+    ?_ ?_
+  · filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem hy] with y hy
+    simp only [writtenInExtChartAt, Function.comp_apply, proj_extChartAt_symm p hy,
+      (extChartAt IB p.proj).right_inv (fst_mem_extChartAt_target p hy)]
+  · simp only [writtenInExtChartAt, Function.comp_apply, proj_extChartAt_symm p hy,
+      (extChartAt IB p.proj).right_inv (fst_mem_extChartAt_target p hy)]
 
 /-- The derivative of the projection of a fibre bundle is surjective at every point of the total
 space: every tangent vector of the base lifts to a tangent vector of the total space. -/
-theorem mfderiv_proj_surjective [IsManifold IB 1 B]
-    [IsManifold (IB.prod 𝓘(𝕜, F)) 1 (TotalSpace F V)] (p : TotalSpace F V) :
+theorem mfderiv_proj_surjective (p : TotalSpace F V) :
     Function.Surjective (mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) p) := by
-  intro v
-  have hy := mem_extChartAt_target (I := IB.prod 𝓘(𝕜, F)) p
-  -- In the preferred chart at `p` the projection is the first projection, and the inverse base
-  -- chart has invertible derivative.
-  obtain ⟨u, hu⟩ :=
-    (isInvertible_mfderivWithin_extChartAt_symm (fst_mem_extChartAt_target p hy)).surjective v
-  have h := DFunLike.congr_fun (mfderiv_proj_comp_mfderivWithin_extChartAt_symm p hy) (u, 0)
-  rw [extChartAt_to_inv] at h
-  exact ⟨_, h.trans hu⟩
+  rw [mfderiv_proj]
+  exact fun v ↦ ⟨(v, 0), rfl⟩
 
 /-- A self-map `g` of the total space covering the identity of the base commutes with the
 derivative of the projection: `dπ_{g z} ∘ dg_z = dπ_z`. -/
