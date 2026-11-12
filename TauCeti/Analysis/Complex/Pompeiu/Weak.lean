@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Complex.Wirtinger.Weyl
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Complex.CauchyKernel
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -195,7 +194,7 @@ theorem integral_conjWirtingerDeriv_smul_cauchyTransform [CompleteSpace F] {f : 
     simp only [cauchyTransform_apply, ← map_smul, L.integral_comp_comm]
   have h := integral_cauchyTransform_apply_conjWirtingerDeriv (L.integrable_comp_iff.2 hf) hc hψ
   simp only [hT] at h
-  simpa [L] using h
+  simpa only [L, ContinuousLinearMap.toSpanSingletonCLE_apply_apply] using h
 
 /-- **Integration by parts against the Cauchy transform.** For integrable `f` and a compactly
 supported real `C¹` function `φ`,
@@ -320,7 +319,8 @@ theorem hasWeakConjWirtingerDerivOn_cauchyTransform_apply [CompleteSpace V] [Com
   have hφΩ : tsupport (fun z ↦ ((φ : ℂ → ℝ) z : ℂ)) ⊆ Ω :=
     (tsupport_comp_subset ofReal_zero _).trans φ.tsupport_subset
   have hψ : ContDiff ℝ 1 ψ := by
-    convert hξ.contDiff_smul_of_tsupport_subset Ω.isOpen hφ.contDiffOn φ.tsupport_subset using 2
+    simpa only [hψ_def, Complex.coe_smul] using
+      hξ.contDiff_smul_of_tsupport_subset Ω.isOpen hφ.contDiffOn φ.tsupport_subset
   have hψc : HasCompactSupport ψ := (φ.hasCompactSupport.comp_left ofReal_zero).smul_right
   have hreal (r : ℝ) (v : W) : r • v = (r : ℂ) • v := RCLike.real_smul_eq_coe_smul (K := ℂ) r v
   have hi1 := integrable_lineDeriv_smul_of_locallyIntegrableOn hu φ 1

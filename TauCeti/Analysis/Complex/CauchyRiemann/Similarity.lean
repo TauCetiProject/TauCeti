@@ -7,12 +7,12 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
-import Mathlib.Analysis.InnerProductSpace.LinearMap
 import Mathlib.Analysis.Normed.Ring.Units
 import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Analysis.Complex.Pompeiu.Holder.Basic
 import TauCeti.Analysis.Complex.Pompeiu.Pointwise
 import TauCeti.Analysis.Complex.Pompeiu.Weak
+import TauCeti.MeasureTheory.Function.RankOne
 
 /-!
 # The similarity principle for classical solutions of linear Cauchy–Riemann equations
@@ -37,9 +37,9 @@ The coefficient `C` need not commute with `i`, and a solution is in general not 
 The proof follows Carleman's argument as presented by McDuff and Salamon, after transporting the
 equation along a complex-linear equivalence of `V` with a Euclidean space, whose inner product is
 used only in the next step. First the real-linear term `C ξ` is absorbed into a complex-linear
-coefficient depending on `ξ`: the rank-one map `D w = ‖ξ‖⁻² ⟪ξ, w⟫ C ξ` is complex-linear,
-satisfies `D ξ = C ξ` and `‖D‖ ≤ ‖C‖`, and is merely measurable, since it jumps at the zeros
-of `ξ`. Then the Cauchy integral equation
+coefficient depending on `ξ`: the rank-one map `D w = ‖ξ‖⁻² ⟪ξ, w⟫ C ξ`
+(`TauCeti.rankOneDivNormSq`) is complex-linear, satisfies `D ξ = C ξ` and `‖D‖ ≤ ‖C‖`, and is
+merely measurable, since it jumps at the zeros of `ξ`. Then the Cauchy integral equation
 `Ψ = 1 + T (½ Ψ D)`, for the Cauchy transform `T` inverting `bar∂ = (∂ₛ + i ∂ₜ)/2`, is solved on a
 small closed disc by the contraction mapping theorem. Its solution `Ψ` is continuous, close to
 `1` and hence invertible, and has weak derivative `bar∂Ψ = ½ Ψ D`. The Leibniz rule for the
@@ -73,57 +73,6 @@ open scoped ENNReal InnerProductSpace
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-
-/-! ### Absorbing a real-linear coefficient -/
-
-/-- A complex-linear map agreeing with the real-linear map `A` at `v`: the rank-one map
-`w ↦ ‖v‖⁻² ⟪v, w⟫ • A v`, which is `0` when `v = 0`. -/
-private def absorb (A : E →L[ℝ] E) (v : E) : E →L[ℂ] E :=
-  ((‖v‖ : ℂ) ^ 2)⁻¹ • InnerProductSpace.rankOne ℂ (A v) v
-
-/-- `absorb A v` agrees with `A` at `v`. -/
-private theorem absorb_apply_self (A : E →L[ℝ] E) (v : E) : absorb A v v = A v := by
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp [absorb]
-  · rw [absorb, smul_apply, InnerProductSpace.rankOne_apply, inner_self_eq_norm_sq_to_K,
-      smul_smul]
-    simp [hv]
-
-/-- `absorb A v` is no larger than `A`. -/
-private theorem norm_absorb_le (A : E →L[ℝ] E) (v : E) : ‖absorb A v‖ ≤ ‖A‖ := by
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp [absorb]
-  · rw [absorb, norm_smul, InnerProductSpace.norm_rankOne, norm_inv, norm_pow, Complex.norm_real,
-      norm_norm]
-    calc (‖v‖ ^ 2)⁻¹ * (‖A v‖ * ‖v‖) ≤ (‖v‖ ^ 2)⁻¹ * (‖A‖ * ‖v‖ * ‖v‖) := by
-          gcongr
-          exact A.le_opNorm v
-      _ = ‖A‖ := by field_simp
-
-/-- On a set where `A` is almost everywhere strongly measurable and `v` is continuous,
-`z ↦ absorb (A z) (v z)` is almost everywhere strongly measurable. Even for continuous `A` it is
-in general discontinuous at the zeros of `v`. -/
-private theorem aestronglyMeasurable_absorb {A : ℂ → E →L[ℝ] E} {v : ℂ → E} {s : Set ℂ}
-    (hs : MeasurableSet s) (hA : AEStronglyMeasurable A (volume.restrict s))
-    (hv : ContinuousOn v s) :
-    AEStronglyMeasurable (fun z ↦ absorb (A z) (v z)) (volume.restrict s) := by
-  have hn : AEMeasurable (fun z ↦ ((‖v z‖ : ℂ) ^ 2)⁻¹) (volume.restrict s) :=
-    measurable_inv.comp_aemeasurable
-      (((Complex.continuous_ofReal.comp_continuousOn hv.norm).pow 2).aestronglyMeasurable
-        hs).aemeasurable
-  -- the rank-one map is `smulRight` of the functional `⟪v, ·⟫`, jointly continuous
-  have hg : Continuous fun p : E × E ↦ ContinuousLinearMap.smulRightL ℂ E E (innerSL ℂ p.1) p.2 :=
-    ((ContinuousLinearMap.smulRightL ℂ E E).continuous.comp
-      ((innerSL ℂ (E := E)).continuous.comp continuous_fst)).clm_apply continuous_snd
-  have hv' := hv.aestronglyMeasurable (μ := volume) hs
-  have hAv : AEStronglyMeasurable (fun z ↦ A z (v z)) (volume.restrict s) := by
-    simpa using (ContinuousLinearMap.id ℝ (E →L[ℝ] E)).aestronglyMeasurable_comp₂ hA hv'
-  have hr : AEStronglyMeasurable (fun z ↦ InnerProductSpace.rankOne ℂ (A z (v z)) (v z))
-      (volume.restrict s) := by
-    refine (hg.comp_aestronglyMeasurable (hv'.prodMk hAv)).congr (ae_of_all _ fun z ↦ ?_)
-    ext w
-    simp
-  exact hn.aestronglyMeasurable.smul hr
 
 /-! ### The Cauchy integral equation -/
 
@@ -212,7 +161,7 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
     norm_cauchySource_le hM (by positivity) hDM (Ψ.norm_coe_le_norm)
   have hcont (Ψ : C(closedBall c r, E →L[ℂ] E)) :
       Continuous (cauchyTransform (cauchySource D Ψ)) :=
-    continuous_cauchyTransform_of_norm_le (hmeas Ψ) (hsupp Ψ) (hbd Ψ)
+    continuous_cauchyTransform_of_norm_le (hmeas Ψ) (hsupp Ψ) (ae_of_all _ (hbd Ψ))
   -- the Cauchy transform of the source is small on the disc
   have hT (Ψ : C(closedBall c r, E →L[ℂ] E)) {B : ℝ} (hB : 0 ≤ B) (hΨ : ∀ x, ‖Ψ x‖ ≤ B) (w : ℂ)
       (hw : w ∈ closedBall c r) : ‖cauchyTransform (cauchySource D Ψ) w‖ ≤ 2 * r * M * B := by
@@ -223,13 +172,10 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
   have hlin (Ψ Ψ' : C(closedBall c r, E →L[ℂ] E)) (w : ℂ) :
       cauchyTransform (cauchySource D Ψ) w - cauchyTransform (cauchySource D Ψ') w =
         cauchyTransform (cauchySource D (Ψ - Ψ')) w := by
-    have hi (Φ : C(closedBall c r, E →L[ℂ] E)) :
-        Integrable fun z ↦ (w - z)⁻¹ • cauchySource D Φ z :=
-      integrable_sub_inv_smul_of_memLp (p := ∞) (q := 1) (by norm_num)
-        (memLp_top_of_bound (hmeas Φ) _ (ae_of_all _ (hbd Φ))) (hsupp Φ) w
-    rw [cauchyTransform_apply, cauchyTransform_apply, cauchyTransform_apply, ← smul_sub,
-      ← integral_sub (hi Ψ) (hi Ψ'), cauchySource_sub]
-    simp only [Pi.sub_apply, smul_sub]
+    have hLp (Φ : C(closedBall c r, E →L[ℂ] E)) : MemLp (cauchySource D Φ) ∞ volume :=
+      memLp_top_of_bound (hmeas Φ) _ (ae_of_all _ (hbd Φ))
+    rw [cauchySource_sub, cauchyTransform_sub_of_memLp (p := ∞) (q := 1) (by norm_num) (hLp Ψ)
+      (hsupp Ψ) (hLp Ψ') (hsupp Ψ'), Pi.sub_apply]
   let op (Ψ : C(closedBall c r, E →L[ℂ] E)) : C(closedBall c r, E →L[ℂ] E) :=
     ⟨fun w ↦ 1 + cauchyTransform (cauchySource D Ψ) w,
       (continuous_const.add (hcont Ψ)).comp continuous_subtype_val⟩
@@ -246,7 +192,7 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
   have hfix : op Ψ₀ = Ψ₀ := ContractingWith.fixedPoint_isFixedPt hop
   have hΨ₀ (z : ℂ) (hz : z ∈ closedBall c r) : Ψ₀ ⟨z, hz⟩ = 1 + cauchyTransform g z := by
     rw [← hfix]
-    rfl
+    simp only [op, ContinuousMap.coe_mk, hg]
   have hnorm : ‖Ψ₀‖ ≤ 4 / 3 := by
     have h1 : ‖Ψ₀‖ ≤ 1 + 4⁻¹ * ‖Ψ₀‖ := by
       refine (ContinuousMap.norm_le _ (by positivity)).2 fun w ↦ ?_
@@ -286,7 +232,8 @@ private theorem conjWirtingerDeriv_add_eq_zero {ξ : ℂ → E} {C : E →L[ℝ]
     (hG : G = (2 : ℂ)⁻¹ • (1 + T).comp D) (hD : D (ξ z) = C (ξ z)) :
     conjWirtingerDeriv ξ z 1 + (G (ξ z) + T (conjWirtingerDeriv ξ z 1)) = 0 := by
   have hC : C (ξ z) = -(fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I) := eq_neg_of_add_eq_zero_right heq
-  rw [conjWirtingerDeriv_apply, smul_eq_mul, mul_one, hG, smul_apply,
+  rw [hG]
+  simp only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one, smul_apply,
     ContinuousLinearMap.comp_apply, hD, hC, add_apply, one_apply_eq_self, map_neg, map_smul]
   module
 
@@ -315,9 +262,10 @@ private theorem exists_similarity_of_contDiffOn_of_innerProductSpace [FiniteDime
   have hball : ball z₀ r ⊆ Ω := ball_subset_closedBall.trans hsubΩ
   -- absorb the real-linear coefficient and solve the Cauchy integral equation
   obtain ⟨g, hg, hTg, hgeq, hTg1⟩ := exists_cauchyTransform_eq hr.le hM (two_mul_min_mul_le hM)
-    (aestronglyMeasurable_absorb measurableSet_closedBall
-      (hCm.mono_measure (Measure.restrict_mono hsubΩ le_rfl)) (hξ.continuousOn.mono hsubΩ))
-    (fun z hz ↦ (norm_absorb_le _ _).trans ((hRΩ (hsub hz)).1.trans (le_max_left _ _)))
+    ((hCm.mono_measure (Measure.restrict_mono hsubΩ le_rfl)).rankOneDivNormSq_apply (𝕜 := ℂ)
+      ((hξ.continuousOn.mono hsubΩ).aestronglyMeasurable measurableSet_closedBall))
+    (fun z hz ↦ ((C z).norm_rankOneDivNormSq_map_le _).trans
+      ((hRΩ (hsub hz)).1.trans (le_max_left _ _)))
   set Ψ : ℂ → E →L[ℂ] E := fun z ↦ 1 + cauchyTransform g z with hΨ
   have hunit (z : ℂ) (hz : z ∈ ball z₀ r) : IsUnit (Ψ z) := by
     by_contra h
@@ -340,7 +288,7 @@ private theorem exists_similarity_of_contDiffOn_of_innerProductSpace [FiniteDime
     have hval : ∀ z ∈ (D : Set ℂ), ((fun z ↦ conjWirtingerDeriv ξ z 1) +
         fun z ↦ g z (ξ z) + cauchyTransform g z (conjWirtingerDeriv ξ z 1)) z = 0 :=
       fun z hz ↦ conjWirtingerDeriv_add_eq_zero (heq z (hball hz))
-        (hgeq z (ball_subset_closedBall hz)) (absorb_apply_self _ _)
+        (hgeq z (ball_subset_closedBall hz)) ((C z).rankOneDivNormSq_apply_map _)
     have hw0 := hw.congr_ae_deriv ((ae_restrict_iff' D.isOpen.measurableSet).2
       (ae_of_all _ hval))
     have hσ : (ξ + fun z ↦ cauchyTransform g z (ξ z)) = fun z ↦ Ψ z (ξ z) := by
@@ -391,8 +339,12 @@ theorem exists_similarity_of_contDiffOn (hΩ : IsOpen Ω) (hξ : ContDiffOn ℝ 
     have hd : fderiv ℝ (eR ∘ ξ) z = eR.comp (fderiv ℝ ξ z) :=
       (eR.hasFDerivAt.comp z (((hξ.differentiableOn one_ne_zero).differentiableAt
         (hΩ.mem_nhds hz)).hasFDerivAt)).fderiv
+    have h := congrArg e (heq z hz)
+    simp only [map_add, map_smul, map_zero] at h
     rw [hd]
-    simpa [eR, eR'] using congrArg e (heq z hz)
+    simpa only [eR, eR', ContinuousLinearMap.comp_apply, Function.comp_apply,
+      ContinuousLinearMap.coe_restrictScalars', ContinuousLinearEquiv.coe_coe,
+      e.symm_apply_apply] using h
   obtain ⟨r, hr, hrΩ, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ :=
     exists_similarity_of_contDiffOn_of_innerProductSpace hΩ hξ'
       (hconj.comp_aestronglyMeasurable hCm) hC'b heq' hz₀
