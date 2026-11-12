@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.AlgebraMap
 public import TauCeti.LinearAlgebra.Alternating.Derivation
 public import TauCeti.LinearAlgebra.End.Aeval
 public import TauCeti.Topology.Algebra.Module.Alternating.Basic
@@ -619,8 +618,8 @@ theorem typeProjection_compContinuousLinearMap {K : W →L[ℝ] W} {f : W →L[�
     (hf : ∀ w, J (f w) = f (K w)) (ω : V [⋀^Fin k]→L[ℝ] F) :
     K.typeProjection p q (ω.compContinuousLinearMap f) =
       (J.typeProjection p q ω).compContinuousLinearMap f := by
-  have h := LinearMap.congr_fun (Polynomial.aeval_comp_eq_comp_aeval
-    (σ := ContinuousAlternatingMap.compContinuousLinearMapLinear ℂ (N := F) (ι := Fin k) f)
+  have h := LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq
+    (f := ContinuousAlternatingMap.compContinuousLinearMapLinear ℂ (N := F) (ι := Fin k) f)
     (LinearMap.ext fun ω ↦ by simpa using alternatingDerivation_compContinuousLinearMap hf ω)
     (Lagrange.basis (Finset.antidiagonal k) typeEigenvalue (p, q))) ω
   simp only [LinearMap.comp_apply, ContinuousAlternatingMap.compContinuousLinearMapLinear_apply]
@@ -740,9 +739,9 @@ private lemma aeval_alternatingDerivation_nodal (hJ : ∀ v, J (J v) = -v) (k : 
     set Ω := aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin (n + 1)]→L[ℝ] F)) P ω
     have hint : ∀ v, curryLeftTopologicalLinear ℂ v Ω = 0 := by
       intro v
-      have h₁ := congrArg (fun T ↦ T ω) (Polynomial.aeval_comp_eq_comp_aeval
+      have h₁ := congrArg (fun T ↦ T ω) (Module.End.aeval_comp_of_comp_eq
         (interior_sub_comp_alternatingDerivation (F := F) hJ v).symm P)
-      have h₂ := congrArg (fun T ↦ T ω) (Polynomial.aeval_comp_eq_comp_aeval
+      have h₂ := congrArg (fun T ↦ T ω) (Module.End.aeval_comp_of_comp_eq
         (interior_add_comp_alternatingDerivation (F := F) hJ v).symm P)
       simp only [LinearMap.comp_apply] at h₁ h₂
       rw [hplus] at h₁

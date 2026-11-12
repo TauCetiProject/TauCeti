@@ -42,11 +42,6 @@ reflection tables.
 The numbering and weight diagram follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*,
 Plate VI. The minuscule action follows J. E. Humphreys, *Introduction to Lie Algebras and
 Representation Theory*, §13.4, and J. C. Jantzen, *Representations of Algebraic Groups*, II.2.
-
-This advances the explicit Chevalley--Demazure construction in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`, which needs an explicit simply connected type-`E₇`
-carrier.
 -/
 
 public section

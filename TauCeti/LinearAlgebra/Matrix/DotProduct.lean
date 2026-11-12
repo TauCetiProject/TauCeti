@@ -16,7 +16,8 @@ form sends `x` to `l i ⬝ᵥ x`, is linearly independent exactly when the squar
 `l i` is invertible. Its kernel is then trivial, so the forms cannot all vanish at a nonzero point.
 
 Relabelling the indices of a square matrix `M` along `e : I ≃ J` is an isometry of the pairing
-`(u, v) ↦ u ⬝ᵥ M *ᵥ v`.
+`(u, v) ↦ u ⬝ᵥ M *ᵥ v`, and the sesquilinear form of a compression `Aᴴ * M * A` is that of `M`
+pulled back along `A`.
 
 When `A` scales `x` to a multiple of `x'` and `Aᵀ` scales `y'` to a multiple of `y`, the scalars
 transform the dot products `x' ⬝ᵥ y'` and `x ⬝ᵥ y` into each other. For the character-lattice
@@ -25,9 +26,13 @@ integers transform (R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, §
 
 ## Main results
 
+* `Matrix.apply_last_eq_of_dotProduct_eq_zero`: if `w ⬝ᵥ v = 0` and the last coordinate of `w` is
+  a unit, then the last coordinate of `v` is determined by its other coordinates.
 * `LinearIndependent.exists_dotProduct_ne_zero`: `n` linearly independent forms on `K ^ n` do not
   all vanish at a nonzero point.
 * `Matrix.comp_equiv_symm_dotProduct_reindex_mulVec`: relabelling the indices is an isometry.
+* `Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec`: the sesquilinear form of a compression
+  `Aᴴ * M * A` is that of `M` pulled back along `A`.
 * `Matrix.dotProduct_self_nonneg`: over an ordered ring `v ⬝ᵥ v` is nonnegative.
 * `TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul`: if `A *ᵥ x = a • x'` and `Aᵀ *ᵥ y' = b • y`,
   then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`.
@@ -55,6 +60,13 @@ theorem Matrix.comp_equiv_symm_dotProduct_reindex_mulVec {I J α : Type*} [Finty
     u ∘ e.symm ⬝ᵥ M.reindex e e *ᵥ (v ∘ e.symm) = u ⬝ᵥ M *ᵥ v := by
   simp [submatrix_mulVec_equiv, Function.comp_assoc]
 
+/-- The sesquilinear form of a compression `Aᴴ * M * A` is the form of `M` pulled back along `A`:
+`star x ⬝ᵥ (Aᴴ * M * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ M *ᵥ (A *ᵥ y)`. -/
+theorem Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec {k l α : Type*} [Fintype k]
+    [Fintype l] [NonUnitalSemiring α] [StarRing α] (A : Matrix k l α) (M : Matrix k k α)
+    (x y : l → α) : star x ⬝ᵥ (Aᴴ * M * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ M *ᵥ (A *ᵥ y) := by
+  rw [← mulVec_mulVec, ← mulVec_mulVec, star_mulVec, dotProduct_mulVec]
+
 /-- Over an ordered ring the dot product `v ⬝ᵥ v`, a sum of squares, is nonnegative. -/
 @[simp]
 theorem Matrix.dotProduct_self_nonneg {n R : Type*} [Fintype n] [Ring R] [LinearOrder R]
@@ -73,3 +85,16 @@ theorem TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul {m n R : Type*} [Fintype m] 
   have key := dotProduct_transpose_mulVec A x y'
   rwa [hx, hy, dotProduct_comm x, dotProduct_comm y', smul_dotProduct, smul_dotProduct,
     dotProduct_comm y, eq_comm] at key
+
+/-- If `w ⬝ᵥ v = 0` and `w (Fin.last n)` is a unit, then `v (Fin.last n)` is
+`-(w (last))⁻¹ * ∑ i, w i.castSucc * v i.castSucc`. -/
+theorem Matrix.apply_last_eq_of_dotProduct_eq_zero {n : ℕ} {R : Type*} [Ring R]
+    {w v : Fin (n + 1) → R} (hv : w ⬝ᵥ v = 0)
+    (hwunit : IsUnit (w (Fin.last n))) :
+    v (Fin.last n) =
+      -((hwunit.unit⁻¹ : Rˣ) : R) * ∑ i : Fin n, w i.castSucc * v i.castSucc := by
+  simp only [dotProduct, Fin.sum_univ_castSucc] at hv
+  calc v (Fin.last n) =
+      ((hwunit.unit⁻¹ : Rˣ) : R) * (w (Fin.last n) * v (Fin.last n)) := by
+        rw [← mul_assoc, hwunit.val_inv_mul, one_mul]
+    _ = _ := by rw [eq_neg_of_add_eq_zero_right hv, mul_neg, neg_mul]

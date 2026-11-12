@@ -173,7 +173,6 @@ theorem contDiffOn_offDiagonalKernel (a : Symbol n V W m) :
   refine contDiffOn_infty.2 fun k ↦ ?_
   have hN := sub_two_mul_floor_lt (m + k) n
   set N := ⌊(m + k + n) / 2⌋₊ + 1
-  have hk : (0 : ℝ) ≤ k := Nat.cast_nonneg k
   have hd : ContDiff ℝ k fun p : CoordinateSpace n × CoordinateSpace n ↦ ‖p.1 - p.2‖ ^ (2 * N) := by
     simp_rw [pow_mul]
     exact ((contDiff_norm_sq ℝ).comp (contDiff_fst.sub contDiff_snd)).pow N

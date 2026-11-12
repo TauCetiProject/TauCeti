@@ -46,10 +46,9 @@ subgroup with the `∅`-units along `Subgroup.subgroupOfEquivOfLe`; it is not in
 The rank refinement — that the rank is exactly `rank Rˣ + |S|` when the class group is finite — is
 a separate topic and is not here.
 
-This is the second of the two finiteness inputs that
-`TauCetiRoadmap/EllipticCurves/README.md` §Layer 6 names for the weak Mordell–Weil theorem:
-"`A(S, 2)` is finite because the `S`-class group is finite and **the `S`-units are finitely
-generated** (AEC VIII.1)."
+This is the second of the two finiteness inputs to the weak Mordell–Weil theorem: `A(S, 2)` is
+finite because the `S`-class group is finite and **the `S`-units are finitely generated**
+(AEC VIII.1).
 
 Throughout, `R` is an *arbitrary* Dedekind domain and `K` its fraction field; `Rˣ` and
 `(S.integer K)ˣ` are the unit groups in play. The motivating case is `R = 𝒪_K` for a number
@@ -82,12 +81,12 @@ bump time they must be re-homed onto Mathlib's `Set.unit_fg`, not dropped with t
 
 The valuation lemma these proofs run on,
 `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZero_eq_one_iff`, is not here: it mentions no
-`S` and no `Set.unit`, so it lives in `TauCeti/RingTheory/DedekindDomain/SelmerGroup.lean`
+`S` and no `Set.unit`, so it lives in `TauCeti/RingTheory/DedekindDomain/ValuationOfNeZero.lean`
 beside the `valuationOfNeZero` API it belongs to.
 
 Adapted from Michael Stoll's elliptic-curves formalisation
 (`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at
-the roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll), and then restated to match
+commit `66889eada51a`, Apache 2.0, by Michael Stoll), and then restated to match
 mathlib4#40791 as described above. Following this repository's convention for adapted material, the
 upstream authorship is credited here rather than in the copyright header.
 -/
