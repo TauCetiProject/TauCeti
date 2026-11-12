@@ -69,7 +69,7 @@ private theorem exists_simpleHolding_ae_eq_of_mem_span
   have hb (i : Fin k) : StronglyMeasurable[ℱ (l i)] (b i) :=
     (stronglyMeasurable_const.indicator (hA i)).const_mul (c i)
   obtain ⟨n, τ, a, hτ₀, hτ, ha, hbound, hhold, -⟩ :=
-    exists_common_simpleStrategy ℱ Finset.univ l u b (fun i _ ↦ hb i)
+    exists_simpleHolding_simpleGains_eq_sum ℱ Finset.univ l u b (fun i _ ↦ hb i)
   refine ⟨n, τ, a, ∑ i, ‖c i‖, hτ₀, hτ, ha, ?_, ?_⟩
   · intro j hj ω
     refine (hbound j hj ω).trans (Finset.sum_le_sum fun i _ ↦ ?_)

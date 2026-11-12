@@ -17,9 +17,9 @@ and add the active positions on each successive interval. Each new position is m
 the left endpoint of its interval, since every position contributing to it was chosen earlier.
 
 `simpleHolding_eq_sum_indicator_Ioc` and `simpleGains_eq_sum_mul_sub` give the holdings and
-integrals on a supplied grid. `exists_common_simpleStrategy` constructs one grid for any finite
-family, preserving both holdings and gains against every price path. It starts at the bottom
-time and has strictly increasing dates, including when some input intervals are empty or
+integrals on a supplied grid. `exists_simpleHolding_simpleGains_eq_sum` constructs one grid for
+any finite family, preserving both holdings and gains against every price path. It starts at the
+bottom time and has strictly increasing dates, including when some input intervals are empty or
 reversed. The new heights are bounded pointwise by the sum of the original absolute heights;
 thus boundedness and Lᵖ control survive refinement without additional moment assumptions.
 
@@ -108,7 +108,7 @@ grid, preserving holdings and gains against every price path. Its heights are bo
 sum of the original absolute heights, so refinement preserves boundedness and Lᵖ control.
 The grid starts at the bottom time. Empty or reversed intervals contribute no holdings or gains;
 for a reversed interval the displayed increment must therefore be suppressed. -/
-theorem exists_common_simpleStrategy [OrderBot ι] {mΩ : MeasurableSpace Ω}
+theorem exists_simpleHolding_simpleGains_eq_sum [OrderBot ι] {mΩ : MeasurableSpace Ω}
     (ℱ : Filtration ι mΩ) (s : Finset κ) (l u : κ → ι) (a : κ → Ω → ℝ)
     (ha : ∀ i ∈ s, StronglyMeasurable[ℱ (l i)] (a i)) :
     ∃ (n : ℕ) (τ : ℕ → ι) (b : ℕ → Ω → ℝ),
