@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Basic
 public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
+public import TauCeti.NumberTheory.LFunctions.Zeros.Divisor
 
 /-!
 # The entire completion of the Riemann zeta function
@@ -86,22 +87,8 @@ theorem riemannZetaData_entireCompletion :
 theorem zero_lt_divisor_zetaEntireCompletion_iff {s : ℂ} :
     0 < MeromorphicOn.divisor zetaEntireCompletion Set.univ s ↔
       0 < MeromorphicOn.divisor completedRiemannZeta Set.univ s := by
-  have han (z : ℂ) : AnalyticAt ℂ zetaEntireCompletion z :=
-    differentiable_zetaEntireCompletion.analyticAt z
-  have hm : MeromorphicOn zetaEntireCompletion Set.univ := fun z _ ↦ (han z).meromorphicAt
-  have htop : meromorphicOrderAt zetaEntireCompletion s ≠ ⊤ := by
-    refine hm.meromorphicOrderAt_ne_top_of_isPreconnected isPreconnected_univ (Set.mem_univ 0)
-      (Set.mem_univ s) ?_
-    rw [(han 0).meromorphicOrderAt_eq, analyticOrderAt_eq_zero.2 (Or.inr (by simp))]
-    simp
-  rw [hm.zero_lt_divisor_iff_of_analyticAt (han s) (Set.mem_univ s) htop]
-  rcases eq_or_ne s 0 with rfl | hs0
-  · simp [divisor_completedRiemannZeta_zero]
-  rcases eq_or_ne s 1 with rfl | hs1
-  · simp [divisor_completedRiemannZeta_one]
-  rw [(meromorphicOn_univ.2 meromorphic_completedRiemannZeta).zero_lt_divisor_iff_of_analyticAt
-    (analyticAt_completedRiemannZeta hs0 hs1) (Set.mem_univ s)
-    (meromorphicOrderAt_completedRiemannZeta_ne_top s), zetaEntireCompletion_eq_mul hs0 hs1]
-  simp [hs0, sub_ne_zero.2 hs1]
+  have h := riemannZetaData_hasMeromorphicContinuation.toNat_divisor_entireCompletion s
+  rw [riemannZetaData_entireCompletion, riemannZetaData_completed] at h
+  omega
 
 end TauCeti.LFunctions
