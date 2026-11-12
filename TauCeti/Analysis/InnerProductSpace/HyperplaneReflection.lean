@@ -247,12 +247,14 @@ theorem aestronglyMeasurable_piecewise_comp_hyperplaneReflection [FiniteDimensio
 section OddReflection
 
 variable [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] {μ : Measure F}
-  [μ.IsAddHaarMeasure] {ν : F} {c : ℝ} {H U : Set F} {f : F → ℝ} {p : ENNReal}
+  [μ.IsAddHaarMeasure] {ν : F} {c : ℝ} {H U : Set F} {E : Type*} [NormedAddCommGroup E]
+  {f : F → E} {p : ENNReal}
 
 /-- **The odd reflection of an `Lᵖ` function.** Let `U` be a measurable set mapped into itself by
 the hyperplane reflection `ρ` and let `H` be measurable. If `f ∈ Lᵖ(U ∩ H)`, then the odd
-reflection `x ↦ 1_H f x - 1_H f (ρ x)`, which equals `f` on `H` and `-f ∘ ρ` on `ρ H`, lies in
-`Lᵖ(U)`. -/
+reflection `x ↦ 1_H f x - 1_H f (ρ x)` lies in `Lᵖ(U)`. When `H` and `ρ H` are disjoint, for
+instance when `H` is an open half-space bounded by the hyperplane, it equals `f` on `H` and
+`-f ∘ ρ` on `ρ H`. -/
 theorem memLp_indicator_sub_indicator_comp_hyperplaneReflection (hHm : MeasurableSet H)
     (hUm : MeasurableSet U) (hU : Set.MapsTo (hyperplaneReflection ν c) U U)
     (hf : MemLp f p (μ.restrict (U ∩ H))) :
@@ -266,14 +268,15 @@ theorem memLp_indicator_sub_indicator_comp_hyperplaneReflection (hHm : Measurabl
 
 /-- **The norm of the odd reflection.** Let `U` be a measurable set mapped into itself by the
 hyperplane reflection `ρ`, let `H` be measurable and let `1 ≤ p`. The odd reflection
-`x ↦ 1_H f x - 1_H f (ρ x)` of a function `f` measurable on `U ∩ H` has `Lᵖ(U)` norm at most
-`2 ‖f‖_{Lᵖ(U ∩ H)}`. -/
+`x ↦ 1_H f x - 1_H f (ρ x)` of a function `f` has `Lᵖ(U)` norm at most `2 ‖f‖_{Lᵖ(U ∩ H)}`. -/
 theorem eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (hp : 1 ≤ p)
     (hHm : MeasurableSet H) (hUm : MeasurableSet U)
-    (hU : Set.MapsTo (hyperplaneReflection ν c) U U)
-    (hf : AEStronglyMeasurable f (μ.restrict (U ∩ H))) :
+    (hU : Set.MapsTo (hyperplaneReflection ν c) U U) :
     eLpNorm (fun x => H.indicator f x - H.indicator f (hyperplaneReflection ν c x)) p
       (μ.restrict U) ≤ 2 * eLpNorm f p (μ.restrict (U ∩ H)) := by
+  by_cases hf : AEStronglyMeasurable f (μ.restrict (U ∩ H))
+  swap
+  · simp [eLpNorm_of_not_aestronglyMeasurable hf]
   have hρ := measurePreserving_restrict_hyperplaneReflection (μ := μ) hU hUm
   have hg : AEStronglyMeasurable (H.indicator f) (μ.restrict U) := by
     rw [aestronglyMeasurable_indicator_iff hHm, Measure.restrict_restrict hHm, Set.inter_comm]

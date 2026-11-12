@@ -28,14 +28,15 @@ holds for `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0` with a bounded measurable
 with `βR/λ` bounded
 (`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_drift`),
 and for `-∂ᵢ(aⁱʲ ∂ⱼu) = f` with a right-hand side `f ∈ L² ∩ Lʳ(U ∩ H)`, `r > 1` and `r > n/2`,
-with the additional term `R^(2 - n/r) ‖f‖_{Lʳ(U ∩ H)} / λ` in the constant
+with `α` and `C` depending also on `r`
 (`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp`).
 
-More precisely, the precise representative of the odd reflection `w = u - u ∘ ρ` is `α`-Hölder on
-every set `K` whose closed `R`-thickening lies in `U`, with constant
-`C R^(-α - n/2) ‖w‖_{L²(U)}`, and `w` agrees with `u` on `U ∩ H`
-(`TauCeti.W1p.value_sub_compHyperplaneReflectionL_ae`). The set `K` may meet the hyperplane: this
-is a boundary estimate, not an interior one.
+More precisely, for the homogeneous equation the precise representative of the odd reflection
+`w = u - u ∘ ρ` is `α`-Hölder on every set `K` whose closed `R`-thickening lies in `U`, with
+constant `C R^(-α - n/2) ‖w‖_{L²(U)}`, and `w` agrees with `u` on `U ∩ H`
+(`TauCeti.W1p.value_sub_compHyperplaneReflectionL_ae`). With a right-hand side `f` the constant is
+`C R^(-α) (R^(-n/2) ‖w‖_{L²(U)} + R^(2 - n/r) ‖f‖_{Lʳ(U ∩ H)} / λ)`. The set `K` may meet the
+hyperplane: this is a boundary estimate, not an interior one.
 
 ## The argument
 
@@ -76,26 +77,6 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ}
-
-/-- The reflected coefficients of a uniformly elliptic `a` and a bounded drift `b`, with no
-zeroth-order term, are essentially bounded on `U`. -/
-private theorem memLp_energyIntegrand_reflect [Nonempty ι] {U H : Opens (EuclideanSpace ℝ ι)}
-    {ν : EuclideanSpace ℝ ι} {c₀ : ℝ} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {beta : ℝ} (hν : ν ≠ 0)
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c₀) U U)
-    (ha : UniformlyEllipticOn {x | x ∈ U ∧ c₀ ≤ ⟪x, ν⟫_ℝ} a lam Lam)
-    (ham : AEStronglyMeasurable a (mu.restrict (U ⊓ H)))
-    (hbm : AEStronglyMeasurable b (mu.restrict (U ⊓ H)))
-    (hb : ∀ x ∈ {x | x ∈ U ∧ c₀ ≤ ⟪x, ν⟫_ℝ}, ‖b x‖ ≤ beta) :
-    MemLp (fun x => energyIntegrand (reflectPrincipal ν c₀ a x) (reflectDrift ν c₀ b x)
-      (reflectDensity ν c₀ (0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤ (mu.restrict U) := by
-  have ha' := uniformlyEllipticOn_iff.1 (ha.reflectPrincipal hν hU)
-  simp only [reflectDensity_zero]
-  exact memLp_energyIntegrand_of_bounds (gamma := 0) (ha'.1.le.trans ha'.2.1)
-    (aestronglyMeasurable_reflectPrincipal hν hH hU ham)
-    (aestronglyMeasurable_reflectDrift hν hH hU hbm) aestronglyMeasurable_const
-    (fun x hx => (ha'.2.2 hx).2) (fun x hx => norm_reflectDrift_le hν hb hU hx)
-    (fun _ _ => by simp)
 
 /-- **De Giorgi's theorem with a drift up to a flat boundary.** Let `n ≥ 1` be the dimension,
 and fix a bound `σ` for `βR/λ`. There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`,
@@ -141,7 +122,8 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_
     fun x hx => norm_reflectDrift_le hν hb hU hx
   refine hhol ha' ham' hbm' hb' (fun φ => ?_) hR hRK hβR
   have h := energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL hν hH hU
-    (memLp_energyIntegrand_reflect hν hH hU ha ham hbm hb) hu0
+    (memLp_energyIntegrand_reflectPrincipal (c := 0) (gamma := 0) hν hH hU ha ham hbm
+      aestronglyMeasurable_const hb (fun _ _ => by simp)) hu0
     (ℓ := 0) (fun v => by rw [zero_apply]; exact hu v) φ
   rwa [reflectDensity_zero] at h
 
@@ -235,13 +217,13 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_
     rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
     exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hfr.eLpNorm_ne_top)
       (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le
-        (by exact_mod_cast hr.le) H.isOpen.measurableSet U.isOpen.measurableSet hU
-        hfr.aestronglyMeasurable)
+        (by exact_mod_cast hr.le) H.isOpen.measurableSet U.isOpen.measurableSet hU)
   have hw : ∀ v : W1p0 mu U 2, energyFormH1 (reflectPrincipal ν c₀ a) 0 0
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (v : W1p mu U 2) =
         ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu := fun v => by
     have h := energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral hν hH hU
-      (memLp_energyIntegrand_reflect (b := 0) (beta := 0) hν hH hU ha ham aestronglyMeasurable_const
+      (memLp_energyIntegrand_reflectPrincipal (b := 0) (c := 0) (beta := 0) (gamma := 0) hν hH hU
+        ha ham aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
         (fun _ _ => by simp)) hu0 hf2 hu v
     rwa [reflectDrift_zero, reflectDensity_zero] at h
   refine (hhol ha' (aestronglyMeasurable_reflectPrincipal hν hH hU ham) hg hw hR hRK).mono_const
