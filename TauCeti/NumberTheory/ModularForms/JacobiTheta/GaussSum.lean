@@ -274,7 +274,7 @@ theorem sum_range_cexp_two_pi_I_sq_div (N : ℕ) :
     rw [tendsto_iff_norm_sub_tendsto_zero]
     have hlim := (tendsto_iff_norm_sub_tendsto_zero.1 (hθ 4 (by norm_num)))
     refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_ hlim
-    filter_upwards [self_mem_nhdsWithin] with Y (hY : 0 < Y)
+    filter_upwards [self_mem_nhdsWithin] with Y _
     have him : (1 / (2 * (N : ℂ)) + I / (4 * Y)).im = 1 / (4 * Y) := by
       rw [add_im, ← ofReal_natCast, ← ofReal_ofNat, ← ofReal_mul, ← ofReal_one, ← ofReal_div,
         ofReal_im, zero_add, ← ofReal_ofNat, ← ofReal_mul, div_ofReal_im, I_im]
