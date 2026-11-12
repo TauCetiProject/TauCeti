@@ -56,7 +56,7 @@ theorem normalizedBrownianIncrements_apply (ω : Ω) (i : Fin n) :
 /-- Standardized increments are measurable when the process observations are measurable. -/
 @[fun_prop]
 theorem measurable_normalizedBrownianIncrements [MeasurableSpace Ω]
-    (hB : ∀ s, Measurable (B s)) : Measurable (normalizedBrownianIncrements B t) := by
+    (hB : ∀ i, Measurable (B (t i))) : Measurable (normalizedBrownianIncrements B t) := by
   exact Measurable.of_eval fun i => ((hB _).sub (hB _)).div_const _
 
 end TauCeti
