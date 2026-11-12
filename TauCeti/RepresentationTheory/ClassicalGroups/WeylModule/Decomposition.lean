@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Basic
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Decomposition
 
--- Non-public: `TauCeti.DirectSum.restrictLinearEquiv` drops the zero summands inside the
+-- Non-public: `TauCeti.DirectSum.restrictSubtypeLinearEquiv` drops the zero summands inside the
 -- construction of `TauCeti.schurWeylDecomposition`; no statement here mentions it.
 import TauCeti.Algebra.DirectSum.FiniteSupport
 
@@ -200,24 +200,6 @@ private abbrev schurWeylSummand (μ : d.Partition) : Type :=
   (Ideal.span {μ.youngSymmetrizer ℂ} : Ideal (MonoidAlgebra ℂ (Equiv.Perm (Fin d)))) ⊗[ℂ]
     (weylModuleOfShape ℂ n (YoungDiagram.ofPartition μ)).toSubmodule
 
-/-- Reindex the summands of the partitions with at most `n` parts from the subtype to the finset.
-`DirectSum.lequivCongrLeft` would index the target summands by `(e.symm μ).1` rather than `μ.1`,
-and its computation lemmas then no longer match the summands of `TauCeti.schurWeylEquiv`. -/
-private noncomputable def schurWeylSummandReindex :
-    (⨁ μ : {μ : d.Partition // μ.parts.card ≤ n}, schurWeylSummand n d μ.1) ≃ₗ[ℂ]
-      ⨁ μ : ({μ | μ.parts.card ≤ n} : Finset d.Partition), schurWeylSummand n d μ.1 :=
-  LinearEquiv.ofLinearMap
-    (DirectSum.toModule ℂ {μ : d.Partition // μ.parts.card ≤ n}
-      (⨁ μ : ({μ | μ.parts.card ≤ n} : Finset d.Partition), schurWeylSummand n d μ.1) fun μ =>
-        DirectSum.lof ℂ ({μ | μ.parts.card ≤ n} : Finset d.Partition)
-          (fun μ => schurWeylSummand n d μ.1) ⟨μ.1, Finset.mem_filter.mpr ⟨Finset.mem_univ _, μ.2⟩⟩)
-    (DirectSum.toModule ℂ ({μ | μ.parts.card ≤ n} : Finset d.Partition)
-      (⨁ μ : {μ : d.Partition // μ.parts.card ≤ n}, schurWeylSummand n d μ.1) fun μ =>
-        DirectSum.lof ℂ {μ : d.Partition // μ.parts.card ≤ n}
-          (fun μ => schurWeylSummand n d μ.1) ⟨μ.1, (Finset.mem_filter.mp μ.2).2⟩)
-    (DirectSum.linearMap_ext ℂ fun μ => LinearMap.ext fun x => by simp)
-    (DirectSum.linearMap_ext ℂ fun μ => LinearMap.ext fun x => by simp)
-
 /-- The linear equivalence inverse to `TauCeti.schurWeylDecomposition`: replace each complex
 Specht module by the ideal `ℂ[S_d] c_μ`, add the zero summands of the shapes with more than `n`
 rows, and apply `TauCeti.schurWeylEquiv`. -/
@@ -225,13 +207,12 @@ private noncomputable def schurWeylDecompositionLinearEquiv :
     (⨁ μ : {μ : d.Partition // μ.parts.card ≤ n},
       (spechtModuleℂ μ.1).V ⊗[ℂ] (schurFunctor n (YoungDiagram.ofPartition μ.1)).V) ≃ₗ[ℂ]
       ⨂[ℂ]^d (Fin n → ℂ) :=
-  (((DirectSum.congrLinearEquiv fun μ => TensorProduct.congr
+  ((DirectSum.congrLinearEquiv fun μ => TensorProduct.congr
       μ.1.spanYoungSymmetrizerEquivSpechtModuleℂ.symm.toLinearEquiv (LinearEquiv.refl ℂ _)).trans
-    (schurWeylSummandReindex n d)).trans
-    (DirectSum.restrictLinearEquiv (schurWeylSummand n d)
-      ({μ | μ.parts.card ≤ n} : Finset d.Partition) fun μ hμ =>
+    (DirectSum.restrictSubtypeLinearEquiv (schurWeylSummand n d) (fun μ => μ.parts.card ≤ n)
+      fun _ hμ =>
       subsingleton_span_youngSymmetrizer_tensorProduct_weylModuleOfShape n d
-        (lt_of_not_ge (by simpa using hμ))).symm).trans
+        (lt_of_not_ge hμ)).symm).trans
     (schurWeylEquiv ℂ n d).toLinearEquiv
 
 /-- The linear equivalence `schurWeylDecompositionLinearEquiv` on a pure tensor of a summand. -/
@@ -241,8 +222,7 @@ private theorem schurWeylDecompositionLinearEquiv_lof_tmul
     schurWeylDecompositionLinearEquiv n d (DirectSum.lof ℂ _ _ μ (s ⊗ₜ w)) =
       schurWeylEquiv ℂ n d (DirectSum.lof ℂ d.Partition _ μ.1
         (μ.1.spanYoungSymmetrizerEquivSpechtModuleℂ.symm s ⊗ₜ w)) := by
-  simp [schurWeylDecompositionLinearEquiv, schurWeylSummandReindex,
-    DirectSum.coe_congrLinearEquiv]
+  simp [schurWeylDecompositionLinearEquiv, DirectSum.coe_congrLinearEquiv]
 
 /-- The linear equivalence `schurWeylDecompositionLinearEquiv` intertwines the actions of
 `S_d × GL n ℂ`. -/
