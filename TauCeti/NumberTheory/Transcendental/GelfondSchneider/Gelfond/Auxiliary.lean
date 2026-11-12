@@ -355,40 +355,27 @@ theorem exists_iteratedDeriv_gelfond_auxiliary_ne_zero {K : Type*} [Field K] (σ
         Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t = 0) ∧
       iteratedDeriv r (fun z ↦ ∑ a, ∑ b, σ (η a b) *
         Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t₀ ≠ 0 := by
-  classical
   have := σ.charZero
   have hβ' : ∀ r : ℚ, (r : ℂ) ≠ σ β := fun r h ↦ hβ r (σ.injective (by rw [map_ratCast, h]))
-  obtain ⟨t₁, ht₁⟩ := hT
-  obtain ⟨a, b, hab⟩ : ∃ a b, η a b ≠ 0 := by
-    by_contra! h
-    exact hη (funext fun a ↦ funext (h a))
-  have hR : (fun z ↦ ∑ a, ∑ b, σ (η a b) *
-      Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) =
-      fun z ↦ ∑ p ∈ (univ : Finset (Fin q × Fin q)), σ (η p.1 p.2) *
-        Complex.exp (((((p.1 + 1 : ℕ) : ℂ) + (p.2 + 1 : ℕ) * σ β) * l) * z) := by
-    funext z
-    rw [Fintype.sum_prod_type]
-  -- At `t₁` the exponential sum has distinct frequencies and a nonzero coefficient.
-  obtain ⟨k, hk, hne⟩ := TauCeti.exists_lt_card_iteratedDeriv_sum_mul_cexp_ne_zero (s := univ)
-    (ρ := fun p : Fin q × Fin q ↦ (((p.1 + 1 : ℕ) : ℂ) + (p.2 + 1 : ℕ) * σ β) * l)
-    (by
-      rintro ⟨a, b⟩ - ⟨a', b'⟩ - h
-      simpa [Fin.val_inj] using TauCeti.ratCast_add_ratCast_mul_injective hβ'
-        (a₁ := ((a + 1 : ℕ), (b + 1 : ℕ)))
-        (a₂ := ((a' + 1 : ℕ), (b' + 1 : ℕ))) (by simpa using mul_right_cancel₀ hl h))
-    (c := fun p ↦ σ (η p.1 p.2)) ⟨(a, b), mem_univ _, (map_ne_zero σ).2 hab⟩ t₁
-  rw [← hR] at hne
-  have hex : ∃ k, ∃ t ∈ T, iteratedDeriv k (fun z ↦ ∑ a, ∑ b, σ (η a b) *
-      Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t ≠ 0 :=
-    ⟨k, t₁, ht₁, hne⟩
-  obtain ⟨t₀, ht₀, hr⟩ := Nat.find_spec hex
-  refine ⟨Nat.find hex, ?_, ?_, t₀, ht₀, fun k' hk' t ht ↦ ?_, hr⟩
-  · by_contra! h
-    exact hr (hn _ h t₀ ht₀)
-  · calc Nat.find hex ≤ k := Nat.find_min' hex ⟨t₁, ht₁, hne⟩
-      _ < q ^ 2 := by simpa [sq] using hk
-  · by_contra h
-    exact Nat.find_min hex hk' ⟨t, ht, h⟩
+  obtain ⟨r, hrq, t₀, ht₀, hzero, hr⟩ := TauCeti.exists_gelfond_value_ne_zero (K := ℂ)
+    (Complex.exp_ne_zero l) (Complex.exp_ne_zero (σ β * l)) hβ' (η := fun a b ↦ σ (η a b))
+    (fun h ↦ hη (by
+      ext a b
+      exact σ.injective (by simpa using congrFun (congrFun h a) b))) hT
+  have key : ∀ k t : ℕ, iteratedDeriv k (fun z ↦ ∑ a, ∑ b, σ (η a b) *
+      Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t = 0 ↔
+      ∑ a, ∑ b, σ (η a b) * (((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) ^ k *
+        (Complex.exp l ^ ((a + 1 : ℕ) * t) * Complex.exp (σ β * l) ^ ((b + 1 : ℕ) * t)) = 0 := by
+    intro k t
+    have h := (RingHom.id ℂ).iteratedDeriv_gelfond_auxiliary_natCast (l := l)
+      (α := Complex.exp l) (β := σ β) (γ := Complex.exp (σ β * l)) rfl rfl
+      (fun a b ↦ σ (η a b)) k t
+    simp only [RingHom.id_apply] at h
+    rw [h, mul_eq_zero, or_iff_right (pow_ne_zero _ hl)]
+  have hr' := (key r t₀).not.2 hr
+  refine ⟨r, ?_, hrq, t₀, ht₀, fun k hk t ht ↦ (key k t).2 (hzero k hk t ht), hr'⟩
+  by_contra! h
+  exact hr' (hn r h t₀ ht₀)
 
 open NumberField in
 /-- **Gelfond's auxiliary function** (Karatarakis–Wiedijk, §3). Let `K` be a number field with an
