@@ -241,9 +241,8 @@ theorem prodLinearEquiv_apply (n : ℕ)
           (holomorphicSectionSheaf.prodFst I F₁ V₁ F₂ V₂).hom c,
         (Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
           (holomorphicSectionSheaf.prodSnd I F₁ V₁ F₂ V₂).hom c) := by
-  rw [prodLinearEquiv, Iso.toLinearEquiv_apply, Iso.trans_hom, ConcreteCategory.comp_apply,
-    ModuleCat.biprodIsoProd_hom_apply, ← ConcreteCategory.comp_apply,
-    ← ConcreteCategory.comp_apply, prodIso_hom, biprod.lift_fst, biprod.lift_snd]
+  rw [prodLinearEquiv, Iso.toLinearEquiv_apply]
+  simp [biprod.lift_eq]
 
 /-- The inverse of the linear equivalence with the product sends a pair of classes to the sum of
 their images under the maps induced by the two inclusions. -/
@@ -255,12 +254,8 @@ theorem prodLinearEquiv_symm_apply (n : ℕ) (a : holomorphicSectionCechCohomolo
           (holomorphicSectionSheaf.prodInl I F₁ V₁ F₂ V₂).hom a +
         (Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
           (holomorphicSectionSheaf.prodInr I F₁ V₁ F₂ V₂).hom b := by
-  rw [LinearEquiv.symm_apply_eq, prodLinearEquiv_apply]
-  simp only [map_add, ← ConcreteCategory.comp_apply, ← Functor.map_comp, ← ObjectProperty.ι_map,
-    ← Functor.comp_map]
-  rw [holomorphicSectionSheaf.prodInl_prodFst, holomorphicSectionSheaf.prodInl_prodSnd,
-    holomorphicSectionSheaf.prodInr_prodFst, holomorphicSectionSheaf.prodInr_prodSnd]
-  simp
+  rw [prodLinearEquiv, Iso.toLinearEquiv_symm, Iso.toLinearEquiv_apply]
+  simp [biprod.desc_eq, ← Category.assoc, -ModuleCat.hom_comp]
 
 /-- The cohomology of a direct sum is finite-dimensional when both summands' are. -/
 instance finiteDimensional_prod (n : ℕ)
