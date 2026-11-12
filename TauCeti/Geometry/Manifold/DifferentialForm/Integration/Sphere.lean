@@ -43,7 +43,9 @@ differentiable, so the integral is computed on a smooth representative:
   (`TauCeti.rectangleIntegral_eq_of_homotopy`).
 
 So the integral `TauCeti.sphereIntegral φ x a` of `φ` over a class `a` is its integral over the
-unit square along any smooth sphere representing `a` (`TauCeti.sphereIntegral_mk`). Concatenating
+unit square along any smooth sphere representing `a` (`TauCeti.sphereIntegral_mk`), and more
+generally along any smooth map of the plane whose restriction to the unit square represents `a`
+(`TauCeti.sphereIntegral_mk_of_contMDiff`), such as two caps of a loop glued along it. Concatenating
 two smooth spheres along the first coordinate represents the product in `π₂(M, x)`, so the
 integral is additive (`TauCeti.sphereIntegral_mul`). It is natural: the integral of the pullback
 of a form along a smooth map `f` over a class `a` is the integral of the form over `f_* a`
@@ -65,6 +67,8 @@ of a form along a smooth map `f` over a class `a` is the integral of the form ov
 * `TauCeti.rectangleIntegral_eq_of_isSmoothSphere_of_homotopic`: homotopic smooth spheres have
   the same integral.
 * `TauCeti.sphereIntegral_mk`: the integral over the class of a smooth sphere.
+* `TauCeti.sphereIntegral_mk_of_contMDiff`: the integral over the class of a generalized loop that
+  is the restriction of any smooth map of the plane.
 * `TauCeti.sphereIntegral_mul`, `TauCeti.sphereIntegral_one`: additivity.
 * `TauCeti.sphereIntegral_mpullback`: naturality under smooth maps.
 * `TauCeti.VanishesOnSpheres.sphereIntegral_eq_zero`, `TauCeti.sphereIntegral_mextDeriv`: forms
@@ -574,6 +578,101 @@ theorem sphereIntegral_mk (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) 
     sphereIntegral φ x ⟦hv.genLoop⟧ = rectangleIntegral φ v (0, 0) (1, 1) := by
   obtain ⟨hv', h⟩ := (exists_isSmoothSphere (I := I) (⟦hv.genLoop⟧ : π_ 2 M x)).choose_spec
   exact rectangleIntegral_eq_of_isSmoothSphere_of_homotopic hφ hdφ hv' hv (Quotient.exact h)
+
+/-- The integral of a closed `C¹` form over the class of a generalized loop `p` that is the
+restriction to the unit square of a smooth map `w` of the plane is the integral over the unit
+square along `w`. Unlike a smooth sphere, `w` need not be constant near the boundary of the
+square; it only sends the boundary to `x`, because `p` does. -/
+theorem sphereIntegral_mk_of_contMDiff (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
+    {w : ℝ × ℝ → M} (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ w) {p : Ω^ (Fin 2) M x}
+    (hp : ∀ y, p y = w ((y 0 : ℝ), (y 1 : ℝ))) :
+    sphereIntegral φ x ⟦p⟧ = rectangleIntegral φ w (0, 0) (1, 1) := by
+  -- `w` sends the boundary of the unit square to `x`.
+  have hedge {a b : ℝ} (ha : a ∈ Icc (0 : ℝ) 1) (hb : b ∈ Icc (0 : ℝ) 1)
+      (hab : a = 0 ∨ a = 1 ∨ b = 0 ∨ b = 1) : w (a, b) = x := by
+    refine (hp ![⟨a, ha⟩, ⟨b, hb⟩]).symm.trans (p.2 _ ?_)
+    rcases hab with h | h | h | h
+    exacts [⟨0, Or.inl (Subtype.ext h)⟩, ⟨0, Or.inr (Subtype.ext h)⟩,
+      ⟨1, Or.inl (Subtype.ext h)⟩, ⟨1, Or.inr (Subtype.ext h)⟩]
+  -- Flatten `w` near the boundary by the reparametrization `ρ` in both coordinates; `ρ` is `0`
+  -- below `1/4`, `1` above `3/4` and fixes `0` and `1`.
+  set ρ : ℝ → ℝ := fun s ↦ Real.smoothTransition (2 * s - 1 / 2) with hρ_def
+  have hρ : ContDiff ℝ ∞ ρ := Real.smoothTransition.contDiff.comp (by fun_prop)
+  have hρI (s : ℝ) : ρ s ∈ Icc (0 : ℝ) 1 :=
+    ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+  have hρ0 {s : ℝ} (hs : s ≤ 1 / 4) : ρ s = 0 :=
+    Real.smoothTransition.zero_of_nonpos (by linarith)
+  have hρ1 {s : ℝ} (hs : 3 / 4 ≤ s) : ρ s = 1 :=
+    Real.smoothTransition.one_of_one_le (by linarith)
+  -- The straight-line homotopy from the identity to `ρ` keeps `[0, 1]` inside `[0, 1]` and
+  -- fixes its endpoints.
+  set ℓ : ℝ → ℝ → ℝ := fun c s ↦ s + c * (ρ s - s) with hℓ
+  have hℓI {c s : ℝ} (hc : c ∈ Icc (0 : ℝ) 1) (hs : s ∈ Icc (0 : ℝ) 1) :
+      ℓ c s ∈ Icc (0 : ℝ) 1 := by
+    have h := convex_Icc (0 : ℝ) 1 hs (hρI s) (sub_nonneg.2 hc.2) hc.1 (by ring)
+    convert h using 1
+    simp only [hℓ, smul_eq_mul]
+    ring
+  have hℓ0 (c : ℝ) : ℓ c 0 = 0 := by simp [hℓ, hρ0 (by norm_num : (0 : ℝ) ≤ 1 / 4)]
+  have hℓ1 (c : ℝ) : ℓ c 1 = 1 := by simp [hℓ, hρ1 (by norm_num : (3 / 4 : ℝ) ≤ 1)]
+  set v : ℝ × ℝ → M := w ∘ Prod.map ρ ρ with hv_def
+  have hv : IsSmoothSphere I x v := by
+    refine ⟨hw.comp (hρ.prodMap hρ).contMDiff, 1 / 4, by norm_num, fun z hz ↦ ?_⟩
+    simp only [mem_prod, mem_Icc, not_and_or, not_le] at hz
+    refine hedge (hρI _) (hρI _) ?_
+    rcases hz with ((hz | hz) | (hz | hz))
+    · exact Or.inl (hρ0 hz.le)
+    · exact Or.inr (Or.inl (hρ1 (by linarith)))
+    · exact Or.inr (Or.inr (Or.inl (hρ0 hz.le)))
+    · exact Or.inr (Or.inr (Or.inr (hρ1 (by linarith))))
+  -- The generalized loops of `v` and `p` are homotopic relative to the boundary.
+  have hhom : GenLoop.Homotopic hv.genLoop p := by
+    refine GenLoop.Homotopic.symm ⟨{
+      toFun := fun q ↦ p fun i ↦ projIcc 0 1 zero_le_one (ℓ q.1 (q.2 i))
+      continuous_toFun := p.1.continuous.comp (continuous_pi fun i ↦ continuous_projIcc.comp
+        (by simp only [hℓ]; fun_prop))
+      map_zero_left := fun y ↦ by simp [hℓ]
+      map_one_left := fun y ↦ by
+        simp only [Icc.coe_one, hp, hv_def]
+        congr 2 <;>
+        · rw [projIcc_of_mem _ (hℓI ⟨zero_le_one, le_rfl⟩ (Subtype.prop _))]
+          simp [hℓ, cubeToPlane_apply]
+      prop' := fun t y hy ↦ ?_ }⟩
+    obtain ⟨i, hi⟩ := hy
+    simp only [ContinuousMap.coe_mk]
+    rw [p.2 y ⟨i, hi⟩]
+    refine p.2 _ ⟨i, ?_⟩
+    rcases hi with hi | hi
+    · exact Or.inl (by simp only [hi, Icc.coe_zero, hℓ0, projIcc_left, Icc.mk_zero])
+    · exact Or.inr (by simp only [hi, Icc.coe_one, hℓ1, projIcc_right, Icc.mk_one])
+  rw [← Quotient.sound hhom, sphereIntegral_mk hφ hdφ hv]
+  -- The integral over `v` is the integral over `w`, by the same straight-line homotopy, which
+  -- keeps the four edges of the square at `x`.
+  let Φ : (ℝ × ℝ) × ℝ → M := fun q ↦ w (ℓ q.2 q.1.1, ℓ q.2 q.1.2)
+  have hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ :=
+    (hw.comp (by simp only [hℓ]; fun_prop : ContDiff ℝ ∞
+      fun q : (ℝ × ℝ) × ℝ ↦ (ℓ q.2 q.1.1, ℓ q.2 q.1.2)).contMDiff).of_le (by norm_cast)
+  have h01 : [[(0 : ℝ), 1]] = Icc 0 1 := uIcc_of_le zero_le_one
+  have key := rectangleIntegral_eq_of_homotopy hφ hdφ hΦ (a := (0, 0)) (b := (1, 1))
+    (Or.inr fun t ht c hc ↦ by
+      rw [h01] at ht
+      simp only [Φ, hℓ0]
+      rw [hedge ⟨le_rfl, zero_le_one⟩ (hℓI hc ht) (Or.inl rfl),
+        hedge ⟨le_rfl, zero_le_one⟩ ⟨le_rfl, zero_le_one⟩ (Or.inl rfl)])
+    (Or.inr fun t ht c hc ↦ by
+      rw [h01] at ht
+      simp only [Φ, hℓ1]
+      rw [hedge ⟨zero_le_one, le_rfl⟩ (hℓI hc ht) (Or.inr (Or.inl rfl)),
+        hedge ⟨zero_le_one, le_rfl⟩ ⟨zero_le_one, le_rfl⟩ (Or.inr (Or.inl rfl))])
+    (fun s hs c hc ↦ by
+      rw [h01] at hs
+      simp only [Φ, hℓ1, hℓ0]
+      rw [hedge (hℓI hc hs) ⟨zero_le_one, le_rfl⟩ (Or.inr (Or.inr (Or.inr rfl))),
+        hedge (hℓI hc hs) ⟨le_rfl, zero_le_one⟩ (Or.inr (Or.inr (Or.inl rfl)))])
+  have hΦ₁ : (fun z ↦ Φ (z, 1)) = v := funext fun z ↦ by simp [Φ, hℓ, hv_def, Prod.map]
+  have hΦ₀ : (fun z ↦ Φ (z, 0)) = w := funext fun z ↦ by simp [Φ, hℓ]
+  rw [hΦ₁, hΦ₀] at key
+  exact key
 
 /-- The integral of a closed `C¹` form over the identity class vanishes. -/
 @[simp]
