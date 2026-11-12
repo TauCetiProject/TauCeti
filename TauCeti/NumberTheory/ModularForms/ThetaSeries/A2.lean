@@ -8,7 +8,9 @@ module
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.RealModel
 public import TauCeti.Algebra.Module.ZLattice.RootLattice
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.Normalized
+import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Roots
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.ConstantTerm
+import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.GeneralLevel
 import TauCeti.NumberTheory.ModularForms.SturmBound
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
@@ -90,9 +92,17 @@ private theorem a2_eisenstein_coeff {m : ℕ} (hm : m ≠ 0) :
   simp only [DirichletCharacter.modOne_eq_one', one_mul, pow_zero, mul_one,
     kroneckerChar_natCast]
 
-/-- The theta series of the real model of `A₂` is the weight-one Eisenstein series of character
-`(-3 / ·)`, normalized to constant coefficient one. -/
-@[simp]
+private theorem a2_six_eisenstein_coeff (m : ℕ) :
+    (qExpansion 1 ⇑((6 : ℂ) • EisensteinSeries.normalizedCharE1MF
+      (1 : DirichletCharacter ℂ 1) χ₋₃ (N := 3) (by decide))).coeff m =
+      6 * (qExpansion 1 (EisensteinSeries.normalizedCharE1MF
+        (1 : DirichletCharacter ℂ 1) χ₋₃ (N := 3) (by decide))).coeff m := by
+  rw [FunLike.coe_smul, ModularForm.qExpansion_smul one_pos
+    (TauCeti.one_mem_strictPeriods_Gamma1_map 3), PowerSeries.coeff_smul, smul_eq_mul]
+
+/-- The theta series of the real model of `A₂` is six times the normalized weight-one
+Eisenstein series of character `(-3 / ·)` with first coefficient one, giving constant
+coefficient one. -/
 theorem thetaSeries_realModel_typeARootLattice_two :
     ZLattice.thetaSeries ((typeARootLattice 2).realModel (isPosDef_typeARootLattice 2)) =
       ⇑((6 : ℂ) • EisensteinSeries.normalizedCharE1MF
@@ -113,12 +123,11 @@ theorem thetaSeries_realModel_typeARootLattice_two :
     subst i
     rw [FunLike.coe_sub, ModularForm.qExpansion_sub one_pos
       (TauCeti.one_mem_strictPeriods_Gamma1_map 3), map_sub,
-      FunLike.coe_smul, ModularForm.qExpansion_smul one_pos
-        (TauCeti.one_mem_strictPeriods_Gamma1_map 3), PowerSeries.coeff_smul,
-      coe_a2ThetaForm, ZLattice.IsEven.qExpansion_thetaSeries_coeff
+      a2_six_eisenstein_coeff, coe_a2ThetaForm,
+      ZLattice.IsEven.qExpansion_thetaSeries_coeff_zero
         ((isEven_realModel_iff _ _).mpr (isEven_typeARootLattice 2)),
       a2_eisenstein_constant]
-    norm_num [ZLattice.representationNumber_zero]
+    norm_num
   rw [← coe_a2ThetaForm, sub_eq_zero.mp hzero]
 
 /-- The classical expansion `Θ_{A₂}(τ) = 1 + 6 ∑_{m ≥ 1} (∑_{d ∣ m} (-3 / d)) q^m`,
@@ -150,18 +159,18 @@ theorem representationNumber_typeARootLattice_two_mul {m : ℕ} (hm : m ≠ 0) :
       6 * ∑ d ∈ m.divisors, kroneckerSym (-3) d := by
   have hcoeff := (isEven_typeARootLattice 2).qExpansion_thetaSeries_realModel_coeff
     (isPosDef_typeARootLattice 2) m
-  rw [thetaSeries_realModel_typeARootLattice_two, FunLike.coe_smul,
-    ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map 3),
-    PowerSeries.coeff_smul, a2_eisenstein_coeff hm, smul_eq_mul] at hcoeff
+  rw [thetaSeries_realModel_typeARootLattice_two, a2_six_eisenstein_coeff,
+    a2_eisenstein_coeff hm] at hcoeff
   exact_mod_cast hcoeff.symm
 
 /-- The `A₂` root lattice has six vectors of norm two. -/
 @[simp]
 theorem representationNumber_typeARootLattice_two :
     (typeARootLattice 2).representationNumber 2 = 6 := by
-  have h := representationNumber_typeARootLattice_two_mul one_ne_zero
-  norm_num [kroneckerSym_one_right] at h
-  exact_mod_cast h
+  have h := (DynkinType.A 2).representationNumber_rootLattice_two
+    (DynkinType.isSimplyLaced_A 2) (by decide)
+  erw [DynkinType.rootLattice_A] at h
+  exact h
 
 /-- The kissing number of `A₂` is six. -/
 @[simp]
