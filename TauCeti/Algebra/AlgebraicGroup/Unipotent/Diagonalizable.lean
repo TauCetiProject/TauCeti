@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Embedding
+public import TauCeti.Algebra.Bialgebra.Equiv
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.GroupLike
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Triangular
 
@@ -89,7 +90,7 @@ theorem bialgHom_eq_unit_comp_counit_of_groupLikeSetSpan_eq_top [IsAlgClosed k]
     split_ifs <;> simp
   ext x
   obtain ⟨y, rfl⟩ := hsurj x
-  simpa [Bialgebra.unitBialgHom] using AlgHom.congr_fun hcomp y
+  simpa using AlgHom.congr_fun hcomp y
 
 /-- **A diagonalizable closed subgroup of a reduced unipotent group is trivial**, over an
 algebraically closed field. If a surjective bialgebra morphism `H → K` exhibits the group
@@ -104,7 +105,7 @@ theorem algebraMap_bijective_of_groupLikeSetSpan_eq_top_of_surjective [IsAlgClos
   have h := bialgHom_eq_unit_comp_counit_of_groupLikeSetSpan_eq_top hH hK φ
   refine ⟨Bialgebra.algebraMap_injective K, fun y ↦ ?_⟩
   obtain ⟨x, rfl⟩ := hφ y
-  exact ⟨Bialgebra.counitBialgHom k H x, by simp [h, Bialgebra.unitBialgHom]⟩
+  exact ⟨Bialgebra.counitBialgHom k H x, by simp [h]⟩
 
 /-- The bialgebra form of
 `algebraMap_bijective_of_groupLikeSetSpan_eq_top_of_surjective`: a diagonalizable closed subgroup
@@ -116,14 +117,8 @@ noncomputable def counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective [IsAlgClos
     (hK : Subcoalgebra.groupLikeSetSpan (R := k) (C := K) Set.univ = ⊤)
     (φ : H →ₐc[k] K) (hφ : Function.Surjective φ) :
     K ≃ₐc[k] k :=
-  BialgEquiv.ofBijective (Bialgebra.counitBialgHom k K)
-    ⟨fun x y hxy ↦ by
-      have hbij := algebraMap_bijective_of_groupLikeSetSpan_eq_top_of_surjective hH hK φ hφ
-      obtain ⟨r, rfl⟩ := hbij.2 x
-      obtain ⟨s, rfl⟩ := hbij.2 y
-      simp only [Bialgebra.counitBialgHom_apply, Bialgebra.counit_algebraMap] at hxy
-      rw [hxy],
-    Bialgebra.counit_surjective⟩
+  Bialgebra.counitBialgEquivOfBijective
+    (algebraMap_bijective_of_groupLikeSetSpan_eq_top_of_surjective hH hK φ hφ)
 
 /-- The triviality equivalence of a diagonalizable closed subgroup is the counit. -/
 @[simp]
@@ -133,9 +128,9 @@ theorem counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective_apply [IsAlgClosed k
     (hK : Subcoalgebra.groupLikeSetSpan (R := k) (C := K) Set.univ = ⊤)
     (φ : H →ₐc[k] K) (hφ : Function.Surjective φ) (x : K) :
     counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective hH hK φ hφ x =
-      Bialgebra.counitBialgHom k K x := by
+      Coalgebra.counit (R := k) x := by
   rw [counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective]
-  exact congrFun (BialgEquiv.coe_ofBijective (Bialgebra.counitBialgHom k K) _) x
+  exact Bialgebra.counitBialgEquivOfBijective_apply _ x
 
 /-- The inverse of the triviality equivalence of a diagonalizable closed subgroup is the
 structure map. -/
@@ -147,12 +142,8 @@ theorem counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective_symm_apply [IsAlgClo
     (φ : H →ₐc[k] K) (hφ : Function.Surjective φ) (r : k) :
     (counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective hH hK φ hφ).symm r =
       algebraMap k K r := by
-  let e := counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective hH hK φ hφ
-  refine e.toMulEquiv.symm_apply_eq.mpr ?_
-  calc
-    r = Bialgebra.counitBialgHom k K (algebraMap k K r) := by simp
-    _ = e (algebraMap k K r) :=
-      (counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective_apply hH hK φ hφ _).symm
+  rw [counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective]
+  exact Bialgebra.counitBialgEquivOfBijective_symm_apply _ r
 
 end geometricallyUnipotentPointsCommHopfAlgProperty
 
