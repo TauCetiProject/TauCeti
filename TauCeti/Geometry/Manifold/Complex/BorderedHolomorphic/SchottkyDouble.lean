@@ -435,9 +435,7 @@ theorem extChartAt_interiorInl_eventuallyEq_id (x : borderedInterior M) :
       (extChartAt 𝓘(ℂ) x x)] id := by
   simp only [extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
     modelWithCornersSelf_coe_symm, Function.comp_id, Function.id_comp]
-  filter_upwards [(chartAt ℂ x).eventually_right_inverse (mem_chart_target ℂ x),
-    (chartAt ℂ x).open_target.mem_nhds (mem_chart_target ℂ x)] with w hw hw'
-  have hsrc : (chartAt ℂ x).symm w ∈ (chartAt ℂ x).source := (chartAt ℂ x).map_target hw'
+  filter_upwards [(chartAt ℂ x).eventually_right_inverse (mem_chart_target ℂ x)] with w hw
   simp only [Function.comp_apply, interiorInl_apply, id_eq]
   rw [chartAt_inl, doubleChart_inl, ← chartAt_borderedInterior_apply x, hw]
 
