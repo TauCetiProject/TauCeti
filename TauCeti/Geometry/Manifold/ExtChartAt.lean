@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Sets.Compacts
 
@@ -19,7 +19,9 @@ public import Mathlib.Topology.Sets.Compacts
 Mathlib's extended chart at a point is a `PartialEquiv` between a manifold and its model vector
 space. Its restrictions to the chart source and target are mutually continuous, hence the chart
 restricted to its source is a measurable embedding for Borel measurable spaces. This is the
-form used to transport measures between a manifold and coordinates.
+form used to transport measures between a manifold and coordinates. Continuous injections from
+measurable subsets of Polish spaces into a Lindelöf manifold also give measurable embeddings
+on those subsets, without requiring the manifold to be Hausdorff.
 
 Before choosing a measurable structure on the manifold, chart measurability expresses
 measurability in each preferred chart. When the chart space `H` is locally compact, compact sets
@@ -637,6 +639,51 @@ theorem _root_.MeasurableSet.image_extChartAt {s : Set M} (hs : MeasurableSet s)
   rw [← Set.inter_eq_left.mpr hsource, ← Set.image_domRestrict]
   exact (measurableEmbedding_extChartAt_restrict (I := I) x).measurableSet_image.mpr
     (hs.preimage measurable_subtype_coe)
+
+/-- A continuous injection from a measurable subset of a Polish space into a Lindelöf
+manifold is a measurable embedding on that subset. The manifold need not be Hausdorff. -/
+theorem _root_.ModelWithCorners.measurableEmbedding_domRestrict_of_continuousOn_injOn
+    (I : ModelWithCorners 𝕜 E H) [LindelofSpace M]
+    {X : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
+    {f : X → M} {s : Set X} (hf : ContinuousOn f s) (hs : MeasurableSet s)
+    (hinj : Set.InjOn f s) : MeasurableEmbedding (s.domRestrict f) := by
+  refine ⟨hinj.injective, hf.domRestrict.measurable, ?_⟩
+  intro a ha
+  have hA : MeasurableSet (Subtype.val '' a : Set X) :=
+    (MeasurableEmbedding.subtype_coe hs).measurableSet_image.mpr ha
+  have hAs : Subtype.val '' a ⊆ s := Subtype.coe_image_subset s a
+  obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover
+    (fun x : M ↦ (extChartAt I x).source) fun x ↦ extChartAt_source_mem_nhds x
+  have hpiece (α : M) :
+      MeasurableSet (f '' (f ⁻¹' (extChartAt I α).source ∩ (Subtype.val '' a))) := by
+    let S := f ⁻¹' (extChartAt I α).source ∩ (Subtype.val '' a)
+    have hS : MeasurableSet S := by
+      dsimp only [S]
+      rw [Set.inter_comm, ← Subtype.image_preimage_coe]
+      exact (MeasurableEmbedding.subtype_coe hA).measurableSet_image.mpr
+        ((hf.mono hAs).domRestrict.measurable (isOpen_extChartAt_source α).measurableSet)
+    have hmap : f '' S ⊆ (extChartAt I α).source := Set.image_subset_iff.mpr
+      fun _ hx ↦ hx.1
+    have hcoords : MeasurableSet ((extChartAt I α) '' (f '' S)) := by
+      rw [← Set.image_comp]
+      exact hS.image_of_continuousOn_injOn
+        ((continuousOn_extChartAt α).comp (hf.mono (Set.inter_subset_right.trans hAs))
+          (fun _ hx ↦ hx.1))
+        ((extChartAt I α).injOn.comp
+          (hinj.mono (Set.inter_subset_right.trans hAs)) (fun _ hx ↦ hx.1))
+    rw [← Set.inter_eq_right.mpr hmap, ← Subtype.image_preimage_coe]
+    apply (MeasurableEmbedding.subtype_coe
+      (isOpen_extChartAt_source (I := I) α).measurableSet).measurableSet_image.mpr
+    apply (measurableEmbedding_extChartAt_restrict (I := I) α).measurableSet_image.mp
+    rwa [Set.image_domRestrict, Set.inter_eq_left.mpr hmap]
+  have him : s.domRestrict f '' a =
+      ⋃ α ∈ t, f '' (f ⁻¹' (extChartAt I α).source ∩ (Subtype.val '' a)) := by
+    simp only [Set.image_preimage_inter]
+    simp_rw [← Set.iUnion_inter]
+    rw [hcover, Set.univ_inter, ← Set.image_comp]
+    rfl
+  rw [him]
+  exact MeasurableSet.biUnion ht fun α _ ↦ hpiece α
 
 end BorelModel
 
