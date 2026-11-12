@@ -208,6 +208,15 @@ theorem eval₂_extended (σ : SmoothTwoForm I M) (p : M × (ℝ × ℝ))
   simp only [RCLike.inner_apply, conj_trivial]
   ring
 
+/-- The simp normal form of `eval₂_extended`, with `eval₂` unfolded:
+`σ.extended_p(v, w) = σ_{p₁}(v₁, w₁) + (δt_v δe_w - δe_v δt_w)`. -/
+@[simp]
+theorem extended_apply (σ : SmoothTwoForm I M) (p : M × (ℝ × ℝ))
+    (v w : TangentSpace (I.prod 𝓘(ℝ, ℝ × ℝ)) p) :
+    σ.extended.1 p ![v, w] = σ.1 p.1 ![v.1, w.1] + (v.2.1 * w.2.2 - v.2.2 * w.2.1) :=
+  (SmoothBundleForm.eval₂_apply _ _ _ _).symm.trans ((eval₂_extended σ p v w).trans
+    (congrArg (· + _) (SmoothBundleForm.eval₂_apply _ _ _ _)))
+
 /-- The form of the extended phase space of a nondegenerate form is nondegenerate. -/
 theorem IsNondegenerate.extended (hσ : σ.IsNondegenerate) : σ.extended.IsNondegenerate :=
   hσ.prod (SymplecticForm.isNondegenerate_constSmooth _)
