@@ -144,6 +144,28 @@ section LivesOver
 variable {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ)
   {E E' M : Type w} [TopologicalSpace E] [TopologicalSpace E']
 
+/-- Pointwise form of `TauCeti.homologyMap_comp_fiberLocalization`: for `σ : E → E'` over `M`,
+localizing `σ_* α` at the fibre of `p'` over `b` is the image under `σ` of the localization of
+`α` at the fibre of `p`. -/
+theorem homologyMap_comp_fiberLocalization_apply (σ : C(E, E')) {p : E → M} {p' : E' → M}
+    (h : p' ∘ σ = p) (b : M) {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) :
+    (fiberLocalization R p' b k).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) R k).hom α) =
+      (localHomologyMap R σ (by rw [← preimage_comp, h]) k).hom
+        ((fiberLocalization R p b k).hom α) := by
+  rw [← ModuleCat.comp_apply, homologyMap_comp_fiberLocalization R σ h b k, ModuleCat.comp_apply]
+
+/-- Pointwise form of `TauCeti.homologyMap_comp_homologyMap_of_comp_eq_id`: for a section `s` of
+`p : E → M`, `p_* (s_* β) = β`. -/
+theorem homologyMap_comp_homologyMap_of_comp_eq_id_apply [TopologicalSpace M] (p : C(E, M))
+    (s : C(M, E)) (hs : p.comp s = ContinuousMap.id M) {k : ℕ}
+    (β : ((TopCat.toSSet.obj (TopCat.of M)).homology R k : ModuleCat.{w} Λ)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom
+      ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom β) = β := by
+  rw [← ModuleCat.comp_apply, homologyMap_comp_homologyMap_of_comp_eq_id R p s hs,
+    ModuleCat.id_apply]
+
 /-- A class `α ∈ Hₖ(E)` **lives over the fundamental class** of `M` at `b`, for a map
 `p : E → M`, if its localization `Hₖ(E) → Hₖ(E, E ∖ p⁻¹(b))` at the fibre over `b` is nonzero.
 
@@ -187,8 +209,7 @@ theorem LivesOverFundamentalClass.of_homologyMap (σ : C(E, E')) {p : E → M} {
     LivesOverFundamentalClass R p b α := by
   intro h'
   apply hα
-  rw [← ModuleCat.comp_apply, homologyMap_comp_fiberLocalization R σ h b k,
-    ModuleCat.comp_apply, h', map_zero]
+  rw [homologyMap_comp_fiberLocalization_apply R σ h, h', map_zero]
 
 /-- If the image `p_* α` of a class of `E` in the homology of `M` lives over the fundamental class
 at `b`, then `α` lives over the fundamental class at `b` for `p`. -/
@@ -202,9 +223,7 @@ theorem LivesOverFundamentalClass.of_homologyMap_proj [TopologicalSpace M] (p : 
 
 /-- **Classes over a section.** Let `s` be a section of `p : E → M`. If `α ∈ Hₖ(E)` lives over
 the fundamental class at `b` and `p_* α = 0`, then `α - s_* β` lives over the fundamental class
-at `b` for every `β ∈ Hₖ(M)`: the localization of `s_* β` is the image under `s` of the
-localization of `β = p_* s_* β`, which is the image under `p` of the localization of `α`, hence
-zero. -/
+at `b` for every `β ∈ Hₖ(M)`. -/
 theorem LivesOverFundamentalClass.sub_homologyMap_section [TopologicalSpace M] (p : C(E, M))
     (s : C(M, E)) (hs : p.comp s = ContinuousMap.id M) {b : M} {k : ℕ}
     {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)}
@@ -214,21 +233,21 @@ theorem LivesOverFundamentalClass.sub_homologyMap_section [TopologicalSpace M] (
     LivesOverFundamentalClass R p b
       (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom β) := by
   have hs' : (p ∘ s : M → M) = id := congrArg DFunLike.coe hs
-  have hps : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom
-      ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom β) = β := by
-    rw [← ModuleCat.comp_apply, homologyMap_comp_homologyMap_of_comp_eq_id R p s hs,
-      ModuleCat.id_apply]
   intro h
   rw [map_sub, sub_eq_zero] at h
-  -- The localization of `β` at the point `b` of `M` vanishes.
-  have hβ : (fiberLocalization R id b k).hom β = 0 := by
-    rw [← hps, ← ModuleCat.comp_apply,
-      homologyMap_comp_fiberLocalization R p (Function.id_comp _) b k, ModuleCat.comp_apply, ← h,
-      ← ModuleCat.comp_apply, ← homologyMap_comp_fiberLocalization R p (Function.id_comp _) b k,
-      ModuleCat.comp_apply, hα₀, map_zero]
+  -- The localization of `β = p_* s_* β` at `b` is the image under `p` of the localization of
+  -- `s_* β`, which is that of `α`; so it is the localization of `p_* α = 0`.
+  have hβ : (fiberLocalization R id b k).hom β = 0 := calc
+    (fiberLocalization R id b k).hom β
+        = (localHomologyMap R p subset_rfl k).hom ((fiberLocalization R p b k).hom
+            ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom β)) := by
+      rw [← homologyMap_comp_fiberLocalization_apply R p (Function.id_comp _),
+        homologyMap_comp_homologyMap_of_comp_eq_id_apply R p s hs]
+    _ = (localHomologyMap R p subset_rfl k).hom ((fiberLocalization R p b k).hom α) := by rw [h]
+    _ = 0 := by
+      rw [← homologyMap_comp_fiberLocalization_apply R p (Function.id_comp _), hα₀, map_zero]
   apply hα
-  rw [h, ← ModuleCat.comp_apply, homologyMap_comp_fiberLocalization R s hs' b k,
-    ModuleCat.comp_apply, hβ, map_zero]
+  rw [h, homologyMap_comp_fiberLocalization_apply R s hs', hβ, map_zero]
 
 /-- **Classes over a section, up to the section.** Let `s` be a section of `p : E → M`. Some
 `α ∈ Hₖ(E)` keeps living over the fundamental class at `b` after subtracting any class `s_* β`,
@@ -247,8 +266,7 @@ theorem exists_forall_livesOverFundamentalClass_sub_iff [TopologicalSpace M] (p 
   refine ⟨fun ⟨α, hα⟩ ↦
     ⟨_, ?_, hα ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)⟩,
     fun ⟨α, hα₀, hα⟩ ↦ ⟨α, hα.sub_homologyMap_section R p s hs hα₀⟩⟩
-  rw [map_sub, ← ModuleCat.comp_apply (SSet.homologyMap _ R k),
-    homologyMap_comp_homologyMap_of_comp_eq_id R p s hs, ModuleCat.id_apply, sub_self]
+  rw [map_sub, homologyMap_comp_homologyMap_of_comp_eq_id_apply R p s hs, sub_self]
 
 end LivesOver
 
