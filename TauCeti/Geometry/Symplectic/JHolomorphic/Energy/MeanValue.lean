@@ -45,8 +45,11 @@ Gromov compactness: if `8 A ∫_{B_r(z₀)} ‖∂ₛu‖² < π`, then
 `π r² ‖∂ₛu(z₀)‖² ≤ 8 ∫_{B_r(z₀)} ‖∂ₛu‖²`.
 
 For `J` that is `C²` on an open set containing a compact set `K`, one smallness threshold `δ > 0`
-works for all curves with image in `K`. As `∂ₜu = J(u) ∂ₛu`, these bounds control the full
-derivative of `u`.
+works for all curves with image in `K`. The threshold depends only on bounds for `J` and its first
+two derivatives on `K`, so it is also uniform over a family of structures `J p` depending `C²` on a
+parameter `p` in a compact set, such as the structures `J(z₀, ·)` frozen at the points `z₀` of a
+compact window of the domain of an inhomogeneous equation. As `∂ₜu = J(u) ∂ₛu`, these bounds
+control the full derivative of `u`.
 
 ## Main declarations
 
@@ -58,6 +61,8 @@ derivative of `u`.
   inequality for `J`-holomorphic curves, with explicit constants.
 * `TauCeti.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball`:
   the same with a smallness threshold that is uniform over curves with image in a compact set.
+* One threshold for a compact family of structures:
+  `exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball_parametric`.
 
 ## References
 
@@ -287,6 +292,77 @@ theorem pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball {z₀ : �
     (by simpa [measureReal_def, NNReal.coe_real_pi] using hsmall)
   simpa [measureReal_def, hr, mul_comm, mul_left_comm, mul_assoc] using h
 
+/-- The partial maps `J p` of a family of structures that is jointly `C²` on an open set `W`
+containing `C × K` are `C²` at every point of `K` for `p ∈ C`, and the norms of `J p`, of its
+derivative and of its second derivative are bounded there, uniformly in `p`, by those of the family
+on the compact set `C × K`. -/
+private theorem exists_nonneg_forall_norm_le_of_contDiffOn_uncurry {P : Type*}
+    [NormedAddCommGroup P] [NormedSpace ℝ P] {J : P → V → V →L[ℝ] V} {W : Set (P × V)}
+    {C : Set P} {K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 (Function.uncurry J) W)
+    (hC : IsCompact C) (hK : IsCompact K) (hCKW : C ×ˢ K ⊆ W) :
+    ∃ A, 0 ≤ A ∧ ∀ p ∈ C, ∀ x ∈ K, ContDiffAt ℝ 2 (J p) x ∧ ‖J p x‖ ≤ A ∧
+      ‖fderiv ℝ (J p) x‖ ≤ A ∧ ‖iteratedFDeriv ℝ 2 (J p) x‖ ≤ 2 * A := by
+  obtain ⟨A, hA0, hA⟩ := hJ.exists_nonneg_bound_iteratedFDeriv_of_isOpen (n := 2) hW
+    (hC.prod hK) hCKW
+  refine ⟨A, hA0, fun p hp x hx ↦ ?_⟩
+  have hpx : (p, x) ∈ C ×ˢ K := ⟨hp, hx⟩
+  have hJpx : ContDiffAt ℝ 2 (Function.uncurry J) (p, x) := hJ.contDiffAt (hW.mem_nhds (hCKW hpx))
+  -- `J p` is the composite of the family with the affine map `y ↦ (p, y)`, whose derivative is
+  -- `inr`, of norm at most one, and whose second derivative vanishes.
+  have hf : ContDiffAt ℝ 2 (fun y : V ↦ (p, y)) x := contDiffAt_const.prodMk contDiffAt_id
+  have hDf : fderiv ℝ (fun y : V ↦ (p, y)) = fun _ ↦ ContinuousLinearMap.inr ℝ P V := by
+    funext y
+    exact ((hasFDerivAt_const p y).prodMk (hasFDerivAt_id y)).fderiv
+  have hD : ∀ j, 1 ≤ j → j ≤ 2 → ‖iteratedFDeriv ℝ j (fun y : V ↦ (p, y)) x‖ ≤ 1 ^ j := by
+    intro j hj1 hj2
+    interval_cases j
+    · rw [norm_iteratedFDeriv_one, hDf, one_pow]
+      exact ContinuousLinearMap.norm_inr_le_one ℝ P V
+    · rw [iteratedFDeriv_succ_eq_comp_right, hDf, iteratedFDeriv_const_of_ne one_ne_zero]
+      simp [LinearIsometryEquiv.map_zero]
+  have hcomp (n : ℕ) (hn : n ≤ 2) : ‖iteratedFDeriv ℝ n (J p) x‖ ≤ n.factorial * A := by
+    have h := norm_iteratedFDeriv_comp_le_of_contDiffAt (n := n) (hJpx.of_le (by exact_mod_cast hn))
+      (hf.of_le (by exact_mod_cast hn)) (fun j hj ↦ hA j (hj.trans hn) _ hpx)
+      (fun j hj1 hj ↦ hD j hj1 (hj.trans hn))
+    rwa [one_pow, mul_one] at h
+  refine ⟨hJpx.comp x hf, ?_, ?_, ?_⟩
+  · simpa using hcomp 0 (by norm_num)
+  · simpa [norm_iteratedFDeriv_one] using hcomp 1 (by norm_num)
+  · simpa using hcomp 2 le_rfl
+
+/-- **The mean-value inequality for a compact family of structures.** Let `J p` be structures
+depending on a parameter `p` in a normed space, jointly `C²` in `(p, x)` on an open set `W`
+containing `C × K` for compact sets `C` and `K`, with `J p (x)² = -1` on `C × K`. There is one
+energy threshold `δ > 0` for all `p ∈ C`: every solution `u` of `∂ₜu = J p (u) ∂ₛu` that is `C³`
+on the open disk `ball z₀ r`, has `∂ₛu` continuous on its closure, maps the disk into `K` and has
+energy `∫ ‖∂ₛu‖² < δ` over it, satisfies `π r² ‖∂ₛu(z₀)‖² ≤ 8 ∫_{B_r(z₀)} ‖∂ₛu‖²`.
+
+Such families arise as the structures `J(z₀, ·)` frozen at the points `z₀` of a compact window of
+the domain of an inhomogeneous equation, possibly together with further parameters. -/
+theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball_parametric
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] {J : P → V → V →L[ℝ] V}
+    {W : Set (P × V)} {C : Set P} {K : Set V} (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 2 (Function.uncurry J) W) (hC : IsCompact C) (hK : IsCompact K)
+    (hCKW : C ×ˢ K ⊆ W) (hJsq : ∀ p ∈ C, ∀ x ∈ K, ∀ v, J p x (J p x v) = -v) :
+    ∃ δ > 0, ∀ ⦃p : P⦄, p ∈ C → ∀ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, 0 ≤ r →
+      ContDiffOn ℝ 3 u (ball z₀ r) →
+      ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r) →
+      (∀ y ∈ ball z₀ r, fderiv ℝ u y I = J p (u y) (fderiv ℝ u y 1)) →
+      (∀ y ∈ ball z₀ r, u y ∈ K) →
+      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
+      π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+  -- One nonnegative bound for `J p` and its first two derivatives on `K`, uniform in `p ∈ C`.
+  obtain ⟨A, hA0, hA⟩ := exists_nonneg_forall_norm_le_of_contDiffOn_uncurry hW hJ hC hK hCKW
+  set B := 4 * A * (2 * A) + 2 * A ^ 2 + 8 * A ^ 2 * A ^ 2
+  refine ⟨π / (8 * (B + 1)), by positivity, fun p hp u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
+  have hI : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by positivity
+  refine pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball hr hu hu' hCR
+    (fun y hy ↦ (hA p hp _ (huK y hy)).1) (fun y hy ↦ hJsq p hp _ (huK y hy))
+    (fun y hy ↦ (hA p hp _ (huK y hy)).2.1) (fun y hy ↦ (hA p hp _ (huK y hy)).2.2.1)
+    (fun y hy ↦ (hA p hp _ (huK y hy)).2.2.2) ?_
+  rw [lt_div_iff₀ (by positivity)] at hE
+  nlinarith
+
 /-- **The mean-value inequality for `J`-holomorphic curves in a compact set.** Let `J` be `C²` on an
 open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`. There is an energy threshold
 `δ > 0` such that every solution `u` of `∂ₜu = J(u) ∂ₛu` that is `C³` on the open disk
@@ -301,18 +377,11 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setInteg
       (∀ y ∈ ball z₀ r, u y ∈ K) →
       ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
       π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
-  -- One nonnegative bound `C` for `J` and its first two derivatives on `K`.
-  obtain ⟨C, hC0, hC⟩ := hJ.exists_nonneg_bound_iteratedFDeriv_of_isOpen (n := 2) hW hK hKW
-  set A := 4 * C * C + 2 * C ^ 2 + 8 * C ^ 2 * C ^ 2
-  refine ⟨π / (8 * (A + 1)), by positivity, fun u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
-  have hI : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by positivity
-  refine pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball hr hu hu' hCR
-    (fun y hy ↦ hJ.contDiffAt (hW.mem_nhds (hKW (huK y hy))))
-    (fun y hy ↦ hJsq _ (huK y hy))
-    (fun y hy ↦ by simpa using hC 0 (by norm_num) _ (huK y hy))
-    (fun y hy ↦ by simpa [norm_iteratedFDeriv_one] using hC 1 (by norm_num) _ (huK y hy))
-    (fun y hy ↦ hC 2 le_rfl _ (huK y hy)) ?_
-  rw [lt_div_iff₀ (by positivity)] at hE
-  nlinarith
+  obtain ⟨δ, hδ, h⟩ :=
+    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball_parametric
+      (J := fun (_ : Unit) ↦ J) (hW.preimage continuous_snd)
+      (hJ.comp contDiffOn_snd fun _ hq ↦ hq) isCompact_univ hK
+      (fun q hq ↦ hKW hq.2) fun _ _ ↦ hJsq
+  exact ⟨δ, hδ, h (Set.mem_univ ())⟩
 
 end TauCeti
