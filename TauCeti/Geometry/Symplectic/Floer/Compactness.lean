@@ -12,7 +12,6 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Geometry.Symplectic.Floer.Graph
-import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Integral.WithLp
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
@@ -90,7 +89,7 @@ With the Floer energy, for families `K_p` of `C³` perturbations and `C²` famil
 `ω`-tame structures over a compact window `C`, the statement is
 `TauCeti.SymplecticForm.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`.
 The taming constants of `J_p` and the sizes of `X_{K_{s,p}}` are uniform over `C × D × K`
-(`TauCeti.SymplecticForm.exists_forall_norm_fderiv_stdComplexLineReal_sq_le_parametric`), so the
+(`TauCeti.SymplecticForm.exists_forall_norm_fderiv_stdComplexLineReal_sq_le`), so the
 comparison of the two energies holds with constants independent of `p`. The statement for a single
 datum is the case of a constant family over a one-point window.
 
@@ -525,7 +524,7 @@ theorem fderiv_comp_equivRealProdCLM_I_sub (ω : SymplecticForm V) {u : ℝ × �
 that for every `p ∈ C`, every solution `u` of the Floer equation for `K_p` and `J_p(z, u)` at a
 point `z ∈ D` with `u(z) ∈ K` satisfies
 `‖∂ₛu(z)‖² ≤ A ω(∂ₛu - X_{K_{s,p}}, ∂ₜu - X_{K_{t,p}}) + B`. -/
-theorem exists_forall_norm_fderiv_stdComplexLineReal_sq_le_parametric (ω : SymplecticForm V)
+theorem exists_forall_norm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm V)
     {P : Type*} [TopologicalSpace P] {Ks Kt : P → ℝ × ℝ → V → ℝ}
     {J : P → ℝ × ℝ → V → AlmostComplexStructure V} {C : Set P} {D : Set (ℝ × ℝ)} {K : Set V}
     (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K)
@@ -556,27 +555,6 @@ theorem exists_forall_norm_fderiv_stdComplexLineReal_sq_le_parametric (ω : Symp
     h).trans ?_
   have hXB : ‖ω.hamiltonianVectorField (Ks p z) (u z)‖ ≤ B := by simpa using hB _ hq
   gcongr
-
-/-- **The energy density bounds the derivative uniformly on a compact window.** Let `J(z, x)` be
-continuous and tamed by `ω`, and `X_{K_s}(z, x)` continuous, on `D × K` for compact `D ⊆ ℝ × ℝ`
-and `K ⊆ V`. There are constants `A, B ≥ 0` such that every solution `u` of the Floer equation
-for `J(z, u)` at a point `z ∈ D` with `u(z) ∈ K` satisfies
-`‖∂ₛu(z)‖² ≤ A ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t}) + B`. -/
-theorem exists_forall_norm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm V)
-    {D : Set (ℝ × ℝ)} {K : Set V} (hD : IsCompact D) (hK : IsCompact K)
-    (hJ : ContinuousOn
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (D ×ˢ K))
-    (hX : ContinuousOn (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianVectorField (Ks p.1) p.2) (D ×ˢ K))
-    (hJt : ∀ z ∈ D, ∀ x ∈ K, ω.Tames (J z x)) :
-    ∃ A ≥ 0, ∃ B ≥ 0, ∀ ⦃u : ℝ × ℝ → V⦄ ⦃z : ℝ × ℝ⦄, z ∈ D → u z ∈ K →
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) →
-      ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤ A * ω.floerEnergyDensity Ks Kt u z + B := by
-  obtain ⟨A, hA, B, hB, h⟩ := ω.exists_forall_norm_fderiv_stdComplexLineReal_sq_le_parametric
-    (Ks := fun _ : Unit ↦ Ks) (Kt := fun _ ↦ Kt) (J := fun _ ↦ J) isCompact_univ hD hK
-    (hJ.comp continuousOn_snd fun _ hq ↦ hq.2) (hX.comp continuousOn_snd fun _ hq ↦ hq.2)
-    fun _ _ ↦ hJt
-  exact ⟨A, hA, B, hB, fun u z hz hu h' ↦ h (mem_univ ()) hz hu h'⟩
 
 /-- If `‖∂ₛu‖² ≤ A e + B` on an open set `Ω` of finite measure, where `e` is the Floer energy
 density, integrable on `Ω`, and `u` is `C¹` on `Ω`, then `‖∂ₛu‖²` is integrable on `Ω`. -/
@@ -750,27 +728,13 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
           ∃ M, ∀ n, ∀ y ∈ C', ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
-  -- The Hamiltonian vector fields are jointly `C²` in the parameter, the domain point and the
-  -- target point.
-  have hXK {L : P → ℝ × ℝ → V → ℝ}
-      (hL : ContDiffOn ℝ 3 (fun q : P × ((ℝ × ℝ) × V) ↦ L q.1 q.2.1 q.2.2) W) :
-      ContDiffOn ℝ 2
-        (fun q : P × ((ℝ × ℝ) × V) ↦ ω.hamiltonianVectorField (L q.1 q.2.1) q.2.2) W := by
-    intro q hq
-    have h := ω.contDiffAt_hamiltonianVectorField_uncurry (n := 2)
-      (K := fun a : P × (ℝ × ℝ) ↦ L a.1 a.2) (p := (q.1, q.2.1)) (x := q.2.2)
-      (((hL q hq).contDiffAt (hW.mem_nhds hq)).comp ((q.1, q.2.1), q.2.2)
-        (contDiffAt_fst.fst.prodMk (contDiffAt_fst.snd.prodMk contDiffAt_snd)))
-    exact (h.comp q (contDiffAt_fst.prodMk contDiffAt_snd.fst |>.prodMk contDiffAt_snd.snd)
-      ).contDiffWithinAt
-  have hX : ContDiffOn ℝ 2
-      (fun q : P × ((ℝ × ℝ) × V) ↦ ω.hamiltonianOneForm (Ks q.1) (Kt q.1) q.2.1 q.2.2) W :=
-    (((contDiffOn_const (c := ContinuousLinearMap.fst ℝ ℝ ℝ)).smulRight (hXK hKs)).add
-      ((contDiffOn_const (c := ContinuousLinearMap.snd ℝ ℝ ℝ)).smulRight (hXK hKt))).congr
-      fun _ _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
+  have hX := ω.contDiffOn_hamiltonianOneForm (n := 2) hW hKs hKt
   obtain ⟨A, hA0, B, hB0, hpt⟩ :=
-    ω.exists_forall_norm_fderiv_stdComplexLineReal_sq_le_parametric (Ks := Ks) (Kt := Kt) hC hD hK
-      (hJ.continuousOn.mono hCDKW) ((hXK hKs).continuousOn.mono hCDKW) hJt
+    ω.exists_forall_norm_fderiv_stdComplexLineReal_sq_le (Ks := Ks) (Kt := Kt) hC hD hK
+      (hJ.continuousOn.mono hCDKW)
+      ((hX.continuousOn.mono hCDKW).clm_apply (continuousOn_const (c := stdComplexLineReal))
+        |>.congr fun _ _ ↦ by simp)
+      hJt
   obtain ⟨δ₀, hδ₀, hconv⟩ :=
     ω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm hW hX hJ hC hD
       hK hCDKW

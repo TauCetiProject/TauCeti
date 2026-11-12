@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Capped
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Compactness of the capped comparison family
@@ -122,22 +123,16 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
       fun q : ℝ × ((ℝ × ℝ) × V) ↦ (equivRealProdCLM.symm q.2.1, (q.1, q.2.2)) :=
     (equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
       (contDiff_fst.contMDiff.prodMk (contDiff_snd.comp contDiff_snd).contMDiff)
-  have hHs' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 3 (uncurry (H q)) := by
-    have h := (hHs q).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  have hJs' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V →L[ℝ] V) 2
-      fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap := by
-    have h := (hJs q).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
   have hK' (v : ℂ) : ContDiffOn ℝ 3 (fun q : ℝ × ((ℝ × ℝ) × V) ↦
       cappedComparisonPerturbation H q.1 (equivRealProdCLM.symm q.2.1) q.2.2 v) univ :=
-    (((contMDiff_cappedComparisonPerturbation hH hHs').comp hg).clm_apply
+    (((contMDiff_cappedComparisonPerturbation hH
+      fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff).comp hg).clm_apply
       contMDiff_const).contDiff.contDiffOn
   have hJ' : ContDiffOn ℝ 2 (fun q : ℝ × ((ℝ × ℝ) × V) ↦ (cappedComparisonAlmostComplex h₀ J hJ
       q.1 (equivRealProdCLM.symm q.2.1) q.2.2).toLinearMap.toContinuousLinearMap) univ :=
-    ((contMDiff_cappedComparisonAlmostComplex h₀ hJp hJs').comp hg).contDiff.contDiffOn
+    ((contMDiff_cappedComparisonAlmostComplex h₀ hJp
+      fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff).comp hg
+      ).contDiff.contDiffOn
   have hJt (R : ℝ) (w : ℂ) (x : V) : ω.Tames (cappedComparisonAlmostComplex h₀ J hJ R w x) := by
     rw [cappedComparisonAlmostComplex_def]
     exact tames_cappedAlmostComplex h₀ _ _ w x
