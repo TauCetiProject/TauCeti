@@ -15,8 +15,8 @@ A set of vertices of a Serre graph is convex when it contains every vertex cross
 path between two of its vertices. In a tree, the nonempty convex sets are the vertex sets of the
 subtrees, since reduced paths are the geodesics. Convex sets are closed under arbitrary
 intersections. In an acyclic graph, the following sets are convex: a set of vertices in which no
-two distinct vertices are joined by a path (for instance a singleton), the pair of endpoints of a
-dart, and the set of vertices of a path.
+two distinct vertices are joined by a path (for instance a singleton), and the set of vertices of
+a path.
 
 In a tree, a union of convex sets with a common vertex is convex, and a dart between two convex
 sets with a common vertex has both endpoints in one of them: subtrees through a common vertex
@@ -101,21 +101,6 @@ theorem IsAcyclic.isConvex_of_pairwise (h : Γ.IsAcyclic) {S : Set Γ.V}
 /-- In an acyclic graph every singleton is convex. -/
 theorem IsAcyclic.isConvex_singleton (h : Γ.IsAcyclic) (v : Γ.V) : Γ.IsConvex {v} :=
   h.isConvex_of_pairwise (Set.pairwise_singleton v _)
-
-/-- In an acyclic graph, the two endpoints of a dart form a convex set. -/
-theorem IsAcyclic.isConvex_pair_src_tgt (h : Γ.IsAcyclic) (e : Γ.E) :
-    Γ.IsConvex {Γ.src e, Γ.tgt e} := by
-  rintro a (rfl | rfl) b (rfl | rfl) p hp f hf
-  · rw [(isAcyclic_iff Γ).mp h _ p hp, Path.darts_nil] at hf
-    exact absurd hf List.not_mem_nil
-  · rw [h.eq_of_isReduced hp (Path.isReduced_toPath Γ (Γ.dart e)), Path.darts_toPath,
-      List.mem_singleton, dart_val] at hf
-    exact hf ▸ Set.mem_insert _ _
-  · rw [h.eq_of_isReduced hp (Path.isReduced_toPath Γ (Quiver.reverse (Γ.dart e))),
-      Path.darts_toPath, List.mem_singleton, reverse_val, dart_val] at hf
-    exact hf ▸ Set.mem_insert_of_mem _ (Γ.src_rev e)
-  · rw [(isAcyclic_iff Γ).mp h _ p hp, Path.darts_nil] at hf
-    exact absurd hf List.not_mem_nil
 
 /-- In an acyclic graph, the vertices of a path form a convex set. -/
 theorem IsAcyclic.isConvex_setOf_mem_vertices (h : Γ.IsAcyclic) {a b : Γ.V} (p : Γ.Path a b) :
