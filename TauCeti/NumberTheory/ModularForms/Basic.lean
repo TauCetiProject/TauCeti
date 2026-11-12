@@ -287,7 +287,7 @@ private theorem mdifferentiableAt_slash_J (k : ℤ) {f : ℍ → ℂ} {τ : ℍ}
   rw [mdifferentiableAt_iff, coe_J_smul] at hf
   rw [mdifferentiableAt_iff]
   have h := (hf.comp _ differentiable_neg.differentiableAt).star_star
-  rw [show star (starRingEnd ℂ (τ : ℂ)) = τ by simp] at h
+  simp only [starRingEnd_apply, star_star] at h
   refine h.congr_of_eventuallyEq ?_
   filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds τ.im_pos] with x hx
   simp [ModularForm.slash_def, J_smul, ofComplex_apply_of_im_pos hx]
@@ -298,7 +298,9 @@ theorem _root_.MDifferentiableAt.slash {f : ℍ → ℂ} {g : GL (Fin 2) ℝ} {�
     (hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (g • τ)) (k : ℤ) :
     MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (f ∣[k] g) τ := by
   rcases g.det_ne_zero.lt_or_gt with hg | hg
-  · rw [show g = J * (J * g) by simp [← mul_assoc, ← sq], SlashAction.slash_mul]
+  · -- Factor through `J` so that the remaining matrix `J * g` has positive determinant.
+    have hJg : g = J * (J * g) := by simp [← mul_assoc, ← sq]
+    rw [hJg, SlashAction.slash_mul]
     refine mdifferentiableAt_slash_of_det_pos k ?_ (mdifferentiableAt_slash_J k ?_)
     · rw [← Matrix.GeneralLinearGroup.val_det_apply, map_mul, Units.val_mul, det_J]
       simpa using hg
