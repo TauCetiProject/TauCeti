@@ -41,6 +41,7 @@ open TensorProduct TauCeti.UniversalEnvelopingAlgebra
 noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid}
+
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
 variable (M : AddSubgroup V)

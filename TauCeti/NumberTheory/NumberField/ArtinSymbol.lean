@@ -73,9 +73,21 @@ theorem artinSymbol_eq_mk_of_isArithFrobAt {L : Type*} [Field L] [NumberField L]
     [IsGalois K L] (𝔭 : Ideal (𝓞 K)) [𝔭.IsMaximal]
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭],
       Algebra.IsUnramifiedAt (𝓞 K) Q)
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭]
+    (Q : Ideal (𝓞 L)) [Q.LiesOver 𝔭]
     (σ : L ≃ₐ[K] L) (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     artinSymbol 𝔭 hur = ConjClasses.mk σ := by
+  wlog hQp : Q.IsPrime generalizing Q
+  · -- A proper ideal over the maximal ideal `𝔭` lies in a maximal ideal over `𝔭`.
+    obtain ⟨Q', hQ'max, hle⟩ := Ideal.exists_le_maximal Q
+      ((Ideal.ne_top_iff_of_liesOver (P := Q) (p := 𝔭)).mpr (Ideal.IsMaximal.ne_top inferInstance))
+    have hunder : Q'.under (𝓞 K) = 𝔭 :=
+      (Ideal.IsMaximal.eq_of_le inferInstance (Ideal.comap_ne_top _ hQ'max.ne_top)
+        ((Ideal.LiesOver.over (p := 𝔭) (P := Q)).le.trans (Ideal.comap_mono hle))).symm
+    have hQ'lies : Q'.LiesOver 𝔭 := ⟨hunder.symm⟩
+    refine this Q' ?_ hQ'max.isPrime
+    have hQunder : Q.under (𝓞 K) = 𝔭 := (Ideal.LiesOver.over (p := 𝔭) (P := Q)).symm
+    exact IsArithFrobAt.of_le hσ hle (hQunder.trans hunder.symm).symm
+  have : Q.IsPrime := hQp
   let P : 𝔭.primesOver (𝓞 L) := Classical.choice inferInstance
   let _ : P.1.IsPrime := P.2.1
   let _ : P.1.LiesOver 𝔭 := P.2.2
@@ -242,10 +254,6 @@ section BaseChange
 The companion to `artinSymbol_map_restrictNormalHom`. That law shrinks the top field of a normal
 tower and takes no power; this one raises the base field and takes the power `f(𝔓/𝔭)`.
 -/
-
--- Source. Both transport laws are specified by `TauCetiRoadmap/Chebotarev/README.md` Layer 1,
--- which asks for closed transport lemmas derived from `artinSymbol_map_restrictNormalHom` and
--- `exists_isArithFrobAt_pow_inertiaDeg`. This is the second of the two.
 
 /-- **Raising the base field raises the Artin symbol to the residue degree.** For number fields
 `K ⊆ M ⊆ L` with `L / K` Galois, `𝔭` a prime of `𝓞 K` unramified in `L / K`, and `𝔓` a prime of

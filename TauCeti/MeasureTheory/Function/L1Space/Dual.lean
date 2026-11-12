@@ -79,11 +79,10 @@ theorem exists_toDual_eq [IsFiniteMeasure μ] (φ : StrongDual 𝕜 (Lp 𝕜 1 �
   -- Testing against simple functions bounds `‖h‖_∞` by `‖φ‖`.
   have hint : Integrable h μ := (Lp.memLp u).star.integrable one_le_two
   have hbound : eLpNorm h ∞ μ ≤ ‖φ‖ₑ :=
-    hint.aestronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le
-      (fun _ _ _ => hint.integrableOn) fun σ hσ =>
-        have hσ₂ := σ.memLp_of_isFiniteMeasure 2 μ
-        enorm_integral_mul_le_of_apply_eq φ hσ
-          (hφ _ (hσ₂.toLp σ) (hσ.coeFn_toLp.trans hσ₂.coeFn_toLp.symm))
+    hint.aestronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le fun σ hσ =>
+      have hσ₂ := σ.memLp_of_isFiniteMeasure 2 μ
+      enorm_integral_mul_le_of_apply_eq φ hσ
+        (hφ _ (hσ₂.toLp σ) (hσ.coeFn_toLp.trans hσ₂.coeFn_toLp.symm))
   have hh : MemLp h ∞ μ := memLp_iff.2 (hbound.trans_lt enorm_lt_top)
   refine ⟨hh.toLp h, ContinuousLinearMap.ext fun f => ?_⟩
   -- Both functionals are continuous, and they agree on indicator functions.
