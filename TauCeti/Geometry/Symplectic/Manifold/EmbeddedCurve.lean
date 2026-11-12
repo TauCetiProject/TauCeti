@@ -32,8 +32,8 @@ orientation of `(S, j)`, and it does not depend on `σ`.
 Hausdorff manifold `S` modelled on the real inner product space `F`, an almost complex structure
 `j` on `S` and a smooth pseudoholomorphic embedding `u : S → M`. With the complex orientation of
 `S`, it pushes the fundamental class of `S` forward to `u_*[S]`
-(`TauCeti.PseudoholomorphicEmbedding.fundamentalClass`). This class depends only on the image of
-`u` (`TauCeti.PseudoholomorphicEmbedding.fundamentalClass_eq_of_range_eq`): if `u₁` and `u₂` have
+(`TauCeti.PseudoholomorphicEmbedding.homologyClass`). This class depends only on the image of
+`u` (`TauCeti.PseudoholomorphicEmbedding.homologyClass_eq_of_range_eq`): if `u₁` and `u₂` have
 the same image, then `φ = u₂⁻¹ ∘ u₁` is a homeomorphism, smooth because `u₂` is an immersion, and
 `φ^* (u₂^* σ) = u₁^* σ`, so `φ` preserves the complex orientations. Its degree is therefore the
 local index `1` at the single preimage of a point, and `u₁ = u₂ ∘ φ` gives
@@ -52,7 +52,7 @@ keeps the images and their multiplicities. Its class is `∑ m_C [C]`
 
 * `TauCeti.PseudoholomorphicEmbedding J F`: a smooth pseudoholomorphic embedding of a compact
   connected manifold modelled on `F`.
-* `TauCeti.PseudoholomorphicEmbedding.fundamentalClass`: its class `u_*[S]` for the complex
+* `TauCeti.PseudoholomorphicEmbedding.homologyClass`: its class `u_*[S]` for the complex
   orientation of `S`.
 * `TauCeti.IsEmbeddedPseudoholomorphicCurve J C`: `C` is the image of a smooth pseudoholomorphic
   embedding of a compact connected surface.
@@ -63,11 +63,11 @@ keeps the images and their multiplicities. Its class is `∑ m_C [C]`
 
 ## Main results
 
-* `TauCeti.PseudoholomorphicEmbedding.fundamentalClass_eq_of_range_eq`: pseudoholomorphic
+* `TauCeti.PseudoholomorphicEmbedding.homologyClass_eq_of_range_eq`: pseudoholomorphic
   embeddings with the same image carry the same class.
-* `TauCeti.PseudoholomorphicEmbedding.fundamentalClass_eq_of_tames`: the class does not depend on
+* `TauCeti.PseudoholomorphicEmbedding.homologyClass_eq_of_tames`: the class does not depend on
   the taming form.
-* `TauCeti.PseudoholomorphicEmbedding.fundamentalClass_ofId`: the identity of a compact connected
+* `TauCeti.PseudoholomorphicEmbedding.homologyClass_id`: the identity of a compact connected
   almost complex manifold carries its fundamental class.
 
 ## References
@@ -166,7 +166,7 @@ theorem continuous : Continuous p :=
   p.contMDiff.continuous
 
 /-- A pseudoholomorphic embedding has injective derivatives. -/
-theorem injective_mfderiv (x : p.Source) : Function.Injective (mfderiv 𝓘(ℝ, F) I p x) :=
+theorem mfderiv_injective (x : p.Source) : Function.Injective (mfderiv 𝓘(ℝ, F) I p x) :=
   p.isSmoothEmbedding.isImmersion.mfderiv_injective (by simp) x
 
 /-- The embedding as a continuous map. -/
@@ -180,7 +180,7 @@ theorem coe_toContinuousMap : ⇑p.toContinuousMap = p :=
 /-- The pullback `u^* σ` of a form taming `J` tames the almost complex structure of the source. -/
 theorem tames_mpullback (hσ : σ.Tames J) :
     SmoothTwoForm.Tames (SmoothForm.mpullback p p.contMDiff σ) p.j :=
-  hσ.mpullback_of_isPseudoholomorphic p.contMDiff p.isPseudoholomorphic p.injective_mfderiv
+  hσ.mpullback_of_isPseudoholomorphic p.contMDiff p.isPseudoholomorphic p.mfderiv_injective
 
 /-- The **reparametrization** between two pseudoholomorphic embeddings with the same image:
 the map `u₂⁻¹ ∘ u₁` from the source of `p` to the source of `q`. -/
@@ -203,7 +203,7 @@ theorem continuous_reparam (h : range p = range q) : Continuous (p.reparam q h) 
     (p.continuous.subtype_mk _)
 
 /-- The reparametrization is injective, as `u₁` is. -/
-theorem injective_reparam (h : range p = range q) : Function.Injective (p.reparam q h) :=
+theorem reparam_injective (h : range p = range q) : Function.Injective (p.reparam q h) :=
   fun x y hxy ↦ p.isSmoothEmbedding.isEmbedding.injective <| by
     rw [← p.apply_reparam q h x, ← p.apply_reparam q h y, hxy]
 
@@ -226,17 +226,37 @@ theorem mpullback_reparam (h : range p = range q) :
 def reparamContinuousMap (h : range p = range q) : C(p.Source, q.Source) :=
   ⟨p.reparam q h, p.continuous_reparam q h⟩
 
+@[simp]
+theorem coe_reparamContinuousMap (h : range p = range q) :
+    ⇑(p.reparamContinuousMap q h) = p.reparam q h :=
+  (rfl)
+
 variable (F) in
 /-- The identity of a compact connected almost complex manifold `(S, j)` modelled on `F`, as a
 pseudoholomorphic embedding into itself. -/
-def ofId (S : Type) [TopologicalSpace S] [T2Space S] [CompactSpace S] [ConnectedSpace S]
-    [ChartedSpace F S] [IsManifold 𝓘(ℝ, F) ∞ S] (j : SmoothAlmostComplexStructure 𝓘(ℝ, F) S) :
-    PseudoholomorphicEmbedding j F where
+@[expose] protected def id (S : Type) [TopologicalSpace S] [T2Space S] [CompactSpace S]
+    [ConnectedSpace S] [ChartedSpace F S] [IsManifold 𝓘(ℝ, F) ∞ S]
+    (j : SmoothAlmostComplexStructure 𝓘(ℝ, F) S) : PseudoholomorphicEmbedding j F where
   Source := S
   j := j
-  toFun := id
+  toFun := _root_.id
   isSmoothEmbedding := IsSmoothEmbedding.id
   isPseudoholomorphic := isPseudoholomorphic_id j
+
+section Id
+
+variable {S : Type} [TopologicalSpace S] [T2Space S] [CompactSpace S] [ConnectedSpace S]
+  [ChartedSpace F S] [IsManifold 𝓘(ℝ, F) ∞ S] (j : SmoothAlmostComplexStructure 𝓘(ℝ, F) S)
+
+@[simp]
+theorem coe_id : ⇑(PseudoholomorphicEmbedding.id F S j) = _root_.id :=
+  (rfl)
+
+@[simp]
+theorem id_j : (PseudoholomorphicEmbedding.id F S j).j = j :=
+  (rfl)
+
+end Id
 
 variable [FiniteDimensional ℝ F] {n : ℕ} (hF : finrank ℝ F = n + 1)
 
@@ -245,13 +265,25 @@ variable [FiniteDimensional ℝ F] {n : ℕ} (hF : finrank ℝ F = n + 1)
 def orientation (hσ : σ.Tames J) : Manifold.Orientation 𝓘(ℝ, F) p.Source (Fin (n + 1)) :=
   (p.tames_mpullback hσ).isNondegenerate.orientation hF
 
-/-- The **fundamental class** `u_*[S] ∈ Hₙ₊₁(M; ℤ)` carried by a pseudoholomorphic embedding
+theorem orientation_def (hσ : σ.Tames J) :
+    p.orientation hF hσ = (p.tames_mpullback hσ).isNondegenerate.orientation hF :=
+  (rfl)
+
+/-- The tangent orientation of the complex orientation at `x` is the symplectic orientation of
+`(u^* σ)_x`. -/
+@[simp]
+theorem orientationAt_orientation (hσ : σ.Tames J) (x : p.Source) :
+    (p.orientation hF hσ).orientationAt x =
+      ((p.tames_mpullback hσ).isNondegenerate.symplecticFormAt x).orientation hF :=
+  SmoothTwoForm.IsNondegenerate.orientationAt_orientation _ hF x
+
+/-- The **homology class** `u_*[S] ∈ Hₙ₊₁(M; ℤ)` carried by a pseudoholomorphic embedding
 `u : S → M`, for the complex orientation of `S`. -/
-def fundamentalClass (hσ : σ.Tames J) :=
+def homologyClass (hσ : σ.Tames J) :=
   ((p.orientation hF hσ).toHomologicalOrientation hF).mapFundamentalClass hF p.toContinuousMap
 
-theorem fundamentalClass_def (hσ : σ.Tames J) :
-    p.fundamentalClass hF hσ =
+theorem homologyClass_def (hσ : σ.Tames J) :
+    p.homologyClass hF hσ =
       ((p.orientation hF hσ).toHomologicalOrientation hF).mapFundamentalClass hF
         p.toContinuousMap :=
   (rfl)
@@ -263,9 +295,9 @@ theorem orientation_eq_of_tames {σ' : SmoothTwoForm I M} (hσ : σ.Tames J) (h�
     (p.tames_mpullback hσ')
 
 /-- The class `u_*[S]` does not depend on the form taming `J` used to orient `S`. -/
-theorem fundamentalClass_eq_of_tames {σ' : SmoothTwoForm I M} (hσ : σ.Tames J)
-    (hσ' : σ'.Tames J) : p.fundamentalClass hF hσ = p.fundamentalClass hF hσ' := by
-  rw [fundamentalClass_def, fundamentalClass_def, p.orientation_eq_of_tames hF hσ hσ']
+theorem homologyClass_eq_of_tames {σ' : SmoothTwoForm I M} (hσ : σ.Tames J)
+    (hσ' : σ'.Tames J) : p.homologyClass hF hσ = p.homologyClass hF hσ' := by
+  rw [homologyClass_def, homologyClass_def, p.orientation_eq_of_tames hF hσ hσ']
 
 /-- The reparametrization preserves the complex orientations. -/
 theorem isOrientationPreservingAt_reparam (hσ : σ.Tames J) (h : range p = range q)
@@ -284,7 +316,7 @@ theorem degree_reparam (hσ : σ.Tames J) (h : range p = range q) :
   obtain ⟨x⟩ := (inferInstance : Nonempty p.Source)
   have hfib : φ ⁻¹' {φ x} = {x} := by
     ext y
-    exact (p.injective_reparam q h).eq_iff
+    exact (p.reparam_injective q h).eq_iff
   have hpres := p.isOrientationPreservingAt_reparam q hF hσ h x
   obtain ⟨e, he, -⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).1 hpres
   rw [← HomologicalOrientation.localDegree_eq_degree _ _ hF hF φ.continuous.isProperMap (φ x),
@@ -295,27 +327,28 @@ theorem degree_reparam (hσ : σ.Tames J) (h : range p = range q) :
 /-- **The class of a pseudoholomorphic embedding depends only on its image.** If two smooth
 pseudoholomorphic embeddings of compact connected manifolds have the same image, then they carry
 the same class `u₁_*[S₁] = u₂_*[S₂]` for the complex orientations. -/
-theorem fundamentalClass_eq_of_range_eq (hσ : σ.Tames J) (h : range p = range q) :
-    p.fundamentalClass hF hσ = q.fundamentalClass hF hσ := by
+theorem homologyClass_eq_of_range_eq (hσ : σ.Tames J) (h : range p = range q) :
+    p.homologyClass hF hσ = q.homologyClass hF hσ := by
   have hcomp : q.toContinuousMap.comp (p.reparamContinuousMap q h) = p.toContinuousMap :=
     ContinuousMap.ext (p.apply_reparam q h)
-  rw [fundamentalClass_def, fundamentalClass_def, ← hcomp,
+  rw [homologyClass_def, homologyClass_def, ← hcomp,
     HomologicalOrientation.mapFundamentalClass_comp_eq_degree_smul _ _ hF hF,
     p.degree_reparam q hF hσ h, one_smul]
 
 /-- The identity of a compact connected almost complex manifold `(S, j)` carries the fundamental
 class of `S` for its complex orientation, the symplectic orientation of any form taming `j`. -/
-theorem fundamentalClass_ofId {S : Type} [TopologicalSpace S] [T2Space S] [CompactSpace S]
+theorem homologyClass_id {S : Type} [TopologicalSpace S] [T2Space S] [CompactSpace S]
     [ConnectedSpace S] [ChartedSpace F S] [IsManifold 𝓘(ℝ, F) ∞ S]
     {j : SmoothAlmostComplexStructure 𝓘(ℝ, F) S} {τ : SmoothTwoForm 𝓘(ℝ, F) S}
     (hτ : τ.Tames j) :
-    (ofId F S j).fundamentalClass hF hτ =
+    (PseudoholomorphicEmbedding.id F S j).homologyClass hF hτ =
       ((hτ.isNondegenerate.orientation hF).toHomologicalOrientation hF).fundamentalClass hF := by
-  have ho : (ofId F S j).orientation hF hτ = hτ.isNondegenerate.orientation hF :=
+  have ho : (PseudoholomorphicEmbedding.id F S j).orientation hF hτ =
+      hτ.isNondegenerate.orientation hF :=
     SmoothTwoForm.IsNondegenerate.orientation_eq_of_tames _ hF _
-      ((ofId F S j).tames_mpullback hτ) hτ
-  rw [fundamentalClass_def, ho]
-  -- The source of `ofId F S j` is `S` and its embedding is the identity.
+      ((PseudoholomorphicEmbedding.id F S j).tames_mpullback hτ) hτ
+  rw [homologyClass_def, ho]
+  -- The source of `PseudoholomorphicEmbedding.id F S j` is `S` and its embedding is the identity.
   exact HomologicalOrientation.mapFundamentalClass_id _ hF
 
 end PseudoholomorphicEmbedding
@@ -340,20 +373,20 @@ variable {C : Set M}
 `u_*[S]` of any parametrization `u : S → M` of `C`, with the complex orientation of `S`
 (`TauCeti.IsEmbeddedPseudoholomorphicCurve.homologyClass_eq`). -/
 def homologyClass (hC : IsEmbeddedPseudoholomorphicCurve J C) (hσ : σ.Tames J) :=
-  hC.choose.fundamentalClass Complex.finrank_real_complex hσ
+  hC.choose.homologyClass Complex.finrank_real_complex hσ
 
 /-- The class of an embedded `J`-holomorphic curve is the class carried by any of its
 parametrizations. -/
 theorem homologyClass_eq (hC : IsEmbeddedPseudoholomorphicCurve J C) (hσ : σ.Tames J)
     (p : PseudoholomorphicEmbedding J ℂ) (hp : range p = C) :
-    hC.homologyClass hσ = p.fundamentalClass Complex.finrank_real_complex hσ :=
-  hC.choose.fundamentalClass_eq_of_range_eq p _ hσ (hC.choose_spec.trans hp.symm)
+    hC.homologyClass hσ = p.homologyClass Complex.finrank_real_complex hσ :=
+  hC.choose.homologyClass_eq_of_range_eq p _ hσ (hC.choose_spec.trans hp.symm)
 
 /-- The class of an embedded `J`-holomorphic curve does not depend on the form taming `J`. -/
 theorem homologyClass_eq_of_tames (hC : IsEmbeddedPseudoholomorphicCurve J C)
     {σ' : SmoothTwoForm I M} (hσ : σ.Tames J) (hσ' : σ'.Tames J) :
     hC.homologyClass hσ = hC.homologyClass hσ' :=
-  hC.choose.fundamentalClass_eq_of_tames _ hσ hσ'
+  hC.choose.homologyClass_eq_of_tames _ hσ hσ'
 
 end IsEmbeddedPseudoholomorphicCurve
 
@@ -383,9 +416,9 @@ def homologyClass (c : EmbeddedCurveConfiguration J) (hσ : σ.Tames J) :=
 theorem homologyClass_eq_sum (c : EmbeddedCurveConfiguration J) (hσ : σ.Tames J)
     (p : Set M → PseudoholomorphicEmbedding J ℂ) (hp : ∀ C ∈ c.mult.support, range (p C) = C) :
     c.homologyClass hσ =
-      ∑ C ∈ c.mult.support, c.mult C • (p C).fundamentalClass Complex.finrank_real_complex hσ := by
+      ∑ C ∈ c.mult.support, c.mult C • (p C).homologyClass Complex.finrank_real_complex hσ := by
   rw [homologyClass, ← Finset.sum_attach c.mult.support
-    fun C ↦ c.mult C • (p C).fundamentalClass Complex.finrank_real_complex hσ]
+    fun C ↦ c.mult C • (p C).homologyClass Complex.finrank_real_complex hσ]
   refine Finset.sum_congr rfl fun C _ ↦ ?_
   rw [IsEmbeddedPseudoholomorphicCurve.homologyClass_eq _ hσ (p C) (hp C C.2)]
 
@@ -410,7 +443,7 @@ theorem homologyClass_zero (hσ : σ.Tames J) :
   simp [homologyClass]
 
 /-- The configuration consisting of one embedded `J`-holomorphic curve `C` with multiplicity
-`m`. -/
+`m`; for `m = 0` this is the empty configuration. -/
 def single {C : Set M} (hC : IsEmbeddedPseudoholomorphicCurve J C) (m : ℕ) :
     EmbeddedCurveConfiguration J where
   mult := Finsupp.single C m
