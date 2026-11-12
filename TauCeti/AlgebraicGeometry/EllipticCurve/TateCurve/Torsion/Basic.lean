@@ -142,6 +142,40 @@ theorem tateTorsionExponent_eq
   apply torsionByδ_eq _ _ _ P hu
   exact Additive.toMul.injective (by simpa [tatePeriodHom] using ha.symm)
 
+section DivisionPoint
+
+open scoped AddSubgroup
+
+variable {L}
+
+/-- A chosen `n`-th root of the Tate parameter gives an `n`-torsion point whose exponent class
+is one. The root is part of the data; no splitting of the torsion sequence is chosen. -/
+noncomputable def tateDivisionPoint (u : Lˣ)
+    (hu : u ^ n = Units.map (algebraMap K L : K →* L) q) :
+    (((tateCurveAt q hq)⁄L).toAffine.Point)[(n : ℤ)] :=
+  ⟨tateUnitHom L q hq (.ofMul u), by
+    rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul, ← ofMul_pow,
+      tateUnitHom_eq_zero_iff, hu]
+    exact Subgroup.mem_zpowers _⟩
+
+/-- The division point is represented under uniformization by the chosen root. -/
+@[simp]
+theorem coe_tateDivisionPoint (u : Lˣ)
+    (hu : u ^ n = Units.map (algebraMap K L : K →* L) q) :
+    (tateDivisionPoint q hq n u hu : ((tateCurveAt q hq)⁄L).toAffine.Point) =
+      tateUnitHom L q hq (.ofMul u) := (rfl)
+
+/-- A division point has exponent class one. -/
+@[simp]
+theorem tateTorsionExponent_tateDivisionPoint (u : Lˣ)
+    (hu : u ^ n = Units.map (algebraMap K L : K →* L) q) :
+    tateTorsionExponent L q hq n (tateDivisionPoint q hq n u hu) =
+      (1 : QuotSMulTop (n : ℤ) ℤ) := by
+  exact tateTorsionExponent_eq L q hq n _ u (coe_tateDivisionPoint q hq n u hu).symm 1
+    (by simpa using hu)
+
+end DivisionPoint
+
 /-- Roots of unity define Tate-curve torsion points through uniformization. -/
 noncomputable def tateRootsOfUnityHom : Additive (rootsOfUnity n L) →+
     Submodule.torsionBy ℤ (((tateCurveAt q hq)⁄L).toAffine.Point) (n : ℤ) :=
@@ -237,6 +271,19 @@ theorem map_tateUnitHom (u : Lˣ) :
     Point.map ι (tateUnitHom L q hq (.ofMul u)) =
       tateUnitHom M q hq (.ofMul (Units.map (ι : L →* M) u)) := by
   simp [map_tateUniformizationBaseChange q hq ι hι]
+
+/-- The roots-of-unity inclusion into Tate torsion commutes with continuous maps of complete
+normed extensions. -/
+theorem torsionByMap_tateRootsOfUnityHom (ζ : rootsOfUnity n L) :
+    torsionByMap (n : ℤ) (Point.map ι).toIntLinearMap
+        (tateRootsOfUnityHom L q hq n (.ofMul ζ)) =
+      tateRootsOfUnityHom M q hq n (.ofMul (restrictRootsOfUnity ι n ζ)) := by
+  apply Subtype.ext
+  simp only [coe_torsionByMap_apply, AddMonoidHom.coe_toIntLinearMap,
+    coe_tateRootsOfUnityHom, toMul_ofMul]
+  rw [map_tateUnitHom q hq ι hι]
+  refine congrArg (fun u : Mˣ ↦ tateUnitHom M q hq (.ofMul u)) (Units.ext ?_)
+  simp only [Units.coe_map, restrictRootsOfUnity_coe_apply, AlgHom.coe_toMonoidHom]
 
 /-- The exponent class is unchanged by a continuous map of complete normed extensions.
 In particular, continuous `K`-automorphisms of a complete normed extension preserve exponent

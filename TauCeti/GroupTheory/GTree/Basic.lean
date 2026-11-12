@@ -34,11 +34,13 @@ such actions.
   `T` dominates `T'` exactly when every vertex stabilizer of `T` is elliptic in `T'`. Two
   `G`-trees lie in the same deformation space when each dominates the other.
 
-The one-vertex `G`-tree is minimal, every subgroup is elliptic in it, and it is dominated by
-every `G`-tree. The line, a `G`-tree for the infinite cyclic group, is in
-`TauCeti.GroupTheory.GTree.Line`. The automorphism of the segment exchanging its
-vertices inverts its edge (`TauCeti.SerreGraph.segmentSwap_smul`); more generally, no element of
-a `G`-tree exchanges the endpoints of a dart.
+A `G`-tree with at most one vertex has no darts, is minimal and relative to all families of
+subgroups, every subgroup is elliptic in it, and it is dominated by every `G`-tree; it dominates
+exactly the `G`-trees in which `G` fixes a vertex. The one-vertex `G`-tree is such a tree. The
+line, a `G`-tree for the infinite cyclic group, is in `TauCeti.GroupTheory.GTree.Line`. The
+automorphism of the segment exchanging its vertices inverts its edge
+(`TauCeti.SerreGraph.segmentSwap_smul`); more generally, no element of a `G`-tree exchanges the
+endpoints of a dart.
 
 ## Main declarations
 
@@ -214,6 +216,41 @@ variable (T) in
 theorem isEllipticSubgroup_stabilizer (v : T.V) : T.IsEllipticSubgroup (stabilizer G v) :=
   ⟨v, le_rfl⟩
 
+variable (T) in
+/-- The stabilizer of a dart fixes its source. -/
+theorem stabilizer_dart_le_stabilizer_src (e : T.E) :
+    stabilizer G e ≤ stabilizer G (T.src e) := fun g hg => by
+  rw [mem_stabilizer_iff] at hg ⊢
+  rw [← src_smul, hg]
+
+variable (T) in
+/-- The stabilizer of a dart fixes its target. -/
+theorem stabilizer_dart_le_stabilizer_tgt (e : T.E) :
+    stabilizer G e ≤ stabilizer G (T.tgt e) := fun g hg => by
+  rw [mem_stabilizer_iff] at hg ⊢
+  rw [← tgt_smul, hg]
+
+/-- A dart and its reverse have the same stabilizer. -/
+@[simp] theorem stabilizer_rev (e : T.E) : stabilizer G (T.rev e) = stabilizer G e := by
+  ext g
+  rw [mem_stabilizer_iff, mem_stabilizer_iff, ← rev_smul, T.rev_injective.eq_iff]
+
+variable (T) in
+/-- Dart stabilizers are elliptic. -/
+theorem isEllipticSubgroup_stabilizer_dart (e : T.E) : T.IsEllipticSubgroup (stabilizer G e) :=
+  ⟨T.src e, T.stabilizer_dart_le_stabilizer_src e⟩
+
+/-- In a `G`-tree with at most one vertex, `G` fixes the vertex. -/
+@[simp] theorem stabilizer_eq_top_of_subsingleton [Subsingleton T.V] (v : T.V) :
+    stabilizer G v = ⊤ :=
+  eq_top_iff.mpr fun _ _ => mem_stabilizer_iff.mpr (Subsingleton.elim _ _)
+
+variable (T) in
+/-- Every subgroup is elliptic in a `G`-tree with at most one vertex. -/
+theorem isEllipticSubgroup_of_subsingleton [Subsingleton T.V] (H : Subgroup G) :
+    T.IsEllipticSubgroup H :=
+  ⟨Classical.arbitrary T.V, le_top.trans_eq (stabilizer_eq_top_of_subsingleton _).symm⟩
+
 /-- Conjugates of an elliptic subgroup are elliptic. -/
 theorem IsEllipticSubgroup.map_conj {H : Subgroup G} (hH : T.IsEllipticSubgroup H) (g : G) :
     T.IsEllipticSubgroup (H.map (MulAut.conj g : G →* G)) := by
@@ -341,6 +378,18 @@ theorem IsRelative.mono {𝒜 𝒜' ℋ ℋ' : Set (Subgroup G)} (h : T.IsRelati
     (hℋ : ℋ' ⊆ ℋ) : T.IsRelative 𝒜' ℋ' :=
   ⟨fun e => h𝒜 (h.1 e), fun H hH => h.2 H (hℋ hH)⟩
 
+variable (T) in
+/-- A `G`-tree with at most one vertex has no darts. -/
+theorem isEmpty_dart_of_subsingleton [Subsingleton T.V] : IsEmpty T.E :=
+  (IsTree.isAcyclic _ T.isTree).isEmpty_dart_of_subsingleton
+
+variable (T) in
+/-- A `G`-tree with at most one vertex is relative to all families of subgroups. -/
+theorem isRelative_of_subsingleton [Subsingleton T.V] (𝒜 ℋ : Set (Subgroup G)) :
+    T.IsRelative 𝒜 ℋ :=
+  ⟨fun e => (T.isEmpty_dart_of_subsingleton.false e).elim,
+    fun H _ => T.isEllipticSubgroup_of_subsingleton H⟩
+
 /-! ### Domination and deformation spaces -/
 
 variable (T) in
@@ -378,6 +427,25 @@ theorem Dominates.isElliptic (h : T.Dominates T') {g : G} (hg : T.IsElliptic g) 
 theorem dominates_iff : T.Dominates T' ↔ ∀ v : T.V, T'.IsEllipticSubgroup (stabilizer G v) :=
   MulAction.nonempty_mulActionHom_iff
 
+/-- `T` dominates `T'` exactly when every subgroup elliptic in `T` is elliptic in `T'`. -/
+theorem dominates_iff_forall_isEllipticSubgroup :
+    T.Dominates T' ↔ ∀ H : Subgroup G, T.IsEllipticSubgroup H → T'.IsEllipticSubgroup H :=
+  ⟨fun h _ hH => h.isEllipticSubgroup hH,
+    fun h => dominates_iff.mpr fun v => h _ (T.isEllipticSubgroup_stabilizer v)⟩
+
+variable (T) in
+/-- Every `G`-tree dominates a `G`-tree with at most one vertex. -/
+theorem dominates_of_subsingleton [Subsingleton T'.V] : T.Dominates T' :=
+  dominates_iff.mpr fun _ => T'.isEllipticSubgroup_of_subsingleton _
+
+/-- A `G`-tree with at most one vertex dominates exactly the `G`-trees in which `G` is
+elliptic. -/
+theorem dominates_iff_of_subsingleton [Subsingleton T.V] :
+    T.Dominates T' ↔ T'.IsEllipticSubgroup ⊤ := by
+  rw [dominates_iff]
+  exact ⟨fun h => stabilizer_eq_top_of_subsingleton (Classical.arbitrary T.V) ▸ h _,
+    fun h _ => h.mono le_top⟩
+
 variable (T T') in
 /-- Two `G`-trees lie in the same deformation space when each dominates the other. -/
 def SameDeformationSpace : Prop :=
@@ -402,6 +470,14 @@ theorem SameDeformationSpace.isEllipticSubgroup_iff (h : T.SameDeformationSpace 
     {H : Subgroup G} : T.IsEllipticSubgroup H ↔ T'.IsEllipticSubgroup H :=
   ⟨h.1.isEllipticSubgroup, h.2.isEllipticSubgroup⟩
 
+/-- Two `G`-trees lie in the same deformation space exactly when they have the same elliptic
+subgroups. -/
+theorem sameDeformationSpace_iff_forall_isEllipticSubgroup :
+    T.SameDeformationSpace T' ↔
+      ∀ H : Subgroup G, T.IsEllipticSubgroup H ↔ T'.IsEllipticSubgroup H := by
+  simp only [sameDeformationSpace_iff, dominates_iff_forall_isEllipticSubgroup, iff_def,
+    forall_and]
+
 /-! ### The one-vertex tree -/
 
 variable (G) in
@@ -418,7 +494,7 @@ instance : Subsingleton (point.{u, v} G).V :=
 /-- Every subgroup is elliptic in the one-vertex tree. -/
 @[simp] theorem point_isEllipticSubgroup (H : Subgroup G) :
     (point.{u, v} G).IsEllipticSubgroup H :=
-  ⟨Classical.arbitrary _, fun _ _ => Subsingleton.elim _ _⟩
+  isEllipticSubgroup_of_subsingleton _ H
 
 /-- Every element is elliptic in the one-vertex tree. -/
 @[simp] theorem point_isElliptic (g : G) : (point.{u, v} G).IsElliptic g :=
@@ -431,20 +507,16 @@ theorem point_isMinimal : (point.{u, v} G).IsMinimal :=
 variable (G) in
 /-- The one-vertex tree is relative to all families of subgroups. -/
 theorem point_isRelative (𝒜 ℋ : Set (Subgroup G)) : (point.{u, v} G).IsRelative 𝒜 ℋ :=
-  ⟨fun e => e.elim, fun H _ => point_isEllipticSubgroup H⟩
+  isRelative_of_subsingleton _ 𝒜 ℋ
 
 variable (T) in
 /-- Every `G`-tree dominates the one-vertex tree. -/
 theorem dominates_point : T.Dominates (point.{u', v'} G) :=
-  dominates_iff.mpr fun _ => point_isEllipticSubgroup _
+  T.dominates_of_subsingleton
 
 /-- The one-vertex tree dominates exactly the `G`-trees in which `G` is elliptic. -/
-theorem point_dominates_iff : (point.{u', v'} G).Dominates T ↔ T.IsEllipticSubgroup ⊤ := by
-  rw [dominates_iff]
-  refine ⟨fun h => ?_, fun h _ => h.mono le_top⟩
-  have hstab : stabilizer G (Classical.arbitrary (point.{u', v'} G).V) = ⊤ :=
-    eq_top_iff.mpr fun _ _ => mem_stabilizer_iff.mpr (Subsingleton.elim _ _)
-  exact hstab ▸ h _
+theorem point_dominates_iff : (point.{u', v'} G).Dominates T ↔ T.IsEllipticSubgroup ⊤ :=
+  dominates_iff_of_subsingleton
 
 end GTree
 
