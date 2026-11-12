@@ -40,13 +40,12 @@ open FourierTransform MeasureTheory Metric Module
 
 variable {E H : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-  [CompleteSpace H]
 
 namespace TauCeti
 
 /-- **Kernels of dyadic pieces of symbols.** Let `g` be a smooth function, valued in a complex
-Hilbert space, with the symbol estimates `‖D^i g ξ‖ ≤ C_i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order
-`m` for `i ≤ N`, and let `2N > n = dim E`,
+inner product space, with the symbol estimates `‖D^i g ξ‖ ≤ C_i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of
+order `m` for `i ≤ N`, and let `2N > n = dim E`,
 `a > 0`, `b` and `B : ℕ → ℝ`. There is a constant `C` with the following property. Let `R > 0` and
 let `χ` be a smooth real function such that `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` on the support of `χ`
 and `‖D^k χ‖ ≤ B k / R ^ k` for `k ≤ N`. Then the kernel of the dyadic piece `χ g` satisfies
