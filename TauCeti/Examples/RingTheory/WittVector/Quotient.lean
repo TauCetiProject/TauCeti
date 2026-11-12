@@ -26,14 +26,14 @@ variable {p : ℕ} [Fact p.Prime] {S : Type*} [CommRing S] [CharP S p] [PerfectR
 example (ξ : WittVector p S) :
     (WittVector p S ⧸ span {ξ}) ⧸ span {(p : WittVector p S ⧸ span {ξ})} ≃+*
       S ⧸ span {ξ.coeff 0} :=
-  (wittVectorQuotientModPEquiv (span {ξ})).trans (Ideal.quotEquivOfEq (by simp [Ideal.map_span]))
+  (wittVectorQuotientPEquiv (span {ξ})).trans (Ideal.quotEquivOfEq (by simp [Ideal.map_span]))
 
 -- In particular, the quotient by `p - [a]` reduces to `S / (a)`.
 example (a : S) :
     (WittVector p S ⧸ span {(p : WittVector p S) - teichmuller p a}) ⧸
       span {(p : WittVector p S ⧸ span {(p : WittVector p S) - teichmuller p a})} ≃+*
         S ⧸ span {a} :=
-  (wittVectorQuotientModPEquiv (span {(p : WittVector p S) - teichmuller p a})).trans
+  (wittVectorQuotientPEquiv (span {(p : WittVector p S) - teichmuller p a})).trans
     (Ideal.quotEquivOfEq (by
       rw [Ideal.map_span, Set.image_singleton, map_sub, map_natCast,
         constantCoeff_apply, teichmuller_coeff_zero, CharP.cast_eq_zero, zero_sub,
@@ -41,18 +41,18 @@ example (a : S) :
 
 -- The inverse sends each residue class to a Teichmüller representative.
 example (I : Ideal (WittVector p S)) (s : S) :
-    I.wittVectorQuotientModPEquiv
+    I.wittVectorQuotientPEquiv
       (Ideal.Quotient.mk _ (Ideal.Quotient.mk I (teichmuller p s))) =
         Ideal.Quotient.mk _ s := by
   simp
 
 -- Over a finite field, the zero and one residue classes remain distinct.
 example :
-    wittVectorQuotientModPEquiv (span {(p : WittVector p (ZMod p))})
+    wittVectorQuotientPEquiv (span {(p : WittVector p (ZMod p))})
       (Ideal.Quotient.mk _ (Ideal.Quotient.mk _ 1)) ≠ 0 := by
   have hmap : (span {(p : WittVector p (ZMod p))}).map constantCoeff = ⊥ := by
     simp [Ideal.map_span]
-  rw [wittVectorQuotientModPEquiv_mk_mk, one_coeff_zero]
+  rw [wittVectorQuotientPEquiv_mk_mk, one_coeff_zero]
   intro h
   rw [hmap] at h
   exact (one_ne_zero : (1 : ZMod p) ≠ 0)
@@ -63,7 +63,7 @@ example :
     (WittVector p (ZMod p) ⧸ span {(p : WittVector p (ZMod p)) ^ 2}) ⧸
       span {(p : WittVector p (ZMod p) ⧸ span {(p : WittVector p (ZMod p)) ^ 2})} ≃+*
         ZMod p :=
-  (wittVectorQuotientModPEquiv (span {(p : WittVector p (ZMod p)) ^ 2})).trans
+  (wittVectorQuotientPEquiv (span {(p : WittVector p (ZMod p)) ^ 2})).trans
     ((Ideal.quotEquivOfEq (by simp [Ideal.map_span, -constantCoeff_apply])).trans
       (RingEquiv.quotientBot _))
 
@@ -71,4 +71,4 @@ example :
 example (I : Ideal (WittVector p (ZMod p))) :
     Function.Surjective
       (fun x : (WittVector p (ZMod p) ⧸ I) ⧸ span {(p : WittVector p (ZMod p) ⧸ I)} ↦ x ^ p) :=
-  I.frobenius_wittVector_quotient_modP_surjective
+  I.surjective_frobenius_wittVectorQuotientP
