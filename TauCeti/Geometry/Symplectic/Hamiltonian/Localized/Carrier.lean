@@ -76,6 +76,12 @@ theorem hamiltonianVectorField_eq_zero_of_notMem (ω : SymplecticForm V)
   rw [ω.hamiltonianVectorField_congr_of_eventuallyEq hev, hamiltonianVectorField_eq_zero_iff]
   exact fderiv_const_apply 0
 
+omit [FiniteDimensional ℝ V] in
+/-- A `C^n` function supported in `C`, `1 ≤ n`, is differentiable. -/
+private theorem differentiableAt_of_one_le (hn : 1 ≤ n) (h : 𝓓^{n}_{C}(P × V, ℝ)) (p : P × V) :
+    DifferentiableAt ℝ h p :=
+  h.contDiff.differentiable (by exact_mod_cast (one_ne_zero.bot_lt.trans_le hn).ne') p
+
 /-- The Hamiltonian vector field of a slice of a `C^n` function supported in `C`, `1 ≤ n`, is
 bounded by the `C¹` seminorm of the function, up to the norm of the inverse of the contraction by
 `ω`. -/
@@ -84,8 +90,7 @@ theorem norm_hamiltonianVectorField_le_seminorm (ω : SymplecticForm V) (hn : 1 
     ‖ω.hamiltonianVectorField (fun y' ↦ h (z, y')) y‖ ≤
       ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ *
         ContDiffMapSupportedIn.seminorm ℝ (P × V) ℝ n C 1 h := by
-  have hd : DifferentiableAt ℝ h (z, y) :=
-    (h.contDiff.differentiable (by exact_mod_cast (one_ne_zero.bot_lt.trans_le hn).ne')) _
+  have hd := differentiableAt_of_one_le hn h (z, y)
   have hf : fderiv ℝ (fun y' ↦ h (z, y')) y =
       (fderiv ℝ h (z, y)).comp (ContinuousLinearMap.inr ℝ P V) :=
     (hd.hasFDerivAt.comp y (hasFDerivAt_prodMk_right z y)).fderiv
@@ -106,13 +111,33 @@ private theorem hamiltonianVectorField_add_of_one_le (ω : SymplecticForm V) (hn
     ω.hamiltonianVectorField (fun y' ↦ (h + g) (z, y')) y =
       ω.hamiltonianVectorField (fun y' ↦ h (z, y')) y +
         ω.hamiltonianVectorField (fun y' ↦ g (z, y')) y := by
-  have hn' : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (one_ne_zero.bot_lt.trans_le hn).ne'
   have hd (k : 𝓓^{n}_{C}(P × V, ℝ)) : DifferentiableAt ℝ (fun y' ↦ k (z, y')) y :=
-    (k.contDiff.differentiable hn' _).comp y
+    (differentiableAt_of_one_le hn k (z, y)).comp y
       ((differentiableAt_const z).prodMk differentiableAt_id)
   simpa using ω.hamiltonianVectorField_const_mul_add_const_mul (hd h) (hd g) 1 1
 
+/-- The pairing of a covector field along `u` with the Hamiltonian vector field of a `C^n`
+function `h` supported in `C`, `1 ≤ n`, is bounded on the projection of `C` by `‖η‖` times the
+`C¹` bound of `h`, and vanishes off it. -/
+private theorem norm_apply_hamiltonianVectorField_le_indicator (ω : SymplecticForm V)
+    (hn : 1 ≤ n) (u : P → V) (η : P → V →L[ℝ] ℝ) (h : 𝓓^{n}_{C}(P × V, ℝ)) (z : P) :
+    ‖η z (ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z))‖ ≤
+      (Prod.fst '' (C : Set (P × V))).indicator (fun z ↦ ‖η z‖ *
+        (‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ *
+          ContDiffMapSupportedIn.seminorm ℝ (P × V) ℝ n C 1 h)) z := by
+  by_cases hzS : z ∈ Prod.fst '' (C : Set (P × V))
+  · rw [indicator_of_mem hzS]
+    exact ((η z).le_opNorm _).trans (mul_le_mul_of_nonneg_left
+      (ω.norm_hamiltonianVectorField_le_seminorm hn h z (u z)) (norm_nonneg _))
+  · rw [indicator_of_notMem hzS, ω.hamiltonianVectorField_eq_zero_of_notMem h
+      fun hC ↦ hzS ⟨_, hC, rfl⟩, map_zero, norm_zero]
+
 variable [MeasurableSpace P] [BorelSpace P] {μ : Measure P}
+
+omit [NormedSpace ℝ P] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- The projection of the compact set `C` to `P` is measurable. -/
+private theorem measurableSet_image_fst : MeasurableSet (Prod.fst '' (C : Set (P × V))) :=
+  (C.isCompact.image continuous_fst).isClosed.measurableSet
 
 /-- Along a map continuous on the projection of `C`, the pairing of an integrable covector field
 with the Hamiltonian vector field of a `C^n` function supported in `C`, `1 ≤ n`, is integrable. -/
@@ -120,24 +145,27 @@ private theorem integrable_apply_hamiltonianVectorField (ω : SymplecticForm V) 
     {u : P → V} (hu : ContinuousOn u (Prod.fst '' (C : Set (P × V)))) {η : P → V →L[ℝ] ℝ}
     (hη : IntegrableOn η (Prod.fst '' (C : Set (P × V))) μ) (h : 𝓓^{n}_{C}(P × V, ℝ)) :
     Integrable (fun z ↦ η z (ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z))) μ := by
-  set S : Set P := Prod.fst '' (C : Set (P × V))
-  have hS : MeasurableSet S := (C.isCompact.image continuous_fst).isClosed.measurableSet
-  -- Off `S` the point `(z, u z)` lies off `C`, so the integrand vanishes.
-  refine (integrableOn_iff_integrable_of_support_subset (s := S) fun z hz ↦ ?_).1 ?_
-  · by_contra hzS
-    refine hz ?_
-    simp only [ω.hamiltonianVectorField_eq_zero_of_notMem h fun hC ↦ hzS ⟨_, hC, rfl⟩, map_zero]
-  -- On `S` the vector field is continuous and bounded by the `C¹` seminorm of `h`.
-  have hX : ContinuousOn (fun z ↦ ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z)) S :=
+  -- Off the projection of `C` the integrand vanishes, so it is measurable once it is
+  -- measurable on the projection, where the vector field is continuous.
+  have hX : ContinuousOn (fun z ↦ ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z))
+      (Prod.fst '' (C : Set (P × V))) :=
     ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn (K := fun z y ↦ h (z, y)) hu
       ((h.contDiff.of_le (by exact_mod_cast hn)).contDiffOn)
-  refine Integrable.mono' (hη.norm.mul_const (‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ *
-    ContDiffMapSupportedIn.seminorm ℝ (P × V) ℝ n C 1 h))
-    ((ContinuousLinearMap.apply ℝ ℝ).aestronglyMeasurable_comp₂ (hX.aestronglyMeasurable hS)
-      hη.aestronglyMeasurable) (Eventually.of_forall fun z ↦ ?_)
-  exact ((η z).le_opNorm _).trans
-    (mul_le_mul_of_nonneg_left (ω.norm_hamiltonianVectorField_le_seminorm hn h z (u z))
-      (norm_nonneg _))
+  have hm : AEStronglyMeasurable
+      (fun z ↦ η z (ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z)))
+      (μ.restrict (Prod.fst '' (C : Set (P × V)))) :=
+    (ContinuousLinearMap.apply ℝ ℝ).aestronglyMeasurable_comp₂
+      (hX.aestronglyMeasurable measurableSet_image_fst) hη.aestronglyMeasurable
+  refine (integrableOn_iff_integrable_of_support_subset (s := Prod.fst '' (C : Set (P × V)))
+    fun z hz ↦ ?_).1 ?_
+  · by_contra hzS
+    refine hz (norm_le_zero_iff.1 ?_)
+    simpa only [indicator_of_notMem hzS] using
+      ω.norm_apply_hamiltonianVectorField_le_indicator hn u η h z
+  exact Integrable.mono' (hη.norm.mul_const _) hm
+    ((ae_restrict_mem measurableSet_image_fst).mono fun z hz ↦ by
+      simpa only [indicator_of_mem hz] using
+        ω.norm_apply_hamiltonianVectorField_le_indicator hn u η h z)
 
 /-- The pairing `δK ↦ ∫ η z (X_{δK(z, ·)}(u z)) dμ` of an integrable covector field along `u` with
 Hamiltonian variations, as a continuous linear functional on `𝓓^{n}_{C}(P × V, ℝ)`, `1 ≤ n`. -/
@@ -160,25 +188,15 @@ private noncomputable def hamiltonianPairing (ω : SymplecticForm V) (hn : 1 ≤
       set S : Set P := Prod.fst '' (C : Set (P × V))
       set B := ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ *
         ContDiffMapSupportedIn.seminorm ℝ (P × V) ℝ n C 1 h
-      have hS : MeasurableSet S := (C.isCompact.image continuous_fst).isClosed.measurableSet
-      -- The integrand is bounded by `‖η‖ * B` on `S` and vanishes off `S`.
-      have hle : ∀ z, ‖η z (ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z))‖ ≤
-          S.indicator (fun z ↦ ‖η z‖ * B) z := by
-        intro z
-        by_cases hzS : z ∈ S
-        · rw [indicator_of_mem hzS]
-          exact ((η z).le_opNorm _).trans (mul_le_mul_of_nonneg_left
-            (ω.norm_hamiltonianVectorField_le_seminorm hn h z (u z)) (norm_nonneg _))
-        · rw [indicator_of_notMem hzS, ω.hamiltonianVectorField_eq_zero_of_notMem h
-            fun hC ↦ hzS ⟨_, hC, rfl⟩, map_zero, norm_zero]
       rw [Finset.sup_singleton]
       calc ‖∫ z, η z (ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z)) ∂μ‖
           ≤ ∫ z, S.indicator (fun z ↦ ‖η z‖ * B) z ∂μ :=
-            norm_integral_le_of_norm_le ((integrable_indicator_iff hS).2
-              (hη.norm.mul_const B)) (Eventually.of_forall hle)
+            norm_integral_le_of_norm_le ((integrable_indicator_iff measurableSet_image_fst).2
+              (hη.norm.mul_const B)) (Eventually.of_forall
+                (ω.norm_apply_hamiltonianVectorField_le_indicator hn u η h))
         _ = ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ *
               (∫ z in S, ‖η z‖ ∂μ) * ContDiffMapSupportedIn.seminorm ℝ (P × V) ℝ n C 1 h := by
-            rw [integral_indicator hS, integral_mul_const]
+            rw [integral_indicator measurableSet_image_fst, integral_mul_const]
             ring⟩
 
 variable [FiniteDimensional ℝ P] in

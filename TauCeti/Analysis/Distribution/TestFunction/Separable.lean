@@ -10,6 +10,7 @@ public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.SecondCountableSpace
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.LinearAlgebra.Multilinear.FiniteDimensional
+import TauCeti.Topology.MetricSpace.Pseudo.Constructions
 
 /-!
 # Second countability of the spaces of functions supported in a compact set
@@ -99,21 +100,14 @@ theorem dist_restrictStructureMap (i : ℕ) (f g : 𝓓^{n}_{K}(E, F)) :
       structureMapLM_apply_eq_zero_of_notMem i g hx, dist_self]
     exact dist_nonneg
 
-/-- Two maps into pseudometric spaces that have the same distances induce the same topology. -/
-private theorem induced_eq_of_dist_eq {X Y Z : Type*} [PseudoMetricSpace Y]
-    [PseudoMetricSpace Z] {f : X → Y} {g : X → Z} (h : ∀ a b, dist (f a) (f b) = dist (g a) (g b)) :
-    induced f inferInstance = induced g inferInstance := by
-  have hm : PseudoMetricSpace.induced f inferInstance = PseudoMetricSpace.induced g inferInstance :=
-    PseudoMetricSpace.ext (by ext a b; exact h a b)
-  exact congrArg (fun m : PseudoMetricSpace X ↦ m.toUniformSpace.toTopologicalSpace) hm
-
 /-- The derivatives restricted to `K` embed `𝓓^{n}_{K}(E, F)` topologically into the product
 `Π i, C(K, E [×i]→L[ℝ] F)`. -/
 theorem isInducing_restrictStructureMap :
     IsInducing fun (f : 𝓓^{n}_{K}(E, F)) (i : ℕ) ↦ restrictStructureMap n i f := by
   have h : (topologicalSpace : TopologicalSpace 𝓓^{n}_{K}(E, F)) =
       ⨅ i : ℕ, induced (restrictStructureMap n i) inferInstance :=
-    iInf_congr fun i ↦ induced_eq_of_dist_eq fun f g ↦ (dist_restrictStructureMap i f g).symm
+    iInf_congr fun i ↦ PseudoMetricSpace.induced_topology_eq_of_dist_eq fun f g ↦
+      (dist_restrictStructureMap i f g).symm
   -- `inducing_iInf_to_pi` is stated for the infimum topology, which is the topology of
   -- `𝓓^{n}_{K}(E, F)` by `h`.
   convert inducing_iInf_to_pi fun i : ℕ ↦ restrictStructureMap (K := K) (F := F) n i
