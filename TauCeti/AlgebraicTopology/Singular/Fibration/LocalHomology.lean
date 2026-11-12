@@ -30,7 +30,7 @@ structure on `B` with a single top cell containing `b` (their Proposition 2.6), 
 detect classes **living over the fundamental class** of the base. A class `α ∈ Hₖ(E)` lives over
 the fundamental class at `b` when its localization in `Hₖ(E, E ∖ F)` is nonzero
 (`TauCeti.LivesOverFundamentalClass`). For a Serre fibration this happens exactly when
-`j_! α ≠ 0` (`TauCeti.livesOverFundamentalClass_iff_singularHomologyComplFiberIso`), and
+`j_! α ≠ 0` (`TauCeti.livesOverFundamentalClass_iff_singularHomologyComplFiberIso_hom_ne_zero`), and
 only in degrees at least `r` (`TauCeti.LivesOverFundamentalClass.finrank_le`).
 
 The relative group, rather than the shriek map itself, is used in the definition because it does
@@ -53,7 +53,7 @@ over the punctured base is the shifted homology of the fibre
 
 * `TauCeti.TopCat.singularHomologyComplFiberIso`: `Hₙ₊ᵣ(E, E ∖ p⁻¹(b)) ≅ Hₙ(p⁻¹(b))`.
 * `TauCeti.TopCat.isZero_singularHomology_complFiber`: `Hₘ(E, E ∖ p⁻¹(b)) = 0` for `m < r`.
-* `TauCeti.livesOverFundamentalClass_iff_singularHomologyComplFiberIso`: a class lives
+* `TauCeti.livesOverFundamentalClass_iff_singularHomologyComplFiberIso_hom_ne_zero`: a class lives
   over the fundamental class exactly when its image in `Hₖ₋ᵣ(p⁻¹(b))` is nonzero.
 * `TauCeti.LivesOverFundamentalClass.finrank_le`: such a class has degree at least `r`.
 
@@ -261,7 +261,7 @@ variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensio
 `T₁` space with a chart `e` of dimension `r` at `b`, a class `α ∈ Hₙ₊ᵣ(E; R)` lives over the
 fundamental class at `b` exactly when its image under the shriek map
 `Hₙ₊ᵣ(E) → Hₙ₊ᵣ(E, E ∖ p⁻¹(b)) ≅ Hₙ(p⁻¹(b))` of the inclusion of `b` is nonzero. -/
-theorem livesOverFundamentalClass_iff_singularHomologyComplFiberIso
+theorem livesOverFundamentalClass_iff_singularHomologyComplFiberIso_hom_ne_zero
     (hp : TopCat.serreFibrations p) {n m : ℕ} (h : n + finrank ℝ V = m)
     (α : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) m : ModuleCat.{u} R)) :
     LivesOverFundamentalClass (ModuleCat.of R R) p b α ↔
