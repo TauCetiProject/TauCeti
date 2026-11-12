@@ -261,8 +261,9 @@ theorem thomPairOverInterIso_inv_fst_apply (v : ↥(π F E ⁻¹' U ∩ π F E �
     TopPair.Hom.fst (thomPairOverInterIso F E U V).inv v = ⟨v.1, v.2⟩ :=
   (rfl)
 
-/-- The restriction from the union pair of the Mayer–Vietoris sequence to the pair over `U` is the
-restriction from `U ∪ V` to `U`. -/
+/-- The inclusion of the pair over `U` into the union pair of the Mayer–Vietoris sequence, followed
+by `(thomPairOverUnionIso F E U V).inv`, is the inclusion of the Thom pair over `U` into the Thom
+pair over `U ∪ V`. -/
 @[reassoc]
 theorem ofInclusionMap_comp_thomPairOverUnionIso_inv_left :
     TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion subset_union_left)
@@ -273,8 +274,9 @@ theorem ofInclusionMap_comp_thomPairOverUnionIso_inv_left :
     erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply, thomPairOverMap_fst_apply]
     rfl)
 
-/-- The restriction from the union pair of the Mayer–Vietoris sequence to the pair over `V` is the
-restriction from `U ∪ V` to `V`. -/
+/-- The inclusion of the pair over `V` into the union pair of the Mayer–Vietoris sequence, followed
+by `(thomPairOverUnionIso F E U V).inv`, is the inclusion of the Thom pair over `V` into the Thom
+pair over `U ∪ V`. -/
 @[reassoc]
 theorem ofInclusionMap_comp_thomPairOverUnionIso_inv_right :
     TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion subset_union_right)
@@ -285,8 +287,8 @@ theorem ofInclusionMap_comp_thomPairOverUnionIso_inv_right :
     erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply, thomPairOverMap_fst_apply]
     rfl)
 
-/-- The restriction from the pair over `U ∩ V` to the pair over `U`, through the intersection pair
-of the Mayer–Vietoris sequence. -/
+/-- The inclusion of the Thom pair over `U ∩ V` into the Thom pair over `U` factors through the
+intersection pair of the Mayer–Vietoris sequence. -/
 @[reassoc]
 theorem thomPairOverInterIso_hom_comp_ofInclusionMap_left :
     (thomPairOverInterIso F E U V).hom ≫ TopPair.ofInclusionMap _ _
@@ -297,8 +299,8 @@ theorem thomPairOverInterIso_hom_comp_ofInclusionMap_left :
     erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply, thomPairOverMap_fst_apply]
     rfl)
 
-/-- The restriction from the pair over `U ∩ V` to the pair over `V`, through the intersection pair
-of the Mayer–Vietoris sequence. -/
+/-- The inclusion of the Thom pair over `U ∩ V` into the Thom pair over `V` factors through the
+intersection pair of the Mayer–Vietoris sequence. -/
 @[reassoc]
 theorem thomPairOverInterIso_hom_comp_ofInclusionMap_right :
     (thomPairOverInterIso F E U V).hom ≫ TopPair.ofInclusionMap _ _

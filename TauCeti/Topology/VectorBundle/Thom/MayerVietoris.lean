@@ -13,21 +13,26 @@ public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
 /-!
 # The Thom map and the Mayer–Vietoris sequence
 
-Let `E → B` be a vector bundle with Thom pair `(E, E₀)` and let `u ∈ Hⁿ(E, E₀; K)`. For a subset
-`W` of the base, the Thom map `TauCeti.thomMapOver` of a class `u_W ∈ Hⁿ(E|_W, E₀|_W; K)` is
-`a ↦ π_W^*a ⌣ u_W`, where `π_W : E|_W ⟶ W` is the restricted projection; it is defined, with its
-naturality in restrictions, in `TauCeti.Topology.VectorBundle.Thom.Isomorphism`.
+Let `E → B` be a vector bundle with Thom pair `(E, E₀)`, let `K` be a commutative ring and let `M`
+be a `K`-module. For a subset `W` of the base, the Thom map `TauCeti.thomMapOver` of a class
+`u_W ∈ Hⁿ(E|_W, E₀|_W; K)` is `a ↦ π_W^*a ⌣ u_W`, from `Hᵖ(W; M)` to `Hᵐ(E|_W, E₀|_W; M)` for
+`p + n = m`, where `π_W : E|_W ⟶ W` is the restricted projection; for `W = B` it is the Thom map
+`TauCeti.thomMap` of `u ∈ Hⁿ(E, E₀; K)`. Both are defined, with their naturality, in
+`TauCeti.Topology.VectorBundle.Thom.Isomorphism`.
 
 The main result is the **Mayer–Vietoris step of the Thom isomorphism**
-(`TauCeti.thomMap_bijective_of_union_eq_univ`). Let `U` and `V` be open sets covering the base. If
-the Thom maps of the restrictions of `u` over `U`, `V` and `U ∩ V` are bijective in every degree,
-and `Hⁿ⁻¹(E|_{U ∩ V}, E₀|_{U ∩ V}; M)` vanishes, then the Thom map of `u` is bijective in every
-degree. This is the gluing step in the proof of the Thom isomorphism by induction over trivializing
-open sets (Milnor and Stasheff, proof of Theorem 10.4; Hatcher, proof of Theorem 4D.10). For a real
-vector bundle of rank `n`, the vanishing hypothesis holds when `U ∩ V` is a finite union of
-trivializing open sets (`TauCeti.isZero_singularCohomology_thomPairOver_biUnion`).
+(`TauCeti.thomMapOver_union_bijective`). Let `U` and `V` be open sets of the base and let
+`u ∈ Hⁿ(E|_{U ∪ V}, E₀|_{U ∪ V}; K)`. If the Thom maps of the restrictions of `u` over `U`, `V`
+and `U ∩ V` are bijective in every degree, and `Hⁿ⁻¹(E|_{U ∩ V}, E₀|_{U ∩ V}; M)` vanishes, then
+the Thom map of `u` over `U ∪ V` is bijective in every degree. This is the gluing step in the proof
+of the Thom isomorphism by induction over finite unions of trivializing open sets (Milnor and
+Stasheff, proof of Theorem 10.4; Hatcher, proof of Theorem 4D.10). For a real vector bundle of
+rank `n`, the vanishing hypothesis holds when `U ∩ V` is a finite union of trivializing open sets
+(`TauCeti.isZero_singularCohomology_thomPairOver_biUnion`).
 
-The Thom maps form a map from the Mayer–Vietoris sequence of the cover `{U, V}` of the base
+It is first proved when `U` and `V` cover the base, for the Thom map of a class
+`u ∈ Hⁿ(E, E₀; K)` (`TauCeti.thomMap_bijective_of_union_eq_univ`). The Thom maps form a map from
+the Mayer–Vietoris sequence of the cover `{U, V}` of the base
 (`TopCat.singularCohomologyMayerVietorisδ`) to the Mayer–Vietoris sequence of the Thom pairs over
 `U` and over `V` (`TopCat.singularCohomologyPairMayerVietorisδ`). The squares through restrictions
 commute by naturality of the cup product. The square through the connecting morphisms commutes
@@ -35,13 +40,17 @@ because the connecting morphism of the pairs carries `a ⌣ u|` to `δ a ⌣ u`
 (`TopCat.singularCohomologyPairMayerVietorisδ_singularCup`), and the connecting morphism of the
 cover of the total space by the preimages of `U` and `V` is compatible with the projection
 (`TopCat.singularCohomologyMayerVietorisδ_naturality`). The five lemma
-(`ModuleCat.bijective_of_surjective_of_bijective_of_bijective_of_injective`) concludes; in degree
-`m = n`, where the ladder starts with the first maps of the sequences, its left exact form
-(`ModuleCat.bijective_of_bijective_of_injective_of_left_exact`) does.
+(`ModuleCat.bijective_of_surjective_of_bijective_of_bijective_of_injective`) concludes; in base
+degree `p = 0`, that is `m = n`, where the ladder starts with the first maps of the sequences, its
+left exact form (`ModuleCat.bijective_of_bijective_of_injective_of_left_exact`) does. The general
+case is this one for the restriction `E|_{U ∪ V}`, the pull-back of `E` along the inclusion of
+`U ∪ V` into `B`, whose Thom pairs over the preimages of subsets `T ⊆ U ∪ V` are those of `E` over
+`T` (`TauCeti.thomMapOver_naturality`).
 
 ## Main results
 
-* `TauCeti.thomMap_bijective_of_union_eq_univ`: the Mayer–Vietoris step of the Thom isomorphism.
+* `TauCeti.thomMapOver_union_bijective`: the Mayer–Vietoris step of the Thom isomorphism.
+* `TauCeti.thomMap_bijective_of_union_eq_univ`: its case of a cover of the base.
 
 ## References
 
@@ -62,7 +71,7 @@ namespace TauCeti
 
 section MayerVietoris
 
-/-! ### The Mayer–Vietoris step
+/-! ### The Mayer–Vietoris step for a cover of the base
 
 Throughout, `U` and `V` are open sets of the base with `U ∪ V = B`. The Mayer–Vietoris sequence of
 the Thom pairs over `U` and over `V` is stated for the pairs `(E|_U ∩ E|_V, E₀|_U ∩ E₀|_V)` and
@@ -90,7 +99,7 @@ private abbrev unionPair : TopPair.{w} :=
       (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V))
 
 variable (F E) in
-/-- The restriction from the Thom pair `(E, E₀)` to the Thom pair over `W`. -/
+/-- The inclusion of the Thom pair over `W` into the Thom pair `(E, E₀)`. -/
 private abbrev thomPairRestrict (W : Set B) : thomPairOver F E W ⟶ thomPair F E :=
   thomPairOverMap F E (subset_univ W) ≫ (thomPairOverUnivIso F E).hom
 
@@ -147,11 +156,7 @@ omit [TopologicalSpace B] [TopologicalSpace F] [∀ b, TopologicalSpace (E b)] [
 private theorem thomPairOverInterIso_inv_comp_thomPairRestrict :
     (thomPairOverInterIso F E U V).inv ≫ thomPairRestrict F E (U ∩ V) =
       interToThomPair F E U V := by
-  rw [Iso.inv_comp_eq, interToThomPair,
-    show TopCat.interToUnionMap _ _ = _ from TopPair.ofInclusionMap_comp _
-      (hst' := (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U))
-      (ContinuousMap.inclusion inter_subset_left) (ContinuousMap.inclusion subset_union_left)
-      (fun _ hx ↦ inter_subset_left hx) (fun _ hx ↦ subset_union_left hx), Category.assoc,
+  rw [Iso.inv_comp_eq, interToThomPair, TopCat.interToUnionMap_eq_comp_left, Category.assoc,
     thomPairOverInterIso_hom_comp_ofInclusionMap_left_assoc, unionToThomPair,
     ofInclusionMap_comp_thomPairOverUnionIso_inv_left_assoc, thomPairRestrict, thomPairRestrict,
     thomPairOverMap_comp_thomPairOverMap_assoc, thomPairOverMap_comp_thomPairOverMap_assoc]
@@ -351,8 +356,8 @@ private theorem bijective_biprod_map_thomMapOverHom {n : ℕ}
     (biprod.mapIso (asIso (thomMapOverHom F E M U u p m h))
       (asIso (thomMapOverHom F E M V u p m h))).hom
 
-/-- The Thom map over `U ∩ V`, read on the intersection pair, is bijective when the Thom map over
-`U ∩ V` is. -/
+/-- The Thom map over `W`, followed by the map on cohomology induced by an isomorphism
+`e : P ≅ thomPairOver F E W`, is bijective when the Thom map over `W` is. -/
 private theorem bijective_thomMapOverHom_comp {W : Set B} {P : TopPair.{w}}
     (e : P ≅ thomPairOver F E W) {n : ℕ}
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
@@ -440,11 +445,12 @@ private theorem bijective_thomMap_comp_succ (hU : IsOpen U) (hV : IsOpen V) (hUV
     (bijective_thomMapOverHom_comp (thomPairOverInterIso F E U V).symm u h
       (hΦUV (q + 1) (q + n + 1) h)).1
 
-/-- **The Mayer–Vietoris step of the Thom isomorphism.** Let `U` and `V` be open sets covering the
-base of a fibre bundle `E → B` and let `u ∈ Hⁿ(E, E₀; K)`. If the Thom maps of the restrictions of
-`u` over `U`, `V` and `U ∩ V` are bijective in every degree, and
-`Hⁿ⁻¹(E|_{U ∩ V}, E₀|_{U ∩ V}; M)` vanishes, then the Thom map `a ↦ π^*a ⌣ u` of `u` is bijective
-in every degree. -/
+/-- **The Mayer–Vietoris step of the Thom isomorphism for a cover of the base.** Let `U` and `V`
+be open sets covering the base of a fibre bundle `E → B`, let `u ∈ Hⁿ(E, E₀; K)` and let `M` be a
+`K`-module. If the Thom maps `Hᵖ(W; M) ⟶ Hᵐ(E|_W, E₀|_W; M)` of the restrictions of `u` over
+`W = U`, `V` and `U ∩ V` are bijective in every degree, and `Hⁿ⁻¹(E|_{U ∩ V}, E₀|_{U ∩ V}; M)`
+vanishes, then the Thom map `a ↦ π^*a ⌣ u` from `Hᵖ(B; M)` to `Hᵐ(E, E₀; M)` is bijective in
+every degree. -/
 theorem thomMap_bijective_of_union_eq_univ (hU : IsOpen U) (hV : IsOpen V) (hUV : U ∪ V = univ)
     {n : ℕ} (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
     (hΦU : ∀ p m (h : p + n = m), Function.Bijective (thomMapOver F E M U n p m h
@@ -476,5 +482,190 @@ theorem thomMap_bijective_of_union_eq_univ (hU : IsOpen U) (hV : IsOpen V) (hUV 
     exact bijective_thomMap_comp_succ hU hV hUV u hΦU hΦV hΦUV q h
 
 end MayerVietoris
+
+section Union
+
+/-! ### The Mayer–Vietoris step over a union of two open sets
+
+The restriction `E|_W` of `E` to a subset `W` of the base is the pull-back of `E` along the
+inclusion `W → B`, a fibre bundle over `W`. For `T ⊆ W`, its Thom pair over the preimage of `T` in
+`W` is the Thom pair of `E` over `T`, and its Thom pair is the Thom pair of `E` over `W`. These
+identifications carry the Thom maps of `E|_W` to those of `E`, so the Mayer–Vietoris step over
+`U ∪ V` is the one for the cover of `U ∪ V` by the preimages of `U` and `V`. -/
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)]
+  [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  {K : Type w} [CommRing K] {M : ModuleCat.{w} K}
+
+attribute [local instance] pullbackFiberZero
+
+variable (E) in
+/-- The restriction `E|_W` of `E` to a subset `W` of the base, as a bundle over `W`. -/
+private abbrev restrictBundle (W : Set B) : W → Type w :=
+  (⇑(ContinuousMap.subtypeVal W)) *ᵖ E
+
+variable (F E) in
+/-- For `T ⊆ W`, the Thom pair of `E|_W` over the preimage of `T` in `W` is the Thom pair of `E`
+over `T`. -/
+private def restrictThomPairOverIso {W T : Set B} (hT : T ⊆ W) :
+    thomPairOver F (restrictBundle E W) (Subtype.val ⁻¹' T) ≅ thomPairOver F E T where
+  hom := TopPair.ofInclusionMap _ _
+    ⟨fun v ↦ ⟨⟨v.1.proj, v.1.2⟩, v.2⟩,
+      ((Pullback.continuous_lift F E _).comp continuous_subtype_val).subtype_mk _⟩
+    fun _ hv ↦ ⟨hv.1, mem_zeroSectionCompl.2 (mem_zeroSectionCompl.1 hv.2 :)⟩
+  inv := TopPair.ofInclusionMap _ _
+    ⟨fun v ↦ ⟨⟨⟨v.1.proj, hT v.2⟩, v.1.2⟩, v.2⟩,
+      ((inducing_pullbackTotalSpaceEmbedding F E _).continuous_iff.2
+        ((((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _).prodMk
+          continuous_subtype_val)).subtype_mk _⟩
+    fun _ hv ↦ ⟨hv.1, mem_zeroSectionCompl.2 (mem_zeroSectionCompl.1 hv.2 :)⟩
+  hom_inv_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ by
+    -- The ambient maps evaluate only after unfolding `TopPair.ofInclusion`.
+    erw [TopCat.comp_app, TopPair.ofInclusionMap_fst_apply, TopPair.ofInclusionMap_fst_apply]
+    rfl)
+  inv_hom_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ by
+    -- The ambient maps evaluate only after unfolding `TopPair.ofInclusion`.
+    erw [TopCat.comp_app, TopPair.ofInclusionMap_fst_apply, TopPair.ofInclusionMap_fst_apply]
+    rfl)
+
+/-- For `T ⊆ W`, the preimage of `T` in `W` is homeomorphic to `T`. -/
+private def preimageValIso {W T : Set B} (hT : T ⊆ W) :
+    TopCat.of ↥((Subtype.val : W → B) ⁻¹' T) ≅ TopCat.of ↥T where
+  hom := TopCat.ofHom ⟨fun b ↦ ⟨b.1.1, b.2⟩, by fun_prop⟩
+  inv := TopCat.ofHom ⟨fun b ↦ ⟨⟨b.1, hT b.2⟩, b.2⟩, by fun_prop⟩
+
+/-- The identification of the Thom pairs over `T` covers the homeomorphism of the bases. -/
+private theorem restrictThomPairOverIso_hom_fst_comp_thomPairOverProj {W T : Set B}
+    (hT : T ⊆ W) :
+    TopPair.Hom.fst (restrictThomPairOverIso F E hT).hom ≫ thomPairOverProj F E T =
+      thomPairOverProj F (restrictBundle E W) (Subtype.val ⁻¹' T) ≫ (preimageValIso hT).hom :=
+  TopCat.ext fun _ ↦ by
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+    -- The ambient map evaluates only after unfolding `TopPair.ofInclusion`.
+    erw [thomPairOverProj_apply, thomPairOverProj_apply, TopPair.ofInclusionMap_fst_apply]
+    rfl
+
+/-- For `T ⊆ T' ⊆ W`, the identifications of the Thom pairs over `T` and over `T'` commute with
+the inclusions. -/
+private theorem thomPairOverMap_comp_restrictThomPairOverIso_hom {W T T' : Set B} (hT' : T' ⊆ W)
+    (hTT' : T ⊆ T') :
+    thomPairOverMap F (restrictBundle E W) (preimage_mono hTT') ≫
+        (restrictThomPairOverIso F E hT').hom =
+      (restrictThomPairOverIso F E (hTT'.trans hT')).hom ≫ thomPairOverMap F E hTT' :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ by
+    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, ConcreteCategory.comp_apply,
+      ConcreteCategory.comp_apply]
+    -- The ambient maps evaluate only after unfolding `TopPair.ofInclusion`.
+    erw [thomPairOverMap_fst_apply, thomPairOverMap_fst_apply, TopPair.ofInclusionMap_fst_apply,
+      TopPair.ofInclusionMap_fst_apply]
+    rfl)
+
+/-- For `T ⊆ W`, the Thom map of `E|_W` over the preimage of `T` is bijective when the Thom map of
+`E` over `T` is. -/
+private theorem bijective_thomMapOver_restrictBundle {W T : Set B} (hT : T ⊆ W) {n p m : ℕ}
+    (h : p + n = m)
+    (u : (thomPairOver F E T).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (hΦ : Function.Bijective (thomMapOver F E M T n p m h u)) :
+    Function.Bijective (thomMapOver F (restrictBundle E W) M (Subtype.val ⁻¹' T) n p m h
+      (TopPair.singularCohomologyMap (restrictThomPairOverIso F E hT).hom n u)) := by
+  rw [← Function.Bijective.of_comp_iff _ (ConcreteCategory.bijective_of_isIso
+    (TopCat.singularCohomologyMap (R := ModuleCat.of K K) (k := K) (M := M)
+      (preimageValIso hT).hom p))]
+  convert (ConcreteCategory.bijective_of_isIso (TopPair.singularCohomologyMap
+    (R := ModuleCat.of K K) (k := K) (M := M) (restrictThomPairOverIso F E hT).hom m)).comp hΦ
+    using 1
+  funext a
+  exact thomMapOver_naturality F E _ _ (restrictThomPairOverIso_hom_fst_comp_thomPairOverProj hT)
+    h u a
+
+variable (F E) in
+/-- The identification of the Thom pair of `E|_W` with the Thom pair of `E` over `W`. -/
+private abbrev restrictThomPairHom (W : Set B) :
+    thomPair F (restrictBundle E W) ⟶ thomPairOver F E W :=
+  (thomPairOverUnivIso F (restrictBundle E W)).inv ≫
+    thomPairOverMap F (restrictBundle E W) (Subtype.coe_preimage_self W).ge ≫
+    (restrictThomPairOverIso F E (subset_refl W)).hom
+
+private theorem isIso_restrictThomPairHom (W : Set B) : IsIso (restrictThomPairHom F E W) := by
+  have : IsIso (thomPairOverMap F (restrictBundle E W) (Subtype.coe_preimage_self W).ge) :=
+    ⟨thomPairOverMap F _ (subset_univ _), by simp, by simp⟩
+  infer_instance
+
+/-- The identification of the Thom pairs over `W` covers the identity of `W`. -/
+private theorem restrictThomPairHom_fst_comp_thomPairOverProj (W : Set B) :
+    TopPair.Hom.fst (restrictThomPairHom F E W) ≫ thomPairOverProj F E W =
+      thomPairProj F (restrictBundle E W) :=
+  TopCat.ext fun _ ↦ by
+    rw [ConcreteCategory.comp_apply, TopPair.Hom.fst_comp, TopPair.Hom.fst_comp,
+      ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+    -- The ambient maps evaluate only after unfolding `TopPair.ofInclusion`.
+    erw [thomPairOverUnivIso_inv_fst_apply, thomPairOverMap_fst_apply,
+      TopPair.ofInclusionMap_fst_apply, thomPairOverProj_apply, thomPairProj_apply]
+    rfl
+
+/-- **The Mayer–Vietoris step of the Thom isomorphism.** Let `U` and `V` be open sets of the base
+of a fibre bundle `E → B`, let `u ∈ Hⁿ(E|_{U ∪ V}, E₀|_{U ∪ V}; K)` and let `M` be a `K`-module.
+If the Thom maps `Hᵖ(W; M) ⟶ Hᵐ(E|_W, E₀|_W; M)` of the restrictions of `u` over `W = U`, `V` and
+`U ∩ V` are bijective in every degree, and `Hⁿ⁻¹(E|_{U ∩ V}, E₀|_{U ∩ V}; M)` vanishes, then the
+Thom map `a ↦ π_{U ∪ V}^*a ⌣ u` from `Hᵖ(U ∪ V; M)` to `Hᵐ(E|_{U ∪ V}, E₀|_{U ∪ V}; M)` is
+bijective in every degree. -/
+theorem thomMapOver_union_bijective {U V : Set B} (hU : IsOpen U) (hV : IsOpen V) {n : ℕ}
+    (u : (thomPairOver F E (U ∪ V)).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (hΦU : ∀ p m (h : p + n = m), Function.Bijective (thomMapOver F E M U n p m h
+      (TopPair.singularCohomologyMap (thomPairOverMap F E subset_union_left) n u)))
+    (hΦV : ∀ p m (h : p + n = m), Function.Bijective (thomMapOver F E M V n p m h
+      (TopPair.singularCohomologyMap (thomPairOverMap F E subset_union_right) n u)))
+    (hΦUV : ∀ p m (h : p + n = m), Function.Bijective (thomMapOver F E M (U ∩ V) n p m h
+      (TopPair.singularCohomologyMap
+        (thomPairOverMap F E (inter_subset_left.trans subset_union_left)) n u)))
+    (hUVn : ∀ k, k + 1 = n →
+      IsZero ((thomPairOver F E (U ∩ V)).singularCohomology (ModuleCat.of K K) K M k))
+    (p m : ℕ) (h : p + n = m) :
+    Function.Bijective (thomMapOver F E M (U ∪ V) n p m h u) := by
+  have := isIso_restrictThomPairHom (F := F) (E := E) (U ∪ V)
+  -- Restricting the transported class to the preimage of `T ⊆ U ∪ V` transports the restriction
+  -- of `u` to `T`.
+  have hres : ∀ {T : Set B} (hT : T ⊆ U ∪ V),
+      TopPair.singularCohomologyMap (thomPairOverMap F (restrictBundle E (U ∪ V))
+          (subset_univ (Subtype.val ⁻¹' T)) ≫ (thomPairOverUnivIso F _).hom) n
+        (TopPair.singularCohomologyMap (restrictThomPairHom F E (U ∪ V)) n u) =
+      TopPair.singularCohomologyMap (restrictThomPairOverIso F E hT).hom n
+        (TopPair.singularCohomologyMap (thomPairOverMap F E hT) n u) := fun hT ↦ by
+    rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
+      Category.assoc, Iso.hom_inv_id_assoc, thomPairOverMap_comp_thomPairOverMap_assoc,
+      thomPairOverMap_comp_restrictThomPairOverIso_hom (subset_refl _) hT]
+  have hΦ := thomMap_bijective_of_union_eq_univ (E := restrictBundle E (U ∪ V)) (M := M)
+    (hU.preimage continuous_subtype_val) (hV.preimage continuous_subtype_val)
+    (eq_univ_of_forall fun b ↦ b.2)
+    (TopPair.singularCohomologyMap (restrictThomPairHom F E (U ∪ V)) n u)
+    (fun p m h ↦ by
+      rw [hres subset_union_left]
+      exact bijective_thomMapOver_restrictBundle subset_union_left h _ (hΦU p m h))
+    (fun p m h ↦ by
+      rw [hres subset_union_right]
+      exact bijective_thomMapOver_restrictBundle subset_union_right h _ (hΦV p m h))
+    (fun p m h ↦ by
+      -- The preimage of `U ∩ V` is the intersection of the preimages only up to unfolding.
+      have := bijective_thomMapOver_restrictBundle (M := M) (W := U ∪ V)
+        (inter_subset_left.trans subset_union_left) h _ (hΦUV p m h)
+      rw [← hres] at this
+      exact this)
+    (fun k hk ↦ (hUVn k hk).of_iso (asIso (TopPair.singularCohomologyMap
+      (restrictThomPairOverIso F E (inter_subset_left.trans subset_union_left)).hom k)).symm)
+    p m h
+  -- The Thom map of `E|_{U ∪ V}` is the Thom map of `E` over `U ∪ V`, followed by the isomorphism
+  -- `restrictThomPairHom` on cohomology.
+  rw [← Function.Bijective.of_comp_iff' (ConcreteCategory.bijective_of_isIso
+    (TopPair.singularCohomologyMap (R := ModuleCat.of K K) (k := K) (M := M)
+      (restrictThomPairHom F E (U ∪ V)) m))]
+  convert hΦ using 1
+  funext a
+  simp only [Function.comp_apply, thomMap_apply, thomMapOver_apply]
+  rw [TopPair.singularCohomologyMap_singularCup_singularCohomologyMap K _ _ _
+    (restrictThomPairHom_fst_comp_thomPairOverProj (U ∪ V))]
+  rfl
+
+end Union
 
 end TauCeti

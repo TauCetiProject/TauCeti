@@ -39,7 +39,9 @@ pulled back along the constant map at `b`
 
 For a subset `W` of the base, the Thom map over `W` of a class `u_W ∈ Hⁿ(E|_W, E₀|_W; K)` is
 `a ↦ π_W^*a ⌣ u_W` (`TauCeti.thomMapOver`), where `π_W : E|_W ⟶ W` is the restricted projection
-`TauCeti.thomPairOverProj`. It is natural in restrictions to smaller subsets
+`TauCeti.thomPairOverProj`. It sends `1` to `u_W` (`TauCeti.thomMapOver_one`) and is natural in
+maps of Thom pairs over subsets covering maps of those subsets (`TauCeti.thomMapOver_naturality`),
+in particular in restrictions to smaller subsets
 (`TauCeti.singularCohomologyMap_thomPairOverMap_thomMapOver`), and the Thom map of `u` restricts
 over `W` to the Thom map of the restriction of `u`
 (`TauCeti.singularCohomologyMap_thomPairOverMap_thomMap`).
@@ -52,6 +54,8 @@ over `W` to the Thom map of the restriction of `u`
 * `TauCeti.thomMap_singularCup`: linearity over the cohomology of the base.
 * `TauCeti.singularCohomologyMap_fiberThomPairMap_thomMap`: the restriction to a fibre.
 * `TauCeti.thomMapOver`: the Thom map `a ↦ π_W^*a ⌣ u_W` over a subset `W` of the base.
+* `TauCeti.thomMapOver_one`: `Φ_{u_W}(1) = u_W`.
+* `TauCeti.thomMapOver_naturality`: naturality in maps of Thom pairs over subsets.
 * `TauCeti.singularCohomologyMap_thomPairOverMap_thomMapOver`,
   `TauCeti.singularCohomologyMap_thomPairOverMap_thomMap`: naturality in restrictions.
 
@@ -196,6 +200,42 @@ theorem thomMapOver_apply (W : Set B) {n p m : ℕ} (h : p + n = m)
         (TopCat.singularCohomologyMap (thomPairOverProj F E W) p a) u :=
   (rfl)
 
+/-- **The Thom map over a subset sends `1` to `u`**: the image of the class of the constant
+`0`-cocycle with value `1 ∈ K` is `u`. -/
+@[simp]
+theorem thomMapOver_one (W : Set B) {n : ℕ} (h : 0 + n = n)
+    (u : (thomPairOver F E W).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    thomMapOver F E (ModuleCat.of K K) W n 0 n h u
+        (((TopCat.of W).singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).homologyπ 0
+          ((TopCat.of W).constSingularCocycle K (𝟙 (ModuleCat.of K K)))) = u := by
+  rw [thomMapOver_apply]
+  refine (congrArg (fun x ↦ (thomPairOver F E W).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv
+    (ρ_ (ModuleCat.of K K)).hom 0 n n h x u)
+    (TopCat.singularCohomologyMap_homologyπ_constSingularCocycle (thomPairOverProj F E W) K
+      (𝟙 (ModuleCat.of K K)))).trans ?_
+  exact TopPair.singularCup_constSingularCocycle_left K (thomPairOver F E W) (η := 𝟙 _)
+    (by monoidal) (by monoidal) h u
+
+/-- **Naturality of the Thom map over a subset.** A map of Thom pairs
+`φ : (E'|_{W'}, E'₀|_{W'}) ⟶ (E|_W, E₀|_W)` covering a map `g : W' ⟶ W` intertwines the Thom map
+over `W` of `u` with the Thom map over `W'` of its pull-back `φ^*u`:
+`Φ_{φ^*u}(g^*a) = φ^*Φ_u(a)`. -/
+theorem thomMapOver_naturality {B' : Type w} [TopologicalSpace B'] {F' : Type*}
+    [TopologicalSpace F'] {E' : B' → Type w} [TopologicalSpace (TotalSpace F' E')]
+    [∀ b, Zero (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E'] {W' : Set B'}
+    {W : Set B} (φ : thomPairOver F' E' W' ⟶ thomPairOver F E W) (g : TopCat.of W' ⟶ TopCat.of W)
+    (hφ : TopPair.Hom.fst φ ≫ thomPairOverProj F E W = thomPairOverProj F' E' W' ≫ g) {n p m : ℕ}
+    (h : p + n = m)
+    (u : (thomPairOver F E W).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (a : (TopCat.of W).singularCohomology (ModuleCat.of K K) K M p) :
+    thomMapOver F' E' M W' n p m h (TopPair.singularCohomologyMap φ n u)
+        (TopCat.singularCohomologyMap g p a) =
+      TopPair.singularCohomologyMap φ m (thomMapOver F E M W n p m h u a) := by
+  rw [thomMapOver_apply, thomMapOver_apply,
+    TopPair.singularCohomologyMap_singularCup_singularCohomologyMap K _ _ _ hφ,
+    TopCat.singularCohomologyMap_comp]
+  rfl
+
 /-- **Naturality of the Thom map over a subset in restrictions**: for `W ⊆ W'`, restricting
 `Φ_u(a)` from `W'` to `W` gives the Thom map over `W` of the restrictions of `u` and `a`. -/
 theorem singularCohomologyMap_thomPairOverMap_thomMapOver {W W' : Set B} (hW : W ⊆ W')
@@ -204,11 +244,8 @@ theorem singularCohomologyMap_thomPairOverMap_thomMapOver {W W' : Set B} (hW : W
     (a : (TopCat.of W').singularCohomology (ModuleCat.of K K) K M p) :
     TopPair.singularCohomologyMap (thomPairOverMap F E hW) m (thomMapOver F E M W' n p m h u a) =
       thomMapOver F E M W n p m h (TopPair.singularCohomologyMap (thomPairOverMap F E hW) n u)
-        (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.inclusion hW)) p a) := by
-  rw [thomMapOver_apply, thomMapOver_apply,
-    TopPair.singularCohomologyMap_singularCup_singularCohomologyMap K _ _ _
-      (thomPairOverMap_fst_comp_thomPairOverProj F E hW), TopCat.singularCohomologyMap_comp]
-  rfl
+        (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.inclusion hW)) p a) :=
+  (thomMapOver_naturality F E _ _ (thomPairOverMap_fst_comp_thomPairOverProj F E hW) h u a).symm
 
 /-- **The Thom map restricted to a subset of the base**: restricting `Φ_u(a)` from `B` to `W` gives
 the Thom map over `W` of the restrictions of `u` and `a`. -/

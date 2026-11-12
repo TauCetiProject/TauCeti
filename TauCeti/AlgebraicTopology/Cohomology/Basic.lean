@@ -31,8 +31,9 @@ take `C := ModuleCat k` and `R := k`: then `Cₙ(X; k)` is the free `k`-module o
 * `TopCat.singularCochainComplexMap`: the cochain map induced by a continuous map, that of its
   singular simplicial map.
 * `TopCat.singularCohomology` and `TopCat.singularCohomologyMap`: singular cohomology and the
-  maps induced on it by continuous maps, with `TauCeti.singularCohomologyFunctor` the resulting
-  functor `TopCatᵒᵖ ⥤ ModuleCat k`.
+  maps induced on it by continuous maps, isomorphisms for homeomorphisms
+  (`TopCat.isIso_singularCohomologyMap_of_isIso`), with `TauCeti.singularCohomologyFunctor` the
+  resulting functor `TopCatᵒᵖ ⥤ ModuleCat k`.
 * `SSet.constCochain`: the constant `0`-cochain with value `e : R ⟶ M` on every
   vertex of a simplicial set. `TopCat.constSingularCocycle` is the cocycle it defines
   for a space `X`. For `e` the unit of a ring of coefficients, its class is the unit of the
@@ -148,6 +149,13 @@ lemma singularCohomologyMap_comp {X Y Z : TopCat.{w}} (f : X ⟶ Y) (g : Y ⟶ Z
       TopCat.singularCohomologyMap g n ≫ TopCat.singularCohomologyMap f n := by
   simp [TopCat.singularCohomologyMap, singularCochainComplexMap_comp,
     HomologicalComplex.homologyMap_comp]
+
+/-- A homeomorphism induces an isomorphism on singular cohomology. -/
+instance isIso_singularCohomologyMap_of_isIso {X Y : TopCat.{w}} (f : X ⟶ Y) [IsIso f] (n : ℕ) :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) f n) :=
+  ⟨TopCat.singularCohomologyMap (inv f) n, by
+    rw [← singularCohomologyMap_comp, IsIso.inv_hom_id, singularCohomologyMap_id], by
+    rw [← singularCohomologyMap_comp, IsIso.hom_inv_id, singularCohomologyMap_id]⟩
 
 end TopCat
 

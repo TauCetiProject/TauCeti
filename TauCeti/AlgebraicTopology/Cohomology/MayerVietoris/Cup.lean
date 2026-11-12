@@ -47,7 +47,8 @@ uses.
 * `TopCat.singularCohomologyPairMayerVietorisδ_singularCup`: the connecting morphism of the
   Mayer–Vietoris sequence of two pairs, applied to `a ⌣ b|`, is `δ a ⌣ b`.
 * `TopCat.interToUnionMap`: the map of pairs `(U ∩ V, A ∩ B) ⟶ (U ∪ V, A ∪ B)` along which `b`
-  is restricted.
+  is restricted, with its factorizations `TopCat.interToUnionMap_eq_comp_left` and
+  `TopCat.interToUnionMap_eq_comp_right` through `(U, A)` and `(V, B)`.
 
 ## References
 
@@ -116,6 +117,26 @@ private abbrev rightToUnionMap :
     TopPair.ofInclusion hBV ⟶ TopPair.ofInclusion (Set.union_subset_union hAU hBV) :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.subset_union_right)
     fun _ hx ↦ Set.subset_union_right hx
+
+/-- The inclusion `(U ∩ V, A ∩ B) ⟶ (U ∪ V, A ∪ B)` factors through `(U, A)`. -/
+lemma interToUnionMap_eq_comp_left :
+    interToUnionMap hAU hBV =
+      TopPair.ofInclusionMap _ hAU (ContinuousMap.inclusion Set.inter_subset_left)
+          (fun _ hx ↦ Set.inter_subset_left hx) ≫
+        TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.subset_union_left)
+          fun _ hx ↦ Set.subset_union_left hx := by
+  rw [← TopPair.ofInclusionMap_comp]
+  rfl
+
+/-- The inclusion `(U ∩ V, A ∩ B) ⟶ (U ∪ V, A ∪ B)` factors through `(V, B)`. -/
+lemma interToUnionMap_eq_comp_right :
+    interToUnionMap hAU hBV =
+      TopPair.ofInclusionMap _ hBV (ContinuousMap.inclusion Set.inter_subset_right)
+          (fun _ hx ↦ Set.inter_subset_right hx) ≫
+        TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.subset_union_right)
+          fun _ hx ↦ Set.subset_union_right hx := by
+  rw [← TopPair.ofInclusionMap_comp]
+  rfl
 
 /-- The pair `(U ∩ V, A ∩ B)`. -/
 private abbrev interPair : TopPair.{w} := TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)
@@ -301,9 +322,9 @@ private lemma cupLift_g_eq (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q : ℕ}
     LinearMap.neg_apply] at hgx
   -- Restricting the components of the lift to `(U ∩ V, A ∩ B)`.
   have eU := cupLift_restrict_component k hAU hBV _ u μ (interToLeftMap hAU hBV)
-    (leftToUnionMap hAU hBV) (by rw [← TopPair.ofInclusionMap_comp]; congr 1) rfl yU b'
+    (leftToUnionMap hAU hBV) (interToUnionMap_eq_comp_left hAU hBV).symm rfl yU b'
   have eV := cupLift_restrict_component k hAU hBV _ u μ (interToRightMap hAU hBV)
-    (rightToUnionMap hAU hBV) (by rw [← TopPair.ofInclusionMap_comp]; congr 1) rfl yV b'
+    (rightToUnionMap hAU hBV) (interToUnionMap_eq_comp_right hAU hBV).symm rfl yV b'
   -- Cupping is linear in its first argument.
   have hlin : ∀ (a₁ a₂ : ((toSSet.obj (TopPair.ofInclusion
       (Set.inter_subset_inter hAU hBV)).fst).chainComplex R).X p ⟶ M)
