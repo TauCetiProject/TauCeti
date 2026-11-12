@@ -82,11 +82,10 @@ the Floer equation with tame almost complex structures this topological part is 
 `-(∑ r, Ba r + ∑ r, Bb r)`, uniformly in `L > 4` and `R ≥ L/2` (`SmoothTwoForm`'s
 `IsNondegenerate.neg_sum_add_sum_le_integral_add_sum_add_sum_of_plumbedTruncation`). For `R = L/2`,
 `Σ_R` is the plumbed truncation `S_{L/2} ∪ ψ(S_{L/2})`
-(`TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_div_two`), which gives the statements
-`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_truncation` and its
-bounds over that set. On a target which is not symplectically aspherical the area term depends on
-the homotopy class of `u`; caps of the four boundary loops turn it into capped actions and the area
-of a sphere, which is not done here.
+(`TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_div_two`), so rewriting along it
+specializes these statements to that set. On a target which is not symplectically aspherical the
+area term depends on the homotopy class of `u`; caps of the four boundary loops turn it into capped
+actions and the area of a sphere, which is not done here.
 
 No cutoff is needed on a manifold. Each half of `Σ_R` is a truncated pair of pants with one end cut
 short along the middle circle of the neck, and its energy identity
@@ -892,17 +891,10 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedTruncation
   set B := Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
     {z | inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2}
   have hL2 : (1 : ℝ) ≤ L / 2 := by linarith
-  have heq (r : Puncture) : Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
-      {z | r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2} =
-        Complex.equivRealProdCLM.symm ⁻¹' truncationAt (Function.update (fun _ ↦ R) r (L / 2)) := by
-    rw [← truncation_inter_eq_truncationAt r hR, preimage_inter]
-    rfl
-  have hR₀ (r r' : Puncture) : 0 ≤ Function.update (fun _ ↦ R) r (L / 2) r' := by
-    rcases eq_or_ne r' r with rfl | h
-    · simp only [Function.update_self]; linarith
-    · simp only [Function.update_of_ne h]; linarith
-  have hAeq : A = _ := heq q
-  have hBeq : B = _ := heq inf
+  have hR₀ (r r' : Puncture) : 0 ≤ Function.update (fun _ ↦ R) r (L / 2) r' :=
+    le_update_iff (x := fun _ ↦ (0 : ℝ)).2 ⟨by linarith, fun _ _ ↦ by linarith⟩ r'
+  have hAeq : A = _ := preimage_truncation_inter_eq_preimage_truncationAt q hR
+  have hBeq : B = _ := preimage_truncation_inter_eq_preimage_truncationAt inf hR
   have hAc : IsCompact A := by rw [hAeq]; exact isCompact_preimage_truncationAt _
   have hBc : IsCompact B := by rw [hBeq]; exact isCompact_preimage_truncationAt _
   have hAm := hAc.isClosed.measurableSet
@@ -998,45 +990,6 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedTruncation
   rw [hinputs, hcancel]
   ring
 
-/-- **The energy identity on the plumbed four-punctured sphere, for a manifold target.** Over the
-plumbed truncation `S_{L/2} ∪ ψ(S_{L/2})`, the Floer energy of `u` for the plumbed perturbation is
-the symplectic area, plus the Hamiltonian terms of the four outer boundary circles `±s = L/2`,
-minus the integrated curvature. This is the case `R = L/2` of
-`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedTruncation`, where the truncated
-plumbed sphere is `S_{L/2} ∪ ψ(S_{L/2})` (`plumbedTruncation_div_two`). For a symplectic vector
-space target the area and the Hamiltonian terms combine into the actions of the four loops, in
-`SymplecticForm.integral_floerEnergyDensity_plumbedPerturbation_eq_sum_hamiltonianAction`. -/
-theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_truncation
-    (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
-    (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
-    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) {u : ℝ × ℝ → M}
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
-    ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
-        (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)), ω.floerEnergyDensity
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z =
-      (∫ z in Complex.equivRealProdCLM.symm ⁻¹'
-          (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)),
-          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
-        ((∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (u (Complex.equivRealProdCLM
-            (q.plumbingMap L (r.cylindricalEndLift (↑(L / 2) + ↑t * Complex.I)))))) +
-          ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (u
-            (Complex.equivRealProdCLM
-              (r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I))))) -
-        ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
-            (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)), ω.hamiltonianCurvature
-          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-          z (u z) := by
-  rw [← plumbedTruncation_div_two hq]
-  exact hω.integral_floerEnergyDensity_plumbedTruncation hq hHa hHb hHas hHbs hab hL le_rfl hu
-
 /-- **The energy bound on the truncated plumbed four-punctured sphere, for a manifold target.**
 Under the hypotheses of
 `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedTruncation`, if
@@ -1071,42 +1024,6 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_plumbedTruncation_sub_le
     abs_neg]
   exact ω.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL
     hBa hBb u _
-
-/-- **The energy bound on the plumbed four-punctured sphere, for a manifold target.** Under the
-hypotheses of
-`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_truncation`, if
-`|Ha r| ≤ Ba r` and `|Hb r| ≤ Bb r`, then the Floer energy over the plumbed truncation differs from
-the symplectic area plus the Hamiltonian terms of its four boundary circles by at most
-`∑ r, Ba r + ∑ r, Bb r`, uniformly in the neck length `L > 4`. This is the case `R = L/2` of
-`SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_plumbedTruncation_sub_le`. -/
-theorem IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_truncation_sub_le
-    (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
-    (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
-    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) {Ba Bb : Puncture → ℝ}
-    (hBa : ∀ r t x, |Ha r t x| ≤ Ba r) (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) {u : ℝ × ℝ → M}
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
-    |(∫ z in Complex.equivRealProdCLM.symm ⁻¹'
-        (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)), ω.floerEnergyDensity
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z) -
-      (∫ z in Complex.equivRealProdCLM.symm ⁻¹'
-          (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)),
-          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) -
-        ((∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (u (Complex.equivRealProdCLM
-            (q.plumbingMap L (r.cylindricalEndLift (↑(L / 2) + ↑t * Complex.I)))))) +
-          ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (u
-            (Complex.equivRealProdCLM
-              (r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I)))))| ≤
-      ∑ r, Ba r + ∑ r, Bb r := by
-  rw [← plumbedTruncation_div_two hq]
-  exact hω.abs_integral_floerEnergyDensity_plumbedTruncation_sub_le hq hHa hHb hHas hHbs hab hL
-    le_rfl hBa hBb hu
 
 /-- **The topological energy of a solution on the truncated plumbed four-punctured sphere is
 bounded below, for a manifold target.** Let `u` solve the Floer equation `(du - X_K)^{0,1} = 0` on
@@ -1149,50 +1066,5 @@ theorem
   have h := (abs_le.1 (hω.abs_integral_floerEnergyDensity_plumbedTruncation_sub_le hq hHa hHb hHas
     hHbs hab hL hR hBa hBb hu)).2
   linarith
-
-/-- **The topological energy of a solution on the plumbed four-punctured sphere is bounded below,
-for a manifold target.** Let `u` solve the Floer equation `(du - X_K)^{0,1} = 0` on the plumbed
-truncation for almost complex structures `J z` on the tangent spaces `T_{u(z)} M` tamed by the
-two-form, under the hypotheses of
-`IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_truncation_sub_le`. Since its
-energy is nonnegative, its symplectic area over the plumbed truncation plus the Hamiltonian terms of
-the four boundary circles is at least `-(∑ r, Ba r + ∑ r, Bb r)`, whatever the neck length
-`L > 4`. This is the case `R = L/2` of
-`IsNondegenerate.neg_sum_add_sum_le_integral_add_sum_add_sum_of_plumbedTruncation`. -/
-theorem
-    IsNondegenerate.neg_sum_add_sum_le_integral_add_sum_add_sum_of_plumbedPerturbation_truncation
-    (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
-    (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
-    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) {Ba Bb : Puncture → ℝ}
-    (hBa : ∀ r t x, |Ha r t x| ≤ Ba r) (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) {u : ℝ × ℝ → M}
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1})
-    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
-    (hJ : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹'
-      (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)),
-      (hω.symplecticFormAt (u z)).Tames (J z))
-    (hfloer : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹'
-      (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)),
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedMFDeriv
-          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z).toLinearMap) :
-    -(∑ r, Ba r + ∑ r, Bb r) ≤
-      (∫ z in Complex.equivRealProdCLM.symm ⁻¹'
-          (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)),
-          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
-        ((∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (u (Complex.equivRealProdCLM
-            (q.plumbingMap L (r.cylindricalEndLift (↑(L / 2) + ↑t * Complex.I)))))) +
-          ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (u
-            (Complex.equivRealProdCLM
-              (r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I))))) := by
-  rw [← plumbedTruncation_div_two hq] at hJ hfloer ⊢
-  exact hω.neg_sum_add_sum_le_integral_add_sum_add_sum_of_plumbedTruncation hq hHa hHb hHas hHbs
-    hab hL le_rfl hBa hBb hu hJ hfloer
 
 end TauCeti.SmoothTwoForm

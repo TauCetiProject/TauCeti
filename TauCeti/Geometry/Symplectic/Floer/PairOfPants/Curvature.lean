@@ -982,16 +982,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_inte
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
             z (u z) := by
   -- The region is the truncation at the height `c` on `q` and `R` on the other two ends.
-  have hA : Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
-      {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c} =
-        Complex.equivRealProdCLM.symm ⁻¹' truncationAt (Function.update (fun _ ↦ R) q c) := by
-    rw [← truncation_inter_eq_truncationAt q hcR, preimage_inter]
-    rfl
-  have hRq (r : Puncture) : 1 ≤ Function.update (fun _ ↦ R) q c r := by
-    rcases eq_or_ne r q with rfl | hr
-    · simpa using hc
-    · simpa [hr] using hc.trans hcR
-  rw [hA] at hAV ⊢
+  have hRq (r : Puncture) : 1 ≤ Function.update (fun _ ↦ R) q c r :=
+    le_update_iff (x := fun _ ↦ 1).2 ⟨hc, fun _ _ ↦ hc.trans hcR⟩ r
+  rw [preimage_truncation_inter_eq_preimage_truncationAt q hcR] at hAV ⊢
   rw [hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncationAt hH hHs hVo hAV hu hRq,
     ← Finset.add_sum_erase _ _ (Finset.mem_univ q), Finset.mul_sum,
     Finset.sum_congr rfl fun r hr ↦ by rw [Function.update_of_ne (Finset.ne_of_mem_erase hr)],
