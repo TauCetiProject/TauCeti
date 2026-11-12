@@ -29,6 +29,8 @@ cell by cell, that the skeleta of a CW complex form good pairs.
 
 * `TauCeti.radialPush`: the straight-line homotopy from the identity to
   `r⁻¹ • TauCeti.radialRetraction r`.
+* `TauCeti.radialPush_eq_smul`: it rescales each vector along its ray, by a factor depending only
+  on the time and the norm.
 * `TauCeti.norm_radialPush`: its norm is the linear interpolation of the endpoint norms.
 * `TauCeti.norm_le_norm_radialPush` and `TauCeti.norm_radialPush_le_one`: on the closed unit
   ball it does not decrease norms and stays in the ball.
@@ -63,6 +65,11 @@ theorem radialPush_zero (r : ℝ) (y : E) : radialPush r 0 y = y := by
 @[simp]
 theorem radialPush_one (r : ℝ) (y : E) : radialPush r 1 y = r⁻¹ • radialRetraction r y := by
   simp [radialPush]
+
+/-- The radial push rescales `y` along its ray, by a factor depending only on `t` and `‖y‖`. -/
+theorem radialPush_eq_smul (r : ℝ) (t : I) (y : E) :
+    radialPush r t y = (1 - (t : ℝ) + (t : ℝ) * (r⁻¹ * min 1 (r / ‖y‖))) • y := by
+  rw [radialPush, radialRetraction_def, smul_smul, smul_smul, ← mul_assoc, ← add_smul]
 
 /-- On a vector of seminorm zero, the radial push contracts linearly to zero. -/
 @[simp]

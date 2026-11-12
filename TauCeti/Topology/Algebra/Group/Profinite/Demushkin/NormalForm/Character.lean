@@ -313,7 +313,7 @@ theorem exists_isDemushkin_demushkinQ_eq_two_isEmpty_continuousMulEquiv (hn : 3 
     refine ⟨_, _, h₁, h₂, demushkinRank_presentedProP_demushkinWordTwoEven (dvd_zero 2) two_pos h₁,
       demushkinRank_presentedProP_demushkinWordNeTwo dvd_rfl h₂,
       demushkinQ_presentedProP_demushkinWordTwoEven (dvd_zero 4) two_pos h₁, ?_, ⟨fun e ↦ ?_⟩⟩
-    · rw [demushkinQ_presentedProP_demushkinWordNeTwo dvd_rfl two_ne_zero h₂,
+    · rw [demushkinQ_presentedProP_demushkinWordNeTwo two_ne_zero h₂,
       Nat.padicValNat_def, Nat.Prime.multiplicity_self,
         pow_one]
     · refine unitsPlusMinus_ne_zpowers_neg_one 2 ?_
