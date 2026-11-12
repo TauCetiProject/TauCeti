@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.HigmanSims.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.GroupAction.Transitive
-import TauCeti.GroupTheory.Perm.Rigidity
+import TauCeti.Logic.Function.Rigidity
 
 /-!
 # Basic orbits and a base of the Higman--Sims model
@@ -997,7 +997,7 @@ private theorem fixed_of_rank (g : Equiv.Perm (Fin 100))
     (hg : ∀ x y, related (g x) (g y) = related x y) (n : ℕ)
     (hseed : ∀ x : Fin 100, rigidRank x < n → x.val < 6 → g x = x) :
     ∀ x, rigidRank x < n → g x = x := by
-  apply g.apply_eq_self_of_rank (seed := fun x ↦ x.val < 6)
+  apply Function.apply_eq_self_of_rank (⇑g) (seed := fun x ↦ x.val < 6)
     (rel := fun z x ↦ (decide (x = z), related z x)) rigidAnchors_rank ?_ ?_ n hseed
   · intro x hx
     exact rigidAnchors_unique x (by omega)

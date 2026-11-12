@@ -5,25 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Perm.Basic
 public import Mathlib.Data.List.Basic
+public import Mathlib.Data.Nat.Init
 
 /-!
-# Permutation rigidity from ranked anchors
+# Function rigidity from ranked anchors
 
-A permutation preserving a binary relation fixes every point determined by its relation
+An endofunction preserving a binary relation fixes every point determined by its relation
 values at already fixed anchors. A natural-number rank makes this determination inductive:
 anchors have lower rank, and seed points are fixed separately. The rank bound allows partial
-rigidity as well as a proof that a permutation is the identity.
+rigidity as well as a proof that an endofunction is the identity.
 -/
 
 public section
 
-namespace Equiv.Perm
+namespace Function
 
-/-- A relation-preserving permutation fixes all points below a rank bound if it fixes the
+/-- A relation-preserving endofunction fixes all points below a rank bound if it fixes the
 seed points there and each non-seed point is uniquely determined by its lower-rank anchors. -/
-theorem apply_eq_self_of_rank {α β : Type*} (g : Equiv.Perm α)
+theorem apply_eq_self_of_rank {α β : Type*} (g : α → α)
     {rel : α → α → β} {rank : α → ℕ} {anchors : α → List α} {seed : α → Prop}
     (hrank : ∀ x, ∀ z ∈ anchors x, rank z < rank x)
     (huniq : ∀ x, ¬ seed x → ∀ y,
@@ -42,7 +42,7 @@ theorem apply_eq_self_of_rank {α β : Type*} (g : Equiv.Perm α)
         intro z hz
         have hlt := hrank x z hz
         rw [hxm] at hlt
-        simpa only [ih _ hlt z rfl (hlt.trans hmn)] using hg z x
+        simpa only [ih _ hlt z rfl (Nat.lt_trans hlt hmn)] using hg z x
   exact fun x hx ↦ h _ x rfl hx
 
-end Equiv.Perm
+end Function

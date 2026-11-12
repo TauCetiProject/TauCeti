@@ -10,7 +10,7 @@ public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.GroupAction.Transitive
 import Mathlib.Data.Nat.Bits
-import TauCeti.GroupTheory.Perm.Rigidity
+import TauCeti.Logic.Function.Rigidity
 
 /-!
 # Basic orbits and a base of the McLaughlin permutation model
@@ -900,7 +900,7 @@ private theorem rigidAnchors_unique (x : Fin 275) (hx : 6 ≤ x.val) : ∀ y,
 private theorem fixed_of_rank {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) (n : ℕ)
     (hseed : ∀ x : Fin 275, rigidRank x < n → x.val < 6 → g x = x) :
     ∀ x, rigidRank x < n → g x = x := by
-  apply g.apply_eq_self_of_rank (seed := fun x ↦ x.val < 6)
+  apply Function.apply_eq_self_of_rank (⇑g) (seed := fun x ↦ x.val < 6)
     rigidAnchors_rank ?_ (related_apply hg) n hseed
   intro x hx
   exact rigidAnchors_unique x (by omega)
