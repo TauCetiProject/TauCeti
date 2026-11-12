@@ -134,6 +134,9 @@ def add {m : ℕ} (p : Vertex n) (q : Vertex m) : Vertex (n + m) :=
 def sqDist (p q : Vertex n) : ℤ :=
   ((p.x : ℤ) - q.x) ^ 2 + ((p.y : ℤ) - q.y) ^ 2 + ((p.z : ℤ) - q.z) ^ 2
 
+theorem sqDist_def (p q : Vertex n) :
+    sqDist p q = ((p.x : ℤ) - q.x) ^ 2 + ((p.y : ℤ) - q.y) ^ 2 + ((p.z : ℤ) - q.z) ^ 2 := (rfl)
+
 @[simp] theorem sqDist_self (p : Vertex n) : sqDist p p = 0 := by simp [sqDist]
 
 /-- Barycentric squared distance vanishes exactly at equal vertices. -/
