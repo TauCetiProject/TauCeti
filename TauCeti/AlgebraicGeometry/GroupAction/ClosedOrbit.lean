@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.GroupAction.LocallyClosed
+import TauCeti.AlgebraicGeometry.RationalPoint.Image
 
 /-!
 # Existence of closed orbits
@@ -78,7 +79,7 @@ theorem orbit_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
     (y : 𝟙_ (Over (Spec (.of k))) ⟶ X) (a : (𝟙_ (Over (Spec (.of k)))).left) :
     orbit G y ⊆ Z ↔ y.left a ∈ Z := by
   have : JacobsonSpace G.left := LocallyOfFiniteType.jacobsonSpace G.hom
-  refine ⟨fun h ↦ h (by simpa only [one_smul] using left_apply_smul_mem_orbit G y 1 a),
+  refine ⟨fun h ↦ h (by simpa only [one_smul] using smul_left_apply_mem_orbit G y 1 a),
     fun hy ↦ ?_⟩
   -- The preimage of `Z` in `G` is closed and contains every closed point, which is a rational
   -- point of `G`; closed points are dense in the Jacobson scheme `G`.
@@ -87,7 +88,8 @@ theorem orbit_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
     refine Set.eq_univ_of_univ_subset ?_
     rw [← closure_closedPoints (X := G.left), hcl.closure_subset_iff]
     intro c hc
-    obtain ⟨g, hc'⟩ := exists_orbitMap_left_eq_smul_left G y (mem_closedPoints_iff.mp hc) a
+    obtain ⟨g, hc'⟩ :=
+      exists_orbitMap_left_apply_eq_smul_left_apply G y (mem_closedPoints_iff.mp hc) a
     rw [Set.mem_preimage]
     let := translationMulAction G X
     rw [hc', ← translationMulAction_smul_apply, translationMulAction_smul]

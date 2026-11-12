@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
-public import TauCeti.AlgebraicGeometry.RationalPoint.Image
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import TauCeti.Topology.Algebra.MulAction.Orbit
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 /-!
@@ -75,28 +76,10 @@ section RationalPoints
 
 variable [MonObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
 
-omit [IsAlgClosed k] [LocallyOfFiniteType G.hom] in
-/-- The orbit morphism sends a rational point `g` of `G` to the translate `g • x`, as a morphism
-of underlying schemes. -/
-@[reassoc (attr := simp)]
-theorem left_comp_orbitMap_left (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
-    (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
-    g.left ≫ (orbitMap G x).left = (g • x).left := by
-  simpa only [toUnit_unit, Category.id_comp, Over.comp_left] using
-    congrArg (fun f ↦ f.left) (comp_orbitMap G g x)
-
-omit [IsAlgClosed k] [LocallyOfFiniteType G.hom] in
-/-- A translate of a rational point `x` by a rational point of `G` lies in the geometric orbit
-of `x`. -/
-theorem left_apply_smul_mem_orbit (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
-    (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) (a : (𝟙_ (Over (Spec (.of k)))).left) :
-    (g • x).left a ∈ orbit G x :=
-  (mem_orbit G x _).mpr ⟨g.left a, by rw [← Scheme.Hom.comp_apply, left_comp_orbitMap_left]⟩
-
-/-- Over an algebraically closed field, the orbit morphism sends every closed point of `G` to a
-translate of `x` by a rational point of `G`. -/
-theorem exists_orbitMap_left_eq_smul_left (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) {c : G.left}
-    (hc : IsClosed {c}) (a : (𝟙_ (Over (Spec (.of k)))).left) :
+/-- Over an algebraically closed field, with `G` locally of finite type, the orbit morphism sends
+every closed point of `G` to a translate of `x` by a rational point of `G`. -/
+theorem exists_orbitMap_left_apply_eq_smul_left_apply (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+    {c : G.left} (hc : IsClosed {c}) (a : (𝟙_ (Over (Spec (.of k)))).left) :
     ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, (orbitMap G x).left c = (g • x).left a := by
   let g : 𝟙_ (Over (Spec (.of k))) ⟶ G :=
     Over.homMk (U := 𝟙_ _) (V := G) (pointOfClosedPoint G.hom c hc)
@@ -117,11 +100,12 @@ theorem orbit_inter_closedPoints (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
     have : JacobsonSpace G.left := LocallyOfFiniteType.jacobsonSpace G.hom
     obtain ⟨c, hc, hfc⟩ := (orbitMap G x).left.continuous.exists_isClosed_singleton_of_mem_range
       (mem_closedPoints_iff.mp hpc).isLocallyClosed ((mem_orbit G x p).mp hpo)
-    obtain ⟨g, hg⟩ := exists_orbitMap_left_eq_smul_left G x hc (IsLocalRing.closedPoint k)
+    obtain ⟨g, hg⟩ :=
+      exists_orbitMap_left_apply_eq_smul_left_apply G x hc (IsLocalRing.closedPoint k)
     exact Set.mem_iUnion.mpr ⟨g, _, hg.symm.trans hfc⟩
   simp only [Set.iUnion_subset_iff]
   rintro g _ ⟨a, rfl⟩
-  refine ⟨left_apply_smul_mem_orbit G x g a, ?_⟩
+  refine ⟨smul_left_apply_mem_orbit G x g a, ?_⟩
   obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
   exact mem_closedPoints_iff.mpr
     (TauCeti.AlgebraicGeometry.isClosed_singleton_of_section (Over.w (g • x)))
@@ -132,7 +116,7 @@ lies in the geometric orbit of `x` exactly when it is a translate of `x` by a ra
 theorem left_apply_mem_orbit_iff (x y : 𝟙_ (Over (Spec (.of k))) ⟶ X)
     (a : (𝟙_ (Over (Spec (.of k)))).left) :
     y.left a ∈ orbit G x ↔ ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, g • x = y := by
-  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ hg ▸ left_apply_smul_mem_orbit G x g a⟩
+  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ hg ▸ smul_left_apply_mem_orbit G x g a⟩
   -- The rational point `y` is a closed point of the orbit, hence a translate `g • x` at the
   -- underlying point; two sections agreeing at a point of `Spec k` are equal.
   obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
