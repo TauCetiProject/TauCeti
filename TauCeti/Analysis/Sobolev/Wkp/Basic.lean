@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.SeparableMeasure
 public import TauCeti.Analysis.Calculus.IteratedGradient
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
@@ -34,6 +35,9 @@ instance, for `sin` in `W^{1,∞}(ℝ)`.  The derivative fields above first orde
 so the norm of `W^{k,2}(Ω)` with `k ≥ 2` need not be induced by an inner product: on
 `Ω = (0,1)² ⊆ ℝ²`, for instance, `x²/2` and `y²/2` violate the parallelogram law.  It is a
 Banach-space norm, not in general the Hilbert-space norm of `H^k(Ω)`.
+
+For finite `p`, the full iterated weak-derivative graph topology is second countable, hence
+separable. No separability assertion is made for `p = ∞`.
 
 ## Implementation notes
 
@@ -141,6 +145,21 @@ theorem SobolevStage.instCompleteSpace (j : ℕ) :
 
 attribute [instance] SobolevStage.instCompleteSpace
 
+/-- At finite exponent, every iterated weak-derivative graph stage is second countable. -/
+instance SobolevStage.instSecondCountableTopology [Fact (p ≠ ⊤)] (j : ℕ) :
+    SecondCountableTopology
+      (sobolevStage (mu := mu) (Omega := Omega) (p := p) j).Space := by
+  induction j with
+  | zero =>
+    -- The first stage is definitionally the value-gradient `Lᵖ` subspace `W1p`.
+    exact (inferInstance : SecondCountableTopology (W1p mu Omega p))
+  | succ j ih =>
+    have := ih
+    -- The next stage is a graph in the product of the preceding stage and an `Lᵖ` space.
+    exact (inferInstance : SecondCountableTopology
+      (WeakDerivStep mu Omega p
+        (sobolevStage (mu := mu) (Omega := Omega) (p := p) j).iteratedGradientL))
+
 /-- The arbitrary-order, real-valued weak Sobolev space `W^{k,p}(Ω)`.  At order zero this is
 `Lᵖ(Ω)`; order one is `W1p`; every further order adjoins the weak derivative of the highest
 derivative field from the preceding order. -/
@@ -170,6 +189,12 @@ theorem Wkp.instCompleteSpace :
   | k + 1 => (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).completeSpace
 
 attribute [instance] Wkp.instCompleteSpace
+
+/-- At every order and finite exponent, the full weak Sobolev topology is second countable. -/
+instance Wkp.instSecondCountableTopology [Fact (p ≠ ⊤)] :
+    (k : ℕ) → SecondCountableTopology (Wkp mu Omega p k)
+  | 0 => inferInstance
+  | k + 1 => SobolevStage.instSecondCountableTopology k
 
 namespace Wkp
 
