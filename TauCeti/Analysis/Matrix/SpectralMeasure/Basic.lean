@@ -193,7 +193,7 @@ theorem PosSemidef.ae_mem_Ici_spectralMeasure {A : Matrix n n 𝕜} (hA : A.PosS
   have hsum :
       ∑ i, (Set.Iio 0).indicator (1 : ℝ → ℝ≥0∞) (hA.isHermitian.eigenvalues i) = 0 := by
     apply Finset.sum_eq_zero
-    intro i hi
+    intro i _
     simp [not_lt.mpr (hA.eigenvalues_nonneg i)]
   rw [hsum]
   simp

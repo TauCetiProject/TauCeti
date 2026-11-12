@@ -74,8 +74,6 @@ carrying the top letter `n`.  Those cells are what the last variable counts.
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 2.2.
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
   Section 5, Example 3.
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 6, "branching rules".
 -/
 
 public section

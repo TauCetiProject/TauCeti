@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.KullbackLeibler.Projection
-public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 public import TauCeti.MeasureTheory.Measure.Decomposition.Prod
 public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 public import TauCeti.MeasureTheory.MeasurableSpace.Metric
@@ -259,7 +259,7 @@ theorem tendsto_entropicTransportCost_transportCost_of_forall_exists
   convert tendsto_entropicTransportCost_nhdsGT_zero c μ ν using 2
   refine le_antisymm ?_ ?_
   · rw [transportCost_def]
-    exact iInf₂_mono fun π hπ ↦ le_iInf fun _ ↦ le_rfl
+    exact iInf₂_mono fun π _ ↦ le_iInf fun _ ↦ le_rfl
   · rw [transportCost_def]
     refine le_iInf₂ fun π hπ ↦ ENNReal.le_of_forall_pos_le_add fun δ hδ _ ↦ ?_
     obtain ⟨σ, hσ, hkl, hle⟩ := h π hπ δ hδ
@@ -394,9 +394,9 @@ theorem IsCoupling.exists_isCoupling_klDiv_ne_top_lintegral_le_of_le_add {π : M
   -- Above a large finite level `M = M₁ + M₂`, the cost exceeds `M` by at most `a x + b y`, where
   -- `a` and `b` are the excesses of `cX` and `cY` over `M₁` and `M₂`, of integrals at most `δ / 4`.
   have hδ0 : (0 : ℝ≥0∞) < δ / 4 := pos_iff_ne_zero.2 hδ'
-  obtain ⟨M₁, hai⟩ := ((tendsto_lintegral_tsub_atTop hcX hcXi).eventually
+  obtain ⟨M₁, hai⟩ := ((tendsto_lintegral_tsub_atTop hcXi).eventually
     (eventually_le_nhds hδ0)).exists
-  obtain ⟨M₂, hbi⟩ := ((tendsto_lintegral_tsub_atTop hcY hcYi).eventually
+  obtain ⟨M₂, hbi⟩ := ((tendsto_lintegral_tsub_atTop hcYi).eventually
     (eventually_le_nhds hδ0)).exists
   set a : X → ℝ≥0∞ := fun x ↦ cX x - M₁
   set b : Y → ℝ≥0∞ := fun y ↦ cY y - M₂

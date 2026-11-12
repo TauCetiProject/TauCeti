@@ -45,9 +45,6 @@ structure is introduced for it, matching Mathlib's treatment of `IsManifold`.
 There is deliberately no inclusion in the other direction against `contDiffGroupoid`: a smooth
 transition map is not literally piecewise affine, and the comparison between the smooth and the PL
 structures is the Whitehead smoothing theory, not a containment of groupoids.
-
-This is the structure-group track of layer 1 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`).
 -/
 
 public section

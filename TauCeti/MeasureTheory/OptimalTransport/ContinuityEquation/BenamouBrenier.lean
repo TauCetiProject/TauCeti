@@ -199,7 +199,7 @@ theorem wassersteinEDist_rpow_le (h : IsContinuityEquation (fun t ↦ (ν t : Me
   rintro r ⟨φ, ψ, hfeas, rfl⟩
   refine ofReal_kantorovichDualValue_le h hν hab hp₁ φ ψ fun x y ↦ ?_
   have hxy := hfeas.ofReal_add_le x y
-  rwa [edist_eq_enorm_sub, ← ofReal_norm,
+  rwa [eDist_eq_eNorm_sub, ← ofReal_norm,
     ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) (zero_le_one.trans hp₁),
     ENNReal.ofReal_le_ofReal_iff (by positivity)] at hxy
 
@@ -239,7 +239,7 @@ theorem isLeast_lintegral_isContinuityEquation {μ₀ μ₁ : Measure E} [IsProb
     rw [ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
       ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.coe_mk]
   have hνc : Continuous ν := ProbabilityMeasure.toFiniteMeasure_continuous.comp
-    (P.continuous_map_of_forall_continuous (fun _ ↦ by fun_prop) fun _ ↦ by fun_prop)
+    (P.continuous_map_of_ae_continuous (fun _ ↦ by fun_prop) (ae_of_all _ fun _ ↦ by fun_prop))
   have h0 : (ν 0 : Measure E) = μ₀ := by
     rw [hν, ← hπ.toIsCoupling.fst_eq, Measure.fst]
     simp

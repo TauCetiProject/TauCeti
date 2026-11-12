@@ -74,7 +74,7 @@ variable {K F : Type*} [Field K] [NumberField K] [Field F] [NumberField F] [Alge
 variable (K F) in
 /-- **Weighted Chebotarev for cyclotomic extensions.** For `F = K(μ_m)` and `σ ∈ Gal(F/K)`, the
 Frobenius `ψ` function of `σ` satisfies `ψ_σ(x) = x / #Gal(F/K) + o(x)`. -/
-theorem frobeniusPsi_asymptotic_of_isCyclotomicExtension (m : ℕ) [NeZero m]
+theorem frobeniusPsi_asymptotic_of_isCyclotomicExtension (m : ℕ)
     [IsCyclotomicExtension {m} K F] (σ : F ≃ₐ[K] F) :
     (fun x : ℝ ↦ frobeniusPsi K F (ConjClasses.mk σ) x -
       (1 / Nat.card (F ≃ₐ[K] F) : ℝ) * x) =o[atTop] fun x : ℝ ↦ x := by
