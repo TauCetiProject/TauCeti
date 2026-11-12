@@ -56,6 +56,17 @@ open scoped Topology
 
 namespace TauCeti
 
+/-- The energy–momentum values with nonzero vertical momentum strictly above the curve of
+relative equilibria: the domain where the two turning points are distinct and avoid the poles. -/
+def sphericalPendulumTurningPointDomain : Set (ℝ × ℝ) :=
+  {c | c.2 ≠ 0 ∧ ∃ z ∈ Ioo (-1) 1, sphericalPendulumEffectivePotential c.2 z < c.1}
+
+/-- Membership in the domain of distinct nonpolar turning points. -/
+@[simp]
+theorem mem_sphericalPendulumTurningPointDomain_iff {c : ℝ × ℝ} :
+    c ∈ sphericalPendulumTurningPointDomain ↔
+      c.2 ≠ 0 ∧ ∃ z ∈ Ioo (-1) 1, sphericalPendulumEffectivePotential c.2 z < c.1 := (Iff.rfl)
+
 /-- The **lower turning point** `z₋` of the spherical pendulum at energy `h` and vertical angular
 momentum `j`: the infimum of the heights `q₃` of the points of the fibre `F⁻¹(h, j)` of the
 energy–momentum map. -/
@@ -125,6 +136,14 @@ private theorem exists_mem_fibreHeights {h j z₀ : ℝ} (hz₀ : z₀ ∈ Ioo (
     ((sq_lt_one_iff_abs_lt_one _).2 (abs_lt.2 hz₀))).1 hV
   exact ⟨mem_fibreHeights_of_lt hz₀ hlt, hlt⟩
 
+/-- Strict positivity of the radicand away from the poles gives an interior fibre height. -/
+private theorem mem_interior_fibreHeights_of_lt {h j z : ℝ} (hz : z ∈ Ioo (-1) 1)
+    (hlt : j ^ 2 < 2 * (h - z) * (1 - z ^ 2)) : z ∈ interior (fibreHeights h j) := by
+  have hcont : Continuous fun z : ℝ ↦ 2 * (h - z) * (1 - z ^ 2) := by fun_prop
+  exact mem_interior_iff_mem_nhds.2
+    ((((hcont.tendsto z).eventually_const_lt hlt).and (isOpen_Ioo.mem_nhds hz)).mono
+      fun _ hx ↦ mem_fibreHeights_of_lt hx.2 hx.1)
+
 /-- At the infimum of the heights of a nonempty fibre with `j ≠ 0` the radicand vanishes: a
 height of positive radicand has lower heights of the fibre next to it. -/
 private theorem radicand_sInf_eq_zero {h j : ℝ} (hj : j ≠ 0) (hne : (fibreHeights h j).Nonempty) :
@@ -132,15 +151,13 @@ private theorem radicand_sInf_eq_zero {h j : ℝ} (hj : j ≠ 0) (hne : (fibreHe
   set a := sInf (fibreHeights h j)
   have ha : a ∈ fibreHeights h j :=
     (isClosed_fibreHeights h j).csInf_mem hne (bddBelow_fibreHeights h j)
-  have haI := mem_Ioo_of_mem_fibreHeights hj ha
   refine le_antisymm ?_ (sub_nonneg.2 ha.2.2)
   by_contra hpos
-  have hcont : Continuous fun z : ℝ ↦ 2 * (h - z) * (1 - z ^ 2) := by fun_prop
-  have hev : ∀ᶠ z in 𝓝 a, j ^ 2 < 2 * (h - z) * (1 - z ^ 2) ∧ z ∈ Ioo (-1) 1 :=
-    ((hcont.tendsto a).eventually_const_lt (by linarith)).and (isOpen_Ioo.mem_nhds haI)
-  obtain ⟨z, ⟨hz, hzI⟩, hza⟩ := ((hev.filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin :
-    ∀ᶠ z in 𝓝[<] a, _ ∧ z < a).exists
-  exact hza.not_ge (csInf_le (bddBelow_fibreHeights h j) (mem_fibreHeights_of_lt hzI hz))
+  have hmem := mem_interior_fibreHeights_of_lt (mem_Ioo_of_mem_fibreHeights hj ha)
+    (by linarith : j ^ 2 < 2 * (h - a) * (1 - a ^ 2))
+  have hsub : fibreHeights h j ⊆ Ici a := fun _ hz ↦ csInf_le (bddBelow_fibreHeights h j) hz
+  have := interior_mono hsub hmem
+  simp only [interior_Ici, mem_Ioi, lt_self_iff_false] at this
 
 /-- At the supremum of the heights of a nonempty fibre with `j ≠ 0` the radicand vanishes. -/
 private theorem radicand_sSup_eq_zero {h j : ℝ} (hj : j ≠ 0) (hne : (fibreHeights h j).Nonempty) :
@@ -148,15 +165,13 @@ private theorem radicand_sSup_eq_zero {h j : ℝ} (hj : j ≠ 0) (hne : (fibreHe
   set b := sSup (fibreHeights h j)
   have hb : b ∈ fibreHeights h j :=
     (isClosed_fibreHeights h j).csSup_mem hne (bddAbove_fibreHeights h j)
-  have hbI := mem_Ioo_of_mem_fibreHeights hj hb
   refine le_antisymm ?_ (sub_nonneg.2 hb.2.2)
   by_contra hpos
-  have hcont : Continuous fun z : ℝ ↦ 2 * (h - z) * (1 - z ^ 2) := by fun_prop
-  have hev : ∀ᶠ z in 𝓝 b, j ^ 2 < 2 * (h - z) * (1 - z ^ 2) ∧ z ∈ Ioo (-1) 1 :=
-    ((hcont.tendsto b).eventually_const_lt (by linarith)).and (isOpen_Ioo.mem_nhds hbI)
-  obtain ⟨z, ⟨hz, hzI⟩, hbz⟩ := ((hev.filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin :
-    ∀ᶠ z in 𝓝[>] b, _ ∧ b < z).exists
-  exact hbz.not_ge (le_csSup (bddAbove_fibreHeights h j) (mem_fibreHeights_of_lt hzI hz))
+  have hmem := mem_interior_fibreHeights_of_lt (mem_Ioo_of_mem_fibreHeights hj hb)
+    (by linarith : j ^ 2 < 2 * (h - b) * (1 - b ^ 2))
+  have hsub : fibreHeights h j ⊆ Iic b := fun _ hz ↦ le_csSup (bddAbove_fibreHeights h j) hz
+  have := interior_mono hsub hmem
+  simp only [interior_Iic, mem_Iio, lt_self_iff_false] at this
 
 /-- **Vieta.** If the radicand `2 (h - z) (1 - z²) - j²`, a cubic in `z` with leading coefficient
 `2` and sum of roots `h`, vanishes at two distinct heights `a` and `b`, then its third root is
@@ -306,7 +321,7 @@ private theorem eventually_forall_radicand_neg {h₀ j₀ : ℝ} {K : Set ℝ} (
 above the curve of relative equilibria. -/
 theorem continuousOn_sphericalPendulumLowerTurningPoint :
     ContinuousOn (fun c : ℝ × ℝ ↦ sphericalPendulumLowerTurningPoint c.1 c.2)
-      {c | c.2 ≠ 0 ∧ ∃ z ∈ Ioo (-1) 1, sphericalPendulumEffectivePotential c.2 z < c.1} := by
+      sphericalPendulumTurningPointDomain := by
   rintro ⟨h₀, j₀⟩ ⟨hj₀, z₀, hz₀, hV₀⟩
   have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj₀ hz₀ hV₀
   have ha₀ := neg_one_lt_sphericalPendulumLowerTurningPoint hj₀ hz₀ hV₀
@@ -349,7 +364,7 @@ theorem continuousOn_sphericalPendulumLowerTurningPoint :
 above the curve of relative equilibria. -/
 theorem continuousOn_sphericalPendulumUpperTurningPoint :
     ContinuousOn (fun c : ℝ × ℝ ↦ sphericalPendulumUpperTurningPoint c.1 c.2)
-      {c | c.2 ≠ 0 ∧ ∃ z ∈ Ioo (-1) 1, sphericalPendulumEffectivePotential c.2 z < c.1} := by
+      sphericalPendulumTurningPointDomain := by
   rintro ⟨h₀, j₀⟩ ⟨hj₀, z₀, hz₀, hV₀⟩
   have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj₀ hz₀ hV₀
   have ha₀ := neg_one_lt_sphericalPendulumLowerTurningPoint hj₀ hz₀ hV₀
