@@ -9,10 +9,9 @@ public import TauCeti.Geometry.Symplectic.Floer.Graph
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.HigherIntegrability
 public import TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
-import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.Geometry.Symplectic.Complex.Line
-import TauCeti.Geometry.Symplectic.Prod.Basic
+import TauCeti.Geometry.Symplectic.Prod.WithLp
 import TauCeti.Geometry.Symplectic.SymplecticTransport
 import TauCeti.Geometry.Symplectic.Transport
 
@@ -155,15 +154,11 @@ private theorem exists_graph (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc :
   set Ω := (stdComplexSymplecticForm.prod ω).transport e
   set J₁ := ((AlmostComplexStructure.ofComplexModule ℂ).prod J₀).transport e
   have hΩ (p q : WithLp 2 (ℂ × V)) :
-      Ω p q = stdComplexSymplecticForm p.fst q.fst + ω p.snd q.snd := by
-    simp [Ω, e]
-  have hΩJ (p q : WithLp 2 (ℂ × V)) : Ω p (J₁ q) = inner ℝ p q := by
-    simp only [Ω, J₁, SymplecticForm.transport_apply, AlmostComplexStructure.transport_apply,
-      LinearEquiv.symm_apply_apply, SymplecticForm.prod_apply,
-      AlmostComplexStructure.prod_apply, AlmostComplexStructure.ofComplexModule_apply, hg,
-      WithLp.prod_inner_apply, Complex.inner, stdComplexSymplecticForm_apply, e]
-    simp [Complex.mul_re, Complex.mul_im]
-    ring
+      Ω p q = stdComplexSymplecticForm p.fst q.fst + ω p.snd q.snd :=
+    SymplecticForm.prod_transport_withLp_apply _ _ p q
+  have hΩJ (p q : WithLp 2 (ℂ × V)) : Ω p (J₁ q) = inner ℝ p q :=
+    SymplecticForm.prod_transport_withLp_apply_transport
+      stdComplexSymplecticForm_apply_ofComplexModule_eq_inner hg p q
   have hD : IsCompact (closedBall z₀ R ×ˢ K) := (isCompact_closedBall z₀ R).prod hK
   obtain ⟨M, hM⟩ := hD.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
   obtain ⟨B, hB⟩ := hD.exists_bound_of_continuousOn (hX.continuousOn.mono hKW)
@@ -242,6 +237,18 @@ private theorem exists_graph (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc :
   · rintro _ ⟨q, hq, rfl⟩
     simpa [T] using hq.2
 
+/-- Off the puncture, the differential of `u` is the second component of the differential of a
+graph `G` of `u`. -/
+private theorem fderiv_eq_sndL_comp {G : ℂ → WithLp 2 (ℂ × V)}
+    (hG : ContDiffOn ℝ 3 G (ball z₀ R \ {z₀})) (hGu : ∀ z, (G z).snd = u z) {z : ℂ}
+    (hz : z ∈ ball z₀ R \ {z₀}) :
+    fderiv ℝ u z = (WithLp.sndL 2 ℝ ℂ V).comp (fderiv ℝ G z) := by
+  have hGd := (hG.differentiableOn (by norm_num) z hz).differentiableAt
+    ((isOpen_ball.sdiff isClosed_singleton).mem_nhds hz)
+  have hu_eq : u = fun w ↦ WithLp.sndL 2 ℝ ℂ V (G w) := funext fun w ↦ by simp [hGu]
+  rw [hu_eq]
+  exact ((WithLp.sndL 2 ℝ ℂ V).hasFDerivAt.comp z hGd.hasFDerivAt).fderiv
+
 variable [FiniteDimensional ℝ V]
 
 open Classical in
@@ -303,51 +310,22 @@ theorem exists_hasWeakFDerivOn_update_of_finite_energy (hg : ∀ v w, ω v (J₀
         (fderiv ℝ u) := by
   obtain ⟨q, hq, -, hcont, hmaps⟩ := exists_continuousOn_update_of_finite_energy hg hc hR hW hJ
     hX hK hKW hJsq hu hF huK htame henergy
-  have hD : IsCompact (closedBall z₀ R ×ˢ K) := (isCompact_closedBall z₀ R).prod hK
-  obtain ⟨M, hM⟩ := hD.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
-  obtain ⟨B, hB⟩ := hD.exists_bound_of_continuousOn (hX.continuousOn.mono hKW)
-  set M₀ := max M 0
-  set B₀ := max B 0
-  -- The Floer equation bounds the full differential by the real-direction derivative.
-  have hbound : ∀ z ∈ ball z₀ R \ {z₀},
-      ‖fderiv ℝ u z‖ ≤ (1 + M₀) * (1 + ‖fderiv ℝ u z 1‖ ^ 2) + (1 + M₀) * B₀ := by
-    intro z hz
-    have hp : (z, u z) ∈ closedBall z₀ R ×ˢ K := ⟨ball_subset_closedBall hz.1, huK hz⟩
-    have hJM : ‖J (z, u z)‖ ≤ M₀ := (hM _ hp).trans (le_max_left _ _)
-    have hXB : ‖X (z, u z)‖ ≤ B₀ := (hB _ hp).trans (le_max_left _ _)
-    have hX1 : ‖X (z, u z) 1‖ ≤ B₀ := by simpa using (X (z, u z)).le_of_opNorm_le hXB 1
-    have hXI : ‖X (z, u z) I‖ ≤ B₀ := by simpa using (X (z, u z)).le_of_opNorm_le hXB I
-    have hI : ‖fderiv ℝ u z I‖ ≤ B₀ + M₀ * (‖fderiv ℝ u z 1‖ + B₀) := by
-      rw [← sub_add_cancel (fderiv ℝ u z I) (X (z, u z) I), hF z hz]
-      refine (norm_add_le _ _).trans (add_le_add ?_ hXI) |>.trans_eq (add_comm _ _)
-      exact (J (z, u z)).le_of_opNorm_le hJM _ |>.trans
-        (by gcongr; exact norm_sub_le_of_le le_rfl hX1)
-    have hop : ‖fderiv ℝ u z‖ ≤ ‖fderiv ℝ u z 1‖ + ‖fderiv ℝ u z I‖ :=
-      ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦
-        (fderiv ℝ u z).norm_apply_le_norm_one_add_norm_I w
-    have hs : ‖fderiv ℝ u z 1‖ ≤ 1 + ‖fderiv ℝ u z 1‖ ^ 2 := by
-      nlinarith [sq_nonneg (‖fderiv ℝ u z 1‖ - 1)]
-    have hM0 : 0 ≤ M₀ := le_max_right _ _
-    nlinarith [mul_le_mul_of_nonneg_left hs hM0]
-  have hi : IntegrableOn (fderiv ℝ u) (ball z₀ R) := by
-    have hmajor : IntegrableOn
-        (fun z ↦ (1 + M₀) * (1 + ‖fderiv ℝ u z 1‖ ^ 2) + (1 + M₀) * B₀) (ball z₀ R) :=
-      (((integrableOn_const (C := (1 : ℝ)) measure_ball_lt_top.ne).fun_add henergy).const_mul
-        _).add (integrableOn_const measure_ball_lt_top.ne)
-    refine hmajor.mono' (measurable_fderiv ℝ u).aestronglyMeasurable ?_
+  obtain ⟨Ω, J₁, c', J', W', K', G, hΩJ, hc', hW', hJ', hK', hK'W, hJsq', hG, hCR, hGK, htame',
+    henergy', hGu, -⟩ := exists_graph hg hc hW hJ hX hK hKW hJsq hu hF huK htame henergy
+  obtain ⟨q', -, -, -, hweak⟩ := Ω.exists_hasWeakFDerivOn_update_of_finite_energy hΩJ hc' hR hW'
+    hJ' hK' hK'W hJsq' hG hCR hGK htame' henergy'
+  refine ⟨q, hq, hcont, hmaps, ?_⟩
+  -- `u` is the second component of its graph, so the two fillings and the two differentials
+  -- agree off `z₀`.
+  have hne : ∀ᵐ z ∂volume.restrict (ball z₀ R), z ∈ ball z₀ R \ {z₀} := by
     filter_upwards [ae_restrict_mem measurableSet_ball,
       ae_restrict_of_ae (volume.ae_ne z₀)] with z hz hzne
-    exact hbound z ⟨hz, hzne⟩
-  refine ⟨q, hq, hcont, hmaps,
-    hasWeakFDerivOn_of_hasFDerivAt_off_countable (s := {z₀}) (countable_singleton z₀)
-      hcont hi.locallyIntegrableOn fun z hz ↦ ?_⟩
-  have hz' : z ∈ ball z₀ R \ {z₀} := hz
-  have hdu := (hu.differentiableOn (by norm_num) z hz').differentiableAt
-    ((isOpen_ball.sdiff isClosed_singleton).mem_nhds hz')
-  have heq : Function.update u z₀ q =ᶠ[𝓝 z] u := by
-    filter_upwards [isOpen_compl_singleton.mem_nhds hz'.2] with w hw
-    exact Function.update_of_ne hw _ _
-  exact hdu.hasFDerivAt.congr_of_eventuallyEq heq
+    exact ⟨hz, hzne⟩
+  refine ((hweak.clm_comp (WithLp.sndL 2 ℝ ℂ V)).congr_ae ?_).congr_ae_deriv ?_
+  · filter_upwards [hne] with z hz
+    simp [Function.update_of_ne hz.2, hGu]
+  · filter_upwards [hne] with z hz
+    exact (fderiv_eq_sndL_comp hG hGu hz).symm
 
 open Classical in
 /-- **Higher integrability across the singularity of a Floer solution.** Under the hypotheses of
@@ -384,17 +362,12 @@ theorem exists_continuousOn_update_memLp_fderiv_of_finite_energy
   filter_upwards [ae_restrict_mem measurableSet_ball,
     ae_restrict_of_ae (volume.ae_ne z₀)] with z hzε hzne
   have hz : z ∈ ball z₀ R \ {z₀} := ⟨ball_subset_ball hεR.le hzε, hzne⟩
-  have hnhds : ball z₀ R \ {z₀} ∈ 𝓝 z := (isOpen_ball.sdiff isClosed_singleton).mem_nhds hz
-  have hGd := (hG.differentiableOn (by norm_num) z hz).differentiableAt hnhds
   have hupd : ∀ᶠ w in 𝓝 z, w ≠ z₀ := isOpen_compl_singleton.mem_nhds hzne
   have hG' : fderiv ℝ (Function.update G z₀ q') z = fderiv ℝ G z :=
     Filter.EventuallyEq.fderiv_eq (hupd.mono fun w hw ↦ Function.update_of_ne hw _ _)
   have hu' : fderiv ℝ (Function.update u z₀ q) z = fderiv ℝ u z :=
     Filter.EventuallyEq.fderiv_eq (hupd.mono fun w hw ↦ Function.update_of_ne hw _ _)
-  have hu_eq : u = fun w ↦ WithLp.sndL 2 ℝ ℂ V (G w) := funext fun w ↦ by simp [hGu]
-  have hdu : fderiv ℝ u z = (WithLp.sndL 2 ℝ ℂ V).comp (fderiv ℝ G z) := by
-    rw [hu_eq]
-    exact ((WithLp.sndL 2 ℝ ℂ V).hasFDerivAt.comp z hGd.hasFDerivAt).fderiv
-  rw [Function.comp_apply, hG', hu', hdu, ContinuousLinearMap.compL_apply]
+  rw [Function.comp_apply, hG', hu', fderiv_eq_sndL_comp hG hGu hz,
+    ContinuousLinearMap.compL_apply]
 
 end TauCeti.Floer
