@@ -176,7 +176,7 @@ private theorem apply_smul_le {A : E → ℝ≥0∞} (hsmul : ∀ (r : ℝ) x, A
     (c : lp (fun _ : ℕ ↦ ℝ) 1) (ν : ℕ) :
     A ((c ν / synthesisWeight a ν) • e ν) ≤ ‖c ν‖ₑ / synthesisWeight a ν * A (e ν) := by
   refine (hsmul _ _).trans_eq ?_
-  simp [enorm_eq_nnnorm, nnnorm_div, ENNReal.coe_div, (synthesisWeight_pos a ν).ne']
+  simp [eNorm_eq_nnNorm, nnNorm_div, ENNReal.coe_div, (synthesisWeight_pos a ν).ne']
 
 end Term
 

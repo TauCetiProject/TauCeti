@@ -126,7 +126,7 @@ private theorem memLp_laplacian_sub_mul_principalPart (hx : Continuous x) {a : �
     {ρ : ℂ → ℝ} (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hρa : ρ =ᶠ[𝓝 a] 1) (c : ℂ) :
     MemLp (fun z ↦ Δ (fun w ↦ (ρ w : ℂ) * (c / (w - a) ^ k)) z -
       ((x z 2 ^ 2 + x z 3 ^ 2 : ℝ) : ℂ) * ((ρ z : ℂ) * (c / (z - a) ^ k))) 2 volume := by
-  set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 with hPdef
+  set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2
   have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
   have hPc : Continuous P := by
     have := hxi 2; have := hxi 3; fun_prop
@@ -163,7 +163,7 @@ private theorem memLp_laplacian_sub_mul_principalPart (hx : Continuous x) {a : �
     rw [hgnear z hz hza, norm_neg, norm_mul, Complex.norm_of_nonneg hP0]
     simp only [hη₀def, hρz, ofReal_one, one_mul, norm_div, norm_pow]
     have hpk : ‖z - a‖ ^ k ≤ 1 := pow_le_one₀ hd0.le hd.le
-    have hkpos : 0 < ‖z - a‖ ^ k := pow_pos hd0 k
+    have _ : 0 < ‖z - a‖ ^ k := pow_pos hd0 k
     calc P z * (‖c‖ / ‖z - a‖ ^ k) ≤ C * ‖z - a‖ ^ (2 * k) * (‖c‖ / ‖z - a‖ ^ k) := by
           gcongr
       _ = C * ‖c‖ * ‖z - a‖ ^ k := by
@@ -218,11 +218,11 @@ private theorem integrable_and_integral_principalPart_mul_laplacian_sub_mul (hx 
       ∫ z, (ρ z : ℂ) * (c / (z - a) ^ k) * ((Δ φ z - (x z 2 ^ 2 + x z 3 ^ 2) * φ z : ℝ) : ℂ) =
         ∫ z, (Δ (fun w ↦ (ρ w : ℂ) * (c / (w - a) ^ k)) z -
           ((x z 2 ^ 2 + x z 3 ^ 2 : ℝ) : ℂ) * ((ρ z : ℂ) * (c / (z - a) ^ k))) * (φ z : ℂ) := by
-  set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 with hPdef
+  set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2
   have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
   have hPc : Continuous P := by
     have := hxi 2; have := hxi 3; fun_prop
-  set η₀ : ℂ → ℂ := fun z ↦ (ρ z : ℂ) * (c / (z - a) ^ k) with hη₀def
+  set η₀ : ℂ → ℂ := fun z ↦ (ρ z : ℂ) * (c / (z - a) ^ k)
   have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
   -- `φ` is a test function on the punctured plane `Ω`, where `η₀` is smooth.
   let Ω : TopologicalSpace.Opens ℂ := ⟨{a}ᶜ, isOpen_compl_singleton⟩
@@ -275,11 +275,11 @@ theorem exists_integral_mul_laplacian_sub_mul_eq_zero (hx : Continuous x)
       ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ → a ∉ tsupport φ →
         ∫ z, ((ρ z : ℂ) * (c / (z - a) ^ k) + h z) *
           ((Δ φ z - (x z 2 ^ 2 + x z 3 ^ 2) * φ z : ℝ) : ℂ) = 0 := by
-  set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 with hPdef
+  set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2
   have hP : MemLp P ⊤ volume := memLp_top_potential hx hlim
   obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
-  set η₀ : ℂ → ℂ := fun z ↦ (ρ z : ℂ) * (c / (z - a) ^ k) with hη₀def
-  set g : ℂ → ℂ := fun z ↦ Δ η₀ z - P z * η₀ z with hgdef
+  set η₀ : ℂ → ℂ := fun z ↦ (ρ z : ℂ) * (c / (z - a) ^ k)
+  set g : ℂ → ℂ := fun z ↦ Δ η₀ z - P z * η₀ z
   have hg2 : MemLp g 2 volume := memLp_laplacian_sub_mul_principalPart hx hα hρ hρc hρa c
   -- Solve `-Δh + P h = g` in `H²`, componentwise.
   have hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z := ae_of_all _ fun z ↦ by positivity
