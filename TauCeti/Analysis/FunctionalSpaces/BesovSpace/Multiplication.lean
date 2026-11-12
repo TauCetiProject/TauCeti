@@ -13,15 +13,17 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Normed.Lp.Reindex
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Multiplication by smooth functions on Besov spaces
 
-Let `g : E → ℂ` be a smooth function whose derivatives of every order are bounded. Multiplication
-by `g` maps every inhomogeneous Besov space `B^s_{p,q}`, `s ∈ ℝ`, `1 ≤ p, q ≤ ∞`, boundedly to
-itself (`TemperedDistribution.MemBesov.smulLeftCLM`, `TauCeti.BesovSpace.smulLeftCLM`). The
-operator norm is at most `C G`, where `C` depends only on the bump function `φ` and on `s`, and
-`G` bounds the derivatives of `g` of order at most `N`, for an `N` depending only on `s`
+Let `s ∈ ℝ` and let `g : E → ℂ` be a function of temperate growth whose derivatives of order at
+most `N` are bounded, for a natural number `N > |s|`. Multiplication by `g` maps every
+inhomogeneous Besov space `B^s_{p,q}`, `1 ≤ p, q ≤ ∞`, boundedly to itself
+(`TemperedDistribution.MemBesov.smulLeftCLM`, `TauCeti.BesovSpace.smulLeftCLM`). The operator norm
+is at most `C G`, where `C` depends only on the bump function `φ`, on `s` and on `N`, and `G`
+bounds the derivatives of `g` of order at most `N`
 (`TauCeti.BesovSpace.exists_toDistr_eq_smulLeftCLM_and_norm_le`). In particular the bound does
 not depend on `p` or `q`, and it covers the Hölder–Zygmund scale `𝒞^s = B^s_{∞,∞}` and the
 negative orders `s < 0`. Scalar smooth multipliers are the scalar case of the matrix-valued
@@ -54,7 +56,7 @@ converges absolutely, and its sum is the sequence of weighted blocks of `g u`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_smulLeftCLM_and_norm_le`: multiplication by `g` maps
   `B^s_{p,q}` to itself with norm at most `C G`, uniformly in `p` and `q`.
 * `TemperedDistribution.MemBesov.smulLeftCLM`: `B^s_{p,q}` is stable under multiplication by
-  smooth functions with bounded derivatives.
+  functions of temperate growth whose derivatives of order at most `⌊|s|⌋₊ + 1` are bounded.
 * `TauCeti.BesovSpace.smulLeftCLM`: the multiplication as a bounded operator on `B^s_{p,q}`, with
   operator norm at most `C G` (`TauCeti.BesovSpace.exists_norm_smulLeftCLM_le`).
 
@@ -79,14 +81,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 namespace TauCeti
 
 open TemperedDistribution
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A bound `G` on the derivatives of `g` of order at most `M` is nonnegative and bounds `g`. -/
-private theorem nonneg_and_norm_le_of_norm_iteratedFDeriv_le [NormedSpace ℝ E] {g : E → ℂ}
-    {M : ℕ} {G : ℝ} (hgG : ∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) :
-    0 ≤ G ∧ ∀ x, ‖g x‖ ≤ G :=
-  have hg (x : E) : ‖g x‖ ≤ G := by simpa using hgG 0 (Nat.zero_le _) x
-  ⟨(norm_nonneg _).trans (hg 0), hg⟩
 
 /-! ### Interaction of a multiplication with the Littlewood–Paley blocks -/
 
@@ -271,15 +265,6 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le_of_annulu
           rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
           ring
 
-/-- `(2^a / 2^b)^M = 2^{-M |b - a|}` for `a ≤ b`. -/
-private theorem two_pow_div_two_pow_pow_eq {a b : ℕ} (hab : a ≤ b) (M : ℕ) :
-    ((2 : ℝ) ^ a / 2 ^ b) ^ M = (2 : ℝ) ^ (-(M * |(b : ℝ) - a|)) := by
-  rw [abs_of_nonneg (sub_nonneg.2 (by exact_mod_cast hab)), ← Real.rpow_natCast _ M,
-    ← Real.rpow_natCast 2 a, ← Real.rpow_natCast 2 b, ← Real.rpow_sub two_pos,
-    ← Real.rpow_mul zero_le_two]
-  congr 1
-  ring
-
 /-- **Off-diagonal decay of a multiplication between Littlewood–Paley blocks.** Let `M` be a
 natural number. There is `K`, depending only on `φ` and `M`, with the following property. Let `g`
 be a function of temperate growth whose derivatives of order at most `M` are bounded by `G`, let
@@ -313,7 +298,7 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le
     obtain ⟨v, hv, hvn⟩ := h₁ hg hgG hkj f
       (hf ▸ isVanishingOn_fourier_littlewoodPaleyBlock φ k u)
     refine ⟨v, hv, (hvn.trans_eq ?_).trans (hK K₁ (by linarith))⟩
-    rw [two_pow_div_two_pow_pow_eq hkj.le]
+    rw [Real.pow_div_pow_pow_eq_rpow_of_le two_pos hkj.le]
   · -- Equal frequencies: the multiplication and the block are bounded on `Lᵖ`.
     obtain ⟨v, hv, hvn⟩ := h₀ hg hg₀ k f
     refine ⟨v, hv, ?_⟩
@@ -326,37 +311,32 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le
       rw [two_mul_rOut_div_rIn_mul, ← hf]
       exact isVanishingOn_fourier_littlewoodPaleyBlock_succ φ k u)
     refine ⟨v, hv, (hvn.trans_eq ?_).trans (hK (K₂ * (2 / φ.rIn) ^ M) (by linarith))⟩
-    rw [abs_sub_comm, ← two_pow_div_two_pow_pow_eq hjk.le, div_pow, div_pow, div_pow, mul_pow,
-      pow_succ]
+    rw [abs_sub_comm, ← Real.pow_div_pow_pow_eq_rpow_of_le two_pos hjk.le, div_pow, div_pow,
+      div_pow, mul_pow, pow_succ]
     field_simp
     ring
 
 /-! ### Multiplication on Besov spaces -/
 
-/-- **Multiplication by a smooth function is bounded on Besov spaces.** For every `s` there are
-`N` and `C`, depending only on `φ` and `s`, with the following property. Let `g` be a function of
-temperate growth whose derivatives of order at most `N` are bounded by `G`. Then for all
-`1 ≤ p, q ≤ ∞` and every `u ∈ B^s_{p,q}`, the product `g u` lies in `B^s_{p,q}` and
-`‖g u‖ ≤ C G ‖u‖`. -/
+/-- **Multiplication by a smooth function is bounded on Besov spaces.** Let `N` be a natural
+number with `|s| < N`. There is `C`, depending only on `φ`, `s` and `N`, with the following
+property. Let `g` be a function of temperate growth whose derivatives of order at most `N` are
+bounded by `G`. Then for all `1 ≤ p, q ≤ ∞` and every `u ∈ B^s_{p,q}`, the product `g u` lies in
+`B^s_{p,q}` and `‖g u‖ ≤ C G ‖u‖`. -/
 theorem BesovSpace.exists_toDistr_eq_smulLeftCLM_and_norm_le (φ : ContDiffBump (0 : E))
-    (s : ℝ) :
-    ∃ N : ℕ, ∃ C : ℝ, 0 ≤ C ∧ ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+    {s : ℝ} {N : ℕ} (hN : |s| < N) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
       (∀ n ≤ N, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) →
       ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (u : BesovSpace F φ s p q),
       ∃ v : BesovSpace F φ s p q, v.toDistr = smulLeftCLM F g u.toDistr ∧ ‖v‖ ≤ C * G * ‖u‖ := by
   -- With `N > |s|`, the weighted interaction `2^{js} 2^{-N |j - k|} 2^{-ks}` of the blocks `j`
   -- and `k` is at most `r^{|j - k|}` with `r = 2^{|s| - N} < 1`, and the weighted blocks of
   -- `g u` are the row sums of a matrix with geometric decay away from the diagonal.
-  set N := ⌊|s|⌋₊ + 1
   set r : ℝ := 2 ^ (|s| - N)
   have hr0 : 0 ≤ r := by positivity
-  have hr1 : r < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by
-    have := Nat.lt_floor_add_one |s|
-    simp only [N]
-    push_cast
-    linarith)
+  have hr1 : r < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
   obtain ⟨K, hK, hblock⟩ := exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le (F := F) φ N
-  refine ⟨N, K * ∑' d : ℤ, r ^ d.natAbs, by positivity, fun {g G} hg hgG {p q} _ _ u ↦ ?_⟩
+  refine ⟨K * ∑' d : ℤ, r ^ d.natAbs, by positivity, fun {g G} hg hgG {p q} _ _ u ↦ ?_⟩
   obtain ⟨hG, -⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG
   set c : ℕ → ℂ := fun j ↦ (((2 : ℝ) ^ (s * j) : ℝ) : ℂ)
   -- `Δⱼ (g Δₖ u)` is an `Lᵖ` function `v j k`, and `2^{js} v j k` is dominated by
@@ -415,15 +395,17 @@ open TauCeti
 
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
 
-/-- **Smooth multipliers of Besov spaces.** If `u ∈ B^s_{p,q}` and `g` is smooth with bounded
-derivatives of every order, then `g u ∈ B^s_{p,q}`. -/
+/-- **Smooth multipliers of Besov spaces.** If `u ∈ B^s_{p,q}` and `g` is a function of temperate
+growth whose derivatives of order at most `⌊|s|⌋₊ + 1`, the least natural number exceeding `|s|`,
+are bounded, then `g u ∈ B^s_{p,q}`. -/
 theorem MemBesov.smulLeftCLM {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) {g : E → ℂ}
-    (hg : ContDiff ℝ (⊤ : ℕ∞) g) (hbd : ∀ n : ℕ, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
+    (hg : g.HasTemperateGrowth)
+    (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
     (smulLeftCLM F g u).MemBesov φ s p q := by
-  obtain ⟨N, C, -, hC⟩ := BesovSpace.exists_toDistr_eq_smulLeftCLM_and_norm_le (F := F) φ s
-  obtain ⟨G, hG⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (N := N) fun n _ ↦ hbd n
-  obtain ⟨v, hv, -⟩ :=
-    hC (Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le hg hbd) hG hu.toBesovSpace
+  obtain ⟨C, -, hC⟩ := BesovSpace.exists_toDistr_eq_smulLeftCLM_and_norm_le (F := F) φ
+    (N := ⌊|s|⌋₊ + 1) (by push_cast; exact Nat.lt_floor_add_one _)
+  obtain ⟨G, hG⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists hbd
+  obtain ⟨v, hv, -⟩ := hC hg hG hu.toBesovSpace
   rw [← hu.toDistr_toBesovSpace, ← hv]
   exact v.memBesov_toDistr
 
@@ -436,45 +418,45 @@ open TemperedDistribution
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
 
 variable (F φ s p q) in
-/-- **Multiplication by a smooth function** `g` with bounded derivatives of every order, as a
-bounded operator on `B^s_{p,q}`. Its norm is bounded by a constant depending only on `φ` and `s`
-times a bound for finitely many derivatives of `g`
-(`TauCeti.BesovSpace.exists_toDistr_eq_smulLeftCLM_and_norm_le`). -/
-def smulLeftCLM (g : E → ℂ) (hg : ContDiff ℝ (⊤ : ℕ∞) g)
-    (hbd : ∀ n : ℕ, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
+/-- **Multiplication by a smooth function** `g` of temperate growth whose derivatives of order at
+most `⌊|s|⌋₊ + 1` are bounded, as a bounded operator on `B^s_{p,q}`. Its norm is bounded by a
+constant depending only on `φ`, `s` and `N` times a bound for the derivatives of `g` of order at
+most `N`, for any natural number `N > |s|` (`TauCeti.BesovSpace.exists_norm_smulLeftCLM_le`). -/
+def smulLeftCLM (g : E → ℂ) (hg : g.HasTemperateGrowth)
+    (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
     BesovSpace F φ s p q →L[ℂ] BesovSpace F φ s p q :=
   LinearMap.mkContinuousOfExistsBound
     { toFun u := (u.memBesov_toDistr.smulLeftCLM hg hbd).toBesovSpace
       map_add' _ _ := ext (by simp)
       map_smul' _ _ := ext (by simp) } <| by
-    obtain ⟨N, C, -, hC⟩ := exists_toDistr_eq_smulLeftCLM_and_norm_le (F := F) φ s
-    obtain ⟨G, hG⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (N := N) fun n _ ↦ hbd n
+    obtain ⟨C, -, hC⟩ := exists_toDistr_eq_smulLeftCLM_and_norm_le (F := F) φ
+      (N := ⌊|s|⌋₊ + 1) (by push_cast; exact Nat.lt_floor_add_one _)
+    obtain ⟨G, hG⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists hbd
     refine ⟨C * G, fun u ↦ ?_⟩
-    obtain ⟨v, hv, hvn⟩ :=
-      hC (Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le hg hbd) hG (p := p) (q := q) u
+    obtain ⟨v, hv, hvn⟩ := hC hg hG (p := p) (q := q) u
     have : (u.memBesov_toDistr.smulLeftCLM hg hbd).toBesovSpace = v := ext (by simp [hv])
     simpa [this] using hvn
 
 @[simp]
-theorem toDistr_smulLeftCLM {g : E → ℂ} (hg : ContDiff ℝ (⊤ : ℕ∞) g)
-    (hbd : ∀ n : ℕ, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) (u : BesovSpace F φ s p q) :
+theorem toDistr_smulLeftCLM {g : E → ℂ} (hg : g.HasTemperateGrowth)
+    (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) (u : BesovSpace F φ s p q) :
     (smulLeftCLM F φ s p q g hg hbd u).toDistr = TemperedDistribution.smulLeftCLM F g u.toDistr :=
   by simp [smulLeftCLM]
 
-/-- **The norm of a smooth multiplier of Besov spaces.** For every `s` there are `N` and `C`,
-depending only on `φ` and `s`, with the following property. If the derivatives of order at most
-`N` of `g` are bounded by `G`, then multiplication by `g` has operator norm at most `C G` on
-`B^s_{p,q}` for all `1 ≤ p, q ≤ ∞`. -/
-theorem exists_norm_smulLeftCLM_le (φ : ContDiffBump (0 : E)) (s : ℝ) :
-    ∃ N : ℕ, ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] {g : E → ℂ}
-      (hg : ContDiff ℝ (⊤ : ℕ∞) g) (hbd : ∀ n : ℕ, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) {G : ℝ},
-      (∀ n ≤ N, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ‖smulLeftCLM F φ s p q g hg hbd‖ ≤ C * G := by
-  obtain ⟨N, C, hC, hmul⟩ := exists_toDistr_eq_smulLeftCLM_and_norm_le (F := F) φ s
-  refine ⟨N, C, hC, fun {p q} _ _ g hg hbd G hgG ↦ ?_⟩
+/-- **The norm of a smooth multiplier of Besov spaces.** Let `N` be a natural number with
+`|s| < N`. There is `C`, depending only on `φ`, `s` and `N`, with the following property. If the
+derivatives of order at most `N` of `g` are bounded by `G`, then multiplication by `g` has operator
+norm at most `C G` on `B^s_{p,q}` for all `1 ≤ p, q ≤ ∞`. -/
+theorem exists_norm_smulLeftCLM_le (φ : ContDiffBump (0 : E)) {N : ℕ} (hN : |s| < N) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] {g : E → ℂ}
+      (hg : g.HasTemperateGrowth) (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C)
+      {G : ℝ}, (∀ n ≤ N, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) →
+      ‖smulLeftCLM F φ s p q g hg hbd‖ ≤ C * G := by
+  obtain ⟨C, hC, hmul⟩ := exists_toDistr_eq_smulLeftCLM_and_norm_le (F := F) φ hN
+  refine ⟨C, hC, fun {p q} _ _ g hg hbd G hgG ↦ ?_⟩
   have hG := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).1
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
-  obtain ⟨v, hv, hvn⟩ :=
-    hmul (Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le hg hbd) hgG (p := p) (q := q) u
+  obtain ⟨v, hv, hvn⟩ := hmul hg hgG (p := p) (q := q) u
   have : smulLeftCLM F φ s p q g hg hbd u = v := ext (by simp [hv])
   rwa [this]
 
