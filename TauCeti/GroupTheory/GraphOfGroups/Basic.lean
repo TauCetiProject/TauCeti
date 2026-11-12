@@ -142,37 +142,34 @@ theorem αArrow_injective (e : a ⟶ b) : Function.Injective (𝔸.αArrow e) :=
 theorem ωArrow_injective (e : a ⟶ b) : Function.Injective (𝔸.ωArrow e) :=
   (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.2).injective.comp (𝔸.ω_injective e.1)
 
+/-- The map `α` of an arrow `e'` whose dart is the reverse of the dart of `e` is `ω_e`. -/
+private theorem αArrow_eq_ωArrow_of_val_eq_rev (e' : b ⟶ a) (e : a ⟶ b) (h : e'.1 = Γ.rev e.1)
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge e'.1)) :
+    𝔸.αArrow e' c =
+      𝔸.ωArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by rw [h, Γ.toGeomEdge_rev]) c) := by
+  obtain ⟨e, rfl, rfl⟩ := e
+  obtain ⟨f, h₁, h₂⟩ := e'
+  obtain rfl : f = Γ.rev e := h
+  rw [αArrow_apply, ωArrow_mk, α_rev_apply]
+  -- Only the cast along `h₁ : src (rev e) = tgt e` is left. It is the identity because `tgt e`
+  -- is defined as `src (rev e)` (`SerreGraph.tgt` is exposed for this); the statement of
+  -- `α_rev_apply` relies on the same definitional equality.
+  rfl
+
 /-- The map `α` of a reversed dart is `ω` of the dart. -/
 theorem αArrow_reverse_apply (e : a ⟶ b)
     (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1)) :
     𝔸.αArrow (Quiver.reverse e) c =
-      𝔸.ωArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by simp) c) := by
-  obtain ⟨e, rfl, rfl⟩ := e
-  -- The reversal of the quiver of `Γ` does not unfold here; transport along its first component.
-  have key : ∀ (f : Γ.E) (_ : f = Γ.rev e) (h₁ : Γ.src f = Γ.tgt e) (h₂ : Γ.tgt f = Γ.src e)
-      (h : Γ.toGeomEdge f = Γ.toGeomEdge e) (c : 𝔸.edgeGroup (Γ.toGeomEdge f)),
-      𝔸.αArrow (⟨f, h₁, h₂⟩ : Γ.tgt e ⟶ Γ.src e) c =
-        𝔸.ωArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) (MulEquiv.cast (M := 𝔸.edgeGroup) h c) := by
-    rintro f rfl h₁ h₂ h c
-    rw [αArrow_apply, ωArrow_mk, α_rev_apply]
-    simp only [MulEquiv.cast_apply]
-    rfl
-  refine key _ (Γ.reverse_val _) ?_ ?_ _ c <;> simp
+      𝔸.ωArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by simp) c) :=
+  𝔸.αArrow_eq_ωArrow_of_val_eq_rev _ e (Γ.reverse_val e) c
 
 /-- The map `ω` of a reversed dart is `α` of the dart. -/
 theorem ωArrow_reverse_apply (e : a ⟶ b)
     (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1)) :
     𝔸.ωArrow (Quiver.reverse e) c =
       𝔸.αArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by simp) c) := by
-  obtain ⟨e, rfl, rfl⟩ := e
-  have key : ∀ (f : Γ.E) (_ : f = Γ.rev e) (h₁ : Γ.src f = Γ.tgt e) (h₂ : Γ.tgt f = Γ.src e)
-      (h : Γ.toGeomEdge f = Γ.toGeomEdge e) (c : 𝔸.edgeGroup (Γ.toGeomEdge f)),
-      𝔸.ωArrow (⟨f, h₁, h₂⟩ : Γ.tgt e ⟶ Γ.src e) c =
-        𝔸.αArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) (MulEquiv.cast (M := 𝔸.edgeGroup) h c) := by
-    rintro f rfl h₁ h₂ h c
-    rw [ωArrow_apply, αArrow_mk, ω_rev_apply]
-    simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
-  refine key _ (Γ.reverse_val _) ?_ ?_ _ c <;> simp
+  rw [𝔸.αArrow_eq_ωArrow_of_val_eq_rev e (Quiver.reverse e) (by simp)]
+  simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
 
 /-- An edge group element `c` of a dart `e`, read as an element `c'` of the edge group of
 `rev e`: `α_{rev e}(c') = ω_e(c)` and `ω_{rev e}(c') = α_e(c)`. -/

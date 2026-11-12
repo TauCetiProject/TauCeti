@@ -99,18 +99,14 @@ noncomputable def edgePart (g : 𝔸.vertexGroup a) : 𝔸.edgeGroup (Γ.toGeomE
     d.rep e g * 𝔸.αArrow e (d.edgePart e g) = g := by
   simpa [rep, edgePart] using (d e).2.equiv_fst_mul_equiv_snd g
 
-private theorem equiv_mul_αArrow {s : 𝔸.vertexGroup a} (hs : s ∈ (d e).1)
-    (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
-    (d e).2.equiv (s * 𝔸.αArrow e c) = (⟨s, hs⟩, ⟨_, c, rfl⟩) :=
-  (Equiv.eq_symm_apply _).1 ((d e).2.equiv_symm_apply (⟨s, hs⟩, ⟨_, c, rfl⟩)).symm
-
 /-- An element of the transversal is its own representative. -/
-theorem rep_of_mem {g : 𝔸.vertexGroup a} (hg : g ∈ (d e).1) : d.rep e g = g := by
-  simpa [rep] using congrArg (fun x ↦ (x.1 : 𝔸.vertexGroup a)) (d.equiv_mul_αArrow e hg 1)
+theorem rep_of_mem {g : 𝔸.vertexGroup a} (hg : g ∈ (d e).1) : d.rep e g = g :=
+  congrArg Subtype.val ((d e).2.equiv_fst_eq_self_of_mem_of_one_mem (one_mem _) hg)
 
 /-- An element of the transversal has trivial edge group part. -/
-theorem edgePart_of_mem {g : 𝔸.vertexGroup a} (hg : g ∈ (d e).1) : d.edgePart e g = 1 :=
-  𝔸.αArrow_injective e <| by simpa [d.rep_of_mem e hg] using d.rep_mul_αArrow_edgePart e g
+theorem edgePart_of_mem {g : 𝔸.vertexGroup a} (hg : g ∈ (d e).1) : d.edgePart e g = 1 := by
+  simp only [edgePart, (d e).2.equiv_snd_eq_one_of_mem_of_one_mem (one_mem _) hg]
+  exact map_one _
 
 @[simp] theorem rep_rep (g : 𝔸.vertexGroup a) : d.rep e (d.rep e g) = d.rep e g :=
   d.rep_of_mem e (d.rep_mem e g)
@@ -120,20 +116,20 @@ theorem edgePart_of_mem {g : 𝔸.vertexGroup a} (hg : g ∈ (d e).1) : d.edgePa
 
 @[simp] theorem rep_mul_αArrow (g : 𝔸.vertexGroup a) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
     d.rep e (g * 𝔸.αArrow e c) = d.rep e g := by
-  conv_lhs => rw [← d.rep_mul_αArrow_edgePart e g, mul_assoc, ← map_mul]
-  rw [rep, d.equiv_mul_αArrow e (d.rep_mem e g)]
+  rw [rep, (d e).2.equiv_mul_right_of_mem (MonoidHom.mem_range.2 ⟨c, rfl⟩), rep]
 
 @[simp] theorem edgePart_mul_αArrow (g : 𝔸.vertexGroup a) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
     d.edgePart e (g * 𝔸.αArrow e c) = d.edgePart e g * c := by
-  conv_lhs => rw [← d.rep_mul_αArrow_edgePart e g, mul_assoc, ← map_mul]
-  simp only [edgePart, d.equiv_mul_αArrow e (d.rep_mem e g)]
-  exact (MonoidHom.ofInjective (𝔸.αArrow_injective e)).symm_apply_apply _
+  simp only [edgePart, (d e).2.equiv_mul_right_of_mem (MonoidHom.mem_range.2 ⟨c, rfl⟩)]
+  rw [MulEquiv.symm_apply_eq, map_mul (MonoidHom.ofInjective _), MulEquiv.apply_symm_apply]
+  -- Both sides are the element `x α_e(c)` of `α_e(A_e)`, where `x` is the component of `g`
+  -- in `α_e(A_e)`; the product in the subgroup is the product of the underlying elements.
+  rfl
 
 /-- The representative of `g` lies in `α_e(A_e)` exactly when `g` does. -/
 theorem rep_mem_range_iff (g : 𝔸.vertexGroup a) :
     d.rep e g ∈ (𝔸.αArrow e).range ↔ g ∈ (𝔸.αArrow e).range := by
-  conv_rhs => rw [← d.rep_mul_αArrow_edgePart e g]
-  exact ((𝔸.αArrow e).range.mul_mem_cancel_right ⟨_, rfl⟩).symm
+  rw [← (𝔸.αArrow e).range.mul_mem_cancel_right ⟨d.edgePart e g, rfl⟩, rep_mul_αArrow_edgePart]
 
 end Transversal
 
@@ -320,10 +316,12 @@ theorem cancelDart_cons_reverse {b c : Γ.V} (q : 𝔸.AlternatingPath a c) (e :
   exact (MonoidHom.ofInjective (𝔸.αArrow_injective e)).symm_apply_apply c₀
 
 open scoped Classical in
-/-- Appending the dart `e` to `p` and normalizing at the new end for the transversal `d`: a
-backtracking `rev e, α_e(c), e` is deleted, and otherwise the last element `g` of `p` is written
-`g = s α_e(c)` with `s` in the transversal `d e`, and `p` becomes `…, s, e, ω_e(c)`. The earlier
-entries of `p` are not changed; when `p` is reduced and normalized, so is the result. -/
+/-- Appending the dart `e` to `p` and normalizing at the new end for the transversal `d`. If `p`
+ends with `rev e, α_e(c)`, the backtracking `rev e, α_e(c), e` is deleted: the last dart and
+element of `p` are removed and `ω_e(c)` is multiplied onto the new last element. Otherwise the last
+element `g` of `p` is written `g = s α_e(c)` with `s` in the transversal `d e`, `p` becomes
+`…, s, e, ω_e(c)`, and no other entry of `p` changes. When `p` is reduced and normalized, so is
+the result. -/
 noncomputable def appendDart {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c) :
     𝔸.AlternatingPath a c :=
   if h : p.Cancels e then p.cancelDart e h
