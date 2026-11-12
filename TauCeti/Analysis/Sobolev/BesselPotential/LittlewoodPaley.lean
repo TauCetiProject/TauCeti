@@ -9,9 +9,9 @@ public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
 import TauCeti.Analysis.Distribution.TemperedDistribution.BesselPotential
 import TauCeti.Analysis.Fourier.L2Multiplier
+import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The Littlewood–Paley characterization of `H^{s,2}`: `B^s_{2,2} = H^{s,2}`
@@ -38,19 +38,18 @@ specialize to `H^s`.
 ## The argument
 
 The order `0` case is Plancherel's theorem for the blocks. The blocks are `L²` Fourier
-multipliers by the pieces `ψⱼ` of the Littlewood–Paley partition, which take values in `[-1, 1]`
-and have disjoint supports when their indices differ by at least some `L`. Multipliers by real
-symbols with disjoint supports have orthogonal ranges, so the blocks are almost orthogonal, and
-`‖∑ⱼ gⱼ‖² ≤ L ∑ⱼ ‖gⱼ‖²` for almost orthogonal vectors
-(`TauCeti.norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero`).
+multipliers by the pieces `ψⱼ` of the Littlewood–Paley partition, which are real and have
+disjoint supports when their indices differ by at least some `L`.
 
-* If `f ∈ L²`, then `∑ ‖Δⱼ f‖² = Re ⟪f, ∑ Δⱼ Δⱼ f⟫ ≤ ‖f‖ (L ∑ ‖Δⱼ f‖²)^{1/2}`, so the blocks of
-  `f` are square summable.
+* If `f ∈ L²`, then the blocks of `f` are square summable by the `L²` Littlewood–Paley inequality
+  `∑ⱼ ‖Δⱼ f‖² ≤ L ‖f‖²` (`TauCeti.exists_sum_norm_fourierMultiplierCLM_sq_le`).
 * Conversely, if the blocks `gⱼ = Δⱼ v` of a tempered distribution are `L²` functions with
   `∑ ‖gⱼ‖² < ∞`, then `gⱼ` is unchanged by the enlarged cutoff `Ψⱼ`, which equals `1` on the
-  support of `ψⱼ` and vanishes on the support of `ψₖ` for `k` far from `j`. So the `gⱼ` are almost
-  orthogonal, the series `∑ gⱼ` converges in `L²`, and its sum is `v` by Littlewood–Paley
-  reconstruction in `𝓢'`.
+  support of `ψⱼ` and vanishes on the support of `ψₖ` for `k` far from `j`. The multiplier by the
+  real symbol `Ψⱼ` is self-adjoint, so the `gⱼ` are almost orthogonal, and
+  `‖∑ⱼ gⱼ‖² ≤ L ∑ⱼ ‖gⱼ‖²` for almost orthogonal vectors
+  (`TauCeti.norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero`). Hence the series `∑ gⱼ` converges
+  in `L²`, and its sum is `v` by Littlewood–Paley reconstruction in `𝓢'`.
 
 General orders reduce to order `0`: `J^s` commutes with the blocks, and on the `j`-th block it is
 the multiplier by the Schwartz symbol `(1 + ‖ξ‖²)^{s/2} Ψⱼ`, whose kernel has `L¹` norm `O(2^{js})`.
@@ -78,66 +77,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 namespace TemperedDistribution
 
-section Multiplier
-
-variable {u u₁ u₂ : E → ℝ} {m m₁ m₂ : Lp ℂ ∞ (volume : Measure E)}
-
-/-- The `L²` multiplier by a smooth compactly supported real symbol agrees, as a tempered
-distribution, with the multiplier on tempered distributions. -/
-private theorem toTemperedDistribution_fourierMultiplierCLM (hu : ContDiff ℝ (⊤ : ℕ∞) u)
-    (hs : HasCompactSupport u) (hm : m =ᵐ[volume] fun ξ ↦ (u ξ : ℂ))
-    (a : Lp F 2 (volume : Measure E)) :
-    (Lp.fourierMultiplierCLM F m a : 𝓢'(E, F)) =
-      fourierMultiplierCLM F (fun ξ ↦ (u ξ : ℂ)) (a : 𝓢'(E, F)) := by
-  have hc : HasCompactSupport fun ξ ↦ (u ξ : ℂ) := hs.comp_left Complex.ofReal_zero
-  have hd : ContDiff ℝ (⊤ : ℕ∞) fun ξ ↦ (u ξ : ℂ) := Complex.ofRealCLM.contDiff.comp hu
-  have hg' := hd.continuous.memLp_top_of_hasCompactSupport hc (volume : Measure E)
-  obtain rfl : m = hg'.toLp _ := Lp.ext (hm.trans hg'.coeFn_toLp.symm)
-  exact (Lp.fourierMultiplierCLM_toTemperedDistribution_eq a (hc.hasTemperateGrowth hd) hg').symm
-
-/-- A symbol that is almost everywhere real is self-adjoint in `L^∞`. -/
-private theorem star_eq_self_of_ae_eq (hm : m =ᵐ[volume] fun ξ ↦ (u ξ : ℂ)) : star m = m :=
-  Lp.ext <| by
-    filter_upwards [Lp.coeFn_star m, hm] with ξ h₁ h₂
-    rw [h₁, Pi.star_apply, h₂, Complex.star_def, Complex.conj_ofReal]
-
-/-- The `L²` multiplier by a real symbol is self-adjoint. -/
-private theorem inner_fourierMultiplierCLM_left (hm : m =ᵐ[volume] fun ξ ↦ (u ξ : ℂ))
-    (a b : Lp F 2 (volume : Measure E)) :
-    ⟪Lp.fourierMultiplierCLM F m a, b⟫_ℂ = ⟪a, Lp.fourierMultiplierCLM F m b⟫_ℂ :=
-  (Lp.isSelfAdjoint_fourierMultiplierCLM (star_eq_self_of_ae_eq hm)).isSymmetric a b
-
-/-- `L²` multipliers by real symbols with disjoint supports have orthogonal ranges. -/
-private theorem inner_fourierMultiplierCLM_eq_zero (hm₁ : m₁ =ᵐ[volume] fun ξ ↦ (u₁ ξ : ℂ))
-    (hm₂ : m₂ =ᵐ[volume] fun ξ ↦ (u₂ ξ : ℂ)) (h : ∀ ξ, u₁ ξ * u₂ ξ = 0)
-    (a b : Lp F 2 (volume : Measure E)) :
-    ⟪Lp.fourierMultiplierCLM F m₁ a, Lp.fourierMultiplierCLM F m₂ b⟫_ℂ = 0 := by
-  refine Lp.inner_fourierMultiplierCLM_fourierMultiplierCLM_eq_zero ?_ a b
-  rw [star_eq_self_of_ae_eq hm₁]
-  refine Lp.ext ?_
-  filter_upwards [Lp.coeFn_lpSMul (r := ∞) m₁ m₂, hm₁, hm₂,
-    Lp.coeFn_zero ℂ ∞ (volume : Measure E)] with ξ h₁ h₂ h₃ h₄
-  rw [h₁, Pi.smul_apply', h₂, h₃, h₄, smul_eq_mul, ← Complex.ofReal_mul, h, Complex.ofReal_zero,
-    Pi.zero_apply]
-
-end Multiplier
-
 variable (φ : ContDiffBump (0 : E))
-
-/-- Each piece `ψⱼ` of the Littlewood–Paley partition defines a symbol in `L^∞` of norm at most
-`1`. -/
-private theorem exists_ae_eq_inhomogeneousLittlewoodPaley_and_norm_le (j : ℕ) :
-    ∃ m : Lp ℂ ∞ (volume : Measure E),
-      m =ᵐ[volume] (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) ∧ ‖m‖ ≤ 1 := by
-  have hc : HasCompactSupport fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
-    (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_left Complex.ofReal_zero
-  have hm := (Complex.continuous_ofReal.comp
-    (φ.contDiff_inhomogeneousLittlewoodPaley j (n := 0)).continuous).memLp_top_of_hasCompactSupport
-      hc (volume : Measure E)
-  refine ⟨hm.toLp _, hm.coeFn_toLp, Lp.norm_top_le_of_ae_bound zero_le_one ?_⟩
-  filter_upwards [hm.coeFn_toLp] with ξ hξ
-  rw [hξ, Function.comp_apply, Complex.norm_real, Real.norm_eq_abs]
-  exact φ.abs_inhomogeneousLittlewoodPaley_le_one j ξ
 
 /-- **The Littlewood–Paley blocks of an `L²` function are square summable.** There is `C`,
 depending only on `φ`, such that the blocks `Δⱼ f` of every `f ∈ L²` are `L²` functions with
@@ -146,39 +86,14 @@ private theorem exists_sum_norm_sq_littlewoodPaleyBlock_le :
     ∃ C : ℝ, ∀ f : Lp F 2 (volume : Measure E), ∃ g : ℕ → Lp F 2 (volume : Measure E),
       (∀ j, littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = g j) ∧
         ∀ t : Finset ℕ, ∑ j ∈ t, ‖g j‖ ^ 2 ≤ C * ‖f‖ ^ 2 := by
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
-  choose m hm hm1 using exists_ae_eq_inhomogeneousLittlewoodPaley_and_norm_le φ
-  set T : ℕ → Lp F 2 (volume : Measure E) →L[ℂ] Lp F 2 (volume : Measure E) :=
-    fun j ↦ Lp.fourierMultiplierCLM F (m j)
-  refine ⟨L, fun f ↦ ⟨fun j ↦ T j f, fun j ↦ ?_, fun t ↦ ?_⟩⟩
-  · rw [littlewoodPaleyBlock_apply]
-    exact (toTemperedDistribution_fourierMultiplierCLM (φ.contDiff_inhomogeneousLittlewoodPaley j)
-      (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j) (hm j) f).symm
-  -- With `gⱼ = Δⱼ f`, `∑ ‖gⱼ‖² = Re ⟪f, ∑ Δⱼ gⱼ⟫`, and the vectors `Δⱼ gⱼ` are almost orthogonal.
-  set A := ∑ j ∈ t, ‖T j f‖ ^ 2
-  set S := ‖∑ j ∈ t, T j (T j f)‖
-  have hA : A = RCLike.re ⟪f, ∑ j ∈ t, T j (T j f)⟫_ℂ := by
-    rw [inner_sum, map_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← inner_fourierMultiplierCLM_left (hm j), ← norm_sq_eq_re_inner (𝕜 := ℂ)]
-  have hS : S ^ 2 ≤ L * A := by
-    refine (TauCeti.norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero (fun i k hik ↦
-      inner_fourierMultiplierCLM_eq_zero (hm i) (hm k) (hL i k hik) _ _) t).trans ?_
-    refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun j _ ↦ ?_) (Nat.cast_nonneg L)
-    exact pow_le_pow_left₀ (norm_nonneg _) ((Lp.norm_fourierMultiplierCLM_apply_le _ _).trans
-      (mul_le_of_le_one_left (norm_nonneg _) (hm1 j))) 2
-  have hAS : A ≤ ‖f‖ * S := hA ▸ re_inner_le_norm _ _
-  have hA0 : 0 ≤ A := Finset.sum_nonneg fun j _ ↦ by positivity
-  -- `A² ≤ ‖f‖² S² ≤ ‖f‖² L A`, so `A ≤ L ‖f‖²`.
-  have h : A * A ≤ (L * ‖f‖ ^ 2) * A := by
-    calc A * A ≤ (‖f‖ * S) * (‖f‖ * S) := mul_self_le_mul_self hA0 hAS
-      _ = ‖f‖ ^ 2 * S ^ 2 := by ring
-      _ ≤ ‖f‖ ^ 2 * (L * A) := by gcongr
-      _ = (L * ‖f‖ ^ 2) * A := by ring
-  rcases hA0.eq_or_lt with h0 | h0
-  · rw [← h0]
-    positivity
-  · exact le_of_mul_le_mul_right h h0
+  obtain ⟨C, -, hC⟩ := TauCeti.exists_sum_norm_fourierMultiplierCLM_sq_le (F := F) φ
+  choose m hm using fun j ↦ Lp.exists_ae_eq_ofReal_of_hasCompactSupport
+    (φ.contDiff_inhomogeneousLittlewoodPaley j (n := 0)).continuous
+    (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j)
+  refine ⟨C, fun f ↦ ⟨fun j ↦ Lp.fourierMultiplierCLM F (m j) f, fun j ↦ ?_, hC m hm f⟩⟩
+  rw [littlewoodPaleyBlock_apply]
+  exact Lp.fourierMultiplierCLM_toTemperedDistribution_eq_of_ae_eq f
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) (hm j)
 
 /-- **Almost orthogonality of `L²` blocks.** There is `L`, depending only on `φ`, such that if the
 blocks `Δᵢ v` and `Δₖ v` of a tempered distribution `v` are `L²` functions `gᵢ` and `gₖ`, then
@@ -197,25 +112,25 @@ private theorem exists_inner_eq_zero_of_littlewoodPaleyBlock_eq :
     intro i k hik ξ
     rw [φ.enlargedLittlewoodPaley_apply, Finset.sum_mul]
     exact Finset.sum_eq_zero fun l hl ↦ hL l k (by rw [Finset.mem_Ico] at hl; omega) ξ
-  have hc : ∀ i, HasCompactSupport fun ξ ↦ (φ.enlargedLittlewoodPaley L i ξ : ℂ) := fun i ↦
-    (φ.hasCompactSupport_enlargedLittlewoodPaley L i).comp_left Complex.ofReal_zero
-  have hM : ∀ i, ∃ M : Lp ℂ ∞ (volume : Measure E),
-      M =ᵐ[volume] fun ξ ↦ (φ.enlargedLittlewoodPaley L i ξ : ℂ) := fun i ↦
-    ⟨_, ((Complex.continuous_ofReal.comp (φ.contDiff_enlargedLittlewoodPaley L i
-      (n := 0)).continuous).memLp_top_of_hasCompactSupport (hc i) volume).coeFn_toLp⟩
-  choose M hM using hM
+  have hgrowth : ∀ i, (fun ξ ↦ (φ.enlargedLittlewoodPaley L i ξ : ℂ)).HasTemperateGrowth :=
+    fun i ↦ ((φ.hasCompactSupport_enlargedLittlewoodPaley L i).comp_left
+      Complex.ofReal_zero).hasTemperateGrowth
+        (Complex.ofRealCLM.contDiff.comp (φ.contDiff_enlargedLittlewoodPaley L i))
+  choose M hM using fun i ↦ Lp.exists_ae_eq_ofReal_of_hasCompactSupport
+    (φ.contDiff_enlargedLittlewoodPaley L i (n := 0)).continuous
+    (φ.hasCompactSupport_enlargedLittlewoodPaley L i)
   set T : ℕ → Lp F 2 (volume : Measure E) →L[ℂ] Lp F 2 (volume : Measure E) :=
     fun i ↦ Lp.fourierMultiplierCLM F (M i)
+  -- `Ψᵢ` is real, so `T i` is self-adjoint.
+  have hTs : ∀ i, IsSelfAdjoint (T i) := fun i ↦
+    Lp.isSelfAdjoint_fourierMultiplierCLM (Lp.star_eq_self_of_ae_eq_ofReal (hM i))
   -- `Ψᵢ gₖ` is the multiplier by `ψₖ Ψᵢ` applied to `v`.
   have hT : ∀ i k, (T i (g k) : 𝓢'(E, F)) = fourierMultiplierCLM F (fun ξ ↦
       ((φ.inhomogeneousLittlewoodPaley k ξ * φ.enlargedLittlewoodPaley L i ξ : ℝ) : ℂ)) v := by
     intro i k
-    rw [toTemperedDistribution_fourierMultiplierCLM (φ.contDiff_enlargedLittlewoodPaley L i)
-      (φ.hasCompactSupport_enlargedLittlewoodPaley L i) (hM i), ← hg, littlewoodPaleyBlock_apply,
-      fourierMultiplierCLM_fourierMultiplierCLM_apply
-        (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k)
-        ((hc i).hasTemperateGrowth
-          (Complex.ofRealCLM.contDiff.comp (φ.contDiff_enlargedLittlewoodPaley L i)))]
+    rw [← Lp.fourierMultiplierCLM_toTemperedDistribution_eq_of_ae_eq _ (hgrowth i) (hM i), ← hg,
+      littlewoodPaleyBlock_apply, fourierMultiplierCLM_fourierMultiplierCLM_apply
+        (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k) (hgrowth i)]
     congr 2
     funext ξ
     simp
@@ -229,7 +144,8 @@ private theorem exists_inner_eq_zero_of_littlewoodPaleyBlock_eq :
       Lp.toTemperedDistribution_zero]
     simp [fourierMultiplierCLM_const]
   intro i k hik
-  rw [← hTg i, inner_fourierMultiplierCLM_left (hM i), hT0 i k hik, inner_zero_right]
+  rw [← hTg i, ← (hTs i).adjoint_eq, ContinuousLinearMap.adjoint_inner_left, hT0 i k hik,
+    inner_zero_right]
 
 /-- **A tempered distribution with square-summable `L²` blocks is an `L²` function.** There is
 `C`, depending only on `φ`, such that if every block `Δⱼ v` of `v ∈ 𝓢'` is an `L²` function `gⱼ`

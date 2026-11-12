@@ -42,13 +42,16 @@ defined, it agrees with Mathlib's multipliers.
   T_{m₁ m₂}`, with linearity in the symbol and `T_c = c • id` for a constant symbol.
 * `MeasureTheory.Lp.adjoint_fourierMultiplierCLM`: the adjoint of `T_m` is `T_{star m}`, so a
   real symbol gives a self-adjoint multiplier
-  (`MeasureTheory.Lp.isSelfAdjoint_fourierMultiplierCLM`), and multipliers whose symbols have
-  disjoint supports have orthogonal ranges
-  (`MeasureTheory.Lp.inner_fourierMultiplierCLM_fourierMultiplierCLM_eq_zero`).
+  (`MeasureTheory.Lp.isSelfAdjoint_fourierMultiplierCLM`). A symbol that is almost everywhere
+  real is fixed by `star` (`MeasureTheory.Lp.star_eq_self_of_ae_eq_ofReal`), and a continuous
+  compactly supported real function is almost everywhere a symbol in `L^∞`
+  (`MeasureTheory.Lp.exists_ae_eq_ofReal_of_hasCompactSupport`).
 * `SchwartzMap.toLp_fourierMultiplierCLM_eq` and
   `MeasureTheory.Lp.fourierMultiplierCLM_toTemperedDistribution_eq`: for a bounded symbol of
   temperate growth, `T_m` agrees with Mathlib's multipliers on Schwartz functions and, as a
-  tempered distribution, on every `f ∈ L²`.
+  tempered distribution, on every `f ∈ L²`. The same holds for any `m ∈ L^∞` almost everywhere
+  equal to a function of temperate growth
+  (`MeasureTheory.Lp.fourierMultiplierCLM_toTemperedDistribution_eq_of_ae_eq`).
 * `SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul`: for any bounded symbol `m`, a
   Schwartz function `g` with `𝓕 g = m • 𝓕 f` is `T_m f` in `L²`.
 * `SchwartzMap.coeFn_fourierMultiplierCLM_toLp`: for a Schwartz symbol `σ`, `T_σ` is
@@ -200,15 +203,21 @@ theorem isSelfAdjoint_fourierMultiplierCLM (hm : star m = m) :
     IsSelfAdjoint (fourierMultiplierCLM (E := E) F m) := by
   rw [ContinuousLinearMap.isSelfAdjoint_iff', adjoint_fourierMultiplierCLM, hm]
 
-variable {m₁ m₂} in
-/-- Multipliers whose symbols have disjoint supports have orthogonal ranges: if
-`star m₁ • m₂ = 0`, then `⟪T_{m₁} f, T_{m₂} g⟫ = 0`. -/
-theorem inner_fourierMultiplierCLM_fourierMultiplierCLM_eq_zero
-    (h : (star m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) = 0) (f g : Lp F 2 (volume : Measure E)) :
-    ⟪fourierMultiplierCLM F m₁ f, fourierMultiplierCLM F m₂ g⟫ = 0 := by
-  rw [← adjoint_inner_right, adjoint_fourierMultiplierCLM,
-    fourierMultiplierCLM_fourierMultiplierCLM_apply, h, fourierMultiplierCLM_zero, zero_apply,
-    inner_zero_right]
+variable {m} in
+/-- A symbol that is almost everywhere equal to a real function is real: `star m = m`. -/
+theorem star_eq_self_of_ae_eq_ofReal {u : E → ℝ} (hm : m =ᵐ[volume] fun ξ ↦ (u ξ : ℂ)) :
+    star m = m :=
+  Lp.ext <| by
+    filter_upwards [Lp.coeFn_star m, hm] with ξ h₁ h₂
+    simp [h₁, h₂]
+
+/-- A continuous compactly supported real function is almost everywhere equal to a symbol in
+`L^∞`. -/
+theorem exists_ae_eq_ofReal_of_hasCompactSupport {u : E → ℝ} (hu : Continuous u)
+    (hs : HasCompactSupport u) :
+    ∃ m : Lp ℂ ∞ (volume : Measure E), m =ᵐ[volume] fun ξ ↦ (u ξ : ℂ) :=
+  ⟨_, ((Complex.continuous_ofReal.comp hu).memLp_top_of_hasCompactSupport
+    (hs.comp_left Complex.ofReal_zero) volume).coeFn_toLp⟩
 
 /-- The pairing of `g` with the multiplier `T_m f`, computed on the Fourier side:
 `⟪g, T_m f⟫ = ∫ m ξ ⟪𝓕 g ξ, 𝓕 f ξ⟫ dξ`. -/
@@ -269,6 +278,18 @@ theorem fourierMultiplierCLM_toTemperedDistribution_eq (hg : g.HasTemperateGrowt
       (toTemperedDistributionCLM F volume 2 ∘L fourierMultiplierCLM F (hg'.toLp g)).cont
   · simp [SchwartzMap.toLp_fourierMultiplierCLM_eq hg hg',
       TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq hg]
+
+variable {m} in
+/-- The `L²` multiplier with symbol `m` agrees, as a tempered distribution, with the multiplier
+`TemperedDistribution.fourierMultiplierCLM F g` whenever `m` is almost everywhere equal to a
+function `g` of temperate growth. -/
+theorem fourierMultiplierCLM_toTemperedDistribution_eq_of_ae_eq (hg : g.HasTemperateGrowth)
+    (hm : m =ᵐ[volume] g) :
+    TemperedDistribution.fourierMultiplierCLM F g (f : 𝓢'(E, F)) =
+      (fourierMultiplierCLM F m f : 𝓢'(E, F)) := by
+  have hg' : MemLp g ∞ := (Lp.memLp m).ae_eq hm
+  obtain rfl : m = hg'.toLp g := Lp.ext (hm.trans hg'.coeFn_toLp.symm)
+  exact fourierMultiplierCLM_toTemperedDistribution_eq f hg hg'
 
 /-! ### Schwartz symbols and convolution kernels -/
 
