@@ -288,7 +288,7 @@ theorem mem_totallyRamifiedOfDegree_iff_exists_eisenstein_generator {n : ℕ}
       ∃ (f : 𝒪[K][X]) (x : SeparableClosure K), f.Monic ∧ f.IsEisensteinAt 𝓂[K] ∧
         f.natDegree = n ∧ aeval x (f.map (algebraMap 𝒪[K] K)) = 0 ∧ K⟮x⟯ = L := by
   refine ⟨exists_eisenstein_generator_of_mem_totallyRamifiedOfDegree, ?_⟩
-  rintro ⟨f, x, hmonic, hf, hdeg, hx, rfl⟩
+  rintro ⟨f, x, _, hf, hdeg, hx, rfl⟩
   exact adjoin_mem_totallyRamifiedOfDegree_of_eisenstein hf hdeg hx
 
 /-- The image of any embedding of a counted extension into the separable closure is again
@@ -297,7 +297,7 @@ theorem _root_.AlgHom.fieldRange_mem_totallyRamifiedOfDegree {n : ℕ}
     {L : IntermediateField K (SeparableClosure K)} (φ : L →ₐ[K] SeparableClosure K)
     (hL : L ∈ totallyRamifiedOfDegree K n) :
     φ.fieldRange ∈ totallyRamifiedOfDegree K n := by
-  obtain ⟨f, x, hmonic, hf, hdeg, hx, hgen⟩ :=
+  obtain ⟨f, x, _, hf, hdeg, hx, hgen⟩ :=
     exists_eisenstein_generator_of_mem_totallyRamifiedOfDegree hL
   let y : L := ⟨x, hgen ▸ IntermediateField.mem_adjoin_simple_self K x⟩
   have hy : aeval y (f.map (algebraMap 𝒪[K] K)) = 0 := by

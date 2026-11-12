@@ -254,7 +254,7 @@ theorem dynkinBlockSum_sub {V : Type*} [AddCommGroup V] [Module K V]
     simp only [dynkinBlockSum, ih, smul_sub]
     rw [← Finset.sum_sub_distrib]
     apply Finset.sum_congr rfl
-    intro p hp
+    intro p _
     split_ifs <;> simp only [sub_self, Finset.sum_sub_distrib]
 
 /-- The block sum depends only on word values at its prescribed length. -/
@@ -299,7 +299,7 @@ theorem dynkinTerm_smul (n : ℕ) (t : K) (x y : L) :
   unfold dynkinTerm
   rw [Finset.smul_sum]
   apply Finset.sum_congr rfl
-  intro k hk
+  intro k _
   have h := dynkinBlockSum_congr K k n (dynkinWordBracket (t • x) (t • y))
     (fun w => t ^ n • dynkinWordBracket x y w) (by
       intro w hw
@@ -333,7 +333,7 @@ theorem dynkinTerm_of_lie_eq_zero (n : ℕ) (x y : L) (hxy : ⁅x, y⁆ = 0) :
     simp
   rw [ite_eq_right hn, dynkinTerm]
   apply Finset.sum_eq_zero
-  intro k hk
+  intro k _
   have h := dynkinBlockSum_eq_zero_of_forall K k n (dynkinWordBracket x y) (by
     intro w hw
     exact dynkinWordBracket_eq_zero_of_lie_eq_zero x y hxy w (by omega))
@@ -380,7 +380,7 @@ theorem dynkinPolynomial_mem_homogeneousSubmodule (n : ℕ) :
     dynkinPolynomial K n ∈ FreeLieAlgebra.homogeneousSubmodule K Bool n := by
   unfold dynkinPolynomial dynkinTerm
   apply Submodule.sum_mem
-  intro k hk
+  intro k _
   apply Submodule.smul_mem
   apply dynkinBlockSum_mem
   intro w hw
