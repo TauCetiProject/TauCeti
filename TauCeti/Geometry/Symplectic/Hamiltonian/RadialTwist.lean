@@ -117,6 +117,14 @@ theorem hasCompactSupport_radialHamiltonian {G : ℝ → ℝ} {R : ℝ} (hG : �
   have hR := (Real.sqrt_lt' ((Real.sqrt_nonneg R).trans_lt hw')).1 hw'
   simp [radialHamiltonian_apply, hG _ hR.le]
 
+/-- A profile vanishing on `[R, ∞)` gives a radial Hamiltonian vanishing near every point at
+distance more than `√R` from `p`. -/
+theorem radialHamiltonian_eventuallyEq_zero {G : ℝ → ℝ} {R : ℝ} (hG : ∀ s, R ≤ s → G s = 0)
+    {p w : ℂ} (hw : R < ‖w - p‖ ^ 2) : radialHamiltonian G p =ᶠ[𝓝 w] 0 := by
+  filter_upwards [(isOpen_lt continuous_const
+    (by fun_prop : Continuous fun z : ℂ ↦ ‖z - p‖ ^ 2)).mem_nhds hw] with z hz
+  simp [hG _ hz.le]
+
 /-- The derivative of the radial Hamiltonian: `dH(w) v = -G'(‖w - p‖²) ⟪w - p, v⟫`. -/
 theorem hasFDerivAt_radialHamiltonian {G : ℝ → ℝ} {g : ℝ} {p w : ℂ}
     (hG : HasDerivAt G g (‖w - p‖ ^ 2)) :
@@ -169,6 +177,16 @@ theorem hamiltonianFlow_radialHamiltonian {G : ℝ → ℝ} {p : ℂ} {K : NNRea
   rw [h0] at h
   rw [SymplecticForm.hamiltonianFlow_eq]
   exact h.symm
+
+/-- The orbit of `w` under the flow of a radial Hamiltonian stays on the circle through `w` about
+`p`. -/
+theorem norm_hamiltonianFlow_radialHamiltonian_sub_center {G : ℝ → ℝ} {p : ℂ} {K : NNReal}
+    (hX : LipschitzWith K
+      (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian G p)))
+    {w : ℂ} (hG : DifferentiableAt ℝ G (‖w - p‖ ^ 2)) (t : ℝ) :
+    ‖stdComplexSymplecticForm.hamiltonianFlow (radialHamiltonian G p) hX t w - p‖ = ‖w - p‖ := by
+  rw [hamiltonianFlow_radialHamiltonian hX hG, add_sub_cancel_left, norm_mul,
+    norm_exp_I_mul_ofReal, one_mul]
 
 /-- The centre is a fixed point of every time map. -/
 @[simp]
@@ -299,10 +317,9 @@ theorem sum_radialHamiltonian_eventuallyEq (hGR : ∀ j ∈ s, ∀ x, R ≤ x �
     nlinarith [hp hi hj hji.symm, norm_nonneg (y - p i), norm_nonneg (y - p j),
       mul_self_le_mul_self (norm_nonneg _) htri, sq_nonneg (‖y - p i‖ - ‖y - p j‖)]
   filter_upwards [(Filter.eventually_all_finset s).2 fun j hj ↦ (Filter.eventually_imp_distrib_left
-    (p := j ≠ i)).2 fun hji ↦ (isOpen_lt continuous_const
-      (by fun_prop : Continuous fun w : ℂ ↦ ‖w - p j‖ ^ 2)).mem_nhds (hfar j hj hji)] with w hw
-  refine Finset.sum_eq_single_of_mem i hi fun j hj hji ↦ ?_
-  simp [hGR j hj _ (hw j hj hji).le]
+    (p := j ≠ i)).2 fun hji ↦ radialHamiltonian_eventuallyEq_zero (hGR j hj) (hfar j hj hji)]
+    with w hw
+  exact Finset.sum_eq_single_of_mem i hi fun j hj hji ↦ hw j hj hji
 
 /-- **The flow of a sum of disjoint radial twists.** If the profiles vanish on `[R, ∞)` and the
 centres are more than `2 √R` apart, then on the closed disc of radius `√R` about `p i` the flow
@@ -321,8 +338,24 @@ theorem hamiltonianFlow_sum_radialHamiltonian {K K' : NNReal}
   refine stdComplexSymplecticForm.hamiltonianFlow_apply_eq_of_eventuallyEq _ hX hXi
     fun τ _ ↦ sum_radialHamiltonian_eventuallyEq hGR hp hi ?_
   -- The orbit of the `i`-th twist stays on the circle through `w`.
-  rwa [hamiltonianFlow_radialHamiltonian hXi hG, add_sub_cancel_left, norm_mul,
-    norm_exp_I_mul_ofReal, one_mul]
+  rwa [norm_hamiltonianFlow_radialHamiltonian_sub_center hXi hG]
+
+/-- **A sum of radial twists is the identity outside their discs.** If the profiles vanish on
+`[R, ∞)`, the flow of the sum is the identity near every point at distance more than `√R` from
+all the centres. -/
+theorem hamiltonianFlow_sum_radialHamiltonian_eventuallyEq_id {K : NNReal}
+    (hX : LipschitzWith K (stdComplexSymplecticForm.hamiltonianVectorField
+      fun w ↦ ∑ j ∈ s, radialHamiltonian (G j) (p j) w))
+    (hGR : ∀ j ∈ s, ∀ x, R ≤ x → G j x = 0) {w : ℂ} (hw : ∀ j ∈ s, R < ‖w - p j‖ ^ 2)
+    (t : ℝ) : stdComplexSymplecticForm.hamiltonianFlow _ hX t =ᶠ[𝓝 w] id := by
+  -- The sum vanishes near `w`, so every point near `w` is a critical point.
+  have h : (fun w ↦ ∑ j ∈ s, radialHamiltonian (G j) (p j) w) =ᶠ[𝓝 w] fun _ ↦ 0 := by
+    filter_upwards [(Filter.eventually_all_finset s).2 fun j hj ↦
+      radialHamiltonian_eventuallyEq_zero (hGR j hj) (hw j hj)] with z hz
+    exact Finset.sum_eq_zero hz
+  filter_upwards [h.eventuallyEq_nhds] with z hz
+  refine (stdComplexSymplecticForm.forall_hamiltonianFlow_apply_eq_self_iff _ hX z).2 ?_ t
+  rw [hz.fderiv_eq, fderiv_const_apply]
 
 /-- **A sum of radial twists fixes the points outside their discs.** If the profiles vanish on
 `[R, ∞)`, every point at distance more than `√R` from all the centres is fixed by the flow of the
@@ -331,14 +364,8 @@ theorem hamiltonianFlow_sum_radialHamiltonian_eq_self {K : NNReal}
     (hX : LipschitzWith K (stdComplexSymplecticForm.hamiltonianVectorField
       fun w ↦ ∑ j ∈ s, radialHamiltonian (G j) (p j) w))
     (hGR : ∀ j ∈ s, ∀ x, R ≤ x → G j x = 0) {w : ℂ} (hw : ∀ j ∈ s, R < ‖w - p j‖ ^ 2)
-    (t : ℝ) : stdComplexSymplecticForm.hamiltonianFlow _ hX t w = w := by
-  refine (stdComplexSymplecticForm.forall_hamiltonianFlow_apply_eq_self_iff _ hX w).2 ?_ t
-  -- The sum vanishes near `w`, so `w` is a critical point.
-  have h : (fun w ↦ ∑ j ∈ s, radialHamiltonian (G j) (p j) w) =ᶠ[𝓝 w] fun _ ↦ 0 := by
-    filter_upwards [(Filter.eventually_all_finset s).2 fun j hj ↦ (isOpen_lt continuous_const
-      (by fun_prop : Continuous fun z : ℂ ↦ ‖z - p j‖ ^ 2)).mem_nhds (hw j hj)] with z hz
-    exact Finset.sum_eq_zero fun j hj ↦ by simp [hGR j hj _ (hz j hj).le]
-  rw [h.fderiv_eq, fderiv_const_apply]
+    (t : ℝ) : stdComplexSymplecticForm.hamiltonianFlow _ hX t w = w :=
+  (hamiltonianFlow_sum_radialHamiltonian_eventuallyEq_id hX hGR hw t).eq_of_nhds
 
 end Sum
 

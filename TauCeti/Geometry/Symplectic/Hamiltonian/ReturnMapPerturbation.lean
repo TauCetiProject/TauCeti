@@ -25,9 +25,9 @@ Taubes's count of pseudoholomorphic curves in the product of a circle with the m
 This file shows that the condition can always be reached, simultaneously for finitely many
 periodic orbits, by an arbitrarily small Hamiltonian perturbation localized near one point of each
 orbit (`TauCeti.exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero_of_finite`). Let `p i` be
-finitely many periodic points and take `r > 0` such that the disc of radius `r` about each `p i`
-contains no point of the orbits other than `p i`. There is a smooth compactly supported
-Hamiltonian `H` whose time-one map `ψ`
+finitely many periodic points on pairwise distinct orbits and take `r > 0` such that the disc of
+radius `r` about each `p i` contains no point of these orbits other than `p i` itself. There is a
+smooth compactly supported Hamiltonian `H` whose time-one map `ψ`
 
 * fixes every `p i` and every point outside the discs, so that the orbits are unchanged and so is
   `φ` near their other points;
@@ -44,7 +44,7 @@ The Hamiltonian is a sum of radial twists `w ↦ -θ i G(‖w - p i‖²) / 2`
 vanishing on `[r² / 9, ∞)` (`TauCeti.exists_contDiff_cutoff_id`). Their supports are disjoint, so
 the time-one map of the sum is the rotation by the angle `θ i` near `p i` and the identity near the
 other orbit points (`TauCeti.exists_hamiltonianFlow_eventuallyEq_rotation`). The linearized return
-map of `φ ∘ ψ` at `p i` is therefore `A i` composed with multiplication by `exp (θ i i)`
+map of `φ ∘ ψ` at `p i` is therefore `A i` composed with multiplication by `exp (I * θ i)`
 (`HasFDerivAt.iterate_comp_of_eventuallyEq_id`). For each orbit only countably many angles make
 some power of that map degenerate
 (`LinearMap.countable_setOf_exists_det_one_sub_pow_mul_lmul_exp_eq_zero`), and the angles of
@@ -148,10 +148,8 @@ theorem exists_hamiltonianFlow_eventuallyEq_rotation {ι : Type*} [Finite ι] {p
     rw [hamiltonianFlow_sum_radialHamiltonian hX (fun j _ ↦ hGR j) hsep (Finset.mem_univ i)
       (hXi i) (hGdiff i _) hw.le, hw', one_mul]
   · -- Away from the discs the time-one map is the identity.
-    filter_upwards [(Filter.eventually_all.2 fun i ↦ (isOpen_lt continuous_const
-      (by fun_prop : Continuous fun z : ℂ ↦ ‖z - p i‖ ^ 2)).mem_nhds
-        (by nlinarith [hw i] : r ^ 2 / 9 < ‖w - p i‖ ^ 2))] with z hz
-    exact hamiltonianFlow_sum_radialHamiltonian_eq_self hX (fun j _ ↦ hGR j) (fun j _ ↦ hz j) 1
+    exact hamiltonianFlow_sum_radialHamiltonian_eventuallyEq_id hX (fun j _ ↦ hGR j)
+      (fun j _ ↦ by nlinarith [hw j]) 1
   · -- Points of the disc about `p i` turn through an angle at most `|θ i| C`.
     by_cases h : ∃ i, ‖w - p i‖ ^ 2 ≤ r ^ 2 / 9
     · obtain ⟨i, hi⟩ := h
@@ -171,14 +169,15 @@ theorem exists_hamiltonianFlow_eventuallyEq_rotation {ι : Type*} [Finite ι] {p
       exact mul_nonneg (mul_nonneg hC0 hD) hr.le
 
 /-- **Localized Hamiltonian twists make finitely many periodic orbits nondegenerate in all
-iterates.** Let `p i` be finitely many periodic points, of periods `k i > 0`, of a map `φ` of the
-plane, continuous along their orbits, whose linearized return maps `A i` have determinant one. Let
-`r > 0` be at most the distance from each `p i` to every point of the orbits other than `p i`
-itself. For every `ε > 0` there is a smooth compactly supported Hamiltonian `H` whose time-one map
-`ψ` fixes every `p i` and every point at distance at least `r` from all the `p i`, moves no point
-by more than `ε`, and makes each `p i` a periodic point of `φ ∘ ψ` of period `k i` whose linearized
-return map `B` has `det (1 - B ^ n) ≠ 0` for every `n ≠ 0`. The conclusions hold for every
-Lipschitz constant of the Hamiltonian vector field, one of which exists.
+iterates.** Let `p i` be finitely many periodic points on pairwise distinct orbits, of periods
+`k i > 0`, of a map `φ` of the plane, continuous along their orbits, whose linearized return maps
+`A i` have determinant one. Let `r > 0` be at most the distance from each `p i` to every other
+point of its own orbit and to every point of the other orbits. For every `ε > 0` there is a smooth
+compactly supported Hamiltonian `H` whose time-one map `ψ` fixes every `p i` and every point at
+distance at least `r` from all the `p i`, moves no point by more than `ε`, and makes each `p i` a
+periodic point of `φ ∘ ψ` of period `k i` whose linearized return map `B` has
+`det (1 - B ^ n) ≠ 0` for every `n ≠ 0`. The conclusions hold for every Lipschitz constant of the
+Hamiltonian vector field, one of which exists.
 
 Since `ψ` is the identity near the points of the orbits other than the `p i`, the orbits of `φ`
 are orbits of `φ ∘ ψ`. Points of other periodic orbits of `φ` within `r` of some `p i` may be
@@ -228,7 +227,7 @@ theorem exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero_of_finite {ι : Ty
       _ = ε := one_mul ε
   · rw [(Function.iterate_comp_eventuallyEq_of_eventuallyEq_id (hk i) (hψp i)
       (hψ' i).continuousAt (hφ i) (hidorb i)).eq_of_nhds, Function.comp_apply, hψp, hp]
-  · -- The return map `A i ∘ exp (θ i i)` is nondegenerate in all iterates by the choice of `θ i`.
+  · -- The return map `A i ∘ exp (I * θ i)` is nondegenerate in all iterates by the choice of `θ i`.
     have hcoe : ((A i).comp (exp (I * θ i) • ContinuousLinearMap.id ℝ ℂ) : ℂ →ₗ[ℝ] ℂ) =
         (A i : ℂ →ₗ[ℝ] ℂ) * Algebra.lmul ℝ ℂ (exp (θ i * I)) := by
       ext v
