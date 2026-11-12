@@ -125,8 +125,9 @@ theorem orbit_stabilizerChain_eq_image_of_siftCheck {gens : List G}
     (hgens : gens.all (TauCeti.sift b T 0 k 1) = true)
     (hsift : ∀ i < k, TauCeti.siftCheck b T k i = true) {i : ℕ} (hi : i < k) :
     orbit (H.stabilizerChain b i) (b i) = (· • b i) '' {r | r ∈ T i} :=
-  let ⟨h₁, h₂, h₃, h₄, h₅⟩ := hypotheses_of_siftCheck hT hH htrans hgens hsift
-  orbit_stabilizerChain_eq_image_of_sift h₁ h₂ h₃ h₄ h₅ hi
+  let ⟨h₁, h₂, h₃, h₅⟩ := hypotheses_of_siftCheck hT htrans hsift
+  orbit_stabilizerChain_eq_image_of_sift h₁ h₂ h₃
+    (hH.trans (closure_le_closure_of_sift hgens)) h₅ hi
 
 /-- The structured sifting hypotheses certify exact subgroup membership, without assuming
 completeness of the listed transversals or triviality of the terminal stabilizer in advance. -/
@@ -148,7 +149,7 @@ theorem sift_eq_true_iff_mem_of_siftCheck {gens : List G}
     (hgens : gens.all (TauCeti.sift b T 0 k 1) = true)
     (hsift : ∀ i < k, TauCeti.siftCheck b T k i = true) (g : G) :
     TauCeti.sift b T 0 k 1 g = true ↔ g ∈ H :=
-  let ⟨h₁, h₂, h₃, h₄, h₅⟩ := hypotheses_of_siftCheck hT hH htrans hgens hsift
-  sift_eq_true_iff_mem_of_sift h₁ h₂ h₃ h₄ h₅ g
+  let ⟨h₁, h₂, h₃, h₅⟩ := hypotheses_of_siftCheck hT htrans hsift
+  sift_eq_true_iff_mem_of_sift h₁ h₂ h₃ (hH.trans (closure_le_closure_of_sift hgens)) h₅ g
 
 end Subgroup

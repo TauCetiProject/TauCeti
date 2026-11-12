@@ -83,14 +83,13 @@ Equalities of the automorphisms themselves are proved with `TauCeti.serre_equiv_
 equivalence-level extensionality principle of the presentation, so that no proof here has to
 descend to the underlying homomorphisms by hand.
 
-## Roadmap
+## Applications
 
-Both automorphisms are prerequisites for the pinned Chevalley--Demazure group schemes, Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, which asks for the split reductive group scheme over
-`ℤ` to be built "via a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra". The
-Serre presentation of `TauCeti/Algebra/Lie/Presentation/Serre.lean` is the explicit carrier of the
-Lie algebra that construction starts from, and the two automorphisms are the two symmetries of it
-that construction uses.
+Both automorphisms are inputs to the pinned Chevalley--Demazure group schemes, the split reductive
+group schemes over `ℤ` built via a Chevalley basis and the Kostant `ℤ`-form of the enveloping
+algebra. The Serre presentation of `TauCeti/Algebra/Lie/Presentation/Serre.lean` is the explicit
+carrier of the Lie algebra that construction starts from, and the two automorphisms are the two
+symmetries of it that construction uses.
 
 The Chevalley involution is the immediate one: the classical normalisation of a Chevalley basis
 picks the root vectors `x α` and `x (-α)` compatibly by transporting them along an automorphism
@@ -107,9 +106,9 @@ semisimple Lie algebra identified with the presentation.
 The diagram automorphisms are the second: a pinning is what makes "the" graph automorphism well
 defined, and on the Chevalley--Demazure side the graph automorphism of the group scheme is obtained
 by descending the one that permutes the divided powers of the generators in the Kostant `ℤ`-form,
-which is `TauCeti.serreDiagramAut` on the underlying Lie algebra. Consumed in turn by milestone L0
-of `TauCetiRoadmap/CFSGStatement/README.md`, whose twisted groups of Lie type are the fixed points
-of a Steinberg endomorphism built from a graph automorphism of the ambient pinned group.
+which is `TauCeti.serreDiagramAut` on the underlying Lie algebra. The twisted groups of Lie type
+are the fixed points of a Steinberg endomorphism built from such a graph automorphism of the
+ambient pinned group.
 
 ## References
 
@@ -146,8 +145,7 @@ algebra. -/
 private theorem serreDiagramHom_comp (hσ : CM.submatrix σ σ = CM) (hτ : CM.submatrix τ τ = CM)
     (hστ : ∀ i, τ (σ i) = i) :
     (serreDiagramHom R CM hτ).comp (serreDiagramHom R CM hσ) = LieHom.id :=
-  serre_hom_ext (fun i => by simp [serreDiagramHom, hστ])
-    (fun i => by simp [serreDiagramHom, hστ]) fun i => by simp [serreDiagramHom, hστ]
+  serre_hom_ext (fun i => by simp [serreDiagramHom, hστ]) fun i => by simp [serreDiagramHom, hστ]
 
 /-- The automorphism of `Matrix.ToLieAlgebra R CM` induced by a permutation `σ` of the index set
 preserving `CM`: it sends the generator of index `i` to the generator of index `σ i`, in each of
@@ -188,24 +186,23 @@ theorem serreDiagramAut_serreF (hσ : CM.submatrix σ σ = CM) (i : B) :
 /-- `TauCeti.serreDiagramAut` is the unique homomorphism permuting the generators along `σ`. -/
 theorem eq_serreDiagramAut {hσ : CM.submatrix σ σ = CM}
     {g : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ Matrix.ToLieAlgebra R CM}
-    (hH : ∀ i, g (serreH R CM i) = serreH R CM (σ i))
     (hE : ∀ i, g (serreE R CM i) = serreE R CM (σ i))
     (hF : ∀ i, g (serreF R CM i) = serreF R CM (σ i)) :
     g = (serreDiagramAut R CM hσ : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ Matrix.ToLieAlgebra R CM) :=
-  eq_serreLift hH hE hF
+  eq_serreLift hE hF
 
 /-- The identity permutation induces the identity automorphism. -/
 @[simp]
 theorem serreDiagramAut_refl :
     serreDiagramAut R CM (submatrix_perm_refl CM) = LieEquiv.refl :=
-  serre_equiv_ext (fun i => by simp) (fun i => by simp) fun i => by simp
+  serre_equiv_ext (fun i => by simp) fun i => by simp
 
 /-- Diagram automorphisms compose along the composition of permutations. -/
 @[simp]
 theorem serreDiagramAut_trans (hσ : CM.submatrix σ σ = CM) (hτ : CM.submatrix τ τ = CM) :
     (serreDiagramAut R CM hσ).trans (serreDiagramAut R CM hτ) =
       serreDiagramAut R CM (submatrix_perm_trans hσ hτ) :=
-  serre_equiv_ext (fun i => by simp) (fun i => by simp) fun i => by simp
+  serre_equiv_ext (fun i => by simp) fun i => by simp
 
 /-- The inverse of a diagram automorphism is the diagram automorphism of the inverse
 permutation. -/
@@ -213,7 +210,6 @@ permutation. -/
 theorem serreDiagramAut_symm (hσ : CM.submatrix σ σ = CM) :
     (serreDiagramAut R CM hσ).symm = serreDiagramAut R CM (submatrix_perm_symm hσ) :=
   serre_equiv_ext (fun i => (LieEquiv.symm_apply_eq _).2 (by simp))
-    (fun i => (LieEquiv.symm_apply_eq _).2 (by simp))
     fun i => (LieEquiv.symm_apply_eq _).2 (by simp)
 
 -- Unlike `Equiv.Perm`, endomorphism `LieEquiv`s do not carry a group instance. This private
@@ -253,10 +249,6 @@ theorem serreDiagramAut_iterate_eq_id (hσ : CM.submatrix σ σ = CM) {n : ℕ}
   have hiter : lieEquivIterate R (serreDiagramAut R CM hσ) n = LieEquiv.refl :=
     serre_equiv_ext
       (fun i => calc
-        _ = serreH R CM ((σ ^ n) i) := lieEquivIterate_apply_of_apply R _ σ
-          (serreH R CM) (serreDiagramAut_serreH R CM hσ) n i
-        _ = _ := by rw [hn, Equiv.Perm.one_apply]; rfl)
-      (fun i => calc
         _ = serreE R CM ((σ ^ n) i) := lieEquivIterate_apply_of_apply R _ σ
           (serreE R CM) (serreDiagramAut_serreE R CM hσ) n i
         _ = _ := by rw [hn, Equiv.Perm.one_apply]; rfl)
@@ -276,7 +268,7 @@ theorem serreLift_comp_serreDiagramAut {H E F : B → L} (h : IsSerreSystem R CM
     (serreLift h).comp
         (serreDiagramAut R CM hσ : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ Matrix.ToLieAlgebra R CM) =
       serreLift (h.perm hσ) :=
-  serre_hom_ext (fun i => by simp) (fun i => by simp) fun i => by simp
+  serre_hom_ext (fun i => by simp) fun i => by simp
 
 /-- A Serre realization intertwines the diagram automorphism with any endomorphism performing the
 same reindexing on the `E` and `F` generators: the generator equations imply equivariance, and
@@ -285,8 +277,7 @@ theorem serreLift_intertwines_serreDiagramAut {H E F : B → L} (h : IsSerreSyst
     (hσ : CM.submatrix σ σ = CM) (ψ : L →ₗ⁅R⁆ L)
     (hE : ∀ i, ψ (E i) = E (σ i)) (hF : ∀ i, ψ (F i) = F (σ i)) :
     ψ.comp (serreLift h) = (serreLift h).comp (serreDiagramAut R CM hσ).toLieHom :=
-  serre_hom_ext (fun i => by simp [← h.lie_E_F_self, hE, hF]) (fun i => by simp [hE])
-    fun i => by simp [hF]
+  serre_hom_ext (fun i => by simp [hE]) fun i => by simp [hF]
 
 end Diagram
 
@@ -304,8 +295,7 @@ private noncomputable def serreChevalleyHom :
 /-- The signed exchange of the generators is its own inverse. -/
 private theorem serreChevalleyHom_comp :
     (serreChevalleyHom R CM).comp (serreChevalleyHom R CM) = LieHom.id :=
-  serre_hom_ext (fun i => by simp [serreChevalleyHom]) (fun i => by simp [serreChevalleyHom])
-    fun i => by simp [serreChevalleyHom]
+  serre_hom_ext (fun i => by simp [serreChevalleyHom]) fun i => by simp [serreChevalleyHom]
 
 /-- The *Chevalley involution* of `Matrix.ToLieAlgebra R CM`: the automorphism `Hᵢ ↦ -Hᵢ`,
 `Eᵢ ↦ -Fᵢ`, `Fᵢ ↦ -Eᵢ` exchanging the raising and lowering generators with a sign. -/
@@ -342,12 +332,11 @@ theorem serreChevalleyInvolution_serreF (i : B) :
 lowering generators with a sign. -/
 theorem eq_serreChevalleyInvolution
     {g : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ Matrix.ToLieAlgebra R CM}
-    (hH : ∀ i, g (serreH R CM i) = -serreH R CM i)
     (hE : ∀ i, g (serreE R CM i) = -serreF R CM i)
     (hF : ∀ i, g (serreF R CM i) = -serreE R CM i) :
     g = (serreChevalleyInvolution R CM :
       Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ Matrix.ToLieAlgebra R CM) :=
-  eq_serreLift hH hE hF
+  eq_serreLift hE hF
 
 /-- Applying the Chevalley involution twice returns the original element. -/
 @[simp]
@@ -355,7 +344,7 @@ theorem serreChevalleyInvolution_serreChevalleyInvolution (x : Matrix.ToLieAlgeb
     serreChevalleyInvolution R CM (serreChevalleyInvolution R CM x) = x := by
   have h : (serreChevalleyInvolution R CM).trans (serreChevalleyInvolution R CM) =
       (LieEquiv.refl : Matrix.ToLieAlgebra R CM ≃ₗ⁅R⁆ Matrix.ToLieAlgebra R CM) :=
-    serre_equiv_ext (fun i => by simp) (fun i => by simp) fun i => by simp
+    serre_equiv_ext (fun i => by simp) fun i => by simp
   simpa using DFunLike.congr_fun h x
 
 /-- The Chevalley involution is an involution. -/
@@ -368,7 +357,6 @@ theorem serreChevalleyInvolution_involutive :
 theorem serreChevalleyInvolution_symm :
     (serreChevalleyInvolution R CM).symm = serreChevalleyInvolution R CM :=
   serre_equiv_ext (fun i => (LieEquiv.symm_apply_eq _).2 (by simp))
-    (fun i => (LieEquiv.symm_apply_eq _).2 (by simp))
     fun i => (LieEquiv.symm_apply_eq _).2 (by simp)
 
 /-- The Chevalley involution commutes with every diagram automorphism: both composites send `Hᵢ` to
@@ -377,7 +365,7 @@ theorem serreChevalleyInvolution_comm_serreDiagramAut {σ : Equiv.Perm B}
     (hσ : CM.submatrix σ σ = CM) :
     (serreChevalleyInvolution R CM).trans (serreDiagramAut R CM hσ) =
       (serreDiagramAut R CM hσ).trans (serreChevalleyInvolution R CM) :=
-  serre_equiv_ext (fun i => by simp) (fun i => by simp) fun i => by simp
+  serre_equiv_ext (fun i => by simp) fun i => by simp
 
 /-- Naturality: any Serre system realising the presentation transports the Chevalley involution to
 the signed exchange of that system. -/
@@ -387,7 +375,7 @@ theorem serreLift_comp_serreChevalleyInvolution {H E F : B → L} (h : IsSerreSy
         (serreChevalleyInvolution R CM :
           Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ Matrix.ToLieAlgebra R CM) =
       serreLift h.neg_swap :=
-  serre_hom_ext (fun i => by simp) (fun i => by simp) fun i => by simp
+  serre_hom_ext (fun i => by simp) fun i => by simp
 
 end Chevalley
 
