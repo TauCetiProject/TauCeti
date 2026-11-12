@@ -28,7 +28,9 @@ first integral of the others. Every maximal integral curve of their Hamiltonian 
 therefore stays in one compact level of `F` in `W`, and these vector fields are complete
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField`).
 Since `L ⊆ W`, the set `L` is also the connected component of its level in `W`
-(`TauCeti.image_val_connectedComponentIn_preimage_val`).
+(`TauCeti.image_val_connectedComponentIn_preimage_val`), and it is compact and regular there when
+it is so in `M`
+(`IsNondegenerate.exists_opens_isCompact_connectedComponentIn_isCompleteVectorField`).
 
 This is how the theorems about the action of complete commuting Hamiltonian flows, such as the
 Liouville–Arnold theorem near a compact regular component of a level, hold with no global
@@ -38,11 +40,12 @@ completeness hypothesis: they are applied on `W` and transported along the inclu
 
 In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
 
-* `poissonBracket_comp_subtype_val`: restriction to an open submanifold preserves Poisson
-  brackets.
 * `exists_opens_isCompleteVectorField_hamiltonianVectorField`: a compact component of a level of
   a family of commuting functions has an open neighbourhood with compact levels on which their
   Hamiltonian vector fields are complete.
+* `exists_opens_isCompact_connectedComponentIn_isCompleteVectorField`: a compact regular component
+  of a level is a compact regular component of a level of the restricted family on such a
+  neighbourhood.
 
 ## References
 
@@ -65,18 +68,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] {σ : SmoothTwoForm I M} (hσ : σ.IsNondegenerate)
 include hσ
-
-/-- **Poisson brackets restrict to open submanifolds.** For a nondegenerate form `σ` and an open
-set `U`, the Poisson bracket of the restrictions of `f` and `g` to `U`, for the restriction of `σ`
-to `U`, is the restriction of their Poisson bracket. -/
-theorem poissonBracket_comp_subtype_val (U : Opens M) {f g : M → ℝ} {x : U}
-    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
-    SmoothTwoForm.poissonBracket
-        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)
-        (f ∘ Subtype.val) (g ∘ Subtype.val) x =
-      σ.poissonBracket f g x :=
-  (hσ.mpullback_subtype_val U).poissonBracket_comp hσ contMDiff_subtype_val rfl
-    (isRegularPoint_iff.1 (isRegularPoint_subtype_val x)) hf hg
 
 /-- **Commuting Hamiltonian flows are complete near a compact component of a level.** Let `F` be
 a family of pairwise Poisson-commuting `C²` functions for a nondegenerate form `σ` on a
@@ -103,10 +94,9 @@ theorem exists_opens_isCompleteVectorField_hamiltonianVectorField [T2Space M]
   have hFi (j : ι) : ContMDiff I 𝓘(ℝ) 2 (F · j) := contMDiff_pi_module_iff.1 hF j
   -- the levels of `F` in `U` are the compact sets `W ∩ F⁻¹(c)`
   have hlev (c : ι → ℝ) : IsCompact ((fun y : U ↦ F y) ⁻¹' {c}) := by
-    rw [Subtype.isCompact_iff]
-    convert hWc c using 1
-    ext y
-    exact ⟨fun ⟨z, hz, hzy⟩ ↦ hzy ▸ ⟨z.2, hz⟩, fun ⟨hyW, hy⟩ ↦ ⟨⟨y, hyW⟩, hy, rfl⟩⟩
+    have hc := hWc c
+    rw [← Subtype.image_preimage_coe] at hc
+    exact Subtype.isCompact_iff.2 hc
   have hcommU (i j : ι) (y : U) := (hσ.poissonBracket_comp_subtype_val U
     ((hFi i).mdifferentiable (by simp) y) ((hFi j).mdifferentiable (by simp) y)).trans
     (hcomm i j y)
@@ -116,6 +106,40 @@ theorem exists_opens_isCompleteVectorField_hamiltonianVectorField [T2Space M]
   exact hσU.isCompleteVectorField_hamiltonianVectorField_of_isCompact_preimage_singleton
     ((hFi i).comp contMDiff_subtype_val) hlev (fun j ↦ isFirstIntegral_iff.2 (hcommU j i))
     fun j ↦ ((hFi j).comp contMDiff_subtype_val).mdifferentiable (by simp)
+
+/-- **Restriction to a neighbourhood of a compact regular component of a level.** Let `F` be a
+family of pairwise Poisson-commuting `C²` functions for a nondegenerate form `σ` on a
+finite-dimensional boundaryless Hausdorff manifold, and let the connected component `L` of `x` in
+its level `F⁻¹(F x)` be compact and consist of regular points of `F`. Then there is an open set `W`
+containing `x` such that `L` is the image of the connected component of `x` in the level of the
+restriction of `F` to `W`, and that component is compact and consists of regular points of the
+restriction. On the open submanifold `W`, with the restriction of `σ`, the restrictions of the
+functions `F_i` still Poisson-commute, and their Hamiltonian vector fields are complete. -/
+theorem exists_opens_isCompact_connectedComponentIn_isCompleteVectorField [T2Space M]
+    [BoundarylessManifold I M] {ι : Type*} [Fintype ι] {F : M → ι → ℝ}
+    (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) 2 F) (hcomm : ∀ i j x, σ.poissonBracket (F · i) (F · j) x = 0)
+    {x : M} (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)
+    (hK : IsCompact (connectedComponentIn (F ⁻¹' {F x}) x)) :
+    ∃ (W : Opens M) (hxW : x ∈ W),
+      ((↑) : W → M) '' connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) ⟨x, hxW⟩ =
+        connectedComponentIn (F ⁻¹' {F x}) x ∧
+      IsCompact (connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) ⟨x, hxW⟩) ∧
+      (∀ z ∈ connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) ⟨x, hxW⟩,
+        IsRegularPoint I 𝓘(ℝ, ι → ℝ) (fun z : W ↦ F z) z) ∧
+      (∀ i j y, SmoothTwoForm.poissonBracket
+        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ)
+        (fun y : W ↦ F y i) (fun y : W ↦ F y j) y = 0) ∧
+      ∀ i, IsCompleteVectorField (SmoothTwoForm.hamiltonianVectorField
+        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ)
+        fun y : W ↦ F y i) := by
+  obtain ⟨W, hLW, -, hcommW, hcW⟩ :=
+    hσ.exists_opens_isCompleteVectorField_hamiltonianVectorField hF hcomm hK
+  have hxW : x ∈ W := hLW (mem_connectedComponentIn rfl)
+  have himage : ((↑) : W → M) '' connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) ⟨x, hxW⟩ =
+      connectedComponentIn (F ⁻¹' {F x}) x :=
+    image_val_connectedComponentIn_preimage_val hxW hLW
+  refine ⟨W, hxW, himage, by rwa [Subtype.isCompact_iff, himage], fun z hz ↦ ?_, hcommW, hcW⟩
+  exact (hreg z (himage ▸ mem_image_of_mem _ hz)).comp (isRegularPoint_subtype_val z)
 
 end IsNondegenerate
 

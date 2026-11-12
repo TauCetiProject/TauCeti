@@ -16,9 +16,11 @@ import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Symplectic.Manifold.Opens
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
 /-!
@@ -73,6 +75,8 @@ a nondegenerate form `σ₂` back to `σ`
 carries the Hamiltonian vector field of `g ∘ φ` to that of `g`, wherever its differential is
 surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`), and so
 `{g ∘ φ, k ∘ φ} = {g, k} ∘ φ` there (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`).
+In particular, Poisson brackets restrict to open submanifolds
+(`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp_subtype_val`).
 Along a curve where its differential is surjective, `φ` therefore maps integral curves of the
 Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField`).
@@ -110,6 +114,8 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`: naturality of Hamiltonian vector
   fields, their integral curves and Poisson brackets under maps pulling one form back to the
   other.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp_subtype_val`: restriction to an open
+  submanifold preserves Poisson brackets.
 
 ## References
 
@@ -685,6 +691,27 @@ theorem isMIntegralCurve_comp_hamiltonianVectorField {g : M₂ → ℝ} {γ : �
 end IsNondegenerate
 
 end Naturality
+
+/-! ### Restriction to open submanifolds -/
+
+section Opens
+
+variable [FiniteDimensional ℝ E]
+
+/-- **Poisson brackets restrict to open submanifolds.** For a nondegenerate form `σ` and an open
+set `U`, the Poisson bracket of the restrictions of `f` and `g` to `U`, for the restriction of `σ`
+to `U`, is the restriction of their Poisson bracket. -/
+theorem IsNondegenerate.poissonBracket_comp_subtype_val (hσ : σ.IsNondegenerate)
+    (U : TopologicalSpace.Opens M) {f g : M → ℝ} {x : U} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    SmoothTwoForm.poissonBracket
+        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)
+        (f ∘ Subtype.val) (g ∘ Subtype.val) x =
+      σ.poissonBracket f g x :=
+  (hσ.mpullback_subtype_val U).poissonBracket_comp hσ contMDiff_subtype_val rfl
+    ((isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero).surjective hf hg
+
+end Opens
 
 end SmoothTwoForm
 

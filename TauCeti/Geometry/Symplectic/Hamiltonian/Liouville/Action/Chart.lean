@@ -295,22 +295,13 @@ theorem exists_actionAngleChart_of_isCompact (hσ : σ.IsSymplectic)
           c' = c ∧ ∃ m : ι → ℤ, θ' = θ + fun i ↦ 2 * π * m i := by
   -- The Hamiltonian flows are complete on an open neighbourhood `W` of the component, which is
   -- also the component of `x` in its level in `W`; the chart is built on `W`.
-  obtain ⟨W, hLW, -, hcommW, hcW⟩ :=
-    hσ.isNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField
-      (hF.of_le (by simp)) hcomm hK
-  have hxW : x ∈ W := hLW (mem_connectedComponentIn rfl)
+  obtain ⟨W, hxW, himage, hKW, hregW, hcommW, hcW⟩ :=
+    hσ.isNondegenerate.exists_opens_isCompact_connectedComponentIn_isCompleteVectorField
+      (hF.of_le (by simp)) hcomm hreg hK
   set y : W := ⟨x, hxW⟩
-  have himage : ((↑) : W → M) '' connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) y =
-      connectedComponentIn (F ⁻¹' {F x}) x :=
-    image_val_connectedComponentIn_preimage_val hxW hLW
   set σW : SmoothTwoForm I W := SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ
   have hσW : σW.IsSymplectic := hσ.mpullback_subtype_val W
   have hFW : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ fun z : W ↦ F z := hF.comp contMDiff_subtype_val
-  have hregW (z) (hz : z ∈ connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) y) :
-      IsRegularPoint I 𝓘(ℝ, ι → ℝ) (fun z : W ↦ F z) z :=
-    (hreg z (himage ▸ mem_image_of_mem _ hz)).comp (isRegularPoint_subtype_val z)
-  have hKW : IsCompact (connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) y) := by
-    rwa [Subtype.isCompact_iff, himage]
   obtain ⟨t, ht, hyt, s, hsy, hs, hFs, hL⟩ :=
     hσW.exists_contMDiffOn_section_eval₂_mfderiv_eq_zero hFW hcommW hcW
       (hregW y (mem_connectedComponentIn rfl))

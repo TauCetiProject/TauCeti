@@ -119,21 +119,12 @@ theorem nonempty_homeomorph_unitAddTorus
     Nonempty (connectedComponentIn (F ⁻¹' {F x}) x ≃ₜ UnitAddTorus ι) := by
   -- The Hamiltonian flows are complete on an open neighbourhood `W` of the component, which is
   -- also the component of `x` in its level in `W`.
-  obtain ⟨W, hLW, -, hcommW, hcW⟩ :=
-    hσ.isNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField
-      (hF.of_le (by simp)) hcomm hK
-  have hxW : x ∈ W := hLW (mem_connectedComponentIn rfl)
+  obtain ⟨W, hxW, himage, hKW, hregW, hcommW, hcW⟩ :=
+    hσ.isNondegenerate.exists_opens_isCompact_connectedComponentIn_isCompleteVectorField
+      (hF.of_le (by simp)) hcomm hreg hK
   set y : W := ⟨x, hxW⟩
-  have himage : ((↑) : W → M) '' connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) y =
-      connectedComponentIn (F ⁻¹' {F x}) x :=
-    image_val_connectedComponentIn_preimage_val hxW hLW
   have hσW := hσ.mpullback_subtype_val W
   have hFW : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ fun z : W ↦ F z := hF.comp contMDiff_subtype_val
-  have hregW (z) (hz : z ∈ connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) y) :
-      IsRegularPoint I 𝓘(ℝ, ι → ℝ) (fun z : W ↦ F z) z :=
-    (hreg z (himage ▸ mem_image_of_mem _ hz)).comp (isRegularPoint_subtype_val z)
-  have hKW : IsCompact (connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) y) := by
-    rwa [Subtype.isCompact_iff, himage]
   -- On `W` the component is `(ι → ℝ) / Λ` for the full lattice `Λ` of periods of `x`.
   set Λ := hσW.hamiltonianFlowStabilizer hFW hcommW hcW y
   have : DiscreteTopology Λ := hσW.discreteTopology_hamiltonianFlowStabilizer hFW hcommW hcW

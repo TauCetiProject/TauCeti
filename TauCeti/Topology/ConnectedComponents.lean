@@ -352,7 +352,7 @@ theorem _root_.Continuous.exists_isOpen_forall_isCompact_inter_preimage_singleto
     exact disjoint_left.mp hVF hz (hzy.trans (connectedComponentIn_subset _ _ hy))
   by_cases hc : c ∈ f '' frontier V
   · convert isCompact_empty
-    exact eq_empty_of_forall_notMem fun y h ↦ h.1.2 (by rwa [show f y = c from h.2])
+    exact eq_empty_of_forall_notMem fun y h ↦ h.1.2 (by rwa [mem_singleton_iff.1 h.2])
   · -- a point of `closure V` in the level `c` is not on the frontier, so it lies in `V`
     have heq : V ∩ f ⁻¹' (f '' frontier V)ᶜ ∩ f ⁻¹' {c} = closure V ∩ f ⁻¹' {c} := by
       ext y
@@ -387,7 +387,7 @@ theorem image_val_connectedComponentIn_preimage_val {F s : Set X} {x : X} (hx : 
       _ ⊆ _ := image_mono (hpre.subset_connectedComponentIn (mem_connectedComponentIn hxF)
           (preimage_mono (connectedComponentIn_subset F x)))
   · rw [connectedComponentIn_eq_empty hxF,
-      connectedComponentIn_eq_empty (show (⟨x, hx⟩ : s) ∉ ((↑) : s → X) ⁻¹' F from hxF),
+      connectedComponentIn_eq_empty (mt mem_preimage.1 hxF),
       image_empty]
 
 /-- **A complementary component missing the frontier of a neighbourhood is clopen.** Let `K` be a
