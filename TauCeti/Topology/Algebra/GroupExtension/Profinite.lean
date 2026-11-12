@@ -34,9 +34,11 @@ to equivalence of extensions.
 
 The continuous section is the only step that uses the topology of `E` in an essential way. It comes
 from the continuous section of a profinite group over the quotient by a closed subgroup, applied to
-the kernel, which is closed because it is compact and `E`, being profinite, is Hausdorff. Nothing
-asks the kernel to be *open*: an open kernel would force `G` to be discrete, whereas the extensions
-this dictionary is used on have infinite `G`.
+the kernel, which is closed as the preimage of `1` under the continuous projection onto the
+Hausdorff base `G`. Compactness of `M` enters only in `TauCeti.GroupExtension.continuous_factorSet`
+and `TauCeti.GroupExtension.factorSetContinuousMulEquiv`. Nothing asks the kernel to be *open*: an
+open kernel would force `G` to be discrete, whereas the extensions this dictionary is used on have
+infinite `G`.
 
 Bundling the data, `TauCeti.ProfiniteGroupExtension G M` is an extension of `G` by `M` with
 profinite total group, continuous inclusion and projection, inducing the given action of `G` on
@@ -83,7 +85,8 @@ extensions is the subject of `TauCeti/Topology/Algebra/GroupExtension/Cohomology
   §VII.4, (7.4.1), for the relabelling of an extension along isomorphisms of its kernel and quotient
   (`TauCeti.ProfiniteGroupExtension.relabel`).
 * L. Ribes, P. Zalesskii, *Profinite Groups*, 2nd ed., Prop. 2.2.2 for the continuous section over
-  an arbitrary closed subgroup, of which the compact-kernel case used here is a special case.
+  an arbitrary closed subgroup, applied here to the closed kernel of the continuous projection onto
+  a Hausdorff group.
 -/
 
 public section
@@ -162,22 +165,19 @@ section Profinite
 variable [IsTopologicalGroup E] [CompactSpace E] [TotallyDisconnectedSpace E]
   [Group M] {S : GroupExtension M E G}
 
-/-- **The projection of a profinite extension has a continuous normalized section.**
-The kernel of the continuous projection to a Hausdorff group is closed, so the continuous section
-of a profinite group over the quotient by a closed subgroup applies; the base is identified with
-that quotient because the projection is a continuous bijection out of a compact space. -/
+/-- **The projection of a profinite extension to a Hausdorff group has a continuous normalized
+section.** The hypotheses are a profinite total group `E`, a Hausdorff base `G` and a continuous
+projection `S.rightHom`; no topology on the kernel `M` and no continuity of `S.inl` is needed. -/
 theorem exists_continuous_section [T2Space G] (hrh : Continuous S.rightHom) :
     ∃ σ : S.Section, Continuous ⇑σ ∧ σ 1 = 1 := by
   -- identify `G` with the quotient of `E` by the kernel of the projection
   let f : E →ₜ* G := ⟨S.rightHom, hrh⟩
   set N := f.toMonoidHom.ker
-  -- Both the section and the equivalence use the bundled projection's kernel, which is
-  -- definitionally the original projection's kernel for the closedness proof below.
   -- Bundling continuity leaves the projection's values unchanged.
   have hf : ∀ x, f x = S.rightHom x := fun _ => rfl
   let e := f.quotientKerEquivOfSurjective S.rightHom_surjective
   -- pull the continuous section of `E → E ⧸ N` back along that identification
-  obtain ⟨s, hs, hsec, hs₁⟩ := TauCeti.exists_continuous_section N (isClosed_singleton.preimage hrh)
+  obtain ⟨s, hs, hsec, hs₁⟩ := TauCeti.exists_continuous_section N f.isClosed_ker
   have hone : e.symm 1 = QuotientGroup.mk 1 := by
     rw [← S.rightHom.map_one, ← hf, f.quotientKerEquivOfSurjective_symm_apply]
   have hsec' : ∀ g : G, S.rightHom (s (e.symm g)) = g := fun g => by
@@ -355,8 +355,8 @@ section Section
 
 variable [T2Space G] (X : ProfiniteGroupExtension G M)
 
-/-- **A continuous normalized section of a profinite extension**, chosen once
-and for all from `TauCeti.GroupExtension.exists_continuous_section`. The pushforwards
+/-- **A continuous normalized section of a profinite extension over a Hausdorff group**, chosen
+once and for all from `TauCeti.GroupExtension.exists_continuous_section`. The pushforwards
 `TauCeti.ProfiniteGroupExtension.map` of `X` are the twisted products of the pushforwards of the
 factor set of this section. -/
 noncomputable def continuousSection : X.toGroupExtension.Section :=
@@ -365,6 +365,7 @@ noncomputable def continuousSection : X.toGroupExtension.Section :=
 theorem continuous_continuousSection : Continuous ⇑X.continuousSection :=
   (GroupExtension.exists_continuous_section X.continuous_rightHom).choose_spec.1
 
+@[simp]
 theorem continuousSection_one : X.continuousSection 1 = 1 :=
   (GroupExtension.exists_continuous_section X.continuous_rightHom).choose_spec.2
 

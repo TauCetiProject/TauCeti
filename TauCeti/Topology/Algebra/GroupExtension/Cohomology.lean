@@ -814,7 +814,7 @@ theorem contCohomologyClass_map_eq_of_continuous_monoidHom (φ : X.E →* Y.E) (
   -- section of `Y` whose factor set is the pushforward along `f` of the factor set of `X`
   -- (`GroupExtension.factorSet_monoidHomComp`); both classes are then read off that factor set.
   have hσ' : X.continuousSection.monoidHomComp φ hright 1 = 1 := by
-    simp [X.continuousSection_one]
+    simp
   have hσ'c : Continuous ⇑(X.continuousSection.monoidHomComp φ hright) :=
     (hφ.comp X.continuous_continuousSection).congr fun g =>
       (GroupExtension.Section.monoidHomComp_apply X.continuousSection φ hright g).symm
