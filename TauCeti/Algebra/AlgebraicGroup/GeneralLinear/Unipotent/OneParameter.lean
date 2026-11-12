@@ -156,7 +156,7 @@ theorem aeval_comp_nilpotentOneParameterCoordinateMap_add (hX : IsNilpotent X) (
 
 /-- A polynomial one-parameter subgroup of `GLₙ` through a unipotent matrix `g` is the
 finite exponential curve of `log g`. The conclusion identifies regular maps, not only points. -/
-theorem eq_nilpotentOneParameterCoordinateMap_log [IsDomain R]
+theorem eq_nilpotentOneParameterCoordinateMap_log
     (γ : coordinateHopfAlgebra R n →ₐ[R] R[X])
     (hγ : ∀ s t : R, toConv ((Polynomial.aeval (s + t)).comp γ) =
       toConv ((Polynomial.aeval s).comp γ) * toConv ((Polynomial.aeval t).comp γ))
@@ -164,7 +164,7 @@ theorem eq_nilpotentOneParameterCoordinateMap_log [IsDomain R]
     (hg : IsNilpotent ((g : Matrix (Fin n) (Fin n) R) - 1))
     (h : toConv ((Polynomial.aeval (1 : R)).comp γ) = generalLinearToPoint n g) :
     γ = nilpotentOneParameterCoordinateMap n (IsNilpotent.isNilpotent_log hg) := by
-  have : CharZero R := Algebra.charZero_of_charZero ℚ R
+  have := HasUniqueDiv.of_module_rat R
   apply γ.eq_of_aeval_one_comp_eq _ hγ
     (aeval_comp_nilpotentOneParameterCoordinateMap_add n _)
   apply toConv_injective

@@ -23,7 +23,7 @@ curve lies in `H` scheme-theoretically by
 the Lie algebra of `H`, and the velocity of `t ↦ exp(tX)` has matrix `X`. No smoothness,
 connectedness or reducedness assumption on `H` is needed.
 
-More generally, over a rational domain, a polynomial one-parameter subgroup of `GLₙ` with
+More generally, a polynomial one-parameter subgroup of `GLₙ` with
 unipotent value `g` at parameter one has velocity matrix `log g`.
 
 ## Main declarations
@@ -68,7 +68,7 @@ theorem tangentMatrix_curveVelocity_nilpotentOneParameterCoordinateMap (hX : IsN
 
 /-- The velocity of a polynomial one-parameter subgroup of `GLₙ` is the logarithm of its
 unipotent value at parameter one. -/
-theorem tangentMatrix_curveVelocity_eq_log [IsDomain R]
+theorem tangentMatrix_curveVelocity_eq_log
     (γ : coordinateHopfAlgebra R n →ₐ[R] R[X])
     (hγ : ∀ s t : R, toConv ((Polynomial.aeval (s + t)).comp γ) =
       toConv ((Polynomial.aeval s).comp γ) * toConv ((Polynomial.aeval t).comp γ))

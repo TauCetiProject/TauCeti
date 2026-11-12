@@ -217,10 +217,13 @@ and at `0` it is an integral combination of the values `p.eval m` with `m ≤ na
 theorem eq_zero_of_eval_natCast_eq_zero {R : Type*} [CommRing R] [HasUniqueDiv R] (p : R[X])
     (h : ∀ m ≤ p.natDegree, p.eval (m : R) = 0) : p = 0 := by
   have hd := congrFun p.fwdDiff_iter_degree_eq_factorial 0
-  rw [fwdDiff_iter_eq_sum_shift, Finset.sum_eq_zero fun k hk ↦ by
-    rw [zero_add, nsmul_one, h k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)), smul_zero],
-    Pi.smul_apply, Pi.natCast_apply, smul_eq_mul, ← nsmul_eq_mul', eq_comm,
-    nsmul_eq_zero_iff_right (Nat.factorial_ne_zero _), leadingCoeff_eq_zero] at hd
-  exact hd
+  have hsum : Δ_[1]^[p.natDegree] p.eval 0 = 0 := by
+    rw [fwdDiff_iter_eq_sum_shift]
+    exact Finset.sum_eq_zero fun k hk ↦ by
+      simp [h k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))]
+  rw [hsum] at hd
+  simp only [Pi.smul_apply, Pi.natCast_apply, smul_eq_mul, ← nsmul_eq_mul'] at hd
+  exact leadingCoeff_eq_zero.mp
+    ((nsmul_eq_zero_iff_right (Nat.factorial_ne_zero _)).mp hd.symm)
 
 end Polynomial
