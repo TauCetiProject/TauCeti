@@ -111,15 +111,12 @@ theorem adjoin_X_pow_eq_cyclicInvariants (hζ : IsPrimitiveRoot ζ e) :
   rw [Algebra.adjoin_singleton_eq_range_aeval]
   ext p
   constructor
-  · rintro ⟨q, hq⟩
-    -- The range witness uses a ring-hom coercion; expose evaluation to rewrite the expansion.
-    change aeval (X ^ e) q = p at hq
-    subst hq
-    change aeval (C ζ * X) (aeval (X ^ e) q) = aeval (X ^ e) q
-    rw [← aeval_algHom_apply, map_pow, aeval_X, mul_pow, ← C_pow, hζ.pow_eq_one, C_1, one_mul]
+  · rintro ⟨q, rfl⟩
+    simp [AlgHom.mem_equalizer, ← aeval_algHom_apply, mul_pow, ← C_pow, hζ.pow_eq_one]
   · intro hp
+    rw [AlgHom.mem_equalizer, AlgHom.id_apply, ← comp_eq_aeval] at hp
     rcases e.eq_zero_or_pos with rfl | he
-    · have h := (p.comp_C_mul_X_eq_self_iff hζ).1 (by rw [comp_eq_aeval]; exact hp)
+    · have h := (p.comp_C_mul_X_eq_self_iff hζ).1 hp
       refine ⟨C (p.coeff 0), ?_⟩
       simpa using (eq_C_of_natDegree_le_zero
         (natDegree_le_iff_coeff_eq_zero.2 fun n hn ↦ h n (by simpa using hn.ne'))).symm
