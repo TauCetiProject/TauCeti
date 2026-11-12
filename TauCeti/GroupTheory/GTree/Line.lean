@@ -109,6 +109,11 @@ theorem line_stabilizer_dart (e : line.E) : stabilizer (Multiplicative ℤ) e = 
   have h₁ : k.toAdd + Prod.fst e = Prod.fst e := congrArg Prod.fst h
   omega
 
+/-- The integers act freely on the vertices of the line. -/
+theorem line_stabilizer_vertex (v : line.V) : stabilizer (Multiplicative ℤ) v = ⊥ :=
+  eq_bot_iff.mpr fun _ hk => Subgroup.mem_bot.mpr <| of_not_not fun h =>
+    isHyperbolic_iff.mp (line_isHyperbolic h) v (mem_stabilizer_iff.mp hk)
+
 /-- The line is relative to the trivial edge family and the trivial elliptic family. -/
 theorem line_isRelative : line.IsRelative {⊥} {⊥} :=
   isRelative_iff.mpr ⟨fun e => line_stabilizer_dart e, fun _ hH => hH ▸ isEllipticSubgroup_bot line⟩
