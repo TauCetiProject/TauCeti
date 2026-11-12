@@ -558,8 +558,8 @@ theorem exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq
       AEStronglyMeasurable (fun z ↦ w z • g z) μ :=
     ((contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous.aestronglyMeasurable).smul
       (Lp.aestronglyMeasurable g)
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top (hsm y),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top (hsm f)]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top (hsm y),
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top (hsm f)]
   simp_rw [henorm]
   have hK : (K : ℝ≥0∞) = ENNReal.ofReal (E * E * K₀) ^ (1 / (2 : ℝ≥0∞).toReal) := by
     rw [ENNReal.toReal_ofNat, ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
