@@ -74,6 +74,9 @@ bijective.
 * `TauCeti.intervalBaseOrbit_sq_eq_sigmoid`, `TauCeti.one_sub_intervalBaseOrbit_sq` and
   `TauCeti.intervalBaseFlow_eq_intervalBaseOrbit`: the trajectory `q` through the sigmoid, and
   every flow line through `(0, 1)` as a reparametrization of `q`.
+* `TauCeti.intervalBaseOrbit_one_add_log` and `TauCeti.intervalBaseOrbit_one_sub_log`: the unit-rate
+  trajectory at times `c ∓ T` in the gluing parameter `ρ = e^{-T}`, `ρ` times a function of `ρ²`
+  near `0` and a function of `ρ²` near `1`.
 * `TauCeti.index_trajectoryOperator_intervalBasePotential`,
   `TauCeti.exists_ker_trajectoryOperator_intervalBasePotential_eq_span`,
   `TauCeti.surjective_trajectoryOperator_intervalBasePotential` and
@@ -433,6 +436,28 @@ approaches `1` at rate `2`. -/
 theorem one_sub_intervalBaseOrbit_sq (C s : ℝ) :
     1 - intervalBaseOrbit C s ^ 2 = Real.sigmoid (-(2 * C * s)) := by
   rw [intervalBaseOrbit_sq_eq_sigmoid, Real.sigmoid_neg]
+
+/-- **Arrival at rate `2`.** In the gluing parameter `ρ = e^{-T}`, the unit-rate trajectory at time
+`c + T` is `1 / √(1 + (e^{-c} ρ)²)`: it depends on `ρ` only through `ρ²`. -/
+theorem intervalBaseOrbit_one_sub_log (c : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
+    intervalBaseOrbit 1 (c - Real.log ρ) = (√(1 + (Real.exp (-c) * ρ) ^ 2))⁻¹ := by
+  rw [intervalBaseOrbit_apply,
+    show -(2 * 1 * (c - Real.log ρ)) = (-c + Real.log ρ) + (-c + Real.log ρ) by ring,
+    Real.exp_add, Real.exp_add, Real.exp_log hρ, sq]
+
+/-- **Departure at rate `1`.** In the gluing parameter `ρ = e^{-T}`, the unit-rate trajectory at
+time `c - T` is `x / √(1 + x²)` for `x = e^{c} ρ`: it is `ρ` times a function of `ρ²`. -/
+theorem intervalBaseOrbit_one_add_log (c : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
+    intervalBaseOrbit 1 (c + Real.log ρ) =
+      Real.exp c * ρ * (√(1 + (Real.exp c * ρ) ^ 2))⁻¹ := by
+  have hx : 0 < Real.exp c * ρ := mul_pos (Real.exp_pos c) hρ
+  have hsq : 1 + ((Real.exp c * ρ) ^ 2)⁻¹ = (1 + (Real.exp c * ρ) ^ 2) / (Real.exp c * ρ) ^ 2 := by
+    field_simp
+    ring
+  rw [intervalBaseOrbit_apply,
+    show -(2 * 1 * (c + Real.log ρ)) = -((c + Real.log ρ) + (c + Real.log ρ)) by ring,
+    Real.exp_neg, Real.exp_add, Real.exp_add, Real.exp_log hρ, ← sq, hsq,
+    Real.sqrt_div' _ (sq_nonneg _), Real.sqrt_sq hx.le, inv_div, div_eq_mul_inv]
 
 private theorem inv_sqrt_two_mem_Ioo : (√2)⁻¹ ∈ Ioo (0 : ℝ) 1 :=
   ⟨by positivity, inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two⟩
