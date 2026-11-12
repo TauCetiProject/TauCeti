@@ -57,7 +57,8 @@ attached only to doubles along the complement of `TauCeti.borderedInterior M`.
   double is Hausdorff and second countable when `M` is. Compactness is inherited from
   `TauCeti.DoubleAlong`.
 * `TauCeti.SchottkyDouble.doubleChart_swap`: the swap reads as `z ↦ conj z` in every doubled chart.
-* `TauCeti.SchottkyDouble.fixedPoints_swap`: the fixed set of the swap is the boundary.
+* `TauCeti.DoubleAlong.swap_swap` and `TauCeti.DoubleAlong.fixed_locus` apply directly: the swap
+  is an involution whose fixed set is the boundary on the first copy.
 * `TauCeti.SchottkyDouble.isOpenEmbedding_interiorInl` and
   `TauCeti.SchottkyDouble.contMDiff_interiorInl`: the first copy of the interior is a holomorphic
   open embedding.
@@ -408,17 +409,6 @@ theorem doubleChart_swap_doubleChart_symm {e e' : OpenPartialHomeomorph M Closed
     doubleChart e' he' (DoubleAlong.swap _ ((doubleChart e he).symm w)) =
       conj (doubleChart e' he' ((doubleChart e he).symm w)) :=
   doubleChart_swap he' hw.2
-
-/-- The sheet swap is an involution. -/
-theorem swap_involutive :
-    Function.Involutive (DoubleAlong.swap (borderedInterior M : Set M)ᶜ) :=
-  DoubleAlong.swap_swap _
-
-/-- The fixed set of the sheet swap is the boundary of `M`, on the first copy. -/
-theorem fixedPoints_swap :
-    Function.fixedPoints (DoubleAlong.swap (borderedInterior M : Set M)ᶜ) =
-      DoubleAlong.inl _ '' (borderedInterior M : Set M)ᶜ :=
-  DoubleAlong.fixed_locus _
 
 /-! ### The first copy of the interior -/
 
