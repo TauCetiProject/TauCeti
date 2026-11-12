@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.HopfAlgebra.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
