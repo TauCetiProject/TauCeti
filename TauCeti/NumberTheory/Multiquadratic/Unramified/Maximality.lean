@@ -176,7 +176,8 @@ theorem nonempty_algHom_candidateGenusField {d : ℤ} (hd : Squarefree d)
     Nonempty (M →ₐ[ℚ] candidateGenusField hd) := by
   by_cases hsq : IsSquare ((d : ℤ) : ℚ)
   · -- A rational square generates only `ℚ`, so `M = ℚ`.
-    have h1 := finrank_eq_one_of_isSquare_of_isUnramifiedIn hsq hy hunr
+    have h1 := finrank_eq_one_of_isSquare_of_isUnramifiedIn hsq
+      (by rw [hy, IsScalarTower.algebraMap_apply ℤ ℚ M]; norm_num) hunr
     exact ⟨(Algebra.ofId ℚ (candidateGenusField hd)).comp
       (AlgEquiv.ofBijective (Algebra.ofId ℚ M)
         (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp h1)).symm.toAlgHom⟩
