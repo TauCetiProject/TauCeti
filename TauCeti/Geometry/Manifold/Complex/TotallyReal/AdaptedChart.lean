@@ -30,12 +30,15 @@ This is McDuff–Salamon Exercise B.4.10. The chart is read off from the model c
 `x₀`, `γ = χ ∘ ι ∘ φ⁻¹` and `J_χ` the structure read in `χ`, the inverse of `ψ` is
 `χ⁻¹ ∘ Φ` for the adapted normal extension `Φ (x, y) = γ x + J_χ (γ x) (Dγ x y)`. The topological
 embedding hypothesis is what allows the source of `ψ` to be shrunk so that it meets `ι (N)` only
-in the image of a neighbourhood of `x₀`.
-
-The convergence of the charts under `C^ℓ` convergence of the structure is not treated here.
+in the image of a neighbourhood of `x₀`. The step from a model adapted extension and a shrinking
+set to the manifold chart is stated separately, so that the converging families of
+`TauCeti.Geometry.Manifold.Complex.TotallyReal.AdaptedChart.Family` can reuse it.
 
 ## Main declarations
 
+* `TauCeti.IsAdaptedChart`: the properties of an adapted chart listed above.
+* `TauCeti.exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension`: the adapted chart built
+  from a model adapted extension.
 * `TauCeti.IsTotallyRealEmbedding.exists_adaptedChart`: the adapted chart.
 * `TauCeti.adaptedNormalExtension_writtenInExtChartAt_inl`: in the flat model `V ⊆ V × V` with
   the standard structure the adapted extension is the identity.
