@@ -38,6 +38,7 @@ Hilbert C⋆-module.
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
 * `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity.
+* `CStarMatrix.diag_nonneg_of_nonneg`: the diagonal entries of a positive matrix are positive.
 
 ## References
 
@@ -170,5 +171,12 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
   rw [← star_mul_self_eq_zero, hN.star_eq]
   calc N * N = star R * (R * N) := by rw [← mul_assoc, ← hR]
     _ = 0 := by rw [hRN, mul_zero]
+
+/-- The diagonal entries of a positive matrix over a C⋆-algebra are positive. -/
+theorem diag_nonneg_of_nonneg {M : CStarMatrix n n A} (hM : 0 ≤ M) (i : n) : 0 ≤ M i i := by
+  obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hM
+  rw [CStarMatrix.mul_apply]
+  exact Finset.sum_nonneg fun k _ => by
+    simp [CStarMatrix.star_apply]
 
 end CStarMatrix
