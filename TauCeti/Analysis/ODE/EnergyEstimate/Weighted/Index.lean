@@ -61,7 +61,8 @@ the unweighted operator `d/ds`, which is not Fredholm when `E ≠ 0`, becomes Fr
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id`:
   the index of `D_{A - c}` is `n(A⁻, δ⁻) - n(A⁺, δ⁺)`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_index_sub_finrank_sub_finrank`:
-  faster decay at the ends decreases the index by the number of eigenvalues crossed by the slopes.
+  raising the slope at `+∞` or lowering it at `-∞` decreases the index by the number of
+  eigenvalues crossed.
 * `index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_ker`, in
   `TauCeti.WeakDerivStep`: small decay weights give the index `n⁻(A⁻) - n⁻(A⁺) - dim ker A⁺`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_smul_id_sub_smul_id`: the scalar example.
@@ -177,8 +178,8 @@ theorem index_trajectoryOperator_sub_smul_id
 
 /-- **The index jumps when a weight slope crosses an eigenvalue.** Compare two continuous scalar
 functions `c₁` and `c₂` with limits `δ₁±` and `δ₂±` at `±∞`, where `δ₂⁻ ≤ δ₁⁻` and `δ₁⁺ ≤ δ₂⁺`, so
-that the weight `exp w₂` with `w₂' = c₂` grows at least as fast as `exp w₁` at both ends: elements
-of the space weighted by `exp w₂` decay at least as fast as those weighted by `exp w₁`. Then the
+that the asymptotic exponential growth rate of the weight `exp w₂` with `w₂' = c₂` is at least that
+of `exp w₁` at each end. Then the
 index of `D_{A - c₂}` is that of `D_{A - c₁}` minus the number of eigenvalues of `A⁻` in
 `[δ₂⁻, δ₁⁻)` and minus the number of eigenvalues of `A⁺` in `[δ₁⁺, δ₂⁺)`, counted with
 multiplicity. -/
