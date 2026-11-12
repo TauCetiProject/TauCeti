@@ -123,13 +123,8 @@ theorem exists_eLpNorm_le_mul_enorm_of_ae_eq {alpha X F : Type*} [MeasurableSpac
   · refine ⟨0, fun u => ?_⟩
     rw [eLpNorm_exponent_zero ((Lp.aestronglyMeasurable (S u)).congr (hS u))]
     exact zero_le
-  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal := by
-    rw [sub_nonneg]
-    rcases eq_or_ne pstar ∞ with h | h
-    · simp only [h, ENNReal.toReal_top, div_zero]
-      positivity
-    · exact one_div_le_one_div_of_le (ENNReal.toReal_pos hq0 (ne_top_of_le_ne_top h hq))
-        (ENNReal.toReal_mono h hq)
+  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal :=
+    ENNReal.one_div_toReal_sub_one_div_toReal_nonneg hq0 hq
   have hc : m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg hexp hm
   refine ⟨‖S‖₊ * (m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal)).toNNReal, fun u => ?_⟩
