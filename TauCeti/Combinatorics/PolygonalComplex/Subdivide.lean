@@ -446,8 +446,8 @@ of `C`. -/
 /-- A dart of the subdivision has the link degree of the dart of `C` on which it lies. -/
 theorem linkDegree_subdivide (x : (C.subdivide a).graph.E) :
     (C.subdivide a).linkDegree x = C.linkDegree (C.graph.subdivideOrigin a x) := by
-  rw [linkDegree_eq_card_sum, linkDegree_eq_card_sum, ← SerreGraph.subdivideOrigin_subdivideRev,
-    ← SerreGraph.subdivide_rev]
+  rw [linkDegree_eq_natCard_sum, linkDegree_eq_natCard_sum,
+    ← SerreGraph.subdivideOrigin_subdivideRev, ← SerreGraph.subdivide_rev]
   exact Nat.card_congr ((C.subdivideSideEquiv a _).sumCongr (C.subdivideSideEquiv a x))
 
 /-- A germ at an old vertex keeps its link degree. -/

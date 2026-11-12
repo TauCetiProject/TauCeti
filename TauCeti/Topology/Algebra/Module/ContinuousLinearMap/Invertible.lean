@@ -20,7 +20,7 @@ The inverse of an invertible map also suffices, including on trivial spaces. The
 without completeness or continuity of the original family, and are useful when differentiating
 inverse families.
 
-Over a field, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
+Over a semifield, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
 of `c • f` is `c⁻¹ • f.inverse`; this is how the inverse of a positively homogeneous family of
 maps is seen to be homogeneous of the opposite degree.
 
@@ -91,7 +91,7 @@ theorem IsInvertible.eventually_of_tendsto_inverse {A : ι → E →L[𝕜] F} {
 
 section Smul
 
-variable {𝕜 M M₂ : Type*} [Field 𝕜]
+variable {𝕜 M M₂ : Type*} [Semifield 𝕜]
   [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M] [ContinuousConstSMul 𝕜 M]
   [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
 

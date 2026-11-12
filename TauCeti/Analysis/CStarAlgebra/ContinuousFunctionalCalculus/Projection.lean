@@ -54,7 +54,7 @@ variable {A : Type*} [Ring A] [StarRing A] [TopologicalSpace A] [Algebra ℝ A]
 theorem isStarProjection_cfc {f : ℝ → ℝ} {a : A}
     (hf : ∀ t ∈ spectrum ℝ a, IsIdempotentElem (f t)) : IsStarProjection (cfc f a) := by
   by_cases h : IsSelfAdjoint a ∧ ContinuousOn f (spectrum ℝ a)
-  · obtain ⟨ha, hcont⟩ := h
+  · obtain ⟨_, hcont⟩ := h
     refine ⟨?_, cfc_predicate f a⟩
     rw [IsIdempotentElem, ← cfc_mul f f a]
     exact cfc_congr hf

@@ -42,7 +42,7 @@ theorem sum_sum_min_eq_sum_sq_card_filter {ι : Type*} (s : Finset ι) (len : ι
     (∑ i ∈ s, ∑ j ∈ s, min (len i) (len j)) =
       ∑ k ∈ range n, (s.filter fun i => k < len i).card ^ 2 := by
   classical
-  have hmin (i : ι) (hi : i ∈ s) (j : ι) (hj : j ∈ s) :
+  have hmin (i : ι) (hi : i ∈ s) (j : ι) :
       min (len i) (len j) =
         ∑ k ∈ range n, (if k < len i then 1 else 0) * (if k < len j then 1 else 0) := by
     have hf : ((range n).filter fun k => k < len i ∧ k < len j) =
@@ -56,10 +56,10 @@ theorem sum_sum_min_eq_sum_sq_card_filter {ι : Type*} (s : Finset ι) (len : ι
       _ = ((range n).filter fun k => k < len i ∧ k < len j).card := by
         simp [← ite_and, sum_boole, and_comm]
       _ = _ := by rw [hf, card_range]
-  rw [sum_congr rfl fun i hi => sum_congr rfl fun j hj => hmin i hi j hj]
+  rw [sum_congr rfl fun i hi => sum_congr rfl fun j _ => hmin i hi j]
   simp_rw [sum_comm (s := s) (t := range n)]
   apply sum_congr rfl
-  intro k hk
+  intro k _
   rw [← sum_mul_sum]
   simp [sq]
 
