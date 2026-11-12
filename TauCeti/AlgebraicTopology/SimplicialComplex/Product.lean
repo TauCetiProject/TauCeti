@@ -32,12 +32,12 @@ the standard one-simplex on `Fin 2`. The faces of the ordered cylinder are descr
 as the subsets of staircase simplices, which switch from the initial to the terminal end of the
 interval at one vertex of a face of the base.
 
-The construction is the simplicial product used in the collapse track of layer 11 of the
-geometric-topology roadmap (`TauCetiRoadmap/GeometricTopology/README.md`). In particular, the
-ordered cylinder is the missing product `K × I` in the statement of Zeeman's conjecture. The
-definition follows the ordered (staircase) triangulation convention in Rourke--Sanderson,
-*Introduction to Piecewise-Linear Topology*, Chapter 2. No claim about the realization of this
-product is made here; identifying its realization with the product of realizations is later work.
+The construction is the simplicial product used in collapse arguments. In particular, the ordered
+cylinder is the simplicial model of the product `K × I` in the statement of Zeeman's conjecture
+(`Zeeman`). The definition follows the ordered (staircase) triangulation convention in
+Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2. No claim about the
+realization of this product is made here; for a product with finitely many faces,
+`Realization.Product.Homeomorph` identifies its realization with the product of realizations.
 
 ## Main definitions
 
