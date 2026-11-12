@@ -34,11 +34,19 @@ automorphism `e : E ≃L[ℝ] E`, or fixed basis orientations of `E` and `F`), t
 diffeomorphism preserves or reverses orientation according to the sign of the real determinant of
 `e`, and its `orientationSign` equals `SignType.sign` of that determinant.
 
+Orientations also transport along the other kind of recharting, in which the charts themselves
+are composed with `L : F ≃L[ℝ] E`, giving the charted space structure
+`ContinuousLinearEquiv.chartedSpace L M` modelled on `E`. The recharted orientation
+`TauCeti.Manifold.Orientation.rechart` maps every tangent orientation by `L`, and recharting the
+source or the target of a map does not change its orientation sign.
+
 ## Main definitions
 
 * `TauCeti.Manifold.OrientationLift.transContinuousLinearEquiv`,
   `TauCeti.Manifold.Orientation.transContinuousLinearEquiv`: transport an orientation lift or
   manifold orientation along `e : E ≃L[ℝ] F`.
+* `TauCeti.Manifold.Orientation.rechart`: transport a manifold orientation to the recharting
+  `ContinuousLinearEquiv.chartedSpace L M` along `L : F ≃L[ℝ] E`.
 
 ## Main results
 
@@ -53,6 +61,11 @@ diffeomorphism preserves or reverses orientation according to the sign of the re
 * `TauCeti.IsOrientedAtlas.orientationSign_toTransContinuousLinearEquiv`,
   `TauCeti.IsOrientedAtlas.orientationSign_toTransContinuousLinearEquiv_basis`: comparison with a
   separately fixed model orientation has the sign of the real determinant of `e`.
+* `TauCeti.Manifold.Orientation.orientationAt_rechart`: the tangent orientations of the
+  recharted orientation are those of `o` mapped by `L`.
+* `TauCeti.Manifold.Orientation.orientationSign_rechart_left`,
+  `TauCeti.Manifold.Orientation.orientationSign_rechart_right`: recharting the source or the
+  target leaves orientation signs unchanged.
 
 ## References
 

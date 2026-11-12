@@ -77,24 +77,28 @@ theorem chartAt_chartedSpace (x : M) :
 variable {M}
 
 /-- The preferred chart of the recharted structure at `x` is `L ∘ chartAt F x`. -/
+@[simp]
 theorem coe_chartAt_chartedSpace (x : M) :
     ⇑(letI := L.chartedSpace M; chartAt E x) = L ∘ chartAt F x :=
   (rfl)
 
 /-- The inverse of the preferred chart of the recharted structure at `x` is
 `(chartAt F x).symm ∘ L.symm`. -/
+@[simp]
 theorem coe_chartAt_chartedSpace_symm (x : M) :
     ⇑(letI := L.chartedSpace M; chartAt E x).symm = (chartAt F x).symm ∘ L.symm :=
   (rfl)
 
 /-- The target of the preferred chart of the recharted structure at `x` is the preimage under
 `L.symm` of the target of the preferred chart of `M` at `x`. -/
+@[simp]
 theorem target_chartAt_chartedSpace (x : M) :
     (letI := L.chartedSpace M; chartAt E x).target = L.symm ⁻¹' (chartAt F x).target := by
   simp [chartAt_chartedSpace]
 
 /-- The source of the preferred chart of the recharted structure at `x` is the source of the
 preferred chart of `M` at `x`. -/
+@[simp]
 theorem source_chartAt_chartedSpace (x : M) :
     (letI := L.chartedSpace M; chartAt E x).source = (chartAt F x).source := by
   simp [chartAt_chartedSpace]
@@ -117,7 +121,7 @@ private theorem writtenInExtChartAt_id_eventuallyEq (x : M) :
     L.symm.continuous.continuousAt.preimage_mem_nhds (by
       simpa using (chartAt F x).open_target.mem_nhds (mem_chart_target F x))
   filter_upwards [hmem] with y hy
-  simp [writtenInExtChartAt, coe_chartAt_chartedSpace_symm, (chartAt F x).right_inv hy]
+  simp [writtenInExtChartAt, (chartAt F x).right_inv hy]
 
 /-- In the preferred charts at `x`, the identity from the original structure to the recharted one
 is `L` near `chartAt F x x`. -/
@@ -126,7 +130,7 @@ private theorem writtenInExtChartAt_id_symm_eventuallyEq (x : M) :
      writtenInExtChartAt 𝓘(𝕜, F) 𝓘(𝕜, E) x (id : M → M)) =ᶠ[𝓝 (chartAt F x x)] L := by
   let := L.chartedSpace M
   filter_upwards [(chartAt F x).open_target.mem_nhds (mem_chart_target F x)] with y hy
-  simp [writtenInExtChartAt, coe_chartAt_chartedSpace, (chartAt F x).right_inv hy]
+  simp [writtenInExtChartAt, (chartAt F x).right_inv hy]
 
 /-- The identity of `M`, from its recharting along `L` to its original structure, is `C^n`. -/
 theorem contMDiff_id_chartedSpace_left {n : ℕ∞ω} :
@@ -154,6 +158,7 @@ theorem contMDiff_id_chartedSpace_right {n : ℕ∞ω} :
 
 /-- The derivative of the identity of `M`, from its recharting along `L` to its original
 structure, is `L.symm`. -/
+@[simp]
 theorem mfderiv_id_chartedSpace_left (x : M) :
     (letI := L.chartedSpace M
      mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) (id : M → M) x) = (L.symm : E →L[𝕜] F) := by
@@ -164,6 +169,7 @@ theorem mfderiv_id_chartedSpace_left (x : M) :
 
 /-- The derivative of the identity of `M`, from its original structure to its recharting along
 `L`, is `L`. -/
+@[simp]
 theorem mfderiv_id_chartedSpace_right (x : M) :
     (letI := L.chartedSpace M
      mfderiv 𝓘(𝕜, F) 𝓘(𝕜, E) (id : M → M) x) = (L : F →L[𝕜] E) := by

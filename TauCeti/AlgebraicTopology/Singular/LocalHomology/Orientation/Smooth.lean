@@ -1121,9 +1121,9 @@ theorem toHomologicalOrientation_rechart {E : Type w} [NormedAddCommGroup E] [No
   let K := (modelEquiv hF).symm.trans (L.trans (modelEquiv hE))
   refine localOrientationOfOrientedChart_eq_of_eq_trans _ _ K ?_ _ _ ?_ _ _
   · ext y
-    · simp [K, ContinuousLinearEquiv.coe_chartAt_chartedSpace]
-    · simp [K, ContinuousLinearEquiv.coe_chartAt_chartedSpace_symm]
-    · simp [ContinuousLinearEquiv.source_chartAt_chartedSpace]
+    · simp [K]
+    · simp [K]
+    · simp
   · -- Both orientations are the tangent orientation of `o` at `x` mapped by `L` and then by the
     -- linear equivalence of `E` with the Euclidean model.
     have hK : L.toLinearEquiv.trans (modelEquiv hE).toLinearEquiv =
