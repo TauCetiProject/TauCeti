@@ -62,6 +62,13 @@ abbrev tensorObj (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB)
 variable {M M' M'' : DGBimoduleCat.{uR, uA, uB, uM} hA hB}
   {N N' N'' : DGBimoduleCat.{uR, uB, uC, uN} hB hC}
 
+/-- The differential of the tensor product bimodule is the tensor differential of the
+Leibniz rules of the underlying right and left DG modules. -/
+theorem tensorObj_differential_eq_leibnizDifferential :
+    (tensorObj M N).differential =
+      leibnizDifferential M.isDGRightModule.leibniz N.isDGLeftModule.leibniz :=
+  differential_eq_leibnizDifferential M.isDGRightModule N.isDGLeftModule
+
 /-- The differential on a homogeneous pure tensor has the usual Koszul sign. -/
 theorem tensorObj_differential_tmul {p : ℤ} {m : M} (hm : m ∈ M.grading p) (n : N) :
     (tensorObj M N).differential (tmul R B m n) =
@@ -252,10 +259,8 @@ theorem map_eq_tensorObj_differential_comp_map_add_map_comp_add {f₁ f₂ k : M
       (tensorObj M' N').differential ∘ₗ BalancedTensorProduct.map k g hk hg +
         BalancedTensorProduct.map k g hk hg ∘ₗ (tensorObj M N).differential +
         BalancedTensorProduct.map f₂ g hf₂ hg := by
-  rw [show (tensorObj M N).differential = _ from
-      differential_eq_leibnizDifferential M.isDGRightModule N.isDGLeftModule,
-    show (tensorObj M' N').differential = _ from
-      differential_eq_leibnizDifferential M'.isDGRightModule N'.isDGLeftModule]
+  rw [tensorObj_differential_eq_leibnizDifferential,
+    tensorObj_differential_eq_leibnizDifferential]
   exact map_eq_leibnizDifferential_comp_map_add_map_comp_add _ _ _ _ hg hf₁ hf₂ hk hk₁ hfk hgd
 
 /-- The ordinary balanced tensor product as a bifunctor on DG bimodules.
