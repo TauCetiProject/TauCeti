@@ -84,6 +84,15 @@ end TauCeti
 
 namespace TopCat
 
+/-- Postcomposition of a singular simplex agrees with postcomposition of its continuous map
+from the standard topological simplex. -/
+@[simp]
+theorem toSSetObjEquiv_map {X Y : TopCat.{w}} (f : X ⟶ Y) (n : SimplexCategoryᵒᵖ)
+    (σ : (toSSet.obj X).obj n) :
+    toSSetObjEquiv Y n ((toSSet.map f).app n σ) =
+      f.hom.comp (toSSetObjEquiv X n σ) :=
+  (rfl)
+
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
   {R : C} {X : TopCat.{w}}
 
