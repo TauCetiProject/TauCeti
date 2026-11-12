@@ -274,6 +274,11 @@ theorem exists_isCoupling_of_wassersteinEDist_ne_top (h : wassersteinEDist p μ 
   obtain ⟨π, hπ, -⟩ := wassersteinEDist_lt_iff.1 h.lt_top
   exact ⟨π, hπ⟩
 
+/-- A law at finite Wasserstein distance from a probability law is a probability law. -/
+theorem isProbabilityMeasure_right_of_wassersteinEDist_ne_top [IsProbabilityMeasure μ]
+    (h : wassersteinEDist p μ ν ≠ ⊤) : IsProbabilityMeasure ν :=
+  (exists_isCoupling_of_wassersteinEDist_ne_top h).choose_spec.isProbabilityMeasure_right
+
 /-- At the exponent `0` the objective of a jointly measurable ground distance is identically `0`,
 so the Wasserstein distance of any two coupled measures vanishes. Thus distance-specific results
 below exclude `p = 0`, although monotonicity in the exponent remains valid when its lower exponent
@@ -597,8 +602,7 @@ theorem wassersteinEDist_dirac_left_ne_top (hd : Measurable fun z : X × X ↦ e
     {x₀ x₁ : X} (hx : edist x₁ x₀ ≠ ∞) (ν : Measure X)
     (h : wassersteinEDist p (Measure.dirac x₀) ν ≠ ∞) :
     wassersteinEDist p (Measure.dirac x₁) ν ≠ ∞ := by
-  obtain ⟨π, hπ⟩ := exists_isCoupling_of_wassersteinEDist_ne_top h
-  have : IsProbabilityMeasure ν := hπ.isProbabilityMeasure_right
+  have : IsProbabilityMeasure ν := isProbabilityMeasure_right_of_wassersteinEDist_ne_top h
   rw [← memLp_edist_iff_wassersteinEDist_dirac_ne_top hd] at h ⊢
   exact (memLp_edist_iff_of_edist_ne_top
     (hd.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable
