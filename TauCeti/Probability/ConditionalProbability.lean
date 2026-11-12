@@ -392,7 +392,7 @@ theorem tvDist_cond_self {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
       · rw [ProbabilityTheory.cond, Measure.restrict_smul, Measure.restrict_restrict hA,
           inter_self]
         apply Measure.le_iff.mpr
-        intro B hB
+        intro B _
         rw [_root_.smul_apply, smul_eq_mul]
         have hi : 1 ≤ (μ A)⁻¹ := by
           simpa using ENNReal.inv_le_inv.mpr (prob_le_one (μ := μ) (s := A))

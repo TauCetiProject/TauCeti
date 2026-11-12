@@ -127,6 +127,7 @@ theorem exists_isSolution_iff_obstruction_eq_zero :
       rw [obstruction_def]
       exact (AddEquiv.map_eq_zero_iff e).symm
 
+omit [TopologicalSpace P.Q] [DiscreteTopology P.Q] in
 /-- Vanishing of canonical continuous `H²` for the actual kernel module solves the embedding
 problem. -/
 theorem exists_isSolution_of_subsingleton_continuousCohomology_two
@@ -134,6 +135,8 @@ theorem exists_isSolution_of_subsingleton_continuousCohomology_two
       letI := P.kernelAction hcomm
       Subsingleton (continuousCohomology 2 (ofDiscreteModule ℤ G (Additive P.α.ker)))) :
     ∃ β : G →* P.E, P.IsSolution β := by
+  let : TopologicalSpace P.Q := ⊥
+  let : DiscreteTopology P.Q := ⟨rfl⟩
   apply (P.exists_isSolution_iff_obstruction_eq_zero hcomm).mpr
   let := h
   exact Subsingleton.elim _ _

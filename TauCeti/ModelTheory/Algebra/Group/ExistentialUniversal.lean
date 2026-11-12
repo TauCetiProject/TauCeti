@@ -257,6 +257,23 @@ and the inequations `I`. -/
       ¬∃ x : Fin n → G, (∀ e ∈ E, FreeGroup.lift x e = 1) ∧ ∀ i ∈ I, FreeGroup.lift x i ≠ 1 := by
   simp [noSolutionSentence, wordEqOne, Sentence.Realize]
 
+/-- With a single inequation `w ≠ 1`, the sentence `noSolutionSentence E {w}` is the universal
+implication `∀ x, (⋀ e ∈ E, e(x) = 1) → w(x) = 1`: a group satisfies it exactly when `w` vanishes
+at every tuple at which all words of `E` vanish. -/
+theorem realize_noSolutionSentence_singleton {G : Type*} [Group G]
+    (E : Finset (FreeGroup (Fin n))) (w : FreeGroup (Fin n)) : G ⊨ noSolutionSentence E {w} ↔
+      ∀ x : Fin n → G, (∀ e ∈ E, FreeGroup.lift x e = 1) → FreeGroup.lift x w = 1 := by
+  simp
+
+/-- A consequence `w` of the relators `E`, that is an element of their normal closure, vanishes
+wherever `E` does, in every group: every group satisfies `∀ x, E(x) = 1 → w(x) = 1`. -/
+theorem realize_noSolutionSentence_singleton_of_mem_normalClosure {G : Type*} [Group G]
+    {E : Finset (FreeGroup (Fin n))} {w : FreeGroup (Fin n)}
+    (hw : w ∈ Subgroup.normalClosure (E : Set (FreeGroup (Fin n)))) :
+    G ⊨ noSolutionSentence E {w} :=
+  (realize_noSolutionSentence_singleton E w).2 fun x hx =>
+    Subgroup.normalClosure_le_normal (N := (FreeGroup.lift x).ker) hx hw
+
 end NoSolution
 
 end FirstOrder.Language.group

@@ -605,7 +605,7 @@ theorem hasFTaylorSeriesUpToOn_integral_of_continuous_jets :
       C (fun y ↦ iteratedFDeriv ℝ (k + 1) (f y) x)
     rwa [hcomm, hcurry] at hD
   constructor
-  · intro x hx
+  · intro x _
     let C := (continuousMultilinearCurryFin0 ℝ H F).toContinuousLinearEquiv
     have hcomm := ContinuousLinearEquiv.integral_comp_comm (𝕜 := ℝ) (μ := μ)
       (E := H [×0]→L[ℝ] F) (F := F) C
@@ -620,7 +620,7 @@ theorem hasFTaylorSeriesUpToOn_integral_of_continuous_jets :
     apply continuousOn_integral_of_compact_support (k := univ) isCompact_univ
     · exact (hjets k).comp continuous_swap.continuousOn
         (fun _ hp ↦ ⟨mem_univ _, hp.1⟩)
-    · intro x y hx hy
+    · intro x y _ hy
       exact (hy (mem_univ y)).elim
 
 /-- A compact family with jointly continuous spatial jets has a smooth integral. -/
