@@ -34,7 +34,7 @@ all of `α` are bundled as multilinear maps `(α → A) → R`:
 * `TauCeti.partitionCumulantMultilinear φ π` — the free cumulant `a ↦ κ_π(a)`;
 * `TauCeti.freeCumulantMultilinear φ` — the free cumulant `a ↦ κ_α(a)`; for `α = Fin n` with
   `n ≥ 1` this is the `n`-th free cumulant `κ_n` as an element of
-  `MultilinearMap R (fun _ : Fin n => A) R`.
+  `MultilinearMap (RingHom.id R) (fun _ : Fin n => A) R`.
 
 ## Main results
 

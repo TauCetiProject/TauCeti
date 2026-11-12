@@ -684,10 +684,10 @@ private theorem exists_forall_eventually_lipschitzOnWith_comp_add
       DifferentiableAt ℝ (u k) (z + (σ k, 0)) :=
     ((hu k).differentiableOn (by norm_num) _ ⟨hzS hz, mem_univ _⟩).differentiableAt
       ((hS.prod isOpen_univ).mem_nhds ⟨hzS hz, mem_univ _⟩)
-  refine ⟨((convex_Icc _ _).prod convex_univ).lipschitzOnWith_of_nnnorm_fderiv_le (𝕜 := ℝ)
+  refine ⟨((convex_Icc _ _).prod convex_univ).lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ)
     (fun z hz ↦ (hdiff hz).comp z (differentiableAt_id.add_const _)) fun z hz ↦ ?_,
     fun z hz ↦ by simpa only [hzσ] using huK k _ (hzS hz) z.2⟩
-  rw [fderiv_comp_add_right, ← NNReal.coe_le_coe, coe_nnnorm]
+  rw [fderiv_comp_add_right, ← NNReal.coe_le_coe, coe_nnNorm]
   exact (hB hS ((hwin hz).trans hkS) (hu k) (hper k) (huK k) (hfloer k)
     ((lintegral_mono_set (Set.prod_mono (hwin hz) le_rfl)).trans hkE)).trans
     (Real.le_coe_toNNReal B)

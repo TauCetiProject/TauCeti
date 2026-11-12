@@ -186,7 +186,7 @@ variable {𝕜 G F : Type*} [RCLike 𝕜] [AddGroup G] [MeasurableSpace G] [Meas
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] {K : G → 𝕜}
 
 /-- **Convolving an `L^∞` function with an integrable kernel** gives a function bounded
-everywhere by `‖K‖₁ ‖g‖_∞`. Compare Mathlib's `MeasureTheory.enorm_convolution_le`, the extended
+everywhere by `‖K‖₁ ‖g‖_∞`. Compare Mathlib's `MeasureTheory.eNorm_convolution_le`, the extended
 form for Hölder conjugate exponents. -/
 theorem norm_convolution_lsmul_le_integral_norm_mul_norm (hK : Integrable K μ) (g : Lp F ∞ μ)
     (x : G) : ‖(K ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] (g : G → F)) x‖ ≤ (∫ y, ‖K y‖ ∂μ) * ‖g‖ := by

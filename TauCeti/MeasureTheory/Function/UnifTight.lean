@@ -56,7 +56,7 @@ theorem tendsto_eLpNorm_comp_sub_comp_of_tendsto {α β γ : Type*} {m : Measura
     hg.mono (hP.comp_aestronglyMeasurable hg.aestronglyMeasurable)
       (Eventually.of_forall fun x ↦ hPb (g x))
   have hbound (n : ℕ) : ∀ᵐ x ∂μ, ‖(P ∘ f n) x‖ₑ ≤ ‖f n x‖ₑ :=
-    Eventually.of_forall fun x ↦ enorm_le_iff_norm_le.2 (hPb (f n x))
+    Eventually.of_forall fun x ↦ eNorm_le_iff_norm_le.2 (hPb (f n x))
   refine tendsto_of_subseq_tendsto fun ns hns ↦ ?_
   obtain ⟨hmeasure, hui, hut⟩ :=
     (tendstoInMeasure_iff_tendsto_Lp hp hp' (fun n ↦ hf (ns n)) hg).2 (hfg.comp hns)
@@ -69,7 +69,7 @@ theorem tendsto_eLpNorm_comp_sub_comp_of_tendsto {α β γ : Type*} {m : Measura
     refine tendsto_nhds_bot_mono (hui.comp ms) (Eventually.of_forall fun ε ↦ ?_)
     simp only
     gcongr
-    exact eLpNorm_mono_enorm_ae (hmeas _).restrict ((hbound _).filter_mono ae_restrict_le)
+    exact eLpNorm_mono_eNorm_ae (hmeas _).restrict ((hbound _).filter_mono ae_restrict_le)
   exact ⟨ms, tendsto_Lp_of_tendsto_ae hp hp' (fun n ↦ hmeas (ns (ms n))) hPg hPui
     ((hut.comp ms).ae_mono (fun n ↦ hmeas (ns (ms n))) fun n ↦ hbound (ns (ms n))) hlim⟩
 
