@@ -22,7 +22,8 @@ of compatible pairs (`TauCeti.SchemePointTopology.pointsHomeomorphOfIsPullback`)
 preserves fibre products. No finiteness or separation assumptions are needed. The chosen fibre
 product `pullback g₁ g₂` is the special case `TauCeti.SchemePointTopology.pullbackPointsHomeomorph`,
 and a fibre product over the base itself has the product of the point spaces as its points
-(`TauCeti.SchemePointTopology.pointsProdHomeomorphOfIsPullback`).
+(`TauCeti.SchemePointTopology.pointsProdEquivOfIsPullback`, and as a homeomorphism
+`TauCeti.SchemePointTopology.pointsProdHomeomorphOfIsPullback`).
 
 Affine charts `Spec A ⟶ X` and `Spec B ⟶ Y` over an affine chart `Spec C ⟶ Z` give an affine
 chart `Spec (A ⊗[C] B) ⟶ P` (`TauCeti.SchemePointTopology.tensorProductChart`), on whose points
@@ -90,9 +91,9 @@ theorem pointsEquivOfIsPullback_symm_apply_val
 /-- The first projection of the inverse fibre-product comparison is the first point of the
 pair. -/
 @[simp]
-theorem map_fst_pointsEquivOfIsPullback_symm (h : p₁ ≫ fX = fP)
+theorem map_fst_pointsEquivOfIsPullback_symm
     (p : {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2}) :
-    map p₁ h ((pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm p) = p.1.1 :=
+    map p₁ hp₁ ((pointsEquivOfIsPullback hP hp₁ hg₁ hg₂).symm p) = p.1.1 :=
   Subtype.ext (by simp)
 
 /-- The second projection of the inverse fibre-product comparison is the second point of the
@@ -187,15 +188,10 @@ theorem pointsEquivOfIsPullback_symm_chartPoint (hiA : iA ≫ fX = Spec.algebraM
           ((map_chartPoint_eq_map_chartPoint_iff hg₁ hg₂ hA hB hiA hiB hiC a b).1 h)) := by
   apply Subtype.ext
   simp only [pointsEquivOfIsPullback_symm_apply_val, chartPoint_val]
-  refine hP.hom_ext ?_ ?_
-  · rw [IsPullback.lift_fst, Category.assoc, tensorProductChart_fst, ← Category.assoc,
-      ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    refine congrArg (fun φ ↦ Spec.map (CommRingCat.ofHom φ) ≫ iA) (RingHom.ext fun t ↦ ?_)
-    simp
-  · rw [IsPullback.lift_snd, Category.assoc, tensorProductChart_snd, ← Category.assoc,
-      ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    refine congrArg (fun φ ↦ Spec.map (CommRingCat.ofHom φ) ≫ iB) (RingHom.ext fun t ↦ ?_)
-    simp
+  refine hP.hom_ext ?_ ?_ <;>
+    simp only [IsPullback.lift_fst, IsPullback.lift_snd, Category.assoc, tensorProductChart_fst,
+      tensorProductChart_snd, ← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp] <;>
+    congr 2 <;> ext <;> simp
 
 end TensorProductChart
 
@@ -301,9 +297,8 @@ theorem isEmbedding_prodMk_map_of_isPullback (hp₂ : p₂ ≫ fY = fP) :
   IsEmbedding.subtypeVal.comp (pointsHomeomorphOfIsPullback hP hp₁ hg₁ hg₂).isEmbedding
 
 include hP hg₁ hg₂ in
-/-- If the points of `Z` form a Hausdorff space, for instance when `Z` is separated, the
-projections embed the points of a fibre product as a closed subspace of the product of the point
-spaces. -/
+/-- If the points of `Z` form a Hausdorff space, the projections embed the points of a fibre
+product as a closed subspace of the product of the point spaces. -/
 theorem isClosedEmbedding_prodMk_map_of_isPullback [T2Space (Points (R := R) fZ)]
     (hp₂ : p₂ ≫ fY = fP) :
     IsClosedEmbedding fun x : Points (R := R) fP ↦ (map p₁ hp₁ x, map p₂ hp₂ x) := by
@@ -339,18 +334,55 @@ end Pullback
 
 section Prod
 
-variable [TopologicalSpace R] [IsLocalRing R] [IsOpenUnits R] [IsTopologicalRing R]
-  (hXY : IsPullback p₁ p₂ fX fY)
+variable (hXY : IsPullback p₁ p₂ fX fY)
 
-/-- **Points of a product.** Over a local topological ring with open units and continuous
-inversion on the units, the `R`-points of a fibre product `P` of `X` and `Y` over `Spec k` are
-homeomorphic, through the two projections, to the product of the `R`-points of `X` and `Y`. -/
+/-- **Points of a product.** The `R`-points of a fibre product `P` of `X` and `Y` over `Spec k` are
+the pairs of `R`-points of `X` and `Y`, through the two projections. -/
+noncomputable def pointsProdEquivOfIsPullback :
+    Points (R := R) fP ≃ Points (R := R) fX × Points (R := R) fY :=
+  (pointsEquivOfIsPullback hXY hp₁ (Category.comp_id fX) (Category.comp_id fY)).trans
+    (Equiv.subtypeUnivEquiv fun _ ↦ Subsingleton.elim _ _)
+
+/-- The product comparison sends a point to its two projections. -/
+@[simp]
+theorem pointsProdEquivOfIsPullback_apply (x : Points (R := R) fP) :
+    pointsProdEquivOfIsPullback hp₁ hXY x = (map p₁ hp₁ x,
+      map p₂ (snd_comp_eq_of_commSq (Category.comp_id fX) (Category.comp_id fY) hXY.toCommSq hp₁)
+        x) :=
+  (rfl)
+
+/-- The first projection of the inverse product comparison is the first point of the pair. -/
+@[simp]
+theorem map_fst_pointsProdEquivOfIsPullback_symm (p : Points (R := R) fX × Points (R := R) fY) :
+    map p₁ hp₁ ((pointsProdEquivOfIsPullback hp₁ hXY).symm p) = p.1 :=
+  map_fst_pointsEquivOfIsPullback_symm hXY hp₁ _ _ _
+
+/-- The second projection of the inverse product comparison is the second point of the pair. -/
+@[simp]
+theorem map_snd_pointsProdEquivOfIsPullback_symm (h : p₂ ≫ fY = fP)
+    (p : Points (R := R) fX × Points (R := R) fY) :
+    map p₂ h ((pointsProdEquivOfIsPullback hp₁ hXY).symm p) = p.2 :=
+  map_snd_pointsEquivOfIsPullback_symm hXY hp₁ _ _ h _
+
+variable [TopologicalSpace R] [IsLocalRing R] [IsOpenUnits R] [IsTopologicalRing R]
+
+/-- Over a local topological ring with open units and continuous inversion on the units, the
+`R`-points of a fibre product `P` of `X` and `Y` over `Spec k` are homeomorphic, through the two
+projections, to the product of the `R`-points of `X` and `Y`. -/
 noncomputable def pointsProdHomeomorphOfIsPullback :
     Points (R := R) fP ≃ₜ Points (R := R) fX × Points (R := R) fY :=
   (pointsHomeomorphOfIsPullback hXY hp₁ (Category.comp_id fX) (Category.comp_id fY)).trans
     { toEquiv := Equiv.subtypeUnivEquiv fun _ ↦ Subsingleton.elim _ _
       continuous_toFun := continuous_subtype_val
       continuous_invFun := continuous_id.subtype_mk _ }
+
+/-- The product homeomorphism has the product comparison of points as its underlying
+equivalence. -/
+@[simp]
+theorem pointsProdHomeomorphOfIsPullback_toEquiv :
+    (pointsProdHomeomorphOfIsPullback (R := R) hp₁ hXY).toEquiv =
+      pointsProdEquivOfIsPullback hp₁ hXY :=
+  (rfl)
 
 /-- The product homeomorphism sends a point to its two projections. -/
 @[simp]
@@ -362,10 +394,10 @@ theorem pointsProdHomeomorphOfIsPullback_apply (x : Points (R := R) fP) :
 
 /-- The first projection of the inverse product homeomorphism is the first point of the pair. -/
 @[simp]
-theorem map_fst_pointsProdHomeomorphOfIsPullback_symm (h : p₁ ≫ fX = fP)
+theorem map_fst_pointsProdHomeomorphOfIsPullback_symm
     (p : Points (R := R) fX × Points (R := R) fY) :
-    map p₁ h ((pointsProdHomeomorphOfIsPullback hp₁ hXY).symm p) = p.1 :=
-  map_fst_pointsEquivOfIsPullback_symm hXY hp₁ _ _ h _
+    map p₁ hp₁ ((pointsProdHomeomorphOfIsPullback hp₁ hXY).symm p) = p.1 :=
+  map_fst_pointsEquivOfIsPullback_symm hXY hp₁ _ _ _
 
 /-- The second projection of the inverse product homeomorphism is the second point of the
 pair. -/
