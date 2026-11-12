@@ -54,7 +54,8 @@ The file also records the characterization `laplacian_eq_traceL` of the Laplacia
 the squared norm, its chain-rule generalization `ContDiff.laplacian_comp_norm_sq` to radial
 functions `x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
 `ContDiffAt.laplacian_fun_smul` for products with a scalar function, the chain rule
-`ContDiffAt.laplacian_comp` for a real function of a scalar function, the companion rule
+`ContDiffAt.laplacian_comp` for a real function of a scalar function and its plane-wave case
+`ContDiffAt.laplacian_comp_inner_sub`, additivity over finite sums, the companion rule
 `ContDiffAt.laplacian_norm_sq` for the squared norm of a vector-valued function, and the locality
 statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes identically.
 
@@ -96,6 +97,9 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   function `F` of a scalar function `q`.
 * `ContDiffAt.laplacian_fun_smul`: its vector-valued form
   `Δ (f • g) = f • Δg + 2 Dg(∇f) + Δf • g`.
+* `ContDiffAt.laplacian_comp_inner_sub`: the Laplacian of a plane wave `z ↦ F ⟪θ, z - x⟫` is
+  `‖θ‖² F''`.
+* `TauCeti.laplacian_fun_sum`: the Laplacian of a finite sum of `C²` functions.
 * `ContDiffAt.laplacian_norm_sq`: the Laplacian of a squared norm,
   `Δ ‖f‖² = 2 ∑ᵢ ‖Df (bᵢ)‖² + 2 ⟪f, Δf⟫` for an orthonormal basis `b`.
 * `TauCeti.tsupport_laplacian_subset`: `tsupport (Δ f) ⊆ tsupport f`.
@@ -521,6 +525,46 @@ theorem _root_.ContDiffAt.laplacian_comp {F : ℝ → ℝ} {q : E → ℝ} {x : 
   rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ b) x,
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis q b) x, hgrad]
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
+
+open Gradient in
+/-- **The Laplacian of a plane wave.** For a vector `θ`, a base point `x` and a real function `F`
+twice differentiable at `⟪θ, y - x⟫`, the function `z ↦ F ⟪θ, z - x⟫`, constant on the hyperplanes
+orthogonal to `θ`, has Laplacian `‖θ‖² F'' (⟪θ, y - x⟫)` at `y`. For instance `cosh (c ⟪θ, z⟫)`
+with `‖θ‖ = 1` is an eigenfunction of `Δ` with eigenvalue `c²`. -/
+theorem _root_.ContDiffAt.laplacian_comp_inner_sub {F : ℝ → ℝ} {θ x y : E}
+    (hF : ContDiffAt ℝ 2 F ⟪θ, y - x⟫_ℝ) :
+    Δ (fun z ↦ F ⟪θ, z - x⟫_ℝ) y = ‖θ‖ ^ 2 * deriv (deriv F) ⟪θ, y - x⟫_ℝ := by
+  set q : E → ℝ := fun z ↦ ⟪θ, z - x⟫_ℝ with hq
+  -- `q` is affine, with derivative `⟪θ, ·⟫` everywhere, so `∇q = θ` and `Δq = 0`.
+  have hqd (z : E) : HasFDerivAt q (innerSL ℝ θ) z := by
+    simpa [hq, inner_sub_right] using ((innerSL ℝ θ).hasFDerivAt (x := z)).sub_const ⟪θ, x⟫_ℝ
+  have hgrad : ∇ q y = θ := by
+    refine HasGradientAt.gradient ?_
+    rw [hasGradientAt_iff_hasFDerivAt, show toDual ℝ E θ = innerSL ℝ θ by ext; simp]
+    exact hqd y
+  have hlap : Δ q y = 0 := by
+    have h : fderiv ℝ q = fun _ ↦ innerSL ℝ θ := funext fun z ↦ (hqd z).fderiv
+    rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+    simp [iteratedFDeriv_two_apply, h]
+  have hqc : ContDiffAt ℝ 2 q y :=
+    (contDiff_const.inner ℝ (contDiff_id.sub contDiff_const)).contDiffAt
+  have h := ContDiffAt.laplacian_comp (q := q) hF hqc
+  rw [Function.comp_def, hgrad, hlap, mul_zero, add_zero, mul_comm] at h
+  exact h
+
+/-- **The Laplacian of a finite sum** is the sum of the Laplacians of the summands, when these are
+twice differentiable at the point. -/
+theorem laplacian_fun_sum {ι : Type*} {s : Finset ι} {f : ι → E → F} {x : E}
+    (hf : ∀ i ∈ s, ContDiffAt ℝ 2 (f i) x) :
+    Δ (fun y ↦ ∑ i ∈ s, f i y) x = ∑ i ∈ s, Δ (f i) x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    simp_rw [Finset.sum_insert ha]
+    rw [← ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)]
+    exact (hf a (Finset.mem_insert_self a s)).laplacian_add
+      (ContDiffAt.sum fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
 
 open Gradient in
 /-- **The Leibniz rule for the Laplacian**, vector-valued form.  For a scalar function `f` and a
