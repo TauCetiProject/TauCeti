@@ -81,12 +81,30 @@ theorem hasFDerivAt_log (x : EuclideanSpace ℝ ι) (hx : ∀ i, x i ≠ 0) :
   simp [ContinuousLinearMap.comp_apply, Matrix.toLpLin_apply, Matrix.mulVec_diagonal]
 
 omit [DecidableEq ι] in
-/-- The Jacobian determinant of coordinatewise logarithms is the reciprocal coordinate product. -/
+/-- The Jacobian determinant of coordinatewise logarithms is the reciprocal coordinate product.
+If a coordinate vanishes, both sides are `0`, since `Real.log` is not differentiable at `0`. -/
 @[simp]
-theorem det_fderiv_log (x : EuclideanSpace ℝ ι) (hx : ∀ i, x i ≠ 0) :
+theorem det_fderiv_log (x : EuclideanSpace ℝ ι) :
     (fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 (fun i ↦ Real.log (y i))) x).det =
       (∏ i, x i)⁻¹ := by
   classical
-  rw [(hasFDerivAt_log x hx).fderiv, Matrix.det_toEuclideanCLM_diagonal, Finset.prod_inv_distrib]
+  by_cases hx : ∀ i, x i ≠ 0
+  · rw [(hasFDerivAt_log x hx).fderiv, Matrix.det_toEuclideanCLM_diagonal,
+      Finset.prod_inv_distrib]
+  · push Not at hx
+    obtain ⟨i, hi⟩ := hx
+    have : Nonempty ι := ⟨i⟩
+    have hnd : ¬ DifferentiableAt ℝ
+        (fun y : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 (fun i ↦ Real.log (y i))) x := fun hd ↦ by
+      have h1 := (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp x hd
+      have hφx : x + (x i - x i) • EuclideanSpace.single i (1 : ℝ) = x := by simp
+      have hφ : DifferentiableAt ℝ
+          (fun t : ℝ ↦ x + (t - x i) • EuclideanSpace.single i (1 : ℝ)) (x i) := by fun_prop
+      have h2 := DifferentiableAt.comp (x i) (by rwa [hφx]) hφ
+      refine Real.differentiableAt_log_iff.1 (h2.congr_of_eventuallyEq (Filter.Eventually.of_forall
+        fun t ↦ ?_)) hi
+      simp
+    rw [fderiv_zero_of_not_differentiableAt hnd, Finset.prod_eq_zero (Finset.mem_univ i) hi]
+    simp [ContinuousLinearMap.det, LinearMap.det_zero, finrank_euclideanSpace]
 
 end PiLp
