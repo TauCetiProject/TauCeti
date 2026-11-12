@@ -69,7 +69,7 @@ theorem norm_eval_hasseDeriv_monomial_le (d μ : σ →₀ ℕ) (c : R) (a : σ 
     _ ≤ ((∏ s, (μ s).choose (d s) : ℕ) : ℝ) * ‖c * ∏ s, a s ^ (μ s - d s)‖ := norm_nsmul_le
     _ ≤ ((∏ s, (μ s).choose (d s) : ℕ) : ℝ) * (‖c‖ * ∏ s, ‖a s‖ ^ (μ s - d s)) := by
       gcongr
-      exact TauCeti.norm_mul_prod_pow_le _ _ _ _
+      exact Finset.norm_mul_prod_pow_le _ _ _ _
     _ = ‖c‖ * ∏ s, ((μ s).choose (d s) : ℝ) * ‖a s‖ ^ (μ s - d s) := by
       rw [prod_mul_distrib, Nat.cast_prod]
       ring
