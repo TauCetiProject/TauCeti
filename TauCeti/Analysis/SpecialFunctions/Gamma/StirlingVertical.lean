@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling
-public import Mathlib.Analysis.Calculus.MeanValue
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 
 /-!
 # Stirling's formula on vertical strips
@@ -24,8 +24,9 @@ Once `|σ| ≤ |t|` the point `σ + i t` has `|arg| ≤ 3π/4`, and the sector m
 `(σ - 1/2) log ‖s‖ - t arg s - σ` differs from the vertical one by two terms of size `O(1 / |t|)`:
 
 * `0 ≤ log ‖s‖ - log |t| ≤ |σ| / |t|`, since `|t| ≤ ‖s‖ ≤ |t| + |σ|`;
-* for `t > 0`, `π / 2 - arg s = arctan (σ / t)`, and `|arctan x - x| ≤ |x| ^ 3`, so
-  `t (π / 2 - arg s) - σ` is at most `σ ^ 2 / t` in absolute value.
+* for `t > 0`, `π / 2 - arg s = arctan (σ / t)` (`Complex.arg_eq_pi_div_two_sub_arctan_of_im_pos`)
+  and `|arctan x - x| ≤ |x| ^ 3` (`Real.abs_arctan_sub_self_le`), so `t (π / 2 - arg s) - σ` is at
+  most `σ ^ 2 / t` in absolute value.
 
 Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
 
@@ -47,43 +48,33 @@ open Complex Real Filter Set Asymptotics
 
 namespace TauCeti
 
-/-- `arctan x = x + O(|x| ^ 3)`, with constant `1`, from `|arctan' u - 1| ≤ u ^ 2`. -/
-private theorem abs_arctan_sub_self_le (x : ℝ) : |Real.arctan x - x| ≤ |x| ^ 3 := by
-  have hderiv : ∀ u ∈ Metric.closedBall (0 : ℝ) |x|, HasDerivWithinAt
-      (fun u ↦ Real.arctan u - u) ((1 + u ^ 2)⁻¹ - 1) (Metric.closedBall 0 |x|) u :=
-    fun u _ ↦ ((Real.hasDerivAt_arctan' u).sub (hasDerivAt_id u)).hasDerivWithinAt
-  have hbound : ∀ u ∈ Metric.closedBall (0 : ℝ) |x|, ‖(1 + u ^ 2)⁻¹ - 1‖ ≤ |x| ^ 2 := by
-    intro u hu
-    rw [Metric.mem_closedBall, dist_zero_right, Real.norm_eq_abs] at hu
-    have h1 : 0 < 1 + u ^ 2 := by positivity
-    have heq : (1 + u ^ 2)⁻¹ - 1 = -(u ^ 2 / (1 + u ^ 2)) := by
-      field_simp
-      ring
-    rw [heq, Real.norm_eq_abs, abs_neg, abs_of_nonneg (by positivity)]
-    calc u ^ 2 / (1 + u ^ 2) ≤ u ^ 2 := div_le_self (sq_nonneg u) (by nlinarith)
-      _ = |u| ^ 2 := (sq_abs u).symm
-      _ ≤ |x| ^ 2 := pow_le_pow_left₀ (abs_nonneg u) hu 2
-  have h := (convex_closedBall (0 : ℝ) |x|).norm_image_sub_le_of_norm_hasDerivWithin_le
-    (x := 0) (y := x) hderiv hbound (Metric.mem_closedBall_self (abs_nonneg x)) (by simp)
-  simpa [pow_succ] using h
+/-- The modulus term: `0 ≤ log ‖σ + i t‖ - log t ≤ |σ| / t` for `t > 0`, since
+`t ≤ ‖σ + i t‖ ≤ t + |σ|`. -/
+private theorem abs_log_norm_sub_log_im_le {σ t : ℝ} (ht : 0 < t) :
+    |Real.log ‖(σ : ℂ) + t * I‖ - Real.log t| ≤ |σ| / t := by
+  set s : ℂ := σ + t * I
+  have hts : t ≤ ‖s‖ := by simpa [s, abs_of_pos ht] using abs_im_le_norm s
+  have hst : ‖s‖ ≤ |σ| + t := by simpa [s, abs_of_pos ht] using norm_le_abs_re_add_abs_im s
+  rw [abs_of_nonneg (sub_nonneg.2 (Real.log_le_log ht hts)),
+    ← Real.log_div (ht.trans_le hts).ne' ht.ne']
+  refine (Real.log_le_sub_one_of_pos (div_pos (ht.trans_le hts) ht)).trans ?_
+  rw [div_sub_one ht.ne']
+  exact div_le_div_of_nonneg_right (by linarith) ht.le
 
-/-- In the upper half-plane, `π / 2 - arg (σ + i t) = arctan (σ / t)`. -/
-private theorem arctan_div_eq_pi_div_two_sub_arg {σ t : ℝ} (ht : 0 < t) :
-    Real.arctan (σ / t) = π / 2 - arg (σ + t * I) := by
-  have hre : ((σ : ℂ) + t * I).re = σ := by simp
-  have him : ((σ : ℂ) + t * I).im = t := by simp
-  have hpos : 0 < arg ((σ : ℂ) + t * I) := by
-    refine (arg_nonneg_iff.mpr (by rw [him]; exact ht.le)).lt_of_ne (Ne.symm ?_)
-    intro h
-    rw [arg_eq_zero_iff, him] at h
-    exact ht.ne' h.2
-  have hlt : arg ((σ : ℂ) + t * I) < π := by
-    refine (arg_le_pi _).lt_of_ne ?_
-    intro h
-    rw [arg_eq_pi_iff, him] at h
-    exact ht.ne' h.2
-  refine Real.arctan_eq_of_tan_eq ?_ ⟨by linarith, by linarith⟩
-  rw [Real.tan_pi_div_two_sub, tan_arg, hre, him, inv_div]
+/-- The angle term: `|t (arctan (σ / t) - σ / t)| ≤ σ ^ 2 / t` for `|σ| ≤ t`, from the cubic
+bound `|arctan x - x| ≤ |x| ^ 3` at `|x| ≤ 1`. -/
+private theorem abs_mul_arctan_div_sub_div_le {σ t : ℝ} (ht : 0 < t) (hσt : |σ| ≤ t) :
+    |t * (Real.arctan (σ / t) - σ / t)| ≤ σ ^ 2 / t := by
+  have hx1 : |σ / t| ≤ 1 := by
+    rw [abs_div, abs_of_pos ht]
+    exact div_le_one_of_le₀ hσt ht.le
+  rw [abs_mul, abs_of_pos ht]
+  calc t * |Real.arctan (σ / t) - σ / t| ≤ t * |σ / t| ^ 2 :=
+        mul_le_mul_of_nonneg_left ((Real.abs_arctan_sub_self_le _).trans
+          (pow_le_pow_of_le_one (abs_nonneg _) hx1 (by norm_num))) ht.le
+    _ = σ ^ 2 / t := by
+      rw [sq_abs]
+      field_simp
 
 /-- The explicit vertical bound in the upper half-plane. -/
 private theorem abs_log_norm_Gamma_vertical_sub_le_of_pos {σ t : ℝ} (ht : 0 < t)
@@ -98,59 +89,40 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_pos {σ t : ℝ} (ht : 0 <
   rw [abs_of_pos ht]
   have hs0 : s ≠ 0 := fun h ↦ ht.ne' (by rw [← him, h, zero_im])
   have hts : t ≤ ‖s‖ := by simpa [him, abs_of_pos ht] using abs_im_le_norm s
-  have hst : ‖s‖ ≤ |σ| + t := by simpa [hre, him, abs_of_pos ht] using norm_le_abs_re_add_abs_im s
   have hK : 0 ≤ K := div_nonneg zero_le_two (pow_nonneg (sub_nonneg.2 (Real.cos_le_one _)) 3)
-  -- the angle
-  set x : ℝ := σ / t with hx_def
-  have hx1 : |x| ≤ 1 := by
-    rw [hx_def, abs_div, abs_of_pos ht]
-    exact div_le_one_of_le₀ hσt ht.le
-  have harctan := arctan_div_eq_pi_div_two_sub_arg (σ := σ) ht
-  have hatan_le : |Real.arctan x| ≤ π / 4 := by
+  -- the angle: `arg s = π / 2 - arctan (σ / t)` with `|arctan (σ / t)| ≤ π / 4`
+  have harg := arg_eq_pi_div_two_sub_arctan_of_im_pos (w := s) (by rwa [him])
+  rw [hre, him] at harg
+  have hatan_le : |Real.arctan (σ / t)| ≤ π / 4 := by
+    have hx1 : |σ / t| ≤ 1 := by
+      rw [abs_div, abs_of_pos ht]
+      exact div_le_one_of_le₀ hσt ht.le
     rw [← Real.arctan_one, abs_le, ← Real.arctan_neg]
     exact ⟨Real.arctan_mono (abs_le.1 hx1).1, Real.arctan_mono (abs_le.1 hx1).2⟩
-  have harg : |s.arg| ≤ π - π / 4 := by
-    have h : s.arg = π / 2 - Real.arctan x := by rw [harctan]; ring
-    rw [h, abs_le]
+  have hsector : |s.arg| ≤ π - π / 4 := by
+    rw [harg, abs_le]
     obtain ⟨h1, h2⟩ := abs_le.1 hatan_le
     constructor <;> linarith [Real.pi_pos]
   -- Stirling on the sector `|arg s| ≤ 3π/4`
   have hS := abs_log_norm_Gamma_sub_stirling_le (by positivity) (by linarith [Real.pi_pos])
-    harg hs0
+    hsector hs0
   rw [hre, him, ← div_div] at hS
   have hS' : K / ‖s‖ ≤ K / t := div_le_div_of_nonneg_left hK ht hts
   -- the modulus term
-  have hlog0 : 0 ≤ Real.log ‖s‖ - Real.log t := sub_nonneg.2 (Real.log_le_log ht hts)
-  have hlog1 : Real.log ‖s‖ - Real.log t ≤ |σ| / t := by
-    rw [← Real.log_div (norm_ne_zero_iff.2 hs0) ht.ne']
-    refine (Real.log_le_sub_one_of_pos (div_pos (norm_pos_iff.2 hs0) ht)).trans ?_
-    rw [div_sub_one ht.ne']
-    exact div_le_div_of_nonneg_right (by linarith) ht.le
   have hA : |(σ - 1 / 2) * (Real.log ‖s‖ - Real.log t)| ≤ |σ - 1 / 2| * |σ| / t := by
-    rw [abs_mul, abs_of_nonneg hlog0, mul_div_assoc]
-    exact mul_le_mul_of_nonneg_left hlog1 (abs_nonneg _)
-  -- the angle term
-  have hB : |t * (Real.arctan x - x)| ≤ σ ^ 2 / t := by
-    rw [abs_mul, abs_of_pos ht]
-    have h3 : |x| ^ 3 ≤ |x| ^ 2 := pow_le_pow_of_le_one (abs_nonneg x) hx1 (by norm_num)
-    have hx2 : t * |x| ^ 2 = σ ^ 2 / t := by
-      rw [sq_abs, hx_def]
-      field_simp
-    calc t * |Real.arctan x - x| ≤ t * |x| ^ 2 :=
-          mul_le_mul_of_nonneg_left ((abs_arctan_sub_self_le x).trans h3) ht.le
-      _ = σ ^ 2 / t := hx2
+    rw [abs_mul, mul_div_assoc]
+    exact mul_le_mul_of_nonneg_left (abs_log_norm_sub_log_im_le ht) (abs_nonneg _)
   have hsplit : Real.log ‖Complex.Gamma s‖ -
       ((σ - 1 / 2) * Real.log t - π * t / 2 + Real.log (2 * π) / 2) =
       (Real.log ‖Complex.Gamma s‖ - ((σ - 1 / 2) * Real.log ‖s‖ - t * s.arg - σ +
         Real.log (2 * π) / 2)) + (σ - 1 / 2) * (Real.log ‖s‖ - Real.log t) +
-      t * (Real.arctan x - x) := by
-    have hσ : t * x = σ := by rw [hx_def]; field_simp
-    have harg' : s.arg = π / 2 - Real.arctan x := by rw [harctan]; ring
-    rw [harg']
+      t * (Real.arctan (σ / t) - σ / t) := by
+    have hσ : t * (σ / t) = σ := by field_simp
+    rw [harg]
     linear_combination hσ
   rw [hsplit, add_div, add_div]
   refine (abs_add_three _ _ _).trans ?_
-  linarith [hS.trans hS']
+  linarith [hS.trans hS', abs_mul_arctan_div_sub_div_le ht hσt]
 
 /-- **Stirling's formula on vertical strips**, explicit form: for `t ≠ 0` and `|σ| ≤ |t|`,
 `|log ‖Γ(σ + i t)‖ - ((σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2)| ≤
@@ -184,9 +156,8 @@ theorem exists_abs_log_norm_Gamma_vertical_sub_le (a b : ℝ) :
   refine (abs_log_norm_Gamma_vertical_sub_le (abs_pos.1 ht0) (by linarith)).trans ?_
   refine div_le_div_of_nonneg_right ?_ ht0.le
   have h1 : |σ - 1 / 2| ≤ M + 1 / 2 := by
-    refine (abs_sub _ _).trans ?_
-    norm_num
-    linarith
+    obtain ⟨hl, hu⟩ := abs_le.1 hσM
+    exact abs_le.2 ⟨by linarith, by linarith⟩
   have h2 : |σ - 1 / 2| * |σ| ≤ (M + 1 / 2) * M :=
     mul_le_mul h1 hσM (abs_nonneg _) (by linarith)
   have h3 : σ ^ 2 ≤ M ^ 2 := by
