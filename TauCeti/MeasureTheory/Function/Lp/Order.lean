@@ -63,11 +63,15 @@ theorem posPart_eq_zero_iff {f : Lp ℝ p μ} : Lp.posPart f = 0 ↔ f ≤ 0 := 
   rw [← coeFn_le]
   constructor
   · intro h
-    filter_upwards [coeFn_posPart f, h ▸ coeFn_zero ℝ p μ, coeFn_zero ℝ p μ] with x hx h₀ h₀'
+    have hpos : Lp.posPart f =ᵐ[μ] 0 := by
+      rw [h]
+      exact coeFn_zero ℝ p μ
+    filter_upwards [coeFn_posPart f, hpos, coeFn_zero ℝ p μ] with x hx h₀ h₀'
     rw [h₀', Pi.zero_apply, ← max_eq_right_iff, ← hx, h₀, Pi.zero_apply]
   · intro h
     refine Lp.ext ?_
     filter_upwards [coeFn_posPart f, coeFn_zero ℝ p μ, h] with x hx h₀ hle
-    rw [hx, h₀, Pi.zero_apply, max_eq_right (hle.trans_eq (h₀ ▸ rfl))]
+    rw [hx, h₀, Pi.zero_apply, max_eq_right_iff]
+    exact hle.trans_eq h₀
 
 end MeasureTheory.Lp

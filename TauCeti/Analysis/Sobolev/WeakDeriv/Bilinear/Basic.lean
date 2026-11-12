@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.GelfandTriple
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-public import Mathlib.Analysis.Convolution
 import TauCeti.MeasureTheory.Function.Lp.Holder
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Convolution.Basic
@@ -45,8 +44,6 @@ energy identity behind existence and uniqueness for linear parabolic equations.
 
 ## Main declarations
 
-* `TauCeti.HasWeakLineDerivOn.convolution_eq_apply_fderiv_convolution`: mollification commutes with
-  a weak derivative taken through a continuous linear map.
 * `TauCeti.HasWeakLineDerivOn.bilin`: the mixed product rule for two functions.
 * `TauCeti.HasWeakLineDerivOn.bilin_self`: the weak product rule `∂_v B(u, u) = 2 u'(u)`.
 * `TauCeti.HasWeakLineDerivOn.norm_sq_of_gelfandDual`: its Gelfand-triple form
@@ -68,35 +65,6 @@ namespace TauCeti
 variable {E V : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V] {Ω : Opens E} {v : E}
-
-/-- **Mollification commutes with a weak derivative taken through a continuous linear map.** Let
-`U` be locally integrable, let `y ↦ L (U y)` have weak derivative `U'` on `Ω`, and let `ρ` be a
-smooth compactly supported kernel with `x - tsupport ρ ⊆ Ω`. Then the mollification `g = ρ ⋆ U`
-satisfies `(ρ ⋆ U') x = L (∂_v g x)`. -/
-theorem HasWeakLineDerivOn.convolution_eq_apply_fderiv_convolution {G : Type*}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {L : V →L[ℝ] G} {U : E → V}
-    {U' : E → G} (hind : HasWeakLineDerivOn μ Ω (fun y ↦ L (U y)) U' v)
-    (hU : LocallyIntegrable U μ) {ρ : E → ℝ} (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ)
-    {x : E} (hx : ∀ y ∈ tsupport ρ, x - y ∈ Ω) :
-    (ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U') x =
-      L (fderiv ℝ (ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U) x v) := by
-  set g := ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U with hg_def
-  have hgd : HasFDerivAt g (fderiv ℝ g x) x :=
-    ((hρc.contDiff_convolution_left _ (hρ.of_le (by simp)) hU :
-      ContDiff ℝ 1 g).differentiable one_ne_zero x).hasFDerivAt
-  -- `L ∘ g` is the mollification of `L ∘ U`, so its derivative is the mollification of `U'`.
-  have hLg : (fun y ↦ L (g y)) =
-      (fun y ↦ L (U y)) ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] ρ := by
-    ext1 y
-    rw [convolution_flip, hg_def,
-      L.convolution_lsmul_comp_comm (hρc.convolutionExists_left _ hρ.continuous hU y)]
-  have h₁ : HasLineDerivAt ℝ (fun y ↦ L (g y))
-      ((U' ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] ρ) x) x v := by
-    rw [hLg]
-    exact hind.hasLineDerivAt_convolution_right
-      (fun y ↦ L.integrableAtFilter_comp (hU y)) ρ hρ hρc x hx
-  rw [← convolution_flip]
-  exact h₁.unique ((L.hasFDerivAt.comp x hgd).hasLineDerivAt v)
 
 /-- **The product rule for a mollified quadratic form.** Let `U` be locally integrable, let the
 `V*`-valued function `y ↦ B (U y)` have weak derivative `U'` on `Ω`, and let `ρ` be a smooth

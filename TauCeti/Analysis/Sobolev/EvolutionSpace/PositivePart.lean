@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Basic
+public import TauCeti.Analysis.InnerProductSpace.GelfandTriple
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.Lp.Holder

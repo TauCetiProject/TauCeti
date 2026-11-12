@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.MeasureTheory.Integral.PiSystem
+import TauCeti.Algebra.Order.Ring.PosPartSq
 
 /-!
 # Inner products of square-integrable functions
@@ -190,15 +191,6 @@ theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
   filter_upwards [hg.coeFn_toLp] with x hx
   rw [hx]
 
-/-- For real `x` and `y`, the remainder `(x + y)⁺² - x⁺² - 2 x⁺ y` of the square of the positive
-part lies between `0` and `y²`. -/
-private theorem max_add_sq_sub_bounds (x y : ℝ) :
-    0 ≤ max (x + y) 0 ^ 2 - max x 0 ^ 2 - 2 * max x 0 * y ∧
-      max (x + y) 0 ^ 2 - max x 0 ^ 2 - 2 * max x 0 * y ≤ y ^ 2 := by
-  rcases le_total 0 x with hx | hx <;> rcases le_total 0 (x + y) with hxy | hxy <;>
-    simp only [max_eq_left, max_eq_right, hx, hxy] <;> constructor <;>
-    nlinarith [sq_nonneg y, sq_nonneg (x + y), sq_nonneg x]
-
 open Filter in
 /-- **The squared `L²` norm of the positive part is differentiable**: on real `L²`, the map
 `g ↦ ‖g⁺‖²` has derivative `k ↦ 2 ⟪f⁺, k⟫` at `f`. -/
@@ -229,8 +221,8 @@ theorem Lp.hasFDerivAt_norm_posPart_sq (f : Lp ℝ 2 μ) :
       ← integral_const_mul, ← integral_sub i₁ i₂, ← integral_sub i₁₂ i₃]
     exact integral_congr_ae hφeq
   -- Pointwise `0 ≤ φ ≤ h²`, so `0 ≤ ∫ φ ≤ ‖h‖²`.
-  have hφ : ∀ᵐ x ∂μ, 0 ≤ φ x ∧ φ x ≤ h x * h x :=
-    Eventually.of_forall fun x ↦ by simpa only [φ, ← sq] using max_add_sq_sub_bounds (f x) (h x)
+  have hφ : ∀ᵐ x ∂μ, 0 ≤ φ x ∧ φ x ≤ h x * h x := Eventually.of_forall fun x ↦ by
+    simpa only [φ, ← sq] using TauCeti.max_add_sq_sub_bounds (f x) (h x)
   have hh : ‖h‖ ^ 2 = ∫ x, h x * h x ∂μ := by
     rw [← real_inner_self_eq_norm_sq, L2.inner_def]
     simp only [RCLike.inner_apply, conj_trivial]
