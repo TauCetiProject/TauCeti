@@ -419,8 +419,6 @@ theorem exists_forall_one_sub_normSq_le_mul_exp (m : ℕ) (R : ℝ) {c : ℝ} (h
   obtain ⟨hxs, hsol, hfr⟩ := mem_framedVortexSubMulAction.1 x.2
   have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ (x : ℂ → EuclideanSpace ℝ (Fin 4)) w i :=
     (contDiff_piLp 2).1 hxs i
-  have hb₁ := (hxi 0).differentiable (by simp)
-  have hb₂ := (hxi 1).differentiable (by simp)
   have hp : ContDiff ℝ 2 fun w ↦ (x : ℂ → EuclideanSpace ℝ (Fin 4)) w 2 := (hxi 2).of_le (by simp)
   have hq : ContDiff ℝ 2 fun w ↦ (x : ℂ → EuclideanSpace ℝ (Fin 4)) w 3 := (hxi 3).of_le (by simp)
   have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hfr
@@ -433,7 +431,7 @@ theorem exists_forall_one_sub_normSq_le_mul_exp (m : ℕ) (R : ℝ) {c : ℝ} (h
   have hpos : ∀ z, R₀ ≤ ‖z‖ → 0 < s z := fun z hz ↦ hδ.trans_le (hlowx z hz)
   -- First step: decay at the rate `c₀` outside the disc of radius `R₀`.
   have hstep₁ : ∀ z, R₀ ≤ ‖z‖ → -Real.log (s z) ≤ M₀ * Real.exp (-(c₀ * (‖z‖ - R₀))) :=
-    fun z hz ↦ neg_log_normSq_le_mul_exp_of_le_normSq hb₁ hb₂ hp hq hsol hlim hR₀ hc₀.le hM₀
+    fun z hz ↦ neg_log_normSq_le_mul_exp_of_le_normSq hp hq hsol hlim hR₀ hc₀.le hM₀
       (fun w hw ↦ h4c₀ ▸ hlowx w hw) hpos
       (fun w hw ↦ neg_le_neg (Real.log_le_log hδ (hlowx w hw.ge))) hz
   -- Past the radius `R₁`, `-log |α|² ≤ M₁`, that is `|α|² ≥ 4 c'²`.
@@ -449,7 +447,7 @@ theorem exists_forall_one_sub_normSq_le_mul_exp (m : ℕ) (R : ℝ) {c : ℝ} (h
     exact (Real.log_le_log_iff h4c'0 (hpos z hz₀)).mp this
   -- Second step: decay at the rate `c'` outside the disc of radius `R₁`.
   have hstep₂ : ∀ z, R₁ ≤ ‖z‖ → -Real.log (s z) ≤ M₁ * Real.exp (-(c' * (‖z‖ - R₁))) :=
-    fun z hz ↦ neg_log_normSq_le_mul_exp_of_le_normSq hb₁ hb₂ hp hq hsol hlim hR₁ hc'0.le hM₁.le
+    fun z hz ↦ neg_log_normSq_le_mul_exp_of_le_normSq hp hq hsol hlim hR₁ hc'0.le hM₁.le
       hsR₁ (fun w hw ↦ hpos w (by linarith)) (fun w hw ↦ hfar w hw.ge) hz
   have hcc' : Real.exp (-(c' * ‖z‖)) ≤ Real.exp (-(c * ‖z‖)) :=
     Real.exp_le_exp.mpr (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _)
@@ -490,8 +488,7 @@ theorem exists_forall_abs_curvature_le_mul_exp (m : ℕ) (R : ℝ) {c : ℝ} (hc
   obtain ⟨hxs, hsol, hfr⟩ := mem_framedVortexSubMulAction.1 x.2
   have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ (x : ℂ → EuclideanSpace ℝ (Fin 4)) w i :=
     (contDiff_piLp 2).1 hxs i
-  have h₁ := normSq_le_one_of_tendsto ((hxi 0).differentiable (by simp))
-    ((hxi 1).differentiable (by simp)) ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
+  have h₁ := normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
     (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hfr) z
   rw [curvature_eq_of_equation_eq_zero (hsol z), abs_neg, abs_of_nonneg (by linarith)]
   linarith [hK x hx z]
