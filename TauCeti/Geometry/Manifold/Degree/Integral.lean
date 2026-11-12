@@ -260,7 +260,7 @@ theorem eventually_isRegularValue_and_degreeAtRegularValue_eq [CompactSpace M] [
   classical
   set s := (hy.finite_preimage (o.card_eq.symm.trans o'.card_eq) hf.continuous).toFinset
   have hs (x : M) : x ∈ s ↔ f x = y := by simp [s]
-  obtain ⟨e, hxe, hfe, hsgn, hdisj, V, hV, hVt, hVs⟩ :=
+  obtain ⟨e, -, hfe, hsgn, hdisj, V, hV, hVt, hVs⟩ :=
     exists_stack_of_records o o' hf hy s hs
   filter_upwards [hV] with y' hy'
   -- Over `y'`, the sheet over `x` contains the preimage `(e x).symm y'`, and no other.
