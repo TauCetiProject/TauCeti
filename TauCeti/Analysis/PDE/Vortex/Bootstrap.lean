@@ -146,7 +146,7 @@ theorem mem_sobolevFields_add_one_of_gaugeFixedOperator {s : ℝ} (hs : 1 ≤ s)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (hyc : ContDiff ℝ 1 y)
     (hL : gaugeFixedOperator vacuumField y ∈ sobolevFields s) : y ∈ sobolevFields (s + 1) := by
   -- `L²` representatives of the coordinates and of their classical derivatives.
-  choose u huy hu using fun i ↦ mem_realSobolevFunctions.1 (mem_sobolevFields.1 hy i)
+  choose u huy _ using fun i ↦ mem_realSobolevFunctions.1 (mem_sobolevFields.1 hy i)
   have hd (i : Fin 4) (v : ℂ) :
       (fun z ↦ fderiv ℝ (fun w ↦ y w i) z v) ∈ realSobolevFunctions ℂ (s - 1) 2 :=
     fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num) (by linarith)
