@@ -48,7 +48,9 @@ properties of the graded parts of the strands algebra.
 * `TauCeti.StrandDiagram.grading_eq_of_matchedSetoid`: diagrams differing in the positions of their
   horizontal strands within matched classes have the same grading.
 * `TauCeti.StrandsAlgebra.horizontalCompletion_mem_gradedPart`: `a(ρ, h)` has grading `gr(ρ)`.
-* `TauCeti.StrandsAlgebra.matchedSum_mem_gradedPart`: a matched completion sum is homogeneous.
+* `TauCeti.StrandsAlgebra.matchedSum_mem_gradedPart`,
+  `TauCeti.StrandsAlgebra.matchedSum_mem_gradedPart_iff`: a matched completion sum is homogeneous,
+  of the grading of the diagram it completes.
 * `TauCeti.StrandsAlgebra.matchedIdem_mem_gradedPart`,
   `TauCeti.StrandsAlgebra.matchedOne_mem_gradedPart`: the idempotents `I(s)` and the unit
   `∑ₛ I(s)` have grading `1`.
@@ -56,6 +58,7 @@ properties of the graded parts of the strands algebra.
   `TauCeti.StrandsAlgebra.iSupIndep_matchedSubalgebra_inf_gradedPart`: the matched subalgebra is
   the sum of its homogeneous parts, which are independent.
 * `TauCeti.StrandsAlgebra.matchedSum_mem_gradedPartBy`,
+  `TauCeti.StrandsAlgebra.matchedSum_mem_gradedPartBy_iff`,
   `TauCeti.StrandsAlgebra.iSup_matchedSubalgebra_inf_gradedPartBy`,
   `TauCeti.StrandsAlgebra.iSupIndep_matchedSubalgebra_inf_gradedPartBy`: the same for any function
   on strand diagrams unchanged by moving a horizontal strand within a matched pair.
@@ -104,6 +107,17 @@ theorem matchedSum_mem_gradedPartBy
   rw [Finsupp.mem_support_iff, repr_matchedSum_apply, ne_eq, ite_eq_right_iff, not_imp] at hψ
   exact (apply_eq_of_matchedSetoid hd hψ.1).symm
 
+/-- A matched completion sum lies in the part of degree `g` for a function `d` on strand diagrams
+unchanged by moving a horizontal strand within a matched pair exactly when the diagram it completes
+has degree `g`. -/
+theorem matchedSum_mem_gradedPartBy_iff [Nontrivial R]
+    (hd : ∀ φ a b, M a = M b → d (φ.swapHorizontal a b) = d φ) {φ : StrandDiagram α} {g : G} :
+    matchedSum R M φ ∈ gradedPartBy R d g ↔ d φ = g := by
+  classical
+  refine ⟨fun h ↦ mem_gradedPartBy.1 h φ ?_, fun h ↦ h ▸ matchedSum_mem_gradedPartBy hd φ⟩
+  rw [Finsupp.mem_support_iff, repr_matchedSum_apply, ite_eq_left ((matchedSetoid M).refl' φ)]
+  exact one_ne_zero
+
 /-- The matched subalgebra is the sum of its intersections with the parts `gradedPartBy R d g`, for
 any function `d` on strand diagrams unchanged by moving a horizontal strand within a matched
 pair. -/
@@ -129,6 +143,13 @@ theorem matchedSum_mem_gradedPart (φ : StrandDiagram α) :
     matchedSum R M φ ∈ gradedPart R φ.grading := by
   rw [gradedPart_eq_gradedPartBy]
   exact matchedSum_mem_gradedPartBy (fun φ a b _ ↦ grading_swapHorizontal φ a b) φ
+
+/-- A matched completion sum has grading `g` exactly when the diagram it completes does. -/
+@[simp]
+theorem matchedSum_mem_gradedPart_iff [Nontrivial R] {φ : StrandDiagram α}
+    {g : StrandGradingGroup α} : matchedSum R M φ ∈ gradedPart R g ↔ φ.grading = g := by
+  rw [gradedPart_eq_gradedPartBy]
+  exact matchedSum_mem_gradedPartBy_iff fun φ a b _ ↦ grading_swapHorizontal φ a b
 
 /-- **The grading of the matched subalgebra.** The matched subalgebra is the sum of its homogeneous
 parts, its intersections with the graded parts of the strands algebra. -/
