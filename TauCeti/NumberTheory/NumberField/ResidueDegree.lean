@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import Mathlib.RingTheory.DedekindDomain.Factorization
 import TauCeti.NumberTheory.RamificationInertia.Tower
+import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
 # The residue degree of a height-one prime over `ℚ`
@@ -159,7 +160,6 @@ theorem _root_.IsDedekindDomain.HeightOneSpectrum.absNorm_eq_absNorm_under_of_in
     {E : Type*} [Field E] [NumberField E] [Algebra K E] {𝔓 : HeightOneSpectrum (𝓞 E)}
     (h : 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1) :
     Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (𝔓.under (𝓞 K)).asIdeal := by
-  have : 𝔓.asIdeal.LiesOver (𝔓.under (𝓞 K)).asIdeal := ⟨HeightOneSpectrum.under_asIdeal _ 𝔓⟩
   rw [← Ideal.absNorm_pow_inertiaDeg (𝔓.under (𝓞 K)).asIdeal 𝔓.asIdeal, h, pow_one]
 
 /-! ### Fibring the primes over the rational primes below them -/
@@ -192,12 +192,10 @@ theorem _root_.IsDedekindDomain.HeightOneSpectrum.encard_setOf_under_eq_le_finra
     {E : Type*} [Field E] [NumberField E] [Algebra K E]
     (p : HeightOneSpectrum (𝓞 K)) :
     {P : HeightOneSpectrum (𝓞 E) | P.under (𝓞 K) = p}.encard ≤ Module.finrank K E := by
-  let hdiv : ∀ P : HeightOneSpectrum (𝓞 E),
+  have hdiv : ∀ P : HeightOneSpectrum (𝓞 E),
       P.under (𝓞 K) = p ↔
         P.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 E)) p.asIdeal := fun P ↦ by
-    rw [← Ideal.liesOver_iff_dvd_map P.isPrime.ne_top]
-    exact ⟨fun h ↦ ⟨(congrArg HeightOneSpectrum.asIdeal h).symm⟩,
-      fun h ↦ HeightOneSpectrum.ext h.over.symm⟩
+    rw [HeightOneSpectrum.under_eq_iff_liesOver, Ideal.liesOver_iff_dvd_map P.isPrime.ne_top]
   let e : {P : HeightOneSpectrum (𝓞 E) // P.under (𝓞 K) = p} ≃
       p.asIdeal.primesOver (𝓞 E) :=
     (Equiv.subtypeEquivRight hdiv).trans
