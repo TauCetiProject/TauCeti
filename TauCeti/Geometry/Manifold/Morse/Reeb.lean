@@ -141,6 +141,24 @@ theorem IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two (hf : Is
       ((contDiff_neg.contMDiff.contMDiffAt.comp p (hf.contMDiff p)).of_le (by norm_cast)) hmin'
     have := hnd.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     omega
-  exact nonempty_homeomorph_sphere_of_pair_eq_univ (by simp [hE]) hpq (hpq'.symm.trans huniv)
+  -- The discs are points, the single points `p` and `q`.
+  have : Subsingleton (EuclideanSpace ℝ (Fin (finrank ℝ E))) :=
+    finrank_zero_iff.1 (by rw [finrank_euclideanSpace_fin, hE])
+  have : Unique (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1) :=
+    { default := ⟨0, by simp⟩, uniq := fun _ ↦ Subsingleton.elim _ _ }
+  have hnorm (v : closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1) :
+      ‖(v : EuclideanSpace ℝ (Fin (finrank ℝ E)))‖ ≠ 1 := by
+    simp [Subsingleton.elim (v : EuclideanSpace ℝ (Fin (finrank ℝ E))) 0]
+  refine nonempty_homeomorph_sphere_of_union_closedBall (A := {p}) (B := {q})
+    (F := EuclideanSpace ℝ (Fin (finrank ℝ E))) (by simp)
+    isClosed_singleton isClosed_singleton
+    (eq_univ_of_forall fun x ↦ by
+      have hx := hcrit x
+      rw [hpq', insert_eq] at hx
+      exact hx)
+    (Homeomorph.homeomorphOfUnique _ _) (Homeomorph.homeomorphOfUnique _ _)
+    (fun x ↦ ?_) (fun x ↦ ?_)
+  · simpa [mem_singleton_iff.1 x.2, hpq] using hnorm _
+  · simpa [mem_singleton_iff.1 x.2, hpq.symm] using hnorm _
 
 end TauCeti

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-import TauCeti.Analysis.InnerProductSpace.Hemisphere
+import Mathlib.Topology.Compactification.OnePoint.Sphere
 import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
 import TauCeti.Geometry.Manifold.Morse.Deformation
 import TauCeti.Topology.CellularSet.Sphere
@@ -17,10 +17,9 @@ import TauCeti.Topology.CellularSet.Sphere
 
 Let `f` be a smooth function on a compact boundaryless manifold `M` of dimension `m`, with
 exactly two critical points. Then `M` is the union of two open sets, each homeomorphic to `ℝᵐ`
-(`TauCeti.exists_twoEuclideanOpenCover_of_two_criticalPoints`), and so `M` is homeomorphic to the
-sphere `Sᵐ` (`TauCeti.nonempty_homeomorph_sphere_of_two_criticalPoints`). The critical points may be
-degenerate: no Hessian condition is assumed, so the Morse lemma is not available and the cover is
-built from the descending flow of `f` alone.
+(`TauCeti.exists_twoEuclideanOpenCover_of_two_criticalPoints`). The critical points may be
+degenerate: no Hessian condition is assumed, so the Morse lemma is not available and the proof
+uses only the descending flow of `f`.
 
 When `f` is not constant, its two critical points are its unique minimum `x₀` and its unique
 maximum `x₁`, and every value strictly between `f x₀` and `f x₁` is regular. Choose open
@@ -37,8 +36,9 @@ to the sphere `Sᵐ` (Milnor 1959, Corollary 1; Rosen 1960, Lemma 1;
 `TauCeti.nonempty_homeomorph_sphere_of_two_euclidean_opens`). With this cover it gives Reeb's
 sphere theorem for functions with two possibly degenerate critical points
 (`TauCeti.nonempty_homeomorph_sphere_of_two_criticalPoints`): `M` is homeomorphic to `Sᵐ`. In
-dimension `0` every point is critical, so `M` consists of two points and is the sphere `S⁰`
-(`TauCeti.nonempty_homeomorph_sphere_of_pair_eq_univ`). For Morse functions the theorem is
+dimension `0` the two coordinate neighbourhoods are distinct points, so collapsing the complement
+of the first one is a homeomorphism onto the one-point compactification of a point, which is `S⁰`.
+For Morse functions that theorem is
 `TauCeti.IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two`, proved by gluing two
 discs. Neither theorem identifies `M` with the standard sphere up to diffeomorphism.
 
@@ -65,7 +65,7 @@ discs. Neither theorem identifies `M` with the standard sphere up to diffeomorph
 
 public section
 
-open Filter Metric Set Module
+open Filter Set Module
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -144,22 +144,45 @@ theorem exists_twoEuclideanOpenCover_of_two_criticalPoints (hf : ContMDiff I �
 /-- **Reeb's sphere theorem for degenerate critical points.** If a smooth function on a compact
 boundaryless manifold `M` modelled on a real vector space of dimension `m` has exactly two critical
 points, then `M` is homeomorphic to the sphere `Sᵐ`. The critical points may be degenerate, for
-instance with vanishing Hessian. No dimension or connectedness hypothesis is needed; in dimension
-`0` the manifold consists of the two critical points. The conclusion is a homeomorphism only: `M`
-need not be diffeomorphic to the standard sphere. -/
+instance with vanishing Hessian. In dimension `0` every point is critical, so `M` consists of two
+points, as does `S⁰`. The conclusion is a homeomorphism only: `M` need not be diffeomorphic to the
+standard sphere. -/
 theorem nonempty_homeomorph_sphere_of_two_criticalPoints (hf : ContMDiff I 𝓘(ℝ) ∞ f)
     (h2 : totalCriticalCount I f = 2) :
     Nonempty (M ≃ₜ Metric.sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1) := by
-  rcases Nat.eq_zero_or_pos (finrank ℝ E) with hE | hE
-  · -- Dimension `0`: every point is critical, so `M` consists of two distinct points.
-    obtain ⟨p, q, -, -, hpq, hpq', -⟩ :=
-      exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two (I := I) hf.continuous h2
-    have : Subsingleton E := finrank_zero_iff.1 hE
-    exact nonempty_homeomorph_sphere_of_pair_eq_univ (by simp [hE]) hpq
-      (hpq' ▸ criticalPoints_eq_univ_of_subsingleton)
   obtain ⟨U, V, hU, hV, hUV, ⟨eU⟩, ⟨eV⟩⟩ :=
     exists_twoEuclideanOpenCover_of_two_criticalPoints hf h2
-  exact nonempty_homeomorph_sphere_of_two_euclidean_opens hU hV hUV eU eV (by simpa using hE)
-    (by simp)
+  rcases Nat.eq_zero_or_pos (finrank ℝ E) with h0 | hdim
+  swap
+  · exact nonempty_homeomorph_sphere_of_two_euclidean_opens hU hV hUV eU eV (by simpa using hdim)
+      (by simp)
+  -- In dimension `0`, `U` and `V` are single points, and `M` is the one-point compactification
+  -- of `U`, which is `S⁰`.
+  have : Subsingleton (EuclideanSpace ℝ (Fin (finrank ℝ E))) :=
+    Module.finrank_zero_iff (R := ℝ) |>.1 (by simpa using h0)
+  -- `U` is not all of `M`, which has two critical points.
+  obtain ⟨x, hx⟩ : Uᶜ.Nonempty := by
+    rw [nonempty_compl]
+    rintro rfl
+    have : Subsingleton M := ((Homeomorph.Set.univ M).symm.trans eU).injective.subsingleton
+    have h1 : (criticalPoints I f).encard ≤ 1 :=
+      encard_le_one_iff.2 fun a b _ _ ↦ Subsingleton.elim a b
+    rw [← totalCriticalCount_def, h2] at h1
+    exact absurd h1 (by decide)
+  have hVU : V = Uᶜ := by
+    have hxV : x ∈ V := (eq_univ_iff_forall.1 hUV x).resolve_left hx
+    have : Subsingleton V := eV.injective.subsingleton
+    refine (subset_compl_iff_disjoint_right.2 ?_).antisymm fun y hy ↦
+      (eq_univ_iff_forall.1 hUV y).resolve_left hy
+    refine disjoint_left.2 fun y hy hyU ↦ hx ?_
+    have hyx : y = x := congrArg Subtype.val (Subsingleton.elim (⟨y, hy⟩ : V) ⟨x, hxV⟩)
+    exact hyx ▸ hyU
+  have hκ : Topology.IsOpenEmbedding (Subtype.val ∘ eV.symm) :=
+    hV.isOpenEmbedding_subtypeVal.comp eV.symm.isOpenEmbedding
+  have hball : Metric.closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 0 = univ :=
+    eq_univ_of_forall fun v ↦ by simp [Subsingleton.elim v 0]
+  obtain ⟨h⟩ := IsCellularSet.nonempty_homeomorph_onePoint hU (isCellularSet_closedBall 0 le_rfl)
+    hκ (by rw [hball, image_univ, EquivLike.range_comp, Subtype.range_coe, hVU])
+  exact ⟨h.trans (eU.onePointCongr.trans (onePointEquivSphereOfFinrankEq (by simp)))⟩
 
 end TauCeti

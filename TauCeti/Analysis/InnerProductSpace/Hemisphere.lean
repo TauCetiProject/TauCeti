@@ -62,8 +62,6 @@ and then the latitude map reaches no point.
 * `TauCeti.isometry_equatorInclusion`: the equator inclusion preserves distances.
 * `TauCeti.nonempty_homeomorph_sphere_of_union_closedBall`: two closed discs glued along their
   boundary spheres form a sphere.
-* `TauCeti.nonempty_homeomorph_sphere_of_pair_eq_univ`: a T₁ space with exactly two points is the
-  sphere `S⁰`.
 * `TauCeti.exists_latitude_eq` and `TauCeti.eq_and_eq_of_latitude_eq`: the latitude map is
   surjective when the equator is nonempty, and injective off the poles.
 
@@ -530,25 +528,6 @@ theorem nonempty_homeomorph_sphere_of_union_closedBall {F : Type*} [NormedAddCom
     L.toHomeomorph.subtype fun v ↦ by simp
   exact nonempty_homeomorph_sphere_of_union_closedBall_orthogonal p hA hB hAB (eA.trans S)
     (eB.trans S) (fun x ↦ by simpa [S] using hAe x) (fun x ↦ by simpa [S] using hBe x)
-
-omit [FiniteDimensional ℝ E] in
-/-- **Two points form the sphere `S⁰`.** A T₁ space consisting of exactly two distinct points is
-homeomorphic to the unit sphere of any one-dimensional real inner product space. It is the
-union of two closed discs of dimension `0` with empty boundary spheres. -/
-theorem nonempty_homeomorph_sphere_of_pair_eq_univ [T1Space X] (hE : Module.finrank ℝ E = 1)
-    {p q : X} (hpq : p ≠ q) (h : ({p, q} : Set X) = univ) : Nonempty (X ≃ₜ sphere (0 : E) 1) := by
-  have : Unique (closedBall (0 : EuclideanSpace ℝ (Fin 0)) 1) :=
-    { default := ⟨0, by simp⟩, uniq := fun _ ↦ Subsingleton.elim _ _ }
-  have hnorm (v : closedBall (0 : EuclideanSpace ℝ (Fin 0)) 1) :
-      ‖(v : EuclideanSpace ℝ (Fin 0))‖ ≠ 1 := by
-    simp [Subsingleton.elim (v : EuclideanSpace ℝ (Fin 0)) 0]
-  refine nonempty_homeomorph_sphere_of_union_closedBall (A := {p}) (B := {q})
-    (F := EuclideanSpace ℝ (Fin 0)) (by simp [hE]) isClosed_singleton isClosed_singleton
-    (by rwa [← singleton_union] at h)
-    (Homeomorph.homeomorphOfUnique _ _) (Homeomorph.homeomorphOfUnique _ _) (fun x ↦ ?_)
-    (fun x ↦ ?_)
-  · simpa [mem_singleton_iff.1 x.2, hpq] using hnorm _
-  · simpa [mem_singleton_iff.1 x.2, hpq.symm] using hnorm _
 
 end Gluing
 
