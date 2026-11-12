@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import TauCeti.LinearAlgebra.SesquilinearForm.Complex
 public import TauCeti.RepresentationTheory.InvariantForm
 
@@ -58,8 +57,8 @@ positivity results over `RCLike` would fix the wrong one of the two for the `ℂ
 * `Representation.isPosSemidef_sumOfConjugatesSesqForm`: that sum is positive semidefinite if the
   form is.
 * `Representation.exists_isInvariantSesqForm_isPosSemidef_apply_self_ne_zero`: **a
-  finite-dimensional complex representation of a finite group carries a positive definite invariant
-  Hermitian form.**  This is the unitarian trick for a finite group, with the undivided sum in
+  complex representation of a finite group carries a positive definite invariant Hermitian
+  form.**  This is the unitarian trick for a finite group, with the undivided sum in
   place of the average.
 * `Representation.IsInvariantSesqForm.surjective_of_apply_self_ne_zero`: **a definite invariant
   sesquilinear form on a finite-dimensional space makes every action map surjective**, so a
@@ -242,9 +241,9 @@ section Existence
 
 variable {G V : Type*} [Group G] [Finite G] [AddCommGroup V] [Module ℂ V]
 
-/-- **A finite-dimensional complex representation of a finite group carries a positive definite
-invariant Hermitian form.**  Take the coordinate Hermitian form of a basis -- the sesquilinear form
-of the identity matrix, `∑ i, conj (b.repr x i) * b.repr y i` -- and sum it over the conjugates.
+/-- **A complex representation of a finite group carries a positive definite invariant Hermitian
+form.**  Take the coordinate Hermitian form of a basis -- the sesquilinear form
+`∑ i, conj (b.repr x i) * b.repr y i` -- and sum it over the conjugates.
 The sum stays Hermitian and nonnegative, and it stays definite because a vanishing sum of
 nonnegative complex numbers has vanishing summands, in particular the one at `g = 1`.
 
@@ -252,18 +251,26 @@ This is the unitarian trick for a finite group, with the undivided sum in place 
 no invertibility of the group order is needed.  Over `ℝ` the same recipe gives only a *nonzero*
 invariant form (`TauCeti.Representation.exists_isInvariantForm_isSymm_ne_zero`); it is the
 definiteness of the Hermitian form that makes this statement stronger. -/
-theorem exists_isInvariantSesqForm_isPosSemidef_apply_self_ne_zero (ρ : Representation ℂ G V)
-    [FiniteDimensional ℂ V] :
+theorem exists_isInvariantSesqForm_isPosSemidef_apply_self_ne_zero (ρ : Representation ℂ G V) :
     ∃ H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ,
       IsInvariantSesqForm ρ H ∧ H.IsPosSemidef ∧ ∀ x : V, x ≠ 0 → H x x ≠ 0 := by
   classical
   have : Fintype G := Fintype.ofFinite G
-  set b := Module.finBasis ℂ V with _
-  set H₀ : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ := Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ) b b 1 with hH₀
-  have hH₀apply : ∀ x y : V, H₀ x y = ∑ i, (starRingEnd ℂ) (b.repr x i) * b.repr y i := by
-    intro x y
-    simp [hH₀, Matrix.toLinearMapₛₗ₂_apply, Matrix.one_apply, smul_eq_mul, mul_comm,
-      Finset.sum_ite_eq]
+  set b := Module.Free.chooseBasis ℂ V with _
+  set H₀ : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ := LinearMap.mk₂'ₛₗ (starRingEnd ℂ) (RingHom.id ℂ)
+    (fun x y => (b.repr x).sum fun i a => (starRingEnd ℂ) a * b.repr y i)
+    (fun x x' y => by
+      rw [map_add, Finsupp.sum_add_index' (fun i => by simp) (fun i a a' => by simp [add_mul])])
+    (fun c x y => by
+      rw [map_smulₛₗ, Finsupp.sum_smul_index' (fun i => by simp), smul_eq_mul, Finsupp.mul_sum]
+      exact Finsupp.sum_congr fun i _ => by simp [mul_assoc])
+    (fun x y y' => by
+      simp only [map_add, Finsupp.add_apply, mul_add, Finsupp.sum, Finset.sum_add_distrib])
+    (fun c x y => by
+      simp only [map_smul, Finsupp.smul_apply, smul_eq_mul, Finsupp.mul_sum]
+      exact Finsupp.sum_congr fun i _ => by simp only [RingHom.id_apply]; ring)
+  have hH₀apply : ∀ x y : V, H₀ x y = (b.repr x).sum fun i a => (starRingEnd ℂ) a * b.repr y i :=
+    fun x y => rfl
   have hH₀nonneg : H₀.IsNonneg := by
     refine ⟨fun x => ?_⟩
     rw [hH₀apply]
@@ -274,10 +281,11 @@ theorem exists_isInvariantSesqForm_isPosSemidef_apply_self_ne_zero (ρ : Represe
     rw [hH₀apply] at hx
     have hzero : ∀ i, b.repr x i = 0 := by
       intro i
+      by_contra hi
       have := (Finset.sum_eq_zero_iff_of_nonneg
-        (fun j (_ : j ∈ Finset.univ) => star_mul_self_nonneg (b.repr x j))).mp hx i
-        (Finset.mem_univ i)
-      simpa [mul_eq_zero, or_self] using this
+        (fun j (_ : j ∈ (b.repr x).support) => star_mul_self_nonneg (b.repr x j))).mp hx i
+        (Finsupp.mem_support_iff.mpr hi)
+      exact hi (by simpa using this)
     exact b.repr.map_eq_zero_iff.mp (Finsupp.ext hzero)
   refine ⟨sumOfConjugatesSesqForm ρ H₀, isInvariantSesqForm_sumOfConjugatesSesqForm ρ H₀,
     isPosSemidef_sumOfConjugatesSesqForm ⟨hH₀symm, hH₀nonneg⟩, fun x hx hzero => hx ?_⟩
