@@ -321,6 +321,23 @@ theorem euclideanParabolicOperatorL_apply
         c p * u p) := by
   simp [euclideanParabolicOperatorL]
 
+/-- The Euclidean parabolic operator is affine in its coefficients: interpolating two operators
+interpolates their coefficients. -/
+theorem euclideanParabolicOperatorL_lineMap (hα : α ≤ 1)
+    (a₀ a₁ : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b₀ b₁ : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (c₀ c₁ : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) (θ : ℝ) :
+    AffineMap.lineMap (euclideanParabolicOperatorL (ht := ht) hα a₀ b₀ c₀)
+        (euclideanParabolicOperatorL hα a₁ b₁ c₁) θ =
+      euclideanParabolicOperatorL hα (AffineMap.lineMap a₀ a₁ θ) (AffineMap.lineMap b₀ b₁ θ)
+        (AffineMap.lineMap c₀ c₁ θ) := by
+  ext u p
+  simp only [AffineMap.lineMap_apply_module]
+  simp only [_root_.add_apply, _root_.smul_apply, HolderSpace.add_apply,
+    HolderSpace.smul_apply, euclideanParabolicOperatorL_apply, Pi.add_apply, Pi.smul_apply,
+    smul_eq_mul, add_mul, Finset.sum_add_distrib, mul_assoc, ← Finset.mul_sum]
+  ring
+
 open Laplacian in
 /-- With the identity coefficient matrix and no lower-order terms, the Euclidean operator is the
 heat operator `∂ₜu - Δu`, with the Laplacian taken on the time slice through `p`. -/
