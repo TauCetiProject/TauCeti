@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
@@ -61,6 +62,8 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   `TauCeti.I_mul_sub_mul_I_sub_div_add_I_div_add`: for a point `ζ` of the unit circle, the
   rotated transform `z ↦ i (ζ - z) / (ζ + z)` carries the closed unit disc minus `-ζ` onto the
   closed upper half-plane, with inverse `w ↦ ζ (i - w) / (w + i)`.
+* `TauCeti.contDiffAt_I_mul_sub_div_add` and `TauCeti.contDiffAt_mul_I_sub_div_add_I`: these
+  two maps are analytic away from their poles `-ζ` and `-i`.
 
 ## References
 
@@ -70,6 +73,7 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 public section
 
 open Bornology Complex Filter Metric Set Topology
+open scoped ContDiff
 
 namespace TauCeti
 
@@ -430,5 +434,17 @@ theorem I_mul_sub_mul_I_sub_div_add_I_div_add {ζ w : ℂ} (hζ : ζ ≠ 0) (hw 
   rw [h2, div_eq_iff (by simp [hζ, hw, I_ne_zero])]
   field_simp
   ring
+
+/-- The map `z ↦ i (ζ - z) / (ζ + z)` is analytic away from its pole `-ζ`. -/
+theorem contDiffAt_I_mul_sub_div_add {n : ℕ∞ω} (ζ : ℂ) {z : ℂ} (hz : ζ + z ≠ 0) :
+    ContDiffAt ℂ n (fun z : ℂ ↦ I * (ζ - z) / (ζ + z)) z :=
+  (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
+    (contDiffAt_const.add contDiffAt_id) hz
+
+/-- The map `w ↦ ζ (i - w) / (w + i)` is analytic away from its pole `-i`. -/
+theorem contDiffAt_mul_I_sub_div_add_I {n : ℕ∞ω} (ζ : ℂ) {w : ℂ} (hw : w + I ≠ 0) :
+    ContDiffAt ℂ n (fun w : ℂ ↦ ζ * (I - w) / (w + I)) w :=
+  (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
+    (contDiffAt_id.add contDiffAt_const) hw
 
 end TauCeti

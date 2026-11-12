@@ -72,18 +72,6 @@ private theorem ne_zero_of_norm_eq_one {ζ : ℂ} (hζ : ‖ζ‖ = 1) : ζ ≠ 
 private theorem add_ne_zero_of_ne_neg {ζ z : ℂ} (hz : z ≠ -ζ) : ζ + z ≠ 0 :=
   fun h ↦ hz (eq_neg_of_add_eq_zero_right h)
 
-/-- The map `z ↦ I (ζ - z) / (ζ + z)` is analytic away from its pole `-ζ`. -/
-private theorem contDiffAt_I_mul_sub_div_add {n : ℕ∞ω} (ζ : ℂ) {z : ℂ} (hz : ζ + z ≠ 0) :
-    ContDiffAt ℂ n (fun z : ℂ ↦ I * (ζ - z) / (ζ + z)) z :=
-  (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
-    (contDiffAt_const.add contDiffAt_id) hz
-
-/-- The map `w ↦ ζ (I - w) / (w + I)` is analytic away from its pole `-I`. -/
-private theorem contDiffAt_mul_I_sub_div_add_I {n : ℕ∞ω} (ζ : ℂ) {w : ℂ} (hw : w + I ≠ 0) :
-    ContDiffAt ℂ n (fun w : ℂ ↦ ζ * (I - w) / (w + I)) w :=
-  (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
-    (contDiffAt_id.add contDiffAt_const) hw
-
 /-- The Cayley chart attached to a point `ζ` of the unit circle: the map
 `z ↦ I (ζ - z) / (ζ + z)` from the closed unit disc minus `-ζ` onto the closed upper half-plane,
 with inverse `w ↦ ζ (I - w) / (w + I)`. It sends `ζ` to `0` and `0` to `I`. -/
