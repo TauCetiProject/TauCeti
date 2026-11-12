@@ -45,6 +45,9 @@ section ring.
   stable opens of `X₀ ×_S S'` are exactly the preimages of opens of `X₀`.
 * `TauCeti.DescentDatum.exists_baseChange_hom_isIso_restrict`: for such `p`, the restriction of an
   effective descent datum to a stable open is effective.
+* `TauCeti.DescentDatum.Hom.exists_baseChange_hom_isIso_restrict_of_pullbackAlong`: effectivity
+  of the base change of a descent datum to an open of the base gives effectivity of its restriction
+  to the preimage of that open.
 
 ## References
 
@@ -313,5 +316,52 @@ theorem exists_baseChange_hom_isIso_restrict_of_isAffineHom [IsAffineHom p] [Fla
       IsIso g.hom := by
   obtain ⟨U₀, g, hg, -⟩ := exists_baseChange_hom_isIso_restrict D.toBaseChangeDescended.inv hU
   exact ⟨U₀, g, hg⟩
+
+section PullbackAlong
+
+variable {D} {U : S.Opens} {Y₀ : Over U.toScheme}
+  (f : Hom (baseChange (pullback.fst U.ι p) Y₀) (D.pullbackAlong U.ι)) [IsIso f.hom]
+
+/-- An isomorphism from a canonical descent datum to the base change of `D` to an open `U` of `S`
+gives an open immersion `Y₀ ×_S S' ⟶ X`. -/
+instance Hom.isOpenImmersion_ofPullbackAlong_hom_left :
+    IsOpenImmersion f.ofPullbackAlong.hom.left := by
+  have : IsIso f.hom.left := (Over.forget _).map_isIso f.hom
+  rw [Hom.ofPullbackAlong_hom_left]
+  infer_instance
+
+/-- The open immersion `Y₀ ×_S S' ⟶ X` given by an isomorphism onto the base change of `D` to an
+open `U` of `S` has image the preimage of `U` in `X`. -/
+theorem Hom.opensRange_ofPullbackAlong_hom_left :
+    f.ofPullbackAlong.hom.left.opensRange = (X.hom ≫ p) ⁻¹ᵁ U := by
+  have : IsIso f.hom.left := (Over.forget _).map_isIso f.hom
+  simp only [Hom.ofPullbackAlong_hom_left]
+  rw [Scheme.Hom.opensRange_comp_of_isIso, Scheme.Hom.opensRange_comp_of_isIso,
+    Scheme.Hom.opensRange_pullbackFst, Scheme.Hom.opensRange_pullbackSnd,
+    Scheme.Opens.opensRange_ι, Scheme.Hom.comp_preimage]
+
+/-- **Effectivity after base change to an open gives effectivity of the restriction.** If the base
+change `D.pullbackAlong U.ι` of `D` to an open `U` of `S` is isomorphic to the canonical descent
+datum on `Y₀ ×_U (U ×_S S')`, then the restriction of `D` to the preimage of `U` in `X` is
+isomorphic to the canonical descent datum on `Y₀ ×_S S'`, with `Y₀` viewed over `S`, compatibly
+with `Hom.ofPullbackAlong`. -/
+theorem Hom.exists_baseChange_hom_isIso_restrict_of_pullbackAlong :
+    ∃ g : Hom (baseChange p ((Over.map U.ι).obj Y₀)) (D.restrict _ (D.isStable_comp_preimage U)),
+      IsIso g.hom ∧ (D.restrictHom _ _).comp g = f.ofPullbackAlong := by
+  have hrange : Set.range f.ofPullbackAlong.hom.left = Set.range ((X.hom ≫ p) ⁻¹ᵁ U).ι := by
+    rw [← Scheme.Hom.coe_opensRange, f.opensRange_ofPullbackAlong_hom_left,
+      Scheme.Opens.range_ι]
+  let g := f.ofPullbackAlong.codRestrict (D.isStable_comp_preimage U)
+    (hrange.trans (Scheme.Opens.range_ι _)).subset
+  refine ⟨g, ?_, Hom.restrictHom_comp_codRestrict _ _ _⟩
+  suffices IsIso ((Over.forget S').map g.hom) from isIso_of_reflects_iso _ (Over.forget S')
+  -- `g.hom.left` is the isomorphism between two open immersions with the same range.
+  have : g.hom.left = (IsOpenImmersion.isoOfRangeEq _ _ hrange).hom := by
+    rw [← cancel_mono ((X.hom ≫ p) ⁻¹ᵁ U).ι, Hom.codRestrict_hom_left_ι,
+      IsOpenImmersion.isoOfRangeEq_hom_fac]
+  rw [Over.forget_map, this]
+  infer_instance
+
+end PullbackAlong
 
 end TauCeti.DescentDatum

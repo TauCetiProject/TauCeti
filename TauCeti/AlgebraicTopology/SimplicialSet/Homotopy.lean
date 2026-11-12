@@ -246,7 +246,7 @@ lemma map_const_toSimplicialObjectHomotopy_h (H : SSet.Homotopy f g) {n : ℕ} (
   refine map_h_app_eq_app H _ _ _ _ ?_ ?_
   · rw [← Functor.map_comp_apply, ← op_comp, SimplexCategory.const_comp]
     rfl
-  · ext k : 1
+  · ext _ : 1
     exact stdSimplex.objMk₁_of_castSucc_lt.{w} i.succ.castSucc (0 : Fin (n + 2)) (by simp)
 
 /-- For `i ≥ 1`, the first edge of `h i x` is the image under `f` of the first edge of `x`. -/

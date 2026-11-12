@@ -212,10 +212,11 @@ theorem exists_eq_of_mul_list_prod (x : CentralizerExt u n) :
       L.IsChain (fun l l' => l.1 ≠ l'.1) ∧ (∀ l ∈ L, l.2 ∉ (centralizerExtMap u n l.1).range) ∧
       (∀ l ∈ L.head?, l.1 = true) ∧
       x = of g * (L.map fun l => Monoid.PushoutI.of (φ := centralizerExtMap u n) l.1 l.2).prod := by
-  obtain ⟨h, L, hc, hred, rfl⟩ :=
-    Monoid.PushoutI.exists_eq_base_mul_list_prod (centralizerExtMap_injective u n) x
+  obtain ⟨h, ⟨L, _, hc⟩, hred, rfl⟩ := Monoid.PushoutI.exists_eq_base_mul_ofCoprodI_prod x
+  replace hred : ∀ l ∈ L, l.2 ∉ (centralizerExtMap u n l.1).range := hred
   rw [← Monoid.PushoutI.of_apply_eq_base _ false, ← of_def, centralizerExtMap_false,
-    Subgroup.coe_subtype]
+    Subgroup.coe_subtype, Monoid.CoprodI.Word.prod, map_list_prod, List.map_map]
+  simp only [Function.comp_def, Monoid.PushoutI.ofCoprodI_of]
   rcases L with _ | ⟨⟨_ | _, a⟩, L⟩
   · exact ⟨h, [], hc, hred, by simp, rfl⟩
   · -- A leading letter of `G` is absorbed into `g`; `show` retypes the letter

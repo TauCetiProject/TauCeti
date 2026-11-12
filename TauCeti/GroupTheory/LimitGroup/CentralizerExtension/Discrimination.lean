@@ -39,14 +39,15 @@ under `t ↦ u ^ k` for every large `k`.
 
 ## Implementation notes
 
-An element of the amalgam `G(u, ℤⁿ)` is `h * a₁ * ⋯ * aᵣ` with `h ∈ C_G(u)` and letters `aⱼ`
-alternately in `G ∖ C_G(u)` and in `(C_G(u) × ℤⁿ) ∖ C_G(u)` (Mathlib's
-`Monoid.PushoutI.NormalWord`). A letter `(c, v)` of the second factor, with `v ≠ 0`, maps to
-`c * u ^ (m * (w ⬝ᵥ v))`. Since `c` commutes with `u`, the image of the element is an alternating
-product `g * u ^ (m * e₁) * g₁ * ⋯ * u ^ (m * eₛ) * gₛ` with `eⱼ = w ⬝ᵥ vⱼ` and separators `gⱼ`
-outside `C_G(u)`, except possibly the last. It is nontrivial for all large `m` by the big powers
-property (`Group.IsBP.exists_forall_mul_prod_ne_one`) as soon as every `eⱼ` is nonzero. When no
-letter of the second factor occurs, the element lies in `G` and is fixed by every retraction.
+An element of the amalgam `G(u, ℤⁿ)` is `h * a₁ * ⋯ * aᵣ` with `h ∈ G` and letters `aⱼ`
+alternately in `(C_G(u) × ℤⁿ) ∖ C_G(u)` and in `G ∖ C_G(u)`
+(`TauCeti.LimitGroup.CentralizerExt.exists_eq_of_mul_list_prod`). A letter `(c, v)` of the second
+factor, with `v ≠ 0`, maps to `c * u ^ (m * (w ⬝ᵥ v))`. Since `c` commutes with `u`, the image of
+the element is an alternating product `g * u ^ (m * e₁) * g₁ * ⋯ * u ^ (m * eₛ) * gₛ` with
+`eⱼ = w ⬝ᵥ vⱼ` and separators `gⱼ` outside `C_G(u)`, except possibly the last. It is nontrivial
+for all large `m` by the big powers property (`Group.IsBP.exists_forall_mul_prod_ne_one`) as soon
+as every `eⱼ` is nonzero. When no letter of the second factor occurs, the element lies in `G` and
+is fixed by every retraction.
 
 ## References
 

@@ -8,53 +8,89 @@ module
 public import Mathlib.GroupTheory.PushoutI
 
 /-!
-# Reduced lists of letters in an amalgamated product
+# Reduced words in an amalgamated product
 
-Let `φ i : H →* G i` be a family of injective group homomorphisms, with amalgamated product
-`Monoid.PushoutI φ`. A list of letters `⟨i, g⟩` with `g : G i` is *reduced* when consecutive
-letters lie in different factors and no letter lies in the amalgamated subgroup `φ i H`. This file
-states the normal form theorem for amalgamated products in terms of such lists, which is the form
-in which it is applied to concrete words.
+Let `φ i : H →* G i` be a family of group homomorphisms, with amalgamated product
+`Monoid.PushoutI φ`. A word of the free product of the `G i` is *reduced*
+(`Monoid.PushoutI.Reduced`) when none of its letters lies in the amalgamated subgroup. Every element
+of the amalgamated product is an element of the amalgamated subgroup times the product of a reduced
+word: merging adjacent letters of the same factor and absorbing letters of the amalgamated subgroup
+reduces any word. This is the existence part of the normal form theorem; unlike uniqueness, it does
+not need the `φ i` to be injective.
+
+When the `φ i` are injective, uniqueness (Mathlib's `Monoid.PushoutI.Reduced.eq_empty_of_mem_range`)
+says that the product of a nonempty reduced word is not in the amalgamated subgroup. This file
+restates it for lists of letters `⟨i, g⟩` with `g : G i`, consecutive letters in different factors,
+which is the form in which it is applied to concrete words.
 
 ## Main results
 
-* `Monoid.PushoutI.exists_eq_base_mul_list_prod`: every element is the product of an element of
-  the amalgamated subgroup and a reduced list of letters.
+* `Monoid.PushoutI.exists_eq_base_mul_ofCoprodI_prod`: every element is `h * w` with `h` in the
+  amalgamated subgroup and `w` the product of a reduced word.
 * `Monoid.PushoutI.list_prod_notMem_range_base`: the product of a nonempty reduced list of letters
   is not in the amalgamated subgroup.
 * `Monoid.PushoutI.list_prod_inv_mul_of_mul_list_prod_notMem_range_base`: the conjugate
   `w⁻¹ * g * w` of a letter `g` outside the amalgamated subgroup by the product `w` of a reduced
   list that does not start in the factor of `g` is not in the amalgamated subgroup.
+
+## References
+
+* J.-P. Serre, *Trees*, Chapter I, §1.2, Theorem 1 (the normal form theorem for amalgamated
+  products).
 -/
 
 public section
 
 namespace Monoid.PushoutI
 
-open Function
+open Function CoprodI
 
 variable {ι : Type*} {G : ι → Type*} {H : Type*} [∀ i, Group (G i)] [Group H]
   {φ : ∀ i, H →* G i}
 
-/-- The normal form theorem for an amalgamated product of groups: every element is `h * a₁ ⋯ aᵣ`
-with `h` in the amalgamated subgroup and letters `aⱼ` taken from the factors, consecutive ones
-from different factors and none of them in the amalgamated subgroup. -/
-theorem exists_eq_base_mul_list_prod (hφ : ∀ i, Injective (φ i)) (x : PushoutI φ) :
-    ∃ (h : H) (L : List (Σ i, G i)), L.IsChain (fun l l' => l.1 ≠ l'.1) ∧
-      (∀ l ∈ L, l.2 ∉ (φ l.1).range) ∧ x = base φ h * (L.map fun l => of l.1 l.2).prod := by
+/-- Left multiplication by a letter `g : G i` preserves the products `h * w` of an element `h` of
+the amalgamated subgroup and the product `w` of a reduced word. -/
+private theorem exists_of_mul_base_mul_ofCoprodI_prod (i : ι) (g : G i) (h : H) {w : Word G}
+    (hw : Reduced φ w) : ∃ (h' : H) (w' : Word G), Reduced φ w' ∧
+      of i g * (base φ h * ofCoprodI w.prod) = base φ h' * ofCoprodI w'.prod := by
   classical
-  obtain ⟨d⟩ := NormalWord.transversal_nonempty φ hφ
-  set W := NormalWord.equiv (d := d) x
-  refine ⟨W.head, W.toList, W.chain_ne, ?_, ?_⟩
-  · -- A nonidentity letter of the transversal is not in the amalgamated subgroup.
-    rintro ⟨i, g⟩ hl hg
-    have h1 := (d.compl i).equiv_fst_eq_self_of_mem_of_one_mem (d.one_mem i) hg
-    rw [(d.compl i).equiv_fst_eq_one_of_mem_of_one_mem (one_mem _) (W.normalized i g hl)] at h1
-    exact W.ne_one _ hl (congrArg Subtype.val h1).symm
-  · have hW : W.prod = x := NormalWord.equiv.symm_apply_apply x
-    conv_lhs => rw [← hW]
-    rw [NormalWord.prod, CoprodI.Word.prod, map_list_prod, List.map_map]
-    simp [Function.comp_def]
+  -- Write `w` as its first letter in `G i` (possibly `1`) followed by a word not starting in `G i`.
+  generalize hp : Word.equivPair i w = p
+  have hwp : w.prod = CoprodI.of p.head * p.tail.prod := by
+    rw [← hp, ← Word.prod_rcons, ← Word.equivPair_symm, Equiv.symm_apply_apply]
+  have hgw : of i g * (base φ h * ofCoprodI w.prod) =
+      of i (g * φ i h * p.head) * ofCoprodI p.tail.prod := by
+    simp only [hwp, map_mul, ofCoprodI_of, ← of_apply_eq_base φ i, mul_assoc]
+  have htail : Reduced φ p.tail := fun l hl => hw l (Word.mem_of_mem_equivPair_tail _ (hp ▸ hl))
+  by_cases ha : g * φ i h * p.head ∈ (φ i).range
+  · obtain ⟨h', hh'⟩ := ha
+    exact ⟨h', p.tail, htail, by rw [hgw, ← hh', of_apply_eq_base]⟩
+  have ha1 : g * φ i h * p.head ≠ 1 := fun h1 => ha (h1 ▸ one_mem _)
+  refine ⟨1, .cons _ p.tail p.fstIdx_ne ha1, fun l hl => ?_, ?_⟩
+  · rcases List.mem_cons.1 hl with rfl | hl
+    exacts [ha, htail l hl]
+  · rw [hgw, map_one, one_mul, Word.prod_cons, map_mul ofCoprodI, ofCoprodI_of]
+
+/-- Every element of an amalgamated product of groups is the product of an element of the
+amalgamated subgroup and the product of a reduced word: a word whose consecutive letters lie in
+different factors and none of whose letters lies in the amalgamated subgroup. -/
+theorem exists_eq_base_mul_ofCoprodI_prod (x : PushoutI φ) :
+    ∃ (h : H) (w : Word G), Reduced φ w ∧ x = base φ h * ofCoprodI w.prod := by
+  suffices ∀ y : PushoutI φ, (∃ (h : H) (w : Word G), Reduced φ w ∧
+      y = base φ h * ofCoprodI w.prod) →
+      ∃ (h : H) (w : Word G), Reduced φ w ∧ x * y = base φ h * ofCoprodI w.prod by
+    simpa using this 1 ⟨1, .empty, by simp [Reduced], by simp⟩
+  induction x using induction_on with
+  | of i g =>
+    rintro _ ⟨h, w, hw, rfl⟩
+    exact exists_of_mul_base_mul_ofCoprodI_prod i g h hw
+  | base h =>
+    rintro _ ⟨h', w, hw, rfl⟩
+    exact ⟨h * h', w, hw, by rw [map_mul, mul_assoc]⟩
+  | mul x y hx hy =>
+    intro z hz
+    rw [mul_assoc]
+    exact hx _ (hy z hz)
 
 /-- In an amalgamated product of groups, the product of a nonempty list of letters, consecutive
 ones from different factors and none of them in the amalgamated subgroup, is not in the
