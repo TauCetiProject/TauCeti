@@ -103,6 +103,24 @@ theorem exists_exterior_lt_mass
     hR (le_trans (le_max_left R 1) hz.le)
   linarith
 
+/-- The potential `P = |α|² / 4` of a field whose section has unit modulus at infinity is
+bounded. -/
+theorem memLp_top_potential (hx : Continuous x)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    MemLp (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) ⊤ volume := by
+  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
+  have hPc : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
+    have := hxi 2; have := hxi 3; fun_prop
+  obtain ⟨K, hK, hKc⟩ := mem_cocompact.1 (hlim.eventually (ge_mem_nhds (by norm_num : (1 : ℝ) < 2)))
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hPc.continuousOn
+  refine memLp_top_of_bound hPc.aestronglyMeasurable (max M 1) (ae_of_all _ fun z ↦ ?_)
+  by_cases hz : z ∈ K
+  · exact (hM z hz).trans (le_max_left _ _)
+  · have h2 : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 2 := hKc hz
+    have h0 : 0 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by positivity
+    rw [Real.norm_of_nonneg h0]
+    linarith [le_max_right M 1]
+
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
 
 /-- The vortex adjoint has squared `L²` lower bound `a ≤ 1/4` on any compactly supported

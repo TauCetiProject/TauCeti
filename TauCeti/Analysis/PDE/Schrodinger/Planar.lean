@@ -25,9 +25,9 @@ has a smooth solution `h ∈ H²(ℂ)` that solves it at every point
 The weak solution `h ∈ H²(ℂ)` comes from
 `TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`. Since
 `2 > dim ℂ / 2`, it has a continuous representative
-(`TauCeti.exists_continuous_ae_eq_of_mem_realSobolevFunctions`), which solves `Δh = P h - g` in the
-sense of distributions. The right side is a smooth function of the position and of the value of
-`h`, so the planar semilinear bootstrap
+(`TemperedDistribution.exists_continuous_ae_eq_of_mem_realSobolevFunctions`), which solves
+`Δh = P h - g` in the sense of distributions. The right side is a smooth function of the position
+and of the value of `h`, so the planar semilinear bootstrap
 `TauCeti.contDiffOn_succ_of_forall_integral_laplacian_mul_eq_comp` makes `h` smooth, and
 `TauCeti.eqOn_laplacian_of_forall_integral_laplacian_mul_eq_comp` makes the equation hold
 pointwise.

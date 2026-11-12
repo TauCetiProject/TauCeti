@@ -115,6 +115,22 @@ private theorem forall_mem_linearizedEquation_eq_zero
   · rw [← gaugeFixedOperator_apply_two, hker w, PiLp.zero_apply]
   · rw [← gaugeFixedOperator_apply_three, hker w, PiLp.zero_apply]
 
+omit [μ.IsAddHaarMeasure] in
+/-- The section variation of a `C²` kernel element of `L_x` decomposes as `δα = α G + e^ν H` with
+`G` continuous and `H` entire. -/
+private theorem exists_sectionValue_eq_mul_add_exp_mul_of_mem {ν : ℂ → ℂ}
+    (hp : Differentiable ℝ fun w ↦ x w 2) (hq : Differentiable ℝ fun w ↦ x w 3)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) (hν : Differentiable ℝ ν)
+    (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2)
+    (hV : ∀ y ∈ V, ContDiff ℝ 2 y ∧ MemLp y 2 μ ∧ ∀ w, gaugeFixedOperator x y w = 0)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ V) :
+    ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
+      ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w := by
+  obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := forall_mem_linearizedEquation_eq_zero hV y hy
+  obtain ⟨G, hG, H, hH, hGH⟩ := exists_sectionValue_eq_mul_add_exp_mul (k := 2) (by norm_num)
+    hp hq hhol hν hνeq h₁ h₂ h₃ h₄ h₅
+  exact ⟨G, hG.continuous, H, hH, hGH⟩
+
 /-- **The principal-part map on the kernel.** For a space `V` of `C²` square-integrable kernel
 elements, the principal-part map `TauCeti.Vortex.principalPartMap` gives an injective real-linear
 map from `V` to `ℂ^|D|`. -/
@@ -133,12 +149,8 @@ private theorem exists_injective_linearMap (hx : ContDiff ℝ 2 x)
   obtain ⟨ν, hν, hνeq⟩ :=
     exists_contDiff_conjWirtingerDeriv_apply_one_eq (by norm_num) (contDiff_connectionCoeff
       (hi 0) (hi 1))
-  have hdec (y) (hy : y ∈ V) : ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
-      ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w := by
-    obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := hlin y hy
-    obtain ⟨G, hG, H, hH, hGH⟩ := exists_sectionValue_eq_mul_add_exp_mul (k := 2) (by norm_num)
-      hp hq hhol (hν.differentiable (by norm_num)) hνeq h₁ h₂ h₃ h₄ h₅
-    exact ⟨G, hG.continuous, H, hH, hGH⟩
+  have hdec (y) (hy : y ∈ V) := exists_sectionValue_eq_mul_add_exp_mul_of_mem hp hq hhol
+    (hν.differentiable (by norm_num)) hνeq hV hy
   exact ⟨principalPartMap hD hν.continuous hdec,
     principalPartMap_injective (k := 2) (by norm_num) (hi 0) (hi 1) hp hq hhol hD hν hνeq hlin hdec
       fun y hy η hη hyη ↦ eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto
@@ -421,8 +433,7 @@ private theorem memLp_complexGaugeDirection {h₁ h₂ : ℂ → ℝ} (hx₂ : C
     refine memLp_of_mem_realSobolevFunctions (s := 1) ?_
     refine fderiv_apply_mem_realSobolevFunctions ENNReal.one_lt_two ENNReal.ofNat_ne_top
       zero_le_one (hf.of_le (by simp)) ?_ v
-    norm_num
-    exact hS
+    rwa [one_add_one_eq_two]
   have hmul (f : ℂ → ℝ) (hf : ContDiff ℝ ∞ f) (hS : f ∈ realSobolevFunctions ℂ 2 2) {g : ℂ → ℝ}
       (hg : Continuous g) (hgb : ∀ z, ‖g z‖ ≤ 1) : MemLp (fun z ↦ f z * g z) 2 volume :=
     (memLp_of_mem_realSobolevFunctions hS).of_le (hf.continuous.mul hg).aestronglyMeasurable
@@ -566,11 +577,7 @@ theorem exists_mem_gaugeFixedKernel_sectionValue_eq_mul_add_exp_mul (hx : ContDi
   have hP₀ (z : ℂ) : 0 ≤ P z := by positivity
   have hPle (z : ℂ) : 4 * P z ≤ 1 :=
     normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol hlim z
-  have hPb : MemLp P ⊤ volume :=
-    memLp_top_of_bound (((hxi 2).pow 2).add ((hxi 3).pow 2)).continuous.aestronglyMeasurable
-      (1 / 4) (ae_of_all _ fun z ↦ by
-        rw [Real.norm_of_nonneg (hP₀ z)]
-        linarith [hPle z])
+  have hPb : MemLp P ⊤ volume := memLp_top_potential hx.continuous hlim
   obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 / 8 : ℝ) < 1 / 4)
   have hxb (z : ℂ) : ‖x z 2‖ ≤ 1 ∧ ‖x z 3‖ ≤ 1 := by
     have h4 := hPle z
@@ -626,13 +633,8 @@ theorem finrank_gaugeFixedKernel {m : ℕ} (hx : ContDiff ℝ ∞ x) (hsol : ∀
       exact ⟨v, hv.continuousAt, hv₀, hvf⟩
   obtain ⟨ν, hν, hνeq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eq (n := ⊤) le_top
     (contDiff_connectionCoeff (hxi 0) (hxi 1))
-  have hdec (y) (hy : y ∈ gaugeFixedKernel x) : ∃ G : ℂ → ℂ, Continuous G ∧
-      ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
-        ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w := by
-    obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := forall_mem_linearizedEquation_eq_zero hker y hy
-    obtain ⟨G, hG, H, hH, hGH⟩ := exists_sectionValue_eq_mul_add_exp_mul (k := 2) (by norm_num)
-      hp hq hhol (hν.differentiable (by simp)) hνeq h₁ h₂ h₃ h₄ h₅
-    exact ⟨G, hG.continuous, H, hH, hGH⟩
+  have hdec (y) (hy : y ∈ gaugeFixedKernel x) := exists_sectionValue_eq_mul_add_exp_mul_of_mem hp
+    hq hhol (hν.differentiable (by simp)) hνeq hker hy
   -- By Hermite interpolation, the principal-part map on the kernel is surjective.
   have hsurj : Function.Surjective (principalPartMap hα hν.continuous hdec) := by
     intro t
