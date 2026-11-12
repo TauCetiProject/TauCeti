@@ -479,10 +479,8 @@ theorem measureReal_le_integral_inner_outerNormal_add {ψ : 𝓓(Ω, E)} {B S : 
     ((integrableOn_outerNormal hSfin).sub (integrableOn_const hSfin)).norm
   rw [← integral_indicator hSm, ← integral_add hint (hg.integrable_indicator hSm),
     ← integral_indicator_one hBm]
-  refine integral_mono_ae ((integrable_indicator_iff hBm).2 (integrableOn_const hBfin))
-    (hint.add (hg.integrable_indicator hSm)) ?_
-  filter_upwards [ae_mem_reducedBoundary] with y hy
-  have hνy : ‖outerNormal μ Ω s y‖ = 1 := norm_outerNormal hy
+  refine integral_mono ((integrable_indicator_iff hBm).2 (integrableOn_const hBfin))
+    (hint.add (hg.integrable_indicator hSm)) fun y => ?_
   -- For unit vectors, `⟪a • ν, ν_s⟫ + ‖ν_s - ν‖ ≥ a`, since `⟪ν, ν_s⟫ ≥ 1 - ‖ν_s - ν‖`.
   have hkey : 1 - ‖outerNormal μ Ω s y - ν‖ ≤ ⟪ν, outerNormal μ Ω s y⟫ := by
     have h := abs_real_inner_le_norm ν (outerNormal μ Ω s y - ν)
