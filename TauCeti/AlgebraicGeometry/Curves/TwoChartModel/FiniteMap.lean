@@ -47,7 +47,7 @@ theorem isFinite_map (hF : IsFunctionField k F) (hF' : IsFunctionField k F')
     have : IsProper (f ≫ (twoChartModel hF hx ↘ Spec (.of k))) := by
       rw [(Scheme.Hom.isOver_iff (Spec (.of k))).mp
         (inferInstance : f.IsOver (Spec (.of k)))]
-      exact isProper
+      infer_instance
     exact IsProper.of_comp f (twoChartModel hF hx ↘ Spec (.of k))
   have hqf : LocallyQuasiFinite f := by
     have hloc : IsZariskiLocalAtSource @LocallyQuasiFinite :=

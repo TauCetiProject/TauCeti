@@ -77,19 +77,16 @@ pullback of rational functions is the identification of the function field of th
 `k(X)` (`eq_isoTwoChartModel_hom_iff`). -/
 noncomputable def isoTwoChartModel :
     X ≅ twoChartModel (IsCurveOver.isFunctionField (k := k) (X := X)) hx :=
-  have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
   isoOfFunctionFieldAlgEquiv (IsCurveOver.valuationRing_stalk k X)
     (twoChartModel.valuationRing_stalk) (twoChartModel.functionFieldEquiv hxt)
 
 /-- The isomorphism `X ⟶ M` of `isoTwoChartModel` is a morphism over `k`. -/
 instance : (X.isoTwoChartModel hx hxt).hom.IsOver (Spec (.of k)) := by
-  have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
   rw [isoTwoChartModel]
   infer_instance
 
 /-- The isomorphism `M ⟶ X` of `isoTwoChartModel` is a morphism over `k`. -/
 instance : (X.isoTwoChartModel hx hxt).inv.IsOver (Spec (.of k)) := by
-  have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
   rw [isoTwoChartModel]
   infer_instance
 
@@ -100,7 +97,6 @@ of `k(X)`, the pullback along the isomorphism `X ⟶ M` of `isoTwoChartModel` is
 theorem functionFieldMap_isoTwoChartModel_hom (z : X.functionField) :
     (X.isoTwoChartModel hx hxt).hom.functionFieldMap
       ((twoChartModel.functionFieldEquiv hxt).symm z) = z := by
-  have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
   simp [isoTwoChartModel]
 
 /-- The pullback of rational functions along the isomorphism `M ⟶ X` of `isoTwoChartModel` is the
@@ -109,7 +105,6 @@ identification `k(X) ≃ₐ[k] k(M)` of `k(X)` with the function field of the tw
 theorem functionFieldMap_isoTwoChartModel_inv (z : X.functionField) :
     (X.isoTwoChartModel hx hxt).inv.functionFieldMap z =
       (twoChartModel.functionFieldEquiv hxt).symm z := by
-  have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
   simp [isoTwoChartModel]
 
 /-- **A regular proper curve is the two-chart model of its function field in exactly one way**: a
@@ -122,7 +117,6 @@ theorem eq_isoTwoChartModel_hom_iff
     f = (X.isoTwoChartModel hx hxt).hom ↔
       ∀ z, f.functionFieldMap ((twoChartModel.functionFieldEquiv hxt).symm z) = z := by
   refine ⟨fun h ↦ h ▸ functionFieldMap_isoTwoChartModel_hom X hx hxt, fun h ↦ ?_⟩
-  have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
   refine Hom.ext_of_functionFieldMap_eq (Spec (.of k)) ?_
   ext a
   obtain ⟨z, rfl⟩ := (twoChartModel.functionFieldEquiv hxt).symm.surjective a

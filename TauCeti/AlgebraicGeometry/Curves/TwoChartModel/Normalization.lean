@@ -72,7 +72,7 @@ noncomputable def normalizationIso (hxt : Transcendental k x) :
   have := isFinite_map hF hF' hx hx' h hxt
   -- The local rings of the model of `F'` are valuation rings, hence integrally closed.
   have := isIso_normalizationDesc_fromSpecStalk_genericPoint
-    (fun p ↦ have := valuationRing_stalk (hF := hF') (hx := hx') p; inferInstance)
+    (fun _ ↦ inferInstance)
     (map hF hF' hx hx' h)
   asIso (Scheme.Hom.normalizationDesc _ _ (map hF hF' hx hx' h) rfl)
 

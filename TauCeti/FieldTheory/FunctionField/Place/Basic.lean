@@ -368,7 +368,7 @@ theorem mem_integers_of_mem_algebraicClosure {f : F} (hf : f ∈ algebraicClosur
 
 /-- **An algebraic function is regular at every place**: the set of places at which `x` is regular
 is all of them. -/
-theorem setOf_mem_integers_eq_univ {x : F} (hx : IsAlgebraic k x) :
+theorem setOf_mem_integers_eq_univ_of_isAlgebraic {x : F} (hx : IsAlgebraic k x) :
     {P : Place k F | x ∈ P.integers} = Set.univ :=
   Set.eq_univ_of_forall fun P ↦
     P.mem_integers_of_mem_algebraicClosure (mem_algebraicClosure_iff.mpr hx)

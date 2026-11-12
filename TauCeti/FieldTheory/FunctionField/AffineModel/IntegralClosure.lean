@@ -40,11 +40,11 @@ The places missing from the finite chart are the poles of `x`, of which there ar
   `TauCeti.isFractionRing_integralClosure_adjoin`: `R_x` is a Dedekind domain, with fraction field
   `F` when `x` is transcendental over `k` (for algebraic `x` it is the constant field).
 * `TauCeti.isDedekindDomain_holomorphyRing_setOf_mem` and
-  `TauCeti.finiteType_holomorphyRing_setOf_mem`: `R_x` is a Dedekind domain and a finitely
-  generated `k`-algebra (for `x` transcendental over `k` this is `R_x`; for algebraic `x` it is the
-  constant field), presented as the holomorphy ring of the places at which `x` is regular, the form
-  in which it is a chart of the scheme of `F` in
-  `TauCeti/AlgebraicGeometry/Curves/TwoChartModel/`.
+  `TauCeti.finiteType_holomorphyRing_setOf_mem`: for every `x`, the holomorphy ring of the places
+  at which `x` is regular, which is `R_x`, is a Dedekind domain and a finitely generated
+  `k`-algebra. It is the affine model of `F` over `k[x]` when `x` is transcendental over `k`, and
+  collapses to the constant field `algebraicClosure k F` when `x` is algebraic. This is the form in
+  which it is a chart of the scheme of `F` in `TauCeti/AlgebraicGeometry/Curves/TwoChartModel/`.
 * `TauCeti.isDedekindDomain_holomorphyRing_compl` and `TauCeti.finiteType_holomorphyRing_compl`:
   the ring of functions regular outside a finite set `T` of places is a finitely generated
   Dedekind domain, since it is the holomorphy ring of a function `x` whose pole set is `T`
@@ -174,7 +174,7 @@ theorem isDedekindDomain_integralClosure_adjoin (hF : IsFunctionField k F) (x : 
     IsDedekindDomain (integralClosure (Algebra.adjoin k {x}) F) := by
   by_cases hx : IsAlgebraic k x
   · have h := restrictScalars_integralClosure_adjoin_eq_holomorphyRing hF x
-    rw [Place.setOf_mem_integers_eq_univ hx, holomorphyRing_univ hF] at h
+    rw [Place.setOf_mem_integers_eq_univ_of_isAlgebraic hx, holomorphyRing_univ hF] at h
     -- restricting scalars, and passing from an intermediate field to its subalgebra, keep the
     -- carrier and the ring structure
     have : IsDedekindDomain ((integralClosure (Algebra.adjoin k {x}) F).restrictScalars k) := by
@@ -194,20 +194,22 @@ theorem isFractionRing_integralClosure_adjoin (hF : IsFunctionField k F)
   have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
   exact integralClosure.isFractionRing_of_finite_extension k⟮x⟯ F
 
-/-- **The functions regular wherever `x` is form a Dedekind domain**: for `x` transcendental over
-`k` this holomorphy ring is `R_x`, and for algebraic `x` it is the constant field. -/
+/-- **The functions regular wherever `x` is form a Dedekind domain**: for every `x` this holomorphy
+ring is `R_x` (`TauCeti.restrictScalars_integralClosure_adjoin_eq_holomorphyRing`), the affine
+model over `k[x]` when `x` is transcendental over `k`, and the constant field
+`algebraicClosure k F` when `x` is algebraic. -/
 theorem isDedekindDomain_holomorphyRing_setOf_mem (hF : IsFunctionField k F) (x : F) :
     IsDedekindDomain (holomorphyRing {P : Place k F | x ∈ P.integers}) := by
   rw [← restrictScalars_integralClosure_adjoin_eq_holomorphyRing hF x]
   exact isDedekindDomain_integralClosure_adjoin hF x
 
-/-- **The functions regular wherever `x` is form a finitely generated `k`-algebra**: for `x`
-transcendental over `k` this holomorphy ring is `R_x`, and for algebraic `x` it is the finite
-constant field. -/
+/-- **The functions regular wherever `x` is form a finitely generated `k`-algebra**: for every `x`
+this holomorphy ring is `R_x`. When `x` is algebraic over `k` it is the constant field
+`algebraicClosure k F`, which is a finite extension of `k`. -/
 theorem finiteType_holomorphyRing_setOf_mem (hF : IsFunctionField k F) (x : F) :
     Algebra.FiniteType k (holomorphyRing {P : Place k F | x ∈ P.integers}) := by
   by_cases hx : IsAlgebraic k x
-  · rw [Place.setOf_mem_integers_eq_univ hx, holomorphyRing_univ hF]
+  · rw [Place.setOf_mem_integers_eq_univ_of_isAlgebraic hx, holomorphyRing_univ hF]
     -- the carrier of the subalgebra underlying an intermediate field is that of the field
     have : Module.Finite k (algebraicClosure k F) := hF.finiteDimensional_algebraicClosure
     exact inferInstanceAs (Algebra.FiniteType k (algebraicClosure k F))
