@@ -32,8 +32,11 @@ integral:
 Together they show that a position chosen at `r`, times the change of a martingale over
 `(r, r']`, is a martingale whenever this product is integrable at every time.
 
-The following results need only a preordered time index. The norm of a Banach-valued
-martingale is a submartingale (`MeasureTheory.Martingale.norm`). For a real submartingale,
+The following results need only a preordered time index. Sampling along a monotone time map
+preserves martingales, supermartingales, and submartingales with respect to the sampled
+filtration (`MeasureTheory.Martingale.comp`, `MeasureTheory.Supermartingale.comp`, and
+`MeasureTheory.Submartingale.comp`). The norm of a Banach-valued martingale is a submartingale
+(`MeasureTheory.Martingale.norm`). For a real submartingale,
 multiplication by a nonnegative position known at an earlier date preserves the expectation
 inequality when both products are integrable (`MeasureTheory.Submartingale.integral_mul_le`).
 In particular, positions need not be bounded. Nonnegative submartingale values inherit Lᵖ

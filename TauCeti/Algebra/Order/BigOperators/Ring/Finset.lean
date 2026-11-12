@@ -14,8 +14,9 @@ import Mathlib.Algebra.BigOperators.Intervals
 `Finset.sum_sq_le_sum_mul` bounds the sum of squares of nonnegative elements by their sum
 times a common upper bound, in a partially ordered semiring.
 `Finset.sum_range_sq_sub_le` specializes this to successive differences `t (i + 1) - t i`
-along a monotone prefix in a partially ordered ring, bounding their squared sum by
+along a monotone prefix in a partially ordered ring, bounding the sum of their squares by
 the endpoint difference `t n - t 0` times a common upper bound.
+These bounds convert sums of squared partition increments into mesh bounds by telescoping.
 -/
 
 public section

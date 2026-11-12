@@ -10,7 +10,13 @@ public import Mathlib.Probability.Process.Adapted
 /-!
 # Sampling a filtration
 
-Composing a filtration with a monotone time map gives a filtration on the sampling index.
+`MeasureTheory.Filtration.comp` composes a filtration with a monotone time map, preserving
+sigma-finiteness relative to the filtration. Sampling processes along the same map preserves
+adaptedness and strong adaptedness (`MeasureTheory.Adapted.comp` and
+`MeasureTheory.StronglyAdapted.comp`).
+
+This restricts filtrations and processes to deterministic grids or shifted indices, allowing
+discrete-time martingale results to be applied to the sampled processes.
 -/
 
 public section
