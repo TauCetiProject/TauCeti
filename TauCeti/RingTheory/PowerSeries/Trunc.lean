@@ -204,6 +204,31 @@ theorem trunc_val_zpow_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
 
 end Ring
 
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R]
+
+/-- Evaluation at an element `x` of a possibly noncommutative `R`-algebra with `x ^ n = 0` sees a
+power series only through its coefficients below `n`: any polynomial with the same coefficients
+below `n` has the same value as the truncation. -/
+theorem aeval_trunc_eq_aeval_of_pow_eq_zero {A : Type*} [Semiring A] [Algebra R A] {x : A}
+    {n : ℕ} (hx : x ^ n = 0) {f : R⟦X⟧} {p : Polynomial R}
+    (h : ∀ d < n, coeff d f = p.coeff d) :
+    Polynomial.aeval x (trunc n f) = Polynomial.aeval x p := by
+  have key (P : Polynomial R) :
+      Polynomial.aeval x P = ∑ i ∈ Finset.range n, P.coeff i • x ^ i := by
+    rw [Polynomial.aeval_eq_sum_range' (n := max n (P.natDegree + 1))
+      (lt_of_lt_of_le (Nat.lt_succ_self _) (le_max_right _ _))]
+    refine (Finset.sum_subset (Finset.range_mono (le_max_left _ _)) fun i _ hi => ?_).symm
+    rw [Finset.mem_range, not_lt] at hi
+    rw [pow_eq_zero_of_le hi hx, smul_zero]
+  rw [key, key]
+  exact Finset.sum_congr rfl fun d hd => by
+    rw [Finset.mem_range] at hd
+    simp [coeff_trunc, hd, h d hd]
+
+end CommSemiring
+
 section CommRing
 
 variable {R : Type*} [CommRing R]
@@ -217,16 +242,6 @@ theorem trunc_val_zpow_mul_derivative_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ
   trunc_mul_eq_of_trunc_eq
     (trunc_val_zpow_eq_of_trunc_eq (trunc_eq_of_trunc_eq_of_le h (Nat.le_succ m)) k)
     (by rw [trunc_derivative, trunc_derivative, h])
-
-/-- Evaluation at an element `x` of a possibly noncommutative `R`-algebra with `x ^ n = 0` sees a
-power series only through its coefficients below `n`: any polynomial with the same coefficients
-below `n` has the same value as the truncation. -/
-theorem aeval_trunc_eq_aeval_of_pow_eq_zero {A : Type*} [Ring A] [Algebra R A] {x : A} {n : ℕ}
-    (hx : x ^ n = 0) {f : R⟦X⟧} {p : Polynomial R} (h : ∀ d < n, coeff d f = p.coeff d) :
-    Polynomial.aeval x (trunc n f) = Polynomial.aeval x p := by
-  obtain ⟨q, hq⟩ : (Polynomial.X : Polynomial R) ^ n ∣ trunc n f - p :=
-    Polynomial.X_pow_dvd_iff.2 fun d hd => by simp [coeff_trunc, hd, h d hd]
-  rw [← sub_eq_zero, ← map_sub, hq, map_mul, map_pow, Polynomial.aeval_X, hx, zero_mul]
 
 end CommRing
 
