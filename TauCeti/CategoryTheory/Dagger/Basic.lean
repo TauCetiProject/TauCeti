@@ -112,7 +112,7 @@ end Preadditive
 The scalar involution is arbitrary; complex conjugation is its standard specialization. -/
 class DaggerLinear (R : Type w) [CommSemiring R] [StarRing R]
     (C : Type u) [Category.{v} C] [DaggerCategory C] [Preadditive C]
-    [Linear R C] [DaggerPreadditive C] : Prop where
+    [Linear R C] : Prop where
   /-- Taking daggers conjugates the scalar. -/
   dagger_smul : ∀ {X Y : C} (r : R) (f : X ⟶ Y),
     dagger (r • f) = star r • dagger f
@@ -221,7 +221,7 @@ instance [Preadditive C] [DaggerPreadditive C] : StarRing (End X) where
 
 /-- The scalar action on endomorphisms is compatible with the dagger involution. -/
 instance {R : Type w} [CommSemiring R] [StarRing R] [Preadditive C] [Linear R C]
-    [DaggerPreadditive C] [DaggerLinear R C] : StarModule R (End X) where
+    [DaggerLinear R C] : StarModule R (End X) where
   star_smul r f := by ext; simp
 
 end CategoryTheory.End

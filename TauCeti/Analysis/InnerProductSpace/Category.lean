@@ -140,11 +140,26 @@ theorem isUnitary_linearIsometryEquiv (e : X ≃ₗᵢ[𝕜] Y) :
 
 /-- Recover the linear isometric equivalence from a unitary arrow. -/
 def linearIsometryEquivOfUnitary (f : X ⟶ Y) (hf : IsUnitary f) :
-    X ≃ₗᵢ[𝕜] Y where
-  toLinearEquiv := LinearEquiv.ofLinearMap f.toLinearMap (dagger f).toLinearMap
-    (congrArg ContinuousLinearMap.toLinearMap hf.dagger_hom_id)
-    (congrArg ContinuousLinearMap.toLinearMap hf.hom_dagger_id)
-  norm_map' := (ContinuousLinearMap.norm_map_iff_adjoint_comp_self f).2 hf.hom_dagger_id
+    X ≃ₗᵢ[𝕜] Y := by
+  have adjoint_comp_self : (ContinuousLinearMap.adjoint f).comp f =
+      ContinuousLinearMap.id 𝕜 X := by
+    simpa only [comp_eq_comp, id_eq_id, dagger_eq_adjoint] using hf.hom_dagger_id
+  have self_comp_adjoint : f.comp (ContinuousLinearMap.adjoint f) =
+      ContinuousLinearMap.id 𝕜 Y := by
+    simpa only [comp_eq_comp, id_eq_id, dagger_eq_adjoint] using hf.dagger_hom_id
+  have forward_inverse : f.toLinearMap.comp (dagger f).toLinearMap = LinearMap.id := by
+    simpa only [dagger_eq_adjoint, ContinuousLinearMap.toLinearMap_comp,
+      ContinuousLinearMap.coe_id] using
+      congrArg ContinuousLinearMap.toLinearMap self_comp_adjoint
+  have inverse_forward : (dagger f).toLinearMap.comp f.toLinearMap = LinearMap.id := by
+    simpa only [dagger_eq_adjoint, ContinuousLinearMap.toLinearMap_comp,
+      ContinuousLinearMap.coe_id] using
+      congrArg ContinuousLinearMap.toLinearMap adjoint_comp_self
+  exact
+    { toLinearEquiv := LinearEquiv.ofLinearMap f.toLinearMap (dagger f).toLinearMap
+        forward_inverse inverse_forward
+      norm_map' := (ContinuousLinearMap.norm_map_iff_adjoint_comp_self f).2
+        (by simpa only [ContinuousLinearMap.one_def] using adjoint_comp_self) }
 
 /-- The recovered equivalence has the original arrow as its forward map. -/
 theorem linearIsometryEquivOfUnitary_apply (f : X ⟶ Y) (hf : IsUnitary f) (x : X) :
