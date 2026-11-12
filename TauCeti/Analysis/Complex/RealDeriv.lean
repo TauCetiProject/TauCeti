@@ -8,11 +8,15 @@ module
 public import Mathlib.Analysis.Complex.RealDeriv
 
 /-!
-# Complex conjugation is nowhere complex differentiable
+# Real derivatives of complex conjugation and of `|Re z|`
 
 Complex conjugation is real differentiable (Mathlib's `Complex.differentiable_conj`), but its real
 derivative `conjCLE` is not complex linear: it sends `1` to `1` and `I` to `-I`. Hence conjugation,
 and the reflection `z ↦ -conj z` across the imaginary axis, are complex differentiable at no point.
+
+Off the imaginary axis, `z ↦ |Re z|` agrees near `z` with `±Re`, so its real derivative there is
+`reCLM` on the right half-plane (`Complex.hasFDerivAt_abs_re_of_pos`) and `-reCLM` on the left one
+(`Complex.hasFDerivAt_abs_re_of_neg`).
 -/
 
 public section
@@ -40,5 +44,17 @@ theorem not_differentiableAt_conj (z : ℂ) : ¬ DifferentiableAt ℂ (fun w : �
 theorem not_differentiableAt_neg_conj (z : ℂ) :
     ¬ DifferentiableAt ℂ (fun w : ℂ ↦ -conj w) z := fun hd ↦
   not_differentiableAt_conj z (by simpa using hd.neg)
+
+/-- On the right half-plane, `z ↦ |Re z|` has real derivative `reCLM`. -/
+theorem hasFDerivAt_abs_re_of_pos {z : ℂ} (hz : 0 < z.re) :
+    HasFDerivAt (fun w : ℂ ↦ |w.re|) reCLM z :=
+  reCLM.hasFDerivAt.congr_of_eventuallyEq <|
+    (continuous_re.continuousAt.eventually (lt_mem_nhds hz)).mono fun _ hw ↦ abs_of_pos hw
+
+/-- On the left half-plane, `z ↦ |Re z|` has real derivative `-reCLM`. -/
+theorem hasFDerivAt_abs_re_of_neg {z : ℂ} (hz : z.re < 0) :
+    HasFDerivAt (fun w : ℂ ↦ |w.re|) (-reCLM) z :=
+  reCLM.hasFDerivAt.neg.congr_of_eventuallyEq <|
+    (continuous_re.continuousAt.eventually (gt_mem_nhds hz)).mono fun _ hw ↦ abs_of_neg hw
 
 end Complex

@@ -16,6 +16,7 @@ import Mathlib.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Analysis.Complex.RealDeriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
@@ -732,28 +733,8 @@ theorem memWkpLoc_one_log_norm_iff {Ω : Opens ℂ} (h0 : (0 : ℂ) ∈ Ω) :
     · exact (memLpLoc_iff.1 h K hKU hK).of_le hmeas.restrict
         (ae_of_all _ fun z => by
           rw [hnorm, Real.norm_of_nonneg (inv_nonneg.2 (norm_nonneg z))])
+
 /-! ### The even reflection fails at order two -/
-
-private theorem lipschitzWith_one_abs_re : LipschitzWith 1 fun z : ℂ => |z.re| :=
-  LipschitzWith.of_dist_le_mul fun a b => by
-    rw [NNReal.coe_one, one_mul, Real.dist_eq, dist_eq_norm]
-    exact (abs_abs_sub_abs_le_abs_sub _ _).trans (by simpa using Complex.abs_re_le_norm (a - b))
-
-private theorem fderiv_abs_re_apply_one_of_pos {z : ℂ} (hz : 0 < z.re) :
-    fderiv ℝ (fun z : ℂ => |z.re|) z 1 = 1 := by
-  have : (fun w : ℂ => |w.re|) =ᶠ[𝓝 z] fun w => Complex.reCLM w :=
-    eventuallyEq_of_mem ((Complex.continuous_re.isOpen_preimage _ isOpen_Ioi).mem_nhds
-      (mem_preimage.2 (mem_Ioi.2 hz))) fun w hw => abs_of_pos hw
-  rw [this.fderiv_eq, Complex.reCLM.fderiv]
-  simp
-
-private theorem fderiv_abs_re_apply_one_of_neg {z : ℂ} (hz : z.re < 0) :
-    fderiv ℝ (fun z : ℂ => |z.re|) z 1 = -1 := by
-  have : (fun w : ℂ => |w.re|) =ᶠ[𝓝 z] fun w => (-Complex.reCLM) w :=
-    eventuallyEq_of_mem ((Complex.continuous_re.isOpen_preimage _ isOpen_Iio).mem_nhds
-      (mem_preimage.2 (mem_Iio.2 hz))) fun w hw => abs_of_neg hw
-  rw [this.fderiv_eq, ContinuousLinearMap.fderiv]
-  simp
 
 /-- The even extension `z ↦ |Im z|` of the normal coordinate `Im z` is not in the local class
 `W^{2,p}` on any set whose interior meets the real axis, for any exponent: its first derivative
@@ -775,10 +756,12 @@ theorem not_memWkpLoc_two_abs_im {z₀ : ℂ} (hz₀ : z₀ ∈ interior U) (him
     convert h.comp_continuousLinearEquiv_add A z₀ hmaps using 2 with z
     simp [hA, him]
   obtain ⟨-, D, hD, hD1⟩ := memWkpLoc_succ_iff.1 h'
-  -- The weak derivative is the classical one, `± re`, off the imaginary axis.
+  -- `|Re z|` is Lipschitz, so its weak derivative is the classical one, `± re`, off the
+  -- imaginary axis.
+  have hlip : LocallyLipschitz fun z : ℂ => |z.re| :=
+    (lipschitzWith_one_norm.comp (RCLike.lipschitzWith_re (K := ℂ))).locallyLipschitz
   have hae := (ae_restrict_iff' (Opens.interior (ball (0 : ℂ) r)).isOpen.measurableSet).1
-    (hD.ae_eq
-      lipschitzWith_one_abs_re.locallyLipschitz.locallyLipschitzOn.hasWeakFDerivOn_fderiv)
+    (hD.ae_eq hlip.locallyLipschitzOn.hasWeakFDerivOn_fderiv)
   -- So `(D · 1 + 1) / 2` is the indicator of the right half-plane, which is not `W^{1,p}`.
   have hind : MemWkpLoc p (ball 0 r) 1 ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := by
     refine (((hD1.clm_comp (ContinuousLinearMap.apply ℝ ℝ (1 : ℂ))).add
@@ -789,10 +772,11 @@ theorem not_memWkpLoc_two_abs_im {z₀ : ℂ} (hz₀ : z₀ ∈ interior U) (him
     rw [Opens.coe_interior, isOpen_ball.interior_eq] at hz
     simp only [Pi.smul_apply, Pi.add_apply, ContinuousLinearMap.apply_apply, hz hzb, smul_eq_mul]
     rcases lt_or_gt_of_ne hz0 with h | h
-    · rw [fderiv_abs_re_apply_one_of_neg h,
+    · rw [(Complex.hasFDerivAt_abs_re_of_neg h).fderiv,
         indicator_of_notMem (s := {z : ℂ | 0 < z.re}) (not_lt.2 h.le)]
       norm_num
-    · rw [fderiv_abs_re_apply_one_of_pos h, indicator_of_mem (s := {z : ℂ | 0 < z.re}) h]
+    · rw [(Complex.hasFDerivAt_abs_re_of_pos h).fderiv,
+        indicator_of_mem (s := {z : ℂ | 0 < z.re}) h]
       norm_num
   exact not_memWkpLoc_indicator_re_pos (k := 0) (z₀ := 0)
     (by rw [isOpen_ball.interior_eq]; exact mem_ball_self hr) rfl hind
