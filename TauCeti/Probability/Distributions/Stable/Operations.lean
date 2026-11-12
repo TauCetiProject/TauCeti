@@ -78,20 +78,26 @@ theorem stableMeasure_map_affine {s : ℝ≥0} {m a b : ℝ}
   apply Measure.ext_of_charFun
   funext t
   have harg : ((‖b‖₊ * s : ℝ≥0) : ℝ) * t = |b| * (s * t) := by
-    simp only [NNReal.coe_mul, coe_nnnorm, Real.norm_eq_abs]
+    simp only [NNReal.coe_mul, coe_nnNorm, Real.norm_eq_abs]
     ring
   rw [charFun_map_affine, charFun_stableMeasure hα hβ, charFun_stableMeasure hα hβ',
     ← Complex.exp_add, mul_left_comm (s : ℝ) b t, stableCharacteristicExponent_mul, harg]
   push_cast
   ring_nf
 
-/-- Positive scaling and translation of the scale-one, location-zero stable law gives the
-stable law with that scale and location. This holds even for invalid shape or skewness. -/
-theorem stableMeasure_one_zero_map_affine {s : ℝ≥0} {m : ℝ} (hs : 0 < s) :
+/-- Scaling and translation of the scale-one, location-zero stable law gives the stable law with
+that scale and location, including the zero-scale Dirac case. This holds even for invalid shape
+or skewness. -/
+theorem stableMeasure_one_zero_map_affine {s : ℝ≥0} {m : ℝ} :
     (stableMeasure α β 1 0).map (fun x ↦ m + s * x) = stableMeasure α β s m := by
-  simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs)] using
-    stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
-      (Or.inl (NNReal.coe_ne_zero.mpr hs.ne'))
+  rcases eq_or_ne s 0 with rfl | hs
+  · by_cases hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1
+    · let _ := isProbabilityMeasure_stableMeasure hv.1 hv.2 1 0
+      simp [stableMeasure_zero_scale hv.1 hv.2, Measure.map_const]
+    · simp [stableMeasure_of_not_valid hv]
+  · simpa [Real.sign_of_pos (NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hs))] using
+      stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
+        (Or.inl (NNReal.coe_ne_zero.mpr hs))
 
 /-- Reflection of a stable law negates its skewness and location. This holds for all
 parameters, since invalid shapes give the zero measure on both sides. -/

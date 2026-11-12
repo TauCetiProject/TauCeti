@@ -25,6 +25,8 @@ so topological generators are dense in `G`.
 
 * `TauCeti.closedZpowers_lieExp_eq_top_iff`: `lieExp X` is a topological generator of a connected
   commutative Lie group if and only if `Λ + ℤ X` is dense in the Lie algebra.
+* `TauCeti.dense_setOf_closedZpowers_lieExp_eq_top`: in a compact connected commutative Lie
+  group, the derivations whose exponential is a topological generator are dense.
 * `TauCeti.dense_setOfPred_closedZpowers_eq_top` and `TauCeti.exists_closedZpowers_eq_top`:
   topological generators of a compact connected commutative Lie group are dense; in particular
   they exist.
@@ -107,14 +109,22 @@ private noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDeriv
 variable (I)
 include I
 
+/-- **Kronecker's theorem in the Lie algebra.** In a compact connected commutative Lie group, the
+derivations `X` whose exponential is a topological generator form a dense subset of the Lie
+algebra. -/
+theorem dense_setOf_closedZpowers_lieExp_eq_top :
+    Dense {X : LeftInvariantDerivation I G | closedZpowers (lieExp (I := I) X) = ⊤} :=
+  (AddSubgroup.dense_setOfPred_dense_sup
+    (span_ker_lieExpAddMonoidHom_eq_top (I := I) (G := G))).mono
+    fun X hX ↦ (closedZpowers_lieExp_eq_top_iff X).mpr hX
+
 /-- **Topological generators of a compact connected commutative Lie group are dense.** -/
 theorem dense_setOfPred_closedZpowers_eq_top : Dense {g : G | closedZpowers g = ⊤} := by
-  have hgen := AddSubgroup.dense_setOfPred_dense_sup
-    (span_ker_lieExpAddMonoidHom_eq_top (I := I) (G := G))
   refine ((lieExp_surjective_of_preconnectedSpace (I := I) (G := G)).denseRange.dense_image
-    (contMDiff_lieExp (I := I) (G := G)).continuous hgen).mono ?_
+    (contMDiff_lieExp (I := I) (G := G)).continuous
+    (dense_setOf_closedZpowers_lieExp_eq_top I (G := G))).mono ?_
   rintro _ ⟨X, hX, rfl⟩
-  exact (closedZpowers_lieExp_eq_top_iff X).mpr hX
+  exact hX
 
 /-- **A compact connected commutative Lie group has a topological generator.** -/
 theorem exists_closedZpowers_eq_top : ∃ g : G, closedZpowers g = ⊤ :=

@@ -284,7 +284,6 @@ private theorem inter_four_cb_b :
       {((0 : ℝ), (1 / 2 : ℝ)), (1 / 2, 1 / 2)} := by
   rintro p ⟨h₁, h₂⟩
   have e₁ := le_of_mem_convexHull 1 1 1 (by norm_num) h₁
-  have e₂ := le_of_mem_convexHull (-1) (-1) (-1) (by norm_num) h₁
   have e₃ := le_of_mem_convexHull (-1) 0 (-1 / 2) (by norm_num) h₁
   have e₄ := le_of_mem_convexHull 0 (-1) (-1 / 2) (by norm_num) h₂
   exact .inr (Prod.ext (by simp; linarith) (by simp; linarith))

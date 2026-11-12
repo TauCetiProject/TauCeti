@@ -97,7 +97,7 @@ private theorem exists_isMaxOn_add_neumannBarrier {Q : Set ℂ} (hQc : IsCompact
       IsMaxOn (fun w ↦ f w + ε * neumannBarrier w) Q z₁ := by
   -- Perturb `f` by `ε φ` with `ε |φ| < (f z - m) / 2` on `Q`, and take a maximizer `z₁`.
   obtain ⟨M, hM⟩ := hQc.exists_bound_of_continuousOn contDiff_neumannBarrier.continuous.continuousOn
-  set δ := f z - m with hδ
+  set δ := f z - m
   have hδpos : 0 < δ := sub_pos.mpr hlt
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM z hz)
   set ε := δ / (2 * (M + 1)) with hε

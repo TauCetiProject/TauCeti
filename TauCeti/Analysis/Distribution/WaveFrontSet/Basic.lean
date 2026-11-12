@@ -6,12 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.LinearEquiv
+public import TauCeti.Analysis.Distribution.Restriction
+public import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Inversion
-import TauCeti.Analysis.PositiveDefinite.FourierAtom
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.Topology.Algebra.Module.Cone
 
@@ -34,7 +40,8 @@ not microlocally smooth.
 
 ## Main declarations
 
-* `Distribution.localFourier T φ`: the Fourier transform `η ↦ T (φ e_η)` of `φ T`.
+* `Distribution.localFourier T φ`: the Fourier transform `η ↦ T (φ e_η)` of `φ T`; it is
+  continuous (`Distribution.continuous_localFourier`).
 * `Distribution.IsMicrolocallySmoothAt T x ξ`: microlocal smoothness at `(x, ξ)`.
 * `Distribution.waveFrontSet T`: the wave front set.
 
@@ -44,6 +51,9 @@ not microlocally smooth.
   the wave front set is closed in `Ω × (E \ {0})`.
 * `Distribution.smul_mem_waveFrontSet_iff`: it is conic in the frequency variable.
 * `Distribution.waveFrontSet_subset_dsupport`: it lies over the support of `T`.
+* `Distribution.localFourier_smulLeftCLM`, `Distribution.localFourier_restrictCLM`: the localized
+  Fourier transforms of a smooth multiple and of a restriction, as localized Fourier transforms of
+  `T` with modified cutoffs.
 * `Distribution.waveFrontSet_smul`, `Distribution.waveFrontSet_conj`: nonzero scalar multiples
   have the same wave front set, and complex conjugation reflects the frequencies.
 * `Distribution.localFourier_eq_fourier`: where `T` is a locally integrable function `f`, the
@@ -57,6 +67,12 @@ not microlocally smooth.
   is, Lebesgue measure of `V` pushed forward to `E`, has wave front set `(Ω ∩ V) × (Vᗮ \ {0})`,
   the conormal set of `V`. Its localized Fourier transform is computed by
   `Distribution.localFourier_ofFun_one_map_subtype` as a Fourier transform on `V`.
+* `Distribution.waveFrontSet_compCLMOfContinuousLinearEquiv`: the wave front set is invariant
+  under linear changes of coordinates, with covectors transforming by the transpose. If a linear
+  automorphism `e` identifies `V` with `Ω`, then `(x, ξ)` lies in the wave front set of the
+  pullback `e^* T` exactly when `(e x, (e⁻¹)ᵀ ξ)` lies in that of `T`. The underlying identity
+  `Distribution.localFourier_compCLMOfContinuousLinearEquiv` rescales localized Fourier
+  transforms.
 
 ## Implementation notes
 
@@ -68,7 +84,8 @@ is `mapCLM conjCLE T`, and the complex point mass at `x₀` is `mapCLM ofRealCLM
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, §8.1,
-  Definition 8.1.2.
+  Definition 8.1.2, and §8.2, Theorem 8.2.4 (the wave front set of a pullback, here along a
+  linear change of coordinates).
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, Lecture I, §7.
 -/
 
@@ -89,6 +106,13 @@ the compactly supported distribution `φ T`. -/
 def localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) : ℂ :=
   T.complexPairing
     (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ)
+
+/-- The defining equation of `Distribution.localFourier`: `T` paired with the product of `φ` and
+the Fourier atom `e_η`. -/
+theorem localFourier_def (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    T.localFourier φ η = T.complexPairing
+      (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ) := by
+  rw [localFourier]
 
 /-- The localized Fourier transform at `η` pairs `T` with any test function equal to
 `x ↦ φ x * 𝐞 (-⟪x, η⟫)`. -/
@@ -136,6 +160,52 @@ theorem localFourier_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, �
 @[simp]
 theorem localFourier_zero_cutoff (T : 𝓓'(Ω, ℂ)) (η : E) : T.localFourier 0 η = 0 := by
   simpa using localFourier_smul_cutoff T 0 0 η
+
+/-- At the zero frequency the localized Fourier transform is the pairing `T φ` with the cutoff. -/
+@[simp]
+theorem localFourier_at_zero (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    T.localFourier φ 0 = T.complexPairing φ :=
+  localFourier_eq T φ fun x ↦ by simp
+
+/-- The localized Fourier transform `η ↦ T (φ e_η)` is continuous in the frequency. -/
+theorem continuous_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    Continuous (T.localFourier φ) := by
+  set ψ : E → 𝓓(Ω, ℂ) := fun η ↦
+    bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ
+  have hT : T.localFourier φ = fun η ↦ T.complexPairing (ψ η) :=
+    funext fun η ↦ localFourier_eq T φ fun x ↦ by
+      simp [ψ, bilinLeftCLM_apply, TauCeti.fourierAtom_eq_fourierChar,
+        -TauCeti.fourierAtom_apply]
+  rw [hT]
+  -- The modulated cutoffs `φ e_η` share the support of `φ` and depend smoothly on `η`.
+  refine T.complexPairing.continuous.comp (continuous_of_contDiff_uncurry
+    φ.hasCompactSupport.isCompact φ.tsupport_subset (fun η ↦ ?_) ?_)
+  · simp only [ψ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+    exact tsupport_mul_subset_left
+  · simp only [ψ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+    exact (φ.contDiff.comp contDiff_snd).mul TauCeti.contDiff_uncurry_fourierAtom
+
+/-- The localized Fourier transform of a smooth multiple `g T` with cutoff `φ` is that of `T` with
+cutoff `g φ`. -/
+@[simp]
+theorem localFourier_smulLeftCLM (T : 𝓓'(Ω, ℂ)) {g : E → ℝ} (hg : ContDiff ℝ ∞ g)
+    (φ : 𝓓(Ω, ℂ)) (η : E) :
+    (smulLeftCLM hg T).localFourier φ η = T.localFourier (TestFunction.smulLeftCLM hg φ) η := by
+  rw [localFourier, localFourier, complexPairing_smulLeftCLM]
+  congr 1
+  ext x
+  simp [bilinLeftCLM_apply, mul_assoc]
+
+/-- The localized Fourier transform of a restriction `T|_{Ω'}` with cutoff `φ` is that of `T`
+with cutoff `φ` extended by zero. -/
+@[simp]
+theorem localFourier_restrictCLM {Ω' : Opens E} (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω', ℂ)) (η : E) :
+    (restrictCLM T : 𝓓'(Ω', ℂ)).localFourier φ η =
+      T.localFourier (TestFunction.monoCLM ℝ φ) η := by
+  rw [localFourier, localFourier, complexPairing_restrictCLM]
+  congr 1
+  ext x
+  by_cases h : Ω' ≤ Ω <;> simp [h, bilinLeftCLM_apply]
 
 /-- A complex distribution `T` is **microlocally smooth** at `(x, ξ)` if some complex test
 function `φ` with `φ x ≠ 0` has localized Fourier transform `localFourier T φ` rapidly
@@ -264,21 +334,13 @@ theorem isMicrolocallySmoothAt_conj_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} :
   have key {S : 𝓓'(Ω, ℂ)} {ζ : E} (h : S.IsMicrolocallySmoothAt x (-ζ)) :
       (mapCLM conjCLE.toContinuousLinearMap S).IsMicrolocallySmoothAt x ζ := by
     obtain ⟨φ, hφ, Γ, hΓ, hζ, hcone, hdecay⟩ := h
-    have hφφ : postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap
-        (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ) = φ := by
-      ext y
-      simp
     refine ⟨postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ, by simpa using hφ,
       Neg.neg ⁻¹' Γ, hΓ.preimage continuous_neg, hζ, fun t ht η hη => ?_, fun N => ?_⟩
     · simpa [smul_neg] using hcone t ht (-η) hη
     · obtain ⟨C, hC⟩ := hdecay N
-      exact ⟨C, fun η hη => by simpa [localFourier_conj, hφφ] using hC (-η) hη⟩
-  have hconj : mapCLM conjCLE.toContinuousLinearMap (mapCLM conjCLE.toContinuousLinearMap T) =
-      T := by
-    ext φ
-    simp [mapCLM_apply]
+      exact ⟨C, fun η hη => by simpa [localFourier_conj] using hC (-η) hη⟩
   refine ⟨fun h => ?_, key⟩
-  rw [← hconj]
+  rw [← mapCLM_conj_mapCLM_conj T]
   exact key (by rwa [neg_neg])
 
 /-- Complex conjugation reflects the wave front set in the frequency variable. -/
@@ -331,6 +393,18 @@ theorem waveFrontSet_subset_dsupport (T : 𝓓'(Ω, ℂ)) :
     T.waveFrontSet ⊆ dsupport T ×ˢ univ := by
   rintro ⟨x, ξ⟩ ⟨hx, -, hT⟩
   exact ⟨by_contra fun hxT => hT (isMicrolocallySmoothAt_of_notMem_dsupport hx hxT ξ), trivial⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- Near a point of the support of `T` there are complex cutoffs `φ` with `T φ ≠ 0`, that is, with
+localized Fourier transform nonzero at the zero frequency. -/
+theorem exists_tsupport_subset_localFourier_at_zero_ne_zero {T : 𝓓'(Ω, ℂ)} {x : E}
+    (hx : x ∈ dsupport T) {U : Set E} (hU : U ∈ 𝓝 x) :
+    ∃ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ U ∧ T.localFourier φ 0 ≠ 0 := by
+  obtain ⟨θ, hθ, hTθ⟩ := (mem_dsupport_iff_forall_exists_ne x).1 hx (interior U)
+    (mem_interior_iff_mem_nhds.2 hU) isOpen_interior
+  refine ⟨postcompCLM (𝕜 := ℝ) ofRealCLM θ, ?_, by simpa using hTθ⟩
+  rw [postcompCLM_apply]
+  exact (tsupport_comp_subset (map_zero ofRealCLM) θ).trans (hθ.trans interior_subset)
 
 /-- The zero distribution has empty wave front set. -/
 @[simp]
@@ -436,7 +510,7 @@ supported. -/
 private theorem contDiff_and_hasCompactSupport_restrict (V : Submodule ℝ E) (φ : 𝓓(Ω, ℂ)) :
     ContDiff ℝ ∞ (fun v : V => φ v) ∧ HasCompactSupport (fun v : V => φ v) :=
   ⟨φ.contDiff.comp V.subtypeL.contDiff, φ.hasCompactSupport.comp_isClosedEmbedding
-    (V.isClosedEmbedding_subtype V.closed_of_finiteDimensional)⟩
+    (V.isClosedEmbedding_subtype V.isClosed_of_finiteDimensional)⟩
 
 /-- The localized Fourier transform of the surface measure of a subspace `V`, that is, Lebesgue
 measure of `V` pushed forward to `E`, is the Fourier transform on `V` of the restriction of the
@@ -446,7 +520,7 @@ theorem localFourier_ofFun_one_map_subtype (V : Submodule ℝ E) (φ : 𝓓(Ω, 
     (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).localFourier φ η =
       𝓕 (fun v : V => φ v) (V.orthogonalProjectionOnto η) := by
   have hce : Topology.IsClosedEmbedding ((↑) : V → E) :=
-    V.isClosedEmbedding_subtype V.closed_of_finiteDimensional
+    V.isClosedEmbedding_subtype V.isClosed_of_finiteDimensional
   -- The pushed-forward measure is finite on compact sets, so constants are locally integrable.
   have := MeasureTheory.Measure.isFiniteMeasureOnCompacts_map_of_isProperMap MeasureTheory.volume
     hce.isProperMap
@@ -464,7 +538,7 @@ private theorem isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem (V : Subm
     {x : E} (hx : x ∈ Ω) (hxV : x ∉ V) (ξ : E) :
     (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).IsMicrolocallySmoothAt x ξ := by
   obtain ⟨φ, hφ, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
-    (inter_mem (V.closed_of_finiteDimensional.isOpen_compl.mem_nhds hxV) (Ω.isOpen.mem_nhds hx))
+    (inter_mem (V.isClosed_of_finiteDimensional.isOpen_compl.mem_nhds hxV) (Ω.isOpen.mem_nhds hx))
     inter_subset_right (1 : ℂ)
   -- The cutoff vanishes on `V`, so the localized Fourier transform vanishes identically.
   have hg : (fun v : V => φ v) = 0 :=
@@ -562,5 +636,96 @@ theorem waveFrontSet_ofFun_one_map_subtype (V : Submodule ℝ E) :
       hT (isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem_orthogonal V hx hξV)
 
 end FiniteDimensional
+
+/-! ### Linear changes of coordinates -/
+
+section LinearEquiv
+
+open scoped InnerProduct
+
+variable [FiniteDimensional ℝ E] {V : Opens E}
+
+/-- **Localized Fourier transforms under a linear change of coordinates.** The localized Fourier
+transform of the pullback `e^* T` with cutoff `φ`, at the frequency `η`, is `|det e|⁻¹` times that
+of `T` with the transported cutoff `φ ∘ e⁻¹`, at the frequency `(e⁻¹)ᵀ η`. -/
+theorem localFourier_compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω)
+    (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(V, ℂ)) (η : E) :
+    (compCLMOfContinuousLinearEquiv e hVO T).localFourier φ η =
+      (|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) *
+        T.localFourier (e.transportTestFunction hVO φ) (((e.symm : E →L[ℝ] E)†) η) := by
+  rw [localFourier, complexPairing_compCLMOfContinuousLinearEquiv]
+  congr 1
+  refine (localFourier_eq _ _ fun y => ?_).symm
+  simp [bilinLeftCLM_apply, TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply,
+    ContinuousLinearMap.adjoint_inner_right]
+
+/-- If `T` is microlocally smooth at `(e x, (e⁻¹)ᵀ ξ)`, then its pullback along `e` is
+microlocally smooth at `(x, ξ)`. Here `e` identifies `V` with `Ω`. -/
+theorem IsMicrolocallySmoothAt.compCLMOfContinuousLinearEquiv {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V)
+    (h : T.IsMicrolocallySmoothAt (e x) (((e.symm : E →L[ℝ] E)†) ξ)) :
+    (compCLMOfContinuousLinearEquiv e hVO T).IsMicrolocallySmoothAt x ξ := by
+  obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hdecay⟩ := h
+  set A : E →L[ℝ] E := (e.symm : E →L[ℝ] E)†
+  -- The cutoff `φ ∘ e` and the cone `A⁻¹ Γ` carry the decay of `T` over to its pullback.
+  refine ⟨e.symm.transportTestFunction hOV φ, by simpa using hφ, A ⁻¹' Γ,
+    hΓ.preimage A.continuous, hξ, fun t ht η hη => ?_, fun N => ?_⟩
+  · simpa only [mem_preimage, map_smul] using hcone t ht (A η) hη
+  obtain ⟨C, hC⟩ := hdecay N
+  refine ⟨|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ * ((1 + ‖(e : E →L[ℝ] E)‖) ^ N * C),
+    fun η hη => ?_⟩
+  -- Since `eᵀ` inverts `A`, `‖η‖ ≤ ‖eᵀ‖ ‖A η‖ = ‖e‖ ‖A η‖`.
+  have hηe : ‖η‖ ≤ ‖(e : E →L[ℝ] E)‖ * ‖A η‖ := by
+    have h := e.symm.adjoint_symm_adjoint_apply η
+    rw [ContinuousLinearEquiv.symm_symm] at h
+    calc ‖η‖ = ‖((e : E →L[ℝ] E)†) (A η)‖ := by rw [h]
+      _ ≤ ‖(e : E →L[ℝ] E)†‖ * ‖A η‖ := ContinuousLinearMap.le_opNorm _ _
+      _ = ‖(e : E →L[ℝ] E)‖ * ‖A η‖ := by rw [LinearIsometryEquiv.norm_map]
+  have hηA : 1 + ‖η‖ ≤ (1 + ‖(e : E →L[ℝ] E)‖) * (1 + ‖A η‖) := by
+    nlinarith [norm_nonneg (A η), norm_nonneg (e : E →L[ℝ] E)]
+  have hC' := hC (A η) hη
+  rw [localFourier_compCLMOfContinuousLinearEquiv,
+    ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm, norm_mul,
+    Complex.norm_real, Real.norm_of_nonneg (by positivity), mul_left_comm]
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  calc (1 + ‖η‖) ^ N * ‖T.localFourier φ (A η)‖
+      ≤ ((1 + ‖(e : E →L[ℝ] E)‖) * (1 + ‖A η‖)) ^ N * ‖T.localFourier φ (A η)‖ := by
+        gcongr
+    _ = (1 + ‖(e : E →L[ℝ] E)‖) ^ N * ((1 + ‖A η‖) ^ N * ‖T.localFourier φ (A η)‖) := by
+        rw [mul_pow, mul_assoc]
+    _ ≤ (1 + ‖(e : E →L[ℝ] E)‖) ^ N * C := by gcongr
+
+/-- **Microlocal smoothness under a linear change of coordinates.** When `e` identifies `V` with
+`Ω`, the pullback `e^* T` is microlocally smooth at `(x, ξ)` exactly when `T` is microlocally
+smooth at `(e x, (e⁻¹)ᵀ ξ)`. -/
+theorem isMicrolocallySmoothAt_compCLMOfContinuousLinearEquiv_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V) :
+    (compCLMOfContinuousLinearEquiv e hVO T).IsMicrolocallySmoothAt x ξ ↔
+      T.IsMicrolocallySmoothAt (e x) (((e.symm : E →L[ℝ] E)†) ξ) := by
+  refine ⟨fun h => ?_, fun h => h.compCLMOfContinuousLinearEquiv e hVO hOV⟩
+  -- Pull `e^* T` back along `e⁻¹`, which gives back `T`.
+  have h' : (compCLMOfContinuousLinearEquiv e hVO T).IsMicrolocallySmoothAt (e.symm (e x))
+      (((e.symm.symm : E →L[ℝ] E)†) (((e.symm : E →L[ℝ] E)†) ξ)) := by
+    simpa only [ContinuousLinearEquiv.adjoint_symm_adjoint_apply,
+      ContinuousLinearEquiv.symm_apply_apply] using h
+  simpa using h'.compCLMOfContinuousLinearEquiv e.symm hOV (by simpa using hVO)
+
+/-- **The wave front set under a linear change of coordinates.** When `e` identifies `V` with
+`Ω`, the wave front set of the pullback `e^* T` consists of the `(x, ξ)` with
+`(e x, (e⁻¹)ᵀ ξ)` in the wave front set of `T`: positions move by `e⁻¹` and covectors by the
+transpose `eᵀ`. -/
+theorem waveFrontSet_compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω)
+    (hOV : MapsTo e.symm Ω V) (T : 𝓓'(Ω, ℂ)) :
+    (compCLMOfContinuousLinearEquiv e hVO T).waveFrontSet =
+      Prod.map e ((e.symm : E →L[ℝ] E)†) ⁻¹' T.waveFrontSet := by
+  ext ⟨x, ξ⟩
+  have hx : x ∈ V ↔ e x ∈ Ω := ⟨fun h => hVO h, fun h => by simpa using hOV h⟩
+  have hξ : ξ ≠ 0 ↔ ((e.symm : E →L[ℝ] E)†) ξ ≠ 0 := by
+    refine ⟨fun h h0 => h ?_, fun h h0 => h (by simp [h0])⟩
+    rw [← e.symm.adjoint_symm_adjoint_apply ξ, h0, map_zero]
+  simp only [mem_waveFrontSet_iff, mem_preimage, Prod.map_apply, hx, hξ,
+    isMicrolocallySmoothAt_compCLMOfContinuousLinearEquiv_iff e hVO hOV]
+
+end LinearEquiv
 
 end Distribution

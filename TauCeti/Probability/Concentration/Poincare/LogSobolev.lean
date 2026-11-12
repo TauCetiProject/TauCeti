@@ -29,8 +29,11 @@ gradient is the operator norm `‖fderiv ℝ f x‖`.
 
 * `MeasureTheory.Measure.PoincareInequality.mono` and
   `MeasureTheory.Measure.LogSobolevInequality.mono`: the inequalities persist for larger constants.
+* `MeasureTheory.Measure.PoincareInequality.eq_zero_or_measure_univ_eq_one` and
+  `MeasureTheory.Measure.LogSobolevInequality.toReal_measure_univ_eq_zero_or_one_le`: the total
+  mass of a measure satisfying the inequality is constrained by the constant function `1`.
 * `MeasureTheory.Measure.PoincareInequality.map_smul` and
-  `MeasureTheory.Measure.LogSobolevInequality.map_smul`: dilating the measure by `a ≠ 0`
+  `MeasureTheory.Measure.LogSobolevInequality.map_smul`: dilating the measure by `a`
   multiplies the constant by `a ^ 2`.
 * `TauCeti.Probability.not_poincareInequality_bernoulliMeasure`: a two-point measure `p δ₁ +
   (1 - p) δ₀` on `ℝ` with `0 < p < 1` satisfies no Poincaré inequality.
@@ -119,41 +122,110 @@ section Scaling
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-/-- Dilating a measure satisfying the Poincaré inequality with constant `C` by `a ≠ 0` gives a
-measure satisfying it with constant `a ^ 2 * C`. -/
-theorem PoincareInequality.map_smul {μ : Measure E} {C : ℝ} (h : PoincareInequality μ C) {a : ℝ}
-    (ha : a ≠ 0) : PoincareInequality (μ.map (fun x ↦ a • x)) (a ^ 2 * C) := by
-  have he := measurableEmbedding_const_smul₀ (α := E) ha
-  intro f hf hfL hdf
-  have hg : ContDiff ℝ ∞ (fun y ↦ f (a • y)) := hf.comp (contDiff_const_smul a)
-  have hgL : MemLp (fun y ↦ f (a • y)) 2 μ := (he.memLp_map_measure_iff).1 hfL
-  have hdg : MemLp (fun x ↦ ‖fderiv ℝ (fun y ↦ f (a • y)) x‖) 2 μ := by
-    simp only [TauCeti.norm_fderiv_comp_smul a]
-    exact ((he.memLp_map_measure_iff).1 hdf).const_mul |a|
-  rw [variance_map hfL.aemeasurable he.measurable.aemeasurable,
-    TauCeti.integral_sq_norm_fderiv_comp_smul ha]
-  have := h _ hg hgL hdg
-  have hpos : 0 < a ^ 2 := by positivity
-  calc _ ≤ C * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := this
-    _ = a ^ 2 * C * ((a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ) := by
-      field_simp
+omit [BorelSpace E] in
+/-- A finite measure satisfying a Poincaré inequality is zero or has total mass one: the constant
+function `1` has variance zero, which forces the measure to be a probability measure unless it
+vanishes. -/
+theorem PoincareInequality.eq_zero_or_measure_univ_eq_one {μ : Measure E} {C : ℝ}
+    [IsFiniteMeasure μ] (h : PoincareInequality μ C) : μ = 0 ∨ μ Set.univ = 1 := by
+  have h1 := h (fun _ ↦ 1) contDiff_const (memLp_const 1) (by simp)
+  have hv0 : variance (fun _ : E ↦ (1 : ℝ)) μ = 0 :=
+    le_antisymm (by simpa using h1) (variance_nonneg _ _)
+  have hae1 := ae_eq_integral_of_variance_eq_zero (memLp_const 1) hv0
+  by_cases hμ0 : μ = 0
+  · exact Or.inl hμ0
+  · obtain ⟨_, hx⟩ := (ae_neBot.2 hμ0).nonempty_of_mem hae1
+    refine Or.inr ?_
+    have : μ.real Set.univ = 1 := by simpa [integral_const] using hx.symm
+    simpa [Measure.real, ENNReal.toReal_eq_one_iff] using this
 
-/-- Dilating a measure satisfying the logarithmic Sobolev inequality with constant `C` by `a ≠ 0`
+/-- Dilating a measure satisfying the Poincaré inequality with constant `C` by `a` gives a
+measure satisfying it with constant `a ^ 2 * C`. -/
+theorem PoincareInequality.map_smul {μ : Measure E} {C : ℝ} (h : PoincareInequality μ C) {a : ℝ} :
+    PoincareInequality (μ.map (fun x ↦ a • x)) (a ^ 2 * C) := by
+  by_cases ha : a = 0
+  · subst ha
+    simp only [zero_smul, Measure.map_const]
+    intro f _ hfL _
+    rw [zero_pow two_ne_zero, zero_mul, zero_mul]
+    refine le_of_eq ?_
+    have hae : f =ᵐ[μ Set.univ • Measure.dirac (0 : E)] fun _ ↦ f 0 :=
+      ae_smul_measure (by simp) _
+    refine (variance_congr hae).trans ?_
+    rcases (memLp_const_iff (μ := μ Set.univ • Measure.dirac (0 : E)) (c := f 0) two_ne_zero
+      ENNReal.ofNat_ne_top).1 (hfL.ae_eq hae) with h0 | hfin
+    · rw [h0]
+      exact variance_zero _
+    · have hμfin : IsFiniteMeasure μ := ⟨by simpa [smul_apply] using hfin⟩
+      rcases h.eq_zero_or_measure_univ_eq_one with hμ0 | hμ1
+      · simp [hμ0]
+      · rw [hμ1, one_smul]
+        exact variance_dirac _
+  · have he := measurableEmbedding_const_smul₀ (α := E) ha
+    intro f hf hfL hdf
+    have hg : ContDiff ℝ ∞ (fun y ↦ f (a • y)) := hf.comp (contDiff_const_smul a)
+    have hgL : MemLp (fun y ↦ f (a • y)) 2 μ := (he.memLp_map_measure_iff).1 hfL
+    have hdg : MemLp (fun x ↦ ‖fderiv ℝ (fun y ↦ f (a • y)) x‖) 2 μ := by
+      simp only [TauCeti.norm_fderiv_comp_smul a]
+      exact ((he.memLp_map_measure_iff).1 hdf).const_mul |a|
+    rw [variance_map hfL.aemeasurable he.measurable.aemeasurable,
+      TauCeti.integral_sq_norm_fderiv_comp_smul ha]
+    have := h _ hg hgL hdg
+    calc _ ≤ C * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := this
+      _ = a ^ 2 * C * ((a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ) := by
+        field_simp
+
+omit [BorelSpace E] in
+/-- A measure satisfying a logarithmic Sobolev inequality has total mass zero or at least one (as a
+real number, so an infinite mass counts as zero): the constant function `1` has nonpositive
+entropy `-μ(E) log μ(E)`. -/
+theorem LogSobolevInequality.toReal_measure_univ_eq_zero_or_one_le {μ : Measure E} {C : ℝ}
+    (h : LogSobolevInequality μ C) : (μ Set.univ).toReal = 0 ∨ 1 ≤ (μ Set.univ).toReal := by
+  by_cases hfin : μ Set.univ = ⊤
+  · exact Or.inl (by simp [hfin])
+  · have : IsFiniteMeasure μ := ⟨lt_top_iff_ne_top.2 hfin⟩
+    have h1 := h (fun _ : E ↦ (1 : ℝ)) contDiff_const (by simp) (by simp)
+      (by simp)
+    have he : entropy μ (fun _ : E ↦ (1 : ℝ) ^ 2) =
+        -((μ Set.univ).toReal * Real.log (μ Set.univ).toReal) := by
+      simp [entropy_def, Measure.real]
+    have hz : 2 * C * ∫ x, ‖fderiv ℝ (fun _ : E ↦ (1 : ℝ)) x‖ ^ 2 ∂μ = 0 := by simp
+    rcases (ENNReal.toReal_nonneg).eq_or_lt' with h0 | hpos
+    · exact Or.inl h0
+    · refine Or.inr (Real.log_nonneg_iff hpos |>.1 ?_)
+      by_contra hlt
+      nlinarith [mul_neg_of_pos_of_neg hpos (not_le.1 hlt)]
+
+/-- Dilating a measure satisfying the logarithmic Sobolev inequality with constant `C` by `a`
 gives a measure satisfying it with constant `a ^ 2 * C`. -/
 theorem LogSobolevInequality.map_smul {μ : Measure E} {C : ℝ} (h : LogSobolevInequality μ C)
-    {a : ℝ} (ha : a ≠ 0) : LogSobolevInequality (μ.map (fun x ↦ a • x)) (a ^ 2 * C) := by
-  have he := measurableEmbedding_const_smul₀ (α := E) ha
-  intro f hf hdf hf2 hf2log
-  have hg : ContDiff ℝ ∞ (fun y ↦ f (a • y)) := hf.comp (contDiff_const_smul a)
-  have hdg : MemLp (fun x ↦ ‖fderiv ℝ (fun y ↦ f (a • y)) x‖) 2 μ := by
-    simp only [TauCeti.norm_fderiv_comp_smul a]
-    exact ((he.memLp_map_measure_iff).1 hdf).const_mul |a|
-  rw [entropy_map he, TauCeti.integral_sq_norm_fderiv_comp_smul ha]
-  have := h _ hg hdg ((he.integrable_map_iff).1 hf2) ((he.integrable_map_iff).1 hf2log)
-  have hpos : 0 < a ^ 2 := by positivity
-  calc _ ≤ 2 * C * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := this
-    _ = 2 * (a ^ 2 * C) * ((a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ) := by
-      field_simp
+    {a : ℝ} : LogSobolevInequality (μ.map (fun x ↦ a • x)) (a ^ 2 * C) := by
+  by_cases ha : a = 0
+  · subst ha
+    simp only [zero_smul, Measure.map_const]
+    intro f _ _ _ _
+    rw [zero_pow two_ne_zero, zero_mul, mul_zero, zero_mul]
+    have hm := h.toReal_measure_univ_eq_zero_or_one_le
+    simp only [entropy_def, integral_smul_measure, integral_dirac, smul_eq_mul]
+    rcases hm with h0 | h1
+    · simp [h0]
+    · by_cases hg : f 0 ^ 2 = 0
+      · simp [hg]
+      · have hpos : 0 < f 0 ^ 2 := lt_of_le_of_ne (sq_nonneg _) (Ne.symm hg)
+        rw [Real.log_mul (by linarith) hg]
+        have := Real.log_nonneg h1
+        nlinarith [mul_nonneg (mul_nonneg (ENNReal.toReal_nonneg (a := μ Set.univ)) hpos.le) this]
+  · have he := measurableEmbedding_const_smul₀ (α := E) ha
+    intro f hf hdf hf2 hf2log
+    have hg : ContDiff ℝ ∞ (fun y ↦ f (a • y)) := hf.comp (contDiff_const_smul a)
+    have hdg : MemLp (fun x ↦ ‖fderiv ℝ (fun y ↦ f (a • y)) x‖) 2 μ := by
+      simp only [TauCeti.norm_fderiv_comp_smul a]
+      exact ((he.memLp_map_measure_iff).1 hdf).const_mul |a|
+    rw [entropy_map he, TauCeti.integral_sq_norm_fderiv_comp_smul ha]
+    have := h _ hg hdg ((he.integrable_map_iff).1 hf2) ((he.integrable_map_iff).1 hf2log)
+    calc _ ≤ 2 * C * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := this
+      _ = 2 * (a ^ 2 * C) * ((a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ) := by
+        field_simp
 
 end Scaling
 

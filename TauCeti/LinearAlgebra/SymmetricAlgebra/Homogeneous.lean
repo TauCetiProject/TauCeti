@@ -38,9 +38,8 @@ degree one preserves every homogeneous submodule.
 * `TauCeti.SymmetricAlgebra.derivation_mem_homogeneousSubmodule`: a derivation sending generators
   to degree one preserves every homogeneous submodule.
 
-This is the homogeneous-piece prerequisite for the degreewise PBW comparison map in
-Layer 3, “PBW, a substantial sub-project”, of the
-[highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md).
+These pieces are the domains of the degreewise PBW comparison maps in
+`TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Homogeneous`.
 -/
 
 public section
@@ -127,7 +126,7 @@ theorem iSup_homogeneousSubmodule_eq_top :
     _ = (_root_.Algebra.adjoin R
         (Set.range (SymmetricAlgebra.ι R M))).toSubmodule :=
       TauCeti.Algebra.iSup_wordFiltration_eq_adjoin (SymmetricAlgebra.ι R M)
-    _ = ⊤ := by rw [adjoin_range_ι]; rfl
+    _ = ⊤ := by rw [SymmetricAlgebra.adjoin_range_ι]; rfl
 
 /-- The degree-zero homogeneous submodule of a symmetric algebra is the image of the scalars,
 which embed injectively. -/
@@ -155,7 +154,7 @@ theorem algebraMap_homogeneousSubmoduleZeroEquiv_apply (x : homogeneousSubmodule
 /-- The degree-one homogeneous submodule of a symmetric algebra is the image of the module, which
 embeds injectively. -/
 noncomputable def homogeneousSubmoduleOneEquiv : homogeneousSubmodule R M 1 ≃ₗ[R] M :=
-  ((LinearEquiv.ofInjective (SymmetricAlgebra.ι R M) (ι_injective R M)).trans
+  ((LinearEquiv.ofInjective (SymmetricAlgebra.ι R M) (SymmetricAlgebra.ι_injective R M)).trans
     (LinearEquiv.ofEq _ _ (pow_one _).symm)).symm
 
 /-- The inverse of `homogeneousSubmoduleOneEquiv` sends an element of the module to its

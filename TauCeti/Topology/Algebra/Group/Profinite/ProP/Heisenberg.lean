@@ -17,14 +17,15 @@ public import TauCeti.Topology.Separation.TypeTags
 /-!
 # The Heisenberg group over a pro-`p` ring is pro-`p`
 
-Let `R` be a compact Hausdorff topological ring whose additive group is pro-`p`. Then the
-Heisenberg group `HeisenbergGroup R`, with the topology of `R × R × R`, is pro-`p`
+Let `R` be a ring with a topology whose additive group is pro-`p`; no compatibility of the topology
+with the ring operations is needed. Then the Heisenberg group `HeisenbergGroup R`, with the topology
+of `R × R × R`, is pro-`p`
 (`TauCeti.HeisenbergGroup.isProP`). It is an extension
 
   `1 → R → HeisenbergGroup R → R × R → 1`,
 
 where `R` embeds as the central `z`-axis `(0, 0, z)` and the quotient map forgets the
-`z`-coordinate, and pro-`p` groups are closed under extensions with compact total group
+`z`-coordinate, and pro-`p` groups are closed under extensions with open projection
 (`TauCeti.IsProP.of_ker_isProP`).
 
 Over the `p`-adic integers this gives the compact, totally disconnected pro-`p` group
@@ -43,8 +44,8 @@ binomial coefficient of the binomial ring `ℤ_[p]`.
 
 ## Main results
 
-* `TauCeti.HeisenbergGroup.isProP`: the Heisenberg group over a compact Hausdorff topological ring
-  with pro-`p` additive group is pro-`p`.
+* `TauCeti.HeisenbergGroup.isProP`: the Heisenberg group over a ring with pro-`p` additive group is
+  pro-`p`.
 * `TauCeti.HeisenbergGroup.isProP_padicInt`: the Heisenberg group over `ℤ_[p]` is pro-`p`.
 * `TauCeti.HeisenbergGroup.padicPow_eq`: the `p`-adic power of `(x, y, z)` by `c` is
   `(c x, c y, c z + (c choose 2) x y)`.
@@ -73,8 +74,8 @@ open Multiplicative
 variable {p : ℕ} {R : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalRing R]
   [CompactSpace R] [T2Space R]
 
-/-- The Heisenberg group over a compact Hausdorff topological ring whose additive group is
-pro-`p` is pro-`p`. -/
+omit [IsTopologicalRing R] [CompactSpace R] [T2Space R] in
+/-- The Heisenberg group over a ring whose additive group is pro-`p` is pro-`p`. -/
 theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R) := by
   classical
   -- The quotient map `(x, y, z) ↦ (x, y)` onto `R × R`, whose kernel is the `z`-axis.
@@ -87,8 +88,12 @@ theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R)
     { toFun c := ⟨0, 0, c.toAdd⟩
       map_one' := by ext <;> simp
       map_mul' a b := by ext <;> simp }
-  have hf : Continuous f :=
-    continuous_ofAdd.comp (continuous_x.prodMk continuous_y)
+  have hfopen : IsOpenMap f := by
+    have h : ⇑f = ofAdd ∘ Prod.map id Prod.fst ∘ homeomorphProd := by
+      ext a <;> simp [f]
+    rw [h]
+    exact (isOpenMap_ofAdd (X := R × R)).comp
+      ((IsOpenMap.id.prodMap isOpenMap_fst).comp homeomorphProd.isOpenMap)
   have hg : Continuous g :=
     continuous_iff.mpr ⟨continuous_const, continuous_const, continuous_toAdd⟩
   have hker : f.ker = zAxis := by
@@ -126,8 +131,7 @@ theorem isProP (hR : IsProP p (Multiplicative R)) : IsProP p (HeisenbergGroup R)
   have hRR : IsProP p (Multiplicative (R × R)) :=
     (hR.prod hR).of_equiv (ContinuousMulEquiv.prodMultiplicative R R).symm
   exact S.isProP (hSinl ▸ hg)
-    (hSrh ▸ (MonoidHom.isOpenQuotientMap_of_isQuotientMap
-      (Topology.IsQuotientMap.of_surjective_continuous hsurj hf)).isOpenMap) hR hRR
+    (hSrh ▸ hfopen) hR hRR
 
 /-- The Heisenberg group over the `p`-adic integers is pro-`p`. -/
 theorem isProP_padicInt (p : ℕ) [Fact p.Prime] : IsProP p (HeisenbergGroup ℤ_[p]) :=
@@ -167,14 +171,14 @@ whose three coordinates lie in `p ^ n ℤ_p` (`mem_level_iff`), the kernel of re
 `p ^ n`. It has index `p ^ (3 n)` (`index_level`), and the levels form a basis of neighbourhoods
 of `1` (`hasBasis_nhds_one_level`). -/
 noncomputable def level : OpenNormalSubgroup (HeisenbergGroup ℤ_[p]) :=
-  (openNormalSubgroupBot (HeisenbergGroup (ZMod (p ^ n)))).comap
+  (⊥ : OpenNormalSubgroup (HeisenbergGroup (ZMod (p ^ n)))).comap
     (map (PadicInt.toZModPow (p := p) n)) (continuous_map_toZModPow p n)
 
 /-- The underlying subgroup of the level `p ^ n` is the kernel of reduction modulo `p ^ n`. -/
 @[simp]
 theorem level_toSubgroup :
     (level p n).toSubgroup = (map (PadicInt.toZModPow (p := p) n)).ker := by
-  rw [level, OpenNormalSubgroup.toSubgroup_comap, openNormalSubgroupBot_toSubgroup,
+  rw [level, OpenNormalSubgroup.toSubgroup_comap, OpenNormalSubgroup.toSubgroup_bot,
     MonoidHom.comap_bot]
 
 /-- The level `p ^ n` consists of the triples whose coordinates are all multiples of `p ^ n`. -/
@@ -182,7 +186,7 @@ theorem level_toSubgroup :
 theorem mem_level_iff {a : HeisenbergGroup ℤ_[p]} :
     a ∈ level p n ↔
       (p : ℤ_[p]) ^ n ∣ a.x ∧ (p : ℤ_[p]) ^ n ∣ a.y ∧ (p : ℤ_[p]) ^ n ∣ a.z := by
-  simp only [level, OpenNormalSubgroup.mem_comap, mem_openNormalSubgroupBot, map_apply,
+  simp only [level, OpenNormalSubgroup.mem_comap, OpenNormalSubgroup.mem_bot, map_apply,
     ← Ideal.mem_span_singleton, ← PadicInt.ker_toZModPow, RingHom.mem_ker]
   constructor
   · intro h
@@ -192,9 +196,9 @@ theorem mem_level_iff {a : HeisenbergGroup ℤ_[p]} :
 
 /-- The level `p ^ 0` is the whole group. -/
 @[simp]
-theorem level_zero : level p 0 = openNormalSubgroupTop (HeisenbergGroup ℤ_[p]) :=
+theorem level_zero : level p 0 = (⊤ : OpenNormalSubgroup (HeisenbergGroup ℤ_[p])) :=
   OpenNormalSubgroup.toSubgroup_injective <| by
-    simp only [openNormalSubgroupTop_toSubgroup, Subgroup.eq_top_iff']
+    simp only [OpenNormalSubgroup.toSubgroup_top, Subgroup.eq_top_iff']
     exact fun a ↦ (mem_level_iff p 0).mpr (by simp)
 
 /-- The levels decrease as the exponent grows. -/

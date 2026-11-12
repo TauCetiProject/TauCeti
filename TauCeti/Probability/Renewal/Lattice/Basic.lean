@@ -121,7 +121,6 @@ theorem IsLatticeSpan.measure_Ioc_mul_eq_measure_singleton (h : μ.IsLatticeSpan
   apply measure_congr
   filter_upwards [h.ae_mem_range] with x hx
   obtain ⟨k, rfl⟩ := hx
-  apply propext
   simp only [mem_Ioc, mem_singleton_iff]
   have hle : (k : ℝ≥0) * a ≤ ((n + 1 : ℕ) : ℝ≥0) * a ↔ k ≤ n + 1 := by
     rw [mul_le_mul_iff_left₀ h.pos]
@@ -142,7 +141,6 @@ theorem IsLatticeSpan.measure_Iic_eq_of_mem_Ico (h : μ.IsLatticeSpan a) {t : �
   apply measure_congr
   filter_upwards [h.ae_mem_range] with x hx
   obtain ⟨k, rfl⟩ := hx
-  apply propext
   simp only [mem_Iic]
   constructor
   · intro hk
@@ -274,7 +272,7 @@ theorem IsLattice.exists_isGreatest_of_measure_zero_lt_one [IsProbabilityMeasure
 
 /-- A measure with a greatest span is not concentrated at `0`: if it were, `2 * g` would be a
 span exceeding every span `g`. -/
-private theorem measure_compl_singleton_zero_ne_zero {g : ℝ≥0}
+theorem measure_compl_singleton_zero_ne_zero_of_isGreatest_isLatticeSpan {g : ℝ≥0}
     (hg : IsGreatest {b | μ.IsLatticeSpan b} g) : μ {0}ᶜ ≠ 0 := by
   intro h0
   have hspan : μ.IsLatticeSpan (2 * g) := by
@@ -283,6 +281,14 @@ private theorem measure_compl_singleton_zero_ne_zero {g : ℝ≥0}
     exact ⟨0, by simp [mem_singleton_iff.1 hx]⟩
   exact (hg.2 hspan).not_gt (lt_two_mul_self hg.1.pos)
 
+/-- A probability measure with a greatest lattice span has mass strictly below one at `0`. -/
+theorem measure_singleton_zero_lt_one_of_isGreatest_isLatticeSpan [IsProbabilityMeasure μ]
+    {g : ℝ≥0} (hg : IsGreatest {b | μ.IsLatticeSpan b} g) : μ {0} < 1 := by
+  apply tsub_pos_iff_lt.mp
+  rw [← prob_compl_eq_one_sub (measurableSet_singleton 0)]
+  exact pos_iff_ne_zero.mpr
+    (measure_compl_singleton_zero_ne_zero_of_isGreatest_isLatticeSpan hg)
+
 /-- A span `a` is the greatest span exactly when the positive `n` with `μ {n * a} > 0` have gcd
 one. -/
 theorem isGreatest_setOf_isLatticeSpan_iff :
@@ -290,7 +296,8 @@ theorem isGreatest_setOf_isLatticeSpan_iff :
       μ.IsLatticeSpan a ∧ Nat.setGcd {n : ℕ | 0 < n ∧ 0 < μ {(n : ℝ≥0) * a}} = 1 := by
   constructor
   · intro h
-    have heq := (h.1.isGreatest_setGcd_mul (measure_compl_singleton_zero_ne_zero h)).unique h
+    have heq := (h.1.isGreatest_setGcd_mul
+      (measure_compl_singleton_zero_ne_zero_of_isGreatest_isLatticeSpan h)).unique h
     exact ⟨h.1, by exact_mod_cast (mul_eq_right₀ h.1.pos.ne').1 heq⟩
   · rintro ⟨ha, hd⟩
     -- A gcd of one forces an atom at a positive multiple of `a`.
@@ -310,7 +317,7 @@ theorem IsLatticeSpan.isGreatest_of_measure_singleton_pos (ha : μ.IsLatticeSpan
 theorem isLatticeSpan_iff_exists_nat_mul_eq {g : ℝ≥0}
     (hg : IsGreatest {b | μ.IsLatticeSpan b} g) :
     μ.IsLatticeSpan b ↔ ∃ k : ℕ, 0 < k ∧ (k : ℝ≥0) * b = g := by
-  have h0 := measure_compl_singleton_zero_ne_zero hg
+  have h0 := measure_compl_singleton_zero_ne_zero_of_isGreatest_isLatticeSpan hg
   constructor
   · intro hb
     obtain ⟨k, hk, hkb⟩ := hb.exists_nat_mul_eq_setGcd_mul hg.1 h0

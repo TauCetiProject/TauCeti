@@ -115,7 +115,7 @@ tangent-bundle trivialization centred at `x` is the derivative within `s` of the
 extended chart at `x`, at every nearby parameter of `s` at which the curve is still in that
 chart. -/
 theorem sectionCoord_curveVelocityWithin_eventuallyEq {x : M} {s : Set 𝕜} {t : 𝕜}
-    (hs : UniqueDiffOn 𝕜 s) (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s) (ht : t ∈ s)
+    (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s) (ht : t ∈ s)
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
     sectionCoord (F := E) γ (curveVelocityWithin I γ s) x =ᶠ[𝓝[s] t]
       derivWithin (extChartAt I x ∘ γ) s := by
@@ -123,8 +123,12 @@ theorem sectionCoord_curveVelocityWithin_eventuallyEq {x : M} {s : Set 𝕜} {t 
     (hγ t ht).continuousWithinAt.preimage_mem_nhdsWithin
       ((trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds hx)
   filter_upwards [hbase, self_mem_nhdsWithin] with r hr hrs
-  rw [sectionCoord_apply, derivWithin_extChartAt_comp γ hr (hs r hrs)
-    (hasMFDerivWithinAt_curveVelocityWithin (hγ r hrs))]
+  by_cases hu : UniqueDiffWithinAt 𝕜 s r
+  · rw [sectionCoord_apply, derivWithin_extChartAt_comp γ hr hu
+      (hasMFDerivWithinAt_curveVelocityWithin (hγ r hrs))]
+  · -- Without a unique derivative both sides take the junk value `0`.
+    rw [sectionCoord_apply, curveVelocityWithin_eq_zero_of_not_uniqueDiffWithinAt hu, map_zero,
+      derivWithin_zero_of_not_uniqueDiffWithinAt hu]
 
 omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
   [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I] in
@@ -144,7 +148,7 @@ theorem contDiffWithinAt_sectionCoord_curveVelocityWithin {n : ℕ∞ω} [IsMani
   have hderiv : ContDiffWithinAt 𝕜 n (derivWithin (extChartAt I x ∘ γ) s) s t :=
     hchart.derivWithin hs le_rfl ht
   exact hderiv.congr_of_eventuallyEq_of_mem
-    (sectionCoord_curveVelocityWithin_eventuallyEq γ hs
+    (sectionCoord_curveVelocityWithin_eventuallyEq γ
       (hγ.mdifferentiableOn (by simp)) ht hx) ht
 
 omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
@@ -267,7 +271,7 @@ theorem alongCurveInChartWithin_pullback {x : M} {s : Set 𝕜} {t : 𝕜} {w : 
   -- The two summands of the coordinate formula are the readings of the flat frame derivative and
   -- of the Christoffel form, whose sum is the covariant derivative.
   rw [alongCurveInChartWithin_apply, derivWithin_sectionCoord_pullback γ b X hy hu hγ hX,
-    derivWithin_extChartAt_comp γ hy hu hγ, christoffelMap_apply b hcov hy, sectionCoord_apply,
+    derivWithin_extChartAt_comp γ hy hu hγ, christoffelMap_apply b hcov, sectionCoord_apply,
     e.symmL_continuousLinearMapAt (R := 𝕜) hy, e.symmL_continuousLinearMapAt (R := 𝕜) hy,
     ← map_add, covariantDerivative_eq_add_christoffelForm b hcov hy hX,
     add_apply]
@@ -322,7 +326,7 @@ theorem alongCurveWithin_pullback_curveVelocityWithin {s : Set 𝕜} {t : 𝕜}
 second-order expression `u'' + Γ (u', u')`, for `u` the curve read in the extended chart at `x`.
 The chart need not be the one centred at the current point of the curve. -/
 theorem alongCurveInChartWithin_curveVelocityWithin {x : M} {s : Set 𝕜} {t : 𝕜}
-    (hs : UniqueDiffOn 𝕜 s) (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s) (ht : t ∈ s)
+    (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s) (ht : t ∈ s)
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
     alongCurveInChartWithin cov γ (curveVelocityWithin I γ s) s x t =
       derivWithin (derivWithin (extChartAt I x ∘ γ) s) s t +
@@ -330,7 +334,7 @@ theorem alongCurveInChartWithin_curveVelocityWithin {x : M} {s : Set 𝕜} {t : 
           (cov.isCovariantDerivativeOn
             (s := (trivializationAt E (TangentSpace I) x).baseSet)) (γ t)
           (derivWithin (extChartAt I x ∘ γ) s t) (derivWithin (extChartAt I x ∘ γ) s t) := by
-  have hEq := sectionCoord_curveVelocityWithin_eventuallyEq γ hs hγ ht hx
+  have hEq := sectionCoord_curveVelocityWithin_eventuallyEq γ hγ ht hx
   have hpoint : sectionCoord (F := E) γ (curveVelocityWithin I γ s) x t =
       derivWithin (extChartAt I x ∘ γ) s t := hEq.self_of_nhdsWithin ht
   rw [alongCurveInChartWithin_apply, hEq.derivWithin_eq hpoint, hpoint]

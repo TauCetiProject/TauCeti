@@ -109,26 +109,40 @@ private theorem aeval_poly :
     aeval y (X ^ q + X - C (IntermediateField.AdjoinSimple.gen K x ^ (q + 1))) = 0 := by
   simp [h.equation]
 
-/-- `y` is integral over `K(x)`. -/
-theorem isIntegral_adjoin_x (hq : 1 < q) : IsIntegral K⟮x⟯ y :=
-  ⟨_, monic_poly hq, by rw [← aeval_def]; exact h.aeval_poly⟩
+/-- `y` is integral over `K(x)`. For `q ≤ 1` the equation determines `y` as a rational function
+of `x`. -/
+theorem isIntegral_adjoin_x : IsIntegral K⟮x⟯ y := by
+  rcases lt_or_ge 1 q with hq | hq
+  · exact ⟨_, monic_poly hq, by rw [← aeval_def]; exact h.aeval_poly⟩
+  have hgen := IntermediateField.AdjoinSimple.algebraMap_gen K x
+  interval_cases q
+  · have hy : y = algebraMap K⟮x⟯ F (IntermediateField.AdjoinSimple.gen K x - 1) := by
+      rw [map_sub, map_one, hgen]
+      linear_combination h.equation
+    exact hy ▸ isIntegral_algebraMap
+  · by_cases h2 : (2 : F) = 0
+    · exact absurd (pow_eq_zero_iff (two_ne_zero' ℕ) |>.mp
+        (by linear_combination (-1 : F) * h.equation + (y : F) * h2)) h.transcendental_x.ne_zero
+    · have hy : y = algebraMap K⟮x⟯ F (IntermediateField.AdjoinSimple.gen K x ^ 2 / 2) := by
+        rw [map_div₀, map_pow, hgen, map_ofNat, eq_div_iff h2]
+        linear_combination h.equation
+      exact hy ▸ isIntegral_algebraMap
 
 /-- `F` is finite over `K(x)`. -/
-theorem finiteDimensional_adjoin_x (hq : 1 < q) : FiniteDimensional K⟮x⟯ F := by
-  have := IntermediateField.adjoin.finiteDimensional (h.isIntegral_adjoin_x hq)
+theorem finiteDimensional_adjoin_x : FiniteDimensional K⟮x⟯ F := by
+  have := IntermediateField.adjoin.finiteDimensional h.isIntegral_adjoin_x
   rw [h.adjoin_adjoin_eq_top] at this
   exact IntermediateField.topEquiv.toLinearEquiv.finiteDimensional
 
 /-- A field with Hermitian coordinates is an algebraic function field. -/
-theorem isFunctionField (hq : 1 < q) : IsFunctionField K F :=
-  have := h.finiteDimensional_adjoin_x hq
+theorem isFunctionField : IsFunctionField K F :=
+  have := h.finiteDimensional_adjoin_x
   h.transcendental_x.isFunctionField_adjoin.finite_extension
 
 /-- At a pole `P` of `x`, the function `y` has a pole as well, and
 `q · ord_P y = (q + 1) · ord_P x`. -/
 theorem mul_ord_y_eq (hq : 1 < q) {P : Place K F} (hP : P.ord x < 0) :
     (q : ℤ) * P.ord y = (q + 1) * P.ord x := by
-  have hx0 : x ≠ 0 := h.transcendental_x.ne_zero
   have hrhs : P.ord (y ^ q + y) = (q + 1) * P.ord x := by
     rw [h.equation, P.ord_pow]
     push_cast
@@ -164,8 +178,8 @@ private theorem dvd_ord_x (hq : 1 < q) (P : Place K F) : (q : ℤ) ∣ -P.ord x 
 /-- **The degree of `x`**: `[F : K(x)] = q`. -/
 theorem finrank_adjoin_x (hq : 1 < q) : Module.finrank K⟮x⟯ F = q := by
   classical
-  have hF := h.isFunctionField hq
-  have := h.finiteDimensional_adjoin_x hq
+  have hF := h.isFunctionField
+  have := h.finiteDimensional_adjoin_x
   have hx0 : x ≠ 0 := h.transcendental_x.ne_zero
   -- The degree of the pole divisor of `x` is `[F : K(x)]`, and every coefficient is divisible
   -- by `q`.
@@ -181,7 +195,7 @@ theorem finrank_adjoin_x (hq : 1 < q) : Module.finrank K⟮x⟯ F = q := by
   -- `y` generates `F` over `K(x)` and is a root of a polynomial of degree `q`.
   have hle : Module.finrank K⟮x⟯ F ≤ q := by
     rw [← IntermediateField.finrank_top', ← h.adjoin_adjoin_eq_top,
-      IntermediateField.adjoin.finrank (h.isIntegral_adjoin_x hq),
+      IntermediateField.adjoin.finrank h.isIntegral_adjoin_x,
       ← natDegree_poly (K := K) (x := x) hq]
     exact natDegree_le_of_dvd (minpoly.dvd _ _ h.aeval_poly)
       (monic_poly (K := K) (x := x) hq).ne_zero
@@ -190,7 +204,7 @@ theorem finrank_adjoin_x (hq : 1 < q) : Module.finrank K⟮x⟯ F = q := by
 /-- **The minimal polynomial of `y` over `K(x)`** is `T ^ q + T - x ^ (q + 1)`. -/
 theorem minpoly_adjoin_x (hq : 1 < q) :
     minpoly K⟮x⟯ y = X ^ q + X - C (IntermediateField.AdjoinSimple.gen K x ^ (q + 1)) := by
-  have hint := h.isIntegral_adjoin_x hq
+  have hint := h.isIntegral_adjoin_x
   refine (eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hint) (monic_poly hq)
     (minpoly.dvd _ _ h.aeval_poly) ?_).symm
   rw [natDegree_poly hq, ← IntermediateField.adjoin.finrank hint, h.adjoin_adjoin_eq_top,

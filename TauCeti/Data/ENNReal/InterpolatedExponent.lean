@@ -25,6 +25,8 @@ Marcinkiewicz). This file records its elementary arithmetic.
 * `TauCeti.inv_eq_ofReal_of_inv_eq`: `1 / s` is the real convex combination of `1 / s₀` and
   `1 / s₁`.
 * `TauCeti.mem_uIcc_of_inv_eq`: `s` lies between `s₀` and `s₁`.
+* `TauCeti.exists_inv_eq_of_mem_Ioo`: conversely, every `s` strictly between `s₀` and `s₁` is
+  interpolated with some `0 < θ < 1`.
 * `TauCeti.eq_top_iff_of_inv_eq`: for `0 < θ < 1`, `s = ∞` exactly when `s₀ = s₁ = ∞`.
 * `TauCeti.one_le_of_inv_eq`: interpolating exponents in `[1, ∞]` stays in `[1, ∞]`.
 * `TauCeti.inv_conjExponent_eq_of_inv_eq`: the conjugate exponents interpolate in the same way.
@@ -63,6 +65,29 @@ theorem mem_uIcc_of_inv_eq (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
     refine ⟨(h1 _).trans_le ?_, le_trans ?_ (h1 _).ge⟩ <;> gcongr <;> simp
   simpa using ENNReal.inv_strictAnti.antitone.mapsTo_uIcc hs'
 
+/-- Every exponent strictly between `s₀ ≠ 0` and `s₁` is an interpolated exponent
+`1 / s = (1 - θ) / s₀ + θ / s₁` for some `0 < θ < 1`. -/
+theorem exists_inv_eq_of_mem_Ioo (hs₀ : s₀ ≠ 0) (hs : s ∈ Set.Ioo s₀ s₁) :
+    ∃ θ ∈ Set.Ioo (0 : ℝ) 1, s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹ := by
+  have hs0 : s ≠ 0 := (pos_iff_ne_zero.2 hs₀).trans hs.1 |>.ne'
+  have h₀ : s₀⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hs₀
+  have h : s⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hs0
+  have h₁ : s₁⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 ((pos_iff_ne_zero.2 hs0).trans hs.2).ne'
+  rw [← ENNReal.ofReal_toReal h₀, ← ENNReal.ofReal_toReal h, ← ENNReal.ofReal_toReal h₁]
+  have hr₀ : s⁻¹.toReal < s₀⁻¹.toReal := ENNReal.toReal_strict_mono h₀ (ENNReal.inv_lt_inv.2 hs.1)
+  have hr₁ : s₁⁻¹.toReal < s⁻¹.toReal := ENNReal.toReal_strict_mono h (ENNReal.inv_lt_inv.2 hs.2)
+  have hb : 0 ≤ s₁⁻¹.toReal := ENNReal.toReal_nonneg
+  generalize s₀⁻¹.toReal = a, s⁻¹.toReal = r, s₁⁻¹.toReal = b at *
+  have hab : 0 < a - b := by linarith
+  have hθ₀ : 0 < (a - r) / (a - b) := div_pos (by linarith) hab
+  have hθ₁ : (a - r) / (a - b) < 1 := (div_lt_one hab).2 (by linarith)
+  refine ⟨(a - r) / (a - b), ⟨hθ₀, hθ₁⟩, ?_⟩
+  rw [← ENNReal.ofReal_mul (by linarith), ← ENNReal.ofReal_mul hθ₀.le,
+    ← ENNReal.ofReal_add (by nlinarith) (by positivity)]
+  congr 1
+  field_simp
+  ring
+
 /-- For `0 < θ < 1`, an interpolated exponent is infinite exactly when both endpoint exponents
 are. -/
 theorem eq_top_iff_of_inv_eq (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
@@ -93,11 +118,11 @@ theorem inv_conjExponent_eq_of_inv_eq (hs₀ : 1 ≤ s₀) (hs₁ : 1 ≤ s₁)
           ofReal_sub_add_ofReal hθ.1 hθ.2, ENNReal.ofReal_one]
     _ = _ := by rw [hs]; ring
 
-/-- Let `p ≤ q` with `1 ≤ q < ∞`, and let `ν < ∞` with `1/p - 1/q < ν`. Then `q` is interpolated
+/-- Let `p ≤ q` with `1 ≤ q < ∞`, and let `ν` with `1/p - 1/q < ν`. Then `q` is interpolated
 between `p` and a larger finite exponent still in this range: there are a finite `s ≥ 1` with
 `1/p - 1/s < ν` and `0 ≤ θ < 1` with `1/q = (1 - θ)/p + θ/s`. With `ν = 1/n` this chooses the
 auxiliary exponent for compactness of subcritical Sobolev embeddings by interpolation. -/
-theorem exists_inv_eq_of_inv_lt_inv_add {p q ν : ℝ≥0∞} (hq₁ : 1 ≤ q) (hq : q ≠ ∞) (hν : ν ≠ ∞)
+theorem exists_inv_eq_of_inv_lt_inv_add {p q ν : ℝ≥0∞} (hq₁ : 1 ≤ q) (hq : q ≠ ∞)
     (hpq : p ≤ q) (h : p⁻¹ < q⁻¹ + ν) :
     ∃ s : ℝ≥0∞, ∃ θ : ℝ, 1 ≤ s ∧ s ≠ ∞ ∧ p⁻¹ < s⁻¹ + ν ∧ 0 ≤ θ ∧ θ < 1 ∧
       q⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * s⁻¹ := by
@@ -107,6 +132,12 @@ theorem exists_inv_eq_of_inv_lt_inv_add {p q ν : ℝ≥0∞} (hq₁ : 1 ≤ q) 
   have hp₀ : p ≠ 0 := by
     rintro rfl
     simp at h
+  wlog hν : ν ≠ ∞ generalizing ν
+  · have hp' : p⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hp₀
+    have hq' : q⁻¹ ≠ 0 := (ENNReal.inv_pos.2 hq).ne'
+    obtain ⟨s, θ, hs₁, hs, -, hθ₀, hθ₁, hsθ⟩ :=
+      this (ν := p⁻¹) (add_comm p⁻¹ q⁻¹ ▸ ENNReal.lt_add_right hp' hq') hp'
+    exact ⟨s, θ, hs₁, hs, by rw [not_not.1 hν, add_top]; exact hp'.lt_top, hθ₀, hθ₁, hsθ⟩
   -- Work with the real reciprocals `a = 1/p`, `b = 1/q` and `ν`.
   have hinv {r : ℝ≥0∞} (hr : r ≠ 0) (hr' : r ≠ ∞) : r⁻¹ = ENNReal.ofReal r.toReal⁻¹ := by
     rw [ENNReal.ofReal_inv_of_pos (ENNReal.toReal_pos hr hr'), ENNReal.ofReal_toReal hr']

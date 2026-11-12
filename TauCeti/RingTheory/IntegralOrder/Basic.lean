@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.MulOpposite
 public import Mathlib.Algebra.Module.Lattice
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
@@ -39,6 +40,7 @@ whose regular trace form vanishes, although the conclusion holds there via the r
 ## Main results
 
 * `TauCeti.IntegralOrder.isOrder_iff`: `Λ` is an order iff it is finite over `R` and spans `E`.
+* `TauCeti.IntegralOrder.isOrder_op_iff`: `Λᵒᵖ` is an order in `Eᵐᵒᵖ` iff `Λ` is an order in `E`.
 * `TauCeti.IntegralOrder.IsOrder.isIntegral`: every element of an order is integral over `R`.
 * `TauCeti.IntegralOrder.IsOrder.le_integralClosure`: in a commutative algebra, every order lies in
   the integral closure of `R`.
@@ -120,6 +122,17 @@ theorem of_le (h : IsOrder F Λ) (hle : Λ ≤ Γ) [Module.Finite R Γ] : IsOrde
 
 end IsOrder
 
+/-- **Opposite orders.** `Λᵒᵖ` is an `R`-order in `Eᵐᵒᵖ` exactly when `Λ` is an `R`-order in `E`. -/
+theorem isOrder_op_iff {Λ : Subalgebra R E} : IsOrder F Λ.op ↔ IsOrder F Λ := by
+  have hspan : span F (Λ.op : Set Eᵐᵒᵖ) =
+      (span F (Λ : Set E)).map ((MulOpposite.opLinearEquiv F : E ≃ₗ[F] Eᵐᵒᵖ) : E →ₗ[F] Eᵐᵒᵖ) := by
+    rw [Submodule.map_span]
+    congr 1
+    ext x
+    simp [← MulOpposite.unop_inj]
+  rw [isOrder_iff, isOrder_iff, hspan, Submodule.map_eq_top_iff,
+    Module.Finite.equiv_iff Λ.linearEquivOp]
+
 omit [Algebra F E] [Algebra R E] [IsScalarTower R F E] in
 /-- The image of `R` is an `R`-order in `F`. -/
 theorem isOrder_bot : IsOrder F (⊥ : Subalgebra R F) := by
@@ -186,9 +199,10 @@ theorem isOrder_of_isIntegral [IsIntegrallyClosed R] [IsNoetherianRing R]
 
 /-- **Integral closures are orders.** The integral closure of an integrally closed noetherian domain
 `R` in a finite separable extension `L` of its fraction field `F` is an `R`-order in `L`. -/
-theorem integralClosure_isOrder [IsDomain R] [IsIntegrallyClosed R] [IsNoetherianRing R]
+theorem integralClosure_isOrder [IsIntegrallyClosed R] [IsNoetherianRing R]
     (L : Type*) [Field L] [Algebra F L] [Algebra R L] [IsScalarTower R F L] [FiniteDimensional F L]
     [Algebra.IsSeparable F L] : IsOrder F (integralClosure R L) := by
+  have := IsDomain.of_faithfulSMul R F
   exact isOrder_iff.2 ⟨IsIntegralClosure.finite R F L (integralClosure R L),
     span_integralClosure_eq_top⟩
 

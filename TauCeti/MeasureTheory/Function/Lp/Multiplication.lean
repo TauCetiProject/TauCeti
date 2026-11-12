@@ -128,6 +128,14 @@ theorem multiplicationOperator_of_ae_eq_const {a : Lp ℂ ∞ μ} {c : ℂ}
   filter_upwards [multiplicationOperator_ae a f, Lp.coeFn_smul c f, ha] with x h hf ha'
   simp [h, hf, ha']
 
+/-- The scalar embedding into L∞ acts on L² by scalar multiplication. -/
+@[simp]
+theorem multiplicationOperator_algebraMap (c : ℂ) :
+    multiplicationOperator (E := E) (algebraMap ℂ (Lp ℂ ∞ μ) c) =
+      c • ContinuousLinearMap.id ℂ (Lp E 2 μ) := by
+  apply multiplicationOperator_of_ae_eq_const
+  simpa only [Algebra.algebraMap_self_apply] using coeFn_algebraMap (R := ℂ) (μ := μ) c
+
 end NormedSpace
 
 section InnerProductSpace
@@ -198,7 +206,7 @@ theorem norm_multiplicationOperator [SigmaFinite μ] [Nontrivial E] (a : Lp ℂ 
     ‖multiplicationOperator (E := E) a‖ = ‖a‖ := by
   apply le_antisymm (norm_multiplicationOperator_le a)
   by_contra hle
-  have hlt : ‖multiplicationOperator (E := E) a‖ < ‖a‖ := lt_of_not_ge hle
+  have _ : ‖multiplicationOperator (E := E) a‖ < ‖a‖ := lt_of_not_ge hle
   -- Test the operator on the indicator of the set where `‖a‖` exceeds a level `c` strictly
   -- between the operator norm and `‖a‖`.
   set c := (‖multiplicationOperator (E := E) a‖ + ‖a‖) / 2 with hc_def

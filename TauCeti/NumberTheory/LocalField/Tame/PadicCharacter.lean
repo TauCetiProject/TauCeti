@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Nat.Prime.Basic
+public import TauCeti.NumberTheory.LocalField.RootsOfUnity.AlgebraicClosure
 public import TauCeti.NumberTheory.LocalField.Tame.Quotient
 public import TauCeti.RingTheory.RootsOfUnity.PadicTateTwist
 import TauCeti.Algebra.CharP.Lemmas
-import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
@@ -193,13 +193,10 @@ theorem nonempty_continuousMulEquiv_piPadicInt :
     Nonempty (inertiaSubgroup K ⧸ (wildInertiaSubgroup K).subgroupOf (inertiaSubgroup K) ≃ₜ*
       Multiplicative (∀ ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ ringChar 𝓀[K]}, ℤ_[ℓ])) := by
   have hp := CharP.prime_ringChar 𝓀[K]
-  -- `ℓ ^ n` is a unit of `𝒪[K]` for `ℓ ≠ p`, so `K^{alg}` has all `ℓ`-power roots of unity.
   have hroots (ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ ringChar 𝓀[K]}) (n : ℕ) :
-      HasEnoughRootsOfUnity (AlgebraicClosure K) ((ℓ : ℕ) ^ n) := by
-    have : NeZero (((ℓ : ℕ) ^ n : ℕ) : K) := ⟨natCast_ne_zero_of_isUnit
-      (IsLocalRing.isUnit_natCast_iff_not_dvd.2 (hp.coprime_iff_not_dvd.1
-        (((Nat.coprime_primes ℓ.1.2 hp).2 ℓ.2).pow_left n).symm))⟩
-    infer_instance
+      HasEnoughRootsOfUnity (AlgebraicClosure K) ((ℓ : ℕ) ^ n) :=
+    hasEnoughRootsOfUnity_algebraicClosure_of_coprime_ringChar K
+      (((Nat.coprime_primes ℓ.1.2 hp).2 ℓ.2).pow_left n)
   let φ (ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ ringChar 𝓀[K]}) :
       PadicTateTwist ℓ (AlgebraicClosure K) ≃ₜ+ ℤ_[ℓ] :=
     have := hroots ℓ
