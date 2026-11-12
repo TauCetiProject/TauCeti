@@ -86,7 +86,8 @@ theorem exists_eLpNorm_bilin_le_eLpNormWkp_one (hp : 2 < p) (hq : 1 ≤ q) (hqp 
     simp [hz]
   · filter_upwards [ae_mono hUm (ae_eq_zero_of_eLpNormWkp_eq_zero hq0 hg0)] with z hz
     simp [hz]
-  obtain ⟨Dg, hDg, hgq, hDgq, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
+  obtain ⟨Dg, hDg, hDgq, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
+  have hgq := memLp_of_eLpNormWkp_ne_top hg
   rw [eLpNormWkp_zero] at hDgq hgΩ
   have hf : AEStronglyMeasurable f (volume.restrict U) :=
     (memLp_iff.2 (lt_top_iff_ne_top.2 hf)).aestronglyMeasurable
@@ -144,8 +145,10 @@ theorem exists_eLpNormWkp_one_bilin_le [FiniteDimensional ℝ F] [CompleteSpace 
     simp [hz]
   · filter_upwards [ae_eq_zero_of_eLpNormWkp_eq_zero hq0 hg0] with z hz
     simp [hz]
-  obtain ⟨Df, hDf, hfp, hDfp, hfΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hf
-  obtain ⟨Dg, hDg, hgq, hDgq, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
+  obtain ⟨Df, hDf, hDfp, hfΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hf
+  obtain ⟨Dg, hDg, hDgq, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
+  have hfp := memLp_of_eLpNormWkp_ne_top hf
+  have hgq := memLp_of_eLpNormWkp_ne_top hg
   rw [eLpNormWkp_zero] at hDfp hfΩ hDgq hgΩ
   replace hDfp : MemLp Df p (volume.restrict Ω) := memLp_iff.2 (lt_top_iff_ne_top.2 hDfp)
   replace hDgq : MemLp Dg q (volume.restrict Ω) := memLp_iff.2 (lt_top_iff_ne_top.2 hDgq)

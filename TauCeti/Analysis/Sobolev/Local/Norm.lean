@@ -22,10 +22,11 @@ derivatives are unique almost everywhere, so the minimum is attained by every we
 
 This is the quantity in which interior estimates of elliptic equations are stated. The file
 supplies its unfolding, its value through a given weak derivative on an open set, the `Lᵖ` and
-`W^{k,p}_loc` membership of a function of finite norm, the extraction of a weak derivative from a
-finite successor-order norm, the almost-everywhere vanishing of a function of zero norm,
-monotonicity in the set, invariance under almost-everywhere change, the triangle inequality and
-the operator-norm bound under a continuous linear map of the codomain.
+`W^{k,p}_loc` membership of a function of finite norm and, conversely, the finiteness of the
+norm of a `W^{k,p}_loc` function on relatively compact subsets, the extraction of a weak
+derivative from a finite successor-order norm, the almost-everywhere vanishing of a function of
+zero norm, monotonicity in the set, invariance under almost-everywhere change, the triangle
+inequality and the operator-norm bound under a continuous linear map of the codomain.
 
 ## References
 
@@ -141,15 +142,31 @@ theorem memWkpLoc_of_eLpNormWkp_ne_top (hf : eLpNormWkp p U k f ≠ ∞) : MemWk
     exact memWkpLoc_succ_iff.2 ⟨(memLp_of_eLpNormWkp_ne_top hf).memLpLoc, D, hD, ih hDk⟩
 
 /-- On an open set, a finite successor-order norm is realized by a weak derivative of finite norm
-of the previous order, and the function is `Lᵖ` there. -/
+of the previous order. -/
 theorem exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top {Ω : Opens ℂ}
     (hf : eLpNormWkp p Ω (k + 1) f ≠ ∞) :
-    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemLp f p (volume.restrict Ω) ∧
-      eLpNormWkp p Ω k D ≠ ∞ ∧
+    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ eLpNormWkp p Ω k D ≠ ∞ ∧
       eLpNormWkp p Ω (k + 1) f = eLpNorm f p (volume.restrict Ω) + eLpNormWkp p Ω k D := by
   obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
   rw [Opens.interior_coe] at hD
-  exact ⟨D, hD, memLp_of_eLpNormWkp_ne_top hf, hDk, eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD⟩
+  exact ⟨D, hD, hDk, eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD⟩
+
+/-- A local Sobolev function has finite `W^{k,p}` norm on every compact subset of its domain. -/
+theorem MemWkpLoc.eLpNormWkp_ne_top_of_isCompact (hf : MemWkpLoc p U k f) {K : Set ℂ}
+    (hKU : K ⊆ U) (hK : IsCompact K) : eLpNormWkp p K k f ≠ ∞ := by
+  induction k generalizing F with
+  | zero => exact (memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top
+  | succ k ih =>
+    obtain ⟨D, hD, hDk⟩ := hf.exists_weakFDeriv
+    refine ne_top_of_le_ne_top ?_ (eLpNormWkp_succ_le (hD.mono (interior_mono hKU)))
+    exact ENNReal.add_ne_top.2 ⟨(memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top, ih hDk⟩
+
+/-- A local Sobolev function has finite `W^{k,p}` norm on every set whose closure is compact and
+contained in its domain. -/
+theorem MemWkpLoc.eLpNormWkp_ne_top_of_closure_subset (hf : MemWkpLoc p U k f)
+    (hV : IsCompact (closure V)) (hVU : closure V ⊆ U) : eLpNormWkp p V k f ≠ ∞ :=
+  ne_top_of_le_ne_top (hf.eLpNormWkp_ne_top_of_isCompact hVU hV)
+    (eLpNormWkp_mono_set subset_closure)
 
 /-- The zero function has zero `W^{k,p}` norm. -/
 @[simp]
