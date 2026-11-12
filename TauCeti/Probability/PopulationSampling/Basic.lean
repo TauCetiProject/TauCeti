@@ -26,6 +26,8 @@ respectively on the injective ones (`TauCeti.Probability.sampleWithReplacement`,
 
 * `measurable_reindexPopulation` — measurability of the joint selection/population evaluation;
 * `samplePopulation` — sample a random population along an independent random selection;
+* `samplePopulation_map` — measurable observations commute with sampling;
+* `samplePopulation_dirac_comp` — its deterministic-population composition form;
 * `samplePopulation_apply`, `samplePopulation_apply_population` — its evaluation by
   conditioning on the selection or on the population;
 * `samplePopulation_eq_bind`, `samplePopulation_eq_bind_population` — its form as a mixture,
@@ -108,6 +110,31 @@ theorem samplePopulation_dirac (σ : Measure (ι → κ)) [SFinite σ] (x : κ �
   rw [samplePopulation_def, Measure.prod_dirac,
     Measure.map_map measurable_reindexPopulation measurable_prodMk_right]
   rfl
+
+/-- A measurable observation commutes with sampling along any selection law. The population law
+need only be s-finite; no finiteness or normalization is required of the selection law. -/
+theorem samplePopulation_map {β : Type*} [MeasurableSpace β] (σ : Measure (ι → κ))
+    (ρ : Measure (κ → α)) [SFinite ρ] {g : α → β} (hg : Measurable g) :
+    samplePopulation σ (ρ.map (fun x i => g (x i))) =
+      (samplePopulation σ ρ).map (fun y i => g (y i)) := by
+  have hκ : Measurable (fun x : κ → α => fun i => g (x i)) := by fun_prop
+  have hι : Measurable (fun y : ι → α => fun i => g (y i)) := by fun_prop
+  have hprod := Measure.map_prod_map σ ρ measurable_id hκ
+  rw [Measure.map_id] at hprod
+  rw [samplePopulation_def, hprod,
+    Measure.map_map measurable_reindexPopulation (measurable_id.prodMap hκ),
+    samplePopulation_def, Measure.map_map hι measurable_reindexPopulation]
+  rfl
+
+/-- Sampling an observed deterministic population along any selection law is the observation's
+pushforward of the original sampling law. -/
+theorem samplePopulation_dirac_comp {β : Type*} [MeasurableSpace β]
+    (σ : Measure (ι → κ)) (x : κ → α) {g : α → β} (hg : Measurable g) :
+    samplePopulation σ (Measure.dirac (g ∘ x)) =
+      (samplePopulation σ (Measure.dirac x)).map (fun y i => g (y i)) := by
+  have hκ : Measurable (fun y : κ → α => fun i => g (y i)) := by fun_prop
+  simpa only [Measure.map_dirac' hκ, Function.comp_def] using
+    samplePopulation_map σ (Measure.dirac x) hg
 
 /-- Evaluating a sampled law by conditioning first on the selection: it averages the laws of the
 selected entries of the population over the selection law. -/

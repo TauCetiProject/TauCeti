@@ -171,10 +171,9 @@ theorem norm_prod_charFun_sub_exp_le {ι : Type*} [Fintype ι] {Y : ι → Ω �
       |t| ^ 3 * ε / 6 + (t ^ 2 + t ^ 4 / 8) *
         (∑ i, ∫ ω, ({ω | ε ≤ |Y i ω|}.indicator fun ω ↦ Y i ω ^ 2) ω ∂P) +
         t ^ 4 / 8 * ε ^ 2 := by
-  set σ : ι → ℝ := fun i ↦ ∫ ω, Y i ω ^ 2 ∂P with hσ
+  set σ : ι → ℝ := fun i ↦ ∫ ω, Y i ω ^ 2 ∂P
   set Li : ι → ℝ := fun i ↦ ∫ ω, ({ω | ε ≤ |Y i ω|}.indicator fun ω ↦ Y i ω ^ 2) ω ∂P
-    with hLi
-  set L : ℝ := ∑ i, Li i with hL
+  set L : ℝ := ∑ i, Li i
   have hσ0 : ∀ i, 0 ≤ σ i := fun i ↦ integral_nonneg fun ω ↦ sq_nonneg _
   have hLi0 : ∀ i, 0 ≤ Li i := fun i ↦
     integral_nonneg fun ω ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _
@@ -223,9 +222,6 @@ theorem norm_prod_charFun_sub_exp_le {ι : Type*} [Fintype ι] {Y : ι → Ω �
           push_cast
           rfl
       _ ≤ _ := by
-          have h1' : ‖charFun (P.map (Y i)) t - (1 - t ^ 2 * σ i / 2)‖ ≤
-              |t| ^ 3 * ε / 6 * σ i + t ^ 2 * Li i := by
-            simpa [hσ, hLi, mul_div_assoc] using h1
           linarith
   refine (Finset.sum_le_sum fun i _ ↦ hterm i).trans (le_of_eq ?_)
   simp only [Finset.sum_add_distrib, ← Finset.mul_sum]
@@ -281,10 +277,10 @@ theorem HasLaw.tendstoInDistribution_sum_of_lindeberg {ι : ℕ → Type*} [∀ 
     rw [tendsto_iff_norm_sub_tendsto_zero]
     -- for `0 < ε ≤ 1` the row estimate is at most `C ε + C Lₙ(ε)`; choose `ε` with `C ε < δ / 2`
     -- and wait until `C Lₙ(ε) < δ / 2`
-    set C : ℝ := |t| ^ 3 + 3 * t ^ 2 + t ^ 4 with hC
+    set C : ℝ := |t| ^ 3 + 3 * t ^ 2 + t ^ 4
     have hC0 : 0 ≤ C := by positivity
     refine Metric.tendsto_nhds.2 fun δ hδ ↦ ?_
-    set ε := min 1 (δ / (2 * (C + 1))) with hε
+    set ε := min 1 (δ / (2 * (C + 1)))
     have hε0 : 0 < ε := lt_min one_pos (by positivity)
     have hε1 : ε ≤ 1 := min_le_left _ _
     have hCε : C * ε < δ / 2 := by

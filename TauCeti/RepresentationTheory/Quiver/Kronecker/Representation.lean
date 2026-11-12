@@ -60,10 +60,8 @@ being accepted where `(kroneckerRep k M N f).obj Quiver.Kronecker.src ⟶
 
 ## References
 
-This is the representation-level part of the “Kronecker quiver” worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See Derksen--Weyman, *An
-Introduction to Quiver Representations*, and Assem--Simson--Skowroński, *Elements of the
-Representation Theory of Associative Algebras I*, Ch. II.
+See Derksen--Weyman, *An Introduction to Quiver Representations*, and Assem--Simson--Skowroński,
+*Elements of the Representation Theory of Associative Algebras I*, Ch. II.
 -/
 
 public section

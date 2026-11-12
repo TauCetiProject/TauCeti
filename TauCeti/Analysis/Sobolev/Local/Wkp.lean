@@ -318,7 +318,7 @@ theorem memWkpLoc_ball_one_iff {u : ℂ → ℝ} :
     MemWkpLoc p (ball 0 1) k u ↔ ∀ r < 1,
       ∃ v : Wkp volume ⟨ball (0 : ℂ) r, isOpen_ball⟩ p k,
         Wkp.value k v =ᵐ[volume.restrict (ball 0 r)] u := by
-  refine ⟨fun hu r hr => ?_, fun h => memWkpLoc_of_forall_wkp (Ω := disc 1) fun W hWc hWΩ => ?_⟩
+  refine ⟨fun hu r hr => ?_, fun h => memWkpLoc_of_forall_wkp (Ω := disc 1) fun W _ hWΩ => ?_⟩
   · exact hu.exists_wkp (Ω := disc 1) (W := disc r) ((isCompact_closedBall 0 r).of_isClosed_subset
       isClosed_closure closure_ball_subset_closedBall)
       (closure_ball_subset_closedBall.trans (closedBall_subset_ball hr))

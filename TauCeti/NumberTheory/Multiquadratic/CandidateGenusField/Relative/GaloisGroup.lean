@@ -28,9 +28,8 @@ when its sign vector has even parity. Restriction of scalars then gives
 This is the relative Galois-group side of the genus-field construction; the sign subspace found
 here is matched with the genus characters of `ℚ(√d)`, hence with the maximal elementary-2 quotient
 `Cl⁺(ℚ(√d)) / Cl⁺(ℚ(√d))²`, in
-`TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.GenusCharacter`. When `d` is
-nonsquare, its order is the predicted `2 ^ (t - 1)`, where `t` is the number of chosen prime
-discriminants.
+`TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.GenusCharacter`. Its order is
+the predicted `2 ^ (t - 1)`, where `t` is the number of chosen prime discriminants.
 
 The prime-discriminant description of the genus field is classical; see D. A. Cox,
 *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*.
@@ -54,7 +53,7 @@ formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-dista
 * `TauCeti.Multiquadratic.galoisGroupEquivCandidateGenusFieldRelative_apply`: the equivalence is
   given by the sign pattern of the restricted automorphism.
 * `TauCeti.Multiquadratic.card_aut_candidateGenusField_over_base`: the relative Galois group has
-  order `2 ^ (t - 1)` when `d` is nonsquare.
+  order `2 ^ (t - 1)`.
 -/
 
 public section
@@ -454,15 +453,13 @@ sign changes on the chosen prime-discriminant generators. -/
     (genusFieldRoot_sq_algebraMap hd) (candidateGenusFieldRoot_independent hd)
       (candidateGenusFieldBaseAdjoin hd) v' P
 
-/-- **Order of the relative candidate-genus-field Galois group.** If the squarefree integer `d`
-is not a rational square, the relative group over its embedded quadratic base has order
-`2 ^ (t - 1)`, where `t = (genusPrimeDiscriminants hd).card`. -/
-theorem card_aut_candidateGenusField_over_base {d : ℤ} (hd : Squarefree d)
-    (hnsq : ¬ IsSquare (((d : ℤ) : ℚ))) :
+/-- **Order of the relative candidate-genus-field Galois group.** For squarefree `d`, the relative
+group over the embedded quadratic base has order `2 ^ (t - 1)`, where
+`t = (genusPrimeDiscriminants hd).card`. -/
+theorem card_aut_candidateGenusField_over_base {d : ℤ} (hd : Squarefree d) :
     Nat.card
         (candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) =
       2 ^ ((genusPrimeDiscriminants hd).card - 1) := by
-  rw [IsGalois.card_aut_eq_finrank,
-    finrank_candidateGenusField_over_candidateGenusFieldBase hd hnsq]
+  rw [IsGalois.card_aut_eq_finrank, finrank_candidateGenusField_over_candidateGenusFieldBase hd]
 
 end TauCeti.Multiquadratic

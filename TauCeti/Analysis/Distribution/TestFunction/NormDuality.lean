@@ -94,7 +94,7 @@ private theorem ofReal_setIntegral_norm_le_iSup (hG : LocallyIntegrableOn G Ω �
   have hGL : IntegrableOn G (cthickening δ K) μ :=
     hG.integrableOn_compact_subset hδΩ hK.cthickening
   -- The unit field along the Riesz representative `g` of `G`, extended by zero outside `K`.
-  set g : E → F := fun x => (InnerProductSpace.toDual ℝ F).symm (G x) with hg_def
+  set g : E → F := fun x => (InnerProductSpace.toDual ℝ F).symm (G x)
   have hgm : AEStronglyMeasurable g (μ.restrict K) :=
     (InnerProductSpace.toDual ℝ F).symm.continuous.comp_aestronglyMeasurable
       (hGL.aestronglyMeasurable.mono_measure (Measure.restrict_mono hKL le_rfl))
@@ -127,7 +127,6 @@ private theorem ofReal_setIntegral_norm_le_iSup (hG : LocallyIntegrableOn G Ω �
       div_lt_div_of_pos_left hδ (by positivity)
         (by linarith [(by positivity : (0 : ℝ) < (n + 1 : ℕ))])⟩
   set ψ : ℕ → E → F := fun n => (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] σ
-    with hψ_def
   have hψs (n : ℕ) : tsupport (ψ n) ⊆ cthickening δ K := by
     have hsupp : Function.support (ψ n) ⊆ thickening (φ n).rOut K := by
       refine (support_convolution_subset _).trans ?_
