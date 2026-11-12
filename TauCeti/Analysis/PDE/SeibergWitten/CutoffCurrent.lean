@@ -75,7 +75,12 @@ Given an almost complex structure `J`, the cutoff phase form also has a modulus 
 with a test form `ζ` is the pairing of `χ(s) τ = d^c_J H(s) + E` with `dζ`; after an integration
 by parts in the first term, these pointwise bounds reduce that pairing to integral bounds on
 `1 - |α|²` and on `∂bar_a α`. This reduction is carried out in
-`TauCeti.Analysis.PDE.SeibergWitten.CurvatureComparison`.
+`TauCeti.Analysis.PDE.SeibergWitten.CurvatureComparison`. For a holomorphic section,
+`∂bar_a α = 0`, the correction vanishes and `τ = d^c_J log |α|²` away from the zeros of `α`
+(`covariantPhaseForm_eq_twistedDifferential_log`). The operator `∂bar_a` satisfies the product
+rule `∂bar_a (h α) = α ∂bar_(a - a') h + h ∂bar_(a') α` for a second connection form `a' = i b'`
+(`covariantDBar_mul`), so the quotient of two holomorphic sections is holomorphic for the
+difference of their connections where the denominator does not vanish.
 
 On a pair of vectors the cutoff current is an explicit combination of the curvature and of the
 covariant derivative: with `s = |α|²` and `χ'` the derivative of `χ`,
@@ -699,6 +704,45 @@ theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
     field_simp
     rw [normSq_apply]
     ring
+
+/-- **The phase form of a holomorphic section.** At a point where `α` does not vanish and
+`∂bar_a α = 0`, the phase form `τ = Im (α⁻¹ dα) + b` is the twisted differential of `log |α|²`:
+`τ = d^c_J log |α|²`. -/
+theorem covariantPhaseForm_eq_twistedDifferential_log (hα : DifferentiableAt ℝ α x)
+    (h₀ : α x ≠ 0) (hdbar : covariantDBar J b α x = 0) :
+    covariantPhaseForm b α x = J.twistedDifferential (fun y ↦ Real.log (‖α y‖ ^ 2)) x := by
+  have hd := hα.hasFDerivAt.norm_sq
+  have hn : ‖α x‖ ^ 2 ≠ 0 := by positivity
+  have hc := J.twistedDifferential_comp (Real.hasDerivAt_log hn) hd.differentiableAt
+  rw [Function.comp_def] at hc
+  rw [hc]
+  ext v
+  obtain ⟨w, rfl⟩ : ∃ w, v = fun _ ↦ w := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
+  -- The real and imaginary parts of `∇_w α + i ∇_{J w} α = 0`.
+  have hw := congrArg (fun φ : E →L[ℝ] ℂ ↦ φ w) hdbar
+  simp only [covariantDBar_apply, covariantDeriv_apply, zero_apply, div_eq_zero_iff,
+    OfNat.ofNat_ne_zero, or_false, Complex.ext_iff, add_re, add_im, mul_re, mul_im, I_re, I_im,
+    ofReal_re, ofReal_im, zero_re, zero_im] at hw
+  simp only [covariantPhaseForm_apply, ContinuousAlternatingMap.add_apply, phaseForm_apply,
+    ContinuousAlternatingMap.smul_apply, J.twistedDifferential_apply, hd.fderiv,
+    _root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, Complex.inner,
+    smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat, mul_re, mul_im, conj_re, conj_im, inv_re, inv_im]
+  rw [← normSq_eq_norm_sq] at hn ⊢
+  field_simp
+  rw [normSq_apply] at hn ⊢
+  linear_combination (α x).re * hw.2 - (α x).im * hw.1
+
+/-- **Product rule for `∂bar_a`.** For a second connection form `a' = i b'`,
+`∂bar_a (h α) = α ∂bar_(a - a') h + h ∂bar_(a') α`. -/
+theorem covariantDBar_mul {h : E → ℂ} {b' : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    (hh : DifferentiableAt ℝ h x) (hα : DifferentiableAt ℝ α x) :
+    covariantDBar J b (h * α) x =
+      α x • covariantDBar J (b - b') h x + h x • covariantDBar J b' α x := by
+  ext v
+  simp only [covariantDBar_apply, covariantDeriv_apply, fderiv_mul hh hα, Pi.mul_apply,
+    _root_.add_apply, _root_.smul_apply, smul_eq_mul, Pi.sub_apply,
+    ContinuousAlternatingMap.sub_apply, ofReal_sub]
+  ring
 
 /-- **Pointwise bound on the correction form.** If `χ` vanishes on `[0, c)` and `|χ| ≤ 1`, then
 `‖2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J‖ ≤ (2 / √c) ‖∂bar_a α‖`. -/
