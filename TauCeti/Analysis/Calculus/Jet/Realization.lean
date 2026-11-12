@@ -64,7 +64,7 @@ theorem finiteJetSeries_eq_zero_of_le (r : ℕ)
 
 /-- The factorial-normalized finite Taylor sum associated with a tuple `A`, centered at `x`.
 The tuple contains precisely the orders from zero through `r`. In characteristic zero,
-`iteratedFDeriv_finiteJetPolynomial` realizes every symmetric tuple as its derivatives. -/
+`iteratedFDeriv_finiteJetPolynomial_self` realizes every symmetric tuple as its derivatives. -/
 noncomputable def finiteJetPolynomial (r : ℕ)
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x y : E) : F :=
   (finiteJetSeries r A).partialSum (r + 1) (y - x)
@@ -96,10 +96,9 @@ theorem finiteJetPolynomial_self (r : ℕ)
     finiteJetPolynomial r A x x = A 0 0 := by
   rw [← (finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x).toHasFPowerSeriesOnBall.coeff_zero
     (0 : Fin 0 → E)]
-  change finiteJetSeries r A 0 0 = A ⟨0, Nat.zero_lt_succ r⟩ 0
-  simpa only [Nat.factorial_zero, Nat.cast_one, inv_one, one_smul]
-    using congrArg (fun f : E [×0]→L[𝕜] F ↦ f 0)
-      (finiteJetSeries_apply r A ⟨0, Nat.zero_lt_succ r⟩)
+  have hcoeff := finiteJetSeries_apply r A ⟨0, Nat.zero_lt_succ r⟩
+  simp only [Nat.factorial_zero, Nat.cast_one, inv_one, one_smul] at hcoeff
+  exact congrArg (fun f : E [×0]→L[𝕜] F ↦ f 0) hcoeff
 
 /-- The finite Taylor polynomial is smooth (and in fact analytic). -/
 theorem contDiff_finiteJetPolynomial (r : ℕ)
@@ -112,7 +111,7 @@ theorem contDiff_finiteJetPolynomial (r : ℕ)
 
 /-- Every prescribed symmetric derivative of the finite Taylor polynomial has the
 specified value at its center. Symmetry is invariance under permutations of the slots. -/
-theorem iteratedFDeriv_finiteJetPolynomial (r : ℕ)
+theorem iteratedFDeriv_finiteJetPolynomial_self (r : ℕ)
     [CharZero 𝕜]
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F)
     (hA : ∀ i (v : Fin i.val → E) (σ : Equiv.Perm (Fin i.val)), A i (v ∘ σ) = A i v)
@@ -140,7 +139,7 @@ theorem exists_contDiff_iteratedFDeriv_eq_eventually_mem (r : ℕ) [CharZero �
       (∀ i : Fin (r + 1), iteratedFDeriv 𝕜 i.val f x = A i) ∧
       ∀ᶠ y in 𝓝 x, (y, f y) ∈ u := by
   refine ⟨finiteJetPolynomial r A x, contDiff_finiteJetPolynomial r A x,
-    iteratedFDeriv_finiteJetPolynomial r A hA x, ?_⟩
+    iteratedFDeriv_finiteJetPolynomial_self r A hA x, ?_⟩
   have hmem : (x, finiteJetPolynomial r A x x) ∈ u := by simpa using hx
   exact (continuousAt_id.prodMk
     (contDiff_finiteJetPolynomial r A x).continuous.continuousAt).eventually (hu.mem_nhds hmem)
@@ -165,6 +164,6 @@ theorem exists_contDiff_hasCompactSupport_iteratedFDeriv_eq
     hχc.smul_right, (tsupport_smul_subset_left _ _).trans (hχs.trans interior_subset), ?_⟩
   intro i
   exact ((heq.iteratedFDeriv ℝ i.val).eq_of_nhds).trans
-    (iteratedFDeriv_finiteJetPolynomial r A hA x i)
+    (iteratedFDeriv_finiteJetPolynomial_self r A hA x i)
 
 end TauCeti
