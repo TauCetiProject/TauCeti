@@ -201,7 +201,7 @@ theorem weightPolynomial_def (C : Set (∀ i, β i)) :
 theorem coeff_weightPolynomial (C : Set (∀ i, β i)) (w : ℕ) :
     C.weightPolynomial.coeff w = C.weightDistribution w := by
   rw [weightPolynomial_def, Polynomial.finsetSum_coeff]
-  simp_rw [Polynomial.coeff_monomial]
+  simp_rw [Polynomial.coeff_monomial_apply]
   rw [sum_ite_eq', ite_eq_left_iff]
   intro hw
   rw [weightDistribution_eq_zero_of_card_lt (by simpa [Nat.lt_succ_iff] using hw),

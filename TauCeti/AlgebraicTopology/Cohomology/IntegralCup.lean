@@ -72,12 +72,7 @@ noncomputable section
 
 open CategoryTheory MonoidalCategory
 
-/-- Mathlib's `MonoidalLinear ℤ` instance on `ModuleCat ℤ` is stated for its `ℤ`-linear structure
-as a category of modules, while instance search finds the `ℤ`-linear structure of a preadditive
-category; whiskering commutes with the integer multiples of the latter as well. -/
-local instance : MonoidalLinear ℤ (ModuleCat.{0} ℤ) where
-  whiskerLeft_smul X _ _ r f := whiskerLeft_zsmul r X f
-  smul_whiskerRight r _ _ f X := zsmul_whiskerRight r f X
+attribute [local instance] MonoidalPreadditive.monoidalLinearInt
 
 namespace TauCeti
 
@@ -275,8 +270,9 @@ theorem integralCup_integralCohomologyOne_right (p : ℕ) (a : X.integralCohomol
 /-- **The iterated cup product of degree-one classes**, `(a₁, …, a_r) ↦ a₁ ⌣ (a₂ ⌣ ⋯ a_r)`, as
 a multilinear map `H¹(X; ℤ)ʳ → Hʳ(X; ℤ)`; for `r = 0` it is the unit class. -/
 def integralCupProd :
-    (r : ℕ) → MultilinearMap ℤ (fun _ : Fin r ↦ X.integralCohomology 1) (X.integralCohomology r)
-  | 0 => MultilinearMap.constOfIsEmpty ℤ _ X.integralCohomologyOne
+    (r : ℕ) → MultilinearMap (RingHom.id ℤ) (fun _ : Fin r ↦ X.integralCohomology
+        1) (X.integralCohomology r)
+  | 0 => MultilinearMap.constOfIsEmpty (RingHom.id ℤ) _ X.integralCohomologyOne
   | r + 1 => MultilinearMap.mk'
     (fun v ↦ X.integralCup 1 r (r + 1) (by omega) (v 0) (integralCupProd r (Fin.tail v)))
     (fun v i x y ↦ by cases i using Fin.cases <;> simp [Ne.symm])
