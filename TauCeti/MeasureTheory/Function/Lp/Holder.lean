@@ -22,7 +22,8 @@ Hölder multiplication also preserves compactness. If `V : X → L^q` is a compa
 `1/p + 1/s = 1/q` the operator `u ↦ B(a, ι u) : X → L^q` is compact, although `ι` itself need not
 be. For a simple function `a`, which lies in `L^∞`, the operator factors through `V`. Simple
 functions are dense in `L^p`, the operator depends continuously on `a`, and compact operators form
-a closed set.
+a closed set. For a bounded coefficient `α ∈ L^∞` the composite `u ↦ (V u) α` is compact directly,
+since Hölder multiplication `L^∞ × L^q → L^q` is bounded.
 -/
 
 public section
@@ -107,5 +108,21 @@ theorem tendsto_setLIntegral_enorm_bilin_sub {E F G H ι : Type*} [MeasurableSpa
     filter_upwards [B.coeFn_holder (r := r) (A n) (C n), ha n, hc n] with x h₁ h₂ h₃
     exact h₁.trans (congrArg₂ (fun u v => B u v) h₂ h₃)
   · exact B.holderL_ae_eq_of_measure_le Measure.restrict_le_self A₀ C₀ ha₀ hc₀
+
+/-- **Compact multiplication by a bounded coefficient.** For a compact operator `V : X → L^q(ν)`
+and `α ∈ L^∞(ν, G)`, the operator `u ↦ (V u) α : X → L^q(ν, G)` is compact: it is Hölder
+multiplication `L^∞ × L^q → L^q` composed with `V`. -/
+theorem exists_isCompactOperator_smul_of_memLp_top {X Y G : Type*}
+    [SeminormedAddCommGroup X] [NormedSpace ℝ X] [MeasurableSpace Y] {ν : Measure Y}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    {V : X →L[ℝ] Lp ℝ q ν} (hV : IsCompactOperator V) {α : Y → G} (hα : MemLp α ∞ ν) :
+    ∃ M : X →L[ℝ] Lp G q ν, (∀ u, M u =ᵐ[ν] fun x => V u x • α x) ∧ IsCompactOperator M := by
+  let B : G →L[ℝ] ℝ →L[ℝ] G := (ContinuousLinearMap.lsmul ℝ ℝ).flip
+  refine ⟨(B.holderL ν ∞ q q (hα.toLp α)).comp V, fun u => ?_, ?_⟩
+  · filter_upwards [B.coeFn_holder (r := q) (hα.toLp α) (V u), hα.coeFn_toLp] with x h₁ h₂
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂]
+    simp [B]
+  · rw [ContinuousLinearMap.coe_comp]
+    exact hV.clm_comp _
 
 end TauCeti

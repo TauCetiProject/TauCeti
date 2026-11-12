@@ -189,22 +189,6 @@ theorem W1p.exists_isCompactOperator_value_smul_of_memLp_of_isLipschitzDomainWit
   filter_upwards [hM u, hα.coeFn_toLp] with x h₁ h₂
   rw [h₁, h₂]
 
-/-- Compact multiplication by a bounded coefficient `α ∈ L^∞(ν, G)` after a compact operator
-`V` into `L^q(ν)`: Hölder multiplication `L^∞ × L^q → L^q` composed with `V`. -/
-private theorem exists_isCompactOperator_smul_of_memLp_top {X Y : Type*}
-    [SeminormedAddCommGroup X] [NormedSpace ℝ X] [MeasurableSpace Y] {ν : Measure Y}
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {V : X →L[ℝ] Lp ℝ q ν}
-    (hV : IsCompactOperator V) {α : Y → G} (hα : MemLp α ∞ ν) :
-    ∃ M : X →L[ℝ] Lp G q ν, (∀ u, M u =ᵐ[ν] fun x => V u x • α x) ∧ IsCompactOperator M := by
-  let B : G →L[ℝ] ℝ →L[ℝ] G := (ContinuousLinearMap.lsmul ℝ ℝ).flip
-  refine ⟨(B.holderL ν ∞ q q (hα.toLp α)).comp V, fun u => ?_, ?_⟩
-  · filter_upwards [B.coeFn_holder (r := (q : ℝ≥0∞)) (hα.toLp α) (V u), hα.coeFn_toLp]
-      with x h₁ h₂
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂]
-    simp [B]
-  · rw [ContinuousLinearMap.coe_comp]
-    exact hV.clm_comp _
-
 omit [Nontrivial E] in
 /-- **Compact multiplication by bounded coefficients on `W^{1,q}_0`.** For a bounded open `Ω`
 and `α ∈ L^∞(Ω, G)`, multiplication `u ↦ u α` is a compact operator `W^{1,q}_0(Ω) → L^q(Ω, G)`
@@ -215,7 +199,7 @@ theorem W1p0.exists_isCompactOperator_value_smul_of_memLp_top {G : Type*}
     ∃ M : W1p0 μ Ω q →L[ℝ] Lp G q (μ.restrict Ω),
       (∀ u, M u =ᵐ[μ.restrict Ω] fun x => W1p.value (u : W1p μ Ω q) x • α x) ∧
         IsCompactOperator M := by
-  obtain ⟨M, hM, hMc⟩ := exists_isCompactOperator_smul_of_memLp_top (q := q)
+  obtain ⟨M, hM, hMc⟩ := exists_isCompactOperator_smul_of_memLp_top (q := (q : ℝ≥0∞))
     (W1p0.isCompactOperator_valueL (mu := μ) (Omega := Ω) ENNReal.coe_ne_top hΩ) hα
   exact ⟨M, fun u => by simpa only [W1p0.valueL_apply] using hM u, hMc⟩
 
