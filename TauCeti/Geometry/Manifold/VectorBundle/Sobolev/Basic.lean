@@ -491,7 +491,7 @@ theorem lowerOrderL_apply (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n)
 
 /-- The chart data of `C.lowerOrderL μ p k w` are those of `w`. -/
 @[simp]
-theorem chartValueL_lowerOrderL_coe (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n) :
+theorem chartValueL_coe_lowerOrderL (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n) :
     C.chartValueL μ p k i (C.lowerOrderL μ p k w) = C.chartValueL μ p (k + 1) i w := by
   rw [← C.chartValueL_lowerOrderL μ p k i w]
   refine congrArg (C.chartValueL μ p k i) (funext fun i ↦ funext fun j ↦ ?_)

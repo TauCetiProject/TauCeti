@@ -37,7 +37,8 @@ satisfy the identity and cocycle laws over the relevant base sets
 the first trivialization to its coordinate in the second
 (`Bundle.Trivialization.coordChangeL_apply_snd`). Convergence in the total space of a vector bundle
 is convergence of base points and of fibre coordinates in any linear trivialization over the limit
-point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`).
+point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`), and the scalar action on each fibre is
+continuous (`Bundle.Trivialization.continuousSMul`).
 
 We also record the product trivialization's fibrewise inverse
 (`Bundle.Trivialization.prod_symm_apply'`), the preferred trivialization of a direct-sum fibre
@@ -149,6 +150,13 @@ theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' :
   rw [← comp_continuousLinearEquivAt_eq_coord_change e e' ⟨hb, hb'⟩]
   ext x
   simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- The scalar action on a fibre of a vector bundle is continuous: over the base set of a linear
+trivialization `e`, the fibre is homeomorphic to the model fibre by the linear equivalence
+`e.continuousLinearEquivAt 𝕜 b`. -/
+theorem continuousSMul (hb : b ∈ e.baseSet) : ContinuousSMul 𝕜 (E b) :=
+  (e.continuousLinearEquivAt 𝕜 b hb).toHomeomorph.isInducing.continuousSMul continuous_id
+    fun {_ _} ↦ (e.continuousLinearEquivAt 𝕜 b hb).map_smul _ _
 
 omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
 /-- The coordinate change from a linear trivialization to itself is the identity over its base

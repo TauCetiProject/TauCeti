@@ -16,8 +16,8 @@ exact same total-space topology and trivialization atlas (`VectorBundle.restrict
 conversely any `VectorBundle 𝕜' G W` whose atlas trivializations are `𝕜`-linear upgrades to a
 `VectorBundle 𝕜 G W` (`VectorBundle.ofLinear`). A trivialization that is linear over both fields
 has the same continuous linear map at every point over either field
-(`Bundle.Trivialization.coe_continuousLinearMapAt_restrictScalars`), so the `𝕜'`-linear map is
-`𝕜`-linear.
+(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`), so the
+`𝕜'`-linear map is `𝕜`-linear.
 -/
 
 public section
@@ -73,8 +73,8 @@ variable {B : Type*} [TopologicalSpace B] (𝕜' 𝕜 : Type*) [NontriviallyNorm
 /-- A trivialization that is linear over both `𝕜'` and `𝕜` has the same continuous linear map at
 every point over either field. In particular the `𝕜'`-linear map of a trivialization of a
 `VectorBundle 𝕜 G W`, restricted to `𝕜'` by `VectorBundle.restrictScalars`, is `𝕜`-linear. -/
-theorem coe_continuousLinearMapAt_restrictScalars (e : Trivialization G (π G W)) [e.IsLinear 𝕜']
-    [e.IsLinear 𝕜] (b : B) :
+theorem coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt (e : Trivialization G (π G W))
+    [e.IsLinear 𝕜'] [e.IsLinear 𝕜] (b : B) :
     ⇑(e.continuousLinearMapAt 𝕜' b) = e.continuousLinearMapAt 𝕜 b := by
   ext v
   simp only [continuousLinearMapAt_apply, coe_linearMapAt]

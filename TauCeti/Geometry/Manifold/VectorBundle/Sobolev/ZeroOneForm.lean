@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 public import TauCeti.Topology.VectorBundle.RestrictScalars
-import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 
 /-!
 # Sobolev `(0,1)`-forms over a complex curve
@@ -89,7 +88,7 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
   [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (V x)]
   [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, ContinuousSMul ℂ (V x)] [FiberBundle F V] [VectorBundle ℂ F V]
+  [FiberBundle F V] [VectorBundle ℂ F V]
 
 local instance instVectorBundleRealZeroOneForm : VectorBundle ℝ F V :=
   VectorBundle.restrictScalars ℝ ℂ F V
@@ -136,6 +135,7 @@ private theorem modelZeroOnePart_antilinear (η : ℂ →L[ℝ] F) (v : ℂ) :
 
 variable (A : FiniteBundleAtlas ℂ M F V)
 
+variable [∀ x, ContinuousSMul ℂ (V x)] in
 /-- On the image of a chart, the `(0,1)`-part of a one-form is read as the `(0,1)`-projection of
 its reading. -/
 private theorem coord_tangentHom_zeroOnePart (i : Fin A.n)
@@ -144,24 +144,22 @@ private theorem coord_tangentHom_zeroOnePart (i : Fin A.n)
       modelZeroOnePart F (A.tangentHom.coord i θ y) := by
   have hx : (A.chart i).symm y ∈ (chartAt ℂ (A.center i)).source :=
     A.dom_subset_chart_source i (A.symm_mem_dom hy)
-  have hS (a v : ℂ) : (tangentBundleCore 𝓘(ℝ, ℂ) M).coordChange (achart ℂ (A.center i))
-      (achart ℂ ((A.chart i).symm y)) ((A.chart i).symm y) (a • v) =
-      a • (tangentBundleCore 𝓘(ℝ, ℂ) M).coordChange (achart ℂ (A.center i))
-        (achart ℂ ((A.chart i).symm y)) ((A.chart i).symm y) v :=
-    tangentCoordChange_smul ℝ (𝕜' := ℂ) ⟨hx, mem_chart_source ℂ _⟩ a v
+  -- In the tangent coordinates of the chart, the almost complex structure is `v ↦ i • v`.
+  have hJ (v : ℂ) : (ofComplexManifold ℂ M).toEndomorphism ((A.chart i).symm y)
+      ((trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ)) (A.center i)).symmL ℝ ((A.chart i).symm y) v) =
+      (trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ)) (A.center i)).symmL ℝ ((A.chart i).symm y)
+        (Complex.I • v) := by
+    have h := DFunLike.congr_fun (inTangentCoordinates_ofComplexManifold hx) v
+    simp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates, id_eq,
+      ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply] at h
+    rw [← h, Trivialization.symmL_continuousLinearMapAt]
+    rwa [TangentBundle.trivializationAt_baseSet]
   rw [FiniteBundleAtlas.coord_tangentHom, FiniteBundleAtlas.coord_tangentHom]
   ext v
   simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
     modelZeroOnePart_apply, zeroOnePart_apply]
-  -- `TangentSpace 𝓘(ℝ, ℂ) x` is `ℂ` by definition but carries no `ℂ`-action, so the readings of
-  -- tangent vectors, the complex linearity `hS` of the real tangent coordinate change and the
-  -- almost complex structure `v ↦ i • v` can only be matched up to this definitional equality:
-  -- `erw` rewrites the coordinate change, whose coercion is to `TangentSpace`, by its `ℂ`-valued
-  -- form, and the final `rfl` identifies `(i • id) w` on `TangentSpace` with `i • w` on `ℂ`.
-  erw [TangentBundle.symmL_trivializationAt_eq_core hx, hS]
-  rw [map_smul, map_add, Trivialization.coe_continuousLinearMapAt_restrictScalars ℝ ℂ, map_smul,
-    toEndomorphism_ofComplexManifold]
-  rfl
+  rw [hJ, map_smul, map_add,
+    Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ, map_smul]
 
 /-- On the image of a chart, a one-form is read as a complex antilinear map exactly when it is a
 `(0,1)`-form at the corresponding point. -/
@@ -170,6 +168,8 @@ private theorem isZeroOneForm_iff_coord_tangentHom (i : Fin A.n)
     (ofComplexManifold ℂ M).IsZeroOneForm (θ ((A.chart i).symm y)) ↔
       ∀ v, A.tangentHom.coord i θ y (Complex.I • v) =
         -(Complex.I • A.tangentHom.coord i θ y v) := by
+  have (x : M) : ContinuousSMul ℂ (V x) :=
+    (trivializationAt F V x).continuousSMul ℂ (mem_baseSet_trivializationAt F V x)
   rw [← modelZeroOnePart_eq_self_iff, ← coord_tangentHom_zeroOnePart A i θ hy,
     ← zeroOnePart_eq_self_iff, FiniteBundleAtlas.coord_tangentHom,
     FiniteBundleAtlas.coord_tangentHom]
@@ -185,7 +185,7 @@ private theorem isZeroOneForm_iff_coord_tangentHom (i : Fin A.n)
   rw [ContinuousLinearMap.inCoordinates_eq h₁ h₂, ContinuousLinearMap.inCoordinates_eq h₁ h₂] at h
   exact (ContinuousLinearEquiv.arrowCongrEquiv _ _).injective h
 
-omit [FiniteDimensional ℝ F] [∀ x, ContinuousSMul ℂ (V x)] in
+omit [FiniteDimensional ℝ F] in
 variable {A} in
 private theorem mem_image_of_mem_image_tangentHom {i : Fin A.n} {y : ℂ}
     (hy : y ∈ A.tangentHom.sectionChartData.image i) : y ∈ A.image i :=
@@ -206,7 +206,6 @@ def zeroOneSobolevSections : Submodule ℝ (SobolevSection A.tangentHom μ p k) 
 
 variable {A μ p k}
 
-omit [∀ x, ContinuousSMul ℂ (V x)] in
 /-- An element of `W^{k,p}` of `V`-valued one-forms is a `(0,1)`-form exactly when its chart data
 are complex antilinear almost everywhere on the image of every chart. -/
 theorem mem_zeroOneSobolevSections_iff {w : SobolevSection A.tangentHom μ p k} :
@@ -259,7 +258,6 @@ theorem mem_zeroOneSobolevSections_of_isZeroOneForm {w : SobolevSection A.tangen
   (mem_zeroOneSobolevSections_iff_isZeroOneForm hw).2 fun _ ↦ Filter.Eventually.of_forall
     fun _ ↦ hθ _
 
-omit [∀ x, ContinuousSMul ℂ (V x)] in
 /-- The `(0,1)`-forms form a closed subspace: it is the intersection of the kernels of continuous
 linear maps. -/
 theorem isClosed_zeroOneSobolevSections :
@@ -278,6 +276,8 @@ variable (A μ p k) in
 /-- The `(0,1)`-projection on `W^{k,p}` of `V`-valued one-forms, as an endomorphism. -/
 private def zeroOnePartEnd :
     SobolevSection A.tangentHom μ p k →L[ℝ] SobolevSection A.tangentHom μ p k :=
+  haveI (x : M) : ContinuousSMul ℂ (V x) :=
+    (trivializationAt F V x).continuousSMul ℂ (mem_baseSet_trivializationAt F V x)
   SectionChartData.constMapL μ p k (modelZeroOnePart F)
     (fun θ x ↦ (ofComplexManifold ℂ M).zeroOnePart (θ x)) fun i θ y hy ↦ by
       rw [A.tangentHom.sectionChartData_coord_of_mem _ hy,
@@ -335,6 +335,7 @@ theorem chartValueL_zeroOnePartSobolevL_ae (w : SobolevSection A.tangentHom μ p
     simp only [modelZeroOnePart_apply, add_apply, FunLike.coe_smul, Pi.smul_apply,
       ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
 
+variable [∀ x, ContinuousSMul ℂ (V x)] in
 /-- **Lifting the pointwise projection.** If the chart data of `w` are the readings of a one-form
 `θ`, the chart data of its `(0,1)`-projection are the readings of the `(0,1)`-part of `θ`. -/
 theorem chartValueL_zeroOnePartSobolevL_ae_coord {w : SobolevSection A.tangentHom μ p k}
@@ -374,14 +375,13 @@ theorem closedComplemented_zeroOneSobolevSections :
 
 /-! ### Lowering the order -/
 
-omit [∀ x, ContinuousSMul ℂ (V x)] in
 /-- Forgetting the highest derivative of a `(0,1)`-form gives a `(0,1)`-form. -/
 theorem lowerOrderL_mem_zeroOneSobolevSections {w : SobolevSection A.tangentHom μ p (k + 1)}
     (hw : w ∈ zeroOneSobolevSections A μ p (k + 1)) :
     A.tangentHom.sectionChartData.lowerOrderL μ p k w ∈ zeroOneSobolevSections A μ p k := by
   rw [mem_zeroOneSobolevSections_iff] at hw ⊢
   intro i
-  rw [SectionChartData.chartValueL_lowerOrderL_coe]
+  rw [SectionChartData.chartValueL_coe_lowerOrderL]
   exact hw i
 
 variable (A μ p k) in
@@ -392,7 +392,6 @@ def zeroOneLowerOrderL :
     (zeroOneSobolevSections A μ p (k + 1)).subtypeL).codRestrict _
       fun w ↦ lowerOrderL_mem_zeroOneSobolevSections w.2
 
-omit [∀ x, ContinuousSMul ℂ (V x)] in
 /-- The inclusion of `(0,1)`-forms forgets the highest derivative. -/
 @[simp]
 theorem coe_zeroOneLowerOrderL (w : zeroOneSobolevSections A μ p (k + 1)) :
