@@ -25,6 +25,8 @@ their common image must be interior points.
 
 ## Main results
 
+* `TauCeti.IsIntegralManifold.eventually_sub_mem_of_flatChart`: local containment in an affine
+  plaque in flat coordinates.
 * `TauCeti.IsIntegralManifold.exists_plaque_chart_of_flatChart`: affine plaque coordinates
   for an integral immersion in a chart flattening its distribution.
 * `TauCeti.IsIntegralManifold.exists_partialDiffeomorph`: local equivalence of integral
@@ -54,6 +56,30 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- An integral immersion of regularity at least one locally stays in a single affine plaque
+in any coordinates flattening its distribution onto a finite-dimensional subspace. -/
+theorem IsIntegralManifold.eventually_sub_mem_of_flatChart
+    {n : ℕ∞ω} [IsManifold J n N]
+    {D : ∀ z : M, Submodule ℝ (TangentSpace I z)} {f : N → M}
+    (hf : IsIntegralManifold J n D f) (hn : 1 ≤ n)
+    (Φ : PartialEquiv M E) (hΦopen : IsOpen Φ.source)
+    (hΦsmooth : ContMDiffOn I 𝓘(ℝ, E) n Φ Φ.source)
+    (W : Submodule ℝ E) [FiniteDimensional ℝ W]
+    (hflat : ∀ z ∈ Φ.source, (D z).map (mfderiv I 𝓘(ℝ, E) Φ z).toLinearMap = W)
+    {x : N} (hx : f x ∈ Φ.source) :
+    ∀ᶠ y in 𝓝 x, Φ (f y) - Φ (f x) ∈ W := by
+  let _ : IsManifold J 1 N := .of_le hn
+  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
+  have hhor : IsHorizontalMap J D f :=
+    isHorizontalMap_iff_range_mfderiv_le.mpr fun z ↦ (hf.range_mfderiv z).le
+  have hDp (z : M) (hz : z ∈ Φ.source) :
+      (D z).map (mvfderiv I Φ z).toLinearMap ≤ W := by
+    rw [(D z).map_mvfderiv_eq_map_mfderiv (I := I) (x := z) Φ]
+    exact (hflat z hz).le
+  exact hhor.eventually_sub_mem (hf.contMDiff.mdifferentiable hn0).mdifferentiableOn
+    isOpen_univ (hΦsmooth.mdifferentiableOn hn0) hΦopen W.closed_of_finiteDimensional
+    hDp (mem_univ x) hx
 
 /-- In `C^n` coordinates flattening its distribution onto a finite-dimensional subspace, an
 integral immersion has local parameters at an interior source point whose image is in the
@@ -90,17 +116,7 @@ theorem IsIntegralManifold.exists_plaque_chart_of_flatChart
   have hrange : LinearMap.range (mfderiv J 𝓘(ℝ, E) (Φ ∘ f) x).toLinearMap = W := by
     simpa only [hder, ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp,
       hf.range_mfderiv x] using hD (f x) hfx
-  have hhor : IsHorizontalMap J D f :=
-    isHorizontalMap_iff_range_mfderiv_le.mpr fun z ↦ (hf.range_mfderiv z).le
-  have hDp (z : M) (hz : z ∈ Φ.source) :
-      (D z).map (mvfderiv I Φ z).toLinearMap ≤ W := by
-    rintro v ⟨w, hw, rfl⟩
-    rw [ContinuousLinearMap.coe_coe, mvfderiv_apply_eq_mfderiv_apply, ← hD z hz]
-    exact ⟨w, hw, rfl⟩
-  have hplaque := hhor.eventually_sub_mem
-    (hf.contMDiff.mdifferentiable hn0).mdifferentiableOn isOpen_univ
-    (hΦsmooth.mdifferentiableOn hn0) hΦopen W.closed_of_finiteDimensional
-    hDp (mem_univ x) hfx
+  have hplaque := hf.eventually_sub_mem_of_flatChart hn Φ hΦopen hΦsmooth W hD hfx
   exact ContMDiffOn.exists_plaque_chart hp hopen hfx hn hx hinj hrange hplaque
 
 variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
@@ -133,24 +149,10 @@ theorem IsIntegralManifold.exists_partialDiffeomorph
   have hm' : (1 : ℕ∞ω) ≤ m := by exact_mod_cast hm
   let _ : IsManifold I (m : ℕ∞ω) M :=
     .of_le (le_self_add.trans hmr)
-  -- Use one Frobenius chart for both immersions at their common image point.
-  obtain ⟨e, W, he, hxe, _, hflat⟩ := hinv.exists_flatChart hm hmr hD hfx
-  let Φ := e.extend I
-  have hΦ : (Φ : M → E) = I ∘ e := e.extend_coe
-  have hΦopen : IsOpen Φ.source := e.isOpen_extend_source
-  have hΦsmooth : ContMDiffOn I 𝓘(ℝ, E) m Φ Φ.source := by
-    simpa only [Φ, e.extend_coe, e.extend_source] using e.contMDiffOn_extend he
-  have hΦinj (z : M) (hz : z ∈ Φ.source) : Injective (mfderiv I 𝓘(ℝ, E) Φ z) :=
-    (isInvertible_mfderiv_extend (IsManifold.maximalAtlas_subset_of_le hm' he)
-      (by simpa only [Φ, e.extend_source] using hz)).injective
-  have hxΦ : f x ∈ Φ.source := by
-    simpa only [Φ, e.extend_source] using hxe
+  -- Both immersions use one set of extended flat coordinates.
+  obtain ⟨Φ, W, hΦopen, hxΦ, _, hΦsmooth, hflatΦ, hΦinj⟩ :=
+    hinv.exists_flatChart_extend hm hmr hD hfx
   have hyΦ : g y ∈ Φ.source := hfg ▸ hxΦ
-  have hflatΦ (z : M) (hz : z ∈ Φ.source) :
-      (D z).map (mfderiv I 𝓘(ℝ, E) Φ z).toLinearMap = W := by
-    rw [hΦ]
-    exact hflat z (by
-      simpa only [Φ, e.extend_source] using hz)
   -- Each immersion has local parameters in the same affine direction subspace.
   obtain ⟨c, hxc, hc0, hcsrc, hfc⟩ :=
     hf.exists_plaque_chart_of_flatChart Φ hΦopen hΦsmooth hm' W hflatΦ hx hxΦ

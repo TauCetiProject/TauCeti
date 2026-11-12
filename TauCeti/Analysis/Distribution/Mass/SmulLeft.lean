@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.Mass.Basic
+public import TauCeti.Analysis.Distribution.Mass.Measure
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 
 /-!
@@ -37,6 +37,8 @@ alternatization defining the wedge with a one-form.
   the mass of a contraction with a smooth one-form.
 * `Distribution.HasLocallyFiniteMass.comp_smulLeftCLM`,
   `Distribution.HasLocallyFiniteMass.comp_oneFormWedgeCLM`: preservation of locally finite mass.
+* `Distribution.mass_comp_oneFormWedgeCLM_le_lintegral`: the sharper bound
+  `M(T ⌞ α) ≤ (k + 1) ∫ ‖α‖ d‖T‖` against the mass measure of `T`.
 * `Distribution.localMass_comp_smulLeftCLM_comp_extDerivCLM_le`,
   `Distribution.mass_comp_smulLeftCLM_comp_extDerivCLM_le`: the mass of the boundary of a smooth
   multiple.
@@ -122,6 +124,31 @@ theorem mass_comp_oneFormWedgeCLM_le (T : 𝓕) (hα : ContDiff ℝ n α)
   simpa using localMass_comp_oneFormWedgeCLM_le (U := univ) T hα fun x hx => hαc x hx.2
 
 end OneFormWedge
+
+section MassMeasure
+
+open MeasureTheory
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {𝓕 : Type*}
+  [FunLike 𝓕 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
+  [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
+
+/-- **Mass of a contraction against the mass measure.** For `T` of locally finite mass,
+`M(T ⌞ α) ≤ (k + 1) ∫ ‖α‖ d‖T‖`. Unlike `Distribution.mass_comp_oneFormWedgeCLM_le`, the size of
+`α` is weighted by the mass measure `‖T‖` instead of bounded by its supremum. -/
+theorem mass_comp_oneFormWedgeCLM_le_lintegral {T : 𝓕} (hT : HasLocallyFiniteMass T)
+    (hα : ContDiff ℝ n α) :
+    mass (T ∘ oneFormWedgeCLM (k := k) hα) ≤ (k + 1) * ∫⁻ x, ‖α x‖ₑ ∂massMeasure T := by
+  refine mass_le_iff.2 fun ω hω => (enorm_apply_le_lintegral_massMeasure hT _).trans ?_
+  rw [← lintegral_const_mul' _ _ (by simp)]
+  refine lintegral_mono fun x => (enorm_oneFormWedgeCLM_apply_le hα ω x).trans ?_
+  have hωx : ‖ω x‖ₑ ≤ 1 := by
+    rw [← ofReal_norm]
+    exact ENNReal.ofReal_le_one.2 (hω x)
+  calc (k + 1 : ℝ≥0∞) * ‖α x‖ₑ * ‖ω x‖ₑ ≤ (k + 1) * ‖α x‖ₑ * 1 := by gcongr
+    _ = (k + 1) * ‖α x‖ₑ := mul_one _
+
+end MassMeasure
 
 section Boundary
 

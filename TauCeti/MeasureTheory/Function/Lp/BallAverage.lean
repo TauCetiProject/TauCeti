@@ -90,8 +90,8 @@ the maximal inequality, so the two developments are kept apart.
 * `TauCeti.enorm_ballAverage_add_sub_ballAverage_le`: the equicontinuity estimate, with modulus
   the `Lᵖ` modulus of continuity of `f` itself.
 * `TauCeti.uniformEquicontinuous_ballAverage`: equicontinuity of the ball averages of a family.
-* `TauCeti.continuous_ballAverage`, `TauCeti.memLp_ballAverage`: a ball average at positive
-  scale is continuous and remains in `Lᵖ`.
+* `TauCeti.continuous_ballAverage`, `TauCeti.memLp_ballAverage`: a ball average is
+  continuous and remains in `Lᵖ`.
 * `TauCeti.tendsto_ballAverage_cocompact`: at every fixed scale the ball average of an `Lᵖ`
   function tends to zero at infinity, since `‖f‖ ^ p` has vanishing mass on far balls.
 * `TauCeti.ballAverage_sub_self`, `TauCeti.eLpNorm_ballAverage_sub_le`: the deviation of `f` from
@@ -131,6 +131,11 @@ theorem ballAverage_apply (mu : Measure E) (r : ℝ) (f : E → F) (x : E) :
 theorem ballAverage_zero (mu : Measure E) (r : ℝ) (x : E) :
     ballAverage mu r (0 : E → F) x = 0 :=
   average_zero (mu.restrict (ball x r))
+
+/-- For `r ≤ 0` the balls are empty and the ball average is the zero function. -/
+@[simp]
+theorem ballAverage_eq_zero_of_nonpos (hr : r ≤ 0) : ballAverage mu r f = 0 :=
+  funext fun x => by simp [ballAverage, Metric.ball_eq_empty.2 hr]
 
 /-- The ball average commutes with addition when both summands are integrable on the ball. -/
 theorem ballAverage_add {g : E → F} {x : E} (hf : IntegrableOn f (ball x r) mu)
@@ -269,13 +274,18 @@ theorem enorm_ballAverage_add_sub_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞
   rw [ballAverage_sub_ballAverage hp hf]
   exact enorm_ballAverage_le hp hp' x
 
-/-- At a fixed positive scale, the ball averages of a family of `Lᵖ` functions whose translation
-increments are uniformly small in `Lᵖ` form a uniformly equicontinuous family. -/
+/-- The ball averages of a family of `Lᵖ` functions whose translation
+increments are uniformly small in `Lᵖ` form a uniformly equicontinuous family. For `r ≤ 0` the
+balls are empty and every ball average is zero. -/
 theorem uniformEquicontinuous_ballAverage {ι : Type*} {u : ι → E → F}
-    (hp : 1 ≤ p) (hp' : p ≠ ∞) (hu : ∀ i, MemLp (u i) p mu) (hr : 0 < r)
+    (hp : 1 ≤ p) (hp' : p ≠ ∞) (hu : ∀ i, MemLp (u i) p mu)
     (htrans : ∀ ε : ℝ≥0∞, 0 < ε → ∃ δ > 0, ∀ i, ∀ h : E, ‖h‖ < δ →
       eLpNorm (fun x => u i (x + h) - u i x) p mu ≤ ε) :
     UniformEquicontinuous fun i => ballAverage mu r (u i) := by
+  rcases le_or_gt r 0 with hr | hr
+  · simp only [ballAverage_eq_zero_of_nonpos hr]
+    rw [Metric.uniformEquicontinuous_iff]
+    exact fun c hc => ⟨1, one_pos, fun x y _ _ => by simpa using hc⟩
   set V : ℝ≥0∞ := mu (ball (0 : E) r)
   have hV0 : V ≠ 0 := (measure_ball_pos mu 0 hr).ne'
   have hVt : V ≠ ∞ := measure_ball_lt_top.ne
@@ -299,9 +309,13 @@ theorem uniformEquicontinuous_ballAverage {ι : Type*} {u : ι → E → F}
   rw [dist_eq_norm, ← norm_neg, neg_sub]
   linarith
 
-/-- At every positive scale, the ball average of an `Lᵖ` function is continuous. -/
-theorem continuous_ballAverage (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p mu)
-    (hr : 0 < r) : Continuous (ballAverage mu r f) := by
+/-- The ball average of an `Lᵖ` function is continuous. For `r ≤ 0` the balls are empty and the
+ball average is zero. -/
+theorem continuous_ballAverage (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p mu) :
+    Continuous (ballAverage mu r f) := by
+  rcases le_or_gt r 0 with hr | hr
+  · rw [ballAverage_eq_zero_of_nonpos hr]
+    exact continuous_const
   rw [continuous_iff_continuousAt]
   intro x
   rw [ContinuousAt, tendsto_iff_edist_tendsto_0]
@@ -321,11 +335,14 @@ theorem continuous_ballAverage (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p 
   have hbound := enorm_ballAverage_add_sub_ballAverage_le (r := r) hp hp' hf (y - x) x
   rwa [add_sub_cancel] at hbound
 
-/-- **The ball average is an `Lᵖ` contraction**, for `1 ≤ p < ∞`. This is Minkowski's integral
-inequality for the normalized indicator of a ball; it is the reason the smoothing operator does
-not have to be undone quantitatively. -/
+/-- **The ball average is an `Lᵖ` contraction**, for `1 ≤ p < ∞` (for `r ≤ 0` it is zero).
+This is Minkowski's integral inequality for the normalized indicator of a ball; it is the reason
+the smoothing operator does not have to be undone quantitatively. -/
 theorem eLpNorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : AEStronglyMeasurable f mu)
-    (hr : 0 < r) : eLpNorm (ballAverage mu r f) p mu ≤ eLpNorm f p mu := by
+    : eLpNorm (ballAverage mu r f) p mu ≤ eLpNorm f p mu := by
+  rcases le_or_gt r 0 with hr | hr
+  · rw [ballAverage_eq_zero_of_nonpos hr, eLpNorm_zero]
+    exact zero_le
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hq : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
   have hV0 : mu (ball (0 : E) r) ≠ 0 := (measure_ball_pos mu 0 hr).ne'
@@ -346,10 +363,10 @@ theorem eLpNorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : AEStrongly
     ← mul_assoc, mul_comm (mu (ball (0 : E) r))⁻¹, mul_assoc, ENNReal.inv_mul_cancel hV0 hVt,
     mul_one]
 
-/-- At every positive scale, taking the ball average preserves membership in `Lᵖ`. -/
-theorem memLp_ballAverage (hf : MemLp f p mu) (hp : 1 ≤ p) (hp' : p ≠ ∞)
-    (hr : 0 < r) : MemLp (ballAverage mu r f) p mu :=
-  lt_of_le_of_lt (eLpNorm_ballAverage_le hp hp' hf.aestronglyMeasurable hr) hf.eLpNorm_lt_top
+/-- Taking the ball average preserves membership in `Lᵖ`. -/
+theorem memLp_ballAverage (hf : MemLp f p mu) (hp : 1 ≤ p) (hp' : p ≠ ∞) :
+    MemLp (ballAverage mu r f) p mu :=
+  lt_of_le_of_lt (eLpNorm_ballAverage_le hp hp' hf.aestronglyMeasurable) hf.eLpNorm_lt_top
 
 /-- **Ball averages of an `Lᵖ` function vanish at infinity**, for `1 ≤ p < ∞`: at every fixed
 scale, `A_r f x → 0` as `x` leaves every compact set. The `p`-th power of `‖A_r f x‖` is at most

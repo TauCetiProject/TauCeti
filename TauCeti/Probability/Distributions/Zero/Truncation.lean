@@ -159,7 +159,7 @@ theorem quantile_map_natCast_cond_compl_zero (h : ν {0} ≠ 1) {u : ℝ}
   have hset : (univ : Set ℝ) \ Iic 0 = Ioi 0 := by
     rw [← compl_eq_univ_sdiff, compl_Iic]
   have hq := (ν.map (Nat.cast : ℕ → ℝ)).quantile_cond_sdiff (IsLowerSet.Iic 0) isLowerSet_univ
-    measurableSet_Iic MeasurableSet.univ (by simpa [hIic] using hlt) hu
+    (by simpa [hIic] using hlt) hu
   rwa [hset, hIic, probReal_univ, ← map_natCast_cond_compl_zero] at hq
 
 end MeasureTheory.Measure

@@ -129,7 +129,6 @@ variable {Λ E : Type*} [AddCommGroup Λ] [AddCommGroup E]
     letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))
   (hb : ∀ (g : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
     torusFamilyProjection P (b g z) = g • z)
-  (hbone : ∀ z : rootsOfUnityBall m r, b 1 z = Quotient.mk _ (z, 0))
   (hbmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
     b (g * h) z = torusFamilyAffineMap R P ρ hP b hb g (b h z))
 
@@ -142,7 +141,7 @@ theorem isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff
     {u₀ : rootsOfUnityBall m r} (hu₀ : (u₀ : ℂ) = 0) {ζ : rootsOfUnity m ℂ}
     (hζ : IsPrimitiveRoot ζ m) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
     IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) ↔
       ∀ k : ℕ, 0 < k → k < m →
         ∀ c, c - (⇑(torusFamilyFiberLinearPart R hone hmul P ρ hP
@@ -155,7 +154,7 @@ theorem isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff
   have hgen : Subgroup.zpowers ζ = ⊤ := Subgroup.eq_top_of_card_eq _ <| by
     rw [Nat.card_zpowers, ← hζ.eq_orderOf, Complex.card_rootsOfUnity]
   have h := isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers_of_eq_bot_of_ne
-    R hone hmul P ρ hP b hb hbone hbmul (smul_rootsOfUnityBall_of_coe_eq_zero hu₀ ζ) (hgen ▸ le_top)
+    R hone hmul P ρ hP b hb hbmul (smul_rootsOfUnityBall_of_coe_eq_zero hu₀ ζ) (hgen ▸ le_top)
     (isOfFinOrder_of_finite ζ) fun u hu ↦
       stabilizer_rootsOfUnityBall_of_coe_ne_zero fun h ↦ hu (Subtype.ext (h.trans hu₀.symm))
   rwa [← hζ.eq_orderOf] at h
@@ -170,16 +169,16 @@ theorem isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff_addOrderOf_
     {u₀ : rootsOfUnityBall m r} (hu₀ : (u₀ : ℂ) = 0) {ζ : rootsOfUnity m ℂ}
     (hζ : IsPrimitiveRoot ζ m) (hR : ∀ v, R ζ u₀ v = v) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
     IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) ↔
       addOrderOf (torusFamilyFiberTranslationPart P b hb
         (smul_rootsOfUnityBall_of_coe_eq_zero hu₀ ζ)) = m := by
-  rw [isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff R hone hmul P ρ hP b hb hbone
+  rw [isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff R hone hmul P ρ hP b hb
       hbmul hu₀ hζ, torusFamilyFiberLinearPart_eq_refl R hone hmul P ρ hP _ hR,
     addOrderOf_eq_iff (NeZero.pos m)]
   simp only [AddEquiv.coe_refl, Function.iterate_id, id, sub_self, AddEquiv.partialNorm_refl]
   -- The torsion condition `m • t = 0` always holds; the conditions on smaller orders agree.
-  exact ⟨fun h ↦ ⟨nsmul_torusFamilyFiberTranslationPart_eq_zero R hone hmul P ρ hP b hb hbone hbmul
+  exact ⟨fun h ↦ ⟨nsmul_torusFamilyFiberTranslationPart_eq_zero R P ρ hP b hb hbmul
     _ hR hζ.pow_eq_one, fun k hk hk₀ ↦ (h k hk₀ hk 0).symm⟩, fun h k hk₀ hk _ ↦ (h.2 k hk hk₀).symm⟩
 
 /-- **Freeness of a translation over the rotated disc, through its lattice class.** Let `ζ` be a
@@ -198,14 +197,14 @@ theorem isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff_addOrderOf_
     (hmE : Function.Injective fun v : E ↦ m • v) {β : E}
     (hβ : b ζ u₀ = Quotient.mk _ (u₀, β)) {l : Λ} (hl : P u₀ l = m • β) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
     IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) ↔
       addOrderOf (Submodule.Quotient.mk l : QuotSMulTop (m : ℤ) Λ) = m := by
   have hy := smul_rootsOfUnityBall_of_coe_eq_zero hu₀ ζ
   -- The translation part `t = [β]` on the central torus is `m`-torsion.
   have ht : (m : ℤ) • torusFamilyFiberTranslationPart P b hb hy = 0 := by
     rw [natCast_zsmul]
-    exact nsmul_torusFamilyFiberTranslationPart_eq_zero R hone hmul P ρ hP b hb hbone hbmul hy hR
+    exact nsmul_torusFamilyFiberTranslationPart_eq_zero R P ρ hP b hb hbmul hy hR
       hζ.pow_eq_one
   let x : Submodule.torsionBy ℤ (AddAction.orbitRel.Quotient (LinearMap.range (P u₀)) E) m :=
     ⟨_, (Submodule.mem_torsionBy_iff _ _).2 ht⟩
@@ -219,7 +218,7 @@ theorem isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff_addOrderOf_
   have hx : addOrderOf (torusFamilyFiberTranslationPart P b hb hy) = addOrderOf x :=
     addOrderOf_injective (Submodule.subtype _).toAddMonoidHom Subtype.val_injective x
   rw [isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff_addOrderOf_eq R hone hmul P ρ hP
-      b hb hbone hbmul hu₀ hζ hR, ← hδ, hδx, hx]
+      b hb hbmul hu₀ hζ hR, ← hδ, hδx, hx]
 
 /-- **Exact order of a cyclic affine action over the rotated disc.** Over a disc of positive
 radius, a primitive `m`-th root of unity acts on the total space of the family of tori by a
@@ -227,13 +226,13 @@ permutation of exact order `m`: the affine action lifts the rotations, which act
 theorem orderOf_toPerm_torusFamilyAffineMulAction_rootsOfUnityBall (hr : 0 < r)
     {ζ : rootsOfUnity m ℂ} (hζ : IsPrimitiveRoot ζ m) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
     orderOf (toPerm ζ : Equiv.Perm
       (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) = m := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
   have := faithfulSMul_rootsOfUnityBall (m := m) hr
-  have := faithfulSMul_torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  have := faithfulSMul_torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
   exact (orderOf_injective (toPermHom _ _) toPerm_injective ζ).trans hζ.eq_orderOf.symm
 
 end Freeness
@@ -252,7 +251,6 @@ variable {m : ℕ} [NeZero m] {r : ℝ} {Λ : Type*} [AddCommGroup Λ] {E : Type
   (hone : ∀ (z : rootsOfUnityBall m r) (v : E), R 1 z v = v)
   (hmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r) (v : E),
     R (g * h) z v = R g (h • z) (R h z v))
-  (hbone : ∀ z : rootsOfUnityBall m r, b 1 z = Quotient.mk _ (z, 0))
   (hbmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
     b (g * h) z = torusFamilyAffineMap R P ρ hequiv b hb g (b h z))
 
@@ -262,12 +260,12 @@ rotations, the map `p_Q : X / C_m → ℂ` induced by `z ↦ z ^ m` has image th
 `r ^ m`, the quotient of `D` by the rotations (`TauCeti.rootsOfUnityBallQuotientHomeomorph`). -/
 theorem range_torusFamilyAffineQuotientLift_rootsOfUnityBall (hr : 0 ≤ r) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    Set.range (torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    Set.range (torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
       (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m) fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) =
       Metric.ball 0 (r ^ m) := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   rw [← image_pow_ball hr]
   ext t
   constructor
@@ -288,12 +286,12 @@ centre `u₀` of the disc, the central torus `T₀ = E / LinearMap.range (P u₀
 theorem preimage_torusFamilyAffineQuotientLift_rootsOfUnityBall_zero {u₀ : rootsOfUnityBall m r}
     (hu₀ : (u₀ : ℂ) = 0) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
       (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m) (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) ⁻¹'
         {0} = Set.range fun v : E ↦ Quotient.mk _ (Quotient.mk _ (u₀, v)) := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   ext y
   induction y using Quotient.inductionOn with | h x =>
   induction x using Quotient.inductionOn with | h p =>
@@ -305,7 +303,7 @@ theorem preimage_torusFamilyAffineQuotientLift_rootsOfUnityBall_zero {u₀ : roo
   · rintro ⟨v, hv⟩
     -- The map induced by `z ↦ z ^ m` takes the same value on both classes, `0` on the class of
     -- a point over the centre.
-    have h := congrArg (torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+    have h := congrArg (torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
       (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m) fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) hv
     simp only [torusFamilyAffineQuotientLift_mk, torusFamilyProjection_mk, hu₀,
       zero_pow (NeZero.ne m)] at h
@@ -332,57 +330,59 @@ variable {m : ℕ} [NeZero m] {r : ℝ}
   (hone : ∀ (z : rootsOfUnityBall m r) (v : E), R 1 z v = v)
   (hmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r) (v : E),
     R (g * h) z v = R g (h • z) (R h z v))
-  (hbone : ∀ z : rootsOfUnityBall m r, b 1 z = Quotient.mk _ (z, 0))
   (hbmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
     b (g * h) z = torusFamilyAffineMap R P ρ hequiv b hb g (b h z))
   (hRc : ∀ g : rootsOfUnity m ℂ, Continuous fun p : rootsOfUnityBall m r × E ↦ R g p.1 p.2)
   (hbc : letI := periodAddAction P; ∀ g, Continuous (b g))
   (hfree : letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
   {e : letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     OpenPartialHomeomorph (MulAction.orbitRel.Quotient (rootsOfUnity m ℂ)
       (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) (ModelProd ℂ E)}
   (he : letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul hcont hRc hbc hfree
+      hbmul hcont hRc hbc hfree
     e ∈ atlas (ModelProd ℂ E) (MulAction.orbitRel.Quotient (rootsOfUnity m ℂ)
       (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))))
 
 include he
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The local equation of the cyclic quotient.** Let the `m`-th roots of unity act freely on a
 family of tori `X → D` over the disc by an affine action lifting the rotations. In every chart
 `e` of the quotient atlas of `Q = X / C_m`, the map `p_Q : Q → ℂ` induced by `z ↦ z ^ m` is
 `(u, v) ↦ u ^ m`. -/
 theorem torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow {w : ModelProd ℂ E}
     (hw : w ∈ e.target) :
-    torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+    torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
       (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m) (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z)
       (e.symm w) = w.1 ^ m := by
   obtain ⟨z, hz⟩ := exists_torusFamilyAffineQuotientLift_symm_eq_of_mem_atlas (H := ℂ) P hcont
-    hinj R ρ hequiv b hb hone hmul hbone hbmul (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
+    hinj R ρ hequiv b hb hone hmul hbmul (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
     (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) hRc hbc hfree he
   obtain ⟨hwz, hw⟩ := hz w hw
   rw [hw, rootsOfUnityBall.coe_chartAt_symm z hwz]
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The local equation of the cyclic quotient, on its source.** In every chart `e` of the
 quotient atlas of `Q = X / C_m`, the map `p_Q : Q → ℂ` induced by `z ↦ z ^ m` is the `m`-th power
 of the first coordinate `u` of `e`: `p_Q = u ^ m`. -/
 theorem torusFamilyAffineQuotientLift_rootsOfUnityBall_eq_pow
     {x : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       MulAction.orbitRel.Quotient (rootsOfUnity m ℂ)
         (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))}
     (hx : x ∈ e.source) :
-    torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+    torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
       (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m) (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z)
       x = (e x).1 ^ m := by
   rw [← torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow P hcont hinj R ρ hequiv b hb
-    hone hmul hbone hbmul hRc hbc hfree he (e.map_source hx), e.left_inv hx]
+    hone hmul hbmul hRc hbc hfree he (e.map_source hx), e.left_inv hx]
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The central fibre in a chart of the cyclic quotient.** In every chart `e` of the quotient
 atlas of `Q = X / C_m`, the fibre over `0` of the map `p_Q : Q → ℂ` induced by `z ↦ z ^ m`, which
 is the image of the central torus
@@ -390,7 +390,7 @@ is the image of the central torus
 target of `e` on which the first coordinate vanishes. So it is an embedded hypersurface of `Q`,
 cut out in each chart by the first coordinate. -/
 theorem image_source_inter_preimage_torusFamilyAffineQuotientLift_rootsOfUnityBall_zero :
-    e '' (e.source ∩ torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+    e '' (e.source ∩ torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
       (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
       (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) ⁻¹' {0}) =
       e.target ∩ {w | w.1 = 0} := by
@@ -399,8 +399,9 @@ theorem image_source_inter_preimage_torusFamilyAffineQuotientLift_rootsOfUnityBa
   refine and_congr_right fun hw ↦ ?_
   simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_ofPred_eq]
   rw [torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow P hcont hinj R ρ hequiv b hb hone
-      hmul hbone hbmul hRc hbc hfree he hw, pow_eq_zero_iff (NeZero.ne m)]
+      hmul hbmul hRc hbc hfree he hw, pow_eq_zero_iff (NeZero.ne m)]
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The central fibre has multiplicity `m`.** Let `x` be a point of the central fibre of the
 cyclic quotient `Q = X / C_m`, the fibre over `0` of the map `p_Q : Q → ℂ` induced by
 `z ↦ z ^ m`, and let `e` be a chart of the quotient atlas at `x`. Along the transverse line
@@ -408,18 +409,18 @@ cyclic quotient `Q = X / C_m`, the fibre over `0` of the map `p_Q : Q → ℂ` i
 vanishes at `u = 0` to order exactly `m`. -/
 theorem analyticOrderAt_torusFamilyAffineQuotientLift_rootsOfUnityBall
     {x : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       MulAction.orbitRel.Quotient (rootsOfUnity m ℂ)
         (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))}
     (hx : x ∈ e.source)
-    (hx0 : torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+    (hx0 : torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
       (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m) (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z)
       x = 0) :
-    analyticOrderAt (fun u : ℂ ↦ torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone
+    analyticOrderAt (fun u : ℂ ↦ torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul
       hbmul (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
       (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) (e.symm ((u, (e x).2) : ℂ × E))) 0 = m := by
   rw [torusFamilyAffineQuotientLift_rootsOfUnityBall_eq_pow P hcont hinj R ρ hequiv b hb hone hmul
-    hbone hbmul hRc hbc hfree he hx, pow_eq_zero_iff (NeZero.ne m)] at hx0
+    hbmul hRc hbc hfree he hx, pow_eq_zero_iff (NeZero.ne m)] at hx0
   -- The transverse line stays in the target of `e` near `u = 0`, where `p_Q` reads as `u ^ m`.
   have hmem : {u : ℂ | ((u, (e x).2) : ℂ × E) ∈ e.target} ∈ nhds (0 : ℂ) := by
     refine (e.open_target.preimage (Continuous.prodMk_left (e x).2)).mem_nhds ?_
@@ -429,7 +430,7 @@ theorem analyticOrderAt_torusFamilyAffineQuotientLift_rootsOfUnityBall
   refine analyticOrderAt_congr (Filter.eventually_of_mem hmem fun u hu ↦ ?_)
   dsimp only
   rw [torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow P hcont hinj R ρ hequiv b hb hone
-    hmul hbone hbmul hRc hbc hfree he hu, Pi.pow_apply, sub_zero]
+    hmul hbmul hRc hbc hfree he hu, Pi.pow_apply, sub_zero]
 
 end Charts
 
@@ -452,7 +453,6 @@ variable {m : ℕ} [NeZero m] {r : ℝ}
   (hone : ∀ (z : rootsOfUnityBall m r) (v : E), R 1 z v = v)
   (hmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r) (v : E),
     R (g * h) z v = R g (h • z) (R h z v))
-  (hbone : ∀ z : rootsOfUnityBall m r, b 1 z = Quotient.mk _ (z, 0))
   (hbmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
     b (g * h) z = torusFamilyAffineMap R P ρ hequiv b hb g (b h z))
   (hR : ∀ g : rootsOfUnity m ℂ,
@@ -461,9 +461,10 @@ variable {m : ℕ} [NeZero m] {r : ℝ}
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
     ∀ g, ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, E)) ω (b g))
   (hfree : letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The cyclic quotient is a holomorphic submersion off the central fibre.** For a holomorphic
 family of tori `X → D` over the disc `D` and a free holomorphic affine action of the `m`-th roots of
 unity lifting the rotations, the map `p_Q : X / C_m → ℂ` induced by `z ↦ z ^ m` is a holomorphic
@@ -472,28 +473,28 @@ of the action is characterized by
 `TauCeti.isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff`. -/
 theorem isSubmersionAtOfComplement_torusFamilyAffineQuotientLift_rootsOfUnityBall
     (y : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       MulAction.orbitRel.Quotient (rootsOfUnity m ℂ)
         (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
-    (hy : torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+    (hy : torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
       (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m) (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) y ≠
         0) :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
+      hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
       (fun g ↦ (hbc g).continuous) hfree
     IsSubmersionAtOfComplement E (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ) ω
-      (torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+      (torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
         (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m) fun g z ↦ coe_smul_rootsOfUnityBall_pow g z)
       y := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   induction y using Quotient.inductionOn with | h x =>
   rw [torusFamilyAffineQuotientLift_mk] at hy
   exact isSubmersionAtOfComplement_torusFamilyAffineQuotientLift P hinj hP R ρ hequiv b hb hone
-    hmul hbone hbmul hR hbc hfree _ x
+    hmul hbmul hR hbc hfree _ x
     (isLocalDiffeomorphAt_coe_pow_rootsOfUnityBall le_top fun h ↦ hy (by rw [h, zero_pow
       (NeZero.ne m)]))
 

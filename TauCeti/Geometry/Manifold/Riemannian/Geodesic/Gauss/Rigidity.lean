@@ -330,7 +330,6 @@ private theorem IsNormalDomain.sameRay_riemannianLog_of_enorm_eq_add_pathELength
     rw [← pathELength_congr (hEq.mono (Icc_subset_Icc_right hu.2)),
       ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin
         (contMDiffOn_riemannianExp_comp h hc hdom)
-        (uniqueMDiffOn_iff_uniqueDiffOn.2 (uniqueDiffOn_Icc hcd)) hu.1
         (Icc_subset_Icc_right hu.2), ← ofReal_norm, ← ofReal_norm,
       ← ENNReal.ofReal_add (norm_nonneg _) hnn] at h1
     exact (ENNReal.ofReal_eq_ofReal_iff (norm_nonneg _) (add_nonneg (norm_nonneg _) hnn)).1 h1

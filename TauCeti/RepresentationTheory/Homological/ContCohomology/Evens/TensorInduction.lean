@@ -367,7 +367,7 @@ private theorem tensorRead_tprod
   apply Finset.prod_congr
   · ext i
     simp
-  · intro i hi
+  · intro i _
     rfl
 
 private theorem tensorRead_twoTensor

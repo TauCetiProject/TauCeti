@@ -195,7 +195,7 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
   have hle := ae_enorm_le_of_forall_enorm_integral_inner_le hf
     (Measure.measurable_rnDeriv η ρ)
     (fun K hK => ne_top_of_le_ne_top hK.measure_lt_top.ne (Measure.setLIntegral_rnDeriv_le K))
-    fun U hU φ hφU hφ => by
+    fun U _ φ hφU hφ => by
       -- Bound each singular pairing by its norm measure on the support of the test field.
       have heq : ∫ x : Ω, ⟪φ x, f x⟫ ∂ρ =
           (∫ x : Ω, ⟪φ x, polarDensity μ Ω u x⟫ ∂ω) - ∫ x : Ω, ⟪φ x, τ x⟫ ∂ξ := by

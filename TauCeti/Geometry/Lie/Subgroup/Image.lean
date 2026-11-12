@@ -49,7 +49,6 @@ of the range of its Lie map. No closedness of the image is required. -/
 theorem range_eq_closure_lieExp_image (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
     MonoidHom.range φ.toMonoidHom =
       Subgroup.closure (lieExp '' ((lieMap φ).range : Set (LeftInvariantDerivation I' G'))) := by
-  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   have himage : φ.toMonoidHom '' range (lieExp (I := I) (G := G)) =
       lieExp '' ((lieMap φ).range : Set (LeftInvariantDerivation I' G')) := by

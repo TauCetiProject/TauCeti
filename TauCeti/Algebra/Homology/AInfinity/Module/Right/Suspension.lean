@@ -264,7 +264,7 @@ theorem apply_algebra_splice_of_mem
       F (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
         f n (G.koszulTwist n x)
           fun i : Fin n ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i))
-    {n p s : ℕ} (hs : 0 < s) (hps : p + s ≤ n) {x : M} {e : ℤ}
+    {n p s : ℕ} (hps : p + s ≤ n) {x : M} {e : ℤ}
     (hx : x ∈ G.piece e) (d : ℕ → ℤ) (a : ℕ → A)
     (ha : ∀ i < n, a i ∈ AA.grading.piece (d i)) :
     F ((G.shift 1).koszulTwist 1 x ⊗ₜ[R]
@@ -276,6 +276,13 @@ theorem apply_algebra_splice_of_mem
             (2 - s) * (e + ∑ i ∈ Finset.range p, d i)) •
           evalNat (f (p + 1 + (n - p - s)) x)
             (replaceBlock a p s (evalNat (AA.m s) fun j ↦ a (p + j))) := by
+  rcases Nat.eq_zero_or_pos s with rfl | hs
+  · -- An empty block: both sides vanish, the left through the splice and the right through the
+    -- vanishing arity-zero operation.
+    rw [ReducedTensorWords.splice_zero_length, map_zero, TensorProduct.tmul_zero, map_zero]
+    rw [MultilinearMap.evalNat_def, MultilinearMap.map_coord_zero _
+      (⟨p, by omega⟩ : Fin (p + 1 + (n - p - 0))), smul_zero, smul_zero]
+    simp [replaceBlock_self, MultilinearMap.evalNat_def, AA.m_zero]
   obtain ⟨t, rfl⟩ : ∃ t, n = p + s + t := ⟨n - p - s, by omega⟩
   have ht : p + s + t - p - s = t := by omega
   -- Pull the Koszul twists of the `p` letters before the block out of the splice as one sign.

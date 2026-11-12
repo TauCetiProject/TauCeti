@@ -45,14 +45,14 @@ variable {X Y : TopCat.{u}} (f : X ≅ Y)
 /-- The preimage along `f.hom` of the preimage along `f.inv` of an open `U` of `X` is `U`. -/
 @[simp]
 theorem map_hom_obj_map_inv_obj (U : Opens X) :
-    (Opens.map f.hom).obj ((Opens.map f.inv).obj U) = U :=
-  (TopCat.homeoOfIso f).opensCongr.symm_apply_apply U
+    (Opens.map f.hom).obj ((Opens.map f.inv).obj U) = U := by
+  rw [← map_comp_obj, f.hom_inv_id, map_id_obj]
 
 /-- The preimage along `f.inv` of the preimage along `f.hom` of an open `U` of `Y` is `U`. -/
 @[simp]
 theorem map_inv_obj_map_hom_obj (U : Opens Y) :
-    (Opens.map f.inv).obj ((Opens.map f.hom).obj U) = U :=
-  (TopCat.homeoOfIso f).opensCongr.apply_symm_apply U
+    (Opens.map f.inv).obj ((Opens.map f.hom).obj U) = U := by
+  rw [← map_comp_obj, f.inv_hom_id, map_id_obj]
 
 /-- For opens `V ≤ W` of `X` and an open `Q` of `W`, the image in `X` of the preimage of `Q` in `V`
 lies in the image of `Q` in `X`. -/
@@ -65,7 +65,7 @@ theorem functor_obj_map_homOfLE_obj_le {V W : Opens X} (h : V ≤ W) (Q : Opens 
 /-- The inclusion of an open set `V` into a larger open set `W` is an open embedding. -/
 lemma isOpenEmbedding_toTopCat_map {V W : Opens X} (h : V ⟶ W) :
     Topology.IsOpenEmbedding ((toTopCat X).map h) :=
-  Topology.IsOpenEmbedding.of_comp _ W.isOpenEmbedding V.isOpenEmbedding
+  isOpenEmbedding_of_le h.le
 
 /-- The inclusion of `V` into `W` followed by the inclusion of `W` is the inclusion of `V`. -/
 @[reassoc (attr := simp)]

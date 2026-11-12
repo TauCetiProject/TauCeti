@@ -221,7 +221,7 @@ theorem mpullback_prodMk_mlieDerivForm_vertical (t : ℝ) (x : M)
       (ContinuousLinearMap.ext fun r ↦ Prod.ext (smul_zero _).symm (rfl))
   have hψ := hasDerivAt_mpullback_of_eq_id (I := 𝓘(ℝ, ℝ).prod I) (ψ := ψ)
     (V := fun p : ℝ × M ↦ ((0 : ℝ), X p.1 p.2)) (t := 0) (t, x)
-    (Eventually.of_forall fun p ↦ by simp [ψ, timeDependentFlowOf_self hX₁])
+    (Eventually.of_forall fun p ↦ by simp [ψ, timeDependentFlowOf_self])
     (hψsmooth 0 (t, x) (by simpa using mem_timeDependentFlowDomain_self hX₁ t x))
     (Eventually.of_forall hψvel) (hα.mdifferentiableAt one_ne_zero)
   -- Slicing at time `t` turns `ψ_r` into the time-dependent flow from `t` to `t + r`.
@@ -309,7 +309,6 @@ private theorem hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk_suspen
       (mpullback I I (timeDependentFlowOf X s t)
         (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
           (mlieDerivForm (timeDependentSuspensionField X) α)) x) t := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
   have hZ := contMDiff_timeDependentSuspensionField hX
   have hφ := contMDiff_timeDependentFlowOf hc (n := 2) (by norm_num) hX
   have hι (u : ℝ) : MDifferentiable I (𝓘(ℝ, ℝ).prod I) (Prod.mk u : M → ℝ × M) :=
@@ -319,7 +318,7 @@ private theorem hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk_suspen
   have hΨ (r : ℝ) : flowOf (timeDependentSuspensionField X) r =
       fun p : ℝ × M ↦ (p.1 + r, timeDependentFlowOf X p.1 (p.1 + r) p.2) := by
     funext p
-    have h := flowOf_timeDependentSuspensionField hX₁ (s := p.1) (t := p.1 + r) (x := p.2)
+    have h := flowOf_timeDependentSuspensionField (s := p.1) (t := p.1 + r) (x := p.2)
       ((timeDependentFlowDomain_eq_univ hc).symm ▸ mem_univ _)
     rwa [add_sub_cancel_left] at h
   have hΨsmooth (r : ℝ) : MDifferentiable (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I)
@@ -349,7 +348,7 @@ private theorem hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk_suspen
       ((𝓘(ℝ, ℝ).prod I).prod 𝓘(ℝ, (ℝ × E) [⋀^Fin k]→L[ℝ] F))
       (fun p ↦ TotalSpace.mk' ((ℝ × E) [⋀^Fin k]→L[ℝ] F) p (α p))
       (flowOf (timeDependentSuspensionField X) (t - s) (s, x)) := by
-    rwa [flowOf_timeDependentSuspensionField hX₁
+    rwa [flowOf_timeDependentSuspensionField
       ((timeDependentFlowDomain_eq_univ hc).symm ▸ mem_univ _)]
   have h := ((compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt
     (t - s) (hasDerivAt_mpullback_flowOf hZ (hc.mem_flowDomain _ _) hαΨ)).comp_sub_const t s
@@ -399,7 +398,6 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
     mpullback I I (timeDependentFlowOf X s t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) x =
       Real.exp (∫ u in s..t, g (u, timeDependentFlowOf X s u x)) •
         mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
   -- The pullbacks at `x`, as alternating maps on the model space.
   set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun u ↦
     mpullback I I (timeDependentFlowOf X s u) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α) x
@@ -411,12 +409,13 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
       hα.contMDiffAt
     rwa [hL u, mpullback_fun_smul] at h
   have hP0 : P s = mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
-    have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self hX₁ s)
+    have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self X s)
     exact (congrArg (fun f ↦ mpullback I I f (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α) x)
       h).trans (congrFun (mpullback_id _) x)
   rw [← hP0]
-  exact eq_exp_integral_smul_of_hasDerivAt_smul (V := E [⋀^Fin k]→L[ℝ] F) isOpen_univ
-    ordConnected_univ hcont.continuousOn hP (mem_univ s) (mem_univ t)
+  exact eq_exp_integral_smul_of_hasDerivWithinAt_smul (V := E [⋀^Fin k]→L[ℝ] F)
+    ordConnected_univ hcont.continuousOn (fun u hu ↦ (hP u hu).hasDerivWithinAt) (mem_univ s)
+    (mem_univ t)
 
 /-- **Moser's principle for families of forms**, invariance case. Let `X` be a jointly `C²`
 time-dependent vector field with complete suspension and time-dependent flow `φ`, and let `α` be
