@@ -579,7 +579,7 @@ theorem lintegral_rpow_le_of_sq_le_maximalFunction (μ : Measure E) [μ.IsAddHaa
       ∫⁻ x, maximalFunction μ h x ^ e ∂μ ≤
         ENNReal.ofReal (2 * e * 2 ^ (e - 1) / (e - 1)) * 4 ^ finrank ℝ E *
           ∫⁻ x, h x ^ e ∂μ := fun {h} hh {e} he => by
-    simpa only [enorm_eq_self] using lintegral_rpow_maximalFunction_le μ (f := h) hh he
+    simpa only [eNorm_eq_self] using lintegral_rpow_maximalFunction_le μ (f := h) hh he
   -- Pointwise: `g^s = (g²)^r ≤ 2^(r-1) (2^(r-1) ((α₁ M₁)^r + (α₂ M₂)^r) + (α₃ M₃^(1/q))^r)`.
   have hpt : ∀ x, g x ^ s ≤ 2 ^ (r - 1) * (2 ^ (r - 1) *
       (α₁ ^ r * M₁ x ^ r + α₂ ^ r * M₂ x ^ r) + α₃ ^ r * M₃ x ^ (r / q)) := fun x => by

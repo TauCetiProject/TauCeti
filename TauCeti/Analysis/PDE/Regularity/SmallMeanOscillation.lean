@@ -248,7 +248,7 @@ private theorem sq_setLAverage_enorm_gradient_sub_le
   -- Every average over `B_r ∋ x` is at most `2^(n + 1)` times the centred maximal function at `x`.
   have hM : ∀ f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ≥0∞,
       ⨍⁻ y in ball c r, f y ≤ 2 ^ (n + 1) * maximalFunction volume f x := fun f => by
-    simpa only [enorm_eq_self, finrank_euclideanSpace, Fintype.card_fin] using
+    simpa only [eNorm_eq_self, finrank_euclideanSpace, Fintype.card_fin] using
       (setLAverage_le_uncenteredMaximalFunction volume f hxr).trans
         (uncenteredMaximalFunction_le_two_pow_mul_maximalFunction volume f x)
   have hsq : ∀ (h : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) (t : ℝ),
@@ -403,8 +403,8 @@ private theorem lintegral_enorm_gradient_rpow_le
   have hbound := lintegral_rpow_le_of_sq_le_maximalFunction (g := fun x =>
       sharpMaximalFunction volume g x) volume
     (h₁ := fun y => ‖g y‖ₑ ^ 2) (h₂ := fun y => ‖G y‖ₑ ^ 2) (h₃ := fun y => ‖g y‖ₑ ^ (2 * q))
-    (hgm.enorm.pow_const 2) (hGp.aestronglyMeasurable.enorm.pow_const 2)
-    (hgm.enorm.pow_const _) hq hqs hpt
+    (hgm.eNorm.pow_const 2) (hGp.aestronglyMeasurable.eNorm.pow_const 2)
+    (hgm.eNorm.pow_const _) hq hqs hpt
   simp only [hy2, hy3] at hbound
   exact hFS.trans (mul_le_mul_right hbound _)
 
@@ -474,10 +474,10 @@ private theorem eLpNorm_gradient_le_of_le_quarter
   have hp0 : p ≠ 0 := (zero_lt_two.trans hp).ne'
   have hs1 : 0 ≤ 1 / s := one_div_nonneg.2 (zero_le_two.trans hs.le)
   have key := lintegral_enorm_gradient_rpow_le ha hbd hosc hu hp.le hgp hGp hqq hq hqs hqp hκ hFS
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hgp.aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hGp.aestronglyMeasurable, ← hs_def,
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hgp.aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hGp.aestronglyMeasurable, ← hs_def,
     ← ENNReal.mul_rpow_of_nonneg _ _ hs1]
-  have hI := (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hp0 hp_top hgp.eLpNorm_lt_top).ne
+  have hI := (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hp_top hgp.eLpNorm_lt_top).ne
   rw [← hs_def] at hI
   refine ENNReal.rpow_le_rpow ((ENNReal.le_mul_two_of_le_add_div_two hI ?_).trans_eq
     (mul_right_comm _ _ _)) hs1
