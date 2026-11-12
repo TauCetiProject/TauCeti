@@ -41,6 +41,13 @@ The computation has three steps.
 The disks of the single cells are lifted to the universe of `E` and `B`, so that the pullbacks
 are Serre fibrations in `TopCat.{u}`.
 
+A map `f : E ⟶ E'` over `B` between Serre fibrations induces maps between all these objects, and
+the identification is natural for them: on the first page it acts on the summand of `j` by the map
+of fibres over `χⱼ(0)`. For a CW structure with a single top cell, the composite
+`Hₖ(E) ⟶ Hₖ(E, p⁻¹(Xⁿ⁻¹)) ≅ Hₖ₋ₙ(F)` is the shriek map of the inclusion of a point used by
+Barraud–Damian–Humilière–Oancea to detect classes living above the fundamental class, and this
+naturality is the commutation of shriek maps with maps of fibrations (their Proposition 2.12).
+
 ## Main definitions and results
 
 * `TauCeti.TopCat.cellDiskPullbackPair`: the pair `(Pⱼ, ∂Pⱼ)` of the pullback of `p` along the
@@ -53,6 +60,11 @@ are Serre fibrations in `TopCat.{u}`.
 * `TauCeti.TopCat.preimageSkeletonPairSingularHomologyIsoSigma`:
   `Hq+n(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹)) ≅ ⨁ⱼ Hq(Fⱼ)`, characterized on the summands by
   `TauCeti.TopCat.ι_preimageSkeletonPairSingularHomologyIsoSigma_inv`.
+* `TauCeti.TopCat.cellDiskPullbackPairSingularHomologyIso_hom_naturality`,
+  `TauCeti.TopCat.preimageSkeletonPairSingularHomologyIsoSigma_hom_naturality`: both
+  identifications are natural in maps `f : E ⟶ E'` over `B` between Serre fibrations, through the
+  induced maps of pullbacks `TauCeti.TopCat.cellDiskPullbackMap`, of skeletal pairs
+  `TauCeti.TopCat.preimageSkeletonPairMap` and of fibres `TopCat.Hom.preimageMap`.
 
 ## References
 
@@ -61,6 +73,8 @@ are Serre fibrations in `TopCat.{u}`.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 5.1, the proof of Theorem 5.15.
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Section 5.1.
+* J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
+  Applications to cotangent bundles*, arXiv:2404.07953, §2.4, Lemma 2.9 and Proposition 2.12.
 -/
 
 public section
@@ -70,6 +84,7 @@ noncomputable section
 universe u
 
 open CategoryTheory Limits Metric Set Topology Topology.RelCWComplex
+open TopCat.Hom (mapsTo_preimage_of_comp_eq preimageMap)
 open Homeomorph (uliftClosedBall coe_uliftClosedBall_apply)
 
 namespace TauCeti
@@ -361,6 +376,154 @@ lemma ι_preimageSkeletonPairSingularHomologyIsoSigma_inv (n q : ℕ) (j : cell 
     (q + n)).comp_coconePointUniqueUpToIso_inv (coproductIsCoproduct _) ⟨j⟩)
 
 end Homology
+
+/-! ### Naturality in maps of fibrations over `B` -/
+
+section Naturality
+
+variable {E' : _root_.TopCat.{u}} {p' : E' ⟶ B} {f : E ⟶ E'}
+
+variable (C f) in
+/-- The map `Pⱼ ⟶ P'ⱼ`, `(x, e) ↦ (x, f e)`, between the pullbacks of `p` and `p'` along the
+characteristic map of the `n`-cell `j`, induced by a map `f : E ⟶ E'` over `B`. -/
+def cellDiskPullbackMap (hf : f ≫ p' = p) (n : ℕ) (j : cell C n) :
+    _root_.TopCat.of {x : _root_.TopCat.of (closedBall (0 : ULift.{u} (Fin n → ℝ)) 1) × E //
+        cellULiftMap C n j x.1 = p x.2} ⟶
+      _root_.TopCat.of {x : _root_.TopCat.of (closedBall (0 : ULift.{u} (Fin n → ℝ)) 1) × E' //
+        cellULiftMap C n j x.1 = p' x.2} :=
+  _root_.TopCat.ofHom
+    ⟨fun x ↦ ⟨(x.1.1, f x.1.2), x.2.trans (ConcreteCategory.congr_hom hf.symm x.1.2)⟩, by fun_prop⟩
+
+omit [T2Space B] in
+@[simp]
+lemma coe_cellDiskPullbackMap_apply (hf : f ≫ p' = p) (n : ℕ) (j : cell C n)
+    (x : {x : _root_.TopCat.of (closedBall (0 : ULift.{u} (Fin n → ℝ)) 1) × E //
+      cellULiftMap C n j x.1 = p x.2}) :
+    (cellDiskPullbackMap C f hf n j x).1 = (x.1.1, f x.1.2) :=
+  (rfl)
+
+omit [T2Space B] in
+/-- `Pⱼ ⟶ P'ⱼ` is a map over the disk of `j`. -/
+lemma cellDiskPullbackMap_comp_pullbackFst (hf : f ≫ p' = p) (n : ℕ) (j : cell C n) :
+    cellDiskPullbackMap C f hf n j ≫ _root_.TopCat.pullbackFst (cellULiftMap C n j) p' =
+      _root_.TopCat.pullbackFst (cellULiftMap C n j) p :=
+  (rfl)
+
+omit [T2Space B] in
+/-- `Pⱼ ⟶ P'ⱼ` maps the part over the boundary sphere into the part over the boundary sphere. -/
+lemma mapsTo_cellDiskPullbackMap (hf : f ≫ p' = p) (n : ℕ) (j : cell C n) :
+    MapsTo (cellDiskPullbackMap C f hf n j)
+      (_root_.TopCat.pullbackFst (cellULiftMap C n j) p ⁻¹'
+        {x | (x : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1})
+      (_root_.TopCat.pullbackFst (cellULiftMap C n j) p' ⁻¹'
+        {x | (x : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1}) :=
+  fun _ hx ↦ hx
+
+variable (C f) in
+/-- The map `(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹)) ⟶ (p'⁻¹(Xⁿ), p'⁻¹(Xⁿ⁻¹))` of consecutive stages of the skeletal
+filtrations induced by a map `f : E ⟶ E'` over `B`. -/
+def preimageSkeletonPairMap (hf : f ≫ p' = p) (n : ℕ) :
+    preimageSkeletonPair p C n ⟶ preimageSkeletonPair p' C n :=
+  TopPair.ofInclusionMap _ _
+    (preimageMap f hf (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B)).hom
+    fun _ hx ↦ mapsTo_preimage_of_comp_eq hf _ hx
+
+@[simp]
+lemma coe_preimageSkeletonPairMap_fst_apply (hf : f ≫ p' = p) (n : ℕ)
+    (x : (preimageSkeletonPair p C n).fst) :
+    (ConcreteCategory.hom (Y := _root_.TopCat.of
+      (p' ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B)))
+      (TopPair.Hom.fst (preimageSkeletonPairMap C f hf n)) x).1 = f x.1 :=
+  congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)
+
+/-- The projections to the skeletal filtrations commute with the maps induced by `f`. -/
+@[reassoc]
+lemma cellDiskPullbackPairMap_comp_preimageSkeletonPairMap (hf : f ≫ p' = p) (n : ℕ)
+    (j : cell C n) :
+    cellDiskPullbackPairMap p C n j ≫ preimageSkeletonPairMap C f hf n =
+      TopPair.ofSubsetMap (cellDiskPullbackMap C f hf n j)
+          (mapsTo_cellDiskPullbackMap hf n j) ≫
+        cellDiskPullbackPairMap p' C n j := by
+  refine TopPair.hom_ext_of_fst _ ?_
+  ext x
+  simp only [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply]
+  apply Subtype.ext
+  erw [coe_preimageSkeletonPairMap_fst_apply, coe_cellDiskPullbackPairMap_fst_apply,
+    coe_cellDiskPullbackPairMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
+  rfl
+
+variable (hp : serreFibrations p) (hp' : serreFibrations p') (R : Type u) [Ring R]
+
+omit [T2Space B] in
+include hp hp' in
+/-- **Naturality of `cellDiskPullbackPairSingularHomologyIso`.** For a map `f : E ⟶ E'` over `B`
+between Serre fibrations, the identifications `Hq+n(Pⱼ, ∂Pⱼ; R) ≅ Hq(p⁻¹(χⱼ(0)); R)` intertwine the
+map of pullback pairs induced by `f` with the map of fibres over the centre of the cell. -/
+@[reassoc]
+theorem cellDiskPullbackPairSingularHomologyIso_hom_naturality (hf : f ≫ p' = p) (n q : ℕ)
+    (j : cell C n) :
+    (cellDiskPullbackPairSingularHomologyIso hp R n q j).hom ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+          (ModuleCat.of R R)).map (preimageMap f hf {map n j 0}) =
+      TopPair.singularHomologyMap (TopPair.ofSubsetMap (cellDiskPullbackMap C f hf n j)
+          (mapsTo_cellDiskPullbackMap hf n j))
+          (ModuleCat.of R R) (q + n) ≫
+        (cellDiskPullbackPairSingularHomologyIso hp' R n q j).hom := by
+  have hhomeo : (_root_.TopCat.isoOfHomeo (cellDiskPullbackFiberHomeomorph p C n j)).hom ≫
+      preimageMap f hf {map n j 0} =
+      preimageMap (cellDiskPullbackMap C f hf n j) (cellDiskPullbackMap_comp_pullbackFst hf n j)
+          {x | (x : ULift.{u} (Fin n → ℝ)) = 0} ≫
+        (_root_.TopCat.isoOfHomeo (cellDiskPullbackFiberHomeomorph p' C n j)).hom :=
+    rfl
+  rw [cellDiskPullbackPairSingularHomologyIso, cellDiskPullbackPairSingularHomologyIso,
+    Iso.trans_hom, Iso.trans_hom, Category.assoc, Functor.mapIso_hom, Functor.mapIso_hom,
+    ← Functor.map_comp]
+  refine (congrArg (fun φ ↦ _ ≫ ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+    (ModuleCat.of R R)).map φ) hhomeo).trans ?_
+  rw [Functor.map_comp]
+  -- The pullbacks appear with two defeq but syntactically different types, so the naturality of
+  -- the disk isomorphism is applied by `exact` rather than rewritten.
+  exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _)
+    (singularHomologyPreimageSphereIso_hom_naturality R
+      (mem_serreFibrations_pullbackFst hp (cellULiftMap C n j))
+      (mem_serreFibrations_pullbackFst hp' (cellULiftMap C n j))
+      (cellDiskPullbackMap_comp_pullbackFst hf n j) q (q + n) (by simp))).trans
+    (Category.assoc _ _ _)
+
+include hp hp' in
+/-- **Naturality of the first page of the skeletal filtration of a Serre fibration.** For a map
+`f : E ⟶ E'` over `B` between Serre fibrations, the identifications
+`Hq+n(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹); R) ≅ ⨁ⱼ Hq(p⁻¹(χⱼ(0)); R)` intertwine the map of skeletal pairs
+induced by `f` with the sum of the maps of fibres over the centres of the cells. -/
+@[reassoc]
+theorem preimageSkeletonPairSingularHomologyIsoSigma_hom_naturality (hf : f ≫ p' = p)
+    (n q : ℕ) :
+    (preimageSkeletonPairSingularHomologyIsoSigma C hp R n q).hom ≫
+        Limits.Sigma.map (fun j ↦
+          ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+            (ModuleCat.of R R)).map (preimageMap f hf {map n j 0})) =
+      TopPair.singularHomologyMap (preimageSkeletonPairMap C f hf n) (ModuleCat.of R R) (q + n) ≫
+        (preimageSkeletonPairSingularHomologyIsoSigma C hp' R n q).hom := by
+  rw [← cancel_epi (preimageSkeletonPairSingularHomologyIsoSigma C hp R n q).inv,
+    Iso.inv_hom_id_assoc,
+    ← cancel_mono (preimageSkeletonPairSingularHomologyIsoSigma C hp' R n q).inv,
+    Category.assoc, Category.assoc, Iso.hom_inv_id, Category.comp_id]
+  refine Sigma.hom_ext _ _ fun j ↦ ?_
+  have hcell : (cellDiskPullbackPairSingularHomologyIso hp R n q j).inv ≫
+      TopPair.singularHomologyMap (TopPair.ofSubsetMap (cellDiskPullbackMap C f hf n j)
+        (mapsTo_cellDiskPullbackMap hf n j))
+        (ModuleCat.of R R) (q + n) =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (preimageMap f hf {map n j 0}) ≫
+        (cellDiskPullbackPairSingularHomologyIso hp' R n q j).inv := by
+    rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
+    exact (cellDiskPullbackPairSingularHomologyIso_hom_naturality hp hp' R hf n q j).symm
+  rw [Limits.Sigma.ι_map_assoc, ι_preimageSkeletonPairSingularHomologyIsoSigma_inv,
+    ι_preimageSkeletonPairSingularHomologyIsoSigma_inv_assoc, ← TopPair.singularHomologyMap_comp,
+    cellDiskPullbackPairMap_comp_preimageSkeletonPairMap, TopPair.singularHomologyMap_comp,
+    reassoc_of% hcell]
+
+end Naturality
 
 end TopCat
 
