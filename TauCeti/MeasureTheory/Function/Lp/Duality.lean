@@ -385,12 +385,12 @@ private theorem Lp.enorm_inner_le_of_forall_re_inner_le {E : Type*} [NormedAddCo
   rcases eq_or_ne z 0 with hz0 | hz0
   · simp [hz0]
   have hapos : 0 < a.toReal := ENNReal.toReal_pos ha0 hg
-  have hzpos : 0 < ‖z‖ := norm_pos_iff.2 hz0
+  have : 0 < ‖z‖ := norm_pos_iff.2 hz0
   -- The rescaled and rotated test function `k • g` has norm one and pairing `‖z‖ / ‖g‖_{q'}`.
   set k : 𝕜 := ((a.toReal⁻¹ * ‖z‖⁻¹ : ℝ) : 𝕜) * (starRingEnd 𝕜) z
   have hk : ‖k‖ = a.toReal⁻¹ := by
-    rw [norm_mul, RCLike.norm_ofReal, RCLike.norm_conj, abs_of_pos (by positivity), mul_assoc,
-      inv_mul_cancel₀ hzpos.ne', mul_one]
+    rw [norm_mul, RCLike.norm_ofReal, RCLike.norm_conj, abs_of_pos (by positivity)]
+    field_simp
   have hkg : eLpNorm (k • g) q' μ ≤ 1 := by
     have ha : ENNReal.ofReal a.toReal = a := ENNReal.ofReal_toReal hg
     rw [eLpNorm_congr_ae (Lp.coeFn_smul k g), eLpNorm_const_smul, ← ofReal_norm, hk]
@@ -400,8 +400,8 @@ private theorem Lp.enorm_inner_le_of_forall_re_inner_le {E : Type*} [NormedAddCo
           rw [← ENNReal.ofReal_mul (by positivity), inv_mul_cancel₀ hapos.ne', ENNReal.ofReal_one]
       _ ≤ 1 := le_rfl
   have hre : RCLike.re ⟪h, k • g⟫_𝕜 = ‖z‖ / a.toReal := by
-    rw [inner_smul_right, mul_assoc, RCLike.conj_mul, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul,
-      RCLike.ofReal_re]
+    rw [inner_smul_right, mul_assoc, RCLike.conj_mul, RCLike.re_ofReal_mul]
+    norm_cast
     field_simp
   have hle : ‖z‖ ≤ c * a.toReal := by
     have := H _ hkg
@@ -421,7 +421,7 @@ theorem Lp.exists_eLpNorm_le_one_and_lt_re_inner [SigmaFinite μ] {E : Type*}
     (h : Lp E 2 μ) {c : ℝ} (hc : ENNReal.ofReal c < eLpNorm h q μ) :
     ∃ g : Lp E 2 μ, eLpNorm g q' μ ≤ 1 ∧ c < RCLike.re ⟪h, g⟫_𝕜 := by
   rcases lt_or_ge c 0 with hc0 | hc0
-  · exact ⟨0, by rw [eLpNorm_congr_ae (Lp.coeFn_zero E 2 μ)]; simp, by simpa using hc0⟩
+  · exact ⟨0, Lp.eLpNorm_coeFn_zero.trans_le zero_le_one, by simpa using hc0⟩
   by_contra! H
   have key := Lp.enorm_inner_le_of_forall_re_inner_le (𝕜 := 𝕜) hqq.symm.ne_zero hc0 H
   -- The pairing of `h` with a bounded `g` of finite-measure support is the pairing in `L²`.
@@ -463,9 +463,10 @@ theorem Lp.exists_eLpNorm_le_one_and_lt_re_inner [SigmaFinite μ] {E : Type*}
       congr 1 with x
       rcases eq_or_ne (h x) 0 with hx | hx
       · simp [g₁, hx]
-      · rw [inner_smul_right, inner_smul_right, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow,
-          ← mul_assoc, mul_assoc, ← RCLike.ofReal_mul, sq, ← mul_assoc,
-          inv_mul_cancel₀ (norm_ne_zero_iff.2 hx), one_mul, mul_comm]
+      · have hx' : ((‖h x‖ : ℝ) : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hx)
+        simp only [g₁, inner_smul_right, inner_self_eq_norm_sq_to_K]
+        push_cast
+        field_simp
     calc ‖∫ x, ((‖h x‖ : ℝ) : 𝕜) * g x ∂μ‖ₑ = ‖⟪h, hg2.toLp g₁⟫_𝕜‖ₑ := by rw [hinner, hint]
       _ ≤ ENNReal.ofReal c * eLpNorm g₁ 1 μ := by rw [← hnorm]; exact key _ (hnorm ▸ hfin)
       _ ≤ ENNReal.ofReal c * eLpNorm g 1 μ := by gcongr; exact eLpNorm_mono hg₁m hg₁
