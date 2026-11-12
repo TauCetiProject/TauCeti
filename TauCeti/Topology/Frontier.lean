@@ -307,11 +307,11 @@ variable {X α : Type*} [TopologicalSpace X] [LinearOrder α] [TopologicalSpace 
 
 /-- **A function at most `a` on the frontier of an open set is at most `a` on the frontier of its
 superlevel set there.** If `f` is continuous on an open set `U` and `f ≤ a` on `frontier U`, then
-`f ≤ a` on the frontier of `U ∩ {a < f}`. That set is open
-(`ContinuousOn.isOpen_inter_preimage`), so a point of its frontier is not in it: either the point
-lies in `U`, and then `f ≤ a` there, or it lies on `frontier U`. -/
+`f ≤ a` on the frontier of `U ∩ {a < f}`. -/
 theorem le_of_mem_frontier_inter_preimage_Ioi (hU : IsOpen U) (hf : ContinuousOn f U)
     (hfr : ∀ y ∈ frontier U, f y ≤ a) (hx : x ∈ frontier (U ∩ f ⁻¹' Ioi a)) : f x ≤ a := by
+  -- The superlevel set is open, so a point of its frontier is not in it: either the point lies
+  -- in `U`, and then `f ≤ a` there, or it lies on `frontier U`.
   rw [(hf.isOpen_inter_preimage hU isOpen_Ioi).frontier_eq] at hx
   by_cases hxU : x ∈ U
   · exact not_lt.1 fun h ↦ hx.2 ⟨hxU, h⟩

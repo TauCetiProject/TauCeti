@@ -345,9 +345,8 @@ theorem Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn (u : Wkp mu Om
 
 /-- **A `C²` function minus a strong function.** Let `u ∈ W^{2,p}(U)` have the representative
 `ū`, let `Ω ⊆ U` be open and bounded, and let `w` be `C²` on an open set containing the closure of
-`Ω`. Then `w - ū` represents an element `V` of `W^{2,p}(Ω)`, the restriction of `u` subtracted from
-the Sobolev function represented by `w`, whose weak Hessian is `∇²w - ∇²u` almost everywhere on
-`Ω`. -/
+`Ω`. Then `w - ū` represents an element `V` of `W^{2,p}(Ω)` whose weak Hessian is `∇²w - ∇²u`
+almost everywhere on `Ω`. -/
 theorem Wkp.exists_value_ae_eq_sub_of_contDiffOn {U : Opens (EuclideanSpace ℝ ι)}
     (hΩU : Omega ≤ U) (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (u : Wkp mu U p 2) {ū w : EuclideanSpace ℝ ι → ℝ}
