@@ -118,6 +118,16 @@ theorem exists_value_iteratedGradient_ae_eq_of_chain (n : ℕ) {u : E → ℝ}
     · rw [iteratedGradient_mk]
       exact hg.coeFn_toLp
 
+/-- A function almost everywhere equal to the `j`-th recorded derivative of `y ∈ W^{j+1,p}(Ω)`
+lies in `Lᵖ(Ω)` with norm at most `‖y‖`. -/
+private theorem memLp_and_eLpNorm_le_of_ae_eq_iteratedGradient {j : ℕ}
+    {y : Wkp mu Omega p (j + 1)} {G : E → IteratedGradient E j}
+    (hG : G =ᵐ[mu.restrict Omega] iteratedGradient j y) :
+    MemLp G p (mu.restrict Omega) ∧ eLpNorm G p (mu.restrict Omega) ≤ ENNReal.ofReal ‖y‖ := by
+  refine ⟨(Lp.memLp _).ae_eq hG.symm, ?_⟩
+  rw [eLpNorm_congr_ae hG, ← Lp.enorm_def, ← ofReal_norm]
+  exact ENNReal.ofReal_le_ofReal (norm_iteratedGradient_le j y)
+
 /-- **A weak derivative chain recovers the recorded derivatives.** Let `y ∈ W^{n+1,p}(Ω)` and let
 `G 0, …, G n` be a chain of iterated weak gradients on `Ω` of a representative `f` of the value of
 `y`. Then `G n` is the highest recorded derivative of `y`, and every `G i` with `i ≤ n` lies in
@@ -136,9 +146,7 @@ theorem iteratedGradient_ae_eq_and_eLpNorm_le_of_chain :
       exact innerSL_inj.1 hx
     refine ⟨hG0, fun i hi => ?_⟩
     obtain rfl := Nat.le_zero.1 hi
-    refine ⟨(Lp.memLp _).ae_eq hG0.symm, ?_⟩
-    rw [eLpNorm_congr_ae hG0, ← Lp.enorm_def, ← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal (norm_iteratedGradient_le 0 y)
+    exact memLp_and_eLpNorm_le_of_ae_eq_iteratedGradient hG0
   | n + 1, y, f, G, hy, h0, hG => by
     obtain ⟨hGn, hb⟩ := iteratedGradient_ae_eq_and_eLpNorm_le_of_chain n (lowerOrder (n + 1) y)
       (by rwa [← value_succ]) h0 fun i hi => hG i (by omega)
@@ -148,9 +156,7 @@ theorem iteratedGradient_ae_eq_and_eLpNorm_le_of_chain :
     rcases Nat.lt_or_eq_of_le hi with hi | rfl
     · obtain ⟨hm, hle⟩ := hb i (by omega)
       exact ⟨hm, hle.trans (ENNReal.ofReal_le_ofReal (norm_lowerOrder_le _ y))⟩
-    · refine ⟨(Lp.memLp _).ae_eq hGn1.symm, ?_⟩
-      rw [eLpNorm_congr_ae hGn1, ← Lp.enorm_def, ← ofReal_norm]
-      exact ENNReal.ofReal_le_ofReal (norm_iteratedGradient_le (n + 1) y)
+    · exact memLp_and_eLpNorm_le_of_ae_eq_iteratedGradient hGn1
 
 end Wkp
 

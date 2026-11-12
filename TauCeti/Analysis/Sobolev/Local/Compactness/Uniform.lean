@@ -77,6 +77,17 @@ section Morrey
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {p : ℝ≥0∞} {Ω : Opens ℂ}
 
+/-- For `α > 0`, `R > 0` and `δ > 0` there is a radius `r ∈ (0, R]` with `A * r ^ α < δ`. -/
+private theorem exists_pos_le_mul_rpow_lt (A : ℝ) {α R δ : ℝ} (hα : 0 < α) (hR : 0 < R)
+    (hδ : 0 < δ) : ∃ r : ℝ, 0 < r ∧ r ≤ R ∧ A * r ^ α < δ := by
+  have hrα : Tendsto (fun r : ℝ => A * r ^ α) (𝓝[>] 0) (𝓝 0) := by
+    have := (Real.continuousAt_rpow_const 0 α (Or.inr hα.le)).tendsto
+    rw [Real.zero_rpow hα.ne'] at this
+    simpa using (this.mono_left nhdsWithin_le_nhds).const_mul A
+  obtain ⟨r, ⟨hr0, hrR⟩, hr⟩ :=
+    (Filter.Eventually.and (Ioc_mem_nhdsGT hR) (hrα.eventually (gt_mem_nhds hδ))).exists
+  exact ⟨r, hr0, hrR, hr⟩
+
 /-- **Uniform Cauchy property from `Lᵖ` convergence and `W^{1,p}` bounds.** Let `2 < p ≤ ∞`.
 Let `f m ∈ MemWkpLoc p Ω 1` have weak derivatives `D m` on `Ω` which are bounded in `Lᵖ(K)`
 uniformly in `m` for every compact `K ⊆ Ω`, and suppose that `f m` converges in `Lᵖ(K)` to a
@@ -110,20 +121,10 @@ theorem uniformCauchySeqOn_preciseRepresentative_of_tendsto_eLpNorm (hp : 2 < p)
   have hgK : MemLp g p (volume.restrict (cthickening R K)) := memLpLoc_iff.1 hg _ hRK hK'
   rw [Metric.uniformCauchySeqOn_iff]
   intro ε hε
-  have hrα : Tendsto (fun r : ℝ => r ^ α) (𝓝[>] 0) (𝓝 0) := by
-    have := (Real.continuousAt_rpow_const 0 α (Or.inr hα.le)).tendsto
-    rw [Real.zero_rpow hα.ne'] at this
-    exact this.mono_left nhdsWithin_le_nhds
-  have hev : ∀ᶠ r : ℝ in 𝓝[>] 0, 0 < r ∧ r ≤ R / 2 ∧ C * (2 * M) * r ^ α < ε / 2 := by
-    have e1 : ∀ᶠ r : ℝ in 𝓝[>] 0, 0 < r := eventually_mem_nhdsWithin
-    have e2 : ∀ᶠ r : ℝ in 𝓝[>] 0, r ≤ R / 2 :=
-      Filter.mem_of_superset (Ioo_mem_nhdsGT (half_pos hR))
-        fun r (hr : r ∈ Ioo 0 (R / 2)) => (hr.2.le : r ≤ R / 2)
-    refine e1.and (e2.and ?_)
-    have h0 : Tendsto (fun r : ℝ => C * (2 * M) * r ^ α) (𝓝[>] 0) (𝓝 0) := by
-      simpa using hrα.const_mul (C * (2 * M))
-    exact h0.eventually (gt_mem_nhds (half_pos hε))
-  obtain ⟨r, hr0, hrR, hrε⟩ := hev.exists
+  -- Fix a radius `r` making the derivative term of the Morrey bound at most `ε / 2`, then an
+  -- index `N` beyond which the `Lᵖ` term is at most `ε / 2`, and bound pointwise by `hsup`.
+  obtain ⟨r, hr0, hrR, hrε⟩ :=
+    exists_pos_le_mul_rpow_lt (C * (2 * M)) hα (half_pos hR) (half_pos hε)
   set T := r ^ (-(2 / p.toReal))
   have hT : 0 < T := Real.rpow_pos_of_pos hr0 _
   have hconv : Tendsto (fun m => (eLpNorm (f m - g) p
@@ -253,6 +254,32 @@ private theorem exists_opens_of_isCompact {K : Set ℂ} (hK : IsCompact K) (hKΩ
   obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
   exact ⟨W, hKW, hWc, hWΩ, SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ)⟩
 
+/-- Under the hypotheses of
+`TauCeti.tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_wkp`, every compact `K ⊆ Ω`
+lies in an open `W ≤ Ω` carrying representatives `y m` of the `u m` and `w` of `v` in
+`Wkp volume W p k` with `y m → w`. -/
+private theorem exists_wkp_tendsto_of_isCompact {u : ℕ → ℂ → ℝ} {v : ℂ → ℝ}
+    (hu : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+      ∃ R : ℝ, ∀ m, ∃ y : Wkp volume W p (k + 1),
+        ‖y‖ ≤ R ∧ Wkp.value (k + 1) y =ᵐ[volume.restrict W] u m)
+    (hv : MemWkpLoc p Ω k v)
+    (hlim : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+      ∀ (y : ℕ → Wkp volume W p k) (w : Wkp volume W p k),
+        (∀ m, Wkp.value k (y m) =ᵐ[volume.restrict W] u m) →
+        Wkp.value k w =ᵐ[volume.restrict W] v → Tendsto y atTop (𝓝 w))
+    {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ W : Opens ℂ, K ⊆ W ∧ W ≤ Ω ∧ ∃ (y : ℕ → Wkp volume W p k) (w : Wkp volume W p k),
+      (∀ m, Wkp.value k (y m) =ᵐ[volume.restrict W] u m) ∧
+        Wkp.value k w =ᵐ[volume.restrict W] v ∧ Tendsto y atTop (𝓝 w) := by
+  obtain ⟨W, hKW, hWc, hWΩ, hWle⟩ := exists_opens_of_isCompact hK hKΩ
+  obtain ⟨R, hR⟩ := hu W hWc hWΩ
+  choose V _ hV using hR
+  obtain ⟨w, hw⟩ := hv.exists_wkp hWc hWΩ
+  have hy : ∀ m, Wkp.value k (Wkp.lowerOrder k (V m)) =ᵐ[volume.restrict W] u m := fun m => by
+    rw [← Wkp.value_succ]
+    exact hV m
+  exact ⟨W, hKW, hWle, _, w, hy, hw, hlim W hWc hWΩ _ w hy hw⟩
+
 /-- **Locally uniform convergence of local Rellich limits.** Let `2 < p ≤ ∞`. Let `u m` be real
 functions bounded in `W^{k+1,p}` on every relatively compact open subset `W` of `Ω`, as in
 `TauCeti.exists_subseq_memWkpLoc_tendsto_wkp`, which converge in `W^{k,p}` on every such `W` to
@@ -295,15 +322,9 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_wkp (hp : 2 <
             (Eventually.of_forall fun z => innerSL_apply_norm _ _)
       _ ≤ ENNReal.ofReal ‖y‖ := (hb 0 (Nat.zero_le _)).2
       _ ≤ R.toNNReal := ENNReal.ofReal_le_ofReal hyR
-  · obtain ⟨W, hKW, hWc, hWΩ, _⟩ := exists_opens_of_isCompact hK hKΩ
-    obtain ⟨R, hR⟩ := hu W hWc hWΩ
-    choose V _ hV using hR
-    obtain ⟨w, hw⟩ := hv.exists_wkp hWc hWΩ
-    have hy : ∀ m, Wkp.value k (Wkp.lowerOrder k (V m)) =ᵐ[volume.restrict W] u m := fun m => by
-      rw [← Wkp.value_succ]
-      exact hV m
+  · obtain ⟨W, hKW, -, y, w, hy, hw, hyw⟩ := exists_wkp_tendsto_of_isCompact hu hv hlim hK hKΩ
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (Wkp.tendsto_eLpNorm_sub_of_tendsto (hlim W hWc hWΩ _ w hy hw) hy hw) (fun _ => bot_le)
+      (Wkp.tendsto_eLpNorm_sub_of_tendsto hyw hy hw) (fun _ => bot_le)
       fun m => eLpNorm_mono_measure _ (Measure.restrict_mono hKW le_rfl)
 
 /-- **Locally uniform convergence of the iterated weak gradients of local Rellich limits.** Let
@@ -364,16 +385,9 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_iteratedGradient_of_tend
     obtain ⟨R, hR⟩ := hfield W hWc hWΩ
     exact ⟨R.toNNReal, fun m => (eLpNorm_mono_measure _ (Measure.restrict_mono hKW le_rfl)).trans
       (hR m (i + 1) (by omega)).2⟩
-  · obtain ⟨W, hKW, hWc, hWΩ, hWle⟩ := exists_opens_of_isCompact hK hKΩ
-    obtain ⟨R, hR⟩ := hu W hWc hWΩ
-    choose V _ hV using hR
-    obtain ⟨w, hw⟩ := hv.exists_wkp hWc hWΩ
-    set y : ℕ → Wkp volume W p (n + 1) := fun m => Wkp.lowerOrder (n + 1) (V m)
-    have hy : ∀ m, Wkp.value (n + 1) (y m) =ᵐ[volume.restrict W] u m := fun m => by
-      rw [← Wkp.value_succ]
-      exact hV m
-    have hyw : Tendsto (fun m => ‖y m - w‖) atTop (𝓝 0) :=
-      tendsto_iff_norm_sub_tendsto_zero.1 (hlim W hWc hWΩ y w hy hw)
+  · obtain ⟨W, hKW, hWle, y, w, hy, hw, hyw⟩ := exists_wkp_tendsto_of_isCompact hu hv hlim hK hKΩ
+    replace hyw : Tendsto (fun m => ‖y m - w‖) atTop (𝓝 0) :=
+      tendsto_iff_norm_sub_tendsto_zero.1 hyw
     -- The chain `G m - H` of `u m - v` bounds the difference of the fields by `‖y m - w‖`.
     have hle : ∀ m, eLpNorm (G m i - H i) p (volume.restrict W) ≤ ENNReal.ofReal ‖y m - w‖ := by
       intro m
