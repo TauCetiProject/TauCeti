@@ -315,13 +315,7 @@ theorem plumbedPerturbation_update_smul_cylindricalEndLift_of_pos (hq : q ≠ in
   -- The point lies in the end disc of the input `i`, where the neck datum vanishes.
   have hlt : ‖plumbedCenters q r L i + plumbedScales q r L i * zero.cylindricalEndLift z -
       plumbedCenters q r L i‖ < ‖plumbedScales q r L i‖ / 2 := by
-    have h := norm_cylindricalEndLift_sub_endCenter zero z
-    rw [endCenter_zero, sub_zero, endScale_zero] at h
-    have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
-    rw [add_sub_cancel_left, norm_mul, h, h2]
-    have : Real.exp (-(2 * π * z.re)) < 1 :=
-      Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
-    nlinarith [norm_pos_iff.2 ha]
+    simpa using norm_mul_cylindricalEndLift_zero_lt ha hz
   rw [plumbedPerturbation_update_smul,
     plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation hq hrq hr (by linarith),
     Pi.add_apply, Pi.add_apply, Pi.smul_apply, Pi.smul_apply, ← plumbedCenters_def,

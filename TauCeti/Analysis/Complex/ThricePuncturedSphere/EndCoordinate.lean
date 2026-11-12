@@ -254,15 +254,16 @@ theorem two_mul_exp_le_norm_cylindricalEndLift_inf {R : ℝ} {z : ℂ} (hz : z.r
   have h : 2 * π * R ≤ -(2 * π) * z.re := by nlinarith [Real.pi_pos]
   linarith [Real.exp_le_exp.2 h]
 
-/-- On the part `s > 0` of the end at `0`, the end lift `φ₀(z) = exp (-2πz) / 2` scaled by a
-nonzero `a` stays in the open disc of radius `‖a‖ / 2` about `0`. -/
-theorem norm_mul_cylindricalEndLift_zero_lt {a z : ℂ} (ha : a ≠ 0) (hz : 0 < z.re) :
-    ‖a * zero.cylindricalEndLift z‖ < ‖a‖ / 2 := by
+/-- On the part `s > R` of the end at `0`, the end lift `φ₀(z) = exp (-2πz) / 2` scaled by a
+nonzero `a` stays in the open disc of radius `‖a‖ exp (-2πR) / 2` about `0`. -/
+theorem norm_mul_cylindricalEndLift_zero_lt {a z : ℂ} {R : ℝ} (ha : a ≠ 0) (hz : R < z.re) :
+    ‖a * zero.cylindricalEndLift z‖ < ‖a‖ * Real.exp (-(2 * π * R)) / 2 := by
   have h := norm_cylindricalEndLift_sub_endCenter zero z
   rw [endCenter_zero, sub_zero, endScale_zero] at h
   have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
   rw [norm_mul, h, h2]
-  have : Real.exp (-(2 * π * z.re)) < 1 := Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
+  have : Real.exp (-(2 * π * z.re)) < Real.exp (-(2 * π * R)) :=
+    Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
   nlinarith [norm_pos_iff.2 ha]
 
 /-- The logarithmic end coordinate `ζ_q(w) = -log ((w - c_q) / b_q) / (2π)`. It inverts the end

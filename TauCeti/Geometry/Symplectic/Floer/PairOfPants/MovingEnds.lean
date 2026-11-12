@@ -284,8 +284,7 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_of_pos
         (a i * (deriv zero.cylindricalEndLift z * v)) =
       v.im * (smoothTransition (z.re - 1) * H i z.im x) := by
   have hlt : ‖c i + a i * zero.cylindricalEndLift z - c i‖ < ‖a i‖ / 2 := by
-    rw [add_sub_cancel_left]
-    exact norm_mul_cylindricalEndLift_zero_lt ha hz
+    simpa using norm_mul_cylindricalEndLift_zero_lt ha hz
   rw [puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout hlt,
     inputEndPerturbation_cylindricalEndLift_apply hH ha]
 
@@ -379,7 +378,7 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
 /-- Evaluating the centers and the scales of a configuration at the input `i` is smooth. -/
-theorem contMDiff_prodMap_apply {n : ℕ∞} (i : ι) :
+theorem contMDiff_configurationEval {n : ℕ∞} (i : ι) :
     ContMDiff (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I))
       (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) n
       (fun p : ((ι → ℂ) × (ι → ℂ)) × (ℂ × M) => ((p.1.1 i, p.1.2 i), p.2)) :=
@@ -401,7 +400,7 @@ theorem contMDiffAt_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i, Period
   refine (contMDiffAt_finsetSum fun i _ => ?_).add
     ((contMDiff_negativePlanePerturbation hHout hHouts).contMDiffAt.comp _ contMDiffAt_snd)
   exact (contMDiffAt_inputEndPerturbation (hH i) (hHs i) (ha i) (hw i) x).comp ((c, a), (w, x))
-    (contMDiff_prodMap_apply i).contMDiffAt
+    (contMDiff_configurationEval i).contMDiffAt
 
 end Smooth
 

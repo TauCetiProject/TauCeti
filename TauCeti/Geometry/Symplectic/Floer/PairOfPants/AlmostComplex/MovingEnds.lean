@@ -117,7 +117,7 @@ theorem puncturedSphereCayley_of_forall_le_norm_sub {w : ℂ}
     puncturedSphereCayley J₀ c a J Jout w x =
       smoothTransition (-(inf.endCoord w).re - 1) • J₀.cayley (Jout (inf.endCoord w).im x) := by
   rw [puncturedSphereCayley_def, Finset.sum_eq_zero fun i _ => ?_, zero_add]
-  rw [smoothTransition_eq_zero_of_le_norm_sub (hw i), zero_smul]
+  rw [smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub (hw i), zero_smul]
 
 /-- **At most one end contributes.** If discs `‖w - c j‖ < r j` containing the discs
 `‖w - c j‖ < ‖a j‖ exp (-2π) / 2` are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`,
@@ -134,12 +134,12 @@ theorem puncturedSphereCayley_of_norm_sub_lt {r : ι → ℝ}
   -- The other input discs and the output end are disjoint from the disc of the input `i`.
   have hj (j : ι) (hji : j ≠ i) :
       smoothTransition ((zero.endCoord ((w - c j) / a j)).re - 1) = 0 := by
-    refine smoothTransition_eq_zero_of_le_norm_sub ?_
+    refine smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub ?_
     have h₂ : ‖c j - c i‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
       simpa using norm_sub_le (w - c i) (w - c j)
     linarith [hsep hji, hr j]
   have hinf : smoothTransition (-(inf.endCoord w).re - 1) = 0 := by
-    refine smoothTransition_eq_zero_of_norm_le ?_
+    refine smoothTransition_neg_endCoord_inf_eq_zero_of_norm_le ?_
     have h₂ : ‖w‖ ≤ ‖c i‖ + ‖w - c i‖ := by simpa using norm_add_le (c i) (w - c i)
     linarith [hout i]
   rw [puncturedSphereCayley_def, Finset.sum_eq_single i (fun j _ hji => by rw [hj j hji, zero_smul])
@@ -323,7 +323,7 @@ theorem cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_pos
     (fun j => by
       have he : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
       nlinarith [norm_nonneg (a j)])
-    hsep hout hJ hJp ha (norm_mul_cylindricalEndLift_zero_lt ha hz) x
+    hsep hout hJ hJp ha (by simpa using norm_mul_cylindricalEndLift_zero_lt ha hz) x
 
 /-- **The structure is `J i t` far out on each input end.** If the discs
 `‖w - c j‖ < ‖a j‖ exp (-2π) / 2` are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, and
@@ -339,13 +339,7 @@ theorem puncturedSphereAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J�
       J i z.im x := by
   -- On the part `s ≥ 2` the point lies in the support disc of the input `i`.
   have hlt : ‖a i * zero.cylindricalEndLift z‖ < ‖a i‖ * Real.exp (-(2 * π)) / 2 := by
-    have h := norm_cylindricalEndLift_sub_endCenter zero z
-    rw [endCenter_zero, sub_zero, endScale_zero] at h
-    have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
-    rw [norm_mul, h, h2]
-    have he : Real.exp (-(2 * π * z.re)) < Real.exp (-(2 * π)) :=
-      Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
-    nlinarith [norm_pos_iff.2 ha]
+    simpa using norm_mul_cylindricalEndLift_zero_lt (R := 1) ha (by linarith)
   refine h₀.eq_of_cayley_eq (tames_puncturedSphereAlmostComplex h₀ _ x) (hJ z.im x) ?_
   rw [cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_norm_lt h₀ (fun _ => le_rfl) hsep
     hout hJ hJp ha hlt, smoothTransition.one_of_one_le (by linarith), one_smul]
@@ -454,7 +448,9 @@ theorem plumbedAlmostComplex_update_base_eq_puncturedSphereAlmostComplex (h₀ :
       (tames_pairOfPantsAlmostComplex h₀ _ x) ?_
     obtain ⟨h₁, h₂⟩ := exp_neg_two_pi_div_two_le_norm_sub_endCenter_and_norm_le hq hrq hr hL h
     have hr₀ : smoothTransition ((zero.endCoord ((w - r.endCenter) / (2 * r.endScale))).re - 1) =
-        0 := smoothTransition_eq_zero_of_le_norm_sub (by rwa [norm_two_mul_endScale hr, one_mul])
+        0 :=
+      smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub
+        (by rwa [norm_two_mul_endScale hr, one_mul])
     set v := (w - q.endCenter) / q.plumbingFactor L
     have hf := q.plumbingFactor_ne_zero L
     have hv₁ : zero.endCoord ((w - q.plumbingMap L 1) / -q.plumbingFactor L) = one.endCoord v := by
@@ -467,21 +463,21 @@ theorem plumbedAlmostComplex_update_base_eq_puncturedSphereAlmostComplex (h₀ :
       ring
     rw [cayley_pairOfPantsAlmostComplex, Puncture.sum_univ, puncturedSphereCayley_def,
       Fin.sum_univ_three]
-    simp [hr₀, smoothTransition_eq_zero_of_norm_le h₂, hv₁, v,
+    simp [hr₀, smoothTransition_neg_endCoord_inf_eq_zero_of_norm_le h₂, hv₁, v,
       AlmostComplexStructure.cayley_self]
   · -- On the receiving part the two inputs of the inserted pair of pants do not contribute.
     refine eq_puncturedSphereAlmostComplex_of_cayley_eq h₀
       (tames_pairOfPantsAlmostComplex h₀ _ x) ?_
     have hle : (q.endCoord w).re ≤ L / 2 := not_lt.1 h
-    have hψ := smoothTransition_eq_zero_of_le_norm_sub (c := q.plumbingMap L 1)
+    have hψ := smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub (c := q.plumbingMap L 1)
       (a := -q.plumbingFactor L) (by
         rw [norm_neg]
         exact norm_plumbingFactor_mul_exp_div_two_le_norm_sub_plumbingMap_one hq hL hle)
     have hc : smoothTransition ((zero.endCoord ((w - q.endCenter) / q.plumbingFactor L)).re - 1) =
         0 := by
       rcases eq_or_ne w q.endCenter with rfl | hc
-      · exact smoothTransition_eq_zero_of_sub_div_eq_zero (by rw [sub_self, zero_div])
-      · exact smoothTransition_eq_zero_of_le_norm_sub
+      · exact smoothTransition_endCoord_zero_eq_zero_of_sub_div_eq_zero (by rw [sub_self, zero_div])
+      · exact smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub
           (norm_plumbingFactor_mul_exp_div_two_le_norm_sub_endCenter hq hL hc hle)
     rw [cayley_pairOfPantsAlmostComplex, Puncture.sum_univ, puncturedSphereCayley_def,
       Fin.sum_univ_three]
@@ -528,7 +524,7 @@ private theorem contMDiffAt_inputCayley (h₀ : ω.Compatible J₀) {n : ℕ∞}
   simp only [endSign_zero, one_mul] at hterm
   -- The end coordinate `v = (w - c i) / a i` is a smooth function of the configuration and `w`.
   exact hterm.comp ((c, a), (w, x)) ((contMDiffAt_sub_div_prodMk ha w x).comp ((c, a), (w, x))
-    (contMDiff_prodMap_apply i).contMDiffAt)
+    (contMDiff_configurationEval i).contMDiffAt)
 
 omit [Fintype ι] in
 /-- Strict separation of the input discs, and of the input discs from the circle

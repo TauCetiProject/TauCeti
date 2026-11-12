@@ -165,7 +165,7 @@ theorem negativePlaneAlmostComplex_eq_of_norm_le (h₀ : ω.Compatible J₀) {w 
     (hw : ‖w‖ ≤ 2 * Real.exp (2 * π)) (x : M) : negativePlaneAlmostComplex h₀ J hJ w x = J₀ := by
   refine h₀.eq_of_cayley_eq (tames_negativePlaneAlmostComplex h₀ w x) h₀.tames ?_
   rw [cayley_negativePlaneAlmostComplex, AlmostComplexStructure.cayley_self,
-    smoothTransition_eq_zero_of_norm_le hw, zero_smul]
+    smoothTransition_neg_endCoord_inf_eq_zero_of_norm_le hw, zero_smul]
 
 /-- **The structure on the end.** If `J` has period one in `t`, then on the part `s < 0` of the
 end, the Cayley transform of the negative plane structure at the point with end coordinates
