@@ -20,7 +20,7 @@ series `∑ⱼ uⱼ` converges in `Lᵖ`, and its sum `u` lies in the Besov spac
 
 for a constant `C` depending only on the bump function, `R` and `s`, and not on `p` or `q`
 (`TauCeti.BesovSpace.exists_hasSum_toDistr_eq_and_norm_le`; Bahouri–Chemin–Danchin,
-Lemma 2.84). A sequence bounded termwise by `2^{js} ‖uⱼ‖_p` may be used on the right instead.
+Lemma 2.84). A sequence bounding `2^{js} ‖uⱼ‖_p` termwise may be used on the right instead.
 
 This is how Besov regularity is recognised for a sum of pieces that are localised in balls rather
 than in annuli. The typical example is the resonant term `∑ⱼ Δⱼ f · Δⱼ g` of Bony's paraproduct
@@ -43,7 +43,7 @@ Writing the series as `∑ᵢ Tuᵢ` with the shifted sequence `Tuᵢ = u_{i-L}`
 
 where `Tw` is the same shift of a dominating sequence `w`. The right side is a one-sided
 convolution of `Tw` with the summable kernel `2^{-ms}`, whose `ℓ^q` norm is at most
-`(1 - 2^{-s})⁻¹ ‖Tw‖_{ℓ^q} ≤ (1 - 2^{-s})⁻¹ ‖w‖_{ℓ^q}` (`lp.exists_eq_tsum_smul_add_and_norm_le`).
+`(1 - 2^{-s})⁻¹ ‖Tw‖_{ℓ^q} ≤ (1 - 2^{-s})⁻¹ ‖w‖_{ℓ^q}` (`lp.exists_hasSum_geometric_shiftRight`).
 
 ## References
 
@@ -64,48 +64,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 namespace TauCeti.BesovSpace
 
 open TemperedDistribution
-
-/-- The sequence `x` shifted `M` places to the right and padded with zeros. -/
-private def shiftRight {α : Type*} [Zero α] (M : ℕ) (x : ℕ → α) (i : ℕ) : α :=
-  if M ≤ i then x (i - M) else 0
-
-private theorem shiftRight_add {α : Type*} [Zero α] (M : ℕ) (x : ℕ → α) (n : ℕ) :
-    shiftRight M x (n + M) = x n := by
-  simp [shiftRight]
-
-private theorem shiftRight_of_lt {α : Type*} [Zero α] {M i : ℕ} (x : ℕ → α) (hi : i < M) :
-    shiftRight M x i = 0 := by
-  simp [shiftRight, not_le.2 hi]
-
-/-- The one-sided convolution `k ↦ ∑ₘ rᵐ (Tw)_{k+m}` of the right shift `Tw` of a sequence
-`w ∈ ℓ^q` with the geometric kernel `rᵐ`, `0 ≤ r < 1`, converges termwise and lies in `ℓ^q` with
-norm at most `(1 - r)⁻¹ ‖w‖`. -/
-private theorem exists_hasSum_geometric_shiftRight {q : ℝ≥0∞} [Fact (1 ≤ q)] {r : ℝ}
-    (hr0 : 0 ≤ r) (hr1 : r < 1) (M : ℕ) (w : lp (fun _ : ℕ ↦ ℝ) q) :
-    ∃ y : lp (fun _ : ℕ ↦ ℝ) q,
-      (∀ k, HasSum (fun m ↦ r ^ m * shiftRight M w (k + m)) (y k)) ∧
-        ‖y‖ ≤ (1 - r)⁻¹ * ‖w‖ := by
-  have hq0 : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  -- The right shift of `w` lies in `ℓ^q`, with norm at most `‖w‖`: it is `w` reindexed along
-  -- `i ↦ i - M`, which is injective on `{i | M ≤ i}`.
-  have hinj : {i | M ≤ i}.InjOn (· - M) := fun _ ha _ hb h ↦ tsub_inj_left ha hb h
-  let w' : lp (fun _ : ℕ ↦ ℝ) q :=
-    ⟨{i | M ≤ i}.indicator (w ∘ (· - M)), (lp.memℓp w).indicator_comp hinj⟩
-  have hw' (i : ℕ) : w' i = shiftRight M w i := by
-    by_cases hi : M ≤ i <;> simp [w', shiftRight, hi]
-  have hgeom : Summable fun m : ℕ ↦ ‖r ^ m‖ := by
-    simpa only [norm_pow, Real.norm_of_nonneg hr0] using summable_geometric_of_lt_one hr0 hr1
-  obtain ⟨y, hy, hy_norm⟩ := lp.exists_eq_tsum_smul_add_and_norm_le hgeom w'
-  refine ⟨y, fun k ↦ ?_, hy_norm.trans ?_⟩
-  · have hsum : Summable fun m ↦ r ^ m * w' (k + m) :=
-      Summable.of_norm_bounded (hgeom.mul_right ‖w'‖) fun m ↦ (norm_mul_le _ _).trans
-        (mul_le_mul_of_nonneg_left (lp.norm_apply_le_norm hq0 w' _) (norm_nonneg _))
-    simpa only [hy k, hw', smul_eq_mul] using hsum.hasSum
-  · rw [show (∑' m : ℕ, ‖r ^ m‖) = (1 - r)⁻¹ by
-      simpa only [norm_pow, Real.norm_of_nonneg hr0] using tsum_geometric_of_lt_one hr0 hr1]
-    exact mul_le_mul_of_nonneg_left
-      (lp.norm_le_of_forall_eq_indicator_comp hq0 hinj fun _ ↦ rfl)
-      (inv_nonneg.2 (sub_nonneg.2 hr1.le))
 
 /-- **Reconstruction from pieces with spectra in dyadic balls** (Bahouri–Chemin–Danchin,
 Lemma 2.84). Let `s > 0`. There is `C`, depending only on `φ`, `R` and `s`, such that for all
@@ -153,7 +111,7 @@ theorem exists_hasSum_toDistr_eq_and_norm_le (φ : ContDiffBump (0 : E)) (R : �
   have hblock_Tu {i k : ℕ} (hik : i < k) :
       littlewoodPaleyBlock F φ k (Tu i : 𝓢'(E, F)) = 0 := by
     by_cases hi : L ≤ i
-    · simp only [Tu, shiftRight, hi, ↓reduceIte]
+    · simp only [Tu, shiftRight_of_le u hi]
       exact hL _ _ _ (hu _) (by omega)
     · simp [Tu, shiftRight_of_lt u (not_le.1 hi)]
   have hTu_norm (i : ℕ) : ‖Tu i‖ ≤ ρ ^ L * (ρ⁻¹ ^ i * Tw i) := by
@@ -166,18 +124,22 @@ theorem exists_hasSum_toDistr_eq_and_norm_le (φ : ContDiffBump (0 : E)) (R : �
             linear_combination (-(ρ⁻¹ ^ j * w j)) * hρr L
     · simp [Tu, Tw, shiftRight_of_lt _ (not_le.1 hi)]
   -- The dominating sequence: the one-sided convolution of `Tw` with the kernel `ρ⁻ᵐ`.
-  obtain ⟨y, hy, hy_norm⟩ := exists_hasSum_geometric_shiftRight hr0 hr1 L w
+  have hr : ‖ρ⁻¹‖ < 1 := by rwa [Real.norm_of_nonneg hr0]
+  obtain ⟨y, hy, hy_norm⟩ := lp.exists_hasSum_geometric_shiftRight hr L w
+  rw [Real.norm_of_nonneg hr0] at hy_norm
+  simp only [smul_eq_mul] at hy
   -- Only the tail of the shifted series contributes to the `k`-th block.
   set tail : ℕ → Lp F p (volume : Measure E) := fun k ↦ f - ∑ i ∈ Finset.range k, Tu i
   have htail (k : ℕ) : HasSum (fun m ↦ Tu (m + k)) (tail k) := (hasSum_nat_add_iff' k).2 hTu
   have hblock_tail (k : ℕ) : littlewoodPaleyBlock F φ k (tail k : 𝓢'(E, F)) =
       littlewoodPaleyBlock F φ k (f : 𝓢'(E, F)) := by
+    -- The coercion to tempered distributions commutes with finite sums.
+    have hcoe : ((∑ i ∈ Finset.range k, Tu i : Lp F p volume) : 𝓢'(E, F)) =
+        ∑ i ∈ Finset.range k, (Tu i : 𝓢'(E, F)) :=
+      map_sum (Lp.toTemperedDistributionCLM F volume p) _ _
     simp only [tail]
-    rw [Lp.toTemperedDistribution_sub, map_sub,
-      show ((∑ i ∈ Finset.range k, Tu i : Lp F p volume) : 𝓢'(E, F)) =
-        ∑ i ∈ Finset.range k, (Tu i : 𝓢'(E, F)) from
-        map_sum (Lp.toTemperedDistributionCLM F volume p) _ _,
-      map_sum, Finset.sum_eq_zero fun i hi ↦ hblock_Tu (Finset.mem_range.1 hi), sub_zero]
+    rw [Lp.toTemperedDistribution_sub, map_sub, hcoe, map_sum,
+      Finset.sum_eq_zero fun i hi ↦ hblock_Tu (Finset.mem_range.1 hi), sub_zero]
   have htail_norm (k : ℕ) : ‖tail k‖ ≤ ρ ^ L * ρ⁻¹ ^ k * y k :=
     (htail k).norm_le_of_bounded ((hy k).mul_left _) fun m ↦
       (hTu_norm (m + k)).trans_eq (by rw [add_comm m k, pow_add]; ring)

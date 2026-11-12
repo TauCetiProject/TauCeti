@@ -26,7 +26,9 @@ pieces of nearby index, as for two Littlewood–Paley decompositions of the same
 
 Likewise a one-sided convolution with an `ℓ¹` kernel `a`, `k ↦ ∑ₘ aₘ f (k + m)`, a series of the
 left shifts of `f`, is bounded on `ℓᵖ` for `1 ≤ p ≤ ∞` with norm at most `∑ₘ |aₘ|`
-(`lp.exists_eq_tsum_smul_add_and_norm_le`), a case of Young's inequality.
+(`lp.exists_eq_tsum_smul_add_and_norm_le`), a case of Young's inequality. For the right shift
+`TauCeti.shiftRight M w` of `w`, padded with zeros, and the geometric kernel `rᵐ`, `‖r‖ < 1`, the
+bound is `(1 - ‖r‖)⁻¹ ‖w‖` (`lp.exists_hasSum_geometric_shiftRight`).
 -/
 
 public section
@@ -107,9 +109,9 @@ theorem lp.norm_le_of_forall_eq_sum_Ico_sub_add [Fact (1 ≤ p)] {f f' : lp (fun
 /-- **Young's inequality for a one-sided `ℓ¹` kernel.** For a summable kernel `a` and `f ∈ ℓᵖ`,
 `1 ≤ p ≤ ∞`, the sequence `k ↦ ∑ₘ aₘ f (k + m)` lies in `ℓᵖ` with norm at most
 `(∑ₘ |aₘ|) ‖f‖`. -/
-theorem lp.exists_eq_tsum_smul_add_and_norm_le {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [CompleteSpace E] [Fact (1 ≤ p)] {a : ℕ → ℝ}
-    (ha : Summable fun m ↦ ‖a m‖) (f : lp (fun _ : ℕ ↦ E) p) :
+theorem lp.exists_eq_tsum_smul_add_and_norm_le {𝕜 E : Type*} [NormedRing 𝕜]
+    [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [CompleteSpace E] [Fact (1 ≤ p)]
+    {a : ℕ → 𝕜} (ha : Summable fun m ↦ ‖a m‖) (f : lp (fun _ : ℕ ↦ E) p) :
     ∃ f' : lp (fun _ : ℕ ↦ E) p, (∀ k, f' k = ∑' m, a m • f (k + m)) ∧
       ‖f'‖ ≤ (∑' m, ‖a m‖) * ‖f‖ := by
   have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
@@ -126,8 +128,66 @@ theorem lp.exists_eq_tsum_smul_add_and_norm_le {E : Type*} [NormedAddCommGroup E
     Summable.of_norm_bounded (ha.mul_right ‖f‖) hbound
   refine ⟨∑' m, a m • shift m, fun k ↦ ?_, ?_⟩
   · simp_rw [← hshift_apply _ k]
-    exact (hsum.hasSum.map (lp.evalCLM ℝ (fun _ : ℕ ↦ E) p k)
-      (lp.evalCLM ℝ (fun _ : ℕ ↦ E) p k).continuous).tsum_eq.symm
+    exact (hsum.hasSum.map (lp.evalCLM 𝕜 (fun _ : ℕ ↦ E) p k)
+      (lp.evalCLM 𝕜 (fun _ : ℕ ↦ E) p k).continuous).tsum_eq.symm
   · calc ‖∑' m, a m • shift m‖ ≤ ∑' m, ‖a m‖ * ‖f‖ :=
           tsum_of_norm_bounded (ha.mul_right ‖f‖).hasSum hbound
       _ = (∑' m, ‖a m‖) * ‖f‖ := tsum_mul_right
+
+namespace TauCeti
+
+/-- The sequence `x` shifted `M` places to the right and padded with zeros. -/
+def shiftRight {α : Type*} [Zero α] (M : ℕ) (x : ℕ → α) (i : ℕ) : α :=
+  if M ≤ i then x (i - M) else 0
+
+/-- The right shift by `M` reads `x n` at index `n + M`. -/
+theorem shiftRight_add {α : Type*} [Zero α] (M : ℕ) (x : ℕ → α) (n : ℕ) :
+    shiftRight M x (n + M) = x n := by
+  simp [shiftRight]
+
+/-- At an index `i ≥ M`, the right shift by `M` reads `x (i - M)`. -/
+@[simp]
+theorem shiftRight_of_le {α : Type*} [Zero α] {M i : ℕ} (x : ℕ → α) (hi : M ≤ i) :
+    shiftRight M x i = x (i - M) := by
+  simp [shiftRight, hi]
+
+/-- The right shift by `M` vanishes at the indices `i < M`. -/
+@[simp]
+theorem shiftRight_of_lt {α : Type*} [Zero α] {M i : ℕ} (x : ℕ → α) (hi : i < M) :
+    shiftRight M x i = 0 := by
+  simp [shiftRight, not_le.2 hi]
+
+end TauCeti
+
+open TauCeti in
+/-- The one-sided convolution `k ↦ ∑ₘ rᵐ (Tw)_{k+m}` of the right shift `Tw` of a sequence
+`w ∈ ℓ^q` with the geometric kernel `rᵐ`, `‖r‖ < 1`, converges termwise and lies in `ℓ^q` with
+norm at most `(1 - ‖r‖)⁻¹ ‖w‖`. -/
+theorem lp.exists_hasSum_geometric_shiftRight {𝕜 E : Type*} [NormedDivisionRing 𝕜]
+    [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [CompleteSpace E] [Fact (1 ≤ p)]
+    {r : 𝕜} (hr : ‖r‖ < 1) (M : ℕ) (w : lp (fun _ : ℕ ↦ E) p) :
+    ∃ y : lp (fun _ : ℕ ↦ E) p,
+      (∀ k, HasSum (fun m ↦ r ^ m • shiftRight M w (k + m)) (y k)) ∧
+        ‖y‖ ≤ (1 - ‖r‖)⁻¹ * ‖w‖ := by
+  have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+  -- The right shift of `w` lies in `ℓᵖ`, with norm at most `‖w‖`: it is `w` reindexed along
+  -- `i ↦ i - M`, which is injective on `{i | M ≤ i}`.
+  have hinj : {i | M ≤ i}.InjOn (· - M) := fun _ ha _ hb h ↦ tsub_inj_left ha hb h
+  let w' : lp (fun _ : ℕ ↦ E) p :=
+    ⟨{i | M ≤ i}.indicator (w ∘ (· - M)), (lp.memℓp w).indicator_comp hinj⟩
+  have hw' (i : ℕ) : w' i = shiftRight M w i := by
+    by_cases hi : M ≤ i <;> simp [w', shiftRight, hi]
+  have hgeom : Summable fun m : ℕ ↦ ‖r ^ m‖ := by
+    simpa only [norm_pow] using summable_geometric_of_lt_one (norm_nonneg r) hr
+  have htsum : ∑' m : ℕ, ‖r ^ m‖ = (1 - ‖r‖)⁻¹ := by
+    simpa only [norm_pow] using tsum_geometric_of_lt_one (norm_nonneg r) hr
+  obtain ⟨y, hy, hy_norm⟩ := lp.exists_eq_tsum_smul_add_and_norm_le hgeom w'
+  refine ⟨y, fun k ↦ ?_, hy_norm.trans ?_⟩
+  · have hsum : Summable fun m ↦ r ^ m • w' (k + m) :=
+      Summable.of_norm_bounded (hgeom.mul_right ‖w'‖) fun m ↦ (norm_smul_le _ _).trans
+        (mul_le_mul_of_nonneg_left (lp.norm_apply_le_norm hp w' _) (norm_nonneg _))
+    simpa only [hy k, hw'] using hsum.hasSum
+  · rw [htsum]
+    exact mul_le_mul_of_nonneg_left
+      (lp.norm_le_of_forall_eq_indicator_comp hp hinj fun _ ↦ rfl)
+      (inv_nonneg.2 (sub_nonneg.2 hr.le))
