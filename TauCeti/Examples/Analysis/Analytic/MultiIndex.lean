@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.Analytic.MultiIndex.TaylorCoeff
-import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
+import TauCeti.Analysis.Complex.RealDeriv
 
 /-!
 # Normalization examples and counterexamples for multi-index Taylor coefficients
@@ -68,6 +68,20 @@ noncomputable def bilinearSeries (i₀ i₁ : Fin 2) : FormalMultilinearSeries �
   | 2 => bilinearTerm i₀ i₁
   | _ => 0
 
+/-- On a pair of standard basis vectors `(e (a 0), e (a 1))`, `bilinearTerm i₀ i₁` evaluates to
+`1` at `a = ![i₀, i₁]` and `0` otherwise. -/
+theorem bilinearTerm_basis (i₀ i₁ : Fin 2) (a : Fin 2 → Fin 2) :
+    bilinearTerm (𝕜 := 𝕜) i₀ i₁ (fun j ↦ Pi.single (a j) 1) =
+      if a = ![i₀, i₁] then 1 else 0 := by
+  simp only [bilinearTerm_apply]
+  split_ifs with ha
+  · subst ha
+    simp
+  · by_cases h0 : a 0 = i₀
+    · have h1 : a 1 ≠ i₁ := fun h1 ↦ ha (funext (Fin.forall_fin_two.2 ⟨h0, h1⟩))
+      simp [Pi.single_eq_of_ne' h1]
+    · simp [Pi.single_eq_of_ne' h0]
+
 /-- On `p 2 (u, v) = u 0 * v 1`, the basis tuple `(e 0, e 1)` evaluates to `1` while `(e 1, e 0)`
 evaluates to `0`. -/
 theorem bilinearTerm_zero_one_basis :
@@ -81,16 +95,8 @@ theorem mvCoeff_bilinearSeries_zero_one :
     (bilinearSeries (𝕜 := 𝕜) 0 1).mvCoeff ![1, 1] = 1 := by
   have hdeg : ∑ i : Fin 2, (![1, 1] : Fin 2 → ℕ) i = 2 := by decide
   rw [FormalMultilinearSeries.mvCoeff_eq_sum _ hdeg]
-  rw [sum_eq_single (![0, 1] : Fin 2 → Fin 2)]
-  · simp [bilinearSeries]
-  · intro a _ ha
-    simp only [bilinearSeries, bilinearTerm_apply]
-    by_cases h0 : a 0 = 0
-    · have h1 : a 1 ≠ 1 := fun h1 ↦ ha (funext (Fin.forall_fin_two.2 ⟨h0, h1⟩))
-      simp [Pi.single_eq_of_ne' h1]
-    · simp [Pi.single_eq_of_ne' h0]
-  · intro hmem
-    exact False.elim (hmem (by decide))
+  simp only [bilinearSeries, bilinearTerm_basis, sum_ite_eq']
+  exact ite_eq_left (by decide)
 
 /-- For `p 2 (u, v) = u 0 * v 0`, the unique tuple of basis vectors with counts `![2, 0]` is
 `(e 0, e 0)`, so `mvCoeff p ![2, 0] = 1` (no factor of `2!`). -/
@@ -98,16 +104,8 @@ theorem mvCoeff_bilinearSeries_zero_zero :
     (bilinearSeries (𝕜 := 𝕜) 0 0).mvCoeff ![2, 0] = 1 := by
   have hdeg : ∑ i : Fin 2, (![2, 0] : Fin 2 → ℕ) i = 2 := by decide
   rw [FormalMultilinearSeries.mvCoeff_eq_sum _ hdeg]
-  rw [sum_eq_single (![0, 0] : Fin 2 → Fin 2)]
-  · simp [bilinearSeries]
-  · intro a _ ha
-    simp only [bilinearSeries, bilinearTerm_apply]
-    by_cases h0 : a 0 = 0
-    · have h1 : a 1 ≠ 0 := fun h1 ↦ ha (funext (Fin.forall_fin_two.2 ⟨h0, h1⟩))
-      simp [Pi.single_eq_of_ne' h1]
-    · simp [Pi.single_eq_of_ne' h0]
-  · intro hmem
-    exact False.elim (hmem (by decide))
+  simp only [bilinearSeries, bilinearTerm_basis, sum_ite_eq']
+  exact ite_eq_left (by decide)
 
 /-- Both degree-`2` series have constant term `mvCoeff p 0 = 0`. -/
 theorem mvCoeff_bilinearSeries_zero :
@@ -119,7 +117,7 @@ theorem mvCoeff_bilinearSeries_zero :
 theorem mvCoeff_constFormalMultilinearSeries_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     (c : 𝕜) :
     (constFormalMultilinearSeries 𝕜 (Fin 2 → 𝕜) c).mvCoeff 0 = c := by
-  simp [FormalMultilinearSeries.mvCoeff_zero_eq_apply (v := 0)]
+  simp
 
 end FormalSeries
 
@@ -141,9 +139,7 @@ theorem iteratedDeriv_sq_zero [CompleteSpace 𝕜] :
     iteratedDeriv 2 (fun w : 𝕜 ↦ w ^ 2) 0 = 2 := by
   have han : AnalyticAt 𝕜 (fun w : 𝕜 ↦ w ^ 2) 0 := analyticAt_id.fun_pow 2
   have h := han.factorial_smul_mvTaylorCoeff_of_unique (ι := Fin 1) (x := (0 : 𝕜)) ![2]
-  change (2 : ℕ).factorial • mvTaylorCoeff (fun z : Fin 1 → 𝕜 ↦ z 0 ^ 2) 0 ![2] =
-    iteratedDeriv 2 (fun w : 𝕜 ↦ w ^ 2) 0 at h
-  rw [mvTaylorCoeff_sq_zero] at h
+  simp only [Fin.default_eq_zero, Matrix.cons_val_zero, ← Pi.zero_def, mvTaylorCoeff_sq_zero] at h
   simpa [Nat.factorial] using h.symm
 
 /-- Expanding `z ↦ z 0 ^ 2` around `![3]` gives first-order Taylor coefficient `6` (the coefficient
@@ -191,29 +187,15 @@ def conjPlusOne (z : Fin 1 → ℂ) : ℂ := 1 + starRingEnd ℂ (z 0)
 /-- `conjPlusOne` is `ℂ`-analytic nowhere on `Fin 1 → ℂ`. -/
 theorem not_analyticAt_conjPlusOne (x : Fin 1 → ℂ) : ¬ AnalyticAt ℂ conjPlusOne x := by
   intro ha
-  let e : ℂ →L[ℂ] (Fin 1 → ℂ) := (ContinuousLinearMap.id ℂ ℂ).smulRight (Pi.single 0 1)
-  have hx : AnalyticAt ℂ (fun z : Fin 1 → ℂ ↦ conjPlusOne (z + x)) (e 0) := by
-    rw [map_zero]
-    simpa using ha.comp_sub (-x)
-  have hcomp : AnalyticAt ℂ ((fun z : Fin 1 → ℂ ↦ conjPlusOne (z + x)) ∘ e) 0 :=
-    hx.comp (e.analyticAt 0)
-  have hd : DifferentiableAt ℂ (fun w : ℂ ↦ starRingEnd ℂ w + (1 + starRingEnd ℂ (x 0))) 0 := by
-    refine hcomp.differentiableAt.congr_of_eventuallyEq (Filter.Eventually.of_forall fun w ↦ ?_)
-    simp [conjPlusOne, e]
-    ring
-  have hconj : DifferentiableAt ℂ (starRingEnd ℂ) 0 := by
-    simpa using hd.sub_const (1 + starRingEnd ℂ (x 0))
-  have hℝ : HasFDerivAt (starRingEnd ℂ) Complex.conjCLE.toContinuousLinearMap 0 :=
-    Complex.conjCLE.hasFDerivAt
-  have hℂ : HasFDerivAt (starRingEnd ℂ) ((fderiv ℂ (starRingEnd ℂ) 0).restrictScalars ℝ) 0 :=
-    HasFDerivAt.restrictScalars ℝ hconj.hasFDerivAt
-  have heq := hℝ.unique hℂ
-  have h1 : deriv (starRingEnd ℂ) 0 = 1 := by
-    simpa using (DFunLike.congr_fun heq 1).symm
-  have hI : (-Complex.I : ℂ) = Complex.I := by
-    simpa [h1] using DFunLike.congr_fun heq Complex.I
-  have hIm := congrArg Complex.im hI
-  norm_num at hIm
+  let s : ℂ →L[ℂ] (Fin 1 → ℂ) := ContinuousLinearMap.pi fun _ ↦ ContinuousLinearMap.id ℂ ℂ
+  have hsx : s (x 0) = x := by
+    ext i
+    rw [Subsingleton.elim i 0]
+    simp [s]
+  have hd : DifferentiableAt ℂ (fun w : ℂ ↦ conjPlusOne (s w) - 1) (x 0) :=
+    (((hsx.symm ▸ ha).differentiableAt.comp (x 0) s.differentiableAt).sub_const 1)
+  exact Complex.not_differentiableAt_conj (x 0)
+    (by simpa [conjPlusOne, s] using hd)
 
 /-- Because `conjPlusOne` is nowhere `ℂ`-analytic, every Taylor coefficient vanishes — in particular
 `mvTaylorCoeff conjPlusOne 0 0 = 0`, whereas `conjPlusOne 0 = 1`. -/

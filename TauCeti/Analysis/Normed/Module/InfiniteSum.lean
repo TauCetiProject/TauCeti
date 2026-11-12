@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Completion
 import Mathlib.Algebra.Algebra.Bilinear
+import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 public import Mathlib.Analysis.Normed.Group.Ultra
@@ -40,7 +41,9 @@ the scalar action. If the action is moreover a module structure, then completene
 passing to the completion shows that the double sum of two families with sums `a` and `b` is
 `a • b`, and grouping it by the antidiagonals of an additive index type gives the corresponding
 Cauchy-product formula. The `tsum` forms of these identities assume the module is Hausdorff
-(stated as `T0Space`, which is equivalent for seminormed groups).
+(stated as `T0Space`, which is equivalent for seminormed groups). Without any ultrametric
+hypothesis, the product double sum also holds whenever both series are summable in norm
+(`HasSum.smul_of_summable_norm`).
 
 The joint-decay statement is stronger than continuity of scalar multiplication at zero: cofinite
 decay on a product index requires all but finitely many pairs to be small.
@@ -280,6 +283,26 @@ private theorem norm_lsmul_le (r : R) (m : M) :
     ‖(Algebra.lsmul ℤ ℤ M : R →ₐ[ℤ] Module.End ℤ M).toLinearMap r m‖ ≤
       1 * ‖r‖ * ‖m‖ := by
   simpa only [AlgHom.toLinearMap_apply, Algebra.lsmul_apply, one_mul] using norm_smul_le r m
+
+omit [IsUltrametricDist M] in
+/-- Scalar multiplication distributes over two absolutely summable `HasSum` series in a seminormed
+module with a bounded scalar action, without requiring completeness of `M`. -/
+theorem _root_.HasSum.smul_of_summable_norm {α β : Type*} {f : α → R} {g : β → M} {a : R}
+    {b : M} (hf : HasSum f a) (hg : HasSum g b)
+    (hf_norm : Summable fun i ↦ ‖f i‖) (hg_norm : Summable fun j ↦ ‖g j‖) :
+    HasSum (fun ij : α × β ↦ f ij.1 • g ij.2) (a • b) := by
+  classical
+  have habs : Summable fun ij : α × β ↦ ‖f ij.1 • g ij.2‖ :=
+    Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_smul_le _ _)
+      (hf_norm.mul_of_nonneg hg_norm (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _))
+  refine hasSum_of_subseq_of_summable habs (p := atTop)
+    (s := fun s : Finset α × Finset β ↦ s.1 ×ˢ s.2) tendsto_finsetProd_atTop ?_
+  have hrect (s : Finset α × Finset β) :
+      ∑ ij ∈ s.1 ×ˢ s.2, f ij.1 • g ij.2 = (∑ i ∈ s.1, f i) • (∑ j ∈ s.2, g j) := by
+    rw [Finset.sum_product, Finset.sum_smul]
+    exact Finset.sum_congr rfl fun i _ ↦ (Finset.smul_sum (r := f i) (s := s.2) (f := g)).symm
+  simp_rw [hrect, ← prod_atTop_atTop_eq]
+  exact (hf.comp tendsto_fst).smul (hg.comp tendsto_snd)
 
 /-- Scalar multiplication distributes over two infinite sums in an ultrametric normed module. -/
 theorem _root_.HasSum.smul_of_nonarchimedean {α β : Type*} {f : α → R} {g : β → M} {a : R}

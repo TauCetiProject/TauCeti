@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Analytic.Basic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Uniqueness
 import TauCeti.Algebra.MvPolynomial.Funext
+import TauCeti.GroupTheory.Perm.FiberSubgroup
 
 /-!
 # Multi-index coefficients of formal multilinear series
@@ -27,13 +28,17 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
 
 ## Main definitions and results
 
-* `FormalMultilinearSeries.mvCoeff`: the multi-index coefficient of a formal multilinear series.
+* `FormalMultilinearSeries.mvCoeff`: the multi-index coefficient of a formal multilinear series,
+  together with `ContinuousLinearMap.mvCoeff_compFormalMultilinearSeries` and
+  `FormalMultilinearSeries.mvCoeff_constFormalMultilinearSeries`.
 * `FormalMultilinearSeries.apply_eq_sum_mvCoeff`: the degree-`k` term is
   `∑ α ∈ univ.piAntidiag k, (∏ i, z i ^ α i) • p.mvCoeff α`.
 * `FormalMultilinearSeries.sum_norm_mvCoeff_le`: the coefficients of total degree `k` have norms
   summing to at most `(card ι) ^ k * ‖p k‖`.
-* `FormalMultilinearSeries.summable_norm_mvCoeff_mul_pow` and
-  `FormalMultilinearSeries.summable_norm_prod_pow_smul_mvCoeff`: the multi-index series converges
+* `TauCeti.summable_norm_prod_pow_smul_of_le`,
+  `FormalMultilinearSeries.summable_norm_mvCoeff_mul_pow`, and
+  `FormalMultilinearSeries.summable_norm_prod_pow_smul_mvCoeff`: normal summability at radius `ρ`
+  implies absolute summability on `‖y‖ ≤ ρ`, and the multi-index series converges
   normally and absolutely wherever the operator-norm bounds `(card ι) ^ k * ‖p k‖ * ρ ^ k` are
   summable.
 * `HasFPowerSeriesOnBall.hasSum_mvCoeff`: a function with a power series is the sum of its
@@ -124,6 +129,16 @@ theorem mvCoeff_zero_eq_apply (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F)
   rw [mvCoeff_eq_sum p (k := 0) (by simp)]
   simp [Subsingleton.elim _ v]
 
+/-- Postcomposing a formal multilinear series with a continuous linear map applies that map to each
+multi-index coefficient. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.mvCoeff_compFormalMultilinearSeries
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (g : F →L[𝕜] G) (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (α : ι → ℕ) :
+    (g.compFormalMultilinearSeries p).mvCoeff α = g (p.mvCoeff α) := by
+  classical
+  simp [mvCoeff_eq_sum _ rfl, map_sum]
+
 /-- The multi-index coefficient at `α` is the sum over the tuples `a : Fin k → ι` whose
 coordinate counts are `α`, for `α` of total degree `k`. -/
 private theorem mvCoeff_eq_sum_fiber [DecidableEq ι] (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F)
@@ -154,10 +169,37 @@ end NormedField
 
 end FormalMultilinearSeries
 
+/-- On the closed polydisc `‖y‖ ≤ ρ`, normal summability of a multi-index family `d` at radius `ρ`
+implies absolute summability of `(∏ i, y i ^ β i) • d β`. -/
+theorem TauCeti.summable_norm_prod_pow_smul_of_le {𝕜 : Type*} [NormedField 𝕜] {ι : Type*}
+    [Fintype ι] {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {d : (ι → ℕ) → F} {ρ : ℝ} {y : ι → 𝕜}
+    (hd : Summable fun β : ι → ℕ ↦ ‖d β‖ * ρ ^ (∑ i, β i)) (hy : ‖y‖ ≤ ρ) :
+    Summable fun β : ι → ℕ ↦ ‖(∏ i, y i ^ β i) • d β‖ := by
+  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun β ↦ ?_) hd
+  rw [norm_smul, norm_prod, mul_comm, ← prod_pow_eq_pow_sum]
+  gcongr with i
+  rw [norm_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) ((norm_le_pi_norm y i).trans hy) _
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Fintype ι]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 namespace FormalMultilinearSeries
+
+/-- The multi-index coefficient of `constFormalMultilinearSeries 𝕜 (ι → 𝕜) c` is `c` at `0` and `0`
+at every nonzero multi-index. -/
+@[simp]
+theorem mvCoeff_constFormalMultilinearSeries (c : F) (α : ι → ℕ) :
+    (constFormalMultilinearSeries 𝕜 (ι → 𝕜) c).mvCoeff α = if α = 0 then c else 0 := by
+  classical
+  split_ifs with hα
+  · subst hα
+    simp [mvCoeff_zero_eq_apply (v := 0)]
+  · have hsum : ∑ i, α i ≠ 0 := fun h0 ↦
+      hα (funext fun i ↦ Finset.sum_eq_zero_iff.1 h0 i (mem_univ i))
+    rw [mvCoeff_eq_sum _ rfl]
+    simp [constFormalMultilinearSeries_apply_of_ne_zero hsum]
 
 /-- The multi-index coefficients of total degree `k` have norms summing to at most
 `(card ι) ^ k * ‖p k‖`. -/
@@ -207,25 +249,9 @@ theorem summable_norm_mvCoeff_mul_pow (p : FormalMultilinearSeries 𝕜 (ι → 
 `∑ α, (∏ i, z i ^ α i) • p.mvCoeff α` converges absolutely. -/
 theorem summable_norm_prod_pow_smul_mvCoeff (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F)
     {z : ι → 𝕜} (h : Summable fun k ↦ (Fintype.card ι : ℝ) ^ k * ‖p k‖ * ‖z‖ ^ k) :
-    Summable fun α : ι → ℕ ↦ ‖(∏ i, z i ^ α i) • p.mvCoeff α‖ := by
-  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun α ↦ ?_)
-    (p.summable_norm_mvCoeff_mul_pow (norm_nonneg z) h)
-  rw [norm_smul, norm_prod, mul_comm, ← prod_pow_eq_pow_sum]
-  gcongr with i
-  rw [norm_pow]
-  gcongr
-  exact norm_le_pi_norm z i
-
-/-- A representative tuple `Fin k → ι` in which each coordinate `i` occurs `α i` times. -/
-private noncomputable def repTuple {α : ι → ℕ} {k : ℕ} (hα : ∑ i, α i = k) : Fin k → ι :=
-  fun j ↦ ((Fintype.equivFinOfCardEq (by simp [hα]) : (Σ i : ι, Fin (α i)) ≃ Fin k).symm j).1
-
-private theorem card_fiber_repTuple [DecidableEq ι] {α : ι → ℕ} {k : ℕ} (hα : ∑ i, α i = k)
-    (i : ι) : Fintype.card {j : Fin k // repTuple hα j = i} = α i := by
-  let e : Fin k ≃ Σ i : ι, Fin (α i) := (Fintype.equivFinOfCardEq (by simp [hα])).symm
-  rw [Fintype.card_congr (e.subtypeEquiv fun _ ↦ Iff.rfl :
-      {j : Fin k // repTuple hα j = i} ≃ {x : Σ i, Fin (α i) // x.1 = i}),
-    Fintype.card_congr (Equiv.sigmaSubtype i), Fintype.card_fin]
+    Summable fun α : ι → ℕ ↦ ‖(∏ i, z i ^ α i) • p.mvCoeff α‖ :=
+  TauCeti.summable_norm_prod_pow_smul_of_le
+    (p.summable_norm_mvCoeff_mul_pow (norm_nonneg z) h) le_rfl
 
 omit [Fintype ι] in
 /-- The continuous `k`-multilinear map `(m₁, …, mₖ) ↦ (∏ j, mⱼ (g j)) • v` realizing one ordered
@@ -264,7 +290,11 @@ evaluation are canonical. -/
 private noncomputable def ofMvCoeff (c : (ι → ℕ) → F) :
     FormalMultilinearSeries 𝕜 (ι → 𝕜) F := fun k ↦
   ∑ α ∈ univ.piAntidiag k,
-    if hα : ∑ i, α i = k then monomialMultilinearMap (repTuple hα) (c α) else 0
+    if hα : ∑ i, α i = k then
+      monomialMultilinearMap
+        (TauCeti.exists_forall_card_filter_eq (α := Fin k)
+          (hα.trans (Fintype.card_fin k).symm)).choose (c α)
+    else 0
 
 open Classical in
 private theorem norm_ofMvCoeff_le (c : (ι → ℕ) → F) (k : ℕ) :
@@ -274,21 +304,26 @@ private theorem norm_ofMvCoeff_le (c : (ι → ℕ) → F) (k : ℕ) :
   rw [dite_eq_left_of_eq_true (eq_true (mem_piAntidiag.1 hα).1)]
   exact norm_monomialMultilinearMap_le _ _
 
+open Classical in
 private theorem mvCoeff_ofMvCoeff (c : (ι → ℕ) → F) (β : ι → ℕ) :
     (ofMvCoeff (𝕜 := 𝕜) c).mvCoeff β = c β := by
-  classical
   set k := ∑ i, β i with hk_def
   let S := univ.filter fun a : Fin k → ι ↦ ∀ i, Fintype.card {j // a j = i} = β i
   rw [mvCoeff_eq_sum _ hk_def.symm]
   simp only [ofMvCoeff, _root_.sum_apply]
   rw [sum_comm]
   have hterm (α : ι → ℕ) (hα : α ∈ univ.piAntidiag k) :
-      (∑ x ∈ S, (if h : ∑ i, α i = k then monomialMultilinearMap (𝕜 := 𝕜) (repTuple h) (c α) else 0)
-        (fun j ↦ Pi.single (x j) (1 : 𝕜))) = if α = β then c α else 0 := by
+      (∑ x ∈ S, (if h : ∑ i, α i = k then
+        monomialMultilinearMap (𝕜 := 𝕜)
+          (TauCeti.exists_forall_card_filter_eq (α := Fin k)
+            (h.trans (Fintype.card_fin k).symm)).choose (c α)
+      else 0) (fun j ↦ Pi.single (x j) (1 : 𝕜))) = if α = β then c α else 0 := by
     have hαk : ∑ i, α i = k := (mem_piAntidiag.1 hα).1
+    have hcard : ∑ i, α i = Fintype.card (Fin k) := hαk.trans (Fintype.card_fin k).symm
+    have hg := (TauCeti.exists_forall_card_filter_eq (α := Fin k) hcard).choose_spec
     simp_rw [dite_eq_left_of_eq_true (eq_true hαk), monomialMultilinearMap_basis]
-    have hmem : repTuple hαk ∈ S ↔ α = β := by
-      simp [S, card_fiber_repTuple hαk, funext_iff]
+    have hmem : (TauCeti.exists_forall_card_filter_eq (α := Fin k) hcard).choose ∈ S ↔ α = β := by
+      simp [S, Fintype.card_subtype, hg, funext_iff]
     simp [hmem]
   rw [sum_congr rfl hterm]
   have hβ : β ∈ univ.piAntidiag k := mem_piAntidiag.2 ⟨hk_def.symm, by simp⟩
@@ -416,13 +451,7 @@ theorem exists_hasFPowerSeriesOnBall_tsum [CompleteSpace F] (c : (ι → ℕ) �
       HasFPowerSeriesOnBall (fun z : ι → 𝕜 ↦ ∑' α : ι → ℕ, (∏ i, z i ^ α i) • c α) p 0 r ∧
         ∀ α, p.mvCoeff α = c α := by
   refine exists_hasFPowerSeriesOnBall_of_hasSum hr hsum fun y hy ↦ ?_
-  have hnorm : Summable fun α : ι → ℕ ↦ ‖(∏ i, y i ^ α i) • c α‖ := by
-    refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun α ↦ ?_) hsum
-    rw [norm_smul, norm_prod, mul_comm, ← prod_pow_eq_pow_sum]
-    gcongr with i
-    rw [norm_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _) ((norm_le_pi_norm y i).trans hy.le) _
-  simpa only [zero_add] using hnorm.of_norm.hasSum
+  simpa only [zero_add] using (summable_norm_prod_pow_smul_of_le hsum hy.le).of_norm.hasSum
 
 /-- **Uniqueness of normally convergent multi-index series**: if a multi-index series converges
 normally on a polydisc of positive radius and vanishes near the origin (in particular if it
