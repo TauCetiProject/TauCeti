@@ -10,7 +10,7 @@ import Mathlib.Analysis.Complex.Convex
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.Complex.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
@@ -269,8 +269,6 @@ theorem exists_pos_forall_norm_fderiv_le_of_setLIntegral_le
   have hEb := hper'.setIntegral_ball_le_two_mul (fun _ ↦ sq_nonneg _) hr2 subset_rfl
     (by linarith) ((hcont.mono ball_subset_closedBall).norm.pow 2 |>.aestronglyMeasurable
       measurableSet_ball) hE'
-  have hE0 : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 :=
-    setIntegral_nonneg measurableSet_ball fun _ _ ↦ sq_nonneg _
   -- The mean-value inequality bounds `∂ₛu`, and the equation bounds `du`.
   have hmv := hmean hr.le (by linarith) (hu.mono (ball_subset_closedBall.trans hball)) hcont
     (fun y hy ↦ hCR y (hball (ball_subset_closedBall hy)))
@@ -306,7 +304,7 @@ theorem exists_forall_norm_fderiv_le_of_lintegral_ne_top
     hW hJ hX hK hKW hJsq hJ1 hJI hX1 hXI
   have hU : IsOpen {z : ℂ | a < z.re} := isOpen_lt continuous_const continuous_re
   -- Far out along the end, the energy over one period of the half-strip is at most `ε`.
-  obtain ⟨R, hR, hRa⟩ := ((tendsto_setLIntegral_reProdIm_Ioi_atTop hfin).eventually
+  obtain ⟨R, hR, _⟩ := ((tendsto_setLIntegral_reProdIm_Ioi_atTop hfin).eventually
     (gt_mem_nhds (ENNReal.ofReal_pos.2 hε))).and (eventually_ge_atTop a) |>.exists
   -- On the compact part `b ≤ re z ≤ R + r` of the end, `du` is bounded by continuity.
   obtain ⟨M₁, hM₁⟩ := (hper.fderiv (𝕜 := ℝ)).exists_bound_of_continuousOn_reProdIm_univ
@@ -364,7 +362,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 /-- A `1`-periodic family `J_t(x)`, continuous on `ℝ × K` for a compact `K` and tamed by `ω` there,
 has uniform taming and norm constants: `c ‖v‖² ≤ ω(v, J_t(x) v)` and `‖J_t(x) v‖ ≤ M ‖v‖` for
 all `t` and all `x ∈ K`, with `c > 0`. -/
-private theorem exists_pos_forall_mul_norm_sq_le_and_norm_le (hK : IsCompact K)
+theorem exists_pos_forall_mul_norm_sq_le_and_norm_le (hK : IsCompact K)
     (hJ : ContinuousOn (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
       (univ ×ˢ K))
     (hJper : Periodic J 1) (hJt : ∀ t, ∀ x ∈ K, ω.Tames (J t x)) :

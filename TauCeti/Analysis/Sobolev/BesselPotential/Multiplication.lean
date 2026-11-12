@@ -151,6 +151,7 @@ private theorem ofReal_rpow_mul_norm_fourier_smulLeftCLM_le (s : ℝ) (φ : 𝓢
               (‖𝓕 φ (ξ - y)‖ * ‖𝓕 f y‖) := by gcongr
         _ = _ := by ring
 
+omit [CompleteSpace F] in
 /-- The `H^s` estimate for multiplication by a Schwartz function, on the Fourier side:
 `‖⟨ξ⟩ ^ s 𝓕 (φ f)‖_{L²} ≤ 2 ^ (|s| / 2) (∫ ⟨ζ⟩ ^ |s| ‖𝓕 φ ζ‖ dζ) ‖⟨ξ⟩ ^ s 𝓕 f‖_{L²}`. It is
 the pointwise Peetre bound followed by Schur's test for the convolution kernel. -/
@@ -159,6 +160,13 @@ theorem eLpNorm_rpow_smul_fourier_smulLeftCLM_le (s : ℝ) (φ : 𝓢(E, ℂ)) (
         2 volume ≤
       ENNReal.ofReal (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) *
         eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 f ξ) 2 volume := by
+  by_cases hF : CompleteSpace F
+  swap
+  · have h0 : ∀ g : 𝓢(E, F), 𝓕 g = 0 := fun g ↦ by
+      ext ξ
+      rw [SchwartzMap.fourier_coe, Real.fourier_eq]
+      exact integral_of_not_completeSpace hF
+    simp [h0]
   set k : E → ℝ≥0∞ :=
     fun ζ ↦ ENNReal.ofReal (2 ^ (|s| / 2) * ((1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖))
   set g : E → ℝ≥0∞ := fun y ↦ ENNReal.ofReal ((1 + ‖y‖ ^ 2) ^ (s / 2) * ‖𝓕 f y‖)
@@ -200,13 +208,20 @@ end SchwartzMap
 
 namespace TemperedDistribution
 
+omit [CompleteSpace F] in
 /-- The Bessel potential of a Schwartz function is the Schwartz function given by the Fourier
 multiplier with the same symbol `⟨ξ⟩ ^ s`. -/
 theorem besselPotential_toTemperedDistributionCLM_eq (s : ℝ) (f : 𝓢(E, F)) :
     besselPotential E F s (f : 𝓢'(E, F)) =
       (SchwartzMap.fourierMultiplierCLM F
-        (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) f : 𝓢'(E, F)) :=
-  fourierMultiplierCLM_toTemperedDistributionCLM_eq (by fun_prop) f
+        (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) f : 𝓢'(E, F)) := by
+  by_cases hF : CompleteSpace F
+  · exact fourierMultiplierCLM_toTemperedDistributionCLM_eq (by fun_prop) f
+  · have h0 : ∀ g : 𝓢(E, F), (g : 𝓢'(E, F)) = 0 := fun g ↦ by
+      ext u
+      exact (SchwartzMap.toTemperedDistributionCLM_apply_apply volume g u).trans
+        (integral_of_not_completeSpace hF)
+    rw [h0, h0, map_zero]
 
 end TemperedDistribution
 
@@ -273,7 +288,7 @@ theorem exists_besselPotential_smulLeftCLM_eq_and_norm_le (s : ℝ) (φ : 𝓢(E
   have hT (ψ : 𝓢(E, F)) : T (ψ.toLp 2 volume) = ((M ψ).toLp 2 volume : 𝓢'(E, F)) := by
     simp only [T, M, ContinuousLinearMap.comp_apply, Lp.toTemperedDistributionCLM_apply,
       Lp.toTemperedDistribution_toLp_eq, besselPotential_toTemperedDistributionCLM_eq,
-      smulLeftCLM_toTemperedDistributionCLM_eq φ.hasTemperateGrowth, Λ]
+      smulLeftCLM_toTemperedDistributionCLM_eq, Λ]
   have hu : u = besselPotential E F (-s) v := by
     rw [← hv, besselPotential_besselPotential_apply]
     simp

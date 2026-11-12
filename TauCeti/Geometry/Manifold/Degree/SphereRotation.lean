@@ -58,6 +58,8 @@ In the statements, `n = m + 1`, so that `Sⁿ⁻¹ = Sᵐ` is modelled on `ℝ�
 * `TauCeti.mvfderiv_coe_sphereRotationFamily_apply`: its derivative.
 * `TauCeti.sphereRotationFamily_eq_sphereRotationFamily_iff`: the two preimages of a point
   `q ≠ ±p`.
+* `TauCeti.sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero`: points with `Im z = 0` are sent to
+  `±p`.
 * `TauCeti.isInvertible_mfderiv_sphereRotationFamily`: its derivative is invertible where
   `Im z ≠ 0`.
 * `Orientation.orientationSign_sphereRotationFamily`: its orientation sign there.
@@ -343,17 +345,6 @@ private theorem volumeForm_cons_cons_mvfderiv (o : Orientation ℝ E (Fin (m + 1
 private def sphereTangentBasis {p : sphere (0 : E) 1} (v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
     Basis (Fin m) ℝ (TangentSpace (𝓡 m) v) :=
   finBasisOfFinrankEq ℝ (TangentSpace (𝓡 m) v) (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
-
-/-- A positively oriented tangent basis of the unit circle of `ℂ` at `z`. -/
-private def circleTangentBasis (z : sphere (0 : ℂ) 1) : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) z) :=
-  (finBasisOfFinrankEq ℝ (TangentSpace (𝓡 1) z)
-    ((Complex.orientation.sphereOrientation.finrank_tangentSpace_eq z).trans
-      (Fintype.card_fin 1))).adjustToOrientation
-      (Complex.orientation.sphereOrientation.orientationAt z)
-
-private theorem orientation_circleTangentBasis (z : sphere (0 : ℂ) 1) :
-    (circleTangentBasis z).orientation = Complex.orientation.sphereOrientation.orientationAt z :=
-  Basis.orientation_adjustToOrientation _ _
 
 /-- The product of tangent bases `b` of `Sᵐ` at `v` and `c` of `S¹` at `z`, with `b` first, as a
 basis of the tangent space of `Sᵐ × S¹` at `(v, z)`. -/

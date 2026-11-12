@@ -129,7 +129,7 @@ theorem decreasingMerge_le_singularValue_withLpProdMap (h₁ : HasMinMaxLowerBou
   refine NNReal.coe_le_coe.mp ((T₁.withLpProdMap p T₂).le_singularValue_of_lt_rank hV
     fun x hx ↦ ?_)
   rw [Submodule.mem_map_equiv, LinearEquiv.symm_symm, WithLp.coe_linearEquiv] at hx
-  simpa using WithLp.prod_mul_norm_le_mul_norm t.coe_nonneg zero_le_one (x := x)
+  simpa using WithLp.prod_mul_norm_le_mul_norm (c := (t : ℝ)) (d := 1) (x := x)
     (y := T₁.withLpProdMap p T₂ x) (by simpa using hc₁ _ hx.1) (by simpa using hc₂ _ hx.2)
 
 end Lower
