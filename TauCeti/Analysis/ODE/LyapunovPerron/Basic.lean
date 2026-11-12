@@ -635,11 +635,6 @@ theorem apply_lyapunovPerronSolution_zero (hP : IsIdempotentElem P) (hAP : Commu
     (ξ : X) : P (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ 0) = P ξ := by
   set γ := lyapunovPerronSolution A P N hs hu hα hN hsmall ξ
   set g : ℝ → X := fun s ↦ N (γ s.toNNReal)
-  have hg : Continuous g :=
-    ((γ.comp N hN).compContinuous ⟨Real.toNNReal, continuous_real_toNNReal⟩).continuous
-  have hgM (s : ℝ) : ‖g s‖ ≤ ‖N 0‖ + ε * ‖γ‖ :=
-    ((γ.comp N hN).norm_coe_le_norm s.toNNReal).trans
-      (TauCeti.norm_boundedContinuousFunction_comp_le hN γ)
   rw [lyapunovPerronSolution_apply, NNReal.coe_zero, map_add,
     apply_lyapunovPerronIntegral_zero hP hAP, add_zero,
     zero_smul, exp_zero, one_apply_eq_self, ← mul_apply_eq_comp P, hP.eq]

@@ -672,7 +672,7 @@ theorem sum_smul_typeDSimpleRootCoordinates (hn : 4 ≤ n) {v : Fin n → ℤ}
   -- Row `k` of the coweight matrix acts on a vector by the dot product with the `k`-th coweight.
   have hrow (v : Fin n → ℤ) (k : Fin n) :
       (Matrix.of (typeDDoubleCoweight n)).mulVec v k = typeDDoubleCoweight n k ⬝ᵥ v := by
-    rw [Matrix.mulVec_apply, Matrix.of_row]
+    rw [Matrix.mulVec_apply, Matrix.row_of]
   have hsep (v : Fin n → ℤ) (hv : ∀ k, typeDDoubleCoweight n k ⬝ᵥ v = 0) : v = 0 :=
     Matrix.eq_zero_of_mulVec_eq_zero hdet (funext fun k => (hrow v k).trans (hv k))
   refine sub_eq_zero.mp (hsep _ fun k => ?_)

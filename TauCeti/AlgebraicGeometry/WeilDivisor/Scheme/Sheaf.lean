@@ -145,7 +145,7 @@ theorem nonneg_iff_one_mem_sections (D : SchemeWeilDivisor X) :
         (1 : Γ(X, (⊤ : X.Opens))) ∈ sections D ⊤ := by
   rw [mem_sections]
   simp only [Scheme.rationalFunctionsEquiv_toRationalFunctions_app, map_one, one_ne_zero,
-    false_or, Scheme.ord_one]
+    false_or, AlgebraicGeometry.Scheme.ord_one, Pi.zero_apply]
   rw [WeilDivisor.nonneg_iff]
   constructor
   · intro h x _
