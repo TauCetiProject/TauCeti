@@ -106,11 +106,12 @@ theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : �
 /-- A sequence `u` converges along `atTop` if and only if its values `u ⌊x⌋₊` at the natural
 floors of `x` converge as `x → ∞` in a floor semiring such as `ℝ`. -/
 theorem tendsto_comp_natFloor_iff {R X : Type*} [Semiring R] [LinearOrder R]
-    [IsStrictOrderedRing R] [FloorSemiring R] {u : ℕ → X} {l : Filter X} :
+    [FloorSemiring R] {u : ℕ → X} {l : Filter X} :
     Tendsto (fun x : R ↦ u ⌊x⌋₊) atTop l ↔ Tendsto u atTop l := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.comp ?_⟩
   · have hcast : Tendsto (fun n : ℕ ↦ (n : R)) atTop atTop :=
-      tendsto_atTop_atTop.2 fun x ↦ ⟨⌈x⌉₊, fun n hn ↦ (Nat.le_ceil x).trans (mod_cast hn)⟩
+      tendsto_atTop_atTop.2 fun x ↦
+        ⟨⌈x⌉₊, fun n hn ↦ Nat.le_of_ceil_le hn⟩
     simpa [Function.comp_def] using h.comp hcast
   · exact tendsto_atTop_atTop.2 fun n ↦ ⟨n, fun x hx ↦ Nat.le_floor hx⟩
 

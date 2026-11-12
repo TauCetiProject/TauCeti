@@ -40,7 +40,9 @@ density pointwise, and no integral needs to be evaluated.
   correlation matrix built from independent centered symmetric Beta partial correlations has the
   LKJ density, in correlation coordinates;
   `map_correlationMatrix_map_correlationCoordinatesOfPartialCorrelation_pi_betaMeasure` identifies
-  the resulting random matrix with `TauCeti.Probability.lkjMeasure p η`.
+  the resulting random matrix with `TauCeti.Probability.lkjMeasure p η`;
+  `TauCeti.Probability.map_coe_lkjMeasure` restates this, forgetting symmetry, as the law of the
+  Gram matrix `TauCeti.partialCorrelationGram` of the partial correlations.
 * `TauCeti.Probability.map_partialCorrelationOfCorrelationCoordinates_withDensity`: conversely,
   the partial correlations of a correlation matrix with the LKJ density are independent centered
   symmetric Beta variables.
@@ -99,7 +101,7 @@ theorem map_correlationCoordinatesOfPartialCorrelation_pi_betaMeasure (hη : 0 <
       (betaMeasure (lkjPartialCorrelationShape p η ij)
         (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x) =
         volume.withDensity (D ij) :=
-    betaMeasure_map_centered_eq_withDensity (lkjPartialCorrelationShape_pos hη ij)
+    betaMeasure_map_centered_eq_withDensity _
   let _ (ij : strictLowerTriangle p) : IsProbabilityMeasure (volume.withDensity (D ij)) := by
     rw [← hfactor]
     have := isProbabilityMeasureBeta (lkjPartialCorrelationShape_pos hη ij)
@@ -150,6 +152,22 @@ theorem map_correlationMatrix_map_correlationCoordinatesOfPartialCorrelation_pi_
   by_cases hx : x ∈ posDefCorrelationRegion p
   · rw [indicator_of_mem hx, lkjPDF_of_posDef p η (mem_posDefCorrelationRegion.1 hx)]
   · rw [indicator_of_notMem hx, lkjPDF_of_not_posDef p η (mt mem_posDefCorrelationRegion.2 hx)]
+
+/-- Forgetting the symmetric subtype, the LKJ law is the Gram pushforward of independent
+centered symmetric Beta partial correlations. -/
+theorem map_coe_lkjMeasure (hη : 0 < η) :
+    (lkjMeasure p η).map Subtype.val =
+      (Measure.pi fun ij : strictLowerTriangle p ↦
+        (betaMeasure (lkjPartialCorrelationShape p η ij)
+          (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)).map
+        partialCorrelationGram := by
+  rw [← map_correlationMatrix_map_correlationCoordinatesOfPartialCorrelation_pi_betaMeasure hη,
+    Measure.map_map measurable_subtype_coe (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  apply Measure.map_congr
+  filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure
+    (lkjPartialCorrelationShape_pos hη)] with z hz
+  exact coe_correlationMatrix_correlationCoordinatesOfPartialCorrelation (fun ij ↦ (hz ij).le)
 
 /-- **Independence of the LKJ partial correlations.** The partial correlations of a correlation
 matrix whose strictly lower coordinates have density `det R ^ (η - 1) / lkjNormalizer p η` on the

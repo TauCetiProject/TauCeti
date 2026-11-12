@@ -16,7 +16,7 @@ of the original kernel, and in finite dimension an essential dual range is equiv
 superfluous original kernel. Thus dualizing preserves the minimality condition on the maps in
 projective covers and injective envelopes.
 
-As in `TauCeti.dualRightAction`, the dual actions are specified by equivariant linear
+As in `TauCeti.linearMapRightAction`, the dual actions are specified by equivariant linear
 identifications, rather than competing global instances on linear-map types. The range
 calculation reuses Mathlib's `LinearMap.range_dualMap_eq_dualAnnihilator_ker`.
 
@@ -111,8 +111,8 @@ module needs to be finite-dimensional for this range calculation. -/
 theorem range_moduleDualMap :
     LinearMap.range (moduleDualMap f eM heM eP heP) =
       moduleDualAnnihilator eM heM (LinearMap.ker f) := by
-  have := eM.isScalarTower_of_moduleDual heM
-  have := eP.isScalarTower_of_moduleDual heP
+  have := eM.isScalarTower_of_linearMap heM
+  have := eP.isScalarTower_of_linearMap heP
   have hsquare : eM.toLinearMap ∘ₗ (moduleDualMap f eM heM eP heP).restrictScalars k =
       (f.restrictScalars k).dualMap ∘ₗ eP.toLinearMap := by
     ext q m
@@ -129,7 +129,7 @@ and reflects this minimality condition. Only the original source needs to be fin
 theorem isEssential_range_moduleDualMap_iff [FiniteDimensional k M] :
     IsEssential (LinearMap.range (moduleDualMap f eM heM eP heP)) ↔
       IsSuperfluous (LinearMap.ker f) := by
-  have := eM.isScalarTower_of_moduleDual heM
+  have := eM.isScalarTower_of_linearMap heM
   rw [range_moduleDualMap f eM heM eP heP, isEssential_moduleDualAnnihilator_iff]
 
 end Field

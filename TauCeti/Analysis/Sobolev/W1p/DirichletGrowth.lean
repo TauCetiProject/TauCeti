@@ -87,7 +87,7 @@ theorem W1p.setAverage_norm_value_sub_setAverage_closedBall_le {x : E} {r : ℝ}
   rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul, mul_left_comm]
   simp_rw [Real.norm_eq_abs]
   exact mul_le_mul_of_nonneg_left
-    (W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hr hball u)
+    (W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hball u)
     (inv_nonneg.2 measureReal_nonneg)
 
 /-- The growth condition `∫_{B(x, r)} ‖∇u‖ ≤ M r^(n - 1 + α)` makes the mean oscillation of `u`
