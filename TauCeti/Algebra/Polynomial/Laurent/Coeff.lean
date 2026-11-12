@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.MonoidAlgebra.Degree
 public import Mathlib.Algebra.Polynomial.Laurent
 
 /-!
@@ -22,11 +23,15 @@ every coefficient of nonnegative exponent. These hold over an arbitrary semiring
   coefficients.
 * `LaurentPolynomial.coeff_one`: the coefficients of `1`.
 * `LaurentPolynomial.coeff_trunc`: `(trunc f).coeff n = f.coeff (n : ℤ)`.
+* `LaurentPolynomial.leadingCoeff_toLaurent_mul_T`: multiplication by a Laurent monomial
+  preserves the leading coefficient of an ordinary polynomial.
 -/
 
 public section
 
 namespace LaurentPolynomial
+
+section Semiring
 
 variable {R : Type*} [Semiring R]
 
@@ -56,5 +61,47 @@ theorem coeff_one (d : ℤ) : (1 : R[T;T⁻¹]).coeff d = if d = 0 then 1 else 0
 /-- Truncation retains every coefficient of nonnegative exponent. -/
 @[simp]
 theorem coeff_trunc (f : R[T;T⁻¹]) (n : ℕ) : (trunc f).coeff n = f.coeff (n : ℤ) := (rfl)
+
+end Semiring
+
+section LeadingCoeff
+
+open AddMonoidAlgebra
+
+variable {R : Type*} [CommSemiring R]
+
+/-- Shifting an ordinary polynomial by any Laurent monomial preserves its leading coefficient. -/
+theorem leadingCoeff_toLaurent_mul_T (p : Polynomial R) (n : ℤ) :
+    (p.toLaurent * T n).leadingCoeff ((↑) : ℤ → WithBot ℤ) = p.leadingCoeff := by
+  classical
+  by_cases hp : p = 0
+  · simp [hp]
+  have hc (k : ℕ) : (p.toLaurent * T n).coeff (k + n) = p.coeff k := by
+    rw [T, coeff_mul_single_add, mul_one, coeff_toLaurent]
+    -- `Polynomial.toLaurent` transports coefficients along `Nat.castEmbedding`.
+    -- Expose this representation to apply injectivity at the embedded natural exponent.
+    change p.coeff.mapDomain Nat.castEmbedding (Nat.castEmbedding k) = p.coeff k
+    rw [Finsupp.mapDomain_apply_of_injective Nat.castEmbedding.injective]
+  have hd : (p.toLaurent * T n).supDegree ((↑) : ℤ → WithBot ℤ) =
+      ↑((p.natDegree : ℤ) + n) := by
+    apply supDegree_eq_of_max ⟨_, rfl⟩
+    · rw [Function.leftInverse_invFun WithBot.coe_injective (_ + n),
+        Finsupp.mem_support_iff, hc]
+      exact Polynomial.leadingCoeff_ne_zero.mpr hp
+    · intro a ha
+      have hcoef := Finsupp.mem_support_iff.1 ha
+      rw [mul_comm p.toLaurent (T n), coeff_T_mul] at hcoef
+      have hm : a - n ∈ p.support.map Nat.castEmbedding := by
+        rw [← support_coeff_toLaurent]
+        exact Finsupp.mem_support_iff.2 hcoef
+      obtain ⟨k, hk, he⟩ := Finset.mem_map.1 hm
+      have hkn := Polynomial.le_natDegree_of_mem_supp k hk
+      have he' : (k : ℤ) = a - n := he
+      have ha_le : a ≤ (p.natDegree : ℤ) + n := by omega
+      exact WithBot.coe_le_coe.mpr ha_le
+  rw [leadingCoeff, hd, Function.leftInverse_invFun WithBot.coe_injective (_ + n), hc]
+  rfl
+
+end LeadingCoeff
 
 end LaurentPolynomial

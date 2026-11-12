@@ -37,7 +37,7 @@ polynomial `C f`. -/
 @[simp↓]
 theorem map_quotient_eq_zero_iff {f : S} {p : LaurentPolynomial S} :
     mapRingHom ℤ (Ideal.Quotient.mk (Ideal.span {f})) p = 0 ↔ C f ∣ p := by
-  rw [TauCeti.AddMonoidAlgebra.mapRingHom_eq_zero_iff, Ideal.mk_ker,
+  rw [AddMonoidAlgebra.mapRingHom_eq_zero_iff, Ideal.mk_ker,
     Ideal.smul_top_eq_map, Ideal.map_span, Set.image_singleton]
   exact Ideal.mem_span_singleton
 

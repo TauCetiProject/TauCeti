@@ -97,7 +97,7 @@ variable {R : Type*} [CommSemiring R] {M : Type*}
 
 /-- An element of `R[M]` lies in `I • R[M]` exactly when all of its coefficients lie in `I`. -/
 @[to_additive (dont_translate := R I) (attr := simp)
-  _root_.TauCeti.AddMonoidAlgebra.mem_ideal_smul_top_iff
+  _root_.AddMonoidAlgebra.mem_ideal_smul_top_iff
 /-- An element of an additive monoid algebra lies in the extension of an ideal exactly when
 all of its coefficients lie in that ideal. -/]
 theorem mem_ideal_smul_top_iff {I : Ideal R} {x : MonoidAlgebra R M} :
@@ -113,7 +113,7 @@ theorem mem_ideal_smul_top_iff {I : Ideal R} {x : MonoidAlgebra R M} :
 
 /-- Applying a ring homomorphism `f` to the coefficients kills exactly `ker f • R[M]`. -/
 @[to_additive (dont_translate := R S) (attr := simp)
-  _root_.TauCeti.AddMonoidAlgebra.mapRingHom_eq_zero_iff
+  _root_.AddMonoidAlgebra.mapRingHom_eq_zero_iff
 /-- A coefficient homomorphism kills exactly the extension of its coefficient kernel. -/]
 theorem mapRingHom_eq_zero_iff [Monoid M] {S : Type*} [Semiring S] (f : R →+* S)
     {x : MonoidAlgebra R M} :
