@@ -81,6 +81,18 @@ protected theorem abs_sub_le_eVariationOn {f : α → E} {s : Set α}
   rw [abs_le]
   constructor <;> linarith
 
+/-- The extended diameter of the set of cumulative variations from any base point is at most the
+total variation on `s`. -/
+protected theorem ediam_image_le (f : α → E) {s : Set α} (a : α) :
+    Metric.ediam (variationOnFromTo f s a '' s) ≤ eVariationOn f s := by
+  by_cases hf : BoundedVariationOn f s
+  swap
+  · rw [BoundedVariationOn, not_ne_iff] at hf
+    exact hf ▸ le_top
+  refine Metric.ediam_image_le_iff.2 fun x _ y _ ↦ ?_
+  rw [edist_dist, Real.dist_eq, ← ENNReal.ofReal_toReal hf]
+  exact ENNReal.ofReal_le_ofReal (variationOnFromTo.abs_sub_le_eVariationOn hf)
+
 end variationOnFromTo
 
 namespace LocallyBoundedVariationOn
