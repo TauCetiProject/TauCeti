@@ -182,10 +182,7 @@ private theorem exists_smul_mul_self_eq_neg_one {u : D} {r : ℝ}
   exact ⟨(Real.sqrt (-r))⁻¹, by
     rw [smul_mul_smul_comm, hu, Algebra.smul_def, ← map_mul, hscal, map_neg, map_one]⟩
 
-/-- **A recentred and rescaled non-real element is a square root of `-1`.** Take `y` outside the
-copy of `ℝ` and write `y * y = a + b * y`. Completing the square, the element `u = y - b / 2` has
-`u * u` a real scalar, and `u` is again outside `ℝ`, so `exists_smul_mul_self_eq_neg_one` rescales
-it to a square root of `-1`. -/
+/-- **Every non-real element can be recentred and rescaled to a square root of `-1`.** -/
 private theorem exists_smul_sub_mul_self_eq_neg_one {y : D} (hy : y ∉ (⊥ : Subalgebra ℝ D)) :
     ∃ b c : ℝ, (c • (y - algebraMap ℝ D (b / 2))) * (c • (y - algebraMap ℝ D (b / 2))) = -1 := by
   obtain ⟨a, b, hab⟩ := exists_mul_self_eq_algebraMap_add_smul y
@@ -209,10 +206,7 @@ private theorem exists_smul_sub_mul_self_eq_neg_one {y : D} (hy : y ∉ (⊥ : S
   exact ⟨b, c, hudef ▸ hc⟩
 
 /-- **A finite-dimensional real algebra that is a domain and is not `ℝ` contains a square root
-of `-1`.**
-
-Take any `y` outside the copy of `ℝ`; `exists_smul_sub_mul_self_eq_neg_one` completes the square
-and rescales it to a square root of `-1`. -/
+of `-1`.** -/
 theorem exists_mul_self_eq_neg_one (h : finrank ℝ D ≠ 1) : ∃ i : D, i * i = -1 := by
   -- Some `y` is not a real scalar.
   obtain ⟨y, hy⟩ : ∃ y : D, y ∉ (⊥ : Subalgebra ℝ D) := by
@@ -222,6 +216,47 @@ theorem exists_mul_self_eq_neg_one (h : finrank ℝ D ≠ 1) : ∃ i : D, i * i 
     exact hc ⟨x, hx⟩
   obtain ⟨b, c, hc⟩ := exists_smul_sub_mul_self_eq_neg_one hy
   exact ⟨_, hc⟩
+
+/-- **A square root of `-1` in a real domain of dimension more than `2` is not central.** -/
+private theorem exists_mul_ne_mul_of_two_lt_finrank {i : D} (hi : i * i = -1)
+    (h : 2 < finrank ℝ D) : ∃ x : D, x * i ≠ i * x := by
+  by_contra hc
+  push Not at hc
+  -- Otherwise `i` is central, and then every element lies in the plane `span {1, i}`: a recentred
+  -- and rescaled non-real element is a square root of `-1` commuting with `i`, so it is `±i`.
+  obtain ⟨y, hy⟩ : ∃ y : D, y ∉ Submodule.span ℝ (Set.range ![(1 : D), i]) := by
+    by_contra hy
+    push Not at hy
+    have hle := finrank_range_le_card (R := ℝ) ![(1 : D), i]
+    have htop : Submodule.span ℝ (Set.range ![(1 : D), i]) = ⊤ := eq_top_iff.2 fun y _ ↦ hy y
+    rw [Set.finrank, htop, finrank_top] at hle
+    simp at hle
+    omega
+  have hybot : y ∉ (⊥ : Subalgebra ℝ D) := fun hmem ↦ by
+    obtain ⟨t, rfl⟩ := Algebra.mem_bot.1 hmem
+    exact hy (by
+      rw [Algebra.algebraMap_eq_smul_one]
+      exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨0, rfl⟩))
+  obtain ⟨b, c, hjsq⟩ := exists_smul_sub_mul_self_eq_neg_one hybot
+  obtain ⟨j, hjdef⟩ : ∃ j : D, j = c • (y - algebraMap ℝ D (b / 2)) := ⟨_, rfl⟩
+  rw [← hjdef] at hjsq
+  have hij : j = i ∨ j = -i :=
+    ((commute_iff_eq j i).2 (hc j)).mul_self_eq_mul_self_iff.mp (hjsq.trans hi.symm)
+  have hc0 : c ≠ 0 := by
+    rintro rfl
+    simp [hjdef] at hjsq
+  have hyj : y = (b / 2) • (1 : D) + c⁻¹ • j := by
+    rw [hjdef, smul_smul, inv_mul_cancel₀ hc0, one_smul, ← Algebra.algebraMap_eq_smul_one]
+    abel
+  refine hy ?_
+  rw [hyj]
+  refine Submodule.add_mem _ (Submodule.smul_mem _ _ (Submodule.subset_span ⟨0, rfl⟩))
+    (Submodule.smul_mem _ _ ?_)
+  rcases hij with h | h
+  · rw [h]
+    exact Submodule.subset_span ⟨1, rfl⟩
+  · rw [h]
+    exact Submodule.neg_mem _ (Submodule.subset_span ⟨1, rfl⟩)
 
 /-- **A square root of `-1` that does not commute with everything has an anticommuting partner**:
 if `i * i = -1` and some `x` fails to commute with `i`, then there is a `j` with `j * j = -1` and
@@ -284,9 +319,8 @@ end Quadratic
 
 namespace Algebra
 
-/-- **A real central division algebra has degree at most `2`.** When `D` is finite dimensional it
-has a subfield of degree `deg ℝ D`, and a finite extension of `ℝ` is `ℝ` or `ℂ`, so that degree is
-`1` or `2`. Otherwise `finrank ℝ D = 0`, so the degree is `0`. -/
+/-- **A real central division algebra has degree at most `2`.** When `D` is finite dimensional its
+degree is `1` or `2`; otherwise `finrank ℝ D = 0`, so the degree is `0`. -/
 theorem deg_le_two (D : Type*) [DivisionRing D] [Algebra ℝ D] [Algebra.IsCentral ℝ D] :
     deg ℝ D ≤ 2 := by
   by_cases hD : FiniteDimensional ℝ D
@@ -345,45 +379,7 @@ theorem nonempty_algEquiv_quaternion_of_finrank_eq_four (D : Type*) [Ring D] [Is
     Nonempty (D ≃ₐ[ℝ] ℍ[ℝ]) := by
   have : FiniteDimensional ℝ D := .of_finrank_pos (by omega)
   obtain ⟨i, hi⟩ := exists_mul_self_eq_neg_one (D := D) (by omega)
-  obtain ⟨x, hx⟩ : ∃ x : D, x * i ≠ i * x := by
-    by_contra hc
-    push Not at hc
-    -- Otherwise `i` is central, and then every element lies in the plane `span {1, i}`: a recentred
-    -- and rescaled non-real element is a square root of `-1` commuting with `i`, so it is `±i`.
-    obtain ⟨y, hy⟩ : ∃ y : D, y ∉ Submodule.span ℝ (Set.range ![(1 : D), i]) := by
-      by_contra hy
-      push Not at hy
-      have hle := finrank_range_le_card (R := ℝ) ![(1 : D), i]
-      have htop : Submodule.span ℝ (Set.range ![(1 : D), i]) = ⊤ := eq_top_iff.2 fun y _ ↦ hy y
-      rw [Set.finrank, htop, finrank_top, h4] at hle
-      simp at hle
-    have hybot : y ∉ (⊥ : Subalgebra ℝ D) := fun hmem ↦ by
-      obtain ⟨t, rfl⟩ := Algebra.mem_bot.1 hmem
-      exact hy (by
-        rw [Algebra.algebraMap_eq_smul_one]
-        exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨0, rfl⟩))
-    obtain ⟨b, c, hjsq⟩ := exists_smul_sub_mul_self_eq_neg_one hybot
-    obtain ⟨j, hjdef⟩ : ∃ j : D, j = c • (y - algebraMap ℝ D (b / 2)) := ⟨_, rfl⟩
-    rw [← hjdef] at hjsq
-    have hij : i = j ∨ i = -j :=
-      (show Commute i j from (hc j).symm).mul_self_eq_mul_self_iff.mp (hi.trans hjsq.symm)
-    have hc0 : c ≠ 0 := by
-      rintro rfl
-      rw [zero_smul] at hjdef
-      rw [hjdef, mul_zero] at hjsq
-      exact zero_ne_one (neg_eq_zero.1 hjsq.symm ▸ rfl : (0 : D) = 1)
-    have hyj : y = (b / 2) • (1 : D) + c⁻¹ • j := by
-      rw [hjdef, smul_smul, inv_mul_cancel₀ hc0, one_smul, ← Algebra.algebraMap_eq_smul_one]
-      abel
-    refine hy ?_
-    rw [hyj]
-    refine Submodule.add_mem _ (Submodule.smul_mem _ _ (Submodule.subset_span ⟨0, rfl⟩))
-      (Submodule.smul_mem _ _ ?_)
-    rcases hij with h | h
-    · rw [← h]
-      exact Submodule.subset_span ⟨1, rfl⟩
-    · rw [neg_eq_iff_eq_neg.1 h.symm]
-      exact Submodule.neg_mem _ (Submodule.subset_span ⟨1, rfl⟩)
+  obtain ⟨x, hx⟩ := exists_mul_ne_mul_of_two_lt_finrank hi (by omega)
   -- The anticommuting partner, and the quaternion basis the pair forms.
   obtain ⟨j, hj, hanti⟩ := exists_mul_self_eq_neg_one_and_mul_eq_neg_mul hi hx
   have hanti' : j * i = -(i * j) := by rw [hanti]; abel
