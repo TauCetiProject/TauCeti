@@ -42,7 +42,7 @@ ingredients of a chart of `G_s` at the identity modelled on `H^s(ℂ; ℝ)`.
 * **Its inverse is Lipschitz near the identity.** If `‖u - 1‖_{H^s}, ‖u' - 1‖_{H^s} ≤ R` with
   `C R < 1`, then the phases `arg u, arg u'` lie in `H^s` and
   `‖arg u - arg u'‖_{H^s} ≤ (1 - C R)⁻¹ ‖u - u'‖_{H^s}`
-  (`TauCeti.Vortex.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_arg`), since
+  (`TauCeti.Vortex.exists_memSobolev_ae_eq_arg_and_norm_sub_le`), since
   `i arg u = log (1 + (u - 1))` and the logarithm series is Lipschitz on `H^s`
   (`TemperedDistribution.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_log_one_add`).
 
@@ -62,7 +62,7 @@ constructed here.
   to `1` in `H^s` are exponentials of continuous real `H^s` phases.
 * `TauCeti.Vortex.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp`: the exponential is
   locally Lipschitz from `H^s` phases to `H^s` coordinates of gauges.
-* `TauCeti.Vortex.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_arg`: near the identity,
+* `TauCeti.Vortex.exists_memSobolev_ae_eq_arg_and_norm_sub_le`: near the identity,
   the phase `arg u` lies in `H^s` and is Lipschitz in the coordinate `u - 1`.
 
 ## References
@@ -209,7 +209,7 @@ constant `C` with the following property. Let `u, u'` be circle-valued maps on t
 coordinates `u - 1`, `u' - 1` are represented by `L²` functions `h, h' ∈ H^s(ℂ; ℂ)` with
 `‖h‖_{H^s}, ‖h'‖_{H^s} ≤ R` and `C R < 1`. Then the phases `arg u` and `arg u'` are represented by
 `L²` functions `F, F' ∈ H^s`, and `‖F - F'‖_{H^s} ≤ (1 - C R)⁻¹ ‖h - h'‖_{H^s}`. -/
-theorem exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_arg {s : ℝ}
+theorem exists_memSobolev_ae_eq_arg_and_norm_sub_le {s : ℝ}
     (hs : 1 < s) :
     ∃ C, 0 ≤ C ∧ ∀ {u u' : ℂ → Circle} {h h' : Lp ℂ 2 (volume : Measure ℂ)},
       h =ᵐ[volume] (fun z ↦ (u z : ℂ) - 1) → h' =ᵐ[volume] (fun z ↦ (u' z : ℂ) - 1) →

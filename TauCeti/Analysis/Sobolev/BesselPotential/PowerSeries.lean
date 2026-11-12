@@ -51,9 +51,6 @@ what the charts of a gauge group modelled on `H^s` require.
 
 ## Main declarations
 
-* `TemperedDistribution.exists_toBesselPotentialSpace_eq_tsum_and_ae_tendsto`: a series of `L²`
-  functions in `H^s` converging in `H^s` converges almost everywhere to an `L²` function whose
-  `H^s` element is its sum.
 * `TemperedDistribution.exists_hasSum_mul_pow`: a power series without constant term whose
   majorant series converges at `C ‖u‖_{H^s}` maps `u ∈ H^s` to an `H^s` function, which is the
   pointwise sum almost everywhere, with the norm bound above.
@@ -90,42 +87,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E]
 
 namespace TemperedDistribution
-
-/-- **Series in `H^s` converge almost everywhere, `s > n / 2`.** Let `dₙ` be `L²` functions in
-`H^s` and `aₙ` complex coefficients such that `∑ₙ aₙ dₙ` converges in `H^s`. Then its sum is the
-`H^s` element of an `L²` function `g`, and the partial sums `∑_{n < N} aₙ dₙ(x)` converge to `g(x)`
-for almost every `x`. -/
-theorem exists_toBesselPotentialSpace_eq_tsum_and_ae_tendsto {s : ℝ} (hs : finrank ℝ E < 2 * s)
-    {d : ℕ → Lp ℂ 2 (volume : Measure E)} (hd : ∀ n, MemSobolev s 2 (d n : 𝓢'(E, ℂ)))
-    {a : ℕ → ℂ} (ha : Summable fun n ↦ a n • (hd n).toBesselPotentialSpace) :
-    ∃ g : Lp ℂ 2 (volume : Measure E), ∃ hg : MemSobolev s 2 (g : 𝓢'(E, ℂ)),
-      hg.toBesselPotentialSpace = ∑' n, a n • (hd n).toBesselPotentialSpace ∧
-      ∀ᵐ x ∂volume, Tendsto (fun N ↦ ∑ n ∈ Finset.range N, a n * d n x) atTop (𝓝 (g x)) := by
-  have hs0 : 0 ≤ s := by
-    have := (finrank ℝ E).cast_nonneg (α := ℝ)
-    linarith
-  set F := ∑' n, a n • (hd n).toBesselPotentialSpace
-  -- The limit `F` is the `H^s` element of an `L²` function `g`.
-  obtain ⟨g, hFg⟩ := memSobolev_zero_iff.1 (F.memSobolev_toDistr.mono hs0)
-  have hg : MemSobolev s 2 (g : 𝓢'(E, ℂ)) := hFg ▸ F.memSobolev_toDistr
-  have hgF : hg.toBesselPotentialSpace = F := BesselPotentialSpace.ext (by simp [hFg])
-  refine ⟨g, hg, hgF, ?_⟩
-  -- The partial sums converge to `F` in `H^s`, hence almost everywhere.
-  set S : ℕ → Lp ℂ 2 (volume : Measure E) := fun N ↦ ∑ n ∈ Finset.range N, a n • d n
-  have hS (N : ℕ) : MemSobolev s 2 (S N : 𝓢'(E, ℂ)) := by
-    simpa only [S, Lp.toTemperedDistribution_sum, Lp.toTemperedDistribution_smul] using
-      MemSobolev.sum fun n (_ : n ∈ Finset.range N) ↦ (hd n).smul (a n)
-  have hlim := ae_tendsto_of_tendsto_toBesselPotentialSpace hs hS hg <| by
-    simpa only [MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul
-      fun n _ ↦ hd n, Finset.sum_attach _ fun n ↦ a n • (hd n).toBesselPotentialSpace, hgF] using
-      ha.hasSum.tendsto_sum_nat
-  have hpart : ∀ᵐ x ∂volume, ∀ N, S N x = ∑ n ∈ Finset.range N, a n * d n x :=
-    ae_all_iff.2 fun N ↦ by
-      filter_upwards [(Lp.coeFn_finsetSum _ _).trans <| eventuallyEq_sum fun n _ ↦
-        Lp.coeFn_smul (a n) (d n)] with x h
-      simpa [S] using h
-  filter_upwards [hlim, hpart] with x hx hSx
-  simpa only [hSx] using hx
 
 /-- **Power series act on `H^s`, `s > n / 2`.** There is a constant `C`, depending only on `s` and
 `E`, with the following property. Let `u` be an `L²` function in `H^s` and `aₙ` complex
@@ -167,7 +128,7 @@ theorem exists_hasSum_mul_pow {s : ℝ} (hs : finrank ℝ E < 2 * s) :
       calc ‖a n‖ * ‖u x‖ ^ (n + 1) ≤ ‖a n‖ * (C * R) ^ (n + 1) := by gcongr
         _ = C * R * (‖a n‖ * (C * R) ^ n) := by ring
     refine ((ha.mul_left (C * R)).of_norm_bounded hbound).hasSum_iff_tendsto_nat.2 ?_
-    simpa only [hpx] using hx
+    simpa only [hpx, smul_eq_mul] using hx
   · rw [hvF, ← tsum_mul_left]
     exact tsum_of_norm_bounded (ha.mul_left R).hasSum hw
 
@@ -315,7 +276,8 @@ theorem exists_norm_toBesselPotentialSpace_sub_le_of_hasSum_mul_pow {s : ℝ}
     filter_upwards [hlim, ae_all_iff.2 hdu, hvu, hvw, Lp.coeFn_sub v v'] with x hx hdx h₁ h₂ hsub
     rw [hsub, Pi.sub_apply]
     refine tendsto_nhds_unique hx ?_
-    simpa only [hdx, mul_sub, Finset.sum_sub_distrib] using (h₁.sub h₂).tendsto_sum_nat
+    simpa only [hdx, smul_eq_mul, mul_sub, Finset.sum_sub_distrib] using
+      (h₁.sub h₂).tendsto_sum_nat
   subst hgv
   rw [← hv.toBesselPotentialSpace_toTemperedDistribution_sub hv' hg, hgF, ← tsum_mul_right]
   refine tsum_of_norm_bounded ((ha.mul_right δ).hasSum) fun n ↦ (hD n).trans_eq (mul_comm _ _)
