@@ -359,7 +359,9 @@ def pointTwistMul (x z : X) : E z →L[ℂ] F :=
 variable (F E) in
 open Classical in
 /-- The inverse of `pointTwistMul` away from `x`, extended by `0` at `x`: it reads a vector of the
-point twist as a vector of `E`, normalized to zero at the allowed pole. -/
+point twist as a vector of `E`, normalized to zero at the allowed pole. Its scalar is `0` at `x`
+and `1` elsewhere, hence its own inverse, so the same map is also the inclusion of the negative
+point twist `E(-x)` into `E`, which is multiplication by the canonical section of `𝒪(x)`. -/
 def pointTwistDiv (x z : X) : F →L[ℂ] E z :=
   (trivializationAt F E z).symmL ℂ z ∘L
     ((pointTwistFactor x false (decide (z = x)) z)⁻¹ • ContinuousLinearMap.id ℂ F)
@@ -413,6 +415,17 @@ theorem pointTwistDiv_apply_of_ne {x z : X} (h : z ≠ x) (w : F) :
   classical
   rw [pointTwistDiv_apply, decide_eq_false h, pointTwistFactor_self, inv_one, one_smul]
 
+open Classical in
+/-- The scalar of `pointTwistMul` and `pointTwistDiv` is `0` at `x` and `1` elsewhere, so it is its
+own inverse. -/
+theorem inv_pointTwistFactor_false_decide (x z : X) :
+    (pointTwistFactor x false (decide (z = x)) z)⁻¹ =
+      pointTwistFactor x false (decide (z = x)) z := by
+  by_cases h : z = x
+  · subst h
+    rw [decide_eq_true rfl, pointTwistFactor_false_true, pointTwistCoord_self, inv_zero]
+  · rw [decide_eq_false h, pointTwistFactor_self, inv_one]
+
 @[simp] theorem pointTwistDiv_pointTwistMul {x z : X} (h : z ≠ x) (v : E z) :
     pointTwistDiv F E x z (pointTwistMul F E x z v) = v := by
   rw [pointTwistDiv_apply_of_ne h, pointTwistMul_apply_of_ne h]
@@ -423,6 +436,12 @@ theorem pointTwistDiv_apply_of_ne {x z : X} (h : z ≠ x) (w : F) :
   rw [pointTwistDiv_apply_of_ne h, pointTwistMul_apply_of_ne h]
   exact congrArg Prod.snd
     ((trivializationAt F E z).apply_mk_symm (mem_baseSet_trivializationAt F E z) w)
+
+/-- Away from `x`, `pointTwistDiv` is an isomorphism, with inverse `pointTwistMul`. -/
+theorem pointTwistDiv_bijective_of_ne {x z : X} (h : z ≠ x) :
+    Function.Bijective (pointTwistDiv F E x z) :=
+  Function.bijective_iff_has_inverse.2
+    ⟨pointTwistMul F E x z, pointTwistMul_pointTwistDiv h, pointTwistDiv_pointTwistMul h⟩
 
 /-- Away from `x`, the leading coefficient is `pointTwistDiv` multiplied by the centred chart
 coordinate. -/
