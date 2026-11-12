@@ -10,7 +10,6 @@ public import TauCeti.Topology.Homotopy.HomotopyEquiv
 public import TauCeti.Topology.MappingSpace.FreeLoop
 public import TauCeti.Topology.PathComponent
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
-import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 import TauCeti.Topology.Homotopy.Path
 
 /-!
@@ -45,10 +44,6 @@ The Moore free loop space `MooreFreeLoopSpace X` is homotopy equivalent to `C(S�
 
 ## Main declarations
 
-* `Path.joined_toCircle_trans_trans_symm`: a conjugate `χ · ℓ · χ⁻¹` of a loop `ℓ` is joined to
-  `ℓ` in `C(S¹, X)`.
-* `ContinuousMap.joined_toCircle_trans_trans_symm_toLoop`: every free loop is joined to a loop at
-  any point of the path component of its base point.
 * `Path.joined_toCircle_iff_isConj`: two loops at `x` are joined in `C(S¹, X)` exactly when their
   classes are conjugate in `π₁(X, x)`.
 * `TauCeti.freeLoopComponentOfConjClass`: the injective map `ConjClasses π₁(X, x) → π₀(C(S¹, X))`,
@@ -61,7 +56,7 @@ The Moore free loop space `MooreFreeLoopSpace X` is homotopy equivalent to `C(S�
 
 ## References
 
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, §1.1, Exercise 1.1.2.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, §1.1, Exercise 6.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
   Applications to cotangent bundles*, arXiv:2404.07953, §1.4 (local systems on `𝓛X`, one
   basepoint in each free homotopy class).
@@ -78,16 +73,6 @@ variable {X : Type*} [TopologicalSpace X]
 namespace Path
 
 variable {x y : X}
-
-/-- Homotopic loops are joined in the free loop space. -/
-theorem Homotopic.joined_toCircle {γ γ' : Path x x} (h : γ.Homotopic γ') :
-    Joined γ.toCircle γ'.toCircle :=
-  (Path.joined_iff_homotopic.2 h).map (continuous_toCircle x)
-
-/-- A conjugate `χ · ℓ · χ⁻¹` of a loop `ℓ` is joined to `ℓ` in the free loop space. -/
-theorem joined_toCircle_trans_trans_symm (χ : Path x y) (ℓ : Path y y) :
-    Joined ((χ.trans ℓ).trans χ.symm).toCircle ℓ.toCircle :=
-  (joined_toCircle_iff_homotopicWith _ _).2 (homotopicWith_trans_trans_symm χ ℓ)
 
 /-- **Free homotopy classes of loops at a point are conjugacy classes.** Two loops at `x` are
 joined by a path in the free loop space `C(S¹, X)` exactly when their classes are conjugate in
@@ -125,19 +110,6 @@ theorem joined_toCircle_iff_isConj {γ₀ γ₁ : Path x x} :
     exact (h₁.joined_toCircle.trans h₂).symm
 
 end Path
-
-namespace ContinuousMap
-
-variable {x : X}
-
-/-- **Every free loop is freely homotopic to a loop at a given point.** If `χ` is a path from `x`
-to the base point `f 1` of a free loop `f`, then the loop `χ · f · χ⁻¹` at `x` is joined to `f` in
-the free loop space. -/
-theorem joined_toCircle_trans_trans_symm_toLoop (f : C(Circle, X)) (χ : Path x (f 1)) :
-    Joined ((χ.trans f.toLoop).trans χ.symm).toCircle f := by
-  simpa using Path.joined_toCircle_trans_trans_symm χ f.toLoop
-
-end ContinuousMap
 
 namespace TauCeti
 
@@ -178,17 +150,6 @@ theorem injective_freeLoopComponentOfConjClass :
   induction a using Path.Homotopic.Quotient.ind with | mk γ₀ => ?_
   induction b using Path.Homotopic.Quotient.ind with | mk γ₁ => ?_
   exact ConjClasses.mk_eq_mk_iff_isConj.2 (Path.joined_toCircle_iff_isConj.1 (Quotient.exact h))
-
-variable (X) in
-/-- The path component of the base points of the free loops in a path component of the free loop
-space `C(S¹, X)`: evaluation at `1 ∈ S¹` on path components. -/
-def freeLoopComponentBase : ZerothHomotopy C(Circle, X) → ZerothHomotopy X :=
-  Quotient.map (fun f ↦ f 1) fun _ _ h ↦ h.map (continuous_eval_const 1)
-
-@[simp]
-theorem freeLoopComponentBase_mk (f : C(Circle, X)) :
-    freeLoopComponentBase X (.mk f) = .mk (f 1) :=
-  (rfl)
 
 @[simp]
 theorem freeLoopComponentBase_freeLoopComponentOfConjClass

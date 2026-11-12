@@ -32,16 +32,19 @@ ambient space whose intermediate paths all stay in `V`. Analytic continuation co
 `Path.homotopic_of_continuous_square` is likewise adapted from Kim Morrison's
 [#38292](https://github.com/leanprover-community/mathlib4/pull/38292). It is used by
 `AlgebraicTopology/UniversalCover/BasedPath.lean`, where it previously lived privately, and by
-`AlgebraicTopology/Sphere/Puncture.lean`. Its moving-basepoint variant
-`Path.exists_trans_homotopic_trans_of_homotopicWith` reads a homotopy of loops through closed paths
-as the square `γ₀ · δ ≃ δ · γ₁` along the track `δ` of the base point; it identifies free homotopy
-classes of loops with conjugacy classes in
-`AlgebraicTopology/FundamentalGroup/FreeLoop.lean`, together with the converse
-`Path.homotopicWith_trans_trans_symm`: a conjugate loop `χ · ℓ · χ⁻¹` is homotopic to `ℓ` through
-closed paths. Its family version `Path.homotopicWith_uncurry_trans_trans_symm` gives the conjugation
-homotopy of families of loops in `Topology/MappingSpace/Sphere/LoopFamily.lean`. The lemma
+`AlgebraicTopology/Sphere/Puncture.lean`. The lemma
 `Path.Homotopic.refl_of_forall_mem_of_nullhomotopic` is not from #38292; it was factored out of
 `AlgebraicTopology/SemilocallySimplyConnected/Basic.lean`.
+
+The free homotopy lemmas below are not from #38292 either. The moving-basepoint variant
+`Path.exists_trans_homotopic_trans_of_homotopicWith` of `Path.homotopic_of_continuous_square` reads
+a homotopy of loops through closed paths as the square `γ₀ · δ ≃ δ · γ₁` along the track `δ` of the
+base point; it identifies free homotopy classes of loops with conjugacy classes in
+`AlgebraicTopology/FundamentalGroup/FreeLoop.lean`, together with the converse
+`Path.homotopicWith_trans_trans_symm`: a conjugate loop `χ · ℓ · χ⁻¹` is homotopic to `ℓ` through
+closed paths. Its family version `Path.homotopicWith_uncurry_trans_trans_symm` is the explicit
+conjugation homotopy moved here from `Topology/MappingSpace/Sphere/LoopFamily.lean`, where it gives
+the conjugation homotopy of families of loops.
 
 `Path.exists_monotone_range_subpath_subset` subdivides a path, by the Lebesgue number lemma on the
 unit interval, so that each consecutive subpath lies in a member of a given family of sets. It is

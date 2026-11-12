@@ -10,8 +10,9 @@ public import TauCeti.Topology.Circle.Loop
 public import TauCeti.Topology.CompactOpen
 public import TauCeti.Topology.ContinuousMap.Precomp
 public import TauCeti.Topology.MappingSpace.Evaluation
-public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Topology.Homotopy.Path
 import TauCeti.Topology.Homotopy.Homotopic.With
+import TauCeti.Topology.Homotopy.Path
 import TauCeti.Topology.PathComponent
 
 /-!
@@ -42,6 +43,12 @@ such paths in `𝓛₀Q` (`TauCeti.constLoopPathHomeomorph`).
 * `Path.continuous_toCircle`: reading loops as circle maps is continuous.
 * `Path.joined_toCircle_iff_homotopicWith`: two loops are joined in `C(Circle, Q)` exactly when
   they are homotopic through closed paths `I → Q`.
+* `Path.joined_toCircle_trans_trans_symm`: a conjugate `χ · ℓ · χ⁻¹` of a loop `ℓ` is joined to
+  `ℓ` in `C(Circle, Q)`.
+* `ContinuousMap.joined_toCircle_trans_trans_symm_toLoop`: every free loop is joined to a loop at
+  any point of the path component of its base point.
+* `TauCeti.freeLoopComponentBase`: evaluation at `1 ∈ Circle` on path components,
+  `π₀(C(Circle, Q)) → π₀(Q)`.
 * `TauCeti.contractibleLoops`, `TauCeti.basepointContractibleLoop`: the contractible free loops
   `𝓛₀Q` and basepoint evaluation `𝓛₀Q → Q` at `1 ∈ Circle`.
 * `TauCeti.constContractibleLoop`: the constant loops as a continuous map `Q → 𝓛₀Q`, an
@@ -335,6 +342,46 @@ theorem joined_toCircle_iff_homotopicWith (γ : Path x x) (γ' : Path y y) :
   rw [← (TauCeti.circleMapHomeomorphClosedUnitPath (Q := X)).joined_iff, h, h,
     ContinuousMap.homotopicWith_iff_joined]
 
+/-- Homotopic loops are joined in the free loop space. -/
+theorem Homotopic.joined_toCircle {γ γ' : Path x x} (h : γ.Homotopic γ') :
+    Joined γ.toCircle γ'.toCircle := by
+  obtain ⟨F⟩ := h
+  exact (joined_toCircle_iff_homotopicWith γ γ').2
+    ⟨{ toHomotopy := F.toHomotopy, prop' := fun t ↦ by simp }⟩
+
+/-- A conjugate `χ · ℓ · χ⁻¹` of a loop `ℓ` is joined to `ℓ` in the free loop space. -/
+theorem joined_toCircle_trans_trans_symm (χ : Path x y) (ℓ : Path y y) :
+    Joined ((χ.trans ℓ).trans χ.symm).toCircle ℓ.toCircle :=
+  (joined_toCircle_iff_homotopicWith _ _).2 (homotopicWith_trans_trans_symm χ ℓ)
+
 end Path
+
+namespace ContinuousMap
+
+variable {x : X}
+
+/-- **Every free loop is freely homotopic to a loop at a given point.** If `χ` is a path from `x`
+to the base point `f 1` of a free loop `f`, then the loop `χ · f · χ⁻¹` at `x` is joined to `f` in
+the free loop space. -/
+theorem joined_toCircle_trans_trans_symm_toLoop (f : C(Circle, X)) (χ : Path x (f 1)) :
+    Joined ((χ.trans f.toLoop).trans χ.symm).toCircle f := by
+  simpa using Path.joined_toCircle_trans_trans_symm χ f.toLoop
+
+end ContinuousMap
+
+namespace TauCeti
+
+variable (X) in
+/-- The path component of the base points of the free loops in a path component of the free loop
+space `C(S¹, X)`: evaluation at `1 ∈ S¹` on path components. -/
+def freeLoopComponentBase : ZerothHomotopy C(Circle, X) → ZerothHomotopy X :=
+  Quotient.map (fun f ↦ f 1) fun _ _ h ↦ h.map (continuous_eval_const 1)
+
+@[simp]
+theorem freeLoopComponentBase_mk (f : C(Circle, X)) :
+    freeLoopComponentBase X (.mk f) = .mk (f 1) :=
+  (rfl)
+
+end TauCeti
 
 end FreeLoop
