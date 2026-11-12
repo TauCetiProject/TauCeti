@@ -32,8 +32,8 @@ the contribution of each representative to the ambient binary-form trace.
 * `TauCeti.PopaZagier.upperTriangularCoeff`: the normalised coefficient of `(a b; 0 d)`.
 * `TauCeti.TraceFormulaMatrixModule.coeff_popaZagierElement_upperTriangular`: the coefficient
   of an upper-triangular matrix with positive upper-left entry.
-* `TauCeti.TraceFormulaMatrixModule.trace_popaZagierElement_single_upperTriangularRep`: the
-  contribution of one canonical representative.
+* `TauCeti.TraceFormulaMatrixModule.trace_popaZagierElement_single_upperTriangular`: the
+  contribution of one upper-triangular matrix with positive upper-left entry.
 
 ## References
 
@@ -117,16 +117,15 @@ theorem coeff_popaZagierElement_upperTriangular {n : ℤ} (A : TraceFormulaMatri
   rw [PopaZagier.upperTriangularCoeff_def]
   split_ifs <;> norm_num
 
-/-- The contribution of one canonical upper-triangular representative to the trace of
+/-- The contribution of one upper-triangular matrix with positive upper-left entry to the trace of
 Popa--Zagier's explicit element on the ambient binary-form space. -/
-theorem trace_popaZagierElement_single_upperTriangularRep {n : ℤ}
-    (w : ℕ) (hw : Even w) (A : TraceFormulaMatrix n) (hA : A ∈ FixedDetMatrices.reps n) :
+theorem trace_popaZagierElement_single_upperTriangular {n : ℤ}
+    (w : ℕ) (hw : Even w) (A : TraceFormulaMatrix n) (hc : A.1 1 0 = 0) (ha : 0 < A.1 0 0) :
     LinearMap.trace ℚ (homogeneousSubmodule (Fin 2) ℚ w)
         (periodAction hw
           (single (mk A) ((popaZagierElement ℚ n).coeff (mk A)))) =
       PopaZagier.upperTriangularCoeff (A.1 0 0) (A.1 0 1) (A.1 1 1) *
         (Polynomial.dickson 2 (n : ℚ) w).eval ((A.1 0 0 + A.1 1 1 : ℤ) : ℚ) := by
-  obtain ⟨hc, ha, -, -⟩ := hA
   rw [trace_periodAction_single_eq_dickson_eval w hw A, Matrix.trace_fin_two,
     coeff_popaZagierElement_upperTriangular A hc ha]
 
