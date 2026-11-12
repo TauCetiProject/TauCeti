@@ -8,7 +8,13 @@ module
 public import Mathlib.Algebra.Star.Module
 
 /-!
-# Annihilators in rings with a proper star, and scalar commutation in star modules
+# Involution-closed absorption, proper-star annihilators, and scalar commutation
+
+In any magma `A` with an antimultiplicative involution (`StarMul A`), a subset closed under `star`
+(`StarMemClass S A`) that absorbs multiplication by ambient elements on the left also absorbs
+multiplication on the right via `x * a = star (star a * star x)`. Similarly, in a star module over
+`R` with `StarMul A` and `IsScalarTower R A A`, applying `star` shows that scalars commute with
+left multiplication (`x * (c • y) = c • (x * y)`), so `SMulCommClass R A A` is automatic.
 
 In a star ring whose star is proper (`IsProperStar`: `star x * x = 0` forces `x = 0`), such as a
 C⋆-algebra, an element killed by every two-sided multiplication `star d * X * c` vanishes. This is
@@ -22,6 +28,8 @@ centralizers.
 
 ## Main results
 
+* `StarMemClass.mul_mem_right_of_mul_mem_left`: left absorption implies right absorption on
+  star-closed subsets.
 * `TauCeti.eq_zero_of_forall_star_mul_mul_eq_zero`: if `star d * X * c = 0` for all `c` and
   `d`, then `X = 0`.
 * `TauCeti.faithfulSMul_mulOpposite_of_isProperStar`: if `c * x = c * y` for all `c`, then
@@ -33,6 +41,13 @@ centralizers.
 -/
 
 public section
+
+/-- A subset closed under the involution and under left multiplication by ambient elements is also
+closed under right multiplication, via `x * a = star (star a * star x)`. -/
+theorem StarMemClass.mul_mem_right_of_mul_mem_left {S A : Type*} [Mul A] [StarMul A]
+    [SetLike S A] [StarMemClass S A] {s : S}
+    (hmul : ∀ a : A, ∀ x ∈ s, a * x ∈ s) (a : A) {x : A} (hx : x ∈ s) : x * a ∈ s := by
+  simpa only [star_mul, star_star] using star_mem (hmul (star a) (star x) (star_mem hx))
 
 namespace TauCeti
 

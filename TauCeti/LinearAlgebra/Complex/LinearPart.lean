@@ -63,6 +63,8 @@ a field `𝕜`. The hypothesis `[NeZero (2 : 𝕜)]` is assumed only where `½ +
   conjugating source, target, and map along linear equivalences.
 * `TauCeti.IsComplexLinear.symm`, `TauCeti.IsComplexAntilinear.symm`: the inverse of a
   complex-linear (complex-antilinear) equivalence is complex linear (complex antilinear).
+* `TauCeti.add_apply_eq_zero_iff_eq_apply`: for `K` with `K² = -1`, the equation `a + K b = 0`
+  is `b = K a`.
 
 The sign conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 2nd ed., Section 2.2, specialized to the pointwise linear setting.
@@ -439,6 +441,19 @@ theorem complexLinearPart_neg (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) (F 
 theorem complexAntilinearPart_neg (J : V →ₗ[𝕜] V) (J' : W →ₗ[𝕜] W) (F : V →ₗ[𝕜] W) :
     complexAntilinearPart J J' (-F) = -complexAntilinearPart J J' F :=
   map_neg (complexAntilinearPartLinearMap J J') F
+
+/-- For an additive endomorphism `K` with `K² = -1`, such as an almost complex structure, the
+equation `a + K b = 0` is equivalent to `b = K a`. -/
+theorem add_apply_eq_zero_iff_eq_apply {M F : Type*} [AddGroup M] [FunLike F M M]
+    [AddMonoidHomClass F M M] {K : F} (hK : ∀ v, K (K v) = -v) (a b : M) :
+    a + K b = 0 ↔ b = K a := by
+  constructor
+  · intro h
+    have := congrArg K h
+    rw [map_add, hK, map_zero] at this
+    exact (add_neg_eq_zero.1 this).symm
+  · rintro rfl
+    rw [hK, add_neg_cancel]
 
 variable {J : V →ₗ[𝕜] V} {J' : W →ₗ[𝕜] W}
 

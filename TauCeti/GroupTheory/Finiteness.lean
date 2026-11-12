@@ -59,20 +59,18 @@ subgroup and a `Fin`-indexed form of finite generation.
   resolution cannot infer.
 
 `Subgroup.fg_of_fg_map_of_fg_inf_ker` and `Group.fg_of_fg_ker_of_fg_range` are both
-`@[to_additive]`, and both are steps towards the `S`-unit group being finitely generated, which
-`TauCetiRoadmap/EllipticCurves/README.md` §Layer 6 names as an input to the weak Mordell–Weil
-theorem: the group of `S`-units sits in an extension whose kernel is the unit group
-of the base and whose range is a subgroup of a free group of rank `|S|`, so establishing finite
-generation needs exactly these two facts. The finiteness that the descent then applies to it is
-Mathlib's
-`Subgroup.finiteIndex_range_powMonoidHom_of_fg`, read through
+`@[to_additive]`, and both are steps towards the `S`-unit group being finitely generated, an input
+to the weak Mordell–Weil theorem: the group of `S`-units sits in an extension whose kernel is the
+unit group of the base and whose range is a subgroup of a free group of rank `|S|`, so establishing
+finite generation needs exactly these two facts. The finiteness that the descent then applies to it
+is Mathlib's `Subgroup.finiteIndex_range_powMonoidHom_of_fg`, read through
 `Subgroup.finiteIndex_iff_finite_quotient`; nothing here reproves it.
 
 `AddSubgroup.fg_of_addCommGroup`, `Subgroup.fg_of_commGroup` and `Group.fg_of_fg_ker_of_fg_range`
 are adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at the
-roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's convention
-for adapted material, the upstream authorship is credited here rather than in the copyright header.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's convention for
+adapted material, the upstream authorship is credited here rather than in the copyright header.
 
 **`Subgroup.fg_of_fg_map_of_fg_inf_ker` is new here**, with no counterpart in that source, which
 has only the `K = ⊤` case; Mathlib records the general statement's absence in the comment at
