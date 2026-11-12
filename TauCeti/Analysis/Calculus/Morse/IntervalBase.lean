@@ -321,6 +321,10 @@ theorem isIntegralCurve_intervalBaseFlow (C : ℝ) {t : ℝ} (ht : t ∈ Icc (-1
 theorem intervalBaseFlow_neg (C s t : ℝ) : intervalBaseFlow C s (-t) = -intervalBaseFlow C s t := by
   rw [intervalBaseFlow, intervalBaseFlow, neg_sq, neg_div]
 
+/-- The flow commutes with the absolute value. -/
+theorem abs_intervalBaseFlow (C s t : ℝ) : |intervalBaseFlow C s t| = intervalBaseFlow C s |t| := by
+  rw [intervalBaseFlow, intervalBaseFlow, abs_div, abs_of_nonneg (Real.sqrt_nonneg _), sq_abs]
+
 /-- The critical point `-1` is fixed by the flow. -/
 @[simp]
 theorem intervalBaseFlow_apply_neg_one (C s : ℝ) : intervalBaseFlow C s (-1) = -1 := by
