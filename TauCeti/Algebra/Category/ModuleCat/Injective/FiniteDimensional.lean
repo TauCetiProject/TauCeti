@@ -44,17 +44,10 @@ presentation with finitely generated target, in the same universe as the source.
 theorem exists_injectivePresentation_of_finite (M : ModuleCat.{w} A) [Module.Finite A M] :
     ∃ I : InjectivePresentation M, Module.Finite A I.J := by
   classical
-  by_cases hM : Subsingleton M
-  · have : Module.Injective A M :=
-      Module.Baer.injective fun _ g ↦ ⟨0, fun x hx ↦ Subsingleton.elim _ _⟩
-    exact ⟨{ J := M, injective := Module.injective_object_of_injective_module A M, f := 𝟙 M },
-      inferInstance⟩
-  have := not_subsingleton_iff_nontrivial.mp hM
+  rcases subsingleton_or_nontrivial M with hM | hM
+  · exact ⟨{ J := M, injective := (isZero_of_subsingleton M).injective, f := 𝟙 M }, inferInstance⟩
   obtain ⟨m, hm⟩ := exists_ne (0 : M)
   have : Small.{w} A := by
-    have : Nontrivial A := by
-      refine ⟨0, 1, fun h => hm ?_⟩
-      simpa [← h] using (one_smul A m).symm
     have : Small.{w} k := by
       let : Module k M := Module.compHom M (algebraMap k A)
       exact small_of_injective (smul_left_injective k hm)
