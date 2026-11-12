@@ -547,24 +547,10 @@ theorem localArithmeticFactor_one_mul_apply_pow {p : ℕ}
     ((1 : IdealArithmeticFunction K).localArithmeticFactor P *
       (1 : IdealArithmeticFunction K).localArithmeticFactor Q) (p ^ k) = k + 1 := by
   have hp : 1 < p := hP ▸ NumberField.HeightOneSpectrum.one_lt_absNorm P
-  rw [ArithmeticFunction.mul_apply, Nat.sum_divisorsAntidiagonal
-    (fun a b ↦ (1 : IdealArithmeticFunction K).localArithmeticFactor P a *
-      (1 : IdealArithmeticFunction K).localArithmeticFactor Q b)]
-  have hsub : (Finset.range (k + 1)).image (p ^ ·) ⊆ (p ^ k).divisors := fun d hd ↦ by
-    obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hd
-    exact Nat.mem_divisors.mpr ⟨pow_dvd_pow p (Finset.mem_range_succ_iff.mp hi),
-      (pow_pos (by omega) _).ne'⟩
-  rw [← Finset.sum_subset hsub fun d hd hnd ↦ ?_,
-    Finset.sum_image fun i _ j _ h ↦ Nat.pow_right_injective hp h]
-  · rw [Finset.sum_congr rfl fun i hi ↦ by
-      rw [Nat.pow_div (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)) (by omega),
-        localArithmeticFactor_one_apply_pow hP, localArithmeticFactor_one_apply_pow hQ, one_mul]]
-    simp
-  · rw [localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq _ P, zero_mul]
-    rintro ⟨n, hn⟩
-    rw [hP] at hn
-    exact hnd (Finset.mem_image.mpr ⟨n, Finset.mem_range_succ_iff.mpr
-      ((Nat.pow_dvd_pow_iff_le_right hp).mp (hn ▸ Nat.dvd_of_mem_divisors hd)), hn⟩)
+  simp only [localArithmeticFactor, hP, hQ]
+  rw [← _root_.map_mul (ArithmeticFunction.ofPowerSeries p) (localPowerSeries 1 P)
+    (localPowerSeries 1 Q), ArithmeticFunction.ofPowerSeries_apply_pow hp, PowerSeries.coeff_mul]
+  simp
 
 end IdealArithmeticFunction
 
