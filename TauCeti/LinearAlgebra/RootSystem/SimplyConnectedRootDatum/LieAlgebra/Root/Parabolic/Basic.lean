@@ -58,7 +58,7 @@ attribute [local instance high] Algebra.toModule
 
 /-- A simple root subgroup normalizes the remaining positive subgroup whenever every pair
 with that simple root has a one- or two-factor Chevalley commutator formula. -/
-theorem range_simple_le_normalizer_posRoots_diff_singleton_of_pair_cases
+theorem range_simpleIndex_le_normalizer_posRoots_diff_singleton_of_pair_cases
     (i : Fin t.rank) (A : CommAlgCat ℤ)
     (hcases : ∀ β : Fin t.numRoots,
       RootPairStringCases (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) β) :
@@ -71,21 +71,6 @@ theorem range_simple_le_normalizer_posRoots_diff_singleton_of_pair_cases
   let X := fun γ => (chevalleyRootSubgroup ρ M hM hnil γ A).range
   let U := ⨆ γ ∈ S, X γ
   have hsimple := simpleIndex_mem_posRoots (ht := ht) i
-  -- A sum of two positive roots is positive and cannot be the omitted simple root.
-  have hadd {α β γ : Fin t.numRoots}
-      (hα : α ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-      (hβ : β ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-      (hγ : (t.simplyConnectedRootDatum ht).root γ =
-        (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β) :
-      γ ∈ S := by
-    have hrat := (t.root_rationalRootSystem_eq_add_zsmul_iff ht β α γ 1).mpr
-      (by simpa only [one_smul] using hγ)
-    simp only [Int.cast_one, one_smul] at hrat
-    refine ⟨(mem_posRoots _ _ _).mpr
-      (((mem_posRoots _ _ _).mp hα).add ((mem_posRoots _ _ _).mp hβ) hrat), ?_⟩
-    intro heq
-    exact root_ne_add_of_mem_support (simpleIndex_mem_support i)
-      ((mem_posRoots _ _ _).mp hα) ((mem_posRoots _ _ _).mp hβ) (heq ▸ hrat)
   have hmem {γ : Fin t.numRoots} (hγ : γ ∈ S) (u : Multiplicative A) :
       chevalleyRootSubgroup ρ M hM hnil γ A u ∈ U :=
     le_iSup₂ (f := fun γ _ => X γ) γ hγ ⟨u, rfl⟩
@@ -115,20 +100,22 @@ theorem range_simple_le_normalizer_posRoots_diff_singleton_of_pair_cases
     exact U.one_mem
   · rw [← ofAdd_toAdd u, ← ofAdd_toAdd v,
       commutatorElement_chevalleyRootSubgroup_of_root_eq_add ρ M hM hnil hγ hi hj]
-    exact hmem (hadd hsimple β.property.1 hγ) _
+    exact hmem (root_add_mem_posRoots_diff_singleton i hsimple β.property.1 hγ) _
   · have hδ' : (t.simplyConnectedRootDatum ht).root δ =
         (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) +
           (t.simplyConnectedRootDatum ht).root γ := by rw [hδ, hγ]; module
     rw [← ofAdd_toAdd u, ← ofAdd_toAdd v,
       commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add ρ M hM hnil hγ hδ hi hj]
-    exact U.mul_mem (hmem (hadd hsimple β.property.1 hγ) _)
-      (hmem (hadd hsimple (hadd hsimple β.property.1 hγ).1 hδ') _)
+    have hγpos := root_add_mem_posRoots_diff_singleton i hsimple β.property.1 hγ
+    exact U.mul_mem (hmem hγpos _)
+      (hmem (root_add_mem_posRoots_diff_singleton i hsimple hγpos.1 hδ') _)
   · have hδ' : (t.simplyConnectedRootDatum ht).root δ =
         (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ := by
         rw [hδ, hγ]; module
     rw [← commutatorElement_inv, ← ofAdd_toAdd u, ← ofAdd_toAdd v,
       commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add ρ M hM hnil hγ hδ hi hj]
-    exact U.inv_mem (U.mul_mem (hmem (hadd β.property.1 hsimple hγ) _)
-      (hmem (hadd β.property.1 (hadd β.property.1 hsimple hγ).1 hδ') _))
+    have hγpos := root_add_mem_posRoots_diff_singleton i β.property.1 hsimple hγ
+    exact U.inv_mem (U.mul_mem (hmem hγpos _)
+      (hmem (root_add_mem_posRoots_diff_singleton i β.property.1 hγpos.1 hδ') _))
 
 end TauCeti.DynkinType

@@ -122,7 +122,7 @@ theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_range_le
 
 /-- If the chosen simple root subgroup normalizes the remaining positive subgroup, every
 positive element factors through these two subgroups. No uniqueness is asserted. -/
-theorem mem_iSup_posRoots_iff_exists_mem_posRoots_diff_singleton_mul
+theorem mem_iSup_posRoots_iff_exists_mem_posRoots_diff_singleton_mul_of_range_le_normalizer
     (i : Fin t.rank) (A : CommAlgCat ℤ)
     (hx : (chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A).range ≤
       Subgroup.normalizer

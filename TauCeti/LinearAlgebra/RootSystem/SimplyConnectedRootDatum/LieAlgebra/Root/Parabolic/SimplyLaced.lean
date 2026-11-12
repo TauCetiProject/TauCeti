@@ -54,21 +54,9 @@ private theorem isChevalleyStableUnder_posRoots_diff_singleton_posRoots (hs : t.
   by_cases hadd : (t.simplyConnectedRootDatum ht).root α +
       (t.simplyConnectedRootDatum ht).root β ∈ Set.range (t.simplyConnectedRootDatum ht).root
   · obtain ⟨γ, hγ⟩ := hadd
-    have hγrat : (t.rationalRootSystem ht).root γ =
-        (t.rationalRootSystem ht).root α + (t.rationalRootSystem ht).root β := by
-      simpa only [Int.cast_one, one_smul] using
-        (t.root_rationalRootSystem_eq_add_zsmul_iff ht β α γ 1).mpr
-          (by simpa only [one_smul] using hγ)
-    have hγpos : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
-      (mem_posRoots _ _ _).mpr (((mem_posRoots _ _ _).mp hα).add
-        ((mem_posRoots _ _ _).mp hβ.1) hγrat)
-    have hγne : γ ≠ t.simpleIndex ht i := by
-      intro heq
-      subst γ
-      exact root_ne_add_of_mem_support (simpleIndex_mem_support i)
-        ((mem_posRoots _ _ _).mp hα) ((mem_posRoots _ _ _).mp hβ.1) hγrat
+    have hγmem := root_add_mem_posRoots_diff_singleton i hα hβ.1 hγ
     have hcomm := t.pairing_simplyConnectedRootDatum_comm ht hs
-    exact Or.inr ⟨γ, ⟨hγpos, hγne⟩, t.structureConstant ht α β,
+    exact Or.inr ⟨γ, hγmem, t.structureConstant ht α β,
       lie_chevalleySystem_eq_structureConstant_zsmul hγ,
       lie_chevalleySystem_eq_zero_of_add_eq hγ
         (RootPairing.root_add_notMem_of_root_eq_add hcomm hγ),
@@ -147,7 +135,8 @@ theorem mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul (hs : t.IsSimpl
     ∃ q ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
       (chevalleyRootSubgroup ρ M hM hnil γ A).range),
       ∃ u, g = q * chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A u :=
-  mem_iSup_posRoots_iff_exists_mem_posRoots_diff_singleton_mul ρ M hM hnil i A
+  mem_iSup_posRoots_iff_exists_mem_posRoots_diff_singleton_mul_of_range_le_normalizer
+    ρ M hM hnil i A
     (range_simpleIndex_le_normalizer_posRoots_diff_singleton ρ M hM hnil hs i A) g
 
 end
