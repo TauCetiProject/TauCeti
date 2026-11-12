@@ -97,16 +97,17 @@ theorem map_iSup_posRoots_chevalleyRootSubgroup_conj_kostantWeylGL
 
 /-- If a positive simple root subgroup normalizes the punctured positive subgroup, then so
 does its opposite root subgroup. -/
-theorem range_chevalleyRootSubgroup_sup_le_normalizer_posRoots_diff_singleton
+theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_le_normalizer
     (i : Fin t.rank) (A : CommAlgCat ℤ)
     (hpos : (chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A).range ≤
       Subgroup.normalizer
         (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
           (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _)) :
-    (chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A).range ⊔
-      (chevalleyRootSubgroup ρ M hM hnil
-        ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
-          (t.simpleIndex ht i)) A).range ≤
+    Subgroup.closure
+      (Set.range (chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A) ∪
+        Set.range (chevalleyRootSubgroup ρ M hM hnil
+          ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
+            (t.simpleIndex ht i)) A)) ≤
     Subgroup.normalizer
       (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
         (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) := by
@@ -117,7 +118,11 @@ theorem range_chevalleyRootSubgroup_sup_le_normalizer_posRoots_diff_singleton
   have hw : U.map (MulAut.conj w) = U :=
     Subgroup.mem_normalizer_iff_map_conj_eq.mp
       (kostantWeylGL_mem_normalizer_posRoots_diff_singleton ρ M hM hnil i A)
-  apply sup_le hpos
+  apply (Subgroup.closure_le _).mpr
+  apply Set.union_subset hpos
+  change (chevalleyRootSubgroup ρ M hM hnil
+    ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
+      (t.simpleIndex ht i)) A).range ≤ Subgroup.normalizer (U : Set _)
   rw [← map_range_chevalleyRootSubgroup_conj_kostantWeylGL ρ M hM hnil i]
   exact (Subgroup.map_mono hpos).trans (by
     have H := Subgroup.le_normalizer_map (H := U) (MulAut.conj w).toMonoidHom
@@ -126,7 +131,7 @@ theorem range_chevalleyRootSubgroup_sup_le_normalizer_posRoots_diff_singleton
 /-- If a simple root subgroup normalizes the subgroup of the other positive roots, every
 positive element factors as a punctured-positive element followed by a simple-root element.
 No uniqueness or generation of the ambient group is assumed. -/
-theorem mem_iSup_posRoots_chevalleyRootSubgroup_iff
+theorem mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul_of_le_normalizer
     (i : Fin t.rank) (A : CommAlgCat ℤ)
     (hpos : (chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A).range ≤
       Subgroup.normalizer
@@ -138,10 +143,11 @@ theorem mem_iSup_posRoots_chevalleyRootSubgroup_iff
     ∃ v ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \
         {t.simpleIndex ht i}, (chevalleyRootSubgroup ρ M hM hnil γ A).range),
       ∃ u : Multiplicative A,
-        v * chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A u = g := by
+        g = v * chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A u := by
   conv_lhs => rw [posRoots_eq_diff_union_simpleIndex i, iSup_union, iSup_singleton]
   rw [Subgroup.mem_sup_of_right_le_normalizer_left hpos]
   simp only [MonoidHom.mem_range, exists_exists_eq_and]
+  simp only [eq_comm]
 
 end
 

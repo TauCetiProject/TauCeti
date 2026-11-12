@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Positive
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.G2.ShortLong
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.G2.ShortPair
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Rational
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.G2
 import TauCeti.GroupTheory.Commutator
 
 /-!
@@ -20,9 +17,10 @@ The opposite pair Xᵢ, X₋ᵢ normalizes Uᵢ, and every element of the positi
 product in Uᵢ Xᵢ. These are the local factorizations used in the simple-reflection reduction
 of the Bruhat decomposition; no global Bruhat or ambient point-generation theorem is assumed.
 
-The positive-root commutators use the native integral G₂ formulas, including the four-factor
-short–long and three-factor short–short cases. The negative-root normalization follows by
-conjugating with the simple Weyl representative, which already normalizes Uᵢ by
+The positive-root commutators use the graded bound
+`TauCeti.DynkinType.commutator_range_chevalleyRootSubgroup_g2_le`, based on the native integral
+G₂ formulas. The negative-root normalization follows by conjugating with the simple Weyl
+representative, which already normalizes Uᵢ by
 `TauCeti.DynkinType.kostantWeylGL_mem_normalizer_posRoots_diff_singleton`.
 Thus no division by two or three in the value ring is needed. The results hold on every
 Kostant-stable lattice with nilpotent simple root operators, over every commutative value ring.
@@ -38,7 +36,6 @@ public section
 namespace TauCeti.DynkinType
 
 open TensorProduct TauCeti.UniversalEnvelopingAlgebra
-open scoped commutatorElement
 
 noncomputable section
 
@@ -54,99 +51,51 @@ variable (hnil : ∀ i, IsNilpotent
 -- Match the tensor product to the integral algebra structure of the value ring.
 attribute [local instance high] Algebra.toModule
 
-private theorem g2_positive_commutator_cases (i j : Fin 12)
-    (hi : i.val < 2) (hj : j.val < 6) (hij : i ≠ j) :
-    (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 0 ∧ j = 3) ∨
-      (i = 1 ∧ j = 0) ∨ (i = 1 ∧ j = 4) ∨
-      (g2Root i + g2Root j ∉ Set.range g2Root ∧ g2Root i + g2Root j ≠ 0) := by
-  simp only [Set.mem_range, g2Root_apply]
-  revert i j
-  decide +kernel
-
-private theorem g2_simple_commutator_mem (A : CommAlgCat ℤ)
-    (P : Subgroup (LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)))
-    (i j : Fin G2.numRoots) (hi : i.val < 2) (hj : j.val < 6) (hij : i ≠ j)
-    (hP : ∀ k : Fin G2.numRoots, k.val < 6 → k ≠ i →
-      (chevalleyRootSubgroup ρ M hM hnil k A).range ≤ P) (u v : A) :
-    ⁅chevalleyRootSubgroup ρ M hM hnil i A (Multiplicative.ofAdd u),
-      chevalleyRootSubgroup ρ M hM hnil j A (Multiplicative.ofAdd v)⁆ ∈ P := by
-  -- Normalize the opaque root count throughout the telescope before substituting table indices.
-  revert i j
-  simp +instances only [numRoots_G2]
-  intro i j hi hj hij hP
-  have hSL := @commutatorElement_chevalleyRootSubgroup_of_g2_short_long ht V _ _ ρ M hM hnil
-  have hSP := fun {i j k l m : Fin G2.numRoots} =>
-    @commutatorElement_chevalleyRootSubgroup_of_g2_short_pair ht i j k l m V _ _ ρ M hM hnil
-  have hLS := @commutatorElement_chevalleyRootSubgroup_G2_of_long_sum ht V _ _ ρ M hM hnil
-  have hRev := @commutatorElement_chevalleyRootSubgroup_of_g2_long_short ht V _ _ ρ M hM hnil
-  simp +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2,
-    g2SimplyConnectedRootDatum_root, g2Root_apply, g2Length_apply] at hSL hSP hLS hRev
-  have mem (k : Fin 12) (hk : k.val < 6) (hki : k ≠ i) (a : A) :
-      chevalleyRootSubgroup ρ M hM hnil k A (Multiplicative.ofAdd a) ∈ P :=
-    hP k hk hki ⟨_, rfl⟩
-  -- The five noncommuting pairs use the integral formulas; every correction root stays punctured.
-  rcases g2_positive_commutator_cases i j hi hj hij with
-    ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | h
-  · rw [hSL (α := 0) (β := 1) (γ := 2) (δ := 3) (ε := 4) (ζ := 5)
-      (by decide) (by decide) (by decide) (by decide)]
-    exact P.mul_mem (P.mul_mem (P.mul_mem (mem 2 (by decide) (by decide) _)
-      (mem 3 (by decide) (by decide) _)) (mem 4 (by decide) (by decide) _))
-      (mem 5 (by decide) (by decide) _)
-  · rw [hSP (i := 0) (j := 2) (k := 3) (l := 4) (m := 5)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]
-    exact P.mul_mem (P.mul_mem (mem 3 (by decide) (by decide) _)
-      (mem 4 (by decide) (by decide) _)) (mem 5 (by decide) (by decide) _)
-  · rw [hLS (α := 0) (β := 3) (γ := 4) (by decide) (by decide)]
-    exact mem 4 (by decide) (by decide) _
-  · rw [hRev (α := 0) (β := 1) (γ := 2) (δ := 3) (ε := 4) (ζ := 5)
-      (by decide) (by decide) (by decide) (by decide)]
-    exact P.mul_mem (P.mul_mem (P.mul_mem (mem 2 (by decide) (by decide) _)
-      (mem 3 (by decide) (by decide) _)) (mem 4 (by decide) (by decide) _))
-      (mem 5 (by decide) (by decide) _)
-  · rw [hLS (α := 1) (β := 4) (γ := 5) (by decide) (by decide)]
-    exact mem 5 (by decide) (by decide) _
-  · have hComm := fun {α β : Fin G2.numRoots} =>
-      @commute_chevalleyRootSubgroup G2 ht α β V _ _ ρ M hM hnil
-    simp +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2,
-      g2SimplyConnectedRootDatum_root] at hComm
-    rw [commutatorElement_eq_one_iff_commute.mpr (hComm h.1 h.2 A u v)]
-    exact P.one_mem
+private theorem range_simpleIndex_le_normalizer_posRoots_diff_singleton_G2
+    (i : Fin G2.rank) (A : CommAlgCat ℤ) :
+    (chevalleyRootSubgroup ρ M hM hnil (G2.simpleIndex ht i) A).range ≤
+      Subgroup.normalizer
+        (⨆ γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) \
+            {G2.simpleIndex ht i}, (chevalleyRootSubgroup ρ M hM hnil γ A).range :
+          Subgroup _) := by
+  rw [iSup_subtype']
+  apply Subgroup.le_normalizer_iSup_of_commutator_le
+  rintro ⟨γ, hγ⟩
+  let i₆ : Fin 6 := ⟨(G2.simpleIndex ht i).val,
+    lt_trans (by simpa only [simpleIndex_val, rank_G2] using i.isLt) (by decide : 2 < 6)⟩
+  let γ₆ : Fin 6 := ⟨γ.val, (mem_posRoots_rational_g2_iff ht γ).mp hγ.1⟩
+  have hcomm := commutator_range_chevalleyRootSubgroup_g2_le ρ M hM hnil A i₆ γ₆
+    (by intro h; exact hγ.2 (Fin.ext (congrArg Fin.val h).symm))
+  refine hcomm.trans ?_
+  rw [iSup_subtype]
+  refine iSup₂_le fun k hk => le_iSup_of_le (Fin.castAdd 6 k) (le_iSup_of_le ?_ le_rfl)
+  refine ⟨(mem_posRoots_rational_g2_iff ht _).mpr k.isLt, ?_⟩
+  -- Correction indices are strictly larger than the chosen simple index, so stay punctured.
+  have hik := lt_of_le_of_lt (le_max_left i₆ γ₆) hk
+  intro heq
+  exact (ne_of_lt hik) (Fin.ext (congrArg Fin.val heq).symm)
 
 /-- In type G₂ the positive and negative simple root subgroups together normalize the subgroup
 of the other positive roots. This holds over arbitrary commutative value rings, including
 characteristics two and three. -/
-theorem range_chevalleyRootSubgroup_sup_le_normalizer_posRoots_diff_singleton_G2
+theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_G2
     (i : Fin G2.rank) (A : CommAlgCat ℤ) :
-    (chevalleyRootSubgroup ρ M hM hnil (G2.simpleIndex ht i) A).range ⊔
-      (chevalleyRootSubgroup ρ M hM hnil
-        ((G2.simplyConnectedRootDatum ht).reflectionPerm (G2.simpleIndex ht i)
-          (G2.simpleIndex ht i)) A).range ≤
+    Subgroup.closure
+      (Set.range (chevalleyRootSubgroup ρ M hM hnil (G2.simpleIndex ht i) A) ∪
+        Set.range (chevalleyRootSubgroup ρ M hM hnil
+          ((G2.simplyConnectedRootDatum ht).reflectionPerm (G2.simpleIndex ht i)
+            (G2.simpleIndex ht i)) A)) ≤
     Subgroup.normalizer
       (⨆ γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) \ {G2.simpleIndex ht i},
         (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) := by
-  let U := ⨆ γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) \
-      {G2.simpleIndex ht i}, (chevalleyRootSubgroup ρ M hM hnil γ A).range
-  have hpos : (chevalleyRootSubgroup ρ M hM hnil (G2.simpleIndex ht i) A).range ≤
-      Subgroup.normalizer (U : Set _) := by
-    dsimp only [U]
-    rw [iSup_subtype']
-    apply Subgroup.le_normalizer_iSup_of_commutator_le
-    rintro ⟨γ, hγ⟩
-    apply Subgroup.commutator_le.mpr
-    rintro _ ⟨u, rfl⟩ _ ⟨v, rfl⟩
-    rw [iSup_subtype]
-    exact g2_simple_commutator_mem ρ M hM hnil A U _ _
-      (by simpa only [simpleIndex_val, rank_G2] using i.isLt)
-      ((mem_posRoots_rational_g2_iff ht γ).mp hγ.1)
-      (Ne.symm hγ.2) (fun k hk hki => le_iSup_of_le k (le_iSup_of_le
-        ⟨(mem_posRoots_rational_g2_iff ht k).mpr hk, hki⟩ le_rfl)) u.toAdd v.toAdd
-  exact range_chevalleyRootSubgroup_sup_le_normalizer_posRoots_diff_singleton
-    ρ M hM hnil i A hpos
+  exact closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_le_normalizer
+    ρ M hM hnil i A
+    (range_simpleIndex_le_normalizer_posRoots_diff_singleton_G2 ρ M hM hnil i A)
 
 /-- Every positive G₂ element factors as an element generated by the other positive root groups
 followed by an element of a chosen simple root group. This is an existence statement, without
 assuming uniqueness or generation of the ambient group. -/
-theorem mem_iSup_posRoots_chevalleyRootSubgroup_iff_G2
+theorem mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul_G2
     (i : Fin G2.rank) (A : CommAlgCat ℤ)
     (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)) :
     g ∈ (⨆ γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht),
@@ -154,10 +103,10 @@ theorem mem_iSup_posRoots_chevalleyRootSubgroup_iff_G2
     ∃ v ∈ (⨆ γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) \
         {G2.simpleIndex ht i}, (chevalleyRootSubgroup ρ M hM hnil γ A).range),
       ∃ u : Multiplicative A,
-        v * chevalleyRootSubgroup ρ M hM hnil (G2.simpleIndex ht i) A u = g := by
-  exact mem_iSup_posRoots_chevalleyRootSubgroup_iff ρ M hM hnil i A
-    (le_sup_left.trans (range_chevalleyRootSubgroup_sup_le_normalizer_posRoots_diff_singleton_G2
-      ρ M hM hnil i A)) g
+        g = v * chevalleyRootSubgroup ρ M hM hnil (G2.simpleIndex ht i) A u := by
+  exact mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul_of_le_normalizer
+    ρ M hM hnil i A
+    (range_simpleIndex_le_normalizer_posRoots_diff_singleton_G2 ρ M hM hnil i A) g
 
 end
 

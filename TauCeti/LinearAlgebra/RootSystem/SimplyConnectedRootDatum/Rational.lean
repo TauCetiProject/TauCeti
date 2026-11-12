@@ -144,8 +144,13 @@ theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n 
 /-- Rational base change preserves the height of every root in the pinned base. -/
 @[simp] theorem height_rationalBase (i : Fin t.numRoots) :
     (t.rationalBase ht).height i = (t.simplyConnectedBase ht).height i := by
-  exact height_rootPairingBaseChangeBase ℚ (t.simplyConnectedRootDatum ht)
-    (toLinearMap_simplyConnectedRootDatum t ht) (t.simplyConnectedBase ht) i
+  obtain ⟨f, -, -, hf⟩ := (t.simplyConnectedBase ht).exists_root_eq_sum_int i
+  rw [RootPairing.Base.height_eq_sum hf, ← support_rationalBase t ht]
+  apply RootPairing.Base.height_eq_sum
+  rw [support_rationalBase]
+  ext k
+  have hk := congrFun hf k
+  simpa [root_rationalRootSystem, smul_eq_mul] using congrArg (fun z : ℤ => (z : ℚ)) hk
 
 /-- The rational and integral pinned bases define the same set of positive root indices. -/
 theorem posRoots_rationalRootSystem :
