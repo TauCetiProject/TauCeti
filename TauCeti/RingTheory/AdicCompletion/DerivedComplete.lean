@@ -425,6 +425,20 @@ private lemma bijective_mulLeft_comp_iff (N : ModuleCat.{u} A) :
     Function.Bijective.of_comp_iff' hΦ]
 
 omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
+/-- Precomposition with the first map of `TauCeti.awayPresentation f` is bijective on morphisms
+to `N` if and only if the telescope map of `f` is bijective on `N`. -/
+private lemma bijective_awayPresentation_f_comp_iff (N : ModuleCat.{u} A) :
+    Function.Bijective (fun g : (awayPresentation f).X₂ ⟶ N ↦ (awayPresentation f).f ≫ g) ↔
+      Function.Bijective (telescope N f) := by
+  rw [awayPresentation_f, ← bijective_mulLeft_comp_iff f N]
+  -- Identify the first two terms of `awayPresentation f` with `A[X]`, removing the `eqToHom`s.
+  generalize awayPresentation_X₁ f = h₁, awayPresentation_X₂ f = h₂
+  generalize (awayPresentation f).X₁ = X₁ at h₁ ⊢
+  generalize (awayPresentation f).X₂ = X₂ at h₂ ⊢
+  subst h₁ h₂
+  simp
+
+omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
 /-- For `f : A` and an `A`-module `N`, every `Extⁿ_A(A[1/f], N)` vanishes exactly when the
 telescope map `(xₙ) ↦ (xₙ - f • xₙ₊₁)` on `ℕ → N` is bijective (Stacks, Tag 091P). -/
 theorem forall_subsingleton_ext_localizationAway_iff [HasExt.{w'} (ModuleCat.{u} A)]
@@ -432,14 +446,8 @@ theorem forall_subsingleton_ext_localizationAway_iff [HasExt.{w'} (ModuleCat.{u}
     (∀ n, Subsingleton (Ext.{w'} (ModuleCat.of A (Localization.Away f)) N n)) ↔
       Function.Bijective (telescope N f) := by
   have h := (awayPresentation_shortExact f).forall_subsingleton_ext_X₃_iff_bijective N
-  rw [awayPresentation_X₃, awayPresentation_f] at h
-  rw [h, ← bijective_mulLeft_comp_iff f N]
-  -- Identify the first two terms of `awayPresentation f` with `A[X]`, removing the `eqToHom`s.
-  generalize awayPresentation_X₁ f = h₁, awayPresentation_X₂ f = h₂
-  generalize (awayPresentation f).X₁ = X₁ at h₁ ⊢
-  generalize (awayPresentation f).X₂ = X₂ at h₂ ⊢
-  subst h₁ h₂
-  simp
+  rw [awayPresentation_X₃] at h
+  rw [h, bijective_awayPresentation_f_comp_iff]
 
 end Module
 
@@ -467,26 +475,16 @@ theorem derivedComplete_singleFunctor_iff {I : Ideal A} {N : ModuleCat.{u} A} {m
 
 /-! ### Cohomology modules -/
 
-omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
-/-- The telescope map of `f` is bijective on `N` if and only if it is on a module isomorphic to
-`N`. -/
-private lemma bijective_telescope_congr {N N' : Type*} [AddCommGroup N] [Module A N]
-    [AddCommGroup N'] [Module A N'] (e : N ≃ₗ[A] N') (f : A) :
-    Function.Bijective (telescope N f) ↔ Function.Bijective (telescope N' f) := by
-  have he : Function.Bijective (e.toLinearMap.compLeft ℕ) :=
-    ⟨e.injective.comp_left, e.surjective.comp_left⟩
-  rw [← Function.Bijective.of_comp_iff' he, ← LinearMap.coe_comp, compLeft_comp_telescope,
-    LinearMap.coe_comp, Function.Bijective.of_comp_iff _ he]
-
 /-- For every object `M` of `D(A)`, with no boundedness assumption, `RHom_A(A[1/f], M) = 0` if and
 only if the telescope map `(xₖ) ↦ (xₖ - f • xₖ₊₁)` is bijective on every cohomology module
-`Hⁿ(M)`. This uses the free resolution `0 → A[X] → A[X] → A[1/f] → 0`: maps from `A[X]` placed in
-degree zero to `M⟦n⟧` are maps `A[X] → Hⁿ(M)`. -/
+`Hⁿ(M)`. -/
 theorem mem_derivedCompleteIdeal_iff_bijective_telescope {f : A} :
     f ∈ derivedCompleteIdeal M ↔ ∀ n : ℤ,
       Function.Bijective (telescope ((homologyFunctor (ModuleCat.{u} A) n).obj M) f) := by
+  -- Use the free resolution `0 → A[X] → A[X] → A[1/f] → 0`: maps from `A[X]` placed in degree
+  -- zero to `M⟦n⟧` are maps `A[X] → Hⁿ(M)`.
   have h := (awayPresentation_shortExact f).forall_singleFunctor_hom_eq_zero_iff M
-  rw [awayPresentation_X₃, awayPresentation_f] at h
+  rw [awayPresentation_X₃] at h
   rw [mem_derivedCompleteIdeal, h]
   refine forall_congr' fun n ↦ ?_
   -- `H⁰(M⟦n⟧)` is `Hⁿ(M)`.
@@ -494,18 +492,12 @@ theorem mem_derivedCompleteIdeal_iff_bijective_telescope {f : A} :
       (homologyFunctor (ModuleCat.{u} A) n).obj M :=
     ((homologyFunctor (ModuleCat.{u} A) 0).isoShiftZero ℤ).symm.app _ ≪≫
       ((homologyFunctor (ModuleCat.{u} A) 0).shiftIso n 0 n (add_zero n)).app M
-  rw [← bijective_telescope_congr e.toLinearEquiv, ← bijective_mulLeft_comp_iff f]
-  -- Identify the first two terms of `awayPresentation f` with `A[X]`, removing the `eqToHom`s.
-  generalize awayPresentation_X₁ f = h₁, awayPresentation_X₂ f = h₂
-  generalize (awayPresentation f).X₁ = X₁ at h₁ ⊢
-  generalize (awayPresentation f).X₂ = X₂ at h₂ ⊢
-  subst h₁ h₂
-  simp
+  rw [← bijective_telescope_iff_of_linearEquiv e.toLinearEquiv]
+  exact bijective_awayPresentation_f_comp_iff f _
 
 /-- **Derived completeness is detected on cohomology** (Stacks, Proposition 15.93.5, Tag 091T).
 An object `M` of `D(A)`, with no boundedness assumption, is derived `I`-complete if and only if
-every cohomology module `Hⁿ(M)` is a derived `I`-complete module. This is the roadmap's
-`DerivedDeRham.isDerivedCompleteCohomology`. -/
+every cohomology module `Hⁿ(M)` is a derived `I`-complete module. -/
 theorem derivedComplete_iff_isDerivedComplete_homology {I : Ideal A} :
     derivedComplete I M ↔
       ∀ n : ℤ, IsDerivedComplete I ((homologyFunctor (ModuleCat.{u} A) n).obj M) := by
