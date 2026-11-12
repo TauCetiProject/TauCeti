@@ -274,7 +274,6 @@ private theorem cubic_candidate_coefficients_const_neg_one_of_root (a b : ℤ)
     (hroot : x ^ 3 + a * x ^ 2 + b * x - 1 = 0) :
     (a = 1 ∧ b = -2) ∨ (a = 2 ∧ b = -3) := by
   have hx4 : x < 4 / 3 := hxB.trans hB
-  have hx0 : 0 < x := zero_lt_one.trans hx1
   have h1 := mul_pos (sub_pos.mpr hx1) (sub_pos.mpr hx1)
   -- Integral coefficients leave the two advertised survivors.
   obtain ⟨hrlo, hrhi⟩ := mul_add_mem_Ioo_of_root_const_neg_one a b hBcubic hx1 hxB hroot
@@ -425,8 +424,7 @@ theorem cubicUnitEliminationCertificate_sound (hmin : minpoly ℤ θ = X ^ 3 - X
     {u : (𝓞 K)ˣ} (hu : (u : 𝓞 K) = θ ^ 2 - θ) :
     Subgroup.closure {u} ⊔ torsion K = ⊤ := by
   exact UnitCandidateEliminationCertificate.sound
-    (cubicUnitEliminationCertificate hmin hgen hw hu) (units_rank_eq_one hmin hgen)
-    (by rw [finrank_eq_three hmin hgen]; exact Nat.prime_three) hw
+    (cubicUnitEliminationCertificate hmin hgen hw hu) (units_rank_eq_one hmin hgen) hw
     (lt_trans (by norm_num) (unit_value_mem_Ioo hmin hw hu).1)
 
 /-- The regulator is the logarithm of the value of the fundamental unit `θ² - θ` at the real

@@ -50,9 +50,8 @@ adapted from
   provides on unit sheaves and on restrictions of a sheaf of modules;
 * `SheafOfModules.pushforward` and `SheafOfModules.overFunctor` are additive.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible sheaves on a
-scheme; the Picard group `Pic X` under `⊗`", by providing the restriction compatibility needed to
-compare local trivializations on refinements.
+These restriction compatibilities are what is needed to compare local trivializations of sheaves
+of modules on refinements of a cover.
 -/
 
 public section

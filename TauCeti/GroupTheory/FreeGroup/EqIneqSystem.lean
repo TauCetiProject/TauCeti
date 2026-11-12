@@ -20,6 +20,10 @@ their conjunction available to normal forms for quantifier-free group formulas.
 Read with coefficients in `F(A)`, such a word is an equation of algebraic geometry over `F(A)`,
 an element of `F(A)[X]` (`TauCeti.EqIneqSystem.toGX`).
 
+A system is presented as finite syntax by two lists of possibly unreduced words
+(`TauCeti.EqIneqSystem.ofWords`); whether an assignment solves it depends only on the variables
+occurring in the words (`TauCeti.EqIneqSystem.isSolution_ofWords_congr`).
+
 The equation–inequation viewpoint follows Kharlampovich and Myasnikov, *Implicit function
 theorem over free groups*, §2.3.
 -/
@@ -53,6 +57,17 @@ theorem eval_eq_lift (v : X → G) (c : A → G) :
 @[simp] theorem eval_of (v : X → G) (c : A → G) (i : X ⊕ A) :
     eval v c (FreeGroup.of i) = Sum.elim v c i := by
   simp [eval]
+
+/-- The value of a word depends only on the values of the variables occurring in it. -/
+theorem eval_mk_congr {v v' : X → G} (c : A → G) {w : List ((X ⊕ A) × Bool)}
+    (h : ∀ x b, (Sum.inl x, b) ∈ w → v x = v' x) :
+    eval v c (FreeGroup.mk w) = eval v' c (FreeGroup.mk w) := by
+  simp only [eval, FreeGroup.lift_mk]
+  congr 1
+  refine List.map_congr_left fun y hy => ?_
+  obtain ⟨x | a, b⟩ := y
+  · simp [h x b hy]
+  · simp
 
 variable (X A) in
 /-- Words in variables `X` and letters of `A` as elements of `F(A)[X] = F(A) ∗ F(X)`, the
@@ -140,6 +155,14 @@ def append (S T : EqIneqSystem X A) : EqIneqSystem X A :=
   simp [IsSolution, append, List.mem_append, or_imp, forall_and, and_assoc,
     and_left_comm]
 
+/-- Appending the empty system leaves a system unchanged. -/
+@[simp] theorem append_empty (S : EqIneqSystem X A) : S.append (empty X A) = S := by
+  simp [append, empty]
+
+/-- Appending a system to the empty system gives that system. -/
+@[simp] theorem empty_append (S : EqIneqSystem X A) : (empty X A).append S = S := by
+  simp [append, empty]
+
 /-- Distribute conjunction over two finite disjunctions of word systems. -/
 def disjunctionProduct (S T : List (EqIneqSystem X A)) : List (EqIneqSystem X A) :=
   (S.product T).map fun st => st.1.append st.2
@@ -156,6 +179,12 @@ input family. -/
     exact ⟨s, hs, t, ht, heq⟩
   · rintro ⟨s, hs, t, ht, heq⟩
     exact ⟨(s, t), List.mem_product.mpr ⟨hs, ht⟩, heq⟩
+
+/-- Distributing conjunction against a single system appends that system to every member of
+the other family. -/
+@[simp] theorem disjunctionProduct_singleton (S : List (EqIneqSystem X A)) (T : EqIneqSystem X A) :
+    disjunctionProduct S [T] = S.map fun s => s.append T := by
+  simp [disjunctionProduct, List.product, ← List.map_eq_flatMap]
 
 /-- Solving a system in a distributed conjunction is equivalent to solving one system
 from each input family. -/
@@ -228,6 +257,59 @@ theorem map_relabel_disjunctionProduct {Y : Type*} (f : X → Y)
       disjunctionProduct (S.map (relabel f)) (T.map (relabel f)) := by
   simp [disjunctionProduct, List.product, List.map_flatMap, List.flatMap_map,
     Function.comp_def]
+
+section OfWords
+
+/-- The system whose equations and inequations are the elements represented by two lists of
+words in the variables and the coefficient letters. The words may be unreduced; this is the
+presentation of a system as finite syntax. -/
+def ofWords (p : List (List ((X ⊕ A) × Bool)) × List (List ((X ⊕ A) × Bool))) :
+    EqIneqSystem X A :=
+  ⟨p.1.map FreeGroup.mk, p.2.map FreeGroup.mk⟩
+
+/-- The equations of a system given by words are the elements the first words represent. -/
+@[simp] theorem eqs_ofWords (p : List (List ((X ⊕ A) × Bool)) × List (List ((X ⊕ A) × Bool))) :
+    (ofWords p).eqs = p.1.map FreeGroup.mk := by rfl
+
+/-- The inequations of a system given by words are the elements the second words represent. -/
+@[simp] theorem ineqs_ofWords (p : List (List ((X ⊕ A) × Bool)) × List (List ((X ⊕ A) × Bool))) :
+    (ofWords p).ineqs = p.2.map FreeGroup.mk := by rfl
+
+/-- Every system is given by the reduced words of its equations and inequations. -/
+@[simp] theorem ofWords_toWord [DecidableEq X] [DecidableEq A] (S : EqIneqSystem X A) :
+    ofWords (S.eqs.map FreeGroup.toWord, S.ineqs.map FreeGroup.toWord) = S := by
+  ext1 <;> simp [Function.comp_def, FreeGroup.mk_toWord]
+
+/-- An assignment solves a system given by words exactly when the first words evaluate to the
+identity and the second words do not. -/
+theorem isSolution_ofWords_iff (p : List (List ((X ⊕ A) × Bool)) × List (List ((X ⊕ A) × Bool)))
+    (v : X → G) (c : A → G) :
+    (ofWords p).IsSolution v c ↔ (∀ w ∈ p.1, eval v c (FreeGroup.mk w) = 1) ∧
+      ∀ w ∈ p.2, eval v c (FreeGroup.mk w) ≠ 1 := by
+  simp [IsSolution]
+
+/-- Whether an assignment solves a system given by words depends only on its values at the
+variables occurring in the words. -/
+theorem isSolution_ofWords_congr
+    {p : List (List ((X ⊕ A) × Bool)) × List (List ((X ⊕ A) × Bool))} {v v' : X → G} (c : A → G)
+    (h : ∀ w ∈ p.1 ++ p.2, ∀ x b, (Sum.inl x, b) ∈ w → v x = v' x) :
+    (ofWords p).IsSolution v c ↔ (ofWords p).IsSolution v' c := by
+  have key : ∀ w ∈ p.1 ++ p.2, eval v c (FreeGroup.mk w) = eval v' c (FreeGroup.mk w) :=
+    fun w hw => eval_mk_congr c (h w hw)
+  rw [isSolution_ofWords_iff, isSolution_ofWords_iff]
+  exact and_congr (forall₂_congr fun w hw => by rw [key w (List.mem_append_left _ hw)])
+    (forall₂_congr fun w hw => by rw [key w (List.mem_append_right _ hw)])
+
+/-- Relabelling the variables of a system given by words relabels the variable letters of the
+words. -/
+theorem relabel_ofWords {Y : Type*} (f : X → Y)
+    (p : List (List ((X ⊕ A) × Bool)) × List (List ((X ⊕ A) × Bool))) :
+    (ofWords p).relabel f =
+      ofWords (p.1.map (List.map fun y => (Sum.map f id y.1, y.2)),
+        p.2.map (List.map fun y => (Sum.map f id y.1, y.2))) := by
+  ext1 <;> simp [Function.comp_def, FreeGroup.map.mk]
+
+end OfWords
 
 /-- Evaluation commutes with a group homomorphism when the variables and coefficients are
 mapped along that homomorphism. -/

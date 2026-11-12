@@ -123,7 +123,7 @@ theorem eq_of_mulVec_eq_smul_of_nonneg (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0 
   have hA' : ∀ i j, 0 ≤ A i j := fun i j => (hA i j).le
   refine le_antisymm (le_of_smul_le_mulVec hA' hv hAv.le hw hw0 hAw.ge) ?_
   have hv0 : v ≠ 0 := by
-    obtain ⟨j, hj⟩ := Function.ne_iff.1 hw0
+    obtain ⟨j, _⟩ := Function.ne_iff.1 hw0
     exact fun h => (hv j).ne' (congrFun h j)
   exact le_of_smul_le_mulVec hA' (pos_of_mulVec_eq_smul hA hw hw0 hAw) hAw.le
     (fun i => (hv i).le) hv0 hAv.ge
