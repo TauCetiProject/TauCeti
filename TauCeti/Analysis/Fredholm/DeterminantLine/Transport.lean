@@ -25,12 +25,15 @@ nowhere zero (`ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_s
 
 A family `v x` of elements of the determinant lines is **coherent** at `x₀` within `s`
 (`TauCeti.IsDetLineCoherentWithinAt`) if `v x₀ ≠ 0` and some kernel chart valid at `x₀` reads `v x`,
-for `x ∈ s` near `x₀`, as a nonnegative multiple of its reading of `v x₀`. So a coherent family is a
-continuous section of the determinant line bundle up to rescaling by positive functions: it is a
-continuous orientation of the family of determinant lines. The transition between two kernel
-charts valid at `x₀` is, at `x` near `x₀`, a scalar multiple of the same transition at `x₀`, with a
-coefficient which depends continuously on `x` and equals `1` at `x₀`, hence is positive nearby. So
-the condition holds for every kernel chart valid at `x₀` as soon as it holds for one
+for `x ∈ s` near `x₀`, as a nonnegative (possibly zero) multiple of its reading of `v x₀`. A
+family is **coherent on `s`** (`TauCeti.IsDetLineCoherentOn`) if it is coherent within `s` at every
+point of `s`. It is then nonzero at every point of `s`, so the nearby multiples are positive: a
+family coherent on `s` is a continuous section of the determinant line bundle over `s` up to
+rescaling by positive functions, that is, a continuous orientation of the determinant lines over
+`s`. The transition between two kernel charts valid at `x₀` is, at `x` near `x₀`, a scalar multiple
+of the same transition at `x₀`, with a coefficient which depends continuously on `x` and equals `1`
+at `x₀`, hence is positive nearby (`ContinuousLinearMap.eventually_detLineChartEquiv_symm_eq_smul`).
+So the condition holds for every kernel chart valid at `x₀` as soon as it holds for one
 (`TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`).
 
 * **Uniqueness.** Two coherent families on a preconnected set that lie on the same ray at one point
@@ -64,12 +67,13 @@ operator of interest.
 
 ## Main definitions
 
-* `TauCeti.IsDetLineCoherentWithinAt T v s x₀`, `TauCeti.IsDetLineCoherentOn T v s`: the family
-  `v` of elements of the determinant lines is a continuous orientation near `x₀` within `s`, and
-  at every point of `s`.
+* `TauCeti.IsDetLineCoherentWithinAt T v s x₀`: the family `v` of elements of the determinant
+  lines is coherent at `x₀` within `s`, nonzero at `x₀` and read in a kernel chart, nearby, as
+  nonnegative multiples of its reading at `x₀`.
+* `TauCeti.IsDetLineCoherentOn T v s`: `v` is coherent at every point of `s`; it is a continuous
+  orientation of the determinant lines over `s`.
 * `TauCeti.detLineOrientationTransport`: the transport of orientations of determinant lines along
   a continuous path of Fredholm operators.
-* `TauCeti.instNegRayDetLine`: the opposite orientation of a determinant line.
 
 ## Main results
 
@@ -104,10 +108,10 @@ section Coherent
 /-- A family `v x` of elements of the determinant lines of the operators `T x` is **coherent at
 `x₀` within `s`** if `v x₀ ≠ 0` and some kernel chart valid at `x₀`, with stabilizer a
 finite-dimensional subspace `S` of the target and kernel coordinate `q`, reads `v x`, for `x ∈ s`
-near `x₀`, as a nonnegative multiple of its reading of `v x₀`. Such a family is a continuous
-orientation of the determinant lines near `x₀`; by
+near `x₀`, as a nonnegative (possibly zero) multiple of its reading of `v x₀`. By
 `TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`, every kernel chart valid at `x₀` reads it
-in this way when the family `T` is continuous within `s` at `x₀`. -/
+in this way when the family `T` is continuous within `s` at `x₀`. A family coherent at every point
+of `s` is a continuous orientation over `s` (`TauCeti.IsDetLineCoherentOn`). -/
 def IsDetLineCoherentWithinAt (T : X → E →L[ℝ] F) (v : ∀ x, (T x : E →ₗ[ℝ] F).detLine)
     (s : Set X) (x₀ : X) : Prop :=
   v x₀ ≠ 0 ∧ ∃ (S : Submodule ℝ F) (_ : FiniteDimensional ℝ S) (G : Submodule ℝ (E × S))
@@ -118,7 +122,9 @@ def IsDetLineCoherentWithinAt (T : X → E →L[ℝ] F) (v : ∀ x, (T x : E →
         (detLineChartEquiv (T x₀) S.subtypeL q h₀ (v x₀))
 
 /-- A family of elements of the determinant lines is **coherent on `s`** if it is coherent within
-`s` at every point of `s`: it is a continuous orientation of the determinant lines over `s`. -/
+`s` at every point of `s`. It is then nonzero at every point of `s`, so its nearby readings in a
+kernel chart are positive multiples of each other: it is a continuous orientation of the
+determinant lines over `s`. -/
 def IsDetLineCoherentOn (T : X → E →L[ℝ] F) (v : ∀ x, (T x : E →ₗ[ℝ] F).detLine)
     (s : Set X) : Prop :=
   ∀ x ∈ s, IsDetLineCoherentWithinAt T v s x
@@ -204,54 +210,6 @@ theorem IsDetLineCoherentWithinAt.comp {Y : Type*} [TopologicalSpace Y] {f : Y �
 
 variable [CompleteSpace E]
 
-/-- The transition between two kernel charts, both valid at the operator `A₀`, is at every
-operator `A` near `A₀` a positive multiple of the same transition at `A₀`: its coefficient relative
-to the transition at `A₀` is continuous in `A` and equal to `1` at `A₀`. -/
-private theorem eventually_detLineChartEquiv_symm_eq_smul {A₀ : E →L[ℝ] F}
-    {Λ G Λ' G' : Type*} [NormedAddCommGroup Λ] [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
-    [NormedAddCommGroup Λ'] [NormedSpace ℝ Λ'] [FiniteDimensional ℝ Λ']
-    [NormedAddCommGroup G'] [NormedSpace ℝ G'] [FiniteDimensional ℝ G']
-    {D₂ : Λ →L[ℝ] F} {q : E × Λ →L[ℝ] G} {D₂' : Λ' →L[ℝ] F} {q' : E × Λ' →L[ℝ] G'}
-    (h₀ : ((A₀.coprod D₂).prod q).IsInvertible) (h₀' : ((A₀.coprod D₂').prod q').IsInvertible) :
-    ∀ᶠ A in 𝓝 A₀, ∃ (h : ((A.coprod D₂).prod q).IsInvertible)
-      (h' : ((A.coprod D₂').prod q').IsInvertible) (c : ℝ), 0 < c ∧
-      ∀ u, detLineChartEquiv A D₂ q h ((detLineChartEquiv A D₂' q' h').symm u) =
-        c • detLineChartEquiv A₀ D₂ q h₀ ((detLineChartEquiv A₀ D₂' q' h₀').symm u) := by
-  obtain ⟨U, hU, hxU, hUinv⟩ := exists_isOpen_isInvertible_prod (q := q)
-    (continuous_id.continuousLinearMapCoprod (continuous_const (y := D₂))).continuousAt h₀
-  obtain ⟨U', hU', hxU', hUinv'⟩ := exists_isOpen_isInvertible_prod (q := q')
-    (continuous_id.continuousLinearMapCoprod (continuous_const (y := D₂'))).continuousAt h₀'
-  set V := U ∩ U'
-  have hV : IsOpen V := hU.inter hU'
-  have hxV : A₀ ∈ V := ⟨hxU, hxU'⟩
-  -- The transition on the open set `V` where both charts are valid, relative to its value at `A₀`.
-  obtain ⟨c, hc, -, hcu⟩ := exists_continuous_detLineChartEquiv_symm_eq_smul
-    (T := fun A : V ↦ (A : E →L[ℝ] F)) continuous_subtype_val (fun A ↦ hUinv A A.2.1)
-    (fun A ↦ hUinv' A A.2.2) ⟨A₀, hxV⟩
-  -- At `A₀` the transition agrees with itself, so its relative coefficient `c` is `1` there.
-  have hc1 : c ⟨A₀, hxV⟩ = 1 := by
-    have : Nontrivial (TauCeti.detLine ℝ G' ⊗[ℝ] Dual ℝ (TauCeti.detLine ℝ Λ')) :=
-      Module.nontrivial_of_finrank_eq_succ (n := 0) (by
-        rw [Module.finrank_tensorProduct (R := ℝ) (S := ℝ), Subspace.dual_finrank_eq,
-          TauCeti.finrank_detLine ℝ G', TauCeti.finrank_detLine ℝ Λ'])
-    obtain ⟨u, hu⟩ := exists_ne (0 : TauCeti.detLine ℝ G' ⊗[ℝ] Dual ℝ (TauCeti.detLine ℝ Λ'))
-    set B := detLineChartEquiv A₀ D₂ q h₀ ((detLineChartEquiv A₀ D₂' q' h₀').symm u)
-    have hB : B ≠ 0 :=
-      (LinearEquiv.map_ne_zero_iff _).2 ((LinearEquiv.map_ne_zero_iff _).2 hu)
-    have h : B = c ⟨A₀, hxV⟩ • B := hcu ⟨A₀, hxV⟩ u
-    exact ((smul_left_inj (R := ℝ)
-      (M := TauCeti.detLine ℝ G ⊗[ℝ] Dual ℝ (TauCeti.detLine ℝ Λ)) hB).1
-      ((one_smul ℝ B).trans h)).symm
-  have hpos : ∀ᶠ A : V in 𝓝 ⟨A₀, hxV⟩, 0 < c A :=
-    hc.continuousAt.eventually (lt_mem_nhds (by rw [hc1]; exact one_pos))
-  have hpos' : ∀ᶠ A in 𝓝 A₀, ∀ hA : A ∈ V, 0 < c ⟨A, hA⟩ := by
-    have := (eventually_nhds_subtype_iff V ⟨A₀, hxV⟩ (fun A ↦ ∀ hA : A ∈ V, 0 < c ⟨A, hA⟩)).1
-      (hpos.mono fun A hA _ ↦ hA)
-    rwa [hV.nhdsWithin_eq hxV] at this
-  filter_upwards [hpos', hV.mem_nhds hxV] with A hcA hAV
-  exact ⟨hUinv A hAV.1, hUinv' A hAV.2, c ⟨A, hAV⟩, hcA hAV, hcu ⟨A, hAV⟩⟩
-
 /-- **Coherence holds in every kernel chart.** If `v` is coherent within `s` at `x₀` for a
 family continuous within `s` at `x₀`, then every kernel chart valid at `x₀` reads `v x`, for `x ∈ s`
 near `x₀`, as a nonnegative multiple of its reading of `v x₀`. -/
@@ -306,26 +264,13 @@ theorem IsDetLineCoherentOn.sameRay (hT : ContinuousOn T s) (hs : IsPreconnected
 
 variable [CompleteSpace F]
 
-/-- A kernel chart of the form used in `TauCeti.IsDetLineCoherentWithinAt`, valid on an open
-neighbourhood of a Fredholm operator. -/
-private theorem exists_kernelChart {A₀ : E →L[ℝ] F} (hF : IsFredholm A₀) :
-    ∃ (S : Submodule ℝ F) (_ : FiniteDimensional ℝ S) (G : Submodule ℝ (E × S))
-      (_ : FiniteDimensional ℝ G) (q : E × S →L[ℝ] G) (U : Set (E →L[ℝ] F)), IsOpen U ∧ A₀ ∈ U ∧
-      ∀ A ∈ U, ((A.coprod S.subtypeL).prod q).IsInvertible := by
-  obtain ⟨S, -, -, hS, q, U, hU, hxU, hinv⟩ :=
-    IsFredholm.exists_stabilization_kernel_coordinates (T := fun A : E →L[ℝ] F ↦ A) hF
-      continuousAt_id (D := ⊤) (by simp)
-  have : FiniteDimensional ℝ (A₀.coprod S.subtypeL).ker :=
-    (hF.coprod_of_finiteDimensional S.subtypeL).finite_ker
-  exact ⟨S, hS, _, inferInstance, q, U, hU, hxU, hinv⟩
-
 /-- A family which is a fixed nonzero element of the determinant line of a fixed Fredholm operator
 is coherent. -/
 theorem isDetLineCoherentOn_const {T₀ : E →L[ℝ] F} (hT₀ : IsFredholm T₀)
     {v₀ : (T₀ : E →ₗ[ℝ] F).detLine} (hv₀ : v₀ ≠ 0) (s : Set X) :
     IsDetLineCoherentOn (fun _ ↦ T₀) (fun _ ↦ v₀) s := by
   intro x _
-  obtain ⟨S, hS, G, hG, q, U, -, hxU, hinv⟩ := exists_kernelChart hT₀
+  obtain ⟨S, hS, G, hG, q, U, -, hxU, hinv⟩ := hT₀.exists_isOpen_kernelChart
   exact ⟨hv₀, S, hS, G, hG, q, hinv _ hxU, Eventually.of_forall fun _ ↦ ⟨hinv _ hxU, SameRay.rfl⟩⟩
 
 /-- A family which is nonzero at a parameter with Fredholm operator is coherent on the singleton
@@ -333,7 +278,7 @@ of that parameter. -/
 private theorem isDetLineCoherentOn_singleton (hF : IsFredholm (T x₀)) (hv : v x₀ ≠ 0) :
     IsDetLineCoherentOn T v {x₀} := by
   rintro x rfl
-  obtain ⟨S, hS, G, hG, q, U, -, hxU, hinv⟩ := exists_kernelChart hF
+  obtain ⟨S, hS, G, hG, q, U, -, hxU, hinv⟩ := hF.exists_isOpen_kernelChart
   refine ⟨hv, S, hS, G, hG, q, hinv _ hxU, ?_⟩
   rw [nhdsWithin_singleton]
   exact Filter.eventually_pure.2 ⟨hinv _ hxU, SameRay.rfl⟩
@@ -415,7 +360,7 @@ theorem exists_isDetLineCoherentOn_Icc {p q : ℝ} (hT : ContinuousOn T (Icc p q
   let P : ℝ → Prop := fun t ↦
     ∃ v : ∀ t, (T t : E →ₗ[ℝ] F).detLine, IsDetLineCoherentOn T v (Icc p t)
   have hP (x : ℝ) (hx : x ∈ Icc p q) : ∀ᶠ y in 𝓝[Icc p q] x, (P x ↔ P y) ∧ (P y ↔ P x) := by
-    obtain ⟨S, hS, G, hG, q', U, hU, hxU, hinv⟩ := exists_kernelChart (hF x hx)
+    obtain ⟨S, hS, G, hG, q', U, hU, hxU, hinv⟩ := (hF x hx).exists_isOpen_kernelChart
     obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhdsWithin_iff.1 ((hT x hx).preimage_mem_nhdsWithin
       (hU.mem_nhds hxU))
     -- Between two points of `[p, q]` where one kernel chart is valid, `P` does not change.
@@ -455,15 +400,6 @@ theorem exists_isDetLineCoherentOn_Icc {p q : ℝ} (hT : ContinuousOn T (Icc p q
 end Interval
 
 end Coherent
-
-/-- Negation of orientations of the determinant line of a linear map, sending an orientation to
-the opposite one. This is `Module.Ray`'s negation; instance search does not find it unaided, since
-it reaches the additive group structure of the tensor product `f.detLine` only through nested
-unification. -/
-noncomputable instance instNegRayDetLine {R M N : Type*} [CommRing R] [PartialOrder R]
-    [IsStrictOrderedRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-    (f : M →ₗ[R] N) : Neg (Module.Ray R f.detLine) :=
-  @instNegRay R _ _ _ f.detLine TensorProduct.addCommGroup _
 
 section Transport
 
