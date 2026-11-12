@@ -138,7 +138,7 @@ theorem norm_fderiv_mul_bubble_le (hn : 2 ≤ finrank ℝ E) {t R : ℝ} (ht : 0
     ‖fderiv ℝ (fun y ↦ χ y * bubble t b y) x‖ ≤
       (‖fderiv ℝ χ x‖ + |χ x| * ((finrank ℝ E : ℝ) - 2) / R) *
         (2 * t) ^ (((finrank ℝ E : ℝ) - 2) / 2) * R ^ (2 - (finrank ℝ E : ℝ)) := by
-  have hu := ((contDiff_bubble ht.ne' b : ContDiff ℝ 1 (bubble t b)).differentiable
+  have hu := ((contDiff_bubble t b : ContDiff ℝ 1 (bubble t b)).differentiable
     one_ne_zero).differentiableAt (x := x)
   have hrpow : R ^ (1 - (finrank ℝ E : ℝ)) = R ^ (2 - (finrank ℝ E : ℝ)) / R := by
     -- The subtraction-by-one form lets `Real.rpow_sub_one` extract the factor `1 / R`.

@@ -90,7 +90,7 @@ theorem memLp_bubble (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b : E) :
     MemLp (bubble t b) (ENNReal.ofReal (criticalExponent (finrank ℝ E))) μ := by
   have hp := criticalExponent_pos hn
   refine (integrable_norm_rpow_iff
-    (contDiff_bubble (m := 0) ht.ne' b).continuous.aestronglyMeasurable
+    (contDiff_bubble (m := 0) t b).continuous.aestronglyMeasurable
     (by simpa using hp) ENNReal.ofReal_ne_top).mp ?_
   rw [ENNReal.toReal_ofReal hp.le]
   refine (integrable_bubble_rpow_criticalExponent μ (by omega) hn.ne' ht b).congr
@@ -101,7 +101,7 @@ theorem memLp_bubble (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b : E) :
 measure. -/
 theorem memLp_fderiv_bubble (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b : E) :
     MemLp (fderiv ℝ (bubble t b)) 2 μ :=
-  (memLp_two_iff_integrable_sq_norm ((contDiff_bubble (m := 1) ht.ne' b).continuous_fderiv
+  (memLp_two_iff_integrable_sq_norm ((contDiff_bubble (m := 1) t b).continuous_fderiv
     one_ne_zero).aestronglyMeasurable).mpr (integrable_norm_fderiv_bubble_sq μ hn ht b)
 
 include μ in
