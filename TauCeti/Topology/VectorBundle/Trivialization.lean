@@ -24,7 +24,8 @@ linear equivalence `e.continuousLinearEquivAt 𝕜 b`, with inverse its symmetri
 `Bundle.Trivialization.homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt`).
 
 More generally, any linear trivialization sends a vector over its base set to a nonzero vector
-exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). Over the base
+exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`), and likewise
+for its inverse over the base set (`Bundle.Trivialization.symm_ne_zero_iff`). Over the base
 set, its fibrewise linear inverse `e.symmₗ R b` is the inverse of the fibrewise linear equivalence
 (`Bundle.Trivialization.coe_linearEquivAt_symm`), hence injective
 (`Bundle.Trivialization.symmₗ_injective`). For two linear
@@ -89,6 +90,12 @@ vector is nonzero. -/
 theorem snd_apply_ne_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
     (e v).2 ≠ 0 ↔ v.2 ≠ 0 := by
   simpa only [linearEquivAt_apply] using (e.linearEquivAt R v.proj hv).map_ne_zero_iff
+
+include R in
+/-- Over its base set, the inverse of a linear trivialization sends a vector of the model fibre to
+a nonzero vector exactly when the vector is nonzero. -/
+theorem symm_ne_zero_iff {b : B} (hb : b ∈ e.baseSet) {w : F} : e.symm b w ≠ 0 ↔ w ≠ 0 := by
+  simpa only [linearEquivAt_symm_apply] using (e.linearEquivAt R b hb).symm.map_ne_zero_iff
 
 /-- Over the base set, the fibrewise linear inverse of a linear trivialization is the inverse of
 its fibrewise linear equivalence. -/

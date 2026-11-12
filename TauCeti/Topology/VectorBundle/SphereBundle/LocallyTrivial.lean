@@ -12,6 +12,7 @@ import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Sphere bundles are locally trivial
@@ -117,11 +118,6 @@ private theorem apply_snd_ne_zero_of_mem_sphereBundle {v : TauCeti.sphereBundle 
   (e.linearEquivAt ℝ _ hv).map_ne_zero_iff.2
     (norm_ne_zero_iff.1 (by rw [mem_sphereBundle.1 v.2]; exact one_ne_zero))
 
-/-- The inverse of a linear chart sends unit vectors over its base set to nonzero vectors. -/
-private theorem symm_ne_zero {b : B} (hb : b ∈ e.baseSet) (w : sphere (0 : F) 1) :
-    e.symm b w ≠ 0 :=
-  (e.linearEquivAt ℝ b hb).symm.map_ne_zero_iff.2 (ne_zero_of_mem_unit_sphere w)
-
 variable [FiberBundle F E] [VectorBundle ℝ F E]
 
 open scoped Classical in
@@ -144,7 +140,8 @@ over its base set, and an arbitrary unit vector elsewhere. -/
 private def sphereBundleInv (p : B × sphere (0 : F) 1) : TauCeti.sphereBundle F E :=
   if hp : p.1 ∈ e.baseSet then
     ⟨⟨p.1, ‖e.symm p.1 p.2‖⁻¹ • e.symm p.1 p.2⟩,
-      mem_sphereBundle.2 (norm_smul_inv_norm (e.symm_ne_zero hp p.2))⟩
+      mem_sphereBundle.2
+        (norm_smul_inv_norm ((e.symm_ne_zero_iff ℝ hp).2 (ne_zero_of_mem_unit_sphere p.2)))⟩
   else Classical.choice (nonempty_sphereBundle p.1 p.2)
 
 private theorem coe_sphereBundleInv {p : B × sphere (0 : F) 1} (hp : p.1 ∈ e.baseSet) :
@@ -182,7 +179,8 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
         (NormedSpace.normalize_eq_self_of_norm_eq_one (mem_sphereBundle.1 v.2)))
   right_inv' p hp := by
     have hp' : p.1 ∈ e.baseSet := hp.1
-    have hpos : 0 < ‖e.symm p.1 p.2‖⁻¹ := inv_pos.2 (norm_pos_iff.2 (e.symm_ne_zero hp' p.2))
+    have hpos : 0 < ‖e.symm p.1 p.2‖⁻¹ :=
+      inv_pos.2 (norm_pos_iff.2 ((e.symm_ne_zero_iff ℝ hp').2 (ne_zero_of_mem_unit_sphere p.2)))
     have hsymm := e.coe_sphereBundleInv hp'
     have hz : (e.sphereBundleInv p : TotalSpace F E).proj = p.1 := by rw [hsymm]
     refine Prod.ext ((sphereBundleProj_apply F E _).trans hz) (Subtype.ext ?_)
@@ -225,7 +223,8 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
         ‖(e.toOpenPartialHomeomorph.symm (p.1, (p.2 : F))).2‖⁻¹) (e.baseSet ×ˢ univ) :=
       (hnorm.comp_continuousOn hs).inv₀ fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ by
         rw [Function.comp_apply, ← e.mk_symm hp.1]
-        exact norm_ne_zero_iff.2 (e.symm_ne_zero hp.1 p.2)
+        exact norm_ne_zero_iff.2
+          ((e.symm_ne_zero_iff ℝ hp.1).2 (ne_zero_of_mem_unit_sphere p.2))
     refine (e.toOpenPartialHomeomorph.continuousOn_symm.comp
       (continuous_fst.continuousOn.prodMk
         (hn.smul (continuous_subtype_val.comp continuous_snd).continuousOn))
