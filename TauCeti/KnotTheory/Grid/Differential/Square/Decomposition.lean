@@ -17,9 +17,10 @@ intermediate grid state and a second rectangle from that state to `z`. This file
 factorization as `GridRectangleDecomposition`, the shared object on which the disjoint,
 overlapping and annular cases of the square-zero argument all operate.
 
-Such a factorization is determined by the ordered side columns of its two rectangles: the
-intermediate state is the source with the first pair of columns swapped, and an oriented rectangle
-between two given states is determined by its initial side column.
+Such a factorization is determined by the ordered side columns of its first rectangle and the
+initial side column of its second rectangle: the intermediate state is the source with the first
+pair of columns swapped, and an oriented rectangle between two given states is determined by its
+initial side column.
 
 ## Main definitions
 
@@ -30,8 +31,8 @@ between two given states is determined by its initial side column.
 
 * `TauCeti.GridRectangleDecomposition.ext`: a decomposition is determined by the ordered side
   columns of its first rectangle and the initial side column of its second rectangle.
-* `TauCeti.GridRectangleDecomposition.sides_injective`: the same statement as
-  injectivity of the ordered quadruple of side columns.
+* `TauCeti.GridRectangleDecomposition.sides_injective`: the ordered quadruple of side columns
+  determines the decomposition, a corollary of `ext`.
 * `TauCeti.GridRectangleDecomposition.target_apply_of_notMem_sideColumns`: away from the four
   side columns the target of a decomposition agrees with its source.
 * `TauCeti.GridRectangleDecomposition.transpose` and `transposeEquiv`: diagonal reflection of

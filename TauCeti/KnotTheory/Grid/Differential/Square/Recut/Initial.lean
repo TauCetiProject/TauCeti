@@ -354,8 +354,8 @@ a *recut*: the L-shaped union of their domains has a second decomposition into t
 rectangles, through a different intermediate grid state.
 
 The two cyclic orders of the three side columns give the two shapes of the new cut, and in each
-of them the intermediate state and the four side columns of the recut are computed, which by
-`GridRectangleDecomposition.ext` determine it.
+of them the intermediate state and the four side columns of the recut are computed, and these
+determine the recut uniquely.
 
 Emptiness of both rectangles enters twice. It fixes the cyclic order of the three side columns
 and of the three corner rows, and it then transfers to the two new rectangles: the part of a new
