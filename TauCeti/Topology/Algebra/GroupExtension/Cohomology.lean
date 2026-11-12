@@ -95,8 +95,6 @@ a profinite group computes with.
 * `TauCeti.ProfiniteGroupExtension.contCohomologyClassEquiv`: **`H²(G, M)` classifies profinite
   extensions of `G` by `M` inducing the given action up to continuous equivalence**, as a
   bijection of sets.
-* `TauCeti.ProfiniteGroupExtension.continuousSection`: a continuous normalized section of a
-  profinite extension with compact kernel, chosen once and for all.
 * `TauCeti.ProfiniteGroupExtension.map`: the pushforward of a profinite extension along a
   continuous equivariant homomorphism of profinite coefficient modules, and
   `TauCeti.ProfiniteGroupExtension.mapHom`, the canonical continuous homomorphism from the
@@ -655,29 +653,6 @@ theorem contCohomologyClassEquiv_apply_mk (X : ProfiniteGroupExtension G M) :
   (rfl)
 
 end Realization
-
-/-! ### The chosen section -/
-
-section Section
-
-variable [T2Space G] (X : ProfiniteGroupExtension G M)
-
-/-- **A continuous normalized section of a profinite extension**, chosen once
-and for all from `TauCeti.GroupExtension.exists_continuous_section`. The pushforwards
-`TauCeti.ProfiniteGroupExtension.map` of `X` are the twisted products of the pushforwards of the
-factor set of this section. -/
-noncomputable def continuousSection : X.toGroupExtension.Section :=
-  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose
-
-omit [CompactSpace M] in
-theorem continuous_continuousSection : Continuous ⇑X.continuousSection :=
-  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose_spec.1
-
-omit [CompactSpace M] in
-theorem continuousSection_one : X.continuousSection 1 = 1 :=
-  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose_spec.2
-
-end Section
 
 /-! ### Naturality in the coefficient module -/
 

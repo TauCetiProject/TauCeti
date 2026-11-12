@@ -51,6 +51,8 @@ extensions is the subject of `TauCeti/Topology/Algebra/GroupExtension/Cohomology
   continuous inclusion and projection, inducing the given action, bundled with its total group, and
   `TauCeti.ProfiniteGroupExtension.ofFactorSet`, the twisted product of a continuous factor set
   when `G` and `M` are profinite.
+* `TauCeti.ProfiniteGroupExtension.continuousSection`: a continuous normalized section of a
+  profinite extension over a Hausdorff group, chosen once and for all.
 * `TauCeti.ProfiniteGroupExtension.relabelQuotient` and `TauCeti.ProfiniteGroupExtension.relabel`:
   the same profinite total group, with its quotient, or both its kernel and quotient, replaced by
   continuously isomorphic groups whose actions correspond.
@@ -346,6 +348,27 @@ namespace ProfiniteGroupExtension
 
 attribute [instance] instGroup instTopologicalSpace instIsTopologicalGroup instCompactSpace
   instTotallyDisconnectedSpace
+
+/-! ### The chosen section -/
+
+section Section
+
+variable [T2Space G] (X : ProfiniteGroupExtension G M)
+
+/-- **A continuous normalized section of a profinite extension**, chosen once
+and for all from `TauCeti.GroupExtension.exists_continuous_section`. The pushforwards
+`TauCeti.ProfiniteGroupExtension.map` of `X` are the twisted products of the pushforwards of the
+factor set of this section. -/
+noncomputable def continuousSection : X.toGroupExtension.Section :=
+  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose
+
+theorem continuous_continuousSection : Continuous ⇑X.continuousSection :=
+  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose_spec.1
+
+theorem continuousSection_one : X.continuousSection 1 = 1 :=
+  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose_spec.2
+
+end Section
 
 section OfFactorSet
 
