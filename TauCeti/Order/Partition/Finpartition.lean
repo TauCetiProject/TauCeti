@@ -355,7 +355,7 @@ theorem sum_apply_part_of_subset {M : Type*} [AddCommMonoid M] (P : Finpartition
   congr 2
   ext x
   simp only [Finset.mem_filter, Finset.mem_inter, and_congr_right_iff]
-  exact fun hx => P.part_eq_iff_mem hA
+  exact fun _ => P.part_eq_iff_mem hA
 
 /-- Summing a function of the part containing each point groups the points by part. -/
 theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : Finset α → M) :

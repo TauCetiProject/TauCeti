@@ -10,7 +10,8 @@ public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 /-!
 # Cyclic reduction and word length in a free group
 
-These lemmas relate cyclic reduction to the identity and give the length of a positive power.
+These lemmas bound the length of a cyclic reduction, relate cyclic reduction to the identity
+and give the length of a positive power.
 -/
 
 public section
@@ -18,6 +19,14 @@ public section
 namespace FreeGroup
 
 variable {α : Type*} [DecidableEq α]
+
+/-- Cyclic reduction does not lengthen a word. -/
+@[to_additive]
+theorem length_reduceCyclically_le (L : List (α × Bool)) :
+    (reduceCyclically L).length ≤ L.length := by
+  have h := congrArg List.length (reduceCyclically.conj_conjugator_reduceCyclically L)
+  simp only [List.length_append] at h
+  omega
 
 /-- A free-group element has empty cyclic reduction exactly when it is the identity. -/
 @[to_additive (attr := simp)]

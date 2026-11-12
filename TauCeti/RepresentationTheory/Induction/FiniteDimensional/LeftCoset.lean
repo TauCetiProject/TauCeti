@@ -46,7 +46,7 @@ variable {S : Subgroup G} [S.FiniteIndex]
 /-- The free left-coset model of induction, using inversion to turn the existing
 right-coset coordinates into left-coset coordinates. -/
 noncomputable def indLeftCosetCoinvariantEquiv (A : Rep.{max w u} k S) :
-    Rep.ind S.subtype A ≃ₗ[k] (G ⧸ S →₀ A) :=
+    ind S.subtype A ≃ₗ[k] (G ⧸ S →₀ A) :=
   (indSubtypeEquivPi A).trans
     ((LinearEquiv.funCongrLeft k A
       (QuotientGroup.quotientRightRelEquivQuotientLeftRel S).symm).trans
@@ -55,7 +55,7 @@ noncomputable def indLeftCosetCoinvariantEquiv (A : Rep.{max w u} k S) :
 -- This comparison is not a simp rule: computations should stay in the left-coset model.
 /-- The coordinate at a left coset is the existing right-coset coordinate at its inverse. -/
 theorem indLeftCosetCoinvariantEquiv_apply (A : Rep.{max w u} k S)
-    (x : Rep.ind S.subtype A) (q : G ⧸ S) :
+    (x : ind S.subtype A) (q : G ⧸ S) :
     indLeftCosetCoinvariantEquiv A x q =
       indSubtypeEquivPi A x
         ((QuotientGroup.quotientRightRelEquivQuotientLeftRel S).symm q) :=
@@ -64,8 +64,8 @@ theorem indLeftCosetCoinvariantEquiv_apply (A : Rep.{max w u} k S)
 /-- The induced action permutes left cosets by `g⁻¹` and applies the corresponding
 subgroup correction to each value. -/
 theorem indLeftCosetCoinvariantEquiv_ρ_apply (A : Rep.{max w u} k S) (g : G)
-    (x : Rep.ind S.subtype A) (q : G ⧸ S) :
-    indLeftCosetCoinvariantEquiv A ((Rep.ind S.subtype A).ρ g x) q =
+    (x : ind S.subtype A) (q : G ⧸ S) :
+    indLeftCosetCoinvariantEquiv A ((ind S.subtype A).ρ g x) q =
       A.ρ (rightCosetFactor (S := S)
         (((QuotientGroup.quotientRightRelEquivQuotientLeftRel S).symm q).out * g))
         (indLeftCosetCoinvariantEquiv A x (g⁻¹ • q)) := by
@@ -82,11 +82,11 @@ theorem indLeftCosetCoinvariantEquiv_ρ_apply (A : Rep.{max w u} k S) (g : G)
 
 /-- Induced intertwiners act on the values of the free left-coset model. -/
 theorem indLeftCosetCoinvariantEquiv_indMap {A B : Rep.{max w u} k S} (f : A ⟶ B)
-    (x : Rep.ind S.subtype A) (q : G ⧸ S) :
-    indLeftCosetCoinvariantEquiv B ((Rep.indMap S.subtype f).hom x) q =
+    (x : ind S.subtype A) (q : G ⧸ S) :
+    indLeftCosetCoinvariantEquiv B ((indMap S.subtype f).hom x) q =
       f.hom (indLeftCosetCoinvariantEquiv A x q) := by
   rw [indLeftCosetCoinvariantEquiv_apply, indLeftCosetCoinvariantEquiv_apply,
-    Rep.indSubtypeEquivPi_indMap]
+    indSubtypeEquivPi_indMap]
 
 -- Normalize the induced carrier and generator so simp can match them in importing modules.
 /-- An arbitrary coinvariant generator becomes a single vector at `g⁻¹S`; its value is corrected

@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.OfParent
 public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.Algebra.Group.Int.Defs
+public import Mathlib.Algebra.Order.Ring.Abs
 
 /-!
 # The line
@@ -15,7 +16,8 @@ public import Mathlib.Algebra.Group.Int.Defs
 The line is the Serre graph with the integers as vertices and one geometric edge between `n` and
 `n + 1`: the graph `SerreGraph.ofParent` of the parent map `n ↦ n + 1`. It is the Cayley graph of
 the infinite cyclic group, that is of the free group of rank one, and it is a tree: no integer is
-a proper iterate of itself under `n ↦ n + 1`, and any two integers have a common iterate.
+a proper iterate of itself under `n ↦ n + 1`, and any two integers have a common iterate. The
+distance between two vertices is the absolute value of the difference of their coordinates.
 
 The coordinate `SerreGraph.lineVertexEquiv` identifies the vertices with the integers, and the
 integers act on the line by translation, `SerreGraph.lineShift`, with `k • n = k + n`.
@@ -74,6 +76,20 @@ theorem line_connected : line.Connected :=
 /-- The line is a tree. -/
 theorem line_isTree : line.IsTree :=
   (isTree_iff line).mpr ⟨line_connected, line_isAcyclic⟩
+
+/-- The distance between two vertices of the line is the absolute value of the difference of
+their coordinates. -/
+theorem line_dist (a b : line.V) :
+    (line.dist a b : ℤ) = |lineVertexEquiv a - lineVertexEquiv b| := by
+  obtain ⟨p, hp⟩ := line_isTree.existsUnique_isReduced a b |>.exists
+  obtain ⟨k, l, hkl, heq, hne⟩ := exists_iterate_eq_of_isReduced _ p hp
+  have hlen : p.length = k + l := hkl.symm
+  -- The coordinate `lineVertexEquiv` is the identity of `ℤ`, the type of vertices of the line.
+  have ha : lineVertexEquiv a = a := rfl
+  have hb : lineVertexEquiv b = b := rfl
+  simp at heq hne
+  rw [line_isAcyclic.dist_eq_length hp, hlen, abs_eq_max_neg]
+  omega
 
 /-- The translation action of the integers on the line, `k • n = k + n`. -/
 def lineShift : Multiplicative ℤ →* line.Aut :=
