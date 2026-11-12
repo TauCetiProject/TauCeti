@@ -45,6 +45,8 @@ holomorphic section.
 ## Main results
 
 * `IsLocalFrameOn.contMDiffOn_coeff`: a Cᵐ section has Cᵐ coefficients in a Cⁿ frame, for m ≤ n.
+* `IsLocalFrameOn.continuousOn_coeff_totalSpace`: the coefficients of a vector in a frame depend
+  continuously on the vector, as a point of the total space.
 * `IsLocalFrameOn.trivialization_mem_maximalAtlas`: the trivialization of a `C^n` local frame lies
   in the maximal atlas of `C^n` trivializations.
 * `Bundle.Trivialization.isLocalFrameOn_symm_of_mem_maximalAtlas`: a member of the maximal atlas
@@ -374,6 +376,27 @@ theorem contMDiffOn_coeff [VectorBundle 𝕜 F V] [FiniteDimensional 𝕜 F]
     -- Lowering the regularity leaves the pointwise basis unchanged.
     rfl
   exact hcoord.congr heq (heq x hx)
+
+/-- The coefficients of a vector in a local frame on an open set `U` depend continuously on the
+vector, as a point of the total space over `U`. -/
+theorem continuousOn_coeff_totalSpace [VectorBundle 𝕜 F V] [FiniteDimensional 𝕜 F]
+    (hs : IsLocalFrameOn IB F n s U) (hU : IsOpen U) (i : ι) :
+    ContinuousOn (fun p : TotalSpace F V ↦ hs.coeff i p.proj p.2) (π F V ⁻¹' U) := by
+  intro p hp
+  let := hs.fintypeOfFiniteDimensional hp
+  let b : Basis ι 𝕜 F := (hs.toBasisAt hp).map
+    ((trivializationAt F V p.proj).linearEquivAt 𝕜 p.proj
+      (FiberBundle.mem_baseSet_trivializationAt' p.proj))
+  have htriv : ContinuousOn (fun q : TotalSpace F V ↦ (hs.trivialization hU b q).2)
+      (π F V ⁻¹' U) :=
+    continuous_snd.comp_continuousOn (hs.trivialization hU b).continuousOn_toFun
+  have heq (q : TotalSpace F V) (hq : q ∈ π F V ⁻¹' U) :
+      hs.coeff i q.proj q.2 = b.coord i (hs.trivialization hU b q).2 := by
+    obtain ⟨x, v⟩ := q
+    rw [hs.trivialization_apply hU b hq]
+    simp [IsLocalFrameOn.coeff, mem_preimage.mp hq, Basis.coord_apply, Basis.equiv]
+  exact (((b.coord i).toContinuousLinearMap.continuous.comp_continuousOn htriv) p hp).congr
+    heq (heq p hp)
 
 end IsLocalFrameOn
 

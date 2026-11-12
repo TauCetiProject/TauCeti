@@ -336,9 +336,7 @@ theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ball_ae_eq
   obtain ⟨h, hh, hodd, -, hgrad⟩ :=
     hharm.exists_harmonicOnNhd_ae_eq_of_inf_normalHalfSpace hU hw hG0 hw0
   refine ⟨∇ h, (hh.mono hball).gradient, fun x hx => ?_, ?_⟩
-  · have hρx : normalReflection E a x ∈ U := hU (hball hx)
-    exact gradient_normalReflection_of_forall_eq_neg U.isOpen hodd (hball hx)
-      ((hh _ hρx).1.differentiableAt (by norm_num))
+  · exact gradient_normalReflection_of_forall_eq_neg U.isOpen hodd (hball hx)
   · refine ae_restrict_of_ae_restrict_of_subset ?_ hgrad
     rw [Opens.coe_inf]
     exact inter_subset_inter_left _ hball

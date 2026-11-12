@@ -223,10 +223,11 @@ Even a weak dominance condition on the image `w • x` suffices: `x` itself is d
 dominant integral weights (`TauCeti.eq_one_of_smul_eq_self_of_forall_coroot'_eq_natCast_add_one`)
 then forces `w = 1`. -/
 theorem eq_one_of_forall_coroot'_smul_eq_natCast_of_forall_coroot'_eq_natCast_add_one
-    [P.flip.IsReduced] {w : P.weylGroup}
+    {w : P.weylGroup}
     (hx : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i x = (n : R) + 1)
     (hwx : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i (w • x) = (n : R)) :
     w = 1 := by
+  have := P.flip_isReduced
   have hx' : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i x = (n : R) := fun i hi ↦ by
     obtain ⟨n, hn⟩ := hx i hi
     exact ⟨n + 1, by rw [hn]; push_cast; ring⟩

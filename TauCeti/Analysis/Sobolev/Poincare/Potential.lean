@@ -204,8 +204,6 @@ theorem setLIntegral_enorm_sub_le_of_starConvex (hΩ : IsOpen Ω) (hu : ContDiff
     have h := enorm_sub_le_lintegral_enorm_fderiv_apply (u := u) x (y - x)
       (fun t ht => (hu.differentiableOn one_ne_zero _ (hmem t ht)).differentiableAt
         (hΩ.mem_nhds (hmem t ht)))
-      ((hcont.comp (by fun_prop : Continuous fun t : ℝ => x + t • (y - x)).continuousOn
-        hmem).clm_apply continuousOn_const)
     rw [add_sub_cancel, enorm_sub_rev] at h
     rw [← lintegral_mul_const' _ _ enorm_ne_top, setLIntegral_congr Ioc_ae_eq_Icc]
     refine h.trans (setLIntegral_mono' measurableSet_Icc fun t ht => ?_)
