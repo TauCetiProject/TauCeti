@@ -183,16 +183,12 @@ theorem not_isProperMap_exp_neg_real : ¬ IsProperMap (fun x : ℝ ↦ Real.exp 
     ⟨(Real.exp_pos _).le, Real.exp_le_one_iff.2 (by linarith [le_max_right m 0])⟩
   linarith [hm hmem, le_max_left m 0]
 
-/-- For the standard metric on `ℝ`, the gradient of `f(x) = exp (-x)` is `-exp (-x)`. -/
-private theorem gradient_exp_neg_real (x : ℝ) :
-    gradient (fun y : ℝ ↦ Real.exp (-y)) x = -Real.exp (-x) := by
-  rw [gradient_eq_deriv', (hasDerivAt_exp_neg_real x).deriv]
-
 /-- The curve `t ↦ log (exp x₀ + t)` solves `x' = exp (-x)` where `exp x₀ + t > 0`. -/
 private theorem hasDerivAt_expNegTrajectory {x₀ t : ℝ} (ht : 0 < Real.exp x₀ + t) :
     HasDerivAt (fun s ↦ Real.log (Real.exp x₀ + s))
       (-gradient (fun y : ℝ ↦ Real.exp (-y)) (Real.log (Real.exp x₀ + t))) t := by
-  rw [gradient_exp_neg_real, neg_neg, Real.exp_neg, Real.exp_log ht]
+  rw [gradient_eq_deriv', (hasDerivAt_exp_neg_real _).deriv, neg_neg, Real.exp_neg,
+    Real.exp_log ht]
   simpa using ((hasDerivAt_id t).const_add (Real.exp x₀)).log ht.ne'
 
 /-- **The trajectory of `-grad exp (-x)` through `x₀`** is `t ↦ log (exp x₀ + t)`, wherever
@@ -205,7 +201,7 @@ theorem maximalIntegralCurve_neg_mgradient_exp_neg {x₀ t : ℝ} (ht : -Real.ex
   simpa using eqOn_maximalIntegralCurve_neg_mgradient_of_hasDerivAt
     (f := fun y : ℝ ↦ Real.exp (-y)) (by fun_prop) h0
     (fun s hs ↦ hasDerivAt_expNegTrajectory (by linarith [hs.1]))
-    (show t ∈ Ioo (-Real.exp x₀) (max t 0 + 1) from ⟨ht, by linarith [le_max_left t 0]⟩)
+    (mem_Ioo.mpr ⟨ht, by linarith [le_max_left t 0]⟩)
 
 /-- The trajectory of `-grad exp (-x)` through any `x₀` runs off to `+∞`. -/
 theorem tendsto_maximalIntegralCurve_neg_mgradient_exp_neg (x₀ : ℝ) :
@@ -231,7 +227,7 @@ theorem not_mapsTo_maximalIntegralCurve_neg_mgradient_exp_neg (x₀ : ℝ) {K : 
   obtain ⟨t, ht, ht0⟩ :=
     (((tendsto_maximalIntegralCurve_neg_mgradient_exp_neg x₀).eventually_gt_atTop m).and
       (eventually_ge_atTop 0)).exists
-  exact (hm (hmaps (show t ∈ Ici 0 from ht0))).not_gt ht
+  exact (hm (hmaps (mem_Ici.mpr ht0))).not_gt ht
 
 end BoundedBelow
 

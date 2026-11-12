@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Trajectory
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
+import TauCeti.Geometry.Manifold.Morse.Examples.ExponentialConvergence
 
 /-!
 # Gradient trajectories of the quadratic well
@@ -38,13 +39,13 @@ uses it to test the convergence and decay theorems for gradient trajectories of 
   vanish, and the decay bound holds with the constant `0`.
 * **A forward curve with an endpoint.** The convergence and decay theorems are stated for curves
   that solve the curve equation on `[0, ∞)`, with a one-sided derivative at the endpoint `0`, and
-  such a curve need not extend backwards as a trajectory. The curve `γ(t) = x₀ exp (-2 max(t, 0))`,
-  which is `x₀ exp (-2 t)` for `t ≥ 0` and the constant `x₀` for `t < 0`, solves the curve equation
-  on `[0, ∞)` (`TauCeti.isMIntegralCurveOn_Ici_neg_mgradient_sq`). For `x₀ ≠ 0` its left
-  derivative at `0` vanishes while `-grad f (x₀) = -2 x₀` does not, so it is an integral curve on
-  no open interval containing `0`
-  (`TauCeti.not_isMIntegralCurveOn_Ioo_neg_mgradient_sq`). The maximal trajectory `Γ` through
-  `γ(1)` agrees with `s ↦ γ(1 + s)` exactly for `s ≥ -1`
+  a prescribed continuation of such a curve to negative times need not be an integral curve. The
+  curve `γ(t) = x₀ exp (-2 max(t, 0))`, which is `x₀ exp (-2 t)` for `t ≥ 0` and the constant
+  `x₀` for `t < 0`, solves the curve equation on `[0, ∞)`
+  (`TauCeti.isMIntegralCurveOn_Ici_neg_mgradient_sq`). For `x₀ ≠ 0` its left derivative at `0`
+  vanishes while `-grad f (x₀) = -2 x₀` does not, so it is an integral curve on no open interval
+  containing `0` (`TauCeti.not_isMIntegralCurveOn_Ioo_neg_mgradient_sq`). The maximal trajectory
+  `Γ` through `γ(1)` agrees with `s ↦ γ(1 + s)` exactly for `s ≥ -1`
   (`TauCeti.maximalIntegralCurve_neg_mgradient_sq_eq_iff`). This is why those theorems compare a
   forward curve with the maximal trajectory through one of its values at a positive time.
 
@@ -61,15 +62,12 @@ open scoped Bundle ContDiff ENNReal Manifold
 
 namespace TauCeti
 
-/-- The gradient of `x ↦ x²` on `ℝ` is `x ↦ 2 x`. -/
-private theorem gradient_sq_real (x : ℝ) : gradient (fun y : ℝ ↦ y ^ 2) x = 2 * x := by
-  rw [gradient_eq_deriv']
-  simp
-
 /-- For the standard metric on `ℝ`, the negative gradient of `x ↦ x²` at `x` is `-2 x`. -/
 private theorem neg_mgradient_sq_real_apply (x : ℝ) :
     (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x = (-(2 * x) : ℝ) := by
-  rw [Pi.neg_apply, mgradient_eq_gradient_of_eq rfl, gradient_sq_real]
+  rw [Pi.neg_apply, mgradient_eq_gradient_of_eq rfl, gradient_eq_deriv']
+  simp only [differentiableAt_fun_id, deriv_fun_pow, deriv_id'', Nat.cast_ofNat, mul_one,
+    Nat.add_one_sub_one, pow_one]
   -- Both sides are the real number `-2 x`, read in `ℝ` and in its tangent space.
   rfl
 
@@ -118,7 +116,7 @@ theorem maximalIntegralCurve_neg_mgradient_sq (x₀ t : ℝ) :
   have hb : 0 < |t| + 1 := by positivity
   simpa using eqOn_maximalIntegralCurve_neg_mgradient_of_hasDerivAt
     (f := fun y : ℝ ↦ y ^ 2) (by fun_prop) (a := -(|t| + 1)) (b := |t| + 1) ⟨neg_lt_zero.2 hb, hb⟩
-    (fun s _ ↦ (hasDerivAt_quadraticTrajectory x₀ s).congr_deriv (by rw [gradient_sq_real]))
+    (fun s _ ↦ (hasDerivAt_quadraticTrajectory x₀ s).congr_deriv (by simp [gradient_eq_deriv']))
     ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
 
 /-- The trajectories of the quadratic well, as functions of time. -/
@@ -237,20 +235,12 @@ theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
       Manifold.riemannianEDist 𝓘(ℝ, ℝ)
           (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀ t) 0 ≤
         ENNReal.ofReal (C * Real.exp (-(μ * t))) := by
+  -- The distance is the same as along the stable trajectory of the saddle through `(x₀, 0)`.
   rintro ⟨C, hC, h⟩
-  have hgrow : Tendsto (fun t : ℝ ↦ Real.exp ((μ - 2) * t)) atTop atTop :=
-    Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop (sub_pos.2 hμ))
-  obtain ⟨t, ht, hbig⟩ := (h.and (hgrow.eventually_gt_atTop (C / |x₀|))).exists
-  rw [riemannianEDist_maximalIntegralCurve_neg_mgradient_sq,
-    ENNReal.ofReal_le_ofReal_iff (by positivity)] at ht
-  -- Multiplying the bound by `exp (μ t)` gives `|x₀| exp ((μ - 2) t) ≤ C`.
-  have hle : |x₀| * Real.exp ((μ - 2) * t) ≤ C :=
-    calc |x₀| * Real.exp ((μ - 2) * t) = |x₀| * Real.exp (-(2 * t)) * Real.exp (μ * t) := by
-          rw [mul_assoc, ← Real.exp_add]
-          ring_nf
-      _ ≤ C * Real.exp (-(μ * t)) * Real.exp (μ * t) := by gcongr
-      _ = C := by simp [Real.exp_neg]
-  linarith [(div_lt_iff₀ (abs_pos.2 hx₀)).1 hbig]
+  refine not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_sq_sub_sq hx₀ hμ
+    ⟨C, hC, h.mono fun t ht ↦ ?_⟩
+  rwa [riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_sub_sq,
+    ← riemannianEDist_maximalIntegralCurve_neg_mgradient_sq]
 
 /-! ### A forward curve with an endpoint -/
 
@@ -265,14 +255,14 @@ theorem isMIntegralCurveOn_Ici_neg_mgradient_sq (x₀ : ℝ) :
       x₀ * Real.exp (-(2 * max u 0)) = x₀ * Real.exp (-(2 * u)) := fun u (hu : 0 ≤ u) ↦ by
     rw [max_eq_left hu]
   refine ((hasDerivAt_quadraticTrajectory x₀ t).hasDerivWithinAt.congr_of_mem heq
-    (show t ∈ Ici 0 from ht)).congr_deriv ?_
+    (mem_Ici.mpr ht)).congr_deriv ?_
   dsimp only
   rw [neg_mgradient_sq_real_apply, max_eq_left ht]
 
-/-- **A forward curve need not extend backwards.** For `x₀ ≠ 0`, the curve
+/-- **A prescribed backward continuation need not be an integral curve.** For `x₀ ≠ 0`, the curve
 `t ↦ x₀ exp (-2 max(t, 0))` is an integral curve of `-grad x²` on no open interval containing
-`0`: it is constant for `t ≤ 0`, so its left derivative at `0` vanishes, while `-grad x²` is
-`-2 x₀ ≠ 0` there. -/
+`0`, although its forward part extends to the trajectory `t ↦ x₀ exp (-2 t)`: it is constant for
+`t ≤ 0`, so its left derivative at `0` vanishes, while `-grad x²` is `-2 x₀ ≠ 0` there. -/
 theorem not_isMIntegralCurveOn_Ioo_neg_mgradient_sq {x₀ a b : ℝ} (hx₀ : x₀ ≠ 0) (ha : a < 0)
     (hb : 0 < b) :
     ¬ IsMIntegralCurveOn (fun t ↦ x₀ * Real.exp (-(2 * max t 0)))
@@ -283,7 +273,7 @@ theorem not_isMIntegralCurveOn_Ioo_neg_mgradient_sq {x₀ a b : ℝ} (hx₀ : x�
   -- To the left of `0` the curve is the constant `x₀`.
   have hconst : HasDerivWithinAt (fun t ↦ x₀ * Real.exp (-(2 * max t 0))) 0 (Iic 0) 0 :=
     (hasDerivWithinAt_const 0 (Iic 0) x₀).congr_of_mem
-      (fun u (hu : u ≤ 0) ↦ by simp [max_eq_right hu]) (show (0 : ℝ) ∈ Iic 0 from le_rfl)
+      (fun u (hu : u ≤ 0) ↦ by simp [max_eq_right hu]) (mem_Iic.mpr le_rfl)
   have := (uniqueDiffWithinAt_Iic (0 : ℝ)).eq_deriv _ h0 hconst
   dsimp only at this
   rw [neg_mgradient_sq_real_apply] at this
