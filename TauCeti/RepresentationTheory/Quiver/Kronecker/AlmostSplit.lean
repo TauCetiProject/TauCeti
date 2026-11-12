@@ -81,14 +81,6 @@ public section
 
 namespace TauCeti
 
--- Source. This file follows the "`A₂` quiver" worked example of
--- `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose acceptance
--- criterion asks for the Auslander--Reiten quiver of `A₂` to be "the three-vertex mesh
--- `S₂ → P₁ → S₁` with `τ S₁ = S₂`"; the sequence, the two almost-split properties and the
--- resulting mesh below are that bullet. Its path-algebra and classification halves are
--- `TauCeti.RepresentationTheory.Quiver.Kronecker.UpperTriangular` and
--- `TauCeti.RepresentationTheory.Quiver.Kronecker.Indecomposable`.
-
 open CategoryTheory CategoryTheory.Limits Quiver.Kronecker
 
 universe u

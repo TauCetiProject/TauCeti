@@ -12,7 +12,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Analytic.Order
-import TauCeti.Analysis.Complex.Wirtinger.Similarity
 import Mathlib.Data.Finsupp.Multiset
 import Mathlib.Topology.Algebra.Polynomial
 
@@ -31,6 +30,9 @@ topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow`. The e
 factorization is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`), so `f` has at most one zero
 multiplicity function (`TauCeti.IsZeroMultiplicity.unique`); it is positive exactly at the zeros of
 `f`.
+
+Near `z`, `f` vanishes to every order `k ≤ n z`: `‖f w‖ ≤ C ‖w - z‖ ^ k`
+(`TauCeti.IsZeroMultiplicity.exists_eventually_norm_le_mul_pow`).
 
 This file proves how zero multiplicities transform:
 
@@ -112,6 +114,19 @@ theorem eq_zero_iff (h : IsZeroMultiplicity f n) {z : ℂ} : n z = 0 ↔ f z ≠
 /-- The multiplicity is positive exactly at the zeros of `f`. -/
 theorem pos_iff (h : IsZeroMultiplicity f n) {z : ℂ} : 0 < n z ↔ f z = 0 := by
   rw [Nat.pos_iff_ne_zero, Ne, h.eq_zero_iff, not_not]
+
+/-- A function vanishes at `z` at least to every order `k` up to its multiplicity there:
+`‖f w‖ ≤ C ‖w - z‖ ^ k` near `z`. -/
+theorem exists_eventually_norm_le_mul_pow (h : IsZeroMultiplicity f n) {z : ℂ} {k : ℕ}
+    (hk : k ≤ n z) : ∃ C, ∀ᶠ w in 𝓝 z, ‖f w‖ ≤ C * ‖w - z‖ ^ k := by
+  obtain ⟨v, hv, -, hf⟩ := isZeroMultiplicity_iff.1 h z
+  refine ⟨‖v z‖ + 1, ?_⟩
+  filter_upwards [hf, hv.norm.eventually (ge_mem_nhds (lt_add_one ‖v z‖)),
+    Metric.ball_mem_nhds z one_pos] with w hw hvw hwz
+  have hd : ‖w - z‖ ≤ 1 := (mem_ball_iff_norm.1 hwz).le
+  rw [hw, norm_mul, norm_pow, mul_comm]
+  exact mul_le_mul hvw (pow_le_pow_of_le_one (norm_nonneg _) hd hk) (by positivity)
+    (by positivity)
 
 /-- **Affine change of variable.** If `c ≠ 0`, the zero multiplicity of `w ↦ f (c w + a)` at `z`
 is that of `f` at `c z + a`. -/

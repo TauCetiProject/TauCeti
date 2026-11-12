@@ -64,6 +64,11 @@ integrable `f` it is holomorphic off the closed support `tsupport f`, with compl
   integrable data is holomorphic off its closed support.
 * `HasCompactSupport.conjWirtingerDeriv_cauchyTransform` and
   `HasCompactSupport.cauchyTransform_conjWirtingerDeriv`: normalized right and left inverses.
+* `TauCeti.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I_eq`: the
+  Cauchy–Pompeiu normalisation `(2π)⁻¹` with `D` is the normalisation `π⁻¹` with `\bar∂`.
+* `TauCeti.pi_inv_smul_integral_swap_sub_inv_smul_eq_neg_cauchyTransform` and
+  `HasCompactSupport.conjWirtingerDeriv_pi_inv_smul_integral_swap_sub_inv_smul`: the transposed
+  kernel `(z - w)⁻¹` gives the negative transform, so `\bar∂` of it is `-f`.
 * `HasCompactSupport.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I`:
   the Cauchy–Pompeiu formula.
 * `HasCompactSupport.hasFDerivAt_integral_sub_inv_smul`: the Cauchy transform of a compactly
@@ -278,6 +283,24 @@ theorem cauchyTransform_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Norm
   simp only [cauchyTransform_apply, Pi.smul_apply]
   simp_rw [smul_comm (w - _)⁻¹ a]
   rw [integral_smul, smul_comm]
+
+/-- **The two normalisations agree.** The Cauchy–Pompeiu integral `(2π)⁻¹ ∫ (w - z)⁻¹ • D u z`,
+with `D = 2 \bar∂`, is the normalised Cauchy transform `π⁻¹ ∫ (w - z)⁻¹ • \bar∂ u z` of `\bar∂ u`.
+No hypothesis on `u` is needed: the identity holds for the integrals themselves. -/
+theorem two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I_eq
+    (u : ℂ → F) (w : ℂ) :
+    (2 * Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (fderiv ℝ u z 1 + I • fderiv ℝ u z I) =
+      cauchyTransform (fun z ↦ conjWirtingerDeriv u z 1) w := by
+  simp_rw [fderiv_apply_one_add_I_smul_fderiv_apply_I, smul_comm _ (2 : ℂ)]
+  rw [integral_smul, smul_smul, cauchyTransform_apply]
+  congr 1
+  field_simp
+
+/-- The transposed kernel `(z - w)⁻¹` gives the negative of the Cauchy transform. -/
+theorem pi_inv_smul_integral_swap_sub_inv_smul_eq_neg_cauchyTransform (f : ℂ → F) (w : ℂ) :
+    (Real.pi : ℂ)⁻¹ • ∫ z, (z - w)⁻¹ • f z = -cauchyTransform f w := by
+  simp_rw [← neg_sub w, inv_neg, neg_smul]
+  rw [integral_neg, smul_neg, cauchyTransform_apply]
 
 section Polar
 
@@ -534,18 +557,22 @@ applying it to `bar∂ u` recovers `u`, with no boundary term. -/
 theorem _root_.HasCompactSupport.cauchyTransform_conjWirtingerDeriv {u : ℂ → F}
     (hc : HasCompactSupport u) (hu : ContDiff ℝ 1 u) (w : ℂ) :
     cauchyTransform (fun z ↦ conjWirtingerDeriv u z 1) w = u w := by
-  rw [cauchyTransform_apply]
-  have heq : (fun z ↦ (w - z)⁻¹ • conjWirtingerDeriv u z 1) =
-      fun z ↦ (2 : ℂ)⁻¹ • ((w - z)⁻¹ •
-        (fderiv ℝ u z 1 + Complex.I • fderiv ℝ u z Complex.I)) := by
-    funext z
-    simp only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one]
-    exact smul_comm _ _ _
-  rw [heq, integral_smul, smul_smul]
-  convert hc.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I hu w
-    using 1
-  congr 1
-  field_simp
+  rw [← two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I_eq]
+  exact hc.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I hu w
+
+/-- **The plausible wrong kernel.** For compactly supported `C¹` data `f`, the transform with the
+transposed kernel `(z - w)⁻¹` satisfies `\bar∂ T' f = -f`, not `f`. -/
+theorem _root_.HasCompactSupport.conjWirtingerDeriv_pi_inv_smul_integral_swap_sub_inv_smul
+    {f : ℂ → F} (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w : ℂ) :
+    conjWirtingerDeriv (fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (z - w)⁻¹ • f z) w 1 = -f w := by
+  -- `conjWirtingerDeriv_const_smul` is stated for a scalar multiple `c • g` of a function.
+  have hneg : (fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (z - w)⁻¹ • f z) =
+      (-1 : ℂ) • cauchyTransform f := by
+    funext w
+    rw [Pi.smul_apply, neg_one_smul,
+      pi_inv_smul_integral_swap_sub_inv_smul_eq_neg_cauchyTransform]
+  rw [hneg, conjWirtingerDeriv_const_smul, smul_apply, hc.conjWirtingerDeriv_cauchyTransform hf,
+    neg_one_smul]
 
 omit [CompleteSpace F] in
 /-- On compactly supported `C¹` data the real derivative of the Cauchy transform is the Cauchy

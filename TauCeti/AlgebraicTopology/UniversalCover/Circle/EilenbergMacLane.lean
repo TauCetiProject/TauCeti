@@ -19,9 +19,6 @@ These results package the existing circle calculations into the Eilenberg--Mac L
 fundamental-group witness is `AddCircle.fundamentalGroupMulEquiv`, and higher homotopy
 vanishing is supplied by `AddCircle.subsingleton_homotopyGroup`.
 
-This realizes `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13,
-"`K(G, 1)` spaces", for circles.
-
 ## Main declarations
 
 * `AddCircle.isAspherical`: every real additive circle is aspherical.
