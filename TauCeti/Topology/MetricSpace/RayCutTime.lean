@@ -297,11 +297,8 @@ theorem upperSemicontinuous_rayCutTime {P : Type*} [TopologicalSpace P] {Γ : P 
       rw [mem_preimage, mem_Ici, le_rayCutTime_iff (hΓ p) hR (h0T p) (h0S p) (hcut p) ht0]
       simp only [mem_rayMinimizingTimes, ht, true_and, mem_inter_iff, mem_ofPred_eq]
     rw [heq]
-    refine isClosed_of_closure_subset fun p hp ↦ ?_
-    have hpT : Icc 0 t ⊆ T p := (hT t ht).closure_subset (closure_mono inter_subset_left hp)
-    exact ⟨hpT, isClosed_singleton.closure_subset
-      (((continuous_infEDist.comp_continuousOn (hc t ht)) p hpT).mono
-        inter_subset_left |>.mem_closure hp fun _ hq ↦ hq.2)⟩
+    exact (continuous_infEDist.comp_continuousOn (hc t ht)).preimage_isClosed_of_isClosed
+      (hT t ht) isClosed_singleton
   · convert isClosed_empty
     exact eq_empty_of_forall_notMem fun p hp ↦ (htR.trans_le hp).not_ge (hI p).2
 
