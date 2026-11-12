@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.HNNExtension.DehnTwist
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
+public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 
 /-!
 # The Dehn twist of an extension of a centralizer
@@ -26,6 +27,8 @@ retractions `t ↦ u ^ k`.
 
 * `TauCeti.LimitGroup.CentralizerExt.twist_zpow_t`: the `k`-th power of the twist sends `t` to
   `t * u ^ k`.
+* `TauCeti.LimitGroup.CentralizerExt.zpowers_twist_le_fixingSubgroup`: the powers of the twist
+  fix `G`.
 * `TauCeti.LimitGroup.CentralizerExt.retraction_comp_twist_zpow`: the retraction `t ↦ u ^ m`
   composed with the `k`-th power of the twist is the retraction `t ↦ u ^ (m + k)`.
 
@@ -73,6 +76,12 @@ theorem twist_of (g : G) : twist u (of g) = of g := by
 @[simp]
 theorem twist_t (i : Fin 1) : twist u (t i) = t i * of u := by
   simpa using twist_zpow_t u 1 i
+
+/-- The powers of the twist fix `G`. -/
+theorem zpowers_twist_le_fixingSubgroup :
+    zpowers (twist u) ≤ fixingSubgroup (MulAut (CentralizerExt u 1))
+      (Set.range (of : G →* CentralizerExt u 1)) :=
+  zpowers_le.2 <| (mem_fixingSubgroup_iff _).2 fun _ ⟨g, hg⟩ => hg ▸ twist_of u g
 
 /-- The retraction `t ↦ u ^ m` composed with the `k`-th power of the twist is the retraction
 `t ↦ u ^ (m + k)`. -/
