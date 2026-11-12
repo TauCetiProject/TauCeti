@@ -26,6 +26,8 @@ of the torus are the standard examples of Lagrangian sections that are not exact
 ## Main declarations
 
 * `TauCeti.torusTimeClosedForm p i`: the coordinate time form `dt_i` as a closed form.
+* `TauCeti.torusVolumeClosedForm q`: the volume form `dt_0 ∧ ⋯ ∧ dt_(n-1)` of the torus
+  `∀ i : Fin n, AddCircle (q i)`, a top-degree and hence closed form.
 * `TauCeti.sum_smul_torusTimeForm_mem_exactForms_iff`: `∑ j, c j • dt_j` is exact if and only if
   `c = 0`.
 * `TauCeti.torusTimeForm_notMem_exactForms`: `dt_i` is not exact.
@@ -108,5 +110,18 @@ instance nontrivial_deRhamCohomology_torus_one [Nonempty ι] :
     Nontrivial (deRhamCohomology (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
       (∀ i, AddCircle (p i)) 1) :=
   (linearIndependent_deRhamCohomology_mk_torusTimeClosedForm p).nontrivial
+
+/-- The volume form `dt_0 ∧ ⋯ ∧ dt_(n-1)` of the torus `∀ i : Fin n, AddCircle (q i)`, as a
+closed form: it is a top-degree form. -/
+def torusVolumeClosedForm {n : ℕ} (q : Fin n → ℝ) [∀ i, Fact (0 < q i)] :
+    closedForms (ModelWithCorners.pi fun _ : Fin n ↦ 𝓘(ℝ)) (∀ i, AddCircle (q i)) n :=
+  ⟨torusVolumeForm q, mem_closedForms_of_finrank_le _ (by simp) _⟩
+
+/-- The underlying form of `torusVolumeClosedForm q` is the volume form of the torus. -/
+@[simp]
+theorem coe_torusVolumeClosedForm {n : ℕ} (q : Fin n → ℝ) [∀ i, Fact (0 < q i)] :
+    (torusVolumeClosedForm q : SmoothForm (ModelWithCorners.pi fun _ : Fin n ↦ 𝓘(ℝ))
+      (∀ i, AddCircle (q i)) ℝ n) = torusVolumeForm q :=
+  (rfl)
 
 end TauCeti

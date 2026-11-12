@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
 # Integral linear automorphisms of a torus
@@ -26,9 +27,13 @@ circle. This is an action of the group `GL(ι, ℤ)` by additive maps
 torus, with inverse `x ↦ A⁻¹ • x` (`Diffeomorph.constSmul`), and the cotangent bundle `T*Tⁿ`
 inherits the cotangent-lifted action (`TauCeti.CotangentBundle.instMulAction`).
 
-The covering map `(ι → ℝ) → Tⁿ`, `t ↦ ([t i])ᵢ`, has derivative the identity of `ι → ℝ` at every
-point (`AddCircle.hasMFDerivAt_coe_pi`), and it intertwines the action of `A` on the torus with
-multiplication of real vectors by the matrix `A` (`AddCircle.generalLinearGroup_smul_coe_pi`).
+More generally, for periods `p i > 0` that may differ, the covering map
+`(ι → ℝ) → ∀ i, AddCircle (p i)`, `t ↦ ([t i])ᵢ`, is surjective and has derivative the identity of
+`ι → ℝ` at every point (`AddCircle.hasMFDerivAt_coe_pi`), so it is an analytic local
+diffeomorphism (`AddCircle.isLocalDiffeomorph_coe_pi`). Smoothness questions on the torus can
+therefore be asked of the lifts to `ι → ℝ`. For equal periods the covering map intertwines the
+action of `A` on the torus with multiplication of real vectors by the matrix `A`
+(`AddCircle.generalLinearGroup_smul_coe_pi`).
 Hence the derivative of `x ↦ A • x` at every point is the matrix `A`, acting on `ι → ℝ`
 (`AddCircle.mfderiv_generalLinearGroup_smul_apply`). Choosing a basis of the period lattice of a
 torus is choosing such an `A`: these maps are the changes of angle coordinates of action–angle
@@ -39,7 +44,8 @@ charts.
 * `AddCircle.instDistribMulActionGeneralLinearGroup`: the action of `GL(ι, ℤ)` on
   `ι → AddCircle p` by additive maps.
 * `AddCircle.instContMDiffConstSMulGeneralLinearGroup`: it acts by smooth maps.
-* `AddCircle.hasMFDerivAt_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` has derivative the identity.
+* `AddCircle.hasMFDerivAt_coe_pi`, `AddCircle.isLocalDiffeomorph_coe_pi`: the covering map
+  `(ι → ℝ) → ∀ i, AddCircle (p i)` has derivative the identity, and is a local diffeomorphism.
 * `AddCircle.hasMFDerivAt_generalLinearGroup_smul`,
   `AddCircle.mfderiv_generalLinearGroup_smul_apply`: the derivative of `x ↦ A • x` is the matrix
   `A`.
@@ -59,27 +65,54 @@ open scoped Manifold ContDiff
 
 namespace AddCircle
 
-variable (p : ℝ) {ι : Type*} [Fintype ι]
+variable {ι : Type*} [Fintype ι]
 
 /-! ### The covering map -/
 
 section Cover
 
-variable [Fact (0 < p)]
+variable (p : ι → ℝ)
 
-/-- The covering map `(ι → ℝ) → (ι → AddCircle p)`, `t ↦ ([t i])ᵢ`, has derivative the identity of
-`ι → ℝ`, the tangent spaces of the torus being read in its product charts. -/
+omit [Fintype ι] in
+/-- The covering map `(ι → ℝ) → (∀ i, AddCircle (p i))` is surjective. -/
+theorem coe_pi_surjective :
+    Surjective fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (p i)) :=
+  Surjective.piMap fun _ ↦ QuotientAddGroup.mk_surjective
+
+variable [∀ i, Fact (0 < p i)]
+
+/-- The covering map `(ι → ℝ) → (∀ i, AddCircle (p i))`, `t ↦ ([t i])ᵢ`, has derivative the
+identity of `ι → ℝ`, the tangent spaces of the torus being read in its product charts. -/
 theorem hasMFDerivAt_coe_pi (t : ι → ℝ) :
     HasMFDerivAt 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) t (ContinuousLinearMap.id ℝ (ι → ℝ)) :=
-  (TauCeti.hasMFDerivAt_pi (M := fun _ : ι ↦ AddCircle p) (I := fun _ ↦ 𝓘(ℝ))
-    (f := fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) fun i ↦ (hasMFDerivAt_coe p (t i)).comp t
-    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).hasMFDerivAt).congr_mfderiv <| by
+      (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (p i))) t (ContinuousLinearMap.id ℝ (ι → ℝ)) :=
+  (TauCeti.hasMFDerivAt_pi (M := fun i : ι ↦ AddCircle (p i)) (I := fun _ ↦ 𝓘(ℝ))
+    (f := fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (p i))) fun i ↦
+      (hasMFDerivAt_coe (p i) (t i)).comp t
+        (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).hasMFDerivAt).congr_mfderiv <| by
     -- The product of the coordinate projections is the identity of `ι → ℝ`.
     ext v i
     rfl
 
+/-- The covering map `(ι → ℝ) → (∀ i, AddCircle (p i))` is `C^n` for every `n`, including
+analytic. -/
+theorem contMDiff_coe_pi (n : ℕ∞ω) :
+    ContMDiff 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) n
+      (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (p i))) :=
+  contMDiff_pi_iff.2 fun i ↦ (contMDiff_coe (p i) n).comp
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).contMDiff
+
+/-- The covering map `(ι → ℝ) → (∀ i, AddCircle (p i))` is a `C^n` local diffeomorphism for every
+`n ≥ 1`, including analytic, since its derivative is the identity at every point. -/
+theorem isLocalDiffeomorph_coe_pi {n : ℕ∞ω} (hn : 1 ≤ n) :
+    IsLocalDiffeomorph 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) n
+      (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (p i))) :=
+  TauCeti.isLocalDiffeomorph_of_mfderiv_eq (contMDiff_coe_pi p n) hn fun t ↦
+    ⟨ContinuousLinearEquiv.refl ℝ (ι → ℝ), (hasMFDerivAt_coe_pi p t).mfderiv.symm⟩
+
 end Cover
+
+variable (p : ℝ)
 
 /-! ### The action of `GL(ι, ℤ)` -/
 
@@ -135,9 +168,7 @@ theorem hasMFDerivAt_generalLinearGroup_smul (A : GL ι ℤ) (x : ι → AddCirc
       (fun y ↦ A • y) x
       (LinearMap.toContinuousLinearMap (Matrix.toLin' ((A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ)))) := by
   set L := LinearMap.toContinuousLinearMap (Matrix.toLin' ((A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ)))
-  obtain ⟨t, rfl⟩ : ∃ t : ι → ℝ, (fun i ↦ (t i : AddCircle p)) = x :=
-    ⟨fun i ↦ (QuotientAddGroup.mk_surjective (x i)).choose,
-      funext fun i ↦ (QuotientAddGroup.mk_surjective (x i)).choose_spec⟩
+  obtain ⟨t, rfl⟩ := coe_pi_surjective (fun _ ↦ p) x
   -- The action composed with the covering map is the covering map composed with `L`.
   have hcomp : HasMFDerivAt 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
       ((fun y ↦ A • y) ∘ fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) t L := by
@@ -145,13 +176,13 @@ theorem hasMFDerivAt_generalLinearGroup_smul (A : GL ι ℤ) (x : ι → AddCirc
         (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) ∘ L :=
       funext (generalLinearGroup_smul_coe_pi p A)
     rw [hfun]
-    exact ((hasMFDerivAt_coe_pi p (L t)).comp t L.hasMFDerivAt).congr_mfderiv
+    exact ((hasMFDerivAt_coe_pi (fun _ ↦ p) (L t)).comp t L.hasMFDerivAt).congr_mfderiv
       (ContinuousLinearMap.id_comp L)
   have hd : MDifferentiableAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
       (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun y ↦ A • y) (fun i ↦ (t i : AddCircle p)) :=
     ((contMDiff_const_smul A).mdifferentiableAt (n := 1) one_ne_zero)
-  have h := mfderiv_comp t hd (hasMFDerivAt_coe_pi p t).mdifferentiableAt
-  rw [hcomp.mfderiv, (hasMFDerivAt_coe_pi p t).mfderiv] at h
+  have h := mfderiv_comp t hd (hasMFDerivAt_coe_pi (fun _ ↦ p) t).mdifferentiableAt
+  rw [hcomp.mfderiv, (hasMFDerivAt_coe_pi (fun _ ↦ p) t).mfderiv] at h
   have h' : mfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
       (fun y ↦ A • y) (fun i ↦ (t i : AddCircle p)) = L := by
     rw [h]
