@@ -9,6 +9,9 @@ public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 public import TauCeti.Probability.Process.ElementaryDensity
 public import TauCeti.Probability.Process.Predictable.Measure
+public import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
+import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
@@ -24,7 +27,10 @@ The first theorem allows any measure on the predictable sigma-algebra finite on 
 predictable rectangles, with no mass at time zero. The second gives the finite-horizon
 Lebesgue-time × sample-measure form.
 Finally, one sequence of finite-grid holdings approximates a Brownian-integrable process
-on every finite horizon.
+on every finite horizon. For a finite predictable measure, L¹ approximation follows by
+first approximating by simple functions and then using L² density. For finite time and
+sample measures, a subsequence also converges in pathwise time L¹ almost surely; the time
+measure need only have no atom at zero. This includes deterministic bond variation.
 No Brownian motion, usual filtration conditions or path regularity is assumed. The grids
 start at zero; their last date need not equal the observation horizon. Approximation is
 in energy norm, not pointwise or uniform in time.
@@ -163,6 +169,91 @@ theorem exists_simpleHolding_eLpNorm_sub_lt_timeMeasure
       (fun p ↦ simpleHolding τ n a p.1 p.2 - H p.1 p.2) := by
     simpa only [Pi.sub_def, Function.uncurry_def] using hp.sub hH
   rwa [ℱ.predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hs] at herr
+
+/-- For a finite predictable measure with a null initial slice, bounded finite-grid
+holdings are dense in L¹. Unlike square-energy approximation, this allows integrands
+whose squares are not integrable. -/
+theorem exists_simpleHolding_eLpNorm_one_sub_lt
+    (μ : @Measure (ℝ≥0 × Ω) ℱ.predictable) [IsFiniteMeasure μ]
+    (hzero : μ ({0} ×ˢ (univ : Set Ω)) = 0)
+    {H : ℝ≥0 → Ω → ℝ} (hH₁ : MemLp (Function.uncurry H) 1 μ)
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    ∃ (n : ℕ) (τ : ℕ → ℝ≥0) (a : ℕ → Ω → ℝ) (C : ℝ),
+      τ 0 = 0 ∧ StrictMonoOn τ (Iic n) ∧
+      (∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j)) ∧
+      (∀ j < n, ∀ ω, ‖a j ω‖ ≤ C) ∧
+      eLpNorm (fun p ↦ simpleHolding τ n a p.1 p.2 - H p.1 p.2) 1 μ < ε := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  obtain ⟨g, hg, _⟩ := hH₁.exists_simpleFunc_eLpNorm_sub_lt ENNReal.one_ne_top
+    (ENNReal.half_pos hε.ne').ne'
+  have hex (m : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt μ
+    (fun _ _ _ _ ↦ measure_ne_top _ _) hzero (H := fun t ω ↦ g (t, ω))
+    (g.memLp_of_isFiniteMeasure 2 μ)
+    (ε := (m : ℝ≥0∞)⁻¹) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top m))
+  choose n τ a C hτ₀ hτ ha hb herr using hex
+  have h₂ : Tendsto (fun m ↦ eLpNorm
+      (fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - g p) 2 μ) atTop (𝓝 0) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      ENNReal.tendsto_inv_nat_nhds_zero (fun _ ↦ bot_le) (fun m ↦ (herr m).le)
+  have h₁ := TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm (by norm_num) h₂
+  obtain ⟨m, hm⟩ := (h₁.eventually (gt_mem_nhds (ENNReal.half_pos hε.ne'))).exists
+  refine ⟨n m, τ m, a m, C m, hτ₀ m, hτ m, ha m, hb m, ?_⟩
+  calc
+    _ = eLpNorm ((fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - g p) +
+        ((g : ℝ≥0 × Ω → ℝ) - Function.uncurry H)) 1 μ := by
+      congr 1
+      ext p
+      simp [Function.uncurry_def]
+    _ ≤ eLpNorm (fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - g p) 1 μ +
+        eLpNorm ((g : ℝ≥0 × Ω → ℝ) - Function.uncurry H) 1 μ := eLpNorm_add_le le_rfl
+    _ < ε / 2 + ε / 2 := ENNReal.add_lt_add hm (by rwa [eLpNorm_sub_comm])
+    _ = ε := ENNReal.add_halves ε
+
+/-- Predictable L¹ integrands for finite time and sample measures admit bounded,
+left-measurable finite-grid approximations, both in product L¹ and almost surely in
+pathwise time L¹. The deterministic time measure may vanish on intervals, and needs
+only a null atom at zero; no continuity of the integrand is required. -/
+theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_ae
+    (ν : Measure ℝ≥0) [IsFiniteMeasure ν] (hν : ν {0} = 0)
+    (P : Measure Ω) [IsFiniteMeasure P]
+    {H : ℝ≥0 → Ω → ℝ} (hH : IsStronglyPredictable ℱ H)
+    (hH₁ : MemLp (Function.uncurry H) 1 (ν.prod P)) :
+    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ),
+      (∀ m, τ m 0 = 0) ∧ (∀ m, StrictMonoOn (τ m) (Iic (n m))) ∧
+      (∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j)) ∧
+      (∀ m j, j < n m → ∀ ω, ‖a m j ω‖ ≤ C m) ∧
+      Tendsto (fun m ↦ eLpNorm
+        (fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 1
+          (ν.prod P)) atTop (𝓝 0) ∧
+      ∀ᵐ ω ∂P, Tendsto (fun m ↦ ∫⁻ t,
+        ‖simpleHolding (τ m) (n m) (a m) t ω - H t ω‖ₑ ∂ν) atTop (𝓝 0) := by
+  let μ := (ν.prod P).trim ℱ.predictable_le_prod
+  have hzero : μ ({0} ×ˢ (univ : Set Ω)) = 0 := by
+    have hs : MeasurableSet[ℱ.predictable] ({0} ×ˢ (univ : Set Ω)) :=
+      measurableSet_predictable_singleton_bot_prod MeasurableSet.univ
+    simp only [μ, trim_measurableSet_eq _ hs, Measure.prod_prod, hν, zero_mul]
+  have hH₁' : MemLp (Function.uncurry H) 1 μ := by
+    simpa only [memLp_iff, μ, eLpNorm_trim ℱ.predictable_le_prod hH] using hH₁
+  have hex (m : ℕ) := ℱ.exists_simpleHolding_eLpNorm_one_sub_lt μ hzero hH₁'
+    (ε := (m : ℝ≥0∞)⁻¹) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top m))
+  choose n τ a C hτ₀ hτ ha hb herr using hex
+  have hmeas m : StronglyMeasurable[ℱ.predictable]
+      (fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) :=
+    (isStronglyPredictable_simpleHolding (ha m)).sub hH
+  have hlim : Tendsto (fun m ↦ eLpNorm
+      (fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 1
+        (ν.prod P)) atTop (𝓝 0) := by
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      ENNReal.tendsto_inv_nat_nhds_zero (fun _ ↦ bot_le) fun m ↦ ?_
+    simpa only [μ, eLpNorm_trim ℱ.predictable_le_prod (hmeas m)] using (herr m).le
+  have he m := ((hmeas m).mono ℱ.predictable_le_prod).enorm.aemeasurable (μ := ν.prod P)
+  obtain ⟨φ, hφ, hpath⟩ := TauCeti.exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral
+    (fun m ↦ (he m).lintegral_prod_left')
+    (by simpa only [← lintegral_prod_symm _ (he _),
+      ← eLpNorm_one_eq_lintegral_enorm ((hmeas _).mono
+        ℱ.predictable_le_prod).aestronglyMeasurable] using hlim)
+  exact ⟨n ∘ φ, τ ∘ φ, a ∘ φ, C ∘ φ, fun m ↦ hτ₀ (φ m), fun m ↦ hτ (φ m),
+    fun m ↦ ha (φ m), fun m ↦ hb (φ m), hlim.comp hφ.tendsto_atTop, hpath⟩
 
 end MeasureTheory.Filtration
 
