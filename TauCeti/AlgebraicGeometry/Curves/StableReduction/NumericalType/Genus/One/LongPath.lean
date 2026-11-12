@@ -327,7 +327,6 @@ private lemma false_of_left_equal {n : ℕ} {c : ℕ → T.Component}
         2 * T.multiplicity (c (n - 2)) := by
       apply mul_left_cancel₀ hW.ne'
       linear_combination hP
-    have hmlast : (0 : ℤ) < T.multiplicity (c (n - 1)) := by simp
     nlinarith
   · have eR := right_multiplicity_eq_of_right_double hc hcard hn hzero hW hint hright
     rw [hright, max_eq_right (by omega), eR] at hP
@@ -541,7 +540,7 @@ theorem isGenusOneLongPathShape_or_isGenusOneLongPathShape_of_isMinimal_and_arit
       T.IsGenusOneLongPathShape n (fun i ↦ c (n - 1 - i)) := by
   have h₂ := (T.isMinimal_and_arithmeticGenus_eq_one_iff (by omega)).mp ⟨hT, hg⟩
   apply T.isGenusOneLongPathShape_or_isGenusOneLongPathShape hcard hn
-  · exact ⟨hinj, fun i hi ↦ (T.isMinusTwoIndex_iff.mp (h₂ (c i))).2, hpos⟩
+  · exact ⟨hinj, fun i _ ↦ (T.isMinusTwoIndex_iff.mp (h₂ (c i))).2, hpos⟩
   · exact hzero
 
 /-- For a genus-one long path on a minus-two chain exhausting all components, some component's

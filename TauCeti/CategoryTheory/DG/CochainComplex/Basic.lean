@@ -33,10 +33,6 @@ conventions of every later differential graded construction.
   differential graded category.
 * `TauCeti.xIsoOfEq_hom_v` and `TauCeti.dgComp_v`: component formulas for degree transport and
   composition.
-* `CochainComplex.HomComplex.Cochain.v_apply_mem_ker_of_δ_eq_zero`: a closed degree-zero cochain
-  of complexes of modules sends closed elements to closed elements.
-* `CochainComplex.HomComplex.δ_v_apply_of_d_eq_zero`: on a closed element, the differential of a
-  cochain of complexes of modules is the differential of its value.
 
 ## Main definitions
 
@@ -125,31 +121,3 @@ theorem cochainEval_apply {K L : CochainComplex (ModuleCat.{v} R) ℤ} {n : ℤ}
   (rfl)
 
 end TauCeti
-
-namespace CochainComplex.HomComplex
-
-/-- On an element killed by the differential of the source, the differential of a cochain of
-complexes of modules is the differential of the target applied to the value of the cochain. -/
-theorem δ_v_apply_of_d_eq_zero {R : Type*} [Ring R] {K L : CochainComplex (ModuleCat R) ℤ}
-    {n m : ℤ} (hnm : n + 1 = m) (z : Cochain K L n) {p q r : ℤ} (hpq : p + n = q)
-    (hpr : p + m = r) {a : K.X p} (ha : (K.d p (p + 1)).hom a = 0) :
-    ((δ n m z).v p r hpr).hom a = (L.d q r).hom ((z.v p q hpq).hom a) := by
-  rw [δ_v n m hnm z p r hpr q (p + 1) (by omega) rfl]
-  simp [ha]
-
-end CochainComplex.HomComplex
-
-namespace CochainComplex.HomComplex.Cochain
-
-/-- A closed cochain of degree zero between complexes of modules sends elements killed by the
-differential to elements killed by the differential. -/
-theorem v_apply_mem_ker_of_δ_eq_zero {R : Type*} [Ring R] {K L : CochainComplex (ModuleCat R) ℤ}
-    (z : Cochain K L 0) (hz : δ 0 1 z = 0) {p q : ℤ} (hpq : p + 1 = q) {a : K.X p}
-    (ha : (K.d p q).hom a = 0) :
-    (z.v p p (add_zero p)).hom a ∈ LinearMap.ker (L.d p q).hom := by
-  have key := congrArg (fun φ ↦ ModuleCat.Hom.hom φ a) (Cochain.congr_v hz p q hpq)
-  simpa only [δ_zero_cochain_v, Cochain.zero_v, ModuleCat.hom_sub, ModuleCat.hom_comp,
-    LinearMap.sub_apply, LinearMap.comp_apply, ha, map_zero, sub_zero, ModuleCat.hom_zero,
-    LinearMap.zero_apply, LinearMap.mem_ker] using key
-
-end CochainComplex.HomComplex.Cochain
