@@ -71,7 +71,12 @@ above. On a compact window the taming constant of `J` and the size of `X_{K_s}` 
 the Floer energy density bounds `‖∂ₛu‖²` up to an additive constant
 (`TauCeti.SymplecticForm.norm_fderiv_stdComplexLineReal_sq_le`). Hence bounded Floer energy gives
 bounded energy `∫ ‖∂ₛu‖²`, and since small discs have small area, energy concentrating at a
-bubbling point is also Floer energy.
+bubbling point is also Floer energy. This step only uses a pointwise bound `‖∂ₛu‖² ≤ A f + B` by a
+nonnegative energy density `f`, so it is stated for any such density and coordinate data on
+`ℝ × ℝ`
+(`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq_le`). The
+manifold-target version, with the Floer energy density of a map into a manifold read in a chart,
+is in `TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`.
 
 The same holds uniformly over a compact parameter window
 (`TauCeti.Floer.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`): if `J_p`
@@ -482,6 +487,216 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
 
 end Parameter
 
+section RealCoordinates
+
+/-! ### Real coordinates and energy densities
+
+On the domain `ℝ × ℝ` the coordinate equation reads
+`∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` with `X(z, x) : ℝ × ℝ →L[ℝ] V`. Read through
+the complex coordinate `equivRealProdCLM`, it is the equation of
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset`. The energy is then any nonnegative
+density `f` bounding `‖∂ₛu‖²` up to constants, `‖∂ₛu‖² ≤ A f + B`. On a compact window
+this holds for the Floer energy density of a tame structure, whether the target is a symplectic
+vector space or a chart of a symplectic manifold. -/
+
+/-- `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset` for solutions on the domain
+`ℝ × ℝ`, read through the complex coordinate `equivRealProdCLM`; the energy is `∫ ‖∂ₛu‖²`. -/
+private theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm
+    {J : (ℝ × ℝ) × V → V →L[ℝ] V} {X : (ℝ × ℝ) × V → ℝ × ℝ →L[ℝ] V} {W : Set ((ℝ × ℝ) × V)}
+    {D : Set (ℝ × ℝ)} {K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
+    (hX : ContDiffOn ℝ 2 X W) (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ D, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃E : ℝ⦄, IsOpen Ω → Ω ⊆ D →
+      (∀ k, ContDiffOn ℝ 3 (u k) Ω) →
+      (∀ k, ∀ z ∈ Ω, fderiv ℝ (u k) z stdComplexLineImag - X (z, u k z) stdComplexLineImag =
+        J (z, u k z) (fderiv ℝ (u k) z stdComplexLineReal - X (z, u k z) stdComplexLineReal)) →
+      (∀ k, MapsTo (u k) Ω K) →
+      (∀ k, IntegrableOn (fun z ↦ ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2) Ω) →
+      (∀ k, ∫ z in Ω, ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2 ≤ E) →
+      ∃ (φ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V), StrictMono φ ∧ ↑Z ⊆ Ω ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
+          δ ≤ ∫ y in ball z ε ∩ Ω, ‖fderiv ℝ (u (φ n)) y stdComplexLineReal‖ ^ 2) ∧
+        (∀ C, IsCompact C → C ⊆ Ω \ ↑Z →
+          ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
+        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
+  classical
+  set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM with he
+  set g : ℂ × V → (ℝ × ℝ) × V := fun q ↦ (e q.1, q.2)
+  have hg {n : WithTop ℕ∞} : ContDiff ℝ n g := (e.contDiff.comp contDiff_fst).prodMk contDiff_snd
+  obtain ⟨δ, hδ, hconv⟩ := exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
+    (hW.preimage (hg (n := 0)).continuous) (hJ.comp hg.contDiffOn (mapsTo_preimage g W))
+    ((hX.comp hg.contDiffOn (mapsTo_preimage g W)).clm_comp
+      (contDiffOn_const (c := (e : ℂ →L[ℝ] ℝ × ℝ))))
+    (e.toHomeomorph.isCompact_preimage.2 hD) hK (fun q hq ↦ hDKW ⟨hq.1, hq.2⟩)
+    (fun y hy x hx v ↦ hJsq _ hy _ hx v)
+  -- `e` preserves volume, and in the coordinate `e` the density `‖∂ₛu‖²` is `‖∂ₛ(u ∘ e)‖²`.
+  have hint_iff (w : ℝ × ℝ → V) (S : Set (ℝ × ℝ)) :
+      IntegrableOn (fun y ↦ ‖fderiv ℝ (w ∘ e) y 1‖ ^ 2) (e ⁻¹' S) ↔
+        IntegrableOn (fun z ↦ ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2) S := by
+    simp only [he, fderiv_comp_equivRealProdCLM_one]
+    exact Complex.volume_preserving_equiv_real_prod.integrableOn_comp_preimage
+      equivRealProdCLM.toHomeomorph.measurableEmbedding
+      (f := fun z ↦ ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2) (s := S)
+  have hint_eq (w : ℝ × ℝ → V) (S : Set (ℝ × ℝ)) :
+      ∫ y in e ⁻¹' S, ‖fderiv ℝ (w ∘ e) y 1‖ ^ 2 =
+        ∫ z in S, ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2 := by
+    simp only [he, fderiv_comp_equivRealProdCLM_one]
+    exact Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
+      equivRealProdCLM.toHomeomorph.measurableEmbedding
+      (fun z ↦ ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2) S
+  refine ⟨δ, hδ, fun Ω u E hΩ hΩD hu hfl huK hint hE ↦ ?_⟩
+  obtain ⟨φ, Z', v', hφ, hZ'Ω, -, hconc', hbd', hvc', hvK', hlim'⟩ :=
+    hconv (Ω := e ⁻¹' Ω) (u := fun k ↦ u k ∘ e) (E := E)
+      (hΩ.preimage e.continuous) (preimage_mono hΩD)
+      (fun k ↦ (hu k).comp e.contDiff.contDiffOn (mapsTo_preimage _ _))
+      (fun k y hy ↦ by
+        simpa [he, g, fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
+          equivRealProdCLM_one, equivRealProdCLM_I, stdComplexLineReal_eq,
+          stdComplexLineImag_eq] using hfl k (e y) hy)
+      (fun k y hy ↦ huK k hy)
+      (fun k ↦ (hint_iff (u k) Ω).2 (hint k)) (fun k ↦ (hint_eq (u k) Ω).trans_le (hE k))
+  -- The bubbling set and the limit in the original coordinates.
+  set Z : Finset (ℝ × ℝ) := Z'.image e with hZ_def
+  have hpreZ : e ⁻¹' (Ω \ ↑Z) = e ⁻¹' Ω \ ↑Z' := by
+    rw [preimage_sdiff, hZ_def, Finset.coe_image, e.injective.preimage_image]
+  have hsymm : MapsTo e.symm (Ω \ ↑Z) (e ⁻¹' Ω \ ↑Z') := fun y hy ↦ by
+    rw [← hpreZ]
+    simpa using hy
+  have hu_symm (k : ℕ) : (u k ∘ e) ∘ e.symm = u k := funext fun z ↦ by simp
+  refine ⟨φ, Z, v' ∘ e.symm, hφ, ?_, fun z hz ε hε ↦ ?_, fun C hC hCZ ↦ ?_,
+    hvc'.comp e.symm.continuous.continuousOn hsymm, fun y hy ↦ hvK' (hsymm hy), ?_⟩
+  · rw [hZ_def, Finset.coe_image]
+    exact image_subset_iff.2 hZ'Ω
+  · -- A disc of `ℂ` lies in the disc of `ℝ × ℝ` of the same radius about the image point.
+    obtain ⟨z', hz', rfl⟩ := Finset.mem_image.1 hz
+    have hsub : ball z' ε ∩ e ⁻¹' Ω ⊆ e ⁻¹' (ball (e z') ε ∩ Ω) := fun y hy ↦
+      ⟨(lipschitz_equivRealProd.dist_le_mul y z').trans_lt (by simpa using hy.1), hy.2⟩
+    filter_upwards [hconc' z' hz' ε hε] with n hn
+    rw [← hint_eq]
+    exact hn.trans (setIntegral_mono_set
+      ((hint_iff _ _).2 ((hint (φ n)).mono_set inter_subset_right))
+      (Eventually.of_forall fun _ ↦ by positivity) hsub.eventuallyLE)
+  · obtain ⟨M', hM'⟩ := hbd' (e ⁻¹' C) (e.toHomeomorph.isCompact_preimage.2 hC)
+      (hpreZ ▸ preimage_mono hCZ)
+    refine ⟨M' * ‖(e.symm : ℝ × ℝ →L[ℝ] ℂ)‖, fun n y hy ↦ ?_⟩
+    have hd := e.symm.comp_right_fderiv (f := u (φ n) ∘ e) (x := y)
+    rw [hu_symm] at hd
+    rw [hd]
+    exact (opNorm_comp_le _ _).trans
+      (mul_le_mul_of_nonneg_right (hM' n _ (by simpa using hy)) (norm_nonneg _))
+  · simpa only [hu_symm] using hlim'.comp e.symm hsymm e.symm.continuous.continuousOn
+
+/-- If `‖∂ₛu‖² ≤ A f + B` on an open set `Ω` of finite measure, where `f` is integrable on `Ω`,
+and `u` is `C¹` on `Ω`, then `‖∂ₛu‖²` is integrable on `Ω`. -/
+private theorem integrableOn_norm_fderiv_stdComplexLineReal_sq {u : ℝ × ℝ → V}
+    {f : ℝ × ℝ → ℝ} {Ω : Set (ℝ × ℝ)} {A B : ℝ} (hΩ : IsOpen Ω) (hΩfin : volume Ω ≠ ⊤)
+    (hu : ContDiffOn ℝ 1 u Ω) (hint : IntegrableOn f Ω)
+    (hle : ∀ z ∈ Ω, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤ A * f z + B) :
+    IntegrableOn (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2) Ω :=
+  Integrable.mono' ((hint.const_mul A).fun_add (integrableOn_const (C := B) hΩfin))
+    ((((hu.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
+      continuousOn_const).norm.pow 2).aestronglyMeasurable hΩ.measurableSet)
+    (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz ↦ by
+      rw [Real.norm_of_nonneg (by positivity)]
+      exact hle z hz)
+
+/-- If `‖∂ₛu‖² ≤ A f + B` on a measurable set `S` of finite measure, with `A, B ≥ 0` and `f ≥ 0`,
+then `∫_S ‖∂ₛu‖² ≤ (A + B + 1)(|S| + ∫_S f)`. -/
+private theorem setIntegral_norm_fderiv_stdComplexLineReal_sq_le {u : ℝ × ℝ → V}
+    {f : ℝ × ℝ → ℝ} {S : Set (ℝ × ℝ)} {A B : ℝ} (hS : MeasurableSet S) (hSfin : volume S ≠ ⊤)
+    (hA0 : 0 ≤ A) (hB0 : 0 ≤ B)
+    (hgint : IntegrableOn (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2) S)
+    (hint : IntegrableOn f S) (hf0 : ∀ z ∈ S, 0 ≤ f z)
+    (hle : ∀ z ∈ S, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤ A * f z + B) :
+    ∫ z in S, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤
+      (A + B + 1) * (volume.real S + ∫ z in S, f z) := by
+  have hint0 : 0 ≤ ∫ z in S, f z := setIntegral_nonneg hS hf0
+  have hm0 : 0 ≤ volume.real S := measureReal_nonneg
+  calc ∫ z in S, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2
+      ≤ ∫ z in S, (A * f z + B) :=
+        setIntegral_mono_on hgint ((hint.const_mul A).fun_add (integrableOn_const (C := B) hSfin))
+          hS hle
+    _ = A * (∫ z in S, f z) + B * volume.real S := by
+        rw [integral_add (hint.const_mul A) (integrableOn_const hSfin), integral_const_mul,
+          setIntegral_const, smul_eq_mul, mul_comm (volume.real S)]
+    _ ≤ (A + B + 1) * (volume.real S + ∫ z in S, f z) := by
+        nlinarith [mul_nonneg hA0 hm0, mul_nonneg hB0 hint0]
+
+/-- **Solutions with bounded energy density converge off finitely many bubbling points.** Let `J`
+and `X` be `C²` on an open set `W ⊆ (ℝ × ℝ) × V` containing `D × K` for compact `D ⊆ ℝ × ℝ` and
+`K ⊆ V`, with `J(z, x)² = -1` on `D × K`, and let `A, B ≥ 0`. There is a threshold `δ > 0` with the
+following property. Let `uₖ` be `C³` solutions of
+`∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` on an open set `Ω ⊆ D` with image in `K`,
+and let `fₖ ≥ 0` be integrable energy densities on `Ω` with `‖∂ₛuₖ‖² ≤ A fₖ + B` and
+`∫_Ω fₖ ≤ E`. Then there are a subsequence `φ`, a finite set `Z ⊆ Ω` with `#Z * δ ≤ E`, and a
+continuous `v : Ω \ Z → K` such that along `φ` every disc about a point of `Z` eventually carries
+energy `∫ f` at least `δ`, the differentials are uniformly bounded on every compact subset of
+`Ω \ Z`, and `u_{φ n} → v` locally uniformly on `Ω \ Z`.
+
+For the Floer equation of a tame structure the Floer energy density is such a density, both on a
+symplectic vector space
+(`TauCeti.SymplecticForm.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset`) and in a
+chart of a manifold. -/
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq_le
+    {J : (ℝ × ℝ) × V → V →L[ℝ] V} {X : (ℝ × ℝ) × V → ℝ × ℝ →L[ℝ] V} {W : Set ((ℝ × ℝ) × V)}
+    {D : Set (ℝ × ℝ)} {K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
+    (hX : ContDiffOn ℝ 2 X W) (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ D, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v) {A B : ℝ} (hA0 : 0 ≤ A)
+    (hB0 : 0 ≤ B) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃f : ℕ → ℝ × ℝ → ℝ⦄ ⦃E : ℝ⦄,
+      IsOpen Ω → Ω ⊆ D → (∀ k, ContDiffOn ℝ 3 (u k) Ω) →
+      (∀ k, ∀ z ∈ Ω, fderiv ℝ (u k) z stdComplexLineImag - X (z, u k z) stdComplexLineImag =
+        J (z, u k z) (fderiv ℝ (u k) z stdComplexLineReal - X (z, u k z) stdComplexLineReal)) →
+      (∀ k, MapsTo (u k) Ω K) → (∀ k, ∀ z ∈ Ω, 0 ≤ f k z) →
+      (∀ k, ∀ z ∈ Ω, ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2 ≤ A * f k z + B) →
+      (∀ k, IntegrableOn (f k) Ω) → (∀ k, ∫ z in Ω, f k z ≤ E) →
+      ∃ (φ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V), StrictMono φ ∧
+        ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, f (φ n) y) ∧
+        (∀ C, IsCompact C → C ⊆ Ω \ ↑Z →
+          ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
+        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
+  obtain ⟨δ₀, hδ₀, hconv⟩ :=
+    exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm hW hJ hX hD hK hDKW
+      hJsq
+  have hC₀0 : 0 < A + B + 1 := by positivity
+  refine ⟨δ₀ / (2 * (A + B + 1)), by positivity,
+    fun Ω u f E hΩ hΩD hu hfl huK hf0 hgle hint hE ↦ ?_⟩
+  have hΩm : MeasurableSet Ω := hΩ.measurableSet
+  have hΩfin : volume Ω ≠ ⊤ := ((measure_mono hΩD).trans_lt hD.measure_lt_top).ne
+  have hgint (k : ℕ) := integrableOn_norm_fderiv_stdComplexLineReal_sq hΩ hΩfin
+    ((hu k).of_le (by norm_num)) (hint k) (hgle k)
+  have hgS (k : ℕ) {S : Set (ℝ × ℝ)} (hS : MeasurableSet S) (hSΩ : S ⊆ Ω) :=
+    setIntegral_norm_fderiv_stdComplexLineReal_sq_le hS
+      (ne_top_of_le_ne_top hΩfin (measure_mono hSΩ)) hA0 hB0 ((hgint k).mono_set hSΩ)
+      ((hint k).mono_set hSΩ) (fun z hz ↦ hf0 k z (hSΩ hz)) fun z hz ↦ hgle k z (hSΩ hz)
+  obtain ⟨φ, Z, v, hφ, hZΩ, hconc', hbd, hvc, hvK, hlim⟩ :=
+    hconv hΩ hΩD hu hfl huK hgint fun k ↦ (hgS k hΩm le_rfl).trans (mul_le_mul_of_nonneg_left
+      (add_le_add (measureReal_mono hΩD hD.measure_lt_top.ne) (hE k)) hC₀0.le)
+  -- Energy `δ₀` of `∂ₛu` concentrating at a point gives energy `δ₀ / (2 (A + B + 1))` of `f`
+  -- there, since small discs have small area.
+  have hconc : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
+      δ₀ / (2 * (A + B + 1)) ≤ ∫ y in ball z ε ∩ Ω, f (φ n) y := by
+    intro z hz ε hε
+    refine eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball
+      (δ := δ₀ / (A + B + 1))
+      hΩm (by rw [Measure.volume_eq_prod]; exact measure_singleton _)
+      ⟨1, one_pos, measure_ball_lt_top.ne⟩ (fun n ↦ hf0 (φ n))
+      (fun n ↦ hint (φ n)) ?_ hε fun ρ hρ ↦ ?_
+    · rw [mul_comm, ← div_div]
+      exact half_lt_self (by positivity)
+    filter_upwards [hconc' z hz ρ hρ] with n hn
+    have h := hgS (φ n) (S := ball z ρ ∩ Ω) (measurableSet_ball.inter hΩm) inter_subset_right
+    rw [div_le_iff₀ hC₀0]
+    linarith
+  exact ⟨φ, Z, v, hφ, hZΩ, card_mul_le_of_forall_eventually_le_setIntegral_ball hΩm
+    (fun n ↦ hf0 (φ n)) (fun n ↦ hint (φ n)) (fun n ↦ hE (φ n)) hconc, hconc, hbd, hvc, hvK,
+    hlim⟩
+
+end RealCoordinates
+
 end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
@@ -542,133 +757,6 @@ theorem exists_forall_norm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm 
   have hXB : ‖ω.hamiltonianVectorField (Ks z) (u z)‖ ≤ B := by simpa using hB _ hp
   gcongr
 
-/-- If `‖∂ₛu‖² ≤ A e + B` on an open set `Ω` of finite measure, where `e` is the Floer energy
-density, integrable on `Ω`, and `u` is `C¹` on `Ω`, then `‖∂ₛu‖²` is integrable on `Ω`. -/
-private theorem integrableOn_norm_fderiv_stdComplexLineReal_sq (ω : SymplecticForm V)
-    {u : ℝ × ℝ → V} {Ω : Set (ℝ × ℝ)} {A B : ℝ} (hΩ : IsOpen Ω) (hΩfin : volume Ω ≠ ⊤)
-    (hu : ContDiffOn ℝ 1 u Ω) (hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω)
-    (hle : ∀ z ∈ Ω,
-      ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤ A * ω.floerEnergyDensity Ks Kt u z + B) :
-    IntegrableOn (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2) Ω :=
-  Integrable.mono' ((hint.const_mul A).fun_add (integrableOn_const (C := B) hΩfin))
-    ((((hu.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
-      continuousOn_const).norm.pow 2).aestronglyMeasurable hΩ.measurableSet)
-    (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz ↦ by
-      rw [Real.norm_of_nonneg (by positivity)]
-      exact hle z hz)
-
-/-- If `‖∂ₛu‖² ≤ A e + B` on a measurable set `S` of finite measure, with `A, B ≥ 0` and `e ≥ 0`
-the Floer energy density, then `∫_S ‖∂ₛu‖² ≤ (A + B + 1)(|S| + ∫_S e)`. -/
-private theorem setIntegral_norm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm V)
-    {u : ℝ × ℝ → V} {S : Set (ℝ × ℝ)} {A B : ℝ} (hS : MeasurableSet S) (hSfin : volume S ≠ ⊤)
-    (hA0 : 0 ≤ A) (hB0 : 0 ≤ B)
-    (hgint : IntegrableOn (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2) S)
-    (hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) S)
-    (he0 : ∀ z ∈ S, 0 ≤ ω.floerEnergyDensity Ks Kt u z)
-    (hle : ∀ z ∈ S,
-      ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤ A * ω.floerEnergyDensity Ks Kt u z + B) :
-    ∫ z in S, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤
-      (A + B + 1) * (volume.real S + ∫ z in S, ω.floerEnergyDensity Ks Kt u z) := by
-  have hint0 : 0 ≤ ∫ z in S, ω.floerEnergyDensity Ks Kt u z := setIntegral_nonneg hS he0
-  have hm0 : 0 ≤ volume.real S := measureReal_nonneg
-  calc ∫ z in S, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2
-      ≤ ∫ z in S, (A * ω.floerEnergyDensity Ks Kt u z + B) :=
-        setIntegral_mono_on hgint ((hint.const_mul A).fun_add (integrableOn_const (C := B) hSfin))
-          hS hle
-    _ = A * (∫ z in S, ω.floerEnergyDensity Ks Kt u z) + B * volume.real S := by
-        rw [integral_add (hint.const_mul A) (integrableOn_const hSfin), integral_const_mul,
-          setIntegral_const, smul_eq_mul, mul_comm (volume.real S)]
-    _ ≤ (A + B + 1) * (volume.real S + ∫ z in S, ω.floerEnergyDensity Ks Kt u z) := by
-        nlinarith [mul_nonneg hA0 hm0, mul_nonneg hB0 hint0]
-
-/-- `TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset` for solutions
-of the Floer equation `(du - X_K)^{0,1} = 0` on the domain `ℝ × ℝ`, read through the complex
-coordinate `equivRealProdCLM`; the energy is `∫ ‖∂ₛu‖²`. -/
-private theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm
-    (ω : SymplecticForm V) {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {K : Set V}
-    (hW : IsOpen W) (hX : ContDiffOn ℝ 2
-      (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianOneForm Ks Kt p.1 p.2) W)
-    (hJ : ContDiffOn ℝ 2
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
-    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W) :
-    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃E : ℝ⦄, IsOpen Ω → Ω ⊆ D →
-      (∀ k, ContDiffOn ℝ 3 (u k) Ω) →
-      (∀ k, ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
-        (ω.perturbedFDeriv Ks Kt (u k) z : ℝ × ℝ →ₗ[ℝ] V)) →
-      (∀ k, MapsTo (u k) Ω K) →
-      (∀ k, IntegrableOn (fun z ↦ ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2) Ω) →
-      (∀ k, ∫ z in Ω, ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2 ≤ E) →
-      ∃ (φ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V), StrictMono φ ∧ ↑Z ⊆ Ω ∧
-        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
-          δ ≤ ∫ y in ball z ε ∩ Ω, ‖fderiv ℝ (u (φ n)) y stdComplexLineReal‖ ^ 2) ∧
-        (∀ C, IsCompact C → C ⊆ Ω \ ↑Z →
-          ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
-        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
-        TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
-  classical
-  set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM with he
-  set g : ℂ × V → (ℝ × ℝ) × V := fun q ↦ (e q.1, q.2)
-  have hg {n : WithTop ℕ∞} : ContDiff ℝ n g := (e.contDiff.comp contDiff_fst).prodMk contDiff_snd
-  obtain ⟨δ, hδ, hconv⟩ := Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
-    (hW.preimage (hg (n := 0)).continuous) (hJ.comp hg.contDiffOn (mapsTo_preimage g W))
-    ((hX.comp hg.contDiffOn (mapsTo_preimage g W)).clm_comp
-      (contDiffOn_const (c := (e : ℂ →L[ℝ] ℝ × ℝ))))
-    (e.toHomeomorph.isCompact_preimage.2 hD) hK (fun q hq ↦ hDKW ⟨hq.1, hq.2⟩)
-    (fun y _ x _ v ↦ by simp)
-  -- `e` preserves volume, and in the coordinate `e` the density `‖∂ₛu‖²` is `‖∂ₛ(u ∘ e)‖²`.
-  have hint_iff (w : ℝ × ℝ → V) (S : Set (ℝ × ℝ)) :
-      IntegrableOn (fun y ↦ ‖fderiv ℝ (w ∘ e) y 1‖ ^ 2) (e ⁻¹' S) ↔
-        IntegrableOn (fun z ↦ ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2) S := by
-    simp only [he, fderiv_comp_equivRealProdCLM_one]
-    exact Complex.volume_preserving_equiv_real_prod.integrableOn_comp_preimage
-      equivRealProdCLM.toHomeomorph.measurableEmbedding
-      (f := fun z ↦ ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2) (s := S)
-  have hint_eq (w : ℝ × ℝ → V) (S : Set (ℝ × ℝ)) :
-      ∫ y in e ⁻¹' S, ‖fderiv ℝ (w ∘ e) y 1‖ ^ 2 =
-        ∫ z in S, ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2 := by
-    simp only [he, fderiv_comp_equivRealProdCLM_one]
-    exact Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
-      equivRealProdCLM.toHomeomorph.measurableEmbedding
-      (fun z ↦ ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2) S
-  refine ⟨δ, hδ, fun Ω u E hΩ hΩD hu hfl huK hint hE ↦ ?_⟩
-  obtain ⟨φ, Z', v', hφ, hZ'Ω, -, hconc', hbd', hvc', hvK', hlim'⟩ :=
-    hconv (Ω := e ⁻¹' Ω) (u := fun k ↦ u k ∘ e) (E := E)
-      (hΩ.preimage e.continuous) (preimage_mono hΩD)
-      (fun k ↦ (hu k).comp e.contDiff.contDiffOn (mapsTo_preimage _ _))
-      (fun k y hy ↦ by simpa [he, g] using ω.fderiv_comp_equivRealProdCLM_I_sub (hfl k (e y) hy))
-      (fun k y hy ↦ huK k hy)
-      (fun k ↦ (hint_iff (u k) Ω).2 (hint k)) (fun k ↦ (hint_eq (u k) Ω).trans_le (hE k))
-  -- The bubbling set and the limit in the original coordinates.
-  set Z : Finset (ℝ × ℝ) := Z'.image e with hZ_def
-  have hpreZ : e ⁻¹' (Ω \ ↑Z) = e ⁻¹' Ω \ ↑Z' := by
-    rw [preimage_sdiff, hZ_def, Finset.coe_image, e.injective.preimage_image]
-  have hsymm : MapsTo e.symm (Ω \ ↑Z) (e ⁻¹' Ω \ ↑Z') := fun y hy ↦ by
-    rw [← hpreZ]
-    simpa using hy
-  have hu_symm (k : ℕ) : (u k ∘ e) ∘ e.symm = u k := funext fun z ↦ by simp
-  refine ⟨φ, Z, v' ∘ e.symm, hφ, ?_, fun z hz ε hε ↦ ?_, fun C hC hCZ ↦ ?_,
-    hvc'.comp e.symm.continuous.continuousOn hsymm, fun y hy ↦ hvK' (hsymm hy), ?_⟩
-  · rw [hZ_def, Finset.coe_image]
-    exact image_subset_iff.2 hZ'Ω
-  · -- A disc of `ℂ` lies in the disc of `ℝ × ℝ` of the same radius about the image point.
-    obtain ⟨z', hz', rfl⟩ := Finset.mem_image.1 hz
-    have hsub : ball z' ε ∩ e ⁻¹' Ω ⊆ e ⁻¹' (ball (e z') ε ∩ Ω) := fun y hy ↦
-      ⟨(lipschitz_equivRealProd.dist_le_mul y z').trans_lt (by simpa using hy.1), hy.2⟩
-    filter_upwards [hconc' z' hz' ε hε] with n hn
-    rw [← hint_eq]
-    exact hn.trans (setIntegral_mono_set
-      ((hint_iff _ _).2 ((hint (φ n)).mono_set inter_subset_right))
-      (Eventually.of_forall fun _ ↦ by positivity) hsub.eventuallyLE)
-  · obtain ⟨M', hM'⟩ := hbd' (e ⁻¹' C) (e.toHomeomorph.isCompact_preimage.2 hC)
-      (hpreZ ▸ preimage_mono hCZ)
-    refine ⟨M' * ‖(e.symm : ℝ × ℝ →L[ℝ] ℂ)‖, fun n y hy ↦ ?_⟩
-    have hd := e.symm.comp_right_fderiv (f := u (φ n) ∘ e) (x := y)
-    rw [hu_symm] at hd
-    rw [hd]
-    exact (opNorm_comp_le _ _).trans
-      (mul_le_mul_of_nonneg_right (hM' n _ (by simpa using hy)) (norm_nonneg _))
-  · simpa only [hu_symm] using hlim'.comp e.symm hsymm e.symm.continuous.continuousOn
-
 /-- **Floer solutions of bounded energy converge off finitely many bubbling points.** Let
 `K = K_s ds + K_t dt` be `C³` and `J(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × V` containing
 `D × K` for compact `D ⊆ ℝ × ℝ` and `K ⊆ V`, with `J(z, x)` tamed by `ω` on `D × K`. There is a
@@ -708,46 +796,13 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset (ω : Symp
     ((hX.continuousOn.mono hDKW).clm_apply (continuousOn_const (c := stdComplexLineReal)) |>.congr
       fun p _ ↦ by simp)
     hJt
-  obtain ⟨δ₀, hδ₀, hconv⟩ :=
-    ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm hW hX hJ hD hK hDKW
-  have hC₀0 : 0 < A + B + 1 := by positivity
-  refine ⟨δ₀ / (2 * (A + B + 1)), by positivity, fun Ω u E hΩ hΩD hu hfl huK hint hE ↦ ?_⟩
-  have hΩm : MeasurableSet Ω := hΩ.measurableSet
-  have hΩfin : volume Ω ≠ ⊤ := ((measure_mono hΩD).trans_lt hD.measure_lt_top).ne
-  -- On `Ω`, the energy density `f k` is nonnegative and bounds `‖∂ₛuₖ‖²` up to a constant.
-  set f : ℕ → ℝ × ℝ → ℝ := fun k ↦ ω.floerEnergyDensity Ks Kt (u k) with hf_def
-  have hf0 (k : ℕ) : ∀ z ∈ Ω, 0 ≤ f k z := fun z hz ↦
-    ω.floerEnergyDensity_nonneg (hJt z (hΩD hz) _ (huK k hz)) (hfl k z hz)
-  have hgle (k : ℕ) : ∀ z ∈ Ω, ‖fderiv ℝ (u k) z stdComplexLineReal‖ ^ 2 ≤ A * f k z + B :=
-    fun z hz ↦ hpt (hΩD hz) (huK k hz) (hfl k z hz)
-  have hgint (k : ℕ) := ω.integrableOn_norm_fderiv_stdComplexLineReal_sq hΩ hΩfin
-    ((hu k).of_le (by norm_num)) (hint k) (hgle k)
-  have hgS (k : ℕ) {S : Set (ℝ × ℝ)} (hS : MeasurableSet S) (hSΩ : S ⊆ Ω) :=
-    ω.setIntegral_norm_fderiv_stdComplexLineReal_sq_le hS
-      (ne_top_of_le_ne_top hΩfin (measure_mono hSΩ)) hA0 hB0 ((hgint k).mono_set hSΩ)
-      ((hint k).mono_set hSΩ) (fun z hz ↦ hf0 k z (hSΩ hz)) fun z hz ↦ hgle k z (hSΩ hz)
-  obtain ⟨φ, Z, v, hφ, hZΩ, hconc', hbd, hvc, hvK, hlim⟩ :=
-    hconv hΩ hΩD hu hfl huK hgint fun k ↦ (hgS k hΩm le_rfl).trans (mul_le_mul_of_nonneg_left
-      (add_le_add (measureReal_mono hΩD hD.measure_lt_top.ne) (hE k)) hC₀0.le)
-  -- Energy `δ₀` of `∂ₛu` concentrating at a point gives Floer energy `δ₀ / (2 (A + B + 1))`
-  -- there, since small discs have small area.
-  have hconc : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
-      δ₀ / (2 * (A + B + 1)) ≤ ∫ y in ball z ε ∩ Ω, f (φ n) y := by
-    intro z hz ε hε
-    refine eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball
-      (δ := δ₀ / (A + B + 1))
-      hΩm (by rw [Measure.volume_eq_prod]; exact measure_singleton _)
-      ⟨1, one_pos, measure_ball_lt_top.ne⟩ (fun n ↦ hf0 (φ n))
-      (fun n ↦ hint (φ n)) ?_ hε fun ρ hρ ↦ ?_
-    · rw [mul_comm, ← div_div]
-      exact half_lt_self (by positivity)
-    filter_upwards [hconc' z hz ρ hρ] with n hn
-    have h := hgS (φ n) (S := ball z ρ ∩ Ω) (measurableSet_ball.inter hΩm) inter_subset_right
-    rw [div_le_iff₀ hC₀0]
-    simp only [hf_def] at h ⊢
-    linarith
-  exact ⟨φ, Z, v, hφ, hZΩ, card_mul_le_of_forall_eventually_le_setIntegral_ball hΩm
-    (fun n ↦ hf0 (φ n)) (fun n ↦ hint (φ n)) (fun n ↦ hE (φ n)) hconc, hconc, hbd, hvc, hvK,
-    hlim⟩
+  obtain ⟨δ, hδ, hconv⟩ :=
+    Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq_le hW hJ hX hD
+      hK hDKW (fun _ _ _ _ _ ↦ by simp) hA0 hB0
+  exact ⟨δ, hδ, fun Ω u E hΩ hΩD hu hfl huK hint hE ↦ hconv hΩ hΩD hu
+    (fun k z hz ↦ by
+      simpa [perturbedFDeriv_eq_sub] using (hfl k z hz).apply_stdComplexLineImag) huK
+    (fun k z hz ↦ ω.floerEnergyDensity_nonneg (hJt z (hΩD hz) _ (huK k hz)) (hfl k z hz))
+    (fun k z hz ↦ hpt (hΩD hz) (huK k hz) (hfl k z hz)) hint hE⟩
 
 end TauCeti.SymplecticForm
