@@ -41,7 +41,7 @@ nondegenerate weakly exact form
 `spec(s F) = {-s F(x) | x a critical point of F}`
 
 (`TauCeti.SmoothTwoForm.IsNondegenerate.contractibleActionSpectrum_smul_eq`). The critical values
-of a smooth function on a second countable manifold form a null set, by Sard's theorem, so this
+of a smooth function on a boundaryless Lindelöf manifold form a null set, by Sard's theorem, so this
 spectrum has empty interior. Consequently, a continuous function `ρ` on a preconnected set `S` of
 positive numbers with `ρ(s) ∈ spec(s F)` for every `s ∈ S` is of the form `ρ(s) = -s F(x)` for a
 single critical point `x`
@@ -210,13 +210,12 @@ theorem contractibleActionSpectrum_smul_eq (h : σ.IsNondegenerate) (hω : IsWea
       _, (isLoopCylinder_const x).isCap⟩, haction x⟩
 
 /-- **Continuous selections of the spectra of `s F`.** Let `σ` be a nondegenerate weakly exact
-two-form on a boundaryless second countable manifold modelled on a finite-dimensional space, and
+two-form on a boundaryless Lindelöf manifold modelled on a finite-dimensional space, and
 `F` a smooth function. Let `S` be a nonempty preconnected set of positive numbers such that, for
 every `s ∈ S`, no level of `F` carries a closed characteristic contractible in `M` of period at
 most `s`. If `ρ` is continuous on `S` and `ρ(s)` lies in the contractible action spectrum of `s F`
 for every `s ∈ S`, then there is a single critical point `x` of `F` with `ρ(s) = -s F(x)` for all
-`s ∈ S`. Indeed `-ρ(s) / s` is continuous on `S` with values in the critical values of `F`, which
-have empty interior by Sard's theorem. -/
+`s ∈ S`. -/
 theorem exists_mem_criticalPoints_forall_eq_neg_mul [I.Boundaryless] [LindelofSpace M]
     (h : σ.IsNondegenerate) (hω : IsWeaklyExact σ.1) (hF : ContMDiff I 𝓘(ℝ) ∞ F) {S : Set ℝ}
     (hS : IsPreconnected S) (hSne : S.Nonempty) (hSpos : ∀ s ∈ S, 0 < s)
@@ -229,7 +228,8 @@ theorem exists_mem_criticalPoints_forall_eq_neg_mul [I.Boundaryless] [LindelofSp
     refine ((hF.isNullSet_image_criticalPoints (by simp)).mono
       (image_mono fun x hx ↦ ?_)).interior_eq_empty
     exact isRegularPoint_iff_notMem_criticalPoints.not_left.2 hx
-  -- `-ρ(s) / s` takes its values in the critical values of `F`.
+  -- `-ρ(s) / s` takes its values in the critical values of `F`, and is continuous on `S`, so it is
+  -- constant there.
   have hval (s : ℝ) (hs : s ∈ S) : ∃ x ∈ criticalPoints I F, ρ s = -(s * F x) := by
     have := hρS s hs
     rw [contractibleActionSpectrum_smul_eq h hω (hF.mdifferentiable (by simp)) (hSpos s hs)

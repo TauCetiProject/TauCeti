@@ -76,11 +76,12 @@ theorem IsPreconnected.forall_le_or_forall_ge (hs : IsPreconnected s)
     fun h x hx ↦ h (mem_image_of_mem f hx)
 
 /-- A continuous function on a preconnected set, with values in a subset `t` of a densely ordered
-space whose interior is empty, is constant on the set: its image is preconnected, so it contains
-the open interval between any two of its points, which would lie in the interior of `t`. -/
+space whose interior is empty, is constant on the set. -/
 theorem IsPreconnected.subsingleton_image_of_interior_eq_empty [DenselyOrdered α]
     (hs : IsPreconnected s) {f : X → α} (hf : ContinuousOn f s) {t : Set α}
     (hft : MapsTo f s t) (ht : interior t = ∅) : (f '' s).Subsingleton := by
+  -- The image is preconnected, so it contains the open interval between any two of its points,
+  -- which would lie in the interior of `t`.
   have hIoo {a b : α} (ha : a ∈ f '' s) (hb : b ∈ f '' s) : ¬a < b := fun hab ↦ by
     obtain ⟨c, hc⟩ := nonempty_Ioo.2 hab
     have hsub : Ioo a b ⊆ interior t := interior_maximal
