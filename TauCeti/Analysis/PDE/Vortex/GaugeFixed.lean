@@ -736,6 +736,7 @@ def gaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     exact ⟨hy.const_smul t, hy₂.const_smul t, fun z ↦ by
       rw [gaugeFixedOperator_smul, hyk, smul_zero]⟩
 
+@[simp]
 theorem mem_gaugeFixedKernel :
     y ∈ gaugeFixedKernel x ↔
       ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0 :=
