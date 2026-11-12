@@ -184,6 +184,18 @@ theorem augmentation_toIdeal_pow_eq_span_range_ι_pow (n : ℕ) :
     rw [Ideal.IsTwoSided.pow_succ, ih, augmentation_toIdeal_eq_span_range_ι, Ideal.span_mul_span,
       ← pow_succ']
 
+/-- A product of `n` canonical Lie generators lies in the `n`-th power of the augmentation
+ideal. -/
+theorem prod_map_ι_mem_augmentation_toIdeal_pow (l : List L) :
+    (l.map (_root_.UniversalEnvelopingAlgebra.ι R)).prod ∈
+      (HopfIdeal.augmentation R U).toIdeal ^ l.length := by
+  induction l with
+  | nil => simp only [List.map_nil, List.prod_nil, List.length_nil, Submodule.pow_zero,
+      Ideal.one_eq_top, Submodule.mem_top]
+  | cons x l ih =>
+    rw [List.map_cons, List.prod_cons, List.length_cons, Ideal.IsTwoSided.pow_succ]
+    exact Ideal.mul_mem_mul (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L x)) ih
+
 end Generators
 
 section LowerCentralSeries
