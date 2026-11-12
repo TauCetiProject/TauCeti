@@ -36,6 +36,23 @@ public section
 
 open Function Submodule
 
+namespace Ideal
+
+/-- A finite ideal-power torsion submodule is complete for that ideal. -/
+instance isAdicComplete_primaryComponent_of_finite {R M : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] (I : Ideal R) [Module.Finite R (I.primaryComponent M)] :
+    IsAdicComplete I (I.primaryComponent M) := by
+  obtain ⟨k, hk⟩ := I.exists_le_torsionBySet_pow_of_le_primaryComponent
+    (P := I.primaryComponent M) (Module.Finite.iff_fg.mp inferInstance) le_rfl
+  have hkill : I ^ k • (⊤ : Submodule R (I.primaryComponent M)) = ⊥ := by
+    apply eq_bot_iff.mpr
+    refine Submodule.smul_le.mpr fun a ha x _ ↦ ?_
+    apply Subtype.ext
+    exact (Submodule.mem_torsionBySet_iff _ _).mp (hk x.2) ⟨a, ha⟩
+  exact TauCeti.isAdicComplete_of_pow_smul_eq_bot hkill
+
+end Ideal
+
 namespace AdicCompletion
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] (r : R)
@@ -43,23 +60,15 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] (r : R)
 /-- If the parameter-power torsion of `M` is already complete, completion induces a
 bijection on parameter-power torsion. The map is the restriction of the canonical completion
 map, not an unspecified identification. -/
-theorem bijective_primaryComponent_map_of_isAdicComplete
+theorem primaryComponent_map_of_bijective_of_isAdicComplete
     [IsAdicComplete (Ideal.span {r}) ((Ideal.span {r}).primaryComponent M)] :
     Bijective (Ideal.primaryComponent.map (Ideal.span {r}) (of (Ideal.span {r}) M)) := by
   let I := Ideal.span {r}
   let T := I.primaryComponent M
-  have hreg : IsSMulRegular (M ⧸ T) r := by
-    apply (isSMulRegular_iff_torsionBy_eq_bot _ _).mpr
-    apply le_antisymm ?_ bot_le
-    intro x hx
-    apply (Ideal.primaryComponent_quotient_primaryComponent
-      (Submodule.fg_span (Set.finite_singleton r))).le
-    simpa only [Finset.coe_singleton] using
-      (Ideal.mem_primaryComponent_span_iff {r}).mpr (by
-      intro s hs
-      have hs' : s = r := by simpa using hs
-      subst s
-      exact ⟨1, by simpa using hx⟩)
+  have hreg : IsSMulRegular (M ⧸ T) r :=
+    (Ideal.primaryComponent_span_singleton_eq_bot_iff r).mp
+      (Ideal.primaryComponent_quotient_primaryComponent
+        (Submodule.fg_span (Set.finite_singleton r)))
   have hex := map_span_singleton_exact_of_isSMulRegular
     (LinearMap.exact_subtype_mkQ T) T.mkQ_surjective hreg
   have hinj := map_span_singleton_injective_of_isSMulRegular
@@ -74,14 +83,8 @@ theorem bijective_primaryComponent_map_of_isAdicComplete
   · intro y
     have hy : map I T.mkQ (y : AdicCompletion I M) = 0 := by
       have hmem := I.primaryComponent_map_mem ((map I T.mkQ).restrictScalars R) y
-      have hzero : I.primaryComponent (AdicCompletion I (M ⧸ T)) = ⊥ := by
-        apply le_antisymm ?_ bot_le
-        intro z hz
-        have hz' : z ∈ (Ideal.span (↑({r} : Finset R) : Set R)).primaryComponent
-            (AdicCompletion I (M ⧸ T)) := by
-          simpa only [Finset.coe_singleton] using hz
-        obtain ⟨n, hn⟩ := (Ideal.mem_primaryComponent_span_iff {r}).mp hz' r (by simp)
-        exact (hreg.adicCompletion.pow n) (hn.trans (smul_zero _).symm)
+      have hzero : I.primaryComponent (AdicCompletion I (M ⧸ T)) = ⊥ :=
+        (Ideal.primaryComponent_span_singleton_eq_bot_iff r).mpr hreg.adicCompletion
       simpa only [hzero, Submodule.mem_bot, LinearMap.restrictScalars_apply] using hmem
     obtain ⟨z, hz⟩ := (hex (y : AdicCompletion I M)).mp hy
     obtain ⟨t, rfl⟩ := of_surjective I T z
@@ -91,36 +94,27 @@ theorem bijective_primaryComponent_map_of_isAdicComplete
 /-- Bounded parameter-power torsion is unchanged by principal-adic completion. There are
 no Noetherian or finite-generation hypotheses: only the torsion submodule must be killed by
 a uniform power of the defining ideal. -/
-theorem bijective_primaryComponent_map_of_pow_smul_eq_bot {k : ℕ}
+theorem primaryComponent_map_of_bijective_of_pow_smul_eq_bot {k : ℕ}
     (hk : (Ideal.span {r}) ^ k •
       (⊤ : Submodule R ((Ideal.span {r}).primaryComponent M)) = ⊥) :
     Bijective (Ideal.primaryComponent.map (Ideal.span {r}) (of (Ideal.span {r}) M)) := by
   let := TauCeti.isAdicComplete_of_pow_smul_eq_bot hk
-  exact bijective_primaryComponent_map_of_isAdicComplete r
+  exact primaryComponent_map_of_bijective_of_isAdicComplete r
 
-/-- If the parameter-power torsion is finite, principal-adic completion identifies it with
-the torsion of the completion. In particular this applies to Noetherian modules.
+/-- If the parameter-power torsion is complete, principal-adic completion identifies it with
+the torsion of the completion. In particular this applies when the torsion submodule is finite.
 The underlying map is induced by `AdicCompletion.of`. -/
 noncomputable def primaryComponentEquiv
-    [Module.Finite R ((Ideal.span {r}).primaryComponent M)] :
+    [IsAdicComplete (Ideal.span {r}) ((Ideal.span {r}).primaryComponent M)] :
     (Ideal.span {r}).primaryComponent M ≃ₗ[R]
-      (Ideal.span {r}).primaryComponent (AdicCompletion (Ideal.span {r}) M) := by
-  refine LinearEquiv.ofBijective (Ideal.primaryComponent.map (Ideal.span {r})
-    (of (Ideal.span {r}) M)) ?_
-  let I := Ideal.span {r}
-  obtain ⟨k, hk⟩ := I.exists_le_torsionBySet_pow_of_le_primaryComponent
-    (P := I.primaryComponent M) (Module.Finite.iff_fg.mp inferInstance) le_rfl
-  have hkill : I ^ k • (⊤ : Submodule R (I.primaryComponent M)) = ⊥ := by
-    apply eq_bot_iff.mpr
-    refine Submodule.smul_le.mpr fun a ha x _ ↦ ?_
-    apply Subtype.ext
-    exact (Submodule.mem_torsionBySet_iff _ _).mp (hk x.2) ⟨a, ha⟩
-  exact bijective_primaryComponent_map_of_pow_smul_eq_bot r hkill
+      (Ideal.span {r}).primaryComponent (AdicCompletion (Ideal.span {r}) M) :=
+  LinearEquiv.ofBijective (Ideal.primaryComponent.map (Ideal.span {r})
+    (of (Ideal.span {r}) M)) (primaryComponent_map_of_bijective_of_isAdicComplete r)
 
 /-- The torsion comparison sends an element to its canonical image in the completion. -/
 @[simp]
 theorem coe_primaryComponentEquiv_apply
-    [Module.Finite R ((Ideal.span {r}).primaryComponent M)]
+    [IsAdicComplete (Ideal.span {r}) ((Ideal.span {r}).primaryComponent M)]
     (x : (Ideal.span {r}).primaryComponent M) :
     (primaryComponentEquiv r x : AdicCompletion (Ideal.span {r}) M) =
       of (Ideal.span {r}) M (x : M) := by
@@ -130,7 +124,7 @@ theorem coe_primaryComponentEquiv_apply
 original torsion element of the completion. -/
 @[simp]
 theorem of_coe_primaryComponentEquiv_symm_apply
-    [Module.Finite R ((Ideal.span {r}).primaryComponent M)]
+    [IsAdicComplete (Ideal.span {r}) ((Ideal.span {r}).primaryComponent M)]
     (y : (Ideal.span {r}).primaryComponent (AdicCompletion (Ideal.span {r}) M)) :
     of (Ideal.span {r}) M ((primaryComponentEquiv r).symm y : M) = y := by
   rw [← coe_primaryComponentEquiv_apply, LinearEquiv.apply_symm_apply]
