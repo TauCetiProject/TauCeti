@@ -60,7 +60,7 @@ theorem _root_.ContDiffOn.holderOnWith_iteratedFDeriv_of_lt {k j : ℕ} {s : Set
     intro x hx
     exact_mod_cast (norm_fderiv_iteratedFDeriv (𝕜 := ℝ) (f := f) (n := j) (x := x)) ▸
       hnext x hx
-  have hlip := Convex.lipschitzOnWith_of_nnnorm_fderiv_le hdiff hder hconv
+  have hlip := Convex.lipschitzOnWith_of_nnNorm_fderiv_le hdiff hder hconv
   exact hlip.holderOnWith_of_norm_le hb hα
 
 end TauCeti
