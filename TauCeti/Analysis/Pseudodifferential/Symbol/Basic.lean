@@ -37,8 +37,9 @@ space, and develop the first operations of the symbol calculus:
   frequency derivatives commute with each other (`TauCeti.Symbol.spatialDeriv_comm`,
   `TauCeti.Symbol.frequencyDeriv_comm`, `TauCeti.Symbol.spatialDeriv_frequencyDeriv_comm`);
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
-  of multiplication by `f`, has order `0`; in particular so does a constant
-  (`TauCeti.Symbol.const`);
+  of multiplication by `f`, has order `0`; in particular so do a constant
+  (`TauCeti.Symbol.const`) and the symbol `φ(x) id` of multiplication by a scalar function
+  (`TauCeti.Symbol.ofSmul`);
 * `TauCeti.Symbol.ofFrequency`: a smooth coefficient `b(ξ)` independent of the position with
   `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩^(m - k)` has order `m`, with estimates uniform in the position
   (`TauCeti.Symbol.isUniform_ofFrequency`);
@@ -873,6 +874,21 @@ theorem not_isUniform_ofSpatial_smul (j : Fin n) {T : V →L[ℂ] W} (hT : T ≠
   rw [abs_of_nonneg (by positivity), div_mul_cancel₀ _ hT'.ne'] at hx
   linarith [le_abs_self C]
 
+/-- The symbol `φ(x) id` of multiplication by a smooth scalar function `φ`, of order `0`. -/
+def ofSmul (φ : CoordinateSpace n → ℂ) (hφ : ContDiff ℝ ∞ φ) : Symbol n V V 0 :=
+  ofSpatial (fun x => φ x • ContinuousLinearMap.id ℂ V) (hφ.smul contDiff_const)
+
+@[simp]
+theorem coefficient_ofSmul {φ : CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (ofSmul φ hφ : Symbol n V V 0).coefficient p = φ p.1 • ContinuousLinearMap.id ℂ V := (rfl)
+
+/-- The symbol of multiplication by a compactly supported smooth scalar function has compact
+spatial support. -/
+theorem hasCompactSpatialSupport_ofSmul {φ : CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ)
+    (hφc : HasCompactSupport φ) : (ofSmul φ hφ : Symbol n V V 0).HasCompactSpatialSupport :=
+  (hasCompactSpatialSupport_ofSpatial_iff _).2 (hφc.smul_right (f' := fun _ => _))
+
 /-- The constant symbol with coefficient `T`, a symbol of order `0`. -/
 def const (T : V →L[ℂ] W) : Symbol n V W 0 :=
   ofSpatial (fun _ => T) contDiff_const
@@ -1031,6 +1047,13 @@ def comp (b : Symbol n W U m') (a : Symbol n V W m) : Symbol n V U (m' + m) wher
 theorem coefficient_comp (b : Symbol n W U m') (a : Symbol n V W m)
     (p : CoordinateSpace n × CoordinateSpace n) :
     (b.comp a).coefficient p = (b.coefficient p).comp (a.coefficient p) := (rfl)
+
+/-- Composing with the symbol `φ(x) id` on the left multiplies the coefficient by `φ(x)`. -/
+theorem coefficient_ofSmul_comp {φ : CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ)
+    (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
+    ((ofSmul φ hφ).comp a).coefficient p = φ p.1 • a.coefficient p := by
+  rw [coefficient_comp, coefficient_ofSmul, ContinuousLinearMap.smul_comp,
+    ContinuousLinearMap.id_comp]
 
 theorem comp_add (b : Symbol n W U m') (a₁ a₂ : Symbol n V W m) :
     b.comp (a₁ + a₂) = b.comp a₁ + b.comp a₂ := by

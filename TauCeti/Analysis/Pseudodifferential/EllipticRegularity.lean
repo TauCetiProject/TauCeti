@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
 
 /-!
-# Local parametrices and interior elliptic regularity
+# Interior elliptic regularity
 
 Let `a` be a symbol of order `m` on `ℝⁿ` with values in `V →L[ℂ] W`, elliptic above some radius
 (`TauCeti.Symbol.IsEllipticAbove`), and let `b` be a left parametrix symbol of `a`, a symbol of
@@ -17,19 +17,15 @@ order `-m` with `1 ∼ ∑ₖ sharpTerm b a k`
 The composition symbol `b # c` is only available when the right factor `c` has compact spatial
 support, so the parametrix is applied to a localization of `Op(a)`: a symbol `c` with compact
 spatial support that agrees with `a` on an open set `Ω`, for instance `ψ(x) a(x, ξ)` for a cutoff
-`ψ` equal to `1` on `Ω`. For a smooth cutoff `φ` with `tsupport φ ⊆ Ω` this file proves the
-**local left parametrix identity**
+`ψ` equal to `1` on `Ω`. For a smooth cutoff `φ` with `tsupport φ ⊆ Ω`, the local left parametrix
+identity `(φ b) # c = φ + r` with `r` smoothing (`TauCeti.Symbol.isSmoothing_sharp_sub_ofSmul`)
+gives `Op(φ b) Op(c) = φ + Op(r)` on the Bessel-potential spaces `H^s = H^{s,2}(ℝⁿ; V)`. This file
+proves this operator identity and its consequences:
 
-`(φ b) # c = φ + r` with `r` smoothing,
-
-and its consequences on the Bessel-potential spaces `H^s = H^{s,2}(ℝⁿ; V)`, where
-`Op(φ b) Op(c) = φ + Op(r)`:
-
-* `TauCeti.Symbol.isSmoothing_sharp_sub_ofSpatial`: the local left parametrix identity, for any
-  left parametrix symbol `b` of a symbol `a`, elliptic or not.
-* `TauCeti.Symbol.IsEllipticAbove.exists_quantizeSobolev_localParametrix`: for an elliptic `a`,
-  there are a symbol `q` of order `-m` and a smoothing symbol `r`, both with compact spatial
-  support, with `Op(q) Op(c) u = φ u + Op(r) u` for every `u ∈ H^s` and every real `s`.
+* `TauCeti.Symbol.IsEllipticAbove.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLeftCLM_add`
+  is the operator identity: for an elliptic `a`, there are a symbol `q` of order `-m` and a
+  smoothing symbol `r`, both with compact spatial support, with `Op(q) Op(c) u = φ u + Op(r) u`
+  for every `u ∈ H^s` and every real `s`.
 * `TauCeti.Symbol.IsEllipticAbove.memSobolev_smulLeftCLM`: **interior elliptic regularity**. If
   `u ∈ H^t` and `Op(c) u ∈ H^{s - m}`, then `φ u ∈ H^s`, whatever the real numbers `s` and `t`.
 * `TauCeti.Symbol.IsEllipticAbove.exists_norm_smulLeftCLM_le`: **the interior elliptic estimate**
@@ -68,50 +64,6 @@ namespace Symbol
 
 variable {n : ℕ} {m : ℝ}
 
-/-! ### The local left parametrix identity -/
-
-section LocalParametrix
-
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W] {a : Symbol n V W m} {b : Symbol n W V (-m)}
-
-/-- **The local left parametrix identity.** Let `b` be a left parametrix symbol of `a`, so that
-`1 ∼ ∑ₖ sharpTerm b a k`, let `c` be a symbol with compact spatial support that agrees with `a` on
-an open set `Ω`, and let `φ` be a smooth function with `tsupport φ ⊆ Ω`. If `q = φ b`, then
-`q # c - φ` is smoothing. -/
-theorem isSmoothing_sharp_sub_ofSpatial [CompleteSpace V] [CompleteSpace W]
-    (hL : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) (const (.id ℂ V)))
-      (b.sharpTerm a))
-    {Ω : Set (CoordinateSpace n)} (hΩ : IsOpen Ω) {c : Symbol n V W m}
-    (hc : c.HasCompactSpatialSupport)
-    (hca : ∀ x ∈ Ω, ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
-    {φ : CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ) (hφΩ : tsupport φ ⊆ Ω)
-    {q : Symbol n W V (-m)} (hq : ∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ)) :
-    (q.sharp c hc - inclusion (neg_add_cancel m).ge (ofSpatial
-      (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) (hφ.smul contDiff_const))).IsSmoothing := by
-  refine isSmoothing_iff.2 fun m'' ↦ ?_
-  obtain ⟨N, hN⟩ : ∃ N : ℕ, -(N : ℝ) ≤ m'' := ⟨⌈-m''⌉₊, by linarith [Nat.le_ceil (-m'')]⟩
-  obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hL N
-  refine ⟨inclusion (by linarith) ((ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-    (hφ.smul contDiff_const)).comp
-    (b.sharpRemainder c hc N - r)), ?_⟩
-  funext ⟨x, ξ⟩
-  simp only [coefficient_inclusion, coefficient_comp, coefficient_ofSpatial, coefficient_sub,
-    Pi.sub_apply, coefficient_sharpRemainder]
-  rw [coefficient_sharp_of_coefficient_eq_smul hc (hq x) ξ]
-  by_cases hx : x ∈ Ω
-  · have hev : ∀ᶠ y in 𝓝 x, ∀ η, c.coefficient (y, η) = a.coefficient (y, η) :=
-      eventually_of_mem (hΩ.mem_nhds hx) hca
-    have hr' := congrFun hr (x, ξ)
-    simp only [coefficient_inclusion, coefficient_const, Pi.sub_apply, Finset.sum_apply] at hr'
-    simp only [Finset.sum_apply, coefficient_sharpTerm_congr_of_eventually b hev, ← hr']
-    simp only [ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp, smul_sub]
-    abel
-  · have : φ x = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hx (hφΩ h)
-    simp [this]
-
-end LocalParametrix
-
 /-! ### Interior elliptic regularity on Bessel-potential spaces -/
 
 section Sobolev
@@ -124,8 +76,9 @@ be a symbol with compact spatial support that agrees with `a` on an open set `Ω
 smooth compactly supported function with `tsupport φ ⊆ Ω`. There are a symbol `q` of order `-m`
 and a smoothing symbol `r`, both with compact spatial support, such that
 `Op(q) Op(c) u = φ u + Op(r) u` for every `u ∈ H^s` and every real `s`. -/
-theorem IsEllipticAbove.exists_quantizeSobolev_localParametrix {a : Symbol n V W m} {R : ℝ}
-    (ha : a.IsEllipticAbove R) {Ω : Set (CoordinateSpace n)} (hΩ : IsOpen Ω)
+theorem IsEllipticAbove.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLeftCLM_add
+    {a : Symbol n V W m} {R : ℝ} (ha : a.IsEllipticAbove R) {Ω : Set (CoordinateSpace n)}
+    (hΩ : IsOpen Ω)
     {c : Symbol n V W m} (hc : c.HasCompactSpatialSupport)
     (hca : ∀ x ∈ Ω, ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
     {φ : CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ)
@@ -137,26 +90,20 @@ theorem IsEllipticAbove.exists_quantizeSobolev_localParametrix {a : Symbol n V W
             TemperedDistribution.smulLeftCLM V φ u.toDistr +
               (r.quantizeSobolev hr s u).toDistr := by
   obtain ⟨b, hL, -⟩ := ha.exists_isAsymptoticSum_sharpTerm
-  obtain ⟨q, hqb⟩ : ∃ q : Symbol n W V (-m),
-      ∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ) :=
-    ⟨inclusion (zero_add (-m)).le ((ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-      (hφ.smul contDiff_const)).comp b), fun x ξ ↦ by
-      rw [coefficient_inclusion, coefficient_comp, coefficient_ofSpatial,
-        ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp]⟩
-  have hq : q.HasCompactSpatialSupport := hasCompactSpatialSupport_iff.2
-    ⟨tsupport φ, hφc, fun x hx ξ ↦ by rw [hqb, image_eq_zero_of_notMem_tsupport hx, zero_smul]⟩
-  have he : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-      (hφ.smul contDiff_const)).HasCompactSpatialSupport :=
-    (hasCompactSpatialSupport_ofSpatial_iff _).2 (hφc.mono fun x hx h0 ↦ hx (by simp [h0]))
+  have he := hasCompactSpatialSupport_ofSmul (V := V) hφ hφc
+  set q := inclusion (zero_add (-m)).le ((ofSmul φ hφ).comp b)
+  have hq : q.HasCompactSpatialSupport := (he.comp_right b).inclusion _
+  have hqb : ∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ) := fun x ξ ↦ by
+    rw [coefficient_inclusion, coefficient_ofSmul_comp]
   have he' := he.inclusion (neg_add_cancel m).ge
   have hr := (hq.sharp hc).sub he'
-  refine ⟨q, hq, _, hr, isSmoothing_sharp_sub_ofSpatial hL hΩ hc hca hφ hφΩ hqb, fun s u ↦ ?_⟩
+  refine ⟨q, hq, _, hr, isSmoothing_sharp_sub_ofSmul hL hΩ hc hca hφ hφΩ hqb, fun s u ↦ ?_⟩
   rw [← toDistr_quantizeSobolev_sharp hq hc,
     toDistr_quantizeSobolev_congr (hq.sharp hc) (he'.add hr)
       (a' := inclusion (neg_add_cancel m).ge _ + (q.sharp c hc - inclusion (neg_add_cancel m).ge _))
       (by simp) rfl,
     quantizeSobolev_add he' hr, add_apply, BesselPotentialSpace.toDistr_add,
-    toDistr_quantizeSobolev_congr he' he (by simp) rfl, toDistr_quantizeSobolev_ofSpatial hφ hφc]
+    toDistr_quantizeSobolev_congr he' he (by simp) rfl, toDistr_quantizeSobolev_ofSmul hφ hφc]
 
 /-- **Interior elliptic regularity.** Let `a` be elliptic of order `m`, let `c` be a symbol with
 compact spatial support that agrees with `a` on an open set `Ω`, and let `φ` be a smooth compactly
@@ -170,7 +117,8 @@ theorem IsEllipticAbove.memSobolev_smulLeftCLM {a : Symbol n V W m} {R : ℝ}
     (hφΩ : tsupport φ ⊆ Ω) {s t : ℝ} {u : H^{t}(CoordinateSpace n, V)}
     (hu : (c.quantizeSobolev hc t u).toDistr.MemSobolev (s - m) 2) :
     (TemperedDistribution.smulLeftCLM V φ u.toDistr).MemSobolev s 2 := by
-  obtain ⟨q, hq, r, hr, hrS, h⟩ := ha.exists_quantizeSobolev_localParametrix hΩ hc hca hφ hφc hφΩ
+  obtain ⟨q, hq, r, hr, hrS, h⟩ :=
+    ha.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLeftCLM_add hΩ hc hca hφ hφc hφΩ
   have h₁ : (q.quantizeSobolev hq (t - m) (c.quantizeSobolev hc t u)).toDistr.MemSobolev s 2 := by
     rw [toDistr_quantizeSobolev_congr hq hq rfl (u' := hu.toBesselPotentialSpace)
       hu.toBesselPotentialSpace_toDistr.symm]
@@ -194,7 +142,8 @@ theorem IsEllipticAbove.exists_norm_smulLeftCLM_le {a : Symbol n V W m} {R : ℝ
     ∃ C, ∀ u : H^{s}(CoordinateSpace n, V),
       ‖BesselPotentialSpace.smulLeftCLM s (hφc.toSchwartzMap hφ) u‖ ≤
         C * (‖c.quantizeSobolev hc s u‖ + ‖BesselPotentialSpace.inclusion hrs u‖) := by
-  obtain ⟨q, hq, e, he, heS, h⟩ := ha.exists_quantizeSobolev_localParametrix hΩ hc hca hφ hφc hφΩ
+  obtain ⟨q, hq, e, he, heS, h⟩ :=
+    ha.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLeftCLM_add hΩ hc hca hφ hφc hφΩ
   obtain ⟨e', he'⟩ := isSmoothing_iff.1 heS (r - s)
   have he'c := he.of_coefficient_eq he'
   refine ⟨max ‖q.quantizeSobolev hq (s - m)‖ ‖e'.quantizeSobolev he'c r‖, fun u ↦ ?_⟩

@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -91,7 +92,7 @@ families of operators.
   on Schwartz functions.
 * `TauCeti.Symbol.toDistr_quantizeSobolev_congr`: the operators `Op(a) : H^s → H^{s - m}` for
   different `s` agree on their common domain, and only depend on the coefficient of `a`.
-* `TauCeti.Symbol.toDistr_quantizeSobolev_ofSpatial`: for the symbol `φ(x) id` of a compactly
+* `TauCeti.Symbol.toDistr_quantizeSobolev_ofSmul`: for the symbol `φ(x) id` of a compactly
   supported smooth function, `Op(a)` is multiplication by `φ`.
 * `TauCeti.Symbol.toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply`: Sobolev
   extensions of quantizations are compatible with isomorphisms of the fibres.
@@ -945,36 +946,29 @@ theorem toDistr_quantizeSobolev_congr {m' : ℝ} {a' : Symbol n V W m'}
 
 /-- **Multiplication operators.** For a smooth compactly supported function `φ`, the quantization
 of the symbol `φ(x) id`, of order `0`, is multiplication by `φ` on every `H^s`. -/
-theorem toDistr_quantizeSobolev_ofSpatial {φ : CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ)
-    (hφc : HasCompactSupport φ)
-    (h : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-      (hφ.smul contDiff_const)).HasCompactSpatialSupport) (s : ℝ)
-    (u : H^{s}(CoordinateSpace n, V)) :
-    ((ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-      (hφ.smul contDiff_const)).quantizeSobolev h s u).toDistr =
-        TemperedDistribution.smulLeftCLM V φ u.toDistr := by
+theorem toDistr_quantizeSobolev_ofSmul {φ : CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ)
+    (hφc : HasCompactSupport φ) (s : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
+    ((ofSmul (V := V) φ hφ).quantizeSobolev (hasCompactSpatialSupport_ofSmul hφ hφc) s u).toDistr =
+      TemperedDistribution.smulLeftCLM V φ u.toDistr := by
   have hφS : ⇑(hφc.toSchwartzMap hφ) = φ := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  have hφT : φ.HasTemperateGrowth := hφS ▸ (hφc.toSchwartzMap hφ).hasTemperateGrowth
   have key : BesselPotentialSpace.inclusion (sub_zero s).ge ∘L
-      (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-        (hφ.smul contDiff_const)).quantizeSobolev h s =
+      (ofSmul (V := V) φ hφ).quantizeSobolev (hasCompactSpatialSupport_ofSmul hφ hφc) s =
       BesselPotentialSpace.smulLeftCLM s (hφc.toSchwartzMap hφ) := by
     refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
       BesselPotentialSpace.ext ?_
-    ext ψ
-    rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
-      BesselPotentialSpace.toDistr_smulLeftCLM, TemperedDistribution.smulLeftCLM_apply_apply,
-      toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
-      SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
-    have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-        (hφ.smul contDiff_const)).coefficient = fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
-      funext (coefficient_ofSpatial _ _)
-    have hφT : φ.HasTemperateGrowth := hφS ▸ (hφc.toSchwartzMap hφ).hasTemperateGrowth
-    simp only [hc, hφS, SchwartzMap.toTemperedDistributionCLM_apply_apply,
-      SchwartzMap.smulLeftCLM_apply_apply hφT]
-    refine integral_congr_ae (.of_forall fun x ↦ ?_)
-    dsimp only
-    rw [quantizeSchwartzValue_comp_fst (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)]
-    simp [smul_smul, mul_comm]
+    rw [ContinuousLinearMap.comp_apply, quantizeSobolev_toBesselPotentialSpaceCLM,
+      BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
+      BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+      SchwartzMap.toDistr_toBesselPotentialSpaceCLM, hφS,
+      TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
+    congr 1
+    ext x
+    have hc : (ofSmul (V := V) φ hφ).coefficient = fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
+      funext (coefficient_ofSmul hφ)
+    rw [SchwartzMap.smulLeftCLM_apply_apply hφT, HasCompactSupport.toSchwartzMap_toFun, hc,
+      quantizeSchwartzValue_comp_fst (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)]
+    simp
   simpa [hφS] using congrArg (fun T ↦ (T u).toDistr) key
 
 end Sobolev
