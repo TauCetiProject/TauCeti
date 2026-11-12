@@ -15,7 +15,8 @@ its full multiplicity gives a smaller number. Removing the `p`-part erases `p` f
 factors. These facts support induction by successively removing prime-power blocks. For a
 divisor `n ∣ m`, the `p`-free parts are related by `m / n * ordCompl[p] n =
 ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m / n)` between groups
-of roots of unity acts on their `p`-primary parts.
+of roots of unity acts on their `p`-primary parts. The product of any set of prime factors of
+`n` divides `n`.
 -/
 
 public section
@@ -25,6 +26,11 @@ namespace Nat
 /-- For `1 < n` the least prime factor of `n` is one of its primes. -/
 theorem minFac_mem_primeFactors {n : ℕ} (hn : 1 < n) : n.minFac ∈ n.primeFactors :=
   Nat.mem_primeFactors.2 ⟨Nat.minFac_prime hn.ne', n.minFac_dvd, by omega⟩
+
+/-- The product of a set of prime factors of `n` divides `n`. -/
+theorem prod_dvd_of_subset_primeFactors {n : ℕ} {s : Finset ℕ} (h : s ⊆ n.primeFactors) :
+    ∏ p ∈ s, p ∣ n :=
+  (Finset.prod_dvd_prod_of_subset _ _ id h).trans (prod_primeFactors_dvd n)
 
 /-- Peeling the block at the least prime factor makes `n` strictly smaller. -/
 theorem ordCompl_minFac_lt {n : ℕ} (hn : 1 < n) : ordCompl[n.minFac] n < n :=

@@ -110,7 +110,7 @@ on every interval: it is `O(H (σ - s)^((α - 2)/2))` for `σ > s` and vanishes 
 private theorem intervalIntegrable_laplacianSlice {s : ℝ} (hg : AEStronglyMeasurable (f s))
     (hM : ∀ᵐ y, ‖f s y‖ ≤ M) (hH : HolderWith H α (f s)) (hα : 0 < α) (x : E) (a b : ℝ) :
     IntervalIntegrable (laplacianSlice f x s) volume a b := by
-  obtain ⟨C, hC₀, hC⟩ := exists_norm_laplacian_heatKernel_convolution_le (E := E) (F := F) (α := α)
+  obtain ⟨C, _, hC⟩ := exists_norm_laplacian_heatKernel_convolution_le (E := E) (F := F) (α := α)
   refine ((intervalIntegrable_sub_const_rpow (neg_one_lt_sub_two_div_two hα) s a b).const_mul
     (C * H)).mono_fun ?_
     (ae_of_all _ fun σ => ?_)
@@ -173,7 +173,7 @@ private theorem integrable_laplacianSlice (hf : StronglyMeasurable (Function.unc
     Integrable (Function.uncurry (laplacianSlice f x))
       ((volume.restrict (Ioo 0 t)).prod (volume.restrict (Ioo 0 t))) := by
   obtain ⟨C, hC₀, hC⟩ := exists_norm_laplacian_heatKernel_convolution_le (E := E) (F := F) (α := α)
-  set p : ℝ := ((α : ℝ) - 2) / 2 with hp_def
+  set p : ℝ := ((α : ℝ) - 2) / 2
   have hp : -1 < p := neg_one_lt_sub_two_div_two hα
   have hp1 : 0 < p + 1 := by linarith
   have hfs (s : ℝ) : AEStronglyMeasurable (f s) :=

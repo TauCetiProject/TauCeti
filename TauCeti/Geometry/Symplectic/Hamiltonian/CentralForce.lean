@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Gram.Pair
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
+import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
@@ -44,9 +45,15 @@ the origin between `ℓ² / (m κ + ‖A‖)` and, when `‖A‖ < m κ`, `ℓ²
 inequality `‖A‖ < m κ` holds exactly when `H < 0`. On the collision set `ℓ = 0`,
 `A = -(m κ / ‖q‖) q`.
 
-The statements about Hamiltonian vector fields and Poisson brackets are pointwise on the punctured
-phase space `q ≠ 0`, the cotangent bundle of the punctured configuration space; the Poisson
-bracket at a point only depends on germs there.
+The conservation laws for the angular momentum, its square, and its action on the Runge–Lenz
+vector hold at every point of phase space. The bracket with the angular momentum vanishes because
+the Hamiltonian is even along the rotation direction, so its derivative there is zero; at a point
+`(q, p)` the differential of `ℓ²` is twice that of the angular momentum in the plane of `q` and
+`p`, so its bracket vanishes too; and at `q = 0` the Runge–Lenz vector vanishes along the whole
+line through `(q, p)` in the rotation direction. The other statements about Hamiltonian vector
+fields and Poisson brackets are pointwise on the punctured phase space `q ≠ 0`, the cotangent
+bundle of the punctured configuration space; the Poisson bracket at a point only depends on germs
+there.
 
 ## Main declarations
 
@@ -68,8 +75,8 @@ bracket at a point only depends on germs there.
 * `TauCeti.norm_rungeLenz_eq_abs_mul_sqrt`: `‖A‖ = |m κ| √(1 + 2 H ℓ² / (m κ²))`.
 * `TauCeti.norm_fst_eq_div_one_add_sqrt_mul_cos_angle`: Kepler orbits are conics,
   `‖q‖ = ℓ² / (m κ (1 + e cos φ))`.
-* `TauCeti.norm_rungeLenz_lt_iff_centralForceHamiltonian_neg`: the eccentricity is less than one
-  exactly when the energy is negative.
+* `TauCeti.norm_rungeLenz_lt_iff_centralForceHamiltonian_neg`: `‖A‖ < m κ` exactly when the energy
+  is negative; for `κ > 0` this says that the eccentricity is less than one.
 
 ## References
 
@@ -282,7 +289,7 @@ theorem inner_rungeLenz_fst (m κ : ℝ) (x : V × V) :
       ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 - m * κ * ‖x.1‖ := by
   rcases eq_or_ne x.1 0 with hq | hq
   · simp [rungeLenz, hq]
-  · have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
+  · have _ : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
     simp only [rungeLenz, inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
       real_inner_comm x.2 x.1]
     field_simp
@@ -359,9 +366,11 @@ theorem norm_fst_mul_sub_norm_rungeLenz_le_sq_sub_inner_sq (m κ : ℝ) (x : V �
   rw [inner_rungeLenz_fst] at h
   linear_combination h
 
-/-- **Bound states are ellipses.** For an attractive potential and nonzero angular momentum, the
-eccentricity `‖A‖ / (m κ)` is less than one exactly when the energy is negative. -/
-theorem norm_rungeLenz_lt_iff_centralForceHamiltonian_neg {m κ : ℝ} (hm : 0 < m) (hκ : 0 < κ)
+/-- **Bound states are ellipses.** For nonzero angular momentum, `‖A‖ < m κ` exactly when the
+energy is negative. For an attractive coupling `κ > 0` the inequality says that the eccentricity
+`‖A‖ / (m κ)` is less than one; for a repulsive or vanishing coupling `κ ≤ 0` both sides are
+false. -/
+theorem norm_rungeLenz_lt_iff_centralForceHamiltonian_neg {m κ : ℝ} (hm : 0 < m)
     {x : V × V} (hℓ : ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 ≠ 0) :
     ‖rungeLenz m κ x‖ < m * κ ↔ centralForceHamiltonian m (fun r ↦ -κ / r) x < 0 := by
   have hq : x.1 ≠ 0 := by
@@ -372,6 +381,11 @@ theorem norm_rungeLenz_lt_iff_centralForceHamiltonian_neg {m κ : ℝ} (hm : 0 <
     have := real_inner_mul_inner_self_le x.1 x.2
     rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at this
     linear_combination this
+  rcases le_or_gt κ 0 with hκ | hκ
+  · have hH : 0 ≤ centralForceHamiltonian m (fun r ↦ -κ / r) x :=
+      add_nonneg (by positivity) (div_nonneg (neg_nonneg.2 hκ) (norm_nonneg _))
+    exact iff_of_false (not_lt.2 ((mul_nonpos_of_nonneg_of_nonpos hm.le hκ).trans (norm_nonneg _)))
+      (not_lt.2 hH)
   rw [← sq_lt_sq₀ (norm_nonneg _) (mul_pos hm hκ).le, norm_rungeLenz_sq hm.ne' κ hq]
   constructor <;> intro h <;> nlinarith [mul_pos hm hpos]
 
@@ -411,43 +425,57 @@ theorem stdSymplecticForm_hamiltonianVectorField_angularMomentum (u w : V) (x : 
       (⟪x.1, u⟫_ℝ • w - ⟪x.1, w⟫_ℝ • u, ⟪x.2, u⟫_ℝ • w - ⟪x.2, w⟫_ℝ • u) := by
   rw [stdSymplecticForm_hamiltonianVectorField (hasFDerivAt_angularMomentum u w x), neg_sub]
 
-/-- **Conservation of angular momentum.** Away from the collision set, every component of the
-angular momentum Poisson-commutes with a central-force Hamiltonian. -/
+/-- **Conservation of angular momentum.** Every component of the angular momentum Poisson-commutes
+with a central-force Hamiltonian. -/
 theorem stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum {m : ℝ}
-    {U : ℝ → ℝ} {U' : ℝ} {x : V × V} (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) (u w : V) :
+    {U : ℝ → ℝ} {x : V × V} (u w : V) :
     (stdSymplecticForm (V := V)).poissonBracket (centralForceHamiltonian m U)
       (angularMomentum u w) x = 0 := by
-  rw [stdSymplecticForm_poissonBracket (hasFDerivAt_centralForceHamiltonian hU hq)
-    (hasFDerivAt_angularMomentum u w x)]
-  simp [inner_sub_right, real_inner_smul_right, real_inner_comm]
-  ring
+  rw [SymplecticForm.poissonBracket_eq_fderiv,
+    stdSymplecticForm_hamiltonianVectorField_angularMomentum]
+  -- The Hamiltonian is even along the rotation direction, so its derivative there vanishes.
+  refine fderiv_apply_eq_zero_of_apply_add_smul_neg _ fun t ↦ ?_
+  have hrot (z : V) :
+      ‖z + t • (⟪z, u⟫_ℝ • w - ⟪z, w⟫_ℝ • u)‖ = ‖z + (-t) • (⟪z, u⟫_ℝ • w - ⟪z, w⟫_ℝ • u)‖ := by
+    have hz : ⟪z, ⟪z, u⟫_ℝ • w - ⟪z, w⟫_ℝ • u⟫_ℝ = 0 := by
+      simp only [inner_sub_right, real_inner_smul_right]
+      ring
+    rw [neg_smul, ← sub_eq_add_neg,
+      norm_sub_eq_norm_add (𝕜 := ℝ) (by rw [real_inner_smul_left, real_inner_comm, hz, mul_zero])]
+  simp only [centralForceHamiltonian, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd]
+  rw [hrot x.1, hrot x.2]
 
-/-- **Conservation of the squared angular momentum.** Away from the collision set, the squared
+/-- **Conservation of the squared angular momentum.** The squared
 length `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of the angular momentum bivector Poisson-commutes with every
-central-force Hamiltonian, in every dimension. -/
+central-force Hamiltonian, in every dimension and at every point of phase space. -/
 theorem stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian {m : ℝ}
-    {U : ℝ → ℝ} {U' : ℝ} {x : V × V} (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) :
+    {U : ℝ → ℝ} {x : V × V} :
     (stdSymplecticForm (V := V)).poissonBracket
       (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2)
       (centralForceHamiltonian m U) x = 0 := by
-  rw [stdSymplecticForm_poissonBracket (hasStrictFDerivAt_sq_sub_inner_sq x).hasFDerivAt
-    (hasFDerivAt_centralForceHamiltonian hU hq)]
-  have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
-  simp only [inner_sub_left, real_inner_smul_left, real_inner_smul_right,
-    real_inner_self_eq_norm_sq, real_inner_comm x.1 x.2]
-  field_simp
-  ring
+  -- At `x`, the differential of `ℓ²` is twice that of the angular momentum in the plane of `x.1`
+  -- and `x.2`, so the bracket is `-2` times a bracket of the angular momentum with the Hamiltonian.
+  have hX : (stdSymplecticForm (V := V)).hamiltonianVectorField
+      (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) x =
+        (2 : ℝ) •
+          (stdSymplecticForm (V := V)).hamiltonianVectorField (angularMomentum x.1 x.2) x := by
+    rw [stdSymplecticForm_hamiltonianVectorField (hasStrictFDerivAt_sq_sub_inner_sq x).hasFDerivAt,
+      stdSymplecticForm_hamiltonianVectorField_angularMomentum, real_inner_self_eq_norm_sq,
+      real_inner_self_eq_norm_sq, real_inner_comm x.2 x.1, Prod.smul_mk, Prod.mk.injEq]
+    constructor <;> module
+  rw [SymplecticForm.poissonBracket_eq_neg_fderiv, hX, map_smul,
+    ← SymplecticForm.poissonBracket_eq_fderiv,
+    stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum, smul_zero, neg_zero]
 
 /-- **Conservation of the squared angular momentum along the motion.** Let `γ` be an integral
-curve of the Hamiltonian vector field of a central-force Hamiltonian on a preconnected open set `s`
-of times, avoiding the collision set, with `U` differentiable along it. Then the squared angular
-momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of `γ` takes the same value at all times `t₀, t ∈ s`. -/
+curve of the Hamiltonian vector field of a central-force Hamiltonian on a preconnected set `s`
+of times. Then the squared angular momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of `γ` takes the same
+value at all times `t₀, t ∈ s`. -/
 theorem sq_sub_inner_sq_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ → V × V} {s : Set ℝ}
-    (hs : IsOpen s) (hs' : IsPreconnected s)
+    (hs : IsPreconnected s)
     (hγ : ∀ t ∈ s, HasDerivAt γ
       ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
-    (hq : ∀ t ∈ s, (γ t).1 ≠ 0) (hU : ∀ t ∈ s, DifferentiableAt ℝ U ‖(γ t).1‖) {t₀ t : ℝ}
-    (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     ‖(γ t).1‖ ^ 2 * ‖(γ t).2‖ ^ 2 - ⟪(γ t).1, (γ t).2⟫_ℝ ^ 2 =
       ‖(γ t₀).1‖ ^ 2 * ‖(γ t₀).2‖ ^ 2 - ⟪(γ t₀).1, (γ t₀).2⟫_ℝ ^ 2 := by
   -- The derivative of `ℓ²` along `γ` is the Poisson bracket `{ℓ², H} = 0`.
@@ -456,21 +484,28 @@ theorem sq_sub_inner_sq_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ �
     have h := (hasStrictFDerivAt_sq_sub_inner_sq (γ t)).hasFDerivAt.comp_hasDerivAt t (hγ t ht)
     rwa [← (hasStrictFDerivAt_sq_sub_inner_sq (γ t)).hasFDerivAt.fderiv,
       ← SymplecticForm.poissonBracket_eq_fderiv,
-      stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian
-        (hU t ht).hasDerivAt (hq t ht)] at h
-  exact hs.is_const_of_deriv_eq_zero hs'
-    (fun t ht ↦ (hderiv t ht).differentiableAt.differentiableWithinAt)
-    (fun t ht ↦ (hderiv t ht).deriv) ht ht₀
+      stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian] at h
+  -- A function with zero derivative on a preconnected set of times is constant there.
+  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) ∘ γ) (f' := fun _ ↦ 0)
+    (C := 0) (fun x hx ↦ (hderiv x hx).hasDerivWithinAt) (fun x _ ↦ by simp) ht₀ ht
+  exact sub_eq_zero.1 (norm_le_zero_iff.1 (by simpa using h))
 
 /-- Angular momentum rotates the Runge–Lenz vector. In any dimension, for the plane
 specified by `u, w`, the bracket is the component of the infinitesimal rotation of `A`.
 The vectors `u, w` need not be orthonormal. -/
 theorem stdSymplecticForm_poissonBracket_inner_rungeLenz_angularMomentum
-    (m κ : ℝ) (u w e : V) {x : V × V} (hq : x.1 ≠ 0) :
+    (m κ : ℝ) (u w e : V) {x : V × V} :
     (stdSymplecticForm (V := V)).poissonBracket (fun y ↦ ⟪rungeLenz m κ y, e⟫_ℝ)
       (angularMomentum u w) x =
         ⟪rungeLenz m κ x, u⟫_ℝ * ⟪w, e⟫_ℝ -
           ⟪rungeLenz m κ x, w⟫_ℝ * ⟪u, e⟫_ℝ := by
+  by_cases hq : x.1 = 0
+  · -- On the collision set the Runge–Lenz vector vanishes along the rotation direction.
+    rw [show rungeLenz m κ x = 0 by simp [rungeLenz, hq], SymplecticForm.poissonBracket_eq_fderiv,
+      stdSymplecticForm_hamiltonianVectorField_angularMomentum]
+    simp only [inner_zero_left, zero_mul, sub_self]
+    exact fderiv_apply_eq_zero_of_apply_add_smul_neg _ fun t ↦ by simp [rungeLenz, hq]
   -- The terms differentiating the invariant scalars `‖p‖²`, `⟨q,p⟩`, and `‖q‖` cancel.
   have halg (P qp qe pe qu pu qw pw ue we c d : ℝ) :
       P * (qu * we) - pe * (qu * pw) - c * (qu * we) + d * (qu * qw) -

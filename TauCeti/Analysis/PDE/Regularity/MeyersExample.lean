@@ -549,10 +549,6 @@ private theorem mul_rpow_le_norm_radialCoordGradient (hμ0 : 0 < μ) (hμ1 : μ 
   simp only [Fin.isValue, one_ne_zero, ↓reduceIte]
   generalize ‖x‖ ^ (μ - 3) = t
   rw [hr]
-  have key : (t * ((x 0 ^ 2 + x 1 ^ 2) * 1 + (μ - 1) * x 0 * x 0)) ^ 2 +
-      (t * ((x 0 ^ 2 + x 1 ^ 2) * 0 + (μ - 1) * x 0 * x 1)) ^ 2 -
-      (μ * (t * (x 0 ^ 2 + x 1 ^ 2))) ^ 2 =
-      t ^ 2 * (x 0 ^ 2 + x 1 ^ 2) * (1 - μ ^ 2) * x 1 ^ 2 := by ring
   have : 0 ≤ t ^ 2 * (x 0 ^ 2 + x 1 ^ 2) * (1 - μ ^ 2) * x 1 ^ 2 :=
     mul_nonneg (mul_nonneg (by positivity) hc) (sq_nonneg _)
   linarith
