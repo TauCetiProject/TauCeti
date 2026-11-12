@@ -154,17 +154,28 @@ private theorem coe_graphDiagonalFrame_of_diagonal {A : GLSymplectic n ℝ} (ψ 
   -- from `sin² + cos² = 1` and `i² = -1`.
   rw [coe_graphDiagonalFrame_of_transpose_mul_self hAA, hA]
   ext (i | i) (j | j) <;>
-  rcases eq_or_ne i j with rfl | hij <;>
-  simp [graphFrame_def, Matrix.mul_apply, Fintype.sum_sum_type, diagonal_apply, toBlocks₁₁,
-    toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, Matrix.one_apply, apply_ite ((↑) : ℝ → ℂ),
-    apply_ite Complex.re, apply_ite Complex.im, apply_ite (starRingEnd ℂ), ite_mul, mul_ite,
-    Finset.sum_ite_eq', Complex.exp_ofReal_mul_I, *, Ne.symm]
-  · linear_combination (-1 / 2 : ℂ) * Complex.sin_sq_add_cos_sq (ψ i : ℂ)
-  · linear_combination (Complex.I / 2) * Complex.sin_sq_add_cos_sq (ψ i : ℂ)
-  · linear_combination (-Complex.I / 2) * Complex.sin_sq_add_cos_sq (ψ i : ℂ) -
-      Complex.sin (ψ i : ℂ) * Complex.cos (ψ i : ℂ) * Complex.I_sq
-  · linear_combination (-1 / 2 : ℂ) * Complex.sin_sq_add_cos_sq (ψ i : ℂ) +
-      (Complex.sin (ψ i : ℂ) ^ 2 / 2 - Complex.cos (ψ i : ℂ) ^ 2 / 2) * Complex.I_sq
+  by_cases hij : i = j <;>
+  simp only [hij, hre, him, one_div, graphFrame_def, toBlocks₁₁, Matrix.one_apply, Sum.inl.injEq,
+    toBlocks₂₁, ne_eq, reduceCtorEq, not_false_eq_true, Ne.symm, toBlocks₁₂, toBlocks₂₂,
+    Sum.inr.injEq, ofReal_mul, ofReal_ofNat, realify_apply_inl_inl, diagonal_apply,
+    RCLike.re_to_complex, apply_ite Complex.re, zero_re, realify_apply_inr_inl,
+    RCLike.im_to_complex, apply_ite Complex.im, zero_im, realify_apply_inl_inr,
+    realify_apply_inr_inr, Matrix.smul_apply, Matrix.mul_apply, conjTranspose_apply,
+    RCLike.star_def, Fintype.sum_sum_type, fromBlocks_apply₁₁, apply_ite (starRingEnd ℂ), map_one,
+    map_zero, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte,
+    fromBlocks_apply₂₁, Matrix.add_apply, map_apply, of_apply, apply_ite     ((↑) : ℝ → ℂ),
+    ofReal_one, ofReal_zero, smul_eq_mul, add_zero, ofReal_sub, ofReal_pow, ofReal_cos, ofReal_sin,
+    ite_mul, one_mul, zero_mul, exp_ofReal_mul_I, Sum.elim_inl, Finset.sum_ite_eq, add_re, mul_re,
+    I_re, sin_ofReal_im, I_im, sub_self, ofReal_cos_ofReal_re, fromBlocks_apply₁₂, Matrix.neg_apply,
+    mul_neg, Finset.sum_neg_distrib, fromBlocks_apply₂₂, ofReal_neg, add_im, cos_ofReal_im, mul_im,
+    zero_add, ofReal_sin_ofReal_re, neg_zero, map_neg, conj_I, neg_neg, neg_mul, Sum.elim_inr,
+    I_mul_I]
+  · linear_combination (-1 / 2 : ℂ) * Complex.sin_sq_add_cos_sq (ψ j : ℂ)
+  · linear_combination (Complex.I / 2) * Complex.sin_sq_add_cos_sq (ψ j : ℂ)
+  · linear_combination (-Complex.I / 2) * Complex.sin_sq_add_cos_sq (ψ j : ℂ) -
+      Complex.sin (ψ j : ℂ) * Complex.cos (ψ j : ℂ) * Complex.I_sq
+  · linear_combination (-1 / 2 : ℂ) * Complex.sin_sq_add_cos_sq (ψ j : ℂ) +
+      (Complex.sin (ψ j : ℂ) ^ 2 / 2 - Complex.cos (ψ j : ℂ) ^ 2 / 2) * Complex.I_sq
 
 /-- **Normalization by rotations.** For a path of rotations `γ t = diag (e^{i θ_j t})` of `ℂⁿ`, with
 continuous angles `θ_j`, the Conley–Zehnder index is `-2 ∑ j, (c(θ_j 1 / 2) - c(θ_j 0 / 2))`,
@@ -177,56 +188,65 @@ theorem conleyZehnderIndex_eq_sum_of_diagonal {A B : GLSymplectic n ℝ} (γ : P
     conleyZehnderIndex γ = -2 * ∑ j,
       (((⌊θ j 1 / (2 * Real.pi)⌋ + ⌈θ j 1 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2 -
         ((⌊θ j 0 / (2 * Real.pi)⌋ + ⌈θ j 0 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2) := by
-  -- Half angles, the diagonal frames `diag (e^{i θ / 2}, e^{i θ / 2})` and the real orthogonal
-  -- factors `diag (e^{i θ / 2})`, realified.
+  -- Half angles `ψ = θ / 2`. The frame of the graph of `γ t` relative to the diagonal is the
+  -- diagonal frame `δ t = diag (e^{i ψ}, e^{i ψ})` times the realified rotation `diag (e^{i ψ})`,
+  -- a real orthogonal matrix, which does not change the Souriau map.
   set ψ : n → I → ℝ := fun j t => θ j t / 2
   have hψ (t : I) : ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
       (diagonal fun j => Complex.exp (↑(2 * ψ j t) * Complex.I)).realify := by
     rw [hγ t]
     simp only [ψ, mul_div_cancel₀ _ (two_ne_zero' ℝ)]
-  set e : n → I → ℂ := fun j t => Complex.exp (ψ j t * Complex.I)
-  let D : I → unitaryGroup (n ⊕ n) ℂ := fun t =>
-    ⟨diagonal (Sum.elim (e · t) (e · t)), by
-      convert diagonal_exp_mem_unitaryGroup (Sum.elim (ψ · t) (ψ · t)) using 2
-      ext (k | k) <;> rfl⟩
-  have horth (t : I) : (diagonal (e · t)).realify ∈ orthogonalGroup (n ⊕ n) ℝ :=
+  have hφ (k : n ⊕ n) : Continuous (Sum.elim ψ ψ k) := by
+    rcases k with k | k <;> exact (hθ k).div_const 2
+  let δ : Path _ _ :=
+    ⟨⟨fun t => unitaryTorusHom (n ⊕ n) fun k => Circle.exp (Sum.elim ψ ψ k t),
+      continuous_unitaryTorusHom.comp (continuous_pi fun k => Circle.exp.continuous.comp (hφ k))⟩,
+      rfl, rfl⟩
+  have hδ (t : I) : (δ t : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+      diagonal fun k => Complex.exp (Sum.elim ψ ψ k t * Complex.I) := by
+    simp only [δ, Path.coe_mk_mk, coe_unitaryTorusHom, Circle.coe_exp]
+  have horth (t : I) :
+      (diagonal fun j => Complex.exp (ψ j t * Complex.I)).realify ∈ orthogonalGroup (n ⊕ n) ℝ :=
     realify_mem_orthogonalGroup_iff.2 (diagonal_exp_mem_unitaryGroup (ψ · t))
-  let O : I → unitaryGroup (n ⊕ n) ℂ := fun t =>
-    ⟨(diagonal (e · t)).realify.map ((↑) : ℝ → ℂ), map_ofReal_mem_unitaryGroup (horth t)⟩
-  have hOc (t : I) : (O t : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
-      (diagonal (e · t)).realify.map ((↑) : ℝ → ℂ) :=
-    rfl
-  have hO (t : I) : (O t : Matrix (n ⊕ n) (n ⊕ n) ℂ) * (O t : Matrix (n ⊕ n) (n ⊕ n) ℂ)ᵀ = 1 := by
-    have h := congrArg Complex.ofRealHom.mapMatrix ((mem_orthogonalGroup_iff _ _).1 (horth t))
-    rw [map_mul, map_one] at h
-    rw [hOc, ← transpose_map]
-    exact h
-  have hDc : Continuous D := by
-    refine Continuous.subtype_mk (continuous_pi fun k => continuous_pi fun l => ?_) _
-    rcases k with k | k <;> rcases l with l | l <;>
-      simp only [diagonal_apply, Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq, ite_false,
-        Sum.elim_inl, Sum.elim_inr] <;>
-      first | exact continuous_const | (split_ifs <;> fun_prop)
-  let δ : Path (D 0) (D 1) := ⟨⟨D, hDc⟩, rfl, rfl⟩
-  have hδ (t : I) : (δ t : Matrix (n ⊕ n) (n ⊕ n) ℂ) = diagonal (Sum.elim (e · t) (e · t)) :=
-    rfl
-  have hframe (t : I) : graphDiagonalFrame (γ t) = D t * O t :=
-    Subtype.ext (coe_graphDiagonalFrame_of_diagonal (ψ · t) (hψ t))
+  have hframe (t : I) :
+      graphDiagonalFrame (γ t) = δ t * ⟨_, map_ofReal_mem_unitaryGroup (horth t)⟩ := by
+    refine Subtype.ext ?_
+    rw [coe_graphDiagonalFrame_of_diagonal (ψ · t) (hψ t), Submonoid.coe_mul, hδ]
+    -- The diagonal factors agree entrywise on each summand of `n ⊕ n`.
+    congr 2
+    ext (k | k) <;> simp only [Sum.elim_inl, Sum.elim_inr]
   rw [conleyZehnderIndex_def, Matrix.UnitaryGroup.maslovIndex_eq_of_souriau_eq _ δ fun t => by
       rw [Path.map_coe, Function.comp_apply, hframe,
-        Matrix.UnitaryGroup.souriau_mul_of_mul_transpose_eq_one _ _ (hO t)]
-      rfl,
-    Matrix.UnitaryGroup.maslovIndex_eq_sum_of_diagonal δ (φ := Sum.elim ψ ψ)
-      (fun k => by rcases k with k | k <;> exact (hθ k).div_const 2)
-      fun t => by
-        -- On each summand, `Sum.elim (e · t) (e · t)` is `e^{i ψ}` by definition of `e`.
-        rw [hδ]
-        congr 1
-        ext (k | k) <;> rfl,
-    Fintype.sum_sum_type]
+        Matrix.UnitaryGroup.souriau_mul_of_mul_transpose_eq_one (δ t)
+          ⟨_, map_ofReal_mem_unitaryGroup (horth t)⟩ (map_ofReal_mul_transpose_eq_one (horth t))],
+    Matrix.UnitaryGroup.maslovIndex_eq_sum_of_diagonal δ hφ hδ, Fintype.sum_sum_type]
   simp only [Sum.elim_inl, Sum.elim_inr, ψ, div_div]
   rw [Finset.mul_sum, ← Finset.sum_add_distrib, ← Finset.sum_neg_distrib]
   refine Finset.sum_congr rfl fun j _ => ?_
+  ring
+
+/-- `(⌊x⌋ + ⌈x⌉) / 2 = k + 1 / 2` for `x` strictly between the integers `k` and `k + 1`. -/
+private theorem floor_add_ceil_div_two_of_mem_Ioo {x : ℝ} {k : ℤ}
+    (hx : x ∈ Set.Ioo (k : ℝ) (k + 1)) : ((⌊x⌋ + ⌈x⌉ : ℤ) : ℝ) / 2 = k + 1 / 2 := by
+  rw [Int.floor_eq_iff.2 ⟨hx.1.le, hx.2⟩,
+    (Int.ceil_eq_iff (z := k + 1)).2 ⟨by push_cast; linarith [hx.1], by push_cast; exact hx.2.le⟩]
+  push_cast
+  ring
+
+/-- A path of rotations `diag (e^{i θ_j t})` of `ℂⁿ` starting at the identity, whose angles all end
+in `(2 π k, 2 π (k + 1))`, has Conley–Zehnder index `-(2 k + 1) n`. -/
+private theorem conleyZehnderIndex_eq_of_rotation {A B : GLSymplectic n ℝ} (γ : Path A B)
+    {θ : n → I → ℝ} (hθ : ∀ j, Continuous (θ j))
+    (hγ : ∀ t, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+      (diagonal fun j => Complex.exp (θ j t * Complex.I)).realify)
+    (h0 : ∀ j, θ j 0 = 0) (k : ℤ) (h1 : ∀ j, θ j 1 / (2 * Real.pi) ∈ Set.Ioo (k : ℝ) (k + 1)) :
+    conleyZehnderIndex γ = -(2 * k + 1) * Fintype.card n := by
+  have key (j : n) : (((⌊θ j 1 / (2 * Real.pi)⌋ + ⌈θ j 1 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2 -
+      ((⌊θ j 0 / (2 * Real.pi)⌋ + ⌈θ j 0 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2) = k + 1 / 2 := by
+    rw [floor_add_ceil_div_two_of_mem_Ioo (h1 j), h0 j, zero_div, Int.floor_zero, Int.ceil_zero,
+      add_zero, Int.cast_zero, zero_div, sub_zero]
+  rw [conleyZehnderIndex_eq_sum_of_diagonal γ hθ hγ, Finset.sum_congr rfl fun j _ => key j,
+    Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   ring
 
 /-- **A counterclockwise rotation has index `-n`.** A path of rotations `diag (e^{i θ_j t})` of `ℂⁿ`
@@ -238,18 +258,11 @@ theorem conleyZehnderIndex_eq_neg_card_of_rotation {A B : GLSymplectic n ℝ} (�
       (diagonal fun j => Complex.exp (θ j t * Complex.I)).realify)
     (h0 : ∀ j, θ j 0 = 0) (h1 : ∀ j, θ j 1 ∈ Set.Ioo 0 (2 * Real.pi)) :
     conleyZehnderIndex γ = -Fintype.card n := by
-  have key (j : n) : (((⌊θ j 1 / (2 * Real.pi)⌋ + ⌈θ j 1 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2 -
-      ((⌊θ j 0 / (2 * Real.pi)⌋ + ⌈θ j 0 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2) = 1 / 2 := by
-    have hπ : 0 < 2 * Real.pi := by positivity
-    have hlo : 0 < θ j 1 / (2 * Real.pi) := div_pos (h1 j).1 hπ
-    have hhi : θ j 1 / (2 * Real.pi) < 1 := (div_lt_one hπ).2 (h1 j).2
-    rw [h0 j, zero_div, Int.floor_zero, Int.ceil_zero,
-      (Int.floor_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      (Int.ceil_eq_iff (z := 1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩]
-    norm_num
-  rw [conleyZehnderIndex_eq_sum_of_diagonal γ hθ hγ, Finset.sum_congr rfl fun j _ => key j]
-  simp
-  ring
+  have hπ : 0 < 2 * Real.pi := by positivity
+  rw [conleyZehnderIndex_eq_of_rotation γ hθ hγ h0 0 fun j => ?_]
+  · norm_num
+  · rw [Int.cast_zero, zero_add]
+    exact ⟨div_pos (h1 j).1 hπ, (div_lt_one hπ).2 (h1 j).2⟩
 
 /-- **A clockwise rotation has index `n`.** A path of rotations `diag (e^{i θ_j t})` of `ℂⁿ`
 starting at the identity, whose angles all end in `(-2π, 0)`, has Conley–Zehnder index `n`. In
@@ -260,19 +273,11 @@ theorem conleyZehnderIndex_eq_card_of_rotation {A B : GLSymplectic n ℝ} (γ : 
       (diagonal fun j => Complex.exp (θ j t * Complex.I)).realify)
     (h0 : ∀ j, θ j 0 = 0) (h1 : ∀ j, θ j 1 ∈ Set.Ioo (-(2 * Real.pi)) 0) :
     conleyZehnderIndex γ = Fintype.card n := by
-  have key (j : n) : (((⌊θ j 1 / (2 * Real.pi)⌋ + ⌈θ j 1 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2 -
-      ((⌊θ j 0 / (2 * Real.pi)⌋ + ⌈θ j 0 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2) = -(1 / 2) := by
-    have hπ : 0 < 2 * Real.pi := by positivity
-    have hlo : -1 < θ j 1 / (2 * Real.pi) := by
-      rw [lt_div_iff₀ hπ]; linarith [(h1 j).1]
-    have hhi : θ j 1 / (2 * Real.pi) < 0 := div_neg_of_neg_of_pos (h1 j).2 hπ
-    rw [h0 j, zero_div, Int.floor_zero, Int.ceil_zero,
-      (Int.floor_eq_iff (z := -1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      (Int.ceil_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩]
-    norm_num
-  rw [conleyZehnderIndex_eq_sum_of_diagonal γ hθ hγ, Finset.sum_congr rfl fun j _ => key j]
-  simp
-  ring
+  have hπ : 0 < 2 * Real.pi := by positivity
+  rw [conleyZehnderIndex_eq_of_rotation γ hθ hγ h0 (-1) fun j => ?_]
+  · norm_num
+  · rw [Int.cast_neg, Int.cast_one, neg_add_cancel]
+    exact ⟨(lt_div_iff₀ hπ).2 (by linarith [(h1 j).1]), div_neg_of_neg_of_pos (h1 j).2 hπ⟩
 
 /-! ### Loops -/
 
