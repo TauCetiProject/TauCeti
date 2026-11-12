@@ -20,8 +20,10 @@ import TauCeti.Topology.UnitInterval.OpenSquare
 # Euclidean disks and their boundaries
 
 The closed Euclidean disk is contractible, and its boundary is path-connected when the disk has
-dimension at least two.  The disk is a `T₃` space, in particular Hausdorff, so the inclusion of its
-boundary sphere is a closed embedding (`TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion`).
+dimension at least two, so `TopCat.sphere (n + 1)` is path-connected
+(`TauCeti.TopCat.pathConnectedSpace_sphere`).  The disk is a `T₃` space, in particular Hausdorff,
+so the inclusion of its boundary sphere is a closed embedding
+(`TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion`).
 This module also constructs the standard `TopPair` consisting of a disk and its boundary, providing
 the topological input for relative-homology calculations. A map out of the boundary sphere is
 null-homotopic exactly when it extends over the disk
@@ -32,11 +34,12 @@ Mathlib's `TopCat.diskBoundary n` is the universe lift of the unit sphere of
 `EuclideanSpace ℝ (Fin n)`.  It is homeomorphic to the unit sphere of the Euclidean space
 `EuclideanSpace ℝ (ULift (Fin n))` of the same dimension in the lifted universe
 (`TauCeti.diskBoundaryHomeomorph`), which lets results about unit spheres of inner product spaces
-in that universe be applied to it.  In particular the boundary of the `0`-disk is empty, and a
-point of the boundary `S⁰` of the `1`-disk is determined by its coordinate
-(`TauCeti.diskBoundary_one_ext`).  The antipodal map of the boundary sphere is
-`TauCeti.diskBoundaryNeg`.  More generally, a linear isometry `e` of `EuclideanSpace ℝ (Fin n)`
-induces homeomorphisms of the disk and of its boundary sphere, compatible with the boundary
+in that universe be applied to it.  In particular the boundary of the `n`-disk is empty exactly
+when `n = 0` (`TauCeti.nonempty_diskBoundary_iff`), and a point of the boundary `S⁰` of the
+`1`-disk is determined by its coordinate (`TauCeti.diskBoundary_one_ext`).  The antipodal map of
+the boundary sphere is `TauCeti.diskBoundaryNeg`.  More generally, a linear isometry `e` of
+`EuclideanSpace ℝ (Fin n)` induces homeomorphisms of the disk and of its boundary sphere,
+compatible with the boundary
 inclusion (`LinearIsometryEquiv.diskIso`, `LinearIsometryEquiv.diskBoundaryIso`); these are the
 orthogonal reparametrizations of attached cells. Likewise a linear isometry of a normed space onto
 `EuclideanSpace ℝ (Fin n)` identifies its closed unit ball with the disk
@@ -88,6 +91,11 @@ lemma pathConnectedSpace_diskBoundary {n : ℕ} (hn : 2 ≤ n) :
           omega)
         0 (by norm_num))
   exact Homeomorph.ulift.symm.pathConnectedSpace
+
+/-- The sphere `TopCat.sphere (n + 1)` of positive dimension, the boundary of the `(n + 2)`-disk,
+is path-connected. -/
+instance pathConnectedSpace_sphere (n : ℕ) : PathConnectedSpace (TopCat.sphere.{u} (n + 1)) :=
+  pathConnectedSpace_diskBoundary (by omega)
 
 /-- The `n`-dimensional disk is a `T₃` space, in particular Hausdorff, being homeomorphic to a
 closed ball in Euclidean space. -/
@@ -313,9 +321,20 @@ lemma sq_diskBoundary_one_eq_one (s : TopCat.diskBoundary.{u} 1) :
   rw [mem_sphere_zero_iff_norm.1 s.down.2, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs] at h
   simpa using h.symm
 
+/-- The boundary sphere of a disk of positive dimension is nonempty. -/
+instance nonempty_diskBoundary_succ (n : ℕ) : Nonempty (TopCat.diskBoundary.{u} (n + 1)) :=
+  ⟨ULift.up ⟨EuclideanSpace.single 0 1, by simp⟩⟩
+
+/-- The boundary sphere of the `n`-disk is nonempty exactly when `n ≠ 0`. -/
+@[simp]
+theorem nonempty_diskBoundary_iff {n : ℕ} : Nonempty (TopCat.diskBoundary.{u} n) ↔ n ≠ 0 := by
+  cases n
+  · simpa using not_nonempty_iff.2 isEmpty_diskBoundary_zero
+  · simpa using nonempty_diskBoundary_succ _
+
 /-- The `n`-sphere is nonempty. -/
 instance nonempty_topCatSphere (n : ℕ) : Nonempty (TopCat.sphere.{u} n) :=
-  ⟨ULift.up ⟨EuclideanSpace.single 0 1, by simp⟩⟩
+  nonempty_diskBoundary_succ n
 
 /-- The subspace of the pair consisting of the `0`-disk and its boundary is empty.  This lets
 instances about pairs with empty subspace apply to `diskBoundaryPair 0`. -/

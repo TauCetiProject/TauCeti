@@ -117,6 +117,10 @@ theorem isEven_comap_iff [NormedSpace ℝ E] [NormedSpace ℝ F] (L : Submodule 
   refine ⟨fun h y hy ↦ ?_, fun h x hx ↦ e.norm_map x ▸ h _ hx⟩
   simpa using h (e.symm y) (by rwa [e.apply_symm_apply])
 
+/-- An even lattice is discrete: a nonzero vector has squared norm at least `2`. -/
+theorem IsEven.discreteTopology {L : Submodule ℤ E} (hL : IsEven L) : DiscreteTopology L :=
+  discreteTopology_of_norm_sq_mem_int_mul (c := 2) (by norm_num) hL
+
 variable [InnerProductSpace ℝ E] [InnerProductSpace ℝ F]
 
 /-! ### Integral lattices -/
@@ -246,7 +250,6 @@ theorem IsUnimodular.span_eq_top [FiniteDimensional ℝ E] {L : Submodule ℤ E}
     rw [real_inner_smul_left, real_inner_comm,
       Submodule.inner_right_of_mem_orthogonal (subset_span hy) hv]
     simp
-  have hnorm : (0 : ℝ) < ‖v‖ := norm_pos_iff.2 hv0
   obtain ⟨m, hm⟩ := isIntegral_iff.1 h.isIntegral _ (hmem (1 / (√2 * ‖v‖))) _
     (hmem (1 / (√2 * ‖v‖)))
   rw [real_inner_smul_left, real_inner_smul_right, real_inner_self_eq_norm_sq] at hm

@@ -78,11 +78,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 namespace MorseCriticalPoint
 
+variable (f g) in
 /-- **The critical points of a separated sum are the pairs of critical points.** -/
-noncomputable def separatedSumEquiv (hfs : ContDiff ℝ 2 f) (hgs : ContDiff ℝ 2 g) :
+noncomputable def separatedSumEquiv :
     MorseCriticalPoint (separatedSum f g) ≃ MorseCriticalPoint f × MorseCriticalPoint g where
   toFun P :=
-    have h := (isNondegenerateCriticalPoint_separatedSum_iff hfs.contDiffAt hgs.contDiffAt).1 P.2
+    have h := isNondegenerateCriticalPoint_separatedSum_iff.1 P.2
     (⟨P.1.fst, h.1⟩, ⟨P.1.snd, h.2⟩)
   invFun pq := ⟨WithLp.toLp 2 (pq.1.1, pq.2.1), pq.1.2.separatedSum pq.2.2⟩
   left_inv _ := rfl
@@ -90,24 +91,21 @@ noncomputable def separatedSumEquiv (hfs : ContDiff ℝ 2 f) (hgs : ContDiff ℝ
 
 /-- The critical point of the separated sum attached to a pair `(p, q)` is the point `(p, q)`. -/
 @[simp]
-theorem coe_separatedSumEquiv_symm (hfs : ContDiff ℝ 2 f) (hgs : ContDiff ℝ 2 g)
-    (pq : MorseCriticalPoint f × MorseCriticalPoint g) :
-    ((separatedSumEquiv hfs hgs).symm pq : WithLp 2 (E × F)) =
+theorem coe_separatedSumEquiv_symm (pq : MorseCriticalPoint f × MorseCriticalPoint g) :
+    ((separatedSumEquiv f g).symm pq : WithLp 2 (E × F)) =
       WithLp.toLp 2 ((pq.1 : E), (pq.2 : F)) :=
   (rfl)
 
 /-- The first component of a critical point of the separated sum. -/
 @[simp]
-theorem coe_separatedSumEquiv_fst (hfs : ContDiff ℝ 2 f) (hgs : ContDiff ℝ 2 g)
-    (P : MorseCriticalPoint (separatedSum f g)) :
-    ((separatedSumEquiv hfs hgs P).1 : E) = (P : WithLp 2 (E × F)).fst :=
+theorem coe_separatedSumEquiv_fst (P : MorseCriticalPoint (separatedSum f g)) :
+    ((separatedSumEquiv f g P).1 : E) = (P : WithLp 2 (E × F)).fst :=
   (rfl)
 
 /-- The second component of a critical point of the separated sum. -/
 @[simp]
-theorem coe_separatedSumEquiv_snd (hfs : ContDiff ℝ 2 f) (hgs : ContDiff ℝ 2 g)
-    (P : MorseCriticalPoint (separatedSum f g)) :
-    ((separatedSumEquiv hfs hgs P).2 : F) = (P : WithLp 2 (E × F)).snd :=
+theorem coe_separatedSumEquiv_snd (P : MorseCriticalPoint (separatedSum f g)) :
+    ((separatedSumEquiv f g P).2 : F) = (P : WithLp 2 (E × F)).snd :=
   (rfl)
 
 end MorseCriticalPoint
@@ -211,8 +209,8 @@ theorem morseBoundaryCoeff_separatedSum (hhs : ContDiff ℝ 2 (separatedSum f g)
     (hth : IsMorseSmale (separatedSum f g) hh) (p p' : MorseCriticalPoint f)
     (q q' : MorseCriticalPoint g) :
     morseBoundaryCoeff hhs hh hMh hch hth
-        ((MorseCriticalPoint.separatedSumEquiv hfs hgs).symm (p, q))
-        ((MorseCriticalPoint.separatedSumEquiv hfs hgs).symm (p', q')) =
+        ((MorseCriticalPoint.separatedSumEquiv f g).symm (p, q))
+        ((MorseCriticalPoint.separatedSumEquiv f g).symm (p', q')) =
       (if p = p' then morseBoundaryCoeff hgs hg hN hcg htg q q' else 0) +
         if q = q' then morseBoundaryCoeff hfs hf hM hcf htf p p' else 0 := by
   have hfd := hfs.differentiable two_ne_zero
@@ -274,13 +272,13 @@ theorem morseBoundary_separatedSum_single (hhs : ContDiff ℝ 2 (separatedSum f 
     (hth : IsMorseSmale (separatedSum f g) hh) (p : MorseCriticalPoint f)
     (q : MorseCriticalPoint g) (a : ZMod 2) :
     morseBoundary hhs hh hMh hch hth
-        (Finsupp.single ((MorseCriticalPoint.separatedSumEquiv hfs hgs).symm (p, q)) a) =
-      Finsupp.mapDomain (fun p' ↦ (MorseCriticalPoint.separatedSumEquiv hfs hgs).symm (p', q))
+        (Finsupp.single ((MorseCriticalPoint.separatedSumEquiv f g).symm (p, q)) a) =
+      Finsupp.mapDomain (fun p' ↦ (MorseCriticalPoint.separatedSumEquiv f g).symm (p', q))
           (morseBoundary hfs hf hM hcf htf (Finsupp.single p a)) +
-        Finsupp.mapDomain (fun q' ↦ (MorseCriticalPoint.separatedSumEquiv hfs hgs).symm (p, q'))
+        Finsupp.mapDomain (fun q' ↦ (MorseCriticalPoint.separatedSumEquiv f g).symm (p, q'))
           (morseBoundary hgs hg hN hcg htg (Finsupp.single q a)) := by
   classical
-  set e := MorseCriticalPoint.separatedSumEquiv hfs hgs
+  set e := MorseCriticalPoint.separatedSumEquiv f g
   ext Q
   obtain ⟨⟨p', q'⟩, rfl⟩ := e.symm.surjective Q
   have hinjL : Function.Injective fun p' ↦ e.symm (p', q) :=
@@ -314,11 +312,12 @@ theorem morseBoundary_separatedSum_single (hhs : ContDiff ℝ 2 (separatedSum f 
       htg hh hhs hMh hch hth, smul_eq_mul, mul_add]
   split_ifs <;> simp [add_comm]
 
+variable (f g) in
 /-- **The mod-two Morse chains of a separated sum are the tensor product** of the mod-two Morse
 chains of the summands: the pair `(p, q)` of critical points corresponds to `p ⊗ q`. -/
 noncomputable def morseChainSeparatedSumEquiv :
     MorseChain (separatedSum f g) ≃ₗ[ZMod 2] MorseChain f ⊗[ZMod 2] MorseChain g :=
-  (Finsupp.domLCongr (MorseCriticalPoint.separatedSumEquiv hfs hgs)).trans
+  (Finsupp.domLCongr (MorseCriticalPoint.separatedSumEquiv f g)).trans
     (finsuppTensorFinsupp' (ZMod 2) (MorseCriticalPoint f) (MorseCriticalPoint g)).symm
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
@@ -326,8 +325,8 @@ omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 @[simp]
 theorem morseChainSeparatedSumEquiv_single (p : MorseCriticalPoint f) (q : MorseCriticalPoint g)
     (a : ZMod 2) :
-    morseChainSeparatedSumEquiv hfs hgs
-        (Finsupp.single ((MorseCriticalPoint.separatedSumEquiv hfs hgs).symm (p, q)) a) =
+    morseChainSeparatedSumEquiv f g
+        (Finsupp.single ((MorseCriticalPoint.separatedSumEquiv f g).symm (p, q)) a) =
       Finsupp.single p a ⊗ₜ Finsupp.single q 1 := by
   simp [morseChainSeparatedSumEquiv, finsuppTensorFinsupp'_symm_single_eq_tmul_single_one]
 
@@ -336,8 +335,8 @@ omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 with that critical point. -/
 private theorem morseChainSeparatedSumEquiv_mapDomain_left (q : MorseCriticalPoint g)
     (c : MorseChain f) :
-    morseChainSeparatedSumEquiv hfs hgs
-        (Finsupp.mapDomain (fun p' ↦ (MorseCriticalPoint.separatedSumEquiv hfs hgs).symm (p', q))
+    morseChainSeparatedSumEquiv f g
+        (Finsupp.mapDomain (fun p' ↦ (MorseCriticalPoint.separatedSumEquiv f g).symm (p', q))
           c) =
       c ⊗ₜ Finsupp.single q 1 := by
   induction c using Finsupp.induction_linear with
@@ -350,8 +349,8 @@ omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 with that critical point. -/
 private theorem morseChainSeparatedSumEquiv_mapDomain_right (p : MorseCriticalPoint f)
     (c : MorseChain g) :
-    morseChainSeparatedSumEquiv hfs hgs
-        (Finsupp.mapDomain (fun q' ↦ (MorseCriticalPoint.separatedSumEquiv hfs hgs).symm (p, q'))
+    morseChainSeparatedSumEquiv f g
+        (Finsupp.mapDomain (fun q' ↦ (MorseCriticalPoint.separatedSumEquiv f g).symm (p, q'))
           c) =
       Finsupp.single p 1 ⊗ₜ c := by
   induction c using Finsupp.induction_linear with
@@ -368,12 +367,12 @@ theorem morseChainSeparatedSumEquiv_comp_morseBoundary (hhs : ContDiff ℝ 2 (se
     (hMh : HasNondegenerateCriticalPointsOn (separatedSum f g) univ)
     (hch : ∀ c : ℝ, IsCompact {z | separatedSum f g z ≤ c})
     (hth : IsMorseSmale (separatedSum f g) hh) :
-    (morseChainSeparatedSumEquiv hfs hgs).toLinearMap ∘ₗ morseBoundary hhs hh hMh hch hth =
+    (morseChainSeparatedSumEquiv f g).toLinearMap ∘ₗ morseBoundary hhs hh hMh hch hth =
       ((morseBoundary hfs hf hM hcf htf).rTensor (MorseChain g) +
           (morseBoundary hgs hg hN hcg htg).lTensor (MorseChain f)) ∘ₗ
-        (morseChainSeparatedSumEquiv hfs hgs).toLinearMap := by
+        (morseChainSeparatedSumEquiv f g).toLinearMap := by
   refine Finsupp.lhom_ext fun P a ↦ ?_
-  obtain ⟨⟨p, q⟩, rfl⟩ := (MorseCriticalPoint.separatedSumEquiv hfs hgs).symm.surjective P
+  obtain ⟨⟨p, q⟩, rfl⟩ := (MorseCriticalPoint.separatedSumEquiv f g).symm.surjective P
   simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
     morseBoundary_separatedSum_single hfs hf hM hcf htf hgs hg hN hcg htg hh hhs hMh hch hth,
     map_add, morseChainSeparatedSumEquiv_mapDomain_left,
