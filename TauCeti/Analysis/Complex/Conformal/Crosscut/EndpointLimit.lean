@@ -480,7 +480,7 @@ theorem exists_tendsto_nhdsWithin_ball_inter_sphere (hζ : dist ζ c = r)
   have hr : 0 < r := by linarith
   have hφ0 := arccos_div_two_mul_pos hr hρr
   have hφπ2 := arccos_div_two_mul_lt_pi_div_two hρ hr
-  obtain ⟨θ₀, hθ₀, rfl⟩ := (closedBall_inter_sphere_eq_circleMap_image_Icc hζ hρ hρr).le he
+  obtain ⟨θ₀, _, rfl⟩ := (closedBall_inter_sphere_eq_circleMap_image_Icc hζ hρ hρr).le he
   rw [ball_inter_sphere_eq_circleMap_image_Ioo hζ hρ hρr]
   exact exists_tendsto_nhdsWithin_circleMap_image_Ioo isOpen_ball hf ζ
     (by linarith [Real.pi_pos]) (fun _ hθ => circleMap_mem_ball_of_mem_Ioo hζ hρ hρr hθ)
