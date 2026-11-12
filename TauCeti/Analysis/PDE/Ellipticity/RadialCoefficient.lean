@@ -19,7 +19,8 @@ For real numbers `α` and `β`, the coefficient field `TauCeti.PDE.radialCoeffic
 
 with eigenvalue `α + β` in the radial direction and `α` in the tangential directions. It is
 symmetric, measurable and bounded, homogeneous of degree `0`, and for `β ≠ 0` discontinuous at the
-origin. For `α > 0` and `β ≥ 0` it is uniformly elliptic with constants `α` and `α + β`. Such
+origin. For `α > 0` and `β ≥ 0` it is uniformly elliptic with constants `α` and `α + β`, and for
+`β ≤ 0 < α + β` with constants `α + β` and `α`. Such
 fields are the standard sources of explicit singular solutions of elliptic equations with bounded
 measurable coefficients, in divergence form (Meyers) and in non-divergence form (Gilbarg–Serrin).
 
@@ -29,9 +30,13 @@ measurable coefficients, in divergence form (Meyers) and in non-divergence form 
 * `TauCeti.PDE.dotProduct_radialCoefficient_mulVec`: its bilinear form.
 * `TauCeti.PDE.abs_dotProduct_radialCoefficient_mulVec_le`: its bilinear form is bounded by
   `|α| + |β|`.
+* `TauCeti.PDE.abs_dotProduct_radialCoefficient_mulVec_le_of_nonpos`: for `β ≤ 0 < α + β`,
+  its bilinear form is bounded by `α`.
 * `TauCeti.PDE.uniformlyEllipticOn_radialCoefficient`,
   `TauCeti.PDE.isSymm_radialCoefficient`, `TauCeti.PDE.stronglyMeasurable_radialCoefficient`:
   it is uniformly elliptic with constants `α` and `α + β`, symmetric and measurable.
+* `TauCeti.PDE.uniformlyEllipticOn_radialCoefficient_of_nonpos`: for `β ≤ 0 < α + β`, it is
+  uniformly elliptic with constants `α + β` and `α`.
 -/
 
 public section
@@ -106,6 +111,56 @@ theorem uniformlyEllipticOn_radialCoefficient (hα : 0 < α) (hβ : 0 ≤ β)
     linarith
   · simpa [abs_of_pos hα, abs_of_nonneg hβ] using
       abs_dotProduct_radialCoefficient_mulVec_le (α := α) (β := β) x η ξ
+
+/-- For `β ≤ 0 < α + β`, the bilinear form of the radial coefficient is bounded by `α`, its
+tangential eigenvalue: `ηᵀ a(x) ξ = ⟪η, α ξ + t x⟫` with `‖α ξ + t x‖ ≤ α ‖ξ‖`. -/
+theorem abs_dotProduct_radialCoefficient_mulVec_le_of_nonpos (hβ : β ≤ 0) (hαβ : 0 < α + β)
+    (x η ξ : EuclideanSpace ℝ ι) :
+    |η ⬝ᵥ (radialCoefficient α β x *ᵥ ξ)| ≤ α * ‖η‖ * ‖ξ‖ := by
+  have hα : 0 ≤ α := by linarith
+  set t : ℝ := β / ‖x‖ ^ 2 * ⟪x, ξ⟫_ℝ with ht
+  have heq : η ⬝ᵥ (radialCoefficient α β x *ᵥ ξ) = ⟪η, α • ξ + t • x⟫_ℝ := by
+    rw [dotProduct_radialCoefficient_mulVec, inner_add_right, real_inner_smul_right,
+      real_inner_smul_right, ht]
+    ring
+  -- The cross term `t (2 α ⟪ξ, x⟫ + t ‖x‖²) = β (2 α + β) ⟪x, ξ⟫² / ‖x‖²` is nonpositive.
+  have hcross : t * (2 * α * ⟪ξ, x⟫_ℝ + t * ‖x‖ ^ 2) ≤ 0 := by
+    rcases eq_or_ne x 0 with rfl | hx
+    · simp [ht]
+    have h : t * (2 * α * ⟪ξ, x⟫_ℝ + t * ‖x‖ ^ 2) =
+        β * (2 * α + β) / ‖x‖ ^ 2 * ⟪x, ξ⟫_ℝ ^ 2 := by
+      rw [ht, real_inner_comm ξ x]
+      field_simp
+    rw [h]
+    exact mul_nonpos_of_nonpos_of_nonneg (div_nonpos_of_nonpos_of_nonneg
+      (mul_nonpos_of_nonpos_of_nonneg hβ (by linarith)) (by positivity)) (sq_nonneg _)
+  have hw : ‖α • ξ + t • x‖ ≤ α * ‖ξ‖ := by
+    refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
+    rw [norm_add_sq_real, norm_smul, norm_smul, real_inner_smul_left, real_inner_smul_right,
+      Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg hα]
+    nlinarith [sq_abs t]
+  rw [heq, mul_assoc, mul_comm ‖η‖, ← mul_assoc]
+  exact (abs_real_inner_le_norm _ _).trans
+    (by rw [mul_comm]; exact mul_le_mul_of_nonneg_right hw (norm_nonneg η))
+
+/-- For `β ≤ 0 < α + β`, the radial coefficient is uniformly elliptic with constants `α + β` and
+`α`. -/
+theorem uniformlyEllipticOn_radialCoefficient_of_nonpos (hβ : β ≤ 0) (hαβ : 0 < α + β)
+    (Ω : Set (EuclideanSpace ℝ ι)) :
+    UniformlyEllipticOn Ω (radialCoefficient α β) (α + β) α := by
+  refine UniformlyEllipticOn.of_bounds hαβ (by linarith) (fun x _ ξ => ?_)
+    (fun x _ η ξ => abs_dotProduct_radialCoefficient_mulVec_le_of_nonpos hβ hαβ x η ξ)
+  rw [Matrix.toQuadraticForm'_apply, dotProduct_radialCoefficient_mulVec,
+    real_inner_self_eq_norm_sq, real_inner_comm x ξ]
+  -- The radial term loses at most `|β| ‖ξ‖²`, by the Cauchy–Schwarz inequality.
+  have hcs : ⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ ≤ ‖x‖ ^ 2 * ‖ξ‖ ^ 2 := by
+    simpa only [real_inner_self_eq_norm_sq] using real_inner_mul_inner_self_le x ξ
+  have h : β * ‖ξ‖ ^ 2 ≤ β / ‖x‖ ^ 2 * (⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ) := by
+    rcases eq_or_ne x 0 with rfl | hx
+    · simpa using mul_nonpos_of_nonpos_of_nonneg hβ (sq_nonneg ‖ξ‖)
+    rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
+    nlinarith [mul_le_mul_of_nonpos_left hcs hβ]
+  linarith
 
 /-- The radial coefficient is strongly measurable. -/
 theorem stronglyMeasurable_radialCoefficient :

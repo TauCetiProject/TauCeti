@@ -136,60 +136,14 @@ theorem uniformlyEllipticOn_meyersCoefficient (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
     (by nlinarith : 0 ≤ 1 - μ ^ 2) Ω
   rwa [add_sub_cancel] at h
 
-/-- For `μ ≥ 1`, the bilinear form of Meyers' coefficient is bounded by `μ²`, its tangential
-eigenvalue: `ηᵀ a(x) ξ = ⟪η, μ² ξ + t x⟫` with `‖μ² ξ + t x‖ ≤ μ² ‖ξ‖`. -/
-private theorem abs_dotProduct_meyersCoefficient_mulVec_le_sq (hμ : 1 ≤ μ)
-    (x η ξ : EuclideanSpace ℝ (Fin 2)) :
-    |η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ)| ≤ μ ^ 2 * ‖η‖ * ‖ξ‖ := by
-  set t : ℝ := (1 - μ ^ 2) / ‖x‖ ^ 2 * ⟪x, ξ⟫_ℝ with ht
-  have heq : η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ) = ⟪η, μ ^ 2 • ξ + t • x⟫_ℝ := by
-    rw [dotProduct_meyersCoefficient_mulVec, inner_add_right, real_inner_smul_right,
-      real_inner_smul_right, ht]
-    ring
-  -- The cross term `t (2 μ² ⟪ξ, x⟫ + t ‖x‖²) = (1 - μ⁴) ⟪x, ξ⟫² / ‖x‖²` is nonpositive.
-  have hcross : t * (2 * μ ^ 2 * ⟪ξ, x⟫_ℝ + t * ‖x‖ ^ 2) ≤ 0 := by
-    rcases eq_or_ne x 0 with rfl | hx
-    · simp [ht]
-    have h : t * (2 * μ ^ 2 * ⟪ξ, x⟫_ℝ + t * ‖x‖ ^ 2) =
-        (1 - μ ^ 2) * (1 + μ ^ 2) / ‖x‖ ^ 2 * ⟪x, ξ⟫_ℝ ^ 2 := by
-      rw [ht, real_inner_comm ξ x]
-      field_simp
-      ring
-    rw [h]
-    exact mul_nonpos_of_nonpos_of_nonneg (div_nonpos_of_nonpos_of_nonneg
-      (mul_nonpos_of_nonpos_of_nonneg (by nlinarith) (by positivity)) (by positivity))
-      (sq_nonneg _)
-  have hw : ‖μ ^ 2 • ξ + t • x‖ ≤ μ ^ 2 * ‖ξ‖ := by
-    refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
-    rw [norm_add_sq_real, norm_smul, norm_smul, real_inner_smul_left, real_inner_smul_right,
-      Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by positivity : (0 : ℝ) ≤ μ ^ 2)]
-    nlinarith [sq_abs t]
-  rw [heq, mul_assoc, mul_comm ‖η‖, ← mul_assoc]
-  exact (abs_real_inner_le_norm _ _).trans
-    (by rw [mul_comm]; exact mul_le_mul_of_nonneg_right hw (norm_nonneg η))
-
 /-- For `μ ≥ 1`, Meyers' coefficient is uniformly elliptic with constants `1` and `μ²`, so its
 ellipticity ratio is `μ²`. -/
 theorem uniformlyEllipticOn_meyersCoefficient_of_one_le (hμ : 1 ≤ μ)
     (Ω : Set (EuclideanSpace ℝ (Fin 2))) :
     UniformlyEllipticOn Ω (meyersCoefficient μ) 1 (μ ^ 2) := by
-  refine UniformlyEllipticOn.of_bounds one_pos (by nlinarith) (fun x _ ξ => ?_)
-    (fun x _ η ξ => abs_dotProduct_meyersCoefficient_mulVec_le_sq hμ x η ξ)
-  rw [Matrix.toQuadraticForm'_apply, dotProduct_meyersCoefficient_mulVec,
-    real_inner_self_eq_norm_sq, real_inner_comm x ξ]
-  -- The radial term loses at most `(μ² - 1) ‖ξ‖²`, by the Cauchy–Schwarz inequality.
-  have hcs : ⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ ≤ ‖x‖ ^ 2 * ‖ξ‖ ^ 2 := by
-    simpa only [real_inner_self_eq_norm_sq] using real_inner_mul_inner_self_le x ξ
-  have h : (μ ^ 2 - 1) / ‖x‖ ^ 2 * (⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ) ≤ (μ ^ 2 - 1) * ‖ξ‖ ^ 2 := by
-    rcases eq_or_ne x 0 with rfl | hx
-    · simp only [norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, div_zero,
-        zero_mul]
-      exact mul_nonneg (by nlinarith) (by positivity)
-    rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
-    nlinarith [mul_le_mul_of_nonneg_left hcs (by nlinarith : (0 : ℝ) ≤ μ ^ 2 - 1)]
-  have h' : (1 - μ ^ 2) / ‖x‖ ^ 2 * (⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ) =
-      -((μ ^ 2 - 1) / ‖x‖ ^ 2 * (⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ)) := by ring
-  linarith
+  have h := uniformlyEllipticOn_radialCoefficient_of_nonpos (by nlinarith : 1 - μ ^ 2 ≤ 0)
+    (by linarith : 0 < μ ^ 2 + (1 - μ ^ 2)) Ω
+  rwa [add_sub_cancel] at h
 
 /-- Meyers' coefficient is strongly measurable. -/
 theorem stronglyMeasurable_meyersCoefficient : StronglyMeasurable (meyersCoefficient μ) :=

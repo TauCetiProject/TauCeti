@@ -262,12 +262,6 @@ private theorem measurable_gradField (ε : ℝ) : Measurable (gradField (E := E)
   unfold gradField
   fun_prop
 
-
-private theorem tendsto_eps : Tendsto (fun k : ℕ => (1 : ℝ) / (k + 1)) atTop (𝓝 0) :=
-  tendsto_one_div_add_atTop_nhds_zero_nat
-
-private theorem eps_pos (k : ℕ) : 0 < (1 : ℝ) / (k + 1) := by positivity
-
 /-- On a ball centred at the origin, the derivative of the gradient field `γ ‖x‖ ^ (γ - 2) x`
 across the origin is its classical derivative. -/
 private theorem hasWeakFDerivOn_ball_gradField [Nontrivial E] (hγ : γ ≤ 2)
@@ -296,17 +290,20 @@ private theorem hasWeakFDerivOn_ball_gradField [Nontrivial E] (hγ : γ ≤ 2)
     (U := fun k : ℕ => hessField γ (1 / (k + 1)))
     (hG.locallyIntegrableOn) (fun v => (hH v).locallyIntegrableOn) (fun k => ?_) ?_ ?_
   · exact hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty
-      (continuous_gradField (eps_pos k)).continuousOn
-      ((continuous_hessField (eps_pos k)).locallyIntegrable.locallyIntegrableOn _)
-      fun x _ => hasFDerivAt_gradField γ _ (by positivity [eps_pos k])
+      (continuous_gradField (Nat.one_div_pos_of_nat (n := k))).continuousOn
+      ((continuous_hessField (Nat.one_div_pos_of_nat (n := k))).locallyIntegrable
+        |>.locallyIntegrableOn _)
+      fun x _ => hasFDerivAt_gradField γ _ (by positivity)
   · exact tendsto_setLIntegral_ball_enorm_sub_of_norm_le_mul_norm_rpow hs1
-      (fun k => (continuous_gradField (eps_pos k)).aestronglyMeasurable)
-      (fun k x hx => norm_gradField_le hx (eps_pos k).le hγ)
-      fun x hx => (continuousAt_gradField hx).tendsto.comp tendsto_eps
+      (fun k => (continuous_gradField (Nat.one_div_pos_of_nat (n := k))).aestronglyMeasurable)
+      (fun k x hx => norm_gradField_le hx (Nat.one_div_pos_of_nat (n := k)).le hγ)
+      fun x hx =>
+        (continuousAt_gradField hx).tendsto.comp tendsto_one_div_add_atTop_nhds_zero_nat
   · exact tendsto_setLIntegral_ball_enorm_sub_of_norm_le_mul_norm_rpow hs2
-      (fun k => (continuous_hessField (eps_pos k)).aestronglyMeasurable)
-      (fun k x hx => norm_hessField_le hx (eps_pos k).le hγ)
-      fun x hx => (continuousAt_hessField hx).tendsto.comp tendsto_eps
+      (fun k => (continuous_hessField (Nat.one_div_pos_of_nat (n := k))).aestronglyMeasurable)
+      (fun k x hx => norm_hessField_le hx (Nat.one_div_pos_of_nat (n := k)).le hγ)
+      fun x hx =>
+        (continuousAt_hessField hx).tendsto.comp tendsto_one_div_add_atTop_nhds_zero_nat
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem nontrivial_of_two_lt (hγ : γ ≤ 2) (hn : 2 < finrank ℝ E + γ) : Nontrivial E :=
@@ -407,8 +404,10 @@ private theorem aestronglyMeasurable_iteratedGradientChain_one_norm_rpow [Nontri
     AEStronglyMeasurable (iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1) μ := by
   have hae : ∀ᵐ x ∂μ, x ≠ 0 := μ.ae_ne 0
   exact (aestronglyMeasurable_of_tendsto_ae atTop
-    (fun k => (continuous_hessField (E := E) (γ := γ) (eps_pos k)).aestronglyMeasurable)
-    (hae.mono fun x hx => (continuousAt_hessField hx).tendsto.comp tendsto_eps)).congr
+    (fun k => (continuous_hessField (E := E) (γ := γ)
+      (Nat.one_div_pos_of_nat (n := k))).aestronglyMeasurable)
+    (hae.mono fun x hx =>
+      (continuousAt_hessField hx).tendsto.comp tendsto_one_div_add_atTop_nhds_zero_nat)).congr
     (hae.mono fun x hx => (iteratedGradientChain_one_norm_rpow_eq_hessField hx).symm)
 
 /-- If the Hessian of `‖x‖ ^ γ`, `γ ≠ 0`, `γ < 2`, is `p`-integrable near the origin, then
