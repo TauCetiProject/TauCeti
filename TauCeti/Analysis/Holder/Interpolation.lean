@@ -355,7 +355,6 @@ theorem norm_le_of_hasFDerivWithinAt_of_closedBall_subset {s : Set E} {g : E →
   rw [hgw] at h2
   rw [Real.rpow_add' hε.le (by positivity), Real.rpow_one, div_add' _ _ _ hε.ne', le_div_iff₀ hε]
   rw [Real.rpow_add' hε.le (by positivity), Real.rpow_two, sq] at h2
-  have hre : (H : ℝ) * (ε * ε ^ (α : ℝ)) * ε = H * (ε * ε * ε ^ (α : ℝ)) := by ring
   linarith
 
 /-- **Interpolation of the second derivative on a ball.** If `g` has derivative `g'` within `s`,
@@ -389,7 +388,6 @@ theorem norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset {s : Set E} {g
   have hxx := h1 x (by simp [hε.le])
   rw [Real.rpow_add' hε.le (by positivity), Real.rpow_one] at hD hxw hxx
   rw [div_add' _ _ _ (by positivity), le_div_iff₀ (by positivity)]
-  have hεα : 0 ≤ (H : ℝ) * ε ^ (α : ℝ) := by positivity
   have key : ε * ‖g'' x v‖ ≤ 2 * (M / ε) + 3 * (H * (ε * ε ^ (α : ℝ))) := by linarith
   have key' : ε * (ε * ‖g'' x v‖) ≤ ε * (2 * (M / ε) + 3 * (H * (ε * ε ^ (α : ℝ)))) :=
     mul_le_mul_of_nonneg_left key hε.le

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
+import TauCeti.Geometry.Manifold.Morse.Bott.Lemma
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 import TauCeti.Topology.Connected.Basic
 
@@ -43,6 +44,14 @@ many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
 (`TauCeti.IsMorseBottFamily.subsingleton_image_range`), so on a compact manifold it has finitely
 many critical values (`TauCeti.IsMorseBottFamily.finite_image_criticalPoints`). The same family
 exhibits `-f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily.neg`).
+
+Conversely, the last two conditions follow from the first three once the pieces are known to
+partition the critical set. A Morse–Bott critical submanifold is isolated in the critical set, so
+if `f` is smooth and the images of `C²` nondegenerate critical submanifolds with nonempty
+preconnected sources are pairwise disjoint and cover the critical set, each image is closed, hence
+a connected component of the critical set, and the family is locally finite
+(`TauCeti.IsMorseBottFamily.of_pairwise_disjoint`). This is how a Morse–Bott family is built from
+a description of the critical set as a disjoint union of nondegenerate critical submanifolds.
 
 Morse functions are the zero-dimensional case. On a boundaryless finite-dimensional manifold, a
 critical point is nondegenerate exactly when the piece through it is modelled on a trivial space
@@ -228,6 +237,69 @@ theorem isMorse_of_subsingleton [∀ a, Subsingleton (E' a)] (hn : n ≠ 0) : Is
 end Boundaryless
 
 end IsMorseBottFamily
+
+/-- **Morse–Bott critical submanifolds partitioning the critical set form a Morse–Bott family.**
+Let `f` be smooth and let each `i a` be a `C²` nondegenerate critical submanifold of `f`, with a
+nonempty preconnected source modelled without boundary. If the images of the `i a` are pairwise
+disjoint and cover the critical set, then they are exactly the connected components of the
+critical set and form a locally finite family, so the family exhibits `f` as a Morse–Bott
+function. -/
+theorem IsMorseBottFamily.of_pairwise_disjoint [I.Boundaryless] [FiniteDimensional ℝ E]
+    [IsManifold I 2 M] [∀ a, (J a).Boundaryless] [∀ a, Nonempty (S a)]
+    [∀ a, PreconnectedSpace (S a)] (hn : 2 ≤ n) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hi : ∀ a, (i a).IsNondegenerateCriticalSubmanifold f)
+    (hdisj : Pairwise (Disjoint on fun a ↦ range (i a)))
+    (hcover : criticalPoints I f ⊆ ⋃ a, range (i a)) : IsMorseBottFamily i f := by
+  choose U hUo hU using fun a ↦ (hi a).exists_isOpen_criticalPoints_inter_eq_range hn
+  have hcrit : IsClosed (criticalPoints I f) := isClosed_criticalPoints (hf.of_le (by simp))
+  have hrange (a : ι) : range (i a) ⊆ criticalPoints I f := by
+    rintro _ ⟨s, rfl⟩
+    exact (hi a).mem_criticalPoints s
+  have hrangeU (a : ι) : range (i a) ⊆ U a := fun x hx ↦ by
+    rw [← hU a] at hx
+    exact hx.2
+  -- A point of the `b`-th piece lying in `U a` forces `b = a`.
+  have hindex {a b : ι} {x : M} (hxb : x ∈ range (i b)) (hxU : x ∈ U a) : b = a := by
+    by_contra hba
+    have hxa : x ∈ range (i a) := by
+      rw [← hU a]
+      exact ⟨hrange b hxb, hxU⟩
+    exact disjoint_left.1 (hdisj hba : Disjoint (range (i b)) (range (i a))) hxb hxa
+  -- Each piece is closed: within the closed critical set, it is the complement of the open sets
+  -- `U b` cutting out the other pieces.
+  have hclosed (a : ι) : IsClosed (range (i a)) := by
+    have heq : range (i a) = criticalPoints I f ∩ (⋃ b, ⋃ (_ : b ≠ a), U b)ᶜ := by
+      ext x
+      simp only [mem_inter_iff, mem_compl_iff, mem_iUnion, not_exists]
+      refine ⟨fun hx ↦ ⟨hrange a hx, fun b hba hxU ↦ hba (hindex hx hxU).symm⟩,
+        fun ⟨hx, hxU⟩ ↦ ?_⟩
+      obtain ⟨b, hb⟩ := mem_iUnion.1 (hcover hx)
+      by_cases hba : b = a
+      · exact hba ▸ hb
+      · exact absurd (hrangeU b hb) (hxU b hba)
+    rw [heq]
+    exact hcrit.inter (isOpen_iUnion fun b ↦ isOpen_iUnion fun _ ↦ hUo b).isClosed_compl
+  refine
+    { contMDiff := hf
+      isNondegenerateCriticalSubmanifold := hi
+      nonempty := inferInstance
+      boundarylessManifold := fun _ ↦ inferInstance
+      range_eq_connectedComponentIn := fun a s ↦
+        (hi a).range_eq_connectedComponentIn hn (hclosed a) s
+      range_injective := fun a b hab ↦ by_contra fun hba ↦ ?_
+      criticalPoints_subset_iUnion_range := hcover
+      locallyFinite_range := fun x ↦ ?_ }
+  · have hab' : range (i a) = range (i b) := hab
+    have hd : Disjoint (range (i a)) (range (i b)) := hdisj hba
+    rw [hab'] at hd
+    exact (range_nonempty (i b)).ne_empty (disjoint_self.1 hd)
+  · -- Near a critical point only its own piece occurs; away from the critical set, none does.
+    by_cases hx : x ∈ criticalPoints I f
+    · obtain ⟨a, ha⟩ := mem_iUnion.1 (hcover hx)
+      exact ⟨U a, (hUo a).mem_nhds (hrangeU a ha),
+        (finite_singleton a).subset fun b ⟨_, hyb, hyU⟩ ↦ hindex hyb hyU⟩
+    · exact ⟨(criticalPoints I f)ᶜ, hcrit.isOpen_compl.mem_nhds hx,
+        finite_empty.subset fun b ⟨_, hyb, hy⟩ ↦ hy (hrange b hyb)⟩
 
 /-- **Morse functions are Morse–Bott.** On a boundaryless finite-dimensional manifold, the
 critical points of a Morse function, each included as a point from a trivial model space, form a

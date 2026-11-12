@@ -83,6 +83,9 @@ product.
 
 ## Main results
 
+* `TauCeti.StrandGradingGroup.linking_add_linking_swap`, `TauCeti.StrandGradingGroup.linking_self`:
+  the symmetric part of `L` is minus the product of the total sums of the boundaries, so `L` is
+  antisymmetric on boundaries of total sum zero.
 * `TauCeti.StrandDiagram.grading_trans`: the grading is multiplicative on composable diagrams.
 * `TauCeti.StrandDiagram.grading_idOn`: the identity diagrams have grading `1`.
 * `TauCeti.StrandDiagram.grading_mem_gPrime`: every grading of a diagram lies in `G'(n)`.
@@ -100,6 +103,9 @@ product.
   own grading only (`TauCeti.StrandsAlgebra.of_mem_gradedPart_iff`).
 * `TauCeti.StrandsAlgebra.iSupIndep_gradedPart`, `TauCeti.StrandsAlgebra.isInternal_gradedPart`:
   the graded parts are independent, so over a ring the algebra is their internal direct sum.
+* `TauCeti.StrandsAlgebra.mem_gradedPart_iff_of_basis`: a linear isomorphism of strands algebras
+  given by a bijection of diagrams that transforms gradings by an injective map carries graded parts
+  onto graded parts.
 
 ## References
 
@@ -159,6 +165,51 @@ theorem exists_linking_eq (δ₁ δ₂ : α → ℤ) :
   choose k hk using fun p ↦ exists_pointMultiplicity_eq p δ₂
   refine ⟨∑ p, δ₁ p * k p, ?_⟩
   simp [linking_apply, hk, div_eq_mul_inv, Finset.sum_mul, mul_assoc]
+
+/-- The multiplicity `m(β, p)` in terms of the boundary at and above `p` rather than below it:
+`m(β, p) = ∑_{y > p} δ y + δ p / 2 - ∑_y δ y`. -/
+theorem pointMultiplicity_eq_sum_gt (p : α) (δ : α → ℤ) :
+    pointMultiplicity p δ =
+      ∑ y ∈ ({y | p < y} : Finset α), (δ y : ℚ) + δ p / 2 - ∑ y, (δ y : ℚ) := by
+  have h : ∑ y, (δ y : ℚ) = ∑ y ∈ ({y | y < p} : Finset α), (δ y : ℚ) + δ p +
+      ∑ y ∈ ({y | p < y} : Finset α), (δ y : ℚ) := by
+    have hp : (δ p : ℚ) = ∑ y, if p = y then (δ y : ℚ) else 0 := by simp
+    rw [Finset.sum_filter, Finset.sum_filter, hp, ← Finset.sum_add_distrib,
+      ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun y _ ↦ ?_
+    rcases lt_trichotomy y p with hy | rfl | hy
+    · simp [hy, hy.ne', hy.not_gt]
+    · simp
+    · simp [hy, hy.ne, hy.not_gt]
+  rw [pointMultiplicity_apply, h]
+  ring
+
+/-- **The symmetric part of `L`** is minus the product of the total sums of the boundaries:
+`L(β₁, β₂) + L(β₂, β₁) = -(∑ ∂β₁) (∑ ∂β₂)`. So `L` is antisymmetric on the classes of
+`H₁([1, n], {1, …, n})`, whose boundaries have total sum zero. -/
+theorem linking_add_linking_swap (δ₁ δ₂ : α → ℤ) :
+    linking δ₁ δ₂ + linking δ₂ δ₁ = -((∑ x, (δ₁ x : ℚ)) * ∑ x, (δ₂ x : ℚ)) := by
+  -- Exchanging the two summation variables turns the pairs `y < p` into the pairs `p < y`.
+  have hswap : ∑ p, (δ₂ p : ℚ) * ∑ y ∈ ({y | y < p} : Finset α), (δ₁ y : ℚ) =
+      ∑ p, (δ₁ p : ℚ) * ∑ y ∈ ({y | p < y} : Finset α), (δ₂ y : ℚ) := by
+    simp only [Finset.sum_filter, Finset.mul_sum, mul_ite, mul_zero]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun y _ ↦ by rw [mul_comm]
+  have hdiag : ∑ p, (δ₂ p : ℚ) * (δ₁ p / 2) = ∑ p, (δ₁ p : ℚ) * (δ₂ p / 2) :=
+    Finset.sum_congr rfl fun p _ ↦ by ring
+  have h₂₁ : linking δ₂ δ₁ =
+      -∑ p, (δ₁ p : ℚ) * (pointMultiplicity p δ₂ + ∑ x, (δ₂ x : ℚ)) := by
+    simp only [linking_apply, pointMultiplicity_eq_sum_gt _ δ₂, sub_add_cancel]
+    simp only [pointMultiplicity_apply, mul_sub, mul_neg, mul_add, Finset.sum_sub_distrib,
+      Finset.sum_neg_distrib, Finset.sum_add_distrib, hswap, hdiag]
+    ring
+  rw [h₂₁, linking_apply]
+  simp only [mul_add, Finset.sum_add_distrib, ← Finset.sum_mul]
+  ring
+
+/-- `L(β, β) = -(∑ ∂β)² / 2`, which vanishes on the classes of `H₁([1, n], {1, …, n})`. -/
+theorem linking_self (δ : α → ℤ) : linking δ δ = -(∑ x, (δ x : ℚ)) ^ 2 / 2 := by
+  linear_combination (1 / 2 : ℚ) * linking_add_linking_swap δ δ
 
 /-- Modulo `1`, the form `L(β₁, β₂)` is half the sum of the products of the coefficients of
 `∂β₁` and `∂β₂`. -/
@@ -873,6 +924,27 @@ theorem mem_gradedPart {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :
 theorem gradedPart_eq_span (g : StrandGradingGroup α) :
     gradedPart R g = Submodule.span R (of '' {φ | φ.grading = g}) :=
   gradedPartBy_eq_span _ g
+
+/-- A linear isomorphism of strands algebras given on basis elements by a bijection of diagrams
+which transforms gradings by an injective map `F` carries the part of grading `g` onto the part of
+grading `F g`. -/
+theorem mem_gradedPart_iff_of_basis {β : Type*} [LinearOrder β] [Fintype β]
+    (L : StrandsAlgebra R α ≃ₗ[R] StrandsAlgebra R β)
+    (E : StrandDiagram α ≃ StrandDiagram β) {F : StrandGradingGroup α → StrandGradingGroup β}
+    (hF : F.Injective) (hL : ∀ φ, L (of φ) = of (E φ)) (hE : ∀ φ, (E φ).grading = F φ.grading)
+    {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :
+    L x ∈ gradedPart R (F g) ↔ x ∈ gradedPart R g := by
+  have himage : E '' {φ | φ.grading = g} = {ψ | ψ.grading = F g} := by
+    rw [E.image_eq_preimage_symm]
+    ext ψ
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq]
+    rw [← hF.eq_iff, ← hE, Equiv.apply_symm_apply]
+  have hmap : (gradedPart R g).map (L : StrandsAlgebra R α →ₗ[R] StrandsAlgebra R β) =
+      gradedPart R (F g) := by
+    rw [gradedPart_eq_span, gradedPart_eq_span, Submodule.map_span, Set.image_image]
+    simp only [LinearEquiv.coe_coe, hL]
+    rw [← Set.image_image of E, himage]
+  rw [← hmap, Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply]
 
 /-- A strand diagram lies in the part of grading `g` exactly when its grading is `g`. -/
 theorem of_mem_gradedPart_iff [Nontrivial R] {φ : StrandDiagram α} {g : StrandGradingGroup α} :

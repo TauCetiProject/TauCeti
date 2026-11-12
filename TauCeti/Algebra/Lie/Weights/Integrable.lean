@@ -178,7 +178,7 @@ private theorem exists_int_apply_coroot_and_genWeightSpace_zsmul_add_ne_bot (hα
   obtain ⟨N, hNfg, hNst, hvN⟩ := mem_locallyFiniteSubmodule.1 hvlf
   -- the `α`-string of `χ`, truncated to `N`
   set P : ℤ → Submodule K M := fun k ↦ (genWeightSpace M (k • ⇑α + χ)).toSubmodule ⊓ N
-  set W : Submodule K M := ⨆ k : ℤ, P k with hWdef
+  set W : Submodule K M := ⨆ k : ℤ, P k
   have hWN : W ≤ N := iSup_le fun _ ↦ inf_le_right
   have hvP : v ∈ P 0 := ⟨by simpa using hvmem, hvN⟩
   -- a root vector shifts the string by its own root and preserves `N`, hence preserves `W`

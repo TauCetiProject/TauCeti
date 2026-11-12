@@ -40,10 +40,8 @@ marking-swapped counterpart. These chain-level symmetry equivalences need no squ
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G item 8
-("Symmetries and the genus bound"), together with that roadmap's standing convention to "state
-invariance naturality-ready". The underlying chain symmetries follow
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+The underlying chain symmetries follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
+Links*, Chapter 3.
 -/
 
 public section

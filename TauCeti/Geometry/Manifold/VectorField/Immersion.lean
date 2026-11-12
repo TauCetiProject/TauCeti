@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Immersion
 public import TauCeti.Geometry.Manifold.VectorField.Related
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # Restricting tangent vector fields along immersions
@@ -74,11 +75,8 @@ theorem ContMDiffAt.vectorField_of_mfderiv
   have hx := FiberBundle.mem_baseSet_trivializationAt' (F := E) (E := TangentSpace I) x₀
   have hy := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := TangentSpace J) (f x₀)
   have hleft : (inTangentCoordinates I J id f (mfderiv I J f) x₀ x₀).HasLeftInverse := by
-    rw [inTangentCoordinates, id_eq, inCoordinates_eq hx hy]
-    exact ((trivializationAt F (TangentSpace J) (f x₀)).continuousLinearEquivAt 𝕜
-      (f x₀) hy).hasLeftInverse.comp
-      (hinj.comp ((trivializationAt E (TangentSpace I) x₀).continuousLinearEquivAt 𝕜
-        x₀ hx).symm.hasLeftInverse)
+    rw [inTangentCoordinates, id_eq, hasLeftInverse_inCoordinates_iff hx hy]
+    exact hinj
   rw [Bundle.contMDiffAt_section]
   apply ContMDiffAt.of_clm_apply (A := inTangentCoordinates I J id f (mfderiv I J f) x₀)
     (hA := hA) (h := hleft)
