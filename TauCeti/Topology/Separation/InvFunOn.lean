@@ -20,11 +20,17 @@ cell.
 
 The proof is the closed map argument: the preimage under the inverse of a closed set `C` is the
 trace on `f '' U` of the compact, hence closed, set `f '' (C ∩ K)`.
+
+Such an inverse lifts maps of the target through `f`, as in M. Brown's proof of the generalized
+Schoenflies theorem: if `k` is the identity near `y` and continuous and injective on `f '' Q`, then
+the map `g` which is the identity on the fibre `f⁻¹(y)` and `f⁻¹ ∘ k ∘ f` elsewhere is continuous on
+`Q`, satisfies `f ∘ g = k ∘ f` there, and is injective wherever `f` is injective off the fibre
+(`ContinuousOn.exists_continuousOn_injOn_lift`).
 -/
 
 public section
 
-open Function Set
+open Function Set Filter Topology
 
 variable {α β : Type*} [TopologicalSpace α] [TopologicalSpace β]
 
@@ -48,5 +54,61 @@ theorem ContinuousOn.continuousOn_invFunOn_image_of_isCompact [Nonempty α] [T2S
       by_contra hkU
       exact disjoint_left.1 hdisj ⟨k, ⟨hkK, hkU⟩, hky⟩ hy
     rwa [← hky, hinj.leftInvOn_invFunOn hkU]
+
+/-- **Lifting a map which is the identity near a point.** Let `f` be continuous on `Q` and let `k`
+be continuous at the points of `f '' Q`, injective there and the identity near `y`. Suppose that
+`k ∘ f` maps `Q \ f⁻¹(y)` into `f '' P`, where `f` is injective on `P` with inverse continuous on
+`f '' P`, and that every point of `Q \ f⁻¹(y)` mapped into `f '' P` lies in `P`. Then the map `g`
+which is the identity on `f⁻¹(y)` and `f⁻¹ ∘ k ∘ f` elsewhere is continuous on `Q`, lifts `k`
+through `f` there, maps `Q \ f⁻¹(y)` into `P`, and is injective on every `R ⊆ Q` on which `f` is
+injective off `f⁻¹(y)`. -/
+theorem ContinuousOn.exists_continuousOn_injOn_lift [Nonempty α] [T1Space β] {f : α → β}
+    {Q P R : Set α} {y : β} {k : β → β} (hf : ContinuousOn f Q)
+    (hinv : ContinuousOn (invFunOn f P) (f '' P)) (hinj : InjOn f P)
+    (hQP : ∀ x ∈ Q, f x ≠ y → f x ∈ f '' P → x ∈ P) (hkc : ∀ x ∈ Q, ContinuousAt k (f x))
+    (hki : InjOn k (f '' Q)) (hkid : k =ᶠ[𝓝 y] id) (hkP : ∀ x ∈ Q, f x ≠ y → k (f x) ∈ f '' P)
+    (hRQ : R ⊆ Q) (hfR : InjOn f (R \ f ⁻¹' {y})) :
+    ∃ g : α → α, ContinuousOn g Q ∧ InjOn g R ∧ (∀ x ∈ Q, f (g x) = k (f x)) ∧
+      (∀ x ∈ Q, f x = y → g x = x) ∧ ∀ x ∈ Q, f x ≠ y → g x ∈ P := by
+  classical
+  have hky : k y = y := hkid.eq_of_nhds
+  set g : α → α := fun x ↦ if f x = y then x else invFunOn f P (k (f x))
+  have hgy {x : α} (hx : f x = y) : g x = x := by simp [g, hx]
+  have hg {x : α} (hx : f x ≠ y) : g x = invFunOn f P (k (f x)) := by simp [g, hx]
+  have hgP {x : α} (hx : x ∈ Q) (hxy : f x ≠ y) : g x ∈ P ∧ f (g x) = k (f x) := by
+    rw [hg hxy]
+    exact ⟨invFunOn_mem (hkP x hx hxy), invFunOn_eq (hkP x hx hxy)⟩
+  have hfg {x : α} (hx : x ∈ Q) : f (g x) = k (f x) := by
+    by_cases hxy : f x = y
+    · rw [hgy hxy, hxy, hky]
+    · exact (hgP hx hxy).2
+  refine ⟨g, fun x hx ↦ ?_, fun x hx x' hx' h ↦ ?_, fun x hx ↦ hfg hx, fun x _ ↦ hgy,
+    fun x hx hxy ↦ (hgP hx hxy).1⟩
+  · by_cases hxy : f x = y
+    · -- Near the fibre `k` is the identity, so `g` is the identity.
+      obtain ⟨W, hWk, hW, hyW⟩ := _root_.eventually_nhds_iff.1 hkid
+      have hid : g =ᶠ[𝓝[Q] x] id := by
+        filter_upwards [self_mem_nhdsWithin,
+          (hf x hx).preimage_mem_nhdsWithin (hW.mem_nhds (by rwa [hxy]))] with x' hx' hx'W
+        by_cases hx'y : f x' = y
+        · exact hgy hx'y
+        · have hk : k (f x') = f x' := hWk _ hx'W
+          rw [hg hx'y, hk, id]
+          exact hinj.leftInvOn_invFunOn (hQP x' hx' hx'y (hk ▸ hkP x' hx' hx'y))
+      exact continuousWithinAt_id.congr_of_eventuallyEq hid (hid.eq_of_nhdsWithin hx)
+    · -- Elsewhere `g` is `f⁻¹ ∘ k ∘ f`, a composite of maps continuous at the relevant points.
+      have hcont : ContinuousWithinAt (fun x ↦ invFunOn f P (k (f x))) (Q ∩ {x | f x ≠ y}) x :=
+        (hinv _ (hkP x hx hxy)).comp (f := fun x ↦ k (f x))
+          ((hkc x hx).comp_continuousWithinAt ((hf x hx).mono inter_subset_left))
+          fun x' hx' ↦ hkP x' hx'.1 hx'.2
+      exact (hcont.congr (fun x' hx' ↦ hg hx'.2) (hg hxy)).mono_of_mem_nhdsWithin
+        (inter_mem self_mem_nhdsWithin
+          ((hf x hx).preimage_mem_nhdsWithin (isOpen_compl_singleton.mem_nhds hxy)))
+  · -- `k` is injective on `f '' Q`, so `x` and `x'` have the same image under `f`.
+    have hfx : f x = f x' := hki (mem_image_of_mem f (hRQ hx)) (mem_image_of_mem f (hRQ hx'))
+      (by rw [← hfg (hRQ hx), ← hfg (hRQ hx'), h])
+    by_cases hxy : f x = y
+    · rwa [hgy hxy, hgy (hfx ▸ hxy)] at h
+    · exact hfR ⟨hx, hxy⟩ ⟨hx', fun h ↦ hxy (hfx.trans h)⟩ hfx
 
 end

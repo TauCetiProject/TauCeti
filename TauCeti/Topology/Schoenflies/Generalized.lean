@@ -128,8 +128,7 @@ private theorem exists_homeomorph_setOf_nonneg (hb : IsBicollar σ b)
     Subtype.ext ((hh₁ ⟨σ x, hσx⟩ ((hgσ (σ x)).2 (mem_range_self x))).trans hgσx)
   have key : (h₁.trans r) ⟨σ x, hσx⟩ = ⟨x, sphere_subset_closedBall x.2⟩ := by
     ext1
-    rw [Homeomorph.trans_apply, Homeomorph.subtype_apply_coe, h₁x,
-      Homeomorph.radialExtension_coe_sphere, Homeomorph.symm_apply_apply]
+    simp [r, h₁x]
   rw [← key, Homeomorph.symm_apply_apply]
 
 end IsBicollar
