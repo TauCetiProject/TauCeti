@@ -72,6 +72,9 @@ surjective exactly when the Morse index drops by one.
   solution of the linearized equation along a nonconstant trajectory is square integrable.
 * `IsIntegralCurve.surjective_trajectoryOperator_hessianOperator_iff_finrank_ker`: the linearized
   operator is surjective exactly when its kernel has dimension `morseIndex f p - morseIndex f q`.
+  The `IsIntegralCurve` lemma
+  `surjective_trajectoryOperator_hessianOperator_iff_finrank_squareIntegrableSolutions` states this
+  for the initial values of the square-integrable linearized solutions.
 * `IsIntegralCurve.surjective_trajectoryOperator_hessianOperator_iff`: in dimension one the
   linearized operator is surjective exactly when `morseIndex f p = morseIndex f q + 1`.
 * `IsIntegralCurve.morseIndex_lt_morseIndex_of_surjective`: if the linearized operator is
@@ -353,6 +356,25 @@ theorem surjective_trajectoryOperator_hessianOperator_iff_finrank_ker
   rw [index_trajectoryOperator_of_isClosed_range hadj hclosed] at hindex
   rw [surjective_trajectoryOperator_iff_ker_neg_eq_bot hadj hclosed, ← Submodule.finrank_eq_zero]
   omega
+
+/-- **The linearized operator is onto exactly when its decaying solutions have the expected
+dimension.** Under the hypotheses of
+`IsIntegralCurve.surjective_trajectoryOperator_hessianOperator_iff_finrank_ker`, the operator
+`ξ ↦ ξ' + Hess f(γ) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is surjective if and only if the initial
+values `TauCeti.squareIntegrableSolutions` of the square-integrable solutions of
+`v' + Hess f(γ) v = 0` form a space of dimension `morseIndex f p - morseIndex f q`. -/
+theorem surjective_trajectoryOperator_hessianOperator_iff_finrank_squareIntegrableSolutions
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
+    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q))
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
+    Function.Surjective (trajectoryOperator (p := 2) AL) ↔
+      (Module.finrank ℝ (squareIntegrableSolutions fun s ↦ hessianOperator f (γ s)) : ℤ) =
+        morseIndex f p - morseIndex f q := by
+  rw [surjective_trajectoryOperator_hessianOperator_iff_finrank_ker hγ hf hp hq hbot htop hAL,
+    finrank_ker_trajectoryOperator (A := fun s ↦ hessianOperator f (γ s))
+      ((hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp hγ.continuous) _ hAL]
 
 /-- **In dimension one the linearized operator is onto exactly when the index drops by one.** On a
 one-dimensional space, let `f` be a `C²` function and `γ` a negative gradient trajectory from a

@@ -70,6 +70,9 @@ states its own hypothesis on `C`.
   `TauCeti.tendsto_fst_nhds_one_of_tendsto_triangleBaseOrbitParameter_atTop`: convergence to the
   broken orbit.
 * `TauCeti.hessianOperator_triangleBasePotential_apply`: the Hessian acts coordinatewise.
+* `TauCeti.isIntegralCurve_triangleBasePotential_iff` and
+  `TauCeti.mem_squareIntegrableSolutions_triangleBasePotential`: the trajectories and their
+  linearized equations split into those of the interval base along the two coordinates.
 * `TauCeti.squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_top`,
   `TauCeti.squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_span_toLp_one_zero`,
   `TauCeti.squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_span_toLp_zero_one`:
@@ -471,9 +474,11 @@ variable {γ : ℝ → WithLp 2 (ℝ × ℝ)}
   {AL : Lp (WithLp 2 (ℝ × ℝ) →L[ℝ] WithLp 2 (ℝ × ℝ)) ∞
     (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
 
-/-- The linearized equation along a trajectory of the triangle base decouples into the linearized
-equations of the interval base along its two coordinates. -/
-private theorem mem_squareIntegrableSolutions_triangleBasePotential {x : WithLp 2 (ℝ × ℝ)} :
+/-- **The linearized equation along a trajectory of the triangle base decouples** into the
+linearized equations of the interval base along its two coordinates: a vector is the initial value
+of a square-integrable linearized solution exactly when each coordinate is one for the
+corresponding coordinate of the trajectory. -/
+theorem mem_squareIntegrableSolutions_triangleBasePotential {x : WithLp 2 (ℝ × ℝ)} :
     x ∈ squareIntegrableSolutions (fun s ↦ hessianOperator (triangleBasePotential C) (γ s)) ↔
       x.fst ∈ squareIntegrableSolutions
           (fun s ↦ hessianOperator (intervalBasePotential C) (γ s).fst) ∧
@@ -483,30 +488,15 @@ private theorem mem_squareIntegrableSolutions_triangleBasePotential {x : WithLp 
     hessianOperator_separatedSum_apply (contDiff_intervalBasePotential C).contDiffAt
       (contDiff_intervalBasePotential C).contDiffAt _
 
-/-- The coordinates of a trajectory of the triangle base are trajectories of the interval base. -/
-private theorem isIntegralCurve_triangleBasePotential_iff :
+/-- **Trajectories of the triangle base** are exactly the curves whose two coordinates are
+trajectories of the interval base. -/
+theorem isIntegralCurve_triangleBasePotential_iff :
     IsIntegralCurve γ (fun _ z ↦ -∇ (triangleBasePotential C) z) ↔
       IsIntegralCurve (fun s ↦ (γ s).fst) (fun _ t ↦ -∇ (intervalBasePotential C) t) ∧
         IsIntegralCurve (fun s ↦ (γ s).snd) (fun _ t ↦ -∇ (intervalBasePotential C) t) :=
   isIntegralCurve_separatedSum_iff
     (fun _ ↦ (contDiff_intervalBasePotential C (n := 1)).differentiable one_ne_zero _)
     (fun _ ↦ (contDiff_intervalBasePotential C (n := 1)).differentiable one_ne_zero _)
-
-private theorem tendsto_fst_of_tendsto {l : Filter ℝ} {a b : ℝ}
-    (h : Tendsto γ l (𝓝 (WithLp.toLp 2 (a, b)))) : Tendsto (fun s ↦ (γ s).fst) l (𝓝 a) :=
-  ((WithLp.fstL 2 ℝ ℝ ℝ).continuous.tendsto _).comp h
-
-private theorem tendsto_snd_of_tendsto {l : Filter ℝ} {a b : ℝ}
-    (h : Tendsto γ l (𝓝 (WithLp.toLp 2 (a, b)))) : Tendsto (fun s ↦ (γ s).snd) l (𝓝 b) :=
-  ((WithLp.sndL 2 ℝ ℝ ℝ).continuous.tendsto _).comp h
-
-/-- A trajectory of the interval base with the same limit at both ends is constant. -/
-private theorem eq_of_tendsto_intervalBasePotential {u : ℝ → ℝ}
-    (hu : IsIntegralCurve u (fun _ t ↦ -∇ (intervalBasePotential C) t)) {c : ℝ}
-    (hbot : Tendsto u atBot (𝓝 c)) (htop : Tendsto u atTop (𝓝 c)) (s : ℝ) : u s = c :=
-  hu.eq_of_tendsto_atBot_of_tendsto_atTop
-    (fun _ ↦ (contDiff_intervalBasePotential C (n := 1)).differentiable one_ne_zero _)
-    (contDiff_intervalBasePotential C (n := 0)).continuous.continuousAt hbot htop s
 
 /-- **Along a source-to-sink orbit every linearized solution decays.** Along a trajectory of the
 triangle base from the source `(0, 0)` to the sink `(1, 1)`, including the diagonal, every solution
@@ -519,14 +509,16 @@ theorem squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_top
     (htop : Tendsto γ atTop (𝓝 (WithLp.toLp 2 (1, 1)))) :
     squareIntegrableSolutions (fun s ↦ hessianOperator (triangleBasePotential C) (γ s)) = ⊤ := by
   obtain ⟨hu, hv⟩ := isIntegralCurve_triangleBasePotential_iff.1 hγ
+  have hubot := ((WithLp.continuous_fst 2 ℝ ℝ).tendsto' _ 0 rfl).comp hbot
+  have hutop := ((WithLp.continuous_fst 2 ℝ ℝ).tendsto' _ 1 rfl).comp htop
+  have hvbot := ((WithLp.continuous_snd 2 ℝ ℝ).tendsto' _ 0 rfl).comp hbot
+  have hvtop := ((WithLp.continuous_snd 2 ℝ ℝ).tendsto' _ 1 rfl).comp htop
   ext x
   simp only [mem_squareIntegrableSolutions_triangleBasePotential, Submodule.mem_top,
     hu.squareIntegrableSolutions_hessianOperator_eq_top (Module.finrank_self ℝ)
-      (contDiff_intervalBasePotential C) (tendsto_fst_of_tendsto hbot)
-      (tendsto_fst_of_tendsto htop) zero_ne_one,
+      (contDiff_intervalBasePotential C) hubot hutop zero_ne_one,
     hv.squareIntegrableSolutions_hessianOperator_eq_top (Module.finrank_self ℝ)
-      (contDiff_intervalBasePotential C) (tendsto_snd_of_tendsto hbot)
-      (tendsto_snd_of_tendsto htop) zero_ne_one, and_self]
+      (contDiff_intervalBasePotential C) hvbot hvtop zero_ne_one, and_self]
 
 /-- **Along the edge `v = 0` the linearized solutions are tangent to the edge.** For `C ≠ 0`, along
 a trajectory of the triangle base from the source `(0, 0)` to the corner `(1, 0)`, the initial
@@ -539,16 +531,18 @@ theorem squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_span_
     squareIntegrableSolutions (fun s ↦ hessianOperator (triangleBasePotential C) (γ s)) =
       ℝ ∙ WithLp.toLp 2 (1, 0) := by
   obtain ⟨hu, hv⟩ := isIntegralCurve_triangleBasePotential_iff.1 hγ
+  have hubot := ((WithLp.continuous_fst 2 ℝ ℝ).tendsto' _ 0 rfl).comp hbot
+  have hutop := ((WithLp.continuous_fst 2 ℝ ℝ).tendsto' _ 1 rfl).comp htop
+  have hvbot := ((WithLp.continuous_snd 2 ℝ ℝ).tendsto' _ 0 rfl).comp hbot
+  have hvtop := ((WithLp.continuous_snd 2 ℝ ℝ).tendsto' _ 0 rfl).comp htop
   -- The second coordinate runs from `0` to `0`, so it stays at `0`.
   have hv0 : (fun s ↦ hessianOperator (intervalBasePotential C) (γ s).snd) =
       fun _ ↦ hessianOperator (intervalBasePotential C) 0 := funext fun s ↦ by
-    rw [eq_of_tendsto_intervalBasePotential hv (tendsto_snd_of_tendsto hbot)
-      (tendsto_snd_of_tendsto htop) s]
+    rw [eq_of_tendsto_intervalBasePotential hv hvbot hvtop s]
   ext x
   rw [mem_squareIntegrableSolutions_triangleBasePotential, hv0,
     hu.squareIntegrableSolutions_hessianOperator_eq_top (Module.finrank_self ℝ)
-      (contDiff_intervalBasePotential C) (tendsto_fst_of_tendsto hbot)
-      (tendsto_fst_of_tendsto htop) zero_ne_one,
+      (contDiff_intervalBasePotential C) hubot hutop zero_ne_one,
     IsNondegenerateCriticalPoint.squareIntegrableSolutions_hessianOperator_eq_bot
       (isNondegenerateCriticalPoint_intervalBasePotential_zero hC),
     Submodule.mem_span_singleton]
@@ -568,16 +562,18 @@ theorem squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_span_
     squareIntegrableSolutions (fun s ↦ hessianOperator (triangleBasePotential C) (γ s)) =
       ℝ ∙ WithLp.toLp 2 (0, 1) := by
   obtain ⟨hu, hv⟩ := isIntegralCurve_triangleBasePotential_iff.1 hγ
+  have hubot := ((WithLp.continuous_fst 2 ℝ ℝ).tendsto' _ 1 rfl).comp hbot
+  have hutop := ((WithLp.continuous_fst 2 ℝ ℝ).tendsto' _ 1 rfl).comp htop
+  have hvbot := ((WithLp.continuous_snd 2 ℝ ℝ).tendsto' _ 0 rfl).comp hbot
+  have hvtop := ((WithLp.continuous_snd 2 ℝ ℝ).tendsto' _ 1 rfl).comp htop
   -- The first coordinate runs from `1` to `1`, so it stays at `1`.
   have hu1 : (fun s ↦ hessianOperator (intervalBasePotential C) (γ s).fst) =
       fun _ ↦ hessianOperator (intervalBasePotential C) 1 := funext fun s ↦ by
-    rw [eq_of_tendsto_intervalBasePotential hu (tendsto_fst_of_tendsto hbot)
-      (tendsto_fst_of_tendsto htop) s]
+    rw [eq_of_tendsto_intervalBasePotential hu hubot hutop s]
   ext x
   rw [mem_squareIntegrableSolutions_triangleBasePotential, hu1,
     hv.squareIntegrableSolutions_hessianOperator_eq_top (Module.finrank_self ℝ)
-      (contDiff_intervalBasePotential C) (tendsto_snd_of_tendsto hbot)
-      (tendsto_snd_of_tendsto htop) zero_ne_one,
+      (contDiff_intervalBasePotential C) hvbot hvtop zero_ne_one,
     IsNondegenerateCriticalPoint.squareIntegrableSolutions_hessianOperator_eq_bot
       (isNondegenerateCriticalPoint_intervalBasePotential_one hC),
     Submodule.mem_span_singleton]
@@ -585,27 +581,6 @@ theorem squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_span_
   · refine (WithLp.ext_iff 2).2 (Prod.ext ?_ ?_) <;> simp [(Submodule.mem_bot ℝ).1 h.1]
   · rintro ⟨a, rfl⟩
     simp
-
-/-- The linearized operator along a trajectory of the triangle base between two vertices is onto
-once the square-integrable solutions have the dimension `ind p - ind q`. -/
-private theorem surjective_trajectoryOperator_triangleBasePotential_of_finrank {p q : ℝ × ℝ}
-    (hp : IsNondegenerateCriticalPoint (triangleBasePotential C) (WithLp.toLp 2 p))
-    (hq : IsNondegenerateCriticalPoint (triangleBasePotential C) (WithLp.toLp 2 q))
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (triangleBasePotential C) z))
-    (hbot : Tendsto γ atBot (𝓝 (WithLp.toLp 2 p))) (htop : Tendsto γ atTop (𝓝 (WithLp.toLp 2 q)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ hessianOperator (triangleBasePotential C) (γ s))
-    (hfin : (Module.finrank ℝ (squareIntegrableSolutions
-        (fun s ↦ hessianOperator (triangleBasePotential C) (γ s))) : ℤ) =
-      morseIndex (triangleBasePotential C) (WithLp.toLp 2 p) -
-        morseIndex (triangleBasePotential C) (WithLp.toLp 2 q)) :
-    Function.Surjective (trajectoryOperator (p := 2) AL) := by
-  have hf := contDiff_triangleBasePotential C (n := 2)
-  rw [hγ.surjective_trajectoryOperator_hessianOperator_iff_finrank_ker hf hp hq hbot htop hAL,
-    finrank_ker_trajectoryOperator
-      (A := fun s ↦ hessianOperator (triangleBasePotential C) (γ s))
-      ((hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp hγ.continuous) _ hAL,
-    hfin]
 
 /-- **The linearized operator along a source-to-sink orbit is onto.** For `C > 0`, along a
 trajectory of the triangle base from the source `(0, 0)` to the sink `(1, 1)`, including the
@@ -618,9 +593,10 @@ theorem surjective_trajectoryOperator_triangleBasePotential_toLp_zero_zero_toLp_
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ hessianOperator (triangleBasePotential C) (γ s)) :
     Function.Surjective (trajectoryOperator (p := 2) AL) := by
-  refine surjective_trajectoryOperator_triangleBasePotential_of_finrank
+  refine (hγ.surjective_trajectoryOperator_hessianOperator_iff_finrank_squareIntegrableSolutions
+    (contDiff_triangleBasePotential C)
     (isNondegenerateCriticalPoint_triangleBasePotential_toLp_zero_zero hC.ne')
-    (isNondegenerateCriticalPoint_triangleBasePotential_toLp_one_one hC.ne') hγ hbot htop hAL ?_
+    (isNondegenerateCriticalPoint_triangleBasePotential_toLp_one_one hC.ne') hbot htop hAL).2 ?_
   rw [squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_top hγ hbot htop,
     finrank_top, morseIndex_triangleBasePotential_toLp_zero_zero hC,
     morseIndex_triangleBasePotential_toLp_one_one hC, (WithLp.linearEquiv 2 ℝ (ℝ × ℝ)).finrank_eq,
@@ -637,9 +613,10 @@ theorem surjective_trajectoryOperator_triangleBasePotential_toLp_zero_zero_toLp_
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ hessianOperator (triangleBasePotential C) (γ s)) :
     Function.Surjective (trajectoryOperator (p := 2) AL) := by
-  refine surjective_trajectoryOperator_triangleBasePotential_of_finrank
+  refine (hγ.surjective_trajectoryOperator_hessianOperator_iff_finrank_squareIntegrableSolutions
+    (contDiff_triangleBasePotential C)
     (isNondegenerateCriticalPoint_triangleBasePotential_toLp_zero_zero hC.ne')
-    (isNondegenerateCriticalPoint_triangleBasePotential_toLp_one_zero hC.ne') hγ hbot htop hAL ?_
+    (isNondegenerateCriticalPoint_triangleBasePotential_toLp_one_zero hC.ne') hbot htop hAL).2 ?_
   rw [squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_span_toLp_one_zero hC.ne'
       hγ hbot htop,
     finrank_span_singleton (by simp), morseIndex_triangleBasePotential_toLp_zero_zero hC,
@@ -656,9 +633,10 @@ theorem surjective_trajectoryOperator_triangleBasePotential_toLp_one_zero_toLp_o
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ hessianOperator (triangleBasePotential C) (γ s)) :
     Function.Surjective (trajectoryOperator (p := 2) AL) := by
-  refine surjective_trajectoryOperator_triangleBasePotential_of_finrank
+  refine (hγ.surjective_trajectoryOperator_hessianOperator_iff_finrank_squareIntegrableSolutions
+    (contDiff_triangleBasePotential C)
     (isNondegenerateCriticalPoint_triangleBasePotential_toLp_one_zero hC.ne')
-    (isNondegenerateCriticalPoint_triangleBasePotential_toLp_one_one hC.ne') hγ hbot htop hAL ?_
+    (isNondegenerateCriticalPoint_triangleBasePotential_toLp_one_one hC.ne') hbot htop hAL).2 ?_
   rw [squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_span_toLp_zero_one hC.ne'
       hγ hbot htop,
     finrank_span_singleton (by simp), morseIndex_triangleBasePotential_toLp_one_zero hC,

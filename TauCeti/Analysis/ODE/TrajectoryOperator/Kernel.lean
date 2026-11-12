@@ -151,7 +151,8 @@ theorem mem_squareIntegrableSolutions_iff_of_apply_eq_toLp
         (WithLp.sndL 2 ℝ F₁ F₂).hasFDerivAt.comp_hasDerivAt s (hv s)
   · rintro ⟨⟨v₁, hv₁0, hv₁, hv₁2⟩, ⟨v₂, hv₂0, hv₂, hv₂2⟩⟩
     let e : F₁ × F₂ →L[ℝ] WithLp 2 (F₁ × F₂) := (WithLp.prodContinuousLinearEquiv 2 ℝ F₁ F₂).symm
-    refine ⟨fun s ↦ WithLp.toLp 2 (v₁ s, v₂ s), by simp [hv₁0, hv₂0]; rfl, fun s ↦ ?_, ?_⟩
+    refine ⟨fun s ↦ WithLp.toLp 2 (v₁ s, v₂ s),
+      (WithLp.ext_iff 2).2 (Prod.ext (by simp [hv₁0]) (by simp [hv₂0])), fun s ↦ ?_, ?_⟩
     · simpa [e, hA, Function.comp_def, ← WithLp.toLp_neg] using
         e.hasFDerivAt.comp_hasDerivAt s ((hv₁ s).prodMk (hv₂ s))
     · -- The pair is the sum of its two components embedded in the product.
