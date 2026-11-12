@@ -92,17 +92,17 @@ private theorem coordinateDeriv_frequencyDeriv (w : List (Fin n)) (j : Fin n)
   filter_upwards [isOpen_compl_singleton.mem_nhds hξ] with η hη
   simp [coefficient_frequencyDeriv _ _ hη, coordinateDeriv_cons]
 
-/-- At a nonzero frequency, a spatial derivative along a word of the spatial derivative
+/-- A spatial derivative along a word of the spatial derivative
 `∂_{x_j} a` is the spatial derivative of `a` along the word extended by `j`. -/
 private theorem coordinateDeriv_spatialDeriv (w : List (Fin n)) (j : Fin n)
-    {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    {x ξ : CoordinateSpace n} :
     coordinateDeriv w
         (fun y ↦ (a.spatialDeriv (EuclideanSpace.single j 1)).coefficient (y, ξ)) x =
       coordinateDeriv (w ++ [j]) (fun y ↦ a.coefficient (y, ξ)) x := by
   rw [coordinateDeriv_append]
   congr 1
   funext y
-  simp [coefficient_spatialDeriv _ _ hξ, coordinateDeriv_cons]
+  simp [coefficient_spatialDeriv _ _, coordinateDeriv_cons]
 
 /-- **Closed form of the composition terms.** At a nonzero frequency, `sharpTerm k b a` is
 `((-i)ᵏ / k!) ∑_{|w| = k} ∂_ξ^w b ∘ ∂_x^w a`, the sum over the words `w` of length `k` in the
@@ -117,7 +117,7 @@ theorem coefficient_sharpTerm (k : ℕ) {x ξ : CoordinateSpace n} (hξ : ξ ≠
   | succ k ih =>
     rw [sharpTerm_succ, coefficient_smul, Pi.smul_apply, coefficient_sum, Finset.sum_apply]
     simp only [coefficient_castDegree, ih, coordinateDeriv_frequencyDeriv _ _ _ hξ,
-      coordinateDeriv_spatialDeriv _ _ _ hξ, Finset.smul_sum, smul_smul]
+      coordinateDeriv_spatialDeriv _ _ _, Finset.smul_sum, smul_smul]
     rw [← (Fin.snocEquiv fun _ ↦ Fin n).sum_comp, Fintype.sum_prod_type]
     refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun w _ ↦ ?_
     simp only [Fin.snocEquiv_apply, List.ofFn_succ', Fin.snoc_castSucc, Fin.snoc_last,
