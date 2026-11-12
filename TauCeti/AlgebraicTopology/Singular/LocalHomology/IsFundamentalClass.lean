@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Equiv.SpanSingleton
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 
 /-!
@@ -13,9 +14,10 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 Let `M` be a space, `R` a ring and `N` an `R`-module. A class `μ` of the singular homology
 `Hₙ(M; N)` is a *fundamental class* (`TauCeti.IsFundamentalClass`) when, for every point `x` of
 `M`, its image in the local homology `Hₙ(M, M ∖ {x}; N)` generates that `R`-module. The image is
-the quotient map `Hₙ(M; N) ⟶ Hₙ(M, M ∖ M; N)` followed by restriction to `{x}`. With `N = R` this
-is the notion of an `R`-fundamental class of Hatcher, p.236: for a topological `n`-manifold the
-local homology at each point is a copy of `R`, and the image of `μ` must be a generator there.
+`TauCeti.singularHomologyToLocalHomology`, the quotient map `Hₙ(M; N) ⟶ Hₙ(M, M ∖ M; N)` followed
+by restriction to `{x}`. With `N = R` this is the notion of an `R`-fundamental class of Hatcher,
+p.236: for a topological `n`-manifold the local homology at each point is a copy of `R`, and the
+image of `μ` must be a generator there.
 
 The predicate needs no orientation datum, which is what closed-manifold duality over an arbitrary
 commutative ring consumes. The integral fundamental class `o.fundamentalClass hn` of an oriented
@@ -29,14 +31,19 @@ one, are fundamental classes in this sense.
 
 ## Main results
 
-* `TauCeti.isFundamentalClass_iff_isUnit_of_linearEquiv`: for local homology identified with a
-  commutative ring `R` at every point, `μ` is a fundamental class exactly when each of its local
+* `TauCeti.isFundamentalClass_smul_iff_of_isUnit`: multiplying by a unit preserves fundamental
+  classes.
+* `TauCeti.isFundamentalClass_iff_isUnit_of_linearEquiv`: for local homology identified with the
+  coefficient ring `R` at every point, `μ` is a fundamental class exactly when each of its local
   coordinates is a unit of `R`.
 * `TauCeti.isFundamentalClass_of_subsingleton`: over the zero ring every class is fundamental.
 * `TauCeti.not_isFundamentalClass_zero`: on a nonempty `n`-manifold with nontrivial coefficients,
-  the zero class is not fundamental.
-* `TauCeti.isFundamentalClass_iff_ne_zero`: over a field, on a compact connected manifold, the
-  fundamental classes are exactly the nonzero top-dimensional classes.
+  the zero class of `Hₙ(M; N)` is not fundamental.
+* `TauCeti.IsFundamentalClass.isFundamentalClass_smul_iff`: on a nonempty `n`-manifold with
+  faithful coefficients over a commutative ring, `r • μ` is fundamental for a fundamental class
+  `μ` exactly when `r` is a unit.
+* `TauCeti.isFundamentalClass_iff_ne_zero`: over a division ring, on a compact connected manifold,
+  the fundamental classes are exactly the nonzero top-dimensional classes.
 * `TauCeti.isFundamentalClass_iff_forall_isLocalOrientation`: with integral coefficients, `μ` is a
   fundamental class exactly when its image at each point is a local orientation.
 * `TauCeti.HomologicalOrientation.isFundamentalClass_fundamentalClass`: the integral fundamental
@@ -47,10 +54,6 @@ one, are fundamental classes in this sense.
   circle, the image of `2 • [S¹]` at each point is twice a generator.
 * `TauCeti.HomologicalOrientation.isFundamentalClass_rationalFundamentalClass`: the rational
   fundamental class of a compact connected oriented manifold is a fundamental class.
-
-For a finite discrete space (a `0`-manifold), `isFundamentalClass_iff_isUnit_of_linearEquiv` says
-that a class of `H₀(M; R)` is fundamental exactly when its coordinate at every point is a unit:
-over `ℤ` on two points, `(u₁, u₂)` is fundamental exactly when `u₁, u₂ = ±1`, and `(1, 0)` is not.
 
 ## References
 
@@ -72,23 +75,6 @@ section Definition
 
 variable {M : Type w} [TopologicalSpace M] {R : Type u} [Ring R] {N : ModuleCat.{w} R} {n : ℕ}
 
-variable (N) in
-/-- The map `Hₙ(M; N) → Hₙ(M, M ∖ {x}; N)` from the singular homology of `M` to its local
-homology at `x`: the quotient map to `Hₙ(M, M ∖ M; N)` followed by restriction to `{x}`. -/
-def singularHomologyToLocalHomology (x : M) (n : ℕ) :
-    ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R) →ₗ[R]
-      (localHomology N ({x} : Set M) n : ModuleCat.{w} R) :=
-  ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ (C := ModuleCat.{w} R) N n ≫
-    localHomologyRestriction N (subset_univ {x}) n).hom
-
-theorem singularHomologyToLocalHomology_apply (x : M)
-    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)) :
-    singularHomologyToLocalHomology N x n μ =
-      localHomologyRestriction N (subset_univ {x}) n
-        (((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
-          (C := ModuleCat.{w} R) N n).hom μ) :=
-  (rfl)
-
 /-- **Fundamental classes with coefficients.** A class `μ` of `Hₙ(M; N)` is a *fundamental class*
 when, for every point `x` of `M`, its image in the local homology `Hₙ(M, M ∖ {x}; N)` generates
 that `R`-module. The image is the quotient map to `Hₙ(M, M ∖ M; N)` followed by restriction to
@@ -104,12 +90,18 @@ theorem isFundamentalClass_iff
       ∀ x : M, Submodule.span R {singularHomologyToLocalHomology N x n μ} = ⊤ :=
   Iff.rfl
 
+/-- Multiplying a class by a unit of `R` does not change whether it is fundamental. -/
+theorem isFundamentalClass_smul_iff_of_isUnit {r : R} (hr : IsUnit r)
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)} :
+    IsFundamentalClass (r • μ) ↔ IsFundamentalClass μ := by
+  simp only [isFundamentalClass_iff, map_smul, Submodule.span_singleton_smul_eq hr]
+
 /-- A class is fundamental exactly when its negative is. -/
 @[simp]
 theorem isFundamentalClass_neg_iff
     {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)} :
     IsFundamentalClass (-μ) ↔ IsFundamentalClass μ := by
-  simp only [isFundamentalClass_iff, map_neg, ← Set.neg_singleton, Submodule.span_neg]
+  rw [← neg_one_smul R μ, isFundamentalClass_smul_iff_of_isUnit isUnit_one.neg]
 
 /-- **Over the zero ring every class is fundamental**: every module over it is trivial. -/
 theorem isFundamentalClass_of_subsingleton [Subsingleton R]
@@ -119,34 +111,17 @@ theorem isFundamentalClass_of_subsingleton [Subsingleton R]
   have := Module.subsingleton R (localHomology N ({x} : Set M) n : ModuleCat.{w} R)
   exact Subsingleton.elim _ _
 
-/-- An element of a module identified with a commutative ring `R` generates it exactly when its
-coordinate is a unit. -/
-private theorem span_singleton_eq_top_iff_isUnit {R P : Type*} [CommRing R] [AddCommGroup P]
-    [Module R P] (e : P ≃ₗ[R] R) (v : P) :
-    Submodule.span R {v} = ⊤ ↔ IsUnit (e v) := by
-  rw [Submodule.span_singleton_eq_top_iff]
-  refine ⟨fun h ↦ ?_, fun h w ↦ ⟨e w * ↑h.unit⁻¹, e.injective ?_⟩⟩
-  · obtain ⟨r, hr⟩ := h (e.symm 1)
-    exact IsUnit.of_mul_eq_one_right r (by simpa using congrArg e hr)
-  · rw [map_smul, smul_eq_mul, mul_assoc, IsUnit.val_inv_mul, mul_one]
-
-end Definition
-
-section CommRing
-
-variable {M : Type w} [TopologicalSpace M] {R : Type u} [CommRing R] {N : ModuleCat.{w} R} {n : ℕ}
-
 /-- **Fundamental classes through local coordinates.** If the local homology `Hₙ(M, M ∖ {x}; N)`
-is identified with the commutative ring `R` at every point, a class is fundamental exactly when its
-coordinate at every point is a unit. For a finite discrete space and `n = 0`, this says that a
-class of `H₀(M; R)` is fundamental exactly when each of its entries is a unit. -/
-theorem isFundamentalClass_iff_isUnit_of_linearEquiv
+is identified with the ring `R` at every point, a class is fundamental exactly when its coordinate
+at every point is a unit. Over a noncommutative ring this needs every left inverse to be a
+two-sided inverse. -/
+theorem isFundamentalClass_iff_isUnit_of_linearEquiv [IsDedekindFiniteMonoid R]
     (e : ∀ x : M, (localHomology N ({x} : Set M) n : ModuleCat.{w} R) ≃ₗ[R] R)
     (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)) :
     IsFundamentalClass μ ↔ ∀ x : M, IsUnit (e x (singularHomologyToLocalHomology N x n μ)) :=
-  forall_congr' fun x ↦ span_singleton_eq_top_iff_isUnit (e x) _
+  forall_congr' fun x ↦ (e x).span_singleton_eq_top_iff_isUnit
 
-end CommRing
+end Definition
 
 section Manifold
 
@@ -154,9 +129,9 @@ variable {M E : Type w} [TopologicalSpace M] [NormedAddCommGroup E] [NormedSpace
   [FiniteDimensional ℝ E] [ChartedSpace E M] {n : ℕ} (hn : finrank ℝ E = n)
 
 include hn in
-/-- **The zero class is not fundamental** on a nonempty manifold with nontrivial coefficients: the
-local homology at a point is then a nontrivial copy of the coefficients, which `0` does not
-generate. -/
+/-- **The zero class is not fundamental** in the top degree `n` of a nonempty `n`-manifold with
+nontrivial coefficients: the local homology `Hₙ(M, M ∖ {x}; N)` at a point is then a nontrivial
+copy of the coefficients, which `0 ∈ Hₙ(M; N)` does not generate. -/
 theorem not_isFundamentalClass_zero [T1Space M] [Nonempty M] {R : Type u} [Ring R]
     (N : ModuleCat.{w} R) [Nontrivial N] :
     ¬ IsFundamentalClass (0 : ((TopCat.toSSet.obj (TopCat.of M)).homology N n :
@@ -172,38 +147,50 @@ theorem not_isFundamentalClass_zero [T1Space M] [Nonempty M] {R : Type u} [Ring 
   exact bot_ne_top hx
 
 include hn in
-/-- On a compact connected manifold, a top-dimensional class is determined by its image in the
-local homology at any one point. -/
-private theorem localHomologyRestriction_singularHomologyπ_injective [T2Space M] [CompactSpace M]
-    [ConnectedSpace M] {Λ : Type w} [Ring Λ] (N : ModuleCat.{w} Λ) (x : M) :
-    Function.Injective (singularHomologyToLocalHomology N x n) := by
-  have : IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).snd := by
-    simp only [compl_univ]
-    exact inferInstanceAs (IsEmpty (∅ : Set M))
-  have hπ : IsIso ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
-      (C := ModuleCat.{w} Λ) N n) := inferInstance
-  exact (localHomologySystemCone_π_app_injective N hn (FundamentalGroupoid.mk x)).comp
-    ((ConcreteCategory.isIso_iff_bijective _).1 hπ).1
+/-- **Multiples of a fundamental class.** On a nonempty `n`-manifold, with faithful coefficients
+`N` over a commutative ring `R`, a multiple `r • μ` of a fundamental class `μ ∈ Hₙ(M; N)` is a
+fundamental class exactly when `r` is a unit. If some `s` carries the image of `r • μ` at a point
+back to the image of `μ`, then `s * r` acts trivially on the local homology there, which is a copy
+of `N`, so `s * r = 1`. -/
+theorem IsFundamentalClass.isFundamentalClass_smul_iff [T1Space M] [Nonempty M] {R : Type u}
+    [CommRing R] {N : ModuleCat.{w} R} [FaithfulSMul R N]
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)}
+    (hμ : IsFundamentalClass μ) (r : R) : IsFundamentalClass (r • μ) ↔ IsUnit r := by
+  refine ⟨fun h ↦ ?_, fun hr ↦ (isFundamentalClass_smul_iff_of_isUnit hr).2 hμ⟩
+  subst hn
+  obtain ⟨x⟩ := ‹Nonempty M›
+  have hv := (isFundamentalClass_iff μ).1 hμ x
+  have hrv := (isFundamentalClass_iff _).1 h x
+  rw [map_smul] at hrv
+  obtain ⟨s, hs⟩ := Submodule.mem_span_singleton.1
+    (hrv.symm ▸ Submodule.mem_top : singularHomologyToLocalHomology N x _ μ ∈ _)
+  -- `s * r` fixes the image of `μ`, hence every multiple of it, that is every local class.
+  have hsr (z : (localHomology N ({x} : Set M) (finrank ℝ E) : ModuleCat.{w} R)) :
+      (s * r) • z = z := by
+    obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.1 (hv.symm ▸ Submodule.mem_top : z ∈ _)
+    rw [smul_comm (s * r) t, mul_smul, hs]
+  let e := (singularHomologyComplSingletonFinrankIso N (chartAt E x)
+    (mem_chart_source E x)).toLinearEquiv
+  refine IsUnit.of_mul_eq_one_right s (FaithfulSMul.eq_of_smul_eq_smul fun y : N ↦ ?_)
+  rw [one_smul, ← e.apply_symm_apply y, ← map_smul, hsr]
 
 include hn in
-/-- **Fundamental classes over a field.** On a nonempty compact connected `n`-manifold, a class of
-`Hₙ(M; K)` is a fundamental class exactly when it is nonzero: its image at each point is then a
-nonzero element of the one-dimensional local homology. -/
+/-- **Fundamental classes over a division ring.** On a nonempty compact connected `n`-manifold, a
+class of `Hₙ(M; K)` is a fundamental class exactly when it is nonzero: its image at each point is
+then a nonzero element of the one-dimensional local homology. -/
 theorem isFundamentalClass_iff_ne_zero [T2Space M] [CompactSpace M] [ConnectedSpace M]
-    {K : Type w} [Field K]
+    {K : Type w} [DivisionRing K]
     (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of K K) n : ModuleCat.{w} K)) :
     IsFundamentalClass μ ↔ μ ≠ 0 := by
   have : Nonempty M := ConnectedSpace.toNonempty
-  refine ⟨fun h hμ ↦ not_isFundamentalClass_zero hn (ModuleCat.of K K) (hμ ▸ h),
-    fun hμ ↦ (isFundamentalClass_iff μ).2 fun x ↦ ?_⟩
-  have himg := (localHomologyRestriction_singularHomologyπ_injective hn (ModuleCat.of K K) x).ne
-    hμ
-  rw [map_zero] at himg
+  refine ⟨fun h hμ ↦ not_isFundamentalClass_zero hn (ModuleCat.of K K) (hμ ▸ h), fun hμ ↦ ?_⟩
   subst hn
-  let e := (singularHomologyComplSingletonFinrankIso (ModuleCat.of K K) (chartAt E x)
-    (mem_chart_source E x)).toLinearEquiv
-  rw [span_singleton_eq_top_iff_isUnit e, isUnit_iff_ne_zero]
-  exact e.map_ne_zero_iff.2 himg
+  rw [isFundamentalClass_iff_isUnit_of_linearEquiv fun x ↦
+    (singularHomologyComplSingletonFinrankIso (ModuleCat.of K K) (chartAt E x)
+      (mem_chart_source E x)).toLinearEquiv]
+  refine fun x ↦ isUnit_iff_ne_zero.2 ((LinearEquiv.map_ne_zero_iff _).2 ?_)
+  rw [← map_zero (singularHomologyToLocalHomology (ModuleCat.of K K) x _)]
+  exact (singularHomologyToLocalHomology_injective _ rfl x).ne hμ
 
 end Manifold
 
@@ -240,25 +227,13 @@ theorem isFundamentalClass_fundamentalClass : IsFundamentalClass (o.fundamentalC
     exact (o x).property
 
 /-- **Multiples of the fundamental class.** On a nonempty compact oriented manifold, `c • [M]` is
-a fundamental class exactly when `c` is a unit, that is `c = ±1`: its image at `x` is `c • o x`,
-and `o x` has infinite order. -/
+a fundamental class exactly when `c` is a unit, that is `c = ±1`. -/
 theorem isFundamentalClass_zsmul_fundamentalClass_iff [Nonempty M] (c : ℤ) :
     IsFundamentalClass (c • o.fundamentalClass hn) ↔ IsUnit c := by
-  have himg (x : M) : singularHomologyToLocalHomology _ x n (c • o.fundamentalClass hn) =
-      c • (o x).val := by
-    rw [map_zsmul, singularHomologyToLocalHomology_apply,
-      o.localHomologyRestriction_singularHomologyπ_fundamentalClass hn x]
-  simp only [isFundamentalClass_iff_forall_isLocalOrientation, himg]
-  refine ⟨fun h ↦ ?_, fun hc x ↦ ?_⟩
-  · obtain ⟨x⟩ := ‹Nonempty M›
-    obtain ⟨d, hd⟩ := (isLocalOrientation_iff _ _ _).1 (h x) (o x).val
-    rw [smul_smul] at hd
-    exact IsUnit.of_mul_eq_one_right d
-      (o.zsmul_left_injective hn x (show (d * c) • (o x).val = (1 : ℤ) • (o x).val by
-        rw [one_smul]; exact hd))
-  · rcases Int.isUnit_iff.1 hc with rfl | rfl
-    · simpa using (o x).property
-    · simpa using (o x).property.neg
+  have : FaithfulSMul ℤ (ULift.{0} ℤ) :=
+    ⟨fun h ↦ by simpa using congrArg ULift.down (h 1)⟩
+  rw [← int_smul_eq_zsmul]
+  exact (o.isFundamentalClass_fundamentalClass hn).isFundamentalClass_smul_iff hn c
 
 /-- **Twice the fundamental class is not a fundamental class** on a nonempty compact oriented
 manifold, for instance the circle: its image at each point is twice a generator of `ℤ`. -/
