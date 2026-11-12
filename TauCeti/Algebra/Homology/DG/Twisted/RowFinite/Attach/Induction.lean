@@ -231,9 +231,9 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
       (fun x ↦ by have := hdc₀ x.1; rwa [x.2] at this) hQ
   -- The new rows and images on `G`: the old ones below stage `n`, the attached ones at stage `n`.
   let m' : G → G →₀ A := fun x ↦
-    if hx : st x < n then m x else if hx' : st x = n then mapDomain Subtype.val (a ⟨x, hx'⟩) else 0
+    if st x < n then m x else if hx' : st x = n then mapDomain Subtype.val (a ⟨x, hx'⟩) else 0
   let c' : G → M := fun x ↦
-    if hx : st x < n then c x else if hx' : st x = n then cQ ⟨x, hx'⟩ else 0
+    if st x < n then c x else if hx' : st x = n then cQ ⟨x, hx'⟩ else 0
   have hm'P (x : P) : m' x.1 = m x.1 := by simp [m', x.2]
   have hc'P (x : P) : c' x.1 = c x.1 := by simp [c', x.2]
   have hm'Q (x : Q) : m' x.1 = mapDomain Subtype.val (a x) := by
@@ -252,7 +252,7 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
   have hφ : Function.Injective φ := Subtype.val_injective.sumElim Subtype.val_injective
     fun x y hxy ↦ by
       have h₁ := x.2
-      have h₂ := y.2
+      have := y.2
       simp only [hxy] at h₁
       omega
   have hDφ (f : P ⊕ Q →₀ A) : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m' (mapDomain φ f) =
