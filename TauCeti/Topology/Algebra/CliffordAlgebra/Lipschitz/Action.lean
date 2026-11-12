@@ -20,8 +20,8 @@ automorphism group.
 
 Joint continuity holds over a commutative base ring when the quadratic space carries its module
 topology and multiplication in the Clifford algebra is continuous. Over a topological field, the
-representation is continuous when the quadratic space is finite-dimensional and carries its module
-topology.
+representation is continuous whenever the quadratic space is finite-dimensional, with no topology
+required on it.
 
 ## Main results
 
