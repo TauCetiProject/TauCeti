@@ -1,0 +1,54 @@
+{
+  "schema": "tauceti-ci.source-candidate/v2",
+  "source": {
+    "forge": {
+      "kind": "forgejo",
+      "url": "https://git.taucetiproject.org"
+    },
+    "name": "TauCetiProject/TauCeti",
+    "id": 1
+  },
+  "execution": {
+    "forge": {
+      "kind": "github",
+      "url": "https://github.com"
+    },
+    "name": "TauCetiProject/TauCeti",
+    "id": 1256881326
+  },
+  "credential_origin": {
+    "kind": "forgejo",
+    "url": "https://git.taucetiproject.org"
+  },
+  "workflow": ".github/workflows/source-candidate.yml",
+  "harness": {
+    "forge": {
+      "kind": "github",
+      "url": "https://github.com"
+    },
+    "name": "TauCetiProject/TauCetiTools",
+    "id": 1426390374
+  },
+  "harness_revision": "de7633dd55b5fb6e596b69c0f4345f3e82322640",
+  "base_branch": "main",
+  "execution_branch": "main",
+  "require_publication": true,
+  "member_sources": [
+    {
+      "forge": {
+        "kind": "github",
+        "url": "https://github.com"
+      },
+      "name": "TauCetiProject/TauCeti",
+      "id": 1256881326
+    },
+    {
+      "forge": {
+        "kind": "forgejo",
+        "url": "https://git.taucetiproject.org"
+      },
+      "name": "TauCetiProject/TauCeti",
+      "id": 1
+    }
+  ]
+}

@@ -130,8 +130,6 @@ theorem variance_id_chiMeasure (hk : 0 ≤ k) (hs : 0 < s) :
 theorem integral_id_chiMeasure_pos (hk : 0 < k) (hs : 0 < s) :
     0 < ∫ x, x ∂chiMeasure k s := by
   rw [integral_id_chiMeasure hk.le hs]
-  have h1 : 0 < Real.Gamma ((k + 1) / 2) := Real.Gamma_pos_of_pos (by positivity)
-  have h2 : 0 < Real.Gamma (k / 2) := Real.Gamma_pos_of_pos (by positivity)
   positivity
 
 /-- The chi mean is nonnegative in every parameter regime. -/
@@ -246,7 +244,7 @@ theorem integrable_exp_mul_id_chiMeasure (k s t : ℝ) :
     filter_upwards [ae_pos_gammaMeasure (k / 2) (1 / 2)] with x hx
     rw [Real.norm_eq_abs, abs_of_pos (exp_pos _), ← exp_add]
     apply exp_le_exp.2
-    have hsq := sq_nonneg (t * s - √x / 2)
+    have _ := sq_nonneg (t * s - √x / 2)
     have hsqrt := sq_sqrt hx.le
     nlinarith
 

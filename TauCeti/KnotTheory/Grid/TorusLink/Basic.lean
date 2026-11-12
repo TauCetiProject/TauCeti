@@ -31,10 +31,9 @@ Everything else in the name "torus link" is informal motivation and is *not* est
 file: that the staircase traversal is the closure of the `(p + 1)`-strand braid winding `q + 1`
 times around, hence the `(p + 1, q + 1)` torus link — of which the classical component count is
 indeed `gcd (p + 1) (q + 1)`, matching the count proved here — and, in the same vein, the
-readings of the members above as the unknot, the Hopf link, and the trefoil. As the roadmap's
-standing convention has it, a link *is* a grid diagram modulo grid moves at this stage, and the
-comparison with other presentations of a link belongs to the separate reconciliation lane; until
-that lane runs, the classical names are labels for these diagrams, not theorems about them.
+readings of the members above as the unknot, the Hopf link, and the trefoil. Here a link *is* a
+grid diagram modulo grid moves (`TauCeti.GridLink`), and no comparison with other presentations of
+a link is made; the classical names are labels for these diagrams, not theorems about them.
 
 ## Main definitions
 
@@ -59,10 +58,9 @@ that lane runs, the classical names are labels for these diagrams, not theorems 
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.1, "Grid diagrams and
-grid states", and supplies the family of diagrams that Lane G.7 needs for `τ(T_{p,q})` and the
-Milnor conjecture, together with the `5 × 5` trefoil grid named in the acceptance criteria. The
-diagram follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+These diagrams are the input for the grid homology computation of `τ(T_{p,q})` and the Milnor
+conjecture. The diagram follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
+Chapter 3.
 -/
 
 public section
