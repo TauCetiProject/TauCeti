@@ -13,26 +13,31 @@ import Mathlib.RingTheory.TotallySplit
 /-!
 # The frame algebra of a finite étale algebra is a torsor
 
-Let `S` be a finite étale `R`-algebra of constant rank `n` and `ι` a type with `n` elements. The
-frame algebra `TauCeti.Algebra.FrameAlgebra R S ι`, the ring of functions on the `ι`-tuples of
-pairwise distinct points of `Spec S` over `Spec R`, is a finite étale `Perm ι`-torsor over `R`
+Let `S` be an `R`-algebra which becomes split of rank `|ι|` after a faithfully flat extension
+`R → T`, that is `T ⊗[R] S ≃ₐ[T] (ι → T)`. Then the frame algebra
+`TauCeti.Algebra.FrameAlgebra R S ι` of `ι`-tuples of pairwise distinct points of `Spec S` is a
+finite étale `Equiv.Perm ι`-torsor over `R`
+(`TauCeti.Algebra.FrameAlgebra.isFiniteEtaleTorsor_of_algEquiv_pi`).
+
+Indeed, forming frame algebras commutes with base change
+(`TauCeti.Algebra.FrameAlgebra.baseChangeEquiv`), so `T ⊗[R] FrameAlgebra R S ι` is the frame
+algebra of the split algebra `ι → T`, which is the trivial torsor `Equiv.Perm ι → T`
+(`TauCeti.Algebra.FrameAlgebra.permEquiv`); being a torsor descends along faithfully flat
+extensions (`TauCeti.Algebra.IsFiniteEtaleTorsor.of_baseChange_algEquiv_pi`).
+
+Every finite étale algebra `S` of constant rank `Fintype.card ι` is split by a faithfully flat
+finite étale extension (Mathlib's `Algebra.IsFiniteSplit.exists_tensorProduct_of_etale`), so its
+frame algebra is a finite étale `Perm ι`-torsor
 (`TauCeti.Algebra.FrameAlgebra.isFiniteEtaleTorsor`). It is the ring-theoretic Galois closure of
 `S`: for a finite separable field extension `L / K` of degree `n` with Galois closure `M`, it is a
-product of copies of `M`.
-
-The proof is faithfully flat descent. After a faithfully flat finite étale base change `R → T`
-the algebra splits, `T ⊗[R] S ≃ₐ[T] (ι → T)` (Mathlib's
-`Algebra.IsFiniteSplit.exists_tensorProduct_of_etale`). The frame algebra commutes with base change
-(`TauCeti.Algebra.FrameAlgebra.baseChangeEquiv`), and the frame algebra of the split algebra
-`ι → T` is the trivial torsor `Perm ι → T` (`TauCeti.Algebra.FrameAlgebra.permEquiv`). Both
-identifications are equivariant, so `TauCeti.Algebra.IsFiniteEtaleTorsor.of_baseChange_algEquiv_pi`
-applies.
-The splitting cover is stated for `S` in the universe of `R`. A finite algebra is isomorphic to
-one in that universe (`Shrink`), and the frame algebra is invariant under isomorphisms
-(`TauCeti.Algebra.FrameAlgebra.congr`), so the result holds for `S` in any universe.
+product of copies of `M`. The splitting cover is stated for `S` in the universe of `R`. A finite
+algebra is isomorphic to one in that universe (`Shrink`), and the frame algebra is invariant under
+isomorphisms (`TauCeti.Algebra.FrameAlgebra.congr`), so the result holds for `S` in any universe.
 
 ## Main results
 
+* `TauCeti.Algebra.FrameAlgebra.isFiniteEtaleTorsor_of_algEquiv_pi`: the frame algebra of an
+  algebra split by a faithfully flat extension is a finite étale `Perm ι`-torsor.
 * `TauCeti.Algebra.FrameAlgebra.isFiniteEtaleTorsor`: the frame algebra of a finite étale algebra
   of constant rank `Fintype.card ι` is a finite étale `Perm ι`-torsor.
 
@@ -50,9 +55,32 @@ open scoped TensorProduct
 
 universe u
 
-namespace TauCeti.Algebra.FrameAlgebra
+namespace TauCeti.Algebra
 
-attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction
+namespace FrameAlgebra
+
+section LocallySplit
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Algebra.EssFiniteType R S]
+  [Algebra.FormallyUnramified R S] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
+/-- **The frame algebra of a locally split algebra is a torsor.** If `S` becomes isomorphic to the
+split algebra `ι → T` after a faithfully flat extension `R → T`, then the frame algebra of
+`ι`-tuples of pairwise distinct points of `Spec S` is a finite étale `Equiv.Perm ι`-torsor
+over `R`. -/
+theorem isFiniteEtaleTorsor_of_algEquiv_pi (T : Type*) [CommRing T] [Algebra R T]
+    [Module.FaithfullyFlat R T] (e : T ⊗[R] S ≃ₐ[T] (ι → T)) :
+    IsFiniteEtaleTorsor (Equiv.Perm ι) R (FrameAlgebra R S ι) :=
+  IsFiniteEtaleTorsor.of_baseChange_algEquiv_pi T
+    (((baseChangeEquiv R S T ι).trans (congr ι e)).trans (permEquiv T ι)) fun σ x τ ↦ by
+      have hσ : MulSemiringAction.toAlgHom R (FrameAlgebra R S ι) σ =
+          (permAlgEquiv R S ι σ).toAlgHom :=
+        AlgHom.ext (smul_def σ)
+      simp only [AlgEquiv.trans_apply, Algebra.TensorProduct.rightMulSemiringAction_smul_def, hσ,
+        baseChangeEquiv_map_permAlgEquiv, congr_smul, permEquiv_smul]
+
+end LocallySplit
 
 /-- `TauCeti.Algebra.FrameAlgebra.isFiniteEtaleTorsor` for `R` and `S` in the same universe, in
 which Mathlib's splitting cover `Algebra.IsFiniteSplit.exists_tensorProduct_of_etale` applies. -/
@@ -68,14 +96,8 @@ private theorem isFiniteEtaleTorsor_aux {R S : Type u} [CommRing R] [CommRing S]
   obtain rfl : m = Fintype.card ι := by
     simpa using f.toLinearEquiv.finrank_eq.symm.trans
       (TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq h)
-  -- Over `T`, the frame algebra is that of the split algebra `ι → T`, the trivial torsor.
-  let g : T ⊗[R] S ≃ₐ[T] (ι → T) :=
-    f.trans (AlgEquiv.piCongrLeft' T (fun _ ↦ T) (Fintype.equivFin ι).symm)
-  refine .of_baseChange_algEquiv_pi T
-    ((baseChangeEquiv R S ι T).trans ((FrameAlgebra.congr ι g).trans (permEquiv T ι)))
-    fun σ x τ ↦ ?_
-  rw [AlgEquiv.trans_apply, AlgEquiv.trans_apply, baseChangeEquiv_smul, congr_smul, permEquiv_smul,
-    AlgEquiv.trans_apply, AlgEquiv.trans_apply]
+  exact isFiniteEtaleTorsor_of_algEquiv_pi T
+    (f.trans (AlgEquiv.piCongrLeft' T (fun _ ↦ T) (Fintype.equivFin ι).symm))
 
 /-- **The frame algebra is a torsor.** For a finite étale `R`-algebra `S` of constant rank
 `Fintype.card ι`, the frame algebra of `ι`-tuples of pairwise distinct points of `S` is a finite
@@ -94,4 +116,6 @@ theorem isFiniteEtaleTorsor {R : Type u} {S : Type*} [CommRing R] [CommRing S] [
     ((Module.rankAtStalk_eq_of_equiv e.toLinearEquiv).trans h)
   exact .of_algEquiv (FrameAlgebra.congr ι e) (FrameAlgebra.congr_smul e)
 
-end TauCeti.Algebra.FrameAlgebra
+end FrameAlgebra
+
+end TauCeti.Algebra

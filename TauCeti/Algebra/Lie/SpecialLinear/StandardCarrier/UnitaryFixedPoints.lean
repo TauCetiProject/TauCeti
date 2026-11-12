@@ -78,12 +78,10 @@ than the identity.
 * D. Gorenstein, R. Lyons and R. Solomon, *The Classification of the Finite Simple Groups*, for the
   small-field convention that indexes the twisted type-`A` family by `q` rather than by `q ^ 2`.
 
-This advances the "points over an algebraically closed field" target of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, by describing the group of points fixed by the induced
-endomorphism the previous file constructed. Its consumer is milestone L3 of
-`TauCetiRoadmap/CFSGStatement/README.md`, which sets `H_d = fixedSubgroup d.steinberg` with
-`d.steinberg` the map `γ₂ ∘ Frob_q` of milestone L1 on the `²A` branch; the equation proved here is
-what lets a reader of that branch see which matrices `H_d` contains.
+This describes the group of points fixed by the endomorphism constructed in
+`TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.TwistedFrobenius`. The twisted family
+`²A_r(q)` is read from the fixed subgroup of the Steinberg map `γ ∘ Frob_q`, and the equation proved
+here says which matrices that subgroup contains.
 -/
 
 public section

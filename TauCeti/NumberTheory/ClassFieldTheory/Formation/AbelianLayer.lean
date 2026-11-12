@@ -69,8 +69,6 @@ class-field correspondences directly in terms of their abelian Galois groups.
 
 public noncomputable section
 
--- Formalization source: `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
-
 /-! ### Abelian layers -/
 
 namespace OpenNormalSubgroup

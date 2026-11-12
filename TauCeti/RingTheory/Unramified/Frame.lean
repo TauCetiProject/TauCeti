@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import TauCeti.Algebra.TensorProduct.BaseChange
 public import TauCeti.RingTheory.Etale.PiTensorProduct
-public import TauCeti.RingTheory.PiTensorProduct.BaseChange
 public import TauCeti.RingTheory.PiTensorProduct.Equiv
 public import TauCeti.RingTheory.Unramified.Diagonal
 import Mathlib.Data.Fintype.EquivFin
@@ -36,17 +34,16 @@ algebra of functions on the embeddings `ι ↪ κ`, with `σ` acting by precompo
 (`TauCeti.Algebra.FrameAlgebra.piEquiv`). For `κ = ι` it is the function algebra on `Perm ι`
 with right translation, the trivial `Perm ι`-torsor (`TauCeti.Algebra.FrameAlgebra.permEquiv`).
 
-The construction is natural: an isomorphism `S ≃ₐ[R] S'` induces an isomorphism of frame
-algebras (`TauCeti.Algebra.FrameAlgebra.congr`), and the frame algebra commutes with base change
-along any `R`-algebra `T` (`TauCeti.Algebra.FrameAlgebra.baseChangeEquiv`), compatibly with the
-permutation actions. Both rest on the invariance of the diagonal idempotent under isomorphisms and
-base change.
+Forming frame algebras commutes with base change: for an `R`-algebra `T`, the frame algebra of
+`T ⊗[R] S` over `T` is `T ⊗[R] FrameAlgebra R S ι`, compatibly with the permutation actions
+(`TauCeti.Algebra.FrameAlgebra.baseChangeEquiv`). It is also functorial in isomorphisms of `S`
+(`TauCeti.Algebra.FrameAlgebra.congr`). Both rest on the transport of the idempotents `δᵢⱼ` and `ε`
+along maps whose image spans the target, such as `S → T ⊗[R] S`.
 
-For `S` finite étale of constant rank `n` and `ι = Fin n`, the frame algebra is a finite étale
-`Perm (Fin n)`-torsor over `R`, the ring-theoretic Galois closure of `S`
-(`TauCeti.Algebra.FrameAlgebra.isFiniteEtaleTorsor`, in `TauCeti.RingTheory.Etale.Torsor.Frame`).
-A faithfully flat finite étale base change makes `S` split, and the computation in this file is the
-split model of that torsor.
+For `S` finite étale of constant rank `n` and `ι = Fin n`, the frame algebra is the standard
+candidate for a finite étale `Perm (Fin n)`-torsor over `R` splitting `S`, the ring-theoretic
+Galois closure of `S`. A faithfully flat base change making `S` split turns it into the split
+model computed in this file.
 
 ## Main definitions
 
@@ -55,9 +52,8 @@ split model of that torsor.
 * `TauCeti.Algebra.FrameAlgebra R S ι`: the frame algebra, with its action of `Equiv.Perm ι`.
 * `TauCeti.Algebra.FrameAlgebra.piEquiv`, `TauCeti.Algebra.FrameAlgebra.permEquiv`: the frame
   algebra of a split algebra.
+* `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv`: base change of the frame algebra.
 * `TauCeti.Algebra.FrameAlgebra.congr`: the frame algebras of isomorphic algebras are isomorphic.
-* `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv`: the base change of the frame algebra of `S` along
-  `T` is the frame algebra of `T ⊗[R] S` over `T`.
 
 ## Main results
 
@@ -70,11 +66,10 @@ split model of that torsor.
   of a finite étale algebra is finite étale.
 * `TauCeti.Algebra.FrameAlgebra.piEquiv_smul`, `TauCeti.Algebra.FrameAlgebra.permEquiv_smul`:
   equivariance of the split computation.
-* `TauCeti.Algebra.FrameAlgebra.congr_smul`,
-  `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv_smul`: equivariance of the isomorphism
-  invariance and of the base change.
-* `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv_map_congr`: compatibility of the base change with
-  the isomorphism invariance.
+* `TauCeti.Algebra.map_tensorPowDiagonal_of_span_range_eq_top`,
+  `TauCeti.Algebra.map_distinctIdempotent_of_span_range_eq_top`: transport of `δᵢⱼ` and `ε`.
+* `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv_map_permAlgEquiv`,
+  `TauCeti.Algebra.FrameAlgebra.congr_smul`: equivariance of base change and of `congr`.
 
 ## References
 
@@ -149,17 +144,6 @@ theorem permAlgEquiv_tensorPowDiagonal (σ : Equiv.Perm ι) (i j : ι) :
   rw [← AlgEquiv.coe_toAlgHom, map_tensorPowDiagonal]
   congr 2 <;> exact AlgHom.ext fun a ↦ permAlgEquiv_singleAlgHom σ _ a
 
-/-- Applying an algebra isomorphism `e : S ≃ₐ[R] S'` in every slot sends `δᵢⱼ` to `δᵢⱼ`. -/
-@[simp]
-theorem congrAlgEquiv_tensorPowDiagonal {S' : Type*} [CommRing S'] [Algebra R S']
-    [Algebra.EssFiniteType R S'] [Algebra.FormallyUnramified R S'] (e : S ≃ₐ[R] S') (i j : ι) :
-    PiTensorProduct.congrAlgEquiv (fun _ : ι ↦ e) (tensorPowDiagonal R S i j) =
-      tensorPowDiagonal R S' i j := by
-  rw [← AlgEquiv.coe_toAlgHom, map_tensorPowDiagonal, tensorPowDiagonal,
-    ← FormallyUnramified.map_elem e, ← AlgHom.comp_apply]
-  congr 1
-  exact Algebra.TensorProduct.ext' fun a b ↦ by simp
-
 end Diagonal
 
 section Distinct
@@ -218,14 +202,6 @@ theorem permAlgEquiv_distinctIdempotent (σ : Equiv.Perm ι) :
   refine Finset.prod_equiv (σ.prodCongr σ) (fun p ↦ ?_) fun p _ ↦ ?_
   · simp [Finset.mem_offDiag, σ.injective.ne_iff]
   · simp
-
-/-- Applying an algebra isomorphism `e : S ≃ₐ[R] S'` in every slot sends `ε` to `ε`. -/
-@[simp]
-theorem congrAlgEquiv_distinctIdempotent {S' : Type*} [CommRing S'] [Algebra R S']
-    [Algebra.EssFiniteType R S'] [Algebra.FormallyUnramified R S'] (e : S ≃ₐ[R] S') :
-    PiTensorProduct.congrAlgEquiv (fun _ : ι ↦ e) (distinctIdempotent R S ι) =
-      distinctIdempotent R S' ι := by
-  simp [distinctIdempotent, map_prod]
 
 end Distinct
 
@@ -352,6 +328,141 @@ instance finite [Module.Finite R S] : Module.Finite R (FrameAlgebra R S ι) :=
 
 end FrameAlgebra
 
+section Transport
+
+variable {R S}
+variable {T S' : Type*} [CommRing T] [Algebra R T] [CommRing S'] [Algebra T S'] [Algebra R S']
+  [IsScalarTower R T S'] [Algebra.EssFiniteType T S'] [Algebra.FormallyUnramified T S']
+
+section Diagonal
+
+variable {ι : Type*} [DecidableEq ι]
+
+/-- An algebra map `φ` between tensor powers acting on every factor through an algebra map
+`f : S → S'` whose image spans `S'` over `T`, such as base change or a surjection, carries the
+idempotent `δᵢⱼ` to `δᵢⱼ`. -/
+theorem map_tensorPowDiagonal_of_span_range_eq_top (f : S →ₐ[R] S')
+    (hf : Submodule.span T (Set.range f) = ⊤) (φ : (⨂[R] _ : ι, S) →ₐ[R] ⨂[T] _ : ι, S')
+    (hφ : ∀ k, φ.comp (singleAlgHom k) = ((singleAlgHom k).restrictScalars R).comp f) (i j : ι) :
+    φ (tensorPowDiagonal R S i j) = tensorPowDiagonal T S' i j := by
+  -- Both sides are images of the diagonal idempotent of `S` under maps agreeing on `a ⊗ b`.
+  have h : Algebra.TensorProduct.productMap (((singleAlgHom i).restrictScalars R).comp f)
+      (((singleAlgHom j).restrictScalars R).comp f) =
+      ((Algebra.TensorProduct.productMap (singleAlgHom (R := T) (A := fun _ : ι ↦ S') i)
+        (singleAlgHom j)).restrictScalars R).comp
+        (Algebra.TensorProduct.productMap
+          ((Algebra.TensorProduct.includeLeft (R := T) (S := R) (B := S')).comp f)
+          (((Algebra.TensorProduct.includeRight (R := T) (A := S')).restrictScalars R).comp f)) :=
+    Algebra.TensorProduct.ext' fun a b ↦ by simp
+  rw [map_tensorPowDiagonal, hφ, hφ, tensorPowDiagonal, ← FormallyUnramified.productMap_elem f hf]
+  exact DFunLike.congr_fun h _
+
+/-- An algebra map `φ` between tensor powers acting on every factor through an algebra map
+`f : S → S'` whose image spans `S'` over `T` carries the idempotent `ε` of tuples of distinct
+points to `ε`. -/
+theorem map_distinctIdempotent_of_span_range_eq_top [Fintype ι] (f : S →ₐ[R] S')
+    (hf : Submodule.span T (Set.range f) = ⊤) (φ : (⨂[R] _ : ι, S) →ₐ[R] ⨂[T] _ : ι, S')
+    (hφ : ∀ k, φ.comp (singleAlgHom k) = ((singleAlgHom k).restrictScalars R).comp f) :
+    φ (distinctIdempotent R S ι) = distinctIdempotent T S' ι := by
+  simp only [distinctIdempotent_def, map_prod, map_sub, map_one,
+    map_tensorPowDiagonal_of_span_range_eq_top f hf φ hφ]
+
+end Diagonal
+
+section BaseChange
+
+variable (T) (ι : Type*) [Fintype ι] [DecidableEq ι]
+
+/-- Base change carries the idempotent `ε` of tuples of distinct points of `S` to that of
+`T ⊗[R] S`. -/
+theorem baseChangeAlgEquiv_one_tmul_distinctIdempotent :
+    PiTensorProduct.baseChangeAlgEquiv T (fun _ : ι ↦ S) (1 ⊗ₜ distinctIdempotent R S ι) =
+      distinctIdempotent T (T ⊗[R] S) ι := by
+  -- `T ⊗[R] S` is spanned over `T` by the `1 ⊗ s`.
+  have hspan : Submodule.span T (Set.range
+      (Algebra.TensorProduct.includeRight : S →ₐ[R] T ⊗[R] S)) = ⊤ := by
+    have h := Submodule.baseChange_span (R := R) T (Set.univ : Set S)
+    rw [Submodule.span_univ, Submodule.baseChange_top, Set.image_univ] at h
+    exact h.symm
+  exact map_distinctIdempotent_of_span_range_eq_top _ hspan
+    (((PiTensorProduct.baseChangeAlgEquiv (R := R) T fun _ : ι ↦ S).toAlgHom.restrictScalars
+      R).comp Algebra.TensorProduct.includeRight)
+    fun k ↦ AlgHom.ext fun a ↦ by simp [-PiTensorProduct.singleAlgHom_apply]
+
+variable (R S) in
+/-- Base change of the frame algebra: the frame algebra of `T ⊗[R] S` over `T` is the base change
+of the frame algebra of `S` over `R`. -/
+noncomputable def FrameAlgebra.baseChangeEquiv :
+    T ⊗[R] FrameAlgebra R S ι ≃ₐ[T] FrameAlgebra T (T ⊗[R] S) ι :=
+  (Algebra.TensorProduct.tensorQuotientEquiv T (⨂[R] _ : ι, S) T _).trans <|
+    Ideal.quotientEquivAlg _ _ (PiTensorProduct.baseChangeAlgEquiv T fun _ ↦ S) <| by
+      rw [Ideal.map_span, Ideal.map_span, Set.image_singleton, Set.image_singleton, map_sub,
+        map_one, Algebra.TensorProduct.includeRight_apply, RingHom.coe_coe, map_sub, map_one,
+        baseChangeAlgEquiv_one_tmul_distinctIdempotent]
+
+variable {T ι}
+
+/-- `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` sends `t ⊗ [x]` to the class of the base change
+of `t ⊗ x`. -/
+@[simp]
+theorem FrameAlgebra.baseChangeEquiv_tmul_mk (t : T) (x : ⨂[R] _ : ι, S) :
+    FrameAlgebra.baseChangeEquiv R S T ι (t ⊗ₜ Ideal.Quotient.mk _ x) =
+      Ideal.Quotient.mk _ (PiTensorProduct.baseChangeAlgEquiv T (fun _ ↦ S) (t ⊗ₜ x)) := (rfl)
+
+/-- `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` is equivariant for the permutations of the
+slots, acting on `T ⊗[R] FrameAlgebra R S ι` through the right factor. -/
+theorem FrameAlgebra.baseChangeEquiv_map_permAlgEquiv (σ : Equiv.Perm ι)
+    (y : T ⊗[R] FrameAlgebra R S ι) :
+    FrameAlgebra.baseChangeEquiv R S T ι
+        (Algebra.TensorProduct.map (AlgHom.id T T) (permAlgEquiv R S ι σ).toAlgHom y) =
+      σ • FrameAlgebra.baseChangeEquiv R S T ι y := by
+  induction y using TensorProduct.inductionOn with
+  | tmul t z =>
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective z
+    rw [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, AlgEquiv.coe_toAlgHom, ← smul_def,
+      smul_mk, baseChangeEquiv_tmul_mk, baseChangeEquiv_tmul_mk, smul_mk,
+      ← PiTensorProduct.baseChangeAlgEquiv_map_permAlgEquiv, Algebra.TensorProduct.map_tmul,
+      AlgHom.id_apply, AlgEquiv.coe_toAlgHom]
+  | add y z hy hz => simp only [map_add, hy, hz, smul_def]
+
+end BaseChange
+
+end Transport
+
+section Congr
+
+variable {R S}
+variable {S' : Type*} [CommRing S'] [Algebra R S'] [Algebra.EssFiniteType R S']
+  [Algebra.FormallyUnramified R S'] (ι : Type*) [Fintype ι] [DecidableEq ι]
+
+/-- An isomorphism `S ≃ₐ[R] S'` induces an isomorphism of frame algebras, applying it to every
+slot. -/
+noncomputable def FrameAlgebra.congr (e : S ≃ₐ[R] S') :
+    FrameAlgebra R S ι ≃ₐ[R] FrameAlgebra R S' ι :=
+  Ideal.quotientEquivAlg _ _ (PiTensorProduct.congrAlgEquiv fun _ ↦ e) <| by
+    have hspan : Submodule.span R (Set.range e.toAlgHom) = ⊤ := by
+      rw [AlgEquiv.coe_toAlgHom, e.surjective.range_eq, Submodule.span_univ]
+    rw [Ideal.map_span, Set.image_singleton, RingHom.coe_coe, map_sub, map_one,
+      ← AlgEquiv.coe_toAlgHom, map_distinctIdempotent_of_span_range_eq_top _ hspan _
+        fun k ↦ AlgHom.ext fun a ↦ by simp]
+
+variable {ι}
+
+/-- `TauCeti.Algebra.FrameAlgebra.congr e` sends the class of `x` to the class of `x` with `e`
+applied to every slot. -/
+@[simp]
+theorem FrameAlgebra.congr_mk (e : S ≃ₐ[R] S') (x : ⨂[R] _ : ι, S) :
+    FrameAlgebra.congr ι e (Ideal.Quotient.mk _ x) =
+      Ideal.Quotient.mk _ (PiTensorProduct.congrAlgEquiv (fun _ ↦ e) x) := (rfl)
+
+/-- `TauCeti.Algebra.FrameAlgebra.congr e` is equivariant for the permutations of the slots. -/
+theorem FrameAlgebra.congr_smul (e : S ≃ₐ[R] S') (σ : Equiv.Perm ι) (y : FrameAlgebra R S ι) :
+    FrameAlgebra.congr ι e (σ • y) = σ • FrameAlgebra.congr ι e y := by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
+  rw [smul_mk, congr_mk, congr_mk, smul_mk, PiTensorProduct.congrAlgEquiv_permAlgEquiv]
+
+end Congr
+
 section Split
 
 variable {κ : Type*} [Finite κ]
@@ -475,170 +586,5 @@ theorem FrameAlgebra.permEquiv_smul (σ : Equiv.Perm ι) (y : FrameAlgebra R (ι
   rw [permEquiv_apply, permEquiv_apply, piEquiv_smul, Equiv.Perm.mul_def, Equiv.trans_toEmbedding]
 
 end Split
-
-section Congr
-
-variable {R S ι} {S' : Type*} [CommRing S'] [Algebra R S'] [Algebra.EssFiniteType R S']
-  [Algebra.FormallyUnramified R S']
-
-variable (ι) in
-/-- The frame algebra is invariant under isomorphisms: an `R`-algebra isomorphism
-`e : S ≃ₐ[R] S'` induces an isomorphism of frame algebras, applying `e` in every slot. -/
-noncomputable def FrameAlgebra.congr (e : S ≃ₐ[R] S') :
-    FrameAlgebra R S ι ≃ₐ[R] FrameAlgebra R S' ι :=
-  Ideal.quotientEquivAlg _ _ (PiTensorProduct.congrAlgEquiv fun _ ↦ e) <| by
-    rw [Ideal.map_span, Set.image_singleton, RingHom.coe_coe, map_sub, map_one,
-      congrAlgEquiv_distinctIdempotent]
-
-/-- `TauCeti.Algebra.FrameAlgebra.congr e` sends the class of `x` to the class of `x` with `e`
-applied in every slot. -/
-@[simp]
-theorem FrameAlgebra.congr_mk (e : S ≃ₐ[R] S') (x : ⨂[R] _ : ι, S) :
-    FrameAlgebra.congr ι e (Ideal.Quotient.mk _ x) =
-      Ideal.Quotient.mk _ (PiTensorProduct.congrAlgEquiv (fun _ ↦ e) x) := by
-  rw [FrameAlgebra.congr, Ideal.quotientEquivAlg_mk]
-
-/-- `TauCeti.Algebra.FrameAlgebra.congr` commutes with the action of the permutations of the
-slots. -/
-theorem FrameAlgebra.congr_smul (e : S ≃ₐ[R] S') (σ : Equiv.Perm ι) (y : FrameAlgebra R S ι) :
-    FrameAlgebra.congr ι e (σ • y) = σ • FrameAlgebra.congr ι e y := by
-  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-  rw [smul_mk, congr_mk, congr_mk, smul_mk, PiTensorProduct.congrAlgEquiv_permAlgEquiv]
-
-omit [Algebra.EssFiniteType R S'] [Algebra.FormallyUnramified R S'] in
-/-- The identity of `S` induces the identity of the frame algebra. -/
-@[simp]
-theorem FrameAlgebra.congr_refl : FrameAlgebra.congr ι (AlgEquiv.refl : S ≃ₐ[R] S) = .refl :=
-  AlgEquiv.ext fun y ↦ by
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [congr_mk, PiTensorProduct.congrAlgEquiv_refl, AlgEquiv.coe_refl, id_eq,
-      AlgEquiv.coe_refl, id_eq]
-
-/-- The inverse of `TauCeti.Algebra.FrameAlgebra.congr ι e` is induced by the inverse of `e`. -/
-@[simp]
-theorem FrameAlgebra.congr_symm (e : S ≃ₐ[R] S') :
-    (FrameAlgebra.congr ι e).symm = FrameAlgebra.congr ι e.symm :=
-  AlgEquiv.ext fun y ↦ by
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [AlgEquiv.symm_apply_eq, congr_mk, congr_mk, ← PiTensorProduct.congrAlgEquiv_symm,
-      AlgEquiv.apply_symm_apply]
-
-/-- `TauCeti.Algebra.FrameAlgebra.congr` sends a composite of isomorphisms to the composite of the
-induced isomorphisms. -/
-theorem FrameAlgebra.congr_trans {S'' : Type*} [CommRing S''] [Algebra R S'']
-    [Algebra.EssFiniteType R S''] [Algebra.FormallyUnramified R S''] (e : S ≃ₐ[R] S')
-    (e' : S' ≃ₐ[R] S'') :
-    FrameAlgebra.congr ι (e.trans e') = (FrameAlgebra.congr ι e).trans (FrameAlgebra.congr ι e') :=
-  AlgEquiv.ext fun y ↦ by
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [AlgEquiv.trans_apply, congr_mk, congr_mk, congr_mk, PiTensorProduct.congrAlgEquiv_trans,
-      AlgEquiv.trans_apply]
-
-end Congr
-
-section BaseChange
-
-variable {R S ι} (T : Type*) [CommRing T] [Algebra R T]
-
-omit [Fintype ι] in
-/-- Base change sends `t ⊗ δᵢⱼ` to `t • δᵢⱼ`: the locus where the points in the slots `i` and `j`
-agree pulls back to the corresponding locus for `T ⊗[R] S` over `T`. -/
-@[simp]
-theorem baseChangeAlgEquiv_tmul_tensorPowDiagonal [Finite ι] (t : T) (i j : ι) :
-    PiTensorProduct.baseChangeAlgEquiv T (fun _ : ι ↦ S) (t ⊗ₜ[R] tensorPowDiagonal R S i j) =
-      t • tensorPowDiagonal T (T ⊗[R] S) i j := by
-  rw [TensorProduct.tmul_eq_smul_one_tmul t, map_smul, ← AlgEquiv.toAlgHom_apply,
-    ← AlgHom.liftEquiv_symm_apply (R := R), map_tensorPowDiagonal, tensorPowDiagonal,
-    FormallyUnramified.productMap_elem_baseChange]
-  congr 3 <;> exact AlgHom.ext fun a ↦
-    PiTensorProduct.baseChangeAlgEquiv_tmul_singleAlgHom T (fun _ ↦ S) 1 _ a
-
-/-- Base change sends `t ⊗ ε` to `t • ε`: the locus of tuples of pairwise distinct points pulls
-back to the corresponding locus for `T ⊗[R] S` over `T`. -/
-@[simp]
-theorem baseChangeAlgEquiv_tmul_distinctIdempotent (t : T) :
-    PiTensorProduct.baseChangeAlgEquiv T (fun _ : ι ↦ S) (t ⊗ₜ[R] distinctIdempotent R S ι) =
-      t • distinctIdempotent T (T ⊗[R] S) ι := by
-  rw [TensorProduct.tmul_eq_smul_one_tmul t, map_smul, ← AlgEquiv.toAlgHom_apply,
-    ← AlgHom.liftEquiv_symm_apply (R := R), distinctIdempotent, map_prod, distinctIdempotent]
-  congr 1
-  refine Finset.prod_congr rfl fun p _ ↦ ?_
-  rw [map_sub, map_one, AlgHom.liftEquiv_symm_apply, AlgEquiv.toAlgHom_apply,
-    baseChangeAlgEquiv_tmul_tensorPowDiagonal, one_smul]
-
-variable (R S ι) in
-/-- The frame algebra commutes with base change: for an `R`-algebra `T`, the base change of the
-frame algebra of `S` is the frame algebra of `T ⊗[R] S` over `T`. Geometrically, the `ι`-tuples of
-pairwise distinct points of `Spec S` over `Spec R` pull back to those of `Spec (T ⊗[R] S)` over
-`Spec T`. -/
-noncomputable def FrameAlgebra.baseChangeEquiv :
-    T ⊗[R] FrameAlgebra R S ι ≃ₐ[T] FrameAlgebra T (T ⊗[R] S) ι :=
-  (Algebra.TensorProduct.tensorQuotientEquiv T (⨂[R] _ : ι, S) T _).trans <|
-    Ideal.quotientEquivAlg _ _ (PiTensorProduct.baseChangeAlgEquiv T fun _ ↦ S) <| by
-      rw [Ideal.map_span, Ideal.map_span, Set.image_singleton, Set.image_singleton]
-      simp [TensorProduct.tmul_sub, ← Algebra.TensorProduct.one_def]
-
-/-- `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` sends `t ⊗ x` to the class of the base change
-of `t ⊗ x` to the tensor power of `T ⊗[R] S` over `T`. -/
-@[simp]
-theorem FrameAlgebra.baseChangeEquiv_tmul_mk (t : T) (x : ⨂[R] _ : ι, S) :
-    FrameAlgebra.baseChangeEquiv R S ι T (t ⊗ₜ Ideal.Quotient.mk _ x) =
-      Ideal.Quotient.mk _ (PiTensorProduct.baseChangeAlgEquiv T (fun _ ↦ S) (t ⊗ₜ x)) := by
-  rw [baseChangeEquiv, AlgEquiv.trans_apply, Algebra.TensorProduct.tensorQuotientEquiv_apply_tmul,
-    Ideal.quotientEquivAlg_mk]
-
-/-- The inverse of `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` sends the class of `y` to the
-image of the inverse base change of `y` under the quotient map in the right factor. -/
-@[simp]
-theorem FrameAlgebra.baseChangeEquiv_symm_mk (y : ⨂[T] _ : ι, (T ⊗[R] S)) :
-    (FrameAlgebra.baseChangeEquiv R S ι T).symm (Ideal.Quotient.mk _ y) =
-      Algebra.TensorProduct.map (AlgHom.id T T) (Ideal.Quotient.mkₐ R _)
-        ((PiTensorProduct.baseChangeAlgEquiv T fun _ ↦ S).symm y) := by
-  rw [AlgEquiv.symm_apply_eq]
-  obtain ⟨z, rfl⟩ := (PiTensorProduct.baseChangeAlgEquiv T fun _ ↦ S).surjective y
-  rw [AlgEquiv.symm_apply_apply]
-  induction z using TensorProduct.inductionOn with
-  | tmul t x =>
-    rw [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, Ideal.Quotient.mkₐ_eq_mk,
-      baseChangeEquiv_tmul_mk]
-  | add x y hx hy => simp only [map_add, hx, hy]
-
-attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
-/-- `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` is equivariant, for the permutations acting on
-`T ⊗[R] FrameAlgebra R S ι` through the right factor: permuting the slots of the frame algebra of
-`S` and then extending scalars is extending scalars and then permuting the slots of the frame
-algebra of `T ⊗[R] S`. -/
-theorem FrameAlgebra.baseChangeEquiv_smul (σ : Equiv.Perm ι) (x : T ⊗[R] FrameAlgebra R S ι) :
-    FrameAlgebra.baseChangeEquiv R S ι T (σ • x) = σ • FrameAlgebra.baseChangeEquiv R S ι T x := by
-  induction x using TensorProduct.inductionOn with
-  | tmul t y =>
-    obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [Algebra.TensorProduct.rightMulSemiringAction_smul_tmul, smul_mk, baseChangeEquiv_tmul_mk,
-      baseChangeEquiv_tmul_mk, smul_mk]
-    congr 1
-    exact PiTensorProduct.baseChangeAlgEquiv_map_permAlgEquiv T σ (t ⊗ₜ y)
-  | add x y hx hy =>
-    simp only [Algebra.TensorProduct.rightMulSemiringAction_smul_def, smul_def, map_add] at hx hy ⊢
-    rw [hx, hy]
-
-/-- `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` commutes with the isomorphisms of frame
-algebras induced by an isomorphism `e : S ≃ₐ[R] S'` and by its base change. -/
-theorem FrameAlgebra.baseChangeEquiv_map_congr {S' : Type*} [CommRing S'] [Algebra R S']
-    [Algebra.EssFiniteType R S'] [Algebra.FormallyUnramified R S'] (e : S ≃ₐ[R] S')
-    (x : T ⊗[R] FrameAlgebra R S ι) :
-    FrameAlgebra.baseChangeEquiv R S' ι T
-        (Algebra.TensorProduct.map (AlgHom.id T T) (FrameAlgebra.congr ι e).toAlgHom x) =
-      FrameAlgebra.congr ι (Algebra.TensorProduct.congr (AlgEquiv.refl : T ≃ₐ[T] T) e)
-        (FrameAlgebra.baseChangeEquiv R S ι T x) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul t y =>
-    obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, AlgEquiv.toAlgHom_apply, congr_mk,
-      baseChangeEquiv_tmul_mk, baseChangeEquiv_tmul_mk, congr_mk]
-    exact congrArg _ (PiTensorProduct.baseChangeAlgEquiv_map_congrAlgEquiv T (fun _ ↦ S) (fun _ ↦ e)
-      (t ⊗ₜ y))
-  | add x y hx hy => simp only [map_add, hx, hy]
-
-end BaseChange
 
 end TauCeti.Algebra

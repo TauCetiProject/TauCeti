@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.Distribution.FourierMultiplier
+public import Mathlib.Analysis.Distribution.Support
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 
 /-!
 # Fourier multipliers with Schwartz symbols on `Lᵖ` functions
@@ -34,8 +36,9 @@ functions are not dense and the multiplier cannot be obtained by extension from 
 
 This is the form in which frequency-localized functions are handled: a function whose Fourier
 transform is supported in a ball is reproduced by a multiplier whose symbol is a bump function
-equal to one on that ball, so that it is a convolution with a fixed Schwartz kernel. Bernstein's
-inequalities are derived this way.
+equal to one on that ball, so that it is a convolution with a fixed Schwartz kernel
+(`TemperedDistribution.ae_eq_fourierInv_convolution_of_isVanishingOn`). Bernstein's inequalities
+are derived this way.
 
 ## Main declarations
 
@@ -45,6 +48,8 @@ inequalities are derived this way.
   `Lᵠ` function `𝓕⁻ σ ⋆ f`, with `‖T_σ f‖_q ≤ ‖𝓕⁻ σ‖_r ‖f‖_p`.
 * `TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le`: the case `q = p`, `r = 1`,
   `‖T_σ f‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p`.
+* `TemperedDistribution.ae_eq_fourierInv_convolution_of_isVanishingOn`: the reproducing formula
+  `f = 𝓕⁻ σ ⋆ f` when `σ` equals one near the spectrum of `f`.
 
 ## References
 
@@ -202,5 +207,22 @@ theorem exists_fourierMultiplierCLM_eq_and_norm_le (σ : 𝓢(E, ℂ))
     exact (𝓕⁻ σ).continuous.aestronglyMeasurable
   rw [eLpNorm_one_eq_lintegral_enorm hK, ← integral_norm_eq_lintegral_enorm hK] at hgf
   exact ⟨g, hg, hgf⟩
+
+/-- **The reproducing formula for frequency-localized functions.** If the Fourier transform of
+`f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, vanishes on `s`, and the Schwartz symbol `σ` equals one outside a closed
+subset of `s` (that is, `tsupport (σ - 1) ⊆ s`), then `f` agrees almost everywhere with its
+convolution with the kernel `𝓕⁻ σ`. -/
+theorem ae_eq_fourierInv_convolution_of_isVanishingOn {f : Lp F p (volume : Measure E)}
+    {s : Set E} (hf : Distribution.IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) s)
+    {σ : 𝓢(E, ℂ)} (hσ : tsupport (⇑σ - 1) ⊆ s) :
+    f =ᵐ[volume] 𝓕⁻ (σ : E → ℂ) ⋆[lsmul ℂ ℂ] (f : E → F) := by
+  obtain ⟨g, hg, hgc, -⟩ :=
+    exists_fourierMultiplierCLM_toTemperedDistribution_eq σ f (q := p) le_rfl
+      (by rw [inv_one, add_comm])
+  rw [fourierMultiplierCLM_eq_self_of_isVanishingOn hf σ.hasTemperateGrowth hσ] at hg
+  have hfg : f = g := LinearMap.ker_eq_bot.mp (Lp.ker_toTemperedDistributionCLM_eq_bot (F := F)
+    (μ := (volume : Measure E)) (p := p)) hg
+  subst hfg
+  exact hgc
 
 end TemperedDistribution

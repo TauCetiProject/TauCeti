@@ -75,12 +75,10 @@ exclusion of `D̃₄` that `TauCeti.not_isFiniteType_affineD₄` gets from the d
 
 ## References
 
-This file supplies the fork half of the "chain/fork length constraints" step of the classification
-of finite-type Cartan matrices, Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See
-J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, step (7), where
-the inequality `1/p + 1/q + 1/r > 1` is obtained from the same linear weighting of the arms, and
-Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
+This file supplies the fork half of the chain and fork length constraints of the classification of
+finite-type Cartan matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, §11.4, step (7), where the inequality `1/p + 1/q + 1/r > 1` is obtained from the same
+linear weighting of the arms, and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
 -/
 
 public section
