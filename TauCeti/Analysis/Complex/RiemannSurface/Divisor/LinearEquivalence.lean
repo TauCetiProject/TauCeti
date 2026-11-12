@@ -77,8 +77,8 @@ private theorem meromorphicOrderAt_finitePart_eq {D E : WeilDivisor X}
     meromorphicOrderAt (f.toMul : MeromorphicFunction X).finitePart x =
       ((D x - E x : ℤ) : WithTop ℤ) := by
   rw [← MeromorphicFunction.order_apply,
-    ← MeromorphicFunction.coe_coeff_principalDivisor_orderSystem, hf]
-  rfl
+    ← MeromorphicFunction.coe_coeff_principalDivisor_orderSystem, hf, WeilDivisor.coeff,
+    Finsupp.sub_apply]
 
 /-- If the principal divisor of `f` is `D - E`, multiplication by `f` identifies the divisor
 sheaves `𝒪(D) ≅ 𝒪(E)`. Sections are normalized after multiplication. -/
@@ -89,6 +89,19 @@ def divisorSheafIsoOfPrincipalDivisorEq {D E : WeilDivisor X}
   divisorSheafGlobalMulIso D E (f.toMul : MeromorphicFunction X).finitePart
     (fun x ↦ (f.toMul : MeromorphicFunction X).meromorphicAt_finitePart x)
     (meromorphicOrderAt_finitePart_eq f hf)
+
+/-- `divisorSheafIsoOfPrincipalDivisorEq` multiplies a section by the finite part of `f`, fills
+removable singularities and sets the values at the allowed poles of `E` to zero. -/
+theorem divisorSheafIsoOfPrincipalDivisorEq_hom_app {D E : WeilDivisor X}
+    (f : Additive (MeromorphicFunction X)ˣ)
+    (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - E) (U : Opens X)
+    (s : (divisorSheaf D).obj.obj (op U)) :
+    (divisorSheafSectionsEquiv E U
+        ((divisorSheafIsoOfPrincipalDivisorEq f hf).hom.hom.app (op U) s)).1 =
+      fun y : U ↦ if E y ≤ 0 then affineChart (sphereMap
+        ((f.toMul : MeromorphicFunction X).finitePart *
+          Subtype.val.extend (divisorSheafSectionsEquiv D U s).1 0) y) else 0 :=
+  divisorSheafGlobalMulIso_hom_app _ _ _ U s
 
 /-- On a punctured neighbourhood of each point, `divisorSheafIsoOfPrincipalDivisorEq` sends a
 section `s` of `𝒪(D)` to `f s`. -/
@@ -123,14 +136,6 @@ def divisorSheafIsoSubPrincipalDivisor (D : WeilDivisor X)
       divisorSheaf (D - (MeromorphicFunction.orderSystem X).principalDivisor f) :=
   divisorSheafIsoOfPrincipalDivisorEq f (sub_sub_cancel D _).symm
 
-/-- `divisorSheafIsoSubPrincipalDivisor` is the multiplication isomorphism for the divisor
-identity `(f) = D - (D - (f))`. -/
-theorem divisorSheafIsoSubPrincipalDivisor_eq (D : WeilDivisor X)
-    (f : Additive (MeromorphicFunction X)ˣ) :
-    divisorSheafIsoSubPrincipalDivisor D f =
-      divisorSheafIsoOfPrincipalDivisorEq f (sub_sub_cancel D _).symm :=
-  (rfl)
-
 /-- **Linearly equivalent divisors have isomorphic divisor sheaves.** The isomorphism is
 multiplication by a chosen meromorphic function whose principal divisor is `D - E`. -/
 def divisorSheafIsoOfLinearlyEquivalent {D E : WeilDivisor X}
@@ -149,7 +154,7 @@ theorem exists_divisorSheafIsoOfLinearlyEquivalent_eq {D E : WeilDivisor X}
   ⟨_, _, rfl⟩
 
 /-- Linearly equivalent divisors have global section spaces of the same dimension. -/
-theorem finrank_divisorSheaf_eq_of_linearlyEquivalent {D E : WeilDivisor X}
+theorem finrank_divisorSheaf_globalSections_eq_of_linearlyEquivalent {D E : WeilDivisor X}
     (h : (MeromorphicFunction.orderSystem X).LinearlyEquivalent D E) :
     Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) =
       Module.finrank ℂ ((divisorSheaf E).obj.obj (op ⊤)) :=
@@ -210,8 +215,8 @@ the multiplication isomorphism of divisor sheaves. -/
 def divisorCechCohomologyIsoOfLinearlyEquivalent {D E : WeilDivisor X}
     (h : (MeromorphicFunction.orderSystem X).LinearlyEquivalent D E) (n : ℕ) :
     divisorCechCohomology D n ≅ divisorCechCohomology E n :=
-  (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).mapIso
-    ((sheafToPresheaf _ _).mapIso (divisorSheafIsoOfLinearlyEquivalent h))
+  divisorCechCohomologyIsoOfPrincipalDivisorEq _
+    ((OrderSystem.linearlyEquivalent_iff_exists_principalDivisor _).mp h).choose_spec n
 
 /-- The cohomology isomorphism of linearly equivalent divisors is induced by the sheaf
 isomorphism. -/
@@ -221,7 +226,17 @@ theorem divisorCechCohomologyIsoOfLinearlyEquivalent_hom {D E : WeilDivisor X}
     (divisorCechCohomologyIsoOfLinearlyEquivalent h n).hom =
       (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
         (divisorSheafIsoOfLinearlyEquivalent h).hom.hom :=
-  (rfl)
+  divisorCechCohomologyIsoOfPrincipalDivisorEq_hom _ _ n
+
+/-- The inverse cohomology isomorphism of linearly equivalent divisors is induced by the inverse
+sheaf isomorphism. -/
+@[simp]
+theorem divisorCechCohomologyIsoOfLinearlyEquivalent_inv {D E : WeilDivisor X}
+    (h : (MeromorphicFunction.orderSystem X).LinearlyEquivalent D E) (n : ℕ) :
+    (divisorCechCohomologyIsoOfLinearlyEquivalent h n).inv =
+      (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+        (divisorSheafIsoOfLinearlyEquivalent h).inv.hom :=
+  divisorCechCohomologyIsoOfPrincipalDivisorEq_inv _ _ n
 
 /-- In degree `0` the cohomology isomorphism of linearly equivalent divisors is the sheaf
 isomorphism on global sections. -/
@@ -232,7 +247,7 @@ theorem cechCohomologyZeroIso_hom_comp_divisorCechCohomologyIsoOfLinearlyEquival
         (divisorCechCohomologyIsoOfLinearlyEquivalent h 0).hom =
       (divisorSheafIsoOfLinearlyEquivalent h).hom.hom.app (op ⊤) ≫
         (cechCohomologyZeroIso (divisorSheaf E)).hom :=
-  (cechCohomologyZeroIso_hom_naturality _ _).symm
+  cechCohomologyZeroIso_hom_comp_divisorCechCohomologyIsoOfPrincipalDivisorEq_hom _ _
 
 /-- Linearly equivalent divisors have Čech cohomology of the same dimension in every degree.
 For infinite-dimensional cohomology both sides are `0`; finiteness is not assumed. -/
