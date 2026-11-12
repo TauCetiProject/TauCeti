@@ -97,6 +97,16 @@ theorem abs_riemannianVolumeForm_apply_orthonormal
   rw [Orientation.volumeFormL_apply]
   exact (Manifold.Orientation.orientationAt o x).abs_volumeForm_apply_of_orthonormal b
 
+/-- The Riemannian volume form is positive on every positively oriented tangent basis, orthonormal
+or not. -/
+theorem riemannianVolumeForm_apply_pos (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (b : Module.Basis (Fin m) ℝ (TangentSpace I x))
+    (hb : b.orientation = Manifold.Orientation.orientationAt o x) :
+    0 < riemannianVolumeForm o x b := by
+  let := o.fact_finrank_tangentSpace x
+  rw [riemannianVolumeForm_apply]
+  exact Orientation.volumeForm_apply_pos_iff.2 hb
+
 /-- The Riemannian volume form is negative on an oppositely oriented orthonormal basis. -/
 theorem riemannianVolumeForm_apply_orthonormal_of_opposite
     (o : Manifold.Orientation I M (Fin m)) (x : M)
@@ -180,6 +190,23 @@ theorem exists_eventually_riemannianVolumeForm_chartLocalFrame_eq
   · refine ⟨-1, Or.inr rfl, ?_⟩
     filter_upwards [hconst, e.open_baseSet.mem_nhds hx] with y hy hyb
     rw [hframe y hyb, riemannianVolumeForm_basisAt o σ hyb, hy hyb, ite_eq_right hP, neg_one_mul]
+
+/-- **The volume of a coordinate frame.** At every point `y` of the chart source at `x`, the
+volume form evaluated on the coordinate frame of the chart at `x`, reindexed along `σ`, has
+absolute value `√(det g)`, the chart volume density, whatever the orientation of the frame. -/
+theorem abs_riemannianVolumeForm_chartLocalFrame (o : Manifold.Orientation I M (Fin m))
+    (σ : Fin (finrank ℝ E) ≃ Fin m) {x y : M} (hy : y ∈ (chartAt H x).source) :
+    |riemannianVolumeForm o y (fun i ↦ Riemannian.Tensor.chartLocalFrame (I := I) x (σ.symm i) y)| =
+      chartVolumeDensity (I := I) x y := by
+  have hy' : y ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet]
+  have hframe : (fun i ↦ Riemannian.Tensor.chartLocalFrame (I := I) x (σ.symm i) y) =
+      (trivializationAt E (TangentSpace I) x).basisAt ((Module.finBasis ℝ E).reindex σ) hy' :=
+    (Riemannian.Tensor.coe_basisAt_reindex_eq_chartLocalFrame σ x hy').symm
+  rw [hframe, riemannianVolumeForm_basisAt o σ hy']
+  split_ifs
+  · exact abs_of_nonneg (chartVolumeDensity_nonneg x y)
+  · rw [abs_neg, abs_of_nonneg (chartVolumeDensity_nonneg x y)]
 
 variable {n : WithTop ℕ∞} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
