@@ -37,7 +37,6 @@ lemma of_inv_mul_mul (p q : G) : of (p⁻¹ * q * p) = of q := by
 of `p` and `q`. -/
 lemma ofMul_of_add_ofMul_of (p q : G) :
     Additive.ofMul (of p) + Additive.ofMul (of q) = Additive.ofMul (of (q * p)) := by
-  rw [← ofMul_mul]
   simp [mul_comm]
 
 /-- An element has trivial image in the abelianization exactly when it is in the commutator
@@ -62,15 +61,15 @@ theorem mulEquiv_ext {M : Type*} [Monoid M] {e e' : Abelianization G ≃* M}
 
 /-- **The abelianization of a product** of two groups is the product of their abelianizations:
 the class of `(g, h)` corresponds to the pair of the classes of `g` and `h`. -/
-def prodMulEquiv (H : Type*) [Group H] :
+def prodMulEquiv {H : Type*} [Group H] :
     Abelianization (G × H) ≃* Abelianization G × Abelianization H :=
   (QuotientGroup.quotientMulEquivOfEq (by
-    rw [commutator_def, commutator_def, commutator_def, ← Subgroup.top_prod_top,
-      Subgroup.commutator_prod_prod])).trans (QuotientGroup.prodMulEquiv _ _)
+    simp only [commutator_def, ← Subgroup.top_prod_top, Subgroup.commutator_prod_prod])).trans
+    (QuotientGroup.prodMulEquiv _ _)
 
 @[simp]
-theorem prodMulEquiv_of (H : Type*) [Group H] (gh : G × H) :
-    prodMulEquiv H (of gh) = (of gh.1, of gh.2) :=
+theorem prodMulEquiv_of {H : Type*} [Group H] (gh : G × H) :
+    prodMulEquiv (of gh) = (of gh.1, of gh.2) :=
   (rfl)
 
 end Abelianization

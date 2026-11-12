@@ -139,7 +139,7 @@ theorem integral_id_stableMeasure (hα : α ∈ Ioc 1 2) (hβ : |β| ≤ 1)
 /-- A random variable with a stable law of shape greater than one has mean equal to the
 law's corrected `S₁` location. -/
 theorem integral_of_hasLaw_stableMeasure (hα : α ∈ Ioc 1 2) (hβ : |β| ≤ 1)
-    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : Ω → ℝ}
+    {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω} {X : Ω → ℝ}
     {s : ℝ≥0} {m : ℝ} (hX : HasLaw X (stableMeasure α β s m) P) :
     ∫ ω, X ω ∂P = stableS1Location α β s m :=
   hX.integral_eq.trans (integral_id_stableMeasure hα hβ s m)

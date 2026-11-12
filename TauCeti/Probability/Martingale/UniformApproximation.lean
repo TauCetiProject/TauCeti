@@ -73,7 +73,7 @@ theorem exists_strictMono_summable_uniform_errors {ℱ : Filtration ℝ≥0 mΩ}
         (T := (n : ℝ≥0)) (by
           filter_upwards [hcont (φ (n + 1)), hcont (φ n)] with ω h₁ h₂ t _
           exact (h₁ t).sub (h₂ t))
-        (ε := (2 : ℝ≥0)⁻¹ ^ n) (δ := (2 : ℝ≥0)⁻¹ ^ n) (by positivity)
+        (ε := (2 : ℝ≥0)⁻¹ ^ n) (δ := (2 : ℝ≥0)⁻¹ ^ n)
         (by simpa using hdist.le)
   refine ⟨φ, hφmono, hbound, fun T ↦ ?_⟩
   -- On a fixed horizon only finitely many indices precede its integer ceiling.

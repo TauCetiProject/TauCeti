@@ -256,25 +256,6 @@ private theorem two_mul_norm_eq (x : typeE₇RootLattice.dualCarrier) :
   rw [e7Coordinates]
   ring
 
-private theorem minuscule_pairing_bounds (x : typeE₇RootLattice.dualCarrier)
-    (hx : typeE₇RootLattice.form x x = 3 / 2) (i : Fin 7) :
-    -1 ≤ typeE₇DualWeightEquiv x i ∧ typeE₇DualWeightEquiv x i ≤ 1 := by
-  have hm := isPosDef_typeE₇RootLattice.nonneg
-    ((x : Fin 7 → ℚ) - typeE₇SimpleRoot i)
-  have hp := isPosDef_typeE₇RootLattice.nonneg
-    ((x : Fin 7 → ℚ) + typeE₇SimpleRoot i)
-  simp only [LinearMap.BilinMap.toQuadraticMap_apply,
-    LinearMap.BilinForm.sub_left, LinearMap.BilinForm.sub_right,
-    LinearMap.BilinForm.add_left, LinearMap.BilinForm.add_right,
-    typeE₇RootLattice.isSymm.eq (typeE₇SimpleRoot i) x,
-    form_typeE₇SimpleRoot_typeE₇SimpleRoot, CartanMatrix.E_diag, hx,
-    ← typeE₇DualWeightEquiv_apply] at hm hp
-  have h : (-2 : ℚ) < typeE₇DualWeightEquiv x i ∧
-      (typeE₇DualWeightEquiv x i : ℚ) < 2 := by constructor <;> linarith
-  have hi : (-2 : ℤ) < typeE₇DualWeightEquiv x i ∧ typeE₇DualWeightEquiv x i < 2 := by
-    exact_mod_cast h
-  omega
-
 /-- The 56 realized minuscule weights exhaust the dual vectors of squared norm `3/2`. -/
 theorem form_self_eq_three_halves_iff_mem_range_typeE₇MinusculeDual
     (x : typeE₇RootLattice.dualCarrier) :
@@ -286,8 +267,8 @@ theorem form_self_eq_three_halves_iff_mem_range_typeE₇MinusculeDual
       have h := two_mul_norm_eq x
       rw [hx, show (2 : ℚ) * (3 / 2) = 3 by norm_num] at h
       exact_mod_cast h.symm
-    obtain ⟨a, ha⟩ := mem_range_e7MinusculeWeight_of_bounded_of_quadratic_eq_three
-      (typeE₇DualWeightEquiv x) (minuscule_pairing_bounds x hx) hn
+    obtain ⟨a, ha⟩ := mem_range_e7MinusculeWeight_of_quadratic_eq_three
+      (typeE₇DualWeightEquiv x) hn
     refine ⟨a, typeE₇DualWeightEquiv.injective ?_⟩
     rw [typeE₇DualWeightEquiv_typeE₇MinusculeDual, ha]
   · rintro ⟨a, rfl⟩
