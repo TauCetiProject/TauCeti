@@ -200,25 +200,16 @@ theorem isIso_filteredSpaceSpectralSequenceMap_sublevel_hom_f (hf : ContMDiff I 
       (fun x h₁ h₂ hx ↦ hcrit q x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨h₁, h₂⟩) R k
   refine isIso_filteredSpaceSpectralSequenceMap_hom_f R _ _ _ _ (fun q n ↦ ?_) r hr pq
   -- The map of pairs induced by the identity consists of the two sublevel inclusions.
-  have hfst : TopPair.Hom.fst (filteredSpaceStepMap (Y := TopCat.of M) (Y' := TopCat.of M)
-      ((sublevel_mono f).comp ha) ((sublevel_mono f).comp ha') (𝟙 _)
-        (fun q _ hx ↦ (hx : f _ ≤ a q).trans (haa' q)) (Int.le_add_one le_rfl : q ≤ q + 1)) =
-      (sublevelPair f (haa' (q + 1))).map :=
-    TopCat.hom_ext (ContinuousMap.ext fun x ↦ TopPair.ofInclusionMap_fst_apply _ _ x)
-  have hsnd : TopPair.Hom.snd (filteredSpaceStepMap (Y := TopCat.of M) (Y' := TopCat.of M)
-      ((sublevel_mono f).comp ha) ((sublevel_mono f).comp ha') (𝟙 _)
-        (fun q _ hx ↦ (hx : f _ ≤ a q).trans (haa' q)) (Int.le_add_one le_rfl : q ≤ q + 1)) =
-      (sublevelPair f (haa' q)).map :=
-    TopCat.hom_ext (ContinuousMap.ext fun x ↦ Subtype.ext (TopPair.ofInclusionMap_snd_apply _ _ x))
-  refine TopPair.isIso_singularHomologyMap_of_isIso R _ n ?_ ?_ (fun m _ ↦ ?_) (fun m _ ↦ ?_)
-  · rw [hfst]
-    exact hiso (q + 1) n
-  · rw [hsnd]
-    exact hiso q n
-  · rw [hfst]
-    exact hiso (q + 1) m
-  · rw [hsnd]
-    exact hiso q m
+  set φ := filteredSpaceStepMap (Y := TopCat.of M) (Y' := TopCat.of M)
+    ((sublevel_mono f).comp ha) ((sublevel_mono f).comp ha') (𝟙 _)
+      (fun q _ hx ↦ (hx : f _ ≤ a q).trans (haa' q)) (Int.le_add_one le_rfl : q ≤ q + 1)
+  have hfst : TopPair.Hom.fst φ = (sublevelPair f (haa' (q + 1))).map :=
+    TopCat.hom_ext (ContinuousMap.ext fun x ↦ Subtype.ext (filteredSpaceStepMap_fst_apply ..))
+  have hsnd : TopPair.Hom.snd φ = (sublevelPair f (haa' q)).map :=
+    TopCat.hom_ext (ContinuousMap.ext fun x ↦ Subtype.ext (filteredSpaceStepMap_snd_apply ..))
+  refine TopPair.isIso_singularHomologyMap_of_isIso R φ n ?_ ?_ (fun m _ ↦ ?_) (fun m _ ↦ ?_) <;>
+    simp only [hfst, hsnd]
+  exacts [hiso (q + 1) n, hiso q n, hiso (q + 1) m, hiso q m]
 
 /-- **The first page of the spectral sequence of a critical-band filtration is free on the
 critical points.** Let `f` be a Morse function and `a : ℤ → ℝ` monotone, and let the band

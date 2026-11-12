@@ -469,35 +469,29 @@ section Naturality
 variable {Y' Y'' : TopCat.{w}} {X' : ℤ → Set Y'} (hX' : Monotone X') {X'' : ℤ → Set Y''}
   (hX'' : Monotone X'') (g : Y ⟶ Y') (hg : ∀ q, Set.MapsTo g (X q) (X' q))
 
-/-- The restriction `X q ⟶ X' q` of a map `g` carrying `X q` into `X' q`. -/
-private abbrev restrictMap (q : ℤ) :
-    (TopPair.ofSubset (X q)).snd ⟶ (TopPair.ofSubset (X' q)).snd :=
-  TopCat.ofHom ⟨(hg q).restrict, g.hom.continuous.restrict (hg q)⟩
-
 /-- A map carrying `X q` into `X' q` carries the singular chains of `X q` into those of `X' q`. -/
 @[reassoc]
 private lemma singularChainFiltrationι_naturality (q : ℤ) :
-    extendMap (SSet.chainComplexMap (TopCat.toSSet.map (restrictMap g hg q)) R)
+    extendMap (SSet.chainComplexMap
+        (TopCat.toSSet.map (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg q)))) R)
         ComplexShape.embeddingDownNat ≫ singularChainFiltrationι R X' q =
       singularChainFiltrationι R X q ≫
         extendMap (SSet.chainComplexMap (TopCat.toSSet.map g) R) ComplexShape.embeddingDownNat := by
-  -- Both composites `X q ⟶ Y'` send a point `x` to `g x`.
-  have h : restrictMap g hg q ≫ (TopPair.ofSubset (X' q)).map =
-      (TopPair.ofSubset (X q)).map ≫ g := rfl
+  -- The map of pairs `(Y, X q) ⟶ (Y', X' q)` induced by `g` commutes with the inclusions; push
+  -- this square through the singular chain functors.
+  have h := congrArg (fun φ ↦ extendMap (SSet.chainComplexMap (TopCat.toSSet.map φ) R)
+    ComplexShape.embeddingDownNat) (TopPair.Hom.w (TopPair.ofSubsetMap g (hg q)))
+  simp only [Functor.map_comp, extendMap_comp] at h
+  rw [TopPair.ofSubsetMap_fst] at h
   rw [singularChainFiltrationι_def, singularChainFiltrationι_def]
-  -- The ambient space of the pair `(Y', X' q)` is `Y'` only up to unfolding `TopPair.ofSubset`,
-  -- so the composites are formed with `exact` rather than `rw`.
-  exact (extendMap_comp _ _ _).symm.trans <| (congrArg (extendMap · _) <|
-    (Functor.map_comp _ _ _).symm.trans <| (congrArg _ <|
-      (Functor.map_comp _ _ _).symm.trans <| (congrArg _ h).trans
-        (Functor.map_comp _ _ _)).trans (Functor.map_comp _ _ _)).trans (extendMap_comp _ _ _)
+  exact h
 
 include hg in
 private lemma factors_singularChainFiltration (q : ℤ) :
     (singularChainFiltration R X' q).Factors ((singularChainFiltration R X q).arrow ≫
       extendMap (SSet.chainComplexMap (TopCat.toSSet.map g) R) ComplexShape.embeddingDownNat) :=
   (Subobject.mk_factors_iff _ _).2 ⟨(singularChainFiltrationIso R X q).hom ≫ extendMap
-      (SSet.chainComplexMap (TopCat.toSSet.map (restrictMap g hg q)) R)
+      (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg q)))) R)
         ComplexShape.embeddingDownNat,
     (Category.assoc _ _ _).trans <|
       (congrArg (_ ≫ ·) (singularChainFiltrationι_naturality R g hg q)).trans
@@ -578,11 +572,30 @@ abbrev filteredSpaceStepMap {a b : ℤ} (hab : a ≤ b) :
   TopPair.ofInclusionMap _ _ ⟨(hg b).restrict, g.hom.continuous.restrict (hg b)⟩
     fun _ hx ↦ hg a hx
 
-/-- The ambient part of the map of pairs `(X b, X a) ⟶ (X' b, X' a)` is the restriction of
-`g`. -/
+/-- The ambient component of the map of pairs `(X b, X a) ⟶ (X' b, X' a)` induced by `g` sends
+`x` to `g x`. -/
+@[simp]
+lemma filteredSpaceStepMap_fst_apply {a b : ℤ} (hab : a ≤ b)
+    (x : (TopPair.ofInclusion (hX hab)).fst) :
+    (TopPair.Hom.fst (filteredSpaceStepMap hX hX' g hg hab) x).1 = g x.1 :=
+  congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)
+
+/-- The subspace component of the map of pairs `(X b, X a) ⟶ (X' b, X' a)` induced by `g` sends
+`x` to `g x`. -/
+@[simp]
+lemma filteredSpaceStepMap_snd_apply {a b : ℤ} (hab : a ≤ b)
+    (x : (TopPair.ofInclusion (hX hab)).snd) :
+    (TopPair.Hom.snd (filteredSpaceStepMap hX hX' g hg hab) x).1 = g x.1 :=
+  TopPair.ofInclusionMap_snd_apply _ _ x
+
+/-- The ambient component of the map of pairs `(X b, X a) ⟶ (X' b, X' a)` induced by `g` is the
+subspace component of the map of pairs `(Y, X b) ⟶ (Y', X' b)` induced by `g`. -/
 private lemma fst_filteredSpaceStepMap {a b : ℤ} (hab : a ≤ b) :
-    TopPair.Hom.fst (filteredSpaceStepMap hX hX' g hg hab) = restrictMap g hg b :=
-  TopCat.hom_ext (ContinuousMap.ext fun x ↦ TopPair.ofInclusionMap_fst_apply _ _ x)
+    TopPair.Hom.fst (filteredSpaceStepMap hX hX' g hg hab) =
+      TopPair.Hom.snd (TopPair.ofSubsetMap g (hg b)) := by
+  ext x
+  exact Subtype.ext <| (filteredSpaceStepMap_fst_apply hX hX' g hg hab x).trans
+    (TopPair.ofSubsetMap_snd_apply g (hg b) x).symm
 
 /-- On the stage `F_b`, identified with the singular chains of `X b`, the morphism of filtrations
 induced by `g` is the chain map induced by the restriction of `g`. -/
@@ -594,8 +607,8 @@ private lemma filteredSpaceFiltrationMap_app_comp_singularChainFiltrationIso_hom
             (singularChainFiltrationIso R X' b).hom =
       (CochainComplex.filtrationFunctorObjIso _ (monotone_singularChainFiltration R hX) b).hom ≫
         Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
-          (singularChainFiltrationIso R X b).hom ≫ extendMap
-            (SSet.chainComplexMap (TopCat.toSSet.map (restrictMap g hg b)) R)
+          (singularChainFiltrationIso R X b).hom ≫ extendMap (SSet.chainComplexMap
+            (TopCat.toSSet.map (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg b)))) R)
             ComplexShape.embeddingDownNat := by
   refine (cancel_mono (singularChainFiltrationι R X' b)).1 ?_
   simp only [Category.assoc, singularChainFiltrationIso_hom_comp_singularChainFiltrationι,
@@ -623,17 +636,18 @@ private lemma cokernelMap_comp_cokernelFiltrationFunctorMapIso_hom {a b : ℤ}
         ComplexShape.embeddingDownNat ≫
       extendMap (TopPair.singularChainComplexMap (filteredSpaceStepMap hX hX' g hg hab) R)
         ComplexShape.embeddingDownNat =
-      extendMap (SSet.chainComplexMap (TopCat.toSSet.map (restrictMap g hg b)) R)
+      extendMap (SSet.chainComplexMap
+          (TopCat.toSSet.map (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg b)))) R)
         ComplexShape.embeddingDownNat ≫
       extendMap ((TopPair.ofInclusion (hX' hab)).singularChainComplexπ R)
-        ComplexShape.embeddingDownNat :=
-    (extendMap_comp _ _ _).symm.trans <| (congrArg (extendMap · _) <|
-      (TopPair.singularChainComplexπ_pair_naturality _ R).symm.trans <|
-        congrArg (fun φ ↦ SSet.chainComplexMap (TopCat.toSSet.map φ) R ≫ _)
-          (fst_filteredSpaceStepMap hX hX' g hg hab)).trans (extendMap_comp _ _ _)
-  exact (filteredSpaceFiltrationMap_app_comp_singularChainFiltrationIso_hom_assoc R hX hX' g hg b
-    _).trans <| congrArg (_ ≫ ·) <| congrArg (_ ≫ ·) <|
-      (congrArg (_ ≫ ·) h.symm).trans (Category.assoc _ _ _).symm
+        ComplexShape.embeddingDownNat := by
+    rw [← extendMap_comp, ← TopPair.singularChainComplexπ_pair_naturality,
+      fst_filteredSpaceStepMap]
+    exact extendMap_comp _ _ _
+  refine (filteredSpaceFiltrationMap_app_comp_singularChainFiltrationIso_hom_assoc R hX hX' g hg b
+    _).trans ?_
+  rw [← h]
+  exact congrArg (_ ≫ ·) <| congrArg (_ ≫ ·) (Category.assoc _ _ _).symm
 
 /-- **The morphism of spectral sequences of a map of filtered spaces on the first page.** Let
 `g : Y ⟶ Y'` carry each `X q` into `X' q`. Under the identifications of the first pages with
@@ -648,9 +662,12 @@ theorem filteredSpaceSpectralSequenceFirstPageXIso_hom_naturality (pq : ℤ × �
         TopPair.singularHomologyMap (filteredSpaceStepMap hX hX' g hg (by lia)) R n := by
   simp only [filteredSpaceSpectralSequenceFirstPageXIso, Iso.trans_hom,
     filteredSpaceSpectralSequenceMap_def]
+  -- Compare the graded pieces at the chain level, then pass to homology.
   rw [CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality_assoc]
   refine (congrArg (_ ≫ ·) ?_).trans (Category.assoc _ _ _).symm
-  -- Compare the graded pieces at the chain level, then pass to homology.
+  -- The complexes involved are indexed through the proofs `hX hab` and `hX' hab`, so this goal is
+  -- not type-correct at reducible transparency and `rw` or `simp` cannot rewrite inside it; the
+  -- steps are composed explicitly.
   exact (HomologicalComplex.homologyMap_comp_assoc _ _ _ _).symm.trans <|
     (congrArg (fun φ ↦ HomologicalComplex.homologyMap φ m ≫ _)
       (cokernelMap_comp_cokernelFiltrationFunctorMapIso_hom R hX hX' g hg _)).trans <|
