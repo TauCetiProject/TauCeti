@@ -17,7 +17,9 @@ Unlike the usual finite-measure comparison, this holds for the infinite measure 
 The decisive estimate bounds every value of `t ^ (-θ) K(t,u)` by the interpolation norm.
 
 `KMethodSpace.inclusion` is the continuous linear inclusion, with a bound independent of the
-couple and the target exponent. It preserves the underlying element of the sum space.
+couple and the target exponent. It preserves the underlying element of the sum space. On the sum
+space itself the same bound reads `‖u‖_{θ,q} ≤ max 1 c_{θ,p}⁻¹ ‖u‖_{θ,p}`
+(`kMethodENorm_le_ofReal_mul_kMethodENorm`).
 
 ## References
 
@@ -164,5 +166,20 @@ theorem inclusion_comp {r : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ r)]
   simp
 
 end KMethodSpace
+
+/-- Increasing the secondary exponent multiplies the `K`-method norm of an element of the sum
+space by at most `max 1 c_{θ,p}⁻¹`; this is `KMethodSpace.kMethodENorm_toSum_le` stated on the
+sum space, where an element of infinite norm makes the bound trivial. -/
+theorem kMethodENorm_le_ofReal_mul_kMethodENorm [T1Space V] [Fact (1 ≤ p)] (hpq : p ≤ q)
+    (u : C.SumSpace) :
+    C.kMethodENorm θ q u ≤
+      ENNReal.ofReal (max 1 (kMethodConst θ p).toReal⁻¹) * C.kMethodENorm θ p u := by
+  by_cases hu : C.kMethodENorm θ p u = ∞
+  · rw [hu, ENNReal.mul_top (ENNReal.ofReal_pos.2 (by positivity)).ne']
+    exact le_top
+  · have h := KMethodSpace.kMethodENorm_toSum_le hpq
+      (KMethodSpace.mk u (mem_kMethod_iff.2 (lt_top_iff_ne_top.2 hu)))
+    rwa [KMethodSpace.toSumₗ_mk, ENNReal.ofReal_mul (by positivity), KMethodSpace.ofReal_norm,
+      KMethodSpace.toSumₗ_mk] at h
 
 end TauCeti.CompatibleCouple

@@ -39,7 +39,9 @@ disjoint, each of `dt / t`-measure `|μ| log b`. Integrating over them compares 
 function that dominates its `j`-th term on the `j`-th interval: the sum of the sequence is at most
 `(|μ| log b)⁻¹` times the integral (`TauCeti.ofReal_mul_tsum_le_lintegral_multHaar`), and likewise
 for `ℓ^q` and `L^q(dt / t)` norms (`TauCeti.ofReal_rpow_mul_eLpNorm_count_le_eLpNorm_multHaar`).
-This is how dyadic sums are bounded by integrals against `dt / t`.
+The intervals `[b ^ j, b ^ (j + 1))`, `j ∈ ℤ`, tile `(0, ∞)`, which gives the same comparison for
+two-sided sequences (`TauCeti.ofReal_log_mul_tsum_le_lintegral_multHaar_zpow`). This is how
+dyadic sums are bounded by integrals against `dt / t`.
 -/
 
 public section
@@ -270,6 +272,36 @@ theorem ofReal_rpow_mul_eLpNorm_count_le_eLpNorm_multHaar {b c μ : ℝ} {q : �
       (inv_nonneg.2 hr.le)
     simp only [enorm_eq_self]
     exact ENNReal.rpow_le_rpow (h j r hr') hr.le
+
+/-- For `b > 1`, the intervals `[b ^ j, b ^ (j + 1))` for `j ∈ ℤ` tile `(0, ∞)`: they are pairwise
+disjoint and have `dt / t`-measure `log b`. So if `g j ≤ f` on the `j`-th interval, then
+`log b ∑ j, g j ≤ ∫ f dt / t`. -/
+theorem ofReal_log_mul_tsum_le_lintegral_multHaar_zpow {b : ℝ} (hb : 1 < b)
+    {f : ℝ → ℝ≥0∞} {g : ℤ → ℝ≥0∞} (h : ∀ j : ℤ, ∀ r ∈ Ico (b ^ j) (b ^ (j + 1)), g j ≤ f r) :
+    ENNReal.ofReal (Real.log b) * ∑' j, g j ≤ ∫⁻ r, f r ∂multHaar := by
+  have hb0 : 0 < b := zero_lt_one.trans hb
+  set S : ℤ → Set ℝ := fun j ↦ Ico (b ^ j) (b ^ (j + 1))
+  have hS (j : ℤ) : multHaar (S j) = ENNReal.ofReal (Real.log b) := by
+    rw [multHaar_Ico (zpow_pos hb0 j) (zpow_le_zpow_right₀ hb.le (by omega)),
+      Real.log_zpow, Real.log_zpow]
+    push_cast
+    ring_nf
+  have hdisj : Pairwise (Function.onFun Disjoint S) := by
+    intro j k hjk
+    simp only [Function.onFun, S, Set.Ico_disjoint_Ico]
+    rcases lt_or_gt_of_ne hjk with h | h
+    · exact (min_le_left _ _).trans <|
+        (zpow_le_zpow_right₀ hb.le (by omega)).trans (le_max_right _ _)
+    · exact (min_le_right _ _).trans <|
+        (zpow_le_zpow_right₀ hb.le (by omega)).trans (le_max_left _ _)
+  calc ENNReal.ofReal (Real.log b) * ∑' j, g j = ∑' j, ∫⁻ _ in S j, g j ∂multHaar := by
+        rw [← ENNReal.tsum_mul_left]
+        exact tsum_congr fun j ↦ by rw [setLIntegral_const, hS, mul_comm]
+    _ ≤ ∑' j, ∫⁻ r in S j, f r ∂multHaar :=
+        tsum_le_tsum fun j ↦ setLIntegral_mono' measurableSet_Ico (h j)
+    _ = ∫⁻ r in ⋃ j, S j, f r ∂multHaar :=
+        (lintegral_iUnion (fun _ ↦ measurableSet_Ico) hdisj f).symm
+    _ ≤ ∫⁻ r, f r ∂multHaar := setLIntegral_le_lintegral _ _
 
 end GeometricIntervals
 

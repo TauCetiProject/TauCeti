@@ -118,6 +118,26 @@ theorem kFunctional_fstToSum_interFst_le (ht : 0 ≤ t) (x : C.inter) :
   · rw [min_eq_right h, C.fstToSum_interFst]
     exact (C.kFunctional_sndToSum_le ht _).trans (by gcongr; exact C.norm_interSnd_le x)
 
+/-- Near-optimal decompositions of an element of the intersection can be taken in the
+intersection: if `K(t, x) < r`, then `x = y + z` with `y, z` in the intersection and
+`‖y‖_{X₀} + t ‖z‖_{X₁} < r`. Indeed, in any decomposition `x = x₀ + x₁` with `x₀ ∈ X₀` and
+`x₁ ∈ X₁`, both `x₀ = x - x₁` and `x₁ = x - x₀` lie in `X₀ ∩ X₁`. -/
+theorem exists_add_eq_and_norm_interFst_add_mul_norm_interSnd_lt (ht : 0 ≤ t) (x : C.inter)
+    {r : ℝ} (hr : C.kFunctional t (C.fstToSum (C.interFst x)) < r) :
+    ∃ y z : C.inter, y + z = x ∧ ‖C.interFst y‖ + t * ‖C.interSnd z‖ < r := by
+  obtain ⟨x₀, x₁, hx, hlt⟩ := (kFunctional_lt_iff ht).1 hr
+  have hV : C.embed₀ x₀ + C.embed₁ x₁ = C.embed₀ (C.interFst x) := by
+    simpa only [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum] using
+      congrArg C.sumSpaceEmbed hx
+  have hx' := C.embed₀_interFst x
+  refine ⟨⟨(x₀, C.interSnd x - x₁), ?_⟩, ⟨(C.interFst x - x₀, x₁), ?_⟩, ?_, ?_⟩
+  · rw [mem_inter_iff, map_sub, ← hx', ← hV]
+    abel
+  · rw [mem_inter_iff, map_sub, ← hV]
+    abel
+  · ext <;> simp [interFst_apply, interSnd_apply]
+  · simpa [interFst_apply, interSnd_apply] using hlt
+
 /-- `t ↦ K(t, u)` is monotone on `[0, ∞)`. -/
 theorem kFunctional_mono (hs : 0 ≤ s) (hst : s ≤ t) (u : C.SumSpace) :
     C.kFunctional s u ≤ C.kFunctional t u :=
@@ -196,6 +216,11 @@ theorem kFunctional_add_le (ht : 0 ≤ t) (u v : C.SumSpace) :
     abel
   · have := mul_le_mul_of_nonneg_left (norm_add_le x₁ y₁) ht
     linarith [norm_add_le x₀ y₀]
+
+/-- For `t ≥ 0`, `K(t, ·)` is subadditive over finite sums. -/
+theorem kFunctional_sum_le {ι : Type*} (ht : 0 ≤ t) (s : Finset ι) (u : ι → C.SumSpace) :
+    C.kFunctional t (∑ i ∈ s, u i) ≤ ∑ i ∈ s, C.kFunctional t (u i) :=
+  Finset.le_sum_of_subadditive _ (kFunctional_zero ht).le (kFunctional_add_le ht) s u
 
 private lemma kFunctional_smul_le (ht : 0 ≤ t) (c : 𝕜) (u : C.SumSpace) :
     C.kFunctional t (c • u) ≤ ‖c‖ * C.kFunctional t u := by
