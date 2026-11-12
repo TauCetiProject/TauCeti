@@ -19,6 +19,11 @@ basis under a bundle trivialization gives continuous local orthonormal bases. Th
 uses Mathlib's `InnerProductSpace.gramSchmidt` and `gramSchmidtNormed`, including their span
 and orthonormality theorems, rather than a separate orthogonalization procedure.
 
+Linear combinations of a continuous orthonormal frame along a continuous map depend
+jointly continuously on the point and on the coefficients
+(`TauCeti.continuous_totalSpaceMk_repr_symm`); this is the continuity of the inverse of the chart
+that such a frame defines.
+
 The continuity argument follows the sectionwise Gram–Schmidt construction of Patrick Massot
 and Michael Rothgang in Mathlib PR [#26221](https://github.com/leanprover-community/mathlib4/pull/26221),
 revision `c487a9a1d25ee47368d6e095f701fc633bb6847a`, adapted to arbitrary continuous base spaces,
@@ -194,3 +199,37 @@ theorem exists_continuous_local_orthonormalBasis (c : Module.Basis ι 𝕜 F) (x
     e.orthonormalBasis c, e.continuous_orthonormalBasis c⟩
 
 end Module.Basis
+
+namespace TauCeti
+
+omit [TauCeti.ContinuousFiberNorm F E] [LinearOrder ι] [LocallyFiniteOrderBot ι] in
+/-- Linear combinations of a continuous orthonormal frame `u` of `E` along a continuous map `b`
+depend jointly continuously on the point and on the coefficients. -/
+theorem continuous_totalSpaceMk_repr_symm [Fintype ι] (hb : Continuous b)
+    (u : ∀ x, OrthonormalBasis ι 𝕜 (E (b x)))
+    (hu : ∀ i, Continuous fun x ↦ TotalSpace.mk' F (b x) (u x i)) :
+    Continuous fun p : X × EuclideanSpace 𝕜 ι ↦
+      TotalSpace.mk' F (b p.1) ((u p.1).repr.symm p.2) := by
+  classical
+  refine continuous_iff_continuousAt.2 fun p ↦ ?_
+  rw [FiberBundle.continuousAt_totalSpace]
+  refine ⟨(hb.comp continuous_fst).continuousAt, ?_⟩
+  let e := trivializationAt F E (b p.1)
+  have hmem : ∀ᶠ p' : X × EuclideanSpace 𝕜 ι in 𝓝 p, b p'.1 ∈ e.baseSet :=
+    (hb.comp continuous_fst).continuousAt
+      (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (b p.1)))
+  have hc (i : ι) : ContinuousAt
+      (fun p' : X × EuclideanSpace 𝕜 ι ↦ TotalSpace.mk' F (b p'.1) (u p'.1 i)) p :=
+    ((hu i).comp continuous_fst).continuousAt
+  have he (i : ι) := ((FiberBundle.continuousAt_totalSpace F _).1 (hc i)).2
+  have hsum : ContinuousAt
+      (fun p' : X × EuclideanSpace 𝕜 ι ↦ ∑ i, p'.2 i • (e ⟨b p'.1, u p'.1 i⟩).2) p :=
+    tendsto_finsetSum Finset.univ fun i _ ↦
+      ((PiLp.continuous_apply 2 (fun _ : ι ↦ 𝕜) i).comp continuous_snd).continuousAt.smul (he i)
+  apply hsum.congr_of_eventuallyEq (hmem.mono fun p' hp' ↦ ?_)
+  dsimp only at e ⊢
+  simp only [← e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hp', ← map_smul, ← map_sum,
+    OrthonormalBasis.sum_repr_symm]
+  exact (Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) e hp' _).symm
+
+end TauCeti

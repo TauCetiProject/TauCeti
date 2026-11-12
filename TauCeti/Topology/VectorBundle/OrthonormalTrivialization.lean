@@ -59,34 +59,13 @@ private theorem continuous_local_repr :
     ((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _
   exact ((hd i).comp hbase).inner_bundle continuous_subtype_val
 
-include hd in
 omit [IsContinuousRiemannianBundle F E] in
+include hd in
 private theorem continuous_local_repr_symm :
     Continuous fun p : U × F ↦ TotalSpace.mk' F (p.1 : B)
-      ((d p.1).repr.symm (c.repr p.2)) := by
-  classical
-  refine continuous_iff_continuousAt.2 fun p ↦ ?_
-  rw [FiberBundle.continuousAt_totalSpace]
-  refine ⟨(continuous_subtype_val.comp continuous_fst).continuousAt, ?_⟩
-  let e := trivializationAt F E (p.1 : B)
-  have hmem : ∀ᶠ q : U × F in 𝓝 p, (q.1 : B) ∈ e.baseSet :=
-    (continuous_subtype_val.comp continuous_fst).continuousAt
-      (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (p.1 : B)))
-  have hc (i : ι) : ContinuousAt
-      (fun q : U × F ↦ TotalSpace.mk' F (q.1 : B) (d q.1 i)) p :=
-    ((hd i).comp continuous_fst).continuousAt
-  have he (i : ι) := ((FiberBundle.continuousAt_totalSpace F _).1 (hc i)).2
-  have hcoef (i : ι) : Continuous (fun q : U × F ↦ c.repr q.2 i) := by
-    fun_prop
-  have hsum : ContinuousAt
-      (fun q : U × F ↦ ∑ i, c.repr q.2 i • (e ⟨(q.1 : B), d q.1 i⟩).2) p :=
-    tendsto_finsetSum Finset.univ fun i _ ↦
-      (hcoef i).continuousAt.smul (he i)
-  apply hsum.congr_of_eventuallyEq (hmem.mono fun q hq ↦ ?_)
-  dsimp only at e ⊢
-  simp only [← e.continuousLinearMapAt_apply_of_mem (R := ℝ) hq,
-    ← map_smul, ← map_sum, OrthonormalBasis.sum_repr_symm]
-  exact (Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) e hq _).symm
+      ((d p.1).repr.symm (c.repr p.2)) :=
+  (TauCeti.continuous_totalSpaceMk_repr_symm continuous_subtype_val d hd).comp
+    (continuous_fst.prodMk (c.repr.continuous.comp continuous_snd))
 
 open scoped Classical in
 /-- A continuous local orthonormal basis defines a bundle chart whose fibre map sends that

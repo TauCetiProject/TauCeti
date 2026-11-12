@@ -37,7 +37,11 @@ closed unit ball of `F`, by a homeomorphism carrying the unit sphere bundle `S(E
 
 These are the product structures used to build cells of disc bundles over a CW complex: pulled
 back along the characteristic map of a cell `Dᵠ → X`, a rank `r` bundle becomes
-`Dᵠ × (Dʳ, Sʳ⁻¹)`.
+`Dᵠ × (Dʳ, Sʳ⁻¹)`. In the form used there, a bundle with continuous fibre inner products has a
+continuous orthonormal frame along any continuous map from a contractible paracompact R₁ space
+(`TauCeti.exists_continuous_orthonormalBasis_of_contractibleSpace`): the pullback bundle is
+trivial, and Gram–Schmidt applied to the inverse images of a basis of `F` is continuous
+(`Continuous.gramSchmidtNormed_bundle`).
 
 ## Main results
 
@@ -48,6 +52,9 @@ back along the characteristic map of a cell `Dᵠ → X`, a rank `r` bundle beco
   isometric on every fibre.
 * `TauCeti.exists_homeomorph_prod_of_contractibleSpace`: such a bundle is homeomorphic to `B × F`
   by fibrewise linear isometries.
+* `TauCeti.exists_continuous_orthonormalBasis_of_contractibleSpace`: a finite-rank bundle with
+  continuous fibre inner products has a continuous orthonormal frame along any continuous map
+  from a contractible paracompact R₁ space.
 * `TauCeti.exists_homeomorph_discBundle_prod_closedBall_of_contractibleSpace`: its disc and sphere
   bundles form the product pair `B × (D(F), S(F))`.
 
@@ -129,6 +136,55 @@ theorem exists_trivialization_baseSet_eq_univ_of_contractibleSpace :
     proj_toFun _ _ := rfl }, ⟨fun b _ ↦ (Ψ b).toLinearEquiv.toLinearMap.isLinear⟩, rfl⟩
 
 end Linear
+
+section Frame
+
+variable {𝕜 : Type*} [RCLike 𝕜] {B : Type*} [TopologicalSpace B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {E : B → Type*} [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace 𝕜 (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [ContinuousFiberNorm F E]
+
+variable (𝕜 F E) in
+/-- **Orthonormal frames along maps from contractible spaces.** Let `E` be a finite-rank vector
+bundle over `B` whose fibres carry inner products over `𝕜 = ℝ` or `ℂ` with continuous norm, and
+`g : Y → B` a continuous map from a contractible paracompact R₁ space, for instance a closed ball
+of a real normed space. Then `E` has a continuous orthonormal frame along `g`: an orthonormal
+basis of each fibre `E (g y)`, indexed by `Fin (finrank 𝕜 F)`, whose vectors depend continuously
+on `y`. -/
+theorem exists_continuous_orthonormalBasis_of_contractibleSpace {Y : Type*} [TopologicalSpace Y]
+    [R1Space Y] [ParacompactSpace Y] [ContractibleSpace Y] (g : C(Y, B)) :
+    ∃ u : ∀ y, OrthonormalBasis (Fin (Module.finrank 𝕜 F)) 𝕜 (E (g y)),
+      ∀ i, Continuous fun y ↦ TotalSpace.mk' F (g y) (u y i) := by
+  have := FiniteDimensional.complete 𝕜 F
+  obtain ⟨e, _, he⟩ :=
+    exists_trivialization_baseSet_eq_univ_of_contractibleSpace 𝕜 F ((g : Y → B) *ᵖ E)
+  let c := Module.finBasis 𝕜 F
+  have hy (y : Y) : y ∈ e.baseSet := he ▸ mem_univ y
+  let v : Fin (Module.finrank 𝕜 F) → ∀ y, E (g y) := fun j y ↦ e.symmL 𝕜 y (c j)
+  have hv (j : Fin (Module.finrank 𝕜 F)) : Continuous fun y ↦ TotalSpace.mk' F (g y) (v j y) := by
+    have H := e.continuousOn_symm_prodMk_left (v := c j)
+    have H' : Continuous fun y : Y ↦
+        (⟨y, e.symmL 𝕜 y (c j)⟩ : TotalSpace F ((g : Y → B) *ᵖ E)) :=
+      (H.comp_continuous continuous_id (fun y ↦ hy y)).congr fun y ↦
+        (e.mk_symm (hy y) (c j)).symm.trans
+          (congrArg (TotalSpace.mk y) (e.symmL_apply (hy y) (c j)).symm)
+    exact (Pullback.continuous_lift F E g).comp H'
+  have hli (y : Y) : LinearIndependent 𝕜 (fun j ↦ v j y) := by
+    have := (c.map (e.continuousLinearEquivAt 𝕜 y (hy y)).symm.toLinearEquiv).linearIndependent
+    simp only [Module.Basis.coe_map, ContinuousLinearEquiv.coe_toLinearEquiv,
+      Trivialization.symm_continuousLinearEquivAt_eq, Function.comp_def] at this
+    exact this
+  refine ⟨fun y ↦ OrthonormalBasis.mk (InnerProductSpace.gramSchmidtNormed_orthonormal (hli y)) ?_,
+    fun i ↦ ?_⟩
+  · rw [InnerProductSpace.span_gramSchmidtNormed_range, InnerProductSpace.span_gramSchmidt]
+    exact (c.map (e.continuousLinearEquivAt 𝕜 y (hy y)).symm.toLinearEquiv).span_eq.ge.trans
+      (by
+        simp only [v, Module.Basis.coe_map, Function.comp_def, e.symmL_apply (hy y)]
+        exact le_rfl)
+  · simpa only [OrthonormalBasis.coe_mk] using Continuous.gramSchmidtNormed_bundle hv hli i
+
+end Frame
 
 section Riemannian
 
