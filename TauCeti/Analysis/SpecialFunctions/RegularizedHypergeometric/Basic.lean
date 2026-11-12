@@ -14,10 +14,10 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 # Regularized hypergeometric series and the function `₀F₁`
 
 Mathlib defines the regularized hypergeometric function `Complex.regularizedHGFun a b` as the sum
-of its power series. This file records that series as a `HasSum` statement, proves the derivative
-formula by shifting all parameters by one when `a.card ≤ b.card`, and develops the
-function `₀F₁(; b; z) = ∑ zⁿ / (n! Γ(b + n))`, the case `a = 0`, `b = {b}`, which underlies the
-Bessel functions.
+of its power series. This file records that series as a `HasSum` statement, proves that
+differentiation shifts all parameters by one and multiplies by the product of the upper parameters
+when `a.card ≤ b.card`, and develops the function `₀F₁(; b; z) = ∑ zⁿ / (n! Γ(b + n))`, the case
+`a = 0`, `b = {b}`, which underlies the Bessel functions.
 
 For every complex `b`, Mathlib provides the contiguous relation
 `₀F₁(; b; z) = b ₀F₁(; b + 1; z) + z ₀F₁(; b + 2; z)`.
@@ -106,8 +106,9 @@ theorem hasSum_deriv_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.car
       Real.norm_of_nonneg (by positivity)]
     gcongr
 
-/-- Shifting all parameters by one gives the coefficients of the derivative series,
-without any exclusion on the lower parameters. -/
+/-- Shifting all parameters by one and multiplying by the product of the upper parameters
+`a.prod` gives the coefficients of the derivative series, without any exclusion on the lower
+parameters. -/
 theorem mul_regularizedHGFunCoeff_add_one (a b : Multiset ℂ) (n : ℕ) :
     (n + 1 : ℂ) * regularizedHGFunCoeff a b (n + 1) =
       a.prod * regularizedHGFunCoeff (a.map (· + 1)) (b.map (· + 1)) n := by
