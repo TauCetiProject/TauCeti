@@ -115,6 +115,7 @@ theorem restrictRight_disjointUnion (f : Assignment Q K) (g : Assignment R K) :
   (rfl)
 
 /-- An assignment on a disjoint union is determined by its restrictions to the two summands. -/
+@[simp]
 theorem disjointUnion_restrictLeft_restrictRight
     (f : Assignment (DisjointUnionHom Q R) K) :
     f.restrictLeft.disjointUnion f.restrictRight = f := by
@@ -143,28 +144,28 @@ theorem disjointUnionEquiv_symm_apply (f : Assignment (DisjointUnionHom Q R) K) 
     disjointUnionEquiv.symm f = (f.restrictLeft, f.restrictRight) :=
   (rfl)
 
+/-- Disjoint-union assignments are ordered componentwise. -/
+@[simp]
+theorem disjointUnion_le_disjointUnion [LE K] {f f' : Assignment Q K}
+    {g g' : Assignment R K} :
+    f.disjointUnion g ≤ f'.disjointUnion g' ↔ f ≤ f' ∧ g ≤ g' := by
+  simp only [Pi.le_def]
+  constructor
+  · intro h
+    exact ⟨fun _ _ e ↦ h _ _ (DisjointUnionHom.inl e),
+      fun _ _ e ↦ h _ _ (DisjointUnionHom.inr e)⟩
+  · rintro ⟨hf, hg⟩ (x | x) (y | y) e
+    · exact hf _ _ e
+    · exact e.elim
+    · exact e.elim
+    · exact hg _ _ e
+
 /-- Bounds on a disjoint-union assignment hold exactly when they hold on both summands. -/
 theorem disjointUnion_mem_Icc [Preorder K]
     (f lo hi : Assignment Q K) (g lo' hi' : Assignment R K) :
     f.disjointUnion g ∈ Set.Icc (lo.disjointUnion lo') (hi.disjointUnion hi') ↔
       f ∈ Set.Icc lo hi ∧ g ∈ Set.Icc lo' hi' := by
-  simp only [Set.mem_Icc, Pi.le_def]
-  constructor
-  · intro h
-    exact ⟨⟨fun _ _ e ↦ h.1 _ _ (DisjointUnionHom.inl e),
-      fun _ _ e ↦ h.2 _ _ (DisjointUnionHom.inl e)⟩,
-      ⟨fun _ _ e ↦ h.1 _ _ (DisjointUnionHom.inr e),
-        fun _ _ e ↦ h.2 _ _ (DisjointUnionHom.inr e)⟩⟩
-  · rintro ⟨hf, hg⟩
-    constructor <;> rintro (x | x) (y | y) e
-    · exact hf.1 _ _ e
-    · exact e.elim
-    · exact e.elim
-    · exact hg.1 _ _ e
-    · exact hf.2 _ _ e
-    · exact e.elim
-    · exact e.elim
-    · exact hg.2 _ _ e
+  simp only [Set.mem_Icc, disjointUnion_le_disjointUnion, and_and_and_comm]
 
 end Assignment
 
@@ -216,14 +217,14 @@ theorem excessAt_disjointUnion_inr (f : Assignment Q K) (g : Assignment R K) (x 
 @[simp]
 theorem excessAt_restrictLeft (f : Assignment (DisjointUnionHom Q R) K) (x : V) :
     excessAt f.restrictLeft x = excessAt f (.inl x) := by
-  rw [← f.disjointUnion_restrictLeft_restrictRight]
-  simp
+  conv_rhs => rw [← f.disjointUnion_restrictLeft_restrictRight]
+  exact (excessAt_disjointUnion_inl _ _ x).symm
 
 @[simp]
 theorem excessAt_restrictRight (f : Assignment (DisjointUnionHom Q R) K) (x : W) :
     excessAt f.restrictRight x = excessAt f (.inr x) := by
-  rw [← f.disjointUnion_restrictLeft_restrictRight]
-  simp
+  conv_rhs => rw [← f.disjointUnion_restrictLeft_restrictRight]
+  exact (excessAt_disjointUnion_inr _ _ x).symm
 
 end Excess
 
