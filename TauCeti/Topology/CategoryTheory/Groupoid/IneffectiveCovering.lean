@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.CategoryTheory.Groupoid.Effective
 public import TauCeti.Topology.Covering.Degree
+public import TauCeti.Topology.Covering.Proper
 
 /-!
 # The covering of ineffective arrows
@@ -63,12 +64,7 @@ theorem isCoveringMap_source_ineffectiveArrows [T2Space (Quiver.Total C)]
     (hclosed : IsClosed (ineffectiveArrows C)) :
     IsCoveringMap fun a : ineffectiveArrows C ↦ (a : Quiver.Total C).left := by
   have hloc := hs.comp isOpen_ineffectiveArrows.isOpenEmbedding_subtypeVal.isLocalHomeomorph
-  have hproper := isProperMap_source_ineffectiveArrows hp hclosed
-  apply isCoveringMap_iff_isCoveringMapOn_univ.mpr
-  apply hproper.isClosedMap.isCoveringMapOn_of_isLocalHomeomorphOn _ hloc.isLocalHomeomorphOn
-  intro x _
-  exact (hproper.isCompact_preimage isCompact_singleton).finite
-    (hloc.isLocallyInjective.isDiscrete_preimage_singleton x)
+  exact hloc.isCoveringMap_of_isProperMap (isProperMap_source_ineffectiveArrows hp hclosed)
 
 end Quiver
 

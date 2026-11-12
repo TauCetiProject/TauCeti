@@ -43,17 +43,21 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
   {C : Type*} [Groupoid C] [TopologicalSpace C] [ChartedSpace H C]
   [TopologicalSpace (Quiver.Total C)] [ChartedSpace H' (Quiver.Total C)]
-  [IsTopologicalGroupoid C] [T2Space (Quiver.Total C)] {n : ℕ∞ω}
+  [T2Space (Quiver.Total C)] {n : ℕ∞ω}
 
-/-- In a topological groupoid with Hausdorff arrow space and boundaryless object charts over
-a complete `RCLike` normed space, ineffective arrows are closed if source-target is proper and
-source and target are `C^n` local diffeomorphisms with `1 ≤ n`. -/
+/-- In a groupoid with Hausdorff arrow space, continuous units and composition, and boundaryless
+object charts over a complete `RCLike` normed space, ineffective arrows are closed if source-target
+is proper and source and target are `C^n` local diffeomorphisms with `1 ≤ n`. -/
 theorem isClosed_ineffectiveArrows
     (hp : IsProperMap fun a : Quiver.Total C ↦ (a.left, a.right))
     (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total C → C))
-    (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total C → C)) (hn : 1 ≤ n) :
+    (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total C → C))
+    (hu : Continuous fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C))
+    (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
+      p.1.1.comp p.1.2 p.2) (hn : 1 ≤ n) :
     IsClosed (ineffectiveArrows C) := by
-  have : T2Space C := (IsTopologicalGroupoid.isEmbedding_unit C).t2Space
+  have : T2Space C :=
+    (Function.LeftInverse.isEmbedding (fun _ ↦ rfl) hs.isLocalHomeomorph.continuous hu).t2Space
   refine closure_subset_iff_isClosed.mp ?_
   rintro ⟨x, y, f⟩ ha
   -- Any limit of ineffective arrows still has equal endpoints.
@@ -65,8 +69,7 @@ theorem isClosed_ineffectiveArrows
   subst y
   have := finite_aut_of_proper_source_target hp hs.isLocalHomeomorph x
   obtain ⟨U, hxU, act, F, hsmul, -, -, -, -, hopen, -, hsource, htarget, hcentre⟩ :=
-    exists_contMDiff_isotropy_action_of_proper_source_target hp hs ht
-      IsTopologicalGroupoid.continuous_unit IsTopologicalGroupoid.continuous_comp x
+    exists_contMDiff_isotropy_action_of_proper_source_target hp hs ht hu hc x
   let : MulAction (Aut x) U := act
   let σ (g : Aut x) (z : U) : Quiver.Total C :=
     ⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) U).symm (g, z)).hom⟩
@@ -94,6 +97,8 @@ theorem isClosed_ineffectiveArrows
     exact hcl
   rwa [hzero] at hmem
 
+variable [IsTopologicalGroupoid C]
+
 /-- In a topological groupoid with Hausdorff arrow space and boundaryless object charts over
 a complete `RCLike` normed space, the ineffective-kernel order on objects is locally constant
 if source-target is proper and source and target are `C^n` local diffeomorphisms with `1 ≤ n`. -/
@@ -103,7 +108,8 @@ theorem isLocallyConstant_card_ineffectiveKernel
     (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total C → C)) (hn : 1 ≤ n) :
     IsLocallyConstant fun x : C ↦ Nat.card (ineffectiveKernel hs.isLocalHomeomorph x) :=
   isLocallyConstant_card_ineffectiveKernel_of_isClosed hs.isLocalHomeomorph hp
-    (isClosed_ineffectiveArrows hp hs ht hn)
+    (isClosed_ineffectiveArrows hp hs ht
+      IsTopologicalGroupoid.continuous_unit IsTopologicalGroupoid.continuous_comp hn)
 
 /-- In a topological groupoid with Hausdorff arrow space and boundaryless object charts over
 a complete `RCLike` normed space, the coarse ineffective-kernel order is locally constant if
@@ -114,6 +120,7 @@ theorem isLocallyConstant_coarseCardIneffectiveKernel
     (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total C → C)) (hn : 1 ≤ n) :
     IsLocallyConstant (coarseCardIneffectiveKernel hs.isLocalHomeomorph) :=
   isLocallyConstant_coarseCardIneffectiveKernel_of_isClosed hs.isLocalHomeomorph hp
-    (isClosed_ineffectiveArrows hp hs ht hn)
+    (isClosed_ineffectiveArrows hp hs ht
+      IsTopologicalGroupoid.continuous_unit IsTopologicalGroupoid.continuous_comp hn)
 
 end TauCeti
