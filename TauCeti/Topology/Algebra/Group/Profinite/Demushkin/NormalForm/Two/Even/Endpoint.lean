@@ -25,7 +25,7 @@ Since `-1` is a value of the canonical character and `-1 ∉ 1 + 4ℤ₂`, the `
 `2` (`TauCeti.demushkinQ_eq_two_of_neg_one_mem_range_demushkinCharacter`), so Labute's Theorem 3
 for `q = 2` and even rank,
 `IsDemushkin.exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo`,
-carries a relator `r ∈ Φ(F)` of `G` to `x₁^{2+α} (x₁, x₂) x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)` with
+carries a relator `r` of `G` to `x₁^{2+α} (x₁, x₂) x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)` with
 `α ∈ 4ℤ₂` and `q ∈ {0} ∪ {2^f : f ≥ 2}`. The character table of that word
 (`TauCeti.IsDemushkin.eq_zero_and_eq_zero_of_range_demushkinCharacter_eq_zpowers_neg_one`) shows
 that the image `{±1}` forces `α = 0`, and `q = 0` as soon as the factor `x₃^q` is present, which
@@ -34,7 +34,7 @@ leaves exactly the endpoint word.
 ## Main results
 
 * `freeProP.exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq_zpowers_neg_one`: a
-  relator in `Φ(F)` of the free pro-`2` group on an even number of generators presenting a
+  relator of the free pro-`2` group on an even number of generators presenting a
   Demushkin group with image `{±1}` is carried to `x₁² (x₁, x₂) ⋯ (x_{n-1}, x_n)` by a continuous
   automorphism of `F`.
 * `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_of_range_eq_zpowers_neg_one`: **Labute's
@@ -80,7 +80,7 @@ private theorem demushkinWordTwoEvenPadic_zero_freeProPGen (hn : 2 ≤ n) {q : �
 namespace freeProP
 
 /-- **Labute's normal form for the dyadic Demushkin groups of even rank with image `{±1}`**
-(Labute, Theorem 3 and the corollary to Theorem 4). Let `r ∈ Φ(F)` be a relator of the free
+(Labute, Theorem 3 and the corollary to Theorem 4). Let `r` be a relator of the free
 pro-`2` group on an even number `n` of generators presenting a Demushkin group
 `G = ⟨x₁, …, x_n ∣ r⟩` whose canonical character has image `{±1}`. Then a continuous automorphism
 of `F` carries `r` to `x₁² (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
@@ -104,7 +104,7 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq_zpower
     (fun _ ↦ hq) hn (by omega) (presentedProP.congrSingleton e he) hA
   exact ⟨e, he.trans (demushkinWordTwoEvenPadic_zero_freeProPGen hn2 hq₀)⟩
 
-/-- **Labute's Theorem 2 at the even-rank dyadic endpoint.** Let `r, r' ∈ Φ(F)` be relators of the
+/-- **Labute's Theorem 2 at the even-rank dyadic endpoint.** Let `r, r'` be relators of the
 free pro-`2` group on an even number `n` of generators presenting Demushkin groups whose canonical
 characters both have image `{±1}`. Then a continuous automorphism of `F` carries `r` to `r'`; in
 particular the closed normal closures of `r` and `r'` are carried to each other. -/

@@ -72,7 +72,7 @@ word `x₁^{2 + 2^g} (x₁, x₂)`. Neither the exponent within its valuation no
   have the same twisted image `U^[f]` are topologically isomorphic.
 * `TauCeti.nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_not_dvd`,
   `TauCeti.nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoRankTwo_of_not_dvd`: **the
-  exponent within its valuation and the level above `v₂(α)` are free**: for `n ≥ 4` even, `g ≥ 2`,
+  exponent within its valuation and the level above `v₂(α)` are free**: for `n` even, `g ≥ 2`,
   a natural exponent `α` of exact divisibility depth `g` and a finite level `f > g`, the
   `n`-generator words `x₁^{2 + α} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯` and
   `x₁^{2 + 2^g} (x₁, x₂)(x₃, x₄) ⋯` present topologically isomorphic groups, and in rank two so do
@@ -313,7 +313,7 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq
   exact ⟨e₁.trans e, by rw [ContinuousMulEquiv.trans_apply, he]⟩
 
 /-- **Labute's normal form for a one-relator dyadic Demushkin group of even rank with twisted
-image.** Let `r ∈ Φ(F)` be a relator of the free pro-`2` group on an even number `n` of
+image.** Let `r` be a relator of the free pro-`2` group on an even number `n` of
 generators presenting a Demushkin group whose canonical character has image `U^[f]`, `f ≥ 2`
 finite. Then `⟨x₁, …, x_n ∣ r⟩` is topologically isomorphic to
 `⟨x₁, …, x_n ∣ x₁^{2 + 2^f} (x₁, x₂) ⋯ (x_{n-1}, x_n)⟩`. -/
@@ -380,11 +380,13 @@ theorem IsDemushkin.nonempty_continuousMulEquiv_of_even_demushkinRank_of_range_e
 
 /-! ### The exponent within its valuation and the level above `v₂(α)`
 
-In the even-rank dyadic word `x₁^{2+α} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` on `n ≥ 4`
+In the even-rank dyadic word `x₁^{2+α} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` on `n`
 generators with a natural exponent `α` of exact divisibility depth `g ≥ 2`, that is `2^g ∣ α` and
 `2^{g+1} ∤ α`, every finite level `f > g` presents the group of the rank-`n` level-`∞` word with
-`α = 2^g`, `x₁^{2 + 2^g} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`: both are Demushkin groups of rank `n`
-whose canonical characters have image `U^[g]`, so the uniqueness theorem identifies them. In rank
+`α = 2^g`, `x₁^{2 + 2^g} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. For positive `n` both are Demushkin
+groups of rank `n` whose canonical characters have image `U^[g]`, so the uniqueness theorem
+identifies them; for `n = 0` both groups are trivial, and for `n = 2` the word has no level factor
+and is the rank-two word. In rank
 two the word `x₁^{2+α} (x₁, x₂)` likewise presents the group of the rank-two word
 `x₁^{2 + 2^g} (x₁, x₂)`, both Demushkin groups of rank `2` with image `U^[g]`. -/
 

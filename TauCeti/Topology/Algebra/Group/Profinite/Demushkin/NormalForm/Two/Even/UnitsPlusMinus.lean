@@ -601,7 +601,7 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq
   exact ⟨e₀.trans e₃, by rw [ContinuousMulEquiv.trans_apply, he₀]; exact he₃⟩
 
 /-- **Labute's normal form for a one-relator dyadic Demushkin group of even rank with image
-`{±1} × U^(f)`.** Let `r ∈ Φ(F)` be a relator of the free pro-`2` group on an even number `n ≥ 4`
+`{±1} × U^(f)`.** Let `r` be a relator of the free pro-`2` group on an even number `n ≥ 4`
 of generators presenting a Demushkin group whose canonical character has image `V^(f)`, `f ≥ 2`
 finite. Then `⟨x₁, …, x_n ∣ r⟩` is topologically isomorphic to
 `⟨x₁, …, x_n ∣ x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)⟩`. -/
