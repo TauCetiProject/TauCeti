@@ -154,6 +154,18 @@ theorem exists_dense_open_flat_of_isAffine
   exact exists_dense_open_flat_of_comp_iso f Y.isoSpec
     (exists_dense_open_flat_of_target_spec (f ≫ Y.isoSpec.hom))
 
+/-- Flatness over an open `V` of an open subscheme `U` of the target is flatness over the image
+of `V` in the target. -/
+private theorem flat_restrict_image_of_flat_restrict_restrict {X Y : Scheme.{u}} (f : X ⟶ Y)
+    (U : Y.Opens) (V : U.toScheme.Opens) (h : Flat (f ∣_ U ∣_ V)) : Flat (f ∣_ U.ι ''ᵁ V) := by
+  -- Instance search does not find `RespectsIso @Flat` at this Mathlib revision, so derive it from
+  -- the affine-local description of flatness.
+  have : MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) := by
+    rw [HasRingHomProperty.eq_affineLocally (P := @Flat)]
+    exact affineLocally_respectsIso _ RingHom.Flat.respectsIso
+  exact (MorphismProperty.arrow_mk_iso_iff (@Flat : MorphismProperty Scheme.{u})
+    (morphismRestrictRestrict f U V)).mp h
+
 /-- **Generic flatness.** A finite-type morphism to a reduced locally Noetherian scheme
 is flat over a dense open subset of its target. Neither reducedness of the source nor
 separatedness of the morphism is required. -/
@@ -176,13 +188,8 @@ theorem exists_dense_open_flat
   refine ⟨U, hU, (flat_restrict_iff f U).mpr ?_⟩
   intro x hx
   obtain ⟨A, y, hy, hxy⟩ := Opens.mem_iSup.mp hx
-  have : MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) := by
-    rw [HasRingHomProperty.eq_affineLocally (P := @Flat)]
-    exact affineLocally_respectsIso _ RingHom.Flat.respectsIso
-  have hflatA : Flat (f ∣_ A.1.ι ''ᵁ V A) :=
-    (MorphismProperty.arrow_mk_iso_iff (@Flat : MorphismProperty Scheme.{u})
-      (morphismRestrictRestrict f A.1 (V A))).mp (hflat A)
-  exact (flat_restrict_iff f (A.1.ι ''ᵁ V A)).mp hflatA x ⟨y, hy, hxy⟩
+  exact (flat_restrict_iff f (A.1.ι ''ᵁ V A)).mp
+    (flat_restrict_image_of_flat_restrict_restrict f A.1 (V A) (hflat A)) x ⟨y, hy, hxy⟩
 
 /-- **Generic flatness** over an integral base. A finite-type morphism to an integral scheme is
 flat over a dense open subset of its target. The target need not be Noetherian. -/
@@ -200,11 +207,7 @@ theorem exists_dense_open_flat_of_isIntegral
   refine ⟨A.ι ''ᵁ V, (A.ι ''ᵁ V).isOpen.dense ?_, ?_⟩
   · obtain ⟨z, hz⟩ := hV.nonempty
     exact ⟨A.ι z, z, hz, rfl⟩
-  · have : MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) := by
-      rw [HasRingHomProperty.eq_affineLocally (P := @Flat)]
-      exact affineLocally_respectsIso _ RingHom.Flat.respectsIso
-    exact (MorphismProperty.arrow_mk_iso_iff (@Flat : MorphismProperty Scheme.{u})
-      (morphismRestrictRestrict f A V)).mp hflat
+  · exact flat_restrict_image_of_flat_restrict_restrict f A V hflat
 
 end Scheme.Hom
 
