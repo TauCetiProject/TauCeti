@@ -256,6 +256,13 @@ theorem contDiff_inhomogeneousLittlewoodPaley {n : ℕ∞} (j : ℕ) :
   · rw [inhomogeneousLittlewoodPaley_succ]
     exact φ.contDiff_littlewoodPaley _
 
+/-- Each piece of the inhomogeneous partition is even, `ψⱼ (-ξ) = ψⱼ ξ`, since the bump function
+`φ` is radial. -/
+@[simp]
+theorem inhomogeneousLittlewoodPaley_neg (j : ℕ) (ξ : E) :
+    φ.inhomogeneousLittlewoodPaley j (-ξ) = φ.inhomogeneousLittlewoodPaley j ξ := by
+  simp [inhomogeneousLittlewoodPaley, ContDiffBump.neg]
+
 /-- Every piece `ψⱼ` vanishes outside the open ball of radius `2^j φ.rOut`. -/
 theorem inhomogeneousLittlewoodPaley_eq_zero_of_le_norm {j : ℕ} {ξ : E}
     (hξ : 2 ^ j * φ.rOut ≤ ‖ξ‖) : φ.inhomogeneousLittlewoodPaley j ξ = 0 := by

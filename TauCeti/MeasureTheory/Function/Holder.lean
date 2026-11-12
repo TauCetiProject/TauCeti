@@ -21,6 +21,8 @@ integration-by-parts arguments:
 * `ContinuousLinearMap.lpPairing_mul_eq_integral`: the Hölder pairing
   `ContinuousLinearMap.lpPairing` of the multiplication of a complete normed algebra is the
   integral of the product.
+* `ContinuousLinearMap.norm_lpPairing_le`: the Hölder pairing induced by a continuous bilinear map
+  `B` has norm at most `‖B‖`.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
 -/
@@ -59,6 +61,28 @@ product. -/
 theorem lpPairing_mul_eq_integral (g : Lp R q μ) (f : Lp R q' μ) :
     (mul 𝕜 R).lpPairing μ q q' g f = ∫ x, g x * f x ∂μ := by
   simp [lpPairing_eq_integral]
+
+section Pairing
+
+variable {α 𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
+  [NormedSpace 𝕜 G] [NormedSpace ℝ G] [SMulCommClass ℝ 𝕜 G] [CompleteSpace G]
+  {mα : MeasurableSpace α} {μ : Measure α} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+  [p.HolderConjugate q]
+
+/-- **Hölder's inequality for the pairing** `∫ B (f x) (g x) dx` of `Lᵖ` and `L^q`: the Hölder
+pairing induced by a continuous bilinear map `B` has norm at most `‖B‖`. -/
+theorem norm_lpPairing_le (B : E →L[𝕜] F →L[𝕜] G) : ‖B.lpPairing μ p q‖ ≤ ‖B‖ := by
+  refine opNorm_le_bound₂ _ (norm_nonneg B) fun f g ↦ ?_
+  calc ‖B.lpPairing μ p q f g‖ = ‖∫ x, B (f x) (g x) ∂μ‖ := by rw [lpPairing_eq_integral]
+    _ ≤ ∫ x, ‖B (f x) (g x)‖ ∂μ := norm_integral_le_integral_norm _
+    _ = ‖B.holder 1 f g‖ := by
+        rw [L1.norm_eq_integral_norm]
+        exact integral_congr_ae ((B.coeFn_holder (r := 1) f g).mono fun x hx ↦ by
+          simp only [hx])
+    _ ≤ ‖B‖ * ‖f‖ * ‖g‖ := B.norm_holder_apply_apply_le _ _
+
+end Pairing
 
 end ContinuousLinearMap
 
