@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 Under the canonical identification of product tangent spaces, the tangent image of
 `x ↦ (f x, g x)` is the range of `df × dg`, that of `x ↦ (x, f x)` is the linear graph of `df`,
 and the tangent image of a product map `f × g` at `(x, y)` is the product of the tangent images
-of `f` at `x` and of `g` at `y`. These are the
+of `f` at `x` and of `g` at `y`, as is its kernel. These are the
 bridges between linear criteria for graphs and products of subspaces and geometric conditions on
 embedded graphs and products of submanifolds, including Lagrangian ones. The calculations use
 Mathlib's product derivatives, `LinearMap.graph_eq_range_prod` and `LinearMap.range_prodMap`.
@@ -119,5 +119,25 @@ theorem map_range_mfderiv_prodMap
     rfl
   rw [← LinearMap.range_comp, hd, LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _),
     LinearMap.range_prodMap]
+
+/-- The kernel of the differential of a product of differentiable maps, read in the product
+tangent spaces, is the product of the kernels of the differentials of the factors. -/
+theorem ker_mfderiv_prodMap
+    {E' F' G G' M' N' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace G]
+    {I' : ModelWithCorners 𝕜 E' G} [TopologicalSpace M'] [ChartedSpace G M']
+    [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] [TopologicalSpace G']
+    {J' : ModelWithCorners 𝕜 F' G'} [TopologicalSpace N'] [ChartedSpace G' N']
+    {f : M → M'} {g : N → N'} {p : M × N} (hf : MDifferentiableAt I I' f p.1)
+    (hg : MDifferentiableAt J J' g p.2) :
+    (mfderiv (I.prod J) (I'.prod J') (Prod.map f g) p).ker =
+      ((mfderiv I I' f p.1).ker.prod (mfderiv J J' g p.2).ker).comap
+        (Manifold.tangentSpaceProdEquiv (I := I) (J := J) p).toLinearMap := by
+  ext v
+  obtain ⟨w, rfl⟩ := (Manifold.tangentSpaceProdEquiv (I := I) (J := J) p).symm.surjective v
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, mfderiv_prodMap_apply hf hg,
+    ContinuousLinearEquiv.map_eq_zero_iff, Submodule.mem_comap]
+  simp only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+    ContinuousLinearEquiv.apply_symm_apply, Submodule.mem_prod, LinearMap.mem_ker,
+    ContinuousLinearMap.coe_coe, Prod.mk_eq_zero]
 
 end TauCeti.Manifold
