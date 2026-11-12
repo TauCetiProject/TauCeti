@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 public import TauCeti.Topology.CompactOpen
-public import TauCeti.Topology.MappingSpace.Based
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 
 /-!
@@ -34,6 +33,10 @@ Mathlib's `IsProjectiveLimit.unique` and the evaluation-generated Borel sigma al
   postcomposition with `g`.
 * `TauCeti.isProbabilityMeasure_comap_postcomp_of_dense`: the pullback of such a probability law
   is a probability law.
+* `TauCeti.continuousMap_measure_ext_of_forall_finset_map_restrict_eq`: finite-dimensional
+  laws determine a finite Borel law on continuous maps.
+* `TauCeti.basedMap_measure_ext_of_forall_finset_map_restrict_eq`: the corresponding
+  uniqueness criterion for based continuous maps.
 -/
 
 public section
@@ -86,48 +89,47 @@ theorem isProbabilityMeasure_comap_postcomp_of_dense {g : C(X, E)} (hg : IsClose
 /-- A Borel law on continuous paths agrees with a finite law if their finite-dimensional
 laws agree. The empty marginal already forces equality of total masses. The topology on
 the path space is compact-open, not the pointwise topology. -/
-theorem continuousMap_measure_ext [SecondCountableTopology T] [LocallyCompactSpace T]
+theorem continuousMap_measure_ext_of_forall_finset_map_restrict_eq
+    [SecondCountableTopology T] [LocallyCompactSpace T]
     [SecondCountableTopology E] [RegularSpace E] [MeasurableSpace E] [BorelSpace E]
     {μ ν : Measure C(T, E)} [IsFiniteMeasure ν]
     (h : ∀ I : Finset T,
       μ.map (fun γ : C(T, E) ↦ I.restrict (γ : T → E)) =
         ν.map (fun γ : C(T, E) ↦ I.restrict (γ : T → E))) : μ = ν := by
-  have hcoe : Measurable (fun γ : C(T, E) ↦ (γ : T → E)) :=
-    Measurable.of_eval fun t ↦ ContinuousMap.measurable_eval t
+  have hcoe := ContinuousMap.measurable_coeFun (X := T) (Y := E)
   have hμ := ProbabilityTheory.isProjectiveLimit_map (P := μ) hcoe.aemeasurable
   have hν := ProbabilityTheory.isProjectiveLimit_map (P := ν) hcoe.aemeasurable
   simp_rw [h] at hμ
   have heq := hμ.unique hν
-  have hm : borel C(T, E) =
+  have hm : ContinuousMap.measurableSpace (X := T) (Y := E) =
       (inferInstance : MeasurableSpace (T → E)).comap (fun γ : C(T, E) ↦ (γ : T → E)) := by
-    rw [ContinuousMap.borel_eq_iSup_comap_eval]
+    rw [ContinuousMap.measurableSpace_eq_iSup_comap_eval]
     simp [MeasurableSpace.pi, MeasurableSpace.comap_iSup, MeasurableSpace.comap_comp,
-      Function.comp_def, BorelSpace.measurable_eq]
+      Function.comp_def]
   ext A hA
-  have hA' : MeasurableSet[borel C(T, E)] A := hA
-  rw [hm, MeasurableSpace.measurableSet_comap] at hA'
-  obtain ⟨B, hB, hBA⟩ := hA'
+  rw [hm, MeasurableSpace.measurableSet_comap] at hA
+  obtain ⟨B, hB, hBA⟩ := hA
   rw [← hBA, ← Measure.map_apply hcoe hB, ← Measure.map_apply hcoe hB]
   exact congrArg (fun ρ ↦ ρ B) heq
 
 /-- A law on based continuous paths agrees with a finite law if their finite-dimensional
 laws agree, including the empty set of observation times. -/
-theorem basedMap_measure_ext [SecondCountableTopology T] [LocallyCompactSpace T]
-    [SecondCountableTopology E] [RegularSpace E] [T2Space E]
+theorem basedMap_measure_ext_of_forall_finset_map_restrict_eq
+    [SecondCountableTopology T] [LocallyCompactSpace T]
+    [SecondCountableTopology E] [RegularSpace E]
     [MeasurableSpace E] [BorelSpace E] {t₀ : T} {x₀ : E}
     {ν ρ : Measure (BasedMap T E t₀ x₀)} [IsFiniteMeasure ρ]
     (h : ∀ I : Finset T,
       ν.map (fun γ ↦ I.restrict (γ.1 : T → E)) =
         ρ.map (fun γ ↦ I.restrict (γ.1 : T → E))) : ν = ρ := by
-  have he : MeasurableEmbedding (Subtype.val : BasedMap T E t₀ x₀ → C(T, E)) :=
-    MeasurableEmbedding.subtype_coe
-      (isClosed_eq (continuous_eval_const t₀) continuous_const).measurableSet
-  apply he.map_injective
-  apply continuousMap_measure_ext
-  intro I
-  have hm : Measurable (fun γ : C(T, E) ↦ I.restrict (γ : T → E)) :=
-    (Finset.measurable_restrict I).comp
-      (Measurable.of_eval fun t ↦ ContinuousMap.measurable_eval t)
-  simpa only [Measure.map_map hm he.measurable, Function.comp_def] using h I
+  have heq : ν.map Subtype.val = ρ.map Subtype.val := by
+    apply continuousMap_measure_ext_of_forall_finset_map_restrict_eq
+    intro I
+    simpa only [Measure.map_map (ContinuousMap.measurable_restrict I) measurable_subtype_coe,
+      Function.comp_def] using h I
+  ext A hA
+  obtain ⟨B, hB, rfl⟩ := hA
+  rw [← Measure.map_apply measurable_subtype_coe hB,
+    ← Measure.map_apply measurable_subtype_coe hB, heq]
 
 end TauCeti
