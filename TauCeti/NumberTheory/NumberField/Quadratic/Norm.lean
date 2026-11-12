@@ -25,9 +25,9 @@ For a quadratic number field `K = ℚ(√d)` presented by an algebraic integer `
 * `exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one`: a solution of the negative Pell equation
   `b² - d a² = -1` supplies a unit of norm `-1`.
 
-The positivity is a descent input for the genus theory of the multiquadratic roadmap: for a
-norm-`±1` element `α` it upgrades `N(α) = ±1` to `N(α) = 1`, the hypothesis of Hilbert's
-Theorem 90 used to realise a `2`-torsion class by an ambiguous ideal.
+The positivity is a descent input for genus theory: for a norm-`±1` element `α` it upgrades
+`N(α) = ±1` to `N(α) = 1`, the hypothesis of Hilbert's Theorem 90 used to realise a `2`-torsion
+class by an ambiguous ideal.
 
 See D. A. Cox, *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*.
 -/
