@@ -12,6 +12,7 @@ import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import Mathlib.CategoryTheory.Limits.Preserves.Opposites
 import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
 import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
+import TauCeti.CategoryTheory.Linear.Yoneda
 
 /-!
 # Morphisms from a chain complex into an object
@@ -32,8 +33,8 @@ coefficients to short exact sequences of cochain complexes. For singular chains 
 exact cohomology sequence of a short exact sequence of coefficients.
 
 It also sends coproducts of chain complexes to products of cochain complexes, with smallness
-measured in the universe of morphisms of the coefficient category. This uses Mathlib's
-`whiskering_linearYoneda` comparison with the Yoneda embedding (Kim Morrison) and the transfer
+measured in the universe of morphisms of the coefficient category. This uses the preservation of
+limits by `Hom(-, Y)` (`CategoryTheory.preservesLimits_linearYoneda_obj`) and Mathlib's transfer
 of limit preservation across opposite categories (Markus Himmel).
 
 The functor and its action on homotopies require only a preadditive `k`-linear category.
@@ -106,18 +107,10 @@ The index type is small in the universe of the morphisms of `C`. -/
 instance linearYonedaFunctor_preservesLimitsOfShape_discrete {ι : Type w} [Small.{v} ι]
     [HasColimitsOfShape (Discrete ι) C] :
     PreservesLimitsOfShape (Discrete ι) (linearYonedaFunctor (α := α) k Y) := by
-  let _ : PreservesLimitsOfShape (Discrete ι)ᵒᵖ ((linearYoneda k C).obj Y) := by
-    have hforget : (linearYoneda k C).obj Y ⋙ forget (ModuleCat.{v} k) = yoneda.obj Y :=
-      Functor.congr_obj (whiskering_linearYoneda k C) Y
-    let _ : PreservesLimitsOfShape (Discrete (Shrink.{v} ι))ᵒᵖ
-        ((linearYoneda k C).obj Y ⋙ forget (ModuleCat.{v} k)) :=
-      hforget ▸ inferInstance
-    -- The forgetful functor reflects limits of small shape. Shrinking the index type makes
-    -- that reflection available without identifying the index and morphism universes.
-    let _ : PreservesLimitsOfShape (Discrete (Shrink.{v} ι))ᵒᵖ ((linearYoneda k C).obj Y) :=
-      preservesLimitsOfShape_of_reflects_of_preserves _ (forget (ModuleCat.{v} k))
-    exact preservesLimitsOfShape_of_equiv
-      (Discrete.equivalence (equivShrink.{v} ι)).symm.op _
+  -- `Hom(-, Y)` preserves limits whose shape lives in the universe of morphisms of `C`.
+  -- Shrinking the index type transfers this without identifying the two universes.
+  let _ : PreservesLimitsOfShape (Discrete ι)ᵒᵖ ((linearYoneda k C).obj Y) :=
+    preservesLimitsOfShape_of_equiv (Discrete.equivalence (equivShrink.{v} ι)).symm.op _
   let _ : PreservesColimitsOfShape (Discrete ι) ((linearYoneda k C).obj Y).rightOp :=
     preservesColimitsOfShape_rightOp _ _
   let _ : PreservesLimitsOfShape (Discrete ι)

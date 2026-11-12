@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Algebra.Homology.LocalCohomology
-public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.CategoryTheory.Limits.Preserves.Opposites
+public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
+public import TauCeti.CategoryTheory.Abelian.Ext
+import TauCeti.Algebra.Module.Torsion.QuotientLinearMap
 
 /-!
 # Local cohomology in degree zero
@@ -17,32 +18,29 @@ Mathlib defines the local cohomology module `H^i_J(M) = (localCohomology J i).ob
 `M` over a commutative ring `R` as the colimit over `n` of `Extⁱ(R ⧸ Jⁿ, M)`, where `Ext` is the
 left derived functor `Ext R (ModuleCat R) i` of `Hom(-, M)`. This file computes the degree-zero
 group for an arbitrary commutative ring: `H⁰_J(M)` is the `J`-power torsion of `M`, the union of
-the annihilators `{m | Jⁿ m = 0}` of the powers of `J`.
+the annihilators `{m | Jⁿ m = 0}` of the powers of `J`, which is Mathlib's `J`-primary component
+`Ideal.primaryComponent M J`.
 
 The comparison is the canonical map `localCohomology.degreeZeroToModule J M : H⁰_J(M) ⟶ M`.
 On the term of index `n` of the colimit it identifies `Ext⁰(R ⧸ Jⁿ, M)` with `Hom(R ⧸ Jⁿ, M)`
 (`CategoryTheory.extZeroIso`) and evaluates at `1`; these maps are compatible along the
 quotient maps `R ⧸ Jⁿ⁺¹ ⟶ R ⧸ Jⁿ`, which send `1` to `1`. Evaluation at `1` identifies
-`Hom(R ⧸ Jⁿ, M)` with the annihilator of `Jⁿ` in `M`, and the colimit is filtered, so the
-induced map is injective with image the union of these annihilators.
-
-The identification `Ext⁰(X, Y) ≅ Hom(X, Y)` holds in any abelian category with enough
-projectives: `Hom(-, Y)` sends finite colimits to finite limits, so the zeroth left derived
-functor of `Hom(-, Y)`, read in the opposite category, is `Hom(-, Y)` itself
-(`CategoryTheory.Functor.leftDerivedZeroIsoSelf`).
+`Hom(R ⧸ Jⁿ, M)` with the annihilator of `Jⁿ` in `M` (`Ideal.quotientLinearMapEquivTorsionBySet`),
+and the colimit is filtered, so the induced map is injective with image the union of these
+annihilators.
 
 ## Main definitions
 
-* `CategoryTheory.extZeroIso`: the isomorphism `Ext⁰(X, Y) ≅ Hom(X, Y)`, natural in `X`
-  (`CategoryTheory.extZeroIso_hom_naturality`).
-* `localCohomology.degreeZeroToModule J M`: the canonical map `H⁰_J(M) ⟶ M`.
+* `localCohomology.degreeZeroToModule J M`: the canonical map `H⁰_J(M) ⟶ M`, natural in `M`
+  (`localCohomology.degreeZeroToModule_naturality`).
 
 ## Main results
 
 * `localCohomology.degreeZeroToModule_ι`: on the term of index `n` it is evaluation at `1`.
 * `localCohomology.degreeZeroToModule_injective`: the map `H⁰_J(M) ⟶ M` is injective.
-* `localCohomology.range_degreeZeroToModule`: its image is `⨆ n, torsionBySet R M (Jⁿ)`, the
-  union of the annihilators of the powers of `J`.
+* `localCohomology.range_degreeZeroToModule` and `localCohomology.range_hom_degreeZeroToModule`:
+  its image is the `J`-primary component `⨆ n, torsionBySet R M (Jⁿ)`, the union of the
+  annihilators of the powers of `J`.
 
 ## References
 
@@ -53,52 +51,9 @@ functor of `Hom(-, Y)`, read in the opposite category, is `Hom(-, Y)` itself
 
 public section
 
-universe w v u
+universe u
 
 open CategoryTheory Limits Opposite
-
-namespace CategoryTheory
-
-section ExtZero
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [EnoughProjectives C]
-  (k : Type w) [Ring k] [Linear k C]
-
-/-- `Hom(-, Y)` sends finite colimits in `C` to finite limits of `k`-modules. -/
-instance preservesFiniteLimits_linearYoneda_obj (Y : C) :
-    PreservesFiniteLimits ((linearYoneda k C).obj Y) := by
-  have hforget : (linearYoneda k C).obj Y ⋙ forget (ModuleCat.{v} k) = yoneda.obj Y :=
-    Functor.congr_obj (whiskering_linearYoneda k C) Y
-  have : PreservesFiniteLimits ((linearYoneda k C).obj Y ⋙ forget (ModuleCat.{v} k)) :=
-    hforget ▸ inferInstance
-  exact preservesFiniteLimits_of_reflects_of_preserves _ (forget (ModuleCat.{v} k))
-
-/-- `Hom(-, Y)`, read as a functor to the opposite category of `k`-modules, is right exact. -/
-instance preservesFiniteColimits_linearYoneda_obj_rightOp (Y : C) :
-    PreservesFiniteColimits ((linearYoneda k C).obj Y).rightOp :=
-  preservesFiniteColimits_rightOp _
-
-variable {k}
-
-/-- The isomorphism `Ext⁰(X, Y) ≅ Hom(X, Y)` for the left derived functor `Ext k C 0` of
-`Hom(-, Y)`: the zeroth left derived functor of the right exact functor `Hom(-, Y)`, read in the
-opposite category of `k`-modules, is `Hom(-, Y)` itself. -/
-noncomputable def extZeroIso (X Y : C) :
-    ((Ext k C 0).obj (op X)).obj Y ≅ ModuleCat.of k (X ⟶ Y) :=
-  (((linearYoneda k C).obj Y).rightOp.leftDerivedZeroIsoSelf.app X).unop.symm
-
-/-- The isomorphism `Ext⁰(X, Y) ≅ Hom(X, Y)` is natural in `X`: precomposition with `f : X' ⟶ X`
-on `Hom(-, Y)` corresponds to the action of `Ext k C 0` on `f`. -/
-@[reassoc]
-theorem extZeroIso_hom_naturality {X X' : C} (f : X' ⟶ X) (Y : C) :
-    ((Ext k C 0).map f.op).app Y ≫ (extZeroIso X' Y).hom =
-      (extZeroIso X Y).hom ≫ ((linearYoneda k C).obj Y).map f.op :=
-  Quiver.Hom.op_inj
-    (((linearYoneda k C).obj Y).rightOp.leftDerivedZeroIsoSelf.inv.naturality f).symm
-
-end ExtZero
-
-end CategoryTheory
 
 namespace localCohomology
 
@@ -108,65 +63,69 @@ section EvalOne
 
 variable (I : Ideal R)
 
-/-- Evaluation at `1`, the `R`-linear map `Hom(R ⧸ I, M) → M`. -/
-@[expose]
-def evalOne : ModuleCat.of R (ModuleCat.of R (R ⧸ I) ⟶ M) ⟶ M :=
-  ModuleCat.ofHom
-    { toFun f := f (Submodule.Quotient.mk 1)
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
+/-- Evaluation at `1`, the `R`-linear map `Hom(R ⧸ I, M) → M`: the identification of
+`Hom(R ⧸ I, M)` with the annihilator of `I` in `M`, followed by the inclusion into `M`. -/
+private noncomputable def evalOne : ModuleCat.of R (ModuleCat.of R (R ⧸ I) ⟶ M) ⟶ M :=
+  ModuleCat.ofHom ((Submodule.torsionBySet R M I).subtype ∘ₗ
+    (I.quotientLinearMapEquivTorsionBySet M).toLinearMap ∘ₗ ModuleCat.homLinearEquiv.toLinearMap)
 
-@[simp]
-theorem evalOne_apply (f : ModuleCat.of R (R ⧸ I) ⟶ M) :
-    evalOne M I f = f (Submodule.Quotient.mk 1) :=
-  rfl
+private theorem evalOne_apply (f : ModuleCat.of R (R ⧸ I) ⟶ M) :
+    evalOne M I f = f (1 : R ⧸ I) :=
+  I.coe_quotientLinearMapEquivTorsionBySet_apply M f.hom
 
-/-- A morphism out of the cyclic module `R ⧸ I` is determined by its value at `1`. -/
-theorem evalOne_injective : Function.Injective (evalOne M I) := fun _ _ h ↦
-  ModuleCat.hom_ext (Submodule.linearMap_qext _ (LinearMap.ext_ring h))
+private theorem evalOne_injective : Function.Injective (evalOne M I) :=
+  Subtype.val_injective.comp
+    ((I.quotientLinearMapEquivTorsionBySet M).injective.comp ModuleCat.homLinearEquiv.injective)
 
-/-- The values at `1` of the morphisms `R ⧸ I ⟶ M` are the elements of `M` killed by `I`. -/
-theorem range_evalOne :
+private theorem range_evalOne :
     Set.range (evalOne M I) = Submodule.torsionBySet R M (I : Set R) := by
-  ext m
-  refine ⟨?_, fun hm ↦ ?_⟩
-  · rintro ⟨f, rfl⟩
-    rw [SetLike.mem_coe, Submodule.mem_torsionBySet_iff]
-    rintro ⟨a, ha⟩
-    rw [evalOne_apply, ← map_smul, ← Submodule.Quotient.mk_smul, smul_eq_mul, mul_one,
-      (Submodule.Quotient.mk_eq_zero I).mpr ha, map_zero]
-  · rw [SetLike.mem_coe, Submodule.mem_torsionBySet_iff] at hm
-    exact ⟨ModuleCat.ofHom (I.liftQ (LinearMap.toSpanSingleton R M m) fun a ha ↦ hm ⟨a, ha⟩),
-      one_smul R m⟩
+  simp only [evalOne, ModuleCat.hom_ofHom, LinearMap.coe_comp, LinearEquiv.coe_coe,
+    Submodule.coe_subtype]
+  rw [((I.quotientLinearMapEquivTorsionBySet M).surjective.comp
+    ModuleCat.homLinearEquiv.surjective).range_comp, Subtype.range_coe]
+
+/-- Evaluation at `1` is natural in the module. -/
+private theorem evalOne_naturality {N : ModuleCat.{u} R} (f : M ⟶ N) :
+    ((linearCoyoneda R (ModuleCat R)).obj (op (ModuleCat.of R (R ⧸ I)))).map f ≫ evalOne N I =
+      evalOne M I ≫ f := by
+  ext g
+  exact (evalOne_apply N I (((linearCoyoneda R (ModuleCat R)).obj _).map f g)).trans
+    (congrArg f (evalOne_apply M I g)).symm
+
+/-- Evaluation at `1` is compatible with the quotient maps `R ⧸ I ⟶ R ⧸ I'` for `I ≤ I'`, which
+send `1` to `1`. -/
+private theorem evalOne_precomp {I' : Ideal R} (h : I ≤ I') :
+    ((linearYoneda R (ModuleCat R)).obj M).map
+        (ModuleCat.ofHom (Submodule.mapQ I I' LinearMap.id h)).op ≫ evalOne M I = evalOne M I' := by
+  ext g
+  -- Precomposition with the quotient map, which sends `1` to `1`.
+  exact (evalOne_apply M I _).trans (evalOne_apply M I' g).symm
 
 end EvalOne
 
 /-- The cocone with vertex `M` on the diagram `n ↦ Ext⁰(R ⧸ Jⁿ, M)` defining `H⁰_J(M)`, whose leg
 of index `n` is `Ext⁰(R ⧸ Jⁿ, M) ≅ Hom(R ⧸ Jⁿ, M)` followed by evaluation at `1`. -/
-@[expose]
-noncomputable def degreeZeroCocone :
+private noncomputable def degreeZeroCocone :
     Cocone (diagram (idealPowersDiagram J) 0 ⋙ (evaluation _ _).obj M) where
   pt := M
   ι :=
     { app t := (extZeroIso _ M).hom ≫ evalOne M _
       naturality t t' w := by
         dsimp
-        rw [Category.comp_id, extZeroIso_hom_naturality_assoc]
-        -- The quotient map `R ⧸ Jⁿ⁺ᵐ ⟶ R ⧸ Jⁿ` sends `1` to `1`.
-        rfl }
+        rw [Category.comp_id, extZeroIso_hom_naturality_left_assoc]
+        exact (extZeroIso _ M).hom ≫= evalOne_precomp M _ _ }
 
 /-- The leg of `degreeZeroCocone` of index `n` is injective. -/
-theorem degreeZeroCocone_ι_app_injective (t : ℕᵒᵖᵒᵖ) :
+private theorem degreeZeroCocone_ι_app_injective (t : ℕᵒᵖᵒᵖ) :
     Function.Injective ((degreeZeroCocone J M).ι.app t) :=
   (evalOne_injective M _).comp (ConcreteCategory.bijective_of_isIso (extZeroIso _ M).hom).1
 
 /-- The image of the leg of `degreeZeroCocone` of index `n` is the annihilator of `Jⁿ`. -/
-theorem range_degreeZeroCocone_ι_app (t : ℕᵒᵖᵒᵖ) :
+private theorem range_degreeZeroCocone_ι_app (t : ℕᵒᵖᵒᵖ) :
     Set.range ((degreeZeroCocone J M).ι.app t) =
-      (Submodule.torsionBySet R M ((J ^ t.unop.unop : Ideal R) : Set R) : Set M) := by
-  rw [← range_evalOne]
-  change Set.range (evalOne M _ ∘ (extZeroIso _ M).hom) = _
-  exact (ConcreteCategory.bijective_of_isIso (extZeroIso _ M).hom).2.range_comp _
+      (Submodule.torsionBySet R M ((J ^ t.unop.unop : Ideal R) : Set R) : Set M) :=
+  ((ConcreteCategory.bijective_of_isIso (extZeroIso _ M).hom).2.range_comp (evalOne M _)).trans
+    (range_evalOne M _)
 
 /-- The forgetful functor of `R`-modules preserves colimits indexed by `ℕᵒᵖᵒᵖ`, which is
 filtered; the shape lives in `Type`, below the universe of `R`. -/
@@ -185,14 +144,38 @@ index `n` of the colimit, it identifies `Ext⁰(R ⧸ Jⁿ, M)` with `Hom(R ⧸ 
 noncomputable def degreeZeroToModule : (localCohomology J 0).obj M ⟶ M :=
   (isColimitEvaluation J M).desc (degreeZeroCocone J M)
 
+@[reassoc]
+private theorem ι_app_degreeZeroToModule (t : ℕᵒᵖᵒᵖ) :
+    (colimit.ι (diagram (idealPowersDiagram J) 0) t).app M ≫ degreeZeroToModule J M =
+      (degreeZeroCocone J M).ι.app t :=
+  (isColimitEvaluation J M).fac (degreeZeroCocone J M) t
+
+private theorem degreeZeroToModule_ι_app_apply (t : ℕᵒᵖᵒᵖ)
+    (x : ((diagram (idealPowersDiagram J) 0).obj t).obj M) :
+    degreeZeroToModule J M ((((evaluation _ _).obj M).mapCocone
+        (colimit.cocone (diagram (idealPowersDiagram J) 0))).ι.app t x) =
+      (degreeZeroCocone J M).ι.app t x :=
+  ConcreteCategory.congr_hom (ι_app_degreeZeroToModule J M t) x
+
 /-- On the term of index `n` of the colimit defining `H⁰_J(M)`, the map `degreeZeroToModule` is
 evaluation at `1` of the morphism `R ⧸ Jⁿ ⟶ M` corresponding to an element of
 `Ext⁰(R ⧸ Jⁿ, M)`. -/
-theorem degreeZeroToModule_ι (n : ℕ)
-    (x : ((Ext R (ModuleCat.{u} R) 0).obj (op (ModuleCat.of R (R ⧸ J ^ n)))).obj M) :
-    degreeZeroToModule J M ((colimit.ι (diagram (idealPowersDiagram J) 0) (op (op n))).app M x) =
-      (extZeroIso _ M).hom x (Submodule.Quotient.mk 1) :=
-  ConcreteCategory.congr_hom ((isColimitEvaluation J M).fac (degreeZeroCocone J M) (op (op n))) x
+theorem degreeZeroToModule_ι (t : ℕᵒᵖᵒᵖ)
+    (x : ((diagram (idealPowersDiagram J) 0).obj t).obj M) :
+    degreeZeroToModule J M ((colimit.ι (diagram (idealPowersDiagram J) 0) t).app M x) =
+      (extZeroIso _ M).hom x (1 : R ⧸ J ^ t.unop.unop) :=
+  (degreeZeroToModule_ι_app_apply J M t x).trans (evalOne_apply M _ _)
+
+/-- The map `H⁰_J(M) ⟶ M` is natural in `M`. -/
+@[reassoc]
+theorem degreeZeroToModule_naturality {M N : ModuleCat.{u} R} (f : M ⟶ N) :
+    (localCohomology J 0).map f ≫ degreeZeroToModule J N = degreeZeroToModule J M ≫ f := by
+  refine (isColimitEvaluation J M).hom_ext fun t ↦
+    ((colimit.ι (diagram (idealPowersDiagram J) 0) t).naturality_assoc f _).symm.trans ?_
+  rw [ι_app_degreeZeroToModule]
+  exact (extZeroIso_hom_naturality_right_assoc _ f _).trans
+    (((extZeroIso _ M).hom ≫= evalOne_naturality M _ f).trans
+      ((Category.assoc _ _ _).symm.trans (ι_app_degreeZeroToModule_assoc J M t f).symm))
 
 /-- **Local cohomology in degree zero is torsion, injectivity.** For any commutative ring `R`,
 ideal `J` and module `M`, the canonical map `H⁰_J(M) ⟶ M` is injective. -/
@@ -204,40 +187,38 @@ theorem degreeZeroToModule_injective : Function.Injective (degreeZeroToModule J 
   refine Concrete.isColimit_rep_eq_of_exists _ x y ⟨IsFiltered.max i j,
     IsFiltered.leftToMax i j, IsFiltered.rightToMax i j,
     degreeZeroCocone_ι_app_injective J M _ ?_⟩
-  have hx := ConcreteCategory.congr_hom
-    ((isColimitEvaluation J M).fac (degreeZeroCocone J M) i) x
-  have hy := ConcreteCategory.congr_hom
-    ((isColimitEvaluation J M).fac (degreeZeroCocone J M) j) y
-  have hx' := ConcreteCategory.congr_hom ((degreeZeroCocone J M).w (IsFiltered.leftToMax i j)) x
-  have hy' := ConcreteCategory.congr_hom ((degreeZeroCocone J M).w (IsFiltered.rightToMax i j)) y
-  rw [ConcreteCategory.comp_apply] at hx' hy' hx hy
-  rw [hx', hy', ← hx, ← hy]
+  rw [Cocone.w_apply, Cocone.w_apply, ← degreeZeroToModule_ι_app_apply,
+    ← degreeZeroToModule_ι_app_apply]
   exact h
 
+/-- The canonical map `H⁰_J(M) ⟶ M` is a monomorphism. -/
+instance : Mono (degreeZeroToModule J M) :=
+  (ModuleCat.mono_iff_injective _).2 (degreeZeroToModule_injective J M)
+
 /-- **Local cohomology in degree zero is torsion, image.** For any commutative ring `R`, ideal `J`
-and module `M`, the image of the canonical map `H⁰_J(M) ⟶ M` is the `J`-power torsion of `M`,
-the union of the annihilators of the powers `Jⁿ`. -/
+and module `M`, the image of the canonical map `H⁰_J(M) ⟶ M` is the `J`-primary component of
+`M`, the union of the annihilators of the powers `Jⁿ`. -/
 theorem range_degreeZeroToModule :
-    Set.range (degreeZeroToModule J M) =
-      (⨆ n : ℕ, Submodule.torsionBySet R M ((J ^ n : Ideal R) : Set R) : Submodule R M) := by
-  have hmono : Monotone fun n : ℕ ↦ Submodule.torsionBySet R M ((J ^ n : Ideal R) : Set R) :=
-    fun _ _ hmn ↦ Submodule.torsionBySet_le_torsionBySet_of_subset
-      (Ideal.pow_le_pow_right hmn)
+    Set.range (degreeZeroToModule J M) = Ideal.primaryComponent M J := by
   ext m
-  rw [SetLike.mem_coe, Submodule.mem_iSup_of_directed _ hmono.directed_le]
+  rw [SetLike.mem_coe, Ideal.primaryComponent_mem]
   constructor
   · rintro ⟨a, rfl⟩
     obtain ⟨i, x, rfl⟩ := Concrete.isColimit_exists_rep _ (isColimitEvaluation J M) a
-    have hx := ConcreteCategory.congr_hom
-      ((isColimitEvaluation J M).fac (degreeZeroCocone J M) i) x
-    rw [ConcreteCategory.comp_apply] at hx
-    exact ⟨i.unop.unop, hx ▸ (range_degreeZeroCocone_ι_app J M i ▸ Set.mem_range_self x :
-      (degreeZeroCocone J M).ι.app i x ∈
-        (Submodule.torsionBySet R M ((J ^ i.unop.unop : Ideal R) : Set R) : Set M))⟩
+    have hx : (degreeZeroCocone J M).ι.app i x ∈ Set.range ((degreeZeroCocone J M).ι.app i) :=
+      Set.mem_range_self x
+    rw [range_degreeZeroCocone_ι_app] at hx
+    rw [degreeZeroToModule_ι_app_apply]
+    exact ⟨i.unop.unop, hx⟩
   · rintro ⟨n, hn⟩
     rw [← SetLike.mem_coe, ← range_degreeZeroCocone_ι_app J M (op (op n))] at hn
     obtain ⟨x, rfl⟩ := hn
-    exact ⟨_, ConcreteCategory.congr_hom
-      ((isColimitEvaluation J M).fac (degreeZeroCocone J M) (op (op n))) x⟩
+    exact ⟨_, degreeZeroToModule_ι_app_apply J M _ x⟩
+
+/-- The image of the canonical map `H⁰_J(M) ⟶ M`, as a submodule of `M`, is the `J`-primary
+component of `M`. -/
+theorem range_hom_degreeZeroToModule :
+    LinearMap.range (degreeZeroToModule J M).hom = Ideal.primaryComponent M J :=
+  SetLike.coe_injective ((LinearMap.coe_range _).trans (range_degreeZeroToModule J M))
 
 end localCohomology
