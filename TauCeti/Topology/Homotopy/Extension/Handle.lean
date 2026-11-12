@@ -536,7 +536,7 @@ theorem exists_leftInverse_homotopicRel_of_isPushout_handles
     (ContinuousMap.Homotopy.refl inlP.hom).cast (by ext x; rfl)
       (by ext x; exact (congrArg φ (hgl x)).trans (hφl' x) |>.symm)
   let HZ : ((ContinuousMap.id P).comp inrP.hom).Homotopy ((φ.hom.comp g.hom).comp inrP.hom) :=
-    sigmaHomotopy fun i ↦
+    TopCat.sigmaHomotopy fun i ↦
       { toContinuousMap :=
           (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i ≫
             inrP).hom.comp (handleHomotopy (k i) (m i))
@@ -547,14 +547,14 @@ theorem exists_leftInverse_homotopicRel_of_isPushout_handles
         inrP (Sigma.ι (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (m i))) i
           (handleHomotopy (k i) (m i) (t, p))) := by
     simp only [HZ]
-    rw [sigmaHomotopy_apply_ι]
+    rw [TopCat.sigmaHomotopy_apply_ι]
     rfl
   have hYZ (t : unitInterval)
       (b : (∐ fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (m i)) :
         TopCat.{u})) :
       HY (t, Sigma.desc α b) = HZ (t, Limits.Sigma.map (fun i ↦ TopCat.ofHom
         ((TopCat.diskBoundaryInclusion (k i)).hom.prodMap (ContinuousMap.id _))) b) := by
-    obtain ⟨i, s, rfl⟩ := exists_sigma_ι_eq b
+    obtain ⟨i, s, rfl⟩ := TopCat.exists_sigma_ι_eq _ b
     rw [Sigma.ι_comp_desc_apply, Sigma.ι_map_apply, hHZ]
     simp only [HY, ContinuousMap.Homotopy.cast_apply, ContinuousMap.Homotopy.refl_apply]
     -- `Sigma.map` acts on the `i`-th attaching region as `(s, y) ↦ (s, y)`, fixed by the homotopy.

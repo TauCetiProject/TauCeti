@@ -96,7 +96,7 @@ private lemma IsControlled.sum {ι : Type*} (s : Finset ι)
     IsControlled fun u x ↦ ∑ i ∈ s, Φ i u x := by
   classical
   induction s using Finset.induction_on with
-  | empty => exact ⟨0, continuous_const, fun u x ↦ by simp⟩
+  | empty => exact ⟨0, continuous_const, fun u _ ↦ by simp⟩
   | insert i s hi ih =>
     simp only [Finset.sum_insert hi]
     exact (h i (Finset.mem_insert_self i s)).add

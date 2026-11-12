@@ -39,13 +39,14 @@ closed embedding.
   compatible maps out of `I × Y` and `I × Z`.
 * `CategoryTheory.IsPushout.homotopyDesc`: the homotopy between maps out of `P` glued from
   compatible homotopies of their restrictions to `Y` and to `Z`.
+* `TopCat.sigmaCylinderDesc`: the map out of the cylinder `I × ∐ⱼ F j` glued from maps out of the
+  cylinders `I × F j`.
+* `TopCat.sigmaHomotopy`: the homotopy between maps out of a coproduct `∐ⱼ F j` glued from
+  homotopies of their restrictions to the summands.
 * `TopCat.exists_glue_of_isClosedEmbedding`: maps out of the pieces of a finite closed cover which
   agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
   closed pieces meeting it along prescribed subspaces is a pushout square.
-* `TauCeti.TopCat.exists_sigma_ι_eq`: every point of a coproduct `∐ D` lies in a summand.
-* `TauCeti.TopCat.sigmaHomotopy`: the homotopy between maps out of a coproduct `∐ D` glued from
-  homotopies of their restrictions to the summands.
 * `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`,
   `TauCeti.TopCat.exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma`: every point of a pushout of
   `L` and `⨆ᵢ D i` comes from `L` or from one of the `D i`.
@@ -152,6 +153,55 @@ namespace TopCat
 open CategoryTheory Set Topology
 
 universe u
+
+section Sigma
+
+open Limits
+
+variable {J : Type u} (F : J → TopCat.{u})
+
+/-- Every point of a coproduct in `TopCat` lies in the image of one of the coprojections. -/
+theorem exists_sigma_ι_eq (z : (∐ F : TopCat.{u})) : ∃ j x, Sigma.ι F j x = z :=
+  let ⟨⟨j⟩, x, hx⟩ := Concrete.colimit_exists_rep _ z; ⟨j, x, hx⟩
+
+variable {W : Type u} [TopologicalSpace W] {F}
+
+/-- The map `I × ∐ⱼ F j → W` which is `C j` on the cylinder `I × F j`: the uncurried form of the
+map `∐ⱼ F j → C(I, W)` glued from the curried maps. -/
+def sigmaCylinderDesc (C : ∀ j, C(I × F j, W)) : C(I × (∐ F : TopCat.{u}), W) :=
+  (Sigma.desc fun j ↦ TopCat.ofHom ((C j).comp ContinuousMap.prodSwap).curry :
+    (∐ F) ⟶ TopCat.of C(I, W)).hom.uncurry.comp ContinuousMap.prodSwap
+
+@[simp]
+theorem sigmaCylinderDesc_ι (C : ∀ j, C(I × F j, W)) (t : I) (j : J) (x : F j) :
+    sigmaCylinderDesc C (t, Sigma.ι F j x) = C j (t, x) := by
+  have hx := ConcreteCategory.congr_hom
+    (Sigma.ι_comp_desc (fun j ↦ TopCat.ofHom ((C j).comp ContinuousMap.prodSwap).curry :
+      ∀ j, F j ⟶ TopCat.of C(I, W)) j) x
+  exact congrArg (fun g : C(I, W) ↦ g t) hx
+
+/-- **Homotopies of the summands of a coproduct glue.** Homotopies between the restrictions of two
+maps `f g : ∐ⱼ F j → W` to the summands `F j` of a coproduct in `TopCat` glue to a homotopy between
+`f` and `g`. For a disjoint union of types this is `ContinuousMap.Homotopy.sigma`. -/
+def sigmaHomotopy {f g : C((∐ F : TopCat.{u}), W)}
+    (H : ∀ j, (f.comp (Sigma.ι F j).hom).Homotopy (g.comp (Sigma.ι F j).hom)) :
+    f.Homotopy g where
+  toContinuousMap := sigmaCylinderDesc fun j ↦ (H j).toContinuousMap
+  map_zero_left z := by
+    obtain ⟨j, x, rfl⟩ := exists_sigma_ι_eq F z
+    simp
+  map_one_left z := by
+    obtain ⟨j, x, rfl⟩ := exists_sigma_ι_eq F z
+    simp
+
+/-- On the `j`-th summand, the glued homotopy `TopCat.sigmaHomotopy` is `H j`. -/
+@[simp]
+theorem sigmaHomotopy_apply_ι {f g : C((∐ F : TopCat.{u}), W)}
+    (H : ∀ j, (f.comp (Sigma.ι F j).hom).Homotopy (g.comp (Sigma.ι F j).hom)) (t : I) (j : J)
+    (x : F j) : sigmaHomotopy H (t, Sigma.ι F j x) = H j (t, x) :=
+  sigmaCylinderDesc_ι _ t j x
+
+end Sigma
 
 /-- **Gluing along a finite closed cover.** Let `X` be covered by the ranges of a closed embedding
 `i : A ⟶ X` and of finitely many closed embeddings `j k : B k ⟶ X`, any two of which meet only
@@ -263,50 +313,6 @@ open CategoryTheory Limits Topology
 
 universe u
 
-section Sigma
-
-variable {ι : Type u} {D : ι → TopCat.{u}} {W : Type u} [TopologicalSpace W]
-
-/-- Every point of a coproduct `∐ D` in `TopCat` lies in one of the summands. -/
-theorem exists_sigma_ι_eq (z : (∐ D : TopCat.{u})) : ∃ i d, Sigma.ι D i d = z :=
-  let ⟨⟨i⟩, d, hd⟩ := Concrete.colimit_exists_rep (Discrete.functor D) z; ⟨i, d, hd⟩
-
-/-- The map out of the cylinder `I × ∐ D` glued from maps `H i : I × D i → W`, as the uncurried
-form of the map out of `∐ D` glued from the curried maps into `C(I, W)`. -/
-private def sigmaCylinderDesc (H : ∀ i, C(I × D i, W)) : C(I × (∐ D : TopCat.{u}), W) :=
-  (Sigma.desc fun i ↦ TopCat.ofHom ((H i).comp ContinuousMap.prodSwap).curry).hom.uncurry.comp
-    ContinuousMap.prodSwap
-
-private theorem sigmaCylinderDesc_apply_ι (H : ∀ i, C(I × D i, W)) (t : I) (i : ι) (d : D i) :
-    sigmaCylinderDesc H (t, Sigma.ι D i d) = H i (t, d) := by
-  have hd : (Sigma.desc fun i ↦ TopCat.ofHom ((H i).comp ContinuousMap.prodSwap).curry)
-      (Sigma.ι D i d) = ((H i).comp ContinuousMap.prodSwap).curry d :=
-    ConcreteCategory.congr_hom (Sigma.ι_comp_desc _ i) d
-  exact congrArg (fun γ : C(I, W) ↦ γ t) hd
-
-/-- **Homotopies of the summands of a coproduct glue.** Homotopies between the restrictions of two
-maps `f g : ∐ D → W` to the summands `D i` of a coproduct in `TopCat` glue to a homotopy between
-`f` and `g`. For a disjoint union of types this is `ContinuousMap.Homotopy.sigma`. -/
-def sigmaHomotopy {f g : C((∐ D : TopCat.{u}), W)}
-    (H : ∀ i, (f.comp (Sigma.ι D i).hom).Homotopy (g.comp (Sigma.ι D i).hom)) :
-    f.Homotopy g where
-  toContinuousMap := sigmaCylinderDesc fun i ↦ (H i).toContinuousMap
-  map_zero_left z := by
-    obtain ⟨i, d, rfl⟩ := exists_sigma_ι_eq z
-    simp [sigmaCylinderDesc_apply_ι]
-  map_one_left z := by
-    obtain ⟨i, d, rfl⟩ := exists_sigma_ι_eq z
-    simp [sigmaCylinderDesc_apply_ι]
-
-/-- On the `i`-th summand, the glued homotopy `TauCeti.TopCat.sigmaHomotopy` is `H i`. -/
-@[simp]
-theorem sigmaHomotopy_apply_ι {f g : C((∐ D : TopCat.{u}), W)}
-    (H : ∀ i, (f.comp (Sigma.ι D i).hom).Homotopy (g.comp (Sigma.ι D i).hom)) (t : I) (i : ι)
-    (d : D i) : sigmaHomotopy H (t, Sigma.ι D i d) = H i (t, d) :=
-  sigmaCylinderDesc_apply_ι _ t i d
-
-end Sigma
-
 section PushoutSigma
 
 variable {ι : Type u} {A D : ι → TopCat.{u}} {L X P : TopCat.{u}} {α : ∀ i, A i ⟶ L}
@@ -320,7 +326,7 @@ theorem range_union_iUnion_range_of_isPushout_sigma {W : TopCat.{u}} {f : W ⟶ 
   refine Set.eq_univ_of_forall fun y ↦ ?_
   obtain ⟨x, hx⟩ | ⟨z, rfl⟩ := Types.eq_or_eq_of_isPushout ((forget TopCat).map_isPushout sq) y
   · exact Or.inl ⟨x, hx⟩
-  · obtain ⟨i, d, rfl⟩ := exists_sigma_ι_eq z
+  · obtain ⟨i, d, rfl⟩ := TopCat.exists_sigma_ι_eq _ z
     exact Or.inr (Set.mem_iUnion.2 ⟨i, d, rfl⟩)
 
 /-- Every point of a pushout of `L` and `⨆ᵢ D i` is the image of a point of `L` or of one of the

@@ -36,12 +36,6 @@ hypothesis is needed for this upper bound.
 * `TauCeti.TitsSystem.exists_sublist_of_mem_prod_bruhatCell`: the subword expansion for a product
   of simple cells.
 
-## Roadmap
-
-This is the next combinatorial input toward injectivity of the Weyl-to-double-coset map and the
-Coxeter-system consequences of a Tits system in Layer 7, "Bruhat decomposition and BN-pairs /
-Tits systems", of `TauCetiRoadmap/ReductiveGroups/README.md`.
-
 ## References
 
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 29.1--29.2.
