@@ -123,12 +123,9 @@ private theorem generatingTarget_eq_generatingSource_iff_extChartAt
       (differentiableAt_id.prodMk (differentiableAt_const _))
   -- A function on `M₂` is differentiable at `a` when its expression in the chart at `x₂` is.
   have hmd {f : M₂ → ℝ} (hf : DifferentiableAt ℝ (f ∘ e₂.symm) (e₂ a)) :
-      MDifferentiableAt I₂ 𝓘(ℝ) f a := by
-    have hfeq : (f ∘ e₂.symm) ∘ e₂ =ᶠ[𝓝 a] f := by
-      filter_upwards [(isOpen_extChartAt_source x₂).mem_nhds ha] with a' ha'
-      rw [comp_apply, comp_apply, e₂.left_inv ha']
-    exact (hf.mdifferentiableAt.comp a
-      (mdifferentiableAt_extChartAt (by simpa [e₂] using ha))).congr_of_eventuallyEq hfeq.symm
+      MDifferentiableAt I₂ 𝓘(ℝ) f a :=
+    (mdifferentiableAt_iff_source_of_mem_source (by simpa [e₂] using ha)).2
+      hf.mdifferentiableAt.mdifferentiableWithinAt
   have hsum : DifferentiableAt ℝ ((fun a' ↦ S (q, a') + T (a', Q)) ∘ e₂.symm) (e₂ a) :=
     hSa.add hTa
   have hcoord : (fun a' ↦ S (q, a') + T (a', Q)) ∘ e₂.symm =
