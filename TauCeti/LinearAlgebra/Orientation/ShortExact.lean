@@ -458,17 +458,12 @@ theorem prod_shortExact_right {Z : Type*} [AddCommGroup Z] [Module K Z] [FiniteD
     (ha : finrank K A = a) (hc : finrank K C = c) (hB : finrank K B = a + c) :
     prod oz (shortExact hf hfg hg o p ha hc) hz hB =
       reindex K (Z × B) (finCongr (add_assoc z a c))
-        (shortExact (by
-            rw [LinearMap.coe_prodMap, LinearMap.id_coe]
-            exact Function.injective_id.prodMap hf) (hfg.id_prodMap Z)
-          (by rw [LinearMap.coe_comp]; exact hg.comp LinearMap.snd_surjective) (prod oz o hz ha)
-          p (by rw [finrank_prod, hz, ha]) hc) := by
-  have hf' : Function.Injective (LinearMap.id.prodMap f : Z × A →ₗ[K] Z × B) := by
-    rw [LinearMap.coe_prodMap, LinearMap.id_coe]
-    exact Function.injective_id.prodMap hf
-  have hg' : Function.Surjective (g ∘ₗ LinearMap.snd K Z B) := by
-    rw [LinearMap.coe_comp]
-    exact hg.comp LinearMap.snd_surjective
+        (shortExact (Function.injective_id.prodMap hf) (hfg.id_prodMap Z)
+          (hg.comp LinearMap.snd_surjective) (prod oz o hz ha) p (by rw [finrank_prod, hz, ha])
+          hc) := by
+  have hf' : Function.Injective (LinearMap.id.prodMap f : Z × A →ₗ[K] Z × B) :=
+    Function.injective_id.prodMap hf
+  have hg' : Function.Surjective (g ∘ₗ LinearMap.snd K Z B) := hg.comp LinearMap.snd_surjective
   have h := shortExact_assoc (f := LinearMap.inl K Z A) (g := LinearMap.snd K Z A)
     (f' := LinearMap.id.prodMap f) (g' := g ∘ₗ LinearMap.snd K Z B) (k := LinearMap.inl K Z B)
     (h := LinearMap.snd K Z B) (i := f) (j := g) LinearMap.inl_injective Function.Exact.inl_snd
@@ -492,17 +487,12 @@ theorem prod_shortExact_left {Z : Type*} [AddCommGroup Z] [Module K Z] [FiniteDi
     (hc : finrank K C = c) (hz : finrank K Z = z) (hB : finrank K B = a + c) :
     prod (shortExact hf hfg hg o p ha hc) oz hB hz =
       (-1 : Kˣ) ^ (c * z) • reindex K (B × Z) (finCongr (by omega))
-        (shortExact (by
-            rw [LinearMap.coe_prodMap, LinearMap.id_coe]
-            exact hf.prodMap Function.injective_id) (hfg.prodMap_id Z)
-          (by rw [LinearMap.coe_comp]; exact hg.comp LinearMap.fst_surjective) (prod o oz ha hz)
-          p (by rw [finrank_prod, ha, hz]) hc) := by
-  have hf' : Function.Injective (f.prodMap LinearMap.id : A × Z →ₗ[K] B × Z) := by
-    rw [LinearMap.coe_prodMap, LinearMap.id_coe]
-    exact hf.prodMap Function.injective_id
-  have hg' : Function.Surjective (g ∘ₗ LinearMap.fst K B Z) := by
-    rw [LinearMap.coe_comp]
-    exact hg.comp LinearMap.fst_surjective
+        (shortExact (hf.prodMap Function.injective_id) (hfg.prodMap_id Z)
+          (hg.comp LinearMap.fst_surjective) (prod o oz ha hz) p (by rw [finrank_prod, ha, hz])
+          hc) := by
+  have hf' : Function.Injective (f.prodMap LinearMap.id : A × Z →ₗ[K] B × Z) :=
+    hf.prodMap Function.injective_id
+  have hg' : Function.Surjective (g ∘ₗ LinearMap.fst K B Z) := hg.comp LinearMap.fst_surjective
   have hAZ : finrank K (A × Z) = a + z := by rw [finrank_prod, ha, hz]
   -- The inclusion `A → B × Z` is the kernel of `g × id : B × Z → C × Z` and of
   -- `(b, z) ↦ (z, g b) : B × Z → Z × C`.
@@ -515,12 +505,9 @@ theorem prod_shortExact_left {Z : Type*} [AddCommGroup Z] [Module K Z] [FiniteDi
     ext <;> simp [φ, hfg.apply_apply_eq_zero]
   have hjh₂ : LinearMap.snd K Z C ∘ₗ φ = g ∘ₗ LinearMap.fst K B Z := by
     ext <;> simp [φ]
-  have hk₁ : Function.Injective (LinearMap.inl K B Z ∘ₗ f) := by
-    rw [LinearMap.coe_comp]
-    exact LinearMap.inl_injective.comp hf
-  have hk₂ : Function.Injective (f.prodMap LinearMap.id ∘ₗ LinearMap.inl K A Z) := by
-    rw [LinearMap.coe_comp]
-    exact hf'.comp LinearMap.inl_injective
+  have hk₁ : Function.Injective (LinearMap.inl K B Z ∘ₗ f) := LinearMap.inl_injective.comp hf
+  have hk₂ : Function.Injective (f.prodMap LinearMap.id ∘ₗ LinearMap.inl K A Z) :=
+    hf'.comp LinearMap.inl_injective
   -- Through `C × Z`, the orientation `[B][Z]` is induced by `[A]` and `[C][Z]`.
   have h₁ := shortExact_assoc (f := f) (g := g) (f' := LinearMap.inl K B Z)
     (g' := LinearMap.snd K B Z) (h := g.prodMap LinearMap.id) (i := LinearMap.inl K C Z)

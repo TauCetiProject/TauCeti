@@ -112,9 +112,9 @@ theorem _root_.Function.Exact.prodMap_id {R M N P : Type*} (Z : Type*) [Semiring
 and let `h : D → F` restrict on `B` to `B → C → F` with `i : C → F` injective, and induce
 `D → E` through `j : F → E`. Then `A → D → F` is exact: its kernel `h⁻¹(0)` lies in `B` and is
 the kernel of `B → C` there. -/
-theorem _root_.Function.Exact.comp_of_comp_eq {R A B C D E F : Type*} [Ring R]
-    [AddCommGroup A] [AddCommGroup B] [AddCommGroup C] [AddCommGroup D] [AddCommGroup E]
-    [AddCommGroup F] [Module R A] [Module R B] [Module R C] [Module R D] [Module R E]
+theorem _root_.Function.Exact.comp_of_comp_eq {R A B C D E F : Type*} [Semiring R]
+    [AddCommMonoid A] [AddCommMonoid B] [AddCommMonoid C] [AddCommMonoid D] [AddCommMonoid E]
+    [AddCommMonoid F] [Module R A] [Module R B] [Module R C] [Module R D] [Module R E]
     [Module R F] {f : A →ₗ[R] B} {g : B →ₗ[R] C} {f' : B →ₗ[R] D} {g' : D →ₗ[R] E}
     {h : D →ₗ[R] F} {i : C →ₗ[R] F} {j : F →ₗ[R] E} (hfg : Function.Exact f g)
     (hfg' : Function.Exact f' g') (hi : Function.Injective i) (hhi : h ∘ₗ f' = i ∘ₗ g)

@@ -256,7 +256,7 @@ theorem transverse_fiberProduct_left {p : Submodule K X}
     (hy : finrank K Y = y) (ht : finrank K T = t) (hq : q + t = x + y)
     (hQ : finrank K (ker (α.coprod (-β))) = q + 1)
     (hW : finrank K (range (fiberProductInclusionLeft α β p)) = q) :
-    (fiberProduct (surjective_coprod_neg_of_comp_subtype_left h) ox oy ot hX hy ht
+    (fiberProduct (surjective_coprod_neg_of_comp_left p.subtype h) ox oy ot hX hy ht
         (by omega)).transverse hQ hW (mt mem_range_fiberProductInclusionLeft.1 hv₁) =
       map (Fin q) (LinearEquiv.ofInjective _ (fiberProductInclusionLeft_injective p))
         (fiberProduct h (ox.transverse hX hp hv₁) oy ot hp hy ht hq) := by
@@ -266,7 +266,7 @@ theorem transverse_fiberProduct_left {p : Submodule K X}
   set eι := LinearEquiv.ofInjective ι (fiberProductInclusionLeft_injective p)
   set J := p.subtype.prodMap (LinearMap.id : Y →ₗ[K] Y)
   have hJ : Function.Injective J := p.injective_subtype.prodMap Function.injective_id
-  have h' := surjective_coprod_neg_of_comp_subtype_left h
+  have h' := surjective_coprod_neg_of_comp_left p.subtype h
   set fp := fiberProduct h' ox oy ot hX hy ht (by omega : q + 1 + t = x + 1 + y)
   -- Write the boundary orientation as the image of an orientation `o` of `p ×_T Y`.
   set o := (map (Fin q) eι).symm (fp.transverse hQ hW hv)
@@ -311,7 +311,7 @@ theorem transverse_fiberProduct_right {p : Submodule K Y}
     (hp : finrank K p = y) (ht : finrank K T = t) (hq : q + t = x + y)
     (hQ : finrank K (ker (α.coprod (-β))) = q + 1)
     (hW : finrank K (range (fiberProductInclusionRight α β p)) = q) :
-    (fiberProduct (surjective_coprod_neg_of_comp_subtype_right h) ox oy ot hx hY ht
+    (fiberProduct (surjective_coprod_neg_of_comp_right p.subtype h) ox oy ot hx hY ht
         (by omega)).transverse hQ hW (mt mem_range_fiberProductInclusionRight.1 hv₂) =
       (-1 : Kˣ) ^ (x + t) • map (Fin q) (LinearEquiv.ofInjective _
         (fiberProductInclusionRight_injective p))
@@ -322,7 +322,7 @@ theorem transverse_fiberProduct_right {p : Submodule K Y}
   set eι := LinearEquiv.ofInjective ι (fiberProductInclusionRight_injective p)
   set J := (LinearMap.id : X →ₗ[K] X).prodMap p.subtype
   have hJ : Function.Injective J := Function.injective_id.prodMap p.injective_subtype
-  have h' := surjective_coprod_neg_of_comp_subtype_right h
+  have h' := surjective_coprod_neg_of_comp_right p.subtype h
   set fp := fiberProduct h' ox oy ot hx hY ht (by omega : q + 1 + t = x + (y + 1))
   -- Write the boundary orientation as the image of an orientation `o` of `X ×_T p`.
   set o := (map (Fin q) eι).symm (fp.transverse hQ hW hv)
@@ -402,10 +402,8 @@ private theorem snd_comp_prod_right :
 
 private theorem injective_comp_subtype_left :
     Function.Injective ((ker (α.coprod (-β))).subtype.prodMap (LinearMap.id : Z →ₗ[K] Z) ∘ₗ
-      (ker ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))).subtype) := by
-  rw [LinearMap.coe_comp, LinearMap.coe_prodMap, LinearMap.id_coe]
-  exact ((ker _).injective_subtype.prodMap Function.injective_id).comp
-    (Submodule.injective_subtype _)
+      (ker ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))).subtype) :=
+  ((ker _).injective_subtype.prodMap Function.injective_id).comp (Submodule.injective_subtype _)
 
 private theorem exact_comp_subtype_left :
     Function.Exact ((ker (α.coprod (-β))).subtype.prodMap (LinearMap.id : Z →ₗ[K] Z) ∘ₗ
@@ -419,15 +417,13 @@ private theorem surjective_prod_left (h₁ : Function.Surjective (α.coprod (-β
     Function.Surjective
       (((γ ∘ₗ snd K X Y).coprod (-δ)).prod (α.coprod (-β) ∘ₗ fst K (X × Y) Z)) :=
   Function.Exact.inl_snd.surjective_of_comp_eq h₂
-    (by rw [LinearMap.coe_comp]; exact h₁.comp LinearMap.fst_surjective)
+    (h₁.comp LinearMap.fst_surjective)
     comp_prodMap_subtype_left snd_comp_prod_left
 
 private theorem injective_comp_subtype_right :
     Function.Injective ((LinearMap.id : X →ₗ[K] X).prodMap (ker (γ.coprod (-δ))).subtype ∘ₗ
-      (ker (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))).subtype) := by
-  rw [LinearMap.coe_comp, LinearMap.coe_prodMap, LinearMap.id_coe]
-  exact (Function.injective_id.prodMap (ker _).injective_subtype).comp
-    (Submodule.injective_subtype _)
+      (ker (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))).subtype) :=
+  (Function.injective_id.prodMap (ker _).injective_subtype).comp (Submodule.injective_subtype _)
 
 private theorem exact_comp_subtype_right :
     Function.Exact ((LinearMap.id : X →ₗ[K] X).prodMap (ker (γ.coprod (-δ))).subtype ∘ₗ
@@ -441,7 +437,7 @@ private theorem surjective_prod_right (h₃ : Function.Surjective (γ.coprod (-�
     Function.Surjective
       ((α.coprod (-(β ∘ₗ fst K Y Z))).prod (γ.coprod (-δ) ∘ₗ snd K X (Y × Z))) :=
   Function.Exact.inl_snd.surjective_of_comp_eq h₄
-    (by rw [LinearMap.coe_comp]; exact h₃.comp LinearMap.snd_surjective)
+    (h₃.comp LinearMap.snd_surjective)
     comp_prodMap_subtype_right snd_comp_prod_right
 
 variable [LinearOrder K] [IsStrictOrderedRing K] [FiniteDimensional K X] [FiniteDimensional K Y]
@@ -469,12 +465,10 @@ private theorem shortExact_fiberProduct_fiberProduct_left
         (finCongr (by omega : x + y + z = m + (s + t)))
         (prod (prod ox oy hx hy) oz (by rw [finrank_prod, hx, hy]) hz) := by
   set Q₁ := ker (α.coprod (-β))
-  have hf' : Function.Injective (Q₁.subtype.prodMap (LinearMap.id : Z →ₗ[K] Z)) := by
-    rw [LinearMap.coe_prodMap, LinearMap.id_coe]
-    exact Q₁.injective_subtype.prodMap Function.injective_id
-  have hg' : Function.Surjective (α.coprod (-β) ∘ₗ fst K (X × Y) Z) := by
-    rw [LinearMap.coe_comp]
-    exact h₁.comp LinearMap.fst_surjective
+  have hf' : Function.Injective (Q₁.subtype.prodMap (LinearMap.id : Z →ₗ[K] Z)) :=
+    Q₁.injective_subtype.prodMap Function.injective_id
+  have hg' : Function.Surjective (α.coprod (-β) ∘ₗ fst K (X × Y) Z) :=
+    h₁.comp LinearMap.fst_surjective
   -- Orient `(X × Y) × Z` through `Q₁ × Z`, with quotient `T`, and through `S × T`.
   have hL := shortExact_assoc (Submodule.injective_subtype _) (exact_subtype_ker_map _) h₂ hf'
     ((exact_subtype_ker_map (α.coprod (-β))).prodMap_id Z) hg' injective_comp_subtype_left
@@ -518,12 +512,10 @@ private theorem shortExact_fiberProduct_fiberProduct_right
         (finCongr (by omega : x + (y + z) = m + (t + s)))
         (prod ox (prod oy oz hy hz) hx (by rw [finrank_prod, hy, hz])) := by
   set Q₂ := ker (γ.coprod (-δ))
-  have hf' : Function.Injective ((LinearMap.id : X →ₗ[K] X).prodMap Q₂.subtype) := by
-    rw [LinearMap.coe_prodMap, LinearMap.id_coe]
-    exact Function.injective_id.prodMap Q₂.injective_subtype
-  have hg' : Function.Surjective (γ.coprod (-δ) ∘ₗ snd K X (Y × Z)) := by
-    rw [LinearMap.coe_comp]
-    exact h₃.comp LinearMap.snd_surjective
+  have hf' : Function.Injective ((LinearMap.id : X →ₗ[K] X).prodMap Q₂.subtype) :=
+    Function.injective_id.prodMap Q₂.injective_subtype
+  have hg' : Function.Surjective (γ.coprod (-δ) ∘ₗ snd K X (Y × Z)) :=
+    h₃.comp LinearMap.snd_surjective
   -- Orient `X × (Y × Z)` through `X × Q₂`, with quotient `S`, and through `T × S`.
   have hR := shortExact_assoc (Submodule.injective_subtype _) (exact_subtype_ker_map _) h₄ hf'
     ((exact_subtype_ker_map (γ.coprod (-δ))).id_prodMap X) hg' injective_comp_subtype_right
@@ -604,8 +596,6 @@ theorem map_fiberProduct_assoc (h₁ : Function.Surjective (α.coprod (-β)))
   have hTS : finrank K (T × S) = t + s := by rw [finrank_prod, ht, hs]
   -- Both groupings are kernels in the triple products, of `(X × Y) × Z → S × T` and
   -- `X × (Y × Z) → T × S`.
-  -- The associativity isomorphisms of the triple products and of their quotients compare the two
-  -- kernel orientations.
   -- The associativity isomorphisms of the triple products and of their quotients compare the two
   -- kernel orientations.
   have hN := map_prodAssoc_shortExact h₁ h₂ h₃ h₄

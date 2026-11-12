@@ -48,8 +48,9 @@ quadratic forms with the subgroup preserving both summands.
   and `α`, and transversality, the surjectivity of `(ξ, η) ↦ α ξ - β η`, is symmetric.
 * `LinearMap.fiberProductInclusionLeft`, `LinearMap.fiberProductInclusionRight`: for a subspace
   of one factor, the inclusion of the smaller fibre product in the fibre product of `α` and `β`;
-  transversality passes from the smaller fibre product to the larger one
-  (`LinearMap.surjective_coprod_neg_of_comp_subtype_left` and its right analogue).
+  transversality passes from the smaller fibre product to the larger one, and more generally
+  from `α ∘ φ` to `α` for any linear map `φ` (`LinearMap.surjective_coprod_neg_of_comp_left` and
+  its right analogue).
 * `LinearMap.fiberProductAssoc`: the associativity isomorphism
   `(X ×_T Y) ×_S Z ≃ X ×_T (Y ×_S Z)` of iterated fibre products; transversality passes from the
   left grouping to the right one (`LinearMap.surjective_coprod_neg_of_comp_left`,
@@ -316,19 +317,21 @@ theorem mem_range_fiberProductInclusionRight {p : Submodule R Y} {v : ker (α.co
     rw [coprod_apply] at hv
     simpa using hv
 
-/-- Transversality of `α ∘ p.subtype` and `β` implies that of `α` and `β`. -/
-theorem surjective_coprod_neg_of_comp_subtype_left {p : Submodule R X}
-    (h : Function.Surjective ((α ∘ₗ p.subtype).coprod (-β))) :
+/-- Transversality of `α ∘ φ` and `β` implies that of `α` and `β`, for any linear map `φ` into
+the first factor, such as the inclusion `p.subtype` of a subspace. -/
+theorem surjective_coprod_neg_of_comp_left {W : Type*} [AddCommGroup W] [Module R W]
+    (φ : W →ₗ[R] X) (h : Function.Surjective ((α ∘ₗ φ).coprod (-β))) :
     Function.Surjective (α.coprod (-β)) := fun t ↦ by
   obtain ⟨z, hz⟩ := h t
-  exact ⟨p.subtype.prodMap LinearMap.id z, by simpa using hz⟩
+  exact ⟨φ.prodMap LinearMap.id z, by simpa using hz⟩
 
-/-- Transversality of `α` and `β ∘ p.subtype` implies that of `α` and `β`. -/
-theorem surjective_coprod_neg_of_comp_subtype_right {p : Submodule R Y}
-    (h : Function.Surjective (α.coprod (-(β ∘ₗ p.subtype)))) :
+/-- Transversality of `α` and `β ∘ φ` implies that of `α` and `β`, for any linear map `φ` into
+the second factor, such as the inclusion `p.subtype` of a subspace. -/
+theorem surjective_coprod_neg_of_comp_right {W : Type*} [AddCommGroup W] [Module R W]
+    (φ : W →ₗ[R] Y) (h : Function.Surjective (α.coprod (-(β ∘ₗ φ)))) :
     Function.Surjective (α.coprod (-β)) := fun t ↦ by
   obtain ⟨z, hz⟩ := h t
-  exact ⟨LinearMap.id.prodMap p.subtype z, by simpa using hz⟩
+  exact ⟨LinearMap.id.prodMap φ z, by simpa using hz⟩
 
 end FiberProductInclusion
 
@@ -337,14 +340,6 @@ section FiberProductAssoc
 variable {R X Y Z S T : Type*} [Ring R] [AddCommGroup X] [Module R X] [AddCommGroup Y]
   [Module R Y] [AddCommGroup Z] [Module R Z] [AddCommGroup S] [Module R S] [AddCommGroup T]
   [Module R T] {α : X →ₗ[R] T} {β : Y →ₗ[R] T} {γ : Y →ₗ[R] S} {δ : Z →ₗ[R] S}
-
-/-- Transversality of `α ∘ φ` and `β` implies that of `α` and `β`, for any linear map `φ` into
-the first factor. -/
-theorem surjective_coprod_neg_of_comp_left {W : Type*} [AddCommGroup W] [Module R W]
-    (φ : W →ₗ[R] X) (h : Function.Surjective ((α ∘ₗ φ).coprod (-β))) :
-    Function.Surjective (α.coprod (-β)) := fun t ↦ by
-  obtain ⟨z, hz⟩ := h t
-  exact ⟨φ.prodMap LinearMap.id z, by simpa using hz⟩
 
 /-- Transversality of an iterated fibre product can be moved from the left grouping to the right
 one. If `α : X → T` and `β : Y → T` are transverse, and so are `δ : Z → S` and the map
