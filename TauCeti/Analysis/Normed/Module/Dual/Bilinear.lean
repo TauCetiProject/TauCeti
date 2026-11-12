@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.DoubleDual
+public import TauCeti.Analysis.Normed.Module.Dual.ClusterPt
 
 /-!
 # Transposes and bidual extensions of bounded bilinear maps
@@ -15,13 +15,18 @@ public import Mathlib.Analysis.Normed.Module.DoubleDual
 Three successive transposes give `ContinuousLinearMap.arensExtension`, the extension to
 the biduals with the first variable evaluated last. Flipping before and after this
 construction gives the other order of evaluation. These constructions underlie the
-two Arens products of a normed algebra.
+two Arens products of a normed algebra. If `B` has an approximate right identity along a
+family in its second variable, every weak-star bidual cluster point of that family is a
+right identity for the Arens extension.
 
 The construction uses Mathlib's bounded composition and precomposition maps.
 See H. G. Dales, *Banach Algebras and Automatic Continuity*, §2.6.
 -/
 
 public noncomputable section
+
+open Filter
+open scoped Topology
 
 namespace ContinuousLinearMap
 
@@ -175,5 +180,22 @@ theorem continuous_toWeakDual_arensExtension_inclusionInDoubleDual_right
   apply WeakDual.continuous_of_continuous_eval
   intro f
   exact WeakDual.eval_continuous (B.bilinearTranspose f x)
+
+/-- If `B x (u i)` tends to `x` for every `x`, then every weak-star bidual cluster point of
+`u` is a right identity for the Arens extension of `B`. The family need not be bounded. -/
+theorem arensExtension_eq_left_of_tendsto_of_mapClusterPt {ι : Type*} {l : Filter ι}
+    {u : ι → F} (B : E →L[𝕜] F →L[𝕜] E) (hl : ∀ x : E, Tendsto (fun i ↦ B x (u i)) l (𝓝 x))
+    {y : StrongDual 𝕜 (StrongDual 𝕜 F)}
+    (hy : MapClusterPt (StrongDual.toWeakDual y) l
+      (fun i ↦ StrongDual.toWeakDual (NormedSpace.inclusionInDoubleDual 𝕜 F (u i))))
+    (x : StrongDual 𝕜 (StrongDual 𝕜 E)) : B.arensExtension x y = x := by
+  ext f
+  rw [arensExtension_apply]
+  congr 1
+  ext a
+  rw [bilinearTranspose_apply]
+  apply hy.apply_eq_of_inclusionInDoubleDual_of_tendsto
+  simpa only [Function.comp_def, bilinearTranspose_apply] using
+    (f.continuous.tendsto a).comp (hl a)
 
 end ContinuousLinearMap
