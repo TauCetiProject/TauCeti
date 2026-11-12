@@ -413,7 +413,7 @@ theorem leadingTerm_weightRefinement (f : MvPolynomial σ R) :
 theorem degree_weightRefinement_zero (f : MvPolynomial σ R) :
     (m.weightRefinement 0).degree f = m.degree f :=
   m.degree_weightRefinement_of_isWeightedHomogeneous 0 (d := 0) (by
-    intro a ha
+    intro a _
     simp [Finsupp.weight_apply])
 
 end WeightRefinement

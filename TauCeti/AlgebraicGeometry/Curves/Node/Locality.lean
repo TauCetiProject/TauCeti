@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Nodal
 public import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Etale
+import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 
 /-!
 # Source locality of nodal relative curves
@@ -95,10 +96,6 @@ theorem AffineAtWorstNodalOfRelativeDimensionOne.of_openCover
   let : (𝒰.X j).Over (Spec (.of R)) := ⟨𝒰.f j ≫ f⟩
   have : (𝒰.f j).IsOver (Spec (.of R)) := ⟨rfl⟩
   have : SyntomicOfRelativeDimension 1 ((𝒰.X j) ↘ Spec (.of R)) := (h j).syntomic
-  have : MorphismProperty.RespectsIso @FormallyUnramified.{u} :=
-    MorphismProperty.IsLocalAtSource.toRespects
-      (P := (show MorphismProperty Scheme.{u} from @FormallyUnramified.{u}))
-      (K := Scheme.zariskiPrecoverage)
   have H := (Scheme.isPullback_singularLocus_subschemeι_of_etale (R := R) (𝒰.f j)).flip
   -- The cover index and the source of its map depend on these projections. The generated
   -- projection lemmas do not simplify this dependent goal, so reduce just the two wrappers.

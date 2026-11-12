@@ -17,7 +17,8 @@ every degree-`n` cycle of `L` is the image of a cycle of `K` up to a boundary, a
 cycle of `K` whose image is a boundary is itself a boundary
 (`HomologicalComplex.moduleCat_quasiIsoAt_iff`, and `CochainComplex.moduleCat_quasiIsoAt_iff` for
 cochain complexes indexed by `ℤ`). These are surjectivity and injectivity of the
-induced map on homology, written on representatives.
+induced map on homology, written on representatives; the first condition alone is surjectivity
+(`HomologicalComplex.moduleCat_epi_homologyMap_iff`).
 
 For the cochain complexes `TauCeti.gradedCochainComplex` assembled from graded modules, the two
 conditions in all degrees combine into one statement about homogeneous elements
@@ -28,6 +29,8 @@ quasi-isomorphism can be propagated along a filtration one generator degree at a
 
 ## Main results
 
+* `HomologicalComplex.moduleCat_epi_homologyMap_iff`: surjectivity on homology in one degree, on
+  elements.
 * `HomologicalComplex.moduleCat_quasiIsoAt_iff`: quasi-isomorphisms in one degree, on elements.
 * `CochainComplex.moduleCat_quasiIsoAt_iff`: the same for cochain complexes indexed by `ℤ`, with
   neighbouring degrees `n - 1` and `n + 1`.
@@ -43,6 +46,45 @@ namespace HomologicalComplex
 
 variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
   {K L : HomologicalComplex (ModuleCat R) c}
+
+/-- **Surjectivity on homology for complexes of modules, on elements.** A chain map `φ` of
+complexes of modules induces an epimorphism on degree-`n` homology exactly when every degree-`n`
+cycle `y` of `L` is `φ x + d b` for a cycle `x` of `K`. Here `p = c.prev n` and `m = c.next n`. -/
+theorem moduleCat_epi_homologyMap_iff (φ : K ⟶ L) {n p m : ι} (hp : c.prev n = p)
+    (hm : c.next n = m) :
+    Epi (homologyMap φ n) ↔
+      ∀ y : L.X n, L.d n m y = 0 →
+        ∃ x : K.X n, K.d n m x = 0 ∧ ∃ b : L.X p, L.d p n b = y - φ.f n x := by
+  have hmap (x : K.X n) (hx : K.d n m x = 0) :
+      homologyMap φ n (K.homologyπ n (K.moduleCatCyclesMk x m hm hx)) =
+        L.homologyπ n (L.moduleCatCyclesMk (φ.f n x) m hm
+          (by rw [Hom.comm_apply, hx, map_zero])) :=
+    homologyMap_homologyπ_moduleCatCyclesMk φ x m hm hx
+  rw [ModuleCat.epi_iff_surjective]
+  constructor
+  · intro hsurj y hy
+    obtain ⟨z, hz⟩ := hsurj (L.homologyπ n (L.moduleCatCyclesMk y m hm hy))
+    obtain ⟨x, hx, rfl⟩ := K.exists_homologyπ_moduleCatCyclesMk_eq m hm z
+    have hyx : L.d n m (y - φ.f n x) = 0 := by
+      rw [map_sub, hy, Hom.comm_apply, hx, map_zero, sub_zero]
+    refine ⟨x, hx, ?_⟩
+    -- The cycle `y - φ x` has zero homology class, so it is a boundary.
+    have hsub : L.moduleCatCyclesMk (y - φ.f n x) m hm hyx =
+        L.moduleCatCyclesMk y m hm hy - L.moduleCatCyclesMk (φ.f n x) m hm
+          (by rw [Hom.comm_apply, hx, map_zero]) :=
+      L.moduleCat_iCycles_injective n (by simp only [map_sub, iCycles_moduleCatCyclesMk])
+    obtain ⟨b, hb⟩ := (L.moduleCat_homologyπ_eq_zero_iff hp
+      (L.moduleCatCyclesMk (y - φ.f n x) m hm hyx)).1
+      (by rw [hsub, map_sub, ← hmap x hx, hz, sub_self])
+    refine ⟨b, ?_⟩
+    rw [← moduleCat_iCycles_toCycles_apply, hb, iCycles_moduleCatCyclesMk]
+  · intro hsurj z
+    obtain ⟨y, hy, rfl⟩ := L.exists_homologyπ_moduleCatCyclesMk_eq m hm z
+    obtain ⟨x, hx, b, hb⟩ := hsurj y hy
+    refine ⟨K.homologyπ n (K.moduleCatCyclesMk x m hm hx), ?_⟩
+    rw [hmap]
+    exact L.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d (-b) (by
+      rw [iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk, map_neg, hb, neg_sub])
 
 /-- **Quasi-isomorphisms of complexes of modules, on elements.** A chain map `φ` of complexes of
 modules is a quasi-isomorphism in degree `n` exactly when every degree-`n` cycle `y` of `L` is
@@ -67,35 +109,17 @@ theorem moduleCat_quasiIsoAt_iff (φ : K ⟶ L) {n p m : ι} (hp : c.prev n = p)
         L.homologyπ n (L.moduleCatCyclesMk (φ.f n x) m hm
           (by rw [Hom.comm_apply, hx, map_zero])) :=
     homologyMap_homologyπ_moduleCatCyclesMk φ x m hm hx
-  rw [quasiIsoAt_iff_isIso_homologyMap, ConcreteCategory.isIso_iff_bijective]
-  constructor
-  · rintro ⟨hinj, hsurj⟩
-    refine ⟨fun y hy ↦ ?_, fun x hx b hb ↦ ?_⟩
-    · obtain ⟨z, hz⟩ := hsurj (L.homologyπ n (L.moduleCatCyclesMk y m hm hy))
-      obtain ⟨x, hx, rfl⟩ := K.exists_homologyπ_moduleCatCyclesMk_eq m hm z
-      have hyx : L.d n m (y - φ.f n x) = 0 := by
-        rw [map_sub, hy, Hom.comm_apply, hx, map_zero, sub_zero]
-      refine ⟨x, hx, (hzero _ hyx).1 ?_⟩
-      have hsub : L.moduleCatCyclesMk (y - φ.f n x) m hm hyx =
-          L.moduleCatCyclesMk y m hm hy - L.moduleCatCyclesMk (φ.f n x) m hm
-            (by rw [Hom.comm_apply, hx, map_zero]) :=
-        L.moduleCat_iCycles_injective n (by simp only [map_sub, iCycles_moduleCatCyclesMk])
-      rw [hsub, map_sub, ← hmap x hx, hz, sub_self]
-    · exact (hzero x hx).1 (hinj ((hmap x hx).trans
-        (((hzero _ _).2 ⟨b, hb⟩).trans (map_zero _).symm)))
-  · rintro ⟨hsurj, hinj⟩
-    refine ⟨(injective_iff_map_eq_zero (homologyMap φ n).hom).2 fun z hz ↦ ?_, fun z ↦ ?_⟩
-    · obtain ⟨x, hx, rfl⟩ := K.exists_homologyπ_moduleCatCyclesMk_eq m hm z
-      have hz' : homologyMap φ n (K.homologyπ n (K.moduleCatCyclesMk x m hm hx)) = 0 := hz
-      rw [hmap, hzero] at hz'
-      obtain ⟨b, hb⟩ := hz'
-      exact (hzero x hx).2 (hinj x hx b hb)
-    · obtain ⟨y, hy, rfl⟩ := L.exists_homologyπ_moduleCatCyclesMk_eq m hm z
-      obtain ⟨x, hx, b, hb⟩ := hsurj y hy
-      refine ⟨K.homologyπ n (K.moduleCatCyclesMk x m hm hx), ?_⟩
-      rw [hmap]
-      exact L.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d (-b) (by
-        rw [iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk, map_neg, hb, neg_sub])
+  rw [quasiIsoAt_iff_isIso_homologyMap, ConcreteCategory.isIso_iff_bijective,
+    ← moduleCat_epi_homologyMap_iff φ hp hm, ModuleCat.epi_iff_surjective]
+  refine and_comm.trans (and_congr Iff.rfl ⟨fun hinj x hx b hb ↦ ?_, fun hinj ↦ ?_⟩)
+  · exact (hzero x hx).1 (hinj ((hmap x hx).trans
+      (((hzero _ _).2 ⟨b, hb⟩).trans (map_zero _).symm)))
+  · refine (injective_iff_map_eq_zero (homologyMap φ n).hom).2 fun z hz ↦ ?_
+    obtain ⟨x, hx, rfl⟩ := K.exists_homologyπ_moduleCatCyclesMk_eq m hm z
+    have hz' : homologyMap φ n (K.homologyπ n (K.moduleCatCyclesMk x m hm hx)) = 0 := hz
+    rw [hmap, hzero] at hz'
+    obtain ⟨b, hb⟩ := hz'
+    exact (hzero x hx).2 (hinj x hx b hb)
 
 end HomologicalComplex
 

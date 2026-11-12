@@ -540,8 +540,8 @@ theorem _root_.LocallyFinite.isSemianalytic_iUnion {ι : Type*} {s : ι → Set 
   obtain ⟨V, hV, hI⟩ := hfin x
   refine (SemianalyticAt.biUnion hI fun i _ => hs i x).congr ?_
   filter_upwards [hV] with y hy
-  simp only [eq_iff_iff, mem_iUnion, exists_prop]
-  exact ⟨fun ⟨i, hi, hy⟩ => ⟨i, hy⟩, fun ⟨i, hyi⟩ => ⟨i, ⟨y, hyi, hy⟩, hyi⟩⟩
+  simp only [mem_iUnion, exists_prop]
+  exact ⟨fun ⟨i, _, hy⟩ => ⟨i, hy⟩, fun ⟨i, hyi⟩ => ⟨i, ⟨y, hyi, hy⟩, hyi⟩⟩
 
 /-- **Analytic isomorphisms, locally.** For a partial equivalence `e` whose source is a
 neighbourhood of `x`, with `e` analytic at `x` and its inverse analytic at `e x`, the set

@@ -40,6 +40,8 @@ lies in `H^{s-1}`. On Schwartz fields the tempered operators agree with `vacuumO
 * `TauCeti.Vortex.temperedVacuumOperator_toTemperedDistribution` and
   `TauCeti.Vortex.temperedVacuumAdjoint_toTemperedDistribution`: they extend `vacuumOperator` and
   `vacuumAdjoint` from Schwartz fields.
+* `TauCeti.Vortex.sum_temperedVacuumOperator_apply`: on tempered fields, `L₀` is the transpose of
+  `vacuumAdjoint` on real Schwartz fields.
 * `TauCeti.Vortex.temperedVacuumAdjoint_temperedVacuumOperator` and
   `TauCeti.Vortex.temperedVacuumOperator_temperedVacuumAdjoint`: the Weitzenböck identities
   `L₀* L₀ = L₀ L₀* = -Δ + 1 / 4`.
@@ -187,6 +189,32 @@ theorem temperedVacuumAdjoint_toTemperedDistribution (y : 𝓢(ℂ, EuclideanSpa
     congr 1
     ext z
     simp [div_eq_inv_mul]
+
+/-- **`L₀` on tempered fields is the transpose of `L₀*` on real Schwartz fields.** For every field
+`Y` of complex tempered distributions and every real Schwartz field `η`,
+`∑ᵢ (L₀ Y)ᵢ (ηᵢ) = ∑ⱼ Yⱼ ((L₀* η)ⱼ)`. -/
+theorem sum_temperedVacuumOperator_apply (Y : Fin 4 → 𝓢'(ℂ, ℂ))
+    (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
+    ∑ i, temperedVacuumOperator Y i (η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i)) =
+      ∑ j, Y j ((vacuumAdjoint η).postcompCLM (ofRealCLM ∘L EuclideanSpace.proj j)) := by
+  set c : Fin 4 → 𝓢(ℂ, ℂ) := fun j ↦ η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj j)
+  set c' : Fin 4 → 𝓢(ℂ, ℂ) :=
+    fun j ↦ (vacuumAdjoint η).postcompCLM (ofRealCLM ∘L EuclideanSpace.proj j)
+  obtain ⟨h₀, h₁, h₂, h₃⟩ :
+      c' 0 = -∂_{(1 : ℂ)} (c 0) - ∂_{I} (c 1) + (1 / 2 : ℂ) • c 3 ∧
+      c' 1 = -∂_{I} (c 0) + ∂_{(1 : ℂ)} (c 1) - (1 / 2 : ℂ) • c 2 ∧
+      c' 2 = -∂_{(1 : ℂ)} (c 2) - ∂_{I} (c 3) + (1 / 2 : ℂ) • c 1 ∧
+      c' 3 = ∂_{I} (c 2) - ∂_{(1 : ℂ)} (c 3) + (1 / 2 : ℂ) • c 0 := by
+    refine ⟨?_, ?_, ?_, ?_⟩ <;>
+    · ext z
+      simp [c, c', TauCeti.lineDerivOp_postcompCLM]
+      ring
+  simp only [c, c'] at h₀ h₁ h₂ h₃
+  simp only [Fin.sum_univ_four, h₀, h₁, h₂, h₃, temperedVacuumOperator_apply_zero,
+    temperedVacuumOperator_apply_one, temperedVacuumOperator_apply_two,
+    temperedVacuumOperator_apply_three]
+  simp [lineDerivOp_apply_apply]
+  ring
 
 /-! ### The Weitzenböck identities -/
 

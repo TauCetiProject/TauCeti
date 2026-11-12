@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.Topology.GDelta.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
+import Mathlib.RingTheory.Complex
 import Mathlib.Topology.Algebra.Module.Cardinality
 import Mathlib.Topology.Instances.Matrix
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.LevelSet
+import TauCeti.LinearAlgebra.Matrix.SchurComplement
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -44,6 +47,14 @@ the matrices of `SL(2, ℝ)` with all positive powers nondegenerate form a dense
 (`Matrix.SpecialLinearGroup.dense_setOf_forall_det_one_sub_pow_ne_zero`,
 `Matrix.SpecialLinearGroup.isGδ_setOf_forall_det_one_sub_pow_ne_zero`).
 
+Without coordinates, the plane is the complex line `ℂ` and the linearized return map an `ℝ`-linear
+endomorphism `A` of `ℂ`; in the basis `(1, i)` the rotation `R(θ)` is multiplication by
+`exp (-θ i)`. For all but countably many `θ`, every positive iterate of `A` composed with
+multiplication by `exp (θ i)` is again nondegenerate
+(`LinearMap.countable_setOf_exists_det_one_sub_pow_mul_lmul_exp_eq_zero`). This is the form in
+which the derivative of a radial Hamiltonian twist of the plane enters, since such a twist is a
+rotation near its centre.
+
 ## Main results
 
 * `Matrix.det_one_sub_pow_eq_two_sub_two_mul_cos_fin_two`: `det (1 - A ^ n) = 2 - 2 cos (n θ)`
@@ -57,6 +68,9 @@ the matrices of `SL(2, ℝ)` with all positive powers nondegenerate form a dense
 * `Matrix.SpecialLinearGroup.dense_setOf_forall_det_one_sub_pow_ne_zero` and
   `Matrix.SpecialLinearGroup.isGδ_setOf_forall_det_one_sub_pow_ne_zero`: the elements of
   `SL(2, ℝ)` with all positive powers nondegenerate form a dense `Gδ` set.
+* `LinearMap.countable_setOf_exists_det_one_sub_pow_mul_lmul_exp_eq_zero`: for an `ℝ`-linear
+  endomorphism `A` of `ℂ` of determinant one, only countably many angles `θ` make some positive
+  power of `A ∘ (exp (θ i) ·)` have eigenvalue `1`.
 
 ## References
 
@@ -195,3 +209,45 @@ theorem isGδ_setOf_forall_det_one_sub_pow_ne_zero :
 end SpecialLinearGroup
 
 end Matrix
+
+/-! ### Rotations of the complex line -/
+
+namespace LinearMap
+
+open Complex
+
+/-- **Rotating a determinant-one map of the plane makes all its iterates nondegenerate, for all
+but countably many angles.** For an `ℝ`-linear endomorphism `A` of `ℂ` of determinant one, only
+countably many `θ` make some positive power of `A ∘ (exp (θ i) ·)` have eigenvalue `1`. This is
+the coordinate-free form of
+`Matrix.SpecialLinearGroup.countable_setOf_exists_det_one_sub_pow_rotation_mul_eq_zero`: in the
+basis `(1, i)`, multiplication by `exp (θ i)` is the rotation `R(-θ)`. -/
+theorem countable_setOf_exists_det_one_sub_pow_mul_lmul_exp_eq_zero
+    {A : Module.End ℝ ℂ} (hA : LinearMap.det A = 1) :
+    {θ : ℝ | ∃ n ≠ 0,
+      LinearMap.det (1 - (A * Algebra.lmul ℝ ℂ (exp (θ * I))) ^ n) = 0}.Countable := by
+  have hτ (f : Module.End ℝ ℂ) :
+      LinearMap.toMatrixAlgEquiv basisOneI f = LinearMap.toMatrix basisOneI basisOneI f := by
+    ext i j
+    rw [LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
+  have hdet (f : Module.End ℝ ℂ) :
+      LinearMap.det f = (LinearMap.toMatrixAlgEquiv basisOneI f).det := by
+    rw [hτ, LinearMap.det_toMatrix]
+  set M := LinearMap.toMatrixAlgEquiv basisOneI A
+  have hM : M.det = 1 := by rw [← hdet, hA]
+  -- Multiplication by `exp (θ i)` is the rotation `R(-θ)` in the basis `(1, i)`, and
+  -- `det (1 - (M R) ^ n) = det (1 - (R M) ^ n)` (`Matrix.det_one_sub_mul_pow_comm`).
+  have key (θ : ℝ) {n : ℕ} (hn : n ≠ 0) :
+      LinearMap.det (1 - (A * Algebra.lmul ℝ ℂ (exp (θ * I))) ^ n) =
+        (1 - ((Matrix.SpecialLinearGroup.rotation (-θ) : Matrix _ _ ℝ) * M) ^ n).det := by
+    have hR : LinearMap.toMatrixAlgEquiv basisOneI (Algebra.lmul ℝ ℂ (exp (θ * I))) =
+        (Matrix.SpecialLinearGroup.rotation (-θ) : Matrix (Fin 2) (Fin 2) ℝ) := by
+      rw [hτ, ← Algebra.leftMulMatrix_apply, Algebra.leftMulMatrix_complex]
+      simp [Matrix.SpecialLinearGroup.coe_rotation, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im]
+    rw [hdet, map_sub, map_one, map_pow, map_mul, hR, Matrix.det_one_sub_mul_pow_comm _ _ hn]
+  refine ((Matrix.SpecialLinearGroup.countable_setOf_exists_det_one_sub_pow_rotation_mul_eq_zero
+    hM).preimage neg_injective).mono fun θ hθ ↦ ?_
+  obtain ⟨n, hn, h⟩ := hθ
+  exact ⟨n, hn, by rwa [key θ hn] at h⟩
+
+end LinearMap

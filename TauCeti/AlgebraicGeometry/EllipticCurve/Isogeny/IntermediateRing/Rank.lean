@@ -18,9 +18,10 @@ import TauCeti.NumberTheory.RamificationInertia.Tower
 
 The intermediate ring of an isogeny `φ : W₁ → W₂` — the integral closure of `W₂.CoordinateRing`
 inside `W₁.FunctionField` — is a `W₂.CoordinateRing`-module of rank exactly `φ.degree`. This is the
-arithmetic content of the roadmap's *place-free* count: the degree, defined as a dimension of
-function fields, is also a rank over the coordinate ring, so for a maximal prime it can be read off
-the primes of the intermediate ring lying over that prime instead of off a field extension.
+arithmetic content of the *place-free* count of an isogeny's fibres: the degree, defined as a
+dimension of function fields, is also a rank over the coordinate ring, so for a maximal prime it
+can be read off the primes of the intermediate ring lying over that prime instead of off a field
+extension.
 
 The bridge is a localization comparison. `W₂.FunctionField` is the fraction field of
 `W₂.CoordinateRing` by definition, and `W₁.FunctionField` is the fraction field of the intermediate
@@ -67,10 +68,11 @@ hypotheses a caller uses to obtain module-finiteness.
 
 **Why not `IsIntegralClosure.rank`.** Mathlib states the same comparison for an integral closure,
 but only over a *principal ideal* base (`Mathlib/RingTheory/DedekindDomain/IntegralClosure.lean`),
-a hypothesis unavailable from the current assumptions. The roadmap's intended identification of
-the coordinate ring's class group with the point group is context for this limitation, not an
-obstruction established here. `IsFractionRing.finrank_eq` compares the ranks with no hypothesis on
-the base at all, so it is the route taken here.
+a hypothesis unavailable from the current assumptions. For an elliptic curve the coordinate ring's
+class group is identified with the group of points, so the base is principal only when that group
+is trivial; this is context for the limitation, not an obstruction established here.
+`IsFractionRing.finrank_eq` compares the ranks with no hypothesis on the base at all, so it is the
+route taken here.
 
 **Module-finiteness is an instance argument of projectivity and the fibre statements, not a derived
 fact.** The three statements below that do need it take
@@ -86,7 +88,7 @@ stated under its natural finite-flat hypotheses. Over a Dedekind domain a torsio
 flat, and torsion-freeness of the intermediate ring is injectivity of `algebraMap W₂.CoordinateRing
 φ.intermediateRing`, which follows from the hypotheses already present: the composite into
 `W₁.FunctionField` is the pullback, and the pullback of an isogeny is injective. So
-`moduleProjective_intermediateRing` supplies the flatness needed in the roadmap's Dedekind setting.
+`moduleProjective_intermediateRing` supplies the flatness needed over a Dedekind coordinate ring.
 The argument is made once there rather than repeated: `IntermediateRing/Basic.lean` records that a
 standalone torsion-freeness lemma about this ring was removed in review as a one-step wrapper, and
 nothing here reinstates one.
@@ -100,17 +102,13 @@ discrimination key `Isogeny.intermediateRing` confines instance search to the ob
 The sibling statements do name a chosen structure and therefore stay theorems with an explicit
 hypothesis pinning it, as `Isogeny.moduleFinite_intermediateRing` does.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 1**, the "points come along" milestone, whose
-place-free alternate route reads: "the intermediate ring is locally free of rank `deg φ` over the
-Dedekind coordinate ring, so every fibre over an affine point has `deg φ` points with
-multiplicity, and translation moves the kernel fibre onto one". This file is that rank and the
-prime-level fibre count under it; reading those primes as the points the milestone speaks of needs
-`W₁` nonsingular, which this file does not assume. It is also the form in which **Layer 0**'s
-fundamental identity
-`Σ_{w ∣ v} e_w · f_w = [F₁ : F₂]` reaches the affine places of `W₂`, the maximal ideals of its
-coordinate ring.
+**The place-free fibre count.** The intermediate ring is locally free of rank `deg φ` over
+the Dedekind coordinate ring, so every fibre over an affine point has `deg φ` points with
+multiplicity, and translation moves the kernel fibre onto one. This file is that rank and the
+prime-level fibre count under it; reading those primes as points needs `W₁` nonsingular, which
+this file does not assume. It is also the form in which the fundamental identity
+`Σ_{w ∣ v} e_w · f_w = [F₁ : F₂]` of function-field extensions reaches the affine places of `W₂`,
+the maximal ideals of its coordinate ring.
 
 ## Provenance
 
@@ -124,9 +122,8 @@ structures are the pullback-induced ones, installed inside the proof, so the sta
 hypothesis-free. The rank identity, projectivity, fundamental identity, and prime-count bound are
 not in that source.
 
-⚠ *mathlib-track*, with the sibling `Isogeny` files: `TauCetiRoadmap/EllipticCurves/README.md`
-pins D. Angdinata's shared isogeny development as carrying the intermediate ring and its
-structural theory.
+⚠ *mathlib-track*, with the sibling `Isogeny` files: D. Angdinata's shared isogeny development
+carries the intermediate ring and its structural theory.
 
 ## References
 
@@ -158,8 +155,7 @@ instance isFractionRing_intermediateRing (φ : Isogeny W₁ W₂) :
   have h : ∀ x, algebraMap W₂.CoordinateRing W₁.FunctionField x = φ.pullback x :=
     φ.pullback.algebraMap_toAlgebra_apply
   have : IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField :=
-    IsScalarTower.of_algebraMap_eq fun x ↦ by
-      rw [h, φ.fieldPullback.algebraMap_toAlgebra_apply, fieldPullback_algebraMap]
+    φ.isScalarTower_coordinateRing_of_algebraMap_eq_pullback h
   have : IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField :=
     φ.isScalarTower_intermediateRing rfl h
   have := φ.isIntegralClosure_intermediateRing h
@@ -179,20 +175,21 @@ a structure globally would be a diamond, since different isogenies induce differ
 Nothing here is spent on separability or on the coordinate rings being Dedekind. -/
 theorem finrank_intermediateRing_eq_degree (φ : Isogeny W₁ W₂)
     [Algebra W₂.CoordinateRing W₁.FunctionField]
-    [Algebra W₂.FunctionField W₁.FunctionField]
-    [IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField]
     [Algebra W₂.CoordinateRing φ.intermediateRing]
     [IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField]
     (h : ∀ x, algebraMap W₂.CoordinateRing W₁.FunctionField x = φ.pullback x) :
     Module.finrank W₂.CoordinateRing φ.intermediateRing = φ.degree := by
-  rw [φ.degree_eq_finrank (φ.algebraMap_functionField_eq_fieldPullback h)]
+  -- the function-field algebra structure is local, as `IntermediateRing/Basic.lean` prescribes
+  let _ := φ.fieldPullback.toRingHom.toAlgebra
+  have : IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField :=
+    φ.isScalarTower_coordinateRing_of_algebraMap_eq_pullback h
+  rw [φ.degree_eq_finrank φ.fieldPullback.algebraMap_toAlgebra_apply]
   exact (IsFractionRing.finrank_eq W₂.CoordinateRing W₂.FunctionField φ.intermediateRing
     W₁.FunctionField).symm
 
 /-- **The intermediate ring is projective, hence locally free, over the Dedekind target coordinate
-ring.** Once the function-field algebra structures and scalar towers required by
-`finrank_intermediateRing_eq_degree` are also present, its rank is `φ.degree`. This is the form in
-which the roadmap's place-free fibre count is stated.
+ring.** By `finrank_intermediateRing_eq_degree` its rank is `φ.degree`. This is the form in
+which the place-free fibre count is stated.
 
 The structure map is injective, because it factors the pullback of the isogeny and that is
 injective, so the intermediate ring is torsion-free and hence flat over the Dedekind coordinate
@@ -236,8 +233,6 @@ Mathlib's `Ideal.sum_ramification_inertia_eq_finrank` takes the binder the same 
 same `Module.Finite`. -/
 theorem sum_ramificationIdx_mul_inertiaDeg_eq_degree (φ : Isogeny W₁ W₂)
     [Algebra W₂.CoordinateRing W₁.FunctionField]
-    [Algebra W₂.FunctionField W₁.FunctionField]
-    [IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField]
     [Algebra W₂.CoordinateRing φ.intermediateRing]
     [IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField]
     [Module.Finite W₂.CoordinateRing φ.intermediateRing]
@@ -259,14 +254,12 @@ and `W₁` nonsingular, neither of which is assumed.
 For prime `p`, equality holds exactly when every ramification index and every inertia degree over
 `p` is one; a nonprime `p` has no primes over it, so the condition is vacuous there while the count
 is `0`.
-Turning the weighted identity above into an honest count of geometric points is therefore Layer 1's
-separable-⟹-unramified milestone (`e_q = 1`) together with a separably closed base (`f_q = 1`) and
-a nonsingular `W₁`, which makes the primes counted here points of `W₁`; none of the three is
-assumed. -/
+Turning the weighted identity above into an honest count of geometric points therefore needs a
+separable isogeny to be unramified (`e_q = 1`), together with a separably closed base
+(`f_q = 1`) and a nonsingular `W₁`, which makes the primes counted here points of `W₁`; none of
+the three is assumed. -/
 theorem ncard_primesOver_le_degree (φ : Isogeny W₁ W₂)
     [Algebra W₂.CoordinateRing W₁.FunctionField]
-    [Algebra W₂.FunctionField W₁.FunctionField]
-    [IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField]
     [Algebra W₂.CoordinateRing φ.intermediateRing]
     [IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField]
     [Module.Finite W₂.CoordinateRing φ.intermediateRing]

@@ -160,10 +160,9 @@ theorem serreLift_injective (b : LieAlgebra.Basis ι H) :
   have hβ := (isSerreSystem_serre K b.Aᵀ).submatrix φ.symm.injective
   rw [hCM'] at hβ
   have hβα : (serreLift hβ).comp (serreLift hα) = LieHom.id :=
-    serre_hom_ext (fun i ↦ by simp) (fun i ↦ by simp) fun i ↦ by simp
+    serre_hom_ext (fun i ↦ by simp) fun i ↦ by simp
   have hfac : serreLift (isSerreSystem_lieBasis b) = (serreLift hS).comp (serreLift hα) := by
-    refine (eq_serreLift (fun i ↦ ?_) (fun i ↦ ?_) fun i ↦ ?_).symm
-    · simpa using (congrFun hH (φ i)).symm
+    refine (eq_serreLift (fun i ↦ ?_) fun i ↦ ?_).symm
     · simp [φ]
     · simp [φ]
   rw [hfac, LieHom.coe_comp]

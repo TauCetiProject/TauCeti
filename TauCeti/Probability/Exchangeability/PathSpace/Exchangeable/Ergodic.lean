@@ -53,9 +53,7 @@ shift-invariant events.  For an i.i.d. product law both hold:
 * `ergodicSMul_infinitePi_const` — Hewitt–Savage in ergodic form: the finitely supported
   permutations act ergodically on an i.i.d. product law.
 
-This discharges the `ErgodicSMul` interface, item (1) ⇔ (2) of the zero-one/ergodic/extreme
-interfaces of Layer 6 of the `Exchangeability` roadmap.  No material is adapted from
-`cameronfreer/exchangeability`.
+No material is adapted from `cameronfreer/exchangeability`.
 -/
 
 public section
