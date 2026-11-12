@@ -545,13 +545,12 @@ the subdivided edge. -/
 theorem nonempty_vertexLink_subdivide_path {c : C.Corner}
     (h : C.outgoing c = a ∨ C.outgoing c = C.graph.rev a) :
     Nonempty (((C.subdivide a).vertexLink none).Path ⟨.inr true, rfl⟩ ⟨.inr false, rfl⟩) := by
-  have hv := cornerVertex_subdivideLastCorner h
   have hin := incoming_subdivideLastCorner h
   rcases h with h | h
-  · exact (C.subdivide a).nonempty_vertexLink_path ⟨_, hv⟩ (a := ⟨.inr true, rfl⟩)
-      (b := ⟨.inr false, rfl⟩) (by simp [h]) (by simp [hin, h])
-  · obtain ⟨p⟩ := (C.subdivide a).nonempty_vertexLink_path ⟨_, hv⟩ (a := ⟨.inr false, rfl⟩)
-      (b := ⟨.inr true, rfl⟩) (by simp [h]) (by simp [hin, h])
+  · exact (C.subdivide a).nonempty_vertexLink_path_of_corner (C.subdivideLastCorner a c)
+      (a := ⟨.inr true, rfl⟩) (b := ⟨.inr false, rfl⟩) (by simp [h]) (by simp [hin, h])
+  · obtain ⟨p⟩ := (C.subdivide a).nonempty_vertexLink_path_of_corner (C.subdivideLastCorner a c)
+      (a := ⟨.inr false, rfl⟩) (b := ⟨.inr true, rfl⟩) (by simp [h]) (by simp [hin, h])
     exact ⟨p.reverse⟩
 
 /-- The new vertex of a subdivision has a surface link as soon as the subdivided edge lies on one
