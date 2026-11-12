@@ -184,6 +184,15 @@ theorem coordinateWeight_def (j : Fin D.dim) :
     D.coordinateWeight j = D.weightLatticeBasis.repr ⟨D.weight j, D.weight_mem_weightLattice j⟩ :=
   (rfl)
 
+/-- If the chosen weight-lattice basis consists of the fundamental weights, coordinate weights
+are the original fundamental-weight coordinate vectors. -/
+theorem coordinateWeight_eq_weight
+    (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1) :
+    D.coordinateWeight = D.weight := by
+  ext j i
+  have h := congrFun (D.sum_coordinateWeight_smul j) i
+  simpa [hb, Pi.single_apply] using h
+
 /-- **The coordinate weights span the character lattice.** The weights span `Λ(D)` by definition,
 and reading `Λ(D)` in the chosen basis is a linear isomorphism onto `Fin t.rank → ℤ`. -/
 theorem span_range_coordinateWeight_eq_top :
