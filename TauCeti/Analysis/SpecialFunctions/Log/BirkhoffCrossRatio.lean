@@ -97,7 +97,6 @@ private theorem cross_ratio_eq_zero_or_one_of_birkhoff_of_neg {α β α' β' c l
     simp
   right
   obtain rfl : β' = 0 := (mul_eq_zero.mp hαβ').resolve_left hαpos.ne'
-  have hα0 : α ≠ 0 := hαpos.ne'
   have hα'0 : α' ≠ 0 := hα'.ne
   field_simp
   ring

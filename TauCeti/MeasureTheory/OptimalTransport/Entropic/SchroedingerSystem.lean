@@ -167,9 +167,7 @@ private theorem logIntegralExp_sub_sub_le_of_le [IsFiniteMeasure ν] (hν : ν �
   set A₂ := ∫ b, Real.exp (h (a, b) + ψ₂ b) ∂ν
   set B₁ := ∫ b, Real.exp (h (a', b) + ψ₁ b) ∂ν
   set B₂ := ∫ b, Real.exp (h (a', b) + ψ₂ b) ∂ν
-  have hA₁ : 0 < A₁ := integral_exp_pos (hi a hψ₁ hC₁)
   have hA₂ : 0 < A₂ := integral_exp_pos (hi a hψ₂ hC₂)
-  have hB₁ : 0 < B₁ := integral_exp_pos (hi a' hψ₁ hC₁)
   have hB₂ : 0 < B₂ := integral_exp_pos (hi a' hψ₂ hC₂)
   -- `exp m * A₂ ≤ A₁ ≤ exp (m + ω) * A₂`.
   have hA₁lo : Real.exp m * A₂ ≤ A₁ := by
