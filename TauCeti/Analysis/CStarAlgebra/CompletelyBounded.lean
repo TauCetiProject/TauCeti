@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import Mathlib.Analysis.CStarAlgebra.Hom
-import Mathlib.Analysis.CStarAlgebra.Module.Constructions
+import TauCeti.Analysis.CStarAlgebra.CauchySchwarz
 
 /-!
 # Completely bounded maps between C⋆-algebras
@@ -24,20 +23,27 @@ This file treats C⋆-algebras only, with the operator-space structure they carr
 
 ## Main declarations
 
-* `TauCeti.IsCompletelyBounded`, `TauCeti.cbNorm`: complete boundedness and the cb norm, with
-  `TauCeti.norm_map_le_cbNorm_mul` (`‖φₙ x‖ ≤ ‖φ‖_cb ‖x‖`), `TauCeti.cbNorm_le_of_bound`, and
-  `TauCeti.norm_apply_le_cbNorm_mul` (`‖φ‖ ≤ ‖φ‖_cb`, the level-one comparison).
-* `TauCeti.IsCompletelyBounded.comp`, `TauCeti.cbNorm_comp_le`: composition, and
-  `TauCeti.cbNorm_id_le_one`.
-* `TauCeti.isCompletelyBounded_nonUnitalStarAlgHom`, `TauCeti.cbNorm_nonUnitalStarAlgHom_le_one`:
-  star homomorphisms are complete contractions.
-* `TauCeti.norm_sum_mul_mul_sq_le`: `‖∑ aₖ x bₖ‖² ≤ ‖∑ aₖ aₖ⋆‖ ‖x‖² ‖∑ bₖ⋆ bₖ‖` in a
-  C⋆-algebra, from the Cauchy–Schwarz inequality of the Hilbert module `Dⁿ`.
-* `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices as a linear map.
-* `TauCeti.isCompletelyBounded_transposeₗ`, `TauCeti.cbNorm_transposeₗ`: the transpose on
-  `M_n(ℂ)` is completely bounded with cb norm `n`. At level `n` it sends the flip unitary
-  `[E l k]_{k l}`, of norm `1`, to `[E k l]_{k l}`, which is `n` times a rank-one projection; the
-  bound `n` at every level comes from writing the transpose as `y ↦ ∑ E i j * y * E i j`.
+* `LinearMap.IsCompletelyBounded`, `LinearMap.cbNorm`: complete boundedness and the cb norm, with
+  `LinearMap.norm_map_le_cbNorm_mul` (`‖φₙ x‖ ≤ ‖φ‖_cb ‖x‖`, for matrices over any finite index
+  type), `LinearMap.cbNorm_le_iff`, and `LinearMap.norm_apply_le_cbNorm_mul`
+  (`‖φ a‖ ≤ ‖φ‖_cb ‖a‖`, the level-one comparison).
+* `LinearMap.cbNorm_zero`, `LinearMap.cbNorm_add_le`, `LinearMap.cbNorm_smul`,
+  `LinearMap.cbNorm_neg`, `LinearMap.cbNorm_sub_le`, `LinearMap.cbNorm_eq_zero_iff`: the cb norm
+  is a norm on the completely bounded maps.
+* `LinearMap.IsCompletelyBounded.comp`, `LinearMap.cbNorm_comp_le`: composition, and
+  `LinearMap.cbNorm_id`.
+* `NonUnitalStarAlgHom.isCompletelyBounded`, `NonUnitalStarAlgHom.cbNorm_le_one`: star
+  homomorphisms are complete contractions.
+* `CStarMatrix.isCompletelyBounded_transposeₗ`, `CStarMatrix.cbNorm_transposeₗ`: the transpose on
+  `M_n(ℂ)` is completely bounded with cb norm `n`.
+
+## Implementation notes
+
+For the transpose on `M_n(ℂ)` with matrix units `E i j`, the upper bound `n` at every level comes
+from writing the transpose as `y ↦ ∑ E i j * y * E i j` and applying
+`Finset.norm_sum_mul_mul_sq_le`. For `n ≥ 1`, the lower bound comes from level `n`: the
+amplification sends the flip unitary `[E l k]_{k l}`, of norm `1`, to `[E k l]_{k l}`, which is
+`n` times a rank-one projection.
 
 ## References
 
@@ -47,38 +53,9 @@ This file treats C⋆-algebras only, with the operator-space structure they carr
 
 public section
 
-open scoped InnerProductSpace WithCStarModule ComplexOrder
+open scoped ComplexOrder
 
-namespace CStarMatrix
-
-variable {m n R A : Type*}
-
-variable (R) in
-/-- The transpose of C⋆-matrices, as a linear map. -/
-@[expose] def transposeₗ [Semiring R] [AddCommMonoid A] [Module R A] :
-    CStarMatrix m n A →ₗ[R] CStarMatrix n m A where
-  toFun M := M.transpose
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-@[simp]
-theorem transposeₗ_apply [Semiring R] [AddCommMonoid A] [Module R A] (M : CStarMatrix m n A)
-    (i : n) (j : m) : transposeₗ R M i j = M j i :=
-  rfl
-
-/-- Entries of a finite sum of C⋆-matrices are the sums of the entries. -/
-theorem sum_apply [AddCommMonoid A] {ι : Type*} (s : Finset ι) (f : ι → CStarMatrix m n A)
-    (i : m) (j : n) : (∑ k ∈ s, f k) i j = ∑ k ∈ s, f k i j := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert k s hk ih => simp [Finset.sum_insert hk, ih]
-
-end CStarMatrix
-
-namespace TauCeti
-
-section Defs
+namespace LinearMap
 
 variable {A B C : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
@@ -96,6 +73,24 @@ bounded; the results about it assume `IsCompletelyBounded φ` where needed. -/
 noncomputable def cbNorm (φ : A →ₗ[ℂ] B) : ℝ :=
   sInf {C | 0 ≤ C ∧ ∀ (n : ℕ) (x : CStarMatrix (Fin n) (Fin n) A), ‖x.map φ‖ ≤ C * ‖x‖}
 
+theorem isCompletelyBounded_def {φ : A →ₗ[ℂ] B} :
+    IsCompletelyBounded φ ↔
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ (n : ℕ) (x : CStarMatrix (Fin n) (Fin n) A), ‖x.map φ‖ ≤ C * ‖x‖ :=
+  (Iff.rfl)
+
+theorem cbNorm_def (φ : A →ₗ[ℂ] B) :
+    cbNorm φ =
+      sInf {C | 0 ≤ C ∧ ∀ (n : ℕ) (x : CStarMatrix (Fin n) (Fin n) A), ‖x.map φ‖ ≤ C * ‖x‖} :=
+  (rfl)
+
+/-- The cb norm of a map that is not completely bounded is the junk value `0`. -/
+theorem cbNorm_of_not_isCompletelyBounded {φ : A →ₗ[ℂ] B} (hφ : ¬IsCompletelyBounded φ) :
+    cbNorm φ = 0 := by
+  rw [cbNorm_def]
+  exact (congrArg sInf (Set.eq_empty_of_forall_notMem fun C hC => hφ ⟨C, hC⟩)).trans
+    Real.sInf_empty
+
+@[simp, grind .]
 theorem cbNorm_nonneg (φ : A →ₗ[ℂ] B) : 0 ≤ cbNorm φ :=
   Real.sInf_nonneg fun _ h => h.1
 
@@ -104,16 +99,33 @@ theorem cbNorm_le_of_bound {φ : A →ₗ[ℂ] B} {c : ℝ} (hc : 0 ≤ c)
     (h : ∀ (n : ℕ) (x : CStarMatrix (Fin n) (Fin n) A), ‖x.map φ‖ ≤ c * ‖x‖) : cbNorm φ ≤ c :=
   csInf_le ⟨0, fun _ h => h.1⟩ ⟨hc, h⟩
 
-/-- The cb norm bounds every amplification of a completely bounded map. -/
-theorem norm_map_le_cbNorm_mul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) {n : ℕ}
+/-- The cb norm bounds the amplifications of a completely bounded map at the levels `Fin n`. -/
+private theorem norm_map_le_cbNorm_mul_fin {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) {n : ℕ}
     (x : CStarMatrix (Fin n) (Fin n) A) : ‖x.map φ‖ ≤ cbNorm φ * ‖x‖ := by
   rcases (norm_nonneg x).eq_or_lt with hx | hx
   · rw [← hx, norm_eq_zero.mp hx.symm]
-    have : (0 : CStarMatrix (Fin n) (Fin n) A).map φ = 0 := by ext; simp [CStarMatrix.map_apply]
-    simp [this]
+    simp [← CStarMatrix.mapₗ_apply]
   rw [← div_le_iff₀ hx]
   obtain ⟨c, hc, hb⟩ := hφ
   exact le_csInf ⟨c, hc, hb⟩ fun d hd => (div_le_iff₀ hx).mpr (hd.2 n x)
+
+/-- The cb norm bounds every amplification of a completely bounded map, for matrices over any
+finite index type. -/
+theorem norm_map_le_cbNorm_mul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) {κ : Type*}
+    [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map φ‖ ≤ cbNorm φ * ‖x‖ := by
+  classical
+  let e := Fintype.equivFin κ
+  have hmap : CStarMatrix.reindexₐ ℂ B e (x.map φ) = (CStarMatrix.reindexₐ ℂ A e x).map φ := by
+    simpa using CStarMatrix.mapₗ_reindexₐ (M := x) (e := e) φ
+  rw [← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ B e), hmap,
+    ← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ A e) x]
+  exact norm_map_le_cbNorm_mul_fin hφ _
+
+/-- For a completely bounded map, the cb norm is at most `c ≥ 0` exactly when `c` bounds every
+amplification. -/
+theorem cbNorm_le_iff {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) {c : ℝ} (hc : 0 ≤ c) :
+    cbNorm φ ≤ c ↔ ∀ (n : ℕ) (x : CStarMatrix (Fin n) (Fin n) A), ‖x.map φ‖ ≤ c * ‖x‖ :=
+  ⟨fun h n x => (norm_map_le_cbNorm_mul hφ x).trans (by gcongr), cbNorm_le_of_bound hc⟩
 
 /-- Complete boundedness only needs some uniform bound on the amplifications. -/
 theorem isCompletelyBounded_iff_exists_bound {φ : A →ₗ[ℂ] B} :
@@ -122,19 +134,123 @@ theorem isCompletelyBounded_iff_exists_bound {φ : A →ₗ[ℂ] B} :
   refine ⟨fun ⟨C, _, h⟩ => ⟨C, h⟩, fun ⟨C, h⟩ => ⟨max C 0, le_max_right _ _, fun n x => ?_⟩⟩
   exact (h n x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
 
-/-- The level-one comparison `‖φ a‖ ≤ ‖φ‖_cb ‖a‖`: the cb norm dominates the operator norm. -/
+/-- The level-one comparison `‖φ a‖ ≤ ‖φ‖_cb ‖a‖` for a completely bounded map. -/
 theorem norm_apply_le_cbNorm_mul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) (a : A) :
     ‖φ a‖ ≤ cbNorm φ * ‖a‖ := by
-  let e := (CStarMatrix.toOneByOne (Fin 1) ℂ A).toNonUnitalStarAlgHom
-  let f := (CStarMatrix.toOneByOne (Fin 1) ℂ B).toNonUnitalStarAlgHom
-  have he := NonUnitalStarAlgHom.norm_map e (CStarMatrix.toOneByOne (Fin 1) ℂ A).injective a
-  have hf := NonUnitalStarAlgHom.norm_map f (CStarMatrix.toOneByOne (Fin 1) ℂ B).injective (φ a)
-  have hfa : f (φ a) = (e a).map φ := rfl
-  rw [hfa] at hf
-  rw [← hf, ← he]
+  let eA := (CStarMatrix.toOneByOne (Fin 1) ℂ A).toNonUnitalStarAlgHom
+  let eB := (CStarMatrix.toOneByOne (Fin 1) ℂ B).toNonUnitalStarAlgHom
+  have hmap : eB (φ a) = (eA a).map φ := by
+    ext i j
+    change CStarMatrix.toOneByOne (Fin 1) ℂ B (φ a) i j =
+      φ (CStarMatrix.toOneByOne (Fin 1) ℂ A a i j)
+    simp
+  rw [← NonUnitalStarAlgHom.norm_map eB (CStarMatrix.toOneByOne (Fin 1) ℂ B).injective, hmap,
+    ← NonUnitalStarAlgHom.norm_map eA (CStarMatrix.toOneByOne (Fin 1) ℂ A).injective a]
   exact norm_map_le_cbNorm_mul hφ _
 
-/-- The identity map is completely bounded. -/
+section Zero
+
+omit [PartialOrder A] [StarOrderedRing A] [PartialOrder B] [StarOrderedRing B] in
+private theorem map_zero_eq {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) A) :
+    x.map ⇑(0 : A →ₗ[ℂ] B) = 0 := by
+  ext; simp [CStarMatrix.zero_apply]
+
+@[simp, grind .]
+theorem isCompletelyBounded_zero : IsCompletelyBounded (0 : A →ₗ[ℂ] B) :=
+  ⟨0, le_rfl, fun n x => by simp [map_zero_eq]⟩
+
+@[simp, grind =]
+theorem cbNorm_zero : cbNorm (0 : A →ₗ[ℂ] B) = 0 :=
+  le_antisymm (cbNorm_le_of_bound le_rfl fun n x => by simp [map_zero_eq]) (cbNorm_nonneg _)
+
+/-- A completely bounded map has cb norm `0` exactly when it is zero. -/
+theorem cbNorm_eq_zero_iff {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) :
+    cbNorm φ = 0 ↔ φ = 0 := by
+  refine ⟨fun h => LinearMap.ext fun a => norm_le_zero_iff.mp ?_, fun h => h ▸ cbNorm_zero⟩
+  simpa [h] using norm_apply_le_cbNorm_mul hφ a
+
+end Zero
+
+section Add
+
+private theorem norm_map_add_le {φ ψ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ)
+    (hψ : IsCompletelyBounded ψ) {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) A) :
+    ‖x.map ⇑(φ + ψ)‖ ≤ (cbNorm φ + cbNorm ψ) * ‖x‖ := by
+  have : x.map ⇑(φ + ψ) = x.map φ + x.map ψ := by ext; simp
+  rw [this, add_mul]
+  exact (norm_add_le _ _).trans
+    (add_le_add (norm_map_le_cbNorm_mul hφ x) (norm_map_le_cbNorm_mul hψ x))
+
+@[grind ←]
+theorem IsCompletelyBounded.add {φ ψ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ)
+    (hψ : IsCompletelyBounded ψ) : IsCompletelyBounded (φ + ψ) :=
+  ⟨_, add_nonneg (cbNorm_nonneg φ) (cbNorm_nonneg ψ), fun _ x => norm_map_add_le hφ hψ x⟩
+
+/-- The cb norm satisfies the triangle inequality on completely bounded maps. -/
+theorem cbNorm_add_le {φ ψ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ)
+    (hψ : IsCompletelyBounded ψ) : cbNorm (φ + ψ) ≤ cbNorm φ + cbNorm ψ :=
+  cbNorm_le_of_bound (add_nonneg (cbNorm_nonneg φ) (cbNorm_nonneg ψ)) fun _ x =>
+    norm_map_add_le hφ hψ x
+
+end Add
+
+section SMul
+
+omit [PartialOrder A] [StarOrderedRing A] in
+private theorem norm_map_smul (c : ℂ) (φ : A →ₗ[ℂ] B) {n : ℕ}
+    (x : CStarMatrix (Fin n) (Fin n) A) : ‖x.map ⇑(c • φ)‖ = ‖c‖ * ‖x.map φ‖ := by
+  have : x.map ⇑(c • φ) = c • x.map φ := by ext; simp
+  rw [this, norm_smul]
+
+@[grind ←]
+theorem IsCompletelyBounded.smul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) (c : ℂ) :
+    IsCompletelyBounded (c • φ) :=
+  ⟨‖c‖ * cbNorm φ, mul_nonneg (norm_nonneg c) (cbNorm_nonneg φ), fun n x => by
+    rw [norm_map_smul, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (norm_map_le_cbNorm_mul hφ x) (norm_nonneg c)⟩
+
+private theorem cbNorm_smul_le {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) (c : ℂ) :
+    cbNorm (c • φ) ≤ ‖c‖ * cbNorm φ :=
+  cbNorm_le_of_bound (mul_nonneg (norm_nonneg c) (cbNorm_nonneg φ)) fun n x => by
+    rw [norm_map_smul, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (norm_map_le_cbNorm_mul hφ x) (norm_nonneg c)
+
+/-- The cb norm is absolutely homogeneous. -/
+theorem cbNorm_smul (c : ℂ) (φ : A →ₗ[ℂ] B) : cbNorm (c • φ) = ‖c‖ * cbNorm φ := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  have hinv (ψ : A →ₗ[ℂ] B) : c⁻¹ • c • ψ = ψ := by rw [smul_smul, inv_mul_cancel₀ hc, one_smul]
+  by_cases hφ : IsCompletelyBounded φ
+  · refine le_antisymm (cbNorm_smul_le hφ c) ?_
+    have := cbNorm_smul_le (hφ.smul c) c⁻¹
+    rw [hinv, norm_inv, inv_mul_eq_div, le_div_iff₀ (norm_pos_iff.mpr hc), mul_comm] at this
+    exact this
+  · have hcφ : ¬IsCompletelyBounded (c • φ) := fun h => hφ (hinv φ ▸ h.smul c⁻¹)
+    rw [cbNorm_of_not_isCompletelyBounded hφ, cbNorm_of_not_isCompletelyBounded hcφ, mul_zero]
+
+@[simp, grind =]
+theorem isCompletelyBounded_neg {φ : A →ₗ[ℂ] B} :
+    IsCompletelyBounded (-φ) ↔ IsCompletelyBounded φ :=
+  ⟨fun h => by simpa using h.smul (-1), fun h => by simpa using h.smul (-1)⟩
+
+@[simp, grind =]
+theorem cbNorm_neg (φ : A →ₗ[ℂ] B) : cbNorm (-φ) = cbNorm φ := by
+  simpa using cbNorm_smul (-1) φ
+
+@[grind ←]
+theorem IsCompletelyBounded.sub {φ ψ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ)
+    (hψ : IsCompletelyBounded ψ) : IsCompletelyBounded (φ - ψ) :=
+  sub_eq_add_neg φ ψ ▸ hφ.add (isCompletelyBounded_neg.mpr hψ)
+
+theorem cbNorm_sub_le {φ ψ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ)
+    (hψ : IsCompletelyBounded ψ) : cbNorm (φ - ψ) ≤ cbNorm φ + cbNorm ψ := by
+  simpa [sub_eq_add_neg] using cbNorm_add_le hφ (isCompletelyBounded_neg.mpr hψ)
+
+end SMul
+
+section Comp
+
+@[simp, grind .]
 theorem isCompletelyBounded_id : IsCompletelyBounded (LinearMap.id : A →ₗ[ℂ] A) :=
   ⟨1, zero_le_one, fun n x => by simp⟩
 
@@ -142,144 +258,124 @@ theorem isCompletelyBounded_id : IsCompletelyBounded (LinearMap.id : A →ₗ[�
 theorem cbNorm_id_le_one : cbNorm (LinearMap.id : A →ₗ[ℂ] A) ≤ 1 :=
   cbNorm_le_of_bound zero_le_one fun n x => by simp
 
+/-- The identity map of a nontrivial C⋆-algebra has cb norm `1`. -/
+@[simp, grind =]
+theorem cbNorm_id [Nontrivial A] : cbNorm (LinearMap.id : A →ₗ[ℂ] A) = 1 := by
+  refine le_antisymm cbNorm_id_le_one ?_
+  obtain ⟨a, ha⟩ := exists_ne (0 : A)
+  have := norm_apply_le_cbNorm_mul isCompletelyBounded_id a
+  rwa [LinearMap.id_apply, le_mul_iff_one_le_left (norm_pos_iff.mpr ha)] at this
+
+private theorem norm_map_comp_le {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B} (hψ : IsCompletelyBounded ψ)
+    (hφ : IsCompletelyBounded φ) {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) A) :
+    ‖x.map (ψ ∘ₗ φ)‖ ≤ cbNorm ψ * cbNorm φ * ‖x‖ := by
+  have : x.map (ψ ∘ₗ φ) = (x.map φ).map ψ := by ext; simp
+  rw [this, mul_assoc]
+  exact (norm_map_le_cbNorm_mul hψ _).trans
+    (mul_le_mul_of_nonneg_left (norm_map_le_cbNorm_mul hφ x) (cbNorm_nonneg ψ))
+
 /-- The composite of completely bounded maps is completely bounded. -/
+@[grind →]
 theorem IsCompletelyBounded.comp {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B} (hψ : IsCompletelyBounded ψ)
     (hφ : IsCompletelyBounded φ) : IsCompletelyBounded (ψ ∘ₗ φ) :=
-  ⟨cbNorm ψ * cbNorm φ, mul_nonneg (cbNorm_nonneg ψ) (cbNorm_nonneg φ), fun n x => by
-    have : x.map (ψ ∘ₗ φ) = (x.map φ).map ψ := by ext; simp [CStarMatrix.map_apply]
-    rw [this, mul_assoc]
-    exact (norm_map_le_cbNorm_mul hψ _).trans
-      (mul_le_mul_of_nonneg_left (norm_map_le_cbNorm_mul hφ x) (cbNorm_nonneg ψ))⟩
+  ⟨_, mul_nonneg (cbNorm_nonneg ψ) (cbNorm_nonneg φ), fun _ x => norm_map_comp_le hψ hφ x⟩
 
 /-- The cb norm is submultiplicative. -/
 theorem cbNorm_comp_le {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B} (hψ : IsCompletelyBounded ψ)
     (hφ : IsCompletelyBounded φ) : cbNorm (ψ ∘ₗ φ) ≤ cbNorm ψ * cbNorm φ :=
-  cbNorm_le_of_bound (mul_nonneg (cbNorm_nonneg ψ) (cbNorm_nonneg φ)) fun n x => by
-    have : x.map (ψ ∘ₗ φ) = (x.map φ).map ψ := by ext; simp [CStarMatrix.map_apply]
-    rw [this, mul_assoc]
-    exact (norm_map_le_cbNorm_mul hψ _).trans
-      (mul_le_mul_of_nonneg_left (norm_map_le_cbNorm_mul hφ x) (cbNorm_nonneg ψ))
+  cbNorm_le_of_bound (mul_nonneg (cbNorm_nonneg ψ) (cbNorm_nonneg φ)) fun _ x =>
+    norm_map_comp_le hψ hφ x
 
-/-- A star homomorphism of C⋆-algebras is completely bounded: each amplification is again a star
-homomorphism, hence contractive. -/
-theorem isCompletelyBounded_nonUnitalStarAlgHom (π : A →⋆ₙₐ[ℂ] B) :
-    IsCompletelyBounded (π : A →ₗ[ℂ] B) :=
-  ⟨1, zero_le_one, fun n x => by
-    simpa using NonUnitalStarAlgHom.norm_apply_le (CStarMatrix.mapₙₐ (n := Fin n) π) x⟩
+end Comp
+
+end LinearMap
+
+namespace NonUnitalStarAlgHom
+
+variable {F A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
+
+private theorem norm_map_le (π : F) {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) A) :
+    ‖x.map (π : A →ₗ[ℂ] B)‖ ≤ 1 * ‖x‖ := by
+  simpa using norm_apply_le (CStarMatrix.mapₙₐ (n := Fin n) (ofClass π)) x
+
+/-- A star homomorphism of C⋆-algebras is completely bounded. -/
+theorem isCompletelyBounded (π : F) : (π : A →ₗ[ℂ] B).IsCompletelyBounded :=
+  ⟨1, zero_le_one, fun _ x => norm_map_le π x⟩
 
 /-- A star homomorphism of C⋆-algebras is a complete contraction. -/
-theorem cbNorm_nonUnitalStarAlgHom_le_one (π : A →⋆ₙₐ[ℂ] B) : cbNorm (π : A →ₗ[ℂ] B) ≤ 1 :=
-  cbNorm_le_of_bound zero_le_one fun n x => by
-    simpa using NonUnitalStarAlgHom.norm_apply_le (CStarMatrix.mapₙₐ (n := Fin n) π) x
+theorem cbNorm_le_one (π : F) : (π : A →ₗ[ℂ] B).cbNorm ≤ 1 :=
+  LinearMap.cbNorm_le_of_bound zero_le_one fun _ x => norm_map_le π x
 
-end Defs
+end NonUnitalStarAlgHom
 
-section CauchySchwarz
-
-variable {D : Type*} [NonUnitalCStarAlgebra D] [PartialOrder D] [StarOrderedRing D]
-
-/-- The Cauchy–Schwarz bound `‖∑ aₖ x bₖ‖² ≤ ‖∑ aₖ aₖ⋆‖ ‖x‖² ‖∑ bₖ⋆ bₖ‖` in a C⋆-algebra:
-`∑ aₖ x bₖ` is the inner product of the columns `(bₖ⋆)` and `(aₖ x)` of the Hilbert module
-`Dⁿ`. -/
-theorem norm_sum_mul_mul_sq_le {ι : Type*} [Fintype ι] (a b : ι → D) (x : D) :
-    ‖∑ k, a k * x * b k‖ ^ 2 ≤ ‖∑ k, a k * star (a k)‖ * ‖x‖ ^ 2 * ‖∑ k, star (b k) * b k‖ := by
-  let u : C⋆ᵐᵒᵈ(D, ι → D) := (WithCStarModule.equiv D (ι → D)).symm fun k => star (b k)
-  let v : C⋆ᵐᵒᵈ(D, ι → D) := (WithCStarModule.equiv D (ι → D)).symm fun k => a k * x
-  have huv : ⟪u, v⟫_D = ∑ k, a k * x * b k := by
-    simp [u, v, WithCStarModule.pi_inner, WithCStarModule.inner_def]
-  have hu : ‖u‖ ^ 2 = ‖∑ k, star (b k) * b k‖ := by
-    simp [u, WithCStarModule.pi_norm_sq, WithCStarModule.inner_def]
-  have hv : ‖v‖ ^ 2 ≤ ‖x‖ ^ 2 * ‖∑ k, a k * star (a k)‖ := by
-    rw [WithCStarModule.pi_norm_sq]
-    have hle : ∑ k, ⟪v k, v k⟫_D ≤ ‖x * star x‖ • ∑ k, a k * star (a k) := by
-      rw [Finset.smul_sum]
-      refine Finset.sum_le_sum fun k _ => ?_
-      have := CStarAlgebra.star_right_conjugate_le_norm_smul (a k) (x * star x)
-      simpa [v, WithCStarModule.inner_def, mul_assoc] using this
-    have h0 : 0 ≤ ∑ k, ⟪v k, v k⟫_D := Finset.sum_nonneg fun k _ => CStarModule.inner_self_nonneg
-    refine (CStarAlgebra.norm_le_norm_of_le_of_nonneg hle h0).trans_eq ?_
-    rw [norm_smul, norm_norm, CStarRing.norm_self_mul_star, sq]
-  rw [← huv]
-  calc ‖⟪u, v⟫_D‖ ^ 2 ≤ (‖u‖ * ‖v‖) ^ 2 := by
-        gcongr
-        exact CStarModule.norm_inner_le (C⋆ᵐᵒᵈ(D, ι → D))
-    _ = ‖u‖ ^ 2 * ‖v‖ ^ 2 := by ring
-    _ ≤ ‖∑ k, star (b k) * b k‖ * (‖x‖ ^ 2 * ‖∑ k, a k * star (a k)‖) := by
-        rw [hu]
-        gcongr
-    _ = _ := by ring
-
-end CauchySchwarz
+namespace CStarMatrix
 
 section Transpose
 
-open CStarMatrix hiding sum_apply mul_apply one_apply
-
-variable {m n : ℕ}
+variable {m n : Type*} [Fintype m] [Fintype n]
 
 /-- The matrix unit `E i j` of `M_n(ℂ)`. -/
-private def matrixUnit (i j : Fin n) : CStarMatrix (Fin n) (Fin n) ℂ :=
-  ofMatrix (Matrix.of fun r s => if r = i ∧ s = j then 1 else 0)
+private def matrixUnit [DecidableEq n] (i j : n) : CStarMatrix n n ℂ :=
+  ofMatrix (Matrix.single i j 1)
 
-private theorem matrixUnit_apply (i j r s : Fin n) :
-    matrixUnit i j r s = if r = i ∧ s = j then 1 else 0 :=
-  rfl
+omit [Fintype n] in
+private theorem star_matrixUnit [DecidableEq n] (i j : n) :
+    star (matrixUnit i j) = matrixUnit j i := by
+  ext r s
+  simp [matrixUnit, star_apply, Matrix.single_apply, and_comm, apply_ite]
 
 /-- The transpose on `M_n(ℂ)` is `y ↦ ∑ E i j * y * E i j`. -/
-private theorem transposeₗ_eq_sum (y : CStarMatrix (Fin n) (Fin n) ℂ) :
-    transposeₗ ℂ y = ∑ p : Fin n × Fin n, matrixUnit p.1 p.2 * y * matrixUnit p.1 p.2 := by
+private theorem transposeₗ_eq_sum [DecidableEq n] (y : CStarMatrix n n ℂ) :
+    transposeₗ ℂ y = ∑ p : n × n, matrixUnit p.1 p.2 * y * matrixUnit p.1 p.2 := by
   ext r s
-  simp [CStarMatrix.sum_apply, CStarMatrix.mul_apply, matrixUnit_apply, Fintype.sum_prod_type,
-    ite_and]
+  simp [sum_apply, mul_apply, matrixUnit, Matrix.single_apply, Fintype.sum_prod_type, ite_and]
 
 /-- The block-diagonal matrix `diag(E i j, …, E i j)` in `M_m(M_n(ℂ))`. -/
-private def blockMatrixUnit (m : ℕ) (i j : Fin n) :
-    CStarMatrix (Fin m) (Fin m) (CStarMatrix (Fin n) (Fin n) ℂ) :=
-  ofMatrix (Matrix.of fun k l => if k = l then matrixUnit i j else 0)
+private def blockMatrixUnit (m : Type*) [Fintype m] [DecidableEq m] [DecidableEq n] (i j : n) :
+    CStarMatrix m m (CStarMatrix n n ℂ) :=
+  ofMatrix (Matrix.scalar m (matrixUnit i j))
 
-private theorem blockMatrixUnit_apply (i j : Fin n) (k l : Fin m) :
-    blockMatrixUnit m i j k l = if k = l then matrixUnit i j else 0 :=
-  rfl
+private theorem blockMatrixUnit_apply [DecidableEq m] [DecidableEq n] (i j : n) (k l : m) :
+    blockMatrixUnit m i j k l = if k = l then matrixUnit i j else 0 := by
+  simp [blockMatrixUnit, Matrix.diagonal_apply]
 
-private theorem blockMatrixUnit_apply_apply (i j : Fin n) (k l : Fin m) (r s : Fin n) :
-    blockMatrixUnit m i j k l r s = if k = l ∧ r = i ∧ s = j then 1 else 0 := by
+private theorem star_blockMatrixUnit [DecidableEq m] [DecidableEq n] (i j : n) :
+    star (blockMatrixUnit m i j) = blockMatrixUnit m j i := by
+  ext k l : 1
+  simp only [star_apply, blockMatrixUnit_apply, eq_comm (a := l)]
+  split_ifs <;> simp only [star_matrixUnit, star_zero]
+
+private theorem blockMatrixUnit_apply_apply [DecidableEq m] [DecidableEq n] (i j : n) (k l : m)
+    (r s : n) : blockMatrixUnit m i j k l r s = if k = l ∧ i = r ∧ j = s then 1 else 0 := by
   rw [blockMatrixUnit_apply]
-  split_ifs <;> simp_all [matrixUnit_apply]
-
-private theorem blockMatrixUnit_mul_mul_apply (i j : Fin n)
-    (x : CStarMatrix (Fin m) (Fin m) (CStarMatrix (Fin n) (Fin n) ℂ)) (k l : Fin m) :
-    (blockMatrixUnit m i j * x * blockMatrixUnit m i j) k l =
-      matrixUnit i j * x k l * matrixUnit i j := by
-  simp [CStarMatrix.mul_apply, blockMatrixUnit_apply]
+  split_ifs <;> simp_all [matrixUnit, zero_apply]
 
 /-- The amplification of the transpose is `x ↦ ∑ diag(E i j) * x * diag(E i j)`. -/
-private theorem map_transposeₗ_eq_sum
-    (x : CStarMatrix (Fin m) (Fin m) (CStarMatrix (Fin n) (Fin n) ℂ)) :
+private theorem map_transposeₗ_eq_sum [DecidableEq m] [DecidableEq n]
+    (x : CStarMatrix m m (CStarMatrix n n ℂ)) :
     x.map (transposeₗ ℂ) =
-      ∑ p : Fin n × Fin n, blockMatrixUnit m p.1 p.2 * x * blockMatrixUnit m p.1 p.2 := by
-  refine CStarMatrix.ext fun k l => ?_
-  rw [CStarMatrix.sum_apply, map_apply]
-  simp_rw [blockMatrixUnit_mul_mul_apply]
-  exact transposeₗ_eq_sum _
+      ∑ p : n × n, blockMatrixUnit m p.1 p.2 * x * blockMatrixUnit m p.1 p.2 := by
+  ext k l : 2
+  rw [sum_apply, map_apply, transposeₗ_eq_sum]
+  simp [mul_apply, blockMatrixUnit_apply]
 
-private theorem sum_blockMatrixUnit_mul_star :
-    ∑ p : Fin n × Fin n, blockMatrixUnit m p.1 p.2 * star (blockMatrixUnit m p.1 p.2) =
-      (n : ℂ) • 1 := by
+private theorem sum_blockMatrixUnit_mul_star [DecidableEq m] [DecidableEq n] :
+    ∑ p : n × n, blockMatrixUnit m p.1 p.2 * star (blockMatrixUnit m p.1 p.2) =
+      (Fintype.card n : ℂ) • 1 := by
   ext k l r s
-  simp [CStarMatrix.sum_apply, CStarMatrix.mul_apply, star_apply, blockMatrixUnit_apply_apply,
-    CStarMatrix.one_apply, Fintype.sum_prod_type, ite_and]
-  by_cases hkl : k = l <;> by_cases hrs : r = s <;>
-    simp [hkl, hrs, CStarMatrix.one_apply, eq_comm]
+  simp [sum_apply, mul_apply, star_apply, blockMatrixUnit_apply_apply, one_apply,
+    Fintype.sum_prod_type, ite_and]
+  by_cases hkl : k = l <;> by_cases hrs : r = s <;> simp [hkl, hrs, one_apply, eq_comm]
 
-
-private theorem sum_star_blockMatrixUnit_mul :
-    ∑ p : Fin n × Fin n, star (blockMatrixUnit m p.1 p.2) * blockMatrixUnit m p.1 p.2 =
-      (n : ℂ) • 1 := by
-  ext k l r s
-  simp [CStarMatrix.sum_apply, CStarMatrix.mul_apply, star_apply, blockMatrixUnit_apply_apply,
-    CStarMatrix.one_apply, Fintype.sum_prod_type, ite_and]
-  by_cases hkl : k = l <;> by_cases hrs : r = s <;>
-    simp [hkl, hrs, CStarMatrix.one_apply, eq_comm]
+private theorem sum_star_blockMatrixUnit_mul [DecidableEq m] [DecidableEq n] :
+    ∑ p : n × n, star (blockMatrixUnit m p.1 p.2) * blockMatrixUnit m p.1 p.2 =
+      (Fintype.card n : ℂ) • 1 := by
+  simp_rw [star_blockMatrixUnit]
+  rw [← sum_blockMatrixUnit_mul_star (m := m)]
+  refine Fintype.sum_equiv (Equiv.prodComm n n) _ _ fun p => ?_
+  simp [star_blockMatrixUnit]
 
 private theorem norm_natCast_smul_one_le {D : Type*} [CStarAlgebra D] (n : ℕ) :
     ‖(n : ℂ) • (1 : D)‖ ≤ n := by
@@ -287,79 +383,76 @@ private theorem norm_natCast_smul_one_le {D : Type*} [CStarAlgebra D] (n : ℕ) 
   · simp [Subsingleton.elim ((n : ℂ) • (1 : D)) 0]
   · simp [norm_smul]
 
-/-- Every amplification of the transpose on `M_n(ℂ)` is bounded by `n`: write the transpose as
-`∑ E i j * y * E i j` and apply `norm_sum_mul_mul_sq_le`, with
-`∑ E i j * (E i j)⋆ = ∑ (E i j)⋆ * E i j = n • 1`. -/
-theorem norm_map_transposeₗ_le (x : CStarMatrix (Fin m) (Fin m) (CStarMatrix (Fin n) (Fin n) ℂ)) :
-    ‖x.map (transposeₗ ℂ)‖ ≤ n * ‖x‖ := by
-  have h := norm_sum_mul_mul_sq_le (fun p : Fin n × Fin n => blockMatrixUnit m p.1 p.2)
-    (fun p : Fin n × Fin n => blockMatrixUnit m p.1 p.2) x
+/-- Every amplification of the transpose on `M_n(ℂ)` is bounded by `n`. -/
+theorem norm_map_transposeₗ_le (x : CStarMatrix m m (CStarMatrix n n ℂ)) :
+    ‖x.map (transposeₗ ℂ)‖ ≤ Fintype.card n * ‖x‖ := by
+  classical
+  have h := Finset.norm_sum_mul_mul_sq_le Finset.univ
+    (fun p : n × n => blockMatrixUnit m p.1 p.2) (fun p : n × n => blockMatrixUnit m p.1 p.2) x
   rw [sum_blockMatrixUnit_mul_star, sum_star_blockMatrixUnit_mul, ← map_transposeₗ_eq_sum] at h
-  have hn := norm_natCast_smul_one_le
-    (D := CStarMatrix (Fin m) (Fin m) (CStarMatrix (Fin n) (Fin n) ℂ)) n
+  have hn := norm_natCast_smul_one_le (D := CStarMatrix m m (CStarMatrix n n ℂ)) (Fintype.card n)
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp (h.trans ?_)
-  calc _ ≤ (n : ℝ) * ‖x‖ ^ 2 * n := by gcongr
-    _ = (n * ‖x‖) ^ 2 := by ring
+  calc _ ≤ (Fintype.card n : ℝ) * ‖x‖ ^ 2 * Fintype.card n := by gcongr
+    _ = (Fintype.card n * ‖x‖) ^ 2 := by ring
 
 /-- The flip unitary `[E l k]_{k l}` in `M_n(M_n(ℂ))`. -/
-private def flipMatrix (n : ℕ) : CStarMatrix (Fin n) (Fin n) (CStarMatrix (Fin n) (Fin n) ℂ) :=
+private def flipMatrix (n : Type*) [DecidableEq n] :
+    CStarMatrix n n (CStarMatrix n n ℂ) :=
   ofMatrix (Matrix.of fun k l => matrixUnit l k)
 
-private theorem flipMatrix_apply_apply (k l r s : Fin n) :
-    flipMatrix n k l r s = if r = l ∧ s = k then 1 else 0 :=
-  rfl
+omit [Fintype n] in
+private theorem flipMatrix_apply_apply [DecidableEq n] (k l r s : n) :
+    flipMatrix n k l r s = if l = r ∧ k = s then 1 else 0 := by
+  simp [flipMatrix, matrixUnit, Matrix.single_apply]
 
-private theorem flipMatrix_mem_unitary :
-    flipMatrix n ∈ unitary (CStarMatrix (Fin n) (Fin n) (CStarMatrix (Fin n) (Fin n) ℂ)) := by
-  rw [Unitary.mem_iff]
-  constructor <;>
-  · ext k l r s
-    simp [CStarMatrix.sum_apply, CStarMatrix.mul_apply, star_apply, flipMatrix_apply_apply,
-      CStarMatrix.one_apply, ite_and]
-    by_cases hkl : k = l <;> by_cases hrs : r = s <;>
-      simp [hkl, hrs, CStarMatrix.one_apply, eq_comm]
+private theorem flipMatrix_mem_unitary [DecidableEq n] :
+    flipMatrix n ∈ unitary (CStarMatrix n n (CStarMatrix n n ℂ)) := by
+  have hstar : star (flipMatrix n) = flipMatrix n := by
+    ext k l r s
+    simp [star_apply, flipMatrix_apply_apply, and_comm, apply_ite]
+  rw [Unitary.mem_iff, hstar, and_self]
+  ext k l r s
+  simp [sum_apply, mul_apply, flipMatrix_apply_apply, one_apply, ite_and]
+  by_cases hkl : k = l <;> by_cases hrs : r = s <;> simp [hkl, hrs, one_apply, eq_comm]
 
-private theorem map_transposeₗ_flipMatrix_apply_apply (k l r s : Fin n) :
-    (flipMatrix n).map (transposeₗ ℂ) k l r s = if r = k ∧ s = l then 1 else 0 := by
-  simp [map_apply, flipMatrix_apply_apply, and_comm]
-
-/-- The transpose of the flip unitary has norm `n`: it is `n` times a rank-one projection. -/
-private theorem norm_map_transposeₗ_flipMatrix :
-    ‖(flipMatrix n).map (transposeₗ ℂ)‖ = n := by
+private theorem norm_map_transposeₗ_flipMatrix [DecidableEq n] [Nonempty n] :
+    ‖(flipMatrix n).map (transposeₗ ℂ)‖ = Fintype.card n := by
   set P := (flipMatrix n).map (transposeₗ ℂ)
+  have hP_apply (k l r s : n) : P k l r s = if k = r ∧ l = s then 1 else 0 := by
+    simp [P, flipMatrix_apply_apply, and_comm]
   have hstar : star P = P := by
     ext k l r s
-    simp [P, star_apply, flipMatrix_apply_apply, eq_comm, and_comm]
-  have hsq : P * P = (n : ℂ) • P := by
+    simp [star_apply, hP_apply, and_comm, apply_ite]
+  have hsq : P * P = (Fintype.card n : ℂ) • P := by
     ext k l r s
-    simp [P, CStarMatrix.sum_apply, CStarMatrix.mul_apply, flipMatrix_apply_apply, ite_and]
-  rcases Nat.eq_zero_or_pos n with hn | hn
-  · subst hn
-    simp [show P = 0 from CStarMatrix.ext fun k => k.elim0]
+    simp [sum_apply, mul_apply, hP_apply, ite_and]
+    split_ifs <;> simp
+  obtain ⟨k₀⟩ := ‹Nonempty n›
   have hP : P ≠ 0 := fun h => by
-    have := congrArg (fun Q : CStarMatrix (Fin n) (Fin n) (CStarMatrix (Fin n) (Fin n) ℂ) =>
-      Q ⟨0, hn⟩ ⟨0, hn⟩ ⟨0, hn⟩ ⟨0, hn⟩) h
-    simp [P, map_transposeₗ_flipMatrix_apply_apply] at this
-  have hnorm : ‖P‖ * ‖P‖ = n * ‖P‖ := by
+    simpa [hP_apply, zero_apply] using congr($h k₀ k₀ k₀ k₀)
+  have hnorm : ‖P‖ * ‖P‖ = Fintype.card n * ‖P‖ := by
     rw [← CStarRing.norm_star_mul_self, hstar, hsq, norm_smul, Complex.norm_natCast]
   exact mul_right_cancel₀ (norm_ne_zero_iff.mpr hP) hnorm
 
 /-- The transpose on `M_n(ℂ)` is completely bounded. -/
-theorem isCompletelyBounded_transposeₗ (n : ℕ) :
-    IsCompletelyBounded (transposeₗ ℂ : CStarMatrix (Fin n) (Fin n) ℂ →ₗ[ℂ] _) :=
-  ⟨n, n.cast_nonneg, fun _ x => norm_map_transposeₗ_le x⟩
+@[simp, grind .]
+theorem isCompletelyBounded_transposeₗ (n : Type*) [Fintype n] :
+    (transposeₗ ℂ : CStarMatrix n n ℂ →ₗ[ℂ] _).IsCompletelyBounded :=
+  ⟨Fintype.card n, by positivity, fun _ x => norm_map_transposeₗ_le x⟩
 
-/-- **The transpose on `M_n(ℂ)` has cb norm `n`.** At level `n` it sends the flip unitary
-`[E l k]_{k l}`, of norm `1`, to `[E k l]_{k l}`, of norm `n`. -/
-theorem cbNorm_transposeₗ (n : ℕ) :
-    cbNorm (transposeₗ ℂ : CStarMatrix (Fin n) (Fin n) ℂ →ₗ[ℂ] _) = n := by
-  refine le_antisymm (cbNorm_le_of_bound n.cast_nonneg fun _ x => norm_map_transposeₗ_le x) ?_
-  rcases Nat.eq_zero_or_pos n with hn | hn
-  · simpa [hn] using cbNorm_nonneg _
-  have : NeZero n := ⟨hn.ne'⟩
+/-- **The transpose on `M_n(ℂ)` has cb norm `n`.** -/
+@[simp, grind =]
+theorem cbNorm_transposeₗ (n : Type*) [Fintype n] :
+    (transposeₗ ℂ : CStarMatrix n n ℂ →ₗ[ℂ] _).cbNorm = Fintype.card n := by
+  classical
+  refine le_antisymm (LinearMap.cbNorm_le_of_bound (by positivity) fun _ x =>
+    norm_map_transposeₗ_le x) ?_
+  cases isEmpty_or_nonempty n
+  · simp
   have hU := CStarRing.norm_of_mem_unitary (flipMatrix_mem_unitary (n := n))
-  have := norm_map_le_cbNorm_mul (isCompletelyBounded_transposeₗ n) (flipMatrix n)
+  have := LinearMap.norm_map_le_cbNorm_mul (isCompletelyBounded_transposeₗ n) (flipMatrix n)
   rwa [norm_map_transposeₗ_flipMatrix, hU, mul_one] at this
+
 end Transpose
 
-end TauCeti
+end CStarMatrix

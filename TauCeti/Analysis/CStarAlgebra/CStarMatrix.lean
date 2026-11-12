@@ -28,12 +28,18 @@ already forces `M` to be self-adjoint, by polarization over `ℂ`. The criterion
 to recognise positive matrices over a C⋆-algebra, for instance Gram matrices of vectors in a
 Hilbert C⋆-module.
 
+The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
+sums and of `1 × 1` matrices, and the transpose as a linear map.
+
 ## Main declarations
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
   ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
+* `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
+  `1 × 1` C⋆-matrices.
+* `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
@@ -75,6 +81,33 @@ lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix
 @[simp]
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
+
+/-- Entries of a finite sum of C⋆-matrices are the sums of the entries. -/
+theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)
+    (f : ι → CStarMatrix m n A) (i : m) (j : n) : (∑ k ∈ s, f k) i j = ∑ k ∈ s, f k i j := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [zero_apply]
+  | insert k s hk ih => simp [Finset.sum_insert hk, ih]
+
+/-- The entry of the `1 × 1` C⋆-matrix associated to `a`. -/
+@[simp]
+theorem toOneByOne_apply [Unique n] [Semiring R] [AddCommMonoid A] [Mul A] [Star A] [Module R A]
+    (a : A) (i j : n) : toOneByOne n R A a i j = a :=
+  rfl
+
+variable (R) in
+/-- The transpose of C⋆-matrices, as a linear map. -/
+def transposeₗ {m : Type*} [Semiring R] [AddCommMonoid A] [Module R A] :
+    CStarMatrix m n A →ₗ[R] CStarMatrix n m A where
+  toFun M := M.transpose
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+
+@[simp]
+theorem transposeₗ_apply {m : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
+    (M : CStarMatrix m n A) : transposeₗ R M = M.transpose :=
+  (rfl)
 
 /-- A matrix over a complex star-algebra with proper star all of whose quadratic forms are
 self-adjoint is self-adjoint. -/
