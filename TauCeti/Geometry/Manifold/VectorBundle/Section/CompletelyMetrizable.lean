@@ -20,7 +20,8 @@ any covering system of smooth frames, which does not depend on the covering syst
 (`ContMDiffSection.frameTopology_eq_of_covers`). For instance the `C^k` vector fields on `M` are
 the `C^k` sections of its tangent bundle.
 
-This file proves that for a second-countable base this topology is completely metrizable
+This file proves that for a Lindelöf base, for instance a second-countable, sigma-compact or
+compact one, this topology is completely metrizable
 (`ContMDiffSection.isCompletelyMetrizableSpace_frameTopology`), hence a Baire space
 (`ContMDiffSection.baireSpace_frameTopology`): a countable intersection of open dense sets of
 sections is dense. This is the parameter space of the genericity theorems for vector fields and
@@ -34,19 +35,19 @@ domains gives a metrizable topology
 (`ContMDiffSection.metrizableSpace_frameTopology_of_sigmaCompactDomains`); the space is complete
 for the uniform structure of this topological additive group
 (`ContMDiffSection.completeSpace_frameTopology`); and a metrizable topological additive group has
-a countably generated uniformity, so it carries a complete compatible metric. On a
-second-countable base every covering frame system has a countable subcover, whose domains are
-open in a locally compact second-countable space and hence sigma-compact, and the subcover
-induces the same topology.
+a countably generated uniformity, so it carries a complete compatible metric. A Lindelöf base is
+covered by countably many charts, so it is second-countable. Then every covering frame system
+has a countable subcover, whose domains are open in a locally compact second-countable space and
+hence sigma-compact, and the subcover induces the same topology.
 
 ## Main results
 
 * `ContMDiffSection.isCompletelyMetrizableSpace_frameTopology_of_countable`: for a countable
   covering frame system with sigma-compact domains, the sections form a completely metrizable
   space.
-* `ContMDiffSection.isCompletelyMetrizableSpace_frameTopology`: on a second-countable base, the
+* `ContMDiffSection.isCompletelyMetrizableSpace_frameTopology`: on a Lindelöf base, the
   same for every covering frame system.
-* `ContMDiffSection.baireSpace_frameTopology`: on a second-countable base, the sections form a
+* `ContMDiffSection.baireSpace_frameTopology`: on a Lindelöf base, the sections form a
   Baire space.
 
 ## References
@@ -94,14 +95,20 @@ theorem isCompletelyMetrizableSpace_frameTopology_of_countable [Countable ι]
     IsUniformAddGroup.uniformity_countably_generated
   infer_instance
 
-/-- **Sections are completely metrizable.** Over a second-countable boundaryless manifold
+/-- **Sections are completely metrizable.** Over a Lindelöf boundaryless manifold
 modelled on a locally compact space over `ℝ` or `ℂ`, the `C^n` sections of a vector bundle with
 Banach model fibre, for finite or smooth regularity `n`, form a completely metrizable space in the
 compact derivative topology of any covering system of smooth frames. -/
-theorem isCompletelyMetrizableSpace_frameTopology [SecondCountableTopology M]
+theorem isCompletelyMetrizableSpace_frameTopology [LindelofSpace M]
     (hcover : ∀ x, ∃ i, x ∈ U i) :
     let _ := frameTopology (I := I) (n := n) e U hU
     IsCompletelyMetrizableSpace Cₛ^n⟮I; F, V⟯ := by
+  -- A Lindelöf manifold with a second-countable model is second-countable.
+  have : ProperSpace E := .of_locallyCompactSpace 𝕜
+  have : SecondCountableTopology H := I.secondCountableTopology
+  have : SecondCountableTopology M := by
+    obtain ⟨s, hs, hsU⟩ := _root_.countable_cover_nhds fun x : M ↦ chart_source_mem_nhds H x
+    exact ChartedSpace.secondCountable_of_countable_cover H hsU hs
   -- Pass to a countable subcover, which induces the same topology.
   obtain ⟨T, hT, hTU⟩ := isOpen_iUnion_countable (fun i ↦ (U i : Set M)) fun i ↦ (U i).isOpen
   have := hT.to_subtype
@@ -122,12 +129,12 @@ theorem isCompletelyMetrizableSpace_frameTopology [SecondCountableTopology M]
   exact isCompletelyMetrizableSpace_frameTopology_of_countable (I := I) (n := n)
     (fun j : T ↦ e j) (fun j ↦ U j) (fun j ↦ hU j) hcover'
 
-/-- **Sections form a Baire space.** Over a second-countable boundaryless manifold modelled on a
+/-- **Sections form a Baire space.** Over a Lindelöf boundaryless manifold modelled on a
 locally compact space over `ℝ` or `ℂ`, the `C^n` sections of a vector bundle with Banach model
 fibre, for finite or smooth regularity `n`, form a Baire space in the compact derivative topology
 of any covering system of smooth frames: a countable intersection of open dense sets of sections
 is dense. -/
-theorem baireSpace_frameTopology [SecondCountableTopology M] (hcover : ∀ x, ∃ i, x ∈ U i) :
+theorem baireSpace_frameTopology [LindelofSpace M] (hcover : ∀ x, ∃ i, x ∈ U i) :
     let _ := frameTopology (I := I) (n := n) e U hU
     BaireSpace Cₛ^n⟮I; F, V⟯ := by
   let _ := frameTopology (I := I) (n := n) e U hU
