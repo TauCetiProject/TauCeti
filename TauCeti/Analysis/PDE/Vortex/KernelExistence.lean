@@ -300,11 +300,7 @@ theorem exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add (hx : 
     · simp [ξ, P, G]
     · simpa [G] using hGrow 2 (by simp) w
     · simpa [G] using hGrow 3 (by simp) w
-  · have hadd : sectionValue (y₀ + logVariation x ξ) w =
-        sectionValue y₀ w + sectionValue (logVariation x ξ) w := by
-      simp only [sectionValue_apply, Pi.add_apply, PiLp.add_apply, ofReal_add]
-      ring
-    rw [hadd, sectionValue_apply, (hy₀η w hw).eq_of_nhds, ← sectionValue_apply,
+  · rw [sectionValue_add, sectionValue_apply, (hy₀η w hw).eq_of_nhds, ← sectionValue_apply,
       sectionValue_logVariation, sectionValue_logVariation]
     ring
 
