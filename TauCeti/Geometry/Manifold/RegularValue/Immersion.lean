@@ -76,7 +76,7 @@ theorem IsRegularValue.eventually_mem_range (hreg : IsRegularValue I 𝓘(𝕜, 
     {g : P → M} (hg : ContMDiff J I 1 g) (hgc : ∀ q, f (g q) = c) {q₀ : P}
     (hinj : Injective (mfderiv J I g q₀)) (hq₀ : J.IsInteriorPoint q₀) :
     ∀ᶠ x in 𝓝 (g q₀), f x = c → x ∈ range g := by
-  have : CompleteSpace G := FiniteDimensional.complete 𝕜 G
+  have : CompleteSpace G := FiniteDimensional.completeSpace 𝕜 G
   have hn : finrank 𝕜 E - finrank 𝕜 F = finrank 𝕜 G := by omega
   let := regularLevelChartedSpace hf hreg hn
   have := isManifold_regularLevel le_rfl hf hreg hn
