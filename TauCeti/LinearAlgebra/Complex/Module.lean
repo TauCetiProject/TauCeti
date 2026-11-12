@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.Module
+public import Mathlib.LinearAlgebra.StdBasis
+import Mathlib.Algebra.Module.Torsion.Field
 import Mathlib.Algebra.Ring.Action.ConjAct
+import Mathlib.LinearAlgebra.Basis.Submodule
 import Mathlib.Tactic.FastInstance
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -43,6 +46,9 @@ at `I` (`Units.conj_complexAlgHom_apply`).
 
 The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
 half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`).
+
+The real span of the standard basis of `ι → ℂ` is `ℝ^ι`, the vectors with real entries
+(`TauCeti.mem_span_range_basisFun_iff`).
 -/
 
 public section
@@ -164,6 +170,14 @@ theorem realPart_eq_add_half_star_sub {A : Type*} [AddCommGroup A] [Module ℂ A
     (ℜ a : A) = a + (2 : ℝ)⁻¹ • (star a - a) := by
   rw [realPart_apply_coe]
   module
+
+/-- The real span of the standard basis of `ι → ℂ` is `ℝ^ι`, the vectors with real entries. -/
+theorem mem_span_range_basisFun_iff {ι : Type*} [Finite ι] (w : ι → ℂ) :
+    w ∈ Submodule.span ℝ (Set.range (Pi.basisFun ℂ ι)) ↔ ∀ i, (w i).im = 0 := by
+  simp only [(Pi.basisFun ℂ ι).mem_span_iff_repr_mem ℝ, Pi.basisFun_repr]
+  refine forall_congr' fun i ↦ ⟨?_, fun h ↦ ⟨(w i).re, Complex.ext (by simp) (by simp [h])⟩⟩
+  rintro ⟨r, hr⟩
+  simp [← hr]
 
 end TauCeti
 

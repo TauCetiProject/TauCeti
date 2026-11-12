@@ -149,12 +149,14 @@ variable [Finite ι] (hs : IsLocalFrameOn IB F n (complexDoubledFrame σ) U) (hU
   (b : Basis ι ℂ F)
 
 /-- The trivialization of a doubled frame sends `σ i x` to `b i`. -/
+@[simp]
 theorem trivialization_complexDoubledFrame_apply_zero {x : B} (hx : x ∈ U) (i : ι) :
     hs.trivialization hU (Complex.basisOneI.smulTower b) ⟨x, σ i x⟩ = (x, b i) := by
   simpa [Basis.smulTower_apply] using hs.trivialization_apply_frame hU
     (Complex.basisOneI.smulTower b) hx (0, i)
 
 /-- The trivialization of a doubled frame sends `i σ i x` to `i b i`. -/
+@[simp]
 theorem trivialization_complexDoubledFrame_apply_one {x : B} (hx : x ∈ U) (i : ι) :
     hs.trivialization hU (Complex.basisOneI.smulTower b) ⟨x, Complex.I • σ i x⟩ =
       (x, Complex.I • b i) := by
