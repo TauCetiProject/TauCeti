@@ -479,23 +479,11 @@ private theorem memLp_radialCoordGradient (hμ0 : 0 < μ) (hμ1 : μ ≤ 1) {p :
     (hp0 : p ≠ 0) (hp : p ≠ ∞) {Ω : Opens (EuclideanSpace ℝ (Fin 2))}
     (hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin 2))))
     (h : p.toReal * (1 - μ) < 2) :
-    MemLp (radialCoordGradient μ 0) p (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin 2)))) := by
-  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  have hGm := (measurable_radialCoordGradient (μ := μ) 0).aestronglyMeasurable
-    (μ := volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin 2))))
-  obtain ⟨R, hR⟩ := hb.subset_ball (0 : EuclideanSpace ℝ (Fin 2))
-  refine (integrable_norm_rpow_iff hGm hp0 hp).1 ?_
-  have hker : IntegrableOn (fun x : EuclideanSpace ℝ (Fin 2) => ‖x‖ ^ (p.toReal * (μ - 1)))
-      (Ω : Set (EuclideanSpace ℝ (Fin 2))) :=
-    IntegrableOn.mono_set
-      (integrableOn_norm_rpow_ball (by rw [finrank_euclideanSpace_fin]; push_cast; nlinarith)) hR
-  refine (hker.const_mul (2 ^ p.toReal)).mono'
-    ((measurable_radialCoordGradient 0).norm.pow_const _).aestronglyMeasurable ?_
-  filter_upwards [ae_restrict_of_ae (compl_mem_ae_iff.2
-    (measure_singleton (0 : EuclideanSpace ℝ (Fin 2))))] with x hx
-  rw [Real.norm_of_nonneg (by positivity), mul_comm p.toReal, Real.rpow_mul (norm_nonneg x),
-    ← Real.mul_rpow (by norm_num) (by positivity)]
-  exact Real.rpow_le_rpow (norm_nonneg _) (norm_radialCoordGradient_le hμ0 hμ1 0 hx) hpr.le
+    MemLp (radialCoordGradient μ 0) p (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin 2)))) :=
+  memLp_restrict_of_norm_le_mul_norm_rpow hp0 hp hb
+    (measurable_radialCoordGradient 0).aestronglyMeasurable
+    (fun x hx => norm_radialCoordGradient_le hμ0 hμ1 0 hx)
+    (by rw [finrank_euclideanSpace_fin]; push_cast; linarith)
 
 /-- On a bounded open set, Meyers' solution is bounded, hence `p`-integrable. -/
 private theorem memLp_meyersSolution (hμ0 : 0 < μ) {p : ℝ≥0∞}

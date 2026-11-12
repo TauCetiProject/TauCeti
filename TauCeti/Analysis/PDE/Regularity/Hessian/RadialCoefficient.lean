@@ -226,60 +226,60 @@ theorem not_memVMO_radialCoefficient_apply [Nontrivial ι] (hb : b ≠ 0) (i : �
 
 /-! ### The equation for a norm power -/
 
+/-- Contracting the radial coefficient against a linear map `H` gives the trace of `H` plus `b`
+times its radial value: `aⁱʲ(x) Hᵢⱼ = tr H + b ⟪H x, x⟫ / ‖x‖²`. -/
+private theorem sum_radialCoefficient_mul_apply_single (x : EuclideanSpace ℝ ι)
+    (H : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) :
+    ∑ i, ∑ j, radialCoefficient b x i j * H (EuclideanSpace.single j 1) i =
+      ∑ i, ⟪H (EuclideanSpace.single i 1), EuclideanSpace.single i 1⟫_ℝ +
+        b / ‖x‖ ^ 2 * ⟪H x, x⟫_ℝ := by
+  have hH : ∀ i, H x i = ∑ j, x j * H (EuclideanSpace.single j 1) i := fun i => by
+    conv_lhs => rw [← (EuclideanSpace.basisFun ι ℝ).sum_repr x]
+    simp
+  have hin : ⟪H x, x⟫_ℝ = ∑ i, x i * H x i := by
+    simp [PiLp.inner_apply]
+  simp only [radialCoefficient_apply, add_mul, Finset.sum_add_distrib, ite_mul, one_mul, zero_mul,
+    Finset.sum_ite_eq, Finset.mem_univ, ite_true, EuclideanSpace.inner_single_right, conj_trivial,
+    hin, hH, Finset.mul_sum]
+  congr 1
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+
 /-- **The radial operator on a norm power.** Away from the origin, for
 `a = TauCeti.PDE.radialCoefficient b` and `u(x) = ‖x‖ ^ γ`,
-`aⁱʲ ∂ᵢ∂ⱼu = γ ‖x‖ ^ (γ - 2) ((n + γ - 2) + b (γ - 1))`. -/
+`aⁱʲ ∂ᵢ∂ⱼu = γ ‖x‖ ^ (γ - 2) ((n + γ - 2) + b (γ - 1))`: the trace of the Hessian contributes
+`γ (n + γ - 2) ‖x‖ ^ (γ - 2)` and its radial value `γ (γ - 1) ‖x‖ ^ γ`. -/
 theorem sum_radialCoefficient_mul_iteratedGradientChain_norm_rpow (γ : ℝ)
     {x : EuclideanSpace ℝ ι} (hx : x ≠ 0) :
     ∑ i, ∑ j, radialCoefficient b x i j *
         iteratedGradientChain (fun y : EuclideanSpace ℝ ι => ‖y‖ ^ γ) 1 x
           (EuclideanSpace.single j 1) i =
       γ * ‖x‖ ^ (γ - 2) * (Fintype.card ι + γ - 2 + b * (γ - 1)) := by
-  have hN : 0 < ‖x‖ := norm_pos_iff.2 hx
-  have hS : ∑ i, x i * x i = ‖x‖ ^ 2 := by
-    rw [EuclideanSpace.norm_sq_eq]
-    simp [sq]
-  have h4 : ‖x‖ ^ (γ - 4) = ‖x‖ ^ (γ - 2) / ‖x‖ ^ 2 := by
-    rw [eq_div_iff (by positivity), ← Real.rpow_natCast, ← Real.rpow_add hN]
-    norm_num
-    ring_nf
-  simp only [radialCoefficient_apply, iteratedGradientChain_one_norm_rpow_apply hx,
-    PiLp.add_apply, PiLp.smul_apply, PiLp.single_apply, EuclideanSpace.inner_single_right,
-    smul_eq_mul, conj_trivial, one_mul, mul_add, add_mul, Finset.sum_add_distrib, mul_ite,
-    ite_mul, mul_one, mul_zero, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-  have e2 : ∑ i, b / ‖x‖ ^ 2 * (x i * x i) * (γ * ‖x‖ ^ (γ - 2)) =
-      b / ‖x‖ ^ 2 * (γ * ‖x‖ ^ (γ - 2)) * ∑ i, x i * x i := by
-    rw [Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ => by ring
-  have e3 : ∑ i, γ * (γ - 2) * ‖x‖ ^ (γ - 4) * x i * x i =
-      γ * (γ - 2) * ‖x‖ ^ (γ - 4) * ∑ i, x i * x i := by
-    rw [Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ => by ring
-  have e4 : ∑ i, ∑ j, b / ‖x‖ ^ 2 * (x i * x j) * (γ * (γ - 2) * ‖x‖ ^ (γ - 4) * x j * x i) =
-      b / ‖x‖ ^ 2 * (γ * (γ - 2) * ‖x‖ ^ (γ - 4)) * ((∑ i, x i * x i) * ∑ j, x j * x j) := by
-    rw [Finset.sum_mul_sum, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [Finset.mul_sum]
-    exact Finset.sum_congr rfl fun j _ => by ring
-  rw [e2, e3, e4, hS, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, h4]
+  have htr := sum_inner_iteratedGradientChain_one_norm_rpow_apply (γ := γ) hx
+    (EuclideanSpace.basisFun ι ℝ)
+  simp only [EuclideanSpace.basisFun_apply, finrank_euclideanSpace] at htr
+  rw [sum_radialCoefficient_mul_apply_single, htr,
+    inner_iteratedGradientChain_one_norm_rpow_apply_self hx, Real.rpow_sub (norm_pos_iff.2 hx)]
+  norm_cast
   field_simp
-  ring
 
-/-- Every element of `W^{2,p}(Ω)` equal to `‖x‖ ^ γ`, for `n ≥ 1`, `γ > 0` and `n + γ > 2`,
-satisfies `aⁱʲ ∂ᵢ∂ⱼu = γ ‖x‖ ^ (γ - 2) ((n + γ - 2) + b (γ - 1))` almost everywhere with its weak
-Hessian, for `a = TauCeti.PDE.radialCoefficient b`. -/
-theorem ae_sum_radialCoefficient_mul_iteratedGradient_eq [Nonempty ι] {γ : ℝ} (hγ0 : 0 < γ)
-    (hn : 2 < Fintype.card ι + γ) {Ω : Opens (EuclideanSpace ℝ ι)} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (w : Wkp volume Ω p 2)
+/-- Every element of `W^{2,p}(Ω)` equal to `‖x‖ ^ γ`, for `n + γ > 2`, satisfies
+`aⁱʲ ∂ᵢ∂ⱼu = γ ‖x‖ ^ (γ - 2) ((n + γ - 2) + b (γ - 1))` almost everywhere with its weak Hessian,
+for `a = TauCeti.PDE.radialCoefficient b`. -/
+theorem ae_sum_radialCoefficient_mul_iteratedGradient_eq {γ : ℝ} (hn : 2 < Fintype.card ι + γ)
+    {Ω : Opens (EuclideanSpace ℝ ι)} {p : ℝ≥0∞} [Fact (1 ≤ p)] (w : Wkp volume Ω p 2)
     (hw : (Wkp.value 2 w : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] fun y => ‖y‖ ^ γ) :
     ∀ᵐ y ∂volume.restrict (Ω : Set (EuclideanSpace ℝ ι)),
       ∑ i, ∑ j, radialCoefficient b y i j *
           Wkp.iteratedGradient 1 w y (EuclideanSpace.single j 1) i =
         γ * ‖y‖ ^ (γ - 2) * (Fintype.card ι + γ - 2 + b * (γ - 1)) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · -- On the zero space `γ > 2`, so both sides vanish.
+    have hγ : 2 < γ := by simpa using hn
+    exact ae_of_all _ fun y => by
+      simp [Subsingleton.elim y 0, Real.zero_rpow (by linarith : γ - 2 ≠ 0)]
   have hn' : 2 < finrank ℝ (EuclideanSpace ℝ ι) + γ := by rwa [finrank_euclideanSpace]
-  filter_upwards [Wkp.iteratedGradient_one_ae_eq_norm_rpow hγ0 hn' w hw,
-    ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton (0 : EuclideanSpace ℝ ι)))]
-    with y hy h0
+  filter_upwards [Wkp.iteratedGradient_one_ae_eq_iteratedGradientChain_norm_rpow hn' w hw,
+    ae_restrict_of_ae (volume.ae_ne 0)] with y hy h0
   rw [hy]
   exact sum_radialCoefficient_mul_iteratedGradientChain_norm_rpow γ h0
 
@@ -314,7 +314,7 @@ theorem exists_wkp_two_value_ae_eq_norm_rpow_and_sum_radialCoefficient_eq_zero_i
     field_simp [(by linarith : (1 - γ) ≠ 0)]
     ring
   filter_upwards [ae_sum_radialCoefficient_mul_iteratedGradient_eq
-    (b := (Fintype.card ι + γ - 2) / (1 - γ)) hγ0 (by linarith) w hw] with y hy
+    (b := (Fintype.card ι + γ - 2) / (1 - γ)) (by linarith) w hw] with y hy
   rw [hy, hzero, mul_zero]
 
 end PDE

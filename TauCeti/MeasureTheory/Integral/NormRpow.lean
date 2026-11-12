@@ -314,8 +314,7 @@ theorem tendsto_setLIntegral_ball_enorm_sub_of_norm_le_mul_norm_rpow [Nontrivial
     (hbound : ∀ k, ∀ x : E, x ≠ 0 → ‖f k x‖ ≤ C * ‖x‖ ^ s)
     (hlim : ∀ x : E, x ≠ 0 → Tendsto (fun k => f k x) atTop (𝓝 (g x))) :
     Tendsto (fun k => ∫⁻ x in ball 0 R, ‖f k x - g x‖ₑ ∂mu) atTop (𝓝 0) := by
-  have hae : ∀ᵐ x ∂mu.restrict (ball 0 R), x ≠ 0 :=
-    ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton 0))
+  have hae : ∀ᵐ x ∂mu.restrict (ball 0 R), x ≠ 0 := ae_restrict_of_ae (mu.ae_ne 0)
   simpa only [ofReal_norm] using tendsto_lintegral_norm_of_dominated_convergence hf
     (((integrableOn_norm_rpow_ball (mu := mu) hs).const_mul C).hasFiniteIntegral)
     (fun k => hae.mono fun x hx => hbound k x hx) (hae.mono hlim)
@@ -332,8 +331,7 @@ theorem memLp_restrict_of_norm_le_mul_norm_rpow [Nontrivial E] {F : Type*}
   refine (integrable_norm_rpow_iff hf hp0 hp).1 ?_
   refine (((integrableOn_norm_rpow_ball (mu := mu) hs).mono_set hR).const_mul
     (|C| ^ p.toReal)).mono' (hf.norm.aemeasurable.pow_const _).aestronglyMeasurable ?_
-  filter_upwards [ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton (μ := mu) 0))]
-    with x hx
+  filter_upwards [ae_restrict_of_ae (mu.ae_ne 0)] with x hx
   rw [Real.norm_of_nonneg (by positivity), Real.rpow_mul (norm_nonneg x),
     ← Real.mul_rpow (abs_nonneg C) (by positivity)]
   exact Real.rpow_le_rpow (norm_nonneg _)

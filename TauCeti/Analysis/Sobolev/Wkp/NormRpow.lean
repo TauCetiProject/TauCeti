@@ -23,6 +23,10 @@ measure, and let `u(x) = ‖x‖ ^ γ`. Away from the origin its classical Hessi
 `D²u(x) v = γ ‖x‖ ^ (γ - 2) v + γ (γ - 2) ‖x‖ ^ (γ - 4) ⟪x, v⟫ x`
 
 (`TauCeti.iteratedGradientChain_one_norm_rpow_apply`), of size comparable to `‖x‖ ^ (γ - 2)`.
+Its trace is `γ (n + γ - 2) ‖x‖ ^ (γ - 2)`
+(`TauCeti.sum_inner_iteratedGradientChain_one_norm_rpow_apply`) and its radial value is
+`⟪D²u(x) x, x⟫ = γ (γ - 1) ‖x‖ ^ γ`
+(`TauCeti.inner_iteratedGradientChain_one_norm_rpow_apply_self`).
 For `n + γ > 2` this Hessian is locally integrable, and it is the weak derivative of the gradient
 of `u` across the origin (`TauCeti.hasWeakFDerivOn_gradient_norm_rpow`), while the gradient is the
 weak derivative of `u` itself (`TauCeti.hasWeakFDerivOn_norm_rpow`). Consequently, for
@@ -203,7 +207,7 @@ variable [FiniteDimensional ℝ E]
 
 private theorem gradient_norm_rpow_eq_gradField {x : E} (hx : x ≠ 0) :
     ∇ (fun y : E => ‖y‖ ^ γ) x = gradField γ 0 x := by
-  rw [gradient_norm_rpow hx, gradField_zero]
+  rw [gradient_norm_rpow_of_ne hx, gradField_zero]
 
 private theorem iteratedGradientChain_one_norm_rpow_eq_hessField {x : E} (hx : x ≠ 0) :
     iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1 x = hessField γ 0 x := by
@@ -220,6 +224,36 @@ theorem iteratedGradientChain_one_norm_rpow_apply {x : E} (hx : x ≠ 0) (v : E)
     iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1 x v =
       (γ * ‖x‖ ^ (γ - 2)) • v + (γ * (γ - 2) * ‖x‖ ^ (γ - 4) * ⟪x, v⟫_ℝ) • x := by
   rw [iteratedGradientChain_one_norm_rpow_eq_hessField hx, hessField_zero_apply]
+
+/-- Away from the origin, the Hessian of `‖x‖ ^ γ` in the radial direction is
+`⟪D²u(x) x, x⟫ = γ (γ - 1) ‖x‖ ^ γ`. -/
+theorem inner_iteratedGradientChain_one_norm_rpow_apply_self {x : E} (hx : x ≠ 0) :
+    ⟪iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1 x x, x⟫_ℝ = γ * (γ - 1) * ‖x‖ ^ γ := by
+  have hN := norm_pos_iff.2 hx
+  rw [iteratedGradientChain_one_norm_rpow_apply hx, inner_add_left, real_inner_smul_left,
+    real_inner_smul_left, real_inner_self_eq_norm_sq, Real.rpow_sub hN, Real.rpow_sub hN]
+  norm_cast
+  field_simp
+  ring
+
+/-- Away from the origin, the trace of the Hessian of `‖x‖ ^ γ`, computed in any orthonormal
+basis, is `γ (n + γ - 2) ‖x‖ ^ (γ - 2)`, where `n` is the dimension. -/
+theorem sum_inner_iteratedGradientChain_one_norm_rpow_apply {ι : Type*} [Fintype ι] {x : E}
+    (hx : x ≠ 0) (v : OrthonormalBasis ι ℝ E) :
+    ∑ i, ⟪iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1 x (v i), v i⟫_ℝ =
+      γ * (finrank ℝ E + γ - 2) * ‖x‖ ^ (γ - 2) := by
+  have hterm : ∀ i, ⟪iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1 x (v i), v i⟫_ℝ =
+      γ * ‖x‖ ^ (γ - 2) + γ * (γ - 2) * ‖x‖ ^ (γ - 4) * (⟪x, v i⟫_ℝ * ⟪v i, x⟫_ℝ) := fun i => by
+    rw [iteratedGradientChain_one_norm_rpow_apply hx, inner_add_left, real_inner_smul_left,
+      real_inner_smul_left, real_inner_self_eq_norm_sq, v.norm_eq_one, real_inner_comm (v i) x]
+    ring
+  have hN := norm_pos_iff.2 hx
+  rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_add_distrib, Finset.sum_const,
+    ← Finset.mul_sum, v.sum_inner_mul_inner, real_inner_self_eq_norm_sq, Finset.card_univ,
+    ← finrank_eq_card_basis v.toBasis, nsmul_eq_mul, Real.rpow_sub hN, Real.rpow_sub hN]
+  norm_cast
+  field_simp
+  ring
 
 /-! ### Passing to the limit -/
 
@@ -242,8 +276,7 @@ private theorem hasWeakFDerivOn_ball_gradField [Nontrivial E] (hγ : γ ≤ 2)
     HasWeakFDerivOn μ ⟨ball 0 R, isOpen_ball⟩ (gradField γ 0) (hessField γ 0) := by
   have hs1 : -(finrank ℝ E : ℝ) < γ - 1 := by linarith
   have hs2 : -(finrank ℝ E : ℝ) < γ - 2 := by linarith
-  have hae : ∀ᵐ x ∂μ.restrict (ball 0 R), x ≠ 0 :=
-    ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton 0))
+  have hae : ∀ᵐ x ∂μ.restrict (ball 0 R), x ≠ 0 := ae_restrict_of_ae (μ.ae_ne 0)
   -- The limit fields are integrable on the ball.
   have hG : IntegrableOn (gradField γ 0) (ball 0 R) μ :=
     ((integrableOn_norm_rpow_ball (mu := μ) hs1).const_mul |γ|).mono'
@@ -289,19 +322,15 @@ private theorem hasWeakFDerivOn_gradField (hγ : γ ≤ 2) (hn : 2 < finrank ℝ
 
 /-! ### Weak derivatives across the origin -/
 
-/-- For `γ > 0`, the classical gradient of `‖x‖ ^ γ` is its weak gradient on every open set; this
-restates `TauCeti.hasWeakFDerivOn_norm_rpow` in terms of the gradient. -/
-private theorem hasWeakFDerivOn_norm_rpow_innerSL_gradient [Nontrivial E] (hγ : 0 < γ)
-    (Ω : Opens E) :
+/-- For `n + γ > 1`, the classical gradient of `‖x‖ ^ γ` is its weak gradient on every open set;
+this restates `TauCeti.hasWeakFDerivOn_norm_rpow` in terms of the gradient. -/
+private theorem hasWeakFDerivOn_norm_rpow_innerSL_gradient [Nontrivial E]
+    (hs : 1 - (finrank ℝ E : ℝ) < γ) (Ω : Opens E) :
     HasWeakFDerivOn μ Ω (fun y : E => ‖y‖ ^ γ)
       (fun x => innerSL ℝ (∇ (fun y : E => ‖y‖ ^ γ) x)) := by
-  have hs : 1 - (finrank ℝ E : ℝ) < γ := by
-    have : (1 : ℝ) ≤ finrank ℝ E := by exact_mod_cast finrank_pos (R := ℝ) (M := E)
-    linarith
   refine (hasWeakFDerivOn_norm_rpow hs Ω).congr_ae_deriv ?_
-  filter_upwards [ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton (μ := μ) (0 : E)))]
-    with x hx
-  rw [gradient_norm_rpow hx, map_smul]
+  filter_upwards [ae_restrict_of_ae (μ.ae_ne 0)] with x hx
+  rw [gradient_norm_rpow_of_ne hx, map_smul]
 
 /-- **The weak Hessian of a norm power.** Let `n + γ > 2`, where `n` is the dimension. On every
 open set, the classical Hessian of `‖x‖ ^ γ`, of size comparable to `‖x‖ ^ (γ - 2)`, is the weak
@@ -312,8 +341,7 @@ theorem hasWeakFDerivOn_gradient_norm_rpow (hn : 2 < finrank ℝ E + γ) (Ω : O
       (iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1) := by
   rcases le_or_gt γ 2 with hγ | hγ
   · have := nontrivial_of_two_lt hγ hn
-    have hae : ∀ᵐ x ∂μ.restrict Ω, x ≠ 0 :=
-      ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton 0))
+    have hae : ∀ᵐ x ∂μ.restrict Ω, x ≠ 0 := ae_restrict_of_ae (μ.ae_ne 0)
     exact ((hasWeakFDerivOn_gradField hγ hn Ω).congr_ae
       (hae.mono fun x hx => (gradient_norm_rpow_eq_gradField hx).symm)).congr_ae_deriv
       (hae.mono fun x hx => (iteratedGradientChain_one_norm_rpow_eq_hessField hx).symm)
@@ -331,9 +359,10 @@ theorem hasWeakFDerivOn_gradient_norm_rpow (hn : 2 < finrank ℝ E + γ) (Ω : O
       (by simpa only [iteratedGradientChain_succ] using h0.locallyIntegrable.locallyIntegrableOn _)
       fun x _ => ((h1 x).differentiableAt (by norm_num)).hasFDerivAt
 
-/-- The weak Hessian of an element of `W^{2,p}(Ω)` equal to `‖x‖ ^ γ`, for `γ > 0` and
-`n + γ > 2`, is its classical Hessian. -/
-theorem Wkp.iteratedGradient_one_ae_eq_norm_rpow (hγ0 : 0 < γ) (hn : 2 < finrank ℝ E + γ)
+/-- The weak Hessian of an element of `W^{2,p}(Ω)` equal to `‖x‖ ^ γ`, for `n + γ > 2`, is its
+classical Hessian. -/
+theorem Wkp.iteratedGradient_one_ae_eq_iteratedGradientChain_norm_rpow
+    (hn : 2 < finrank ℝ E + γ)
     {Ω : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)] (w : Wkp μ Ω p 2)
     (hw : (Wkp.value 2 w : E → ℝ) =ᵐ[μ.restrict Ω] fun y => ‖y‖ ^ γ) :
     (Wkp.iteratedGradient 1 w : E → IteratedGradient E 1) =ᵐ[μ.restrict Ω]
@@ -349,7 +378,7 @@ theorem Wkp.iteratedGradient_one_ae_eq_norm_rpow (hγ0 : 0 < γ) (hn : 2 < finra
   have h1 := (Wkp.hasWeakFDerivOn_value (Wkp.lowerOrder 1 w)).congr_ae hv
   have hg : (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 w) : E → E) =ᵐ[μ.restrict Ω]
       ∇ fun y : E => ‖y‖ ^ γ := by
-    filter_upwards [h1.ae_eq (hasWeakFDerivOn_norm_rpow_innerSL_gradient hγ0 Ω)] with x hx
+    filter_upwards [h1.ae_eq (hasWeakFDerivOn_norm_rpow_innerSL_gradient (by linarith) Ω)] with x hx
     exact ext_inner_right ℝ fun v => by simpa using congrArg (· v) hx
   exact ((Wkp.hasWeakFDerivOn_iteratedGradient 0 w).congr_ae hg).ae_eq
     (hasWeakFDerivOn_gradient_norm_rpow hn Ω)
@@ -363,22 +392,10 @@ private theorem abs_mul_rpow_le_norm_hessField {x : E} (hx : x ≠ 0) :
     |γ * (finrank ℝ E + γ - 2)| * ‖x‖ ^ (γ - 2) ≤ finrank ℝ E * ‖hessField γ 0 x‖ := by
   set b := stdOrthonormalBasis ℝ E
   have hN : 0 < ‖x‖ := norm_pos_iff.2 hx
-  have h42 : ‖x‖ ^ (γ - 4) * ‖x‖ ^ 2 = ‖x‖ ^ (γ - 2) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_add hN]
-    norm_num
-    ring_nf
   have htr : ∑ i, ⟪hessField γ 0 x (b i), b i⟫_ℝ =
       γ * (finrank ℝ E + γ - 2) * ‖x‖ ^ (γ - 2) := by
-    have hterm : ∀ i, ⟪hessField γ 0 x (b i), b i⟫_ℝ =
-        γ * ‖x‖ ^ (γ - 2) + γ * (γ - 2) * ‖x‖ ^ (γ - 4) * (⟪x, b i⟫_ℝ * ⟪b i, x⟫_ℝ) := by
-      intro i
-      rw [hessField_zero_apply, inner_add_left, real_inner_smul_left, real_inner_smul_left,
-        real_inner_self_eq_norm_sq, b.norm_eq_one, real_inner_comm (b i) x]
-      ring
-    rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_add_distrib, Finset.sum_const,
-      ← Finset.mul_sum, b.sum_inner_mul_inner, real_inner_self_eq_norm_sq, Finset.card_univ,
-      Fintype.card_fin, nsmul_eq_mul, mul_assoc (γ * (γ - 2)), h42]
-    ring
+    simpa only [iteratedGradientChain_one_norm_rpow_eq_hessField hx] using
+      sum_inner_iteratedGradientChain_one_norm_rpow_apply (γ := γ) hx b
   have hle : |∑ i, ⟪hessField γ 0 x (b i), b i⟫_ℝ| ≤ finrank ℝ E * ‖hessField γ 0 x‖ := by
     refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
     calc ∑ i, |⟪hessField γ 0 x (b i), b i⟫_ℝ| ≤ ∑ _i : Fin (finrank ℝ E), ‖hessField γ 0 x‖ :=
@@ -389,7 +406,7 @@ private theorem abs_mul_rpow_le_norm_hessField {x : E} (hx : x ≠ 0) :
 
 private theorem aestronglyMeasurable_iteratedGradientChain_one_norm_rpow [Nontrivial E] :
     AEStronglyMeasurable (iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1) μ := by
-  have hae : ∀ᵐ x ∂μ, x ≠ 0 := compl_mem_ae_iff.2 (measure_singleton 0)
+  have hae : ∀ᵐ x ∂μ, x ≠ 0 := μ.ae_ne 0
   exact (aestronglyMeasurable_of_tendsto_ae atTop
     (fun k => (continuous_hessField (E := E) (γ := γ) (eps_pos k)).aestronglyMeasurable)
     (hae.mono fun x hx => (continuousAt_hessField hx).tendsto.comp tendsto_eps)).congr
@@ -423,8 +440,7 @@ private theorem lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow (hγ0 : 0
     refine (hint.const_mul (c ^ (-q.toReal))).mono'
       (by fun_prop : Measurable fun x : E => ‖x‖ ^ ((γ - 2) * q.toReal)).aestronglyMeasurable
       ?_
-    filter_upwards [ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton (μ := μ) 0))]
-      with x hx
+    filter_upwards [ae_restrict_of_ae (μ.ae_ne 0)] with x hx
     have hlow : c * ‖x‖ ^ (γ - 2) ≤ ‖iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1 x‖ := by
       rw [iteratedGradientChain_one_norm_rpow_eq_hessField hx, div_mul_eq_mul_div,
         div_le_iff₀ hnpos, mul_comm _ (finrank ℝ E : ℝ)]
@@ -459,7 +475,8 @@ private theorem exists_wkp_two_value_ae_eq_norm_rpow (hγ0 : 0 < γ) (hγ : γ <
       (by nlinarith)
   have hg : MemLp (∇ fun y : E => ‖y‖ ^ γ) p (μ.restrict Ω) :=
     memLp_restrict_of_norm_le_mul_norm_rpow hp0 hpt hb
-      (measurable_gradient _).aestronglyMeasurable (fun x hx => (norm_gradient_norm_rpow hx).le)
+      (measurable_gradient _).aestronglyMeasurable
+      (fun x hx => (norm_gradient_norm_rpow_of_ne hx).le)
       (by nlinarith)
   have hH : MemLp (iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1) p (μ.restrict Ω) :=
     memLp_restrict_of_norm_le_mul_norm_rpow hp0 hpt hb
@@ -469,7 +486,8 @@ private theorem exists_wkp_two_value_ae_eq_norm_rpow (hγ0 : 0 < γ) (hγ : γ <
         exact norm_hessField_le hx le_rfl hγ.le)
       (by nlinarith)
   have h1 : HasWeakFDerivOn μ Ω hu.toLp (fun x => innerSL ℝ (⇑hg.toLp x)) :=
-    ((hasWeakFDerivOn_norm_rpow_innerSL_gradient hγ0 Ω).congr_ae hu.coeFn_toLp.symm).congr_ae_deriv
+    ((hasWeakFDerivOn_norm_rpow_innerSL_gradient (by linarith) Ω).congr_ae
+      hu.coeFn_toLp.symm).congr_ae_deriv
       (hg.coeFn_toLp.mono fun x hx => by simp only [hx])
   obtain ⟨v, hv, hgv⟩ : ∃ v : Wkp μ Ω p 1,
       W1p.value v = hu.toLp ∧ Wkp.iteratedGradient 0 v = hg.toLp :=
@@ -495,7 +513,7 @@ theorem exists_wkp_two_value_ae_eq_norm_rpow_iff (hγ0 : 0 < γ) (hγ : γ < 2)
       p < ENNReal.ofReal (finrank ℝ E / (2 - γ)) :=
   ⟨fun ⟨w, hw⟩ => lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow hγ0 hγ hn
       (Ω.isOpen.mem_nhds h0) ((Lp.memLp (Wkp.iteratedGradient 1 w)).ae_eq
-        (Wkp.iteratedGradient_one_ae_eq_norm_rpow hγ0 hn w hw)),
+        (Wkp.iteratedGradient_one_ae_eq_iteratedGradientChain_norm_rpow hn w hw)),
     exists_wkp_two_value_ae_eq_norm_rpow hγ0 hγ hn hb⟩
 
 end TauCeti

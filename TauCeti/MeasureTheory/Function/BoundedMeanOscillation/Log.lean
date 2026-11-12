@@ -269,25 +269,9 @@ theorem ofReal_le_setLAverage_enorm_log_norm_sub_setAverage_ball_zero [Nontrivia
         ‖Real.log ‖y‖ - ⨍ z in ball (0 : E) r, Real.log ‖z‖ ∂μ‖ₑ ∂μ := by
   set a := ⨍ z in ball (0 : E) r, Real.log ‖z‖ ∂μ
   obtain ⟨z, hsub, hz⟩ := exists_forall_mem_ball_ofReal_le_enorm_log_norm_sub (E := E) a hr
-  have hball : μ (ball (0 : E) r) = 8 ^ finrank ℝ E * μ (ball z (r / 8)) := by
-    have h8 := Measure.addHaar_ball_mul_of_pos μ (0 : E) (by norm_num : (0 : ℝ) < 8) (r / 8)
-    rw [show (8 : ℝ) * (r / 8) = r by ring] at h8
-    rw [Measure.addHaar_ball_center μ z, h8, ENNReal.ofReal_pow (by norm_num),
-      ENNReal.ofReal_ofNat]
-  have hpos : μ (ball (0 : E) r) ≠ 0 := (measure_ball_pos μ 0 hr).ne'
-  have htop : μ (ball (0 : E) r) ≠ ∞ := measure_ball_lt_top.ne
-  rw [setLAverage_eq, ENNReal.le_div_iff_mul_le (Or.inl hpos) (Or.inl htop)]
-  calc ENNReal.ofReal (Real.log 2 / (2 * 8 ^ finrank ℝ E)) * μ (ball (0 : E) r)
-      = ENNReal.ofReal (Real.log 2 / 2) * μ (ball z (r / 8)) := by
-        rw [hball, ← mul_assoc, ← ENNReal.ofReal_ofNat 8, ← ENNReal.ofReal_pow (by norm_num),
-          ← ENNReal.ofReal_mul (by positivity)]
-        congr 2
-        field_simp
-    _ = ∫⁻ _ in ball z (r / 8), ENNReal.ofReal (Real.log 2 / 2) ∂μ := by
-        rw [setLIntegral_const]
-    _ ≤ ∫⁻ y in ball z (r / 8), ‖Real.log ‖y‖ - a‖ₑ ∂μ :=
-        setLIntegral_mono' measurableSet_ball hz
-    _ ≤ ∫⁻ y in ball (0 : E) r, ‖Real.log ‖y‖ - a‖ₑ ∂μ := lintegral_mono_set hsub
+  have h := ofReal_mul_div_pow_le_setLAverage_enorm_sub (μ := μ) (by positivity : 0 < r / 8)
+    hsub hz
+  rwa [show r / 8 / r = 8⁻¹ by field_simp, inv_pow, ← div_eq_mul_inv, div_div] at h
 
 /-- **`log ‖x‖` does not have vanishing mean oscillation** on a nontrivial finite-dimensional real
 normed space with an additive Haar measure. -/

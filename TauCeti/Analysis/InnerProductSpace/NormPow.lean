@@ -45,8 +45,8 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
-* `gradient_norm_rpow`, `norm_gradient_norm_rpow`: the gradient `p ‖x‖ ^ (p - 2) x` of an
-  arbitrary real power away from zero, and its norm `|p| ‖x‖ ^ (p - 1)`.
+* `gradient_norm_rpow_of_ne`, `norm_gradient_norm_rpow_of_ne`: the gradient `p ‖x‖ ^ (p - 2) x`
+  of an arbitrary real power away from zero, and its norm `|p| ‖x‖ ^ (p - 1)`.
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
 * `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
 * `inv_norm_le_norm_fderiv_fderiv_norm`: the second derivative of the norm is at least `‖x‖⁻¹`
@@ -141,7 +141,7 @@ theorem fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
   (hasFDerivAt_norm_rpow_of_ne p hx).fderiv
 
 /-- Away from the origin, the gradient of `‖x‖ ^ p` is `p ‖x‖ ^ (p - 2) x`. -/
-theorem gradient_norm_rpow [CompleteSpace E] {p : ℝ} {x : E} (hx : x ≠ 0) :
+theorem gradient_norm_rpow_of_ne [CompleteSpace E] {p : ℝ} {x : E} (hx : x ≠ 0) :
     ∇ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • x := by
   refine HasGradientAt.gradient (hasGradientAt_iff_hasFDerivAt.2 ?_)
   convert hasFDerivAt_norm_rpow_of_ne p hx using 1
@@ -149,10 +149,10 @@ theorem gradient_norm_rpow [CompleteSpace E] {p : ℝ} {x : E} (hx : x ≠ 0) :
   simp [InnerProductSpace.toDual_apply_apply]
 
 /-- Away from the origin, the gradient of `‖x‖ ^ p` has norm `|p| ‖x‖ ^ (p - 1)`. -/
-theorem norm_gradient_norm_rpow [CompleteSpace E] {p : ℝ} {x : E} (hx : x ≠ 0) :
+theorem norm_gradient_norm_rpow_of_ne [CompleteSpace E] {p : ℝ} {x : E} (hx : x ≠ 0) :
     ‖∇ (fun y : E ↦ ‖y‖ ^ p) x‖ = |p| * ‖x‖ ^ (p - 1) := by
   have hN : 0 < ‖x‖ := norm_pos_iff.2 hx
-  rw [gradient_norm_rpow hx, norm_smul, Real.norm_eq_abs, abs_mul,
+  rw [gradient_norm_rpow_of_ne hx, norm_smul, Real.norm_eq_abs, abs_mul,
     abs_of_pos (Real.rpow_pos_of_pos hN _), mul_assoc, show p - 1 = (p - 2) + 1 by ring,
     Real.rpow_add_one hN.ne']
 
